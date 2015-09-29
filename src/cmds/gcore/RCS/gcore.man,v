@@ -1,0 +1,94 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     89.02.05.20.51.07;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@The gcore program.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@'\" Copyright 1989 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/lib/forms/RCS/proto.man,v 1.5 89/01/27 08:36:02 ouster Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS <GCORE> cmds
+.BS
+.SH NAME
+gcore \- Generate a core file from a Sprite process.
+.SH SYNOPSIS
+.nf
+\fBgcore\fR [\fIoptions\fR] \fIpid pid ...\fR
+.SH OPTIONS
+.IP "\fB\-o\fI prefix\fR" 10
+Generate the output file names by prepending the string 
+\fIprefix\fR to each of the pids.
+.IP "\fB\-k\fR"
+Kill the process after the core dump is produced.
+.IP "\fB\-s \fIsignal\fR"
+Use signal number \fIsignal\fR to pause running process.
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBGcore\fR generates a snapshot of the current execution state
+of a Sprite process.
+For historical reasons,
+these snapshot are referred to as core dumps or core files.
+Core dumps can be used by the \fBgdb\fR debugger to 
+examine the process's state as if the debugger was attached
+to the process.
+.LP
+\fBGcore\fR takes as arguments one or more process ids and 
+generates core dumps for each process in the file core.\fIpid\fR
+where \fIpid\fR is the specified process id.
+The \fB-o\fR option allows a string other than "core" to be
+used to generate output file names.
+If the \fB-k\fR option is specified, the processes specified will
+be sent a SIGKILL signal after the core dump is finished. 
+.LP
+\fBGcore\fR reads the register state and memory image of a
+process by using the Sprite debugger 
+interface (\fBProc_Debug\fR.) 
+If the process is not already in the DEBUG state (see the \fBps\fR command),
+\fBgcore\fR will send the process a SIGTRAP signal to force 
+it into the DEBUG state.  
+This operation will fail if the user does not have permission to 
+send signals to the process or the 
+process has blocked, ignored, or has a handler installed for the SIGTRAP signal.
+The \fB-s\fR option can be used to inform \fBgcore\fR
+to use a signal number other than 5 (SIGTRAP).
+Other signals that may work are 4 (SIGILL), 8 (SIGFPE) and 11 (SIGSEGV).
+\fBGcore\fR restarts running process by sending them a SIGCONT after
+the dump is produced.
+.SH WARNING
+The signals used by \fBgcore\fR  to stop running processes
+can interrupt system calls such 
+as \fBread, select\fR, or \fBsleep\fR, 
+causing them to return an error status of EINTR. 
+Some programs may interpret the EINTR as an error and exit.
+.SH KEYWORDS
+gdb, coredump
+@

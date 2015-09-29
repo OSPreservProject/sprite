@@ -1,0 +1,42 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     90.08.27.13.47.07;  author eklee;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Generate correct parity.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/*
+ * devRaidHardInit.h --
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/raid/RCS/devRaidReconstruct.h,v 1.1 90/05/15 18:54:59 eklee Exp Locker: eklee $ SPRITE (Berkeley)
+ */
+
+extern void InitiateHardInit();
+@

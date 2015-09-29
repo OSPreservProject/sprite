@@ -1,0 +1,10 @@
+D DS3100_M                          	ds3100.md
+F LFSSTATS.C;1                      	lfsstats.c
+F LFSSTATS.MAN;1                    	lfsstats.man
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+F MKSTATPR.AWK;1                    	mkstatprint.awk
+D RCS                               	RCS
+F STATPRIN.H;1                      	statprint.h
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md

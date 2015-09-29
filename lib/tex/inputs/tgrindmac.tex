@@ -1,0 +1,139 @@
+% @(#)tgrindmac.tex	1.4 (LBL) 3/30/85
+% Macros for TeX "tgrind" (a TeX equivalent of 4bsd "vgrind").
+%
+%  Copyright (C) 1985 by Van Jacobson, Lawrence Berkeley Laboratory.
+%  This program may be freely used and copied but may not be sold
+%  without the author's written permission.  This notice must remain
+%  in any copy or derivative.
+%
+%  Please send improvements, bug fixes, comments, etc., to 
+%    van@lbl-rtsg.arpa
+%    ...ucbvax!lbl-csam!van
+%
+%  Modifications.
+%  --------------
+%  10Feb85, vj	Written.
+%  23Mar85, rf  Substitute ambx10 for amb10
+%  29Mar85, Chris Torek: Use tt font for all characters in strings.
+%		Print decent quotes in comments rather than use tt
+%		font quotes.  Show filename (to terminal & log file)
+%		at start of each new file.
+%  30Mar85, vj	Fixed bug in tabbing.
+
+\font\sevenrm=cmr7			% font for right margin line numbers
+\font\twelvebf=cmbx10 scaled \magstep1	% font for page headers
+\font\forteenrm=cmr10 scaled \magstep2	% font for right margin proc names
+
+% tfontedpr outputs a "\Head{Hdr text}" if you give it the "-h" flag.
+% We remember the text in "\Header" so it can be included in the 
+% head line.
+\def\Head#1{\def\Header{#1}}
+\def\Header{\null}
+
+% We get a "\File{Filename},{Last Mod Time},{Last Mod Date}" at the start of
+% each new file.  We remember this stuff for inclusion in the page head & foot.
+% We reset the page number & current line number to 0 and output a null
+% mark to let the output routine know we're starting a new file.
+% We set up the \headline & \footline token lists inside the File macro to
+% save remembering the filename & mod time with yet other macros.
+\def\File#1,#2,#3{\vfill\eject\mark{\empty}
+\global\linecount=0\linenext=9\pageno=1\message{#1}
+\headline={\twelvebf\Header\hfil
+\edef\a{\topmark}\edef\b{\botmark}\edef\c{\firstmark}
+\ifx\c\empty\botmark\else
+\ifx\a\empty\botmark\else
+\ifx\b\empty\topmark\else
+\ifx\a\b\topmark\else\topmark--\botmark\fi
+\fi\fi\fi(#1)}
+\footline={\it{}#2 #3\hfil{}Page \folio{} of #1}}
+
+% There's a "\Proc{Proc Name}" at the start of each procedure.  If
+% the language definition allows nested procedures (e.g., pascal), there
+% will be a "\ProcCont{Proc Name}" at the end of each inner procedure.
+% (In this case, "proc name" is the name of the outer procedure.  I.e.,
+% ProcCont marks the continuation of "proc name").
+\def\Proc#1{\global\def\Procname{#1}\global\setbox\procbox=\hbox{\forteenrm #1}}
+\def\ProcCont#1{\global\def\Procname{#1}
+\global\setbox\procbox=\hbox{\forteenrm$\ldots$#1}}
+\newbox\procbox
+\def\Procname{\null}
+
+% Each formfeed in the input is replaced by a "\NewPage" macro.  If
+% you really want a page break here, define this as "\vfill\eject".
+\def\NewPage{\filbreak\bigskip}
+
+% Each line of the program text is enclosed by a "\L{...}".  We turn
+% each line into an hbox of size hsize.  If we saw a procedure name somewhere
+% in the line (i.e., "procbox" is not null), we right justify "procbox"
+% on the line.  Every 10 lines we output a small, right justified line number.
+\def\L#1{\filbreak\hbox to \hsize{\CF\strut\global\advance\linecount by1
+#1\hss\ifvoid\procbox\linebox\else\box\procbox\mark{\Procname}\fi}}
+
+\newcount\linecount \linecount=0
+\newcount\linenext \linenext=9
+\def\linebox{\ifnum\linecount>\linenext\global\advance\linenext by10
+\hbox{\sevenrm\the\linecount}\fi}
+
+
+% The following weirdness is to deal with tabs.  "Pieces" of a line
+% between tabs are output as "\LB{...}".  E.g., a line with a tab at
+% column 16 would be output as "\LB{xxx}\Tab{16}\LB{yyy}".  (Actually, to
+% reduce the number of characters in the .tex file the \Tab macro
+% supplies the 2nd & subsequent \LB's.) We accumulate the LB stuff in an
+% hbox.  When we see a Tab, we grab this hbox (using "\lastbox") and turn
+% it into a box that extends to the tab position.  We stash this box in
+% "\linesofar" & use "\everyhbox" to get \linesofar concatenated onto the
+% front of the next piece of the line.  (There must be a better way of
+% doing tabs [cf., the Plain.tex tab macros] but I'm not not enough of a
+% TeX wizard to come up with it.  Suggestions would be appreciated.)
+
+\def\LB{\CF\hbox}
+\newbox\linesofar\setbox\linesofar=\null
+\everyhbox={\box\linesofar}
+\newdimen\TBwid
+\def\Tab#1{\setbox\tbox=\lastbox\TBwid=1\wd\tbox\advance\TBwid by 1\ts
+\ifdim\TBwid>#1\ts
+\setbox\linesofar=\hbox{\box\tbox\space}\else
+\setbox\linesofar=\hbox to #1\ts{\box\tbox\hfil}\fi\LB}
+
+% A normal space is too thin for code listings.  We make spaces & tabs
+% be in "\ts" units (which are the width of a "0" in the current font).
+\newdimen\ts
+\newbox\tbox
+\setbox\tbox=\hbox{0} \ts=1\wd\tbox \setbox\tbox=\hbox{\hskip 1\ts}
+\def\space{\hskip 1\ts\relax}
+
+% Font changing stuff for keywords, comments & strings.  We put keywords
+% in boldface, comments in text-italic & strings in typewriter.  Since
+% we're usually changing the font inside of a \LB macro, we remember the
+% current font in \CF & stick a \CF at the start of each new box.
+% Also, the characters " and ' behave differently in comments than in
+% code, and others behave differently in strings than in code.
+\newif\ifcomment\newif\ifstring
+\let\CF=\rm
+\def\K#1{{\bf #1}}	% Keyword
+\def\C{\it\global\let\CF=\it\global\commenttrue\relax}	% Comment Start
+\def\CE{\rm\global\let\CF=\rm\global\commentfalse\relax}% Comment End
+\def\S{\tt\global\let\CF=\tt\global\stringtrue\relax}	% String Start
+\def\SE{\rm\global\let\CF=\rm\global\stringfalse\relax}	% String End
+
+% Special characters.
+\def\{{\ifmmode\lbrace\else\ifstring{\char'173}\else$\lbrace$\fi\fi}
+\def\}{\ifmmode\rbrace\else\ifstring{\char'175}\else$\rbrace$\fi\fi}
+\def\!{\ifmmode\backslash\else\ifstring{\char'134}\else$\backslash$\fi\fi}
+\def\|{\ifmmode|\else\ifstring{\char'174}\else$|$\fi\fi}
+\def\<{\ifmmode<\else\ifstring<\else$<$\fi\fi}
+\def\>{\ifmmode>\else\ifstring>\else$>$\fi\fi}
+\def\/{\ifmmode/\else\ifstring/\else$/$\fi\fi}
+\def\-{\ifmmode-\else\ifstring-\else$-$\fi\fi}
+\def\_{\ifstring{\char'137}\else\underbar{\ }\fi}
+\def\&{{\char'046}}
+\def\#{{\char'043}}
+\def\%{{\char'045}}
+\def\~{{\char'176}}
+\def\"{\ifcomment''\else{\tt\char'042}\fi}
+\def\'{\ifcomment'\else{\tt\char'047}\fi}
+\def\^{{\char'136}}
+\def\${{\rm\char'044}}
+
+\raggedright\obeyspaces\let =\space%

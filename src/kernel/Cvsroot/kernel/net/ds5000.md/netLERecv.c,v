@@ -1,0 +1,954 @@
+head     9.6;
+branch   ;
+access   ;
+symbols  ds3100:9.6 sun3:9.6 sun4nw:9.5 symm:9.5 spur:9.5 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.6
+date     92.05.13.14.45.35;  author jhh;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     91.03.19.14.04.10;  author jhh;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     91.03.15.16.23.31;  author jhh;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.10.19.15.47.36;  author jhh;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.12.21.09.57.21;  author mendel;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.11.16.15.18.33;  author rab;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.13.42;  author douglis;  state Stable;
+branches ;
+next     8.4;
+
+8.4
+date     89.08.10.16.06.17;  author mendel;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.05.24.07.58.44;  author rab;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.12.12.14.52.45;  author nelson;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.30.11.51.01;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.27.56;  author douglis;  state Stable;
+branches ;
+next     6.1;
+
+6.1
+date     88.09.06.09.06.46;  author mendel;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.20.58;  author brent;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     88.06.27.10.46.13;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.22.16.25.16;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Routines to manage the receive unit of the AMD LANCE ethernet chip.
+@
+
+
+9.6
+log
+@Reduced number of error messages printed to syslog.
+@
+text
+@/* netLERecv.c -
+ *
+ * Routines to manage the receive unit of the AMD LANCE ethernet chip.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/net/sun3.md/netLERecv.c,v 9.5 91/03/19 14:04:10 jhh Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <netLEInt.h>
+#include <vm.h>
+#include <vmMach.h>
+#include <sys.h>
+#include <list.h>
+#include <machMon.h>
+
+/*
+ * Macro to step ring pointers.
+ */
+
+#define	NEXT_RECV(p)	( ((p+1) > statePtr->recvDescLastPtr) ? \
+				statePtr->recvDescFirstPtr : \
+				(p+1))
+#define	PREV_RECV(p)	( ((p-1) < statePtr->recvDescFirstPtr) ? \
+				statePtr->recvDescLastPtr : \
+				(p-1))
+
+
+static void AllocateRecvMem _ARGS_((NetLEState *statePtr));
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AllocateRecvMem --
+ *
+ *	Allocate kernel memory for receive ring and data buffers.	
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Device state structure is updated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+AllocateRecvMem(statePtr)
+    NetLEState		*statePtr; /* The state of the interface. */
+{
+    unsigned int	memBase;
+    int			i;
+
+    /*
+     * Allocate the ring of receive buffer descriptors.  The ring must start
+     * on 8-byte boundary.  
+     */
+    memBase = (unsigned int) BufAlloc(statePtr, 
+		(NET_LE_NUM_RECV_BUFFERS * sizeof(NetLERecvMsgDesc)) + 8);
+    /*
+     * Insure ring starts on 8-byte boundary.
+     */
+    if (memBase & 0x7) {
+	memBase = (memBase + 8) & ~0x7;
+    }
+    statePtr->recvDescFirstPtr = (volatile NetLERecvMsgDesc *) memBase;
+
+    /*
+     * Allocate the receive buffers. The buffers are
+     * allocated on an odd short word boundry so that packet data (after
+     * the ethernet header) will start on a long word boundry. This
+     * eliminates unaligned word fetches from the RPC module which would
+     * cause alignment traps on SPARC processors such as the sun4.
+     *
+     * This code assumes that ethernet headers are an odd number of short
+     * (2-byte) words long.
+     */
+
+    for (i = 0; i < NET_LE_NUM_RECV_BUFFERS; i++) {
+	int 	addr;
+	addr = (int) BufAlloc(statePtr, NET_LE_RECV_BUFFER_SIZE + 3);
+	addr += 1;
+	addr &= ~0x3;
+	addr += 2;
+        statePtr->recvDataBuffer[i] = (Address) addr;
+	bzero((char *) statePtr->recvDataBuffer[i], NET_LE_RECV_BUFFER_SIZE);
+    }
+#undef ALIGNMENT_PADDING
+
+    statePtr->recvMemAllocated = TRUE;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetLERecvInit --
+ *
+ *	Initialize the receive buffer lists for the receive unit allocating
+ *	memory if need.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The receive ring is initialized and the device state structure is
+ *	updated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NetLERecvInit(statePtr)
+    NetLEState		*statePtr; /* The state of the interface. */
+{
+    int 	bufNum;
+    volatile NetLERecvMsgDesc	*descPtr;
+
+    if (!statePtr->recvMemAllocated) {
+	AllocateRecvMem(statePtr);
+    }
+    /*
+     * Initialize the state structure to point to the ring. recvDescFirstPtr
+     * is set by AllocateRecvMem() and never changed.
+     */
+    statePtr->recvDescLastPtr = 
+		&(statePtr->recvDescFirstPtr[NET_LE_NUM_RECV_BUFFERS-1]);
+    statePtr->recvDescNextPtr = statePtr->recvDescFirstPtr;
+
+    /* 
+     * Initialize the ring buffer descriptors.
+     */
+    descPtr = statePtr->recvDescFirstPtr;
+    for (bufNum = 0; bufNum < NET_LE_NUM_RECV_BUFFERS; bufNum++, descPtr++) { 
+	bzero((char *) descPtr, sizeof(NetLERecvMsgDesc));
+	 /*
+	  * Point the descriptor at its buffer.
+	  */
+	descPtr->bufAddrLow = 
+		NET_LE_TO_CHIP_ADDR_LOW(statePtr->recvDataBuffer[bufNum]);
+	descPtr->bufAddrHigh = 
+		NET_LE_TO_CHIP_ADDR_HIGH(statePtr->recvDataBuffer[bufNum]);
+	/* 
+	 * Insert its size. Note the 2's complementness of the bufferSize.
+	 */
+	descPtr->bufferSize = -NET_LE_RECV_BUFFER_SIZE;
+	/*
+	 * Set ownership to the chip.
+	 */
+	NetBfByteSet(descPtr->bits, ChipOwned, 1);
+    }
+    statePtr->lastRecvCnt = 0;
+    statePtr->recvMemInitialized = TRUE;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetLERecvProcess --
+ *
+ *	Process a newly received packet.
+ *
+ * Results:
+ *	FAILURE if something went wrong, SUCCESS otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+NetLERecvProcess(dropPackets, statePtr)
+    Boolean		dropPackets;	/* Drop all packets. */
+    NetLEState		*statePtr; 	/* The state of the interface. */
+{
+    register	volatile NetLERecvMsgDesc	*descPtr;
+    register	Net_EtherHdr		*etherHdrPtr;
+    int					size;
+    Boolean				tossPacket;
+    int					numResets;
+
+    /*
+     * If not initialized then forget the interrupt.
+     */
+
+    if (!statePtr->recvMemInitialized) {
+	return (FAILURE);
+    }
+    descPtr = statePtr->recvDescNextPtr;
+
+    if (NetBfByteTest(descPtr->bits, ChipOwned, 1)) {
+	if (statePtr->lastRecvCnt == 0) {
+	    printf(
+	"LE ethernet: Bogus receive interrupt. Buffer 0x%x owned by chip.\n",
+		descPtr);
+	    return (FAILURE);
+	} else {
+	    statePtr->lastRecvCnt = 0;
+	    return (SUCCESS);
+	}
+    }
+    if (NetBfByteTest(descPtr->bits, StartOfPacket, 0)) {
+	printf(
+	 "LE ethernet: Bogus receive interrupt. Buffer doesn't start packet.\n");
+	return (FAILURE);
+    }
+    /*
+     * Loop as long as there are packets to process.
+     */
+
+    tossPacket = dropPackets;
+    numResets = statePtr->numResets;
+    statePtr->lastRecvCnt = 0;
+    while (TRUE) {
+	/* 
+	 * Check to see if we have processed all our buffers. 
+	 */
+	if (NetBfByteTest(descPtr->bits, ChipOwned, 1)) {
+	    break;
+	}
+	/*
+	 * Since we allocated very large receive buffers all packets must fit
+	 * in one buffer. Hence all buffers should have startOfPacket.
+	 */
+	if (NetBfByteTest(descPtr->bits, StartOfPacket, 0)) {
+		printf(
+		     "LE ethernet: Receive buffer doesn't start packet.\n");
+		return (FAILURE);
+	}
+	/*
+	 * All buffers should also have an endOfPacket too.
+	 */
+	if (NetBfByteTest(descPtr->bits, EndOfPacket, 0)) {
+	    /* 
+	     * If not an endOfPacket see if it was an error packet.
+	     */
+	    if (NetBfByteTest(descPtr->bits, Error, 0)) {
+		printf(
+		     "LE ethernet: Receive buffer doesn't end packet.\n");
+		return (FAILURE);
+	    }
+	    /*
+	     * We have got a serious error with a packet. 
+	     * Report the error and toss the packet.
+	     */
+	    tossPacket = TRUE;
+	    if (NetBfByteTest(descPtr->bits, OverflowError, 1)) {
+		statePtr->stats.overrunErrors++;
+		printf(
+		       "LE ethernet: Received packet with overflow error.\n");
+	    }
+	    /*
+	     * Should probably panic on buffer errors.
+	     */
+	    if (NetBfByteTest(descPtr->bits, RecvBufferError, 1)) {
+		panic(
+		       "LE ethernet: Received packet with buffer error.\n");
+	    }
+	} else { 
+	    /*
+	     * The buffer had an endOfPacket bit set. Check for CRC errors and
+	     * the like.
+	     */
+	    if (NetBfByteTest(descPtr->bits, Error, 1)) {
+		tossPacket = TRUE;	/* Throw away packet on error. */
+		if (NetBfByteTest(descPtr->bits, FramingError, 1)) {
+		    statePtr->stats.frameErrors++;
+		    if ((statePtr->stats.frameErrors % 100) == 0) {
+			printf(
+		   "LE ethernet: Received 100 packets with framing errors.\n");
+		    }
+		}
+		if (NetBfByteTest(descPtr->bits, CrcError, 1)) {
+		    statePtr->stats.crcErrors++;
+		    if ((statePtr->stats.crcErrors % 100) == 0) {
+			printf(
+		       "LE ethernet: Received 100 packets with CRC errors.\n");
+		   }
+		}
+
+	     } 
+	}
+
+	/* 
+	 * Once we gotten here, it means that the buffer contains a packet
+	 * and the tossPacket flags says if it is good or not.
+	 */
+
+	statePtr->stats.packetsRecvd++;
+
+	etherHdrPtr = (Net_EtherHdr *) 
+	    NET_LE_FROM_CHIP_ADDR(statePtr, descPtr->bufAddrHigh,
+		descPtr->bufAddrLow);
+
+	 /*
+	  * Call higher level protocol to process the packet. Remove the
+	  * CRC check (4 bytes) at the end of the packet.
+	  */
+	size = descPtr->packetSize - 4;
+	if (!tossPacket) {
+		Net_Input(statePtr->interPtr, (Address)etherHdrPtr, size);
+	}
+	/*
+	 * If the number of resets has changed then somebody reset the chip
+	 * in Net_Input. In that case we can't keep processing packets because
+	 * the packet pointers have been reset.  
+	 */
+	if (numResets != statePtr->numResets) {
+	    return SUCCESS;
+	}
+	/*
+	 * We're finish with it, give the buffer back to the chip. 
+	 */
+	NetBfByteSet(descPtr->bits, ChipOwned, 1);
+
+	statePtr->lastRecvCnt++;
+	/* 
+	 * Check to see if we have processed all our buffers. 
+	 */
+	descPtr = NEXT_RECV(descPtr);
+	if (NetBfByteTest(descPtr->bits, ChipOwned, 1)) {
+		break;
+	}
+    }
+    /*
+     * Update the the ring pointer. We should be pointer at the chip owned 
+     * buffer in that the next packet will be put.
+     */
+
+    statePtr->recvDescNextPtr = descPtr;
+
+    /*
+     * RETURN a success.
+     */
+    return (SUCCESS);
+}
+@
+
+
+9.5
+log
+@same lance driver for sun3, sun4c, and ds5000.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/ds5000.md/RCS/netLERecv.c,v 1.2 91/03/19 10:49:12 jhh Exp $ SPRITE (Berkeley)";
+d281 4
+a284 2
+		    printf(
+		       "LE ethernet: Received packet with framing error.\n");
+d288 4
+a291 2
+		    printf(
+		       "LE ethernet: Received packet with CRC error.\n");
+@
+
+
+9.4
+log
+@started merging with ds5000 sources
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/ds5000.md/RCS/netLERecv.c,v 1.1 90/11/07 18:01:42 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d205 1
+a205 1
+	if (statePtr->lastRecvCnt < 2) {
+d210 3
+@
+
+
+9.3
+log
+@Rewrite to support multiple interfaces and the Ultranet
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net.jhh/sun3.md/RCS/netLERecv.c,v 9.4 90/09/20 21:13:52 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d26 1
+d32 1
+a32 1
+#define	NEXT_RECV(p)	( ((++p) > statePtr->recvDescLastPtr) ? \
+d34 4
+a37 1
+				(p))
+d39 1
+d69 1
+a69 1
+    memBase = (unsigned int) VmMach_NetMemAlloc(
+d85 3
+a89 1
+#define ALIGNMENT_PADDING       (sizeof(Net_EtherHdr)&0x3)
+d91 7
+a97 3
+        statePtr->recvDataBuffer[i] = (Address)
+                VmMach_NetMemAlloc(NET_LE_RECV_BUFFER_SIZE + ALIGNMENT_PADDING)
+		    + ALIGNMENT_PADDING;
+d146 1
+d151 1
+a151 1
+		NET_LE_SUN_TO_CHIP_ADDR_LOW(statePtr->recvDataBuffer[bufNum]);
+d153 1
+a153 1
+		NET_LE_SUN_TO_CHIP_ADDR_HIGH(statePtr->recvDataBuffer[bufNum]);
+a158 14
+	 * Clear out error fields. 
+	 */
+	NetBfByteSet(descPtr->bits, Error, 0);
+	NetBfByteSet(descPtr->bits, FramingError, 0);
+	NetBfByteSet(descPtr->bits, OverflowError, 0);
+	NetBfByteSet(descPtr->bits, CrcError, 0);
+	NetBfByteSet(descPtr->bits, RecvBufferError, 0);
+	/*
+	 * Clear packet boundary bits.
+	 */
+	NetBfByteSet(descPtr->bits, StartOfPacket, 0);
+	NetBfByteSet(descPtr->bits, EndOfPacket, 0);
+
+	/*
+d163 1
+d193 1
+a201 1
+
+a203 3
+    /*
+     * First a few consistency check. 
+     */
+d205 6
+a210 3
+	printf(
+	    "LE ethernet: Bogus receive interrupt. Buffer owned by chip.\n");
+	return (FAILURE);
+a211 1
+
+d222 2
+d229 1
+a229 1
+		break;
+d298 2
+a299 1
+	    NET_LE_SUN_FROM_CHIP_ADDR(descPtr->bufAddrHigh,descPtr->bufAddrLow);
+d310 8
+d322 1
+a322 16
+	/*
+	 * Clear the interrupt bit for the packet we just got before 
+	 * we check the ownership of the next packet. This prevents the 
+	 * following race condition: We check the buffer and it is own
+	 * by the chip; the chip gives the buffer to us and sets the
+	 * interrupt; we clear the interrupt. 
+	 * The fix is to always clear the interrupt and then check
+	 * for owership as the chip sets owership and then sets the
+	 * interrupt.
+	 */
+
+	NetBfShortSet(statePtr->regPortPtr->addrPort, AddrPort, 
+		NET_LE_CSR0_ADDR);
+	statePtr->regPortPtr->dataPort = 
+			NET_LE_CSR0_RECV_INTR | NET_LE_CSR0_INTR_ENABLE;
+
+a330 1
+
+@
+
+
+9.2
+log
+@Changed the spelling of framming to framing to make fred and mary happy.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netLERecv.c,v 9.1 89/11/16 15:18:33 rab Exp Locker: mendel $ SPRITE (Berkeley)";
+d20 6
+a25 8
+#include "sprite.h"
+#include "vm.h"
+#include "vmMach.h"
+#include "netLEInt.h"
+#include "net.h"
+#include "netInt.h"
+#include "sys.h"
+#include "list.h"
+d31 2
+a32 2
+#define	NEXT_RECV(p)	( ((++p) > netLEState.recvDescLastPtr) ? \
+				netLEState.recvDescFirstPtr : \
+a33 8
+/*
+ * Receive data buffers.
+ */
+static	Address	recvDataBuffer[NET_LE_NUM_RECV_BUFFERS];
+
+/*
+ * Flag to note if recv memory has been initialized and/or allocated.
+ */
+d35 1
+a35 2
+static	Boolean	recvMemInitialized = FALSE;
+static	Boolean	recvMemAllocated = FALSE;
+d54 2
+a55 1
+AllocateRecvMem()
+d72 1
+a72 1
+    netLEState.recvDescFirstPtr = (volatile NetLERecvMsgDesc *) memBase;
+d84 1
+a84 1
+        recvDataBuffer[i] = (Address)
+d90 1
+a90 1
+    recvMemAllocated = TRUE;
+d113 2
+a114 1
+NetLERecvInit()
+d119 2
+a120 2
+    if (!recvMemAllocated) {
+	AllocateRecvMem();
+d126 3
+a128 3
+    netLEState.recvDescLastPtr = 
+		&(netLEState.recvDescFirstPtr[NET_LE_NUM_RECV_BUFFERS-1]);
+    netLEState.recvDescNextPtr = netLEState.recvDescFirstPtr;
+d133 1
+a133 1
+    descPtr = netLEState.recvDescFirstPtr;
+d139 1
+a139 1
+			NET_LE_SUN_TO_CHIP_ADDR_LOW(recvDataBuffer[bufNum]);
+d141 1
+a141 1
+			NET_LE_SUN_TO_CHIP_ADDR_HIGH(recvDataBuffer[bufNum]);
+d149 7
+a155 7
+	descPtr->error = 0;
+	descPtr->framingError = 0;
+	descPtr->overflowError = 0;
+	descPtr->crcError = 0;
+	descPtr->bufferError = 0;
+	/*
+	 * Clear packet boundry bits.
+d157 3
+a159 2
+	descPtr->startOfPacket = descPtr->endOfPacket = 0;
+	
+d163 1
+a163 1
+	descPtr->chipOwned = 1;
+d165 1
+a165 1
+    recvMemInitialized = TRUE;
+d186 3
+a188 2
+NetLERecvProcess(dropPackets)
+    Boolean	dropPackets;	/* Drop all packets. */
+a190 1
+    register	NetLEState		*netLEStatePtr;
+d199 1
+a199 1
+    if (!recvMemInitialized) {
+d203 1
+a203 3
+    netLEStatePtr = &netLEState;
+
+    descPtr = netLEStatePtr->recvDescNextPtr;
+d208 1
+a208 1
+    if (descPtr->chipOwned) {
+d214 1
+a214 1
+    if (!descPtr->startOfPacket) {
+d228 1
+a228 1
+	if (descPtr->chipOwned) {
+d235 1
+a235 1
+	if (!descPtr->startOfPacket) {
+d243 1
+a243 1
+	if (!descPtr->endOfPacket) {
+d247 1
+a247 1
+	    if (!descPtr->error) { 
+d257 2
+a258 2
+	    if (descPtr->overflowError) {
+		net_EtherStats.overrunErrors++;
+d265 1
+a265 1
+	    if (descPtr->bufferError) {
+d274 1
+a274 1
+	    if (descPtr->error) {
+d276 2
+a277 2
+		if (descPtr->framingError) {
+		    net_EtherStats.frameErrors++;
+d281 2
+a282 2
+		if (descPtr->crcError) {
+		    net_EtherStats.crcErrors++;
+d295 1
+a295 1
+	net_EtherStats.packetsRecvd++;
+d306 1
+a306 1
+		Net_Input((Address)etherHdrPtr, size);
+d311 1
+a311 1
+	descPtr->chipOwned = 1;
+d324 3
+a326 2
+	netLEStatePtr->regPortPtr->addrPort = NET_LE_CSR0_ADDR;
+	netLEStatePtr->regPortPtr->dataPort = 
+d333 1
+a333 1
+	if (descPtr->chipOwned) {
+d343 1
+a343 1
+    netLEStatePtr->recvDescNextPtr = descPtr;
+@
+
+
+9.1
+log
+@Checked volatiles.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netLERecv.c,v 9.0 89/09/12 15:13:42 douglis Stable Locker: rab $ SPRITE (Berkeley)";
+d159 1
+a159 1
+	descPtr->frammingError = 0;
+d286 1
+a286 1
+		if (descPtr->frammingError) {
+d289 1
+a289 1
+		       "LE ethernet: Received packet with framming error.\n");
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netLERecv.c,v 8.4 89/08/10 16:06:17 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+a68 1
+    Address	(*allocFunc)();
+a69 10
+#ifdef sun2
+    allocFunc = Vm_RawAlloc;
+#endif
+#ifdef sun3
+    allocFunc = VmMach_NetMemAlloc;
+#endif
+#ifdef sun4
+    allocFunc = VmMach_NetMemAlloc;
+#endif
+
+d74 1
+a74 1
+    memBase = (unsigned int) allocFunc(
+d82 1
+a82 1
+    netLEState.recvDescFirstPtr = (NetLERecvMsgDesc *) memBase;
+d95 2
+a96 2
+                allocFunc(NET_LE_RECV_BUFFER_SIZE + ALIGNMENT_PADDING) +
+                                                        ALIGNMENT_PADDING;
+d126 1
+a126 1
+    NetLERecvMsgDesc	*descPtr;
+d197 1
+a197 1
+    register	NetLERecvMsgDesc	*descPtr;
+@
+
+
+8.4
+log
+@Added and debuged support for sun4c.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netLERecv.c,v 8.3 89/05/24 07:58:44 rab Exp $ SPRITE (Berkeley)";
+@
+
+
+8.3
+log
+@Changes to allow optimization.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netLERecv.c,v 8.2 88/12/12 14:52:45 nelson Exp Locker: rab $ SPRITE (Berkeley)";
+d77 3
+d96 5
+a100 1
+     * Allocate the receive buffers.
+d102 6
+a107 2
+     for (i = 0; i < NET_LE_NUM_RECV_BUFFERS; i++) {
+	recvDataBuffer[i] = (Address) allocFunc(NET_LE_RECV_BUFFER_SIZE);
+d109 2
+@
+
+
+8.2
+log
+@Changed to allocate memory and remap packets into high memory on a sun3.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netLERecv.c,v 8.1 88/11/30 11:51:01 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+8.1
+log
+@Sys_Printf => printf   Sys_Panic => panic
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netLERecv.c,v 8.0 88/11/11 18:27:56 douglis Stable Locker: brent $ SPRITE (Berkeley)";
+d22 1
+d39 1
+a39 1
+static	Address	recvDataBuffer[NET_LE_RECV_BUFFER_SIZE];
+d69 1
+d71 7
+d82 1
+a82 1
+    memBase = (unsigned int) Vm_RawAlloc(
+d96 1
+a96 1
+	recvDataBuffer[i] = (Address) Vm_RawAlloc(NET_LE_RECV_BUFFER_SIZE);
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netLERecv.c,v 6.1 88/09/06 09:06:46 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d208 1
+a208 1
+	Sys_Panic(SYS_WARNING,
+d214 1
+a214 1
+	Sys_Panic(SYS_WARNING,
+d235 1
+a235 1
+		Sys_Panic(SYS_WARNING,
+d247 1
+a247 1
+		Sys_Panic(SYS_WARNING,
+d258 1
+a258 1
+		Sys_Panic(SYS_WARNING,
+d265 1
+a265 1
+		Sys_Panic(SYS_FATAL,
+d277 1
+a277 1
+		    Sys_Printf(
+d282 1
+a282 1
+		    Sys_Printf(
+@
+
+
+6.1
+log
+@
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: netLERecv.c,v 1.2 88/06/27 10:46:13 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d21 1
+@
+
+
+1.2
+log
+@Updated copyright notice and cleaned up comment typos.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: netLERecv.c,v 1.1 88/06/22 16:25:16 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d5 9
+a13 2
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+d17 1
+a17 1
+static char rcsid[] = "$Header: netIERecv.c,v 5.1 88/05/05 17:58:39 brent Exp $ SPRITE (Berkeley)";
+d21 1
+a21 1
+#include "netLE.h"
+d70 1
+a70 1
+     * on 8 byte boundry.  
+d75 1
+a75 1
+     * Insure ring starts on 8 byte boundry.
+a114 1
+    unsigned	int	addr;
+@

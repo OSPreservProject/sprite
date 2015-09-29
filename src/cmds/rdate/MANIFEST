@@ -1,0 +1,13 @@
+INSTALL			Installation instructions
+MANIFEST		This file
+Makefile		The name says it
+PORTING			Comments on porting rdate to a new environment
+README			Some important comments
+rdate.8			man page for rdate
+
+code files:
+
+rdate.c
+port.c
+sockio.c
+rdate.h

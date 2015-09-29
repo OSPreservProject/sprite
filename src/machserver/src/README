@@ -1,0 +1,19 @@
+directory		what it is
+---------		----------
+benchmarks		benchmark programs
+cmds			user programs.  WARNING: some of these sources
+			are source-license encumbered (i.e., not
+			redistributable).  The directories for these
+			sources are mode 770.  The distributable
+			sources are in mode 775 directories.
+cmds.notworking		user programs that either don't build or don't
+			work
+daemons			sources for daemons.
+lib			sources for libc and libnet.  lib/c.orig is a
+			reference copy of the native libc from which
+			lib/c is derived.
+			WARNING: Some of the files in lib/c are links
+			into lib/c.orig.  Some of the files in
+			lib/c.orig are not world-readable; they may be
+			encumbered.
+sprited			the Sprite server

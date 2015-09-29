@@ -1,0 +1,17 @@
+#
+# Make file for operating system dependencies library
+#
+
+     CDEBUGFLAGS = -g
+        INCLUDES = -I. -I$(FONTSRC)/include -I$(TOP)
+         HEADERS = 
+            SRCS = fontaccel.c fontbounds.c fontdump.c fontfree.c fontutil.c
+            OBJS = fontaccel.o fontbounds.o fontdump.o fontfree.o fontutil.o
+
+NormalLibraryObjectRule()
+NormalLibraryTarget(fontutils,$(OBJS))
+
+NormalLintTarget($(SRCS))
+
+DependTarget()
+

@@ -1,0 +1,164 @@
+Mig_GetPdevName.c:
+global.c:
+global.c(1711): warning: msgPtr unused in function WakeupWaiters
+global.c(1789): warning: cltPtr unused in function RecordEvictions
+global.c(2262): warning: host set but not used in function Global_ChangeState
+global.c(2672): warning: host set but not used in function Global_UpdateLoad
+main.c:
+migPdev.c:
+migd.c:
+util.c:
+sleep, arg. 1 used inconsistently	llib-lc:sleepTmp.c 2(29)  ::  llib-lc:sleep.c 2(48)
+Proc_Wait, arg. 2 used inconsistently	llib-lc:proc.c(117)  ::  llib-lc:proc.c 2(97)
+Proc_Wait, arg. 4 used inconsistently	llib-lc:proc.c(117)  ::  llib-lc:proc.c 2(97)
+time, arg. 1 used inconsistently	llib-lc:time.c 2(20)  ::  global.c 2(261)
+ctime, arg. 1 used inconsistently	llib-lc:ctime.c 2(28)  ::  global.c 2(264)
+time, arg. 1 used inconsistently	llib-lc:time.c 2(20)  ::  global.c(317)
+ctime, arg. 1 used inconsistently	llib-lc:ctime.c 2(28)  ::  global.c(320)
+time, arg. 1 used inconsistently	llib-lc:time.c 2(20)  ::  global.c(416)
+time, arg. 1 used inconsistently	llib-lc:time.c 2(20)  ::  global.c(598)
+ctime, arg. 1 used inconsistently	llib-lc:ctime.c 2(28)  ::  global.c(598)
+List_Insert, arg. 1 used inconsistently	llib-lc:List_Insert.c 2(46)  ::  global.c(934)
+List_Insert, arg. 2 used inconsistently	llib-lc:List_Insert.c 2(46)  ::  global.c(934)
+time, arg. 1 used inconsistently	llib-lc:time.c 2(20)  ::  global.c(981)
+free, arg. 1 used inconsistently	llib-lc:free.c 2(60)  ::  global.c(1248)
+time, arg. 1 used inconsistently	llib-lc:time.c 2(20)  ::  global.c(1443)
+List_Insert, arg. 1 used inconsistently	llib-lc:List_Insert.c 2(46)  ::  global.c(1647)
+List_Insert, arg. 2 used inconsistently	llib-lc:List_Insert.c 2(46)  ::  global.c(1647)
+List_Insert, arg. 1 used inconsistently	llib-lc:List_Insert.c 2(46)  ::  global.c(1663)
+List_Insert, arg. 2 used inconsistently	llib-lc:List_Insert.c 2(46)  ::  global.c(1663)
+time, arg. 1 used inconsistently	llib-lc:time.c 2(20)  ::  global.c(1722)
+time, arg. 1 used inconsistently	llib-lc:time.c 2(20)  ::  global.c(1829)
+time, arg. 1 used inconsistently	llib-lc:time.c 2(20)  ::  global.c(1948)
+Sig_Send, arg. 2 used inconsistently	llib-lc:syscalls.c 2(335)  ::  global.c(2466)
+syslog, arg. 1 used inconsistently	llib-lc:syslog.c(196)  ::  global.c(2849)
+time, arg. 1 used inconsistently	llib-lc:time.c 2(20)  ::  global.c(2946)
+ctime, arg. 1 used inconsistently	llib-lc:ctime.c 2(28)  ::  global.c(2949)
+syslog value declared inconsistently	llib-lc:syslog.c(196)  ::  global.c(3735)
+time, arg. 1 used inconsistently	llib-lc:time.c 2(20)  ::  main.c 2(136)
+time value used inconsistently	llib-lc:time.c 2(20)  ::  main.c 2(136)
+ctime, arg. 1 used inconsistently	llib-lc:ctime.c 2(28)  ::  main.c 2(136)
+ctime value used inconsistently	llib-lc:ctime.c 2(28)  ::  main.c 2(136)
+signal, arg. 2 used inconsistently	llib-lc:signal.c 2(20)  ::  main.c(279)
+signal, arg. 2 used inconsistently	llib-lc:signal.c 2(20)  ::  main.c(281)
+signal, arg. 2 used inconsistently	llib-lc:signal.c 2(20)  ::  main.c(283)
+signal, arg. 2 used inconsistently	llib-lc:signal.c 2(20)  ::  main.c(288)
+signal, arg. 2 used inconsistently	llib-lc:signal.c 2(20)  ::  main.c(289)
+time value used inconsistently	llib-lc:time.c 2(20)  ::  main.c(375)
+ctime, arg. 1 used inconsistently	llib-lc:ctime.c 2(28)  ::  main.c(376)
+ctime value used inconsistently	llib-lc:ctime.c 2(28)  ::  main.c(376)
+time, arg. 1 used inconsistently	llib-lc:time.c 2(20)  ::  main.c(417)
+time value used inconsistently	llib-lc:time.c 2(20)  ::  main.c(417)
+ctime, arg. 1 used inconsistently	llib-lc:ctime.c 2(28)  ::  main.c(417)
+ctime value used inconsistently	llib-lc:ctime.c 2(28)  ::  main.c(417)
+ctime value declared inconsistently	llib-lc:ctime.c 2(28)  ::  main.c(417)
+_exit value declared inconsistently	llib-lc:_exit.c 2(43)  ::  main.c(178)
+syslog value declared inconsistently	llib-lc:syslog.c(196)  ::  main.c(400)
+openlog value declared inconsistently	llib-lc:syslog.c(209)  ::  main.c(306)
+time value declared inconsistently	llib-lc:time.c 2(20)  ::  main.c(417)
+Pdev_Open, arg. 2 used inconsistently	llib-lc:pdev.c 2(192)  ::  migPdev.c 2(247)
+Pdev_Open, arg. 6 used inconsistently	llib-lc:pdev.c 2(192)  ::  migPdev.c 2(247)
+Sig_Send, arg. 1 used inconsistently	llib-lc:syscalls.c 2(335)  ::  migPdev.c(382)
+Sig_Send, arg. 2 used inconsistently	llib-lc:syscalls.c 2(335)  ::  migPdev.c(382)
+syslog value declared inconsistently	llib-lc:syslog.c(196)  ::  migPdev.c(1064)
+signal, arg. 2 used inconsistently	llib-lc:signal.c 2(20)  ::  migd.c 2(215)
+time, arg. 1 used inconsistently	llib-lc:time.c 2(20)  ::  migd.c(414)
+ctime, arg. 1 used inconsistently	llib-lc:ctime.c 2(28)  ::  migd.c(416)
+time, arg. 1 used inconsistently	llib-lc:time.c 2(20)  ::  migd.c(701)
+ctime, arg. 1 used inconsistently	llib-lc:ctime.c 2(28)  ::  migd.c(701)
+time, arg. 1 used inconsistently	llib-lc:time.c 2(20)  ::  migd.c(774)
+signal, arg. 2 used inconsistently	llib-lc:signal.c 2(20)  ::  migd.c(878)
+bzero, arg. 1 used inconsistently	llib-lc:bzero.c 2(58)  ::  migd.c(1092)
+bcopy, arg. 1 used inconsistently	llib-lc:bcopy.c 2(69)  ::  migd.c(1097)
+bcopy, arg. 2 used inconsistently	llib-lc:bcopy.c 2(69)  ::  migd.c(1097)
+bzero, arg. 1 used inconsistently	llib-lc:bzero.c 2(58)  ::  migd.c(1102)
+Proc_GetPCBInfo, arg. 3 used inconsistently	llib-lc:syscalls.c 2(305)  ::  migd.c(1408)
+Proc_GetPCBInfo, arg. 5 used inconsistently	llib-lc:syscalls.c 2(305)  ::  migd.c(1408)
+signal, arg. 2 used inconsistently	llib-lc:signal.c 2(20)  ::  migd.c(1458)
+syslog value declared inconsistently	llib-lc:syslog.c(196)  ::  migd.c(1541)
+sleep value declared inconsistently	llib-lc:sleepTmp.c 2(29)  ::  migd.c(674)
+syslog value declared inconsistently	llib-lc:syslog.c(196)  ::  util.c 2(56)
+signal returns value which is sometimes ignored
+maxArchTypes defined( global.c 2(136) ), but never used
+maxArchTypes used( global.c(532) ), but not defined
+archTypesArray defined( global.c 2(138) ), but never used
+archTypesArray used( global.c(1720) ), but not defined
+maxHosts defined( global.c 2(141) ), but never used
+maxHosts used( global.c(2590) ), but not defined
+maxKnownHost defined( global.c 2(143) ), but never used
+maxKnownHost used( global.c(2997) ), but not defined
+migInfoArray defined( global.c 2(145) ), but never used
+migInfoArray used( global.c(3583) ), but not defined
+idleHostsArray defined( global.c 2(146) ), but never used
+idleHostsArray used( global.c(1725) ), but not defined
+inUseArray defined( global.c 2(149) ), but never used
+inUseArray used( global.c(1144) ), but not defined
+waitingLists defined( global.c 2(152) ), but never used
+waitingLists used( global.c(1727) ), but not defined
+hostsUp defined( global.c 2(156) ), but never used
+hostsUp used( global.c(2700) ), but not defined
+hostCounts defined( global.c 2(159) ), but never used
+hostCounts used( global.c(3150) ), but not defined
+lastRequestHost defined( global.c 2(162) ), but never used
+lastRequestHost used( global.c(1012) ), but not defined
+global_ErrorFile defined( global.c 2(190) ), but never used
+lockDesc defined( global.c 2(192) ), but never used
+lockDesc used( global.c(302) ), but not defined
+descAtts defined( global.c 2(193) ), but never used
+descAtts used( global.c(2973) ), but not defined
+MigPdev_MakeReady returns value which is always ignored
+Global_HostDown returns value which is always ignored
+Global_SetParms defined( global.c(3813) ), but never used
+Global_DumpIdleList defined( global.c(3845) ), but never used
+numOptions defined( main.c 2(61) ), but never used
+numOptions used( main.c(259) ), but not defined
+Host_Start returns value which is always ignored
+hostNameBuffer defined( main.c 2(65) ), but never used
+hostNameBuffer used( main.c(326) ), but not defined
+strcpy returns value which is always ignored
+Debug1 defined( main.c 2(107) ), but never used
+TheEnd defined( main.c 2(135) ), but never used
+FatalError defined( main.c 2(171) ), but never used
+strncpy returns value which is always ignored
+service defined( migPdev.c 2(56) ), but never used
+service used( migPdev.c(247) ), but not defined
+ioctlCallbacks defined( migPdev.c 2(123) ), but never used
+ioctlCallbacks used( migPdev.c(979) ), but not defined
+pdev defined( migPdev.c 2(141) ), but never used
+pdev used( migPdev.c(1126) ), but not defined
+pdevName defined( migPdev.c 2(143) ), but never used
+pdevName used( migPdev.c(299) ), but not defined
+nextOpenID defined( migPdev.c 2(145) ), but never used
+nextOpenID used( migPdev.c(617) ), but not defined
+close returns value which is always ignored
+MigPdev_NotifyDaemons defined( migPdev.c(525) ), but never used
+migdGlobalDesc defined( migd.c 2(64) ), but never used
+migdGlobalDesc used( migd.c(1640) ), but not defined
+currentInfo defined( migd.c 2(67) ), but never used
+currentInfo used( migd.c(1161) ), but not defined
+curVecPtr defined( migd.c 2(68) ), but never used
+curVecPtr used( migd.c(1550) ), but not defined
+migd_NeverAccept defined( migd.c 2(72) ), but never used
+refuseMigration defined( migd.c 2(153) ), but never used
+refuseMigration used( migd.c(1043) ), but not defined
+ignoreInput defined( migd.c 2(155) ), but never used
+ignoreInput used( migd.c(1040) ), but not defined
+ignoreLoad defined( migd.c 2(157) ), but never used
+ignoreLoad used( migd.c(1046) ), but not defined
+writeRate defined( migd.c 2(158) ), but never used
+writeRate used( migd.c(950) ), but not defined
+numLowPris defined( migd.c 2(161) ), but never used
+numLowPris used( migd.c(1030) ), but not defined
+writejmp defined( migd.c 2(165) ), but never used
+writejmp used( migd.c(874) ), but not defined
+timeOutTimer defined( migd.c 2(166) ), but never used
+timeOutTimer used( migd.c(884) ), but not defined
+noTimer defined( migd.c 2(167) ), but never used
+noTimer used( migd.c(1476) ), but not defined
+alarm returns value which is always ignored
+fclose returns value which is always ignored
+fflush returns value which is always ignored
+fprintf returns value which is sometimes ignored
+freopen returns value which is sometimes ignored
+_exit returns value which is always ignored
+sprintf returns value which is sometimes ignored

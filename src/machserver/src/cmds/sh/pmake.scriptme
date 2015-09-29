@@ -1,0 +1,50 @@
+#!/sprite/cmds/csh
+rm -f sym.md/args.o
+cc  -w -g -O   -I. -Isym.md -c args.c -o sym.md/args.o
+rm -f sym.md/blok.o
+cc  -w -g -O   -I. -Isym.md -c blok.c -o sym.md/blok.o
+rm -f sym.md/builtin.o
+cc  -w -g -O   -I. -Isym.md -c builtin.c -o sym.md/builtin.o
+rm -f sym.md/cmd.o
+cc  -w -g -O   -I. -Isym.md -Usym -c cmd.c -o sym.md/cmd.o
+rm -f sym.md/ctype.o
+cc  -w -g -O   -I. -Isym.md -c ctype.c -o sym.md/ctype.o
+rm -f sym.md/error.o
+cc  -w -g -O   -I. -Isym.md -c error.c -o sym.md/error.o
+rm -f sym.md/expand.o
+cc  -w -g -O   -I. -Isym.md -c expand.c -o sym.md/expand.o
+rm -f sym.md/fault.o
+cc  -w -g -O   -I. -Isym.md -c fault.c -o sym.md/fault.o
+rm -f sym.md/io.o
+cc  -w -g -O   -I. -Isym.md -c io.c -o sym.md/io.o
+rm -f sym.md/macro.o
+cc  -w -g -O   -I. -Isym.md -c macro.c -o sym.md/macro.o
+rm -f sym.md/main.o
+cc  -w -g -O   -I. -Isym.md -c main.c -o sym.md/main.o
+rm -f sym.md/msg.o
+cc  -w -g -O   -I. -Isym.md -c msg.c -o sym.md/msg.o
+rm -f sym.md/name.o
+cc  -w -g -O   -I. -Isym.md -c name.c -o sym.md/name.o
+rm -f sym.md/print.o
+cc  -w -g -O   -I. -Isym.md -c print.c -o sym.md/print.o
+rm -f sym.md/service.o
+cc  -w -g -O   -I. -Isym.md -c service.c -o sym.md/service.o
+rm -f sym.md/setbrk.o
+cc  -w -g -O   -I. -Isym.md -c setbrk.c -o sym.md/setbrk.o
+rm -f sym.md/stak.o
+cc  -w -g -O   -I. -Isym.md -c stak.c -o sym.md/stak.o
+rm -f sym.md/string.o
+cc  -w -g -O   -I. -Isym.md -c string.c -o sym.md/string.o
+rm -f sym.md/word.o
+cc  -w -g -O   -I. -Isym.md -c word.c -o sym.md/word.o
+rm -f sym.md/xec.o
+cc  -w -g -O   -I. -Isym.md -c xec.c -o sym.md/xec.o
+rm -f sym.md/sh
+cc  -w -g -O   -I. -Isym.md -o sym.md/sh  sym.md/args.o sym.md/blok.o sym.md/builtin.o sym.md/cmd.o sym.md/ctype.o sym.md/error.o sym.md/expand.o sym.md/fault.o sym.md/io.o sym.md/macro.o sym.md/main.o sym.md/msg.o sym.md/name.o sym.md/print.o sym.md/service.o sym.md/setbrk.o sym.md/stak.o sym.md/string.o sym.md/word.o sym.md/xec.o
+ ---
+rm -f sym.md/xec.o
+cc  -w -g -O   -I. -Isym.md -c xec.c -o sym.md/xec.o
+--- sym.md/sh ---
+rm -f sym.md/sh
+cc  -w -g -O   -I. -Isym.md -o sym.md/sh  sym.md/args.o sym.md/blok.o sym.md/builtin.o sym.md/cmd.o sym.md/ctype.o sym.md/error.o sym.md/expand.o sym.md/fault.o sym.md/io.o sym.md/macro.o sym.md/main.o sym.md/msg.o sym.md/name.o sym.md/print.o sym.md/service.o sym.md/setbrk.o sym.md/stak.o sym.md/string.o sym.md/word.o sym.md/xec.o
+--- default ---

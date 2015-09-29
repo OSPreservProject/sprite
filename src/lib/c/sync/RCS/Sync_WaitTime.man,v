@@ -1,0 +1,52 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     88.12.30.16.08.18;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@' $Header: Sync_WaitTime,v 1.1 86/12/16 19:52:40 andrew Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS Sync_WaitTime lib
+.BS
+.SH NAME
+Sync_WaitTime \- sleep for a specified amount of time
+.SH SYNOPSIS
+.nf
+\fB#include <time.h>\fR
+.sp .5
+Boolean
+\fBSync_WaitTime\fR(\fItime\fP)
+.SH ARGUMENTS
+.AP Time time in
+The amount of time to sleep.
+.BE
+.SH DESCRIPTION
+.PP
+\fBSync_WaitTime\fR causes the process to sleep for a specified amount of time.
+The call will return FALSE when the process is woken up because the
+time expired.
+The call returns TRUE if the process was woken up prematurely because
+of the arrival of a signal.
+.SH SEE ALSO
+Sync
+.SH KEYWORDS
+wait, block, process, wakeup
+@

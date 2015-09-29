@@ -1,0 +1,395 @@
+512
+llib-ldmalloc:calloc.c 2
+2
+2 33 98 0 0
+calloc
+14 0 0
+14 0 0
+16
+0 47 18 0 0
+calloc
+512
+llib-ldmalloc:dump.c 2
+2
+1 46 36 0 0
+malloc_dump
+4 0 0
+512
+llib-ldmalloc:free.c 2
+2
+1 40 32 0 0
+free
+18 0 0
+512
+llib-ldmalloc:m_init.c 2
+2
+0 30 32 0 0
+malloc_init
+512
+llib-ldmalloc:m_perror.c
+2
+0 16 114 0 0
+malloc_err_strings
+2
+1 46 32 0 0
+malloc_perror
+18 0 0
+512
+llib-ldmalloc:malloc.c 2
+2
+0 29 4 0 0
+malloc_checking
+2
+0 30 18 0 0
+malloc_data_start
+2
+0 31 18 0 0
+malloc_data_end
+2
+0 32 24 256 18011
+malloc_end
+2
+0 33 4 0 0
+malloc_errfd
+2
+0 34 4 0 0
+malloc_errno
+2
+0 35 4 0 0
+malloc_fatal_level
+2
+0 36 8 256 18011
+malloc_start
+2
+0 37 4 0 0
+malloc_warn_level
+2
+1 42 98 0 0
+malloc
+14 0 0
+16
+0 195 18 0 0
+malloc
+2
+1 226 32 0 0
+malloc_split
+24 256 18011
+2
+4 310 32 0 0
+malloc_join
+24 256 18011
+24 256 18011
+4 0 0
+4 0 0
+2
+0 356 624 0 0
+malloc_void_funcs
+2
+0 361 628 0 0
+malloc_int_funcs
+2
+0 367 1650 0 0
+malloc_char_star_funcs
+2
+3 381 32 0 0
+malloc_memset
+18 0 0
+4 0 0
+4 0 0
+2
+1 409 32 0 0
+malloc_fatal
+18 0 0
+2
+1 473 32 0 0
+malloc_warning
+18 0 0
+2
+1 538 32 0 0
+malloc_err_handler
+4 0 0
+512
+llib-ldmalloc:malloc_chk.c 2
+2
+1 43 36 0 0
+malloc_in_arena
+18 0 0
+16
+0 54 4 0 0
+malloc_in_arena
+2
+2 81 32 0 0
+malloc_check_str
+18 0 0
+18 0 0
+2
+3 123 32 0 0
+malloc_check_data
+18 0 0
+18 0 0
+4 0 0
+2
+3 163 32 0 0
+malloc_verify
+18 0 0
+18 0 0
+4 0 0
+512
+llib-ldmalloc:malloc_chn.c 2
+2
+1 36 36 0 0
+malloc_chain_check
+4 0 0
+16
+0 188 4 0 0
+malloc_chain_check
+512
+llib-ldmalloc:mallopt.c 2
+2
+2 38 36 0 0
+mallopt
+4 0 0
+9 32 8436
+16
+0 103 4 0 0
+mallopt
+512
+llib-ldmalloc:memory.c
+2
+4 18 98 0 0
+memccpy
+18 0 0
+18 0 0
+4 0 0
+4 0 0
+16
+0 59 18 0 0
+memccpy
+2
+3 66 98 0 0
+memchr
+18 0 0
+4 0 0
+4 0 0
+16
+0 83 18 0 0
+memchr
+2
+3 90 98 0 0
+memcpy
+18 0 0
+18 0 0
+4 0 0
+16
+0 101 18 0 0
+memcpy
+2
+3 108 36 0 0
+memcmp
+18 0 0
+18 0 0
+4 0 0
+16
+0 118 4 0 0
+memcmp
+2
+3 125 98 0 0
+memset
+18 0 0
+4 0 0
+4 0 0
+16
+0 136 18 0 0
+memset
+2
+3 143 98 0 0
+bcopy
+18 0 0
+18 0 0
+4 0 0
+16
+0 145 18 0 0
+bcopy
+2
+2 151 98 0 0
+bzero
+18 0 0
+4 0 0
+16
+0 153 18 0 0
+bzero
+2
+3 160 36 0 0
+bcmp
+18 0 0
+18 0 0
+4 0 0
+16
+0 162 4 0 0
+bcmp
+512
+llib-ldmalloc:realloc.c 2
+2
+2 50 98 0 0
+realloc
+18 0 0
+14 0 0
+16
+0 175 18 0 0
+realloc
+512
+llib-ldmalloc:string.c 2
+2
+0 17 4 0 0
+malloc_checking
+2
+2 23 98 0 0
+strcat
+18 0 0
+18 0 0
+16
+0 56 18 0 0
+strcat
+2
+1 61 98 0 0
+strdup
+18 0 0
+16
+0 80 18 0 0
+strdup
+2
+3 87 98 0 0
+strncat
+18 0 0
+18 0 0
+4 0 0
+16
+0 128 18 0 0
+strncat
+2
+2 134 36 0 0
+strcmp
+18 0 0
+18 0 0
+16
+0 144 4 0 0
+strcmp
+2
+3 151 36 0 0
+strncmp
+18 0 0
+18 0 0
+4 0 0
+16
+0 161 4 0 0
+strncmp
+2
+2 167 98 0 0
+strcpy
+18 0 0
+18 0 0
+16
+0 185 18 0 0
+strcpy
+2
+3 192 98 0 0
+strncpy
+18 0 0
+18 0 0
+4 0 0
+16
+0 221 18 0 0
+strncpy
+2
+1 226 36 0 0
+strlen
+18 0 0
+16
+0 239 4 0 0
+strlen
+2
+2 245 98 0 0
+strchr
+18 0 0
+4 0 0
+16
+0 259 18 0 0
+strchr
+2
+2 265 98 0 0
+strrchr
+18 0 0
+4 0 0
+16
+0 280 18 0 0
+strrchr
+2
+2 286 98 0 0
+index
+18 0 0
+4 0 0
+16
+0 288 18 0 0
+index
+2
+2 294 98 0 0
+rindex
+18 0 0
+4 0 0
+16
+0 296 18 0 0
+rindex
+2
+2 302 98 0 0
+strpbrk
+18 0 0
+18 0 0
+16
+0 326 18 0 0
+strpbrk
+2
+2 332 36 0 0
+strspn
+18 0 0
+18 0 0
+16
+0 352 4 0 0
+strspn
+2
+2 358 36 0 0
+strcspn
+18 0 0
+18 0 0
+16
+0 378 4 0 0
+strcspn
+2
+2 416 98 0 0
+strtok
+18 0 0
+18 0 0
+16
+0 428 18 0 0
+strtok
+2
+3 450 98 0 0
+strtoken
+82 0 0
+18 0 0
+4 0 0
+16
+0 496 18 0 0
+strtoken
+512
+llib-ldmalloc:tostring.c 2
+2
+5 58 36 0 0
+tostring
+18 0 0
+4 0 0
+4 0 0
+4 0 0
+4 0 0
+16
+0 131 4 0 0
+tostring

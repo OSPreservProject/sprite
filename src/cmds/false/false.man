@@ -1,0 +1,21 @@
+' $Header: /a/newcmds/false/RCS/false.man,v 1.2 88/12/29 13:10:53 ouster Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS FALSE cmds
+.BS
+.SH NAME
+false \- Return a non-zero status
+.SH SYNOPSIS
+\fBfalse\fR
+.BE
+
+.SH DESCRIPTION
+.PP
+This command does nothing except return a non-zero status.
+It is normally used in Bourne shell scripts for loop control
+and other conditional operations.
+
+.SH "SEE ALSO"
+sh(1), true(1)
+
+.SH KEYWORDS
+false, shell, status

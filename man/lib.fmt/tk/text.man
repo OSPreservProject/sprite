@@ -1,0 +1,1056 @@
+
+
+
+text                      User Commands                      text
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     text - Create and manipulate text widgets
+
+SSYYNNOOPPSSIISS
+     tteexxtt _p_a_t_h_N_a_m_e ?_o_p_t_i_o_n_s?
+
+SSTTAANNDDAARRDD OOPPTTIIOONNSS
+     bbaacckkggrroouunndd      ffoorreeggrroouunndd     iinnsseerrttWWiiddtthh     sseelleeccttBBoorrddeerrWWiiddtthh
+     bboorrddeerrWWiiddtthh     iinnsseerrttBBaacckkggrroouunndd               ppaaddXXsseelleeccttFFoorreeggrroouunndd
+     ccuurrssoorr          iinnsseerrttBBoorrddeerrWWiiddtthh              ppaaddYYsseettGGrriidd
+     eexxppoorrttSSeelleeccttiioonn iinnsseerrttOOffffTTiimmee  rreelliieeff          yySSccrroollllCCoommmmaanndd
+     ffoonntt            iinnsseerrttOOnnTTiimmee   sseelleeccttBBaacckkggrroouunndd
+
+     See the ``options'' manual entry for details on the standard
+     options.
+
+WWIIDDGGEETT--SSPPEECCIIFFIICC OOPPTTIIOONNSS
+     Name:           hheeiigghhtt
+     Class:          HHeeiigghhtt
+     Command-Line Switch:           --hheeiigghhtt
+
+          Specifies the desired height for the window,  in  units
+          of characters.  Must be at least one.
+
+     Name:           ssttaattee
+     Class:          SSttaattee
+     Command-Line Switch:           --ssttaattee
+
+          Specifies one of two states for the  text:   nnoorrmmaall  or
+          ddiissaabblleedd.   If the text is disabled then characters may
+          not be inserted or deleted and no insertion cursor will
+          be displayed, even if the input focus is in the widget.
+
+     Name:           wwiiddtthh
+     Class:          WWiiddtthh
+     Command-Line Switch:           --wwiiddtthh
+
+          Specifies the desired width for the window in units  of
+          characters.   If  the font doesn't have a uniform width
+          then the width  of  the  character  ``0''  is  used  in
+          translating from character units to screen units.
+
+     Name:           wwrraapp
+     Class:          WWrraapp
+     Command-Line Switch:           --wwrraapp
+
+          Specifies how to handle lines in the text that are  too
+          long  to  be  displayed  in a single line of the text's
+          window.  The value must be nnoonnee or  cchhaarr  or  wwoorrdd.   A
+          wrap  mode of nnoonnee means that each line of text appears
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+text                      User Commands                      text
+
+
+
+          as exactly one line on the  screen;   extra  characters
+          that don't fit on the screen are not displayed.  In the
+          other modes each line of text will be  broken  up  into
+          several screen lines if necessary to keep all the char-
+          acters visible.  In cchhaarr mode a screen line  break  may
+          occur  after  any  character; in wwoorrdd mode a line break
+          will only be made at word boundaries.
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The tteexxtt command creates a new window (given by the _p_a_t_h_N_a_m_e
+     argument)  and  makes  it  into  a  text widget.  Additional
+     options, described above, may be specified  on  the  command
+     line  or  in the option database to configure aspects of the
+     text such as its default background color and  relief.   The
+     tteexxtt command returns the path name of the new window.
+
+     A text widget displays one or more lines of text and  allows
+     that  text  to  be  edited.  Text widgets support three dif-
+     ferent kinds of annotations on the text, called tags, marks,
+     and  windows.   Tags allow different portions of the text to
+     be displayed with different fonts and colors.  In  addition,
+     Tcl  commands  can  be associated with tags so that commands
+     are invoked when particular actions such as  keystrokes  and
+     mouse button presses occur in particular ranges of the text.
+     See TAGS below for more details.
+
+     The second form of annotation consists of marks,  which  are
+     floating  markers in the text.  Marks are used to keep track
+     of various interesting  positions  in  the  text  as  it  is
+     edited.  See MARKS below for more details.
+
+     The third form of annotation allows arbitrary windows to  be
+     displayed  in  the  text widget.  See WINDOWS below for more
+     details.
+
+
+IINNDDIICCEESS
+     Many of the widget commands  for  texts  take  one  or  more
+     indices as arguments.  An index is a string used to indicate
+     a particular place within a text, such as a place to  insert
+     characters  or  one  endpoint  of  a  range of characters to
+     delete.  Indices have the syntax
+
+          _b_a_s_e _m_o_d_i_f_i_e_r _m_o_d_i_f_i_e_r _m_o_d_i_f_i_e_r ...
+
+     Where _b_a_s_e gives a starting point and the  _m_o_d_i_f_i_e_rs  adjust
+     the  index  from  the  starting  point (e.g. move forward or
+     backward one character).  Every index must contain  a  _b_a_s_e,
+     but the _m_o_d_i_f_i_e_rs are optional.
+
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+text                      User Commands                      text
+
+
+
+     The _b_a_s_e for an index must have one of the following forms:
+
+     _l_i_n_e.._c_h_a_r   Indicates _c_h_a_r'th character on line _l_i_n_e.  Lines
+                 are  numbered  from 1 for consistency with other
+                 UNIX programs that use  this  numbering  scheme.
+                 Within a line, characters are numbered from 0.
+
+     @@_x,,_y        Indicates the character that  covers  the  pixel
+                 whose x and y coordinates within the text's win-
+                 dow are _x and _y.
+
+     eenndd         Indicates the last character in the text,  which
+                 is always a newline character.
+
+     _m_a_r_k        Indicates the  character  just  after  the  mark
+                 whose name is _m_a_r_k.
+
+     _t_a_g..ffiirrsstt   Indicates the first character in the  text  that
+                 has  been  tagged with _t_a_g.  This form generates
+                 an error if no characters are  currently  tagged
+                 with _t_a_g.
+
+     _t_a_g..llaasstt    Indicates the character just after the last  one
+                 in the text that has been tagged with _t_a_g.  This
+                 form generates an error  if  no  characters  are
+                 currently tagged with _t_a_g.
+
+     If modifiers follow the base index, each one  of  them  must
+     have  one of the forms listed below.  Keywords such as cchhaarrss
+     and wwoorrddeenndd may be abbreviated as long as  the  abbreviation
+     is unambiguous.
+
+     ++ _c_o_u_n_t cchhaarrss
+          Adjust the index forward by _c_o_u_n_t characters, moving to
+          later  lines  in  the  text if necessary.  If there are
+          fewer than _c_o_u_n_t  characters  in  the  text  after  the
+          current index, then set the index to the last character
+          in the text.   Spaces  on  either  side  of  _c_o_u_n_t  are
+          optional.
+
+     -- _c_o_u_n_t cchhaarrss
+          Adjust the index backward by _c_o_u_n_t  characters,  moving
+          to  earlier  lines  in the text if necessary.  If there
+          are fewer than _c_o_u_n_t characters in the text before  the
+          current  index, then set the index to the first charac-
+          ter in the text.  Spaces on either side  of  _c_o_u_n_t  are
+          optional.
+
+     ++ _c_o_u_n_t lliinneess
+          Adjust the index forward by _c_o_u_n_t lines, retaining  the
+          same  character position within the line.  If there are
+          fewer than _c_o_u_n_t lines after the  line  containing  the
+
+
+
+Sprite v1.0                                                     3
+
+
+
+
+
+
+text                      User Commands                      text
+
+
+
+          current  index, then set the index to refer to the same
+          character position on the last line of the text.  Then,
+          if  the  line is not long enough to contain a character
+          at the indicated character position, adjust the charac-
+          ter position to refer to the last character of the line
+          (the newline).  Spaces on  either  side  of  _c_o_u_n_t  are
+          optional.
+
+     -- _c_o_u_n_t lliinneess
+          Adjust the index backward by _c_o_u_n_t lines, retaining the
+          same  character position within the line.  If there are
+          fewer than _c_o_u_n_t lines before the line  containing  the
+          current  index, then set the index to refer to the same
+          character position on  the  first  line  of  the  text.
+          Then, if the line is not long enough to contain a char-
+          acter at the indicated character position,  adjust  the
+          character  position  to  refer to the last character of
+          the line (the newline).  Spaces on either side of _c_o_u_n_t
+          are optional.
+
+     lliinneessttaarrtt
+          Adjust the index to refer to the first character on the
+          line.
+
+     lliinneeeenndd
+          Adjust the index to refer to the last character on  the
+          line (the newline).
+
+     wwoorrddssttaarrtt
+          Adjust the index to refer to the first character of the
+          word  containing the current index.  A word consists of
+          any number of adjacent  characters  that  are  letters,
+          digits,  or  underscores, or a single character that is
+          not one of these.
+
+     wwoorrddeenndd
+          Adjust the index to refer to the character  just  after
+          the  last one of the word containing the current index.
+          If the current index refers to the  last  character  of
+          the text then it is not modified.
+
+     If more than one modifier is present then they  are  applied
+     in  left-to-right  order.   For example, the index ``eenndd -- 11
+     cchhaarrss'' refers to the next-to-last character in the text and
+     ``iinnsseerrtt  wwoorrddssttaarrtt  --  11  cc''  refers to the character just
+     before the first one in the word  containing  the  insertion
+     cursor.
+
+
+TTAAGGSS
+     The first form of annotation in text widgets is  a  tag.   A
+     tag  is a textual string that is associated with some of the
+
+
+
+Sprite v1.0                                                     4
+
+
+
+
+
+
+text                      User Commands                      text
+
+
+
+     characters in a text.  There may be any number of tags asso-
+     ciated  with  characters in a text.  Each tag may refer to a
+     single character, a range of characters, or  several  ranges
+     of  characters.  An individual character may have any number
+     of tags associated with it.
+
+     A priority order is defined among tags, and  this  order  is
+     used  in  implementing  some  of  the  tag-related functions
+     described below.  When a tag is defined (by  associating  it
+     with  characters  or  setting its display options or binding
+     commands to it), it is given  a  priority  higher  than  any
+     existing  tag.   The priority order of tags may be redefined
+     using the ``_p_a_t_h_N_a_m_e ttaagg rraaiissee'' and ``_p_a_t_h_N_a_m_e ttaagg  lloowweerr''
+     widget commands.
+
+     Tags serve three purposes in text widgets.  First, they con-
+     trol  the  way  information  is displayed on the screen.  By
+     default, characters are displayed as determined by the bbaacckk--
+     ggrroouunndd,  ffoonntt,  and  ffoorreeggrroouunndd options for the text widget.
+     However, display options may be associated  with  individual
+     tags  using  the  ``_p_a_t_h_N_a_m_e ttaagg ccoonnffiigguurree'' widget command.
+     If a character has been tagged,  then  the  display  options
+     associated  with the tag override the default display style.
+     The following options are currently supported for tags:
+
+     --bbaacckkggrroouunndd _c_o_l_o_r
+          _C_o_l_o_r specifies the background color to use for charac-
+          ters  associated  with the tag.  It may have any of the
+          forms accepted by TTkk__GGeettCCoolloorr.
+
+     --bbggssttiippppllee _b_i_t_m_a_p
+          _B_i_t_m_a_p specifies a bitmap that is  used  as  a  stipple
+          pattern  for  the  background.   It may have any of the
+          forms accepted by TTkk__GGeettBBiittmmaapp.  If _b_i_t_m_a_p hasn't  been
+          specified,  or  if  it is specified as an empty string,
+          then a solid fill will be used for the background.
+
+     --bboorrddeerrwwiiddtthh _p_i_x_e_l_s
+          _P_i_x_e_l_s specifies the width of  a  3-D  border  to  draw
+          around  the  background.   It may have any of the forms
+          accepted by TTkk__GGeettPPiixxeellss.  This option is used in  con-
+          junction  with the --rreelliieeff option to give a 3-D appear-
+          ance to the background for characters;  it  is  ignored
+          unless the --bbaacckkggrroouunndd option has been set for the tag.
+
+     --ffggssttiippppllee _b_i_t_m_a_p
+          _B_i_t_m_a_p specifies a bitmap that is  used  as  a  stipple
+          pattern when drawing text and other foreground informa-
+          tion such as underlines.  It may have any of the  forms
+          accepted by TTkk__GGeettBBiittmmaapp.  If _b_i_t_m_a_p hasn't been speci-
+          fied, or if it is specified as an empty string, then  a
+          solid fill will be used.
+
+
+
+Sprite v1.0                                                     5
+
+
+
+
+
+
+text                      User Commands                      text
+
+
+
+     --ffoonntt _f_o_n_t_N_a_m_e
+          _F_o_n_t_N_a_m_e is the name of a font to use for drawing char-
+          acters.   It  may  have  any  of  the forms accepted by
+          TTkk__GGeettFFoonnttSSttrruucctt.
+
+     --ffoorreeggrroouunndd _c_o_l_o_r
+          _C_o_l_o_r specifies the color to use when drawing text  and
+          other  foreground  information  such as underlines.  It
+          may have any of the forms accepted by TTkk__GGeettCCoolloorr.
+
+     --rreelliieeff _r_e_l_i_e_f
+          _R_e_l_i_e_f _s_p_e_c_i_f_i_e_s _t_h_e _3-_D  _r_e_l_i_e_f  _t_o  _u_s_e  _f_o_r  _d_r_a_w_i_n_g
+          _b_a_c_k_g_r_o_u_n_d_s,   _i_n   _a_n_y   _o_f   _t_h_e  _f_o_r_m_s  _a_c_c_e_p_t_e_d  _b_y
+          TTkk__GGeettRReelliieeff.  This option is used in conjunction  with
+          the --bboorrddeerrwwiiddtthh option to give a 3-D appearance to the
+          background for characters; it  is  ignored  unless  the
+          --bbaacckkggrroouunndd option has been set for the tag.
+
+     --uunnddeerrlliinnee _b_o_o_l_e_a_n
+          _B_o_o_l_e_a_n specifies whether or not to draw  an  underline
+          underneath  characters.   It  may have any of the forms
+          accepted by TTkk__GGeettBBoooolleeaann.
+
+     If a character has several tags associated with it,  and  if
+     their  display  options  conflict,  then  the options of the
+     highest priority tag are  used.   If  a  particular  display
+     option  hasn't been specified for a particular tag, or if it
+     is specified as an empty string, then that option will never
+     be  used;   the next-highest-priority tag's option will used
+     instead.  If no tag specifies a particular display  optionl,
+     then the default style for the widget will be used.
+
+     The second purpose for tags  is  event  bindings.   You  can
+     associate  bindings  with a tag in much the same way you can
+     associate bindings with a widget class:  whenever particular
+     X events occur on characters with the given tag, a given Tcl
+     command will be executed.  Tag bindings can be used to  give
+     behaviors  to ranges of characters; among other things, this
+     allows  hypertext-like  features  to  be  implemented.   For
+     details,  see the description of the ttaagg bbiinndd widget command
+     below.
+
+     The third use for tags is in managing  the  selection.   See
+     THE SELECTION below.
+
+
+MMAARRKKSS
+     The second form of annotation in text  widgets  is  a  mark.
+     Marks  are used for remembering particular places in a text.
+     They are something like tags, in that they  have  names  and
+     they  refer  to places in the file, but a mark isn't associ-
+     ated  with  particular  characters.   Instead,  a  mark   is
+
+
+
+Sprite v1.0                                                     6
+
+
+
+
+
+
+text                      User Commands                      text
+
+
+
+     associated with the gap between two characters.  Only a sin-
+     gle position may be associated with  a  mark  at  any  given
+     time.   If the characters around a mark are deleted the mark
+     will still remain;  it will just have new  neighbor  charac-
+     ters.   In  contrast, if the characters containing a tag are
+     deleted then the tag will no longer have an association with
+     characters  in  the file.  Marks may be manipulated with the
+     ``_p_a_t_h_N_a_m_e mmaarrkk'' widget command, and  their  current  loca-
+     tions  may  be determined by using the mark name as an index
+     in widget commands.
+
+     The name space for marks is different from  that  for  tags:
+     the  same  name  may  be used for both a mark and a tag, but
+     they will refer to different things.
+
+     Two marks have special significance.  First, the mark iinnsseerrtt
+     is  associated with the insertion cursor, as described under
+     THE INSERTION CURSOR below.  Second,  the  mark  ccuurrrreenntt  is
+     associated  with  the  character closest to the mouse and is
+     adjusted automatically to track the mouse position  and  any
+     changes  to  the text in the widget (one exception:  ccuurrrreenntt
+     is not updated in response to mouse motions if a mouse  but-
+     ton  is  down;   the update will be deferred until all mouse
+     buttons have been released).  Neither of these special marks
+     may be unset.
+
+
+WWIINNDDOOWWSS
+     The third form of annotation in text widgets  is  a  window.
+     Window support isn't implemented yet, but when it is it will
+     be described here.
+
+
+TTHHEE SSEELLEECCTTIIOONN
+     Text widgets support the standard  X  selection.   Selection
+     support  is  implemented  via  tags.  If the eexxppoorrttSSeelleeccttiioonn
+     option for the text widget is true then the sseell tag will  be
+     associated with the selection:
+
+     [1]  Whenever characters are tagged with sseell the text widget
+          will claim ownership of the selection.
+
+     [2]  Attempts to retrieve the selection will be serviced  by
+          the  text  widget, returning all the charaters with the
+          sseell tag.
+
+     [3]  If the selection is claimed away by another application
+          or  by another window within this application, then the
+          sseell tag will be removed  from  all  characters  in  the
+          text.
+
+     The sseell tag is automatically defined when a text  widget  is
+
+
+
+Sprite v1.0                                                     7
+
+
+
+
+
+
+text                      User Commands                      text
+
+
+
+     created,  and  it may not be deleted with the ``_p_a_t_h_N_a_m_e ttaagg
+     ddeelleettee'' widget command.  Furthermore, the sseelleeccttBBaacckkggrroouunndd,
+     sseelleeccttBBoorrddeerrWWiiddtthh, and sseelleeccttFFoorreeggrroouunndd options for the text
+     widget are tied to the --bbaacckkggrroouunndd, --bboorrddeerrwwiiddtthh, and --ffoorree--
+     ggrroouunndd  options  for  the  sseell  tag:  changes in either will
+     automatically be reflected in the other.
+
+
+TTHHEE IINNSSEERRTTIIOONN CCUURRSSOORR
+     The mark named iinnsseerrtt has special significance in text widg-
+     ets.   It  is  defined  automatically  when a text widget is
+     created and it may not be unset  with  the  ``_p_a_t_h_N_a_m_e  mmaarrkk
+     uunnsseett''  widget  command.   The  iinnsseerrtt  mark represents the
+     position of the insertion cursor, and the  insertion  cursor
+     will  automatically be drawn at this point whenever the text
+     widget has the input focus.
+
+
+WWIIDDGGEETT CCOOMMMMAANNDD
+     The tteexxtt command creates a new Tcl command whose name is the
+     same  as  the  path name of the text's window.  This command
+     may be used to invoke various operations on the widget.   It
+     has the following general form:
+
+          _p_a_t_h_N_a_m_e _o_p_t_i_o_n ?_a_r_g _a_r_g ...?
+     _P_a_t_h_N_a_m_e is the name of the command, which is  the  same  as
+     the  text widget's path name.  _O_p_t_i_o_n and the _a_r_gs determine
+     the exact behavior of the command.  The  following  commands
+     are possible for text widgets:
+
+     _p_a_t_h_N_a_m_e ccoommppaarree _i_n_d_e_x_1 _o_p _i_n_d_e_x_2
+          Compares the indices given by _i_n_d_e_x_1 and _i_n_d_e_x_2 accord-
+          ing to the relational operator given by _o_p, and returns
+          1 if the relationship is satisfied and 0 if  it  isn't.
+          _O_p  must  be  one of the operators <, <=, ==, >=, >, or
+          !=.  If _o_p is == then 1 is returned if the two  indices
+          refer  to  the  same  character,  if  _o_p is < then 1 is
+          returned if _i_n_d_e_x_1 refers to an  earlier  character  in
+          the text than _i_n_d_e_x_2, and so on.
+
+     _p_a_t_h_N_a_m_e ccoonnffiigguurree ?_o_p_t_i_o_n? ?_v_a_l_u_e _o_p_t_i_o_n _v_a_l_u_e ...?
+          Query  or  modify  the  configuration  options  of  the
+          widget.   If  no  _o_p_t_i_o_n  is  specified, returns a list
+          describing all of the available  options  for  _p_a_t_h_N_a_m_e
+          (see  TTkk__CCoonnffiigguurreeIInnffoo for information on the format of
+          this list).  If _o_p_t_i_o_n is specified with no _v_a_l_u_e, then
+          the  command  returns  a  list describing the one named
+          option (this list will be identical to the  correspond-
+          ing  sublist  of  the  value  returned  if no _o_p_t_i_o_n is
+          specified).  If one  or  more  _o_p_t_i_o_n-_v_a_l_u_e  pairs  are
+          specified,  then  the command modifies the given widget
+          option(s) to have the given value(s);  in this case the
+
+
+
+Sprite v1.0                                                     8
+
+
+
+
+
+
+text                      User Commands                      text
+
+
+
+          command  returns  an empty string.  _O_p_t_i_o_n may have any
+          of the values accepted by the tteexxtt command.
+
+     _p_a_t_h_N_a_m_e ddeebbuugg ?_b_o_o_l_e_a_n?
+          If _b_o_o_l_e_a_n is specified, then it must have one  of  the
+          true  or  false  values accepted by Tcl_GetBoolean.  If
+          the value is  a  true  one  then  internal  consistency
+          checks  will be turned on in the B-tree code associated
+          with text widgets.  If _b_o_o_l_e_a_n has a false  value  then
+          the  debugging  checks  will  be turned off.  In either
+          case the command returns an empty string.   If  _b_o_o_l_e_a_n
+          is  not specified then the command returns oonn or ooffff to
+          indicate whether or not debugging is turned on.   There
+          is  a  single debugging switch shared by all text widg-
+          ets:  turning debugging on or off in any  widget  turns
+          it  on  or off for all widgets.  For widgets with large
+          amounts of text, the consistency  checks  may  cause  a
+          noticeable slow-down.
+
+     _p_a_t_h_N_a_m_e ddeelleettee _i_n_d_e_x_1 ?_i_n_d_e_x_2?
+          Delete a range of characters from the  text.   If  both
+          _i_n_d_e_x_1  and  _i_n_d_e_x_2  are specified, then delete all the
+          characters starting with the one given  by  _i_n_d_e_x_1  and
+          stopping  just  before  _i_n_d_e_x_2  (i.e.  the character at
+          _i_n_d_e_x_2 is not deleted).  If _i_n_d_e_x_2  doesn't  specify  a
+          position  later in the text than _i_n_d_e_x_1 then no charac-
+          ters are deleted.  If _i_n_d_e_x_2 isn't specified  then  the
+          single  character  at  _i_n_d_e_x_1  is  deleted.   It is not
+          allowable to delete characters  in  a  way  that  would
+          leave the text without a newline as the last character.
+          The command returns an empty string.
+
+     _p_a_t_h_N_a_m_e ggeett _i_n_d_e_x_1 ?_i_n_d_e_x_2?
+          Return a range of characters from the text.  The return
+          value  will  be all the characters in the text starting
+          with the one whose index  is  _i_n_d_e_x_1  and  ending  just
+          before  the one whose index is _i_n_d_e_x_2 (the character at
+          _i_n_d_e_x_2 will not be returned).   If  _i_n_d_e_x_2  is  omitted
+          then  the  single  character at _i_n_d_e_x_1 is returned.  If
+          there are no characters in the  specified  range  (e.g.
+          _i_n_d_e_x_1  is  past  the end of the file or _i_n_d_e_x_2 is less
+          than or equal  to  _i_n_d_e_x_1)  then  an  empty  string  is
+          returned.
+
+     _p_a_t_h_N_a_m_e iinnddeexx _i_n_d_e_x
+          Returns the position corresponding to _i_n_d_e_x in the form
+          _l_i_n_e._c_h_a_r where _l_i_n_e is the line number and _c_h_a_r is the
+          character number.  _I_n_d_e_x may  have  any  of  the  forms
+          described under INDICES above.
+
+     _p_a_t_h_N_a_m_e iinnsseerrtt _i_n_d_e_x _c_h_a_r_s
+          Inserts _c_h_a_r_s into the text just before  the  character
+
+
+
+Sprite v1.0                                                     9
+
+
+
+
+
+
+text                      User Commands                      text
+
+
+
+          at _i_n_d_e_x and returns an empty string.  It is not possi-
+          ble to insert characters after the last newline of  the
+          text.
+
+     _p_a_t_h_N_a_m_e mmaarrkk _o_p_t_i_o_n ?_a_r_g _a_r_g ...?
+          This command is used to manipulate  marks.   The  exact
+          behavior  of the command depends on the _o_p_t_i_o_n argument
+          that follows the mmaarrkk argument.  The following forms of
+          the command are currently supported:
+
+          _p_a_t_h_N_a_m_e mmaarrkk nnaammeess
+               Returns a list whose elements are the names of all
+               the marks that are currently set.
+
+          _p_a_t_h_N_a_m_e mmaarrkk sseett _m_a_r_k_N_a_m_e _i_n_d_e_x
+               Sets the mark named _m_a_r_k_N_a_m_e to  a  position  just
+               before   the  character  at  _i_n_d_e_x.   If  _m_a_r_k_N_a_m_e
+               already exists, it is moved from its old position;
+               if  it doesn't exist, a new mark is created.  This
+               command returns an empty string.
+
+          _p_a_t_h_N_a_m_e mmaarrkk uunnsseett _m_a_r_k_N_a_m_e ?_m_a_r_k_N_a_m_e _m_a_r_k_N_a_m_e ...?
+               Remove the mark corresponding to each of the _m_a_r_k_-
+               _N_a_m_e  arguments.   The  removed  marks will not be
+               usable in indices and  will  not  be  returned  by
+               future  calls  to  ``_p_a_t_h_N_a_m_e  mmaarrkk nnaammeess''.  This
+               command returns an empty string.
+
+     _p_a_t_h_N_a_m_e ssccaann _o_p_t_i_o_n _a_r_g_s
+          This command is used to implement  scanning  on  texts.
+          It has two forms, depending on _o_p_t_i_o_n:
+
+          _p_a_t_h_N_a_m_e ssccaann mmaarrkk _y
+               Records _y and the current view in the text window;
+               used  in  conjunction  with later ssccaann ddrraaggttoo com-
+               mands.  Typically this command is associated  with
+               a mouse button press in the widget.  It returns an
+               empty string.
+
+          _p_a_t_h_N_a_m_e ssccaann ddrraaggttoo _y
+               This command computes the difference between its _y
+               argument  and the _y argument to the last ssccaann mmaarrkk
+               command for the widget.  It then adjusts the  view
+               up  or  down  by  10  times  the  difference in y-
+               coordinates.  This command is typically associated
+               with mouse motion events in the widget, to produce
+               the effect of dragging  the  text  at  high  speed
+               through  the window.  The return value is an empty
+               string.
+
+     _p_a_t_h_N_a_m_e ttaagg _o_p_t_i_o_n ?_a_r_g _a_r_g ...?
+          This command is used to  manipulate  tags.   The  exact
+
+
+
+Sprite v1.0                                                    10
+
+
+
+
+
+
+text                      User Commands                      text
+
+
+
+          behavior  of the command depends on the _o_p_t_i_o_n argument
+          that follows the ttaagg argument.  The following forms  of
+          the command are currently supported:
+
+          _p_a_t_h_N_a_m_e ttaagg aadddd _t_a_g_N_a_m_e _i_n_d_e_x_1 ?_i_n_d_e_x_2?
+               Associate the tag _t_a_g_N_a_m_e with all of the  charac-
+               ters  starting  with _i_n_d_e_x_1 and ending just before
+               _i_n_d_e_x_2 (the character at _i_n_d_e_x_2 isn't tagged).  If
+               _i_n_d_e_x_2  is  omitted  then  the single character at
+               _i_n_d_e_x_1 is tagged.  If there are no  characters  in
+               the  specified  range (e.g. _i_n_d_e_x_1 is past the end
+               of the file or _i_n_d_e_x_2 is less  than  or  equal  to
+               _i_n_d_e_x_1) then the command has no effect.  This com-
+               mand returns an empty string.
+
+          _p_a_t_h_N_a_m_e ttaagg bbiinndd _t_a_g_N_a_m_e ?_s_e_q_u_e_n_c_e? ?_c_o_m_m_a_n_d?
+               This command associates _c_o_m_m_a_n_d with the tag given
+               by  _t_a_g_N_a_m_e.  Whenever the event sequence given by
+               _s_e_q_u_e_n_c_e occurs for  a  character  that  has  been
+               tagged  with _t_a_g_N_a_m_e, the command will be invoked.
+               This widget command is similar to the bbiinndd command
+               except  that  it  operates on characters in a text
+               rather than entire widgets.  See the  bbiinndd  manual
+               entry  for  complete  details  on  the  syntax  of
+               _s_e_q_u_e_n_c_e and the substitutions performed  on  _c_o_m_-
+               _m_a_n_d  before  invoking  it.   If all arguments are
+               specified then a new binding is created, replacing
+               any  existing  binding  for  the same _s_e_q_u_e_n_c_e and
+               _t_a_g_N_a_m_e (if the  first  character  of  _c_o_m_m_a_n_d  is
+               ``+''  then  _c_o_m_m_a_n_d  augments an existing binding
+               rather than  replacing  it).   In  this  case  the
+               return  value  is  an empty string.  If _c_o_m_m_a_n_d is
+               omitted then the command returns the _c_o_m_m_a_n_d asso-
+               ciated  with _t_a_g_N_a_m_e and _s_e_q_u_e_n_c_e (an error occurs
+               if there is no such binding).  If both _c_o_m_m_a_n_d and
+               _s_e_q_u_e_n_c_e  are  omitted  then the command returns a
+               list of all the sequences for which bindings  have
+               been defined for _t_a_g_N_a_m_e.
+
+               The only events for which bindings may  be  speci-
+               fied  are those related to the mouse and keyboard,
+               such as EEnntteerr,  LLeeaavvee,  BBuuttttoonnPPrreessss,  MMoottiioonn,  and
+               KKeeyyPPrreessss.   Event  bindings  for a text widget use
+               the ccuurrrreenntt  mark  described  under  MARKS  above.
+               EEnntteerr  events  trigger  for  a  character  when it
+               becomes the current character  (i.e.  the  ccuurrrreenntt
+               mark  moves  to  just in front of that character).
+               LLeeaavvee events  trigger  for  a  character  when  it
+               ceases  to  be  the current item (i.e. the ccuurrrreenntt
+               mark moves away from that character, or the  char-
+               acter  is  deleted).   These  events are different
+               than EEnntteerr and LLeeaavvee events  for  windows.   Mouse
+
+
+
+Sprite v1.0                                                    11
+
+
+
+
+
+
+text                      User Commands                      text
+
+
+
+               and  keyboard  events  are directed to the current
+               character.
+
+               It is possible for the current character  to  have
+               multiple  tags,  and  for  each  of them to have a
+               binding for a  particular  event  sequence.   When
+               this occurs, the binding from the highest priority
+               tag is used.  If a particular tag doesn't  have  a
+               binding  that  matches  an  event, then the tag is
+               ignored and  tags  with  lower  priority  will  be
+               checked.
+
+               If bindings are created for the widget as a  whole
+               using  the  bbiinndd command, then those bindings will
+               supplement the tag bindings.  This  means  that  a
+               single  event can trigger two Tcl scripts, one for
+               a widget-level binding and  one  for  a  tag-level
+               binding.
+
+          _v_a_l_u_e ...?
+          _p_a_t_h_N_a_m_e ttaagg  ccoonnffiigguurree  _t_a_g_N_a_m_e  ?_o_p_t_i_o_n?  ?_v_a_l_u_e?  ?_o_p_t_i_o_n
+               This  command  is  similar to the ccoonnffiigguurree widget
+               command except that it modifies options associated
+               with the tag given by _t_a_g_N_a_m_e instead of modifying
+               options for the overall text widget.  If no _o_p_t_i_o_n
+               is  specified, the command returns a list describ-
+               ing all of the available options for _t_a_g_N_a_m_e  (see
+               TTkk__CCoonnffiigguurreeIInnffoo  for information on the format of
+               this list).  If _o_p_t_i_o_n is specified with no _v_a_l_u_e,
+               then the command returns a list describing the one
+               named option (this list will be identical  to  the
+               corresponding  sublist of the value returned if no
+               _o_p_t_i_o_n is specified).  If one or more _o_p_t_i_o_n-_v_a_l_u_e
+               pairs are specified, then the command modifies the
+               given option(s) to have the given value(s) in _t_a_g_-
+               _N_a_m_e;  in  this  case the command returns an empty
+               string.  See TAGS above for details on the options
+               available for tags.
+
+          _p_a_t_h_N_a_m_e ttaagg ddeelleettee _t_a_g_N_a_m_e ?_t_a_g_N_a_m_e ...?
+               Deletes all tag information for each of  the  _t_a_g_-
+               _N_a_m_e arguments.  The command removes the tags from
+               all characters in the file and  also  deletes  any
+               other  information  associated with the tags, such
+               as bindings and display information.  The  command
+               returns an empty string.
+
+          _p_a_t_h_N_a_m_ettaagg lloowweerr _t_a_g_N_a_m_e ?_b_e_l_o_w_T_h_i_s?
+               Changes the priority of tag _t_a_g_N_a_m_e so that it  is
+               just  lower in priority than the tag whose name is
+               _b_e_l_o_w_T_h_i_s.   If   _b_e_l_o_w_T_h_i_s   is   omitted,   then
+               _t_a_g_N_a_m_e's  priority  is  changed to make it lowest
+
+
+
+Sprite v1.0                                                    12
+
+
+
+
+
+
+text                      User Commands                      text
+
+
+
+               priority of all tags.
+
+          _p_a_t_h_N_a_m_e ttaagg nnaammeess ?_i_n_d_e_x?
+               Returns a list whose elements are the names of all
+               the tags that are active at the character position
+               given by _i_n_d_e_x.  If _i_n_d_e_x  is  omitted,  then  the
+               return  value  will  describe all of the tags that
+               exist for the text (this includes  all  tags  that
+               have  been named in a ``_p_a_t_h_N_a_m_e ttaagg'' widget com-
+               mand but haven't been deleted by a ``_p_a_t_h_N_a_m_e  ttaagg
+               ddeelleettee'' widget command, even if no characters are
+               currently marked with the tag).  The list will  be
+               sorted  in  order  from lowest priority to highest
+               priority.
+
+          _p_a_t_h_N_a_m_e ttaagg nneexxttrraannggee _t_a_g_N_a_m_e _i_n_d_e_x_1 ?_i_n_d_e_x_2?
+               This command searches the  text  for  a  range  of
+               characters  tagged  with  _t_a_g_N_a_m_e  where the first
+               character of the range  is  no  earlier  than  the
+               character  at _i_n_d_e_x_1 and no later than the charac-
+               ter just before _i_n_d_e_x_2 (a range starting at _i_n_d_e_x_2
+               will  not  be  considered).   If  several matching
+               ranges  exist,  the  first  one  is  chosen.   The
+               command's  return  value  is a list containing two
+               elements, which are the index of the first charac-
+               ter  of  the  range and the index of the character
+               just after the last  one  in  the  range.   If  no
+               matching  range  is found then the return value is
+               an empty string.  If _i_n_d_e_x_2 is not given  then  it
+               defaults to the end of the text.
+
+          _p_a_t_h_N_a_m_ettaagg rraaiissee _t_a_g_N_a_m_e ?_a_b_o_v_e_T_h_i_s?
+               Changes the priority of tag _t_a_g_N_a_m_e so that it  is
+               just higher in priority than the tag whose name is
+               _a_b_o_v_e_T_h_i_s.   If   _a_b_o_v_e_T_h_i_s   is   omitted,   then
+               _t_a_g_N_a_m_e's  priority  is changed to make it highest
+               priority of all tags.
+
+          _p_a_t_h_N_a_m_e ttaagg rraannggeess _t_a_g_N_a_m_e
+               Return a list describing all of the ranges of text
+               that have been tagged with _t_a_g_N_a_m_e.  The list con-
+               sists of zero or more pairs of elements, with each
+               pair  describing  a  range of characters that have
+               been tagged with _t_a_g_N_a_m_e.  The  first  element  of
+               the pair contains the index of the first character
+               of the range, and the second element of  the  pair
+               contains the index of the character just after the
+               last one in the range.  The list is sorted so that
+               the first tagged range in the text is described by
+               the first two elements of the list, and so on.  If
+               there  are  no  characters tagged with _t_a_g then an
+               empty string is returned.
+
+
+
+Sprite v1.0                                                    13
+
+
+
+
+
+
+text                      User Commands                      text
+
+
+
+          _p_a_t_h_N_a_m_e ttaagg rreemmoovvee _t_a_g_N_a_m_e _i_n_d_e_x_1 ?_i_n_d_e_x_2?
+               Remove the tag _t_a_g_N_a_m_e from all of the  characters
+               starting  at  _i_n_d_e_x_1 and ending just before _i_n_d_e_x_2
+               (the character  at  _i_n_d_e_x_2  isn't  affected).   If
+               _i_n_d_e_x_2  is  omitted  then  the single character at
+               _i_n_d_e_x_1 is untagged.  If there are no characters in
+               the  specified  range (e.g. _i_n_d_e_x_1 is past the end
+               of the file or _i_n_d_e_x_2 is less  than  or  equal  to
+               _i_n_d_e_x_1) then the command has no effect.  This com-
+               mand returns an empty string.
+
+     _p_a_t_h_N_a_m_e yyvviieeww ?--ppiicckkppllaaccee? _w_h_a_t
+          This command changes the view in the widget's window so
+          that  the  line given by _w_h_a_t is visible in the window.
+          _W_h_a_t may be either an absolute  line  number,  where  0
+          corresponds  to the first line of the file, or an index
+          with any of the forms described  under  INDICES  above.
+          The  first  form  (absolute line number) is used in the
+          commands issued by scrollbars to control  the  widget's
+          view.   If  the  --ppiicckkppllaaccee option isn't specified then
+          _w_h_a_t will appear at the top of the window.   If  --ppiicckk--
+          ppllaaccee  is  specified then the widget chooses where _w_h_a_t
+          appears in the window:
+
+          [1]  If _w_h_a_t is already visible somewhere in the window
+               then the command does nothing.
+
+          [2]  If _w_h_a_t is only a few lines off-screen  above  the
+               window  then  it  will be positioned at the top of
+               the window.
+
+          [3]  If _w_h_a_t is only a few lines off-screen  below  the
+               window then it will be positioned at the bottom of
+               the window.
+
+          [4]  Otherwise, _w_h_a_t will be centered in the window.
+
+          The --ppiicckkppllaaccee option is typically used after inserting
+          text  to  make  sure that the insertion cursor is still
+          visible on the screen.  This command returns  an  empty
+          string.
+
+
+BBIINNDDIINNGGSS
+     Tk automatically creates class bindings for texts that  give
+     them the following default behavior:
+
+     [1]  Pressing mouse button 1 in an text positions the inser-
+          tion  cursor  just  before the character underneath the
+          mouse cursor and sets the input focus to this widget.
+
+     [2]  Dragging with mouse button 1 strokes  out  a  selection
+
+
+
+Sprite v1.0                                                    14
+
+
+
+
+
+
+text                      User Commands                      text
+
+
+
+          between  the  insertion  cursor and the character under
+          the mouse.
+
+     [3]  If you double-press mouse button 1 then the word  under
+          the mouse cursor will be selected, the insertion cursor
+          will be positioned at the beginning of  the  word,  and
+          dragging  the  mouse  will stroke out a selection whole
+          words at a time.
+
+     [4]  If you triple-press mouse button 1 then the line  under
+          the mouse cursor will be selected, the insertion cursor
+          will be positioned at the beginning of  the  line,  and
+          dragging  the  mouse  will stroke out a selection whole
+          line at a time.
+
+     [5]  The ends of the selection can be adjusted  by  dragging
+          with  mouse button 1 while the shift key is down;  this
+          will adjust the end of the selection that  was  nearest
+          to  the mouse cursor when button 1 was pressed.  If the
+          selection was made in word or line mode then it will be
+          adjusted in this same mode.
+
+     [6]  The view in the text can be adjusted by  dragging  with
+          mouse button 2.
+
+     [7]  If the input focus is in a text widget  and  characters
+          are  typed on the keyboard, the characters are inserted
+          just before the insertion cursor.
+
+     [8]  Control+h and the Backspace and Delete keys  erase  the
+          character just before the insertion cursor.
+
+     [9]  Control+v inserts the current selection just before the
+          insertion cursor.
+
+     [10] Control+d deletes the selected  characters;   an  error
+          occurs if the selection is not in this widget.
+
+     If the text is disabled using the  ssttaattee  option,  then  the
+     text's  view  can still be adjusted and text in the text can
+     still be selected, but no insertion cursor will be displayed
+     and no text modifications will take place.
+
+     The behavior of texts can be changed by defining  new  bind-
+     ings for individual widgets or by redefining the class bind-
+     ings.
+
+
+PPEERRFFOORRMMAANNCCEE IISSSSUUEESS
+     Text widgets should run efficiently under a variety of  con-
+     ditions.   The  text  widget  uses  about  2-3 bytes of main
+     memory for each byte of text, so texts containing a megabyte
+
+
+
+Sprite v1.0                                                    15
+
+
+
+
+
+
+text                      User Commands                      text
+
+
+
+     or  more  should be practical on most workstations.  Text is
+     represented internally with a modified B-tree structure that
+     makes operations relatively efficient even with large texts.
+     Tags are included in the B-tree  structure  in  a  way  that
+     allows  tags  to  span  large  ranges  or have many disjoint
+     smaller ranges without loss of efficiency.  Marks  are  also
+     implemented  in  a  way  that allows large numbers of marks.
+     The only known mode of operation where a text widget may not
+     run  efficiently  is  if  it has a very large number of dif-
+     ferent tags.  Hundreds of tags should be  fine,  or  even  a
+     thousand, but tens of thousands of tags will make texts con-
+     sume a lot of memory and run slowly.
+
+
+KKEEYYWWOORRDDSS
+     text, widget
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                    16
+
+
+

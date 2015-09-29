@@ -1,0 +1,69 @@
+#
+# pushd.test
+#
+# Tests for tcl.tlib directory directory stack routines.
+#
+#---------------------------------------------------------------------------
+# Copyright 1992 Karl Lehenbauer and Mark Diekhans.
+#
+# Permission to use, copy, modify, and distribute this software and its
+# documentation for any purpose and without fee is hereby granted, provided
+# that the above copyright notice appear in all copies.  Karl Lehenbauer and
+# Mark Diekhans make no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without express or
+# implied warranty.
+#------------------------------------------------------------------------------
+# $Id: pushd.test,v 2.0 1992/10/16 04:50:08 markd Rel $
+#------------------------------------------------------------------------------
+#
+
+if {[info procs test] == ""} then {source testlib.tcl}
+
+rename SAVED_UNKNOWN unknown
+
+set CWD [pwd]
+
+cd /tmp
+
+#
+# Get actual location of /tmp incase its symbolicly linked.
+#
+set TMP [pwd]
+
+Test pushd-1.1 {ppushd command} {
+    pushd
+} 0 {}
+
+Test pushd-1.2 {pushd command} {
+    set dummy $TCLENV(dirPushList)
+} 0 $TMP
+
+Test pushd-1.3 {pushd command} {
+    pushd /
+} 0 {}
+
+Test pushd-1.4 {pushd command} {
+    set TCLENV(dirPushList)
+} 0 "$TMP $TMP"
+
+cd $CWD
+
+Test popd-1.1 {popd command} {
+    popd
+} 0 $TMP
+
+Test popd-1.2 {popd command} {
+    set TCLENV(dirPushList)
+} 0 $TMP
+
+Test popd-1.3 {popd command} {
+    popd
+    popd
+} 1 {directory stack empty}
+
+Test popd-1.4 {popd command} {
+    set TCLENV(dirPushList)
+} 0 {}
+
+cd $CWD
+rename unknown SAVED_UNKNOWN

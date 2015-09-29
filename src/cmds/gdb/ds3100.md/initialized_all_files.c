@@ -1,0 +1,1 @@
+../sprite/initialized_all_files_mips.c

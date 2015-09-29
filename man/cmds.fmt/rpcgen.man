@@ -1,0 +1,462 @@
+
+
+
+RPCGEN                    User Commands                    RPCGEN
+
+
+
+NNAAMMEE
+     rpcgen - an RPC protocol compiler
+
+SSYYNNOOPPSSIISS
+     rrppccggeenn --hh [[--oo _o_u_t_f_i_l_e]] [[_i_n_p_u_t_f_i_l_e]]
+     rrppccggeenn --cc [[--oo _o_u_t_f_i_l_e]] [[_i_n_f_i_l_e]]
+     rrppccggeenn _i_n_f_i_l_e
+     rrppccggeenn [[--ss _t_r_a_n_s_p_o_r_t]]** [[--oo _o_u_t_f_i_l_e] [[_i_n_f_i_l_e]]
+
+DDEESSCCRRIIPPTTIIOONN
+     _r_p_c_g_e_n is a tool that generates CC code to implement an RPC
+     protocol.  The input to _r_p_c_g_e_n is a language with striking
+     similarity to CC known as RPCL (Remote Procedure Call
+     Language).  _r_p_c_g_e_n operates in four modes.  The first mode
+     is used to convert RPCL definitions into CC definitions for
+     use as a header file.  The second mode compiles the XDR rou-
+     tines required to serialize the protocol described by RPCL.
+     The third mode compiles both, leaving the header file in a
+     file named _i_n_f_i_l_e with a ..hh extension and the XDR routines
+     in _i_n_f_i_l_e with a ..cc extension.  The fourth mode is used to
+     compile an RPC server skeleton, so that all you have to do
+     is write local procedures that know nothing about RPC in
+     order to implement an RPC server.
+
+     The input may contain CC-style comments and preprocessor
+     directives.  Comments are ignored, while the directives are
+     simply stuffed uninterpreted in the output header file.
+
+     You can customize some of your XDR routines by leaving those
+     data types undefined.  For every data type that is unde-
+     fined, _r_p_c_g_e_n will assume that there exists a routine with
+     the name `xdr_' prepended to the name of the undefined type.
+
+OOPPTTIIOONNSS
+     --cc   Compile XDR routines.
+
+     --hh   Compile CC data-definitions (a header file)
+
+     --oo _o_u_t_f_i_l_e
+          Specify the name of the output file.  If none is speci-
+          fied, standard output is used (--cc, --hh and --ss modes
+          only).
+
+     --ss _t_r_a_n_s_p_o_r_t
+          Compile a server, using the the given transport.  The
+          supported transports are uuddpp and ttccpp. This option may
+          be invoked more than once so as to compile a server
+          that serves multiple transports.
+
+UUSSAAGGEE
+
+
+
+
+
+Sprite v1.0               11 March 1986                         1
+
+
+
+
+
+
+RPCGEN                    User Commands                    RPCGEN
+
+
+
+     RRPPCCLL SSyynnttaaxx SSuummmmaarryy
+     This summary of RPCL syntax, which is used for _r_p_c_g_e_n input,
+     is intended more for aiding comprehension than as an exact
+     statement of the language.
+
+     PPrriimmiittiivvee DDaattaa TTyyppeess
+          [ uunnssiiggnneedd ] cchhaarr
+          [ uunnssiiggnneedd ] sshhoorrtt
+          [ uunnssiiggnneedd ] iinntt
+          [ uunnssiiggnneedd ] lloonngg
+          uunnssiiggnneedd
+          ffllooaatt
+          ddoouubbllee
+          vvooiidd
+          bbooooll
+     Except for the added boolean data-type bbooooll, RPCL is identi-
+     cal to CC.  _r_p_c_g_e_n converts bbooooll declarations to iinntt declara-
+     tions in the output header file (literally it is converted
+     to a bbooooll__tt, which has been ##ddeeffiinnee'd to be an iinntt). Also,
+     vvooiidd declarations may appear only inside of uunniioonn and pprroo--
+     ggrraamm definitions.  For those averse to typing the prefix
+     uunnssiiggnneedd, the abbreviations uu__cchhaarr, uu__sshhoorrtt, uu__iinntt and
+     uu__lloonngg are available.
+
+     DDeeccllaarraattiioonnss
+     RPCL allows only three kinds of declarations:
+
+     _d_e_c_l_a_r_a_t_i_o_n:
+          _s_i_m_p_l_e-_d_e_c_l_a_r_a_t_i_o_n
+          _p_o_i_n_t_e_r-_d_e_c_l_a_r_a_t_i_o_n
+          _v_e_c_t_o_r-_d_e_c_l_a_r_a_t_i_o_n
+
+     _s_i_m_p_l_e-_d_e_c_l_a_r_a_t_i_o_n:
+          _t_y_p_e-_n_a_m_e _o_b_j_e_c_t-_i_d_e_n_t
+
+     _p_o_i_n_t_e_r-_d_e_c_l_a_r_a_t_i_o_n:
+          _t_y_p_e-_n_a_m_e **_o_b_j_e_c_t-_i_d_e_n_t
+
+     _v_e_c_t_o_r-_d_e_c_l_a_r_a_t_i_o_n:
+          _t_y_p_e-_n_a_m_e _o_b_j_e_c_t-_i_d_e_n_t[[_s_i_z_e]]
+
+     (_s_i_z_e can be either an integer or a symbolic constant)
+
+     RPCL declarations contain both limitations and extensions
+     with respect to CC.  The limitations are that you cannot
+     declare multidimensional arrays or pointers-to-pointers in-
+     line (You can still declare them though, using ttyyppeeddeeff).
+     There are two extensions:
+
+          Opaque data is declared as a vector as follows:
+
+               ooppaaqquuee _o_b_j_e_c_t-_i_d_e_n_t [[ _s_i_z_e ]]
+
+
+
+Sprite v1.0               11 March 1986                         2
+
+
+
+
+
+
+RPCGEN                    User Commands                    RPCGEN
+
+
+
+          In the protocol, this results in an object of _s_i_z_e
+          bytes. Note that this is _n_o_t the same as a declaration
+          of _s_i_z_e characters, since XDR characters are 32-bits.
+          Opaque declarations are compiled in the output header
+          file into character array declarations of _s_i_z_e bytes.
+
+          Strings are special and are declared as a vector
+          declaration:
+
+               ssttrriinngg _o_b_j_e_c_t-_i_d_e_n_t [[ _m_a_x-_s_i_z_e ]]
+
+          If _m_a_x-_s_i_z_e is unspecified, then there is essentially
+          no limit to the maximum length of the string. String
+          declarations get compiled into the following:
+
+               char *_o_b_j_e_c_t-_i_d_e_n_t
+
+     TTyyppee DDeeffiinniittiioonnss
+     The only way to generate an XDR routine is to define a type.
+     For every type _z_e_t_y_p_e you define, there is a corresponding
+     XDR routine named _x_d_r__z_e_t_y_p_e.
+
+     There are six ways to define a type:
+
+     _t_y_p_e-_d_e_f_i_n_i_t_i_o_n:
+          _t_y_p_e_d_e_f
+          _e_n_u_m_e_r_a_t_i_o_n-_d_e_f
+          _s_t_r_u_c_t_u_r_e-_d_e_f
+          _v_a_r_i_a_b_l_e-_l_e_n_g_t_h-_a_r_r_a_y-_d_e_f
+          _d_i_s_c_r_i_m_i_n_a_t_e_d-_u_n_i_o_n-_d_e_f
+          _p_r_o_g_r_a_m-_d_e_f
+
+     The first three are very similar to their CC namesakes. CC
+     does not have a formal type mechanism to define variable-
+     length arrays and XDR unions are quite different from their
+     CC counterparts. Program definitions are not really type
+     definitions, but they are useful nonetheless.
+
+     You may not nest XDR definitions.  For example, the follow-
+     ing will cause _r_p_c_g_e_n to choke:
+          struct dontdoit {
+               struct ididit {
+                    int oops;
+               } sorry;
+               enum ididitagain { OOPS, WHOOPS } iapologize;
+          };
+
+     Typedefs
+     An XDR ttyyppeeddeeff looks as follows:
+
+     _t_y_p_e_d_e_f:
+          ttyyppeeddeeff _d_e_c_l_a_r_a_t_i_o_n ;;
+
+
+
+Sprite v1.0               11 March 1986                         3
+
+
+
+
+
+
+RPCGEN                    User Commands                    RPCGEN
+
+
+
+     The _o_b_j_e_c_t-_i_d_e_n_t part of _d_e_c_l_a_r_a_t_i_o_n is the name of the new
+     type, whereas the _t_y_p_e-_n_a_m_e part is the name of the type
+     from which it is derived.
+
+     _E_n_u_m_e_r_a_t_i_o_n _T_y_p_e_s
+     The syntax is:
+
+     _e_n_u_m_e_r_a_t_i_o_n-_d_e_f:
+          eennuumm _e_n_u_m-_i_d_e_n_t {{
+               _e_n_u_m-_l_i_s_t
+          }};;
+
+     _e_n_u_m-_l_i_s_t:
+          _e_n_u_m-_s_y_m_b_o_l-_i_d_e_n_t [ == _a_s_s_i_g_n_m_e_n_t ]
+          _e_n_u_m-_s_y_m_b_o_l-_i_d_e_n_t [ == _a_s_s_i_g_n_m_e_n_t ] ,, _e_n_u_m-_l_i_s_t
+
+     (_a_s_s_i_g_n_m_e_n_t may be either an integer or a symbolic constant)
+
+     If there is no explicit assignment, then the implicit
+     assignment is the value of the previous enumeration plus 1.
+     If not explicitly assigned, the first enumeration receives
+     the value 0.
+
+     _S_t_r_u_c_t_u_r_e_s
+     _s_t_r_u_c_t_u_r_e-_d_e_f:
+          ssttrruucctt _s_t_r_u_c_t-_i_d_e_n_t {{
+               _d_e_c_l_a_r_a_t_i_o_n-_l_i_s_t
+          }};;
+
+     _d_e_c_l_a_r_a_t_i_o_n-_l_i_s_t:
+          _d_e_c_l_a_r_a_t_i_o_n ;;
+          _d_e_c_l_a_r_a_t_i_o_n ;; _d_e_c_l_a_r_a_t_i_o_n-_l_i_s_t
+
+     _V_a_r_i_a_b_l_e-_L_e_n_g_t_h _A_r_r_a_y_s
+     _v_a_r_i_a_b_l_e-_l_e_n_g_t_h-_a_r_r_a_y-_d_e_f:
+          aarrrraayy _a_r_r_a_y-_i_d_e_n_t {{
+               uunnssiiggnneedd _l_e_n_g_t_h-_i_d_e_n_t_i_f_e_r ;;
+               _v_e_c_t_o_r-_d_e_c_l_a_r_a_t_i_o_n ;;
+          }};;
+
+     A variable length array definition looks much like a struc-
+     ture definition. Here's an example:
+          array mp_int {
+               unsigned len;
+               short val[MAX_MP_LENGTH];
+          };
+     This is compiled into:
+          struct mp_int {
+               unsigned len;
+               short *val;
+          };
+          typedef struct mp_int mp_int;
+
+
+
+Sprite v1.0               11 March 1986                         4
+
+
+
+
+
+
+RPCGEN                    User Commands                    RPCGEN
+
+
+
+     _D_i_s_r_i_m_i_n_a_t_e_d _U_n_i_o_n_s
+     _d_i_s_c_r_i_m_i_n_a_t_e_d-_u_n_i_o_n-_d_e_f:
+          uunniioonn _u_n_i_o_n-_i_d_e_n_t sswwiittcchh (( _d_i_s_c_r_i_m_i_n_a_n_t-_d_e_c_l_a_r_a_t_i_o_n )) {{
+               _c_a_s_e-_l_i_s_t
+               [ ddeeffaauulltt :: _d_e_c_l_a_r_a_t_i_o_n ;; ]
+          }};;
+
+     _c_a_s_e-_l_i_s_t:
+          ccaassee _c_a_s_e-_i_d_e_n_t :: _d_e_c_l_a_r_a_t_i_o_n ;;
+          ccaassee _c_a_s_e-_i_d_e_n_t :: _d_e_c_l_a_r_a_t_i_o_n ;; _c_a_s_e-_l_i_s_t
+
+     _d_i_s_c_r_i_m_i_n_a_n_t-_d_e_c_l_a_r_a_t_i_o_n:
+          _d_e_c_l_a_r_a_t_i_o_n
+
+     The union definition looks like a cross between a C-union
+     and a C-switch.  An example:
+          union net_object switch (net_kind kind) {
+          case MACHINE:
+               struct sockaddr_in sin;
+          case USER:
+               int uid;
+          default:
+               string whatisit;
+          };
+     Compiles into:
+          struct net_object {
+               net_kind kind;
+               union {
+                    struct sockaddr_in sin;
+                    int uid;
+                    char *whatisit;
+               } net_object;
+          };
+          typedef struct net_object net_object;
+     Note that the name of the union component of the output
+     struct is the same as the name of the type itself.
+
+     _P_r_o_g_r_a_m _D_e_f_i_n_i_t_i_o_n_s
+     _p_r_o_g_r_a_m-_d_e_f:
+          pprrooggrraamm _p_r_o_g_r_a_m-_i_d_e_n_t {{
+               _v_e_r_s_i_o_n-_l_i_s_t
+          }} == _p_r_o_g_r_a_m-_n_u_m_b_e_r ;;
+
+     _v_e_r_s_i_o_n-_l_i_s_t:
+          _v_e_r_s_i_o_n
+          _v_e_r_s_i_o_n _v_e_r_s_i_o_n-_l_i_s_t
+     _v_e_r_s_i_o_n:
+          vveerrssiioonn _v_e_r_s_i_o_n-_i_d_e_n_t {{
+               _p_r_o_c_e_d_u_r_e-_l_i_s_t
+          }} == _v_e_r_s_i_o_n-_n_u_m_b_e_r ;;
+     _p_r_o_c_e_d_u_r_e-_l_i_s_t:
+          _p_r_o_c_e_d_u_r_e-_d_e_c_l_a_r_a_t_i_o_n
+
+
+
+Sprite v1.0               11 March 1986                         5
+
+
+
+
+
+
+RPCGEN                    User Commands                    RPCGEN
+
+
+
+          _p_r_o_c_e_d_u_r_e-_d_e_c_l_a_r_a_t_i_o_n _p_r_o_c_e_d_u_r_e-_l_i_s_t
+     _p_r_o_c_e_d_u_r_e-_d_e_c_l_a_r_a_t_i_o_n:
+          _t_y_p_e-_n_a_m_e _p_r_o_c_e_d_u_r_e-_i_d_e_n_t (( _t_y_p_e-_n_a_m_e )) == _p_r_o_c_e_d_u_r_e-
+          _n_u_m_b_e_r ;;
+
+     Program definitions look like nothing you've ever seen
+     before, so we turn to an example to explain them.  Suppose
+     you wanted to create server that could get or set the date.
+     It's declaration might look like this:
+          program DATE_PROG {
+               version DATE_VERS {
+                    date DATE_GET(timezone) = 1;
+                    void DATE_SET(date) = 2; /* Greenwich mean time */
+               } = 1;
+          } = 100;
+     In the header file, this compiles into the following:
+          #define DATE_PROG 100
+          #define DATE_VERS 1
+          #define DATE_GET 1
+          #define DATE_SET 2
+     These ddeeffiinnee's are intended for use by the client program to
+     reference the remote procedures.
+
+     If you are using _r_p_c_g_e_n to compile your server, then there
+     are some important things for you to know. The server inter-
+     faces to your local procedures by expecting a CC function
+     with the same name as that in the program definition, but in
+     all lower-case letters and followed by the version number.
+     Here is the local procedure that implements DATE_GET:
+          date *    /* always returns a pointer to the results */
+          date_get_1(tz)
+               timezone *tz;  /* always takes a a pointer to the arguments */
+          {
+               static date d; /* must be static! */
+
+               /*
+                * figure out the date
+                * and store it in d
+                */
+               return(&d);
+          }
+     The name of the routine is the same as the ##ddeeffiinnee'd name,
+     but in all lower case letters and followed by the version
+     number. XDR will recursively free the argument after getting
+     the results from your local procedure, so you should copy
+     from the argument any data that you will need between calls.
+     However, XDR neither allocates nor frees your results. You
+     must take care of their storage yourself.
+
+
+
+
+
+
+
+Sprite v1.0               11 March 1986                         6
+
+
+
+
+
+
+RPCGEN                    User Commands                    RPCGEN
+
+
+
+     MMaakkee IInnffeerreennccee RRuulleess FFoorr CCoommppiilliinngg XXDDRR HHeeaaddeerrss
+
+     It is possible to set up suffix transformation rules in
+     _m_a_k_e(1) for compiling XDR routines and header files.  The
+     convention is that RPCL protocol files have the extension
+     ..xx.  The _m_a_k_e rules to do this are:
+          .SUFFIXES: .x
+          .x.c:
+               rpcgen -c $< -o $@
+
+          .x.h:
+               rpcgen -h $< -o $@
+
+SSEEEE AALLSSOO
+     _R_e_m_o_t_e _P_r_o_c_e_d_u_r_e _C_a_l_l: _P_r_o_g_r_a_m_m_i_n_g _G_u_i_d_e and _E_x_t_e_r_n_a_l _D_a_t_a
+     _R_e_p_r_e_s_e_n_t_a_t_i_o_n: _P_r_o_t_o_c_o_l _S_p_e_c_i_f_i_c_a_t_i_o_n in _N_e_t_w_o_r_k_i_n_g _o_n _t_h_e
+     _S_u_n _W_o_r_k_s_t_a_t_i_o_n
+
+BBUUGGSS
+     Name clashes can occur when using program definitions, since
+     the apparent scoping does not really apply. Most of these
+     can be avoided by giving unique names for programs, ver-
+     sions, procedures and types.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0               11 March 1986                         7
+
+
+

@@ -1,0 +1,11 @@
+
+
+          lvarpop var [index [string]]
+               The lvarpop command pops (deletes) the element indexed
+               by index from the list contained in the variable var.
+               If index is omitted, then 0 is assumed.  If string, is
+               specified, then the deleted element is replaced by
+               string. The replaced or deleted element is returned.
+               Thus ``lvarpop argv 0'' returns the first element of
+               argv, setting argv to contain the remainder of the
+               string.

@@ -1,0 +1,264 @@
+
+
+
+IMAKE                     User Commands                     IMAKE
+
+
+
+NNAAMMEE
+     imake - C preprocessor interface to the make utility
+
+SSYYNNOOPPSSIISS
+     iimmaakkee [ --DD_d_e_f_i_n_e ] [ --II_d_i_r ] [ --TT_t_e_m_p_l_a_t_e ] [ --ff _f_i_l_e_n_a_m_e ]
+     [ --ss _f_i_l_e_n_a_m_e ] [ --ee ] [ --vv ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _I_m_a_k_e is used to generate _M_a_k_e_f_i_l_e_s from a template, a set
+     of _c_p_p macro functions, and a per-directory input file
+     called an _I_m_a_k_e_f_i_l_e.  This allows machine dependencies (such
+     has compiler options, alternate command names, and special
+     _m_a_k_e rules) to be kept separate from the descriptions of the
+     various items to be built.
+
+OOPPTTIIOONNSS
+     The following command line options may be passed to _i_m_a_k_e:
+
+     --DD_d_e_f_i_n_e
+             This option is passed directly to _c_p_p.  It is typi-
+             cally used to set directory-specific variables.  For
+             example, the X Window System uses this flag to set
+             _T_O_P_D_I_R to the name of the directory containing the
+             top of the core distribution and _C_U_R_D_I_R to the name
+             of the current directory, relative to the top.
+
+     --II_d_i_r_e_c_t_o_r_y
+             This option is passed directly to _c_p_p.  It is typi-
+             cally used to indicate the directory in which the
+             _i_m_a_k_e template and configuration files may be found.
+
+     --TT_t_e_m_p_l_a_t_e
+             This option specifies the name of the master tem-
+             plate file (which is usually located in the direc-
+             tory specified with -_I) used by _c_p_p.  The default is
+             _I_m_a_k_e._t_m_p_l.
+
+     --ff _f_i_l_e_n_a_m_e
+             This option specifies the name of the per-directory
+             input file.  The default is _I_m_a_k_e_f_i_l_e.
+
+     --ss _f_i_l_e_n_a_m_e
+             This option specifies the name of the _m_a_k_e descrip-
+             tion file to be generated but _m_a_k_e should not be
+             invoked.  If the _f_i_l_e_n_a_m_e is a dash (-), the output
+             is written to _s_t_d_o_u_t.  The default is to generate,
+             but not execute, a _M_a_k_e_f_i_l_e.
+
+     --ee      This option indicates the _i_m_a_k_e should execute the
+             generated _M_a_k_e_f_i_l_e.  The default is to leave this to
+             the user.
+
+
+
+
+X Version 11                Release 5                           1
+
+
+
+
+
+
+IMAKE                     User Commands                     IMAKE
+
+
+
+     --vv      This option indicates that _i_m_a_k_e should print the
+             _c_p_p command line that it is using to generate the
+             _M_a_k_e_f_i_l_e.
+
+HHOOWW IITT WWOORRKKSS
+     _I_m_a_k_e invokes _c_p_p with any -_I or -_D flags passed on the com-
+     mand line and passes it the following 3 lines:
+
+               #define IMAKE_TEMPLATE "Imake.tmpl"
+               #define INCLUDE_IMAKEFILE "Imakefile"
+               #include IMAKE_TEMPLATE
+
+     where _I_m_a_k_e._t_m_p_l and _I_m_a_k_e_f_i_l_e may be overridden by the -_T
+     and -_f command options, respectively.
+
+     The IMAKE_TEMPLATE typically reads in a file containing
+     machine-dependent parameters (specified as _c_p_p symbols), a
+     site-specific parameters file, a file defining variables, a
+     file containing _c_p_p macro functions for generating _m_a_k_e
+     rules, and finally the _I_m_a_k_e_f_i_l_e (specified by
+     INCLUDE_IMAKEFILE) in the current directory.  The _I_m_a_k_e_f_i_l_e
+     uses the macro functions to indicate what targets should be
+     built; _i_m_a_k_e takes care of generating the appropriate rules.
+
+     _I_m_a_k_e configuration files contain two types of variables,
+     imake variables and make variables.  The imake variables are
+     interpreted by cpp when _i_m_a_k_e is run.  By convention they
+     are mixed case.  The make variables are written into the
+     _M_a_k_e_f_i_l_e for later interpretation by _m_a_k_e. By convention
+     make variables are upper case.
+
+     The rules file (usually named _I_m_a_k_e._r_u_l_e_s in the configura-
+     tion directory) contains a variety of _c_p_p macro functions
+     that are configured according to the current platform.
+     _I_m_a_k_e replaces any occurrences of the string ``@@'' with a
+     newline to allow macros that generate more than one line of
+     _m_a_k_e rules. For example, the macro
+
+     #define   program_target(program, objlist)        @@\
+     program:  objlist                                 @@\
+               $(CC)  -o  $@  objlist  $(LDFLAGS)
+
+     when called with _p_r_o_g_r_a_m__t_a_r_g_e_t(_f_o_o, _f_o_o_1._o  _f_o_o_2._o) will
+     expand to
+
+     foo:      foo1.o  foo2.o
+               $(CC)  -o  $@  foo1.o  foo2.o  $(LDFLAGS)
+
+
+     On systems whose _c_p_p reduces multiple tabs and spaces to a
+     single space, _i_m_a_k_e attempts to put back any necessary tabs
+     (_m_a_k_e is very picky about the difference between tabs and
+
+
+
+X Version 11                Release 5                           2
+
+
+
+
+
+
+IMAKE                     User Commands                     IMAKE
+
+
+
+     spaces).  For this reason, colons (:) in command lines must
+     be preceded by a backslash (\).
+
+UUSSEE WWIITTHH TTHHEE XX WWIINNDDOOWW SSYYSSTTEEMM
+     The X Window System uses _i_m_a_k_e extensively, for both full
+     builds within the source tree and external software.  As
+     mentioned above, two special variables, _T_O_P_D_I_R and _C_U_R_D_I_R,
+     are set to make referencing files using relative path names
+     easier.  For example, the following command is generated
+     automatically to build the _M_a_k_e_f_i_l_e in the directory _l_i_b/_X/
+     (relative to the top of the sources):
+
+               %  ../.././config/imake  -I../.././config  \
+                     -DTOPDIR=../../.   -DCURDIR=./lib/X
+
+     When building X programs outside the source tree, a special
+     symbol _U_s_e_I_n_s_t_a_l_l_e_d is defined and _T_O_P_D_I_R and _C_U_R_D_I_R are
+     omitted.  If the configuration files have been properly
+     installed, the script _x_m_k_m_f(1) may be used.
+
+IINNPPUUTT FFIILLEESS
+     Here is a summary of the files read by _i_m_a_k_e as used by X.
+     The indentation shows what files include what other files.
+
+         Imake.tmpl                generic variables
+             site.def              site-specific, BeforeVendorCF defined
+             *.cf                  machine-specific
+                 *Lib.rules        shared library rules
+             site.def              site-specific, AfterVendorCF defined
+             Project.tmpl          X-specific variables
+                 *Lib.tmpl         shared library variables
+             Imake.rules           rules
+         Imakefile
+             Library.tmpl          library rules
+             Server.tmpl           server rules
+
+     Note that _s_i_t_e._d_e_f gets included twice, once before the *._c_f
+     file and once after.  Although most site customizations
+     should be specified after the *._c_f file, some, such as the
+     choice of compiler, need to be specified before, because
+     other variable settings may depend on them.
+
+     The first time _s_i_t_e._d_e_f is included, the variable BeforeVen-
+     dorCF is defined, and the second time, the variable After-
+     VendorCF is defined.  All code in _s_i_t_e._d_e_f should be inside
+     an #ifdef for one of these symbols.
+
+FFIILLEESS
+     /usr/tmp/tmp-imake._n_n_n_n_n_n     temporary input file for cpp
+     /usr/tmp/tmp-make._n_n_n_n_n_n      temporary input file for make
+     /lib/cpp                      default C preprocessor
+
+
+
+
+X Version 11                Release 5                           3
+
+
+
+
+
+
+IMAKE                     User Commands                     IMAKE
+
+
+
+SSEEEE AALLSSOO
+     make(1), xmkmf(1)
+     S. I. Feldman, _M_a_k_e - _A _P_r_o_g_r_a_m _f_o_r _M_a_i_n_t_a_i_n_i_n_g _C_o_m_p_u_t_e_r
+     _P_r_o_g_r_a_m_s
+
+EENNVVIIRROONNMMEENNTT VVAARRIIAABBLLEESS
+     The following environment variables may be set, however
+     their use is not recommended as they introduce dependencies
+     that are not readily apparent when _i_m_a_k_e is run:
+
+     IIMMAAKKEEIINNCCLLUUDDEE
+          If defined, this should be a valid include argument for
+          the C preprocessor.  E.g., ``-I/usr/include/local''.
+          Actually, any valid _c_p_p argument will work here.
+
+     IIMMAAKKEECCPPPP
+          If defined, this should be a valid path to a preproces-
+          sor program.  E.g. ``/usr/local/cpp''.  By default,
+          _i_m_a_k_e will use /lib/cpp.
+
+     IIMMAAKKEEMMAAKKEE
+          If defined, this should be a valid path to a make pro-
+          gram, such as ``/usr/local/make''.  By default, _i_m_a_k_e
+          will use whatever _m_a_k_e program is found using
+          _e_x_e_c_v_p(_3). This variable is only used if the ``-e''
+          option is specified.
+
+AAUUTTHHOORR
+     Todd Brunhoff, Tektronix and MIT Project Athena; Jim Fulton,
+     MIT X Consortium
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+X Version 11                Release 5                           4
+
+
+

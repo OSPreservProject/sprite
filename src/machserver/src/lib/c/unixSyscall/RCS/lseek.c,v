@@ -1,0 +1,111 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  srv030:1.2 srv028:1.2 srv027:1.2 srv026:1.2 srv024:1.2 srv022:1.2 srv021:1.2 srv019:1.2 srv018:1.2 srv016:1.2 srv014:1.2 srv010:1.2 srv008:1.2 srv007:1.2 srv006:1.2 srv005:1.2 srv004:1.2 srv003:1.2 srv002:1.2 srv001:1.2;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     91.12.01.22.31.51;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.11.27.15.03.55;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Snapshot: FS support.
+@
+text
+@/* 
+ * lseek.c --
+ *
+ *	Procedure to map from Unix access system call to Sprite.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/lib/c/unixSyscall/RCS/lseek.c,v 1.1 91/11/27 15:03:55 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include "compatInt.h"
+#include <fs.h>
+#include <sys/file.h>
+#include <errno.h>
+#include <status.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * lseek --
+ *
+ *	procedure for Unix lseek call. 
+ *
+ * Results:
+ *	the old offset if the IOC_Reposition call was successful.
+ *	UNIX_ERROR is returned if IOC_Reposition failed.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+long
+lseek(filedes, offset, whence)
+    int filedes;			/* array of stream identifiers */
+    long offset;
+    int whence;
+{
+    ReturnStatus	status;
+    int  		base;
+    int			newOffset;
+
+    switch(whence) {
+	case L_SET:
+	    base = IOC_BASE_ZERO;
+	    break;
+	case L_INCR:
+	    base = IOC_BASE_CURRENT;
+	    break;
+	case L_XTND:
+	    base = IOC_BASE_EOF;
+	    break;
+	default:
+	    errno = EINVAL;
+	    return(UNIX_ERROR);
+    }
+    status = Ioc_Reposition(filedes, base, (int) offset, &newOffset);
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(newOffset);
+    }
+}
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: lseek.c,v 1.4 88/07/29 17:40:26 ouster Exp $ SPRITE (Berkeley)";
+d19 1
+@

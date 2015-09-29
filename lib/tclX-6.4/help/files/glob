@@ -1,0 +1,8 @@
+          glob ?-nocomplain? filename ?filename ...?
+               This command  performs  filename  globbing,  using  csh
+               rules.   The  returned  value  from glob is the list of
+               expanded filenames.  If -nocomplain is specified as the
+               first  argument  then  an  empty  list may be returned;
+               otherwise an error is returned if the expanded list  is
+               empty.   The  -nocomplain  argument  must  be  provided
+               exactly: an abbreviation will not be accepted.

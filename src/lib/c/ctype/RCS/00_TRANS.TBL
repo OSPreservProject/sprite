@@ -1,0 +1,16 @@
+F CTYPEBIT.C_V;1                    	ctypeBits.c,v
+F ISALNUM.C_V;1                     	isalnum.c,v
+F ISALPHA.C_V;1                     	isalpha.c,v
+F ISASCII.C_V;1                     	isascii.c,v
+F ISCNTRL.C_V;1                     	iscntrl.c,v
+F ISDIGIT.C_V;1                     	isdigit.c,v
+F ISGRAPH.C_V;1                     	isgraph.c,v
+F ISLOWER.C_V;1                     	islower.c,v
+F ISPRINT.C_V;1                     	isprint.c,v
+F ISPUNCT.C_V;1                     	ispunct.c,v
+F ISSPACE.C_V;1                     	isspace.c,v
+F ISUPPER.C_V;1                     	isupper.c,v
+F ISXDIGIT.C_V;1                    	isxdigit.c,v
+F TOASCII.C_V;1                     	toascii.c,v
+F TOLOWER.C_V;1                     	tolower.c,v
+F TOUPPER.C_V;1                     	toupper.c,v

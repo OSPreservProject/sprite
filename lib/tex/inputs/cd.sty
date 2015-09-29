@@ -1,0 +1,139 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Cut Here %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% cd.sty - Commutative diagram macros modified from AmSTeX  3-Mar-89
+% Intended as a LaTeX style file.  Darrel Hankerson  (Bitnet: hank@auducvax)
+
+%\catcode`\@=11
+\def\ssize{\scriptstyle}
+\newdimen\ex@
+\ex@.2326ex
+
+\def\vspace@{\def\vspace##1{\noalign{\vskip##1\relax}}}
+\def\Let@{\relax\iffalse{\fi\let\\=\cr\iffalse}\fi}
+
+\let\ampersand@\relax
+\newdimen\bigaw@
+\newdimen\minaw@
+\minaw@11.11128\ex@
+\newdimen\minCDaw@
+\minCDaw@2.5pc
+\newif\ifCD@
+\def\minCDarrowwidth#1{\relax\ifmmode\ifinner\onlydmatherr@\minCDarrowwidth
+ \else\minCDaw@#1\relax\fi\else\onlydmatherr@\minCDarrowwidth\fi}
+\def\CD{\bgroup\catcode`\@=\active %\catcode added for LaTeX
+ \vspace@\relax\iffalse{\fi\let\ampersand@&\iffalse}\fi
+ \CD@true\vcenter\bgroup\Let@\tabskip\z@skip\baselineskip20\ex@
+ \lineskip3\ex@\lineskiplimit3\ex@\halign\bgroup
+ &\hfill$\m@th##$\hfill\cr}
+\def\endCD{\cr\egroup\egroup\egroup}
+\def\cd#1{\csname cd\string#1\endcsname}
+\def\cddef#1{\expandafter\def\csname cd\string#1\endcsname}
+\cddef.{\relax\ifmmode&&\else\leavevmode.\spacefactor3000 \fi}
+\cddef\rightarrow#1#2{\harrow@{#1}{#2}\rightarrowfill} \cddef>{\cd\rightarrow}
+\cddef\leftarrow#1#2{\harrow@{#1}{#2}\leftarrowfill} \cddef<{\cd\leftarrow}
+\def\harrow@#1#2#3{\ampersand@\setbox\z@\hbox{$\ssize
+ \;\;{#1}\;$}\setbox\@ne\hbox{$\ssize\;\;{#2}\;$}\setbox\tw@
+ \hbox{$#2$}\ifCD@
+ \global\bigaw@\minCDaw@\else\global\bigaw@\minaw@\fi
+ \ifdim\wd\z@>\bigaw@\global\bigaw@\wd\z@\fi
+ \ifdim\wd\@ne>\bigaw@\global\bigaw@\wd\@ne\fi
+ \ifCD@\hskip.5em\fi
+ \ifdim\wd\tw@>\z@
+ \mathrel{\mathop{\hbox to\bigaw@{#3}}\limits^{#1}_{#2}}\else
+ \mathrel{\mathop{\hbox to\bigaw@{#3}}\limits^{#1}}\fi
+ \ifCD@\hskip.5em\fi\ampersand@}
+\cddef\uparrow#1#2{\llap{$\vcenter{\hbox
+ {$\ssize#1$}}$}\Big\uparrow\rlap{$\vcenter{\hbox{$\ssize#2$}}$}&&}
+\cddef\downarrow#1#2{\llap{$\vcenter{\hbox
+ {$\ssize#1$}}$}\Big\downarrow\rlap{$\vcenter{\hbox{$\ssize#2$}}$}&&}
+\cddef=#1#2{\ampersand@\setbox\z@\hbox{$\ssize
+ \;{#1}\;\;$}\setbox\@ne\hbox{$\ssize\;{#2}\;\;$}\setbox\tw@
+ \hbox{$#2$}\ifCD@
+ \global\bigaw@\minCDaw@\else\global\bigaw@\minaw@\fi
+ \ifdim\wd\z@>\bigaw@\global\bigaw@\wd\z@\fi
+ \ifdim\wd\@ne>\bigaw@\global\bigaw@\wd\@ne\fi
+ \ifCD@\hskip.5em\fi
+ \ifdim\wd\tw@>\z@
+ \mathrel{\mathop{\vbox{\hrule width\bigaw@\vskip3\ex@\hrule width
+ \bigaw@}}\limits^{#1}_{#2}}\else
+ \mathrel{\mathop{\vbox{\hrule width\bigaw@\vskip3\ex@\hrule width
+ \bigaw@}}\limits^{#1}}\fi
+ \ifCD@\hskip.5em\fi\ampersand@}
+\cddef|#1#2{\llap{$\vcenter{\hbox
+ {$\ssize#1$}}$}\Big\vert\rlap{$\vcenter{\hbox{$\ssize#2$}}$}&&}
+\cddef\|#1#2{\llap{$\vcenter{\hbox
+ {$\ssize#1$}}$}\Big\vert\Big\vert\rlap{$\vcenter{\hbox{$\ssize#2$}}$}&&}
+\def\pretend#1\haswidth#2{\setbox\z@\hbox{$\scriptstyle{#2}$}\hbox
+ to\wd\z@{\hfill$\scriptstyle{#1}$\hfill}}
+\cddef\updownarrows#1#2{\llap{$\vcenter{\hbox{$\ssize#1$}}$}
+ \Big\uparrow\Big\downarrow\rlap{$\vcenter{\hbox{$\ssize#2$}}$}&&}
+\cddef\downuparrows#1#2{\llap{$\vcenter{\hbox{$\ssize#1$}}$}
+ \Big\downarrow\Big\uparrow\rlap{$\vcenter{\hbox{$\ssize#2$}}$}&&}
+\cddef\rightleftarrows#1#2{\harrows@{#1}{#2}\rightarrowfill\leftarrowfill}
+\cddef\leftrightarrows#1#2{\harrows@{#1}{#2}\leftarrowfill\rightarrowfill}
+\def\harrows@#1#2#3#4{\ampersand@\setbox\z@\hbox{$\ssize
+ \;{#1}\;\;$}\setbox\@ne\hbox{$\ssize\;{#2}\;\;$}\setbox\tw@
+ \hbox{$#2$}\ifCD@
+ \global\bigaw@\minCDaw@\else\global\bigaw@\minaw@\fi
+ \ifdim\wd\z@>\bigaw@\global\bigaw@\wd\z@\fi
+ \ifdim\wd\@ne>\bigaw@\global\bigaw@\wd\@ne\fi
+ \ifCD@\hskip.5em\fi
+ \ifdim\wd\tw@>\z@
+ \mathrel{\mathop{\harrowsfill@#3#4}\limits^{#1}_{#2}}\else
+ \mathrel{\mathop{\harrowsfill@#3#4}\limits^{#1}}\fi
+ \ifCD@\hskip.5em\fi\ampersand@}
+\def\harrowsfill@#1#2{\stackrel{\raisebox{0pt}[2\ex@][0pt]{\hbox
+ to\bigaw@{#1}}}{\raisebox{-1\ex@}[0pt][0pt]{\hbox to \bigaw@{#2}}}}
+%\endinput  % End here if AmSTeX @-syntax not needed.
+
+%%%%%  The following code adds the AmSTeX @-syntax  %%%%%
+%\newlinechar=`\^^J
+\def\err@#1{\errmessage{AmS-TeX error: #1}}
+\newhelp\athelp@
+{Only certain combinations beginning with @ make sense to me.^^J
+Perhaps you wanted \string\@\space for a printed @?^^J
+I've ignored the character or group after @.}
+\def\futureletnextat@{\futurelet\next\at@}
+{\catcode`\@=\active
+\lccode`\Z=`\@ \lccode`\I=`\I \lowercase
+{\gdef@{\expandafter\csname futureletnextatZ\endcsname}\expandafter
+ \gdef\csname atZ\endcsname
+ {\ifcat\noexpand\next a\def\next{\csname atZZ\endcsname}\else
+ \ifcat\noexpand\next0\def\next{\csname atZZ\endcsname}\else
+ \ifcat\noexpand\next\relax\def\next{\csname atZZZ\endcsname}\else
+ \def\next{\csname atZZZZ\endcsname}\fi\fi\fi\next}
+\expandafter\gdef\csname atZZ\endcsname#1{\expandafter
+ \ifx\csname #1Zat\endcsname\relax\def\next
+ {\errhelp\expandafter=\csname athelpZ\endcsname
+ \csname errZ\endcsname{Invalid use of \string@}}\else
+ \def\next{\csname #1Zat\endcsname}\fi\next}
+\expandafter\gdef\csname atZZZ\endcsname#1{\expandafter
+ \ifx\csname \string#1ZZat\endcsname\relax\def\next
+ {\errhelp\expandafter=\csname athelpZ\endcsname
+ \csname errZ\endcsname{Invalid use of \string@}}\else
+ \def\next{\csname \string#1ZZat\endcsname}\fi\next}
+\expandafter\gdef\csname atZZZZ\endcsname#1{\errhelp
+ \expandafter=\csname athelpZ\endcsname
+ \csname errZ\endcsname{Invalid use of \string@}}}}
+\def\atdef@#1{\expandafter\def\csname #1@at\endcsname}
+\def\atdef@@#1{\expandafter\def\csname \string#1@@at\endcsname}
+\newhelp\defahelp@{If you typed \string\define\space cs instead of
+\string\define\string\cs\space^^J
+I've substituted an inaccessible control sequence so that your^^J
+definition will be completed without mixing me up too badly.^^J
+If you typed \string\define{\string\cs} the inaccessible control sequence^^J
+was defined to be \string\cs, and the rest of your^^J
+definition appears as input.}
+\newhelp\defbhelp@{I've ignored your definition, because it might^^J
+conflict with other uses that are important to me.}
+\atdef@.{\cd.}  % AmSTeX @-format
+\atdef@>#1>#2>{\cd\rightarrow{#1}{#2}}
+\atdef@<#1<#2<{\cd\leftarrow{#1}{#2}}
+\atdef@ A#1A#2A{\cd\uparrow{#1}{#2}}
+\atdef@ V#1V#2V{\cd\downarrow{#1}{#2}}
+\atdef@|{\Big\Vert&&}
+\atdef@@\vert{\Big\Vert&&}
+\atdef@={&\hskip.5em\mathrel
+ {\vbox{\hrule width\minCDaw@\vskip3\ex@\hrule width
+ \minCDaw@}}\hskip.5em&}
+%\catcode`\@=\active
+\endinput

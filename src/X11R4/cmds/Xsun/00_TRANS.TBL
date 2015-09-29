@@ -1,0 +1,20 @@
+L CFB.;1                            	cfb	../X/ddx/cfb
+L COMMON.MK;1                       	common.mk	../X/common.mk
+L DIX.;1                            	dix	../X/dix
+L EXTENSIO.;1                       	extensions	../X/extensions
+F FILE.LST;1                        	FILE.LST
+F LOCAL.MK;1                        	local.mk
+F LOCAL_MK.OLD;1                    	local.mk.old
+F MAKEFILE.;1                       	Makefile
+L MFB.;1                            	mfb	../X/ddx/mfb
+L MI.;1                             	mi	../X/ddx/mi
+L OS.;1                             	os	../X/os/sprite
+L PCF.;1                            	pcf	../X/ddx/pcf
+D RCS                               	RCS
+L SNF.;1                            	snf	../X/ddx/snf
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md
+F TAGS.;1                           	TAGS
+L XSUN.;1                           	Xsun	../X/ddx/Xsun
+L XSUN.MAN;1                        	Xsun.man	Xsun/Xsun.man
+F _GDBINIT.;1                       	.gdbinit

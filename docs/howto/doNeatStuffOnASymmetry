@@ -1,0 +1,338 @@
+
+-----------------------------------------------------------------------------
+From: sequent!fubar@uunet.uu.net
+Subject: how to do some Sequent stuff
+Date: Fri, 27 Jul 90 16:14:17 PDT
+
+
+	How to do lots of neat things on a Sequent
+
+-----------------How to boot it:
+
+	To boot a kernel from the Dynix disk (which was sd(0,0) when I
+last checked), you type:
+
+	b sd(0,0)kernelname
+
+	The Sprite kernel I left there was called "vmsprite."
+
+	You may specify arguments as usual after the kernel name, e.g.,
+
+	b sd(0,0)kernelname -f
+
+	does a fastboot.
+
+	The auto reboot functionality is controlled by the setting of
+the AUTO switch on the front panel.  If AUTO is off, the machine will
+not automatically boot after a crash or reset.  If AUTO is on, then
+boot string 0 will be executed to boot the machine.
+
+	You cannot boot diskless, unless you want to write an 8K disk
+bootstrap that does the diskless stuff for you.
+
+	There is (or was when I was there) a SCEDMON (The boot
+monitor, with a "*" prompt) quick reference card with most of the
+commands on it.
+
+-----------------Everything you never wanted to know about the SCED:
+
+	From SCEDMON, type:
+
+	ra
+
+	Which prints everything stored in the battery backed up RAM on
+the SCED.  The machine will respond with something like this:
+
+ Date 90/07/27 22:43:30 UTC
+ boot flags: 0x0
+ boot 0: 0x0: zd(0,0)dynix
+ boot 1: 0x64000: zd(0,0)stand/dump zd(0,7) 8000 /dev/rzd0h 81920
+ scc:  0 pf=8020 tf=8020 baud=9600  *1 pf=80A0 tf=80A0 baud=9600
+ ileave=1  erase=^H  kill=^X  int=^P
+ system mode: wide, tsize 16, bsize 16, copy-back cache
+
+	The "boot flags" is the default numeric argument to pass to
+the booted program.  Dynix uses this to set various boot conditions:
+
+0x01: ask for file name (interpreted by Dynix /boot program)
+0x02: single user
+0x04: don't sync
+0x08: don't reboot (if auto is set), just halt (after program is done)
+0x10: name given for /etc/init
+0x20: firmware: don't start controller
+0x40: firmware: don't init system
+0x80: boot aux ("boot 1") boot name
+0x100: firmware: only build config tables
+0x200: boot with cache off (don't try this at home)
+
+Some of the possible values are recognised by the SCED firmware,
+others by the Dynix kernel.  The Symmetry Sprite kernel ignores this
+number entirely, so not all of these will be effective under Sprite.
+
+	The "boot 0" and "boot 1" fields are the stored boot strings.
+Normally, boot 0 will boot the OS, and boot 1 will boot the memory
+dumper.  You can change the boot strings with:
+
+	wnD=string
+
+	where "D" is boot name you want to fiddle with, and "string"
+is what you want it to be.  You can also boot Dynix and use the
+/etc/bootflags program.  You can't alter these things from Sprite
+because I haven't done the SCED console memory driver necessary for
+it.
+
+	The "scc" line breaks down like this:
+
+ scc:  0 pf=8020 tf=8020 baud=9600  *1 pf=80A0 tf=80A0 baud=9600
+
+	Everything from the first "0" to the "*" is the data for the
+local console port, everything from the "1" to the end of the line is
+for the remote port.  The "*" is located either before the "0" or the
+"1," depending upon the setting of the front panel LOCAL and REMOTE
+switches.  "pf" and "tf" are the terminal flags word for the
+respective ports, 8020 is the default, 80A0 differs in that sending a
+BREAK down the line will do the equivalent of pressing the RESET front
+panel switch.  With 8020 set, a BREAK will do baud rate rotation,
+which isn't nearly as exciting.  The definition of each bit in the
+terminal flags word is given in the SCEDMON quick reference.  The
+"baud=9600" part of the line should be fairly self-explanatory.
+
+	The "ileave" specifies whether or not memory interleave is on
+or off.  I've never messed with this, so I don't really know what
+happens if you change it.  The "erase," "kill," and "int" fields are
+the console erase, kill and interrupt characters active under SCEDMON.
+You can change them with the "we=C" "wk=C" and "wx=C" commands,
+respectively.  Note that hitting the interrupt character will stop the
+pre-boot self-tests.  Interrupting the tests this way may leave the
+machine in a weird state.
+
+	I have not ever needed anything on the "system mode" line, I
+doubt you will either.  I'm not entirely sure what the data
+represents.
+
+	BTW, one useful command not in the SCEDMON quick reference
+(well, not in mine anyway) is "zap."  This will completely reset the
+SCED, and is useful to me from time to time.
+
+-----------------How to format a disk:
+
+	There are 3 wren3 disks, sd0-sd2 ("sd" for Scsi Disk, I
+guess).  sd0 contains Dynix, you can leave that there, or not.  The
+Symmetry disk label goes in sector 15, which was probably a bad place
+to put it.  I believe sector 16 is empty, you might want to change all
+of the proper defines before you mess with the disks a lot.  Anyway, I
+brought a labeldisk program with me that should label the disk.  The
+partition tables for a wren3 are:
+
+
+part	start	length
+a	0	50
+b	50	106
+c 	0	965
+d	156	50
+e	206	757
+f	0	0
+g	156	808
+h	0	0
+
+which looks vaguely like:
+
+0 ---------------------- C len=965 -------------------------------- 964
+|               50               156              206                !
+| -- A len=50 --! -- B len=106 -- ! -- D len=50 -- ! -- E len=757 -- !
+|               !                 !                !                 !
+|               !                 ! --------- G len=808 -------------!
+
+	If you change the partition tables on the disk label, the
+standalone disk boot and possibly the kernel as well will break.
+
+	Once you label the disk properly, fsmake should do its thing
+without trouble.
+
+-----------------How to set up to boot from Sprite disks
+
+	There's a program in /sprite/src/boot/sdboot, that generates the
+8K disk bootstrap.  Before I get into it, here's how the boot procedure
+goes:
+
+	you type: "b sd(0,0)whatever" at SCEDMON.
+
+	The SCED reads the first 16 sectors off of sd0 (or whichever
+disk you've specified), loads them in at 0, and begins executing at 0.
+The SMAGIC standalone magic number is really an i386 instruction to
+make this work properly.  Alert readers will note that the label lies
+in the last sector of this data, originally I was going to have the
+disk bootstrap using the label partition tables, but I ran out of code
+space, and it would've been difficult to relabel the disks on our
+machine.
+
+	The code goes from 0, and jumps to the a_bootstrap field of the
+exec structure, which contains various i386 initialization things.
+
+	From there, it loads in whichever kernel file you've
+specified, magically moves it to 0 and begins executing it.  The
+kernel file text must start at 0x4000, and the gap from the end of the
+exec struct to 0x4000 must be padded with zeroes.  This empty area is
+filled in with system configuration data by the SCED.
+
+	Anyway, back to the disk boot.  The source directory
+(/sprite/src/boot/sdboot/sym.md) should contain a binary.  If you dd
+the first 15*512 bytes from this file onto the first 15 sectors of the
+raw device (which I'll tell you how to make in just a second), you
+should be able to boot Sprite kernels from any Sprite filesystem on
+that disk.
+
+-----------------How to make devices for the sd disks
+
+	The major numbers for the sd disks are the same as all of the
+other sd disks (DEV_SCSI_DISK, which I believe is 4).  The minor numbers
+go like this:
+
+part	sd0	sd1	sd2
+a	0	8	16
+b	1	9	17
+c	2	10	18
+d	3	11	19
+e	4	12	20
+f	5	13	21
+g	6	14	22
+h	7	15	23
+
+	..and so on.
+
+
+---------------------------------------------------------------------------
+
+
+	Everything we messed with for sequent support in the machine
+independant kernel sources should be inside "#ifdef sequent."  As I
+recall, there really wasn't that much.  
+
+	In the regular sources, pretty much everything either just
+needed to be compiled, and was ok, or had stuff that went in separate
+directories (like cc1.sym).  There's some stuff in the C library that
+didn't go behind ifdefs (disk labels and the like, mostly), there
+should be RCS files for all the changes.  The RCS files I have are:
+
+Disk.man,v      diskFragIO.c,v  diskIO.c,v
+disk.h,v        diskHeader.c,v  diskPrint.c,v
+pdev.c,v
+Sync_GetLock.s,v  Sync_Unlock.s,v
+fsStubs.s,v         profStubs.s,v       sysStubs.s,v        vmStubs.s,v
+netStubs.s,v        sigStubs.s,v        testStubs.s,v
+procStubs.s,v       syncStubs.s,v       userSysCallInt.h,v
+
+
+
+---------------------------------------------------------------------------
+
+From: jhh@sprite.Berkeley.EDU (John H. Hartman)
+Date: Thu, 1 Nov 1990 10:45:57 PST
+Subject: news from fubar
+
+I just got off the phone with fubar.  Here's what we talked about.
+
+It looks possible to poll for an ethernet packet.  The routine 
+se_intr() in net/symm.md/netScedEther.c has a loop that processes all
+pending packets.  We just have to write a polling routine that does the
+same thing.
+
+Sequent found a bug in gas 1.37 that caused it to drop a byte in the
+middle of a file.  This only happens if you specify an input file.
+It doesn't happen if you read from a pipe.  Symptoms usually are a
+syntax error, but it is possible you'd lose a byte out of a constant
+or something.
+
+He's going to send us whatever hardware documentation he can get his 
+hands on.
+
+---------------------------------------------------------------------------
+
+Subject: Re: debugging a kernel 
+Date: Fri, 19 Oct 90 12:49:09 PDT
+From: fubar@sequent.com
+
+>What is the proper procedure for debugging a kernel?
+
+	Well, about all you can really do is either load it up with
+printfs (yuk), or dump vmcores and run /usr/etc/crash or adb on them.
+Crash comes with Dynix, it hasn't got any documentation.  It knows all
+about Dynix proc structures and stacks and whatnot; about all you can
+do with it under Sprite is hex dump things.  I think it sucks.  Adb
+you're probably familiar with, for Sprite the only real advantage it
+has is that you can start a stacktrace at any arbitrary location
+(crash knows where the stack is "supposed to be," and won't go beyond
+those limits).  Adb doesn't come with Dynix, but I can give it to you
+if you want it (presumably its ok for you guys to have BSD sources).
+
+	When Sprite panics under Dynix, it'll fill in a special structure
+that you can examine after the crash.  It's called panic_data, and
+it's found in mach/sym.md/machArchdep.c:
+
+struct  panic_data {
+        int     pd_processor;           /* Panicing engine */
+        char    *pd_sp;                 /* sp to saved regs in panic frame */
+        char    *pd_dblsp;              /*sp to saved regs in dblpanic frame */
+        Proc_ControlBlock *pd_proc;     /* Panicing process, 0 if idle */
+};
+
+	pd_processor is the processor number that initially panicked.
+pd_sp is the pointer to the saved regs for the initial panic (more on
+that in a bit), and pd_dblsp is the same thing, but for a double panic
+(two panics either sequentially on the same processor, or concurrently
+on two processors).  There's a global kernel variable called
+"dblpanic" that is set to 1 if a double panic occurs.  Anyway,
+finally, pd_proc is the Proc_ControlBlock for the executing process; I
+have some of the byte offsets of various important elements in this
+(processID at 0x44 and machStatePtr at 0xb0 are the two I used a lot).
+
+	The pd_sp is set (as is all of this stuff) in MachPanic, in
+machArchdep.c.  It's the %esp register after a pushal instruction, so
+the registers are all tucked away just above it.  They're pushed in
+this order: %eax, %ecx, %edx, %ebx, %esp (before pushal began), %ebp,
+%esi, %edi.  In case you're not familiar with the 386 layout, %esp is
+the stack pointer, %ebp is the frame pointer, and %eip is the
+instruction pointer.
+
+	The better way is to follow the pd_proc through the control
+block structure.  Look at Mach_State structure (pointer found at
+pd_proc + 0xb0), and follow it to the machTrapEntry structure.  This
+is the register set when the panic trap occured, and is probably the
+easiest way to find what you're after.
+
+	One thing I did pretty often was a sort of checkpointing
+structure, e.g., once you know the approximate source of the trouble,
+set up something like:
+
+struct XX {
+	int pc;
+	int somestate;
+} XX[512];
+
+int XXptr = -1;
+
+#define CKPOINT { XXptr = (XXptr == 511) ? 0 : XXptr + 1;
+		  XX[XXptr]. pc = GetPC();
+		}
+
+and spread those liberally about, then use crash/adb to go through
+that stuff in the vmcore.
+
+	The other thing we did to make life easier was to run a serial
+line from a tty port on another machine to the "remote" console port
+on the Sprite machine.  If you then put the S27 on "Remote" (a front
+panel button), you can tip to that tty port, and it's the console.
+
+	Oh, I don't know if I mentioned it elsewhere or not... to get
+a vmcore in the first place, you do 'b 80' at SCEDMON (the boot
+monitor).  This should work automagically, and put a crash dump in
+/usr/crash.  It'll choke on a Sprite kernel, but that's ok.
+
+	If you have any troubles with this at all or whatever, feel
+free to call or email.  I can telnet in and poke around now, too,
+should the need arise.
+
+	-J
+
+---------------------------------------------------------------------------
+

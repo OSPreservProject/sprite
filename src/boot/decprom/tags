@@ -1,0 +1,30 @@
+DecPromDevOpen	devDecProm.c	/^DecPromDevOpen(devicePtr)$/
+DecPromDevRead	devDecProm.c	/^DecPromDevRead(devicePtr, offset, len, buffer, num/
+Exit	main.c	/^Exit()$/
+FileLoad	fileLoad.c	/^FileLoad(handlePtr)$/
+FsAttachDisk	fsDisk.c	/^FsAttachDisk(fsDevicePtr)$/
+FsDeviceBlockIO	fsDisk.c	/^FsDeviceBlockIO(readWriteFlag, devicePtr, fragNumb/
+FsFindComponent	fs.c	/^FsFindComponent(domainPtr, curHandlePtr, component/
+FsGetFileDesc	fs.c	/^FsGetFileDesc(domainPtr, fileNumber, descPtr)$/
+FsGetFirstIndex	fsIndex.c	/^FsGetFirstIndex(handlePtr, blockNum, indexInfoPtr)/
+FsGetNextIndex	fsIndex.c	/^FsGetNextIndex(handlePtr, indexInfoPtr)$/
+FsInitFileHandle	fs.c	/^FsInitFileHandle(domainPtr, fileNumber, handlePtr)/
+Fs_BlocksToDiskAddr	fsDisk.c	/^Fs_BlocksToDiskAddr(fragNumber, data, diskAddrPtr)/
+Fs_BlocksToSectors	fsDisk.c	/^Fs_BlocksToSectors(fragNumber, data)$/
+Fs_Open	fs.c	/^Fs_Open(fileName, useFlags, permissions, handlePtr/
+Fs_Read	fs.c	/^Fs_Read(handlePtr, offset, numBytes, buffer, readC/
+Fs_SectorsToRawDiskAddr	fsDisk.c	/^Fs_SectorsToRawDiskAddr(sector, numSectors, numHea/
+IsSpriteLabel	fsDisk.c	/^IsSpriteLabel(buffer)$/
+IsSunLabel	fsDisk.c	/^IsSunLabel(buffer)$/
+Mach_Probe	machStubs.c	/^Mach_Probe(size, srcAddress, destAddress)$/
+Mach_SetHandler	machStubs.c	/^Mach_SetHandler() { }$/
+MakePtrAccessible	fsIndex.c	/^MakePtrAccessible(handlePtr, indexInfoPtr, descPtr/
+Mmain	main.c	/^main(argc,argv)$/
+_free	mem.c	/^_free(address)$/
+bcopy	byte.c	/^bcopy(sourcePtr, destPtr, numBytes)$/
+bzero	byte.c	/^bzero( destPtr, numBytes)$/
+free	mem.c	/^free(address)$/
+malloc	mem.c	/^malloc(numBytes)$/
+panic	stubs.c	/^panic(string)$/
+printf	stubs.c	/^printf(format, arg1, arg2, arg3, arg4, arg5, arg6,/
+strcmp	byte.c	/^strcmp(s1, s2)$/

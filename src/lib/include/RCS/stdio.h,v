@@ -1,0 +1,1127 @@
+head     1.28;
+branch   ;
+access   ;
+symbols  sprited:1.27.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.28
+date     92.08.05.11.17.34;  author ouster;  state Exp;
+branches ;
+next     1.27;
+
+1.27
+date     91.12.05.10.44.56;  author ouster;  state Exp;
+branches 1.27.1.1;
+next     1.26;
+
+1.26
+date     90.12.07.23.46.20;  author rab;  state Exp;
+branches ;
+next     1.25;
+
+1.25
+date     90.11.06.17.20.54;  author rab;  state Exp;
+branches ;
+next     1.24;
+
+1.24
+date     90.09.20.15.48.34;  author mgbaker;  state Exp;
+branches ;
+next     1.23;
+
+1.23
+date     90.09.11.16.45.07;  author mendel;  state Exp;
+branches ;
+next     1.22;
+
+1.22
+date     90.09.11.14.35.26;  author kupfer;  state Exp;
+branches ;
+next     1.21;
+
+1.21
+date     90.09.03.22.23.56;  author shirriff;  state Exp;
+branches ;
+next     1.20;
+
+1.20
+date     90.09.03.11.01.36;  author kupfer;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     90.06.27.13.29.57;  author shirriff;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     90.06.21.09.47.47;  author rab;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     89.06.23.11.30.01;  author rab;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     88.11.23.17.38.05;  author mlgray;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     88.09.28.09.20.58;  author ouster;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     88.09.14.10.40.52;  author ouster;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     88.07.28.16.43.57;  author ouster;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     88.07.25.13.59.27;  author ouster;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     88.07.25.11.02.38;  author ouster;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     88.07.21.16.03.45;  author ouster;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     88.07.21.08.43.43;  author ouster;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     88.07.20.18.12.28;  author ouster;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.07.15.17.28.13;  author ouster;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.07.11.09.09.56;  author ouster;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.07.05.10.11.23;  author ouster;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.07.05.09.14.28;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.07.05.09.05.34;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.06.26.16.05.04;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.21.09.36.57;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.27.1.1
+date     92.03.20.22.20.47;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.28
+log
+@Changed fseek arguments to conform to POSIX.
+@
+text
+@/*
+ * stdio.h --
+ *
+ *	This header file declares the stdio library facilities.  They
+ *	provide a general stream facility and routines for formatted
+ *	input and output.
+ *
+ * Copyright 1986, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/lib/include/RCS/stdio.h,v 1.27 91/12/05 10:44:56 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+ */
+
+#ifndef _STDIO_H
+#define _STDIO_H
+
+/* 
+ * sprite.h is needed for typedefs that are used in some function
+ * prototypes.  Unfortunately, some user programs define conflicting
+ * typedefs.  Because practically everyone uses stdio.h, only include
+ * <sprite.h> if function prototypes are enabled (i.e. we're in the
+ * kernel or the user has explicitly asked for prototypes).
+ */
+#include <cfuncproto.h>
+
+#ifdef _HAS_PROTOTYPES
+#include <sprite.h>
+#endif
+
+#ifndef EOF
+#define EOF (-1)
+#endif
+
+#ifndef NULL
+#define NULL 0
+#endif
+
+#ifndef _CLIENTDATA
+typedef int *ClientData;
+#define _CLIENTDATA
+#endif
+
+#ifndef _VA_LIST
+#define _VA_LIST
+typedef char *va_list;
+#endif
+
+/*
+ * The main data structure used by the stdio module is a FILE.  This
+ * describes a byte-sequential communication channel.  The channel
+ * includes buffer storage and the names of three stream-dependent
+ * procedures:
+ *
+ * The procedure readProc is called when another byte of data is needed
+ * and the buffer is empty (readCount == 0).  It should read more data
+ * into the buffer, reset readCount and lastAccess, and set the STDIO_EOF
+ * flag and/or status field if any problem occurred while reading the data.
+ *
+ * The writeProc procedure is similar to readProc, except that it is
+ * called when the buffer has filled (writeCount just became zero);
+ * its job is to write out the contents of the buffer and reset
+ * lastAccess and writeCount.  If the flush parameter is non-zero, then
+ * the procedure is being called as part of fflush, and it MUST empty
+ * the buffer.  Otherwise, the procedure may, if it chooses, increase
+ * the size of the buffer and return without actually writing anything.
+ *
+ * The third procedure, closeProc, is called when the stream is closed
+ * (writeProc is also called on close, before closeProc).  CloseProc
+ * should take any client-specific closing actions, such as closing
+ * the file corresponding to the stream or freeing the buffer space
+ * for the stream.  Its return value will be the return value from
+ * the fclose call.  If an error occurs while closing the stream, then
+ * the FILE structure should not be de-allocated, since the client will
+ * need to get at information in it to find out what went wrong.
+ *
+ * The procedures have the following calling sequences:
+ *
+ *	void readProc(stream)
+ *	    FILE *stream;
+ *	{
+ *	}
+
+ *	void writeProc(stream, flush)
+ *	    FILE *stream;
+ *	    Boolean flush;
+ *	{
+ *	}
+
+ *	int closeProc(stream)
+ *	    FILE *stream;
+ *	{
+ *	}
+ *
+ * See StdIoFileReadProc, StdIoFileWriteProc, and StdIoFileCloseProc for
+ * examples of these procedures.
+ */
+
+typedef struct _file {
+    unsigned char *lastAccess;	/* Place (in buffer) from which last input
+				 * or output byte was read or written
+				 * (respectively). */
+    int readCount;		/* # of characters that may be read from
+				 * buffer before calling readProc to refill
+				 * the buffer. */
+    int writeCount;		/* # of characters that may be written into
+				 * buffer before calling writeProc to empty
+				 * the buffer.  WriteProc is called immediately
+				 * when the buffer fills, so that this value
+				 * is never zero unless the stream is not
+				 * currently being used for writing. */
+    unsigned char *buffer;	/* Pointer to storage for characters.  NULL
+				 * means storage hasn't been allocated yet. */
+    int bufSize;		/* Total number of bytes of storage available
+				 * in buffer. 0 means storage for buffer hasn't
+				 * been allocated yet. */
+    void (*readProc)_ARGS_((struct _file *));
+				/* Procedure called to refill buffer. */
+    void (*writeProc)_ARGS_((struct _file *, Boolean));
+				/* Procedure called to empty buffer. */
+    int (*closeProc)_ARGS_((struct _file *));
+				/* Procedure called to close stream.  NULL
+				 * means no procedure to call. */
+    ClientData clientData;	/* Additional data for the use of the
+				 * procedures above,  e.g. the stream ID used
+				 * in kernel calls. */
+    int status;			/* Non-zero means an error has occurred while
+				 * emptying or filling the buffer.  This field
+				 * is set by readProc and writeProc. */
+    int flags;			/* Miscellaneous flags.  See below for values.
+				 */
+    struct _file *nextPtr;	/* For file streams, this is used to link all
+				 * file streams together (NULL means end of
+				 * list).  For other types of streams, it can
+				 * be used for anything desired by the
+				 * stream implementor. */
+} FILE;
+
+/* Flags for FILEs:
+ *
+ * STDIO_READ:		Means that this stream is used for input.
+ * STDIO_WRITE:		Means that this stream is used for output.
+ * STDIO_EOF:		Means that an end-of-file has been encountered
+ *			on this stream.  All future reads will fail.
+ * STDIO_LINEBUF:	Means that this stream is line-buffered:  flush when
+ *			a newline is output or stdin is read.
+ * STDIO_NOT_OUR_BUF:  	Means that the buffer for the stream belongs to someone
+ *	    	  	else and should not be freed by the stdio library.
+ * 
+ */
+
+#define STDIO_READ		1
+#define STDIO_WRITE		2
+#define STDIO_EOF		4
+#define STDIO_LINEBUF		8
+#define STDIO_NOT_OUR_BUF	16
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * getc --
+ * getchar --
+ * putc --
+ * putchar --
+ *
+ *	These four macros are used to input the next character from
+ *	a FILE or output the next character to a FILE.  Normally they
+ *	just move a character to or from a buffer, but if the buffer is
+ *	full (or empty) then they call a slow procedure to empty (or fill)
+ *	the buffer.
+ *
+ *	These macros are somewhat gross. putc is a ternary operator
+ *	to allow people to say things like
+ *
+ *	    if (a)
+ *	    	  putc(stdout, '\n');
+ *	    else ...
+ *
+ *	If it were a complex expression, the compiler would complain.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Information is modified in stream's buffer.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifndef lint
+#define getc(stream) 							\
+    (((stream)->readCount <= 0) ?   	    	    	    	    	\
+	    fgetc(stream) :						\
+	    ((stream)->readCount -= 1,		 	    	    	\
+	     (stream)->lastAccess += 1,				    	\
+	     *((stream)->lastAccess)))
+
+#define putc(c, stream)	    	    		    	    	    	\
+    ((((stream)->writeCount <= 1) || ((stream)->flags & STDIO_LINEBUF)) ? \
+	    fputc(c, stream) :  		    	    	    	\
+	    ((stream)->writeCount -= 1,	    	    	    	    	\
+	     (stream)->lastAccess += 1,	    	    	    	    	\
+	     *(stream)->lastAccess = c))
+#else
+_EXTERN int getc _ARGS_((FILE stream));
+_EXTERN int putc _ARGS_((int c, FILE stream));
+#endif
+
+#define getchar() getc(stdin)
+
+#define putchar(c) putc(c, stdout)
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ferror --
+ * feof --
+ *
+ *	These two macros return information about whether an error
+ *	or end-of-file condition has occurred on a stream.
+ *
+ * Results:
+ *	ferror returns 0 if no error has occurred on the stream;
+ *	if an error has occurred then it returns the error code.
+ *	feof returns 0 if no end-of-file has been encountered on
+ *	the stream, and TRUE (non-zero) if an end-of-file has been
+ *	encountered.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#define ferror(stream) ((stream)->status)
+#define feof(stream) ((stream)->flags & STDIO_EOF)
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Miscellaneous additional things exported by stdio:
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*
+ * Handles for standard input and output channels.
+ */
+
+extern FILE stdioInFile, stdioOutFile, stdioErrFile;
+#define stdin	(&stdioInFile)
+#define stdout	(&stdioOutFile)
+#define stderr	(&stdioErrFile)
+
+/*
+ * Default buffer size:
+ */
+
+#define BUFSIZ			4096
+
+/*
+ * Flags to setvbuf:
+ */
+
+#define _IOFBF		1
+#define _IOLBF		2
+#define _IONBF		3
+
+/*
+ * Relative position indicator for fseek:
+ */
+
+#define SEEK_SET	0
+#define SEEK_CUR	1
+#define SEEK_END	2
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Procedures exported by the stdio module:
+ * (Note that these declarations are missing the "const" modifiers
+ * found in the ANSI version...)
+ * 
+ *----------------------------------------------------------------------
+ */
+
+_EXTERN void	clearerr _ARGS_((FILE *stream));
+_EXTERN int	fclose _ARGS_((FILE *stream));
+_EXTERN FILE *	fdopen _ARGS_((int streamID, char *access));
+_EXTERN int	fflush _ARGS_((FILE *stream));
+_EXTERN int	fgetc _ARGS_((FILE *stream));
+_EXTERN char *	fgets _ARGS_((char *bufferPtr, int maxChars, FILE *stream));
+_EXTERN int	fileno _ARGS_((FILE *stream));
+_EXTERN FILE *	fopen _ARGS_((_CONST char *fileName, _CONST char *access));
+_EXTERN int	fputc _ARGS_((int c, FILE *stream));
+_EXTERN int	fputs _ARGS_((char *string, FILE *stream));
+_EXTERN int	fread _ARGS_((char *bufferPtr, int size, int numItems,
+			      FILE *stream));
+_EXTERN FILE *	freopen _ARGS_((_CONST char *fileName,
+                                _CONST char *access, FILE *stream));
+_EXTERN long	fseek _ARGS_((FILE *stream, long offset, int base));
+_EXTERN long	ftell _ARGS_((FILE *stream));
+_EXTERN int	fwrite _ARGS_((char *bufferPtr, int size, int numItems,
+			       FILE *stream));
+_EXTERN char *	gets _ARGS_((char *bufferPtr));
+_EXTERN int	getw _ARGS_((FILE *stream));
+_EXTERN void	perror _ARGS_((_CONST char *msg));
+_EXTERN FILE *	popen _ARGS_((_CONST char *cmd, char *mode));
+_EXTERN int	pclose _ARGS_((FILE *ptr));
+_EXTERN int      remove _ARGS_((_CONST char *filename));
+_EXTERN int      rename _ARGS_((_CONST char *oldname, _CONST char *newname));
+
+#ifdef KERNEL
+/*
+ * Special-case declarations for kernels:
+ * Printf returns void because the old Sys_Printf did.
+ * Varargs declarations aren't easy to do across all machines, so 
+ * we'll punt on them for now.
+ */
+_EXTERN void	printf _ARGS_(());
+_EXTERN int	fprintf _ARGS_(());
+_EXTERN int	scanf _ARGS_(());
+_EXTERN char *	sprintf _ARGS_(());
+_EXTERN int	sscanf _ARGS_(());
+_EXTERN int	fscanf _ARGS_(());
+_EXTERN int	vfprintf _ARGS_(());
+_EXTERN int	vfscanf _ARGS_(());
+_EXTERN int	vprintf _ARGS_(());
+_EXTERN char *	vsprintf _ARGS_(());
+#else /* KERNEL */
+/* 
+ * User-mode declarations for the routines in the special-case section:
+ * Note that the prototype declarations are actually no-ops until 
+ * _ARGS_ is turned on for user code.  Also, the varargs declarations 
+ * are only a first cut; there no guarantee they'll actually work when 
+ * _ARGS_ is turned on.
+ */
+_EXTERN int	printf _ARGS_((_CONST char *format, ...));
+_EXTERN int	fprintf _ARGS_((FILE *stream, _CONST char *format, ...));
+_EXTERN int	scanf _ARGS_((_CONST char *format, ...));
+_EXTERN char *	sprintf _ARGS_((char *s, _CONST char *format, ...));
+_EXTERN int	sscanf _ARGS_((char *s, _CONST char *format, ...));
+_EXTERN int	fscanf _ARGS_((FILE *stream, _CONST char *format, ...));
+_EXTERN int	vfprintf _ARGS_((FILE *stream,
+                                 _CONST char *format, va_list args));
+_EXTERN int	vfscanf _ARGS_((FILE *stream,
+                                _CONST char *format, va_list args));
+_EXTERN int	vprintf _ARGS_((_CONST char *format, va_list args));
+_EXTERN char *	vsprintf _ARGS_((char *string,
+                                 _CONST char *format, va_list args));
+#endif /* KERNEL */
+
+_EXTERN int	puts _ARGS_((_CONST char *string));
+_EXTERN int	putw _ARGS_((int w, FILE *stream));
+_EXTERN void	rewind _ARGS_((FILE *stream));
+_EXTERN void	setbuf _ARGS_((FILE *stream, char *buf));
+_EXTERN void	setbuffer _ARGS_((FILE *stream, char *buf, int size));
+_EXTERN void	setlinebuf _ARGS_((FILE *stream));
+_EXTERN int	setvbuf _ARGS_((FILE *stream, char *buf, int mode, int size));
+_EXTERN FILE *	tmpfile _ARGS_((void));
+_EXTERN char *	tmpnam _ARGS_((char *s));
+_EXTERN char *	tempnam _ARGS_((char *dir, char *pfx));
+_EXTERN int	ungetc _ARGS_((int c, FILE *stream));
+_EXTERN void	_cleanup _ARGS_((void));
+
+_EXTERN void	Stdio_Setup _ARGS_((FILE *stream, int readable, int writable,
+				unsigned char *buffer, int bufferSize,
+				void (*readProc)(FILE * file),
+				void (*writeProc)(FILE * file, Boolean flush),
+				int (*closeProc)(FILE * file),
+				ClientData clientData));
+
+#endif /* _STDIO_H */
+@
+
+
+1.27
+log
+@Use _HAS_PROTOTYPES instead of KERNEL to decide whether to include
+<stdio.h>.  This supports user-level programs that want to use
+prototypes.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/lib/include/RCS/stdio.h,v 1.26 90/12/07 23:46:20 rab Exp Locker: ouster $ SPRITE (Berkeley)
+d307 1
+a307 1
+_EXTERN long	fseek _ARGS_((FILE *stream, int offset, int base));
+@
+
+
+1.27.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/lib/include/RCS/stdio.h,v 1.27 91/12/05 10:44:56 ouster Exp $ SPRITE (Berkeley)
+@
+
+
+1.26
+log
+@Added typedef of va_list for prototypes.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/lib/include/RCS/stdio.h,v 1.25 90/11/06 17:20:54 rab Exp Locker: rab $ SPRITE (Berkeley)
+d26 3
+a28 5
+ * typedefs.  Because practically everyone uses stdio.h, we should
+ * give advance warning before forcing users to use the typedefs from
+ * sprite.h.  This must be done before we can turn on function
+ * prototypes for Sprite user program.  (Or, change the prototypes so 
+ * that they don't use the Sprite typedefs.)
+d32 1
+a32 1
+#ifdef KERNEL
+@
+
+
+1.25
+log
+@Changed extern to _EXTERN for g++.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/lib/include/RCS/stdio.h,v 1.24 90/09/20 15:48:34 mgbaker Exp Locker: rab $ SPRITE (Berkeley)
+d49 5
+@
+
+
+1.24
+log
+@Fixed prototype problem that unleashed a bug in cproto.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/lib/include/RCS/stdio.h,v 1.23 90/09/11 16:45:07 mendel Exp Locker: mgbaker $ SPRITE (Berkeley)
+d20 2
+a21 2
+#ifndef _STDIO
+#define _STDIO
+d207 2
+a208 1
+extern int getc(), putc();
+d290 11
+a300 11
+extern void	clearerr _ARGS_((FILE *stream));
+extern int	fclose _ARGS_((FILE *stream));
+extern FILE *	fdopen _ARGS_((int streamID, char *access));
+extern int	fflush _ARGS_((FILE *stream));
+extern int	fgetc _ARGS_((FILE *stream));
+extern char *	fgets _ARGS_((char *bufferPtr, int maxChars, FILE *stream));
+extern int	fileno _ARGS_((FILE *stream));
+extern FILE *	fopen _ARGS_((char *fileName, char *access));
+extern int	fputc _ARGS_((int c, FILE *stream));
+extern int	fputs _ARGS_((char *string, FILE *stream));
+extern int	fread _ARGS_((char *bufferPtr, int size, int numItems,
+d302 5
+a306 4
+extern FILE *	freopen _ARGS_((char *fileName, char *access, FILE *stream));
+extern long	fseek _ARGS_((FILE *stream, int offset, int base));
+extern long	ftell _ARGS_((FILE *stream));
+extern int	fwrite _ARGS_((char *bufferPtr, int size, int numItems,
+d308 7
+a314 5
+extern char *	gets _ARGS_((char *bufferPtr));
+extern int	getw _ARGS_((FILE *stream));
+extern void	perror _ARGS_((char *msg));
+extern FILE *	popen _ARGS_((char *cmd, char *mode));
+extern int	pclose _ARGS_((FILE *ptr));
+d323 10
+a332 10
+extern void	printf _ARGS_(());
+extern int	fprintf _ARGS_(());
+extern int	scanf _ARGS_(());
+extern char *	sprintf _ARGS_(());
+extern int	sscanf _ARGS_(());
+extern int	fscanf _ARGS_(());
+extern int	vfprintf _ARGS_(());
+extern int	vfscanf _ARGS_(());
+extern int	vprintf _ARGS_(());
+extern char *	vsprintf _ARGS_(());
+d341 13
+a353 10
+extern int	printf _ARGS_((char *format, ...));
+extern int	fprintf _ARGS_((FILE *stream, char *format, ...));
+extern int	scanf _ARGS_((char *format, ...));
+extern char *	sprintf _ARGS_((char *s, char *format, ...));
+extern int	sscanf _ARGS_((char *s, char *format, ...));
+extern int	fscanf _ARGS_((FILE *stream, char *format, ...));
+extern int	vfprintf _ARGS_((FILE *stream, char *format, va_list args));
+extern int	vfscanf _ARGS_((FILE *stream, char *format, va_list args));
+extern int	vprintf _ARGS_((char *format, va_list args));
+extern char *	vsprintf _ARGS_((char *string, char *format, va_list args));
+d356 12
+a367 12
+extern int	puts _ARGS_((char *string));
+extern int	putw _ARGS_((int w, FILE *stream));
+extern void	rewind _ARGS_((FILE *stream));
+extern void	setbuf _ARGS_((FILE *stream, char *buf));
+extern void	setbuffer _ARGS_((FILE *stream, char *buf, int size));
+extern void	setlinebuf _ARGS_((FILE *stream));
+extern int	setvbuf _ARGS_((FILE *stream, char *buf, int mode, int size));
+extern FILE *	tmpfile _ARGS_((void));
+extern char *	tmpnam _ARGS_((char *s));
+extern char *	tempnam _ARGS_((char *dir, char *pfx));
+extern int	ungetc _ARGS_((int c, FILE *stream));
+extern void	_cleanup _ARGS_((void));
+d369 1
+a369 1
+extern void	Stdio_Setup _ARGS_((FILE *stream, int readable, int writable,
+d376 1
+a376 1
+#endif /* _STDIO */
+@
+
+
+1.23
+log
+@Corrected prototype for Stdio_Setup.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/lib/include/RCS/stdio.h,v 1.22 90/09/11 14:35:26 kupfer Exp Locker: mendel $ SPRITE (Berkeley)
+d363 5
+a367 5
+				    unsigned char *buffer, int bufferSize,
+				    void (*readProc)(FILE *),
+				    void (*writeProc)(FILE *, Boolean),
+				    int (*closeProc)(FILE *),
+				    ClientData clientData));
+@
+
+
+1.22
+log
+@Clean up function prototypes some.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/lib/include/RCS/stdio.h,v 1.21 90/09/03 22:23:56 shirriff Exp Locker: kupfer $ SPRITE (Berkeley)
+d365 1
+a365 1
+				    void (*writeProc)(FILE *),
+@
+
+
+1.21
+log
+@Changed printf args and varargs declaration so this would work in
+the kernel.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/lib/include/RCS/stdio.h,v 1.20 90/09/03 11:01:36 kupfer Exp Locker: shirriff $ SPRITE (Berkeley)
+d23 12
+d36 1
+a36 5
+#if defined(__STDC__) && !defined(spur) && !defined(sun4) && !defined(KERNEL)
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif /* STDC */
+d297 1
+a297 1
+extern int	fputc _ARGS_((char c, FILE *stream));
+d314 4
+a317 3
+ * If we're in the kernel, we want printf to return void, since the old
+ * Sys_Printf did.
+ * Also, varargs declarations aren't working yet for the kernel.
+d325 12
+a336 1
+#else
+d343 4
+d348 1
+a359 4
+extern int	vfprintf _ARGS_((FILE *stream, char *format, va_list args));
+extern int	vfscanf _ARGS_((FILE *stream, char *format, va_list args));
+extern int	vprintf _ARGS_((char *format, va_list args));
+extern char *	vsprintf _ARGS_((char *string, char *format, va_list args));
+d362 6
+a367 1
+extern void	Stdio_Setup();
+@
+
+
+1.20
+log
+@Added prototyping declarations.  (Checked in by shirriff)
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/lib/include/RCS/stdio.h,v 1.19 90/06/27 13:29:57 shirriff Exp Locker: kupfer $ SPRITE (Berkeley)
+d24 1
+a24 1
+#if defined(__STDC__) && !defined(spur) && !defined(sun4)
+d28 1
+a28 1
+#endif
+a288 1
+extern int	fprintf _ARGS_((FILE *stream, char *format, ...));
+a293 1
+extern int	fscanf _ARGS_((FILE *stream, char *format, ...));
+d308 1
+d310 6
+a315 1
+extern void	printf _ARGS_((char *format, ...));
+d318 5
+a326 1
+extern int	scanf _ARGS_((char *format, ...));
+a330 2
+extern char *	sprintf _ARGS_((char *s, char *format, ...));
+extern int	sscanf _ARGS_((char *s, char *format, ...));
+@
+
+
+1.19
+log
+@Fixed declaration of pclose().
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/lib/include/RCS/stdio.h,v 1.18 90/06/21 09:47:47 rab Exp $ SPRITE (Berkeley)
+d23 7
+d111 6
+a116 3
+    void (*readProc)();		/* Procedure called to refill buffer. */
+    void (*writeProc)();	/* Procedure called to empty buffer. */
+    int (*closeProc)();		/* Procedure called to close stream.  NULL
+d275 3
+a277 1
+ *
+d281 24
+a304 22
+extern void	clearerr();
+extern int	fclose();
+extern FILE *	fdopen();
+extern int	fflush();
+extern int	fgetc();
+extern char *	fgets();
+extern int	fileno();
+extern FILE *	fopen();
+extern int	fprintf();
+extern int	fputc();
+extern int	fputs();
+extern int	fread();
+extern FILE *	freopen();
+extern int	fscanf();
+extern long	fseek();
+extern long	ftell();
+extern int	fwrite();
+extern char *	gets();
+extern int	getw();
+extern void	perror();
+extern FILE *   popen();
+extern int      pclose();
+d311 1
+a311 1
+extern void	printf();
+d313 1
+a313 1
+extern int	printf();
+d315 19
+a333 19
+extern int	puts();
+extern int	putw();
+extern void	rewind();
+extern int	scanf();
+extern void	setbuf();
+extern void	setbuffer();
+extern void	setlinebuf();
+extern int	setvbuf();
+extern char *	sprintf();
+extern int	sscanf();
+extern FILE *	tmpfile();
+extern char *	tmpnam();
+extern char *	tempnam();
+extern int	ungetc();
+extern int	vfprintf();
+extern int	vfscanf();
+extern int	vprintf();
+extern char *	vsprintf();
+extern void	_cleanup();
+@
+
+
+1.18
+log
+@Added forward declarations for popen and pclose.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/lib/include/RCS/stdio.h,v 1.17 89/06/23 11:30:01 rab Exp Locker: rab $ SPRITE (Berkeley)
+d290 1
+a290 1
+extern void     pclose();
+@
+
+
+1.17
+log
+@*** empty log message ***
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/lib/include/RCS/stdio.h,v 1.16 88/11/23 17:38:05 mlgray Exp Locker: rab $ SPRITE (Berkeley)
+d289 3
+@
+
+
+1.16
+log
+@Added ifdef for KERNEL printf to return void rather than an integer
+for backwards compatibility.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/lib/include.new/RCS/stdio.h,v 1.15 88/09/28 09:20:58 ouster Exp Locker: mlgray $ SPRITE (Berkeley)
+d320 1
+a320 1
+#endif _STDIO
+@
+
+
+1.15
+log
+@Added tmpnam, tmpname, tmpfile.
+@
+text
+@d17 1
+a17 1
+ * $Header: stdio.h,v 1.14 88/09/14 10:40:52 ouster Exp $ SPRITE (Berkeley)
+d289 7
+d297 1
+@
+
+
+1.14
+log
+@Remove panic declaration.
+@
+text
+@d17 1
+a17 1
+ * $Header: stdio.h,v 1.13 88/07/28 16:43:57 ouster Exp $ SPRITE (Berkeley)
+d51 1
+a51 1
+ * the procedure is being called as part of Io_Flush, and it MUST empty
+d123 1
+a123 1
+/* Flags for Io_Streams:
+d264 1
+a264 1
+ * Procedures exported by the Io module:
+d300 3
+@
+
+
+1.13
+log
+@Don't make bufSize unsigned.  Too much hassle.
+@
+text
+@d17 1
+a17 1
+ * $Header: stdio.h,v 1.12 88/07/25 13:59:27 ouster Exp $ SPRITE (Berkeley)
+a287 1
+extern void	panic();
+@
+
+
+1.12
+log
+@Add lint-related stuff to check getc and putc calls better.
+@
+text
+@d17 1
+a17 1
+ * $Header: stdio.h,v 1.11 88/07/25 11:02:38 ouster Exp $ SPRITE (Berkeley)
+d101 1
+a101 1
+    unsigned int bufSize;	/* Total number of bytes of storage available
+@
+
+
+1.11
+log
+@Declare Stdio_Setup().
+@
+text
+@d17 1
+a17 1
+ * $Header: stdio.h,v 1.10 88/07/21 16:03:45 ouster Exp $ SPRITE (Berkeley)
+d174 1
+d188 3
+@
+
+
+1.10
+log
+@Change return type of fseek.
+@
+text
+@d17 1
+a17 1
+ * $Header: stdio.h,v 1.9 88/07/21 08:43:43 ouster Exp $ SPRITE (Berkeley)
+d303 2
+@
+
+
+1.9
+log
+@Eliminated _doprnt and _doscan, replaced with vfscanf, vfprintf, etc.
+@
+text
+@d17 1
+a17 1
+ * $Header: stdio.h,v 1.8 88/07/20 18:12:28 ouster Exp $ SPRITE (Berkeley)
+d279 1
+a279 1
+extern int	fseek();
+@
+
+
+1.8
+log
+@Added link field for change to file streams (let there be more
+than one FILE open for a single stream id).
+@
+text
+@d17 1
+a17 1
+ * $Header: stdio.h,v 1.7 88/07/15 17:28:13 ouster Exp $ SPRITE (Berkeley)
+d298 4
+a302 2
+extern int	_doprnt();
+extern int	_doscan();
+@
+
+
+1.7
+log
+@No need to include sprite.h anymore.
+@
+text
+@d17 1
+a17 1
+ * $Header: stdio.h,v 1.6 88/07/11 09:09:56 ouster Exp $ SPRITE (Berkeley)
+d86 1
+a86 1
+typedef struct {
+d116 5
+@
+
+
+1.6
+log
+@Make ftell return "long".
+@
+text
+@d17 1
+a17 1
+ * $Header: stdio.h,v 1.5 88/07/05 10:11:23 ouster Exp $ SPRITE (Berkeley)
+d23 2
+a24 2
+#ifndef _SPRITE
+#include <sprite.h>
+d27 7
+a33 2
+#ifndef EOF
+#define EOF (-1)
+@
+
+
+1.5
+log
+@Typo in last change.
+@
+text
+@d17 1
+a17 1
+ * $Header: stdio.h,v 1.3 88/07/05 09:05:34 ouster Exp $ SPRITE (Berkeley)
+d270 1
+a270 1
+extern int	ftell();
+@
+
+
+1.4
+log
+@Re-did last change.
+@
+text
+@d172 1
+a172 1
+    ((((stream)->writeCount <= 1) || (stream->flags & STDIO_LINEBUF)) ?	\
+@
+
+
+1.3
+log
+@Putc was evaluation c twice, which goofed up old programs that
+depend on its only being evaluated once.  The second evaluation
+was unnecessary anyway.
+@
+text
+@d17 1
+a17 1
+ * $Header: stdio.h,v 1.2 88/06/26 16:05:04 ouster Exp $ SPRITE (Berkeley)
+d172 1
+a172 1
+    (((stream)->writeCount <= 1) ? 	    	    	\
+@
+
+
+1.2
+log
+@Define perror.
+@
+text
+@d17 1
+a17 1
+ * $Header: stdio.h,v 1.1 88/06/21 09:36:57 ouster Exp $ SPRITE (Berkeley)
+d172 1
+a172 1
+    ((((stream)->writeCount <= 1) || (c == '\n')) ? 	    	    	\
+d174 1
+a174 1
+     	    ((stream)->writeCount -= 1,	    	    	    	    	\
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+ * $Header: stdio.h,v 1.2 88/06/18 14:47:39 ouster Exp $ SPRITE (Berkeley)
+d275 1
+@

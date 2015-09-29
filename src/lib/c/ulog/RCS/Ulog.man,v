@@ -1,0 +1,160 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     88.12.30.16.20.46;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@'\" $Header: Ulog,v 1.1 88/09/22 22:07:24 douglis Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS Ulog lib
+.BS
+.SH NAME
+Ulog \- obtain or update information in the database of user logins and logouts.
+.SH SYNOPSIS
+.nf
+\fB#include	<ulog.h>\fR
+
+Ulog_Data *
+\fBUlog_LastLogin\fR(\fIuid\fP)
+
+int
+\fBUlog_GetAllLogins\fR(\fInumEntries, locPtr, dataArray\fP)
+
+int
+\fBUlog_RecordLogin\fR(\fIuid, location, portID\fP)
+
+int
+\fBUlog_RecordLogout\fR(\fIuid, portID\fP)
+
+int
+\fBUlog_ClearLogins\fR()
+
+.SH ARGUMENTS
+
+.AS Ulog_Data dataArray[] 
+.AP int uid in
+A numerical identifier for a user for whom to retrieve or update information.
+.AP int numEntries in
+The number of Ulog_Data structures contained in \fIdataArray\fP.
+.AP int *locPtr in/out
+A pointer to an integer specifying the index of the next record in
+the user log to access.  
+.AP Ulog_Data dataArray[] out
+A buffer to hold Ulog_Data entries returned by the Ulog_GetAllLogins routine.
+.AP char *location in
+String specifying location of user logging in (i.e., remote host)
+.AP int portID in
+Numerical identifier for login port.
+.BE
+.SH DESCRIPTION
+The ulog library provides a facility to record logins and logouts in
+the system, to retrieve information about the last time a user
+logged in or about 
+all users logged into the system, and to clear the login entries for a
+host.  Each host has a fixed number of 
+entries allocated to it in the user log
+database file.  One entry, with a \fIportID\fP of
+\fBULOG_LOC_CONSOLE\fP, is reserved for the console of a host; there
+are (\fBULOG_MAX_PORTS\fP - 1) other
+entries available for rlogin processes.  (There is currently no
+facility for multiple local logins, such as over a serial line.)
+.PP
+The \fIulog\fP library converts between the ASCII representation stored in the
+database and an internal C structure, known as a Ulog_Data structure.
+This structure contains information giving <uid,hostID,portID>
+corresponding to a user logged in on a particular ``port'' on a
+particular host.  Each login entry also includes the time of the
+login, which is the \fBtv_sec\fP part of a \fBtime\fP structure.  It
+also includes any additional information for the location of the user;
+this is an arbitrary string that typically gives the host from which
+an rlogin occurs.
+Two database files are used: one for logins on a host/port basis, and
+one for the last login by each user.
+.PP
+A Ulog_Data structure is defined as follows:
+.DS L
+.ta 4n 2.5c 6.5c
+\fBtypedef struct\fR {
+	\fBint\fP \fIuid\fP;		/* user identifier */
+	\fBint\fP \fIhostID\fP;		/* host for which data is
+					   valid */
+	\fBint\fP \fIportID\fP;		/* port within host */
+	\fBint\fP \fIupdated\fP;	/* login time (in seconds since
+					   1/1/70); 0 if invalid */
+	\fBchar\fP \fIlocation\fP[\fBULOG_LOC_LENGTH\fP];
+					/* location of user */
+} Ulog_Data;
+.DE
+.PP
+The \fBUlog_LastLogin()\fR procedure returns a pointer to a
+statically-allocated Ulog_Data structure.  Therefore, the contents of the
+structure may change on subsequent calls to \fBUlog_LastLogin()\fR.  The
+information returned by \fBUlog_LastLogin()\fR corresponds to the most
+recent login by the user specified by \fIuid\fP.
+.PP
+\fBUlog_GetAllLogins()\fR provides a mechanism for retrieving multiple login
+entries at once.  The user must allocate an array of Ulog_Data
+structures, and pass the size of the array and a pointer to it as
+arguments to \fBUlog_GetAllLogins()\fR.  In addition, the \fIlocPtr\fP
+argument specifies where in the login database to start looking.
+\fI*locPtr\fP 
+should be initialized to 0 prior to the first call to
+\fBUlog_GetAllLogins()\fR.  \fBUlog_GetAllLogins()\fR returns the number of
+entries in \fIdataArray\fP that were filled.  If that number is less
+than the maximum number specified by \fInumEntries\fP, then all data
+has been returned.  If it is equal to \fInumEntries\fP, then
+\fBUlog_GetAllLogins()\fR should be called again to retrieve additional
+entries from  the point at which the last call left off (given by
+\fI*locPtr\fP). 
+.PP
+\fBUlog_RecordLogin()\fR allows the caller to register information
+for a new login.  The caller specifies the user ID, location, and port
+of the user logging in.  The procedure obtains the hostID and current
+time, and records the login.
+.PP
+\fBUlog_RecordLogout()\fR provides a similar facility to record logouts.  It
+takes a user ID and port number, and it removes the corresponding
+loginn from the list
+of active logins.
+.PP
+\fBUlog_ClearLogins()\fR may be used at boot time to clear any old entries
+in the user log for the current host.  Note: if a host is down, it may
+still have entries in the user log.  It is the responsibility of the
+user to use the migration information database to determine if a host
+is up, in order to validate user log entries.
+.SH DIAGNOSTICS
+\fBUlog_RecordLogin()\fR, \fBUlog_RecordLogout()\fR, and \fBUlog_ClearLogins()\fR return zero if
+all went well.  Otherwise 
+they return -1 and the \fIerrno\fR variable contains additional information
+about what error occurred.  \fBUlog_GetAllLogins()\fR similarly returns -1 on
+error, but it returns 0 if no more records are available.  \fBUlog_LastLogin()\fR
+returns
+NULL on error. 
+.SH FILES
+.IP /sprite/admin/data/userLog
+The database of current logins on each host.
+.IP /sprite/admin/data/lastLog
+The database of each user's most recent login.
+.SH KEYWORDS
+user log, user ID, sprite ID
+.SH SEE ALSO
+db, mig, Mig_GetInfo, login, rlogin, rlogind
+@

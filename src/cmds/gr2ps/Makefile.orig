@@ -1,0 +1,105 @@
+#
+#  John Coker
+#  University of California, Berkeley
+#
+
+DEST	      = /usr/local
+
+PROGRAM	      = gr2ps
+
+MANDIR	      = /usr/man/manl
+
+MANUAL	      = gr2ps.l
+
+EXTHDRS	      = /usr/include/ctype.h \
+		/usr/include/math.h \
+		/usr/include/stdio.h
+
+HDRS	      =
+
+CFLAGS	      = -O
+
+IFLAGS	      = -o john
+
+YFLAGS	      = -d
+
+LFLAGS	      =
+
+LDFLAGS	      = $(CFLAGS)
+
+LIBS	      = -lm
+
+LINKER	      = cc
+
+MAKEFILE      = Makefile
+
+OBJS	      = curve.o \
+		gr2ps.o
+
+PRINT	      = psgrind -Pgp
+
+SRCS	      = curve.c \
+		gr2ps.c
+
+MACROS	      = pspicture.tex pspicture.latex
+
+DISTRIB	      = $(MAKEFILE) $(SRCS) $(HDRS) $(MANUAL) \
+		README PSinTeX $(MACROS) tank.ps
+
+SHAR	      = $(PROGRAM).shar
+
+TAR	      = $(PROGRAM).tar
+
+$(PROGRAM):     $(OBJS)
+		@rm -f $(PROGRAM) core
+		@echo "Linking \`$(PROGRAM)' ..."
+		@$(LINKER) $(LDFLAGS) $(OBJS) $(LIBS) -o $(PROGRAM)
+		@size $(PROGRAM)
+
+install:	$(DEST)/$(PROGRAM) $(MANDIR)/$(MANUAL)
+		@echo "Installation completed."
+
+clean:;		@rm -f $(OBJS) $(PROGRAM) core *.out .#* $(SHAR) $(TAR)
+
+depend:;	@rm -f .#*
+		@mkmf -f $(MAKEFILE) PROGRAM=$(PROGRAM) DEST=$(DEST)
+
+shar::		$(SHAR)
+
+tar::		$(TAR)
+
+$(SHAR):	$(DISTRIB)
+		@rm -f $(SHAR)
+		shar $(SHAR) $(DISTRIB)
+		@ls -lgs $(SHAR)
+
+$(TAR):		$(DISTRIB)
+		@rm -f $(TAR)
+		tar cvf $(TAR) $(DISTRIB)
+		@ls -lgs $(TAR)
+
+index:;		@ctags -wx $(HDRS) $(SRCS)
+
+print:;		@$(PRINT) $(HDRS) $(SRCS)
+
+tags:;          @ctags $(HDRS) $(SRCS)
+
+update:		$(DEST)/$(PROGRAM)
+
+manual:		$(MANDIR)/$(MANUAL)
+
+$(DEST)/$(PROGRAM): $(PROGRAM)
+		install $(IFLAGS) -c -s -m 0755 $(PROGRAM) $(DEST)
+		@ls -lgs $(DEST)/$(PROGRAM)
+
+$(MANDIR)/$(MANUAL): $(MANUAL)
+		install $(IFLAGS) -c -m 0644 $(MANUAL) $(MANDIR)
+		@ls -lgs $(MANDIR)/$(MANUAL)
+
+.DEFAULT:;	co $@
+
+.SUFFIXES:;
+.SUFFIXES:	.o .c
+###
+curve.o: /usr/include/math.h /usr/include/stdio.h
+gr2ps.o: /usr/include/stdio.h /usr/include/ctype.h /usr/include/math.h

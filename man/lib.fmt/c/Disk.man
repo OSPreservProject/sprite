@@ -1,0 +1,398 @@
+
+
+
+Disk                  C Library Procedures                   Disk
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Disk_ReadLabel,      Disk_WriteLabel,       Disk_EraseLabel,  |
+     Disk_NewLabel,Disk_ReadDecLabel,         Disk_WriteDecLabel,  |
+     Disk_ReadSunLabel,                       Disk_WriteSunLabel,  |
+     Disk_ReadDomainHeader,               Disk_WriteDomainHeader,  |
+     Disk_ReadSummaryInfo,                 Disk_WriteSummaryInfo,  |
+     Disk_SectorRead,      Disk_SectorWrite,      Disk_BlockRead,  |
+     Disk_BlockWrite,      Disk_BadBlockRead,      Disk_FragRead,  |
+     Disk_FragWrite,                      Disk_PrintDomainHeader,  |
+     Disk_PrintSummaryInfo,             Disk_PrintFileDescBitmap,  |
+     Disk_PrintDataBlockBitmap,               Disk_PrintDirEntry,  |
+     Disk_PrintLabel - Package for accessing OFS file systems via  |
+     raw disks
+
+SSYYNNOOPPSSIISS
+     #include <disk.h>                                             |
+
+     Disk_Label *                                                  |
+     DDiisskk__RReeaaddLLaabbeell(_f_i_l_e_I_D)                                        |
+     int                                                           |
+     DDiisskk__WWrriitteeLLaabbeell(_f_i_l_e_I_D, _l_a_b_e_l_P_t_r)                             |
+     Disk_Label *                                                  |
+     DDiisskk__NNeewwLLaabbeell(_l_a_b_e_l_T_y_p_e)                                      |
+     int                                                           |
+     DDiisskk__EErraasseeLLaabbeell(_f_i_l_e_I_D, _l_a_b_e_l_T_y_p_e)                            |
+     Dec_DiskLabel *                                               |
+     DDiisskk__RReeaaddDDeeccLLaabbeell(_f_i_l_e_I_D)                                     |
+     int                                                           |
+     DDiisskk__WWrriitteeDDeeccLLaabbeell(_f_i_l_e_I_D, _d_e_c_L_a_b_e_l_P_t_r)                       |
+     Sun_DiskLabel *
+     DDiisskk__RReeaaddSSuunnLLaabbeell(_f_i_l_e_I_D)
+     int                                                           |
+     DDiisskk__WWrriitteeSSuunnLLaabbeell(_f_i_l_e_I_D, _s_u_n_L_a_b_e_l_P_t_r)                       |
+     Ofs_DomainHeader *                                            |
+     DDiisskk__RReeaaddDDoommaaiinnHHeeaaddeerr(_f_i_l_e_I_D, _l_a_b_e_l_P_t_r)                       |
+     int                                                           |
+     DDiisskk__WWrriitteeDDoommaaiinnHHeeaaddeerr(_f_i_l_e_I_D, _l_a_b_e_l_P_t_r, _h_e_a_d_e_r_P_t_r)           |
+     Ofs_SummaryInfo *                                             |
+     DDiisskk__RReeaaddSSuummmmaarryyIInnffoo(_f_i_l_e_I_D, _l_a_b_e_l_P_t_r)                        |
+     int                                                           |
+     DDiisskk__WWrriitteeSSuummmmaarryyIInnffoo(_f_i_l_e_I_D, _l_a_b_e_l_P_t_r, _s_u_m_m_a_r_y_P_t_r)           |
+     int
+     DDiisskk__SSeeccttoorrRReeaadd(_f_i_l_e_I_D, _i_n_d_e_x, _c_o_u_n_t, _b_u_f_f_e_r)
+     int
+     DDiisskk__SSeeccttoorrWWrriittee(_f_i_l_e_I_D, _i_n_d_e_x, _c_o_u_n_t, _b_u_f_f_e_r)
+     int
+     DDiisskk__BBlloocckkRReeaadd(_f_i_l_e_I_D, _h_e_a_d_e_r_P_t_r, _i_n_d_e_x, _c_o_u_n_t, _b_u_f_f_e_r)
+     int
+     DDiisskk__BBlloocckkWWrriittee(_f_i_l_e_I_D, _h_e_a_d_e_r_P_t_r, _i_n_d_e_x, _c_o_u_n_t, _b_u_f_f_e_r)
+     int
+
+
+
+Sprite v.1.0       Printed:  October 31, 1990                   1
+
+
+
+
+
+
+Disk                  C Library Procedures                   Disk
+
+
+
+     DDiisskk__BBaaddBBlloocckkRReeaadd(_f_i_l_e_I_D, _h_e_a_d_e_r_P_t_r, _i_n_d_e_x, _b_u_f_f_e_r)
+     int
+     DDiisskk__FFrraaggRReeaadd(_f_i_l_e_I_D, _h_e_a_d_e_r_P_t_r, _i_n_d_e_x, _c_o_u_n_t, _b_u_f_f_e_r)
+     int
+     DDiisskk__FFrraaggWWrriittee(_f_i_l_e_I_D, _h_e_a_d_e_r_P_t_r, _i_n_d_e_x, _c_o_u_n_t, _b_u_f_f_e_r)
+     void
+     DDiisskk__PPrriinnttDDoommaaiinnHHeeaaddeerr(_h_e_a_d_e_r_P_t_r)
+     void
+     DDiisskk__PPrriinnttSSuummmmaarryyIInnffoo(_s_u_m_m_a_r_y_P_t_r)
+     DDiisskk__PPrriinnttLLaabbeell(_l_a_b_e_l_P_t_r)                                     |
+     void
+     DDiisskk__PPrriinnttFFiilleeDDeessccBBiittmmaapp(_h_e_a_d_e_r_P_t_r, _b_i_t_m_a_p)
+     void
+     DDiisskk__PPrriinnttDDaattaaBBlloocckkBBiittmmaapp(_h_e_a_d_e_r_P_t_r, _b_i_t_m_a_p)
+     void
+     DDiisskk__PPrriinnttDDiirrEEnnttrryy(_d_i_r_E_n_t_r_y_P_t_r)
+
+
+AARRGGUUMMEENNTTSS
+     int                _f_i_l_e_I_D        (in)      File   descriptor
+                                                from  ooppeenn of raw
+                                                disk.
+
+     int                _p_a_r_t_i_t_i_o_n     (in)      Index  of  parti-
+                                                tion  to  access,
+                                                0-7.               |
+
+     Disk_Label         *_l_a_b_e_l_P_t_r     (in)                              ||
+                                                Basic disk infor-  |
+                                                mation       from  |
+                                                DDiisskk__RReeaaddLLaabbeell.    |
+
+     Disk_NativeLabelType             _l_a_b_e_l_T_y_p_e(in)                     ||
+                                                Type  of machine-  |
+                                                specific (native)  |
+                                                disk label on the  |
+                                                disk.              |
+
+     Dec_DiskLabel  *_d_e_c_L_a_b_e_l_P_t_r                                        ||
+                                                Native disk label  |
+                                                for ds3100s.       |
+
+     Sun_DiskLabel  *_s_u_n_L_a_b_e_l_P_t_r                                        ||
+                                                Native disk label  |
+                                                for Suns.
+
+     int                _i_n_d_e_x         (in)      Index  of   first
+                                                (sector/block/fragment)
+                                                to transfer.
+
+     int                _c_o_u_n_t         (in)      Number         of
+                                                (sectors/blocks/fragments)
+
+
+
+Sprite v.1.0       Printed:  October 31, 1990                   2
+
+
+
+
+
+
+Disk                  C Library Procedures                   Disk
+
+
+
+                                                to transfer.
+
+     char               *_b_u_f_f_e_r       (in)      Buffer  for  data
+                                                transferred.
+
+     Ofs_DomainHeader   *_h_e_a_d_e_r_P_t_r    (in)      Disk       header
+                                                information  from
+                                                DDiisskk__RReeaaddDDiisskkHHeeaaddeerr.
+
+     Ofs_SummaryInfo    *_s_u_m_m_a_r_y_P_t_r   (in)      Disk      summary
+                                                information  sec-
+                                                tor.
+
+     char               *_b_i_t_m_a_p       (in)      Array  of  bitmap
+                                                bytes.
+
+     Fslcl_DirEntry     *_d_i_r_E_n_t_r_y_P_t_r  (in)      Directory   entry
+                                                structure.
+
+_________________________________________________________________
+
+
+IINNTTRROODDUUCCTTIIOONN
+     The DDiisskk package is used to read and write  raw  disks  that
+     are  formatted to contain Sprite file systems.  To use these
+     routines correctly it is important to understand disk _p_a_r_t_i_-
+     _t_i_o_n_s,  file  system _h_e_a_d_e_r _i_n_f_o_r_m_a_t_i_o_n, file system _b_l_o_c_k_s,
+     and file system block _f_r_a_g_m_e_n_t_s.
+
+     Each physical disk is divided into as many as 8  partitions.
+     The  letters  'a'  through 'h' are used to distinguish these
+     different partitions in the  names  of  the  special  device
+     files  that  are  used  to access them.  Thus ``/dev/rsd0a''
+     references the first (zero'th) partition on disk  rrssdd00.  The  |
+     partitioning information is stored on the disk in the ``disk  |
+     label''.  This label is in a machine-dependent  format,  and  |
+     is  referred  to  as the ``native disk label''.  Native disk  |
+     labels are kept in a machine-dependent location on the disk.  |
+     This  is  usually  in sector 0 or some other sector near the  |
+     start of the  first  partition.   The  ffssmmaakkee  program  also  |
+     copies  the  label  to a partition when it formats it into a  |
+     file   system.   The    routines    DDiisskk__RReeaaddSSuunnLLaabbeell    and  |
+     DDiisskk__RReeaaddDDeeccLLaabbeell  can  be  used  to  read  the  native disk  |
+     labels.                                                       |
+
+     It is not always convenient to deal with native disk labels.  |
+     For this reason a generic label type and associated routines  |
+     have been provided.  The type DDiisskk__LLaabbeell is a standard  for-  |
+     mat  for disk labels.  The routine DDiisskk__RReeaaddLLaabbeell is used to  |
+     read a native disk label off the disk and convert it into  a  |
+     DDiisskk__LLaabbeell.   The  routine  DDiisskk__WWrriitteeLLaabbeell  will  convert a  |
+     DDiisskk__LLaabbeell into a native disk label  and  write  it  on  the  |
+     disk.   Two  more  procedures  are provided for manipulating  |
+     disk labels.  DDiisskk__EErraasseeLLaabbeell will erase a native disk label  |
+
+
+
+Sprite v.1.0       Printed:  October 31, 1990                   3
+
+
+
+
+
+
+Disk                  C Library Procedures                   Disk
+
+
+
+     from  the  disk,  and  DDiisskk__NNeewwLLaabbeell is used to create a new  |
+     label if the disk does not have one already.   The  contents  |
+     of a DDiisskk__LLaabbeell are defined in <disk.h>.
+
+     The detailed structure of the file system is  defined  by  a
+     Ofs_DomainHeader  structure that located on the disk accord-
+     ing to the  DDiisskk__LLaabbeell.   This  can  be  obtained  with  the
+     DDiisskk__RReeaaddDDoommaaiinnHHeeaaddeerr   procedure.    The   Ofs_DomainHeader
+     structure is defined in <kernel/fsdm.h>, and  is  passed  to
+     the  block  and  fragment I/O routines so they can correctly
+     locate blocks and fragments.
+
+     A secondary data structure called the summary information is  |
+     kept  on  disk  following  the  domain  header.  The summary  |
+     information consists of a single sector  and  contains  such  |
+     information  as  the number of free blocks and file descrip-  |
+     tors.   The  Ofs_SummaryInfo   structure   is   defined   in  |
+     <kernel/fsdm.h>.   The  location  of  the  summary sector is  |
+     stored in the DDiisskk__LLaabbeell.  The summary sector  can  be  read  |
+     and    written    using    the    DDiisskk__RReeaaddSSuummmmaarryyIInnffoo   and  |
+     DDiisskk__WWrriitteeSSuummmmaarryyIInnffoo procedures.
+
+SSEECCTTOORR II//OO
+     DDiisskk__SSeeccttoorrRReeaadd and DDiisskk__SSeeccttoorrWWrriittee read and write  sectors
+     from  the disk without regard to the underlying block struc-
+     ture.  Their  _i_n_d_e_x  argument  specifies  the  first  sector
+     (starting  from  zero) to transfer, relative to the start of
+     the partition.  The sector offsets given in  the  DDiisskk__LLaabbeell
+     structure are useful with this routine.
+
+BBLLOOCCKK II//OO
+     The file system is arranged in  block-sized  chunks  on  the
+     disk.    FFSS__BBLLOOCCKK__SSIIZZEE   defines  how  many  bytes  this  is
+     (currently 4 Kbytes).  Due to disk  geometry  considerations
+     consecutive  blocks  may  or  may not be contiguous on disk.
+     DDiisskk__BBlloocckkRReeaadd and DDiisskk__BBlloocckkWWrriittee use  geometry  and  block
+     layout  information  in  the  Ofs_DomainHeader  to correctly
+     locate disk blocks.  The _i_n_d_e_x argument to these routines is
+     a  block index, counting from the beginning of the partition
+     (see the warning below!).
+
+     DDiisskk__BBaaddBBlloocckkRReeaadd is used to re-read a bad file system block
+     and  determine  which sectors are bad.  It returns a bitmask
+     with bits set to indicate which of the sectors were success-
+     fully  read.   Bit  _i in the mask corresponds to sector _i in
+     the block.  DDIISSKK__SSEECCTTOORRSS__PPEERR__BBLLOOCCKK defines how  many  sector
+     there are in each file system block.
+
+FFRRAAGGMMEENNTT II//OO
+     Each file system block  is  sub-divided  into  fragments  to
+     optimize  allocation of small files.  Currently the fragment
+     size is 1 Kbyte, so there are 4  fragments  to  each  block.
+
+
+
+Sprite v.1.0       Printed:  October 31, 1990                   4
+
+
+
+
+
+
+Disk                  C Library Procedures                   Disk
+
+
+
+     DDiisskk__FFrraaggRReeaadd  and DDiisskk__FFrraaggWWrriittee are used to read and write
+     fragments.  The _i_n_d_e_x argument to these routines is a  frag-
+     ment  index,  counting  from  the beginning of the partition
+     (see the warning below!).  The _c_o_u_n_t argument to these  rou-
+     tines should not be greater than the number of fragments per
+     file system block.
+
+BBLLOOCCKK AANNDD FFRRAAGGMMEENNTT IINNDDEEXXEESS
+     WWAARRNNIINNGG:: there are several caveats about block  numbers  and
+     fragment  numbers as used by the Sprite file system.  A par-
+     tition is divided into areas for bitmaps, file  descriptors,
+     and  data  blocks.   These  divisions  are  specified in the
+     Ofs_DomainHeader structure in terms  of  block  offsets  and
+     number  of  blocks.   However, _b_l_o_c_k _n_u_m_b_e_r_s _a_r_e _n_o_t _k_e_p_t _i_n
+     _d_i_s_k _m_a_p_s,  _o_n_l_y  _f_r_a_g_m_e_n_t  _n_u_m_b_e_r_s.   When  traversing  the
+     direct and indirect blocks that define where a file's blocks
+     are, fragment indexes must be  converted  to  block  indexes
+     before   using  either  DDiisskk__BBlloocckkRReeaadd  or  DDiisskk__BBlloocckkWWrriittee.
+     Also, _d_i_r_e_c_t _b_l_o_c_k _p_o_i_n_t_e_r_s _i_n _t_h_e _m_a_p_s _a_r_e _f_r_a_g_m_e_n_t _i_n_d_e_x_e_s
+     _r_e_l_a_t_i_v_e  _t_o  _t_h_e  _s_t_a_r_t  _o_f _t_h_e _d_a_t_a _b_l_o_c_k _a_r_e_a _o_f _t_h_e _f_i_l_e
+     _s_y_s_t_e_m.  Thus to convert from a direct block  pointer  to  a
+     physical fragment index:
+
+          fragIndex = blockPointer + (headerPtr->dataOffset * FS_FRAGMENTS_PER_BLOCK);
+          blockIndex = fragIndex / FS_FRAGMENTS_PER_BLOCK;
+
+     The last main caveat is that  _i_n_d_i_r_e_c_t  _b_l_o_c_k  _p_o_i_n_t_e_r_s  _a_r_e
+     _p_h_y_s_i_c_a_l _f_r_a_g_m_e_n_t _i_n_d_e_x_e_s.  They do not need to be offset in
+     the same way as direct block pointers.  This applies to  any
+     block  pointer  that points to an indirect block, never to a
+     block pointer that points to a data block.
+
+PPRRIINNTTIINNGG UUTTIILLIITTIIEESS
+     The last set of procedures in this package are used to print
+     out  contents  of  the  file system.  DDiisskk__PPrriinnttDDoommaaiinnHHeeaaddeerr
+     prints    out     the     domain     header     information.
+     DDiisskk__PPrriinnttSSuummmmaarryyIInnffoo  prints  out  the summary disk sector.
+     This sector is used to keep the prefix under which the  disk
+     is  exported,  the  current  number  of blocks allocated and
+     free, and whether or not the disk was safely sync'ed at last
+     reboot.              DDiisskk__PPrriinnttFFiilleeDDeessccBBiittmmaapp            and
+     DDiisskk__PPrriinnttDDaattaaBBlloocckkBBiittmmaapp print out the file descriptor  and
+     data  block  bitmaps  in  hex.  A zero bit represents a free
+     descriptor or block.  DDiisskk__PPrriinnttDDiirrEEnnttrryy prints out a direc-
+     tory entry.
+
+SSEEEE AALLSSOO
+     fscheck, fsmake, labeldisk, installboot
+
+KKEEYYWWOORRDDSS
+     disk, block, sector, fragment
+
+
+
+
+Sprite v.1.0       Printed:  October 31, 1990                   5
+
+
+
+
+
+
+Disk                  C Library Procedures                   Disk
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  October 31, 1990                   6
+
+
+
+
+
+

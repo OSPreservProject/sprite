@@ -1,0 +1,155 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  srv030:1.2 srv028:1.2 srv027:1.2 srv026:1.2 srv024:1.2 srv022:1.2 srv021:1.2 srv019:1.2 srv018:1.2 srv016:1.2 srv014:1.2 srv010:1.2 srv008:1.2 srv007:1.2 srv006:1.2 srv005:1.2 srv004:1.2 srv003:1.2 srv002:1.2 srv001:1.2;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     91.10.04.12.03.01;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.09.26.22.49.06;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Initialization code for Sprite emulation.
+@
+
+
+1.2
+log
+@Add SpriteEmu_ServerPort to make sure the request port is initialized.
+@
+text
+@/* 
+ * emuInit.c --
+ *
+ *	Initialization for the Sprite emulator library.
+ *
+ * Copyright 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/lib/c/emulator/RCS/emuInit.c,v 1.1 91/09/26 22:49:06 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <mach.h>
+#include <spriteEmu.h>
+#include <spriteEmuInt.h>
+
+/* 
+ * This should go into a Mach header file somewhere...
+ */
+extern int mach_init();
+
+/* 
+ * This is the task's port for making Sprite requests.  Callers should use 
+ * the SpriteEmu_ServerPort function to get it, to ensure that the port is 
+ * correctly initialized.
+ */
+static mach_port_t serverPort = MACH_PORT_NULL; 
+				/* port for making Sprite requests */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SpriteEmu_Init --
+ *
+ *	Initialization for the Sprite emulation library.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Ensures that Mach initialization is done.  Gets the Sprite request
+ *	port for the process.  Suspends the current thread if there was an
+ *	error.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+SpriteEmu_Init()
+{
+    mach_init();
+
+    if (task_get_bootstrap_port(mach_task_self(), &serverPort)
+	== KERN_SUCCESS) {
+	return;
+    }
+
+    thread_suspend(mach_thread_self());
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SpriteEmu_ServerPort --
+ *
+ *	Get the service request port.
+ *
+ * Results:
+ *	Returns the service port.
+ *
+ * Side effects:
+ *	Initializes the emulation support, if necessary.
+ *
+ *----------------------------------------------------------------------
+ */
+
+mach_port_t
+SpriteEmu_ServerPort()
+{
+    if (serverPort == MACH_PORT_NULL) {
+	SpriteEmu_Init();
+    }
+
+    return serverPort;
+}
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.5 91/02/09 13:24:44 ouster Exp $ SPRITE (Berkeley)";
+d22 1
+d25 1
+a25 3
+ * There is a declaration for mach_thread_self in <mach/mach_traps.h>, but
+ * there's a problem with the declaration for mach_task_self that makes the
+ * gcc cpp unhappy.
+d27 1
+a27 1
+extern mach_port_t mach_thread_self();
+d29 6
+a34 1
+mach_port_t spriteEmu_ServerPort = MACH_PORT_NULL; 
+d49 3
+a51 2
+ *	Gets the Sprite request port for the process.  Suspends the current 
+ *	thread if there was an error.
+d59 3
+a61 1
+    if (task_get_bootstrap_port(mach_task_self(), &spriteEmu_ServerPort)
+d67 27
+@

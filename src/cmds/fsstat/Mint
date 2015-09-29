@@ -1,0 +1,4 @@
+#!/bin/csh -f
+date
+echo " "
+cat Sys/mint/88* | awk -f fsstats.awk 

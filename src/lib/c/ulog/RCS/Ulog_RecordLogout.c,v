@@ -1,0 +1,206 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     89.01.02.13.54.25;  author douglis;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.09.22.22.14.59;  author douglis;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.09.15.10.17.33;  author douglis;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.09.13.16.44.48;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.08.14.15.12.23;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@ecord information that someone has logged out, removing them from the
+list of people logged into the current machine.
+@
+
+
+1.5
+log
+@added call to Host_End.
+@
+text
+@/* 
+ * ULog_RecordLogout.c --
+ *
+ *	Source code for the ULog_RecordLogout procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: Ulog_RecordLogout.c,v 1.4 88/09/22 22:14:59 douglis Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <ulog.h>
+#include "ulogInt.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ulog_RecordLogout --
+ *
+ *	Remove information for a user from the database after the user
+ * 	logs out.
+ *
+ *	Note: for now, this just nulls out the "user log" entry showing
+ *	who's logged in on a particular host/port combination.  It
+ *	can later be modified to update a "last" like database showing time
+ *	logged out as well as time logged in.
+ *
+ * Results:
+ *	-1 indicates an error, in which case errno indicates more details.
+ *	0 indicates success.
+ *
+ * Side effects:
+ *	The database file is updated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+int
+Ulog_RecordLogout(uid, portID)
+    int uid;		/* user identifier */
+    int portID;		/* index into host's area in userLog */
+{
+    int status;
+    char myHostName[ULOG_LOC_LENGTH];
+    char buffer[ULOG_RECORD_LENGTH];
+    Host_Entry *hostPtr;
+
+    if (portID >= ULOG_MAX_PORTS || portID < 0) {
+#ifdef DEBUG
+	syslog(LOG_ERR, "recording logout: invalid port: %d\n", portID);
+#endif
+	errno = EINVAL;
+	return(-1);
+    }
+
+    if (gethostname(myHostName, ULOG_LOC_LENGTH) < 0) {
+	syslog(LOG_ERR, "Ulog_RecordLogout: error in gethostname.\n");
+	return(-1);
+    }
+    hostPtr = Host_ByName(myHostName);
+    Host_End();
+    if (hostPtr == (Host_Entry *) NULL) {
+	syslog(LOG_ERR,
+	       "Ulog_RecordLogout: error in Host_ByName for current host.\n");
+	return(-1);
+    }
+
+    bzero(buffer, ULOG_RECORD_LENGTH);
+    (void) sprintf(buffer, ULOG_FORMAT_STRING, -1, hostPtr->id, portID,
+		     0, "(none)");
+
+    status = Db_WriteEntry(ULOG_FILE_NAME, buffer,
+			   hostPtr->id * ULOG_MAX_PORTS + portID,
+			   ULOG_RECORD_LENGTH, DB_LOCK_BREAK);
+    return(status);
+}
+@
+
+
+1.4
+log
+@changed order of args to DB_*Entry routines.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: Ulog_RecordLogout.c,v 1.3 88/09/15 10:17:33 douglis Exp $ SPRITE (Berkeley)";
+d72 1
+@
+
+
+1.3
+log
+@fixed bug using uninitialized structure for hostID instead of taking
+it from hostPtr.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: Ulog_RecordLogout.c,v 1.2 88/09/13 16:44:48 douglis Exp $ SPRITE (Berkeley)";
+d75 1
+d82 1
+a82 1
+    status = Db_WriteEntry(ULOG_FILE_NAME,
+d84 1
+a84 1
+			   ULOG_RECORD_LENGTH, buffer, DB_LOCK_BREAK);
+@
+
+
+1.2
+log
+@changed to use ascii representation in database file.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: Ulog_RecordLogout.c,v 1.1 88/08/14 15:12:23 douglis Exp $ SPRITE (Berkeley)";
+a53 1
+    Ulog_Data data;
+d82 1
+a82 1
+			   data.hostID * ULOG_MAX_PORTS + portID,
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: proto.c,v 1.2 88/03/11 08:39:08 ouster Exp $ SPRITE (Berkeley)";
+d57 1
+a58 1
+    int hostID;
+a67 5
+    data.uid = -1;
+    data.portID = portID;
+    data.updated = 0;
+    data.location[0] = '\0'; 
+
+a76 1
+    hostID = hostPtr->id;
+d78 7
+a84 2
+    status = Db_WriteEntry(ULOG_FILE_NAME, hostID * ULOG_MAX_PORTS + portID,
+			   sizeof(data), (char *) &data, DB_LOCK_BREAK);
+@

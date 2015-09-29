@@ -1,0 +1,97 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     90.12.08.00.04.17;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.11.15.13.34.11;  author rab;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Put ifdef around typedef of va_list, because it is also typedefed in
+stdio.h for prototypes.
+@
+text
+@/*
+ * stdarg.h --
+ *
+ *	Macros for handling variable-length argument lists.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/lib/include/symm.md/RCS/stdarg.h,v 1.1 90/11/15 13:34:11 rab Exp Locker: rab $ SPRITE (Berkeley)
+ */
+
+#ifndef _STDARG
+#define _STDARG
+
+#ifndef _VA_LIST
+#define _VA_LIST
+typedef char *va_list;
+#endif
+
+#define __va_rounded_size(TYPE)  \
+  (((sizeof (TYPE) + sizeof (int) - 1) / sizeof (int)) * sizeof (int))
+
+#define va_start(AP, lastarg) \
+ ((AP) = ((char *)&lastarg + __va_rounded_size(lastarg)))
+
+#define va_arg(AP, TYPE)						\
+ ((AP) += __va_rounded_size (TYPE),					\
+  *((TYPE *) ((AP) - __va_rounded_size (TYPE))))
+
+#define va_end(list)
+
+#endif /* _STDARG */
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/sun3.md/RCS/stdarg.h,v 1.2 88/11/15 21:41:23 rab Exp $ SPRITE (Berkeley)
+d21 4
+a24 5
+typedef struct {
+    char *vl_current;			/* Pointer to last arg returned from
+					 * list. */
+    char *vl_next;			/* Pointer to next arg to return. */
+} va_list;
+d26 2
+d29 2
+a30 2
+#define va_start(list, lastarg) \
+    (list).vl_current = (list).vl_next = ((char *) &lastarg) + 4;
+d32 3
+a34 4
+#define va_arg(list, type)			\
+    ((list).vl_current = (list).vl_next,	\
+    (list).vl_next += sizeof(type),		\
+     *((type *) (list).vl_current))
+@

@@ -1,0 +1,1 @@
+../../dist/tkucbsrc/main.sed

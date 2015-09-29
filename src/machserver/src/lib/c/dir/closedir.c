@@ -1,0 +1,1 @@
+../../c.orig/dir/closedir.c

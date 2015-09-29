@@ -1,0 +1,10 @@
+F DBG.H_V;1                         	dbg.h,v
+F DBGASM.S_V;1                      	dbgAsm.s,v
+F DBGDBXIN.H_V;1                    	dbgDbxInt.h,v
+F DBGDIS.C_V;1                      	dbgDis.c,v
+F DBGINT.H_V;1                      	dbgInt.h,v
+F DBGIP.C_V;1                       	dbgIP.c,v
+F DBGMAIN.C_V;1                     	dbgMain.c,v
+F DBGMAIND.C_V;1                    	dbgMainDbx.c,v
+D SCVS                              	SCVS
+F TAGS_V.;1                         	TAGS,v

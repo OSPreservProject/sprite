@@ -1,0 +1,9 @@
+F PRINTFIE.;1                       	printFields,v
+F RAWFS.C_V;1                       	rawfs.c,v
+F RAWMIG.C_V;1                      	rawmig.c,v
+F RAWPROC.C_V;1                     	rawproc.c,v
+F RAWRECOV.C_V;1                    	rawrecov.c,v
+F RAWRPC.C_V;1                      	rawrpc.c,v
+F RAWSTAT.C_V;1                     	rawstat.c,v
+F RAWSTAT.MAN;1                     	rawstat.man,v
+F RAWVM.C_V;1                       	rawvm.c,v

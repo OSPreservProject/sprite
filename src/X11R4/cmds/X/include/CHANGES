@@ -1,0 +1,7 @@
+The following changes have been made to this directory since R3:
+
+	o  Most server structures redone.
+
+	o  Most non-DIX interface header files removed from this
+	   directory.  All MI files live in ddx/mi, mfb files in ddx/mfb,
+	   even though the interfaces are public.

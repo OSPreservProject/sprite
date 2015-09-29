@@ -1,0 +1,101 @@
+head     9.0;
+branch   ;
+access   ;
+symbols  ds3100:9.0 sun3:9.0 sun4nw:9.0 symm:9.0 spur:9.0 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.0
+date     89.09.12.15.02.28;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     89.08.15.19.53.02;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.26.20.02.58;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Converted over to new tty driver.
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@/*
+ *  devGraphics.h --
+ *
+ *     	Defines of procedures and variables used by other files.
+ *
+ *	Copyright (C) 1989 Digital Equipment Corporation.
+ *	Permission to use, copy, modify, and distribute this software and
+ *	its documentation for any purpose and without fee is hereby granted,
+ *	provided that the above copyright notice appears in all copies.
+ *	Digital Equipment Corporation makes no representations about the
+ *	suitability of this software for any purpose.  It is provided "as is"
+ *	without express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/dev/ds3100.md/RCS/graphics.h,v 1.2 89/08/15 19:53:02 rab Exp Locker: douglis $ SPRITE (DECWRL)
+ */
+
+#ifndef _DEVGRAPHICS
+#define _DEVGRAPHICS
+
+#include <dev/graphics.h>
+
+extern Boolean	devGraphicsOpen;
+
+extern void		DevGraphicsInit();
+extern void		DevGraphicsInterrupt();
+extern ReturnStatus	DevGraphicsOpen();
+extern ReturnStatus	DevGraphicsClose();
+extern ReturnStatus	DevGraphicsRead();
+extern ReturnStatus	DevGraphicsWrite();
+extern ReturnStatus	DevGraphicsSelect();
+extern ReturnStatus	DevGraphicsIOControl();
+extern void		DevGraphicsKbdIntr();
+extern void		DevGraphicsMouseIntr();
+
+#endif /* _DEVGRAPHICS */
+@
+
+
+1.2
+log
+@Commented #endif labels.
+@
+text
+@d14 1
+a14 1
+ * $Header: /sprite/src/kernel/dev/ds3100.md/RCS/graphics.h,v 1.1 89/07/26 20:02:58 nelson Exp Locker: rab $ SPRITE (DECWRL)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+/* 
+d9 1
+a9 1
+ *	provided that the above copyright notice appears in all copies.  
+d14 1
+a14 1
+ * $Header: /sprite/src/kernel/dev.old/ds3100.md/RCS/devGraphics.h,v 1.2 89/07/18 17:20:37 ouster Exp $ SPRITE (DECWRL)
+d35 1
+a35 1
+#endif _DEVGRAPHICS
+@

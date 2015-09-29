@@ -1,0 +1,3755 @@
+\typeout{Document Style laletter.  September 18, 1989}
+
+%  Steve Sydoriak wrote this software.
+
+%  Copyright, 1990, The Regents of the University of California.
+%  This software was produced under a U.S. Government contract
+%  (W-7405-ENG-36) by the Los Alamos National Laboratory, which is
+%  operated by the University of California for the U.S. Department
+%  of Energy.  The U.S.  Government is licensed to use, reproduce,
+%  and distribute this software.  Permission is granted to the public
+%  to copy and use this software without charge, provided that this
+%  notice and any statement of authorship are reproduced on all
+%  copies.  Neither the Government nor the University makes any
+%  warranty, express or implied, or assumes any liability or
+%  responsibility for the use of this software.
+
+% *****************************************
+% **** BEGINNING OF ARTICLE.DOC MACROS ****
+% *****************************************
+
+% The following portion of this file was copied from article.doc, 
+% with some of the lines commented out or added with % LETTER CHANGES
+
+%    ****************************************
+%    *             BIBLIOGRAPHY             *
+%    ****************************************
+%
+% The thebibliography environment executes the following commands:
+%
+%  \def\newblock{\hskip .11em plus .33em minus -.07em} --
+%      Defines the `closed' format, where the blocks (major units of 
+%      information) of an entry run together.
+%
+%  \sloppy  -- Used because it's rather hard to do line breaks in 
+%      bibliographies,
+% 
+%  \sfcode`\.=1000\relax --
+%      Causes a `.' (period) not toproduce an end-of-sentence space.
+%
+% LETTER CHANGES\def\thebibliography#1{\section*{References\@mkboth
+% LETTER CHANGES  {REFERENCES}{REFERENCES}}\list
+\def\thebibliography#1{%% LETTER CHANGES
+  \par% LETTER CHANGES
+  \vspace{\baselineskip}% LETTER CHANGES
+  REFERENCES% LETTER CHANGES
+  \list% LETTER CHANGES
+  {[\arabic{enumi}]}{\settowidth\labelwidth{[#1]}\leftmargin\labelwidth
+  \advance\leftmargin\labelsep
+  \usecounter{enumi}}%
+% The following line reflects the change between 16 Mar 88 and 4 Sep 86
+% versions of article.sty.
+  \def\newblock{\hskip .11em plus .33em minus .07em}%
+  \sloppy\clubpenalty4000\widowpenalty4000
+  \sfcode`\.=1000\relax}%
+
+\let\endthebibliography=\endlist
+
+%    ****************************************
+%    *         FIGURES AND TABLES           *
+%    ****************************************
+% 
+% Float placement parameters.  See LaTeX manual for their definition.
+%
+\setcounter{topnumber}{2}
+\def\topfraction{.7}
+\setcounter{bottomnumber}{1}
+\def\bottomfraction{.3}
+\setcounter{totalnumber}{3}
+\def\textfraction{.2}
+\def\floatpagefraction{.5}
+\setcounter{dbltopnumber}{2}
+\def\dbltopfraction{.7}
+\def\dblfloatpagefraction{.5}
+
+% \@makecaption{NUMBER}{TEXT} : Macro to make a figure or table caption.  
+%      NUMBER : Figure or table number--e.g., 'Figure 3.2' 
+%      TEXT   : The caption text.
+%  Macro should be called inside a \parbox of right width, with \normalsize.
+% changed 25 Jun 86 to fix according to Howard Trickey:
+% instead of \unhbox\@tempboxa\par we do #1: #2\par
+
+\long\def\@makecaption#1#2{%
+  \vskip 10pt 
+  \setbox\@tempboxa\hbox{#1: #2}%
+  \ifdim \wd\@tempboxa >\hsize   % IF longer than one line:
+    #1: #2\par                 %   THEN set as ordinary paragraph.
+  \else                        %   ELSE  center.
+    \hbox to\hsize{\hfil\box\@tempboxa\hfil}%
+  \fi
+}%
+%
+% To define a float of type TYPE (e.g., TYPE = figure), the document style 
+% must define the following.
+%
+%  \fps@TYPE   : The default placement specifier for floats of type TYPE.
+%
+%  \ftype@TYPE : The type number for floats of type TYPE.  Each TYPE has
+%                associated a unique positive TYPE NUMBER, which is a power 
+%                of two.  E.g., figures might have type number 1, tables type 
+%                number 2, programs type number 4, etc.
+%
+%  \ext@TYPE   : The file extension indicating the file on which the 
+%                contents list for float type TYPE is stored.  For example, 
+%                \ext@figure = 'lof'.
+%
+%  \fnum@TYPE  : A macro to generate the figure number for a caption.
+%                For example, \fnum@TYPE == Figure \thefigure.
+%
+%  The actual float-making environment commands--e.g., the commands
+%  \figure and \endfigure--are defined in terms of the macros \@float
+%  and \end@float, which are described below.
+%
+%  \@float{TYPE}[PLACEMENT] : Macro to begin a float environment for a 
+%     single-column float of type TYPE with PLACEMENT as the placement 
+%     specifier.  The default value of PLACEMENT is defined by \fps@TYPE.   
+%     The environment is ended by \end@float.  
+%     E.g., \figure == \@float{figure}, \endfigure == \end@float.
+
+% FIGURE
+
+\newcounter{figure}
+\def\thefigure{\@arabic\c@figure}
+
+\def\fps@figure{tbp}
+\def\ftype@figure{1}
+\def\ext@figure{lof}
+\def\fnum@figure{Figure \thefigure}
+\def\figure{\@float{figure}}
+\let\endfigure\end@float
+\@namedef{figure*}{\@dblfloat{figure}}
+\@namedef{endfigure*}{\end@dblfloat}
+
+% TABLE
+
+\newcounter{table}
+\def\thetable{\@arabic\c@table}
+
+\def\fps@table{tbp}
+\def\ftype@table{2}
+\def\ext@table{lot}
+\def\fnum@table{Table \thetable}
+\def\table{\@float{table}}
+\let\endtable\end@float
+\@namedef{table*}{\@dblfloat{table}}
+\@namedef{endtable*}{\end@dblfloat}
+%
+% END OF ARTICLE.DOC MACROS
+
+% ***************************
+% **** LETTER.STY MACROS ****
+% ***************************
+% The following portion of this file was copied from letter.doc, 
+% with many of the lines commented out with % LETTER CHANGES
+
+% LETTER DOCUMENT STYLE -- Released 21 July 1985
+%    for LaTeX version 2.09
+% Copyright (C) 1985 by Leslie Lamport
+
+% LETTER CHANGES \typeout{Document Style 'letter'. Released 21 July 1985}
+
+%  The type size option is handled by \def'ing \@ptsize to the following
+%  values:
+%       10pt : 0, 11pt : 1, 12pt : 2
+%  Then loading the different fonts accordingly.
+%
+
+\def\@ptsize{0}                     % Default is 10pt.
+\@namedef{ds@11pt}{\def\@ptsize{1}} % 11pt option.
+\@namedef{ds@12pt}{\def\@ptsize{2}} % 12pt option.
+
+
+% no twoside option
+%
+\@twosidefalse
+
+%  draft option
+%
+% \overfullrule = 0pt             % Default is don't mark overfull hboxes.
+\def\ds@draft{\overfullrule 5pt}  % Causes overfull hboxes to be marked.
+
+% The \@options command causes the execution of every command \ds@FOO 
+% which is defined and for which the user typed the FOO option in his
+% \documentstyle command.  For every option BAR he typed for which
+% \ds@BAR is not defined, the file BAR.sty will be read after the present
+% (main) .STY file is executed.
+
+\@options
+
+%  ****************************************
+%  *               FONTS                  *
+%  ****************************************
+%
+
+\lineskip 1pt            % \lineskip is 1pt for all font sizes.
+\normallineskip 1pt
+\def\baselinestretch{1}
+
+% Each size-changing command \SIZE executes the command
+%        \@setsize\SIZE{BASELINESKIP}\FONTSIZE\@FONTSIZE
+% where:
+%   BASELINESKIP = Normal value of \baselineskip for that size.  (Actual 
+%                  value will be \baselinestretch * BASELINESKIP.)
+%
+%  \FONTSIZE     = Name of font-size command.  The currently available
+%                  (preloaded) font sizes are: \vpt (5pt), \vipt (6pt),
+%                  \viipt (etc.), \viiipt, \ixpt, \xpt, \xipt, \xiipt,
+%                  \xivpt, \xviipt, \xxpt, \xxvpt.
+%  \@FONTSIZE    = The same as the font-size command except with an
+%                  '@' in front---e.g., if \FONTSIZE = \xivpt then
+%                  \@FONTSIZE = \@xivpt.
+%
+% For reasons of efficiency that needn't concern the designer,
+% the document style defines \@normalsize instead of \normalsize .  This is
+% done only for \normalsize, not for any other size-changing commands.
+
+\ifcase \@ptsize\relax   % 10pt option
+
+\def\@normalsize{\@setsize\normalsize{12pt}\xpt\@xpt  
+\abovedisplayskip 10pt plus2pt minus5pt%
+\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip  \z@ plus3pt%   
+\belowdisplayshortskip  6pt plus3pt minus3pt%
+\let\@listi\@listI}   % Setting of \@listi added 22 Dec 87
+
+\def\small{\@setsize\small{11pt}\ixpt\@ixpt
+\abovedisplayskip 8.5pt plus 3pt minus 4pt%
+\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip \z@ plus2pt%
+\belowdisplayshortskip 4pt plus2pt minus 2pt%
+\def\@listi{\leftmargin\leftmargini %% Def of \@list i added 22 Dec 87
+\topsep 4pt plus 2pt minus 2pt\parsep 2pt plus 1pt minus 1pt
+\itemsep \parsep}}
+
+\def\footnotesize{\@setsize\footnotesize{9.5pt}\viiipt\@viiipt
+\abovedisplayskip 6pt plus 2pt minus 4pt%
+\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip \z@ plus 1pt%
+\belowdisplayshortskip 3pt plus 1pt minus 2pt%
+\def\@listi{\leftmargin\leftmargini %% Def of \@list i added 22 Dec 87
+\topsep 3pt plus 1pt minus 1pt\parsep 2pt plus 1pt minus 1pt
+\itemsep \parsep}}
+
+\def\scriptsize{\@setsize\scriptsize{8pt}\viipt\@viipt}
+\def\tiny{\@setsize\tiny{6pt}\vpt\@vpt}
+\def\large{\@setsize\large{14pt}\xiipt\@xiipt}
+\def\Large{\@setsize\Large{18pt}\xivpt\@xivpt}
+\def\LARGE{\@setsize\LARGE{22pt}\xviipt\@xviipt}
+\def\huge{\@setsize\huge{25pt}\xxpt\@xxpt}
+\def\Huge{\@setsize\Huge{30pt}\xxvpt\@xxvpt}
+
+\or  % 11pt option
+
+\def\@normalsize{\@setsize\normalsize{13.6pt}\xipt\@xipt
+\abovedisplayskip 11pt plus3pt minus6pt%
+\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip  \z@ plus3pt%   
+\belowdisplayshortskip  6.5pt plus3.5pt minus3pt%
+\let\@listi\@listI}   % Setting of \@listi added 22 Dec 87
+
+\def\small{\@setsize\small{12pt}\xpt\@xpt
+\abovedisplayskip 10pt plus2pt minus5pt%
+\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip  \z@ plus3pt%   
+\belowdisplayshortskip  6pt plus3pt minus3pt%
+\def\@listi{\leftmargin\leftmargini %% Def of \@listi added 22 Dec 87
+\topsep 6pt plus 2pt minus 2pt\parsep 3pt plus 2pt minus 1pt
+\itemsep \parsep}}
+
+\def\footnotesize{\@setsize\footnotesize{11pt}\ixpt\@ixpt
+\abovedisplayskip 8pt plus 2pt minus 4pt%
+\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip \z@ plus 1pt%
+\belowdisplayshortskip 4pt plus 2pt minus 2pt%
+\def\@listi{\leftmargin\leftmargini %% Def of \@listi added 22 Dec 87
+\topsep 4pt plus 2pt minus 2pt\parsep 2pt plus 1pt minus 1pt
+\itemsep \parsep}}
+
+\def\scriptsize{\@setsize\scriptsize{9.5pt}\viiipt\@viiipt}
+\def\tiny{\@setsize\tiny{7pt}\vipt\@vipt}
+\def\large{\@setsize\large{14pt}\xiipt\@xiipt}
+\def\Large{\@setsize\Large{18pt}\xivpt\@xivpt}
+\def\LARGE{\@setsize\LARGE{22pt}\xviipt\@xviipt}
+\def\huge{\@setsize\huge{25pt}\xxpt\@xxpt}
+\def\Huge{\@setsize\Huge{30pt}\xxvpt\@xxvpt}
+
+\or  % 12pt option
+
+\def\@normalsize{\@setsize\normalsize{15pt}\xiipt\@xiipt
+\abovedisplayskip 12pt plus3pt minus7pt%
+\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip  \z@ plus3pt%   
+\belowdisplayshortskip  6.5pt plus3.5pt minus3pt%
+\let\@listi\@listI}   % Setting of \@listi added 22 Dec 87
+
+\def\small{\@setsize\small{13.6pt}\xipt\@xipt
+\abovedisplayskip 11pt plus3pt minus6pt%
+\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip  \z@ plus3pt%   
+\belowdisplayshortskip  6.5pt plus3.5pt minus3pt%
+\def\@listi{\leftmargin\leftmargini %% Def of \@list i added 22 Dec 87
+\parsep 4.5pt plus 2pt minus 1pt
+            \itemsep \parsep
+            \topsep 9pt plus 3pt minus 5pt}}
+
+\def\footnotesize{\@setsize\footnotesize{12pt}\xpt\@xpt
+\abovedisplayskip 10pt plus2pt minus5pt%
+\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip  \z@ plus3pt%   
+\belowdisplayshortskip  6pt plus3pt minus3pt%
+\def\@listi{\leftmargin\leftmargini %% Def of \@list i added 22 Dec 87
+\topsep 6pt plus 2pt minus 2pt\parsep 3pt plus 2pt minus 1pt
+\itemsep \parsep}}
+
+\def\scriptsize{\@setsize\scriptsize{9.5pt}\viiipt\@viiipt}
+\def\tiny{\@setsize\tiny{7pt}\vipt\@vipt}
+\def\large{\@setsize\large{18pt}\xivpt\@xivpt}
+\def\Large{\@setsize\Large{22pt}\xviipt\@xviipt}
+\def\LARGE{\@setsize\LARGE{25pt}\xxpt\@xxpt}
+\def\huge{\@setsize\huge{30pt}\xxvpt\@xxvpt}
+\let\Huge=\huge
+\fi
+
+\normalsize  % Choose the normalsize font.
+
+
+%  ****************************************
+%  *            PAGE LAYOUT               *
+%  ****************************************
+%
+% All margin dimensions measured from a point one inch from top and side
+% of page.  Dimensions shrink by about 2 percent
+
+% SIDE MARGINS:
+% LETTER CHANGES \oddsidemargin   53pt   % Left margin on odd-numbered pages.
+% LETTER CHANGES \evensidemargin  53pt   % Left margin on even-numbered pages.
+\marginparwidth  90pt      % Width of marginal notes.
+\marginparsep    11pt      % Horizontal space between outer margin and 
+                           % marginal note
+\marginparpush 5pt         % Minimum vertical space between marginal notes.
+
+% VERTICAL SPACING:        
+                         % Top of page:
+% LETTER CHANGES \topmargin 27pt% Nominal distance from top of page to top of
+                         %    box containing running head.
+% LETTER CHANGES \headheight 12pt %    Height of box containing running head.
+% LETTER CHANGES \headsep 45pt      %    Space between running head and text.
+% \topskip = 10pt        %    '\baselineskip' for first line of page.
+                         % Bottom of page:
+\footheight 12pt         %    Height of box containing running foot.
+\footskip 25pt           %    Distance from baseline of box containing foot 
+                         %    to baseline of last line of text.
+
+% DIMENSION OF TEXT:
+
+% LETTER CHANGES \textheight 505pt% Height of text (including footnotes
+                                  % and figures, 
+                         % excluding running head and foot).
+% LETTER CHANGES \textwidth 365pt         % Width of text line.
+                         % For two-column mode: 
+% LETTER CHANGES \columnsep 10pt          %    Space between columns 
+% LETTER CHANGES \columnseprule 0pt       %    Width of rule between columns.
+
+% LETTER CHANGES \raggedbottom  % 'ragged bottom' (all pages set to natural
+                          % height, with no stretch or shrinkage) 
+
+% FOOTNOTES:
+
+\footnotesep 12pt    % Height of strut placed at the beginning of every
+                     % footnote.
+\skip\footins 10pt plus 2pt minus 4pt  % Space between last line of text and 
+                                       % top of first footnote.
+
+
+% FLOATS:
+%   The following items must be defined, even though there are no
+%   floats in this style.
+\floatsep 12pt plus 2pt minus 2pt
+\textfloatsep  20pt plus 2pt minus 4pt
+\intextsep 12pt plus 2pt minus 2pt
+% LETTER CHANGES \dblfloatsep 12pt plus 2pt minus 2pt
+% LETTER CHANGES \dbltextfloatsep 20pt plus 2pt minus 4pt
+\@maxsep 20pt
+% LETTER CHANGES \@dblmaxsep 20pt
+\@fptop 0pt plus 1fil
+\@fpsep 8pt plus 2fil
+\@fpbot 0pt plus 1fil
+% LETTER CHANGES \@dblfptop 0pt plus 1fil
+% LETTER CHANGES \@dblfpsep 8pt plus 2fil
+% LETTER CHANGES \@dblfpbot 0pt plus 1fil
+
+
+
+%    ****************************************
+%    *           LETTER COMMANDS            *
+%    ****************************************
+
+% LETTER CHANGES ** This whole section of letter.doc was discarded.
+
+%    ****************************************
+%    *        THE SRI LETTER FORMAT         *
+%    ****************************************
+
+% LETTER CHANGES ** This whole section of letter.doc was discarded.
+
+%    ****************************************
+%    *     THE GENERIC LETTER COMMANDS      *
+%    ****************************************
+
+% LETTER CHANGES ** This whole section of letter.doc was discarded.
+
+%    ****************************************
+%    *            PAGE STYLES               *
+%    ****************************************
+
+% LETTER CHANGES ** This whole section of letter.doc was discarded.
+
+
+%  ****************************************
+%  *           PARAGRAPHING               *
+%  ****************************************
+%
+% LETTER CHANGES \parskip .7em     % Extra vertical space between paragraphs.
+\parindent 0pt                     % Width of paragraph indentation.
+% LETTER CHANGES \topsep .4em      % Extra vertical space, in addition to 
+                                   % \parskip, added above and below list and
+                                   % paragraphing environments.
+\partopsep 0pt                     % Extra vertical space, in addition to 
+                                   % \parskip and \topsep, added when user
+                                   % leaves blank line before environment.
+% LETTER CHANGES \itemsep .4em     % Extra vertical space, in addition to
+                                   % \parskip, added between list items.
+
+% The following page-breaking penalties are defined
+
+\@lowpenalty   51      % Produced by \nopagebreak[1] or \nolinebreak[1]
+\@medpenalty  151      % Produced by \nopagebreak[2] or \nolinebreak[2]
+\@highpenalty 301      % Produced by \nopagebreak[3] or \nolinebreak[3]
+
+\@beginparpenalty -\@lowpenalty    % Before a list or paragraph environment.
+\@endparpenalty   -\@lowpenalty    % After a list or paragraph environment.
+\@itempenalty     -\@lowpenalty    % Between list items.
+
+% \clubpenalty         % 'Club line'  at bottom of page.
+% \widowpenalty        % 'Widow line' at top of page.
+% \displaywidowpenalty % Math display widow line.
+% \predisplaypenalty   % Breaking before a math display.
+% \postdisplaypenalty  % Breaking after a math display.
+% \interlinepenalty    % SET BY THE LETTER COMMANDS
+% \brokenpenalty       % Breaking after a hyphenated line.
+
+
+
+%    ****************************************
+%    *                LISTS                 *
+%    ****************************************
+
+% LETTER CHANGES **  This whole section of letter.doc has been redefined
+% in \opening, after \@typeface has been defined.
+
+
+%    ****************************************
+%    *         OTHER ENVIRONMENTS           *
+%    ****************************************
+%
+%
+% THEOREM
+% \@begintheorem ... \@endtheorem are the commands executed at the
+% beginning and end of a (user-defined) theorem-like environment.
+% Except \@opargbegintheorem is executed when an optional argument is
+% given.  Cf. LATEX.TEX.
+%
+% \def\@begintheorem#1#2{\it \trivlist \item[\hskip \labelsep{\bf #1\ #2}]}
+% \def\@opargbegintheorem#1#2#3{\it \trivlist
+%       \item[\hskip \labelsep{\bf #1\ #2\ (#3)}]}
+% \def\@endtheorem{\endtrivlist}
+
+
+% EQUATION and EQNARRAY 
+%
+% \newcounter{equation}    
+%  Default is for left-hand side of equations to be flushleft.
+%  To make them flushright, do:
+%  \let\@eqnsel = \hfil
+%
+
+\def\theequation{\arabic{equation}}
+
+% \jot = 3pt      % Extra space added between lines of an eqnarray environment
+
+\arraycolsep 5pt     % Half the space between columns in an array environment.
+% LETTER CHANGES \tabcolsep 6pt% Half the space between columns in a
+                               % tabular environment.
+\arrayrulewidth .4pt % Width of rules in array and tabular environment.
+\doublerulesep 2pt   % Space between adjacent rules in array or tabular env.
+
+% TABBING
+%
+% LETTER CHANGES \tabbingsep \labelsep% Space used by the \' command.
+                                      % (See LaTeX manual.)
+
+% MINIPAGE
+%  \@minipagerestore is called upon entry to a minipage environment to
+%  set up things that are to be handled differently inside a minipage
+%  environment. In the current styles, it does nothing.
+%
+% \skip\@mpfootins : plays same role for footnotes in a minipage as
+%                    \skip\footins does for ordinary footnotes
+
+\skip\@mpfootins = \skip\footins
+
+% FRAMEBOX
+%
+\fboxsep = 3pt    % Space left between box and text by \fbox and \framebox.
+\fboxrule = .4pt  % Width of rules in box made by \fbox and \framebox.
+
+
+%    ****************************************
+%    *             FOOTNOTES                *
+%    ****************************************
+%
+% \footnoterule is a macro to draw the rule separating the footnotes from
+% the text.  It should take zero vertical space, so it needs a negative
+% skip to compensate for any positive space taken by the rule.  (See
+% PLAIN.TEX.)
+
+\def\footnoterule{\kern-1\p@   
+  \hrule width .4\columnwidth 
+  \kern .6\p@}                 % The \hrule has default height of .4pt .
+
+% \newcounter{footnote}
+
+% The numbering style (arabic, alph, etc.) for ordinary footnotes
+% is defined by the macro \thefootnote.
+%
+%   \@makefntext{NOTE} :
+%        Must produce the actual footnote, using \@thefnmark as the mark 
+%        of the footnote and NOTE as the text.  It is called when effectively
+%        inside a \parbox, with \hsize = \columnwidth.  
+%
+
+\long\def\@makefntext#1{\noindent % Macro to make the text of a footnote
+    \hangindent 5pt\hbox 
+    to 5pt{\hss $^{\@thefnmark}$}#1}
+
+% \@makefnmark : A macro to generate the footnote marker that goes
+%                in the text.  Default definition used.
+
+
+%    ****************************************
+%    *            MISCELLANEOUS             *
+%    ****************************************
+%
+% DATE
+%
+\def\today{\ifcase\month\or
+  January\or February\or March\or April\or May\or June\or
+  July\or August\or September\or October\or November\or December\fi
+  \space\number\day, \number\year}
+
+
+
+%    ****************************************
+%    *           INITIALIZATION             *
+%    ****************************************
+%
+% Default initializations
+
+% LETTER CHANGES \smallskipamount=.5\parskip  % These values are used by
+                                              % the letter macros.
+% LETTER CHANGES \medskipamount=\parskip
+% LETTER CHANGES \bigskipamount=2\parskip
+
+% LETTER CHANGES \ps@plain                    % 'plain' page style
+\pagenumbering{arabic}       % Arabic page numbers
+\onecolumn                   % Single-column
+% LETTER CHANGES  Since users want bibliographies, tables of figures,
+% LETTER CHANGES  tables of contents, let them have the .AUX, etc files.
+%
+% LETTER CHANGES \@fileswfalse % \@fileswfalse inhibits writing of .AUX file.
+
+% END OF LETTER.STY -- THE LETTER DOCUMENT STYLE
+
+%
+% ***************************************************************
+% **** BEGINNING OF LOCALLY WRITTEN MACROS FOR LANL LETTERS. ****
+% ***************************************************************
+%
+% *****************************************
+% **** DEFINE AND INITIALIZE REGISTERS ****
+% *****************************************
+
+% \NEWLENGTH, \NEWCOUNTER, \NEWCOUNT, \NEWTOKS, \NEWSAVEBOX, \NEWDIMEN,
+% \NEWSKIP, \NEWIF
+
+\newwrite\@mainmlb
+
+\newlength{\@lengthlabel}
+\newlength{\@lengthrule}
+\newlength{\@lengthdate}
+\newlength{\@lengthname}
+
+\newcounter{@countlist}
+
+\newcount\@countverticalposition
+\newcount\@countbotheader
+\newcount\@countclassseptop
+\newcount\@countclasssepbot
+\newcount\@counttemp
+\newcount\@countto
+\newcount\@countattn
+\newcount\@countattnsave
+\newcount\@countthru
+\newcount\@counttelephone
+\newcount\@countcy
+\newcount\@countvia
+\newcount\@countattachments
+\newcount\@countreference
+\newcount\@countenc
+\newcount\@countdistribution
+\newcount\@countrightcolon
+\newcount\@countleftheader
+\newcount\@countrightheader
+\newcount\@countpictorig
+\newcount\@countletterlist
+\newcount\@countleftto
+\newcount\@countrightto
+\newcount\@counttemptwo
+\newcount\@countcoltemp
+\newcount\@countreturnaddress
+\newcount\@countskiplabels
+
+\newtoks\@toksto
+\newtoks\@toksattn
+\newtoks\@toksattnsave
+\newtoks\@toksthru
+\newtoks\@tokscy
+\newtoks\@tokstelephone
+\newtoks\@toksvia
+\newtoks\@toksattachments
+\newtoks\@toksenc
+\newtoks\@toksreference
+\newtoks\@toksdistribution
+\newtoks\@tokspagetwoheader
+\newtoks\@toksbeforenewline
+\newtoks\@toksafternewline
+\newtoks\@toksaftersave
+\newtoks\@toksempty
+\newtoks\@toksblank
+\newtoks\@toksnewline
+\newtoks\@toksremaining
+\newtoks\@toksitem
+\newtoks\@toksbeforeendto
+\newtoks\@toksafterendto
+\newtoks\@toksbeforecomma
+\newtoks\@toksleftto
+\newtoks\@toksrightto
+\newtoks\@tokstemp
+\newtoks\@tokscoltemp
+\newtoks\@toksreturnaddress
+
+\newsavebox{\@boxtemp}
+\newsavebox{\@boxclasspage}
+\newsavebox{\@boxpagetwoheader}
+
+\newdimen\@dimentoppagetwo
+\newdimen\@dimenpagetwoheader
+\newdimen\@dimenfirstpageleftheader
+\newdimen\@dimenwdtt
+\newdimen\@dimenletterpaperhcorr
+\newdimen\@dimenletterpapervcorr
+\newdimen\@dimenspaceaftercolon
+\newdimen\descriptionmargin
+\newdimen\@dimenversemargin
+\newdimen\@dimentocolsep
+\newdimen\@dimenhspacesig
+\newdimen\@dimenexpandside
+\newdimen\@dimenexpandtopmargin
+\newdimen\@dimentemp
+\newdimen\@headsepfirst
+\newdimen\@textheightfirst
+\newdimen\@dimenmaillabelheight
+\newdimen\@dimenmaillabeltopmargin
+\newdimen\@bodysep
+
+\newskip\@baselineskipsave
+\newskip\@parskipsave
+\newskip\@topskipfirst
+
+\newif\if@newline
+\newif\if@comma
+\newif\if@notvoidtoks
+\newif\if@toksnotequal
+\newif\if@beenhere
+\newif\if@somethingbefore
+\newif\if@continueloop
+\newif\if@cmfonts
+\newif\if@closing
+\newif\if@everyindent
+\newif\if@printingto
+\newif\if@neveropened
+\newif\if@newtemp
+\newif\if@newattn
+\newif\if@newtelephone
+\newif\if@newcy
+\newif\if@newattachments
+\newif\if@newreference
+\newif\if@newdistribution
+\newif\if@newenc
+\newif\if@newthru
+\newif\if@newvia
+\newif\if@newrightto
+\newif\if@newleftto
+\newif\if@newto
+\newif\if@makemaillabels
+\newif\if@outputfirstpage% Set in \@printfirstpageheader and \@outputpage
+\newif\if@outputlastpage%  Set in \@printfirstpageheader and \@outputpage
+\newif\if@newreturnaddress
+
+% Initialize defs and registers.
+
+\let\@mlbout=\@mainmlb
+\clubpenalty=10000
+\widowpenalty=10000
+\topmargin -72pt% Gets rid of default 1 inch margin at top of page.
+\textheight=724pt
+\@textheightfirst=\textheight
+\topskip=0pt
+\@topskipfirst=\topskip
+\headsep=0pt
+\@headsepfirst=\headsep
+\headheight 0pt
+\footskip 43pt
+\textwidth 438pt
+\@countverticalposition 0
+\@toksempty={}
+\@toksblank={ }
+\@toksnewline={\\}
+\@dimenpagetwoheader 180pt
+\@dimenfirstpageleftheader 220pt
+\@dimenexpandside=0pt
+\@dimenexpandtopmargin=0pt
+\@countleftheader=87
+\@countrightcolon=404
+\@countbotheader 104
+\@dimenletterpaperhcorr 0pt
+\@dimenletterpapervcorr 0pt
+\@dimenspaceaftercolon 12pt
+\@everyindentfalse
+\@printingtofalse
+\@neveropenedtrue
+\@newtemptrue
+\@newattntrue
+\@newtelephonetrue
+\@newcytrue
+\@newattachmentstrue
+\@newreferencetrue
+\@newdistributiontrue
+\@newenctrue
+\@newthrutrue
+\@newviatrue
+\@newrighttotrue
+\@newlefttotrue
+\@newtotrue
+\@newreturnaddresstrue
+\@makemaillabelsfalse
+\@dimentocolsep=24pt
+
+\def\@blank{ }%
+\def\@tt{tt}\def\@rm{rm}%
+\def\@texfonts{texfonts}%
+\def\@lafonts{lafonts}\def\@postscript{postscript}%
+\def\@letterpaper{letterpaper}%
+\def\@useto{to}\def\@usesubject{subject}\def\@useattn{attn}%
+
+% ********************
+% **** USER INPUT ****
+% ********************
+
+%
+% \DEF \TO, \THRU, \CY, \ATTACHMENTS, \REFERENCE, \ENCLOSURES,
+% \DISTRIBUTION
+% \defs that call \@toksinput or \@tokstoinput.
+%
+\def\to#1{%
+  \if@newto\@resettovars\fi
+  \ifnum\@countleftto>0 \@errortoleftrightto\@tokstoinput{leftto}{#1}%
+  \else\ifnum\@countrightto>0 \@errortoleftrightto\@tokstoinput{leftto}{#1}%
+  \else \@tokstoinput{to}{#1}%
+  \fi\fi}%
+\def\leftto#1{%
+  \if@newleftto\@resettovars\fi
+  \ifnum\@countto>0 \@totoleftto\fi \@tokstoinput{leftto}{#1}}%
+\def\rightto#1{%
+  \if@newrightto\@resettovars\fi
+  \ifnum\@countto>0 \@totoleftto\fi \@tokstoinput{rightto}{#1}}%
+\def\attn#1{\if@printingto Attn: #1\@toksinput{attn}{#1}\else\@errorattn\fi
+ % This \global kludge is necessary because @countattn is incremented
+ % within the \list environment.
+  \global\@countattn=\@countattn}%
+\def\telephone#1{\@toksinput{telephone}{#1}}%
+\def\cy#1{\@toksinput{cy}{#1}}%
+\def\via#1{\@tokstoinput{via}{#1}}%
+\def\thru#1{\@tokstoinput{thru}{#1}}%
+\def\attachments#1{\@toksinput{attachments}{#1}}%
+\def\reference#1{\@toksinput{reference}{#1}}%
+\def\distribution#1{\@toksinput{distribution}{#1}}%
+\def\enc#1{\@toksinput{enc}{#1}}%
+% Allow only the last \returnaddress to be used.
+\def\returnaddress#1{\@toksreturnaddress={}\@countreturnaddress=0
+  \@toksinput{returnaddress}{#1}}%
+%
+% \DEF \HEADERFONTS, \BODYFONTS, \SUBJECT, \SYMBOL, \SERIALNUMBER, 
+% \MAILSTOP, \TELEPHONE, etc
+% Other defs (that don't call \@toksinput or \@tokstoinput).
+% Remove leading and trailing blanks from \typeface, \headerfonts, \bodyfonts.
+%
+\def\typeface#1{\def\@typeface{#1}%
+  \@unspaceleft\@typeface \@unspaceright\@typeface}%
+\def\headerfonts#1{\def\@headerfonts{#1}%
+  \@unspaceleft\@headerfonts \@unspaceright\@headerfonts}%
+\def\bodyfonts#1{\def\@bodyfonts{#1}%
+  \@unspaceleft\@bodyfonts \@unspaceright\@bodyfonts
+  \ifx\@bodyfonts\@postscript \@psdefclasslabel\fi}%
+\def\nocallouts{\def\@nocallouts{}}%
+\def\usetoasheader{\def\@useasheader{to}}%
+\def\useattnasheader{\def\@useasheader{attn}}%
+\def\usesubjectasheader{\def\@useasheader{subject}}%
+\def\useotherasheader#1{\def\@useasheader{#1}}%
+\def\subject#1{%
+  \def\@subjectorig{#1}%
+  \def\@subject{\uppercase{#1}}%
+  \ifx\@subjectorig\@blank\def\@subject{}\fi
+  \ifx\@subjectorig\@empty\def\@subject{}\fi}%
+\def\salutation#1{\def\@salutation{#1}}%
+\def\symbol#1{\def\@symbol{#1}\@unspaceright\@symbol
+  \@unspaceleft\@symbol}%
+\def\serialnumber#1{\def\@serialnumber{#1}\@unspaceleft\@serialnumber
+  \@unspaceright\@serialnumber}%
+\def\mailstop#1{\def\@mailstop{#1}\@unspaceright\@mailstop
+  \@unspaceleft\@mailstop}%
+\def\date#1{\def\@date{#1}\@unspaceleft\@date}%
+\def\expandwidth#1{\@ifnoinfo{#1}{\@dimenexpandside=0pt}{%
+  \@dimenexpandside=#1 \divide\@dimenexpandside by 2
+  \advance \textwidth by #1}}%
+\def\expandtopmargin#1{%
+  \@ifnoinfo{#1}{\@dimenexpandtopmargin=0pt}{\@dimenexpandtopmargin=#1}}%
+\def\shortletterstyle{\def\@shortletterstyle{}}%
+\def\noclearpage{\def\@noclearpage{}}%
+\def\signer#1{\def\@signer{#1}%
+  \@unspaceright\@signer\@upperunspaceleft\@signer}%
+\def\originator#1{%
+  \def\@originator{#1}%
+  \@unspaceright\@originator
+  \@upperunspaceleft\@originator}%
+\def\typist#1{%
+  \def\@typist{#1}%
+  \ifx\@typist\@empty
+  \else
+    \ifx\@typist\@blank
+      \def\@typist{}%
+    \else
+      \def\@typist{\lowercase{\ignorespaces#1}}%
+ \fi\fi}%
+\def\letterpaperhcorr#1{\@ifnoinfo{#1}%
+  {\@dimenletterpaperhcorr=0pt}{\@dimenletterpaperhcorr=#1}}%
+\def\letterpapervcorr#1{\@ifnoinfo{#1}%
+  {\@dimenletterpapervcorr=0pt}{\@dimenletterpapervcorr=#1}}%
+\def\complimentaryclose#1{\def\@complimentaryclose{#1}}%
+\def\signature#1{\def\@signature{#1}}%
+\def\cypagebreak{\def\@cypagebreak{}}%
+\def\attachmentspagebreak{\def\@attachmentspagebreak{}}%
+\def\encpagebreak{\def\@encpagebreak{}}%
+\def\distributionpagebreak{\def\@distributionpagebreak{}}%
+\def\encas{\def\@encas{}}%
+\def\attachmentas{\def\@attachmentas{}}%
+\def\attachmentsas{\def\@attachmentsas{}}%
+\def\encpagebreak{\def\@encpagebreak{}}%
+\def\makemaillabels{\@makemaillabelstrue}
+\def\maillabelheight#1{\@ifnoinfo{#1}%
+  {\maillabelheight{1.5in}}{\@dimenmaillabelheight=#1}}%
+\def\maillabeltopmargin#1{\@ifnoinfo{#1}%
+  {\maillabeltopmargin{.25in}}{\@dimenmaillabeltopmargin=#1}}%
+\def\skiplabels#1{\@ifnoinfo{#1}%
+  {\@countskiplabels=0}{\@countskiplabels=#1}}%
+
+% \DEF \CLASSLABEL
+% Read in argument from \classlabel and create \@classlabel
+% If argument is not {s} or {c} or {u}, stop the job.
+
+\def\classlabel#1{%
+  \def\@unspacedclasslabel{#1}%
+  \@unspaceleft{\@unspacedclasslabel}%
+  \@unspaceright{\@unspacedclasslabel}%
+  \@ifundefined{@classlabel}%
+    {}{\def\@todieornottodie{\@errortwoclasses\@exit}}%
+      % \@secret, \@confidential, and \@unclassified need different \defs 
+      % so that they dont compare equal
+  \def\@secret{s}\def\@confidential{c}\def\@unclassified{u}%
+   \ifx\@unspacedclasslabel\@secret% If #1 is s
+    \def\@classlabel{SECRET}% 
+    \typeout{^^JThis letter will be marked SECRET.^^J}%
+  \else\ifx\@unspacedclasslabel\@confidential% If #1 is c
+    \def\@classlabel{CONFIDENTIAL}%
+    \typeout{^^JThis letter will be marked CONFIDENTIAL.^^J}%
+  \else\ifx\@unspacedclasslabel\@unclassified% If #1 is u
+    \def\@classlabel{UNCLASSIFIED}%
+    \typeout{^^JThis letter will be marked UNCLASSIFIED.^^J}%
+  \else\ifx\@unspacedclasslabel\@empty% If #1 is empty
+    \def\@classlabel{}%
+  \else 
+        % #1 was not a c, s, or u so it's time to die
+    \def\@todieornottodie{%
+      \def\@classlabel{#1}%
+      \@errorclassargument
+      \@exit}%
+  \fi\fi\fi\fi
+  \@todieornottodie
+}%
+% \DEF \@TOKSINPUT
+% Called by something like  \@toksinput{cy}{Steve Sydoriak\\Bill Ebanks}
+% \@toksinput collects input from \cy, \attachments, etc:  any
+%   input that can have mutiple lines of input of the form \xx{a\\b\\c,etc}
+%   or \xx{a}\xx{b}, etc.  \@toksinput leaves \@toksxx={a\\b\\c}, for example,
+%   and \@countxx=3.  Some user errors, such as \xx{\\a} or \xx{a\\}\xx{b}
+%   are corrected.
+\def\@toksinput#1#2{%
+  \def\@toksname{\csname @toks#1\endcsname}%
+  \def\@countname{\csname @count#1\endcsname}%
+  \def\@ifnewname{\csname if@new#1\endcsname}%
+  \def\@newnamefalse{\csname @new#1false\endcsname}%
+  \def\@newnametrue{\csname @new#1true\endcsname}%
+  \@ifnewname
+  % @newnametrue, ie, @toksinput has not been called with #1 since 
+  %   \documentstyle or \closing, so initialize.
+  % Note however, if #1={temp}, that \@newtemptrue every time.  
+  %   (See \@tokstoinput.)
+    \@newnamefalse
+    \@countname=0
+    \@toksname={}%
+  % @newnamefalse, ie, @toksinput has been called before, so add a \\
+  \else
+    \@addtotoks\@toksname\\
+  \fi
+  \@beenherefalse
+  \@toksremaining={#2}%
+  \loop
+  % Pull off @toksbeforenewline, the tokens before @toksremaining's first \\ 
+    \@tonewlinepull\@toksremaining
+    \@somethingbeforefalse
+    \@toksnotequal\@toksbeforenewline\@toksempty
+    \if@toksnotequal
+      \@toksnotequal\@toksbeforenewline\@toksblank
+      \if@toksnotequal
+  % There is something non-blank before the \\ in @toksbeforenewline.
+        \@somethingbeforetrue
+    \fi\fi
+    \if@somethingbefore
+      \if@beenhere
+  % Been thru the loop before, so add a \\ to @toksname.
+        \@addtotoks\@toksname\\
+      \else
+  % This is the first time thru the loop.
+        \@beenheretrue
+      \fi
+  % When \@toksbeforenewline is not empty and not blank, add it to \@toksname.
+      \@addtokstotoks\@toksname\@toksbeforenewline
+      \@continuelooptrue
+      \advance\@countname by 1
+    \else
+      \@toksnotequal\@toksafternewline\@toksempty%    Blank or empty before \\
+      \if@toksnotequal
+        \@toksnotequal\@toksafternewline\@toksnewline%  Something after the \\
+        \if@toksnotequal
+          \@continuelooptrue%     \@toksafter.ne.{}and.ne.{\\}
+        \else
+          \@continueloopfalse%    \@toksafter={\\}
+        \fi
+      \else
+        \@continueloopfalse%      \@toksafter={ }
+    \fi\fi
+  \if@continueloop
+  % Set @toksremaining to @toksafternewline, and repeat the loop.
+    \@toksremaining=\@toksafternewline
+  \repeat
+}%
+% \DEF \@RESETTOVARS
+%
+% Comes here when a \if@newleftto, \if@newrightto, or \if@newto is true,
+% as detected by \leftto, \rightto, or \to.
+% Reinitializes for the addresses on the next letter.
+%
+\def\@resettovars{%
+  \@newtofalse\@countto=0\@toksto={}%
+  \@newlefttofalse\@countleftto=0\@toksleftto={}%
+  \@newrighttofalse\@countrightto=0\@toksrightto={}%
+}
+% \DEF \@TOKSTOINPUT
+% Called by something like  
+% \@tokstoinput{to}{Roy Nielson \\ Library Department \\
+%   Lawrence Berkeley Laboratory \\ University of California \\
+%   Library, Bldg. 50, Room 134 \\ Berkeley, CA 94720}
+%
+% \@tokstoinput collects input from \to, \leftto, and \rightto and 
+% concatenates them into \@toksto, \@toksleftto, and \@toksrightto
+% The number of addresses is counted in \@countto, etc.
+% If there are multiple occurrences of \to, \leftto, or \rightto, 
+% addresses are terminated with \@endto, for example,
+%
+% \leftto{a\\b\\c}
+% \leftto{d\\e\\f}
+%
+% produces
+%
+% \@toksleftto={a\\b\\c\@endto d\\e\\f\@endto}
+% and \@countleftto=2
+%
+\def\@tokstoinput#1#2{%
+  \edef\@tokstoname{\csname @toks#1\endcsname}%
+  \edef\@counttoname{\csname @count#1\endcsname}%
+  %
+  % Setting \@newtemptrue causes \@toksinput to initialize \@tokstemp
+  %   and prevents a \\ from being put at the beginning of \@tokstemp.
+  \@newtemptrue
+  \@toksinput{temp}{#2}%
+  \@toksnotequal\@tokstemp\@toksempty
+  \if@toksnotequal
+    \@addtokstotoks\@tokstoname\@tokstemp
+    \@addtotoks\@tokstoname\@endto
+    \advance\@counttoname by 1
+  \fi
+}%
+% \DEF \@TOTOLEFTTO
+% Comes here the first time that a call to \leftto or \rightto 
+% follows a call to \to.
+% An warning message is printed, and 'to' info is moved to 'leftto'.
+%
+\def\@totoleftto{%
+  \@errortoleftrightto
+  \@toksleftto=\@toksto
+  \@toksto={}%
+  \@countleftto=\@countto
+  \@countto=0}%
+
+% *****************************
+% **** OPENING AND CLOSING ****
+% *****************************
+
+% \DEF \OPENING
+% \opening prints the preprinted header info and/or the people*s names, etc.,
+% down to but not including the SUBJECT: line.
+%
+\def\opening{%
+  \@checkinput
+  \if@neveropened
+     \@neveropenedfalse
+     % \font commands don't work twice in a row
+     \@choosefonts
+  \fi
+     \@initializefontvariables
+     \@initializeothervariables
+     \@baselineskipsave=\baselineskip
+     \@parskipsave=\parskip
+     \@closingfalse
+     % \lineskip is temporarily set to 0pt because the addresses are
+     % printed in a \vbox.
+     \lineskip=0pt
+     \@printfirstpageheader
+     \@checkuseasinput
+     \@makepagetwoheader
+     \@beginletter
+     \lineskip=\normallineskip
+}%
+% \DEF \CLOSING
+% The closing prints all the info after the body of the letter
+%
+\def\closing{%
+  \normalsize
+  \@closingtrue
+  \@endletter
+  \@clearclosing
+  \leftskip=\@dimenhspacesig
+  \@printcompclose
+  \@printsignature
+  \par
+  \leftskip=0pt
+  \@printoriginatorline
+  \@printenc
+  \@printattachments
+  \@printdistribution
+  \@printcy
+  \@settrue
+  \@restorevariables
+  \@multipleletters
+}%
+% \DEF \@RESTOREVARIABLES
+\def\@restorevariables{%
+  \@countattn=0
+  \@toksattn={}%
+}%
+% \DEF \@MULTIPLELETTERS
+% When multiple letters are being printed, all the macros that
+% write to the .aux file, such as \cite, \label, \begin{figure},
+% etc, should only write to .aux the first time through the body
+% of the letter.
+%
+\def\@multipleletters{%
+  \def\@citex[##1]##2{%
+    \def\@citea{}\@cite{\@for\@citeb:=##2\do
+    {\@citea\def\@citea{,\penalty\@m\ }\@ifundefined
+       {b@\@citeb}{{\bf ?}\@warning
+       {Citation `\@citeb' on page \thepage \space undefined}}%
+    \hbox{\csname b@\@citeb\endcsname}}}{##1}}%
+  \def\addcontentsline##1##2##3{}%
+  \def\label##1{\@bsphack\@esphack}%
+  \def\@lbibitem[##1]##2{\item[\@biblabel{##1}]\ignorespaces}%
+  \def\@bibitem##1{\item\ignorespaces}%
+  \setcounter{figure}{0}%
+  \setcounter{table}{0}%
+  \setcounter{footnote}{0}%
+  \setcounter{equation}{0}%
+}%
+
+% **************************
+% **** CHECK USER INPUT ****
+% **************************
+
+% \DEF \@CHECKINPUT
+% Check for missing input items and set default input values.
+%
+\def\@checkinput{%
+  \ifnum\@countvia>0 %
+    \ifnum\@countthru>0 %
+      \@errorthruandvia
+  \fi\fi
+  \@ifemptyorundefined{@salutation}%
+    {\@errorundeclaredsalutation}{}%
+  \@ifemptyorundefined{@complimentaryclose}%
+    {\def\@complimentaryclose{Sincerely yours,}\@errorundeclaredcompclose}{}%
+  \@ifemptyorundefined{@signature}{\@errorundeclared{\signature}%
+    \@errorshowexample{\signature}{Betty J. Donaldson}}{}%
+  \@ifemptyorundefined{@signer}{\@errorundeclared{\signer}%
+    \@errorshowexample{\signer}{BJD}}{}%
+  \ifnum\@countto=0\ifnum\@countleftto=0\ifnum\@countrightto=0 %
+        \@errorundeclaredto\fi\fi\fi
+  \@ifundefined{@symbol}{\def\@symbol{}}{}%
+  \@ifundefined{@nocallouts}{%
+    \ifx\@symbol\@empty
+      \@errorundeclaredcallout{\symbol}\@errorshowexample{\symbol}{C-2}%
+    \fi
+    \@ifemptyorundefined{@mailstop}%
+      {\def\@mailstop{}\@errorundeclaredcallout{\mailstop}%
+        \@errorshowexample{\mailstop}{B253}}{}%
+    \ifnum\@counttelephone=0 %
+      \@tokstelephone={}%
+      \@errorundeclaredcallout{\telephone}%
+      \@errorshowexample{\telephone}{(505) 665-0859}%
+    \fi
+  }{}%
+  \@ifundefined{@subject}{\def\@subject{}}{}%
+  \@ifundefined{@originator}%
+    {\def\@originator{}}{}%
+  \@ifemptyorundefined{@signer}%
+    {\def\@signer{}}{}%
+  \@ifundefined{@typist}%
+    {\def\@typist{}}{}%
+  \@ifemptyorundefined{@date}{\def\@date{\today}}%
+    {\ifx\@date\@empty\def\@date{\today}\fi}%
+  \@ifemptyorundefined{@serialnumber}%
+    {\def\@serialnumber{}}{\ifx\@symbol\@empty \@errorserialnosymbol\fi}%
+  \def\@symbolserialnumber{%
+    \@symbol
+    \ifx\@symbol\@empty
+    \else
+      \ifx\@serialnumber\@empty
+      \else
+        -\relax
+    \fi\fi
+    \@serialnumber\ }%
+  \@ifundefined{@typeface}{\def\@typeface{tt}}{}%
+  \ifx\@typeface\@empty\def\@typeface{tt}\fi%
+  \@ifundefined{@headerfonts}{\def\@headerfonts{texfonts}}{}%
+  \ifx\@headerfonts\@empty\def\@headerfonts{texfonts}\fi%
+  \@ifundefined{@bodyfonts}{\def\@bodyfonts{texfonts}}{}%
+  \ifx\@bodyfonts\@empty\def\@bodyfonts{texfonts}\fi
+}%
+% \DEF \@CHECKUSEASINPUT
+% Check that the type of data to be used on the second page headers
+% has been defined.  This \def is separate from \@checkinput because
+% \attn is not executed until 1st page headers are printed.
+% 
+%
+\def\@checkuseasinput{%
+  \@ifundefined{@useasheader}{\def\@useasheader{to}}{%
+    \ifx\@useasheader\@useattn
+      \ifnum\@countattn=0 %
+        \@erroruseas{attn}{\attn}\def\@useasheader{to}%
+      \fi
+    \else\ifx\@useasheader\@usesubject
+      \ifx\@subject\@empty
+        \@erroruseas{subject}{\subject}\def\@useasheader{to}%
+      \fi
+    \fi\fi
+}}%
+
+% **********************
+% **** CHOOSE FONTS ****
+% **********************
+
+% \DEF \@CHOOSEFONTS
+% This \def chooses the fonts for the letter
+%
+\def\@choosefonts{%
+  \@amorcm
+  \@getpostscriptnames
+  \@chooseheaderfonts
+  \@choosebodyfonts
+  \@setnormalsize
+}%
+% \DEF \@AMORCM figures out whether am or cm fonts have been loaded.
+% If the amfonts (amr10,etc) were defined by lfonts.tex, an error message
+% is printed.  Only systems that have upgraded to the cm fonts can 
+% use texfonts.
+%
+\def\@amorcm{%
+  \edef\@cmr{\csname cmr10\endcsname}%
+  \edef\@tenrm{\csname\fontname\tenrm\endcsname}%
+  \ifx\@cmr\@tenrm \@cmfontstrue\else\@cmfontsfalse\fi
+  \if@cmfonts
+  \else\ifx\@bodyfonts\@texfonts
+    \@erroramfonts
+  \else\ifx\@headerfonts\@texfonts
+    \@erroramfonts
+  \fi\fi\fi
+}%
+% \DEF \@GETPOSTSCRIPTNAMES
+% This \def defines PostScript font names.
+%
+\def\@getpostscriptnames{%
+  \def\@cmhelv{psmhlv }%
+  \def\@cmhelvb{psmhlvb }%
+  \def\@cmtimer{psmtimr }%
+  \def\@cmtimei{psmtimi }%
+  \def\@cmtimeb{psmtimb }%
+  \def\@cmcour{psmcou }%
+  \def\@cmcouro{psmcouo }%
+  \def\@cmcourb{psmcoub }%
+}%
+% \DEF \@CHOOSEHEADERFONTS
+% This \def chooses the header fonts
+%
+\def\@chooseheaderfonts{%
+  % If letterpaper, don't need to load any fonts.
+  \ifx\@headerfonts\@letterpaper
+  \else\ifx\@headerfonts\@lafonts
+    \font\@booksix=book6%
+    \font\@bookseven=book7%
+    \font\@lettertwentyeight=memo28%
+    \font\@latwentyeight=la28%
+    \font\@spectwelve=spec12%
+  \else\ifx\@headerfonts\@texfonts
+    \if@cmfonts
+      \font\@booksix=cmr6%
+      \font\@bookseven=cmr7%
+      \font\@latwentyeight=cmbx10 scaled\magstep5%
+      \font\@memotwentyeight=cmbx10 scaled\magstep5%
+      \font\@spectwelve=cmss10 scaled\magstep1%
+    \else
+      \font\@booksix=amr6%
+      \font\@bookseven=amr7%
+      \font\@latwentyeight=ambx10 scaled\magstep5%
+      \font\@memotwentyeight=ambx10 scaled \magstep5%
+      \font\@spectwelve=amss10 scaled\magstep1%
+    \fi
+  \else\ifx\@headerfonts\@postscript
+    \font\@booksix=\@cmhelv at 6pt%
+    \font\@bookseven=\@cmhelv at 7pt%
+    \font\@lettertwentyeight=\@cmhelvb at 28pt%
+    \font\@spectwelve=\@cmhelv at 10.5pt%
+  \else% illegal header
+    \def\@todieornottodie{\@errorillegalheaderfont\@exitfi}%
+  \fi\fi\fi\fi
+  \@todieornottodie
+}%
+% \DEF \@CHOOSEBODYFONTS
+% This \def chooses the fonts for the body of the letter
+%
+\def\@choosebodyfonts{%
+  \ifx\@typeface\@tt
+  \else\ifx\@typeface\@rm
+  \else
+    \def\@todieornottodie{\@errorillegaltypeface\@exitfi}%
+  \fi\fi
+  \@todieornottodie
+    \ifx\@bodyfonts\@texfonts
+      \if@cmfonts
+        \font\@classfont=cmss10 scaled \magstep5%
+      \else
+        \font\@classfont=amssmc40
+      \fi
+    \else\ifx\@bodyfonts\@postscript
+      \ifcase\@ptsize\relax   % 10pt option
+        \font\tenrm  = \@cmtimer at 10pt    % roman
+        \font\tentt  = \@cmcour  at 10pt   % typewriter
+        \ifx\@typeface\@tt
+          \font\tenit  = \@cmcouro at 10pt   % tt italic
+          \font\tenbf  = \@cmcourb at 10pt   % tt bold
+        \else\ifx\@typeface\@rm
+          \font\tenit  = \@cmtimei at 10pt   % roman italic
+          \font\tenbf  = \@cmtimeb at 10pt   % roman bold 
+        \fi\fi
+      \or  % 11pt option
+        \font\elvrm  = \@cmtimer at 11pt % roman  
+        \font\elvtt  = \@cmcour  at 11pt % typewriter
+        \ifx\@typeface\@tt
+          \font\elvit  = \@cmcouro at 11pt   % tt italic
+          \font\elvbf  = \@cmcourb at 11pt   % tt bold 
+        \else\ifx\@typeface\@rm
+          \font\elvit  = \@cmtimei at 11pt   % roman italic
+          \font\elvbf  = \@cmtimeb at 11pt   % roman bold 
+        \fi\fi
+      \or  % 12pt option
+        \font\twlrm  = \@cmtimer at 12pt % roman  
+        \font\twltt  = \@cmcour  at 12pt % typewriter
+        \ifx\@typeface\@tt
+          \font\twlit  = \@cmcouro at 12pt   % tt italic
+          \font\twlbf  = \@cmcourb at 12pt   % tt bold 
+        \else\ifx\@typeface\@rm
+          \font\twlit  = \@cmtimei at 12pt   % roman italic
+          \font\twlbf  = \@cmtimeb at 12pt   % roman bold 
+        \fi\fi
+      \fi
+    \else
+      \def\@todieornottodie{\@errorillegalbodyfont\@exitfi}%
+    \fi\fi
+    \@todieornottodie
+}%
+% \DEF \@SETNORMALSIZE
+% Define \normalsize.  See lfonts.tex.  The difference here is that
+% we must plug tt or rm into the def.
+\def\@setnormalsize{%
+  \edef\normalsize{%
+    \ifx\@currsize\normalsize
+      \ifx\@typeface\@tt
+        \tt
+      \else\ifx\@typeface\@rm
+        \rm
+      \fi\fi
+    \else 
+      \@normalsize
+    \fi}}%
+
+% **********************************************************
+% **** INITIALIZE FONT AND TYPEFACE DEPENDENT VARIABLES ****
+% **********************************************************
+
+% \DEF \@INITIALIZEFONTVARIABLES
+% This def will initialize fonts dependent variables such as parskip and
+% will put kerns in the variable that need it, such as the header words 
+% and special symbols such as bullets
+%
+\def\@initializefontvariables{%
+  \raggedbottom
+  \@kernheaderwords
+  \@initializetypefacedependencies
+  % \pem is redefined so that \em will return to \tt or \rm depending
+  % on @typeface  
+  \def\pem{%
+    \ifdim\fontdimen\@ne\font>\z@
+      \csname\@typeface\endcsname 
+    \else\it
+    \fi
+}}%
+% \DEF \@KERNHEADERWORDS
+%
+% Define and kern @losalamos @lanl @lanm for tex fonts.
+
+\def\@kernheaderwords{%
+  \ifx\@headerfonts\@texfonts
+    \def\@lanl{%
+        \raise 1pt\hbox{%
+          \def\@kern{\kern -.5pt}%
+          L\@kern o\@kern s\ \kern -2.5pt A\@kern l\@kern a\@kern m\@kern
+          o\@kern s\ \kern -2pt N\@kern a\@kern t\@kern i\@kern o\@kern
+          n\@kern a\@kern l\ \kern -3pt L\@kern a\@kern b\@kern o\@kern
+          r\@kern a\@kern t\@kern o\@kern r\@kern y}}%
+    \def\@lanm{%
+        \def\@kern{\kern -.5pt}%
+        L\@kern o\@kern s\kern -2.5pt\  A\@kern l\@kern a\@kern m\@kern
+        o\@kern s\kern -1pt ,\kern -4.5pt\  New\kern -3pt\  Mexico\kern -3pt
+        \  87545}%
+    \def\@losalamos{Los Alamos}%
+  \else\ifx\@headerfonts\@lafonts
+%
+% Are the old or new Metafoundry fonts being used?
+% If the width of the L in spec12 is 5.3368, then the new fonts are in use.
+% If the width of the L in spec12 is 5.5407, then the old fonts are in use.
+% Test for width == 5.3368pt +/- .001pt in case rounding is a problem.
+    \@spectwelve\setbox\@boxtemp=\hbox{L}\@dimentemp=\wd\@boxtemp
+    \advance\@dimentemp by -5.3368pt
+    \ifdim\@dimentemp<0pt \@dimentemp=-\@dimentemp\fi
+    \ifdim\@dimentemp<.001pt
+% Define and kern @losalamos @lanl @lanm for new la fonts.
+      \def\@lanl{%
+        L\kern -.4pt o\kern .35pt s\ \kern -.8pt 
+        A\kern .6pt l\kern .1pt a\kern .6pt m\kern .1pt o\kern .35pt s%
+        \def\@kern{\kern .22pt}%
+        \ N\@kern a\@kern t\@kern i\@kern o\@kern n\@kern a\kern .47pt
+        l\ \kern -.2pt 
+        \def\@kern{\kern .03pt}%
+        L\@kern a\kern .43pt b\@kern o\@kern r\@kern a\@kern
+        t\kern -.22pt o\@kern r\@kern y}%
+      \def\@lanm{%
+        L\kern -.4pt o\kern .35pt s\ \kern -.8pt 
+        \def\@kern{\kern .35pt}%
+        A\kern .6pt l\kern .1pt a\kern .6pt m\kern .1pt o\kern .35pt s,%
+        \ \kern -1.5pt 
+        N\kern -.2pt ew\ \kern -.1pt 
+        \def\@kern{\kern .15pt}%
+        M\kern -.05pt e\@kern x\@kern i\@kern c\@kern o\ \kern -.1pt 
+        8\kern -.65pt 7\kern -.9pt 54\kern -.7pt 5}%
+      \def\@losalamos{%
+        \kern -1.2pt L\kern 0pt o\kern -.75pt s\ \kern -6.7pt 
+        A\kern .25pt l\kern 1.25pt a\kern -.85pt m\kern -.65pt
+        o\kern -.75pt s}%
+% Define and kern @losalamos @lanl @lanm for old la fonts.
+    \else
+      \def\@todieornottodie{\@erroroldlafonts\@exit}%
+    \fi
+  \else\ifx\@headerfonts\@postscript
+% Define and kern @losalamos @lanl @lanm for postscript fonts.
+    \def\@lanl{%
+        \raise .5pt\hbox{%
+          Los\kern -2pt\   Alamos\kern -1.5pt\   National\kern -2pt
+          \   Laboratory}}%
+    \def\@lanm{%
+        \def\@kern{\kern .57pt}%
+        Los\kern -2pt\   Alamos\kern -1pt,\kern -3.5pt\   N\@kern e\@kern
+        w\kern -2pt\   M\@kern e\@kern x\@kern i\@kern c\@kern
+        o\kern -2pt\   87545}%
+%
+% @LOSALAMOS is a PostScript macro that prints Los Alamos in hollow letters.
+% ##1 and ##2 are \@dimenletterpaperhcorr and \@dimenletterpapervcorr
+%
+    \def\@PSlosalamos##1##2{%
+      \@psdeflosalamos
+      \special{ps:: ##1 ##2 @LOSALAMOS1 @LOSALAMOS2 @LOSALAMOS3}}%
+  \fi\fi\fi
+  \@todieornottodie
+}%
+% \DEF \@INITIALIZETYPEFACEDEPENDENCIES
+%
+% Variables that are dependent on typeface are initialized here.
+
+\def\@initializetypefacedependencies{%
+
+% For typewriter typeface.
+
+  \ifx\@typeface\@tt
+
+% Hyphenation.
+
+    \rightskip=0pt plus 3.6em%  As this increases, there will be less hyphens.
+    \@rightskip=\rightskip
+    \hyphenchar\nintt=\defaulthyphenchar
+    \hyphenchar\tentt=\defaulthyphenchar
+    \hyphenchar\elvtt=\defaulthyphenchar
+    \hyphenchar\twltt=\defaulthyphenchar
+    
+% Bullets.
+
+    \ifx\@bodyfonts\@texfonts
+      \def\@bullet{\leavevmode\raise-.22ex\hbox to 0pt{+\hss}o}%
+    \else\ifx\@bodyfonts\@postscript
+      \def\@bullet{\leavevmode\raise-.19ex\hbox to 0pt{+\hss}o}%
+    \fi\fi
+  \fi
+  \@initializelists
+}%
+% \DEF \@INITIALIZELISTS
+%
+% Initialize \list variables.
+% Most of the initialization for Roman typeface and some initialization 
+% for typewriter typeface comes directly from Lamport's letter.doc
+
+\def\@initializelists{%
+          % \@dimenwdtt is the width of a character in the typewriter font.
+\setbox\@boxtemp=\hbox{\tt n}\@dimenwdtt=\wd\@boxtemp
+  \ifx\@typeface\@tt
+  
+    \parskip=\baselineskip
+
+%    ****************************************
+%    *                LISTS                 *
+%    ****************************************
+%
+
+% The following commands are used to set the default values for the list
+% environment's parameters. See the LaTeX manual for an explanation of
+% the meanings of the parameters.  Defaults for the list environment are
+% set as follows.  First, \rightmargin, \listparindent and \itemindent
+% are set to 0pt.  Then, for a Kth level list, the command \@listK is
+% called, where 'K' denotes 'i', 'ii', ... , 'vi'.  (I.e., \@listiii is
+% called for a third-level list.)  By convention, \@listK should set
+% \leftmargin to \leftmarginK.
+%
+% For efficiency, level-one list's values are defined at top level, and
+% \@listi is defined to be a no-op.
+
+    \leftmargini    4\@dimenwdtt
+    \leftmarginii   4\@dimenwdtt
+    \leftmarginiii  4\@dimenwdtt
+    \leftmarginiv   4\@dimenwdtt
+    \leftmarginv    4\@dimenwdtt
+    \leftmarginvi   4\@dimenwdtt
+
+    \leftmargin\leftmargini
+    \labelwidth\leftmargini\advance\labelwidth-\labelsep
+    \labelsep=\@dimenwdtt
+    \parsep=\baselineskip
+
+    \topsep 0pt
+    \itemsep 0pt
+    \@bodysep 0pt
+
+    \descriptionmargin=5\@dimenwdtt
+    
+    \@dimentemp=\@dimenwdtt
+
+% For Roman typeface
+
+  \else\ifx\@typeface\@rm
+  
+    \parskip=.7em
+    \@parskipsave=\parskip
+
+% Bullets.
+  
+    \def\@bullet{$\bullet$}%
+
+% See comments for *** LISTS *** above under \ifx\@typeface\@tt
+
+    \leftmargini   2.5em
+    \leftmarginii  2.2em    % > \labelsep + width of '(m)'
+    \leftmarginiii 1.87em   % > \labelsep + width of 'vii.'
+    \leftmarginiv  1.7em    % > \labelsep + width of 'M.'
+    \leftmarginv   1em
+    \leftmarginvi  1em
+
+    \leftmargin\leftmargini
+    \labelwidth\leftmargini\advance\labelwidth-\labelsep
+    \labelsep 5pt
+
+    \topsep .4em
+    \@bodysep .8em
+
+    \parsep .4em
+    \itemsep .2em
+    
+    \descriptionmargin=3em
+
+    \@dimentemp=5pt
+    
+  \fi\fi
+
+  \listparindent=0pt
+  \let\@listi\relax
+
+  \def\@listii{\leftmargin\leftmarginii
+     \labelwidth\leftmarginii\advance\labelwidth-\labelsep}%
+
+  \def\@listiii{\leftmargin\leftmarginiii
+      \labelwidth\leftmarginiii\advance\labelwidth-\labelsep
+      \ifx\@typeface\@rm
+        \topsep .2em 
+        \itemsep \topsep
+      \fi}%
+
+  \def\@listiv{\leftmargin\leftmarginiv
+       \labelwidth\leftmarginiv\advance\labelwidth-\labelsep}%
+
+  \def\@listv{\leftmargin\leftmarginv
+       \labelwidth\leftmarginv\advance\labelwidth-\labelsep}%
+
+  \def\@listvi{\leftmargin\leftmarginvi
+       \labelwidth\leftmarginvi\advance\labelwidth-\labelsep}%
+
+% VERSE
+%   The verse environment is defined by making clever use of the
+%   list environment's parameters.  The user types \\ to end a line.
+%   This is implemented by \let'in \\ equal \@centercr.
+%
+\@dimenversemargin=3\@dimentemp
+\def\verse{\let\\=\@centercr
+ \list{}{\itemsep\z@ \itemindent -\@dimenversemargin \listparindent \itemindent 
+ \rightmargin\leftmargin\advance\leftmargin \@dimenversemargin}\item[]}%
+\let\endverse\endlist
+
+% QUOTATION
+%   Fills lines
+%   Indents paragraph
+%   
+  \def\quotation{\list{}{%
+    \rightmargin\leftmargin}\item[]}%
+  \let\endquotation=\endlist
+
+% The following is from letter.doc's OTHER ENVIRONMENTS.
+  \tabcolsep \@dimentemp % Half the space between columns in a 
+                          % tabular environment.
+
+  \tabbingsep \labelsep   % Space used by the \' command.  (See LaTeX manual.)
+
+% ENUMERATE
+%  Enumeration is done with four counters: enumi, enumii, enumiii
+%  and enumiv, where enumN controls the numbering of the Nth level
+%  enumeration.  The label is generated by the commands \labelenumi 
+%  ... \labelenumiv.
+
+  \def\labelenumi{\arabic{enumi}.}%
+  \def\theenumi{\arabic{enumi}}%
+
+  \def\labelenumii{\alph{enumii}.}%
+  \def\theenumii{\alph{enumii}}%
+  \def\p@enumii{\theenumi}%
+
+  \def\labelenumiii{(\arabic{enumiii})}%
+  \def\theenumiii{\roman{enumiii}}%
+  \def\p@enumiii{\theenumi(\theenumii)}%
+
+  \def\labelenumiv{(\alph{enumiv})}%
+  \def\theenumiv{\Alph{enumiv}}%
+  \def\p@enumiv{\p@enumiii\theenumiii}%
+
+% ITEMIZE
+% Itemization is controlled by four commands: \labelitemi, \labelitemii,
+% \labelitemiii, and \labelitemiv, which define the labels of the various 
+% itemization levels.
+
+  \def\labelitemi{\@bullet}% From OPM manual
+  \def\labelitemii{-}%
+  \def\labelitemiii{*}%
+  \def\labelitemiv{+}%
+
+% QUOTE -- same as quotation except no paragraph indentation,
+%
+  \def\quote{\list{}{\rightmargin\leftmargin}\item[]}%
+  \let\endquote=\endlist
+
+% DESCRIPTION 
+%
+%  To change the formatting of the label, you must redefine 
+%  \descriptionlabel.  
+
+  \def\descriptionlabel##1{\hspace\labelsep \it ##1}%
+  \def\description{\list{}{\labelwidth\z@ \itemindent-\leftmargin
+         \let\makelabel\descriptionlabel}}%
+
+  \let\enddescription\endlist
+}%
+% \DEF \@INITIALIZEOTHERVARIABLES
+% Variables that define the positioning and style of headers are set here,
+% among others.
+% 
+\def\@initializeothervariables{%
+  \let\@texttop=\relax
+  \@ifundefined{@classlabel}{\def\@classlabel{}}{}%
+        % Defines the headers on page one.
+  \def\ps@firstpage{\let\@mkboth\@gobbletwo
+    \def\@oddhead{\@makeclassheader\@printclasspage}%
+    \def\@oddfoot{}}%
+        % Defines the headers on page two and on.
+  \def\ps@pagetwo{\let\@mkboth\@gobbletwo
+    \def\@oddhead{%
+      \@printpagetwoheader\@printpagenum\@printclasspage}%
+    \def\@oddfoot{}}%
+  %
+  \pagestyle{pagetwo}%
+  %
+  % Initialize first page variables.
+  %
+  \@advcountbydimen\@countverticalposition\@dimenletterpapervcorr
+
+  \@advcountbydimen\@countleftheader\@dimenletterpaperhcorr
+  \@advcountbydimen\@countrightcolon\@dimenletterpaperhcorr
+
+  \@countrightheader=\@countrightcolon
+  \@advcountbydimen\@countrightheader\@dimenspaceaftercolon
+
+  \@countpictorig=\@countleftheader
+  \@advcountbydimen\@countpictorig{-\@dimenexpandside}%
+
+  \oddsidemargin=\@countleftheader pt
+  \advance \oddsidemargin by -1in
+  \advance \oddsidemargin by -\@dimenexpandside
+  \evensidemargin=\oddsidemargin
+}%
+% \DEF \@SETTRUE
+% Sets all the \@new....true.
+% These variables are used to check if such and so a variable has
+% been used by \@toksinput since the current memo began.
+\def\@settrue{%
+  \@newtemptrue
+  \@newattntrue
+  \@newtelephonetrue
+  \@newtelephonetrue
+  \@newcytrue
+  \@newattachmentstrue
+  \@newreferencetrue
+  \@newdistributiontrue
+  \@newenctrue
+  \@newthrutrue
+  \@newviatrue
+  \@newrighttotrue
+  \@newlefttotrue
+  \@newtotrue
+}
+
+% *********************************************
+% **** CLASSIFICATION AND PAGE TWO HEADERS ****
+% *********************************************
+
+% \DEF \@MAKECLASSHEADER
+% Make the box that contains the classification header and footer.
+%
+\def\@makeclassheader{%
+  \@countclassseptop 24   % This is the vertical distance in POINTS from 
+                          % the top border to SECRET or CONFIDENTIAL.
+  \@countclasssepbot 40   % This is the vertical distance in POINTS from 
+                          % the bottom border to SECRET or CONFIDENTIAL.
+                          % It is bigger than the top sep to make room
+                          % for the Equal Opportunity line at the bottom.
+% \global is necessary here because \@makeclassheader is called from
+% \@oddhead which is within a \begin-\endgroup inside of \output
+  \@globaladvcountbydimen\@countclasssepbot{-\@dimenletterpapervcorr}%
+  \@globaladvcountbydimen\@countclassseptop\@dimenletterpapervcorr
+% PostScript
+  \ifx\@bodyfonts\@postscript
+    \@makePSclassheader
+% Not PostScript
+  \else
+    \ifx\@classlabel\@empty
+      \global\setbox\@boxclasspage=\hbox{\hbox to 0pt{\hss\hss}}%
+    \else
+      \global\setbox\@boxclasspage=\hbox{\hbox to 0pt{\hss
+        \begin{picture}(0,0)(\@countpictorig,0)%
+        {%
+          \@classfont
+          \put (0,-\@countclassseptop)%
+            {\makebox(0,0)[tl]{\hbox to 8.5in{\hfil\@classlabel\hfil}}}%
+          \@counttemp=-\@countclasssepbot
+          \advance\@counttemp by 795      % 795pt is 11in
+          \put (0,-\@counttemp)%
+            {\makebox(0,0)[bl]{\hbox to 8.5in{\hfil\@classlabel\hfil}}}%
+%         \put (0,0){\line(1,-2){20}}% debug corner
+%         \put (0,0){\line(1,-1){20}}% debug corner
+%         \put (0,0){\line(1,-3){20}}% debug corner
+        }%
+        \end{picture}%
+      \hss}}%
+  \fi\fi
+}%
+% \DEF \@PSDEFLOSALAMOS
+% This is the PostScript definition for @LOSALAMOS, which prints
+% 'Los Alamos' when \headerfonts{postscript} is used.
+% The PostScript code is read in little chunks to avoid the problem
+% of preview crashing on the Suns with bigger chunks.  Arbortext has
+% fixed the problem, but many older version of preview are still
+% being used and distributed.
+% 
+\gdef\@psdeflosalamos{%
+  \special{ps::[local]%
+    /@LOSALAMOS1 {
+        % Print a hollow Los Alamos
+        %
+      /VirginState save def
+      /Helvetica-Bold findfont [ 27.7 0 0 29 0 0 ] makefont setfont
+        %
+      /YC exch neg def % y correction for label placement.
+      /XC exch def % x correction
+    } def
+  }%
+  \special{ps::[local]%
+    /@LOSALAMOS2 {
+      /MV {moveto} def
+      /SO {false charpath stroke} def
+      .5 setlinewidth
+      XC 87 add YC 716 add translate
+        %
+    } def
+  }%
+  \special{ps::[local]%
+    /@LOSALAMOS3 {
+      0 0 MV    (L) SO
+      15.9 0 MV (o) SO
+      31.8 0 MV (s) SO
+      51.3 0 MV (A) SO
+      70.2 0 MV (l) SO
+      77 0 MV   (a) SO
+      91.4 0 MV (m) SO
+      115 0 MV  (o) SO
+      130.9 0 MV (s) SO
+        %
+      VirginState restore
+    } def
+  }%
+}%
+% \DEF \@PSDEFCLASSLABEL
+% This is the PostScript definition for @CLASSOVERLAY, which prints
+% the classification label when \bodyfonts{postscript} is used.
+% The PostScript code is read in little chunks to avoid the problem
+% of preview crashing on the Suns with bigger chunks.  Arbortext has
+% fixed the problem, but many older version of preview are still
+% being used and distributed.
+% 
+\def\@psdefclasslabel{%
+  \specialbop{ps::[global]%
+    /@CLASSOVERLAY1 {
+        %
+        % Print the classification label at the top and bottom of the page.
+        %
+      /VirginState save def
+      /Topdist exch def
+      /Botdist exch def
+      dup (SECRET) eq
+      {/Space 3.5 def /X 272 def } % Dist is vert distance
+        % between the edge of the paper and the classification label.
+      {/Space 3 def /X 244 def } % Space is the space added
+        % between letters in the label.  X is the distance to the left
+        % side of the label.
+      ifelse
+      /Label exch def
+    } def
+  }%
+  \specialbop{ps::[global]%
+    /@CLASSOVERLAY2 {
+      /Print { gsave Space 0 Label ashow grestore } def
+      /DoubPrint { Print StrikeWidth 0 rmoveto Print } def
+        %
+      /Scale .415888 def % The letters are scaled by this amount.
+      /StrikeWidth 1.4 def % The letters are each printed twice
+        % with this distance between the letters.  Double
+        % striking is used to make the vertical portions of
+        % the letters wider.
+    } def
+  }%
+  \specialbop{ps::[global]%
+    /@CLASSOVERLAY3 {
+      /Helvetica-Bold findfont [29 Scale mul 0 0 29 0 0] makefont setfont
+        %
+      X 770 Topdist sub moveto 
+      DoubPrint
+        %
+      X Botdist moveto
+      DoubPrint
+      VirginState restore
+    } def
+  }%
+}%
+% \DEF \@MAKEPSCLASSHEADER
+% Define the PostScript macro that prints the classification header
+% and footer.
+%
+\def\@makePSclassheader{%
+%
+% \@PSclasslabel invokes the PostScript command @CLASSOVERLAY
+% @CLASSOVERLAY prints the classification label in PostScript
+% in such a way as to simulate the labels on preprinted SECRET
+% or CONFIDENTIAL paper.
+%
+  \gdef\@PSclasslabel##1##2##3{%
+    \special{ps:: ##1 ##2 ##3 @CLASSOVERLAY1 @CLASSOVERLAY2 @CLASSOVERLAY3}}%
+}%
+% \DEF \@MAKEPAGETWOHEADER
+% The header for pages 2-N are put in a box because the height of
+% \@boxpagetwoheader is used to calulate \@dimentoppagetwo
+% which is used to calculate \topskip and \headsep and \textheight
+%
+\def\@makepagetwoheader{%
+  \@tokspagetwoheader={}%
+  \ifx\@useasheader\@useto
+    \@pullpagetwotoheader
+  \else\ifx\@useasheader\@useattn
+    \@tokspagetwoheader=\@toksattn
+  \else\ifx\@useasheader\@usesubject
+    \ifx\@subject\@empty\else\@tokspagetwoheader=\expandafter{\@subjectorig}\fi
+  \else
+    \@tokspagetwoheader=\expandafter{\@useasheader}%
+  \fi\fi\fi
+  \savebox{\@boxpagetwoheader}{%
+    \begin{minipage}[b]{\textwidth}%
+          % The 72pt puts the page number line at one inch down the page.
+          % The -\ht\strutbox compensates for the distance between the top
+          %   of the minipage and the bottom of the top line.
+      \normalsize
+      \rule{0pt}{72pt}\rule{0pt}{-\ht\strutbox}% \rule keeps it in horiz mode
+      \parbox[t]{\@dimenpagetwoheader}{%
+          \parskip=\@parskipsave
+          \the\@tokspagetwoheader\copy\strutbox
+          \ifx\@serialnumber\@empty
+          \else
+            \ifhmode\newline\fi \@symbolserialnumber\copy\strutbox
+          \fi
+        }%
+      \copy\strutbox\hfill
+      \makebox[\@dimenpagetwoheader][r]{\hfil\@date}%
+    \end{minipage}%
+  }%
+        % Now make the distance from the bottom of the page two
+        % header to the first line of the page equal to four lines.
+  \@dimentoppagetwo=\ht\@boxpagetwoheader
+  \advance\@dimentoppagetwo by 4\baselineskip
+  \advance\@dimentoppagetwo by -\dp\strutbox
+}%
+% \DEF \@PRINTCLASSPAGE
+% The \def prints the classification label at the top and bottom of a page.
+%
+\def\@printclasspage{%
+  \ifx\@bodyfonts\@postscript
+    \ifx\@classlabel\@empty
+    \else
+      \@PSclasslabel{(\@classlabel)}{\the\@countclasssepbot }%
+        {\the\@countclassseptop }%
+    \fi
+    \vbox to 0in{}\hss
+  \else
+    \vbox to 0in{\hbox to 0pt{\usebox{\@boxclasspage}\hss}\vss}\hss
+  \fi
+}%
+% \DEF \@PRINTPAGETWOHEADER
+% The \def prints the header on page two and following pages.
+%
+\def\@printpagetwoheader{%
+    \vbox to 0in{\hbox to 0pt{\usebox{\@boxpagetwoheader}\hss}\vss}%
+}%
+% \DEF \@PRINTPAGENUM
+% The \def prints the page number on page two and following pages.
+%
+\def\@printpagenum{%
+  \vbox to 0pt{\hbox to 0pt{%
+    \begin{minipage}[b]{\textwidth}%
+      \normalsize
+      \rule{0pt}{72pt}\rule{0pt}{-\ht\strutbox}% \rule keeps it in horiz mode
+      \hfil{- \thepage\ -}\hfil
+    \end{minipage}%
+  \hss}\vss}%
+}%
+% \DEF \@PULLPAGETWOTOHEADER
+% This \def pulls the page two header from \leftto and \rightto input.
+% The first line of each address in \@toksleftto and \@toksrightto is
+% put into \@tokspagetwoheader.  A \\ is put into \@tokspagetwoheader
+% after each address except for the last one.
+%
+\def\@pullpagetwotoheader{%
+  \@pullloop{leftto}%
+  \ifnum\@countrightto=0\else
+    \@addtotoks\@tokspagetwoheader\\
+    \@pullloop{rightto}%
+  \fi
+}%
+\def\@pullloop#1{%
+  \@tokstemp=\csname @toks#1\endcsname
+  \@counttemp=\csname @count#1\endcsname
+  % Pull off \@counttemp first lines from \@tokstemp
+  \loop
+  \ifnum\@counttemp>0 %
+    \@toendtopull\@tokstemp
+    \@tonewlinepull\@toksbeforeendto
+    \@tocommapull\@toksbeforenewline
+    \@addtokstotoks\@tokspagetwoheader\@toksbeforecomma
+    \ifnum\@counttemp=1\else
+      \@addtotoks\@tokspagetwoheader\\
+    \fi
+    \@tokstemp=\@toksafterendto
+    \advance\@counttemp by -1
+  \repeat
+}%
+
+
+% *************************************************************
+% **** BEGIN AND END LETTER, SHORT OR NORMAL LETTER STYLE. ****
+% *************************************************************
+
+% \DEF \@BEGINLETTER
+% If the short letter style was used, the variables are set for it.
+%
+\def\@beginletter{%
+  \@ifundefined{@shortletterstyle}{\par}%
+    {%  Shortletterstyle.
+      \ifx\@typeface\@tt
+        \topsep=\baselineskip
+        \baselineskip=2\baselineskip
+        \parindent=5\@dimenwdtt
+        \leftmargini=7\@dimenwdtt
+      \else\ifx\@typeface\@rm
+        \advance\baselineskip by \parskip
+        \parindent=2.5em
+        \leftmargini=3.5em
+        \topsep=1.2em
+        \parsep=.6em
+        \itemsep=.6em
+      \fi\fi
+      \parskip=0pt
+      \leftmargin=\leftmargini
+      \par
+    }%
+}%
+% \DEF \@CLEARCLOSING
+% If there are any unprinted floats, call \clearpage.
+% This has the unfortunate effect of putting the closing information
+% on a page by itself.
+%
+\def\@clearclosing{%
+  \edef\@tempa{\@toplist\@botlist\@deferlist}%
+  \ifx\@tempa\@empty\else
+    \@ifundefined{@noclearpage}{\clearpage}{}%
+  \fi
+}%
+% \DEF \@ENDLETTER
+% If the short letter style is wanted, the variables for it are un-set.
+%
+\def\@endletter{%
+  \@ifundefined{@shortletterstyle}{\@dimenhspacesig=0pt}%
+    {%
+      \par
+      \ifnum\thepage>1 %
+        \@errorshortletter
+      \fi
+      \parindent=0em
+      \baselineskip=\@baselineskipsave
+      \parskip=\@parskipsave
+      % In shortletterstyle, put closing 3 spaces to right of center
+      \@dimenhspacesig=\textwidth
+      \divide\@dimenhspacesig by \@dimenwdtt
+      \divide\@dimenhspacesig by 2
+      \multiply\@dimenhspacesig by \@dimenwdtt
+      \advance\@dimenhspacesig by 3\@dimenwdtt
+    }%
+}%
+
+% ***********************
+% **** PRINT OPENING ****
+% ***********************
+
+% \DEF \@PRINTFIRSTPAGEHEADER
+% Prints TO: DATE: etc. headers, (but not the info from the colon on).
+%
+\def\@printfirstpageheader{%
+  \@outputlastpagetrue
+  \newpage
+  \@outputfirstpagetrue
+  \@outputlastpagefalse
+  \thispagestyle{firstpage}%
+  \normalsize
+  \begin{picture}(0,0)(\@countpictorig,\@countverticalposition)%
+    \ifx\@headerfonts\@letterpaper
+    \else
+      \@printletterpaper
+    \fi
+    \@printfirstpagerightheader
+  \end{picture}%
+  \@splitto
+  \@printingtotrue\@printto\@printingtofalse
+  \@printthruorvia{thru}%
+  \@printthruorvia{via}%
+  \@printsalutation
+  \@printsubject
+  \@printreference
+}%
+% \DEF \@PRINTLETTERPAPER
+% The preprinted part is printed.
+%
+\def\@printletterpaper{%
+%   \put (0,0){\line(1,-2){40}}% debug corner
+%   \put (0,0){\line(1,-1){40}}% debug corner
+%   \put (0,0){\line(2,-1){40}}% debug corner
+    \ifx\@headerfonts\@postscript
+      \@dimentemp=\@dimenletterpaperhcorr
+      \@counttemp=\@dimentemp
+      \divide\@counttemp by 65536
+      \@counttemptwo=\@dimenletterpapervcorr
+      \divide\@counttemptwo by 65536
+      \@PSlosalamos{\the\@counttemp }{\the\@counttemptwo }%
+    \else
+      \@latwentyeight
+      \put (\@countleftheader,-77){\@losalamos}%
+    \fi
+    \@spectwelve
+    \put (\@countleftheader,-93){\@lanl}%
+    \put (\@countleftheader,-\@countbotheader){\@lanm}%
+    \@bookseven
+% But what about @#$% am fonts!
+% The Equal Opportunity line should stay with the classification label.
+    \@counttemptwo=767
+% Note that the Equal Op has been moved by the \@dimenletterpapervcorr
+% in the \begin{picture}.
+    \put (0,-\@counttemptwo){\makebox(0,0)[bl]{\hbox to 8.5in{%
+        \hfil An Equal Opportunity Employer/Operated
+        by the University of California\hfil}}}%
+%
+% Now print the TO, DATE, etc.
+% First print the part of the heading that is the same for thru or thruless
+%
+    \@ifundefined{@nocallouts}{%
+      \@booksix
+      \put (\@countrightcolon,-68){\makebox(0,0)[br]{DATE:}}%
+      \put (\@countrightcolon,-80){\makebox(0,0)[br]{IN REPLY REFER TO:}}%
+      \put (\@countrightcolon,-92){\makebox(0,0)[br]{MAIL STOP:}}%
+      \put (\@countrightcolon,-\@countbotheader){\makebox(0,0)[br]{TELEPHONE:}}%
+      }{}%
+}%
+% \DEF \@PRINTFIRSTPAGERIGHTHEADER
+% Print the user input for the right hand side of the first page header.
+% This will either be the callouts or the date and reference.
+%
+\def\@printfirstpagerightheader{%
+  \normalsize
+  \@ifundefined{@nocallouts}{%
+    \put (\@countrightheader,-68){\@date}%
+    \put (\@countrightheader,-80){\@symbolserialnumber}%
+    \put (\@countrightheader,-92){\@mailstop}%
+    \put (\@countrightheader,-\@countbotheader)%
+      {\parbox[t]{2.5in}{\parskip=\@parskipsave\the\@tokstelephone}}%
+    }{%
+    \put (\@countrightheader,-\@countbotheader){\parbox[b]{2.5in}{%
+      \parskip=\@parskipsave\ignorespaces\@date
+      \\Ref\@: \ignorespaces\@symbolserialnumber
+}}}}%
+% \DEF \@SPLITTO
+% This macro figures out how to split \@toksto into \@toksleftto and
+% \@toksrightto.  If \@countto=0, \@toksleftto and \@toksrightto are
+% used as is.  If  1 <= \@countto <= 2  \@toksto is put into \@toksleftto.
+% If  \@countto > 2  \@toksto is divided between \@toksleftto and 
+% \@toksrightto, with the extra address put into \@toksleftto if
+% \@countto is an odd number.
+% On exit, \@toksto is left empty, and \@countto=0.
+%
+\def\@splitto{%
+  \ifnum\@countto=0 %
+  \else\ifnum\@countto<3 %
+      \@toksleftto=\@toksto
+      \@countleftto=\@countto
+      \@toksrightto={}%
+      \@countrightto=0
+    \else
+      \@countrightto=\@countto \divide\@countrightto by 2
+      \@countleftto=\@countto \advance\@countleftto by -\@countrightto
+    % Pull off \@countleftto addresses from \@toksto
+    \@toksleftto={}%
+    \@counttemp=\@countleftto
+    \@tokstemp=\@toksto
+    \loop
+      \@toendtopull\@tokstemp
+      \@addtokstotoks\@toksleftto\@toksbeforeendto
+      \@addtotoks\@toksleftto\@endto
+      \@tokstemp=\@toksafterendto
+      \advance\@counttemp by -1
+      \ifnum\@counttemp>0 %
+    \repeat
+    \@toksrightto=\@tokstemp
+  \fi\fi
+  \@toksto={}\@countto=0
+}%
+% \DEF \@PRINTTO
+\def\@printto{%
+  \newline
+  \@dimentemp=\@countbotheader pt
+  \advance\@dimentemp by \@dimenletterpapervcorr
+  \advance\@dimentemp by 3\baselineskip
+  \advance\@dimentemp by -\ht\strutbox
+  \advance\@dimentemp by \@dimenexpandtopmargin
+  \vrule height \the\@dimentemp width0pt
+  % \@everyindenttrue causes the \@item macro to indent every paragraph in
+  % an \item, including the first paragraph.  The indent here will make
+  % wrap-around addresses indent on subsequent lines.
+  \@everyindenttrue
+  \vbox to 0pt{%
+    \hbox{%
+      \@dimentemp=\textwidth
+      \ifnum\@countrightto=0 %
+        \parbox[t]{\@dimentemp}%
+          {\parskip=\@parskipsave
+            \ifnum\@countleftto>0 \@maketocol{leftto}\fi \mbox{}}%
+      \else
+        \advance\@dimentemp by -\@dimentocolsep
+        \divide\@dimentemp by 2
+        \parbox[t]{\@dimentemp}%
+          {\parskip=\@parskipsave
+            \ifnum\@countleftto>0 \@maketocol{leftto}\fi \mbox{}}%
+        \hskip\@dimentocolsep
+        \parbox[t]{\@dimentemp}%
+          {\parskip=\@parskipsave\@maketocol{rightto}\mbox{}}%
+      \fi
+    }%
+  }%
+  \@everyindentfalse
+  \newline
+  % Make distance to comp close \parskip + \@bodysep
+  \vspace{-\baselineskip}%
+  \vspace{-\parskip}%
+  \vspace{\@bodysep}%
+  \mbox{}%
+}%
+% \DEF \@MAKETOCOL
+% 
+% Makes a column of to (addresses).
+% It's called with {leftto} or {rightto}
+% This is done in the list environment so that long lines will be 
+% reverse indented (first line sticks out to the left).
+%
+\def\@maketocol#1{%
+  \@tokscoltemp=\csname @toks#1\endcsname
+  \@countcoltemp=\csname @count#1\endcsname
+  % Save \@countcoltemp to reset on exit from \@maketocol.
+  \@counttemptwo=\@countcoltemp
+  \begin{list}{}{\parsep=0pt\itemsep=\parskip\listparindent=-2\@dimenwdtt
+        \topsep=0pt\leftmargin=-\listparindent}%
+    % Goes thru longloop once per address.
+    \longloop
+    \ifnum\@countcoltemp>0 %
+      \advance\@countcoltemp by -1
+      \@toendtopull\@tokscoltemp
+      \@tokscoltemp=\@toksafterendto
+      % Write this address to the .mlb file, to be used later for printing
+      % mailing labels.
+      \@writeonelabel{\the\@toksbeforeendto}%
+      \item
+      \leavevmode\copy\strutbox
+      % Goes thru innerloop once per printed line.
+      \innerloop
+        \@tonewlinepull\@toksbeforeendto
+      % Save \@toksafternewline into \@toksaftersave; \the\@toksbeforenewline
+        % can send execution off to \def\attn and then to \def\@toksinput.
+        % \@toksinput resets \@toksafternewline.
+        \@toksaftersave=\@toksafternewline
+        % Print the next line of the address.
+        \ignorespaces\the\@toksbeforenewline
+        \copy\strutbox
+        \@toksnotequal\@toksaftersave\@toksempty
+      \if@toksnotequal
+        \par
+        \@toksbeforeendto=\@toksaftersave
+      \innerrepeat
+    \longrepeat
+  \end{list}%
+  \@countcoltemp=\@counttemptwo
+}%
+% \DEF \LONGLOOP, \LONGINNERLOOP, \INNERITERATE
+%
+% These defs are used by \@maketocol instead of plain.tex's normal loops.
+% \longloop makes it possible to output \par tokens while in the loop.
+% \innerloop and \inneriterate are used as inner loops.
+%
+\long\def\longloop#1\longrepeat{\def\longbody{#1}\longiterate}%
+\def\longiterate{\longbody \let\next\longiterate \else\let\next\relax\fi \next}%
+\let\longrepeat=\fi% this makes \longloop...\if...\longrepeat skippable
+%
+\long\def\innerloop#1\innerrepeat{\def\innerbody{#1}\inneriterate}%
+\def\inneriterate{\innerbody \let\next\inneriterate
+  \else\let\next\relax\fi \next}%
+\let\innerrepeat=\fi% this makes \innerloop...\if...\innerrepeat skippable
+%
+% \DEF \@PRINTSALUTATION
+% Print the salutation
+%
+\def\@printsalutation{%
+  \@ifemptyorundefined{@salutation}{}{%
+    \par
+    \@salutation
+}}%
+% \DEF \@PRINTTHRUORVIA
+% Print the THRU or VIA list if \@countthru or \@countvia > 0
+%
+\def\@printthruorvia#1{%
+  \@tokstemp=\csname @toks#1\endcsname
+  \@counttemp=\csname @count#1\endcsname
+  \ifnum\@counttemp=0 %
+  \else
+    \longloop
+    \@toendtopull\@tokstemp
+    \par
+    \begin{list}{\copy\strutbox \uppercase{#1}:\hfill}{%
+      \settowidth\labelwidth{\uppercase{#1}: }%
+      \leftmargin=\labelwidth
+      \topsep=0pt
+      \labelsep=0pt}%
+      \item\the\@toksbeforeendto
+    \end{list}%
+    \@toksnotequal\@toksafterendto\@toksempty
+    \if@toksnotequal
+    \@tokstemp=\@toksafterendto
+    \longrepeat
+  \fi}%
+%
+% \DEF \@PRINTSUBJECT
+% Print the SUBJECT list if \@subject is not empty.
+%
+\def\@printsubject{%
+  \par
+  \ifx\@subject\@empty\else
+    \begin{list}{\copy\strutbox SUBJECT:\hfill}{%
+        \settowidth\labelwidth{SUBJECT\@: }%
+        \leftmargin=\labelwidth
+        \topsep=0pt
+        \labelsep=0pt}%
+      \item\@subject
+    \end{list}%
+  \fi
+}%
+% \DEF \@PRINTREFERENCE
+% This prints the reference.
+%
+\def\@printreference{%
+  \par
+  \ifnum\@countreference=0 %
+  \else
+    \ifnum\@countreference=1 %
+      REFERENCE:\relax
+    \else
+      REFERENCES:\relax
+    \fi
+    \par\vspace{-\baselineskip}% Begin list on same line as REFERENCE:
+%
+% No number for one item lists
+%
+    \begin{list}{\ifnum\@countreference=1\else\arabic{@countlist}.\fi}{%
+      \topsep=0pt\itemsep=0pt\parsep=0pt
+      \ifnum\@countreference=1 %
+        \settowidth\leftmargin{REFERENCE\@: }%
+      \else
+        \settowidth\leftmargin{REFERENCES\@: }%
+      \fi
+      \@setnumdefaults\@countreference
+    }%
+    \@printnumberedlist{\@toksreference}%
+    \end{list}%
+  \fi
+}%
+
+% ************************
+% **** PRINT CLOSING. ****
+% ************************
+
+% \DEF \@PRINTCOMPCLOSE
+% Print complimentary close.
+%
+\def\@printcompclose{%
+  \par
+  % Make distance to comp close \parskip + \@bodysep
+  \vspace{\@bodysep}%
+  \@complimentaryclose
+}%
+% \DEF \@PRINTSIGNATURE
+% Leave space for the signature and print the signature line.
+%
+\def\@printsignature{%
+  \par
+  \@ifemptyorundefined{@signature}{}{{%
+      \samepage
+      \vspace*{2\baselineskip}%
+      \@signature
+}}}%
+% \DEF \@PRINTORIGINATORLINE
+% Print the signer, originator, and typist.
+%
+\def\@printoriginatorline{% 
+  \@ifemptyorundefined{@signature}{\nopagebreak}{}%
+  \par
+  \ifx\@signer\@empty
+  \else
+      \@signer
+      \ifx\@originator\@empty
+        \ifx\@typist\@empty \else :\relax \fi
+      \else
+        -\relax
+      \fi
+  \fi
+  \ifx\@originator\@empty
+  \else
+    \@originator
+    \ifx\@typist\@empty \else :\relax \fi
+  \fi
+  \ifx\@typist\@empty
+  \else
+    \@typist
+  \fi
+}%
+% \DEF \@PRINTENCLOSURES
+% Now print the enclosures
+%
+\def\@printenc{%
+  \@ifundefined{@encas}{}{%
+    \ifnum\@countenc=0 %
+      \par Enc.\ a/s%
+    \else \@erroras\enc\encas{Enc. a/s}%
+    \fi}%
+  \ifnum\@countenc=0 %
+  \else
+    \par
+    \@ifundefined{@encpagebreak}{}{\pagebreak}%
+    \ifnum\@countenc=1 %
+      Enclosure:\relax
+    \else
+      Enc.\relax
+    \fi
+    \nopagebreak
+    \par\vspace{-\baselineskip}%
+%
+% No number for one item lists
+%
+    \@countletterlist=\@countenc
+    \begin{list}{\ifnum\@countenc=1\else\arabic{@countlist}.\fi}{%
+      \ifnum\@countenc=1 %
+        \settowidth\leftmargin{Enclosure: }%
+      \else
+        \settowidth\leftmargin{Enc.\ }%
+      \fi
+      \@setnumdefaults\@countenc
+      \topsep=0pt\itemsep=0pt\parsep=0pt
+    }%
+    \@printnumberedlist{\@toksenc}%
+    \end{list}%
+  \fi
+}%
+% \DEF \@PRINTATTACHMENTS
+% Now print the attachments
+%
+\def\@printattachments{%
+  \@ifundefined{@attachmentas}%
+        % No \attachmentas
+    {\@ifundefined{@attachmentsas}{}%
+        % \@attachmentsas and not \@attachmentas
+      {\ifnum\@countattachments=0 %
+        \par Attachments a/s%
+      \else \@erroras\attachments\attachmentsas{Attachments a/s}\fi}}%
+        % Yes, \attachmentas
+    {\@ifundefined{@attachmentsas}%
+        % \@attachmentas and not \@attachmentsas
+      {\ifnum\@countattachments=0 %
+        \par Attachment a/s%
+      \else\@erroras\attachments\attachmentas{Attachment a/s}\fi}%
+        % \@attachmentas and \@attachmentsas
+      {\par Attachments a/s%
+        \@erroras\attachmentas\attachmentsas{Attachment a/s}}}%
+  \ifnum\@countattachments=0 %
+  \else
+    \par
+    \@ifundefined{@attachmentspagebreak}{}{\pagebreak}%
+      \ifnum\@countattachments=1 %
+        Attachment:\relax
+      \else
+        Attachments:\relax
+      \fi
+%
+% No number for one item lists
+%
+    \@countletterlist=\@countattachments
+    \begin{list}{\ifnum\@countattachments=1\else\arabic{@countlist}.\fi}{%
+      \leftmargin=0pt
+      \@setnumdefaults\@countattachments
+    }%
+    \@printnumberedlist{\@toksattachments}%
+    \end{list}%
+  \fi
+}%
+% \DEF \@PRINTDISTRIBUTION
+% Now the distribution list 
+%
+\def\@printdistribution{%
+  \ifnum\@countdistribution=0 %
+  \else
+    \par
+    \@ifundefined{@distributionpagebreak}{}{\pagebreak}%
+    {\offinterlineskip    Distribution:\copy\strutbox}%
+    \@countletterlist=\@countdistribution
+    \begin{list}{}{%
+      \topsep=0pt\itemsep=0pt\parsep=0pt
+      \parskip=0pt\labelsep=0pt\labelwidth=0pt\leftmargin=0pt
+    }%
+    \item\the\@toksdistribution
+    \end{list}%
+  \fi
+}%
+% \DEF \@PRINTCY
+% Print the Cy list if \@countcy > 0
+%
+\def\@printcy{%
+  \ifnum\@countcy=0 %
+  \else
+    \pagebreak[0]%
+    \par
+    \@ifundefined{@cypagebreak}{}{\pagebreak}%
+    \begin{list}{Cy:\hfill}{%
+        \settowidth\labelwidth{Cy: }%
+        \leftmargin=\labelwidth
+        \topsep=0pt\itemsep=0pt\parsep=0pt
+        \labelsep=0pt
+      }%
+    \item\the\@tokscy
+    \end{list}%
+  \fi
+}%
+
+% ************************************
+% **** NUMBERED LISTS FOR CLOSING ****
+% ************************************
+
+% \DEF \@SETNUMDEFAULTS
+% Set defaults for numbered lists.  #1 is the number of
+% items in the list.
+%
+\def\@setnumdefaults#1{%
+  \ifnum #1=1 %
+    \labelwidth=0pt%     No number for one item list
+    \labelsep=0pt
+  \else
+    \usecounter{@countlist}%
+    \ifnum #1<10 %
+      \settowidth\labelwidth{8.}% Between 2 and 9 items.
+    \else
+      \settowidth\labelwidth{88.}%  10 or more.
+  \fi\fi
+  \addtolength\leftmargin\labelwidth
+  \addtolength\leftmargin\labelsep
+  \topsep=0pt\itemsep=0pt\parsep=0pt
+  \setlength\parskip{0pt}%
+}%
+% \DEF \@PRINTNUMBEREDLIST
+% This prints a numbered list as is used to print reference, 
+% attachments, and enclosures.
+%
+\def\@printnumberedlist#1{%
+  \@toksremaining=#1%
+  \loop
+    \@tonewlinepull{\@toksremaining}%
+    \@toksnotequal\@toksbeforenewline\@toksempty
+  \if@toksnotequal
+    \@toksitem=\@toksbeforenewline
+    \@toksremaining=\@toksafternewline
+    \ifx #1\@toksreference%     Make reference list uppercase
+      \item\uppercase\expandafter{\the\@toksitem}%
+    \else
+      \item\the\@toksitem
+    \fi
+  \repeat
+}%
+
+% *****************
+% **** PARSING ****
+% *****************
+
+% \DEF \@TONEWLINEPULL    \DEF \@TONEWLINEPULLSUBONE, etc.
+% Put the tokens in #1 before the first \\ into \@toksbeforenewline.
+% Put the tokens in #1 after the firrst \\ into \@toksafternewline.
+% \@newlinetrue if there was a \\ in the token #1.
+%
+\def\@tonewlinepull#1{\let\@nlsave=\\\let\\=\relax
+  \expandafter\@tonewlinepullone\the#1\\\@empty
+  \if@newline\expandafter\@tonewlinepullthree\the#1\@empty
+  \else\fi\let\\=\@nlsave}%
+\def\@tonewlinepullone#1\\{\@toksbeforenewline={#1}%
+        \futurelet\next\@tonewlinepulltwo}%
+\def\@tonewlinepulltwo#1\@empty{\@toksafternewline={#1}%
+        \ifx\@empty\next\@newlinefalse
+ \else\@newlinetrue\fi}%
+\def\@tonewlinepullthree#1\\{\@toksbeforenewline={#1}%
+        \futurelet\next\@tonewlinepullfour}%
+\def\@tonewlinepullfour#1\@empty{\@toksafternewline={#1}%
+        \ifx\@empty\next\@newlinefalse
+ \else\@newlinetrue\fi}%
+
+% \DEF \@TOCOMMAPULL   \DEF \@TOCOMMAPULLSUB, etc.
+% Put the tokens in #1 before the first "," into \@toksbeforecomma.
+% \@commatrue if there was a "," in the token #1.
+%
+\def\@tocommapull#1{\expandafter\@tocommapullone\the#1,\@empty}%
+\def\@tocommapullone#1,{\@toksbeforecomma={#1}%
+        \futurelet\next\@tocommapulltwo}%
+\def\@tocommapulltwo#1\@empty{\ifx\@empty\next \@commafalse
+        \else \@commatrue \fi}%
+
+% \DEF \@TOENDTOPULL    \DEF \@TOENDTOPULLSUBONE, etc.
+% Put the tokens in #1 before the first \@endto into \@toksbeforeendto.
+% Put the tokens in #1 after the first \@endto into \@toksafterendto.
+% We are counting on finding a \@endto in \the#1.
+%
+\def\@toendtopull#1{\expandafter\@toendtopullone\the#1\@empty}%
+\def\@toendtopullone#1\@endto#2\@empty{\@toksbeforeendto={#1}%
+  \@toksafterendto={#2}}%
+
+% \DEF \@UNSPACELEFT
+% Gets rid of a space at the beginning of a macro definition.
+% \def\word{  xx  }
+% \@unspaceleft\word
+% results in \def\word{xx  }
+%
+\def\@unspaceleft#1{%
+  \def\@macroname{#1}%
+  \ifx #1\@empty 
+  \else
+    \ifx #1\@blank
+      \global\expandafter\def\@macroname{}%
+    \else
+  % If #1 is not blank or empty, call \@unspaceleftone
+      \expandafter\@unspaceleftone#1\relax\relax\@empty
+  \fi\fi
+}%
+    % The use of #1 as a parameter in @unspaceleftone ignores a leading blank.
+\def\@unspaceleftone#1#2\relax{%
+  \global\expandafter\def\@macroname{#1#2}%
+  \@unspacelefttwo}%
+\def\@unspacelefttwo#1\@empty{}%
+
+% \DEF \@UPPERUNSPACELEFT
+% Gets rid of a space at the beginning of a macro definition and returns
+% uppercase.
+% \def\word{  xx  }
+% \@upperunspaceleft\word
+% results in \def\word{\uppercase{xx  }}
+%
+\def\@upperunspaceleft#1{%
+  \def\@macroname{#1}%
+  \ifx #1\@empty 
+  \else
+    \ifx #1\@blank
+      \global\expandafter\def\@macroname{}%
+    \else
+  % If #1 is not blank or empty, call \@upperunspaceleftone
+      \expandafter\@upperunspaceleftone#1\relax\relax\@empty
+  \fi\fi
+}%
+    %  #1 as a parameter in @upperunspaceleftone ignores a leading blank.
+\def\@upperunspaceleftone#1#2\relax{%
+  \global\expandafter\def\@macroname{\uppercase{#1#2}}%
+  \@unspacelefttwo}%
+%\def\@unspacelefttwo#1\@empty{}%
+
+% \DEF \@UNSPACERIGHT
+% Gets rid of a space at the end of a macro definition.
+% \def\word{  xx  }
+% \@unspaceright\word
+% results in \def\word{  xx}
+%
+\def\@unspaceright#1{%
+  \def\@macroname{#1}%
+        % Save the original definition of #1.
+  \edef\@temp{#1}%
+        % \@unspacerightone will find the first \relax if #1 ends in a blank.
+        % Otherwise it will find the second \relax and set \next to \@empty.
+  \expandafter\@unspacerightone#1\relax{} \relax\@empty
+}%
+\def\@unspacerightone#1 \relax{%
+  \global\expandafter\edef\@macroname{#1}%
+  \futurelet\next\@unspacerighttwo}%
+\def\@unspacerighttwo#1\@empty{%
+  \ifx\@empty\next
+    \global\expandafter\edef\@macroname{\@temp}%
+  \fi
+}%
+
+% ****************************************************************
+% **** UTILITIES FOR MASSAGING TOKEN AND DIMENSION VARIABLES. ****
+% ****************************************************************
+% \DEF \@ADDTOTOKS
+% addtotoks takes the current token variable #1 and appends the
+%   tokens in #2. #1 must be a token variable defined by \newtoks
+% For example, if \toks={abc}
+%   \@addtotoks{\toks}{DEF\xx} will result in \toks={abcDEF\xx}
+%
+\def\@addtotoks#1#2{#1=\expandafter{\the#1#2}}%
+%
+% \DEF \@ADDTOKSTOTOKS
+% addtokstotoks takes the current token variable #1 and appends the
+%   token variable #2 to it, putting the result into token variable #1.
+% For example, if \toksone={abc} and \tokstwo={xyz},
+%   \@addtokstotoks\toksone\tokstwo will result in \toksone={abcxyz}
+\def\@addtokstotoks#1#2{\edef\@deftemp{\the#1\the#2}%
+  \global#1=\expandafter{\@deftemp}}%
+%
+% \DEF \@IFEMPTYORUNDEFINED
+% Like LaTeX's \@ifundefined, except that #2 will also be 
+% executed if \#1 is empty or blank.
+%
+\long\def\@ifemptyorundefined#1#2#3{%
+  \expandafter\ifx\csname#1\endcsname\relax#2
+  \else\expandafter\ifx\csname#1\endcsname\@empty#2
+  \else\expandafter\ifx\csname#1\endcsname\@blank#2
+  \else#3\fi\fi\fi}
+%
+% \DEF \@IFNOINFO
+% \@ifnoinfo{#1}{\actionone}{\actiontwo}
+%   performs \actionone if #1 is empty or blank,
+%   otherwise performs \actiontwo
+\def\@ifnoinfo#1#2#3{\def\@deftemp{#1}%
+  \ifx\@deftemp\@empty#2\else\ifx\@deftemp\@blank#2\else#3\fi\fi}
+%
+% \DEF \@TOKSNOTEQUAL    \DEF \@TOKSEQUAL
+% \@toksnotequal compares two token variables and returns \@toksnotequaltrue
+%    if they are the different.  Eg, \toks1={a\b c}\toks2={a\b}
+%    \@toksnotequal{\toks1}{\toks2} returns \@toksnotequaltrue
+% \@toksequal works in a similar manner.
+%
+\def\@toksnotequal#1#2{\begingroup\edef\one{\the#1}\edef\two{\the#2}%
+  \ifx\one\two\global\@toksnotequalfalse\else\global\@toksnotequaltrue\fi
+  \endgroup}%
+% \def\@toksequal#1#2{\begingroup\edef\one{\the#1}\edef\two{\the#2}%
+%  \ifx\one\two\global\@toksequaltrue\else\global\@toksequalfalse\fi\endgroup}%
+%
+% \DEF \@ADVCOUNTBYDIMEN
+% A count variable is advanced by a dimension variable expressed in points.
+% For example, if \countx=10 and \dimenx=2pt, then
+%   \@advcountbydimen\countx\dimenx
+%   leaves \countx=12 and \dimenx=2pt
+%
+\def\@advcountbydimen#1#2{\@counttemp=#2%
+  \divide\@counttemp by 65536 \advance#1by \@counttemp}%
+%  \divide\@counttemp by 65536 \global\advance#1by \@counttemp}%
+%
+% \DEF \@GLOBALADVCOUNTBYDIMEN
+% A count variable is globally advanced by a dimension variable 
+% expressed in points.
+%
+\def\@globaladvcountbydimen#1#2{\@counttemp=#2%
+  \divide\@counttemp by 65536 \global\advance#1by \@counttemp}%
+%
+% \DEF \@NOTVOIDTOKS
+% \@notvoidtokstrue if there is at least one token in the variable #1.
+%
+\def\@notvoidtoks#1{\@addtotoks{#1}{\@empty}%
+        \expandafter\@notvoidtoksone\the#1}%
+\def\@notvoidtoksone{\futurelet\next\@notvoidtokstwo}%
+\def\@notvoidtokstwo#1\@empty{\ifx\@empty\next \@notvoidtoksfalse
+        \else \@notvoidtokstrue \fi}%
+
+% ****************
+% **** LABELS ****
+% ****************
+
+% The \makemaillabels declaration causes mailing labels to be made.  It must
+% go before the \begin{document} command.  
+%
+% Commands for generating the labels are put on the .MLB file, which is
+% read in and processed by the \end{document} command.
+%
+% Much of the following code is taken from Lamport's letter macros.
+
+% The following default values set things up for producing
+% labels in two columns of seven 1-1/2" X 4" labels each,
+% suitable for reproducing onto Avery brand number 5362 address
+% labels.
+
+% For 1" labels, use
+%\maillabelheight{1in}
+%\maillabeltopmargin{.5in}
+
+% For 1 1/2" labels, use
+%\maillabelheight{1.5in}
+%\maillabeltopmargin{.25in}
+
+% For 2" labels,use
+%\maillabelheight{2in}
+%\maillabeltopmargin{.5in}
+
+\maillabelheight{}
+\maillabeltopmargin{}
+
+% \DEF \@STARTLABELS
+%
+% Resets page layout variables for printing labels.
+%
+\def\@startlabels{%
+  \baselineskip=0pt 
+  \lineskip=0pt
+  \pagestyle{empty}
+  \let\@texttop=\relax
+  \topmargin=-72pt
+  \advance\topmargin by\@dimenmaillabeltopmargin
+  \headsep 0pt
+  \oddsidemargin -35pt
+  \evensidemargin -35pt
+  \textheight 11in
+  \advance\textheight by-\@dimenmaillabeltopmargin
+  \@colht\textheight  \@colroom\textheight \vsize\textheight
+  \textwidth 550pt
+  \columnsep 25pt
+  \xpt
+  \raggedbottom
+  \boxmaxdepth=0pt
+  \parindent=0pt      %% corrected 3/5/86 
+  \twocolumn\relax
+ % Write \@countskiplabels blank labels
+   \loop
+   \ifnum\@countskiplabels>0
+     \@mlabel{}%
+     \advance\@countskiplabels by -1
+   \repeat
+}
+% \DEF \@MLABEL
+% Prints one label.
+%
+\def\@mlabel#1{%
+  \setbox0\vbox{\parbox[b]{3.6in}%
+  {\strut\@printingtotrue\ignorespaces #1}}%
+  \vbox to \the\@dimenmaillabelheight{\vss \box0 \vss}}%
+
+% \DEF \@WRITEONELABEL
+%
+% One label is written to the .MLB file.
+%
+\def\@writeonelabel#1{%
+  \if@makemaillabels
+    \begingroup 
+      \def\protect{\string}
+      \let\\=\relax
+      \def\protect##1{\string##1\space}
+      \immediate\write\@mlbout{\string\@mlabel{#1}}%
+      \ifnum\@countreturnaddress=0\else
+        \immediate\write\@mlbout{\string\@mlabel{\the\@toksreturnaddress}}%
+      \fi
+    \endgroup 
+  \fi}
+  
+% ************************
+% **** ERROR MESSAGES ****
+% ************************
+
+\def\@eightspaces{\space\space\space\space\space\space\space\space}%
+\def\@errorundeclared#1{\typeout{^^JWarning: you have not called \protect #1
+  before calling \protect\opening.^^J}}%
+\def\@errorundeclaredcallout#1{\typeout{^^JWarning: you have not specified
+  the callout \protect #1^^J
+  \@eightspaces before calling \protect\opening.^^J}}%
+\def\@errorundeclaredto{\typeout{^^JWarning: you have not specified 
+    an address
+  before calling \protect\opening.^^J^^J
+  \@eightspaces Use \protect\to\space to specify an address, 
+    for example^^J^^J
+  \@eightspaces \protect\to{Vieno Severi Alanne \protect\\^^J
+  \@eightspaces 414 Rio Seco \protect\\^^J
+  \@eightspaces Santa Fe, NM 87501}^^J}}%
+\def\@errorshowexample#1#2{\typeout{\@eightspaces\space For example, use^^J^^J
+  \@eightspaces\protect #1{#2}^^J}}%
+\def\@errorundeclaredsalutation{\typeout{^^JWarning: you have not called 
+  \protect\salutation\space before calling \protect\opening.^^J}%
+  \@errorshowexample{\salutation}{Dear Henry,}}%
+\def\@errorundeclaredcompclose{\typeout{^^JWarning: you have not called
+  \protect\complimentaryclose\space before calling \protect\opening.^^J
+  \@eightspaces\protect\complimentaryclose{Sincerely Yours,} 
+  will  be used by default.^^J}}%
+\def\@errorserialnosymbol{\typeout{^^JWarning: you have called 
+  \protect\serialnumber, but you have not called \protect\symbol.^^J}%
+  \@errorshowexample{\symbol}{C-2}}%
+\def\@errortoleftrightto{\typeout{%
+  ^^JWarning: you have called \protect\leftto\space
+  and/or \protect\rightto\space as well as \protect\to.^^J
+  \@eightspaces All addresses called by \protect\to\space will be printed in
+  the left column.^^J}}%
+\def\@erroruseas#1#2{\typeout{^^JWarning: you specified 
+  \protect\use#1asheader,^^J
+  \@eightspaces yet you have not specified \protect#2.^^J^^J
+  \@eightspaces The first line of the addressee will be used ^^J
+  \@eightspaces on headers after page one.^^J}}%
+\def\@errorattn{\typeout{^^JWarning: \protect\attn\space must be used only
+    within the argument of \protect\to, for example,^^J^^J
+  \@eightspaces \protect\to{Genie Electronics \protect\\ ^^J
+  \@eightspaces \protect\attn{Mr. Robert Mercer, Sales Manager} \protect\\ ^^J
+  \@eightspaces P.O. Box 8501 \protect\\ ^^J
+  \@eightspaces Midwest City, OK 73110}^^J}}%
+\def\@errorthruandvia{\typeout{^^JWarning: you have used both
+  \protect\thru\space and \protect\via\space in this letter.^^J
+  \@eightspaces Use one or the other, but not both.}}%
+\def\@errorclassargument{%
+  \typeout{^^JFatal error: \protect\classlabel{\@classlabel} 
+    calls for an invalid classification label.^^J}%
+  \@errorclassmessage}%
+\def\@errortwoclasses{%
+  \typeout{^^JFatal error: you have called \protect\classlabel \space
+    more than once, or you have^^J
+    \@eightspaces\space\space\space\space called 
+      \protect\classlabel \space after having called 
+      \protect\begin{document}.^^J^^J
+    \space You are allowed to declare only one classification label
+    per letter.^^J
+    \space You must call \protect\classlabel\space before using 
+           \protect\begin{document}.^^J}%
+  \@errorclassmessage}%
+\def\@errorclassmessage{%
+  \typeout{%
+    \space\space To print CONFIDENTIAL on the top and bottom
+      of your letter,^^J
+      \space use \protect\classlabel{c}^^J^^J
+    \space To print SECRET on the top and bottom
+      of your letter,^^J
+      \space use \protect\classlabel{s}^^J^^J
+    \space To print UNCLASSIFIED on the top and bottom
+      of your letter,^^J
+      \space use \protect\classlabel{u}^^J^^J
+    \space If you do not want a classification label on your letter,^^J
+      \space use \protect\classlabel{}^^J
+      \space or do not use the \protect\classlabel\space command.^^J^^J
+    \space Change your file, and rerun LaTeX.^^J}}%
+\def\@errorillegaltypeface{%
+  \typeout{^^JFatal error: \protect\typeface{\@typeface} calls for an invalid
+      typeface.^^J^^J
+    \space Use \protect\typeface{tt} or \protect\typeface{rm}^^J^^J
+    \space Change your file, and rerun LaTeX.^^J}}%
+\def\@errorillegalheaderfont{\def\@fontcommand{\protect\headerfonts}%
+  \def\@fontarg{\@headerfonts}%
+  \typeout{^^JFatal error: \@fontcommand{\@fontarg} calls for 
+      an invalid font.^^J^^J
+    \space Use \@fontcommand{lafonts}, \@fontcommand{texfonts},^^J
+    \space or \@fontcommand{postscript}\space
+    depending on what fonts^^J \space are available on your machine.^^J^^J
+    \space Using \@fontcommand{} will give you the default fonts.^^J^^J
+    \space Use \@fontcommand{letterpaper} if you wish to print your letter^^J
+    \space on pre-printed letter paper.^^J^^J
+    \space Change your file, and rerun LaTeX.^^J}}%
+\def\@errorillegalbodyfont{\def\@fontcommand{\protect\bodyfonts}%
+  \def\@fontarg{\@bodyfonts}%
+  \typeout{^^JFatal error: \@fontcommand{\@fontarg} calls 
+      for an invalid font.^^J^^J
+    \space Use \@fontcommand{texfonts} or \@fontcommand{postscript}^^J
+    \space depending on what fonts are available on your machine.^^J^^J
+    \space Using \@fontcommand{} will give you the default fonts.^^J^^J
+    \space Change your file, and rerun LaTeX.^^J}}%
+\def\@erroramfonts{%
+  \typeout{^^JWarning: You are using the obsolete Almost Modern (AM) 
+      fonts.^^J^^J
+    \@eightspaces Only cursory debugging has been attempted using AM fonts.^^J
+    \@eightspaces The Computer Modern (CM) fonts are fully supported
+      by laletter.^^J}}%
+\def\@erroroldlafonts{%
+  \typeout{^^JFatal error: Your system is using an obsolete version 
+    of lafonts.^^J^^J
+    \@eightspaces Get the manual called "TeX Fonts for Los Alamos 
+    Memos and Letters^^J
+    \@eightspaces Installation Reference," CIC \protect##1128,
+      from the Computer^^J
+    \@eightspaces Information Center, 667-6992.^^J}}%
+\def\@errorshortletter{%
+  \typeout{^^JWarning: Use of the \protect\shortletterstyle\space macro
+    is intended^^J
+    \@eightspaces for use with letters of ten lines or less.^^J^^J}}%
+\def\@erroras#1#2#3{%
+  \typeout{^^JWarning: You have used both \protect#1\space and
+    \protect#2.^^J
+    \@eightspaces Use one or the other but not both.^^J
+    \@eightspaces "#3" will not be printed on this letter.^^J^^J}}%
+
+% ***********************
+% **** DEATH UTILITY ****
+% ***********************
+
+% \DEF \@TODIEORNOTTODIE
+% The \@todieornottodie macro is initialized here.
+% If a fatal error occurs, it will be equipped with a suitable 
+% error message and an \@exit call.  \@todieornottodie will then be called
+% once the \fi and \endgroups have all been passed.  This prevents the
+% printing of confusing error messages.
+%
+\def\@todieornottodie{\relax}%
+
+% \DEF \@EXIT
+% @exit terminates the job prematurely.
+\def\@exit{\@fileswfalse\@makemaillabelsfalse\end{document}}%
+% \DEF \@EXITFI
+% @exitfi finishes an \if and terminates the job prematurely.
+\def\@exitfi{\@fileswfalse\@makemaillabelsfalse\fi\end{document}}%
+
+% ***********************************************************************
+% **** ARBORTEXT'S SPECIALBOP (BEGINNING OF PAGE) FOR USE WITH DVIPS ****
+% ***********************************************************************
+
+\def\@specialbopempty{}%
+\let\@specialboptext=\@specialbopempty
+%
+% \DEF \SPECIALBOP
+% Stands for \SPECIAL-Beginning-Of-Page, supplied by Arbortext.
+%
+\def\specialbop#1{%
+ \xdef\@specialboptext{%
+   \@specialboptext      
+   \special{#1}%   
+}}%
+\def\@specialbopemit{%   (used by the \output routine)
+ \ifx\@specialboptext\@specialbopempty
+ \else
+  \@specialboptext
+  \global\let\@specialboptext=\@specialbopempty
+ \fi
+}%
+
+% ***************************************************************************
+% **** REDEFINE LATEX.TEX'S \@ITEM FOR NICE PAGEBREAKS IN \CLOSING LISTS ****
+% ***************************************************************************
+
+% \DEF \@ITEM
+%
+% This is mostly copied from latex.tex.
+% The penalties have been altered so that lists in the \closing of
+% a letter will not leave clubs and widows.
+% The first 3 lines and the last 2 lines are kept on the same page.
+%
+\def\@item[#1]{%
+  \if@noparitem \@donoparitem
+  \else \if@inlabel \indent \par \fi
+    \ifhmode \unskip\unskip \par \fi 
+    \if@newlist \if@nobreak \@nbitem \else
+        {% LETTER CHANGES begin here
+          \if@closing
+            \@beginparpenalty=10000
+          \fi
+          \addpenalty\@beginparpenalty
+        }% LETTER CHANGES end here
+        \addvspace\@topsep \addvspace{-\parskip}\fi
+      \else 
+      {% LETTER CHANGES begin here
+        \if@closing
+          \ifnum\c@@countlist=1 %
+            \@itempenalty=10000
+          \fi
+          \advance \@countletterlist by -1
+          \ifnum\c@@countlist=\@countletterlist
+            \@itempenalty=10000
+          \fi
+        \fi
+        \addpenalty\@itempenalty
+      }% LETTER CHANGES end here
+      \addvspace\itemsep 
+    \fi 
+    \global\@inlabeltrue 
+  \fi
+  \everypar{\global\@minipagefalse\global\@newlistfalse 
+    \if@inlabel\global\@inlabelfalse 
+      \if@everyindent\else% LETTER CHANGES
+        \hskip -\parindent
+      \fi% LETTER CHANGES
+      \box\@labels
+      \penalty\z@ \fi
+    \everypar{}}\global\@nobreakfalse
+  \if@noitemarg\@noitemargfalse \if@nmbrlist\refstepcounter{\@listctr}\fi\fi
+  \setbox\@tempboxa\hbox{\makelabel{#1}}%
+  \global\setbox\@labels
+  \hbox{\unhbox\@labels \hskip \itemindent
+    \hskip -\labelwidth \hskip -\labelsep 
+    \ifdim \wd\@tempboxa >\labelwidth 
+      \box\@tempboxa
+    \else \hbox to\labelwidth {\makelabel{#1}}\fi
+    \hskip \labelsep}\ignorespaces
+}%
+
+% **************************************************************************
+% **** REDEFINE LATEX.TEX'S @OUTPUTPAGE TO ALLOW ARBORTEXT'S SPECIALBOP ****
+% **************************************************************************
+
+% \DEF \@OUTPUTPAGE
+% This redefinition of LaTeX's @outputpage is necessary to allow
+% \special commands to be executed before anything else on the page.
+% For example, the PostScript macros need to be defined before
+% any of the page making begins.
+%
+% These alterations were supplied by ArborText.
+%
+% Changes were also made to change the values of topskip, headsep,
+% and textheight after outputting page 1.
+%
+\def\@outputpage{\begingroup\catcode`\ =10 
+% The following line was added to bring this def up to date with
+% latex.tex, <4 Aug 1988>
+  \let\-\@dischyph \let\'\@acci \let\`\@accii \let\=\@acciii
+  \if@specialpage
+  \global\@specialpagefalse\@nameuse{ps@\@specialstyle}\fi
+  \if@twoside
+    \ifodd\count\z@ \let\@thehead\@oddhead \let\@thefoot\@oddfoot
+      \let\@themargin\oddsidemargin
+    \else \let\@thehead\@evenhead
+      \let\@thefoot\@evenfoot \let\@themargin\evensidemargin
+  \fi\fi
+  \shipout
+  \vbox{\normalsize \baselineskip\z@ \lineskip\z@
+% The following line was added to bring this def up to date with
+% latex.tex, <4 Aug 1988>
+    \let\par\@@par %% 15 Sep 87
+    \@specialbopemit% LETTER CHANGES 
+    \vskip \topmargin \moveright\@themargin
+    \vbox{\setbox\@tempboxa
+      \vbox to\headheight{\vfil \hbox to\textwidth{\@thehead}}%
+        \dp\@tempboxa\z@
+        \box\@tempboxa
+        \vskip \headsep
+        \box\@outputbox
+        \baselineskip\footskip
+        \hbox to\textwidth{\@thefoot}}}\global\@colht\textheight
+  \endgroup
+  \if@outputfirstpage% LETTER CHANGES
+    % Reset \topskip for page two.
+    % The topskip keeps the baseline of the first line of text in
+    % the right place.  If the top vbox on the page is taller than
+    % \ht\strutbox, it will go no higher than the top of the strutbox. 
+    %
+    \global\topskip=\ht\strutbox% LETTER CHANGES
+    \global\headsep=\@dimentoppagetwo% LETTER CHANGES
+    \global\advance\headsep by -\topskip% LETTER CHANGES
+    \global\advance\textheight by -\headsep% LETTER CHANGES
+    %
+    \global\@outputfirstpagefalse% LETTER CHANGES
+  \fi% LETTER CHANGES
+  \stepcounter{page}%
+  \if@outputlastpage% LETTER CHANGES
+    \ifnum\outputpenalty=-\@M
+      \global\c@page=1
+      \global\topskip=\@topskipfirst
+      \global\headsep=\@headsepfirst
+      \global\textheight=\@textheightfirst
+  \fi\fi
+  \let\firstmark\botmark
+}%
+
+% *********************************************************
+% **** REDEFINE LATEX.TEX'S \DOCUMENT AND \ENDDOCUMENT ****
+% *********************************************************
+
+% \DEF \DOCUMENT
+%
+% \document redefined so it writes '\@startlabels' on the 
+% MLB file if it's making one.  The AUX file is also opened.
+%
+\def\document{\endgroup
+  \@colht\textheight  \@colroom\textheight \vsize\textheight
+   \columnwidth\textwidth \@clubpenalty\clubpenalty
+   \if@twocolumn \advance\columnwidth -\columnsep 
+      \divide\columnwidth\tw@ \hsize\columnwidth \@firstcolumntrue 
+   \fi
+  \hsize\columnwidth \linewidth\hsize
+  \begingroup\@floatplacement\@dblfloatplacement
+   \makeatletter\let\@writefile\@gobbletwo
+   \@input{\jobname.aux}\endgroup 
+  \if@filesw \immediate\openout\@mainaux=\jobname.aux
+    \immediate\write\@mainaux{\relax}\fi
+  \if@makemaillabels \immediate\openout\@mainmlb=\jobname.mlb
+   \immediate\write\@mainmlb{\string\@startlabels}\fi
+  \def\do##1{\let ##1\@notprerr}
+  \@preamblecmds
+  \let\do\noexpand  
+  \@normalsize\everypar{}}
+%
+% \DEF \ENDDOCUMENT
+%
+% Redefine \enddocument so it outputs the labels, if necessary.
+%
+\def\enddocument{%
+  % Call \@printto if \opening has never been called.
+  % This can happen if mailing labels only are printed
+  %   with no letter desired.
+  % Output is put into \@boxtemp and discarded.
+  \if@neveropened
+    \@splitto
+    \setbox\@boxtemp=\hbox{\@printingtotrue\@printto\@printingtofalse}%
+  \fi
+  \@checkend{document}\newpage\begingroup  
+  \if@makemaillabels \immediate\closeout\@mainmlb 
+  \makeatletter\input \jobname.mlb\clearpage\fi
+  \if@filesw \immediate\closeout\@mainaux 
+  \def\global\@namedef##1##2{}\def\newlabel{\@testdef r}%
+  \def\bibcite{\@testdef b}\@tempswafalse \makeatletter\input \jobname.aux
+  \if@tempswa \@warning{Label(s) may have changed.  Rerun to get
+  cross-references right}\fi\fi\endgroup\deadcycles\z@\@@end}
+% ***************************
+% *** END OF LALETTER.DOC ***
+% ***************************
+
+% These are the commands starting with '\' that appear in laletter.sty
+% that are not defined in LaTeX or TeX.
+% 
+% \@PSclasslabel
+% \@PSlosalamos
+% \@addtokstotoks
+% \@addtotoks
+% \@advcountbydimen
+% \@amorcm
+% \@attachmentas
+% \@attachmentsas
+% \@attachmentspagebreak
+% \@baselineskipsave
+% \@beginletter
+% \@blank
+% \@bodyfonts
+% \@bodysep
+% \@bookseven
+% \@booksix
+% \@boxclasspage
+% \@boxpagetwoheader
+% \@boxtemp
+% \@bullet
+% \@checkinput
+% \@checkuseasinput
+% \@choosebodyfonts
+% \@choosefonts
+% \@chooseheaderfonts
+% \@classfont
+% \@classlabel
+% \@clearclosing
+% \@cmcour
+% \@cmcourb
+% \@cmcouro
+% \@cmhelv
+% \@cmhelvb
+% \@cmr
+% \@cmtimeb
+% \@cmtimei
+% \@cmtimer
+% \@complimentaryclose
+% \@confidential
+% \@countattachments
+% \@countattn
+% \@countattnsave
+% \@countbotheader
+% \@countclasssepbot
+% \@countclassseptop
+% \@countcoltemp
+% \@countcy
+% \@countdistribution
+% \@countenc
+% \@countleftheader
+% \@countleftto
+% \@countletterlist
+% \@countname
+% \@countpictorig
+% \@countreference
+% \@countreturnaddress
+% \@countrightcolon
+% \@countrightheader
+% \@countrightto
+% \@countskiplabels
+% \@counttelephone
+% \@counttemp
+% \@counttemptwo
+% \@countthru
+% \@countto
+% \@counttoname
+% \@countverticalposition
+% \@countvia
+% \@cypagebreak
+% \@deftemp
+% \@dimenexpandside
+% \@dimenexpandtopmargin
+% \@dimenfirstpageleftheader
+% \@dimenhspacesig
+% \@dimenletterpaperhcorr
+% \@dimenletterpapervcorr
+% \@dimenmaillabelheight
+% \@dimenmaillabeltopmargin
+% \@dimenpagetwoheader
+% \@dimenspaceaftercolon
+% \@dimentemp
+% \@dimentocolsep
+% \@dimentoppagetwo
+% \@dimenversemargin
+% \@dimenwdtt
+% \@distributionpagebreak
+% \@eightspaces
+% \@encas
+% \@encpagebreak
+% \@endletter
+% \@endto
+% \@erroramfonts
+% \@erroras
+% \@errorattn
+% \@errorclassargument
+% \@errorclassmessage
+% \@errorillegalbodyfont
+% \@errorillegalheaderfont
+% \@errorillegaltypeface
+% \@erroroldlafonts
+% \@errorserialnosymbol
+% \@errorshortletter
+% \@errorshowexample
+% \@errorthruandvia
+% \@errortoleftrightto
+% \@errortwoclasses
+% \@errorundeclared
+% \@errorundeclaredcallout
+% \@errorundeclaredcompclose
+% \@errorundeclaredsalutation
+% \@errorundeclaredto
+% \@erroruseas
+% \@exit
+% \@exitfi
+% \@fontarg
+% \@fontcommand
+% \@getpostscriptnames
+% \@globaladvcountbydimen
+% \@headerfonts
+% \@headsepfirst
+% \@ifemptyorundefined
+% \@ifnewname
+% \@ifnoinfo
+% \@initializefontvariables
+% \@initializelists
+% \@initializeothervariables
+% \@initializetypefacedependencies
+% \@kern
+% \@kernheaderwords
+% \@lafonts
+% \@lanl
+% \@lanm
+% \@latwentyeight
+% \@lengthdate
+% \@lengthlabel
+% \@lengthname
+% \@lengthrule
+% \@letterpaper
+% \@lettertwentyeight
+% \@losalamos
+% \@macroname
+% \@mailstop
+% \@mainmlb
+% \@makePSclassheader
+% \@makeclassheader
+% \@makepagetwoheader
+% \@maketocol
+% \@memotwentyeight
+% \@mlabel
+% \@mlbout
+% \@multipleletters
+% \@newnamefalse
+% \@newnametrue
+% \@nlsave
+% \@nocallouts
+% \@noclearpage
+% \@notvoidtoks
+% \@notvoidtoksone
+% \@notvoidtokstwo
+% \@originator
+% \@parskipsave
+% \@postscript
+% \@printattachments
+% \@printclasspage
+% \@printcompclose
+% \@printcy
+% \@printdistribution
+% \@printenc
+% \@printfirstpageheader
+% \@printfirstpagerightheader
+% \@printletterpaper
+% \@printnumberedlist
+% \@printoriginatorline
+% \@printpagenum
+% \@printpagetwoheader
+% \@printreference
+% \@printsalutation
+% \@printsignature
+% \@printsubject
+% \@printthruorvia
+% \@printto
+% \@psdefclasslabel
+% \@psdeflosalamos
+% \@pullloop
+% \@pullpagetwotoheader
+% \@resettovars
+% \@restorevariables
+% \@rm
+% \@salutation
+% \@secret
+% \@serialnumber
+% \@setnormalsize
+% \@setnumdefaults
+% \@settrue
+% \@shortletterstyle
+% \@signature
+% \@signer
+% \@specialbopemit
+% \@specialbopempty
+% \@specialboptext
+% \@spectwelve
+% \@splitto
+% \@startlabels
+% \@subject
+% \@subjectorig
+% \@symbol
+% \@symbolserialnumber
+% \@tenrm
+% \@texfonts
+% \@textheightfirst
+% \@tocommapull
+% \@tocommapullone
+% \@tocommapulltwo
+% \@todieornottodie
+% \@toendtopull
+% \@toendtopullone
+% \@toksafterendto
+% \@toksafternewline
+% \@toksaftersave
+% \@toksattachments
+% \@toksattn
+% \@toksattnsave
+% \@toksbeforecomma
+% \@toksbeforeendto
+% \@toksbeforenewline
+% \@toksblank
+% \@tokscoltemp
+% \@tokscy
+% \@toksdistribution
+% \@toksempty
+% \@toksenc
+% \@toksinput
+% \@toksitem
+% \@toksleftto
+% \@toksname
+% \@toksnewline
+% \@toksnotequal
+% \@tokspagetwoheader
+% \@toksreference
+% \@toksremaining
+% \@toksreturnaddress
+% \@toksrightto
+% \@tokstelephone
+% \@tokstemp
+% \@toksthru
+% \@toksto
+% \@tokstoinput
+% \@tokstoname
+% \@toksvia
+% \@tonewlinepull
+% \@tonewlinepullfour
+% \@tonewlinepullone
+% \@tonewlinepullthree
+% \@tonewlinepulltwo
+% \@topskipfirst
+% \@totoleftto
+% \@tt
+% \@typeface
+% \@typist
+% \@unclassified
+% \@unspacedclasslabel
+% \@unspaceleft
+% \@unspaceleftone
+% \@unspacelefttwo
+% \@unspaceright
+% \@unspacerightone
+% \@unspacerighttwo
+% \@upperunspaceleft
+% \@upperunspaceleftone
+% \@useasheader
+% \@useattn
+% \@usesubject
+% \@useto
+% \@writeonelabel
+% \attachmentas
+% \attachments
+% \attachmentsas
+% \attachmentspagebreak
+% \attn
+% \bodyfonts
+% \c@@countlist
+% \classlabel
+% \closing
+% \complimentaryclose
+% \cy
+% \cypagebreak
+% \descriptionmargin
+% \distribution
+% \distributionpagebreak
+% \enc
+% \encas
+% \encpagebreak
+% \expandtopmargin
+% \expandwidth
+% \headerfonts
+% \if@beenhere
+% \if@closing
+% \if@cmfonts
+% \if@comma
+% \if@continueloop
+% \if@everyindent
+% \if@makemaillabels
+% \if@neveropened
+% \if@newattachments
+% \if@newattn
+% \if@newcy
+% \if@newdistribution
+% \if@newenc
+% \if@newleftto
+% \if@newline
+% \if@newreference
+% \if@newreturnaddress
+% \if@newrightto
+% \if@newtelephone
+% \if@newtemp
+% \if@newthru
+% \if@newto
+% \if@newvia
+% \if@notvoidtoks
+% \if@outputfirstpage
+% \if@outputlastpage
+% \if@printingto
+% \if@somethingbefore
+% \if@toksnotequal
+% \innerbody
+% \inneriterate
+% \innerloop
+% \innerrepeat
+% \leftto
+% \letterpaperhcorr
+% \letterpapervcorr
+% \longbody
+% \longiterate
+% \longloop
+% \longrepeat
+% \maillabelheight
+% \maillabeltopmargin
+% \mailstop
+% \makemaillabels
+% \newblock
+% \next
+% \nocallouts
+% \noclearpage
+% \one
+% \opening
+% \originator
+% \ps@firstpage
+% \ps@pagetwo
+% \reference
+% \returnaddress
+% \rightto
+% \salutation
+% \serialnumber
+% \shortletterstyle
+% \signature
+% \signer
+% \skiplabels
+% \specialbop
+% \subject
+% \telephone
+% \thru
+% \two
+% \typeface
+% \typist
+% \use
+% \useattnasheader
+% \useotherasheader
+% \usesubjectasheader
+% \usetoasheader
+% \via
+
+% Here is a list of most of the locally defined macros and their line
+% numbers in this file.
+
+%  2666	% \DEF \@ADDTOKSTOTOKS
+%  2658	% \DEF \@ADDTOTOKS
+%  2703	% \DEF \@ADVCOUNTBYDIMEN
+%  1215	% \DEF \@AMORCM figures out whether am or cm fonts have been loaded.
+%  1978	% \DEF \@BEGINLETTER
+%  1123	% \DEF \@CHECKINPUT
+%  1182	% \DEF \@CHECKUSEASINPUT
+%  1280	% \DEF \@CHOOSEBODYFONTS
+%  1205	% \DEF \@CHOOSEFONTS
+%  1244	% \DEF \@CHOOSEHEADERFONTS
+%  2002	% \DEF \@CLEARCLOSING
+%  2013	% \DEF \@ENDLETTER
+%  2955	% \DEF \@EXIT
+%  2958	% \DEF \@EXITFI
+%  1231	% \DEF \@GETPOSTSCRIPTNAMES
+%  2713	% \DEF \@GLOBALADVCOUNTBYDIMEN
+%  2674	% \DEF \@IFEMPTYORUNDEFINED
+%  2684	% \DEF \@IFNOINFO
+%  1352	% \DEF \@INITIALIZEFONTVARIABLES
+%  1475	% \DEF \@INITIALIZELISTS
+%  1655	% \DEF \@INITIALIZEOTHERVARIABLES
+%  1446	% \DEF \@INITIALIZETYPEFACEDEPENDENCIES
+%  2989	% \DEF \@ITEM
+%  1369	% \DEF \@KERNHEADERWORDS
+%  1717	% \DEF \@MAKECLASSHEADER
+%  1868	% \DEF \@MAKEPAGETWOHEADER
+%  1854	% \DEF \@MAKEPSCLASSHEADER
+%  2198	% \DEF \@MAKETOCOL
+%  2792	% \DEF \@MLABEL
+%  1096	% \DEF \@MULTIPLELETTERS
+%  2720	% \DEF \@NOTVOIDTOKS
+%  3048	% \DEF \@OUTPUTPAGE
+%  2419	% \DEF \@PRINTATTACHMENTS
+%  1909	% \DEF \@PRINTCLASSPAGE
+%  2338	% \DEF \@PRINTCOMPCLOSE
+%  2478	% \DEF \@PRINTCY
+%  2460	% \DEF \@PRINTDISTRIBUTION
+%  2382	% \DEF \@PRINTENCLOSURES
+%  2039	% \DEF \@PRINTFIRSTPAGEHEADER
+%  2106	% \DEF \@PRINTFIRSTPAGERIGHTHEADER
+%  2064	% \DEF \@PRINTLETTERPAPER
+%  2522	% \DEF \@PRINTNUMBEREDLIST
+%  2357	% \DEF \@PRINTORIGINATORLINE
+%  1930	% \DEF \@PRINTPAGENUM
+%  1924	% \DEF \@PRINTPAGETWOHEADER
+%  2304	% \DEF \@PRINTREFERENCE
+%  2257	% \DEF \@PRINTSALUTATION
+%  2347	% \DEF \@PRINTSIGNATURE
+%  2289	% \DEF \@PRINTSUBJECT
+%  2265	% \DEF \@PRINTTHRUORVIA
+%  2158	% \DEF \@PRINTTO
+%  1802	% \DEF \@PSDEFCLASSLABEL
+%  1757	% \DEF \@PSDEFLOSALAMOS
+%  1942	% \DEF \@PULLPAGETWOTOHEADER
+%   982	% \DEF \@RESETTOVARS
+%  1091	% \DEF \@RESTOREVARIABLES
+%  1333	% \DEF \@SETNORMALSIZE
+%  2502	% \DEF \@SETNUMDEFAULTS
+%  1692	% \DEF \@SETTRUE
+%  2123	% \DEF \@SPLITTO
+%  2761	% \DEF \@STARTLABELS
+%  2566	% \DEF \@TOCOMMAPULL   \DEF \@TOCOMMAPULLSUB, etc.
+%  2946	% \DEF \@TODIEORNOTTODIE
+%  2576	% \DEF \@TOENDTOPULL    \DEF \@TOENDTOPULLSUBONE, etc.
+%   915	% \DEF \@TOKSINPUT
+%  2691	% \DEF \@TOKSNOTEQUAL    \DEF \@TOKSEQUAL
+%   993	% \DEF \@TOKSTOINPUT
+%  2546	% \DEF \@TONEWLINEPULL    \DEF \@TONEWLINEPULLSUBONE, etc.
+%  1028	% \DEF \@TOTOLEFTTO
+%  2585	% \DEF \@UNSPACELEFT
+%  2632	% \DEF \@UNSPACERIGHT
+%  2608	% \DEF \@UPPERUNSPACELEFT
+%  2800	% \DEF \@WRITEONELABEL
+%   882	% \DEF \CLASSLABEL
+%  1069	% \DEF \CLOSING
+%  3115	% \DEF \DOCUMENT
+%  3139	% \DEF \ENDDOCUMENT
+%   808	% \DEF \HEADERFONTS, \BODYFONTS, \SUBJECT, \SYMBOL, \SERIALNUMBER, 
+%  2242	% \DEF \LONGLOOP, \LONGINNERLOOP, \INNERITERATE
+%  1044	% \DEF \OPENING
+%  2969	% \DEF \SPECIALBOP
+%   776	% \DEF \TO, \THRU, \CY, \ATTACHMENTS, \REFERENCE, \ENCLOSURES,
+
+% The following list will give you a view of this file as a whole.
+% Included are banners from major sections of code and locally
+% defined macros.  Line numbers are given on the left.
+
+%    18	% **** BEGINNING OF ARTICLE.DOC MACROS ****
+%    25	%    *             BIBLIOGRAPHY             *
+%    59	%    *         FIGURES AND TABLES           *
+%   150	% **** LETTER.STY MACROS ****
+%   190	%  *               FONTS                  *
+%   327	%  *            PAGE LAYOUT               *
+%   393	%    *           LETTER COMMANDS            *
+%   399	%    *        THE SRI LETTER FORMAT         *
+%   405	%    *     THE GENERIC LETTER COMMANDS      *
+%   411	%    *            PAGE STYLES               *
+%   418	%  *           PARAGRAPHING               *
+%   453	%    *                LISTS                 *
+%   461	%    *         OTHER ENVIRONMENTS           *
+%   515	%    *             FOOTNOTES                *
+%   547	%    *            MISCELLANEOUS             *
+%   560	%    *           INITIALIZATION             *
+%   581	% **** BEGINNING OF LOCALLY WRITTEN MACROS FOR LANL LETTERS. ****
+%   585	% **** DEFINE AND INITIALIZE REGISTERS ****
+%   772	% **** USER INPUT ****
+%   776	% \DEF \TO, \THRU, \CY, \ATTACHMENTS, \REFERENCE, \ENCLOSURES,
+%   808	% \DEF \HEADERFONTS, \BODYFONTS, \SUBJECT, \SYMBOL, \SERIALNUMBER, 
+%   882	% \DEF \CLASSLABEL
+%   915	% \DEF \@TOKSINPUT
+%   982	% \DEF \@RESETTOVARS
+%   993	% \DEF \@TOKSTOINPUT
+%  1028	% \DEF \@TOTOLEFTTO
+%  1041	% **** OPENING AND CLOSING ****
+%  1044	% \DEF \OPENING
+%  1069	% \DEF \CLOSING
+%  1091	% \DEF \@RESTOREVARIABLES
+%  1096	% \DEF \@MULTIPLELETTERS
+%  1120	% **** CHECK USER INPUT ****
+%  1123	% \DEF \@CHECKINPUT
+%  1182	% \DEF \@CHECKUSEASINPUT
+%  1202	% **** CHOOSE FONTS ****
+%  1205	% \DEF \@CHOOSEFONTS
+%  1215	% \DEF \@AMORCM figures out whether am or cm fonts have been loaded.
+%  1231	% \DEF \@GETPOSTSCRIPTNAMES
+%  1244	% \DEF \@CHOOSEHEADERFONTS
+%  1280	% \DEF \@CHOOSEBODYFONTS
+%  1333	% \DEF \@SETNORMALSIZE
+%  1349	% **** INITIALIZE FONT AND TYPEFACE DEPENDENT VARIABLES ****
+%  1352	% \DEF \@INITIALIZEFONTVARIABLES
+%  1369	% \DEF \@KERNHEADERWORDS
+%  1446	% \DEF \@INITIALIZETYPEFACEDEPENDENCIES
+%  1475	% \DEF \@INITIALIZELISTS
+%  1489	%    *                LISTS                 *
+%  1536	% See comments for *** LISTS *** above under \ifx\@typeface\@tt
+%  1655	% \DEF \@INITIALIZEOTHERVARIABLES
+%  1692	% \DEF \@SETTRUE
+%  1714	% **** CLASSIFICATION AND PAGE TWO HEADERS ****
+%  1717	% \DEF \@MAKECLASSHEADER
+%  1757	% \DEF \@PSDEFLOSALAMOS
+%  1802	% \DEF \@PSDEFCLASSLABEL
+%  1854	% \DEF \@MAKEPSCLASSHEADER
+%  1868	% \DEF \@MAKEPAGETWOHEADER
+%  1909	% \DEF \@PRINTCLASSPAGE
+%  1924	% \DEF \@PRINTPAGETWOHEADER
+%  1930	% \DEF \@PRINTPAGENUM
+%  1942	% \DEF \@PULLPAGETWOTOHEADER
+%  1975	% **** BEGIN AND END LETTER, SHORT OR NORMAL LETTER STYLE. ****
+%  1978	% \DEF \@BEGINLETTER
+%  2002	% \DEF \@CLEARCLOSING
+%  2013	% \DEF \@ENDLETTER
+%  2036	% **** PRINT OPENING ****
+%  2039	% \DEF \@PRINTFIRSTPAGEHEADER
+%  2064	% \DEF \@PRINTLETTERPAPER
+%  2106	% \DEF \@PRINTFIRSTPAGERIGHTHEADER
+%  2123	% \DEF \@SPLITTO
+%  2158	% \DEF \@PRINTTO
+%  2198	% \DEF \@MAKETOCOL
+%  2242	% \DEF \LONGLOOP, \LONGINNERLOOP, \INNERITERATE
+%  2257	% \DEF \@PRINTSALUTATION
+%  2265	% \DEF \@PRINTTHRUORVIA
+%  2289	% \DEF \@PRINTSUBJECT
+%  2304	% \DEF \@PRINTREFERENCE
+%  2335	% **** PRINT CLOSING. ****
+%  2338	% \DEF \@PRINTCOMPCLOSE
+%  2347	% \DEF \@PRINTSIGNATURE
+%  2357	% \DEF \@PRINTORIGINATORLINE
+%  2382	% \DEF \@PRINTENCLOSURES
+%  2419	% \DEF \@PRINTATTACHMENTS
+%  2460	% \DEF \@PRINTDISTRIBUTION
+%  2478	% \DEF \@PRINTCY
+%  2499	% **** NUMBERED LISTS FOR CLOSING ****
+%  2502	% \DEF \@SETNUMDEFAULTS
+%  2522	% \DEF \@PRINTNUMBEREDLIST
+%  2543	% **** PARSING ****
+%  2546	% \DEF \@TONEWLINEPULL    \DEF \@TONEWLINEPULLSUBONE, etc.
+%  2566	% \DEF \@TOCOMMAPULL   \DEF \@TOCOMMAPULLSUB, etc.
+%  2576	% \DEF \@TOENDTOPULL    \DEF \@TOENDTOPULLSUBONE, etc.
+%  2585	% \DEF \@UNSPACELEFT
+%  2608	% \DEF \@UPPERUNSPACELEFT
+%  2632	% \DEF \@UNSPACERIGHT
+%  2656	% **** UTILITIES FOR MASSAGING TOKEN AND DIMENSION VARIABLES. ****
+%  2658	% \DEF \@ADDTOTOKS
+%  2666	% \DEF \@ADDTOKSTOTOKS
+%  2674	% \DEF \@IFEMPTYORUNDEFINED
+%  2684	% \DEF \@IFNOINFO
+%  2691	% \DEF \@TOKSNOTEQUAL    \DEF \@TOKSEQUAL
+%  2703	% \DEF \@ADVCOUNTBYDIMEN
+%  2713	% \DEF \@GLOBALADVCOUNTBYDIMEN
+%  2720	% \DEF \@NOTVOIDTOKS
+%  2730	% **** LABELS ****
+%  2761	% \DEF \@STARTLABELS
+%  2792	% \DEF \@MLABEL
+%  2800	% \DEF \@WRITEONELABEL
+%  2818	% **** ERROR MESSAGES ****
+%  2943	% **** DEATH UTILITY ****
+%  2946	% \DEF \@TODIEORNOTTODIE
+%  2955	% \DEF \@EXIT
+%  2958	% \DEF \@EXITFI
+%  2963	% **** ARBORTEXT'S SPECIALBOP (BEGINNING OF PAGE) FOR USE WITH DVIPS ***
+%  2969	% \DEF \SPECIALBOP
+%  2986	% **** REDEFINE LATEX.TEX'S \@ITEM FOR NICE PAGEBREAKS IN \CLOSING LISTS
+%  2989	% \DEF \@ITEM
+%  3045	% **** REDEFINE LATEX.TEX'S @OUTPUTPAGE TO ALLOW ARBORTEXT'S SPECIALBOP 
+%  3048	% \DEF \@OUTPUTPAGE
+%  3112	% **** REDEFINE LATEX.TEX'S \DOCUMENT AND \ENDDOCUMENT ****
+%  3115	% \DEF \DOCUMENT
+%  3139	% \DEF \ENDDOCUMENT
+%  3161	% *** END OF LALETTER.DOC ***

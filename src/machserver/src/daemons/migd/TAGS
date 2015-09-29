@@ -1,0 +1,117 @@
+
+Mig_GetPdevName.c,25
+Mig_GetPdevName(64,1820
+
+global.c,1086
+CheckFairness(1102,33382
+CltToMigd(3578,103124
+CreateMigdRecord(449,14530
+DumpStats(3065,88361
+EndCallBack(2551,74228
+ForceHostIdle(3659,104914
+Global_ChangeState(2229,65224
+Global_Done(1331,40362
+Global_DoneIoctl(1276,38768
+Global_DumpIdleList(3843,109626
+Global_End(583,18020
+Global_GetIdle(769,23082
+Global_GetLoadInfo(657,19654
+Global_GetStats(3716,106408
+Global_GetUpdate(1999,59319
+Global_HostDown(2584,75116
+Global_HostUp(2336,67915
+Global_Init(240,8928
+Global_IsHostUp(2186,64167
+Global_Quit(628,19043
+Global_RemoveHost(2076,61424
+Global_ResetStats(3763,107696
+Global_SetParms(3804,108685
+Global_UpdateLoad(2660,77061
+HostIsIdle(3616,103980
+InitStats(409,13575
+InsertIdle(1555,47031
+} MessageBlock;83,3273
+#define NEXT_HOST_IN_USE_TO_INFO(116,4532
+#define NEXT_HOST_REQUEST_TO_INFO(113,4428
+ReadStats(3179,92921
+RecordEvictions(1783,53283
+RemoveHost(2130,62918
+} RequestInfo;111,4412
+RestoreCheckPoint(2823,82057
+} RevokeAction;127,4945
+RevokePermission(1918,56906
+SaveCheckPoint(2934,84751
+TellClient(1878,55942
+WakeupWaiters(1704,51264
+
+global.h,0
+
+main.c,134
+Debug1(105,3079
+FatalError(168,4306
+PrintMemStats(221,5414
+TheEnd(132,3620
+main(247,5846
+static int numOptions = sizeof(60,1888
+
+migPdev.c,410
+DaemonSelectPredicate(496,12637
+} IoctlCallback;69,2071
+MigPdev_CloseAllStreams(1111,29212
+MigPdev_End(283,7691
+MigPdev_Init(175,5113
+MigPdev_MakeReady(442,11236
+MigPdev_NotifyDaemons(524,13172
+MigPdev_OpenMaster(205,5741
+MigPdev_SignalClients(410,10484
+MigPdev_Stat(323,8456
+PdevClose(656,16781
+PdevIoctl(925,23868
+PdevOpen(554,13713
+PdevRead(760,19417
+PdevWrite(823,21117
+SendSignal(356,9108
+
+migPdev.h,0
+
+migd.c,529
+AlarmHandler(1463,38190
+CalculateLoads(1028,27174
+CheckMessages(1700,44283
+ContactGlobal(451,12020
+CreateGlobal(702,18756
+GetNewParms(1356,35601
+GetStats(1203,32145
+HandleException(1312,34673
+} Load;100,2610
+Migd_End(382,10441
+Migd_Evict(1495,39014
+Migd_EvictIoctl(1644,42899
+Migd_GatherLoad(809,20665
+Migd_GetLocalLoad(1278,33985
+Migd_GetParms(1424,37231
+Migd_HandleRequests(780,20205
+Migd_Init(245,6903
+Migd_SetParms(1384,36208
+ParseMigStatus(412,10966
+Reap(637,17213
+} Stats;90,2437
+WriteAlarm(670,17869
+
+migd.h,292
+#define ADD_WITH_OVERFLOW(199,6457
+#define DATE(184,6009
+} Migd_Info;117,4300
+} Migd_OpenStreamInfo;87,3155
+} Migd_ServiceType;47,1310
+} Migd_WaitList;96,3412
+#define SYSLOG0(160,5333
+#define SYSLOG1(166,5475
+#define SYSLOG2(172,5635
+#define SYSLOG3(178,5813
+#define mnew(147,4945
+
+util.c,16
+Malloc(49,1262
+
+version.h,0

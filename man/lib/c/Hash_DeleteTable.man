@@ -1,0 +1,28 @@
+' $Header: /sprite/src/lib/c/hash/RCS/Hash_DeleteTable.man,v 1.1 88/12/30 15:05:19 ouster Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS Hash_DeleteTable lib
+.BS
+.SH NAME
+Hash_DeleteTable \- release storage in hash table
+.SH SYNOPSIS
+\fB#include <hash.h>\fR
+.sp
+\fBHash_DeleteTable\fR(\fItablePtr\fR)
+.AS Hash_Table tablePtr
+.SH ARGUMENTS
+.AP Hash_Table *tablePtr in
+Pointer to hash table whose internal storage is to be released.
+.BE
+
+.SH DESCRIPTION
+.LP
+\fBHash_DeleteTable\fR deletes all the entries in a hash table and also
+releases the table's internal bucket storage back to the memory manager.
+The Hash_Table structure at \fI*tablePtr\fR is not recycled to the memory
+manager (it is considered to belong to the caller), but the contents of
+\fI*tablePtr\fR are reset to indicate that the table is void.  Future operations
+on the table will result in core dumps,  unless \fBHash_InitTable\fR gets
+called again to reset the table.
+
+.SH KEYWORDS
+delete, hash table

@@ -1,0 +1,5 @@
+L ALLOCA.C;1                        	alloca.c	../../../c.orig/crt/ds3100.md/alloca.c
+F DEPENDEN.MK;1                     	dependencies.mk
+F LINT.;1                           	lint
+F MD.MK;1                           	md.mk
+L SETJMP.S;1                        	setjmp.s	../../../c.orig/crt/ds3100.md/setjmp.s

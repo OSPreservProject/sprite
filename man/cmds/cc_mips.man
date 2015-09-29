@@ -1,0 +1,750 @@
+.TH cc 1 RISC
+.SH Name
+cc \- RISC C compiler
+.SH Syntax
+.B cc
+[ 
+.I option 
+] ... 
+.I file 
+...
+.SH Description
+The 
+.PN cc
+command invokes the RISC 
+.I ucode
+C compiler.  It produces RISC object code in RISC extended 
+.I coff
+format (the default), binary or symbolic
+.IR ucode ,
+.I ucode
+object files
+and binary or symbolic assembly language.  
+.PP
+The 
+.PN cc
+command accepts the following arguments:
+.IP \(bu 5
+Arguments ending in .c are interpreted as C source programs.  They
+are compiled, and the resulting object file has the same name
+as the source program except .o is substituted for .c.  If a
+single C source program is compiled and loaded at once, the .o file 
+is deleted.
+.IP \(bu 5
+Arguments ending in .s are interpreted as assembly source programs.
+When they are assembled, they produce a .o file. 
+.IP \(bu 5
+Arguments ending in .i are interpreted as C source after being
+processed by the C preprocessor.  They are compiled without
+being processed by the C preprocessor.
+.PP
+If the highest level of optimization is specified (with the
+.B \-O3
+flag) or only \fIucode\fP object files are to be produced (with the
+.B \-j
+flag) each C source file is compiled into a
+.I ucode
+object file. The
+.I ucode
+object file is left in a file whose name consists of the last component
+of the source with .u substituted for .c.
+.PP
+The following suffixes aid compiler development, but are not
+generally used: .B, .O., .S, and .M.  These arguments are interpreted
+as binary
+.IR ucode ,
+produced by the front end, optimizer, ucode object file splitter, and ucode
+merger respectively.  Arguments whose names end with .U are assumed to be
+symbolic
+.IR ucode .
+Arguments whose names end with .G are assumed to be binary assembly
+language, which is produced by the code generator and the symbolic to binary
+assembler.
+.PP
+Files that are assumed to be binary
+.IR ucode ,
+symbolic
+.IR ucode ,
+or binary assembly language by the suffix conventions are also assumed to
+have their corresponding symbol table in a file with a .T suffix.
+.PP
+The 
+.PN cc
+command always defines the C preprocessor macro
+.B LANGUAGE_C
+when a .c file is being compiled.
+The
+.PN cc
+command defines the C preprocessor macro
+.B LANGUAGE_ASSEMBLY
+when a .s file is compiled.
+.SH Options
+The following options are interpreted by
+.MS cc 1 .
+See
+.MS ld 1
+for load-time options.
+.TP 15
+.B \-c
+Suppress the loading phase of the compilation and force
+an object file to be produced even if only one program is compiled.
+.TP 15
+.B \-g0
+Do not produce symbol table information for symbolic
+debugging.  This is the default.
+.TP 15
+.B \-g1
+Produce debugger symbol table information. This option limits
+optimization, but some optimizations that affect debugger accuracy might
+be performed. The debugger symbol table is built before optimizations
+and cannot reflect the optimizations.
+.TP 15
+.BR \-g " or " \-g2
+Produce debugger symbol table information and inhibit optimizations
+that limit full symbolic debugging. The debugger symbol table is
+accurate.
+.TP 15
+.B \-g3
+Produce debugger symbol table. This option does not limit optimizations,
+so the symbol table may be inaccurate. The symbol table is built before
+optimizations and cannot reflect the optimizations.
+.TP 15
+.B \-L
+Change the algorithm of searching for
+.BI lib x \&.a
+or
+.BI lib x \&.b
+to
+.B never
+look in the default directories.  This is useful when the default
+directories
+for libraries should not be searched and only the directories specified
+by the 
+.MS ld 1 
+option
+.BI \-L dir
+are to be searched.
+.TP 15
+.B \-w
+Suppress warning messages.
+.TP 15
+.B \-p0
+Do not permit profiling.  This is the default.
+If loading happens, the standard runtime startup routine 
+.RB ( crt0.o )
+is used and the profiling libraries are not searched.
+.TP 15
+.BR \-p1 " or " \-p
+Set up for profiling by periodically sampling the value of the program
+counter.  This option only affects the loading.
+When loading happens, this option replaces the standard runtime startup routine
+with the profiling runtime startup routine
+.RB ( mcrt0.o )
+and searches the level 1 profiling library
+.RB ( libprof1.a ).
+When profiling happens, the startup routine calls
+.MS monstartup 3
+and produces a file
+.I mon.out
+that contains execution-profiling data for use with the postprocessor
+.MS prof 1 .
+.TP 15
+.B \-O0
+Turn off all optimizations.
+.TP 15
+.B \-O1
+Turn on all optimizations that complete fast.  This is the default.
+.TP 15
+.BR \-O " or " \-O2
+Invoke the global
+.I ucode
+optimizer.
+.TP 15
+.B \-O3
+Perform all optimizations, including global register allocation.  This 
+option must precede all source file arguments.  With this option, a
+.I ucode
+object file is created for each C source file and left in a .u file.
+The newly created ucode object files, the ucode object files specified on
+the command line, the runtime startup routine, and all the runtime libraries
+are ucode linked.  Optimization is performed on the resulting ucode 
+linked file and then it is linked as normal producing an a.out file.  
+A resulting .o file is not left from the ucode linked result.
+In fact
+.B \-c
+cannot be specified with
+.BR \-O3 .
+.TP 15
+.BI \-feedback " file"
+Use 
+with the
+.B \-cord
+option to specify the feedback file.  This
+.I file
+is produced by
+.MS prof 1
+with its
+.B \-feedback
+option from an execution of the program produced by
+.MS pixie 1 . 
+.TP 15
+.B \-cord
+Run the procedure-rearranger
+on the resulting file after linking.  The rearrangement is performed
+to reduce the cache conflicts of the program's text.  The output
+is left in the file specified by the
+.BI \-o " output"
+option or a.out by default.  At least one
+.B \-feedback
+.I file
+must be specified.
+.TP 15
+.B \-j
+Compile the specified source programs, and leave the
+.I ucode
+object file output in corresponding files with the .u suffix.
+.TP 15
+.BI \-ko " output"
+Name the output file created by the ucode loader as
+.I output.
+This file is not removed.
+If this file is compiled, the object file is left in
+a file whose name consists of
+.I output
+with the suffix changed to an .o.  If
+.I output
+has no suffix, an .o suffix is appended to
+.I output.
+.TP 15
+.B \-k
+Pass options that start with a
+.B \-k
+to the ucode loader.  This option is used to specify ucode libraries
+(with
+.BI \-kl x
+) and other ucode loader options.
+.TP 15
+.B \-S
+Compile the specified source programs and leave the symbolic
+assembly language output in corresponding files suffixed with .s.
+.TP 15
+.B \-P
+Run only the C macro preprocessor and put the result for each source file
+using suffix convention (for example, .c and .s)
+in a corresponding .i file.
+The .i file does not have number lines (#) in it.
+This sets the 
+.B \-cpp
+option.
+.TP 15
+.B \-E
+Run only the C macro preprocessor
+on the files (regardless of any suffix or not), and send the result to the
+standard output.
+This sets the 
+.B \-cpp
+option.
+.TP 15
+.B \-Em
+Runs only the macro preprocessor on the named C programs and
+produces the makefile dependencies.
+.TP 15
+.BI \-o " output"
+Name the final output file
+.IR output .
+If this option is used, the file a.out is unaffected.
+.TP 15
+.BI \-D name=def
+.br
+.ns
+.TP 15
+.BI \-D \*Sname
+Define the
+.I name
+to the C macro preprocessor,
+as if by
+`#define'.
+If a definition is not given, the name is defined as 1.
+.TP 15
+.BI \-U \*Sname
+Remove any initial definition of
+.IR name .
+.TP 15
+.BI \-I \*Sdir
+Search for #include files
+whose names do not begin with a slash (/) in the following order: (1) in
+the directory of the 
+.I dir
+argument, (2) in the directories specified by 
+.B \-I
+options, (3) in the standard directory
+.RB ( /usr/include ).
+.TP 15
+.B \-I
+Do not search for #include in the standard directory
+.RB ( /usr/include ).
+.TP 15
+.B \-M
+Specifies the floating point type to be used for double-precision
+floating point and is passed on to
+.MS ld 1
+as the map option.
+.TP 15
+.B \-W1,M
+Same a \-M, except it is POSIX compliant.
+.TP 15
+.BI \-G " num"
+Specify the maximum size, in bytes, of a data item that is to be accessed from
+the global pointer.  The
+.I num
+argument is interpreted as a decimal number.  If
+.I num
+is zero, data is not accessed from the global pointer.  The default
+value for
+.I num
+is 8 bytes.
+.TP 15
+.B \-v
+Print the passes as they execute with their arguments and their input and output
+files.
+Also prints resource usage in the C shell
+.I time
+format.
+.TP 15
+.B \-V
+Print the version of the driver and the versions of all passes.  This is done
+with the
+.MS what 1
+command.
+.TP 15
+.B \-std
+Produce warnings for things that are not standard in the
+language.
+.TP 15
+.BI \-Y environment
+Compiles C programs for \fIenvironment\fP.  If \fIenvironment\fP is
+SYSTEM_FIVE or is omitted, it defines SYSTEM_FIVE for the preprocessor,
+.PN cpp .
+If the loader is invoked, it specifies that the System V version of the
+C runtime library is used.  Also, if the math library is specified
+with the \fB\-lm\fR option, the System V version is used.  If 
+\fIenvironment\fP is POSIX, it defines POSIX for the preprocessor.  If
+the environment variable PROG_ENV has the value SYSTEM_FIVE or POSIX,
+the effect is the same as when specifying the corresponding 
+\fB\-Y\fIenvironment\fR option to
+.PN cc .
+The \fB\-Y\fP option overrides the PROG_ENV variable; \fB\-YBSD\fP can be used to
+override all special actions.
+.TP 15
+.B \-cpp
+Run the C macro preprocessor on C and assembly source files before compiling.
+This is the default for
+.MS cc l .
+.TP 15
+.B \-nocpp
+Do not run the C macro preprocessor on C and assembly source files before
+compiling.
+.TP 15
+.BI \-Olimit " num"
+Specify the maximum size, in basic blocks, of a routine that 
+will be optimized
+by the global optimizer.  If a routine has more than 
+the specified number 
+of basic blocks, it cannot be optimized and a message is printed.  A
+.B \-O, \-O2,
+or
+.B \-O3
+must be used to specify the global optimizer.  The argument must 
+also be specified. The argument
+.I num
+is interpreted as a decimal number.  The default value for
+.I num
+is 500 basic blocks.
+.TP 15
+.B \-signed
+Causes all
+.I char
+declarations to be
+.I "signed char"
+declarations. This is the default.
+.TP 15
+.B \-unsigned
+Causes all
+.I char
+declarations to be
+.I "unsigned char"
+declarations.
+.TP 15
+.B \-volatile
+Causes all variables to be treated as
+.I volatile.
+.TP 15
+.B \-varargs
+Prints warnings for lines that may require the
+.I varargs.h
+macros.
+.TP 15
+.B \-f
+Causes the compiler not to promote expressions of type
+.I float
+to type
+.I double.
+.TP 15
+.B \-float
+Same as the 
+.B \-f 
+option.
+.TP 15
+\fB\-fill \fInumber\fR
+Set the fill pattern for ``holes'' within an output section.  
+The \fInumber\fR argument is a four byte hex constant.
+.NT
+The 
+.B \-EB
+and
+.B \-EL
+options are needed only when compiling for RISC 
+machines from vendors other than Digital.
+.NE
+The default target byte ordering matches the machine 
+where the compiler is running.  The options
+.B \-EB
+and
+.B \-EL
+specify the target byte ordering (big-endian and little-endian,
+respectively).
+The compiler also defines a C preprocessor macro for the
+target byte ordering.  These C preprocessor macros are
+.B MIPSEB
+and
+.B MIPSEL
+for big-endian and little-endian byte ordering respectively.
+.PP
+If the specified target byte ordering does not match the machine where the
+compiler is running, then the runtime startups and libraries come from
+.B /usr/libeb
+for big-endian runtimes on a little-endian machine and from
+.B /usr/libel
+for little-endian runtimes on a big-endian machine.
+.TP 15
+.B \-EB
+Produce object files targeted for big-endian byte ordering.  The C preprocessor
+macro
+.B MIPSEB
+is defined by the compiler.
+.TP 15
+.B \-EL
+Produce object files targeted for little-endian byte ordering.  The
+C preprocessor macro
+.B MIPSEL
+is defined by the compiler.
+.PP
+The following options primarily aid compiler
+development and are not generally used:
+.TP 15
+.BI \-H c
+Halt compiling after the pass specified by the character
+.IR c ,
+producing an intermediate file for the next pass.  The
+.I c
+can be
+.B [ fjusmoca ].
+It selects the compiler pass in the same way as the
+.B \-t
+option.
+If this option is used, the symbol table file produced and used by the passes
+is the last component of the source file with the suffix changed to .T.
+It is not removed.
+.TP 15
+.B \-K
+Build and use intermediate file names with the last component of the
+source file's  name replacing its suffix with the conventional suffix for the
+type of file (for example, .B file for binary
+.I ucode,
+produced by the front end).  These intermediate files are never removed
+even when a pass encounters a fatal error.
+When ucode linking is performed and the
+.B \-K
+option is specified, the base name of the files created after the ucode link is
+u.out by default.  If
+.BI \-ko " output"
+is specified, the base name of the object file is 
+.I output
+without the suffix.  Suffixes are appended to
+.I output
+if it does not have a suffix.
+.TP 15
+.B \-#
+Converts binary
+.I ucode
+files (.B) or optimized binary ucode files (.O) to symbolic
+.I ucode
+(a .U file).
+If a symbolic ucode file is to be produced by converting the binary
+.I ucode
+from the C compiler front end then the front end option
+.B \-Xu is used.
+.TP 15
+.BI \-W c[c...],arg1[,arg2...]
+Pass the argument[s]
+.I argi
+to the compiler pass[es]
+.I c[c..].
+The
+.I c's
+are one of
+.B [ pfjusmocablyz ].
+The c's selects the compiler pass in the same way as the
+.B \-t
+option.
+.PP
+The options
+.BR \-t [ hpfjusmocablyzrnt ],
+.BI \-h path,
+and
+.BI \-B string
+select a name to use for a particular pass, startup routine, or standard library.
+These arguments are processed from left to right so their order is significant.
+When the
+.B \-B
+option is encountered, the selection of names takes place using the last
+.B \-h
+and
+.B \-t
+options.  Therefore, the
+.B \-B
+option is always required when using
+.B \-h
+or
+.BR \-t .
+Sets of these options can be used to select any combination of names.
+.PP
+The
+.B \-EB
+or
+.B \-EL
+options and the
+.B \-p[01]
+options must precede all
+.B \-B
+options because they can affect the location of runtime libraries and which
+runtime libraries are used.
+.TP 15
+.BR \-t [ hpfjusmocablyzrnt ]
+Select the names.  The names must be selected from the options in the
+following table:
+.br
+.ta \w'btou, utob\ \ 'u
+.SM "Name      Character"
+.br
+include	h  (see note below)
+.br
+cpp	p
+.br
+ccom	f
+.br
+ujoin	j
+.br
+uld	u
+.br
+usplit	s
+.br
+umerge	m
+.br
+uopt	o
+.br
+ugen	c
+.br
+as0	a
+.br
+as1	b
+.br
+ld	l
+.br
+ftoc	y
+.br
+cord	z
+.br
+[m]crt0.o	r
+.br
+libprof1.a	n
+.br
+btou, utob	t
+.br
+.sp +.5
+If the character h is in the
+.B \-t
+argument then a directory is added to the list of directories to be used in 
+searching for #include files.  This directory name has the form
+.SM COMP_TARGET_ROOT\fR/usr/include\fIstring\fR .
+This directory is to contain the include files for the
+.I string
+release of the compiler.  The standard directory is still searched.
+.TP 15
+.BI \-h \*Spath
+Use
+.I path
+rather than the directory where the name is normally found.
+.TP 15
+.BI \-B \*Sstring
+Append
+.I string
+to all names specified by the
+.B \-t
+option.  If the
+.B \-t
+option has not been processed before the
+.B \-B,
+the
+.B \-t
+option is assumed to be the following: hpfjusmocablyzrnt.  This list 
+designates all names.
+If the
+.B \-t
+argument has not been processed before the
+.B \-B
+argument,
+.BI \-B string
+is passed to the loader to use with its
+.BI \-l x
+arguments.
+.PP
+Invoking the compiler with a name of the form
+.BI cc string
+has the same effect as using a
+.BI \-B string
+option on the command line.
+.PP
+If the environment variable
+.SM COMP_HOST_ROOT
+is set, the value is used as the root
+directory for all pass names rather than the default slash (/).
+If the environment variable
+.SM COMP_TARGET_ROOT
+is set, the value is used as the root
+directory for all include and library names rather than the default
+slash (/).
+This affects the standard directory for #include files, /usr/include,
+and the standard library, /usr/lib/libc.a.  If this is set then the only
+directory that is searched for libraries, using the
+.BI \-l x
+option, is
+.SM COMP_TARGET_ROOT\fR/usr/lib .
+.PP
+If the environment variable
+.SM TMPDIR
+is set, the value is used as the directory to place any temporary files
+rather than the default
+.B /tmp/ .
+.PP
+If the environment variable
+.SM RLS_ID_OBJECT
+is set, the value is used as the name of an object to link in if a link takes
+place.  This is used to add release identification information to objects.
+It is always the last object specified to the loader.  
+.PP
+Other arguments are assumed to be either loader options or 
+C\-compatible
+object files, typically produced by an earlier
+.PN cc
+run, or perhaps libraries of 
+C\-compatible
+routines.  These files, together with the results of any
+compilations specified, are loaded in the order
+given, producing an executable program with the default name
+.B a.out.
+.SH Options
+The ULTRIX C compiler provides the following default symbols
+for your use.  These symbols are useful in ifdef statements
+to isolate code for one of the particular cases.  Thus, these
+symbols can be useful for ensuring portable code.
+.TP 15
+unix
+Any UNIX system
+.TP
+bsd4_2
+Berkeley UNIX Version 4.2
+.TP
+ultrix
+ULTRIX only
+.TP
+mips
+Any RISC architecture
+.TP
+MIPSEL
+Little endian variant of MIPS architecture
+.TP
+host_mips
+Native compilation environment (as opposed to cross-compiler)
+.SH Restrictions
+The standard library, /usr/lib/libc.a, is loaded by using the \-lc loader
+option and not a full path name. The wrong library may be loaded if
+there are files with the name
+.RI libc.a string
+in the directories specified with the 
+.B \-L
+loader option or in the default directories searched by the loader.
+.PP
+The handling of include directories and libc.a is confusing.
+.SH Files
+.ta \w'/usr/lib/libprof1.a\ \ 'u
+file.c			input file
+.br
+file.o			object file
+.br
+a.out			loaded output
+.br
+/tmp/ctm?		temporary
+.br
+/usr/lib/cpp	C macro preprocessor
+.br
+/usr/lib/ccom	C front end
+.br
+/usr/lib/ujoin	binary ucode and symbol table joiner
+.br
+/usr/bin/uld	ucode loader
+.br
+/usr/lib/usplit	binary ucode and symbol table splitter
+.br
+/usr/lib/umerge	procedure intergrator
+.br
+/usr/lib/uopt	optional global ucode optimizer
+.br
+/usr/lib/ugen	code generator
+.br
+/usr/lib/as0	symbolic to binary assembly language translator
+.br
+/usr/lib/as1	binary assembly language assembler and reorganizer
+.br
+/usr/lib/crt0.o	runtime startup
+.br
+/usr/lib/mcrt0.o	startup for profiling
+.br
+/usr/lib/libc.a	standard library, see intro(3)
+.br
+/usr/lib/libprof1.a	level 1 profiling library
+.br
+/usr/include	standard directory for #include files
+.br
+/usr/bin/ld	MIPS loader
+.br
+/usr/lib/ftoc	interface between 
+.MS prof 1
+and cord
+.br
+/usr/lib/cord	procedure-rearranger
+.br
+/usr/bin/btou	binary to symbolic ucode translator
+.br
+/usr/bin/utob	symbolic to binary ucode translator
+.br
+mon.out		file produced for analysis by
+.MS prof 1
+.PP
+Runtime startups and libraries for the opposite byte sex of machine the
+compiler is running on have the same names but are located in different
+directories.  For big-endian runtimes on a little-endian machine the
+directory is /usr/libeb and for little-endian runtimes on
+a big-endian machine the directory is /usr/libel.
+.SH See Also
+dbx(1), ld(1), pixie(1), prof(1), what(1), monitor(3)

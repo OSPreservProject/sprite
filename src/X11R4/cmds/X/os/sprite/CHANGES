@@ -1,0 +1,17 @@
+The following changes have been made to this directory since R3:
+
+	o  Massive changes to support out-of-memory.
+
+	o  Shared client buffers.
+
+	o  Authorization hooks added.
+	
+	o  MIT-MAGIC-COOKIE-1 support added.
+
+	o  XDMCP support added.
+
+	o  XDM-AUTHENTICATION-1/XDM-AUTHORIZATION-1 support mostly
+	   added (lacks DES implementation).
+
+	o  New interfaces: IgnoreClient and AttendClient for
+	   MultiBuffering extension

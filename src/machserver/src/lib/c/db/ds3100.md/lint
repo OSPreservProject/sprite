@@ -1,0 +1,14 @@
+DbLockDesc.c:
+Db_Close.c:
+Db_Get.c:
+Db_Open.c:
+Db_Put.c:
+Db_ReadEntry.c:
+Db_WriteEntry.c:
+signal, arg. 2 used inconsistently	llib-lc:signal.c 2(20)  ::  DbLockDesc.c 2(150)
+signal, arg. 2 used inconsistently	llib-lc:signal.c 2(20)  ::  DbLockDesc.c 2(157)
+signal, arg. 2 used inconsistently	llib-lc:signal.c 2(20)  ::  DbLockDesc.c 2(175)
+syslog: variable # of args.	DbLockDesc.c 2(152)  ::  DbLockDesc.c 2(191)
+bcopy value declared inconsistently	llib-lc:bcopy.c 2(69)  ::  Db_Get.c 2(119)
+strcpy value declared inconsistently	llib-lc:strcpy.c 2(42)  ::  Db_Open.c 2(86)
+alarm returns value which is always ignored

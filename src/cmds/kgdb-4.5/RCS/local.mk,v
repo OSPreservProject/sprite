@@ -1,0 +1,33 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    jhh:1.1; strict;
+comment  @@;
+
+
+1.1
+date     92.08.05.22.09.09;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@default2		:	
+	(cd $(TM).md/gdb; make)
+	mv /sprite/src/cmds/$(NAME)/$(TM).md/gdb/$(NAME) ./$(TM).md/$(NAME)
+
+clean tidy cleanall	::
+	(cd $(TM).md; make clean)
+
+#include <$(SYSMAKEFILE)>
+@

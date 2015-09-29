@@ -1,0 +1,68 @@
+Aug. 21, 1989
+
+Rpc Send Test: N = 100, Host = mint (32), size = 32
+N = 100, Size = 32, Time = 0.004800
+Rpc Send Test: N = 100, Host = mint (32), size = 32
+N = 100, Size = 32, Time = 0.004100
+Rpc Send Test: N = 100, Host = mint (32), size = 32
+N = 100, Size = 32, Time = 0.005900
+Rpc Send Test: N = 100, Host = mint (32), size = 32
+N = 100, Size = 32, Time = 0.006000
+Rpc Send Test: N = 100, Host = mint (32), size = 32
+N = 100, Size = 32, Time = 0.004400
+Rpc Send Test: N = 100, Host = mint (32), size = 32
+N = 100, Size = 32, Time = 0.004800
+Rpc Send Test: N = 100, Host = mint (32), size = 32
+N = 100, Size = 32, Time = 0.003500
+Rpc Send Test: N = 100, Host = mint (32), size = 32
+N = 100, Size = 32, Time = 0.005400
+Rpc Send Test: N = 100, Host = mint (32), size = 32
+N = 100, Size = 32, Time = 0.003900
+
+
+Rpc Send Test: N = 100, Host = allspice (14), size = 32
+N = 100, Size = 32, Time = 0.000200
+status f65203f8
+rpcecho -h allspice
+Rpc Send Test: N = 100, Host = allspice (14), size = 32
+N = 100, Size = 32, Time = 0.000300
+status f65203f8
+rpcecho -h allspice
+Rpc Send Test: N = 100, Host = allspice (14), size = 32
+N = 100, Size = 32, Time = 0.000900
+status f65203f8
+rpcecho -h allspice
+Rpc Send Test: N = 100, Host = allspice (14), size = 32
+N = 100, Size = 32, Time = 0.003200
+status f65203f8
+rpcecho -h allspice
+Rpc Send Test: N = 100, Host = allspice (14), size = 32
+N = 100, Size = 32, Time = 0.000200
+status f65203f8
+rpcecho -h allspice
+Rpc Send Test: N = 100, Host = allspice (14), size = 32
+N = 100, Size = 32, Time = 0.001500
+status f65203f8
+****************************************************************************
+Between mint and fenugreek:
+32 byte
+
+Rpc Send Test: N = 1000, Host = mint (32), size = 32
+N = 1000, Size = 32, Time = 0.002750
+
+Rpc Send Test: N = 1000, Host = mint (32), size = 32
+N = 1000, Size = 32, Time = 0.002780
+
+Rpc Send Test: N = 1000, Host = mint (32), size = 32
+N = 1000, Size = 32, Time = 0.002860
+
+8K
+Rpc Send Test: N = 100, Host = mint (32), size = 8192
+N = 100, Size = 8192, Time = 0.020400
+
+Rpc Send Test: N = 100, Host = mint (32), size = 8192
+N = 100, Size = 8192, Time = 0.020800
+
+Rpc Send Test: N = 100, Host = mint (32), size = 8192
+N = 100, Size = 8192, Time = 0.022500
+

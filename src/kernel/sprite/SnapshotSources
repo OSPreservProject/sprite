@@ -1,0 +1,54 @@
+#!/bin/csh -f  
+
+onintr cleanup
+
+if ($#argv != 1) then
+    echo "Usage: $0 versionNumber"
+    exit
+endif
+set insDir = '/sprite/src/kernel/Snapshots'
+set srcDir = '/sprite/src/kernel'
+set version = $1
+if (-e "$insDir/$version/.ssdone") then
+    echo "$insDir/$version already exists. Skipping snapshot of sources."
+    exit
+endif
+pushd $srcDir
+pmake SNAPDIR=$insDir SNAPVERSION=$version snapshot
+popd
+
+mkdir $insDir/$version/include
+update /sprite/lib/include $insDir/$version/include
+pushd $insDir/$version/include
+rm user
+rm kernel
+ln -s ../Include kernel
+foreach i (*.md)
+    pushd $i
+    rm kernel
+    ln -s ../../Include/$i kernel
+    popd
+end
+popd
+
+mkdir $insDir/$version/Include
+update /sprite/src/kernel/Include $insDir/$version/Include
+pushd $insDir/$version/Include
+rm user
+ln -s ../include user
+foreach i (*.md)
+    pushd $i
+    rm user
+    ln -s ../../include/$i user
+    popd
+end
+popd
+
+touch $insDir/$version/.ssdone
+echo "***** KERNEL $version" `date` "*****" >> /sprite/src/kernel/scvs.log
+
+cleanup:
+    rm -f /tmp/ss.$$
+    rm -f /tmp/ss.libc.$$
+    rm -f /tmp/ss.script.$$
+

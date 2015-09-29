@@ -1,0 +1,8 @@
+
+
+          scanfile contexthandle filehandle
+               Scan the file specified by filehandle, starting at the
+               current file position.  Check all patterns in the scan
+               context specified by contexthandle against it,
+               executing the match commands corresponding to patterns
+               matched.

@@ -1,0 +1,46 @@
+
+		Using PostScript Illustrations in TeX
+
+    TeX provides an unstandardized interface directly to the printer
+drivers to support illustartions (and possibly extensions) in a non-
+standard way.  This mecanism, called \special, is interpreted by the
+printer driver for PostScript printers to be the name of a file of
+PostScript code to be interpolated at that point in the document.
+
+    When the file is being interpolated, the origin is placed at the
+left edge and ``current V'' in the dvi file.  This is the place where
+the next character will be placed if the user goes into horizontal mode.
+This means that you should write your PostScript programs so that
+the image lies along the bottom of the page, and in the center.
+
+    Also, the PostScript files should NOT contain any showpage
+commands.  A copypage would be okay, but doesn't make much sense.
+
+    Any PostScript commands are okay, even those that change the
+CTM, since the driver brackets the user PostScript code with
+gsave/grestore.  It is best though, to make sure the opstack has
+not been changed when your illustration is done.
+
+    One thing to worry about; the printer driver needs to access
+the file by the name given (and it will NOT run in the user's
+current directory (unless that's /usr/spool/??d) and may not even
+run on the user's machine).  Thus, one must make sure that the
+printer is being spooled from the current machine, and that the
+full pathname of the file is specified (no tildes, please).
+If neither of these conditions is practical, the user will have
+to run dvi2ps by hand.  Here is an exaple command sequence that
+will format and print the dvifile pspicture.dvi on the printer
+"ps":
+
+	% dvi2ps pspicture.dvi > /tmp/dvi$$ps
+	[1]
+	% cat /usr/local/lib/ps/psdvi.pro /tmp/dvi$$ps | lpr -l -Pps
+	% rm /tmp/dvi$$ps
+
+Of course, these pathnames may not be right for your machine.
+
+    See the files pspicture.tex and pspicture.latex (and tank.ps)
+for examples of using PostScript in a TeX ddocument.
+
+				John Coker
+				October 1986

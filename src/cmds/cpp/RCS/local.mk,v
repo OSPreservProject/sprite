@@ -1,0 +1,62 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     92.06.29.16.00.23;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     92.06.29.15.49.10;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Name the DECstation version cpp.gnu.
+@
+text
+@#
+# This file is included by Makefile.  Makefile is generated automatically
+# by mkmf, and this file provides additional local personalization.  The
+# variable SYSMAKEFILE is provdied by Makefile.
+#
+
+#if !empty(TM:Mds3100)
+NAME		= cpp.gnu
+#endif
+
+#
+# Don't automatically back up Gcc stuff:  want to make sure the
+# backup version is VERY reliable and don't want two quick buggy
+# changes to result in unusable backup.
+#
+NOBACKUP	= true
+
+#include	<$(SYSMAKEFILE)>
+
+#
+# Use headers from the main gcc area, including both stuff from
+# the distribution and stuff that's been modified specially for Sprite.
+#
+.PATH.h		: ../gcc/sprite ../gcc/dist
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d7 4
+@

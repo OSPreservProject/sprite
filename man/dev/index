@@ -1,0 +1,28 @@
+disk
+disk, 
+Device used to read and write disk sectors
+disk, partition, label, 
+mouse
+mouse, 
+Devices used to read mouse and keyboard events for window systems
+event, keyboard, mouse, window system, 
+pdev
+Pseudo-devices, 
+files controlled by server processes.
+pseudo-device, device, server, client, read, write, iocontrol, 
+pfs
+Pseudo-file-systems, 
+File systems implemented by user-level server processes.
+server, pseudo-device, 
+raid
+raid, 
+Devices used to send ioctl's to RAID devices.
+raid command, raid device, 
+scsi
+scsi, 
+Devices used to send arbitrary SCSI commands to SCSI devices
+scsi command, scsi device, HBA, 
+tty
+tty, 
+general terminal interface
+

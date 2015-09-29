@@ -1,0 +1,43 @@
+%>>>>DEPROC.README
+DEPROC -- A TeX Header for Formatting DECUS Proceedings Articles
+
+
+DEPROC is a package that will format articles for the DECUS Pro-
+ceedings.  It can be used by anyone who has access to the TeX
+typesetting system.  DEPROC is a TeX header (macro package).
+
+
+The DECUS Proceedings have traditionally been published from copy
+supplied by the authors, prepared according to rules devised for
+typewritten material.  The power of the computer typesetting language
+TeX has now been applied to this task, and a formatting package, named
+DEPROC, has been submitted to the DECUS Program Library for use by
+authors who have access to a working TeX system.  (The TeX program and
+related software, created by Donald Knuth of Stanford, are in the
+public domain.)
+
+The documentation (which was itself produced by the DEPROC package--
+see file DEPROCDOC.TEX) presents the important features of DEPROC and,
+through examples, shows how it is to be used.  Use of DEPROC, which is
+encouraged, will produce the author's work, nicely typeset, in the
+standard Proceedings format.  There is a general description of how
+the package works and of the mechanical requirements for camera copy
+of Proceedings articles, which will be created on the author's local
+output device.
+
+No prior knowledge of TeX is required, but authors using DEPROC will
+be expected to learn some rudiments, especially if their papers
+contain special notation or formats such as tables.  A sample table
+appears in DEPROCDEV.TEX and DEPROCDEV.FIL, the files used to prepare
+a table of output devices which have been interfaced to DEC computers.
+
+
+Questions and suggestions about DEPROC may be sent to
+
+        Barbara N. Beeton
+        American Mathematical Society
+        Post Office Box 6248
+        Providence, Rhode Island  02940
+        401-272-9500
+
+

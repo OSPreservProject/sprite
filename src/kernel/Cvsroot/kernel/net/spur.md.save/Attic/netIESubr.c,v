@@ -1,0 +1,147 @@
+head     8.0;
+branch   ;
+access   ;
+symbols  sun4nw:8.0 symm:8.0 spur:8.0 newlib:8.0;
+locks    ; strict;
+comment  @ * @;
+
+
+8.0
+date     88.11.11.18.28.34;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     88.10.27.13.31.01;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.30.10.02.58;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@SPUR ethernet driver.
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@/* netIESubr.c -
+ *
+ * Subroutines for the intel device driver.  These routines are to convert 
+ * SPUR addresses to/from Intel address and offsets into Intel memory.
+ * 
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/net/spur.md/RCS/netIESubr.c,v 1.2 88/10/27 13:31:01 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+#include "list.h"
+#include "netIEInt.h"
+#include "net.h"
+#include "netInt.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetIEAddrFromSPURAddr --
+ *
+ *	Change 32-bit SPUR address to Intel LCC 16-bit address.
+ *
+ * Results:
+ *	The modified address.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+unsigned short
+NetIEAddrFromSPURAddr(addr)
+    Address	addr;
+{
+
+    if (addr < netIEState.deviceBase || 
+       (addr > (netIEState.deviceBase + NET_IE_MEM_SIZE))) {
+	panic("NetIEAddrFromSPURAddr: Address out of buffer memory\n");
+    }
+
+    return((unsigned short) (addr - netIEState.deviceBase));
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetIEAddrToSPURAddr --
+ *
+ *	Change 16-bit Intel address to a SPUR address.
+ *
+ * Results:
+ *	The modified address.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Address
+NetIEAddrToSPURAddr(addr)
+    unsigned	short addr;
+{
+
+
+    return(NET_IE_SLOT_OFFSET(addr));
+}
+
+
+@
+
+
+1.2
+log
+@Multiprocessor support and convsion to new c library.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: netIESubr.c,v 1.1 88/06/30 10:02:58 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: netIESubr.c,v 5.1 88/05/05 17:58:42 brent Exp $ SPRITE (Berkeley)";
+a22 1
+#include "sys.h"
+d52 1
+a52 2
+	Sys_Panic(SYS_FATAL,
+		"NetIEAddrFromSPURAddr: Address out of buffer memory\n");
+@

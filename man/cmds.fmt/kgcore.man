@@ -1,0 +1,68 @@
+
+
+
+KGCORE                    User Commands                    KGCORE
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     kgcore -  Generate a core dump of a remote Sprite kernel
+
+SSYYNNOOPPSSIISS
+     kkggccoorree _o_p_t_i_o_n _m_a_c_h_i_n_e
+
+OOPPTTIIOONNSS
+     --oo _f_i_l_e_n_a_m_e    Write the core image to filename rather  than
+                    the file vmcore.
+
+     --cc             Include the file system block  cache  in  the
+                    core dump.
+
+     --vv             Output progress info.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The kkggccoorree command is used to make  a  copy  of  the  kernel
+     memory  image  of  a Sprite machine. The memory image may be
+     used with kkggddbb to examine the machine's  state.  _M_a_c_h_i_n_e  is
+     the name of a machine running Sprite. The machine must be in
+     the kernel debugger for kkggccoorree to work (see the -d option of
+     the  kkmmssgg command.) KKggccoorree writes the kernel memory image to
+     the file vmcore unless another file name is  specified  with
+     the --oo option. This file may be specified as a core image to
+     kkggddbb.
+
+
+KKEEYYWWOORRDDSS
+     debug, kernel, core, kgdb
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  May 27, 1991                     1
+
+
+

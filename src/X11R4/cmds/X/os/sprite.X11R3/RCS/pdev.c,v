@@ -1,0 +1,2185 @@
+head     1.12;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.12
+date     89.06.22.09.38.41;  author ouster;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     89.06.01.10.44.09;  author brent;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     88.11.28.10.37.45;  author ouster;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     88.10.01.10.55.51;  author ouster;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     88.09.16.10.57.37;  author ouster;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.09.11.13.09.20;  author ouster;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.09.11.13.01.04;  author ouster;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.09.09.18.00.25;  author ouster;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.09.08.18.15.52;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.08.26.16.13.09;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.08.26.08.56.51;  author deboor;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     87.11.29.19.51.59;  author deboor;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Functions to support connections using the second-generation pseudo-devices
+@
+
+
+1.12
+log
+@Changes for new pdev code (large vs. small replies, signal returns).
+@
+text
+@/*-
+ * pdev.c --
+ *	Functions for handling a connection to a client over a pseudo-device.
+ *
+ *	For each client, we have two buffers -- a 2K output buffer, from
+ *	which the client reads, and a 2K request buffer, to which it writes.
+ *	The size for the output buffer is based on examination of the size
+ *	of buffers used in the old pseudo-device implementation. None
+ *	was larger than 2K, so... The input buffer size is based on the
+ *	size of Xlib's output buffer -- 2K. This is obviously inadequate for
+ *	large amounts of image data, but for most applications it should
+ *	be fine.
+ *
+ *	Requests are processed from the request buffer in order, obviously,
+ *	with a write request remaining current until all its data have been
+ *	consumed. If an X request crosses a pdev request boundary, it is
+ *	copied and collected in a separate area, which is deallocated on the
+ *	next call. X requests wholy inside a pdev request are left in the
+ *	buffer. The kernel is not told the pdev request has been processed
+ *	until all X requests in the pdev request have been handled.
+ *
+ *	Each time data are written to the read buffer, the pointers are
+ *	updated. The stream is not read until the request buffer has
+ *	been exhausted.
+ *
+ * Copyright (c) 1987 by the Regents of the University of California
+ *
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ */
+#ifndef lint
+static char rcsid[] =
+"$Header: /a/X/src/cmds/Xsprite/os/RCS/pdev.c,v 1.11 89/06/01 10:44:09 brent Exp Locker: brent $ SPRITE (Berkeley)";
+#endif lint
+
+#define NEED_REPLIES /* For Debugging Only */
+
+/*
+ * These first two header files must indeed be first, or else this
+ * file won't compile.
+ */
+
+#define Time SpriteTime
+#include    <fs.h>
+#undef Time
+#include    <stdlib.h>
+
+#include    "spriteos.h"
+
+#include    "Xproto.h"
+#include    "opaque.h"
+
+#include    <bit.h>
+#include    <dev/pdev.h>
+#include    <errno.h>
+#include    <status.h>
+#include    <stdio.h>
+#include    <sys/time.h>
+
+/*
+ * Template for the pseudo-device through which we communicate. Given to
+ * one of the printf functions and expects two arguments: the name of the
+ * local host and the display number we're using.
+ */
+#define	DEVICE_TEMPLATE	"/hosts/%s/X%s"
+
+#define REASONABLE_TIME	    5
+#define OUT_BUF_SIZE	    2048
+#define IN_BUF_SIZE	    2048
+
+/*
+ * The private data maintained for a pseudo-device client
+ */
+typedef struct {
+    int	    	  	streamID;   /* Server stream over which we get the
+				     * buffer pointers */
+    ClientPtr	  	client;	    /* Client for which this is */
+    int	    	  	state;
+#define PDEV_REQ_EMPTY	    	0x0002	/* Request buffer is empty */
+#define PDEV_READ_EMPTY	    	0x0004 	/* Read buffer is empty */
+#define PDEV_COLLECTING	    	0x0008	/* Collecting broken X request */
+#define PDEV_COLLECTING_HEADER	0x0010	/* Collecting broken X header */
+
+    /*
+     * Request (inBuf) and read-ahead (outBuf) buffers
+     */
+    char  	  	outBuf[OUT_BUF_SIZE];
+    char    	  	*outPtr;    /* Next place to store data */
+
+    char    	  	inBuf[IN_BUF_SIZE];
+    Pdev_Request	*reqPtr;    /* Address of next request to process */
+    char    	  	*inPtr;	    /* Position in current request */
+
+    Pdev_BufPtrs  	curPtrs;    /* Current pointers for the two buffers */
+
+    /*
+     * Overflow. If the outBuf fills up, we copy the output data into
+     * 'overflow' and copy as much down as possible when the kernel has
+     * emptied outBuf.
+     *
+     * If an X request comes in that is broken across two PDEV_WRITE requests,
+     * we allocate enough room to hold it and point bigReq at it, then copy
+     * data from inBuf, as it becomes available, into bigReq until the
+     * request is fulfilled.
+     */
+    Buffer  	  	overflow;   /* Any output that won't fit in outBuf */
+    char    	  	*bigReq;    /* Points to space for any broken request
+				     * that is being assembled. NULL if none */
+    char    	  	*bigReqPtr; /* Current position in bigReq */
+    int	    	  	need;	    /* Number of bytes still needed */
+} PdevPrivRec, *PdevPrivPtr;
+
+static void 	  PdevCloseClient();
+static char 	  *PdevReadClient();
+static int  	  PdevWriteClient();
+
+int	    	  Pdev_Conn;
+
+/*-
+ *-----------------------------------------------------------------------
+ * Pdev_Init --
+ *	Initialize pseudo-device connections.
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	The pseudo-device for this display is opened. The process will
+ *	exit if the device cannot be opened.
+ *
+ *-----------------------------------------------------------------------
+ */
+void
+Pdev_Init(hostname)
+    char    *hostname;	/* The name of the local host */
+{
+    char    	  deviceName[100];  /* Path to pseudo-device */
+    int	    	  oldPermMask;	    /* Previous permission mask */
+    ReturnStatus  status;
+
+    /*
+     * Create the pseudo-device, making sure it's readable and writable
+     * by everyone.
+     */
+
+    sprintf (deviceName, DEVICE_TEMPLATE, hostname, display);
+    oldPermMask = umask(0);
+    status = Fs_Open (deviceName,
+	    FS_NON_BLOCKING | FS_CREATE | FS_READ | FS_PDEV_MASTER,
+	    0666, &Pdev_Conn);
+    if (status != 0) {
+	errno = Compat_MapCode(status);
+	Error (deviceName);
+	FatalError ("Could not open pseudo-device %s",
+		deviceName);
+    }
+
+    (void) umask(oldPermMask);
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * PdevSetPtrs --
+ *	Set our idea of the state of the two buffers. Called when a
+ *	Pdev_BufPtrs structure is read from the kernel. If the read-ahead
+ *	buffer has been emptied by the kernel and there's overflow waiting
+ *	to go, copy it down and inform the kernel of it.
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	curPtrs is altered.
+ *
+ *-----------------------------------------------------------------------
+ */
+static void
+PdevSetPtrs(pdevPriv, bufPtrs)
+    PdevPrivPtr	pdevPriv;
+    Pdev_BufPtrs  	*bufPtrs;
+{
+    if (DBG(PDEV)) {
+	ErrorF("SetPtrs(%d): req %d:%d read %d:%d\n",
+	       pdevPriv->client ? pdevPriv->client->index : -1,
+	       bufPtrs->requestFirstByte,
+	       bufPtrs->requestLastByte,
+	       bufPtrs->readFirstByte,
+	       bufPtrs->readLastByte);
+    }
+
+    /*
+     * First update the extent of the request buffer.
+     */
+    pdevPriv->curPtrs.requestLastByte = bufPtrs->requestLastByte;
+    if ((bufPtrs->requestLastByte != -1)  &&
+	(pdevPriv->state & PDEV_REQ_EMPTY)) {
+	    /*
+	     * We only pay attention to the requestFirstByte if going from
+	     * an empty to a non-empty buffer, since we think we know where
+	     * the first request byte actually is.
+	     */
+	    pdevPriv->curPtrs.requestFirstByte = bufPtrs->requestFirstByte;
+	    pdevPriv->reqPtr =
+		(Pdev_Request *)&pdevPriv->inBuf[bufPtrs->requestFirstByte];
+	    pdevPriv->inPtr = (char *)NULL;
+	    pdevPriv->state &= ~PDEV_REQ_EMPTY;
+    }
+
+    /*
+     * Then the extent of the read buffer.
+     */
+    pdevPriv->curPtrs.readFirstByte = bufPtrs->readFirstByte;
+    if (bufPtrs->readFirstByte == -1) {
+	int   numBytes;
+
+	pdevPriv->state |= PDEV_READ_EMPTY;
+	pdevPriv->outPtr = pdevPriv->outBuf;
+
+	numBytes = Buf_Size(pdevPriv->overflow);
+	if (numBytes > OUT_BUF_SIZE) {
+	    numBytes = OUT_BUF_SIZE;
+	}
+	if (numBytes != 0) {
+	    /*
+	     * Copy as much overflow data into the output buffer as possible.
+	     * The number of bytes actually copied is left in numBytes.
+	     * pdevPriv->outPtr is set to point to the next place to store
+	     * data in the buffer.
+	     */
+	    numBytes = Buf_GetBytes(pdevPriv->overflow, numBytes,
+				    (Byte *)pdevPriv->outBuf);
+	    pdevPriv->outPtr = &pdevPriv->outBuf[numBytes];
+
+	    if (numBytes != 0) {
+		/*
+		 * If bytes actually copied, the buffer is no longer empty.
+		 * Adjust the pointers and inform the kernel of the existence
+		 * of the data.
+		 */
+		pdevPriv->state &= ~PDEV_READ_EMPTY;
+		pdevPriv->curPtrs.readFirstByte = 0;
+		pdevPriv->curPtrs.readLastByte = numBytes - 1;
+		(void)Fs_IOControl (pdevPriv->streamID,
+				    IOC_PDEV_SET_PTRS,
+				    sizeof(pdevPriv->curPtrs),
+				    (Address)&pdevPriv->curPtrs,
+				    0,
+				    (Address)NULL);
+	    }
+	} else {
+	    /*
+	     * Need to make this -1 so PdevWriteClient works correctly
+	     * (it adds the number of bytes written to readLastByte without
+	     * checking its value)
+	     */
+	    pdevPriv->curPtrs.readLastByte = -1;
+	}
+    }
+}
+	
+/*-
+ *-----------------------------------------------------------------------
+ * PdevRequestHandled --
+ *	Tell the kernel that we have handled the request at
+ *	pdevPriv->reqPtr and update our own idea of the request buffer.
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	curPtrs.requestFirstByte is altered, inPtr is NULLed, the
+ *	PDEV_REQ_EMPTY flag will be set if the buffer is now empty.
+ *
+ *-----------------------------------------------------------------------
+ */
+static void
+PdevRequestHandled(pdevPriv)
+    PdevPrivPtr	pdevPriv;
+{
+    ReturnStatus status;
+
+    pdevPriv->inPtr = (char *)NULL;
+    pdevPriv->curPtrs.requestFirstByte += pdevPriv->reqPtr->hdr.messageSize;
+    pdevPriv->reqPtr =
+	(Pdev_Request *)&pdevPriv->inBuf[pdevPriv->curPtrs.requestFirstByte];
+
+    if (pdevPriv->curPtrs.requestFirstByte >
+	pdevPriv->curPtrs.requestLastByte) {
+	    pdevPriv->state |= PDEV_REQ_EMPTY;
+    }
+
+    if (DBG(PDEV)) {
+	ErrorF("RequestHandled(%d): req %d:%d read %d:%d\n",
+	       pdevPriv->client ? pdevPriv->client->index : -1,
+	       pdevPriv->curPtrs.requestFirstByte,
+	       pdevPriv->curPtrs.requestLastByte,
+	       pdevPriv->curPtrs.readFirstByte,
+	       pdevPriv->curPtrs.readLastByte);
+    }
+
+    status = Fs_IOControl(pdevPriv->streamID, IOC_PDEV_SET_PTRS,
+	    sizeof(pdevPriv->curPtrs), (Address) &pdevPriv->curPtrs,
+	    0, (Address) NULL);
+    if (status != 0) {
+	errno = Compat_MapCode(status);
+	if (DBG(PDEV)) {
+	    Error("RequestHandled: SET_PTRS");
+	}
+    }
+    if (pdevPriv->state & PDEV_REQ_EMPTY) {
+	pdevPriv->curPtrs.requestFirstByte =
+	    pdevPriv->curPtrs.requestLastByte = -1;
+    }
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * PdevWaitForReadable --
+ *	Wait for a connection to become readable, but only wait a
+ *	reasonable amount of time.
+ *
+ * Results:
+ *	Returns 0 if successful, -1 if an error occurs or no
+ *	files were readable.
+ *
+ * Side Effects:
+ *	The curPtrs field of the connection is updated.
+ *
+ *-----------------------------------------------------------------------
+ */
+static ReturnStatus
+PdevWaitForReadable (pdevPriv, selMask)
+    PdevPrivPtr	pdevPriv;   /* Connection to read */
+    int	    	  	*selMask;   /* Pre-allocated select mask (zeroed) */
+{
+    Pdev_BufPtrs  	bufPtrs;    /* New buffer pointers for stream */
+    struct timeval  	timeout;    /* Timeout interval for select */
+    int	    	  	numReady;   /* Number of ready streams */
+    int	    	  	numBytes;   /* Number of bytes read */
+    
+    Bit_Set (pdevPriv->streamID, selMask);
+    timeout.tv_sec = REASONABLE_TIME;
+    timeout.tv_usec = 0;
+
+    numReady = select(pdevPriv->streamID+1, selMask, (int *) 0, (int *)0,
+	    &timeout);
+    if (numReady < 1) {
+	return -1;
+    }
+
+    numBytes = read(pdevPriv->streamID, (char *) &bufPtrs, sizeof(bufPtrs));
+    if (numBytes == -1) {
+	if (DBG(PDEV)) {
+	    Error ("PdevWaitForReadable");
+	}
+	return (-1);
+    }
+    if (bufPtrs.magic != PDEV_BUF_PTR_MAGIC) {
+	if (DBG(PDEV)) {
+	    ErrorF ("Buffer magic numbers don't match\n");
+	}
+	return (-1);
+    }
+    PdevSetPtrs(pdevPriv, &bufPtrs);
+    return (0);
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * PdevConnFail --
+ *	Inform a client that it has been denied access.
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	None.
+ *
+ *-----------------------------------------------------------------------
+ */
+static void
+PdevConnFail (pdevPriv, swapped, reason)
+    PdevPrivPtr	pdevPriv;   	/* Failed connection */
+    Bool    	  	swapped;    	/* TRUE if client is byte-swapped */
+    char    	  	*reason;    	/* Reason for failure */
+{
+    int	    	  	*selMask;   	/* Mask for selecting on stream */
+    struct timeval  	timeout;    	/* Timeout for select */
+    struct timeval  	*pTimeOut;
+    int	    	  	numReady;   	/* Number of streams from select*/
+    int	    	  	numBytes;   	/* Number of bytes read/written */
+    int	    	  	length;	    	/* Length of reason */
+    xConnSetupPrefix	*c; 	    	/* Pointer to returned structure in
+					 * read-ahead buffer */
+    Pdev_BufPtrs  	bufPtrs;    	/* New pointers for buffer */
+
+
+    if (reason == (char *)NULL) {
+	length = 0;
+    } else {
+	length = strlen (reason);
+    }
+
+    c = (xConnSetupPrefix *)pdevPriv->outBuf;
+    c->success = xFalse;
+    c->lengthReason = length;
+    c->length = (length + 3) >> 2;
+
+    pdevPriv->curPtrs.readFirstByte = 0;
+    pdevPriv->curPtrs.readLastByte =
+	sizeof(xConnSetupPrefix) + (c->length << 2);
+
+    if (!swapped) {
+	c->majorVersion = X_PROTOCOL;
+	c->minorVersion = X_PROTOCOL_REVISION;
+    } else {
+	short	  n;
+
+	swaps(&c->length, n);
+	c->majorVersion = lswaps(X_PROTOCOL);
+	c->minorVersion = lswaps(X_PROTOCOL_REVISION);
+    }
+    
+    strcpy((char *)&c[1], reason);
+
+    if (Fs_IOControl(pdevPriv->streamID, IOC_PDEV_SET_PTRS,
+		     sizeof(pdevPriv->curPtrs),
+		     (Address)&pdevPriv->curPtrs,
+		     0, (Address)NULL) != 0) {
+			 return;
+    }
+    
+    Bit_Alloc (pdevPriv->streamID+1, selMask);
+
+    timeout.tv_sec = REASONABLE_TIME;
+    timeout.tv_usec = 0;
+    if (DBG(PDEV)) {
+	pTimeOut = (struct timeval *)0;
+    } else {
+	pTimeOut = &timeout;
+    }
+    
+    /*
+     * We give the client a REASONABLE_TIME to read the failure structure
+     * and message. If it doesn't read it in that time, it loses. When the
+     * read-ahead buffer is empty, the client has read the info.
+     */
+    do {
+	Bit_Set (pdevPriv->streamID, selMask);
+	numReady = select(pdevPriv->streamID+1, selMask, (int *)0, (int *)0,
+		pTimeOut);
+	if (numReady < 1) {
+	    if (DBG(PDEV)) {
+		ErrorF("PdevConnFail: didn't read in reasonable time\n");
+	    }
+	    break;
+	}
+	numBytes = read(pdevPriv->streamID, (char *) &bufPtrs,
+		sizeof(bufPtrs));
+	if ((numBytes != sizeof(bufPtrs))
+		|| (bufPtrs.magic != PDEV_BUF_PTR_MAGIC)) {
+	    break;
+	}
+	if (bufPtrs.readFirstByte == -1) {
+	    break;
+	} else {
+	    PdevSetPtrs(pdevPriv, &bufPtrs);
+	    while (!(pdevPriv->state & PDEV_REQ_EMPTY)) {
+		if (pdevPriv->reqPtr->hdr.operation == PDEV_CLOSE) {
+		    /*
+		     * If we get a close message before the data are all read,
+		     * just allow the client to go away gracefully -- reply to
+		     * the close and get the h*** out of here.
+		     */
+		    Pdev_Reply	reply;
+
+		    reply.magic = PDEV_REPLY_MAGIC;
+		    reply.status = SUCCESS;
+		    reply.selectBits = 0;
+		    reply.replySize = 0;
+		    reply.replyBuf = (Address)NULL;
+		    reply.signal = 0;
+		    reply.code = 0;
+		    (void)Fs_IOControl(pdevPriv->streamID,
+				       IOC_PDEV_REPLY,
+				       sizeof(reply), (Address)&reply,
+				       0, (Address)NULL);
+		    PdevRequestHandled(pdevPriv);
+		    goto done;
+		}
+		/*
+		 * Anything else we just drop on the floor
+		 */
+		PdevRequestHandled(pdevPriv);
+	    }
+	}
+    } while (!pTimeOut || (pTimeOut->tv_sec || pTimeOut->tv_usec));
+
+done:
+    Bit_Free (selMask);
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * Pdev_EstablishNewConnections --
+ *	Accept connections from new clients. 
+ *
+ * Results:
+ *	None returned. pNewClients and *pNumNew are filled in.
+ *
+ * Side Effects:
+ *	AllClientsMask and AllStreamsMask are altered. Fields in the
+ *	private structure for the new clients are filled and several
+ *	private structures are created.
+ *
+ *-----------------------------------------------------------------------
+ */
+void
+Pdev_EstablishNewConnections (pNewClients, pNumNew)
+    ClientPtr  	  	*pNewClients;	/* Array to fill in */
+    int	    	  	*pNumNew; 	/* Number of new connections
+					 * established */
+{
+    Pdev_Notify	  	note;	    	/* Notification of new stream */
+    PdevPrivPtr	pdevPriv;   		/* New private information for us */
+    ClntPrivPtr	  	pPriv;	    	/* New private information for client */
+    ClientPtr	  	client;	    	/* New client */
+    Pdev_Request	*pdevReq;   	/* Pointer to current request */
+    Pdev_Reply 	openReply;  		/* Reply to open request */
+    Pdev_SetBufArgs	bufArgs;    	/* Structure to set r/w buffers */
+    int	    	  	numBytes;   	/* Number of bytes read */
+    xConnClientPrefix	*xccp;	    	/* Client's description of itself */
+    Boolean    	  	swapped;    	/* Set TRUE if client is byte-swapped.
+					 * FALSE otherwise. */
+    Boolean 	  	writeBehind;	/* For IOC_PDEV_WRITE_BEHIND */
+
+    pNewClients += *pNumNew;
+    writeBehind = TRUE;	    	/* Turn on write-behind */
+
+    while (1) {
+	numBytes = read(Pdev_Conn, (char *) &note, sizeof(note));
+	if ((numBytes != sizeof(note)) || (note.magic != PDEV_NOTIFY_MAGIC)) {
+	    return;
+	}
+
+	Ioc_SetBits(note.newStreamID, IOC_NON_BLOCKING);
+	
+	pdevPriv = (PdevPrivPtr) malloc(sizeof(PdevPrivRec));
+	pdevPriv->streamID = 	    	    	note.newStreamID;
+	pdevPriv->client =  	    	    	NullClient;
+	pdevPriv->state =   	    	    	PDEV_REQ_EMPTY|PDEV_READ_EMPTY;
+	pdevPriv->curPtrs.magic =   	    	PDEV_BUF_PTR_MAGIC;
+	pdevPriv->curPtrs.requestFirstByte =	-1;
+	pdevPriv->curPtrs.requestLastByte = 	-1;
+	pdevPriv->curPtrs.readFirstByte =   	-1;
+	pdevPriv->curPtrs.readLastByte =    	-1;
+	pdevPriv->inPtr =   	    	    	(char *)NULL;
+	pdevPriv->outPtr =  	    	    	pdevPriv->outBuf;
+	pdevPriv->overflow =	    	    	Buf_Init(0);
+	pdevPriv->bigReq =  	    	    	(char *)NULL;
+	pdevPriv->bigReqPtr =	    	    	(char *)NULL;
+
+	pPriv = (ClntPrivPtr) malloc(sizeof(ClntPrivRec));
+	pPriv->readProc =   	    	    	PdevReadClient;
+	pPriv->writeProc =  	    	    	PdevWriteClient;
+	pPriv->closeProc =  	    	    	PdevCloseClient;
+	pPriv->mask =	    	    	    	(int *)0;
+	pPriv->ready =	    	    	    	(int *)0;
+	pPriv->maskWidth =  	    	    	0;
+	pPriv->devicePrivate = 	    	    	(pointer)pdevPriv;
+	
+	bufArgs.requestBufAddr = pdevPriv->inBuf;
+	bufArgs.requestBufSize = IN_BUF_SIZE;
+	bufArgs.readBufAddr = pdevPriv->outBuf;
+	bufArgs.readBufSize = OUT_BUF_SIZE;
+
+	(void)Fs_IOControl(pdevPriv->streamID, IOC_PDEV_SET_BUF,
+			   sizeof(bufArgs), (Address)&bufArgs,
+			   0, (Address)NULL);
+	(void)Fs_IOControl(pdevPriv->streamID, IOC_PDEV_WRITE_BEHIND,
+			   sizeof(Boolean), (Address) &writeBehind,
+			   0, (Address)NULL);
+
+	ExpandMasks (pPriv, pdevPriv->streamID);
+
+	/*
+	 * Wait for and handle the OPEN request. If the request comes from
+	 * an un-authorized source, we return a status of FS_NO_ACCESS. If
+	 * there's an error, we close the stream and free everything.
+	 */
+	if ((PdevWaitForReadable(pdevPriv, pPriv->ready) != 0) ||
+	    (pdevPriv->reqPtr->hdr.operation != PDEV_OPEN)) {
+		(void) close(pdevPriv->streamID);
+		free((char *)pdevPriv);
+		free((char *)pPriv);
+		continue;
+	}
+	pdevReq = pdevPriv->reqPtr;
+
+	openReply.magic =   	PDEV_REPLY_MAGIC;
+	openReply.selectBits = 	FS_WRITABLE | FS_READABLE;
+	openReply.replySize =	0;
+	openReply.replyBuf =	(Address)NULL;
+	openReply.signal = 0;
+	openReply.code = 0;
+
+	if (InvalidHost(FamilySprite, pdevReq->param.open.uid,
+			pdevReq->param.open.hostID)) {
+	    openReply.status = FS_NO_ACCESS;
+	    (void) Fs_IOControl(pdevPriv->streamID, IOC_PDEV_REPLY,
+				sizeof(openReply), (Address)&openReply,
+				0, (Address)NULL);
+	    
+	    (void) close(pdevPriv->streamID);
+	    free((char *)pdevPriv);
+	    free((char *)pPriv);
+	    continue;
+	} else {
+	    openReply.status = SUCCESS;
+	    (void) Fs_IOControl(pdevPriv->streamID, IOC_PDEV_REPLY,
+				sizeof(openReply), (Address)&openReply,
+				0, (Address)NULL);
+	    
+	}
+
+	PdevRequestHandled(pdevPriv);
+
+	/*
+	 * Once the OPEN operation has been received, we must wait for the
+	 * client to write an xConnClientPrefix on the device. Since the
+	 * Sprite Xlib doesn't pass any extra authorization string junk,
+	 * we only need to read the prefix.
+	 */
+
+	if (PdevWaitForReadable(pdevPriv, pPriv->ready) != 0) {
+	    (void) close(pdevPriv->streamID);
+	    free((char *)pdevPriv);
+	    free((char *)pPriv);
+	    continue;
+	}
+	pdevReq = pdevPriv->reqPtr;
+
+	if (pdevReq->hdr.operation == PDEV_WRITE_ASYNC) {
+	    pdevReq->hdr.operation = PDEV_WRITE;
+	}
+	if ((pdevReq->hdr.magic != PDEV_REQUEST_MAGIC) ||
+	    (pdevReq->hdr.operation != PDEV_WRITE) ||
+	    (pdevReq->hdr.requestSize < sizeof(xConnClientPrefix))) {
+		(void) close(pdevPriv->streamID);
+		free((char *)pdevPriv);
+		free((char *)pPriv);
+		continue;
+	}
+
+	xccp = (xConnClientPrefix *)&pdevReq[1];
+	if (xccp->byteOrder != whichByteIsFirst) {
+	    SwapConnClientPrefix (xccp);
+	    swapped = TRUE;
+	} else {
+	    swapped = FALSE;
+	}
+
+	if ((xccp->majorVersion != X_PROTOCOL) ||
+	    (xccp->minorVersion != X_PROTOCOL_REVISION)) {
+		PdevRequestHandled(pdevPriv);
+		PdevConnFail(pdevPriv, swapped, "Protocol version mismatch");
+		(void) close(pdevPriv->streamID);
+		free((char *)pdevPriv);
+		free((char *)pPriv);
+		continue;
+	}
+	if ((xccp->nbytesAuthProto != 0) || (xccp->nbytesAuthString != 0)) {
+	    PdevRequestHandled(pdevPriv);
+	    PdevConnFail(pdevPriv, swapped,
+			    "Can't handle authorization strings");
+	    (void) close(pdevPriv->streamID);
+	    free((char *)pdevPriv);
+	    free((char *)pPriv);
+	    continue;
+	}
+
+	client = (ClientPtr)NextAvailableClient();
+	if (client == NullClient) {
+	    PdevRequestHandled(pdevPriv);
+	    PdevConnFail(pdevPriv, swapped, "Too many clients");
+	    (void) close(pdevPriv->streamID);
+	    free((char *)pdevPriv);
+	    free((char *)pPriv);
+	    continue;
+	} else {
+	    pdevPriv->client = client;
+	    client->osPrivate = (pointer)pPriv;
+	    client->swapped = swapped;
+	}
+	
+	PdevRequestHandled(pdevPriv);
+
+	if (DBG(PDEV) || DBG(CONN)) {
+	    ErrorF ("New Pdev connection: client %d (newID = %d)\n",
+		    client->index, pdevPriv->streamID);
+	}
+	    
+	if ((pdevPriv->state & PDEV_REQ_EMPTY) == 0) {
+	    /*
+	     * If there's still stuff left in the request buffer (beyond
+	     * the initial open request), mark the stream as having input...
+	     */
+	    Bit_Set(pdevPriv->streamID, ClientsWithInputMask);
+	}
+	
+	*pNewClients = client;
+	pNewClients++;
+	(*pNumNew)++;
+
+	/*
+	 * If we're only listening to one client, add the new client's
+	 * stream to the saved AllClients and AllStreams masks so it is
+	 * included when the grab is released. Otherwise, we can just
+	 * add the stream to the regular AllClients and AllStreams
+	 * masks.
+	 */
+	if (GrabDone) {
+	    Bit_Set (pdevPriv->streamID, SavedAllClientsMask);
+	    Bit_Set (pdevPriv->streamID, SavedAllStreamsMask);
+	} else {
+	    Bit_Set (pdevPriv->streamID, AllClientsMask);
+	    Bit_Set (pdevPriv->streamID, AllStreamsMask);
+	}
+    }
+}
+    
+/*-
+ *-----------------------------------------------------------------------
+ * PdevCloseClient --
+ *	Some client is being booted. Free up our part of its connection
+ *	resources. XXX: Maybe we should wait for the read-ahead buffer to
+ *	drain?
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	The pseudo-device stream is closed and the private data freed
+ *	The stream is removed from these masks:
+ *	    AllStreamsMask, SavedAllStreamsMask, AllClientsMask,
+ *	    SavedAllClientsMask, ClientsWithInputMask
+ *
+ *-----------------------------------------------------------------------
+ */
+static void
+PdevCloseClient (pPriv)
+    ClntPrivPtr	  pPriv;    	/* Private data for client whose connection
+				 * should be closed */
+{
+    register PdevPrivPtr pdevPriv;
+    register int  	    streamID;
+
+    pdevPriv = (PdevPrivPtr) pPriv->devicePrivate;
+    
+    streamID = pdevPriv->streamID;
+    close(streamID);
+    Bit_Clear(streamID, AllStreamsMask);
+    Bit_Clear(streamID, SavedAllStreamsMask);
+    Bit_Clear(streamID, AllClientsMask);
+    Bit_Clear(streamID, SavedAllClientsMask);
+    Bit_Clear(streamID, ClientsWithInputMask);
+    Buf_Destroy(pdevPriv->overflow, TRUE);
+
+    if (pdevPriv->state & PDEV_COLLECTING) {
+	free((char *) pdevPriv->bigReq);
+    }
+	    
+    free((char *) pdevPriv);
+}
+
+#define request_length(req, cli) \
+ 	(((cli)->swapped?lswaps(((xReq *)(req))->length):\
+	  ((xReq *)(req))->length) << 2)
+
+
+/*-
+ *-----------------------------------------------------------------------
+ * PdevReadClient --
+ *	Return one request from the given client. If the client is being
+ *	naughty, we call ConnectionClosed to close the thing down.
+ *	The client will be closed down as well if the stream which acted
+ *	up was the only one open for the client. We still return NULL
+ *	with status 0 from there, but the client is gone...
+ *
+ * Results:
+ *	The request buffer.
+ *
+ * Side Effects:
+ *	ClientsWithInputMask may be modified.
+ *
+ *-----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static char *
+PdevReadClient (pPriv, pStatus, oldbuf)
+    ClntPrivPtr	  	pPriv;	    /* Client with input */
+    int	    	  	*pStatus;   /* Result of read:
+				     *	>0 -- number of bytes in the request
+				     *   0  -- not all the request is there
+				     *	<0 -- indicates an error */
+    char    	  	*oldbuf;    /* The previous buffer */
+{
+    PdevPrivPtr  	pdevPriv;   /* Private data for the client */
+    int	    	  	need;	    /* Number of bytes needed for the
+				     * current request */
+    xReq    	  	*reqPtr;    /* Request to give back */
+    Pdev_BufPtrs  	bufPtrs;    /* New pointers for buffer */
+    int	    	  	numBytes;
+    Pdev_ReplyData 	reply;
+
+    pdevPriv = (PdevPrivPtr) pPriv->devicePrivate;
+
+    Bit_Clear (pdevPriv->streamID, ClientsWithInputMask);
+    
+    if (pdevPriv->state & PDEV_REQ_EMPTY) {
+	if (Bit_IsSet(pdevPriv->streamID, pPriv->ready)) {
+	    /*
+	     * If the request buffer is empty, we think, then we need to see if
+	     * the kernel has anything for us. However, we only do the read on
+	     * the device if we actually got here because selecdt says the
+	     * stream is ready. This prevents a client from hogging the server
+	     * in an obnoxious fashion...
+	     */
+	    numBytes = read(pdevPriv->streamID, &bufPtrs, sizeof(bufPtrs));
+	    if (numBytes == -1) {
+		if (errno != EWOULDBLOCK) {
+		    if (DBG(PDEV)) {
+			Error("Reading buffer pointers");
+		    }
+		    *pStatus = -1;
+		    return((char *)NULL);
+		} else {
+		    /*
+		     * Wasn't actually anything to read. Go on to
+		     * the next client...
+		     */
+		    *pStatus = 0;
+		    SchedYield();
+		    return ((char *)NULL);
+		}
+	    }
+	    if ((numBytes != sizeof(bufPtrs)) ||
+		(bufPtrs.magic != PDEV_BUF_PTR_MAGIC)) {
+		    if (DBG(PDEV)) {
+			ErrorF("Improper data when reading buffer pointers");
+		    }
+		    *pStatus = -1;
+		    return ((char *)NULL);
+	    }
+	    PdevSetPtrs(pdevPriv, &bufPtrs);
+	}
+	if (pdevPriv->state & PDEV_REQ_EMPTY) {
+	    /*
+	     * If there are still no requests, there's nothing more to
+	     * be done. PdevSetPtrs will have copied any overflow
+	     * to the read-ahead buffer, so...
+	     */
+	    *pStatus = 0;
+	    SchedYield();
+	    return ((char *)NULL);
+	}
+    }
+
+    Bit_Clear (pdevPriv->streamID, pPriv->ready);
+    
+    /*
+     * Process the requests until we get one that's a WRITE request,
+     * then set inPtr to the data for the request and break out
+     * of the loop.
+     */
+    while ((pdevPriv->inPtr == (char *)NULL) &&
+	   !(pdevPriv->state & PDEV_REQ_EMPTY))
+    {
+	switch (pdevPriv->reqPtr->hdr.operation) {
+	    case PDEV_WRITE_ASYNC:
+	    case PDEV_WRITE:
+		if (DBG(PDEV)) {
+		    ErrorF("client %d: PDEV_WRITE(%d)\n",
+			   pdevPriv->client->index,
+			   pdevPriv->reqPtr->hdr.requestSize);
+		}
+		pdevPriv->inPtr = (char *)&pdevPriv->reqPtr[1];
+		break;
+	    case PDEV_CLOSE:
+		/*
+		 * We like closes. We just return -1 to cause the
+		 * connection to be aborted.
+		 */
+		if (DBG(PDEV) || DBG(CONN)) {
+		    ErrorF("client %d: PDEV_CLOSE\n", pdevPriv->client->index);
+		}
+		reply.magic = PDEV_REPLY_MAGIC;
+		reply.status = SUCCESS;
+		reply.selectBits = 0;
+		reply.replySize = 0;
+		reply.replyBuf = (Address)NULL;
+		reply.signal = 0;
+		reply.code = 0;
+		(void)Fs_IOControl(pdevPriv->streamID,
+				   IOC_PDEV_REPLY,
+				   sizeof(reply), (Address)&reply,
+				   0, (Address)NULL);
+		PdevRequestHandled(pdevPriv);
+		*pStatus = -1;
+		return ((char *)NULL);
+	    case PDEV_IOCTL: {
+		/*
+		 * All this should be unnecessary, but we reply to it
+		 * anyway and pretend we know what we're doing when it
+		 * comes to the IOC_NUM_READABLE
+		 */
+		char    *inBuffer;
+		int	replyBuf;
+		int	command;
+		
+		reply.magic = PDEV_REPLY_MAGIC;
+		reply.status = SUCCESS;
+		reply.selectBits =
+		    ((pdevPriv->state & PDEV_READ_EMPTY)?0:FS_READABLE) |
+			FS_WRITABLE;
+		reply.replySize = 0;
+		reply.replyBuf = (Address)&replyBuf;
+		
+		if (pdevPriv->reqPtr->hdr.requestSize) {
+		    inBuffer = (char *)&pdevPriv->reqPtr[1];
+		} else {
+		    inBuffer = (char *)NULL;
+		}
+		if (DBG(PDEV)) {
+		    ErrorF("client %d: PDEV_IOCTL(%x, %d, %x, %d, ...)\n",
+			   pdevPriv->client->index,
+			   pdevPriv->reqPtr->param.ioctl.command,
+			   pdevPriv->reqPtr->hdr.requestSize,
+			   inBuffer,
+			   pdevPriv->reqPtr->hdr.replySize);
+		}
+		
+		switch (pdevPriv->reqPtr->param.ioctl.command) {
+		    case IOC_NUM_READABLE:
+			/*
+			 * XXX: This is already handled by the
+			 * kernel since it knows how much it has
+			 * more accurately than I do.
+			 */
+			reply.replySize = sizeof(int);
+			replyBuf = pdevPriv->curPtrs.readLastByte -
+			    pdevPriv->curPtrs.readFirstByte;
+			break;
+		    case IOC_SET_BITS:
+		    case IOC_SET_FLAGS:
+			break;
+		    case IOC_CLEAR_BITS:
+		    case IOC_GET_FLAGS:
+			replyBuf = 0;
+			reply.replySize = sizeof(int);
+			break;
+		    default:
+			if (DBG(PDEV)) {
+			    ErrorF("Invalid IOCTL %x\n",
+				   pdevPriv->reqPtr->param.ioctl.command);
+			}
+			reply.status = FS_DEVICE_OP_INVALID;
+			break;
+		}
+		reply.signal = 0;
+		reply.code = 0;
+		if (reply.replySize > 0) {
+		    *(int *)reply.data = replyBuf;
+		    command = IOC_PDEV_SMALL_REPLY;
+		} else {
+		    command = IOC_PDEV_REPLY;
+		}
+		(void)Fs_IOControl(pdevPriv->streamID,
+				   command,
+				   sizeof(reply), (Address)&reply,
+				   0, (Address)NULL);
+		PdevRequestHandled(pdevPriv);
+		break;
+	    }
+	    default:
+		/*
+		 * Bad pseudo-device request -- close the beastie down
+		 */
+		reply.magic = PDEV_REPLY_MAGIC;
+		reply.status = FS_DEVICE_OP_INVALID;
+		reply.selectBits = 0;
+		reply.replySize = 0;
+		reply.replyBuf = (Address)NULL;
+		reply.signal = 0;
+		reply.code = 0;
+		if (DBG(PDEV)) {
+		    ErrorF("Bad new pdev request %d client %d\n",
+			   pdevPriv->reqPtr->hdr.operation,
+			   pdevPriv->client->index);
+		}
+		(void)Fs_IOControl(pdevPriv->streamID,
+				   IOC_PDEV_REPLY,
+				   sizeof(reply), (Address)&reply,
+				   0, (Address)NULL);
+		PdevRequestHandled(pdevPriv);
+		*pStatus = -1;
+		return ((char *)NULL);
+	}
+    }
+    if (pdevPriv->inPtr == (char *)NULL) {
+	/*
+	 * If didn't reach a PDEV_WRITE request, there's nothing more
+	 * to do...
+	 */
+	Bit_Clear(pdevPriv->streamID, ClientsWithInputMask);
+	SchedYield();
+	*pStatus = 0;
+	return ((char *)NULL);
+    }
+    
+    if (pdevPriv->state & PDEV_COLLECTING) {
+	/*
+	 * Collecting an X request that was broken across a WRITE boundary.
+	 * bigReqPtr points to the next place to store stuff for the
+	 * request, while need contains the number of bytes still needed
+	 * to fill the request. bigReq has been allocated to contain
+	 * the requisite space.
+	 */
+	need = min(pdevPriv->need, pdevPriv->reqPtr->hdr.requestSize);
+	bcopy(pdevPriv->inPtr, pdevPriv->bigReqPtr, need);
+	pdevPriv->bigReqPtr += need;
+	pdevPriv->need -= need;
+	pdevPriv->inPtr += need;
+	if (pdevPriv->need != 0) {
+	    PdevRequestHandled(pdevPriv);
+	    *pStatus = 0;
+	    return ((char *)NULL);
+	} else {
+	    pdevPriv->reqPtr->hdr.requestSize -= need;
+	    need = request_length(pdevPriv->bigReq, pdevPriv->client);
+	    *pStatus = need;
+	    pdevPriv->state &= ~PDEV_COLLECTING;
+	    Bit_Set(pdevPriv->streamID, ClientsWithInputMask);
+	    if (DBG(PDEV)) {
+		ErrorF("XRequest(%d, %d) #%d\n", pdevPriv->client->index,
+		       ((xReq *)pdevPriv->bigReq)->reqType,
+		       pdevPriv->client->sequence + 1);
+	    }
+	    return (pdevPriv->bigReq);
+	}
+    } else if (pdevPriv->state & PDEV_COLLECTING_HEADER) {
+	/*
+	 * The header for the request was broken across a WRITE boundary.
+	 * bigReqPtr points to the place we left off in the header,
+	 * while bigReq points to a piece of memory big enough for
+	 * an xReq and no more.  Once the entire request header is seen,
+	 * we can allocate a large enough buffer for the entire request.
+	 */
+	need = min(pdevPriv->need, pdevPriv->reqPtr->hdr.requestSize);
+	bcopy(pdevPriv->inPtr, pdevPriv->bigReqPtr, need);
+	pdevPriv->bigReqPtr += need;
+	pdevPriv->need -= need;
+	pdevPriv->inPtr += need;
+	if (pdevPriv->need != 0) {
+	    /*
+	     * XXX: Shouldn't happen
+	     */
+	    PdevRequestHandled(pdevPriv);
+	    *pStatus = 0;
+	    return ((char *)NULL);
+	} else {
+	    /*
+	     * We've now gotten a complete header. To keep this simple
+	     * we just allocate the needed buffer, copy the header in,
+	     * switch to COLLECTING state from COLLECTING_HEADER and
+	     * return a blocked read. We'll get called again (very
+	     * soon) to fill out the request...
+	     */
+	    xReq	*xreq;
+
+	    xreq = (xReq *)pdevPriv->bigReq;
+	    need = request_length(xreq, pdevPriv->client);
+	    pdevPriv->bigReq = malloc((unsigned) need);
+	    bcopy(xreq, pdevPriv->bigReq, sizeof(xReq));
+	    pdevPriv->bigReqPtr += sizeof(xReq);
+	    pdevPriv->need = need - sizeof(xReq);
+	    pdevPriv->state ^= PDEV_COLLECTING|PDEV_COLLECTING_HEADER;
+	    free((char *) xreq);
+	    *pStatus = 0;
+	    return ((char *)NULL);
+	}
+    }
+    if (pdevPriv->bigReq != (char *)NULL) {
+	/*
+	 * If we're not collecting anything and there's something
+	 * pointed to by bigReq, it must be old and should be
+	 * deallocated.
+	 */
+	free((char *) pdevPriv->bigReq);
+	pdevPriv->bigReq = (char *)NULL;
+    }
+    if (pdevPriv->reqPtr->hdr.requestSize < sizeof(xReq)) {
+	if (pdevPriv->reqPtr->hdr.requestSize != 0) {
+	    /*
+	     * Only go into the COLLECTING_HEADER state if there are
+	     * data bytes left in the request (i.e. it's really a broken
+	     * header, not just an exhausted WRITE request).
+	     */
+	    pdevPriv->state |= PDEV_COLLECTING_HEADER;
+	    pdevPriv->bigReq = (char *) malloc(sizeof(xReq));
+	    bcopy(pdevPriv->inPtr, pdevPriv->bigReq,
+		    pdevPriv->reqPtr->hdr.requestSize);
+	    pdevPriv->bigReqPtr =
+		pdevPriv->bigReq + pdevPriv->reqPtr->hdr.requestSize;
+	    pdevPriv->need = sizeof(xReq) - pdevPriv->reqPtr->hdr.requestSize;
+	}
+	PdevRequestHandled(pdevPriv);
+	*pStatus = 0;
+	return ((char *)NULL);
+    } else {
+	/*
+	 * Can actually figure out the size of the request. Store it
+	 * in 'need'
+	 */
+	need = request_length (pdevPriv->inPtr, pdevPriv->client);
+	
+	if (need > pdevPriv->reqPtr->hdr.requestSize) {
+	    /*
+	     * The X request didn't fit in PDEV_WRITE request, so
+	     * we mark the stream as collecting a (big) request, copy
+	     * in whatever data we have and return a blocked read status.
+	     * Note we DO NOT yield the server since there may be another
+	     * write request pending.
+	     */
+	    pdevPriv->state |= PDEV_COLLECTING;
+	    pdevPriv->bigReq = (char *) malloc((unsigned) need);
+	    bcopy(pdevPriv->inPtr, pdevPriv->bigReq,
+		    pdevPriv->reqPtr->hdr.requestSize);
+	    pdevPriv->bigReqPtr =
+		pdevPriv->bigReq + pdevPriv->reqPtr->hdr.requestSize;
+	    pdevPriv->need = need - pdevPriv->reqPtr->hdr.requestSize;
+	    PdevRequestHandled(pdevPriv);
+	    *pStatus = 0;
+	    return ((char *)NULL);
+	} else {
+	    reqPtr = (xReq *)pdevPriv->inPtr;
+	    pdevPriv->inPtr += need;
+	    pdevPriv->reqPtr->hdr.requestSize -= need;
+	    *pStatus = need;
+	    Bit_Set(pdevPriv->streamID, ClientsWithInputMask);
+	    if (DBG(PDEV)) {
+		ErrorF("XRequest(%d, %d) #%d\n", pdevPriv->client->index,
+		       reqPtr->reqType, pdevPriv->client->sequence+1);
+	    }
+	    return ((char *)reqPtr);
+	}
+    }
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * PdevWriteClient --
+ *	Write data to the client. Data are copied into the read buffer
+ *	as much as possible. Data that cannot fit in the read buffer are
+ *	placed in the overflow buffer until the kernel catches up with us,
+ *	at which point the data are copied back down to the read buffer.
+ *	Output packets may be broken at arbitrary points and all
+ *	transmissions are rounded to be a multiple of 32 bits long. Because
+ *	of this, if the entire packet fits into the read buffer, the
+ *	pad bytes do too.
+ *
+ * Results:
+ *	Number of bytes written.
+ *
+ * Side Effects:
+ *	The data bytes are stuffed into the buffer for the client, awaiting
+ *	a read request from the client.
+ *
+ *-----------------------------------------------------------------------
+ */
+static int
+PdevWriteClient (pPriv, numBytes, xRepPtr)
+    ClntPrivPtr	  pPriv;    	/* Client to receive the data */
+    int	    	  numBytes; 	/* Number of bytes (unrounded) */
+    Address    	  xRepPtr; 	/* The data bytes */
+{
+    int	    	  	    rndNumBytes;    /* Number of bytes, rounded to a
+					     * longword */
+    int	    	  	    pad = 0;	    /* Padding bytes */
+    register int  	    padding;	    /* Number of bytes needed */
+    register PdevPrivPtr    pdevPriv;	    /* Data private to client */
+    ReturnStatus	    status;
+
+    rndNumBytes = (numBytes + 3) & ~3;
+
+    pdevPriv = (PdevPrivPtr) pPriv->devicePrivate;
+    
+    
+    padding = rndNumBytes - numBytes;
+
+    if (pdevPriv->curPtrs.readLastByte == (OUT_BUF_SIZE - 1)) {
+	/*
+	 * Output buffer is full -- must copy data to overflow buffer
+	 */
+	if (DBG(PDEV)) {
+	    ErrorF("WriteClient(%d): overflow -- ", pdevPriv->client->index);
+	}
+	Buf_AddBytes(pdevPriv->overflow, numBytes, (Byte *)xRepPtr);
+	if (padding != 0) {
+	    Buf_AddBytes(pdevPriv->overflow, padding, (Byte *)&pad);
+	}
+    } else {
+	int 	  numWrite;
+
+	numWrite = min(numBytes,OUT_BUF_SIZE - pdevPriv->curPtrs.readLastByte);
+	bcopy((char *) xRepPtr, (char *) pdevPriv->outPtr, numWrite);
+	numBytes -= numWrite;
+
+	/*
+	 * Update the output pointers. Note that since readLastByte starts
+	 * at -1, adding numWrite will point to the last valid byte of data
+	 * in the buffer...
+	 */
+	pdevPriv->curPtrs.readLastByte += numWrite;
+	pdevPriv->outPtr += numWrite;
+	
+	if (numBytes != 0) {
+	    /*
+	     * Didn't manage to fit the entire request into the read-ahead
+	     * buffer. Copy excess to overflow.
+	     */
+	    Buf_AddBytes(pdevPriv->overflow,
+			 numBytes,
+			 ((Byte *)xRepPtr) + numWrite);
+	    if (padding != 0) {
+		Buf_AddBytes(pdevPriv->overflow,
+			     padding,
+			     (Byte *)&pad);
+	    }
+	} else if (padding != 0) {
+	    /*
+	     * Because the buffer is a multiple of 32-bits long, any rounding
+	     * that needs to be done is guaranteed to fit if the unrounded
+	     * packet fit.
+	     */
+	    bcopy((char *) &pad, pdevPriv->outPtr, padding);
+	    pdevPriv->curPtrs.readLastByte += padding;
+	    pdevPriv->outPtr += padding;
+	}
+
+	/*
+	 * Inform kernel of new read buffer extents
+	 */
+	status = Fs_IOControl(pdevPriv->streamID, IOC_PDEV_SET_PTRS,
+		sizeof(pdevPriv->curPtrs), (Address) &pdevPriv->curPtrs,
+		0, (Address) NULL);
+	if (status != 0) {
+	    errno = Compat_MapCode(status);
+	    if (DBG(PDEV)) {
+		Error("WriteClient: SET_PTRS");
+	    }
+	}
+	if (DBG(PDEV)) {
+	    ErrorF("WriteClient(%d): req %d:%d read %d:%d ",
+		   pdevPriv->client->index,
+		   pdevPriv->curPtrs.requestFirstByte,
+		   pdevPriv->curPtrs.requestLastByte,
+		   pdevPriv->curPtrs.readFirstByte,
+		   pdevPriv->curPtrs.readLastByte);
+	    
+	    switch (((xReply *)xRepPtr)->generic.type) {
+		case X_Reply:
+		    ErrorF("Reply to %d\n",
+			   ((xReply *)xRepPtr)->generic.sequenceNumber);
+		    break;
+		case X_Error:
+		    ErrorF("Error for %d\n",
+			   ((xReply *)xRepPtr)->generic.sequenceNumber);
+		    break;
+		case KeyPress: ErrorF("KeyPress event\n"); break;
+		case KeyRelease: ErrorF("KeyRelease event\n"); break;
+		case ButtonPress: ErrorF("ButtonPress event\n"); break;
+		case ButtonRelease: ErrorF("ButtonRelease event\n"); break;
+		case MotionNotify: ErrorF("MotionNotify event\n"); break;
+		case EnterNotify: ErrorF("EnterNotify event\n"); break;
+		case LeaveNotify: ErrorF("LeaveNotify event\n"); break;
+		case FocusIn: ErrorF("FocusIn event\n"); break;
+		case FocusOut: ErrorF("FocusOut event\n"); break;
+		case KeymapNotify: ErrorF("KeymapNotify event\n"); break;
+		case Expose: ErrorF("Expose event\n"); break;
+		case GraphicsExpose: ErrorF("GraphicsExpose event\n"); break;
+		case NoExpose: ErrorF("NoExpose event\n"); break;
+		case VisibilityNotify: ErrorF("VisibilityNotify event\n"); break;
+		case CreateNotify: ErrorF("CreateNotify event\n"); break;
+		case DestroyNotify: ErrorF("DestroyNotify event\n"); break;
+		case UnmapNotify: ErrorF("UnmapNotify event\n"); break;
+		case MapNotify: ErrorF("MapNotify event\n"); break;
+		case MapRequest: ErrorF("MapRequest event\n"); break;
+		case ReparentNotify: ErrorF("ReparentNotify event\n"); break;
+		case ConfigureNotify: ErrorF("ConfigureNotify event\n"); break;
+		case ConfigureRequest: ErrorF("ConfigureRequest event\n"); break;
+		case GravityNotify: ErrorF("GravityNotify event\n"); break;
+		case ResizeRequest: ErrorF("ResizeRequest event\n"); break;
+		case CirculateNotify: ErrorF("CirculateNotify event\n"); break;
+		case CirculateRequest: ErrorF("CirculateRequest event\n"); break;
+		case PropertyNotify: ErrorF("PropertyNotify event\n"); break;
+		case SelectionClear: ErrorF("SelectionClear event\n"); break;
+		case SelectionRequest: ErrorF("SelectionRequest event\n"); break;
+		case SelectionNotify: ErrorF("SelectionNotify event\n"); break;
+		case ColormapNotify: ErrorF("ColormapNotify event\n"); break;
+		case ClientMessage: ErrorF("ClientMessage event\n"); break;
+		case MappingNotify: ErrorF("MappingNotify event\n"); break;
+		default:
+		    ErrorF("Data\n");
+	    }
+	}
+    }
+    return (numBytes);
+}
+@
+
+
+1.11
+log
+@Added support for PDEV_WRITE_ASYNC
+(whichis easy, because writes were already async)
+@
+text
+@d2 2
+a3 3
+ * newpdev.c --
+ *	Functions for handling a connection to a client over a new
+ *	pseudo-device.
+d6 1
+a6 1
+ *	which the client reads, and a 2K input buffer, to which it writes.
+d40 1
+a40 1
+"$Header: /a/X/src/cmds/Xsprite/os/RCS/pdev.c,v 1.10 88/11/28 10:37:45 ouster Exp $ SPRITE (Berkeley)";
+d489 2
+d611 3
+a613 1
+	
+d821 1
+a821 1
+    Pdev_Reply 	reply;
+d909 2
+d925 2
+a926 1
+		int	    replyBuf;
+d953 1
+a953 1
+			 * XXX: This should be handled by the
+d977 8
+d986 1
+a986 1
+				   IOC_PDEV_REPLY,
+d1001 2
+@
+
+
+1.10
+log
+@Changes for new pdev header format.
+@
+text
+@d41 1
+a41 1
+"$Header: pdev.c,v 1.9 88/10/01 10:55:51 ouster Exp $ SPRITE (Berkeley)";
+d647 3
+d884 1
+@
+
+
+1.9
+log
+@Change FS_NEW_MASTER => FS_PDEV_MASTER.
+@
+text
+@d41 1
+a41 1
+"$Header: pdev.c,v 1.8 88/09/16 10:57:37 ouster Exp $ SPRITE (Berkeley)";
+d291 1
+a291 1
+    pdevPriv->curPtrs.requestFirstByte += pdevPriv->reqPtr->messageSize;
+d477 1
+a477 1
+		if (pdevPriv->reqPtr->operation == PDEV_CLOSE) {
+d598 1
+a598 1
+	    (pdevPriv->reqPtr->operation != PDEV_OPEN)) {
+d647 3
+a649 3
+	if ((pdevReq->magic != PDEV_REQUEST_MAGIC) ||
+	    (pdevReq->operation != PDEV_WRITE) ||
+	    (pdevReq->requestSize < sizeof(xConnClientPrefix))) {
+d880 1
+a880 1
+	switch (pdevPriv->reqPtr->operation) {
+d885 1
+a885 1
+			   pdevPriv->reqPtr->requestSize);
+d926 1
+a926 1
+		if (pdevPriv->reqPtr->requestSize) {
+d935 1
+a935 1
+			   pdevPriv->reqPtr->requestSize,
+d937 1
+a937 1
+			   pdevPriv->reqPtr->replySize);
+d985 1
+a985 1
+			   pdevPriv->reqPtr->operation,
+d1016 1
+a1016 1
+	need = min(pdevPriv->need, pdevPriv->reqPtr->requestSize);
+d1026 1
+a1026 1
+	    pdevPriv->reqPtr->requestSize -= need;
+d1046 1
+a1046 1
+	need = min(pdevPriv->need, pdevPriv->reqPtr->requestSize);
+d1089 2
+a1090 2
+    if (pdevPriv->reqPtr->requestSize < sizeof(xReq)) {
+	if (pdevPriv->reqPtr->requestSize != 0) {
+d1099 1
+a1099 1
+		    pdevPriv->reqPtr->requestSize);
+d1101 2
+a1102 2
+		pdevPriv->bigReq + pdevPriv->reqPtr->requestSize;
+	    pdevPriv->need = sizeof(xReq) - pdevPriv->reqPtr->requestSize;
+d1114 1
+a1114 1
+	if (need > pdevPriv->reqPtr->requestSize) {
+d1125 1
+a1125 1
+		    pdevPriv->reqPtr->requestSize);
+d1127 2
+a1128 2
+		pdevPriv->bigReq + pdevPriv->reqPtr->requestSize;
+	    pdevPriv->need = need - pdevPriv->reqPtr->requestSize;
+d1135 1
+a1135 1
+	    pdevPriv->reqPtr->requestSize -= need;
+@
+
+
+1.8
+log
+@In changing to new C library goofed umask arguments.
+@
+text
+@d41 1
+a41 1
+"$Header: pdev.c,v 1.7 88/09/11 13:09:20 ouster Exp $ SPRITE (Berkeley)";
+d157 1
+a157 1
+	    FS_NON_BLOCKING | FS_CREATE | FS_READ | FS_NEW_MASTER,
+@
+
+
+1.7
+log
+@Typo in last mod.
+@
+text
+@d41 1
+a41 1
+"$Header: pdev.c,v 1.6 88/09/11 13:01:04 ouster Exp $ SPRITE (Berkeley)";
+d155 1
+a155 1
+    oldPermMask = umask(0777);
+@
+
+
+1.6
+log
+@Switch to use errno for errors.
+@
+text
+@d41 1
+a41 1
+"$Header: pdev.c,v 1.5 88/09/09 18:00:25 ouster Exp $ SPRITE (Berkeley)";
+d160 1
+a160 1
+	errno = CompatMapCode(status);
+d313 1
+a313 1
+	errno = CompatMapCode(status);
+d1245 1
+a1245 1
+	    errno = CompatMapCode(status);
+@
+
+
+1.5
+log
+@Include bit.h.
+@
+text
+@d41 1
+a41 1
+"$Header: pdev.c,v 1.4 88/09/08 18:15:52 ouster Exp $ SPRITE (Berkeley)";
+d147 1
+d156 8
+a163 7
+    if (Fs_Open (deviceName,
+		  FS_NON_BLOCKING | FS_CREATE | FS_READ | FS_NEW_MASTER,
+		  0666,
+		  &Pdev_Conn) != 0) {
+		      Error (deviceName);
+		      FatalError ("Could not open pseudo-device %s",
+				  deviceName);
+d288 2
+d309 8
+a316 8
+    if (Fs_IOControl(pdevPriv->streamID, IOC_PDEV_SET_PTRS,
+		     sizeof(pdevPriv->curPtrs),
+		     (Address)&pdevPriv->curPtrs,
+		     0,
+		     (Address)NULL) != 0) {
+			 if (DBG(PDEV)) {
+			     Error("RequestHandled: SET_PTRS");
+			 }
+d1178 2
+a1179 1
+    register PdevPrivPtr pdevPriv;	    /* Data private to client */
+d1241 8
+a1248 8
+	if (Fs_IOControl(pdevPriv->streamID, IOC_PDEV_SET_PTRS,
+			 sizeof(pdevPriv->curPtrs),
+			 (Address)&pdevPriv->curPtrs,
+			 0,
+			 (Address)NULL) != 0) {
+			     if (DBG(PDEV)) {
+				 Error("WriteClient: SET_PTRS");
+			     }
+@
+
+
+1.4
+log
+@Intermediate check-in while converting to new C library.
+@
+text
+@d41 1
+a41 1
+"$Header: pdev.c,v 1.3 88/08/26 16:13:09 brent Exp $ SPRITE (Berkeley)";
+d61 1
+@
+
+
+1.3
+log
+@Converted to new, standard, pseudo-device definitions
+@
+text
+@d41 1
+a41 1
+"$Header: newpdev.c,v 1.1 87/11/29 19:51:59 deboor Exp $ SPRITE (Berkeley)";
+d44 12
+a57 2
+#define NEED_REPLIES /* For Debugging Only */
+
+d62 4
+d69 1
+a69 1
+ * one of the Io_Print functions and expects two arguments: the name of the
+d152 3
+a154 3
+    Io_PrintString (deviceName, DEVICE_TEMPLATE, hostname, display);
+    if ((Fs_SetDefPerm (0777, &oldPermMask) != SUCCESS) ||
+    	(Fs_Open (deviceName,
+d157 1
+a157 1
+		  &Pdev_Conn) != SUCCESS)) {
+d163 1
+a163 1
+    (void) Fs_SetDefPerm (oldPermMask, &oldPermMask);
+d308 1
+a308 1
+		     (Address)NULL) != SUCCESS) {
+d326 2
+a327 1
+ *      SUCCESS or an error status.
+d340 1
+a340 1
+    SpriteTime	  	timeout;    /* Timeout interval for select */
+d345 2
+a346 2
+    timeout.seconds = REASONABLE_TIME;
+    timeout.microseconds = 0;
+d348 4
+a351 8
+    if ((Fs_Select (pdevPriv->streamID+1, &timeout, selMask, (int *)0, (int *)0,
+		   &numReady) != SUCCESS) ||
+	(numReady != 1)) {
+	    if (numReady == 0) {
+		return (FS_TIMEOUT);
+	    } else {
+		return (stat_LastError);
+	    }
+d353 7
+a359 7
+    
+    if (Fs_Read(pdevPriv->streamID, sizeof(bufPtrs), &bufPtrs,
+		&numBytes) != SUCCESS) {
+		    if (DBG(PDEV)) {
+			Error ("PdevWaitForReadable");
+		    }
+		    return (FAILURE);
+d365 1
+a365 1
+	return (FAILURE);
+d368 1
+a368 1
+    return (SUCCESS);
+d391 2
+a392 2
+    SpriteTime	  	timeout;    	/* Timeout for select */
+    SpriteTime	  	*pTimeOut;
+d404 1
+a404 1
+	length = String_Length (reason);
+d427 1
+a427 1
+    String_Copy(reason, (char *)&c[1]);
+d432 1
+a432 1
+		     0, (Address)NULL) != SUCCESS) {
+d438 2
+a439 2
+    timeout.seconds = REASONABLE_TIME;
+    timeout.microseconds = 0;
+d441 1
+a441 1
+	pTimeOut = (SpriteTime *)0;
+d453 7
+a459 7
+	if ((Fs_Select (pdevPriv->streamID+1, pTimeOut, selMask, (int *)0,
+			(int *)0, &numReady) != SUCCESS) ||
+	    (numReady != 1)) {
+		if (DBG(PDEV)) {
+		    ErrorF("PdevConnFail: didn't read in reasonable time\n");
+		}
+		break;
+d461 5
+a465 5
+	if ((Fs_Read(pdevPriv->streamID, sizeof(bufPtrs),
+		     &bufPtrs, &numBytes) != SUCCESS) ||
+	    (numBytes != sizeof(bufPtrs)) ||
+	    (bufPtrs.magic != PDEV_BUF_PTR_MAGIC)) {
+		break;
+d498 1
+a498 1
+    } while (!pTimeOut || (pTimeOut->seconds || pTimeOut->microseconds));
+d526 1
+a526 1
+    PdevPrivPtr	pdevPriv;   	/* New private information for us */
+d530 1
+a530 1
+    Pdev_Reply 	openReply;  	/* Reply to open request */
+d542 3
+a544 5
+	if ((Fs_Read(Pdev_Conn, sizeof(note),
+		     (Address)&note, &numBytes) != SUCCESS) ||
+	    (numBytes != sizeof(note)) ||
+	    (note.magic != PDEV_NOTIFY_MAGIC)) {
+		return;
+d546 1
+a546 1
+	
+d549 1
+a549 1
+	pdevPriv = (PdevPrivPtr)Mem_Alloc(sizeof(PdevPrivRec));
+d564 1
+a564 1
+	pPriv = (ClntPrivPtr)Mem_Alloc(sizeof(ClntPrivRec));
+d592 1
+a592 1
+	if ((PdevWaitForReadable(pdevPriv, pPriv->ready) != SUCCESS) ||
+d594 3
+a596 3
+		(void)Fs_Close(pdevPriv->streamID);
+		Mem_Free((Address)pdevPriv);
+		Mem_Free((Address)pPriv);
+d613 3
+a615 3
+	    (void)Fs_Close(pdevPriv->streamID);
+	    Mem_Free((Address)pdevPriv);
+	    Mem_Free((Address)pPriv);
+d634 4
+a637 4
+	if (PdevWaitForReadable(pdevPriv, pPriv->ready) != SUCCESS) {
+	    (void)Fs_Close(pdevPriv->streamID);
+	    Mem_Free((Address)pdevPriv);
+	    Mem_Free((Address)pPriv);
+d645 3
+a647 3
+		(void)Fs_Close(pdevPriv->streamID);
+		Mem_Free((Address)pdevPriv);
+		Mem_Free((Address)pPriv);
+d663 3
+a665 3
+		(void)Fs_Close(pdevPriv->streamID);
+		Mem_Free((Address)pdevPriv);
+		Mem_Free((Address)pPriv);
+d672 3
+a674 3
+	    (void)Fs_Close(pdevPriv->streamID);
+	    Mem_Free((Address)pdevPriv);
+	    Mem_Free((Address)pPriv);
+d682 3
+a684 3
+	    (void)Fs_Close(pdevPriv->streamID);
+	    Mem_Free((Address)pdevPriv);
+	    Mem_Free((Address)pPriv);
+d757 1
+a757 1
+    Fs_Close(streamID);
+d766 1
+a766 1
+	Mem_Free(pdevPriv->bigReq);
+d769 1
+a769 1
+    Mem_Free ((Address)pdevPriv);
+d821 1
+a821 1
+	     * the device if we actually got here because Fs_Select says the
+d825 17
+a841 17
+	    if (Fs_Read(pdevPriv->streamID, sizeof(bufPtrs),
+			&bufPtrs, &numBytes) != SUCCESS) {
+			    if (stat_LastError != FS_WOULD_BLOCK) {
+				if (DBG(PDEV)) {
+				    Error("Reading buffer pointers");
+				}
+				*pStatus = -1;
+				return((char *)NULL);
+			    } else {
+				/*
+				 * Wasn't actually anything to read. Go on to
+				 * the next client...
+				 */
+				*pStatus = 0;
+				SchedYield();
+				return ((char *)NULL);
+			    }
+d1012 1
+a1012 3
+	Byte_Copy(need,
+		  pdevPriv->inPtr,
+		  pdevPriv->bigReqPtr);
+d1042 1
+a1042 3
+	Byte_Copy(need,
+		  pdevPriv->inPtr,
+		  pdevPriv->bigReqPtr);
+d1062 1
+a1062 1
+	    
+d1065 2
+a1066 4
+	    pdevPriv->bigReq = Mem_Alloc(need);
+	    Byte_Copy(sizeof(xReq),
+		      xreq,
+		      pdevPriv->bigReq);
+d1070 1
+a1070 1
+	    Mem_Free((char *)xreq);
+d1081 1
+a1081 1
+	Mem_Free(pdevPriv->bigReq);
+d1092 3
+a1094 4
+	    pdevPriv->bigReq = (char *)Mem_Alloc(sizeof(xReq));
+	    Byte_Copy(pdevPriv->reqPtr->requestSize,
+		      pdevPriv->inPtr,
+		      pdevPriv->bigReq);
+d1118 3
+a1120 4
+	    pdevPriv->bigReq = (char *)Mem_Alloc(need);
+	    Byte_Copy(pdevPriv->reqPtr->requestSize,
+		      pdevPriv->inPtr,
+		      pdevPriv->bigReq);
+d1197 1
+a1197 3
+	Byte_Copy(numWrite,
+		  (Address)xRepPtr,
+		  pdevPriv->outPtr);
+d1227 1
+a1227 1
+	    Byte_Copy(padding, (char *) &pad, pdevPriv->outPtr);
+d1239 1
+a1239 1
+			 (Address)NULL) != SUCCESS) {
+@
+
+
+1.2
+log
+@Fixes to go with the latest implementation of  pseudo-devices
+@
+text
+@a38 2
+#ifdef NEWPDEV
+
+d84 1
+a84 1
+    Pdev_NewRequest	*reqPtr;    /* Address of next request to process */
+d104 1
+a104 1
+} NewPdevPrivRec, *NewPdevPrivPtr;
+d106 3
+a108 3
+static void 	  NewPdevCloseClient();
+static char 	  *NewPdevReadClient();
+static int  	  NewPdevWriteClient();
+d110 1
+a110 1
+int	    	  NewPdev_Conn;
+d114 1
+a114 1
+ * NewPdev_Init --
+d127 1
+a127 1
+NewPdev_Init(hostname)
+d143 1
+a143 1
+		  &NewPdev_Conn) != SUCCESS)) {
+d154 1
+a154 1
+ * NewPdevSetPtrs --
+d169 2
+a170 2
+NewPdevSetPtrs(pdevPriv, bufPtrs)
+    NewPdevPrivPtr	pdevPriv;
+d173 1
+a173 1
+    if (DBG(NEWPDEV)) {
+d195 1
+a195 1
+		(Pdev_NewRequest *)&pdevPriv->inBuf[bufPtrs->requestFirstByte];
+d243 1
+a243 1
+	     * Need to make this -1 so NewPdevWriteClient works correctly
+d254 1
+a254 1
+ * NewPdevRequestHandled --
+d268 2
+a269 2
+NewPdevRequestHandled(pdevPriv)
+    NewPdevPrivPtr	pdevPriv;
+d274 1
+a274 1
+	(Pdev_NewRequest *)&pdevPriv->inBuf[pdevPriv->curPtrs.requestFirstByte];
+d281 1
+a281 1
+    if (DBG(NEWPDEV)) {
+d295 1
+a295 1
+			 if (DBG(NEWPDEV)) {
+d307 1
+a307 1
+ * NewPdevWaitForReadable --
+d320 2
+a321 2
+NewPdevWaitForReadable (pdevPriv, selMask)
+    NewPdevPrivPtr	pdevPriv;   /* Connection to read */
+d345 2
+a346 2
+		    if (DBG(NEWPDEV)) {
+			Error ("NewPdevWaitForReadable");
+d351 1
+a351 1
+	if (DBG(NEWPDEV)) {
+d356 1
+a356 1
+    NewPdevSetPtrs(pdevPriv, &bufPtrs);
+d362 1
+a362 1
+ * NewPdevConnFail --
+d374 2
+a375 2
+NewPdevConnFail (pdevPriv, swapped, reason)
+    NewPdevPrivPtr	pdevPriv;   	/* Failed connection */
+d429 1
+a429 1
+    if (DBG(NEWPDEV)) {
+d445 2
+a446 2
+		if (DBG(NEWPDEV)) {
+		    ErrorF("NewPdevConnFail: didn't read in reasonable time\n");
+d459 1
+a459 1
+	    NewPdevSetPtrs(pdevPriv, &bufPtrs);
+d467 1
+a467 1
+		    Pdev_NewReply	reply;
+d478 1
+a478 1
+		    NewPdevRequestHandled(pdevPriv);
+d484 1
+a484 1
+		NewPdevRequestHandled(pdevPriv);
+d495 1
+a495 1
+ * NewPdev_EstablishNewConnections --
+d509 1
+a509 1
+NewPdev_EstablishNewConnections (pNewClients, pNumNew)
+d515 1
+a515 1
+    NewPdevPrivPtr	pdevPriv;   	/* New private information for us */
+d518 2
+a519 2
+    Pdev_NewRequest	*pdevReq;   	/* Pointer to current request */
+    Pdev_NewReply 	openReply;  	/* Reply to open request */
+d531 1
+a531 1
+	if ((Fs_Read(NewPdev_Conn, sizeof(note),
+d540 1
+a540 1
+	pdevPriv = (NewPdevPrivPtr)Mem_Alloc(sizeof(NewPdevPrivRec));
+d556 3
+a558 3
+	pPriv->readProc =   	    	    	NewPdevReadClient;
+	pPriv->writeProc =  	    	    	NewPdevWriteClient;
+	pPriv->closeProc =  	    	    	NewPdevCloseClient;
+d583 1
+a583 1
+	if ((NewPdevWaitForReadable(pdevPriv, pPriv->ready) != SUCCESS) ||
+d616 1
+a616 1
+	NewPdevRequestHandled(pdevPriv);
+d625 1
+a625 1
+	if (NewPdevWaitForReadable(pdevPriv, pPriv->ready) != SUCCESS) {
+d652 2
+a653 2
+		NewPdevRequestHandled(pdevPriv);
+		NewPdevConnFail(pdevPriv, swapped, "Protocol version mismatch");
+d660 2
+a661 2
+	    NewPdevRequestHandled(pdevPriv);
+	    NewPdevConnFail(pdevPriv, swapped,
+d669 1
+a669 1
+	client = NextAvailableClient();
+d671 2
+a672 2
+	    NewPdevRequestHandled(pdevPriv);
+	    NewPdevConnFail(pdevPriv, swapped, "Too many clients");
+d683 1
+a683 1
+	NewPdevRequestHandled(pdevPriv);
+d685 2
+a686 2
+	if (DBG(NEWPDEV) || DBG(CONN)) {
+	    ErrorF ("New NewPdev connection: client %d (newID = %d)\n",
+d721 1
+a721 1
+ * NewPdevCloseClient --
+d738 1
+a738 1
+NewPdevCloseClient (pPriv)
+d742 1
+a742 1
+    register NewPdevPrivPtr pdevPriv;
+d745 1
+a745 1
+    pdevPriv = (NewPdevPrivPtr) pPriv->devicePrivate;
+d770 1
+a770 1
+ * NewPdevReadClient --
+d787 1
+a787 1
+NewPdevReadClient (pPriv, pStatus, oldbuf)
+d795 1
+a795 1
+    NewPdevPrivPtr  	pdevPriv;   /* Private data for the client */
+d801 1
+a801 1
+    Pdev_NewReply 	reply;
+d803 1
+a803 1
+    pdevPriv = (NewPdevPrivPtr) pPriv->devicePrivate;
+d819 1
+a819 1
+				if (DBG(NEWPDEV)) {
+d836 1
+a836 1
+		    if (DBG(NEWPDEV)) {
+d842 1
+a842 1
+	    NewPdevSetPtrs(pdevPriv, &bufPtrs);
+d847 1
+a847 1
+	     * be done. NewPdevSetPtrs will have copied any overflow
+d868 1
+a868 1
+		if (DBG(NEWPDEV)) {
+d880 1
+a880 1
+		if (DBG(NEWPDEV) || DBG(CONN)) {
+d892 1
+a892 1
+		NewPdevRequestHandled(pdevPriv);
+d917 1
+a917 1
+		if (DBG(NEWPDEV)) {
+d946 1
+a946 1
+			if (DBG(NEWPDEV)) {
+d957 1
+a957 1
+		NewPdevRequestHandled(pdevPriv);
+d969 1
+a969 1
+		if (DBG(NEWPDEV)) {
+d978 1
+a978 1
+		NewPdevRequestHandled(pdevPriv);
+d1010 1
+a1010 1
+	    NewPdevRequestHandled(pdevPriv);
+d1019 1
+a1019 1
+	    if (DBG(NEWPDEV)) {
+d1045 1
+a1045 1
+	    NewPdevRequestHandled(pdevPriv);
+d1097 1
+a1097 1
+	NewPdevRequestHandled(pdevPriv);
+d1123 1
+a1123 1
+	    NewPdevRequestHandled(pdevPriv);
+d1132 1
+a1132 1
+	    if (DBG(NEWPDEV)) {
+d1143 1
+a1143 1
+ * NewPdevWriteClient --
+d1163 1
+a1163 1
+NewPdevWriteClient (pPriv, numBytes, xRepPtr)
+d1172 1
+a1172 1
+    register NewPdevPrivPtr pdevPriv;	    /* Data private to client */
+d1176 1
+a1176 1
+    pdevPriv = (NewPdevPrivPtr) pPriv->devicePrivate;
+d1185 1
+a1185 1
+	if (DBG(NEWPDEV)) {
+d1241 1
+a1241 1
+			     if (DBG(NEWPDEV)) {
+d1245 1
+a1245 1
+	if (DBG(NEWPDEV)) {
+a1301 2
+
+#endif NEWPDEV
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d39 2
+d43 1
+a43 1
+"$Header: pdev.c,v 1.1 87/11/01 20:17:30 deboor Exp $ SPRITE (Berkeley)";
+d60 1
+a60 1
+#define	DEVICE_TEMPLATE	"/hosts/%s/X1%s"
+d335 1
+a335 1
+    if ((Fs_Select (pdevPriv->streamID+1, /*&timeout*/ (SpriteTime *)0, selMask, (int *)0, (int *)0,
+d462 26
+d489 1
+a489 1
+    } while (1);
+d491 1
+d527 1
+d530 1
+d574 3
+d654 1
+d662 1
+d673 1
+d1304 2
+@

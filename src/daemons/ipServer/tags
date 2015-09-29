@@ -1,0 +1,176 @@
+BadOp	sockOps.c	/^BadOp()$/
+CalcChecksum	tcpOutput.c	/^CalcChecksum(packetPtr, len)$/
+CalcFreeSpace	tcpInput.c	/^CalcFreeSpace(sockPtr, tcbPtr)$/
+CanForward	ip.c	/^CanForward(dest)$/
+CheckList	sockBuf.c	/^CheckList(bufInfoPtr)$/
+ComputeDiff	stat.c	/^ComputeDiff(newPtr, oldPtr, diffPtr)$/
+ConnQueueAppend	tcpSock.c	/^ConnQueueAppend(sockPtr, newSockPtr)$/
+ConnQueueFull	tcpSock.c	/^ConnQueueFull(sockPtr)$/
+ConnQueueNext	tcpSock.c	/^ConnQueueNext(sockPtr)$/
+ConnQueueNotEmpty	tcpSock.c	/^ConnQueueNotEmpty(sockPtr, mustBeConnected)$/
+CopyHeader	ip.c	/^CopyHeader(srcHdrLen, srcHdrPtr, destHdrPtr)$/
+DgramFragInfo	ip.c	/^} DgramFragInfo;$/
+DummyOp	sockOps.c	/^DummyOp()$/
+ForwardPacket	ip.c	/^ForwardPacket(packetPtr)$/
+FragDataInfo	ip.c	/^} FragDataInfo;$/
+FragTimeoutHandler	ip.c	/^FragTimeoutHandler(data, time)$/
+FreeFragments	ip.c	/^FreeFragments(fragInfoPtr)$/
+GetLineList	route.c	/^GetLineList(stream, startDelim, endDelim, arraySiz/
+GetOption	sockOps.c	/^GetOption(sockPtr, inBufSize, inBuffer, outBufSize/
+GetPort	tcpSock.c	/^GetPort(localAddr)$/
+HandleGenericIOC	sockOps.c	/^HandleGenericIOC(privPtr, command, inBufSize, inBu/
+Hash_FindEntry	route.c	/^#define Hash_FindEntry(table, key) \\$/
+Hash_InitTable	route.c	/^#define Hash_InitTable(table, numBuckets, keys) \\/
+ICMP_Init	icmp.c	/^ICMP_Init()$/
+ICMP_SendErrorMsg	icmp.c	/^ICMP_SendErrorMsg(ipHdrPtr, type, code)$/
+IPS_GetTimestamp	main.c	/^IPS_GetTimestamp()$/
+IPS_InitPacket	main.c	/^IPS_InitPacket(dataLen, packetPtr)$/
+IP_AcceptedProtocol	ip.c	/^IP_AcceptedProtocol(protocol)$/
+IP_DelayedOutput	ip.c	/^IP_DelayedOutput()$/
+IP_FormatPacket	ip.c	/^IP_FormatPacket(protocol, timeToLive, srcAddr, des/
+IP_GetSrcRoute	ip.c	/^IP_GetSrcRoute(lenPtr, destPtr)$/
+IP_Init	ip.c	/^IP_Init()$/
+IP_Input	ip.c	/^IP_Input(netID, packetPtr)$/
+IP_MemBin	ip.c	/^IP_MemBin()$/
+IP_Output	ip.c	/^IP_Output(packetPtr, canTrash)$/
+IP_PacketInput	route.c	/^IP_PacketInput(protoPtr, callInfoPtr)$/
+IP_QueueOutput	ip.c	/^IP_QueueOutput(packetPtr)$/
+IP_SetProtocolHandler	ip.c	/^IP_SetProtocolHandler(protocol, proc)$/
+Input	icmp.c	/^Input(netID, packetPtr)$/
+Mmain	main.c	/^main(argc, argv)$/
+NetAddrInfo	route.c	/^} NetAddrInfo;$/
+NetInfo	route.c	/^} NetInfo;$/
+NoOp	sockOps.c	/^NoOp()$/
+Output	raw.c	/^Output(sockPtr, local, remote, packetPtr)$/
+PdevControlHandler	main.c	/^PdevControlHandler(clientData, streamID, eventMask/
+PdevReply	main.c	/^PdevReply(streamID, replyPtr, caller)$/
+PdevRequestHandler	main.c	/^PdevRequestHandler(clientData, streamID, eventMask/
+PrintInfoAndDebug	main.c	/^PrintInfoAndDebug(sigNum, sigCode)$/
+PrintMemStats	main.c	/^PrintMemStats(sigNum, sigCode)$/
+PrivPtr	main.c	/^typedef struct Sock_PrivInfo *PrivPtr;$/
+ProcessOptions	ip.c	/^ProcessOptions(hdrLen, ipHeaderPtr)$/
+ProcessTimers	tcpTimer.c	/^ProcessTimers(sockPtr, tcbPtr, timer)$/
+ProtNumToName	ip.c	/^ProtNumToName(num) $/
+ProtocolInfo	sockOps.c	/^} ProtocolInfo;$/
+Raw_Input	raw.c	/^Raw_Input(protocol, srcAddr, destAddr, packetPtr)$/
+Raw_SocketBind	raw.c	/^Raw_SocketBind(sockPtr, addrPtr, userID)$/
+Raw_SocketClose	raw.c	/^Raw_SocketClose(sockPtr)$/
+Raw_SocketConnect	raw.c	/^Raw_SocketConnect(sockPtr, remoteAddrPtr, initiali/
+Raw_SocketOpen	raw.c	/^Raw_SocketOpen(sockPtr, userID)$/
+Raw_SocketRead	raw.c	/^Raw_SocketRead(privPtr, bufSize, buffer, amountRea/
+Raw_SocketSelect	raw.c	/^Raw_SocketSelect(sockPtr)$/
+Raw_SocketShutdown	raw.c	/^Raw_SocketShutdown(sockPtr, how)$/
+Raw_SocketWrite	raw.c	/^Raw_SocketWrite(privPtr, packetPtr, amtWrittenPtr)/
+ReadIPPacket	route.c	/^ReadIPPacket(data, streamID, eventMask)$/
+ReassElement	tcpInput.c	/^} ReassElement;$/
+Reassemble	tcpInput.c	/^Reassemble(sockPtr, tcbPtr, tcpHdrPtr, packetPtr)$/
+ReassemblePacket	ip.c	/^ReassemblePacket(fragInfoPtr, packetPtr)$/
+ReturnToSender	icmp.c	/^ReturnToSender(netID, type, dataLen, icmpPtr, pack/
+RteFetchAddress	route.c	/^RteFetchAddress(inet)$/
+RteInsertAddress	route.c	/^RteInsertAddress(inet, etherPtr, flags, netPtr)$/
+Rte_AddrIsForUs	route.c	/^Rte_AddrIsForUs(addr)$/
+Rte_AddressInit	route.c	/^Rte_AddressInit(myHostName, filename, newOfficialA/
+Rte_FindOutputNet	route.c	/^Rte_FindOutputNet(dest, netIDPtr, maxOutSizePtr)$/
+Rte_GetBroadcastAddr	route.c	/^Rte_GetBroadcastAddr(netID)$/
+Rte_GetNetNum	route.c	/^Rte_GetNetNum(netID)$/
+Rte_GetOfficialAddr	route.c	/^Rte_GetOfficialAddr(broadcastWanted)$/
+Rte_GetSubnetMask	route.c	/^Rte_GetSubnetMask(netID)$/
+Rte_IsBroadcastAddr	route.c	/^Rte_IsBroadcastAddr(address)$/
+Rte_IsLocalAddr	route.c	/^Rte_IsLocalAddr(netID)$/
+Rte_OutputPacket	route.c	/^Rte_OutputPacket(netID, packetPtr)$/
+Rte_UpdateRoute	route.c	/^Rte_UpdateRoute(toAddr, useAddr)$/
+Rte_ValidateAddress	route.c	/^Rte_ValidateAddress(addr)$/
+SWAP_FRAG_OFFSET_HOST_TO_NET	ip.c	/^#define SWAP_FRAG_OFFSET_HOST_TO_NET(ptr) { \\$/
+SWAP_FRAG_OFFSET_NET_TO_HOST	ip.c	/^#define SWAP_FRAG_OFFSET_NET_TO_HOST(ptr) { \\$/
+SaveRoute	ip.c	/^SaveRoute(optionPtr, dest)$/
+SetHandler	main.c	/^#define SetHandler(sig, routine) \\$/
+SetOption	sockOps.c	/^SetOption(sockPtr, inBufSize, inBuffer)$/
+Sock_BadRoute	sockMisc.c	/^Sock_BadRoute(sockPtr)$/
+Sock_BufAlloc	sockBuf.c	/^Sock_BufAlloc(sockPtr, type, maxSize)$/
+Sock_BufAppend	sockBuf.c	/^Sock_BufAppend(sockPtr, type, atomic, dataLen, dat/
+Sock_BufCopy	sockBuf.c	/^Sock_BufCopy(sockPtr, type, offset, bufSize, buffe/
+Sock_BufFetch	sockBuf.c	/^Sock_BufFetch(sockPtr, flags, bufSize, buffer, amt/
+Sock_BufRemove	sockBuf.c	/^Sock_BufRemove(sockPtr, type, amount)$/
+Sock_BufSize	sockBuf.c	/^Sock_BufSize(sockPtr, type, request)$/
+Sock_Clone	sockOps.c	/^Sock_Clone(sockPtr, attachParent)$/
+Sock_Close	sockOps.c	/^Sock_Close(privPtr)$/
+Sock_Connected	sockMisc.c	/^Sock_Connected(sockPtr)$/
+Sock_Destroy	sockOps.c	/^Sock_Destroy(sockPtr)$/
+Sock_Disconnected	sockMisc.c	/^Sock_Disconnected(sockPtr)$/
+Sock_Disconnecting	sockMisc.c	/^Sock_Disconnecting(sockPtr)$/
+Sock_HasUsers	sockMisc.c	/^Sock_HasUsers(sockPtr)$/
+Sock_HaveUrgentData	sockMisc.c	/^Sock_HaveUrgentData(sockPtr)$/
+Sock_IOControl	sockOps.c	/^Sock_IOControl(privPtr, command, userID, inBufSize/
+Sock_Init	sockOps.c	/^Sock_Init()$/
+Sock_IsOptionSet	sockMisc.c	/^Sock_IsOptionSet(sockPtr, option)$/
+Sock_IsRecvStopped	sockMisc.c	/^Sock_IsRecvStopped(sockPtr)$/
+Sock_IsSendStopped	sockMisc.c	/^Sock_IsSendStopped(sockPtr)$/
+Sock_Match	sockOps.c	/^Sock_Match(protIndex, localAddr, localPort, remote/
+Sock_MemBin	sockOps.c	/^Sock_MemBin()$/
+Sock_NotifyWaiter	sockOps.c	/^Sock_NotifyWaiter(sharePtr, flags)$/
+Sock_Open	sockOps.c	/^Sock_Open(sockPdevPtr, isNewOpen, streamID, fsFlag/
+Sock_PrintInfo	sockOps.c	/^Sock_PrintInfo(sigNum, sigCode)$/
+Sock_Read	sockOps.c	/^Sock_Read(privPtr, bufSize, buffer, amountReadPtr)/
+Sock_ReturnError	sockOps.c	/^Sock_ReturnError(status, protocol, destAddr, dataP/
+Sock_ScanList	sockOps.c	/^Sock_ScanList(protoIndex, sockPtr)$/
+Sock_Select	sockOps.c	/^Sock_Select(ptr, isPrivPointer)$/
+Sock_SetError	sockMisc.c	/^Sock_SetError(sockPtr, status)$/
+Sock_StopRecv	sockMisc.c	/^Sock_StopRecv(sockPtr)$/
+Sock_StopSending	sockMisc.c	/^Sock_StopSending(sockPtr)$/
+Sock_UrgentDataNext	sockMisc.c	/^Sock_UrgentDataNext(sockPtr)$/
+Sock_Write	sockOps.c	/^Sock_Write(privPtr, procID, bufSize, buffer, amtWr/
+SocketOps	sockOps.c	/^} SocketOps;$/
+Stat_Command	stat.c	/^Stat_Command(command)$/
+Stat_PrintInfo	stat.c	/^Stat_PrintInfo(sigNum, sigCode)$/
+SwapAddresses	icmp.c	/^SwapAddresses(ipPtr)$/
+TCPCalcMaxSegSize	tcpInput.c	/^TCPCalcMaxSegSize(tcbPtr)$/
+TCPCancelTimers	tcpTimer.c	/^TCPCancelTimers(tcbPtr)$/
+TCPCleanReassList	tcpInput.c	/^TCPCleanReassList(tcbPtr)$/
+TCPCloneConnection	tcpSock.c	/^TCPCloneConnection(sockPtr, localAddr, localPort, /
+TCPCloseConnection	tcpSock.c	/^TCPCloseConnection(sockPtr, tcbPtr)$/
+TCPDropConnection	tcpSock.c	/^TCPDropConnection(sockPtr, tcbPtr, status)$/
+TCPMakeTemplateHdr	tcpSock.c	/^TCPMakeTemplateHdr(sockPtr, tcbPtr)$/
+TCPOutput	tcpOutput.c	/^TCPOutput(sockPtr, tcbPtr)$/
+TCPPrintHdrFlags	tcpTrace.c	/^TCPPrintHdrFlags(stream, flags)$/
+TCPRespond	tcpOutput.c	/^TCPRespond(sockPtr, tcpHdrPtr, ipHdrPtr, ack, seq,/
+TCPSetPersist	tcpTimer.c	/^TCPSetPersist(tcbPtr)$/
+TCPSockToTCB	tcpSock.c	/^TCPSockToTCB(sockPtr)$/
+TCPTimerInit	tcpTimer.c	/^TCPTimerInit()$/
+TCPTrace	tcpTrace.c	/^TCPTrace(command, prevState, tcbPtr, headerPtr, da/
+TCP_Init	tcpInput.c	/^TCP_Init(seconds)$/
+TCP_MemBin	tcpInput.c	/^TCP_MemBin()$/
+TCP_PrintInfo	tcpTrace.c	/^TCP_PrintInfo(data)$/
+TCP_Quench	tcpSock.c	/^TCP_Quench(tcbPtr)$/
+TCP_SocketAccept	tcpSock.c	/^TCP_SocketAccept(sockPtr, outBuffer)$/
+TCP_SocketBind	tcpSock.c	/^TCP_SocketBind(sockPtr, addrPtr, userID)$/
+TCP_SocketClose	tcpSock.c	/^TCP_SocketClose(sockPtr)$/
+TCP_SocketConnect	tcpSock.c	/^TCP_SocketConnect(sockPtr, remoteAddrPtr, initiali/
+TCP_SocketDestroy	tcpSock.c	/^TCP_SocketDestroy(data)$/
+TCP_SocketGetOpt	tcpSock.c	/^TCP_SocketGetOpt(sockPtr, optName, outBufSize, out/
+TCP_SocketListen	tcpSock.c	/^TCP_SocketListen(sockPtr, backlog, userID)$/
+TCP_SocketOpen	tcpSock.c	/^TCP_SocketOpen(sockPtr, userID)$/
+TCP_SocketRead	tcpSock.c	/^TCP_SocketRead(privPtr, bufSize, buffer, amountRea/
+TCP_SocketSelect	tcpSock.c	/^TCP_SocketSelect(sockPtr)$/
+TCP_SocketSetOpt	tcpSock.c	/^TCP_SocketSetOpt(sockPtr, optName, inBufSize, inBu/
+TCP_SocketShutdown	tcpSock.c	/^TCP_SocketShutdown(sockPtr, how)$/
+TCP_SocketWrite	tcpSock.c	/^TCP_SocketWrite(privPtr, packetPtr, amtWrittenPtr)/
+TestInputProc	ip.c	/^TestInputProc(netID, packetPtr)$/
+TimeoutHandler	tcpTimer.c	/^TimeoutHandler(data, time)$/
+ToggleDebug	main.c	/^ToggleDebug(sigNum, sigCode)$/
+ToggleDisconnect	main.c	/^ToggleDisconnect(sigNum, sigCode)$/
+TraceRecord	tcpTrace.c	/^} TraceRecord;$/
+UDP_Init	udp.c	/^UDP_Init()$/
+UDP_Output	udp.c	/^UDP_Output(localAddr, remoteAddr, packetPtr)$/
+UDP_ReadRequest	udp.c	/^UDP_ReadRequest(privPtr, requestPtr, streamID)$/
+UDP_SocketBind	udp.c	/^UDP_SocketBind(sockPtr, addrPtr, userID)$/
+UDP_SocketClose	udp.c	/^UDP_SocketClose(sockPtr)$/
+UDP_SocketConnect	udp.c	/^UDP_SocketConnect(sockPtr, remoteAddrPtr, initiali/
+UDP_SocketInput	udp.c	/^UDP_SocketInput(sockPtr, srcAddr, srcPort, packetP/
+UDP_SocketOpen	udp.c	/^UDP_SocketOpen(sockPtr, userID)$/
+UDP_SocketRead	udp.c	/^UDP_SocketRead(privPtr, bufSize, buffer, amountRea/
+UDP_SocketSelect	udp.c	/^UDP_SocketSelect(sockPtr)$/
+UDP_SocketShutdown	udp.c	/^UDP_SocketShutdown(sockPtr, how)$/
+UDP_SocketWrite	udp.c	/^UDP_SocketWrite(privPtr, packetPtr, amtWrittenPtr)/
+UDP_WriteRequest	udp.c	/^UDP_WriteRequest(privPtr, procID, bufSize, buffer,/
+f1	main.c	/^f1(iPtr)$/
+xchg	tcpOutput.c	/^#define xchg(a,b,type) { type t; t=a; a=b; b=t; }$/

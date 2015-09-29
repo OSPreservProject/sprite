@@ -1,0 +1,66 @@
+
+
+
+GETHOSTNAME           C Library Procedures            GETHOSTNAME
+
+
+
+NNAAMMEE
+     gethostid - get sprite identifier of current host
+
+SSYYNNOOPPSSIISS
+     ggeetthhoossttiidd(())
+
+DDEESSCCRRIIPPTTIIOONN
+     _G_e_t_h_o_s_t_i_d returns the sprite host id of the current host.
+
+RREETTUURRNN VVAALLUUEE
+     If the call succeeds the sprite ID is returned.  If the call
+     fails, then a value of -1 is returned and an error code is
+     placed in the global location _e_r_r_n_o.
+
+SSEEEE AALLSSOO
+     gethostid(2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0              March 19, 1992                         1
+
+
+

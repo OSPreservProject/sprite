@@ -1,0 +1,78 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @# @;
+
+
+1.1
+date     88.10.31.10.58.42;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Script to gather the file system statistics periodically
+and place in a file named by host and datestamp.  Each invocation
+replaces the previous version; on booting, the host removes the
+naming information for the previous version so that it is not removed.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#!/sprite/cmds/csh -f
+# Script to gather the file system statistics periodically
+# and place in a file named by host and datestamp.  Each invocation
+# replaces the previous version; on booting, the host removes the
+# naming information for the previous version so that it is not removed.
+# This is necessary because statistics reset to 0 each time we reboot.
+
+# Reset the path & umask because for some reason cron does not always have
+# the right path.
+set path = (/sprite/cmds); rehash
+umask 002
+
+# allow for different versions of fsstat on different machines.
+if (-e /hosts/`hostname`/fsstat) then 
+    set fsstat = /hosts/`hostname`/fsstat
+else
+    set fsstat = /sprite/cmds/fsstat
+endif
+
+# The name of the file is of the form "yydddhh_mm"
+set name = `date "+%y%j_%H%M"`
+# set name = `date | awk '{printf("%s%s%s_%s", $6, $2, $3, $4)}'`
+
+# The directory is named by the host w/o the domain.
+set dir = /sprite/admin/fsstats/`shorthostname`
+if (! -d  $dir) mkdir $dir
+cd $dir
+
+# Generate the fsstat file, complete with uptime and host information as
+# well as deletion histograms.  Then link the name to "last" and remove
+# the previous "last".
+
+$fsstat -dH > "${name}"
+# leave this here for a while since we may have left over "prev's"  
+# But from now on, delete prev immediately rather than on the next
+# iteration so we don't have two copies from the same boot.
+if (-e prev) then
+	set prev = (`ls -l prev | awk '{print $NF}'`)
+	rm -f $prev prev
+endif
+if (-e last) mv last prev
+# mv doesn't always work properly??
+rm -f last
+ln -s ${name} last
+# Now get rid of the backup copy
+if (-e prev) then
+	set prev = (`ls -l prev | awk '{print $NF}'`)
+	rm -f $prev prev
+endif
+@

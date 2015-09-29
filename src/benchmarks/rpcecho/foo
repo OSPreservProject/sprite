@@ -1,0 +1,11 @@
+#!/sprite/cmds/csh -f
+
+set start = 5150
+set end = 5200
+set inc = 1
+
+set size = $start
+while($size <= $end)
+    rpcecho -d $size -h fenugreek
+    @ size += $inc
+end

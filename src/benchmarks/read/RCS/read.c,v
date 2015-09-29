@@ -1,0 +1,423 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.6
+date     89.09.13.20.47.51;  author ouster;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.03.10.16.10.28;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.03.02.13.10.32;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.03.02.08.42.39;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.02.06.17.30.47;  author nelson;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     87.12.17.21.25.24;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.6
+log
+@Switchover to version that can be ported to UNIX.
+@
+text
+@/* 
+ * read.c --
+ *
+ *	This program is a stand-alone benchmark to measure
+ *	the speed of reading a file.  It should be invoked
+ *	as follows:
+ *
+ *	read [count]
+ *
+ *	The program will read its standard input file count
+ *	times from start to finish, then print out the speed
+ *	of reading in bytes/sec.  If omitted, count defaults
+ *	to 1.
+ *
+ * Copyright 1989 Regents of the University of California.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: protoPub.c,v 1.3 87/01/04 17:28:56 andrew Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <stdio.h>
+#include <sys/time.h>
+#include <sys/resource.h>
+
+static char buffer[16384];
+
+main(argc, argv)
+int argc;
+char **argv;
+{
+    int cnt, total, repeats;
+    double rate, micros;
+    struct rusage begin ,end;
+    struct timeval start, stop;
+    struct timezone tz;
+
+    if (argc == 1) {
+	repeats = 1;
+    } else {
+	repeats = atoi(argv[1]);
+    }
+    total = 0;
+
+#ifdef GETRUSAGE
+    getrusage(RUSAGE_SELF, &begin);
+#else
+    gettimeofday(&start, (struct timezone *) NULL);
+#endif
+
+    for ( ; repeats > 0; repeats--) {
+	lseek(0, 0, 0);
+	while (1) {
+	    cnt = read(0, buffer, 16384);
+	    total += cnt;
+	    if (cnt < 16384) break;
+	}
+    }
+#ifdef GETRUSAGE
+    getrusage(RUSAGE_SELF, &end);
+    micros = (end.ru_utime.tv_sec + end.ru_stime.tv_sec
+	    - begin.ru_utime.tv_sec - begin.ru_stime.tv_sec)*1000000
+	    + (end.ru_utime.tv_usec - begin.ru_utime.tv_usec)
+	    + (end.ru_stime.tv_usec - begin.ru_stime.tv_usec);
+#else
+    gettimeofday(&stop, (struct timezone *) NULL);
+    micros = 1000000*(stop.tv_sec - start.tv_sec)
+	    + stop.tv_usec - start.tv_usec;
+#endif
+    rate = total/(micros/1000000.0);
+    printf("%d bytes read at %.0f bytes/sec.\n", total, rate);
+}
+@
+
+
+1.5
+log
+@Updated error testing suite
+@
+text
+@d1 32
+a32 27
+#include "sprite.h"
+#include "time.h"
+#include "fs.h"
+#include "io.h"
+#include "option.h"
+
+static char *buffer;
+
+int	repeats = 1;
+int	blockSize = 16384;
+int	msToPause = -1;
+int	loops = -1;
+Boolean errorTest = FALSE;
+
+Option optionArray[] = {
+    {OPT_INT, 'r', (Address) &repeats,
+     "\tNumber of times to repeat read (Default 1)."},
+    {OPT_INT, 'b', (Address) &blockSize, 
+     "\tBlock size to use for reading (Default 16384)."},
+    {OPT_INT, 'p', (Address)&msToPause,
+     "\tMilliseconds to pause between reads of each block. "},
+    {OPT_INT, 'l', (Address)&loops,
+     "\tNumber of times to loop between reads of each block. "},
+    {OPT_TRUE, 'e', (Address)&errorTest,
+     "\tTest error cases. "},
+};
+int numOptions = sizeof(optionArray) / sizeof(Option);
+d34 1
+a34 2
+int Handler();
+int gotSig = FALSE;
+d40 5
+a44 20
+    int 		cnt, total;
+    double 		rate, tmp;
+    Time 		before, after;
+    Ioc_RepositionArgs	seek;
+    int			newOffset;
+    ReturnStatus	status;
+    Time		pauseTime;
+    Sig_Action		newAction, oldAction;
+    register	int	i;
+
+    (void)Opt_Parse(&argc, argv, numOptions, optionArray);
+
+    /*
+     * Set up signal handling, trap interrupts in order to test
+     * the GEN_INTERRUPTED_BY_SIGNAL return code.
+     */
+    newAction.action = SIG_HANDLE_ACTION;
+    newAction.handler = Handler;
+    newAction.sigHoldMask = 0;
+    Sig_SetAction(SIG_INTERRUPT, &newAction, &oldAction);
+d46 5
+a50 1
+    buffer = (char *)Mem_Alloc(blockSize);
+a51 79
+    if (msToPause > 0) {
+	pauseTime.seconds = 0;
+	pauseTime.microseconds = msToPause * 1000;
+    }
+
+    if (errorTest) {
+	int numErrors = 0;
+	Io_Print("Read Error Tests\n"); Io_Flush(io_StdOut);
+
+	Fs_Write(1, 3, "? ", &cnt);
+	status = Fs_Read(-2, 0, 0, &cnt);
+	if (status == SUCCESS) {
+	    Io_Print("ERROR: Fs_Read(-2) worked!\n");
+	    numErrors++;
+	} else {
+	    Stat_PrintMsg(status, "Fs_Read(-2)");
+	}
+
+	Fs_Write(1, 3, "? ", &cnt);
+	status = Fs_Read(0, 10, -1, &cnt);
+	if (status == SUCCESS) {
+	    Io_Print("ERROR: Fs_Read{buffer = -1} worked!\n");
+	    numErrors++;
+	} else {
+	    Stat_PrintMsg(status, "Fs_Read{buffer = -1}");
+	}
+
+	Fs_Write(1, 3, "? ", &cnt);
+	status = Fs_Read(0, -1, buffer, &cnt);
+	if (status == SUCCESS) {
+	    Io_Print("ERROR: Fs_Read{count < 0} worked!\n");
+	    numErrors++;
+	} else {
+	    Stat_PrintMsg(status, "Fs_Read{count < 0}");
+	}
+
+	/*
+	 * This uses Fs_RawRead because the library routine Fs_Read
+	 * dies on a bad amountReadPtr.
+	 */
+	Fs_Write(1, 3, "? ", &cnt);
+	status = Fs_RawRead(0, 10, buffer, 0);
+	if (status == SUCCESS) {
+	    Io_Print("ERROR: Fs_RawRead{&cnt = 0} worked!\n");
+	    numErrors++;
+	} else {
+	    Stat_PrintMsg(status, "Fs_RawRead{&cnt = 0}");
+	}
+
+	{
+	    int outFD2;
+	    status = Fs_Open("/dev/null", FS_WRITE, 0,&outFD2);
+	    if (status != SUCCESS) {
+		Io_PrintStream(io_StdErr, "Could not open %s for writing, status %x\n",
+			       "/dev/null", status);
+	    } else {
+		status = Fs_Read(outFD2, 10, buffer, &cnt);
+		if (status == SUCCESS) {
+		    Io_Print("ERROR: Fs_Read{writeonly stream} worked!\n");
+		    numErrors++;
+		} else {
+		    Stat_PrintMsg(status, "Fs_Read{writeonly stream}");
+		}
+	    }
+	}
+
+	{
+	    char *newBuf = (char *)Mem_Alloc(100 * 1024);
+	    Io_Print("Starting 100K read... "); Io_Flush(io_StdOut);
+	    status = Fs_RawRead(0, 100 * 1024, newBuf, &cnt);
+	    if (gotSig) {
+		Io_Print("Got Signal, "); Io_Flush(io_StdOut);
+	    }
+	    if (status == SUCCESS) {
+		Io_Print("Read %d bytes\n", cnt);
+	    } else {
+		Stat_PrintMsg(status, "read");
+	    }
+	}
+d53 12
+a64 8
+	Fs_Close(0);
+	Fs_Write(1, 3, "? ", &cnt);
+	status = Fs_Read(0, 10, buffer, &cnt);
+	if (status == SUCCESS) {
+	    Io_Print("ERROR: Fs_Read{closed stream} worked!\n");
+	    numErrors++;
+	} else {
+	    Stat_PrintMsg(status, "Fs_Read{closed stream}");
+a65 28
+	if (numErrors) {
+	    Io_Print("Read Test had %d errors\n", numErrors);
+	} else {
+	    Io_Print("No errors\n");
+	}
+	Proc_Exit(numErrors);
+    } else {
+	Sys_GetTimeOfDay(&before, NULL, NULL);
+	for ( ; repeats > 0; repeats--) {
+	    Ioc_Reposition(0, IOC_BASE_ZERO, 0, &newOffset);
+	    while (1) {
+		if (msToPause > 0) {
+		    Sync_WaitTime(pauseTime);
+		}
+		if (loops > 0) {
+		    for (i = loops; i > 0; i --) {
+		    }
+		}
+		status = Fs_Read(0, blockSize, buffer, &cnt);
+		total += cnt;
+		if (cnt < blockSize || status != SUCCESS) break;
+	    }
+	}
+	Sys_GetTimeOfDay(&after, NULL, NULL);
+	rate = after.seconds - before.seconds;
+	rate += (after.microseconds - before.microseconds)*.000001;
+	rate = total/rate;
+	Io_Print("%d bytes read at %.0f bytes/sec.\n", total, rate);
+d67 13
+a79 6
+}
+
+int
+Handler()
+{
+    gotSig = TRUE;
+@
+
+
+1.4
+log
+@Updated it to exit with a status equal to the number of
+errors it found.
+@
+text
+@d108 15
+a122 7
+	Fs_Write(1, 3, "? ", &cnt);
+	status = Fs_Read(1, 10, buffer, &cnt);
+	if (status == SUCCESS) {
+	    Io_Print("ERROR: Fs_Read{stdOut} worked!\n");
+	    numErrors++;
+	} else {
+	    Stat_PrintMsg(status, "Fs_Read{stdOut}");
+d147 5
+@
+
+
+1.3
+log
+@Added error case testing.
+@
+text
+@d65 1
+d72 1
+d81 1
+d90 1
+d103 1
+d112 1
+d136 1
+d140 1
+a140 1
+
+@
+
+
+1.2
+log
+@Added looping and sleeping optoins.
+@
+text
+@d13 1
+d24 2
+d29 3
+d43 1
+d47 10
+d64 53
+a116 6
+    Sys_GetTimeOfDay(&before, NULL, NULL);
+    for ( ; repeats > 0; repeats--) {
+	Ioc_Reposition(0, IOC_BASE_ZERO, 0, &newOffset);
+	while (1) {
+	    if (msToPause > 0) {
+		Sync_WaitTime(pauseTime);
+d118 23
+a140 2
+	    if (loops > 0) {
+		for (i = loops; i > 0; i --) {
+d142 7
+a149 3
+	    status = Fs_Read(0, blockSize, buffer, &cnt);
+	    total += cnt;
+	    if (cnt < blockSize || status != SUCCESS) break;
+d151 5
+d157 6
+a162 5
+    Sys_GetTimeOfDay(&after, NULL, NULL);
+    rate = after.seconds - before.seconds;
+    rate += (after.microseconds - before.microseconds)*.000001;
+    rate = total/rate;
+    Io_Print("%d bytes read at %.0f bytes/sec.\n", total, rate);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 2
+d19 4
+d30 8
+a37 6
+    int cnt, total;
+    double rate, tmp;
+    Time before, after;
+    Ioc_RepositionArgs seek;
+    int oldOffset;
+    ReturnStatus status;
+a40 2
+    seek.base = IOC_BASE_ZERO;
+    seek.offset = 0;
+d42 5
+d49 1
+a49 1
+	Ioc_Reposition(0, &seek, &oldOffset);
+d51 7
+@

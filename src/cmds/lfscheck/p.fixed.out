@@ -1,0 +1,24 @@
+/dev/rvj10c:UsageArray: FreeBlocks wrong; is 1054532 should be 1055121
+/dev/rvj10c:CheckAllFiles: Corrupted descriptor block at 1775597, magic number 0x1f
+/dev/rvj10c:CheckAllFiles: Can't desc for file 83400 at 1775597
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 666 is wrong; is 8704 should be 8192
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 758 is wrong; is 317568 should be 317056
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 1023 is wrong; is 24832 should be 24320
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 1346 is wrong; is 31744 should be 31232
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 1350 is wrong; is 76032 should be 75008
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 1731 is wrong; is 128896 should be 137088
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 1733 is wrong; is 16384 should be 29056
+File tve/.nfslog references non-allocated descriptor 83400. File Deleted.
+Entry .nfslog (22) now has nameLength 7, recordLength 16, fileNumber 0.
+File 75166 is unreferenced
+1 unreferenced files
+/dev/rvj10c:CheckDescMapSummary: Summary wrong. Not current block 0 at 1775597
+/dev/rvj10c:No summary region for in use block at 1775597
+/dev/rvj10c:No summary region for desc 83400; should be a 1775597
+08:06:07.570:Read LFS checkpoint from /dev/rvj10c
+08:06:22.330:Checking files
+08:23:34.130:Checking usage array
+08:23:34.170:Checking directory tree
+08:26:55.800:Checking summary regions
+08:32:10.110:Reporting errors
+/dev/rvj10c: 7 major errors 6 minor errors

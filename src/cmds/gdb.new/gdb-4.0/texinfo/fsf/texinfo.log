@@ -1,0 +1,153 @@
+This is Common TeX, Version 2.9 (preloaded format=plain 89.9.18) 10 SEP 1991 12:26
+**&plain texinfo.tex 
+(./texinfo.tex Loading texinfo package [Version 2.53]:  Basics,
+\bindingoffset=\dimen16
+\normaloffset=\dimen17
+\pagewidth=\dimen18
+\pageheight=\dimen19
+\cornerlong=\dimen20
+\cornerthick=\dimen21
+\topandbottommargin=\dimen22
+\outerhsize=\dimen23
+\outervsize=\dimen24
+\EMsimple=\toks12
+\singlespaceskip=\skip18
+\mil=\dimen25
+ fonts,
+\sffam=\fam8
+\fontdepth=\count25
+\tclosesave=\dimen26
+\tcloserm=\dimen27
+
+page headings,
+\titlepagetopglue=\skip19
+\titlepagebottomglue=\skip20
+\realeverypar=\toks13
+\evenheadline=\toks14
+\oddheadline=\toks15
+\evenfootline=\toks16
+\oddfootline=\toks17
+ tables,
+\tableindent=\dimen28
+\itemindent=\dimen29
+\itemmargin=\dimen30
+\itemmax=\dimen31
+\itemno=\count26
+ indexing,
+\initialskipamount=\skip21
+\secondaryindent=\skip22
+\partialpage=\box16
+\doublecolumnhsize=\dimen32
+\doublecolumnvsize=\dimen33
+\availdimen@=\dimen34
+ sectioning,
+\chapno=\count27
+\secno=\count28
+\subsecno=\count29
+\subsubsecno=\count30
+\appendixno=\count31
+\contentsfile=\write0
+\chapheadingskip=\skip23
+\subsecheadingskip=\skip24
+\secheadingskip=\skip25
+ toc printing,
+\contentsrightmargin=\skip26
+\tocindent=\dimen35
+
+environments,
+\dblarrowbox=\box17
+\longdblarrowbox=\box18
+\pushcharbox=\box19
+\bullbox=\box20
+\equivbox=\box21
+\errorbox=\box22
+\lispnarrowing=\skip27
+\aboveenvskipamount=\skip28
+\circthick=\dimen36
+\cartouter=\dimen37
+\cartinner=\dimen38
+\normbskip=\skip29
+\normpskip=\skip30
+\normlskip=\skip31
+\lskip=\skip32
+\rskip=\skip33
+ defuns,
+\defbodyindent=\skip34
+\defargsindent=\skip35
+\deftypemargin=\skip36
+\deflastargmargin=\skip37
+\parencount=\count32
+ cross reference,
+\auxfile=\write1
+\footnoteno=\count33
+
+and turning on texinfo input format.
+\defaultparindent=\dimen39
+)
+*
+! Interruption.
+<*> 
+    
+? 
+(Please type a command or say `\end')
+* 
+
+*
+! Interruption.
+<*> 
+    
+? 
+(Please type a command or say `\end')
+*
+! Interruption.
+<*> 
+    
+? 
+(Please type a command or say `\end')
+*
+! Interruption.
+<*> 
+    
+? 
+(Please type a command or say `\end')
+*
+! Interruption.
+<*> 
+    
+?  
+Type <return> to proceed, S to scroll future error messages,
+R to run without stopping, Q to run quietly,
+I to insert something, 
+H for help, X to quit.
+?  
+Type <return> to proceed, S to scroll future error messages,
+R to run without stopping, Q to run quietly,
+I to insert something, 
+H for help, X to quit.
+?  
+Type <return> to proceed, S to scroll future error messages,
+R to run without stopping, Q to run quietly,
+I to insert something, 
+H for help, X to quit.
+?  
+Type <return> to proceed, S to scroll future error messages,
+R to run without stopping, Q to run quietly,
+I to insert something, 
+H for help, X to quit.
+? 
+(Please type a command or say `\end')
+*
+(Please type a command or say `\end')
+*
+! Interruption.
+<*> 
+    
+? 
+(Please type a command or say `\end')
+*
+! Emergency stop.
+<*> 
+    
+! End of file on the terminal
+
+No pages of output.

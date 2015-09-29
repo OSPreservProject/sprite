@@ -1,0 +1,96 @@
+#
+# select.test
+#
+# Tests for the select command.
+#---------------------------------------------------------------------------
+# Copyright 1992 Karl Lehenbauer and Mark Diekhans.
+#
+# Permission to use, copy, modify, and distribute this software and its
+# documentation for any purpose and without fee is hereby granted, provided
+# that the above copyright notice appear in all copies.  Karl Lehenbauer and
+# Mark Diekhans make no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without express or
+# implied warranty.
+#------------------------------------------------------------------------------
+# $Id: select.test,v 2.0 1992/10/16 04:50:09 markd Rel $
+#------------------------------------------------------------------------------
+#
+
+if {[info procs test] != "test"} then {source testlib.tcl}
+
+catch {select} msg
+if {"$msg" == "select is not available on this version of Unix"} {
+    echo "**** $msg"
+    echo "**** tests skipped"
+    return
+}
+
+pipe pipe1ReadFh pipe1WriteFh
+fcntl $pipe1WriteFh nobuf 1
+
+pipe pipe2ReadFh pipe2WriteFh
+fcntl $pipe2WriteFh nobuf 1
+
+set pipeReadList   [list $pipe1ReadFh  $pipe2ReadFh]
+set pipeWriteList  [list $pipe1WriteFh $pipe2WriteFh]
+
+Test iocmds-1.1 {select tests} {
+    select $pipeReadList $pipeWriteList {} 0.5
+} 0 [list {} $pipeWriteList {}]
+
+Test iocmds-1.2 {select tests} {
+    puts $pipe1WriteFh "Written to pipe 1"
+    set ret [select $pipeReadList $pipeWriteList {} 0.5]
+    list $ret [gets $pipe1ReadFh]
+} 0 [list [list $pipe1ReadFh $pipeWriteList {}] "Written to pipe 1"]
+
+Test iocmds-1.3 {select tests} {
+    puts $pipe2WriteFh "Written to pipe 2"
+    set ret [select $pipeReadList $pipeWriteList {} 0.5]
+    list $ret [gets $pipe2ReadFh]
+} 0 [list [list $pipe2ReadFh $pipeWriteList {}] "Written to pipe 2"]
+
+Test iocmds-1.4 {select tests} {
+    puts $pipe1WriteFh "Written to pipe 1"
+    puts $pipe2WriteFh "Written to pipe 2"
+    set ret [select $pipeReadList $pipeWriteList {} 0.5]
+    list $ret [gets $pipe1ReadFh] [gets $pipe2ReadFh]
+} 0 [list [list $pipeReadList $pipeWriteList {}] "Written to pipe 1" \
+          "Written to pipe 2"]
+
+Test iocmds-1.5 {select tests} {
+    select $pipeReadList $pipeWriteList {} 0
+} 0 [list {} $pipeWriteList {}]
+
+Test iocmds-1.6 {select tests} {
+    puts $pipe1WriteFh "Written to pipe 1"
+    set ret [select $pipeReadList $pipeWriteList]
+    list $ret [gets $pipe1ReadFh]
+} 0 [list [list $pipe1ReadFh $pipeWriteList {}] "Written to pipe 1"]
+
+Test iocmds-1.7 {select tests} {
+    puts $pipe1WriteFh "Written to pipe 1"
+    set ret [select $pipeReadList $pipeWriteList {} 0]
+    list $ret [gets $pipe1ReadFh]
+} 0 [list [list $pipe1ReadFh $pipeWriteList {}] "Written to pipe 1"]
+
+Test iocmds-1.8 {select tests} {
+    puts $pipe1WriteFh "Written to pipe 1 #1"
+    puts $pipe1WriteFh "Written to pipe 1 #2"
+    set ret1 [select $pipeReadList $pipeWriteList {} 0]
+    set data1 [gets $pipe1ReadFh]
+    set ret2 [select $pipeReadList $pipeWriteList {} 0]
+    set data2 [gets $pipe1ReadFh]
+    list $ret1 $data1 $ret2 $data2
+} 0 [list [list $pipe1ReadFh $pipeWriteList {}] "Written to pipe 1 #1" \
+          [list $pipe1ReadFh $pipeWriteList {}] "Written to pipe 1 #2"]
+
+
+Test iocmds-2.1 {select tests} {
+    select foo $pipeWriteList {} 0
+} 1 {bad file identifier "foo"}
+
+Test iocmds-2.2 {select tests} {
+     select $pipeReadList $pipeWriteList {} X
+} 1 {expected floating-point number but got "X"}
+

@@ -1,0 +1,6 @@
+D DEBUGGER                          	debugger
+F GETKEY.C;1                        	getkey.c
+F README.;1                         	README
+F TCLDBM.C;1                        	tcldbm.c
+F TCLSOCKE.C;1                      	tclSocket.c
+F TCLSOCKE.H;1                      	tclSocket.h

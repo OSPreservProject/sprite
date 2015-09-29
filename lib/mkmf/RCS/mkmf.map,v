@@ -1,0 +1,1591 @@
+head     1.66;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.66
+date     92.06.10.12.44.01;  author kupfer;  state Exp;
+branches ;
+next     1.65;
+
+1.65
+date     91.11.03.17.43.30;  author jhh;  state Exp;
+branches ;
+next     1.64;
+
+1.64
+date     91.10.17.17.45.25;  author rab;  state Exp;
+branches ;
+next     1.63;
+
+1.63
+date     91.08.15.11.46.17;  author jhh;  state Exp;
+branches ;
+next     1.62;
+
+1.62
+date     91.01.04.10.21.39;  author ouster;  state Exp;
+branches ;
+next     1.61;
+
+1.61
+date     91.01.04.10.19.49;  author shirriff;  state Exp;
+branches ;
+next     1.60;
+
+1.60
+date     90.05.18.16.57.58;  author mendel;  state Exp;
+branches ;
+next     1.59;
+
+1.59
+date     90.04.15.11.52.11;  author mendel;  state Exp;
+branches ;
+next     1.58;
+
+1.58
+date     90.03.12.23.27.47;  author jhh;  state Exp;
+branches ;
+next     1.57;
+
+1.57
+date     90.03.06.11.44.24;  author rab;  state Exp;
+branches ;
+next     1.56;
+
+1.56
+date     90.03.05.23.31.47;  author tve;  state Exp;
+branches ;
+next     1.55;
+
+1.55
+date     90.02.14.13.28.30;  author tve;  state Exp;
+branches ;
+next     1.54;
+
+1.54
+date     89.12.30.02.23.56;  author tve;  state Exp;
+branches ;
+next     1.53;
+
+1.53
+date     89.12.13.23.21.59;  author tve;  state Exp;
+branches ;
+next     1.52;
+
+1.52
+date     89.12.13.17.48.39;  author tve;  state Exp;
+branches ;
+next     1.51;
+
+1.51
+date     89.12.12.13.24.41;  author tve;  state Exp;
+branches ;
+next     1.50;
+
+1.50
+date     89.10.25.16.34.25;  author tve;  state Exp;
+branches ;
+next     1.49;
+
+1.49
+date     89.10.24.21.58.13;  author tve;  state Exp;
+branches ;
+next     1.48;
+
+1.48
+date     89.10.24.18.36.37;  author rab;  state Exp;
+branches ;
+next     1.47;
+
+1.47
+date     89.10.23.22.13.03;  author tve;  state Exp;
+branches ;
+next     1.46;
+
+1.46
+date     89.10.19.14.15.17;  author tve;  state Exp;
+branches ;
+next     1.45;
+
+1.45
+date     89.10.09.21.27.38;  author rab;  state Exp;
+branches ;
+next     1.44;
+
+1.44
+date     89.09.28.13.56.16;  author jhh;  state Exp;
+branches ;
+next     1.43;
+
+1.43
+date     89.07.17.14.08.16;  author douglis;  state Exp;
+branches ;
+next     1.42;
+
+1.42
+date     89.06.03.17.49.37;  author douglis;  state Exp;
+branches ;
+next     1.41;
+
+1.41
+date     89.01.15.13.51.07;  author ouster;  state Exp;
+branches ;
+next     1.40;
+
+1.40
+date     89.01.09.10.56.15;  author ouster;  state Exp;
+branches ;
+next     1.39;
+
+1.39
+date     88.12.15.09.04.21;  author ouster;  state Exp;
+branches ;
+next     1.38;
+
+1.38
+date     88.12.14.17.25.35;  author ouster;  state Exp;
+branches ;
+next     1.37;
+
+1.37
+date     88.12.14.09.00.33;  author ouster;  state Exp;
+branches ;
+next     1.36;
+
+1.36
+date     88.12.04.14.52.37;  author ouster;  state Exp;
+branches ;
+next     1.35;
+
+1.35
+date     88.12.04.12.37.28;  author ouster;  state Exp;
+branches ;
+next     1.34;
+
+1.34
+date     88.11.22.17.46.02;  author douglis;  state Exp;
+branches ;
+next     1.33;
+
+1.33
+date     88.11.22.17.43.12;  author douglis;  state Exp;
+branches ;
+next     1.32;
+
+1.32
+date     88.11.10.15.15.25;  author ouster;  state Exp;
+branches ;
+next     1.31;
+
+1.31
+date     88.10.31.13.58.25;  author douglis;  state Exp;
+branches ;
+next     1.30;
+
+1.30
+date     88.10.30.21.53.44;  author douglis;  state Exp;
+branches ;
+next     1.29;
+
+1.29
+date     88.10.23.14.14.00;  author ouster;  state Exp;
+branches ;
+next     1.28;
+
+1.28
+date     88.10.13.09.52.55;  author ouster;  state Exp;
+branches ;
+next     1.27;
+
+1.27
+date     88.10.02.11.37.43;  author ouster;  state Exp;
+branches ;
+next     1.26;
+
+1.26
+date     88.09.29.09.38.53;  author ouster;  state Exp;
+branches ;
+next     1.25;
+
+1.25
+date     88.09.13.11.10.41;  author mendel;  state Exp;
+branches ;
+next     1.24;
+
+1.24
+date     88.09.11.14.45.13;  author ouster;  state Exp;
+branches ;
+next     1.23;
+
+1.23
+date     88.09.09.17.43.32;  author ouster;  state Exp;
+branches ;
+next     1.22;
+
+1.22
+date     88.09.01.15.34.06;  author ouster;  state Exp;
+branches ;
+next     1.21;
+
+1.21
+date     88.08.20.17.52.59;  author ouster;  state Exp;
+branches ;
+next     1.20;
+
+1.20
+date     88.08.20.12.58.29;  author ouster;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     88.08.13.15.07.47;  author ouster;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     88.08.12.14.57.33;  author ouster;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     88.08.12.14.34.30;  author ouster;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     88.08.11.11.21.58;  author brent;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     88.08.10.13.39.26;  author ouster;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     88.07.11.13.22.28;  author ouster;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     88.06.29.17.10.08;  author ouster;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     88.06.27.09.56.48;  author ouster;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     88.06.26.16.30.30;  author ouster;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     88.06.21.16.05.44;  author ouster;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     88.06.17.08.59.19;  author ouster;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     88.06.05.17.42.28;  author ouster;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.05.28.12.06.19;  author ouster;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.05.27.17.37.32;  author ouster;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.05.27.16.03.04;  author douglis;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.04.28.13.24.04;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.04.01.18.47.03;  author deboor;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.03.19.18.14.15;  author deboor;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.03.18.15.10.25;  author deboor;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@File to map from directory patterns to subscript suffix and other things
+@
+
+
+1.66
+log
+@Don't put an RCS directory in the installed kernel source directories.
+@
+text
+@#
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.65 91/11/03 17:43:30 jhh Exp Locker: kupfer $ (SPRITE) Berkeley
+#
+# This file is an awk script that returns information about how to
+# run Mkmf in a directory, based on the name of the directory.  Each
+# line contains a pattern and a single print statement, followed by an
+# exit.  The patterns are applied against stdin, which contains a single
+# line containing a directory name.  The first matching line determines
+# output, which is in the following form
+#	"<mkmf-script> <makeRCS?> <makeDepend?> <makeMd?> <subType>"
+# The fields in the line have the following meanings:
+#	mkmf-script	The "type" of directory that this is:  kernel, library
+#			etc.  This selects a type-specific Mkmf script and
+#			prototype Makefile.
+#	makeRCS		"yes" means make an RCS subdirectory here if one
+#			doesn't already exist.
+#	makeDepend	"yes" means regenerate dependencies at the end of
+#			Mkmf by running "pmake dependall".
+#	makeMd		"yes" means make a default .md subdirectory if
+#			there aren't already .md subdirectories in this
+#			directory.
+#	subType		This is an additional field passed to the type-specific
+#			Mkmf script.  It's most common use is to indicate
+#			where to install things, for example "sprite" for
+#			the Sprite system area.
+#
+# Be careful:  the first matching pattern wins!
+#
+/sprite\/src\/lib\/include/	{ print "hdrs yes no no sprite"; exit }
+/\.md$/				{ print "md no no no sprite"; exit }
+/\/sprite\/src\/attcmds\/rcs\/lib$/ { print "library no yes yes none"; exit}
+/\/sprite\/src\/attcmds\/rpn$/	    { print "bigcmdtop no no yes sprite"; exit}
+/\/sprite\/src\/attcmds\/rpn\//	    { print "bigcmd yes yes yes sprite"; exit}
+/\/sprite\/src\/attcmds\/[^/]*$/    { print "command yes yes yes sprite"; exit }
+/\/sprite\/src\/attcmds$/	    { print "top no no no sprite"; exit }
+/\/sprite\/src\/benchmarks\/[^/]*$/ { print "command yes yes yes test"; exit }
+/\/sprite\/src\/benchmarks$/	    { print "top no no no test"; exit }
+/\/sprite\/src\/cmds\/pmake$/       { print "bigcmdtop no no yes sprite"; exit}
+/\/sprite\/src\/cmds\/pmake\//      { print "bigcmd yes yes yes sprite"; exit}
+/\/sprite\/src\/cmds\/[^/]*$/       { print "command yes yes yes sprite"; exit }
+/\/sprite\/src\/cmds$/	            { print "top no no no sprite"; exit }
+/\/local\/src\/cmds\/[^/]*$/        { print "command yes yes yes local"; exit }
+/\/local\/src\/cmds$/	            { print "top no no no local"; exit }
+/\/local\/src\/lib\/[^/]*$/         { print "library yes yes yes local"; exit }
+/\/local\/src\/lib$/                { print "top no no no local"; exit}
+/\/sprite\/src\/daemons\/[^/]*$/    { print "command yes yes yes daemon"; exit }
+/\/sprite\/src\/daemons$/	    { print "top no no no daemon"; exit }
+/\/sprite\/src\/adobecmds\/[^/]*$/  { print "command yes yes yes sprite"; exit }
+/\/sprite\/src\/adobecmds$/	    { print "top no no no sprite"; exit }
+/\/kernel\/Installed\/[0-9]\.[0-9]+\/[^/]*$/{ print "snapkernel no yes no kernel"; exit }
+/\/kernel\/Installed\/[0-9]\.[0-9]+$/{ print "top no no no sprite"; exit }
+/\/src\/kernel$/		{ print "top no no no sprite"; exit }
+# It's okay to put an RCS directory in a private kernel directory, but
+# the installed source directories should not have an RCS directory.
+/\/src\/kernel\/[^/]*$/		{ print "kernel no yes yes kernel"; exit }
+/\/src\/kernel/			{ print "kernel yes yes yes kernel"; exit }
+/sprite\/src\/lib\/[^/]*\/[^/]*$/ { print "biglib yes yes yes sprite"; exit }
+/sprite\/src\/lib\/c$/		{ print "biglibtop no no yes sprite"; exit }
+/sprite\/src\/lib$/		{ print "top no no no sprite"; exit }
+/sprite\/src\/lib\//		{ print "library yes yes yes sprite"; exit }
+/sprite\/src$/                  { print "top no no no sprite"; exit }
+/X11\/R4$/			{ print "top no no no none"; exit }
+/X11\/R4\/src$/			{ print "top no no no none"; exit }
+/X11\/R4\/src\/lib\/X11\/[^/]*$/ { print "biglib no yes yes none"; exit }
+/X11\/R4\/src\/lib\/X11$/	{ print "biglibtop no no yes none"; exit }
+/X11\/R4\/src\/lib$/		{ print "top no no no none"; exit }
+/X11\/R4\/src\/lib\//		{ print "library yes yes no none"; exit }
+/X11\/R4\/src\/cmds$/		{ print "top no no no none"; exit }
+/X11\/R4\/src\/cmds\/X\// 	{ print "bigcmd yes yes no X11R4"; exit }
+/X11\/R4\/src\/cmds\/Xsun$/	{ print "bigcmdtop no no no X11R4"; exit }
+/X11\/R4\/src\/cmds\/Xmfbpmax$/	{ print "bigcmdtop no no no X11R4"; exit }
+/X11\/R4\/src\/cmds\/Xcfbpmax$/	{ print "bigcmdtop no no no X11R4"; exit }
+/X11\/R4\/src\/cmds\/bitmap$/	{ print "top no no no none"; exit }
+/X11\/R4\/src\/cmds\/font$/	{ print "top no no no none"; exit }
+/X11\/R4\/lib\/fonts.X11R4$/		{ print "top no no no X11R4"; exit }
+/X11\/R4\/src\/cmds\//		{ print "command yes yes no X11R4"; exit }
+/X11\/R4\/lib$/			{ print "top no no no none"; exit }
+/X11\/R4\/lib\/rgb/		{ print "command yes yes no none"; exit }
+/X11\/R4\/lib\/fonts$/		{ print "top no no no none"; exit }
+/X11\/R4\/lib\/fonts\//		{ print "top no no no none"; exit }
+/X11\/R5$/			{ print "top no no no none"; exit }
+/X11\/R5\/src$/			{ print "top no no no none"; exit }
+/X11\/R5\/src\/lib\/X11\/[^/]*$/ { print "biglib no yes yes none"; exit }
+/X11\/R5\/src\/lib\/X11$/	{ print "biglibtop no no yes none"; exit }
+/X11\/R5\/src\/lib$/		{ print "top no no no none"; exit }
+/X11\/R5\/src\/lib\//		{ print "library yes yes no none"; exit }
+/X11\/R5\/src\/cmds$/		{ print "top no no no none"; exit }
+/X11\/R5\/src\/cmds\/X\// 	{ print "bigcmd yes yes no X11R5"; exit }
+/X11\/R5\/src\/cmds\/Xsun$/	{ print "bigcmdtop no no no X11R5"; exit }
+/X11\/R5\/src\/cmds\/Xmfbpmax$/	{ print "bigcmdtop no no no X11R5"; exit }
+/X11\/R5\/src\/cmds\/Xcfbpmax$/	{ print "bigcmdtop no no no X11R5"; exit }
+/X11\/R5\/src\/cmds\/bitmap$/	{ print "top no no no none"; exit }
+/X11\/R5\/src\/cmds\/font$/	{ print "top no no no none"; exit }
+/X11\/R5\/lib\/fonts.X11R5$/		{ print "top no no no X11R5"; exit }
+/X11\/R5\/src\/cmds\//		{ print "command yes yes no X11R5"; exit }
+/X11\/R5\/lib$/			{ print "top no no no none"; exit }
+/X11\/R5\/lib\/rgb/		{ print "command yes yes no none"; exit }
+/X11\/R5\/lib\/fonts$/		{ print "top no no no none"; exit }
+/X11\/R5\/lib\/fonts\//		{ print "top no no no none"; exit }
+/emacs\/src\/cmds$/		{ print "top no no no emacs"; exit }
+/emacs\/src\/cmds\//		{ print "command yes yes yes emacs"; exit }
+/emacs\/src$/			{ print "top no no no emacs"; exit }
+/sprite\/users\/[^/]*\/src\/cmds\// { print "command no yes yes personal";exit}
+/sprite\/users\/[^/]*\/src\/cmds$/  { print "top no no no personal"; exit }
+/sprite\/users\/[^/]*\/src\/lib\//  { print "library no yes yes personal";exit}
+/sprite\/users\/[^/]*\/src\/lib$/   { print "top no no no personal"; exit }
+/user[0-9]+\/[^/]*\/src\/cmds\// { print "command no yes yes personal";exit}
+/user[0-9]+\/[^/]*\/src\/cmds$/  { print "top no no no personal"; exit }
+/user[0-9]+\/[^/]*\/src\/lib\//  { print "library no yes yes personal";exit}
+/user[0-9]+\/[^/]*\/src\/lib$/   { print "top no no no personal"; exit }
+/mic\/[^/]*\/src\/cmds$/  { print "top no no no personal"; exit }
+/mic\/[^/]*\/src\/cmds\// { print "command no yes yes personal";exit}
+/mic\/[^/]*\/src\/lib$/   { print "top no no no personal"; exit }
+/mic\/[^/]*\/src\/lib\//  { print "library no yes yes personal";exit}
+/mic\/guest\/.*\/src\/cmds$/  { print "top no no no personal"; exit }
+/mic\/guest\/.*\/src\/cmds\// { print "command no yes yes personal";exit}
+/mic\/guest\/.*\/src\/lib$/   { print "top no no no personal"; exit }
+/mic\/guest\/.*\/src\/lib\//  { print "library no yes yes personal";exit}
+/\/src\/cmds$/			{ print "top no no no sprite"; exit }
+/\/src\/daemons$/		{ print "top no no no daemon"; exit }
+/\/src\/daemons\/[^/]*$/	{ print "command yes yes yes daemon"; exit }
+/\/src\/tests\//		{ print "command yes yes yes test"; exit }
+/\/src\/tests$/			{ print "top no no no test"; exit }
+/\/src\/cmds\//			{ print "command yes yes yes sprite"; exit }
+/\/src\/admin$/                 { print "top no no no admin"; exit }
+/\/src\/admin\//		{ print "command yes yes yes admin"; exit }
+/\/src\/boot\//			{ print "boot yes yes no boot"; exit }
+/\/src\/boot$/			{ print "top no no no boot"; exit }
+/\/src\/man$/                   { print "top no no no sprite"; exit }
+/\/src\/man\//			{ print "man no no no sprite"; exit }
+#
+# Default: Must be last pattern in file
+#
+/./				{ print "command no yes yes personal" }
+@
+
+
+1.65
+log
+@added /local/src/lib
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.64 91/10/17 17:45:25 rab Exp $ (SPRITE) Berkeley
+d53 3
+@
+
+
+1.64
+log
+@Added /X11/R5 rules.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.63 91/08/15 11:46:17 jhh Exp Locker: rab $ (SPRITE) Berkeley
+d44 2
+@
+
+
+1.63
+log
+@any subdirectories of /sprite/src/kernel should use the kernel makefile
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.62 91/01/04 10:21:39 ouster Exp $ (SPRITE) Berkeley
+d76 19
+@
+
+
+1.62
+log
+@Deleted old X11 stuff.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.60 90/05/18 16:57:58 mendel Exp Locker: shirriff $ (SPRITE) Berkeley
+a49 1
+/\/src\/kernel\/[^/]*$/		{ print "kernel yes yes yes kernel"; exit }
+d51 1
+@
+
+
+1.61
+log
+@Don't know what was changed;  JO checked in for KS.
+@
+text
+@a56 23
+/X\/src\/lib\/include/		{ print "hdrs yes no no x"; exit}
+/X\/src\/lib\/X11$/		{ print "biglibtop no no yes x"; exit }
+/X\/src\/lib\/[^/]*\/[^/]*$/	{ print "biglib yes yes yes x"; exit }
+/X\/src\/lib\//			{ print "library yes yes yes x"; exit }
+/X\/src\/lib$/			{ print "top no no no x"; exit }
+/X\/src\/cmds\/Xsprite$/	{ print "bigcmdtop no no yes x"; exit }
+/X\/src\/cmds\/Xsprite\//	{ print "bigcmd yes yes yes x"; exit }
+/X\/src\/cmds$/			{ print "top no no no x"; exit }
+/X\/src\/cmds\//		{ print "command yes yes yes x"; exit }
+/X\/src$/			{ print "top no no no x"; exit }
+/X11R3\/src$/			{ print "top no no no X11R3"; exit }
+/X11R3\/src\/lib$/		{ print "top no no no X11R3"; exit }
+/X11R3\/src\/lib\//		{ print "library yes yes no X11R3"; exit }
+/X11R3\/src\/cmds$/		{ print "top no no no X11R3"; exit }
+/X11R3\/src\/cmds\/Xsp$/	{ print "bigcmdtop no no no X11R3"; exit }
+/X11R3\/src\/cmds\/Xsp\//	{ print "bigcmd yes yes no X11R3"; exit }
+/X11R3\/src\/cmds\/bitmap$/	{ print "top no no no X11R3"; exit }
+/X11R3\/src\/cmds\/font$/	{ print "top no no no X11R3"; exit }
+/X11R3\/src\/cmds\//		{ print "command yes yes no X11R3"; exit }
+/X11R3$/			{ print "top no no no X11R3"; exit }
+/X11R3\/lib\/rgb/		{ print "command yes yes no X11R3"; exit }
+/X11R3\/lib\/fonts$/		{ print "top no no no X11R3"; exit }
+/X11R3\/lib\/fonts\//		{ print "top no no no X11R3"; exit }
+@
+
+
+1.60
+log
+@Added entries for /X11/R4.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.59 90/04/15 11:52:11 mendel Exp Locker: mendel $ (SPRITE) Berkeley
+d42 2
+@
+
+
+1.59
+log
+@Added lines for /X11/R4.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.58 90/03/12 23:27:47 jhh Exp Locker: mendel $ (SPRITE) Berkeley
+d80 1
+a80 1
+/X11\/R4\/src\/lib\/[^/]*\/[^/]*$/ { print "biglib no yes yes none"; exit }
+d85 4
+a88 2
+/X11\/R4\/src\/cmds\/X$/	{ print "bigcmdtop no no no X11R4"; exit }
+/X11\/R4\/src\/cmds\/X\//	{ print "bigcmd yes yes no X11R4"; exit }
+d91 1
+@
+
+
+1.58
+log
+@handles snapshots of the kernel sources
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.57 90/03/06 11:44:24 rab Exp Locker: jhh $ (SPRITE) Berkeley
+d80 2
+d85 2
+a86 2
+/X11\/R4\/src\/cmds\/X$/	{ print "bigcmdtop no no no none"; exit }
+/X11\/R4\/src\/cmds\/X\//	{ print "bigcmd yes yes no none"; exit }
+d89 1
+a89 1
+/X11\/R4\/src\/cmds\//		{ print "command yes yes no none"; exit }
+@
+
+
+1.57
+log
+@Changed all the X11/R4 to X11\/R4 so awk doesn't barf.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.56 90/03/05 23:31:47 tve Exp Locker: rab $ (SPRITE) Berkeley
+d46 2
+@
+
+
+1.56
+log
+@various changes in /X11*, /mic/*, and /cad removed
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.55 90/02/14 13:28:30 tve Exp Locker: tve $ (SPRITE) Berkeley
+d76 14
+a89 14
+/X11/R4$/			{ print "top no no no none"; exit }
+/X11/R4\/src$/			{ print "top no no no none"; exit }
+/X11/R4\/src\/lib$/		{ print "top no no no none"; exit }
+/X11/R4\/src\/lib\//		{ print "library yes yes no none"; exit }
+/X11/R4\/src\/cmds$/		{ print "top no no no none"; exit }
+/X11/R4\/src\/cmds\/X$/		{ print "bigcmdtop no no no none"; exit }
+/X11/R4\/src\/cmds\/X\//	{ print "bigcmd yes yes no none"; exit }
+/X11/R4\/src\/cmds\/bitmap$/	{ print "top no no no none"; exit }
+/X11/R4\/src\/cmds\/font$/	{ print "top no no no none"; exit }
+/X11/R4\/src\/cmds\//		{ print "command yes yes no none"; exit }
+/X11/R4\/lib$/			{ print "top no no no none"; exit }
+/X11/R4\/lib\/rgb/		{ print "command yes yes no none"; exit }
+/X11/R4\/lib\/fonts$/		{ print "top no no no none"; exit }
+/X11/R4\/lib\/fonts\//		{ print "top no no no none"; exit }
+@
+
+
+1.55
+log
+@added X11R4
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.54 89/12/30 02:23:56 tve Exp Locker: tve $ (SPRITE) Berkeley
+d63 27
+a89 23
+/X11R[34]\/src\/lib$/		{ print "top no no no X11R3"; exit }
+/X11R[34]\/src\/lib\//		{ print "library yes yes no X11R3"; exit }
+/X11R[34]\/src\/cmds\/Xsprite$/	{ print "script yes no no X11R3"; exit }
+/X11R[34]\/src\/cmds\/Xsp$/	{ print "bigcmdtop no no no X11R3"; exit }
+/X11R[34]\/src\/cmds\/Xsp\//	{ print "bigcmd yes yes no X11R3"; exit }
+/X11R[34]\/src\/cmds\/bitmap$/	{ print "top no no no X11R3"; exit }
+/X11R[34]\/src\/cmds\/font$/	{ print "top no no no X11R3"; exit }
+/X11R[34]\/src\/cmds$/		{ print "top no no no X11R3"; exit }
+/X11R[34]\/src\/cmds\//		{ print "command yes yes no X11R3"; exit }
+/X11R[34]\/src$/			{ print "top no no no X11R3"; exit }
+/X11R[34]\/lib\/rgb/		{ print "command yes yes no X11R3"; exit }
+/X11R[34]\/lib\/fonts$/		{ print "top no no no X11R3"; exit }
+/X11R[34]\/lib\/fonts\//		{ print "top no no no X11R3"; exit }
+/X11R[34]$/			{ print "top no no no X11R3"; exit }
+/cad\/src\/lib$/		{ print "top no no no cad"; exit }
+/cad\/src\/lib\//		{ print "library yes yes no cad"; exit }
+/cad\/src\/cmds$/		{ print "top no no no cad"; exit }
+/cad\/src\/cmds\//		{ print "command yes yes no cad"; exit }
+/cad\/src$/			{ print "top no no no cad"; exit }
+/cad\/lib\/rgb/			{ print "command yes yes no cad"; exit }
+/cad\/lib\/fonts$/		{ print "top no no no cad"; exit }
+/cad\/lib\/fonts\//		{ print "top no no no cad"; exit }
+/cad$/				{ print "top no no no cad"; exit }
+d101 1
+d103 1
+a103 1
+/mic\/[^/]*\/src\/cmds$/  { print "top no no no personal"; exit }
+d105 4
+a108 1
+/mic\/[^/]*\/src\/lib$/   { print "top no no no personal"; exit }
+a124 1
+
+@
+
+
+1.54
+log
+@added /mic as root for user home directories
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.53 89/12/13 23:21:59 tve Exp Locker: tve $ (SPRITE) Berkeley
+d63 14
+a76 14
+/X11R3\/src\/lib$/		{ print "top no no no X11R3"; exit }
+/X11R3\/src\/lib\//		{ print "library yes yes no X11R3"; exit }
+/X11R3\/src\/cmds\/Xsprite$/	{ print "script yes no no X11R3"; exit }
+/X11R3\/src\/cmds\/Xsp$/	{ print "bigcmdtop no no no X11R3"; exit }
+/X11R3\/src\/cmds\/Xsp\//	{ print "bigcmd yes yes no X11R3"; exit }
+/X11R3\/src\/cmds\/bitmap$/	{ print "top no no no X11R3"; exit }
+/X11R3\/src\/cmds\/font$/	{ print "top no no no X11R3"; exit }
+/X11R3\/src\/cmds$/		{ print "top no no no X11R3"; exit }
+/X11R3\/src\/cmds\//		{ print "command yes yes no X11R3"; exit }
+/X11R3\/src$/			{ print "top no no no X11R3"; exit }
+/X11R3\/lib\/rgb/		{ print "command yes yes no X11R3"; exit }
+/X11R3\/lib\/fonts$/		{ print "top no no no X11R3"; exit }
+/X11R3\/lib\/fonts\//		{ print "top no no no X11R3"; exit }
+/X11R3$/			{ print "top no no no X11R3"; exit }
+@
+
+
+1.53
+log
+@minor fix to cad stuff
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.52 89/12/13 17:48:39 tve Exp Locker: tve $ (SPRITE) Berkeley
+d97 4
+@
+
+
+1.52
+log
+@added rules for /cad
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.51 89/12/12 13:24:41 tve Exp Locker: tve $ (SPRITE) Berkeley
+a78 2
+/cad\/src\/cmds\/cifplot$/	{ print "bigcmdtop no no no cad"; exit }
+/cad\/src\/cmds\/cifplot\//	{ print "bigcmd yes yes no cad"; exit }
+@
+
+
+1.51
+log
+@X11R3 fixes
+..
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.50 89/10/25 16:34:25 tve Exp Locker: tve $ (SPRITE) Berkeley
+d77 11
+@
+
+
+1.50
+log
+@more X11R3 fixes
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.49 89/10/24 21:58:13 tve Exp Locker: tve $ (SPRITE) Berkeley
+d65 1
+a65 2
+/X11R3\/src\/cmds\/Xsprite$/	{ print "bigcmdtop no no no X11R3"; exit }
+/X11R3\/src\/cmds\/Xsprite\//	{ print "bigcmd yes yes no X11R3"; exit }
+@
+
+
+1.49
+log
+@fixed some X11R3 stuff
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.48 89/10/24 18:36:37 rab Exp Locker: tve $ (SPRITE) Berkeley
+d63 1
+a64 1
+/X11R3\/src\/lib$/		{ print "top no no no X11R3"; exit }
+d74 3
+@
+
+
+1.48
+log
+@Removed /a/newcmds and /a/attcmds stuff.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.47 89/10/23 22:13:03 tve Exp Locker: rab $ (SPRITE) Berkeley
+d63 1
+a63 1
+/X11R3\/src\/lib\//		{ print "library yes yes yes X11R3"; exit }
+d65 2
+a66 2
+/X11R3\/src\/cmds\/Xsprite$/	{ print "bigcmdtop no no yes X11R3"; exit }
+/X11R3\/src\/cmds\/Xsprite\//	{ print "bigcmd yes yes yes X11R3"; exit }
+d69 2
+d72 1
+a72 1
+/X11R3\/src\/cmds\//		{ print "command yes yes yes X11R3"; exit }
+@
+
+
+1.47
+log
+@fixed some stuff for X11R3
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.46 89/10/19 14:15:17 tve Exp Locker: tve $ (SPRITE) Berkeley
+d31 15
+a45 15
+/\/a\/attcmds\/rcs\/lib$/	{ print "library no yes yes none"; exit}
+/\/a\/attcmds\/rpn$/		{ print "bigcmdtop no no yes sprite"; exit}
+/\/a\/attcmds\/rpn\//		{ print "bigcmd yes yes yes sprite"; exit}
+/\/a\/attcmds\/[^/]*$/		{ print "command yes yes yes sprite"; exit }
+/\/a\/attcmds$/			{ print "top no no no sprite"; exit }
+/\/a\/newcmds\/pmake$/		{ print "bigcmdtop no no yes sprite"; exit}
+/\/a\/newcmds\/pmake\//		{ print "bigcmd yes yes yes sprite"; exit}
+#/\/a\/newcmds\/nslookup$/	{ print "bigcmdtop no no yes sprite"; exit}
+#/\/a\/newcmds\/nslookup\//	{ print "bigcmd yes yes yes sprite"; exit}
+/\/a\/newcmds\/[^/]*$/		{ print "command yes yes yes sprite"; exit }
+/\/a\/newcmds$/			{ print "top no no no sprite"; exit }
+/\/a\/daemons\/[^/]*$/		{ print "command yes yes yes daemon"; exit }
+/\/a\/daemons$/			{ print "top no no no daemon"; exit }
+/\/a\/adobecmds\/[^/]*$/	{ print "command yes yes yes sprite"; exit }
+/\/a\/adobecmds$/		{ print "top no no no sprite"; exit }
+@
+
+
+1.46
+log
+@added X11R3
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.45 89/10/09 21:27:38 rab Exp Locker: tve $ (SPRITE) Berkeley
+a62 1
+/X11R3\/src\/lib\/include/	{ print "hdrs yes no no X11R3"; exit}
+d67 2
+a68 4
+/X11R3\/src\/cmds\/Xsp$/	{ print "bigcmdtop no no yes X11R3"; exit }
+/X11R3\/src\/cmds\/Xsp\//	{ print "bigcmd yes yes yes X11R3"; exit }
+/X11R3\/src\/cmds\/font$/	{ print "top no no no X11R3"; exit }
+/X11R3\/src\/cmds\/font\//	{ print "command yes yes yes X11R3"; exit }
+@
+
+
+1.45
+log
+@Modifications for distribution.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.44 89/09/28 13:56:16 jhh Exp Locker: rab $ (SPRITE) Berkeley
+d63 13
+@
+
+
+1.44
+log
+@Added fields for /emacs and /user?.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.43 89/07/17 14:08:16 douglis Exp Locker: douglis $ (SPRITE) Berkeley
+d52 1
+d74 12
+a85 9
+/src\/cmds$/			{ print "top no no no sprite"; exit }
+/src\/daemons$/			{ print "top no no no daemon"; exit }
+/src\/daemons\/[^/]*$/		{ print "command yes yes yes daemon"; exit }
+/src\/tests\//			{ print "command yes yes yes test"; exit }
+/src\/tests$/			{ print "top no no no test"; exit }
+/src\/cmds\//			{ print "command yes yes yes sprite"; exit }
+/src\/admin\//			{ print "command yes yes yes admin"; exit }
+/src\/boot\//			{ print "boot yes yes no boot"; exit }
+/src\/man\//			{ print "man no no no sprite"; exit }
+d90 1
+@
+
+
+1.43
+log
+@changes by JHH for personal directories
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.41 89/01/15 13:51:07 ouster Exp Locker: douglis $ (SPRITE) Berkeley
+d62 3
+d69 4
+@
+
+
+1.42
+log
+@Looks like Fred added adobecmds -- John
+@
+text
+@d62 4
+@
+
+
+1.41
+log
+@Change default to "personal".
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.40 89/01/09 10:56:15 ouster Exp $ (SPRITE) Berkeley
+d44 2
+@
+
+
+1.40
+log
+@Added /sprite/src/man.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.39 88/12/15 09:04:21 ouster Exp Locker: ouster $ (SPRITE) Berkeley
+d72 1
+a72 1
+/./				{ print "command no yes yes sprite" }
+@
+
+
+1.39
+log
+@.md directories weren't getting created for test directories.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.38 88/12/14 17:25:35 ouster Exp $ (SPRITE) Berkeley
+d68 1
+@
+
+
+1.38
+log
+@Remove old entry for tests.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.37 88/12/14 09:00:33 ouster Exp $ (SPRITE) Berkeley
+d63 1
+a66 1
+/src\/tests\//			{ print "command yes yes no test"; exit }
+@
+
+
+1.37
+log
+@Update entries for things in /sprite/src/daemons.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.36 88/12/04 14:52:37 ouster Exp $ (SPRITE) Berkeley
+a30 1
+/\/test\//			{ print "test yes yes no test"; exit }
+@
+
+
+1.36
+log
+@Added entry for /sprite/src/kernel.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.35 88/12/04 12:37:28 ouster Exp $ (SPRITE) Berkeley
+d63 1
+a65 1
+/src\/daemons\//		{ print "command yes yes yes daemon"; exit }
+@
+
+
+1.35
+log
+@Added "top" entries for X.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.34 88/11/22 17:46:02 douglis Exp Locker: douglis $ (SPRITE) Berkeley
+d46 1
+@
+
+
+1.34
+log
+@reinstated admin.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.33 88/11/22 17:43:12 douglis Exp Locker: douglis $ (SPRITE) Berkeley
+d39 2
+a40 2
+/\/a\/newcmds\/nslookup$/	{ print "bigcmdtop no no yes sprite"; exit}
+/\/a\/newcmds\/nslookup\//	{ print "bigcmd yes yes yes sprite"; exit}
+d54 1
+d59 1
+@
+
+
+1.33
+log
+@added /sprite/src/lib to list.
+(by JKO)
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.32 88/11/10 15:15:25 ouster Exp $ (SPRITE) Berkeley
+d63 1
+@
+
+
+1.32
+log
+@Switch to use command instead of command2.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.31 88/10/31 13:58:25 douglis Exp Locker: ouster $ (SPRITE) Berkeley
+d48 1
+@
+
+
+1.31
+log
+@added admin, tests directories
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.30 88/10/30 21:53:44 douglis Exp Locker: douglis $ (SPRITE) Berkeley
+d35 1
+a35 1
+/\/a\/attcmds\/[^/]*$/		{ print "command2 yes yes yes sprite"; exit }
+d41 1
+a41 1
+/\/a\/newcmds\/[^/]*$/		{ print "command2 yes yes yes sprite"; exit }
+d43 1
+a43 1
+/\/a\/daemons\/[^/]*$/		{ print "command2 yes yes yes daemon"; exit }
+a45 2
+/sprite\/src\/lib\/cmds$/	{ print "cmds no no no sprite"; exit }
+/sprite\/src\/lib\/cmds\//	{ print "command yes yes no sprite"; exit }
+d56 7
+a62 9
+/X\/src\/cmds\//		{ print "command2 yes yes yes x"; exit }
+/src\/cmds$/			{ print "cmds no no no sprite"; exit }
+/src\/daemons$/			{ print "cmds no no no daemon"; exit }
+/src\/admin$/			{ print "cmds no no no admin"; exit }
+/src\/tests$/			{ print "cmds no no no test"; exit }
+/src\/cmds\//			{ print "command yes yes no sprite"; exit }
+/src\/daemons\//		{ print "command yes yes no daemon"; exit }
+/src\/admin\//			{ print "command2 yes yes no admin"; exit }
+/src\/tests\//			{ print "command2 yes yes no test"; exit }
+d67 1
+a67 1
+/./				{ print "command2 no yes yes sprite" }
+@
+
+
+1.30
+log
+@added nslookup as bigcmd
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.29 88/10/23 14:14:00 ouster Exp Locker: douglis $ (SPRITE) Berkeley
+d61 2
+d65 2
+@
+
+
+1.29
+log
+@Added entries for rpn.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.28 88/10/13 09:52:55 ouster Exp Locker: ouster $ (SPRITE) Berkeley
+d39 2
+@
+
+
+1.28
+log
+@Added entry for rcs library.
+@
+text
+@d2 1
+a2 1
+# $Header: mkmf.map,v 1.27 88/10/02 11:37:43 ouster Exp $ (SPRITE) Berkeley
+d33 2
+@
+
+
+1.27
+log
+@Make pmake a "bigcmd"
+@
+text
+@d2 1
+a2 1
+# $Header: mkmf.map,v 1.26 88/09/29 09:38:53 ouster Exp $ (SPRITE) Berkeley
+d32 1
+@
+
+
+1.26
+log
+@Added entry for /X/src/cmds.
+@
+text
+@d2 1
+a2 1
+# $Header: mkmf.map,v 1.25 88/09/13 11:10:41 mendel Exp $ (SPRITE) Berkeley
+d34 2
+@
+
+
+1.25
+log
+@Added map for /a/daemons.
+@
+text
+@d2 1
+a2 1
+# $Header: mkmf.map,v 1.24 88/09/11 14:45:13 ouster Exp $ (SPRITE) Berkeley
+d48 1
+d50 2
+a51 2
+/X\/src\/cmds\/Xsprite$/	{ print "bigcmdtop no no yes x"; exit }
+/X\/src\/cmds/			{ print "command2 yes yes yes x"; exit }
+@
+
+
+1.24
+log
+@Added clients for X.
+@
+text
+@d2 1
+a2 1
+# $Header: mkmf.map,v 1.23 88/09/09 17:43:32 ouster Exp $ (SPRITE) Berkeley
+d36 2
+@
+
+
+1.23
+log
+@Fix entry for Xsprite top-level directory.
+@
+text
+@d2 1
+a2 1
+# $Header: mkmf.map,v 1.22 88/09/01 15:34:06 ouster Exp $ (SPRITE) Berkeley
+d48 1
+@
+
+
+1.22
+log
+@Added X server.
+@
+text
+@d2 1
+a2 1
+# $Header: mkmf.map,v 1.21 88/08/20 17:52:59 ouster Exp $ (SPRITE) Berkeley
+d47 1
+a47 1
+/X\/src\/cmds\/Xsprite$/	{ print "bigcmdtop yes yes yes x"; exit }
+@
+
+
+1.21
+log
+@Make lib/c into biglibtop.
+@
+text
+@d2 1
+a2 1
+# $Header: mkmf.map,v 1.20 88/08/20 12:58:29 ouster Exp $ (SPRITE) Berkeley
+d46 2
+@
+
+
+1.20
+log
+@Change Xlib into biglib.
+@
+text
+@d2 1
+a2 1
+# $Header: mkmf.map,v 1.19 88/08/13 15:07:47 ouster Exp $ (SPRITE) Berkeley
+d40 1
+a40 1
+/sprite\/src\/lib\/c$/		{ print "top no no no sprite"; exit }
+@
+
+
+1.19
+log
+@Set up for X stuff.
+@
+text
+@d2 1
+a2 1
+# $Header: mkmf.map,v 1.18 88/08/12 14:57:33 ouster Exp $ (SPRITE) Berkeley
+d43 2
+@
+
+
+1.18
+log
+@Forgot to update default entry.
+@
+text
+@d2 1
+a2 1
+# $Header: mkmf.map,v 1.17 88/08/12 14:34:30 ouster Exp $ (SPRITE) Berkeley
+d29 1
+a29 1
+/src\/lib\/include/		{ print "hdrs yes no no sprite"; exit }
+d37 7
+a43 7
+/\/a\/kernel\/[^/]*$/		{ print "kernel yes yes yes kernel"; exit }
+/src\/lib\/cmds$/		{ print "cmds no no no sprite"; exit }
+/src\/lib\/cmds\//		{ print "command yes yes no sprite"; exit }
+/src\/lib\/[^/]*\/[^/]*$/	{ print "biglib yes yes yes sprite"; exit }
+/src\/lib\/c$/			{ print "top no no no sprite"; exit }
+/src\/lib\//			{ print "library yes yes yes sprite"; exit }
+/a\/X\/src\/lib\//		{ print "library yes yes yes sprite"; exit }
+@
+
+
+1.17
+log
+@Added new field for making .md subdir.
+@
+text
+@d2 1
+a2 1
+# $Header: mkmf.map,v 1.16 88/08/11 11:21:58 brent Exp $ (SPRITE) Berkeley
+d52 1
+a52 1
+/./				{ print "command2 no yes sprite" }
+@
+
+
+1.16
+log
+@Added X library
+@
+text
+@d2 1
+a2 5
+# Awk script to map from a directory pattern to a specific mkmf script to
+# use in any directory matching that pattern. Also tells whether to create
+# an RCS directory and whether to execute "make depend" when the makefile
+# has been created.  Finally, provides "type" information, which is used
+# to determine, for example, where to install binaries.
+d4 22
+a25 1
+# $Header: mkmf.map,v 1.15 88/08/10 13:39:26 ouster Exp $ (SPRITE) Berkeley
+d27 1
+a27 5
+# Each line contains a pattern and a single print statement, followed by an
+# exit. The idea is a directory should match a single pattern in this file
+# and cause a string of the form
+#	"<mkmf-script> <makeRCS?> <makeDepend?> <type>"
+# to be printed.  The first matching pattern wins, so order is important here.
+d29 20
+a48 21
+/src\/lib\/include/			{ print "hdrs yes no sprite"; exit }
+/\.md$/					{ print "md no no sprite"; exit }
+/\/test\//				{ print "test yes yes test"; exit }
+/\/thymeC\/sprite\/src\/cmds\/[^/]*$/	{ print "command2 yes no sprite"; exit }
+/\/a\/attcmds\/[^/]*$/			{ print "command2 yes no sprite"; exit }
+/\/a\/attcmds$/				{ print "top no no sprite"; exit }
+/\/a\/newcmds\/[^/]*$/			{ print "command2 yes no sprite"; exit }
+/\/a\/newcmds$/				{ print "top no no sprite"; exit }
+/\/src\/kernel\/[^/]*$/			{ print "kernel yes no kernel"; exit }
+/\/a\/kernel\/[^/]*$/			{ print "kernel yes no kernel"; exit }
+/src\/lib\/cmds$/			{ print "cmds no no sprite"; exit }
+/src\/lib\/cmds\//			{ print "command yes yes sprite"; exit }
+/src\/lib\/[^/]*\/[^/]*$/		{ print "biglib yes no sprite"; exit }
+/src\/lib\/c$/				{ print "top no no sprite"; exit }
+/src\/lib\//				{ print "library yes no sprite"; exit }
+/a\/X\/src\/lib\//			{ print "library yes no sprite"; exit }
+/src\/cmds$/				{ print "cmds no no sprite"; exit }
+/src\/daemons$/				{ print "cmds no no daemon"; exit }
+/src\/cmds\//				{ print "command yes yes sprite"; exit }
+/src\/daemons\//			{ print "command yes yes daemon"; exit }
+/src\/boot\//				{ print "boot yes yes boot"; exit }
+d52 1
+a52 1
+/./					{ print "command2 no yes sprite" }
+@
+
+
+1.15
+log
+@Default was broken.  Fix to "command2".
+@
+text
+@d8 1
+a8 1
+# $Header: mkmf.map,v 1.14 88/07/11 13:22:28 ouster Exp $ (SPRITE) Berkeley
+d31 1
+@
+
+
+1.14
+log
+@New entries for new commands areas.
+@
+text
+@d8 1
+a8 1
+# $Header: mkmf.map,v 1.13 88/06/29 17:10:08 ouster Exp $ (SPRITE) Berkeley
+d39 1
+a39 1
+/./					{ print "unknown no no" }
+@
+
+
+1.13
+log
+@Added /a/newcmds.
+@
+text
+@d8 1
+a8 1
+# $Header: mkmf.map,v 1.12 88/06/27 09:56:48 ouster Exp $ (SPRITE) Berkeley
+d20 4
+a23 3
+/\/a\/att\/src\/cmds\/[^/]*$/		{ print "command2 yes no sprite"; exit }
+/\/a\/att\/src\/cmds$/			{ print "top no no sprite"; exit }
+\/a\/newcmds/				{ print "command2 yes no sprite"; exit }
+@
+
+
+1.12
+log
+@Add "type" field to map, pass it through to individual mkmf.*
+scripts so they don't have to do their own path-name analysis.
+@
+text
+@d8 1
+a8 1
+# $Header: mkmf.map,v 1.11 88/06/26 16:30:30 ouster Exp $ (SPRITE) Berkeley
+d22 1
+@
+
+
+1.11
+log
+@New entries for /a/att/src/cmds.
+@
+text
+@d5 2
+a6 1
+# has been created.
+d8 1
+a8 1
+# $Header: mkmf.map,v 1.10 88/06/21 16:05:44 ouster Exp $ (SPRITE) Berkeley
+d12 3
+a14 2
+# and cause a string of the form "<mkmf-script> <makeRCS?> <makeDepend?>" to
+# be printed.  The first matching pattern wins, so order is important here.
+d16 18
+a33 18
+/src\/lib\/include/			{ print "hdrs yes no"; exit }
+/\.md$/					{ print "md no no"; exit }
+/\/test\//				{ print "test yes yes"; exit }
+/\/thymeC\/sprite\/src\/cmds\/[^/]*$/	{ print "command2 yes no"; exit }
+/\/a\/att\/src\/cmds\/[^/]*$/		{ print "command2 yes no"; exit }
+/\/a\/att\/src\/cmds$/			{ print "top no no"; exit }
+/\/src\/kernel\/[^/]*$/			{ print "kernel yes no"; exit }
+/\/a\/kernel\/[^/]*$/			{ print "kernel yes no"; exit }
+/src\/lib\/cmds$/			{ print "cmds no no"; exit }
+/src\/lib\/cmds\//			{ print "command yes yes"; exit }
+/src\/lib\/[^/]*\/[^/]*$/		{ print "biglib yes no"; exit }
+/src\/lib\/c$/				{ print "top no no"; exit }
+/src\/lib\//				{ print "library yes no"; exit }
+/src\/cmds$/				{ print "cmds no no"; exit }
+/src\/daemons$/				{ print "cmds no no"; exit }
+/src\/cmds\//				{ print "command yes yes"; exit }
+/src\/daemons\//			{ print "command yes yes"; exit }
+/src\/boot\//				{ print "boot yes yes"; exit }
+@
+
+
+1.10
+log
+@Uninteresting configuration changes.
+@
+text
+@d7 1
+a7 1
+# $Header: mkmf.map,v 1.9 88/06/17 08:59:19 ouster Exp $ (SPRITE) Berkeley
+d18 2
+@
+
+
+1.9
+log
+@Add new library mkmf stuff, change libc.srcDir to biglib.
+@
+text
+@d7 1
+a7 1
+# $Header: mkmf.map,v 1.8 88/06/05 17:42:28 ouster Exp $ (SPRITE) Berkeley
+d12 1
+a12 1
+# be printed.
+d14 1
+d19 1
+@
+
+
+1.8
+log
+@Change for new kernel stuff.
+@
+text
+@d7 1
+a7 1
+# $Header: mkmf.map,v 1.7 88/05/28 12:06:19 ouster Exp $ (SPRITE) Berkeley
+d14 1
+a16 2
+/\/thymeC\/sprite\/src\/cmds\/[^/]*\/.*\.md$/ \
+					{ print "md no no"; exit }
+a17 1
+/\/src\/kernel\/[^/]*\/.*\.md$/		{ print "md no no"; exit }
+d20 1
+a20 2
+/src\/lib\/[^/]*\/[^/]*\/.*\.md$/	{ print "md no no"; exit}
+/src\/lib\/[^/]*\/[^/]*$/		{ print "libc.srcDir yes no"; exit }
+d22 1
+a22 1
+/src\/lib\//				{ print "library yes yes"; exit }
+@
+
+
+1.7
+log
+@Slight adjustment to dependency-making.
+@
+text
+@d7 1
+a7 1
+# $Header: mkmf.map,v 1.6 88/05/27 17:37:32 ouster Exp $ (SPRITE) Berkeley
+d17 1
+a17 1
+					{ print "command.md no no"; exit }
+d19 1
+a19 2
+/\/src\/kernel\/[^/]*\/Object.*$/	{ print "kernelObj no yes"; exit }
+/\/src\/kernel\/[^/]*\/.*\.md$/		{ print "kernelObj no yes"; exit }
+d22 3
+a24 2
+/src\/lib\/[^/]*\/[^/]*$/		{ print "libc.srcDir yes yes"; exit }
+/src\/lib\/c$/				{ print "libc no no"; exit }
+@
+
+
+1.6
+log
+@Added entries for thymeC stuff (should only be temporary).
+@
+text
+@d7 1
+a7 1
+# $Header: mkmf.map,v 1.4 88/04/28 13:24:04 ouster Exp $ (SPRITE) Berkeley
+d15 1
+a15 1
+/\/thymeC\/sprite\/src\/cmds\/[^/]*$/	{ print "command2 yes yes"; exit }
+@
+
+
+1.5
+log
+@*** empty log message ***
+@
+text
+@d15 3
+@
+
+
+1.4
+log
+@Added new library areas.
+@
+text
+@d7 1
+a7 1
+# $Header: mkmf.map,v 1.3 88/04/01 18:47:03 deboor Exp $ (SPRITE) Berkeley
+d17 1
+@
+
+
+1.3
+log
+@Added support for src/lib/cmds*
+@
+text
+@d7 1
+a7 1
+# $Header: mkmf.map,v 1.2 88/03/19 18:14:15 deboor Exp $ (SPRITE) Berkeley
+d14 1
+d19 2
+a25 1
+/src\/test\//				{ print "test yes yes"; exit }
+@
+
+
+1.2
+log
+@Switched to be an awk program
+@
+text
+@d7 1
+a7 1
+# $Header: mkmf.map,v 1.1 88/03/18 15:10:25 deboor Exp $ (SPRITE) Berkeley
+d16 2
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d2 1
+a2 1
+# File to map from a directory pattern to a specific mkmf script to
+d7 1
+a7 1
+# $Header$ (SPRITE) Berkeley
+d9 18
+a26 12
+# Format is:
+#<directory-pattern> 		<mkmf-suffix> 	<make RCS?> 	<make depend?>
+.*/src/kernel$			kernel		yes		no
+.*/src/kernel/[^/]*/Object.*$	kernelObj	no		yes
+.*src/lib/			library		yes		yes
+.*src/cmds$			cmds		no		no
+.*src/daemons$			cmds		no		no
+.*src/cmds/			command		yes		yes
+.*src/daemons/			command		yes		yes
+.*src/test/			test		yes		yes
+.*src/boot/			boot		yes		yes
+.*				unknown		no		no
+@

@@ -1,0 +1,17 @@
+D DS3100_M                          	ds3100.md
+L LOCAL.MK;1                        	local.mk	../main/local.mk
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+D SUN3_MD                           	sun3.md
+F VM.H;1                            	vm.h
+F VMFSCACH.C;1                      	vmFsCache.c
+F VMINT.H;1                         	vmInt.h
+F VMMSGQUE.C;1                      	vmMsgQueue.c
+F VMOPS.C;1                         	vmOps.c
+F VMPAGER.C;1                       	vmPager.c
+F VMSEGMEN.C;1                      	vmSegment.c
+F VMSUBR.C;1                        	vmSubr.c
+F VMSWAPDI.C;1                      	vmSwapDir.c
+F VMSWAPDI.H;1                      	vmSwapDir.h
+F VMSYSCAL.C;1                      	vmSysCall.c
+F VMTYPES.H;1                       	vmTypes.h

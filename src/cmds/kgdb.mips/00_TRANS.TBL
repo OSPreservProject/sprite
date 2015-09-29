@@ -1,0 +1,51 @@
+L BLOCKFRA.C;1                      	blockframe.c	gdb/blockframe.c
+L BREAKPOI.C;1                      	breakpoint.c	gdb/breakpoint.c
+F COFFREAD.C;1                      	coffread.c
+L COMMAND.C;1                       	command.c	gdb/command.c
+L COPYING.C;1                       	copying.c	gdb/copying.c
+L CORE.C;1                          	core.c	gdb/core.c
+F DBXREAD.C;1                       	dbxread.c
+L DEP.C;1                           	dep.c	gdb/ds3100.md/dep.c
+D DS3100_M                          	ds3100.md
+L DS5000.;1                         	ds5000	/sprite/src/kernel/jhh/ds5000
+L EMACS_KE.H;1                      	emacs_keymap.c.h	gdb/emacs_keymap.c.h
+L ENVIRON.C;1                       	environ.c	gdb/environ.c
+L EVAL.C;1                          	eval.c	gdb/eval.c
+L EXPPRINT.C;1                      	expprint.c	gdb/expprint.c
+L EXPREAD_.C;1                      	expread.tab.c	gdb/expread.tab.c
+L FINDVAR.C;1                       	findvar.c	gdb/findvar.c
+L FUNMAP.C;1                        	funmap.c	gdb/funmap.c
+L GDB.;1                            	gdb	../gdb
+L HISTORY.C;1                       	history.c	gdb/history.c
+L INFCMD.C;1                        	infcmd.c	gdb/infcmd.c
+L INFLOW.C;1                        	inflow.c	gdb/inflow.c
+L INFRUN.C;1                        	infrun.c	gdb/infrun.c
+L INITIALI.C;1                      	initialized_all_files.c	gdb/ds3100.md/initialized_all_files.c
+L KERNEL.;1                         	kernel	/sprite/src/kernel/Include/ds3100.md
+L KEYMAPS.C;1                       	keymaps.c	gdb/keymaps.c
+L KGDBCMD.C;1                       	kgdbcmd.c	gdb/sprite/kgdbcmd.c
+F LOCAL.MK;1                        	local.mk
+L MAIN.C;1                          	main.c	gdb/main.c
+F MAKEFILE.;1                       	Makefile
+L MIPSCOFF.CIN;1                    	mipscoff.cinc	gdb/sprite/mipscoff.c
+F MIPSCOFF.SAV;1                    	mipscoff.save
+L OBSTACK.C;1                       	obstack.c	gdb/obstack.c
+L PINSN.C;1                         	pinsn.c	gdb/ds3100.md/pinsn.c
+L PRINTCMD.C;1                      	printcmd.c	gdb/printcmd.c
+L PTRACE.C;1                        	ptrace.c	gdb/ds3100.md/ptrace.c
+D RCS                               	RCS
+L READLINE.C;1                      	readline.c	gdb/readline.c
+L REGEX.C;1                         	regex.c	gdb/regex.c
+L REMOTE.C;1                        	remote.c	gdb/sprite/mips_kgdb_remote.c
+L SOURCE.C;1                        	source.c	gdb/source.c
+L STACK.C;1                         	stack.c	gdb/stack.c
+L SYMMISC.C;1                       	symmisc.c	gdb/symmisc.c
+L SYMTAB.C;1                        	symtab.c	gdb/symtab.c
+F TAGS.;1                           	tags
+L TERMIO.H;1                        	termio.h	gdb/termio.h
+L UTILS.C;1                         	utils.c	gdb/utils.c
+L VALARITH.C;1                      	valarith.c	gdb/valarith.c
+L VALOPS.C;1                        	valops.c	gdb/valops.c
+L VALPRINT.C;1                      	valprint.c	gdb/valprint.c
+L VALUES.C;1                        	values.c	gdb/values.c
+L VERSION.C;1                       	version.c	gdb/version.c

@@ -1,0 +1,10 @@
+The following changes have been made to this directory since R3:
+
+     o  Support added for:
+
+		DECstation 3100 mono/color
+		HP - most HP devices are now included.
+		MacII color
+		SPARCstation GX and non-GX
+		Sun 386i (untested at MIT)
+     

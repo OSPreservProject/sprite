@@ -1,0 +1,652 @@
+head     1.11;
+branch   ;
+access   ;
+symbols  ds3100:1.11 sun3:1.11 sun4nw:1.10 symm:1.10 spur:1.10;
+locks    ; strict;
+comment  @ * @;
+
+
+1.11
+date     92.06.25.17.21.12;  author eklee;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     90.11.09.13.15.55;  author eklee;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     90.10.12.14.01.11;  author eklee;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     90.10.12.11.55.33;  author eklee;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     90.10.10.11.05.44;  author eklee;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     90.09.28.18.49.02;  author eklee;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     90.09.19.14.54.11;  author eklee;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.09.05.12.38.29;  author eklee;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.08.27.13.44.50;  author eklee;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.06.22.13.36.48;  author eklee;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.05.15.19.00.17;  author eklee;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Raid reconstruction related functions.
+@
+
+
+1.11
+log
+@Fixed bug where data was sometimes trashed during writes with a failed disk.
+Fixed up consistency problems while a disk is failed.
+Redid logging.
+@
+text
+@/* 
+ * devRaidInitiate.c --
+ *
+ *	This file implements the BlockDevice interface for homogeneous disk
+ *	arrays.
+ *
+ * Copyright 1989 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#include "sync.h"
+#include <string.h>
+#include <stdio.h>
+#include "sprite.h"
+#include "fs.h"
+#include "dev.h"
+#include "devBlockDevice.h"
+#include "devRaid.h"
+#include "semaphore.h"
+#include "stdlib.h"
+#include "devRaidUtil.h"
+#include "schedule.h"
+#include "devRaidProto.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_InitiateReconstruction --
+ *
+ *	Reconstruct the contents of the failed disk.
+ *	System must be quiesced
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Reconstructs the contents of the failed disk.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void InitiateStripeReconstruction();
+
+void
+Raid_InitiateReconstruction(raidPtr, col, row, version, numSector, uSec, doneProc,
+	clientData, ctrlData)
+    Raid	*raidPtr;
+    int		 col, row, version;
+    int		 numSector;
+    int		 uSec;
+    void       (*doneProc)();
+    ClientData   clientData;
+    int		 ctrlData;
+{
+    RaidReconstructionControl	*reconstructionControlPtr;
+    RaidDisk			*diskPtr;
+
+    LockSema(&raidPtr->disk[col][row]->lock);
+    diskPtr = raidPtr->disk[col][row];
+    if (version != diskPtr->version || diskPtr->state != RAID_DISK_READY) {
+	UnlockSema(&diskPtr->lock);
+	return;
+    }
+    UnlockSema(&diskPtr->lock);
+    reconstructionControlPtr = Raid_MakeReconstructionControl(raidPtr,
+	    col, row, diskPtr, doneProc, clientData, ctrlData);
+    InitiateStripeReconstruction(reconstructionControlPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * reconstructionDoneProc --
+ *
+ *	Callback procedure for Raid_InitiateReconstruction.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+reconstructionDoneProc(reconstructionControlPtr)
+    RaidReconstructionControl	*reconstructionControlPtr;
+{
+    reconstructionControlPtr->doneProc(reconstructionControlPtr->clientData,
+            reconstructionControlPtr->status);
+    Raid_FreeReconstructionControl(reconstructionControlPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_InitiateReconstructionFailure --
+ *
+ *	Causes the reconstruction to fail.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+Raid_InitiateReconstructionFailure(reconstructionControlPtr)
+    RaidReconstructionControl	*reconstructionControlPtr;
+{
+    int	         stripeID = reconstructionControlPtr->stripeID;
+
+    Raid_XUnlockStripe(reconstructionControlPtr->raidPtr, stripeID);
+    Raid_ReportReconstructionFailure(reconstructionControlPtr->col,
+    	    reconstructionControlPtr->row);
+    reconstructionControlPtr->status = FAILURE;
+    reconstructionDoneProc(reconstructionControlPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * InitiateStripeReconstruction --
+ *
+ *	Reconstructs a single stripe.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void reconstructionReadDoneProc();
+static void reconstructionWriteDoneProc();
+
+static void
+InitiateStripeReconstruction(reconstructionControlPtr)
+    RaidReconstructionControl	*reconstructionControlPtr;
+{
+    Raid	       *raidPtr       = reconstructionControlPtr->raidPtr;
+    int		        col           = reconstructionControlPtr->col;
+    int		        row           = reconstructionControlPtr->row;
+    RaidDisk	       *diskPtr       = reconstructionControlPtr->diskPtr;
+    int	       		ctrlData      = reconstructionControlPtr->ctrlData;
+    RaidRequestControl *reqControlPtr = reconstructionControlPtr->reqControlPtr;
+    char	       *readBuf       = reconstructionControlPtr->readBuf;
+    char	       *parityBuf     = reconstructionControlPtr->parityBuf;
+    int		        stripeID;
+    unsigned	        firstSector;
+    unsigned	        nthSector;
+
+    LockSema(&diskPtr->lock);
+    if (diskPtr->numValidSector == raidPtr->sectorsPerDisk) {
+        printf("RAID:MSG:Reconstruction completed.\n");
+	reconstructionDoneProc(reconstructionControlPtr);
+	UnlockSema(&diskPtr->lock);
+	return;
+    }
+    if (diskPtr->state != RAID_DISK_READY) {
+        printf("RAID:MSG:Reconctruction aborted.\n");
+	reconstructionDoneProc(reconstructionControlPtr);
+	UnlockSema(&diskPtr->lock);
+	return;
+    }
+    Raid_MapPhysicalToStripeID(raidPtr, col,row, diskPtr->numValidSector, &stripeID);
+    Raid_XLockStripe(raidPtr, stripeID);
+    UnlockSema(&diskPtr->lock);
+    reconstructionControlPtr->stripeID = stripeID;
+    firstSector = StripeIDToSector(raidPtr, stripeID);
+    nthSector   = NthSectorOfStripe(raidPtr, firstSector);
+    reqControlPtr->numReq = reqControlPtr->numFailed = 0;
+    AddRaidDataRequests(reqControlPtr, raidPtr, FS_READ,
+	    firstSector, nthSector, readBuf, ctrlData);
+    AddRaidParityRequest(reqControlPtr, raidPtr, FS_READ,
+	    firstSector, parityBuf, ctrlData);
+    if (reqControlPtr->numFailed == 1) {
+	Raid_InitiateIORequests(reqControlPtr,
+		reconstructionReadDoneProc,
+		(ClientData) reconstructionControlPtr);
+    } else {
+	Raid_InitiateReconstructionFailure(reconstructionControlPtr);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * reconstructionReadDoneProc --
+ *
+ *	Callback procedure for InitiateStripeReconstruction.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Computes and writes the reconstructed information.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+reconstructionReadDoneProc(reconstructionControlPtr, numFailed)
+    RaidReconstructionControl	*reconstructionControlPtr;
+    int			 	 numFailed;
+{
+    Raid	       *raidPtr       = reconstructionControlPtr->raidPtr;
+    RaidDisk	       *diskPtr       = reconstructionControlPtr->diskPtr;
+    RaidRequestControl *reqControlPtr = reconstructionControlPtr->reqControlPtr;
+    RaidBlockRequest   *failedReqPtr  =
+	    	          reconstructionControlPtr->reqControlPtr->failedReqPtr;
+
+    if (numFailed > 0) {
+	Raid_InitiateReconstructionFailure(reconstructionControlPtr);
+    } else {
+#ifndef NODATA
+	bzero(failedReqPtr->devReq.buffer, failedReqPtr->devReq.bufferLen);
+#endif
+	Raid_XorRangeRequests(reqControlPtr, raidPtr,
+		failedReqPtr->devReq.buffer,
+		(int) failedReqPtr->devReq.startAddress,
+		failedReqPtr->devReq.bufferLen);
+	reqControlPtr->failedReqPtr->devReq.operation = FS_WRITE;
+	reqControlPtr->failedReqPtr->state = REQ_READY;
+	LockSema(&diskPtr->lock);
+	if (diskPtr->state != RAID_DISK_READY) {
+	    printf("RAID:MSG:Reconctruction aborted.\n");
+	    Raid_InitiateReconstructionFailure(reconstructionControlPtr);
+	    UnlockSema(&diskPtr->lock);
+	    return;
+	}
+	diskPtr->numValidSector =
+		NthSectorOfStripeUnit(raidPtr, diskPtr->numValidSector);
+	UnlockSema(&diskPtr->lock);
+	Raid_InitiateIORequests(reqControlPtr, reconstructionWriteDoneProc,
+		(ClientData) reconstructionControlPtr);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * reconstructionWriteDoneProc --
+ *
+ *	Callback procedure for reconstructionReadDoneProc.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Initiates the reconstruction of the next sector on the failed device.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+reconstructionWriteDoneProc(reconstructionControlPtr, numFailed)
+    RaidReconstructionControl	*reconstructionControlPtr;
+    int				 numFailed;
+{
+    Raid	       *raidPtr       = reconstructionControlPtr->raidPtr;
+    RaidDisk	       *diskPtr       = reconstructionControlPtr->diskPtr;
+    int		        stripeID      = reconstructionControlPtr->stripeID;
+
+    if (numFailed > 0) {
+	LockSema(&diskPtr->lock);
+	if (diskPtr->state != RAID_DISK_READY) {
+	    printf("RAID:MSG:Reconctruction aborted.\n");
+	    Raid_InitiateReconstructionFailure(reconstructionControlPtr);
+	    UnlockSema(&diskPtr->lock);
+	    return;
+	}
+	diskPtr->numValidSector =
+		FirstSectorOfStripeUnit(raidPtr, diskPtr->numValidSector);
+	UnlockSema(&diskPtr->lock);
+	Raid_InitiateReconstructionFailure(reconstructionControlPtr);
+    } else {
+	LockSema(&diskPtr->lock);
+	if (diskPtr->state == RAID_DISK_READY) {
+	    printf("RAID:RECON:%d %d %d\n",
+		    diskPtr->device.type, diskPtr->device.unit,
+		    SectorToStripeUnitID(raidPtr, diskPtr->numValidSector-1));
+	    Raid_SaveDisk(raidPtr, diskPtr->col, diskPtr->row,
+		    diskPtr->device.type, diskPtr->device.unit,
+		    diskPtr->version, diskPtr->numValidSector);
+#ifdef TESTING
+	    CheckDiskLog(raidPtr, diskPtr->col, diskPtr->row,
+		    diskPtr->numValidSector);
+#endif TESTING
+	}
+	UnlockSema(&diskPtr->lock);
+	Raid_XUnlockStripe(raidPtr, stripeID);
+	InitiateStripeReconstruction(reconstructionControlPtr);
+    }
+}
+@
+
+
+1.10
+log
+@Moved semaphore routies to semaphore.c.
+@
+text
+@d302 1
+a302 1
+	    Raid_SaveDiskState(raidPtr, diskPtr->col, diskPtr->row,
+d305 4
+@
+
+
+1.9
+log
+@Added Raid_ prefix to external names and cleaned up warning messages.
+@
+text
+@d26 1
+a26 1
+#include "devRaidLock.h"
+@
+
+
+1.8
+log
+@Changed syslog message.
+@
+text
+@d36 1
+a36 1
+ * InitiateReconstruction --
+d53 1
+a53 1
+InitiateReconstruction(raidPtr, col, row, version, numSector, uSec, doneProc,
+d73 1
+a73 1
+    reconstructionControlPtr = MakeReconstructionControl(raidPtr,
+d84 1
+a84 1
+ *	Callback procedure for InitiateReconstruction.
+d101 1
+a101 1
+    FreeReconstructionControl(reconstructionControlPtr);
+d108 1
+a108 1
+ * InitiateReconstructionFailure --
+d122 1
+a122 1
+InitiateReconstructionFailure(reconstructionControlPtr)
+d127 2
+a128 2
+    XUnlockStripe(reconstructionControlPtr->raidPtr, stripeID);
+    ReportReconstructionFailure(reconstructionControlPtr->col,
+d183 2
+a184 2
+    MapPhysicalToStripeID(raidPtr, col,row, diskPtr->numValidSector, &stripeID);
+    XLockStripe(raidPtr, stripeID);
+d195 1
+a195 1
+	InitiateIORequests(reqControlPtr,
+d199 1
+a199 1
+	InitiateReconstructionFailure(reconstructionControlPtr);
+d232 1
+a232 1
+	InitiateReconstructionFailure(reconstructionControlPtr);
+d237 1
+a237 1
+	XorRaidRangeRequests(reqControlPtr, raidPtr,
+d246 1
+a246 1
+	    InitiateReconstructionFailure(reconstructionControlPtr);
+d253 1
+a253 1
+	InitiateIORequests(reqControlPtr, reconstructionWriteDoneProc,
+d288 1
+a288 1
+	    InitiateReconstructionFailure(reconstructionControlPtr);
+d295 1
+a295 1
+	InitiateReconstructionFailure(reconstructionControlPtr);
+d302 1
+a302 1
+	    SaveDiskState(raidPtr, diskPtr->col, diskPtr->row,
+d307 1
+a307 1
+	XUnlockStripe(raidPtr, stripeID);
+@
+
+
+1.7
+log
+@Fixed bug where stripe would not be unlocked if a reconstruct failed.
+@
+text
+@d301 1
+a301 1
+		    SectorToStripeUnitID(raidPtr, diskPtr->numValidSector));
+@
+
+
+1.6
+log
+@Callback proc now returns status.
+Fixed bug introduced when logging was changed (all reconstructs would fail).
+@
+text
+@d18 1
+d20 1
+a20 1
+#include "sync.h"
+d246 1
+a246 1
+	    reconstructionDoneProc(reconstructionControlPtr);
+d288 1
+a288 1
+	    reconstructionDoneProc(reconstructionControlPtr);
+@
+
+
+1.5
+log
+@Added prototypes.
+@
+text
+@d52 2
+a53 1
+InitiateReconstruction(raidPtr, col, row, version, numSector, uSec, ctrlData)
+d58 2
+d67 1
+a67 1
+    if (version == diskPtr->version && diskPtr->state == RAID_DISK_READY) {
+a68 2
+    } else {
+	UnlockSema(&diskPtr->lock);
+d71 1
+d73 1
+a73 1
+	    col, row, diskPtr, (void(*)()) NIL, (ClientData) NIL, ctrlData);
+d98 2
+a99 2
+    RaidDisk	*diskPtr = reconstructionControlPtr->diskPtr;
+
+d129 1
+d173 1
+d179 1
+d242 10
+d284 10
+a300 2
+	    diskPtr->numValidSector =
+		    NthSectorOfStripeUnit(raidPtr, diskPtr->numValidSector);
+@
+
+
+1.4
+log
+@Logs to raw disk instead of file.
+Fixed synchronization bug.
+Deleted RAID_DISK_RECONSTRUCT state.
+@
+text
+@@
+
+
+1.3
+log
+@Replaced Unlock with S/XUnlock.
+@
+text
+@a17 1
+#include <stdio.h>
+a27 2
+#include "devRaidIOC.h"
+#include "debugMem.h"
+d29 1
+d38 1
+d60 1
+a60 1
+    RaidDisk			*diskPtr = raidPtr->disk[col][row];
+d62 2
+a63 1
+    MASTER_LOCK(&diskPtr->mutex);
+d65 1
+a65 2
+        diskPtr->state = RAID_DISK_RECONSTRUCT;
+        MASTER_UNLOCK(&diskPtr->mutex);
+d67 1
+a67 1
+        MASTER_UNLOCK(&diskPtr->mutex);
+a97 5
+    MASTER_LOCK(&diskPtr->mutex);
+    if (diskPtr->state == RAID_DISK_RECONSTRUCT) {
+	diskPtr->state = RAID_DISK_READY;
+    }
+    MASTER_UNLOCK(&diskPtr->mutex);
+d166 1
+d172 1
+a172 1
+    if (diskPtr->state != RAID_DISK_RECONSTRUCT) {
+d178 2
+a182 1
+    XLockStripe(raidPtr, stripeID);
+d237 1
+a237 4
+	diskPtr->numValidSector =
+		NthSectorOfStripeUnit(raidPtr, diskPtr->numValidSector);
+	InitiateIORequests(reqControlPtr,
+		reconstructionWriteDoneProc,
+a268 1
+        diskPtr->numValidSector -= raidPtr->sectorsPerStripeUnit;
+d271 12
+a282 9
+	char buf[120];
+	printf("RAID:RECON:%d %d %d\n",
+		diskPtr->device.type, diskPtr->device.unit,
+		SectorToStripeUnitID(raidPtr, diskPtr->numValidSector));
+	sprintf(buf, "D %d %d %d  %d %d  %d %d\n", diskPtr->row, diskPtr->col,
+		diskPtr->version,
+		diskPtr->device.type, diskPtr->device.unit,
+		diskPtr->state, diskPtr->numValidSector);
+	LogEntry(raidPtr, buf);
+@
+
+
+1.2
+log
+@Added support for logging RAID state changes.
+@
+text
+@d130 1
+a130 1
+    UnlockStripe(stripeID);
+d288 1
+a288 1
+	UnlockStripe(stripeID);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@a23 3
+/* #include "devInt.h" */
+#include "devDiskLabel.h"
+#include "devDiskStats.h"
+a27 1
+#include "dbg.h"
+d71 2
+a72 2
+    reconstructionControlPtr =
+	    MakeReconstructionControl(raidPtr, col, row, diskPtr, ctrlData);
+d186 1
+a186 1
+    LockStripe(stripeID);
+d279 1
+d283 5
+@

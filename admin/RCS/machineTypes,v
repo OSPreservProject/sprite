@@ -1,0 +1,52 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @# @;
+
+
+1.2
+date     92.08.14.13.02.30;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.11.06.11.55.31;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@This file contains a list of all the machine types currently
+supported by this Sprite system.  It is used, for example,
+by Mkmf when generating Makefiles for scripts (which can
+always be used on any machine type).
+@
+
+
+1.2
+log
+@got rid of spur
+@
+text
+@#
+# This file contains a list of all the machine types currently
+# supported by this Sprite system.  It is used, for example,
+# by Mkmf when generating Makefiles for scripts (which can
+# always be used on any machine type).
+#
+sun3
+sun4
+ds3100
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@a7 1
+spur
+@

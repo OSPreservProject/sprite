@@ -1,0 +1,117 @@
+October 29, 1989
+
+    This is release 2.1 of PMake -- a parallel Make program originally written
+for the Sprite operating system.
+
+In this distribution come several pieces:
+    doc/	    Documentation for pmake.
+    	pmake.mansp	Man page for PMake using the Sprite manual
+			macros.
+    	pmake.psc   	Postscript of same
+    	tmac.ansp   	Sprite manual macros
+    	Lst.mansp   	Man page for the Lst library
+    	Lst.psc	    	Postscript of same
+    	tutorial.ms 	Tutorial for PMake. This must be run through 
+			    ditroff -ms | index/index
+    	    	    	The exact command is in the makefile.
+    	tutorial.psc.Z	Compressed Postscript of same
+	prefix.ms	Release notes and description of an automounter
+			for NFS called "prefix"
+	prefix.psc.Z	Compressed Postscript of same
+    	index/	    	Ditroff post-processor to create indices.
+    	    tmac.index	    Macros to create the index.
+	customs/	A term paper on customs
+	cctrl.8		Standard UNIX man page for cctrl utility
+	customs.8	Standard UNIX man page for customs daemon
+	importquota.8	Standard UNIX man page for importquota utility
+	reginfo.1	Standard UNIX man page for reginfo utility
+
+    lib/    	    Libraries for PMake
+    	mk/ 	    	Canned makefiles
+    	    system.mk  	    System Makefile that must be installed before
+			    PMake will run.
+    	sprite/	    	A library to map Sprite runtime functions to UNIX
+	    	    	functions.
+    	lst/	    	The linked-list library used to manage pmake's
+	    	    	dependency graph and just about everything else.
+    	include/    	Sprite include files required for the Sprite library.
+
+    unix/	    Files for a local-execution-only version of PMake under
+		    BSD UNIX.
+	config.h	The definition of several site-dependent constants
+			used mostly in job.c.
+    makefile   	    Makefile to be used with Make to create a local version of
+		    PMake
+    customs/	    Remote execution system for PMake.
+    src/    	    Actual PMake source code.
+    prefix/	    Automounter for use with PMake and Customs
+
+You should edit unix/config.h, makefile and lib/mk/sys.mk, in that order, to
+produce PMake. system.mk should be installed in the system makefile directory
+(wherever you decide to put it).
+
+"Makefile" and "common.mk" are the makefiles I use to create PMake using
+PMake (There are essentially three versions that can be made and I got tired
+of removing the object files each time I wanted to make a different one).
+It kind of gives you an idea of how wild one can get with conditionals etc.
+
+One final word. There are some important differences between PMake and
+Make.  Most of these can be obviated by either giving PMake the -B
+flag or by renaming it to 'make'. Certain features of the System V
+version of Make can be accessed either by giving the -v flag, or by
+invoking PMake as 'smake'. Almost all of the new features of PMake are
+available when in these compatibility modes, but certain pieces of
+stupid behaviour that Make exhibits come into play. Read the
+tutorial...
+
+A mailing list has been established at pmake@bsw.uu.net for questions, etc.
+Administrative stuff should be addressed to pmake-request@bsw.uu.net.
+
+Once more, the University of California, Berkeley Softworks and I accept
+no responsibility for this software. It is provided "as is" in the hope that
+it may be useful, but there is no warranty of any kind attached.
+
+a
+
+NOTES SPECIFIC TO RELEASE 2.1:
+
+The majority of the changes for this release, with the exception of the addition
+of the prefix daemon to the distribution, are merely making pmake do what I
+expect it to do, given the set of features already present in release 2.0.
+Mostly, this involved the proper support of dynamic sources throughout the
+program.
+
+Other changes of note:
+	* the .ORDER target now exists to allow you to enforce an ordering
+	  between targets that do not otherwise depend on each other. This
+	  can be used to serialize ranlib's, for example.
+	* the target() function in conditionals allows you to have a system
+	  makefile whose targets can be easily overridden by an including
+	  makefile.
+	* there are more configuration options in config.h necessitated by the
+	  pending inclusion of pmake in the 4.4 BSD release. They see certain
+	  things differently from me, so to accomodate them (they're nice
+	  people, after all :) I have added some conditional code.
+	* Partial support for the preliminary POSIX standard for Make, including
+	  the existence of single-suffix transformations. The system.mk file
+	  no longer defines a null suffix, preferring to use these single-
+	  suffix rules instead. The .NULL target will still work, however.
+	  PMake reverts to using single-suffix transformations if the
+	  list of suffixes is cleared out with an empty .SUFFIXES line.
+	* transformation rules can now be deleted in the Make way.
+	* added handling of targets with no commands, using the time
+	  that was found for the target, rather than the start of the
+	  make, so long as RECHECK isn't defined. Allows the standard
+	  yacc definitions file hack (performing a compare and copying if
+	  different) to operate properly with a rule like
+		parse.h	: parse.c
+	  thrown in.
+	* The option parsing has gone from Sprite style to using getopt. Thus,
+		pmake -fD foo.mk DEFINE_ME
+	  will no longer work. The proper syntax is
+		pmake -f foo.mk -DDEFINE_ME
+	  though whitespace can still be used between -D and DEFINE_ME.
+	* All variables defined on the command-line automatically have
+	  their values exported in the environment.
+	* The -e flag is supported to cause the environment be searched
+	  before the global variable scope.

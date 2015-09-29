@@ -1,0 +1,11 @@
+D DS3100_M                          	ds3100.md
+F EXECL.C;1                         	execl.c
+L EXECLE.C;1                        	execle.c	../../c.orig/exec/execle.c
+L EXECLP.C;1                        	execlp.c	../../c.orig/exec/execlp.c
+F EXECV.C;1                         	execv.c
+F EXECVP.C;1                        	execvp.c
+L LOCAL.MK;1                        	local.mk	../etc/local.mk
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+D SUN3_MD                           	sun3.md
+L _EXECARG.C;1                      	_ExecArgs.c	../../c.orig/exec/_ExecArgs.c

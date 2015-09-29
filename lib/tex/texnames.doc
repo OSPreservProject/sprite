@@ -1,0 +1,35 @@
+%
+% The TeX-related program names that are not defined already in LaTeX
+%
+% Richard Furuta
+% Department of Computer Science
+% University of Maryland
+% College Park, MD  20742
+%
+% furuta@mimsy.umd.edu
+% seismo!umcp-cs!furuta
+%
+% October 22, 1986, first release
+%
+% April 1, 1987:  modified by William LeFebvre, Rice University
+%   Now includes definitions for BibTeX and SLiTeX, as they appear in the
+%   LaTeX Local User's Guide.
+%
+%
+% \METAFONT
+% if you do not have logo10 try manfnt (which you probably also don't have,
+% sigh)
+\font\mf=logo10
+\hyphenchar\mf=-1  % inhibit hyphenation since there is no equivalent char.
+\newcommand{\METAFONT}{{\mf METAFONT}}
+% \AMSTEX
+% The following comes from Mike Spivak
+\newcommand{\AMSTEX}{$\cal A$\kern-.1667em\lower.5ex\hbox{$\cal M$}\kern-.125em
+     $\cal S$-\TeX}
+
+% \BibTeX and \SLiTeX, taken from the top of the local user's guide  (--wnl)
+\newcommand{\BibTeX}{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\newcommand{\SLiTeX}{{\rm S\kern-.06em{\sc l\kern-.035emi}\kern-.06em T\kern
+   -.1667em\lower.7ex\hbox{E}\kern-.125emX}}

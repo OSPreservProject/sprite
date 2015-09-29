@@ -1,0 +1,17 @@
+F BFD.H;1                           	bfd.h
+F BFD_TEXI.;1                       	bfd.texinfo
+F CHANGELO.;1                       	ChangeLog
+F CHEW.;1                           	chew
+F CHEW.C;1                          	chew.c
+F CONFIG.STA;1                      	config.status
+F CONFIGUR.IN;1                     	configure.in
+F CTOR.TEX;1                        	ctor.texi
+F DOC.STR;1                         	doc.str
+F INIT.TEX;1                        	init.texi
+F LIBBFD.H;1                        	libbfd.h
+F LIBCOFF.H;1                       	libcoff.h
+F MAKEFILE.;1                       	Makefile
+F MAKEFILE.IN;1                     	Makefile.in
+F PROTO.STR;1                       	proto.str
+F SYMS.TEX;1                        	syms.texi
+F TARGETS.TEX;1                     	targets.texi

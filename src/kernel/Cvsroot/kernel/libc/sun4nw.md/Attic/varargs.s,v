@@ -1,0 +1,25 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  sun4nw:1.1 symm:1.1 spur:1.1;
+locks    ; strict;
+comment  @! @;
+
+
+1.1
+date     91.10.31.17.14.56;  author mgbaker;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@e®CŽäehB®{ŽéetyµewSPŽÏ u¡ÞPy½¾rŽÁ K^wŽÙ `_ŽÜ ty+4Aá ÿXGyä IykŽ†mŽÁ9@

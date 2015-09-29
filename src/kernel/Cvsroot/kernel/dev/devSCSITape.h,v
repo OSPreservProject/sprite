@@ -1,0 +1,121 @@
+head     9.2;
+branch   ;
+access   ;
+symbols  ds3100:9.2 sun3:9.2 sun4nw:9.2 symm:9.2 spur:9.2 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.2
+date     91.08.19.13.44.35;  author jhh;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.09.11.12.13.03;  author rab;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.57.46;  author douglis;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     89.05.24.07.53.33;  author rab;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.2
+log
+@defined minor flags
+@
+text
+@/*
+ * devSCSITape.h --
+ *
+ *	Declarations of device switch routines for SCSI Tape drives.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/dev/RCS/devSCSITape.h,v 9.1 90/09/11 12:13:03 rab Exp Locker: mendel $ SPRITE (Berkeley)
+ */
+
+#ifndef _DEVSCSITAPE
+#define _DEVSCSITAPE
+
+/*
+ * Flags encoded in the unit number of the device.
+ */
+
+#define DEV_SCSI_TAPE_NO_REWIND	0x1	/* No rewind on close. */
+#define DEV_SCSI_TAPE_VAR_BLOCK	0x2	/* Variable block size. */
+
+extern ReturnStatus DevSCSITapeOpen _ARGS_((Fs_Device *devicePtr, int useFlags,
+    Fs_NotifyToken token, int *flagsPtr));
+extern ReturnStatus DevSCSITapeRead _ARGS_((Fs_Device *devicePtr,
+    Fs_IOParam *readPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus DevSCSITapeWrite _ARGS_((Fs_Device *devicePtr,
+    Fs_IOParam *writePtr, Fs_IOReply *replyPtr));
+extern ReturnStatus DevSCSITapeIOControl _ARGS_((Fs_Device *devicePtr,
+    Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus DevSCSITapeClose _ARGS_((Fs_Device *devicePtr,
+    int useFlags, int openCount, int writerCount));
+
+#endif /* _DEVSCSITAPE */
+
+@
+
+
+9.1
+log
+@Added prototypes.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/dev/RCS/devSCSITape.h,v 9.0 89/09/12 14:57:46 douglis Stable Locker: rab $ SPRITE (Berkeley)
+d20 7
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/dev/RCS/devSCSITape.h,v 1.1 89/05/24 07:53:33 rab Exp Locker: douglis $ SPRITE (Berkeley)
+d21 10
+a30 6
+ReturnStatus DevSCSITapeOpen();
+ReturnStatus DevSCSITapeRead();
+ReturnStatus DevSCSITapeWrite();
+ReturnStatus DevSCSITapeIOControl();
+ReturnStatus DevSCSITapeClose();
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.2 89/01/07 04:12:44 rab Exp $ SPRITE (Berkeley)
+@

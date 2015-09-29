@@ -1,0 +1,4 @@
+Note: Sprite has some files in machine dependent directories: ds3100.md,
+sun3.md, etc.  If you are not using Sprite pmake, you may have to set
+the include path to compile with these files.  Use -I/usr/include/$MACHINE.md
+to get them.

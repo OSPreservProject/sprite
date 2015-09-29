@@ -1,0 +1,97 @@
+This is Common TeX, Version 2.9 (preloaded format=plain 89.9.18) 21 AUG 1991 14:15
+**&plain gdb-all.texinfo 
+(./gdb-all.texinfo
+(/sprite/src/cmds/gdb.new/dist/texinfo/fsf/texinfo.tex
+Loading texinfo package [Version 2.51]:  Basics,
+\bindingoffset=\dimen16
+\normaloffset=\dimen17
+\pagewidth=\dimen18
+\pageheight=\dimen19
+\cornerlong=\dimen20
+\cornerthick=\dimen21
+\topandbottommargin=\dimen22
+\outerhsize=\dimen23
+\outervsize=\dimen24
+\EMsimple=\toks12
+\singlespaceskip=\skip18
+\mil=\dimen25
+ fonts,
+\sffam=\fam8
+\fontdepth=\count25
+\tclosesave=\dimen26
+\tcloserm=\dimen27
+ page headings,
+\titlepagetopglue=\skip19
+\titlepagebottomglue=\skip20
+\realeverypar=\toks13
+\evenheadline=\toks14
+\oddheadline=\toks15
+\evenfootline=\toks16
+\oddfootline=\toks17
+
+tables,
+\tableindent=\dimen28
+\itemindent=\dimen29
+\itemmargin=\dimen30
+\itemmax=\dimen31
+\itemno=\count26
+ indexing,
+\initialskipamount=\skip21
+\secondaryindent=\skip22
+\partialpage=\box16
+\doublecolumnhsize=\dimen32
+\doublecolumnvsize=\dimen33
+\availdimen@=\dimen34
+ sectioning,
+\chapno=\count27
+\secno=\count28
+\subsecno=\count29
+\subsubsecno=\count30
+\appendixno=\count31
+\contentsfile=\write0
+\chapheadingskip=\skip23
+\subsecheadingskip=\skip24
+\secheadingskip=\skip25
+ toc printing,
+\contentsrightmargin=\skip26
+\tocindent=\dimen35
+ environments,
+\dblarrowbox=\box17
+\longdblarrowbox=\box18
+\pushcharbox=\box19
+\bullbox=\box20
+\equivbox=\box21
+\errorbox=\box22
+\lispnarrowing=\skip27
+\aboveenvskipamount=\skip28
+ defuns,
+\defbodyindent=\skip29
+\defargsindent=\skip30
+\deftypemargin=\skip31
+\deflastargmargin=\skip32
+\parencount=\count32
+
+cross reference,
+\auxfile=\write1
+\footnoteno=\count33
+ and turning on texinfo input format.
+\defaultparindent=\dimen36
+)
+@cpindfile=@write2
+@fnindfile=@write3
+@vrindfile=@write4
+@tpindfile=@write5
+@kyindfile=@write6
+@pgindfile=@write7
+ [1] [2]
+(Summary of GDB)
+Cross reference values unknown; you must run TeX again. [1] [2]
+(New Features since GDB version 3.5) [3] [4] [5] Chapter 1 [6] [7]
+[8] [9] Chapter 2 [10] [11] [12])
+*
+! Emergency stop.
+<*> &plain gdb-all.texinfo 
+                           
+! End of file on the terminal
+
+Output written on gdb-all.dvi (14 pages, 25376 bytes).

@@ -1,0 +1,15 @@
+F BF.H;1                            	bf.h
+F BYTE.H;1                          	byte.h
+D DS3100_M                          	ds3100.md
+F DUMP.H;1                          	dump.h
+F HASH.C;1                          	hash.c
+F HASH.H;1                          	hash.h
+L LOCAL.MK;1                        	local.mk	../main/local.mk
+F MAKEFILE.;1                       	Makefile
+L MAPSTATU.C;1                      	mapStatus.c	../../lib/c/emulator/mapStatus.c
+D RCS                               	RCS
+D SUN3_MD                           	sun3.md
+F TRACE.C;1                         	trace.c
+F TRACE.H;1                         	trace.h
+F UTILS.H;1                         	utils.h
+F UTILSMIS.C;1                      	utilsMisc.c

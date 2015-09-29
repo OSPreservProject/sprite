@@ -1,0 +1,11 @@
+This is TeX, C Version 3.0 (format=plain 90.11.9)  16 JAN 1991 10:37
+**&tex test
+(test.tex
+\ovsize=\dimen16
+\ohsize=\dimen17
+
+! Font \norm=ptmr at 20.0pt not loadable: Metric (TFM) file not found.
+l.26 \font\norm=ptmr at 20truept
+                                
+? X
+No pages of output.

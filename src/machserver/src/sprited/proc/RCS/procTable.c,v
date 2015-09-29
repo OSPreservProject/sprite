@@ -1,0 +1,1196 @@
+head     1.11;
+branch   ;
+access   ;
+symbols  srv030:1.11 srv028:1.11 srv027:1.11 srv026:1.11 srv024:1.11 srv022:1.11 srv021:1.11 srv019:1.11 srv018:1.11 srv016:1.11 srv015:1.11 srv014:1.11 srv012:1.11 srv011:1.11 srv010:1.11 srv008:1.11 srv007:1.11 srv006:1.11 srv005:1.11 srv004:1.11 srv003:1.11 srv002:1.11 srv001:1.11;
+locks    ; strict;
+comment  @ * @;
+
+
+1.11
+date     92.03.12.17.37.15;  author kupfer;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     92.02.27.16.28.56;  author kupfer;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     92.01.21.16.03.50;  author kupfer;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     91.12.01.21.59.29;  author kupfer;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     91.11.14.10.02.29;  author kupfer;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     91.10.18.18.00.39;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.10.08.17.29.05;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.10.04.11.37.39;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.09.23.14.19.51;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.09.02.22.54.00;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.08.19.12.27.11;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Routines to manage the process table.
+@
+
+
+1.11
+log
+@Allow transition from DEAD to DEAD.
+@
+text
+@/* 
+ * procTable.c --
+ *
+ *	Routines to manage the process table.  This maintains a monitor
+ *	that synchronizes access to PCB's.
+ *
+ * Copyright 1985, 1988, 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/proc/RCS/procTable.c,v 1.10 92/02/27 16:28:56 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <user/sync.h>
+
+#include <fs.h>
+#include <main.h>
+#include <proc.h>
+#include <procInt.h>
+#include <rpc.h>
+#include <sig.h>
+#include <sync.h>
+#include <utils.h>
+#include <vm.h>
+
+static Sync_Lock	tableLock;
+#define	LOCKPTR &tableLock
+
+Proc_ControlBlock **proc_PCBTable;
+
+#define PROC_MAX_PROCESSES 256
+#define PROC_PCB_NUM_ALLOC 16
+int proc_MaxNumProcesses;
+
+int procLastSlot = 0;	/* Circular index into proctable for choosing slots */
+static unsigned int realMaxProcesses;	/* The absolute number of process table
+					 * entries, not necessarily
+					 * allocated yet. */ 
+static int entriesInUse = 0;	/* Number of PCB's in use. */
+
+/* 
+ * State transition table for debugging.  The first index is the old state, 
+ * the second index is the new state.  Sorry about using numbers instead of 
+ * TRUE/FALSE, but this makes the table easier to read (or at least that's 
+ * the theory).
+ */
+static Boolean legalState[PROC_NUM_STATES][PROC_NUM_STATES] = {
+				/* to */			   /* from */
+/* unusd, rning, ready, wait,  exit,  dead,  migrt, new,  susp */
+  {  0,     0,     0,     0,     0,     0,     0,    1,     0},/* unused */
+  {  0,     0,     0,     0,     0,     0,     0,    0,     0},/* running */
+  {  0,     0,     1,     1,     1,     1,     1,    0,     1},/* ready */
+  {  0,     0,     1,     0,     1,     1,     0,    0,     1},/* waiting*/
+  {  0,     0,     0,     0,     0,     1,     0,    0,     0},/* exiting*/
+  {  1,     0,     0,     0,     0,     1,     0,    0,     0},/* dead */
+  {  0,     0,     0,     0,     1,     1,     0,    1,     0},/* migrated */
+  {  1,     0,     1,     0,     0,     0,     1,    0,     0},/* new */
+  {  0,     0,     1,     0,     1,     1,     0,    0,     1},/* suspended */
+};
+
+/* 
+ * This is the key that we give to the thread local data package when 
+ * we want to get or set the PCB that is associated with a thread. 
+ */
+static cthread_key_t procPcbKey;
+
+static void 	InitPCB _ARGS_((Proc_ControlBlock *pcbPtr, int pid));
+static void	AddPCBs _ARGS_((Proc_ControlBlock **procPtrPtr));
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * ProcInitTable --
+ *
+ *	Initializes the PCB table.  Initializes an array of
+ *	PROC_MAX_PROCESSES pointers to PCB's but only allocates
+ *	PROC_PCB_NUM_ALLOC entries at first.  The rest are done
+ *	dynamically.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The PCB table is initialized.  Also initializes procPcbKey.
+ *
+ * ----------------------------------------------------------------------------
+ */
+    
+void
+ProcInitTable()
+{
+    register	int 		  i;
+    register	Proc_ControlBlock *pcbPtr;
+
+    proc_MaxNumProcesses     = PROC_PCB_NUM_ALLOC;
+    realMaxProcesses         = PROC_MAX_PROCESSES;
+
+    proc_PCBTable = (Proc_ControlBlock **)
+        Vm_BootAlloc(realMaxProcesses * sizeof(pcbPtr));
+
+    for (i = 0; i < proc_MaxNumProcesses; i++) {
+	pcbPtr = (Proc_ControlBlock *) Vm_BootAlloc(sizeof(Proc_ControlBlock));
+	proc_PCBTable[i] = pcbPtr;
+	InitPCB(pcbPtr, i);
+    }
+
+    /*
+     * Set the rest of the proc table to catch any misuse of nonexistent
+     * entries.
+     */
+
+    for (i = proc_MaxNumProcesses; i < realMaxProcesses; i++) {
+	proc_PCBTable[i] = (Proc_ControlBlock *) NIL;
+    }
+
+    Sync_LockInitDynamic(&tableLock, "Proc:tableLock");
+
+    if (cthread_keycreate(&procPcbKey) < 0) {
+	panic("ProcInitTable: can't create thread local data key.\n");
+    }
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * InitPCB --
+ *
+ *	Initializes a process control block.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static void
+InitPCB(pcbPtr, pid)
+    Proc_ControlBlock *pcbPtr;
+    int pid;			/* the process ID to assign to the slot */
+{
+    List_InitElement((List_Links *)pcbPtr);
+    pcbPtr->magic	= PROC_PCB_MAGIC_NUMBER;
+    pcbPtr->backPtr	= pcbPtr;
+    pcbPtr->state	= PROC_UNUSED;
+    pcbPtr->processID	= pid;
+    pcbPtr->genFlags	= 0;
+
+    pcbPtr->syscallPort = MACH_PORT_NULL;
+    pcbPtr->exceptionPort = MACH_PORT_NULL;
+    pcbPtr->thread = MACH_PORT_NULL;
+    pcbPtr->taskInfoPtr = NULL;
+
+    pcbPtr->currCondPtr = NULL;
+    Sync_ConditionInit(&pcbPtr->waitCondition, "proc:waitCondition", TRUE);
+    Sync_ConditionInit(&pcbPtr->lockedCondition, "proc:lockedCondition",
+		       TRUE);
+    Sync_ConditionInit(&pcbPtr->sleepCondition, "proc:sleepCondition",
+		       TRUE);
+    Sync_ConditionInit(&pcbPtr->remoteCondition, "proc:remoteCondition",
+		       TRUE);
+    Sync_ConditionInit(&pcbPtr->resumeCondition, "proc:resumeCondition",
+		       TRUE);
+
+    /*
+     *  Initialize the pointers to the list headers and the
+     *  PCB entry. These values do not change when the PCB
+     *  entry is re-used.
+     */
+    pcbPtr->childList	= &(pcbPtr->childListHdr);
+    pcbPtr->siblingElement.procPtr	= pcbPtr;
+    pcbPtr->familyElement.procPtr	= pcbPtr;
+    pcbPtr->deadElement.procPtr		= pcbPtr;
+
+    /*
+     *  Set the links to NIL to catch any invalid uses of
+     *  the lists before they are properly initialized.
+     *  These pointers change whenever the PCB entry is re-used.
+     */
+    pcbPtr->childListHdr.nextPtr	= (List_Links *) NIL;
+    pcbPtr->childListHdr.prevPtr	= (List_Links *) NIL;
+
+    List_InitElement((List_Links *)&pcbPtr->siblingElement);
+    List_InitElement((List_Links *)&pcbPtr->familyElement);
+    List_InitElement((List_Links *)&pcbPtr->deadElement);
+
+    pcbPtr->peerHostID = NIL;
+    pcbPtr->peerProcessID = (Proc_PID) NIL;
+    pcbPtr->remoteExecBuffer = (Address) NIL;
+    pcbPtr->migCmdBuffer = (Address) NIL;
+    pcbPtr->migCmdBufSize = 0;
+    pcbPtr->migFlags = 0;
+    pcbPtr->argString = (char *) NIL;
+
+#ifdef LOCKDEP
+    pcbPtr->lockStackSize = 0;
+#endif
+    pcbPtr->locksHeld = 0;
+    pcbPtr->fsPtr = (Fs_ProcessState *)NIL;
+    pcbPtr->rpcClientProcess = (Proc_ControlBlock *) NIL;
+
+    pcbPtr->waitToken = 0;
+    pcbPtr->timerArray = (struct ProcIntTimerInfo *) NIL;
+
+#ifndef CLEAN_LOCK
+    Sync_SemInitDynamic(&pcbPtr->lockInfo, "Proc:perPCBlock");
+#endif
+#ifdef LOCKREG
+    Sync_LockRegister(&pcbPtr->lockInfo);
+#endif
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ *  AddPCBs --
+ *
+ *	Add new proc_ControlBlocks.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The global array of process control blocks is updated to point
+ *	to the PCB's pointed to by procPtrPtr, and the count of useable entries
+ *	is updated.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+static INTERNAL void
+AddPCBs(procPtrPtr)
+    Proc_ControlBlock **procPtrPtr;
+{
+    register int i;
+    
+    for (i = 0; i < PROC_PCB_NUM_ALLOC; i++) {
+	proc_PCBTable[proc_MaxNumProcesses] = *procPtrPtr;
+	procPtrPtr++;
+	proc_MaxNumProcesses++;
+    }
+}
+    
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Proc_InitMainProc --
+ *
+ *	Finish initializing the process table by making a proc table entry
+ *	for the main server process.  The first entry in the table 
+ *	should already be initialized as an unused entry.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The first element of the proc table is modified, and the count of
+ *	used entries is set to 1.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+void
+Proc_InitMainProc()
+{
+    register	Proc_ControlBlock *procPtr;
+
+    entriesInUse = 1;
+    
+    procPtr = proc_PCBTable[PROC_MAIN_PROC_SLOT];
+    cthread_set_name(cthread_self(), "main");
+
+    /*
+     *  Fix up any fields that InitPCB didn't set or set to the wrong 
+     *  value. 
+     *  XXX This business of calling Proc_SetState twice is ugly.  
+     *  Maybe we should just set the process's state directly (it is a 
+     *  special case, after all).
+     */
+    
+    Proc_SetState(procPtr, PROC_NEW);
+    Proc_SetState(procPtr, PROC_READY);
+    procPtr->genFlags		= PROC_KERNEL;
+    procPtr->syncFlags		= 0;
+    procPtr->exitFlags		= 0;
+    procPtr->processID	 	= (PROC_MAIN_PROC_SLOT |
+				   (1 << PROC_GEN_NUM_SHIFT) | 
+				   (rpc_SpriteID << PROC_ID_NUM_SHIFT));
+    procPtr->parentID		= procPtr->processID;
+    procPtr->familyID 		= PROC_NO_FAMILY;	/* not in a family */
+    
+#ifdef SPRITED_PROFILING
+    procPtr->Prof_Buffer        = (short *) NIL;
+    procPtr->Prof_BufferSize    = 0;
+    procPtr->Prof_Offset        = 0;
+    procPtr->Prof_Scale         = 0;
+    procPtr->Prof_PC            = 0;
+#endif
+
+    List_Init(procPtr->childList);
+
+    procPtr->userID		= 0;
+    procPtr->effectiveUserID	= 0;
+
+    Sig_ProcInit(procPtr);
+
+    Proc_SetCurrentProc(procPtr);
+
+    ProcInitMainEnviron(procPtr);
+
+    ProcFamilyHashInit();
+
+    procPtr->peerProcessID = (Proc_PID) NIL;
+    procPtr->peerHostID = (int) NIL;
+    procPtr->remoteExecBuffer = (Address) NIL;
+
+    procPtr->termReason = 0;
+    procPtr->termStatus = 0;
+    procPtr->termCode = 0;
+
+    procPtr->unixErrno = 0;
+    procPtr->unixProgress = -1;	/* XXX avoid magic numbers */
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Proc_LockPID --
+ *
+ *	Determine the validity of the given pid and if valid return a pointer
+ *	to the proc table entry.  The proc table entry is returned locked.
+ *
+ * Results:
+ *	Pointer to proc table entry.
+ *
+ * Side effects:
+ *	Proc table entry is locked.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+ENTRY Proc_LockedPCB *
+Proc_LockPID(pid)
+    Proc_PID	pid;
+{
+    register	Proc_ControlBlock *procPtr;
+#ifndef CLEAN_LOCK
+    register	Sync_Semaphore	  *lockPtr;
+#endif
+
+    LOCK_MONITOR;
+
+    if (Proc_PIDToIndex(pid) >= proc_MaxNumProcesses) {
+	UNLOCK_MONITOR;
+	return NULL;
+    }
+    procPtr = proc_PCBTable[Proc_PIDToIndex(pid)];
+#ifndef CLEAN_LOCK
+    lockPtr = &(procPtr->lockInfo);
+#endif
+
+    while (TRUE) {
+	if (procPtr->state == PROC_UNUSED || procPtr->state == PROC_DEAD) {
+	    procPtr = (Proc_ControlBlock *) NIL;
+	    break;
+	}
+
+	if (procPtr->genFlags & PROC_LOCKED) {
+	    do {
+		Sync_RecordMiss(lockPtr);
+		(void) Sync_Wait(&procPtr->lockedCondition, FALSE);
+	    } while (procPtr->genFlags & PROC_LOCKED);
+	} else {
+	    if (!Proc_ComparePIDs(procPtr->processID, pid)) {
+		procPtr = (Proc_ControlBlock *) NIL;
+	    } else {
+		procPtr->genFlags |= PROC_LOCKED;
+		Sync_RecordHit(lockPtr);
+		Sync_StoreDbgInfo(lockPtr, FALSE);
+		Sync_AddPrior(lockPtr);
+	    }
+	    break;
+	}
+    }
+
+    UNLOCK_MONITOR;
+    return Proc_AssertLocked(procPtr);
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Proc_Lock --
+ *
+ *	Lock the proc table entry.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Proc table entry is locked.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+ENTRY void
+Proc_Lock(procPtr)
+    register	Proc_ControlBlock *procPtr;
+{
+#ifndef CLEAN_LOCK
+    register	Sync_Semaphore	  *lockPtr;
+#endif
+
+    LOCK_MONITOR;
+
+#ifndef CLEAN_LOCK
+    lockPtr = &(procPtr->lockInfo);
+#endif
+
+    while (procPtr->genFlags & PROC_LOCKED) {
+	Sync_RecordMiss(lockPtr);
+	(void) Sync_Wait(&procPtr->lockedCondition, FALSE);
+    }
+    procPtr->genFlags |= PROC_LOCKED;
+
+    Sync_RecordHit(lockPtr);
+    Sync_StoreDbgInfo(lockPtr, FALSE);
+    Sync_AddPrior(lockPtr);
+
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Proc_Unlock --
+ *
+ *	Unlock the proc table entry.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Proc table entry is unlocked.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+ENTRY void
+Proc_Unlock(procPtr)
+    register	Proc_LockedPCB *procPtr;
+{
+    LOCK_MONITOR;
+
+#ifndef CLEAN_LOCK
+    if (!(procPtr->pcb.genFlags & PROC_LOCKED)) {
+	panic("Proc_Unlock: PCB not locked.\n");
+    }
+#endif
+    procPtr->pcb.genFlags &= ~PROC_LOCKED;
+    Sync_Broadcast(&procPtr->pcb.lockedCondition);
+
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_UnlockAndSwitch --
+ *
+ *	Unlock a PCB and perform a context switch to the given state.  
+ *	This is done atomically: no other process can lock the PCB before 
+ *	this process context switches.  
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The process is unlocked when this routine returns.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Proc_UnlockAndSwitch(procPtr, state)
+    Proc_LockedPCB *procPtr;	/* the PCB to unlock */
+    Proc_State state;		/* the state to context switch to */
+{
+    LOCK_MONITOR;
+
+    if (!(procPtr->pcb.genFlags & PROC_LOCKED)) {
+	panic("Proc_Unlock: PCB not locked.\n");
+    }
+    procPtr->pcb.genFlags &= ~PROC_LOCKED;
+    Sync_Broadcast(&procPtr->pcb.lockedCondition);
+
+    switch (state) {
+    case PROC_DEAD:
+    case PROC_EXITING:
+	Sync_UnlockAndSwitch(LOCKPTR, state);
+	panic("Proc_UnlockAndSwitch: Sync_UnlockAndSwitch returned.\n");
+	break;
+    case PROC_SUSPENDED:
+	/* 
+	 * Hang out until somebody else resumes this process.  Note that 
+	 * the PCB's lock is used for synchronization, rather than a simple 
+	 * monitor lock.  This complicates the wait loop below.
+	 */
+	Proc_SetState((Proc_ControlBlock *)procPtr, state);
+	while (procPtr->pcb.state == PROC_SUSPENDED) {
+	    Sync_Wait(&procPtr->pcb.resumeCondition, FALSE);
+	    /* Make sure nobody else has the process locked. */
+	    while (procPtr->pcb.genFlags & PROC_LOCKED) {
+		Sync_RecordMiss(&procPtr->pcb.lockInfo);
+		Sync_Wait(&procPtr->pcb.lockedCondition, FALSE);
+	    }
+	}
+	break;
+    default:
+	panic("Proc_UnlockAndSwitch: unexpected state.\n");
+	break;
+    };
+
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * ProcGetUnusedPCB --
+ *
+ *	Return the first unused PCB.
+ *
+ * Results:
+ *	Pointer to PCB.
+ *
+ * Side effects:
+ *	Proc table entry is locked and marked as PROC_NEW.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+ENTRY Proc_LockedPCB *
+ProcGetUnusedPCB()
+{
+    register	Proc_ControlBlock 	**procPtrPtr;
+    register	Proc_ControlBlock 	*procPtr;
+    Proc_ControlBlock 			*pcbArray[PROC_PCB_NUM_ALLOC];
+    register	int 			i;
+    int					generation;
+
+    LOCK_MONITOR;
+
+    /* 
+     * See if we need to allocate more process table entries.
+     */
+    if (entriesInUse == proc_MaxNumProcesses) {
+	if (proc_MaxNumProcesses > realMaxProcesses - PROC_PCB_NUM_ALLOC) {
+	    panic("ProcGetUnusedPCB: PCB table full!!\n");
+	}
+	for (i = 0; i < PROC_PCB_NUM_ALLOC; i++) {
+	    pcbArray[i] = (Proc_ControlBlock *)
+		    Vm_RawAlloc(sizeof(Proc_ControlBlock));
+	    InitPCB(pcbArray[i], proc_MaxNumProcesses + i);
+	}
+	AddPCBs(pcbArray);
+    }
+
+    /*
+     * Scan the proc table looking for an unused slot.  The search is
+     * circular, starting just after the last slot chosen.  This is done
+     * so that slots are not re-used often so the generation number of
+     * each slot can just be a few bits wide.
+     */
+    for (i = procLastSlot, procPtrPtr = &proc_PCBTable[procLastSlot]; ; ) {
+	if ((*procPtrPtr)->state == PROC_UNUSED) {
+	    break;
+	}
+	i++;
+	procPtrPtr++;
+	if (i >= proc_MaxNumProcesses) {
+	    i = 0;
+	    procPtrPtr = &proc_PCBTable[0];
+	}
+	/*
+	 * Shouldn't hit this, but check to avoid infinite loop.
+	 */
+	if (i == procLastSlot) {
+	    panic("ProcGetUnusedPCB: PCB table full!!\n");
+	}
+    }
+
+    procLastSlot = i+1;
+    if (procLastSlot >= proc_MaxNumProcesses) {
+	procLastSlot = 0;
+    }
+    procPtr = *procPtrPtr;
+    procPtr->genFlags = PROC_LOCKED;
+    procPtr->migFlags = 0;
+    Proc_SetState(procPtr, PROC_NEW);
+    /*
+     *  The PCB entry has a generation number that is incremented each time
+     *  the entry is re-used. The low-order bits are in index into
+     *  the PCB table.
+     */
+    generation = (procPtr->processID & PROC_GEN_NUM_MASK) >> PROC_GEN_NUM_SHIFT;
+    generation += 1;
+    generation = (generation << PROC_GEN_NUM_SHIFT) & PROC_GEN_NUM_MASK;
+    procPtr->processID = i | generation | (rpc_SpriteID << PROC_ID_NUM_SHIFT);
+
+    entriesInUse++;
+
+    UNLOCK_MONITOR;
+
+    return Proc_AssertLocked(procPtr);
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * ProcFreePCB --
+ *
+ *	Mark the given locked PCB as unused.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Proc table entry marked as unused and unlocked.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+ENTRY void
+ProcFreePCB(procPtr)
+    register	Proc_LockedPCB 	*procPtr;
+{
+    LOCK_MONITOR;
+    Proc_SetState((Proc_ControlBlock *)procPtr, PROC_UNUSED);
+    procPtr->pcb.genFlags = 0;
+    entriesInUse--;
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * ProcTableMatch --
+ *
+ *	Go through the process table and return an array of process
+ *	IDs for which the specified function returns TRUE.
+ *
+ * Results:
+ *	The array of PIDs and the number of matches are returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+ENTRY int
+ProcTableMatch(maxPids, booleanFuncPtr, pidArray)
+    unsigned int maxPids;		/* size of pidArray */
+    Boolean (*booleanFuncPtr) _ARGS_((Proc_ControlBlock *pcbPtr));
+					/* function to match */
+    Proc_PID *pidArray;			/* array to store results */
+{
+    Proc_ControlBlock *pcbPtr;
+    int i;
+    int matched = 0;
+    
+    LOCK_MONITOR;
+
+    for (i = 0; i < proc_MaxNumProcesses && matched < maxPids; i++) {
+	pcbPtr = proc_PCBTable[i];
+	if (pcbPtr->state == PROC_UNUSED) {
+	    continue;
+	}
+	if ((*booleanFuncPtr)(pcbPtr)) {
+	    pidArray[matched] = pcbPtr->processID;
+	    matched++;
+	}
+    }
+    UNLOCK_MONITOR;
+    return(matched);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_SetState --
+ *
+ *	Set process state, verifying that the state transition is 
+ *	expected.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Sets the state of the given process to the given state.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifndef CLEAN
+void
+Proc_SetState(procPtr, newState)
+    Proc_ControlBlock *procPtr;
+    Proc_State newState;
+{
+    if (!legalState[(int)(procPtr->state)][(int)newState]) {
+	panic("Proc_SetState: pid %x old state %s, new state %s\n",
+	       procPtr->processID, Proc_StateName(procPtr->state),
+	       Proc_StateName(newState));
+    }
+
+    procPtr->state = newState;
+}
+#endif /* CLEAN */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_GetCurrentProc --
+ *
+ *	Get the PCB for the currently running process.
+ *
+ * Results:
+ *	Returns a pointer to the PCB associated with the current 
+ *	thread.  Returns NULL if no PCB is associated with the thread 
+ *	(e.g., during system initialization).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Proc_ControlBlock *
+Proc_GetCurrentProc()
+{
+    Proc_ControlBlock *procPtr;
+
+    if (!main_MultiThreaded) {
+	return NULL;
+    }
+
+    if (cthread_getspecific(procPcbKey, (any_t *)&procPtr) < 0) {
+	panic("Proc_GetCurrentProc: key not recognized.\n");
+    }
+
+    return procPtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_SetCurrentProc --
+ *
+ *	Record the given process as the currently running one.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Binds the given PCB to the thread local data for the currently 
+ *	running thread.
+ *	Note: if the PCB contains a back pointer to the thread, this is 
+ *	not the place to set it, because this routine must be callable with 
+ *	the process unlocked.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Proc_SetCurrentProc(procPtr)
+    Proc_ControlBlock *procPtr;
+{
+    if (cthread_setspecific(procPcbKey, (any_t)procPtr) < 0) {
+	panic("Proc_SetCurrentProc: cthread_setspecific failed.\n");
+    }
+}
+@
+
+
+1.10
+log
+@Snapshot.  Can kill, suspend, and resume processes.
+@
+text
+@d7 1
+a7 1
+ * Copyright 1985, 1988 Regents of the University of California
+d18 1
+a18 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/proc/RCS/procTable.c,v 1.9 92/01/21 16:03:50 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d63 1
+a63 1
+  {  1,     0,     0,     0,     0,     0,     0,    0,     0},/* dead */
+@
+
+
+1.9
+log
+@Add "name" argument for Sync_ConditionInit calls.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/proc/RCS/procTable.c,v 1.8 91/12/01 21:59:29 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d29 1
+d51 3
+a53 1
+ * the second index is the new state.
+d57 10
+a66 9
+/* unused, ready, waiting, exiting, dead,  migrated, new,   suspended */
+  {FALSE,  FALSE, FALSE,   FALSE,   FALSE, FALSE,    TRUE,  FALSE},/* unused */
+  {FALSE,  TRUE,  TRUE,    TRUE,    TRUE,  TRUE,     FALSE, TRUE}, /* ready */
+  {FALSE,  TRUE,  FALSE,   FALSE,   FALSE, FALSE,    FALSE, FALSE},/* waiting*/
+  {FALSE,  FALSE, FALSE,   FALSE,   TRUE,  FALSE,    FALSE, FALSE},/* exiting*/
+  {TRUE,   FALSE, FALSE,   FALSE,   FALSE, FALSE,    FALSE, FALSE},/* dead */
+  {FALSE,  FALSE, FALSE,   FALSE,   FALSE, FALSE,    TRUE,  FALSE},/* migrtd */
+  {TRUE,   TRUE,  FALSE,   FALSE,   FALSE, TRUE,     FALSE, FALSE},/* new */
+  {FALSE,  TRUE,  FALSE,   FALSE,   FALSE, FALSE,    FALSE, FALSE},/* suspd */
+d173 2
+a317 1
+#ifdef SPRITED_SIGNALS
+a318 1
+#endif
+d478 62
+@
+
+
+1.8
+log
+@Snapshot.  FS appears to work.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/proc/RCS/procTable.c,v 1.7 91/11/14 10:02:29 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d162 7
+a168 4
+    Sync_ConditionInit(&pcbPtr->waitCondition, TRUE);
+    Sync_ConditionInit(&pcbPtr->lockedCondition, TRUE);
+    Sync_ConditionInit(&pcbPtr->sleepCondition, TRUE);
+    Sync_ConditionInit(&pcbPtr->remoteCondition, TRUE);
+@
+
+
+1.7
+log
+@Snapshot. net, rpc, recov modules added.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/proc/RCS/procTable.c,v 1.6 91/10/18 18:00:39 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d165 1
+@
+
+
+1.6
+log
+@Proc_GetCurrentProc should return NULL if called during initialization.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/proc/RCS/procTable.c,v 1.5 91/10/08 17:29:05 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a21 1
+#include <libc.h>
+d43 3
+a45 2
+static int realMaxProcesses;	/* The absolute number of process table
+				 * entries, not necessarily allocated yet. */
+d162 3
+a164 2
+    Sync_ConditionInit(&pcbPtr->waitCondition);
+    Sync_ConditionInit(&pcbPtr->lockedCondition);
+d614 1
+a614 1
+    int maxPids;			/* size of pidArray */
+d663 1
+a663 1
+    if (!legalState[procPtr->state][newState]) {
+@
+
+
+1.5
+log
+@Commenting fix.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/proc/RCS/procTable.c,v 1.4 91/10/04 11:37:39 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d26 1
+d682 2
+a683 1
+ *	thread.  Returns NULL if no PCB is associated with the thread.
+d695 4
+@
+
+
+1.4
+log
+@Snapshot.  fork/exec work.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/proc/RCS/procTable.c,v 1.3 91/09/23 14:19:51 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d715 1
+a715 1
+ *	XXX Note: if the PCB contains a back pointer to the thread, this is 
+@
+
+
+1.3
+log
+@Snapshot.  Server is multithreaded internally.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/sprited/proc/RCS/procTable.c,v 1.2 91/09/02 22:54:00 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d52 1
+d55 1
+a55 1
+  {FALSE,  FALSE, TRUE,    TRUE,    TRUE,  TRUE,     FALSE, TRUE}, /* ready */
+d172 1
+@
+
+
+1.2
+log
+@Changes for module-based source organization.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/sprited/proc/RCS/procTable.c,v 1.1 91/08/19 12:27:11 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d22 4
+d28 1
+a28 1
+#include <user/sync.h>
+d30 2
+d36 32
+a67 2
+Proc_ControlBlock proc_InitialProc;	/* initial user process info 
+					 * (XXX) */
+d70 1
+d87 1
+a87 1
+ *	The PCB table is initialized.
+d95 24
+a118 1
+    InitPCB(&proc_InitialProc, 0);
+d120 4
+d143 3
+a145 3
+InitPCB(procPtr, pid)
+    Proc_ControlBlock *procPtr;
+    int pid;			/* XXX will be used eventually */
+d147 55
+a201 8
+    procPtr->magic = PROC_PCB_MAGIC_NUMBER;
+    procPtr->backPtr = procPtr;
+    procPtr->state = PROC_UNUSED;
+    procPtr->genFlags = 0;
+    procPtr->exceptionPort = MACH_PORT_NULL;
+    procPtr->syscallPort = MACH_PORT_NULL;
+    procPtr->thread = MACH_PORT_NULL;
+    procPtr->taskInfoPtr = NULL;
+d203 1
+a203 1
+    Sync_SemInitDynamic(&procPtr->lockInfo, "Proc:perPCBlock");
+d206 156
+a361 1
+    Sync_LockRegister(&procPtr->lockInfo);
+d363 27
+a389 1
+    procPtr->locksHeld = 0;
+a423 2
+
+#ifndef CLEAN_LOCK
+a424 2
+#endif
+#if 0
+a425 1
+#endif
+a428 1
+#ifndef CLEAN_LOCK
+a431 2
+    Sync_AddPrior(lockPtr);
+#endif
+d455 1
+a455 1
+    register	Proc_ControlBlock *procPtr;
+d459 2
+a460 1
+    if (!(procPtr->genFlags & PROC_LOCKED)) {
+a462 3
+    procPtr->genFlags &= ~PROC_LOCKED;
+#if 0
+    Sync_Broadcast(&procPtr->lockedCondition);
+d464 2
+d487 1
+a487 1
+ENTRY Proc_ControlBlock *
+a489 11
+    Proc_ControlBlock *procPtr;
+
+    procPtr = &proc_InitialProc;
+
+    procPtr->genFlags = PROC_LOCKED;
+    procPtr->state = PROC_NEW;
+    procPtr->taskInfoPtr = ProcNewTaskInfo();
+
+    return procPtr;
+
+#if 0
+a497 2
+
+
+a512 2
+	
+	
+d544 1
+a544 1
+    procPtr->state = PROC_NEW;
+d559 1
+a559 2
+    return(procPtr);
+#endif /* 0 */
+d568 1
+a568 1
+ *	Mark the given PCB as unused.
+d574 1
+a574 1
+ *	Proc table entry marked as PROC_UNUSED.
+d581 1
+a581 1
+    register	Proc_ControlBlock 	*procPtr;
+d583 6
+a588 4
+#if 0
+#ifdef LOCKREG
+    register	Sync_Semaphore	  *lockPtr;
+#endif
+d590 29
+d621 31
+a651 3
+#ifdef LOCKREG
+    lockPtr = &(procPtr->lockInfo);
+#endif
+d653 10
+a662 5
+    while (procPtr->genFlags & PROC_LOCKED) {
+#ifdef LOCKREG
+	Sync_RecordMiss(lockPtr);
+#endif
+	(void) Sync_Wait(&procPtr->lockedCondition, FALSE);
+d664 27
+a690 3
+    procPtr->state = PROC_UNUSED;
+    procPtr->genFlags = 0;
+    entriesInUse--;
+d692 3
+a694 3
+#ifdef LOCKREG
+    Sync_RecordHit(lockPtr);
+#endif
+d696 1
+a696 2
+    UNLOCK_MONITOR;
+#endif /* 0 */
+d699 29
+@
+
+
+1.1
+log
+@Snapshot: Code reorg. and locking for processes & segments.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procTable.c,v 9.12 91/05/16 14:06:39 kupfer Exp $ SPRITE (Berkeley)";
+d22 2
+d25 1
+a25 3
+#include "proc.h"
+#include "procInt.h"
+#include "sync.h"
+@

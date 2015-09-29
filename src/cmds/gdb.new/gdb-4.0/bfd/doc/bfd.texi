@@ -1,0 +1,259 @@
+@c ------------------------------START TEXT FROM ../bfd.c
+@section @code{typedef bfd}
+
+A BFD is has type @code{bfd}; objects of this type are the cornerstone
+of any application using @code{libbfd}. References though the BFD and
+to data in the BFD give the entire BFD functionality.
+
+Here is the struct used to define the type @code{bfd}.  This contains
+the major data about the file, and contains pointers to the rest of
+the data.
+
+
+@example
+struct _bfd 
+@{
+@end example
+@i{  The filename the application opened the BFD with.}
+
+@example
+  CONST char *filename;                
+@end example
+
+@i{A pointer to the target jump table.}
+
+@example
+  struct bfd_target *xvec;
+@end example
+
+
+@i{To avoid dragging too many header files into every file that}
+@i{includes @file{bfd.h}, IOSTREAM has been declared as a "char *", and MTIME}
+@i{as a "long".  Their correct types, to which they are cast when used,}
+@i{are "FILE *" and "time_t".  }
+
+@i{The iostream is the result of an fopen on the filename.}
+
+@example
+  char *iostream;
+@end example
+
+@i{Is the file being cached @xref{File Caching}.}
+
+@example
+  boolean cacheable;
+@end example
+
+@i{Marks whether there was a default target specified when the BFD was}
+@i{opened. This is used to select what matching algorithm to use to chose}
+@i{the back end.}
+
+@example
+  boolean target_defaulted;
+@end example
+
+@i{The caching routines use these to maintain a least-recently-used list of}
+@i{BFDs (@pxref{File Caching}).}
+
+@example
+  struct _bfd *lru_prev, *lru_next;
+@end example
+
+@i{When a file is closed by the caching routines, BFD retains state}
+@i{information on the file here:}
+
+@example
+  file_ptr where;              
+@end example
+
+@i{and here:}
+
+@example
+  boolean opened_once;
+@end example
+
+@example
+  boolean mtime_set;
+@end example
+@i{File modified time }
+
+@example
+  long mtime;          
+@end example
+
+@i{Reserved for an unimplemented file locking extension.}
+
+@example
+int ifd;
+@end example
+
+@i{The format which belongs to the BFD.}
+
+@example
+  bfd_format format;
+@end example
+
+@i{The direction the BFD was opened with}
+
+@example
+  enum bfd_direction @{no_direction = 0,
+                       read_direction = 1,
+                       write_direction = 2,
+                       both_direction = 3@} direction;
+@end example
+
+@i{Format_specific flags}
+
+@example
+  flagword flags;              
+@end example
+
+@i{Currently my_archive is tested before adding origin to anything. I}
+@i{believe that this can become always an add of origin, with origin set}
+@i{to 0 for non archive files.  }
+
+@example
+  file_ptr origin;             
+@end example
+
+@i{Remember when output has begun, to stop strange things happening.}
+
+@example
+  boolean output_has_begun;
+@end example
+
+@i{Pointer to linked list of sections}
+
+@example
+  struct sec  *sections;
+@end example
+
+@i{The number of sections }
+
+@example
+  unsigned int section_count;
+@end example
+
+@i{Stuff only useful for object files:}
+@i{The start address.}
+
+@example
+  bfd_vma start_address;
+@end example
+@i{Used for input and output}
+
+@example
+  unsigned int symcount;
+@end example
+@i{Symbol table for output BFD}
+
+@example
+  struct symbol_cache_entry  **outsymbols;             
+@end example
+
+@i{Architecture of object machine, eg m68k }
+
+@example
+  enum bfd_architecture obj_arch;
+@end example
+
+@i{Particular machine within arch, e.g. 68010}
+
+@example
+  unsigned long obj_machine;
+@end example
+
+@i{Stuff only useful for archives:}
+
+@example
+  PTR arelt_data;              
+  struct _bfd *my_archive;     
+  struct _bfd *next;           
+  struct _bfd *archive_head;   
+  boolean has_armap;           
+@end example
+
+@i{Used by the back end to hold private data.}
+
+@example
+  PTR tdata;
+@end example
+
+@i{Used by the application to hold private data}
+
+@example
+  PTR usrdata;
+@end example
+
+@i{Where all the allocated stuff under this BFD goes (@pxref{Memory Usage}).}
+
+@example
+  struct obstack memory;
+@};
+@end example
+
+
+
+
+@findex bfd_set_start_address
+@subsubsection @code{bfd_set_start_address}
+
+Marks the entry point of an output BFD. Returns @code{true} on
+success, @code{false} otherwise.
+
+@example
+boolean bfd_set_start_address(bfd *, bfd_vma);
+@end example
+
+
+@findex bfd_get_mtime
+@subsubsection @code{bfd_get_mtime}
+
+Return cached file modification time (e.g. as read from archive header
+for archive members, or from file system if we have been called
+before); else determine modify time, cache it, and return it.  
+
+@example
+long bfd_get_mtime(bfd *);
+@end example
+
+
+
+@findex stuff
+@subsubsection @code{stuff}
+
+@lisp
+@c @cartouche
+
+#define bfd_sizeof_headers(abfd, reloc) \
+     BFD_SEND (abfd, _bfd_sizeof_headers, (abfd, reloc))
+
+#define bfd_find_nearest_line(abfd, section, symbols, offset, filename_ptr, func, line_ptr) \
+     BFD_SEND (abfd, _bfd_find_nearest_line,  (abfd, section, symbols, offset, filename_ptr, func, line_ptr))
+
+#define bfd_debug_info_start(abfd) \
+        BFD_SEND (abfd, _bfd_debug_info_start, (abfd))
+
+#define bfd_debug_info_end(abfd) \
+        BFD_SEND (abfd, _bfd_debug_info_end, (abfd))
+
+#define bfd_debug_info_accumulate(abfd, section) \
+        BFD_SEND (abfd, _bfd_debug_info_accumulate, (abfd, section))
+
+#define bfd_stat_arch_elt(abfd, stat) \
+        BFD_SEND (abfd, _bfd_stat_arch_elt,(abfd, stat))
+
+#define bfd_coff_swap_aux_in(a,e,t,c,i) \
+        BFD_SEND (a, _bfd_coff_swap_aux_in, (a,e,t,c,i))
+
+#define bfd_coff_swap_sym_in(a,e,i) \
+        BFD_SEND (a, _bfd_coff_swap_sym_in, (a,e,i))
+
+#define bfd_coff_swap_lineno_in(a,e,i) \
+        BFD_SEND ( a, _bfd_coff_swap_lineno_in, (a,e,i))
+@c @end cartouche
+@end lisp
+
+
+
+@c ------------------------------END TEXT FROM ../bfd.c

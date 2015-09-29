@@ -1,0 +1,21 @@
+' $Header: /a/newcmds/cpp/RCS/cpp.man,v 1.2 88/12/30 09:23:13 ouster Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS CPP cmds
+.BS
+.SH NAME
+cpp \- C pre-processor
+.SH SYNOPSIS
+\fBcpp\fR [\fIoptions\fR]
+.SH OPTIONS
+See the man page for \fBcc\fR to find about about the \fBcpp\fR switches.
+.BE
+
+.SH INTRODUCTION
+.PP
+\fBCpp\fR is the GNU C preprocessor.  \fBCc\fR invokes it automatically to
+expand macros and perform conditional compilation before compiling.
+This program is rarely invoked by normal users.  The options to
+\fBcpp\fR are all described in the man page for the C compiler.
+
+.SH KEYWORDS
+compiler, GNU, macro, preprocessor

@@ -1,0 +1,25 @@
+'\" Copyright 1991 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/admin/dailydump/RCS/dailydump.man,v 1.1 90/12/17 18:19:17 kupfer Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS EXABYTESTAT cmds
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+exabyteStat \- Determine how much space left on exabyte tape
+.SH SYNOPSIS
+\fBexabyteStat device [sleeptime]\fR 
+.BE
+
+.SH DESCRIPTION
+.PP
+This program determines how much space remains on the exabyte tape.
+.SH KEYWORDS
+dump, tape, backup

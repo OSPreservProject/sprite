@@ -1,0 +1,57 @@
+(month)		    (planned milestones)	  (achieved milestones)
+
+-- 1991 --
+
+February	    
+
+March		    get 3.0 running		  3.0 running w/ gdb problems
+		    detailed design done
+		    
+April		    MIG work done		  sync design done
+
+May		    Sprite dev. env. ready	  can debug "live"
+		    disjoint printf server	  dev. env. 99% ready
+		    				  disjoint printf server
+		    				  sig & sched design done
+		    				  first cut of vm design done
+
+June (2 wks) 	    user libc ready		  proc design done
+		    				  vm design revised
+
+July (1 wk)	    				  printf server w/ client.
+		    				  no obvious problems w/ debug
+		    				  support
+
+August		    printf server w/ client
+		    debugging support?
+
+September	    simple VM support
+
+October		    
+
+November	    full emulation library
+
+December (3 wks)    VM finished
+		    VM exception support
+		    (bogus addr, no perm)
+
+-- 1992 --
+
+January		    fork/exec
+		    signals
+
+February	    low-level networking
+
+March		    Sprite remote FS
+
+April		    move VM/proc onto Sprite
+		      FS
+
+May		    initial perf work done
+
+June		    LFS support
+
+Local Variables:
+mode: text
+tab-stop-list: (20 50)
+End:

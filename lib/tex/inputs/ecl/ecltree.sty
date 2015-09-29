@@ -1,0 +1,163 @@
+% ecltree.sty by hideki isozaki Nov. 12, 1990
+%
+% In this style file, I intentionally didn't use ordinary 
+% terms such as \tree, \subtree, \leaf etc.
+% because I will use different tree macros in one file.
+%
+% This macro needs epic.sty
+% Confirm your epic.sty does not contain \makeatother at EOF.
+
+\ifnum\catcode`\@=12
+\typeout{}
+\typeout{ !! Warning: Your epic.sty must be buggy. Delete \string\makeatother.}
+\typeout{}
+\makeatletter\fi
+
+% Ignore End Of Line
+
+\endlinechar=-1\relax
+
+% Dimensions and Boxes : See below
+
+\newdimen\@BundleWidth
+\newdimen\@BundleDepth
+\newdimen\@BundleHeight
+\newbox\@NodeBox
+\newdimen\GapDepth
+\GapDepth=15\p@
+\newdimen\GapWidth
+\GapWidth=4\p@
+\newdimen\EdgeLabelSep
+\EdgeLabelSep=7\p@
+
+%
+%          ---------------                          -
+%          | \@TopLabel  |                          |
+%          ---------------         -                |
+%     (\@SupportX,\@SupportY)      |                |
+%              /   \               |                |
+%             /     \              |                |
+%            /       \             | \GapDepth      | \@BundleHeight
+%           /         \            |                |
+%          /           \           |                |
+%(\@HandleX,0)          \          |                |
+% --------------   --------------  -                -
+% | \@NodeBox  |   | \@NodeBox  |  | \@BundleDepth  
+% |            |   --------------  |                
+% --------------                   -                
+%              |---|
+%            \GapWidth
+%
+% |-----------------------------|
+%           \@PicWidth
+
+%
+% The main environment to make a (sub)tree: bundle
+% \begin{bundle}{#1} \chunk_1 \chunk_2 ... \chunk_n \end{bundle}
+%
+%   #1 ... top node
+%
+\def\bundle#1{\offinterlineskip\leavevmode\hbox\bgroup
+	\endlinechar=-1
+	\def\@TopLabel{#1}
+	\def\@HandleList{}
+	\def\@EdgeLabels{}
+	\edef\@EdgeLabelsY{\expandafter\@RemoveDim\the\EdgeLabelSep}
+	\unitlength=\p@
+	\@BundleWidth=\z@
+	\@BundleDepth=\z@
+	\ignorespaces}
+
+\def\endbundle{
+	\advance\@BundleWidth by -\GapWidth
+	\hskip-\GapWidth
+	\setbox\@NodeBox=\hbox{\vtop{\null\hbox{\@TopLabel}}}
+	\@BundleHeight=\GapDepth
+	\advance\@BundleHeight by \dp\@NodeBox
+	\vrule\@height\@BundleHeight\@width\z@\@depth\@BundleDepth
+	\edef\@SupportY{\expandafter\@RemoveDim\the\GapDepth}
+	\edef\@SupportX{\expandafter\@RemoveDim\the\@BundleWidth}
+	\setbox\@NodeBox=\hbox to \z@{\hss\@TopLabel\hss}
+	\hskip-\@BundleWidth
+	\edef\@EdgeLabels{\@EdgeLabels{}}
+	\edef\@PicWidth{\expandafter\@RemoveDim\the\@BundleWidth}
+	\@BundleWidth=0.5\@BundleWidth
+	\edef\@SupportX{\expandafter\@RemoveDim\the\@BundleWidth}
+	\@DrawBundle}
+
+
+\def\@DrawBundle{
+	\begin{picture}(\@PicWidth,0)(0,0)
+	\edef\@HandleList{\expandafter\@cdr\@HandleList\@nil}
+	\@for\@HandleX:=\@HandleList\do{
+		\@DrawLine(\@SupportX,\@SupportY)(\@HandleX,0)
+		\put(\@HandleX,\@EdgeLabelsY){
+			\makebox(0,0){\expandafter\@car\@EdgeLabels\@nil}}
+		\edef\@EdgeLabels{\expandafter\@cdr\@EdgeLabels\@nil}}
+	\put(\@SupportX,\@SupportY){\raise\dp\@NodeBox\box\@NodeBox}
+	\end{picture}\egroup}
+
+
+%
+%  \chunk[#1]{#2} means a leaf or a subtree.
+%   #1  ... Label for the edge which connects the leaf or the subtree
+%           with its parent node. (optional argument)
+%   #2  ... Label for the leaf or the subtree 
+
+\def\chunk{\@ifnextchar[{\@chunk}{\@chunk[]}}
+
+\def\@chunk[#1]#2{\edef\@EdgeLabels{\@EdgeLabels{#1}}
+	\setbox\@NodeBox=\vtop{\null\hbox{#2}}
+	\advance\@BundleWidth by 0.5\wd\@NodeBox
+	\ifnum\@BundleDepth<\dp\@NodeBox
+		\@BundleDepth=\dp\@NodeBox\fi
+	\edef\@HandleList{\@HandleList,
+		\expandafter\@RemoveDim\the\@BundleWidth}
+	\advance\@BundleWidth by 0.5\wd\@NodeBox
+	\advance\@BundleWidth by \GapWidth
+	\box\@NodeBox\hskip\GapWidth
+	\ignorespaces}
+
+
+%  To change line attribute
+%  ex.
+%  \drawwith{\path}        ... efficient solid line defined by eepic.sty
+%  \drawwith{\dashline{2}} 
+
+\def\drawwith#1{\def\@DrawLine{#1}}
+
+% Default
+\drawwith{\drawline}
+
+% \crank : connects nodes with crank lines instead of direct
+% line. Ex. \drawwith{\crank\drawline}
+%
+\newdimen\@midY
+\def\crank#1(#2,#3)(#4,#5){%
+        \@midY=#3\p@\advance\@midY by #5\p@\divide\@midY by 2\relax
+        \edef\@MidY{\expandafter\@RemoveDim\the\@midY}%
+        #1(#2,#3)(#2,\@MidY)(#4,\@MidY)(#4,#5)}
+
+\def\crankarrow#1(#2,#3)(#4,#5){%
+	\crank#1(#2,#3)(#4,#5)%
+	\put(#4,#5){\vector(0,-1){0}}}
+
+\def\crankrevarrow#1(#2,#3)(#4,#5){%
+	\crank#1(#2,#3)(#4,#5)%
+	\put(#2,#3){\vector(0,1){0}}}
+
+
+%  Ordinary catcode for p and t is 11
+%  Application of \the to dimen generates text such as 1.0pt.
+%  This pt's catcode is 12.
+
+{\catcode`\p=12 \catcode`\t=12
+\gdef\@RemoveDim#1pt{#1}}
+
+% Restore original End Of Line
+
+\endlinechar=13\relax
+
+\endinput
+
+

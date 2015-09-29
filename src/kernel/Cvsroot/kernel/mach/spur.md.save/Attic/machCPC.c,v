@@ -1,0 +1,443 @@
+head     8.4;
+branch   ;
+access   ;
+symbols  symm:8.4 spur:8.4 newlib:8.0;
+locks    ; strict;
+comment  @ * @;
+
+
+8.4
+date     89.11.27.10.33.54;  author jhh;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.02.19.20.29.04;  author jhh;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.01.11.09.40.34;  author mendel;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.30.10.35.50;  author mendel;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.06.41;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     88.11.11.15.36.37;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.10.21.17.18.19;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@SPUR interprocessor communication routines.
+@
+
+
+8.4
+log
+@Multiple changes over a couple of months
+@
+text
+@/*
+ * machCPC.c --
+ *
+ *	This file contains the routines for cross processor proceedure calls
+ *	in multiprocessor SPUR.  CPC provides a mechanism upon which upon
+ *	one processor can execute a subroutine on another processor in the
+ *	same SPUR workstation.  
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ */
+
+#include "sprite.h"
+#include "mach.h"
+#include "machInt.h"
+#include "sync.h"
+
+/*
+ * Declaration of the cross processor call communication block. One such
+ * block exists for each processor.
+ */
+
+typedef struct  {
+    Sync_Semaphore lock;	/* Lock protecting entry. */
+    ClientData	(*routine)();	/* Routine to call. */
+    ClientData	argument;	/* Argument to the routine. */
+    ClientData	*returnValue;	/* Location to place return value. */
+    ReturnStatus status;	/* Return status of call. */
+    Boolean	sync;		/* TRUE if the call synchronous. */
+    Boolean	done;		/* TRUE when a synchronous completes. */
+} MachCpcEntry;
+
+/*
+ * Communication blocks, one for each processor.
+ */
+static MachCpcEntry machCPCData[MACH_MAX_NUM_PROCESSORS];
+
+/*
+ * Interrupt number for cross processor signal. 
+ */
+unsigned int	mach_CpcInterruptNumber;
+
+
+#define	TIMEOUT		10000000
+
+/* 
+ *----------------------------------------------------------------------
+ *
+ * Mach_CPC_Init --
+ *
+ *	Initialized the SPUR cross processor call facility.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ * 
+ */
+void
+Mach_CPC_Init()
+{
+    int		i;
+    /*
+     * Ensure that locks and boolean variables of every communication block
+     * are zero.
+     */
+    bzero(machCPCData, sizeof(machCPCData));
+    for (i = 0; i  < MACH_MAX_NUM_PROCESSORS; i++) {
+	Sync_SemInitDynamic(&(machCPCData[i].lock),"CPCMutex");
+    }
+    /*
+     * Allocate an external interrupt for CPCs. 
+     */
+    mach_CpcInterruptNumber = MACH_EXT_INTERRUPT_ANY;
+    Mach_AllocExtIntrNumber(machExecuteCall,&mach_CpcInterruptNumber);
+    Mach_SetNonmaskableIntr(1 << mach_CpcInterruptNumber);
+}
+
+
+/* 
+ *----------------------------------------------------------------------
+ *
+ * Mach_CallProcessor --
+ *
+ *	Execute a routine on a different SPUR processor.
+ *
+ * Results:
+ *	SUCESS if call is executed, FAILURE otherwise.
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ * 
+ */
+
+
+ReturnStatus
+Mach_CallProcessor(processorNumber, routine, argument, wait, returnValue)
+    int		processorNumber; /* Processor to perform call. */
+    ClientData	(*routine)();	 /* Procedure to call. */
+    ClientData	argument;	 /* Argument to procedure. */
+    Boolean	wait;		 /* TRUE if procedure should wait for call to
+				  * complete. */
+    ClientData	*returnValue;	/* Location to place return value of 
+				 * function. */
+{
+    ReturnStatus	status = SUCCESS;
+
+    if (mach_ProcessorStatus[processorNumber] != MACH_ACTIVE_STATUS) {
+	return (FAILURE);
+    }
+
+    /*
+     * First grap execlusive access to the CPC communication area for the
+     * processor we wish to talk with. 
+     */
+    MASTER_LOCK(&(machCPCData[processorNumber].lock));
+    /* 
+     * Once we grap the lock, fill in the entry and interrupt the
+     * specified procesor. 
+     */
+    machCPCData[processorNumber].routine = routine;
+    machCPCData[processorNumber].argument = argument;
+    machCPCData[processorNumber].returnValue = returnValue;
+    machCPCData[processorNumber].sync = wait;
+    machCPCData[processorNumber].done = FALSE;
+    Mach_SignalProcessor(processorNumber,mach_CpcInterruptNumber);
+    /*
+     * If the call is synchronous we spin waiting for it to complete. 
+     * Completion is signaled when the calling processor sets the done
+     * field to TRUE.
+     * If the call is not synchronous, we just return and the remote 
+     * processor releases the lock when done. 
+     */
+    if (wait) {
+	register int	i;
+	register Boolean * volatile done = &(machCPCData[processorNumber].done);
+	for(i = 0; !(*done) && ( i < TIMEOUT); i++) {
+		continue;
+	}
+	if (machCPCData[processorNumber].done) {
+	    status = machCPCData[processorNumber].status;
+	} else { 
+	   Mach_MonPrintf("Warning: Processor %d appears hung.\n", processorNumber);
+	   status = FAILURE;
+	}
+	MASTER_UNLOCK(&(machCPCData[processorNumber].lock));
+
+    }
+    return (status);
+}
+
+/* 
+ *----------------------------------------------------------------------
+ *
+ * machExecuteCall --
+ *
+ *	Execute a routine called from a different SPUR processor. ExecuteCall
+ *	is called from the interrupt handler upon the reception of a
+ *	CPC interrupt.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ * 
+ */
+
+void
+machExecuteCall(intrStatusPtr)
+    unsigned int	intrStatusPtr;	/* Not used. */
+
+{
+    int		processorNumber; 
+    ClientData	val;
+    /*
+     * Compute a store the current processor number.
+     */
+    processorNumber = Mach_GetProcessorNumber();
+    if (machCPCData[processorNumber].lock.value == 0) {
+	printf("Warning: Processor %d received bogus call interrupt\n",
+			processorNumber);
+	return;
+    }
+
+    /*
+     * Call the specified routine with the specified argument.
+     */
+    val = (machCPCData[processorNumber].routine)
+				(machCPCData[processorNumber].argument);
+
+    /*
+     * If it is a synchronous call, store the return value and signal the
+     * end of the call by senting done to TRUE.
+     * If it not a synchronous call then set the returnValue value to
+     * true and release the lock for the caller.
+     */
+    if (machCPCData[processorNumber].sync) {
+	if (machCPCData[processorNumber].returnValue != (ClientData *) NIL) {
+	    (*machCPCData[processorNumber].returnValue) = val;
+	}
+	machCPCData[processorNumber].status = SUCCESS;
+	machCPCData[processorNumber].done = TRUE;
+    } else {
+	if (machCPCData[processorNumber].returnValue != (ClientData *) NIL) {
+	    (*machCPCData[processorNumber].returnValue) = (ClientData) TRUE;
+	}
+	MASTER_UNLOCK(&(machCPCData[processorNumber].lock));
+    }
+    return;
+}
+
+
+/* 
+ *----------------------------------------------------------------------
+ *
+ * Mach_SignalProcessor --
+ *
+ * 	Send a interrupt to the specified remote processor.
+ *
+ * Results:
+ *	SUCCESS if arguments are ok.
+ *
+ * Side effects:
+ *	The remote processor is interrupted.
+ *----------------------------------------------------------------------
+ * 
+ */
+
+ReturnStatus
+Mach_SignalProcessor(processorNumber, interruptNum)
+    int			processorNumber; 
+    unsigned int	interruptNum; /* External interrupt to generate. */ 
+{
+    unsigned int	interruptAddress;
+
+    if (interruptNum > MACH_MAX_EXT_INTERRUPT) {
+	return (FAILURE);
+    }
+    interruptAddress = 0xf0000000 | 
+			(Mach_MapPnumToSlotId(processorNumber) << 24) | 
+			(interruptNum << 2);
+    Mach_WritePhysicalWord(interruptAddress, 0);
+    return (SUCCESS);
+}
+
+@
+
+
+8.3
+log
+@Changes due to lock registration
+@
+text
+@d150 1
+a150 1
+	if (!machCPCData[processorNumber].done) {
+@
+
+
+8.2
+log
+@Made CPC call use nonmaskable interrupts.
+@
+text
+@d78 1
+a78 1
+	SYNC_SEM_INIT_DYNAMIC(&(machCPCData[i].lock),"CPCMutex");
+@
+
+
+8.1
+log
+@Convert to use new MASTER_LOCK().
+@
+text
+@d48 1
+a48 1
+static unsigned int	mach_CpcInterruptNumber;
+a49 4
+/*
+ * Forward routine declarations.
+ */
+static void ExecuteCall();
+d84 2
+a85 1
+    Mach_AllocExtIntrNumber(ExecuteCall,&mach_CpcInterruptNumber);
+d153 1
+a153 1
+	   printf("Warning: Processor %d appears hung.\n", processorNumber);
+d165 1
+a165 1
+ * ExecuteCall --
+d180 2
+a181 2
+static void
+ExecuteCall(intrStatusPtr)
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d31 1
+a31 1
+    int		lock;		/* Lock protecting entry. */
+d75 1
+d81 3
+a83 1
+
+d129 1
+a129 1
+    MASTER_LOCK(machCPCData[processorNumber].lock);
+d159 1
+a159 1
+	MASTER_UNLOCK(machCPCData[processorNumber].lock);
+d194 1
+a194 1
+    if (machCPCData[processorNumber].lock == 0) {
+d222 1
+a222 1
+	MASTER_UNLOCK(machCPCData[processorNumber].lock);
+@
+
+
+1.2
+log
+@Changes for multiprocessor, ibuffer, and new libc.a.
+@
+text
+@@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d46 1
+a46 1
+ * Interrupt mask for cross processor signal. 
+d48 1
+a48 1
+static unsigned int	mach_CpcInterruptMask;
+d84 2
+a85 2
+    mach_CpcInterruptMask = MACH_EXT_INTERRUPT_ANY;
+    Mach_AllocExtIntrNumber(ExecuteCall,&mach_CpcInterruptMask);
+d136 1
+a136 1
+    Mach_SignalProcessor(processorNumber,mach_CpcInterruptMask);
+d194 1
+d242 1
+a242 1
+Mach_SignalProcessor(processorNumber, interruptMask)
+d244 1
+a244 1
+    unsigned int	interruptMask; /* External interrupt to generate. */ 
+a246 1
+    register int	interruptNum;
+d248 1
+a248 13
+    /*
+     * Compute the external interrupt number from the specified mask.
+     */
+    interruptNum = 0;
+    for(interruptNum = 0;!(interruptMask & 0x1) && 
+			(interruptNum <= MACH_MAX_EXT_INTERRUPT);
+			interruptNum++) {
+	interruptMask >>= 1;
+    }
+    /*
+     * If zero or more than one bit set fail.
+     */
+    if ((interruptNum > MACH_MAX_EXT_INTERRUPT) || (interruptMask >> 1) ) {
+@

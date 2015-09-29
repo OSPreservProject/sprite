@@ -1,0 +1,7 @@
+This records things that still need to be done in the library rewrite:
+
+1. Write alloca.
+
+2. Copy over Mem_CallerPC routine.
+
+3. Delete junk at end of malloc, when everything else is done.

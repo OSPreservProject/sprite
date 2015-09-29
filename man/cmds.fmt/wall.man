@@ -1,0 +1,68 @@
+
+
+
+WALL                      User Commands                      WALL
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     wall - write to all users
+
+SSYYNNOOPPSSIISS
+     wwaallll [ --vv ] [ --ll ] [ --rr ]
+
+     --vv             Verbose: inform the user whether or not  each
+                    machine successfully received the message.
+
+     --ll             Local: Only inform users on the local host.
+
+     --rr             No rlogins: Only write to /dev/syslog on each
+                    machine, not rlogins.
+
+_________________________________________________________________
+
+DDEESSCCRRIIPPTTIIOONN
+     _W_a_l_l reads its standard input until an end-of-file.  It then
+     sends  this message, preceded by `Broadcast Message ...', to
+     the syslog window and all rlogins on each machine.   If  the
+     --ll  option  is  specified,  only users on the local host are
+     notified. If the --rr option is specified, only syslog windows
+     are  written to.  The --vv option will inform the user whether
+     or not each machine successfully received the message.
+
+
+KKEEYYWWOORRDDSS
+     write, message, syslog
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  November 29, 1989                  1
+
+
+

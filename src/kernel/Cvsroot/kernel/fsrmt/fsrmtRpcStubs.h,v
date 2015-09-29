@@ -1,0 +1,350 @@
+head     9.3;
+branch   ;
+access   ;
+symbols  ds3100:9.2 sun3:9.2 sun4nw:9.1 symm:9.1 spur:9.1 sprited:9.1.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.3
+date     92.12.13.18.17.04;  author mgbaker;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     92.10.26.14.10.02;  author mgbaker;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.10.08.15.04.30;  author mendel;  state Exp;
+branches 9.1.1.1;
+next     9.0;
+
+9.0
+date     89.09.12.15.10.02;  author douglis;  state Stable;
+branches ;
+next     8.3;
+
+8.3
+date     89.08.21.15.29.10;  author mendel;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.08.15.18.43.29;  author rab;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.06.09.11.04.21;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.23.08;  author douglis;  state Stable;
+branches ;
+next     7.0;
+
+7.0
+date     88.11.07.14.48.04;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.18.05;  author brent;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.04.10.40.47;  author brent;  state Exp;
+branches ;
+next     ;
+
+9.1.1.1
+date     91.10.28.14.25.13;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@External definitions for filesystem  RPC stubs.
+@
+
+
+9.3
+log
+@Change to timestamp test to fix recovery bug that meant timestamps weren't
+being updated.
+@
+text
+@/*
+ * fsRpcStubs.h --
+ *
+ *	Procedure headers for file system rpcs.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/fsrmt/fsrmtRpcStubs.h,v 9.2 92/10/26 14:10:02 mgbaker Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _FS_RPC_STUBS
+#define _FS_RPC_STUBS
+
+#include <rpc.h>
+
+extern ReturnStatus Fsrmt_RpcGetAttrPath _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcSetAttrPath _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcGetAttr _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcSetAttr _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcGetIOAttr _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcSetIOAttr _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcDevOpen _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcPrefix _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcOpen _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcReopen _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcClose _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcRemove _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcMakeDir _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcMakeDev _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_Rpc2Path _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcRead _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcWrite _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcSelectStub _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcIOControl _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcBlockCopy _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcDomainInfo _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcMigrateStream _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcBulkReopen _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcServerReopen _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+
+
+#endif _FS_RPC_STUBS
+@
+
+
+9.2
+log
+@Support for bulk reopen rpcs.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/fsrmt/fsrmtRpcStubs.h,v 9.1 90/10/08 15:04:30 mendel Exp $ SPRITE (Berkeley)
+d63 2
+@
+
+
+9.1
+log
+@Fixed includes to use <> rather than "", added functions prototypes, and
+removed lint.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/fs.mendel/RCS/fsrmtRpcStubs.h,v 1.1 90/01/16 17:12:13 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d61 2
+@
+
+
+9.1.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/fsrmt/RCS/fsrmtRpcStubs.h,v 9.1 90/10/08 15:04:30 mendel Exp $ SPRITE (Berkeley)
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/fsrmt/RCS/fsrmtRpcStubs.h,v 8.3 89/08/21 15:29:10 mendel Exp Locker: douglis $ SPRITE (Berkeley)
+d16 48
+a63 24
+extern Fsrmt_RpcPrefix();
+extern Fsrmt_RpcOpen();
+extern Fsrmt_RpcRead();
+extern Fsrmt_RpcWrite();
+extern Fsrmt_RpcClose();
+extern Fsrmt_RpcRemove();
+extern Fsrmt_Rpc2Path();
+extern Fsrmt_RpcMakeDir();
+extern Fsrmt_RpcMakeDev();
+extern Fs_RpcSymLink();
+extern Fsrmt_RpcGetAttr();
+extern Fsrmt_RpcSetAttr();
+extern Fsrmt_RpcGetAttrPath();
+extern Fsrmt_RpcSetAttrPath();
+extern Fsrmt_RpcGetIOAttr();
+extern Fsrmt_RpcSetIOAttr();
+extern Fsrmt_RpcDevOpen();
+extern Fsrmt_RpcSelectStub();
+extern Fsrmt_RpcIOControl();
+extern Fsrmt_RpcBlockCopy();
+extern Fsrmt_RpcMigrateStream();
+extern Fsio_RpcStreamMigClose();
+extern Fsrmt_RpcReopen();
+extern Fsrmt_RpcDomainInfo();
+@
+
+
+8.3
+log
+@Break up fs into many modules.    
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsRpcStubs.h,v 8.1 89/06/09 11:04:21 brent Exp $ SPRITE (Berkeley)
+@
+
+
+8.2
+log
+@Commented #endif labels.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsRpcStubs.h,v 8.1 89/06/09 11:04:21 brent Exp Locker: rab $ SPRITE (Berkeley)
+d16 9
+a24 11
+extern Fs_RpcPrefix();
+extern Fs_RpcOpen();
+extern Fs_RpcRead();
+extern Fs_RpcWrite();
+extern Fs_RpcClose();
+extern Fs_RpcRemove();
+extern Fs_Rpc2Path();
+extern Fs_RpcMakeDir();
+extern Fs_RpcRemove();
+extern Fs_RpcMakeDev();
+extern Fs_Rpc2Path();
+d26 15
+a40 18
+extern Fs_RpcGetAttr();
+extern Fs_RpcSetAttr();
+extern Fs_RpcGetAttrPath();
+extern Fs_RpcSetAttrPath();
+extern Fs_RpcGetIOAttr();
+extern Fs_RpcSetIOAttr();
+extern Fs_RpcDevOpen();
+extern Fs_RpcSelectStub();
+extern Fs_RpcIOControl();
+extern Fs_RpcConsist();
+extern Fs_RpcConsistReply();
+extern Fs_RpcBlockCopy();
+extern Fs_RpcMigrateStream();
+extern Fs_RpcReleaseStream();
+extern Fs_RpcReopen();
+extern Fs_RpcRecovery();
+extern Fs_RpcDomainInfo();
+#endif /* _FS_RPC_STUBS */
+@
+
+
+8.1
+log
+@Updated to new RPCs
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsRpcStubs.h,v 8.0 88/11/11 18:23:08 douglis Stable Locker: brent $ SPRITE (Berkeley)
+d45 1
+a45 1
+#endif _FS_RPC_STUBS
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsRpcStubs.h,v 7.0 88/11/07 14:48:04 brent Exp Locker: douglis $ SPRITE (Berkeley)
+d16 29
+a44 13
+extern	ReturnStatus	Fs_RpcPrefix();
+extern	ReturnStatus	Fs_RpcOpen();
+extern	ReturnStatus	Fs_RpcClose();
+extern	ReturnStatus	Fs_RpcRead();
+extern	ReturnStatus	Fs_RpcWrite();
+extern	ReturnStatus	Fs_RpcTransferHandle();
+extern	ReturnStatus	Fs_RpcGetAttr();
+extern	ReturnStatus	Fs_RpcSetAttr();
+extern	ReturnStatus	Fs_RpcRemove();
+extern	ReturnStatus	Fs_RpcMakeDir();
+
+extern	ReturnStatus	Fs_RpcDevOpen();
+extern	ReturnStatus	Fs_RpcDevClose();
+@
+
+
+7.0
+log
+@New version for conversion to new C library
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsRpcStubs.h,v 6.0 88/08/11 12:18:05 brent Stable Locker: brent $ SPRITE (Berkeley)
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: fsRpcStubs.h,v 1.1 88/04/04 10:40:47 brent Exp $ SPRITE (Berkeley)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d10 1
+a10 1
+ * $Header: fsRpcStubs.h,v 5.0 87/08/11 10:41:28 sprite Exp $ SPRITE (Berkeley)
+@

@@ -1,0 +1,134 @@
+
+
+
+LOGIN                     User Commands                     LOGIN
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     login - Allow a user to login
+
+SSYYNNOOPPSSIISS
+     llooggiinn [_o_p_t_i_o_n_s] [_u_s_e_r]
+
+OOPPTTIIOONNSS
+     --hheellpp          Print a summary of the  command-line  options
+                    and exit without performing any logins.
+
+     --ll             Don't record information about the user in  a
+                    file of logins.  The default is to record the
+                    login and logout in a file of logins used  by
+                    programs like ffiinnggeerr.
+
+     --PP _p_o_r_t_N_u_m     Use _p_o_r_t_N_u_m as  the  port  number  associated
+                    with   this  login  in  the  file  of  logins
+                    (ignored if the --ll option is given).
+
+     --rr             Repeat:  when a login shell exits, prompt for
+                    another   account  and  password,  and  start
+                    another login  shell.   The  default  is  for
+                    llooggiinn  to  exit  as  soon  as its login shell
+                    exits.
+
+     --dd _d_e_v_i_c_e      Use _d_e_v_i_c_e for  the  login  rather  than  the
+                    current tty.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     If an extra argument is given, llooggiinn uses that name  as  the
+     name  of  the  user to log in.  Otherwise, it prompts for an
+     account name.  In either case, llooggiinn prompts for a password.
+     If  the  password matches the account, the user is logged in
+     and a command shell is run for the user.  Information  about
+     the  account,  password,  home directory, and login shell is
+     taken from //eettcc//ppaasssswwdd.  If the password does not match  the
+     account, or the account doesn't exist, llooggiinn will prompt for
+     a new account and password.
+
+     If _d_e_v_i_c_e is given, then llooggiinn attempts to use  it  for  the
+     standard input, standard output, and standard error channels
+     associated with the login.  If  no  _d_e_v_i_c_e  is  given,  then
+     llooggiinn  uses  the standard I/O channels provided to it by the
+     shell.
+
+     Normally, llooggiinn waits for the login  shell  to  exit,  which
+     signals  the end of the login session, and then llooggiinn exits.
+     If, however, the --rr switch is given, then llooggiinn will  repeat
+     itself, asking for another account and password, and running
+
+
+
+Sprite v.1.0        Printed:  April 10, 1989                    1
+
+
+
+
+
+
+LOGIN                     User Commands                     LOGIN
+
+
+
+     another login shell.  This will repeat indefinitely.  If the
+     repeat  switch  is  not given, logins will time out after 60
+     seconds if they are not completed.
+
+     If the --ll switch isn't given, then llooggiinn will record  infor-
+     mation  about the login and logout in a file for use by pro-
+     grams like Finger.  The --PP switch is used to indicate  which
+     of  several  ports  to  associate  with the login.  If --ll is
+     given, then no login information is recorded.
+
+KKEEYYWWOORRDDSS
+     account, login, password, user
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  April 10, 1989                    2
+
+
+

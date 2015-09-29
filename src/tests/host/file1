@@ -1,0 +1,52 @@
+# This file contains a database of all the machines currently known
+# to this Sprite system.  Each line describes one machine
+# and has the following format:
+#
+# <spriteID> <netType> <netAddr> <inetAddr> <machType> <name> <aliases>
+#
+# Where the fields are as follows:
+#	spriteID	    The Sprite ID for the host (small number)
+#	netType 	    Type of local network by which the machine is
+#	    	  	    connected. Currently, only "ether" is
+#	    	  	    understood.
+#	netAddr	  	    The host's address on its local network (format
+#			    depends on type of local network).
+#	inetAddr  	    The internet address of the host.
+#	machType	    The machine type.  This string value is used
+#			    when expanding $MACHINE in pathnames.
+#	name	  	    The official name for the machine.
+#	aliases	  	    Other names for the machine.
+#
+1  ether  8:0:20:1:02:C6 128.32.150.11  sun2 lust.Berkeley.EDU lust
+2  ether  8:0:20:1:20:F6 128.32.150.25  sun2 cayenne.Berkeley.EDU cayenne
+3  ether  8:0:20:1:7B:FC 128.32.150.7   sun3 nutmeg.Berkeley.EDU nutmeg
+4  ether  8:0:20:1:9A:8E 128.32.150.15  sun3 dill.Berkeley.EDU dill
+5  ether  8:0:20:1:c8:73 128.32.150.16  sun3 basil.Berkeley.EDU basil
+6  ether  8:0:20:1:13:E1 128.32.150.13  sun2 pride.Berkeley.EDU pride
+7  ether  8:0:20:1:40:41 128.32.150.56  sun2 savory.Berkeley.EDU savory
+8  ether  8:0:20:0:26:ED 128.32.150.55  sun3 fenugreek.Berkeley.EDU fenugreek
+9  ether  8:0:20:1:49:48 128.32.150.28  sun3 ginger.Berkeley.EDU ginger
+10 ether  8:0:20:1:44:10 128.32.150.4   sun3 saffron.Berkeley.EDU saffron
+11 ether  8:0:20:1:48:2E 128.32.150.8   sun3 paprika.Berkeley.EDU paprika
+12 ether  8:0:20:1:10:C3 128.32.150.10  sun3 earth.Berkeley.EDU earth
+13 ether  8:0:20:1:c8:ae 128.32.150.14  sun3 sloth.Berkeley.EDU sloth
+15 ether  8:0:20:1:3b:82 128.32.150.18  sun3 bay.Berkeley.EDU bay
+16 ether  8:0:20:1:c8:d3 128.32.150.20  sun3 pepper.Berkeley.EDU pepper
+17 ether  8:0:20:0:FA:48 128.32.150.9   sun3 murder.Berkeley.EDU murder
+18 ether  8:0:20:1:13:EC 128.32.150.2   sun3 clove.Berkeley.EDU clove
+20 ether  8:0:20:1:24:D2 128.32.150.3   sun2 salt.Berkeley.EDU salt
+21 ether  8:0:20:1:B8:81 128.32.150.42  sun3 hecuba.Berkeley.EDU hecuba
+22 ether  8:0:20:1:2e:29 128.32.150.43  sun2 priam.Berkeley.EDU priam
+23 ether  8:0:20:1:3F:4D 128.32.150.37  sun3 turmeric.Berkeley.EDU turmeric
+24 ether  8:0:20:1:d:c4  128.32.150.22  sun2 greed.Berkeley.EDU greed
+25 ether  8:0:20:1:d:c8  128.32.150.21  sun2 anger.Berkeley.EDU anger
+26 ether  8:0:20:1:48:51 128.32.150.17  sun3 thyme.Berkeley.EDU thyme
+27 ether  8:0:20:1:cf:16 128.32.150.54  sun3 mace.Berkeley.EDU mace
+29 ether  8:0:20:1:4c:b2 128.32.150.41  sun3 sassafras.Berkeley.EDU sassafras
+32 ether  8:0:20:1:5c:ce 128.32.150.52  sun3 mint.Berkeley.EDU mint
+33 ether  8:0:20:1:be:34 128.32.150.6   sun3 sage.Berkeley.EDU sage
+34 ether  8:0:20:1:3d:e3 128.32.150.31  sun3 fennel.Berkeley.EDU fennel
+35 ether  8:0:20:1:C7:5  128.32.150.46  sun3 paris.Berkeley.EDU paris
+36 ether  8:0:20:1:47:7F 128.32.150.45  sun3 helen.Berkeley.EDU helen
+37 ether  8:0:20:0:27:21 128.32.150.50  sun3 homer.Berkeley.EDU homer
+38 ether  8:0:20:1:DC:B5 128.32.150.29  sun3 oregano.Berkeley.EDU oregano

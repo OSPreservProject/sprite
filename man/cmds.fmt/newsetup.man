@@ -1,0 +1,66 @@
+
+
+
+NEWSETUP                  User Commands                  NEWSETUP
+
+
+
+NNAAMMEE
+     newsetup - a program to set up a .newsrc file
+
+SSYYNNOOPPSSIISS
+     nneewwsseettuupp
+
+DDEESSCCRRIIPPTTIIOONN
+     The _n_e_w_s_e_t_u_p program creates a new .newsrc file containing
+     all of the currently active newsgroups.  It tries to put
+     them in a reasonable order, i.e. local newsgroups earlier,
+     but you'll probably want to change the ordering anyway (if
+     you use _r_n) in order to put interesting newsgroups first.
+     If you already have a .newsrc, it will be backed up with the
+     name ".oldnewsrc".
+
+EENNVVIIRROONNMMEENNTT
+     DOTDIR  Where to put your .newsrc, if not in your home
+             directory.
+
+             Default: $HOME
+
+     HOME    Your home directory.
+
+             Default: $LOGDIR
+
+     LOGDIR  Your home directory if HOME is undefined.
+
+FFIILLEESS
+     /usr/lib/news/active or a reasonable facsimile
+     ${DOTDIR-{$HOME-$LOGDIR}}/.newsrc
+
+SSEEEE AALLSSOO
+     rn(1), newsrc(5)
+
+DDIIAAGGNNOOSSTTIICCSS
+BBUUGGSS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                   LOCAL                             1
+
+
+
+
+
+

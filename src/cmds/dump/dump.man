@@ -1,0 +1,138 @@
+' $Header: /sprite/src/admin/dump/RCS/dump.man,v 1.4 91/11/22 14:09:23 jhh Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS DUMP cmds
+.BS
+.SH NAME
+dump \- A program that dumps directories
+.SH SYNOPSIS
+\fBdump\fR [\fIoptions\fR] \fIdirectory\fR
+.SH OPTIONS
+.IP "\fB\-a \fR" 15
+Reset access times after dumping each file.
+.IP "\fB\-f  \fIfilename\fR" 15
+Use \fIfilename\fR as the name of the dump archive.
+.IP "\fB\-help \fR" 15
+Print a help message.
+.IP "\fB\-i number \fR" 15
+Initialize the tape, using \fBnumber\fR for the label.
+.IP "\fB\-l  \fIdigit\fR" 15
+The single digit in the range 0-9 specifies the dump level.  The default
+is zero.
+.IP "\fB\-m \fIusername\fR" 15
+Send mail to \fIusername\fR to report a fatal error, or successful completion.
+.IP "\fB\-r\fR" 15
+Re-initialize the tape.  Any data on the tape is lost.
+.IP "\fB\-s\fR" 15
+Safe re-initialization of tape.  The reinitialization will fail if the
+tape has been recently used.
+.IP "\fB\-t \fR" 15
+Print the dump archive table of contents.
+.IP "\fB\-v \fR" 15
+Verbose.  The name of each file is listed as it is dumped.
+.IP "\fB\-u \fR" 15
+Unofficial dump.  The dump is not recorded in the dumpdates file.
+.BE
+
+.SH INTRODUCTION
+.PP
+The \fBdump\fR command is used to do an incremental dump of a
+set of directory.  It will recursively dump all files and
+subdirectories.  Each file that has been created or modified
+since the last lower level dump will
+be copied to the archive file.  For example, the command
+.DS
+dump -l 2 -f /dev/tape0 /sprite
+
+.DE
+will dump all files in the directory \fB/sprite\fR
+in tar format, to \fB/dev/tape0\fR.
+.SH TAPE FORMAT
+.PP
+Dump tapes have a particular format. It is assumed that blocks on the
+tape cannot be overwritten, so the tape is written in an append-only fashion.
+When a tape is initialized a file called the tape \fIlabel\fP is written
+at the beginning of the tape.  
+Each time a filesystem is dumped a new updated tape label is written to
+the end of the tape, so that the current tape label is always the last
+one on the tape.  
+The tape label is 16 Kbytes in size, and
+consists of a sequence of ASCII strings separated by newlines.  The 
+first string is of the form
+.DS
+SPRITE DUMP TAPE, Version \fIv\fP Level \fIx\fP Tape \fIn\fP
+
+.DE
+where \fIv\fP is the version of \fBdump\fP that wrote the tape,
+\fBx\fP is the level of the dump tape, and \fBn\fP is the dump tape number.
+The version is intended to allow future versions of \fBdump\fP to be 
+backwards compatible.
+The level is filled in when the tape is initialized, but is otherwise
+unused.  It could be used by \fBdump\fP and higher-level software to 
+automate the dumping process.
+.PP
+Subsequent lines in the tape label contain a table of contents for the tape,
+and are of the form
+.DS
+\fITapeNum FileNum MBDumped MBLeft Date FileSystem\fP
+
+.DE
+where \fITapeNum\fP is the tape number, \fIFileNum\fP is the file number
+on tape corresponding to the current entry (starting with 1), 
+\fIMBDumped\fP is the number of MBytes dumped from the filesystem,
+\fIMBLeft\fP is the number of MBytes remaining on the tape after
+the filesystem was dumped, \fIDate\fP is the date when the filesystem was
+dumped, and \fIFileSystem\fP
+is the name of the filesystem that was dumped.
+.SH FILES
+.TP
+\fB/sprite/admin/dump/dumpdates\fP
+When a dump completes the information that is written into the tape label
+is also written into this file.
+Each line is of the form
+.sp
+\fITapeNum FileNum MBDumped MBLeft Date FileSystem\fP
+.sp
+.SP
+where \fITapeNum\fP is the tape number, \fIFileNum\fP is the file number
+on tape corresponding to the current entry (starting with 1), 
+\fIMBDumped\fP is the number of MBytes dumped from the filesystem,
+\fIMBLeft\fP is the number of MBytes remaining on the tape after
+the filesystem was dumped, \fIDate\fP is the date when the filesystem was
+dumped, and \fIFileSystem\fP
+is the name of the filesystem that was dumped.
+.TP
+\fB/sprite/admin/dump/dumplog\fP
+This file contains low-level debugging information that is printed out by
+\fBdump\fP as it runs.
+.TP
+\fB/sprite/admin/dump/statuslog\fP
+This file contains information about the status of both the tape drives
+and the tapes.
+A line is added to the file each time a dump completes, and is of the form
+.sp
+\fIDriveType Serial TapeNum MBDumped ErrorRate Date Device\fP
+.sp
+.SP
+\fIDriveType\fP is the type of drive that was used (e.g. EXB-8500).
+\fISerial\fP is the serial number of the drive.  
+The combination of the drive type
+and serial number should allow tape drives to be uniquely identified.
+\fITapeNumber\fP is the number of the tape that was used.
+\fIMBDumped\fP is the number of MBytes that were dumped. 
+\fIErrorRate\fP is the number of errors per tape access, expressed as
+a percentage of tape accesses.
+An error rate of 100% means that there was an average of one error per
+tape access.
+The definition of an error is vendor specific
+but an increase in the error rate over time may indicate that a tape is
+wearing out or that a drive needs servicing.
+The \fIDate\fP is the date on which the dump occurred,
+and the \fIDevice\fP is the name of the device as passed to the
+\fBdump\fP command.
+The latter should not be considered to uniquely identify a tape drive
+since the mapping between the device name and the device can change,
+thus the drive type and serial number should be used to look for 
+an increasing error rate on a particular drive.
+.SH KEYWORDS
+dump, restore, tape, backup, tar
+

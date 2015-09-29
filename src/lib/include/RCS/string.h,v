@@ -1,0 +1,303 @@
+head     1.9;
+branch   ;
+access   ;
+symbols  sprited:1.9.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.9
+date     91.04.08.00.10.00;  author kupfer;  state Exp;
+branches 1.9.1.1;
+next     1.8;
+
+1.8
+date     90.11.06.17.21.10;  author rab;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     90.09.11.14.40.11;  author kupfer;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     90.05.29.15.22.30;  author rab;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.03.22.16.03.43;  author rab;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.10.03.18.19.08;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.07.22.08.45.03;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.06.24.18.24.35;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.21.09.36.59;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.9.1.1
+date     91.08.15.21.47.34;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.9
+log
+@Add strdup().
+@
+text
+@/*
+ * string.h --
+ *
+ *	Declarations of ANSI C library procedures for string handling.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/lib/include/RCS/string.h,v 1.8 90/11/06 17:21:10 rab Exp Locker: kupfer $ SPRITE (Berkeley)
+ */
+
+#ifndef _STRING
+#define _STRING
+
+#include <cfuncproto.h>
+
+extern _VoidPtr	memchr _ARGS_((_CONST char *s, int c, int n));
+extern int	memcmp _ARGS_((_CONST char *s1, _CONST char *s2, int n));
+extern _VoidPtr	memcpy _ARGS_((char *t, _CONST char *f, int n));
+extern _VoidPtr	memmove _ARGS_((char *t, _CONST char *f, int n));
+extern _VoidPtr	memset _ARGS_((char *s, int c, int n));
+
+extern int	strcasecmp _ARGS_((_CONST char *s1, _CONST char *s2));
+extern char *	strcat _ARGS_((char *dst, _CONST char *src));
+extern char *	strchr _ARGS_((_CONST char *string, int c));
+extern int	strcmp _ARGS_((_CONST char *s1, _CONST char *s2));
+extern char *	strcpy _ARGS_((char *dst, _CONST char *src));
+extern int	strcspn _ARGS_((_CONST char *string, _CONST char *chars));
+extern char *	strdup _ARGS_((_CONST char *string));
+extern char *	strerror _ARGS_((int error));
+extern int	strlen _ARGS_((_CONST char *string));
+extern int	strncasecmp _ARGS_((_CONST char *s1, _CONST char *s2, int n));
+extern char *	strncat _ARGS_((char *dst, _CONST char *src, int numChars));
+extern int	strncmp _ARGS_((_CONST char *s1, _CONST char *s2, int nChars));
+extern char *	strncpy _ARGS_((char *dst, _CONST char *src, int numChars));
+extern char *	strpbrk _ARGS_((_CONST char *string, _CONST char *chars));
+extern char *	strrchr _ARGS_((_CONST char *string, int c));
+extern int	strspn _ARGS_((_CONST char *string, _CONST char *chars));
+extern char *	strstr _ARGS_((_CONST char *string, _CONST char *substring));
+extern char *	strtok _ARGS_((char *s, _CONST char *delim));
+
+/*
+ * Obsolete library procedures from BSD, supported for compatibility:
+ */
+
+extern char *	index _ARGS_((_CONST char *string, int c));
+extern char *	rindex _ARGS_((_CONST char *string, int c));
+
+#endif /* _STRING */
+@
+
+
+1.9.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/string.h,v 1.9 91/04/08 00:10:00 kupfer Exp $ SPRITE (Berkeley)
+@
+
+
+1.8
+log
+@Changed extern to _EXTERN for g++.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/string.h,v 1.7 90/09/11 14:40:11 kupfer Exp Locker: rab $ SPRITE (Berkeley)
+d35 1
+@
+
+
+1.7
+log
+@Use function prototypes.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/string.h,v 1.6 90/05/29 15:22:30 rab Exp Locker: kupfer $ SPRITE (Berkeley)
+d23 12
+a34 12
+extern char *	memchr _ARGS_((char *s, int c, int n));
+extern int	memcmp _ARGS_((char *s1, char *s2, int n));
+extern char *	memcpy _ARGS_((char *t, char *f, int n));
+extern char *	memmove _ARGS_((char *t, char *f, int n));
+extern char *	memset _ARGS_((char *s, int c, int n));
+
+extern int	strcasecmp _ARGS_((char *s1, char *s2));
+extern char *	strcat _ARGS_((char *dst, char *src));
+extern char *	strchr _ARGS_((char *string, int c));
+extern int	strcmp _ARGS_((char *s1, char *s2));
+extern char *	strcpy _ARGS_((char *dst, char *src));
+extern int	strcspn _ARGS_((char *string, char *chars));
+d36 10
+a45 10
+extern int	strlen _ARGS_((char *string));
+extern int	strncasecmp _ARGS_((char *s1, char *s2, int n));
+extern char *	strncat _ARGS_((char *dst, char *src, int numChars));
+extern int	strncmp _ARGS_((char *s1, char *s2, int numChars));
+extern char *	strncpy _ARGS_((char *dst, char *src, int numChars));
+extern char *	strpbrk _ARGS_((char *string, char *chars));
+extern char *	strrchr _ARGS_((char *string, int c));
+extern int	strspn _ARGS_((char *string, char *chars));
+extern char *	strstr _ARGS_((char *string, char *substring));
+extern char *	strtok _ARGS_((char *s, const char *delim));
+d51 2
+a52 2
+extern char *	index _ARGS_((char *string, int c));
+extern char *	rindex _ARGS_((char *string, int c));
+@
+
+
+1.6
+log
+@Added declaration for memmove.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/string.h,v 1.5 89/03/22 16:03:43 rab Exp Locker: rab $ SPRITE (Berkeley)
+d21 1
+a21 21
+extern char *	memchr();
+extern int	memcmp();
+extern char *	memcpy();
+extern char *	memmove();
+extern char *	memset();
+
+extern char *	strcat();
+extern char *	strchr();
+extern int	strcmp();
+extern char *	strcpy();
+extern int	strcspn();
+extern char *	strerror();
+extern int	strlen();
+extern char *	strncat();
+extern int	strncmp();
+extern char *	strncpy();
+extern char *	strpbrk();
+extern char *	strrchr();
+extern int	strspn();
+extern char *	strstr();
+extern char *   strtok();
+d23 24
+d51 2
+a52 2
+extern char	*index();
+extern char	*rindex();
+@
+
+
+1.5
+log
+@Added strtok().
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/string.h,v 1.4 88/10/03 18:19:08 ouster Exp Locker: rab $ SPRITE (Berkeley)
+d24 1
+@
+
+
+1.4
+log
+@Added memchr, memcpy, memset, and memcmp.
+@
+text
+@d15 1
+a15 1
+ * $Header: string.h,v 1.3 88/07/22 08:45:03 ouster Exp $ SPRITE (Berkeley)
+d40 1
+d49 1
+a49 1
+#endif _STRING
+@
+
+
+1.3
+log
+@Added new procedures:  strcspn, strpbrk, strspn.
+@
+text
+@d15 1
+a15 1
+ * $Header: string.h,v 1.2 88/06/24 18:24:35 ouster Exp $ SPRITE (Berkeley)
+d20 5
+@
+
+
+1.2
+log
+@Added strerror declaration.
+@
+text
+@d15 1
+a15 1
+ * $Header: string.h,v 1.1 88/06/21 09:36:59 ouster Exp $ SPRITE (Berkeley)
+d25 1
+d31 1
+d33 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+ * $Header: string.h,v 1.1 88/04/25 20:46:04 ouster Exp $ SPRITE (Berkeley)
+d21 11
+a31 10
+extern char	*strcat();
+extern char	*strchr();
+extern int	 strcmp();
+extern char	*strcpy();
+extern int	 strlen();
+extern char	*strncat();
+extern int	 strncmp();
+extern char	*strncpy();
+extern char	*strrchr();
+extern char	*strstr();
+@

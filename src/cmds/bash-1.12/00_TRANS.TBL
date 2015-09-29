@@ -1,0 +1,5 @@
+D DIST                              	dist
+L DS3100.MD;1                       	ds3100.md	ds5000.md
+D DS5000_M                          	ds5000.md
+F MAKEFILE.;1                       	Makefile
+D SUN4_MD                           	sun4.md

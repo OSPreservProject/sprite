@@ -1,0 +1,1207 @@
+head     9.10;
+branch   ;
+access   ;
+symbols  ds3100:9.8 sun3:9.8 sun4nw:9.7 symm:9.7 spur:9.7 sprited:9.7.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.10
+date     92.12.13.18.21.28;  author mgbaker;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     92.10.28.19.00.41;  author mgbaker;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     92.10.26.14.38.39;  author mgbaker;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     91.03.07.11.35.21;  author kupfer;  state Exp;
+branches 9.7.1.1;
+next     9.6;
+
+9.6
+date     91.03.04.22.38.46;  author kupfer;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.12.05.15.36.35;  author kupfer;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.12.03.16.17.19;  author kupfer;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.12.02.20.31.15;  author kupfer;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.09.11.11.34.54;  author mgbaker;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.05.03.17.33.45;  author douglis;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.17.18;  author douglis;  state Stable;
+branches ;
+next     8.2;
+
+8.2
+date     89.06.09.11.27.02;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.04.06.11.52.35;  author douglis;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.34.17;  author douglis;  state Stable;
+branches ;
+next     6.3;
+
+6.3
+date     88.11.11.14.43.03;  author douglis;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.10.28.19.24.54;  author mlgray;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.26.18.27.24;  author mlgray;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.24.16;  author brent;  state Stable;
+branches ;
+next     5.7;
+
+5.7
+date     88.08.04.17.52.28;  author mlgray;  state Exp;
+branches ;
+next     5.6;
+
+5.6
+date     88.07.19.12.19.18;  author mlgray;  state Exp;
+branches ;
+next     5.5;
+
+5.5
+date     88.06.19.16.14.31;  author mlgray;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     88.01.08.11.13.54;  author brent;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     87.09.29.17.12.22;  author brent;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.09.21.16.26.39;  author brent;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.09.15.08.55.56;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.48.15;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.7.1.1
+date     91.10.21.21.40.40;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.10
+log
+@Code for server-driven recovery.
+@
+text
+@/*
+ *	rpcCall.h --
+ *
+ *      Definitions of remote procedure numbers.  Each different RPC has a
+ *      unique number that identifies it to the server machine.
+ *
+ *	This file must be consistent with lust:~brent/src/sun/sys/h/rfs.h
+ *	so that sprite machines can do rpc with lust as server.
+ *
+ *	Copyright (C) 1985 Regents of the University of California
+ *	All rights reserved.
+ *
+ *	$Header: /sprite/src/kernel/Cvsroot/kernel/rpc/rpcCall.h,v 9.9 92/10/28 19:00:41 mgbaker Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef	_RPCCALL
+#define	_RPCCALL
+
+#ifdef KERNEL
+#include <rpcTypes.h>
+#else
+#include <kernel/rpcTypes.h>
+#endif
+
+/*
+ *	The remote procedures.  For each procedure the format the request
+ *	and reply message is summarized.  See the Rpc_Storage type for
+ *	more explaination.  The stubs often rely on the sizes of these area
+ *	being returned by the RPC system so that the size of variable length
+ *	objects does not have to be in the message explicitly.
+ *
+ *	RPC_ECHO_1	Special echo that is handled completely by the
+ *			server dispatcher.  The server process is not involved.
+ *	RPC_ECHO_2	Echo bytes off the server. The request/reply parameter
+ *			area is empty.  The request/reply data area contains
+ *			the bytes that are echoed.
+ *	RPC_SEND	Send bytes to the server.  The request parameter
+ *			area is empty.  The request data area has the bytes to
+ *			send.  The reply is empty.
+ *	RPC_RECEIVE	Unimplemented.
+ *	RPC_FS_OPEN	Open a file.  Could create the file, always
+ *				follows symbolic links. The request parameter
+ *				area contains a FsOpenParams, and the request
+ *				data area contains a file name.  The return
+ *				parameter area contains an FsOpenReturn
+ *				structure.
+ *	RPC_FS_READ	Read from a file.  The request parameter area contains
+ *			an FsrmtIOParam structure, and the request data
+ *			area is empty.  The return data area contains the
+ *			bytes read.
+ *	RPC_FS_WRITE	Write to a file.  Same request parameter format as Read.
+ *			The request data area contains the bytes to write.  The
+ *			return parameter area contains the offset at which the
+ *			write started, and the amount actually written.
+ *	RPC_FS_CLOSE	Close a file.  The request parameter area has an
+ *			FsRtoken.  The reply is empty.
+ *	RPC_FS_UNLINK	Remove a file.  The request parameter area contains an
+ *			FsUserInfo.  The request data area has the file name.
+ *	RPC_FS_RENAME	Change the name of a file.  The request parameters
+ *			area contains an FsUserInfo, the length of the original
+ *			pathname (int), the length of the new pathname (int),
+ *			then the original pathname.  The data area
+ *			contains the new pathname.
+ *	RPC_FS_MKDIR	Make a directory.  The request parameter area contains
+ *			an FsUserInfo and a creation mode (int).  The request
+ *			data area contains the pathname.  The reply is empty.
+ *	RPC_FS_RMDIR	Remove a directory.  The request parameter area contains
+ *			an FsUserInfo.  The request data area contains the
+ *			pathname.  The reply is empty.
+ *	RPC_FS_LINK	Link two files together.  The format of the request
+ *			is the same as for FS_RENAME.  The reply is empty.
+ *	RPC_GETTIME	Get the time of day.  The request is empty.  The reply
+ *			parameter area contains the current time (Time),
+ *			the number of minutes west of Greenwich (int), and the
+ *			daylights savings flag (int).
+ *	RPC_FS_PREFIX	Broadcast a pathname to a server and
+ *				get a file handle for its prefix.
+ *	RPC_FS_GET_ATTR	Get the file header information about a file.  The
+ *			request parameter area contains an FsFileID.  The
+ *			reply parameter area contains Fs_Attributes.
+ *	RPC_FS_SET_ATTR	Set the file header information about a file.  The
+ *			request parameter area contains an FsFileID and a
+ *			Fs_Attributes struct.  There is a NULL reply.
+ *	RPC_FS_GET_ATTR_PATH	Get attributes given a path name.
+ *	RPC_FS_SET_ATTR_PATH	Set attributes given a pathname.
+ *	RPC_FS_GET_IO_ATTR	Get attributes cached at the I/O server.
+ *	RPC_FS_SET_IO_ATTR	Set attributes cached at the I/O server.
+ *	RPC_PROC_MIG_COMMAND Transfer information about a process that is being
+ *			migrated.
+ *	RPC_PROC_REMOTE_CALL Perform a system call for a migrated process.
+ *	RPC_FS_MIGRATE 		Start the migration of a file handle.
+ *	RPC_FS_RELEASE 		Release a stream reference during migration.
+ *	RPC_FS_RELEASE_NEW	New version of this call.
+ *	RPC_FS_CONSIST	Call from the server to the client to initiate
+ *				cache consistency operations.
+ *	RPC_FS_CONSIST_REPLY	Reply from the client indicating that
+ *				it has completed the cache consistency action.
+ *	RPC_FS_DEV_OPEN	Open a connection to the I/O server for a device.
+ *	RPC_REMOTE_WAKEUP 	Notify a remote process.
+ *	RPC_PROC_REMOTE_WAIT	Perform a Proc_Wait for a migrated process.
+ *	RPC_FS_SELECT	See if a file is readable or writable.
+ *	RPC_FS_IO_CONTROL	Perform an iocontrol.
+ *	RPC_FS_MKDEV		Make a special device file
+ *	RPC_FS_REOPEN		Reopen a file.
+ *	RPC_FS_DOMAIN_INFO	Return information about the given domain.
+ *	RPC_FS_RECOVERY		Recovery control message used by clients to
+ *				tell server's they want to re-establish
+ *				its open file handles, and when they are done.
+ *	RPC_PROC_GETPCB		Retrieve a process control block from another
+ *				host.
+ *	RPC_FS_BULK_REOPEN	Reopen a set of handles instead of just one.
+ *	RPC_FS_SERVER_REOPEN	Server's request to clients to begin recovery.
+ *
+ * These procedure numbers and the service switch should be generated
+ * from another file...
+ */
+
+#define	RPC_BAD_COMMAND		0
+#define	RPC_ECHO_1		1
+#define	RPC_ECHO_2		2
+#define	RPC_SEND		3
+#define	RPC_RECEIVE		4
+#define	RPC_GETTIME		5
+#define	RPC_FS_PREFIX		6
+#define	RPC_FS_OPEN		7
+#define	RPC_FS_READ		8
+#define	RPC_FS_WRITE		9
+#define	RPC_FS_CLOSE		10
+#define	RPC_FS_UNLINK		11
+#define	RPC_FS_RENAME		12
+#define	RPC_FS_MKDIR		13
+#define	RPC_FS_RMDIR		14
+#define RPC_FS_MKDEV		15
+#define	RPC_FS_LINK		16
+#define	RPC_FS_SYM_LINK		17
+#define	RPC_FS_GET_ATTR		18
+#define	RPC_FS_SET_ATTR		19
+#define RPC_FS_GET_ATTR_PATH	20
+#define RPC_FS_SET_ATTR_PATH	21
+#define RPC_FS_GET_IO_ATTR	22
+#define RPC_FS_SET_IO_ATTR	23
+#define	RPC_FS_DEV_OPEN 	24
+#define	RPC_FS_SELECT		25
+#define	RPC_FS_IO_CONTROL	26
+#define	RPC_FS_CONSIST 		27
+#define	RPC_FS_CONSIST_REPLY	28
+#define	RPC_FS_COPY_BLOCK	29
+#define	RPC_FS_MIGRATE 		30
+#define	RPC_FS_RELEASE 		31
+#define	RPC_FS_REOPEN		32
+#define RPC_FS_RECOVERY		33
+#define	RPC_FS_DOMAIN_INFO	34
+#define	RPC_PROC_MIG_COMMAND 	35
+#define	RPC_PROC_REMOTE_CALL 	36
+#define	RPC_PROC_REMOTE_WAIT	37
+#define	RPC_PROC_GETPCB		38
+#define	RPC_REMOTE_WAKEUP 	39
+#define	RPC_SIG_SEND		40
+#define	RPC_FS_RELEASE_NEW 	41
+#define	RPC_FS_BULK_REOPEN 	42
+#define	RPC_FS_SERVER_REOPEN 	43
+#define	RPC_LAST_COMMAND	RPC_FS_SERVER_REOPEN
+#define RPC_NUM_COMMANDS	(RPC_LAST_COMMAND+1)
+
+/*
+ * RPC_NUM_COMMANDS is used to declare the rpc procedure switch and
+ * arrays of counters for each rpc.  (RPC_LAST_COMMAND used to be
+ * used, but it was too easy to get the declaration wrong.)
+ */
+
+/*
+ * Procedures in the rpc service switch.
+ */
+extern ReturnStatus RpcNull _ARGS_((ClientData srvToken, int clientID, int command, Rpc_Storage *storagePtr));
+extern int RpcEcho _ARGS_((ClientData srvToken, int clientID, int command, Rpc_Storage *storagePtr));
+
+#ifdef JUST_LISTING
+ReturnStatus Fs_RpcOpen();		/*  FS_OPEN */
+ReturnStatus Fs_RpcRead();		/*  READ */
+ReturnStatus Fs_RpcWrite();		/*  WRITE */
+ReturnStatus Fs_RpcClose();		/*  CLOSE */
+ReturnStatus Fs_RpcRemove();		/*  UNLINK, RMDIR */
+ReturnStatus Fs_Rpc2Path();		/*  RENAME, LINK */
+ReturnStatus Fs_RpcMakeDir();		/*  MKDIR */
+#endif /* JUST_LISTING */
+
+/* GETTIME */
+extern ReturnStatus RpcGetTime _ARGS_((ClientData srvToken, int clientID, int command, Rpc_Storage *storagePtr)); 
+
+#ifdef JUST_LISTING
+ReturnStatus Fs_RpcPrefix();		/*  FS_PREFIX */
+ReturnStatus Fs_RpcGetAttr();		/*  FS_GET_ATTR */
+ReturnStatus Fs_RpcSetAttr();		/*  FS_SET_ATTR */
+ReturnStatus Fs_RpcGetAttrPath();	/*  FS_GET_ATTR_PATH */
+ReturnStatus Fs_RpcSetAttrPath();	/*  FS_SET_ATTR_PATH */
+ReturnStatus Fs_RpcGetIOAttr();		/*  FS_GET_IO_ATTR */
+ReturnStatus Fs_RpcSetIOAttr();		/*  FS_SET_IO_ATTR */
+#ifdef notdef
+ReturnStatus Proc_RpcMigInit();		/*  PROC_MIG_INIT */
+#endif /* notdef */
+ReturnStatus Proc_RpcMigCommand();	/*  PROC_MIG_COMMAND */
+ReturnStatus Proc_RpcRemoteCall();	/*  PROC_REMOTE_CALL */
+ReturnStatus Fs_RpcStartMigration();	/*  FS_MIGRATE */
+ReturnStatus Fs_RpcConsist();		/*  FS_CONSIST */
+ReturnStatus Fs_RpcDevOpen();		/*  FS_DEV_OPEN */
+ReturnStatus Sync_RemoteNotifyStub();	/*  REMOTE_WAKEUP */
+ReturnStatus Proc_RpcRemoteWait();	/*  PROC_REMOTE_WAIT */
+ReturnStatus Fs_RpcSelectStub();		/*  FS_SELECT */
+ReturnStatus Fs_RpcIOControl();		/*  FS_RPC_IO_CONTROL */
+ReturnStatus Fs_RpcConsistReply();	/*  FS_CONSIST_REPLY */
+ReturnStatus Fs_RpcBlockCopy();		/*  FS_COPY_BLOCK */
+ReturnStatus Fs_RpcMakeDev();		/*  FS_MKDEV */
+ReturnStatus Sig_RpcSend();		/*  SIG_SEND */
+ReturnStatus Fs_RpcReopen();		/*  FS_REOPEN */
+ReturnStatus Fs_RpcDomainInfo();		/*  FS_DOMAIN_INFO */
+ReturnStatus Fs_RpcRecovery();		/*  FS_RECOVERY */
+ReturnStatus Proc_RpcGetPCB();		/*  PROC_GETPCB  */
+ReturnStatus Fsio_RpcStreamMigCloseNew();/*  FS_RELEASE_NEW */
+ReturnStatus Fs_RpcBulkReopen();	/*  FS_BULK_REOPEN */
+ReturnStatus Fs_RpcServerReopen();	/*  FS_SERVER_REOPEN */
+#endif /* JUST_LISTING */
+
+#endif /*	_RPCCALL */
+
+@
+
+
+9.9
+log
+@Getting rid of old "release" rpc.
+@
+text
+@d13 1
+a13 1
+ *	$Header: /sprite/src/kernel/Cvsroot/kernel/rpc/rpcCall.h,v 9.8 92/10/26 14:38:39 mgbaker Exp $ SPRITE (Berkeley)
+d112 1
+d161 2
+a162 1
+#define	RPC_LAST_COMMAND	RPC_FS_BULK_REOPEN
+d220 1
+@
+
+
+9.8
+log
+@Support for bulk reopen rpcs.
+@
+text
+@d13 1
+a13 1
+ *	$Header: /sprite/src/kernel/Cvsroot/kernel/rpc/rpcCall.h,v 9.7 91/03/07 11:35:21 kupfer Exp $ SPRITE (Berkeley)
+a215 1
+ReturnStatus Fsio_RpcStreamMigClose();	/*  FS_RELEASE */
+@
+
+
+9.7
+log
+@Remove last references to RPC_FS_DEV_REOPEN (which was nuked in 8.2).
+@
+text
+@d13 1
+a13 1
+ *	$Header: /sprite/src/kernel/rpc/RCS/rpcCall.h,v 9.6 91/03/04 22:38:46 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d111 1
+d159 2
+a160 1
+#define	RPC_LAST_COMMAND	RPC_FS_RELEASE_NEW
+d218 1
+@
+
+
+9.7.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d13 1
+a13 1
+ *	$Header: /sprite/src/kernel/rpc/RCS/rpcCall.h,v 9.7 91/03/07 11:35:21 kupfer Exp $ SPRITE (Berkeley)
+@
+
+
+9.6
+log
+@FsSpriteReadParams -> FsrmtIOParam (fix a comment).
+@
+text
+@d13 1
+a13 1
+ *	$Header: /sprite/src/kernel/rpc/RCS/rpcCall.h,v 9.5 90/12/05 15:36:35 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+a105 1
+ *	RPC_FS_DEV_REOPEN	Reopen a device at the I/O server.
+a211 1
+ReturnStatus Fs_RpcDevReopen();		/*  FS_DEV_REOPEN */
+@
+
+
+9.5
+log
+@Fix a comment about RPC_LAST_COMMAND (use RPC_NUM_COMMANDS instead).
+@
+text
+@d13 1
+a13 1
+ *	$Header: /sprite/src/kernel/rpc/RCS/rpcCall.h,v 9.4 90/12/03 16:17:19 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d48 1
+a48 1
+ *			an FsSpriteReadParams structure, and the request data
+@
+
+
+9.4
+log
+@Add RPC_NUM_COMMANDS.
+@
+text
+@d13 1
+a13 1
+ *	$Header: /sprite/src/kernel/rpc/RCS/rpcCall.h,v 9.3 90/12/02 20:31:15 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d163 3
+a165 2
+ * RPC_LAST_COMMAND is used to declare the rpc procedure switch
+ * and arrays of counters for each rpc.
+@
+
+
+9.3
+log
+@Move Rpc_Storage from rpc.h to rpcTypes.h.  Add an include of
+rpcTypes.h to rpcCall.h.
+@
+text
+@d13 1
+a13 1
+ *	$Header: /sprite/src/kernel/rpc/RCS/rpcCall.h,v 9.2 90/09/11 11:34:54 mgbaker Exp Locker: kupfer $ SPRITE (Berkeley)
+d160 1
+@
+
+
+9.2
+log
+@Added function prototypes (Mendel checking for mary)
+@
+text
+@d13 1
+a13 1
+ *	$Header: /sprite/src/kernel/rpc/RCS/rpcCall.h,v 9.1 90/05/03 17:33:45 douglis Exp Locker: mgbaker $ SPRITE (Berkeley)
+d18 6
+@
+
+
+9.1
+log
+@added new Fs_Release rpc.
+@
+text
+@d13 1
+a13 1
+ *	$Header: /sprite/src/kernel/fd.rpc/RCS/rpcCall.h,v 9.0 89/09/12 15:17:18 douglis Stable Locker: douglis $ SPRITE (Berkeley)
+d163 24
+a186 17
+extern ReturnStatus RpcNull();
+extern ReturnStatus RpcEcho();
+extern ReturnStatus Fs_RpcOpen();		/*  FS_OPEN */
+extern ReturnStatus Fs_RpcRead();		/*  READ */
+extern ReturnStatus Fs_RpcWrite();		/*  WRITE */
+extern ReturnStatus Fs_RpcClose();		/*  CLOSE */
+extern ReturnStatus Fs_RpcRemove();		/*  UNLINK, RMDIR */
+extern ReturnStatus Fs_Rpc2Path();		/*  RENAME, LINK */
+extern ReturnStatus Fs_RpcMakeDir();		/*  MKDIR */
+extern ReturnStatus RpcGetTime();		/*  GETTIME */
+extern ReturnStatus Fs_RpcPrefix();		/*  FS_PREFIX */
+extern ReturnStatus Fs_RpcGetAttr();		/*  FS_GET_ATTR */
+extern ReturnStatus Fs_RpcSetAttr();		/*  FS_SET_ATTR */
+extern ReturnStatus Fs_RpcGetAttrPath();	/*  FS_GET_ATTR_PATH */
+extern ReturnStatus Fs_RpcSetAttrPath();	/*  FS_SET_ATTR_PATH */
+extern ReturnStatus Fs_RpcGetIOAttr();		/*  FS_GET_IO_ATTR */
+extern ReturnStatus Fs_RpcSetIOAttr();		/*  FS_SET_IO_ATTR */
+d188 1
+a188 1
+extern ReturnStatus Proc_RpcMigInit();		/*  PROC_MIG_INIT */
+d190 21
+a210 20
+extern ReturnStatus Proc_RpcMigCommand();	/*  PROC_MIG_COMMAND */
+extern ReturnStatus Proc_RpcRemoteCall();	/*  PROC_REMOTE_CALL */
+extern ReturnStatus Fs_RpcStartMigration();	/*  FS_MIGRATE */
+extern ReturnStatus Fs_RpcConsist();		/*  FS_CONSIST */
+extern ReturnStatus Fs_RpcDevOpen();		/*  FS_DEV_OPEN */
+extern ReturnStatus Sync_RemoteNotifyStub();	/*  REMOTE_WAKEUP */
+extern ReturnStatus Proc_RpcRemoteWait();	/*  PROC_REMOTE_WAIT */
+extern ReturnStatus Fs_RpcSelectStub();		/*  FS_SELECT */
+extern ReturnStatus Fs_RpcIOControl();		/*  FS_RPC_IO_CONTROL */
+extern ReturnStatus Fs_RpcConsistReply();	/*  FS_CONSIST_REPLY */
+extern ReturnStatus Fs_RpcBlockCopy();		/*  FS_COPY_BLOCK */
+extern ReturnStatus Fs_RpcMakeDev();		/*  FS_MKDEV */
+extern ReturnStatus Sig_RpcSend();		/*  SIG_SEND */
+extern ReturnStatus Fs_RpcReopen();		/*  FS_REOPEN */
+extern ReturnStatus Fs_RpcDomainInfo();		/*  FS_DOMAIN_INFO */
+extern ReturnStatus Fs_RpcDevReopen();		/*  FS_DEV_REOPEN */
+extern ReturnStatus Fs_RpcRecovery();		/*  FS_RECOVERY */
+extern ReturnStatus Proc_RpcGetPCB();		/*  PROC_GETPCB  */
+extern ReturnStatus Fsio_RpcStreamMigClose();	/*  FS_RELEASE */
+extern ReturnStatus Fsio_RpcStreamMigCloseNew();/*  FS_RELEASE_NEW */
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d13 1
+a13 1
+ *	$Header: /sprite/src/kernel/rpc/RCS/rpcCall.h,v 8.2 89/06/09 11:27:02 brent Exp Locker: douglis $ SPRITE (Berkeley)
+d86 2
+d152 2
+a153 1
+#define	RPC_LAST_COMMAND	RPC_SIG_SEND
+d201 2
+@
+
+
+8.2
+log
+@Cleaned up RPC numbering.
+@
+text
+@d13 1
+a13 1
+ *	$Header: /sprite/src/kernel/rpc/RCS/rpcCall.h,v 8.1 89/04/06 11:52:35 douglis Exp $ SPRITE (Berkeley)
+@
+
+
+8.1
+log
+@changed RPC_PROC_MIG_INFO to RPC_PROC_MIG_COMMAND.
+RPC_PROC_MIG_INIT is now obsolete.
+@
+text
+@d13 1
+a13 1
+ *	$Header: /sprite/src/kernel/rpc/RCS/rpcCall.h,v 8.0 88/11/11 18:34:17 douglis Stable Locker: douglis $ SPRITE (Berkeley)
+d114 37
+a150 39
+#define	RPC_FS_OPEN		5
+#define	RPC_FS_READ		6
+#define	RPC_FS_WRITE		7
+#define	RPC_FS_CLOSE		8
+#define	RPC_FS_UNLINK		9
+#define	RPC_FS_RENAME		10
+#define	RPC_FS_MKDIR		11
+#define	RPC_FS_RMDIR		12
+#define	RPC_FS_LINK		13
+#define	RPC_GETTIME		14
+#define	RPC_FS_PREFIX		15
+#define	RPC_FS_GET_ATTR		16
+#define	RPC_FS_SET_ATTR		17
+#define RPC_FS_GET_ATTR_PATH	18
+#define RPC_FS_SET_ATTR_PATH	19
+#define RPC_FS_GET_IO_ATTR	20
+#define RPC_FS_SET_IO_ATTR	21
+#ifdef notdef
+#define	RPC_PROC_MIG_INIT 	22
+#endif
+#define	RPC_PROC_MIG_COMMAND 	23
+#define	RPC_PROC_REMOTE_CALL 	24
+#define	RPC_FS_MIGRATE 		25
+#define	RPC_FS_CONSIST 		26
+#define	RPC_FS_DEV_OPEN 	27
+#define	RPC_REMOTE_WAKEUP 	28
+#define	RPC_PROC_REMOTE_WAIT	29
+#define	RPC_FS_SELECT		30
+#define	RPC_FS_IO_CONTROL	31
+#define	RPC_FS_CONSIST_REPLY	32
+#define	RPC_FS_COPY_BLOCK	33
+#define RPC_FS_MKDEV		34
+#define	RPC_SIG_SEND		35
+#define	RPC_FS_REOPEN		36
+#define	RPC_FS_DOMAIN_INFO	37
+#define RPC_FS_DEV_REOPEN	38
+#define RPC_FS_RECOVERY		39
+#define	RPC_PROC_GETPCB		40
+#define	RPC_LAST_COMMAND	RPC_PROC_GETPCB
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d13 1
+a13 1
+ *	$Header: /sprite/src/kernel/rpc/RCS/rpcCall.h,v 6.3 88/11/11 14:43:03 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+d82 1
+a82 3
+ *	RPC_PROC_MIG_INIT Initiate process migration by confirming that
+ *			foreign processes will be accepted.
+ *	RPC_PROC_MIG_INFO Transfer information about a process that is being
+d131 1
+d133 2
+a134 1
+#define	RPC_PROC_MIG_INFO 	23
+d179 1
+d181 2
+a182 1
+extern ReturnStatus Proc_RpcMigInfo();		/*  PROC_MIG_INFO */
+@
+
+
+6.3
+log
+@changed RpcProc* to Proc_Rpc* and moved into proc module.
+@
+text
+@d13 1
+a13 1
+ *	$Header: /sprite/src/kernel/rpc/RCS/rpcCall.h,v 6.2 88/10/28 19:24:54 mlgray Exp Locker: douglis $ SPRITE (Berkeley)
+@
+
+
+6.2
+log
+@Conversion to new C library.
+@
+text
+@d13 1
+a13 1
+ *	$Header: /sprite/src/kernel/rpc/RCS/rpcCall.h,v 6.1 88/08/26 18:27:24 mlgray Exp Locker: mlgray $ SPRITE (Berkeley)
+d179 3
+a181 3
+extern ReturnStatus RpcProcMigInit();		/*  PROC_MIG_INIT */
+extern ReturnStatus RpcProcMigInfo();		/*  PROC_MIG_INFO */
+extern ReturnStatus RpcProcRemoteCall();	/*  PROC_REMOTE_CALL */
+@
+
+
+6.1
+log
+@Fixed some lint errors.
+@
+text
+@d13 1
+a13 1
+ *	$Header: rpcCall.h,v 6.0 88/08/11 12:24:16 brent Stable $ SPRITE (Berkeley)
+d104 2
+a110 2
+#ifndef OLD_RPC_NUMBERS
+
+d151 2
+a152 1
+#define	RPC_LAST_COMMAND	RPC_FS_RECOVERY
+a153 61
+#else /* OLD_RPC_NUMBERS */
+
+#define	RPC_BAD_COMMAND		0
+#define	RPC_ECHO_1		1
+#define	RPC_ECHO_2		2
+#define	RPC_FS_SPRITE_OPEN	3
+#define	RPC_FS_NAME		4
+#define	RPC_FS_LOCATE		5
+#define	RPC_FS_READ		6
+#define	RPC_FS_WRITE		7
+#define	RPC_FS_CLOSE		8
+#define	RPC_FS_TRUNC		9
+#define	RPC_FS_APPEND		10
+#define	RPC_FS_STAT		11
+#define	RPC_FS_UNLINK		12
+#define	RPC_FS_RENAME		13
+#define	RPC_FS_MKDIR		14
+#define	RPC_FS_RMDIR		15
+#define	RPC_FS_CHMOD		16
+#define	RPC_FS_CHOWN		17
+#define	RPC_FS_LINK		18
+#define	RPC_FS_UNIX_PREFIX	19
+#define	RPC_FS_PULLIN		20
+#define	RPC_FS_UPDAT		21
+#define	RPC_GETTIME		22
+#define	RPC_FS_UNIX_OPEN	23
+#define	RPC_SEND		24
+#define	RPC_FS_SPRITE_PREFIX	25
+#define	RPC_FS_GET_ATTR		26
+#define	RPC_FS_SET_ATTR		27
+#define	RPC_PROC_MIG_INIT 	28
+#define	RPC_PROC_MIG_INFO 	29
+#define	RPC_PROC_REMOTE_CALL 	30
+#define	RPC_FS_START_MIGRATION 	31
+#define	RPC_FS_REMOTE_WAKEUP 	32
+#define	RPC_FS_CONSIST 		33
+#define	RPC_FS_DEV_OPEN 	34
+#define	RPC_SIG_MIG_SEND 	35
+#define	RPC_REMOTE_WAKEUP 	36
+#define	RPC_FS_LOCK	 	37
+#define	RPC_PROC_REMOTE_WAIT	38
+#define	RPC_FS_SELECT		39
+#define	RPC_FS_FINISH_MIGRATION 40
+#define	RPC_FS_IO_CONTROL	41
+#define	RPC_FS_CONSIST_REPLY	42
+#define	RPC_FS_COPY_BLOCK	43
+#define RPC_FS_MKDEV		44
+#define RPC_FS_GET_ATTR_PATH	45
+#define	RPC_SIG_SEND		46
+#define	RPC_FS_REOPEN		47
+#define	RPC_FS_DOMAIN_INFO	48
+#define RPC_FS_DEV_REOPEN	49
+#define RPC_FS_RECOVERY		50
+#define RPC_FS_REQUEST		51
+#define RPC_FS_REPLY		52
+#define RPC_FS_SET_ATTR_PATH	53
+#define RPC_FS_GET_IO_ATTR	54
+#define RPC_FS_SET_IO_ATTR	55
+#define	RPC_LAST_COMMAND	RPC_FS_SET_IO_ATTR
+
+#endif /* OLD_RPC_NUMBERS */
+d197 1
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d13 1
+a13 1
+ *	$Header: rpcCall.h,v 5.7 88/08/04 17:52:28 mlgray Exp $ SPRITE (Berkeley)
+d28 1
+a28 1
+ *	RPC_ECHO_2	Echo bytes off the server. The request/reply parameter 
+d35 5
+a39 5
+ *	RPC_FS_OPEN	Open a file.  Could create the file, always 
+ *				follows symbolic links. The request parameter 
+ *				area contains a FsOpenParams, and the request 
+ *				data area contains a file name.  The return 
+ *				parameter area contains an FsOpenReturn 
+d70 1
+a70 1
+ *	RPC_FS_PREFIX	Broadcast a pathname to a server and 
+d153 1
+a153 1
+#else OLD_RPC_NUMBERS
+d213 1
+a213 1
+#endif OLD_RPC_NUMBERS
+d258 1
+a258 1
+#endif	_RPCCALL
+@
+
+
+5.7
+log
+@In preparation for installing.
+@
+text
+@d13 1
+a13 1
+ *	$Header: rpcCall.h,v 5.6 88/07/19 12:19:18 mlgray Exp $ SPRITE (Berkeley)
+@
+
+
+5.6
+log
+@ready for testing
+@
+text
+@d13 1
+a13 1
+ *	$Header: rpcCall.h,v 5.5 88/06/19 16:14:31 mlgray Exp $ SPRITE (Berkeley)
+a92 1
+ *	RPC_SIG_MIG_SEND	Send a signal to a migrated process.
+d109 1
+a109 1
+#ifdef NEW_RPC_NUMBERS
+d139 12
+a150 13
+#define	RPC_SIG_MIG_SEND 	28
+#define	RPC_REMOTE_WAKEUP 	29
+#define	RPC_PROC_REMOTE_WAIT	30
+#define	RPC_FS_SELECT		31
+#define	RPC_FS_IO_CONTROL	32
+#define	RPC_FS_CONSIST_REPLY	33
+#define	RPC_FS_COPY_BLOCK	34
+#define RPC_FS_MKDEV		35
+#define	RPC_SIG_SEND		36
+#define	RPC_FS_REOPEN		37
+#define	RPC_FS_DOMAIN_INFO	38
+#define RPC_FS_DEV_REOPEN	39
+#define RPC_FS_RECOVERY		40
+d153 1
+a153 1
+#else NEW_RPC_NUMBERS
+d213 1
+a213 1
+#endif NEW_RPC_NUMBERS
+d224 33
+a256 34
+extern ReturnStatus Fs_RpcOpen();		/* 5 - FS_OPEN */
+extern ReturnStatus Fs_RpcRead();		/* 6 - READ */
+extern ReturnStatus Fs_RpcWrite();		/* 7 - WRITE */
+extern ReturnStatus Fs_RpcClose();		/* 8 - CLOSE */
+extern ReturnStatus Fs_RpcRemove();		/* 9 - UNLINK, 12 - RMDIR */
+extern ReturnStatus Fs_Rpc2Path();		/* 10 - RENAME, 13 - LINK */
+extern ReturnStatus Fs_RpcMakeDir();		/* 11 - MKDIR */
+extern ReturnStatus RpcGetTime();		/* 14 - GETTIME */
+extern ReturnStatus Fs_RpcPrefix();		/* 15 - FS_PREFIX */
+extern ReturnStatus Fs_RpcGetAttr();		/* 16 - FS_GET_ATTR */
+extern ReturnStatus Fs_RpcSetAttr();		/* 17 - FS_SET_ATTR */
+extern ReturnStatus Fs_RpcGetAttrPath();	/* 18 - FS_GET_ATTR_PATH */
+extern ReturnStatus Fs_RpcSetAttrPath();	/* 19 - FS_SET_ATTR_PATH */
+extern ReturnStatus Fs_RpcGetIOAttr();		/* 20 - FS_GET_IO_ATTR */
+extern ReturnStatus Fs_RpcSetIOAttr();		/* 21 - FS_SET_IO_ATTR */
+extern ReturnStatus RpcProcMigInit();		/* 22 - PROC_MIG_INIT */
+extern ReturnStatus RpcProcMigInfo();		/* 23 - PROC_MIG_INFO */
+extern ReturnStatus RpcProcRemoteCall();	/* 24 - PROC_REMOTE_CALL */
+extern ReturnStatus Fs_RpcStartMigration();	/* 25 - FS_MIGRATE */
+extern ReturnStatus Fs_RpcConsist();		/* 26 - FS_CONSIST */
+extern ReturnStatus Fs_RpcDevOpen();		/* 27 - FS_DEV_OPEN */
+extern ReturnStatus RpcSigMigSend();		/* 28 - SIG_MIG_SEND */
+extern ReturnStatus Sync_RemoteNotifyStub();	/* 29 - REMOTE_WAKEUP */
+extern ReturnStatus Proc_RpcRemoteWait();	/* 30 - PROC_REMOTE_WAIT */
+extern ReturnStatus Fs_RpcSelectStub();		/* 31 - FS_SELECT */
+extern ReturnStatus Fs_RpcIOControl();		/* 32 - FS_RPC_IO_CONTROL */
+extern ReturnStatus Fs_RpcConsistReply();	/* 33 - FS_CONSIST_REPLY */
+extern ReturnStatus Fs_RpcBlockCopy();		/* 34 - FS_COPY_BLOCK */
+extern ReturnStatus Fs_RpcMakeDev();		/* 35 - FS_MKDEV */
+extern ReturnStatus Sig_RpcSend();		/* 36 - SIG_SEND */
+extern ReturnStatus Fs_RpcReopen();		/* 37 - FS_REOPEN */
+extern ReturnStatus Fs_RpcDomainInfo();		/* 38 - FS_DOMAIN_INFO */
+extern ReturnStatus Fs_RpcDevReopen();		/* 39 - FS_DEV_REOPEN */
+extern ReturnStatus Fs_RpcRecovery();		/* 40 - FS_RECOVERY */
+@
+
+
+5.5
+log
+@Cleaned up the rpc numbers by removing unused calls: NAME, LOCATE, TRUNC,
+APPEND, STAT, CHOWN, CHMOD, PULLIN, UNIX_PREFIX, UNIX_OPEN, UPDAT,
+REQUEST, REPLY, and FINISH_MIGRATION.  Renamed SPRITE_OPEN and SPRITE_PREFIX
+to OPEN and PREFIX.  Added unimplimented RECEIVE to correspond with SEND.
+Generally renumbered things so that all the attribute calls are together
+and SEND and RECEIVE are right after the ECHO calls.
+@
+text
+@d13 1
+a13 1
+ *	$Header: rpcCall.h,v 5.4 88/01/08 11:13:54 brent Exp $ SPRITE (Berkeley)
+a87 2
+ *	RPC_FS_REMOTE_WAKEUP	Wakeup a process on a remote machine that
+ *				is waiting for a server.
+d94 1
+d109 3
+d138 15
+a152 17
+#define	RPC_FS_REMOTE_WAKEUP 	26
+#define	RPC_FS_CONSIST 		27
+#define	RPC_FS_DEV_OPEN 	28
+#define	RPC_SIG_MIG_SEND 	29
+#define	RPC_REMOTE_WAKEUP 	30
+#define	RPC_FS_LOCK	 	31
+#define	RPC_PROC_REMOTE_WAIT	32
+#define	RPC_FS_SELECT		33
+#define	RPC_FS_IO_CONTROL	34
+#define	RPC_FS_CONSIST_REPLY	35
+#define	RPC_FS_COPY_BLOCK	36
+#define RPC_FS_MKDEV		37
+#define	RPC_SIG_SEND		38
+#define	RPC_FS_REOPEN		39
+#define	RPC_FS_DOMAIN_INFO	40
+#define RPC_FS_DEV_REOPEN	41
+#define RPC_FS_RECOVERY		42
+d154 62
+d226 1
+d230 30
+a259 32
+extern ReturnStatus Fs_RpcRemove();		/* 12 - UNLINK, 15 - RMDIR */
+extern ReturnStatus Fs_Rpc2Path();		/* 13 - RENAME, 18 - LINK */
+extern ReturnStatus Fs_RpcMakeDir();		/* 14 - MKDIR */
+extern ReturnStatus RpcGetTime();		/* 22 - GETTIME */
+extern ReturnStatus Fs_RpcOpen();		/* 23 - FS_OPEN */
+extern ReturnStatus Fs_RpcPrefix();		/* 25 - FS_PREFIX */
+extern ReturnStatus Fs_RpcGetAttr();		/* 26 - FS_GET_ATTR */
+extern ReturnStatus Fs_RpcSetAttr();		/* 27 - FS_SET_ATTR */
+extern ReturnStatus Fs_RpcGetAttrPath();	/* 45 - FS_GET_ATTR_PATH */
+extern ReturnStatus Fs_RpcSetAttrPath();	/* 53 - FS_SET_ATTR_PATH */
+extern ReturnStatus Fs_RpcGetIOAttr();		/* 54 - FS_GET_IO_ATTR */
+extern ReturnStatus Fs_RpcSetIOAttr();		/* 55 - FS_SET_IO_ATTR */
+extern ReturnStatus RpcProcMigInit();		/* 28 - PROC_MIG_INIT */
+extern ReturnStatus RpcProcMigInfo();		/* 29 - PROC_MIG_INFO */
+extern ReturnStatus RpcProcRemoteCall();	/* 30 - PROC_REMOTE_CALL */
+extern ReturnStatus Fs_RpcMigrate();		/* 31 - FS_MIGRATE */
+extern ReturnStatus Fs_RpcConsist();		/* 33 - FS_CONSIST */
+extern ReturnStatus Fs_RpcDevOpen();		/* 34 - FS_DEV_OPEN */
+extern ReturnStatus RpcSigMigSend();		/* 35 - SIG_MIG_SEND */
+extern ReturnStatus Sync_RemoteNotifyStub();	/* 36 - REMOTE_NOTIFY */
+extern ReturnStatus Fs_RpcLockStub();		/* 37 - FS_LOCK */
+extern ReturnStatus Proc_RpcRemoteWait();	/* 38 - PROC_REMOTE_WAIT */
+extern ReturnStatus Fs_RpcSelectStub();		/* 39 - FS_SELECT */
+extern ReturnStatus Fs_RpcIOControl();		/* 41 - FS_RPC_IO_CONTROL */
+extern ReturnStatus Fs_RpcConsistReply();	/* 42 - FS_CONSIST_REPLY */
+extern ReturnStatus Fs_RpcBlockCopy();		/* 43 - FS_COPY_BLOCK */
+extern ReturnStatus Fs_RpcMakeDev();		/* 44 - FS_MKDEV */
+extern ReturnStatus Sig_RpcSend();		/* 46 - SIG_SEND */
+extern ReturnStatus Fs_RpcReopen();		/* 47 - FS_REOPEN */
+extern ReturnStatus Fs_RpcDomainInfo();		/* 48 - FS_DOMAIN_INFO */
+extern ReturnStatus Fs_RpcDevReopen();		/* 49 - FS_DEV_REOPEN */
+extern ReturnStatus Fs_RpcRecovery();		/* 50 - FS_RECOVERY */
+@
+
+
+5.4
+log
+@Added SET_ATTR_PATH, GET_IO_ATTR, SET_IO_ATTR
+@
+text
+@d13 1
+a13 1
+ *	$Header: rpcCall.h,v 5.3 87/09/29 17:12:22 brent Exp $ SPRITE (Berkeley)
+d31 5
+a35 1
+ *	RPC_FS_SPRITE_OPEN	Open a file.  Could create the file, always 
+a40 7
+ *	RPC_FS_NAME	Open a file.  Won't create the file.  The request
+ *			parameter is an FsUserInfo, a file mode (int), and
+ *			a follow flag (int) which indicates that symbolic
+ *			links should or should not be followed.  The return
+ *			parameter area contains an FsOpenReturn struct.
+ *	RPC_FS_LOCATE	UNUSED.  A Broadcasted empty request that results
+ *			in an empty reply from any listening server.
+d42 3
+a44 3
+ *			an FsRtoken followed by a UnixUio struct (FIX ME!)
+ *			which specifies length and offset of the read.  The
+ *			return data area contains the bytes read.
+a50 8
+ *	RPC_FS_TRUNC	Truncate a file.  The request parameter area has an
+ *			FsRtoken followed by a truncation length (int).  The
+ *			reply is empty.
+ *	RPC_FS_APPEND	Append mode write to a file.  Same request and reply
+ *			format as RPC_FS_WRITE.
+ *	RPC_FS_STAT	Get the file header information about a file.  The
+ *			request parameter area contains an FsRtoken.  The
+ *			reply parameter area contains FsUnixAttributes.
+a63 6
+ *	RPC_FS_CHMOD	Change the mode of a file.  The request parameter area
+ *			contains an FsRtoken, and a new mode (int).  The
+ *			reply is empty.
+ *	RPC_FS_CHOWN	Change ownership of a file.  The request parameter area
+ *			contains an FsRotken, a new user ID (int), and a new
+ *			group ID (int).  The reply is empty.
+a65 12
+ *	RPC_FS_UNIX_PREFIX	Broadcast a pathname and get an rtoken for its 
+ *				prefix.  The request message is the same as 
+ *				for FS_NAME.  FIX THIS to include a minimum 
+ *				prefix length.  The return is an Rtoken for 
+ *				the prefix of the file.
+ *	RPC_FS_PULLIN	UNUSED.  Return all the prefixes exported by a server
+ *			to a client.  The request message is empty.  The
+ *			reply parameter are contains a list of prefixes.  These
+ *			are a bunch on null-terminated strings.
+ *	RPC_FS_UPDAT	Update time stamps on a file.  The request parameter
+ *			area contains an FsRtoken, then the access time (Time),
+ *			and the modify time (Time).  The reply is empty.
+d70 1
+a70 13
+ *	RPC_FS_UNIX_OPEN	Open a file.  A super-set of FS_OPEN which 
+ *				allows the caller to restrict the type of the 
+ *				file that can be opened, as well as the 
+ *				permissions that are needed.  The request 
+ *				parameter area contains an augmented 
+ *				FsOpenParams which has a type field inserted 
+ *				between the mode and mask fields.  The request 
+ *				data area contains the file name.  The reply 
+ *				parameter area 	contains an FsOpenReturn.
+ *	RPC_SEND	Send bytes to the server.  The request parameter
+ *			area is empty.  The request data area has the bytes to
+ *			send.  The reply is empty.
+ *	RPC_FS_SPRITE_PREFIX	Broadcast a pathname to a Sprite server and 
+d78 4
+d87 1
+a87 1
+ *	RPC_FS_START_MIGATION 	Start the migration of a file handle.
+a94 1
+ *	RPC_FS_GET_ATTR_PATH	Get attributes given a path name.
+a97 1
+ *	RPC_FS_FINISH_MIGATION 	Finish the migration of a file handle.
+a105 6
+ *	RPC_FS_REQUEST		Pseudo-device request message.
+ *	RPC_FS_REPLY		Pseudo-device reply message.
+ *	RPC_FS_SET_ATTR_PATH	Set attributes given a pathname.
+ *	RPC_FS_GET_IO_ATTR	Get attributes cached at the I/O server.
+ *	RPC_FS_SET_IO_ATTR	Set attributes cached at the I/O server.
+ *	
+d113 3
+a115 3
+#define	RPC_FS_SPRITE_OPEN	3
+#define	RPC_FS_NAME		4
+#define	RPC_FS_LOCATE		5
+d119 35
+a153 48
+#define	RPC_FS_TRUNC		9
+#define	RPC_FS_APPEND		10
+#define	RPC_FS_STAT		11
+#define	RPC_FS_UNLINK		12
+#define	RPC_FS_RENAME		13
+#define	RPC_FS_MKDIR		14
+#define	RPC_FS_RMDIR		15
+#define	RPC_FS_CHMOD		16
+#define	RPC_FS_CHOWN		17
+#define	RPC_FS_LINK		18
+#define	RPC_FS_UNIX_PREFIX	19
+#define	RPC_FS_PULLIN		20
+#define	RPC_FS_UPDAT		21
+#define	RPC_GETTIME		22
+#define	RPC_FS_UNIX_OPEN	23
+#define	RPC_SEND		24
+#define	RPC_FS_SPRITE_PREFIX	25
+#define	RPC_FS_GET_ATTR		26
+#define	RPC_FS_SET_ATTR		27
+#define	RPC_PROC_MIG_INIT 	28
+#define	RPC_PROC_MIG_INFO 	29
+#define	RPC_PROC_REMOTE_CALL 	30
+#define	RPC_FS_START_MIGRATION 	31
+#define	RPC_FS_REMOTE_WAKEUP 	32
+#define	RPC_FS_CONSIST 		33
+#define	RPC_FS_DEV_OPEN 	34
+#define	RPC_SIG_MIG_SEND 	35
+#define	RPC_REMOTE_WAKEUP 	36
+#define	RPC_FS_LOCK	 	37
+#define	RPC_PROC_REMOTE_WAIT	38
+#define	RPC_FS_SELECT		39
+#define	RPC_FS_FINISH_MIGRATION 40
+#define	RPC_FS_IO_CONTROL	41
+#define	RPC_FS_CONSIST_REPLY	42
+#define	RPC_FS_COPY_BLOCK	43
+#define RPC_FS_MKDEV		44
+#define RPC_FS_GET_ATTR_PATH	45
+#define	RPC_SIG_SEND		46
+#define	RPC_FS_REOPEN		47
+#define	RPC_FS_DOMAIN_INFO	48
+#define RPC_FS_DEV_REOPEN	49
+#define RPC_FS_RECOVERY		50
+#define RPC_FS_REQUEST		51
+#define RPC_FS_REPLY		52
+#define RPC_FS_SET_ATTR_PATH	53
+#define RPC_FS_GET_IO_ATTR	54
+#define RPC_FS_SET_IO_ATTR	55
+#define	RPC_LAST_COMMAND	RPC_FS_SET_IO_ATTR
+a166 1
+extern ReturnStatus Fs_RpcTruncStub();		/* 9 - TRUNC */
+a169 1
+extern ReturnStatus RpcFsUnixPrefix();		/* 19 - FS_UNIX_PREFIX */
+d171 2
+a172 2
+extern ReturnStatus Fs_RpcOpen();		/* 23 - FS_SPRITE_OPEN */
+extern ReturnStatus Fs_RpcPrefix();		/* 25 - FS_SPRITE_PREFIX */
+d175 4
+d182 1
+a182 1
+extern ReturnStatus Fs_RpcStartMigration();	/* 31 - FS_START_MIGRATION */
+a189 1
+extern ReturnStatus Fs_RpcFinishMigration();	/* 40 - FS_START_MIGRATION */
+a193 1
+extern ReturnStatus Fs_RpcGetAttrPath();	/* 45 - FS_GET_ATTR_PATH */
+a198 5
+extern ReturnStatus Fs_RpcRequest();		/* 51 - FS_REQUEST */
+extern ReturnStatus Fs_RpcReply();		/* 52 - FS_REPLY */
+extern ReturnStatus Fs_RpcSetAttrPath();	/* 53 - FS_SET_ATTR_PATH */
+extern ReturnStatus Fs_RpcGetIOAttr();		/* 54 - FS_GET_IO_ATTR */
+extern ReturnStatus Fs_RpcSetIOAttr();		/* 55 - FS_SET_IO_ATTR */
+@
+
+
+5.3
+log
+@Added more calls.
+@
+text
+@d13 1
+a13 1
+ *	$Header: rpcCall.h,v 5.2 87/09/21 16:26:39 brent Exp $ SPRITE (Berkeley)
+d132 1
+d147 3
+d208 4
+a211 2
+#define	RPC_LAST_COMMAND RPC_FS_REPLY
+
+d213 2
+a214 2
+ * The above constant RPC_LAST_COMMAND is used to declare arrays that
+ * keep information for each procedure.
+d253 9
+a261 7
+extern ReturnStatus Fs_RpcReopen();		/* 47 - FS_RPC_REOPEN */
+extern ReturnStatus Fs_RpcDomainInfo();		/* 48 - FS_RPC_DOMAIN_INFO */
+extern ReturnStatus Fs_RpcDevReopen();		/* 49 - FS_RPC_DEV_REOPEN */
+extern ReturnStatus Fs_RpcRecovery();		/* 50 - FS_RPC_RECOVERY */
+extern ReturnStatus Fs_RpcRequest();		/* 51 - FS_RPC_REQUEST */
+extern ReturnStatus Fs_RpcReply();		/* 52 - FS_RPC_REPLY */
+
+@
+
+
+5.2
+log
+@Added dev-reopen RPC
+@
+text
+@d13 1
+a13 1
+ *	$Header: rpcCall.h,v 5.1 87/09/15 08:55:56 nelson Exp $ SPRITE (Berkeley)
+d141 5
+d201 4
+a204 1
+#define	RPC_LAST_COMMAND RPC_FS_DEV_REOPEN
+d248 6
+a253 2
+extern ReturnStatus Fs_RpcDomainInfo();		/* 48 - FS_RPC_DOMAIN_INFO. */
+extern ReturnStatus Fs_RpcDevReopen();		/* 49 - FS_RPC_DEV_REOPEN. */
+@
+
+
+5.1
+log
+@Added reopen and getDomainInfo RPCs
+@
+text
+@d13 1
+a13 1
+ *	$Header: rpcCall.h,v 5.0 87/08/11 10:48:15 sprite Exp $ SPRITE (Berkeley)
+d140 2
+d195 2
+a196 1
+#define	RPC_LAST_COMMAND RPC_FS_DOMAIN_INFO
+d241 1
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d13 1
+a13 1
+ *	$Header: rpcCall.h,v 4.3 87/06/10 23:28:22 nelson Exp $ SPRITE (Berkeley)
+d138 2
+d191 3
+a193 1
+#define	RPC_LAST_COMMAND RPC_SIG_SEND
+d236 2
+@

@@ -1,0 +1,13 @@
+This directory contains the Bison parser generator.
+
+When installing Bison on Sequent (or Pyramid?) systems, you must
+be in the Berkeley universe.
+
+On systems that do not have a working `alloca' function, you will
+have to get a working `alloca' (perhaps from GNU Emacs) and edit the
+Makefile so that it will be used.
+
+On system V, you will need to alter symtab.c to include string.h,
+and probably add a definition of bcopy in conflicts.c:
+
+			#define bcopy(src,dst,n) memcpy(dst,src,n)

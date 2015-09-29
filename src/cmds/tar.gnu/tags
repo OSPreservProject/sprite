@@ -1,0 +1,141 @@
+DP_NAMELEN	create.c	/^#define DP_NAMELEN(x) strlen((x)->d_name)$/
+Mgetopt	getopt.c	/^main (argc, argv)$/
+Mgetopt1	getopt1.c	/^main (argc, argv)$/
+Mtar	tar.c	/^main(argc, argv)$/
+Mwildmat	wildmat.c	/^main()$/
+NEXTOF	port.c	/^#define NEXTOF(ptr)	(* ((char **)(((char *)(ptr))+/
+READ	rtape_lib.c	/^#define READ(fd)	(Ctp[fd][0])$/
+SpriteMakeNamedPipe	sprite.c	/^SpriteMakeNamedPipe(header, hstat)$/
+SpriteMakePseudoDev	sprite.c	/^SpriteMakePseudoDev(header, hstat)$/
+SpriteMakeRemoteLink	sprite.c	/^SpriteMakeRemoteLink(linkname, name)$/
+Star	wildmat.c	/^Star(s, p)$/
+WRITE	rtape_lib.c	/^#define WRITE(fd)	(Ptc[fd][1])$/
+__rmt_close	rtape_lib.c	/^ int __rmt_close(fildes)$/
+__rmt_ioctl	rtape_lib.c	/^__rmt_ioctl(fildes, op, arg)$/
+__rmt_lseek	rtape_lib.c	/^long __rmt_lseek(fildes, offset, whence)$/
+__rmt_open	rtape_lib.c	/^int __rmt_open (path, oflag, mode, bias)$/
+__rmt_read	rtape_lib.c	/^int __rmt_read(fildes, buf, nbyte)$/
+__rmt_write	rtape_lib.c	/^int __rmt_write(fildes, buf, nbyte)$/
+_rmt_panic	rtape_lib.c	/^static void _rmt_panic(fildes)$/
+_rmt_rexec	rtape_lib.c	/^_rmt_rexec(host, user)$/
+_writeerror	buffer.c	/^_writeerror(err, line)$/
+add_buffer	port.c	/^add_buffer(bb,p,n)$/
+add_dir_name	tar.c	/^add_dir_name(p,device)$/
+add_dir_to_name	tar.c	/^add_dir_to_name(name,dirc)$/
+add_exclude	tar.c	/^add_exclude(file)$/
+addname	tar.c	/^addname(name)$/
+anno	buffer.c	/^anno(stream, prefix, savedp)$/
+append_file	update.c	/^append_file(p)$/
+backspace_output	buffer.c	/^backspace_output()$/
+bcmp	port.c	/^bcmp(s1, s2, n)$/
+bcopy	getopt.c	/^#define bcopy(s, d, l) memcpy((d), (s), (l))$/
+blank_name_list	tar.c	/^blank_name_list()$/
+bprint	update.c	/^bprint(fp,buf,num)$/
+buffer	port.c	/^struct buffer {$/
+bzero	port.c	/^bzero (s1, n)$/
+check_exclude	tar.c	/^check_exclude(name)$/
+child_open	buffer.c	/^child_open()$/
+chown	port.c	/^chown(path, uid, gid)$/
+ck_close	port.c	/^ck_close(fd)$/
+ck_malloc	port.c	/^ck_malloc(size)$/
+ck_pipe	port.c	/^void ck_pipe(pipes)$/
+ck_realloc	port.c	/^ck_realloc(ptr,size)$/
+close_archive	buffer.c	/^close_archive()$/
+collect_and_sort_names	tar.c	/^collect_and_sort_names()$/
+command	rtape_lib.c	/^static int command(fildes, buf)$/
+confirm	tar.c	/^confirm(action,file)$/
+create_archive	create.c	/^create_archive()$/
+decode_header	list.c	/^decode_header(header, st, stdp, wantug)$/
+demode	list.c	/^demode(mode, string)$/
+describe	tar.c	/^describe()$/
+diff_archive	diffarch.c	/^diff_archive()$/
+diff_init	diffarch.c	/^diff_init()$/
+dirent_cmp	tar.c	/^int dirent_cmp(p1,p2)$/
+dump_file	create.c	/^dump_file (p, curdev)$/
+dupto	buffer.c	/^dupto(from, to, msg)$/
+endofrecs	buffer.c	/^endofrecs()$/
+exchange	getopt.c	/^exchange (argv)$/
+execlp	port.c	/^execlp(filename, arg0)$/
+extr_init	extract.c	/^extr_init()$/
+extract_archive	extract.c	/^extract_archive()$/
+extract_sparse_file	extract.c	/^extract_sparse_file(fd, sizeleft, totalsize, name)/
+findgid	names.c	/^findgid(gname)$/
+findgname	names.c	/^findgname(gname, gid)$/
+findrec	buffer.c	/^findrec()$/
+finduid	names.c	/^finduid(uname)$/
+finduname	names.c	/^finduname(uname, uid)$/
+fl_read	buffer.c	/^fl_read()$/
+fl_write	buffer.c	/^fl_write()$/
+flush_archive	buffer.c	/^flush_archive()$/
+flush_buffer	port.c	/^flush_buffer(bb)$/
+foobar	list.c	/^foobar() { return; }$/
+from_oct	list.c	/^from_oct(digs, where)$/
+ftruncate	port.c	/^ftruncate(fd, length)$/
+get_buffer	port.c	/^get_buffer(bb)$/
+get_dir_contents	tar.c	/^get_dir_contents(p,device)$/
+get_long_name	list.c	/^get_long_name(header, type)$/
+geteuid	port.c	/^geteuid()$/
+getoldopt	getoldopt.c	/^getoldopt(argc, argv, optstring, long_options, opt/
+getopt	getopt.c	/^getopt (argc, argv, optstring)$/
+getopt_long	getopt1.c	/^getopt_long (argc, argv, options, long_options, op/
+getwd	port.c	/^getwd(path)$/
+gnu_restore	tar.c	/^gnu_restore(name)$/
+index	port.c	/^index (s, c)$/
+init_buffer	port.c	/^init_buffer()$/
+is_a_directory	tar.c	/^is_a_directory(p)$/
+is_dot_or_dotdot	tar.c	/^is_dot_or_dotdot(p)$/
+is_regex	tar.c	/^is_regex(str)$/
+isfile	buffer.c	/^isfile(p)$/
+isodigit	list.c	/^#define	isodigit(c)	( ((c) >= '0') && ((c) <= '7')/
+junk_archive	update.c	/^junk_archive()$/
+link	port.c	/^link(path1, path2)$/
+list_archive	list.c	/^list_archive()$/
+make_dirs	extract.c	/^make_dirs(pathname)$/
+merge_sort	port.c	/^			   merge_sort() quote_copy_string() un_quote_st/
+mkdir	port.c	/^mkdir(dpath, dmode)$/
+mknod	port.c	/^mknod(path, mode, dev)$/
+move_arch	update.c	/^move_arch(n)$/
+msg	port.c	/^msg(char *str,...)$/
+msg_perror	port.c	/^msg_perror(char *str,...)$/
+name_close	tar.c	/^name_close()$/
+name_cmp	tar.c	/^int name_cmp(n1,n2)$/
+name_expand	tar.c	/^name_expand()$/
+name_from_list	tar.c	/^name_from_list()$/
+name_gather	tar.c	/^name_gather()$/
+name_init	tar.c	/^name_init(argc, argv)$/
+name_match	tar.c	/^name_match(p)$/
+name_next	tar.c	/^name_next(c)$/
+name_scan	tar.c	/^name_scan(p)$/
+names_notfound	tar.c	/^names_notfound()$/
+new_name	tar.c	/^new_name(path,name)$/
+new_volume	buffer.c	/^new_volume(type)$/
+no_op	buffer.c	/^no_op(size,data)$/
+open3	port.c	/^open3(path, flags, mode)$/
+open_archive	buffer.c	/^open_archive(reading)$/
+option	getopt.c	/^struct option$/
+options	tar.c	/^options(argc, argv)$/
+panic	port.c	/^panic(s)$/
+pr_mkdir	list.c	/^pr_mkdir(pathname, length, mode)$/
+print_header	list.c	/^print_header()$/
+quote_copy_string	port.c	/^quote_copy_string(string)$/
+read	read.c	/^read(descriptor, buffer, numBytes)$/
+read_and	list.c	/^read_and(do_something)$/
+read_header	list.c	/^read_header()$/
+readerror	buffer.c	/^readerror()$/
+recursively_delete	tar.c	/^recursively_delete(path)$/
+rindex	port.c	/^rindex(s,c)$/
+rmdir	port.c	/^rmdir(dpath)$/
+rmtread	buffer.c	/^rmtread(fd, buf, cnt)$/
+saverec	buffer.c	/^saverec(pointer)$/
+skip_extended_headers	list.c	/^skip_extended_headers()$/
+skip_file	list.c	/^skip_file(size)$/
+status	rtape_lib.c	/^static int status(fildes)$/
+strstr	port.c	/^strstr(s, wanted)$/
+un_quote_string	port.c	/^char *un_quote_string(string)$/
+update_archive	update.c	/^update_archive()$/
+userec	buffer.c	/^userec(rec)$/
+valloc	port.c	/^valloc (size)$/
+wantbytes	buffer.c	/^wantbytes(size,func)$/
+wildmat	wildmat.c	/^wildmat(s, p)$/
+write	write.c	/^write(descriptor, buffer, numBytes)$/
+write_block	update.c	/^write_block(f)$/

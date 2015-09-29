@@ -1,0 +1,224 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  srv030:1.4 srv028:1.4 srv027:1.4 srv026:1.4 srv024:1.4 srv022:1.4 srv021:1.4 srv019:1.4 srv018:1.4 srv016:1.4 srv015:1.4 srv014:1.4 srv012:1.4 srv011:1.4 srv010:1.4 srv008:1.4 srv007:1.4 srv006:1.4 srv005:1.4 srv004:1.4 srv003:1.4 srv002:1.4 srv001:1.4;
+locks    ; strict;
+comment  @ * @;
+
+
+1.4
+date     92.03.23.14.44.34;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.12.01.21.58.58;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.11.11.23.01.54;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.10.28.14.25.25;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.4
+log
+@Re-enable Fsrmt_RpcDevOpen.
+@
+text
+@/*
+ * fsrmtRpcStubs.h --
+ *
+ *	Procedure headers for file system rpcs.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /user5/kupfer/spriteserver/src/sprited/fsrmt/RCS/fsrmtRpcStubs.h,v 1.3 91/12/01 21:58:58 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+ */
+
+#ifndef _FS_RPC_STUBS
+#define _FS_RPC_STUBS
+
+#include <rpc.h>
+
+extern ReturnStatus Fsrmt_RpcGetAttrPath _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcSetAttrPath _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcGetAttr _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcSetAttr _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcGetIOAttr _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcSetIOAttr _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcDevOpen _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcPrefix _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcOpen _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcReopen _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcClose _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcRemove _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcMakeDir _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcMakeDev _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_Rpc2Path _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcRead _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcWrite _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcSelectStub _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcIOControl _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcBlockCopy _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcDomainInfo _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+#ifdef SPRITED_MIGRATION
+extern ReturnStatus Fsrmt_RpcMigrateStream _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+#else
+#define Fsrmt_RpcMigrateStream	Rpc_NotImplemented
+#endif
+
+
+#endif _FS_RPC_STUBS
+@
+
+
+1.3
+log
+@Snapshot.  FS appears to work.
+@
+text
+@d10 1
+a10 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/fsrmt/RCS/fsrmtRpcStubs.h,v 1.1 91/10/28 14:25:25 kupfer Exp $ SPRITE (Berkeley)
+a29 1
+#ifdef SPRITED_DEVICES
+a31 3
+#else
+#define Fsrmt_RpcDevOpen	Rpc_NotImplemented
+#endif
+@
+
+
+1.2
+log
+@Snapshot.  net and rpc modules work.
+@
+text
+@d10 1
+a10 1
+ * $Header: /r3/kupfer/spriteserver/include/RCS/fsrmtRpcStubs.h,v 1.1 91/10/28 14:25:25 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d18 16
+a33 10
+/* 
+ * For the time being, there are no FS stubs.
+ */
+
+#define Fsrmt_RpcGetAttrPath	Rpc_NotImplemented
+#define Fsrmt_RpcSetAttrPath	Rpc_NotImplemented
+#define Fsrmt_RpcGetAttr	Rpc_NotImplemented
+#define Fsrmt_RpcSetAttr	Rpc_NotImplemented
+#define Fsrmt_RpcGetIOAttr	Rpc_NotImplemented
+#define Fsrmt_RpcSetIOAttr	Rpc_NotImplemented
+d35 33
+a67 14
+#define Fsrmt_RpcPrefix		Rpc_NotImplemented
+#define Fsrmt_RpcOpen		Rpc_NotImplemented
+#define Fsrmt_RpcReopen		Rpc_NotImplemented
+#define Fsrmt_RpcClose		Rpc_NotImplemented
+#define Fsrmt_RpcRemove		Rpc_NotImplemented
+#define Fsrmt_RpcMakeDir	Rpc_NotImplemented
+#define Fsrmt_RpcMakeDev	Rpc_NotImplemented
+#define Fsrmt_Rpc2Path		Rpc_NotImplemented
+#define Fsrmt_RpcRead		Rpc_NotImplemented
+#define Fsrmt_RpcWrite		Rpc_NotImplemented
+#define Fsrmt_RpcSelectStub	Rpc_NotImplemented
+#define Fsrmt_RpcIOControl	Rpc_NotImplemented
+#define Fsrmt_RpcBlockCopy	Rpc_NotImplemented
+#define Fsrmt_RpcDomainInfo	Rpc_NotImplemented
+d69 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d2 1
+a2 1
+ * fsRpcStubs.h --
+d10 1
+a10 1
+ * $Header: /sprite/src/kernel/fsrmt/RCS/fsrmtRpcStubs.h,v 9.1 90/10/08 15:04:30 mendel Exp $ SPRITE (Berkeley)
+d18 26
+a43 44
+extern ReturnStatus Fsrmt_RpcGetAttrPath _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcSetAttrPath _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcGetAttr _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcSetAttr _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcGetIOAttr _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcSetIOAttr _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcDevOpen _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcPrefix _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcOpen _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcReopen _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcClose _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcRemove _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcMakeDir _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcMakeDev _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_Rpc2Path _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcRead _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcWrite _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcSelectStub _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcIOControl _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcBlockCopy _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcDomainInfo _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsrmt_RpcMigrateStream _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+@

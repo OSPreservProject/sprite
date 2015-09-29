@@ -1,0 +1,26 @@
+#!/bin/csh -f
+#
+foreach file ( `echo *.h` )
+    set found = 0
+    foreach mod (`cat ../Modules`)
+	if ( -e ../$mod/$file ) then
+	    set found = 1
+	endif
+    end
+    if ($found == 0) then
+	echo "Not found " $file
+    endif
+end
+foreach subDir (`echo *.md`)
+    foreach file ( `echo $subDir/*.h` )
+	set found = 0
+	foreach mod (`cat ../Modules`)
+	    if ( -e ../$mod/$subDir/$file ) then
+		set found = 1
+	    endif
+	end
+	if ($found == 0) then
+	    echo "Not found " $subDir/$file
+	endif
+    end
+endif

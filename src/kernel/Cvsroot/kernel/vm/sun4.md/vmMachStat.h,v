@@ -1,0 +1,135 @@
+head     9.0;
+branch   ;
+access   ;
+symbols  ds3100:9.0 sun3:9.0 sprited:9.0.1 sun4nw:9.0 symm:9.0 spur:9.0 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.0
+date     89.09.12.15.23.57;  author douglis;  state Stable;
+branches 9.0.1.1;
+next     8.1;
+
+8.1
+date     89.04.14.04.29.07;  author rab;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.44.54;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.31.28;  author brent;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.20.17.56.54;  author nelson;  state Exp;
+branches ;
+next     ;
+
+9.0.1.1
+date     92.02.13.19.04.18;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Machine dependent stats.
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@/*
+ * vmMachStat.h --
+ *
+ *	The statistics structure for the Sun vm module.
+ *
+ * Copyright (C) 1986 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/vm/sun3.md/RCS/vmMachStat.h,v 8.1 89/04/14 04:29:07 rab Exp Locker: douglis $ SPRITE (Berkeley)
+ */
+
+#ifndef _VMMACHSTAT
+#define _VMMACHSTAT
+
+/*
+ * Statistics about Sun virtual memory.
+ */
+
+typedef struct {
+    int	stealContext;		/* The number of times that have to take
+				   a context away from a process. */
+    int	stealPmeg;		/* The number of times that have to take a
+				   pmeg away from a process. */
+} VmMachDepStat;
+
+#endif /* _VMMACHSTAT */
+@
+
+
+9.0.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/vm/sun3.md/vmMachStat.h,v 9.0 89/09/12 15:23:57 douglis Stable $ SPRITE (Berkeley)
+@
+
+
+8.1
+log
+@*** empty log message ***
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/vm/sun2.md/RCS/vmMachStat.h,v 8.0 88/11/11 18:44:54 douglis Stable Locker: rab $ SPRITE (Berkeley)
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/vm/sun2.md/RCS/vmMachStat.h,v 6.0 88/08/11 12:31:28 brent Stable Locker: douglis $ SPRITE (Berkeley)
+d27 1
+a27 1
+#endif _VMMACHSTAT
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: vmMachStat.h,v 1.1 88/06/20 17:56:54 nelson Exp $ SPRITE (Berkeley)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d10 1
+a10 1
+ * $Header: vmStat.h,v 5.10 88/01/08 15:52:40 nelson Exp $ SPRITE (Berkeley)
+@

@@ -1,0 +1,334 @@
+head     1.8;
+branch   ;
+access   ;
+symbols  sprited:1.8.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.8
+date     90.09.11.14.27.26;  author kupfer;  state Exp;
+branches 1.8.1.1;
+next     1.7;
+
+1.7
+date     88.07.28.17.18.51;  author ouster;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.07.28.16.41.20;  author ouster;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.07.25.14.50.32;  author ouster;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.07.25.14.12.05;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.07.21.09.37.46;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.07.11.16.02.29;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.10.16.24.01;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.8.1.1
+date     91.12.02.20.03.37;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.8
+log
+@Use function prototypes. Lint.
+@
+text
+@/* 
+ * sscanf.c --
+ *
+ *	Source code for the "sscanf" library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdio/RCS/sscanf.c,v 1.7 88/07/28 17:18:51 ouster Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <stdio.h>
+#include <string.h>
+#include <varargs.h>
+#include <cfuncproto.h>
+
+#ifndef lint
+
+/* 
+ * Forward declarations:
+ */
+static void StringReadProc _ARGS_((FILE *stream));
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StringReadProc --
+ *
+ *	This procedure is invoked when an attempt is made to read
+ *	past the end of a string.  It returns an end-of-file
+ *	condition.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The stream is marked with an end-of-file condition.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+StringReadProc(stream)
+    register FILE *stream;
+{
+    stream->readCount = 0;
+    stream->flags |= STDIO_EOF;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * sscanf --
+ *
+ *	Same as scanf, except take input from a string rather than
+ *	an I/O stream.
+ *
+ * Results:
+ *	The values indicated by va_alist are modified to hold
+ *	information scanned from string.  The return value is the
+ *	number of fields successfully scanned, or EOF if the string
+ *	is empty.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+sscanf(va_alist)
+    va_dcl			/* char *string, then char *format, then any
+				 * number of pointers to values to be scanned
+				 * from string under control of format. */
+{
+    char *string;
+    char *format;
+    FILE stream;
+    va_list args;
+
+    va_start(args);
+    string = va_arg(args, char *);
+    format = va_arg(args, char *);
+    Stdio_Setup(&stream, 1, 0, (unsigned char *)string, strlen(string),
+		StringReadProc, (void (*)()) 0, (int (*)()) 0, (ClientData) 0);
+    stream.readCount = strlen(string);
+    return vfscanf(&stream, format, args);
+}
+#else
+/* VARARGS2 */
+/* ARGSUSED */
+int
+sscanf(string, format)
+    char *string;
+    char *format;
+{
+    return 0;
+}
+#endif lint
+@
+
+
+1.8.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdio/RCS/sscanf.c,v 1.8 90/09/11 14:27:26 kupfer Exp $ SPRITE (Berkeley)";
+@
+
+
+1.7
+log
+@More lint.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: sscanf.c,v 1.6 88/07/28 16:41:20 ouster Exp $ SPRITE (Berkeley)";
+d23 1
+d26 6
+d93 2
+a94 2
+    Stdio_Setup(&stream, 1, 0, string, strlen(string), StringReadProc,
+	    (void (*)()) 0, (int (*)()) 0, (ClientData) 0);
+@
+
+
+1.6
+log
+@Still cleaning stuff related to lint libraries.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: sscanf.c,v 1.5 88/07/25 14:50:32 ouster Exp $ SPRITE (Berkeley)";
+d93 1
+@
+
+
+1.5
+log
+@Lint.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: sscanf.c,v 1.4 88/07/25 14:12:05 ouster Exp $ SPRITE (Berkeley)";
+d24 1
+a24 1
+#ifndef LINTLIB
+d100 1
+a100 1
+#endif LINTLIB
+@
+
+
+1.4
+log
+@Generate more complete lint library information.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: sscanf.c,v 1.3 88/07/21 09:37:46 ouster Exp $ SPRITE (Berkeley)";
+d24 2
+d27 15
+a41 1
+ * Forward reference to procedure defined in this file:
+d44 7
+a50 2
+extern void	StringReadProc();
+
+a71 1
+#ifndef LINTLIB
+a100 26
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StringReadProc --
+ *
+ *	This procedure is invoked when an attempt is made to read
+ *	past the end of a string.  It returns an end-of-file
+ *	condition.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The stream is marked with an end-of-file condition.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+StringReadProc(stream)
+    register FILE *stream;
+{
+    stream->readCount = 0;
+    stream->flags |= STDIO_EOF;
+}
+@
+
+
+1.3
+log
+@Change to use vfscanf instead of _doscan.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: sscanf.c,v 1.2 88/07/11 16:02:29 ouster Exp $ SPRITE (Berkeley)";
+d51 1
+a51 1
+	/* VARARGS0 */
+d71 10
+@
+
+
+1.2
+log
+@If using varargs, don't have any arguments preceding the va_alist.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: sscanf.c,v 1.1 88/06/10 16:24:01 ouster Exp $ SPRITE (Berkeley)";
+d69 1
+a69 1
+    return _doscan(format, &args, &stream);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: atoi.c,v 1.1 88/04/28 17:20:23 ouster Exp $ SPRITE (Berkeley)";
+d20 1
+a20 1
+#include "stdio.h"
+d51 1
+d53 4
+a56 7
+sscanf(string, format, va_alist)
+    char *string;		/* Source for input characters to parse. */
+    char *format;		/* Contains literal text and format control
+				 * sequences indicating how string is to be
+				 * parsed.  See the manual page for details. */
+    va_dcl			/* Variable number of values to be formatted
+				 * and printed. */
+d58 2
+d63 3
+a68 1
+    va_start(args);
+@

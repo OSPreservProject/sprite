@@ -1,0 +1,53 @@
+' $Header: /sprite/src/lib/c/hash/RCS/Hash_EnumFirst.man,v 1.1 88/12/30 15:05:20 ouster Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS Hash_EnumFirst lib
+.BS
+.SH NAME
+Hash_EnumFirst, Hash_EnumNext \- step through all the entries in a hash table 
+.SH SYNOPSIS
+.nf
+\fB#include <hash.h>\fR
+
+Hash_Entry *
+\fBHash_EnumFirst\fR(\fItablePtr, searchPtr\fR)
+
+Hash_Entry *
+\fBHash_EnumNext\fR(\fIsearchPtr\fP)
+.AS Hash_Search *searchPtr
+.SH ARGUMENTS
+.AP Hash_Table *tablePtr in
+Hash table whose entries are to be enumerated.
+.AP Hash_Search *searchPtr in
+Structure in which information can be stored about the state of the
+search between calls to \fBHash_EnumFirst\fR and/or \fBHash_EnumNext\fR.
+.BE
+
+.SH DESCRIPTION
+.LP
+\fBHash_EnumFirst\fR and \fBHash_EnumNext\fR permit each of the entries in a hash
+table to be examined in order.  \fBHash_EnumFirst\fR returns the first entry
+in the given hash table and sets up the Hash_Search structure
+at \fI*searchPtr\fP;  if the
+table is empty it returns NULL.  \fBHash_EnumNext\fR returns the
+next entry in the table using the information stored in \fI*searchPtr\fP,
+and updates the contents of \fI*searchPtr\fP;  when the entire table
+has been scanned, it returns NULL.  Entries are returned in order of
+their position in the table's buckets, which does not usually make
+any sense to the caller.
+.LP
+A typical usage of these procedures is:
+.DS
+Hash_Search search;
+Hash_Entry *entryPtr;
+Hash_Table table;
+
+ ...
+
+for (entryPtr = Hash_EnumFirst(&table, &search);
+	entryPtr != NULL; entryPtr = Hash_EnumNext(&search)) {
+    ...
+}
+.DE
+
+.SH KEYWORDS
+enumerate, hash table

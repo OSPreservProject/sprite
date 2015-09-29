@@ -1,0 +1,413 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.6
+date     92.06.23.11.31.23;  author jhh;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.06.29.10.26.15;  author mendel;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.06.08.11.55.03;  author mendel;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.12.30.10.05.22;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.12.22.10.56.49;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.11.13.13.57.37;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@man page for the netroute program
+@
+
+
+1.6
+log
+@uses new Host library, does deletion
+@
+text
+@' $Header: /sprite/src/cmds/netroute.new/RCS/netroute.man,v 1.1 92/06/23 11:19:10 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS NETROUTE cmds
+.BS
+.SH NAME
+netroute \- Set up host names, addresses, and machine types
+.SH SYNOPSIS
+\fBnetroute\fR  [\fBoptions\fR]
+.SH OPTIONS
+.IP "[none]"
+Print out the kernel's route table.
+.IP "\fB\-h \fIhost\fR" 5
+The host to operate upon. Either a hostname or Sprite ID.
+.IP "\fB\-f \fIfile\fR"
+Use given file for the Sprite host database.
+.IP "\fB\-g \fIfile\fR"
+Use given file for the Sprite gateway database.
+.IP "\fB\-favor \fInet\fR"
+Try to establish routes across networks of type \fInet\fR.
+.IP "\fB\-disfavor \fInet\fR" 
+Try not to establish routes across networks of type \fInet\fR.
+.IP "\fB\-ether \fIff:oo:oo:bb:aa:rr@@aa.bb.cc.dd\fR" 40
+Establish a route to a host with these ethernet and internet addresses.
+.IP "\fB\-ultra \fIhh/ii@@aa.bb.cc.dd\fR"
+Establish a route to a host with these ultranet and internet addresses.
+.IP "\fB\-fddi \fIqq:ww:ee:rr:tt:yy@@aa.bb.cc.dd\fR"
+Establish a route to a host with these fddi and internet addresses.
+.IP "\fB\-p\fR" 5
+Print routes.  
+.IP "\fB\-i\fR"
+Install routes. This is the default operations if no operations are given.
+.IP "\fB\-d \fIrouteID\fR"
+Delete the route with the given ID.
+.IP "\fB\-m \fImachine_type\fR"
+Host's machine type, where the host is specified by the \fB-h\fR option.
+.IP "\fB\-v\fR"
+Verbose.
+.IP "\fB\-n\fR"
+Print actions instead of doing them.  Not fully supported yet.
+.BE
+.SH INTRODUCTION
+.LP
+This command is used to access the kernel's internal route table.
+This route table is used to determine routes for sending RPC packets
+between the hosts. The route table has nothing to do with user-level
+network communication via TCP/IP or similar protocols.
+Normally \fBnetroute\fR is invoked during the boot script to install routes
+to all the hosts found in \fC/etc/spritehosts\fR 
+(\fC/etc/spritehosts.new\fR during the transition period to the new 
+spritehosts file format). 
+The \fC/etc/spritehosts\fR file 
+contains the spriteID of the host,
+a network type and address (i.e. ethernet),
+an internet address,
+a machine type,
+and a name plus optional aliases.
+The spriteID is used internally for RPC communication between Sprite hosts.
+The network type and network address are used to map the Sprite ID
+to the correct local network address.  The internet address is used
+for the internet protocols.  The machine type is used when expanding
+the string ``$MACHINE'' inside pathnames.  The file server must know
+its clients machine types in order to do this correctly.  The names
+are used to make console error messages contain a human understandable
+host name, and are also used with the internet library routines.
+.SH USAGE
+.LP
+There are three operations that can be performed on routes.  One
+is to print them, another is to install them, and the last is to
+delete them.
+These operations are specified with the \fBp\fR,
+\fBi\fR and \fBd\fR options.
+
+.SH INSTALLING ROUTES
+.LP
+For installing hosts, the information is normally taken from a
+host database file.  A host can be installed from scratch by specifying
+its name (\fBh\R option), machine type (\fBm\R option), and
+network addresses.  The network addresses are specified using
+the \fBether\R, \fBultra\fR, and \fBfddi\fR options.  The strings
+passed to these options must be of the form \fInet_address@@inet_address\fR
+because each network interface has both a network address and
+an internet address.  At least one must be specified.
+.LP
+Routes to hosts can be installed only over one network type.  When
+they are installed, \fBnetroute\fR uses a list of types to check
+in a predefined order (use the \fBv\fR option to find this order.)
+It will try to establish a route using the first network type;
+if that fails, it will try the next, etc.  This list can be changed
+dynamically using the \fBfavor\fR and \fBdisfavor\fR options to
+either favor one network type most or one network type the least,
+respectively.  Both options can be used at the same time.
+.LP
+For example, normally routes are installed over ethernet.  
+To change it so that fddi routes are installed where possible,
+use:
+.sp
+% netroute -i -favor fddi
+.sp
+This will install fddi routes to those machines that support fddi
+routes, and ethernet routes to the remainder.
+.LP
+When new routes are installed successfully, the previous route is
+removed.
+
+.SH DELETING ROUTES
+
+.LP
+Routes are deleted by specifying a route ID using the
+\fBd\fR option.
+
+.SH PRINTING ROUTES
+.LP
+When routes are printed, the following information is given about
+each route: the Sprite ID of the host to which the route goes;
+the hostname and the machine type of that host; a description of
+the route from the kernel; the route ID, and the route ID shifted
+by right by 16 places; the network type of the route;  the
+network address of the interface from which the route sends
+packets;  the protocol that the route serves;
+the route flags; a reference count to the route; min and max
+packet sizes over the route; min and max RPC sizes over the route;
+and the network address of the destination host to which packets
+are sent.
+
+.SH FILES
+.DS L
+\fB/etc/spritehosts\fR	Contains the old host database
+\fB/etc/spritehosts.new\fR Contains the new host database.
+.DE
+.SH KEYWORDS
+ethernet, ultranet, fddi, internet, net, route, $MACHINE 
+@
+
+
+1.5
+log
+@Added set inet address command.
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/netroute/RCS/netroute.man,v 1.4 89/06/08 11:55:03 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d8 1
+a8 3
+\fBnetroute\fR  \fB\-p\fR [\fB\-D\fR]
+.br
+\fBnetroute\fR  [\fB\-f \fIfile\fR]
+d10 4
+a13 4
+.IP "\fB\-p\fR" 14
+Print out the kernel's route table. Other options are ignored.
+.IP "\fB\-D\fR"
+Don't strip Domain suffix off the host name.
+d16 24
+a39 20
+.IP "\fB\-h \fIhostname\fR"
+Install a route for a Sprite hostID.  Route info is taken from \fB\-f \fIfile\fR
+or from standard host database. \fIHostname\fR may be a Sprite hostname 
+or Sprite ID.
+.IP "\fB\-h \fIspriteID\fR"
+Used \fIspriteID\fR as the Sprite ID for host specified by the -h option.
+.IP "\fB\-i \fIinetAddr\fR"
+Used \fIinetAddr\fR as the internet address for host specified by -h option
+(aa.bb.cc.dd format).
+.IP "\fB\-e \fIetherAddr\fR"
+Used \fIetherAddr\fR as the ethernet address for host specified by -h option.
+(aa:bb:cc:dd:ee:ff format).
+.IP "\fB\-m \fImachType\fR"
+Used \fIfImachType\fR as the machine type for host specified by -h option.
+(\fBsun2 sun3 sun4 spur\fR, etc.)
+.IP "\fB\-t \fInetType\fR"
+Define the net type of the route for the host specified by -h option. 
+(Must be \fBether\fR or \fRinet\fR)
+.IP "\fB\-s\fR"
+Set the internet address used by this host.
+d42 11
+a52 5
+.PP
+This command is used to set the kernel's internal route table.
+Normally this is invoked during the boot script with a -f argument
+that specifies a file from which to get the information.  The standard
+file is \fB/etc/spritehosts\fR, and it contains the spriteID of the host,
+d66 59
+a124 9
+If the \fB-p\fR option is specified the kernel routing tables are printed
+and no routes are altered. 
+The \fB-s\fR option instructs netroute to initialized the kernel idea of 
+this hosts interaddress.  The interaddress is taken from the host 
+database but may be overridden with the \fB-i\fR option.
+The \fB-t\fR, \fB-e\fR, \fB-i\fR, \fB-m\fR, and \fB-n\fR options are used to 
+override the defaults in the host database. If the host specified with the
+\fB-h\fR option is not present in the database 
+the \fB-e\fR, \fB-i\fR, and \fB-m\fR and \fB-n\fR option must be present.
+d127 2
+a128 1
+\fB/etc/spritehosts\fR	Contains the standard host database
+d131 1
+a131 1
+ethernet, internet, net, route, $MACHINE 
+@
+
+
+1.4
+log
+@Rewrote to support inet routes.
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/netroute/RCS/netroute.man,v 1.3 88/12/30 10:05:22 ouster Exp Locker: mendel $ SPRITE (Berkeley)
+d36 2
+d60 3
+@
+
+
+1.3
+log
+@More format upgrades.
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/netroute/RCS/netroute.man,v 1.2 88/12/22 10:56:49 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d8 1
+a8 1
+\fBnetroute\fR  \fB\-t\fR [\fB\-D\fR]
+d10 1
+a10 7
+\fBnetroute  \fB\-f \fIfile\fR
+.br
+\fBnetroute  \fB\-h \fIspriteID \fB\-m \fImachType  \fB\-e \fIetherAddr\fR
+.br
+\fBnetroute  \fB\-n \fIhostname \fB\-e \fIetherAddr\fR
+.br
+\fBnetroute  \fB\-i \fIinetAddr \fB\-e \fIetherAddr\fR
+d12 2
+a13 2
+.IP "\fB\-t\fR" 14
+Print out the kernel's route table.
+d17 7
+a23 6
+Install routes from the given file.
+.IP "\fB\-h \fIhostID\fR"
+Install a route for a Sprite hostID.  Need \fB\-m\fR and \fB\-e\fR.
+.IP "\fB\-n \fIhostname\fR"
+Install a route for the given host.  Route info taken from \fB\-f \fIfile\fR
+or from standard host database.
+d25 2
+a26 3
+Install a route for the given internet address (aa.bb.cc.dd format).
+Route info taken from \fB\-f \fIfile\fR
+or from standard host database.
+d28 2
+a29 1
+aa:bb:cc:dd:ee:ff format.
+d31 5
+a35 1
+Defines the machine type of the host. (\fBsun2 sun3 sun4 spur\fR, etc.)
+d55 7
+@
+
+
+1.2
+log
+@Upgrades to new man page format.
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/netroute/RCS/netroute.man,v 1.1 88/11/13 13:57:37 brent Exp Locker: ouster $ SPRITE (Berkeley)
+d8 1
+a8 1
+\fBnetroute\fR  \fB-t\fR [\fB-D\fR]
+d10 1
+a10 1
+\fBnetroute  \fB-f \fIfile\fR
+d12 1
+a12 1
+\fBnetroute  \fB-h \fIspriteID \fB-m \fImachType  \fB-e \fIetherAddr\fR
+d14 1
+a14 1
+\fBnetroute  \fB-n \fIhostname \fB-e \fIetherAddr\fR
+d16 1
+a16 1
+\fBnetroute  \fB-i \fIinetAddr \fB-e \fIetherAddr\fR
+d18 1
+a18 1
+.IP "\fB-t\fR" 14
+d20 1
+a20 1
+.IP "\fB-D\fR"
+d22 1
+a22 1
+.IP "\fB-f \fIfile\fR"
+d24 4
+a27 4
+.IP "\fB-h \fIhostID\fR"
+Install a route for a Sprite hostID.  Need \fB-m\fR and \fB-e\fR.
+.IP "\fB-n \fIhostname\fR"
+Install a route for the given host.  Route info taken from \fB-f \fIfile\fR
+d29 1
+a29 1
+.IP "\fB-i \fIinetAddr\fR"
+d31 1
+a31 1
+Route info taken from \fB-f \fIfile\fR
+d33 1
+a33 1
+.IP "\fB-e \fIetherAddr\fR"
+d35 1
+a35 1
+.IP "\fB-m \fImachType\fR"
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 3
+a3 2
+' $Header: /a/newcmds/rpccmd/RCS/rpccmd.man,v 1.2 88/11/11 10:25:14 brent Exp $ SPRITE (Berkeley)
+.TH netroute prog
+d5 1
+a5 1
+.NA
+d7 10
+a16 6
+.SY
+\fBnetroute\fR  -t [-D]
+\fBnetroute\fR  -f \fIfile\fP
+\fBnetroute\fR  -h \fIspriteID\fP -m \fImachType\fP  -e \fIetherAddr\fP
+\fBnetroute\fR  -n \fIhostname\fP -e \fIetherAddr\fP
+\fBnetroute\fR  -i \fIinetAddr\fP -e \fIetherAddr\fP
+d25 3
+a27 3
+Install a route for a Sprite hostID.  Need -m and -e.
+.IP "\fB-n \fIhostname\fP"
+Install a route for the given host.  Route info taken from -f file
+d29 1
+a29 1
+.IP "\fB-i \fIinetAddr\fP"
+d31 1
+a31 1
+Route info taken from -f file
+d33 1
+a33 1
+.IP "\fB-e \fIetherAddr\fP"
+d35 2
+a36 2
+.IP "\fB-m \fImachType\fP"
+Defines the machine type of the host. (sun2 sun3 sun4 spur, etc.)
+d43 1
+a43 1
+file is /etc/spritehosts, and it contains the spriteID of the host,
+d57 2
+a58 2
+.DS
+/etc/spritehosts	Contains the standard host database
+d61 1
+a61 1
+net, route, $MACHINE, internet, ethernet
+@

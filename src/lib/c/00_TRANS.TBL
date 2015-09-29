@@ -1,0 +1,45 @@
+D BIT                               	bit
+D BSTRING                           	bstring
+D CRT                               	crt
+D CTYPE                             	ctype
+D DB                                	db
+D DIR                               	dir
+F DOID.;1                           	doID
+D DS3100_M                          	ds3100.md
+D ETC                               	etc
+D EXEC                              	exec
+D GATE                              	gate
+D GNULIB                            	gnulib
+D HASH                              	hash
+D HOST                              	host
+L ID.;1                             	ID	ID.$MACHINE
+F ID_DS310.;1                       	ID.ds3100
+L ID_DS500.;1                       	ID.ds5000	ID.ds3100
+F ID_FILE0.;1                       	ID.files10153
+F ID_FILE1.;1                       	ID.files50147
+L ID_SUN3.;1                        	ID.sun3	ID.sun4
+F ID_SUN4.;1                        	ID.sun4
+D INET                              	inet
+D LIST                              	list
+D LOCALE                            	locale
+F MAKEFILE.;1                       	Makefile
+D MIG                               	mig
+F MODULES.;1                        	Modules
+D NET                               	net
+D NETLIB                            	netlib
+D QUAD                              	quad
+D RCS                               	RCS
+D STDIO                             	stdio
+D STDLIB                            	stdlib
+D STRING                            	string
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md
+D SYNC                              	sync
+D SYSCALL                           	syscall
+F TAGS0.;1                          	TAGS
+F TAGS1.;1                          	tags
+D TIME                              	time
+F TMP.;1                            	tmp
+F TODO.;1                           	ToDo
+D ULOG                              	ulog
+D UNIXSYSC                          	unixSyscall

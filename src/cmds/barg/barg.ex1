@@ -1,0 +1,59 @@
+#
+# Example barg input file
+#
+t Extra Disk Bytes With ASAP on Server
+w 952
+y 6 75 0
+s 8 32
+k 160 16 48 16
+n 9 3
+p
+ly Extra Disk Bytes
+1 0 Andrew
+2 6 Vm-make
+3 1 Sort
+d wt
+436.0
+376.0
+297.0
+e
+d wboc
+207.0
+188.0
+139.0
+e
+d asap
+397.0
+334.0
+261.0
+e
+d wboc-asap
+397.0
+340.0
+257.0
+e
+d delay-30
+58.0
+62.0
+20.0
+e
+d full-delay
+76.0
+57.0
+15.0
+e
+d wt-tmp
+290.0
+151.0
+0.0
+e
+d wboc-tmp
+119.0
+73.0
+0.0
+e
+d asap-tmp
+257.0
+119.0
+0.0
+e

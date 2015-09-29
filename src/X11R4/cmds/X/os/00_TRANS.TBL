@@ -1,0 +1,6 @@
+D 4_2BSD                            	4.2bsd
+D BSDEMUL                           	bsdemul
+F CHANGES.;1                        	CHANGES
+F README.;1                         	README
+D SPRITE                            	sprite
+D SPRITE_X                          	sprite.X11R3

@@ -1,0 +1,109 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    mendel:1.1; strict;
+comment  @@;
+
+
+1.1
+date     91.05.31.13.01.33;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Man page for the lfschkpt program.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@'\" Copyright 1989 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/admin/mklfs/RCS/mklfs.man,v 1.1 91/05/31 11:11:06 mendel Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS LFSCHKPT cmds
+.BS
+.SH LFSCHKPT
+lfschkpt \- Display or modify the checkpoint fields of an LFS file system.
+.SH SYNOPSIS
+.nf
+\fBlfschkpt [\fIoptions\fR] \fIdeviceName\fR
+.SH OPTIONS
+.IP \fIdeviceName\fP 14
+The device on which the file system should be created. The partition 
+should contain an unmounted LFS file system. WARNING: This program
+should not be run on a running (attached) file system.
+.IP "\fB\-maxNumCacheBlocks\fI NumCacheBlocks\fR" 14
+\fINumCacheBlocks\fP is the maximum number of file cache blocks to used during
+cleaning.
+.IP "\fB\-checkpointInterval\fI CheckpointInterval\fR" 14
+\fICheckpointInterval\fP is the frequency in seconds to perform 
+checkpoints.
+.IP "\fB\-domainNumber\fI DomainNumber\fR" 14
+\fIDomainNumber\fP is the Sprite domain number assigned to this file system.
+A value of -1 will caused to system to assign it a number upon the
+next attach.
+.IP "\fB\-serverID\fI id\fR" 14
+\fIid\fP is the Sprite hostname id specified in the superblock.  This
+id is used to inform a machine of its name at boot time.  
+.IP "\fB\-maxUtilization\fI Utilization\fR" 14
+\fIUtilization\fP is the maximum fraction of the disk space usable by
+the file system.  
+.IP "\fB\-maxDesc\fI NumDesc\fR" 14
+\fINumDesc\fP is the maximum number of descriptors available in the
+file system. A negative value causes mklfs to compute this number
+based on the disk size.
+.IP "\fB\-segAlignment\fI Alignment\fR" 14
+\fIAlignment\fP is the alignment in bytes where the first segment should start.
+.IP "\fB\-minNumClean\fI numSegments\fR" 14
+\fInumSegments\fP is minimum number of clean segments to maintain in the
+file system. This number acts as an lower bound as when to start segment
+cleaning.
+.IP "\fB\-minFreeBlocks\fI numBlocks\fR" 14
+\fInumBlocks\fP is minimum number of free blocks before the system will
+stop allowing block allocate requests.  This number decides the
+maximum disk space utilization.
+.IP "\fB\-wasteBlocks\fI numBlocks\fR" 14
+\fInumBlocks\fP is the number of blocks the system will waste while filling
+in a segment.
+.IP "\fB\-numSegsToClean\fI numSegments\fR" 14
+\fInumSegments\fP is number of segments the segment cleaner will generate
+This number acts as the threshold under which cleaning is stopped.
+.IP "\fB\-both\fR" 14
+Display both checkpoint regions.
+.IP "\fB\-write\fR" 14
+Apply requested changes to the disk.
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBLfschkpt\fR displays the LFS superblock and checkpoint region
+headers and allows for the user to specify changes to these
+data structures.  
+With no arguments specified, \Blfschkpt\fR displays the data structures.
+The \fB\-write\fR option allows changes to be made to the disk and
+should only be run when the file system is not attached.  The rest
+of the options specify field names in the LfsSuperBlock and LfsCheckPointHdr
+data structures that may be changed.   A field value of -2 (the default)
+means no change. 
+.SH WARNING
+.PP
+\fBLfschkpt\fR does no error checks on changes being made. It is possible
+to render the file system unattachable with this command.
+.SH KEYWORDS
+filesystem, LFS, sprite
+
+@

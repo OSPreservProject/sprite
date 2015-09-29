@@ -1,0 +1,108 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  sprited:1.1.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     88.07.29.17.08.44;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.19.14.29.21;  author ouster;  state Exp;
+branches 1.1.1.1;
+next     ;
+
+1.1.1.1
+date     91.12.10.16.51.35;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Lint.
+@
+text
+@/* 
+ * Ioc_NumReadable.c --
+ *
+ *	Source code for the Ioc_NumReadable library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: Ioc_NumReadable.c,v 1.1 88/06/19 14:29:21 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <fs.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ioc_NumReadable --
+ *	Return the number of bytes available on the stream.
+ *
+ * Results:
+ *	The number of bytes available.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Ioc_NumReadable(streamID, numPtr)
+    int streamID;
+    int *numPtr;
+{
+    register ReturnStatus status;
+
+    status = Fs_IOControl(streamID, IOC_NUM_READABLE, 0,
+			(Address)NULL, sizeof(int), (Address) numPtr);
+    return(status);
+}
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: proto.c,v 1.2 88/03/11 08:39:08 ouster Exp $ SPRITE (Berkeley)";
+d47 1
+a47 1
+			(Address)NULL, sizeof(int), numPtr);
+@
+
+
+1.1.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/syscall/RCS/Ioc_NumReadable.c,v 1.1 88/06/19 14:29:21 ouster Exp $ SPRITE (Berkeley)";
+@

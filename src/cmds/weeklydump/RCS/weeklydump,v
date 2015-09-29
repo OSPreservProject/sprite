@@ -1,0 +1,432 @@
+head     1.13;
+branch   ;
+access   ;
+symbols  ;
+locks    mottsmth:1.13; strict;
+comment  @# @;
+
+
+1.13
+date     91.10.09.16.31.35;  author jhh;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     91.09.28.15.56.54;  author kupfer;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     91.09.28.14.59.54;  author shirriff;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     91.09.04.12.30.57;  author jhh;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     91.09.04.12.29.32;  author shirriff;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     91.08.26.12.04.55;  author kupfer;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     91.08.26.11.48.02;  author shirriff;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     91.07.11.13.47.08;  author shirriff;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.05.05.14.02.13;  author tve;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.05.02.21.48.57;  author root;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.05.02.18.46.30;  author mottsmth;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.04.01.14.18.24;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.12.16.22.16.50;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Script to do weekly full dumps.
+@
+
+
+1.13
+log
+@back to using dump
+@
+text
+@#! /sprite/cmds/csh -f
+#
+#   weeklydump [ startFs ]
+#
+#	Perform a weekly, level 0, dump.
+#	Dump all the filesystems that we want backed up.  If startFs
+#	is specified, we start dumping with that file system,
+#	presumably because the ones ahead of it in the list were
+#	already dumped.
+#
+# $Header: /sprite/src/admin/weeklydump/RCS/weeklydump,v 1.12 91/09/28 15:56:54 kupfer Exp Locker: jhh $
+#
+
+# This is our exit status.
+set result=0
+
+set tapeDrives = `grep -v '^#' /sprite/admin/dump/tapelist`
+if ($#tapeDrives < 1) then
+    echo "No tape drives in /sprite/admin/dump/tapelist?"
+    exit -1
+endif
+
+set dump = dump
+
+# Tell the world what's happening
+touch /sprite/admin/dump/doingweekly
+if ( $USER == "root") then
+    touch /sprite/admin/dump/dumpalias
+    echo -n '$USER' "is root, so /sprite/admin/dump/dumpalias will remain "
+    cat /sprite/admin/dump/dumpalias
+else
+    echo $USER >! /sprite/admin/dump/dumpalias
+endif
+
+# This is the list of filesystems that we want to dump.
+set filesystems=(`cat /sprite/admin/dump/dumplist`)
+
+# If the user says to reinitialize the tape, do it.
+if ($#argv > 0) then
+    if ("$argv[1]" == "-i") then
+	set goodTape = ()
+	foreach tape ($tapeDrives)
+	    echo "initializing" $tape
+	    $dump -s -f $tape
+	    set stat = $status
+	    if ($stat == 123) then
+		echo "Init: tape recently used"
+		exit
+	    else if ($stat != 0) then
+		echo "Init failed on tape $tape"
+	    else
+		set goodTape = ($goodTape $tape)
+	    endif
+	end
+	shift
+	set tapeDrives=($goodTape)
+    endif
+endif
+
+set drivesLeft=($tapeDrives)
+
+if ($#drivesLeft == 0) then
+    echo "No good tape drives"
+    exit
+endif
+
+echo "Tape drive list: $drivesLeft"
+
+# If the user specified a starting filesystem, skip over the ones in
+# front of it.
+
+set start = ""
+
+if ($#argv > 0) then
+    set start = "$argv[1]"
+else
+    set start = `cat /sprite/admin/dump/doingweekly`
+endif
+if ("$start" != "") then
+	while (_$filesystems[1] != _$start)
+		if ($#filesystems == 1) then
+			echo $start "isn't in the list of filesystems."
+			echo $start "isn't in the list of filesystems. |\
+			    mail -s "Dump error" dumper
+			exit 1
+		endif
+		shift filesystems
+	end
+	echo "Starting with filesystem $start"
+endif
+
+/sprite/cmds/hostname >! /sprite/admin/dump/doingweekly.active
+
+# Run through the list of filesystems.  When we get to a dump that
+# fails, we assume it's because the tape filled up, so switch to the
+# next tape.  If we run out of tapes, send mail to the dumper with the
+# name of the next filesystem to be dumped.
+
+while ($#filesystems > 0)
+	set fs=$filesystems[1]
+	set tape=$drivesLeft[1]
+	echo $fs >! /sprite/admin/dump/doingweekly
+	$dump -f $tape -l 0 $fs
+	if ($status == 0) then
+		shift filesystems
+		continue
+	endif
+
+	# Try to switch to another tape and retry the same filesystem.
+	if ($#drivesLeft > 1) then
+		shift drivesLeft
+	else
+		(echo "Please insert new tape(s) and resume with $fs :" ;\
+		echo "weeklydump -i $fs") | \
+		  mail -s "Dumps not completed" dumper
+		set result=1
+		break
+	endif
+end
+
+# Rewind the tapes.
+
+foreach tape ($tapeDrives)
+	tape -r -t $tape
+end
+
+if ($result == 0) then
+    (echo "Dump done.  Put in new tape for daily dump and do:" ; \
+    echo "dailydump -i") | mail -s "Dump done" dumper
+    echo "" >! /sprite/admin/dump/doingweekly
+endif
+
+rm -f /sprite/admin/dump/doingweekly.active
+
+exit $result
+@
+
+
+1.12
+log
+@Store the name of the host running the dumps in the .active file.
+@
+text
+@d11 1
+a11 1
+# $Header: /sprite/src/admin/weeklydump/RCS/weeklydump,v 1.11 91/09/28 14:59:54 shirriff Exp Locker: kupfer $
+d23 2
+a24 1
+set dump = dump.new
+@
+
+
+1.11
+log
+@Tape list comes from file, rather than being hard-wired into the
+script.  (Mike checking in for Ken.)
+@
+text
+@d11 1
+a11 1
+# $Header: /sprite/src/admin/weeklydump/RCS/weeklydump,v 1.10 91/09/04 12:30:57 jhh Exp $
+d91 1
+a91 1
+touch /sprite/admin/dump/doingweekly.active
+d113 1
+a113 1
+		echo "/sprite/admin.sun4/weeklydump -i $fs") | \
+d128 1
+a128 1
+    echo "/sprite/admin.sun4/dailydump -i") | mail -s "Dump done" dumper
+@
+
+
+1.10
+log
+@now uses exb3 (exb-8500)
+@
+text
+@d11 1
+a11 1
+# $Header: /sprite/src/admin/weeklydump/RCS/weeklydump,v 1.9 91/09/04 12:29:32 shirriff Exp Locker: jhh $
+d17 7
+a23 1
+set $dump = dump.new
+a36 4
+# This is the list of tape drives we have to dump to.
+set tapeDrives=(/dev/exb3.nr)
+
+
+d114 1
+a114 1
+		  mail -s "Dump ran out of tapes" dumper
+@
+
+
+1.9
+log
+@checking this in for ken -- jhh
+@
+text
+@d11 1
+a11 1
+# $Header: /sprite/src/admin/weeklydump/RCS/weeklydump,v 1.8 91/08/26 12:04:55 kupfer Exp Locker: shirriff $
+d17 1
+d32 1
+a32 1
+set tapeDrives=(/dev/exb1.nr /dev/exb2.nr)
+d41 1
+a41 1
+	    dump -s -f $tape
+d100 1
+a100 1
+	dump -f $tape -l 0 $fs
+@
+
+
+1.8
+log
+@Put the argv[1] test in quotes, so that "weeklydump /" will work.
+@
+text
+@d11 1
+a11 1
+# $Header: /sprite/src/admin/weeklydump/RCS/weeklydump,v 1.7 91/08/26 11:48:02 shirriff Exp Locker: kupfer $
+d19 7
+a25 1
+echo $USER >! /sprite/admin/dump/dumpalias
+@
+
+
+1.7
+log
+@Added exb2 to the list of drives.
+@
+text
+@d11 1
+a11 1
+# $Header: /sprite/src/admin/weeklydump/RCS/weeklydump,v 1.6 91/07/11 13:47:08 shirriff Exp Locker: shirriff $
+d30 1
+a30 1
+    if ($argv[1] == "-i") then
+@
+
+
+1.6
+log
+@mary's change since we only have one drive right now.
+@
+text
+@d11 1
+a11 1
+# $Header: /sprite/src/admin/weeklydump/RCS/weeklydump,v 1.5 91/05/05 14:02:13 tve Exp Locker: shirriff $
+d25 1
+a25 1
+set tapeDrives=(/dev/exb1.nr)
+@
+
+
+1.5
+log
+@removed /pcs/vlsi.old
+@
+text
+@d11 1
+a11 1
+# $Header: /sprite/src/admin/weeklydump/RCS/weeklydump,v 1.4 91/05/02 21:48:57 root Exp Locker: tve $
+d17 4
+d22 1
+a22 3
+set filesystems=(/ /user6 /scratch5 /scratch6 /pcs /pcs/vlsi \
+  /user1 /sprite/src/kernel /sprite/src /user2 /user4 /X11 /local /scratch1 \
+  /postdev /graphics /scratch4)
+d25 25
+a49 1
+set tapeDrives=(/dev/exb1.nr /dev/exb2.nr)
+d52 7
+d62 2
+d65 6
+a70 1
+	while (_$filesystems[1] != _$argv[1])
+d72 3
+a74 1
+			echo $argv[1] "isn't in the list of filesystems."
+d79 1
+d82 2
+d92 1
+d103 2
+a104 1
+		echo "Please resume with $fs" | \
+d116 8
+@
+
+
+1.4
+log
+@changed /pcs/scratch to /pcs/vlsi.old
+@
+text
+@d11 1
+a11 1
+# $Header: /sprite/src/admin/weeklydump/RCS/weeklydump,v 1.3 91/05/02 18:46:30 mottsmth Exp Locker: root $
+d18 1
+a18 1
+set filesystems=(/ /user6 /scratch5 /scratch6 /pcs /pcs/vlsi /pcs/vlsi.old \
+@
+
+
+1.3
+log
+@/user5 is gone. /user6 replaces it.
+@
+text
+@d11 1
+a11 1
+# $Header: /sprite/src/admin/weeklydump/RCS/weeklydump,v 1.1 90/12/16 22:16:50 kupfer Exp Locker: jhh $
+d18 2
+a19 2
+set filesystems=(/ /user6 /scratch5 /scratch6 /pcs /pcs/scratch /pcs/vlsi /user1 \
+  /sprite/src/kernel /sprite/src /user2 /user4 /X11 /local /scratch1 \
+@
+
+
+1.2
+log
+@updated with new filesystem organization
+@
+text
+@d18 1
+a18 1
+set filesystems=(/ /user5 /pcs /pcs/scratch /pcs/vlsi /user1 \
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+# $Header$
+d18 1
+a18 1
+set filesystems=(/ /user5 /pcs /pcs/tic /pcs/vlsi /user1 \
+d20 1
+a20 1
+  /scratch3 /postdev /graphics)
+@

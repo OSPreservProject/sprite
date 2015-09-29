@@ -1,0 +1,36 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ds3100:1.1 sun3:1.1 sun4nw:1.1 symm:1.1 spur:1.1;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     91.10.29.16.42.34;  author mgbaker;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@FILES = (/sprite/src/kernel/vm)
+
+HOSTS = (allspice)
+
+${FILES} -> ${HOSTS}
+	except ${FILES}/Lint ;
+	except ${FILES}/Profiled ;
+	except ${FILES}/Old ;
+	except_pat ( \\.o\$ \\.po\$ \\,v\$ core  lint make\\.*  Mx\\. );
+	except_pat ( Makefile Distfile ) ;
+	install -w -y ;
+@

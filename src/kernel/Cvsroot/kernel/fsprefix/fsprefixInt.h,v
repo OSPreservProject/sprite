@@ -1,0 +1,149 @@
+head     9.1;
+branch   ;
+access   ;
+symbols  ds3100:9.1 sun3:9.1 sprited:9.1.1 sun4nw:9.1 symm:9.1 spur:9.1 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.1
+date     90.10.08.12.50.49;  author mendel;  state Exp;
+branches 9.1.1.1;
+next     9.0;
+
+9.0
+date     89.09.12.15.09.16;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     89.08.21.15.28.39;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.08.21.11.11.14;  author mendel;  state Exp;
+branches ;
+next     ;
+
+9.1.1.1
+date     91.11.15.16.38.15;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Internal prefix data structures and routiens.
+@
+
+
+9.1
+log
+@Change name to fsprefixInt.h.
+Fixed include files to use <> rather than "".
+Added function prototypes.
+@
+text
+@/*
+ * prefixInt.h --
+ *
+ *	Declarations of data structures and variables private to the 
+ *	fsprefix module.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/fs.mendel/RCS/prefixInt.h,v 1.1 90/01/16 17:12:34 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+ */
+
+#ifndef _FSPREFIXINT
+#define _FSPREFIXINT
+
+#include <stdio.h>
+#include <fsprefix.h>
+
+/* constants */
+
+/* data structures */
+
+/*
+ * A list of hosts that can use a domain is kept for exported prefixes.
+ */
+typedef struct FsprefixExport {
+    List_Links	links;
+    int		spriteID;
+} FsprefixExport;
+
+/* procedures */
+
+extern void FsprefixDone _ARGS_((Fsprefix *prefixPtr));
+extern void FsprefixHandleCloseInt _ARGS_((Fsprefix *prefixPtr, int flags));
+extern void FsprefixIterate _ARGS_((Fsprefix **prefixPtrPtr));
+
+#endif /* _FSPREFIXINT */
+
+@
+
+
+9.1.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/fsprefix/fsprefixInt.h,v 9.1 90/10/08 12:50:49 mendel Exp $ SPRITE (Berkeley)
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fsprefix/RCS/prefixInt.h,v 1.2 89/08/21 15:28:39 mendel Exp Locker: douglis $ SPRITE (Berkeley)
+d19 2
+a20 2
+#ifndef _PREFIX
+#define _PREFIX
+d22 3
+d39 3
+a41 3
+extern void FsprefixDone();
+extern void FsprefixHandleCloseInt();
+extern void FsprefixIterate();
+d43 1
+a43 1
+#endif /* _PREFIX */
+@
+
+
+1.2
+log
+@
+Break up fs into many modules.    
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fsprefix/RCS/prefixInt.h,v 1.1 89/08/21 11:11:14 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.2 89/01/07 04:12:44 rab Exp $ SPRITE (Berkeley)
+@

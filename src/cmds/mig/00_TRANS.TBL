@@ -1,0 +1,7 @@
+D DIST                              	dist
+D DIST_OLD                          	dist.old
+F MAKEFILE.;1                       	Makefile
+L MIG.;1                            	mig	sprite/mig.sh
+L MIG.MAN;1                         	mig.man	sprite/mig.1
+D RCS                               	RCS
+D SPRITE                            	sprite

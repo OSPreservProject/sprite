@@ -1,0 +1,51 @@
+perror.c:
+StdioFileCloseProc.c:
+StdioFileReadProc.c:
+StdioFileWriteProc.c:
+Stdio_Setup.c:
+_cleanup.c:
+clearerr.c:
+fclose.c:
+fdopen.c:
+fflush.c:
+fgetc.c:
+fgets.c:
+fileno.c:
+fopen.c:
+fprintf.c:
+fputc.c:
+fputs.c:
+fread.c:
+freopen.c:
+fscanf.c:
+fseek.c:
+ftell.c:
+fwrite.c:
+gets.c:
+getw.c:
+printf.c:
+puts.c:
+putw.c:
+rewind.c:
+scanf.c:
+setbuf.c:
+setbuffer.c:
+setlinebuf.c:
+setvbuf.c:
+sprintf.c:
+sscanf.c:
+tmpnam.c:
+ungetc.c:
+vfprintf.c:
+vfscanf.c:
+vprintf.c:
+vsnprintf.c:
+vsprintf.c:
+StdioFileOpenMode.c:
+bcopy, arg. 1 used inconsistently	llib-lc:bcopy.c 2(69)  ::  fread.c 2(59)
+bcopy, arg. 2 used inconsistently	llib-lc:bcopy.c 2(69)  ::  fwrite.c 2(65)
+strcpy returns value which is always ignored
+fflush returns value which is sometimes ignored
+close returns value which is sometimes ignored
+fprintf returns value which is always ignored
+ungetc returns value which is always ignored

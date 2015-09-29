@@ -1,0 +1,23 @@
+' $Header: /sprite/src/cmds/rpccmd/RCS/rpccmd.man,v 1.4 88/12/30 10:11:07 ouster Exp Locker: mgbaker $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS MACHSTAT cmds
+.BS
+.SH NAME
+machstat \- Machine-dependent statistics
+.SH SYNOPSIS
+\fBmachstat\fR  [\fIoptions\fR]
+.SH OPTIONS
+.IP "\fB\-raw\fR" 14
+Print out raw numbers.
+.IP "\fB\-noPercents\fR"
+Turn off printing out percentage results.
+.IP "\fB\-sysCalls\fR"
+Print out the information for each system call.
+.BE
+.SH INTRODUCTION
+.PP
+This command is used to get machine-dependent statistics.  For the sun4's
+it prints out register window overflow and underflow information and
+cache flushing information.
+.SH KEYWORDS
+mach stat window register overflow underflow cache flush

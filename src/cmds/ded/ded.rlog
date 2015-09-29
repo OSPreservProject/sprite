@@ -1,0 +1,98 @@
+
+RCS file:        RCS/ded.c,v;   Working file:    ded.c
+head:            1.9
+locks:           lepreau: 1.9;  strict
+access list:   
+symbolic names:
+comment leader:  " * "
+total revisions: 9;    selected revisions: 9
+description:
+----------------------------
+revision 1.9        locked by: lepreau;       
+date: 84/04/25 04:05:32;  author: lepreau;  state: Exp;  lines added/del: 86/303
+--deal with symlinks to directories properly
+--escape normal # chars in command escapes (usually in filenames-- lost+found)
+--fix ^Z during type (didn't happen).  Fixes it better than before now.
+--add m-v support if have LPASS8
+--use internal recursive flag to avoid unneeded sleeps
+--move all functions which don't ref globals to subr.c
+rm, dotname, rmrf, stbtok, sztob, pmode, mselect, outch, putpad, catargs,
+overflow, pname, skipto
+--DFLTEDITOR, and change from ex -> vi
+--move help file to /usr/local/lib
+--move some buffers into getcap() stack space
+--remove junk comments from front
+----------------------------
+revision 1.8        
+date: 84/04/24 23:32:53;  author: lepreau;  state: Exp;  lines added/del: 728/569
+major cosmetic rework, and some semantic.
+--started symlink and socket support; compressed the display;
+generalized pentry some.
+--Fixed major bug with ^Z handling on recursive ded's.  Problem was that
+parent got stopped (w/o resetting modes of course), csh grabbed the tty,
+child got TSTP & tried to do ioctl and got TTOU (never see that from csh),
+then when continue it did its kill(0, TSTP).  Fixed by disabling t_suspc,
+so only the child issues the TSTP, not the kernel. Whew.
+split TSTP stuff out of setdpy/unsetdpy.
+--major lint work.  Only remaining lint w/o flags is:
+wait arg is union in 4.2 llib-lc; lint has bug dealing with
+arg2 to ioctl; flsbuf/filbuf values; partially finished symlink code in pname.
+--ifdef for BSD42 (tested) and BSD41 (not sure if tested),
+started on BSD29, and preserved USG
+--fixed bug with typefiles() printing lines too long.
+--typefiles now buffers output
+--cleaned up sort options, mainly w.r.t. dirorder sort.
+--added "Internal flag vector" support.  Recursive ded's get flag 0.
+--change 'e' implementation from system() to vfork/execvp.  Needs cleanup.
+--nblock fxn -> sztob or stbtok (notyet turned on)
+--added no mem checks
+--showscreen now always does blank()
+--Fixed wait() to loop for the pid.
+--made type() clearer
+--organize header part of code better
+--no more bigded
+--no more spaces after fxn names; no more parens on returns
+----------------------------
+revision 1.7        
+date: 83/12/02 01:43:14;  author: lepreau;  state: Exp;  lines added/del: 2/2
+fix NASTY typo that deleted all stat'ed files in dir.  ain't C wonderful?
+----------------------------
+revision 1.6        
+date: 83/11/29 22:28:32;  author: lepreau;  state: Exp;  lines added/del: 171/260
+--Revamp mem allocation and file structure completely.  Now we do everything
+dynamically, and invoke a hacked version of scandir() to read the dir.
+All the stupid ISARG/numarg stuff is gone.
+--Add "-x<string>" parameter, which says what suffixes to eXclude.
+Cleaned up the code a fair bit.
+----------------------------
+revision 1.5        
+date: 83/11/29 11:31:24;  author: lepreau;  state: Exp;  lines added/del: 8/3
+enable quoting file chars via \.
+----------------------------
+revision 1.4        
+date: 83/11/29 10:10:59;  author: lepreau;  state: Exp;  lines added/del: 9/57
+--Add hashed lookup of passwd names, lifted from ps.c via dlw@berkeley.
+Infinitely faster.
+--reset sigint when invoke ded recursively.
+--missing arg to showscreen() a couple places
+--pname always adds a char so result is known length
+----------------------------
+revision 1.3        
+date: 83/10/28 13:14:30;  author: lepreau;  state: Exp;  lines added/del: 112/53
+Many changes and improvements:
+name change from dired to ded
+"bigded" support for long long filenames and huge number of files
+fixed SIGTSTP support, at least for 4.2
+fixed EOF handling (sticky eof in 4.2)
+changed quit commandf to cap Q
+major change: add routine pname() to print out an entry,
+	handling unprintable chars and long long 4.2 names.
+----------------------------
+revision 1.2        
+date: 83/09/26 08:39:55;  author: lepreau;  state: Exp;  lines added/del: 15/12
+cnvt to 4.2
+----------------------------
+revision 1.1        
+date: 83/09/15 18:53:05;  author: lepreau;  state: Exp;  
+Initial revision
+=============================================================================

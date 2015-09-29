@@ -1,0 +1,40 @@
+#! /sprite/cmds/csh -f
+#
+#  Updatebootcmds is a script that keeps the various /boot/cmds up-to-date.
+#
+# $Header: /sprite/lib/forms/RCS/proto.csh,v 1.2 89/01/16 11:13:37 ouster Exp $ SPRITE (Berkeley)
+#
+# Copyright 1989 Regents of the University of California
+# Permission to use, copy, modify, and distribute this
+# software and its documentation for any purpose and without
+# fee is hereby granted, provided that the above copyright
+# notice appear in all copies.  The University of California
+# makes no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without
+# express or implied warranty.
+#
+
+if ($#argv == 0) then
+    set dirs= (/t9/boot)
+else 
+    set dirs = ''
+    while ($#argv)
+	set dirs = ($dirs $1)
+	shift
+    end
+endif
+
+foreach dir ($dirs)
+    echo $dir
+    set machtypes = `echo $dir/cmds.*`
+    foreach machtype ($machtypes)
+	set machtype = `echo $machtype | sed 's/.*cmds\.//g'`
+	foreach cmd (`echo $dir/cmds.$machtype/*`)
+	    if (-e /sprite/cmds.$machtype/$cmd:t) then
+		update /sprite/cmds.$machtype/$cmd:t $cmd
+	    else if (-e /sprite/admin.$machtype/$cmd:t) then
+		update /sprite/admin.$machtype/$cmd:t $cmd
+	    endif
+	end
+    end
+end

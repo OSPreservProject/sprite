@@ -1,0 +1,394 @@
+head     1.7;
+branch   ;
+access   ;
+symbols  sprited:1.7.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.7
+date     90.01.03.17.30.48;  author douglis;  state Exp;
+branches 1.7.1.1;
+next     1.6;
+
+1.6
+date     89.07.31.17.41.10;  author douglis;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.01.13.09.39.02;  author douglis;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.01.02.13.59.31;  author douglis;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.07.25.14.19.54;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.06.21.11.14.59;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.19.14.29.28;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.7.1.1
+date     91.12.08.17.38.01;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.7
+log
+@be more careful about migrating after MIGHOME signal.
+@
+text
+@/* 
+ * proc.c --
+ *
+ *	Miscellaneous run-time library routines for the Proc module.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/syscall/RCS/proc.c,v 1.6 89/07/31 17:41:10 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <status.h>
+#include <proc.h>
+#include <stdio.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_Exec --
+ *
+ *	Maps Proc_Exec calls into Proc_ExecEnv calls.  This routine
+ *	should not return unless the process cannot be exec'ed.
+ *
+ *
+ * Results:
+ *	Error status from Proc_ExecEnv, if any.
+ *
+ * Side effects:
+ *	Refer to Proc_ExecEnv kernel call & man page.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Proc_Exec(fileName, argPtrArray, debugMe)
+    char *fileName;
+    char **argPtrArray;
+    Boolean debugMe;
+{
+    int status;
+    extern char **environ;
+    extern char **Proc_FetchGlobalEnv();	/* temporary!! */
+
+    /*
+     * Install the system-wide environment if ours is non-existent.
+     */
+    if (environ == (char **) NULL) {
+	environ = Proc_FetchGlobalEnv();
+    }
+    status = Proc_ExecEnv(fileName, argPtrArray, environ, debugMe);
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_Wait --
+ *
+ *	The "normal" interface for waiting on child processes.
+ *	This procedure simply invokes the Proc_RawWait system call
+ *	and retries the call if the Proc_RawWait call aborted because
+ *	of a signal.  See the man page for details on what the kernel
+ *	call does.
+ *
+ * Results:
+ *	A standard Sprite return status.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Proc_Wait(numPids, pidArray, block, procIdPtr, reasonPtr, statusPtr,
+	subStatusPtr, usagePtr)
+    int numPids;		/* Number of entries in pidArray below.
+				 * 0 means wait for ANY child. */
+    int pidArray[];		/* Array of pids to wait for. */
+    Boolean block;		/* TRUE means block;  FALSE means return
+				 * immediately if no children are dead. */
+    int *procIdPtr;		/* Return ID of dead/stopped process here,
+				 * if non-NULL. */
+    int *reasonPtr;		/* Return cause of death/stoppage here, if
+				 * non-NULL. */
+    int *statusPtr;		/* If process exited normally, return exit
+				 * status here (if non-NULL).  Otherwise
+				 * return signal # here. */
+    int *subStatusPtr;		/* Return additional signal status here,
+				 * if non-NULL. */
+    Proc_ResUsage *usagePtr;	/* Return resource usage info here,
+				 * if non-NULL. */
+{
+    ReturnStatus status;
+
+    do {
+	status = Proc_RawWait(numPids, pidArray, block, procIdPtr,
+		reasonPtr, statusPtr, subStatusPtr, usagePtr);
+    } while (status == GEN_ABORTED_BY_SIGNAL);
+    return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_Migrate --
+ *
+ *	The "normal" interface for invoking process migration.  This
+ *	performs extra checks against the process being migrated when
+ *	it is already migrated to a different machine.  
+ *
+ * Results:
+ *	A standard Sprite return status.
+ *
+ * Side effects:
+ *	The process is migrated home if it is not already home, then
+ *	it is migrated to the node specified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Proc_Migrate(pid, nodeID)
+    Proc_PID pid;
+    int	     nodeID;
+{
+    ReturnStatus status;
+    int virtualHost;
+    int physicalHost;
+
+    status = Proc_GetHostIDs(&virtualHost, &physicalHost);
+    if (status != SUCCESS) {
+	return(status);
+    }
+    if (pid == PROC_MY_PID) {
+	if (nodeID != physicalHost && nodeID != virtualHost) {
+	    status = Sig_Send(SIG_MIGRATE_HOME, PROC_MY_PID, FALSE);
+	    if (status != SUCCESS) {
+		return(status);
+	    }
+	}
+    } else {
+	int i;
+	Proc_PCBInfo info;
+	/*
+	 * Try to avoid the race condition for migrating other processes
+	 * home.  This can be removed once the kernel does remote-to-remote
+	 * migration directly.
+	 */
+#define WAIT_MAX_TIMES 10
+#define WAIT_INTERVAL 1
+	(void) Sig_Send(SIG_MIGRATE_HOME, pid, TRUE);
+	for (i = 0; i < WAIT_MAX_TIMES; i++) {
+	    status = Proc_GetPCBInfo(Proc_PIDToIndex(pid),
+				     Proc_PIDToIndex(pid), PROC_MY_HOSTID,
+				     sizeof(info),
+				     &info, (char *) NULL , (int *) NULL);
+	    if (status != SUCCESS) {
+		return(status);
+	    }
+	    if (info.state != PROC_MIGRATED) {
+		break;
+	    }
+	    (void) sleep(WAIT_INTERVAL);
+	}
+	if (i == WAIT_MAX_TIMES) {
+	    fprintf(stderr, "Unable to migrate process %x because it wouldn't migrate home.\n", pid);
+	    return(FAILURE);
+	}
+    }
+    status = Proc_RawMigrate(pid, nodeID);
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_RemoteExec --
+ *
+ *	The "normal" interface for invoking remote exec.  This
+ *	performs extra checks against the process being migrated when
+ *	it is already migrated to a different machine.  
+ *
+ * Results:
+ *	This routine does not return if it succeeds.
+ *	A standard Sprite return status is returned upon failure.
+ *
+ * Side effects:
+ *	The process is migrated home if it is not already home, then
+ *	a remote exec is performed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Proc_RemoteExec(fileName, argPtrArray, envPtrArray, host)
+    char	*fileName;	/* The name of the file to exec. */
+    char	**argPtrArray;	/* The array of arguments to the exec'd 
+				 * program. */
+    char	**envPtrArray;	/* The array of environment variables for
+				 * the exec'd program. */
+    int		host;		/* ID of host on which to exec. */
+{
+    ReturnStatus status;
+    int virtualHost;
+    int physicalHost;
+
+    status = Proc_GetHostIDs(&virtualHost, &physicalHost);
+    if (status != SUCCESS) {
+	return(status);
+    }
+    /*
+     * Save a double migration if the exec is local.
+     */
+    if (physicalHost != host) {
+	if (virtualHost != host) {
+	    status = Sig_Send(SIG_MIGRATE_HOME, PROC_MY_PID, FALSE);
+	    if (status != SUCCESS) {
+		return(status);
+	    }
+	}
+	status = Proc_RawRemoteExec(fileName, argPtrArray, envPtrArray, host);
+    } else {
+	status = Proc_Exec(fileName, argPtrArray, envPtrArray, FALSE);
+    }
+    return(status);
+}
+@
+
+
+1.7.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/syscall/RCS/proc.c,v 1.7 90/01/03 17:30:48 douglis Exp Locker: shirriff $ SPRITE (Berkeley)";
+@
+
+
+1.6
+log
+@added Proc_RemoteExec
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/syscall/RCS/proc.c,v 1.5 89/01/13 09:39:02 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d17 1
+d148 2
+d151 3
+a153 3
+	 * Yes, there's a race condition here.  But then, migrating other
+	 * processes is a little bizarre anyway.  This is at least an
+	 * improvement until the kernel can handle it.
+d155 2
+d158 17
+@
+
+
+1.5
+log
+@don't return a bad status if the SIG_MIGRATE_HOME
+signal fails.  The process may already have migrated.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/syscall/RCS/proc.c,v 1.4 89/01/02 13:59:31 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d155 54
+@
+
+
+1.4
+log
+@added user level Proc_Migrate routine that checks to see if we're
+migrating from one foreign host to another, and sends process the
+SIG_MIGRATE_HOME signal first if so.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/syscall/RCS/proc.c,v 1.3 88/07/25 14:19:54 ouster Exp Locker: douglis $ SPRITE (Berkeley)";
+d152 1
+a152 4
+	status = Sig_Send(SIG_MIGRATE_HOME, pid, TRUE);
+	if (status != SUCCESS) {
+	    return(status);
+	}
+@
+
+
+1.3
+log
+@Lint.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: proc.c,v 1.2 88/06/21 11:14:59 ouster Exp $ SPRITE (Berkeley)";
+d104 55
+@
+
+
+1.2
+log
+@Cleanup header usage.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: proc.c,v 1.1 88/06/19 14:29:28 ouster Exp $ SPRITE (Berkeley)";
+a45 1
+    char *newEnv = NULL;
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: proc.c,v 2.1 88/02/21 15:50:27 douglis Exp $ SPRITE (Berkeley)";
+d14 3
+a16 2
+#include "sprite.h"
+#include "proc.h"
+@

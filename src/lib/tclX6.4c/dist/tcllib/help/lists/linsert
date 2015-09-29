@@ -1,0 +1,10 @@
+          linsert list index element ?element element ...?
+               This command produces a new list from list by inserting
+               all of the element arguments just  before  the  indexth
+               element  of  list.  Each element argument will become a
+               separate element of the new list.   If  index  is  less
+               than  or  equal  to  zero,  then  the  new elements are
+               inserted at the beginning of the  list.   If  index  is
+               greater  than or equal to the number of elements in the
+               list, then the new elements are appended to the list.
+

@@ -1,0 +1,132 @@
+
+
+
+userLog                   File Formats                    userLog
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     /sprite/admin/userLog, /sprite/admin/lastLog  -  files  con-
+     taining information about user logins
+
+DDEESSCCRRIIPPTTIIOONN
+     Each time a user logs into a sprite host, the system records
+     information  about  the  login in two files.  Each record in
+     each file is a fixed-length ASCII string,  so  a  particular
+     record  may  be updated without the need to read and rewrite
+     all other records in the file.
+
+     One file records information on a per-host basis, while  the
+     other records information about the last login of each user.
+     The per-host file, //sspprriittee//aaddmmiinn//uusseerrLLoogg, has one record for
+     each  ``port''  of  each host.  The ports are numbered, with
+     port 0 reserved for the console of each host and  ports  1-N
+     corresponding  to  rlogin  pseudo-devices 1-N.  The per-user
+     file, //sspprriittee//aaddmmiinn//llaassttLLoogg, has one record  per  registered
+     user, indexed by the userID in //eettcc//ppaasssswwdd.
+
+     When a user logs in, the record for the user's last login is
+     updated  to show the new login.  The record for the host and
+     port into which the user logs in is updated  with  the  same
+     information.   When  the user logs out, the latter record is
+     invalidated to show no one is currently logged  in  on  that
+     port, but the record for last login is updated only when the
+     user logs in again.
+
+     Each record contains the following information, separated by
+     white space:
+
+     valid         Whether the entry  corresponds  to  a  current
+                   login.
+
+     hostID        Host on which user logged in.
+
+     portID        Port on this host on which user logged in.
+
+     time          time at which user logged in, or 0 when record
+                   is invalidated.
+
+     location      string indicating other host from which rlogin
+                   occurred, or empty.
+
+     Although the information is stored in ASCII format, to  make
+     it  sharable  by  machines  with  different  byte orderings,
+     internally the user log is accessed via routines  that  con-
+     vert  between  ASCII  and an internal C structure.  Refer to
+     the documentation for the uulloogg library for information about
+     this structure.
+
+
+
+Sprite v.1.0        Printed:  August 22, 1991                   1
+
+
+
+
+
+
+userLog                   File Formats                    userLog
+
+
+
+SSEEEE AALLSSOO
+     ulog, db, login, finger
+
+KKEEYYWWOORRDDSS
+     database, user log
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  August 22, 1991                   2
+
+
+

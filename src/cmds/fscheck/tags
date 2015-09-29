@@ -1,0 +1,41 @@
+AddToDirectory	checkdir.c	/^AddToDirectory(dirNumber, dirFDPtr, dirIndexPtr, d/
+CheckBlocks	fscheck.c	/^CheckBlocks(partFID, domainPtr, fdNum, fdPtr, newC/
+CheckDir	checkdir.c	/^CheckDir(fdNum, fdPtr, fdInfoPtr, lostDirNum, dirO/
+CheckDirEntry	checkdir.c	/^CheckDirEntry(dirIndexPtr, dirEntryPtr)$/
+CheckDirTree	checkdir.c	/^CheckDirTree(partFIDParm, domainParmPtr, descInfoP/
+CheckFDBitmap	fsUtils.c	/^CheckFDBitmap(domainPtr, fdNum, block, bitmapPtrPt/
+CheckFilesystem	fscheck.c	/^CheckFilesystem(firstPartFID, partFID, partition)$/
+ClearFd	fsUtils.c	/^ClearFd(flags, fdPtr)$/
+CloseOutputFile	fsUtils.c	/^CloseOutputFile(stream)$/
+CopyBlock	fscheck.c	/^CopyBlock(domainPtr, descInfoPtr, partFID, bitmapP/
+DirList	checkdir.c	/^} DirList;$/
+ExitHandler	fsUtils.c	/^ExitHandler()$/
+FetchFileDesc	checkdir.c	/^FetchFileDesc(fdNum, fdPtrPtr)$/
+FillNewBlock	fscheck.c	/^FillNewBlock(blockNum, blockType, fragments,domain/
+GetFirstIndex	checkdir.c	/^GetFirstIndex(blockNum, indexInfoPtr)$/
+GetNextIndex	checkdir.c	/^GetNextIndex(indexInfoPtr)$/
+MakeLostAndFound	checkdir.c	/^MakeLostAndFound()$/
+MakePtrAccessible	checkdir.c	/^MakePtrAccessible(indexInfoPtr)$/
+MakeRoot	checkdir.c	/^MakeRoot()$/
+MarkBitmap	fsUtils.c	/^MarkBitmap(fdNum, blockNum, bitmapPtr, numFrags, d/
+Mfscheck	fscheck.c	/^main(argc, argv)$/
+NextDirEntry	checkdir.c	/^NextDirEntry(indexInfoPtr, dirEntryPtrPtr)$/
+OpenDir	checkdir.c	/^OpenDir(fdPtr, fdInfoPtr, indexInfoPtr, dirEntryPt/
+Output	fsUtils.c	/^Output(va_alist)$/
+OutputPerror	fsUtils.c	/^OutputPerror(msg)$/
+ProcessIndirectBlock	fscheck.c	/^ProcessIndirectBlock(fdNum, partFID,lastBlock,dupl/
+ReadBitmap	fsUtils.c	/^ReadBitmap(partFID, domainPtr)$/
+ReadDomainHeader	fsUtils.c	/^ReadDomainHeader(partFID, diskInfoPtr, domainPtr)$/
+ReadFileDescBitmap	fsUtils.c	/^ReadFileDescBitmap(partFID, domainPtr)$/
+RecoveryCheck	fsUtils.c	/^RecoveryCheck(partFID, diskInfoPtr)$/
+RelocateFD	fscheck.c	/^RelocateFD(domainPtr, descInfoPtr, relocPtr)$/
+SetBadDescBitmap	fsUtils.c	/^SetBadDescBitmap(domainPtr, fdNum, bitmapPtrPtr)$/
+SetDotDot	checkdir.c	/^SetDotDot(dirNumber, dirFDPtr, fdPtr, fdInfoPtr)$/
+StoreFileDesc	checkdir.c	/^StoreFileDesc(fdNum, fdPtr)$/
+WriteBitmap	fsUtils.c	/^WriteBitmap(partFID, domainPtr, bitmap)$/
+WriteDomainHeader	fsUtils.c	/^WriteDomainHeader(partFID, diskInfoPtr, domainPtr)/
+WriteFileDesc	fsUtils.c	/^WriteFileDesc(partFID, domainPtr, listPtr, descInf/
+WriteFileDescBitmap	fsUtils.c	/^WriteFileDescBitmap(partFID, domainPtr, bitmap)$/
+WriteOutputFile	fsUtils.c	/^WriteOutputFile(stream,flush)$/
+WriteSummaryInfo	fsUtils.c	/^WriteSummaryInfo(partFID, diskInfoPtr, domainPtr, /
+strnlen	checkdir.c	/^strnlen(string, numChars)$/

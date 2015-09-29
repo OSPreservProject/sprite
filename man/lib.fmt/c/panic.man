@@ -1,0 +1,68 @@
+
+
+
+panic                 C Library Procedures                  panic
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     panic - Print error message and kill process
+
+SSYYNNOOPPSSIISS
+     vvooiidd
+     ppaanniicc((_f_o_r_m_a_t,, _a_r_g,, _a_r_g,, ......))
+
+AARRGGUUMMEENNTTSS
+     char   *_f_o_r_m_a_t   (in)      Format string for  error  message
+                                to print.
+
+     ??   arg  _i_n               Optional   additional   arguments
+                                providing information to print.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     PPaanniicc prints an error message on the standard error file and
+     then kills the process by calling aabboorrtt.  The _f_o_r_m_a_t and _a_r_g
+     arguments control the printing of the  message  just  as  if
+     they had been passed to pprriinnttff.
+
+
+KKEEYYWWOORRDDSS
+     abort, error, message, panic
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  February 14, 1989                  1
+
+
+

@@ -1,0 +1,237 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.3
+date     89.10.09.21.28.21;  author rab;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.04.28.13.24.19;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.03.18.15.10.45;  author deboor;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Subscript for test program source directories
+@
+
+
+1.3
+log
+@Modifications for distribution.
+@
+text
+@#!/bin/csh -f
+#
+# A script to generate (or regenerate) the Makefile for a test directory.
+# If ./Makefile.proto exists, use it, else use a common prototype.
+#
+# We assume we were invoked from mkmf, thus we don't need to alter the
+# path, and MKMFDIR is in the environment to tell us where to find prototype
+# makefiles, etc.
+#
+# Variables:
+#	prog		program to create (directories are assumed to be named
+#			after the programs they create)
+#	pref		prefix pattern that files must match to be included
+#	makefile	name of the makefile to create
+#	MKMFDIR		directory containing prototype makefiles
+#
+set prog=$cwd:t
+set pref='[a-z_A-Z]'
+
+if ($?MAKEFILE) then
+	set makefile=$MAKEFILE
+else
+	set makefile=Makefile
+endif
+
+set distdir=($DISTDIR)
+
+if (-e $makefile.proto) then
+	set proto=$makefile.proto
+else
+	set proto="${MKMFDIR}/Makefile.test"
+endif
+
+echo "Generating a Makefile for $prog using $proto"
+
+#
+# First figure out what's there by way of .c, .y, .l, .s, .p, .h and .o files
+# If any one doesn't have any members, it'll contain the original
+# pattern (b/c of nonomatch). We want it to be empty, though, so
+# we reset it.
+#
+set nonomatch
+set srcs=( ${pref}*.[cylsp] )
+if ("$srcs" == "${pref}*.[cylsp]") set srcs=()
+set Hfiles=( ${pref}*.h )
+if ("$Hfiles" == "${pref}*.h") set Hfiles=()
+rm -f version.o
+set Ofiles=( ${pref}*.o )
+if ("$Ofiles" == "${pref}*.o") set Ofiles=()
+unset nonomatch
+
+#
+# Merge in any .o files that can be created from local source files but don't
+# exist yet. In addition, figure out which .o files may be safely removed
+# during a "make clean" and store them in RmOfiles.
+#
+set RmOfiles=""
+if ("$srcs" != "") then
+	foreach file ($srcs)
+		set file=$file:r.o
+		set RmOfiles=($RmOfiles $file)
+		if (! -e $file) set Ofiles=($Ofiles $file)
+	end
+endif
+
+cat $proto | sed \
+	-e "s,@@(PROGRAM),$prog,g" \
+	-e "s,@@(OBJS),$Ofiles,g" \
+	-e "s,@@(CLEANOBJS),$RmOfiles,g" \
+	-e "s,@@(SRCS),$srcs,g" \
+	-e "s,@@(HDRS),$Hfiles,g" \
+	-e "s,@@(MAKEFILE),$makefile,g" \
+	-e "s,@@(TEMPLATE),$proto,g" \
+	-e "s,@@(DISTDIR),$distdir,g" \
+	-e "s,@@(DATE),`date`,g" > $makefile
+endif
+@
+
+
+1.2
+log
+@New version to bring up to date with rest of mkmf stuff.
+@
+text
+@d26 2
+d74 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d3 2
+a4 3
+# A script to generate (or regenerate) a source (cmds) directory  Makefile
+# from the prototype Makefile.  If ./Makefile.proto exists, use it, else
+# use a common prototype.
+d6 13
+a18 2
+set path=(/sprite/users/sprite/bin /usr/new /usr/local /usr/bin /usr/ucb /bin)
+rehash
+d20 2
+a21 5
+set root=/sprite
+
+set cmddir=`pwd`
+if ($cmddir =~ /sprite/att*) then
+	set isAtt = 1
+d23 1
+a23 1
+	set isAtt = 0
+a24 4
+#set isAtt = `echo $cmddir | sed 's/\/[a-zA-Z]*\/\([a-zA-Z]*\)\/.*/\1/'`
+set prog=$cmddir:t
+set cmddir=$cmddir:h
+set cmddir=$cmddir:t
+d26 2
+a27 2
+if (-e Makefile.proto) then
+	set proto=Makefile.proto
+d29 1
+a29 1
+	set proto="${root}/src/lib/makemake/Makefile.test"
+d32 1
+a32 2
+/bin/echo "Generating a Makefile for the test program $prog in cmds/$cmddir"
+/bin/echo "Using $proto."
+d34 6
+a39 1
+unalias ls
+d41 8
+a48 4
+set Cfiles=`ls [a-z_A-Z]*.c`
+set Hfiles=`ls [a-z_A-Z]*.h`
+/bin/rm -f version.o
+set Ofiles=`ls [a-z_A-Z]*.o`
+a49 25
+if ("$Cfiles" != "") then
+    foreach file ($Cfiles)
+	set ofile = `echo $file | sed -e "s/\.c/.o/g"`
+	if (! -e $ofile) set Ofiles=($Ofiles $ofile)
+    end
+endif
+
+# RmOfiles are files that may be removed safely.  (We can't just have
+# make clean remove *.o because some .o files may not be recreatable.
+set RmOfiles=`echo $Cfiles | sed -e "s/\.c/.o/g"`
+
+# set Pfiles=`echo $Ofiles | sed -e "s/\.o//g"`
+
+if (-e Makefile) /bin/mv  Makefile Makefile.$$~
+
+if (-e ${prog}.arg) then
+    /bin/cat $proto | \
+	    sed -e "s/dir-name/$cmddir/" \
+	    -e "s/^CSRCS.*/CSRCS = $Cfiles/" \
+	    -e "s/^HDRS.*/HDRS = $Hfiles/" \
+	    -e "s/^OBJS.*/OBJS = $Ofiles/" \
+	    -e "s/^RMOBJS.*/RMOBJS = $RmOfiles/" \
+	    -e "s/^PROG.*/PROG = $prog/" \
+	    > Makefile
+else
+d51 3
+a53 1
+#	no prog.arg file so nuke the doargs stuff by eliminating ARGOBJ
+d55 7
+a61 9
+    /bin/cat $proto | \
+	    sed -e "s/dir-name/$cmddir/" \
+	    -e "s/^CSRCS.*/CSRCS = $Cfiles/" \
+	    -e "s/^HDRS.*/HDRS = $Hfiles/" \
+	    -e "s/^OBJS.*/OBJS = $Ofiles/" \
+	    -e "s/^RMOBJS.*/RMOBJS = $RmOfiles/" \
+	    -e "s/^PROG.*/PROG = $prog/" \
+	    -e "s/^ARGOBJ.*/ARGOBJ = /" \
+	    > Makefile
+d64 9
+a72 7
+if ($isAtt) then
+    echo "Adding unix definitions."
+    mv Makefile{,.$$~~}
+    sed -e 's/^UNIXLIB.*/UNIXLIB = ${ATTLIB}\/unix.a/' \
+	-e 's/^ATTINCL.*/ATTINCL = ${ATTLIB}\/include/' \
+	Makefile.$$~~ > Makefile
+    rm Makefile.$$~~
+a73 14
+
+if (-e Makefile.sed) then
+    echo "Modifying with Makefile.sed."
+    mv Makefile{,.$$~~}
+    sed -f Makefile.sed Makefile.$$~~ > Makefile
+    rm Makefile.$$~~
+endif
+
+if (-e Makefile.ex) then
+    echo "Modifying with Makefile.ex."
+    ex - Makefile < Makefile.ex
+endif
+
+/sprite2/users/sprite/bin/make depend
+@

@@ -1,0 +1,164 @@
+head     9.2;
+branch   ;
+access   ;
+symbols  ds3100:9.2 sun3:9.2 sun4nw:9.2 symm:9.2 spur:9.2 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.2
+date     90.09.24.16.59.00;  author kupfer;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.09.11.13.56.38;  author mendel;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.56.03;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     89.07.14.09.35.34;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.01.31.14.01.20;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Eleventh Kernel.  The debugger single steps, calls functions, etc.
+@
+
+
+9.2
+log
+@Changes for function prototypes.
+@
+text
+@/*
+ * dbgInt.h --
+ *
+ *     Internal types, constants, and procedure headers for the debugger module.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ *
+ * $Header: /sprite/src/kernel/dbg/sun4.md/RCS/dbgInt.h,v 9.1 90/09/11 13:56:38 mendel Exp Locker: kupfer $ SPRITE (Berkeley)
+ */
+
+#ifndef _DBGINT
+#define _DBGINT
+
+/*
+ * The following are the registers that are saved when the debugger is
+ * called.
+ */
+
+extern	int		dbgTermReason;		/* Reason why debugger was
+						   called */
+extern	int		dbgSfcReg;		/* Source function code reg */
+extern	int		dbgDfcReg;		/* Dest function code reg */
+extern	int		dbgUserContext;		/* User context register */
+extern	int		dbgKernelContext;	/* Kernel context register */
+
+extern	Boolean	dbgTracing;		/* Flag to say whether we are being
+					   traced by the debugger. */
+			
+/*
+ * Entry point into the debugger from the monitor.  If want to enter the
+ * debugger from the monitor should continue execution at this location.
+ */
+
+extern	int	dbgMonPC;
+
+
+extern	int	dbgInDebugger; 		/* How many levels deep we are in
+					   the debugger. */
+
+extern	int	dbgTraceLevel; 		/* Our trace level. */
+
+#endif /* _DBGINT */
+@
+
+
+9.1
+log
+@Removed lint caused by prototyping.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/dbg/sun4.md/RCS/dbgInt.h,v 9.0 89/09/12 14:56:03 douglis Stable Locker: mendel $ SPRITE (Berkeley)
+a22 2
+
+
+a49 4
+
+extern int Dbg_PacketHdrSize _ARGS_((void));
+
+extern Boolean Dbg_ValidatePacket();
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/dbg/sun4.md/RCS/dbgInt.h,v 1.2 89/07/14 09:35:34 rab Exp Locker: douglis $ SPRITE (Berkeley)
+d53 3
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/dbg/sun4.md/RCS/dbgInt.h,v 1.1 89/01/31 14:01:20 mendel Exp Locker: rab $ SPRITE (Berkeley)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/dbg/sun2.md/RCS/dbgInt.h,v 6.0 88/08/11 12:10:29 brent Stable $ SPRITE (Berkeley)
+d26 1
+a26 1
+ * The following are the registers that are saved when the debugger is 
+d30 1
+a30 1
+extern	int		dbgTermReason;		/* Reason why debugger was 
+d41 1
+a41 1
+ * Entry point into the debugger from the monitor.  If want to enter the 
+d48 1
+a48 1
+extern	int	dbgInDebugger; 		/* How many levels deep we are in 
+d54 1
+a54 1
+#endif _DBGINT
+@

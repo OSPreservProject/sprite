@@ -1,0 +1,760 @@
+ABSL	m68k.c	/^#define ABSL	12$/
+ABSOLUTE_PREFIX	i386.h	/^#define ABSOLUTE_PREFIX '*'$/
+AC	m68k.c	/^#define AC	(SCC+1)		\/* 55 *\/$/
+ADDR	m68k.c	/^#define ADDR	(DATA+8)	\/*   9-16 == address regs 0/
+ADD_REG	m68k.c	/^#define ADD_REG(x)	{     if(x==FPI) cur_regs|=(1<</
+ADEC	m68k.c	/^#define ADEC	5$/
+AFTER_SIZE	input-scrub.c	/^#define AFTER_SIZE  (1)$/
+AFTER_STRING	input-scrub.c	/^#define AFTER_STRING (" ")	\/* bcopy of 0 chars mi/
+AINC	m68k.c	/^#define AINC	6$/
+AINDR	m68k.c	/^#define AINDR	4$/
+AINDX	m68k.c	/^#define AINDX	8$/
+AMIND	m68k.c	/^#define AMIND	10$/
+ANNUL	sparc.c	/^#define ANNUL       (1 << 29)$/
+AOFF	m68k.c	/^#define AOFF	7$/
+AP	vax.c	/^#define AP (12)$/
+APODX	m68k.c	/^#define APODX	9$/
+APRDX	m68k.c	/^#define APRDX	11$/
+AREG	m68k.c	/^#define AREG	3$/
+ARG_LEN	ns32k-opcode.h	/^#define ARG_LEN 50$/
+ASSERT	as.h	/^#define ASSERT	assert$/
+Abs	i386.h	/^#define Abs (Abs8|Abs16|Abs32)$/
+Abs16	i386.h	/^#define Abs16 0x10000000$/
+Abs32	i386.h	/^#define Abs32 0x20000000$/
+Abs8	i386.h	/^#define Abs8  0x08000000$/
+Acc	i386.h	/^#define Acc     0x2000000		\/* Accumulator %al or /
+BAC	m68k.c	/^#define BAC	(BAD+8)		\/* 64,65,66,67, 68,69,70,71 /
+BAD	m68k.c	/^#define BAD	(AC+1)		\/* 56,57,58,59, 60,61,62,63 */
+BAD_CASE	as.h	/^#define BAD_CASE(value)							\\$/
+BB	vax.c	/^#define BB (1+-128)$/
+BCC68000	m68k.c	/^#define BCC68000        4$/
+BEFORE_SIZE	input-scrub.c	/^#define BEFORE_SIZE (1)$/
+BEFORE_STRING	input-scrub.c	/^#define BEFORE_STRING ("\\n")$/
+BF	vax.c	/^#define BF (1+ 127)$/
+BIGNUM_BEGIN_SIZE	read.c	/^#define BIGNUM_BEGIN_SIZE (16)$/
+BITS_PER_CHAR	bignum.h	/^#define BITS_PER_CHAR			(8)$/
+BLOCK_NUMBER_LIMIT	gdb-blocks.c	/^#define BLOCK_NUMBER_LIMIT (1 << (LOG_2_Z0 + LOG_2/
+BRANCH	m68k.c	/^#define BRANCH		1$/
+BSD_FILL_SIZE_CROCK_4	read.c	/^#define BSD_FILL_SIZE_CROCK_4 (4)$/
+BSD_FILL_SIZE_CROCK_8	read.c	/^#define BSD_FILL_SIZE_CROCK_8 (8)$/
+BUFFER_SIZE	input-file.c	/^#define BUFFER_SIZE (32 * 1024)$/
+BYTE	i386.c	/^#define BYTE 0$/
+BYTE_OPCODE_SUFFIX	i386.h	/^#define BYTE_OPCODE_SUFFIX  'b'$/
+BaseIndex	i386.h	/^#define BaseIndex 0x8000$/
+Byte	i386.h	/^#define Byte (Reg8|Imm8|Imm8S)$/
+ByteMem	i386.h	/^#define ByteMem   (Mem8|Disp|BaseIndex)$/
+C	vax.c	/^#define C(a,b) ENCODE_RELAX(a,b)$/
+CAAR	m68k.c	/^#define CAAR	(VBR+1)		\/*  43 *\/$/
+CACR	m68k.c	/^#define CACR	(DFC+1)		\/*  41 *\/$/
+CAL	m68k.c	/^#define CAL	(CRP+1)		\/* 52 *\/$/
+CALL_FAR_IMMEDIATE	i386-opcode.h	/^#define CALL_FAR_IMMEDIATE 0x9a$/
+CALL_PC_RELATIVE	i386-opcode.h	/^#define CALL_PC_RELATIVE 0xe8$/
+CCR	m68k.c	/^#define CCR	(SR+1)		\/*  36 Condition code Reg *\//
+CHARS_PER_LITTLENUM	bignum.h	/^#define CHARS_PER_LITTLENUM		(1 << LITTLENUM_SHIFT/
+COMES_IN_ALL_SIZES	i386.h	/^#define COMES_IN_ALL_SIZES (W)$/
+COMES_IN_BOTH_DIRECTIONS	i386.h	/^#define COMES_IN_BOTH_DIRECTIONS (D|FloatD)$/
+COMMON	as.h	/^#define COMMON			\/* declare our COMMONs storage h/
+COND_JUMP	i386.c	/^#define COND_JUMP 1		\/* conditional jump *\/$/
+CONSISTENT_REGISTER_MATCH	i386.c	/^#define CONSISTENT_REGISTER_MATCH(m0, m1, t0, t1) /
+CONST	strstr.c	/^#define CONST$/
+COPNUM	m68k.c	/^#define COPNUM	(FPREG+8)	\/*  25-32 Co-processor #/
+COPYING_UNIT	obstack.c	/^#define COPYING_UNIT int$/
+CRP	m68k.c	/^#define CRP	(SRP+1)		\/* 51 *\/$/
+Close_VMS_Object_File	vms.c	/^Close_VMS_Object_File()$/
+Control	i386.h	/^#define Control 0x40000		\/* Control register *\/$/
+Create_VMS_Object_File	vms.c	/^Create_VMS_Object_File()$/
+D	i386.h	/^#define D        0x2	\/* D = 0 if Reg --> Regmem; /
+DATA	m68k.c	/^#define DATA	1		\/*   1- 8 == data registers 0-7 */
+DBCC	m68k.c	/^#define DBCC            5$/
+DEFAULT	ns32k.c	/^#define DEFAULT	-1		\/* addr_mode returns this val/
+DEFAULT_ALIGNMENT	obstack.c	/^#define DEFAULT_ALIGNMENT ((char *)&((struct fooal/
+DEFAULT_ROUNDING	obstack.c	/^#define DEFAULT_ROUNDING (sizeof (union fooround))/
+DELETED	hash.c	/^#define DELETED     ((char *)1)	\/* guarenteed inv/
+DFC	m68k.c	/^#define DFC	(SFC+1)		\/*  40 *\/$/
+DISPLENP	vax.c	/^#define DISPLENP(c)	(vip_displen_metacharacter   [/
+DONT_USE	i386.h	/^#define DONT_USE 0x400$/
+DOUBLE	ns32k.c	/^#define DOUBLE		2$/
+DREG	m68k.c	/^#define DREG	2$/
+DRP	m68k.c	/^#define DRP	(TC+1)		\/* 49 *\/$/
+DST	objrecdef.h	/^#define	DST$C_C		7		\/* Language == "C"	*\/$/
+DW	i386.h	/^#define DW (D|W)$/
+DWORD	i386.c	/^#define DWORD 2$/
+DWORD_OPCODE_SUFFIX	i386.h	/^#define DWORD_OPCODE_SUFFIX 'l'$/
+DWord	i386.h	/^#define DWord (Reg32|Imm32)$/
+D_PRECISION	atof-i386.c	/^#define D_PRECISION (4)$/
+Debug	i386.h	/^#define Debug   0x80000		\/* Debug register *\/$/
+Disp	i386.h	/^#define Disp    (Disp8|Disp16|Disp32) \/* General /
+Disp16	i386.h	/^#define Disp16  0x400		\/* 16 bit displacement *\//
+Disp32	i386.h	/^#define Disp32  0x800		\/* 32 bit displacement *\//
+Disp8	i386.h	/^#define Disp8   0x200		\/* 8 bit displacement (for/
+DispUnknown	i386.h	/^#define DispUnknown Disp32	\/* for unknown size di/
+EBP_REG_NUM	i386.h	/^#define EBP_REG_NUM 5$/
+ENCODE_RELAX	vax.c	/^#define ENCODE_RELAX(what,length) (((what) << 2) +/
+ENCODE_RELAX_STATE	i386.c	/^#define ENCODE_RELAX_STATE(type,size) ((type<<2) |/
+END_OF_INSN	i386.h	/^#define END_OF_INSN '\\0'$/
+END_STRING_AND_SAVE	i386.c	/^#define END_STRING_AND_SAVE(s)      *save_stack_p+/
+ERROR_EXPONENT_OVERFLOW	flonum.h	/^#define ERROR_EXPONENT_OVERFLOW (2)$/
+ESCAPE_TO_TWO_BYTE_ADDRESSING	i386.h	/^#define ESCAPE_TO_TWO_BYTE_ADDRESSING ESP_REG_NUM$/
+ESP_REG_NUM	i386.h	/^#define ESP_REG_NUM 4$/
+EXEC_MACHINE_TYPE	write.c	/^#define EXEC_MACHINE_TYPE HP9000S200_ID$/
+FAIL	m68k.c	/^#define FAIL	0$/
+FALSE	as.h	/^#define FALSE	(0)$/
+FBRANCH	m68k.c	/^#define FBRANCH		2$/
+FITS_IN_SIGNED_BYTE	i386.h	/^#define FITS_IN_SIGNED_BYTE(num) ((num) >= -128 &&/
+FITS_IN_SIGNED_WORD	i386.h	/^#define FITS_IN_SIGNED_WORD(num) ((num) >= -32768 /
+FITS_IN_UNSIGNED_BYTE	i386.h	/^#define FITS_IN_UNSIGNED_BYTE(num) ((num) >= 0 && /
+FITS_IN_UNSIGNED_WORD	i386.h	/^#define FITS_IN_UNSIGNED_WORD(num) ((num) >= 0 && /
+FLONUM_STRUCT	flonum.h	/^struct FLONUM_STRUCT$/
+FLONUM_TYPE	flonum.h	/^typedef struct FLONUM_STRUCT FLONUM_TYPE;$/
+FP	vax.c	/^#define FP (13)$/
+FPC	m68k.c	/^#define FPC	(FPS+1)		\/* 47 *\/$/
+FPI	m68k.c	/^#define FPI	(MSP+1)		\/* 45 *\/$/
+FPREG	m68k.c	/^#define FPREG	(ADDR+8)	\/*  17-24 Eight FP registe/
+FPS	m68k.c	/^#define FPS	(FPI+1)		\/* 46 *\/$/
+FRAG_APPEND_1_CHAR	frags.h	/^#define FRAG_APPEND_1_CHAR(datum)	\\$/
+F_PRECISION	atof-i386.c	/^#define F_PRECISION (2)$/
+FloatAcc	i386.h	/^#define FloatAcc 0x400000	\/* Float stack top %st(/
+FloatD	i386.h	/^#define FloatD 0x400$/
+FloatReg	i386.h	/^#define FloatReg 0x200000	\/* Float register *\/$/
+Flush_VMS_Object_Record_Buffer	vms.c	/^Flush_VMS_Object_Record_Buffer()$/
+GPS	objrecdef.h	/^#define	GPS$M_PIC	1$/
+GSD	objrecdef.h	/^#define	GSD$K_ENTRIES	1$/
+GSY	objrecdef.h	/^#define	GSY$M_WEAK	1$/
+GUARD	atof-i386.c	/^#define GUARD (2)$/
+G_PRECISION	atof-vax.c	/^#define G_PRECISION (4)$/
+HASH_STATLENGTH	hash.h	/^#define HASH_STATLENGTH	(6)$/
+HAS_PSECT_ATTRIBUTES	vms.c	/^#define	HAS_PSECT_ATTRIBUTES(Name) \\$/
+H_PRECISION	atof-vax.c	/^#define H_PRECISION (8)$/
+IIF	ns32k.c	/^#define IIF(ptr,a1,c1,e1,g1,i1,k1,m1,o1,q1,s1,u1) /
+IIF_ENTRIES	ns32k.c	/^#define IIF_ENTRIES 13				\/* number of entries in/
+IMMED	m68k.c	/^#define IMMED	1$/
+IMMEDIATEP	vax.c	/^#define IMMEDIATEP(c)	(vip_immediate_metacharacter/
+IMMEDIATE_PREFIX	i386.h	/^#define IMMEDIATE_PREFIX '$'$/
+IND	ns32k.c	/^#define IND(x,y)	(((x)<<2)+(y))$/
+INDIRECTP	vax.c	/^#define INDIRECTP(c)	(vip_indirect_metacharacter  /
+INT3_OPCODE	i386-opcode.h	/^#define INT3_OPCODE 0xcc$/
+INT_OPCODE	i386-opcode.h	/^#define INT_OPCODE 0xcd$/
+ISP	m68k.c	/^#define ISP	(USP+1)		\/*  38 Interrupt stack point/
+IS_COMMENT	app.c	/^#define IS_COMMENT(c)			(lex [c] & LEX_IS_COMMENT_/
+IS_JUMP_ON_CX_ZERO	i386-opcode.h	/^#define IS_JUMP_ON_CX_ZERO(o) \\$/
+IS_JUMP_ON_ECX_ZERO	i386-opcode.h	/^#define IS_JUMP_ON_ECX_ZERO(o) \\$/
+IS_LINE_COMMENT	app.c	/^#define IS_LINE_COMMENT(c)		(lex [c] & LEX_IS_LINE/
+IS_LINE_SEPERATOR	app.c	/^#define IS_LINE_SEPERATOR(c)		(lex [c] & LEX_IS_LI/
+IS_LOOP_ECX_TIMES	i386-opcode.h	/^#define IS_LOOP_ECX_TIMES(o) \\$/
+IS_STRING_INSTRUCTION	i386-opcode.h	/^#define IS_STRING_INSTRUCTION(o) \\$/
+IS_SYMBOL_COMPONENT	app.c	/^#define IS_SYMBOL_COMPONENT(c)		(lex [c] & LEX_IS_/
+IS_WHITESPACE	app.c	/^#define IS_WHITESPACE(c)		(lex [c] & LEX_IS_WHITES/
+Imm	i386.h	/^#define Imm     (Imm8|Imm8S|Imm16|Imm32)    \/* ge/
+Imm1	i386.h	/^#define Imm1    0x80    	\/* 1 bit immediate *\/$/
+Imm16	i386.h	/^#define Imm16   0x20		\/* 16 bit immediate *\/$/
+Imm32	i386.h	/^#define Imm32   0x40		\/* 32 bit immediate *\/$/
+Imm8	i386.h	/^#define Imm8    0x8		\/* 8 bit immediate *\/$/
+Imm8S	i386.h	/^#define Imm8S	0x10		\/* 8 bit immediate sign exten/
+ImmUnknown	i386.h	/^#define ImmUnknown Imm32	\/* for unknown expressio/
+ImplicitRegister	i386.h	/^#define ImplicitRegister (InOutPortReg|ShiftCount|/
+InOutPortReg	i386.h	/^#define InOutPortReg 0x10000	\/* register to hold /
+JUMP_FAR_IMMEDIATE	i386-opcode.h	/^#define JUMP_FAR_IMMEDIATE 0xea$/
+JUMP_PC_RELATIVE	i386-opcode.h	/^#define JUMP_PC_RELATIVE 0xeb$/
+Jump	i386.h	/^#define Jump 0x100		\/* special case for jump insn/
+JumpAbsolute	i386.h	/^#define JumpAbsolute 0x4000000$/
+JumpByte	i386.h	/^#define JumpByte 0x4000$/
+JumpDword	i386.h	/^#define JumpDword 0x8000$/
+JumpInterSegment	i386.h	/^#define JumpInterSegment 0x200	\/* special case fo/
+LEX_BEGIN_NAME	read.h	/^#define LEX_BEGIN_NAME	(2)	\/* may begin a name */
+LEX_IS_COMMENT_START	app.c	/^#define LEX_IS_COMMENT_START		(8)	\/* JF added the/
+LEX_IS_LINE_COMMENT_START	app.c	/^#define LEX_IS_LINE_COMMENT_START	(16)$/
+LEX_IS_LINE_SEPERATOR	app.c	/^#define LEX_IS_LINE_SEPERATOR		(4)$/
+LEX_IS_SYMBOL_COMPONENT	app.c	/^#define LEX_IS_SYMBOL_COMPONENT		(1)$/
+LEX_IS_WHITESPACE	app.c	/^#define LEX_IS_WHITESPACE		(2)$/
+LEX_NAME	read.h	/^#define	LEX_NAME	(1)	\/* may continue a name *\/		/
+LITTLENUM_MASK	bignum.h	/^#define	LITTLENUM_MASK			(0xFFFF)$/
+LITTLENUM_NUMBER_OF_BITS	bignum.h	/^#define	LITTLENUM_NUMBER_OF_BITS	(16)$/
+LITTLENUM_RADIX	bignum.h	/^#define	LITTLENUM_RADIX			(1 << LITTLENUM_NUMBER_O/
+LITTLENUM_SHIFT	bignum.h	/^#define LITTLENUM_SHIFT			(1)$/
+LITTLENUM_TYPE	bignum.h	/^typedef unsigned short int	LITTLENUM_TYPE;$/
+LOG_2_Z0	gdb-blocks.c	/^#define LOG_2_Z0 (8)		\/* How many bits are in Z0 /
+LOG_2_Z1	gdb-blocks.c	/^#define LOG_2_Z1 (8)		\/* How many bits are in Z1 /
+LOG_2_Z2	gdb-blocks.c	/^#define LOG_2_Z2 (8)		\/* How many bits are in Z2 /
+LOG_TO_BASE_2_OF_10	bignum.h	/^#define	LOG_TO_BASE_2_OF_10		(3.321928094887362347/
+LONG	m68k.c	/^#define LONG		2$/
+MASK_BITS	ns32k.c	/^#define MASK_BITS 31$/
+MASK_CHAR	read.c	/^#define MASK_CHAR (0xFF)	\/* If your chars aren't /
+MATCH	i386.c	/^#define MATCH(overlap,given_type) \\$/
+MAXIMUM_NUMBER_OF_LITTLENUMS	atof-vax.c	/^#define MAXIMUM_NUMBER_OF_LITTLENUMS (8) \/* For ./
+MAX_ALIGNMENT	read.c	/^#define MAX_ALIGNMENT (15)$/
+MAX_ARGS	ns32k-opcode.h	/^#define MAX_ARGS 4$/
+MAX_IMMEDIATE_OPERANDS	i386.h	/^#define MAX_IMMEDIATE_OPERANDS 2 \/* max immediate/
+MAX_LINES_PER_VECTOR	gdb-lines.c	/^#define MAX_LINES_PER_VECTOR 50		\/* lpv *\/$/
+MAX_LITTLENUMS	i386.c	/^#define MAX_LITTLENUMS 6$/
+MAX_MEMORY_OPERANDS	i386.h	/^#define MAX_MEMORY_OPERANDS 2	\/* max memory ref p/
+MAX_OPERANDS	i386.h	/^#define MAX_OPERANDS 3		\/* max operands per insn /
+MAX_PRECISION	atof-i386.c	/^#define MAX_PRECISION (6)$/
+MAX_PREFIXES	i386.h	/^#define MAX_PREFIXES 4		\/* max prefixes per opcod/
+MAX_REG_NAME_SIZE	i386-opcode.h	/^#define MAX_REG_NAME_SIZE 8	\/* for parsing regist/
+MHD	objrecdef.h	/^#define	MHD$C_MHD	0$/
+MODE_FROM_DISP_SIZE	i386.h	/^#define MODE_FROM_DISP_SIZE(t) \\$/
+MSCR	m68k.c	/^#define MSCR	13$/
+MSP	m68k.c	/^#define MSP	(CAAR+1)	\/*  44 *\/$/
+M_GENERIC	m-generic.h	/^#define M_GENERIC 1$/
+M_SUN	m-sun3.h	/^#define M_SUN	1$/
+Mapp	app.c	/^main()$/
+Mas	as.c	/^main(argc,argv)$/
+Mem	i386.h	/^#define Mem     (Disp|Mem8|Mem16|Mem32|BaseIndex) /
+Mem16	i386.h	/^#define Mem16   0x2000$/
+Mem32	i386.h	/^#define Mem32   0x4000$/
+Mem8	i386.h	/^#define Mem8    0x1000$/
+Mhash	hash.c	/^main()$/
+Mm68k	m68k.c	/^main()$/
+Modrm	i386.h	/^#define Modrm 0x1000$/
+Mvax	vax.c	/^main()$/
+NDEBUG	as.h	/^#define NDEBUG		\/* JF disable asserts *\/$/
+NO_BASE_REGISTER	i386.h	/^#define NO_BASE_REGISTER EBP_REG_NUM$/
+NO_INDEX_REGISTER	i386.h	/^#define NO_INDEX_REGISTER ESP_REG_NUM$/
+NS32032	ns32k.c	/^#define NS32032$/
+NULL	atof-i386.c	/^#define NULL (0)$/
+NUMOPCODES	sparc-opcode.h	/^#define NUMOPCODES ((sizeof sparc_opcodes)\/(sizeo/
+NoModrm	i386.h	/^#define NoModrm 0x800$/
+None	i386.h	/^#define None 0xff		\/* If no extension_opcode is p/
+OBJ	objrecdef.h	/^#define	OBJ$C_HDR	0$/
+OBJREC	objrecdef.h	/^struct OBJREC {$/
+OK	m68k.c	/^#define OK	1$/
+OPCODE_SUFFIX_TO_TYPE	i386.h	/^#define OPCODE_SUFFIX_TO_TYPE(s)                 /
+PC	m68k.c	/^#define PC	(COPNUM+8)	\/*  33 Program counter *\/$/
+PCREL	m68k.c	/^#define PCREL		3$/
+PCSR	m68k.c	/^#define PCSR	(PSR+1)		\/* 73 *\/$/
+PERMIT_WHITESPACE	read.h	/^#define PERMIT_WHITESPACE	\/* Define to make white/
+POINTER	obstack.c	/^#define POINTER void *$/
+POP_SEG_SHORT	i386-opcode.h	/^#define POP_SEG_SHORT 0x7$/
+PREFIX_SEPERATOR	i386.h	/^#define PREFIX_SEPERATOR '\/'$/
+PREPROCESSOR	input-file.c	/^#define PREPROCESSOR ".\/app"$/
+PRIVATE_SIZE	ns32k.c	/^#define PRIVATE_SIZE 256			\/* size of my garbage /
+PSECT_ATTRIBUTES_STRING	vms.c	/^#define	PSECT_ATTRIBUTES_STRING		"$$PsectAttribute/
+PSECT_ATTRIBUTES_STRING_LENGTH	vms.c	/^#define	PSECT_ATTRIBUTES_STRING_LENGTH	18$/
+PSR	m68k.c	/^#define PSR	(BAC+8)		\/* 72 *\/$/
+PUT_CHAR	vms.c	/^#define	PUT_CHAR(val)	Object_Record_Buffer[Object_/
+PUT_COUNTED_STRING	vms.c	/^#define	PUT_COUNTED_STRING(cp) {\\$/
+PUT_LONG	vms.c	/^#define	PUT_LONG(val)	*((long *)(Object_Record_Buf/
+PUT_SHORT	vms.c	/^#define	PUT_SHORT(val)	*((short *)(Object_Record_B/
+P_PRECISION	atof-m68k.c	/^#define P_PRECISION (6)$/
+REGISTER_PREFIX	i386.h	/^#define REGISTER_PREFIX '%'$/
+REGLST	m68k.c	/^#define REGLST	14$/
+REGMEM_FIELD_HAS_MEM	i386.h	/^#define REGMEM_FIELD_HAS_MEM (~REGMEM_FIELD_HAS_RE/
+REGMEM_FIELD_HAS_REG	i386.h	/^#define REGMEM_FIELD_HAS_REG 0x3                \//
+REPE	i386-opcode.h	/^#define REPE  0xf3$/
+REPNE	i386-opcode.h	/^#define REPNE 0xf2$/
+RESTORE_END_STRING	i386.c	/^#define RESTORE_END_STRING(s)       *s = *--save_s/
+Reg	i386.h	/^#define Reg     (Reg8|Reg16|Reg32)    \/* gen'l re/
+Reg16	i386.h	/^#define Reg16   0x2		\/* 16 bit reg *\/$/
+Reg32	i386.h	/^#define Reg32   0x4		\/* 32 bit reg *\/$/
+Reg8	i386.h	/^#define Reg8    0x1		\/* 8 bit reg *\/$/
+ReverseRegRegmem	i386.h	/^#define ReverseRegRegmem 0x10000$/
+SCC	m68k.c	/^#define SCC	(VAL+1)		\/* 54 *\/$/
+SEG_MAXIMUM_ORDINAL	as.h	/^#define SEG_MAXIMUM_ORDINAL (SEG_DIFFERENCE)$/
+SFC	m68k.c	/^#define SFC	(ISP+1)		\/*  39 *\/$/
+SHORT	m68k.c	/^#define SHORT		1$/
+SIZEOF_STRUCT_FRAG	as.h	/^#define SIZEOF_STRUCT_FRAG \\$/
+SIZET	strstr.c	/^#define SIZET int$/
+SIZE_FROM_RELAX_STATE	i386.c	/^#define SIZE_FROM_RELAX_STATE(s) \\$/
+SIZE_OF_LARGE_NUMBER	expr.h	/^#define SIZE_OF_LARGE_NUMBER (20)	\/* Number of li/
+SKIP_W	m68k.c	/^#define SKIP_W()	{ ss++; if(*ss==' ') ss++;}$/
+SKIP_WHITE	m68k.c	/^#define SKIP_WHITE()	{ str++; if(*str==' ') str++;/
+SKIP_WHITESPACE	read.h	/^#define SKIP_WHITESPACE() {if (* input_line_pointe/
+SMALLEST_DISP_TYPE	i386.h	/^#define SMALLEST_DISP_TYPE(num) \\$/
+SMALLEST_IMM_TYPE	i386.h	/^#define SMALLEST_IMM_TYPE(num) \\$/
+SP	m68k.c	/^#define	SP	ADDR+7$/
+SPECIAL_CASE_SET	sparc.c	/^#define SPECIAL_CASE_SET    1$/
+SR	m68k.c	/^#define SR	(ZPC+1)		\/*  35 Status Reg *\/$/
+SRP	m68k.c	/^#define SRP	(DRP+1)		\/* 50 *\/$/
+SReg2	i386.h	/^#define SReg2   0x800000		\/* 2 bit segment regist/
+SReg3	i386.h	/^#define SReg3   0x1000000		\/* 3 bit segment regis/
+START_FULL	hash.c	/^#define START_FULL  (4)$/
+START_POWER	hash.c	/^#define START_POWER    (11)	\/* power of two: size/
+START_SIZE	hash.c	/^#define START_SIZE  (8)$/
+STATBUFSIZE	hash.c	/^#define STATBUFSIZE (12)	\/* we can have 12 statis/
+STATE_ALWAYS_BRANCH	vax.c	/^#define STATE_ALWAYS_BRANCH		(3) \/* includes BSB./
+STATE_BYTE	vax.c	/^#define STATE_BYTE			(0)$/
+STATE_COMPLEX_BRANCH	vax.c	/^#define STATE_COMPLEX_BRANCH	        (4)$/
+STATE_COMPLEX_HOP	vax.c	/^#define STATE_COMPLEX_HOP		(5)$/
+STATE_CONDITIONAL_BRANCH	vax.c	/^#define STATE_CONDITIONAL_BRANCH	(2)$/
+STATE_LONG	vax.c	/^#define STATE_LONG			(2)$/
+STATE_PC_RELATIVE	vax.c	/^#define STATE_PC_RELATIVE		(1)$/
+STATE_UNDF	vax.c	/^#define STATE_UNDF			(3) \/* Symbol undefined in p/
+STATE_WORD	vax.c	/^#define STATE_WORD			(1)$/
+STATLENGTH	hash.c	/^#define STATLENGTH     (6)	\/* size of statistics /
+STAT_ACCESS	hash.c	/^#define STAT_ACCESS    (1)	\/* number of hash_ask(/
+STAT_COLLIDE	hash.c	/^#define STAT_COLLIDE   (3)	\/* number of collision/
+STAT_SIZE	hash.c	/^#define STAT_SIZE      (0)      \/* number of slot/
+STAT_USED	hash.c	/^#define STAT_USED      (5)	\/* slots used right no/
+STAT__READ	hash.c	/^#define STAT__READ     (0)      \/* reading *\/$/
+STAT__WRITE	hash.c	/^#define STAT__WRITE    (1)      \/* writing *\/$/
+SUB_SEGMENT_ALIGN	write.c	/^#define SUB_SEGMENT_ALIGN (2)$/
+SUN_ASM_SYNTAX	m-sun3.h	/^#define SUN_ASM_SYNTAX$/
+SUSPECT	gdb.c	/^#define SUSPECT		\/* JF *\/$/
+SYMBOL_TYPE	i386.c	/^#define SYMBOL_TYPE(t) \\$/
+SYM_GROUP	gdb-symbols.c	/^#define SYM_GROUP (100)		\/* We allocate storage i/
+SZ_UNDEF	m68k.c	/^#define SZ_UNDEF	3$/
+Seg2ShortForm	i386.h	/^#define Seg2ShortForm 0x40	\/* encoding of load se/
+Seg3ShortForm	i386.h	/^#define Seg3ShortForm 0x80	\/* fs\/gs segment regi/
+Set_VMS_Object_File_Record	vms.c	/^Set_VMS_Object_File_Record(Type)$/
+ShiftCount	i386.h	/^#define ShiftCount 0x20000	\/* register to hold sh/
+ShortForm	i386.h	/^#define ShortForm 0x10		\/* register is in low 3 b/
+ShortFormW	i386.h	/^#define ShortFormW 0x20		\/* ShortForm and W bit i/
+TAB	m68k.c	/^#define TAB(x,y)	(((x)<<2)+(y))$/
+TABLES	hash.c	/^#define TABLES (6)		\/* number of hash tables to m/
+TABTYPE	m68k.c	/^#define TABTYPE(xy)     ((xy) >> 2)$/
+TC	m68k.c	/^#define TC	(FPC+1)		\/* 48 *\/$/
+TIR	objrecdef.h	/^#define	TIR$C_STA_GBL	0$/
+TRUE	as.h	/^#define TRUE	(!FALSE)$/
+TWO_BYTE_OPCODE_ESCAPE	i386.h	/^#define TWO_BYTE_OPCODE_ESCAPE 0x0f$/
+Test	i386.h	/^#define Test    0x100000		\/* Test register *\/$/
+UNCOND_JUMP	i386.c	/^#define UNCOND_JUMP 2		\/* unconditional jump *\/$/
+UNDEF	ns32k.c	/^#define UNDEF           3$/
+UNKNOWN_SIZE	i386.c	/^#define UNKNOWN_SIZE 3$/
+USP	m68k.c	/^#define USP	(CCR+1)		\/*  37 User Stack Pointer */
+Unknown	i386.h	/^#define Unknown 0x0$/
+VAL	m68k.c	/^#define VAL	(CAL+1)		\/* 53 *\/$/
+VAX_ABSOLUTE_MODE	vax-inst.h	/^#define VAX_ABSOLUTE_MODE (0x9F) \/* Use as @#...	/
+VAX_BRB	vax-inst.h	/^#define VAX_BRB (0x11)		\/* Canonical branch.			  /
+VAX_BRW	vax-inst.h	/^#define VAX_BRW (0x31)		\/* Another canonical bran/
+VAX_JMP	vax-inst.h	/^#define VAX_JMP (0x17)		\/* Useful for branch opti/
+VAX_PC_RELATIVE_MODE	vax-inst.h	/^#define VAX_PC_RELATIVE_MODE (0xef) \/* Use it aft/
+VAX_WIDEN_LONG	vax-inst.h	/^#define VAX_WIDEN_LONG (0x6)	\/* Add this to byte /
+VAX_WIDEN_WORD	vax-inst.h	/^#define VAX_WIDEN_WORD (0x20)	\/* Add this to byte/
+VAX_WIDTH_BYTE_JUMP	vax-inst.h	/^#define VAX_WIDTH_BYTE_JUMP	     ':' \/*          /
+VAX_WIDTH_CONDITIONAL_JUMP	vax-inst.h	/^#define VAX_WIDTH_CONDITIONAL_JUMP   '?' \/* vop_w/
+VAX_WIDTH_UNCONDITIONAL_JUMP	vax-inst.h	/^#define VAX_WIDTH_UNCONDITIONAL_JUMP '-' \/* These/
+VAX_WIDTH_WORD_JUMP	vax-inst.h	/^#define VAX_WIDTH_WORD_JUMP          '!' \/* and V/
+VBR	m68k.c	/^#define VBR	(CACR+1)	\/*  42 *\/$/
+VIT_MAX_OPERANDS	vax-inst.h	/^#define VIT_MAX_OPERANDS (6)	\/* maximum number of/
+VIT_OPCODE_SPECIAL	vax-inst.h	/^#define VIT_OPCODE_SPECIAL   0x40000000	\/* Not no/
+VIT_OPCODE_SYNTHETIC	vax-inst.h	/^#define VIT_OPCODE_SYNTHETIC 0x80000000	\/* Not re/
+VMS_Case_Hack_Symbol	vms.c	/^VMS_Case_Hack_Symbol(In,Out)$/
+VMS_Check_For_Main	vms.c	/^VMS_Check_For_Main()$/
+VMS_Fix_Indirect_Reference	vms.c	/^VMS_Fix_Indirect_Reference(Text_Psect, Offset, fra/
+VMS_Global_Symbol_Spec	vms.c	/^VMS_Global_Symbol_Spec(Name, Psect_Number, Psect_O/
+VMS_Initialized_Data_Size	vms.c	/^int VMS_Initialized_Data_Size(sp, End_Of_Data)$/
+VMS_Modify_Psect_Attributes	vms.c	/^VMS_Modify_Psect_Attributes(Name, Attribute_Pointe/
+VMS_Procedure_Entry_Pt	vms.c	/^VMS_Procedure_Entry_Pt(Name, Psect_Number, Psect_O/
+VMS_Psect_Spec	vms.c	/^VMS_Psect_Spec(Name, Size, Type)$/
+VMS_Set_Psect	vms.c	/^VMS_Set_Psect(Psect_Index, Offset, Record_Type)$/
+VMS_Store_Immediate_Data	vms.c	/^VMS_Store_Immediate_Data(Pointer, Size, Record_Typ/
+VMS_Store_PIC_Symbol_Reference	vms.c	/^VMS_Store_PIC_Symbol_Reference(Symbol, Offset, PC_/
+VMS_Store_Repeated_Data	vms.c	/^VMS_Store_Repeated_Data(Repeat_Count,Pointer, Size/
+VMS_Symbol	vms.c	/^struct VMS_Symbol {$/
+VMS_TBT_Line_PC_Correlation	vms.c	/^VMS_TBT_Line_PC_Correlation(Line_Number, Offset, P/
+VMS_TBT_Module_Begin	vms.c	/^VMS_TBT_Module_Begin()$/
+VMS_TBT_Module_End	vms.c	/^VMS_TBT_Module_End()$/
+VMS_TBT_Routine_Begin	vms.c	/^VMS_TBT_Routine_Begin(symbolP, Psect)$/
+VMS_TBT_Routine_End	vms.c	/^VMS_TBT_Routine_End(Size)$/
+VMS_TBT_Source_File	vms.c	/^VMS_TBT_Source_File(Filename, ID_Number)$/
+VMS_TBT_Source_Lines	vms.c	/^VMS_TBT_Source_Lines(Number_Of_Lines)$/
+VMS_write_object_file	vms.c	/^VMS_write_object_file(text_siz, data_siz, text_fra/
+W	i386.h	/^#define W        0x1	\/* set if operands are words/
+WB	vax.c	/^#define WB (2+-32768)$/
+WF	vax.c	/^#define WF (2+ 32767)$/
+WORD	i386.c	/^#define WORD 1$/
+WORD_OPCODE_SUFFIX	i386.h	/^#define WORD_OPCODE_SUFFIX  'w'$/
+WORD_PREFIX_OPCODE	i386-opcode.h	/^#define WORD_PREFIX_OPCODE 0x66$/
+Word	i386.h	/^#define Word (Reg16|Imm16)$/
+WordMem	i386.h	/^#define WordMem   (Mem16|Mem32|Disp|BaseIndex)$/
+WordReg	i386.h	/^#define WordReg (Reg16|Reg32)	\/* for push\/pop op/
+Write_VMS_EOM_Record	vms.c	/^Write_VMS_EOM_Record(Psect, Offset)$/
+Write_VMS_MHD_Records	vms.c	/^Write_VMS_MHD_Records()$/
+X_PRECISION	atof-i386.c	/^#define X_PRECISION (5)$/
+ZPC	m68k.c	/^#define ZPC	(PC+1)		\/*  34 Hack for Program space/
+_	i386-opcode.h	/^#define _ None$/
+__	expr.c	/^#define __ O_illegal$/
+__INT_TO_PTR	obstack.h	/^#define __INT_TO_PTR(P) ((P) + (char *)0)$/
+__OBSTACKS__	obstack.h	/^#define __OBSTACKS__$/
+__PTR_TO_INT	obstack.h	/^#define __PTR_TO_INT(P) ((P) - (char *)0)$/
+_doprnt	vms.c	/^_doprnt(Format, a, f)$/
+_obstack_allocated_p	obstack.c	/^_obstack_allocated_p (h, obj)$/
+_obstack_begin	obstack.c	/^_obstack_begin (h, size, alignment, chunkfun, free/
+_obstack_free	obstack.c	/^_obstack_free (h, obj)$/
+_obstack_newchunk	obstack.c	/^_obstack_newchunk (h, length)$/
+abort	m68k.c	/^abort()$/
+add_exp	m68k.c	/^#define add_exp(beg,end) (\\$/
+add_file	gdb-lines.c	/^add_file(file_number)$/
+add_fix	m68k.c	/^#define add_fix(width,exp,pc_rel) {\\$/
+add_frag	m68k.c	/^#define add_frag(add,off,type)  {\\$/
+add_vector	gdb-lines.c	/^add_vector(f)$/
+addr_mode	ns32k.c	/^struct addr_mode {$/
+addr_modeS	ns32k.c	/^typedef struct addr_mode addr_modeS;$/
+adds	m68k.c	/^#define adds(exp)	((exp)->e_exp.X_add_symbol)$/
+addword	m68k.c	/^#define addword(w)	the_ins.opcode[the_ins.numo++]=/
+alloca	atof-generic.c	/^#define alloca __builtin_alloca$/
+append	append.c	/^append (charPP, fromP, length)$/
+applicatee	hash.c	/^applicatee(string,value)$/
+asH	as.h	/^#define asH			\/* Don't declare things twice. *\/$/
+as_1_char	input-scrub.c	/^as_1_char (c,stream)$/
+as_fatal	messages.c	/^as_fatal (Format, args)$/
+as_howmuch	input-scrub.c	/^as_howmuch (stream)$/
+as_perror	input-scrub.c	/^as_perror(gripe, filename)$/
+as_warn	app.c	/^as_warn(str)$/
+as_where	input-scrub.c	/^as_where()$/
+atof_generic	atof-generic.c	/^atof_generic ($/
+atof_i386	atof-i386.c	/^atof_i386 (str, what_kind, words)$/
+atof_m68k	atof-m68k.c	/^atof_m68k (str, what_kind, words)$/
+atof_ns32k	atof-ns32k.c	/^atof_ns32k (str, what_kind, words)$/
+atof_sizeof	atof-i386.c	/^atof_sizeof (letter)$/
+atof_vax	atof-vax.c	/^atof_vax (str, what_kind, words)$/
+atof_vax_sizeof	atof-vax.c	/^atof_vax_sizeof (letter)$/
+base_index_byte	i386.h	/^} base_index_byte;$/
+bcopy	as.h	/^#define bcopy(from,to,n) memcpy((to),(from),(n))$/
+big_cons	read.c	/^big_cons(nbytes)		\/* worker to do .quad etc state/
+bignum_copy	bignum-copy.c	/^bignum_copy (in, in_length, out, out_length)$/
+bit_fix	write.h	/^struct bit_fix {$/
+bit_fixS	write.h	/^typedef struct bit_fix bit_fixS;$/
+bit_fix_new	ns32k.c	/^bit_fix_new (size,offset,min,max,add,base_type,bas/
+broken_word	struc-symbol.h	/^struct broken_word {$/
+bump_line_counters	input-scrub.c	/^bump_line_counters ()$/
+bzero	as.h	/^#define bzero(s,n) memset((s),0,(n))$/
+clean_up_expression	expr.c	/^clean_up_expression (expressionP)$/
+colon	symbols.c	/^colon (sym_name)		\/* just seen "x:" - rattle symb/
+cons	read.c	/^cons(nbytes)			\/* worker to do .byte etc statemen/
+const	sparc-opcode.h	/^#define const$/
+convert_iif	ns32k.c	/^convert_iif()$/
+crack_operand	m68k.c	/^crack_operand(str,opP)$/
+demand_copy_C_string	read.c	/^demand_copy_C_string (len_pointer)$/
+demand_copy_string	read.c	/^demand_copy_string (lenP)$/
+demand_empty_rest_of_line	read.c	/^demand_empty_rest_of_line()$/
+destroy	hash.c	/^destroy(string,value)$/
+do_scrub_begin	app.c	/^do_scrub_begin()$/
+do_scrub_next_char	app.c	/^do_scrub_next_char(get,unget)$/
+dummy	i386.c	/^void dummy ()$/
+dummy1	flonum-const.c	/^dummy1()$/
+dummy2	hex-value.c	/^dummy2()$/
+dummy3	version.c	/^dummy3()$/
+emit_relocations	sparc.c	/^emit_relocations(fixP, segment_address_in_file)$/
+encode_operand	ns32k.c	/^encode_operand(argc,argv,operandsP,suffixP,im_size/
+equals	read.c	/^equals(sym_name)$/
+evaluate_expr	ns32k.c	/^segT evaluate_expr(resultP,ptr)$/
+expr	expr.c	/^expr (rank, resultP)$/
+expr_part	expr.c	/^expr_part (symbol_1_PP, symbol_2_P)$/
+expression	expr.h	/^#define expression(result) expr(0,result)$/
+expressionS	expr.h	/^expressionS;$/
+find	gdb-blocks.c	/^find (block_number)$/
+find_create	gdb-blocks.c	/^find_create (block_number)$/
+fix	write.h	/^struct fix$/
+fixS	write.h	/^typedef struct fix	fixS;$/
+fix_new_ns32k	ns32k.c	/^fix_new_ns32k (frag, where, size, add_symbol, sub_/
+fixup_segment	write.c	/^fixup_segment (fixP, this_segment_type)$/
+float_cons	read.c	/^float_cons(float_type)		\/* Worker to do .float et/
+flonum_copy	flonum-copy.c	/^flonum_copy (in, out)$/
+flonum_gen2vax	atof-vax.c	/^flonum_gen2vax (format_letter, f, words)$/
+flonum_multip	flonum-mult.c	/^flonum_multip (a, b, product)$/
+fooalign	obstack.c	/^struct fooalign {char x; double d;};$/
+fooround	obstack.c	/^union fooround {long x; double d;};$/
+fragS	as.h	/^typedef struct frag fragS;$/
+frag_align	frags.c	/^frag_align (alignment, fill_character)$/
+frag_grow	frags.c	/^frag_grow (nchars)$/
+frag_more	frags.c	/^frag_more (nchars)$/
+frag_new	frags.c	/^frag_new (old_frags_var_max_size)$/
+frag_var	frags.c	/^frag_var (type, max_chars, var, subtype, symbol, o/
+frag_variant	frags.c	/^frag_variant (type, max_chars, var, subtype, symbo/
+frag_wane	frags.c	/^frag_wane (fragP)$/
+frchainS	subsegs.h	/^typedef struct frchain frchainS;$/
+g_line	gdb-lines.c	/^struct g_line {$/
+g_line_file	gdb-lines.c	/^struct g_line_file {$/
+g_line_vector	gdb-lines.c	/^struct g_line_vector {$/
+gdb_alter	gdb.c	/^gdb_alter (offset, value)	\/* put value into GDB f/
+gdb_begin	gdb.c	/^gdb_begin (filename)		\/* because we failed to est/
+gdb_block	gdb-blocks.c	/^struct gdb_block$/
+gdb_block_beg	gdb-blocks.c	/^gdb_block_beg (block_number, frag, offset)$/
+gdb_block_begin	gdb-blocks.c	/^gdb_block_begin ()$/
+gdb_block_emit	gdb-blocks.c	/^gdb_block_emit ()$/
+gdb_block_end	gdb-blocks.c	/^gdb_block_end (block_number, frag, offset)$/
+gdb_block_position	gdb-blocks.c	/^gdb_block_position (block_number, pos)$/
+gdb_emit	gdb.c	/^gdb_emit (filename)	\/* Append GDB symbols to obje/
+gdb_end	gdb.c	/^gdb_end()$/
+gdb_file_begin	gdb-file.c	/^gdb_file_begin ()$/
+gdb_file_end	gdb-file.c	/^gdb_file_end()$/
+gdb_file_read	gdb-file.c	/^gdb_file_read (buffer, filename)$/
+gdb_file_size	gdb-file.c	/^gdb_file_size (filename)$/
+gdb_line	gdb-lines.c	/^gdb_line(file_number,lineno)$/
+gdb_line_tab	gdb-lines.c	/^gdb_line_tab(file_number,offset)$/
+gdb_lines_emit	gdb-lines.c	/^gdb_lines_emit()$/
+gdb_symbolS	gdb-symbols.c	/^typedef struct gdb_symbol gdb_symbolS;$/
+gdb_symbols_begin	gdb-symbols.c	/^gdb_symbols_begin ()$/
+gdb_symbols_emit	gdb-symbols.c	/^gdb_symbols_emit ()		\/* Append GDB symbols to obj/
+gdb_symbols_fixup	gdb-symbols.c	/^gdb_symbols_fixup (sy, offset)	\/* into the GDB sy/
+gen_to_words	atof-i386.c	/^gen_to_words(words,precision,exponent_bits)$/
+getExpression	sparc.c	/^getExpression(str)$/
+get_absolute_expression	read.c	/^get_absolute_expression ()$/
+get_absolute_expression_and_terminator	read.c	/^get_absolute_expression_and_terminator( val_pointe/
+get_addr_mode	ns32k.c	/^int get_addr_mode(ptr,addr_modeP)$/
+get_known_segmented_expression	read.c	/^get_known_segmented_expression ( expP )$/
+get_num	m68k.c	/^get_num(exp,ok)$/
+get_regs	m68k.c	/^get_regs(i,str,opP)$/
+get_segmented_expression	read.c	/^get_segmented_expression ( expP )$/
+get_symbol_end	expr.c	/^get_symbol_end()$/
+getone	m68k.c	/^#define getone(x)	((((x)->m_opcode)>>16)&0xffff)$/
+gettwo	m68k.c	/^#define gettwo(x)	(((x)->m_opcode)&0xffff)$/
+grow_bignum	read.c	/^grow_bignum()			\/* Extend bignum by 1 char. *\/$/
+hashH	hash.h	/^#define hashH$/
+hash_apply	hash.c	/^hash_apply(handle,function)$/
+hash_ask	hash.c	/^hash_ask(handle,string,access)$/
+hash_code	hash.c	/^hash_code(handle,string)$/
+hash_control	hash.h	/^struct hash_control$/
+hash_delete	hash.c	/^hash_delete(handle,string)$/
+hash_die	hash.c	/^hash_die(handle)$/
+hash_entry	hash.h	/^struct hash_entry$/
+hash_find	hash.c	/^hash_find(handle,string)	\/* return char* or NULL /
+hash_grow	hash.c	/^hash_grow(handle)			\/* make a hash table grow *\//
+hash_insert	hash.c	/^hash_insert(handle,string,value)$/
+hash_jam	hash.c	/^hash_jam(handle,string,value)$/
+hash_new	hash.c	/^hash_new()			\/* create a new hash table *\/$/
+hash_replace	hash.c	/^hash_replace(handle,string,value)$/
+hash_say	hash.c	/^hash_say(handle,buffer,bufsiz)$/
+hpux	m-hpux.h	/^#define hpux$/
+i386_insn	i386.h	/^} i386_insn;$/
+i386_operand	i386.c	/^int i386_operand (operand_string)$/
+ignore_rest_of_line	read.c	/^ignore_rest_of_line()		\/* For suspect lines: give/
+iif_entryT	ns32k.c	/^}iif_entryT;				\/* Internal Instruction Format */
+imulKludge	i386.h	/^#define imulKludge 0x2000$/
+index	as.h	/^#define index strchr$/
+input_file_begin	input-file.c	/^input_file_begin ()$/
+input_file_buffer_size	input-file.c	/^input_file_buffer_size ()$/
+input_file_end	input-file.c	/^input_file_end ()$/
+input_file_give_next_buffer	input-file.c	/^input_file_give_next_buffer (where)$/
+input_file_is_open	input-file.c	/^input_file_is_open ()$/
+input_file_open	input-file.c	/^input_file_open (filename, preprocess, debugging)$/
+input_scrub_begin	input-scrub.c	/^input_scrub_begin ()$/
+input_scrub_end	input-scrub.c	/^input_scrub_end ()$/
+input_scrub_new_file	input-scrub.c	/^input_scrub_new_file (filename)$/
+input_scrub_next_buffer	input-scrub.c	/^input_scrub_next_buffer (bufp)$/
+insop	m68k.c	/^#define insop(w)	{int z;\\$/
+install_gen_operand	m68k.c	/^install_gen_operand(mode,val)$/
+install_operand	m68k.c	/^install_operand(mode,val)$/
+int_ins_form	ns32k.c	/^struct int_ins_form {$/
+int_to_gen	atof-i386.c	/^int_to_gen(x)$/
+is_digit_char	i386.c	/^#define is_digit_char(x) (digit_chars[(unsigned ch/
+is_identifier_char	i386.c	/^#define is_identifier_char(x) (identifier_chars[(u/
+is_it_end_of_statement	read.c	/^is_it_end_of_statement()$/
+is_label	m68k.c	/^is_label(str)$/
+is_name_beginner	read.h	/^#define is_name_beginner(c)     ( lex_type[c] & LE/
+is_opcode_char	i386.c	/^#define is_opcode_char(x) (opcode_chars[(unsigned /
+is_operand_char	i386.c	/^#define is_operand_char(x) (operand_chars[(unsigne/
+is_part_of_name	read.h	/^#define is_part_of_name(c)      ( lex_type[c] & LE/
+is_register_char	i386.c	/^#define is_register_char(x) (register_chars[(unsig/
+is_space_char	i386.c	/^#define is_space_char(x) (space_chars[(unsigned ch/
+isbyte	m68k.c	/^#define isbyte(x)	((x)>=-128 && (x)<=255)$/
+isdnrange	write.c	/^isdnrange(f1,f2)$/
+islive	hash.c	/^#define islive(ptr) (ptr->hash_string && ptr->hash/
+islong	m68k.c	/^#define islong(x)	(1)$/
+isoctal	sparc.c	/^#define isoctal(c)  octal[c]$/
+issbyte	m68k.c	/^#define issbyte(x)	((x)>=-128 && (x)<=127)$/
+issword	m68k.c	/^#define issword(x)	((x)>=-32768 && (x)<=32767)$/
+isubyte	m68k.c	/^#define isubyte(x)	((x)>=0 && (x)<=255)$/
+isuword	m68k.c	/^#define isuword(x)	((x)>=0 && (x)<=65535)$/
+isvar	m68k.c	/^#define isvar(exp)	((exp) && (adds(exp) || subs(ex/
+isword	m68k.c	/^#define isword(x)	((x)>=-32768 && (x)<=65535)$/
+know	as.h	/^#define know(p) ASSERT(p)	\/* know() is less ugly /
+line	gdb-lines.c	/^struct line$/
+line_numberT	input-scrub.c	/^typedef unsigned int line_numberT;	\/* 1-origin li/
+list_search	ns32k.c	/^int list_search(str,optionP,default_map)$/
+local_colon	symbols.c	/^local_colon (n)$/
+local_label_countT	symbols.c	/^local_label_countT;$/
+local_label_name	symbols.c	/^local_label_name(n, augend)$/
+lose	as.c	/^lose()$/
+m68_incant	m68k.c	/^struct m68_incant {$/
+m68_ip	m68k.c	/^m68_ip (instring)$/
+m68_it	m68k.c	/^struct m68_it {$/
+m68k_exp	m68k.c	/^struct m68k_exp {$/
+m68k_ip_op	m68k.c	/^m68k_ip_op(str,opP)$/
+m68k_op	m68k.c	/^struct m68k_op {$/
+m68k_opcode	m68k-opcode.h	/^struct m68k_opcode$/
+m68k_reg_parse	m68k.c	/^m68k_reg_parse(ccp)$/
+make_invalid_floating_point_number	atof-i386.c	/^make_invalid_floating_point_number (words, precisi/
+md_assemble	i386.c	/^void md_assemble (line)$/
+md_atof	atof-vax.c	/^md_atof (what_statement_type, literalP, sizeP)$/
+md_begin	i386.c	/^void md_begin ()$/
+md_chars_to_number	i386.c	/^md_chars_to_number (con, nbytes)$/
+md_convert_frag	i386.c	/^md_convert_frag (fragP)$/
+md_create_long_jump	i386.c	/^void md_create_long_jump (ptr, from_addr, to_addr,/
+md_create_short_jump	i386.c	/^void md_create_short_jump(ptr, from_addr, to_addr)/
+md_end	i386.c	/^void md_end() {}		\/* not much to do here. *\/$/
+md_estimate_size_before_relax	i386.c	/^md_estimate_size_before_relax (fragP, segment_type/
+md_number_to_chars	i386.c	/^md_number_to_chars (con, value, nbytes)$/
+md_number_to_disp	i386.c	/^md_number_to_disp (con, value, nbytes)$/
+md_number_to_field	i386.c	/^md_number_to_field (con, value, nbytes)$/
+md_number_to_imm	i386.c	/^md_number_to_imm (con, value, nbytes)$/
+md_parse_option	i386.c	/^md_parse_option(argP,cntP,vecP)$/
+md_ri_to_chars	i386.c	/^void md_ri_to_chars(ri_p, ri)$/
+min	hash.c	/^#define min(a, b)	((a) < (b) ? (a) : (b))$/
+mklower	m68k.c	/^#define mklower(c) (mklower_table[(unsigned char)(/
+modrm_byte	i386.h	/^} modrm_byte;$/
+mumble	vax.c	/^mumble(text,value)$/
+new_0	gdb-blocks.c	/^new_0 ()$/
+new_1	gdb-blocks.c	/^new_1 ()$/
+new_2	gdb-blocks.c	/^new_2 ()$/
+new_logical_line	input-scrub.c	/^new_logical_line (fname, line_number)$/
+new_sfg	gdb-symbols.c	/^new_sfg ()$/
+next_bits	atof-i386.c	/^next_bits (number_of_bits)$/
+next_char_of_string	read.c	/^next_char_of_string ()$/
+notend	m68k.c	/^#define notend(s) ( !(notend_table[(unsigned char)/
+ns32k_opcode	ns32k-opcode.h	/^struct ns32k_opcode {$/
+obstack_1grow	obstack.h	/^#define obstack_1grow(OBSTACK,datum)					\\$/
+obstack_1grow_fast	obstack.h	/^#define obstack_1grow_fast(h,achar) (*((h)->next_f/
+obstack_alignment_mask	obstack.h	/^#define obstack_alignment_mask(h) ((h)->alignment_/
+obstack_alloc	obstack.h	/^#define obstack_alloc(OBSTACK,length)					\\$/
+obstack_base	obstack.h	/^#define obstack_base(h) ((h)->object_base)$/
+obstack_begin	obstack.h	/^#define obstack_begin(h, size) \\$/
+obstack_blank	obstack.h	/^#define obstack_blank(OBSTACK,length)					\\$/
+obstack_blank_fast	obstack.h	/^#define obstack_blank_fast(h,n) ((h)->next_free +=/
+obstack_chunk_alloc	as.h	/^#define obstack_chunk_alloc	xmalloc$/
+obstack_chunk_free	as.h	/^#define obstack_chunk_free	xfree$/
+obstack_chunk_size	obstack.h	/^#define obstack_chunk_size(h) ((h)->chunk_size)$/
+obstack_copy	obstack.h	/^#define obstack_copy(OBSTACK,where,length)				\\$/
+obstack_copy0	obstack.h	/^#define obstack_copy0(OBSTACK,where,length)				\\$/
+obstack_finish	obstack.h	/^#define obstack_finish(OBSTACK)  					\\$/
+obstack_free	obstack.h	/^#define obstack_free(OBSTACK, OBJ)					\\$/
+obstack_grow	obstack.h	/^#define obstack_grow(OBSTACK,where,length)				\\$/
+obstack_grow0	obstack.h	/^#define obstack_grow0(OBSTACK,where,length)				\\$/
+obstack_init	obstack.h	/^#define obstack_init(h) \\$/
+obstack_int_grow	obstack.h	/^#define obstack_int_grow(OBSTACK,datum)					\\$/
+obstack_int_grow_fast	obstack.h	/^#define obstack_int_grow_fast(h,aint) (*((int *)(h/
+obstack_next_free	obstack.h	/^#define obstack_next_free(h)	((h)->next_free)$/
+obstack_object_size	obstack.h	/^#define obstack_object_size(OBSTACK)					\\$/
+obstack_ptr_grow	obstack.h	/^#define obstack_ptr_grow(OBSTACK,datum)					\\$/
+obstack_ptr_grow_fast	obstack.h	/^#define obstack_ptr_grow_fast(h,aptr) (*((void **)/
+obstack_room	obstack.h	/^#define obstack_room(OBSTACK)						\\$/
+offs	m68k.c	/^#define offs(exp)	((exp)->e_exp.X_add_number)$/
+one	m68k-opcode.h	/^#define one(x) ((x) << 16)$/
+operand	expr.c	/^operand (expressionP)$/
+operatorT	expr.c	/^operatorT;$/
+operator_rankT	expr.c	/^typedef char operator_rankT;$/
+option	ns32k.c	/^struct option {$/
+optlist	ns32k.c	/^void optlist(str,optionP,default_map)$/
+output_file_append	output-file.c	/^output_file_append (where, length, filename)$/
+output_file_close	output-file.c	/^output_file_close (filename)$/
+output_file_create	output-file.c	/^output_file_create (name)$/
+output_invalid	i386.c	/^char * output_invalid (c)$/
+panic	m68k.c	/^panic(format,args)$/
+parse	ns32k.c	/^int parse(line,recursive_level)$/
+parse_register	i386.c	/^reg_entry *parse_register (reg_string)$/
+pe	i386.c	/^static void pe (e)$/
+perform_an_assembly_pass	as.c	/^perform_an_assembly_pass (argc, argv)$/
+pi	i386.c	/^static void pi (line, x)$/
+pobegin	read.c	/^pobegin()$/
+prefix_entry	i386.h	/^} prefix_entry;$/
+print_address	m68k.c	/^print_address(add,fp)$/
+print_frags	m68k.c	/^print_frags()$/
+print_gen	atof-m68k.c	/^print_gen(gen)$/
+print_insn	sparc.c	/^print_insn(insn)$/
+ps	i386.c	/^static void ps (s)$/
+pseudo_set	read.c	/^pseudo_set (symbolP)$/
+pseudo_typeS	md.h	/^pseudo_typeS;$/
+pt	i386.c	/^static void pt (t)$/
+pte	i386.c	/^static void pte (t)$/
+read_a_source_file	read.c	/^read_a_source_file (buffer)$/
+read_begin	read.c	/^read_begin()$/
+reg_entry	i386.h	/^} reg_entry;$/
+register	as.h	/^#define register		\/* no registers: helps debuggin/
+relax_addressT	as.h	/^typedef unsigned long int relax_addressT;\/* Enoug/
+relax_align	write.c	/^relax_align (address, alignment)$/
+relax_segment	write.c	/^relax_segment (segment_frag_root, segment_type)$/
+relax_stateT	as.h	/^relax_stateT;$/
+relax_substateT	as.h	/^typedef unsigned long int relax_substateT;$/
+relax_typeS	md.h	/^relax_typeS;$/
+reloc_info_sparc	sparc.h	/^struct reloc_info_sparc$/
+reloc_type	sparc.h	/^enum reloc_type$/
+relocation_info	sparc.h	/^#define relocation_info reloc_info_sparc$/
+reverse_16_bits	m68k.c	/^reverse_16_bits(in)$/
+reverse_8_bits	m68k.c	/^reverse_8_bits(in)$/
+s_abort	read.c	/^s_abort()$/
+s_align	read.c	/^s_align()$/
+s_comm	read.c	/^s_comm()$/
+s_common	sparc.c	/^s_common()$/
+s_data	read.c	/^s_data()$/
+s_data1	m68k.c	/^s_data1()$/
+s_data2	m68k.c	/^s_data2()$/
+s_desc	read.c	/^s_desc()$/
+s_even	m68k.c	/^s_even()$/
+s_file	read.c	/^s_file()$/
+s_fill	read.c	/^s_fill()$/
+s_gdbbeg	read.c	/^s_gdbbeg()$/
+s_gdbblock	read.c	/^s_gdbblock()$/
+s_gdbend	read.c	/^s_gdbend()$/
+s_gdbline	read.c	/^s_gdbline()$/
+s_gdblinetab	read.c	/^s_gdblinetab()$/
+s_gdbsym	read.c	/^s_gdbsym()$/
+s_globl	read.c	/^s_globl()$/
+s_int	read.c	/^s_int()$/
+s_lcomm	read.c	/^s_lcomm()$/
+s_line	read.c	/^s_line()$/
+s_long	read.c	/^s_long()$/
+s_lsym	read.c	/^s_lsym()$/
+s_org	read.c	/^s_org()$/
+s_proc	sparc.c	/^s_proc()$/
+s_reserve	sparc.c	/^s_reserve()$/
+s_seg	sparc.c	/^s_seg()$/
+s_set	read.c	/^s_set()$/
+s_space	read.c	/^s_space()$/
+s_sparc_align	sparc.c	/^s_sparc_align()$/
+s_text	read.c	/^s_text()$/
+scrub_from_file	app.c	/^scrub_from_file()$/
+scrub_from_string	app.c	/^scrub_from_string()$/
+scrub_to_file	app.c	/^scrub_to_file(ch)$/
+scrub_to_string	app.c	/^scrub_to_string(ch)$/
+seen_at_least_1_file	input-scrub.c	/^seen_at_least_1_file ()		\/* TRUE if we opened any/
+seg	m68k.c	/^#define seg(exp)	((exp)->e_exp.X_seg)$/
+segT	as.h	/^}		segT;$/
+seg_entry	i386.h	/^} seg_entry;$/
+setbuffer	as.h	/^#define setbuffer(a,b,c)$/
+source	gdb-lines.c	/^struct source$/
+sourcevector	gdb-lines.c	/^struct sourcevector$/
+sparc_ip	sparc.c	/^sparc_ip(str)$/
+sparc_it	sparc.c	/^struct sparc_it {$/
+sparc_opcode	sparc-opcode.h	/^struct sparc_opcode$/
+stab	read.c	/^stab (what)$/
+stralloc	as.c	/^stralloc (str)$/
+stringer	read.c	/^stringer(append_zero)		\/* Worker to do .ascii etc/
+strstr	strstr.c	/^strstr(s, wanted)$/
+subs	m68k.c	/^#define subs(exp)	((exp)->e_exp.X_subtract_symbol)/
+subsegT	as.h	/^typedef unsigned char	subsegT;$/
+subseg_change	subsegs.c	/^subseg_change (seg, subseg)$/
+subseg_new	subsegs.c	/^subseg_new (seg, subseg)	\/* begin assembly for a /
+subsegs_begin	subsegs.c	/^subsegs_begin()$/
+sy_desc	struc-symbol.h	/^#define sy_desc		sy_nlist.	n_desc$/
+sy_name	struc-symbol.h	/^#define sy_name		sy_nlist .n_un. n_name$/
+sy_other	struc-symbol.h	/^#define sy_other	sy_nlist.	n_other$/
+sy_type	struc-symbol.h	/^#define sy_type 	sy_nlist.	n_type$/
+sy_value	struc-symbol.h	/^#define sy_value	sy_nlist.	n_value$/
+symbolS	struc-symbol.h	/^typedef struct symbol symbolS;$/
+symbol_begin	symbols.c	/^symbol_begin()$/
+symbol_find	symbols.c	/^symbol_find (name)$/
+symbol_find_or_make	symbols.c	/^symbol_find_or_make (name)$/
+symbol_fixup_group	gdb-symbols.c	/^struct symbol_fixup_group$/
+symbol_fixup_groupS	gdb-symbols.c	/^typedef struct symbol_fixup_group symbol_fixup_gro/
+symbol_new	symbols.c	/^symbol_new (name, type, other, desc, value, frag)$/
+symbol_table_insert	symbols.c	/^symbol_table_insert (symbolP)$/
+symbol_table_lookup	symbols.h	/^#define symbol_table_lookup(name) ((symbolS *)(sym/
+template	i386.h	/^} template;$/
+templates	i386.h	/^} templates;$/
+try_index	m68k.c	/^try_index(s,opP)$/
+two	m68k-opcode.h	/^#define two(x, y) (((x) << 16) + y)$/
+type_name	i386.c	/^struct type_name {$/
+uchar	i386.h	/^typedef unsigned char uchar;$/
+uint	i386.h	/^typedef unsigned int uint;$/
+unget_bits	atof-m68k.c	/^unget_bits(num)$/
+valueT	struc-symbol.h	/^typedef unsigned valueT;	\/* The type of n_value. /
+vax_opcodeT	vax-inst.h	/^typedef long int vax_opcodeT;	\/* For initialising/
+vax_reg_parse	vax.c	/^vax_reg_parse(c1, c2, c3)	\/* 3 chars of register /
+vip	vax.c	/^vip (vitP, instring)$/
+vip_begin	vax.c	/^vip_begin(synthetic_too, immediate, indirect, disp/
+vip_end	vax.c	/^vip_end()$/
+vip_op	vax.c	/^vip_op (optext, vopP)$/
+vip_op_1	vax.c	/^vip_op_1 (table, truths)$/
+vip_op_defaults	vax.c	/^vip_op_defaults(immediate, indirect, displen) \/* /
+vot_code	vax-opcode.h	/^#define vot_code code$/
+vot_detail	vax-opcode.h	/^#define vot_detail detail$/
+vot_how	vax-opcode.h	/^#define vot_how args$/
+vot_name	vax-opcode.h	/^#define vot_name name$/
+what	hash.c	/^what(description)$/
+what_kind_of_float	atof-vax.c	/^what_kind_of_float (letter, precisionP, exponent_b/
+whattable	hash.c	/^whattable()			\/* determine number: what hash tabl/
+write_object_file	write.c	/^write_object_file()$/
+xfree	as.h	/^#define xfree free$/
+xmalloc	xmalloc.c	/^char * xmalloc(n)$/
+xrealloc	xrealloc.c	/^xrealloc (ptr, n)$/

@@ -1,0 +1,95 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Cut Here %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% cddoc.tex
+\documentstyle[11pt,cd]{article}
+\nofiles
+
+\addtolength{\textwidth}{1in}
+\addtolength{\oddsidemargin}{-.5in}
+
+\newcommand{\AmSTeX}{$\cal A$\kern-.1667em\lower.5ex\hbox
+ {$\cal M$}\kern-.125em{$\cal S$}-\TeX}
+
+\newcommand{\cdrl}{\cd\rightleftarrows}
+\newcommand{\cdlr}{\cd\leftrightarrows}
+\newcommand{\cdr}{\cd\rightarrow}
+\newcommand{\cdl}{\cd\leftarrow}
+\newcommand{\cdu}{\cd\uparrow}
+\newcommand{\cdd}{\cd\downarrow}
+\newcommand{\cdud}{\cd\updownarrows}
+\newcommand{\cddu}{\cd\downuparrows}
+
+
+\begin{document}\thispagestyle{empty}
+\begin{center}
+{\Large Commutative Diagrams for \LaTeX} \\
+March 3, 1989
+\end{center}
+
+\paragraph{Commutative diagrams} These were adapted from those in \AmSTeX\
+(see p.\ 146 of {\em The Joy of \TeX}). All of the horizontal ``arrows'' will
+stretch with the superscripts and subscripts. These can also be used outside
+of \verb"\CD", where they will be somewhat shorter. You must put `{\tt cd}'
+in with the other style options, for example
+\verb"\documentstyle[12pt,cd]{article}".  The \verb"@"-commands from the
+\AmSTeX\ still work, but the new \verb"\cd"-style is the preferred format.
+The table below shows the arrows and names, along with suggested
+abbreviations.
+
+\begin{center}
+\begin{tabular}{|c|c|c||c|c|c|} \hline
+Arrow & Name & Abbr. & Arrow & Name & Abbr.\\ \hline
+$\rightarrow$ & \verb"\cd\rightarrow", \verb"\cd>" & \verb"\cdr" &
+        $\leftarrow$ & \verb"\cd\leftarrow", \verb"\cd<" & \verb"\cdl" \\
+$\cd\rightleftarrows {}{}$ &\verb"\cd\rightleftarrows" &\verb"\cdrl" &
+        $\cd\leftrightarrows{}{}$ &\verb"\cd\leftrightarrows"
+        &\verb"\cdlr" \\
+$\uparrow$ &\verb"\cd\uparrow" & \verb"\cdu" &
+        $\downarrow$ &\verb"\cd\downarrow" &\verb"\cdd" \\
+$\uparrow\downarrow$ &\verb"\cd\updownarrows" & \verb"\cdud" &
+        $\downarrow\uparrow$ &\verb"\cd\downuparrows" &\verb"\cddu" \\
+        $|$ & \verb"\cd|" && $\|$ & \verb"\cd\|" & \\
+$\cd={}{}$ & \verb"\cd=" && None & \verb"\cd." &  \\
+\hline
+\end{tabular}
+\end{center}
+
+\paragraph{Example}
+\begin{center}
+\begin{tabular}{l}
+\verb"$$\CD" \\
+\verb"G \cdrl {\gamma}{\delta}  H  \cdr {}{\Delta} K \\" \\
+\verb"\cd.  \cdud {f}{g}  \cd| {h}{k} \\" \\
+\verb"0 \cdr {}{}  G'  \cd= {\beta}{}  H'"
+\verb"\endCD $$"
+\end{tabular}
+\hfil
+$\CD
+G  \cdrl {\gamma}{\delta}  H  \cdr {}{\Delta} K \\
+\cd. \cdud {f}{g}       \cd| {h}{k} \\
+0 \cdr {}{} G' \cd= {\beta}{}   H'
+\endCD$
+\end{center}
+
+
+\bigskip\noindent
+The abbreviations were made with the following \verb"\newcommand"'s at the
+top of the file:
+\begin{verbatim}
+\newcommand{\cdrl}{\cd\rightleftarrows}
+\newcommand{\cdlr}{\cd\leftrightarrows}
+\newcommand{\cdr}{\cd\rightarrow}
+\newcommand{\cdl}{\cd\leftarrow}
+\newcommand{\cdu}{\cd\uparrow}
+\newcommand{\cdd}{\cd\downarrow}
+\newcommand{\cdud}{\cd\updownarrows}
+\newcommand{\cddu}{\cd\downuparrows}
+\end{verbatim}
+
+\bigskip
+\begin{center}
+Darrel Hankerson (Bitnet: \verb"hank@auducvax") \\
+Algebra, Combinatorics, \& Analysis \\
+Auburn University \\
+Auburn, Alabama 36849
+\end{center}
+

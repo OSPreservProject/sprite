@@ -1,0 +1,200 @@
+
+
+
+menubutton                User Commands                menubutton
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     menubutton - Create and manipulate menubutton widgets
+
+SSYYNNOOPPSSIISS
+     mmeennuubbuuttttoonn _p_a_t_h_N_a_m_e [_o_p_t_i_o_n_s]
+
+SSTTAANNDDAARRDD OOPPTTIIOONNSS
+     aaccttiivveeBBaacckkggrroouunndd               bbaacckkggrroouunndd      ffoonnttrreelliieeff
+     aaccttiivveeFFoorreeggrroouunndd               bboorrddeerrWWiiddtthh     ffoorreeggrroouunnddtteexxtt
+
+     See the ``options'' manual entry for details on the standard
+     options.
+
+WWIIDDGGEETT--SSPPEECCIIFFIICC OOPPTTIIOONNSS
+     Name:           mmeennuu
+     Class:          MMeennuuNNaammee
+     Command-Line Switch:--mmeennuu
+
+          Specifies the path name of  the  menu  associated  with
+          this menubutton.
+
+     Name:           vvaarriiaabbllee
+     Class:          VVaarriiaabbllee
+     Command-Line Switch:--vvaarriiaabbllee
+
+          Specifies the name of a global variable to set whenever
+          this menubutton posts its menu.  Also serves as name of
+          group of  related  menubuttons  (allows  event  sharing
+          between  menubuttons  and  menus).  Defaults to ppoosstteedd--
+          MMeennuu.
+
+_________________________________________________________________
+
+
+IINNTTRROODDUUCCTTIIOONN
+     The mmeennuubbuuttttoonn command creates a new window  (given  by  the
+     _p_a_t_h_N_a_m_e  argument)  and  makes it into a menubutton widget.
+     Additional options, described above, may be specified on the
+     command  line or in the option database to configure aspects
+     of the menubutton such as its colors, font, text,  and  ini-
+     tial  relief.   The  mmeennuubbuuttttoonn command returns its _p_a_t_h_N_a_m_e
+     argument.  At the time this command is invoked,  there  must
+     not  exist  a  window  named _p_a_t_h_N_a_m_e, but _p_a_t_h_N_a_m_e's parent
+     must exist.
+
+     A menubutton is a widget that displays a textual string  and
+     is associated with a menu widget.  In normal usage, pressing
+     mouse button 1 over the  menubutton  causes  the  associated
+     menu  to  be  posted just underneath the menubutton.  If the
+     mouse is moved over the menu before releasing the mouse but-
+     ton,  the button release causes the underlying menu entry to
+     be invoked.  When  the  button  is  released,  the  menu  is
+
+
+
+Sprite v.1.0         Printed:  April 7, 1992                    1
+
+
+
+
+
+
+menubutton                User Commands                menubutton
+
+
+
+     unposted.
+
+     Menubuttons are organized into groups to  allow  menu  scan-
+     ning:  if  the  mouse  button is pressed over one menubutton
+     (causing it to post its menu) and the mouse  is  moved  over
+     another  menubutton  in the same group without releasing the
+     mouse button, then the  menu  of  the  first  menubutton  is
+     unposted  and  the  menu  of  the  new  menubutton is posted
+     instead.  This makes it possible to scan a row of  pull-down
+     menus  to  find  a  particular entry.  Typically, all of the
+     menubuttons for an application are in the same group, but it
+     is possible to assign multiple groups:  this allows scanning
+     within a group but not between them.
+
+     Each menubutton is associated with a particular global vari-
+     able,  determined  by  the vvaarriiaabbllee option, and the variable
+     determines the menubutton's group:  all menubuttons with the
+     same  associated variable are in the same group.  Whenever a
+     menubutton posts its menu it stores the  path  name  of  the
+     menu  in the associated variable.  Furthermore, the menubut-
+     ton monitors the value of that variable  after  posting  its
+     menu.   When  the variable changes value in the future (e.g.
+     because some other menubutton posted its menu) then the mon-
+     itoring menubutton unposts its menu and stops monitoring the
+     variable.
+
+
+WWIIDDGGEETT CCOOMMMMAANNDD
+     The mmeennuubbuuttttoonn command creates a new Tcl command whose  name
+     is  _p_a_t_h_N_a_m_e.   This  command  may be used to invoke various
+     operations on the widget.   It  has  the  following  general
+     form:
+
+          _p_a_t_h_N_a_m_e _o_p_t_i_o_n [_a_r_g]
+     _O_p_t_i_o_n and _a_r_g determine the exact behavior of the  command.
+     The following commands are possible for menubutton widgets:
+
+     _p_a_t_h_N_a_m_e aaccttiivvaattee
+          Redisplay the menubutton using  its  active  foreground
+          and   background   colors  instead  of  normal  colors.
+          Returns an empty string.
+
+     _p_a_t_h_N_a_m_e ccoonnffiigguurree [_o_p_t_i_o_n [_v_a_l_u_e _o_p_t_i_o_n _v_a_l_u_e ...]]
+          Query  or  modify  the  configuration  options  of  the
+          widget.   If  no  _o_p_t_i_o_n  is  specified, returns a list
+          describing all of the available  options  for  _p_a_t_h_N_a_m_e
+          (see  TTkk__CCoonnffiigguurreeIInnffoo for information on the format of
+          this list).  If _o_p_t_i_o_n is specified with no _v_a_l_u_e, then
+          the  command  returns  a  list describing the one named
+          option (this list will be identical to the  correspond-
+          ing  sublist  of  the  value  returned  if no _o_p_t_i_o_n is
+          specified).  If one  or  more  _o_p_t_i_o_n-_v_a_l_u_e  pairs  are
+
+
+
+Sprite v.1.0         Printed:  April 7, 1992                    2
+
+
+
+
+
+
+menubutton                User Commands                menubutton
+
+
+
+          specified,  then  the command modifies the given widget
+          option(s) to have the given value(s);  in this case the
+          command  returns  an empty string.  _O_p_t_i_o_n may have any
+          of the values accepted by the mmeennuubbuuttttoonn command.
+
+     _p_a_t_h_N_a_m_e ddeeaaccttiivvaattee
+          Redisplay the menubutton using  its  normal  foreground
+          and   background   colors  instead  of  active  colors.
+          Returns an empty string.
+
+     _p_a_t_h_N_a_m_e ppoosstt
+          Arrange for the  menubutton's  associated  menu  to  be
+          posted.   This  is done by executing a Tcl command with
+          the form
+
+                    _m_e_n_u ppoosstt _x _y _g_r_o_u_p
+
+          where _m_e_n_u is the path name of the associated  menu,  _x
+          and _y are the root-window coordinates of the lower-left
+          corner of the menubutton, and _g_r_o_u_p is the name of  the
+          menubutton's  group  (its  vvaarriiaabbllee option).  As a side
+          effect, the path name of the associated menu is  stored
+          in  the global variable associated with the menubutton.
+          Returns an empty string.
+
+     _p_a_t_h_N_a_m_e uunnppoosstt
+          Store an empty string in the variable  associated  with
+          the menubutton.  If the menubutton has posted its menu,
+          this will cause it to unpost its menu  by  executing  a
+          command of the form
+
+                    _m_e_n_u uunnppoosstt
+
+          where _m_e_n_u is the name of the associated menu.  If  any
+          other  menubutton  sharing the same variable has posted
+          its menu, then that menubutton will unpost its menu  in
+          a similar fashion.  Returns an empty string.
+
+
+BBIINNDDIINNGGSS
+     In the current implementation, new menubuttons are not given
+     any  default  behavior:  you'll have to execute explicit Tcl
+     commands to give the menubutton its  behavior.   This  is  a
+     bug, and will be fixed soon (?).
+
+
+KKEEYYWWOORRDDSS
+     menubutton, widget
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  April 7, 1992                    3
+
+
+

@@ -1,0 +1,68 @@
+
+
+
+Rpc                   C Library Procedures                    Rpc
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Rpc_GetName - Get the name of an RPC.
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<rrppcc..hh>>
+
+     void
+     RRppcc__GGeettNNaammee(_r_p_c_N_u_m, _r_e_s_u_l_t_L_e_n_g_t_h, _r_e_s_u_l_t_P_t_r)
+
+AARRGGUUMMEENNTTSS
+     int    _r_p_c_N_u_m         (in)      An RPC number.
+
+     int    _r_e_s_u_l_t_L_e_n_g_t_h   (in)      The number of characters  in
+                                     the result buffer.
+
+     char   *_r_e_s_u_l_t_P_t_r     (out)     A  pointer  to  the   result
+                                     buffer.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     RRppcc__GGeettNNaammee returns a human-readable name for a given Sprite
+     RPC  number.   The user provides a buffer into which the RPC
+     name is copied.  If the user's buffer is too small, the name
+     is  truncated to fit.  A buffer of RRPPCC__MMAAXX__NNAAMMEE__LLEENNGGTTHH char-
+     acters is guaranteed to be big enough.
+
+
+KKEEYYWWOORRDDSS
+     rpc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  May 31, 1991                     1
+
+
+

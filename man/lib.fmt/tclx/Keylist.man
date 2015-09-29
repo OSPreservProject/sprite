@@ -1,0 +1,132 @@
+
+
+
+Keyed                UNKNOWN MANUAL SECTION                 Keyed
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tcl_GetKeyedListField,                Tcl_SetKeyedListField,
+     Tcl_DeleteKeyedListField - Keyed list management routines.
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttccllEExxtteenndd..hh>>
+
+     int
+     TTccll__GGeettKKeeyyeeddLLiissttFFiieelldd (_i_n_t_e_r_p, _f_i_e_l_d_N_a_m_e, _k_e_y_e_d_L_i_s_t, _f_i_e_l_d_V_a_l_u_e_P_t_r);
+
+     char *
+     TTccll__SSeettKKeeyyeeddLLiissttFFiieelldd (_i_n_t_e_r_p, _f_i_e_l_d_N_a_m_e, _f_i_e_l_d_v_a_l_u_e, _k_e_y_e_d_L_i_s_t);
+
+     char *
+     TTccll__DDeelleetteeKKeeyyeeddLLiissttFFiieelldd (_i_n_t_e_r_p, _f_i_e_l_d_N_a_m_e, _k_e_y_e_d_L_i_s_t);
+
+AARRGGUUMMEENNTTSS
+     Tcl_Interp   *_i_n_t_e_r_p           (in)      Interpreter to  use
+                                              for  error  report-
+                                              ing.
+
+     const char   *_f_i_e_l_d_N_a_m_e        (in)      The  name  of   the
+                                              field  (the key) to
+                                              perform the  opera-
+                                              tion on.
+
+     const char   *_k_e_y_e_d_L_i_s_t        (in)      The keyed  list  to
+                                              perform  the opera-
+                                              tion on.
+
+     char         **_f_i_e_l_d_V_a_l_u_e_P_t_r   (out)     A  pointer   to   a
+                                              dynamicly allocated
+                                              string   containing
+                                              the  field value is
+                                              returned here.
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     These routines perform operations on keyed lists.   See  the
+     _E_x_t_e_n_d_e_d _T_c_l man page for a description of keyed lists.
+
+     TTccll__GGeettKKeeyyeeddLLiissttFFiieelldd retrieves a field value from  a  keyed
+     list. It returns TTCCLL__OOKK if the field was found, TTCCLL__BBRREEAAKK if
+     the field was not found and TTCCLL__EERRRROORR if an  error  occured.
+     NULL  maybe  specifled  for  _f_i_e_l_d_V_a_l_u_e_P_t_r  to check for the
+     presences of a field without actually extracting the value.
+
+     TTccll__SSeettKKeeyyeeddLLiissttFFiieelldd sets a field value in keyed  list.  It
+     returns   a   pointer  to  a  dynamically  allocated  string
+
+
+
+Sprite v1.0                     3                               1
+
+
+
+
+
+
+Keyed                UNKNOWN MANUAL SECTION                 Keyed
+
+
+
+     containing the new list, or NULL if an error occured.
+
+     TTccll__DDeelleetteeKKeeyyeeddLLiissttFFiieelldd deletes a field from keyed list. It
+     returns a pointer to a dynamically allocated string contain-
+     ing the new list, or NULL if an error occured.
+
+KKEEYYWWOORRDDSS
+     lists, keyed
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                     3                               2
+
+
+

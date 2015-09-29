@@ -1,0 +1,927 @@
+head     1.20;
+branch   ;
+access   ;
+symbols  ;
+locks    shirriff:1.20; strict;
+comment  @ * @;
+
+
+1.20
+date     90.02.16.11.26.37;  author brent;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     89.06.19.14.25.57;  author jhh;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     88.12.22.13.21.30;  author brent;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     88.11.21.17.26.51;  author douglis;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     88.03.18.18.48.59;  author douglis;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     88.01.12.15.16.34;  author douglis;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     88.01.10.22.31.52;  author nelson;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     87.12.28.17.32.07;  author nelson;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     87.12.28.11.56.50;  author nelson;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     87.12.23.12.30.06;  author nelson;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     87.12.18.11.12.06;  author nelson;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     87.10.21.12.26.43;  author nelson;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     87.10.21.11.37.15;  author brent;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     87.08.22.16.26.08;  author brent;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     87.06.16.11.29.08;  author brent;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     87.06.16.11.27.17;  author nelson;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     87.05.28.11.29.32;  author nelson;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     87.05.22.11.18.48;  author nelson;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     87.04.27.13.44.27;  author nelson;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.12.24.14.38.16;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.20
+log
+@Fixed up support for FS_SET_BLOCK_SKEW
+@
+text
+@/* 
+ * fscmd.c --
+ *
+ *	Command-line interface to the Fs_Command system call.
+ *	This is used to set various filesystem parameters, ie.
+ *	min/max cache size, cache write-back, debug printing.
+ *
+ * Copyright (C) 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/cmds/fscmd/RCS/fscmd.c,v 1.19 89/06/19 14:25:57 jhh Exp Locker: brent $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+#include "status.h"
+#include "option.h"
+#include "fs.h"
+#include "fsCmd.h"
+#include "stdio.h"
+/*
+ * Command line options.
+ */
+
+int minBlocks = -1;
+int maxBlocks = -1;
+int	cacheWriteBack = -1;
+Boolean	flushCache = FALSE;
+int	fsTracing = -1;
+int	cacheDebug = -1;
+int	pdevDebug = -1;
+int	migDebug = -1;
+int	nameCaching = -1;
+int	clientCaching = -1;
+int	contextSwitches = -1;
+int	noStickySegs = -1;
+int	numCleanerProcs = -1;
+int	readAhead = -1;
+int	readAheadTracing = -1;
+int	writeThrough = -1;
+int	writeBackOnClose = -1;
+int	delayTmpFiles = -1;
+int	tmpDirNum = -1;
+int	writeBackASAP = -1;
+int	wbOnLastDirtyBlock = -1;
+int	writeBackInterval = -1;
+int	blockSkew = -1;
+int	largeFileMode = -1;
+int	maxFilePortion = -1;
+int	deleteHistograms = -1;
+Boolean zeroStats = FALSE;
+char    *updateSummary = NULL;
+
+Option optionArray[] = {
+    {OPT_INT, "B", (Address) &blockSkew, "\tSet block gap for allocation."},
+    {OPT_INT, "C", (Address) &clientCaching, "\tSet client caching flag."},
+    {OPT_INT, "D", (Address) &cacheDebug, "\tSet cache debug flag."},
+    {OPT_INT, "H", (Address)&deleteHistograms, "\tSet delete histograms flag."},
+    {OPT_INT, "L", (Address)&maxFilePortion, "\tSet large file portion."},
+    {OPT_INT, "M", (Address) &maxBlocks, "\tMaximum number of blocks allowed in file system cache."},
+    {OPT_INT, "N", (Address) &nameCaching, "\tSet name caching flag."},
+    {OPT_TRUE, "O", (Address)&zeroStats, "\tZero fsStat counters."},
+    {OPT_INT, "R", (Address) &readAheadTracing, "\tSet read ahead tracing flag."},
+    {OPT_INT, "S", (Address) &writeBackInterval, "\tSet cache write back interval."},
+    {OPT_INT, "W", (Address) &writeBackOnClose, "\tSet write-back-on-close flag"},
+    {OPT_INT, "X", (Address) &tmpDirNum, "\tSet tmp directory number."},
+    {OPT_INT, "Z", (Address) &contextSwitches, "\tDo context switches."},
+    {OPT_INT, "b", (Address) &numCleanerProcs, "\tSet the maximum number of block cleaner processes."},
+    {OPT_TRUE, "f", (Address) &flushCache, "\tFlush and invalidate cache."},
+    {OPT_INT, "g", (Address) &migDebug, "\tSet migration debug flag."},
+    {OPT_INT, "l", (Address)&largeFileMode, "\tSet large file mode for cache."},
+    {OPT_INT, "m", (Address) &minBlocks, "\tMinimum number of blocks allowed in file system cache."},
+    {OPT_INT, "p", (Address) &pdevDebug, "\tSet pseudo-device debug flag."},
+    {OPT_INT, "r", (Address) &readAhead, "\tSet number of blocks of read ahead."},
+    {OPT_INT, "s", (Address) &cacheWriteBack, "\tSet cache write back flag."},
+    {OPT_INT, "t", (Address) &fsTracing, "\tSet fs tracing value."},
+    {OPT_STRING, "u", (Address)&updateSummary, "\tUpdate summary info from disk."},
+    {OPT_INT, "v", (Address) &noStickySegs, "\tSet no sticky segments flag."},
+    {OPT_INT, "w", (Address) &writeThrough, "\tSet write through flag."},
+    {OPT_INT, "x", (Address) &delayTmpFiles, "\tSet delay tmp files flag."},
+    {OPT_INT, "y", (Address) &writeBackASAP, "\tSet write back ASAP flag."},
+    {OPT_INT, "z", (Address) &wbOnLastDirtyBlock, "\tSet write back on last dirty block flag."},
+};
+int numOptions = sizeof(optionArray) / sizeof(Option);
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	Collects arguments and branch to the code for the fs command.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Calls Fs_Command...
+ *
+ *----------------------------------------------------------------------
+ */
+main(argc, argv)
+    int argc;
+    char *argv[];
+{
+    register ReturnStatus status = SUCCESS;	/* status of system calls */
+
+    argc = Opt_Parse(argc, argv, optionArray, numOptions);
+
+    if (minBlocks != -1) {
+	(void) Fs_Command(FS_RAISE_MIN_CACHE_SIZE, sizeof(int), &minBlocks);
+    }
+    if (maxBlocks != -1) {
+	(void) Fs_Command(FS_LOWER_MAX_CACHE_SIZE, sizeof(int), &maxBlocks);
+    }
+    if (flushCache) {
+	/*
+	 * Flush the filesystem cache.
+	 */
+	int numLockedBlocks;
+	status = Fs_Command(FS_EMPTY_CACHE, sizeof(int),
+					    (Address) &numLockedBlocks);
+	if (numLockedBlocks > 0) {
+	    fprintf(stderr, "%d locked blocks left\n",
+				      numLockedBlocks);
+	}
+    }
+    if (zeroStats) {
+	/*
+	 * Zero out the file system statistics.
+	 */
+	(void) Fs_Command(FS_ZERO_STATS, 0, (Address) NULL);
+    }
+    if (updateSummary != NULL) {
+	/*
+	 * Reread summary information from disk and update in-memory copy.
+	 */
+	status = Fs_Command(FS_REREAD_SUMMARY_INFO, strlen(updateSummary)+1,
+			updateSummary);
+    }
+    if (writeBackInterval != -1) {
+	int	newInterval;
+
+	newInterval = writeBackInterval;
+	Fs_Command(FS_SET_WRITE_BACK_INTERVAL, sizeof(int),
+		   &writeBackInterval);
+	printf("Cache write back interval was %d, now %d\n",
+		writeBackInterval, newInterval);
+    }
+    /*
+     * Set various file system flags.  The Fs_Command system call returns
+     * the old value of the flag in place of the value passed in.
+     */
+    if (cacheWriteBack != -1) {
+	/*
+	 * Set the cache write-back flag.
+	 */
+	status = SetFlag(FS_DISABLE_FLUSH, cacheWriteBack, "Cache write-back");
+    }
+    if (fsTracing != -1) {
+	SetFlag(FS_SET_TRACING, fsTracing, "Filesystem tracing");
+    }
+    if (cacheDebug != -1) {
+	status = SetFlag(FS_SET_CACHE_DEBUG, cacheDebug, "Cache debug prints");
+    }
+    if (migDebug != -1) {
+	status = SetFlag(FS_SET_MIG_DEBUG, migDebug, "Migration debug prints");
+    }
+    if (pdevDebug != -1) {
+	status = SetFlag(FS_SET_PDEV_DEBUG, pdevDebug,
+			 "pseudo-device debug prints");
+    }
+    if (nameCaching != -1) {
+	status = SetFlag(FS_SET_NAME_CACHING, nameCaching, "Name caching");
+    }
+    if (clientCaching != -1) {
+	status = SetFlag(FS_SET_CLIENT_CACHING, clientCaching, "Client caching");
+    }
+    if (noStickySegs != -1) {
+	status = SetFlag(FS_SET_NO_STICKY_SEGS, noStickySegs, 
+			 "No sticky segments");
+    }
+
+    if (contextSwitches != -1) {
+	status = Fs_Command(FS_TEST_CS, 4, (Address) &contextSwitches);
+    }
+    if (numCleanerProcs != -1) {
+	status = SetInt(FS_SET_CLEANER_PROCS, numCleanerProcs,
+			"Num block cleaner procs");
+    }
+    if (readAhead != -1){
+	status = SetInt(FS_SET_READ_AHEAD, readAhead,
+			"Num blocks of read ahead");
+    }
+    if (readAheadTracing != -1) {
+	status = SetFlag(FS_SET_RA_TRACING, readAheadTracing, 
+			"Read ahead tracing");
+    }
+    if (writeThrough != -1) {
+	status = SetFlag(FS_SET_WRITE_THROUGH, writeThrough, "Write through");
+    }
+    if (writeBackOnClose != -1) {
+	status = SetFlag(FS_SET_WRITE_BACK_ON_CLOSE, writeBackOnClose,
+		"Write-back-on-close");
+    }
+    if (delayTmpFiles != -1) {
+	status = SetFlag(FS_SET_DELAY_TMP_FILES, delayTmpFiles,
+			 "Delay tmp files");
+    }
+    if (tmpDirNum != -1) {
+	status = Fs_Command(FS_SET_TMP_DIR_NUM, sizeof(int), &tmpDirNum);
+    }
+    if (writeBackASAP != -1) {
+	status = SetFlag(FS_SET_WRITE_BACK_ASAP, writeBackASAP,
+			 "Write back ASAP");
+    }
+    if (wbOnLastDirtyBlock != -1) {
+	status = SetFlag(FS_SET_WB_ON_LAST_DIRTY_BLOCK, wbOnLastDirtyBlock,
+			 "Write back on last dirty block");
+    }
+    if (blockSkew != -1) {
+	status = SetInt(FS_SET_BLOCK_SKEW, blockSkew,
+			 "Block gap for allocation");
+    }
+    if (largeFileMode != -1) {
+	status = SetFlag(FS_SET_LARGE_FILE_MODE, largeFileMode,
+			 "Large file mode for cache");
+    }
+    if (maxFilePortion != -1) {
+	status = SetFlag(FS_SET_MAX_FILE_PORTION, maxFilePortion,
+			 "Maximum large file portion for cache");
+    }
+    if (deleteHistograms != -1) {
+	status = SetFlag(FS_SET_DELETE_HISTOGRAMS, deleteHistograms,
+			 "Keep histograms of size/age distributions on delete");
+    }
+    exit(status);
+}
+
+ReturnStatus
+SetInt(command, value, comment)
+    int command;		/* Argument to Fs_Command */
+    int value;			/* Value for int */
+    char *comment;		/* For Io_Print */
+{
+    register int newValue;
+    register ReturnStatus status;
+
+    newValue = value;
+    status = Fs_Command(command, sizeof(int), (Address) &value);
+    if (status != SUCCESS) {
+	printf("%s failed <%x>\n", comment, status);
+    } else {
+	printf("%s %d, was %d\n", comment, newValue, value);
+    }
+    return(status);
+}
+
+ReturnStatus
+SetFlag(command, value, comment)
+    int command;		/* Argument to Fs_Command */
+    int value;			/* Value for flag */
+    char *comment;		/* For Io_Print */
+{
+    register int newValue;
+    register ReturnStatus status;
+
+    newValue = value;
+    status = Fs_Command(command, sizeof(int), (Address) &value);
+    if (status != SUCCESS) {
+	printf("%s failed <%x>\n", comment, status);
+    } else {
+	printf("%s %s, was %s\n", comment,
+		     newValue ? "on" : "off",
+		     value ? "on" : "off");
+    }
+    return(status);
+}
+@
+
+
+1.19
+log
+@added -u option
+@
+text
+@d13 1
+a13 1
+static char rcsid[] = "$Header: /a/newcmds/fscmd/RCS/fscmd.c,v 1.18 88/12/22 13:21:30 brent Exp $ SPRITE (Berkeley)";
+d56 5
+a60 1
+    {OPT_INT, "m", (Address) &minBlocks, "\tMinimum number of blocks allowed in file system cache."},
+a61 4
+    {OPT_INT, "s", (Address) &cacheWriteBack, "\tSet cache write back flag."},
+    {OPT_INT, "S", (Address) &writeBackInterval, 
+	"\tSet cache write back interval."},
+    {OPT_TRUE, "f", (Address) &flushCache, "\tFlush and invalidate cache."},
+d63 5
+a67 6
+    {OPT_INT, "C", (Address) &clientCaching, "\tSet client caching flag."},
+
+    {OPT_INT, "t", (Address) &fsTracing, "\tSet fs tracing value."},
+    {OPT_INT, "D", (Address) &cacheDebug, "\tSet cache debug flag."},
+    {OPT_INT, "p", (Address) &pdevDebug, "\tSet pseudo-device debug flag."},
+    {OPT_INT, "g", (Address) &migDebug, "\tSet migration debug flag."},
+a68 1
+    {OPT_INT, "v", (Address) &noStickySegs, "\tSet no sticky segments flag."},
+d70 5
+d76 4
+a79 1
+    {OPT_INT, "R", (Address) &readAheadTracing, "\tSet read ahead tracing flag."},
+a80 1
+    {OPT_INT, "W", (Address) &writeBackOnClose, "\tSet write-back-on-close flag"},
+a81 1
+    {OPT_INT, "X", (Address) &tmpDirNum, "\tSet tmp directory number."},
+d83 1
+a83 9
+    {OPT_INT, "z", (Address) &wbOnLastDirtyBlock,
+	"\tSet write back on last dirty block flag."},
+    {OPT_INT, "B", (Address) &blockSkew, "\tSet block skew for allocation."},
+    {OPT_INT, "l", (Address)&largeFileMode, "\tSet large file mode for cache."},
+    {OPT_INT, "L", (Address)&maxFilePortion, "\tSet large file portion."},
+    {OPT_INT, "H", (Address)&deleteHistograms, "\tSet delete histograms flag."},
+    {OPT_TRUE, "O", (Address)&zeroStats, "\tZero fsStat counters."},
+    {OPT_STRING, "u", (Address)&updateSummary, 
+	"\tUpdate summary info from disk."},
+d223 2
+a224 2
+	status = SetFlag(FS_SET_BLOCK_SKEW, blockSkew,
+			 "Block skew on allocation");
+d252 5
+a256 1
+    printf("%s %d, was %d\n", comment, newValue, value);
+d271 4
+a274 1
+    printf("%s %s, was %s\n", comment,
+d277 1
+@
+
+
+1.18
+log
+@Ported to standard C library
+@
+text
+@d13 1
+a13 1
+static char rcsid[] = "$Header: /a/newcmds/fscmd/RCS/fscmd.c,v 1.17 88/11/21 17:26:51 douglis Exp Locker: brent $ SPRITE (Berkeley)";
+d53 1
+d86 2
+d138 7
+@
+
+
+1.17
+log
+@Added flags to set pseudo-device debug and migration debug.
+@
+text
+@d2 1
+a2 1
+ * fsCmd.c --
+d4 3
+a6 1
+ *	User interface to the Fs_Command system call.
+d13 1
+a13 1
+static char rcsid[] = "$Header: fsCmd.c,v 1.16 88/03/18 18:48:59 douglis Exp $ SPRITE (Berkeley)";
+a18 1
+#include "io.h"
+d21 1
+d55 4
+a58 4
+    {OPT_INT, 'm', (Address) &minBlocks, "\tMinimum number of blocks allowed in file system cache."},
+    {OPT_INT, 'M', (Address) &maxBlocks, "\tMaximum number of blocks allowed in file system cache."},
+    {OPT_INT, 's', (Address) &cacheWriteBack, "\tSet cache write back flag."},
+    {OPT_INT, 'S', (Address) &writeBackInterval, 
+d60 3
+a62 3
+    {OPT_TRUE, 'f', (Address) &flushCache, "\tFlush and invalidate cache."},
+    {OPT_INT, 'N', (Address) &nameCaching, "\tSet name caching flag."},
+    {OPT_INT, 'C', (Address) &clientCaching, "\tSet client caching flag."},
+d64 15
+a78 15
+    {OPT_INT, 't', (Address) &fsTracing, "\tSet fs tracing value."},
+    {OPT_INT, 'D', (Address) &cacheDebug, "\tSet cache debug flag."},
+    {OPT_INT, 'p', (Address) &pdevDebug, "\tSet pseudo-device debug flag."},
+    {OPT_INT, 'g', (Address) &migDebug, "\tSet migration debug flag."},
+    {OPT_INT, 'Z', (Address) &contextSwitches, "\tDo context switches."},
+    {OPT_INT, 'v', (Address) &noStickySegs, "\tSet no sticky segments flag."},
+    {OPT_INT, 'b', (Address) &numCleanerProcs, "\tSet the maximum number of block cleaner processes."},
+    {OPT_INT, 'r', (Address) &readAhead, "\tSet number of blocks of read ahead."},
+    {OPT_INT, 'R', (Address) &readAheadTracing, "\tSet read ahead tracing flag."},
+    {OPT_INT, 'w', (Address) &writeThrough, "\tSet write through flag."},
+    {OPT_INT, 'W', (Address) &writeBackOnClose, "\tSet write-back-on-close flag"},
+    {OPT_INT, 'x', (Address) &delayTmpFiles, "\tSet delay tmp files flag."},
+    {OPT_INT, 'X', (Address) &tmpDirNum, "\tSet tmp directory number."},
+    {OPT_INT, 'y', (Address) &writeBackASAP, "\tSet write back ASAP flag."},
+    {OPT_INT, 'z', (Address) &wbOnLastDirtyBlock,
+d80 5
+a84 5
+    {OPT_INT, 'B', (Address) &blockSkew, "\tSet block skew for allocation."},
+    {OPT_INT, 'l', (Address)&largeFileMode, "\tSet large file mode for cache."},
+    {OPT_INT, 'L', (Address)&maxFilePortion, "\tSet large file portion."},
+    {OPT_INT, 'H', (Address)&deleteHistograms, "\tSet delete histograms flag."},
+    {OPT_TRUE, 'O', (Address)&zeroStats, "\tZero fsStat counters."},
+d110 1
+a110 1
+    (void)Opt_Parse(&argc, argv, numOptions, optionArray);
+d126 1
+a126 1
+	    Io_PrintStream(io_StdErr, "%d locked blocks left\n",
+d142 1
+a142 1
+	Io_Print("Cache write back interval was %d, now %d\n",
+d232 1
+a232 1
+    Proc_Exit(status);
+d246 1
+a246 1
+    Io_Print("%s %d, was %d\n", comment, newValue, value);
+d261 1
+a261 1
+    Io_Print("%s %s, was %s\n", comment,
+@
+
+
+1.16
+log
+@added FS_ZERO_STATS capability (-O option).
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsCmd.c,v 1.15 88/01/12 15:16:34 douglis Exp $ SPRITE (Berkeley)";
+d30 2
+d64 2
+d158 7
+@
+
+
+1.15
+log
+@Added flag to toggle delete histogram maintenance.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsCmd.c,v 1.14 88/01/10 22:31:52 nelson Exp $ SPRITE (Berkeley)";
+d48 1
+d78 1
+d123 6
+@
+
+
+1.14
+log
+@Added command to set up large file mode.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsCmd.c,v 1.13 87/12/28 17:32:07 nelson Exp $ SPRITE (Berkeley)";
+d47 1
+d76 1
+d206 4
+@
+
+
+1.13
+log
+@*** empty log message ***
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsCmd.c,v 1.12 87/12/28 11:56:50 nelson Exp $ SPRITE (Berkeley)";
+d44 3
+d72 3
+d192 12
+@
+
+
+1.12
+log
+@Made setting of the write-back interval return the old one.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsCmd.c,v 1.11 87/12/23 12:30:06 nelson Exp $ SPRITE (Berkeley)";
+d57 1
+a57 1
+    {OPT_INT, 'z', (Address) &contextSwitches, "\tDo context switches."},
+@
+
+
+1.11
+log
+@Added more commands.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsCmd.c,v 1.10 87/12/18 11:12:06 nelson Exp $ SPRITE (Berkeley)";
+d115 3
+d120 2
+@
+
+
+1.10
+log
+@Added more commands.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsCmd.c,v 1.9 87/10/21 12:26:43 nelson Exp $ SPRITE (Berkeley)";
+d41 3
+d49 2
+d66 3
+d114 4
+d172 9
+a180 1
+	status = SetFlag(FS_SET_TMP_DIR_NUM, tmpDirNum, "Tmp dir num");
+@
+
+
+1.9
+log
+@Now can turn cache flushing on and off.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsCmd.c,v 1.7 87/08/22 16:26:08 brent Exp $ SPRITE (Berkeley)";
+d37 4
+d57 4
+d147 14
+@
+
+
+1.8
+log
+@Moved all the RPC related junk to rpcCmd
+@
+text
+@d26 1
+a26 1
+Boolean noFlush = FALSE;
+d41 1
+a41 1
+    {OPT_TRUE, 's', (Address) &noFlush, "\tDisable cache flushing."},
+a85 6
+    if (noFlush) {
+	/*
+	 * Turn off cache flushing.
+	 */
+	status = Fs_Command(FS_DISABLE_FLUSH, 0, (Address) NIL);
+    }
+d102 6
+@
+
+
+1.7
+log
+@Needed to include fsCmd.h
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsCmd.c,v 1.6 87/06/16 11:29:08 brent Exp $ SPRITE (Berkeley)";
+a29 4
+int	rpcDebug = -1;
+int	rpcTracing = -1;
+int	rpcClientHist = -1;
+int	rpcServerHist = -1;
+a46 1
+    {OPT_INT, 'T', (Address) &rpcTracing, "\tSet rpc tracing flag."},
+a47 3
+    {OPT_INT, 'R', (Address) &rpcDebug, "\tSet rpc debug flag."},
+    {OPT_INT, 'h', (Address) &rpcClientHist, "\tSet client histogram flag."},
+    {OPT_INT, 'H', (Address) &rpcServerHist, "\tSet server histogram flag."},
+d52 1
+a52 1
+    {OPT_INT, 'Z', (Address) &readAheadTracing, "\tSet read ahead tracing flag."},
+a110 3
+    if (rpcTracing != -1) {
+	status = SetFlag(FS_SET_RPC_TRACING, rpcTracing, "RPC tracing");
+    }
+a113 3
+    if (rpcDebug != -1) {
+	status = SetFlag(FS_SET_RPC_DEBUG, rpcDebug, "RPC debug prints");
+    }
+a118 8
+    }
+    if (rpcClientHist != -1) {
+	status = SetFlag(FS_SET_RPC_CLIENT_HIST, rpcClientHist,
+						 "Client histograms");
+    }
+    if (rpcServerHist != -1) {
+	status = SetFlag(FS_SET_RPC_SERVER_HIST, rpcServerHist,
+						    "Server histograms");
+@
+
+
+1.6
+log
+@Removed prefix related stuff.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsCmd.c,v 1.4 87/05/28 11:29:32 nelson Exp $ SPRITE (Berkeley)";
+a17 1
+#include "ioc.h"
+d19 1
+d43 1
+a43 1
+    {OPT_INT, 'm', (Address) &minBlocks, "Parameters:\n\tMinimum number of blocks allowed in file system cache."},
+d45 1
+a45 1
+    {OPT_TRUE, 's', (Address) &noFlush, "Cache Control:\n\tDisable cache flushing."},
+d50 1
+a50 1
+    {OPT_INT, 't', (Address) &fsTracing, "Trace/Debug:\n\tSet fs tracing value."},
+d136 1
+a136 1
+						 "Taking client histograms");
+d140 1
+a140 1
+						    "Taking server histograms");
+a193 16
+    return(status);
+}
+
+ReturnStatus
+LoadPrefix(argc, argv)
+    int argc;
+    char *argv[];
+{
+    ReturnStatus status;
+
+    if (argc < 2) {
+	Io_PrintStream(io_StdErr, "Supply a prefix.");
+	Opt_PrintUsage(argv[0], numOptions, optionArray);
+	return(FAILURE);
+    }
+
+@
+
+
+1.5
+log
+@Added read-ahead related flags.
+@
+text
+@a23 5
+char *loadedPrefix = (char *)NIL;
+char *exportedPrefix = (char *)NIL;
+char *clearedPrefix = (char *)NIL;
+char *deletedPrefix = (char *)NIL;
+char *localPath = (char *)NIL;
+a42 5
+    {OPT_STRING, 'p', (Address)&loadedPrefix, "Prefix Table:\n\tLoad the prefix"},
+    {OPT_STRING, 'l', (Address)&localPath, "\tLocal directory to export (use with -x)"},
+    {OPT_STRING, 'x', (Address)&exportedPrefix, "\tExport under prefix (use with -l)"},
+    {OPT_STRING, 'c', (Address)&clearedPrefix, "\tPrefix to clear handle for"},
+    {OPT_STRING, 'd', (Address)&deletedPrefix, "\tPrefix to delete altogether"},
+a92 48
+    }
+    if (loadedPrefix != (char *)NIL) {
+	/*
+	 * Load a prefix
+	 *	Load a prefix into the prefix table.
+	 *	A prefix in the prefix table causes a broadcast to find the
+	 *	server the first time a file is opened under that prefix.
+	 */
+	status = Fs_Command(FS_PREFIX_LOAD, String_Length(loadedPrefix) + 1,
+					    loadedPrefix);
+    }
+    if (exportedPrefix != (char *)NIL) {
+	if (localPath == (char *)NIL) {
+	    Io_PrintStream(io_StdErr, "Specify a local directory with -l\n");
+	    Opt_PrintUsage(numOptions, optionArray, argv[0]);
+	    Proc_Exit(FAILURE);
+	} else {
+	    /*
+	     * Export a prefix.  This is used on a server to explicitly
+	     * export a local directory under some prefix.
+	     */
+	    Fs_TwoPaths args;
+
+	    args.pathLen1 = String_Length(localPath) + 1;
+	    args.path1 = localPath;
+	    args.pathLen2 = String_Length(exportedPrefix) + 1;
+	    args.path2 = exportedPrefix;
+
+	    status = Fs_Command(FS_PREFIX_EXPORT, sizeof(Fs_TwoPaths), &args);
+	}
+    } else if (localPath != (char *)NIL) {
+	Io_PrintStream(io_StdErr, "Specify an exported prefix with -x\n");
+	Opt_PrintUsage(numOptions, optionArray, argv[0]);
+	Proc_Exit(FAILURE);
+    }
+    if (clearedPrefix != (char *)NIL) {
+	/*
+	 * Clear a prefix's file handle.
+	 */
+	status = Fs_Command(FS_PREFIX_CLEAR, String_Length(clearedPrefix) + 1,
+					    clearedPrefix);
+    }
+    if (deletedPrefix != (char *)NIL) {
+	/*
+	 * Delete a prefix
+	 */
+	status = Fs_Command(FS_PREFIX_DELETE, String_Length(deletedPrefix) + 1,
+					    deletedPrefix);
+@
+
+
+1.4
+log
+@Added new commands.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsCmd.c,v 1.3 87/05/22 11:18:48 nelson Exp $ SPRITE (Berkeley)";
+d45 1
+d70 1
+d209 2
+a210 2
+	status = Fs_Command(FS_SET_CLEANER_PROCS, 4, 
+			    (Address) &numCleanerProcs);
+d213 2
+a214 2
+	status = Fs_Command(FS_SET_READ_AHEAD, 4,
+			    (Address) &readAhead);
+d216 4
+d221 15
+@
+
+
+1.3
+log
+@Added command to set number of cleaner processes.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsCmd.c,v 1.2 87/04/27 13:44:27 nelson Exp $ SPRITE (Berkeley)";
+d29 2
+a30 2
+int minPages = -1;
+int maxPages = -1;
+d44 1
+d52 2
+a53 2
+    {OPT_INT, 'm', (Address) &minPages, "Parameters:\n\tMinimum number of pages allowed in file system cache."},
+    {OPT_INT, 'M', (Address) &maxPages, "\tMaximum number of pages allowed in file system cache."},
+d68 1
+d96 2
+a97 2
+    if (minPages != -1) {
+	(void) Fs_Command(FS_RAISE_MIN_CACHE_SIZE, sizeof(int), &minPages);
+d99 2
+a100 2
+    if (maxPages != -1) {
+	(void) Fs_Command(FS_LOWER_MAX_CACHE_SIZE, sizeof(int), &maxPages);
+d209 4
+@
+
+
+1.2
+log
+@Added new commands.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsCmd.c,v 1.1 86/12/24 14:38:16 nelson Exp $ SPRITE (Berkeley)";
+d43 1
+d66 1
+d203 4
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: makeFilesystem.c,v 1.1 86/06/19 17:11:30 brent Exp $ SPRITE (Berkeley)";
+d42 1
+a42 1
+int	forwardOpens = -1;
+d64 1
+a64 1
+    {OPT_INT, 'F', (Address) &forwardOpens, "Migration:\n\tSet \"fs calls forwarded\" flag."},
+d194 3
+a196 3
+    if (forwardOpens != -1) {
+	status = SetFlag(FS_MIG_FS_CALLS, forwardOpens,
+						    "Forwarding fs calls home");
+@

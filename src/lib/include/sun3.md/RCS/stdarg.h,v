@@ -1,0 +1,84 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     88.11.15.21.41.23;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.11.15.21.16.11;  author rab;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Ansi compatible version of varargs.h
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@/*
+ * stdarg.h --
+ *
+ *	Macros for handling variable-length argument lists.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: varargs.h,v 1.1 88/06/21 09:37:01 ouster Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _STDARG
+#define _STDARG
+
+typedef struct {
+    char *vl_current;			/* Pointer to last arg returned from
+					 * list. */
+    char *vl_next;			/* Pointer to next arg to return. */
+} va_list;
+
+
+#define va_start(list, lastarg) \
+    (list).vl_current = (list).vl_next = ((char *) &lastarg) + 4;
+
+#define va_arg(list, type)			\
+    ((list).vl_current = (list).vl_next,	\
+    (list).vl_next += sizeof(type),		\
+     *((type *) (list).vl_current))
+
+#define va_end(list)
+
+#endif /* _STDARG */
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@a26 1
+#define va_alist _va_args
+a27 2
+#define va_dcl int _va_args;
+
+d29 1
+a29 1
+    (list).vl_current = (list).vl_next = (char *) &_va_args;
+@

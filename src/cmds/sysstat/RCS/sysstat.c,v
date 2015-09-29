@@ -1,0 +1,962 @@
+head     1.8;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.8
+date     92.06.02.13.21.38;  author kupfer;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     90.02.16.11.44.58;  author jhh;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.10.18.22.40.23;  author jhh;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.08.30.09.19.03;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.08.29.15.58.03;  author jhh;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.08.03.16.05.30;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.12.22.11.07.44;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.10.31.13.57.46;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@program to print system status and statistics.  This is the version
+prior to any conversions to the new library.
+@
+
+
+1.8
+log
+@Add -t and -p options.  Tweaks & lint.
+@
+text
+@/*
+ * sysStat.c --
+ *
+ *	Statistics generation for system calls, and a hook for other
+ *	system-related commands.
+ *
+ * Copyright 1986, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/cmds/sysstat/RCS/sysstat.c,v 1.7 90/02/16 11:44:58 jhh Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <spriteTime.h>
+#include <fs.h>
+#include <sysStats.h>
+#include <status.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <option.h>
+#include <host.h>
+#include <kernel/sysSysCall.h>
+#include <kernel/trace.h>
+#include <kernel/sync.h>
+#include <kernel/sched.h>
+#include <kernel/mach.h>
+
+#include "syscalls.h"
+
+/*
+ * Variables for options.
+ */
+
+int countCalls = 0;
+#define JUST_CALLS	1
+#define CALLS_AND_TIMES	2
+
+int resetCount = 0;
+int printVersion = 0;
+int doSyncStat = 0;
+int doSchedStat = 0;
+int enableProfiling = -1;
+
+Option optionArray[] = {
+    {OPT_CONSTANT(JUST_CALLS), "c", (Address)&countCalls,
+     "Print the number of system calls invoked."},
+    {OPT_TRUE, "l", (Address)&doSyncStat, "Print lock (Sync) statistics"},
+    {OPT_INT, "p", (Address)&enableProfiling,
+     "Set or clear the flag that controls system call profiling"},
+    {OPT_TRUE, "R", (Address)&resetCount,
+     "Reset the count of system calls to 0."},
+    {OPT_CONSTANT(CALLS_AND_TIMES), "t", (Address)&countCalls,
+     "Print the number of system calls invoked and the time they took."},
+    {OPT_TRUE, "v", (Address)&printVersion,
+     "Print compilation timestamp for the kernel (DEFAULT)."},
+    {OPT_TRUE, "x", (Address)&doSchedStat, "Print scheduling statistics"},
+};
+
+/*
+ * Constants used by tracing routines:
+ * 	PROC_NUM_EVENTS - the number of valid trace events for proc.\
+ */
+
+#define PROC_NUM_EVENTS 5
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	Driver.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Variable.
+ *
+ *----------------------------------------------------------------------
+ */
+
+
+main(argc, argv)
+    int argc;
+    char *argv[];
+{
+    ReturnStatus status = SUCCESS;
+    char    	  version[128];
+    Sys_MachineInfo	machineInfo;
+    int			numProcessors;
+    int exitStatus = 0;
+
+    (void) Opt_Parse(argc, argv, optionArray, Opt_Number(optionArray),
+		     OPT_ALLOW_CLUSTERING);
+    if (! (printVersion || countCalls || resetCount)) {
+	printVersion = 1;
+    }
+    if (printVersion) {
+	if (Sys_Stats(SYS_GET_VERSION_STRING, sizeof(version), version) ==
+	    SUCCESS) {
+	    int virtualHost, physicalHost;
+	    Host_Entry *hostPtr;
+
+	    if ((Proc_GetHostIDs(&virtualHost, &physicalHost) != SUCCESS) ||
+		((hostPtr = Host_ByID(physicalHost)) == (Host_Entry *)NULL)) {
+		(void) printf("%s\n", version);
+	    } else {
+		char *cPtr;
+		/*
+		 * Nuke domain suffix and print hostname with kernel version.
+		 */
+		for (cPtr = hostPtr->name ; *cPtr ; cPtr++) {
+		    if (*cPtr == '.') {
+			*cPtr = '\0';
+			break;
+		    }
+		}
+		(void) printf("%-20s %s\n", hostPtr->name, version);
+	    }
+	    (void) fflush(stdout);
+	}
+    }
+
+    if (countCalls) {
+	status = PrintNumCalls(countCalls);
+    }
+    if (status != SUCCESS) {
+	fprintf(stderr, "Couldn't get stats about Sprite calls: %s\n",
+		Stat_GetMsg(status));
+	exitStatus = 1;
+    }
+
+    if (resetCount) {
+	status = Sys_Stats(SYS_SYS_CALL_STATS, 0, (Address) NULL);
+    }
+    if (status != SUCCESS) {
+	fprintf(stderr, "Couldn't reset stats about Sprite calls: %s\n",
+		Stat_GetMsg(status));
+	exitStatus = 1;
+    }
+
+    if (enableProfiling != -1) {
+	status = Sys_Stats(SYS_SYS_CALL_STATS_ENABLE, enableProfiling,
+			   (Address)NULL);
+    }
+    if (status != SUCCESS) {
+	fprintf(stderr, "Couldn't %s profiling for Sprite calls: %s\n",
+		(enableProfiling ? "enable" : "disable"),
+		Stat_GetMsg(status));
+	exitStatus = 1;
+    }
+
+    status = Sys_GetMachineInfo(sizeof(Sys_MachineInfo), &machineInfo);
+    if (status != SUCCESS) {
+	printf("Sys_GetMachineInfo failed: %s.\n", Stat_GetMsg(status));
+	exit(1);
+    }
+    numProcessors = machineInfo.processors;
+    if (doSyncStat) {
+	PrintSyncStats(numProcessors);
+    }
+    if (doSchedStat) {
+	PrintSchedStats(numProcessors);
+    }
+
+    exit(exitStatus);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintNumCalls --
+ *
+ *	Print the number of system calls invoked by processes since the last
+ *	time the counter was reset.
+ *
+ * Results:
+ *	The return status from Sys_Stats is returned.
+ *
+ * Side effects:
+ *	The number of calls is output.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+PrintNumCalls(callType)
+    int callType;		/* just calls, or times too */
+{
+    Address buffer;	/* Buffer to hold counters */
+    int bufSize;
+    ReturnStatus status;
+    int i;
+    int numForeign = 0;
+    int numLocal = 0;
+    register int *numCalls;	/* array of counts (one per call) */
+    Time *totalTimes;		/* array of times (one per call) */
+    int msec;
+    int numAlloc;		/* number of entries to allocate space for */
+
+    /*
+     * Allocate an array to hold the numbers from the kernel.  This will 
+     * either be an array of counters or an array of counters followed by 
+     * an array of Time values.
+     */
+    numAlloc = sysCallArraySize / sizeof(SysCallInfo);
+    bufSize = numAlloc * (callType == JUST_CALLS
+			  ? sizeof(int)
+			  : sizeof(int) + sizeof(Time));
+    buffer = malloc((unsigned) bufSize);
+
+    /* 
+     * Now get the numbers from the kernel.
+     */
+    status = Sys_Stats((callType == JUST_CALLS
+			? SYS_SYS_CALL_STATS
+			: SYS_SYS_CALL_TIMES),
+		       numAlloc, buffer);
+    if (status != SUCCESS) {
+	fprintf(stderr, "Couldn't get %s: %s\n",
+		(callType == JUST_CALLS ? "counters" : "counters and times"),
+		 Stat_GetMsg(status));
+	return(status);
+    }
+
+    /* 
+     * Print out the results.  The format depends on whether we give the 
+     * time as well as the count.
+     */
+    numCalls = (int *) buffer;
+    totalTimes = (Time *)((int *)buffer + numAlloc);
+
+    for (i = 0; i < numAlloc; i++) {
+	if (callType == JUST_CALLS) {
+	    (void) printf("%d\t%-30s", numCalls[i], sysCallArray[i].name);
+	    if (sysCallArray[i].local) {
+		numLocal += numCalls[i];
+		(void) printf("local\n");
+	    } else {
+		numForeign += numCalls[i];
+		(void) printf("remote\n");
+	    }
+	} else {
+	    (void)printf("%d\t%d.%03d\t", numCalls[i], 
+			 totalTimes[i].seconds,
+			 (totalTimes[i].microseconds + 500) / 1000);
+	    if (numCalls[i] != 0) {
+		Time_Divide(totalTimes[i], numCalls[i],
+			    &totalTimes[i]);
+	    }
+	    msec = (int)Time_ToMs(totalTimes[i]);
+	    if (msec < 10 && !Time_EQ(totalTimes[i], time_ZeroSeconds)) {
+		(void)printf("(%d.%03d ms avg)\t",
+			     msec, totalTimes[i].microseconds % 1000);
+	    } else {
+		(void)printf("(%d ms avg)\t",
+			     (int)(Time_ToMs(totalTimes[i]) + 0.5));
+	    }
+	    (void)printf("%-30s\n", sysCallArray[i].name);
+	}
+    }
+    if (callType == JUST_CALLS) {
+	(void) printf("\n\nTotal number of calls: %d local, %d remote.\n",
+		      numLocal, numForeign);
+	(void) printf("%d/%d = %6.2f%% remote.\n",
+		      numForeign, numForeign + numLocal, 
+		      ((double) numForeign) / (numForeign + numLocal) * 100.);
+    }
+    return(0);
+}
+
+PrintSyncStats(numProcessors)
+    int	numProcessors;	
+{
+    Sync_Instrument	syncStat[MACH_MAX_NUM_PROCESSORS];
+    ReturnStatus	status;
+    int			i;
+
+    status = Sys_Stats(SYS_SYNC_STATS, sizeof(syncStat), syncStat);
+    if (status != SUCCESS) {
+	return;
+    }
+    printf("Sync Statistics\n");
+    for (i = 0; i < numProcessors; i++) {
+	printf("Processor %d\n", i);
+	printf("numWakeups = %d\n", syncStat[i].numWakeups);
+	printf("numWakeupCalls = %d\n", syncStat[i].numWakeupCalls);
+	printf("numSpuriousWakeups = %d\n", syncStat[i].numSpuriousWakeups);
+	printf("numLocks = %d\n", syncStat[i].numLocks);
+	printf("numUnlocks = %d\n", syncStat[i].numUnlocks);
+	printf("Misses on sched_Mutex in idle loop = %d\n",
+		    syncStat[i].sched_MutexMiss);
+    }
+}
+
+PrintSchedStats(numProcessors)
+    int numProcessors;
+{
+    Sched_Instrument schedStat;
+    ReturnStatus	status;
+    int			i;
+
+    status = Sys_Stats(SYS_SCHED_STATS, 0, &schedStat);
+    if (status != SUCCESS) {
+	return;
+    }
+    printf("Sched Statistics\n");
+    for (i = 0; i < numProcessors; i++) {
+	printf("Processor %d\n", i);
+	printf("numContextSwitches = %d\n", 
+		    schedStat.processor[i].numContextSwitches);
+	printf("numFullSwitches    = %d\n", schedStat.processor[i].numFullCS);
+	printf("numInvoluntary     = %d\n", 
+		    schedStat.processor[i].numInvoluntarySwitches);
+#ifdef notdef
+	printf("onDeckSelf	   = %d\n",
+		    schedStat.processor[i].onDeckSelf);
+	printf("onDeckOther	   = %d\n",
+		    schedStat.processor[i].onDeckOther);
+#endif notdef
+	printf("Idle Time          = %d.%06d seconds\n",
+		   schedStat.processor[i].idleTime.seconds,
+		   schedStat.processor[i].idleTime.microseconds);
+        printf("Idle ticks = %d * 2^32 + %d.\n", 
+		    schedStat.processor[i].idleTicksOverflow,
+		    schedStat.processor[i].idleTicksLow);
+	printf("Idle ticks/sec = %d.\n", 
+		    schedStat.processor[i].idleTicksPerSecond);
+    }
+}
+
+@
+
+
+1.7
+log
+@prints tick overflows
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /a/newcmds/sysstat/RCS/sysstat.c,v 1.6 89/10/18 22:40:23 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d22 1
+d25 1
+d43 3
+d50 1
+d53 1
+a53 3
+    {OPT_TRUE, "v", (Address)&printVersion,
+     "Print compilation timestamp for the kernel (DEFAULT)."},
+    {OPT_TRUE, "c", (Address)&countCalls,
+d55 3
+d60 4
+a63 1
+    {OPT_TRUE, "l", (Address)&doSyncStat, "Print lock (Sync) statistics"},
+a97 1
+    int migStatus;
+d100 1
+d134 1
+a134 1
+	status = PrintNumCalls();
+d136 5
+d145 17
+d164 2
+a165 2
+	printf("Sys_GetMachineInfo returned 0x%x.\n", status);
+	exit(status);
+d175 1
+a175 1
+    exit(status);
+d196 3
+a198 3
+
+int
+PrintNumCalls()
+d201 1
+d206 4
+a209 2
+    register int *numCalls;
+    int numAlloc;
+d212 3
+a214 1
+     * Get a copy of the array of counters.
+d216 5
+d222 7
+a228 3
+    numAlloc = sysCallArraySize / sizeof(SysCallInfo);
+    buffer = malloc((unsigned) (numAlloc * sizeof(int)));
+    status = Sys_Stats(SYS_SYS_CALL_STATS, numAlloc, buffer);
+d230 3
+a232 1
+	Stat_PrintMsg(status, "Error from Test_Stats");
+d235 5
+d241 1
+d244 9
+a252 4
+	(void) printf("%d\t%-30s", numCalls[i], sysCallArray[i].name);
+	if (sysCallArray[i].local) {
+	    numLocal += numCalls[i];
+	    (void) printf("local\n");
+d254 16
+a269 2
+	    numForeign += numCalls[i];
+	    (void) printf("remote\n");
+d272 7
+a278 5
+    (void) printf("\n\nTotal number of calls: %d local, %d remote.\n",
+	   numLocal, numForeign);
+    (void) printf("%d/%d = %6.2f%% remote.\n",
+	   numForeign, numForeign + numLocal, 
+	   ((double) numForeign) / (numForeign + numLocal) * 100.);
+a309 1
+    Time idleTime;
+@
+
+
+1.6
+log
+@checking in old change
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /a/newcmds/sysstat/RCS/sysstat.c,v 1.5 89/08/30 09:19:03 brent Exp Locker: jhh $ SPRITE (Berkeley)";
+d260 5
+@
+
+
+1.5
+log
+@Changed the format of kernel version string that is printed out
+to
+hostname          SPRITE VERSION ...
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /a/newcmds/sysstat/RCS/sysstat.c,v 1.4 89/08/29 15:58:03 jhh Exp Locker: brent $ SPRITE (Berkeley)";
+a19 2
+
+#include "sched.h"
+@
+
+
+1.4
+log
+@Updated to new structure definitions
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /a/newcmds/sysstat/RCS/sysstat.c,v 1.3 89/08/03 16:05:30 brent Exp $ SPRITE (Berkeley)";
+d29 1
+d102 19
+a120 1
+	    (void) printf("Kernel version: %s\n", version);
+d253 1
+d258 1
+@
+
+
+1.3
+log
+@Added Sched and Lock statistics.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /a/newcmds/sysstat/RCS/sysstat.c,v 1.2 88/12/22 11:07:44 douglis Exp Locker: brent $ SPRITE (Berkeley)";
+d21 2
+d33 1
+d90 2
+d113 6
+a118 1
+
+d120 1
+a120 1
+	PrintSyncStats();
+d123 1
+a123 1
+	PrintSchedStats();
+d190 2
+a191 1
+PrintSyncStats()
+d193 1
+a193 1
+    Sync_Instrument	syncStat;
+d195 1
+d197 1
+a197 1
+    status = Sys_Stats(SYS_SYNC_STATS, 0, &syncStat);
+d202 10
+a211 6
+    printf("numWakeups = %d ", syncStat.numWakeups);
+    printf("numWakeupCalls = %d ", syncStat.numWakeupCalls);
+    printf("numSpuriousWakeups = %d ", syncStat.numSpuriousWakeups);
+    printf("numLocks = %d ", syncStat.numLocks);
+    printf("numUnlocks = %d ", syncStat.numUnlocks);
+    printf("\n");
+d214 2
+a215 1
+PrintSchedStats()
+d220 1
+d227 15
+a241 8
+    printf("numContextSwitches = %d\n", 
+		schedStat.processor[0].numContextSwitches);
+    printf("numFullSwitches    = %d\n", schedStat.processor[0].numFullCS);
+    printf("numInvoluntary     = %d\n", 
+		schedStat.processor[0].numInvoluntarySwitches);
+    printf("Idle Time          = %d.%06d seconds\n",
+	       schedStat.processor[0].idleTime.seconds,
+	       schedStat.processor[0].idleTime.microseconds);
+@
+
+
+1.2
+log
+@moved a bunch of stuff out of this, into migcmd.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /a/newcmds/sysstat/RCS/sysstat.c,v 1.1 88/10/31 13:57:46 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d29 2
+d41 2
+d51 2
+d109 7
+d179 40
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d4 2
+a5 1
+ *	Statistics generation for system calls and process migration.
+d18 1
+a18 1
+static char rcsid[] = "$Header: sysStat.c,v 1.5 88/09/26 17:26:53 douglis Exp $ SPRITE (Berkeley)";
+d25 1
+a28 1
+#include <kernel/procMigrate.h>
+d30 2
+a36 6
+int allowMigration = 0;
+int refuseMigration = 0;
+int getMigStatus = 0;
+int doMigration = 0;
+int startTrace = 0;
+int stopTrace = 0;
+a38 2
+int debugLevel = -1;
+int numRecords = 200;
+d41 2
+a44 12
+    {OPT_INT, "d", (Address)&debugLevel,
+     "Level to set proc_MigDebugLevel."},
+    {OPT_TRUE, "S", (Address)&getMigStatus,
+     "Print whether process migration is allowed."},
+    {OPT_TRUE, "a", (Address)&allowMigration,
+     "Allow future migrations to this machine (must be root)."},
+    {OPT_TRUE, "r", (Address)&refuseMigration,
+     "Disallow future migrations to this machine (must be root)."},
+    {OPT_TRUE, "m", (Address)&doMigration,
+     "Print process migration statistics."},
+    {OPT_INT, "n", (Address)&numRecords,
+     "Number of process migration records to print."},
+a46 6
+    {OPT_TRUE, "t", (Address)&startTrace,
+     "Enable tracing of process migration."},
+    {OPT_TRUE, "T", (Address)&stopTrace,
+     "Disable tracing of process migration."},
+    {OPT_TRUE, "V", (Address)&printVersion,
+     "Print compilation timestamp for the kernel."},
+a47 1
+int numOptions = sizeof(optionArray) / sizeof(Option);
+a55 106
+/*
+ * List of system calls to print out, corresponding to call number.
+ * Whether or not they're local should be taken from some other
+ * file in the kernel rather than repeated here....
+ */
+
+typedef struct {
+    char *name;
+    int local;
+} SysCallInfo;
+
+static SysCallInfo callArray[] = {
+    "Proc_Fork",		0,
+    "Proc_Exec",                0,
+    "Proc_Exit",                0,
+    "Sync_WaitTime",            1,
+    "Test_PrintOut",            1,    
+    "Test_GetLine",             1,
+    "Test_GetChar",             1,
+    "Fs_OpenStub",              1,
+    "Fs_ReadStub",              1,
+    "Fs_WriteStub",             1,
+    "Fs_UserClose",             1,
+    "Fs_RemoveStub",            1,
+    "Fs_RemoveDirStub",         1,
+    "Fs_MakeDirStub",           1,
+    "Fs_ChangeDirStub",         1,
+    "Proc_Wait",                0,
+    "Proc_Detach",              0,
+    "Proc_GetIDs",              0,
+    "Proc_SetIDs",              0,
+    "Proc_GetGroupIDs",         0,
+    "Proc_SetGroupIDs",         0,
+    "Proc_GetFamilyID",         0,
+    "Proc_SetFamilyID",         0,
+    "Test_RpcStub",             1,
+    "Test_StatsStub",           1,
+    "Vm_CreateVA",              1,
+    "Vm_DestroyVA",             1,
+    "Sig_UserSend",             0,
+    "Sig_Pause",                1,
+    "Sig_SetHoldMask",          1,
+    "Sig_SetAction",            1,
+    "Prof_Start",               1,
+    "Prof_End",                 1,
+    "Prof_DumpStub",            0,
+    "Vm_Cmd",                   0,
+    "Sys_GetTimeOfDay",         0,
+    "Sys_SetTimeOfDay",         0,
+    "Sys_DoNothing",            1,
+    "Proc_GetPCBInfo",          0,
+    "Vm_GetSegInfo",            1,
+    "Proc_GetResUsage",         0,
+    "Proc_GetPriority",         0,
+    "Proc_SetPriority",         0,
+    "Proc_Debug",               0,
+    "Proc_Profile",             0,
+    "Fs_TruncateStub",          1,
+    "Fs_TruncateIDStub",        1,
+    "Fs_GetNewIDStub",          1,
+    "Fs_GetAttributesStub",     1,
+    "Fs_GetAttributesIDStub",   1,
+    "Fs_SetAttributesStub",     1,
+    "Fs_SetAttributesIDStub",   1,
+    "Fs_SetDefPermStub",        1,
+    "Fs_IOControlStub",         1,
+    "Dev_VidEnable",            0,
+    "Proc_SetEnviron",          0,
+    "Proc_UnsetEnviron",        0,
+    "Proc_GetEnvironVar",       0,
+    "Proc_GetEnvironRange",     0,
+    "Proc_InstallEnviron",      0,
+    "Proc_CopyEnviron",         0,
+    "Sync_SlowLockStub",        1,
+    "Sync_SlowWaitStub",        1,
+    "Sync_SlowBroadcastStub",   1,
+    "Vm_PageSize",              1,
+    "Fs_HardLinkStub",          1,
+    "Fs_RenameStub",            1,
+    "Fs_SymLinkStub",           1,
+    "Fs_ReadLinkStub",          1,
+    "Fs_CreatePipeStub",        1,
+    "Vm_MapKernelIntoUser",     0,
+    "Fs_AttachDiskStub",        0,
+    "Fs_SelectStub",            1,
+    "Sys_Shutdown",             0,
+    "Proc_Migrate",             0,
+    "Fs_MakeDeviceStub",        1,
+    "Fs_CommandStub",           0,
+    "Fs_LockStub",              1,
+    "Sys_GetMachineInfo", 	1,
+    "Net_InstallRoute", 	0,
+    "Fs_ReadVector", 		1,
+    "Fs_WriteVector", 		1,
+    "Fs_CheckAccess", 		1,
+    "Proc_GetIntervalTimer", 	1,
+    "Proc_SetIntervalTimer", 	1,
+    "Fs_FileWriteBackStub",	1,
+    "Proc_ExecEnv",		1,
+};
+
+/*
+ * Forward and external references.
+ */
+extern char *malloc();
+
+d82 1
+a82 1
+    (void) Opt_Parse(argc, argv, optionArray, numOptions,
+d84 3
+a94 66
+    if (debugLevel != -1) {
+	status = Sys_Stats(SYS_PROC_MIGRATION, SYS_PROC_MIG_SET_DEBUG,
+			   (Address) &debugLevel);
+	if (status != SUCCESS) {
+	    Stat_PrintMsg(status, "Sys_Stats (set debug level)");
+	    exit(status);
+	}
+    }
+
+    if (allowMigration || refuseMigration || getMigStatus) {
+	status = Sys_Stats(SYS_PROC_MIGRATION, SYS_PROC_MIG_GET_STATUS,
+			   (Address) &migStatus);
+	if (status != SUCCESS) {
+	    Stat_PrintMsg(status, "Sys_Stats (getting migration status)");
+	    exit(status);
+	}
+
+	if (allowMigration) {
+	    status = Sys_Stats(SYS_PROC_MIGRATION, SYS_PROC_MIG_ALLOW,
+			       (Address) NULL);
+	    if (status != SUCCESS) {
+		Stat_PrintMsg(status, "Sys_Stats (allow migration)");
+		exit(status);
+	    }
+	    (void) printf("Migration is currently allowed, previously %s.\n",
+		     migStatus ? "refused" : "allowed");
+	} else if (refuseMigration) {
+	    status = Sys_Stats(SYS_PROC_MIGRATION, SYS_PROC_MIG_REFUSE,
+			       (Address) NULL);
+	    if (status != SUCCESS) {
+		Stat_PrintMsg(status, "Sys_Stats (refuse migration)");
+		exit(status);
+	    }
+	    (void) printf("Migration is currently refused, previously %s.\n",
+		     migStatus ? "refused" : "allowed");
+	} else {
+	    (void) printf("Migration is currently %s.\n",
+		     migStatus ? "refused" : "allowed");
+	}
+    }
+    if (startTrace) {
+	status = Sys_Stats(SYS_PROC_TRACE_STATS, SYS_PROC_TRACING_ON,
+			(Address) NULL);
+	if (status != SUCCESS) {
+	    (void) fprintf(stderr, "Error %x returned from Test_Stats.\n",
+			   status);
+	    Stat_PrintMsg(status, "");
+	    exit(status);
+	}
+    }
+
+    if (stopTrace) {
+	status = Sys_Stats(SYS_PROC_TRACE_STATS, SYS_PROC_TRACING_OFF,
+			(Address) NULL);
+	if (status != SUCCESS) {
+	    (void) fprintf(stderr, "Error %x returned from Test_Stats.\n",
+			   status);
+	    Stat_PrintMsg(status, "");
+	    exit(status);
+	}
+    }
+
+    if (doMigration) {
+	status = PrintMigration();
+    }
+
+a109 122
+ * PrintMigration --
+ *
+ *	Print the most recent process migration trace records.
+ *
+ * Results:
+ *	The return status from Test_Stats is returned.
+ *
+ * Side effects:
+ *	Trace records are written to stdout.
+ *
+ *----------------------------------------------------------------------
+ */
+
+
+int
+PrintMigration()
+{
+    int index;		/* index of current table entry */
+    Time baseTime, deltaTime, startTime;	/* Times for print out */
+    Address buffer;	/* Buffer for trace records */
+    int numRecs;		/* number of records actually copied */
+    Trace_Record *traceArray;
+    Proc_TraceRecord *procTraceArray;
+    register Trace_Record *tracePtr;
+    register Proc_TraceRecord *procTracePtr;
+    int status;
+    static char *flagsArray[] = {"RE", "RS", "HE", "HS", "  "};
+    static char *eventArray[] = {"start", "end", "xfer", "call", "migtrap"};
+    static char *commandArray[] = {"proc", "vm", "files", "stream", "user",
+				 "resume"};
+    /*
+     * Get a copy of the trace table.
+     */
+
+    buffer = malloc((unsigned) (sizeof(int) + numRecords *
+				(sizeof(Trace_Record) +
+				 sizeof(Proc_TraceRecord))));
+    status = Sys_Stats(SYS_PROC_TRACE_STATS, numRecords, buffer);
+    if (status != SUCCESS) {
+	(void) fprintf(stderr, "Error from Test_Stats.\n");
+	Stat_PrintMsg(status, "");
+	return(status);
+    }
+
+    numRecs = * ((int *) buffer);
+    buffer += sizeof(int);
+    (void) fprintf(stderr, "Number of records is %d.\n", numRecs);
+    (void) fflush(stderr);
+    if (numRecs == 0) {
+	return(0);
+    }
+
+    traceArray = (Trace_Record *) buffer;
+    procTraceArray = (Proc_TraceRecord *) (buffer + numRecs *
+					 sizeof(Trace_Record));
+
+
+    (void) printf("\n");
+#define PRINT_MIGHEADER() \
+    (void) printf("%10s %10s %10s %2s %10s %24s %7s\n", \
+	"Time", "Delta", "ProcessID", "HR", "Event", "Call", "Sta")
+    PRINT_MIGHEADER();
+
+    baseTime = traceArray[0].time;
+    startTime = traceArray[0].time;
+
+    for (index = 0; index < numRecs; index++) {
+	tracePtr = &traceArray[index];
+	procTracePtr = &procTraceArray[index];
+
+	Time_Subtract(tracePtr->time, startTime, &deltaTime);
+	(void) printf(" %3d.%06d",
+			   deltaTime.seconds,
+			   deltaTime.microseconds);
+	Time_Subtract(tracePtr->time, baseTime, &deltaTime);
+	(void) printf(" %3d.%06d",
+			   deltaTime.seconds,
+			   deltaTime.microseconds);
+	baseTime = tracePtr->time;
+
+	if (tracePtr->flags & TRACE_DATA_INVALID) {
+	    procTracePtr->flags = 4;
+	    procTracePtr->processID = (Proc_PID) NULL;
+	}
+	if (((unsigned) procTracePtr->flags) > 3 ||
+	    ((unsigned) tracePtr->event)  >= PROC_NUM_EVENTS) {
+		(void) fprintf(stderr,
+			       "Entry %d: invalid flags (%d) or event (%d).\n",
+			       index, procTracePtr->flags, tracePtr->event);
+		return(-1);
+	    }
+
+	(void) printf("%10x %3s %10s", procTracePtr->processID,
+		      flagsArray[procTracePtr->flags],
+		      eventArray[tracePtr->event]);
+
+	if (tracePtr->event == PROC_MIGTRACE_TRANSFER) {
+	    (void) printf(" %-10s",
+		     commandArray[(int) procTracePtr->info.command.type]);
+	    if (procTracePtr->info.command.data != (ClientData) NIL) {
+		(void) printf(" %20d",
+			       procTracePtr->info.command.data);
+	    }
+	} else if (tracePtr->event == PROC_MIGTRACE_CALL) {
+	    (void) printf(" %24s",
+		     callArray[(int) procTracePtr->info.call.callNumber].name);
+	    if (!(procTracePtr->flags & PROC_MIGTRACE_START)) {
+		(void) printf(" %10x",
+			       procTracePtr->info.call.status);
+	    }
+	}
+
+	(void) printf("\n");
+    }
+    PRINT_MIGHEADER();
+    return(0);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+d140 1
+a140 1
+    numAlloc = sizeof(callArray) / sizeof(SysCallInfo);
+d150 2
+a151 2
+	(void) printf("%d\t%-30s", numCalls[i], callArray[i].name);
+	if (callArray[i].local) {
+d163 1
+a163 1
+	   ((double) numForeign) / (numForeign + numLocal));
+@

@@ -1,0 +1,310 @@
+head     1.7;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.7
+date     90.09.11.14.39.48;  author kupfer;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     90.09.04.20.46.23;  author rab;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.07.31.19.01.38;  author ouster;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.06.03.16.47.53;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.06.03.14.38.20;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.04.06.09.33.42;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.29.09.51.36;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.7
+log
+@Clean up function prototypes some.
+@
+text
+@/*
+ * td.h --
+ *
+ *	Declarations of externally-visible things provided by the
+ *	terminal driver library.  This includes both the basic tty
+ *	driver and an interface between it and a pseudo-device.
+ *
+ * Copyright 1987, 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/lib/include/RCS/td.h,v 1.6 90/09/04 20:46:23 rab Exp Locker: kupfer $ SPRITE (Berkeley)
+ */
+
+#ifndef _TD
+#define _TD
+
+#include <sprite.h>
+#include <fmt.h>
+
+typedef struct Td_Terminal *Td_Terminal;
+typedef struct Td_Pdev *Td_Pdev;
+
+/*
+ * Command arguments to Td_ControlRaw:
+ */
+
+#define TD_BREAK		1
+#define TD_GOT_CARRIER		2
+#define TD_LOST_CARRIER		3
+
+/*
+ * Command arguments to the device's raw control procedure:
+ */
+
+#define TD_RAW_START_BREAK	1
+#define TD_RAW_STOP_BREAK	2
+#define TD_RAW_SET_DTR		3
+#define TD_RAW_CLEAR_DTR	4
+#define TD_RAW_SHUTDOWN		5
+#define TD_RAW_OUTPUT_READY	6
+#define TD_RAW_FLUSH_OUTPUT	7
+#define TD_RAW_FLOW_CHARS	8
+#define TD_RAW_SET_BAUD_RATE	9
+#define TD_RAW_GET_BAUD_RATE	10
+
+/*
+ * Data structure passed from the terminal driver to the raw
+ * control procedure for TD_RAW_FLOW_CHARS:
+ */
+
+typedef struct {
+    char stop;			/* Character to stop output to raw
+				 * terminal;  -1 means no stop character. */
+    char start;			/* Character to restart output to raw
+				 * terminal;  -1 means no start character. */
+} Td_FlowChars;
+
+/*
+ * Data structure passed from the terminal driver to the raw
+ * control procedure for TD_RAW_SET_BAUD_RATE and TD_RAW_GET_BAUD_RATE:
+ */
+
+typedef struct {
+    char ispeed;		/* New input baud rate for terminal
+				 * (B9600, etc.). */
+    char ospeed;		/* New output baud rate for terminal
+				 * (B9600, etc.). */
+} Td_BaudRate;
+
+/*
+ * Command arguments for the cooked control procedure:
+ */
+
+#define TD_COOKED_SIGNAL	21
+#define TD_COOKED_READS_OK	22
+#define TD_COOKED_WRITES_OK	23
+
+/*
+ * Data structure passed from the terminal driver to the cooked
+ * control procedure for TD_COOKED_SIGNAL:
+ */
+
+typedef struct {
+    int sigNum;			/* Signal number to generate. */
+    int groupID;		/* ID of controlling process group
+				 * for terminal. */
+} Td_Signal;
+
+/*
+ * Exported procedures:
+ */
+
+extern Td_Terminal 
+    Td_Create _ARGS_((int bufferSize,
+		      int (*cookedProc)_ARGS_((ClientData, int operation,
+					       int inBufSize, char *inBuffer,
+					       int outBufSize,
+					       char *outBuffer)),
+		      ClientData cookedData,
+		      int (*rawProc)_ARGS_((ClientData, int operation,
+					    int inBufSize, char *inBuffer,
+					    int outBufSize, char *outBuffer)),
+		      ClientData rawData));
+extern void Td_Delete _ARGS_((Td_Terminal terminal));
+extern int Td_Open _ARGS_((Td_Terminal terminal, int *selectBitsPtr));
+extern void Td_Close _ARGS_((Td_Terminal terminal));
+extern int Td_GetCooked _ARGS_((Td_Terminal terminal, int pID, int familyID,
+    int *numCharsPtr, char *buffer, int *sigNumPtr, int *selectBitsPtr));
+extern int Td_PutCooked _ARGS_((Td_Terminal terminal, int *numBytesPtr,
+    register char *buffer, int *sigNumPtr, int *selectBitsPtr));
+extern int Td_ControlCooked _ARGS_((Td_Terminal terminal, int command,
+    Fmt_Format format, int inputSize, char *input, int *outputSizePtr,
+    char *output, int *sigNumPtr, int *selectBitsPtr));
+extern int Td_GetRaw _ARGS_((Td_Terminal terminal, int numChars,
+    register char *buffer));
+extern void Td_PutRaw _ARGS_((Td_Terminal terminal,
+    int numChars, char *buffer));
+extern void Td_ControlRaw _ARGS_((Td_Terminal terminal, int operation));
+
+extern Td_Pdev Td_CreatePdev _ARGS_((char *name, char **realNamePtr,
+    Td_Terminal *termPtr, int (*rawProc)(), ClientData clientData));
+extern void Td_DeletePdev _ARGS_((Td_Pdev ttyPdev));
+
+#endif /* _TD */
+@
+
+
+1.6
+log
+@Added prototypes.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/lib/include/RCS/td.h,v 1.5 89/07/31 19:01:38 ouster Exp Locker: rab $ SPRITE (Berkeley)
+d99 11
+a109 2
+extern Td_Terminal Td_Create _ARGS_((int bufferSize, int (*cookedProc)(),
+    ClientData cookedData, int (*rawProc)(), ClientData rawData));
+@
+
+
+1.5
+log
+@Changed TD_RAW_BAUD_RATE to TD_RAW_SET and _GET_BAUD_RATE.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/lib/include/RCS/td.h,v 1.4 89/06/03 16:47:53 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d23 3
+d99 21
+a119 12
+extern int		Td_CheckOpen();
+extern void		Td_Close();
+extern Td_Terminal	Td_Create();
+extern Td_Pdev		Td_CreatePdev();
+extern void		Td_Delete();
+extern void		Td_DeletePdev();
+extern int		Td_ControlCooked();
+extern void		Td_ControlRaw();
+extern int		Td_GetCooked();
+extern int		Td_GetRaw();
+extern int		Td_PutCooked();
+extern void		Td_PutRaw();
+d121 1
+a121 1
+#endif _TD
+@
+
+
+1.4
+log
+@Several changes:  TD_HANGUP is now TD_GOT_CARRIER and TD_LOST_CARRIER,
+added TD_RAW_BAUD_RATE callback, changed TD_COOKED_SIGNAL to provide
+both signal number and controlling process group.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/lib/include/RCS/td.h,v 1.3 89/06/03 14:38:20 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d46 2
+a47 1
+#define TD_RAW_BAUD_RATE	9
+d63 1
+a63 1
+ * control procedure for TD_RAW_BAUD_RATE:
+@
+
+
+1.3
+log
+@Document args to Td_ControlRaw.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/lib/include/RCS/td.h,v 1.2 89/04/06 09:33:42 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d42 1
+a42 1
+#define TD_RAW_HANGUP		5
+d46 1
+d61 12
+d79 11
+@
+
+
+1.2
+log
+@Major changes for new, more modular terminal emulator.
+@
+text
+@d17 1
+a17 1
+ * $Header: /a/newcmds/tty/RCS/td.h,v 1.1 89/01/21 17:10:31 ouster Exp $ SPRITE (Berkeley)
+d27 9
+a35 1
+ * Command arguments to the raw control procedure:
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d5 2
+a6 1
+ *	terminal driver library.
+d8 1
+a8 1
+ * Copyright 1987 Regents of the University of California
+d17 1
+a17 1
+ * $Header: td.h,v 2.0 87/08/11 09:32:54 brent Exp $ SPRITE (Berkeley)
+d24 1
+d27 1
+a27 1
+ * Exported variables:
+d30 8
+a37 1
+extern char td_ErrorMsg[];
+d40 20
+d63 1
+d65 10
+a74 4
+extern void		Td_GetState();
+extern void		Td_InputChar();
+extern Td_Terminal	Td_Open();
+extern void		Td_SetState();
+@

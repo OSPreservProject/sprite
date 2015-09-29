@@ -1,0 +1,138 @@
+head     1.7;
+branch   ;
+access   ;
+symbols  ds3100:1.7 sun3:1.7 sun4nw:1.5 symm:1.5 spur:1.5;
+locks    ; strict;
+comment  @@;
+
+
+1.7
+date     92.10.28.12.40.39;  author mgbaker;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     92.10.23.15.03.23;  author elm;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.01.11.16.33.18;  author mgbaker;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.01.11.16.33.02;  author mgbaker;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.01.08.17.26.20;  author mgbaker;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.12.06.22.08.51;  author shirriff;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.08.31.00.49.21;  author rab;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.7
+log
+@Fixing local.mk that Ethan broke by turning on optimization for the decstations.
+@
+text
+@#
+# This file is included by Makefile.  Makefile is generated automatically
+# by mkmf, and this file provides additional local personalization.  The
+# variable SYSMAKEFILE is provided by Makefile;  it's a system Makefile
+# that must be included to set up various compilation stuff.
+#
+NAME = dev
+
+#if !empty(TM:Mds3100) || !empty(TM:Mjhh) || !empty(TM:Mcleands3100) || !empty(TM:Mds5000)
+NOOPTIMIZATION	= no -O please
+#endif
+
+#include	<$(SYSMAKEFILE)>
+@
+
+
+1.6
+log
+@*** empty log message ***
+@
+text
+@d7 1
+a7 2
+FIRSTHDRDIRS = ../fsio ../net ../dev ../vm\
+	../fsio/$(TM).md ../net/$(TM).md ../dev/$(TM).md ../vm/$(TM).md
+d9 3
+a11 2
+
+#XCFLAGS += -DDEBUG
+@
+
+
+1.5
+log
+@*** empty log message ***
+@
+text
+@d7 2
+a9 1
+NAME = dev
+d11 1
+a11 3
+#if !empty(TM:Mds3100) || !empty(TM:Mjhh) || !empty(TM:Mcleands3100) || !empty(TM:Mds5000)
+NOOPTIMIZATION	= no -O please
+#endif
+@
+
+
+1.4
+log
+@For compiling boing.
+@
+text
+@a13 2
+CFLAGS	+= -DPROM_1_4
+
+@
+
+
+1.3
+log
+@*** empty log message ***
+@
+text
+@d14 2
+@
+
+
+1.2
+log
+@Added ds5000
+@
+text
+@@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d8 3
+a10 1
+#if !empty(TM:Mds3100) || !empty(TM:Mjhh) || !empty(TM:Mcleands3100)
+@

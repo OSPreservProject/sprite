@@ -1,0 +1,43 @@
+' $Header: /a/newcmds/txinfo/RCS/txinfo.man,v 1.4 89/07/06 21:58:10 shirriff Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS TXINFO cmds
+.BS
+.SH NAME
+txinfo \- Return up-to-date termcap information
+.SH SYNOPSIS
+\fBtxinfo\fR
+.BE
+.SH INTRODUCTION
+.LP
+This command will output on its standard output two shell commands,
+which will set the TERM and TERMCAP enivornment variables to contain
+correct information for the \fBtx\fR window attached to /dev/tty.
+For this command to work properly, the controlling terminal
+for the process (/dev/tty) must be attached to a \fBtx\fR window;  \fBtxinfo\fR
+outputs \fBtx\fR commands to the window and reads back information supplied
+by \fBtx\fR.
+.LP
+This command is particularly useful in .login files on machines that
+do not have ``tx'' entries in their termcap files (and right now there
+are no machines with "tx" termcap entries), so that you can rlogin
+from your workstation and get the TERM and TERMCAP environment variables
+defined.  For example, you might include the following shell commands
+in your .login files:
+.DS
+
+if ( $TERM == tx ) then
+	set noglob
+	eval `txinfo`
+	unset noglob
+endif
+.DE
+.LP
+The \fBnoglob\fR variable must be unset while processing the
+the TERMCAP entry because it contains special characters like \fB[\fR,
+which will confuse the shell unless \fBnoglob\fR is set.
+
+.SH "SEE ALSO"
+tx
+
+.SH KEYWORDS
+termcap, terminal emulator, typescript, window

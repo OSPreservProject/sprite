@@ -1,0 +1,134 @@
+
+
+
+Tcl_Interp        Tcl Command Language Library         Tcl_Interp
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tcl_Interp - client-visible fields of interpreter structures
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttccll..hh>>
+
+     typedef struct {
+          char *_r_e_s_u_l_t;
+          int _d_y_n_a_m_i_c;
+     } Tcl_Interp;
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The  TTccll__CCrreeaatteeIInntteerrpp  procedure  returns  a  pointer  to  a
+     Tcl_Interp  structure.   This  pointer  is  then passed into
+     other Tcl procedures to process commands in the  interpreter
+     and  perform  other  operations  on the interpreter.  Inter-
+     preter structures contain many many fields that are used  by
+     Tcl,  but  only two that may be read and written by clients:
+     _r_e_s_u_l_t and _d_y_n_a_m_i_c.  These fields are used  by  Tcl  command
+     procedures to return strings that form part of the result of
+     each command.  When Tcl_Eval returns, the string pointed  to
+     be  the  _r_e_s_u_l_t field will be used by Tcl_Eval's caller as a
+     return value or error message.
+
+     The easiest way for command  procedures  to  manipulate  the
+     _r_e_s_u_l_t and _d_y_n_a_m_i_c fields is to call Tcl_Return;  Tcl_Return
+     will hide all the details of  managing  these  fields.   The
+     description  below  is  for those procedures that manipulate
+     the fields directly.
+
+     Whenever a command procedure returns, it  must  ensure  that
+     the  _r_e_s_u_l_t  field  of  its interpreter points to the string
+     being returned by the command.  Normally, these strings  are
+     assumed  to  be  statically  allocated;   in  this case, the
+     _d_y_n_a_m_i_c field must be zero.  As an  alternative,  a  command
+     procedure  may  dynamically  allocate  its  return value and
+     store a pointer to it in _i_n_t_e_r_p->_r_e_s_u_l_t.  In this case,  the
+     command procedure must also set _i_n_t_e_r_p->_d_y_n_a_m_i_c to non-zero.
+     If _i_n_t_e_r_p->_d_y_n_a_m_i_c is non-zero, then Tcl will free the space
+     pointed to by _i_n_t_e_r_p->_r_e_s_u_l_t before it invokes the next com-
+     mand.  If a client procedure overwrites _i_n_t_e_r_p->_r_e_s_u_l_t field
+     when _i_n_t_e_r_p->_d_y_n_a_m_i_c is non-zero, then it is responsible for
+     freeing the old _i_n_t_e_r_p->_r_e_s_u_l_t.  Once again, if clients  use
+     the  TTccll__RReessuulltt  procedure to manage these fields, they need
+     not worry about these issues.
+
+     As part of processing  each  command,  TTccll__EEvvaall  initializes
+     _i_n_t_e_r_p->_r_e_s_u_l_t  and  _i_n_t_e_r_p->_d_y_n_a_m_i_c just before calling the
+     command procedure for the command.  The _d_y_n_a_m_i_c  field  will
+
+
+
+Sprite v.1.0       Printed:  February 3, 1990                   1
+
+
+
+
+
+
+Tcl_Interp        Tcl Command Language Library         Tcl_Interp
+
+
+
+     be  initialized to zero, and _i_n_t_e_r_p->_r_e_s_u_l_t will point to an
+     empty string.  Commands that do not  return  any  value  can
+     simply  leave  the  fields  alone.   Furthermore,  the empty
+     string pointed to by _r_e_s_u_l_t is actually part of an array  of
+     TTCCLL__RREESSUULLTT__SSIIZZEE  characters  (approximately 200).  If a com-
+     mand wishes to return a short string, it can simply copy  it
+     to  the  area  pointed to by _i_n_t_e_r_p->_r_e_s_u_l_t.  Or, it can use
+     the sprintf procedure to generate a short result  string  at
+     the location pointed to by _i_n_t_e_r_p->_r_e_s_u_l_t.
+
+     If a command procedure calls a  lower-level  procedure  that
+     sets _i_n_t_e_r_p->_r_e_s_u_l_t and _i_n_t_e_r_p->_d_y_n_a_m_i_c (such as a recursive
+     instance of TTccll__EEvvaall), then the command procedure must reset
+     _i_n_t_e_r_p->_r_e_s_u_l_t if it wishes to return a value different than
+     that returned by the  lower-level  procedure.   As  part  of
+     resetting  _i_n_t_e_r_p->_r_e_s_u_l_t, it must free the space if _i_n_t_e_r_p-
+     >_d_y_n_a_m_i_c is set.  Once again, the easiest way to  make  sure
+     this gets done right is to call TTccll__RReessuulltt.
+
+
+KKEEYYWWOORRDDSS
+     dynamic, interpreter, result
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  February 3, 1990                   2
+
+
+

@@ -1,0 +1,132 @@
+
+
+
+shmget                C Library Procedures                 shmget
+
+
+
+NNAAMMEE
+     shmget - get shared memory segment
+
+SSYYNNTTAAXX
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<ssyyss//iippcc..hh>>
+     ##iinncclluuddee <<ssyyss//sshhmm..hh>>
+
+     iinntt sshhmmggeett ((kkeeyy,, ssiizzee,, sshhmmffllgg))
+     kkeeyy__tt kkeeyy;;
+     iinntt ssiizzee,, sshhmmffllgg;;
+
+DDEESSCCRRIIPPTTIIOONN
+     The system call returns the shared memory identifier associ-
+     ated with _k_e_y.
+
+     A shared memory identifier and associated data structure and
+     shared memory segment of size _s_i_z_e bytes are created for _k_e_y
+     if one of the following are true:
+
+             The _k_e_y is equal to IPC_PRIVATE.  For further infor-
+             mation, see intro(2).
+
+             The _k_e_y does not already have a shared memory iden-
+             tifier associated with it, and (_s_h_m_f_l_g & IPC_CREAT )
+             is "true".
+
+     Upon creation, the data structure associated with the new
+     shared memory identifier is initialized as follows:
+
+             The sshhmm__ppeerrmm..ccuuiidd,,shm_perm.uid,sshhmm__ppeerrmm..ccggiidd,, and
+             sshhmm__ppeerrmm..ggiidd are set equal to the effective user ID
+             and effective group ID, respectively, of the calling
+             process.
+
+             The low-order 9 bits of sshhmm__ppeerrmm..mmooddee are set equal
+             to the low-order 9 bits of _s_h_m_f_l_g. The sshhmm__sseeggsszz is
+             set equal to the value of _s_i_z_e.
+
+             The sshhmm__llppiidd,,shm_nattch,sshhmm__aattiimmee,, and sshhmm__ddttiimmee are
+             set equal to 0.  The sshhmm__ccttiimmee is set equal to the
+             current time.
+
+RREETTUURRNN VVAALLUUEE
+     Upon successful completion, a non-negative integer, namely a
+     shared memory identifier is returned.  Otherwise, a value of
+     -1 is returned and _e_r_r_n_o is set to indicated the error.
+
+DDIIAAGGNNOOSSTTIICCSS
+     The system call will fail if one or more of the following
+     are true:
+
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+shmget                C Library Procedures                 shmget
+
+
+
+     [EINVAL]       The _s_i_z_e is less than the system imposed
+                    minimum or greater than the system imposed
+                    maximum.
+
+     [EACCES]       A shared memory identifier exists for _k_e_y but
+                    operations permission as specified by the
+                    low-order 9 bits of _s_h_m_f_l_g would not be
+                    granted. For further information, see
+
+     [EINVAL]       A shared memory identifier exists for _k_e_y but
+                    the size of the segment associated with it is
+                    less than _s_i_z_e and _s_i_z_e is not equal to zero.
+
+     [ENOENT]       A shared memory identifier does not exist for
+                    _k_e_y and (_s_h_m_f_l_g & IPC_CREAT ) is "false".
+
+     [ENOSPC]       A shared memory identifier is to be created
+                    but the system imposed limit on the maximum
+                    number of allowed shared memory identifiers
+                    system wide would be exceeded.
+
+     [ENOMEM]       A shared memory identifier and associate
+                    shared memory segment are to be created by
+                    the amount of available physical memory is
+                    not sufficient to fill the request.
+
+     [EEXIST]       A shared memory identifier exists for _k_e_y but
+                    ((_s_h_m_f_l_g & IPC_CREAT ) & (_s_h_m_f_l_g & IPC_EXCL
+                    )) is "true".
+
+SSEEEE AALLSSOO
+     shmctl(2), shmop(2), ftok(3)
+
+BBUUGGSS
+     The System V shared memory functions are implemented at user
+     level on top of the mmap(2) interface.  Not all the System V
+     functionality is implemented.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     2
+
+
+

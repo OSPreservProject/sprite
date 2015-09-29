@@ -1,0 +1,61 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     89.01.04.12.09.04;  author david;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Created machine dependent routines.
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@
+/*
+** The machine dependent statistics routines.
+*/
+#include "sprite.h"
+#include "status.h"
+#include "fs.h"
+#include "fsCmd.h"
+#include "sysStats.h"
+#include "proc.h"
+#include "vm.h"
+#include "kernel/sched.h"
+#include "kernel/fsStat.h"
+#include "kernel/vm.h"
+#include "stdio.h"
+#include "ccMachStat.h"
+
+ReturnStatus
+InitMachStats(stats)
+MachStats	*stats;
+{
+	return(SUCCESS);
+}
+
+ReturnStatus
+GetMachStats(stats)
+MachStats	*stats;
+{
+	return(SUCCESS);
+}
+
+PrintMachStats(startStats, endStats)
+MachStats       *startStats;
+MachStats       *endStats;
+{
+}
+@

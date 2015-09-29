@@ -1,0 +1,68 @@
+
+
+
+tmpfile               C Library Procedures                tmpfile
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     tmpfile - Create a temporary file
+
+SSYYNNOOPPSSIISS
+     iinncclluuddee <<ssttddiioo..hh>>
+
+     FFIILLEE **
+     ttmmppffiillee(())
+
+__________________________________________________________________________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This procedure creates and opens a temporary file.  The file
+     will be removed when it is closed or when the process exits.
+     The return value from ttmmppffiillee is a  pointer  to  the  opened
+     stream, which may be used for performing I/O to and from the
+     file.  If an error occurred in opening  the  file,  NNUULLLL  is
+     returned.
+
+KKEEYYWWOORRDDSS
+     file, open, temporary
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  December 1, 1990                   1
+
+
+

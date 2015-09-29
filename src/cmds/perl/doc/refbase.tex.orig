@@ -1,0 +1,1573 @@
+% refmaster.tex -- Perl Reference Guide
+% SCCS Status     : @(#)@ refmaster	4.1.8
+% Author          : Johan Vromans
+% Created On      : Wed Jul 10 18:26:19 1991
+% Last Modified By: Johan Vromans
+% Last Modified On: Mon Jul 15 23:12:27 1991
+% Update Count    : 3
+% Status          : OK?
+%
+%%%%%%%%%%%%%%%% Copyright %%%%%%%%%%%%%%%%
+%
+% The Perl Reference Guide and its associated files are 
+%
+% Copyright 1989, 1990, 1991 Johan Vromans.
+%
+% They may be used and reproduced under the terms of the
+% GNU Public Licence. A copy of this licence should have 
+% been included in your Perl source kit.
+%
+%%%%%%%%%%%%%%%% Disclaimer %%%%%%%%%%%%%%%%
+%
+% I'm not a TeX wizard. I stole some of the ideas from 
+% Raymond Chen <raymond@math.berkeley.edu> and others.
+%
+%%%%%%%%%%%%%%%% Start of code %%%%%%%%%%%%%%%%
+%
+\documentstyle{refbase}
+
+\begin{document}
+
+
+\begin{titlepage}
+
+\hbox{ }
+\end{titlepage}
+
+\begin{titlepage}
+
+\vskip3cm
+
+\vbox{{\xviipt\sl Perl Reference Guide}
+      {\rule[0.3cm]{\textwidth}{0.25pt}}}
+
+{\bf for Perl version 4.010}
+
+\vskip1cm
+Perl program deigned and created by \\
+Larry Wall \<lwall@netlabs.com\>
+
+\vskip1cm
+Reference guide designed and created by \\
+Johan Vromans \<jv@mh.nl\>
+
+\vskip1.5cm
+\vbox{{\xviipt\sl Contents}
+      {\rule[0.3cm]{\textwidth}{0.25pt}}}
+
+\newcounter{xx}
+\begin{list}{\thexx.}
+{\setlength{\topsep}{0pt plus 1pt}
+ \setlength{\itemsep}{0pt plus 1pt}
+ \setlength{\parsep}{0pt plus 1pt}
+ \usecounter{xx}}
+\item Command line options
+\item Literals
+\item Variables
+\item Statements
+\item Flow control
+\item Operators
+\item File test operators
+\item Arithmetic functions
+\item Conversion functions
+\item Structure conversion
+\item String functions
+\item Array and list functions
+\item File operations
+\item Directory reading routines
+\item Input / Output
+\item Search and replace functions
+\item System interaction
+\item Networking
+\item SystemV IPC
+\item Miscellaneous
+\item Formats
+\item Info from system files
+\item Regular expressions
+\item Special variables
+\item Special arrays
+\item The perl debugger
+\end{list}
+\vskip1cm
+{\catcode`\%=\other \ixpt Rev. \perlrev}
+\end{titlepage}
+
+\vbox{{\xviipt\sl Conventions}
+      {\rule[0.3cm]{\textwidth}{0.25pt}}}
+
+\begin{enum}{2cm}
+\Xi{|fixed|} denotes literal text.
+
+\Xi{<this>} means variable text, i.e. things you must fill in.
+
+\Xi{<this>\dag} means that <this> will default to |$_| if omitted.
+
+\Xi{\kwd{word}} is a keyword, i.e. a word with a special meaning.
+
+\Xi{\fbox{<ret>}} denotes pressing a keyboard key.
+
+\Xi{[\ldots]} denotes an optional part.
+
+\Xi{(\ldots)*} means that the parentheses may be omitted.
+
+\end{enum}
+\section{Command line options} 
+
+\begin{enum}{1cm}
+
+\Xi{|-a|} turns on autosplit mode when used with |-n| or
+|-p|. Splits to |@F|.
+
+\Xi{|-c|} checks syntax but does not execute.
+
+\Xi{|-d|} runs the script under the debugger. Use |-de 0| to
+start the debugger without a script.
+
+\Xi{|-D| <number>} sets debugging flags. 
+
+\Xi{|-e| <commandline>} may be used to enter one line of
+script. Multiple |-e| commands may be given to build up a
+multi-line script.
+
+\Xi{|-i| <ext>} files processed by the |<>| construct are
+to be edited in-place.
+
+\Xi{|-I| <dir>} with |-P|: tells the C preprocessor where
+to look for include files. The directory is prepended to |@INC|.
+
+\Xi{|-L| <octnum>} enables automatic line ending processing.
+
+\Xi{|-n|} assumes an input loop around your script. Lines are not
+printed.
+
+\Xi{|-p|} assumes an input loop around your script. Lines are
+printed.
+
+\Xi{|-P|} runs the C preprocessor on the script before
+compilation by perl.
+
+\Xi{|-s|} interprets ``|-xxx|'' on the command line as
+switches and sets the corresponding variables \$|xxx| in the script.
+
+\Xi{|-S|} uses the |PATH| environment variable to search for
+the script.
+
+\Xi{|-u|} dumps core after compiling the script. To be used with
+the {\it undump\/} program (where available).
+
+\Xi{|-U|} allows perl to do unsafe operations.
+
+\Xi{|-v|} prints the version and patchlevel of your perl
+executable.
+
+\Xi{|-w|} prints warnings about possible spelling errors and
+other error-prone constructs in the script.
+
+\Xi{|-x|} extracts perl program from input stream.
+
+\Xi{|-0| <val>} (that's the number zero) designates an
+initial value for the record terminator \$|/|.
+See also |-L|.
+
+\end{enum}
+\makeuppage
+\section{Literals} 
+
+Numeric: |123  123.4  5E-10  0xff| (hex)|  0377| (octal).
+
+\hangindent=2cm\hangafter=1
+String: |'abc'| literal string, no variable interpolation nor
+escape characters.
+\newline Also: |q/abc/|.
+\newline (Almost any pair of delimiters can be used instead of |/.../|.)
+
+\hangindent=2cm\hangafter=1
+\makebox[1cm]{}|"abc"|
+Variables are interpolated and escape sequences are processed. 
+\newline Also: |qq/abc/|.
+\newline Escape sequences: |\t| (Tab), |\n| (Newline), |\r| (Return),
+|\f| (Formfeed), |\b| (Backspace), |\a| (Alarm), |\e|
+(Escape), |\033|(octal), |\x1b|(hex), |\c[| (control).
+\newline |\l| and |\u| lowcase/upcase the following character; 
+\newline |\L| and |\U| lowcase/upcase until a |\E| is encountered.
+
+
+\hangindent=2cm\hangafter=1
+\makebox[1cm]{}|`|<command>|`|
+evaluates to the output of the <command>. 
+\newline Also: |qx/|<command>|/|.
+
+\hangindent=1cm\hangafter=1
+Array: |(1,2,3)|. |()| is an empty array.  
+\newline Also: |($a,$b,@rest) = (1,2,...);|
+\newline |(1..4)| is the same as |(1,2,3,4)|. Likewise |('abc'..'ade')|
+
+\hangindent=1cm\hangafter=1
+Associative array:
+|(|<key1>|,|<val1>|,|<key2>|,|<val2>|,...)|
+
+\hangindent=1cm\hangafter=1
+Filehandles: 
+\newline Pre-defined: |<STDIN>|, |<STDOUT>|, |<STDERR>|, |<ARGV>|,
+|<DATA>|;
+\newline User-specified: |<|<handle>|>|, |<$|<var>|>|.
+\newline |<>| is the input stream formed by the files specified in
+|@ARGV|, or standard input if no arguments are supplied.
+
+\hangindent=1cm\hangafter=1
+Globs: |<|<pattern>|>| evaluates to all filenames according
+to the pattern.
+\newline Use |<${|<var>|}>| to glob from a variable.
+
+\hangindent=1cm\hangafter=1
+Here-Is: |<<|<identifier>
+\newline {\it See the manual for details}
+
+\hangindent=1cm\hangafter=1
+Special tokens:
+\newline \_\,\_|FILE|\_\,\_: filename; \_\,\_|LINE|\_\,\_: line number.
+\newline \_\,\_|END|\_\,\_: end of program; remaining lines can be read using
+\<<data>\>.
+\section{Variables} 
+
+\begin{enum}{3.2cm}
+
+\Xi{|\$var|} a simple scalar variable
+
+\Xi{|\$var[28]|} 29th element of array |@var| (the |[]| are
+part of it)
+
+\Xi{|\$var\{'Feb'\}|} one value from associative array |%var|
+
+\Xi{|\$var|} last index of array |@var|
+
+\Xi{|@var|} the entire array;
+
+in scalar context: the number of elements in the array
+
+\Xi{|@var[3,4,5]|} a slice of the array |@var|
+
+\Xi{|@var\{'a','b'\}|} a slice of |%var|; same as
+|($var{'a'},$var{'b'})|
+
+\Xi{|\%var|} the entire associative array
+
+\Xi{|\$var\{'a',1,...\}|} emulates a multi-dimensional array
+
+\Xi{|('a'..'z')[4,7,9]|} a slice of an array literal
+
+\Xi{|*|<name>} refers to all objects represented by <name>.
+``|*name1 = *name2|'' makes |name1| a reference to |name2|.
+
+\end{enum}
+\section{Statements} 
+
+Every statement is an expression, optionally followed by a modifier,
+and terminated by a semi-colon.
+
+Execution of expressions can depend on other expressions using one of
+the modifiers \kwd{if}, \kwd{unless}, \kwd{while} or \kwd{until},
+e.g.:
+
+\quad	<expr1> \kwd{if} <expr2> |;| \\
+\quad	<expr1> \kwd{until} <expr2> |;|
+
+Also, by using one of the logical operators \|, |&&| or |? :|, e.g.:
+
+\quad	<expr1> \| <expr2> |;| \\
+\quad	<expr1> |?| <expr2> |:| <expr3> |;| 
+
+Statements can be combined to form a <block> when enclosed in |{}|.
+
+Compound statements may be used to control flow:
+
+\quad	\kwd{if} |(|<expr>|)| <block> [ [ \kwd{elsif}
+	|(|<expr>|)| <BLOCK ...> ] \kwd{else}
+	<block> ]
+\\
+\quad	\kwd{unless} |(|<expr>|)| <block> [ \kwd{else}
+	<block> ]
+\\
+\quad	[ <label>\kwd{:} ] \kwd{while} |(|<expr>|)|
+	<block> [ \kwd{continue} <block> ]
+\\
+\quad	[ <label>\kwd{:} ] \kwd{until} |(|<expr>|)|
+	<block> [ \kwd{continue} <block> ]
+\\
+\quad	[ <label>\kwd{:} ] \kwd{for} |(|<expr>|;|
+	<expr>|;| <expr>|)| <block>
+\\
+\quad	[ <label>\kwd{:} ] \kwd{foreach} <var>\dag
+	|(|<array>|)| <block>
+\\
+\quad	[ <label>\kwd{:} ] <block> [ \kwd{continue} < block> ]
+
+Special forms are:
+
+\quad	\kwd{do} <block> \kwd{while} <expr> |;| \\
+\quad	\kwd{do} <block> \kwd{until} <expr> |;| \\
+
+which are guaranteed to perform <block> once before testing <expr>.
+
+\section{Flow control} 
+
+\begin{enum}{1cm}
+
+\Xi{\kwd{do} <block>}
+Returns the value of the last command in the sequence of commands indicated by <block>. \kwd{next}, \kwd{last} and \kwd{redo}
+ cannot be used here.
+
+\Xi{\kwd{do} <subroutine>\kwd{(LIST)}} 
+Executes a <subroutine> declared by a \kwd{sub} declaration, and
+returns the value of the last expression evaluated in <subroutine> .
+\newline Preferred form is: |&|<subroutine> .
+
+\Xi{\kwd{do} <FILENAME>}
+Executes the contents of <filename> as a perl script. Errors are
+returned in |$@|.
+\newline Preferred form is: \kwd{require} <filename> .
+
+\Xi{\kwd{goto} <label>}
+Continue execution at the specified label.
+
+\Xi{\kwd{last} [<label>]}
+Immediately exits the loop in question. Skips continue block.
+
+\Xi{\kwd{next} [<label>]}
+Starts the next iteration of the loop.
+
+\Xi{\kwd{redo} [<label>]}
+Restarts the loop block without evaluating the conditional again.
+
+\Xi{\kwd{return} <expr>}
+Returns from a subroutine with the value specified.
+
+\end{enum}
+\section{Operators} 
+
+\begin{tabbing}
+|    |\=|    |\= \kill
+|+ -| \> |* /| \> Addition, subtraction, multiplication, division. \\
+|%| \> \> Modulo division. \\
+\| \& \> \^ \> Bitwise or, bitwise and, bitwise exclusive or. \\
+|>>| \> |<<| \> Bitwise shift right, bitwise shift left. \\
+|**| \> \> Exponentiation. \\
+|.| \> \> Concatenation of two strings. \\
+\kwd{x} \> \> Returns a string or array consisting of the left operand
+(an array or \\
+\> \> a string) repeated the number of times specified by the right operand.
+\end{tabbing}
+
+All of the above operators also have an assignment operator, e.g. ``|.=|''.
+
+\begin{tabbing}
+|    |\=|    |\= \kill
+|++| \> |--| \> Auto-increment (magical on strings), auto-decrement. \\
+|? :|\>      \> Alternation (if-then-else) operator. \\
+\|   \> \&   \> Logical or, logical and. \\
+|=|\,|=| \> |!=| \> Numeric equality, inequality. \\
+\kwd{eq} \> \kwd{ne} \> String equality, inequality. \\
+|<|  \>  |>|  \> Numeric less than, greater than. \\
+\kwd{lt} \> \kwd{gt} \> String less than, greater than. \\
+|<=| \> |>=| \> Numeric less (greater) than or equal to. \\
+\kwd{le} \> \kwd{ge} \> String less (greater) than or equal. \\
+|<=>| \> \> Numeric compare. Returns -1, 0 or 1. \\
+\kwd{cmp} \> \> String compare. Returns -1, 0 or 1. \\
+|=~| \> |!~| \> Search pattern, substitution, or translation (negated). \\
+|..| \> \> Enumeration, also input line range operator. \\
+|,| \> \> Comma operator.
+\end{tabbing}
+\section{File test operators} 
+
+These unary operators takes one argument, either a filename or a
+filehandle, and tests the associated file to see if something is true
+about it. If the argument is omitted, tests |$_| (except for |-t,|
+which tests |STDIN|). If the special argument |_| (underscore) is
+passed, uses the info of the preceding test. 
+
+\begin{enum}{2.5cm}
+
+\Xi{|-r -w -x -o|}  File is readable/writable/executable/owned by
+effective uid. 
+
+\Xi{|-R -W -X -O|}  File is readable/writable/executable/owned by real
+uid.  
+
+\Xi{|-e  -z  -s|}  File exists / has zero/non-zero size. 
+
+\Xi{|-f  -d|}  File is a plain file, a directory.
+
+\Xi{|-l  -S  -p|}  File is a symbolic link, a socket, a named pipe (FIFO). 
+
+\Xi{|-b  -c|}  File is a block/character special file. 
+
+\Xi{|-u  -g  -k|}  File has setuid/setgid/sticky bit set. 
+
+\Xi{|-t|}  Tests if filehandle (|STDIN| by default) is opened to a tty.
+
+\Xi{|-T  -B|}  File is a text/non-text (binary) file.  |-T| and |-B|
+return TRUE on a null file, or a file at EOF when testing a filehandle. 
+
+\Xi{|-M  -A  -C|}  File creation / access / inode change time. Measured
+in days since this program started. See also |$^T| in section
+``Special~Variables''.
+
+\end{enum}
+\makeuppage
+A <list> is a (possibly parenthesised) list of expressions, variables
+or <list>s. An array variable or an array slice may always be used
+instead of a <list>.  
+
+\section{Arithmetic functions} 
+
+\begin{enum}{1cm}
+
+\Xi{\kwd{atan2(}<y>\kwd{,}<x>\kwd{)}}
+Returns the arctangent of <Y>/<X> in the range -$\pi$ to $\pi$.
+
+\Xi{\kwd{cos(}\oEXPR \kwd{)}*}
+Returns the cosine of <expr> (expressed in radians).
+
+\Xi{\kwd{exp(}\oEXPR \kwd{)}*}
+Returns |e| to the power of <expr>.
+
+\Xi{\kwd{int(}\oEXPR \kwd{)}*}
+Returns the integer portion of <expr>.
+
+\Xi{\kwd{log(}\oEXPR \kwd{)}*}
+Returns natural logarithm (base |e|) of <expr>.
+
+\Xi{\kwd{rand}[\kwd{(}<expr>\kwd{)}*]}
+Returns a random fractional number between 0 and the value of <expr>.
+If <expr> is omitted, returns a value between 0 and 1. 
+
+\Xi{\kwd{sin(}\oEXPR \kwd{)}*}
+Returns the sine of <expr> (expressed in radians).
+
+\Xi{\kwd{sqrt(}\oEXPR \kwd{)}*}
+Return the square root of <expr>.
+
+\Xi{\kwd{srand}[\kwd{(}<expr>\kwd{)}*]}
+Sets the random number seed for the rand operator.
+
+\Xi{\kwd{time}}
+Returns the number of seconds since January 1, 1970. Suitable for
+feeding to \kwd{gmtime} and \kwd{localtime}. 
+
+\end{enum}
+\section{Conversion functions} 
+
+\begin{enum}{1cm}
+
+\Xi{\kwd{gmtime(}<expr>\kwd{)}*}
+Converts a time as returned by the \kwd{time} function to a 9-element
+array (\$sec, \$min, \$hour, \$mday, \$mon, \$year, \$wday,
+\$yday, \$isdst) with the time analyzed for the Greenwich timezone.
+\$mon has the range 0..11 and \$wday has the range 0..6.
+
+\Xi{\kwd{hex(}\oEXPR\kwd{)}*}
+Returns the decimal value of <expr> interpreted as an hex string.
+
+\Xi{\kwd{localtime(}<expr>\kwd{)}*}
+Converts a time as returned by the \kwd{time} function to a 9-element
+array with the time analyzed for the local timezone. 
+
+\Xi{\kwd{oct(}\oEXPR\kwd{)}*}
+Returns the decimal value of <expr> interpreted as an octal string. If
+<expr> starts off with |0x|, interprets it as a hex string instead.
+
+\Xi{\kwd{ord(}\oEXPR\kwd{)}*}
+Returns the ascii value of the first character of <expr>.
+
+\Xi{\kwd{vec(}<expr>\kwd{,}<offset>\kwd{,}<bits>\kwd{)}}
+Treats <expr> as a string of unsigned ints, and yields the bit at
+<offset>. <bits> must be between 1 and 32. May be used as an lvalue.
+
+\end{enum}
+\section{Structure conversion} 
+
+\begin{enum}{1cm}
+
+\Xi{\kwd{pack(}<template>\kwd{,}<list>\kwd{)}}
+Packs the values into a binary structure using <template>.
+
+\Xi{\kwd{unpack(}<template>\kwd{,}<expr>\kwd{)}}
+Unpacks the structure <expr> into an array, using <template>.
+
+<template> is a sequence of characters as follows:
+
+\begin{tabbing}
+|  |\=|a |\=|/ |\=|A  |\= \kill
+  \> |a| \> / \> |A| \> Ascii string, null / space padded \\
+  \> |b| \> / \> |B| \> Bit string in ascending / descending order \\
+  \> |c| \> / \> |C| \> Native / unsigned char value \\
+  \> |f| \> / \> |d| \> Single / double float in native format \\
+  \> |h| \> / \> |H| \> Hex string, low / high nybble first. \\
+  \> |i| \> / \> |I| \> Signed / unsigned integer value \\
+  \> |l| \> / \> |L| \> Signed / unsigned long value \\
+  \> |n| \> / \> |N| \> Short / long in network byte order \\
+  \> |s| \> / \> |S| \> Signed / unsigned short value \\
+  \> |u| \> / \> |p| \> Uuencoded string / Pointer to a string \\
+  \> |x| \> / \> |@| \> Null byte / null fill until position \\
+  \> |X| \>   \>     \> Backup a byte
+\end{tabbing}
+
+Each character may be followed by a decimal number which will be used
+as a repeat count, an |*| specifies all remaining arguments. \\
+If the format is preceded with |%|<n>, \kwd{unpack} returns an
+<n>-bit checksum instead. \\
+Spaces may be included in the template for readability purposes.
+
+\end{enum}
+\section{String functions} 
+
+\begin{enum}{1cm}
+
+\Xi{\kwd{chop(}<list>\dag\kwd{)}}
+Chops off the last character on all elements of the list; returns the
+last chopped character. The parentheses may be omitted if <list> is a
+single variable.
+
+\Xi{\kwd{crypt(}<plaintext>\kwd{,}<salt>\kwd{)}}
+Encrypts a string.
+
+\Xi{\kwd{eval(}\oEXPR \kwd{)}*}
+<expr> is parsed and executed as if it were a perl program. The value
+returned is the value of the last expression evaluated. If there is a
+syntax error or runtime error, an undefined string is returned by
+eval, and |$@| is set to the error message.
+
+\Xi{\kwd{index(}<str>\kwd{,}<substr>[\kwd{,}<offset>]\kwd{)}}
+Returns the position of <substr> in <str> at or after <offset>. If the
+substring is not found, returns |$[-1|.
+
+\Xi{\kwd{length(}\oEXPR\kwd{)}*}
+Returns the length in characters of the value of <expr>.
+
+\Xi{\kwd{rindex(}<str>\kwd{,}<substr>[\kwd{,}<offset>]\kwd{)}}
+Returns the position of the last occurrence of <substr> in <str> at or
+before <offset>.
+
+\Xi{\kwd{substr(}<expr>\kwd{,}<offset>[\kwd{,}<len>]\kwd{)}}
+Extracts a substring out of <expr> and returns it. If <offset>
+is negative, counts from the end of the string. May be used as an lvalue.
+
+\end{enum}
+\section{Array and list functions} 
+
+\begin{enum}{1cm}
+
+\Xi{\kwd{delete} \$<array>\{<key>\}}
+Deletes the specified value from the specified associative array.
+Returns the deleted value. 
+
+\Xi{\kwd{each(}|\%|<array>\kwd{)}*}
+Returns a 2-element array consisting of the key and value for the next
+value of an associative array. Entries are returned in an apparently
+random order. When the array is entirely read, a null array is
+returned. The next call to \kwd{each} after that will start iterating again.
+
+\Xi{\kwd{grep(}<expr>\kwd{,}<list>\kwd{)}}
+Evaluates <expr> for each element of the <list>, locally setting |$_|
+to refer to the element. Modifying |$_| will modify the corresponding
+element from <list>. Returns array of elements from <list> for which
+<expr> returned true. 
+
+\Xi{\kwd{join(}<expr>\kwd{,}<list>\kwd{)}}
+Joins the separate strings of <list> into a single string with fields
+separated by the value of <expr>, and returns the string.
+
+\Xi{\kwd{keys(}|\%|<array>\kwd{)}*}
+Returns an array with of all the keys of the named
+associative array.
+
+\Xi{\kwd{pop(}|@|<array>\kwd{)}*}
+Pops and returns the last value of the array, shortens the array by 1. 
+
+\Xi{\kwd{push(}|@|<array>\kwd{,}<list>\kwd{)}}
+Pushes the values of <list> onto the end of <array>. The length of the
+array increases by the length of <list>.
+
+\Xi{\kwd{reverse(}<list>\kwd{)}*}
+In array context: returns the <list> in reverse order. \\
+In scalar
+context: returns the first element of <list> with bytes reversed. 
+
+\Xi{\kwd{shift}[\kwd{(}|@|<array>\kwd{)}*]}
+Shifts the first value of the array off and returns it, shortening the
+array by 1 and moving everything down. If |@|<array> is omitted, shifts
+|@ARGV| in main and |@_| in subroutines.  
+
+\Xi{\kwd{sort(} [<subroutine> ] <list>\kwd{)}*}
+Sorts the <list> and returns the sorted array value. If <subroutine>
+is specified, gives the name of a subroutine that returns less than
+zero, zero, or greater than zero, depending on how the elements of the
+array, available to the routine as |$a| and |$b|, are to be ordered.
+
+\Xi{\kwd{splice(}|@|<array>\kwd{,}<offset>[\kwd{,}<length>[\kwd{,}<list>]]\kwd{)}}
+Removes the elements of |@|<array> designated by <offset> and
+<length>, and replaces them with <list> (if specified). \\
+Returns the elements removed.
+
+\Xi{\kwd{split}[\kwd{(}<pattern>[\kwd{,}\oEXPR [\kwd{,}<limit>]]\kwd{)}]}
+Splits a string into an array of strings, and returns it. If <limit>
+is specified, splits in no more than that many fields. If <pattern> is
+also omitted, splits on whitespace. If
+not in array context: returns number of fields and splits to |@_|.
+See also: ``Search and Replace Functions''. 
+
+\Xi{\kwd{unshift(}|@|<array>\kwd{,}<list>\kwd{)}}
+Prepends list to the front of the array, and returns the number of
+elements in the new array.
+
+\Xi{\kwd{values(}|\%|<array>\kwd{)}*}
+Returns a normal array consisting of all the values of the named
+associative array. 
+
+\end{enum}
+
+
+\section{File operations} 
+
+Functions operating on a list of files return the number of files
+successfully operated upon.
+
+\begin{enum}{1cm}
+
+\Xi{\kwd{chmod(}<list>\kwd{)}*}
+Changes the permissions of a list of files. The first element of the
+list must be the numerical mode. 
+
+\Xi{\kwd{chown(}<list>\kwd{)}*}
+Changes the owner and group of a list of files. The first two elements
+of the list must be the numerical uid and gid. 
+
+\Xi{\kwd{truncate(}<file>\kwd{,}<size>\kwd{)}}
+truncates <file> to <size>. <file> may be a filename or a filehandle.
+
+\Xi{\kwd{link(}<oldfile>\kwd{,}<newfile>\kwd{)}}
+Creates a new filename linked to the old filename.
+
+\Xi{\kwd{lstat(}<file>\kwd{)}}
+Like stat, but does not traverse a final symbolic link.
+
+\Xi{\kwd{mkdir(}<dir>\kwd{,}<mode>\kwd{)}}
+Creates a directory with given permissions. Sets |$!| on failure.
+
+\Xi{\kwd{select(}<rbits>\kwd{,}<wbits>\kwd{,}<nbits>\kwd{,}<timeout>\kwd{)}}
+Performs a {\it select\/}(2) system call with the same parameters.
+
+\Xi{\kwd{readlink(}\oEXPR\kwd{)}*}
+Returns the value of a symbolic link.
+
+\Xi{\kwd{rename(}<oldname>\kwd{,}<newname>\kwd{)}}
+Changes the name of a file.
+
+\Xi{\kwd{rmdir(}<filename>\dag\kwd{)}*}
+Deletes the directory if it is empty. Sets |$!| on failure.
+
+\Xi{\kwd{stat(}<file>\kwd{)}}
+Returns a 13-element array (\$dev, \$ino, \$mode, \$nlink, \$uid, \$gid,
+\$rdev, \$size, \$atime, \$mtime, \$ctime, \$blksize, \$blocks). <file> can
+be a filehandle, an expression evaluating to a filename, or |_| to
+refer to the last file test operation. 
+
+\Xi{\kwd{symlink(}<oldfile>\kwd{,}<newfile>\kwd{)}}
+Creates a new filename symbolically linked to the old filename.
+
+\Xi{\kwd{unlink(}<list>\kwd{)}*}
+Deletes a list of files.
+
+\Xi{\kwd{utime(}<list>\kwd{)}*}
+Changes the access and modification times. The first two elements of
+the list must be the numerical access and modification times.
+
+\end{enum}
+
+
+\makeuppage
+\section{Directory reading routines} 
+
+\begin{enum}{1cm}
+
+\Xi{\kwd{closedir(}<dirhandle>\kwd{)}*}
+Closes a directory opened by opendir.
+
+\Xi{\kwd{opendir(}<dirhandle>\kwd{,}<dirname>\kwd{)}}
+Opens a directory on the handle specified.
+
+\Xi{\kwd{readdir(}<dirhandle>\kwd{)}*}
+Returns the next entry (or an array of entries) in the directory.
+
+\Xi{\kwd{rewinddir(}<dirhandle>\kwd{)}*}
+Positions the directory to the beginning.
+
+\Xi{\kwd{seekdir(}<dirhandle>\kwd{,}<pos>\kwd{)}}
+Sets position for readdir on the directory.
+
+\Xi{\kwd{telldir(}<dirhandle>\kwd{)}*}
+Returns the postion in the directory.
+
+\end{enum}
+\section{Input / Output} 
+
+In input/output operations, <filehandle> may be a filehandle as opened
+by the \kwd{open} operator, or a scalar variable which evaluates to
+the name of a filehandle to be used.  
+
+\begin{enum}{1cm}
+
+\Xi{\kwd{binmode(}<filehandle>\kwd{)}*}
+Arranges for the file opened on <filehandle> to be read in ``binary''
+mode as opposed to ``text'' mode (MS-DOS only). 
+
+\Xi{\kwd{close(}<filehandle>\kwd{)}*}
+Closes the file or pipe associated with the file handle.
+
+\Xi{\kwd{dbmclose(}|\%|<array>\kwd{)}*}
+Breaks the binding between the array and the dbm file.
+
+\Xi{\kwd{dbmopen(}|\%|<array>\kwd{,}<dbmname>\kwd{, }<mode>\kwd{)}}
+Binds a dbm or ndbm file to the associative array. If the database
+does not exist, it is created with the indicated mode. 
+
+\Xi{\kwd{eof(}<filehandle>\kwd{)}}
+Returns 1 if the next read will return end of file, or if the file is
+not open. 
+
+\Xi{\kwd{eof}}
+Returns the eof status for the last file read.
+
+\Xi{\kwd{eof( )}}
+Indicates eof on the pseudo file formed of the files listed on the
+command line. 
+
+\Xi{\kwd{fcntl(}<filehandle>\kwd{,}<function>\kwd{,}|\$|<var>\kwd{)}}
+Implements the {\it fcntl\/}(2) function. This function has non-standard
+return values. See the manual for details. 
+
+\Xi{\kwd{fileno(}<filehandle>\kwd{)}*}
+Returns the file descriptor for a given (open) file.
+
+\Xi{\kwd{flock(}<filehandle>\kwd{,}<operation>\kwd{)}}
+Calls {\it flock\/}(2) on the file. <operation> adds from 1 (shared), 2
+(exclusive), 4 (non-blocking) or 8 (unlock). 
+
+
+\Xi{\kwd{getc}[\kwd{(}<filehandle>\kwd{)}*]}
+Yields the next character from the file, or |""| on EOF. If
+<filehandle> is omitted, reads from |STDIN|. 
+
+\Xi{\kwd{ioctl(}<filehandle>\kwd{,}<function>\kwd{,}|\$|<var>\kwd{)}}
+performs {\it ioctl}(2) on the file. This function has non-standard
+return values. See the manual for details. 
+
+\Xi{\kwd{open(}<filehandle>[\kwd{,}<filename>]\kwd{)}}
+Opens a file and associates it with <filehandle>. If <filename> is
+omitted, the scalar variable of the same name as the <filehandle> must
+contain the filename.
+
+The following filename conventions apply when opening a file.
+
+\begin{enum}{2cm}
+\Xi{|"|<file>|"|} open <file> for input. Also |"<|<file>|"|.
+
+\Xi{|">|<file>|"|} open <file> for output, creating it if necessary.
+
+\Xi{|">>|<file>|"|} open <file> in append mode.
+
+\Xi{|"+>|<file>|"|} open <file> with read/write access.
+
+\Xi{|"\||<cmd>|"|} opens a pipe to command <cmd>.
+
+\Xi{|"|<cmd>|\|"|} opens a pipe from command <cmd>.
+\end{enum}
+
+<file> may be |&|<filehnd> in which case the new file handle is
+connected to the (previously opened) filehandle <filehnd>.
+
+\kwd{open} 
+returns 1 upon success, \kwd{undef} otherwise, except for pipes. The
+parentheses may be omitted, if only a <filehandle> is specified.
+
+\Xi{\kwd{pipe(}<readhandle>\kwd{,}<writehandle>\kwd{)}}
+Returns a pair of connected pipes.
+
+\Xi{\kwd{print}[\kwd{(}[<filehandle>]<list>\dag\kwd{)}*]}
+Prints a string or a comma-separated list of strings. If <filehandle>
+is omitted, prints by default to standard output (or to the last
+selected output channel - see \kwd{select}).  
+
+\Xi{\kwd{printf}[\kwd{(}[<filehandle>] <list>\kwd{)}*]}
+Equivalent to \kwd{print} <filehandle> \kwd {sprintf(}<list>\kwd{)}.
+
+\Xi{\kwd{read(}<filehandle>\kwd{,}|\$|<var>\kwd{,}<length>[\kwd{,}<offset>]\kwd{)}}
+Read <length> binary bytes from the file into the variable at
+<offset>. Returns number of bytes actually read. 
+
+\Xi{\kwd{seek(}<filehandle>\kwd{,}<position>\kwd{,}<whence>\kwd{)}}
+Arbitrarily positions the file. Returns 1 upon success, 0 otherwise.
+
+\Xi{\kwd{select}[\kwd{(}<filehandle>\kwd{)}}
+Sets the current default filehandle for output operations. Returns the
+previously selected filehandle. 
+
+\Xi{\kwd{sprintf(}<format>\kwd{,}<list>\kwd{)}}
+Returns a string formatted by (almost all of) the usual printf
+conventions. 
+
+\Xi{\kwd{sysread(}<filehandle>\kwd{,}|\$|<var>\kwd{,}<length>[\kwd{,}<offset>]\kwd{)}}
+Reads <length> bytes into |$|<var> at <offset>.
+
+\Xi{\kwd{syswrite(}<filehandle>\kwd{,}<scalar>\kwd{,}<length>[\kwd{,}<offset>]\kwd{)}}
+Writes <length> bytes from <scalar> at <offset>.
+
+\Xi{\kwd{tell}[\kwd{(}<filehandle>\kwd{)}]*}
+Returns the current file position for the file. If <filehandle> is
+omitted, assumes the file last read. 
+
+\Xi{\kwd{write}[\kwd{(}<filehandle>\kwd{)}]*}
+Writes a formatted record to the specified file, using the format
+associated with that file. See ``Formats''. 
+
+\end{enum}
+\makeuppage
+\section{Search and replace functions}
+
+\begin{enum}{1cm}
+
+\catcode`\~=\other
+
+\Xi{[<expr> |=~|] [\kwd{m}]|/|<pattern>|/|[\kwd{g}][\kwd{i}][\kwd{o}]}
+Searches <expr> (default: |$_|) for a pattern. If you prepend an
+\kwd{m} you can use almost any pair of characters as delimiters. If
+used in array context, an array is returned consisting of the
+subexpressions matched by the parentheses in pattern, i.e.
+|($1,$2,$3,...)|.
+\\
+Optional modifiers: \kwd{g} matches as many times as possible; \kwd{i}
+searches in a case-insensitive manner; \kwd{o} interpolates variables
+only once.
+\\
+If <pattern> is empty, the most recent pattern from a
+previous match or replacement is used.
+\\
+With \kwd{g} the match can be used as an iterator in scalar context.
+
+\Xi{|?|<pattern>|?|}
+This is just like the |/|<pattern>|/| search, except that it matches
+only once between calls to the reset operator. If <pattern> is empty,
+the most recent pattern from a previous match or replacement is used.
+
+\Xi{[|\$|<var> |=~|] \kwd{s}|/|<pattern>|/|<replacement>|/|[\kwd{g}][\kwd{i}][\kwd{e}][\kwd{o}]}
+Searches a string for a pattern, and if found, replaces that pattern
+with the replacement text and returns the number of substitutions
+made. Otherwise it returns false. 
+\\
+Optional modifiers: \kwd{g} replaces all occurrences of the pattern;
+\kwd{e} interprets the replacement string as an expression; \kwd{i}
+and \kwd{o} as with |/|<pattern>|/| matching. Almost any delimiter may
+replace the slashes; if single quotes are used, no interpretation is
+done on the replacement string.
+\\
+If <pattern> is empty, the most recent pattern from a previous match or replacement is used.
+
+\Xi{\kwd{study}[\kwd{(}|\$|<var>\dag\kwd{)}*]}
+Study the contents of |$|<var> in anticipation of doing many pattern
+matches on the contents before it is next modified.
+
+\Xi{[|\$|<var> |=~|] \kwd{tr}|/|<searchlist>|/|<replacementlist>|/|[\kwd{c}][\kwd{d}][\kwd{s}]}
+Translates all occurrences of the characters found in the search list
+with the corresponding character in the replacement list. It returns
+the number of characters replaced. \kwd{y} may be used instead of \kwd{tr}. 
+\\
+Optional modifiers: \kwd{c} complements the <searchlist>; \kwd{d}
+deletes all characters not found in <searchlist>; \kwd{s} squeezes all
+sequences of characters that are translated into the same target
+character into one occurrence of this character.
+
+\end{enum}
+\section{System interaction} 
+
+\begin{enum}{1cm}
+
+\Xi{\kwd{alarm(}<expr>\kwd{)}*}
+Schedules a |SIGALRM| to be delivered after <expr> seconds. 
+
+\Xi{\kwd{chdir} [\kwd{(}<expr>\kwd{)}*]}
+Changes the working directory, |$ENV{"HOME"}| if <expr> is omitted.
+
+\Xi{\kwd{chroot(}<filename>\dag\kwd{)}*}
+Changes the root directory for the process and its children.
+
+\Xi{\kwd{die}[\kwd{(}<list>\kwd{)}*]}
+Prints the value of <list> to |STDERR| and exits with the current
+value of |$!| (errno). If |$!| is 0, exits with the value of |($? >> 8)|.
+If |($? >> 8)| is 0, exits with 255. <list> defaults to
+|"Died."|.
+
+\Xi{\kwd{exec(}<list>\kwd{)}*}
+Executes the system command in <list>; does not return.
+
+\Xi{\kwd{exit(}<expr>\kwd{)}*}
+Exits immediately with the value of |EXPR|.
+
+\Xi{\kwd{fork}}
+Does a {\it fork\/}(2) system call. Returns the child pid to the parent
+process and zero to the child process. 
+
+\Xi{\kwd{getlogin}}
+Returns the current login name as known by the system.
+
+\Xi{\kwd{getpgrp}[\kwd{(}<pid>\kwd{)}*]}
+Returns the process group for process <pid> (0, or omitted,  means the
+current process). 
+
+\Xi{\kwd{getppid}}
+Returns the process id of the parent process.
+
+\Xi{\kwd{getpriority(}<which>\kwd{,}<who>\kwd{)}}
+Returns the current priority for a process, process group, or user.
+
+\Xi{\kwd{kill(}<list>\kwd{)}*}
+Sends a signal to a list of processes. The first element of the list
+must be the signal to send (numeric, or its name as a string). 
+
+\Xi{\kwd{setpgrp(}<pid>\kwd{,}<pgrp>\kwd{)}}
+Sets the process group for the <pid> (0 = current process).
+
+\Xi{\kwd{setpriority(}<which>\kwd{,}<who>\kwd{,}<prio>\kwd{)}}
+Sets the current priority for a process, process group, or a user.
+
+\Xi{\kwd{sleep}[\kwd{(}<expr>\kwd{)}*]}
+Causes the script to sleep for <expr> seconds, or forever if no
+<expr>. Returns the number of seconds actually slept. 
+
+\Xi{\kwd{syscall(}<list>\kwd{)}*}
+Calls the system call specified in the first element of the list,
+passing the rest of the list as arguments to the call. 
+
+\Xi{\kwd{system(}<list>\kwd{)}*}
+Does exactly the same thing as \kwd{exec }<list> except that a fork is
+done first, and the parent process waits for the child process to complete. 
+
+\Xi{\kwd{times}}
+Returns a 4-element array (\$user, \$system, \$cuser, \$csystem) giving
+the user and system times, in seconds, for this process and the
+children of this process.  
+
+\Xi{\kwd{umask}[\kwd{(}<expr>\kwd{)}*]}
+Sets the umask for the process and returns the old one. If <expr> is
+omitted, returns current umask value. 
+
+\Xi{\kwd{wait}}
+Waits for a child process to terminate and returns the pid of the
+deceased process (-1 if none). The status is returned in |$?|. 
+
+\Xi{\kwd{waitpid(}<pid>\kwd{,}<flags>\kwd{)}}
+Performs the same function as the corresponding system call.
+
+\Xi{\kwd{warn(}<list>\kwd{)}*}
+Prints the message on |STDERR| like \kwd{die}, but doesn't exit.
+
+\end{enum}
+\makeuppage
+\section{Networking} 
+
+\begin{enum}{1cm}
+
+\Xi{\kwd{accept(}<newsocket>\kwd{,}<genericsocket>\kwd{)}}
+Accepts a new socket.
+
+\Xi{\kwd{bind(}<socket>\kwd{,}<name>\kwd{)}}
+Binds the <name> to the <socket>.
+
+\Xi{\kwd{connect(}<socket>\kwd{,}<name>\kwd{)}}
+Connects the <name> to the <socket>.
+
+\Xi{\kwd{getpeername(}<socket>\kwd{)}}
+Returns the socket address of the other end of the <socket>.
+
+\Xi{\kwd{getsockname(}<socket>\kwd{)}}
+Returns the name of the socket.
+
+\Xi{\kwd{getsockopt(}<socket>\kwd{,}<level>\kwd{,}<optname>\kwd{)}}
+Returns the socket options.
+
+\Xi{\kwd{listen(}<socket>\kwd{,}<queuesize>\kwd{)}}
+Starts listening on the specified <socket>.
+
+\Xi{\kwd{recv(}<socket>\kwd{,}<scalar>\kwd{,}<length>\kwd{,}<flags>\kwd{)}}
+Receives a message on <socket>.
+
+\Xi{\kwd{send(}<socket>\kwd{,}<msg>\kwd{,}<FLAGS[>\kwd{,}<to>]\kwd{)}}
+Sends a message on the <socket>.
+
+\Xi{\kwd{setsockopt(}<socket>\kwd{,}<level>\kwd{,}<optname>\kwd{,}<optval>\kwd{)}}
+Sets the requested socket option.
+
+\Xi{\kwd{shutdown(}<socket>\kwd{,}<how>\kwd{)}}
+Shuts down a <socket>.
+
+\Xi{\kwd{socket(}<socket>\kwd{,}<domain>\kwd{,}<type>\kwd{,}<protocol>\kwd{)}}
+Creates a <socket> in <domain> with <type> and <protocol>.
+
+\Xi{\kwd{socketpair(}<socket1>\kwd{,}<socket2>\kwd{,}<domain>\kwd{,}<type>\kwd{,}<protocol>\kwd{)}}
+As socket, but creates a pair of bi-directional sockets.
+
+\end{enum}
+\section{SystemV IPC} 
+
+The following functions all perform the same action as the
+corresponding system calls.
+
+\kwd{msgctl(}<id>\kwd{,}<cmd>\kwd{,}<args>\kwd{)} \\
+\kwd{msgget(}<key>\kwd{,}<flags>\kwd{)} \\
+\kwd{msgsnd(}<id>\kwd{,}<msg>\kwd{,}<flags>\kwd{)} \\
+\kwd{msgrcv(}<id>\kwd{,}\$<var>\kwd{,}<size>\kwd{,}<type>\kwd{,}<flags>\kwd{)} \\
+\kwd{semctl(}<id>\kwd{,}<semnum>\kwd{,}<cmd>\kwd{,}<arg>\kwd{)} \\
+\kwd{semget(}<key>\kwd{,}<nsems>\kwd{,}<size>\kwd{,}<flags>\kwd{)} \\
+\kwd{semop(}<key>\kwd{,}...\kwd{)} \\
+\kwd{shmctl(}<id>\kwd{,}<cmd>\kwd{,}<arg>\kwd{)} \\
+\kwd{shmget(}<key>\kwd{,}<size>\kwd{,}<flags>\kwd{)} \\
+\kwd{shmread(}<id>\kwd{,}\$<var>\kwd{,}<pos>\kwd{,}<size>\kwd{)} \\
+\kwd{shmwrite(}<id>\kwd{,}<string>\kwd{,}<pos>\kwd{,}<size>\kwd{)}
+\makeuppage
+\section{Miscellaneous} 
+
+\begin{enum}{1cm}
+
+\Xi{\kwd{caller}[\kwd{(}<expr>\kwd{)}]}
+Returns an array (\$package,\$file,\$line,...) for a specific subroutine
+call. ``|caller|'' returns this info for the current subroutine,
+``|caller(1)|'' for the caller of this subroutine etc..  
+
+\Xi{\kwd{defined(}<expr>\kwd{)}*}
+Tests whether the lvalue <expr> has a real value.
+
+\Xi{\kwd{dump} [<label>]}
+Immediate core dump. When reincarnated, starts at <label>.
+
+\Xi{\kwd{local(}<list>\kwd{)}}
+Creates a scope for the listed variables local to the enclosing block,
+subroutine or eval. 
+
+\Xi{\kwd{package} <name>}
+Designates the remainder of the current block as a package.
+
+\Xi{\kwd{require(}\oEXPR\kwd{)}*}
+Includes the specified file from the perl library. Does not include
+more than once, and yields a fatal error if the file does include not OK. 
+
+\Xi{\kwd{reset} [\kwd{(}<expr>\kwd{)}*]}
+Resets |??| searches so that they work again. <expr> is a list of
+single letters. All variables and arrays beginning with one of those
+letters are reset to their pristine state.  Only affects the current
+package.
+
+\Xi{\kwd{scalar(}<expr>\kwd{)}}
+Forces evaluation of <expr> in scalar context.
+
+\Xi{\kwd{sub} <name> \{ <expr> |;| ... \}}
+Designates <name> as a subroutine. Parameters are passed by reference
+as array |@_|. Returns the value of the last expression evaluated. 
+
+\Xi{\kwd{undef}[\kwd{(}<lvalue>\kwd{)}*]}
+Undefines the <lvalue>. Always returns the undefined value.
+
+\Xi{\kwd{wantarray}}
+Returns true if the current context expects an array value.
+
+\end{enum}
+\section{Formats} 
+
+\kwd{format} [<name>] |=| \\
+<formlist> \\
+|.|
+
+<formlist> pictures the lines, and contains the arguments which will
+give values to the fields in the lines. Picture fields are:
+
+|  @<<<...  | left adjusted field, repeat the |<| to denote the desired
+width; \\
+|  @>>>...  | right adjusted field; \\
+|  @|\|\|\||...  | centered field; \\
+|  @#.##... | numeric format with implied decimal point; \\
+|  @*       | a multi-line field.
+
+Use \^ instead of |@| for multi-line block filling.
+
+Use |~| at the beginning of a line to suppress unwanted empty lines.
+
+Use |~~| at the beginning of a line to have this format line repeated
+until all fields are exhausted. 
+
+Use |$-| to zero to force a page break.
+
+See also |$|\^, |$~|, |$-| and |$=| in section ``Special Variables''.
+\section{Info from system files} 
+
+{\xiipt\sl passwd} \\
+Info is (\$name, \$passwd, \$uid, \$gid, \$quota, \$comment, \$gcos, \$dir, \$shell).
+
+\begin{enum}{6cm}
+
+\Xi{\kwd{endpwent}}	Ends lookup processing.
+
+\Xi{\kwd{getpwent}}	Gets next info.
+
+\Xi{\kwd{getpwnam(}<name>\kwd{)}}	Gets info by name. 
+
+\Xi{\kwd{getpwuid(}<uid>\kwd{)}}	Gets info by uid.
+
+\Xi{\kwd{setpwent}}	Resets lookup processing.
+
+\end{enum}
+
+{\vskip6pt\xiipt\sl group} \\
+Info is a 4-item array: (\$name, \$passwd, \$gid, \$members).
+
+\begin{enum}{6cm}
+
+\Xi{\kwd{endgrent}}	Ends lookup processing.
+
+\Xi{\kwd{getgrgid(}<gid>\kwd{)}}	Gets info by group id. 
+
+\Xi{\kwd{getgrnam(}<name>\kwd{)}}	Gets info by name.
+
+\Xi{\kwd{getgrent}}	Gets next info.
+
+\Xi{\kwd{setgrent}}	Resets lookup processing.
+
+\end{enum}
+
+{\vskip6pt\xiipt\sl hosts} \\
+Info is (\$name, \$aliases, \$addrtype, \$length, @addrs).
+
+\begin{enum}{6cm}
+
+\Xi{\kwd{endhostent}}	Ends lookup processing.
+
+\Xi{\kwd{gethostbyname(}<name>\kwd{)}}	Gets info by name.
+
+\Xi{\kwd{gethostent}}	Gets next info.
+
+\Xi{\kwd{sethostent(}<stayopen>\kwd{)}}	Resets lookup processing.
+
+\end{enum}
+
+{\vskip6pt\xiipt\sl networks} \\
+Info is (\$name, \$aliases, \$addrtype, \$net).
+
+\begin{enum}{6cm}
+
+\Xi{\kwd{endnetent}}	Ends lookup processing.
+
+\Xi{\kwd{getnetbyaddr(}<addr>\kwd{,}<type>\kwd{)}}	Gets info by address and type.
+
+\Xi{\kwd{getnetbyname(}<name>\kwd{)}}	Gets info by name.
+
+\Xi{\kwd{getnetent}}	Gets next info.
+
+\Xi{\kwd{setnetent(}<stayopen>\kwd{)}}	Resets lookup processing.
+
+\end{enum}
+
+{\vskip6pt\xiipt\sl services} \\
+Info is (\$name, \$aliases, \$port, \$proto).
+
+\begin{enum}{6cm}
+
+\Xi{\kwd{endservent}}	Ends lookup processing.
+
+\Xi{\kwd{getservbyname(}<name>\kwd{, }<proto>\kwd{)}}	Gets info by name. 
+
+\Xi{\kwd{getservbyport(}<port>\kwd{, }<proto>\kwd{)}}	Gets info by port.
+
+\Xi{\kwd{getservent}}	Gets next info.
+
+\Xi{\kwd{setservent(}<stayopen>\kwd{)}}	Resets lookup processing.
+
+\end{enum}
+
+{\vskip6pt\xiipt\sl protocols} \\
+
+Info is (\$name, \$aliases, \$proto).
+
+\begin{enum}{6cm}
+
+\Xi{\kwd{endprotoent}}	Ends lookup processing.
+
+\Xi{\kwd{getprotobyname(}<name>\kwd{)}}	Gets info by name.
+
+\Xi{\kwd{getprotobynumber(}<number>\kwd{)}}	Gets info by number.
+
+\Xi{\kwd{getprotoent}}	Gets next info.
+
+\Xi{\kwd{setprotoent(}<stayopen>\kwd{)}}	Resets lookup processing.
+
+\end{enum}
+\section{Regular expressions} 
+
+Each character matches itself, unless it is one of the special
+characters |+?.*()[]{}|\||\|.
+
+\begin{enum}{1cm}
+
+\Xj{|.|}
+matches an arbitrary character, but not a newline.
+
+\Xj{|(|\ldots|)|}
+groups a series of pattern elements to a single element.
+
+\Xj{|+|}
+matches the preceding pattern element one or more times.
+
+\Xj{|?|}
+matches zero or one times.
+
+\Xj{|*|}
+matches zero or more times.
+
+\Xj{\{<n>|,|<m>\}}
+denotes the minimum <n> and maximum <m> match count. |{|<n>|}| means
+exactly <n> times; |{|<n>|,}| means at least <n> times. 
+
+\Xj{|\char`\[|\ldots|\char`\]|}
+denotes a class of characters to match. |[|\^\ldots|]| negates the class.
+
+\Xj{|(|\ldots\|\ldots\|\ldots|)|}
+matches one of the alternatives.
+
+\end{enum}
+
+Non-alphanumerics can be escaped from their special meaning using a
+|\|.
+
+\begin{enum}{1cm}
+
+\Xj{|\char`\\w|}
+matches alphanumeric, including ``|_|'', |\W| matches non-alphanumeric.
+
+\Xj{|\char`\\b|}
+matches word boundaries, |\B| matches non-boundaries.
+
+\Xj{|\char`\\s|}
+matches whitespace, |\S| matches non-whitespace.
+
+\Xj{|\char`\\d|}
+matches numeric, |\D| matches non-numeric.
+
+\Xj{|\char`\\n|, |\char`\\r|, |\char`\\f|, |\char`\\t| etc.} 
+have their usual meaning.
+
+\Xj{|\char`\\w|, |\char`\\s| and |\char`\\d|}
+ may be used within character classes, |\b| denotes backspace in this context.
+
+\Xj{|\char`\\1|\ldots|\char`\\9|}
+refer to matched sub-expressions, grouped with |()|, inside
+the match. 
+
+\Xj{|\char`\\10|}
+and up can also be used if the pattern
+matches that many sub-expressions. 
+
+\end{enum}
+
+See also |$1|\ldots|$9|, |$+|, |$&|, |$`| and |$'| in section ``Special
+Variables''.
+
+\section{Special variables} 
+
+The following variables are global and should be localized in subroutines:
+
+\begin{enum}{1cm}
+
+\Xi{|\char`\$\char`\_|}
+The default input and pattern-searching space.
+
+\Xi{|\char`\$\char`\.|}
+The current input line number of the last filehandle that was read.
+
+\Xi{|\char`\$\char`\/|}
+The input record separator, newline by default. May be multi-character.
+
+\Xi{|\char`\$\char`\,|}
+The output field separator for the print operator.
+
+\Xi{|\char`\$\char`\"|}
+The separator which joins elements of arrays interpolated in strings.
+
+\Xi{|\char`\$\char`\\|}
+The output record separator for the print operator.
+
+\Xi{|\char`\$\char`\#|}
+The output format for printed numbers. Initial value is ``|%.20g|''.
+
+\Xi{|\char`\$\char`\*|}
+Set to 1 to do multiline matching within a string, 0 to assume strings
+contain a single line. Default is 0. 
+
+\Xi{|\char`\$\char`\?|}
+The status returned by the last |`|<command>|`|, pipe close or
+\kwd{system} operator. 
+
+\Xi{|\char`\$\char`\]|}
+The perl version string (as displayed with |perl -v|), or version number.
+
+\Xi{|\char`\$\char`\[|}
+The index of the first element in an array, and of the first character
+in a substring. Default is 0. 
+
+\Xi{|\char`\$\char`\;|}
+The subscript separator for multi-dimensional array emulation. Default
+is |"\034"|. 
+
+\Xi{|\char`\$\char`\!|}
+If used in a numeric context, yields the current value of errno. If
+used in a string context, yields the corresponding error string. 
+
+\Xi{|\char`\$\char`\@|}
+The perl error message from the last eval or \kwd{do} <expr> command.
+
+\Xi{|\char`\$\char`\:|}
+The set of characters after which a string may be broken to fill
+continuation fields (starting with ``|^|'') in a format. 
+
+\Xi{|\char`\$\char`\0|}
+The name of the file containing the perl script being executed. May be
+assigned to. 
+
+\Xi{|\char`\$\char`\$|}
+The process number of the perl running this script. Altered (in the
+child process) by \kwd{fork}. 
+
+\Xi{|\char`\$\char`\<|}
+The real uid of this process.
+
+\Xi{|\char`\$\char`\>|}
+The effective uid of this process. 
+
+\Xi{|\char`\$\char`\(|}
+The real gid of this process.
+
+\Xi{|\char`\$\char`\)|}
+The effective gid of this process.
+
+\Xi{|\char`\$\char`\^D|}
+The debug flags as passed to perl using |-D| .
+
+\Xi{|\char`\$\char`\^F|}
+The highest system file descriptor, ordinarily 2.
+
+\Xi{|\char`\${\char`\^}I|}
+In-place edit extension as passed to perl using |-i| .
+
+\Xi{|\char`\$\char`\^P|}
+Internal debugging flag.
+
+\Xi{|\char`\$\char`\^T|}
+The time (as delivered by \kwd{time}) when the program started. This
+value is used by the file test operators ``|-M|'', ``|-A|'' and
+``|-C|''.
+
+\Xi{|\char`\$\char`\^W|}
+The value if the |-w| option as passed to perl.
+
+\Xi{|\char`\$\char`\^X|}
+The name by which this perl was invoked.
+
+\end{enum}
+
+The following variables are context dependent and need not be
+localized:
+
+\begin{enum}{1cm}
+
+\Xi{|\char`\$\char`\%|}
+The current page number of the currently selected output channel.
+
+\Xi{|\char`\$\char`\=|}
+The page length of the current output channel. Default is 60 lines.
+
+\Xi{|\char`\$\char`\-|}
+The number of lines left on the page.
+
+\Xi{|\char`\$\char`\~|}
+The name of the current report format.
+
+\Xi{|\char`\$\char`\^|}
+The name of the current top-of-page format.
+
+\Xi{|\char`\$\char`\||}
+If set to nonzero, forces a flush after every write or print on the
+currently selected output channel. Default is 0. 
+
+\Xi{|\char`\$ARGV|}
+The name of the current file when reading from |<>| .
+\end{enum}
+
+The following variables are always local to the current block:
+
+\begin{enum}{1cm}
+
+\Xi{|\char`\$\char`\&|}
+The string matched by the last pattern match.
+
+\Xi{|\char`\$\char`\`|}
+The string preceding what was matched by the last pattern match.
+
+\Xi{|\char`\$\char`\'|}
+The string following what was matched by the last pattern match. 
+
+\Xi{|\char`\$\char`\+|}
+The last bracket matched by the last search pattern.
+
+\Xi{\$|1|\ldots\$|9|\ldots}
+Contains the subpattern from the corresponding set of parentheses in
+the last pattern matched. |$10|\ldots and up are only available if the
+match contained that many sub-expressions. 
+
+\end{enum}
+
+
+\section{Special arrays} 
+
+\begin{enum}{1.5cm}
+
+\Xi{|@ARGV|}
+Contains the command line arguments for the script (not including the command name).
+
+\Xi{|@INC|}
+Contains the list of places to look for perl scripts to be evaluated
+by the \kwd{do} <filename> and \kwd{require} commands. 
+
+\Xi{|@\char`\_|}
+Parameter array for subroutines. Also used by \kwd{split} if not in
+array context. 
+
+\Xi{|\char`\%ENV|}
+Contains the current environment.
+
+\Xi{|\char`\%INC|}
+List of files that have been \kwd{require}d or \kwd{do}ne.
+
+\Xi{|\char`\%SIG|}Used to set signal handlers for various signals.
+
+\end{enum}
+\section{The perl debugger} 
+
+The perl symbolic debugger is invoked with |perl -d|.
+
+\begin{enum}{2.5cm}
+
+\Xi{|h|}
+Prints out a help message.
+
+\Xi{|T|}
+Stack trace.
+
+\Xi{|s|}
+Single steps.
+
+\Xi{|n|}
+Single steps around subroutine call.
+
+\Xi{|r|}
+Returns from the current subroutine.
+
+\Xi{|c| [<line>]}
+Continues (until <line>, or another breakpoint or exit).
+
+\Xi{\fbox{<ret>}}
+Repeats last |s| or |n|.
+
+\Xi{|l| [<range>]}
+Lists a range of lines. <range> may be a number, start-end,
+start+amount, or a subroutine name. If omitted, lists next window. 
+
+\Xi{|f| <file>}
+Switches to <file> and start listing it.
+
+\Xi{|-|}
+Lists previous window.
+
+\Xi{|w|}
+Lists window around current line.
+
+\Xi{|l| <sub>}
+Lists the named <sub>routine.
+
+\Xi{|/|<pattern>|/|}
+Forward search for <pattern>.
+
+\Xi{|?|<pattern>|?|}
+Backward search for <pattern>.
+
+\Xi{|L|}
+Lists lines that have breakpoints or actions.
+
+\Xi{|S|}
+List the names of all subroutines.
+
+\Xi{|t|}
+Toggles trace mode.
+
+\Xi{|b| [<line> [<condition>]]}
+Sets breakpoint at <line>, default: current line.
+
+\Xi{|b| <subname> [<condition>]}
+Sets breakpoint at the subroutine.
+
+\Xi{|S|}
+Lists names of all subroutines.
+
+\Xi{|d| [<line>]}
+Deletes breakpoint at the given line.
+
+\Xi{|D|}
+Deletes all breakpoints.
+
+\Xi{|a| <line command>}
+Sets an action for line.
+
+\Xi{|A|}
+Deletes all line actions.
+
+\Xi{|\char`\<| <command>}
+Sets an action to be executed before every debugger prompt.
+
+\Xi{|\char`\>| <command>}
+Sets an action to be executed before every |s|, |c| or |n| command.
+
+\Xi{|V| [<package> [<vars>] ]}
+Lists all variables in a package. Default package is main.
+
+\Xi{|X| [<vars>]}
+Like |V|, but assumes current package.
+
+\Xi{|!| [ [-]<number>]}
+Redo a debugging command. Default is previous command.
+
+\Xi{|H| [-<number>]}
+Displays the last -<number> commands of more than one letter.
+
+\Xi{|q|}
+Quits. You may also use your \fbox{<eof>} character.
+
+\Xi{<command>}
+Executes <command> as a perl statement.
+
+\Xi{|p| \oEXPR}
+Prints <expr>.
+
+\Xi{|=|< >[<alias value>]}
+Sets alias, or lists current aliases.
+
+\end{enum}
+\newpage
+\vfill \vfill \vfill
+\makebox[\textwidth]{Perl Reference Guide Revision \perlrev \hfill
+\copyright 1989,1990,1991 Johan Vromans}
+
+\end{document}

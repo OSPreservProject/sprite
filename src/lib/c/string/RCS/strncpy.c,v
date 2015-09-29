@@ -1,0 +1,160 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  sprited:1.2.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     92.03.27.13.30.06;  author rab;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.03.22.16.07.14;  author rab;  state Exp;
+branches 1.2.1.1;
+next     1.1;
+
+1.1
+date     88.04.25.13.25.50;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.2.1.1
+date     91.11.23.23.10.02;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@A few little optimizations.
+@
+text
+@/* 
+ * strncpy.c --
+ *
+ *	Source code for the "strncpy" library routine.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/string/RCS/strncpy.c,v 1.2 89/03/22 16:07:14 rab Exp Locker: rab $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <string.h>
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * strncpy --
+ *
+ *	Copy exactly numChars characters from src to dst.  If src doesn't
+ *	contain exactly numChars characters, then the last characters are
+ *	ignored (if src is too long) or filled with zeros (if src
+ *	is too short).  If src is too long then dst will not be
+ *	null-terminated.
+ *
+ * Results:
+ *	The return value is a pointer to the destination string, dst.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+strncpy(dst, src, numChars)
+    register char *src;		/* Place from which to copy. */
+    char *dst;			/* Place to store copy. */
+    int numChars;		/* Maximum number of characters to copy. */
+{
+    register char *copy = dst;
+
+#ifndef lint    
+    while (--numChars >= 0) {
+	if ((*copy++ = *src++) == '\0') {
+	    while (--numChars >= 0) {
+		*copy++ = '\0';
+	    }
+	    return dst;
+	}
+    }
+#else
+    for (; numChars > 0; --numChars) {
+	*copy = *src;
+	if (*copy == '\0') {
+	    for (; numChars > 0; --numChars) {
+		*++copy = '\0';
+	    }
+	    return dst;
+	}
+	++copy;
+	++src;
+    }
+#endif
+    return dst;
+}
+
+@
+
+
+1.2
+log
+@Added zero fill after end of string.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/string/RCS/strncpy.c,v 1.1 88/04/25 13:25:50 ouster Exp Locker: rab $ SPRITE (Berkeley)";
+d50 1
+d59 13
+@
+
+
+1.2.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/string/RCS/strncpy.c,v 1.2 89/03/22 16:07:14 rab Exp Locker: rab $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 2
+a18 2
+static char rcsid[] = "$Header: proto.c,v 1.2 88/03/11 08:39:08 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+d20 2
+d50 7
+a56 2
+    if (numChars == 0) {
+	return dst;
+a57 5
+    do {
+	if ((*copy++ = *src) != 0) {
+	    src += 1;
+	}
+    } while (--numChars > 0);
+@

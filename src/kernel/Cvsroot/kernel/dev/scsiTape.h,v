@@ -1,0 +1,490 @@
+head     9.4;
+branch   ;
+access   ;
+symbols  ds3100:9.4 sun3:9.4 sun4nw:9.4 symm:9.4 spur:9.4 Summer89:9.0 newlib:8.0 Summer88:6.0 sbc:5.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.4
+date     91.09.03.19.01.35;  author jhh;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     91.08.19.13.46.21;  author jhh;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     91.06.06.11.20.29;  author mendel;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.09.11.12.13.43;  author rab;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.58.17;  author douglis;  state Stable;
+branches ;
+next     8.6;
+
+8.6
+date     89.05.24.07.54.28;  author rab;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.05.01.16.33.50;  author mendel;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     88.11.29.09.25.47;  author brent;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     88.11.21.09.08.59;  author brent;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.11.16.14.39.36;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.16.14.26.24;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.14.11;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.30.33;  author douglis;  state Stable;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.39.17;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.4
+log
+@drive specific status takes an additional argument
+@
+text
+@/*
+ * scsiTape.h --
+ *
+ *	External definitions for the tape drives on the SCSI I/O bus.
+ *	There are several variants of tape drives and each has an
+ *	associated header file that defines drive-specific sense
+ *	data and other info.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/dev/RCS/scsiTape.h,v 9.3 91/08/19 13:46:21 jhh Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _SCSITAPE
+#define _SCSITAPE
+
+#include <sys/scsi.h>
+#include <scsiDevice.h>
+#include <dev/tape.h>
+
+/*
+ * State info for an SCSI tape drive.  
+ */
+#define	SCSI_TAPE_DEFAULT_BLOCKSIZE	512
+/*
+ * State info for an SCSI tape drive.  This is used to map from a device
+ * unit number back to the SCSI controller for the drive.
+ */
+typedef struct ScsiTape {
+    ScsiDevice	*devPtr;        /* SCSI Device we have attached. */
+    int	type;			/* See user/dev/tape.h. */
+    int state;			/* State bits used to determine if it's open,
+				 * it it really exists, etc. */
+    char *name;			/* Type name of tape device. */
+    int blockSize;		/* Native block size of the drive. */
+    int minBlockSize;		/* Minimum block size for variable length
+				 * blocks. */
+    int maxBlockSize;		/* Max block size for variable length
+				 * blocks. */
+    ReturnStatus (*tapeIOProc) _ARGS_((struct ScsiTape *tapePtr, int command, 
+	char *buffer, int *countPtr)); /* Procedure to customize tape IO. */
+
+    ReturnStatus (*specialCmdProc) _ARGS_((struct ScsiTape *tapePtr,
+		   int command, int count));	/* Procedure to handle special 
+						 * tape cmds. */
+    ReturnStatus (*statusProc) _ARGS_((struct ScsiTape *tapePtr,
+		    Dev_TapeStatus *statusPtr, Boolean *readPositionPtr));
+} ScsiTape;
+
+
+
+/*
+ * Tape drive state:
+ *	SCSI_TAPE_CLOSED	The device file corresponding to the drive
+ *		is not open.  This inhibits read/writes, and allows opens.
+ *	SCSI_TAPE_OPEN		The device file is open.
+ *	SCSI_TAPE_AT_EOF	The file mark was hit on the last read.
+ *	SCSI_TAPE_WRITTEN	The last op on the tape was a write.  This is
+ *				used to write an end-of-tape mark before
+ *				closing or rewinding.
+ */
+#define SCSI_TAPE_CLOSED	0x0
+#define SCSI_TAPE_OPEN		0x1
+#define SCSI_TAPE_AT_EOF	0x2
+#define SCSI_TAPE_WRITTEN	0x4
+
+/*
+ * SCSI_TAPE_DEFAULT_BLOCKSIZE the default block size for SCSI Tapes.
+ */
+#define	SCSI_TAPE_DEFAULT_BLOCKSIZE	512
+
+extern int devNumSCSITapeTypes;
+extern ReturnStatus ((*devSCSITapeAttachProcs[]) _ARGS_((Fs_Device *devicePtr,
+    ScsiDevice *devPtr, ScsiTape *tapePtr)));
+/*
+ * Forward Declarations.
+ */
+
+extern ReturnStatus DevSCSITapeError _ARGS_((ScsiDevice *devPtr,
+    ScsiCmd *scsiCmdPtr));
+extern ReturnStatus DevSCSITapeSpecialCmd _ARGS_((ScsiTape *tapePtr,
+    int command, int count));
+extern ReturnStatus DevSCSITapeVariableIO _ARGS_((register ScsiTape *tapePtr,
+    int command, char *buffer, int *countPtr));
+extern ReturnStatus DevSCSITapeFixedBlockIO _ARGS_((register ScsiTape *tapePtr,
+    int command, char *buffer, int *countPtr));
+
+#endif /* _SCSITAPE */
+@
+
+
+9.3
+log
+@added function prototypes
+@
+text
+@d19 1
+a19 1
+ * $Header: /sprite/src/kernel/dev.jhh/RCS/scsiTape.h,v 9.1 90/09/11 12:13:43 rab Exp Locker: jhh $ SPRITE (Berkeley)
+d55 1
+a55 1
+		    Dev_TapeStatus *statusPtr));
+@
+
+
+9.2
+log
+@Added function prototype to ScsiTape structure.
+Removed unsed releaseProc field of ScsiTape.
+@
+text
+@d19 1
+a19 1
+ * $Header: /sprite/src/kernel/dev/RCS/scsiTape.h,v 9.1 90/09/11 12:13:43 rab Exp Locker: mendel $ SPRITE (Berkeley)
+d25 3
+a27 3
+#include "scsi.h"
+#include "scsiDevice.h"
+#include "dev/tape.h"
+d39 1
+d44 4
+d54 2
+a55 3
+    ReturnStatus (*errorProc) _ARGS_((struct ScsiTape *tapePtr,
+	unsigned int statusByte, int senseLength, char *senseDataPtr));
+				/* Procedure to handle sense data */
+d87 2
+a88 2
+extern ReturnStatus DevSCSITapeError _ARGS_((ScsiTape *tapePtr,
+    unsigned int statusByte, int senseLength, char *senseDataPtr));
+@
+
+
+9.1
+log
+@Added prototypes.
+@
+text
+@d19 1
+a19 1
+ * $Header: /sprite/src/kernel/dev/RCS/scsiTape.h,v 9.0 89/09/12 14:58:17 douglis Stable Locker: rab $ SPRITE (Berkeley)
+d43 9
+a51 5
+    void (*releaseProc)();	/* Procedure to customize device close. */
+    ReturnStatus (*tapeIOProc)(); /* Procedure to customize tape IO. */
+    ReturnStatus (*specialCmdProc)();	/* Procedure to handle specail 
+					 * tape cmds. */
+    ReturnStatus (*errorProc)(); /* Procedure to handle sense data */
+d77 2
+a78 1
+extern ReturnStatus ((*devSCSITapeAttachProcs[])());
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d19 1
+a19 1
+ * $Header: /sprite/src/kernel/dev/RCS/scsiTape.h,v 8.6 89/05/24 07:54:28 rab Exp Locker: douglis $ SPRITE (Berkeley)
+d77 9
+a85 4
+ReturnStatus DevSCSITapeError();
+ReturnStatus DevSCSITapeSpecialCmd();
+ReturnStatus DevSCSITapeVariableIO();
+ReturnStatus DevSCSITapeFixedBlockIO();
+@
+
+
+8.6
+log
+@Changes to allow optimization.
+@
+text
+@d19 1
+a19 1
+ * $Header: /sprite/src/kernel/dev/RCS/scsiTape.h,v 8.5 89/05/01 16:33:50 mendel Exp Locker: rab $ SPRITE (Berkeley)
+@
+
+
+8.5
+log
+@Converted to use the new HBA interface.
+@
+text
+@d19 1
+a19 1
+ * $Header: /sprite/src/kernel/dev.new/RCS/scsiTape.h,v 8.4 88/11/29 09:25:47 brent Exp Locker: mendel $ SPRITE (Berkeley)
+d82 1
+a82 1
+#endif _SCSITAPE
+@
+
+
+8.4
+log
+@fixed externs.
+@
+text
+@d2 1
+a2 1
+ * devSCSITape.h --
+d19 1
+a19 1
+ * $Header: /sprite/src/kernel/dev/sun3.md/RCS/devSCSITape.h,v 8.3 88/11/21 09:08:59 brent Exp Locker: brent $ SPRITE (Berkeley)
+d22 2
+a23 2
+#ifndef _DEVSCSITAPE
+#define _DEVSCSITAPE
+d25 2
+d30 4
+d37 3
+a39 2
+typedef struct DevSCSITape {
+     int state;			/* State bits used to determine if it's open,
+d41 1
+a41 1
+    int type;			/* Type of the drive */
+d43 6
+a48 4
+    void (*setupProc)();	/* Procedure to customize command block */
+    void (*statusProc)();	/* Procedure to fill in Dev_TapeStatus */
+    ReturnStatus (*errorProc)();/* Procedure to handle sense data */
+} DevSCSITape;
+a49 2
+extern DevSCSIDevice *scsiTape[];
+extern int scsiTapeIndex;
+a50 5
+/*
+ * SCSI_MAX_TAPES the maximum number of tape devices that can be hung
+ *	off ALL the SCSI controllers together.
+ */
+#define SCSI_MAX_TAPES	4
+a60 2
+ *	SCSI_TAPE_RETENSION	A retention operation is pending.  This is
+ *				is implemented as part of rewind operations.
+a65 14
+#define SCSI_TAPE_RETENSION	0x8
+
+/*
+ * Tape drive types:
+ *	SCSI_SYSGEN		Sysgen is a controller type found on 2/120's
+ *				It controls a QIC drive.
+ *	SCSI_EMULEX		The Emulex drives are found in the Shoeboxes.
+ *	SCSI_EXABYTE		The 8mm Exabyte drive.
+ */
+#define SCSI_UNKNOWN	0
+#define SCSI_SYSGEN	1
+#define SCSI_EMULEX	2
+#define SCSI_EXABYTE	3
+
+d68 1
+a68 1
+ * Version of the control block used for tape commands.
+d70 1
+a70 30
+typedef struct DevSCSITapeControlBlock {
+    unsigned char command;		/* command code, defined below */
+    unsigned char unitNumber	:3;	/* LUN to pass command to */
+    unsigned char code		:5;	/* command dependent value */
+    unsigned char highCount;		/* High bits of block count */
+    unsigned char midCount;		/* Mid bits of block count */
+    unsigned char lowCount;		/* Low bits of block count */
+    unsigned char vendor57	:1;	/* Vendor unique bit */
+    unsigned char vendor56	:1;	/* Vendor unique bit */
+    unsigned char pad1		:4;	/* Reserved */
+    unsigned char linkIntr	:1;	/* Interrupt after linked command */
+    unsigned char link		:1;	/* Another command follows */
+} DevSCSITapeControlBlock;
+
+/*
+ * The MODE_SELECT command takes a standard 4 byte header and is
+ * followed by zero or more BlockDescriptors and zero or more Vendor
+ * Unique Parameter bytes.  The total length of the header, block
+ * descriptors, and parameter bytes is put in the count field
+ * of the command block.
+ */
+typedef struct DevSCSIModeSelectHdr {
+    unsigned char pad1;			/* Reserved */
+    unsigned char pad2;			/* Reserved */
+    unsigned char		:1;	/* Reserved */
+    unsigned char bufMode	:3;	/* == 1 means buffered, the default */
+    unsigned char speed		:4;	/* == 0 means default speed */
+    unsigned char blockLength;		/* Length of block descriptors that
+					 * follow the header */
+} DevSCSIModeSelectHdr;
+d72 2
+d77 4
+a80 14
+ReturnStatus Dev_SCSITapeOpen();
+ReturnStatus Dev_SCSITapeRead();
+ReturnStatus Dev_SCSITapeWrite();
+ReturnStatus Dev_SCSITapeIOControl();
+ReturnStatus Dev_SCSITapeClose();
+
+ReturnStatus Dev_SCSITapeBlockIOInit();
+ReturnStatus Dev_SCSITapeBlockIO();
+
+ReturnStatus	DevSCSITapeInit();
+void		DevSCSITapeType();
+ReturnStatus	DevSCSITapeIO();
+void		DevSCSITapeSetupCommand();
+ReturnStatus	DevSCSITapeError();
+d82 1
+a82 1
+#endif _DEVSCSITAPE
+@
+
+
+8.3
+log
+@Stable version after code reorganization
+@
+text
+@d19 1
+a19 1
+ * $Header: /sprite/src/kernel/dev/sun3.md/RCS/devSCSITape.h,v 8.2 88/11/16 14:39:36 brent Exp $ SPRITE (Berkeley)
+d35 1
+d128 1
+a128 1
+int		DevSCSITapeType();
+@
+
+
+8.2
+log
+@Moved all tape specfic definitions to here from devSCSI.h
+@
+text
+@d19 1
+a19 1
+ * $Header: /sprite/src/kernel/dev/sun3.md/RCS/devSCSITape.h,v 8.0 88/11/11 18:14:11 douglis Stable Locker: brent $ SPRITE (Berkeley)
+d25 2
+d36 2
+a37 2
+    void (*statusProc();	/* Procedure to fill in Dev_TapeStatus */
+    returnStatus (*errorProc)();/* Procedure to handle sense data */
+d41 2
+d98 17
+d126 5
+a130 1
+ReturnStatus DevSCSITapeError();
+@
+
+
+8.1
+log
+@no real change
+@
+text
+@d4 4
+a7 1
+ *	External definitions for the SCSI Tape.
+d11 7
+a18 1
+ *
+d26 68
+d104 2
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/dev/sun3.md/RCS/devSCSITape.h,v 6.0 88/08/11 12:30:33 douglis Stable Locker: douglis $ SPRITE (Berkeley)
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: devSCSITape.h,v 5.0 87/08/11 10:39:17 sprite Exp $ SPRITE (Berkeley)
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d10 1
+a10 1
+ * $Header: devSCSITape.h,v 1.1 86/07/25 09:06:36 brent Exp $ SPRITE (Berkeley)
+@

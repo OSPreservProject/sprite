@@ -1,0 +1,68 @@
+
+
+
+iostats                   User Commands                   iostats
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     iostats - Show disk usage.
+
+SSYYNNOOPPSSIISS
+     iioossttaattss
+
+_________________________________________________________________
+
+IINNTTRROODDUUCCTTIIOONN
+     For each disk on the system, show the number of samples, the
+     number  that  were  idle, the number of reads for that disk,
+     and the number of writes.
+
+KKEEYYWWOORRDDSS
+     idle, io, disk, read, write
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  May 25, 1990                     1
+
+
+

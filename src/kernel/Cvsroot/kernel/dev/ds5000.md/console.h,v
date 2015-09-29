@@ -1,0 +1,93 @@
+head     9.0;
+branch   ;
+access   ;
+symbols  ds3100:9.0 sun3:9.0 sun4nw:9.0 symm:9.0 spur:9.0 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.0
+date     89.09.12.15.02.24;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     89.07.27.10.36.33;  author nelson;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.26.20.02.54;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Converted over to new tty driver.
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@/*
+ * console.h --
+ *
+ *	Declarations for things exported by devConsole.c to the rest
+ *	of the device module.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/dev/ds3100.md/RCS/console.h,v 1.2 89/07/27 10:36:33 nelson Exp Locker: douglis $ SPRITE (Berkeley)
+ */
+
+#ifndef _DEVCONSOLE
+#define _DEVCONSOLE
+
+#include "dc7085.h"
+
+extern int	DevConsoleRawProc();
+
+extern Boolean	devDivertXInput;
+
+/*
+ * Maximum interval allowed between hitting the console cmd key and hitting the
+ * command key.
+ */
+#define CONSOLE_CMD_INTERVAL	2
+
+#endif /* _DEVCONSOLE */
+@
+
+
+1.2
+log
+@Changed from F13 to F1, added timeouts, and made X do all of the call backs.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/dev/ds3100.md/RCS/console.h,v 1.1 89/07/26 20:02:54 nelson Exp $ SPRITE (Berkeley)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/dev.jo/sun3.md/RCS/console.h,v 1.1 89/07/14 15:35:41 ouster Exp $ SPRITE (Berkeley)
+d22 2
+d25 8
+@

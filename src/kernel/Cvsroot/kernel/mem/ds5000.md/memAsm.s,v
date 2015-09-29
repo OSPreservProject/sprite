@@ -1,0 +1,78 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ds3100:1.2 sun3:1.2 sun4nw:1.2 symm:1.2 spur:1.2;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     91.10.17.13.32.08;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.10.17.13.28.39;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@got rid of signed instructions
+@
+text
+@/* memAsm.s --
+ *
+ *	Routine to return callers PC.
+ *
+ *     	This file contains all hardware dependent routines for the PMAX.
+ *
+ * Copyright (C) 1989 by Digital Equipment Corporation, Maynard MA
+ *
+ *			All Rights Reserved
+ *
+ * Permission to use, copy, modify, and distribute this software and its 
+ * documentation for any purpose and without fee is hereby granted, 
+ * provided that the above copyright notice appear in all copies and that
+ * both that copyright notice and this permission notice appear in 
+ * supporting documentation, and that the name of Digital not be
+ * used in advertising or publicity pertaining to distribution of the
+ * software without specific, written prior permission.  
+ *
+ * Digitial disclaims all warranties with regard to this software, including
+ * all implied warranties of merchantability and fitness.  In no event shall
+ * Digital be liable for any special, indirect or consequential damages or
+ * any damages whatsoever resulting from loss of use, data or profits,
+ * whether in an action of contract, negligence or other tortious action,
+ * arising out of or in connection with the use or performance of this
+ * software.
+ *
+ * rcs = $Header: /sprite/src/kernel/mem/ds3100.md/RCS/memAsm.s,v 1.1 91/10/17 13:28:39 jhh Exp Locker: jhh $ SPRITE (DECWRL)
+ */
+
+#include <regdef.h>
+
+    .globl Mem_CallerPC
+Mem_CallerPC:
+    addu	v0, zero, zero
+    j		ra
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d27 1
+a27 1
+ * rcs = $Header: memAsm.s,v 1.1 89/03/30 18:43:06 mnelson Exp $ SPRITE (DECWRL)
+d34 1
+a34 1
+    add		v0, zero, zero
+@

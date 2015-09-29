@@ -1,0 +1,50 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     89.01.09.09.01.43;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.01.04.12.09.04;  author david;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Created machine dependent types.
+@
+
+
+1.2
+log
+@Added include
+@
+text
+@
+/*
+** Machine dependent Statistics 
+**	There are no machine dependent stats for the sun3.
+*/
+
+#include <dev/ccdev.h>
+
+typedef struct {
+	int dummy;
+} MachStats;
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d6 3
+@

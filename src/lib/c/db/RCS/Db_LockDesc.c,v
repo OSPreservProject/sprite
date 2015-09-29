@@ -1,0 +1,184 @@
+head     1.2;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     88.09.13.16.48.36;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.08.14.15.08.10;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Procedure to lock a file descriptor, optionally polling or breaking
+the lock.
+@
+
+
+1.2
+log
+@fixed some lint; added check for DB_LOCK_NONE lock type.
+@
+text
+@/* 
+ * Db_LockDesc.c --
+ *
+ *	Source code for the Db_LockDesc procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: Db_LockDesc.c,v 1.1 88/08/14 15:08:10 douglis Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <db.h>
+#include "dbInt.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Db_LockDesc --
+ *
+ *	Lock a file descriptor, polling if necessary, and potentially
+ *	breaking the lock if timeout occurs.
+ *
+ * Results:
+ *	If the file is locked, by hook or by crook,
+ *	0 is returned.  If the file is not successfully locked,
+ *	-1 indicates an error and errno gives a more specific error.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Db_LockDesc(streamID, type, action)
+    int streamID;			/* file descriptor */
+    int type;				/* type of lock */
+    Db_LockHow action;		/* DB_LOCK_{POLL,BLOCK,NO_BLOCK,WAIT,NONE} */
+{
+    int delay;
+    int status;
+    int numTries;		/* Counter through the loop polling the lock */
+    int numRetries;		/* Counter through a loop retrying in the
+				 * event we break the lock and someone else
+				 * grabs it. */
+
+    if (action == DB_LOCK_NONE) {
+	return(0);
+    }
+    if (action != DB_LOCK_WAIT) {
+	type |= LOCK_NB;
+    }
+    /*
+     * Try the lock, then loop.  This gets rid of an extraneous delay
+     * after the last unsuccessful lock try.
+     *
+     * If the lock call times out, return SUCCESS to keep the caller
+     * from aborting.
+     */
+    
+    status = flock(streamID, type);
+    if (status == -1) {
+	/*
+	 * It is possible to get a sprite RPC_TIMEOUT condition, or other
+	 * obscure error, which will map to EINVAL by default.  We're mostly
+	 * interested in the EWOULDBLOCK condition, so if we get something
+	 * we know is likely to be innocuous, return 0.  In particular,
+	 * we don't want our caller to abort because the lock timed out, since
+	 * it can wait for recovery.
+	 */
+	if (errno == EINVAL) {
+	    return(0);
+	} 
+	if ((errno != EWOULDBLOCK) || (action == DB_LOCK_NO_BLOCK)) {
+	    return(-1);
+	}
+    } else {
+	return(0);
+    }
+
+    for (numRetries = 0; numRetries < NUM_TRIES; numRetries++) {
+	delay = DELAY;
+	for (numTries = 0; numTries < NUM_TRIES; numTries++) {
+	    (void) sleep(delay);
+	    delay *= 2;
+	    status = flock(streamID, type);
+	    if (status == -1) {
+		if (errno = EINVAL) {
+		    return(0);
+		}
+		if ((errno != EWOULDBLOCK) || (action == DB_LOCK_NO_BLOCK)) {
+		    return(status);
+		}
+	    }
+	}
+	if (action == DB_LOCK_POLL) {
+	    return(ETIMEDOUT);
+	}
+	/*
+	 * Break the lock if required.  Try to break an exclusive lock.  If
+	 * that fails, and we were trying to get an exclusive lock, then try
+	 * releasing a shared lock since that could have been the problem.
+	 * Then try to get the lock again.
+	 * Return EWOULDBLOCK if breaking the lock wasn't successful.
+	 */
+	if (action == DB_LOCK_BREAK) {
+	    status = flock(streamID, LOCK_EX | LOCK_NB | LOCK_UN);
+	    if ((status != 0) && (type & LOCK_EX)) {
+		(void) flock(streamID, LOCK_SH | LOCK_NB | LOCK_UN);
+	    }
+	}
+	status = flock(streamID, type);
+	if (status == 0) {
+	    return(0);
+	} else if (errno != EWOULDBLOCK) {
+	    return(status);
+	}
+    }
+    syslog(LOG_WARNING, "Db_LockDesc: unable to lock stream %d in %s mode",
+	   streamID, (type & LOCK_EX) ? "exclusive" : "shared");
+    errno = EWOULDBLOCK;
+    return (-1);
+}
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: proto.c,v 1.2 88/03/11 08:39:08 ouster Exp $ SPRITE (Berkeley)";
+d48 1
+a48 1
+    Db_LockHow action;		/* DB_LOCK_{POLL,BLOCK,NO_BLOCK} */
+d50 1
+a50 1
+    unsigned int delay;
+d56 4
+a59 1
+    
+d87 2
+@

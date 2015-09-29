@@ -1,0 +1,1 @@
+../../dist/bfd/coff-rs6000.c

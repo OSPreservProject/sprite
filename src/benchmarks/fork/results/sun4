@@ -1,0 +1,46 @@
+Aug. 21, 1989
+loops in
+fork test 1000 forks time   57.810
+
+loops shortened
+fork test 1000 forks time   20.0  
+fork test 1000 forks time   20.910
+
+Aug. 22, 1989
+Moved ContextFlush to Exit
+fork test 1000 forks time   21.120
+
+Took out page flushes due to segment deletes (and profiled)
+fork test 1000 forks time   20.900
+
+Took out segment deletes where context already flushed (and profiled)
+fork test 1000 forks time   18.10 
+
+
+Straight-lined context flush code without random offsets or delay slot fix
+(Profiled)
+fork test 1000 forks time   16.380
+
+Straight-lined context flush code with random offsets and delay slot fix
+fork test 1000 forks time   16.540
+
+Straight-lined all context, seg and page flushes with offset optimizations
+(profiled)
+fork test 1000 forks time   15.870
+
+Aug. 25, 1989
+Without bcopy but with new network optimizations. (profiled)
+fork test 1000 forks time   16.260
+fork test 1000 forks time   15.950
+
+Aug. 26, 1989
+Without bcopy or net opts again.
+fork test 1000 forks time   15.870
+
+With bcopy opts. (profiled)
+fork test 1000 forks time   15.490
+
+Aug. 31, 1989
+With segmapcopy opts. (profiled)
+fork test 1000 forks time   13.960
+

@@ -1,0 +1,68 @@
+
+
+
+RECOVCMD                  User Commands                  RECOVCMD
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     recovcmd - Set variables affecting the  recovery  module  of
+     the kernel.
+
+SSYYNNOOPPSSIISS
+     rreeccoovvccmmdd  -[_o_p_t_i_o_n_s]
+
+OOPPTTIIOONNSS
+     --aabbssoonn        Turn on absolute ping intervals for recovery.
+
+     --aabbssooffff       Turn off absolute ping intervals for recovery.
+
+_________________________________________________________________
+
+IINNTTRROODDUUCCTTIIOONN
+     This command changes variables affecting the behavior of  he
+     recovery  system.   The only variable so far is the absolute
+     pinging variable.  If it's turned on, this means that  ping-
+     ing  of  servers occurs at absolute intervals, unaffected by
+     how long the actual pinging takes.  If turned off, then  the
+     pinging  takes  place 30 seconds after the last pinging fin-
+     ished, no matter how long that took.   Turning  on  absolute
+     pinging  should  prevent  client  pinging from becoming syn-
+     chronized by server reboots.
+
+KKEEYYWWOORRDDSS
+     recovery, ping
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  March 22, 1990                    1
+
+
+

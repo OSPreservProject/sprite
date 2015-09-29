@@ -1,0 +1,15 @@
+#include <Server.tmpl>
+
+SRCS = lk201.c
+OBJS = lk201.o
+INCLUDES = -I. -I../../../include -I$(INCLUDESRC)
+LINTLIBS = ../../../dix/llib-ldix.ln ../../../os/4.2bsd/llib-los.ln
+
+NormalLibraryObjectRule()
+
+all: $(OBJS)
+
+NormalLintTarget($(SRCS))
+LintLibraryTarget(lk201,$(SRCS))
+
+DependTarget()

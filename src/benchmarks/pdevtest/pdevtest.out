@@ -1,0 +1,18 @@
+pdevtest 
+S: Idle ticks 0/170274 =   0.00% Idle, Context Sw. 2272 inv 1095 full 2272, Elapsed time 5.110
+Cache blocks max 2668 min 32 number 348/348 free 145/144 limit 2668
+Bytes read 0+0 remote 0 disk 0+0
+Bytes written 1009+0 remote 187 disk 0+0	traffic ratio %18
+Dev bytes read 0 written 14
+Zero Fills read 0 write1 0 write2 1 frag 0
+Appends 0 Overwrites 0 Failed Reads 0
+Cache reads 0 hits: dirty 0 clean 0 other 0
+Cache writes 2 hits 1 misses 0 thru 1	traffic ratio %50
+Write thru 1 data 1 indirect 0 desc 0 dir 0
+VM requests 0 tried 0 gave 0
+Cache blocks created 0, alloc from free 0 part 1 lru 0
+Handles 770 created 0 installed 0 hits 0 old 0 version 0 flush 0
+	fetched 82 hits 82 released 93 locks 284/284 wait 0
+Segments fetched 0 hits 0
+Lookup relative 0 absolute 0 redirect 0 found 0 loops 0 timeouts 0 stale 0
+

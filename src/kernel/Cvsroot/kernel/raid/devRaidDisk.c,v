@@ -1,0 +1,497 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  ds3100:1.6 sun3:1.6 sun4nw:1.5 symm:1.5 spur:1.5;
+locks    ; strict;
+comment  @ * @;
+
+
+1.6
+date     92.06.25.17.20.57;  author eklee;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     90.10.12.14.00.54;  author eklee;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.09.19.14.54.03;  author eklee;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.09.05.12.37.33;  author eklee;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.06.22.13.35.57;  author eklee;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.05.15.18.58.41;  author eklee;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@RaidDisk specific code.
+@
+
+
+1.6
+log
+@Fixed bug where data was sometimes trashed during writes with a failed disk.
+Fixed up consistency problems while a disk is failed.
+Redid logging.
+@
+text
+@/* 
+ * devRaidDisk.c --
+ *
+ *	Description.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/raid/devRaidDisk.c,v 1.5 90/10/12 14:00:54 eklee Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include "devRaid.h"
+#include "devRaidProto.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ReportRaidDiskAttachError --
+ *
+ *	This procedure is called when a device specified in a RAID
+ *	configuration file can not be attached.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints an error message.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Raid_ReportDiskAttachError(type, unit)
+    int		type, unit;
+{
+    printf("RAID:ATTACH_ERR:dev %d %d:Could not attach device.\n", type, unit);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_MakeDisk --
+ *
+ *	Allocate and initialize RaidDisk.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+RaidDisk *
+Raid_MakeDisk(col, row, type, unit, version, numSector)
+    int 	 col, row;
+    int 	 type, unit, version;
+    int		 numSector;
+{
+    RaidDisk	*diskPtr;
+
+    diskPtr = (RaidDisk *) malloc(sizeof(RaidDisk));
+    InitSema(&diskPtr->lock, "RaidDisk Mutex", 1);
+    diskPtr->row = row;
+    diskPtr->col = col;
+    diskPtr->version = version;
+    diskPtr->device.type = type;
+    diskPtr->device.unit = unit;
+    diskPtr->handlePtr = Dev_BlockDeviceAttach(&diskPtr->device);
+    if (diskPtr->handlePtr == (DevBlockDeviceHandle *) NIL) {
+        diskPtr->numValidSector = 0;
+        diskPtr->state = RAID_DISK_INVALID;
+	Raid_ReportDiskAttachError(type, unit);
+    } else {
+        diskPtr->numValidSector = numSector;
+        diskPtr->state = RAID_DISK_READY;
+    }
+    return diskPtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_FreeDisk --
+ *
+ *	Free RaidDisk.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void Raid_FreeDisk(diskPtr)
+    RaidDisk	*diskPtr;
+{
+    if (diskPtr->handlePtr != (DevBlockDeviceHandle *) NIL) {
+        (void) Dev_BlockDeviceRelease(diskPtr->handlePtr);
+    }
+    free((char *) diskPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_FailDisk --
+ *
+ *	Mark specified disk as failed.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Marks specified disk as failed.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Raid_FailDisk(raidPtr, col, row, version)
+    Raid		*raidPtr;
+    int			col, row;
+    int			version;
+{
+    RaidDisk		*diskPtr;
+
+    /*
+     * Without logging to non-volative memory, it is too risky to operate
+     * with a failed disk as a system crash could cause the loss of data.
+     */
+    Raid_Disable(raidPtr);
+    LockSema(&raidPtr->disk[col][row]->lock);
+    diskPtr = raidPtr->disk[col][row];
+    if (version == diskPtr->version && diskPtr->state == RAID_DISK_READY) {
+	diskPtr->state = RAID_DISK_FAILED;
+	printf("RAID:DISK_FAILED:raid %d %d:pos %d %d %d:dev %d %d\n",
+	        raidPtr->devicePtr->type, raidPtr->devicePtr->unit,
+		row, col, version,
+		diskPtr->device.type, diskPtr->device.unit);
+	Raid_SaveDisk(raidPtr, col, row,
+		diskPtr->device.type, diskPtr->device.unit, diskPtr->version,0);
+#ifdef TESTING
+        CheckDiskLog(raidPtr, col, row, 0);
+#endif /* TESTING */
+
+	diskPtr->numValidSector = 0;
+    }
+    UnlockSema(&diskPtr->lock);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_ReplaceDisk --
+ *
+ *	Replace specified disk with new disk.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Replaces specified disk.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Raid_ReplaceDisk(raidPtr, col, row, version, type, unit, numValidSector)
+    Raid	*raidPtr;
+    int		 col, row;
+    int		 version;
+    int		 type, unit;
+    int		 numValidSector;
+{
+    RaidDisk	*diskPtr    = raidPtr->disk[col][row];
+    RaidDisk	*newDiskPtr;
+
+    LockSema(&raidPtr->disk[col][row]->lock);
+    diskPtr = raidPtr->disk[col][row];
+    if (diskPtr->version != version) {
+	printf("RAID:VERSION_MISMATCH:curVersion %d:spcifiedVersion %d\n",
+		diskPtr->version, version);
+	UnlockSema(&diskPtr->lock);
+	return;
+    }
+    if (diskPtr->state != RAID_DISK_FAILED) {
+	printf("RAID:MSG:Attempted to replace non-failed disk.\n");
+	UnlockSema(&diskPtr->lock);
+	return;
+    }
+    diskPtr->state = RAID_DISK_REPLACED;
+    diskPtr->version = -version;
+    newDiskPtr = Raid_MakeDisk(col, row, type, unit, 1, numValidSector);
+    newDiskPtr->version = version + 1;
+    Raid_SaveDisk(raidPtr, col, row,
+	    newDiskPtr->device.type, newDiskPtr->device.unit,
+	    newDiskPtr->version, newDiskPtr->numValidSector);
+printf("RAID:DISK_REPLACED:raid %d %d:pos %d %d %d:oldDev %d %d:newDev %d %d\n",
+	    raidPtr->devicePtr->type, raidPtr->devicePtr->unit,
+	    row, col, version,
+	    diskPtr->device.type, diskPtr->device.unit,
+	    newDiskPtr->device.type, newDiskPtr->device.unit);
+    raidPtr->disk[col][row] = newDiskPtr;
+    UnlockSema(&diskPtr->lock);
+}
+@
+
+
+1.5
+log
+@Added Raid_ prefix to external names and cleaned up warning messages.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaidDisk.c,v 1.4 90/09/19 14:54:03 eklee Exp Locker: eklee $ SPRITE (Berkeley)";
+d30 1
+a30 1
+ * ReportRaidDiskAtachError --
+a136 1
+
+d139 3
+a141 3
+    Raid	*raidPtr;
+    int		 col, row;
+    int		 version;
+d143 1
+a143 1
+    RaidDisk	*diskPtr;
+d145 5
+d158 1
+a158 1
+	Raid_SaveDiskState(raidPtr, col, row,
+d160 4
+d214 1
+a214 1
+    Raid_SaveDiskState(raidPtr, col, row,
+@
+
+
+1.4
+log
+@Added prototypes.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaidDisk.c,v 1.3 90/09/05 12:37:33 eklee Exp $ SPRITE (Berkeley)";
+d20 3
+d45 1
+a45 1
+ReportRaidDiskAttachError(type, unit)
+d55 1
+a55 1
+ * MakeRaidDisk --
+d69 1
+a69 1
+MakeRaidDisk(col, row, type, unit, version, numSector)
+d87 1
+a87 1
+	ReportRaidDiskAttachError(type, unit);
+d99 1
+a99 1
+ * FreeRaidDisk --
+d112 1
+a112 1
+void FreeRaidDisk(diskPtr)
+d125 1
+a125 1
+ * FailRaidDisk --
+d139 1
+a139 1
+FailRaidDisk(raidPtr, col, row, version)
+d154 1
+a154 1
+	SaveDiskState(raidPtr, col, row,
+d165 1
+a165 1
+ * ReplaceRaidDisk --
+d179 1
+a179 1
+ReplaceRaidDisk(raidPtr, col, row, version, type, unit, numValidSector)
+a187 1
+    char	 buf[120];
+d204 1
+a204 1
+    newDiskPtr = MakeRaidDisk(col, row, type, unit, 1, numValidSector);
+d206 1
+a206 1
+    SaveDiskState(raidPtr, col, row,
+@
+
+
+1.3
+log
+@Logs to raw disk instead of file.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaidDisk.c,v 1.2 90/06/22 13:35:57 eklee Exp Locker: eklee $ SPRITE (Berkeley)";
+@
+
+
+1.2
+log
+@Added support for logging RAID state changes.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaidDisk.c,v 1.1 90/05/15 18:58:41 eklee Exp Locker: eklee $ SPRITE (Berkeley)";
+d21 1
+d27 25
+d66 1
+a66 1
+MakeRaidDisk(col, row, type, unit, numSector)
+d68 1
+a68 1
+    int 	 type, unit;
+d74 1
+a74 1
+    Sync_SemInitDynamic(&diskPtr->mutex, "RaidDisk Mutex");
+d77 1
+a77 2
+    diskPtr->version = 1;
+    diskPtr->useCount = 1;
+a111 1
+    Sync_LockClear(&diskPtr->mutex);
+a121 25
+ * ReportRaidDiskAtachError --
+ *
+ *	This procedure is called when a device specified in a RAID
+ *	configuration file can not be attached.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints an error message.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+ReportRaidDiskAttachError(type, unit)
+    int		type, unit;
+{
+    printf("RAID:ATTACH_ERR:dev %d %d:Could not attach device.\n", type, unit);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+d141 1
+a141 2
+    RaidDisk	*diskPtr = raidPtr->disk[col][row];
+    char	buf[120];
+d143 3
+a145 4
+    MASTER_LOCK(&diskPtr->mutex);
+    if (version == diskPtr->version &&
+	    (diskPtr->state == RAID_DISK_READY || 
+		    diskPtr->state == RAID_DISK_RECONSTRUCT) ){
+a146 2
+	diskPtr->numValidSector = 0;
+        MASTER_UNLOCK(&diskPtr->mutex);
+d151 3
+a153 4
+        sprintf(buf, "F %d %d %d\n", row, col, diskPtr->version);
+	LogEntry(raidPtr, buf);
+    } else {
+        MASTER_UNLOCK(&diskPtr->mutex);
+d155 1
+d187 1
+a188 1
+    MASTER_LOCK(&diskPtr->mutex);
+a189 1
+        MASTER_UNLOCK(&diskPtr->mutex);
+d192 1
+a195 1
+        MASTER_UNLOCK(&diskPtr->mutex);
+d197 1
+a199 6
+    /*
+     * Currently, the useCount is not updated, therefore we do not know
+     * whether the old disk structure is still in use, therfore, we
+     * can not deallocate it.  (i.e. it will stay around forever)
+     */
+    newDiskPtr = MakeRaidDisk(col, row, type, unit, numValidSector);
+d202 1
+d204 3
+a206 2
+    raidPtr->disk[col][row] = newDiskPtr;
+    MASTER_UNLOCK(&diskPtr->mutex);
+d212 2
+a213 3
+    sprintf(buf, "R %d %d %d  %d %d\n", row, col, diskPtr->version,
+		diskPtr->device.type, diskPtr->device.unit);
+    LogEntry(raidPtr, buf);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user4/eklee/raidlib/RCS/devRaidDisk.c,v 1.1 90/03/05 11:38:48 eklee Exp Locker: eklee $ SPRITE (Berkeley)";
+d40 2
+a41 1
+MakeRaidDisk(type, unit, numSector)
+d49 2
+d143 1
+d156 2
+d190 1
+d210 1
+a210 1
+    newDiskPtr = MakeRaidDisk(type, unit, numValidSector);
+d216 1
+a216 1
+    printf("RAID:DISK_REPLACED:raid %d %d:pos %d %d %d:oldDev %d %d:newDev %d %d\n",
+d221 3
+@

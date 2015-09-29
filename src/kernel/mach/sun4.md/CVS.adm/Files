@@ -1,0 +1,17 @@
+bootSysAsm.s
+fastBootAsm.s
+mach.h
+machAsm.s
+machAsmDefs.h
+machCode.c
+machConst.h
+machFPUGlue.c
+machInt.h
+machIntr.s
+machMigrate.c
+machMon.c
+machMon.h
+machSig.h
+machTrap.s
+machTypes.h
+md.mk.sed

@@ -1,0 +1,171 @@
+head     9.0;
+branch   ;
+access   ;
+symbols  ds3100:9.0 sun3:9.0 sun4nw:9.0 symm:9.0 spur:9.0 sprited:9.0 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.0
+date     89.09.12.15.22.12;  author douglis;  state Stable;
+branches ;
+next     1.4;
+
+1.4
+date     89.08.15.21.27.19;  author rab;  state Exp;
+branches 1.4.1.1;
+next     1.3;
+
+1.3
+date     89.06.09.18.00.56;  author douglis;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.12.04.15.06.49;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.12.04.15.05.27;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.4.1.1
+date     91.08.15.21.08.37;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@/*
+ * byte.h --
+ *
+ *	This file defines a few extra convenience macros for manipulating
+ *	byte arrays.
+ *
+ * Copyright (C) 1986 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/utils/RCS/byte.h,v 1.4 89/08/15 21:27:19 rab Exp Locker: douglis $ SPRITE (Berkeley)
+ */
+
+#ifndef _BYTE
+#define _BYTE
+
+/*
+ * Byte_FillBuffer is used to copy a value into a buffer and advance
+ * the pointer into the buffer by the size of the object copied.
+ * Note that pointer must be defined as a character pointer because it is
+ * advanced by sizeof(type) characters.
+ *
+ * Byte_EmptyBuffer assigns into a variable, given a pointer and the type
+ * of the variable, then advances the pointer.
+ */
+
+#define Byte_FillBuffer(pointer, type, value) \
+		* ((type *) pointer) = (value) ; \
+		pointer += sizeof(type)
+
+#define Byte_EmptyBuffer(pointer, type, dest) \
+		dest = * ((type *) pointer); \
+		pointer += sizeof(type)
+
+/*
+ * Character arrays (strings & character buffers) are set up to be
+ * padded to make sure that objects are aligned on double-word boundaries
+ * Byte_AlignAddr rounds lengths to the next boundary.
+ */
+
+#define Byte_AlignAddr(address) \
+	((((unsigned int) address) + (sizeof(double) - 1)) & \
+	 ~(sizeof(double) - 1))
+
+#endif /* _BYTE */
+@
+
+
+1.4
+log
+@Commented #endif labels.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/utils/RCS/byte.h,v 1.3 89/06/09 18:00:56 douglis Exp Locker: rab $ SPRITE (Berkeley)
+@
+
+
+1.4.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/utils/RCS/byte.h,v 1.4 89/08/15 21:27:19 rab Exp $ SPRITE (Berkeley)
+@
+
+
+1.3
+log
+@make Byte_AlignAddr use the least common denominator (double-word aligned).
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/utils/RCS/byte.h,v 1.2 88/12/04 15:06:49 ouster Exp Locker: douglis $ SPRITE (Berkeley)
+d45 1
+a45 1
+#endif _BYTE
+@
+
+
+1.2
+log
+@Eliminate Byte_ routines that are already provide by the C library.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/utils/RCS/byte.h,v 1.1 88/12/04 15:05:27 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d37 2
+a38 2
+ * padded to make sure that integers are aligned on even addresses.
+ * Byte_AlignAddr rounds lengths to the next even number.
+d41 3
+a43 1
+#define Byte_AlignAddr(address) ((address + 1) & ~1)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d4 2
+a5 2
+ *	This file defines the facilities provided for copying,
+ *	comparing, and zeroing byte arrays.
+d11 1
+a11 1
+ * $Header: byte.h,v 2.0 87/08/11 09:32:01 brent Exp $ SPRITE (Berkeley)
+a15 7
+
+#include "sprite.h"
+
+extern void Byte_Copy();
+extern void Byte_Fill();
+extern void Byte_Zero();
+extern Boolean Byte_Compare();
+@

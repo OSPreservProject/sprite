@@ -1,0 +1,15 @@
+
+rpcstat.c,323
+PrintCallCount(417,11295
+PrintClientState(263,7761
+PrintClientStats(128,2984
+PrintCommand(666,16900
+PrintFlags(602,15967
+PrintHostName(455,12167
+PrintRpcTrace(506,13227
+PrintServerState(316,8998
+PrintServerStats(201,5630
+PrintSrvCount(378,10422
+PrintType(812,19698
+main(80,2185
+int numOptions = sizeof(53,1775

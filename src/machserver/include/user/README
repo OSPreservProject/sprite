@@ -1,0 +1,3 @@
+The bizarre symbolic links (e.g., user -> .) are there to handle all
+the different ways files end up getting included in Sprite (e.g.,
+"#include <user/foo.h>", even when a user program is being compiled).

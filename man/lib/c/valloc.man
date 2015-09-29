@@ -1,0 +1,51 @@
+'\" Copyright 1992 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/lib/c/etc/RCS/valloc.man,v 1.1 92/04/21 14:13:40 kupfer Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS valloc lib
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+valloc \- page-aligned memory allocator
+.SH SYNOPSIS
+.nf
+\fB#include <unistd.h>\fR
+.sp
+void *
+\fBvalloc\fR(\fIsize\fP)
+.SH ARGUMENTS
+.AS size_t size
+.AP size_t size in
+Number of bytes to allocate.
+.BE
+
+.SH DESCRIPTION
+.PP
+.B valloc
+is like 
+.BR malloc ,
+except that the pointer it returns is guaranteed to be page-aligned.
+
+.SH BUGS
+.PP
+Using
+.B free
+to deallocate
+.BR valloc 'd
+memory can corrupt
+.BR malloc .
+Unfortunately, there is no
+.B vfree
+routine, so it is currently impossible to free
+.BR valloc 'd 
+memory.
+
+.SH KEYWORDS
+memory, alloc

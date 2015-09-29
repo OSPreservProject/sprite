@@ -1,0 +1,108 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     88.12.21.08.35.42;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.12.18.13.55.09;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Switch to Sprite library location.
+@
+text
+@.so /sprite/lib/ditroff/tmac.sd
+.nr EP 1
+.nr LL 31P
+.nr PI 2m
+.nr PD 0
+.nr FL 31P
+.nr PO 4i-15.5P
+.po 4i-15.5P
+.pl 63.5P
+.lt 31P
+.LP
+.de TL
+.ps 6
+.vs 8
+.tl 'SIAM J. C\\s-1OMPUT\\s+1.''\v'.4m'\\s+5\(co\\s-5\v'-.4m' 19\n(yr Society for Industrial and Applied Mathematics'
+.tl '''0097-5397/\n(yr/0000-0000 $1.00/0'
+.sp 3P-16p
+.nr HM 7.5P
+.ps 10
+.vs 12
+.ft 3
+.ce 100
+..
+.de AU
+.ps 8
+.vs 10
+.sp 8p
+.ft 1
+.ce 100
+..
+.de AB
+.nr PS 8
+.nr VS 10
+.ce 0
+.sp 14p
+.PP
+\\f3Abstract\\fP.
+..
+.de AE
+.nr PS 10
+.nr VS 12
+.ps 10
+.vs 12
+..
+.de OK
+.nr PS 8
+.nr VS 10
+.sp 8p
+.PP
+.nr PS 10
+.nr VS 12
+\\f3Key words\\fP.
+..
+.de FA
+.if n __________________________
+.if t \l'3P'
+.br
+..
+.de NH
+.if !\\n(nH-1 .sp 12p
+.if \\n(.$ .nr nH \\$1
+.sp
+.PP
+.ft 3
+\\n(nH.
+.nr nH \\n(nH+1
+..
+.nr nH 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+.so /usr/local/lib/ditmac/tmac.sd
+@

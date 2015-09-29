@@ -1,0 +1,10 @@
+D DS3100_M                          	ds3100.md
+F EXECL.C;1                         	execl.c
+F EXECL.MAN;1                       	execl.man
+F EXECLE.C;1                        	execle.c
+F EXECLP.C;1                        	execlp.c
+F EXECV.C;1                         	execv.c
+F EXECVP.C;1                        	execvp.c
+F MAKEFILE.;1                       	Makefile
+D SUN3_MD                           	sun3.md
+F _EXECARG.C;1                      	_ExecArgs.c

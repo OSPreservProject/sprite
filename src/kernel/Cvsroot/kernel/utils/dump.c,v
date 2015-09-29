@@ -1,0 +1,1763 @@
+head     9.13;
+branch   ;
+access   ;
+symbols  ds3100:9.13 sun3:9.13 sun4nw:9.13 symm:9.13 spur:9.13 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.13
+date     91.09.17.15.08.04;  author shirriff;  state Exp;
+branches ;
+next     9.12;
+
+9.12
+date     91.09.10.18.45.01;  author rab;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     90.10.11.21.59.59;  author kupfer;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     90.10.09.12.02.11;  author jhh;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     90.10.02.16.27.38;  author shirriff;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     90.09.11.14.11.35;  author kupfer;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.07.18.15.03.52;  author shirriff;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.07.17.13.41.12;  author shirriff;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.07.16.22.39.02;  author shirriff;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.03.02.11.48.10;  author shirriff;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     89.11.28.12.58.05;  author douglis;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.23.08.46.22;  author brent;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.15.15.50.25;  author douglis;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.21.58;  author douglis;  state Stable;
+branches ;
+next     8.6;
+
+8.6
+date     89.08.25.09.37.39;  author mendel;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.08.24.17.36.48;  author mendel;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.08.03.23.18.01;  author rab;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.05.24.07.55.39;  author rab;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.01.31.11.48.34;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.12.04.15.42.39;  author ouster;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.41.09;  author douglis;  state Stable;
+branches ;
+next     6.5;
+
+6.5
+date     88.11.11.15.32.20;  author mendel;  state Exp;
+branches ;
+next     6.4;
+
+6.4
+date     88.10.30.20.57.45;  author jhh;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.10.07.11.25.06;  author mendel;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.25.12.10.42;  author nelson;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.23.15.53.11;  author rab;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.28.42;  author brent;  state Stable;
+branches ;
+next     5.12;
+
+5.12
+date     88.08.05.14.56.09;  author douglis;  state Exp;
+branches ;
+next     5.11;
+
+5.11
+date     88.08.02.12.07.18;  author douglis;  state Exp;
+branches ;
+next     5.10;
+
+5.10
+date     88.06.29.16.25.53;  author mendel;  state Exp;
+branches ;
+next     5.9;
+
+5.9
+date     88.06.16.21.09.53;  author mendel;  state Exp;
+branches ;
+next     5.8;
+
+5.8
+date     88.06.16.10.17.31;  author brent;  state Exp;
+branches ;
+next     5.7;
+
+5.7
+date     88.05.05.18.02.23;  author nelson;  state Exp;
+branches ;
+next     5.6;
+
+5.6
+date     88.03.08.14.24.49;  author douglis;  state Exp;
+branches ;
+next     5.5;
+
+5.5
+date     87.10.09.08.49.39;  author brent;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     87.09.22.18.34.52;  author nelson;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     87.09.22.17.29.02;  author brent;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.09.17.12.03.21;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.08.25.15.21.43;  author brent;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.51.53;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.13
+log
+@Removed static line debugger L1-b.  Added some comments.
+@
+text
+@/* 
+ * dump.c --
+ *
+ *	Routines to print global system states in a readable form.  Examples
+ *	of structures that can be dumped are:
+ *
+ *		* timer queue
+ *		* process table
+ *		* queue of ready processes.
+ *
+ * Copyright 1985 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/dump.c,v 9.12 91/09/10 18:45:01 rab Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+
+#include <net.h>
+#include <sprite.h>
+#include <mach.h>
+#include <dump.h>
+#include <dumpInt.h>
+#include <timer.h>
+#include <proc.h>
+#include <sys.h>
+#include <list.h>
+#include <devVid.h>
+#include <rpc.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fscache.h>
+#include <fspdev.h>
+#include <recov.h>
+#include <string.h>
+#include <sched.h>
+#include <devSyslog.h>
+#include <mem.h>
+#include <stdio.h>
+
+/*
+ * Forward references to procedures internal to this file.
+ */
+static void	DumpProcTable _ARGS_((ClientData));
+static void	PrintL1Menu _ARGS_((ClientData));
+static void	PrintTOD _ARGS_((ClientData));
+static void	PrintVersion _ARGS_((ClientData));
+static void	ResetNetworks _ARGS_((ClientData));
+static void	VidEnable _ARGS_((ClientData));
+
+/*
+ * Table of routines and their arguments to be called on dump events.
+ * Only machine independent dump events should be added to this table.
+ * Machine dependent event should be added to the Local event table.
+ *
+ * These events are registered in the machine dependent dumpEvents.c
+ * This does Dev_RegisterConsoleCmd.  They are called in devConsoleCmds.c.
+ */
+static EventTableType eventTable[] = {
+    {'/', PrintL1Menu, (ClientData)0, "Print Dump Event Menu"},
+    {'a', RESERVED_EVENT, NULL_ARG, "Abort to PROM monitor" }, 
+    {'c', Fscache_DumpStats, (ClientData)0, "Dump cache stats"},
+    {'d', RESERVED_EVENT, NULL_ARG, "Put machine into the kernel debugger"},
+    {'e', Timer_DumpStats, (ClientData) 'e', "Dump timer stats"},
+#ifdef notdef
+    {'f', Fsutil_PrintTrace, (ClientData) -1, "Dump filesystem trace"},
+#endif
+    {'i', Proc_KDump, (ClientData) 0, "Info on waiting processes"},
+    {'j', Dev_SyslogDisable, (ClientData) 0, "Disable/enable syslog"},
+    {'m', Mem_DumpStats, (ClientData) FALSE, "Dump memory stats"},
+    {'n', ResetNetworks, (ClientData)0, "Reset the network interfaces"},
+    {'o', VidEnable, (ClientData) 1, "Turn video on"},
+    {'p', DumpProcTable, (ClientData) 0, "Dump process table"},
+    {'r', Sched_DumpReadyQueue, (ClientData) 0, "Dump ready queue"},
+#ifdef notdef
+    {'q', Fspdev_PrintTrace, (ClientData) 200, "Dump pseudo-device trace"},
+#endif
+    {'s', Timer_DumpStats,   (ClientData) 's', "Reset timer stats"},
+    {'t', Timer_DumpQueue,  (ClientData) 0, "Dump the timer queue"},
+    {'v', PrintVersion, (ClientData) 0, "Print version string of the kernel"},
+    {'w', Fsutil_SyncStub, (ClientData) FALSE, "WRITE BACK CACHE"},
+    {'x', Fsutil_HandleScavengeStub, (ClientData) 0, 
+					"Scavenge filesystem handles"},
+    {'y', Recov_PrintTrace, (ClientData) 50, "Dump RPC recovery trace"},
+    {'z', Rpc_PrintTrace, (ClientData) 50, "Dump RPC packet trace"},
+    {'1', Timer_TimerGetInfo, (ClientData) 1,"Dump info for timer counter 1"},
+    {'2', Timer_TimerGetInfo, (ClientData) 2,"Dump info for timer counter 2"},
+    {'3', Timer_TimerGetInfo, (ClientData) 3,"Dump info for timer counter 3"},
+    {'4', Timer_TimerGetInfo, (ClientData) 4,"Dump info for timer counter 4"},
+    {'5', Timer_TimerGetInfo, (ClientData) 5,"Dump info for timer counter 5"},
+    {'6', PrintTOD,           (ClientData) 0,"Print time of day counters"},
+	/* This MUST be the last entry */
+    {'\0', LAST_EVENT,        NULL_ARG,       (char *) 0 },
+};
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dump_Init --
+ *
+ *	Establish default procedural attachments for Dump events.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Dump_Init()
+{
+    Dump_Register_Events(eventTable);
+
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DumpProcTable --
+ *
+ *	Wrapper to avoid casts and compiler warnings.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	(see Proc_Dump.)
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+static void
+DumpProcTable(dummy)
+    ClientData dummy;
+{
+    Proc_Dump();
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintL1Menu --
+ *
+ *	Dump out a list of the L1-key magic commands.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+static void
+PrintL1Menu(arg)
+    ClientData arg;		/* unused */
+{
+    EventTableType	*entry;
+
+    printf("Pressing the L1 key and a letter causes the following...\n");
+    printf("/ or ? - Print this menu\n");
+    for (entry = eventTable; entry->routine != LAST_EVENT; entry++) {
+	printf("%c - %s\n",entry->key, entry->description);
+    }
+    /*
+     * Show the machine dependent bindings.
+     */
+    printf("Machine dependent entries....\n");
+    Dump_Show_Local_Menu();
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintTOD --
+ *
+ *	Prints the time of day using one of two sources for the time.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Output is written to the display.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static void
+PrintTOD(arg)
+    ClientData arg;		/* unused */
+{
+    Time time1, time2, diff;
+
+    Timer_GetTimeOfDay(&time1, (int *) NIL, (Boolean *) NIL);
+    Timer_GetRealTimeOfDay(&time2, (int *) NIL, (Boolean *) NIL);
+    printf("Fast: %d.%06d\n", time1.seconds, time1.microseconds);
+    printf("Slow: %d.%06d\n", time2.seconds, time2.microseconds);
+    Time_Subtract(time2, time1, &diff);
+    printf("diff: %d.%06d\n", diff.seconds, diff.microseconds);
+
+    /*
+    Timer_GetRealTimeOfDay(&time1, (int *) NIL, (Boolean *) NIL);
+    Timer_GetRealTimeOfDay(&time2, (int *) NIL, (Boolean *) NIL);
+    Time_Subtract(time2, time1, &diff);
+    printf("Slow diff: %d.%06d\n", diff.seconds, diff.microseconds);
+    */
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintVersion --
+ *
+ *	Prints the kernel's version on the console.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Output is written to the display.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static void
+PrintVersion(arg)
+    ClientData arg;		/* unused */
+{
+    extern char *SpriteVersion();
+    char *v;
+
+    v = SpriteVersion();
+    printf("%s\n",v);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ResetNetworks --
+ *
+ *	Reset all network interfaces.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The network interfaces are reset.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static void
+ResetNetworks(arg)
+    ClientData arg;		/* unused */
+{
+    int			i;
+    Net_Interface	*interPtr;
+
+    i = 0; 
+    interPtr = Net_NextInterface(FALSE, &i);
+    while (interPtr != (Net_Interface *) NIL) {
+	Net_Reset(interPtr);
+	i++;
+	interPtr = Net_NextInterface(FALSE, &i);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VidEnable --
+ *
+ *	Wrapper to avoid casts and compiler warnings.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	(see Dev_VidEnable.)
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+VidEnable(onOff)
+    ClientData onOff;
+{
+    Dev_VidEnable((Boolean)onOff);
+}
+@
+
+
+9.12
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/dump.c,v 9.11 90/10/11 21:59:59 kupfer Exp Locker: rab $ SPRITE (Berkeley)";
+d56 3
+a62 4
+#ifdef notdef
+    {'b', RESERVED_EVENT, NULL_ARG, 
+				"Put machine into (old) serial line debugger"},
+#endif
+@
+
+
+9.11
+log
+@Use <> include's.  Change eventTable to get rid of casts and compiler
+warnings.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/dump.c,v 9.10 90/10/09 12:02:11 jhh Exp Locker: kupfer $ SPRITE (Berkeley)";
+d67 1
+d69 1
+d77 1
+d79 1
+d199 1
+a199 1
+
+d237 1
+a237 1
+
+d264 1
+a264 1
+
+@
+
+
+9.10
+log
+@network reset now does all interfaces
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/dump.c,v 9.9 90/10/02 16:27:38 shirriff Exp Locker: jhh $ SPRITE (Berkeley)";
+d20 20
+a39 20
+#include "net.h"
+#include "sprite.h"
+#include "mach.h"
+#include "dump.h"
+#include "dumpInt.h"
+#include "timer.h"
+#include "proc.h"
+#include "sys.h"
+#include "list.h"
+#include "devVid.h"
+#include "rpc.h"
+#include "fs.h"
+#include "fsutil.h"
+#include "fscache.h"
+#include "fspdev.h"
+#include "recov.h"
+#include "string.h"
+#include "sched.h"
+#include "devSyslog.h"
+#include "mem.h"
+d45 1
+d50 1
+d58 1
+a58 1
+    {'/', PrintL1Menu, (ClientData)0,"Print Dump Event Menu"},
+d67 12
+a78 12
+    {'f', Fsutil_PrintTrace,   (ClientData) -1, "Dump filesystem trace"},
+    {'i', (void (*)()) Proc_KDump, (ClientData) 0,"Info on waiting processes"},
+    {'j', Dev_SyslogDisable, (ClientData) 0,"Disable/enable syslog"},
+    {'m', Mem_DumpStats, (ClientData) FALSE,"Dump memory stats"},
+    {'n', ResetNetworks, (ClientData)0,"Reset the network interfaces"},
+    {'o', (void (*)()) Dev_VidEnable, (ClientData) 1,"Turn video on"},
+    {'p', (void (*)()) Proc_Dump, (ClientData) 0,"Dump process table"},
+    {'r', Sched_DumpReadyQueue,  (ClientData) 0,"Dump ready queue"},
+    {'q', Fspdev_PrintTrace,  (ClientData) 200,"Dump pseudo-device trace"},
+    {'s', Timer_DumpStats,   (ClientData) 's',"Reset timer stats"},
+    {'t', Timer_DumpQueue,  (ClientData) 0,"Dump the timer queue"},
+    {'v', PrintVersion, (ClientData) 0,"Print version string of the kernel"},
+d80 4
+a83 3
+    {'x', Fsutil_HandleScavengeStub, (ClientData) 0,"Scavenge filesystem handles"},
+    {'y', Recov_PrintTrace, (ClientData) 50,"Dump RPC recovery trace"},
+    {'z', Rpc_PrintTrace, (ClientData) 50,"Dump RPC packet trace"},
+d99 48
+d160 1
+a182 23
+ * Dump_Init --
+ *
+ *	Establish default procedural attachments for Dump events.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Dump_Init()
+{
+    Dump_Register_Events(eventTable);
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+d277 23
+@
+
+
+9.9
+log
+@Added L1-J to junk (disable) the syslog.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/dump.c,v 9.8 90/09/11 14:11:35 kupfer Exp Locker: shirriff $ SPRITE (Berkeley)";
+d20 1
+a34 1
+#include "net.h"
+d48 1
+d69 1
+a69 1
+    {'n', Net_Reset, (ClientData)0,"Reset the network interface"},
+d215 33
+@
+
+
+9.8
+log
+@Use function prototypes. Lint.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/dump.c,v 9.7 90/07/18 15:03:52 shirriff Exp Locker: kupfer $ SPRITE (Berkeley)";
+d38 2
+a42 6
+ * Forward references that should be in other header files.
+ */
+
+void	Mem_DumpStats();
+
+/*
+d66 1
+@
+
+
+9.7
+log
+@Added L1-i to give info on waiting processes.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/dump.c,v 9.6 90/07/17 13:41:12 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d28 1
+d38 1
+a44 3
+void	Timer_TimerGetInfo();
+void 	Sched_DumpReadyQueue();
+ReturnStatus 	Dev_VidEnable();
+d47 6
+a52 9
+ * Forward references to void procedures internal to this file.
+ */
+void	DumpList();
+void	DumpListLinksStruct();
+void	DumpTimerElement();
+void	DumpTimerStats();
+void 	PrintL1Menu();
+static void	PrintVersion();
+static void	PrintTOD();
+d111 3
+a113 2
+void
+PrintL1Menu()
+d170 2
+a171 1
+PrintTOD()
+d208 2
+a209 1
+PrintVersion()
+@
+
+
+9.6
+log
+@I undid the previous revision.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/dump.c,v 9.5 90/07/16 22:39:02 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d73 1
+@
+
+
+9.5
+log
+@Added L1-i to dump locks.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/dump.c,v 9.4 90/03/02 11:48:10 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+a72 1
+    {'i', (void (*)()) Proc_KDump, (ClientData) 0,"Dump process locks"},
+@
+
+
+9.4
+log
+@Added l1-o to turn on video display.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/dump.c,v 9.3 89/11/28 12:58:05 douglis Exp $ SPRITE (Berkeley)";
+d73 1
+@
+
+
+9.3
+log
+@changed "#ifdef 0" to "#ifdef notdef" to try to get
+rid of pesky serial line debugger on l1-b.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/dump.c,v 9.2 89/10/23 08:46:22 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d45 1
+d75 1
+@
+
+
+9.2
+log
+@Updates calls to new FS modules
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/dump.c,v 9.1 89/10/15 15:50:25 douglis Exp Locker: brent $ SPRITE (Berkeley)";
+d64 1
+a64 1
+#ifdef 0
+@
+
+
+9.1
+log
+@commented out a couple of hazardous keys (b, h) that can crash
+the machine.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/dump.c,v 9.0 89/09/12 15:21:58 douglis Stable Locker: douglis $ SPRITE (Berkeley)";
+a44 1
+void	Fs_SyncStub();
+a55 1
+void FslclNameHashStats();
+a71 3
+#ifdef 0
+    {'h', FslclNameHashStats, (ClientData)NULL, "Dump name hash stats"},
+#endif
+d80 1
+a80 1
+    {'w', Fs_SyncStub, (ClientData) FALSE, "WRITE BACK CACHE"},
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/dump.c,v 8.6 89/08/25 09:37:39 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d66 1
+d69 1
+d74 1
+d76 1
+@
+
+
+8.6
+log
+@*** empty log message ***
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/dump.c,v 8.5 89/08/24 17:36:48 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+@
+
+
+8.5
+log
+@Modified to file system changes.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/dump.c,v 8.4 89/08/03 23:18:01 rab Exp Locker: mendel $ SPRITE (Berkeley)";
+d57 1
+a57 1
+static void FslclNameHashStats();
+@
+
+
+8.4
+log
+@Deleted include of "mem.h", which no longer exists.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/dump.c,v 8.3 89/05/24 07:55:39 rab Exp Locker: rab $ SPRITE (Berkeley)";
+d30 3
+d57 1
+d68 1
+a68 1
+    {'c', Fs_DumpCacheStats, (ClientData)0, "Dump cache stats"},
+d71 2
+a72 2
+    {'f', Fs_PrintTrace,   (ClientData) -1, "Dump filesystem trace"},
+    {'h', Fs_NameHashStats, (ClientData)NULL, "Dump name hash stats"},
+d77 1
+a77 1
+    {'q', Fs_PdevPrintTrace,  (ClientData) 200,"Dump pseudo-device trace"},
+d82 1
+a82 1
+    {'x', Fs_HandleScavengeStub, (ClientData) 0,"Scavenge filesystem handles"},
+@
+
+
+8.3
+log
+@changes to allow optimization.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/dump.c,v 8.2 89/01/31 11:48:34 brent Exp Locker: rab $ SPRITE (Berkeley)";
+a30 1
+#include "mem.h"
+@
+
+
+8.2
+log
+@Changed L1-w to sync the disks
+@
+text
+@d16 2
+a17 2
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/dump.c,v 8.1 88/12/04 15:42:39 ouster Exp Locker: brent $ SPRITE (Berkeley)";
+#endif not lint
+d72 1
+a72 1
+    {'p', Proc_Dump, (ClientData) 0,"Dump process table"},
+a81 1
+
+d87 1
+a87 1
+    {'6', PrintTOD, (ClientData) 0,"Print time of day counters"},
+d89 1
+a89 1
+    {'\000', LAST_EVENT, NULL_ARG, (char *) 0 }, 
+@
+
+
+8.1
+log
+@Stop using obsolete header files.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/dump.c,v 8.0 88/11/11 18:41:09 douglis Stable Locker: ouster $ SPRITE (Berkeley)";
+d37 9
+a47 1
+
+a54 3
+extern	void	Mem_DumpStats();
+extern	void	Timer_TimerGetInfo();
+extern void 	Sched_DumpReadyQueue();
+d78 1
+a78 1
+    {'w', Mem_DumpTrace, (ClientData) -1,"Dump the memory trace buffer"},
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/dump.c,v 6.5 88/11/11 15:32:20 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+a27 1
+#include "byte.h"
+@
+
+
+6.5
+log
+@Added extern for Sched_DumpReadyQueue so module will compile.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/RCS/dump.c,v 6.4 88/10/30 20:57:45 jhh Exp Locker: mendel $ SPRITE (Berkeley)";
+@
+
+
+6.4
+log
+@multiprocessor port
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: dump.c,v 6.3 88/10/07 11:25:06 mendel Exp $ SPRITE (Berkeley)";
+d50 1
+@
+
+
+6.3
+log
+@Modified for the move of the devTimer stuff into the timer module.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: dump.c,v 6.2 88/08/25 12:10:42 nelson Exp $ SPRITE (Berkeley)";
+a28 1
+#include "timer.h"
+a30 1
+#include "fsNameHash.h"
+d35 1
+a37 12
+ * Define constants, which are used instead of enumerated types to allow
+ * DumpListLinksStruct to be called from Kdbx with a List_Links pointer.
+ *
+ * DUMP_PROC indicates a Proc_ControlBlock. 
+ * DUMP_TIMER indicates a Timer_QueueElement.
+ */
+
+typedef int DumpType;
+#define DUMP_PROC 1
+#define DUMP_TIMER 2
+
+/*
+a45 2
+void	DumpPCB();
+void	Dump_ProcessTable();
+a47 3
+extern	void	Fs_DumpCacheStats();
+extern	void	Fs_PdevPrintTrace();
+extern	void	Fs_HandleScavengeStub();
+d62 1
+a62 1
+    {'e', DumpTimerStats, (ClientData) 'e', "Dump timer stats"},
+d64 1
+a64 3
+#ifdef brent
+    {'h', Fs_NameHashStats, (ClientData)fsNameTablePtr,"Dump name hash stats"},
+#endif
+d67 2
+a68 2
+    {'p', Dump_ProcessTable, (ClientData) 0,"Dump process table"},
+    {'r', Dump_ReadyQueue,  (ClientData) 0,"Dump ready queue"},
+d70 2
+a71 2
+    {'s', DumpTimerStats,   (ClientData) 's',"Reset timer stats"},
+    {'t', Dump_TimerQueue,  (ClientData) 0,"Dump the timer queue"},
+d111 2
+a112 2
+    Sys_Printf("Pressing the L1 key and a letter causes the following...\n");
+    Sys_Printf("/ or ? - Print this menu\n");
+d114 1
+a114 1
+	Sys_Printf("%c - %s\n",entry->key, entry->description);
+d119 1
+a119 1
+    Sys_Printf("Machine dependent entries....\n");
+a145 1
+
+a149 334
+ * Dump_ProcessTable --
+ *
+ *	Output all active proceses table entries on the display.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Output is written to the display.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Dump_ProcessTable()
+{
+    Boolean empty;
+    int i;
+    Proc_ControlBlock *procPtr;
+
+    
+    DISABLE_INTR();
+    empty = TRUE;
+    Sys_Printf("\n");
+    Sys_Printf("%6s %6s %5s %10s %10s %8s %8s   %s\n",
+	"PCBPtr", "ID", "wtd", "user", "kernel", "event", "state", "name");
+    for (i = 0; i < proc_MaxNumProcesses; i++) {
+	procPtr = proc_PCBTable[i];
+	if (procPtr->state != PROC_UNUSED) {
+	    empty = FALSE;
+	    DumpListLinksStruct((List_Links *) procPtr, DUMP_PROC);
+	}
+    }
+    if (empty == TRUE) {
+	Sys_Printf("List is empty.");
+    }
+    Sys_Printf("\n");
+    ENABLE_INTR();
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dump_ReadyQueue --
+ *
+ *	Output the ready queue on the display.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Output is written to the display.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Dump_ReadyQueue()
+{
+    extern List_Links *schedReadyQueueHdrPtr;
+
+    DumpList(schedReadyQueueHdrPtr, DUMP_PROC);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dump_TimerQueue --
+ *
+ *	Output the timer queue on the display.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Output is written to the display.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Dump_TimerQueue()
+{
+    extern List_Links *timerQueueList;
+    Timer_Ticks	ticks;
+    Time	time;
+
+    Timer_GetCurrentTicks(&ticks);
+    Timer_TicksToTime(ticks, &time);
+    Sys_Printf("Now: %d.%06u sec\n", time.seconds, time.microseconds);
+    DumpList(timerQueueList, DUMP_TIMER);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DumpList --
+ *
+ *	Output the structures contained in a linked list, with interrupts
+ *	disabled throughout.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Output is written to the display.
+ *
+ *----------------------------------------------------------------------
+ */
+    
+void
+DumpList(hdrPtr, type)
+    List_Links *hdrPtr;
+    DumpType type;
+{
+    List_Links *itemPtr;
+
+    
+    if (List_IsEmpty(hdrPtr)) {
+	Sys_Printf("\nList is empty.\n");
+    } else {
+	Sys_Printf("\n");
+	DISABLE_INTR();
+	LIST_FORALL(hdrPtr, itemPtr) {
+	    DumpListLinksStruct(itemPtr, type);
+	}
+	ENABLE_INTR();
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DumpListLinksStruct --
+ *
+ *	Given the ``type'' of a List_Links (based on a defined constant),
+ *	print out relevant info for the structure to which the List_Links
+ *	points.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Output is displayed on the display (implying that interrupts are
+ *	disabled at length).
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+DumpListLinksStruct(itemPtr, type)
+    List_Links *itemPtr;   /* pointer to List_Links representation of struct */
+    DumpType type;      /* defined constant indicating which typecast to use */
+{
+    switch(type) {
+	case DUMP_PROC:
+	    DumpPCB((Proc_ControlBlock *) itemPtr);
+	    break;
+	case DUMP_TIMER:
+	    DumpTimerElement((Timer_QueueElement *) itemPtr);
+	    break;
+	default:
+	    Sys_Panic(SYS_WARNING,
+		      "DumpListLinksStruct: unknown type %d", type);
+	    break;
+    }
+}
+    
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DumpPCB --
+ *
+ *	Output the more important parts of a Proc_ControlBlock on the display.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Output is written to the display.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+DumpPCB(procPtr)
+    Proc_ControlBlock *procPtr;
+{
+    Time	kernelTime, userTime;
+
+    static char *states[] = {
+	"unused",
+	"running",
+	"ready",
+	"waiting",
+	"exiting",
+	"dead",
+	"migrated",
+	"new",
+	"suspended",
+    };
+    Proc_State state;
+
+    state = procPtr->state;
+    switch (state) {
+	case PROC_UNUSED:
+	case PROC_RUNNING:
+	case PROC_READY:
+	case PROC_WAITING:
+	case PROC_EXITING:
+	case PROC_DEAD:
+	case PROC_MIGRATED:
+	case PROC_NEW:
+	case PROC_SUSPENDED:
+	break;
+	default:
+	Sys_Panic(SYS_FATAL, "DumpPCB: invalid proess state: %d.\n", state);
+    }
+    /*
+     * A header describing the fields has already been printed.
+     */
+    Timer_TicksToTime(procPtr->userCpuUsage.ticks, &userTime);
+    Timer_TicksToTime(procPtr->kernelCpuUsage.ticks, &kernelTime);
+    Sys_Printf(
+	       " %6x %6x %5d [%1d,%6d] [%1d,%6d] %8x %8s",
+	       procPtr, 
+	       procPtr->processID, 
+	       procPtr->weightedUsage, 
+	       userTime.seconds,
+	       userTime.microseconds,
+	       kernelTime.seconds, 
+	       kernelTime.microseconds,
+	       procPtr->event,
+	       states[(int) state]);
+    if (procPtr->argString != (Address) NIL) {
+	char cmd[30];
+	char *space;
+
+	(void) String_NCopy(30, procPtr->argString, cmd);
+	space = String_FindChar(cmd, ' ');
+	if (space != (char *) NULL) {
+	    *space = '\0';
+	}
+	Sys_Printf(" %s\n", cmd);
+    } else {
+	Sys_Printf("\n");
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DumpTimerElement --
+ *
+ *	Output the more important parts of a Timer_QueueElement on the display.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Output is written to the display.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+DumpTimerElement(timerPtr)
+    Timer_QueueElement *timerPtr;
+{
+    Time  	time;
+
+    Timer_TicksToTime(timerPtr->time, &time);
+
+    Sys_Printf("(*0x%x)(0x%x) @@ %d.%06u\n",
+	    (Address) timerPtr->routine, 
+	    (Address) timerPtr->clientData,
+	    time.seconds, time.microseconds);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DumTimerStats --
+ *
+ *	Initializes and prints the timer module statistics.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Output is written to the display.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+DumpTimerStats(arg)
+    ClientData	arg;
+{
+    static   Timer_Ticks	start;
+    static   Timer_Ticks	end;
+    Timer_Ticks	diff;
+    Time  	time;
+
+    if (arg ==  (ClientData) 's') {
+	Timer_GetCurrentTicks(&start);
+	Byte_Zero(sizeof(timer_Statistics), (Address) &timer_Statistics);
+    } else {
+	Timer_GetCurrentTicks(&end);
+	Timer_SubtractTicks(end, start, &diff);
+	Timer_TicksToTime(diff, &time);
+
+	Sys_Printf(
+	"\n%d.%06d cb %d prof %d spur %d; Sched %d Res %d Des %d\n",
+	    time.seconds, time.microseconds,
+	    timer_Statistics.callback,
+	    timer_Statistics.profile,
+	    timer_Statistics.spurious,
+	    timer_Statistics.schedule,
+	    timer_Statistics.resched,
+	    timer_Statistics.desched
+	);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+d170 2
+a171 2
+    Sys_Printf("Fast: %d.%06d\n", time1.seconds, time1.microseconds);
+    Sys_Printf("Slow: %d.%06d\n", time2.seconds, time2.microseconds);
+d173 1
+a173 1
+    Sys_Printf("diff: %d.%06d\n", diff.seconds, diff.microseconds);
+d179 1
+a179 1
+    Sys_Printf("Slow diff: %d.%06d\n", diff.seconds, diff.microseconds);
+d207 1
+a207 1
+    Sys_Printf("%s\n",v);
+@
+
+
+6.2
+log
+@Changed to use new cpu usage time format.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: dump.c,v 6.1 88/08/23 15:53:11 rab Exp $ SPRITE (Berkeley)";
+d29 1
+a29 1
+#include "devTimer.h"
+d67 1
+d98 5
+a102 5
+    {'1', Dev_TimerGetInfo, (ClientData) 1,"Dump info for timer counter 1"},
+    {'2', Dev_TimerGetInfo, (ClientData) 2,"Dump info for timer counter 2"},
+    {'3', Dev_TimerGetInfo, (ClientData) 3,"Dump info for timer counter 3"},
+    {'4', Dev_TimerGetInfo, (ClientData) 4,"Dump info for timer counter 4"},
+    {'5', Dev_TimerGetInfo, (ClientData) 5,"Dump info for timer counter 5"},
+@
+
+
+6.1
+log
+@Cleaned everything up so it would lint with fewer complaints.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: dump.c,v 6.0 88/08/11 12:28:42 brent Stable $ SPRITE (Berkeley)";
+d394 2
+a395 2
+    Timer_TicksToTime(procPtr->userCpuUsage, &userTime);
+    Timer_TicksToTime(procPtr->kernelCpuUsage, &kernelTime);
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: dump.c,v 5.12 88/08/05 14:56:09 douglis Exp $ SPRITE (Berkeley)";
+d411 1
+a411 1
+	String_NCopy(30, procPtr->argString, cmd);
+@
+
+
+5.12
+log
+@reinstated Dump_ProcessTable forward declaration.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: dump.c,v 5.11 88/08/02 12:07:18 douglis Exp $ SPRITE (Berkeley)";
+@
+
+
+5.11
+log
+@removed the debug state from DumpPCB to get rid of
+off-by-one indexing bug for state strings migrated/new/suspended.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: dump.c,v 5.10 88/06/29 16:25:53 mendel Exp $ SPRITE (Berkeley)";
+d42 1
+a42 1
+ * DUMP_PROC indicates a Proc_ControlBlock.
+a55 1
+void	DumpPCB();
+d59 2
+a208 1
+
+@
+
+
+5.10
+log
+@Removed include of "fsInt.h".
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: dump.c,v 5.9 88/06/16 21:09:53 mendel Exp $ SPRITE (Berkeley)";
+a369 1
+	"debug",
+@
+
+
+5.9
+log
+@Removed machine dependencies and changed to be table driven.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: dump.c,v 5.8 88/06/16 10:17:31 brent Exp $ SPRITE (Berkeley)";
+a31 1
+#include "fsInt.h"
+@
+
+
+5.8
+log
+@Changed L1-f to print out the complete fs trace.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: dump.c,v 5.7 88/05/05 18:02:23 nelson Exp $ SPRITE (Berkeley)";
+d23 1
+a28 1
+#include "devKeyboard.h"
+a29 1
+#include "devConsole.h"
+d60 1
+d67 29
+d97 11
+d128 2
+d131 4
+a134 1
+    Sys_Printf("\ or ? - Print this menu\n");
+d136 1
+a136 1
+     * MAKE SURE THIS AGREES WITH Dump_Init() !!
+d138 2
+a139 28
+    Sys_Printf("a - Abort to PROM monitor\n");
+    Sys_Printf("b - Put machine into (old) serial line debugger\n");
+    Sys_Printf("c - Dump cache stats\n");
+    Sys_Printf("d - Put machine into the kernel debugger\n");
+    Sys_Printf("e - Dump timer stats\n");
+    Sys_Printf("f - Dump filesystem trace\n");
+    Sys_Printf("h - Dump name hash statistics\n");
+    Sys_Printf("k - Reset console to keyboard mode\n");
+    Sys_Printf("l - Reset console to raw mode (for X)\n");
+    Sys_Printf("m - Dump memory stats\n");
+    Sys_Printf("n - Reset the network interface\n");
+    Sys_Printf("p - Dump process table\n");
+    Sys_Printf("r - Dump ready queue\n");
+    Sys_Printf("q - Dump pseudo-device trace\n");
+    Sys_Printf("s - Reset timer stats\n");
+    Sys_Printf("t - Dump the timer queue\n");
+    Sys_Printf("v - Print version string of the kernel\n");
+    Sys_Printf("w - Dump the memory trace buffer\n");
+    Sys_Printf("x - Scavenge filesystem handles\n");
+    Sys_Printf("y - Dump RPC recovery trace\n");
+    Sys_Printf("z - Dump RPC packet trace\n");
+
+    Sys_Printf("1 - Dump info for timer counter 1\n");
+    Sys_Printf("2 - Dump info for timer counter 2\n");
+    Sys_Printf("3 - Dump info for timer counter 3\n");
+    Sys_Printf("4 - Dump info for timer counter 4\n");
+    Sys_Printf("5 - Dump info for timer counter 5\n");
+    Sys_Printf("6 - Print time of day counters\n");
+d148 1
+a148 2
+ *	Establish default procedural attachments for keyboard invocation
+ *	of Dump routines.
+d154 1
+a154 1
+ *	Keyboard procedural attachments are modified.
+d162 1
+a162 25
+    Dev_KbdQueueAttachProc('/', PrintL1Menu, (ClientData)0);
+    /*
+     * BE SURE TO UPDATE PrintL1Menu() !!
+     */
+    /* 'a' is reserved for aborting a machine to the monitor */
+    /* 'b' is reserved for putting a machine into serial line debugger */
+    Dev_KbdQueueAttachProc('c', Fs_DumpCacheStats, (ClientData)0);
+    /* 'd' is reserved for putting a machine into the debugger */
+    Dev_KbdQueueAttachProc('e', DumpTimerStats,   (ClientData) 'e');
+    Dev_KbdQueueAttachProc('f', Fs_PrintTrace,   (ClientData) -1);
+    Dev_KbdQueueAttachProc('h', Fs_NameHashStats, (ClientData)fsNameTablePtr);
+    Dev_KbdQueueAttachProc('k', Dev_ConsoleReset, (ClientData) TRUE);
+    Dev_KbdQueueAttachProc('l', Dev_ConsoleReset, (ClientData) FALSE);
+    Dev_KbdQueueAttachProc('m', Mem_DumpStats, (ClientData) FALSE);
+    Dev_KbdQueueAttachProc('n', Net_Reset, (ClientData)0);
+    Dev_KbdQueueAttachProc('p', Dump_ProcessTable, (ClientData) 0);
+    Dev_KbdQueueAttachProc('r', Dump_ReadyQueue,  (ClientData) 0);
+    Dev_KbdQueueAttachProc('q', Fs_PdevPrintTrace,  (ClientData) 200);
+    Dev_KbdQueueAttachProc('s', DumpTimerStats,   (ClientData) 's');
+    Dev_KbdQueueAttachProc('t', Dump_TimerQueue,  (ClientData) 0);
+    Dev_KbdQueueAttachProc('v', PrintVersion, (ClientData) 0);
+    Dev_KbdQueueAttachProc('w', Mem_DumpTrace, (ClientData) -1);
+    Dev_KbdQueueAttachProc('x', Fs_HandleScavengeStub, (ClientData) 0);
+    Dev_KbdQueueAttachProc('y', Recov_PrintTrace, (ClientData) 50);
+    Dev_KbdQueueAttachProc('z', Rpc_PrintTrace, (ClientData) 50);
+a163 6
+    Dev_KbdQueueAttachProc('1', Dev_TimerGetInfo, (ClientData) 1);
+    Dev_KbdQueueAttachProc('2', Dev_TimerGetInfo, (ClientData) 2);
+    Dev_KbdQueueAttachProc('3', Dev_TimerGetInfo, (ClientData) 3);
+    Dev_KbdQueueAttachProc('4', Dev_TimerGetInfo, (ClientData) 4);
+    Dev_KbdQueueAttachProc('5', Dev_TimerGetInfo, (ClientData) 5);
+    Dev_KbdQueueAttachProc('6', PrintTOD, (ClientData) 0);
+d362 2
+a363 1
+   
+d396 2
+d403 4
+a406 12
+#ifdef SUN2
+	       procPtr->userCpuUsage.high,
+	       procPtr->userCpuUsage.low,
+	       procPtr->kernelCpuUsage.high, 
+	       procPtr->kernelCpuUsage.low,
+#endif
+#ifdef SUN3
+	       procPtr->userCpuUsage.seconds,
+	       procPtr->userCpuUsage.microseconds,
+	       procPtr->kernelCpuUsage.seconds, 
+	       procPtr->kernelCpuUsage.microseconds,
+#endif
+@
+
+
+5.7
+log
+@Handles move of stuff from sys to mach.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: dump.c,v 5.6 88/03/08 14:24:49 douglis Exp $ SPRITE (Berkeley)";
+d153 1
+a153 1
+    Dev_KbdQueueAttachProc('f', Fs_PrintTrace,   (ClientData) 50);
+@
+
+
+5.6
+log
+@Print the argument string associated with a process, up to the first space.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: dump.c,v 5.5 87/10/09 08:49:39 brent Exp $ SPRITE (Berkeley)";
+d21 1
+a396 1
+	case PROC_DEBUGABLE:
+@
+
+
+5.5
+log
+@Updated call to recovery trace procedure
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: dump.c,v 5.4 87/09/22 18:34:52 nelson Exp $ SPRITE (Berkeley)";
+d37 1
+d375 10
+a384 10
+	    "unused",
+	    "running",
+	    "ready",
+	    "waiting",
+	    "exiting",
+	    "dead",
+	    "debug",
+	    "migrated",
+	    "new",
+	    "suspended",
+d400 1
+a400 1
+	    break;
+d402 1
+a402 1
+	    Sys_Panic(SYS_FATAL, "DumpPCB: invalid proess state: %d.\n", state);
+d408 4
+a411 4
+	    " %6x %6x %5d [%1d,%6d] [%1d,%6d] %8x %8s %s\n",
+	    procPtr, 
+	    procPtr->processID, 
+	    procPtr->weightedUsage, 
+d413 4
+a416 4
+	    procPtr->userCpuUsage.high,
+	    procPtr->userCpuUsage.low,
+	    procPtr->kernelCpuUsage.high, 
+	    procPtr->kernelCpuUsage.low,
+d419 4
+a422 4
+	    procPtr->userCpuUsage.seconds,
+	    procPtr->userCpuUsage.microseconds,
+	    procPtr->kernelCpuUsage.seconds, 
+	    procPtr->kernelCpuUsage.microseconds,
+d424 15
+a438 3
+	    procPtr->event,
+	    states[(int) state],
+	    procPtr->codeFileName);
+@
+
+
+5.4
+log
+@Added the l1-w key to dump out memory traces.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: dump.c,v 5.3 87/09/22 17:29:02 brent Exp $ SPRITE (Berkeley)";
+d36 1
+a62 1
+extern	void	Rpc_PrintRecovTrace();
+d86 2
+a87 1
+    Sys_Printf("/ - Print this menu\n");
+d165 1
+a165 1
+    Dev_KbdQueueAttachProc('y', Rpc_PrintRecovTrace, (ClientData) 50);
+@
+
+
+5.3
+log
+@Added l1 key menu.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: dump.c,v 5.2 87/09/17 12:03:21 nelson Exp $ SPRITE (Berkeley)";
+d35 1
+d107 1
+d162 1
+@
+
+
+5.2
+log
+@Added l1 key for network reinit.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: dump.c,v 5.1 87/08/25 15:21:43 brent Exp $ SPRITE (Berkeley)";
+d61 1
+d69 53
+d139 6
+d146 1
+d161 1
+@
+
+
+5.1
+log
+@Added L1-q key for dumping pdev trace
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: dump.c,v 5.0 87/08/11 10:51:53 sprite Exp $ SPRITE (Berkeley)";
+d34 1
+d92 1
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: dump.c,v 4.4 87/07/09 10:44:38 nelson Exp $ SPRITE (Berkeley)";
+d59 1
+d93 1
+@

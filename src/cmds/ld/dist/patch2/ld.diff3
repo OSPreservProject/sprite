@@ -1,0 +1,2245 @@
+*** ld.original	Thu Oct 25 22:09:56 1990
+--- ld.current	Thu Oct 25 21:58:36 1990
+***************
+*** 27,37 ****
+--- 27,170 ----
+  #include <fcntl.h>
+  #endif
+  
++ #define NO_C_PLUS_PLUS
++ 
++ #define TARGET_SUN2             2
++ #define TARGET_SUN3             3
++ #define TARGET_SUN4             4
++ #define TARGET_ALTOS            5
++ #define TARGET_I386             6   
++ #define TARGET_HPUX             7
++ #define TARGET_SONY_NEWS        8
++ #define TARGET_SEQUENT          9
++ #define TARGET_VAX              10
++ 
++ /*
++  * If `TARGET_MACHINE' was not defined on the compiler command line,
++  * then set it equal to the host machine.
++  */
++ #ifndef TARGET_MACHINE
++ #if defined(sun) && defined(sparc)
++ #define TARGET_MACHINE  TARGET_SUN4
++ #endif
++ #if defined(sun) && (defined(m68020) || defined(mc68020))
++ #define TARGET_MACHINE  TARGET_SUN3
++ #endif
++ #if defined(sun) && (defined(m68010) || defined(mc68010))
++ #define TARGET_MACHINE  TARGET_SUN2
++ #endif
++ #if defined(ALTOS)
++ #define TARGET_MACHINE  TARGET_ALTOS
++ #endif
++ #if defined(hpux)
++ #define TARGET_MACHINE  TARGET_HPUX
++ #endif
++ #if defined(is386)
++ #define TARGET_MACHINE  TARGET_I386
++ #endif
++ #if defined(sony_news)
++ #define TARGET_MACHINE  TARGET_SONY_NEWS
++ #endif
++ #if defined(sequent)
++ #define TARGET_MACHINE  TARGET_SEQUENT
++ #endif
++ #if defined(is68k) && !defined(TARGET_MACHINE)
++ #define TARGET_MACHINE  TARGET_68K
++ #endif
++ #endif
++ 
++ #ifndef TARGET_MACHINE
++     CANNOT COMPILE, NO TARGET MACHINE SPECIFIED
++ #endif
++ 
++ #ifndef BIG_ENDIAN
++ #define BIG_ENDIAN      4321
++ #endif
++ #ifndef LITTLE_ENDIAN
++ #define LITTLE_ENDIAN   1234
++ #endif
++ #ifndef PDP_ENDIAN
++ /* I think it is unlikely that anybody will try to cross compile
++  * to or from a pdp, so only big-endian and little-endian are supported. */
++ #define PDP_ENDIAN   3412
++ #endif
++ 
++ #if TARGET_MACHINE==TARGET_SUN4         || \
++     TARGET_MACHINE==TARGET_SUN3         || \
++     TARGET_MACHINE==TARGET_SUN2         || \
++     TARGET_MACHINE==TARGET_ALTOS        || \
++     TARGET_MACHINE==TARGET_HPUX         || \
++     TARGET_MACHINE==TARGET_SONY_NEWS    || \
++     TARGET_MACHINE==TARGET_68K
++ #define TARGET_BYTE_ORDER       BIG_ENDIAN
++ #endif
++ 
++ #if TARGET_MACHINE==TARGET_VAX          || \
++     TARGET_MACHINE==TARGET_I386         || \
++     TARGET_MACHINE==TARGET_SEQUENT
++ #define TARGET_BYTE_ORDER       LITTLE_ENDIAN
++ #endif
++ 
++ #if TARGET_MACHINE==TARGET_SUN3
++ #define TARGET_PAGE_SIZE    0x2000
++ #endif
++ 
++ #if defined(sparc)      || \
++     defined(m68000)     || \
++     defined(mc68000)    || \
++     defined(m68010)     || \
++     defined(mc68010)    || \
++     defined(m68020)     || \
++     defined(mc68020)    || \
++     defined(is68k)      || \
++     defined(hpux)       || \
++     defined(sony_news)
++ #define HOST_BYTE_ORDER     BIG_ENDIAN
++ #endif
++ 
++ #if defined(vax)        || \
++     defined(is386)      || \
++     defined(ds3100)     || \
++     defined(sequent)
++ #define HOST_BYTE_ORDER     LITTLE_ENDIAN
++ #endif
++ 
++ #if HOST_BYTE_ORDER != TARGET_BYTE_ORDER
++ static void fix_byte_order();
++ static void fix_exec_header_byte_order();
++ static void fix_symbol_byte_order();
++ static void target_to_host_reloc_byte_order();
++ static void host_to_target_reloc_byte_order();
++ static void fix_symbol_root_byte_order();
++ #endif
++ 
+  #ifdef COFF_ENCAPSULATE
+  #include "a.out.encap.h"
+  #else
++ #ifdef sprite
++ #if TARGET_MACHINE==TARGET_SUN4
++ #include <sun4.md/a.out.h>
++ #elif TARGET_MACHINE==TARGET_SUN3
++ #include <sun3.md/a.out.h>
++ #elif TARGET_MACHINE==TARGET_SEQUENT
++ #include <symm.md/a.out.h>
++ #else
++     no a.out.h specified
++ #endif
++ #else
+  #include <a.out.h>
+  #endif
++ #endif
++ 
++ #ifdef sprite
++ #undef NEW_SEG_SIZE
++ #if TARGET_MACHINE==TARGET_SUN4
++ #define NEW_SEG_SIZE    0x40000
++ #endif
++ #if TARGET_MACHINE==TARGET_SUN3
++ #define NEW_SEG_SIZE    0x20000
++ #endif
++ #endif  /* sprite */
+  
+  #ifndef N_SET_MAGIC
+  #define N_SET_MAGIC(exec, val)  ((exec).a_magic = val)
+***************
+*** 85,91 ****
+  
+  /* Define this to specify the default executable format.  */
+  
+! #ifdef hpux
+  #define DEFAULT_MAGIC NMAGIC  /* hpux bugs screw ZMAGIC */
+  #endif
+  
+--- 218,224 ----
+  
+  /* Define this to specify the default executable format.  */
+  
+! #if TARGET_MACHINE==TARGET_HPUX
+  #define DEFAULT_MAGIC NMAGIC  /* hpux bugs screw ZMAGIC */
+  #endif
+  
+***************
+*** 96,125 ****
+  /* Ordinary 4.3bsd lacks these macros in a.out.h.  */
+  
+  #ifndef N_TXTADDR
+! #if defined(vax) || defined(sony_news)
+  #define N_TXTADDR(X) 0
+  #endif
+! #ifdef is68k
+  #define N_TXTADDR(x)  (sizeof (struct exec))
+  #endif
+! #ifdef sequent
+  #define	N_TXTADDR(x) (N_ADDRADJ(x))
+  #endif
+  #endif
+  
+  #ifndef N_DATADDR
+! #if defined(vax) || defined(sony_news)
+  #define N_DATADDR(x) \
+  	(((x).a_magic==OMAGIC)? (N_TXTADDR(x)+(x).a_text) \
+  	: (page_size+((N_TXTADDR(x)+(x).a_text-1) & ~(page_size-1))))
+  #endif
+! #ifdef is68k
+  #define SEGMENT_SIZE 0x20000
+  #define N_DATADDR(x) \
+!     (((x).a_magic==Omagic)? (N_TXTADDR(x)+(x).a_text) \
+       : (SEGMENT_SIZE + ((N_TXTADDR(x)+(x).a_text-1) & ~(SEGMENT_SIZE-1))))
+  #endif
+! #ifdef sequent
+  #define N_DATADDR(x) \
+  	(((x).a_magic==OMAGIC)? (N_TXTADDR(x)+(x).a_text) \
+  	: (page_size+(((x).a_text-1) & ~(page_size-1))))
+--- 229,258 ----
+  /* Ordinary 4.3bsd lacks these macros in a.out.h.  */
+  
+  #ifndef N_TXTADDR
+! #if TARGET_MACHINE==TARGET_VAX || TARGET_MACHINE==TARGET_SONY_NEWS
+  #define N_TXTADDR(X) 0
+  #endif
+! #if TARGET_MACHINE==TARGET_SUN3 || TARGET_MACHINE==TARGET_SUN2
+  #define N_TXTADDR(x)  (sizeof (struct exec))
+  #endif
+! #if TARGET_MACHINE==TARGET_SEQUENT
+  #define	N_TXTADDR(x) (N_ADDRADJ(x))
+  #endif
+  #endif
+  
+  #ifndef N_DATADDR
+! #if TARGET_MACHINE==TARGET_VAX || TARGET_MACHINE==TARGET_SONY_NEWS
+  #define N_DATADDR(x) \
+  	(((x).a_magic==OMAGIC)? (N_TXTADDR(x)+(x).a_text) \
+  	: (page_size+((N_TXTADDR(x)+(x).a_text-1) & ~(page_size-1))))
+  #endif
+! #if TARGET_MACHINE==TARGET_SUN3 || TARGET_MACHINE==TARGET_SUN2
+  #define SEGMENT_SIZE 0x20000
+  #define N_DATADDR(x) \
+!     (((x).a_magic==OMAGIC)? (N_TXTADDR(x)+(x).a_text) \
+       : (SEGMENT_SIZE + ((N_TXTADDR(x)+(x).a_text-1) & ~(SEGMENT_SIZE-1))))
+  #endif
+! #if TARGET_MACHINE==TARGET_SEQUENT
+  #define N_DATADDR(x) \
+  	(((x).a_magic==OMAGIC)? (N_TXTADDR(x)+(x).a_text) \
+  	: (page_size+(((x).a_text-1) & ~(page_size-1))))
+***************
+*** 127,168 ****
+  #endif
+  
+  /* Define how to initialize system-dependent header fields.  */
+! #ifdef sun
+! #ifdef sparc
+  #define INITIALIZE_HEADER \
+    {outheader.a_machtype = M_SPARC; outheader.a_toolversion = 1;}
+  #endif
+! #if defined(mc68010) || defined(m68010)
+  #define INITIALIZE_HEADER outheader.a_machtype = M_68010
+  #endif
+! #ifndef INITIALIZE_HEADER
+  #define INITIALIZE_HEADER outheader.a_machtype = M_68020
+  #endif
+! #endif
+! #ifdef ALTOS
+  #define INITIALIZE_HEADER N_SET_MACHTYPE (outheader, M_68020)
+  #endif
+! #ifdef is68k
+! #ifdef M_68020
+! /* ISI rel 4.0D doesn't use it, and rel 3.05 doesn't have an
+!    a_machtype field and so won't recognize the magic number.  To keep
+!    binary compatibility for now, just ignore it */
+! #define INITIALIZE_HEADER outheader.a_machtype = 0;
+! #endif
+! #endif
+! #ifdef hpux
+  #define INITIALIZE_HEADER N_SET_MACHTYPE (outheader, HP9000S200_ID)
+  #endif
+! #if defined(i386) && !defined(sequent)
+  #define INITIALIZE_HEADER N_SET_MACHTYPE (outheader, M_386)
+  #endif
+! 
+! #ifdef is68k
+  /* This enables code to take care of an ugly hack in the ISI OS.
+     If a symbol beings with _$, then the object file is included only
+     if the rest of the symbol name has been referenced. */
+  #define DOLLAR_KLUDGE
+  #endif
+  
+  /*
+   * Alloca include.
+--- 260,312 ----
+  #endif
+  
+  /* Define how to initialize system-dependent header fields.  */
+! #if TARGET_MACHINE==TARGET_SUN4
+  #define INITIALIZE_HEADER \
+    {outheader.a_machtype = M_SPARC; outheader.a_toolversion = 1;}
+  #endif
+! #if TARGET_MACHINE==TARGET_SUN2
+  #define INITIALIZE_HEADER outheader.a_machtype = M_68010
+  #endif
+! #if TARGET_MACHINE==TARGET_SUN3
+  #define INITIALIZE_HEADER outheader.a_machtype = M_68020
+  #endif
+! #if TARGET_MACHINE==TARGET_ALTOS
+  #define INITIALIZE_HEADER N_SET_MACHTYPE (outheader, M_68020)
+  #endif
+! #if TARGET_MACHINE==TARGET_HPUX
+  #define INITIALIZE_HEADER N_SET_MACHTYPE (outheader, HP9000S200_ID)
+  #endif
+! #if TARGET_MACHINE==TARGET_I386
+  #define INITIALIZE_HEADER N_SET_MACHTYPE (outheader, M_386)
+  #endif
+! #if TARGET_MACHINE==TARGET_68K
+! #define INITIALIZE_HEADER outheader.a_machtype = 0;  
+  /* This enables code to take care of an ugly hack in the ISI OS.
+     If a symbol beings with _$, then the object file is included only
+     if the rest of the symbol name has been referenced. */
+  #define DOLLAR_KLUDGE
+  #endif
++ #if TARGET==TARGET_SEQUENT
++ /* This is all stuff needed to make standalone binaries */
++ static struct gdtbl gdt_filler = {
++ 	{ 0x0000FFFF, 0x00CF9A00 },	/* code entry */
++ 	{ 0x0000FFFF, 0x00CF9200 },	/* data entry */
++ 	{ 0x00180017, 0x00000000 },	/* 6 byte descriptor */
++ };
++ 
++ static char instr[] = {
++ 	0x67, 0x66, 0x0f, 0x01, 0x15, 0x30, 0x00, 0x00, 0x00,
++ 	0x0f, 0x20, 0xc3,
++ 	0x80, 0xcb, 0x01,
++ 	0x0f, 0x22, 0xc3,
++ 	0xea, 0x5b, 0x00, 0x08, 0x00,
++ 	0xbb, 0x10, 0x00, 0x00, 0x00,
++ 	0x8e, 0xdb,
++ 	0x8e, 0xd3,
++ 	0x8e, 0xc3,
++ 	0xff, 0x25, 0x6c, 0x00, 0x00, 0x00,
++ 	0x00, 0x00, 0x00, 0x00, };
++ #endif   
+  
+  /*
+   * Alloca include.
+***************
+*** 253,259 ****
+   *
+   */
+  
+! #if defined(sun) && defined(sparc)
+  /* Sparc (Sun 4) macros */
+  #undef relocation_info
+  #define relocation_info	                reloc_info_sparc
+--- 397,403 ----
+   *
+   */
+  
+! #if TARGET_MACHINE==TARGET_SUN4
+  /* Sparc (Sun 4) macros */
+  #undef relocation_info
+  #define relocation_info	                reloc_info_sparc
+***************
+*** 264,275 ****
+  #define RELOC_MEMORY_SUB_P(r)		0
+  #define RELOC_MEMORY_ADD_P(r)           0
+  #define RELOC_ADD_EXTRA(r)              ((r)->r_addend)       
+! #define RELOC_PCREL_P(r)             \
+!         ((r)->r_type >= RELOC_DISP8 && (r)->r_type <= RELOC_WDISP22)
+! #define RELOC_VALUE_RIGHTSHIFT(r)       (reloc_target_rightshift[(r)->r_type])
+! #define RELOC_TARGET_SIZE(r)            (reloc_target_size[(r)->r_type])
+  #define RELOC_TARGET_BITPOS(r)          0
+! #define RELOC_TARGET_BITSIZE(r)         (reloc_target_bitsize[(r)->r_type])
+  
+  /* Note that these are very dependent on the order of the enums in
+     enum reloc_type (in a.out.h); if they change the following must be
+--- 408,422 ----
+  #define RELOC_MEMORY_SUB_P(r)		0
+  #define RELOC_MEMORY_ADD_P(r)           0
+  #define RELOC_ADD_EXTRA(r)              ((r)->r_addend)       
+! #define RELOC_PCREL_P(r)                \
+!     ((int) (r)->r_type >= (int) RELOC_DISP8 && \
+!      (int) (r)->r_type <= (int) RELOC_WDISP22)
+! #define RELOC_VALUE_RIGHTSHIFT(r) \
+! 	(reloc_target_rightshift[(int) (r)->r_type])
+! #define RELOC_TARGET_SIZE(r)            (reloc_target_size[(int) (r)->r_type])
+  #define RELOC_TARGET_BITPOS(r)          0
+! #define RELOC_TARGET_BITSIZE(r) \
+! 	(reloc_target_bitsize[(int) (r)->r_type])
+  
+  /* Note that these are very dependent on the order of the enums in
+     enum reloc_type (in a.out.h); if they change the following must be
+***************
+*** 286,294 ****
+  };
+  
+  #define	MAX_ALIGNMENT	(sizeof (double))
+  #endif
+  
+! #ifdef sequent
+  #define RELOC_ADDRESS(r)		((r)->r_address)
+  #define RELOC_EXTERN_P(r)		((r)->r_extern)
+  #define RELOC_TYPE(r)		((r)->r_symbolnum)
+--- 433,445 ----
+  };
+  
+  #define	MAX_ALIGNMENT	(sizeof (double))
++   /* The pagesize on an old sun4 is 0x2000, on sparcStation it is 0x1000.
++      If you want to use the same binaries on both, then you need to use
++      the larger pagesize. */
++ #define TARGET_PAGE_SIZE    0x2000
+  #endif
+  
+! #if TARGET_MACHINE==TARGET_SEQUENT
+  #define RELOC_ADDRESS(r)		((r)->r_address)
+  #define RELOC_EXTERN_P(r)		((r)->r_extern)
+  #define RELOC_TYPE(r)		((r)->r_symbolnum)
+***************
+*** 301,306 ****
+--- 452,458 ----
+  #define RELOC_TARGET_SIZE(r)		((r)->r_length)
+  #define RELOC_TARGET_BITPOS(r)	0
+  #define RELOC_TARGET_BITSIZE(r)	32
++ #define TARGET_PAGE_SIZE    0x1000
+  #endif
+  
+  /* Default macros */
+***************
+*** 530,535 ****
+--- 682,696 ----
+      }
+    symbol;
+  
++ #ifndef NO_C_PLUS_PLUS
++ /* Demangler for C++. */
++ extern char *cplus_demangle ();
++ #endif /* NO_C_PLUS_PLUS */
++ 
++ /* Demangler function to use. */
++ char *(*demangler)() = NULL;
++ 
++ 
+  /* Number of buckets in symbol hash table */
+  #define	TABSIZE	1009
+  
+***************
+*** 804,809 ****
+--- 965,976 ----
+     and reduce the size of the bss section to match.  */
+  int specified_data_size;
+  
++ /* Gap to insert between end of bss and start of data seg */
++ int data_gap;
++ 
++ /* Nonzero if -Z was specified (for data_gap) */
++ int Z_flag_specified;
++ 
+  /* Magic number to use for the output file, set by switch.  */
+  int magic;
+  
+***************
+*** 896,912 ****
+  char *concat ();
+  char *get_file_name ();
+  symbol *getsym (), *getsym_soft ();
+! 
+  int
+  main (argc, argv)
+       char **argv;
+       int argc;
+  {
+    page_size = getpagesize ();
+    progname = argv[0];
+  
+    /* Clear the cumulative info on the output file.  */
+- 
+    text_size = 0;
+    data_size = 0;
+    bss_size = 0;
+--- 1063,1096 ----
+  char *concat ();
+  char *get_file_name ();
+  symbol *getsym (), *getsym_soft ();
+! 
+  int
+  main (argc, argv)
+       char **argv;
+       int argc;
+  {
++ /*   Added this to stop ld core-dumping on very large .o files.    */
++ #ifdef RLIMIT_STACK
++   /* Get rid of any avoidable limit on stack size.  */
++   {
++       struct rlimit rlim;
++ 
++       /* Set the stack limit huge so that alloca does not fail. */
++       getrlimit (RLIMIT_STACK, &rlim);
++       rlim.rlim_cur = rlim.rlim_max;
++       setrlimit (RLIMIT_STACK, &rlim);
++   }
++ #endif /* RLIMIT_STACK */
++ 
++ #ifdef TARGET_PAGE_SIZE
++   page_size = TARGET_PAGE_SIZE;
++ #else
+    page_size = getpagesize ();
++ #endif
++ 
+    progname = argv[0];
+  
+    /* Clear the cumulative info on the output file.  */
+    text_size = 0;
+    data_size = 0;
+    bss_size = 0;
+***************
+*** 932,937 ****
+--- 1116,1122 ----
+    make_executable = 1;
+    force_executable = 0;
+    set_element_prefixes = 0;
++   Z_flag_specified = 0;
+  
+    /* Initialize the cumulative counts of symbols.  */
+  
+***************
+*** 948,955 ****
+  
+    /* Keep a list of symbols referenced from the command line */
+    cl_refs_allocated = 10;
+!   cmdline_references
+!     = (struct glosym **) xmalloc (cl_refs_allocated
+  				  * sizeof(struct glosym *));
+    *cmdline_references = 0;
+  
+--- 1133,1140 ----
+  
+    /* Keep a list of symbols referenced from the command line */
+    cl_refs_allocated = 10;
+!   cmdline_references =
+!     (struct glosym **) xmalloc (cl_refs_allocated
+  				  * sizeof(struct glosym *));
+    *cmdline_references = 0;
+  
+***************
+*** 984,989 ****
+--- 1169,1177 ----
+  
+    text_size -= N_TXTOFF (outheader);
+  
++   if (T_flag_specified)
++       text_size = 0;	/* don't add sizeof(exec) at -T location */
++ 
+    if (text_size < 0)
+      text_size = 0;
+    entry_offset = text_size;
+***************
+*** 1046,1051 ****
+--- 1234,1240 ----
+      case 'u':
+      case 'V':
+      case 'y':
++     case 'Z':
+        if (arg[2])
+  	return 1;
+        return 2;
+***************
+*** 1062,1067 ****
+--- 1251,1265 ----
+        if (! strcmp (&arg[2], "data"))
+  	return 2;
+        return 1;
++ 
++ #if TARGET==TARGET_SEQUENT      
++       /* k == Symmetry standalone,
++        * p == don't align text/data boundary (for 8K disk bootstraps).
++        */
++    case 'k':
++    case 'p':
++        return 1;
++ #endif       
+      }
+  
+    return 1;
+***************
+*** 1158,1170 ****
+  
+    /* Now check some option settings for consistency.  */
+  
+  #ifdef NMAGIC
+    if ((magic == ZMAGIC || magic == NMAGIC)
+  #else
+!   if ((magic == ZMAGIC)
+  #endif
+        && (text_start - text_start_alignment) & (page_size - 1))
+      fatal ("-T argument not multiple of page size, with sharable output", 0);
+  
+    /* Append the standard search directories to the user-specified ones.  */
+    {
+--- 1356,1374 ----
+  
+    /* Now check some option settings for consistency.  */
+  
++ #ifndef sprite
+  #ifdef NMAGIC
+    if ((magic == ZMAGIC || magic == NMAGIC)
+  #else
+! #ifdef SMAGIC
+!     if ((magic == SMAGIC || magic == ZMAGIC)
+! #else
+!     if ((magic == ZMAGIC)
+! #endif /* SMAGIC */
+  #endif
+        && (text_start - text_start_alignment) & (page_size - 1))
+      fatal ("-T argument not multiple of page size, with sharable output", 0);
++ #endif
+  
+    /* Append the standard search directories to the user-specified ones.  */
+    {
+***************
+*** 1240,1245 ****
+--- 1444,1452 ----
+      return;
+    if (! strcmp (swt + 1, "Ttext"))
+      {
++ #ifdef sprite 
++       magic = OMAGIC;
++ #endif
+        text_start = parse (arg, "%x", "invalid argument to -Ttext");
+        T_flag_specified = 1;
+        return;
+***************
+*** 1280,1286 ****
+--- 1487,1508 ----
+        add_cmdline_ref (entry_symbol);
+        return;
+  
++ #if TARGET==TARGET_SEQUENT
++     case 'k':
++ #ifdef SMAGIC
++       magic = SMAGIC;
++ #else
++       fatal("No SMAGIC defined for -k");
++ #endif
++       return;
++ #endif
++ 
+      case 'l':
++ #ifndef NO_C_PLUS_PLUS
++       /* If linking with libg++, use the C++ demangler. */
++       if (arg != NULL && strcmp (arg, "g++") == 0)
++ 	  demangler = cplus_demangle;
++ #endif /* NO_C_PLUS_PLUS */
+        return;
+  
+      case 'L':
+***************
+*** 1323,1328 ****
+--- 1545,1553 ----
+        return;
+  
+      case 'T':
++ #ifdef sprite
++       magic = OMAGIC;
++ #endif      
+        text_start = parse (arg, "%x", "invalid argument to -T");
+        T_flag_specified = 1;
+        return;
+***************
+*** 1372,1377 ****
+--- 1597,1609 ----
+        magic = ZMAGIC;
+        return;
+  
++     case 'Z':
++       data_gap = parse (arg, "%x", "invalid argument to -Z");
++       if (data_gap % page_size)
++ 	  fatal("-Z argument not a multiple of page size", 0);
++       Z_flag_specified = 1;
++       return;
++ 
+      default:
+        fatal ("invalid command option `%s'", swt);
+      }
+***************
+*** 1415,1421 ****
+  
+     FUNCTION receives two arguments: the entry, and ARG.  It must be a
+     function returning unsigned long (though this can probably be fudged). */
+! 
+  unsigned long
+  check_each_file (function, arg)
+       register unsigned long (*function)();
+--- 1647,1653 ----
+  
+     FUNCTION receives two arguments: the entry, and ARG.  It must be a
+     function returning unsigned long (though this can probably be fudged). */
+! #if 0
+  unsigned long
+  check_each_file (function, arg)
+       register unsigned long (*function)();
+***************
+*** 1440,1445 ****
+--- 1672,1678 ----
+      }
+    return 0;
+  }
++ #endif
+  
+  /* Like `each_file' but ignore files that were just for symbol definitions.  */
+  
+***************
+*** 1496,1502 ****
+  
+    if (entry->search_dirs_flag)
+      {
+-       register char **p = search_dirs;
+        int i;
+  
+        for (i = 0; i < n_search_dirs; i++)
+--- 1729,1734 ----
+***************
+*** 1596,1601 ****
+--- 1828,1836 ----
+    len = read (desc, loc, sizeof (struct exec));
+    if (len != sizeof (struct exec))
+      fatal_with_file ("failure reading header of ", entry);
++ #if HOST_BYTE_ORDER != TARGET_BYTE_ORDER
++   fix_exec_header_byte_order(loc);
++ #endif
+    if (N_BADMAG (*loc))
+      fatal_with_file ("bad magic number in ", entry);
+  
+***************
+*** 1622,1632 ****
+    lseek (desc, N_SYMOFF (entry->header) + entry->starting_offset, 0);
+    if (entry->header.a_syms != read (desc, entry->symbols, entry->header.a_syms))
+      fatal_with_file ("premature end of file in symbols of ", entry);
+! 
+    lseek (desc, N_STROFF (entry->header) + entry->starting_offset, 0);
+    if (sizeof str_size != read (desc, &str_size, sizeof str_size))
+      fatal_with_file ("bad string table size in ", entry);
+! 
+    entry->string_size = str_size;
+  }
+  
+--- 1857,1871 ----
+    lseek (desc, N_SYMOFF (entry->header) + entry->starting_offset, 0);
+    if (entry->header.a_syms != read (desc, entry->symbols, entry->header.a_syms))
+      fatal_with_file ("premature end of file in symbols of ", entry);
+! #if HOST_BYTE_ORDER != TARGET_BYTE_ORDER
+!   fix_symbol_byte_order(entry->symbols, entry->header.a_syms);
+! #endif
+    lseek (desc, N_STROFF (entry->header) + entry->starting_offset, 0);
+    if (sizeof str_size != read (desc, &str_size, sizeof str_size))
+      fatal_with_file ("bad string table size in ", entry);
+! #if HOST_BYTE_ORDER != TARGET_BYTE_ORDER
+!   fix_byte_order(&str_size, sizeof(str_size));
+! #endif
+    entry->string_size = str_size;
+  }
+  
+***************
+*** 1706,1712 ****
+    len = read (desc, &hdr, sizeof hdr);
+    if (len != sizeof hdr)
+      fatal_with_file ("failure reading header of ", entry);
+! 
+    if (!N_BADMAG (hdr))
+      {
+        read_entry_symbols (desc, entry);
+--- 1945,1953 ----
+    len = read (desc, &hdr, sizeof hdr);
+    if (len != sizeof hdr)
+      fatal_with_file ("failure reading header of ", entry);
+! #if HOST_BYTE_ORDER != TARGET_BYTE_ORDER
+!   fix_exec_header_byte_order(&hdr);
+! #endif
+    if (!N_BADMAG (hdr))
+      {
+        read_entry_symbols (desc, entry);
+***************
+*** 1738,1744 ****
+    register struct nlist
+      *p,
+      *end = entry->symbols + entry->header.a_syms / sizeof (struct nlist);
+-   int lowest_set_vector = -1;
+  
+    if (trace_files) prline_file_name (entry, stderr);
+  
+--- 1979,1984 ----
+***************
+*** 1748,1754 ****
+        if (set_element_prefixes
+  	  && set_element_prefixed_p (p->n_un.n_strx + entry->strings))
+  	p->n_type += (N_SETA - N_ABS);
+- 
+        if (SET_ELEMENT_P (p->n_type))
+  	{
+  	  set_symbol_count++;
+--- 1988,1993 ----
+***************
+*** 1808,1814 ****
+     all such structs that refer to the same global symbol.
+     This chain starts in the `refs' field of the symbol table entry
+     and is chained through the `n_name'.  */
+- 
+  void
+  enter_global_ref (nlist_p, name, entry)
+       register struct nlist *nlist_p;
+--- 2047,2052 ----
+***************
+*** 1861,1868 ****
+  	{
+  	  /* Indirect symbols value should be modified to point
+  	     a symbol being equivalenced to. */
+! 	  nlist_p->n_value
+! 	    = (unsigned int) getsym ((nlist_p + 1)->n_un.n_strx
+  				     + entry->strings);
+  	  if ((symbol *) nlist_p->n_value == sp)
+  	    {
+--- 2099,2106 ----
+  	{
+  	  /* Indirect symbols value should be modified to point
+  	     a symbol being equivalenced to. */
+! 	  nlist_p->n_value =
+! 	    (unsigned int) getsym ((nlist_p + 1)->n_un.n_strx
+  				     + entry->strings);
+  	  if ((symbol *) nlist_p->n_value == sp)
+  	    {
+***************
+*** 1961,1967 ****
+  		   (nlist_p + 1)->n_un.n_strx + entry->strings);
+  	  break;
+  
+! #ifdef sequent
+  	case N_SHUNDF:
+  	  reftype = "shared undf";
+  	  break;
+--- 2199,2205 ----
+  		   (nlist_p + 1)->n_un.n_strx + entry->strings);
+  	  break;
+  
+! #if TARGET_MACHINE==TARGET_SEQUENT
+  	case N_SHUNDF:
+  	  reftype = "shared undf";
+  	  break;
+***************
+*** 1991,1996 ****
+--- 2229,2235 ----
+     contain the nlist point entry, and it returns the files entry
+     pointer (cast to unsigned long) if it does. */
+  
++ #if 0
+  unsigned long
+  contains_symbol (entry, n_ptr)
+       struct file_entry *entry;
+***************
+*** 2002,2007 ****
+--- 2241,2247 ----
+      return (unsigned long) entry;
+    return 0;
+  }
++ #endif
+  
+  
+  /* Searching libraries */
+***************
+*** 2130,2136 ****
+    bytes_read = read (desc, symdef_data, member_length);
+    if (bytes_read != member_length)
+      fatal_with_file ("malformatted __.SYMDEF in ", entry);
+! 
+    number_of_symdefs = *symdef_data / sizeof (struct symdef);
+    if (number_of_symdefs < 0 ||
+         number_of_symdefs * sizeof (struct symdef) + 2 * sizeof (int) > member_length)
+--- 2370,2378 ----
+    bytes_read = read (desc, symdef_data, member_length);
+    if (bytes_read != member_length)
+      fatal_with_file ("malformatted __.SYMDEF in ", entry);
+! #if HOST_BYTE_ORDER != TARGET_BYTE_ORDER
+!   fix_byte_order(symdef_data, sizeof(*symdef_data));
+! #endif
+    number_of_symdefs = *symdef_data / sizeof (struct symdef);
+    if (number_of_symdefs < 0 ||
+         number_of_symdefs * sizeof (struct symdef) + 2 * sizeof (int) > member_length)
+***************
+*** 2137,2142 ****
+--- 2379,2392 ----
+      fatal_with_file ("malformatted __.SYMDEF in ", entry);
+  
+    symdef_base = (struct symdef *) (symdef_data + 1);
++ #if HOST_BYTE_ORDER != TARGET_BYTE_ORDER
++   for (i = 0; i < number_of_symdefs; ++i)
++     {
++       fix_byte_order(&symdef_base[i].symbol_name_string_index, sizeof(int));
++       fix_byte_order(&symdef_base[i].library_member_offset, sizeof(int));
++     }
++   fix_byte_order(symdef_base + number_of_symdefs, sizeof(int));
++ #endif
+    length_of_strings = *(int *) (symdef_base + number_of_symdefs);
+  
+    if (length_of_strings < 0
+***************
+*** 2182,2188 ****
+  	       about the archive member that the symbol is in.  */
+  
+  	    if (sp && ((sp->referenced && !sp->defined)
+! 		       || (sp->defined && sp->max_common_size)))
+  	      {
+  		int junk;
+  		register int j;
+--- 2432,2441 ----
+  	       about the archive member that the symbol is in.  */
+  
+  	    if (sp && ((sp->referenced && !sp->defined)
+! #if 1		
+! 		       || (sp->defined && sp->max_common_size))
+! #endif
+! 			   )
+  	      {
+  		int junk;
+  		register int j;
+***************
+*** 2312,2318 ****
+  /* ENTRY is an entry for a library member.
+     Its symbols have been read into core, but not entered.
+     Return nonzero if we ought to load this member.  */
+- 
+  int
+  subfile_wanted_p (entry)
+       struct file_entry *entry;
+--- 2565,2570 ----
+***************
+*** 2333,2339 ****
+  	 potentially want it.  */
+        if (type & N_EXT
+  	  && (type != (N_UNDF | N_EXT) || p->n_value
+! 	      
+  #ifdef DOLLAR_KLUDGE
+  	       || name[1] == '$'
+  #endif
+--- 2585,2591 ----
+  	 potentially want it.  */
+        if (type & N_EXT
+  	  && (type != (N_UNDF | N_EXT) || p->n_value
+! 
+  #ifdef DOLLAR_KLUDGE
+  	       || name[1] == '$'
+  #endif
+***************
+*** 2378,2389 ****
+  		{
+  		  /* Symbol being defined as common.
+  		     Remember this, but don't load subfile just for this.  */
+- 
+  		  /* If it didn't used to be common, up the count of
+  		     common symbols.  */
+  		  if (!sp->max_common_size)
+  		    common_defined_global_count++;
+- 
+  		  if (sp->max_common_size < p->n_value)
+  		    sp->max_common_size = p->n_value;
+  		  if (!sp->defined)
+--- 2630,2639 ----
+***************
+*** 2392,2397 ****
+--- 2642,2674 ----
+  		  continue;
+  		}
+  
++ #if TARGET==TARGET_SEQUENT
++ 		/* Don't resolve common (data) symbols with text symbols*/
++ 	      if (type == (N_EXT | N_TEXT)) {
++ 		int dontresolve = 0;
++ 		struct nlist *p, *next;
++ 
++ 		for (p = sp->refs; p; p = next) {
++ 		  if (p->n_value && (p->n_type == (N_UNDF | N_EXT))) {
++ 			  if (trace_files)
++ 				  fprintf(stdout,
++ 				      "refs check fail: symbol %s, ref type= 0x%x, ref value= 0x%x, sym type = 0x%x\n",
++ 				      sp->name, p->n_type, p->n_value, type);
++ 		    dontresolve = 1;
++ 		    break;
++ 		  }
++ 		  next = (struct nlist *) p->n_un.n_name;
++ 		}
++ 		if (sp->trace) {
++ 		  fprintf(stdout, 
++ 		    "symbol %s can't use text sym def in file ", sp->name);
++ 		  print_file_name(entry, stdout);
++ 		  fprintf(stdout, "\n");
++ 		}
++ 		if (dontresolve)
++ 		  continue;
++ 	      }
++ #endif		
+  	      if (write_map)
+  		{
+  		  print_file_name (entry, stdout);
+***************
+*** 2418,2424 ****
+  digest_symbols ()
+  {
+    register int i;
+!   int setv_fill_count;
+  
+    if (trace_files)
+      fprintf (stderr, "Digesting symbol information:\n\n");
+--- 2695,2701 ----
+  digest_symbols ()
+  {
+    register int i;
+!   int setv_fill_count = 0;
+  
+    if (trace_files)
+      fprintf (stderr, "Digesting symbol information:\n\n");
+***************
+*** 2432,2440 ****
+  
+  #ifdef NMAGIC
+    if (magic == ZMAGIC || magic == NMAGIC)
+! #else
+    if (magic == ZMAGIC)
+! #endif
+      {
+        int text_end = text_size + N_TXTOFF (outheader);
+        text_pad = ((text_end + page_size - 1) & (- page_size)) - text_end;
+--- 2709,2721 ----
+  
+  #ifdef NMAGIC
+    if (magic == ZMAGIC || magic == NMAGIC)
+! #else /* NMAGIC */
+! #ifdef SMAGIC
+!   if (magic == ZMAGIC || magic == SMAGIC)
+! #else /* SMAGIC */
+    if (magic == ZMAGIC)
+! #endif /* SMAGIC */
+! #endif /* NMAGIC */
+      {
+        int text_end = text_size + N_TXTOFF (outheader);
+        text_pad = ((text_end + page_size - 1) & (- page_size)) - text_end;
+***************
+*** 2442,2448 ****
+      }
+  
+    outheader.a_text = text_size;
+! #ifdef sequent
+    outheader.a_text += N_ADDRADJ (outheader);
+  #endif
+  
+--- 2723,2729 ----
+      }
+  
+    outheader.a_text = text_size;
+! #if TARGET_MACHINE==TARGET_SEQUENT
+    outheader.a_text += N_ADDRADJ (outheader);
+  #endif
+  
+***************
+*** 2450,2459 ****
+  
+    if (! Tdata_flag_specified)
+      data_start = N_DATADDR (outheader) + text_start - N_TXTADDR (outheader);
+! 
+    /* Make sure bss starts out aligned as much as anyone can want.  */
+  
+    data_size = (data_size + sizeof(double) - 1) & ~(sizeof(double)-1);
+  
+    /* Set up the set element vector */
+  
+--- 2731,2744 ----
+  
+    if (! Tdata_flag_specified)
+      data_start = N_DATADDR (outheader) + text_start - N_TXTADDR (outheader);
+! #ifdef foobar
+    /* Make sure bss starts out aligned as much as anyone can want.  */
+  
+    data_size = (data_size + sizeof(double) - 1) & ~(sizeof(double)-1);
++ #endif
++ 
++   if (Z_flag_specified)
++       data_start += data_gap;
+  
+    /* Set up the set element vector */
+  
+***************
+*** 2463,2474 ****
+           for each symbol for the length word at the beginning of the
+  	 vector, plus a word for each symbol for a zero at the end of
+  	 the vector (for incremental linking).  */
+!       set_sect_size
+! 	= (2 * set_symbol_count + set_vector_count) * sizeof (unsigned long);
+        set_sect_start = data_start + data_size;
+        data_size += set_sect_size;
+        set_vectors = (unsigned long *) xmalloc (set_sect_size);
+        setv_fill_count = 0;
+      }
+  
+    /* Compute start addresses of each file's sections and symbols.  */
+--- 2748,2761 ----
+           for each symbol for the length word at the beginning of the
+  	 vector, plus a word for each symbol for a zero at the end of
+  	 the vector (for incremental linking).  */
+!       set_sect_size =
+!         (2 * set_symbol_count + set_vector_count) * sizeof (unsigned long);
+        set_sect_start = data_start + data_size;
+        data_size += set_sect_size;
+        set_vectors = (unsigned long *) xmalloc (set_sect_size);
++ #if 1
+        setv_fill_count = 0;
++ #endif      
+      }
+  
+    /* Compute start addresses of each file's sections and symbols.  */
+***************
+*** 2493,2499 ****
+  	{
+  	  /* For each symbol */
+  	  register struct nlist *p, *next;
+! 	  int defs = 0, com = sp->max_common_size, erred = 0;
+  	  struct nlist *first_definition;
+  	  for (p = sp->refs; p; p = next)
+  	    {
+--- 2780,2786 ----
+  	{
+  	  /* For each symbol */
+  	  register struct nlist *p, *next;
+! 	  int defs = 0, com = sp->max_common_size;
+  	  struct nlist *first_definition;
+  	  for (p = sp->refs; p; p = next)
+  	    {
+***************
+*** 2575,2587 ****
+  	     Reverse the vector itself to put it in file order.  */
+  	  if ((sp->defined & ~N_EXT) == N_SETV)
+  	    {
+! 	      unsigned long length_word_index
+! 		= (sp->value - set_sect_start) / sizeof (unsigned long);
+  	      unsigned long i, tmp;
+  
+! 	      set_vectors[length_word_index]
+! 		= setv_fill_count - 1 - length_word_index;
+! 
+  	      /* Reverse the vector.  */
+  	      for (i = 1;
+  		   i < (setv_fill_count - length_word_index - 1) / 2 + 1;
+--- 2862,2873 ----
+  	     Reverse the vector itself to put it in file order.  */
+  	  if ((sp->defined & ~N_EXT) == N_SETV)
+  	    {
+! 	      unsigned long length_word_index =
+! 	        (sp->value - set_sect_start) / sizeof (unsigned long);
+  	      unsigned long i, tmp;
+  
+! 	      set_vectors[length_word_index] =
+! 	        setv_fill_count - 1 - length_word_index;
+  	      /* Reverse the vector.  */
+  	      for (i = 1;
+  		   i < (setv_fill_count - length_word_index - 1) / 2 + 1;
+***************
+*** 2588,2595 ****
+  		   i++)
+  		{
+  		  tmp = set_vectors[length_word_index + i];
+! 		  set_vectors[length_word_index + i]
+! 		    = set_vectors[setv_fill_count - i];
+  		  set_vectors[setv_fill_count - i] = tmp;
+  		}
+  
+--- 2874,2881 ----
+  		   i++)
+  		{
+  		  tmp = set_vectors[length_word_index + i];
+! 		  set_vectors[length_word_index + i] =
+! 		    set_vectors[setv_fill_count - i];
+  		  set_vectors[setv_fill_count - i] = tmp;
+  		}
+  
+***************
+*** 2600,2608 ****
+--- 2886,2896 ----
+  	}
+      }
+  
++ #ifdef foobar
+    /* Make sure end of bss is aligned as much as anyone can want.  */
+  
+    bss_size = (bss_size + sizeof(double) - 1) & ~(sizeof(double)-1);
++ #endif
+  
+    if (end_symbol)		/* These are null if -r.  */
+      {
+***************
+*** 2616,2624 ****
+    if (specified_data_size && specified_data_size > data_size)
+      data_pad = specified_data_size - data_size;
+  
+    if (magic == ZMAGIC)
+      data_pad = ((data_pad + data_size + page_size - 1) & (- page_size))
+!                - data_size;
+  
+    bss_size -= data_pad;
+    if (bss_size < 0) bss_size = 0;
+--- 2904,2916 ----
+    if (specified_data_size && specified_data_size > data_size)
+      data_pad = specified_data_size - data_size;
+  
++ #ifdef SMAGIC
++   if (magic == SMAGIC || magic == ZMAGIC)
++ #else
+    if (magic == ZMAGIC)
++ #endif
+      data_pad = ((data_pad + data_size + page_size - 1) & (- page_size))
+! 	- data_size;
+  
+    bss_size -= data_pad;
+    if (bss_size < 0) bss_size = 0;
+***************
+*** 2788,2794 ****
+  {
+    int line;
+    char *filename;
+!   struct nlist *sym;
+  };
+  
+  void qsort ();
+--- 3080,3086 ----
+  {
+    int line;
+    char *filename;
+!   struct nlist *Sym;
+  };
+  
+  void qsort ();
+***************
+*** 2824,2850 ****
+      *next = state_pointer + 1,
+      /* Used to store source file */
+      *source = state_pointer + 2;
+!   struct file_entry *entry = (struct file_entry *) source->sym;
+  
+!   current->sym = next->sym;
+    current->line = next->line;
+    current->filename = next->filename;
+  
+!   while (++(next->sym) < (entry->symbols
+  			  + entry->header.a_syms/sizeof (struct nlist)))
+      {
+        /* n_type is a char, and N_SOL, N_EINCL and N_BINCL are > 0x80, so
+         * may look negative...therefore, must mask to low bits
+         */
+!       switch (next->sym->n_type & 0xff) 
+  	{
+  	case N_SLINE:
+  	  if (use_data_symbols) continue;
+! 	  next->line = next->sym->n_desc;
+  	  return 1;
+  	case N_DSLINE:
+  	  if (!use_data_symbols) continue;
+! 	  next->line = next->sym->n_desc;
+  	  return 1;
+  #ifdef HAVE_SUN_STABS
+  	case N_EINCL:
+--- 3116,3142 ----
+      *next = state_pointer + 1,
+      /* Used to store source file */
+      *source = state_pointer + 2;
+!   struct file_entry *entry = (struct file_entry *) source->Sym;
+  
+!   current->Sym = next->Sym;
+    current->line = next->line;
+    current->filename = next->filename;
+  
+!   while (++(next->Sym) < (entry->symbols
+  			  + entry->header.a_syms/sizeof (struct nlist)))
+      {
+        /* n_type is a char, and N_SOL, N_EINCL and N_BINCL are > 0x80, so
+         * may look negative...therefore, must mask to low bits
+         */
+!       switch (next->Sym->n_type & 0xff) 
+  	{
+  	case N_SLINE:
+  	  if (use_data_symbols) continue;
+! 	  next->line = next->Sym->n_desc;
+  	  return 1;
+  	case N_DSLINE:
+  	  if (!use_data_symbols) continue;
+! 	  next->line = next->Sym->n_desc;
+  	  return 1;
+  #ifdef HAVE_SUN_STABS
+  	case N_EINCL:
+***************
+*** 2852,2870 ****
+  	  continue;
+  #endif
+  	case N_SO:
+! 	  source->filename = next->sym->n_un.n_strx + entry->strings;
+  	  source->line++;
+  #ifdef HAVE_SUN_STABS
+  	case N_BINCL:
+  #endif
+  	case N_SOL:
+! 	  next->filename
+! 	    = next->sym->n_un.n_strx + entry->strings;
+  	default:
+  	  continue;
+  	}
+      }
+!   next->sym = (struct nlist *) 0;
+    return 0;
+  }
+  
+--- 3144,3162 ----
+  	  continue;
+  #endif
+  	case N_SO:
+! 	  source->filename = next->Sym->n_un.n_strx + entry->strings;
+  	  source->line++;
+  #ifdef HAVE_SUN_STABS
+  	case N_BINCL:
+  #endif
+  	case N_SOL:
+! 	  next->filename =
+! 	    next->Sym->n_un.n_strx + entry->strings;
+  	default:
+  	  continue;
+  	}
+      }
+!   next->Sym = (struct nlist *) 0;
+    return 0;
+  }
+  
+***************
+*** 2879,2887 ****
+       struct file_entry *entry;
+  {
+    struct line_debug_entry
+!     *state_pointer
+!       = (struct line_debug_entry *)
+! 	xmalloc (3 * sizeof (struct line_debug_entry));
+    register struct line_debug_entry
+      *current = state_pointer,
+      *next = state_pointer + 1,
+--- 3171,3179 ----
+       struct file_entry *entry;
+  {
+    struct line_debug_entry
+!     *state_pointer =
+!         (struct line_debug_entry *)
+! 	    xmalloc (3 * sizeof (struct line_debug_entry));
+    register struct line_debug_entry
+      *current = state_pointer,
+      *next = state_pointer + 1,
+***************
+*** 2902,2908 ****
+        /* I believe this translates to "We lose" */
+        current->filename = next->filename = entry->filename;
+        current->line = next->line = -1;
+!       current->sym = next->sym = (struct nlist *) 0;
+        return state_pointer;
+      }
+  
+--- 3194,3200 ----
+        /* I believe this translates to "We lose" */
+        current->filename = next->filename = entry->filename;
+        current->line = next->line = -1;
+!       current->Sym = next->Sym = (struct nlist *) 0;
+        return state_pointer;
+      }
+  
+***************
+*** 2909,2920 ****
+    next->line = source->line = 0;
+    next->filename = source->filename
+      = (tmp->n_un.n_strx + entry->strings);
+!   source->sym = (struct nlist *) entry;
+!   next->sym = tmp;
+  
+    next_debug_entry (use_data_symbols, state_pointer); /* To setup next */
+  
+!   if (!next->sym)		/* No line numbers for this section; */
+  				/* setup output results as appropriate */
+      {
+        if (source->line)
+--- 3201,3212 ----
+    next->line = source->line = 0;
+    next->filename = source->filename
+      = (tmp->n_un.n_strx + entry->strings);
+!   source->Sym = (struct nlist *) entry;
+!   next->Sym = tmp;
+  
+    next_debug_entry (use_data_symbols, state_pointer); /* To setup next */
+  
+!   if (!next->Sym)		/* No line numbers for this section; */
+  				/* setup output results as appropriate */
+      {
+        if (source->line)
+***************
+*** 2954,2970 ****
+  
+    int use_data_symbols;
+  
+!   if (next->sym)
+!     use_data_symbols = (next->sym->n_type & N_TYPE) == N_DATA;
+    else
+      return current->line;
+  
+    /* Go back to the beginning if we've already passed it.  */
+!   if (current->sym->n_value > address)
+      {
+        tmp_pointer = init_debug_scan (use_data_symbols,
+  				     (struct file_entry *)
+! 				     ((state_pointer + 2)->sym));
+        state_pointer[0] = tmp_pointer[0];
+        state_pointer[1] = tmp_pointer[1];
+        state_pointer[2] = tmp_pointer[2];
+--- 3246,3262 ----
+  
+    int use_data_symbols;
+  
+!   if (next->Sym)
+!     use_data_symbols = (next->Sym->n_type & N_TYPE) == N_DATA;
+    else
+      return current->line;
+  
+    /* Go back to the beginning if we've already passed it.  */
+!   if (current->Sym->n_value > address)
+      {
+        tmp_pointer = init_debug_scan (use_data_symbols,
+  				     (struct file_entry *)
+! 				     ((state_pointer + 2)->Sym));
+        state_pointer[0] = tmp_pointer[0];
+        state_pointer[1] = tmp_pointer[1];
+        state_pointer[2] = tmp_pointer[2];
+***************
+*** 2972,2982 ****
+      }
+  
+    /* If we're still in a bad way, return -1, meaning invalid line.  */
+!   if (current->sym->n_value > address)
+      return -1;
+  
+!   while (next->sym
+! 	 && next->sym->n_value <= address
+  	 && next_debug_entry (use_data_symbols, state_pointer))
+      ;
+    return current->line;
+--- 3264,3274 ----
+      }
+  
+    /* If we're still in a bad way, return -1, meaning invalid line.  */
+!   if (current->Sym->n_value > address)
+      return -1;
+  
+!   while (next->Sym
+! 	 && next->Sym->n_value <= address
+  	 && next_debug_entry (use_data_symbols, state_pointer))
+      ;
+    return current->line;
+***************
+*** 3006,3023 ****
+    struct relocation_info
+      *reloc_start = data_segment ? entry->datarel : entry->textrel,
+      *reloc;
+!   int reloc_size
+!     = ((data_segment ? entry->header.a_drsize : entry->header.a_trsize)
+!        / sizeof (struct relocation_info));
+!   int start_of_segment
+!     = (data_segment ? entry->data_start_address : entry->text_start_address);
+    struct nlist *start_of_syms = entry->symbols;
+!   struct line_debug_entry *state_pointer
+!     = init_debug_scan (data_segment != 0, entry);
+    register struct line_debug_entry
+!     *current = state_pointer,
+!     *next = state_pointer + 1,
+!     *source = state_pointer + 2;
+    /* Assigned to generally static values; should not be written into.  */
+    char *errfmt;
+    /* Assigned to alloca'd values cand copied into; should be freed
+--- 3298,3313 ----
+    struct relocation_info
+      *reloc_start = data_segment ? entry->datarel : entry->textrel,
+      *reloc;
+!   int reloc_size =
+!     (data_segment ? entry->header.a_drsize : entry->header.a_trsize)
+!        / sizeof (struct relocation_info);
+!   int start_of_segment =
+!     (data_segment ? entry->data_start_address : entry->text_start_address);
+    struct nlist *start_of_syms = entry->symbols;
+!   struct line_debug_entry *state_pointer =
+!     init_debug_scan (data_segment != 0, entry);
+    register struct line_debug_entry
+!     *current = state_pointer;
+    /* Assigned to generally static values; should not be written into.  */
+    char *errfmt;
+    /* Assigned to alloca'd values cand copied into; should be freed
+***************
+*** 3095,3102 ****
+        /* If errfmt == 0, errmsg has already been defined.  */
+        if (errfmt != 0)
+  	{
+! 	  errmsg = (char *) xmalloc (strlen (errfmt) + strlen (g->name) + 1);
+! 	  sprintf (errmsg, errfmt, g->name, data_segment ? "data" : "text");
+  	}
+  
+        address_to_line (RELOC_ADDRESS (reloc) + start_of_segment,
+--- 3385,3398 ----
+        /* If errfmt == 0, errmsg has already been defined.  */
+        if (errfmt != 0)
+  	{
+! 	  char *nm;
+! 
+! 	  if (demangler == NULL || (nm = (*demangler)(g->name)) == NULL)
+! 	    nm = g->name;
+! 	  errmsg = (char *) xmalloc (strlen (errfmt) + strlen (nm) + 1);
+! 	  sprintf (errmsg, errfmt, nm, data_segment ? "data" : "text");
+! 	  if (nm != g->name)
+! 	    free (nm);
+  	}
+  
+        address_to_line (RELOC_ADDRESS (reloc) + start_of_segment,
+***************
+*** 3125,3132 ****
+       FILE *outfile;
+  {
+    int number_of_syms = entry->header.a_syms / sizeof (struct nlist);
+!   unsigned char *nlist_bitvector
+!     = (unsigned char *) alloca ((number_of_syms >> 3) + 1);
+    struct line_debug_entry *text_scan, *data_scan;
+    int i;
+    char *errfmt, *file_name;
+--- 3421,3428 ----
+       FILE *outfile;
+  {
+    int number_of_syms = entry->header.a_syms / sizeof (struct nlist);
+!   unsigned char *nlist_bitvector =
+!     (unsigned char *) alloca ((number_of_syms >> 3) + 1);
+    struct line_debug_entry *text_scan, *data_scan;
+    int i;
+    char *errfmt, *file_name;
+***************
+*** 3204,3210 ****
+  	{
+  	  if (g->undef_refs >= MAX_UREFS_PRINTED)
+  	    continue;
+! 	  
+  	  if (++(g->undef_refs) == MAX_UREFS_PRINTED)
+  	    errfmt = "More undefined \"%s\" refs follow";
+  	  else
+--- 3500,3506 ----
+  	{
+  	  if (g->undef_refs >= MAX_UREFS_PRINTED)
+  	    continue;
+! 
+  	  if (++(g->undef_refs) == MAX_UREFS_PRINTED)
+  	    errfmt = "More undefined \"%s\" refs follow";
+  	  else
+***************
+*** 3227,3233 ****
+  	}
+        else
+  	continue;
+!       
+        if (line_number == -1)
+  	fprintf (outfile, "%s: ", entry->filename);
+        else
+--- 3523,3529 ----
+  	}
+        else
+  	continue;
+! 
+        if (line_number == -1)
+  	fprintf (outfile, "%s: ", entry->filename);
+        else
+***************
+*** 3234,3242 ****
+  	fprintf (outfile, "%s:%d: ", file_name, line_number);
+  
+        if (dont_allow_symbol_name)
+! 	fprintf (outfile, "%s", errfmt);
+        else
+! 	fprintf (outfile, errfmt, g->name);
+  
+        fputc ('\n', outfile);
+      }
+--- 3530,3546 ----
+  	fprintf (outfile, "%s:%d: ", file_name, line_number);
+  
+        if (dont_allow_symbol_name)
+! 	  fprintf (outfile, "%s", errfmt);
+        else
+!       {
+! 	char *nm;
+! 	if (demangler != NULL && (nm = (*demangler)(g->name)) != NULL)
+! 	  {
+! 	    fprintf (outfile, errfmt, nm);
+! 	    free (nm);
+! 	  } else
+! 	    fprintf (outfile, errfmt, g->name);
+!       }
+  
+        fputc ('\n', outfile);
+      }
+***************
+*** 3261,3267 ****
+      return;
+  
+    each_file (do_file_warnings, outfile);
+! 
+    if (list_unresolved_refs || list_multiple_defs)
+      make_executable = 0;
+  }
+--- 3565,3573 ----
+      return;
+  
+    each_file (do_file_warnings, outfile);
+!   if (trace_files)
+! 	  printf("undefined_global_sym_count= %d, multiple_def_count= %d\n",
+! 		 undefined_global_sym_count, multiple_def_count);
+    if (list_unresolved_refs || list_multiple_defs)
+      make_executable = 0;
+  }
+***************
+*** 3314,3321 ****
+  {
+    N_SET_MAGIC (outheader, magic);
+    outheader.a_text = text_size;
+! #ifdef sequent
+    outheader.a_text += N_ADDRADJ (outheader);
+  #endif
+    outheader.a_data = data_size;
+    outheader.a_bss = bss_size;
+--- 3620,3631 ----
+  {
+    N_SET_MAGIC (outheader, magic);
+    outheader.a_text = text_size;
+!   if (T_flag_specified)
+!       outheader.a_text += text_start;
+! #if TARGET_MACHINE==TARGET_SEQUENT
+    outheader.a_text += N_ADDRADJ (outheader);
++   if (entry_symbol == 0)
++       entry_symbol = getsym("start");
+  #endif
+    outheader.a_data = data_size;
+    outheader.a_bss = bss_size;
+***************
+*** 3383,3389 ****
+--- 3693,3717 ----
+        coffheader.data_start = dp->s_vaddr;
+      }
+  #endif
++ #if TARGET==TARGET_SEQUENT
++     if (SMAGIC == magic) {
++ 	char *target_ptr; 
++ 	long n; 
+  
++ 	outheader.a_gdtbl = gdt_filler; 
++ 	if (sizeof(instr) > sizeof(outheader.a_bootstrap)) {
++ 	    fatal("a_bootstrap too small for code"); 
++ 	} 
++ 	n = outheader.a_entry; 
++ 	target_ptr = &instr[sizeof(instr) - 4];
++ 	target_ptr[0] = n & 0xff; 
++ 	target_ptr[1] = (n >> 8) & 0xff; 
++ 	target_ptr[2] = (n >> 16) & 0xff; 
++ 	target_ptr[3] = (n >> 24) & 0xff; 
++ 	bcopy(instr, (char *)outheader.a_bootstrap, sizeof(instr)); 
++     }
++ #endif
++ 
+  #ifdef INITIALIZE_HEADER
+    INITIALIZE_HEADER;
+  #endif
+***************
+*** 3423,3429 ****
+--- 3751,3763 ----
+    if (need_coff_header)
+      mywrite (&coffheader, sizeof coffheader, 1, outdesc);
+  #endif
++ #if HOST_BYTE_ORDER != TARGET_BYTE_ORDER
++   fix_exec_header_byte_order(&outheader);
++ #endif
+    mywrite (&outheader, sizeof (struct exec), 1, outdesc);
++ #if HOST_BYTE_ORDER != TARGET_BYTE_ORDER
++   fix_exec_header_byte_order(&outheader);
++ #endif
+  
+    /* Output whatever padding is required in the executable file
+       between the header and the start of the text.  */
+***************
+*** 3431,3436 ****
+--- 3765,3775 ----
+  #ifndef COFF_ENCAPSULATE
+    padfile (N_TXTOFF (outheader) - sizeof outheader, outdesc);
+  #endif
++ 
++ 
++   if (T_flag_specified)
++ 	  padfile (text_start - sizeof(struct exec), outdesc);
++ 
+  }
+  
+  /* Relocate the text segment of each input file
+***************
+*** 3489,3494 ****
+--- 3828,3837 ----
+  	  fprintf (stderr, "Return from read: %d\n", read_return);
+  	  fatal_with_file ("premature eof in text relocation of ", entry);
+  	}
++ #if HOST_BYTE_ORDER != TARGET_BYTE_ORDER
++       target_to_host_reloc_byte_order(reloc,
++ 	entry->header.a_trsize/sizeof(*reloc));
++ #endif
+        entry->textrel = reloc;
+      }
+  
+***************
+*** 3502,3507 ****
+--- 3845,3854 ----
+  	     L_SET);
+        if (entry->header.a_drsize != read (desc, reloc, entry->header.a_drsize))
+  	fatal_with_file ("premature eof in data relocation of ", entry);
++ #if HOST_BYTE_ORDER != TARGET_BYTE_ORDER
++       target_to_host_reloc_byte_order(reloc,
++ 	entry->header.a_drsize/sizeof(*reloc));
++ #endif
+        entry->datarel = reloc;
+      }
+  }
+***************
+*** 3538,3546 ****
+--- 3885,3902 ----
+    else
+      {
+        reloc = (struct relocation_info *) alloca (entry->header.a_trsize);
++       if (trace_files)
++ 	      printf("lseek to 0x%x (t_o= 0x%x, a_t= 0x%x, a_d= 0x%x)\n",
++ 		     text_offset(entry) + entry->header.a_text +
++ 		     entry->header.a_data, text_offset(entry),
++ 		     entry->header.a_text, entry->header.a_data);
+        lseek (desc, text_offset (entry) + entry->header.a_text + entry->header.a_data, 0);
+        if (entry->header.a_trsize != read (desc, reloc, entry->header.a_trsize))
+  	fatal_with_file ("premature eof in text relocation of ", entry);
++ #if HOST_BYTE_ORDER != TARGET_BYTE_ORDER
++       target_to_host_reloc_byte_order(reloc,
++ 	  entry->header.a_trsize/sizeof(*reloc));
++ #endif
+      }
+  
+    /* Read the text section into core.  */
+***************
+*** 3575,3580 ****
+--- 3931,3945 ----
+    /* Write out the set element vectors.  See digest symbols for
+       description of length of the set vector section.  */
+  
++ #if HOST_BYTE_ORDER != TARGET_BYTE_ORDER
++   {
++     int i;
++     for (i = 0; i < 2 * set_symbol_count + set_vector_count; ++i) {
++ 	fix_byte_order(&set_vectors[i], sizeof(*set_vectors));
++     }
++   }
++ #endif
++ 
+    if (set_vector_count)
+      mywrite (set_vectors, 2 * set_symbol_count + set_vector_count,
+  	     sizeof (unsigned long), outdesc);
+***************
+*** 3619,3624 ****
+--- 3984,3993 ----
+  	     0);
+        if (entry->header.a_drsize != read (desc, reloc, entry->header.a_drsize))
+  	fatal_with_file ("premature eof in data relocation of ", entry);
++ #if HOST_BYTE_ORDER != TARGET_BYTE_ORDER
++       target_to_host_reloc_byte_order(reloc,
++ 	  entry->header.a_drsize/sizeof(*reloc));
++ #endif
+      }
+  
+    lseek (desc, text_offset (entry) + entry->header.a_text, 0);
+***************
+*** 3662,3667 ****
+--- 4031,4037 ----
+        register int relocation = 0;
+        register int addr = RELOC_ADDRESS(p);
+        register unsigned int mask = 0;
++       register unsigned int x;
+  
+        if (addr >= data_size)
+  	fatal_with_file ("relocation address out of range in ", entry);
+***************
+*** 3719,3727 ****
+  	default:
+  	  fatal_with_file ("nonexternal relocation code invalid in ", entry);
+  	}
+! 
+        if (RELOC_PCREL_P(p))
+  	relocation -= pc_relocation;
+  
+  #ifdef RELOC_ADD_EXTRA
+        relocation += RELOC_ADD_EXTRA(p);
+--- 4089,4098 ----
+  	default:
+  	  fatal_with_file ("nonexternal relocation code invalid in ", entry);
+  	}
+! #if 0
+        if (RELOC_PCREL_P(p))
+  	relocation -= pc_relocation;
++ #endif
+  
+  #ifdef RELOC_ADD_EXTRA
+        relocation += RELOC_ADD_EXTRA(p);
+***************
+*** 3737,3746 ****
+  	      else
+  		RELOC_ADD_EXTRA (p) -= pc_relocation;
+  	    }
+! #if 0
+  	  if (! RELOC_PCREL_P (p))
+  	    {
+! 	      if ((int)p->r_type <= RELOC_32
+  		  || RELOC_EXTERN_P (p) == 0)
+  		RELOC_ADD_EXTRA (p) = relocation;
+  	    }
+--- 4108,4117 ----
+  	      else
+  		RELOC_ADD_EXTRA (p) -= pc_relocation;
+  	    }
+! #if 1
+  	  if (! RELOC_PCREL_P (p))
+  	    {
+! 	      if ((int)p->r_type <= (int) RELOC_32
+  		  || RELOC_EXTERN_P (p) == 0)
+  		RELOC_ADD_EXTRA (p) = relocation;
+  	    }
+***************
+*** 3750,3755 ****
+--- 4121,4130 ----
+  	  continue;
+  	}
+  #endif
++ #if 1	
++        if (RELOC_PCREL_P(p))
++ 	   relocation -= pc_relocation;
++ #endif
+  
+        relocation >>= RELOC_VALUE_RIGHTSHIFT(p);
+  
+***************
+*** 3774,3794 ****
+  	  break;
+  
+  	case 1:
+  	  if (RELOC_MEMORY_SUB_P(p))
+! 	    relocation -= mask & *(short *) (data + addr);
+  	  else if (RELOC_MEMORY_ADD_P(p))
+! 	    relocation += mask & *(short *) (data + addr);
+! 	  *(short *) (data + addr) &= ~mask;
+! 	  *(short *) (data + addr) |= relocation;
+  	  break;
+  
+  	case 2:
+! 	  if (RELOC_MEMORY_SUB_P(p))
+! 	    relocation -= mask & *(long *) (data + addr);
+  	  else if (RELOC_MEMORY_ADD_P(p))
+! 	    relocation += mask & *(long *) (data + addr);
+! 	  *(long *) (data + addr) &= ~mask;
+! 	  *(long *) (data + addr) |= relocation;
+  	  break;
+  
+  	default:
+--- 4149,4209 ----
+  	  break;
+  
+  	case 1:
++ #if TARGET_BYTE_ORDER==BIG_ENDIAN
++ 	  x = ((unsigned char *) (data + addr))[1]
++ 	   | (((unsigned char *) (data + addr))[0] << 8);
++ #endif
++ #if TARGET_BYTE_ORDER==LITTLE_ENDIAN
++ 	  x = ((unsigned char *) (data + addr))[0]
++ 	   | (((unsigned char *) (data + addr))[1] << 8);
++ #endif
+  	  if (RELOC_MEMORY_SUB_P(p))
+! 	    relocation -= mask & x;
+  	  else if (RELOC_MEMORY_ADD_P(p))
+! 	    relocation += mask & x;
+! 	  x &= ~mask;
+! 	  x |= relocation;
+! #if TARGET_BYTE_ORDER==BIG_ENDIAN
+! 	  ((unsigned char *) (data + addr))[1] = x;
+! 	  ((unsigned char *) (data + addr))[0] = x >> 8;
+! #endif
+! #if TARGET_BYTE_ORDER==LITTLE_ENDIAN
+! 	  ((unsigned char *) (data + addr))[0] = x;
+! 	  ((unsigned char *) (data + addr))[1] = x >> 8;
+! #endif
+  	  break;
+  
+  	case 2:
+! #if TARGET_BYTE_ORDER==BIG_ENDIAN
+! 	  x = ((unsigned char *) (data + addr))[3]
+! 	   | (((unsigned char *) (data + addr))[2] << 8)
+! 	   | (((unsigned char *) (data + addr))[1] << 16)
+! 	   | (((unsigned char *) (data + addr))[0] << 24);
+! #endif
+! #if TARGET_BYTE_ORDER==LITTLE_ENDIAN
+! 	  x = ((unsigned char *) (data + addr))[0]
+! 	   | (((unsigned char *) (data + addr))[1] << 8)
+! 	   | (((unsigned char *) (data + addr))[2] << 16)
+! 	   | (((unsigned char *) (data + addr))[3] << 24);
+! #endif
+! 		  if (RELOC_MEMORY_SUB_P(p))
+! 	    relocation -= mask & x;
+  	  else if (RELOC_MEMORY_ADD_P(p))
+! 	    relocation += mask & x;
+! 	  x &= ~mask;
+! 	  x |= relocation;
+! #if TARGET_BYTE_ORDER==BIG_ENDIAN
+! 	  ((unsigned char *) (data + addr))[3] = x;
+! 	  ((unsigned char *) (data + addr))[2] = x >> 8;
+! 	  ((unsigned char *) (data + addr))[1] = x >> 16;
+! 	  ((unsigned char *) (data + addr))[0] = x >> 24;
+! #endif
+! #if TARGET_BYTE_ORDER==LITTLE_ENDIAN
+! 	  ((unsigned char *) (data + addr))[0] = x;
+! 	  ((unsigned char *) (data + addr))[1] = x >> 8;
+! 	  ((unsigned char *) (data + addr))[2] = x >> 16;
+! 	  ((unsigned char *) (data + addr))[3] = x >> 24;
+! #endif
+  	  break;
+  
+  	default:
+***************
+*** 3903,3908 ****
+--- 4318,4327 ----
+  	}
+        p++;
+      }
++ #if HOST_BYTE_ORDER != TARGET_BYTE_ORDER
++     host_to_target_reloc_byte_order((struct relocation_info *) entry->textrel,
++ 	entry->header.a_trsize/sizeof(struct relocation_info));
++ #endif
+    mywrite (entry->textrel, 1, entry->header.a_trsize, outdesc);
+  }
+  
+***************
+*** 3962,3967 ****
+--- 4381,4390 ----
+  	}
+        p++;
+      }
++ #if HOST_BYTE_ORDER != TARGET_BYTE_ORDER
++     host_to_target_reloc_byte_order((struct relocation_info *) entry->datarel,
++ 	entry->header.a_drsize/sizeof(struct relocation_info));
++ #endif
+    mywrite (entry->datarel, 1, entry->header.a_drsize, outdesc);
+  }
+  
+***************
+*** 4169,4174 ****
+--- 4592,4609 ----
+    /* Output the buffer full of `struct nlist's.  */
+  
+    lseek (outdesc, symbol_table_offset + symbol_table_len, 0);
++ #if HOST_BYTE_ORDER != TARGET_BYTE_ORDER
++   {
++     int i;
++ 
++     for (i = 0; i < bufp - buf; ++i)
++       {
++         fix_byte_order(&buf[i].n_un.n_name, sizeof(buf->n_un.n_name));
++ 	fix_byte_order(&buf[i].n_desc, sizeof(buf->n_desc));
++ 	fix_byte_order(&buf[i].n_value, sizeof(buf->n_value));
++       }
++   }
++ #endif
+    mywrite (buf, sizeof (struct nlist), bufp - buf, outdesc);
+    symbol_table_len += sizeof (struct nlist) * (bufp - buf);
+  
+***************
+*** 4181,4186 ****
+--- 4616,4625 ----
+    /* Now the total string table size is known, so write it.
+       We are already positioned at the right place in the file.  */
+  
++ #if HOST_BYTE_ORDER != TARGET_BYTE_ORDER
++   fix_byte_order(&strtab_size, sizeof(strtab_size));
++ #endif
++ 
+    mywrite (&strtab_size, sizeof (int), 1, outdesc);  /* we're at right place */
+  
+    /* Write the strings for the global symbols.  */
+***************
+*** 4224,4230 ****
+--- 4663,4673 ----
+      {
+        struct nlist nl;
+  
++ #if TARGET==TARGET_SEQUENT      
++       nl.n_type = N_FN;
++ #else      
+        nl.n_type = N_TEXT;
++ #endif
+        nl.n_un.n_strx = assign_string_table_index (entry->local_sym_name);
+        nl.n_value = entry->text_start_address;
+        nl.n_desc = 0;
+***************
+*** 4281,4286 ****
+--- 4724,4741 ----
+    /* All the symbols are now in BUF; write them.  */
+  
+    lseek (outdesc, symbol_table_offset + symbol_table_len, 0);
++ #if HOST_BYTE_ORDER != TARGET_BYTE_ORDER
++   {
++     int i;
++ 
++     for (i = 0; i < bufp - buf; ++i)
++       {
++ 	fix_byte_order(&buf[i].n_un.n_name, sizeof(buf->n_un.n_name));
++ 	fix_byte_order(&buf[i].n_desc, sizeof(buf->n_desc));
++ 	fix_byte_order(&buf[i].n_value, sizeof(buf->n_value));
++       }
++   }
++ #endif
+    mywrite (buf, sizeof (struct nlist), bufp - buf, outdesc);
+    symbol_table_len += sizeof (struct nlist) * (bufp - buf);
+  
+***************
+*** 4322,4327 ****
+--- 4777,4786 ----
+    if (sizeof root != read (indesc, &root, sizeof root))
+      fatal_with_file ("premature end of file in symbol segment of ", entry);
+  
++ #if HOST_BYTE_ORDER != TARGET_BYTE_ORDER
++   fix_symbol_root_byte_order(&root);
++ #endif
++ 
+    /* Store some relocation info into the root.  */
+  
+    root.ldsymoff = entry->local_syms_offset;
+***************
+*** 4334,4339 ****
+--- 4793,4801 ----
+  
+    /* Write the modified root into the output file.  */
+  
++ #if HOST_BYTE_ORDER != TARGET_BYTE_ORDER
++   fix_symbol_root_byte_order(&root);
++ #endif
+    mywrite (&root, sizeof root, 1, outdesc);
+  
+    /* Copy the rest of the symbol segment unchanged.  */
+***************
+*** 4385,4391 ****
+    end_symbol = getsym ("end");
+  #endif
+  
+! #ifdef sun
+    {
+      symbol *dynamic_symbol = getsym ("__DYNAMIC");
+      dynamic_symbol->defined = N_ABS | N_EXT;
+--- 4847,4853 ----
+    end_symbol = getsym ("end");
+  #endif
+  
+! #if TARGET_MACHINE==TARGET_SUN4 || TARGET_MACHINE==TARGET_SUN3 || TARGET_MACHINE==TARGET_SUN2
+    {
+      symbol *dynamic_symbol = getsym ("__DYNAMIC");
+      dynamic_symbol->defined = N_ABS | N_EXT;
+***************
+*** 4393,4399 ****
+      dynamic_symbol->value = 0;
+    }
+  #endif
+! #ifdef sequent
+    {
+      symbol *_387_flt_symbol = getsym ("_387_flt");
+      _387_flt_symbol->defined = N_ABS | N_EXT;
+--- 4855,4861 ----
+      dynamic_symbol->value = 0;
+    }
+  #endif
+! #if TARGET_MACHINE==TARGET_SEQUENT
+    {
+      symbol *_387_flt_symbol = getsym ("_387_flt");
+      _387_flt_symbol->defined = N_ABS | N_EXT;
+***************
+*** 4691,4693 ****
+--- 5153,5323 ----
+  }
+  
+  #endif
++ 
++ 
++ #if HOST_BYTE_ORDER != TARGET_BYTE_ORDER
++ 
++ static void
++ fix_byte_order(p, n)
++     char *p;
++     int n;
++ {
++     char t;
++ 
++     switch (n) {
++ 
++     case 1:
++ 	return;
++ 
++     case 2:
++ 	t = p[0];
++ 	p[0] = p[1];
++ 	p[1] = t;
++ 	return;
++ 
++     case 4:
++ 	t = p[0];
++ 	p[0] = p[3];
++ 	p[3] = t;
++ 	t = p[1];
++ 	p[1] = p[2];
++ 	p[2] = t;
++ 	return;
++ 
++     default:
++ 	fatal("Internal Error in fix_byte_order, n = %d\n", 0);
++     }
++ }
++ 
++ static void
++ fix_exec_header_byte_order(execP)
++     struct exec *execP;
++ {
++ 
++ #if TARGET_MACHINE==TARGET_SUN4
++     if (N_BADMAG(*execP)) {
++ 	u_char c = * (u_char *) execP;
++ 	execP->a_dynamic = c & 1;
++ 	execP->a_toolversion = c >> 1;
++     } else {
++ 	u_char c = execP->a_toolversion | (execP->a_dynamic << 7);
++ 	* (u_char *) execP = c;
++     }
++ #elif TARGET_MACHINE!=TARGET_SEQUENT
++     fix_byte_order(&execP->a_machtype, sizeof(execP->a_machtype));
++ #endif
++     fix_byte_order(&execP->a_magic,    sizeof(execP->a_magic));
++     fix_byte_order(&execP->a_text,     sizeof(execP->a_text));
++     fix_byte_order(&execP->a_data,     sizeof(execP->a_data));
++     fix_byte_order(&execP->a_bss,      sizeof(execP->a_bss));
++     fix_byte_order(&execP->a_syms,     sizeof(execP->a_syms));
++     fix_byte_order(&execP->a_entry,    sizeof(execP->a_entry));
++     fix_byte_order(&execP->a_trsize,   sizeof(execP->a_trsize));
++     fix_byte_order(&execP->a_drsize,   sizeof(execP->a_drsize));
++     return;
++ }
++ 
++ static void
++ fix_symbol_byte_order(p, size)
++     struct nlist *p;
++     int size;
++ {
++     int n;
++ 
++     for (n = size / sizeof(*p); --n >= 0; ++p) {
++ 	fix_byte_order(&p->n_un, sizeof(p->n_un));
++ 	fix_byte_order(&p->n_desc, sizeof(p->n_desc));
++ 	fix_byte_order(&p->n_value, sizeof(p->n_value));
++     }
++     return;
++ }
++ 
++ static void
++ target_to_host_reloc_byte_order(relocP, nrelocs)
++     struct relocation_info *relocP;
++     int nrelocs;
++ {
++     u_char c[4];
++ 
++ #if TARGET_BYTE_ORDER==BIG_ENDIAN && HOST_BYTE_ORDER==LITTLE_ENDIAN
++     for (; --nrelocs >= 0; ++relocP) {
++ 	fix_byte_order(&relocP->r_address, sizeof(relocP->r_address));
++ 	c[0] = ((u_char *) relocP)[4];
++ 	c[1] = ((u_char *) relocP)[5];
++ 	c[2] = ((u_char *) relocP)[6];
++ 	c[3] = ((u_char *) relocP)[7];
++ 	((u_long *) relocP)[1] = 0;
++ #if TARGET_MACHINE==TARGET_SUN4
++ 	relocP->r_index = (c[0] << 16) | (c[1] << 8) | c[2];
++ 	relocP->r_type = (enum reloc_type) (c[3] & 0x1f);
++ 	relocP->r_extern = (c[3] & 0x80) >> 7;
++ 	fix_byte_order(&relocP->r_addend, sizeof(relocP->r_addend));
++ #else
++ 	relocP->r_symbolnum = (c[0] << 16) | (c[1] << 8) | c[2];
++ 	relocP->r_pcrel = (c[3] >> 7) & 1;
++ 	relocP->r_length = (c[3] >> 5) & 3;
++ 	relocP->r_extern = (c[3] >> 4) & 1;
++ #endif
++     }
++ #endif
++     return;
++ }
++ 
++ static void
++ host_to_target_reloc_byte_order(relocP, nrelocs)
++     struct relocation_info *relocP;
++     int nrelocs;
++ {
++     u_char c[4];
++ 
++ #if TARGET_BYTE_ORDER==BIG_ENDIAN && HOST_BYTE_ORDER==LITTLE_ENDIAN
++     for (; --nrelocs >= 0; ++relocP) {
++ 	fix_byte_order(&relocP->r_address, sizeof(relocP->r_address));
++ #if TARGET_MACHINE==TARGET_SUN4
++ 	c[0] = (relocP->r_index >> 16);
++ 	c[1] = (relocP->r_index >> 8);
++ 	c[2] = relocP->r_index;
++ 	c[3] = (u_char) relocP->r_type | (relocP->r_extern << 7);
++ 	fix_byte_order(&relocP->r_addend, sizeof(relocP->r_addend));
++ #else
++ 	c[0] = (relocP->r_symbolnum >> 16);
++ 	c[1] = (relocP->r_symbolnum >> 8);
++ 	c[2] = relocP->r_symbolnum;
++ 	c[3] = (relocP->r_pcrel << 7) |
++ 	    (relocP->r_length << 5) | (relocP->r_extern << 4);
++ #endif
++ 	((u_char *) relocP)[4] = c[0];
++ 	((u_char *) relocP)[5] = c[1];
++ 	((u_char *) relocP)[6] = c[2];
++ 	((u_char *) relocP)[7] = c[3];
++     }
++ #endif
++     return;
++ }
++ 
++ static void
++ fix_symbol_root_byte_order(p)
++     struct symbol_root *p;
++ {
++ 
++     fix_byte_order(&p->format, sizeof(p->format));
++     fix_byte_order(&p->length, sizeof(p->length));
++     fix_byte_order(&p->ldsymoff, sizeof(p->ldsymoff));
++     fix_byte_order(&p->textrel, sizeof(p->textrel));
++     fix_byte_order(&p->datarel, sizeof(p->datarel));
++     fix_byte_order(&p->bssrel, sizeof(p->bssrel));
++     fix_byte_order(&p->filename, sizeof(p->filename));
++     fix_byte_order(&p->filedir, sizeof(p->filedir));
++     fix_byte_order(&p->blockvector, sizeof(p->blockvector));
++     fix_byte_order(&p->typevector, sizeof(p->typevector));
++     fix_byte_order(&p->language, sizeof(p->language));
++     fix_byte_order(&p->version, sizeof(p->version));
++     fix_byte_order(&p->compilation, sizeof(p->compilation));
++     fix_byte_order(&p->databeg, sizeof(p->databeg));
++     fix_byte_order(&p->bssbeg, sizeof(p->bssbeg));
++     fix_byte_order(&p->sourcevector, sizeof(p->sourcevector));
++     return;
++ }
++ 
++ #endif
++ 

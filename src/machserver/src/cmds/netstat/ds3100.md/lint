@@ -1,0 +1,4 @@
+netstat.c:
+exit value declared inconsistently	llib-lc:exit.c 2(57)  ::  netstat.c 2(89)
+fprintf returns value which is always ignored
+printf returns value which is always ignored

@@ -1,0 +1,33 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @# @;
+
+
+1.1
+date     90.08.09.16.39.25;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Notes about contents of the directory.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@hp.awk is a quick-and-dirty awk script to help you debug hard-params.
+(hard-params runs itself through cpp a few times, which makes it hard
+to specify breakpoints.)
+
+If you need to debug hard-params, run the source file through cpp (by
+hand, sigh), then filter that output with awk.  Compile the resulting
+file and use it when dealing with the debugger.
+@

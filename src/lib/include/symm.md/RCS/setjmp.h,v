@@ -1,0 +1,55 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     91.06.05.23.32.59;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.06.05.21.38.14;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Definitions for setjmp.
+@
+
+
+1.2
+log
+@Add function prototypes for setjmp and longjmp.
+@
+text
+@/*	setjmp.h	4.1	83/05/03	*/
+/* $Header$ */
+
+#include <cfuncproto.h>
+
+/*
+ * Only 10 words are needed for the VAX, but 15 for the Sun.  Use the
+ * larger of the two.
+ */
+
+typedef int jmp_buf[15];
+
+extern int setjmp _ARGS_((jmp_buf));
+extern void longjmp _ARGS_((jmp_buf, int));
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d2 1
+d4 1
+d12 3
+@

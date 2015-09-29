@@ -1,0 +1,5 @@
+          return ?value?
+               Return immediately from the current procedure (or  top-
+               level  command  or  source  command), with value as the
+               return value.  If value  is  not  specified,  an  empty
+               string will be returned as result.

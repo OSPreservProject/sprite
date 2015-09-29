@@ -1,0 +1,134 @@
+
+
+
+TAPE                      User Commands                      TAPE
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     tape - Tape drive control.
+
+SSYYNNOOPPSSIISS
+     ttaappee [--tt _t_a_p_e_D_e_v_i_c_e] [_o_p_t_i_o_n_s]
+
+OOPPTTIIOONNSS
+     --tt _t_a_p_e_D_e_v_i_c_e This specifies  the  tape  device  file.   The
+                   default is ``/dev/tape0''.
+
+     --TT            Retension the tape.
+
+     --ee            Skip to the end of the tape.
+
+     --EE            Erase the whole tape.
+
+     --rr            Rewind the tape.
+
+     --RR            Read the tape 'til end-of-file.
+
+     --BB _b_l_o_c_k_s_i_z_e  Blocksize for read and write transfers.
+
+     --WW _n_u_m_b_l_o_c_k_s  Write numblocks blocks to the tape.
+
+     --ff _n_u_m_f_i_l_e_s   Skip numfiles files.  If numfiles <  0,  back-
+                   wards skip.
+
+     --bb _n_u_m_b_l_o_c_k_s  Skip numblocks blocks.
+
+     --mm _n_u_m_m_a_r_k_s   Write the given number of file  marks  on  the
+                   tape.
+
+     --gg _b_l_o_c_k_N_u_m   Skip to a particular block on the tape.
+
+     --ss            Print out the status of the tape drive.
+
+     --ll            Load the tape.
+
+     --uu            Unload the tape.
+
+     --pp            Prevent tape removal.
+
+     --aa            Allow tape removal.
+
+     --ii            Perform a tape inquiry.
+
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     Tape is used to control tape drives.  A tape can be rewound,
+
+
+
+Sprite v.1.0       Printed:  November 11, 1992                  1
+
+
+
+
+
+
+TAPE                      User Commands                      TAPE
+
+
+
+     files  and  blocks  can be skipped, and testing files can be
+     written and read.
+
+KKEEYYWWOORRDDSS
+     tape, rewind
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  November 11, 1992                  2
+
+
+

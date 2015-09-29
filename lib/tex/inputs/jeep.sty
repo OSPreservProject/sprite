@@ -1,0 +1,324 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% jeep.sty, February  3, 1989
+% G. W. Stewart
+% Department of Computer Science
+% University of Maryland
+% College Park, MD 20784
+%
+% stewart@thales.umd.edu
+
+% This is a personal customization of the LaTeX style files
+% article (4/16/88) and report (5/26/88).  The changes are
+% described more fully in the document jeep.tex.  Briefly
+% the style
+%
+%    1. Changes the default page sizes to reflect the fact
+%       that most output will be on 8.5 x 11 inch paper.
+%
+%    2. Adds commands that allow the casual LaTeX to change
+%       the formats of chapter, section, and theorem heads.
+%
+%    3. Adds commands to number equations and theorems within
+%       sections or subsections.
+%
+%    4. Makes Lance Berc's three part headers and footers the
+%       default page style.  Adds a macro to underline the
+%       header.
+%
+%    5. Changes the default numbering of enumerate to arabic.
+%       Adds a new enumeration environment in which the items
+%       are close together.
+%
+%    6. Adds a command to produce a compact table of contents.
+%
+%    7. Adds commands to produce symbolic footnote marks and
+%       equation labels.
+
+
+% Change the default page sizes.
+
+\setlength{\topmargin}{.25in}
+\setlength{\textheight}{7.5in}
+\setlength{\oddsidemargin}{.375in}
+\setlength{\evensidemargin}{.375in}
+\setlength{\textwidth}{5.75in}
+
+% Define the command \mychapter{<head1>}{<head2>}.  <head1>
+% is the text to put in the chapter head if there is a
+% chapter number; <head2>, if not.
+
+\def\@chapapp{Chapter}
+\def\chapapp{\@chapapp}
+
+\def\mychapter#1#2{
+   \def\@chaphead##1{#1}
+   \def\@schaphead##1{#2}
+}
+
+\def\@makechapterhead#1{ \vspace*{\chaptopsep} { \parindent 0pt \raggedright
+ \ifnum \c@secnumdepth >\m@ne \@chaphead{#1} \else \@schaphead{#1} \fi
+ \par \nobreak \vskip \chapaftersep } }
+
+\def\@makeschapterhead#1{ \vspace*{\chaptopsep} { \parindent 0pt \raggedright
+ \@schaphead{#1}\par
+ \nobreak \vskip \chapaftersep } }
+
+% \chaptopsep is the space between the top of the text page and the
+% chapter head.  \chapaftersep is the space between the chapter
+% head and the text.
+
+\newlength{\chaptopsep}
+\setlength{\chaptopsep}{.5in}
+\newlength{\chapaftersep}
+\setlength{\chapaftersep}{.5in}
+
+% Default chapter headings.
+
+\mychapter{\LARGE \sc \thechapter. #1}{\LARGE \sc #1}
+
+
+% Define the command \mysection{<sec>}{<style>}{<prefix>}.
+% <sec> is the section level--section, subsection, etc.  <style>
+% is the style in which the section head is to be set; e.g.,
+% \large\bf.  <prefix> is what proceeds the head text, usually
+% \the<sec> followed by some putctuation.
+
+
+\def\@startsection#1#2#3#4#5#6{\if@noskipsec \leavevmode \fi
+   \par \@tempskipa #4\relax
+   \@afterindenttrue
+   \ifdim \@tempskipa <\z@ \@tempskipa -\@tempskipa \@afterindentfalse\fi
+   \if@nobreak \everypar{}\else
+     \addpenalty{\@secpenalty}\addvspace{\@tempskipa}\fi \@ifstar
+     {\@ssect{#3}{#4}{#5}{#1}}{\@dblarg{\@sect{#1}{#2}{#3}{#4}{#5}{#6}}}}
+
+
+\def\@sect#1#2#3#4#5#6[#7]#8{\ifnum #2>\c@secnumdepth
+     \def\@svsec{}\else 
+     \refstepcounter{#1}
+     \edef\@svsec{\expandafter\relax\csname @pre#1\endcsname}\fi
+     \@tempskipa #5\relax
+      \ifdim \@tempskipa>\z@ 
+        \begingroup \expandafter\relax\csname @#1style\endcsname\relax
+          \@hangfrom{\hskip #3\relax\@svsec}{\interlinepenalty \@M #8\par}
+        \endgroup
+       \csname #1mark\endcsname{#7}\addcontentsline
+         {toc}{#1}{\ifnum #2>\c@secnumdepth \else
+                      \protect\numberline{\csname the#1\endcsname}\fi
+                    #7}\else
+        \def\@svsechd{
+            \expandafter\relax\csname @#1style\endcsname\relax
+            \hskip #3\@svsec #8\csname #1mark\endcsname
+                      {#7}\addcontentsline
+                           {toc}{#1}{\ifnum #2>\c@secnumdepth \else
+                             \protect\numberline{\csname the#1\endcsname}\fi
+                       #7}}\fi
+     \@xsect{#5}}
+
+
+\def\@ssect#1#2#3#4#5{\@tempskipa #3\relax
+   \ifdim \@tempskipa>\z@
+     \begingroup \expandafter\relax\csname @#4style\endcsname\relax
+     \@hangfrom{\hskip #1}{\interlinepenalty \@M #5\par}\endgroup
+   \else \def\@svsechd{#4\hskip #1\relax #5}\fi
+    \@xsect{#3}}
+
+\def\mysection#1#2#3{
+     \expandafter\def\csname @#1style\endcsname{#2}
+     \expandafter\def\csname @pre#1\endcsname{#3}
+}
+
+% Default section heads.
+
+\mysection{section}{\large\bf}{\thesection.~}
+\mysection{subsection}{\normalsize\bf}{\thesubsection.~}
+\mysection{subsubsection}{\normalsize\bf}{\thesubsubsection.~}
+\mysection{paragraph}{\normalsize\bf}{\theparagraph.}
+\mysection{subparagraph}{\normalsize\bf}{\thesubparagraph.}
+
+% Redefine theorem environment macros to put \theoremcounterend
+% (default ".") after the "theorem" head.
+
+\def\@begintheorem#1#2{\sl \trivlist
+   \item[\hskip \labelsep{\bf #1\ #2\thmcounterend}]}
+\def\@opargbegintheorem#1#2#3{\sl \trivlist
+      \item[\hskip \labelsep{\bf #1\ #2\ (#3)\thmcounterend}]}
+\def\thmcounterend{.}
+
+
+% Define \numberbysection to number figures, table, equations, and
+% theorems within sections.  Similarly for \numberbysubsection.  Any
+% theorem-like environment numbered with theorem inherits this
+% numbering (however, be sure to define the.  theorem environment
+% before invoking \numberbysection or \numberbysubsection).
+
+\def\numberbysection{\renewcommand{\thesection}{\arabic{section}}
+                     \renewcommand{\theequation}{\thesection.\arabic{equation}}
+                     \@addtoreset{equation}{section}
+                     \renewcommand{\thetheorem}{\thesection.\arabic{theorem}}
+                     \@addtoreset{theorem}{section}
+                     \renewcommand{\thefigure}{\thesection.\arabic{figure}}
+                     \@addtoreset{figure}{section}
+                     \renewcommand{\thetable}{\thesection.\arabic{table}}
+                     \@addtoreset{table}{section}}
+
+\def\numberbysubsection{\renewcommand{\thesection}{\arabic{section}}
+              \renewcommand{\thesubsection}{\arabic{subsection}}
+              \renewcommand{\theequation}{\thesubsection.\arabic{equation}}
+              \@addtoreset{equation}{subsection}
+              \renewcommand{\thetheorem}{\thesubsection.\arabic{theorem}}
+              \@addtoreset{theorem}{subsection}
+              \renewcommand{\thefigure}{\thesubsection.\arabic{figure}}
+              \@addtoreset{figure}{subsection}
+              \renewcommand{\thetable}{\thesubsection.\arabic{table}}
+              \@addtoreset{table}{subsection}}
+
+\@definecounter{theorem}
+
+
+% Change the labels of enumerate and outline to arabic numbers.
+
+\def\labelenumi{\arabic{enumi}.} 
+\def\theenumi{\arabic{enumi}} 
+\def\labelenumii{\arabic{enumii}.}
+\def\theenumii{\arabic{enumii}}
+\def\p@enumii{\theenumi.}
+\def\labelenumiii{\arabic{enumiii}.}
+\def\theenumiii{\arabic{enumiii}}
+\def\p@enumiii{\theenumi.\theenumii.}
+\def\labelenumiv{\arabic{enumiv}.}
+\def\theenumiv{\arabic{enumiv}} 
+\def\p@enumiv{\p@enumiii.\theenumiii}
+
+% Outline is a new list style--the same as enumerate with
+% less space between the items.
+
+\def\outline{\ifnum \@enumdepth >3 \@toodeep\else
+      \advance\@enumdepth \@ne 
+      \edef\@enumctr{enum\romannumeral\the\@enumdepth}\list
+      {\csname label\@enumctr\endcsname}{\usecounter
+        {\@enumctr}\def\makelabel##1{\hss\llap{##1}}
+         \parsep \z@ \itemsep \z@ 
+         \ifnum \@enumdepth > 1 \topsep \z@ \fi}\fi}
+
+\let\endoutline =\endlist
+
+% Three part head and foot macros by
+% Lance Berc
+% Olivetti Research Center
+% 2882 Sand Hill Road
+% Menlo Park, California 94025
+% (415) 496-6200
+% lance@orc.olivetti.com
+
+\def\lhead#1{\gdef\@lhead{#1}} \def\lfoot#1{\gdef\@lfoot{#1}}
+\def\chead#1{\gdef\@chead{#1}} \def\cfoot#1{\gdef\@cfoot{#1}}
+\def\rhead#1{\gdef\@rhead{#1}} \def\rfoot#1{\gdef\@rfoot{#1}}
+
+\def\@lhead{} \def\@lfoot{}
+\def\@chead{} \def\@cfoot{}
+\def\@rhead{} \def\@rfoot{}
+
+\def\@threepart#1#2#3{\rlap{#1} \hfil {#2} \hfil \llap{#3}}
+
+\def\ps@threepartheadings
+    {
+    \def\@oddhead{\@threepart{\@lhead}{\@chead}{\@rhead}}
+    \def\@oddfoot{\@threepart{\@lfoot}{\@cfoot}{\@rfoot}}
+
+    \if@twoside
+	\def\@evenhead{\@threepart{\@rhead}{\@chead}{\@lhead}}
+	\def\@evenfoot{\@threepart{\@rfoot}{\@cfoot}{\@lfoot}}
+    \else
+	\def\@evenhead{\@threepart{\@lhead}{\@chead}{\@rhead}}
+	\def\@evenfoot{\@threepart{\@lfoot}{\@cfoot}{\@rfoot}}
+    \fi
+    }
+
+\ps@threepartheadings
+
+% Define \underhead to put a rule under the headers.  \nounderhead
+% suppresses \underhead on the current page.  The space between
+% the text and the rule is \underheadsep.
+
+\def\underhead{
+ \addtolength{\headheight}{\underheadsep}
+ \def\@outputpage{\begingroup\catcode`\ =10 \if@specialpage 
+     \global\@specialpagefalse\@nameuse{ps@\@specialstyle}\fi
+     \if@twoside 
+       \ifodd\count\z@ \let\@thehead\@oddhead \let\@thefoot\@oddfoot
+            \let\@themargin\oddsidemargin
+          \else \let\@thehead\@evenhead
+          \let\@thefoot\@evenfoot \let\@themargin\evensidemargin
+     \fi\fi
+     \shipout
+     \vbox{\normalsize \baselineskip\z@ \lineskip\z@
+           \vskip \topmargin \moveright\@themargin
+           \vbox{\setbox\@tempboxa
+                   \vbox to\headheight{\vfil \hbox to\textwidth{\@thehead}
+                         \vskip \underheadsep
+                          \if@nounderhead\global\@nounderheadfalse
+                                 \hbox to\textwidth{}
+                          \else  \hbox to\textwidth{\hrulefill}\fi}
+                 \dp\@tempboxa\z@
+                 \box\@tempboxa
+                 \vskip \headsep
+                 \box\@outputbox
+                 \baselineskip\footskip
+                 \hbox to\textwidth{\@thefoot}}}\global\@colht\textheight
+           \endgroup\stepcounter{page}\let\firstmark\botmark}
+
+}
+\def\ps@empty{\@nounderheadtrue
+              \let\@mkboth\@gobbletwo\def\@oddhead{}\def\@oddfoot{}%
+\def\@evenhead{}\def\@evenfoot{}}
+
+\def\ps@plain{\@nounderheadtrue
+     \let\@mkboth\@gobbletwo
+     \def\@oddhead{}\def\@oddfoot{\rm\hfil\thepage
+     \hfil}\def\@evenhead{}\let\@evenfoot\@oddfoot}
+
+
+\newif\if@nounderhead \@nounderheadfalse
+\def\nounderhead{\@nounderheadtrue}
+
+\newlength{\underheadsep}
+\setlength{\underheadsep}{.5ex}
+
+% Define \tighttoc to alter table of contents entry so that
+% sections are treated like subsections, subsubsections, etc.
+
+\def\tighttoc{\def\l@section{\@dottedtocline{1}{0em}{1.4em}}}
+
+% Define \symbolnote{<num>}{<text>} to produce a note with footnote
+% mark <num> (less than 10).  The commands \symbolmark{<num>}
+% and \symboltext{<num>}{<text>} are analogues of
+% \footnotemark[<num>] and \footnotetext[<num>]{<text>}.
+
+\def\symbolnote#1#2{\let\@thefootn=\thefootnote%
+\renewcommand{\thefootnote}{\fnsymbol{footnote}}%
+\footnotemark[#1]%
+\footnotetext[#1]{#2}%
+\let\thefootnote=\@thefootn
+}
+
+\def\symbolmark#1{\let\@thefootn=\thefootnote%
+\renewcommand{\thefootnote}{\fnsymbol{footnote}}%
+\footnotemark[#1]%
+\let\thefootnote=\@thefootn
+}
+
+\def\symboltext#1#2{\let\@thefootn=\thefootnote%
+\renewcommand{\thefootnote}{\fnsymbol{footnote}}%
+\footnotetext[#1]{#2}%
+\let\thefootnote=\@thefootn
+}
+
+
+% Define symboleqn environment to make a displayed equation with
+% a symbolic equation label.
+
+\newenvironment{symboleqn}[1]{
+   \def\@savesymbol{#1}$$}{\eqno \@savesymbol $$\global\@ignoretrue}
+

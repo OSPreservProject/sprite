@@ -1,0 +1,7 @@
+This program requires a modification to the ipServer to allow
+raw_protocol sockets to send ip packets including ip headers and to
+receive ICMP_TIME_EXCEEDED messages.  The modified ipServer can
+be compiled using "pmake XCFLAGS=-DREAL_RAW" in the ipServer
+source directory. This ipServer mod will break all other programs using
+RAW sockets (such as ping)!!!
+	Thorsten von Eicken

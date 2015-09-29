@@ -1,0 +1,5616 @@
+head     9.27;
+branch   ;
+access   ;
+symbols  ds3100:9.27 sun3:9.27 sprited:9.21.1 sun4nw:9.23 symm:9.23 spur:9.23 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.27
+date     92.08.10.17.28.30;  author mgbaker;  state Exp;
+branches ;
+next     9.26;
+
+9.26
+date     92.06.01.15.32.13;  author kupfer;  state Exp;
+branches ;
+next     9.25;
+
+9.25
+date     92.05.07.17.09.11;  author kupfer;  state Exp;
+branches ;
+next     9.24;
+
+9.24
+date     91.12.03.21.56.13;  author jhh;  state Exp;
+branches ;
+next     9.23;
+
+9.23
+date     91.09.10.18.38.26;  author rab;  state Exp;
+branches ;
+next     9.22;
+
+9.22
+date     91.08.22.12.57.27;  author mendel;  state Exp;
+branches ;
+next     9.21;
+
+9.21
+date     91.07.26.17.15.37;  author mendel;  state Exp;
+branches 9.21.1.1;
+next     9.20;
+
+9.20
+date     91.07.19.17.27.08;  author mendel;  state Exp;
+branches ;
+next     9.19;
+
+9.19
+date     91.07.03.09.42.31;  author mendel;  state Exp;
+branches ;
+next     9.18;
+
+9.18
+date     91.06.27.12.35.57;  author mendel;  state Exp;
+branches ;
+next     9.17;
+
+9.17
+date     91.06.07.12.11.51;  author mendel;  state Exp;
+branches ;
+next     9.16;
+
+9.16
+date     91.01.28.12.19.51;  author jhh;  state Exp;
+branches ;
+next     9.15;
+
+9.15
+date     91.01.28.11.51.11;  author shirriff;  state Exp;
+branches ;
+next     9.14;
+
+9.14
+date     91.01.10.13.08.31;  author shirriff;  state Exp;
+branches ;
+next     9.13;
+
+9.13
+date     91.01.08.16.27.26;  author shirriff;  state Exp;
+branches ;
+next     9.12;
+
+9.12
+date     90.12.11.00.25.21;  author mgbaker;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     90.12.10.11.11.10;  author jhh;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     90.12.06.17.34.55;  author shirriff;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     90.10.08.15.37.50;  author mendel;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     90.10.01.23.27.15;  author jhh;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.08.31.13.24.34;  author jhh;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.07.15.13.37.49;  author shirriff;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.03.30.16.40.24;  author jhh;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     89.10.26.18.42.08;  author brent;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     89.10.09.14.33.34;  author brent;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.09.25.16.53.01;  author brent;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.09.18.13.46.14;  author brent;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.07.13;  author douglis;  state Stable;
+branches ;
+next     8.8;
+
+8.8
+date     89.08.21.15.26.59;  author mendel;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.06.15.09.17.22;  author brent;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.03.15.14.57.36;  author brent;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.03.14.10.44.10;  author brent;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.02.09.08.45.33;  author brent;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.02.04.12.18.07;  author brent;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.02.01.16.36.58;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.26.11.32.26;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.20.16;  author douglis;  state Stable;
+branches ;
+next     7.0;
+
+7.0
+date     88.11.11.15.31.54;  author brent;  state Exp;
+branches ;
+next     6.9;
+
+6.9
+date     88.10.14.12.15.51;  author brent;  state Exp;
+branches ;
+next     6.8;
+
+6.8
+date     88.09.28.08.37.36;  author brent;  state Exp;
+branches ;
+next     6.7;
+
+6.7
+date     88.09.09.11.19.14;  author brent;  state Exp;
+branches ;
+next     6.6;
+
+6.6
+date     88.09.07.16.53.05;  author brent;  state Exp;
+branches ;
+next     6.5;
+
+6.5
+date     88.09.01.17.15.52;  author brent;  state Exp;
+branches ;
+next     6.4;
+
+6.4
+date     88.08.31.12.01.10;  author brent;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.08.26.12.07.59;  author brent;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.24.18.15.50;  author brent;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.18.17.59.03;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.16.19;  author brent;  state Stable;
+branches ;
+next     1.10;
+
+1.10
+date     88.08.08.14.45.26;  author douglis;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     88.08.05.14.15.05;  author douglis;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     88.07.15.17.39.34;  author mendel;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.07.15.10.43.15;  author brent;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.06.15.17.03.14;  author brent;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.06.02.11.35.01;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.06.01.17.16.49;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.05.05.16.35.34;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.04.19.10.44.28;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.04.10.34.03;  author brent;  state Exp;
+branches ;
+next     ;
+
+9.21.1.1
+date     91.11.15.16.18.38;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@The main recursive lookup procedure for local files.
+@
+
+
+9.27
+log
+@Changes for transparent server recovery.
+@
+text
+@/* 
+ * fslclLookup.c --
+ *
+ *	The routines in the module manage the directory structure.
+ *	The top level loop is in FslclLookup, and it is the workhorse
+ *	of the Local Domain that is called by procedures like FslclOpen.
+ *	Files and directories are also created, deleted, and renamed
+ *	directly (or indirectly) through FslclLookup.
+ *
+ *	Support for heterogenous systems is done here by expanding "$MACHINE"
+ *	in pathnames to a string like "sun3" or "spur".
+ *
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fslcl/fslclLookup.c,v 9.26 92/06/01 15:32:13 kupfer Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <sprite.h>
+#include <fs.h>
+#include <fsconsist.h>
+#include <fsutil.h>
+#include <fsNameOps.h>
+#include <fsprefix.h>
+#include <fsdm.h>
+#include <fslclInt.h>
+#include <fslcl.h>
+#include <fslclNameHash.h>
+#include <fscache.h>
+#include <fsStat.h>
+#include <net.h>
+#include <vm.h>
+#include <string.h>
+#include <proc.h>
+#include <dbg.h>
+#include <fsrecov.h>
+#include <rpc.h>
+#include <recov.h>
+
+int fsCompacts;		/* The number of times a directory block was so
+			 * fragmented that we could have compacted it to
+			 * make room for a new entry in the directory */
+/*
+ * A cache of recently seen pathname components is kept in a hash table.
+ * The hash table gets initialized in Fsdm_AttachDisk after the first disk
+ * gets attached.
+ * The name caching can be disabled by setting the fslclNameCaching flag to FALSE.
+ */
+
+FslclHashTable fslclNameTable;
+FslclHashTable *fslclNameTablePtr = (FslclHashTable *)NIL;
+Boolean fslclNameCaching = TRUE;
+int fslclNameHashSize = FSLCL_NAME_HASH_SIZE;
+
+/*
+ * Forward Declarations.
+ */
+
+static ReturnStatus FindComponent _ARGS_((Fsio_FileIOHandle *parentHandlePtr, 
+		char *component, int compLen, Boolean isDotDot, 
+		Fsio_FileIOHandle **curHandlePtrPtr, int *dirOffsetPtr));
+static ReturnStatus InsertComponent _ARGS_((Fsio_FileIOHandle *curHandlePtr, 
+		char *component, int compLen, int fileNumber,
+		int *dirOffsetPtr));
+static ReturnStatus DeleteComponent _ARGS_((Fsio_FileIOHandle *parentHandlePtr,
+		char *component, int compLen, int *dirOffsetPtr));
+static ReturnStatus ExpandLink _ARGS_((Fsio_FileIOHandle *curHandlePtr, 
+		char *curCharPtr, int offset, char nameBuffer[]));
+static ReturnStatus GetHandle _ARGS_((int fileNumber, 
+		Fsdm_FileDescriptor *newDescPtr, 
+		Fsio_FileIOHandle *curHandlePtr, char *name, 
+		Fsio_FileIOHandle **newHandlePtrPtr));
+static ReturnStatus CreateFile _ARGS_((Fsdm_Domain *domainPtr, 
+		Fsio_FileIOHandle *parentHandlePtr, char *component, 
+		int compLen, int fileNumber, int type, int permissions, 
+		Fs_UserIDs *idPtr, Fsio_FileIOHandle **curHandlePtrPtr, 
+		int *dirOffsetPtr));
+static ReturnStatus WriteNewDirectory _ARGS_((Fsio_FileIOHandle *curHandlePtr,
+		Fsio_FileIOHandle *parentHandlePtr));
+static ReturnStatus LinkFile _ARGS_((Fsio_FileIOHandle *parentHandlePtr,
+		char *component, int compLen, int fileNumber, int logOp, 
+		Fsio_FileIOHandle **curHandlePtrPtr, int clientID));
+static ReturnStatus OkToMoveDirectory _ARGS_((
+		Fsio_FileIOHandle *newParentHandlePtr, 
+		Fsio_FileIOHandle *curHandlePtr));
+static ReturnStatus MoveDirectory _ARGS_((Time *modTimePtr, 
+		Fsio_FileIOHandle *newParentHandlePtr, 
+		Fsio_FileIOHandle *curHandlePtr));
+static ReturnStatus GetParentNumber _ARGS_((Fsio_FileIOHandle *curHandlePtr,
+		int *parentNumberPtr));
+static ReturnStatus SetParentNumber _ARGS_((Fsio_FileIOHandle *curHandlePtr, 
+		int newParentNumber));
+static ReturnStatus DeleteFileName _ARGS_((Fsio_FileIOHandle *parentHandlePtr,
+		Fsio_FileIOHandle *curHandlePtr, char *component, int compLen,
+		int forRename, Fs_UserIDs *idPtr, int logOp, int clientID));
+static void	CloseDeletedFile _ARGS_((Fsio_FileIOHandle **parentHandlePtrPtr,
+					Fsio_FileIOHandle **curHandlePtrPtr));
+static Boolean DirectoryEmpty _ARGS_((Fsio_FileIOHandle *handlePtr));
+static ReturnStatus CheckPermissions _ARGS_((Fsio_FileIOHandle *handlePtr, 
+		int useFlags, Fs_UserIDs *idPtr, int type));
+static ReturnStatus CacheDirBlockWrite _ARGS_((Fsio_FileIOHandle *handlePtr, 
+		Fscache_Block *blockPtr, int blockNum, int length));
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FslclLookup --
+ *
+ *	The guts of local file name lookup.  This does a recursive
+ *	directory lookup of a file pathname.  The success of the lookup
+ *	depends on useFlags and the type.  The process needs to
+ *	have read permission along the path, and other permissions on
+ *	the target file itself according to useFlags. The type of the
+ *	target file has to agree with the type parameter.
+ *
+ *	The major and minor fields of the Fs_FileID for local files correspond
+ *	to the domain and fileNumber, respectively, of a file.  The domain
+ *	is an index into the set of active domains (disks), and the fileNumber
+ *	is an index into the array of file descriptors on disk.
+ *
+ * Results:
+ *	If SUCCESS is returned then *handlePtrPtr contains a valid file
+ *	handle.  This handle should be released with FsLocalClose.
+ *	If FS_LOOKUP_REDIRECT is returned then **newNameInfoPtrPtr contains
+ *	the new file name that the client takes back to its prefix table.
+ *
+ * Side effects:
+ *	After a successful lookup the returned handle is locked and has
+ *	another reference to it.  Also, the domain in which the file was
+ *	found has an extra reference that needs to be released with
+ *	Fsdm_DomainRelease as soon as our caller is finished with the handle.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+FslclLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
+	    idPtr, permissions, fileNumber, handlePtrPtr, newNameInfoPtrPtr)
+    Fs_HandleHeader *prefixHdrPtr;	/* Handle from the prefix table or
+					 * the current working directory */
+    char *relativeName;			/* Name to lookup relative to the
+					 * file indicated by prefixHandlePtr */
+    Fs_FileID *rootIDPtr;		/* File ID of the root of the domain */
+    int useFlags;			/* FS_READ|FS_WRITE|FS_EXECUTE,
+					 * FS_CREATE|FS_EXCLUSIVE, FS_OWNER,
+					 * FS_LINK, FS_FOLLOW (links) */
+    int type;				/* File type which to succeed on.  If
+					 * this is FS_FILE, then any type will
+					 * work. */
+    int clientID;			/* Host ID of the client doing the open.
+					 * Require to properly expand $MACHINE
+					 * in pathnames */
+    Fs_UserIDs *idPtr;			/* User and group IDs */
+    int permissions;			/* Permission bits to use on a newly
+					 * created file. */
+    int fileNumber;			/* File number to link to if FS_LINK
+					 * useFlag is present */
+    Fsio_FileIOHandle **handlePtrPtr;	/* Result, the handle for the file.
+					 * This is returned locked.  Also,
+					 * its domain has a reference which
+					 * needs to be released. */
+    Fs_RedirectInfo **newNameInfoPtrPtr;	/* Redirect Result, the pathname left
+					 * after it leaves our domain */
+{
+    register char 	*curCharPtr;	/* Pointer into the path name */
+    Fsio_FileIOHandle *parentHandlePtr; /* Handle for parent dir. */
+    register char	*compPtr;	/* Pointer into component. */
+    register ReturnStatus status = SUCCESS;
+    register int 	compLen = 0;	/* The length of component */
+    Fsio_FileIOHandle	*curHandlePtr;	/* Handle for the current spot in
+					 * the directory structure */
+    Fsdm_Domain *domainPtr;		/* Domain of the lookup */
+    char component[FS_MAX_NAME_LENGTH]; /* One component of the path name */
+    char *newNameBuffer;		/* Extra buffer used after a symbolic
+					 * link has been expanded */
+    int numLinks = 0;			/* The number of links that have been
+					 * expanded. Used to check against
+					 * loops. */
+    int	logOp;				/* Dir log operation. */
+    int dirFileNumber;			/* File number od directory being 
+					 * operated on. */
+    int	dirOffset;			/* Offset of directory entry in the
+					 * directory being operated on. */
+    ClientData	logClientData;		/* Client data for directory change
+					 * logging. */
+    ClientData	recovLogClientData = (ClientData) 0;
+					/* Client data for directory change
+					 * logging in the recovery system. */
+    /*
+     * Get a handle on the domain of the file.  This is needed for disk I/O.
+     * Remember that the <major> field of the fileID is a domain number.
+     */
+    domainPtr = Fsdm_DomainFetch(prefixHdrPtr->fileID.major, FALSE);
+    if (domainPtr == (Fsdm_Domain *)NIL) {
+	return(FS_DOMAIN_UNAVAILABLE);
+    }
+
+    if (prefixHdrPtr->fileID.type != FSIO_LCL_FILE_STREAM) {
+	printf("FslclLookup, bad prefix handle type <%d> for {%s}%s\n",
+	    prefixHdrPtr->fileID.type,
+	    Fsutil_HandleName(prefixHdrPtr), relativeName);
+	return(FS_DOMAIN_UNAVAILABLE);
+    }
+    /*
+     * Duplicate the prefixHandle into the handle for the current point
+     * in the directory.  This locks and ups the reference count on the handle.
+     */
+    curCharPtr = relativeName;
+    curHandlePtr = Fsutil_HandleDupType(Fsio_FileIOHandle, prefixHdrPtr);
+    parentHandlePtr = (Fsio_FileIOHandle *)NIL;
+    newNameBuffer = (char *)NIL;
+    /*
+     * Loop through the pathname expanding links and checking permissions.
+     * Creations and deletions are handled after this loop.
+     */
+    fs_Stats.lookup.number++;
+    while (*curCharPtr != '\0' && status == SUCCESS) {
+	status = CheckPermissions(curHandlePtr, FS_READ, idPtr, FS_DIRECTORY);
+	if (status != SUCCESS) {
+	    break;
+	}
+	/*
+	 * Get the next component.  We make a special check here
+	 * for "$MACHINE" embedded in the pathname.  This gets expanded
+	 * to a machine type string, i.e. "sun3" or "spur", sort of like
+	 * a symbolic link.  The value is dependent on the ID of the client
+	 * doing the open.  For the local host we use a compiled in string so
+	 * we can bootstrap ok, and for other clients we get the machine
+	 * type string from the net module.  (why net?  why not...
+	 * Net_InstallRoute installs a host's name and machine type.)
+	 */
+#define SPECIAL		"$MACHINE"
+#define SPECIAL_LEN	8
+	compPtr = component;
+	while (*curCharPtr != '/' && *curCharPtr != '\0') {
+	    if (*curCharPtr == '$' &&
+		(strncmp(curCharPtr, SPECIAL, SPECIAL_LEN) == 0)) {
+		char machTypeBuffer[32];
+		char *machType;
+
+		fs_Stats.lookup.numSpecial++;
+		if (clientID == rpc_SpriteID) {
+		    /*
+		     * Can't count on the net stuff being setup for ourselves
+		     * as that is done via a user program way after bootting.
+		     * Instead, use a compiled in string.  This is important
+		     * when opening "/initSprite", which is a link to 
+		     * "/initSprite.$MACHINE", when running on the root server.
+		     */
+		    machType = mach_MachineType;
+		} else {
+		    Net_SpriteIDToMachType(clientID, 32, machTypeBuffer);
+		    if (*machTypeBuffer == '\0') {
+			printf(
+			 "FslclLookup, no machine type for client %d\n",
+				clientID);
+			machType = "unknown";
+		    } else {
+			machType = machTypeBuffer;
+		    }
+		}
+		while (*machType != '\0') {
+		    *compPtr++ = *machType++;
+		    if (compPtr - component >= FS_MAX_NAME_LENGTH) {
+			status = FS_INVALID_ARG;
+			goto endScan;
+		    }
+		}
+		curCharPtr += SPECIAL_LEN;
+#undef SPECIAL
+#undef SPECIAL_LEN
+	    } else {
+		*compPtr++ = *curCharPtr++;
+	    }
+	    if (compPtr - component >= FS_MAX_NAME_LENGTH) {
+		status = FS_INVALID_ARG;
+		goto endScan;
+	    }
+	}
+	fs_Stats.lookup.numComponents++;
+	*compPtr = '\0';
+	compLen = compPtr - component;
+	/*
+	 * Skip intermediate and trailing slashes so that *curCharPtr
+	 * is Null when 'component' has the last component of the name.
+	 */
+	while (*curCharPtr == '/') {
+	    curCharPtr++;
+	}
+	/*
+	 * There are three cases for what the next component is:
+	 * a sub-directory (or file), dot, and dot-dot.
+	 */
+	if ((compLen == 2) && component[0] == '.' && component[1] == '.') {
+	    /* 
+	     * Going to the parent directory ".."
+	     */
+	    if (curHandlePtr->hdr.fileID.minor == rootIDPtr->minor) {
+		/*
+		 * We are falling off the top of the domain.  Make the
+		 * remaining part of the filename, including "../",
+		 * available to our caller so it can go back to the prefix
+		 * table.  Setting the prefixLength to zero indicates
+		 * there is no prefix information in this LOOKUP_REDIRECT
+		 */
+		*newNameInfoPtrPtr = mnew(Fs_RedirectInfo);
+		(*newNameInfoPtrPtr)->prefixLength = 0;
+		(void)strcpy((*newNameInfoPtrPtr)->fileName, "../");
+		(void)strcat((*newNameInfoPtrPtr)->fileName, curCharPtr);
+		fs_Stats.lookup.parent++;
+		status = FS_LOOKUP_REDIRECT;
+	    } else {
+		/*
+		 * Advance curHandlePtr to the parent, "..".
+		 * FindComponent will unlock its parentHandlePtr (the directory
+		 * containing "..") after scanning it but before grabbing
+		 * the handle for "..".  This prevents deadlock with another
+		 * process descending the other way along the path.  
+		 * We then nuke our own "parent" because it really isn't a
+		 * parent anymore.
+		 */
+		if (parentHandlePtr != (Fsio_FileIOHandle *)NIL) {
+		    Fsutil_HandleRelease(parentHandlePtr, TRUE);
+		}
+		parentHandlePtr = curHandlePtr;
+		status = FindComponent(parentHandlePtr, component, compLen,
+			    TRUE, &curHandlePtr, &dirOffset);
+		/*
+		 * Release the handle while being careful about its lock.
+		 * The parent handle is normally aready unlocked by
+		 * FindComponent, unless the directory is corrupted.
+		 */
+		Fsutil_HandleRelease(parentHandlePtr, (status != SUCCESS));
+		parentHandlePtr = (Fsio_FileIOHandle *)NIL;
+	    }
+	} else if ((compLen == 1) && component[0] == '.') {
+	    /*
+	     * Just hang tight with . (dot) because we already
+	     * have a locked handle for it.
+	     */
+	} else {
+	    /*
+	     * Advance to the next component and keep the handle on
+	     * the parent locked so we can do deletes and creates.
+	     */
+	    if (parentHandlePtr != (Fsio_FileIOHandle *)NIL) {
+		Fsutil_HandleRelease(parentHandlePtr, TRUE);
+	    }
+	    parentHandlePtr = curHandlePtr;
+	    status = FindComponent(parentHandlePtr, component, compLen, FALSE,
+			&curHandlePtr, &dirOffset);
+	}
+	/*
+	 * At this point we have a locked handle on the current point
+	 * in the lookup, and perhaps have a locked handle on the parent.
+	 * Links are expanded now so we know whether or not the
+	 * lookup is completed.  On the last component, we only
+	 * expand the link if the FS_FOLLOW flag is present.
+	 */
+	if ((status == SUCCESS) &&
+	    ((*curCharPtr != '\0') || (useFlags & FS_FOLLOW)) &&
+	    ((curHandlePtr->descPtr->fileType == FS_SYMBOLIC_LINK ||
+		curHandlePtr->descPtr->fileType == FS_REMOTE_LINK))) {
+	    numLinks++;
+	    fs_Stats.lookup.symlinks++;
+	    if (numLinks > FS_MAX_LINKS) {
+		status = FS_NAME_LOOP;
+	    } else {
+		/*
+		 * An extra buffer is used because the caller probably only
+		 * has a buffer just big enough for the name.
+		 */
+		int 	offset;		/* Distance of existing name from
+					 * the start of its buffer */
+		if (newNameBuffer == (char *)NIL) {
+		    offset = (int)curCharPtr - (int)relativeName;
+		    newNameBuffer = (char *)malloc(FS_MAX_PATH_NAME_LENGTH);
+		} else {
+		    offset = (int)curCharPtr - (int)newNameBuffer;
+		}
+		status = ExpandLink(curHandlePtr, curCharPtr, offset,
+						    newNameBuffer);
+		if (status == FS_FILE_NOT_FOUND) {
+		    printf( "FslclLookup, empty link \"%s\"\n",
+				relativeName);
+		}
+		curCharPtr = newNameBuffer;
+	    }
+	    if (status == SUCCESS) {
+		/*
+		 * (Note: One could enforce permissions on links here.)
+		 * If the link is back to the root we have to REDIRECT,
+		 * otherwise retreat the current point in the lookup to
+		 * the parent directory before continuing.
+		 */
+		if (*curCharPtr == '/') {
+		    *newNameInfoPtrPtr = mnew(Fs_RedirectInfo);
+		    (void)strcpy((*newNameInfoPtrPtr)->fileName, curCharPtr);
+		    status = FS_LOOKUP_REDIRECT;
+		    /*
+		     * Return the length of the prefix indicated by
+		     * a remote link, zero means no prefix.
+		     */
+		    if (curHandlePtr->descPtr->fileType == FS_REMOTE_LINK) {
+			fs_Stats.lookup.remote++;
+			(*newNameInfoPtrPtr)->prefixLength = 
+					    curHandlePtr->descPtr->lastByte;
+		    } else {
+			fs_Stats.lookup.redirect++;
+			(*newNameInfoPtrPtr)->prefixLength = 0;
+		    }
+		} else if (parentHandlePtr != (Fsio_FileIOHandle *)NIL) {
+		    Fsutil_HandleRelease(curHandlePtr, TRUE);
+		    curHandlePtr = parentHandlePtr;
+		    parentHandlePtr = (Fsio_FileIOHandle *)NIL;
+		    status = SUCCESS;
+		} else {
+		    panic( "No parent after link");
+		    status = FS_INVALID_ARG;
+		}
+	    }
+	}
+    }
+endScan:
+    if ((status == SUCCESS) ||
+	((status == FS_FILE_NOT_FOUND) && (*curCharPtr == '\0'))) {
+	/*
+	 * Done with the lookup.  Determine the type of the file once
+	 * we have a handle for it if its type is not already set from the
+	 * file descriptor. Process creates, links, and deletes.
+	 */
+	switch(useFlags & (FS_CREATE|FS_DELETE|FS_LINK)) {
+	    case 0:
+		if (status == SUCCESS) {
+		    /*
+		     * Normal lookup completion.
+		     */
+		    status = CheckPermissions(curHandlePtr, useFlags, idPtr,
+						type);
+		}
+		break;
+	    case FS_CREATE:
+		fs_Stats.lookup.forCreate++;
+		if (status == SUCCESS && (useFlags & FS_EXCLUSIVE)) {
+		    /*
+		     * FS_EXCLUSIVE and FS_CREATE means that the file
+		     * cannot already exist.
+		     */
+		    status = FS_FILE_EXISTS;
+		} else if (status == FS_FILE_NOT_FOUND) {
+		    /*
+		     * 'component' is the last part of a pathname for a
+		     * file we need to create and that doesn't exist.
+		     * Check for write permission in the parent directory,
+		     * choose a fileNumber for the new file, and then
+		     * create the file itself.
+		     */
+		    int 	newFileNumber;
+		    int 	nearbyFile;
+
+		    status = CheckPermissions(parentHandlePtr, FS_WRITE, idPtr,
+						    FS_DIRECTORY);
+		    if (status == SUCCESS) {
+			int logOp;
+			dirFileNumber = parentHandlePtr->hdr.fileID.minor;
+			newFileNumber = -1;
+			dirOffset = -1;
+			if (type == FS_DIRECTORY) {
+			    logOp = FSDM_LOG_CREATE|FSDM_LOG_IS_DIRECTORY;
+			    nearbyFile = -1;
+			} else {
+			    logOp = FSDM_LOG_CREATE;
+			    nearbyFile = dirFileNumber;
+			}
+			logClientData = Fsdm_DirOpStart(logOp,
+					  parentHandlePtr, dirOffset,
+					  component, compLen,
+					  newFileNumber, type,
+					  (Fsdm_FileDescriptor *) NIL);
+			if (recov_Transparent && clientID != rpc_SpriteID) {
+			    recovLogClientData = Fsrecov_DirOpStart(logOp,
+					      parentHandlePtr, dirOffset,
+					      component, compLen,
+					      newFileNumber, type,
+					      (Fsdm_FileDescriptor *) NIL);
+			}
+			status = Fsdm_GetNewFileNumber(domainPtr, nearbyFile,
+							     &newFileNumber);
+			if (status == SUCCESS) {
+			    status = CreateFile(domainPtr, parentHandlePtr,
+				     component, compLen, newFileNumber, type,
+				     permissions, idPtr, &curHandlePtr,
+				     &dirOffset);
+			    if (status != SUCCESS) {
+				(void)Fsdm_FreeFileNumber(domainPtr,
+						newFileNumber);
+			    } 
+			}
+			if (status == SUCCESS) { 
+			    Fsdm_DirOpEnd(logOp, 
+				    parentHandlePtr, dirOffset,
+				    component, compLen, newFileNumber, type,
+				    curHandlePtr->descPtr, logClientData, 
+				    status);
+			    if (recov_Transparent && clientID != rpc_SpriteID) {
+				Fsrecov_DirOpEnd(logOp, 
+					parentHandlePtr, dirOffset,
+					component, compLen, newFileNumber, type,
+					curHandlePtr->descPtr,
+					recovLogClientData, status);
+			    }
+			} else {
+			    Fsdm_DirOpEnd(logOp, 
+				     parentHandlePtr, dirOffset,
+				     component, compLen, newFileNumber, type,
+				     (Fsdm_FileDescriptor *) NIL, 
+				     logClientData, status);
+			    if (recov_Transparent && clientID != rpc_SpriteID) {
+				Fsrecov_DirOpEnd(logOp, 
+					 parentHandlePtr, dirOffset,
+					 component, compLen, newFileNumber,
+					 type, (Fsdm_FileDescriptor *) NIL, 
+					 recovLogClientData, status);
+			    }
+			}
+		    }
+		} else {
+		    /*
+		     * If the file exists, it's like a normal lookup completion
+		     * and we have to check permissions.
+		     */
+		    status = CheckPermissions(curHandlePtr, useFlags, idPtr,
+						type);
+		}
+		if (status == SUCCESS) {
+		    (void)Fsdm_FileDescStore(curHandlePtr, FALSE);
+		}
+		break;
+	    case FS_LINK: {
+		Boolean 		fileDeleted = FALSE;
+		Fsio_FileIOHandle	*deletedHandlePtr;
+		/*
+		 * The presence of FS_LINK means that curHandlePtr references
+		 * a file that is being linked to.  If the file already exists
+		 * it is deleted first.  Then link is made with LinkFile.
+		 */
+		if (useFlags & FS_RENAME) {
+		    logOp = FSDM_LOG_RENAME_LINK;
+		    fs_Stats.lookup.forRename++;
+		} else {
+		    logOp = FSDM_LOG_LINK;
+		    fs_Stats.lookup.forLink++;
+		}
+		dirFileNumber = parentHandlePtr->hdr.fileID.minor;
+		if (status == SUCCESS) {
+		    /*
+		     * Linking to an existing file.
+		     * This can only be in preparation for a rename.
+		     */
+		    if ((useFlags & FS_RENAME) &&
+			(curHandlePtr->descPtr->fileType == type)) {
+
+			/*
+			 * Make sure the two files aren't actually the
+			 * same.  If they are then just return SUCCESS,
+			 * otherwise we would deadlock when we try to lock
+			 * both file handles, unaware that they are the
+			 * same handle.
+			 */
+			if (fileNumber == curHandlePtr->hdr.fileID.minor) {
+			    break;
+			}
+			/*
+			 * Try the delete, this fails on non-empty directories.
+			 */
+			deletedHandlePtr = curHandlePtr;
+			status = DeleteFileName(parentHandlePtr,
+			      curHandlePtr, component, compLen, FALSE, idPtr,
+			      FSDM_LOG_RENAME_DELETE, clientID);
+			if (status == SUCCESS) {
+			    fileDeleted = TRUE;
+			}
+		    } else {
+			/*
+			 * Not ok to link to an existing file.
+			 */
+			status = FS_FILE_EXISTS;
+		    }
+		} else if (status == FS_FILE_NOT_FOUND) {
+		    /*
+		     * The file does not already exist.  Check write permission
+		     * in the parent before making the link.
+		     */
+		    status = CheckPermissions(parentHandlePtr, FS_WRITE, idPtr,
+						    FS_DIRECTORY);
+		}
+		if (status == SUCCESS) {
+		    status = LinkFile(parentHandlePtr,
+				component, compLen, fileNumber, logOp,
+				&curHandlePtr, clientID);
+		    if (status == SUCCESS) {
+			(void)Fsdm_FileDescStore(curHandlePtr, FALSE);
+		    }
+		}
+		if (fileDeleted) {
+		    CloseDeletedFile(&parentHandlePtr, &deletedHandlePtr);
+		}
+		break;
+	    }
+	    case FS_DELETE:
+		fs_Stats.lookup.forDelete++;
+		if (status == SUCCESS) {
+		    if ((curHandlePtr->descPtr->fileType != type) &&
+			(type != FS_FILE)) {
+			status = (type == FS_DIRECTORY) ? FS_NOT_DIRECTORY :
+							  FS_WRONG_TYPE;
+		    } else {
+			logOp = (useFlags&FS_RENAME) ? FSDM_LOG_RENAME_UNLINK :
+						       FSDM_LOG_UNLINK;
+			status = DeleteFileName(parentHandlePtr, curHandlePtr,
+				component, compLen,
+				(int) (useFlags & FS_RENAME), idPtr, logOp,
+				clientID);
+			if (status == SUCCESS) {
+			    CloseDeletedFile(&parentHandlePtr,
+					&curHandlePtr);
+			}
+		    }
+		}
+		break;
+	}
+    }
+
+    /*
+     * Clean up state and return a fileHandle to our caller.
+     */
+    if (newNameBuffer != (char *)NIL) {
+	free(newNameBuffer);
+    }
+    if (parentHandlePtr != (Fsio_FileIOHandle *)NIL) {
+	Fsutil_HandleRelease(parentHandlePtr, TRUE);
+    }
+    if (curHandlePtr != (Fsio_FileIOHandle *)NIL) {
+	if (status != SUCCESS) {
+	    Fsutil_HandleRelease(curHandlePtr, TRUE);
+	    curHandlePtr = (Fsio_FileIOHandle *)NIL;
+	} 
+    }
+    if (handlePtrPtr != (Fsio_FileIOHandle **)NIL) {
+	/*
+	 * Return a locked handle that has had its reference count bumped.
+	 */
+	*handlePtrPtr = curHandlePtr;
+    } else if (curHandlePtr != (Fsio_FileIOHandle *)NIL) {
+	printf( "FslclLookup: caller didn't want handle\n");
+	Fsutil_HandleRelease(curHandlePtr, TRUE);
+    }
+    if ((status != SUCCESS) ||
+	(handlePtrPtr == (Fsio_FileIOHandle **)NIL)) {
+	Fsdm_DomainRelease(prefixHdrPtr->fileID.major);
+    }
+    if (status == FS_FILE_NOT_FOUND) {
+	fs_Stats.lookup.notFound++;
+    }
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FindComponent --
+ *
+ *	Look for a pathname component in a directory.  This returns a locked
+ *	file handle that has its reference count incremented.
+ *
+ * Results:
+ *	SUCCESS or FS_FILE_NOT_FOUND
+ *
+ * Side effects:
+ *	Disk I/O, installing and locking the handle.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+FindComponent(parentHandlePtr, component, compLen, isDotDot, curHandlePtrPtr,
+	      dirOffsetPtr)
+    Fsio_FileIOHandle	*parentHandlePtr;	/* Locked handle of current 
+						 * directory */
+    register char 	*component;		/* Name of path component to 
+						 * find */
+    register int 	compLen;		/* The number of characters in 
+						 * component */
+    Boolean		isDotDot;		/* TRUE if component is "..".
+						 * In this case the handle for
+						 * the parent is returned
+						 * UNLOCKED. */
+    Fsio_FileIOHandle	**curHandlePtrPtr;	/* Return, locked handle */
+    int			*dirOffsetPtr;		/* OUT: Offset into directory
+						 * off component. */
+{
+    register Fslcl_DirEntry *dirEntryPtr;	/* Reference to directory entry */
+    register char	*s1;		/* Pointers into components used */
+    register char	*s2;		/*   for fast in-line string compare */
+    register int 	blockOffset;	/* Offset within the directory */
+    ReturnStatus 	status;
+    Fscache_Block	*cacheBlockPtr;	/* Cache block */
+    int 		dirBlockNum;	/* Block number within directory */
+    int 		length;		/* Length variable for read call */
+    FslclHashEntry		*entryPtr;	/* Name cache entry */
+    Fs_FileID		fileID;		/* Used when fetching handles */
+
+    /*
+     * Check in system-wide name cache here before scanning
+     * the directory's data blocks.
+     */
+    entryPtr = FSLCL_HASH_LOOK_ONLY(fslclNameTablePtr, component, parentHandlePtr);
+    if (entryPtr != (FslclHashEntry *)NIL) {
+	if (entryPtr->hdrPtr->fileID.type != FSIO_LCL_FILE_STREAM) {
+	    panic(
+		      "FindComponent: got trashy handle from cache");
+	} else {
+	    if (isDotDot) {
+		/*
+		 * Unlock this directory before grabbing the handle for "..".
+		 * This prevents deadlock with another lookup that is
+		 * descending from our parent ("..") into this directory.
+		 */
+		Fsutil_HandleUnlock(parentHandlePtr);
+	    }
+	    *curHandlePtrPtr = Fsutil_HandleDupType(Fsio_FileIOHandle,
+						entryPtr->hdrPtr);
+	    return(SUCCESS);
+	}
+    }
+
+    dirBlockNum = 0;
+    do {
+	status = Fscache_BlockRead(&parentHandlePtr->cacheInfo, dirBlockNum,
+			&cacheBlockPtr, &length, FSCACHE_DIR_BLOCK, FALSE);
+	if (status != SUCCESS || length == 0) {
+	    *curHandlePtrPtr = (Fsio_FileIOHandle *)NIL;
+	    return(FS_FILE_NOT_FOUND);
+	}
+	dirEntryPtr = (Fslcl_DirEntry *)cacheBlockPtr->blockAddr;
+	blockOffset = 0;
+	while (blockOffset < length) {
+	    if (dirEntryPtr->recordLength <= 0) {
+		printf("Corrupted directory?");
+		printf(" File ID <%d, %d, %d>",
+				 parentHandlePtr->hdr.fileID.serverID,
+				 parentHandlePtr->hdr.fileID.major,
+				 parentHandlePtr->hdr.fileID.minor);
+		printf(" dirBlockNum <%d>, blockOffset <%d>",
+			     dirBlockNum, blockOffset);
+		printf("\n");
+		Fscache_UnlockBlock(cacheBlockPtr, (time_t) 0,
+		                    -1, 0, FSCACHE_CLEAR_READ_AHEAD);
+		*curHandlePtrPtr = (Fsio_FileIOHandle *)NIL;
+		return(FS_FILE_NOT_FOUND);
+	    }
+
+	    if (dirEntryPtr->fileNumber != 0) {
+		/*
+		 * A valid directory record.  If component and the directory
+		 * entry are the same length then compare them for a match.
+		 * This String Compare is in-lined for efficiency.
+		 */
+		if ((dirEntryPtr->nameLength == compLen)) {
+		    s1 = component;
+		    s2 = dirEntryPtr->fileName;
+		    do {
+			if (*s1 == '\0') {
+			    /*
+			     * The strings are the same length so hitting
+			     * the end of component indicates a match.
+			     */
+			    if (isDotDot) {
+				/*
+				 * Unlock this directory before grabbing the
+				 * handle for "..".  This prevents deadlock
+				 * with another lookup that is descending
+				 * from our parent ("..") into this directory.
+				 */
+				Fsutil_HandleUnlock(parentHandlePtr);
+			    }
+			    *dirOffsetPtr = blockOffset + 
+					dirBlockNum * FS_BLOCK_SIZE;
+			    /*
+			     * Inlined call to GetHandle().
+			     */
+			    fileID.type = FSIO_LCL_FILE_STREAM;
+			    fileID.serverID = rpc_SpriteID;
+			    fileID.major = parentHandlePtr->hdr.fileID.major;
+			    fileID.minor = dirEntryPtr->fileNumber;
+			    status = Fsio_LocalFileHandleInit(&fileID, component,
+					    (Fsdm_FileDescriptor *) NIL, FALSE,
+					    curHandlePtrPtr);
+
+			    Fscache_UnlockBlock(cacheBlockPtr, (time_t) 0,
+				            -1, 0, FSCACHE_CLEAR_READ_AHEAD);
+			    if (status == SUCCESS) {
+				FSLCL_HASH_INSERT(fslclNameTablePtr, component,
+					     parentHandlePtr, *curHandlePtrPtr);
+			    } else {
+				/*
+				 * It is possible that the file doesn't 
+				 * exist anymore.  This happens when
+				 * the parent directory of an open
+				 * directory is deleted.  The ".." entry
+				 * points to a deleted file.
+				 */
+				if (status == FS_FILE_REMOVED) {
+				    status = FS_FILE_NOT_FOUND;
+				} else {
+
+				    printf(
+		"FindComponent, no handle <0x%x> for \"%s\" fileNumber %d\n",
+				    status, component, dirEntryPtr->fileNumber);
+				}
+				if (isDotDot) {
+				    /*
+				     * If we have an error, relock the handle
+				     * because your caller will assume that it
+				     * is locked.
+				     */
+				    Fsutil_HandleLock(parentHandlePtr);
+				}
+			    }
+			    goto exit;	/* to quiet lint... */
+#ifndef lint
+			} else if (*s1++ != *s2++) {
+			    break;
+#else
+			} else {
+			    if (*s1 != *s2) {
+				break;
+			    }
+			    s1++;
+			    s2++;
+#endif
+			}
+		    } while (TRUE);
+		}
+	    }
+	    blockOffset += dirEntryPtr->recordLength;
+	    dirEntryPtr = (Fslcl_DirEntry *)((int)dirEntryPtr +
+					 dirEntryPtr->recordLength);
+	}
+	dirBlockNum++;
+	Fscache_UnlockBlock(cacheBlockPtr, (time_t) 0, -1, 0, 0);
+    } while(TRUE);
+exit:
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * InsertComponent --
+ *	Add a name to a directory.
+ *
+ * Results:
+ *	SUCCESS or an error code.
+ *
+ * Side effects:
+ *	Adding the name to the directory, writing the modified directory block.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+InsertComponent(curHandlePtr, component, compLen, fileNumber, dirOffsetPtr)
+    Fsio_FileIOHandle *curHandlePtr;	/* Locked handle of current directory */
+    char *component;			/* Name of path component to insert */
+    int compLen;			/* The length of component */
+    int fileNumber;			/* File Number of inserted name */
+    int	*dirOffsetPtr;  /* OUT: directory offset of component's entry.*/
+{
+    ReturnStatus 	status;
+    int			dirBlockNum;	/* Directory block index */
+    int 		blockOffset;	/* Offset within a directory block. */
+    Fslcl_DirEntry 		*dirEntryPtr;	/* Reference to directory entry. */
+    int 		length;		/* Length variable for read call. */
+    int 		recordLength;	/* Length of directory entry for 
+					 * component. */
+    int 		freeSpace;	/* Total amount of free bytes in a 
+					 * directory block. */
+    int 		extraBytes;	/* The number of free bytes attached to
+				 	 * a directory entry. */
+    Fscache_Block	*cacheBlockPtr;	/* Cache block. */
+
+    length = FS_BLOCK_SIZE;
+    recordLength = Fslcl_DirRecLength(compLen);
+    /*
+     * Loop through the directory blocks looking for space of at least
+     * recordLength in which to insert the new directory record.
+     */
+    dirBlockNum = 0;
+    do {
+	/*
+	 * Read in a full data block.
+	 */
+	status = Fscache_BlockRead(&curHandlePtr->cacheInfo, dirBlockNum,
+			&cacheBlockPtr, &length, FSCACHE_DIR_BLOCK, TRUE);
+	if (status != SUCCESS) {
+	    printf( "InsertComponent: Read failed\n");
+	    return(status);
+	} else if (length == 0) {
+	    /*
+	     * No more space, have to grow the directory.  First we
+	     * need another cache block.
+	     */
+	    Boolean found = FALSE;
+
+	    Fscache_FetchBlock(&curHandlePtr->cacheInfo, dirBlockNum,
+				FSCACHE_DIR_BLOCK, &cacheBlockPtr, &found);
+	    if (found) {
+		panic( "InsertComponent found new dir block");
+	    }
+	    bzero(cacheBlockPtr->blockAddr, FS_BLOCK_SIZE);
+	}
+
+	dirEntryPtr = (Fslcl_DirEntry *)cacheBlockPtr->blockAddr;
+	blockOffset = 0;
+	freeSpace = 0;
+	while (blockOffset < length) {
+	    /*
+	     * Scan a data block looking for deleted entries that are
+	     * large enough to use, or for entries that contain enough extra
+	     * bytes for the record we have to insert.  The amount of fragmented
+	     * space is accumulated in freeSpace but compaction is not 
+	     * implemented.
+	     */
+	    if (dirEntryPtr->fileNumber != 0) {
+		/*
+		 * A valid directory record.
+		 * Check the left-over bytes attached to this record.
+		 */
+		extraBytes = dirEntryPtr->recordLength -
+			     Fslcl_DirRecLength(dirEntryPtr->nameLength);
+		if (extraBytes >= recordLength) {
+		    /*
+		     * Can fit new entry in the space left over.
+		     */ 
+		    goto haveASlot;
+		}
+		/*
+		 * Count bytes that occur in fragments of 4 bytes or more.
+		 */
+		freeSpace += extraBytes & ~(FSLCL_REC_LEN_GRAIN-1);
+	    } else {
+		/*
+		 * A deleted name in the directory.
+		 */
+		if (dirEntryPtr->recordLength >= recordLength) {
+		    goto haveASlot;
+		}
+		freeSpace += dirEntryPtr->recordLength;
+	    }
+	    blockOffset += dirEntryPtr->recordLength;
+	    dirEntryPtr = (Fslcl_DirEntry *)((int)dirEntryPtr +
+					 dirEntryPtr->recordLength);
+	}
+	/*
+	 * Finished scanning a directory block.  Note if the accumulated
+	 * free bytes in the block could be used for a directory entry.
+	 * (We aren't implementing compaction for a while yet...)
+	 */
+	if (freeSpace >= recordLength) {
+	    fsCompacts++;
+	}
+	if (length < FS_BLOCK_SIZE) {
+	    /*
+	     * Scanned up to the end of the last directory data block.  Need
+	     * to append to the end of the directory.
+	     */
+	    bzero(cacheBlockPtr->blockAddr + length, FSLCL_DIR_BLOCK_SIZE);
+	    dirEntryPtr->recordLength = FSLCL_DIR_BLOCK_SIZE;
+	    length += FSLCL_DIR_BLOCK_SIZE;
+	    break;
+	}
+
+	dirBlockNum++;
+	Fscache_UnlockBlock(cacheBlockPtr,
+	                    (time_t) 0, -1, 0, FSCACHE_CLEAR_READ_AHEAD);
+    } while(TRUE);
+
+haveASlot:
+
+    /*
+     * At this point dirEntryPtr references the slot we have to either re-use
+     * or that has enough free bytes for us to use.
+     */
+    if (dirEntryPtr->fileNumber != 0) {
+	/*
+	 * Have to take space away from the end of a valid directory entry.
+	 */
+	int newRecordLength;	/* New length of the existing valid entry */
+	Fslcl_DirEntry *tmpDirEntryPtr;	/* Pointer to new slot */
+
+	newRecordLength = Fslcl_DirRecLength(dirEntryPtr->nameLength);
+	tmpDirEntryPtr = (Fslcl_DirEntry *)((int)dirEntryPtr + newRecordLength);
+	tmpDirEntryPtr->recordLength = dirEntryPtr->recordLength -
+				       newRecordLength;
+	dirEntryPtr->recordLength = newRecordLength;
+	dirEntryPtr = tmpDirEntryPtr;
+    }
+    dirEntryPtr->fileNumber = fileNumber;
+    dirEntryPtr->nameLength = compLen;
+    (void)strcpy(dirEntryPtr->fileName, component);
+
+    blockOffset = (((char *)dirEntryPtr) - (char *)(cacheBlockPtr->blockAddr));
+    *dirOffsetPtr = dirBlockNum * FS_BLOCK_SIZE + blockOffset;
+    status = CacheDirBlockWrite(curHandlePtr,cacheBlockPtr,dirBlockNum,length);
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DeleteComponent --
+ *
+ *	Delete a name from a directory.  The file descriptor itself
+ *	is not modified.  It is assumed that the handle for the file that
+ *	is being removed is already locked.
+ *
+ * Results:
+ *	SUCCESS or FS_FILE_NOT_FOUND
+ *
+ * Side effects:
+ *	Sets the fileNumber for the component to Zero (0) to mark as deleted.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+DeleteComponent(parentHandlePtr, component, compLen, dirOffsetPtr)
+    Fsio_FileIOHandle	*parentHandlePtr;/* Locked handle of current dir. */
+    char 		*component;	/* Name to delete */
+    int 		compLen;	/* Length of the name */
+    int			*dirOffsetPtr;	/* OUT: Directory offset of component.*/
+{
+    ReturnStatus	status;
+    int 		blockOffset;	/* Offset within a directory block */
+    Fslcl_DirEntry 	*dirEntryPtr;	/* Reference to directory entry */
+    Fslcl_DirEntry 	*lastDirEntryPtr;/* Back pointer used when merging 
+					  * adjacent entries after the delete */
+    int 		length;		/* Length variable for read call */
+    Fscache_Block	*cacheBlockPtr;	/* Cache block. */
+    int			dirBlockNum;
+
+    dirBlockNum = 0;
+    do {
+	status = Fscache_BlockRead(&parentHandlePtr->cacheInfo, dirBlockNum,
+			  &cacheBlockPtr, &length, FSCACHE_DIR_BLOCK, FALSE);
+	if (status != SUCCESS || length == 0) {
+	    return(FS_FILE_NOT_FOUND);
+	}
+	blockOffset = 0;
+	lastDirEntryPtr = (Fslcl_DirEntry *)NIL;
+	dirEntryPtr = (Fslcl_DirEntry *)cacheBlockPtr->blockAddr;
+	while (blockOffset < length) {
+	    if ((dirEntryPtr->fileNumber != 0) &&
+		(dirEntryPtr->nameLength == compLen) &&
+		(strcmp(component, dirEntryPtr->fileName) == 0)) {
+		/*
+		 * Delete the entry from the name cache.
+		 */
+		*dirOffsetPtr = blockOffset + FS_BLOCK_SIZE*dirBlockNum;
+		FSLCL_HASH_DELETE(fslclNameTablePtr, component,parentHandlePtr);
+		dirEntryPtr->fileNumber = 0;
+		if (lastDirEntryPtr != (Fslcl_DirEntry *)NIL) {
+		    /*
+		     * Grow the previous record so that it now includes
+		     * this one.
+		     */
+		    lastDirEntryPtr->recordLength += dirEntryPtr->recordLength;
+		}
+		/*
+		 * Write out the modified directory block.
+		 */
+		status = CacheDirBlockWrite(parentHandlePtr, cacheBlockPtr, 
+					   dirBlockNum, length);
+		return(status);
+	    }
+	    blockOffset += dirEntryPtr->recordLength;
+	    if ((blockOffset & (FSLCL_DIR_BLOCK_SIZE - 1)) == 0) {
+		 lastDirEntryPtr = (Fslcl_DirEntry *) NIL;
+	    } else {
+		 lastDirEntryPtr = dirEntryPtr;
+	    }
+	    dirEntryPtr = 
+		(Fslcl_DirEntry *)((int)dirEntryPtr + dirEntryPtr->recordLength);
+	}
+	dirBlockNum++;
+	Fscache_UnlockBlock(cacheBlockPtr, (time_t) 0,
+	                    -1, 0, FSCACHE_CLEAR_READ_AHEAD);
+    } while(TRUE);
+    /*NOTREACHED*/
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ExpandLink --
+ *	Expand a link by shifting the remaining pathname over and
+ *	inserting the contents of the link file.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Expands the link into nameBuffer.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+ExpandLink(curHandlePtr, curCharPtr, offset, nameBuffer)
+    Fsio_FileIOHandle	*curHandlePtr;	/* Handle on the link file */
+    char	*curCharPtr;		/* Points to beginning of the remaining
+					 * name that has to be shifted */
+    int		offset;			/* Offset of curCharPtr within its 
+					 * buffer */
+    char 	nameBuffer[];		/* New buffer for the expanded name */
+{
+    ReturnStatus 	status;
+    int 		linkNameLength;	/* The length of the name in the
+					 * link NOT including the Null */
+    register char 	*srcPtr;
+    register char 	*dstPtr;
+
+    linkNameLength = curHandlePtr->descPtr->lastByte;	/* + 1 */
+    if (linkNameLength < 0) {				/* <= */
+	return(FS_FILE_NOT_FOUND);
+    }
+    if (*curCharPtr == '\0') {
+	/*
+	 * There is no pathname, just make sure the new name is Null terminated
+	 */
+	nameBuffer[linkNameLength] = '\0';		/* still ok */
+    } else {
+	/*
+	 * Set up srcPtr to point to the start of the remaining pathname.
+	 * Set up dstPtr to point to just after where the link will be,
+	 * ie. just where the '/' is that separates the link value from
+	 * the remaining pathname.
+	 */
+	srcPtr = curCharPtr;
+	dstPtr = &nameBuffer[linkNameLength];
+	if (linkNameLength < offset) {
+	    /*
+	     * The remaining name has to be shifted left.
+	     * For example, /first is a link to /usr (or /users).  With the
+	     * filename /first/abc, curCharPtr will point to the 'a' in "abc".
+	     * dstPtr points to the '\0' after "/usr".
+	     *
+	     *  / f i r s t / a b c \0		{ current name, offset = 7 }
+	     *  / u s r \0			{ link name, len = 4 }
+	     *  / u s e r s \0			{   or len = 6 }
+	     *  / u s r / a b c			{ final result }
+	     *
+	     * Insert the separating '/' first, then start at the beginning
+	     * of the remaining name and copy it into the new buffer.
+	     */
+	    *dstPtr = '/';
+	    dstPtr++;
+	    for( ; ; ) {
+		*dstPtr = *srcPtr;
+	        if (*srcPtr == '\0') {
+		    break;
+		}
+		dstPtr++;
+		srcPtr++;
+	    }
+	} else {
+	    /*
+	     * The remaining name has to be shifted right.
+	     * For example, /first is a link to /usr/tmp.  With the filename
+	     * /first/abc, curCharPtr will point to the 'a' in "abc".
+	     * dstPtr points to the '\0' after "/usr/tmp".
+	     *
+	     * / f i r s t / a b c \0		{ current name, offset = 7 }
+	     * / u s r / t m p \0		{ link name, len = 8 }
+	     * / u s r / t m p / a b c		{ final result }
+	     * 
+	     * Zoom to the end of the name (adjusting dstPtr to account
+	     * for where the '/' will go) and then shift the name right.
+	     */
+	    dstPtr++;
+	    while (*srcPtr != '\0') {
+		srcPtr++;
+		dstPtr++;
+	    }
+	    while (srcPtr >= curCharPtr) {
+		*dstPtr = *srcPtr;
+		dstPtr--;
+		srcPtr--;
+	    }
+	    *dstPtr = '/';
+	}
+    }
+    /*
+     * Read and insert the link name in front of the remaining name
+     * that was just shifted over.
+     */
+    status = Fscache_Read(&curHandlePtr->cacheInfo, 0, nameBuffer, 0,
+		    &linkNameLength, (Sync_RemoteWaiter *)NIL);
+    if ((status == SUCCESS) || (linkNameLength > 0)) { 
+	(void)Fsdm_UpdateDescAttr(curHandlePtr, &curHandlePtr->cacheInfo.attr, 
+			FSDM_FD_ACCESSTIME_DIRTY);
+    }
+
+    /*
+     * FIX HERE to handle old sprite links that include a null.
+     */
+#ifdef notdef
+    if (nameBuffer[linkNameLength-1] == '\0') {
+	/*
+	 * Old Sprite link with trailing NULL.  Shift remaining name over
+	 * to the left one place.
+	 */
+	dstPtr = &nameBuffer[linkNameLength-1];
+	srcPtr = dstPtr + 1;
+	while (*srcPtr != '\0') {
+	    *dstPtr++ = *srcPtr++;
+	}
+	*dstPtr = '\0'
+    }
+#endif /* notdef */
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetHandle --
+ *
+ *	Given a file number and the handle on the parent directotry,
+ *	this routine returns a locked handle for the file.  This is a
+ *	small layer on top of Fsio_LocalFileHandleInit that is oriented
+ *	towards the needs of the lookup routines.
+ *
+ * Results:
+ *	A return code.  If SUCCESS the returned handle is locked.
+ *
+ * Side effects:
+ *	Calls Fsio_LocalFileHandleInit to set up the handle.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+GetHandle(fileNumber, newDescPtr, curHandlePtr, name, newHandlePtrPtr)
+    int		fileNumber;		/* Number of file to get handle for */
+    Fsdm_FileDescriptor *newDescPtr;
+    Fsio_FileIOHandle	*curHandlePtr;	/* Handle on file in the same domain */
+    char	*name;			/* File name for error msgs */
+    Fsio_FileIOHandle	**newHandlePtrPtr;/* Return, ref. to installed handle */
+{
+    register ReturnStatus status;
+    Fs_FileID fileID;
+
+    fileID.type = FSIO_LCL_FILE_STREAM;
+    fileID.serverID = rpc_SpriteID;
+    fileID.major = curHandlePtr->hdr.fileID.major;
+    fileID.minor = fileNumber;
+    status = Fsio_LocalFileHandleInit(&fileID, name, newDescPtr, FALSE,
+		newHandlePtrPtr);
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CreateFile --
+ *      Create a file by adding it do a directory and and initializing its
+ *      file descriptor.  The caller has already allocated the fileNumber
+ *      for the file.  The file descriptor is written to disk before the
+ *	name is inserted into the directory.
+ *
+ * Results:
+ *	SUCCESS or an error code.
+ *
+ * Side effects:
+ *	Calls InsertComponent, Fsdm_FileDescInit.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+CreateFile(domainPtr, parentHandlePtr, component, compLen, fileNumber, type,
+	   permissions, idPtr, curHandlePtrPtr, dirOffsetPtr)
+    Fsdm_Domain	*domainPtr;		/* Domain of the file */
+    Fsio_FileIOHandle	*parentHandlePtr;/* Handle of directory in which to add 
+					 * file. */
+    char	*component;		/* Name of the file */
+    int		compLen;		/* The length of component */
+    int		fileNumber;		/* Domain relative file number */
+    int		type;			/* Type of the file */
+    int		permissions;		/* Permission bits on the file */
+    Fs_UserIDs	*idPtr;			/* User ID of calling process */
+    Fsio_FileIOHandle	**curHandlePtrPtr;/* Return, handle for the new file */
+    int		*dirOffsetPtr;  /* OUT: directory offset of component's entry.*/
+{
+    ReturnStatus	status;
+    Fsdm_FileDescriptor	*parentDescPtr;	/* Descriptor for the parent */
+    Fsdm_FileDescriptor	*newDescPtr;	/* Descriptor for the new file */
+
+    /*
+     * Set up the file descriptor using the group ID from the parent directory.
+     */
+    parentDescPtr = parentHandlePtr->descPtr;
+    newDescPtr = (Fsdm_FileDescriptor *)malloc(sizeof(Fsdm_FileDescriptor));
+    status = Fsdm_FileDescInit(domainPtr, fileNumber, type, permissions,
+			    idPtr->user, parentDescPtr->gid, newDescPtr);
+    if (status == SUCCESS) {
+	if (type == FS_DIRECTORY) {
+	    /*
+	     * Both the parent and the directory itself reference it.
+	     */
+	    newDescPtr->numLinks = 2;
+	    newDescPtr->flags |= FSDM_FD_LINKS_DIRTY;
+	}
+	/*
+	 * GetHandle does extra work because we already have the
+	 * file descriptor all set up...
+	 */
+	status = GetHandle(fileNumber, newDescPtr, parentHandlePtr, component,
+			    curHandlePtrPtr);
+	if (status != SUCCESS) {
+	    /*
+	     * GetHandle shouldn't fail because we just wrote out
+	     * the file descriptor.
+	     */
+	    panic( "CreateFile: GetHandle failed\n");
+	} else {
+	    if (type == FS_DIRECTORY) {
+		status = WriteNewDirectory(*curHandlePtrPtr,
+					    parentHandlePtr);
+	    }
+	    if (status == SUCCESS) {
+		/*
+		 * Commit by adding the name to the directory.  If we crash
+		 * after this the file will show up and have a good
+		 * descriptor for itself on disk.
+		 */
+		status = InsertComponent(parentHandlePtr, component,
+					  compLen, fileNumber, dirOffsetPtr);
+		if (type == FS_DIRECTORY) {
+		    if (status == SUCCESS) {
+			/*
+			 * Update the parent directory to reflect
+			 * the addition of a new sub-directory.
+			 */
+			parentDescPtr->numLinks++;
+			parentDescPtr->descModifyTime = Fsutil_TimeInSeconds();
+			parentDescPtr->flags |= FSDM_FD_LINKS_DIRTY;
+		       (void)Fsdm_FileDescStore(parentHandlePtr, FALSE);
+		    }
+		}
+	    }
+	    if (status != SUCCESS) {
+		/*
+		 * Couldn't add to the directory, no disk space perhaps.
+		 * Unwind by marking the file descriptor as free and
+		 * releasing the handle we've created.
+		 */
+		panic("CreateFile: aborting create of %d (%s) in %d\n",
+			fileNumber, component, 
+			parentHandlePtr->hdr.fileID.minor);
+		newDescPtr->flags = FSDM_FD_FREE;
+		Fsutil_HandleRelease(*curHandlePtrPtr, TRUE);
+		*curHandlePtrPtr = (Fsio_FileIOHandle *)NIL;
+	    }
+	}
+    }
+    if (status != SUCCESS)  { 
+	free((Address) newDescPtr);
+    } else {
+       (void)Fsdm_FileDescStore(parentHandlePtr, FALSE);
+    }
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WriteNewDirectory --
+ *      Write a new sub-directory.  Set the file numbers on the canned image
+ *      of a new directory and write the block to the directory.
+ *
+ * Results:
+ *	SUCCESS or an error code.
+ *
+ * Side effects:
+ *	Disk I/O to write the directory data block.
+ *
+ *----------------------------------------------------------------------
+ */
+static	ReturnStatus
+WriteNewDirectory(curHandlePtr, parentHandlePtr)
+    Fsio_FileIOHandle *curHandlePtr;		/* Handle of file to delete */
+    Fsio_FileIOHandle *parentHandlePtr;	/* Handle of directory in which
+						 * to delete file*/
+{
+    ReturnStatus	status;
+    int			offset;
+    int			length;
+    register Fslcl_DirEntry *dirEntryPtr;
+    char		*dirBlock;
+
+    /*
+     * The malloc and Byte_Copy could be avoided by puting this routine
+     * into its own monitor so that it could write directly onto fslclEmptyDirBlock
+     * fslclEmptyDirBlock is already set up with ".", "..", and the correct
+     * nameLengths and recordLengths.
+     */
+    dirBlock = (char *)malloc(FSLCL_DIR_BLOCK_SIZE);
+    bcopy((Address)fslclEmptyDirBlock, (Address)dirBlock, FSLCL_DIR_BLOCK_SIZE);
+    dirEntryPtr = (Fslcl_DirEntry *)dirBlock;
+    dirEntryPtr->fileNumber = curHandlePtr->hdr.fileID.minor;
+    dirEntryPtr = (Fslcl_DirEntry *)((int)dirEntryPtr +
+				 dirEntryPtr->recordLength);
+    dirEntryPtr->fileNumber = parentHandlePtr->hdr.fileID.minor;
+    offset = 0;
+    length = FSLCL_DIR_BLOCK_SIZE;
+    status = Fscache_Write(&curHandlePtr->cacheInfo, 0, (Address)dirBlock,
+		offset, &length, (Sync_RemoteWaiter *)NIL);
+    if (status == SUCCESS) {
+	(void)Fsdm_UpdateDescAttr(curHandlePtr, &curHandlePtr->cacheInfo.attr, 
+			FSDM_FD_MODTIME_DIRTY);
+    }
+    free(dirBlock);
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LinkFile --
+ *	Create an entry in a directory that references an existing file.
+ *	This understands that links to directories are made as part of
+ *	a rename and checks that no circularities in the directory structure
+ *	result from moving a directory.  Other than that it is left to
+ *	the caller to check permissions.
+ *
+ * Results:
+ *	SUCCESS or an error code.
+ *
+ * Side effects:
+ *	Calls InsertComponent, bumps the link count on the existing file.
+ *	Calls MoveDirectory in the case of directories.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+LinkFile(parentHandlePtr, component, compLen, fileNumber, logOp,curHandlePtrPtr,
+	clientID)
+    Fsio_FileIOHandle	*parentHandlePtr;/* Handle of directory in which to add 
+					 * file. */
+    char	*component;		/* Name of the file */
+    int		compLen;		/* The length of component */
+    int		fileNumber;		/* Domain relative file number */
+    int		logOp;
+    Fsio_FileIOHandle	**curHandlePtrPtr;/* Return, handle for the new file */
+    int		clientID;		/* ID of requesting client. */
+{
+    ReturnStatus	status;
+    Fsdm_FileDescriptor	*linkDescPtr;	/* Descriptor for the existing file */
+    Time 		modTime;	/* Descriptors are modified */
+    ClientData		logClientData;
+    ClientData		recovLogClientData = (ClientData) 0;
+    int			dirOffset;
+
+    if (fileNumber == parentHandlePtr->hdr.fileID.minor) {
+	/*
+	 * Trying to move a directory into itself, ie. % mv subdir subdir
+	 */
+	return(GEN_INVALID_ARG);
+    }
+    status = GetHandle(fileNumber, (Fsdm_FileDescriptor *) NIL,
+			parentHandlePtr, component, curHandlePtrPtr);
+    if (status != SUCCESS) {
+	printf( "LinkFile: can't get existing file handle\n");
+	return(FAILURE);
+    } else if ((*curHandlePtrPtr)->descPtr->fileType == FS_DIRECTORY) {
+	logOp |= FSDM_LOG_IS_DIRECTORY;
+	status = OkToMoveDirectory(parentHandlePtr, *curHandlePtrPtr);
+    }
+    if (status == SUCCESS) {
+	linkDescPtr = (*curHandlePtrPtr)->descPtr;
+	logClientData = Fsdm_DirOpStart(logOp, parentHandlePtr, -1,
+				component, compLen, fileNumber, 
+					linkDescPtr->fileType,
+					linkDescPtr);
+	if (recov_Transparent && clientID != rpc_SpriteID) {
+	    recovLogClientData = Fsrecov_DirOpStart(logOp, parentHandlePtr, -1,
+		    component, compLen, fileNumber, 
+		    linkDescPtr->fileType, linkDescPtr);
+	}
+	linkDescPtr->numLinks++;
+	linkDescPtr->descModifyTime = Fsutil_TimeInSeconds();
+	linkDescPtr->flags |= FSDM_FD_LINKS_DIRTY;
+	status = Fsdm_FileDescStore(*curHandlePtrPtr, FALSE);
+	if (status == SUCCESS) {
+	    /*
+	     * Commit by adding the name to the directory.
+	     */
+	    status = InsertComponent(parentHandlePtr, component, compLen,
+						fileNumber, &dirOffset);
+	    if ((*curHandlePtrPtr)->descPtr->fileType == FS_DIRECTORY &&
+		status == SUCCESS) {
+		/*
+		 * This link is part of a rename (links to directories are
+		 * only allowed at this time), and the ".." entry in the
+		 * directory may have to be fixed.
+		 */
+		modTime.seconds = Fsutil_TimeInSeconds();
+		status = MoveDirectory(&modTime, parentHandlePtr,
+						    *curHandlePtrPtr);
+		if (status != SUCCESS) {
+		    (void)DeleteComponent(parentHandlePtr, component,
+						    compLen, &dirOffset);
+		}
+	    }
+	    if (status != SUCCESS) {
+		/*
+		 * Couldn't add to the directory because of I/O probably.
+		 * Unwind by reducing the link count.  This gets the cache
+		 * consistent with the cached directory image anyway.
+		 */
+		linkDescPtr->numLinks--;
+		linkDescPtr->flags |= FSDM_FD_LINKS_DIRTY;
+		(void)Fsdm_FileDescStore(*curHandlePtrPtr, FALSE);
+		Fsutil_HandleRelease(*curHandlePtrPtr, TRUE);
+		*curHandlePtrPtr = (Fsio_FileIOHandle *)NIL;
+	    } else {
+		(void)Fsdm_FileDescStore(parentHandlePtr, FALSE);
+	    }
+	} else {
+	    linkDescPtr->numLinks--;
+	    linkDescPtr->flags &= ~FSDM_FD_LINKS_DIRTY;
+	}
+	Fsdm_DirOpEnd(logOp, parentHandlePtr, dirOffset, 
+		  component, compLen, fileNumber, linkDescPtr->fileType,
+		  linkDescPtr, logClientData, status);
+	if (recov_Transparent && clientID != rpc_SpriteID) {
+		Fsrecov_DirOpEnd(logOp, parentHandlePtr, dirOffset, 
+			component, compLen, fileNumber, linkDescPtr->fileType,
+			linkDescPtr, recovLogClientData, status);
+	}
+    }
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * OkToMoveDirectory --
+ *
+ *	Check that it is ok to move a directory.  Dis-connected trees and
+ *	loops in directory structure are prevented here.
+ *
+ * Results:
+ *	A return code.
+ *
+ * Side effects:
+ *	File handles are momentarily locked on the route from the new
+ *	position in the hierarchy up to the root to check against illegal moves.
+ *	This action might cause deadlock with another process desending along
+ *	same route, descenders hold a lock on the parent while they try for
+ *	a lock on the next sub-directory.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+OkToMoveDirectory(newParentHandlePtr, curHandlePtr)
+    Fsio_FileIOHandle *newParentHandlePtr;	/* New parent directory for
+						 * curHandlePtr */
+    Fsio_FileIOHandle *curHandlePtr;		/* Directory being moved */
+{
+    ReturnStatus	status;
+    int 		oldParentFileNumber;	/* File number of original 
+						 * parent directory. */
+    int			newParentNumber;	/* File number of new 
+						 * parent directory. */
+
+    status = GetParentNumber(curHandlePtr, &oldParentFileNumber);
+    if (status != SUCCESS) {
+	return(status);
+    }
+    newParentNumber = newParentHandlePtr->hdr.fileID.minor;
+    if (oldParentFileNumber == newParentNumber) {
+	/*
+	 * ".." entry is ok because the rename is within the same directory.
+	 */
+	status = SUCCESS;
+    } else {
+	/*
+	 * Have to trace up from the new parent to make sure we don't find
+	 * the current file.  If we let that happen then you create
+	 * dis-connected loops in the directory structure.
+	 */
+	Fsio_FileIOHandle *parentHandlePtr;
+	int parentNumber;
+
+	for (parentNumber = newParentNumber; status == SUCCESS; ) {
+	    if (parentNumber == curHandlePtr->hdr.fileID.minor) {
+		status = FS_INVALID_ARG;
+	    } else if (parentNumber == FSDM_ROOT_FILE_NUMBER ||
+		       parentNumber == oldParentFileNumber) {
+		break;
+	    } else {
+		/*
+		 * Advance parentNumber upwards towards the root.  The
+		 * handles are locked because of the I/O required to get
+		 * the parent file number.  We have to be careful when
+		 * locking the parents because the first parent
+		 * (newParentHandlePtr) is already locked by us.
+		 *
+		 * It still seems like there is a possibility of deadlock if
+		 * someone is desending into newParentHandlePtr and has a lock
+		 * on the directory above that.  FIX ME
+		 */
+		if (parentNumber != newParentNumber) {
+		    status = GetHandle(parentNumber,
+		       (Fsdm_FileDescriptor *) NIL,   curHandlePtr, (char *)NIL,
+					&parentHandlePtr);
+		} else {
+		    parentHandlePtr = newParentHandlePtr;
+		}
+		if (status == SUCCESS) {
+		    status = GetParentNumber(parentHandlePtr, &parentNumber);
+		}
+		if (parentHandlePtr != newParentHandlePtr) {
+		    (void)Fsutil_HandleRelease(parentHandlePtr, TRUE);
+		}
+	    }
+	}
+    }
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MoveDirectory --
+ *
+ *	Complete the moving of a directory by updating its reference to
+ *	its parent and incrementing the link count on its new parent.
+ *
+ * Results:
+ *	A return code.
+ *
+ * Side effects:
+ *	Sets the directory's parent entry to reference the parent passed in.
+ *	Increments the link count on the new parent.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+MoveDirectory( modTimePtr, newParentHandlePtr, curHandlePtr)
+    Time	*modTimePtr;			/* Modify time for parent */
+    Fsio_FileIOHandle	*newParentHandlePtr;	/* New parent directory for 
+						 * curHandlePtr */
+    Fsio_FileIOHandle	*curHandlePtr;		/* Directory being moved */
+{
+    ReturnStatus	status;
+    int			oldParentFileNumber;	/* File number of original 
+						 * parent directory */
+    int			newParentNumber;	/* File number of new 
+						 * parent directory */
+
+    status = GetParentNumber(curHandlePtr, &oldParentFileNumber);
+    if (status != SUCCESS) {
+	printf(
+		  "MoveDirectory: Can't get parent's file number\n");
+    } else {
+	newParentNumber = newParentHandlePtr->hdr.fileID.minor;
+	if (oldParentFileNumber != newParentNumber) {
+	    /*
+	     * Patch the directory entry for ".."
+	     */
+	    FSLCL_HASH_DELETE(fslclNameTablePtr, "..", curHandlePtr);
+	    status = SetParentNumber(curHandlePtr, newParentNumber);
+	}
+	if (status == SUCCESS) {
+	    /*
+	     * Increment the link count on the new parent.  The old parent's
+	     * link count gets decremented when the orignial instance of the
+	     * directory is removed.  This is done even if the move is within
+	     * the same directory because deleting the original name later will
+	     * reduce the link count.
+	     */
+	    register Fsdm_FileDescriptor *parentDescPtr;
+
+	    parentDescPtr = newParentHandlePtr->descPtr;
+	    parentDescPtr->numLinks++;
+	    parentDescPtr->descModifyTime = modTimePtr->seconds;
+	    parentDescPtr->flags |= FSDM_FD_LINKS_DIRTY;
+	    (void)Fsdm_FileDescStore(newParentHandlePtr, FALSE);
+	}
+    }
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetParentNumber --
+ *	Read a directory to determine the file number of the parent.
+ *
+ * Results:
+ *	SUCCESS or an error code, sets *parentNumberPtr to be the file number
+ *	from the ".." entry in the directory.
+ *
+ * Side effects:
+ *	None, except for the I/O to read the directory block.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+GetParentNumber(curHandlePtr, parentNumberPtr)
+    Fsio_FileIOHandle	*curHandlePtr;	/* Handle for current directory */
+    int		*parentNumberPtr;	/* Result, the file number of the parent
+					 * of curHandlePtr */
+{
+    ReturnStatus 	status;
+    int 		length;
+    register Fslcl_DirEntry *dirEntryPtr;
+    Fscache_Block	*cacheBlockPtr;
+
+    status = Fscache_BlockRead(&curHandlePtr->cacheInfo, 0, &cacheBlockPtr,
+				&length, FSCACHE_DIR_BLOCK, FALSE);
+    if (status != SUCCESS) {
+	return(status);
+    } else if (length == 0) {
+	return(FAILURE);
+    }
+
+    dirEntryPtr = (Fslcl_DirEntry *)cacheBlockPtr->blockAddr;
+    if (dirEntryPtr->nameLength != 1 ||
+	dirEntryPtr->fileName[0] != '.' ||
+	dirEntryPtr->fileName[1] != '\0') {
+	printf(
+		  "GetParentNumber: \".\", corrupted directory\n");
+	status = FAILURE;
+    } else {
+	dirEntryPtr = 
+		(Fslcl_DirEntry *)((int)dirEntryPtr + dirEntryPtr->recordLength);
+	if (dirEntryPtr->nameLength != 2 ||
+	    dirEntryPtr->fileName[0] != '.' ||
+	    dirEntryPtr->fileName[1] != '.' ||
+	    dirEntryPtr->fileName[2] != '\0') {
+	    printf(
+		      "GetParentNumber: \"..\", corrupted directory\n");
+	    status = FAILURE;
+	} else {
+	    *parentNumberPtr = dirEntryPtr->fileNumber;
+	}
+    }
+    Fscache_UnlockBlock(cacheBlockPtr, (time_t) 0,
+	                -1, 0, FSCACHE_CLEAR_READ_AHEAD);
+
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetParentNumber --
+ *	Patch the file number for the ".." entry of a directory.
+ *
+ * Results:
+ *	SUCCESS or an error code from the I/O.
+ *
+ * Side effects:
+ *	Changes the parent file number of the ".." entry.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+SetParentNumber(curHandlePtr, newParentNumber)
+    Fsio_FileIOHandle	*curHandlePtr;	/* Handle for current directory */
+    int 		newParentNumber;/* The new file number of the parent
+					 * of curHandlePtr */
+{
+    ReturnStatus	status;
+    int 		length;
+    register Fslcl_DirEntry *dirEntryPtr;
+    Fscache_Block	*cacheBlockPtr;
+
+    status = Fscache_BlockRead(&curHandlePtr->cacheInfo, 0, &cacheBlockPtr,
+				&length, FSCACHE_DIR_BLOCK, FALSE);
+    if (status != SUCCESS) {
+	return(status);
+    } else if (length == 0) {
+	return(FAILURE);
+    }
+    dirEntryPtr = (Fslcl_DirEntry *)cacheBlockPtr->blockAddr;
+    if (dirEntryPtr->nameLength != 1 ||
+	dirEntryPtr->fileName[0] != '.' ||
+	dirEntryPtr->fileName[1] != '\0') {
+	printf(
+		  "SetParentNumber: \".\", corrupted directory\n");
+	Fscache_UnlockBlock(cacheBlockPtr, (time_t) 0,
+	                    -1, 0, FSCACHE_CLEAR_READ_AHEAD);
+	return(FAILURE);
+    }
+    dirEntryPtr = (Fslcl_DirEntry *)((int)dirEntryPtr + dirEntryPtr->recordLength);
+    if (dirEntryPtr->nameLength != 2 ||
+	dirEntryPtr->fileName[0] != '.' ||
+	dirEntryPtr->fileName[1] != '.' ||
+	dirEntryPtr->fileName[2] != '\0') {
+	printf("SetParentNumber: \"..\", corrupted directory\n");
+	Fscache_UnlockBlock(cacheBlockPtr, (time_t) 0,
+	                    -1, 0, FSCACHE_CLEAR_READ_AHEAD);
+	return(FAILURE);
+    }
+    dirEntryPtr->fileNumber = newParentNumber;
+    status = CacheDirBlockWrite(curHandlePtr, cacheBlockPtr, 0, length);
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DeleteFileName --
+ *
+ *      Delete a file by clearing its fileNumber in the directory and
+ *	reducing its link count.  
+ *
+ * Results:
+ *	SUCCESS or an error code.
+ *
+ * Side effects:
+ *	Log entry may be written.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+DeleteFileName(parentHandlePtr, curHandlePtr, component,
+	     compLen, forRename, idPtr, logOp, clientID)
+    Fsio_FileIOHandle *parentHandlePtr;	/* Handle of directory in
+						 * which to delete file*/
+    Fsio_FileIOHandle *curHandlePtr;	/* Handle of file to delete */
+    char *component;				/* Name of the file to delte */
+    int compLen;				/* The length of component */
+    int forRename;		/* if FS_RENAME, then the file being delted
+				 * is being renamed.  This allows non-empty
+				 * directories to be deleted */
+    Fs_UserIDs *idPtr;		/* User and group IDs */
+    int		logOp;		/* Directory log operation.; */
+    int		clientID;
+{
+    ReturnStatus status;
+    Fsdm_FileDescriptor *parentDescPtr;	/* Descriptor for parent */
+    Fsdm_FileDescriptor *curDescPtr;	/* Descriptor for the file to delete */
+    int type;				/* Type of the file */
+    int	fileNumber;			/* Number of file being deleted. */
+    ClientData	logClientData;		/* ClientData returned from 
+					 * DirOpStart. */
+    ClientData	recovLogClientData = (ClientData) 0;
+					/* ClientData returned from 
+					 * DirOpStart, for recovery system. */
+    int dirOffset;
+
+    type = curHandlePtr->descPtr->fileType;
+    if (parentHandlePtr == (Fsio_FileIOHandle *)NIL) {
+	/*
+	 * There is no handle on the parent because we have just
+	 * gone up via "..".  You can't delete the parent.
+	 */
+	status = FS_NO_ACCESS;
+    } else if ((compLen == 1) && (component[0] == '.')) {
+	/*
+	 * Disallow removing dot.
+	 */
+	status = FS_NO_ACCESS;
+    } else if (type == FS_DIRECTORY && (!forRename) &&
+		!DirectoryEmpty(curHandlePtr)) {
+	status = FS_DIR_NOT_EMPTY;
+    } else {
+	/*
+	 * One needs write permission in the parent to do the delete.
+	 */
+	status = CheckPermissions(parentHandlePtr, FS_WRITE, idPtr,
+					FS_DIRECTORY);
+    }
+    if (status != SUCCESS) {
+	return(status);
+    }
+    curDescPtr = curHandlePtr->descPtr;
+    parentDescPtr = parentHandlePtr->descPtr;
+    fileNumber = curHandlePtr->hdr.fileID.minor;
+    dirOffset = -1;
+
+    if (type == FS_DIRECTORY) {
+	logOp |= FSDM_LOG_IS_DIRECTORY;
+    }
+    logClientData = Fsdm_DirOpStart(logOp, parentHandlePtr, dirOffset, 
+		    component, compLen, fileNumber, type,
+		    curHandlePtr->descPtr);
+    if (recov_Transparent && clientID != rpc_SpriteID) {
+	recovLogClientData = Fsrecov_DirOpStart(logOp, parentHandlePtr,
+		dirOffset, component, compLen, fileNumber, type,
+		curHandlePtr->descPtr);
+    }
+    /*
+     * Remove the name from the directory first.
+     */
+    status = DeleteComponent(parentHandlePtr, component, compLen, &dirOffset);
+    if (status == SUCCESS) {
+	curDescPtr->numLinks--;
+	curDescPtr->flags |= FSDM_FD_LINKS_DIRTY;
+	if (type == FS_DIRECTORY) {
+	    /*
+	     * The directory might have been known in the hash table as
+	     * someone's "..". Besure that this entry is gone.
+	     */
+	    FSLCL_HASH_DELETE(fslclNameTablePtr, "..", curHandlePtr);
+	    if (!forRename) {
+		/*
+		 * Directories have an extra link because they reference 
+		 * themselves.
+		 */
+		curDescPtr->numLinks--;
+		if (curDescPtr->numLinks > 0) {
+		    printf("DeleteFileName: extra links on directory\n");
+		}
+	    }
+	}
+	curDescPtr->descModifyTime = Fsutil_TimeInSeconds();
+	status = Fsdm_FileDescStore(curHandlePtr, FALSE);
+	if (status != SUCCESS) {
+	    printf("DeleteFileName: (1) Couldn't store descriptor\n");
+#ifdef notdef
+	    return(status);
+#endif
+	}
+	if (type == FS_DIRECTORY) {
+	    /*
+	     * A directory's link count reflects the number of subdirectories
+	     * it has (they each have a ".." that references it.)  Here
+	     * it is decremented because the subdirectory is going away.
+	     */
+	    parentDescPtr->numLinks--;
+	    parentDescPtr->descModifyTime = Fsutil_TimeInSeconds();
+	    parentDescPtr->flags |= FSDM_FD_LINKS_DIRTY;
+	}
+	status = Fsdm_FileDescStore(parentHandlePtr, FALSE);
+	if (status != SUCCESS) {
+	    printf("DeleteFileName: (2) Couldn't store descriptor\n");
+#ifdef notdef
+	    return(status);
+#endif
+	}
+	if ((curDescPtr->numLinks <= 0) && (curHandlePtr->use.ref != 0)) {
+	    logOp |= FSDM_LOG_STILL_OPEN;
+	}
+    } 
+    Fsdm_DirOpEnd(logOp, parentHandlePtr, dirOffset,
+		        component, compLen, fileNumber, type,
+			curDescPtr, logClientData, status);
+    if (recov_Transparent && clientID != rpc_SpriteID) {
+	Fsrecov_DirOpEnd(logOp, parentHandlePtr, dirOffset,
+		component, compLen, fileNumber, type,
+		curDescPtr, recovLogClientData, status);
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CloseDeletedFile --
+ *
+ *	This routine is called to close a deleted file.
+ *	If there are no links left then the
+ *	file's handle is marked as deleted.  Finally, if this routine
+ *	has the last reference on the handle then the file's data blocks
+ *	are truncated away and the file descriptor is marked as free.
+ *
+ *	This is a separate routine from DeleteFileName because the
+ *	file cannot be closed unless the parent handle is unlocked
+ *	(to prevent deadlock while doing the consistency callback),
+ *	and the code to do a rename deletes the existing file, then
+ *	does a link.  This would break if the parent handle was
+ *	released during the delete.
+ *
+ * Results:
+ *	SUCCESS or error code.
+ *
+ * Side effects:
+ *	The parent and/or current handles may be released and set to NIL.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+CloseDeletedFile(parentHandlePtrPtr, curHandlePtrPtr)
+    Fsio_FileIOHandle **parentHandlePtrPtr;	/* Handle of parent of
+						 * deleted file. */
+    Fsio_FileIOHandle **curHandlePtrPtr;	/* Handle of deleted file. */
+
+{
+    register Fsio_FileIOHandle *curHandlePtr;	/* Local copy */
+
+    curHandlePtr = *curHandlePtrPtr;
+    if (curHandlePtr->descPtr->numLinks <= 0) {
+	/*
+	 * At this point curHandlePtr is potentially the last reference
+	 * to the file.  If there are no users then do the delete, otherwise
+	 * mark the handle as deleted and Fsio_FileClose will take care of 
+	 * it.
+	 */
+	curHandlePtr->flags |= FSIO_FILE_NAME_DELETED;
+	if (curHandlePtr->use.ref == 0) {
+	    /*
+	     * Handle the deletion and clean up the handle.
+	     * We set the the clientID to us and specify client
+	     * call-backs so that any other clients will be notified.
+	     */
+	    Fsutil_HandleRelease(*parentHandlePtrPtr, TRUE);
+	    *parentHandlePtrPtr = (Fsio_FileIOHandle *)NIL;
+	    (void)Fsio_FileCloseInt(curHandlePtr, 0, 0, 0, rpc_SpriteID, 
+		    TRUE);
+	    *curHandlePtrPtr = (Fsio_FileIOHandle *)NIL;
+	} else {
+	    Fsutil_HandleRelease(curHandlePtr, TRUE);
+	    *curHandlePtrPtr = (Fsio_FileIOHandle *)NIL;
+	}
+    } else {
+	Fsutil_HandleRelease(curHandlePtr, TRUE);
+	*curHandlePtrPtr = (Fsio_FileIOHandle *)NIL;
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fslcl_DeleteFileDesc --
+ *	Delete a file from disk given its file handle.  It is assumed that the
+ *	file's name has already been deleted from the directory structure.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Delete the data blocks and mark file descriptor as free.  The
+ *	handle remains locked during this call.  The DESCRIPTOR referenced
+ *	by the handle is FREED because the file handle is going to
+ *	be removed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Fslcl_DeleteFileDesc(handlePtr)
+    Fsio_FileIOHandle *handlePtr;
+{
+    ReturnStatus status;
+    Fsdm_Domain *domainPtr;
+
+    if (handlePtr->descPtr->fileType == FS_DIRECTORY) {
+	/*
+	 * Remove .. from the name cache so we don't end up with
+	 * a bad cache entry later when this directory is re-created.
+	 */
+	FSLCL_HASH_DELETE(fslclNameTablePtr, "..", handlePtr);
+    }
+
+    domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, FALSE);
+    if (domainPtr == (Fsdm_Domain *)NIL) {
+	return(FS_DOMAIN_UNAVAILABLE);
+    }
+    /*
+     * The ordering of the deletion is as follows:
+     * 1. Mark the descriptor on disk as free so if we crash the
+     *		disk scavenger will free the blocks for us.
+     * 2. Truncate the blocks out of the cache and from the descriptor.
+     * 3. Mark the file descriptor as available in the bitmask.
+     */
+    handlePtr->descPtr->flags = FSDM_FD_FREE | FSDM_FD_DIRTY;
+    status = Fsdm_FileDescStore(handlePtr,TRUE);
+    if (status != SUCCESS) {
+	printf("Fslcl_DeleteFileDesc: Can't mark descriptor as free\n");
+    } else {
+	status = Fsio_FileTrunc(handlePtr, 0, FSCACHE_TRUNC_DELETE);
+	if (status != SUCCESS) {
+	    printf("Fslcl_DeleteFileDesc: Can't truncate file <%d,%d> \"%s\"\n",
+		    handlePtr->hdr.fileID.major, handlePtr->hdr.fileID.minor,
+		    Fsutil_HandleName(handlePtr));
+	} else {
+	    (void)Fsdm_FreeFileNumber(domainPtr, handlePtr->hdr.fileID.minor);
+	}
+	free((Address)handlePtr->descPtr);
+	handlePtr->descPtr = (Fsdm_FileDescriptor *)NIL;
+    }
+    Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DirectoryEmpty --
+ *	Scan a directory and determine if there are any files left
+ *	in it other than "." and "..".
+ *
+ * Results:
+ *	TRUE if the directory is empty, FALSE otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Boolean
+DirectoryEmpty(handlePtr)
+    Fsio_FileIOHandle *handlePtr;	/* Handle of directory to check */
+{
+    ReturnStatus	status;
+    int 		blockOffset;	/* Offset within a directory block */
+    Fslcl_DirEntry 		*dirEntryPtr;	/* Reference to directory entry */
+    int 		length;		/* Length for read call */
+    int			dirBlockNum;
+    Fscache_Block	*cacheBlockPtr;
+
+    dirBlockNum = 0;
+    do {
+	status = Fscache_BlockRead(&handlePtr->cacheInfo, dirBlockNum,
+		      &cacheBlockPtr, &length, FSCACHE_DIR_BLOCK, FALSE);
+	if (status != SUCCESS || length == 0) {
+	    /*
+	     * Have run out of the directory and not found anything.
+	     */
+	    return(TRUE);
+	}
+	blockOffset = 0;
+	dirEntryPtr = (Fslcl_DirEntry *)cacheBlockPtr->blockAddr;
+	while (blockOffset < length) {
+	    if (dirEntryPtr->fileNumber != 0) {
+		/*
+		 * A valid directory record.
+		 */
+		if ((strcmp(".", dirEntryPtr->fileName) == 0) ||
+		    (strcmp("..", dirEntryPtr->fileName) == 0)) {
+		    /*
+		     * "." and ".." are ok
+		     */
+		} else {
+		    Fscache_UnlockBlock(cacheBlockPtr, (time_t) 0,
+			                -1, 0, FSCACHE_CLEAR_READ_AHEAD);
+		    return(FALSE);
+		}
+	    }
+	    blockOffset += dirEntryPtr->recordLength;
+	    dirEntryPtr = 
+		(Fslcl_DirEntry *)((int)dirEntryPtr + dirEntryPtr->recordLength);
+	}
+	dirBlockNum++;
+	Fscache_UnlockBlock(cacheBlockPtr, (time_t) 0,
+	                    -1, 0, FSCACHE_CLEAR_READ_AHEAD);
+    } while(TRUE);
+    /*NOTREACHED*/
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CheckPermissions --
+ *
+ *	Check permissions on a file during lookup.  This just looks
+ *	at the uid, groupIDs, and the permission bits on the file.
+ *	
+ *	Some semantic checking is done:
+ *		type indicates what kind of file to accept.
+ *		Execution of files with no execute bit is prevented for uid = 0
+ *		Execution of directories is prevented.
+ *	Some semantic checking is not done:
+ *		Doesn't check against writing to directories.  This is
+ *		done later in the FileSrvOpen routine.
+ *
+ * Results:
+ *	FS_NO_ACCESS if the useFlags include a permission that does
+ *	not fit with the uid/groupIDs of the file.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+CheckPermissions(handlePtr, useFlags, idPtr, type)
+    Fsio_FileIOHandle		*handlePtr;
+    register int		useFlags;
+    register Fs_UserIDs		*idPtr;
+    int 			type;
+{
+    register Fsdm_FileDescriptor	*descPtr;
+    register int		*groupPtr;
+    register unsigned int 	permBits;
+    register int 		index;
+    register int		uid = idPtr->user;
+    ReturnStatus 		status;
+
+    if (handlePtr->hdr.fileID.type != FSIO_LCL_FILE_STREAM) {
+	panic( "CheckPermissions on non-local file\n");
+	return(FAILURE);
+    }
+    descPtr = handlePtr->descPtr;
+    /*
+     * Make sure the file type matches.  FS_FILE means any type, otherwise
+     * it should match exactly.
+     */
+    if (type != FS_FILE && type != descPtr->fileType) {
+	/*
+	 * Patch around the fact that FS_REMOTE_LINK and FS_SYMBOLIC_LINK
+	 * get or'ed together, but they are not-proper bit fields.
+	 * (They equal 3 and 2, respectively.)
+	 * Hence we allow a regular symbolic link to satisfy a
+	 * request for a remote link.
+	 */
+	if ((type == (FS_REMOTE_LINK|FS_SYMBOLIC_LINK)) &&
+	    ((descPtr->fileType == FS_SYMBOLIC_LINK) ||
+	     (descPtr->fileType == FS_REMOTE_LINK))) {
+/*	    printf( "Allowing a symlink for a remote link\n");*/
+	} else {
+	    switch(type) {
+		case FS_DIRECTORY:
+		    return(FS_NOT_DIRECTORY);
+		default:
+		    return(FS_WRONG_TYPE);
+	    }
+	}
+    }
+    /*
+     * Dis-allow execution of directories...
+     */
+    if ((type == FS_FILE) && (useFlags & FS_EXECUTE) &&
+	(descPtr->fileType != FS_FILE)) {
+	return(FS_WRONG_TYPE);
+    }
+    /*
+     * Reset SETUID/SETGID bit when writing a file.
+     */
+    if ((useFlags & FS_WRITE) && (descPtr->fileType == FS_FILE) &&
+	(descPtr->permissions & (FS_SET_UID|FS_SET_GID))) {
+	descPtr->permissions &= ~(FS_SET_UID|FS_SET_GID);
+	descPtr->flags |= FSDM_FD_PERMISSIONS_DIRTY;
+    }
+    /*
+     * Check for ownership permission.  This probably redundant with
+     * respect to the checking done by FslclSetAttr.
+     */
+#ifdef notdef
+    if (useFlags & FS_OWNERSHIP) {
+	if ((uid != descPtr->uid) && (uid != 0)) {
+	    return(FS_NOT_OWNER);
+	}
+    }
+#endif notdef
+    /*
+     * Check read/write/exec permissions against one of the owner bits,
+     * the group bits, or the world bits.  'permBits' is set to
+     * be the corresponding bits from the file descriptor and then
+     * shifted over so the comparisions are against the WORLD bits.
+     */
+    if (uid == 0) {
+	/*
+	 * For normal files, only check for execute permission.  This
+	 * prevents root from being able to execute ordinary files by
+	 * accident.  However, root has complete access to directories.
+	 */
+	if (descPtr->fileType == FS_DIRECTORY) {
+	    return(SUCCESS);
+	}
+	useFlags &= FS_EXECUTE;
+    }
+    if (uid == descPtr->uid) {
+	permBits = (descPtr->permissions >> 6) & 07;
+    } else {
+	for (index = idPtr->numGroupIDs, groupPtr = idPtr->group;
+	     index > 0;
+	     index--, groupPtr++) {
+	    if (*groupPtr == descPtr->gid) {
+		permBits = (descPtr->permissions >> 3) & 07;
+		goto havePermBits;
+	    }
+	}
+	permBits = descPtr->permissions & 07;
+    }
+havePermBits:
+    if (((useFlags & FS_READ) && ((permBits & FS_WORLD_READ) == 0)) ||
+	((useFlags & FS_WRITE) && ((permBits & FS_WORLD_WRITE) == 0)) ||
+	((useFlags & FS_EXECUTE) && ((permBits & FS_WORLD_EXEC) == 0))) {
+	/*
+	 * The file's permission don't include what is needed.
+	 */
+	status = FS_NO_ACCESS;
+    } else {
+	status = SUCCESS;
+    }
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CacheDirBlockWrite --
+ *
+ *	Write into a cache block returned from Fscache_BlockRead.  Used only
+ *	for writing directories.
+ *
+ * Results:
+ *	SUCCESS unless error when allocating disk space.
+ *
+ * Side effects:
+ *	The cache block is unlocked.  It is deleted if the offset is the
+ *	beginning of the block and the disk allocation failed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+CacheDirBlockWrite(handlePtr, blockPtr, blockNum, length)
+    register	Fsio_FileIOHandle	*handlePtr;	/* Handle for file. */
+    register	Fscache_Block	*blockPtr;	/* Cache block. */
+    int				blockNum;	/* Block number. */
+    int				length;		/* Number of valid bytes in
+						 * the block. */
+{
+    ReturnStatus	status = SUCCESS;
+    int			blockAddr = FSDM_NIL_INDEX;
+    Boolean		newBlock;
+    int			flags = FSCACHE_CLEAR_READ_AHEAD;
+    int			offset;
+    int			newLastByte;
+    int			blockSize;
+
+    offset =  blockNum * FS_BLOCK_SIZE;
+    newLastByte = offset + length - 1;
+    (void) (handlePtr->cacheInfo.backendPtr->ioProcs.allocate)
+	((Fs_HandleHeader *)handlePtr, offset, length, 0,
+		&blockAddr, &newBlock);
+#ifdef lint
+    (void) Fsdm_BlockAllocate((Fs_HandleHeader *)handlePtr, offset, length,
+			0, &blockAddr, &newBlock);
+    (void) FsrmtFileBlockAllocate((Fs_HandleHeader *)handlePtr, offset, length,
+			0, &blockAddr, &newBlock);
+#endif /* lint */
+    if (blockAddr == FSDM_NIL_INDEX) {
+	status = FS_NO_DISK_SPACE;
+	printf("CacheDirBlockWrite: out of space for %s.\n",
+	       Fsutil_HandleName(handlePtr));	/* DEBUG */
+	if (handlePtr->descPtr->lastByte + 1 < offset) {
+	    /*
+	     * Delete the block if are appending and this was a new cache
+	     * block.
+	     */
+	    flags = FSCACHE_DELETE_BLOCK;
+	}
+    }
+    Fscache_UpdateDirSize(&handlePtr->cacheInfo, newLastByte);
+    handlePtr->descPtr->dataModifyTime = Fsutil_TimeInSeconds();
+    handlePtr->descPtr->descModifyTime = handlePtr->descPtr->dataModifyTime;
+    handlePtr->descPtr->flags |= FSDM_FD_MODTIME_DIRTY;
+    fs_Stats.blockCache.dirBytesWritten += FSLCL_DIR_BLOCK_SIZE;
+    fs_Stats.blockCache.dirBlockWrites++;
+    blockSize = handlePtr->descPtr->lastByte + 1 - (blockNum * FS_BLOCK_SIZE);
+    if (blockSize > FS_BLOCK_SIZE) {
+	blockSize = FS_BLOCK_SIZE;
+    }
+    Fscache_UnlockBlock(blockPtr, (time_t) Fsutil_TimeInSeconds(), blockAddr,
+			blockSize, flags);
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fslcl_CheckDirLog --
+ *
+ *	Check the directory op log against the contents of a dir.  If there's
+ *	a discrepancy, modify the directory to contain the correct files
+ *	and directories.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Modify the directory to contain the correct files.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Fslcl_CheckDirLog(parentHandlePtr, dirLogList)
+    Fsio_FileIOHandle	*parentHandlePtr;
+    List_Links		*dirLogList;
+{
+    List_Links		*itemPtr;
+    char		*component;
+    int			compLen;
+    FslclHashEntry	*entryPtr;	/* Name cache entry */
+    Fsio_FileIOHandle	*handlePtr;
+    Boolean		found;
+    int			dirBlockNum;
+    ReturnStatus	status;
+    Fscache_Block	*cacheBlockPtr;	/* Cache block */
+    int			length;
+    int			blockOffset;
+    Fslcl_DirEntry	*dirEntryPtr;	/* Reference to directory entry */
+    char		buf[256];
+
+
+    if (!recov_Transparent) {
+	panic("Fslcl_CheckDirLog: shouldn't have been called.\n");
+    }
+    LIST_FORALL(dirLogList, itemPtr) {
+	/* Try cached lookup first. */
+
+	found = FALSE;
+	Fsrecov_GetComponent(itemPtr, &component, &compLen);
+	strncpy(buf, component, compLen);
+	buf[compLen] = '\0';
+	entryPtr =
+	    FSLCL_HASH_LOOK_ONLY(fslclNameTablePtr, component, parentHandlePtr);
+
+	if (entryPtr != (FslclHashEntry *)NIL) {
+	    if (entryPtr->hdrPtr->fileID.type != FSIO_LCL_FILE_STREAM) {
+		panic("Fslcl_CheckDirLog: got trashy handle from cache");
+	    }
+	    handlePtr = (Fsio_FileIOHandle *) entryPtr->hdrPtr;
+	    found = TRUE;
+	} else {
+	    dirBlockNum = 0;
+	    do {
+		status = Fscache_BlockRead(&parentHandlePtr->cacheInfo,
+			dirBlockNum, &cacheBlockPtr, &length, FSCACHE_DIR_BLOCK,
+			FALSE);
+		if (status != SUCCESS || length == 0) {
+		    break;
+		}
+		dirEntryPtr = (Fslcl_DirEntry *)cacheBlockPtr->blockAddr;
+		blockOffset = 0;
+		while (blockOffset < length) {
+		    if (dirEntryPtr->recordLength <= 0) {
+			printf(" File ID <%d, %d, %d>",
+					 parentHandlePtr->hdr.fileID.serverID,
+					 parentHandlePtr->hdr.fileID.major,
+					 parentHandlePtr->hdr.fileID.minor);
+			printf(" dirBlockNum <%d>, blockOffset <%d>",
+				     dirBlockNum, blockOffset);
+			printf("\n");
+			    Fscache_UnlockBlock(cacheBlockPtr, (time_t) 0,
+					    -1, 0, FSCACHE_CLEAR_READ_AHEAD);
+			panic("Fslcl_CheckDirLog: Corrupted directory?");
+		    }
+
+		    if (dirEntryPtr->fileNumber != 0) {
+		    /*
+		     * A valid directory record.  If component and the directory
+		     * entry are the same length then compare them for a match.
+		     * This String Compare is in-lined for efficiency.
+		     */
+			if ((dirEntryPtr->nameLength == compLen)) {
+			    if (strncmp(component, dirEntryPtr->fileName,
+				    compLen) == 0) {
+				found = TRUE;
+				break;
+			    }
+			}
+		    } else {
+			printf("Uh oh, dirEntryPtr->fileNumber is 0\n");
+		    }
+		    blockOffset += dirEntryPtr->recordLength;
+		    dirEntryPtr = (Fslcl_DirEntry *)((int)dirEntryPtr +
+						 dirEntryPtr->recordLength);
+		}
+		dirBlockNum++;
+		Fscache_UnlockBlock(cacheBlockPtr, (time_t) 0, -1, 0, 0);
+	    } while(!found);
+	}
+	/* It's been found or not.  Now deal with the result. */
+	if (found) {
+	    printf("Found %s\n", component);
+	} else {
+	    printf("Didn't find %s\n", component);
+	}
+    }
+    return;
+}
+@
+
+
+9.26
+log
+@Add another "out of space" debug printf.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fslcl/fslclLookup.c,v 9.25 92/05/07 17:09:11 kupfer Exp $ SPRITE (Berkeley)";
+a40 1
+#include <rpc.h>
+d46 3
+d92 1
+a92 1
+		Fsio_FileIOHandle **curHandlePtrPtr));
+d104 2
+a105 2
+		Fsio_FileIOHandle *curHandlePtr, char *component, 
+		int compLen, int forRename, Fs_UserIDs *idPtr, int logOp));
+d196 3
+d490 7
+d515 7
+d528 7
+d589 1
+a589 1
+			      FSDM_LOG_RENAME_DELETE);
+d610 1
+a610 1
+				&curHandlePtr);
+d630 4
+a633 3
+			status = DeleteFileName(parentHandlePtr, 
+				curHandlePtr, component, compLen,
+				(int) (useFlags & FS_RENAME), idPtr, logOp);
+d1470 2
+a1471 1
+LinkFile(parentHandlePtr, component, compLen, fileNumber, logOp,curHandlePtrPtr)
+d1479 1
+d1485 1
+d1509 5
+d1560 5
+d1861 1
+a1861 1
+	     compLen, forRename, idPtr, logOp)
+d1872 1
+d1881 3
+d1922 5
+d1983 5
+d2399 116
+@
+
+
+9.25
+log
+@Fix FslclLookup to return FS_INVALID_ARG instead of FS_FILE_NOT_FOUND
+if a single path component is bigger than the maximum.  Fix a line in
+an "#ifdef lint" section (the function name had changed).
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fslcl/fslclLookup.c,v 9.24 91/12/03 21:56:13 jhh Exp $ SPRITE (Berkeley)";
+d2322 2
+@
+
+
+9.24
+log
+@Added test to make sure that the two paths in a rename don't refer to
+the same file.  Without this fix the process would deadlock trying
+to lock the same handle twice. 
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fslcl/fslclLookup.c,v 9.23 91/09/10 18:38:26 rab Exp $ SPRITE (Berkeley)";
+d270 1
+a270 1
+			status = FS_FILE_NOT_FOUND;
+d281 1
+a281 1
+		status = FS_FILE_NOT_FOUND;
+d2317 1
+a2317 1
+    (void) FsrmtBlockAllocate((Fs_HandleHeader *)handlePtr, offset, length,
+@
+
+
+9.23
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fslclLookup.c,v 9.22 91/08/22 12:57:27 mendel Exp Locker: rab $ SPRITE (Berkeley)";
+d546 11
+@
+
+
+9.22
+log
+@Changed the printf error message in CreateFile to be a panic().  It doesn't
+cleanup correctly and leds to crashes later anyway.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fslclLookup.c,v 9.21 91/07/26 17:15:37 mendel Exp $ SPRITE (Berkeley)";
+a39 1
+#include <fsutilTrace.h>
+a46 10
+#ifdef SOSP91
+#include  <sospRecord.h>
+#include <timer.h>
+#endif
+
+/*
+ * Debugging flags.
+ */
+int fslclComponentTrace = FALSE;
+extern int fsprefix_FileNameTrace;
+a143 4
+#ifdef SOSP91
+Timer_Ticks totalNameTime = {0};
+Fs_FileID NullFileID = {0};
+#endif
+a193 13
+#ifdef SOSP91
+#define MAX_RECORDS 20
+    char buf[SOSP_LOOKUP_OFFSET+MAX_RECORDS*sizeof(Fs_FileID)];
+    Fs_FileID *sospTracePtr = (Fs_FileID*)(buf+SOSP_LOOKUP_OFFSET);
+    Timer_Ticks startTicks, endTicks;
+    int sospTraceCount = 0;
+    Timer_GetCurrentTicks(&startTicks);
+    bcopy((Address)prefixHdrPtr, (Address)sospTracePtr,
+	    sizeof(Fs_FileID));
+    sospTracePtr++;
+    sospTraceCount++;
+#endif
+
+a208 3
+#ifdef SOSP91
+    SOSP_IN_NAME_LOOKUP_FIELD = 1;
+#endif
+a245 3
+		if (fslclComponentTrace) {
+		    printf(" $MACHINE -> ");
+		}
+a287 3
+	if (fslclComponentTrace) {
+	    printf(" %s ", component);
+	}
+a364 9
+#ifdef SOSP91
+	if (sospTraceCount<MAX_RECORDS && curHandlePtr !=
+		(Fsio_FileIOHandle *)NIL) {
+	    bcopy((Address)curHandlePtr, (Address)sospTracePtr,
+		    sizeof(Fs_FileID));
+	    sospTracePtr++;
+	    sospTraceCount++;
+	}
+#endif
+a417 14
+#ifdef SOSP91
+		    /*
+		     * Put an indication in the trace that we hit a link.
+		     */
+		    if (sospTraceCount<MAX_RECORDS && curHandlePtr !=
+			    (Fsio_FileIOHandle *)NIL) {
+			((int *)sospTracePtr)[0] = -1;
+			((int *)sospTracePtr)[1] = -2;
+			((int *)sospTracePtr)[2] = -3;
+			((int *)sospTracePtr)[3] = -4;
+			sospTracePtr++;
+			sospTraceCount++;
+		    }
+#endif
+a429 3
+    if (useFlags & FSUTIL_TRACE_FLAG) {
+	FSUTIL_TRACE_NAME(FSUTIL_TRACE_LOOKUP_DONE, relativeName);
+    }
+a596 9
+#ifdef SOSP91
+			SOSP_ADD_DELETE_TRACE(clientID, 
+			    SOSP_REMEMBERED_MIG,  
+			    curHandlePtr->hdr.fileID,
+			    curHandlePtr->cacheInfo.attr.modifyTime,
+			    curHandlePtr->cacheInfo.attr.createTime,
+			    curHandlePtr->cacheInfo.attr.lastByte + 1);
+#endif
+
+a633 3
+    if (fslclComponentTrace && !fsprefix_FileNameTrace) {
+	printf(" <%x>\n", status);
+    }
+a636 20
+#ifdef SOSP91
+    if (curHandlePtr != (Fsio_FileIOHandle *)NIL) {
+	SOSP_ADD_LOOKUP(((int *)buf), clientID,
+	    (*(Fs_FileID *)(&(curHandlePtr->hdr))), status, sospTraceCount,
+	    SOSP_REMEMBERED_MIG,
+	    SOSP_REMEMBERED_OP|(curHandlePtr->descPtr->fileType<<8));
+    } else {
+	SOSP_ADD_LOOKUP(((int *)buf), clientID,
+	    NullFileID, status, sospTraceCount,
+	    SOSP_REMEMBERED_MIG, SOSP_REMEMBERED_OP);
+    }
+    SOSP_REMEMBERED_CLIENT = -1;
+    SOSP_REMEMBERED_MIG = -1;
+    SOSP_REMEMBERED_OP = -1;
+    SOSP_IN_NAME_LOOKUP_FIELD = 0;
+    Timer_GetCurrentTicks(&endTicks);
+    Timer_SubtractTicks(endTicks, startTicks, &endTicks);
+    /* Should really have a lock here, but I'll trust that this works. */
+    Timer_AddTicks(totalNameTime, endTicks, &totalNameTime);
+#endif
+d729 2
+a730 2
+		Fscache_UnlockBlock(cacheBlockPtr, 0, -1, 0,
+				    FSCACHE_CLEAR_READ_AHEAD);
+d772 2
+a773 2
+			    Fscache_UnlockBlock(cacheBlockPtr, 0, -1, 0,
+					       FSCACHE_CLEAR_READ_AHEAD);
+d823 1
+a823 1
+	Fscache_UnlockBlock(cacheBlockPtr, 0, -1, 0, 0);
+d957 2
+a958 1
+	Fscache_UnlockBlock(cacheBlockPtr, 0, -1, 0, FSCACHE_CLEAR_READ_AHEAD);
+d1069 2
+a1070 1
+	Fscache_UnlockBlock(cacheBlockPtr, 0, -1, 0, FSCACHE_CLEAR_READ_AHEAD);
+d1727 2
+a1728 1
+    Fscache_UnlockBlock(cacheBlockPtr, 0, -1, 0, FSCACHE_CLEAR_READ_AHEAD);
+d1772 2
+a1773 1
+	Fscache_UnlockBlock(cacheBlockPtr, 0, -1, 0, FSCACHE_CLEAR_READ_AHEAD);
+d1782 2
+a1783 1
+	Fscache_UnlockBlock(cacheBlockPtr, 0, -1, 0, FSCACHE_CLEAR_READ_AHEAD);
+a2037 1
+    FSUTIL_TRACE_HANDLE(FSUTIL_TRACE_DELETE, ((Fs_HandleHeader *)handlePtr));
+d2108 2
+a2109 2
+		    Fscache_UnlockBlock(cacheBlockPtr, 0, -1, 0, 
+					FSCACHE_CLEAR_READ_AHEAD);
+d2118 2
+a2119 1
+	Fscache_UnlockBlock(cacheBlockPtr, 0, -1, 0, FSCACHE_CLEAR_READ_AHEAD);
+a2296 3
+#ifdef SOSP91
+    Boolean		isForeign = FALSE;	/* Due to migration? */
+#endif SOSP91
+a2297 9
+#ifdef SOSP91
+    if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
+	if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
+		(proc_RunningProcesses[0]->genFlags &
+		(PROC_FOREIGN | PROC_MIGRATING))) {
+	    isForeign = TRUE;
+	}
+    }
+#endif SOSP91
+a2324 6
+#ifdef SOSP91
+	if (isForeign) {
+	    fs_SospMigStats.blockCache.dirBytesWritten += FSLCL_DIR_BLOCK_SIZE;
+	    fs_SospMigStats.blockCache.dirBlockWrites++;
+	}
+#endif SOSP91
+d2329 1
+a2329 1
+    Fscache_UnlockBlock(blockPtr, (unsigned int)Fsutil_TimeInSeconds(), blockAddr,
+@
+
+
+9.21
+log
+@Added more info to printf in CreateFile.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fslclLookup.c,v 9.20 91/07/19 17:27:08 mendel Exp $ SPRITE (Berkeley)";
+d1434 1
+a1434 1
+		printf("CreateFile: aborting create of %d (%s) in %d\n",
+@
+
+
+9.21.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fslcl/fslclLookup.c,v 9.21 91/07/26 17:15:37 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+9.20
+log
+@Fixed dirOffset calculation to use correct block size.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fslclLookup.c,v 9.19 91/07/03 09:42:31 mendel Exp $ SPRITE (Berkeley)";
+d1434 3
+a1436 1
+		printf( "CreateFile: unwinding\n");
+@
+
+
+9.19
+log
+@Added flag to directory logging to indicate operation of directory.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fslclLookup.c,v 9.18 91/06/27 12:35:57 mendel Exp $ SPRITE (Berkeley)";
+d855 1
+a855 1
+					dirBlockNum * FSLCL_DIR_BLOCK_SIZE;
+d1080 1
+a1080 1
+    *dirOffsetPtr = dirBlockNum * FSLCL_DIR_BLOCK_SIZE + blockOffset;
+d1136 1
+a1136 1
+		*dirOffsetPtr = blockOffset + FSLCL_DIR_BLOCK_SIZE*dirBlockNum;
+@
+
+
+9.18
+log
+@Patch incorrect block offset for dir change log.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fslclLookup.c,v 9.17 91/06/07 12:11:51 mendel Exp $ SPRITE (Berkeley)";
+d532 1
+d536 8
+a543 1
+			logClientData = Fsdm_DirOpStart(FSDM_LOG_CREATE,
+a547 2
+			nearbyFile = (type == FS_DIRECTORY) ? -1 : 
+								dirFileNumber;
+d561 1
+a561 1
+			    Fsdm_DirOpEnd(FSDM_LOG_CREATE, 
+d567 1
+a567 1
+			    Fsdm_DirOpEnd(FSDM_LOG_CREATE, 
+a655 1
+
+d1550 1
+d1556 1
+a1556 1
+					component, compLen, fileNumber, 
+d1949 3
+@
+
+
+9.17
+log
+@1) Added code to delete the hash table entry for a directory when the
+   name is deleted.  Previous, the code deleted the entry when the 
+   inode for the directory was delete. This left garbage in the
+   hash table for directories that were delete while open.
+2) Added code to FindComponent to handle the case when ".." of a directory
+   has been deleted.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fslclLookup.c,v 9.16 91/01/28 12:19:51 jhh Exp $ SPRITE (Berkeley)";
+d1074 1
+@
+
+
+9.16
+log
+@renaming a directory in which the target is non-empty didn't work.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fslclLookup.c,v 9.14 91/01/10 13:08:31 shirriff Exp $ SPRITE (Berkeley)";
+d375 2
+a376 11
+		if (status == SUCCESS && curHandlePtr->descPtr ==
+			(Fsdm_FileDescriptor *)NIL) {
+		    printf("FslclLookup, missing '..' link: ID <%d, %d, %d>\n",
+				 curHandlePtr->hdr.fileID.serverID,
+				 curHandlePtr->hdr.fileID.major,
+				 curHandlePtr->hdr.fileID.minor);
+		    status = FS_FILE_NOT_FOUND;
+		} else {
+		    Fsutil_HandleRelease(parentHandlePtr, (status != SUCCESS));
+		    parentHandlePtr = (Fsio_FileIOHandle *)NIL;
+		}
+d868 12
+a879 1
+				printf(
+d882 9
+d1131 1
+a1131 1
+		FSLCL_HASH_DELETE(fslclNameTablePtr, component, parentHandlePtr);
+d1952 1
+a1952 1
+	if (type == FS_DIRECTORY && !forRename) {
+d1954 2
+a1955 1
+	     * Directories have an extra link because they reference themselves.
+d1957 10
+a1966 3
+	    curDescPtr->numLinks--;
+	    if (curDescPtr->numLinks > 0) {
+		printf("DeleteFileName: extra links on directory\n");
+@
+
+
+9.15
+log
+@Increased max number of components for a trace lookup record.
+@
+text
+@d619 3
+a621 1
+			fileDeleted = TRUE;
+@
+
+
+9.14
+log
+@Added the file type to the LOOKUP trace.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fslclLookup.c,v 9.13 91/01/08 16:27:26 shirriff Exp $ SPRITE (Berkeley)";
+d210 1
+a210 1
+#define MAX_RECORDS 10
+@
+
+
+9.13
+log
+@Added an extra trace field to indicate a symbolic link.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fslclLookup.c,v 9.12 90/12/11 00:25:21 mgbaker Exp $ SPRITE (Berkeley)";
+d718 2
+a719 1
+	    SOSP_REMEMBERED_MIG, SOSP_REMEMBERED_OP);
+@
+
+
+9.12
+log
+@Sosp counters
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fslclLookup.c,v 9.11 90/12/10 11:11:10 jhh Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d473 14
+@
+
+
+9.11
+log
+@Fixed delete and set attrs trace records
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fslclLookup.c,v 9.10 90/12/06 17:34:55 shirriff Exp $ SPRITE (Berkeley)";
+d2339 3
+d2343 9
+d2379 6
+@
+
+
+9.10
+log
+@Added sosp measurements.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fslclLookup.c,v 9.9 90/10/08 15:37:50 mendel Exp Locker: shirriff $ SPRITE (Berkeley)";
+d648 9
+@
+
+
+9.9
+log
+@Changed name to fslclLookup.c
+Fixed includes to use <> rather than "", added functions prototypes, and
+removed lint.
+Added directory change logging and use the new disk domain interface.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs.mendel/RCS/fsLocalLookup.c,v 1.1 90/01/16 17:10:54 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d48 4
+d155 4
+d209 12
+d237 3
+d411 9
+d691 19
+@
+
+
+9.8
+log
+@new parameters to Net_SpriteIDToMachType
+@
+text
+@d2 1
+a2 1
+ * fsLocalLookup.c --
+d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl.jhh/RCS/fsLocalLookup.c,v 9.7 90/08/31 13:24:34 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d29 19
+a47 19
+#include "sprite.h"
+#include "fsutil.h"
+#include "fs.h"
+#include "fsNameOps.h"
+#include "fsprefix.h"
+#include "fsdm.h"
+#include "fslclInt.h"
+#include "fslcl.h"
+#include "fsNameHash.h"
+#include "fsconsist.h"
+#include "fscache.h"
+#include "fsutilTrace.h"
+#include "fsStat.h"
+#include "rpc.h"
+#include "net.h"
+#include "vm.h"
+#include "string.h"
+#include "proc.h"
+#include "dbg.h"
+a72 16
+static ReturnStatus	ExpandLink();
+static ReturnStatus	FindComponent();
+static ReturnStatus 	InsertComponent();
+static Boolean		DirectoryEmpty();
+static int		FindFileType();
+static ReturnStatus 	CreateFile();
+static ReturnStatus 	LinkFile();
+static ReturnStatus 	OkToMoveDirectory();
+static ReturnStatus 	MoveDirectory();
+static ReturnStatus 	GetParentNumber();
+static ReturnStatus 	SetParentNumber();
+static ReturnStatus 	DeleteFileName();
+static void		CloseDeletedFile();
+static ReturnStatus 	CheckPermissions();
+static ReturnStatus 	CacheDirBlockWrite();
+static ReturnStatus 	WriteNewDirectory();
+d74 45
+d184 1
+a184 1
+    register int 	compLen;	/* The length of component */
+d194 7
+d346 1
+a346 1
+			    TRUE, &curHandlePtr);
+d379 1
+a379 1
+			&curHandlePtr);
+a462 6
+ 	if (curHandlePtr != (Fsio_FileIOHandle *)NIL &&
+ 	    (curHandlePtr->cacheInfo.attr.userType ==
+	     FS_USER_TYPE_UNDEFINED)) {
+ 	    curHandlePtr->cacheInfo.attr.userType =
+		    FindFileType(parentHandlePtr, relativeName);
+ 	}
+d489 1
+a489 1
+		    int 	fileNumber;
+d491 1
+a491 1
+    
+d495 10
+a504 2
+			nearbyFile = (type == FS_DIRECTORY) ? -1 :
+				     parentHandlePtr->hdr.fileID.minor;
+d506 1
+a506 1
+							     &fileNumber);
+d509 3
+a511 2
+				     component, compLen, fileNumber, type,
+				     permissions, idPtr, &curHandlePtr);
+d513 16
+a528 10
+				Fsdm_FreeFileNumber(domainPtr, fileNumber);
+			    } else if (curHandlePtr !=
+				       (Fsio_FileIOHandle *)NIL &&
+				       (curHandlePtr->cacheInfo.attr.userType ==
+					FS_USER_TYPE_UNDEFINED)) {
+				curHandlePtr->cacheInfo.attr.userType =
+					FindFileType(parentHandlePtr,
+						     relativeName);
+			    }
+
+d539 3
+d552 1
+d555 1
+d558 1
+d570 4
+a573 5
+			status = DeleteFileName(domainPtr, parentHandlePtr,
+			      curHandlePtr, component, compLen, FALSE, idPtr);
+			if (status == SUCCESS) {
+			    fileDeleted = TRUE;
+			}
+d589 6
+a594 2
+		    status = LinkFile(domainPtr, parentHandlePtr,
+				component, compLen, fileNumber, &curHandlePtr);
+d609 4
+a612 1
+			status = DeleteFileName(domainPtr,parentHandlePtr, 
+d614 1
+a614 1
+				(int) (useFlags & FS_RENAME), idPtr);
+d617 1
+a617 1
+					    &curHandlePtr);
+a665 55
+ * FindFileType --
+ *
+ *	Determine the type of a file, given its directory and name.
+ *	By default, files are "other files", but identify tmp/swap/object
+ *	files when possible.  Note: this is intended to be used if there
+ *	is no advisory type already associated with the file, because it
+ *	uses naming and directory information only.
+ *
+ * Results:
+ *	The best guess at a file type is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+FindFileType(parentHandlePtr, relativeName)
+    Fsio_FileIOHandle	*parentHandlePtr;	/* Locked handle of current 
+						 * directory */
+    char		*relativeName;		/* Path to file from cwd */
+{
+    int parentType;
+
+    if (parentHandlePtr != (Fsio_FileIOHandle *)NIL) {
+	parentType  = parentHandlePtr->cacheInfo.attr.userType;
+	if (parentHandlePtr->hdr.fileID.minor == fsutil_TmpDirNum ||
+	    parentType == FS_USER_TYPE_TMP) {
+	    return(FS_USER_TYPE_TMP);
+	}
+	if (parentType == FS_USER_TYPE_SWAP) {
+	    return(FS_USER_TYPE_SWAP);
+	}
+    }
+
+    /*
+     * The check for "swap" is to catch /sprite/swap, and then the parent
+     * handle should catch the children.  NOTE: it's a kludge until file
+     * types are first-class attributes.
+     */
+#define String_Match(foo, bar) 0
+    if (relativeName != (char *) NIL) {
+	if (String_Match(relativeName, "*swap/*") ||
+	    String_Match(relativeName, "*swap")) {
+	    return(FS_USER_TYPE_SWAP);
+	} else if (String_Match(relativeName, "*.o")) {
+	    return(FS_USER_TYPE_OBJECT);
+	}
+    }
+    return(FS_USER_TYPE_OTHER);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+d680 2
+a681 1
+FindComponent(parentHandlePtr, component, compLen, isDotDot, curHandlePtrPtr)
+d693 2
+d781 2
+d791 1
+d847 1
+a847 1
+InsertComponent(curHandlePtr, component, compLen, fileNumber)
+d852 1
+d986 1
+d1010 1
+a1010 1
+DeleteComponent(parentHandlePtr, component, compLen)
+d1014 1
+d1018 2
+a1019 2
+    Fslcl_DirEntry 		*dirEntryPtr;	/* Reference to directory entry */
+    Fslcl_DirEntry 		*lastDirEntryPtr;/* Back pointer used when merging 
+d1042 1
+d1181 5
+d1202 2
+a1203 2
+#endif notdef
+    return(status);
+d1226 1
+a1226 1
+GetHandle(fileNumber, curHandlePtr, name, newHandlePtrPtr)
+d1228 1
+d1240 2
+a1241 1
+    status = Fsio_LocalFileHandleInit(&fileID, name, newHandlePtrPtr);
+d1264 1
+a1264 1
+	   permissions, idPtr, curHandlePtrPtr)
+d1275 1
+d1294 1
+d1296 7
+a1302 2
+	status = Fsdm_FileDescStore(domainPtr, fileNumber, newDescPtr);
+	if (status == SUCCESS) {
+d1304 2
+a1305 2
+	     * GetHandle does extra work because we already have the
+	     * file descriptor all set up...
+d1307 7
+a1313 3
+	    status = GetHandle(fileNumber, parentHandlePtr, component,
+				curHandlePtrPtr);
+	    if (status != SUCCESS) {
+d1315 3
+a1317 2
+		 * GetHandle shouldn't fail because we just wrote out
+		 * the file descriptor.
+d1319 2
+a1320 4
+		panic( "CreateFile: GetHandle failed (continuable)\n");
+		newDescPtr->flags = FSDM_FD_FREE;
+		(void)Fsdm_FileDescStore(domainPtr, fileNumber, newDescPtr);
+	    } else {
+d1322 9
+a1330 23
+		    status = WriteNewDirectory(*curHandlePtrPtr,
+						parentHandlePtr);
+		}
+		if (status == SUCCESS) {
+		    /*
+		     * Commit by adding the name to the directory.  If we crash
+		     * after this the file will show up and have a good
+		     * descriptor for itself on disk.
+		     */
+		    status = InsertComponent(parentHandlePtr, component,
+							compLen, fileNumber);
+		    if (type == FS_DIRECTORY) {
+			if (status == SUCCESS) {
+			    /*
+			     * Update the parent directory to reflect
+			     * the addition of a new sub-directory.
+			     */
+			    parentDescPtr->numLinks++;
+			    parentDescPtr->descModifyTime = fsutil_TimeInSeconds;
+			    (void)Fsdm_FileDescStore(domainPtr,
+				      parentHandlePtr->hdr.fileID.minor,
+					  parentDescPtr);
+			}
+d1333 11
+a1343 12
+		if (status != SUCCESS) {
+		    /*
+		     * Couldn't add to the directory, no disk space perhaps.
+		     * Unwind by marking the file descriptor as free and
+		     * releasing the handle we've created.
+		     */
+		    printf( "CreateFile: unwinding\n");
+		    newDescPtr->flags = FSDM_FD_FREE;
+		    (void)Fsdm_FileDescStore(domainPtr, fileNumber, newDescPtr);
+		    Fsutil_HandleRelease(*curHandlePtrPtr, TRUE);
+		    *curHandlePtrPtr = (Fsio_FileIOHandle *)NIL;
+		}
+d1347 5
+a1351 1
+    free((Address) newDescPtr);
+d1400 4
+d1429 1
+a1429 3
+LinkFile(domainPtr, parentHandlePtr, component, compLen, fileNumber,
+	 curHandlePtrPtr)
+    Fsdm_Domain	*domainPtr;		/* Domain of the file */
+d1435 1
+d1441 2
+d1450 2
+a1451 1
+    status = GetHandle(fileNumber, parentHandlePtr, component, curHandlePtrPtr);
+d1460 4
+d1465 3
+a1467 2
+	linkDescPtr->descModifyTime = fsutil_TimeInSeconds;
+	status = Fsdm_FileDescStore(domainPtr, fileNumber, linkDescPtr);
+d1473 1
+a1473 1
+							fileNumber);
+d1481 2
+a1482 2
+		modTime.seconds = fsutil_TimeInSeconds;
+		status = MoveDirectory(domainPtr, &modTime, parentHandlePtr,
+d1486 1
+a1486 1
+							     compLen);
+d1496 2
+a1497 1
+		(void)Fsdm_FileDescStore(domainPtr, fileNumber, linkDescPtr);
+d1500 2
+d1505 1
+d1507 3
+d1556 1
+a1556 1
+	status == SUCCESS;
+d1585 2
+a1586 1
+		    status = GetHandle(parentNumber, curHandlePtr, (char *)NIL,
+d1622 1
+a1622 2
+MoveDirectory(domainPtr, modTimePtr, newParentHandlePtr, curHandlePtr)
+    Fsdm_Domain	*domainPtr;			/* Domain of operation */
+d1660 2
+a1661 1
+	    (void)Fsdm_FileDescStore(domainPtr, newParentNumber, parentDescPtr);
+d1791 1
+a1791 4
+ *	reducing its link count.  If there are no links left then the
+ *	file's handle is marked as deleted.  Finally, if this routine
+ *	has the last reference on the handle then the file's data blocks
+ *	are truncated away and the file descriptor is marked as free.
+d1797 1
+a1797 1
+ *	May call Fslcl_DeleteFileDesc to remove the file and its data.
+d1802 3
+a1804 4
+DeleteFileName(domainPtr, parentHandlePtr, curHandlePtr, component,
+	       compLen, forRename, idPtr)
+    Fsdm_Domain *domainPtr;			/* Domain of the file */
+    Fsio_FileIOHandle *parentHandlePtr;		/* Handle of directory in
+d1806 1
+a1806 1
+    Fsio_FileIOHandle *curHandlePtr;		/* Handle of file to delete */
+d1813 1
+d1819 4
+d1851 6
+d1860 1
+a1860 1
+    status = DeleteComponent(parentHandlePtr, component, compLen);
+d1863 1
+d1870 1
+a1870 1
+	    printf(" DeleteFileName: extra links on directory\n");
+d1873 2
+a1874 3
+	curDescPtr->descModifyTime = fsutil_TimeInSeconds;
+	status = Fsdm_FileDescStore(domainPtr, curHandlePtr->hdr.fileID.minor,
+				 curDescPtr);
+d1877 1
+d1879 1
+d1888 12
+a1899 7
+	    parentDescPtr->descModifyTime = fsutil_TimeInSeconds;
+	    status = Fsdm_FileDescStore(domainPtr,
+			 parentHandlePtr->hdr.fileID.minor, parentDescPtr);
+	    if (status != SUCCESS) {
+		printf("DeleteFileName: (2) Couldn't store descriptor\n");
+		return(status);
+	    }
+d1901 5
+a1905 2
+    }
+    return status;
+d2022 1
+a2022 1
+    status = Fsdm_FileDescWriteBack(handlePtr, TRUE);
+d2032 1
+a2032 1
+	    Fsdm_FreeFileNumber(domainPtr, handlePtr->hdr.fileID.minor);
+a2186 2
+	Fs_Attributes attr;
+
+d2188 1
+a2188 3
+	descPtr->flags |= FSDM_FD_DIRTY;
+	attr.permissions = descPtr->permissions;
+	Fscache_UpdateCachedAttr(&handlePtr->cacheInfo, &attr, FS_SET_MODE);
+d2282 1
+a2282 1
+    (void) (handlePtr->cacheInfo.ioProcsPtr->allocate)
+d2302 3
+a2304 1
+    handlePtr->descPtr->dataModifyTime = fsutil_TimeInSeconds;
+d2311 1
+a2311 1
+    Fscache_UnlockBlock(blockPtr, (unsigned int)fsutil_TimeInSeconds, blockAddr,
+@
+
+
+9.7
+log
+@made file deletion a two-step process, so that the delete callback is
+not done with the parent handle held, thus avoiding a deadlock.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fsLocalLookup.c,v 9.6 90/07/15 13:37:49 shirriff Exp $ SPRITE (Berkeley)";
+d30 1
+a31 1
+#include "fsutil.h"
+d215 1
+d232 2
+a233 2
+		    machType = Net_SpriteIDToMachType(clientID);
+		    if (machType == (char *)NIL) {
+d238 2
+@
+
+
+9.6
+log
+@Added check to prevent crash if bad '..'.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fsLocalLookup.c,v 9.5 90/03/30 16:40:24 jhh Exp Locker: shirriff $ SPRITE (Berkeley)";
+d78 11
+a88 10
+static ReturnStatus CreateFile();
+static ReturnStatus LinkFile();
+static ReturnStatus OkToMoveDirectory();
+static ReturnStatus MoveDirectory();
+static ReturnStatus GetParentNumber();
+static ReturnStatus SetParentNumber();
+static ReturnStatus DeleteFileName();
+static ReturnStatus CheckPermissions();
+static ReturnStatus CacheDirBlockWrite();
+static ReturnStatus WriteNewDirectory();
+d152 1
+a152 1
+    register Fsio_FileIOHandle *parentHandlePtr; /* Handle for parent dir. */
+d492 3
+a494 1
+	    case FS_LINK:
+d515 1
+d517 4
+a520 1
+			      &curHandlePtr, component, compLen, FALSE, idPtr);
+d539 3
+d543 1
+d552 6
+a557 12
+			/*
+			 * Special case code to trap the bugger who is deleting
+			 * "/tmp", which is a remote link! 
+			 */
+			if (curHandlePtr->descPtr->fileType == FS_REMOTE_LINK &&
+			    parentHandlePtr->hdr.fileID.minor == 2 &&
+			    parentHandlePtr->hdr.fileID.major == 0 &&
+			    strcmp(component, "tmp") == 0) {
+			    printf("FslclLookup removal of \tmp (%s) by client %d denied\n",
+				relativeName, clientID);
+			    status = FS_NO_ACCESS;
+			    break;
+a558 5
+			/* End special hack.  Remove by 1990 */
+
+			status = DeleteFileName(domainPtr, parentHandlePtr, 
+				&curHandlePtr, component, compLen,
+				(int) (useFlags & FS_RENAME), idPtr);
+d1765 1
+a1765 1
+DeleteFileName(domainPtr, parentHandlePtr, curHandlePtrPtr, component,
+d1768 1
+a1768 1
+    Fsio_FileIOHandle *parentHandlePtr;	/* Handle of directory in
+d1770 1
+a1770 1
+    Fsio_FileIOHandle **curHandlePtrPtr;	/* Handle of file to delete */
+a1778 1
+    register Fsio_FileIOHandle *curHandlePtr;	/* Local copy */
+a1782 1
+    curHandlePtr = *curHandlePtrPtr;
+d1822 1
+a1822 1
+	    printf("DeleteFileName: extra links on directory\n");
+d1847 60
+a1906 19
+	if (curDescPtr->numLinks <= 0) {
+	    /*
+	     * At this point curHandlePtr is potentially the last reference
+	     * to the file.  If there are no users then do the delete, otherwise
+	     * mark the handle as deleted and Fsio_FileClose will take care of it.
+	     */
+	    curHandlePtr->flags |= FSIO_FILE_NAME_DELETED;
+	    if (curHandlePtr->use.ref == 0) {
+		/*
+		 * Handle the deletion and clean up the handle.
+		 * We set the the clientID to us and specify client
+		 * call-backs so that any other clients will be notified.
+		 */
+		(void)Fsio_FileCloseInt(curHandlePtr, 0, 0, 0, rpc_SpriteID, TRUE);
+		*curHandlePtrPtr = (Fsio_FileIOHandle *)NIL;
+	    } else {
+		Fsutil_HandleRelease(curHandlePtr, TRUE);
+		*curHandlePtrPtr = (Fsio_FileIOHandle *)NIL;
+	    }
+d1911 3
+a1914 1
+    return(status);
+@
+
+
+9.5
+log
+@nukes setuid bit from cached attributes when file is overwritten
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fsLocalLookup.c,v 9.4 89/10/26 18:42:08 brent Exp $ SPRITE (Berkeley)";
+d312 11
+a322 2
+		Fsutil_HandleRelease(parentHandlePtr, (status != SUCCESS));
+		parentHandlePtr = (Fsio_FileIOHandle *)NIL;
+@
+
+
+9.4
+log
+@Eliminated panic due to bad prefix, replaced with better warning statement.
+Also added HACK to guard against the errant client that
+removes "/tmp" when it reboots.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fsLocalLookup.c,v 9.3 89/10/09 14:33:34 brent Exp $ SPRITE (Berkeley)";
+d2080 2
+d2084 2
+@
+
+
+9.3
+log
+@Split FSIO_FILE_DELETED into FSIO_FILE_NAME_DELETED and
+FSIO_FILE_DESC_DELETED.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fsLocalLookup.c,v 9.2 89/09/25 16:53:01 brent Exp $ SPRITE (Berkeley)";
+d174 7
+a180 1
+   /*
+a187 4
+    if (curHandlePtr->hdr.fileID.type != FSIO_LCL_FILE_STREAM) {
+	panic( "FslclLookup, bad prefix handle type <%d>\n",
+	    curHandlePtr->hdr.fileID.type);
+    }
+d532 15
+@
+
+
+9.2
+log
+@Updated to new fs typedefs
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fsLocalLookup.c,v 9.1 89/09/18 13:46:14 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d1829 1
+a1829 1
+	    curHandlePtr->flags |= FSIO_FILE_DELETED;
+@
+
+
+9.1
+log
+@Updated call to cache block allocation routine.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fsLocalLookup.c,v 8.8 89/08/21 15:26:59 mendel Exp $ SPRITE (Berkeley)";
+d662 1
+a662 1
+    register FslclDirEntry *dirEntryPtr;	/* Reference to directory entry */
+d705 1
+a705 1
+	dirEntryPtr = (FslclDirEntry *)cacheBlockPtr->blockAddr;
+d784 1
+a784 1
+	    dirEntryPtr = (FslclDirEntry *)((int)dirEntryPtr +
+d819 1
+a819 1
+    FslclDirEntry 		*dirEntryPtr;	/* Reference to directory entry. */
+d830 1
+a830 1
+    recordLength = FsDirRecLength(compLen);
+d860 1
+a860 1
+	dirEntryPtr = (FslclDirEntry *)cacheBlockPtr->blockAddr;
+d877 1
+a877 1
+			     FsDirRecLength(dirEntryPtr->nameLength);
+d898 1
+a898 1
+	    dirEntryPtr = (FslclDirEntry *)((int)dirEntryPtr +
+d935 1
+a935 1
+	FslclDirEntry *tmpDirEntryPtr;	/* Pointer to new slot */
+d937 2
+a938 2
+	newRecordLength = FsDirRecLength(dirEntryPtr->nameLength);
+	tmpDirEntryPtr = (FslclDirEntry *)((int)dirEntryPtr + newRecordLength);
+d978 2
+a979 2
+    FslclDirEntry 		*dirEntryPtr;	/* Reference to directory entry */
+    FslclDirEntry 		*lastDirEntryPtr;/* Back pointer used when merging 
+d993 2
+a994 2
+	lastDirEntryPtr = (FslclDirEntry *)NIL;
+	dirEntryPtr = (FslclDirEntry *)cacheBlockPtr->blockAddr;
+d1004 1
+a1004 1
+		if (lastDirEntryPtr != (FslclDirEntry *)NIL) {
+d1020 1
+a1020 1
+		 lastDirEntryPtr = (FslclDirEntry *) NIL;
+d1025 1
+a1025 1
+		(FslclDirEntry *)((int)dirEntryPtr + dirEntryPtr->recordLength);
+d1333 1
+a1333 1
+    register FslclDirEntry *dirEntryPtr;
+d1344 1
+a1344 1
+    dirEntryPtr = (FslclDirEntry *)dirBlock;
+d1346 1
+a1346 1
+    dirEntryPtr = (FslclDirEntry *)((int)dirEntryPtr +
+d1625 1
+a1625 1
+    register FslclDirEntry *dirEntryPtr;
+d1636 1
+a1636 1
+    dirEntryPtr = (FslclDirEntry *)cacheBlockPtr->blockAddr;
+d1645 1
+a1645 1
+		(FslclDirEntry *)((int)dirEntryPtr + dirEntryPtr->recordLength);
+d1685 1
+a1685 1
+    register FslclDirEntry *dirEntryPtr;
+d1695 1
+a1695 1
+    dirEntryPtr = (FslclDirEntry *)cacheBlockPtr->blockAddr;
+d1704 1
+a1704 1
+    dirEntryPtr = (FslclDirEntry *)((int)dirEntryPtr + dirEntryPtr->recordLength);
+d1939 1
+a1939 1
+    FslclDirEntry 		*dirEntryPtr;	/* Reference to directory entry */
+d1955 1
+a1955 1
+	dirEntryPtr = (FslclDirEntry *)cacheBlockPtr->blockAddr;
+d1974 1
+a1974 1
+		(FslclDirEntry *)((int)dirEntryPtr + dirEntryPtr->recordLength);
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fsLocalLookup.c,v 8.8 89/08/21 15:26:59 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+a2129 2
+ *	THIS USES THE descPtr FIELDS.  CHECK cacheInfo.attr FIELDS
+ *
+d2159 8
+a2166 1
+	((Fs_HandleHeader *)handlePtr, offset, length, &blockAddr, &newBlock);
+@
+
+
+8.8
+log
+@Break up fs into many modules.    
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsLocalLookup.c,v 8.7 89/06/15 09:17:22 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+8.7
+log
+@Added fsStats.lookup statistics.
+@
+text
+@d5 2
+a6 2
+ *	The top level loop is in FsLocalLookup, and it is the workhorse
+ *	of the Local Domain that is called by procedures like FsLocalOpen.
+d8 1
+a8 1
+ *	directly (or indirectly) through FsLocalLookup.
+d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsLocalLookup.c,v 8.6 89/03/15 14:57:36 brent Exp $ SPRITE (Berkeley)";
+d31 1
+a31 1
+#include "fsInt.h"
+d33 4
+a36 2
+#include "fsPrefix.h"
+#include "fsLocalDomain.h"
+d38 3
+a40 4
+#include "fsOpTable.h"
+#include "fsConsist.h"
+#include "fsCacheOps.h"
+#include "fsTrace.h"
+d52 2
+a53 2
+int fsComponentTrace = FALSE;
+extern int fsFileNameTrace;
+d60 1
+a60 1
+ * The hash table gets initialized in FsAttachDisk after the first disk
+d62 1
+a62 1
+ * The name caching can be disabled by setting the fsNameCaching flag to FALSE.
+d65 4
+a68 4
+FsHashTable fsNameTable;
+FsHashTable *fsNameTablePtr = (FsHashTable *)NIL;
+Boolean fsNameCaching = TRUE;
+int fsNameHashSize = FS_NAME_HASH_SIZE;
+d93 1
+a93 1
+ * FsLocalLookup --
+d117 1
+a117 1
+ *	FsDomainRelease as soon as our caller is finished with the handle.
+d122 1
+a122 1
+FsLocalLookup(prefixHdrPtr, relativeName, rootIDPtr, useFlags, type, clientID,
+d124 1
+a124 1
+    FsHandleHeader *prefixHdrPtr;	/* Handle from the prefix table or
+d143 1
+a143 1
+    FsLocalFileIOHandle **handlePtrPtr;	/* Result, the handle for the file.
+d147 1
+a147 1
+    FsRedirectInfo **newNameInfoPtrPtr;	/* Redirect Result, the pathname left
+d151 1
+a151 1
+    register FsLocalFileIOHandle *parentHandlePtr; /* Handle for parent dir. */
+d155 1
+a155 1
+    FsLocalFileIOHandle	*curHandlePtr;	/* Handle for the current spot in
+d157 1
+a157 1
+    FsDomain *domainPtr;		/* Domain of the lookup */
+d169 2
+a170 2
+    domainPtr = FsDomainFetch(prefixHdrPtr->fileID.major, FALSE);
+    if (domainPtr == (FsDomain *)NIL) {
+d179 2
+a180 2
+    curHandlePtr = FsHandleDupType(FsLocalFileIOHandle, prefixHdrPtr);
+    parentHandlePtr = (FsLocalFileIOHandle *)NIL;
+d182 2
+a183 2
+    if (curHandlePtr->hdr.fileID.type != FS_LCL_FILE_STREAM) {
+	panic( "FsLocalLookup, bad prefix handle type <%d>\n",
+d190 1
+a190 1
+    fsStats.lookup.number++;
+d214 1
+a214 1
+		if (fsComponentTrace) {
+d217 1
+a217 1
+		fsStats.lookup.numSpecial++;
+d231 1
+a231 1
+			 "FsLocalLookup, no machine type for client %d\n",
+d254 1
+a254 1
+	fsStats.lookup.numComponents++;
+d257 1
+a257 1
+	if (fsComponentTrace) {
+d283 1
+a283 1
+		*newNameInfoPtrPtr = mnew(FsRedirectInfo);
+d287 1
+a287 1
+		fsStats.lookup.parent++;
+d299 2
+a300 2
+		if (parentHandlePtr != (FsLocalFileIOHandle *)NIL) {
+		    FsHandleRelease(parentHandlePtr, TRUE);
+d310 2
+a311 2
+		FsHandleRelease(parentHandlePtr, (status != SUCCESS));
+		parentHandlePtr = (FsLocalFileIOHandle *)NIL;
+d323 2
+a324 2
+	    if (parentHandlePtr != (FsLocalFileIOHandle *)NIL) {
+		FsHandleRelease(parentHandlePtr, TRUE);
+d342 1
+a342 1
+	    fsStats.lookup.symlinks++;
+d361 1
+a361 1
+		    printf( "FsLocalLookup, empty link \"%s\"\n",
+d374 1
+a374 1
+		    *newNameInfoPtrPtr = mnew(FsRedirectInfo);
+d382 1
+a382 1
+			fsStats.lookup.remote++;
+d386 1
+a386 1
+			fsStats.lookup.redirect++;
+d389 2
+a390 2
+		} else if (parentHandlePtr != (FsLocalFileIOHandle *)NIL) {
+		    FsHandleRelease(curHandlePtr, TRUE);
+d392 1
+a392 1
+		    parentHandlePtr = (FsLocalFileIOHandle *)NIL;
+d402 2
+a403 2
+    if (useFlags & FS_TRACE_FLAG) {
+	FS_TRACE_NAME(FS_TRACE_LOOKUP_DONE, relativeName);
+d412 1
+a412 1
+ 	if (curHandlePtr != (FsLocalFileIOHandle *)NIL &&
+d429 1
+a429 1
+		fsStats.lookup.forCreate++;
+d452 1
+a452 1
+			status = FsGetNewFileNumber(domainPtr, nearbyFile,
+d459 1
+a459 1
+				FsFreeFileNumber(domainPtr, fileNumber);
+d461 1
+a461 1
+				       (FsLocalFileIOHandle *)NIL &&
+d487 1
+a487 1
+		    fsStats.lookup.forRename++;
+d489 1
+a489 1
+		    fsStats.lookup.forLink++;
+d523 1
+a523 1
+		fsStats.lookup.forDelete++;
+d545 2
+a546 2
+    if (parentHandlePtr != (FsLocalFileIOHandle *)NIL) {
+	FsHandleRelease(parentHandlePtr, TRUE);
+d548 1
+a548 1
+    if (curHandlePtr != (FsLocalFileIOHandle *)NIL) {
+d550 2
+a551 2
+	    FsHandleRelease(curHandlePtr, TRUE);
+	    curHandlePtr = (FsLocalFileIOHandle *)NIL;
+d554 1
+a554 1
+    if (handlePtrPtr != (FsLocalFileIOHandle **)NIL) {
+d559 3
+a561 3
+    } else if (curHandlePtr != (FsLocalFileIOHandle *)NIL) {
+	printf( "FsLocalLookup: caller didn't want handle\n");
+	FsHandleRelease(curHandlePtr, TRUE);
+d564 2
+a565 2
+	(handlePtrPtr == (FsLocalFileIOHandle **)NIL)) {
+	FsDomainRelease(prefixHdrPtr->fileID.major);
+d567 1
+a567 1
+    if (fsComponentTrace && !fsFileNameTrace) {
+d571 1
+a571 1
+	fsStats.lookup.notFound++;
+d598 1
+a598 1
+    FsLocalFileIOHandle	*parentHandlePtr;	/* Locked handle of current 
+d604 1
+a604 1
+    if (parentHandlePtr != (FsLocalFileIOHandle *)NIL) {
+d606 1
+a606 1
+	if (parentHandlePtr->hdr.fileID.minor == fsTmpDirNum ||
+d650 1
+a650 1
+    FsLocalFileIOHandle	*parentHandlePtr;	/* Locked handle of current 
+d660 1
+a660 1
+    FsLocalFileIOHandle	**curHandlePtrPtr;	/* Return, locked handle */
+d662 1
+a662 1
+    register FsDirEntry *dirEntryPtr;	/* Reference to directory entry */
+d667 1
+a667 1
+    FsCacheBlock	*cacheBlockPtr;	/* Cache block */
+d670 1
+a670 1
+    FsHashEntry		*entryPtr;	/* Name cache entry */
+d677 3
+a679 3
+    entryPtr = FS_HASH_LOOK_ONLY(fsNameTablePtr, component, parentHandlePtr);
+    if (entryPtr != (FsHashEntry *)NIL) {
+	if (entryPtr->hdrPtr->fileID.type != FS_LCL_FILE_STREAM) {
+d689 1
+a689 1
+		FsHandleUnlock(parentHandlePtr);
+d691 1
+a691 1
+	    *curHandlePtrPtr = FsHandleDupType(FsLocalFileIOHandle,
+d699 2
+a700 2
+	status = FsCacheBlockRead(&parentHandlePtr->cacheInfo, dirBlockNum,
+			&cacheBlockPtr, &length, FS_DIR_CACHE_BLOCK, FALSE);
+d702 1
+a702 1
+	    *curHandlePtrPtr = (FsLocalFileIOHandle *)NIL;
+d705 1
+a705 1
+	dirEntryPtr = (FsDirEntry *)cacheBlockPtr->blockAddr;
+d717 3
+a719 3
+		FsCacheUnlockBlock(cacheBlockPtr, 0, -1, 0,
+				    FS_CLEAR_READ_AHEAD);
+		*curHandlePtrPtr = (FsLocalFileIOHandle *)NIL;
+d745 1
+a745 1
+				FsHandleUnlock(parentHandlePtr);
+d750 1
+a750 1
+			    fileID.type = FS_LCL_FILE_STREAM;
+d754 1
+a754 1
+			    status = FsLocalFileHandleInit(&fileID, component,
+d757 2
+a758 2
+			    FsCacheUnlockBlock(cacheBlockPtr, 0, -1, 0,
+					       FS_CLEAR_READ_AHEAD);
+d760 1
+a760 1
+				FS_HASH_INSERT(fsNameTablePtr, component,
+d784 1
+a784 1
+	    dirEntryPtr = (FsDirEntry *)((int)dirEntryPtr +
+d788 1
+a788 1
+	FsCacheUnlockBlock(cacheBlockPtr, 0, -1, 0, 0);
+d811 1
+a811 1
+    FsLocalFileIOHandle *curHandlePtr;	/* Locked handle of current directory */
+d819 1
+a819 1
+    FsDirEntry 		*dirEntryPtr;	/* Reference to directory entry. */
+d827 1
+a827 1
+    FsCacheBlock	*cacheBlockPtr;	/* Cache block. */
+d840 2
+a841 2
+	status = FsCacheBlockRead(&curHandlePtr->cacheInfo, dirBlockNum,
+			&cacheBlockPtr, &length, FS_DIR_CACHE_BLOCK, TRUE);
+d852 2
+a853 2
+	    FsCacheFetchBlock(&curHandlePtr->cacheInfo, dirBlockNum,
+				FS_DIR_CACHE_BLOCK, &cacheBlockPtr, &found);
+d860 1
+a860 1
+	dirEntryPtr = (FsDirEntry *)cacheBlockPtr->blockAddr;
+d887 1
+a887 1
+		freeSpace += extraBytes & ~(FS_REC_LEN_GRAIN-1);
+d898 1
+a898 1
+	    dirEntryPtr = (FsDirEntry *)((int)dirEntryPtr +
+d914 3
+a916 3
+	    bzero(cacheBlockPtr->blockAddr + length, FS_DIR_BLOCK_SIZE);
+	    dirEntryPtr->recordLength = FS_DIR_BLOCK_SIZE;
+	    length += FS_DIR_BLOCK_SIZE;
+d921 1
+a921 1
+	FsCacheUnlockBlock(cacheBlockPtr, 0, -1, 0, FS_CLEAR_READ_AHEAD);
+d935 1
+a935 1
+	FsDirEntry *tmpDirEntryPtr;	/* Pointer to new slot */
+d938 1
+a938 1
+	tmpDirEntryPtr = (FsDirEntry *)((int)dirEntryPtr + newRecordLength);
+d972 1
+a972 1
+    FsLocalFileIOHandle	*parentHandlePtr;/* Locked handle of current dir. */
+d978 2
+a979 2
+    FsDirEntry 		*dirEntryPtr;	/* Reference to directory entry */
+    FsDirEntry 		*lastDirEntryPtr;/* Back pointer used when merging 
+d982 1
+a982 1
+    FsCacheBlock	*cacheBlockPtr;	/* Cache block. */
+d987 2
+a988 2
+	status = FsCacheBlockRead(&parentHandlePtr->cacheInfo, dirBlockNum,
+			  &cacheBlockPtr, &length, FS_DIR_CACHE_BLOCK, FALSE);
+d993 2
+a994 2
+	lastDirEntryPtr = (FsDirEntry *)NIL;
+	dirEntryPtr = (FsDirEntry *)cacheBlockPtr->blockAddr;
+d1002 1
+a1002 1
+		FS_HASH_DELETE(fsNameTablePtr, component, parentHandlePtr);
+d1004 1
+a1004 1
+		if (lastDirEntryPtr != (FsDirEntry *)NIL) {
+d1019 2
+a1020 2
+	    if ((blockOffset & (FS_DIR_BLOCK_SIZE - 1)) == 0) {
+		 lastDirEntryPtr = (FsDirEntry *) NIL;
+d1025 1
+a1025 1
+		(FsDirEntry *)((int)dirEntryPtr + dirEntryPtr->recordLength);
+d1028 1
+a1028 1
+	FsCacheUnlockBlock(cacheBlockPtr, 0, -1, 0, FS_CLEAR_READ_AHEAD);
+d1051 1
+a1051 1
+    FsLocalFileIOHandle	*curHandlePtr;	/* Handle on the link file */
+d1138 1
+a1138 1
+    status = FsCacheRead(&curHandlePtr->cacheInfo, 0, nameBuffer, 0,
+d1167 1
+a1167 1
+ *	small layer on top of FsLocalFileHandleInit that is oriented
+d1174 1
+a1174 1
+ *	Calls FsLocalFileHandleInit to set up the handle.
+d1182 1
+a1182 1
+    FsLocalFileIOHandle	*curHandlePtr;	/* Handle on file in the same domain */
+d1184 1
+a1184 1
+    FsLocalFileIOHandle	**newHandlePtrPtr;/* Return, ref. to installed handle */
+d1189 1
+a1189 1
+    fileID.type = FS_LCL_FILE_STREAM;
+d1193 1
+a1193 1
+    status = FsLocalFileHandleInit(&fileID, name, newHandlePtrPtr);
+d1210 1
+a1210 1
+ *	Calls InsertComponent, FsInitFileDesc.
+d1217 2
+a1218 2
+    FsDomain	*domainPtr;		/* Domain of the file */
+    FsLocalFileIOHandle	*parentHandlePtr;/* Handle of directory in which to add 
+d1226 1
+a1226 1
+    FsLocalFileIOHandle	**curHandlePtrPtr;/* Return, handle for the new file */
+d1229 2
+a1230 2
+    FsFileDescriptor	*parentDescPtr;	/* Descriptor for the parent */
+    FsFileDescriptor	*newDescPtr;	/* Descriptor for the new file */
+d1236 2
+a1237 2
+    newDescPtr = (FsFileDescriptor *)malloc(sizeof(FsFileDescriptor));
+    status = FsInitFileDesc(domainPtr, fileNumber, type, permissions,
+d1246 1
+a1246 1
+	status = FsStoreFileDesc(domainPtr, fileNumber, newDescPtr);
+d1260 2
+a1261 2
+		newDescPtr->flags = FS_FD_FREE;
+		(void)FsStoreFileDesc(domainPtr, fileNumber, newDescPtr);
+d1282 2
+a1283 2
+			    parentDescPtr->descModifyTime = fsTimeInSeconds;
+			    (void)FsStoreFileDesc(domainPtr,
+d1296 4
+a1299 4
+		    newDescPtr->flags = FS_FD_FREE;
+		    (void)FsStoreFileDesc(domainPtr, fileNumber, newDescPtr);
+		    FsHandleRelease(*curHandlePtrPtr, TRUE);
+		    *curHandlePtrPtr = (FsLocalFileIOHandle *)NIL;
+d1326 2
+a1327 2
+    FsLocalFileIOHandle *curHandlePtr;		/* Handle of file to delete */
+    FsLocalFileIOHandle *parentHandlePtr;	/* Handle of directory in which
+d1333 1
+a1333 1
+    register FsDirEntry *dirEntryPtr;
+d1338 2
+a1339 2
+     * into its own monitor so that it could write directly onto fsEmptyDirBlock
+     * fsEmptyDirBlock is already set up with ".", "..", and the correct
+d1342 3
+a1344 3
+    dirBlock = (char *)malloc(FS_DIR_BLOCK_SIZE);
+    bcopy((Address)fsEmptyDirBlock, (Address)dirBlock, FS_DIR_BLOCK_SIZE);
+    dirEntryPtr = (FsDirEntry *)dirBlock;
+d1346 1
+a1346 1
+    dirEntryPtr = (FsDirEntry *)((int)dirEntryPtr +
+d1350 2
+a1351 2
+    length = FS_DIR_BLOCK_SIZE;
+    status = FsCacheWrite(&curHandlePtr->cacheInfo, 0, (Address)dirBlock,
+d1380 2
+a1381 2
+    FsDomain	*domainPtr;		/* Domain of the file */
+    FsLocalFileIOHandle	*parentHandlePtr;/* Handle of directory in which to add 
+d1386 1
+a1386 1
+    FsLocalFileIOHandle	**curHandlePtrPtr;/* Return, handle for the new file */
+d1389 1
+a1389 1
+    FsFileDescriptor	*linkDescPtr;	/* Descriptor for the existing file */
+d1408 2
+a1409 2
+	linkDescPtr->descModifyTime = fsTimeInSeconds;
+	status = FsStoreFileDesc(domainPtr, fileNumber, linkDescPtr);
+d1423 1
+a1423 1
+		modTime.seconds = fsTimeInSeconds;
+d1438 3
+a1440 3
+		(void)FsStoreFileDesc(domainPtr, fileNumber, linkDescPtr);
+		FsHandleRelease(*curHandlePtrPtr, TRUE);
+		*curHandlePtrPtr = (FsLocalFileIOHandle *)NIL;
+d1472 1
+a1472 1
+    FsLocalFileIOHandle *newParentHandlePtr;	/* New parent directory for
+d1474 1
+a1474 1
+    FsLocalFileIOHandle *curHandlePtr;		/* Directory being moved */
+d1498 1
+a1498 1
+	FsLocalFileIOHandle *parentHandlePtr;
+d1504 1
+a1504 1
+	    } else if (parentNumber == FS_ROOT_FILE_NUMBER ||
+d1529 1
+a1529 1
+		    (void)FsHandleRelease(parentHandlePtr, TRUE);
+d1557 1
+a1557 1
+    FsDomain	*domainPtr;			/* Domain of operation */
+d1559 1
+a1559 1
+    FsLocalFileIOHandle	*newParentHandlePtr;	/* New parent directory for 
+d1561 1
+a1561 1
+    FsLocalFileIOHandle	*curHandlePtr;		/* Directory being moved */
+d1579 1
+a1579 1
+	    FS_HASH_DELETE(fsNameTablePtr, "..", curHandlePtr);
+d1590 1
+a1590 1
+	    register FsFileDescriptor *parentDescPtr;
+d1595 1
+a1595 1
+	    (void)FsStoreFileDesc(domainPtr, newParentNumber, parentDescPtr);
+d1619 1
+a1619 1
+    FsLocalFileIOHandle	*curHandlePtr;	/* Handle for current directory */
+d1625 2
+a1626 2
+    register FsDirEntry *dirEntryPtr;
+    FsCacheBlock	*cacheBlockPtr;
+d1628 2
+a1629 2
+    status = FsCacheBlockRead(&curHandlePtr->cacheInfo, 0, &cacheBlockPtr,
+				&length, FS_DIR_CACHE_BLOCK, FALSE);
+d1636 1
+a1636 1
+    dirEntryPtr = (FsDirEntry *)cacheBlockPtr->blockAddr;
+d1645 1
+a1645 1
+		(FsDirEntry *)((int)dirEntryPtr + dirEntryPtr->recordLength);
+d1657 1
+a1657 1
+    FsCacheUnlockBlock(cacheBlockPtr, 0, -1, 0, FS_CLEAR_READ_AHEAD);
+d1679 1
+a1679 1
+    FsLocalFileIOHandle	*curHandlePtr;	/* Handle for current directory */
+d1685 2
+a1686 2
+    register FsDirEntry *dirEntryPtr;
+    FsCacheBlock	*cacheBlockPtr;
+d1688 2
+a1689 2
+    status = FsCacheBlockRead(&curHandlePtr->cacheInfo, 0, &cacheBlockPtr,
+				&length, FS_DIR_CACHE_BLOCK, FALSE);
+d1695 1
+a1695 1
+    dirEntryPtr = (FsDirEntry *)cacheBlockPtr->blockAddr;
+d1701 1
+a1701 1
+	FsCacheUnlockBlock(cacheBlockPtr, 0, -1, 0, FS_CLEAR_READ_AHEAD);
+d1704 1
+a1704 1
+    dirEntryPtr = (FsDirEntry *)((int)dirEntryPtr + dirEntryPtr->recordLength);
+d1710 1
+a1710 1
+	FsCacheUnlockBlock(cacheBlockPtr, 0, -1, 0, FS_CLEAR_READ_AHEAD);
+d1734 1
+a1734 1
+ *	May call FsDeleteFileDesc to remove the file and its data.
+d1741 2
+a1742 2
+    FsDomain *domainPtr;			/* Domain of the file */
+    FsLocalFileIOHandle *parentHandlePtr;	/* Handle of directory in
+d1744 1
+a1744 1
+    FsLocalFileIOHandle **curHandlePtrPtr;	/* Handle of file to delete */
+d1753 3
+a1755 3
+    register FsLocalFileIOHandle *curHandlePtr;	/* Local copy */
+    FsFileDescriptor *parentDescPtr;	/* Descriptor for parent */
+    FsFileDescriptor *curDescPtr;	/* Descriptor for the file to delete */
+d1760 1
+a1760 1
+    if (parentHandlePtr == (FsLocalFileIOHandle *)NIL) {
+d1801 2
+a1802 2
+	curDescPtr->descModifyTime = fsTimeInSeconds;
+	status = FsStoreFileDesc(domainPtr, curHandlePtr->hdr.fileID.minor,
+d1815 2
+a1816 2
+	    parentDescPtr->descModifyTime = fsTimeInSeconds;
+	    status = FsStoreFileDesc(domainPtr,
+d1827 1
+a1827 1
+	     * mark the handle as deleted and FsFileClose will take care of it.
+d1829 1
+a1829 1
+	    curHandlePtr->flags |= FS_FILE_DELETED;
+d1836 2
+a1837 2
+		(void)FsFileCloseInt(curHandlePtr, 0, 0, 0, rpc_SpriteID, TRUE);
+		*curHandlePtrPtr = (FsLocalFileIOHandle *)NIL;
+d1839 2
+a1840 2
+		FsHandleRelease(curHandlePtr, TRUE);
+		*curHandlePtrPtr = (FsLocalFileIOHandle *)NIL;
+d1843 2
+a1844 2
+	    FsHandleRelease(curHandlePtr, TRUE);
+	    *curHandlePtrPtr = (FsLocalFileIOHandle *)NIL;
+d1854 1
+a1854 1
+ * FsDeleteFileDesc --
+d1871 2
+a1872 2
+FsDeleteFileDesc(handlePtr)
+    FsLocalFileIOHandle *handlePtr;
+d1875 1
+a1875 1
+    FsDomain *domainPtr;
+d1882 1
+a1882 1
+	FS_HASH_DELETE(fsNameTablePtr, "..", handlePtr);
+d1885 2
+a1886 2
+    domainPtr = FsDomainFetch(handlePtr->hdr.fileID.major, FALSE);
+    if (domainPtr == (FsDomain *)NIL) {
+d1896 3
+a1898 3
+    FS_TRACE_HANDLE(FS_TRACE_DELETE, ((FsHandleHeader *)handlePtr));
+    handlePtr->descPtr->flags = FS_FD_FREE | FS_FD_DIRTY;
+    status = FsWriteBackDesc(handlePtr, TRUE);
+d1900 1
+a1900 1
+	printf("FsDeleteFileDesc: Can't mark descriptor as free\n");
+d1902 1
+a1902 1
+	status = FsFileTrunc(handlePtr, 0, FS_TRUNC_DELETE);
+d1904 1
+a1904 1
+	    printf("FsDeleteFileDesc: Can't truncate file <%d,%d> \"%s\"\n",
+d1906 1
+a1906 1
+		    FsHandleName(handlePtr));
+d1908 1
+a1908 1
+	    FsFreeFileNumber(domainPtr, handlePtr->hdr.fileID.minor);
+d1911 1
+a1911 1
+	handlePtr->descPtr = (FsFileDescriptor *)NIL;
+d1913 1
+a1913 1
+    FsDomainRelease(handlePtr->hdr.fileID.major);
+d1935 1
+a1935 1
+    FsLocalFileIOHandle *handlePtr;	/* Handle of directory to check */
+d1939 1
+a1939 1
+    FsDirEntry 		*dirEntryPtr;	/* Reference to directory entry */
+d1942 1
+a1942 1
+    FsCacheBlock	*cacheBlockPtr;
+d1946 2
+a1947 2
+	status = FsCacheBlockRead(&handlePtr->cacheInfo, dirBlockNum,
+		      &cacheBlockPtr, &length, FS_DIR_CACHE_BLOCK, FALSE);
+d1955 1
+a1955 1
+	dirEntryPtr = (FsDirEntry *)cacheBlockPtr->blockAddr;
+d1967 2
+a1968 2
+		    FsCacheUnlockBlock(cacheBlockPtr, 0, -1, 0, 
+					FS_CLEAR_READ_AHEAD);
+d1974 1
+a1974 1
+		(FsDirEntry *)((int)dirEntryPtr + dirEntryPtr->recordLength);
+d1977 1
+a1977 1
+	FsCacheUnlockBlock(cacheBlockPtr, 0, -1, 0, FS_CLEAR_READ_AHEAD);
+d2009 1
+a2009 1
+    FsLocalFileIOHandle		*handlePtr;
+d2014 1
+a2014 1
+    register FsFileDescriptor	*descPtr;
+d2021 1
+a2021 1
+    if (handlePtr->hdr.fileID.type != FS_LCL_FILE_STREAM) {
+d2064 1
+a2064 1
+	descPtr->flags |= FS_FD_DIRTY;
+d2068 1
+a2068 1
+     * respect to the checking done by FsLocalSetAttr.
+d2127 1
+a2127 1
+ *	Write into a cache block returned from FsCacheBlockRead.  Used only
+d2144 2
+a2145 2
+    register	FsLocalFileIOHandle	*handlePtr;	/* Handle for file. */
+    register	FsCacheBlock	*blockPtr;	/* Cache block. */
+d2151 1
+a2151 1
+    int			blockAddr = FS_NIL_INDEX;
+d2153 1
+a2153 1
+    int			flags = FS_CLEAR_READ_AHEAD;
+d2160 3
+a2162 3
+    (void) (*fsStreamOpTable[handlePtr->hdr.fileID.type].allocate)
+	((FsHandleHeader *)handlePtr, offset, length, &blockAddr, &newBlock);
+    if (blockAddr == FS_NIL_INDEX) {
+d2169 1
+a2169 1
+	    flags = FS_DELETE_BLOCK;
+d2172 4
+a2175 4
+    FsUpdateDirSize(&handlePtr->cacheInfo, newLastByte);
+    handlePtr->descPtr->dataModifyTime = fsTimeInSeconds;
+    fsStats.blockCache.dirBytesWritten += FS_DIR_BLOCK_SIZE;
+    fsStats.blockCache.dirBlockWrites++;
+d2180 1
+a2180 1
+    FsCacheUnlockBlock(blockPtr, (unsigned int)fsTimeInSeconds, blockAddr,
+@
+
+
+8.6
+log
+@Fixed previous change so rename of regular files still works.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsLocalLookup.c,v 8.5 89/03/14 10:44:10 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d189 1
+d216 1
+d253 1
+d286 1
+d341 1
+d381 1
+d385 1
+d428 1
+d485 5
+a507 25
+#ifdef old_code
+		    if (curHandlePtr->descPtr->fileType != type) {
+			if (curHandlePtr->descPtr->fileType == FS_DIRECTORY) {
+			    status = FS_IS_DIRECTORY;
+			} else if (type == FS_DIRECTORY) {
+			    status = FS_NOT_DIRECTORY;
+			} else {
+			    status = FS_FILE_EXISTS;
+			}
+		    } else if ((type == FS_DIRECTORY) &&
+			    (useFlags & FS_RENAME) == 0) {
+			status = FS_NO_ACCESS;
+		    } else {
+			/*
+			 * Ok to link to an existing file
+			 */
+		    }
+		    if (status == SUCCESS) {
+			/*
+			 * Try the delete, this fails on non-empty directories.
+			 */
+			status = DeleteFileName(domainPtr, parentHandlePtr,
+			      &curHandlePtr, component, compLen, FALSE, idPtr);
+		    }
+#endif old_code
+d522 1
+d568 3
+@
+
+
+8.5
+log
+@Fixed hard link semantics so you cannot link to an existing file.
+Previously I was deleting the existing file!
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsLocalLookup.c,v 8.4 89/02/09 08:45:33 brent Exp $ SPRITE (Berkeley)";
+d480 1
+a480 2
+		     * This can only be a directory made in preparation
+		     * for a rename.
+d482 2
+a483 3
+		    if (curHandlePtr->descPtr->fileType == FS_DIRECTORY &&
+			type == FS_DIRECTORY &&
+			(useFlags & FS_RENAME)) {
+@
+
+
+8.4
+log
+@(Finally) fixed DeleteFileName to use the common FsFileCloseInt
+routine that cleans up deleted files.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsLocalLookup.c,v 8.3 89/02/04 12:18:07 brent Exp $ SPRITE (Berkeley)";
+d479 3
+a481 3
+		     * Linking to an existing file.  Make sure the types match,
+		     * and only allow links to directories if this is in
+		     * preparation for a rename.
+d483 15
+d507 1
+a507 1
+			       (useFlags & FS_RENAME) == 0) {
+d510 3
+a512 1
+			/* Ok to link to the file */
+d521 1
+@
+
+
+8.3
+log
+@Changed it to keep track of both directories and files
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsLocalLookup.c,v 8.2 89/02/01 16:36:58 brent Exp Locker: brent $ SPRITE (Berkeley)";
+a1821 5
+		if (curDescPtr->fileType == FS_DIRECTORY) {
+		    fsStats.object.directory--;
+		} else {
+		    fsStats.object.files--;
+		}
+d1823 3
+a1825 3
+		 * Tell other clients (only the last writer) that the
+		 * file has been deleted.  Call with our own hostID
+		 * order to guarantee a call-back to all clients.
+d1827 1
+a1827 10
+		FsClientRemoveCallback(&curHandlePtr->consist, rpc_SpriteID);
+		/*
+		 * Delete the file from disk.
+		 */
+		status = FsDeleteFileDesc(curHandlePtr);
+		/*
+		 * Wipe out the handle.
+		 */
+		FsHandleRelease(curHandlePtr, TRUE);
+		FsHandleRemove(curHandlePtr);
+@
+
+
+8.2
+log
+@Fixed fsStats.object.files so it gets decremented when a file is removed.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsLocalLookup.c,v 8.1 88/11/26 11:32:26 brent Exp $ SPRITE (Berkeley)";
+d1822 5
+a1841 1
+		fsStats.object.files--;
+@
+
+
+8.1
+log
+@Re-ordered file deletion so that the disk descriptor is marked FS_FD_FREE
+FIRST!!! so that a crash during deletion results in a deleted file upon
+reboot, not a partially deleted file that has duplicate references
+to blocks.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsLocalLookup.c,v 7.0 88/11/11 15:31:54 brent Exp $ SPRITE (Berkeley)";
+d1789 1
+a1789 2
+	    printf(
+		      "DeleteFileName: extra links on directory\n");
+d1796 1
+a1796 2
+	    printf(
+		      "DeleteFileName: (1) Couldn't store descriptor\n");
+d1810 1
+a1810 2
+		printf(
+			  "DeleteFileName: (2) Couldn't store descriptor\n");
+d1837 1
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsLocalLookup.c,v 7.0 88/11/11 15:31:54 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d1892 7
+d1900 2
+a1901 1
+    status = FsFileTrunc(handlePtr, 0, FS_TRUNC_DELETE);
+d1903 1
+a1903 1
+	printf( "FsDeleteFileDesc: Can't truncate file\n");
+d1905 1
+a1905 3
+	handlePtr->descPtr->flags = FS_FD_FREE;
+	status = FsStoreFileDesc(domainPtr, handlePtr->hdr.fileID.minor,
+					    handlePtr->descPtr);
+d1907 3
+a1909 1
+	    printf( "FsDeleteFileDesc: Can't free descriptor\n");
+@
+
+
+7.0
+log
+@New version for conversion to new C library
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsLocalLookup.c,v 6.9 88/10/14 12:15:51 brent Exp Locker: brent $ SPRITE (Berkeley)";
+@
+
+
+6.9
+log
+@FsFileID FsUserID change
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: fsLocalLookup.c,v 6.8 88/09/28 08:37:36 brent Exp $ SPRITE (Berkeley)";
+d182 1
+a182 1
+	Sys_Panic(SYS_FATAL, "FsLocalLookup, bad prefix handle type <%d>\n",
+d209 1
+a209 1
+		(String_NCompare(SPECIAL_LEN, curCharPtr, SPECIAL) == 0)) {
+d213 1
+a213 1
+		    Sys_Printf(" $MACHINE -> ");
+d227 1
+a227 1
+			Sys_Panic(SYS_WARNING,
+d254 1
+a254 1
+	    Sys_Printf(" %s ", component);
+d279 1
+a279 1
+		*newNameInfoPtrPtr = Mem_New(FsRedirectInfo);
+d281 2
+a282 2
+		(void)String_Copy("../", (*newNameInfoPtrPtr)->fileName);
+		(void)String_Cat(curCharPtr, (*newNameInfoPtrPtr)->fileName);
+d348 1
+a348 1
+		    newNameBuffer = (char *)Mem_Alloc(FS_MAX_PATH_NAME_LENGTH);
+d355 1
+a355 1
+		    Sys_Panic(SYS_WARNING, "FsLocalLookup, empty link \"%s\"\n",
+d368 2
+a369 2
+		    *newNameInfoPtrPtr = Mem_New(FsRedirectInfo);
+		    (void)String_Copy(curCharPtr, (*newNameInfoPtrPtr)->fileName);
+d387 1
+a387 1
+		    Sys_Panic(SYS_FATAL, "No parent after link");
+d537 1
+a537 1
+	Mem_Free(newNameBuffer);
+d554 1
+a554 1
+	Sys_Panic(SYS_WARNING, "FsLocalLookup: caller didn't want handle\n");
+d562 1
+a562 1
+	Sys_Printf(" <%x>\n", status);
+d611 1
+d671 1
+a671 1
+	    Sys_Panic(SYS_FATAL,
+d700 2
+a701 2
+		Sys_Printf("Corrupted directory?");
+		Sys_Printf(" File ID <%d, %d, %d>",
+d705 1
+a705 1
+		Sys_Printf(" dirBlockNum <%d>, blockOffset <%d>",
+d707 1
+a707 1
+		Sys_Printf("\n");
+d754 1
+a754 1
+				Sys_Panic(SYS_WARNING,
+d834 1
+a834 1
+	    Sys_Panic(SYS_WARNING, "InsertComponent: Read failed\n");
+d846 1
+a846 1
+		Sys_Panic(SYS_FATAL, "InsertComponent found new dir block");
+d848 1
+a848 1
+	    Byte_Zero(FS_BLOCK_SIZE, cacheBlockPtr->blockAddr);
+d905 1
+a905 1
+	    Byte_Zero(FS_DIR_BLOCK_SIZE, cacheBlockPtr->blockAddr + length);
+d937 1
+a937 1
+    (void)String_Copy(component, dirEntryPtr->fileName);
+d989 1
+a989 1
+		(String_Compare(component, dirEntryPtr->fileName) == 0)) {
+d1055 2
+a1056 2
+    linkNameLength = curHandlePtr->descPtr->lastByte;
+    if (linkNameLength < 0) {
+d1063 1
+a1063 1
+	nameBuffer[linkNameLength] = '\0';
+d1131 17
+d1227 1
+a1227 1
+    newDescPtr = (FsFileDescriptor *)Mem_Alloc(sizeof(FsFileDescriptor));
+d1250 1
+a1250 1
+		Sys_Panic(SYS_FATAL, "CreateFile: GetHandle failed (continuable)\n");
+d1286 1
+a1286 1
+		    Sys_Panic(SYS_WARNING, "CreateFile: unwinding\n");
+d1295 1
+a1295 1
+    Mem_Free((Address) newDescPtr);
+d1328 1
+a1328 1
+     * The Mem_Alloc and Byte_Copy could be avoided by puting this routine
+d1333 2
+a1334 3
+    dirBlock = (char *)Mem_Alloc(FS_DIR_BLOCK_SIZE);
+    Byte_Copy(FS_DIR_BLOCK_SIZE, (Address)fsEmptyDirBlock,
+				 (Address)dirBlock);
+d1344 1
+a1344 1
+    Mem_Free(dirBlock);
+d1391 1
+a1391 1
+	Sys_Panic(SYS_WARNING, "LinkFile: can't get existing file handle\n");
+d1562 1
+a1562 1
+	Sys_Panic(SYS_WARNING,
+d1631 1
+a1631 1
+	Sys_Panic(SYS_WARNING,
+d1641 1
+a1641 1
+	    Sys_Panic(SYS_WARNING,
+d1690 1
+a1690 1
+	Sys_Panic(SYS_WARNING,
+d1700 1
+a1700 1
+	Sys_Panic(SYS_WARNING,"SetParentNumber: \"..\", corrupted directory\n");
+d1789 1
+a1789 1
+	    Sys_Panic(SYS_WARNING,
+d1797 1
+a1797 1
+	    Sys_Panic(SYS_WARNING,
+d1812 1
+a1812 1
+		Sys_Panic(SYS_WARNING,
+d1895 1
+a1895 1
+	Sys_Panic(SYS_WARNING, "FsDeleteFileDesc: Can't truncate file\n");
+d1901 1
+a1901 1
+	    Sys_Panic(SYS_WARNING, "FsDeleteFileDesc: Can't free descriptor\n");
+d1905 1
+a1905 1
+	Mem_Free((Address)handlePtr->descPtr);
+d1956 2
+a1957 2
+		if ((String_Compare(".", dirEntryPtr->fileName) == 0) ||
+		    (String_Compare("..", dirEntryPtr->fileName) == 0)) {
+d2017 1
+a2017 1
+	Sys_Panic(SYS_FATAL, "CheckPermissions on non-local file\n");
+d2036 1
+a2036 1
+/*	    Sys_Panic(SYS_WARNING, "Allowing a symlink for a remote link\n");*/
+@
+
+
+6.8
+log
+@Changed Mem_Alloc's to Mem_New's
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: fsLocalLookup.c,v 6.7 88/09/09 11:19:14 brent Exp $ SPRITE (Berkeley)";
+d101 1
+a101 1
+ *	The major and minor fields of the FsFileID for local files correspond
+d127 1
+a127 1
+    FsFileID *rootIDPtr;		/* File ID of the root of the domain */
+d137 1
+a137 1
+    FsUserIDs *idPtr;			/* User and group IDs */
+d661 1
+a661 1
+    FsFileID		fileID;		/* Used when fetching handles */
+d1160 1
+a1160 1
+    FsFileID fileID;
+d1198 1
+a1198 1
+    FsUserIDs	*idPtr;			/* User ID of calling process */
+d1724 1
+a1724 1
+    FsUserIDs *idPtr;		/* User and group IDs */
+d1989 1
+a1989 1
+    register FsUserIDs		*idPtr;
+@
+
+
+6.7
+log
+@Added rootID parameter to FsLocalLookup to support exporting sub-directories
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: fsLocalLookup.c,v 6.6 88/09/07 16:53:05 brent Exp $ SPRITE (Berkeley)";
+d279 1
+a279 2
+		*newNameInfoPtrPtr = 
+			(FsRedirectInfo *) Mem_Alloc(sizeof(FsRedirectInfo));
+d368 1
+a368 2
+		    *newNameInfoPtrPtr = 
+			(FsRedirectInfo *) Mem_Alloc(sizeof(FsRedirectInfo));
+@
+
+
+6.6
+log
+@Moved name from stream to I/O handle.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: fsLocalLookup.c,v 6.5 88/09/01 17:15:52 brent Exp $ SPRITE (Berkeley)";
+d121 2
+a122 2
+FsLocalLookup(prefixHdrPtr, relativeName, useFlags, type, clientID, idPtr,
+		permissions, fileNumber, handlePtrPtr, newNameInfoPtrPtr)
+d127 1
+d199 1
+a199 1
+	 * doing the open.  For this host we use a compiled in string so
+a269 5
+	     * Remember that the fileID <minor> field is the fileNumber.
+	     * Compare with the fileNumber of the prefix to check against
+	     * falling out of the top of the domain.
+	     *
+	     * FIX HERE to allow exporting non-roots.
+d271 1
+a271 1
+	    if (curHandlePtr->hdr.fileID.minor == FS_ROOT_FILE_NUMBER) {
+@
+
+
+6.5
+log
+@Added call to delete ".." from the name cache when
+you move a directory.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: fsLocalLookup.c,v 6.4 88/08/31 12:01:10 brent Exp $ SPRITE (Berkeley)";
+d750 1
+a750 1
+			    status = FsLocalFileHandleInit(&fileID,
+d1159 1
+a1159 1
+GetHandle(fileNumber, curHandlePtr, newHandlePtrPtr)
+d1162 1
+d1172 1
+a1172 1
+    status = FsLocalFileHandleInit(&fileID, newHandlePtrPtr);
+d1231 2
+a1232 1
+	    status = GetHandle(fileNumber, parentHandlePtr, curHandlePtrPtr);
+d1238 1
+a1238 1
+		Sys_Panic(SYS_FATAL, "CreateFile: GetHandle failed\n");
+d1378 1
+a1378 1
+    status = GetHandle(fileNumber, parentHandlePtr, curHandlePtrPtr);
+d1500 1
+a1500 1
+		    status = GetHandle(parentNumber, curHandlePtr,
+@
+
+
+6.4
+log
+@Fixed ".." related bug when removing directories.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: fsLocalLookup.c,v 6.3 88/08/26 12:07:59 brent Exp $ SPRITE (Berkeley)";
+d1557 1
+a1810 6
+	    if (type == FS_DIRECTORY) {
+		/*
+		 * Remove .. from name cache so we don't ascend to old parent.
+		 */
+		FS_HASH_DELETE(fsNameTablePtr, "..", curHandlePtr);
+	    }
+@
+
+
+6.3
+log
+@Removed lint
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: fsLocalLookup.c,v 6.2 88/08/24 18:15:50 brent Exp $ SPRITE (Berkeley)";
+d42 1
+d224 1
+a224 1
+		    machType = (char *)Net_SpriteIDToMachType(clientID);
+d286 2
+a287 2
+		String_Copy("../", (*newNameInfoPtrPtr)->fileName);
+		String_Cat(curCharPtr, (*newNameInfoPtrPtr)->fileName);
+d375 1
+a375 1
+		    String_Copy(curCharPtr, (*newNameInfoPtrPtr)->fileName);
+d942 1
+a942 1
+    String_Copy(component, dirEntryPtr->fileName);
+d1810 6
+@
+
+
+6.2
+log
+@Added code to clear the setuid-setgid bits when
+you write a file
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: fsLocalLookup.c,v 6.1 88/08/18 17:59:03 brent Exp $ SPRITE (Berkeley)";
+d763 1
+d766 8
+@
+
+
+6.1
+log
+@removed lint
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: fsLocalLookup.c,v 6.0 88/08/11 12:16:19 brent Stable $ SPRITE (Berkeley)";
+a2028 1
+
+d2030 1
+a2030 1
+     * Check for ownership permission first.
+d2032 10
+d2047 1
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: fsLocalLookup.c,v 1.10 88/08/08 14:45:26 douglis Exp $ SPRITE (Berkeley)";
+d507 1
+a507 2
+			      &curHandlePtr, component, compLen, FALSE,
+			      clientID, idPtr);
+d531 1
+a531 1
+				(int) (useFlags & FS_RENAME), clientID, idPtr);
+d1707 1
+a1707 1
+	       compLen, forRename, clientID, idPtr)
+a1716 2
+    int clientID;		/* Host doing lookup.  Used to prevent call-
+				 * backs to this host. */
+d1961 7
+a1967 2
+ *	There is no high level semantic checking like preventing
+ *	directories from being written by users.
+d1998 1
+a1998 1
+     * Make sure the file type matches.  FS_FILE means any time, otherwise
+d2046 3
+a2048 1
+	 * Let uid 0 do anything, regardless of the file's permBits
+d2050 7
+a2056 1
+	status = SUCCESS;
+d2058 6
+a2063 10
+	if (uid == descPtr->uid) {
+	    permBits = (descPtr->permissions >> 6) & 07;
+	} else {
+	    for (index = idPtr->numGroupIDs, groupPtr = idPtr->group;
+	         index > 0;	/* index is just a counter */
+		 index--, groupPtr++) {
+		if (*groupPtr == descPtr->gid) {
+		    permBits = (descPtr->permissions >> 3) & 07;
+		    goto havePermBits;
+		}
+a2064 1
+	    permBits = descPtr->permissions & 07;
+d2066 2
+d2069 9
+a2077 10
+	if (((useFlags & FS_READ) && ((permBits & FS_WORLD_READ) == 0)) ||
+	    ((useFlags & FS_WRITE) && ((permBits & FS_WORLD_WRITE) == 0)) ||
+	    ((useFlags & FS_EXECUTE) && ((permBits & FS_WORLD_EXEC) == 0))) {
+	    /*
+	     * The file's permission don't include what is needed.
+	     */
+	    status = FS_NO_ACCESS;
+	} else {
+	    status = SUCCESS;
+	}
+@
+
+
+1.10
+log
+@rearranged code to avoid referencing a nil pointer. duh.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: fsLocalLookup.c,v 1.9 88/08/05 14:15:05 douglis Exp $ SPRITE (Berkeley)";
+@
+
+
+1.9
+log
+@Changes to support keeping track of file deletions, certain FS system
+calls, and large fsStat counters, ported from the old filesystem.
+This ci message is generic.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: fsLocalLookup.c,v 1.8 88/07/15 17:39:34 mendel Exp $ SPRITE (Berkeley)";
+a600 2
+    parentType  = parentHandlePtr->cacheInfo.attr.userType;
+
+d602 1
+@
+
+
+1.8
+log
+@Fixed up forward routine declarations to remove compiler warning messages.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: fsLocalLookup.c,v 1.7 88/07/15 10:43:15 brent Exp $ SPRITE (Berkeley)";
+d75 1
+d405 3
+a407 1
+	 * Done with the lookup.  Process creates, links, and deletes.
+d409 6
+d456 7
+d464 1
+d478 1
+a478 1
+		 * The presense of FS_LINK means that curHandlePtr references
+d577 55
+d1693 1
+a1693 1
+ *      Delete a file by clearing it's fileNumber in the directory and
+d1747 1
+a1747 1
+	 * One needs write permission in the parent to do the delte.
+@
+
+
+1.7
+log
+@This is Fred checking in for Brent.
+
+Added check for maximum component length.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: fsLocalLookup.c,v 1.6 88/06/15 17:03:14 brent Exp $ SPRITE (Berkeley)";
+d71 14
+a84 4
+ReturnStatus	ExpandLink();
+ReturnStatus	FindComponent();
+ReturnStatus 	InsertComponent();
+Boolean		DirectoryEmpty();
+@
+
+
+1.6
+log
+@Moved ClientRemoveCallbacks to be before the file descriptor is delted.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: fsLocalLookup.c,v 1.5 88/06/02 11:35:01 brent Exp $ SPRITE (Berkeley)";
+d210 1
+a210 2
+		    extern char *etc_MachineType;	/* XXX */
+		    machType = etc_MachineType;
+d222 4
+d233 4
+d387 1
+@
+
+
+1.5
+log
+@Removed ifdef'ed out code that is old and ugly
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: fsLocalLookup.c,v 1.4 88/06/01 17:16:49 brent Exp $ SPRITE (Berkeley)";
+d57 4
+a60 1
+ * The component hash table.
+d62 1
+d64 3
+a66 1
+FsHashTable *fsNameTablePtr = &fsNameTable;
+a1715 4
+		 * Delete the file from disk.
+		 */
+		status = FsDeleteFileDesc(curHandlePtr);
+		/*
+d1722 4
+d1748 1
+a1748 1
+ *	Delete a file given its file handle.  It is assumed that the
+d1755 4
+a1758 2
+ *	Delete the data blocks and free up the file descriptor.  The
+ *	handle's state is not altered - it is assumed to be locked.
+a1768 1
+    FsFileDescriptor *descPtr;
+d1787 1
+a1787 2
+	descPtr = handlePtr->descPtr;
+	descPtr->flags = FS_FD_FREE;
+d1789 1
+a1789 1
+					    descPtr);
+d1795 2
+@
+
+
+1.4
+log
+@Added tracing.
+Added truncation flags.
+Added clientID to Deltet routines so the call-back to
+client's works correctly.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: fsLocalLookup.c,v 1.3 88/05/05 16:35:34 brent Exp $ SPRITE (Berkeley)";
+a1158 11
+			} else {
+			    /*
+			     * Nuke the data block for the directory.  Any
+			     * error returned is ignored because this is a
+			     * recovery action anyway.  (This seems like
+			     * a severe action.  What about files already
+			     * in the directory? BW 5/88)
+			     */
+#ifdef notdef
+			    (void)FsFileTrunc(*curHandlePtrPtr, 0, 0);
+#endif notdef
+@
+
+
+1.3
+log
+@Added support for $MACHINE expansion during pathname lookup
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: fsLocalLookup.c,v 1.2 88/04/19 10:44:28 brent Exp $ SPRITE (Berkeley)";
+d38 1
+d207 1
+a207 1
+		    machType = Net_SpriteIDToMachType(clientID);
+d375 1
+a375 1
+	FS_TRACE_NAME(FS_TRACE_3, relativeName);
+d466 2
+a467 1
+			      &curHandlePtr, component, compLen, FALSE, idPtr);
+d491 1
+a491 1
+				(int) (useFlags & FS_RENAME), idPtr);
+d1163 3
+a1165 1
+			     * recovery action anyway.
+d1167 3
+a1169 1
+			    (void)FsFileTrunc(*curHandlePtrPtr, 0);
+d1624 1
+a1624 1
+	       compLen, forRename, idPtr)
+d1634 2
+d1726 2
+a1727 3
+		 * file has been deleted.  In order to prevent delayed writes
+		 * from cruising in during the callback we set
+		 * the 'file gone' flag.
+a1728 1
+		curHandlePtr->flags |= FS_FILE_GONE;
+d1786 2
+a1787 1
+    status = FsFileTrunc(handlePtr, 0);
+d2041 1
+a2041 3
+    if (newLastByte > handlePtr->descPtr->lastByte) {
+	handlePtr->descPtr->lastByte = newLastByte;
+    }
+@
+
+
+1.2
+log
+@Added check against empty symbolic links.
+@
+text
+@d10 3
+d25 1
+a25 1
+static char rcsid[] = "$Header: fsLocalLookup.c,v 1.1 88/04/04 10:34:03 brent Exp $ SPRITE (Berkeley)";
+d102 2
+a103 2
+FsLocalLookup(prefixHdrPtr, relativeName, useFlags, type, idPtr, permissions,
+			       fileNumber, handlePtrPtr, newNameInfoPtrPtr)
+d114 3
+d175 8
+a182 1
+	 * Get the next component.
+d184 2
+d188 35
+a222 1
+	    *compPtr++ = *curCharPtr++;
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d22 1
+a22 1
+static char rcsid[] = "$Header: fsLocalLookup.c,v 5.9 87/11/18 13:30:13 brent Exp $ SPRITE (Berkeley)";
+d284 4
+d906 3
+@

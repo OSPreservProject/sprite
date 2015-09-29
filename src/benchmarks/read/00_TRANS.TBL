@@ -1,0 +1,8 @@
+D DS3100_M                          	ds3100.md
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+F READ.C;1                          	read.c
+F READ_C.OLD;1                      	read.c.old
+F RESULTS.;1                        	results
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md

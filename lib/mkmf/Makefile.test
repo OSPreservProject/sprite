@@ -1,0 +1,52 @@
+#
+# Prototype Makefile for cmds/* directories.
+#
+# This Makefile is automatically generated.
+# DO NOT EDIT IT OR YOU MAY LOSE YOUR CHANGES.
+#
+# Generated from @(TEMPLATE)
+# @(DATE)
+#
+# For more information, refer to the mkmf manual page.
+#
+# $Header: /sprite/lib/mkmf/RCS/Makefile.test,v 1.6 89/10/09 21:27:56 rab Exp $ SPRITE (Berkeley)
+#
+# Allow mkmf
+
+PROGRAM		= @(PROGRAM)
+OBJS		= @(OBJS)
+CLEANOBJS	= @(CLEANOBJS)
+SRCS		= @(SRCS)
+CSRCS		= $(SRCS:M*.c)
+YSRCS		= $(SRCS:M*.y)
+LSRCS		= $(SRCS:M*.l)
+HDRS		= @(HDRS)
+LIBS		=
+MAKEFILE	= @(MAKEFILE)
+DISTDIR        ?= @(DISTDIR)
+
+LINTFLAGS	= -u
+CFLAGS		= -g
+CTFLAGS		= -wt
+INSTALLFLAGS	= 
+INSTALLDIR	= @(INSTALLDIR)
+
+# Don't define "define_targets", to keep "install" target from being defined.
+# define_targets	=
+
+DEPFILE		= dependencies.mk
+SYSMAKEFILE	= command.mk
+
+#if exists(local.mk)
+#include 	"local.mk"
+#else
+#include	<$(SYSMAKEFILE)>
+#endif
+
+$(PROGRAM)	: $(OBJS) $(LIBS) MAKECMDNOVERS
+lint		: $(SRCS) MAKELINT
+
+tags		: $(SRCS) $(HDRS)
+	$(CTAGS) $(CTFLAGS) $(.ALLSRC)
+
+#include	"dependencies.mk"

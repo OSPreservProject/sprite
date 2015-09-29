@@ -1,0 +1,653 @@
+ADMIN_BITS	stdlib/memInt.h	/^#define ADMIN_BITS(admin)	((admin) & FLAG_BITS)$/
+AdminInfo	stdlib/memInt.h	/^} AdminInfo;$/
+ApplStream	etc/ttyDriver.c	/^} ApplStream;$/
+BLOCKSIZE_TO_INDEX	stdlib/memInt.h	/^#define BLOCKSIZE_TO_INDEX(size)	((size)>>2)$/
+BYTES_TO_BLOCKSIZE	stdlib/memInt.h	/^#define BYTES_TO_BLOCKSIZE(bytes)	((bytes+3+sizeof/
+Bit_AnySet	bit/Bit_AnySet.c	/^Bit_AnySet(numBits, maskPtr)$/
+Bit_Expand	bit/Bit_Expand.c	/^Bit_Expand(newNumBits, oldNumBits, oldBitPtr)$/
+Bit_FindFirstClear	bit/Bit_FindFirstClear.c	/^Bit_FindFirstClear(numBits, arrayPtr)$/
+Bit_FindFirstSet	bit/Bit_FindFirstSet.c	/^Bit_FindFirstSet(numBits, arrayPtr)$/
+Bit_Intersect	bit/Bit_Intersect.c	/^Bit_Intersect(numBits, src1Ptr, src2Ptr, destPtr)$/
+Bit_Union	bit/Bit_Union.c	/^Bit_Union(numBits, src1Ptr, src2Ptr, destPtr)$/
+CLEAR_TEST	bit/bitInt.h	/^#define CLEAR_TEST(mask)	if ((temp & (mask)) != (m/
+COPYTIME	unixSyscall/getrusage.c	/^#define COPYTIME(TO,FROM) { \\$/
+CalcPutByteSize	etc/swapBuffer.c	/^CalcPutByteSize(outType, outSizePtr)$/
+CalcPutDoubleSize	etc/swapBuffer.c	/^CalcPutDoubleSize(outType, outSizePtr)$/
+CalcPutHalfWordSize	etc/swapBuffer.c	/^CalcPutHalfWordSize(outType, outSizePtr)$/
+CalcPutWordSize	etc/swapBuffer.c	/^CalcPutWordSize(outType, outSizePtr)$/
+CalcSize	etc/swapBuffer.c	/^CalcSize(inType, inPtrPtr, inSize, inBuf, outType,/
+CallTimeoutHandler	etc/fsDispatch.c	/^CallTimeoutHandler()$/
+Compat_GetSigHoldMask	unixSyscall/compatSig.c	/^Compat_GetSigHoldMask(maskPtr)$/
+Compat_MapCode	unixSyscall/compatMapCode.c	/^Compat_MapCode(status)$/
+Compat_SpriteSigMaskToUnix	unixSyscall/compatSig.c	/^Compat_SpriteSigMaskToUnix(SpriteMask, UnixMaskPtr/
+Compat_SpriteSignalToUnix	unixSyscall/compatSig.c	/^Compat_SpriteSignalToUnix(signal, unixSigPtr)$/
+Compat_UnixSigMaskToSprite	unixSyscall/compatSig.c	/^Compat_UnixSigMaskToSprite(unixMask, spriteMaskPtr/
+Compat_UnixSignalToSprite	unixSyscall/compatSig.c	/^Compat_UnixSignalToSprite(signal, spriteSigPtr)$/
+ComputeTimeoutValue	etc/fsDispatch.c	/^ComputeTimeoutValue(timeoutPtr)$/
+ConvertToNum	time/Time_ToAscii.c	/^ConvertToNum(cp, n, blank)$/
+CopyData	etc/swapBuffer.c	/^CopyData(inType, inPtrPtr, inSize, inBuf, buf, out/
+CvtFtoA	stdio/vfprintf.c	/^CvtFtoA(value, numDigits, afterPoint, pointPtr, si/
+CvtSpriteToUnixAtts	unixSyscall/stat.c	/^CvtSpriteToUnixAtts(spriteAttsPtr, unixAttsPtr)$/
+CvtSpriteToUnixType	unixSyscall/stat.c	/^CvtSpriteToUnixType(spriteFileType)$/
+CvtUtoA	stdio/vfprintf.c	/^CvtUtoA(i, base, buf, lengthPtr)$/
+DbLockDesc	db/DbLockDesc.c	/^DbLockDesc(streamID, type, action)$/
+Db_Close	db/Db_Close.c	/^Db_Close(handlePtr)$/
+Db_Get	db/Db_Get.c	/^Db_Get(handlePtr, bufPtr, index)$/
+Db_Open	db/Db_Open.c	/^Db_Open(file, size, handlePtr, writing, lockWhen, /
+Db_Put	db/Db_Put.c	/^Db_Put(handlePtr, bufPtr, index)$/
+Db_ReadEntry	db/Db_ReadEntry.c	/^Db_ReadEntry(file, buffer, index, size, lockHow)$/
+Db_WriteEntry	db/Db_WriteEntry.c	/^Db_WriteEntry(file, buffer, index, size, lockHow)$/
+DecodeRequest	unixSyscall/ioctl.c	/^DecodeRequest(request)$/
+DispatcherInit	etc/fsDispatch.c	/^DispatcherInit()$/
+DoExec	exec/execvp.c	/^DoExec(file, argv)$/
+EXPAND	etc/getpwnamuid.c	/^#define	EXPAND(e)	passwd.e = tp; while (*tp++ = *c/
+FD_CLR	net/res_send.c	/^#define	FD_CLR(n, p)	((p)->fds_bits[(n)\/NFDBITS] /
+FD_ISSET	net/res_send.c	/^#define	FD_ISSET(n, p)	((p)->fds_bits[(n)\/NFDBITS/
+FD_SET	net/res_send.c	/^#define	FD_SET(n, p)	((p)->fds_bits[(n)\/NFDBITS] /
+FD_ZERO	net/res_send.c	/^#define FD_ZERO(p)	bzero((char *)(p), sizeof(*(p))/
+FIND_FIRST	bit/bitInt.h	/^#define FIND_FIRST(numBits, arrayPtr) { \\$/
+FakePanicValue	etc/swapBuffer.c	/^#define	FakePanicValue(errstring)	\\$/
+FakePanicVoid	etc/swapBuffer.c	/^#define FakePanicVoid(errstring)	\\$/
+FirstAddrOnPage	unixSyscall/brk.c	/^#define FirstAddrOnPage(address)  (((int) (address/
+Fs_Dispatch	etc/fsDispatch.c	/^Fs_Dispatch()$/
+Fs_EventHandlerChangeData	etc/fsDispatch.c	/^Fs_EventHandlerChangeData(streamID, newData)$/
+Fs_EventHandlerCreate	etc/fsDispatch.c	/^Fs_EventHandlerCreate(streamID, eventMask, proc, c/
+Fs_EventHandlerData	etc/fsDispatch.c	/^Fs_EventHandlerData(streamID)$/
+Fs_EventHandlerDestroy	etc/fsDispatch.c	/^Fs_EventHandlerDestroy(streamID)$/
+Fs_Read	syscall/Fs_Read.c	/^Fs_Read(streamID, amountRead, buffer, amountReadPt/
+Fs_ReadVector	syscall/Fs_ReadVector.c	/^Fs_ReadVector(streamID, numVectors, vectorArray, a/
+Fs_Select	syscall/Fs_Select.c	/^Fs_Select(numStreams, timeoutPtr, readMaskPtr, wri/
+Fs_TimeoutHandlerCreate	etc/fsDispatch.c	/^Fs_TimeoutHandlerCreate(time, relativeTime, proc, /
+Fs_TimeoutHandlerDestroy	etc/fsDispatch.c	/^Fs_TimeoutHandlerDestroy(token)$/
+Fs_Truncate	syscall/Fs_Truncate.c	/^Fs_Truncate(pathName, length)$/
+Fs_Write	syscall/Fs_Write.c	/^Fs_Write(streamID, writeLength, buffer, amtWritten/
+Fs_WriteBack	syscall/Fs_WriteBack.c	/^Fs_WriteBack(fileName, firstByte, lastByte, should/
+Fs_WriteVector	syscall/Fs_WriteVector.c	/^Fs_WriteVector(streamID, numVectors, vectorArray, /
+GETWDERR	etc/getwd.c	/^#define GETWDERR(s)	strcpy(pathname, (s));$/
+GET_ADMIN	stdlib/memInt.h	/^#define GET_ADMIN(blockPtr)	(((AdminInfo *) (block/
+GET_MASK_AND_INTS	bit/bitInt.h	/^#define GET_MASK_AND_INTS(nB,i,m) \\$/
+GET_ORIG_SIZE	stdlib/memInt.h	/^#define GET_ORIG_SIZE(blockPtr)	(((AdminInfo *) (b/
+GET_PC	stdlib/memInt.h	/^#define GET_PC(blockPtr)	(((AdminInfo *) (blockPtr/
+GetByte	etc/swapBuffer.c	/^GetByte(inType, inPtrPtr, buf, inSizeLeft)$/
+GetDoubleWord	etc/swapBuffer.c	/^GetDoubleWord(inType, inPtrPtr, buf, inSizeLeft)$/
+GetHalfWord	etc/swapBuffer.c	/^GetHalfWord(inType, inPtrPtr, buf, inSizeLeft)$/
+GetWord	etc/swapBuffer.c	/^GetWord(inType, inPtrPtr, buf, inSizeLeft)$/
+Hash	hash/Hash.c	/^Hash(tablePtr, key)$/
+HashChainSearch	hash/HashChainSearch.c	/^HashChainSearch(tablePtr, key, hashList)$/
+Hash_CreateEntry	hash/Hash_CreateEntry.c	/^Hash_CreateEntry(tablePtr, key, newPtr)$/
+Hash_DeleteEntry	hash/Hash_DeleteEntry.c	/^Hash_DeleteEntry(tablePtr, hashEntryPtr)$/
+Hash_DeleteTable	hash/Hash_DeleteTable.c	/^Hash_DeleteTable(tablePtr)$/
+Hash_EnumFirst	hash/Hash_EnumFirst.c	/^Hash_EnumFirst(tablePtr, hashSearchPtr)$/
+Hash_EnumNext	hash/Hash_EnumNext.c	/^Hash_EnumNext(hashSearchPtr)$/
+Hash_FindEntry	hash/Hash_FindEntry.c	/^Hash_FindEntry(tablePtr, key)$/
+Hash_InitTable	hash/Hash_InitTable.c	/^Hash_InitTable(tablePtr, numBuckets, keyType)$/
+Hash_PrintStats	hash/Hash_PrintStats.c	/^Hash_PrintStats(tablePtr, proc, clientData)$/
+Host_ByID	host/Host_ByID.c	/^Host_ByID(id)$/
+Host_ByInetAddr	host/Host_ByInetAddr.c	/^Host_ByInetAddr(inetAddr)$/
+Host_ByName	host/Host_ByName.c	/^Host_ByName(name)$/
+Host_ByNetAddr	host/Host_ByNetAddr.c	/^Host_ByNetAddr(addrType, addrPtr)$/
+Host_End	host/Host_End.c	/^Host_End()$/
+Host_Next	host/Host_Next.c	/^Host_Next()$/
+Host_SetFile	host/Host_SetFile.c	/^Host_SetFile(fileName)$/
+Host_Start	host/Host_Start.c	/^Host_Start()$/
+IS_DUMMY	stdlib/memInt.h	/^#define IS_DUMMY(admin)		(((admin) & FLAG_BITS) ==/
+IS_IN_USE	stdlib/memInt.h	/^#define IS_IN_USE(admin)	((admin) & USE_BIT)$/
+Ioc_ClearBits	syscall/Ioc_ClearBits.c	/^Ioc_ClearBits(streamID, bits)$/
+Ioc_GetFlags	syscall/Ioc_GetFlags.c	/^Ioc_GetFlags(streamID, flagsPtr)$/
+Ioc_GetOwner	syscall/Ioc_GetOwner.c	/^Ioc_GetOwner(streamID, idPtr, procOrFamilyPtr)$/
+Ioc_Lock	syscall/Ioc_Lock.c	/^Ioc_Lock(streamID, flags)$/
+Ioc_Map	syscall/Ioc_Map.c	/^Ioc_Map(streamID, numBytes, address)$/
+Ioc_NumReadable	syscall/Ioc_NumReadable.c	/^Ioc_NumReadable(streamID, numPtr)$/
+Ioc_Reposition	syscall/Ioc_Reposition.c	/^Ioc_Reposition(streamID, base, offset, newOffsetPt/
+Ioc_SetBits	syscall/Ioc_SetBits.c	/^Ioc_SetBits(streamID, bits)$/
+Ioc_SetFlags	syscall/Ioc_SetFlags.c	/^Ioc_SetFlags(streamID, flags)$/
+Ioc_SetOwner	syscall/Ioc_SetOwner.c	/^Ioc_SetOwner(streamID, id, procOrFamily)$/
+Ioc_Truncate	syscall/Ioc_Truncate.c	/^Ioc_Truncate(streamID, length)$/
+Ioc_Unlock	syscall/Ioc_Unlock.c	/^Ioc_Unlock(streamID, flags)$/
+List_Init	list/List_Init.c	/^List_Init(headerPtr)$/
+List_Insert	list/List_Insert.c	/^List_Insert(itemPtr, destPtr)$/
+List_Move	list/List_Move.c	/^List_Move(itemPtr, destPtr)$/
+List_Remove	list/List_Remove.c	/^List_Remove(itemPtr)$/
+MARK_DUMMY	stdlib/memInt.h	/^#define MARK_DUMMY(admin)	((admin) | (USE_BIT|DUMM/
+MARK_FREE	stdlib/memInt.h	/^#define MARK_FREE(admin)	((admin) & ~FLAG_BITS)$/
+MARK_IN_USE	stdlib/memInt.h	/^#define MARK_IN_USE(admin)	((admin) | USE_BIT)$/
+MemChunkAlloc	stdlib/MemChunkAlloc.c	/^MemChunkAlloc(size)$/
+MemDoTrace	stdlib/MemDoTrace.c	/^MemDoTrace(allocated, infoPtr, curPC, size)$/
+MemInit	stdlib/MemInit.c	/^MemInit()$/
+MemTraceElement	stdlib/memInt.h	/^} MemTraceElement;$/
+Mem_Bin	stdlib/Mem_Bin.c	/^Mem_Bin(numBytes)$/
+Mem_DumpTrace	stdlib/Mem_DumpTrace.c	/^Mem_DumpTrace(blockSize)$/
+Mem_PrintConfig	stdlib/Mem_PrintConfig.c	/^Mem_PrintConfig()$/
+Mem_PrintInUse	stdlib/Mem_PrintInUse.c	/^Mem_PrintInUse()$/
+Mem_PrintStats	stdlib/Mem_PrintStats.c	/^Mem_PrintStats()$/
+Mem_PrintStatsInt	stdlib/Mem_PrintStats.c	/^Mem_PrintStatsInt()$/
+Mem_SetPrintProc	stdlib/Mem_SetPrintProc.c	/^Mem_SetPrintProc(proc, data)$/
+Mem_SetTraceSizes	stdlib/Mem_SetTraceSizes.c	/^Mem_SetTraceSizes(numSizes, arrayPtr)$/
+Mem_Size	stdlib/Mem_Size.c	/^Mem_Size(blockPtr)$/
+MigAsciiToInternal	mig/MigAsciiToInternal.c	/^MigAsciiToInternal(buffer, infoPtr)$/
+MigGetLocalName	mig/MigGetLocalName.c	/^MigGetLocalName()$/
+MigInternalToAscii	mig/MigInternalToAscii.c	/^MigInternalToAscii(infoPtr, buffer)$/
+Mig_GetAllInfo	mig/Mig_GetAllInfo.c	/^Mig_GetAllInfo(infoPtr, numEntries)$/
+Mig_GetIdleNode	mig/Mig_GetIdleNode.c	/^Mig_GetIdleNode()$/
+Mig_GetInfo	mig/Mig_GetInfo.c	/^Mig_GetInfo(hostID)$/
+Mig_OpenInfo	mig/Mig_OpenInfo.c	/^Mig_OpenInfo(fileType, writing, handlePtr)$/
+Mig_SetInfoParms	mig/Mig_SetInfoParms.c	/^Mig_SetInfoParms(fileName, timeOutPtr)$/
+Mig_UpdateInfo	mig/Mig_UpdateInfo.c	/^Mig_UpdateInfo(hostID, infoPtr, handlePtr)$/
+Mt	time/t.c	/^main()$/
+NEXT	etc/ttyDriver.c	/^#define NEXT(src, size, dst) 		\\$/
+OptNoArg	etc/option.c	/^#define OptNoArg(progName, opt) fprintf(stderr, \\/
+Opt_Parse	etc/option.c	/^Opt_Parse(argc, argv, optionArray, numOptions, fla/
+Opt_PrintUsage	etc/option.c	/^Opt_PrintUsage(commandName, optionArray, numOption/
+PLURALIZE	net/res_debug.c	/^#define	PLURALIZE(x)	x, (x == 1) ? "" : "s"$/
+PREV	etc/ttyDriver.c	/^#define PREV(src, size, dst)		\\$/
+PRIFAC	unixSyscall/syslog.c	/^#define PRIFAC(p)	(((p) & LOG_FACMASK) >> 3)$/
+PdevCleanup	etc/pdev.c	/^PdevCleanup(srvPtr, status, sendReply)$/
+PdevControlRequest	etc/pdev.c	/^PdevControlRequest(pdevPtr)$/
+PdevDefaultClose	etc/pdev.c	/^PdevDefaultClose(private)$/
+PdevDefaultIoctl	etc/pdev.c	/^PdevDefaultIoctl(private, command, familyID, inSiz/
+PdevDefaultOpen	etc/pdev.c	/^PdevDefaultOpen(token, flags, pid, hostID, uid, pr/
+PdevDefaultRead	etc/pdev.c	/^PdevDefaultRead(private, offset, familyID, amountR/
+PdevDefaultWrite	etc/pdev.c	/^PdevDefaultWrite(private, offset, familyID, numByt/
+PdevServiceRequest	etc/pdev.c	/^PdevServiceRequest(srvPtr)$/
+Pdev_Close	etc/pdev.c	/^Pdev_Close(pdev)$/
+Pdev_Open	etc/pdev.c	/^Pdev_Open(name, realNamePtr, openProc, closeProc, /
+Pdev_Ready	etc/pdev.c	/^Pdev_Ready(token, selectBits)$/
+PrintTrace	stdlib/MemDoTrace.c	/^PrintTrace(allocated, infoPtr, curPC)$/
+Proc_CopyEnviron	syscall/procEnviron.c	/^Proc_CopyEnviron()$/
+Proc_Exec	syscall/proc.c	/^Proc_Exec(fileName, argPtrArray, debugMe)$/
+Proc_FetchGlobalEnv	syscall/procEnviron.c	/^Proc_FetchGlobalEnv()$/
+Proc_GetEnvironRange	syscall/procEnviron.c	/^Proc_GetEnvironRange(first, last, envArray, numAct/
+Proc_GetEnvironVar	syscall/procEnviron.c	/^Proc_GetEnvironVar(environVar)$/
+Proc_InstallEnviron	syscall/procEnviron.c	/^Proc_InstallEnviron(newEnviron, numVars)$/
+Proc_SetEnviron	syscall/procEnviron.c	/^Proc_SetEnviron(environVar)$/
+Proc_UnsetEnviron	syscall/procEnviron.c	/^Proc_UnsetEnviron(environVar)$/
+Proc_Wait	syscall/proc.c	/^Proc_Wait(numPids, pidArray, block, procIdPtr, rea/
+PutByte	etc/swapBuffer.c	/^PutByte(outType, outPtrPtr, buf, outSizeLeft)$/
+PutDoubleWord	etc/swapBuffer.c	/^PutDoubleWord(outType, outPtrPtr, buf, outSizeLeft/
+PutHalfWord	etc/swapBuffer.c	/^PutHalfWord(outType, outPtrPtr, buf, outSizeLeft)$/
+PutWord	etc/swapBuffer.c	/^PutWord(outType, outPtrPtr, buf, outSizeLeft)$/
+RETURN	bit/bitInt.h	/^#define RETURN(num) 	return((intNum*BIT_NUM_BITS_P/
+RebuildTable	hash/Hash_CreateEntry.c	/^RebuildTable(tablePtr)$/
+Reply	etc/pdev.c	/^} Reply;$/
+ReplyNoData	etc/pdev.c	/^ReplyNoData(srvPtr, status, selectBits)$/
+ReplyWithData	etc/pdev.c	/^ReplyWithData(srvPtr, status, replyPtr)$/
+Request	etc/pdev.c	/^} Request;$/
+RequestName	unixSyscall/ioctl.c	/^} RequestName;$/
+SET_ADMIN	stdlib/memInt.h	/^#define SET_ADMIN(blockPtr, value)  \\$/
+SET_ORIG_SIZE	stdlib/memInt.h	/^#define SET_ORIG_SIZE(blockPtr,size)	\\$/
+SET_PC	stdlib/memInt.h	/^#define SET_PC(blockPtr)	((AdminInfo *) (blockPtr)/
+SET_TEST	bit/bitInt.h	/^#define SET_TEST(mask)		if ((temp & (mask)) != 0) /
+SIZE	stdlib/memInt.h	/^#define SIZE(admin)		((admin) & ~FLAG_BITS)$/
+Server	etc/pdev.c	/^} Server;$/
+ServiceStream	etc/pdev.c	/^} ServiceStream;$/
+Stat_GetMsg	etc/status.c	/^Stat_GetMsg(status)$/
+Stat_PrintMsg	etc/status.c	/^Stat_PrintMsg(status, string)$/
+StatusMappings	unixSyscall/compatMapCode.c	/^} StatusMappings;$/
+StatusMsgs	etc/status.c	/^} StatusMsgs;$/
+StdioFileCloseProc	stdio/StdioFileCloseProc.c	/^StdioFileCloseProc(stream)$/
+StdioFileOpenMode	stdio/StdioFileOpenMode.c	/^StdioFileOpenMode(access)$/
+StdioFileReadProc	stdio/StdioFileReadProc.c	/^StdioFileReadProc(stream)$/
+StdioFileWriteProc	stdio/StdioFileWriteProc.c	/^StdioFileWriteProc(stream, flush)$/
+Stdio_Setup	stdio/Stdio_Setup.c	/^Stdio_Setup(stream, readable, writable, buffer, bu/
+StreamInfo	etc/fsDispatch.c	/^} StreamInfo;$/
+StringReadProc	stdio/sscanf.c	/^StringReadProc(stream)$/
+StringWriteProc	stdio/sprintf.c	/^StringWriteProc(stream)$/
+Swap_BufSize	etc/swapBuffer.c	/^Swap_BufSize(inBuf, inSize, inType, outType, forma/
+Swap_Buffer	etc/swapBuffer.c	/^Swap_Buffer(inBuf, inSize, inType, outType, format/
+Sync_Broadcast	sync/sync.h	/^#define Sync_Broadcast(conditionPtr) \\$/
+Sync_Condition	sync/sync.h	/^} Sync_Condition;$/
+Sync_Lock	sync/sync.h	/^} Sync_Lock;$/
+Sync_SlowLock	sync/Sync_SlowLock.c	/^Sync_SlowLock(lockPtr)$/
+Sync_SlowWait	sync/Sync_SlowWait.c	/^Sync_SlowWait(conditionPtr, lockPtr, wakeIfSignal)/
+Sync_Wait	sync/sync.h	/^#define Sync_Wait(conditionPtr, wakeIfSignal) \\$/
+TEST	bit/Bit_FindFirstClear.c	/^#define TEST(mask)	CLEAR_TEST(mask)$/
+TdApplRequest	etc/ttyDriver.c	/^TdApplRequest(applPtr)$/
+TdBackspace	etc/ttyDriver.c	/^TdBackspace(tPtr)$/
+TdClose	etc/ttyDriver.c	/^TdClose(tPtr, applPtr, sendReply)$/
+TdControlRequest	etc/ttyDriver.c	/^TdControlRequest(tPtr)$/
+TdEcho	etc/ttyDriver.c	/^TdEcho(tPtr, c)$/
+TdFlushInput	etc/ttyDriver.c	/^TdFlushInput(tPtr)$/
+TdIoc	etc/ttyDriver.c	/^TdIoc(tPtr, applPtr, reqPtr)$/
+TdOpen	etc/ttyDriver.c	/^TdOpen(tPtr, applPtr, reqPtr)$/
+TdPutChar	etc/ttyDriver.c	/^TdPutChar(tPtr, c)$/
+TdRead	etc/ttyDriver.c	/^TdRead(tPtr, applPtr, reqPtr)$/
+TdReply	etc/ttyDriver.c	/^TdReply(applPtr, status, selectBits)$/
+TdRetypeInput	etc/ttyDriver.c	/^TdRetypeInput(tPtr, start)$/
+TdSelectBits	etc/ttyDriver.c	/^TdSelectBits(tPtr)$/
+TdSignal	etc/ttyDriver.c	/^TdSignal(tPtr, signal)$/
+TdWrite	etc/ttyDriver.c	/^TdWrite(tPtr, applPtr, reqPtr)$/
+Td_Close	etc/ttyDriver.c	/^Td_Close(terminal)$/
+Td_GetState	etc/ttyDriver.c	/^Td_GetState(terminal, basicPtr, charsPtr, localCha/
+Td_InputChar	etc/ttyDriver.c	/^Td_InputChar(terminal, c)$/
+Td_Open	etc/ttyDriver.c	/^Td_Open(name, outputStream, realNamePtr)$/
+Td_SetState	etc/ttyDriver.c	/^Td_SetState(terminal, basicPtr, charsPtr, localCha/
+Terminal	etc/ttyDriver.c	/^} Terminal;$/
+Time_Add	time/Time_Add.c	/^Time_Add(time1, time2, resultPtr)$/
+Time_Divide	time/Time_Divide.c	/^Time_Divide(time, factor, resultPtr)$/
+Time_Multiply	time/Time_Multiply.c	/^Time_Multiply(time, factor, resultPtr)$/
+Time_Normalize	time/Time_Normalize.c	/^Time_Normalize(timePtr)$/
+Time_Subtract	time/Time_Subtract.c	/^Time_Subtract(time1, time2, resultPtr)$/
+Time_ToAscii	time/Time_ToAscii.c	/^Time_ToAscii(time, relativeTime, bufferPtr)$/
+Time_ToParts	time/Time_ToParts.c	/^Time_ToParts(time, relativeTime, partsPtr)$/
+TimeoutInfo	etc/fsDispatch.c	/^} TimeoutInfo;$/
+UC	inet/inet_ntoa.c	/^#define	UC(b)	(((int)b)&0xff)$/
+Ulog_ClearLogins	ulog/Ulog_ClearLogins.c	/^Ulog_ClearLogins()$/
+Ulog_GetAllLogins	ulog/Ulog_GetAllLogins.c	/^Ulog_GetAllLogins(numEntries, locPtr, dataPtr)$/
+Ulog_LastLogin	ulog/Ulog_LastLogin.c	/^Ulog_LastLogin(uid)$/
+Ulog_RecordLogin	ulog/Ulog_RecordLogin.c	/^Ulog_RecordLogin(uid, location, portID)$/
+Ulog_RecordLogout	ulog/Ulog_RecordLogout.c	/^Ulog_RecordLogout(uid, portID)$/
+Unix_CloseLock	unixSyscall/flock.c	/^Unix_CloseLock (fd)$/
+UnlockAll	unixSyscall/flock.c	/^UnlockAll()$/
+Wait	unixSyscall/socket.c	/^Wait(socketID, readSelect, timeOutPtr)$/
+WriteProc	stdio/vsprintf.c	/^WriteProc(stream)$/
+YearLength	time/Time_ToParts.c	/^YearLength(year)$/
+_ExecArgs	exec/_ExecArgs.c	/^_ExecArgs(args)$/
+_checkhost	net/rcmd.c	/^_checkhost(rhost, lhost, len)$/
+_cleanup	stdio/_cleanup.c	/^_cleanup()$/
+_endhtent	net/gethostnamadr.c	/^_endhtent()$/
+_exit	unixSyscall/_exit.c	/^_exit(exitStatus)$/
+_gethtbyaddr	net/gethostnamadr.c	/^_gethtbyaddr(addr, len, type)$/
+_gethtbyname	net/gethostnamadr.c	/^_gethtbyname(name)$/
+_gethtent	net/gethostnamadr.c	/^_gethtent()$/
+_getlong	net/res_comp.c	/^_getlong(msgp)$/
+_getshort	net/res_comp.c	/^_getshort(msgp)$/
+_gettemp	etc/mktemp.c	/^_gettemp(as, doopen)$/
+_res_close	net/res_send.c	/^_res_close()$/
+_sethtent	net/gethostnamadr.c	/^_sethtent(f)$/
+_tztab	time/timezone.c	/^_tztab(zone,dst)$/
+_validuser	net/rcmd.c	/^_validuser(hostf, rhost, luser, ruser, baselen)$/
+abort	stdlib/abort.c	/^abort()$/
+abs	stdlib/abs.c	/^abs(j)$/
+accept	unixSyscall/socket.c	/^accept(socketID, addrPtr, addrLenPtr)$/
+access	unixSyscall/access.c	/^access(pathName, mode)$/
+additem	etc/ndbm.c	/^additem(buf, item, item1)$/
+advance	etc/regex.c	/^advance(lp, ep)$/
+alarm	etc/alarm.c	/^alarm(secs)$/
+alphasort	dir/scandir.c	/^alphasort(d1, d2)$/
+any	net/gethostnamadr.c	/^any(cp, match)$/
+asctime	time/ctime.c	/^asctime(timeptr)$/
+atexit	stdlib/atexit.c	/^atexit(func)$/
+atof	stdlib/atof.c	/^atof(string)$/
+atoi	stdlib/atoi.c	/^atoi(string)$/
+atol	stdlib/atol.c	/^atol(string)$/
+backref	etc/regex.c	/^backref(i, lp)$/
+bcmp	bstring/bcmp.c	/^bcmp(sourcePtr, destPtr, numBytes)$/
+bcopy	bstring/bcopy.c	/^bcopy(sourcePtr, destPtr, numBytes)$/
+bind	unixSyscall/socket.c	/^bind(socketID, namePtr, nameLen)$/
+blkencrypt	net/ruserpass.c	/^blkencrypt(block, edflag)$/
+brk	unixSyscall/brk.c	/^brk(addr)$/
+bzero	bstring/bzero.c	/^bzero(destPtr, numBytes)$/
+calloc	stdlib/calloc.c	/^calloc(numElems, elemSize)$/
+cclass	etc/regex.c	/^cclass(set, c, af)$/
+cfree	stdlib/cfree.c	/^cfree(block, numElements, size)$/
+chdir	unixSyscall/chdir.c	/^chdir(pathName)$/
+chkblk	etc/ndbm.c	/^chkblk(buf)$/
+chmod	unixSyscall/chmod.c	/^chmod(path, mode)$/
+chown	unixSyscall/chown.c	/^chown(path, owner, group)$/
+clearerr	stdio/clearerr.c	/^clearerr(stream)$/
+close	unixSyscall/close.c	/^close(streamId)$/
+closedir	dir/closedir.c	/^closedir(dirp)$/
+closelog	unixSyscall/syslog.c	/^closelog()$/
+comerr	etc/regex.c	/^#define	comerr(msg) {expbuf[0] = 0; numbra = 0; re/
+connect	unixSyscall/socket.c	/^connect(socketID, namePtr, nameLen)$/
+creat	unixSyscall/creat.c	/^creat(pathName, permissions)$/
+crypt	etc/crypt.c	/^crypt(pw,salt)$/
+ctime	time/ctime.c	/^ctime(t)$/
+dbm_access	etc/ndbm.c	/^dbm_access(db, hash)$/
+dbm_close	etc/ndbm.c	/^dbm_close(db)$/
+dbm_delete	etc/ndbm.c	/^dbm_delete(db, key)$/
+dbm_fetch	etc/ndbm.c	/^dbm_fetch(db, key)$/
+dbm_firstkey	etc/ndbm.c	/^dbm_firstkey(db)$/
+dbm_forder	etc/ndbm.c	/^dbm_forder(db, key)$/
+dbm_nextkey	etc/ndbm.c	/^dbm_nextkey(db)$/
+dbm_open	etc/ndbm.c	/^dbm_open(file, flags, mode)$/
+dbm_store	etc/ndbm.c	/^dbm_store(db, key, dat, replace)$/
+dcalchash	etc/ndbm.c	/^dcalchash(item)$/
+deblkclr	net/ruserpass.c	/^char *deblkclr(blk)$/
+deblknot	net/ruserpass.c	/^char *deblknot(blk)$/
+delitem	etc/ndbm.c	/^delitem(buf, n)$/
+detzcode	time/ctime.c	/^detzcode(codep)$/
+div	stdlib/div.c	/^div(numer, denom)$/
+dn_comp	net/res_comp.c	/^dn_comp(exp_dn, comp_dn, length, dnptrs, lastdnptr/
+dn_expand	net/res_comp.c	/^dn_expand(msg, eomorig, comp_dn, exp_dn, length)$/
+dn_find	net/res_comp.c	/^dn_find(exp_dn, msg, dnptrs, lastdnptr)$/
+dn_skipname	net/res_comp.c	/^dn_skipname(comp_dn, eom)$/
+dup	unixSyscall/dup.c	/^dup(oldStreamID)$/
+dup2	unixSyscall/dup.c	/^dup2(oldStreamID, newStreamID)$/
+enblkclr	net/ruserpass.c	/^enblkclr(blk,str)		\/* ignores top bit of chars in/
+enblknot	net/ruserpass.c	/^enblknot(blk,crp)$/
+encrypt	etc/crypt.c	/^encrypt(block, edflag)$/
+endgrent	etc/getgrent.c	/^endgrent()$/
+endhostent	net/sethostent.c	/^endhostent()$/
+endnetent	net/getnetent.c	/^endnetent()$/
+endprotoent	net/getprotoent.c	/^endprotoent()$/
+endpwent	etc/getpwent.c	/^endpwent()$/
+endservent	net/getservent.c	/^endservent()$/
+endusershell	etc/getusershell.c	/^endusershell()$/
+execl	exec/execl.c	/^execl(va_alist)$/
+execle	exec/execle.c	/^execle(va_alist)$/
+execlp	exec/execlp.c	/^execlp(va_alist)$/
+execv	exec/execv.c	/^execv(name, argv)$/
+execve	unixSyscall/execve.c	/^execve(name, argv, envp)$/
+execvp	exec/execvp.c	/^execvp(name, argv)$/
+exit	stdlib/exit.c	/^exit(status)$/
+fchmod	unixSyscall/chmod.c	/^fchmod(fd, mode)$/
+fchown	unixSyscall/chown.c	/^fchown(fd, owner, group)$/
+fclose	stdio/fclose.c	/^fclose(stream)$/
+fcntl	unixSyscall/fcntl.c	/^fcntl(fd, cmd, arg)$/
+fdopen	stdio/fdopen.c	/^fdopen(streamID, access)$/
+fetchpw	etc/getpwnamuid.c	/^fetchpw(key)$/
+fflush	stdio/fflush.c	/^fflush(stream)$/
+ffs	bstring/ffs.c	/^ffs(i)$/
+fgetc	stdio/fgetc.c	/^fgetc(stream)$/
+fgets	stdio/fgets.c	/^fgets(bufferPtr, maxChars, stream)$/
+fileno	stdio/fileno.c	/^fileno(stream)$/
+finddatum	etc/ndbm.c	/^finddatum(buf, item)$/
+flock	unixSyscall/flock.c	/^flock(descriptor, operation)$/
+fopen	stdio/fopen.c	/^fopen(fileName, access)$/
+fork	unixSyscall/fork.c	/^fork()$/
+fp_query	net/res_debug.c	/^fp_query(msg,file)$/
+fprintf	stdio/fprintf.c	/^fprintf(va_alist)$/
+fputc	stdio/fputc.c	/^fputc(c, stream)$/
+fputs	stdio/fputs.c	/^fputs(string, stream)$/
+fread	stdio/fread.c	/^fread(bufferPtr, size, numItems, stream)$/
+free	stdlib/free.c	/^free(blockPtr)$/
+freopen	stdio/freopen.c	/^freopen(fileName, access, stream)$/
+fscanf	stdio/fscanf.c	/^fscanf(va_alist)$/
+fseek	stdio/fseek.c	/^fseek(stream, offset, base)$/
+fstat	unixSyscall/stat.c	/^fstat(fd, attsBufPtr)$/
+fsync	unixSyscall/fsync.c	/^fsync(fd)$/
+ftell	stdio/ftell.c	/^ftell(stream)$/
+ftruncate	unixSyscall/ftruncate.c	/^ftruncate(fd, length)$/
+fwrite	stdio/fwrite.c	/^fwrite(bufferPtr, size, numItems, stream)$/
+getanswer	net/gethostnamadr.c	/^getanswer(answer, anslen, iquery)$/
+getbit	etc/ndbm.c	/^getbit(db)$/
+getchar	stdio/getchar.c	/^getchar()$/
+getdirentries	unixSyscall/getdirentries.c	/^getdirentries(fd, buf, nbytes, basep)$/
+getdtablesize	unixSyscall/getdtablesize.c	/^getdtablesize()$/
+getegid	unixSyscall/getgid.c	/^getegid()$/
+getenv	stdlib/getenv.c	/^getenv(name)$/
+geteuid	unixSyscall/geteuid.c	/^geteuid()$/
+getgid	unixSyscall/getgid.c	/^getgid()$/
+getgrent	etc/getgrent.c	/^getgrent()$/
+getgrgid	etc/getgrgid.c	/^getgrgid(gid)$/
+getgrnam	etc/getgrnam.c	/^getgrnam(name)$/
+getgroups	unixSyscall/getgroups.c	/^getgroups(gidsetlen, gidset)$/
+gethostbyaddr	net/gethostnamadr.c	/^gethostbyaddr(addr, len, type)$/
+gethostbyname	net/gethostnamadr.c	/^gethostbyname(name)$/
+gethostname	unixSyscall/gethostname.c	/^gethostname(name, nameLen)$/
+getitimer	unixSyscall/getitimer.c	/^getitimer(which, value)$/
+getlogin	unixSyscall/getlogin.c	/^getlogin()$/
+getnetbyaddr	net/getnetbyaddr.c	/^getnetbyaddr(net, type)$/
+getnetbyname	net/getnetbyname.c	/^getnetbyname(name)$/
+getnetent	net/getnetent.c	/^getnetent()$/
+getopt	etc/getopt.c	/^getopt(nargc, nargv, ostr)$/
+getpagesize	unixSyscall/getpagesize.c	/^getpagesize()$/
+getpass	etc/getpass.c	/^getpass(prompt)$/
+getpeername	unixSyscall/socket.c	/^getpeername(socketID, namePtr, nameLenPtr)$/
+getpgrp	unixSyscall/getpgrp.c	/^getpgrp(pid)$/
+getpid	unixSyscall/getpid.c	/^getpid()$/
+getppid	unixSyscall/getppid.c	/^getppid()$/
+getpriority	unixSyscall/getpriority.c	/^getpriority(which, who)$/
+getprotobyname	net/getprotoname.c	/^getprotobyname(name)$/
+getprotobynumber	net/getproto.c	/^getprotobynumber(proto)$/
+getprotoent	net/getprotoent.c	/^getprotoent()$/
+getpwent	etc/getpwent.c	/^getpwent()$/
+getpwnam	etc/getpwnamuid.c	/^getpwnam(nam)$/
+getpwuid	etc/getpwnamuid.c	/^getpwuid(uid)$/
+getrlimit	unixSyscall/getrlimit.c	/^getrlimit()$/
+getrusage	unixSyscall/getrusage.c	/^getrusage(who, rusage)$/
+gets	stdio/gets.c	/^gets(bufferPtr)$/
+getservbyname	net/getservbyname.c	/^getservbyname(name, proto)$/
+getservbyport	net/getservbyport.c	/^getservbyport(port, proto)$/
+getservent	net/getservent.c	/^getservent()$/
+getsockname	unixSyscall/socket.c	/^getsockname(socketID, namePtr, nameLenPtr)$/
+getsockopt	unixSyscall/socket.c	/^getsockopt(socketID, level, optName, optVal, optLe/
+gettimeofday	unixSyscall/gettimeofday.c	/^gettimeofday(tp, tzp)$/
+getuid	unixSyscall/getuid.c	/^getuid()$/
+getusershell	etc/getusershell.c	/^getusershell()$/
+getutmp	net/ruserpass.c	/^struct utmp *getutmp(sttyname)$/
+getw	stdio/getw.c	/^getw(stream)$/
+getwd	etc/getwd.c	/^getwd(pathname)$/
+gmtime	time/ctime.c	/^gmtime(clock)$/
+grskip	etc/getgrent.c	/^grskip(p,c)$/
+gtty	unixSyscall/gtty.c	/^gtty(fd, buf)$/
+hashinc	etc/ndbm.c	/^hashinc(db, hash)$/
+herror	net/herror.c	/^herror(s)$/
+hostalias	net/res_query.c	/^hostalias(name)$/
+htonl	net/swap.c	/^htonl(longInt)$/
+htons	net/swap.c	/^htons(shortInt)$/
+index	string/index.c	/^index(string, c)$/
+inet_addr	inet/inet_addr.c	/^inet_addr(cp)$/
+inet_lnaof	inet/inet_lnaof.c	/^inet_lnaof(in)$/
+inet_netof	inet/inet_netof.c	/^inet_netof(in)$/
+inet_network	inet/inet_network.c	/^inet_network(cp)$/
+inet_ntoa	inet/inet_ntoa.c	/^inet_ntoa(in)$/
+initgroups	etc/initgroups.c	/^initgroups(uname, agroup)$/
+initshells	etc/getusershell.c	/^initshells()$/
+initstate	stdlib/rand.c	/^initstate( seed, arg_state, n )$/
+insque	etc/insque.c	/^insque(elem, pred)$/
+ioctl	unixSyscall/ioctl.c	/^ioctl(fd, request, buf)$/
+isalnum	ctype/isalnum.c	/^isalnum(c)$/
+isalpha	ctype/isalpha.c	/^isalpha(c)$/
+isascii	ctype/isascii.c	/^isascii(c)$/
+isatty	etc/isatty.c	/^isatty(fd)$/
+iscntrl	ctype/iscntrl.c	/^iscntrl(c)$/
+isdigit	ctype/isdigit.c	/^isdigit(c)$/
+isgraph	ctype/isgraph.c	/^isgraph(c)$/
+islower	ctype/islower.c	/^islower(c)$/
+isprint	ctype/isprint.c	/^isprint(c)$/
+ispunct	ctype/ispunct.c	/^ispunct(c)$/
+isspace	ctype/isspace.c	/^isspace(c)$/
+isupper	ctype/isupper.c	/^isupper(c)$/
+isxdigit	ctype/isxdigit.c	/^isxdigit(c)$/
+kill	unixSyscall/kill.c	/^kill(pid, sig)$/
+killpg	unixSyscall/killpg.c	/^killpg(pgrp, sig)$/
+labs	stdlib/labs.c	/^labs(j)$/
+ldiv	stdlib/ldiv.c	/^ldiv(numer, denom)$/
+link	unixSyscall/link.c	/^link(name1, name2)$/
+listen	unixSyscall/socket.c	/^listen(socketID, backlog)$/
+localtime	time/ctime.c	/^localtime(timep)$/
+lseek	unixSyscall/lseek.c	/^lseek(filedes, offset, whence)$/
+lstat	unixSyscall/stat.c	/^lstat(pathName, attsBufPtr)$/
+makdatum	etc/ndbm.c	/^makdatum(buf, n)$/
+malloc	stdlib/malloc.c	/^malloc(bytesNeeded)$/
+memchr	string/memchr.c	/^memchr(s, c, n)$/
+memcmp	string/memcmp.c	/^memcmp(s1, s2, n)$/
+memcpy	string/memcpy.c	/^memcpy(t, f, n)$/
+memset	string/memset.c	/^memset(s, c, n)$/
+mkdir	unixSyscall/mkdir.c	/^mkdir(pathName, permissions)$/
+mkenvkey	net/ruserpass.c	/^char *mkenvkey(mch)$/
+mknod	unixSyscall/mknod.c	/^mknod(pathName, mode, dev)$/
+mkpwclear	net/ruserpass.c	/^mkpwclear(sencpasswd,mch,spasswd)$/
+mkpwunclear	net/ruserpass.c	/^mkpwunclear(spasswd,mch,sencpasswd)$/
+mkstemp	etc/mktemp.c	/^mkstemp(as)$/
+mktemp	etc/mktemp.c	/^mktemp(as)$/
+nbs8decrypt	net/ruserpass.c	/^char *nbs8decrypt(crp,key)$/
+nbs8encrypt	net/ruserpass.c	/^char *nbs8encrypt(str,key)$/
+nbsdecrypt	net/ruserpass.c	/^char *nbsdecrypt(cpt,key,result)$/
+nbsencrypt	net/ruserpass.c	/^char *nbsencrypt(str,key,result)$/
+nbssetkey	net/ruserpass.c	/^nbssetkey(key)$/
+net_makeaddr	inet/inet_makeaddr.c	/^inet_makeaddr(net, host)$/
+nlist	etc/nlist.c	/^nlist(name, list)$/
+ntohl	net/swap.c	/^ntohl(longInt)$/
+ntohs	net/swap.c	/^ntohs(shortInt)$/
+offtime	time/ctime.c	/^offtime(clock, offset)$/
+open	unixSyscall/open.c	/^open(pathName, unixFlags, permissions)$/
+opendir	dir/opendir.c	/^opendir(name)$/
+openlog	unixSyscall/syslog.c	/^openlog(ident, logstat, logfac)$/
+p_cdname	net/res_debug.c	/^p_cdname(cp, msg, file)$/
+p_class	net/res_debug.c	/^p_class(class)$/
+p_query	net/res_debug.c	/^p_query(msg)$/
+p_rr	net/res_debug.c	/^p_rr(cp, msg, file)$/
+p_time	net/res_debug.c	/^*p_time(value)$/
+p_type	net/res_debug.c	/^p_type(type)$/
+panic	etc/panic.c	/^panic(va_alist)$/
+pause	unixSyscall/pause.c	/^pause()$/
+pclose	etc/popen.c	/^pclose(ptr)$/
+perror	stdio/perror.c	/^perror(msg)$/
+pipe	unixSyscall/pipe.c	/^pipe(filedes)$/
+popen	etc/popen.c	/^popen(cmd,mode)$/
+prepend	etc/getwd.c	/^prepend(dirname, pathname)$/
+printf	stdio/printf.c	/^printf(va_alist)$/
+putchar	stdio/putchar.c	/^putchar(c)$/
+putlong	net/res_comp.c	/^putlong(l, msgp)$/
+puts	stdio/puts.c	/^puts(string)$/
+putshort	net/res_comp.c	/^putshort(s, msgp)$/
+putw	stdio/putw.c	/^putw(w, stream)$/
+pwskip	etc/getpwent.c	/^pwskip(p)$/
+qelem	etc/insque.c	/^struct qelem {$/
+qsort	stdlib/qsort.c	/^qsort(base, n, size, compar)$/
+qst	stdlib/qsort.c	/^qst(base, max)$/
+querybuf	net/gethostnamadr.c	/^} querybuf;$/
+rand	stdlib/rand.c	/^rand()$/
+random	stdlib/rand.c	/^random()$/
+rcmd	net/rcmd.c	/^rcmd(ahost, rport, locuser, remuser, cmd, fd2p)$/
+re_comp	etc/regex.c	/^re_comp(sp)$/
+re_exec	etc/regex.c	/^re_exec(p1)$/
+read	unixSyscall/read.c	/^read(descriptor, buffer, numBytes)$/
+readdir	dir/readdir.c	/^readdir(dirp)$/
+readlink	unixSyscall/readlink.c	/^readlink(link, buffer, numBytes)$/
+readv	unixSyscall/readv.c	/^readv(stream, iov, iovcnt)$/
+realloc	stdlib/realloc.c	/^realloc(ptr, newSize)$/
+recv	unixSyscall/socket.c	/^recv(socketID, bufPtr, bufSize, flags)$/
+recvfrom	unixSyscall/socket.c	/^recvfrom(socketID, bufPtr, bufSize, flags, senderP/
+recvmsg	unixSyscall/socket.c	/^recvmsg(socketID, msgPtr, flags)$/
+remque	etc/remque.c	/^remque(elem)$/
+rename	unixSyscall/rename.c	/^rename(from, to)$/
+renv	net/ruserpass.c	/^renv(host, aname, apass)$/
+renvlook	net/ruserpass.c	/^renvlook(host)$/
+res_init	net/res_init.c	/^res_init()$/
+res_mkquery	net/res_mkquery.c	/^res_mkquery(op, dname, class, type, data, datalen,/
+res_query	net/res_query.c	/^res_query(name, class, type, answer, anslen)$/
+res_querydomain	net/res_query.c	/^res_querydomain(name, domain, class, type, answer,/
+res_search	net/res_query.c	/^res_search(name, class, type, answer, anslen)$/
+res_send	net/res_send.c	/^res_send(buf, buflen, answer, anslen)$/
+rewind	stdio/rewind.c	/^rewind(stream)$/
+rexec	net/rexec.c	/^rexec(ahost, rport, name, pass, cmd, fd2p)$/
+rindex	string/rindex.c	/^rindex(string, c)$/
+rmdir	unixSyscall/rmdir.c	/^rmdir(pathName)$/
+rnetrc	net/ruserpass.c	/^rnetrc(host, aname, apass)$/
+rresvport	net/rcmd.c	/^rresvport(alport)$/
+ruserok	net/rcmd.c	/^ruserok(rhost, superuser, ruser, luser)$/
+ruserpass	net/ruserpass.c	/^ruserpass(host, aname, apass)$/
+sbrk	unixSyscall/brk.c	/^sbrk(numBytes)$/
+scale60	time/times.c	/^scale60(tvp)$/
+scandir	dir/scandir.c	/^scandir(dirname, namelist, select, dcomp)$/
+scanf	stdio/scanf.c	/^scanf(va_alist)$/
+seekdir	dir/seekdir.c	/^seekdir(dirp, loc)$/
+select	unixSyscall/select.c	/^select(width, readfds, writefds, exceptfds, timeou/
+send	unixSyscall/socket.c	/^send(socketID, bufPtr, bufSize, flags)$/
+sendmsg	unixSyscall/socket.c	/^sendmsg(socketID, msgPtr, flags)$/
+sendto	unixSyscall/socket.c	/^sendto(socketID, bufPtr, bufSize, flags, destPtr, /
+setbit	etc/ndbm.c	/^setbit(db)$/
+setbuf	stdio/setbuf.c	/^setbuf(stream, buf)$/
+setbuffer	stdio/setbuffer.c	/^setbuffer(stream, buf, size)$/
+setegid	etc/setegid.c	/^setegid(egid)$/
+setenv	stdlib/setenv.c	/^setenv(name, value)$/
+seteuid	etc/seteuid.c	/^seteuid(euid)$/
+setfiletype	unixSyscall/setfiletype.c	/^setfiletype(path, type)$/
+setgid	etc/setgid.c	/^setgid(gid)$/
+setgrent	etc/getgrent.c	/^setgrent()$/
+setgrfile	etc/getgrent.c	/^setgrfile(file)$/
+setgroups	unixSyscall/setgroups.c	/^setgroups(ngroups, gidset)$/
+sethostent	net/sethostent.c	/^sethostent(stayopen)$/
+sethostfile	net/sethostent.c	/^sethostfile(name)$/
+setitimer	unixSyscall/getitimer.c	/^setitimer(which, value, ovalue)$/
+setkey	etc/crypt.c	/^setkey(key)$/
+setlinebuf	stdio/setlinebuf.c	/^setlinebuf(stream)$/
+setlogmask	unixSyscall/syslog.c	/^setlogmask(pmask)$/
+setnetent	net/getnetent.c	/^setnetent(f)$/
+setpgrp	unixSyscall/setpgrp.c	/^setpgrp(pid, pgrp)$/
+setpriority	unixSyscall/setpriority.c	/^setpriority(which, who, prio)$/
+setprotoent	net/getprotoent.c	/^setprotoent(f)$/
+setpwent	etc/getpwent.c	/^setpwent()$/
+setpwfile	etc/getpwent.c	/^setpwfile(file)$/
+setregid	unixSyscall/setregid.c	/^setregid(rgid, egid)$/
+setreuid	unixSyscall/setreuid.c	/^setreuid(ruid, euid)$/
+setrgid	etc/setrgid.c	/^setrgid(rgid)$/
+setrlimit	unixSyscall/setrlimit.c	/^setrlimit()$/
+setruid	etc/setruid.c	/^setruid(ruid)$/
+setservent	net/getservent.c	/^setservent(f)$/
+setsockopt	unixSyscall/socket.c	/^setsockopt(socketID, level, optName, optVal, optLe/
+setstate	stdlib/rand.c	/^setstate( arg_state )$/
+settimeofday	unixSyscall/settimeofday.c	/^settimeofday(tp, tzp)$/
+setuid	etc/setuid.c	/^setuid(uid)$/
+setusershell	etc/getusershell.c	/^setusershell()$/
+setvbuf	stdio/setvbuf.c	/^setvbuf(stream, buf, mode, size)$/
+shutdown	unixSyscall/socket.c	/^shutdown(socketID, action)$/
+sigblock	unixSyscall/sigblock.c	/^sigblock(mask)$/
+sigpause	unixSyscall/sigpause.c	/^sigpause(mask)$/
+sigsetmask	unixSyscall/sigsetmask.c	/^sigsetmask(mask)$/
+sigvec	unixSyscall/sigvec.c	/^sigvec(sig, newVectorPtr, oldVectorPtr)$/
+sleep	unixSyscall/sleep.c	/^sleep(seconds)$/
+socket	unixSyscall/socket.c	/^socket(domain, type, protocol)$/
+sprintf	stdio/sprintf.c	/^sprintf(va_alist)$/
+srand	stdlib/rand.c	/^srand(seed)$/
+srandom	stdlib/rand.c	/^srandom( seed )$/
+sreverse	net/ruserpass.c	/^sreverse(sto, sfrom)$/
+sscanf	stdio/sscanf.c	/^sscanf(va_alist)$/
+stat	unixSyscall/stat.c	/^stat(pathName, attsBufPtr)$/
+state	time/ctime.c	/^struct state {$/
+strcasecmp	string/strcasecmp.c	/^strcasecmp(s1, s2)$/
+strcat	string/strcat.c	/^strcat(dst, src)$/
+strchr	string/strchr.c	/^strchr(string, c)$/
+strcmp	string/strcmp.c	/^strcmp(s1, s2)$/
+strcpy	string/strcpy.c	/^strcpy(dst, src)$/
+strcspn	string/strcspn.c	/^strcspn(string, chars)$/
+strerror	string/strerror.c	/^strerror(error)$/
+strlen	string/strlen.c	/^strlen(string)$/
+strncasecmp	string/strcasecmp.c	/^strncasecmp(s1, s2, n)$/
+strncat	string/strncat.c	/^strncat(dst, src, numChars)$/
+strncmp	string/strncmp.c	/^strncmp(s1, s2, numChars)$/
+strncpy	string/strncpy.c	/^strncpy(dst, src, numChars)$/
+strpbrk	string/strpbrk.c	/^strpbrk(string, chars)$/
+strrchr	string/strrchr.c	/^strrchr(string, c)$/
+strspn	string/strspn.c	/^strspn(string, chars)$/
+strstr	string/strstr.c	/^strstr(string, substring)$/
+strtod	stdlib/strtod.c	/^strtod(string, endPtr)$/
+strtol	stdlib/strtol.c	/^strtol(string, endPtr, base)$/
+strtoul	stdlib/strtoul.c	/^strtoul(string, endPtr, base)$/
+stty	unixSyscall/stty.c	/^stty(fd, buf)$/
+swab	net/swap.c	/^	union swab {$/
+symlink	unixSyscall/symlink.c	/^symlink(target, link)$/
+syslog	unixSyscall/syslog.c	/^syslog(pri, fmt, p0, p1, p2, p3, p4)$/
+system	stdlib/system.c	/^system(command)$/
+tell	etc/getopt.c	/^#define	tell(s)	{ \\$/
+telldir	dir/telldir.c	/^telldir(dirp)$/
+tempnam	stdio/tmpnam.c	/^tempnam(dir, pfx)$/
+time	time/time.c	/^time(t)$/
+times	time/times.c	/^times(tmsp)$/
+timezone	time/timezone.c	/^timezone(zone, dst)$/
+tmpfile	stdio/tmpnam.c	/^tmpfile()$/
+tmpnam	stdio/tmpnam.c	/^tmpnam(s)$/
+tms	time/times.c	/^struct tms {$/
+token	net/ruserpass.c	/^token()$/
+toktab	net/ruserpass.c	/^static struct toktab {$/
+tolower	ctype/tolower.c	/^tolower(c)$/
+toupper	ctype/toupper.c	/^toupper(c)$/
+truncate	unixSyscall/truncate.c	/^truncate(path, length)$/
+tst	etc/popen.c	/^#define	tst(a,b)	(*mode == 'r'? (b) : (a))$/
+ttinfo	time/ctime.c	/^struct ttinfo {				\/* time type information *\/$/
+ttyname	etc/ttyname.c	/^ttyname(filedes)$/
+ttyslot	etc/ttyslot.c	/^ttyslot()$/
+tzload	time/ctime.c	/^tzload(name)$/
+tzset	time/ctime.c	/^tzset()$/
+tzsetgmt	time/ctime.c	/^tzsetgmt()$/
+tzsetkernel	time/ctime.c	/^tzsetkernel()$/
+umask	unixSyscall/umask.c	/^umask(newMask)$/
+ungetc	stdio/ungetc.c	/^ungetc(c, stream)$/
+unixHandleSig	unixSyscall/sigvec.c	/^unixHandleSig (spriteSig, spriteCode)$/
+unlink	unixSyscall/unlink.c	/^unlink(pathName)$/
+unsetenv	unixSyscall/unsetenv.c	/^unsetenv(name)$/
+utimes	unixSyscall/utimes.c	/^utimes(path, tvp)$/
+vfork	unixSyscall/vfork.c	/^vfork()$/
+vfprintf	stdio/vfprintf.c	/^vfprintf(stream, format, args)$/
+vfscanf	stdio/vfscanf.c	/^vfscanf(stream, format, args)$/
+vprintf	stdio/vprintf.c	/^vprintf(format, args)$/
+vsprintf	stdio/vsprintf.c	/^vsprintf(string, format, args)$/
+wait	unixSyscall/wait.c	/^wait(statusPtr)$/
+wait3	unixSyscall/wait.c	/^wait3(statusPtr, options, unixRusagePtr)$/
+write	unixSyscall/write.c	/^write(descriptor, buffer, numBytes)$/
+writev	unixSyscall/writev.c	/^writev(descriptor, iov, ioveclen)$/
+zone	time/timezone.c	/^static struct zone {$/

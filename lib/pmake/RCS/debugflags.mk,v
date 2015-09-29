@@ -1,0 +1,121 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.3
+date     92.11.27.17.16.46;  author jhh;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     92.06.10.13.05.47;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.04.30.12.09.39;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@System makefile to set debugging and optimization flags.
+@
+
+
+1.3
+log
+@added AGFLAG and AGDFLAG
+@
+text
+@#
+# This Makefile is included by several other system Makefiles.  It
+# sets OFLAG and GFLAG, which control optimization and debugging
+# support, and are eventually included in CFLAGS.  This Makefile is
+# distinct from tm.mk because the comments in tm.mk state that this
+# functionality should be separate.
+# This Makefile uses the following variables as input:
+# NOOPTIMIZATION	If this variable is defined, then optimization
+#			is suppressed.
+# TM			The machine type being compiled for.
+#
+# $Header: /sprite/lib/pmake/RCS/debugflags.mk,v 1.2 92/06/10 13:05:47 jhh Exp $
+#
+
+#
+# OFLAG : optimization flag
+# GFLAG : debugging support when optimization is turned on
+# GDFLAG : debugging support when optimization is turned off (D for Debug)
+# AGFLAG: same as for GFLAG, but for .s files
+# AGDFLAG: samse as for GDFLAG, but for .s files
+
+#ifndef NOOPTIMIZATION
+OFLAG = -O
+#if !empty(TM:Mds3100) || !empty(TM:Mds5000)
+#if empty(CC:Mgcc)
+GFLAG = -g3
+GDFLAG = -g
+AGFLAG = $(GFLAG)
+AGDFLAG = $(GDFLAG)
+#else
+# I wish I knew why GFLAG is set empty here. -mdk
+GFLAG	=
+GDFLAG	=
+AGFLAG = $(GFLAG)
+AGDFLAG = $(GDFLAG)
+#endif /* gcc */
+#else /* not compiling for a DECstation */
+GFLAG = -g
+GDFLAG = -g
+AGFLAG =
+AGDFLAG = 
+#endif
+
+#else /* NOOPTIMIZATION */
+
+OFLAG =
+GFLAG = -g
+GDFLAG = -g
+#if !empty(TM:Mds3100) || !empty(TM:Mds5000)
+AGFLAG = $(GFLAG)
+AGDFLAG = $(GDFLAG)
+#else
+AGFLAG =
+AGDFLAG = 
+#endif
+#endif /* NOOPTIMIZATION */
+@
+
+
+1.2
+log
+@cleaned out some obsolete machine types
+@
+text
+@d12 1
+a12 1
+# $Header: /sprite/lib/pmake/RCS/debugflags.mk,v 1.1 91/04/30 12:09:39 kupfer Exp $
+d15 7
+d27 3
+d33 3
+d39 3
+d48 8
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d12 1
+a12 1
+# $Header$
+d17 1
+a17 1
+#if !empty(TM:Mds3100) || !empty(TM:Mjhh) || !empty(TM:Mcleands3100) || !empty(TM:Mds5000)
+@

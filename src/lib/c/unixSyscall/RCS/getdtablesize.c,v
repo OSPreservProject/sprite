@@ -1,0 +1,63 @@
+head     1.1;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     88.06.19.14.31.20;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/* 
+ * getdtablesize.c --
+ *
+ *	Procedure to map from Unix getdtablesize system call to Sprite.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: getpagesize,v 1.1 86/04/20 18:34:53 andrew Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+
+#include "compatInt.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * getdtablesize --
+ *
+ *	Fake procedure for Unix getdtablesize call. 
+ *
+ * Results:
+ *	The number of descriptors used by Sprite is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+getdtablesize()
+{
+    return(100);
+}
+@

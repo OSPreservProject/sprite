@@ -1,0 +1,119 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  sprited:1.2.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     88.07.20.18.12.15;  author ouster;  state Exp;
+branches 1.2.1.1;
+next     1.1;
+
+1.1
+date     88.06.10.16.23.35;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.2.1.1
+date     91.12.02.19.54.57;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Change file streams so that fdopen can be called more than once
+for a given stream id, and get separate buffers.
+@
+text
+@/* 
+ * _cleanup.c --
+ *
+ *	Source code for the "_cleanup" library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: _cleanup.c,v 1.1 88/06/10 16:23:35 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "stdio.h"
+#include "fileInt.h"
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * _cleanup --
+ *
+ *	This procedure is invoked once just before the process exits.
+ *	It flushes all of the open streams.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Streams get flushed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+_cleanup()
+{
+    register FILE *stream;
+
+    for (stream = stdioFileStreams; stream != NULL; stream = stream->nextPtr) {
+	if (!(stream->flags & STDIO_WRITE)) {
+	    continue;
+	}
+	fflush(stream);
+    }
+}
+@
+
+
+1.2.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdio/RCS/_cleanup.c,v 1.2 88/07/20 18:12:15 ouster Exp $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: atoi.c,v 1.1 88/04/28 17:20:23 ouster Exp $ SPRITE (Berkeley)";
+d43 1
+a43 2
+    FILE *stream;
+    int i;
+d45 3
+a47 4
+    for (i = 0; i < stdioNumFileStreams; i++) {
+	stream = stdioFileStreams[i];
+	if (stream != NULL) {
+	    fflush(stream);
+d49 1
+@

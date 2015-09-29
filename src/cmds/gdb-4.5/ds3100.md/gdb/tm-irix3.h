@@ -1,0 +1,1 @@
+../../dist/gdb/tm-irix3.h

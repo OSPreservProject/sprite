@@ -1,0 +1,72 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    jhh:1.2; strict;
+comment  @@;
+
+
+1.2
+date     92.03.03.11.15.10;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.10.21.16.29.12;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@#
+# This file is included by Makefile.  Makefile is generated automatically
+# by mkmf, and this file provides additional local personalization.  The
+# variable SYSMAKEFILE is provdied by Makefile;  it's a system Makefile
+# that must be included to set up various compilation stuff.
+#
+
+NAME		= kgdb.mips
+
+LIBS		+= -ltermlib 
+
+#
+# If the kernel debugger stub supports kdbx then KDBX must be defined when
+# compiling both the kernel debugger stub and kgdb.
+#
+
+CFLAGS += -DKDBX
+
+#include	<$(SYSMAKEFILE)>
+
+.PATH.h		:  . gdb gdb/ds3100.md \
+		    gdb/sprite gdb/dist gdb/dist/readline \
+		    /sprite/src/lib/include/ds3100.md
+
+CFLAGS          += -DKGDB -I. -Igdb \
+		    -Igdb/ds3100.md -Igdb/sprite \
+                    -Igdb/dist -Igdb/dist/readline \
+		    -I/sprite/src/lib/include/ds3100.md
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d21 1
+a21 1
+.PATH.h		: /sprite/src/kernel/dbg.jhh/ds3100.md . gdb gdb/ds3100.md \
+d25 1
+a25 1
+CFLAGS          += -DKGDB -I/sprite/src/kernel/dbg.jhh/ds3100.md -I. -Igdb \
+@

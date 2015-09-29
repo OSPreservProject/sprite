@@ -1,0 +1,282 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  srv030:1.3 srv027:1.3 srv026:1.3 srv024:1.3 srv021:1.3 srv018:1.3 srv014:1.3 srv010:1.3 srv008:1.3 srv007:1.3 srv006:1.3 srv004:1.3;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     92.01.22.13.22.14;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.11.14.20.31.30;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.11.09.22.08.21;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Program to cause lots of VM activity.
+@
+
+
+1.3
+log
+@Add compile-time constants for name of file, number of iterations.
+Fix a bug in computing the status per cent.  Give a better error
+message if the file contains bad data.
+@
+text
+@/* 
+ * thrash.c --
+ *
+ *	Test program to cause lots of paging.
+ *
+ * Copyright 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/tests/thrash/RCS/thrash.c,v 1.2 91/11/14 20:31:30 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <mach.h>
+#include <ctype.h>
+#include <status.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <test.h>
+#include <vm.h>
+
+/* 
+ * Name of the big mapped file to create.
+ */
+#define FILE_NAME	"DummyFile"
+
+/* 
+ * Number of iterations to walk through the file.
+ */
+#define ITERATIONS	3
+
+Boolean gentle = FALSE;		/* pause between faults? */
+
+/* Forward references */
+
+static void MakeFile _ARGS_((char *fileName));
+
+main(argc, argv)
+    int argc;
+    char *argv[];
+{
+    int bufferLength = 32 * 1024 * 1024;
+    char *buffer;
+    int iter;			/* iteration count */
+    char *cp;
+    ReturnStatus status;
+
+    if (argc > 1) {
+	gentle = TRUE;
+    }
+
+    status = Vm_MapFile(FILE_NAME, FALSE, (off_t)0,
+			(vm_size_t)bufferLength, &buffer);
+    if (status != SUCCESS) {
+	Test_PutMessage("Couldn't map file: ");
+	Test_PutMessage(Stat_GetMsg(status));
+	Test_PutMessage("\n");
+	goto bailOut;
+    }
+
+    /* 
+     * Touch all the pages in the file, then wait a bit before 
+     * repeating.  Verify that the value you wrote is still there.  
+     * Pause before touching each page so as to reduce the load on 
+     * Mach.  (Running at full speed eventually causes the ethernet 
+     * interface to get a bus error, at least on a sun3.)
+     */
+    for (iter = 0; iter < ITERATIONS; iter++) {
+	Test_PutMessage("iteration ");
+	Test_PutDecimal(iter+1);
+	Test_PutMessage(": ");
+	for (cp = buffer; cp < buffer + bufferLength;
+	     cp += vm_page_size) {
+	    if (gentle) {
+		msleep(250);
+	    }
+	    if ((cp - buffer) % (20 * vm_page_size) == 0) {
+		Test_PutDecimal(100 * (unsigned)(cp - buffer) / bufferLength);
+		Test_PutMessage(" ");
+	    }
+	    if (iter > 0) {
+		if (*cp != 'a' + iter - 1) {
+		    Test_PutMessage("thrash: wrong value (");
+		    Test_PutHex(*(unsigned char *)cp);
+		    Test_PutMessage(") at offset ");
+		    Test_PutHex(cp - buffer);
+		    Test_PutMessage("\n");
+		}
+	    }
+	    *cp = 'a' + iter;
+	}
+
+	Test_PutMessage("pausing\n");
+	msleep(1000);
+    }
+
+ bailOut:
+    exit(0);
+}
+@
+
+
+1.2
+log
+@Change to new setup for sprited clients ((almost) no knowledge of
+Mach, etc.).
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/tests/thrash/RCS/thrash.c,v 1.1 91/11/09 22:08:21 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d24 2
+d29 10
+d49 1
+a49 1
+    int bufferLength = 16 * 1024 * 1024;
+d59 2
+a60 1
+    status = Vm_MapFile("DummyFile", FALSE, 0, bufferLength, &buffer);
+d75 1
+a75 1
+    for (iter = 0; iter < 5; iter++) {
+d85 1
+a85 1
+		Test_PutDecimal(100 * (cp - buffer) / bufferLength);
+d90 5
+a94 1
+		    Test_PutMessage("value mismatch\n");
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/client/RCS/client.c,v 1.6 91/08/30 16:06:00 kupfer Exp $ SPRITE (Berkeley)";
+d20 1
+a21 2
+#include <mach.h>
+#include <mach_error.h>
+d24 2
+a25 2
+#include <user/proc.h>
+#include "spriteSrv.h"
+d27 1
+a27 1
+mach_port_t serverPort;		/* port for making Sprite requests */
+a31 2
+static void MapFile _ARGS_((char *fileName, boolean_t readOnly,
+			    int length, Address *startAddrPtr));
+d33 3
+a35 1
+main()
+a36 1
+    kern_return_t kernStatus;
+d41 1
+d43 2
+a44 3
+    kernStatus = task_get_bootstrap_port(mach_task_self(), &serverPort);
+    if (kernStatus != KERN_SUCCESS) {
+	thread_suspend(mach_thread_self());	
+d47 5
+a51 2
+    MapFile("DummyFile", FALSE, bufferLength, &buffer);
+    if (buffer == 0) {
+d60 1
+a60 1
+     * interface to get a bus error.)
+d63 3
+a65 3
+	Test_PutMessage(serverPort, "iteration ");
+	Test_PutDecimal(serverPort, iter+1);
+	Test_PutMessage(serverPort, ": ");
+d68 3
+a70 1
+	    msleep(250);
+d72 2
+a73 3
+		Test_PutDecimal(serverPort,
+				100 * (cp - buffer) / bufferLength);
+		Test_PutMessage(serverPort, " ");
+d77 1
+a77 1
+		    Test_PutMessage(serverPort, "value mismatch\n");
+d83 1
+a83 1
+	Test_PutMessage(serverPort, "pausing\n");
+d88 1
+a88 44
+    Sys_Shutdown(serverPort);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MapFile --
+ *
+ *	Map the named file into our address space.
+ *
+ * Results:
+ *	Fills in the starting location, which is set to 0 
+ *	if there was a problem.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+MapFile(fileName, readOnly, length, startAddrPtr)
+    char *fileName;		/* name of file to map */
+    boolean_t readOnly;		/* map read-only or read-write? */
+    int length;			/* number of bytes to map */
+    Address *startAddrPtr;	/* OUT: where the file was mapped to */
+{
+    kern_return_t kernStatus;
+    ReturnStatus status;
+
+    kernStatus = Vm_MapFileStub(serverPort, fileName, strlen(fileName)+1,
+			    readOnly, 0, length, &status, startAddrPtr);
+    if (kernStatus != KERN_SUCCESS) {
+	Test_PutMessage(serverPort, "Couldn't map file: ");
+	Test_PutMessage(serverPort, mach_error_string(kernStatus));
+	Test_PutMessage(serverPort, "\n");
+	*startAddrPtr = 0;
+    } else if (status != SUCCESS) {
+	Test_PutMessage(serverPort, "Couldn't map file: ");
+	Test_PutMessage(serverPort, Stat_GetMsg(status));
+	Test_PutMessage(serverPort, "\n");
+	*startAddrPtr = 0;
+    }
+a89 1
+
+@

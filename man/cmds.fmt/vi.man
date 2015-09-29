@@ -1,0 +1,132 @@
+
+
+
+VI                        User Commands                        VI
+
+
+
+NNAAMMEE
+     vi, view - visual display editor based on ex(1)
+
+SSYYNNOOPPSSIISS
+     vvii [ --llrrRRxx ] [ --tt _t_a_g ] [ --ww_n_n_n ] [ ++_c_o_m_m_a_n_d ] _f_i_l_e_n_a_m_e...
+
+     vviieeww...
+
+DDEESSCCRRIIPPTTIIOONN
+     vvii (visual) is a display oriented text editor based on
+     eexx(1).  eexx and vvii are, in fact, the same text editor; it is
+     possible to get to the command mode of eexx from within vvii and
+     vice-versa.
+
+     The vviieeww command runs vvii with the rreeaaddoonnllyy variable set.
+     With vviieeww, you can browse through files interactively
+     without making any changes.
+
+OOPPTTIIOONNSS
+     --ll   Set up for editing LISP programs.
+
+     --rr   Recover the named files after a crash.
+
+     --RR   Edit files in read only state.  This has the same
+          effect as the vviieeww command.
+
+     --xx   Prompt for a key with which to encrypt the file or
+          files being edited.
+
+     --tt _t_a_g
+          Edit the file containing _t_a_g.  There must be a tags
+          database in the directory, built by ccttaaggss(1), that con-
+          tains a reference to _t_a_g.
+
+     ++_c_o_m_m_a_n_d
+          Start the editing session by executing _c_o_m_m_a_n_d.
+
+     ++_c_o_m_m_a_n_d
+          Start the editing session by executing _c_o_m_m_a_n_d.
+
+EENNVVIIRROONNMMEENNTT
+     The editor recognizes the environment variable as a command
+     (or list of commands separated by || characters) to run when
+     it starts up.  If this variable is undefined, the editor
+     checks for startup commands in the file ~~//..eexxrrcc file, which
+     you must own.  However, if there is a ..eexxrrcc owned by you in
+     the current directory, the editor takes its startup commands
+     from this file - overriding both the file in your home
+     directory and the environment variable.
+
+FFIILLEESS
+     ccttaaggss(1), eexx(1)
+
+
+
+Sprite v1.0             22 December 1987                        1
+
+
+
+
+
+
+VI                        User Commands                        VI
+
+
+
+BBUUGGSS
+     Software TAB characters using CTRL-T work only immediately
+     after the aauuttooiinnddeenntt.
+
+     SHIFT-left and SHIFT-right on intelligent terminals do not
+     make use of insert and delete character operations in the
+     terminal.
+
+     The wwrraappmmaarrggiinn option can be fooled since it looks at output
+     columns when blanks are typed.  If a long word passes
+     through the margin and onto the next line without a break,
+     then the line will not be broken.
+
+     Repeating a change which wraps over the margin when wwrraappmmaarr--
+     ggiinn is in effect does not generally work well: sometimes it
+     just makes a mess of the change, and sometimes even leaves
+     you in insert mode.  A way to work around the problem is to
+     replicate the changes using yy (yank) and pp (put).
+
+     Insert/delete within a line can be slow if TAB characters
+     are present on intelligent terminals, since the terminals
+     need help in doing this correctly.
+
+     Saving text on deletes in the named buffers is somewhat
+     inefficient.
+
+     The _s_o_u_r_c_e command does not work when executed as `::ssoouurrccee';
+     there is no way to use the `::aappppeenndd', `::cchhaannggee', and
+     `::iinnsseerrtt' commands, since it is not possible to give more
+     than one line of input to a `::' escape.  To use these on a
+     `::gglloobbaall' you must QQ to _e_x command mode, execute them, and
+     then reenter the screen editor with vvii or ooppeenn.
+
+     When using the --rr option to recover a file, you must write
+     the recovered text before quitting or you will lose it.  vvii
+     does not prevent you from exiting without writing unless you
+     make changes.
+
+     vvii does not adjust when the SunView window in which it runs
+     is resized.
+
+RREESSTTRRIICCTTIIOONNSS
+     The encryption facilities of vvii are not available on
+     software shipped outside the U.S.
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0             22 December 1987                        2
+
+
+

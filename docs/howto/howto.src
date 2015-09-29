@@ -1,0 +1,40 @@
+(:source 
+   :version  3 
+   :database-name "/sprite/admin/howto/howto"
+   :cost 0.00 
+   :cost-unit :free 
+   :maintainer "shirriff@violence.Berkeley.EDU"
+   :description "Server created with WAIS release 8 b3.1 on Jan 28 22:27:24 1992 by shirriff@violence.Berkeley.EDU
+The files of type text used in the index were:
+   /sprite/admin/howto/ChangeUltrixClient
+   /sprite/admin/howto/X11R3_colors
+   /sprite/admin/howto/X11R3_defaults
+   /sprite/admin/howto/X11R3_fonts
+   /sprite/admin/howto/X11R3_getStarted
+   /sprite/admin/howto/addNewHost
+   /sprite/admin/howto/addNewUser
+   /sprite/admin/howto/bootFromUnix
+   /sprite/admin/howto/doAPort.txt
+   /sprite/admin/howto/convertToGcc
+   /sprite/admin/howto/createNewMachineType
+   /sprite/admin/howto/deleteAnAccount
+   /sprite/admin/howto/doADump
+   /sprite/admin/howto/doNeatStuffOnASymmetry
+   /sprite/admin/howto/fixPrinterQueue
+   /sprite/admin/howto/installKernels
+   /sprite/admin/howto/installProg
+   /sprite/admin/howto/scvs.txt
+   /sprite/admin/howto/makeKernelChanges
+   /sprite/admin/howto/recoverWrongMxFile
+   /sprite/admin/howto/restoreAFile
+   /sprite/admin/howto/setPromEnvironment
+   /sprite/admin/howto/sparcProm
+   /sprite/admin/howto/startX11R4
+   /sprite/admin/howto/systemMachineDependencies
+   /sprite/admin/howto/understandX11R5
+   /sprite/admin/howto/understand_imake
+   /sprite/admin/howto/updateGcc
+   /sprite/admin/howto/server-info/allspice.debug.txt
+   /sprite/admin/howto/server-info/assault.debug.txt
+"
+)

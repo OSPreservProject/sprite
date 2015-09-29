@@ -1,0 +1,68 @@
+
+
+
+DEBUG                     User Commands                     DEBUG
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     debug - Start a command and  put  it  immediately  into  the
+     debugger
+
+SSYYNNOOPPSSIISS
+     ddeebbuugg _c_o_m_m_a_n_d [_o_p_t_i_o_n_s]
+
+_________________________________________________________________
+
+
+IINNTTRROODDUUCCTTIIOONN
+     The ddeebbuugg command is used to initiate a  process  but  force
+     the  process  into  the  debugger  before  it  executes  any
+     instructions, in order to facilitate debugging.  _C_o_m_m_a_n_d  is
+     the  name  of the command; if _o_p_t_i_o_n_s are present, they will
+     be passed to _c_o_m_m_a_n_d as options.
+
+
+KKEEYYWWOORRDDSS
+     debug
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  January 20, 1989                   1
+
+
+

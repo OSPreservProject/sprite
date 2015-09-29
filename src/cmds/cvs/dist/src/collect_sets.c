@@ -1,0 +1,304 @@
+#ifndef lint
+static char rcsid[] = "$Id: collect_sets.c,v 1.15.1.1 91/01/29 07:16:13 berliner Exp $";
+#endif !lint
+
+/*
+ *    Copyright (c) 1989, Brian Berliner
+ *
+ *    You may distribute under the terms of the GNU General Public License
+ *    as specified in the README file that comes with the CVS 1.0 kit.
+ *
+ * Collect Sets
+ *
+ *	Collects the interesting file names from the administration and
+ *	the repository in a number of variables:
+ *							solved by:
+ *		Clist	conflict-ridden			(user)
+ *		Glist	modified, needs merging		(update)
+ *		Mlist	modified, needs checking in	(commit)
+ *		Olist	needs checking out		(update)
+ *		Alist	to be added			(commit)
+ *		Rlist	to be removed			(commit)
+ *		Wlist	remove entry			(update)
+ *		Llist	locked list			(commit)
+ *		Blist	branch list			(commit)
+ *		Dlist	directory list			(update)
+ *
+ *	Returns non-zero on error.
+ */
+
+#include <sys/param.h>
+#include "cvs.h"
+
+extern char update_dir[];
+
+Collect_Sets(argc, argv)
+    int argc;
+    char *argv[];
+{
+    register int i;
+    char tmp[MAXPATHLEN], update_user[MAXPATHLEN];
+    int ret = 0;
+
+    /*
+     * By default, a call here must wipe the slate clean
+     */
+    Clist[0] = Glist[0] = Mlist[0] = Olist[0] = Dlist[0] = '\0';
+    Alist[0] = Rlist[0] = Wlist[0] = Llist[0] = Blist[0] = '\0';
+    for (i = 0; i < argc; i++) {
+	(void) strcpy(User, argv[i]);
+	if (update_dir[0] != '\0')
+	    (void) sprintf(update_user, "%s/%s", update_dir, User);
+	else
+	    (void) strcpy(update_user, User);
+	if (force_tag_match && (Tag[0] != '\0' || Date[0] != '\0'))
+	    Locate_RCS();
+	else
+	    (void) sprintf(Rcs, "%s/%s%s", Repository, User, RCSEXT);
+	if (isdir(User)) {		/* just a directory -- add to Dlist */
+	    (void) strcat(Dlist, " ");
+	    (void) strcat(Dlist, User);
+	    continue;
+	}
+	Version_TS(Rcs, Tag, User);
+	if (VN_User[0] == '\0') {
+	    /*
+	     * No entry available, TS_Rcs is invalid
+	     */
+	    if (VN_Rcs[0] == '\0') {
+		/*
+		 * There is no RCS file either
+		 */
+		if (TS_User[0] == '\0')	{ /* there is no user file */
+		    if (!force_tag_match || !isfile(Rcs)) {
+			warn(0, "nothing known about %s", update_user);
+			ret++;
+		    }
+		} else {		/* there is a user file */
+		    if (!force_tag_match) {
+			warn(0, "use `cvs add' to create entry for %s",
+			     update_user);
+			ret++;
+		    }
+		}
+	    } else {
+		/*
+		 * There is an RCS file
+		 */
+		if (TS_User[0] == '\0') {
+		    /*
+		     * There is no user file; ad it to the Olist
+		     */
+		    (void) strcat(Olist, " ");
+		    (void) strcat(Olist, User);
+		} else {
+		    /*
+		     * There is a user file; print a warning and add it
+		     * to the conflict list, Clist, only if it is indeed
+		     * different from what we plan to extract
+		     */
+		    No_Difference(0);
+		    if (strcmp(TS_Rcs, TS_User) == 0) {
+			(void) strcat(Olist, " ");
+			(void) strcat(Olist, User);
+		    } else {
+			warn(0, "move away %s; it is in the way",
+			     update_user);
+			(void) strcat(Clist, " ");
+			(void) strcat(Clist, User);
+			ret++;
+		    }
+		}
+	    }
+	} else if (VN_User[0] == '0' && VN_User[1] == '\0') {
+	    /*
+	     * An entry for a new-born file; TS_Rcs is dummy
+	     */
+	    if (TS_User[0] == '\0') {
+		/*
+		 * There is no user file, but there should be one;
+		 * add it to the remove entry list.
+		 */
+		warn(0, "warning: new-born %s has disappeared", update_user);
+		(void) strcat(Wlist, " ");
+		(void) strcat(Wlist, User);
+	    } else {
+		/*
+		 * There is a user file
+		 */
+		if (VN_Rcs[0] == '\0') {
+		    /*
+		     * There is no RCS file, so add it to the add entry list
+		     */
+		    (void) strcat(Alist, " ");
+		    (void) strcat(Alist, User);
+		} else {
+		    /*
+		     * There is an RCS file, so someone else must have
+		     * checked one in behind our back; added to the conflict
+		     * list
+		     */
+		    warn(0, "conflict: %s created independently by second party",
+			 update_user);
+		    (void) strcat(Clist, " ");
+		    (void) strcat(Clist, User);
+		    ret++;
+		}
+	    }
+	} else if (VN_User[0] == '-') {
+	    /*
+	     * An entry for a removed file, TS_Rcs is invalid
+	     */
+	    if (TS_User[0] == '\0') {
+		/*
+		 * There is no user file (as it should be)
+		 */
+		(void) sprintf(tmp, "-%s", VN_Rcs);
+		if (strcmp(tmp, "-") == 0) {
+		    /*
+		     * There is no RCS file; this is all-right, but it
+		     * has been removed independently by a second party;
+		     * added to the remove entry list.
+		     */
+		    (void) strcat(Wlist, " ");
+		    (void) strcat(Wlist, User);
+		} else if (strcmp(tmp, VN_User) == 0) {
+		    /*
+		     * The RCS file is the same version as the user file,
+		     * and that's OK; added to the to be removed list
+		     */
+		    (void) strcat(Rlist, " ");
+		    (void) strcat(Rlist, User);
+		} else {
+		    /*
+		     * The RCS file is a newer version than the user file;
+		     * and this is defintely not OK; make it a conflict.
+		     */
+		    warn(0, "conflict: removed %s was modified by second party",
+			 update_user);
+		    (void) strcat(Clist, " ");
+		    (void) strcat(Clist, User);
+		    ret++;
+		}
+	    } else {
+		/*
+		 * The user file shouldn't be there
+		 */
+		warn(0, "%s should be removed and is still there", update_user);
+		ret++;
+	    }
+	} else {
+	    /*
+	     * A normal entry, TS_Rcs is valid
+	     */
+	    if (VN_Rcs[0] == '\0') {
+		/*
+		 * There is no RCS file
+		 */
+		if (TS_User[0] == '\0') {
+		    /*
+		     * There is no user file, so just remove the entry
+		     */
+		    warn(0, "warning: %s is not (any longer) pertinent",
+			 update_user);
+		    (void) strcat(Wlist, " ");
+		    (void) strcat(Wlist, User);
+		} else if (strcmp(TS_User, TS_Rcs) == 0) {
+		    /*
+		     * The user file is still unmodified, so just remove it
+		     * from the entry list
+		     */
+		    if (!force_tag_match || !isfile(Rcs)) {
+			warn(0, "%s is no longer in the repository",
+			     update_user);
+			(void) strcat(Wlist, " ");
+			(void) strcat(Wlist, User);
+		    }
+		} else {
+		    /*
+		     * The user file has been modified and since it is no
+		     * longer in the repository, a conflict is raised
+		     */
+		    if (!force_tag_match) {
+			Locate_RCS();
+			(void) No_Difference(0);
+			if (strcmp(TS_User, TS_Rcs) == 0) {
+			    warn(0,
+		"warning: %s is not (any longer) pertinent",
+				 update_user);
+			    (void) strcat(Wlist, " ");
+			    (void) strcat(Wlist, User);
+			} else {
+			    warn(0,
+		"conflict: %s is modified but no longer in the repository",
+				 update_user);
+			    (void) strcat(Clist, " ");
+			    (void) strcat(Clist, User);
+			    ret++;
+			}
+		    }
+		}
+	    } else if (strcmp(VN_Rcs, VN_User) == 0) {
+		/*
+		 * The RCS file is the same version as the user file
+		 */
+		if (TS_User[0] == '\0') {
+		    /*
+		     * There is no user file, so note that it was lost
+		     * and extract a new version
+		     */
+		    if (strcmp(command, "checkout") != 0 &&
+			strcmp(command, "co") != 0 &&
+			strcmp(command, "get") != 0)
+			warn(0, "warning: %s was lost", update_user);
+		    (void) strcat(Olist, " ");
+		    (void) strcat(Olist, User);
+		} else if (strcmp(TS_User, TS_Rcs) == 0) {
+		    /*
+		     * The user file is still unmodified, so nothing
+		     * special at all to do -- no lists updated
+		     */
+		} else {
+		    /*
+		     * The user file appears to have been modified, but
+		     * we call No_Difference to verify that it really
+		     * has been modified -- it updates the Mlist,
+		     * if necessary.
+		     */
+		    (void) No_Difference(0);
+		}
+	    } else {
+		/*
+		 * The RCS file is a newer version than the user file
+		 */
+		if (TS_User[0] == '\0') {
+		    /*
+		     * There is no user file, so just get it
+		     */
+		    if (strcmp(command, "checkout") != 0 &&
+			strcmp(command, "co") != 0 &&
+			strcmp(command, "get") != 0)
+			warn(0, "warning: %s was lost", update_user);
+		    (void) strcat(Olist, " ");
+		    (void) strcat(Olist, User);
+		} else if (strcmp(TS_User, TS_Rcs) == 0) {
+		    /*
+		     * The user file is still unmodified, so just get it
+		     * as well
+		     */
+		    (void) strcat(Olist, " ");
+		    (void) strcat(Olist, User);
+		} else {
+		    /*
+		     * The user file appears to have been modified; we call
+		     * No_Difference to verify this for us, and it updates
+		     * Glist if it has really been modified, and Olist if
+		     * it hasn't
+		     */
+		    (void) No_Difference(1);
+		}
+	    }
+	}
+    }
+    return (ret);
+}

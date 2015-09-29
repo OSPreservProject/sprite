@@ -1,0 +1,28 @@
+'\" Copyright 1990 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/cmds/newacct/RCS/newacct.man,v 1.1 90/03/01 12:20:23 rab Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS NEWACCT cmds
+.BS
+.SH NAME
+newacct \- Request a new sprite account
+.SH SYNOPSIS
+\fBnewacct
+.SH DESCRIPTION
+.PP
+This program prompts the user for the information needed to
+create a new user account.  It asks for the login id of the
+new user, the group, office number, home and work phone number,
+and the project that the account will be used for.  Once all the
+information is collected, it is mailed to the system administer,
+who will create the account.
+
+.SH KEYWORDS
+account, request, user

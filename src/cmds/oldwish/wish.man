@@ -1,0 +1,221 @@
+' Copyright 1989 Regents of the University of California
+' Permission to use, copy, modify, and distribute this
+' documentation for any purpose and without fee is hereby
+' granted, provided that this notice appears in all copies.
+' The University of California makes no representations about
+' the suitability of this material for any purpose.  It is
+' provided "as is" without express or implied warranty.
+' 
+' $Header: /a/newcmds/wish/RCS/wish.man,v 1.2 89/01/19 16:44:25 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+' 
+.so \*(]ltmac.sprite
+.HS WISH cmds
+.BS
+.SH NAME
+wish \- Window shell and directory browser for X windows
+.SH SYNOPSIS
+.nf
+\fBwish\fR [\fIoptions\fR] [\fIdirectory\fR]
+.SH OPTIONS
+.IP "\fB\-nopick\fR" 14
+Configure \fBwish\fR so that it will not automatically pick an initial window
+size.  Due to X11 changes, this option is temporarily misbehaving.
+.IP "\fB\-resize\fR" 14
+Configure \fBwish\fR so that it will automatically resize a window whenever it
+thinks the window's contents have changed in such a way that another
+size would be better.  Due to X11 changes, this option is temporarily
+misbehaving.
+.IP "\fB\-empty\fR" 14
+Display headers for file groups that don't match any files.  The default
+is to display headers for file groups that contain files.
+.IP "\fB\-debug\fR" 14
+Print debug messages and do not fork into the background.  This option is
+primarily useful for debugging \fBwish\fR.
+.BE
+.SH DESCRIPTION
+.PP
+\fBWish\fR is a command shell and directory browser that uses the facilities
+of the X window system, the Sx supplementary library, and the Tcl command
+interpreter.  It displays a window containing a configurable list of files
+in the directory
+specified on the command line, or the directory in which it is started,
+if the user does not specify a command-line directory.  Because \fBwish\fR uses
+the Sx and Tcl facilities, its selection and other capabilities are
+compatible with the \fBmx\fR editor and the \fBtx\fR terminal emulator.
+.LP
+Commands are invoked through menus and key and mouse button bindings.  All
+three of these methods are configurable by the user, because all three of
+these methods actually invoke the commands through the Tcl command interpreter.
+.LP
+\fBWish\fR groups files on its display according to rules provided by the
+user.  These rules can include pattern-matching on the file names and various
+other properties, including arbitrary rules that the user can specify through
+Tcl procedures.  The default list of files contains all the files in the
+directory. (Another way of saying this is that the default matching rule
+is the pattern \fB*\fR.)  The user can choose attributes he wants displayed
+for the files, such as access times and sizes, and he can sort the files
+according to different attributes as well.
+.LP
+\fBWish\fR also provides user-configurable command binding that includes
+keyboard bindings, mouse-button bindings and also per-file-group bindings.  The
+latter makes it possible, for instance, to use the left mouse button to invoke
+a compiler by clicking on \fB*.c\fR files, but a text formatter when clicking
+on \fB*.tex\fR files.
+.LP
+The following sections of this manual page describe the configuration, options,
+and possible commands for \fBwish\fR.
+.LP
+
+.SH  CONFIGURATION OPTIONS AND STARTUP COMMANDS
+.PP
+Currently most options are specified via a \fB.Xdefaults\fR file and
+a \fB.wish\fR file.  More command-line support will be added eventually.
+The following list gives the options that can be set in a
+user's \fB.Xdefaults\fR file, which is the general X-application startup
+file.  The
+second section describes options configurable from a wish-specific startup
+file, \fB.wish\fR.  \fBWish\fR will startup pleasantly even if one or both
+of these files are missing, but it will choose its own default configuration
+in this case.
+.SH 2 X DEFAULT OPTIONS
+.IP "\fBBackground\fR" 16
+General background color for \fBwish\fR window.
+.IP "\fBForeground\fR" 16
+General foreground color for \fBwish\fR window.
+.IP "\fBBorder\fR" 16
+Color for border of \fBwish\fR window.
+.IP "\fBBorderWidth\fR" 16
+Width of border around \fBwish\fR window.
+.IP "\fBSelection\fR" 16
+Color of selection highlighting.
+.IP "\fBTitleBackground\fR" 16
+Background color of title bar.
+.IP "\fBTitleForeground\fR" 16
+Foreground color of title bar.
+.IP "\fBTitleBorder\fR" 16
+Color of border around title bar.
+.IP "\fBTxBackground\fR" 16
+Background color of attached tx window.
+.IP "\fBTxForeground\fR" 16
+Foreground color of attached tx window.
+.IP "\fBTxBorder\fR" 16
+Border color for attached tx window.
+.IP "\fBMenuBackground\fR" 16
+Background color for menu bar.
+.IP "\fBMenuForeground\fR" 16
+Foreground color for menu bar.
+.IP "\fBSortBackground\fR" 16
+Background color for bar specifying current file-sorting method.
+.IP "\fBSortForeground\fR" 16
+Foreground color for bar specifying current file-sorting method.
+.IP "\fBFieldsBackground\fR" 16
+Background color for bar specifying displayed file attributes.
+.IP "\fBFieldsForeground\fR" 16
+Foreground color for bar specifying displayed file attributes.
+.IP "\fBEntryBackground\fR" 16
+Background color for bar allowing command entry.
+.IP "\fBEntryForeground\fR" 16
+Foreground color for bar allowing command entry.
+.IP "\fBScrollBackground\fR" 16
+Background color for scroll bar.
+.IP "\fBScrollForeground\fR" 16
+Foreground color for scroll bar.
+.IP "\fBScrollElevator\fR" 16
+Color for elevator in scroll bar.
+.IP "\fBGeometry\fR" 16
+Window geometry.
+.IP "\fBFont\fR" 16
+Font to use in \fBwish\fR window.
+.IP "\fBTitleFont\fR" 16
+Font to use in title bar.
+.SH 2 WISH STARTUP OPTIONS
+.PP
+The \fBwish\fR startup file, \fB.wish\fR, is used for configuring the behavior
+of \fBwish\fR initially, and for changing its behavior if the user changes
+direcotories.  Thus, each directory may have a different \fB.wish\fR file, if
+this is useful.
+.IP "\fB selection binding\fR" 20
+The Tcl command
+.br
+\fBvar selectionButton \fIbutton\fR
+.br
+will set \fIbutton\fR
+(left, right, {shift right}, etc) to be the mouse
+button used for selecting files and text in a \fBwish\fR window.
+.IP "\fBfile sorting\fR" 20
+The Tcl command \fBsortFiles \fImethod\fR will configure \fBwish so that
+inside a file group, it sorts the files by \fImethod\fR.  The default method
+is \fBalpha\fR for alphabetical sorting, but files may also be sorted by
+access times, data-modification times, size etc.  They may also be sorted
+in reverse order for any method.
+.IP "\fBdisplay fields\fR" 20
+The Tcl command \fBsetFields \fIfieldname\fR will add the field \fIfieldname\fR
+to the file attributes \fBwish\fR is currently displaying.  The default
+field is \fBname\fR, but other fields are \fBaccessTime\fR, \fBsize\fR, etc.
+\fBWish\fR will try to interpret many types of capitalizations and
+abbreviations for each field name.
+.IP "\fBdefining groups\fR" 20
+The Tcl command \fBdefineGroup\fR is used to define a list of files to
+group together on the display.  The command has two options:
+\fBdefineGroup comparison \fIpattern\fR create a group that chooses files
+using the matching rule \fIpattern\fR on file names.  For example, the command
+.sp
+\fBdefineGroup comparison B*.ms\fR
+.sp
+will create a group containing all files starting with the letter `B' and
+ending with the suffix `.ms'.  The other option, for arbitrary matching
+rules, is
+.br
+\fBdefineGroup proc \fITcl procedure\fR,
+.br
+where the given
+\fITcl procedure\fR must have a name, which will be the name displayed in the
+file group header, and parameter which takes the name of a file to test
+against the rule.  The rule is in the Tcl procedure body, and it must
+return 1 if the file matches, 0 if not, and a value less than 0 if an error
+occurs.  For example, the following defineGroup command will choose all
+files beginning with a `.', but excluding the files `.' and `..'.
+.sp
+\fBdefineGroup proc {proc DotFiles filename {
+.br
+    return [pattern {!(.) && !(..) && (.*)} $filename]
+.br
+}}\fR
+.sp
+The procedure \fBpattern\fR can be called to do arbitrary filename matching.
+.IP "\fBper-group command bindings\fR" 14
+The command \fBgroupBind \fIgroupName binding command\fR is used to bind
+a command, \fIcommand\fR, to a mouse binding, \fIbinding\fR,
+for files in a particular group, \fIgroupName\fR.  Following the usual
+Tcl syntax, if the command or the binding use more than one word, they
+must be enclosed in braces.  For instance, the following will bind the mouse
+button \fBshift middle\fR to execute the shell command \fBcc -g -c filename\fR,
+on files in the group with suffix `.c'.  The Tcl variable \fB$pointed\fR holds
+the name of the file pointed to with the command binding.
+.sp
+\fBgroupBind *.c {shift middle} {exec cc -g -c $pointed}\fR
+.sp
+The command \fBexec\fR is used to escape to the user's outside shell (C-shell,
+etc), but commands internal to \fBwish\fR can be specified directly.
+.IP "\fBkeyboard bindings\fR" 14
+Key bindings that aren't specific to particular file groups are specified
+with the same mechanism that \fBmx\fR and \fBtx\fR.  See their documentation
+for details.
+.IP "\fBmenu creation\fR" 14
+Menus are created using the same mechanism that \fBmx\fR and \fBtx\fR use.
+See their documentation for details.
+
+.SH OTHER COMMANDS
+.PP
+Other commands can be found on the default set of menus.  These include
+commands to change directories, open new \fBwish\fR windows in other
+directories, etc.
+.LP
+Some commands can be invoked by using the mouse or by typing in particular
+places.  For instance, to change directories, the user need not use the
+\fBchangeDirectory\fR command from a menu or from his key bindings.  He can
+instead type the new directory name into the title bar that displays the
+current directory.  Similarly, typing in the bars that display the
+name of a group will change the pattern used for matching files for that group.
+.SH KEYWORDS
+command shell, X windows, directory browser

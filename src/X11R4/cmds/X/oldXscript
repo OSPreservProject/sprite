@@ -1,0 +1,35 @@
+#!/bin/csh -f 
+#
+# Script for selecting the correct X server for the current machine.
+# $Header: /X11/R4/src/cmds/X/RCS/X,v 1.1 90/04/26 10:45:39 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+#
+# Copyright 1989 Regents of the University of California
+# Permission to use, copy, modify, and distribute this
+# software and its documentation for any purpose and without
+# fee is hereby granted, provided that the above copyright
+# notice appear in all copies.  The University of California
+# makes no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without
+# express or implied warranty.
+#
+set hostName = `hostname`
+set fbtypesFile = "/X11/R4/lib/fbtypes"
+set where	= '$2'
+
+set type = `awk "/^$hostName/ { print $where;}" $fbtypesFile`
+
+switch ($type)
+    case "FBTYPE_DS3100_BW"
+		exec /X11/R4/cmds/Xmfbpmax $*
+                breaksw
+    case "FBTYPE_DS3100_COL"
+		exec /X11/R4/cmds/Xcfbpmax $*
+                breaksw
+    case ""
+		exec /X11/R4/cmds/Xmfbpmax $*
+                breaksw
+    default:
+		echo "Unknown fbType " $type " for host " $hostName
+                breaksw
+endsw
+exit 1

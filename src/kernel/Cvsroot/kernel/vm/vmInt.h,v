@@ -1,0 +1,2109 @@
+head     9.13;
+branch   ;
+access   ;
+symbols  ds3100:9.13 sun3:9.13 sun4nw:9.13 symm:9.13 spur:9.13 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.13
+date     91.09.10.18.29.22;  author rab;  state Exp;
+branches ;
+next     9.12;
+
+9.12
+date     91.04.08.13.02.10;  author shirriff;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     90.12.07.12.54.07;  author mgbaker;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     90.10.19.15.40.38;  author shirriff;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     90.09.12.13.36.49;  author shirriff;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     90.09.11.10.45.13;  author shirriff;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.05.01.12.35.28;  author shirriff;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.04.06.16.52.15;  author shirriff;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.02.15.09.37.03;  author brent;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.02.15.09.33.26;  author brent;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     89.12.11.17.43.11;  author brent;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.22.23.26.35;  author shirriff;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.09.18.17.30.29;  author shirriff;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.22.42;  author douglis;  state Stable;
+branches ;
+next     8.6;
+
+8.6
+date     89.09.07.14.24.52;  author shirriff;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.09.06.17.14.46;  author mgbaker;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.09.06.15.08.22;  author shirriff;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.08.15.19.16.49;  author rab;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.04.28.16.25.25;  author douglis;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.02.10.16.40.15;  author douglis;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.42.03;  author douglis;  state Stable;
+branches ;
+next     6.5;
+
+6.5
+date     88.09.22.21.27.06;  author nelson;  state Exp;
+branches ;
+next     6.4;
+
+6.4
+date     88.08.30.22.20.44;  author nelson;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.08.24.19.37.18;  author nelson;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.15.16.54.11;  author nelson;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.15.12.42.25;  author nelson;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.29.21;  author brent;  state Stable;
+branches ;
+next     5.17;
+
+5.17
+date     88.07.29.11.28.40;  author nelson;  state Exp;
+branches ;
+next     5.16;
+
+5.16
+date     88.07.17.17.19.00;  author nelson;  state Exp;
+branches ;
+next     5.15;
+
+5.15
+date     88.07.12.19.52.57;  author nelson;  state Exp;
+branches ;
+next     5.14;
+
+5.14
+date     88.06.17.15.27.19;  author nelson;  state Exp;
+branches ;
+next     5.13;
+
+5.13
+date     88.04.22.14.21.37;  author nelson;  state Exp;
+branches ;
+next     5.12;
+
+5.12
+date     88.01.08.15.52.01;  author nelson;  state Exp;
+branches ;
+next     5.11;
+
+5.11
+date     88.01.04.14.00.06;  author nelson;  state Exp;
+branches ;
+next     5.10;
+
+5.10
+date     87.12.31.11.08.33;  author nelson;  state Exp;
+branches ;
+next     5.9;
+
+5.9
+date     87.12.15.15.19.37;  author nelson;  state Exp;
+branches ;
+next     5.8;
+
+5.8
+date     87.12.12.16.29.40;  author nelson;  state Exp;
+branches ;
+next     5.7;
+
+5.7
+date     87.12.12.12.36.51;  author nelson;  state Exp;
+branches ;
+next     5.6;
+
+5.6
+date     87.12.11.13.30.13;  author nelson;  state Exp;
+branches ;
+next     5.5;
+
+5.5
+date     87.11.20.18.26.12;  author nelson;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     87.11.18.21.50.51;  author nelson;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     87.10.27.17.07.04;  author nelson;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.10.22.14.49.32;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.10.14.15.34.09;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.52.11;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.13
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@/*
+ * vmInt.h --
+ *
+ *	Machine independent virtual memory data structures and procedure
+ *	headers used internally by the virtual memory module.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/vm/RCS/vmInt.h,v 9.12 91/04/08 13:02:10 shirriff Exp Locker: rab $ SPRITE (Berkeley)
+ */
+
+#ifndef _VMINT
+#define _VMINT
+
+#ifdef KERNEL
+#include <vmMach.h>
+#include <fs.h>
+#include <list.h>
+#include <sync.h>
+#include <proc.h>
+#include <status.h>
+#else
+#include <kernel/vmMach.h>
+#include <kernel/fs.h>
+#include <kernel/sync.h>
+#include <kernel/proc.h>
+#include <status.h>
+#include <list.h>
+#endif
+
+/*
+ * KERNEL VIRTUAL ADDRESS SPACE
+ *
+ * The kernel's virtual address space is divided up in the following way:
+ *
+ * -------------------------------------- mach_KernStart
+ * |					|
+ * | Machine dependent stuff		|
+ * |					|
+ * -------------------------------------- mach_StackBottom
+ * |					|
+ * | Stack for the main process which	|
+ * | is mach_KernStackSize bytes long.	|
+ * |					|
+ * -------------------------------------- mach_CodeStart
+ * |					|
+ * | Kernel code + data.  Current end	|
+ * | is vmMemEnd which is incremented	|
+ * | each time Vm_RawAlloc is called.	|
+ * | The absolute end is		|
+ * | mach_CodeStart + vmKernMemSize.	|			
+ * |					|
+ * -------------------------------------- mach_CodeStart + vmKernMemSize
+ * |					|
+ * | Kernel stacks.  There are		|
+ * | vmMaxProcesses worth of stacks.	|
+ * |					|
+ * -------------------------------------- vmStackEndAddr and vmMapBaseAddr
+ * |					|
+ * | Place to map pages into the	|
+ * | kernel's VAS.  There are at most	|
+ * | vmNumMappedPages mapped at once.	|
+ * |					|
+ * -------------------------------------- vmMapEndAddr
+ * |					|
+ * | Machine dependent part of VAS	|
+ * |					|
+ * -------------------------------------- vmBlockCacheBaseAddr
+ * |					|
+ * | File system block cache pages.	|
+ * |					|
+ * -------------------------------------- vmBlockCacheEndAddr and mach_KernEnd
+ *
+ *
+ * USER VIRTUAL ADDRESS SPACE
+ *
+ * A users virtual address space is divided into three segments:
+ * code, heap and stack.  The code is in the lowest part of the
+ * VAS and is followed by the heap segment which grows towards the stack.
+ * The stack is at the top of the virtual address and grows towards the
+ * heap.  The two fields offset and numPages in each segment table entry
+ * define the bounds of a segment.  offset is the virtual page number that
+ * maps to page table entry zero.  Thus the index into the page table for any
+ * page is the page number minus the offset.  The offset for the code and
+ * heap segment is fixed and the offset for the stack segment will change
+ * as the page table grows.  numPages is the number of pages that can be
+ * accessed for a segment.  Thus for code and heap segments, offset is the
+ * lowest accessible page and (numPages + offset - 1) is the highest
+ * accessible page.  For a stack segment the highest accessible page is fixed
+ * at mach_LastUserStackPage and the lowest accessible page is
+ * (mach_LastUserStackPage - numPages + 1).
+ *
+ * The heap and stack grow in chunks that contain a multiple of
+ * vmPageTableInc pages.  Thus the page table may contain more page table
+ * entries then there are valid pages for a segment.  Two heap and stack
+ * segments overlap if the page tables overlap.
+ *
+ * -------------------------------------- codeSeg.offset * vm_PageSize
+ * |					|
+ * | Code for the process.  There are	|
+ * | codeSeg.numPages worth of pages	|
+ * | in the segment.			|
+ * |					|
+ * -------------------------------------- heapSeg.offset * vm_PageSize
+ * |					|
+ * | Heap for the process.  There are	|
+ * | heapSeg.numPages worth of virtual 	|
+ * | pages in the segment.  However, The|
+ * | actual end corresponds to the size |<- Last addr in heap segment =
+ * | of the page table.			|   (heapSeg.offset + heapSeg.numPages)
+ * |					|    			* vm_PageSize
+ * |					|
+ * -------------------------------------- (heapSeg.offset + heapSeg.ptSize) *
+ *		    |			   			vm_PageSize
+ *		    V			
+ *
+ *		    A
+ *		    |
+ * -------------------------------------- stackSeg.offset * vm_PageSize
+ * |					|
+ * | Stack for the process.  There are	|
+ * | stackSeg.numPages worth of virtual |<- First addr in stack segment =
+ * | pages for the segment.  However,   |   (mach_LastUserStackPage -
+ * | like the heap segment the actual	|    stackSeg.numPages + 1) *
+ * | size corresponds to the size of the|	vm_PageSize
+ * | page table.			|
+ * |					|
+ * -------------------------------------- mach_MaxUserStackAddr
+ *
+ * SYNCHRONIZATION
+ *
+ * There are four types of synchronization in virtual memory:
+ *
+ *	1) The monitor lock.
+ *	2) Per virtual page lock.
+ *	3) Per page table entry lock.
+ *	4) Reader and writer locks on a page table.
+ *	5) Copy-on-write lock.
+ *
+ * The monitor lock is used when updating and accessing internal virtual
+ * memory structures such as the core map and the segment table.  It is
+ * also used to synchronize access to page table entries as will be explained
+ * below.
+ *
+ * Each page managed by VM has a lock count on the page.  As long as the lock
+ * count is greater than zero the page will not be stolen from its owner.
+ * This is used when a;  page needs to be wired down in memory.
+ *
+ * Each page table entry has a page-fault-in-progress bit which is set whenever
+ * a page is being faulted in.  Whenever this bit is set all other page faults
+ * will wait until the fault completes.
+ *
+ * The page tables have two levels of locking.  First there is a count of
+ * the number of users of a page table.  There can be multiple users of
+ * the page table at once.  When the user count is greater than zero,
+ * the page tables are guaranteed not to be expanded.  Thus while the count
+ * is greater than zero a pointer to the page table is guaranteed to be
+ * good; that is, noone is going to move the page table.  The second level
+ * of locking is an exclusive lock.  When this lock is grabbed there can
+ * only be one user of the page table.  This lock cannot be grabbed as long
+ * as the user count is greater than zero.  Once this lock is grabbed the
+ * page tables can be expanded, moved around or whatever.  The first lock
+ * is used when handling page faults or forking segments - operations that
+ * require access to the page table outside of the monitor lock.  The
+ * second level lock is used when adding or deleting virtual addresses
+ * from a segment - operations that require the page table to be reallocated
+ * and copied, some of which must be done outside of the monitor lock.
+ *
+ * The page table locking is only used for heap segments.  Code segments don't
+ * need to do the locking because they never expand.  Stack segments don't
+ * need it because they can't be shared so the calling process doesn't have to
+ * worry about someone else mucking with its page tables.
+ *
+ * Actual updating of page table entries must be done inside of the monitor.
+ * This is because the page allocation code may decide at any time to steal
+ * a page from a segment and it does not pay attention to either of the two
+ * levels of locking for page tables.  Thus although most parts of a page
+ * table entry can be changed at non-monitor level, the resident bit must
+ * be examined inside of the monitor.  Also copying and expanding of page
+ * tables must also be done inside of the monitor.
+ *
+ * The last form of synchronization is for copy-on-write.  See the file
+ * vmCOW.c for details.
+ */
+
+
+/*
+ * Value returned for a page frame when none are available.
+ */
+#define VM_NO_MEM_VAL	0x7fffffff
+
+extern	int	vmFirstFreePage;	/* The first page frame that is not
+					 * owned by the kernel. */
+extern	Boolean	vmNoBootAlloc;		/* TRUE implies can no longer use
+					 * Vm_BootAlloc. */
+extern	Fs_Stream *vmSwapStreamPtr;	/* Swap directory stream. */
+extern	int	vmPageShift;		/* Log base 2 of vm_PageSize. */
+extern	int	vmPageTableInc;		/* The size in which page tables can
+					 * grow. */
+extern	int	vmKernMemSize;		/* Amount of code + data available for
+					 * the kernel. */
+extern	int	vmMaxProcesses;		/* The maximum number of processes that
+					 * are supported by virtual memory. */
+extern	int	vmNumMappedPages;	/* The maximum number of pages that
+					 * can be mapped in by the kernel at
+					 * one time. */
+extern	Address	vmStackBaseAddr;	/* Base of where kernel stacks are. */
+extern	Address	vmStackEndAddr;		/* End of where kernel stacks are. */
+extern	Address	vmMapBaseAddr;		/* Base of where to map pages. */
+extern	Address	vmMapEndAddr;		/* End of where to map pages. */
+extern	int	vmMapBasePage;		/* First page to use for mapping. */
+extern	int	vmMapEndPage;		/* Last page to use for mapping. */
+extern	Address	vmBlockCacheBaseAddr;	/* Base of the file system cache. */
+extern	Address	vmBlockCacheEndAddr;	/* End of the file system cache. */
+extern	int	vmMaxMachSegs;		/* Maximum number of machine segments
+					 * that the hardware will allow. */
+extern	Boolean	vmFreeWhenClean;	/* TRUE if pages should be freed after
+					 * they have been cleaned. */
+extern	Boolean	vmAlwaysRefuse;		/* TRUE if VM should always refuse the
+					 * file systems requests for memory. */
+extern	Boolean	vmAlwaysSayYes;		/* TRUE if VM should always satisfy
+					 * file system requests for memory. */
+extern	int	vmMaxDirtyPages;	/* Maximum number of dirty pages
+					 * before waiting for a page to be
+					 * cleaned. */
+extern	int		vmPagesToCheck;	/* Number of pages to check each time
+					 * that the clock is run. */
+extern	unsigned int	vmClockSleep;	/* Number of seconds to sleep between
+					 * iterations of the clock. */
+extern	int		vmMaxPageOutProcs; /* Maximum number of page out procs
+					    * at any given time. */
+extern	Boolean		vmCORReadOnly;	/* After a cor fault the page is marked
+					 * as read only so that it can be
+					 * determined if it gets modified. */
+extern	Boolean		vmPrefetch;	/* Whether to do prefetch or not. */
+extern	Boolean		vmUseFSReadAhead;/* Should have FS do read ahead on
+					  * object files. */
+
+/*
+ * Variables to control negotiations between the file system and the virtual
+ * memory system.  Each time that FS asks for a page its reference time is
+ * penalized depending on how many pages that it has allocated to it.  The
+ * penalty is enforced by subtracting vmCurPenalty seconds from its access time
+ * or adding vmCurPenalty to the VM access time.  This is done in the
+ * following way.  Let vmPagesPerGroup = total-available-pages /
+ * vmNumPageGroups,  vmCurPenalty = 0 and vmBoundary = vmPagesPerGroup.
+ * Whenever the number of pages allocated to FS exceeds vmBoundary, vmBoundary
+ * is incremented by vmPagesPerGroup and vmCurPenalty is incremented by
+ * vmFSPenalty.  Whenever the number of pages allocated to FS goes under
+ * vmBoundary, vmBoundary is decremented by vmPagesPerGroup and vmCurPenalty is
+ * decremented by vmFSPenalty.
+ */
+extern	int	vmFSPenalty;	/* Number of seconds FS is penalized when it
+				 * asks for page. */
+extern	int	vmNumPageGroups;/* The number of groups to divide memory up
+				 * into. */
+extern	int	vmPagesPerGroup;/* The number of pages in each group. */
+extern	int	vmCurPenalty;	/* The number of seconds that FS is currently
+				 * penalized by. */
+extern	int	vmBoundary;	/* The current number of pages that must be
+				 * exceeded or gone under before changing the
+				 * penalty. */
+
+/*
+ * Variables to control use of modify and reference bits.
+ */
+extern	Boolean	vmWriteablePageout;	/* Page out all pages that are
+					 * writeable before recycling them
+					 * whether they have been modified
+					 * or not. */
+extern	Boolean	vmWriteableRefPageout;	/* Page out all pages that have been
+					 * referenced and are writeable
+					 * before recycling them whether they
+					 * have been modified or not. */
+
+/*
+ * Flags for VmPageAllocate and VmPageAllocateInt:
+ *
+ *  VM_CAN_BLOCK	Can block if no clean memory is available.
+ *  VM_ABORT_WHEN_DIRTY	Abrot even if VM_CAN_BLOCK is set if have exceeded
+ *			the maximum number of dirty pages on the dirty list.
+ */
+#define	VM_CAN_BLOCK		0x1
+#define	VM_ABORT_WHEN_DIRTY	0x2
+
+
+/*---------------------------------------------------------------------------*/
+
+/*
+ *                     Segment Table Structure
+ *
+ * There is one segment table for the entire system that contains
+ * one entry for each segment. Associated with each segment table entry
+ * is a reference count of processes that are using the segment.  If
+ * the reference count is non-zero then the segment is actively being used.
+ * If the reference count is zero then the segment table entry is either in the
+ * inactive segment list or the free segment list.  The inactive segment list
+ * is a list of segment table entries that are not currently in use by
+ * any process but contain code segments that can be reused if a new process
+ * needs the code segment.  The free segment list is a list of segment
+ * table entries that are not being used by any process and do not contain code
+ * segments that could be used by future processes.
+ *
+ * All processes that are sharing segments are linked together.  This is
+ * done by having each segment table entry contain a pointer to a list of
+ * pointers to proc table entries.
+ *
+ * See vmSeg.c for the actual use of the segment table and the free and
+ * inactive lists.
+ */
+
+/*
+ * An element of a linked list of processes sharing a segment.  Each
+ * element of the linked list points to the proc table entry of the process
+ * that is sharing the segment.
+ */
+typedef struct {
+    List_Links	links;
+    Proc_ControlBlock	*procPtr;
+} VmProcLink;
+
+/*
+ * Memory space that has to be allocated for each segment.
+ */
+typedef	struct {
+    Boolean		spaceToFree;	/* TRUE if this structure contains
+					   space that has to be deallocated.*/
+    Vm_PTE		*ptPtr;		/* Pointer to page table */
+    int			ptSize;		/* Size of page table. */
+    VmProcLink		*procLinkPtr;	/* Pointer to proc list element. */
+} VmSpace;
+
+/*
+ * VmSegmentDeleteInt returns different status values depending on the
+ * reference count and segment type.  These status values indicate what
+ * should be done with the segment after the procedure returns.
+ *
+ *	VM_DELETE_SEG -		The segment should be deleted.
+ *	VM_CLOSE_OBJ_FILE -	Don't delete the segment, but close the file
+ *				containing the code for the segment.
+ *	VM_DELETE_NOTHING -	Don't do anything.
+ */
+typedef enum {
+    VM_DELETE_SEG,
+    VM_CLOSE_OBJ_FILE,
+    VM_DELETE_NOTHING,
+} VmDeleteStatus;
+
+/*
+ * System segment number.
+ */
+#define VM_SYSTEM_SEGMENT       0
+
+/*
+ * Segment table flags:
+ *
+ *   VM_SEG_FREE		The segment is currently on the free list.
+ *   VM_SEG_INACTIVE		The segment is currently on the inactive
+ *				list.
+ *   VM_SWAP_FILE_OPENED	A swap file has been opened for this segment.
+ *   VM_SWAP_FILE_LOCKED	The swap file for this segment is being
+ *				opened or written to.
+ *   VM_SEG_DEAD		This segment is in the process of being
+ *				deleted.
+ *   VM_PT_EXCL_ACC		Someone has grabbed exclusive access to the
+ *				the page tables.
+ *   VM_DEBUGGED_SEG		This is a special code segment that is being
+ *				written by the debugger.
+ *   VM_SEG_CANT_COW		This segment cannot be forked copy-on-write.
+ *   VM_SEG_COW_IN_PROGRESS	This segment is being actively copied at
+ *				fork time.
+ *   VM_SEG_IO_ERROR		An I/O error has occurred while paging to
+ *				or from this segment.
+ */
+
+#define	VM_SEG_FREE			0x001
+#define	VM_SEG_INACTIVE			0x002
+#define	VM_SWAP_FILE_OPENED		0x004
+#define	VM_SWAP_FILE_LOCKED		0x008
+#define	VM_SEG_DEAD			0x010
+#define	VM_PT_EXCL_ACC			0x020
+#define	VM_DEBUGGED_SEG			0x040
+/* 0x080 is not used */
+#define	VM_SEG_CANT_COW			0x100
+#define	VM_SEG_COW_IN_PROGRESS		0x200
+#define VM_SEG_IO_ERROR		        0x400
+
+
+/*---------------------------------------------------------------------------*/
+
+/*
+ * 			Core map structure.
+ *
+ * The core map contains one entry for each page in physical memory.
+ * There are four lists that run through the core map: the allocate list,
+ * the dirty list, the free list and the reserve list.  All pages that aren't
+ * be used by any segment are on the free list.  All pages that are being
+ * used by users processes are on the allocate list or the dirty list.
+ * The allocate list is used to keep track of which pages are the best
+ * candidates to use when a new page is needed.  All pages that are not
+ * attached to any segment are at the front of the allocate list and the
+ * rest of the pages on the allocate list are kept in LRU order.  The dirty
+ * list is a list of pages that are being written to disk.  The reserve
+ * list is a list of pages that are kept in case the kernel needs memory
+ * and no clean pages are available.
+ *
+ * See vmPage.c for the actual use of the core map and the lists.
+ * allocate lists.
+ */
+
+typedef struct VmCore {
+    List_Links	links;		/* Links for allocate, free, dirty and reserver
+				 * lists */
+    Vm_VirtAddr	virtPage;	/* The virtual page information for this page */
+    int		wireCount;	/* The number of times that the page has bee
+				 * wired down by users. */
+    int		lockCount;	/* The number of times that this page has been
+				   locked down (i.e. made unpageable). */
+    int 	flags;		/* Flags that indicate the state of the page
+				   as defined below. */
+    int		lastRef;	/* Time in seconds that pages reference bit
+				 * last cleared by clock. */
+} VmCore;
+
+/*
+ * The following defines the state of the page:
+ *
+ * VM_FREE_PAGE    		The page is not attached to any segment.
+ * VM_DIRTY_PAGE   		The page is on the dirty list.
+ * VM_SEG_PAGEOUT_WAIT		A segment is waiting for this page to be
+ *				cleaned.
+ * VM_PAGE_BEING_CLEANED	The page is actually being cleaned.
+ * VM_DONT_FREE_UNTIL_CLEAN	This page cannot be freed until it has
+ *				been written out.
+ */
+#define VM_FREE_PAGE 			0x01
+#define VM_DIRTY_PAGE 			0x02
+#define VM_SEG_PAGEOUT_WAIT 		0x04
+#define VM_PAGE_BEING_CLEANED		0x08
+#define	VM_DONT_FREE_UNTIL_CLEAN	0x10
+
+/*
+ * Copy-on-write info struct.
+ */
+typedef struct VmCOWInfo {
+    List_Links		cowList;
+    int			numSegs;
+    Sync_Condition	condition;
+    Boolean		copyInProgress;
+} VmCOWInfo;
+
+/*
+ * Shared memory.
+ */
+extern int vmShmDebug;
+/*
+ * Debugging printf.
+ */
+#ifdef lint
+#define dprintf printf
+#else
+#define dprintf if (vmShmDebug & 2) printf
+#endif
+
+/*
+ * Macros to get a pointer to a page table entry.
+ */
+#ifdef CLEAN2
+#define	VmGetPTEPtr(segPtr, page) \
+    (&((segPtr)->ptPtr[(page) - (segPtr)->offset]))
+#else /* CLEAN */
+#define	VmGetPTEPtr(segPtr, page) \
+    (((((page) - (segPtr)->offset) > (segPtr)->ptSize)) ? \
+	panic("Page number outside bounds of page table\n"), (Vm_PTE *) NIL : \
+	(&((segPtr)->ptPtr[(page) - (segPtr)->offset])))
+#endif /* CLEAN */
+
+#ifdef CLEAN
+#define	VmGetAddrPTEPtr(virtAddrPtr, page) \
+    (&((virtAddrPtr)->segPtr->ptPtr[(page) - segOffset(virtAddrPtr)]))
+#else /* CLEAN */
+#define	VmGetAddrPTEPtr(virtAddrPtr, page) \
+    (((((page) - segOffset(virtAddrPtr)) < 0) || \
+    (((page) - segOffset(virtAddrPtr)) > (virtAddrPtr)->segPtr->ptSize) ) ? \
+	panic("Page number outside bounds of page table\n"), (Vm_PTE *) NIL : \
+	(&((virtAddrPtr)->segPtr->ptPtr[(page) - segOffset(virtAddrPtr)])))
+#endif /* CLEAN */
+
+/*
+ * Macro to increment a page table pointer.
+ */
+#define	VmIncPTEPtr(ptePtr, val) ((ptePtr) += val)
+
+/*
+ * Macro to get a virtAddr's offset in the page table.
+ */
+#define segOffset(virtAddrPtr) (( (virtAddrPtr)->sharedPtr== \
+	(Vm_SegProcList *)NIL) ? (virtAddrPtr)->segPtr->offset :\
+	   (virtAddrPtr)->sharedPtr->offset)
+
+/*----------------------------------------------------------------------------*/
+
+#define min(a,b) ((a)<(b)?(a):(b))
+#define max(a,b) ((a)>(b)?(a):(b))
+
+/*
+ * Initialization routines.
+ */
+extern void VmSegTableAlloc _ARGS_((void));
+extern void VmSegTableInit _ARGS_((void));
+extern void VmStackInit _ARGS_((void));
+extern void VmCoreMapAlloc _ARGS_((void));
+extern void VmCoreMapInit _ARGS_((void));
+/*
+ * Page allocation routines.
+ */
+extern	unsigned int	VmPageAllocate _ARGS_((Vm_VirtAddr *virtAddrPtr,
+		int flags));
+extern	unsigned int	VmPageAllocateInt _ARGS_((Vm_VirtAddr *virtAddrPtr,
+		int flags));
+extern	unsigned int	VmGetReservePage _ARGS_((Vm_VirtAddr *virtAddrPtr));
+/*
+ * Routine to free pags.
+ */
+extern void VmPageFree _ARGS_((unsigned int pfNum));
+extern void VmPageFreeInt _ARGS_((unsigned int pfNum));
+/*
+ * Routines to put pages on lists.
+ */
+extern void VmPutOnFreeSegList _ARGS_((register Vm_Segment *segPtr));
+extern void VmPutOnFreePageList _ARGS_((unsigned int pfNum));
+/*
+ * Routines to lock pages.
+ */
+extern void VmLockPageInt _ARGS_((unsigned int pfNum));
+extern void VmUnlockPage _ARGS_((unsigned int pfNum));
+extern void VmUnlockPageInt _ARGS_((unsigned int pfNum));
+/*
+ * Routine to see if a page is pinned down.
+ */
+extern Boolean VmPagePinned _ARGS_((Vm_PTE *ptePtr));
+/*
+ * Routine to handle page faults.
+ */
+extern void VmVirtAddrParse _ARGS_((Proc_ControlBlock *procPtr,
+	Address virtAddr, register Vm_VirtAddr *transVirtAddrPtr));
+extern Boolean VmCheckBounds _ARGS_((register Vm_VirtAddr *virtAddrPtr));
+extern void VmZeroPage _ARGS_((unsigned int pfNum));
+extern void VmKillSharers _ARGS_((register Vm_Segment *segPtr));
+extern void VmSwapFileRemove _ARGS_((Fs_Stream *swapStreamPtr,
+	char *swapFileName));
+extern ReturnStatus VmPageFlush _ARGS_((Vm_VirtAddr *virtAddrPtr,
+	int length, Boolean toDisk, Boolean wantRes));
+extern int VmCountDirtyPages _ARGS_((void));
+
+/*
+ * Segment handling routines.
+ */
+extern ReturnStatus VmAddToSeg _ARGS_((register Vm_Segment *segPtr,
+	int firstPage, int lastPage));
+extern VmDeleteStatus VmSegmentDeleteInt _ARGS_((register Vm_Segment *segPtr,
+	register Proc_ControlBlock *procPtr, VmProcLink **procLinkPtrPtr,
+	Fs_Stream **objStreamPtrPtr, Boolean migFlag));
+extern void VmDecPTUserCount _ARGS_((register Vm_Segment *segPtr));
+extern	Vm_Segment	*VmGetSegPtr _ARGS_((int segNum));
+extern void VmFlushSegment _ARGS_((Vm_VirtAddr *virtAddrPtr, int lastPage));
+extern Vm_SegProcList *VmFindSharedSegment _ARGS_((List_Links *sharedSegs,
+	Address virtAddr));
+extern Boolean VmCheckSharedSegment _ARGS_((Proc_ControlBlock *procPtr,
+	Vm_Segment *segPtr));
+extern void VmPrintSharedSegs _ARGS_((Proc_ControlBlock *procPtr));
+
+/*
+ * Routines to validate and invalidate pages.
+ */
+extern void VmPageValidate _ARGS_((Vm_VirtAddr *virtAddrPtr));
+extern void VmPageValidateInt _ARGS_((Vm_VirtAddr *virtAddrPtr,
+	register Vm_PTE *ptePtr));
+extern void VmPageInvalidate _ARGS_((register Vm_VirtAddr *virtAddrPtr));
+extern void VmPageInvalidateInt _ARGS_((Vm_VirtAddr *virtAddrPtr,
+	register Vm_PTE *ptePtr));
+extern void VmValidatePagesInt _ARGS_((Vm_Segment *segPtr, int firstPage,
+	int lastPage, Boolean zeroFill, Boolean clobber));
+/*
+ * VM list routines.  Like normal list routines but do more sanity checks.
+ */
+extern void VmListMove _ARGS_((register List_Links *itemPtr,
+	register List_Links *destPtr));
+extern void VmListRemove _ARGS_((register List_Links *itemPtr));
+extern void VmListInsert _ARGS_((register List_Links *itemPtr,
+	register List_Links *destPtr));
+/*
+ * Routines for copy-on-write and copy-on-reference.
+ */
+extern Boolean VmSegCanCOW _ARGS_((Vm_Segment *segPtr));
+extern void VmSegCantCOW _ARGS_((Vm_Segment *segPtr));
+extern void VmSegCOWDone _ARGS_((Vm_Segment *segPtr, Boolean cantCOW));
+extern void VmSegFork _ARGS_((Vm_Segment *srcSegPtr, Vm_Segment *destSegPtr));
+extern void VmCOWDeleteFromSeg _ARGS_((register Vm_Segment *segPtr,
+	register int firstPage, register int lastPage));
+extern ReturnStatus VmCOR _ARGS_((register Vm_VirtAddr *virtAddrPtr));
+extern void VmCOW _ARGS_((register Vm_VirtAddr *virtAddrPtr));
+extern void VmPageSwitch _ARGS_((unsigned int pageNum, Vm_Segment *newSegPtr));
+extern ReturnStatus VmCOWCopySeg _ARGS_((register Vm_Segment *segPtr));
+/*
+ * Procedures for remote page access.
+ */
+extern ReturnStatus VmCopySwapSpace _ARGS_((register Vm_Segment *srcSegPtr,
+	register Vm_Segment *destSegPtr));
+extern ReturnStatus VmPageServerRead _ARGS_((Vm_VirtAddr *virtAddrPtr,
+	unsigned int pageFrame));
+extern ReturnStatus VmPageServerWrite _ARGS_((Vm_VirtAddr *virtAddrPtr,
+	unsigned int pageFrame, Boolean toDisk));
+extern ReturnStatus VmFileServerRead _ARGS_((Vm_VirtAddr *virtAddrPtr,
+	unsigned int pageFrame));
+extern void VmMakeSwapName _ARGS_((int segNum, char *fileName));
+extern ReturnStatus VmOpenSwapFile _ARGS_((register Vm_Segment *segPtr));
+extern ReturnStatus VmCopySwapPage _ARGS_((register Vm_Segment *srcSegPtr,
+	int virtPage, register Vm_Segment *destSegPtr));
+extern void VmSwapFileLock _ARGS_((register Vm_Segment *segPtr));
+extern void VmSwapFileUnlock _ARGS_((register Vm_Segment *segPtr));
+/*
+ * Procedures for process migration.
+ */
+extern void VmPutOnDirtyList _ARGS_((unsigned int pfNum));
+/*
+ * Procedures for mapping.
+ */
+extern Address VmMapPage _ARGS_((unsigned int pfNum));
+extern void VmUnmapPage _ARGS_((Address mappedAddr));
+extern void VmRemapPage _ARGS_((Address addr, unsigned int pfNum));
+extern ReturnStatus Vm_MmapInt _ARGS_((Address startAddr, int length, int prot,
+	int share, int streamID, int fileAddr, Address *mappedAddr));
+/*
+ * Prefetch routine.
+ */
+extern void VmPrefetch _ARGS_((register Vm_VirtAddr *virtAddrPtr,
+	register Vm_PTE *ptePtr));
+
+#endif /* _VMINT */
+@
+
+
+9.12
+log
+@Split apart Vm_Mmap into Vm_MmapInt
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vmInt.h,v 9.11 90/12/07 12:54:07 mgbaker Exp Locker: shirriff $ SPRITE (Berkeley)
+a370 1
+ *   VM_SEG_CREATE_TRACED	The segment creation has been traced already.
+d385 1
+a385 1
+#define	VM_SEG_CREATE_TRACED		0x080
+a640 5
+/*
+ * Vm tracing.
+ */
+extern	void		VmTraceSegStart _ARGS_((void));
+extern void VmCheckListIntegrity _ARGS_((List_Links *listHdr));
+d642 1
+a642 1
+#endif _VMINT
+@
+
+
+9.11
+log
+@prototyping?
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vmInt.h,v 9.10 90/10/19 15:40:38 shirriff Exp Locker: mgbaker $ SPRITE (Berkeley)
+d635 2
+@
+
+
+9.10
+log
+@Added prototypes.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vmInt.h,v 9.9 90/09/12 13:36:49 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+a644 110
+
+/*
+ * Machine-dependent routines used by machine-independent VM routines.
+ */
+
+/*
+ * Initialization
+ */
+extern void VmMach_BootInit _ARGS_((int *pageSizePtr, int *pageShiftPtr,
+        int *pageTableIncPtr, int *kernMemSizePtr, int *numKernPagesPtr,
+        int *maxSegsPtr, int *maxProcessesPtr));
+extern Address VmMach_AllocKernSpace _ARGS_((Address baseAddr));
+extern void VmMach_Init _ARGS_((int firstFreePage));
+
+/*
+ * Segment creation, expansion, and destruction.
+ */
+extern void VmMach_SegInit _ARGS_((struct Vm_Segment *segPtr));
+extern void VmMach_SegExpand _ARGS_((register struct Vm_Segment *segPtr,
+        int firstPage, int lastPage));
+extern void VmMach_SegDelete _ARGS_((register struct Vm_Segment *segPtr));
+
+/*
+ * Process initialization.
+ */
+extern void VmMach_ProcInit _ARGS_((register struct Vm_ProcInfo *vmPtr));
+
+/*
+ * Manipulating protection.
+ */
+extern void VmMach_SetSegProt _ARGS_((register struct Vm_Segment *segPtr,
+        register int firstPage, int lastPage, Boolean makeWriteable));
+extern void VmMach_SetPageProt _ARGS_((register struct Vm_VirtAddr
+        *virtAddrPtr, Vm_PTE softPTE));
+
+/*
+ * Reference and modify bits.
+ */
+extern void VmMach_GetRefModBits _ARGS_((register struct Vm_VirtAddr
+        *virtAddrPtr, unsigned int virtFrameNum, register Boolean *refPtr,
+        register Boolean *modPtr));
+extern void VmMach_ClearRefBit _ARGS_((register struct Vm_VirtAddr
+	*virtAddrPtr, unsigned int virtFrameNum));
+extern void VmMach_ClearModBit _ARGS_((register struct Vm_VirtAddr
+	*virtAddrPtr, unsigned int virtFrameNum));
+extern void VmMach_AllocCheck _ARGS_((register struct Vm_VirtAddr
+	*virtAddrPtr, unsigned int virtFrameNum, register Boolean *refPtr,
+        register Boolean *modPtr));
+
+/*
+ * Page validation and invalidation.
+ */
+extern void VmMach_PageValidate _ARGS_((register struct Vm_VirtAddr
+	*virtAddrPtr, Vm_PTE pte));
+extern void VmMach_PageInvalidate _ARGS_((register struct Vm_VirtAddr
+	*virtAddrPtr, unsigned int virtPage, Boolean segDeletion));
+
+/*
+ * Routine to parse a virtual address.
+ */
+extern Boolean VmMach_VirtAddrParse _ARGS_((Proc_ControlBlock *procPtr,
+        Address virtAddr, register struct Vm_VirtAddr *transVirtAddrPtr));
+
+/*
+ * Routines to copy data to/from user space.
+ */
+extern ReturnStatus VmMach_CopyInProc _ARGS_((int numBytes,
+        Proc_ControlBlock *fromProcPtr, Address fromAddr,
+        struct Vm_VirtAddr *virtAddrPtr, Address toAddr, Boolean toKernel));
+extern ReturnStatus VmMach_CopyOutProc _ARGS_((int numBytes,
+        Address fromAddr, Boolean fromKernel, Proc_ControlBlock *toProcPtr,
+        Address toAddr, struct Vm_VirtAddr *virtAddrPtr));
+
+/*
+ * Tracing.
+ */
+extern void VmMach_Trace _ARGS_((void));
+
+/*
+ * Pinning and unpinning user memory pages.
+ */
+extern void VmMach_PinUserPages _ARGS_((int mapType, struct Vm_VirtAddr
+        *virtAddrPtr, int lastPage));
+extern void VmMach_UnpinUserPages _ARGS_((struct Vm_VirtAddr *virtAddrPtr,
+        int lastPage));
+/*
+ * Cache flushing.
+ */
+extern void VmMach_FlushPage _ARGS_((struct Vm_VirtAddr *virtAddrPtr,
+        Boolean invalidate));
+extern void VmMach_FlushCode _ARGS_((Proc_ControlBlock *procPtr,
+        struct Vm_VirtAddr *virtAddrPtr, unsigned virtPage, int numBytes));
+/*
+ * Migration.
+ */
+extern void VmMach_HandleSegMigration _ARGS_((struct Vm_Segment *segPtr));
+
+extern ReturnStatus VmMach_Cmd _ARGS_((int command, int arg));
+
+/*
+ * Shared memory.
+ */
+extern void VmMach_SharedSegFinish _ARGS_((Proc_ControlBlock *procPtr,
+        Address addr));
+extern void VmMach_SharedProcStart _ARGS_((Proc_ControlBlock *procPtr));
+extern void VmMach_SharedProcFinish _ARGS_((Proc_ControlBlock *procPtr));
+extern void VmMach_CopySharedMem _ARGS_((Proc_ControlBlock *parentProcPtr,
+        Proc_ControlBlock *childProcPtr));
+extern ReturnStatus VmMach_SharedStartAddr _ARGS_((Proc_ControlBlock *procPtr,
+        int size, Address *reqAddr));
+@
+
+
+9.9
+log
+@Changed includes from quotes to angles.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vmInt.h,v 9.8 90/09/11 10:45:13 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+d520 5
+a524 3
+extern	unsigned int	VmPageAllocate();
+extern	unsigned int	VmPageAllocateInt();
+extern	unsigned int	VmGetReservePage();
+a547 1
+extern	ReturnStatus	VmDoPageIn();
+d568 1
+a568 1
+extern	Vm_Segment	*VmGetSegPtr();
+a627 1
+extern	ReturnStatus	VmOpenSwapByName();
+d643 1
+a643 1
+extern	void		VmTraceSegStart();
+@
+
+
+9.8
+log
+@Added function prototyping.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm.ken/RCS/vmInt.h,v 9.8 90/08/31 16:00:48 shirriff Exp $ SPRITE (Berkeley)
+d18 6
+a23 6
+#include "vmMach.h"
+#include "fs.h"
+#include "list.h"
+#include "sync.h"
+#include "proc.h"
+#include "status.h"
+@
+
+
+9.7
+log
+@Changed debugging flag to be 2, so can debug semaphores separately.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vmInt.h,v 9.6 90/04/06 16:52:15 shirriff Exp $ SPRITE (Berkeley)
+a201 1
+extern	Address	vmMemEnd;		/* Current end of kernel code + data. */
+d512 5
+a516 6
+extern	void		VmSegTableAlloc();
+extern	void		VmSegTableInit();
+extern	void		VmSwapFileInit();
+extern	void		VmStackInit();
+extern	void		VmCoreMapAlloc();
+extern	void		VmCoreMapInit();
+d526 2
+a527 2
+extern	void		VmPageFree();
+extern	void		VmPageFreeInt();
+d531 2
+a532 2
+extern	void		VmPutOnFreeSegList();
+extern	void		VmPutOnFreePageList();
+d536 3
+a538 3
+extern	void		VmLockPageInt();
+extern	void		VmUnlockPage();
+extern	void		VmUnlockPageInt();
+d542 1
+a542 1
+extern	Boolean		VmPagePinned();
+d547 11
+a557 4
+extern	void		VmVirtAddrParse();
+extern	Boolean		VmCheckBounds();
+extern	void		VmZeroPage();
+extern	void		VmKillSharers();
+d561 6
+a566 3
+extern	ReturnStatus 	VmAddToSeg();
+extern  VmDeleteStatus 	VmSegmentDeleteInt();
+extern	void		VmDecPTUserCount();
+d568 7
+a574 3
+extern	void		VmFlushSegment();
+extern	Vm_SegProcList	*VmFindSharedSegment();
+extern	Boolean		VmCheckSharedSegment();
+d578 8
+a585 5
+extern	void		VmPageValidate();
+extern	void		VmPageValidateInt();
+extern	void		VmPageInvalidate();
+extern	void		VmPageInvalidateInt();
+extern	void		VmValidatePagesInt();
+d589 5
+a593 3
+extern	void		VmListMove();
+extern	void		VmListRemove();
+extern	void		VmListInsert();
+d597 10
+a606 8
+extern	Boolean		VmSegCanCOW();
+extern	void		VmSegCantCOW();
+extern	void		VmSegCOWDone();
+extern	void		VmSegFork();
+extern	void		VmCOWDeleteFromSeg();
+extern	ReturnStatus	VmCOR();
+extern	void		VmCOW();
+extern	void		VmPageSwitch();
+d610 14
+a623 9
+extern	ReturnStatus	VmCopySwapSpace();
+extern	ReturnStatus	VmPageServerRead();
+extern	ReturnStatus	VmPageServerWrite();
+extern	ReturnStatus	VmFileServerRead();
+extern	void 		VmMakeSwapName();
+extern	ReturnStatus	VmOpenSwapFile();
+extern	ReturnStatus	VmCopySwapPage();
+extern	void 		VmSwapFileLock();
+extern	void 		VmSwapFileUnlock();
+d628 1
+a628 1
+extern  ENTRY void	VmPutOnDirtyList();
+d632 3
+a634 3
+extern	Address		VmMapPage();
+extern	void		VmUnmapPage();
+extern	void		VmRemapPage();
+d638 2
+a639 1
+extern	void		VmPrefetch();
+d644 112
+a755 1
+extern	void		VmCheckListIntegrity();
+@
+
+
+9.6
+log
+@Added newline to panic.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vmInt.h,v 9.5 90/02/15 09:37:03 brent Exp Locker: shirriff $ SPRITE (Berkeley)
+d466 1
+a466 1
+#define dprintf if (vmShmDebug) printf
+@
+
+
+9.5
+log
+@Moved VM_MAX_PAGE_OUT_PROCS from vmInt.h to vm.h
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vmInt.h,v 9.4 90/02/15 09:33:26 brent Exp Locker: brent $ SPRITE (Berkeley)
+d478 1
+a478 1
+	panic("Page number outside bounds of page table"), (Vm_PTE *) NIL : \
+d489 1
+a489 1
+	panic("Page number outside bounds of page table"), (Vm_PTE *) NIL : \
+@
+
+
+9.4
+log
+@Added VM_MAX_PAGE_OUT_PROCS
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vmInt.h,v 9.3 89/12/11 17:43:11 brent Exp Locker: brent $ SPRITE (Berkeley)
+a232 1
+#define VM_MAX_PAGE_OUT_PROCS	3
+@
+
+
+9.3
+log
+@Moved VM_SWAP_DIR_NAME to vmSwapDir.h
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vmInt.h,v 9.2 89/10/22 23:26:35 shirriff Exp Locker: brent $ SPRITE (Berkeley)
+d233 1
+@
+
+
+9.2
+log
+@Cleaned up macro definitions.
+Added VmPageInvalidateRange declaration.
+@
+text
+@d11 1
+a11 1
+ * $Header: /c/src/kernel/vm.ken/RCS/vmInt.h,v 1.7 89/10/10 21:24:23 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+a444 5
+
+/*
+ * The name of the swap directory.
+ */
+#define	VM_SWAP_DIR_NAME	"/swap/"
+@
+
+
+9.1
+log
+@Changed segOffset definition.
+@
+text
+@d11 1
+a11 1
+ * $Header: /c/src/kernel/vm.ken/RCS/vmInt.h,v 1.6 89/09/12 17:02:03 shirriff Exp $ SPRITE (Berkeley)
+d487 1
+a487 1
+#ifdef CLEAN2
+d506 1
+a506 5
+#ifndef SEGOFFSETCODE
+#ifdef sun4
+#define segOffset(virtAddrPtr) ( (virtAddrPtr)->segPtr->offset)
+#else
+#define segOffset(virtAddrPtr) (( !vmShmDebug || (virtAddrPtr)->sharedPtr== \
+a508 3
+#endif sun4
+#endif SEGOFFSETCODE
+
+a575 1
+extern	void		VmPageInvalidateRange();
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vmInt.h,v 8.6 89/09/07 14:24:52 shirriff Exp Locker: douglis $ SPRITE (Berkeley)
+d465 6
+d472 1
+d506 2
+a508 2
+/*
+#ifdef sun4
+d510 1
+a510 1
+#define segOffset(virtAddrPtr) ( vmShmDebug ? (((virtAddrPtr)->sharedPtr== \
+d512 3
+a514 6
+	( ((virtAddrPtr)->sharedPtr==(Vm_SegProcList *)NULL) ? \
+	   (printf("Warning: NULL segOffset\n"), \
+	       (virtAddrPtr)->sharedPtr->offset) : \
+	   (virtAddrPtr)->sharedPtr->offset)) : (virtAddrPtr)->segPtr->offset)
+#endif
+*/
+d632 1
+@
+
+
+8.6
+log
+@Changes for shared memory.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vmInt.h,v 8.5 89/09/06 17:14:46 mgbaker Exp $ SPRITE (Berkeley)
+@
+
+
+8.5
+log
+@#ifdef'd some of the new shared vm stuff out since it breaks on the sun4.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vmInt.h,v 8.4 89/09/06 15:08:22 shirriff Exp Locker: mgbaker $ SPRITE (Berkeley)
+d462 6
+d499 2
+a501 1
+#define segOffset(virtAddrPtr) ( (virtAddrPtr)->segPtr->offset)
+d503 6
+a508 3
+#define segOffset(virtAddrPtr) ( ((virtAddrPtr)->sharedPtr== \
+	(Vm_SegProcList *)NULL) ? (virtAddrPtr)->segPtr->offset :\
+	(virtAddrPtr)->sharedPtr->offset)
+d510 1
+a628 6
+
+/*
+ * Shared memory.
+ */
+extern int vmShmDebug;
+#define dprintf if (vmShmDebug) printf
+@
+
+
+8.4
+log
+@Mary checking this in for Ken to #ifdef out the new segOffset macro.
+@
+text
+@d11 1
+a11 1
+ * $Header: /c/src/kernel/vm.ken/RCS/vmInt.h,v 1.4 89/08/15 12:01:33 shirriff Exp $ SPRITE (Berkeley)
+d493 3
+d499 1
+@
+
+
+8.3
+log
+@Commented #endif labels.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vmInt.h,v 8.2 89/04/28 16:25:25 douglis Exp Locker: rab $ SPRITE (Berkeley)
+d53 1
+a53 1
+ * | mach_CodeStart + vmKernMemSize.	|
+d116 2
+a117 2
+*		    |			   			vm_PageSize
+ *		    V
+d462 1
+a462 1
+ * Macro to get a pointer to a page table entry.
+d464 1
+a464 1
+#ifdef CLEAN
+d469 1
+a469 1
+    ((((page) - (segPtr)->offset) > (segPtr)->ptSize) ? \
+d474 11
+d490 7
+d500 3
+d554 2
+d557 1
+a557 1
+ * Routines to validate and validate pages.
+d564 1
+d613 7
+a619 1
+#endif /* _VMINT */
+@
+
+
+8.2
+log
+@changed VmGetPTEPtr to check the offset before dereferencing.
+@
+text
+@d4 1
+a4 1
+ *	Machine independent virtual memory data structures and procedure 
+d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vmInt.h,v 8.1 89/02/10 16:40:15 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+d24 1
+a24 1
+#else 
+d52 2
+a53 2
+ * | The absolute end is		| 
+ * | mach_CodeStart + vmKernMemSize.	|			
+d76 1
+a76 1
+ * 
+d83 1
+a83 1
+ * heap.  The two fields offset and numPages in each segment table entry 
+d85 4
+a88 4
+ * maps to page table entry zero.  Thus the index into the page table for any 
+ * page is the page number minus the offset.  The offset for the code and 
+ * heap segment is fixed and the offset for the stack segment will change 
+ * as the page table grows.  numPages is the number of pages that can be 
+d90 1
+a90 1
+ * lowest accessible page and (numPages + offset - 1) is the highest 
+d117 1
+a117 1
+ *		    V			
+d125 1
+a125 1
+ * | pages for the segment.  However,   |   (mach_LastUserStackPage - 
+d131 1
+a131 1
+ * 
+d171 1
+a171 1
+ * The page table locking is only used for heap segments.  Code segments don't 
+d181 1
+a181 1
+ * be examined inside of the monitor.  Also copying and expanding of page 
+d196 1
+a196 1
+extern	Boolean	vmNoBootAlloc;		/* TRUE implies can no longer use 
+d220 1
+a220 1
+extern	Boolean	vmFreeWhenClean;	/* TRUE if pages should be freed after 
+d224 1
+a224 1
+extern	Boolean	vmAlwaysSayYes;		/* TRUE if VM should always satisfy 
+d244 1
+a244 1
+ * memory system.  Each time that FS asks for a page its reference time is 
+d246 4
+a249 4
+ * penalty is enforced by subtracting vmCurPenalty seconds from its access time 
+ * or adding vmCurPenalty to the VM access time.  This is done in the 
+ * following way.  Let vmPagesPerGroup = total-available-pages / 
+ * vmNumPageGroups,  vmCurPenalty = 0 and vmBoundary = vmPagesPerGroup. 
+d251 1
+a251 1
+ * is incremented by vmPagesPerGroup and vmCurPenalty is incremented by 
+d254 1
+a254 1
+ * decremented by vmFSPenalty.  
+d270 1
+a270 1
+extern	Boolean	vmWriteablePageout;	/* Page out all pages that are 
+d275 1
+a275 1
+					 * referenced and are writeable 
+d301 1
+a301 1
+ * is a list of segment table entries that are not currently in use by 
+d316 1
+a316 1
+ * An element of a linked list of processes sharing a segment.  Each 
+d396 1
+a396 1
+ * 			Core map structure.  
+d403 3
+a405 3
+ * The allocate list is used to keep track of which pages are the best 
+ * candidates to use when a new page is needed.  All pages that are not 
+ * attached to any segment are at the front of the allocate list and the 
+d407 1
+a407 1
+ * list is a list of pages that are being written to disk.  The reserve 
+d423 1
+a423 1
+    int 	flags;		/* Flags that indicate the state of the page 
+d430 1
+a430 1
+ * The following defines the state of the page:  
+d482 1
+a482 1
+/* 
+d589 1
+a589 1
+#endif _VMINT
+@
+
+
+8.1
+log
+@added VM_SEG_IO_ERROR flag.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vmInt.h,v 8.0 88/11/11 18:42:03 douglis Stable Locker: douglis $ SPRITE (Berkeley)
+d464 1
+d467 6
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vmInt.h,v 6.5 88/09/22 21:27:06 nelson Exp Locker: douglis $ SPRITE (Berkeley)
+d376 2
+d390 1
+@
+
+
+6.5
+log
+@Added variable definitions.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmInt.h,v 6.4 88/08/30 22:20:44 nelson Exp $ SPRITE (Berkeley)
+@
+
+
+6.4
+log
+@Added headers for page pinning.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmInt.h,v 6.3 88/08/24 19:37:18 nelson Exp $ SPRITE (Berkeley)
+d266 12
+@
+
+
+6.3
+log
+@Bounded maximum growth of stack and allow the machine dependent side to
+limit the number of segments.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmInt.h,v 6.2 88/08/15 16:54:11 nelson Exp $ SPRITE (Berkeley)
+d492 4
+a506 1
+extern	void 		VmDeleteFromSeg();
+a566 1
+
+@
+
+
+6.2
+log
+@Changed procedure header.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmInt.h,v 6.1 88/08/15 12:42:25 nelson Exp $ SPRITE (Berkeley)
+d218 2
+a219 1
+
+@
+
+
+6.1
+log
+@Made this file includeable by the user vmstat program.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmInt.h,v 5.17 88/07/29 11:28:40 nelson Exp $ SPRITE (Berkeley)
+d562 1
+a562 1
+extern	void		VmClearSegTraceTimes();
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+d24 8
+@
+
+
+5.17
+log
+@Fixed gcc complaints.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmInt.h,v 5.16 88/07/17 17:19:00 nelson Exp $ SPRITE (Berkeley)
+@
+
+
+5.16
+log
+@Finished up the user mapping in our mapping out calls for wiring down 
+pages.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmInt.h,v 5.15 88/07/12 19:52:57 nelson Exp $ SPRITE (Berkeley)
+d246 1
+a246 1
+int	vmFSPenalty;		/* Number of seconds FS is penalized when it
+d248 1
+a248 1
+int	vmNumPageGroups;	/* The number of groups to divide memory up
+d250 2
+a251 2
+int	vmPagesPerGroup;	/* The number of pages in each group. */
+int	vmCurPenalty;		/* The number of seconds that FS is currently
+d253 1
+a253 1
+int	vmBoundary;		/* The current number of pages that must be
+@
+
+
+5.15
+log
+@Lint error fixes and more tracing.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmInt.h,v 5.14 88/06/17 15:27:19 nelson Exp $ SPRITE (Berkeley)
+d351 3
+d356 10
+a365 8
+#define	VM_SEG_FREE			0x01
+#define	VM_SEG_INACTIVE			0x02
+#define	VM_SWAP_FILE_OPENED		0x04
+#define	VM_SWAP_FILE_LOCKED		0x08
+#define	VM_SEG_DEAD			0x10
+#define	VM_PT_EXCL_ACC			0x20
+#define	VM_DEBUGGED_SEG			0x40
+#define	VM_SEG_CREATE_TRACED		0x80
+d394 2
+a413 1
+ * VM_USER_WIRED_PAGE		The user wired this page down.
+a419 1
+#define	VM_USER_WIRED_PAGE		0x20
+d515 3
+@
+
+
+5.14
+log
+@Changed interface to match the new mach module interface.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmInt.h,v 5.13 88/04/22 14:21:37 nelson Exp $ SPRITE (Berkeley)
+d350 1
+d360 1
+d542 4
+@
+
+
+5.13
+log
+@Added new segment state indicating that a segment is a copy for the
+debugger.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmInt.h,v 5.12 88/01/08 15:52:01 nelson Exp $ SPRITE (Berkeley)
+d405 1
+d412 1
+@
+
+
+5.12
+log
+@Added prefetch.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmInt.h,v 5.11 88/01/04 14:00:06 nelson Exp $ SPRITE (Berkeley)
+d348 2
+d358 1
+@
+
+
+5.11
+log
+@Added ability to measure the number of copy-on-ref pages that eventually
+got modified.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmInt.h,v 5.10 87/12/31 11:08:33 nelson Exp $ SPRITE (Berkeley)
+d228 3
+d256 11
+d468 1
+d476 1
+d485 1
+d531 4
+@
+
+
+5.10
+log
+@Added variables for implementing the FS penalty mechanism.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmInt.h,v 5.9 87/12/15 15:19:37 nelson Exp $ SPRITE (Berkeley)
+d225 3
+@
+
+
+5.9
+log
+@Comments.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmInt.h,v 5.8 87/12/12 16:29:40 nelson Exp $ SPRITE (Berkeley)
+d210 40
+@
+
+
+5.8
+log
+@Deleted VmFileInfo junk which was unnecessary.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmInt.h,v 5.6 87/12/11 13:30:13 nelson Exp $ SPRITE (Berkeley)
+d25 156
+a186 1
+extern	Address	vmMemEnd;		/* End of kernel memory. */
+d190 1
+a190 1
+extern	int	vmPageShift;		/* Log base 2 of vmPageSize. */
+d193 1
+a231 13
+ * The two fields offset and numPages in each segment table entry define the 
+ * bounds of a segment.  offset is the virtual page number that maps to 
+ * page table entry zero.  Thus the index into the page table for any 
+ * page is the page number minus the offset.  The offset for the code and 
+ * heap segment is fixed and the offset for the stack segment will change 
+ * as the page table grows.  
+ *
+ * numPages is the number of pages that can be accessed for a segment.  Thus
+ * for code and heap segments, offset is the lowest accessible page and 
+ * (numPages + offset - 1) is the highest accessible page.  For a stack segment
+ * the highest accessible page is fixed at MACH_LAST_USER_STACK_PAGE and 
+ * the lowest accessible page is (MACH_LAST_USER_STACK_PAGE - numPages + 1).
+ *
+a240 1
+
+a248 1
+
+d262 2
+a263 2
+ *	DELETE_SEG	-	The segment should be deleted.
+ *	CLOSE_OBJ_FILE	-	Don't delete the segment, but close the file
+d265 1
+a265 1
+ *	DELETE_NOTHING	-	Don't do anything.
+a266 1
+
+a281 1
+ *   VM_DONT_EXPAND		This segment cannot be expanded right now.
+a283 2
+ *   VM_OLD_CODE_SEG		This code segment corresponds to an object file
+ *				that has been modified.
+d289 2
+a290 1
+ *   VM_ADD_DEL_VA		Are adding to or deleting from this segment.
+d294 5
+a298 7
+#define	VM_DONT_EXPAND			0x02
+#define	VM_SEG_INACTIVE			0x04
+#define	VM_OLD_CODE_SEG			0x08
+#define	VM_SWAP_FILE_OPENED		0x10
+#define	VM_SWAP_FILE_LOCKED		0x20
+#define	VM_SEG_DEAD			0x40
+#define	VM_ADD_DEL_VA			0x80
+d307 11
+a317 8
+ * There are two list that run through the core map: the allocate list 
+ * and the dirty list.  All pages, except those that are on the dirty list, 
+ * or are owned by the kernel are on the allocate list.  The allocate
+ * list is used to keep track of which pages are the best candidates to
+ * use when a new page is needed.  All pages that are not attached to
+ * any segment are at the front of the allocate list and the rest of the
+ * pages on the allocate list are kept in LRU order.  The dirty list is
+ * a list of pages that are being written to disk.  
+d319 1
+a319 1
+ * See vmPage.c for the actual use of the core map and the dirty and
+d324 2
+a325 2
+    List_Links	links;		/* Links for allocate and dirty lists */
+
+a326 1
+
+d384 6
+a389 6
+extern	void	VmSegTableAlloc();
+extern	void	VmSegTableInit();
+extern	void	VmSwapFileInit();
+extern	void	VmStackInit();
+extern	void	VmCoreMapAlloc();
+extern	void	VmCoreMapInit();
+d391 1
+a391 1
+ * Internal virtual memory procedures.
+d396 3
+d400 4
+d406 3
+a408 1
+extern	void		VmPageFreeInt();
+d411 3
+d415 6
+a420 1
+extern	void		VmDecExpandCount();
+d424 1
+a424 1
+extern	void		VmPageSwitch();
+d426 3
+d434 3
+a436 1
+extern	void		VmCleanSegment();
+a439 3
+extern	void		VmVirtAddrParse();
+extern	void		VmZeroPage();
+
+d447 1
+a447 1
+
+a459 1
+
+a462 1
+
+a464 1
+
+@
+
+
+5.7
+log
+@Final (hopefully) version after redo of VM.
+@
+text
+@a53 10
+/*
+ * Structure that contains file information that needs to be freed.
+ */
+typedef struct {
+    Fs_Stream	*objStreamPtr;
+    Fs_Stream	*swapStreamPtr;
+    char	*swapFileName;
+    int		segNum;
+} VmFileInfo;
+
+@
+
+
+5.6
+log
+@New VM system where put machine dependent VM stuff into the SUN module.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmInt.h,v 5.5 87/11/20 18:26:12 nelson Exp $ SPRITE (Berkeley)
+a52 9
+
+/*
+ * Values for flags field.  Lower 8 bits are for our use, next 8 bits are 
+ * machine dependent.
+ *
+ *	VM_HEAP_NOT_EXPANDABLE	The heap segment for the current process has
+ *				been made not expandable.
+ */
+#define	VM_HEAP_NOT_EXPANDABLE	0x1
+@
+
+
+5.5
+log
+@More copy-on-write stuff.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmInt.h,v 5.4 87/11/18 21:50:51 nelson Exp $ SPRITE (Berkeley)
+d17 1
+a17 1
+#include "vmMachInt.h"
+d25 1
+a25 2
+ * The number of the first page frame in physical memory that is not owned 
+ * by the kernel.
+d27 1
+a27 1
+extern	int	vmFirstFreePage;
+d29 24
+a52 4
+/*
+ * The pointer to memory allocated at boot time.
+ */
+extern	Address	vmMemEnd;
+a54 23
+ * Flag that is set once we can no longer allocate memory using the boot
+ * allocation routine.
+ */
+extern	Boolean	vmNoBootAlloc;
+
+/*
+ * A stream to the swap directory. 
+ */
+extern	Fs_Stream	*vmSwapStreamPtr;
+
+/*
+ * Structure to represent a translated virtual address
+ */
+
+typedef struct {
+    struct	Vm_Segment	*segPtr;
+    int 			page;
+    int 			offset;
+    int				flags;	/* Flags used after parsing a virtual
+					 * address. */
+} VmVirtAddr;
+
+/*
+d56 1
+a56 1
+ * machine dependent and are defined in vmMachInt.h.
+a65 1
+
+a131 1
+    VmMachData		*machData;	/* Pointer to machine dependent data */
+d153 1
+a153 1
+ * System segment number and pointer to it.
+a155 1
+extern 	Vm_Segment	*vmSysSegPtr;
+d171 1
+a171 2
+ *   VM_DELETING_VA		A range of virtual addresses are being deleted
+ *				from this segment.
+d181 1
+a181 1
+#define	VM_DELETING_VA			0x80
+d206 1
+a206 1
+    VmVirtAddr	virtPage;	/* The virtual page information for this page */
+d248 11
+d268 1
+d274 3
+a276 3
+extern	int		VmPageAllocate();
+extern	int		VmPageAllocateInt();
+extern	int		VmGetReservePage();
+a287 3
+extern	void		VmSetSegProtInt();
+extern	void		VmSetPageProt();
+extern	void		VmSetPageProtInt();
+d290 11
+d329 7
+@
+
+
+5.4
+log
+@Copy-on-write
+@
+text
+@d11 1
+a11 1
+ * $Header: vmInt.h,v 5.3 87/10/27 17:07:04 nelson Exp $ SPRITE (Berkeley)
+d178 2
+d189 1
+@
+
+
+5.3
+log
+@Implemented a new cross-address-space copy routine.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmInt.h,v 5.2 87/10/22 14:49:32 nelson Exp $ SPRITE (Berkeley)
+d243 10
+a258 1
+
+a266 1
+
+a279 5
+extern	void 		VmCleanSeg();
+extern	void 		VmMakeSwapName();
+extern	ReturnStatus	VmOpenSwapFile();
+extern	void 		VmSwapFileLock();
+extern	void 		VmSwapFileUnlock();
+d281 5
+d288 8
+a297 1
+
+d302 5
+@
+
+
+5.2
+log
+@Changed proc table so that it points to VM stuff that is defined here.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmInt.h,v 5.1 87/10/14 15:34:09 nelson Exp $ SPRITE (Berkeley)
+d54 2
+d57 9
+@
+
+
+5.1
+log
+@Added the swap file directory stream pointer.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmInt.h,v 5.0 87/08/11 10:52:11 sprite Exp $ SPRITE (Berkeley)
+d148 1
+a148 1
+ * Pointer to system segment.
+d150 1
+a150 1
+
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d11 1
+a11 1
+ * $Header: vmInt.h,v 4.5 87/05/15 14:15:49 nelson Exp $ SPRITE (Berkeley)
+a27 1
+
+a32 1
+
+a38 1
+
+d42 5
+a220 1
+
+d226 5
+@

@@ -1,0 +1,277 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    shirriff:1.2; strict;
+comment  @@;
+
+
+1.2
+date     88.12.30.09.28.33;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.12.21.11.30.00;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@More format upgrades.
+@
+text
+@' $Header: /a/newcmds/fscmd/RCS/fscmd.man,v 1.1 88/12/21 11:30:00 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS FSCMD cmds
+.BS
+.SH NAME
+fscmd \- Set various parameters in the filesystem
+.SH SYNOPSIS
+.nf
+\fBfscmd\fR \-[\fBmM\fR] \fIsize\fR
+\fBfscmd\fR \-[\fBfslLNCv\fR] \fR
+\fBfscmd\fR \-[\fBwWxXyz\fR] \fR
+\fBfscmd\fR \-[\fBBOtDR\fR] \fR
+.fi
+.BE
+.SH INTRODUCTION
+This command is used to set various kernel variables that control
+the filesystem cache, tracing and debugging output, and other
+features of the system.
+It is implemented using the Fs_Command system call.
+.SH CACHE SIZE
+The minimum and maximum number of filesystem blocks (4 Kbytes each) in the
+main memory cache is set with the -m (minimum) and -M (maximum)
+arguments.  Follow either of these with the number of 4-Kbyte blocks, ie.
+-M 512 means a max of 2 Megabytes in the cache.
+.SH CACHE CONTROL
+.IP "\fB\-f"
+The entire contents of the cache gets written-back and then invalidated by
+specifying \fB\-f\fP.
+.IP "\fB\-s\fR [\fB0\fR|\fB1\fR]"
+The background process that writes back dirty data from the cache
+can be
+disabled
+by specifying the
+``\fB\-s 0\fP''
+flag.  This should be done when patching a mounted filesystem
+or else bad internal structures will get pushed to disk.
+Enable the sync daemon with ``\fB\-s 1\fP''.
+.IP "\fB\-l\fR [\fB0\fR|\fB0\fR]"
+Biasing against ``large'' files in the cache is enabled with ``\fB\-l 1\fR''
+and turned off with ``\fB\-l 0\fR''.
+.IP "\fB\-L \fIsize\fR"
+This sets what portion of the maximum cache size a file must occupy before
+it is considered
+a large file.  For example a value of 8 would indicate that if a file is larger
+than 1/8 of the maximum cache size then it is considered a large file.
+.IP "\fB\-C\fR [\fB0\fR|\fB0\fR]"
+Caching on diskless nodes can be disabled with ``\fB\-C 0\fR'',
+and turned back on with ``\fB\-C 1\fR''.
+This has to be done on a file server to affect its clients; use of the -C
+flag on clients will have no effect.
+.IP "\fB\-N\fR [\fB0\fR|\fB0\fR]"
+The name cache on a diskfull node is disabled with
+``\fB\-N 0\fR'' and enabled with ``\fB\-N 1\fR''.
+.IP "\fB\-v\fR [\fB0\fR|\fB0\fR]"
+The Virtual Memory cache of recently used program segments is
+disabled with ``\fB\-v 1\fR'' (yes, 1), and enabled with ``\fB\-v 0\fR''.
+.IP "\fB\-b \fIN\fR"
+Set the maximum number of block cleaner processes.  This controls the
+amount of overlap during cache writebacks.  3 processes provides the most
+bandwidth, but it does load the server.
+.IP "\fB\-r \fIN\fR"
+Set the read ahead distance (in 4K blocks).  When a read on the cache
+is done, the transfer of N more blocks is initiated.
+.SH "CACHE WRITE BACK POLICY"
+Normally, dirty blocks in the file system cache are aged for at least
+30 seconds before being written back.  This gives the best performance,
+although alternate strategies can be tried out with the following flags.
+There are two write-back policies involved: the client's and the server's.
+Each of the flags below only affects the policy on the client or server
+on which it is invoked.  For example the client could be using a
+write-through policy and the server a 30-second-delay policy.  This would
+mean that client writes would not complete until the blocks have been written
+across the network into the server's cache, but the blocks would not be
+written back to disk until at least 30 seconds later.
+.IP "\fB\-S \fIseconds\fR"
+Set the cache write-back interval in seconds. 
+.IP "\fB\-w\fR [\fB0\fR|\fB0\fR]"
+Write-through caching is enabled with ``\fB\-w 1\fR'' and
+disabled with ``\fB\-w 0\fR''.  With write-through,
+the write system call does not complete until
+the cache block is written back. 
+.IP "\fB\-W [\fB0\fR|\fB0\fR]"
+Write-back-on-close caching is enabled with
+``\fB\-W 1\fR'' and disabled with ``\fB\-W 0\fR''.
+With write-back-on-close the close system call does not complete
+until all of the file's dirty blocks are written back.  
+.IP "\fB\-x\fR [\fB0\fR|\fB0\fR]"
+Write-back of temporary files can be set to delay as long as possible
+with ``\fB\-x 1\fR''.  This is turned off with ``\fB\-x 0\fR''.  Normally temporary files are
+files that are in the /tmp directory.
+.IP "\fB\-X \fIdirNumber\fR"
+This identifies the temporary directory to the file system.
+\fIdirNumber\fP should be the inode number of /tmp.
+Unfortunately, only one temporary directory is understood.
+.IP "\fB\-y\fR [\fB0\fR|\fB0\fR]
+Write-back-as-soon-as-possible caching is enabled with ``\fB\-y 1\fR''
+and turned off with ``\fB\-y 0\fR''.
+With write-back-ASAP, the write system call completes immediately
+and the cache block is scheduled to be written out as-soon-as-possible.
+.IP "\fB\-z\fR [\fB0\fR|\fB0\fR]"
+Write-back-on-last-dirty-block caching is enabled with ``\fB\-z 1\fR''
+and turned off with ``\fB\-z 0\fR''.
+This policy only works on a server.  It 
+means the server writes back its blocks for a file
+after getting the last dirty block for the file from a client.  For example,
+this policy combined with a write-back-on-close client policy would mean
+that after a client closes a file, all of the files blocks are guaranteed
+to be on the server's disk.
+.SH DISK LAYOUT
+.IP "\fB\-B \fIskew\fR"
+Set the block skew for disk allocation.  Not supported in kernel yet.
+.SH TRACING/DEBUG FLAGS
+There are several tracing/debugging flags that can have their
+value set via \fBfscmd\fR.  Each flag expects a following integer
+on the command line that will specify the new value of
+the flag or trace level variable.  \fBFscmd\fR prints out the
+old value of the flag as it changes it.
+Some of the flags are Booleans that are
+set with values of 1 for TRUE, and 0 for FALSE.
+.IP "\fB\-O\fR"
+The fsStats structure is zeroed out.  This information is displayed
+with the fsStat program.
+.IP "\fB\-t\fR [\fB0\fR|\fB0\fR]"
+Filesystem tracing is enabled with ``\fB\-t 1\fR''.  This dumps internal events
+into a circular trace record.  The trace gets printed via a
+special console key sequence, ``\fBL1-f\fR''.
+.IP "\fB\-D\fR [\fB0\fR|\fB0\fR]"
+Cache consistency debug print statements are turned on with ``\fB\-D 1\fR'',
+and turned off with ``\fB\-D 0\fR''.
+.IP "\fB\-R\fR [\fB0\fR|\fB0\fR]"
+Read ahead tracing is enabled with ``\fB\-R 1\fR'' and turned off with ``\fB\-R 0\fR''.
+.SH "SEE ALSO"
+fsStat, prefix, rpcCmd
+.SH FILES
+.nf
+/local/diskcmds		- Server local startup file
+/bootcmds		- Network wide startup file
+.SH KEYWORDS
+debugging, trace, cache, write-back
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+' $Header: /sprite/doc/ref/cmds/RCS/fscmd,v 1.2 88/05/05 09:38:49 nelson Exp Locker: brent $ SPRITE (Berkeley)
+d9 4
+a12 4
+\fBfscmd\fR -[\fBmM\fR] \fIsize\fR
+\fBfscmd\fR -[\fBfslLNCv\fR] \fR
+\fBfscmd\fR -[\fBwWxXyz\fR] \fR
+\fBfscmd\fR -[\fBBOtDR\fR] \fR
+d26 1
+a26 1
+.IP "\fB-f"
+d28 2
+a29 2
+specifying \fB-f\fP.
+.IP "\fB-s\fR [\fB0\fR|\fB1\fR]"
+d34 1
+a34 1
+``\fB-s 0\fP''
+d37 5
+a41 5
+Enable the sync daemon with ``\fB-s 1\fP''.
+.IP "\fB-l\fR [\fB0\fR|\fB0\fR]"
+Biasing against ``large'' files in the cache is enabled with ``\fB-l 1\fR''
+and turned off with ``\fB-l 0\fR''.
+.IP "\fB-L \fIsize\fR"
+d46 3
+a48 3
+.IP "\fB-C\fR [\fB0\fR|\fB0\fR]"
+Caching on diskless nodes can be disabled with ``\fB-C 0\fR'',
+and turned back on with ``\fB-C 1\fR''.
+d51 1
+a51 1
+.IP "\fB-N\fR [\fB0\fR|\fB0\fR]"
+d53 2
+a54 2
+``\fB-N 0\fR'' and enabled with ``\fB-N 1\fR''.
+.IP "\fB-v\fR [\fB0\fR|\fB0\fR]"
+d56 2
+a57 2
+disabled with ``\fB-v 1\fR'' (yes, 1), and enabled with ``\fB-v 0\fR''.
+.IP "\fB-b \fIN\fR"
+d61 1
+a61 1
+.IP "\fB-r \fIN\fR"
+d75 1
+a75 1
+.IP "\fB-S \fIseconds\fR"
+d77 3
+a79 3
+.IP "\fB-w\fR [\fB0\fR|\fB0\fR]"
+Write-through caching is enabled with ``\fB-w 1\fR'' and
+disabled with ``\fB-w 0\fR''.  With write-through,
+d82 1
+a82 1
+.IP "\fB-W [\fB0\fR|\fB0\fR]"
+d84 1
+a84 1
+``\fB-W 1\fR'' and disabled with ``\fB-W 0\fR''.
+d87 1
+a87 1
+.IP "\fB-x\fR [\fB0\fR|\fB0\fR]"
+d89 1
+a89 1
+with ``\fB-x 1\fR''.  This is turned off with ``\fB-x 0\fR''.  Normally temporary files are
+d91 1
+a91 1
+.IP "\fB-X \fIdirNumber\fR"
+d95 3
+a97 3
+.IP "\fB-y\fR [\fB0\fR|\fB0\fR]
+Write-back-as-soon-as-possible caching is enabled with ``\fB-y 1\fR''
+and turned off with ``\fB-y 0\fR''.
+d100 3
+a102 3
+.IP "\fB-z\fR [\fB0\fR|\fB0\fR]"
+Write-back-on-last-dirty-block caching is enabled with ``\fB-z 1\fR''
+and turned off with ``\fB-z 0\fR''.
+d110 1
+a110 1
+.IP "\fB-B \fIskew\fR"
+d114 1
+a114 1
+value set via fscmd.  Each flag expects a following integer
+d116 1
+a116 1
+the flag or trace level variable.  fscmd prints out the
+d120 1
+a120 1
+.IP "\fB-O\fR"
+d123 2
+a124 2
+.IP "\fB-t\fR [\fB0\fR|\fB0\fR]"
+Filesystem tracing is enabled with ``\fB-t 1\fR''.  This dumps internal events
+d127 5
+a131 5
+.IP "\fB-D\fR [\fB0\fR|\fB0\fR]"
+Cache consistency debug print statements are turned on with ``\fB-D 1\fR'',
+and turned off with ``\fB-D 0\fR''.
+.IP "\fB-R\fR [\fB0\fR|\fB0\fR]"
+Read ahead tracing is enabled with ``\fB-R 1\fR'' and turned off with ``\fB-R 0\fR''.
+@

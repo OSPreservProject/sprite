@@ -1,0 +1,10 @@
+F DEVADDRS.H_V;1                    	devAddrs.h,v
+F DEVCONFI.C_V;1                    	devConfig.c,v
+F DEVFSOPT.C_V;1                    	devFsOpTable.c,v
+F DEVSCSIC.C_V;1                    	devSCSIC90Mach.c,v
+F DEVSCSIC.H_V;1                    	devSCSIC90Mach.h,v
+F DEVSCSIT.C_V;1                    	devScsiTapeConfig.c,v
+F DEVSMEM.C_V;1                     	devSmem.c,v
+F DEVSMEM.H_V;1                     	devSmem.h,v
+F SCSIC90.H_V;1                     	scsiC90.h,v
+D SCVS                              	SCVS

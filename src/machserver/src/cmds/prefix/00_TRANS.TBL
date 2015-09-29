@@ -1,0 +1,5 @@
+D DS3100_M                          	ds3100.md
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+F PREFIX.C;1                        	prefix.c
+D RCS                               	RCS

@@ -1,0 +1,287 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     89.12.11.13.42.57;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.08.29.14.25.12;  author rab;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Fixed byteorder problems for ds3100.
+@
+text
+@/* 
+ * swap.c --
+ *
+ *	Library routine for manipulating byte order.
+ *
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/net/RCS/swap.c,v 1.1 89/08/29 14:25:12 rab Exp Locker: rab $ SPRITE (Berkeley)";
+#endif
+
+#include "machparam.h"
+
+
+/* 
+ *----------------------------------------------------------------------
+ *
+ * ntohs --
+ *
+ *	Convert a short integer in network byte order to an short integer in 
+ *	host byte order.
+ *
+ * Results:
+ *	The short integer in host byte order.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+unsigned short 
+ntohs(shortInt)
+    unsigned short shortInt; 	/* A short int in network byte order. */
+{
+
+#if BYTE_ORDER == LITTLE_ENDIAN
+    union swab {
+	unsigned short s;
+	unsigned char  c[2];
+    } in, out;
+
+    in.s = shortInt;
+    out.c[0] = in.c[1];
+    out.c[1] = in.c[0];
+    return out.s;
+#else
+    return shortInt;
+#endif
+
+}
+
+/* 
+ *----------------------------------------------------------------------
+ *
+ * ntohl --
+ *
+ *	Convert an integer in network byte order to an integer in 
+ *	host byte order.
+ *
+ * Results:
+ *	The integer in host byte order.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+unsigned long 
+ntohl(longInt)
+    unsigned long longInt;	/* 32bit integer in network byte order. */
+{
+#if BYTE_ORDER == LITTLE_ENDIAN
+    union {
+	unsigned long l;
+	unsigned char  c[4];
+    } in, out;
+
+    in.l = longInt;
+    out.c[0] = in.c[3];
+    out.c[1] = in.c[2];
+    out.c[2] = in.c[1];
+    out.c[3] = in.c[0];
+    return out.l;
+#else
+    return longInt;
+#endif
+}
+
+/* 
+ *----------------------------------------------------------------------
+ *
+ * htons --
+ *
+ *	Convert a short integer in host byte order to an short integer in 
+ *	network byte order.
+ *
+ * Results:
+ *	The short integer in network byte order.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+unsigned short 
+htons(shortInt)
+	unsigned short shortInt; 	/* A short int in Host byte order. */
+{
+#if BYTE_ORDER == LITTLE_ENDIAN
+    union swab {
+	unsigned short s;
+	unsigned char  c[2];
+    } in, out;
+
+    in.s = shortInt;
+    out.c[0] = in.c[1];
+    out.c[1] = in.c[0];
+    return out.s;
+#else
+    return shortInt;
+#endif
+}
+
+/* 
+ *----------------------------------------------------------------------
+ *
+ * htonl --
+ *
+ *	Convert an integer in host byte order to an integer in 
+ *	net byte order.
+ *
+ * Results:
+ *	The integer in net byte order.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+unsigned long 
+htonl(longInt)
+	unsigned long longInt;	/* 32bit integer in host byte order. */
+{
+#if BYTE_ORDER == LITTLE_ENDIAN
+    union {
+	unsigned long l;
+	unsigned char  c[4];
+    } in, out;
+
+    in.l = longInt;
+    out.c[0] = in.c[3];
+    out.c[1] = in.c[2];
+    out.c[2] = in.c[1];
+    out.c[3] = in.c[0];
+    return out.l;
+#else
+    return longInt;
+#endif
+}
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d20 2
+a21 3
+static char rcsid[] = "$Header: swp.c,v 2.0 87/08/11 09:34:20 brent Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+d45 1
+a45 1
+	unsigned short shortInt; 	/* A short int in network byte order. */
+d48 5
+a52 4
+	union swab {
+		unsigned short s;
+		unsigned char  c[2];
+	} in, out;
+d54 6
+a59 4
+	in.s = shortInt;
+#if BYTE_ORDER == LITTLE_ENDIAN
+	out.c[0] = in.c[1];
+	out.c[1] = in.c[0];
+a61 1
+     return (out.s);
+d83 1
+a83 1
+	unsigned long longInt;	/* 32bit integer in network byte order. */
+d85 5
+a89 5
+
+	union {
+		unsigned long l;
+		unsigned char  c[4];
+	} in, out;
+d91 8
+a98 6
+	in.l = longInt;
+#if BYTE_ORDER == LITTLE_ENDIAN
+	out.c[0] = in.c[3];
+	out.c[1] = in.c[2];
+	out.c[2] = in.c[1];
+	out.c[3] = in.c[0];
+a99 2
+
+     return (out.l);
+d123 5
+a127 5
+
+	union swab {
+		unsigned short s;
+		unsigned char  c[2];
+	} in, out;
+d129 6
+a134 4
+	in.s = shortInt;
+#if BYTE_ORDER == LITTLE_ENDIAN
+	out.c[0] = in.c[1];
+	out.c[1] = in.c[0];
+a135 1
+     return (out.s);
+d159 5
+d165 8
+a172 11
+	union {
+		unsigned long l;
+		unsigned char  c[4];
+	} in, out;
+
+	in.l = longInt;
+#if BYTE_ORDER == LITTLE_ENDIAN
+	out.c[0] = in.c[3];
+	out.c[1] = in.c[2];
+	out.c[2] = in.c[1];
+	out.c[3] = in.c[0];
+a173 2
+
+     return (out.l);
+@

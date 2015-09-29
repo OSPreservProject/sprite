@@ -1,0 +1,61 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  srv030:1.1 srv027:1.1 srv026:1.1 srv024:1.1 srv021:1.1 srv018:1.1 srv014:1.1 srv010:1.1 srv008:1.1 srv007:1.1 srv006:1.1 srv004:1.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     92.03.23.15.13.35;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Test program for ioctl's on the console.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/* 
+ * Short test program to verify that cross-host ioctl's work on the 
+ * console. 
+ */
+
+#include <stdio.h>
+#include <sys/file.h>
+#include <sgtty.h>
+
+main(argc, argv)
+    int argc;
+    char *argv[];
+{
+    int dev;			/* device to get attributes for */
+    struct sgttyb info;		/* attributes */
+
+    if (argc == 1) {
+	dev = fileno(stdout);
+    } else {
+	dev = open(argv[1], O_RDONLY, 0);
+	if (dev < 0) {
+	    perror(argv[1]);
+	    exit(1);
+	}
+    }
+
+    if (gtty(dev, &info) < 0) {
+	perror("can't get device attributes");
+	exit(1);
+    }
+
+    printf("input speed: %d, erase: 0x%x, kill: 0x%x\n",
+	   info.sg_ispeed, info.sg_erase, info.sg_kill);
+    printf("flags: 0%o\n", info.sg_flags);
+}
+@

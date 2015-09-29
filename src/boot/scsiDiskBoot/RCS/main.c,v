@@ -1,0 +1,300 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  ;
+locks    mendel:1.6; strict;
+comment  @ * @;
+
+
+1.6
+date     89.01.06.08.12.02;  author brent;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     87.05.11.11.06.57;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     86.07.24.11.25.46;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     86.07.23.13.33.11;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     86.07.21.09.31.17;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.07.16.13.23.46;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@main boot program
+@
+
+
+1.6
+log
+@Mon_Printf => Mach_MonPrintf
+@
+text
+@/* 
+ * main.c --
+ *
+ *	The main program for booting.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: main.c,v 1.5 87/05/11 11:06:57 brent Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include "sprite.h"
+#include "machMon.h"
+#include "fs.h"
+
+void Exit();
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *      This gets arguments from the PROM, calls other routines to open
+ *      and load the program to boot, and then transfers execution to that
+ *      new program.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+main()
+{
+    ReturnStatus status;
+    register MachMonBootParam *paramPtr;/* Ref to boot params supplied
+					 * by the PROM montor */
+    register int index;			/* Loop index */
+    register int entry;			/* Entry point of boot program */
+    FsHandle *handlePtr;		/* Handle for boot program file */
+
+    /*
+     * The Sun prom collects the boot command line arguments and
+     * puts makes them available throught the rom vector.
+     */
+    paramPtr = *romVectorPtr->bootParam;
+#ifndef NO_PRINTF
+    for (index=0 ; index < 8; index ++) {
+	if (paramPtr->argPtr[index] != (char *)0) {
+	    Mach_MonPrintf("Arg %d: %s\n", index, paramPtr->argPtr[index]);
+	} else {
+	    break;
+	}
+    }
+    Mach_MonPrintf("Device %s\n", paramPtr->devName);
+    Mach_MonPrintf("File \"%s\"\n", paramPtr->fileName);
+#endif
+
+    /*
+     * Set up VM so the user context is the same as the kernel context.
+     * This simplifies the mapping routines.
+     */
+    VmSetUserContext();
+
+    /*
+     * Probe the boot device.
+     */
+    Dev_Config();
+
+    /*
+     * Set up for Block I/O to the boot device
+     */
+#ifndef NO_PRINTF
+    Sys_Printf("Boot %s(%d,%d,%d)%s\n", paramPtr->devName,
+		     paramPtr->ctlrNum, paramPtr->unitNum,
+		     paramPtr->partNum, paramPtr->fileName);
+#endif
+    if (paramPtr->devName[0] == 's' &&
+	paramPtr->devName[1] == 'd') {
+	Fs_AttachDisk(paramPtr->ctlrNum, paramPtr->unitNum,
+					 paramPtr->partNum);
+    } else {
+	Mach_MonPrintf("Can't boot \"%s\"\n", paramPtr->devName);
+	goto exit;
+    }
+
+    /*
+     * Open the file to bootstrap.
+     */
+    status = Fs_Open(paramPtr->fileName, FS_READ, 0, &handlePtr);
+    if (status != SUCCESS) {
+	Mach_MonPrintf("Can't open \"%s\", <%x>\n", paramPtr->fileName, status);
+	goto exit;
+    }
+    entry = FileLoad(handlePtr);
+    if (entry != -1) {
+#ifndef NO_PRINTF
+	Mach_MonPrintf("Transfering to %x\n", entry);
+#endif
+	Boot_Transfer(entry);
+    }
+exit:
+    return;
+}
+
+/*
+ * Exit is called by start.s
+ */
+void
+Exit()
+{
+    Mach_MonPrintf("Boot exiting\n");
+    /*
+     * Return to start.s and then the PROM monitor.
+     */
+    return;
+}
+@
+
+
+1.5
+log
+@Complete trimmed down version.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: main.c,v 1.4 86/07/24 11:25:46 brent Exp $ SPRITE (Berkeley)";
+d16 1
+a16 1
+#include "sunMon.h"
+a17 1
+#include "fsInt.h"
+d42 1
+a42 1
+    register Mon_BootParam *paramPtr;	/* Reference to boot parameters supplied
+d56 1
+a56 1
+	    Mon_Printf("Arg %d: %s\n", index, paramPtr->argPtr[index]);
+d61 2
+a62 2
+    Mon_Printf("Device %s\n", paramPtr->devName);
+    Mon_Printf("File \"%s\"\n", paramPtr->fileName);
+d89 1
+a89 1
+	Mon_Printf("Can't boot \"%s\"\n", paramPtr->devName);
+d98 1
+a98 1
+	Mon_Printf("Can't open \"%s\", <%x>\n", paramPtr->fileName, status);
+d104 1
+a104 1
+	Mon_Printf("Transfering to %x\n", entry);
+d118 1
+a118 1
+    Mon_Printf("Boot exiting\n");
+@
+
+
+1.4
+log
+@more trimming
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: main.c,v 1.3 86/07/23 13:33:11 brent Exp $ SPRITE (Berkeley)";
+d85 2
+a86 1
+    if (String_Compare("sd", paramPtr->devName) == 0) {
+d90 1
+a90 1
+	Mon_Printf("Can't boot from \"%s\"\n", paramPtr->devName);
+@
+
+
+1.3
+log
+@cosmetic fixes
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: main.c,v 1.2 86/07/21 09:31:17 brent Exp $ SPRITE (Berkeley)";
+d89 1
+a89 1
+	Mon_Printf("Can't boot from dev \"%s\"\n", paramPtr->devName);
+d103 1
+d105 1
+@
+
+
+1.2
+log
+@First complete versino
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: main.c,v 1.1 86/07/16 13:23:46 brent Exp $ SPRITE (Berkeley)";
+d45 3
+a47 3
+    register int index;
+    register int entry;
+    FsHandle *handlePtr;
+d49 4
+d80 5
+d87 1
+a87 1
+					 paramPtr->partNum, &handlePtr);
+d103 1
+d116 1
+a116 1
+    Mon_Printf("Exit called\n");
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: proto.c,v 1.4 86/03/20 14:00:11 andrew Exp $ SPRITE (Berkeley)";
+d17 2
+a20 1
+void Quit();
+d42 1
+d46 2
+d50 1
+d60 1
+d62 5
+a66 2
+    Quit("Quitting to monitor");
+}
+d68 30
+a97 6
+void
+Quit(msg)
+    char *msg;
+{
+    Mon_Printf("%s\n", msg);
+    Exit();
+d100 3
+@

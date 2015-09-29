@@ -1,0 +1,9 @@
+Files in this directory are shared between timed and timedc.  Timedc
+has links to this directory.
+
+cksum.c files for vax and tahoe are available on monet.
+
+protocols/timed.h exists in 4.3BSD. Here, timed.h is just stored
+in this directory and protocols is a link back to "." so that
+<protocols/timed.h> points to the right file, and there's no need
+to change each C file to be "timed.h" -- though that could be done.

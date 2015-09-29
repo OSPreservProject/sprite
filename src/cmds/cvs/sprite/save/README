@@ -1,0 +1,6 @@
+
+These sources contain support for symbolic links.  I decided that
+modifying cvs was a bad idea so I put the symbolic link support into
+scvs.  This code is here in case I change my mind again.
+
+jhh 10/9/91

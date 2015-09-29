@@ -1,0 +1,313 @@
+head     5.8;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+5.8
+date     91.10.25.11.25.12;  author shirriff;  state Exp;
+branches ;
+next     5.7;
+
+5.7
+date     89.08.25.09.36.58;  author mendel;  state Exp;
+branches ;
+next     5.6;
+
+5.6
+date     89.08.11.11.34.05;  author brent;  state Exp;
+branches ;
+next     5.5;
+
+5.5
+date     89.01.26.11.09.12;  author brent;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     89.01.08.11.00.08;  author brent;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     88.08.20.10.54.33;  author ouster;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     88.01.28.10.40.49;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.09.24.15.33.52;  author brent;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.53.44;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+5.8
+log
+@Added main.h declaration
+@
+text
+@/* 
+ * mainHook.c --
+ *
+ *	Definitions to modify the behavior of the main routine.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/sprite/RCS/mainHook.c,v 5.7 89/08/25 09:36:58 mendel Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+#include "main.h"
+
+/*
+ * Flags to modify main's behavior.   Can be changed without recompiling
+ * by using adb to modify the binary.
+ */
+
+Boolean main_Debug 	= FALSE; /* If TRUE then enter the debugger */
+Boolean main_DoProf 	= FALSE; /* If TRUE then start profiling */
+Boolean main_DoDumpInit	= TRUE; /* If TRUE then initialize dump routines */
+int main_NumRpcServers	= 2;	 /* # of rpc servers to create */
+char *main_AltInit	= NULL;  /* If non-null then contains name of
+				  * alternate init program to use. */
+Boolean main_AllowNMI = FALSE;	 /* TRUE -> allow non-maskable intrrupts */
+
+#ifdef notdef
+/*
+ * Malloc/Free tracing.  This array defines which object sizes will
+ * be traced by malloc and free.  They'll record the caller's PC and
+ * the number of objects it currently has allocated.  The sizes reflect
+ * the 8 byte granularity of the memory allocator, plus the 16 bytes
+ * of overhead on each bin.
+ */
+#include "fs.h"
+#include "fsPdev.h"
+#include "fsDisk.h"
+#include "fsDevice.h"
+#include "fsFile.h"
+Mem_TraceInfo mainMemTraceInfo[] = {
+    { 24, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE)  },
+    { 32, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
+    { 40, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE)  },
+    { 48, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE)  },
+    { 56, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
+    { 64, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
+    { 72, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
+    { 80, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
+    { 88, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
+    { 96, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
+    { 112, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
+    { sizeof(FsFileDescriptor), (MEM_STORE_TRACE) },
+    { 144, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
+    { sizeof(FsDeviceIOHandle), (MEM_STORE_TRACE) },
+    { sizeof(PdevControlIOHandle), (MEM_STORE_TRACE) },
+    { 216, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
+    { sizeof(PdevServerIOHandle), (MEM_STORE_TRACE) },
+    { sizeof(FsRmtFileIOHandle), (MEM_STORE_TRACE) },
+    { sizeof(FsLocalFileIOHandle), (MEM_STORE_TRACE) },
+};
+#endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Main_HookRoutine --
+ *
+ *	A routine called by main() just before the init program
+ *	is started.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Main_HookRoutine()
+{
+#ifdef notdef
+    Mem_SetTraceSizes(sizeof(mainMemTraceInfo) / sizeof(Mem_TraceInfo),
+			mainMemTraceInfo);
+#endif
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Main_InitVars --
+ *
+ *	A routine called by main() before it does anything.  Can only be used
+ *	to initialize variables and nothing else.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Main_InitVars()
+{
+}
+
+@
+
+
+5.7
+log
+@Removed references to bogus types.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sprite/RCS/mainHook.c,v 5.6 89/08/11 11:34:05 brent Exp $ SPRITE (Berkeley)";
+d15 1
+@
+
+
+5.6
+log
+@Updated Mem_Tracing stuff to use sizeof()
+
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /b/sprite/src/kernel/sprite/RCS/mainHook.c,v 5.5 89/01/26 11:09:12 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d29 1
+a37 1
+#include "../fs/fsInt.h"
+d63 1
+a63 1
+
+d85 1
+d88 1
+@
+
+
+5.5
+log
+@Update memory tracing stuff
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /b/sprite/src/kernel/sprite/RCS/mainHook.c,v 5.4 89/01/08 11:00:08 brent Exp $ SPRITE (Berkeley)";
+a14 1
+#include "mem.h"
+d30 5
+a34 6
+ * These memory tracing sizes are based on a granularity of 8 bytes
+ * per bucket in the memory allocator.  This granuarity stems from the
+ * use of a double-word for administrative info that is used so that
+ * allocated objects on the SPUR machine are all 8 byte aligned.
+ * To repeat, these are bucket sizes and reflect the implementation of
+ * the memory allocator.
+d36 6
+d52 10
+a61 2
+    { 136, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
+    { 288, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
+@
+
+
+5.4
+log
+@Added memory tracing.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: mainHook.c,v 5.3 88/08/20 10:54:33 ouster Exp $ SPRITE (Berkeley)";
+d30 8
+a38 1
+    { 20, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE)  },
+d40 10
+a49 5
+    { 28, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE)  },
+    { 36, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE)  },
+    { 44, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
+    { 132, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
+    { 280, (MEM_STORE_TRACE | MEM_DONT_USE_ORIG_SIZE) },
+@
+
+
+5.3
+log
+@Replace main_UseAltInit with main_AltInit.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: mainHook.c,v 5.2 88/01/28 10:40:49 nelson Exp $ SPRITE (Berkeley)";
+d15 1
+d30 10
+d61 2
+@
+
+
+5.2
+log
+@Added call to variable initialization routine.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: mainHook.c,v 5.1 87/09/24 15:33:52 brent Exp $ SPRITE (Berkeley)";
+d25 2
+a26 1
+Boolean main_UseAltInit = FALSE; /* TRUE -> try to use /initSprite.new */
+@
+
+
+5.1
+log
+@*** empty log message ***
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: mainHook.c,v 5.0 87/08/11 10:53:44 sprite Exp $ SPRITE (Berkeley)";
+d50 23
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: mainHook.c,v 1.1 86/12/04 23:53:10 andrew Exp $ SPRITE (Berkeley)";
+d24 1
+a24 1
+int main_NumRpcServers	= 4;	 /* # of rpc servers to create */
+d26 1
+a26 1
+
+@

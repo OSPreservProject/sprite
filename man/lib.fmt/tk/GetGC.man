@@ -1,0 +1,132 @@
+
+
+
+Tk_GetGC              C Library Procedures               Tk_GetGC
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tk_GetGC, Tk_FreeGC - maintain database of read-only  graph-
+     ics contexts
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttkk..hh>>
+
+     GC
+     TTkk__GGeettGGCC(_t_k_w_i_n, _v_a_l_u_e_M_a_s_k, _v_a_l_u_e_P_t_r)
+
+     TTkk__FFrreeeeGGCC((_g_c)
+
+AARRGGUUMMEENNTTSS
+     Tk_Window       _t_k_w_i_n       (in)      Token  for  window  in
+                                           which   the   graphics
+                                           context will be used.
+
+     unsigned long   _v_a_l_u_e_M_a_s_k   (in)      Mask of bits (such  as
+                                           GGCCFFoorreeggrroouunndd        or
+                                           GGCCSSttiippppllee)  indicating
+                                           which     fields    of
+                                           *_v_a_l_u_e_P_t_r are valid.
+
+     XGCValues       *_v_a_l_u_e_P_t_r   (in)      Pointer  to  structure
+                                           describing the desired
+                                           values for the  graph-
+                                           ics context.
+
+     GC              _g_c          (in)      X    identifier    for
+                                           graphics  context that
+                                           is no longer needed.
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     TTkk__GGeettGGCC and TTkk__FFrreeeeGGCC manage a collection of graphics  con-
+     texts  being  used  by an application.  The procedures allow
+     graphics contexts to be shared, thereby avoiding the  server
+     overhead  that  would  be  incurred  if  a  separate GC were
+     created for each use.  TTkk__GGeettGGCC takes  arguments  describing
+     the desired graphics context and returns an X identifier for
+     a GC that fits the description.  The graphics  context  that
+     is  returned  will  have default values in all of the fields
+     not specified explicitly by _v_a_l_u_e_M_a_s_k and _v_a_l_u_e_P_t_r.
+
+     TTkk__GGeettGGCC and TTkk__GGeettGGCCFFrroommDDaattaa maintain a database of all the
+     graphics  contexts  they have created.  Whenever possible, a
+     call to TTkk__GGeettGGCC or TTkk__GGeettGGCCFFrroommDDaattaa will return an existing
+     graphics  context  rather  than  creating  a  new one.  This
+     approach  can  substantially  reduce  server  overhead,   so
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+Tk_GetGC              C Library Procedures               Tk_GetGC
+
+
+
+     TTkk__GGeettGGCC  should generally be used in preference to the Xlib
+     procedure XXCCrreeaatteeGGCC, which creates a new graphics context on
+     each call.
+
+     Since the return values  of  TTkk__GGeettGGCC  are  shared,  callers
+     should  never  modify  the  graphics  contexts  returned  by
+     TTkk__GGeettGGCC.  If a graphics context must  be  modified  dynami-
+     cally,  then  it  should  be  created  by  calling XXCCrreeaatteeGGCC
+     instead of TTkk__GGeettGGCC.
+
+     When a graphics  context  is  no  longer  needed,  TTkk__FFrreeeeGGCC
+     should be called to release it.  There should be exactly one
+     call to TTkk__FFrreeeeGGCC for each call to TTkk__GGeettGGCC.  When a  graph-
+     ics  context  is no longer in use anywhere (i.e. it has been
+     freed as many times as it has been  gotten)  TTkk__FFrreeeeGGCC  will
+     release it to the X server and delete it from the database.
+
+
+KKEEYYWWOORRDDSS
+     graphics context
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     2
+
+
+

@@ -1,0 +1,39 @@
+#! /sprite/cmds/csh -fb
+#
+# This file rdists the entire Sprite file system and is invoked
+# nightly by crontab.
+#
+# $Header: /sprite/admin/RCS/Rdist,v 1.3 92/08/11 12:53:04 jhh Exp $
+
+set path = (/sprite/cmds)
+
+echo -n "Rdist started: "; date
+set distfile=(/sprite/admin/distfile)
+
+# Address to send error messages to
+set admin=jhh
+
+set targets=(kernel include)
+
+# First make a dry run through to make sure the distfile is
+# acceptable.
+rdist -n -f $distfile $targets > /dev/null
+if ($status != 0) then
+    echo "Error in $distfile."
+    echo "Error in $distfile." | Mail -s "distfile problem" $admin
+else
+# The dry run worked.
+# Rdist each target individually to get around a bug that is causing
+# rdist to die.  Maybe.
+    foreach target ($targets)
+        echo "rdist $target"
+        rdist -f $distfile $target | grep -v "updated" | \
+                                     grep -v "Warning: remote mode"
+	if ($status != 0) then
+	    echo "Please check /sprite/admin/Rdist.log." | \
+		    Mail -s "rdist of $target failed" $admin
+	endif
+    end
+endif    
+echo -n "Rdist completed: "; date
+

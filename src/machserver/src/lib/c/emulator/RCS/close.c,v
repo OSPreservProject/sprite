@@ -1,0 +1,94 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  srv030:1.1 srv028:1.1 srv027:1.1 srv026:1.1 srv024:1.1 srv022:1.1 srv021:1.1 srv019:1.1 srv018:1.1 srv016:1.1 srv014:1.1 srv010:1.1 srv008:1.1 srv007:1.1 srv006:1.1 srv005:1.1 srv004:1.1 srv003:1.1 srv002:1.1 srv001:1.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     92.03.13.20.38.59;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@UNIX close call.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/* 
+ * close.c --
+ *
+ *	UNIX close() for the Sprite server.
+ *
+ * Copyright 1992 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.6 92/03/02 15:29:56 bmiller Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <mach.h>
+#include <sprite.h>
+#include <compatInt.h>
+#include <spriteEmuInt.h>
+#include <spriteSrv.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * close --
+ *
+ *	Procedure to map from Unix close system call to Sprite Fs_Close.
+ *
+ * Results:
+ *	UNIX_ERROR is returned upon error, with the actual error code
+ *	stored in errno.  UNIX_SUCCESS is returned upon success.
+ *
+ * Side effects:
+ *	The steamId passed to close is no longer associated with an open 
+ *	file.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+close(streamId)
+    int streamId;		/* identifier for stream to close */
+{
+    ReturnStatus status;	/* result returned by Fs_Close */
+    kern_return_t kernStatus;
+    Boolean sigPending;
+
+    kernStatus = Fs_CloseStub(SpriteEmu_ServerPort(), streamId, &status,
+			      &sigPending);
+    if (kernStatus != KERN_SUCCESS) {
+	status = Utils_MapMachStatus(kernStatus);
+    }
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}
+
+@

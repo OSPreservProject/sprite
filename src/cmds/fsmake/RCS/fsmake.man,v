@@ -1,0 +1,277 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.5
+date     91.05.31.17.04.31;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.07.02.22.15.23;  author jhh;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.08.29.17.03.09;  author jhh;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.07.13.10.45.18;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.03.03.17.08.56;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@man page for fsmake (make a filesystem)
+@
+
+
+1.5
+log
+@Get correct name for NAME section.
+@
+text
+@'\" Copyright 1989 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/admin/fsmake/RCS/fsmake.man,v 1.4 90/07/02 22:15:23 jhh Exp Locker: kupfer $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS FSMAKE cmds
+.BS
+.SH NAME
+fsmake \- Create a file system on a disk partition.
+.SH SYNOPSIS
+.nf
+\fBfsmake -dev \fIdevice\fP -part \fIpartition\fP [\fIoptions\fR]
+.SH OPTIONS
+.IP "\fB\-dev\fI device\fR" 14
+\fIDevice\fP is the root name of a device, i.e. rxy0, rsd1, rsb0
+.IP "\fB\-part\fI partition\fR" 14
+\fIPartition\fP is a letter indicating a partition, i.e. a, b, c, d, e, f, g.
+.IP "\fB\-devDir\fI devDir\fR" 14
+\fIDevDir\fR is an alternate directory in which to find the device file
+named by concatenating \fIdevice\fR and \fIpartition\fR.  The default 
+directory name is ``/dev``.
+.IP "\fB\-initialPart\fI firstPartName\fR" 14
+\fIfirstPartName\fP is the name of the initial partition on the disk
+which contains basic disk geometry information.  The default is partition
+``a''.
+.IP "\fB\-write\fR" 14
+Write the disk.  The default is to
+not write the disk.
+.IP "\fB\-overlap\fR" 14
+Overlap filesystem blocks across track boundaries. The default is to not overlap
+blocks.
+.IP "\fB\-ratio\fR" 14
+Ratio of Kbytes to file descriptors. The default is 4.
+.IP "\fB\-test\fR" 14
+Don't write to the disk. This is the default.
+.IP "\fB\-scsi\fR" 14
+Compute the disk geometry for a SCSI disk. The geometry will be laid out
+to maximize usable storage.
+.IP "\fB\-noscsi\fR" 14
+Compute the disk geometry for a non-SCSI disk. The geometry will be laid out
+to maximize transfer bandwidth.  The file system currently doesn't do 
+anything intelligent when laying out a file, so this option is probably
+not worth anything.
+.IP "\fB\-host\fI hostID\fR" 14
+Sets the host id field in the domain header. The default is to use the local
+host id if the device server is the local host, otherwise use the device
+server's id.
+\fIHostID\fR is either the name or Sprite id of the machine to 
+which the domain will be attached. 
+.IP "\fB\-boot\fI bootSectors\fR" 14
+Number of sectors in the root partition to reserve for the boot program.
+.IP "\fB\-repartition\fR" 14
+This option will change the partitioning of the disk.  
+DO NOT USE IF THE DISK CONTAINS A FILESYSTEM YOU WISH TO KEEP. 
+Use the
+\fB\-partdisktab\fR option to use the partitioning information in
+the disktab file, otherwise use the \fB\-size\fR option to set
+the size of the current partition.
+.IP "\fB\-partdisktab\fR" 14
+Use in conjunction with the \fB\-repartition\fR option to set the
+disk partitioning from the disktab file.
+.IP "\fB\-size\fI percentage\fR" 14
+Use in conjunction with the \fB\-repartition\fR option to specify
+the size of the current partition as a percentage of the total disk
+size. \fIPercentage\fR is an integer from 0-100.
+.IP "\fB\-reconfig\fR" 14
+Reconfigures the basic disk geometry.  
+DO NOT USE IF THE DISK CONTAINS A FILESYSTEM YOU WISH TO KEEP. 
+If the disk is a non-scsi disk then you must also specify
+the \fB\-configdisktab\fR option which causes the disk geometry
+to be read from the disktab file.  If the disk is a scsi disk
+then you may omit the \fB\-configdisktab\fR option.
+\fIFsmake\fR will then invent a configuration that minimizes wasted
+disk space.
+.IP "\fB\-configdisktab\fR" 14
+Use in conjunction with the \fB\-reconfig\fR option to set the
+disk configuration (geometry) from the disktab file.
+.IP "\fB\-disktabName\fI filename\fR" 14
+Specify the disktab file.  The default is \fI/etc/disktab\fR.
+.IP "\fB\-disktype\fI type\fR" 14
+Specify the type of disk.  This \fItype\fR parameter must
+be the type of disk found in the disktab file.  This option
+must be present in order to use the disktab file.
+.IP "\fB\-labeltype\fI type\fR" 14
+Type of label to write on the disk.  The default is to write whatever
+label is appropriate for the machine on which \fBfsmake\fR is run.
+.IP "\fB\-dir\fI directory\fR" 14
+Copy the specified directory into the newly created filesystem.
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBFsmake\fR will create a Sprite filesystem on a partition. 
+It has a large number of options and is intended to be invoked from
+a shell script.
+\fBFsmake\fR's basic function is to create a filesystem out of an
+entire partition by initializing the 
+the file descriptor
+bitmap, data block bitmap and domain header, and creating
+the root and lost+found directories.
+If you desire you can copy a directory tree into the new filesystem
+via the \fB\-dir\fR option.
+The \fB\-dir\fR option is intended to be used under UNIX.
+If you need to copy stuff into the new filesystem under Sprite
+use the \fBupdate\fR command.
+The rest of the options are more complex and probably not used often.
+The disk configuration, such as sectors per track, tracks per cylinder,
+etc, can be set using the \fB\-reconfig\fR option.
+Don't use this option if the disk contains anything you want to keep,
+since it may goof up the size and location of the disk partition.
+If you don't specify the \fB\-configdisktab\fR option then
+\fBfsmake\fR will make up a configuration that minimizes wasted disk
+space.  This only works under Sprite and on SCSI disks.
+.pp
+The \fB\-repartition\fR allows you to change the partitioning of the disk.
+The \fB\-partdisktab\fR will set the partitioning from the disktab file.
+Once again, don't use this option if there is valuable stuff on the disk
+since you may lose it.
+If you don't use the \fB\-partdisktab\fR option then you have to use the
+\fB\-size\fR option to set the size of the current partition as a
+percentage of the total disk size. 
+\fBFsmake\fR will adjust the start of all paritions that "follow"
+the current one on the disk.
+Note that \fBfsmake\fR assumes an ordering on the partitions, ie
+'a' starts at the beginning of the disk, 'g' follows 'a', 'f' follows
+'e' which in turn follows 'd' which in turn follows 'a'. 'c' is the whole
+disk and 'b' is not used. 
+If you want to change the size of a bunch of partitions then run \fBfsmake\fR
+on the patritions in alphabetical order.  That should do the right thing.
+.pp
+The \fB-ratio\fP option allows you
+change the ratio of file system blocks to file descriptors.
+Non-SCSI disks can have their file system blocks overlap track
+boundaries by specifying the \fB-overlap\fP option.  This packs
+more blocks per cylinder.
+.SH Fsmake on UNIX
+.pp
+The \fBfsmake\fR command can be run on a UNIX system to create a 
+Sprite filesystem.
+There are several differences in functionality. 
+First, \fBfsmake\fR cannot make up a configuration for the disk.
+The configuration must be set from the disktab file.
+Second, the \fB\-dir\fR option uses a special mechanism for creating
+Sprite devices.  If \fBfsmake\fR comes across a file with the suffix
+"SPRITE_DEV" it is assumed to be a placeholder for a Sprite device.
+The contents of the file specify the device server, major number and
+minor number.  Lines that are blank or begin with '#' are ignored.
+The file should contain one line with three integers -- the device
+server SpriteID, major number (device type), and minor number (device unit).
+.SH KEYWORDS
+filesystem
+
+@
+
+
+1.4
+log
+@New and improved. Includes functionality from fsinstall
+@
+text
+@d9 1
+a9 1
+'\" $Header: /sprite/src/admin/fsmake/RCS/fsmake.man,v 1.3 89/08/29 17:03:09 jhh Exp $ SPRITE (Berkeley)
+d14 1
+a14 1
+.SH FSMAKE
+@
+
+
+1.3
+log
+@added -host option
+@
+text
+@d9 1
+a9 1
+'\" $Header: /sprite/src/admin/fsmake/RCS/fsmake.man,v 1.2 89/07/13 10:45:18 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+d24 1
+a24 1
+.IP "\fB\-dir\fI devDir\fR" 14
+d27 1
+a27 1
+directory name is ``/dev/``.
+d56 39
+d99 39
+a137 7
+\fBFsmake\fR will create a filesystem on a partition. 
+The root and lost+found directories are created and the file descriptor
+bitmap, data block bitmap and domain header are initialized.
+The file system completely uses up the specified partition,
+so there is no size to specify.  When running in
+test mode the number of file descriptors and data blocks that would
+be made is printed out.  The \fB-ratio\fP option allows you
+d142 14
+a155 3
+\fBFsmake\fR will create a file named ".fscheck.out" in all 'a' and 'c'
+partitions. This file is used by \fBfscheck\fR to store the output of
+checking the root partition on a file server.  
+@
+
+
+1.2
+log
+@creates .fscheck.out
+@
+text
+@d9 1
+a9 1
+'\" $Header: /sprite/src/admin/fsmake/RCS/fsmake.man,v 1.1 89/03/03 17:08:56 jhh Exp $ SPRITE (Berkeley)
+d50 6
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d9 1
+a9 1
+'\" $Header: /sprite/lib/forms/RCS/proto.man,v 1.5 89/01/27 08:36:02 ouster Exp $ SPRITE (Berkeley)
+d42 8
+d54 1
+a54 1
+Fsmake will create a filesystem on a partition. 
+d65 3
+@

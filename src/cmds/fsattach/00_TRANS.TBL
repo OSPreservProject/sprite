@@ -1,0 +1,18 @@
+D DS3100_M                          	ds3100.md
+F EXEC.C;1                          	exec.c
+F FSATTACH.C;1                      	fsattach.c
+F FSATTACH.H;1                      	fsattach.h
+F FSATTACH.MAN;1                    	fsattach.man
+L FSCHECK.;1                        	fscheck	/sprite/src/cmds/fscheck/ds3100.md/fscheck
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+F MISC.C;1                          	misc.c
+F MISC_C.ORI;1                      	misc.c.orig
+F MOUNT.;1                          	mount
+D RCS                               	RCS
+F RSD0A.FSC;1                       	rsd0a.fsc
+F RSD0G.FSC;1                       	rsd0g.fsc
+F RXY0A.FSC;1                       	rxy0a.fsc
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md
+F TAGS.;1                           	tags

@@ -1,0 +1,42 @@
+'\" Copyright 1991 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/admin/diskwarn/RCS/diskwarn.man,v 1.1 91/06/04 21:23:39 kupfer Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS DISKWARN admin
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+diskwarn \- send mail if a disk partition gets low on space
+.SH SYNOPSIS
+\fBdiskwarn\fR \fIdomain minfree user\fR [ \fIuser ...\fR]
+.SH OPTIONS
+.IP \fIdomain\fR 15
+The name of the filesystem domain to check.
+.IP \fIminfree\fR 15
+The minimum acceptable number of free kilobytes.
+.IP \fIuser\fR 15
+The name of a user who should be notified if there is a problem.
+.BE
+
+.SH DESCRIPTION
+.PP
+This program verifies that
+.I domain
+has at least
+.I minfree
+kilobytes of free space.  If it doesn't, or if there is some problem
+checking
+.IR domain ,
+it sends mail to the users listed on the command line to notify them
+of the problem.  This program was designed to be run from
+.BR cron .
+
+.SH KEYWORDS
+disk, mail, free space, utilization

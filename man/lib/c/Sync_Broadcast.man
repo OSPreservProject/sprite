@@ -1,0 +1,28 @@
+' $Header: /sprite/src/lib/c/sync/RCS/Sync_Broadcast.man,v 1.2 90/06/27 11:20:55 shirriff Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS Sync_Broadcast lib 
+.BS
+.SH NAME
+Sync_Broadcast \- awaken all processes waiting on a condition
+.SH SYNOPSIS
+\fB#include <sync.h>\fR
+.sp .5
+\fBSync_Broadcast\fR(\fIconditionPtr\fP)
+.SH ARGUMENTS
+.AS Sync_Condition *conditionPtr
+.AP Sync_Condition *conditionPtr in
+Condition variable for which processes may be awaiting notification.
+.BE
+.SH DESCRIPTION
+.PP
+\fBSync_Broadcast\fR notifies other processes that a condition has been met.
+If no process is awaiting this condition, then the call has no effect.
+If more than one process is waiting, all of
+them will be awakened simultaneously and may execute in any
+order.
+This routine needs to be called with the monitor lock held.
+.SH SEE ALSO
+Sync, Sync_Wait
+.SH KEYWORDS
+synchronization, wait, block, process, monitor, condition variable, 
+wakeup, broadcast

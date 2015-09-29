@@ -1,0 +1,843 @@
+head     9.11;
+branch   ;
+access   ;
+symbols  ds3100:9.10 sun3:9.10 sun4nw:9.8 symm:9.8 spur:9.8 sprited:9.8.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.11
+date     92.12.13.18.21.35;  author mgbaker;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     92.08.10.22.59.04;  author mgbaker;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     92.04.14.17.04.34;  author jhh;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     90.12.03.18.21.10;  author kupfer;  state Exp;
+branches 9.8.1.1;
+next     9.7;
+
+9.7
+date     90.10.19.15.48.49;  author jhh;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.10.09.11.58.26;  author jhh;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.10.02.16.30.04;  author mgbaker;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.09.11.11.35.31;  author mgbaker;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.05.22.15.15.54;  author mgbaker;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.03.22.12.13.46;  author mgbaker;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.03.22.12.10.02;  author mgbaker;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.17.43;  author douglis;  state Stable;
+branches ;
+next     8.3;
+
+8.3
+date     89.08.17.17.29.52;  author jhh;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.06.08.09.41.11;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.06.02.12.57.37;  author mendel;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.34.55;  author douglis;  state Stable;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.29.14.29.19;  author mlgray;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.26.18.27.42;  author mlgray;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.24.45;  author brent;  state Stable;
+branches ;
+next     5.4;
+
+5.4
+date     88.06.22.12.50.55;  author mendel;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     88.06.20.16.19.19;  author mlgray;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     88.06.15.10.35.40;  author brent;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.10.13.10.54.05;  author brent;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.48.25;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.8.1.1
+date     91.10.21.21.42.04;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.11
+log
+@Code for server-driven recovery.
+@
+text
+@/*
+ * rpcPacket.h --
+ *
+ * This defines the RPC packet header format.  This header comes just
+ * after the packet transport header.  It contains information about the
+ * remote procedure call and is followed by parameters and data for the
+ * RPC.
+ *
+ * Copyright (C) 1987 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * This packet format no longer agrees with the old-old sprite-unix
+ * hybrid (header "fsp.h")
+ *
+ * sccsid "Sprite $Header: /sprite/src/kernel/Cvsroot/kernel/rpc/rpcPacket.h,v 9.10 92/08/10 22:59:04 mgbaker Exp $"
+ */
+
+#ifndef _RPCPACKET
+#define _RPCPACKET
+
+#ifdef KERNEL
+#include <rpcTypes.h>
+#else
+#include <kernel/rpcTypes.h>
+#endif /* KERNEL */
+
+/*
+ * The Rpc header.
+ */
+typedef struct RpcHdr {
+    unsigned int	version;	/* This is a combined version number
+					 * and byte-order indicator.  See
+					 * the defines below. */
+    unsigned int	flags;		/* Protocol flags, explained below */
+    int			clientID;	/* Client Sprite host id */
+    int			serverID;	/* Server Sprite host id */
+    int			channel;	/* The client channel number */
+    int			serverHint;	/* Server index hint. The server
+					 * machine updates this on every
+					 * packet it sends to a client.  The
+					 * channel being used for the RPC
+					 * should preserve the value sent
+					 * and return it (in this field) with
+					 * future messages to the server */
+    unsigned int	bootID;		/* Client boot timestamp.  This changes
+					 * each time a host reboots. */
+    unsigned int	ID;		/* ID/sequence number. This ID is the
+					 * same on all packets pertaining
+					 * to the same RPC. This increases
+					 * until the origniating host reboots */
+    unsigned int	delay;		/* Interfragment delay info */
+    unsigned int	numFrags;	/* Number of fragments in packet (<=16).
+					 * If the packet is complete, ie. no
+					 * fragmenting, then this field should
+					 * be ZERO */
+    unsigned int	fragMask;	/* Fragment bitmask ID. The I'th frag
+					 * has the I'th bit of this mask
+					 * set.  If no fragments then this
+					 * field should be ZERO.  On partial
+					 * acknowledgments this contains
+					 * the receiver's summary bitmask */
+    int			command;	/* Rpc command (see rpcCall.h) or
+					 * error code if RPC_ERROR is set */
+    int			paramSize;	/* Size of the parameter area */
+    int			dataSize;	/* Size of the data data area */
+    int			paramOffset;	/* This is the starting offset for the
+					 * block of parameter bytes sent in
+					 * this fragment.  This is zero for
+					 * unfragmented sends and for the first
+					 * fragment of a group */
+    int			dataOffset;	/* Offset for the data area. */
+} RpcHdr;				/* 64 BYTES */
+
+
+/*
+ * Version number / byte-ordering word.
+ *	RPC_NATIVE_VERSION	Version number in native format
+ *	RPC_SWAPPED_VERSION	Version number if originating on a Vax byte
+ *				ordered host and read on a MC680xx host,
+ *				or vice versa.
+ *	To change the version number increment the right-most byte
+ *	in the native version.
+ */
+
+/*
+ *	Version 1:	6-13-88		Original.
+ *	Version 2:	6-19-88		For cleaning up parameters in
+ *					preparation for byte-swapping.
+ *	Version 3:	6-8-89		New FS parameters.  New ethernet
+ *					packet type (not 0x500 !!)
+ */
+#define	RPC_NATIVE_VERSION	0x0f0e0003
+#define RPC_SWAPPED_VERSION	0x03000e0f
+
+/*
+ * These are the version variables actually used in the kernel. You can
+ * change them early in the boot if you want a different version number.
+ */
+
+extern int 	rpc_NativeVersion;
+extern int	rpc_SwappedVersion;
+
+/*
+ * The flags field is used to type packets and for flags that
+ * modify the packet type.
+ *
+ * Packet Types:
+ *	RPC_REQUEST a request message sent by the client to the server.
+ *
+ *	RPC_REPLY a reply message returned to the client from the server.
+ *
+ *	RPC_ACK an explicit acknowledgment message for a request or reply.
+ *	If the RPC_LASTFRAG flag is present then this is a partial
+ *	acknowledgment and the summary bitmask is in the fragMask field.
+ *
+ *	RPC_ECHO a special packet that just is bounced off the server by
+ *	the dispatcher.  A server process is not involved.
+ *
+ *	RPC_NACK a negative acknowledgement from the server saying that it's
+ *	alive, but can't handle the request yet (no server process for it, etc).
+ *
+ * Packet Flags:
+ *	RPC_PLSACK demands an explicit acknowledgment message from the receiver.
+ *
+ *	RPC_LASTFRAG is present on the last fragment of a batch being sent,
+ *	which is not always the last fragment in a message because a partial
+ *	partial re-send may only involve some fragments in the middle
+ *	of the message.  This flag set on partial acknowledgments.
+ *
+ *	RPC_CLOSE only valid on type RPC_ACK messages.  This means the server
+ *	is requesting acknowledgement of its last reply so it can reassign
+ *	the server process to an active client channel.  When combined with
+ *	RPC_SERVER, this means the client has successfully gotten its
+ *	last reply.
+ *
+ *	RPC_ERROR indicates the service routine had an error, in this
+ *	case the command field contains an error code.
+ *
+ *	RPC_NOT_ACTIVE means that the originating host is not fully alive.
+ *	This means the packet is ignored by the recovery module, but still good.
+ *
+ *	RPC_FAST means this rpc packet comes from a server than was rebooted
+ *	with a "fast boot" and therefor no recovery is necessary if we
+ *	thought it was dead.
+ *
+ *	RPC_SERVER_RECOV means that the server is driving crash recovery
+ *	and the clients must wait until it contacts them in order to reopen
+ *	their files.
+ *
+ * Flags only valid in trace records:
+ *	RPC_SERVER the packet is bound for the server side of the rpc system.
+ *
+ *	RPC_LAST_REC the trace record is the oldest trace record in the
+ *	circular buffer.
+ *
+ *	RPC_FLAGS is gross, because it has two non-contiguous flag areas.
+ *	This is because the RPC_TYPE fields are smack in the middle of
+ *	the flags integer, and we ran out of space for regular flags.
+ */
+#define RPC_NO_FLAGS		0x0
+#define RPC_FLAGS		0xff00ff
+#define RPC_PLSACK		0x000001
+#define RPC_LASTFRAG		0x000002
+#define RPC_CLOSE		0x000004
+#define RPC_ERROR		0x000008
+#define RPC_SERVER		0x000010
+#define RPC_LAST_REC		0x000020
+#define RPC_NOT_ACTIVE		0x000040
+#define	RPC_FAST		0x000080
+/* Skip over bits used in RPC_TYPE, below. */
+#define	RPC_SERVER_RECOV	0x010000
+
+#define RPC_TYPE		0x00ff00
+#define RPC_REQUEST		0x000100
+#define RPC_ACK			0x000200
+#define RPC_REPLY		0x000400
+#define RPC_ECHO		0x000800
+#define	RPC_NACK		0x001000
+
+/*
+ * Items related to Fragmenting.
+ *
+ * The maximum size supported by fragmentation is 16K of data plus
+ * 1k of parameters.  This large chunk is broken into fragments.
+ * The maximum size of a datagram is dependent on the transport medium.
+ */
+#define RPC_MAX_NUM_FRAGS	16
+#define RPC_MAX_FRAG_SIZE	1024
+#define RPC_MAX_DATASIZE	(RPC_MAX_NUM_FRAGS * RPC_MAX_FRAG_SIZE)
+#define RPC_MAX_PARAMSIZE	(1 * RPC_MAX_FRAG_SIZE)
+#define RPC_MAX_SIZE		(RPC_MAX_DATASIZE+RPC_MAX_PARAMSIZE)
+
+/*
+ * An array of bitmasks is kept so the dispatcher can quickly determine if
+ * a message is complete.  Indexed by the total number of fragments in the
+ * packet, the array contains a complete bitmask for that many fragments.
+ */
+extern unsigned int rpcCompleteMask[];
+
+/*
+ * Machines have some minimum delay that they can handle between successive
+ * packets before they start to drop them.  The current notion of this delay
+ * for other hosts is kept in rpcDelay.  This machine's currently acceptable
+ * delay is kept in rpcMyDelay, while its max speed at generating packets is
+ * kept in rpcOutputRate.  This information is used to insert, if neccesary,
+ * delays between transmission of fragments.
+ */
+extern short rpcDelay[];		/* Other host's inter-frag delay */
+extern unsigned short rpcMyDelay;	/* This host's inter-frag delay */
+extern unsigned short rpcOutputRate;		/* This machines output rate */
+
+/*
+ * Forward Declarations.
+ */
+extern ReturnStatus RpcOutput _ARGS_((int spriteID, register RpcHdr *rpcHdrPtr, RpcBufferSet *message, RpcBufferSet *fragment, unsigned int dontSendMask, Sync_Semaphore *mutexPtr));
+
+extern void RpcGetMachineDelay _ARGS_((unsigned short *myDelayPtr, unsigned short *outputRatePtr));
+
+#endif /* not _RPCPACKET */
+@
+
+
+9.10
+log
+@Changes for transparent server recovery.
+@
+text
+@d22 1
+a22 1
+ * sccsid "Sprite $Header: /sprite/src/kernel/Cvsroot/kernel/rpc/rpcPacket.h,v 9.9 92/04/14 17:04:34 jhh Exp $"
+d153 4
+d162 4
+d167 19
+a185 17
+#define RPC_NO_FLAGS	0x0
+#define RPC_FLAG	0x00ff
+#define RPC_PLSACK	0x0001
+#define RPC_LASTFRAG	0x0002
+#define RPC_CLOSE	0x0004
+#define RPC_ERROR	0x0008
+#define RPC_SERVER	0x0010
+#define RPC_LAST_REC	0x0020
+#define RPC_NOT_ACTIVE	0x0040
+#define	RPC_FAST	0x0080
+
+#define RPC_TYPE	0xff00
+#define RPC_REQUEST	0x0100
+#define RPC_ACK		0x0200
+#define RPC_REPLY	0x0400
+#define RPC_ECHO	0x0800
+#define	RPC_NACK	0x1000
+@
+
+
+9.9
+log
+@Uses new net definitions.
+Net_IDToRoute interface changed slightly.
+Got rid of bogus "new" rpc format. It was for the UltraNet and it didn't
+make much difference anyway.
+@
+text
+@d22 1
+a22 1
+ * sccsid "Sprite $Header: /sprite/src/kernel/Cvsroot/kernel/rpc/rpcPacket.h,v 9.8 90/12/03 18:21:10 kupfer Exp $"
+d149 4
+d168 1
+@
+
+
+9.8
+log
+@Add comment noting that "command" can contain an error code (instead
+of the RPC command number).
+@
+text
+@d22 1
+a22 1
+ * sccsid "Sprite $Header: /sprite/src/kernel/rpc/RCS/rpcPacket.h,v 9.7 90/10/19 15:48:49 jhh Exp Locker: kupfer $"
+a80 56
+/*
+ * The following is the new format for rpc headers.  It has offsets for the
+ * start of the parameter and data areas, allowing the rpc packet to be
+ * padded.  This is useful if your network interface doesn't do 
+ * scatter/gather and you want to avoid copying the different rpc 
+ * pieces into contiguous memory.  Currently these new rpc headers
+ * are only used on the Ultranet.
+ */
+
+typedef struct RpcNewHdr {
+    unsigned int	version;	/* This is a combined version number
+					 * and byte-order indicator.  See
+					 * the defines below. */
+    unsigned int	flags;		/* Protocol flags, explained below */
+    int			clientID;	/* Client Sprite host id */
+    int			serverID;	/* Server Sprite host id */
+    int			channel;	/* The client channel number */
+    int			serverHint;	/* Server index hint. The server
+					 * machine updates this on every
+					 * packet it sends to a client.  The
+					 * channel being used for the RPC
+					 * should preserve the value sent
+					 * and return it (in this field) with
+					 * future messages to the server */
+    unsigned int	bootID;		/* Client boot timestamp.  This changes
+					 * each time a host reboots. */
+    unsigned int	ID;		/* ID/sequence number. This ID is the
+					 * same on all packets pertaining
+					 * to the same RPC. This increases
+					 * until the origniating host reboots */
+    unsigned int	delay;		/* Interfragment delay info */
+    unsigned int	numFrags;	/* Number of fragments in packet (<=16).
+					 * If the packet is complete, ie. no
+					 * fragmenting, then this field should
+					 * be ZERO */
+    unsigned int	fragMask;	/* Fragment bitmask ID. The I'th frag
+					 * has the I'th bit of this mask
+					 * set.  If no fragments then this
+					 * field should be ZERO.  On partial
+					 * acknowledgments this contains
+					 * the receiver's summary bitmask */
+    int			command;	/* Rpc command (see rpcCall.h) or
+					 * error code if RPC_ERROR is set */
+    int			paramSize;	/* Size of the parameter area */
+    int			dataSize;	/* Size of the data data area */
+    int			paramOffset;	/* This is the starting offset for the
+					 * block of parameter bytes sent in
+					 * this fragment.  This is zero for
+					 * unfragmented sends and for the first
+					 * fragment of a group */
+    int			dataOffset;	/* Offset for the data area. */
+    int			paramStart;	/* Start of param area in bytes from
+					 * start of the RpcHdr. */
+    int			dataStart;	/* Start of data area in bytes from
+					 * start of the RpcHdr. */
+} RpcHdrNew;				/* 72 BYTES */
+a100 2
+#define	RPC_NATIVE_VERSION_NEW	0xfeedface
+#define RPC_SWAPPED_VERSION_NEW	0xcefaedfe
+a108 2
+extern int 	rpc_NativeVersionNew;
+extern int	rpc_SwappedVersionNew;
+@
+
+
+9.8.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d22 1
+a22 1
+ * sccsid "Sprite $Header: /sprite/src/kernel/rpc/RCS/rpcPacket.h,v 9.8 90/12/03 18:21:10 kupfer Exp $"
+@
+
+
+9.7
+log
+@changed the number of fragments back to 16
+@
+text
+@d22 1
+a22 1
+ * sccsid "Sprite $Header: /sprite/src/kernel/rpc/RCS/rpcPacket.h,v 9.6 90/10/09 11:58:26 jhh Exp Locker: jhh $"
+d69 2
+a70 1
+    int			command;	/* Rpc command, see rpcCall.h */
+d122 2
+a123 1
+    int			command;	/* Rpc command, see rpcCall.h */
+@
+
+
+9.6
+log
+@new net module (added RpcHdrNew)
+@
+text
+@d22 1
+a22 1
+ * sccsid "Sprite $Header: /sprite/src/kernel/rpc/RCS/rpcPacket.h,v 9.5 90/10/02 16:30:04 mgbaker Exp Locker: jhh $"
+d237 1
+a237 1
+#define RPC_MAX_NUM_FRAGS	31
+@
+
+
+9.5
+log
+@More prototyping garbage.
+@
+text
+@d22 1
+a22 1
+ * sccsid "Sprite $Header: /sprite/src/kernel/rpc/RCS/rpcPacket.h,v 9.4 90/09/11 11:35:31 mgbaker Exp Locker: mgbaker $"
+d79 56
+d155 2
+d165 2
+d237 1
+a237 1
+#define RPC_MAX_NUM_FRAGS	16
+@
+
+
+9.4
+log
+@Added function prototypes (Mendel checking for mary)
+@
+text
+@d22 1
+a22 1
+ * sccsid "Sprite $Header: /sprite/src/kernel/rpc/RCS/rpcPacket.h,v 9.3 90/05/22 15:15:54 mgbaker Exp Locker: mgbaker $"
+d27 6
+@
+
+
+9.3
+log
+@Fixed documentation bug.
+@
+text
+@d22 1
+a22 1
+ * sccsid "Sprite $Header: /sprite/src/kernel/rpc/RCS/rpcPacket.h,v 9.2 90/03/22 12:13:46 mgbaker Exp Locker: mgbaker $"
+d199 1
+a199 2
+ReturnStatus RpcOutput();
+void RpcTrace();
+d201 1
+a201 1
+void RpcGetMachineDelay();
+@
+
+
+9.2
+log
+@After merge with rpc.mgb.
+@
+text
+@d22 1
+a22 1
+ * sccsid "Sprite $Header: /sprite/src/kernel/rpc/RCS/rpcPacket.h,v 8.3 89/08/17 17:29:52 jhh Exp $"
+d129 5
+a133 3
+ *	RPC_CLOSE only valid on type RPC_ACK messages.  This means the client
+ *	has successfully gotten its last reply and is ending the sequence
+ *	of RPCs with the server.
+@
+
+
+9.1
+log
+@Prepare to merge.
+@
+text
+@d118 3
+d160 1
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d22 1
+a22 1
+ * sccsid "Sprite $Header: /sprite/src/kernel/rpc/RCS/rpcPacket.h,v 8.3 89/08/17 17:29:52 jhh Exp Locker: douglis $"
+@
+
+
+8.3
+log
+@made version number a variable
+@
+text
+@d22 1
+a22 1
+ * sccsid "Sprite $Header: /sprite/src/kernel/rpc/RCS/rpcPacket.h,v 8.2 89/06/08 09:41:11 brent Exp Locker: jhh $"
+@
+
+
+8.2
+log
+@Incremented version number to go with massive change in FS.
+@
+text
+@d22 1
+a22 1
+ * sccsid "Sprite $Header: /sprite/src/kernel/rpc/RCS/rpcPacket.h,v 8.1 89/06/02 12:57:37 mendel Exp $"
+d93 8
+@
+
+
+8.1
+log
+@Changes for RPC on IP. 
+@
+text
+@d22 1
+a22 1
+ * sccsid "Sprite $Header: /sprite/src/kernel/rpc/RCS/rpcPacket.h,v 8.0 88/11/11 18:34:55 douglis Stable Locker: mendel $"
+d88 2
+d91 2
+a92 2
+#define	RPC_NATIVE_VERSION	0x0f0e0002
+#define RPC_SWAPPED_VERSION	0x02000e0f
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d22 1
+a22 1
+ * sccsid "Sprite $Header: /sprite/src/kernel/rpc/RCS/rpcPacket.h,v 6.2 88/08/29 14:29:19 mlgray Exp Locker: douglis $"
+a160 5
+/*
+ * The following define is for ethernet.  The ethernet limit lets us
+ * transmit 1K of data plus header information.
+ */
+#define RPC_MAX_PACKET_SIZE	NET_ETHER_MAX_BYTES
+@
+
+
+6.2
+log
+@lint
+@
+text
+@d22 1
+a22 1
+ * sccsid "Sprite $Header: rpcPacket.h,v 6.1 88/08/26 18:27:42 mlgray Exp $"
+@
+
+
+6.1
+log
+@Fixed some lint errors.
+@
+text
+@d22 1
+a22 1
+ * sccsid "Sprite $Header: rpcPacket.h,v 6.0 88/08/11 12:24:45 brent Stable $"
+d182 2
+a183 2
+extern short rpcMyDelay;		/* This host's inter-frag delay */
+extern short rpcOutputRate;		/* This machines output rate */
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d22 1
+a22 1
+ * sccsid "Sprite $Header: rpcPacket.h,v 5.4 88/06/22 12:50:55 mendel Exp $"
+d193 1
+a193 1
+#endif not _RPCPACKET
+@
+
+
+5.4
+log
+@Added definition of routine for machine independent delay initialization.
+@
+text
+@d22 1
+a22 1
+ * sccsid "Sprite $Header: rpcPacket.h,v 5.3 88/06/20 16:19:19 mlgray Exp $"
+@
+
+
+5.3
+log
+@Changed version number for clean-up of parameters in preparation for
+byte-swapping.
+@
+text
+@d22 1
+a22 1
+ * sccsid "Sprite $Header: rpcPacket.h,v 5.2 88/06/15 10:35:40 brent Exp $"
+d190 2
+@
+
+
+5.2
+log
+@Changed rpc packet format to contain all ints (no shorts)
+and a version number we also use to check byte ordering.
+@
+text
+@d22 1
+a22 1
+ * sccsid "Sprite $Header: rpcPacket.h,v 5.1 87/10/13 10:54:05 brent Exp $"
+d83 8
+a90 2
+#define	RPC_NATIVE_VERSION	0x0f0e0001
+#define RPC_SWAPPED_VERSION	0x01000e0f
+@
+
+
+5.1
+log
+@Added a "not active" bit to the RPC header.
+@
+text
+@d9 1
+a9 1
+ * Copyright (C) 1985 Regents of the University of California
+d11 7
+d19 2
+a20 2
+ * CHANGES TO THIS FILE NEED TO MIRROR CHANGES MADE TO THE UNIX 
+ * HEADER FILE "fsp.h" 
+d22 1
+a22 1
+ * sccsid "Sprite $Header: rpcPacket.h,v 5.0 87/08/11 10:48:25 sprite Exp $"
+d32 4
+a35 2
+    unsigned short	flags;		/* Protocol flags, explained below */
+    unsigned short	delay;		/* Interfragment delay info */
+d38 2
+a39 2
+    short		channel;	/* The client channel number */
+    short		serverHint;	/* Server index hint. The server
+d46 2
+d50 4
+a53 8
+					 * to the same RPC. For a given
+					 * channel number increases
+					 * increase from one transaction
+					 * to the next */
+    unsigned short	transport;	/* Low-er level transport protocol ID.
+					 * This should GO AWAY but the unix
+					 * file server still depends on it */
+    unsigned short	numFrags;	/* Number of fragments in packet (<=16).
+d57 1
+a57 1
+    unsigned short	fragMask;	/* Fragment bitmask ID. The I'th frag
+d64 3
+a66 4
+    unsigned int	bootID;		/* Client boot timestamp */
+    short		paramSize;	/* Size of the parameter area */
+    short		dataSize;	/* Size of the data data area */
+    short		paramOffset;	/* This is the starting offset for the
+d71 2
+a72 2
+    short		dataOffset;	/* Offset for the data area. */
+} RpcHdr;
+d75 7
+a81 10
+ * Values for the transport field. These are the same as AF_* constants in
+ * the Unix kernel.  This field types the packet delivery header that
+ * comes just before the RPC header.  THIS SHOULD GO AWAY but it requires
+ * re-working the UNIX implementation of RPC.
+ *
+ *  PROTO_INET		(same as Unix AF_INET)
+ *			This indicates that IP is the transport level protocol.
+ *  PROTO_ETHER		(same as Unix AF_ETHER)
+ *			This indicates that raw ethernet packets are
+ *			used to transport packets.
+d83 2
+a84 2
+#define PROTO_INET	2
+#define PROTO_ETHER	12
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d15 1
+a15 1
+ * sccsid "Sprite $Header: rpcPacket.h,v 3.2 86/12/09 10:40:14 brent Exp $"
+d87 1
+a87 1
+ *	Packet Types:
+d99 1
+a99 1
+ *	Packet Flags:
+d114 4
+a117 1
+ *	Flags only valid in trace records:
+d131 1
+@

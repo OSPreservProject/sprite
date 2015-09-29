@@ -1,0 +1,34 @@
+pdevtest 
+C: Idle ticks 0/117093 =   0.00% Idle, Context Sw. 2016 inv 3 full 2016, Elapsed time 7.110
+Cache blocks max 2670 min 256 number 580/580 free 2/1 limit 2670
+Bytes read 0+0 remote 0 disk 0+0
+Bytes written 1500+0 remote 0 disk 0+0	traffic ratio %0
+Dev bytes read 47 written 0
+Zero Fills read 0 write1 0 write2 1 frag 0
+Appends 0 Overwrites 0 Failed Reads 0
+Cache reads 0 hits: dirty 0 clean 0 other 0
+Cache writes 1 hits 0 misses 0 thru 0	traffic ratio %0
+Write thru 0 data 0 indirect 0 desc 0 dir 0
+Cache blocks created 0, alloc from free 0 part 1 lru 0
+Handles 199 created 0 installed 0 hits 0 old 0 version 0 flush 0
+	fetched 0 hits 0 released 10 locks 0/15 wait 0
+Segments fetched 0 hits 0
+Lookup relative 0 absolute 0 redirect 0 found 0 loops 0 timeouts 0 stale 0
+Kernel VM Pages: 194 (Code+Data=176 Stacks=18)
+User VM Pages:   1045 (Free=566 Dirty=0 Res=3 Alloc-list=476)
+Modified pages: Total=48 %Tot-dirty=4.61 %Inuse-dirty=10.08
+FS Pages: Current=290 Max=290 Min=0
+Faults:        4 (Zero=4 FS=0 Swap=0 Quick=0 Coll=0)
+               4 (Code=0 Heap=1 Stack=3)
+Mod page stats:  Pot-mod=0 Not-mod=0 Not-hard-mod=0
+COW: Heap (0/0)=0% Stk (0/0)=0% Tot (0/0)=0%
+     Quick (0/0)=0%
+COR: Heap (0/0)=0% Stk (0/0)=0% Tot (0/0)=0%
+COR-mod: Heap(0/0)=0% Stk (0/0)=0% Tot (0/0)=0%
+Swap pages copied: 0
+Vm allocs: 4 (Free=4 From-FS=0 From-alloc-list=0)
+VM-FS stats: Asked=0 Free-pages=0 Allocs=0 Frees=0
+Alloc-list searches: 0 (Free=0 In-use=0)
+Extra-searches: 0 (Lock=0 Ref=0 Dirty=0)
+Pages written 0
+Contexts stolen 0 pmegs stolen 0

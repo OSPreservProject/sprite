@@ -1,0 +1,251 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.4
+date     88.11.13.12.02.47;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.11.01.18.27.26;  author mlgray;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.02.21.15.52.47;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     87.08.13.14.05.40;  author andrew;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@initial sprite version
+@
+
+
+1.4
+log
+@Added exit(0)
+@
+text
+@/* 
+ * mkversion.c --
+ *
+ *	Output a string to be used as "version.h" describing the current
+ *	working directory and date/time.
+ *
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /a/newcmds/mkversion/RCS/mkversion.c,v 1.3 88/11/01 18:27:26 mlgray Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "stdio.h"
+#include "sys/param.h"
+#include "sys/time.h"
+#include "time.h"
+#include "option.h"
+
+int printDir = 0;
+int printDate = 1;
+char *prog = NULL;
+
+Option optionArray[] = {
+    {OPT_TRUE, "d",  (char *) &printDir,
+	"Print the current working directory (TRUE)"},
+    {OPT_FALSE, "t",  (char *) &printDate,
+	"Don't print the date/time-stamp (FALSE)"},
+    {OPT_STRING, "p",  (char *) &prog,
+	"Output program name STRING (following the directory, if applicable)"},
+};
+int numOptions = sizeof(optionArray) / sizeof(Option);
+
+main(argc, argv)
+    int		argc;
+    char	*argv[];
+{
+    struct	timeval	curTime;
+    struct	timezone	local;
+    char 	pathName[MAXPATHLEN];
+
+    (void) Opt_Parse(argc, argv, optionArray, numOptions, OPT_ALLOW_CLUSTERING);
+
+    printf("#define VERSION \"");
+    
+    if (printDir) {
+	if (getwd(pathName) == NULL) {
+	    fprintf(stderr, "Error in getwd: '%s'\n", pathName);
+	} else {
+	    printf("%s", pathName);
+	}
+    }
+    if (prog) {
+	if (printDir) {
+	    printf("/");
+	}
+	printf("%s", prog);
+    }
+    if (printDir || prog) {
+	printf(" ");
+    }
+    if (printDate) {
+	char *date;
+	int numDateChars = 1;
+	extern char *asctime();
+
+	gettimeofday(&curTime, &local);
+	date = asctime(localtime(&curTime.tv_sec));
+	/*
+	 *  ctime format is ugly:
+	 *  "Sat Aug 10 10:30:01 1987\n\0"
+	 *   012345678901234567890123 4 5
+	 *
+	 * Make it look like Time_ToAscii by picking substrings.
+	 * Get rid of the leading space in the date by checking for ' '
+	 * and printing 1 or 2 chars, starting at the first non-blank.
+	 */
+
+	if (date[8] != ' ') {
+	    numDateChars++;
+	}
+	printf("(%.*s %.3s %.2s %.8s)", numDateChars,
+		 &date[10-numDateChars], &date[4], &date[22], &date[11]);
+    }
+    printf("\"\n");
+    exit(0);
+}
+@
+
+
+1.3
+log
+@Ported to new C library.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/cmds/mkversion/RCS/mkversion.c,v 1.2 88/02/21 15:52:47 douglis Exp Locker: mlgray $ SPRITE (Berkeley)";
+d87 1
+@
+
+
+1.2
+log
+@Changed format of date string.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: mkversion.c,v 1.1 87/08/13 14:05:40 andrew Exp $ SPRITE (Berkeley)";
+d15 3
+a17 1
+#include "sprite.h"
+a18 2
+#include "io.h"
+#include "fs.h"
+d21 2
+a22 2
+Boolean printDir = FALSE;
+Boolean printDate = TRUE;
+d26 1
+a26 1
+    {OPT_TRUE, 'd', (Address) &printDir,
+d28 1
+a28 1
+    {OPT_FALSE, 't', (Address) &printDate,
+d30 1
+a30 1
+    {OPT_STRING, 'p', (Address) &prog,
+a34 2
+extern char *Fs_GetCwd();
+
+d39 3
+a41 4
+    Time	curTime;
+    int		localOffset;
+    char	date[TIME_CVT_BUF_SIZE];
+    char pathName[FS_MAX_PATH_NAME_LENGTH];
+d43 1
+a43 1
+    (void) Opt_Parse(&argc, argv, numOptions, optionArray);
+d45 1
+a45 1
+    Io_Print("#define VERSION \"");
+d48 2
+a49 2
+	if (Fs_GetCwd(pathName) == NULL) {
+	    Io_PrintStream(io_StdErr, "Error in Fs_GetCwd: '%s'\n", pathName);
+d51 1
+a51 1
+	    Io_Print("%s", pathName);
+d56 1
+a56 1
+	    Io_Print("/");
+d58 1
+a58 1
+	Io_Print("%s", prog);
+d61 1
+a61 1
+	Io_Print(" ");
+d64 3
+a66 1
+	Sys_GetTimeOfDay(&curTime, &localOffset, NULL);
+d68 2
+a70 19
+	 * Sprite doesn't yet have a localtime function.  Since sprite
+	 * routines are going to converge to unix names anyway,
+	 * let's just call asctime(localtime) for now.  Grumble.
+	 */
+#ifdef NO_UNIX
+	Time_ToAscii(curTime.seconds + (60 * (localOffset+60)), FALSE, date);
+	/*
+	 *  "Sat, 10 Aug 87 10:30:01\0
+	 *   01234567890123456789012 3
+	 */
+	Io_Print("(%s)", &date[5]);
+#else NO_UNIX
+	{
+	    char *date;
+	    int numDateChars = 1;
+	    extern char *asctime();
+
+	    date = asctime(localtime(&curTime.seconds));
+	/*
+d80 2
+a81 5
+	    if (date[8] != ' ') {
+		numDateChars++;
+	    }
+	    Io_Print("(%.*s %.3s %.2s %.8s)", numDateChars,
+		     &date[10-numDateChars], &date[4], &date[22], &date[11]);
+d83 2
+a84 1
+#endif NO_UNIX
+d86 1
+a86 1
+    Io_Print("\"\n");
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: mkversion.c,v 1.1 87/02/11 11:50:08 douglis Exp $ SPRITE (Berkeley)";
+d68 7
+d81 24
+@

@@ -1,0 +1,55 @@
+%
+%  (c) 1986 John Coker
+%  University of California, Berkeley
+%
+%  pspicture.latex - example LaTeX document with a PostScript picture
+%
+\documentstyle[12pt]{article}
+
+\def\pspicture#1#2{\indent\vskip#2\special{#1}}
+
+\begin{document}
+\def\\{\char92}
+
+\def\PostScript{P{\small OST}S{\small CRIPT}}
+
+This is a demonstration of a {\PostScript} picture inside \LaTeX.  We've
+done all this neatly with a simple {\LaTeX} macro that imbeds a
+{\tt \\special} command containing the name of a {\PostScript}
+file that is to be used as the picture itself.  Of course, this
+depends on the printer {\tt dvi} driver knowing that arguments to
+{\tt \\special}s are names of {\PostScript} files.
+
+And now, of course, it's time for an example.
+The picture of the tank shown in Figure~1 was set into this text with the 
+simple set of commands:
+
+\begin{verbatim}
+\begin{figure}
+\pspicture{tank.ps}{2.5in}
+\caption{A PostScript Picture}
+\end{figure}
+\end{verbatim}
+
+\begin{figure}
+\pspicture{tank.ps}{2.5in}
+\caption{A PostScript Picture}
+\end{figure}
+
+Here is text immediately following the picture.
+These macros depend on the user correctly specifying the picture
+height.
+There is no way for {\LaTeX} and {\PostScript} to
+interact so that {\LaTeX} could automatically know the height
+of a {\PostScript} picture.
+
+\medskip
+\begin{tabbing}
+\hspace{2in}\=John Coker\\
+\nobreak
+\>August 1, 1986\\
+\end{tabbing}
+
+
+\end{document}
+

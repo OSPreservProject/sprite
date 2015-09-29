@@ -1,0 +1,107 @@
+.TH DVI2PS 1L
+.SH NAME
+dvi2ps  \- convert a DVI file to PostScript
+.SH SYNOPSIS
+dvi2ps [ -p ] [ -s ] [ -r ] [ -a pxldir ]  [-f n]  [-t n]  [-m n] dvifile[.dvi]
+.SH DESCRIPTION
+This program converts a DVI file to PostScript, and writes the result
+to standard output.  The result requires a small amount of PostScript
+source to precede it to the printer, before it can be successfully printed.
+.SH ARGUMENTS
+.TP 12
+.B -p
+\- \fIdo not preload font information.\fR
+Occasionally there may be insufficent memory to hold the
+information about all of the fonts in the system.  Portions
+of the document may be converted by including the -p option
+on the command line.  This will prevent the preloading of
+all fonts into the system and instead use demand loading of
+the font tables. 
+.TP 12
+.B -s
+\- \fIturn on printing of statistics.\fR
+Some versions of dvi2ps will optionally print statistics about
+font usage and some other information that is generally only 
+interesting to developers.  On these systems, -s turns on
+the statistics printing.
+.TP 12
+.B -r
+\- \fIstack pages in reverse order.\fR
+Normally, the DVI pages are processed in reverse order, with the
+result that they are stacked in the correct order in the output
+tray.  This option reverses that.
+.TP 12
+\fB-a \fIpxldir\fR
+\- \fIspecify different area for PXL files.\fR
+Specifying ``\fB-a \fIpxldir\fR'' causes directory \fIpxldir\fR'' to be 
+searched for all \fBPXL\fR files, instead of the default directory.
+.TP 12
+\fB-f \fIn\fR
+Specify a starting page number (this is a TeX page number, \count0).
+.TP 12
+\fB-t \fIn\fR
+Specify an ending page number.
+.TP 12
+\fB-m\fR[\fI0h1234\fR]
+Specify a magstep to use to print the document.  This overrides
+whatever might be in the DVI file.
+.TP 12
+\fB-m \fIn\fR
+Specify a magnification to use to print the document.  This should
+probably be one of the magic numbers 1000, 1095, 1200, 1440, 1728,
+but no checking is done.  Note: if your site does not have the
+complete set of 300 dpi fonts, this option might be disabled.
+.SH NOTES
+.PP
+TeX output (.dvi files) can be printed directly to most printers
+using the standard
+.IR lpr(1)
+interface, with the
+.B -d
+option to inform it that you are printing a .dvi file.
+.I Dvi2ps
+is the converter used for PostScript printers internally by
+the line printer daemon, so it (along with the prologue file)
+must be installed on the host which spools for the printer.
+.PP
+Not all fonts are available in the resolution needed to display on the 
+laser printer;  when a missing font is encountered, 
+.I dvi2ps
+will continue to process your dvi file, and and will log a warning message.
+Gaps will appear in the document where the missing characters should have been.
+.PP
+It can take up to 60 seconds for the first page to be output.  After a
+head of steam has been built up, it can roll along at 5-10 seconds
+per page.
+.PP
+PostScript and TranScript are trademarks of Adobe Systems, Inc.
+.SH FILES
+.TP 3i
+*.dvi
+TeX DeVice Independent output file
+.TP 3i
+/usr/local/fonts/pixel
+TeX default font rasters directory
+.TP 3i
+/usr/local/lib/ps/psdvi.pro
+PostScript header for the converted code.
+.SH SEE ALSO
+tex(l) lpr(1)
+.SH BUGS
+Probably too numerous to mention.
+.PP
+There is likely a limit to the size of documents that can be printed (at 
+least, on the Apple LaserWriter).  If you get VMerrors reported when 
+printing, use the `-f' and `-t' options, to select a range of pages.
+The exact limit is unknown, but is probably well in excess of 50 pages
+for ``normal'' documents, decreasing with number of different fonts used,
+size of fonts, etc.
+
+.SH AUTHOR(s)
+Mark Senn wrote the early versions of this program for the
+BBN BitGraph.  Stephan Bechtolsheim, Bob Brown, Richard
+Furuta, James Schaad and Robert Wells improved it.  Norm
+Hutchinson ported the program to the Sun.  Neal Holtz ported
+it to the Apollo, and then to produce PostScript.  Local
+modifications were done by Van Jacobson of Lawerence Berkeley Laboratory.
+

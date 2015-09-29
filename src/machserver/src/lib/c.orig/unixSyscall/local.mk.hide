@@ -1,0 +1,34 @@
+#
+# This file is included by Makefile.  Makefile is generated automatically
+# by mkmf, and this file provides additional local personalization.  The
+# variable SYSMAKEFILE is provdied by Makefile;  it's a system Makefile
+# that must be included to set up various compilation stuff.
+#
+
+#include	<$(SYSMAKEFILE)>
+
+#
+# Special target to remake compatMapCode.c.  This pulls in a bunch of
+# stuff from the Sprite system call library.  Warning:  the order of
+# the targets here is apparently important.  Don't change it, and add
+# only at the end.
+#
+
+STATUSDIR	= /sprite/src/lib/libc/Status
+STATUSFILES	= $(STATUSDIR)/gen.stat $(STATUSDIR)/proc.stat \
+	$(STATUSDIR)/sys.stat $(STATUSDIR)/rpc.stat $(STATUSDIR)/fs.stat \
+	$(STATUSDIR)/vm.stat $(STATUSDIR)/sig.stat $(STATUSDIR)/dev.stat \
+	$(STATUSDIR)/net.stat
+
+compatMapCode.c	: $(STATUSFILES) compatMapCode.c.1 compatMapCode.c.2
+	rm -f $(.TARGET)
+	cat compatMapCode.c.1 > $(.TARGET)
+	mkstat -u $(STATUSFILES) >> $(.TARGET)
+	cat compatMapCode.c.2 >> $(.TARGET)
+
+#
+# Must add to depend targets to make sure compatMapCode.c gets generated
+# before "make depend" is run.
+#
+
+$(TM).md/dependencies.mk	! compatMapCode.c

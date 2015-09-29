@@ -1,0 +1,198 @@
+
+
+
+GRN                       User Commands                       GRN
+
+
+
+NNAAMMEE
+     grn - ditroff preprocessor for gremlin files
+
+SSYYNNOOPPSSIISS
+     ggrrnn [ options ] ... [ _f_i_l_e ] ...
+
+DDEESSCCRRIIPPTTIIOONN
+     _G_r_n is a preprocessor for including _g_r_e_m_l_i_n pictures in
+     _d_i_t_r_o_f_f input.  _G_r_n writes to standard output, processing
+     only input lines between two that start with `.GS' and
+     `.GE'.  Those lines must contain _g_r_n commands (see below).
+     These commands request a gremlin file, and the picture in
+     that file is converted and placed in the ditroff input
+     stream.  The .GS may be followed by a C, L, or R to center,
+     left or right justify the whole gremlin picture (default
+     justification is center).  If no _f_i_l_e is mentioned, the
+     standard input is read.  At the end of the picture, the
+     position on the page is the bottom of the gremlin picture.
+     If the grn entry is ended with `.GF' instead of `.GE', the
+     position is left at the top of the picture.  The following
+     command-line options are understood:
+
+     --PP_d_e_v
+          Prepare output for printer _d_e_v.  The default is varian
+          (or versatec since the two are equivalent).  See ditr-
+          off(1) for acceptable dev's.
+
+     --LL_d_i_r
+          Set the library to directory _d_i_r.  If a gremlin file
+          cannot be found in the current directory, _d_i_r is
+          prepended to the filename for a second try.  The
+          default library directory is /usr/local/gremlib.
+
+GGRRNN CCOOMMMMAANNDDSS
+     Each input line between the `.GS' and `.GE' may have one grn
+     command.  Commands consist of one or two strings separated
+     by white space, the first string being the command and the
+     second its operand.  Commands may be upper or lower case and
+     abbreviated down to one character.
+
+     Commands that affect a picture's environment (those listed
+     before ddeeffaauulltt, below) are only in effect for the current
+     picture: the environment is reinitialized to the defaults at
+     the start of the next picture.  The commands are as follows:
+
+     11 _N  (22, 33, or 44)  Set gremlin's text size number 1 (2, 3,
+          or 4) to _N points.  The default is 12 (16, 24, and 36).
+
+     rroommaann _f_f
+          (iittaalliiccss, bboolldd, or ssppeecciiaall)  Set the roman (italics,
+          bold, or special) font to ditroff's font _f_f (either a
+          name or number).  The default is R (I, B, and S).
+
+
+
+Sprite v1.0                   local                             1
+
+
+
+
+
+
+GRN                       User Commands                       GRN
+
+
+
+     ll _N  Set the stipple font to ditroff's stipple font _f_f (name
+          or number).  The command ssttiippppllee can be substituted,
+          but only abbreviated down as far as `st' to avoid con-
+          fusion with special.  There is NO default for stipples
+          (unless one is set by the default command), and it is
+          illegal to include a gremlin picture with polygons
+          without specifying a stipple font.
+
+     xx _N  Magnify the picture (in addition to any default magnif-
+          ication) by _N, a floating point number > 0.  The com-
+          mand ssccaallee may be substituted, abbreviated down to
+          `sc'.
+
+     nnaarrrrooww _N
+          (mmeeddiiuumm, or tthhiicckk)  Set the thickness of gremlin's nar-
+          row (medium or thick) lines to _N.  The default is 1 (3
+          and 5) pixels.
+
+     ppooiinnttssccaallee <_o_f_f/_o_n>
+          Scale text to match the picture.  Gremlin text is usu-
+          ally printed in the point size specified in 1, 2, 3 or
+          4 regardless of any scaling factors in the picture.
+          Setting ppooiinnttssccaallee will cause the point sizes to scale
+          with the picture (within ditroff's limitations, of
+          course).  An operand of anything but _o_f_f will turn text
+          scaling on.
+
+     ddeeffaauulltt
+          Reset the picture environment defaults to the settings
+          in the current picture.  This is meant to be used as a
+          global parameter setting mechanism at the beginning of
+          the ditroff input file, but can be used at any time to
+          reset the default settings.
+
+     wwiiddtthh _N
+          Forces the picture to be _N inches wide.  This overrides
+          any scaling factors present in the same picture.  wwiiddtthh
+          _0 is ignored.
+
+     hheeiigghhtt _N
+          Forces picture to be _N inches high, overriding other
+          scaling factors.  If both ``width'' and ``height'' are
+          specified the tighter constraint will determine the
+          scale of the picture.  HHeeiigghhtt and wwiiddtthh commands are
+          not saved with a ddeeffaauulltt command.  They will, however,
+          affect point size scaling if that option is set.
+
+     ffiillee _n_a_m_e
+          Get picture from gremlin file _n_a_m_e from the current
+          directory (or in the library directory see the --LL
+          option above).  If two ffiillee commands are given, the
+          second one overrides the first.  If _n_a_m_e doesn't exist,
+
+
+
+Sprite v1.0                   local                             2
+
+
+
+
+
+
+GRN                       User Commands                       GRN
+
+
+
+          an error message is reported and processing continues
+          from the .GE line.
+
+NNOOTTEESS AABBOOUUTT DDIITTRROOFFFF
+     Since _g_r_n is a preprocessor, it doesn't know about current
+     indents, point sizes, margins, number registers, etc.  Con-
+     sequently, no troff input can be placed between the ``.GS''
+     and ``.GE''.  However, gremlin text is now processed by
+     troff, so anything legal in a single line of troff input is
+     legal in a line of gremlin text (barring ``.'' directives at
+     the beginning of a line).
+
+     When using grn along with other preprocessors, it is best to
+     run tbl before grn, pic, and/or ideal to avoid overworking
+     tbl.  Eqn should always be run last.
+
+     A picture is considered an entity, but that doesn't stop
+     troff from trying to break it up if it falls off the end of
+     a page.  Placing the picture between ``keeps'' in either the
+     -ms or -me macros will ensure proper placement.
+
+     The .GS and .GE lines are sent through to ditroff and used
+     in the -ms and -me macros for adjusting the picture.  There
+     are -mg macros available for grn, pic and ideal if you don't
+     use -ms or -me.  Grn uses number registers g1 through g9 and
+     sets register g1 and g2 to the width and height of the grem-
+     lin figure (in device units) before entering the .GS (this
+     is for those who want to rewrite these macros).
+
+FFIILLEESS
+     /usr/lib/font/dev_x_x_x/DESC.out device _x_x_x description file
+
+SSEEEE AALLSSOO
+     gremlin(l), ditroff(1), pic(1), ideal(1)
+
+AAUUTTHHOORR
+     David Slattengren
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                   local                             3
+
+
+

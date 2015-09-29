@@ -1,0 +1,34 @@
+#! /bin/sh
+# Display files that a particular module calls.
+# 
+# Use: caller module
+#
+# Todo: arrange to kill the file if the script is interrupted.
+
+if [ $# != 1 ] ; then
+	echo "Use: callee module"
+	exit 1
+fi
+
+module=$1
+
+tmpFile=/tmp/caller$$
+
+rm -f $tmpFile
+
+moduleList="$module/*.[ch]"
+if [ $module = vm ] ; then
+	moduleList="$moduleList machine/pmap.[ch]"
+fi
+
+grep "#include" $moduleList > $tmpFile
+
+emacs -batch $tmpFile -l /users/kupfer/emacs/caller.el -f save-buffer > /dev/null
+
+sort $tmpFile | uniq
+rm $tmpFile
+
+# Look through the resulting list of .h files.  Do "aid" on likely
+# looking strings (e.g., "thread", "port"), grepping for lines that
+# contain "vm/", "sun3/", or "mach/sun3/".  Run the list through
+# callee.el, get rid of noise, and edit into the .h file list.

@@ -1,0 +1,53 @@
+if (!defined &_IP_ICMP) {
+    eval 'sub _IP_ICMP {1;}';
+    eval 'sub icmp_pptr { &icmp_hun. &ih_pptr;}';
+    eval 'sub icmp_gwaddr { &icmp_hun. &ih_gwaddr;}';
+    eval 'sub icmp_id { &icmp_hun. &ih_idseq. &icd_id;}';
+    eval 'sub icmp_seq { &icmp_hun. &ih_idseq. &icd_seq;}';
+    eval 'sub icmp_void { &icmp_hun. &ih_void;}';
+    eval 'sub icmp_otime { &icmp_dun. &id_ts. &its_otime;}';
+    eval 'sub icmp_rtime { &icmp_dun. &id_ts. &its_rtime;}';
+    eval 'sub icmp_ttime { &icmp_dun. &id_ts. &its_ttime;}';
+    eval 'sub icmp_ip { &icmp_dun. &id_ip. &idi_ip;}';
+    eval 'sub icmp_mask { &icmp_dun. &id_mask;}';
+    eval 'sub icmp_data { &icmp_dun. &id_data;}';
+    eval 'sub ICMP_MINLEN {8;}';
+    eval 'sub ICMP_TSLEN {(8 + 3 * $sizeof{ &n_time});}';
+    eval 'sub ICMP_MASKLEN {12;}';
+    eval 'sub ICMP_ADVLENMIN {(8 + $sizeof{\'struct ip\'} + 8);}';
+    eval 'sub ICMP_ADVLEN {
+        local($p) = @_;
+        eval "(8 + (($p)-> &icmp_ip. &ip_hl << 2) + 8)";
+    }';
+    eval 'sub ICMP_ECHOREPLY {0;}';
+    eval 'sub ICMP_UNREACH {3;}';
+    eval 'sub ICMP_UNREACH_NET {0;}';
+    eval 'sub ICMP_UNREACH_HOST {1;}';
+    eval 'sub ICMP_UNREACH_PROTOCOL {2;}';
+    eval 'sub ICMP_UNREACH_PORT {3;}';
+    eval 'sub ICMP_UNREACH_NEEDFRAG {4;}';
+    eval 'sub ICMP_UNREACH_SRCFAIL {5;}';
+    eval 'sub ICMP_SOURCEQUENCH {4;}';
+    eval 'sub ICMP_REDIRECT {5;}';
+    eval 'sub ICMP_REDIRECT_NET {0;}';
+    eval 'sub ICMP_REDIRECT_HOST {1;}';
+    eval 'sub ICMP_REDIRECT_TOSNET {2;}';
+    eval 'sub ICMP_REDIRECT_TOSHOST {3;}';
+    eval 'sub ICMP_ECHO {8;}';
+    eval 'sub ICMP_TIMXCEED {11;}';
+    eval 'sub ICMP_TIMXCEED_INTRANS {0;}';
+    eval 'sub ICMP_TIMXCEED_REASS {1;}';
+    eval 'sub ICMP_PARAMPROB {12;}';
+    eval 'sub ICMP_TSTAMP {13;}';
+    eval 'sub ICMP_TSTAMPREPLY {14;}';
+    eval 'sub ICMP_IREQ {15;}';
+    eval 'sub ICMP_IREQREPLY {16;}';
+    eval 'sub ICMP_MASKREQ {17;}';
+    eval 'sub ICMP_MASKREPLY {18;}';
+    eval 'sub ICMP_MAXTYPE {18;}';
+    eval 'sub ICMP_INFOTYPE {
+        local($type) = @_;
+        eval "(($type) ==  &ICMP_ECHOREPLY || ($type) ==  &ICMP_ECHO || ($type) ==  &ICMP_TSTAMP || ($type) ==  &ICMP_TSTAMPREPLY || ($type) ==  &ICMP_IREQ || ($type) ==  &ICMP_IREQREPLY || ($type) ==  &ICMP_MASKREQ || ($type) ==  &ICMP_MASKREPLY)";
+    }';
+}
+1;

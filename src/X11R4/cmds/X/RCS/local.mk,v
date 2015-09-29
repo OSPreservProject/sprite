@@ -1,0 +1,69 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    mendel:1.3; strict;
+comment  @@;
+
+
+1.3
+date     90.04.24.10.15.41;  author tve;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.03.23.09.39.46;  author tve;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.02.14.16.05.29;  author tve;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@*** empty log message ***
+@
+text
+@#
+X=/X11/R4
+
+SUBDIRS	= ddx/snf ddx/mi ddx/mfb ddx/cfb dix os/sprite ddx/sprite extensions
+LIBS	+= -lm
+
+# needs fontdir.o in src/cmds/mkfontdir !!!
+
+#include	<$(SYSMAKEFILE)>
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d4 1
+a4 1
+SUBDIRS	= ddx/snf ddx/mi ddx/mfb ddx/cfb dix os/sprite ddx/sprite
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d2 1
+a2 1
+X=/X11R4
+d4 2
+a5 2
+SUBDIRS	= ddx/snf ddx/mi ddx/mfb ddx/cfb ddx/sun dix os/sprite
+LIBS	+= -lm -ldbm
+@

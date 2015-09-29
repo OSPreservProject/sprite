@@ -1,0 +1,1845 @@
+# For handling of signals, see callsSync and callsSig.
+
+# Routines that manipulate Mach tasks or threads need to handle the case where
+# the task or thread has gone away.  If this happens, do a SIGKILL on the
+# process.  We can probably get notified when a task is destroyed, by creating
+# a port and a send-once right, doing a "port notify" on the port and right,
+# then giving the port to the user process.  (Should double-check this with
+# the mach3 experts.)  For the time being, though, we don't have to get
+# notified right away (this is what the BSD single-server does).
+
+# The process state enum now has no affect on scheduling.  It's for
+# instrumentation ("what's this process doing?") and dealing with
+# debugging, migration, and synchronization with the parent.
+
+# Each thread has a Proc_ControlBlock hanging off its context, corresponding to
+# the Proc_ControlBlock that a process has in native Sprite.  When a thread
+# starts doing something for a process, it should set the PCB pointer.  This
+# pointer is used to determine "the current process".
+
+# There are two types of threads: server threads (corresponding to
+# Proc_ServerProcs and Rpc_Servers, Recov_Procs, etc.) and user threads
+# (corresponding to user processes that are running in the (native) kernel).
+# Threads generated in the exception handler are user threads (even though
+# they only run in the kernel).  Threads generated in the memory manager (VM
+# module) are server threads.  The context for a user thread points to the
+# corresponding user process.  The context for a server thread points to a
+# "server process" PCB.
+# (It turns out that this naming scheme is less than ideal.  A better set of
+# names might be "server threads" and "syscall threads", using "client thread"
+# or "client process" to refer to Sprite client processes.
+
+# Initially assume only one thread per task.
+
+AddPCBs				# don't obtain sched_MutexPtr
+DeencapProcState		# not supported initially
+	proc/procMigrate.c
+EncapProcState			# Don't support initially.
+ExitProcessInt			# call new routine to set state.  Try to clean
+				# up some of the ifdefs?
+	proc/procExit.c
+FillPCBInfo			# (copy out pcb info to user-level struct)
+				# keep, though may need some hacks to deal
+				# with fields not supported with Mach.
+	proc/procMisc.c
+FindExitingChild		# call new routine to change process state
+	proc/procExit.c
+InitPCB				# deal with changes to PCB defn.
+PROC_ALL_PROCESSES		# (process mgmt) keep
+	Include/user/proc.h
+	proc/procMigrate.c
+PROC_BAD_AOUT_FORMAT		# keep
+	Include/user/status.h
+	proc/sun3.md/procMach.c
+	proc/procExec.c
+	proc/sun4.md/procMach.c
+	proc/ds3100.md/procMach.c
+	proc/sun4c.md/procMach.c
+PROC_BAD_PSW			# (process mgmt) unused, should eventually
+				# delete.
+	Include/user/proc.h
+PROC_BAD_STACK			# (process mgmt) keep
+	Include/user/proc.h
+	mach/sun3.md/machCode.c
+	mach/sun4.md/machTrap.s
+	mach/sun4.md/machCode.c
+	mach/sun4.md/machAsm.s
+	mach/sun4c.md/machAsm.s
+	mach/sun4c.md/machCode.c
+	mach/sun4c.md/machTrap.s
+	mach/ds5000.md/machCode.c
+	mach/ds3100.md/machCode.c
+	mach/symm.md/machTrap.c
+PROC_BDP_HI			# (symm hardware definition)
+	mach/symm.md/machSGSProc.h
+PROC_BDP_LO			# (symm hardware definition)
+	mach/symm.md/machSGSProc.h
+PROC_BIC			# (symm hardware definition)
+	mach/symm.md/machSGSProc.h
+	mach/symm.md/machArchdep.c
+PROC_BSS_LOAD_ADDR		# (get BSS load addr from exec header) keep.
+	proc/sun3.md/procMach.h
+	proc/sun3.md/procMach.c
+	proc/sun4.md/procMach.c
+	proc/sun4.md/procMach.h
+PROC_CHILD_PROC			# (return value for child of fork()) delete
+				# (child doesn't see return from fork()).
+	mach/ds5000.md/machUNIXSyscall.c
+	mach/ds3100.md/machUNIXSyscall.c
+	proc/procFork.c
+	proc/procStubs.c
+PROC_CMC_0			# (symm hardware definition)
+	mach/symm.md/machSGSProc.h
+PROC_CMC_1			# (symm hardware definition)
+	mach/symm.md/machSGSProc.h
+PROC_CODE_FILE_OFFSET		# (stuff for exec headers) keep.
+	proc/sun3.md/procMach.h
+	proc/sun3.md/procMach.c
+	proc/sun4.md/procMach.c
+	proc/sun4.md/procMach.h
+	proc/ds3100.md/procMach.c
+	proc/ds3100.md/procMach.h
+PROC_CODE_LOAD_ADDR		# (stuff for exec headers) keep.
+	proc/sun3.md/procMach.h
+	proc/sun3.md/procMach.c
+	proc/sun3.md/a.out.h
+	proc/sun4.md/a.out.h
+	proc/sun4.md/procMach.c
+	proc/sun4.md/procMach.h
+	proc/symm.md/procMach.h
+	proc/symm.md/procMach.c
+PROC_CTL			# (symm hardware defn)
+	mach/symm.md/machCode.c
+	mach/symm.md/machSGSProc.h
+	mach/symm.md/machTrap.c
+	mach/symm.md/machArchdep.c
+PROC_CTL1			# (symm hardware defn)
+	mach/symm.md/machSGSProc.h
+PROC_CTL1_MASK			# (symm hardware defn)
+	mach/symm.md/machSGSProc.h
+PROC_CTL1_NO_BURST		# (symm hardware defn)
+	mach/symm.md/machSGSProc.h
+PROC_CTL1_NO_CACHE_2G		# (symm hardware defn)
+	mach/symm.md/machSGSProc.h
+PROC_CTL1_NO_DINVAL		# (symm hardware defn)
+	mach/symm.md/machSGSProc.h
+PROC_CTL1_NO_FRESET		# (symm hardware defn)
+	mach/symm.md/machSGSProc.h
+PROC_CTL1_NO_HIT_D0		# (symm hardware defn)
+	mach/symm.md/machSGSProc.h
+PROC_CTL1_NO_HIT_D1		# (symm hardware defn)
+	mach/symm.md/machSGSProc.h
+PROC_CTL1_NO_HIT_I		# (symm hardware defn)
+	mach/symm.md/machSGSProc.h
+PROC_CTL_LED_OFF		# (symm hardware defn)
+	mach/symm.md/machSGSProc.h
+	mach/symm.md/machArchdep.c
+PROC_CTL_MASK			# (symm hardware defn)
+	mach/symm.md/machSGSProc.h
+PROC_CTL_NO_HOLD		# (symm hardware defn)
+	mach/symm.md/machCode.c
+	mach/symm.md/machSGSProc.h
+	mach/symm.md/machTrap.c
+	mach/symm.md/machArchdep.c
+PROC_CTL_NO_NMI			# (symm hardware defn)
+	mach/symm.md/machSGSProc.h
+	mach/symm.md/machTrap.c
+	mach/symm.md/machArchdep.c
+PROC_CTL_NO_RESET		# (symm hardware defn)
+	mach/symm.md/machCode.c
+	mach/symm.md/machSGSProc.h
+	mach/symm.md/machTrap.c
+	mach/symm.md/machArchdep.c
+PROC_CTL_NO_SSTEP		# (symm hardware defn)
+	mach/symm.md/machCode.c
+	mach/symm.md/machSGSProc.h
+	mach/symm.md/machTrap.c
+	mach/symm.md/machArchdep.c
+PROC_DATA_BSS_ADDR		# (some sort of facade over an exec header)
+				# unused.
+	proc/sun3.md/a.out.h
+	proc/sun4.md/a.out.h
+PROC_DATA_FILE_OFFSET		# (get start of data segment from exec header)
+				# keep.
+	proc/sun3.md/procMach.h
+	proc/sun3.md/procMach.c
+	proc/sun4.md/procMach.c
+	proc/sun4.md/procMach.h
+	proc/ds3100.md/procMach.h
+	proc/sun4c.md/procMach.c
+	proc/sun4c.md/procMach.h
+PROC_DATA_LOAD_ADDR		# (tell where to load data segment, from exec
+				# header) keep.
+	proc/sun3.md/procMach.h
+	proc/sun3.md/procMach.c
+	proc/sun3.md/a.out.h
+	proc/sun4.md/a.out.h
+	proc/sun4.md/procMach.c
+	proc/sun4.md/procMach.h
+	proc/sun4c.md/procMach.c
+	proc/sun4c.md/procMach.h
+PROC_DEAD			# (process state)
+	dbg/sun4.md/dbgMain.c
+	dbg/sun3.md/dbgMain.c
+	proc/procExit.c
+	proc/procTable.c
+	proc/procMisc.c
+	proc/procMigrate.c
+	vm/symm.md/vmSymm.c
+PROC_DEBUGGED			# (attribute flag) keep.
+	Include/user/proc.h
+	proc/procDebug.c
+	proc/procExit.c
+	proc/procMisc.c
+	sig/signals.c
+PROC_DEBUG_ON_EXEC		# (attribute flag) apparently unused; delete?
+	Include/user/proc.h
+	mach/sun3.md/machCode.c
+	mach/ds5000.md/machCode.c
+	mach/ds3100.md/machCode.c
+	mach/symm.md/machTrap.c
+PROC_DEBUG_WAIT			# (attribute flag) keep.
+	Include/user/proc.h
+	proc/procDebug.c
+	proc/procExit.c
+PROC_DONT_MIGRATE		# (attribute flag) keep.
+	Include/user/proc.h
+	mach/ds5000.md/machUNIXSyscall.c
+	mach/ds3100.md/machUNIXSyscall.c
+	proc/procRemote.c
+	proc/procMigrate.c
+	sched/schedule.c
+	sig/signals.c
+PROC_DYING			# (attribute flag) keep.
+	Include/user/proc.h
+	proc/procDebug.c
+	proc/procExit.c
+	proc/procMigrate.c
+PROC_EVICTING			# (attribute flag, for stats) keep.
+	Include/user/proc.h
+	proc/procRemote.c
+	proc/procMigrate.c
+PROC_EXITING			# (process state) keep.
+	sig/signals.c
+PROC_FLT			# (symm hardware definition)
+	mach/symm.md/machSGSProc.h
+	mach/symm.md/machTrap.c
+	mach/symm.md/machArchdep.c
+PROC_FLT_ACC_ERR		# (symm hardware definition)
+	mach/symm.md/machSGSProc.h
+	mach/symm.md/machTrap.c
+	mach/symm.md/machArchdep.c
+PROC_FLT_BDP_HI_PE		# (symm hardware definition)
+	mach/symm.md/machSGSProc.h
+PROC_FLT_BDP_LO_PE		# (symm hardware definition)
+	mach/symm.md/machSGSProc.h
+PROC_FLT_CACHE_B0PE		# (symm hardware definition)
+	mach/symm.md/machSGSProc.h
+PROC_FLT_CACHE_B1PE		# (symm hardware definition)
+	mach/symm.md/machSGSProc.h
+PROC_FLT_CACHE_B2PE		# (symm hardware definition)
+	mach/symm.md/machSGSProc.h
+PROC_FLT_CACHE_B3PE		# (symm hardware definition)
+	mach/symm.md/machSGSProc.h
+PROC_FLT_MASK			# (symm hardware definition)
+	mach/symm.md/machSGSProc.h
+PROC_FLT_SLIC_NMI		# (symm hardware definition)
+	mach/symm.md/machSGSProc.h
+	mach/symm.md/machArchdep.c
+PROC_FOREIGN			# (attribute flag) keep.
+	Include/user/proc.h
+	mach/sun4.md/machCode.c
+	fs/fsNameOps.c
+	fs/fsStubs.c
+	fs/fsAttributes.c
+	fscache/fscacheOps.c
+	fscache/fscacheReadAhead.c
+	fsio/fsioDevice.c
+	fslcl/fslclLookup.c
+	fsrmt/fsrmtFile.c
+	fsrmt/fsrmtIO.c
+	lfs/lfsBlockIO.c
+	ofs/ofsAlloc.c
+	ofs/ofsIndex.c
+	ofs/ofsIo.c
+	ofs/ofsFileDesc.c
+	proc/procDebug.c
+	proc/procExit.c
+	proc/procID.c
+	proc/procExec.c
+	proc/procMisc.c
+	proc/procFork.c
+	proc/procRemote.c
+	proc/procStubs.c
+	proc/procMigrate.c
+	proc/procMigrate.h
+	sched/schedule.c
+	sig/signals.c
+PROC_GET_VALID_PCB		# (check validity of pid and get pcb ptr)
+				# keep. don't bother checking for existence of
+				# task/thread?
+	proc/proc.h
+	proc/procRpc.c
+PROC_HASHBUCKETS		# (number of hash buckets for the event queue)
+				# delete.
+	sync/syncLock.c
+PROC_HIGH_PRIORITY		# (priority level, unused) map to some Mach
+				# priority value, but note that scheduling
+				# algorithm may be different
+	Include/user/proc.h
+PROC_INDEX_MASK			# (mask to get proc table index from pid)
+				# keep.
+	Include/user/proc.h
+	proc/proc.h
+	proc/procMisc.c
+	proc/procRemote.c
+PROC_INVALID_PID		# keep.
+	sig/{signals,sigMigrate}.c
+PROC_KERNEL			# (process attribute flag) keep.
+	Include/user/proc.h
+	main/sun3.md/mainInit.c
+	main/sun4.md/mainInit.c
+	main/ds3100.md/mainInit.c
+	main/symm.md/mainInit.c
+	main/ds5000.md/mainInit.c
+	proc/procExec.c
+	proc/procTable.c
+	proc/procFork.c
+	rpc/rpcDaemon.c
+	sched/schedule.c
+	sig/sigMigrate.c
+	sig/signals.c
+	sys/sysCalls.c
+	vm/vmSeg.c
+	vm/sun3.md/vmSun.c
+	vm/symm.md/vmSymm.c
+	vm/sun4.md/vmSun.c
+	vm/vmSubr.c
+	vm/ds3100.md/vmPmax.c
+	vm/ds5000.md/vm3max.c
+PROC_KILLING			# (process attribute flag; hack for dbx) keep.
+	Include/user/proc.h
+	proc/procDebug.c
+PROC_LIBMAGIC			# (magic number for shared libraries) keep.
+	proc/ds3100.md/procMach.h
+PROC_LOCKED			# (attribute flag) keep.
+	Include/user/proc.h
+	proc/procTable.c
+PROC_LOW_PRIORITY		# (see PROC_HIGH_PRIORITY)
+	Include/user/proc.h
+PROC_MAX_ENVIRON_NAME_LENGTH	# (process mgmt) keep.
+	Include/user/proc.h
+	proc/procExec.c
+	proc/procEnviron.c
+PROC_MAX_ENVIRON_SIZE		# (process mgmt) keep.
+	Include/user/proc.h
+	proc/procExec.c
+	proc/procEnviron.c
+PROC_MAX_ENVIRON_VALUE_LENGTH	# (process mgmt) keep.
+	Include/user/proc.h
+	proc/procExec.c
+	proc/procEnviron.c
+PROC_MAX_INTERPRET_SIZE		# (process mgmt) keep.
+	Include/user/proc.h
+	proc/procExec.c
+PROC_MAX_PRIORITY		# (process mgmt) keep.
+	Include/user/proc.h
+PROC_MAX_TIMER			# keep.
+	Include/user/proc.h
+	proc/procTimer.c
+	proc/procMigrate.c
+PROC_MIGRATED			# (process state) keep.
+	fscache/fscacheOps.c
+	fscache/fscacheReadAhead.c
+	fsio/fsioDevice.c
+	fslcl/fslclLookup.c
+	fsrmt/fsrmtFile.c
+	fsrmt/fsrmtIO.c
+	lfs/lfsBlockIO.c
+	ofs/ofsAlloc.c
+	ofs/ofsIndex.c
+	ofs/ofsIo.c
+	ofs/ofsFileDesc.c
+	proc/procExit.c
+	proc/procID.c
+	proc/procMisc.c
+	proc/procRpc.c
+	proc/procStubs.c
+	proc/procMigrate.c
+	proc/procFamily.c
+	sig/sigMigrate.c
+	sig/signals.c
+	sync/syncLock.c
+	vm/vmSeg.c
+PROC_MIGRATE_VERSION		# keep.
+	proc/sun3.md/migVersion.h
+	proc/sun4.md/migVersion.h
+	proc/ds3100.md/migVersion.h
+	proc/sun4c.md/migVersion.h
+	proc/symm.md/migVersion.h
+	proc/procMigrate.c
+PROC_MIGRATING			# (attribute flag) keep.
+	Include/user/proc.h
+	fscache/fscacheOps.c
+	fscache/fscacheReadAhead.c
+	fslcl/fslclLookup.c
+	fsrmt/fsrmtFile.c
+	ofs/ofsAlloc.c
+	ofs/ofsIndex.c
+	ofs/ofsFileDesc.c
+	proc/procMigrate.c
+	sig/signals.c
+	sig/sigMigrate.c
+	sync/syncLock.c
+PROC_MIGRATION_DONE		# (attribute flag) keep.
+	Include/user/proc.h
+	proc/procRpc.c
+	proc/procRemote.c
+	proc/procMigrate.c
+PROC_MIGRATION_REFUSED		# (kernel return status) keep.
+	mach/sun3.md/machMigrate.c
+	mach/sun4.md/machMigrate.c
+	mach/symm.md/machMigrate.c
+	proc/procRemote.c
+	proc/procMigrate.c
+	prof/profMigrate.c
+	sig/sigMigrate.c
+PROC_MIG_ALLOW_DEFAULT		# (migration control) keep.
+	Include/user/proc.h
+	proc/procMigrate.c
+PROC_MIG_ERROR			# (attribute flag) keep.
+	Include/user/proc.h
+	proc/procRpc.c
+	proc/procMigrate.c
+PROC_MIG_EXPORT_ALL		# (migration control) keep.
+	Include/user/proc.h
+	proc/procMigrate.c
+PROC_MIG_EXPORT_NEVER		# (migration control) keep.
+	Include/user/proc.h
+PROC_MIG_EXPORT_ROOT		# (migration control) keep.
+	Include/user/proc.h
+	proc/procMigrate.c
+PROC_MIG_IMPORT_ALL		# (migration control) keep.
+	Include/user/proc.h
+	proc/procRemote.c
+	sys/sysCalls.c
+PROC_MIG_IMPORT_ALWAYS		# (migration control) keep.
+	Include/user/proc.h
+PROC_MIG_IMPORT_ANYINPUT	# (migration control) keep.
+	Include/user/proc.h
+PROC_MIG_IMPORT_ANYLOAD		# (migration control) keep.
+	Include/user/proc.h
+PROC_MIG_IMPORT_NEVER		# (migration control) keep.
+	proc/procRemote.c
+	Include/user/proc.h
+PROC_MIG_IMPORT_ROOT		# (migration control) keep.
+	proc/procRemote.c
+	Include/user/proc.h
+PROC_MIG_PENDING		# (attribute flag) keep.
+	Include/user/proc.h
+	proc/procExit.c
+	proc/procMigrate.c
+	sig/sigMigrate.c
+PROC_MIN_PRIORITY		# (process mgmt) keep.
+	Include/user/proc.h
+PROC_MY_HOSTID			# (reserved host ID) keep.
+	Include/user/proc.h
+	proc/procMisc.c
+PROC_MY_PID			# (reserved PID ("current process")) keep.
+	Include/user/proc.h
+	mach/ds5000.md/machUNIXSyscall.c
+	fs/fsStreamOps.c
+	proc/procMisc.c
+	proc/procRemote.c
+	proc/procStubs.c
+	proc/procMigrate.c
+	proc/procFamily.c
+	sig/sigStubs.c
+	sig/signals.c
+	sys/sysCalls.c
+PROC_NEW			# (process state) keep.
+	dbg/sun4.md/dbgMain.c
+	dbg/sun3.md/dbgMain.c
+	dbg/sun4c.md/dbgMain.c
+	sig/signals.c
+PROC_NORMAL_PRIORITY		# (process mgmt) keep.
+	Include/user/proc.h
+	proc/procTable.c
+	sched/schedule.c
+PROC_NO_FAMILY			# (process mgmt) keep.
+	Include/user/proc.h
+	proc/procTable.c
+	proc/procFamily.c
+PROC_NO_ID			# ("don't change this ID") keep.
+	Include/user/proc.h
+	mach/ds5000.md/machUNIXSyscall.c
+	mach/ds3100.md/machUNIXSyscall.c
+	proc/procID.c
+	proc/procStubs.c
+PROC_NO_INTR_PRIORITY		# (process mgmt) keep.
+	Include/user/proc.h
+	proc/procMisc.c
+	sched/schedule.c
+	sys/sysCalls.c
+PROC_NO_STACKS			# (status code) eventually delete.
+	mach/sun3.md/machCode.c
+	mach/cleansun3.md/machCode.c
+	mach/sun4.md/machCode.c
+	mach/sun4c.md/machCode.c
+	mach/cleands3100.md/machCode.c
+	mach/ds5000.md/machCode.c
+	mach/ds3100.md/machCode.c
+	mach/sun4nw.md/machCode.c
+	mach/symm.md/machCode.c
+	mach/cleansun4.md/machCode.c
+	mach/cleansun4c.md/machCode.c
+PROC_NO_VM			# (attribute flag) keep.
+	Include/user/proc.h
+	proc/procExit.c
+	proc/procExec.c
+	proc/procRpc.c
+	proc/procRemote.c
+	proc/procMigrate.c
+	vm/sun3.md/vmSun.c
+	vm/sun4.md/vmSun.c
+	vm/vmMigrate.c
+	vm/vmSubr.c
+	vm/ds3100.md/vmPmax.c
+	vm/ds5000.md/vm3max.c
+PROC_NUM_GENERAL_REGS		# (process mgmt, unused) eventually delete.
+	Include/user/proc.h
+PROC_OBJ_MAGIC			# (same as OMAGIC) keep.
+	proc/ds3100.md/procMach.c
+	proc/ds3100.md/procMach.h
+	proc/symm.md/procMach.h
+PROC_ON_DEBUG_LIST		# (attribute flag) keep.
+	Include/user/proc.h
+	proc/procDebug.c
+	proc/procMisc.c
+PROC_PCB_ARG_LENGTH		# (buffer size for argument list) keep.
+	Include/user/proc.h
+	proc/procMisc.c
+PROC_READY			# (process state) keep.
+	fs/fsCommand.c
+	sched/schedule.c
+	sync/syncLock.c
+	sys/sysCalls.c
+PROC_REMOTE_EXEC_PENDING	# (attribute flag) keep.
+	Include/user/proc.h
+	proc/procExec.c
+	proc/procRemote.c
+	proc/procMigrate.c
+PROC_RUNNING			# (process state) eventually delete (requires
+				# source changes to user code).
+	sched/schedule.c
+	sync/syncLock.c
+PROC_SEG_ALIGN			# (4 meg alignment restriction for symm) keep.
+	proc/symm.md/procMach.h
+	proc/symm.md/procMach.c
+PROC_SINGLE_STEP_FLAG		# (attribute flag) keep.
+	Include/user/proc.h
+	mach/sun3.md/machCode.c
+	mach/ds5000.md/machCode.c
+	mach/ds3100.md/machCode.c
+	mach/symm.md/machTrap.c
+	proc/procDebug.c
+PROC_SREV_B1			# (symm hardware definition)
+	mach/symm.md/machSGSProc.h
+PROC_SREV_C0			# (symm hardware definition)
+	mach/symm.md/machSGSProc.h
+PROC_STAT			# (symm hardware definition)
+	mach/symm.md/machSGSProc.h
+	mach/symm.md/machArchdep.c
+PROC_STAT_FATALERR		# (symm hardware definition)
+	mach/symm.md/machSGSProc.h
+PROC_STAT_LED_OFF		# (symm hardware definition)
+	mach/symm.md/machSGSProc.h
+PROC_STAT_MASK			# (symm hardware definition)
+	mach/symm.md/machSGSProc.h
+PROC_STAT_NO_HALT		# (symm hardware definition)
+	mach/symm.md/machSGSProc.h
+PROC_STAT_NO_HOLDA		# (symm hardware definition)
+	mach/symm.md/machSGSProc.h
+	mach/symm.md/machArchdep.c
+PROC_STAT_NO_NMI		# (symm hardware definition)
+	mach/symm.md/machSGSProc.h
+PROC_STAT_NO_RESET		# (symm hardware definition)
+	mach/symm.md/machSGSProc.h
+PROC_STAT_NO_SSTEP		# (symm hardware definition)
+	mach/symm.md/machSGSProc.h
+PROC_STAT_RUNNING		# (symm hardware definition)
+	mach/symm.md/machSGSProc.h
+PROC_SUPER_USER_ID		# (uid for root) keep.
+	Include/user/proc.h
+	proc/procID.c
+	proc/procMisc.c
+	proc/procRemote.c
+	proc/procStubs.c
+	proc/procMigrate.c
+	proc/procFamily.c
+	vm/vmSwapDir.c
+PROC_SUSPENDED			# (process state) keep.
+	sig/signals.c
+PROC_SUSPEND_STATUS		# (exit/wait flag) keep.
+	sig/signals.c
+PROC_TERM_DESTROYED		# (status for Proc_Wait) keep.
+	Include/user/proc.h
+	mach/sun3.md/machCode.c
+	mach/sun4.md/machTrap.s
+	mach/sun4.md/machCode.c
+	mach/sun4.md/machAsm.s
+	mach/ds5000.md/machCode.c
+	mach/ds3100.md/machCode.c
+	mach/symm.md/machTrap.c
+	proc/procExit.c
+	proc/procExec.c
+	proc/procRemote.c
+	proc/procMigrate.c
+	sig/signals.c
+PROC_TERM_DETACHED		# (status for Proc_Wait) keep.
+	Include/user/proc.h
+	proc/procExit.c
+PROC_TERM_EXITED		# (status for Proc_Wait) keep.
+	Include/user/proc.h
+	proc/procExit.c
+PROC_TERM_RESUMED		# (status for Proc_Wait) keep.
+	Include/user/proc.h
+	mach/ds5000.md/machUNIXSyscall.c
+	mach/ds3100.md/machUNIXSyscall.c
+	proc/procDebug.c
+	proc/procExit.c
+	proc/procStubs.c
+PROC_TERM_SIGNALED		# (status for Proc_Wait) keep.
+	Include/user/proc.h
+	mach/ds5000.md/machUNIXSyscall.c
+	mach/ds3100.md/machUNIXSyscall.c
+	proc/procStubs.c
+	sig/signals.c
+PROC_TERM_SUSPENDED		# (status for Proc_Wait)
+	Include/user/proc.h
+	mach/ds5000.md/machUNIXSyscall.c
+	mach/ds3100.md/machUNIXSyscall.c
+	proc/procExit.c
+	proc/procStubs.c
+PROC_TERM_VANISHED		# (new status for Proc_Wait) in case we see
+				# that the task is unexpectedly gone.
+PROC_TIMER_REAL			# (timer number) keep.
+	Include/user/proc.h
+PROC_UID_MISMATCH		# (error code; EPERM) keep.
+	sig/signals.c
+PROC_UNUSED			# (process state) keep.
+	dbg/sun4.md/dbgMain.c
+	dbg/sun3.md/dbgMain.c
+	dbg/sun4c.md/dbgMain.c
+	sched/schedule.c
+PROC_USER			# (attribute flag) keep.
+	Include/user/proc.h
+	mach/sun3.md/machCode.c
+	mach/sun4.md/machCode.c
+	mach/symm.md/machCode.c
+	proc/procExit.c
+	proc/procExec.c
+	proc/procMisc.c
+	proc/procFork.c
+	proc/procRpc.c
+	proc/procStubs.c
+	sched/schedule.c
+	sys/sysCalls.c
+	vm/vmSubr.c
+PROC_VERY_LOW_PRIORITY		# (see PROC_HIGH_PRIORITY)
+	Include/user/proc.h
+	proc/procMisc.c
+PROC_VM_READ_ERROR		# (reason code for PROC_TERM_DESTROYED) keep.
+	Include/user/proc.h
+	vm/vmPage.c
+PROC_VM_WRITE_ERROR		# (see PROC_VM_READ_ERROR)
+	Include/user/proc.h
+PROC_WAITING			# (process state) keep.
+	sched/schedule.c
+	sync/syncLock.c
+PROC_WAIT_BLOCK			# (flag to Proc_Wait) keep.
+	Include/user/proc.h
+	mach/ds5000.md/machUNIXSyscall.c
+	mach/ds3100.md/machUNIXSyscall.c
+	proc/procExit.c
+	proc/procStubs.c
+PROC_WAIT_FOR_SUSPEND		# (flag to Proc_Wait) keep.
+	Include/user/proc.h
+	mach/ds5000.md/machUNIXSyscall.c
+	mach/ds3100.md/machUNIXSyscall.c
+	proc/procExit.c
+	proc/procStubs.c
+ProcChangeTimer			# (set or cancel interval timer for a process)
+				# keep.
+	proc/procInt.h
+	proc/procTimer.c
+	proc/procMigrate.c
+ProcExecHeader			# (a.out header) keep.
+	proc/sun3.md/procMach.h
+	proc/sun3.md/procMach.c
+	proc/sun3.md/a.out.h
+	proc/procInt.h
+	proc/procExec.c
+	proc/sun4.md/a.out.h
+	proc/sun4.md/procMach.c
+	proc/sun4.md/procMach.h
+	proc/ds3100.md/procMach.c
+	proc/ds3100.md/procMach.h
+	proc/sun4c.md/procMach.c
+	proc/sun4c.md/procMach.h
+	proc/symm.md/procMach.h
+	proc/symm.md/procMach.c
+ProcExitProcess			# call new routine to set process state
+ProcFreePCB			# call new routine to set process state
+ProcGetObjInfo			# mostly keep, but needs cleaning up to get
+				# rid of ifdefs and goto's.
+	proc/sun3.md/procMach.c
+	proc/procInt.h
+	proc/procExec.c
+	proc/sun4.md/procMach.c
+	proc/ds3100.md/procMach.c
+	proc/sun4c.md/procMach.c
+	proc/symm.md/procMach.c
+ProcGetUnusedPCB		# call new routine to set state.
+ProcMakeTaskThread		# (new) given a procPtr (locked?), create a
+				# task and thread for it.  
+ProcMigAcceptMigration		# don't set process state.  Call
+				# ProcMakeTaskThread.
+ProcMigContinueProcess		# keep.
+ProcMigReceiveProcess		# (receives encapsulated state of a process)
+				# Set machine state & set up VM mappings (via
+				# deencapsulation).
+				# Initially, make sure isn't called.
+ProcObjInfo			# (machine-independent a.out info) keep.
+	proc/sun3.md/procMach.c
+	proc/procInt.h
+	proc/procExec.c
+	proc/sun4.md/procMach.c
+	proc/ds3100.md/procMach.c
+	proc/sun4c.md/procMach.c
+	proc/symm.md/procMach.c
+ProcRemoteSuspend		# would like to rename (ProcRemoteInform?)
+	proc/procDebug.c
+	proc/procInt.h
+	proc/procMigrate.c
+Proc_ByteCopy			# (copy routine that knows about migration &
+				# how some system calls are RPCs to the home
+				# host) initially panic if is migrated. 
+	fs/fsSysCall.c
+	sys/sysCalls.c
+Proc_CallFuncAbsTime		# keep.
+	proc/proc.h
+	proc/procTimer.c
+	proc/procServer.c
+Proc_CallFunc			# (cheap fork(), for short tasks) keep.
+	dev/devNet.c
+	dev/devTty.c
+	dev/sun3.md/devMouse.c
+	dev/sun3.md/devJaguarHBA.c
+	dev/sun4.md/devJaguarHBA.c
+	dev/sun4.md/devMouse.c
+	fscache/fscacheBlocks.c
+	fscache/fscacheReadAhead.c
+	fsconsist/fsconsistCache.c
+	fsio/fsioDevice.c
+	fsrmt/fsrmtFile.c
+	fsutil/fsutilHandleScavenge.c
+	fsutil/fsutilSync.c
+	lfs/lfsSeg.c
+	lfs/lfsMain.c
+	lfs/lfsCacheBackend.c
+	main/sun3.md/mainInit.c
+	main/sun4.md/mainInit.c
+	main/ds3100.md/mainInit.c
+	main/symm.md/mainInit.c
+	main/ds5000.md/mainInit.c
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+	net/netArp.c
+	ofs/ofsIo.c
+	proc/procExit.c
+	proc/proc.h
+	proc/procRecovery.c
+	proc/procServer.c
+	proc/procMigrate.c
+	recov/recovery.c
+	rpc/rpcServer.c
+	sig/sigMigrate.c
+	sig/signals.c
+	vm/vmPage.c
+	vm/vmTrace.c
+	vm/vmSwapDir.c
+	vm/vmPrefetch.c
+Proc_CallInfo			# keep.
+	dev/devTty.c
+	dev/sun3.md/devMouse.c
+	dev/sun3.md/devJaguarHBA.c
+	dev/sun4.md/devJaguarHBA.c
+	dev/sun4.md/devMouse.c
+	fscache/fscache.h
+	fscache/fscacheReadAhead.c
+	fsconsist/fsconsistCache.c
+	fsio/fsioDevice.c
+	fsrmt/fsrmtFile.c
+	fsutil/fsutil.h
+	fsutil/fsutilHandleScavenge.c
+	fsutil/fsutilRecovery.c
+	fsutil/fsutilSync.c
+	lfs/lfsSeg.c
+	lfs/lfsMain.c
+	lfs/lfsInt.h
+	lfs/lfsCacheBackend.c
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+	net/netArp.c
+	net/netRoute.h
+	ofs/ofs.h
+	ofs/ofsAlloc.c
+	ofs/ofsIo.c
+	proc/procExit.c
+	proc/procInt.h
+	proc/proc.h
+	proc/procTimer.c
+	proc/procTypes.h
+	proc/procRemote.c
+	proc/procServer.c
+	proc/procMigrate.c
+	proc/procServer.h
+	recov/recovery.c
+	recov/recov.h
+	rpc/rpcServer.c
+	sig/sigMigrate.c
+	vm/vm.h
+	vm/vmPage.c
+	vm/vmTrace.h
+	vm/vmTrace.c
+	vm/vmSwapDir.h
+	vm/vmSwapDir.c
+	vm/vmPrefetch.c
+	vm/vmSysCall.c
+Proc_CancelCallFunc		# keep.
+	proc/proc.h
+	proc/procTimer.c
+	proc/procServer.c
+Proc_ComparePIDs		# keep.
+	sig/signals.c
+Proc_ControlBlock		# replace "event" with a condition ptr (so can
+				# tell what the process is waiting on).  Add a
+				# condition variable and a mutex for the
+				# condition variable to keep C Threads happy)
+				# (to replace waiting on the pcb ptr)
+				# (Actually, is this really necessary?  Maybe
+				# just add the resumeCondition for
+				# suspending/resuming the process.)
+				# The CPU usage stuff is (at best) maintained
+				# by the kernel.  Add a task_t and thread_t
+				# for the task/thread executing that process.
+				# Add pointer to per-task info.  Add
+				# "lastSysCall" from Mach_UserState.
+				# New flags: PROC_BEING_SERVED to avoid
+				# potentially conflicting actions being done
+				# by the same process.  (If want to allow
+				# concurrent actions by same process,
+				# substitute a reference count, so that we
+				# don't have to worry about dangling context
+				# pointers in the service threads.)
+	mach/sun3.md/machCode.c
+	mach/sun3.md/machInt.h
+	mach/sun3.md/mach.h
+	mach/sun3.md/machMigrate.c
+	mach/sun4.md/mach.h
+	mach/sun4.md/machCode.c
+	mach/sun4.md/sun4/reg.h
+	mach/sun4.md/machMigrate.c
+	mach/ds5000.md/mach.h
+	mach/ds5000.md/machCode.c
+	mach/ds5000.md/machInt.h
+	mach/ds5000.md/machMigrate.c
+	mach/ds5000.md/machUNIXSyscall.c
+	mach/ds3100.md/mach.h
+	mach/ds3100.md/machInt.h
+	mach/ds3100.md/machMigrate.c
+	mach/ds3100.md/machCode.c
+	mach/ds3100.md/machUNIXSyscall.c
+	mach/symm.md/machCode.c
+	mach/symm.md/machMigrate.c
+	mach/symm.md/machTrap.c
+	mach/symm.md/machSyscallTrace.c
+	mach/symm.md/machGenAsmSymbols.c
+	mach/symm.md/machArchdep.c
+	dbg/sun4.md/dbgMain.c
+	dbg/sun4.md/vmInt.h
+	dbg/sun3.md/vmInt.h
+	dbg/sun3.md/dbgMain.c
+	dbg/ds3100.md/dbgMain.c
+	dbg/ds5000.md/dbgMain.c
+	dev/ds5000.md/devStdFB.c
+	dev/ds5000.md/devGraphics.c
+	fs/fs.h
+	fs/fsInit.c
+	fs/fsNameOps.c
+	fs/fsNameOps.h
+	fs/fsSelect.c
+	fs/fsSysCall.c
+	fs/fsTopMigrate.c
+	fs/fsStubs.c
+	fs/fsTopStream.c
+	fs/fsStreamOps.c
+	fscache/fscacheOps.c
+	fscache/fscacheReadAhead.c
+	fsio/fsioDevice.c
+	fslcl/fslclLookup.c
+	fspdev/fspdevSrv.c
+	fspdev/fspdevSetup.c
+	fsprefix/fsprefixOps.c
+	fsrmt/fsrmtFile.c
+	fsrmt/fsrmtIO.c
+	fsutil/fsutilHandle.c
+	lfs/lfsBlockIO.c
+	main/symm.md/mainInit.c
+	ofs/ofsAlloc.c
+	ofs/ofsIndex.c
+	ofs/ofsIo.c
+	ofs/ofsFileDesc.c
+	proc/procDebug.c
+	proc/procExit.c
+	proc/procID.c
+	proc/procInt.h
+	proc/procExec.c
+	proc/proc.h
+	proc/procTable.c
+	proc/procTimer.c
+	proc/procMisc.c
+	proc/procFork.c
+	proc/procRpc.c
+	proc/procTypes.h
+	proc/procRemote.c
+	proc/procStubs.c
+	proc/procEnviron.c
+	proc/procMigrate.c
+	proc/procMigrate.h
+	proc/procFamily.c
+	prof/prof.h
+	prof/profMigrate.c
+	prof/profProfil.c
+	sched/sched.h
+	sched/schedQueue.c
+	sched/schedule.c
+	sig/sigInt.h
+	sig/sig.h
+	sig/sigMigrate.c
+	sig/sigStubs.c
+	sig/signals.c
+	sync/syncSleep.c
+	sync/syncLock.c
+	sync/sync.h
+	sync/syncUser.c
+	sync/syncLockStat.c
+	sync/syncSysV.c
+	sys/sysCalls.c
+	sys/sysStubs.c
+	sys/sysSysCall.c
+	vm/vmSeg.c
+	vm/vmInt.h
+	vm/vm.h
+	vm/vmPage.c
+	vm/sun3.md/vmSun.c
+	vm/sun3.md/vmMach.h
+	vm/symm.md/vmSymm.c
+	vm/vmMap.c
+	vm/sun4.md/vmSun.c
+	vm/sun4.md/vmMach.h
+	vm/vmMigrate.c
+	vm/vmSubr.c
+	vm/vmSwapDir.c
+	vm/ds3100.md/vmPmax.c
+	vm/vmSysCall.c
+	vm/vmStubs.c
+	vm/ds5000.md/vm3max.c
+Proc_CopyEnvironStub		# (make a copy of the environment, presumably
+				# so that it can be edited) keep.
+	Include/user/proc.h
+	proc/proc.h
+	proc/procEnviron.c
+Proc_Debug			# (handle debugging commands) keep.  Do a
+				# thread_abort() before changing thread state.
+	Include/user/proc.h
+	mach/symm.md/machSyscallTrace.c
+	proc/procDebug.c
+	proc/proc.h
+	sys/sysSysCall.c
+Proc_DebugReq			# (enum of debug commands) keep.
+	Include/user/proc.h
+	proc/procDebug.c
+	proc/proc.h
+Proc_DebugState			# (process mgmt) keep.
+	Include/user/proc.h
+	mach/sun3.md/machCode.c
+	mach/sun3.md/mach.h
+	mach/sun4.md/mach.h
+	mach/sun4.md/machCode.c
+	mach/sun4.md/sun4/reg.h
+	mach/sun4c.md/mach.h
+	mach/sun4c.md/machCode.c
+	mach/ds5000.md/mach.h
+	mach/ds5000.md/machCode.c
+	mach/ds3100.md/mach.h
+	mach/ds3100.md/machCode.c
+	mach/symm.md/machCode.c
+	proc/procDebug.c
+Proc_DestroyMigratedProc	# Initially panic or printf.  Call new routine
+				# to set process state; don't take any
+				# shortcuts if state is NEW (may need some
+				# testing to verify that the exit code can
+				# deal with partially created processes).
+	sig/{signals,sigMigrate}.c
+Proc_Detach			# (system call) keep.
+	Include/user/proc.h
+	mach/symm.md/machSyscallTrace.c
+	proc/procExit.c
+	proc/proc.h
+	proc/procRpc.c
+	sched/schedule.c
+	sys/sysSysCall.c
+Proc_DoForEveryProc		# keep.
+Proc_DoRemoteCall		# (do system call for migrated process) keep.
+	sys/sysSysCall.c
+Proc_Dump			# keep initially; maybe delete eventually
+				# (depending on how useful it turns out to be
+				# for debugging).  Make use of names (locks,
+				# condition variables, threads).
+	dbg/ds3100.md/dbgMain.c
+	utils/dump.c
+Proc_DumpPCB			# keep initially; maybe delete eventually
+	sched/schedule.c
+Proc_EncapInfo			# (used by each module that xfers information
+				# for migration) keep.
+	mach/sun3.md/mach.h
+	mach/sun3.md/machMigrate.c
+	mach/sun4.md/mach.h
+	mach/sun4.md/sun4/reg.h
+	mach/sun4.md/machMigrate.c
+	mach/ds5000.md/mach.h
+	mach/ds5000.md/machMigrate.c
+	mach/ds3100.md/mach.h
+	mach/ds3100.md/machMigrate.c
+	mach/symm.md/machMigrate.c
+	fs/fs.h
+	fs/fsTopMigrate.c
+	proc/procInt.h
+	proc/procExec.c
+	proc/procTypes.h
+	proc/procMigrate.c
+	prof/prof.h
+	prof/profMigrate.c
+	sig/sig.h
+	sig/sigMigrate.c
+	vm/vm.h
+	vm/vmMigrate.c
+Proc_EnvironVar			# (name/value pair) keep.
+	Include/user/proc.h
+	proc/proc.h
+	proc/procEnviron.c
+Proc_EvictForeignProcs		# keep.
+	sys/sysCalls.c
+Proc_Exec			# (system call) keep.  Ensure that when you
+				# map in the code, etc. segments, you get the
+				# addresses you asked for.  Otherwise make the
+				# exec fail.  Disable migration for now.
+				# To clean out the old address space, find the
+				# region for each memory object we know is
+				# mapped into the address space and deallocate
+				# it, decrementing reference counts as you go.
+				# Then use vm_region to find other mapped
+				# regions to deallocate.
+	Include/user/proc.h
+	mach/ds5000.md/machUNIXSyscall.c
+	mach/ds3100.md/machUNIXSyscall.c
+	mach/symm.md/machSyscallTrace.c
+	proc/procExec.c
+	proc/proc.h
+	proc/procStubs.c
+	sys/sysSysCall.c
+Proc_ExecEnv			# (system call) keep
+	Include/user/proc.h
+	mach/ds5000.md/machUNIXSyscall.c
+	mach/ds3100.md/machUNIXSyscall.c
+	mach/symm.md/machSyscallTrace.c
+	proc/procExec.c
+	proc/proc.h
+	proc/procStubs.c
+	sys/sysSysCall.c
+Proc_Exit			# ProcExitProcess (?) should kill the task.
+				# don't bother freeing segments.
+	mach/sun3.md/bootSysAsm.s
+	mach/ds5000.md/loMem.s
+	mach/ds3100.md/loMem.s
+	mach/ds3100.md/machUNIXSyscall.c
+	mach/symm.md/machSyscallTrace.c
+	main/sun3.md/mainInit.c
+	main/sun4.md/mainInit.c
+	main/ds3100.md/mainInit.c
+	main/symm.md/mainInit.c
+	main/ds5000.md/mainInit.c
+	proc/procExit.c
+	proc/proc.h
+	proc/procServer.c
+	proc/procStubs.c
+	recov/recovery.c
+	recov/recovProc.c
+	rpc/rpcDaemon.c
+	rpc/rpcServer.c
+	sched/schedule.c
+	sys/sysSysCall.c
+	sys/sysUnixSyscall.c
+Proc_ExitInt			# Coordinate with Proc_Exit on where to kill
+				# the task.
+	mach/sun3.md/machCode.c
+	mach/sun4.md/machTrap.s
+	mach/sun4.md/machCode.c
+	mach/sun4.md/machAsm.s
+	mach/ds5000.md/machCode.c
+	mach/ds3100.md/machCode.c
+	mach/symm.md/machTrap.c
+	sig/signals.c
+Proc_Fork			# (Fork system call) keep.  If sharing heap,
+				# just create a new thread in the same task
+				# (need to be careful about stack management).
+	Include/user/proc.h
+	mach/ds3100.md/machUNIXSyscall.c
+	mach/symm.md/machSyscallTrace.c
+	proc/proc.h
+	proc/procFork.c
+	sys/sysSysCall.c
+Proc_GetActualProc		# (returns the process running on the active
+				# cpu)
+				# get pcb from thread context.
+	mach/sun3.md/machCode.c
+	mach/sun3.md/mach.h
+	mach/sun4.md/mach.h
+	mach/sun4.md/machCode.c
+	mach/sun4.md/sun4/reg.h
+	mach/ds5000.md/machCode.c
+	mach/ds3100.md/mach.h
+	mach/ds3100.md/machCode.c
+	mach/symm.md/machCode.c
+	mach/symm.md/machTrap.c
+	mach/symm.md/machSyscallTrace.c
+	mach/symm.md/machArchdep.c
+	fs/fsStubs.c
+	proc/procExit.c
+	proc/procExec.c
+	proc/proc.h
+	proc/procMisc.c
+	proc/procFork.c
+	proc/procRemote.c
+	proc/procMigrate.c
+	sig/sigMigrate.c
+	sig/sigStubs.c
+	sig/signals.c
+	vm/symm.md/vmSymm.c
+Proc_GetCurrentLock		# (lock instrumentation) keep.
+	sync/syncLockStat.c
+Proc_GetCurrentProc		# (same as Proc_GetActualProc) Use a field in
+				# the thread-private data to indicate the
+				# current proc.
+	mach/sun3.md/machMigrate.c
+	mach/sun4.md/machCode.c
+	mach/sun4.md/machMigrate.c
+	mach/ds5000.md/machMigrate.c
+	mach/ds3100.md/machMigrate.c
+	mach/ds3100.md/machUNIXSyscall.c
+	mach/symm.md/machMigrate.c
+	dev/ds5000.md/devStdFB.c
+	fs/fsInit.c
+	fs/fsSelect.c
+	fslcl/sospRecord.h
+	fspdev/fspdevPfs.c
+	fspdev/fspdevControl.c
+	main/symm.md/mainInit.c
+	proc/procExit.c
+	proc/procExec.c
+	proc/proc.h
+	proc/procMisc.c
+	proc/procRemote.c
+	proc/procStubs.c
+	prof/profProfil.c
+	sched/schedQueue.c
+	sched/schedule.c
+	sig/signals.c
+	sync/syncSleep.c
+	sync/syncLock.c
+	sync/sync.h
+	sync/syncUser.c
+	sys/sysCalls.c
+	timer/sun3.md/timerIntersil.c
+	timer/ds3100.md/timerMC.c
+	timer/ds5000.md/timerMC.c
+	utils/sospRecord.h
+	vm/vmPage.c
+	vm/sun3.md/vmSun.c
+	vm/symm.md/vmSymm.c
+	vm/vmMap.c
+	vm/sun4.md/vmSun.c
+	vm/vmSubr.c
+	vm/ds3100.md/vmPmax.c
+	vm/vmSysCall.c
+	vm/vmStubs.c
+	vm/ds5000.md/vm3max.c
+Proc_GetEffectiveProc		# (support for forwarded system calls) keep.
+	mach/ds5000.md/machUNIXSyscall.c
+	mach/ds3100.md/machUNIXSyscall.c
+	fs/fs.h
+	fs/fsNameOps.c
+	fs/fsSysCall.c
+	fs/fsStubs.c
+	fs/fsTopStream.c
+	fs/fsAttributes.c
+	fs/fsStreamOps.c
+	fspdev/fspdevSrv.c
+	fspdev/fspdevSetup.c
+	fsprefix/fsprefixOps.c
+	fsutil/fsutilHandle.c
+	proc/procExit.c
+	proc/procID.c
+	proc/proc.h
+	proc/procTimer.c
+	proc/procMisc.c
+	proc/procStubs.c
+	proc/procEnviron.c
+	proc/procMigrate.c
+	proc/procFamily.c
+	sig/signals.c
+	sync/syncSysV.c
+	sys/sysCalls.c
+	sys/sysStubs.c
+	vm/vmSubr.c
+	vm/vmSwapDir.c
+Proc_GetEnvironRangeStub	# (environment list stuff) keep.
+	Include/user/proc.h
+	proc/proc.h
+	proc/procEnviron.c
+Proc_GetEnvironVarStub		# (environment list stuff) keep.
+	Include/user/proc.h
+	proc/proc.h
+	proc/procEnviron.c
+Proc_GetFamilyID		# (process mgmt system call) keep.
+	Include/user/proc.h
+	mach/ds5000.md/machUNIXSyscall.c
+	mach/ds3100.md/machUNIXSyscall.c
+	mach/symm.md/machSyscallTrace.c
+	proc/proc.h
+	proc/procRpc.c
+	proc/procFamily.c
+	sys/sysSysCall.c
+Proc_GetGroupIDs		# (process mgmt system call) keep.
+	Include/user/proc.h
+	mach/ds5000.md/machUNIXSyscall.c
+	mach/ds3100.md/machUNIXSyscall.c
+	mach/symm.md/machSyscallTrace.c
+	proc/procID.c
+	proc/proc.h
+	sys/sysSysCall.c
+Proc_GetHostID			# (map pid to host number) keep
+	fsio/fsioFile.c
+	sig/signals.c
+Proc_GetHostIDs			# (get current & home host IDs) keep.
+	mach/symm.md/machSyscallTrace.c
+	proc/proc.h
+	proc/procMisc.c
+	sys/sysSysCall.c
+Proc_GetIDs			# (system call; return user ID, etc.) keep.
+	Include/user/proc.h
+	mach/ds5000.md/machUNIXSyscall.c
+	mach/ds3100.md/machUNIXSyscall.c
+	mach/symm.md/machSyscallTrace.c
+	proc/procID.c
+	proc/proc.h
+	proc/procStubs.c
+	sys/sysSysCall.c
+Proc_GetIntervalTimer		# (system call; get amt. of time left for
+				# timer) keep.
+	Include/user/proc.h
+	mach/ds3100.md/machUNIXSyscall.c
+	mach/symm.md/machSyscallTrace.c
+	proc/proc.h
+	proc/procTimer.c
+	proc/procStubs.c
+	sys/sysSysCall.c
+Proc_GetPCB			# (get pcb, given pid) keep
+	dbg/sun4.md/dbgMain.c
+	dbg/sun3.md/dbgMain.c
+	dbg/ds3100.md/dbgMain.c
+	sched/schedule.c
+	sync/syncLock.c
+Proc_GetPCBInfo			# (system call; return some number of PCBs)
+				# keep
+	Include/user/proc.h
+	mach/symm.md/machSyscallTrace.c
+	proc/proc.h
+	proc/procMisc.c
+	sys/sysSysCall.c
+Proc_GetPriority		# (system call) keep
+	Include/user/proc.h
+	mach/symm.md/machSyscallTrace.c
+	proc/proc.h
+	proc/procMisc.c
+	sys/sysSysCall.c
+Proc_GetRemoteSegInfo		# (used by Vm_GetSegInfo) keep
+	proc/proc.h
+	proc/procMisc.c
+	vm/vmSeg.c
+Proc_GetResUsage		# (system call; get resource usage) keep.
+	Include/user/proc.h
+	mach/ds3100.md/machUNIXSyscall.c
+	mach/symm.md/machSyscallTrace.c
+	proc/proc.h
+	proc/procMisc.c
+	proc/procRpc.c
+	sys/sysSysCall.c
+Proc_GetPriority		# keep
+	proc/procStubs.c
+	sys/sysUnixSyscall.c
+Proc_HasPermission		# keep
+	sig/signals.c
+Proc_In_A_Family		# (process mgmt macro) keep
+	Include/user/proc.h
+Proc_InformParent		# keep.
+	sig/signals.c
+Proc_Init			# keep.
+	main/sun4c.md/mainInit.c
+	main/sun3.md/mainInit.c
+	main/sun4.md/mainInit.c
+	main/ds3100.md/mainInit.c
+	main/symm.md/mainInit.c
+Proc_InitMainProc		# keep, more or less unchanged
+	main/sun4c.md/mainInit.c
+	main/sun3.md/mainInit.c
+	main/sun4.md/mainInit.c
+	main/ds3100.md/mainInit.c
+	main/symm.md/mainInit.c
+Proc_InstallEnviron		# (system call) keep
+	Include/user/proc.h
+	proc/procEnviron.c
+Proc_IsMigratedProc		# XXX rename to Proc_IsEvictable.
+	proc/proc.h
+	proc/procMigrate.c
+Proc_IsMigratedProcess		# Use Proc_GetEffectiveProc?
+				# Proc_GetCurrentProc?
+	fsutil/fsutil.h
+	prof/sun3.md/profSubr.c
+	prof/sun4.md/profSubr.c
+	prof/sun4c.md/profSubr.c
+	prof/ds3100.md/profSubr.c
+Proc_KDump			# (L1-i) keep? fix? eventually throw out?
+	utils/dump.c
+Proc_KernExec			# (used to start init) rewrite.
+	main/sun4c.md/mainInit.c
+	main/sun3.md/mainInit.c
+	main/sun4.md/mainInit.c
+	main/ds3100.md/mainInit.c
+	main/symm.md/mainInit.c
+Proc_KillAllProcesses		# keep.
+	sys/sysCalls.c
+Proc_Lock			# keep.
+	mach/sun3.md/machCode.c
+	mach/ds5000.md/machCode.c
+	mach/ds3100.md/machCode.c
+	mach/symm.md/machTrap.c
+	fs/fsTopMigrate.c
+	proc/procDebug.c
+	proc/procExit.c
+	proc/procExec.c
+	proc/proc.h
+	proc/procTable.c
+	proc/procTimer.c
+	proc/procMisc.c
+	proc/procRpc.c
+	proc/procRemote.c
+	proc/procStubs.c
+	proc/procMigrate.c
+	proc/procFamily.c
+	sched/schedule.c
+	sig/sigMigrate.c
+	sig/signals.c
+	sys/sysCalls.c
+	vm/vmMigrate.c
+	vm/vmSubr.c
+Proc_LockFamily			# keep.
+	sig/signals.c
+Proc_LockPID			# keep.
+	fspdev/fspdevSrv.c
+	proc/procDebug.c
+	proc/procExit.c
+	proc/proc.h
+	proc/procTable.c
+	proc/procTimer.c
+	proc/procMisc.c
+	proc/procRpc.c
+	proc/procStubs.c
+	proc/procMigrate.c
+	proc/procMigrate.h
+	proc/procFamily.c
+	sig/sigMigrate.c
+	sig/signals.c
+	vm/vmSeg.c
+Proc_MakeReady			# set state to READY (call routine to check
+				# state transition).  Do a broadcast on the
+				# process's resumeCondition (simulate putting
+				# the process in the ready queue).  For user
+				# processes, verify that has task & thread &
+				# VM & state, and resume the thread.
+	proc/{procDebug,procFork,procRemote}.c
+Proc_MakeStringAccessible	# (make string accessible, with the usual "RPC
+				# buffer?" check) Change to take separate
+				# in/out parameters for the string address.
+				# This is to discourage callers from
+				# overwriting what may be an address mapped in
+				# from user space.
+	sys/sysCalls.c
+Proc_MakeUnaccessible		# (paired with Proc_MakeStringAccessible)
+				# keep.
+	sys/sysCalls.c
+Proc_MigAddToCounter		# (atomically increment a counter) keep.
+	fs/fsTopMigrate.c
+	proc/proc.h
+	proc/procMigrate.c
+	proc/procMigrate.h
+	vm/vmMigrate.c
+Proc_MigGetStats		# (return migration stats to user) keep.
+	sys/sysCalls.c
+Proc_MigInit			# no-op; worry about later.
+	main/sun3.md/mainInit.c
+	main/sun4.md/mainInit.c
+	main/ds3100.md/mainInit.c
+	main/ds5000.md/mainInit.c
+	main/symm.md/mainInit.c
+Proc_MigResetStats		# (more migration stats stuff) keep.
+	sys/sysCalls.c
+Proc_MigStats			# keep most.  won't be able to get, e.g.,
+				# pagesWritten w/o hacking the kernel.
+				# Don't worry about initially.
+Proc_Migrate			# (migration system call) initially return
+				# error code; eventually get working.  suspend
+				# the task here?
+	Include/user/proc.h
+	mach/symm.md/machSyscallTrace.c
+	proc/proc.h
+	proc/procRpc.c
+	proc/procMigrate.c
+	sys/sysSysCall.c
+Proc_MigrateStartTracing	# (migration debugging support) keep (may be
+				# broken?)
+	sys/sysCalls.c
+Proc_MigrateTrap		# initially panic (shouldn't get called).
+				# Suspend the task.
+	sig/signals.c
+Proc_NeverMigrate		# keep.
+	mach/ds5000.md/machUNIXSyscall.c
+	mach/ds3100.md/machUNIXSyscall.c
+	fspdev/fspdevPfs.c
+	fspdev/fspdevControl.c
+	proc/proc.h
+	proc/procMigrate.c
+	vm/sun3.md/vmSun.c
+	vm/sun4.md/vmSun.c
+	vm/vmSysCall.c
+	vm/ds5000.md/vm3max.c
+Proc_NewProc			# Let Proc_MakeReady set state to READY.
+				# For user processes, call
+				# Proc_MakeTaskThread; set machine state, set
+				# up VM mappings.  For kernel processes, 
+				# just fork a new thread & fill in pcb.
+				# Set C Thread name to process ID.
+	main/sun3.md/mainInit.c
+	main/sun4.md/mainInit.c
+	main/ds3100.md/mainInit.c
+	main/symm.md/mainInit.c
+	rpc/rpcDaemon.c
+	sched/schedule.c
+Proc_NewServiceThread		# (new; renamed to Sys_NewServiceThread)
+Proc_PCBArgString		# keep.
+	Include/user/proc.h
+	proc/proc.h
+	proc/procMisc.c
+	sys/sysSysCall.c
+Proc_PCBInfo			# (PCB info, massaged for use by users) track
+				# changes to Proc_ControlBlock.
+	Include/user/proc.h
+	proc/procMisc.c
+	vm/vmSeg.c
+	vm/vm.h
+Proc_PCBLink			# (link type for assorted lists that a pcb
+				# might belong to) keep.
+	sig/signals.c
+	sync/syncLock.c
+Proc_PID			# keep.
+	dbg/sun4.md/dbgMain.c
+	dbg/sun3.md/dbgMain.c
+	dev/devTty.c
+	fs/fs.h
+	fscache/fscacheOps.c
+	fsio/fsio.h
+	fsio/fsioFile.c
+	fsio/fsioPipe.c
+	fsio/fsioFile.h
+	fsio/fsioDevice.c
+	fsio/fsioDevice.h
+	fsio/fsioPipe.h
+	fspdev/fspdevSrv.c
+	fspdev/fspdev.h
+	fspdev/fspdevInt.h
+	fspdev/fspdevControl.c
+	fspdev/fspdevSetup.c
+	fsrmt/fsrmt.h
+	fsrmt/fsrmtFile.c
+	fsrmt/fsrmtDomain.c
+	fsrmt/fsrmtInt.h
+	fsrmt/fsrmtDomain.h
+	fsrmt/fsrmtDevice.c
+	main/sun3.md/mainInit.c
+	main/sun4.md/mainInit.c
+	main/ds3100.md/mainInit.c
+	main/symm.md/mainInit.c
+	main/ds5000.md/mainInit.c
+	proc/procDebug.c
+	proc/procExit.c
+	proc/procID.c
+	proc/migrate.h
+	proc/procInt.h
+	proc/proc.h
+	proc/procTable.c
+	proc/procTimer.c
+	proc/procMisc.c
+	proc/procFork.c
+	proc/procRpc.c
+	proc/procRecovery.c
+	proc/procTypes.h
+	proc/procRemote.c
+	proc/procStubs.c
+	proc/procMigrate.c
+	proc/procMigrate.h
+	proc/procFamily.c
+	rpc/rpcDaemon.c
+	sched/schedule.c
+	sig/sigInt.h
+	sig/sig.h
+	sig/sigMigrate.c
+	sig/signals.c
+	sync/syncLock.c
+	sync/sync.h
+	sync/syncTypes.h
+	sys/sysSysCall.c
+	vm/vmPage.c
+Proc_PIDToIndex			# (pid to proc table index) keep.
+	Include/user/proc.h
+	proc/procTable.c
+Proc_Profile			# (start profiling; no-op) throw out?
+	Include/user/proc.h
+	mach/symm.md/machSyscallTrace.c
+	proc/proc.h
+	proc/procMisc.c
+	sys/sysSysCall.c
+Proc_PushLockStack		# (lock instrumentation) keep.  Don't need
+				# DISABLE_INTR (no interrupt routines).
+	sync/syncLockStat.c
+Proc_RawExit			# (process mgmt system call) undefined
+				# => delete.
+	Include/user/proc.h
+Proc_Reaper			# (take pcb from dead to unused) keep
+	proc/procExit.c
+	proc/proc.h
+	proc/procMigrate.c
+Proc_RemoteCall			# (information used when sending a system call
+				# to the home node)
+Proc_RemoteDummy		# ("not implemented" stub) keep.
+	sys/sys.h
+	sys/sysSysCall.c
+Proc_RemoteExec			# (facade over Proc_Exec) keep.
+	mach/symm.md/machSyscallTrace.c
+	proc/procExec.c
+	proc/proc.h
+	sys/sysSysCall.c
+Proc_RemoveFromLockStack	# (lock instrumentation) keep; dike out the
+				# DISABLE_INTR stuff.
+	sync/syncLockStat.c
+Proc_ResUsage			# (process instrumentation) keep as many
+				# fields as possible, initially return 0 for
+				# the others.
+	Include/user/proc.h
+	mach/ds5000.md/machUNIXSyscall.c
+	mach/ds3100.md/machUNIXSyscall.c
+	proc/procExit.c
+	proc/proc.h
+	proc/procMisc.c
+	proc/procStubs.c
+	sys/sysSysCall.c
+Proc_ResumeMigProc		# panic initially
+	mach/sun3.md/machMigrate.c
+	mach/sun4.md/machMigrate.c
+	mach/ds5000.md/machMigrate.c
+	mach/ds3100.md/machMigrate.c
+	mach/symm.md/machMigrate.c
+	proc/proc.h
+	proc/procRemote.c
+Proc_ResumeProcess		# keep.
+	sig/signals.c
+Proc_RpcGetPCB			# (stub for RPC to get PCB or segment) keep.
+	rpc/rpcCall.h
+	rpc/rpcStubs.c
+Proc_RpcMigCommand		# (handles migration commands) initially
+				# always return an error code.
+	rpc/rpcCall.h
+	rpc/rpcStubs.c
+Proc_RpcMigInit			# (unused) delete.
+	rpc/rpcCall.h
+Proc_RpcRemoteCall		# (handle an RPC that was forwarded home)
+				# initially panic.
+	rpc/rpcCall.h
+	rpc/rpcStubs.c
+Proc_RpcRemoteWait		# (Proc_Wait that was forwarded home) panic
+				# initially.
+	rpc/rpcCall.h
+	rpc/rpcStubs.c
+Proc_ServerInit			# (initialization for ServerProc's).  Do
+				# cleaner init. of condition variables.
+	main/sun4c.md/mainInit.c
+	main/sun3.md/mainInit.c
+	main/sun4.md/mainInit.c
+	main/ds3100.md/mainInit.c
+	main/symm.md/mainInit.c
+Proc_ServerProc			# keep.
+	main/sun3.md/mainInit.c
+	main/sun4.md/mainInit.c
+	main/ds3100.md/mainInit.c
+	main/ds5000.md/mainInit.c
+	main/symm.md/mainInit.c
+Proc_SetActualProc		# (synonym for Proc_SetCurrentProc)
+				# unused - delete?
+	proc/proc.h
+Proc_SetCurrentProc		# (updates proc_RunningProcesses) Use a field
+				# in the thread-private data.
+	sched/schedule.c
+Proc_SetEnviron			# (add an env. var. to the env.) keep.
+	Include/user/proc.h
+	proc/proc.h
+	proc/procEnviron.c
+Proc_SetFamilyID		# (system call) keep.
+	Include/user/proc.h
+	mach/ds3100.md/machUNIXSyscall.c
+	mach/symm.md/machSyscallTrace.c
+	proc/proc.h
+	proc/procRpc.c
+	proc/procStubs.c
+	proc/procFamily.c
+	sys/sysSysCall.c
+Proc_SetGroupIDs		# (system call) keep.
+	Include/user/proc.h
+	mach/ds3100.md/machUNIXSyscall.c
+	mach/symm.md/machSyscallTrace.c
+	proc/procID.c
+	proc/proc.h
+	proc/procStubs.c
+	sys/sysSysCall.c
+Proc_SetIDs			# (system call) keep.
+	Include/user/proc.h
+	mach/ds3100.md/machUNIXSyscall.c
+	mach/symm.md/machSyscallTrace.c
+	proc/procID.c
+	proc/proc.h
+	proc/procRpc.c
+	sys/sysSysCall.c
+Proc_SetIntervalTimer		# (system call) keep.
+	Include/user/proc.h
+	mach/ds3100.md/machUNIXSyscall.c
+	mach/symm.md/machSyscallTrace.c
+	proc/proc.h
+	proc/procTimer.c
+	proc/procStubs.c
+	sys/sysSysCall.c
+Proc_SetPriority		# Map Sprite priority level to Mach.
+	Include/user/proc.h
+	mach/symm.md/machSyscallTrace.c
+	proc/proc.h
+	proc/procMisc.c
+	sys/sysCalls.c
+	sys/sysSysCall.c
+Proc_SetServerPriority		# Map Sprite priority level to Mach.
+	rpc/rpcDaemon.c
+Proc_State			# (process mgmt) keep, though not as
+				# meaningful as with native Sprite.
+	Include/user/proc.h
+	proc/procExit.c
+	proc/procTypes.h
+	proc/procMisc.c
+	sched/sched.h
+	sched/schedule.c
+	sync/syncLock.c
+	sync/sync.h
+Proc_StringNCopy		# (strncpy, more or less)
+				# XXX should do the IsMigratedProcess check
+				# itself, and then call Vm_StringNCopy if need
+				# be.  
+				# XXX Fix Fsutil_StringNCopy to just call
+				# Proc_StringNCopy.
+				# XXX Verify that is only used for copy in.
+	fsutil/fsutil.h
+	prof/sun3.md/profSubr.c
+	prof/sun4.md/profSubr.c
+	prof/sun4c.md/profSubr.c
+	prof/ds3100.md/profSubr.c
+Proc_SuspendProcess		# suspend the thread; would like to take an
+				# arbitrary process, but maybe don't do that
+				# initially (rely on process's checking for
+				# pending signals)
+	mach/sun4.md/machTrap.s
+	proc/procDebug.c
+	proc/procExit.c
+	proc/proc.h
+	sig/signals.c
+Proc_TimerInterval		# (process mgmt) keep.
+	Include/user/proc.h
+	mach/ds3100.md/machUNIXSyscall.c
+	proc/procInt.h
+	proc/proc.h
+	proc/procTimer.c
+	proc/procStubs.c
+	proc/procMigrate.c
+Proc_Unlock			# keep.
+	mach/sun3.md/machCode.c
+	mach/ds5000.md/machCode.c
+	mach/ds3100.md/machCode.c
+	mach/symm.md/machTrap.c
+	fs/fsTopMigrate.c
+	fspdev/fspdevSrv.c
+	proc/procDebug.c
+	proc/procExit.c
+	proc/procExec.c
+	proc/proc.h
+	proc/procTable.c
+	proc/procTimer.c
+	proc/procMisc.c
+	proc/procRpc.c
+	proc/procRemote.c
+	proc/procStubs.c
+	proc/procMigrate.c
+	proc/procMigrate.h
+	proc/procFamily.c
+	sched/schedule.c
+	sig/sigMigrate.c
+	sig/signals.c
+	sys/sysCalls.c
+	vm/vmSeg.c
+	vm/vmMigrate.c
+	vm/vmSubr.c
+Proc_UnlockAndSwitch		# MIGRATED, EXITING, DEAD: call
+				# Sync_UnlockAndSwitch.
+				# SUSPENDED: set the state and wait until it
+				# changes.
+Proc_UnlockFamily		# keep.
+	sig/signals.c
+Proc_UnsetEnviron		# (system call) keep.
+	Include/user/proc.h
+	proc/proc.h
+	proc/procEnviron.c
+Proc_ValidatePID		# (unused?) keep.
+Proc_Wait			# (system call) keep.
+	Include/user/proc.h
+	mach/ds3100.md/machUNIXSyscall.c
+	mach/symm.md/machSyscallTrace.c
+	proc/procExit.c
+	proc/proc.h
+	sys/sysSysCall.c
+Proc_WaitForMigration		# initially panic.
+	sig/sigMigrate.c
+Proc_WakeupAllProcesses		# keep.
+	fsutil/fsutilRecovery.c
+RpcProcFork			# call Proc_MakeTaskThread.
+procStatusMappings		# (map Sprite status code to errno) keep.
+	mach/ds3100.md/compatMapCode.c
+	libc/sun3.md/compatMapCode.c
+	libc/symm.md/compatMapCode.c
+proc_AllowMigrationState	# (import/export control) keep.
+	sys/sysCalls.c
+proc_DoTrace			# (enables/disables tracing) keep.
+	sys/sysCalls.c
+proc_KillMigratedDebugs		# (kill foreign processes instead of putting
+				# in debugger) keep.
+	sig/signals.c
+proc_MaxNumProcesses		# (high-water mark for PCB table occupancy)
+				# keep.
+	sched/schedule.c
+proc_MigDebugLevel		# keep.
+	mach/sun3.md/machMigrate.c
+	mach/sun4.md/machMigrate.c
+	mach/ds3100.md/machMigrate.c
+	mach/symm.md/machMigrate.c
+	fs/fsTopMigrate.c
+	fsio/fsioStream.c
+	proc/procDebug.c
+	proc/procExit.c
+	proc/procExec.c
+	proc/procRpc.c
+	proc/procRecovery.c
+	proc/procRemote.c
+	proc/procMigrate.c
+	proc/procMigrate.h
+	prof/profMigrate.c
+	sig/sigMigrate.c
+	sig/signals.c
+	sys/sysCalls.c
+	vm/vmMigrate.c
+proc_MigDoStats			# (enable/disable stats gathering) keep.
+	proc/procRpc.c
+	proc/procMigrate.c
+	proc/procMigrate.h
+	vm/vmMigrate.c
+proc_MigrationVersion		# keep.
+	sys/sysCalls.c
+proc_NumServers			# (maximum number of server procs) keep.
+	main/sun4c.md/mainInit.c
+	main/sun3.md/mainInit.c
+	main/sun4.md/mainInit.c
+	main/ds3100.md/mainInit.c
+	main/cleansun3.md/mainInit.c
+	main/cleands3100.md/mainInit.c
+	main/symm.md/mainInit.c
+	main/cleansun4.md/mainInit.c
+	main/cleansun4c.md/mainInit.c
+proc_PCBTable			# keep.
+	sched/schedule.c
+proc_RunningProcesses		# Delete.  ("the current process" will be
+				# indicated by a field in the thread-local
+				# data.)
+	mach/sun3.md/machIntr.s
+	mach/sun3.md/machAsm.s
+	mach/sun3.md/machTrap.s
+	mach/ds5000.md/machAsm.s
+	mach/ds3100.md/machAsm.s
+	mach/symm.md/machCode.c
+	mach/symm.md/machLocore.s
+	fs/fsStubs.c
+	fscache/fscacheOps.c
+	fscache/fscacheReadAhead.c
+	fsio/fsioDevice.c
+	fslcl/fslclLookup.c
+	fsrmt/fsrmtFile.c
+	fsrmt/fsrmtIO.c
+	lfs/lfsBlockIO.c
+	ofs/ofsAlloc.c
+	ofs/ofsIndex.c
+	ofs/ofsIo.c
+	ofs/ofsFileDesc.c
+	proc/proc.h
+	proc/procTable.c
+	proc/procMigrate.c
+	sched/schedQueue.c
+	sched/schedule.c
+	vm/vmSeg.c
+proc_TraceHdrPtr		# (more instrumentation) keep.
+	sys/sysCalls.c
+
+Local Variables:
+mode: xref
+fill-column: 78
+End:

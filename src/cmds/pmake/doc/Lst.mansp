@@ -1,0 +1,388 @@
+'\" $Header: Lst,v 1.1 87/09/01 15:16:44 deboor Exp $ SPRITE (Berkeley)
+.so tmac.ansp
+.TH List lib
+.BS
+.NA
+Lst \- circular linked list/queue routines
+.SY
+#include <lst.h>
+.sp
+.ta \w'ReturnStatus  'u +\w'Lst_ForEachFrom(l, ln, d, cProc)  '
+Lst	Lst_Init(circ);
+Lst	Lst_Duplicate(l, dupProc);
+void	Lst_Destroy(l, destroyProc);
+int	Lst_Length(l);
+ReturnStatus	Lst_Insert(l, ln, d);
+ReturnStatus	Lst_Append(l, ln, d);
+ReturnStatus	Lst_AtFront(l, d);
+ReturnStatus	Lst_AtEnd(l, d);
+ReturnStatus	Lst_Remove(l, ln);
+ReturnStatus	Lst_Replace(ln, d);
+ReturnStatus	Lst_Move(lns, lnd, before);
+ReturnStatus	Lst_Concat(l1, l2, how);
+LstNode	Lst_First(l);
+LstNode	Lst_Last(l);
+LstNode	Lst_Succ(ln);
+LstNode	Lst_Pred(ln);
+LstNode	Lst_Find(l, d, cmpProc);
+LstNode	Lst_FindFrom(l, ln, d, cmpProc);
+LstNode	Lst_Member(l, d);
+Boolean	Lst_IsEmpty(l);
+void	Lst_ForEach(l, proc, d);
+void	Lst_ForEachFrom(ln, proc, d);
+ClientData	Lst_Datum(ln);
+ReturnStatus	Lst_Open(l);
+LstNode	Lst_Prev(l);
+LstNode	Lst_Cur(l);
+LstNode	Lst_Next(l);
+Boolean	Lst_IsAtEnd(l);
+void	Lst_Close(l);
+ReturnStatus	Lst_EnQueue(l, d);
+ClientData	Lst_DeQueue(l);
+.AR
+.AS ClientData (*destroyProc)() in
+.AP Lst l in
+A list structure as returned by
+.IR Lst_Init .
+.AP LstNode ln in
+A node in the list
+.IR l .
+.AP ClientData d in
+A client-defined datum.
+.AP int (*cmpProc)() in
+A function to compare a node and a datum.
+.AP int (*proc)() in
+A function to apply to nodes on the list.
+.AP void (*destroyProc)() in
+A procedure to destroy an element of the list
+.IR l .
+.AP ClientData (*dupProc)() in
+A function to duplicate an element of the list
+.IR l .
+.AP Boolean before in
+Insert before dest for Lst_Move.
+.AP LstNode lns in
+Source node to move for Lst_Move.
+.AP LstNode lnd in
+Node at which to insert
+.I lns
+for Lst_Move.
+.AP Boolean circ in
+True if new list is to be considered circular.
+.AP Lst l1 in
+The list to which l2 is concatenated.
+.AP Lst l2 in
+The list that is concatenated to l1. This list may be destroyed.
+.AP int how in
+If LIST_CONCNEW, the nodes of l2 are duplicated before being linked to the
+end of l1. l2 remains intact. If LIST_CONCLINK, the nodes of l2 are linked
+at the end of l1 and the Lst for l2 is destroyed.
+.BE
+.SH DESCRIPTION
+.PP
+The
+.I Lst_
+routines are used to manipulate data in linked-lists.
+The lists themselves are doubly-linked and circular with each list
+described by a header of type
+.BR Lst .
+This header is returned by the function
+Lst_Init
+and is required by most functions in the library.
+When you are done using the list,
+you should call the function Lst_Destroy to free up all the resources
+used by the list.
+.PP
+Functions exist to manipulate a list in any of three ways:
+.RS
+.IP 1)
+As a traditional list with random insertion,
+deletion and searching.
+.IP 2)
+As a table suitable for sequential access only.
+.IP 3)
+As a queue.
+.RE
+.LP
+These functions may be freely intermixed except for the removal of the
+sequential-access-functions's ``current'' element.
+Read on.
+.PP
+While lists are described with the
+.B Lst
+type,
+individual elements in the list are described by the
+.B LstNode
+type.
+In reality,
+this structure consists of a forward pointer,
+a backward pointer and a single piece of data of type
+.BR ClientData .
+This datum can be a pointer,
+a character,
+an integer,
+whatever your heart desires.
+Use the Lst_Datum function to extract the datum from a list element.
+.SH RANDOM MODIFICATION
+.IP Lst_Insert
+Takes a list,
+a node and a piece of data and creates a new node for the datum,
+inserting it before the provided node in the list.
+As a special case,
+if the list,
+.IR l ,
+is empty and the list node,
+.IR ln ,
+is the constant
+.IR NILLNODE ,
+the passed datum will become the entire list.
+If the list is empty or the passed node is
+.I NILLNODE
+at any other time,
+however,
+it is considered an error.
+.IP Lst_Append
+Takes the same arguments as Lst_Insert,
+but inserts the new node
+.B after
+the provided node.
+The same special case applies here as with Lst_Insert.
+.IP Lst_AtFront
+Creates a new node for
+.I d
+and places it at the front of the list
+.IR l .
+.IP Lst_AtEnd
+Creates a new node for
+.I d
+and places it at the end of the list
+.IR l .
+.IP Lst_Remove
+Removes the given node ,
+.IR ln ,
+from the list,
+.IR l ,
+and destroys it.
+The datum itself is untouched.
+.IP Lst_Replace
+Replaces the datum in the given node with the new datum,
+.IR d .
+Nothing is done with the old datum since the library doesn't assume anything
+about it.
+If it must be freed,
+you should use Lst_Datum to extract and save it before using Lst_Replace to
+install a new tidbit.
+.IP Lst_Move
+Transfers one list element,
+.IR lns ,
+to a new place
+before the destination node,
+.IR lnd ,
+if
+.I before
+is TRUE,
+and after it if
+.I before
+is FALSE.
+The destination node need not be in the same list as the source node.
+Note that this function
+.I moves
+an element,
+i.e. it does not
+.I copy
+it,
+to a new location,
+so the element is unlinked from its previous list.
+.IP Lst_Concat
+Two lists may be concatenated by means of the Lst_Concat function. There are
+two ways to accomplish this:
+.RS
+.IP 1)
+the second list can be linked to the first list and the header for it
+destroyed. In this case, the third argument should be LIST_CONCLINK.
+.IP 2)
+the second list can have its nodes (but not the data) duplicated and linked to
+the first list, leaving the second list unharmed. The third argument for this
+should be LIST_CONCNEW.
+.RE
+.SH RANDOM ACCESS
+.IP Lst_First
+Returns the first element in the provided list,
+.IR l .
+.IP Lst_Last
+Returns the last element in the list.
+.IP Lst_Succ
+Returns the successor
+(to borrow a name from Pascal)
+of any element.
+If the node is the end of its list and the list has been marked non-circular,
+Lst_Succ returns the constant
+.IR NILLNODE .
+Note the two `L's.
+Note also that if the list is circular,
+it is possible to continue doing Lst_Succ's until pigs have wings.
+For traversing an entire list,
+either use the sequential access functions or the Lst_Foreach function,
+described below.
+.IP Lst_Pred
+Return an elements predecessor.
+If the element is the first of its list and the list is non-circular,
+.I NILLNODE
+will be returned.
+.SH FULL-LIST FUNCTIONS
+.IP Lst_Find
+This function takes for arguments a list,
+a piece of data and a function to be used to find the desired element.
+The given datum is compared with each element of the list in succession
+by means of the comparison function,
+.IR cmpProc ,
+until the function returns 0 or the end of the list is reached.
+The comparison function should take two arguments --
+the datum given to the Lst_Find function and the datum from the current
+element.
+If no matching element is found,
+.I NILLNODE
+is returned.
+Else the
+.B LstNode
+containing the element is returned.
+.IP Lst_FindFrom
+Takes an additional argument -- an element from which to start looking.
+The search continues until it again returns to this element or until a
+matching element is found.
+The Lst_Find function is implemented as a Lst_FindFrom starting from the
+head of the list,
+so everything said about it is equally applicable to Lst_FindFrom.
+.IP Lst_Member
+is much like Lst_Find except it doesn't use a comparison function; it simply
+compares the datum it is given against the datum in the node and stops when
+it finds one that is equal.
+.IP Lst_ForEach
+The given function,
+.IR proc ,
+is passed the datum from each successive element in the list until
+either the entire list has been traversed or the function returns non-zero.
+If the third argument to Lst_ForEach is given,
+that datum will be passed to the
+.I proc
+as its second argument.
+.IP Lst_ForEachFrom
+is like Lst_ForEach except it is given a node from which to start, rather
+than a list, and the traversal continues either until the function returns
+non-zero, the end of the list is reached, or the original node is again
+encountered.
+.SH SEQUENTIAL ACCESS
+.PP
+Functions also exist to treat the list as a table and access its members in a
+sequential fashion.
+They work by maintaining for each list an idea as to the ``current'' element
+of the list.
+.RS
+.IP Lst_Open
+This function initializes all the sequential access functions and must be
+called before any of the others to avoid getting error returns.
+The list's current element is defined by the first function called after
+Lst_Open.
+If it is a Lst_Prev call,
+the library assumes you will be traversing the list from the end and makes the
+last element of the list be current.
+If it is a Lst_Next call,
+the first element is made current.
+.IP Lst_Prev
+Returns the predecessor of the current element and makes it the current
+one.
+If it is the first sequential access call after a Lst_Open,
+the last element of the list is made the current one and is returned.
+.IP Lst_Cur
+Return the current element of the list.
+This should never be the first call after a Lst_Open,
+as no ``current'' node has yet been defined.
+.IP Lst_Next
+Return the successor of the current element and makes it the current one.
+Cf. Lst_Open,
+above.
+.IP Lst_IsAtEnd
+Returns TRUE if the current element is also the last.
+The ``end'' of the list is determined by the most recent access.
+A Lst_Next call will decide it is at the end if it advances from the last to
+the first element of the list.
+A Lst_Prev call will do so if it advances from the first element to the
+ last.
+.IP Lst_Close
+End this session of sequential access on the given list.
+.RE
+.PP
+Note again that since the stored lists are circular,
+it is possible to travel back to the beginning using the Lst_Next function.
+The intended use of these functions is for loops similar to:
+.br
+.di Qq
+.nf
+.ta  .75i 1.5i 2.25i
+if (Lst_Open (l) == SUCCESS) {
+	\fBfor\fP (ln = Lst_Next(l);
+	\h'\w'for ('u'Lst_IsAtEnd(l) == FALSE;
+	\h'\w'for ('u'ln = Lst_Next(l)) {
+		/* \fIprocess ln\fP */
+	}
+}
+.di
+.in +(\n(.lm/2m)-(\n(dlu/2u)
+.nf
+.Qq
+.fi
+.in
+.SH MISCELLANEOUS FUNCTIONS
+.IP Lst_IsEmpty
+returns the constant TRUE if the provided list is empty and FALSE otherwise.
+.IP Lst_Length
+returns the number of elements in the passed list.
+.SH THE QUEUE VIEW
+.PP
+Finally,
+two functions exist for treating the lists as just queues.
+They deal only with the client's own data type,
+so the caller needn't bother with extra declarations of
+.B LstNode
+variables if s/he doesn't want to.
+.IP Lst_EnQueue
+Places the datum on the tail of the queue.
+.IP Lst_DeQueue
+Removes and returns the datum at the head of the queue.
+If the queue is empty,
+the constant
+.I NIL
+is returned.
+.PP
+Note that the function Lst_IsEmpty should be used to see if the queue is
+empty.
+.SH DIAGNOSTICS
+.PP
+All functions of type
+.B ReturnStatus
+will return the constant
+.I SUCCESS
+if they succeeded in doing whatever they do and
+.I FAILURE
+if they did not.
+Reasons for failure are mostly for invalid arguments:
+passing in list elements which do not belong to the passed list,
+passing a NILLNODE instead of a decent list node,
+etc.
+.SH RESTRICTIONS
+.PP
+If you remove the ``current'' node of a list,
+you are asking for trouble on the next sequential access.
+Close or advance the list first.
+Then remove the no-longer ``current'' node.
+.SH BUGS
+.PP
+The sequential access functions need to be smoothed out a bit so the user can
+use just a for loop and so the Lst_IsAtEnd function is a bit more
+descriminating,
+i.e. it'll only return true if cur is at the end because of a Lst_Next or
+something.
+.SH KEYWORDS
+list, queue, circular, data structures
+.SH AUTHOR
+Adam R. de Boor

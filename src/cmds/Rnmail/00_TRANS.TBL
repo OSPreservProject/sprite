@@ -1,0 +1,4 @@
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+L RNMAIL.;1                         	Rnmail	../rn/sprite/Rnmail
+L RNMAIL.MAN;1                      	Rnmail.man	../rn/dist/rrn/Rnmail.1

@@ -1,0 +1,59 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  srv030:1.2 srv027:1.2 srv026:1.2 srv024:1.2 srv021:1.2 srv018:1.2 srv014:1.2 srv010:1.2 srv008:1.2 srv007:1.2 srv006:1.2 srv004:1.2;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     91.11.14.20.30.49;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.11.09.22.07.29;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Change to new setup for sprited clients.
+@
+text
+@#
+# This file is included by Makefile.  Makefile is generated automatically
+# by mkmf, and this file provides additional local personalization.  The
+# variable SYSMAKEFILE is provided by Makefile;  it's a system Makefile
+# that must be included to set up various compilation stuff.
+#
+
+
+MAKE_USER_PROGRAM	= thrash
+
+#include "/users/kupfer/lib/pmake/spriteClient.mk"
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@a7 1
+LIBS		+= -lmach
+d9 1
+a9 6
+# At least for the time being, use the same compilation environment as
+# the Sprite server.  It probably makes more sense to use the server's
+# environment than the Sprite "user" environment, because (a) the
+# emulation code is closely tied to the server and (b) the emulation
+# code needs to know about Mach.
+#include "/users/kupfer/lib/pmake/sprited.mk"
+d11 1
+@

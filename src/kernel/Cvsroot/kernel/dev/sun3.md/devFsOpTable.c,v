@@ -1,0 +1,915 @@
+head     9.4;
+branch   ;
+access   ;
+symbols  ds3100:9.4 sun3:9.4 sprited:9.3.1 sun4nw:9.3 symm:9.3 spur:9.3 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.4
+date     92.03.20.13.48.21;  author jhh;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.11.03.13.50.58;  author mgbaker;  state Exp;
+branches 9.3.1.1;
+next     9.2;
+
+9.2
+date     90.09.11.12.38.58;  author rab;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.01.05.13.17.27;  author ouster;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.58.49;  author douglis;  state Stable;
+branches ;
+next     8.10;
+
+8.10
+date     89.07.22.14.06.03;  author eklee;  state Exp;
+branches ;
+next     8.9;
+
+8.9
+date     89.07.15.11.09.06;  author ouster;  state Exp;
+branches ;
+next     8.8;
+
+8.8
+date     89.07.14.17.33.31;  author ouster;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.07.08.15.15.08;  author mendel;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.06.15.09.19.54;  author brent;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.06.15.08.56.02;  author brent;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.05.24.07.50.49;  author rab;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.05.23.10.27.25;  author mendel;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.01.06.06.56.40;  author rab;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.21.09.10.39;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.14.23;  author douglis;  state Stable;
+branches ;
+next     6.1;
+
+6.1
+date     88.09.05.11.42.47;  author douglis;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.30.43;  author douglis;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     88.07.15.16.59.21;  author mendel;  state Exp;
+branches ;
+next     ;
+
+9.3.1.1
+date     92.03.17.15.17.39;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@/dev device switch table initialization.
+Moved here from file system.
+@
+
+
+9.4
+log
+@Enabled RAID device.
+@
+text
+@/* 
+ * devFsOpTable.c --
+ *
+ *	Initialization of the operation switch tables used for
+ *	the FS => DEV interface on Sun3 hosts.
+ *
+ * Copyright 1987, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/dev/sun3.md/devFsOpTable.c,v 9.3 90/11/03 13:50:58 mgbaker Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include "sprite.h"
+#include "dev.h"
+#include "devInt.h"
+#include "fs.h"
+#include "rawBlockDev.h"
+#include "devFsOpTable.h"
+#include "devTypes.h"
+
+/*
+ * Device specific include files.
+ */
+
+#include "devSyslog.h"
+#include "devNull.h"
+#include "devSCSIDisk.h"
+#include "devSCSITape.h"
+#include "xylogics450.h"
+#include "devNet.h"
+#include "devTMR.h"
+#include "devBlockDevice.h"
+#include "devfb.h"
+#include "scsiHBADevice.h"
+#include "raidExt.h"
+#include "tty.h"
+#include "mouse.h"
+
+
+static ReturnStatus nullOpenProc _ARGS_ ((Fs_Device *devicePtr,
+    int flags, Fs_NotifyToken notifyToken, int *flagsPtr));
+static ReturnStatus noOpenProc _ARGS_ ((Fs_Device *devicePtr,
+    int flags, Fs_NotifyToken notifyToken, int *flagsPtr));
+static ReturnStatus nullReadProc _ARGS_ ((Fs_Device *devicePtr,
+    Fs_IOParam *readPtr, Fs_IOReply *replyPtr));
+static ReturnStatus nullWriteProc _ARGS_ ((Fs_Device *devicePtr,
+    Fs_IOParam *writePtr, Fs_IOReply *replyPtr));
+static ReturnStatus nullCloseProc _ARGS_ ((Fs_Device *devicePtr,
+    int flags, int numUsers, int numWriters));
+static ReturnStatus nullSelectProc _ARGS_ ((Fs_Device *devicePtr,
+    int *readPtr, int *writePtr, int *exceptPtr));
+static ReturnStatus nullReopenProc _ARGS_ ((Fs_Device *devicePtr,
+    int numUsers, int numWriters, Fs_NotifyToken notifyToken, int *flagsPtr));
+static ReturnStatus noReopenProc _ARGS_ ((Fs_Device *devicePtr,
+    int numUsers, int numWriters, Fs_NotifyToken notifyToken, int *flagsPtr));
+static ReturnStatus noMmapProc _ARGS_ ((Fs_Device *devicePtr,
+    Address startAddr, int length, int offset, Address *newAddrPtr));
+
+
+/*
+ * Device type specific routine table:
+ *	This is for the file-like operations as they apply to devices.
+ *	DeviceOpen
+ *	DeviceRead
+ *	DeviceWrite
+ *	DeviceIOControl
+ *	DeviceClose
+ *	DeviceSelect
+ *	BlockDeviceAttach
+ *	DeviceReopen
+ *      DeviceMmap
+ */
+
+
+DevFsTypeOps devFsOpTable[] = {
+    /*
+     * Serial lines used to implement terminals.
+     */
+    {DEV_TERM,       DevTtyOpen, DevTtyRead, DevTtyWrite,
+		     DevTtyIOControl, DevTtyClose, DevTtySelect,
+		     DEV_NO_ATTACH_PROC, noReopenProc, noMmapProc},
+
+    /*
+     * The system error log.  If this is not open then error messages go
+     * to the console.
+     */
+    {DEV_SYSLOG,    Dev_SyslogOpen, Dev_SyslogRead, Dev_SyslogWrite,
+		    Dev_SyslogIOControl, Dev_SyslogClose, Dev_SyslogSelect,
+		    DEV_NO_ATTACH_PROC, Dev_SyslogReopen, noMmapProc},
+    /*
+     * SCSI Worm interface.
+     */
+    {DEV_SCSI_WORM, Dev_TimerOpen, Dev_TimerRead, nullWriteProc,
+		    Dev_TimerIOControl, nullCloseProc, nullSelectProc,
+		    DEV_NO_ATTACH_PROC, noReopenProc, noMmapProc},
+    /*
+     * The following device number is unused.
+     */
+    {DEV_PLACEHOLDER_2, noOpenProc, nullReadProc, nullWriteProc,
+		    Dev_NullIOControl, nullCloseProc, Dev_NullSelect,
+		    DEV_NO_ATTACH_PROC, noReopenProc, noMmapProc},
+    /*
+     * New SCSI Disk interface.
+     */
+    {DEV_SCSI_DISK, DevRawBlockDevOpen, DevRawBlockDevRead,
+		    DevRawBlockDevWrite, DevRawBlockDevIOControl,
+		    DevRawBlockDevClose, Dev_NullSelect, DevScsiDiskAttach,
+		    DevRawBlockDevReopen, noMmapProc},
+    /*
+     * SCSI Tape interface.
+     */
+    {DEV_SCSI_TAPE, DevSCSITapeOpen, DevSCSITapeRead, DevSCSITapeWrite,
+		    DevSCSITapeIOControl, DevSCSITapeClose, Dev_NullSelect,
+		    DEV_NO_ATTACH_PROC, noReopenProc, noMmapProc},
+    /*
+     * /dev/null
+     */
+    {DEV_MEMORY,    nullOpenProc, Dev_NullRead, Dev_NullWrite,
+		    Dev_NullIOControl, nullCloseProc, Dev_NullSelect,
+		    DEV_NO_ATTACH_PROC, nullReopenProc, noMmapProc},
+    /*
+     * Xylogics 450 disk controller.
+     */
+    {DEV_XYLOGICS, DevRawBlockDevOpen, DevRawBlockDevRead,
+		    DevRawBlockDevWrite, DevRawBlockDevIOControl, 
+		    DevRawBlockDevClose, Dev_NullSelect,
+		    DevXylogics450DiskAttach, DevRawBlockDevReopen,
+                    noMmapProc},
+    /*
+     * Network devices.  The unit number specifies the ethernet protocol number.
+     */
+    {DEV_NET,      DevNet_FsOpen, DevNet_FsRead, DevNet_FsWrite, 
+		   DevNet_FsIOControl, DevNet_FsClose, DevNet_FsSelect, 
+		   DEV_NO_ATTACH_PROC, DevNet_FsReopen, noMmapProc},
+    /*
+     * Raw SCSI HBA interface.
+     */
+    {DEV_SCSI_HBA, DevSCSIDeviceOpen, Dev_NullRead, Dev_NullWrite,
+		    DevSCSIDeviceIOControl, DevSCSIDeviceClose, Dev_NullSelect,
+		    DEV_NO_ATTACH_PROC, noReopenProc, noMmapProc},
+    /*  
+     * RAID device.
+     */ 
+    {DEV_RAID, DevRawBlockDevOpen, DevRawBlockDevRead,
+                    DevRawBlockDevWrite, DevRawBlockDevIOControl,
+                    DevRawBlockDevClose, Dev_NullSelect, DevRaidAttach,
+                    DevRawBlockDevReopen, noMmapProc},
+    /*  
+     * Debug device. (useful for debugging RAID device)
+     */ 
+    {DEV_DEBUG, DevRawBlockDevOpen, DevRawBlockDevRead,
+                    DevRawBlockDevWrite, DevRawBlockDevIOControl,
+                    DevRawBlockDevClose, Dev_NullSelect, DevDebugAttach,
+                    DevRawBlockDevReopen, noMmapProc},
+    /*
+     * Event devices for window systems.
+     */
+    {DEV_MOUSE,    DevMouseOpen, DevMouseRead, DevMouseWrite,
+		   DevMouseIOControl, DevMouseClose, DevMouseSelect,
+		   DEV_NO_ATTACH_PROC, noReopenProc, noMmapProc},
+    /*
+     * Frame buffer device.
+     */
+    {DEV_GRAPHICS, DevFBOpen, nullReadProc, nullWriteProc,
+                   DevFBIOControl, DevFBClose, nullSelectProc,
+                   DEV_NO_ATTACH_PROC, noReopenProc, DevFBMMap},
+};
+
+int devNumDevices = sizeof(devFsOpTable) / sizeof(DevFsTypeOps);
+
+static ReturnStatus
+nullOpenProc _ARGS_ ((Fs_Device *devicePtr,
+    int flags, Fs_NotifyToken notifyToken, int *flagsPtr))
+{
+    return SUCCESS;
+}
+
+static ReturnStatus
+noOpenProc _ARGS_ ((Fs_Device *devicePtr,
+    int flags, Fs_NotifyToken notifyToken, int *flagsPtr))
+{
+    return FS_INVALID_ARG;
+}
+
+static ReturnStatus
+nullReadProc _ARGS_ ((Fs_Device *devicePtr,
+    Fs_IOParam *readPtr, Fs_IOReply *replyPtr))
+{
+    return SUCCESS;
+}
+
+static ReturnStatus
+nullWriteProc _ARGS_ ((Fs_Device *devicePtr,
+    Fs_IOParam *readPtr, Fs_IOReply *replyPtr))
+{
+    return SUCCESS;
+}
+
+static ReturnStatus
+nullCloseProc _ARGS_ ((Fs_Device *devicePtr,
+    int flags, int numUsers, int numWriters))
+{
+    return SUCCESS;
+}
+
+static ReturnStatus
+nullSelectProc _ARGS_ ((Fs_Device *devicePtr,
+    int *readPtr, int *writePtr, int *exceptPtr))
+{
+    return SUCCESS;
+}
+
+static ReturnStatus
+nullReopenProc _ARGS_ ((Fs_Device *devicePtr,
+    int numUsers, int numWriters, Fs_NotifyToken notifyToken, int *flagsPtr))
+{
+    return SUCCESS;
+}
+
+static ReturnStatus
+noReopenProc _ARGS_ ((Fs_Device *devicePtr,
+    int numUsers, int numWriters, Fs_NotifyToken notifyToken, int *flagsPtr))
+{
+    return FS_INVALID_ARG;
+}
+
+static ReturnStatus
+noMmapProc _ARGS_ ((Fs_Device *devicePtr,
+    Address startAddr, int length, int offset, Address *newAddrPtr))
+{
+    return FS_INVALID_ARG;
+}
+
+@
+
+
+9.3
+log
+@Added graphics entry for sun3's.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devFsOpTable.c,v 9.2 90/09/11 12:38:58 rab Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d150 1
+a150 1
+    /*
+d155 1
+a155 1
+                    DevRawBlockDevClose, nullSelectProc, DevRaidAttach,
+d157 1
+a157 1
+    /*
+d162 1
+a162 1
+                    DevRawBlockDevClose, nullSelectProc, DevDebugAttach,
+@
+
+
+9.3.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/dev/sun3.md/devFsOpTable.c,v 9.3 90/11/03 13:50:58 mgbaker Exp $ SPRITE (Berkeley)";
+@
+
+
+9.2
+log
+@Added prototypes.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devFsOpTable.c,v 9.1 90/01/05 13:17:27 ouster Exp Locker: rab $ SPRITE (Berkeley)";
+d42 1
+d48 1
+d170 6
+@
+
+
+9.1
+log
+@Use new NULL procedures from /dev/null.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devFsOpTable.c,v 9.0 89/09/12 14:58:49 douglis Stable Locker: ouster $ SPRITE (Berkeley)";
+d47 18
+a65 3
+static ReturnStatus NoDevice();
+static ReturnStatus NullProc();
+
+d78 1
+d88 2
+a89 1
+		     DEV_NO_ATTACH_PROC, NoDevice},
+d96 1
+a96 1
+		    DEV_NO_ATTACH_PROC, Dev_SyslogReopen},
+d100 3
+a102 3
+    {DEV_SCSI_WORM, Dev_TimerOpen, Dev_TimerRead, NullProc,
+		    Dev_TimerIOControl, NullProc, NullProc,
+		    DEV_NO_ATTACH_PROC, NoDevice},
+d106 3
+a108 3
+    {DEV_PLACEHOLDER_2, NoDevice, NullProc, NullProc,
+		    Dev_NullIOControl, NullProc, Dev_NullSelect,
+		    DEV_NO_ATTACH_PROC, NoDevice},
+d113 1
+a113 1
+		    DevRawBlockDevWrite, DevRawBlockDevIOControl, 
+d115 1
+a115 1
+		    DevRawBlockDevReopen},
+d121 1
+a121 1
+		    DEV_NO_ATTACH_PROC, NoDevice},
+d125 3
+a127 3
+    {DEV_MEMORY,    NullProc, Dev_NullRead, Dev_NullWrite,
+		    Dev_NullIOControl, NullProc, Dev_NullSelect,
+		    DEV_NO_ATTACH_PROC, NullProc},
+d134 2
+a135 1
+		    DevXylogics450DiskAttach, DevRawBlockDevReopen},
+d141 1
+a141 1
+		   DEV_NO_ATTACH_PROC, DevNet_FsReopen},
+d147 1
+a147 1
+		    DEV_NO_ATTACH_PROC, NoDevice},
+d153 2
+a154 2
+                    DevRawBlockDevClose, NullProc, DevRaidAttach,
+                    DevRawBlockDevReopen},
+d160 2
+a161 2
+                    DevRawBlockDevClose, NullProc, DevDebugAttach,
+                    DevRawBlockDevReopen},
+d167 1
+a167 2
+		   DEV_NO_ATTACH_PROC, NoDevice},
+
+d173 23
+a195 1
+NullProc()
+d197 1
+a197 1
+    return(SUCCESS);
+d200 27
+d229 2
+a230 1
+NoDevice()
+d232 1
+a232 1
+    return(FS_INVALID_ARG);
+d234 1
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devFsOpTable.c,v 8.10 89/07/22 14:06:03 eklee Exp Locker: douglis $ SPRITE (Berkeley)";
+a47 1
+static ReturnStatus NullSelectProc();
+d90 1
+a90 1
+		    NullProc, NullProc, NullSelectProc,
+d97 1
+a97 1
+		    DevRawBlockDevClose, NullSelectProc, DevScsiDiskAttach,
+d103 1
+a103 1
+		    DevSCSITapeIOControl, DevSCSITapeClose, NullSelectProc,
+d109 2
+a110 2
+		    NullProc, NullProc, NullSelectProc, DEV_NO_ATTACH_PROC,
+		    NullProc},
+d116 1
+a116 1
+		    DevRawBlockDevClose, NullSelectProc,
+d128 1
+a128 1
+		    DevSCSIDeviceIOControl, DevSCSIDeviceClose, NullSelectProc,
+a166 17
+
+
+/*ARGSUSED*/
+static ReturnStatus
+NullSelectProc(devicePtr, readPtr, writePtr, exceptPtr)
+    Fs_Device	*devicePtr;	/* Ignored. */
+    int *readPtr;		/* Read bit */
+    int *writePtr;		/* Write bit */
+    int *exceptPtr;		/* Exception bit */
+{
+    /*
+     * Leave the read and write bits on.  This is used with /dev/null.
+     */
+    *exceptPtr = 0;
+    return(SUCCESS);
+}
+
+@
+
+
+8.10
+log
+@Added DEV_RAID and DEV_DEBUG
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devFsOpTable.c,v 8.9 89/07/15 11:09:06 ouster Exp Locker: eklee $ SPRITE (Berkeley)";
+@
+
+
+8.9
+log
+@Change devTypesInt.h => devTypes.h.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev.jo/sun3.md/RCS/devFsOpTable.c,v 8.8 89/07/14 17:33:31 ouster Exp Locker: ouster $ SPRITE (Berkeley)";
+a130 2
+
+#ifdef USE_RAID
+a144 9
+#else
+    {DEV_RAID, NoDevice, NullProc, NullProc,
+		    NullProc, NullProc, NullSelectProc,
+		    DEV_NO_ATTACH_PROC, NoDevice},
+    {DEV_DEBUG, NoDevice, NullProc, NullProc,
+		    NullProc, NullProc, NullSelectProc,
+		    DEV_NO_ATTACH_PROC, NoDevice},
+#endif /* USE_RAID */
+
+@
+
+
+8.8
+log
+@Changes for new tty driver.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devFsOpTable.c,v 8.7 89/07/08 15:15:08 mendel Exp Locker: eklee $ SPRITE (Berkeley)";
+d28 1
+a28 1
+#include "devTypesInt.h"
+@
+
+
+8.7
+log
+@Added DEV_SCSI_HBA device.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devFsOpTable.c,v 8.6 89/06/15 09:19:54 brent Exp Locker: mendel $ SPRITE (Berkeley)";
+a33 1
+#include "devConsole.h"
+d43 3
+a51 5
+#ifdef SERIALB_DEBUG
+extern ReturnStatus Dev_serialBOutTrace();
+extern ReturnStatus Dev_serialBInTrace();
+#endif
+
+d69 1
+a69 1
+     * The console.  The workstation's display and keyboard.
+d71 3
+a73 3
+    {DEV_CONSOLE,    Dev_ConsoleOpen, Dev_ConsoleRead, Dev_ConsoleWrite,
+		     Dev_ConsoleIOControl, Dev_ConsoleClose, Dev_ConsoleSelect,
+		     DEV_NO_ATTACH_PROC, Dev_ConsoleReopen},
+a86 1
+
+a93 3
+     * SCSI Disk interface.
+     */
+    /*
+a124 1
+
+d126 1
+a126 1
+     * SCSI Tape interface.
+d131 24
+a154 4
+#ifdef SERIALB_DEBUG
+    {DEV_SERIALB_OUT_QUEUE, NullProc, Dev_serialBOutTrace, NullProc,
+                  NullProc, NullProc, NullProc, DEV_NO_ATTACH_PROC,
+		  NoDevice},
+d156 6
+a161 4
+    {DEV_SERIALB_IN_QUEUE, NullProc, Dev_serialBInTrace, NullProc,
+                  NullProc, NullProc, NullProc, DEV_NO_ATTACH_PROC,
+		  NoDevice},
+#endif
+a165 1
+
+@
+
+
+8.6
+log
+@Fixed typo
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devFsOpTable.c,v 8.5 89/06/15 08:56:02 brent Exp $ SPRITE (Berkeley)";
+d43 1
+d133 6
+@
+
+
+8.5
+log
+@Added reopen procedures.  Updated NullSelectProc
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devFsOpTable.c,v 8.4 89/05/24 07:50:49 rab Exp Locker: brent $ SPRITE (Berkeley)";
+d87 1
+a87 1
+> 		    Dev_TimerIOControl, NullProc, NullProc,
+@
+
+
+8.4
+log
+@Changes to allow optimization.
+@
+text
+@d4 2
+a5 1
+ *	The operation tables for the file system devices.  
+d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devFsOpTable.c,v 8.3 89/05/23 10:27:25 mendel Exp Locker: rab $ SPRITE (Berkeley)";
+d41 1
+d65 1
+d75 1
+a75 1
+		     DEV_NO_ATTACH_PROC},
+d82 1
+a82 1
+		    DEV_NO_ATTACH_PROC},
+d86 3
+a88 2
+    {DEV_SCSI_WORM, NoDevice, NullProc, NullProc,
+		    NullProc, NullProc, NullProc, DEV_NO_ATTACH_PROC},
+d94 2
+a95 1
+		    NullProc, NullProc, NullProc, DEV_NO_ATTACH_PROC},
+d104 2
+a105 1
+		    DevRawBlockDevClose, NullProc, DevScsiDiskAttach},
+d110 2
+a111 1
+		    DevSCSITapeIOControl, DevSCSITapeClose, NullProc},
+d116 2
+a117 1
+		    NullProc, NullProc, NullSelectProc, DEV_NO_ATTACH_PROC},
+d123 2
+a124 1
+		    DevRawBlockDevClose, NullProc, DevXylogics450DiskAttach},
+d130 1
+a130 1
+		   DEV_NO_ATTACH_PROC},
+d134 2
+a135 1
+                  NullProc, NullProc, NullProc, DEV_NO_ATTACH_PROC },
+d138 2
+a139 1
+                  NullProc, NullProc, NullProc, DEV_NO_ATTACH_PROC },
+d163 1
+a163 1
+NullSelectProc(devicePtr, inFlags, outFlagsPtr)
+d165 3
+a167 2
+    int		inFlags;	/* FS_READBLE, FS_WRITABLE, FS_EXCEPTION. */
+    int		*outFlagsPtr;	/* Copy of inFlags. */
+d169 4
+a172 1
+    *outFlagsPtr = inFlags;
+@
+
+
+8.3
+log
+@Added block IO routines to device switch.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devFsOpTable.c,v 8.2 89/01/06 06:56:40 rab Exp $ SPRITE (Berkeley)";
+@
+
+
+8.2
+log
+@*** empty log message ***
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devFsOpTable.c,v 8.1 88/11/21 09:10:39 brent Exp Locker: rab $ SPRITE (Berkeley)";
+d25 1
+a35 1
+#include "devSCSI.h"
+d38 1
+a38 2
+#include "devSCSIWorm.h"
+#include "devXylogicsDisk.h"
+d40 1
+d62 1
+d71 2
+a72 1
+		     Dev_ConsoleIOControl, Dev_ConsoleClose, Dev_ConsoleSelect},
+d78 2
+a79 1
+		    Dev_SyslogIOControl, Dev_SyslogClose, Dev_SyslogSelect},
+d83 3
+a85 2
+    {DEV_SCSI_WORM, Dev_SCSIWormOpen, Dev_SCSIWormRead, Dev_SCSIWormWrite,
+		     Dev_SCSIWormIOControl, Dev_SCSIWormClose, NullProc},
+d90 1
+a90 1
+		    NullProc, NullProc, NullProc},
+d94 6
+a99 2
+    {DEV_SCSI_DISK, Dev_SCSIDiskOpen, Dev_SCSIDiskRead, Dev_SCSIDiskWrite,
+		    Dev_SCSIDiskIOControl, Dev_SCSIDiskClose, NullProc},
+d103 2
+a104 2
+    {DEV_SCSI_TAPE, Dev_SCSITapeOpen, Dev_SCSITapeRead, Dev_SCSITapeWrite,
+		    Dev_SCSITapeIOControl, Dev_SCSITapeClose, NullProc},
+d109 1
+a109 1
+		    NullProc, NullProc, NullSelectProc},
+d113 3
+a115 3
+    {DEV_XYLOGICS, Dev_XylogicsDiskOpen, Dev_XylogicsDiskRead,
+		    Dev_XylogicsDiskWrite, Dev_XylogicsDiskIOControl,
+		    Dev_XylogicsDiskClose, NullProc},
+d120 2
+a121 1
+		   DevNet_FsIOControl, DevNet_FsClose, DevNet_FsSelect},
+d125 1
+a125 1
+                  NullProc, NullProc, NullProc },
+d128 1
+a128 1
+                  NullProc, NullProc, NullProc },
+d130 1
+a134 27
+/*
+ * Device Block I/O operation table.  This table is sparse because not
+ * all devices support block I/O.
+ *	FsBlockIOInit
+ *	FsBlockIO
+ */
+DevFsBlockOps devFsBlockOpTable[] = {
+    { DEV_CONSOLE, 0 },
+    { DEV_SYSLOG, 0 },
+    { DEV_SCSI_WORM, 0 },
+    { DEV_PLACEHOLDER_2, 0 },
+    { DEV_SCSI_DISK, Dev_SCSIDiskBlockIO },
+    { DEV_SCSI_TAPE, 0 },
+    { DEV_MEMORY, 0 },
+    { DEV_XYLOGICS, Dev_XylogicsDiskBlockIO },
+    { DEV_NET, 0 },
+#ifdef SERIALB_DEBUG
+    { DEV_SERIALB_OUT_QUEUE, 0 },
+    { DEV_SERIALB_IN_QUEUE, 0 },
+#endif
+};
+
+/*
+ * A list of disk device types that is used when probing for a disk.
+ */
+int devFsDefaultDiskTypes[] = { DEV_SCSI_DISK, DEV_XYLOGICS };
+int devNumDiskTypes = sizeof(devFsDefaultDiskTypes) / sizeof(int);
+@
+
+
+8.1
+log
+@Nuked references to SBC routines
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devFsOpTable.c,v 8.0 88/11/11 18:14:23 douglis Stable Locker: brent $ SPRITE (Berkeley)";
+d46 6
+d113 8
+a124 1
+
+d141 4
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devFsOpTable.c,v 6.1 88/09/05 11:42:47 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d23 1
+d35 1
+a35 1
+#include "devSBCDisk.h"
+a106 5
+    /*
+     * SCSI-3 Disk interface.  Sun's newer SCSI host adaptor.
+     */
+    {DEV_SBC_DISK, Dev_SBCDiskOpen, Dev_SBCDiskRead, Dev_SBCDiskWrite,
+		     Dev_SBCDiskIOControl, Dev_SBCDiskClose, NullProc},
+a127 1
+    { DEV_SBC_DISK, Dev_SBCDiskBlockIO },
+d133 1
+a133 1
+int devFsDefaultDiskTypes[] = { DEV_SCSI_DISK, DEV_XYLOGICS, DEV_SBC_DISK };
+@
+
+
+6.1
+log
+@Changed DEV_KEYBOARD to DEV_SCSI_WORM to support Maxtor optical disk drive.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: devFsOpTable.c,v 6.0 88/08/11 12:30:43 douglis Stable $ SPRITE (Berkeley)";
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: devFsOpTable.c,v 1.1 88/07/15 16:59:21 mendel Exp $ SPRITE (Berkeley)";
+d37 1
+d71 1
+a71 1
+     * The following device numbers are unused.
+d73 5
+a77 1
+    {DEV_KEYBOARD,    NoDevice,NullProc,NullProc, NullProc, NullProc, NullProc},
+d125 1
+a125 1
+    { DEV_KEYBOARD, 0 },
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: fsOpTable.c,v 1.8 88/06/15 17:14:13 brent Exp $ SPRITE (Berkeley)";
+@

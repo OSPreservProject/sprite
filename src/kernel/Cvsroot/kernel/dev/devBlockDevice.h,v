@@ -1,0 +1,422 @@
+head     9.3;
+branch   ;
+access   ;
+symbols  ds3100:9.3 sun3:9.3 sprited:9.2.1 sun4nw:9.3 symm:9.3 spur:9.3 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.3
+date     91.08.19.13.39.54;  author jhh;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     91.04.16.17.12.53;  author jhh;  state Exp;
+branches 9.2.1.1;
+next     9.1;
+
+9.1
+date     90.09.11.12.12.43;  author rab;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.56.52;  author douglis;  state Stable;
+branches ;
+next     1.4;
+
+1.4
+date     89.06.16.12.08.22;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.06.15.08.40.59;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.05.24.07.54.50;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.05.01.15.27.18;  author mendel;  state Exp;
+branches ;
+next     ;
+
+9.2.1.1
+date     92.03.18.21.12.24;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Declarations for block devices drivers.
+@
+
+
+9.3
+log
+@increased size of ctrlData field in DevBlockDeviceRequest to accomodate
+larger ScsiCmds
+@
+text
+@/* 
+ * devBlockDevice.h --
+ *
+ *	Declarations for block devices drivers.  A block device is any device
+ *	that provides random access to some number of fixed size units
+ *	called blocks. Block device are normally used to build file system
+ *	on but may also be accessed like a file. 
+ *
+ *	The model used for block devices is that devices are first "attached"
+ *	to the system.  This is normally done when the device is
+ *	opened with Fs_Open. Attaching a device first 
+ *	verifies the existence and readiness (i.e. Is it powered on?)
+ *	of the device.  If the device exists and is accessible, the
+ *	attach routine returns a pointer to a handle use to 
+ *	access the device. 
+ *
+ *	Because of intended usage and the speeds of some
+ *	block devices, the I/O interface to block devices is asynchronous.
+ *	Input and output operations are started by calling Dev_BlockDeviceIO
+ *	that starts the operation and returns before the operation 
+ *	completes. The initiator of block input/output operations is
+ *	notified of completion by a call back to a function specified
+ *	in the request.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/dev/RCS/devBlockDevice.h,v 9.2 91/04/16 17:12:53 jhh Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _DEVBLOCKDEVICE
+#define _DEVBLOCKDEVICE
+
+#include <user/fs.h>
+
+/*
+ * MAX_BLOCK_DEV_CTRL_WORDS - Number of sizeof(int) words reserved for 
+ * 			      controller use in a block device request.
+ *			      This memory is used by the controller for
+ *			      queuing and building controller control blocks.
+ */
+
+#define	MAX_BLOCK_DEV_CTRL_WORDS (384/sizeof(int))
+
+/*
+ * The DevBlockDeviceRequest structure is passed to block IO devices to 
+ * request a range of address to be read or written.  This startAddress and
+ * range must be fit within the constraint specified in the 
+ * DevBlockDeviceHandle.
+ */
+typedef struct DevBlockDeviceRequest {
+    int			operation;	/* Operation  FS_READ or FS_WRITE. */
+    unsigned int	startAddress;	/* Byte offset into device to start
+					 * operation. */
+    unsigned int	startAddrHigh;	/* High order 32 bits of byte offset
+					 * starting address. */
+    int			bufferLen;	/* Length of the data buffer for 
+					 * request in bytes. */
+    Address		buffer;		/* The data buffer. */
+    void		(*doneProc) _ARGS_ ((struct DevBlockDeviceRequest
+                                                 *requestPtr,
+	                                     ReturnStatus returnStatus,
+					     int amountTransferred));
+                                        /* Procedure to call upon completion.*/
+    ClientData		clientData;	/* Word of client data available to the 
+					 * caller.  */
+				/*
+				 * The rest of the bytes in this structure are
+				 * for block device controller information. 
+				 * It is declared to be an array of ints to 
+				 * guarantee it will start on a word 
+				 * boundary. */
+    int			ctrlData[MAX_BLOCK_DEV_CTRL_WORDS];
+} DevBlockDeviceRequest;
+
+/* 
+ * An active block device is described by a pointer to it's block device 
+ * handle. A block device handle must start with the a DevBlockDeviceHandle 
+ * structure. The call sequence of routines in DevBlockDeviceHandle is 
+ * defined in the macro specified in the comment following the structure's
+ * field names.
+ */
+
+typedef struct DevBlockDeviceHandle {
+    ReturnStatus (*blockIOProc) _ARGS_ ((struct DevBlockDeviceHandle
+                                              *blockDevHandlePtr,
+	                                 DevBlockDeviceRequest *requestPtr));
+                                        /* Start a block read or write
+					 * operation. 
+					 * See below for calling sequence. */
+    ReturnStatus (*IOControlProc) _ARGS_ ((struct DevBlockDeviceHandle
+                                              *blockDevHandlePtr,
+				           Fs_IOCParam *ioctlPtr, 
+					   Fs_IOReply *replyPtr));
+				        /* Perform an IO Control operation on
+					 * the device. 
+					 * See below for calling sequence. */
+    ReturnStatus (*releaseProc) _ARGS_ ((struct DevBlockDeviceHandle
+                                            *blockDevHandlePtr));
+                                        /* Release the device and free any
+					 * resources held. 
+					 * See below for calling sequence. */
+    int	 	minTransferUnit;	/* Smallest unit of transfer to or
+					 * from the device. All request must
+					 * at least this size and be 
+					 * a multiple of this size. */
+    int		maxTransferSize;	/* Largest unit of transfer to and 
+					 * from the device. */
+    ClientData	clientData;		/* A word of clientData usable by the
+					 * caller. */
+} DevBlockDeviceHandle;
+
+
+/*
+ * DevBlockDeviceHandle routine releaseProc calling sequence:
+ *    
+ * releaseProc -
+ *
+ *	ReturnStatus releaseProc(blockDevHandlePtr)
+ *	    DevBlockDeviceHandle *blockDevHandlePtr; / * The device handle as
+ *						       * returned by the 
+ *						       * attach routine. * /
+ *	Release the resources in use by the specified device. 
+ *	Once released, the device must be attached again with 
+ *	attachProc before any operation can be performed.
+ *	Note that device attaches do not nest so the caller is 
+ *	responsible for insuring all users of a device are finished
+ *	before releasing the device. releaseProc returns SUCCESS if
+ *	the operation succeeds or a Sprite error code otherwise.
+ *
+ *
+ * DevBlockDeviceHandle routine blockIOProc calling sequence:
+ *
+ *  ReturnStatus blockIOProc(blockDevHandlePtr, requestPtr)
+ *  	 DevBlockDeviceHandle	*blockDevHandlePtr;
+ *				    / * Handle of the device to operate on. * /
+ *	 DevBlockDeviceRequest	*requestPtr; / * Request to be performed. * /
+ *
+ *	Enqueue a block IO request for the specified device. Upon operation
+ *	completion doneProc specified in the requestPtr is called. 
+ *	blockIOProc should return SUCCESS if the operation is 
+ *	successfully enqueued or a Sprite error code otherwise. 
+ *	When the enqueued operation finishes, 
+ *	doneProc is called with the following arguments:
+ *
+ *	(*doneProc)(requestPtr, returnStatus, amountTransferred)
+ *		DevBlockDeviceRequest *requestPtr;
+ *					       / * The requestPtr passed to
+ *						 * blockIOProc. * /
+ *		ReturnStatus	returnStatus;  / * The error status of the
+ *						 * command. SUCCESS if no
+ *						 * error occurred. * /
+ *		int	amountTransferred;     / * The number of bytes
+ *						 * transferred by the 
+ *						 * operation. * /
+ *	
+ *	Note that doneProc may be called before blockIOProc finishes and
+ *	may also be called running at interrupt level. 
+ *
+ * IOControlProc calling sequences:
+ * 	ReturnStatus IOControlProc(blockDevHandlePtr, command, byteOrder,
+ *				inBufSize, inBuffer,  outBufSize, outBuffer);
+ *
+ *  	 DevBlockDeviceHandle	*blockDevHandlePtr;
+ *				    / * Handle of the device to operate on. * /
+ *	 int	command;	/ * IO control to be performed. * /
+ *	 int	byteOrder;	/ * Caller's byte ordering. * /
+ *	 int	inBufSize;	/ * Size of the input buffer - inBuffer. * /
+ *	 Address inBuffer;	/ * The input buffer. * /
+ *	 int	outBufSize;	/ * Size of the output buffer - outBuffer. * /
+ *	 Address outBuffer;	/ * The output buffer. * /
+ *	
+ *	Execute an IO control operation on the specified device. The
+ *	return value is the Sprite error code for the IOControl.
+ *
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*
+ * DEV_NO_ATTACH_PROC -  Special attach procedure entry in the
+ *			 devFsOpTable array  specifying no attach proc 
+ *			 available.
+ */
+#define	DEV_NO_ATTACH_PROC	((DevBlockDeviceHandle *(*)(Fs_Device *))0)
+
+/* procedures */
+
+extern DevBlockDeviceHandle *Dev_BlockDeviceAttach _ARGS_((Fs_Device *devicePtr));
+extern ReturnStatus Dev_BlockDeviceRelease _ARGS_((DevBlockDeviceHandle *blockDevHandlePtr));
+extern ReturnStatus Dev_BlockDeviceIOSync _ARGS_((DevBlockDeviceHandle *blockDevHandlePtr, DevBlockDeviceRequest *requestPtr, int *amountTransferredPtr));
+
+#ifdef lint
+extern ReturnStatus Dev_BlockDeviceIO _ARGS_ ((DevBlockDeviceHandle *
+    blockDevHandlePtr, DevBlockDeviceRequest *requestPtr));
+extern ReturnStatus Dev_BlockDeviceIOControl _ARGS_ ((DevBlockDeviceHandle
+    *blockDevHandlePtr, Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
+#else
+/*
+ * For speed, we code Dev_BlockDeviceIO and Dev_BlockDeviceIOControl as 
+ * macros. See the routines in devBlockDevice.c for documentation. If 
+ * lint is being run we keep around the routines for type checking.
+ */
+#define	Dev_BlockDeviceIO(handlePtr, requestPtr) \
+       (((handlePtr)->blockIOProc)((handlePtr),(requestPtr)))
+
+#define	Dev_BlockDeviceIOControl(handle, ioctlPtr, replyPtr) \
+       (((handle)->IOControlProc)((handle),(ioctlPtr), (replyPtr)))
+
+
+#endif /* lint */
+#endif /* _DEVBLOCKDEVICE */
+@
+
+
+9.2
+log
+@fixed include statements
+@
+text
+@d34 1
+a34 1
+ * $Header: /sprite/src/kernel/dev/RCS/devBlockDevice.h,v 9.1 90/09/11 12:12:43 rab Exp Locker: jhh $ SPRITE (Berkeley)
+d49 1
+a49 1
+#define	MAX_BLOCK_DEV_CTRL_WORDS (64/sizeof(int))
+@
+
+
+9.2.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d34 1
+a34 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/dev/devBlockDevice.h,v 9.2 91/04/16 17:12:53 jhh Exp $ SPRITE (Berkeley)
+@
+
+
+9.1
+log
+@Added prototypes.
+@
+text
+@d34 1
+a34 1
+ * $Header: /sprite/src/kernel/dev/RCS/devBlockDevice.h,v 9.0 89/09/12 14:56:52 douglis Stable Locker: rab $ SPRITE (Berkeley)
+d40 1
+a40 1
+#include "user/fs.h" 
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d34 1
+a34 1
+ * $Header: /sprite/src/kernel/dev/RCS/devBlockDevice.h,v 1.4 89/06/16 12:08:22 brent Exp Locker: douglis $ SPRITE (Berkeley)
+d40 2
+d66 5
+a70 1
+    void		(*doneProc)();	/* Procedure to call upon completion.*/
+d91 4
+a94 1
+    ReturnStatus  (*blockIOProc)();	/* Start a block read or write
+d97 5
+a101 1
+    ReturnStatus  (*IOControlProc)();	/* Perform an IO Control operation on
+d104 3
+a106 1
+    ReturnStatus  (*releaseProc)();	/* Release the device and free any 
+d191 1
+a191 1
+#define	DEV_NO_ATTACH_PROC	((DevBlockDeviceHandle *(*)())0)
+d195 4
+a198 3
+extern DevBlockDeviceHandle	*Dev_BlockDeviceAttach();
+extern ReturnStatus Dev_BlockDeviceRelease();
+extern ReturnStatus Dev_BlockDeviceIOSync();
+d200 4
+a203 2
+extern ReturnStatus Dev_BlockDeviceIO();
+extern ReturnStatus Dev_BlockDeviceIOControl();
+d206 1
+a206 1
+ * For speed, we code Dev_BlockDeviceIO and Dev_BlockDeviceIOControl() as 
+d218 1
+a218 1
+#endif
+@
+
+
+1.4
+log
+@Updated I/O Control interface
+@
+text
+@d34 1
+a34 1
+ * $Header: /sprite/src/kernel/dev/RCS/devBlockDevice.h,v 1.3 89/06/15 08:40:59 brent Exp Locker: brent $ SPRITE (Berkeley)
+@
+
+
+1.3
+log
+@added reopen extern, fixed IOControl macros
+@
+text
+@d34 1
+a34 1
+ * $Header: /sprite/src/kernel/dev/RCS/devBlockDevice.h,v 1.2 89/05/24 07:54:50 rab Exp Locker: brent $ SPRITE (Berkeley)
+d195 2
+a196 2
+#define	Dev_BlockDeviceIOControl(handle, cmd, byteOrder, isize, ibuf, osize, obuf) \
+       (((handle)->IOControlProc)((handle),(cmd),(byteOrder),(isize),(ibuf),(osize),(obuf)))
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d34 1
+a34 1
+ * $Header: /sprite/src/kernel/dev/RCS/devBlockDevice.h,v 1.1 89/05/01 15:27:18 mendel Exp Locker: rab $ SPRITE (Berkeley)
+d152 2
+a153 2
+ * 	ReturnStatus IOControlProc(blockDevHandlePtr, command, inBufSize, 
+ *		  		   inBuffer,  outBufSize, outBuffer);
+d158 1
+d195 2
+a196 2
+#define	Dev_BlockDeviceIOControl(handle, cmd, isize, ibuf, osize, obuf) \
+       (((handle)->IOControlProc)((handle),(cmd),(isize),(ibuf),(osize),(obuf)))
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d34 1
+a34 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.2 89/01/07 04:12:44 rab Exp $ SPRITE (Berkeley)
+@

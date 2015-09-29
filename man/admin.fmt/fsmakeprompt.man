@@ -1,0 +1,68 @@
+
+
+
+FSMAKEPROMPT              User Commands              FSMAKEPROMPT
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     fsmakeprompt - Interactive front-end for ffssmmaakkee.
+
+SSYYNNOOPPSSIISS
+     makeprompt
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     FFssmmaakkeepprroommpptt is used to create Sprite  filesystems  on  disk
+     partitions.   It  is an interactive front-end for the ffssmmaakkee
+     program.  FFssmmaakkeepprroommpptt prompts the user for  information  on
+     how to build the filesystem(s), then invokes ffssmmaakkee to actu-
+     ally build them.  All of the questions  have  basically  the
+     same  format.  Items  in square brackets '[]'  are a list of
+     legal answers to the question.  An item in parenthesis  '()'
+     is  the default answer. Simply pressing <return> in response
+     to a question will cause the default answer to be used.
+
+KKEEYYWWOORRDDSS
+     filesystem, disk, fsmake
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  July 16, 1991                    1
+
+
+

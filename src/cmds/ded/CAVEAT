@@ -1,0 +1,7 @@
+This is not a "distribution", it is only a snapshot of the
+directory one day.  Someone needed it badly, so here it is.
+There are a bunch of things left to do, and undoc'ed changes
+and commands, and half-implemented things that may break.
+All the ifdef's for other OS's than 4.2 have not been tested at all.
+That said, I have been using this under 4.2 for months w/o problems.
+Jay Lepreau 7/25/84

@@ -1,0 +1,235 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     91.07.26.17.15.05;  author jhh;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.07.25.14.53.20;  author fubar;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.05.03.13.54.55;  author rab;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.11.17.09.03.27;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.21.12.07.47;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.5
+log
+@Added more tape device information (checked in by shirriff)
+@
+text
+@/* 
+ * tape.h --
+ *
+ *	Definitions and macros for tape devices.
+ *
+ * Copyright 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef _TAPE
+#define _TAPE
+
+#include <sys/types.h>
+
+/*   
+ * Tape-drive specific commands:
+ *
+ *   IOC_TAPE_COMMAND		Issue a tape drive specific command
+ *   IOC_TAPE_STATUS		Return status info from a tape drive
+ */
+#define IOC_TAPE			(3 << 16)
+#define IOC_TAPE_COMMAND		(IOC_TAPE | 0x1)
+#define IOC_TAPE_STATUS			(IOC_TAPE | 0x2)
+
+/*
+ * Mag tape control, IOC_TAPE_COMMAND
+ * The one IN parameter specifies a specific
+ * tape command and a repetition count.
+ */
+typedef struct Dev_TapeCommand {
+    int command;
+    int count;
+} Dev_TapeCommand;
+
+#define IOC_TAPE_WEOF			0
+#define IOC_TAPE_REWIND			1
+#define IOC_TAPE_SKIP_BLOCKS		2
+#define IOC_TAPE_SKIP_FILES		3
+#define IOC_TAPE_BACKUP_BLOCKS		4
+#define IOC_TAPE_BACKUP_FILES		5
+#define IOC_TAPE_OFFLINE		6
+#define IOC_TAPE_RETENSION		7
+#define IOC_TAPE_ERASE			8
+#define IOC_TAPE_NO_OP			9
+#define IOC_TAPE_DONT_RETENSION		10
+#define IOC_TAPE_SKIP_EOD		11
+#define IOC_TAPE_GOTO_BLOCK		12
+#define IOC_TAPE_LOAD			13
+#define IOC_TAPE_UNLOAD			14
+#define IOC_TAPE_PREVENT_REMOVAL	15
+#define IOC_TAPE_ALLOW_REMOVAL		16
+
+
+/*
+ * Mag tape status, IOC_TAPE_STATUS
+ * This returns status info from drives.
+ * Any fields that are not valid will be set to -1.
+ * Legal values for drive-specific fields can be found in the header files
+ * in /sprite/lib/include/dev.
+ *
+ * NOTE: error counters may be reset by the device.  For example,
+ * the Exabyte will reset the counters when a new tape is loaded,
+ * the tape is rewound, or when you switch from reading to writing or
+ * vice versa.
+ */
+
+typedef struct Dev_TapeStatus {
+    int		type;		/* Type of tape drive, see below. */
+    int		blockSize;	/* Size of physical block. */
+    int		position;	/* Current block number. */
+    int		remaining;	/* Number of blocks remaining on the tape. */
+    int		dataError;	/* Number of data errors -- bad read after
+				 * write or bad read. */
+    int		readWriteRetry;	/* Number of reads/writes that had to be
+				 * retried. */
+    int		trackingRetry;	/* Number of tracking retries. */
+    Boolean	writeProtect;	/* TRUE if tape is write-protected. */
+    int		bufferedMode;	/* Buffered mode.  Value is drive specific. */
+    int		speed;		/* Tape speed. Value is drive specific. */
+    int		density;	/* Tape density. Value is drive specific. */
+    char	serial[16];	/* Serial number of drive. */
+} Dev_TapeStatus;
+
+/*
+ * Stubs to interface to Fs_IOControl
+ */
+extern ReturnStatus Ioc_TapeStatus();
+extern ReturnStatus Ioc_TapeCommand();
+
+/*
+ * Types for tape drive controllers.
+ */
+
+#define DEV_TAPE_UNKNOWN	0
+#define DEV_TAPE_SYSGEN		1
+#define DEV_TAPE_EMULEX		2
+
+#define DEV_TAPE_8MM		0x100
+#define DEV_TAPE_EXB8200	(DEV_TAPE_8MM | 1)
+#define DEV_TAPE_EXB8500	(DEV_TAPE_8MM | 2)
+
+#define DEV_TAPE_4MM		0x200
+#define DEV_TAPE_TLZ04		(DEV_TAPE_4MM | 1)
+
+#endif /* _TAPE */
+@
+
+
+1.4
+log
+@Added 2 ioctl defs for Symmetry tape drive
+@
+text
+@d1 1
+a1 1
+/*
+d4 1
+a4 4
+ *	Definitions and macros for Mag Tape manipulation.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+d6 8
+a13 2
+ *
+ * $Header: /crg2/bruces6/sprite/src/lib/include/dev/RCS/tape.h,v 1.2 90/04/23 14:19:35 fubar Exp $ SPRITE (Berkeley)
+d19 1
+a50 1
+/* next two are for Symmetry SCED tape drive */
+d53 5
+d63 8
+d72 1
+d74 14
+a87 6
+    int		type;		/* Tape drive Controler type */
+    int		statusReg;	/* Copy of device status register */
+    int		errorReg;	/* Copy of device error register */
+    int		residual;	/* Residual after last command */
+    int		fileNumber;	/* Current file number on the tape */
+    int		blockNumber;	/* Current block number on the tape */
+d99 2
+d103 7
+a109 1
+#define DEV_TAPE_EXABYTE	3
+@
+
+
+1.3
+log
+@Commented out characters following endif.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/lib/include/dev/RCS/tape.h,v 1.2 88/11/17 09:03:27 brent Exp Locker: rab $ SPRITE (Berkeley)
+d47 4
+@
+
+
+1.2
+log
+@Added DEV_TAPE_EXABYTE
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/lib/include/dev/RCS/tape.h,v 1.1 88/06/21 12:07:47 ouster Exp Locker: brent $ SPRITE (Berkeley)
+d74 1
+a74 1
+#endif _TAPE
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d10 1
+a10 1
+ * $Header: tape.h,v 2.0 87/08/11 09:19:35 brent Exp $ SPRITE (Berkeley)
+d70 3
+a72 2
+#define DEV_TAPE_SYSGEN		0x1
+#define DEV_TAPE_EMULUX		0x2
+@

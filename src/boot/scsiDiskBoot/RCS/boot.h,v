@@ -1,0 +1,65 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    mendel:1.2; strict;
+comment  @ * @;
+
+
+1.2
+date     87.05.08.17.43.52;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.07.18.09.30.20;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Boot program configuration parameters.
+@
+
+
+1.2
+log
+@Changed to SCSI_DISK_BOOT to allow for XYLOGICS_BOOT etc.
+@
+text
+@/*
+ * boot.h --
+ *
+ *	Boot program definitions.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: boot.h,v 1.1 86/07/18 09:30:20 brent Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _BOOT
+#define _BOOT
+
+/*
+ * This affects what devices get configured in.
+ */
+#define SCSI_DISK_BOOT
+
+#endif _BOOT
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d10 1
+a10 1
+ * $Header: proto.h,v 1.4 86/03/20 14:00:21 andrew Exp $ SPRITE (Berkeley)
+d19 1
+a19 1
+#define DISK_BOOT
+@

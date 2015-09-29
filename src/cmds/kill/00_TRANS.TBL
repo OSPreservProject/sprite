@@ -1,0 +1,8 @@
+D DS3100_M                          	ds3100.md
+F KILL.C;1                          	kill.c
+F KILL.MAN;1                        	kill.man
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md
+D SYMM_MD                           	symm.md

@@ -1,0 +1,41 @@
+exit.c:
+rand.c:
+atexit.c:
+atoi.c:
+MemData.c:
+MemDoTrace.c:
+MemInit.c:
+Mem_Bin.c:
+Mem_DumpTrace.c:
+Mem_PrintConfig.c:
+Mem_PrintInUse.c:
+Mem_PrintStats.c:
+Mem_SetPrintProc.c:
+Mem_SetTraceSizes.c:
+Mem_Size.c:
+abort.c:
+abs.c:
+atof.c:
+malloc.c:
+strtoul.c:
+MemChunkAlloc.c:
+atol.c:
+bsearch.c:
+calloc.c:
+cfree.c:
+div.c:
+free.c:
+getenv.c:
+labs.c:
+ldiv.c:
+qsort.c:
+realloc.c:
+setenv.c:
+strtod.c:
+strtol.c:
+system.c:
+unsetenv.c:
+_exit value declared inconsistently	llib-lc:_exit.c(43)  ::  system.c(56)
+sigvec returns value which is always ignored
+execlp returns value which is always ignored
+fprintf returns value which is always ignored

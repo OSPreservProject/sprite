@@ -1,0 +1,16 @@
+' $Header: /a/newcmds/click/RCS/click.man,v 1.2 88/12/23 11:49:28 ouster Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS CLICK cmds
+.BS
+.SH NAME
+click \- turn key click on or off
+.SH SYNOPSIS
+\fBclick \fR[\fBon\fR] [\fBoff\fR]
+.BE
+
+.SH DESCRIPTION
+.LP
+This command turns the keyboard key click on or off.
+
+.SH KEYWORDS
+keyboard, key, click

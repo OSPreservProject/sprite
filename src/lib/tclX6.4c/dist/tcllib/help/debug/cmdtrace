@@ -1,0 +1,52 @@
+
+
+          cmdtrace level|on [noeval] [notruncate] [flush] [procs]
+               Print a trace statement for all commands executed at
+               depth of level or below (1 is the top level).  If on is
+               specified, all commands at any level are traced.  The
+               following options are available:
+
+               noeval
+                    Causes arguments to be printed unevaluated.  If
+                    noeval is specified, the arguments are printed
+                    before evaluation.  Otherwise, they are printed
+                    afterwards.
+
+                     If the command line is longer than 60 characters,
+                    it is truncated to 60 and a "..." is postpended to
+                    indicate that there was more output than was
+                    displayed.  If an evaluated argument contains a
+                    space, the entire argument will be enclosed inside
+                    of braces (`{}') to allow the reader to visually
+                    separate the arguments from each other.
+
+               notruncate
+                    Disables the truncation of commands and evaluated
+                    arguments.
+
+               flush
+                    Causes the output buffer to be flushed after each
+                    line is printed.  This is useful when tracing C
+                    code that cause an application to abort, making it
+                    easy to narrow the problem down to the command
+                    that caused the abort.
+
+               procs
+                    Enables the tracing of procedure calls only.
+                    Commands that aren't procedure calls (i.e. calls
+                    to commands that are written in C, C++ or some
+                    object-compatible language) are not traced if the
+                    procs option is specified.  This option is
+                    particularly useful for greatly reducing the
+                    output of cmdtrace while debugging.
+
+               filehandle
+                    If specified, then the trace output will be
+                    written to the file rather than stdout.
+
+          cmdtrace off
+               Turn off all tracing.
+
+          cmdtrace depth
+               Returns the current maximum trace level, or zero if
+               trace is disabled.

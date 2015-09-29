@@ -1,0 +1,266 @@
+
+
+
+Tk_GetCursor          UNKNOWN SECTION (tk)           Tk_GetCursor
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tk_GetCursor,     Tk_GetCursorFromData,     Tk_NameOfCursor,
+     Tk_FreeCursor - maintain database of cursors
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttkk..hh>>
+
+     Cursor
+     TTkk__GGeettCCuurrssoorr((_i_n_t_e_r_p, _t_k_w_i_n, _s_t_r_i_n_g))
+
+     Cursor
+     TTkk__GGeettCCuurrssoorrFFrroommDDaattaa((_i_n_t_e_r_p, _t_k_w_i_n, _s_o_u_r_c_e, _m_a_s_k, _w_i_d_t_h, _h_e_i_g_h_t, _x_H_o_t, _y_H_o_t, _f_g, _b_g))
+
+     char *
+     TTkk__NNaammeeOOffCCuurrssoorr((_c_u_r_s_o_r))
+
+     TTkk__FFrreeeeCCuurrssoorr((_c_u_r_s_o_r))
+
+AARRGGUUMMEENNTTSS
+     Tcl_Interp      *_i_n_t_e_r_p     (in)      Interpreter to use for
+                                           error reporting.
+
+     Tk_Window       _t_k_w_i_n       (in)      Token  for  window  in
+                                           which  the cursor will
+                                           be used.
+
+     Tk_Uid          _s_t_r_i_n_g      (in)      Description of cursor;
+                                           see below for possible
+                                           values.
+
+     char            *_s_o_u_r_c_e     (in)      Data for  cursor  bit-
+                                           map,  in standard bit-
+                                           map format.
+
+     char            *_m_a_s_k       (in)      Data for mask  bitmap,
+                                           in   standard   bitmap
+                                           format.
+
+     unsigned int    _w_i_d_t_h       (in)      Width  of  _s_o_u_r_c_e  and
+                                           _m_a_s_k.
+
+     unsigned int    _h_e_i_g_h_t      (in)      Height of  _s_o_u_r_c_e  and
+                                           _m_a_s_k.
+
+     unsigned int    _x_H_o_t        (in)      X-location  of  cursor
+                                           hot-spot.
+
+     unsigned int    _y_H_o_t        (in)      Y-location  of  cursor
+                                           hot-spot.
+
+
+
+
+Sprite v.1.0      Printed:  September 27, 1991                  1
+
+
+
+
+
+
+Tk_GetCursor          UNKNOWN SECTION (tk)           Tk_GetCursor
+
+
+
+     Tk_Uid          _f_g          (in)      Textual description of
+                                           foreground  color  for
+                                           cursor.
+
+     Tk_Uid          _b_g          (in)      Textual description of
+                                           background  color  for
+                                           cursor.
+
+     Cursor          _c_u_r_s_o_r      (in)      X identifier for  cur-
+                                           sor.      If    passed
+                                           toTTkk__FFrreeeeCCuurrssoorr,  must
+                                           have  been returned by
+                                           some previous call  to
+                                           TTkk__GGeettCCuurrssoorr        or
+                                           TTkk__GGeettCCuurrssoorrFFrroommDDaattaa.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     These procedures manage a collection of cursors  being  used
+     by  an  application.  The procedures allow cursors to be re-
+     used efficiently, thereby avoiding server overhead, and also
+     allow cursors to be named with character strings.
+
+     TTkk__GGeettCCuurrssoorr takes as argument a string describing a cursor,
+     and  returns  the X identifier for a cursor corresponding to
+     the description.  It re-uses an existing cursor if  possible
+     and  creates a new one otherwise.  _S_t_r_i_n_g must be a standard
+     Tcl list with one of the following forms:
+
+     _n_a_m_e  [_f_g_C_o_l_o_r  [_b_g_C_o_l_o_r]]
+          _N_a_m_e is the name of a cursor in the standard  X  cursor
+          font,  i.e.,  any of the names defined in ccuurrssoorrffoonntt..hh,
+          without the XXCC__.  Some  example  values  are  XX__ccuurrssoorr,
+          hhaanndd22,  or  lleefftt__ppttrr.   If _f_g_C_o_l_o_r and _b_g_C_o_l_o_r are both
+          specified, they  give  the  foreground  and  background
+          colors  to use for the cursor (any of the forms accept-
+          able to TTkk__GGeettCCoolloorr may be used).  If only  _f_g_C_o_l_o_r  is
+          specified, then there will be no background color:  the
+          background will  be  transparent.   If  no  colors  are
+          specified, then the cursor will use black for its fore-
+          ground color and white for its background color.
+
+     @@_s_o_u_r_c_e_N_a_m_e  _m_a_s_k_N_a_m_e  _f_g_C_o_l_o_r  _b_g_C_o_l_o_r
+          In this form, _s_o_u_r_c_e_N_a_m_e and _m_a_s_k_N_a_m_e are the names  of
+          files  describing  bitmaps for the cursor's source bits
+          and mask.  Each file must be in  standard  X11  or  X10
+          bitmap format.  _F_g_C_o_l_o_r and _b_g_C_o_l_o_r indicate the colors
+          to use for the cursor, in any of the  forms  acceptable
+          to TTkk__GGeettCCoolloorr.
+
+     @@_s_o_u_r_c_e_N_a_m_e  _f_g_C_o_l_o_r
+          This form is similar to the one above, except that  the
+
+
+
+Sprite v.1.0      Printed:  September 27, 1991                  2
+
+
+
+
+
+
+Tk_GetCursor          UNKNOWN SECTION (tk)           Tk_GetCursor
+
+
+
+          source  is  used  as  mask  also.   This means that the
+          cursor's background is transparent.
+
+     TTkk__GGeettCCuurrssoorrFFrroommDDaattaa allows cursors to be created  from  in-
+     memory  descriptions  of  their  source  and  mask  bitmaps.
+     _S_o_u_r_c_e points to  standard  bitmap  data  for  the  cursor's
+     source  bits,  and  _m_a_s_k  points  to  standard  bitmap  data
+     describing which pixels of _s_o_u_r_c_e are to be drawn and  which
+     are to be considered transparent.  _W_i_d_t_h and _h_e_i_g_h_t give the
+     dimensions of the cursor, _x_H_o_t and _y_H_o_t indicate  the  loca-
+     tion  of  the  cursor's hot-spot (the point that is reported
+     when an event occurs), and _f_g and _b_g describe  the  cursor's
+     foreground and background colors textually (any of the forms
+     suitable for TTkk__GGeettCCoolloorr may be used).  Typically, the argu-
+     ments  to  TTkk__GGeettCCuurrssoorrFFrroommDDaattaa  are  created by including a
+     cursor file directly into the source code for a program,  as
+     in the following example:
+          Cursor cursor;
+          #include "source.cursor"
+          #include "mask.cursor"
+          cursor = Tk_GetCursorFromData(interp, tkwin, source_bits,
+               mask_bits, source_width, source_height, source_x_hot,
+               source_y_hot, Tk_GetUid("red"), Tk_GetUid("blue"));
+
+     Under     normal      conditions,      TTkk__GGeettCCuurrssoorr      and
+     TTkk__GGeettCCuurrssoorrFFrroommDDaattaa  will  return  an  identifier  for  the
+     requested cursor.  If an error occurs in creating  the  cur-
+     sor, such as when _s_t_r_i_n_g refers to a non-existent file, then
+     NNoonnee is returned and an error  message  will  be  stored  in
+     _i_n_t_e_r_p->_r_e_s_u_l_t.
+
+     TTkk__GGeettCCuurrssoorr and TTkk__GGeettCCuurrssoorrFFrroommDDaattaa maintain a database of
+     all  the  cursors  they  have created.  Whenever possible, a
+     call to TTkk__GGeettCCuurrssoorr or TTkk__GGeettCCuurrssoorrFFrroommDDaattaa will return  an
+     existing  cursor  rather  than  creating  a  new  one.  This
+     approach can substantially reduce server overhead, so the Tk
+     procedures  should  generally  be used in preference to Xlib
+     procedures like  XXCCrreeaatteeFFoonnttCCuurrssoorr  or  XXCCrreeaatteePPiixxmmaappCCuurrssoorr,
+     which create a new cursor on each call.
+
+     The procedure TTkk__NNaammeeOOffCCuurrssoorr  is  roughly  the  inverse  of
+     TTkk__GGeettCCuurrssoorr.    If  its  _c_u_r_s_o_r  argument  was  created  by
+     TTkk__GGeettCCuurrssoorr, then the return value is the  _s_t_r_i_n_g  argument
+     that  was  passed  to TTkk__GGeettCCuurrssoorr to create the cursor.  If
+     _c_u_r_s_o_r was created by a call to TTkk__GGeettCCuurrssoorrFFrroommDDaattaa, or  by
+     any  other mechanism, then the return value is a hexadecimal
+     string giving the X identifier for the cursor.   Note:   the
+     string  returned  by  TTkk__NNaammeeOOffCCuurrssoorr  is only guaranteed to
+     persist until the next call to TTkk__NNaammeeOOffCCuurrssoorr.
+
+     When    a    cursor    returned    by    TTkk__GGeettCCuurrssoorr     or
+     TTkk__GGeettCCuurrssoorrFFrroommDDaattaa  is  no  longer  needed,  TTkk__FFrreeeeCCuurrssoorr
+
+
+
+Sprite v.1.0      Printed:  September 27, 1991                  3
+
+
+
+
+
+
+Tk_GetCursor          UNKNOWN SECTION (tk)           Tk_GetCursor
+
+
+
+     should be called to release it.  There should be exactly one
+     call  to  TTkk__FFrreeeeCCuurrssoorr  for  each  call  to TTkk__GGeettCCuurrssoorr or
+     TTkk__GGeettCCuurrssoorrFFrroommDDaattaa.  When a cursor is  no  longer  in  use
+     anywhere  (i.e.  it  has  been freed as many times as it has
+     been gotten) TTkk__FFrreeeeCCuurrssoorr will release it to the  X  server
+     and remove it from the database.
+
+
+BBUUGGSS
+     In determining whether an existing cursor  can  be  used  to
+     satisfy a new request, TTkk__GGeettCCuurrssoorr and TTkk__GGeettCCuurrssoorrFFrroommDDaattaa
+     consider only the immediate values of their arguments.   For
+     example,  when  a  file  name  is  passed  to  TTkk__GGeettCCuurrssoorr,
+     TTkk__GGeettCCuurrssoorr will assume it is safe to  re-use  an  existing
+     cursor  created  from the same file name:  it will not check
+     to see whether the file itself has changed, or  whether  the
+     current  directory  has changed, thereby causing the name to
+     refer to a different file.  Similarly,  TTkk__GGeettCCuurrssoorrFFrroommDDaattaa
+     assumes  that if the same _s_o_u_r_c_e pointer is used in two dif-
+     ferent calls, then the pointers refer to the same data;   it
+     does  not  check  to  see  if  the  actual  data values have
+     changed.
+
+
+KKEEYYWWOORRDDSS
+     cursor
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0      Printed:  September 27, 1991                  4
+
+
+

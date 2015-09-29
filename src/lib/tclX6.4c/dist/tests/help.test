@@ -1,0 +1,232 @@
+#
+# help.test
+#
+# Tests for the help subsystem.  Help must be build first.  If help files
+# change, thest tests may have to be changed.
+#---------------------------------------------------------------------------
+# Copyright 1992 Karl Lehenbauer and Mark Diekhans.
+#
+# Permission to use, copy, modify, and distribute this software and its
+# documentation for any purpose and without fee is hereby granted, provided
+# that the above copyright notice appear in all copies.  Karl Lehenbauer and
+# Mark Diekhans make no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without express or
+# implied warranty.
+#------------------------------------------------------------------------------
+# $Id: help.test,v 2.0 1992/10/16 04:49:52 markd Rel $
+#------------------------------------------------------------------------------
+#
+
+if {[info procs test] != "test"} then {source testlib.tcl}
+
+#
+# Only run help test if help has been installed.
+#
+if {"[glob -nocomplain ../tcllib/help/*]" == ""} {
+    echo "****"
+    echo "**** No help files in tcllib/help - help not available test not run"
+    echo "****"
+    return
+}
+
+#------------------------------------------------------------------------------
+# Read a line from the server, set an alarm to make sure it doesn't hang.
+proc ReadServer {} {
+    global G_helpOutPipeFH
+
+    alarm 45
+    if {[gets $G_helpOutPipeFH line] < 0} {
+        alarm 0
+        error "EOF from help server"}
+    alarm 0
+    return $line
+}
+
+#------------------------------------------------------------------------------
+# Eat a prompt line from the help server.
+
+proc EatServerPrompt {} {
+    set line [ReadServer]
+    if {"$line" != "===HELPSERVER==="} {
+        error "unexpected output from help server: `$line'"}
+}
+
+#------------------------------------------------------------------------------
+# Send a command to the help server and return the output.  The help server
+# output will be bracketed with commands to mark the beginning and ending.
+# An extra newline is always queued to continue the help pager.  The prompt of
+# the pager will be removed from the output.  This assumes that the output has
+# no lines starting with `:'.
+#
+proc HelpSend {cmd pagerCntVar} {
+    global G_helpInPipeFH G_helpOutPipeFH
+    upvar $pagerCntVar pagerCnt
+
+    puts $G_helpInPipeFH $cmd
+    puts $G_helpInPipeFH ""  ;# Just a new line..
+    flush $G_helpInPipeFH
+
+    set pagerCnt 0
+    set results {}
+
+    # Read lines of the output.
+    while 1 {
+        set line [ReadServer]
+        if {"[cindex $line 0]" == ":"} {
+            set line [crange $line 1 end]
+            incr pagerCnt
+            puts $G_helpInPipeFH ""  ;# Just a new line
+        }
+        if {"$line" == "===HELPSERVER==="} {
+            break}
+        append results $line "\n"
+    }
+    # Eat the extra prompt caused by the typed-ahead newline
+    EatServerPrompt
+
+    return $results
+}
+#
+# Create the help server process, which will execute the commands, 
+# with stdin and stdout redirected to pipes.
+#
+
+global G_helpInPipeFH G_helpOutPipeFH G_helpPid
+
+pipe fromClientPipeFH G_helpInPipeFH
+pipe G_helpOutPipeFH  toClientPipeFH
+
+fcntl $G_helpInPipeFH  NOBUF 1
+fcntl $G_helpOutPipeFH NOBUF 1
+
+flush stdout  ;# Not going to exec, must clean up the buffers.
+flush stderr
+set G_helpPid [fork]
+
+if {$G_helpPid == 0} {
+    # Set up stdin/stdout.  Cann't use them nobuf, since we havn't execvp-ed.
+    close stdin
+    dup $fromClientPipeFH stdin
+    close stdout
+    dup $toClientPipeFH stdout
+    close $G_helpInPipeFH
+    close $G_helpOutPipeFH
+
+    rename SAVED_UNKNOWN unknown
+
+    commandloop {puts stdout "===HELPSERVER==="; flush stdout} \
+                {error "Help server incomplete cmd"}
+    error "Help server got eof"
+}
+
+close $fromClientPipeFH
+close $toClientPipeFH
+
+#
+# An alarm will be set when talking to the server uncase it doesn't talk back
+#
+signal error SIGALRM
+
+# Nuke the first prompt
+EatServerPrompt
+
+# Now run the tests.
+
+
+Test help-1.1 {help tests} {
+    HelpSend "help" promptCnt
+} 0 {
+Subjects available in /:
+   control/         debug/           files/           filescan/
+   internation/     intro/           keyedlists/      libraries/
+   lists/           math/            processes/       signals/
+   status/          strings/         tclshell/        time/
+   variables/       
+
+Help files available in /:
+   Tcl.brf          TclX.brf         help             
+}
+
+Test help-1.2 {help tests} {
+    HelpSend "helppwd" promptCnt
+} 0 {Current help subject directory: /
+}
+
+Test help-1.3 {help tests} {
+    HelpSend "helpcd intro" promptCnt
+} 0 {}
+
+Test help-1.4 {help tests} {
+    HelpSend "helppwd" promptCnt
+} 0 {Current help subject directory: /intro
+}
+
+Test help-1.5 {help tests} {
+    set result [HelpSend "help comments" promptCnt]
+    set fh [open "../tcllib/help/intro/comments"]
+    set expect [read $fh]
+    close $fh
+    set summary {}
+    if {"$expect" == "$result"} {
+        append summary "CORRECT"
+    } else {
+        append summary "DATA DOES NOT MATCH"
+    }
+    if {$promptCnt == 0} {
+       append summary " : PROMPT OK"
+    } else {
+       append summary " : TOO MANY PROMPTS"
+    }
+    set summary
+} 0 {CORRECT : PROMPT OK}
+
+Test help-1.6 {help tests} {
+    set result [HelpSend "help expressions" promptCnt]
+    set fh [open "../tcllib/help/intro/expressions"]
+    set expect [read $fh]
+    close $fh
+    set summary {}
+    if {"$expect" == "$result"} {
+        append summary "CORRECT"
+    } else {
+        append summary "DATA DOES NOT MATCH"
+    }
+    if {$promptCnt >= 2} {
+       append summary " : PROMPT OK"
+    } else {
+       append summary " : NOT ENOUGH PROMPTS"
+    }
+    set summary
+} 0 {CORRECT : PROMPT OK}
+
+Test help-1.7 {help tests} {
+    HelpSend "apropos upvar" promptCnt
+} 0 {variables/upvar - Bind a variable to another variable up the procedure call stack.
+}
+
+Test help-1.8 {help tests} {
+    HelpSend "apropos clock" promptCnt
+} 0 {time/alarm - Set a process alarm clock.
+time/convertclock - Parse and convert a date and time string to integer clock value.
+time/fmtclock - Convert an integer time value to human-readable format.
+time/getclock - Return current date and time as an integer value.
+}
+
+Test help-1.9 {help tests} {
+    HelpSend "helpcd" promptCnt
+} 0 {}
+
+Test help-1.10 {help tests} {
+    HelpSend "helppwd" promptCnt
+} 0 {Current help subject directory: /
+}
+
+
+# Terminate the help server.
+
+puts $G_helpInPipeFH "exit 0"
+set status [wait $G_helpPid]
+if {"$status" != "$G_helpPid EXIT 0"} {
+    error "Bad status returned: `$status'"}
+
+return

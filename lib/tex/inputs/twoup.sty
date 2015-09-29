@@ -1,0 +1,20 @@
+% Gary Levin gary@sun.mcs.clarkson.edu
+% 
+% to format files for two up printing use the following style file
+% feel free to modify before you install.  the units are pretty good, so
+% don't fiddle much.  leaves enough room for punching holes at the top.
+%
+%  once latex'ed, reorganize the file using
+%    dvidvi '2:0(-0.35in,-0.25in),1(4.65in,-0.25in)'   $1.dvi  twoup.dvi
+%  then print using  dvi2ps -L
+%  probably should package as a shell file
+%
+\newcommand\twoup{
+\topmargin	0.00in
+\oddsidemargin	0.00in
+\evensidemargin	0.00in
+\headheight	0.25in
+\headsep	0.20in
+\textheight	6.50in
+\pagestyle{headings}
+}

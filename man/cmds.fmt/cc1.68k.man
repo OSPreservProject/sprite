@@ -1,0 +1,68 @@
+
+
+
+CC1.68K                   User Commands                   CC1.68K
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     cc1.68k - Internal program used by GNU C compiler
+
+SSYYNNOOPPSSIISS
+     cccc11..6688kk [_o_p_t_i_o_n]
+
+OOPPTTIIOONNSS
+     See the GNU C Compiler documentation for  information  about
+     options.
+
+_________________________________________________________________
+
+
+IINNTTRROODDUUCCTTIIOONN
+     CCcc11..6688kk is a program used internally by the GNU  C  Compiler
+     to  compile  programs  for  machines  in  the Motorola 68000
+     class.  This program  should  not  normally  be  invoked  by
+     users.   For  more  information  about this program, see the
+     documentation for GNU cccc.
+
+
+KKEEYYWWOORRDDSS
+     compiler, GNU
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  February 6, 1990                   1
+
+
+

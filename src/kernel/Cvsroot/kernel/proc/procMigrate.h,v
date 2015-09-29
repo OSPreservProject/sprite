@@ -1,0 +1,1141 @@
+head     9.12;
+branch   ;
+access   ;
+symbols  ds3100:9.12 sun3:9.12 sun4nw:9.11 symm:9.11 spur:9.11 sprited:9.11.1 Summer89:9.0 newlib:8.0 Summer88:6.0 argString:5.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.12
+date     91.11.15.21.02.40;  author kupfer;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     90.10.09.11.52.46;  author jhh;  state Exp;
+branches 9.11.1.1;
+next     9.10;
+
+9.10
+date     90.09.12.13.57.59;  author jhh;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     90.09.11.12.17.14;  author jhh;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     90.09.06.17.56.53;  author jhh;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.08.09.14.12.48;  author douglis;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.07.30.15.46.05;  author douglis;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.07.11.18.09.29;  author douglis;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.07.11.16.37.14;  author douglis;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.03.16.14.15.29;  author douglis;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.17.08.05.15;  author douglis;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.12.11.13.16;  author douglis;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.14.42;  author douglis;  state Stable;
+branches ;
+next     8.9;
+
+8.9
+date     89.08.13.18.44.41;  author douglis;  state Exp;
+branches ;
+next     8.8;
+
+8.8
+date     89.08.11.14.59.22;  author douglis;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.07.31.17.57.25;  author douglis;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.06.09.17.49.00;  author douglis;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.04.27.11.31.15;  author douglis;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.04.06.11.45.52;  author douglis;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.03.15.15.32.08;  author douglis;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.02.10.16.37.27;  author douglis;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.12.22.09.15.59;  author douglis;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.29.21;  author douglis;  state Stable;
+branches ;
+next     6.4;
+
+6.4
+date     88.11.11.12.26.16;  author douglis;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.11.08.15.59.43;  author douglis;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.31.17.54.59;  author douglis;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.24.14.17.57;  author douglis;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.21.47;  author brent;  state Stable;
+branches ;
+next     5.4;
+
+5.4
+date     88.08.02.15.14.43;  author douglis;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     88.06.30.17.33.15;  author douglis;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     88.05.05.17.57.06;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     88.04.18.09.07.24;  author ouster;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.46.46;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.11.1.1
+date     91.10.28.14.34.40;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.12
+log
+@Fix the RCS Header line.
+@
+text
+@/*
+ * procMigrate.h --
+ *
+ *	Declarations of procedures and constants for process migration. 
+ *
+ * Copyright 1986, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ * $Header$ SPRITE (Berkeley)
+ */
+
+#ifndef _PROCMIGRATE
+#define _PROCMIGRATE
+
+#ifdef KERNEL
+#include <user/proc.h>
+#include <procTypes.h>
+#include <trace.h>
+#include <sys.h>
+#include <netTypes.h>
+#else
+#include <proc.h>
+#include <kernel/procTypes.h>
+#include <kernel/trace.h>
+#include <kernel/sys.h>
+#include <kernel/netTypes.h>
+#endif
+
+/*
+ * Flags for the migFlags field in a PCB.
+ * 	PROC_EVICTING		- [defined in user/proc.h for now]
+ * 				  Process in the middle of eviction
+ *   	PROC_WAS_EVICTED	- Process was evicted at some time, so
+ * 				  the record of the time it used prior
+ * 				  to eviction is relevant.
+ * 			
+ */
+#define PROC_WAS_EVICTED	0x2
+
+/*
+ * Define a macro to get a valid PCB for a migrated process.  This gets the
+ * PCB corresponding to the process ID, and if it is a valid PCB the macro
+ * then checks to make sure the process is migrated and from the specified
+ * host.
+ */
+
+#define PROC_GET_MIG_PCB(pid, procPtr, hostID) 		    	\
+	procPtr = Proc_LockPID(pid);	 			\
+	if (procPtr != (Proc_ControlBlock *) NIL && 		\
+	        (!(procPtr->genFlags & PROC_FOREIGN) || 	\
+	        procPtr->peerHostID != remoteHostID)) {		\
+	    Proc_Unlock(procPtr);				\
+ 	    procPtr = (Proc_ControlBlock *) NIL; 		\
+	}
+
+/*
+ * Structure to contain information for the arguments to a system call
+ * for a migrated process.    The size is the size of the argument passed
+ * to or from the other node.  The disposition is SYS_PARAM_IN and/or
+ * SYS_PARAM_OUT.
+ */
+
+typedef struct {
+    int size;
+    int disposition;
+} Proc_ParamInfo;
+
+/*
+ * Define a simple buffer for passing both buffer size and pointer in
+ * a single argument.  (This simplifies the case when the buffer is NIL).
+ */
+
+typedef struct {
+    int size;
+    Address ptr;
+} Proc_MigBuffer;
+
+/* 
+ * Generic information sent when migrating a system call back to the
+ * home machine.  The processID transferred is the ID of the process
+ * on the machine servicing the RPC.
+ */
+	
+typedef struct {
+    Proc_PID			processID;
+    int			 	callNumber;
+    Boolean			parseArgs;
+    int				numArgs;
+    int				replySize;
+    Proc_ParamInfo		info[SYS_MAX_ARGS];
+} Proc_RemoteCall;
+
+/*
+ * Declare variables and constants for instrumentation.  First,
+ * declare variables for the trace package.  These are followed by
+ * structures that are passed into the trace package.  Each trace
+ * record contains the process ID of the process being operated upon,
+ * whether the operation is done for a process on its home node or a
+ * remote one, and either a system call number and ReturnStatus or a
+ * migration meta-command such as transferring state.
+ */
+
+extern Trace_Header proc_TraceHeader;
+extern Trace_Header *proc_TraceHdrPtr;
+#define PROC_NUM_TRACE_RECS 500
+
+/*
+ * "Events" for the trace package.
+ *
+ *	PROC_MIGTRACE_BEGIN_MIG 	- starting to transfer a process
+ *	PROC_MIGTRACE_END_MIG 		- completed transferring a process
+ *	PROC_MIGTRACE_COMMAND  	- a particular transfer operation
+ *	PROC_MIGTRACE_CALL		- a migrated system call
+ *	
+ */
+
+#define PROC_MIGTRACE_BEGIN_MIG 	0
+#define PROC_MIGTRACE_END_MIG 		1
+#define PROC_MIGTRACE_COMMAND  	2
+#define PROC_MIGTRACE_CALL		3
+#define PROC_MIGTRACE_MIGTRAP		4
+
+typedef struct {
+    int callNumber;
+    ReturnStatus status;
+} Proc_SysCallTrace;
+
+typedef struct {
+    int type;
+    ClientData data;
+} Proc_CommandTrace;
+
+
+typedef struct {
+    Proc_PID processID;
+    int flags;
+    union {
+	Proc_SysCallTrace call;
+	Proc_CommandTrace command;
+	int filler;
+    } info;
+} Proc_TraceRecord;
+	
+/*
+ * Flags for Proc_TraceRecords:
+ *
+ * 	PROC_MIGTRACE_START - start of an RPC
+ *	PROC_MIGTRACE_HOME  - operation is for a process on its home machine
+ *
+ * Both of these flags are boolean, so absence of a flag implies its
+ * opposite (end of an RPC, or that the operation is for a foreign process).
+ */
+
+#define PROC_MIGTRACE_START	0x01
+#define PROC_MIGTRACE_HOME	0x02
+
+/*
+ * Define the statistics "version".  This is used to make sure we're
+ * gathering consistent sets of statistics.  It's stored in the kernel as
+ * a static variable so it can be changed with adb or the debugger if
+ * need be.  It's copied into a structure at initialization time.
+ */
+#ifndef PROC_MIG_STATS_VERSION
+#define PROC_MIG_STATS_VERSION 1002
+#endif /* PROC_MIG_STATS_VERSION */
+
+/*
+ * Define a structure to keep track of statistics.
+ * Times are kept in terms of hundreds of milliseconds.
+ */
+
+#define PROC_MIG_TIME_FOR_STATS(time) \
+      ((time).seconds * 10 + ((time).microseconds + 50000) / 100000)
+
+typedef struct {
+    unsigned int	evictions;	/* Number of processes evicted
+				     	   from this host */
+    unsigned int	pagesWritten;	/* Number of pages flushed as a
+					   result of migration */
+    unsigned int	rpcKbytes; 	/* Total number of Kbytes sent during
+					   migration. */
+    unsigned int 	timeToMigrate;	/* Cumulative time to export
+					   running processes */
+    unsigned int 	timeToExec;	/* Cumulative time to do remote
+					   exec's */
+    unsigned int 	timeToEvict;	/* Cumulative time to evict
+					   processes, individually. */
+    unsigned int 	totalEvictTime;	/* Cumulative time to evict
+					   processes, from start of eviction
+					   request to completion of last
+					   eviction. */
+    unsigned int 	totalCPUTime;   /* Cumulative time used by all
+					   processes belonging to this host. */
+    unsigned int 	remoteCPUTime;  /* Cumulative time used by all
+					   processes belonging to this host,
+					   while executing remotely. */
+    unsigned int 	evictionCPUTime;/* Cumulative time used by all
+					   processes subsequent to first
+					   eviction. */
+} Proc_MigVarStats;
+
+typedef struct {
+    unsigned int 	statsVersion;   /* Used to distinguish old structures.
+					   */
+    unsigned int 	foreign; 	/* Number of foreign processes on
+				     	   this machine */
+    unsigned int 	remote;		/* Number of processes belonging
+			     	   	   to this host, running elsewhere */
+    unsigned int 	exports;	/* Number of times we have exported
+			     		   processes */
+    unsigned int 	execs;		/* Number of times these were remote
+			     	   	   execs */
+    unsigned int 	imports;	/* Number of times we have imported
+			     	   	   processes */
+    unsigned int 	errors;		/* Number of times migration has
+					   failed */
+    unsigned int 	returns;	/* Number of times we have had our own
+					   process migrate back to us,
+					   including evictions */
+    unsigned int 	evictionsToUs;	/* Number of times we have had our own
+					   process evicted. */
+    unsigned int 	hostCounts[NET_NUM_SPRITE_HOSTS];
+    					/* Array of counts of
+					   migration to each host */
+    unsigned int 	migrationsHome; /* Number of times processes migrate
+					   home, excluding evictions. */
+    unsigned int 	evictCalls; 	/* Number of times user-level daemon
+					   requested evictions. */
+    unsigned int 	evictsNeeded; 	/* Number of times requests resulted
+					   in >= 1 evictions. */
+    unsigned int 	evictionsInProgress;
+    					/* Number of processes currently
+					   being evicted. */
+    unsigned int 	processes;	/* Number of exited processes
+					   belonging to this host (used
+					   for averaging CPU times). */
+    Proc_MigVarStats	varStats; 	/* Other stats (see above) counted
+					   both normally and as
+					   sum-of-squares. */
+    Proc_MigVarStats	squared; 	/* Sum-of-squares. */
+					   
+} Proc_MigStats;
+
+
+/*
+ * Macros to manipulate this structure using a monitor.
+ */
+#define PROC_MIG_INC_STAT(stat) \
+	Proc_MigAddToCounter(1, &proc_MigStats.stat, (unsigned int *) NIL)
+#define PROC_MIG_DEC_STAT(stat) \
+	Proc_MigAddToCounter(-1, &proc_MigStats.stat, (unsigned  int *) NIL)
+
+
+
+
+/*
+ * Define a structure for passing information via callback for killing
+ * a migrated process.  [Not used yet, but potentially.]
+ */
+typedef struct Proc_DestroyMigProcData {
+    Proc_ControlBlock *procPtr;		/* local copy of process to kill */
+    ReturnStatus status;		/* status to return when it exits */
+} Proc_DestroyMigProcData;
+
+
+
+/*
+ * External declarations of variables and procedures.
+ */
+extern int proc_MigDebugLevel;		/* amount of debugging info to print */
+extern int proc_MigrationVersion;	/* to distinguish incompatible
+					   versions of migration */
+extern Boolean proc_DoTrace;		/* controls amount of tracing */
+extern Boolean proc_DoCallTrace;	/* ditto */
+extern Boolean proc_MigDoStats;		/* ditto */
+extern Boolean proc_KillMigratedDebugs;	/* kill foreign processes instead
+					   of putting them in the debugger */
+extern int proc_AllowMigrationState;	/* how much migration to permit */
+extern Proc_MigStats proc_MigStats;	/* migration statistics */
+
+
+#endif /* _PROCMIGRATE */
+@
+
+
+9.11
+log
+@moved stuff to procTypes.h
+@
+text
+@d16 1
+a16 1
+ * $ProcMigrate: proto.h,v 1.4 86/03/20 14:00:21 andrew Exp $ SPRITE (Berkeley)
+@
+
+
+9.11.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@@
+
+
+9.10
+log
+@changed format of #includes to use <>
+@
+text
+@d22 1
+d28 7
+a271 42
+/*
+ * Information for encapsulating process state.
+ */
+
+/*
+ * Identifiers to match encapsulated states and modules.
+ * Make sure to update PROC_MIG_NUM_CALLBACKS if one is added!
+ */
+typedef enum {
+    PROC_MIG_ENCAP_PROC,
+    PROC_MIG_ENCAP_VM,
+    PROC_MIG_ENCAP_FS,
+    PROC_MIG_ENCAP_MACH,
+    PROC_MIG_ENCAP_PROF,
+    PROC_MIG_ENCAP_SIG,
+    PROC_MIG_ENCAP_EXEC,
+} Proc_EncapToken;
+
+#define PROC_MIG_NUM_CALLBACKS 7
+
+/*
+ * Each module that participates has a token defined for it.
+ * It also provides routines to encapsulate and deencapsulate data,
+ * as well as optional routines that may be called prior to migration
+ * and subsequent to migration.  This structure is passed around to
+ * other modules performing encapsulation.
+ */
+typedef struct {
+    Proc_EncapToken	token;		/* info about encapsulated data */
+    int			size;		/* size of encapsulated data */
+    ClientData		data;		/* for use by encapsulator */
+    int			special;	/* indicates special action required */
+    ClientData		specialToken;	/* for use during special action */
+    int			processed;	/* indicates this module did possibly
+					   destructive encapsulation operation
+					   and should be called to clean up
+					   on failure */
+					   
+} Proc_EncapInfo;
+  
+    
+    
+@
+
+
+9.9
+log
+@more prototyping stuff
+@
+text
+@d22 5
+a26 5
+#include "user/proc.h"
+#include "procTypes.h"
+#include "trace.h"
+#include "sys.h"
+#include "netTypes.h"
+@
+
+
+9.8
+log
+@First pass at function prototypes
+@
+text
+@d22 2
+a23 1
+#include "proc.h"
+d26 1
+a26 1
+#include "net.h"
+@
+
+
+9.7
+log
+@changed statistics to use unsigned ints
+@
+text
+@a320 12
+/*
+ * Functions for process migration.  [Others should be moved here.]
+ */
+extern void Proc_ResumeMigProc();
+extern void Proc_DestroyMigratedProc();
+
+extern ReturnStatus Proc_WaitForHost();
+extern ReturnStatus Proc_WaitForMigration();
+
+extern ReturnStatus Proc_RpcMigCommand();
+extern ReturnStatus Proc_RpcRemoteCall();
+
+@
+
+
+9.6
+log
+@changes for statistics, mostly dealing w/ evictions and storing time values.
+@
+text
+@d174 1
+a174 1
+    int			evictions;	/* Number of processes evicted
+d176 1
+a176 1
+    int			pagesWritten;	/* Number of pages flushed as a
+d178 1
+a178 1
+    int			rpcKbytes; 	/* Total number of Kbytes sent during
+d180 1
+a180 1
+    int 		timeToMigrate;	/* Cumulative time to export
+d182 1
+a182 1
+    int 		timeToExec;	/* Cumulative time to do remote
+d184 1
+a184 1
+    int 		timeToEvict;	/* Cumulative time to evict
+d186 1
+a186 1
+    int 		totalEvictTime;	/* Cumulative time to evict
+d190 1
+a190 1
+    int 		totalCPUTime;   /* Cumulative time used by all
+d192 1
+a192 1
+    int 		remoteCPUTime;  /* Cumulative time used by all
+d195 1
+a195 1
+    int 		evictionCPUTime;/* Cumulative time used by all
+d201 1
+a201 1
+    int			statsVersion;   /* Used to distinguish old structures.
+d203 1
+a203 1
+    int			foreign; 	/* Number of foreign processes on
+d205 1
+a205 1
+    int			remote;		/* Number of processes belonging
+d207 1
+a207 1
+    int			exports;	/* Number of times we have exported
+d209 1
+a209 1
+    int			execs;		/* Number of times these were remote
+d211 1
+a211 1
+    int			imports;	/* Number of times we have imported
+d213 1
+a213 1
+    int			errors;		/* Number of times migration has
+d215 1
+a215 1
+    int			returns;	/* Number of times we have had our own
+d218 1
+a218 1
+    int			evictionsToUs;	/* Number of times we have had our own
+d220 1
+a220 1
+    int			hostCounts[NET_NUM_SPRITE_HOSTS];
+d223 1
+a223 1
+    int			migrationsHome; /* Number of times processes migrate
+d225 1
+a225 1
+    int			evictCalls; 	/* Number of times user-level daemon
+d227 1
+a227 1
+    int			evictsNeeded; 	/* Number of times requests resulted
+d229 1
+a229 1
+    int			evictionsInProgress;
+d232 1
+a232 1
+    int			processes;	/* Number of exited processes
+d247 1
+a247 1
+	Proc_MigAddToCounter(1, &proc_MigStats.stat, (int *) NIL)
+d249 1
+a249 1
+	Proc_MigAddToCounter(-1, &proc_MigStats.stat, (int *) NIL)
+@
+
+
+9.5
+log
+@changed Time fields to ints, to avoid microseconds completely.
+@
+text
+@d28 11
+d156 10
+d167 1
+a167 3
+ * The unsquared times are stored in milliseconds, while the squared times
+ * are all right-shifted PROC_MIG_TIME_SHIFT places to reduce the
+ * likelihood of overflow.
+d170 2
+a171 1
+#define PROC_MIG_TIME_SHIFT 12
+d180 1
+a180 1
+    int 		timeToMigrate;	/* Cumulative time to migrate
+d185 5
+a189 1
+					   processes */
+d192 1
+a192 1
+    int 		remoteCPUTime;   /* Cumulative time used by all
+d195 3
+d216 4
+a219 1
+					   process migrate back to us */
+d232 3
+d241 1
+@
+
+
+9.4
+log
+@changes for statistics
+@
+text
+@d146 3
+d151 2
+d160 1
+a160 1
+    Time		timeToMigrate;	/* Cumulative time to migrate
+d162 1
+a162 1
+    Time		timeToExec;	/* Cumulative time to do remote
+d164 1
+a164 1
+    Time		timeToEvict;	/* Cumulative time to evict
+d166 1
+a166 1
+    Time		totalCPUTime;   /* Cumulative time used by all
+d168 1
+a168 1
+    Time		remoteCPUTime;   /* Cumulative time used by all
+@
+
+
+9.3
+log
+@removed some function declarations, which are now private to proc.
+@
+text
+@d149 22
+a182 2
+    int			evictions;	/* Number of times we have evicted
+				     	   processes from this host */
+a184 8
+    int			pagesWritten;	/* Number of pages flushed as a
+					   result of migration */
+    Time		timeToMigrate;	/* Cumulative time to migrate
+					   running processes */
+    Time		timeToExec;	/* Cumulative time to do remote
+					   exec's */
+    Time		timeToEvict;	/* Cumulative time to evict
+					   processes */
+a187 2
+    int			rpcKbytes; 	/* Total number of Kbytes sent during
+					   migration. */
+a193 7
+    int			statsVersion;   /* Used to distinguish old structures.
+					   */
+    Proc_Time		totalCPUTime;   /* Cumulative time used by all
+					   processes belonging to this host. */
+    Proc_Time		remoteCPUTime;   /* Cumulative time used by all
+					   processes belonging to this host,
+					   while executing remotely. */
+d197 4
+d207 4
+a210 2
+#define PROC_MIG_INC_STAT(stat) Proc_MigAddToCounter(&proc_MigStats.stat, 1)
+#define PROC_MIG_DEC_STAT(stat) Proc_MigAddToCounter(&proc_MigStats.stat, -1)
+@
+
+
+9.2
+log
+@added a new field in proc_MigStats for keeping track of processes being
+evicted.  not meant to be used by users, but is modified using the
+same monitors as the other fields.
+@
+text
+@a278 2
+extern void Proc_RemoveMigDependency();
+extern void Proc_AddMigDependency();
+@
+
+
+9.1
+log
+@more statistics (cpu time used)
+@
+text
+@d191 3
+d197 7
+a203 1
+  
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d167 1
+a167 1
+    Time		timeToExport;	/* Cumulative time to migrate
+d179 1
+a179 1
+					   home, including evictions. */
+d184 7
+@
+
+
+8.9
+log
+@another stats field
+@
+text
+@@
+
+
+8.8
+log
+@added MigStats fields
+@
+text
+@d182 2
+@
+
+
+8.7
+log
+@> changes for statistics gathering, plus an attempt at fixing non-ready 
+proc on ready queue. [this is a recording]
+@
+text
+@d178 5
+@
+
+
+8.6
+log
+@statistics gathering, remote exec.
+@
+text
+@d155 2
+d159 2
+@
+
+
+8.5
+log
+@moved some definitions to user-level.
+@
+text
+@d25 1
+d145 35
+a187 1
+
+d194 1
+d203 1
+d206 1
+a206 1
+#define PROC_MIG_NUM_CALLBACKS 6
+d227 3
+d240 1
+d244 1
+@
+
+
+8.4
+log
+@reorganization for table-driven encapsulation.
+@
+text
+@a151 43
+/*
+ * Define the state of this machine w.r.t accepting migrated processes.
+ * A machine must always be willing to accept its own processes if they
+ * are migrated home.  Other than that, a host may allow migrations onto
+ * it under various sets of criteria, and may allow migrations away from
+ * it under similar sets of criteria.
+ *
+ *	PROC_MIG_IMPORT_NEVER		- never allow migrations to this host.
+ *	PROC_MIG_IMPORT_ROOT 		- allow migrations to this host only
+ *					  by root.
+ *	PROC_MIG_IMPORT_ALL  		- allow migrations by anyone.
+ *	PROC_MIG_IMPORT_ANYINPUT 	- don't check keyboard input when
+ *					  determining availability.
+ *	PROC_MIG_IMPORT_ANYLOAD  	- don't check load average when
+ *					  determining availability.
+ *	PROC_MIG_IMPORT_ALWAYS  	- don't check either.
+ *	PROC_MIG_EXPORT_NEVER    	- never export migrations from this
+ * 					  host.
+ *	PROC_MIG_EXPORT_ROOT	        - allow only root to export.
+ *	PROC_MIG_EXPORT_ALL	        - allow anyone to export.
+ *
+ * For example, a reasonable default for a file server might be to import
+ * and export only for root; for a user's machine, it might be to allow
+ * anyone to migrate; and for a compute server, it might never export
+ * and import always regardless of load average or keyboard input.  (The
+ * load average would not have to be exceptionally low to determine
+ * availability; the host still would only be selected if the load average
+ * were low enough to gain something by migrating to it.)
+ */
+
+#define PROC_MIG_IMPORT_NEVER 			 0
+#define PROC_MIG_IMPORT_ROOT    	0x00000001
+#define PROC_MIG_IMPORT_ALL     	0x00000003
+#define PROC_MIG_IMPORT_ANYINPUT	0x00000010
+#define PROC_MIG_IMPORT_ANYLOAD		0x00000020
+#define PROC_MIG_IMPORT_ALWAYS  \
+			(PROC_MIG_IMPORT_ANYINPUT | PROC_MIG_IMPORT_ANYLOAD)
+#define PROC_MIG_EXPORT_NEVER			 0
+#define PROC_MIG_EXPORT_ROOT		0x00010000
+#define PROC_MIG_EXPORT_ALL		0x00030000
+
+#define PROC_MIG_ALLOW_DEFAULT (PROC_MIG_IMPORT_ALL | PROC_MIG_EXPORT_ALL)
+
+@
+
+
+8.3
+log
+@added PROC_MIGRATE_DESTROY parameter for migration to kill the remote copy
+of a process whose migration failed.
+@
+text
+@a25 9
+extern int proc_MigDebugLevel;
+extern int proc_MigrationVersion;
+extern Boolean proc_DoTrace;
+extern Boolean proc_DoCallTrace;
+extern Boolean proc_KillMigratedDebugs;
+
+
+#define PROC_MIG_ANY 0
+
+a42 47
+ * Information returned upon first transferring a process state.
+ */
+
+typedef struct {
+    ReturnStatus	status;
+    Proc_PID		remotePID;
+    unsigned int	filler;
+} Proc_MigrateReply;
+
+/*
+ * Types of information passed during a migration:
+ *
+ * PROC_MIGRATE_PROC		- Process control block.
+ * PROC_MIGRATE_VM		- Vm segment.
+ * PROC_MIGRATE_FILES		- All files.
+ * PROC_MIGRATE_FS_STREAM 	- A particular Fs_Stream.
+ * PROC_MIGRATE_USER_INFO 	- User information that may change, such as
+ *		  		  priorities or IDs.
+ *
+ * Other commands that may be sent via RPC:
+ *
+ * PROC_MIGRATE_RESUME	- Resume execution of a migrated process.
+ * PROC_MIGRATE_DESTROY	- Destroy a migrated process due to an error during
+ *			  migration.
+ */
+
+typedef enum {
+    PROC_MIGRATE_PROC,
+    PROC_MIGRATE_VM,
+    PROC_MIGRATE_FILES,
+    PROC_MIGRATE_FS_STREAM,
+    PROC_MIGRATE_USER_INFO,
+    PROC_MIGRATE_RESUME,
+    PROC_MIGRATE_DESTROY
+} Proc_MigrateCommandType;
+    
+/* 
+ * Information sent when transferring a segment.
+ */
+
+typedef struct {
+    Proc_PID			remotePID;
+    Proc_MigrateCommandType  	command;
+    unsigned int		filler;
+} Proc_MigrateCommand;
+    
+/*
+d54 10
+d98 1
+a98 1
+ *	PROC_MIGTRACE_TRANSFER  	- a particular transfer operation
+d105 1
+a105 1
+#define PROC_MIGTRACE_TRANSFER  	2
+d115 1
+a115 1
+    Proc_MigrateCommandType type;
+d153 95
+d258 2
+@
+
+
+8.2
+log
+@added declaration for Proc_WaitForMigration.
+@
+text
+@d71 1
+a71 1
+ * Another command that may be sent via RPC:
+d74 2
+d84 2
+a85 1
+    PROC_MIGRATE_RESUME
+@
+
+
+8.1
+log
+@added an extern for proc_KillMigratedDebugs.
+@
+text
+@d204 1
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d30 1
+@
+
+
+6.4
+log
+@Added proc_MigrationVersion declaration.
+@
+text
+@@
+
+
+6.3
+log
+@a couple of changes for procedure declarations.
+@
+text
+@d27 1
+@
+
+
+6.2
+log
+@de-linted and endif-fix'ed.
+@
+text
+@d201 1
+@
+
+
+6.1
+log
+@added some declarations to get rid of lint errors.
+@
+text
+@d204 1
+a204 1
+#endif _PROCMIGRATE
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d199 5
+@
+
+
+5.4
+log
+@Define a structure for passing information via callback for killing
+a migrated process.  [Not used yet, but potentially.]
+Added Proc_DestroyMigratedProc declaration.
+@
+text
+@@
+
+
+5.3
+log
+@added a function declaration
+@
+text
+@d185 9
+d197 1
+@
+
+
+5.2
+log
+@Handles move of functionality from sys to mach.
+@
+text
+@d184 5
+@
+
+
+5.1
+log
+@Lint cleanup, change copyright notices.
+@
+text
+@d24 1
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d6 8
+a13 2
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+@

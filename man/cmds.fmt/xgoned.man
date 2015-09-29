@@ -1,0 +1,68 @@
+
+
+
+XGONED                    User Commands                    XGONED
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     xgoned - Daemon to start a screen saver on an idle machine
+
+SSYYNNOOPPSSIISS
+     xxggoonneedd [_o_p_t_i_o_n_s]
+
+OOPPTTIIOONNSS
+     --tt _i_d_l_e_T_i_m_e    Length of time (in seconds) that the  machine
+                    must  be  idle  before  starting  the  screen
+                    saver.  The default is 300 (5 minutes).
+
+     --DD             Don't detach the process.
+
+     --dd             Print debugging information.
+
+     --hheellpp          Print a summary of the command-line options.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The xxggoonneedd program is used  to  start  "xgone"  on  an  idle
+     machine. A machine is idle if it has not received input from
+     the console in a fixed amount of time.
+
+BBUUGGSS
+     An idle machine is one that has not received input from  the
+     keyboard.   Mouse  motion is not considered, causing "xgone"
+     to be started if the user uses only the mouse for too long.
+
+KKEEYYWWOORRDDSS
+     xgone, idle machine, screen saver
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  March 7, 1990                    1
+
+
+

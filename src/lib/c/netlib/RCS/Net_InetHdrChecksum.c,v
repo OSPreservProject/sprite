@@ -1,0 +1,420 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.4
+date     90.01.24.11.53.42;  author jhh;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.06.19.14.14.32;  author jhh;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.03.23.10.17.51;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.11.21.09.10.17;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Formed from net.c of src/lib/old/net.c.
+@
+
+
+1.4
+log
+@Backed out version 1.3 because it doesn't work.
+@
+text
+@/* 
+ * Net_InetChecksum2.c --
+ *
+ *	Compute an internet checksum, including the header.
+ *
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/net/RCS/Net_InetHdrChecksum.c,v 1.2 89/03/23 10:17:51 brent Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include "sprite.h"
+#include "net.h"
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_InetChecksum2 --
+ *
+ *	This routine is an optimization for calculating checksums for
+ *	the UDP and TCP output routines. It is similar to Net_InetChecksum 
+ *	except the checksum includes the IP pseudo-header.
+ *
+ *	The comments of Net_InetChecksum apply here.
+ *
+ * Results:
+ *	The 1's complement checksum in network byte-order.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+unsigned short
+Net_InetChecksum2(len, bufPtr, pseudoHdrPtr)
+    register int 	len;		/* The # of bytes in bufPer. */
+    Address		bufPtr;		/* Data to checksum. */
+    Net_IPPseudoHdr	*pseudoHdrPtr;	/* IP pseudo-header to include in the
+					 * checksum. */
+{
+    register unsigned short *wordPtr;
+    register unsigned int sum = 0;
+
+
+    /*
+     * First compute the checksum for the IP pseudo-header.
+     */
+    wordPtr = (unsigned short *) pseudoHdrPtr;
+    if (sizeof(*pseudoHdrPtr) == 20) {
+	/*
+	 * This is a hack because cpp can't use the sizeof operator 
+	 * in #if statements.
+	 */
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+
+    } else {
+	register int i;
+
+	i = sizeof(*pseudoHdrPtr)/sizeof(unsigned short);
+	do {
+	    sum += *wordPtr++;
+	    i--;
+	} while (i > 0);
+    }
+
+    /*
+     * Sum the data in an unrolled loop. Once we have less than 
+     * 32 bytes to sum then it must be done in smaller loops.
+     */
+
+    wordPtr = (unsigned short *) bufPtr;
+    while (len >= 32) {
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+
+	len -= 32;
+    }
+    while (len >= 2) {
+	sum += *wordPtr++;
+	len -= 2;
+    }
+
+    if (len == 1) {
+#if BYTE_ORDER == LITTLE_ENDIAN
+	sum += (*wordPtr) & 0x00ff;
+#else
+	sum += (*wordPtr) & 0xff00;
+#endif
+    }
+
+    /*
+     * The most signficant bits of "sum" contains the carries from
+     * the overflow of the summing. Add this overflow back into
+     * the least significant 16 bits of the sum and do it a second
+     * time in case there's a carry from the first time.
+     */
+    if (sum > 0xffff) {
+	sum = ((sum >> 16) & 0xffff) + (sum & 0xffff);
+
+	/*
+	 * See if there was a carry from the addition. The overflow will
+	 * be at most 1.
+	 */
+	if (sum > 0xffff) {
+	    sum++;
+	}
+    }
+
+    return((~sum & 0xffff));
+}
+
+@
+
+
+1.3
+log
+@Allow buffers to be odd-aligned
+@
+text
+@a35 4
+ *	We have to compute the two checksums separately because one buffer
+ *	may be word aligned and one not. After we compute them we add them
+ *	together and do the usual manipulation of the carry bits.
+ *
+d53 1
+a53 9
+    register unsigned int sum1 = 0;
+    register unsigned int sum2 = 0;
+    int		pseudoLen;
+    int		sum;
+
+    union {
+	unsigned char	c[2];		/* data as bytes */
+	unsigned short	s;		/* data as a word */
+    } convert;
+a54 1
+    Boolean oddAligned = FALSE;
+d60 1
+a60 11
+    convert.s = 0;
+    pseudoLen = sizeof(*pseudoHdrPtr);
+
+    if (((int) wordPtr & 1)) {
+	convert.c[1] = *(unsigned char *) wordPtr;
+	wordPtr = (unsigned short *) ((char *) wordPtr + 1);
+	oddAligned = TRUE;
+	pseudoLen -= 1;
+    }
+
+    if (pseudoLen == 20) {
+d65 11
+a75 11
+	sum1 += *wordPtr++;
+	sum1 += *wordPtr++;
+	sum1 += *wordPtr++;
+	sum1 += *wordPtr++;
+	sum1 += *wordPtr++;
+
+	sum1 += *wordPtr++;
+	sum1 += *wordPtr++;
+	sum1 += *wordPtr++;
+	sum1 += *wordPtr++;
+	sum1 += *wordPtr++;
+d78 7
+a84 15
+	while (pseudoLen >= 2) {
+	    sum1 += *wordPtr++;
+	    pseudoLen -= 2;
+	}
+    }
+    if (pseudoLen == 1) {
+	convert.c[0] = *((unsigned char *) wordPtr);
+    }
+    sum1 += convert.s;
+    convert.s = 0;
+    if (sum1 > 0xffff) {
+	sum1 = ((sum1 >> 16) & 0xffff) + (sum1 & 0xffff);
+	if (sum1 > 0xffff) {
+	    sum1++;
+	}
+a85 3
+    if (oddAligned) {
+	sum1 = (sum1 >> 8) | ((sum1 & 0xff) << 8);
+    }
+d91 1
+a92 11
+    convert.s = 0;
+
+    if (((int) wordPtr & 1)) {
+	convert.c[1] = *(unsigned char *) wordPtr;
+	wordPtr = (unsigned short *) ((char *) wordPtr + 1);
+	oddAligned = TRUE;
+	len -= 1;
+    } else {
+	oddAligned = FALSE;
+    }
+
+d94 4
+a97 4
+	sum2 += *wordPtr++;
+	sum2 += *wordPtr++;
+	sum2 += *wordPtr++;
+	sum2 += *wordPtr++;
+d99 14
+a112 14
+	sum2 += *wordPtr++;
+	sum2 += *wordPtr++;
+	sum2 += *wordPtr++;
+	sum2 += *wordPtr++;
+
+	sum2 += *wordPtr++;
+	sum2 += *wordPtr++;
+	sum2 += *wordPtr++;
+	sum2 += *wordPtr++;
+
+	sum2 += *wordPtr++;
+	sum2 += *wordPtr++;
+	sum2 += *wordPtr++;
+	sum2 += *wordPtr++;
+d117 1
+a117 1
+	sum2 += *wordPtr++;
+d122 5
+a126 1
+	convert.c[0] = *((unsigned char *) wordPtr);
+a127 1
+    sum2 += convert.s;
+d135 2
+a136 2
+    if (sum2 > 0xffff) {
+	sum2 = ((sum2 >> 16) & 0xffff) + (sum2 & 0xffff);
+a141 10
+	if (sum2 > 0xffff) {
+	    sum2++;
+	}
+    }
+    if (oddAligned) {
+	sum2 = (sum2 >> 8) | ((sum2 & 0xff) << 8);
+    }
+    sum = sum1 + sum2;
+    if (sum > 0xffff) {
+	sum = ((sum >> 16) & 0xffff) + (sum & 0xffff);
+@
+
+
+1.2
+log
+@Fixed LITTLE_ENDIAN check.  It has to be
+#if BYTE_ORDER == LITTLE_ENDIAN
+and it cannot be
+#ifdef LITTLE_ENDIAN
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/lib/net/RCS/Net_InetHdrChecksum.c,v 1.1 88/11/21 09:10:17 mendel Exp $ SPRITE (Berkeley)";
+d36 4
+d57 9
+a65 1
+    register unsigned int sum = 0;
+d67 1
+d73 11
+a83 1
+    if (sizeof(*pseudoHdrPtr) == 20) {
+d88 11
+a98 11
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+d101 18
+a118 7
+	register int i;
+
+	i = sizeof(*pseudoHdrPtr)/sizeof(unsigned short);
+	do {
+	    sum += *wordPtr++;
+	    i--;
+	} while (i > 0);
+d125 2
+d128 9
+a136 1
+    wordPtr = (unsigned short *) bufPtr;
+d138 4
+a141 4
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+d143 14
+a156 14
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+	sum += *wordPtr++;
+d161 1
+a161 1
+	sum += *wordPtr++;
+d166 1
+a166 5
+#if BYTE_ORDER == LITTLE_ENDIAN
+	sum += (*wordPtr) & 0x00ff;
+#else
+	sum += (*wordPtr) & 0xff00;
+#endif
+d168 1
+d176 2
+a177 2
+    if (sum > 0xffff) {
+	sum = ((sum >> 16) & 0xffff) + (sum & 0xffff);
+d183 10
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: net.c,v 2.0 87/08/11 09:34:20 brent Exp $ SPRITE (Berkeley)";
+d122 1
+a122 1
+#ifdef LITTLE_ENDIAN
+@

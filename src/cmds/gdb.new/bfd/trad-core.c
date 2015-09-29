@@ -1,0 +1,1 @@
+../sprite/bfd/trad-core.c

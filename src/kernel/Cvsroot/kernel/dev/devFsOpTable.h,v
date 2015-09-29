@@ -1,0 +1,478 @@
+head     9.3;
+branch   ;
+access   ;
+symbols  ds3100:9.3 sun3:9.3 sprited:9.3.1 sun4nw:9.3 symm:9.3 spur:9.3 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.3
+date     91.04.16.17.12.55;  author jhh;  state Exp;
+branches 9.3.1.1;
+next     9.2;
+
+9.2
+date     90.09.11.12.12.49;  author rab;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.08.14.18.43.45;  author mgbaker;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.57.04;  author douglis;  state Stable;
+branches ;
+next     8.4;
+
+8.4
+date     89.06.16.12.07.59;  author brent;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.06.15.08.37.15;  author brent;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.05.24.07.53.15;  author rab;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.05.23.09.57.13;  author mendel;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.10.07;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.11.30;  author brent;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     88.07.15.16.57.11;  author mendel;  state Exp;
+branches ;
+next     ;
+
+9.3.1.1
+date     92.03.18.21.14.40;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@File system device switch table declarations. 
+Moved here from fs module.
+@
+
+
+9.3
+log
+@fixed include statements
+@
+text
+@/*
+ * devFsOpTable.h --
+ *
+ *	The DEVICE operation switch is defined here.  This is the main
+ *	interface between the file system and the device drivers.
+ *
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ * $Header: /sprite/src/kernel/dev/RCS/devFsOpTable.h,v 9.2 90/09/11 12:12:49 rab Exp Locker: jhh $ SPRITE (Berkeley)
+ */
+
+#ifndef _DEVOPTABLE 
+#define _DEVOPTABLE
+
+#include <sprite.h>
+#include <user/fs.h>
+#include <devBlockDevice.h>
+
+/*
+ * Device type specific operations, calling sequence defined below.
+ *	DeviceOpen
+ *	DeviceRead
+ *	DeviceWrite
+ *	DeviceIOControl
+ *	DeviceClose
+ *	DeviceSelect
+ *	BlockDeviceAttach
+ *	DeviceReopen
+ *	DeviceMMap
+ */
+
+typedef struct DevFsTypeOps {
+    int		 type;	/* One of the device types. See devNumbersInt.h */
+    /*
+     * Device Open - called during an open of a device file.
+     *	(*openProc)(devicePtr, flags, notifyToken)
+     *		Fs_Device *devicePtr;		(Identifies device)
+     *		int flags;			(FS_READ, FS_WRITE, FS_APPEND)
+     *		Fs_NotifyToken notifyToken;	(Handle on device used with
+     *						(Fs_NotifyWriter/Reader calls)
+     *	        int *flagsPtr;                	(OUT: Device IO flags)
+     */
+    ReturnStatus (*open) _ARGS_ ((Fs_Device *devicePtr, int flags,
+	                          Fs_NotifyToken notifyToken, int *flagsPtr));
+    /*
+     * Device Read - called to get data from a device.
+     * Device Write - called to pass data to a device.
+     *
+     * Both Read and Write take a Fs_IOParam record that indicates the
+     * buffer, length, and offset of the transfer.  There is also
+     * procID, familyID, and uid information for additional permission checks.
+     * The length, buffer, and offset should be kept read-only because
+     * they may be re-used by higher levels.
+     * These also take a Fs_IOReply record that should be updated to
+     * reflect the length transferred, and a signal/code to generate.
+     * The length, signal, and code are all initialized to zero before
+     * the call into the device driver.
+     *
+     *	(*readProc)(devicePtr, readPtr, replyPtr)
+     *		Fs_Device *devicePtr;		(Identifies device)
+     *		Fs_IOParam *readPtr;		(See above comments)
+     *		Fs_IOReply *replyPtr;		(See above comments)
+     *	(*writeProc)(devicePtr, writePtr, replyPtr)
+     *		Fs_Device *devicePtr;		(Identifies device)
+     *		Fs_IOParam *writePtr;		(See above comments)
+     *		Fs_IOReply *replyPtr;		(See above comments)
+     */
+    ReturnStatus (*read) _ARGS_ ((Fs_Device *devicePtr, Fs_IOParam *readPtr,
+	                          Fs_IOReply *replyPtr));
+    ReturnStatus (*write) _ARGS_ ((Fs_Device *devicePtr, Fs_IOParam *writePtr,
+	                           Fs_IOReply *replyPtr));
+    /*
+     * Device I/O Control - perform a device-specific operation
+     * This takes an Fs_IOCParam record that specifies the inBuffer,
+     * inBufSize, outBuffer, and outBufSize.  It also indicates
+     * the command, byteOrder, procID, familyID, and uid.
+     * The driver is responsible for fixing up the contents of the
+     * inBuffer to match mach_ByteOrder, and fixing up the contents
+     * of the outBuffer to match ioctlPtr->byteOrder.
+     * The Fs_IOReply is used as in read and write.  The length is
+     * initialized to ioctlPtr->outBufSize, so normally this doesn't
+     * have to be modified.
+     *
+     *	(*ioctlProc)(devicePtr, ioctlPtr, replyPtr)
+     *		Fs_Device *devicePtr;		(Identifies device)
+     *		Fs_IOCParam *ioctlPtr;		(See above comments)
+     *		Fs_IOReply *replyPtr;		(See above comments)
+     */
+    ReturnStatus (*ioctl) _ARGS_ ((Fs_Device *devicePtr, Fs_IOCParam *ioctlPtr,
+	                           Fs_IOReply *replyPtr));
+    /*
+     * Device Close - close a stream to a device.
+     *	(*closeProc)(devicePtr, flags, numUsers, numWriters)
+     *		Fs_Device *devicePtr;		(Identifies device)
+     *		int flags;			(Stream usage flags)
+     *		int numUsers;			(Number of active streams left)
+     *		int numWriters;			(Number of writers left)
+     */
+    ReturnStatus (*close) _ARGS_ ((Fs_Device *devicePtr, int flags,
+	                           int numUsers, int numWriters));
+    /*
+     * Device Select - poll a device for readiness
+     *	(*selectProc)(devicePtr, readPtr, writePtr, exceptPtr)
+     *		Fs_Device *devicePtr;		(Identifies device)
+     *		int *readPtr;			(Readability bit)
+     *		int *writePtr;			(Writability bit)
+     *		int *exceptPtr;			(Exception bit)
+     */
+    ReturnStatus (*select) _ARGS_ ((Fs_Device *devicePtr, int *readPtr,
+	                            int *writePtr, int *exceptPtr));
+    /*
+     * Block Device Attach - attach a block device at boot-time.
+     *	(*attachProc)(devicePtr)
+     *		Fs_Device *devicePtr;		(Identifies device)
+     */
+    DevBlockDeviceHandle *((*blockDevAttach) _ARGS_ ((Fs_Device *devicePtr)));
+    /*
+     * Reopen Device -  called during recovery to reestablish a stream
+     *	(*reopenProc)(devicePtr, numUsers, numWriters, notifyToken)
+     *		Fs_Device *devicePtr;		(Identifies device)
+     *		int numUsers;			(Number of active streams)
+     *		int numWriters;			(Number of writers)
+     *		Fs_NotifyToken notifyToken	(Handle on device used with
+     *						(Fs_NotifyWriter/Reader calls)
+     *	        int *flagsPtr;                	(OUT: Device IO flags)
+     */
+    ReturnStatus (*reopen) _ARGS_ ((Fs_Device *devicePtr, int numUsers,
+	                            int numWriters,
+				    Fs_NotifyToken notifyToken,
+				    int *flagsPtr));
+    /*
+     * MMap Device -  called to map device memory into user space.
+     *	(*mmapProc)(devicePtr, startAddr, length, offset, newAddrPtr)
+     *		Fs_Device *devicePtr;		(Identifies device)
+     *		Address startAddr;		(Requested starting virt. addr.)
+     *		int length;			(Length of mapped segment)
+     *		int offset;			(Offset into mapped file)
+     *		Address *newAddrPtr;		(User address really mapped at)
+     */
+    ReturnStatus (*mmap) _ARGS_ ((Fs_Device *devicePtr, Address startAddr,
+	                          int length, int offset, Address *newAddrPtr));
+} DevFsTypeOps;
+
+extern DevFsTypeOps devFsOpTable[];
+extern int devNumDevices;
+
+/*
+ * DEV_TYPE_INDEX() - Compute the index into the devFsOpTable from the
+ *		      type field from of the Fs_Device structure.
+ */
+
+#define	DEV_TYPE_INDEX(type)	((type)&0xff)
+/*
+ * A list of disk device Fs_Device structure that is used when probing for a
+ * disk. Initialized in devConfig.c.
+ */
+extern Fs_Device devFsDefaultDiskPartitions[];
+extern int devNumDefaultDiskPartitions;
+
+#endif /* _DEVOPTABLE */
+@
+
+
+9.3.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d18 1
+a18 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/dev/devFsOpTable.h,v 9.3 91/04/16 17:12:55 jhh Exp $ SPRITE (Berkeley)
+@
+
+
+9.2
+log
+@Added prototypes.
+@
+text
+@d18 1
+a18 1
+ * $Header: /sprite/src/kernel/dev/RCS/devFsOpTable.h,v 9.1 90/08/14 18:43:45 mgbaker Exp Locker: rab $ SPRITE (Berkeley)
+d24 3
+a26 3
+#include "sprite.h"
+#include "user/fs.h"
+#include "devBlockDevice.h"
+@
+
+
+9.1
+log
+@Added /dev/fb support.
+@
+text
+@d18 1
+a18 1
+ * $Header: /sprite/src/kernel/dev.mgb/RCS/devFsOpTable.h,v 1.1 90/08/02 14:36:38 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d50 1
+d52 2
+a53 1
+    ReturnStatus (*open)();
+d77 4
+a80 2
+    ReturnStatus (*read)();
+    ReturnStatus (*write)();
+d98 2
+a99 1
+    ReturnStatus (*ioctl)();
+d108 2
+a109 1
+    ReturnStatus (*close)();
+d118 2
+a119 1
+    ReturnStatus (*select)();
+d125 1
+a125 1
+    DevBlockDeviceHandle *((*blockDevAttach)());
+d132 1
+a132 1
+     *		Fs_NotifyToken *notifyToken	(Handle on device used with
+d134 1
+d136 4
+a139 1
+    ReturnStatus (*reopen)();
+d149 2
+a150 1
+    ReturnStatus (*mmap)();
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d18 1
+a18 1
+ * $Header: /sprite/src/kernel/dev/RCS/devFsOpTable.h,v 8.4 89/06/16 12:07:59 brent Exp Locker: douglis $ SPRITE (Berkeley)
+d38 1
+d129 10
+@
+
+
+8.4
+log
+@Updated I/O Control interface
+@
+text
+@d18 1
+a18 1
+ * $Header: /sprite/src/kernel/dev/RCS/devFsOpTable.h,v 8.3 89/06/15 08:37:15 brent Exp $ SPRITE (Berkeley)
+@
+
+
+8.3
+log
+@Updated the DEV => FS interface to use Fs_IOParam  &  Fs_IOReply.
+Added the reopen procedure.
+Fixed the select procedure.
+TODO: update the ioctl procedure.
+@
+text
+@d18 1
+a18 1
+ * $Header: /sprite/src/kernel/dev/RCS/devFsOpTable.h,v 8.2 89/05/24 07:53:15 rab Exp $ SPRITE (Berkeley)
+d46 1
+a46 1
+     *		int flags;			(Usage flags from open)
+d53 12
+d67 2
+a68 6
+     *		Fs_IOParam *readPtr;		(See fsIO.h)
+     *		Fs_IOReply *replyPtr;		(See fsIO.h)
+     */
+    ReturnStatus (*read)();
+    /*
+     * Device Write - called to pass data to a device.
+d71 2
+a72 2
+     *		Fs_IOParam *writePtr;		(See fsIO.h)
+     *		Fs_IOReply *replyPtr;		(See fsIO.h)
+d74 1
+d78 10
+d90 2
+a91 2
+     *		Fs_IOCParam *ioctlPtr;		(See fsIO.h)
+     *		Fs_IOReply *replyPtr;		(See fsIO.h)
+@
+
+
+8.2
+log
+@Changes to allow optimization.
+@
+text
+@d4 2
+a5 2
+ *	Declarations for device access.  The DEVICE operation switch is
+ *	defined here.  The I/O handle formas for devices is defined here.
+d18 1
+a18 1
+ * $Header: /sprite/src/kernel/dev/RCS/devFsOpTable.h,v 8.1 89/05/23 09:57:13 mendel Exp Locker: rab $ SPRITE (Berkeley)
+d29 9
+a37 3
+ * Device type specific operations.
+ *	The arguments to the operations are commented below the
+ *	macro definitions used to invoke them.
+d42 8
+d51 7
+d59 7
+d67 16
+a82 1
+    ReturnStatus (*ioControl)();
+d84 8
+d93 5
+d99 10
+@
+
+
+8.1
+log
+@Added default disk partition table for finding root file systems on boot.
+@
+text
+@d18 1
+a18 1
+ * $Header: devFsOpTable.h,v 1.1 88/07/15 16:57:11 mendel Exp $ SPRITE (Berkeley)
+d61 1
+a61 1
+#endif _DEVOPTABLE
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d18 1
+a18 1
+ * $Header: /sprite/src/kernel/dev/RCS/devFsOpTable.h,v 6.0 88/08/11 12:11:30 brent Stable Locker: douglis $ SPRITE (Berkeley)
+d25 2
+d42 1
+d47 1
+a47 1
+
+d49 2
+a50 1
+ * The filesystem device block I/O operation switch.
+a51 6
+typedef struct DevFsBlockOps {
+    int 	deviceType;		/* Redundant device type info */
+    ReturnStatus (*readWrite)();	/* Block read/write routine */
+} DevFsBlockOps;
+
+extern DevFsBlockOps devFsBlockOpTable[];
+d53 1
+d55 2
+a56 2
+ * A list of disk device types that is used when probing for a disk.
+ * Initialized in devFsOpTable.c.
+d58 2
+a59 2
+extern int devFsDefaultDiskTypes[];
+extern int devNumDiskTypes;
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d18 1
+a18 1
+ * $Header: devFsOpTable.h,v 1.1 88/07/15 16:57:11 mendel Exp $ SPRITE (Berkeley)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d18 1
+a18 1
+ * $Header: fsDevice.h,v 1.2 88/06/04 12:11:40 brent Exp $ SPRITE (Berkeley)
+@

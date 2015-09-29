@@ -1,0 +1,1614 @@
+head     1.18;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.18
+date     90.03.29.11.33.48;  author ouster;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     90.03.25.15.20.51;  author ouster;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     90.03.22.15.56.53;  author ouster;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     90.03.16.08.43.50;  author ouster;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     89.12.22.11.03.00;  author ouster;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     89.07.16.12.27.59;  author ouster;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     89.07.15.17.31.08;  author shirriff;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     89.06.22.17.01.50;  author shirriff;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     89.06.09.15.40.36;  author ouster;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     89.06.08.17.07.47;  author ouster;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     89.06.05.12.17.08;  author shirriff;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     89.06.02.15.40.58;  author shirriff;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.03.24.14.17.32;  author ouster;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.01.19.12.07.36;  author ouster;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.01.07.13.55.15;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.12.30.10.03.50;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.12.23.15.09.59;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.12.22.10.50.37;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.18
+log
+@Added "where" procedure.
+@
+text
+@'\" Copyright 1989 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/cmds/mx/RCS/mx.man,v 1.17 90/03/25 15:20:51 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+'
+.so \*(]ltmac.sprite
+.HS MX cmds
+.BS
+.SH NAME
+mx \- Mouse-oriented editor for X
+.SH SYNOPSIS
+\fBmx \fR[\fIoptions\fR]  [\fIfile file file ...\fR]
+.br
+\fBmxsync \fR[\fIoptions\fR]  [\fIfile file file ...\fR]
+.SH OPTIONS
+.IP "\fB\-bd \fIcolor\fR" 15
+Use \fIcolor\fR as the border color for the window.  If this switch
+isn't given then the \fBborderColor\fR X default is used.  If it isn't given
+either, then the foreground color is used.
+.IP "\fB\-bg \fIcolor\fR" 15
+Use \fIcolor\fR as the background color for the window.  If this switch
+isn't given then the \fBbackground\fR X default is used.  If it isn't given
+either, or if the display is a black-and-white one, then White is used.
+.IP "\fB\-D\fR" 15
+Causes \fBmx\fR not to detach itself from its parent process.  Useful
+when \fBmx\fR is invoke from programs that wait for it to finish,
+like mail programs.  If \fBmx\fR is invoked under the name \fBmxsync\fR
+then \fBmx\fR acts as if this switch had been given.
+.IP "\fB\-display \fIhost\fB:\fIdisplay\fR" 15
+.VS
+Use \fIhost\fR and \fIdisplay\fR as an indication of the
+display on which to open the window.  The display defaults to the
+one specified in the \fBDISPLAY\fR environment variable.
+.IP "\fB\-f\fR" 15
+Treat all remaining arguments as file names.  This option must be
+used to
+edit a file if its name starts with ``\-'' or ``='' or ``+'' or contains
+a ``:'' character.
+.VE
+.IP "\fB\-fg \fIcolor\fR" 15
+Use \fIcolor\fR as the foreground color for the window.  If this switch
+isn't given then the \fBforeground\fR X default is used.  If it isn't given
+either, or if the display is a black-and-white one, then Black is used.
+.IP "\fB\-fn \fIfont\fR" 15
+Use \fIfont\fR as the font for the window.  If this switch isn't given,
+then the \fBfont\fR X default is used as the font.  If it isn't given
+either, then the Sx default font is used.
+.IP "\fB\-geometry \fIgeometry\fR" 15
+.VS
+Use \fIgeometry\fR as the geometry for the window.  If no geometry
+is specified on the command line, it the geometry defaults to the value of the
+\fBgeometry\fR X default.  If no default is specified, then
+\fBmx\fR picks a geometry.
+.IP \fB\-help\fR
+Print out a list of the command-line options (and brief descriptions
+of their functions) and exit without opening a window.
+.IP "\fB\-icon \fIfile\fR" 15
+\fIFile\fR is the name of a file in bitmap format.  Read the file and
+use it as the icon for the window.  If \fIfile\fR is \fBlocalhost\fR,
+then \fBmx\fR chooses the default icon file corresponding to the local host.
+.IP "\fB\-ix \fIxcoord\fR" 15
+Display the icon at x-coordinate \fIxcoord\fR.
+.IP "\fB\-iy \fIycoord\fR" 15
+Display the icon at y-coordinate \fIycoord\fR.
+.VE
+.IP "\fB\-sb \fIcolor\fR" 15
+Use \fIcolor\fR as the background color for the window's scrollbar.
+If this switch isn't given then the \fBscrollbar.background\fR
+X default is used.  If it isn't given either, then the background
+color for the text window is used.
+.IP "\fB\-sf \fIcolor\fR" 15
+Use \fIcolor\fR as the foreground color for the window's scrollbar.
+If this switch isn't given then the \fBscrollbar.foreground\fR
+X default is used.  If it isn't given either, then the foreground
+color for the text window is used.
+.IP "\fB\-se \fIcolor\fR" 15
+Use \fIcolor\fR as the color for the window's scrollbar elevator.
+If this switch isn't given then the \fBscrollbar.elevator\fR
+X default is used.  If it isn't given either, then the background
+color for the text window is used.
+.IP "\fB\-showtitle\fR" 15
+.VS
+Display a title bar at the top of the window.  Mx normally assumes
+that a window manager will display a title bar;  if your window
+manager doesn't, you may wish to use this switch.  If this switch
+isn't specified, then Mx checks for a \fBshowTitle\fR X default;
+if it exists and contains the string ``yes'', then a title
+bar will be displayed.
+.VE
+.IP "\fB\-t \fItag\fR" 15
+Look up \fItag\fP in the tags file of the current directory, open its
+file in the new window, and go to the line of the tag.
+.IP "\fB\-tb \fIcolor\fR" 15
+Use \fIcolor\fR as the background color for the window's title bar.
+If this switch isn't given then the \fBtitle.background\fR
+X default is used.  If it isn't given either, then the background
+color for the text window is used.  This option is ignored if Mx
+isn't displaying a title bar.
+.IP "\fB\-tf \fIcolor\fR" 15
+Use \fIcolor\fR as the foreground color for the window's title bar.
+If this switch isn't given then the \fBtitle.foreground\fR
+X default is used.  If it isn't given either, then the foreground
+color for the text window is used.  This option is ignored if Mx
+isn't displaying a title bar.
+.IP "\fB\-ts \fIcolor\fR" 15
+Use \fIcolor\fR as the color for the window's title stripes.
+If this switch isn't given then the \title.stripe\fR
+X default is used.  If it isn't given either, then the foreground
+color for the text window is used.  This option is ignored if Mx
+isn't displaying a title bar.
+.IP "\fB+\fR" 15
+Position the file so its last line is visible in the window.
+.IP "\fB+\fIlineNumber\fR" 15
+After opening the file, select the first character of
+line "\fIlineNumber\fP and make that line visible in the window.
+For this switch, line 1 corresponds to the first line of the file.
+.IP "\fB+\fIsearchPattern\fR" 15
+After opening the file, search for \fIsearchPattern\fP, just as if a
+\fBsearch\fP command had been invoked.  If the first character of
+\fIsearchPattern\fP is a slash then the slash is ignored (this is
+for vi compatibility and to permit search patterns that begin with
+a digit).
+.IP "\fB=\fIgeometry\fR" 15
+Use \fIgeometry\fR as the geometry specifier for the window (same effect
+as the \fB-geometry option).
+.IP "\fIhost:display\fR" 15
+Use this argument to select the display on which to create the window
+(same effect as the \fB-display\fR option).
+.BE
+.SH INTRODUCTION
+\fBMx\fR is a mouse-oriented editor that uses the facilities of the X window
+system, the Sx supplementary library, and the Tcl command interpreter.
+.VS
+It displays a window containing the first
+\fIfile\fP argument and permits \fIfile\fP to be edited using the
+commands defined
+below.  If no \fIfile\fR is specified, then \fBmx\fR displays a file
+containing a tutorial introduction to \fBmx\fR.  If \fIfile\fR
+is specified as an empty string, then
+\fBmx\fR creates a scratch window without any particular file association.
+\fBMx\fR normally detaches itself from its parent (as far as its
+parent is concerned, \fBmx\fR will have exited);  if the \fB\-D\fR switch
+is given, or if \fBmx\fR is invoked under the name \fBmxsync\fR,
+then \fBmx\fR doesn't detach itself from its parent.
+.VE
+.LP
+Almost all \fBmx\fR actions are invoked using Tcl commands.  See the Tcl
+documentation for information on the basic command syntax and the
+built-in Tcl commands.  \fBMx\fR extends the Tcl built-in commands
+with additional commands for file editing;  the \fBmx\fR commands are
+described in the COMMANDS section below.
+Commands may be invoked in
+any of three ways:  the command subwindow, pull-down menus, and keystroke
+bindings.  The command subwindow is a small entry window that is
+displayed at the bottom of the \fBmx\fR window.  When it is displayed,
+commands may be entered there.  Pull-down menus appear in a bar at the
+top of the \fBmx\fR window, and may be invoked by pressing a mouse button
+over the menu name and releasing it over an entry in the menu.  Each menu
+entry has a command associated with it;  when the entry is invoked, the
+command is executed (see the \fBmenu\fP command for information on
+how to create and modify menus).  The third command invocation
+mechanism is through
+keystroke bindings:  certain keystrokes, or combinations of keystrokes,
+have commands associated with them.  When the keystroke sequence is typed,
+the associated command is executed (see the \fBbind\fP command for
+details).  For example, the ``a'' key
+is normally bound to the command \fBinsert a\fR, which causes
+character ``a'' to be inserted at the caret location.
+.LP
+Many commands may be invoked either through a menu entry or a keystroke
+binding;  for these commands, the keystroke sequence bound to the command
+appears at the right side of the menu entry.
+
+.SH ".MX FILES"
+After processing command line options, opening the window, and reading
+in the file, \fBmx\fR checks for the existence of a file \fB.mx\fR in your
+home directory (which is given by the
+environment variable HOME).  If the file exists, \fBmx\fR
+reads it in and processes it as a command file, just as if it were read
+with the \fBsource\fP command.  Then it checks for an \fB.mx\fR file in the
+current directory, and processes it if it exists.
+
+.SH CARET AND SELECTION
+The mouse may be used to position the caret (the insertion point)
+and to select ranges of text.  The same actions apply both to the file
+or to the search and command subwindows.
+Left-clicking on a character positions the caret just before
+that character.  Right-clicking will select all of the characters
+from the caret up to and including the character under the pointer.
+If the left button is clicked twice in quick succession without
+moving the mouse, it invokes word selection:  the word containing
+the character under the pointer is selected, the caret is positioned
+at the left side of the word, and future right clicks will select
+only full words.  If the left button is triple-clicked, line selection
+will be invoked.  If the control key is held down while left- and
+right-clicking, the selection will be set without changing the caret
+or input focus.
+
+.SH "VARIABLES"
+.LP
+There are several Tcl global variables that are set or used by \fBmx\fR
+in some situations:
+.RS
+.TP
+\fBfile\fP
+Set by \fBmx\fR to the name of the file loaded in the window (which is
+the first name in \fB$files\fR.
+.VS
+.TP
+\fBfiles\fP
+Set by \fBmx\fR to a list of all the \fIfile\fR arguments specified on the
+command line that created the window.
+.VE
+.TP
+\fBgeometry\fP
+Geometry to use when creating new windows, if none is given as part
+of the \fBopen\fR command.  See the
+\fBopen\fP command for details.
+.TP
+\fBheight\fP
+Set by \fBmx\fR to indicate
+the height of the window, in lines of text.  If the last line
+appearing in the window is only partially visible, it doesn't count.
+.TP
+\fBhelpDir\fP
+\fBMx\fR presets this variable to the location of the directory containing
+help information such as the tutorials.
+.TP
+\fBhistory\fP
+\fBMx\fR automatically changes this variable on each mouse click to hold
+information about all the recently-executed commands.  Several of
+the default key bindings and menu entries also set this variable.
+See the HISTORY section and the \fBhistory\fR command for more
+information.
+.TP
+\fBnewWindow\fR
+During the \fBopen\fR command, \fBmx\fR sets this global variable to hold
+the id of the newly-created window.
+.TP
+\fBnoRegExps\fR
+If this variable is set to ``1'', searches and replaces will use plain
+strings.  By default, pattern matching takes place with vi-style regular
+expressions.
+.TP
+\fBreplaceCmd\fP
+When the middle button is clicked in the ``Replace'' string entry, or when
+carriage-return is typed there, the contents of this variable are
+executed as a command.
+.TP
+\fBreplaceString\fP
+Set by \fBmx\fR to hold the contents of the replacement entry subwindow.
+.TP
+\fBsearchCmd\fP
+When the middle button is clicked in the ``Search'' string entry, or when
+carriage-return is typed there, the contents of this variable are
+executed as a command.
+.TP
+\fBsearchString\fP
+Set by \fBmx\fR to hold the contents of the search entry subwindow.
+.TP
+\fBtagFiles\fP
+List of tags files to check in \fBtag\fP command, separated by
+white space.  See the \fBtag\fP command for details.  This variable
+is read by \fBmx\fR but not written.
+.TP
+\fBversion\fR
+.VS
+Set by \fBmx\fR to hold a version number in the form \fIx.y\fR, where
+changes in \fIx\fR correspond to major revisions with probable
+incompatibilities, and changes in \fIy\fR represent small bug fixes
+and upgrades that should not cause substantial compatibility problems.
+.VE
+.TP
+\fBwidth\fP
+The width of the window, in characters.  If the last character position
+is only partially-visible, then it doesn't count.  If a variable-width
+font is being used, the average character size is used in computing
+the window's width.
+.RE
+
+.SH "MARKS"
+.PP
+A mark is a string that identifies a position in the file.  It
+has the format
+.DS
+\fIline\fB.\fIchar\fR
+.DE
+where \fIline\fR is a line number in the file and \fIchar\fR is
+a position within that line.  For historical reasons, lines
+number from 1 and characters number from 0.
+.PP
+Most commands that deal with positions in the file, such as
+\fBsee\fP and \fBdelete\fP, take marks as arguments.  Typically,
+marks are stored as the values of variables, although they may also be
+typed in directly.  The \fBmark\fP command provides for simple mark
+arithmetic.  The position indicated in a mark
+need not actually exist in the file;  at the time the mark is used it
+is rounded off to the closest actual position in the file.  For example,
+if the line number doesn't exist in the file then it is changed to
+the last line;  if the character position would like off the end of
+the line, then it is rounded to the position of the last character
+in the line.
+.LP
+When a command specifies that one of its arguments must be a mark,
+the mark may either be specified in the \fIline.char\fR form
+(either directly or through command or variable substitution),
+or it may be specified symbolically using one of the following names, which
+refer to special locations:
+.RSquit
+.TP
+\fBbottom\fP
+This special mark refers to
+the character that appears in the bottom left corner of the window.
+.TP
+\fBcaret\fP
+The special mark \fBcaret\fP corresponds to the character just to
+the right of the caret position.
+.TP
+\fBcenter\fP
+The leftmost character on the center line of the window.
+.TP
+\fBeof\fP
+The last character in the file (which is always a newline character).
+.TP
+\fBsel.left\fP
+The leftmost selected character.  This form of mark may only be used
+if the selection is in the file that's in this window.
+.TP
+\fBsel.right\fP
+The rightmost selected character.  This form of mark may only be used
+if the selection is in the file that's in this window.
+.TP
+\fBtop\fP
+The character that appears in the top left corner of the window.
+
+.SH "HISTORY"
+Under normal circumstances,
+\fBMx\fR continuously records all the top-level commands being executed,
+including those coming from keystrokes, menu entries, and the command,
+search, and replace subwindows.
+On each button click, undo, or search operation, all of the recorded
+commands are saved in the variable \fBhistory\fR and the record is
+cleared.  Thus the \fBhistory\fR variable describes all the commands
+executed between the last two events in the above group.  It may
+then be invoked as a command to repeat recent actions.
+.PP
+Under normal circumstances, \fBmx\fR does not record information about
+mouse clicks,  searching, undoing, or \fBhistory\fR commands.
+In addition, changes of focus to the command, search, 
+or replace subwindows are not normally recorded.  Having these commands
+included in the \fBhistory\fR variable turns out to cause more trouble
+than good.  However, much of this behavior is enforced by using
+the \fBhistory\fR command in the key
+bindings and menus established by the \fBmx\fR startup file, so you can
+change it if you wish.  Only the mouse click behavior and \fBmx\fR's refusal
+to record \fBhistory\fR commands are hard-wired.  See the \fBhistory\fR
+command for information on how to control command recording.
+
+.SH "COMMANDS"
+The \fBmx\fR built-in commands are described below.  In addition to these
+commands, any of the Tcl built-in commands may also be used.
+Whenever a top-level command is invoked (i.e. in response to a keystroke or
+menu selection, as opposed to the execution of a command procedure), if it
+returns a non-empty result then the result is displayed in the message
+window.  If the command returns an error then the error message is
+displayed in the message window.
+.TP
+\fBbind \fR[\fIsequence\fR [\fIcommand\fR]]
+If the \fIsequence\fR and \fIcommand\fR arguments are given,
+this command associates
+the keystroke sequence \fIsequence\fR with \fIcommand\fR and
+returns an empty string.
+From now on, whenever \fIsequence\fP is typed in the window,
+the Tcl interpreter will be invoked to execute \fIcommand\fP.
+If \fIsequence\fP is already bound to a command, then
+\fIcommand\fP replaces the previous binding.  If there are two bound
+sequences of which one is a prefix of the other, then the shorter
+sequence will always match in preference to the longer one.
+If \fIcommand\fR is an empty string, then the binding for \fIsequence\fR
+(if any) is deleted, leaving \fIsequence\fP unbound.
+.RS
+.PP
+If the first character of \fIcommand\fP is ``!'', it signifies that
+no undo marks are to be generated around this command;  the ``!'' is
+stripped from the command before executing it.  If several key bindings
+in a row are invoked and each had the ``!'' prefix, then all of the
+invocations will be undone together as a single unit.  If \fIcommand\fP
+consists of nothing but the character ``\fB@@\fP'' (optionally preceded
+by ``!''), then whenever this
+binding is invoked the command ``\fBinsert \fIkey\fR'' will be executed,
+where \fIkey\fR is the last key typed on the keyboard.  ``\fB!@@\fR''
+is typically used as the binding for all the standard ASCII
+characters.
+.PP
+If \fIcommand\fR isn't specified, then the \fIbind\fR command returns
+the current binding for \fIsequence\fR, or the empty string if there
+is no binding for \fIsequence\fR.  If neither \fIsequence\fR or \fIcommand\fR
+is given, then \fBbind\fR returns a Tcl list whose elements are the
+\fIsequence\fRs associated with all known keystroke bindings.
+.RE
+.TP
+\fBcaret \fImark\fR
+.TP
+\fBcaret display \fItype\fR
+.VS
+In the single-argument form of this command, the caret is moved to
+just before the character at the position given by \fImark\fP.
+The two-argument form is used to change the way the caret position
+is displayed.  If \fItype\fR is \fBcaret\fR, the caret position will
+always be marked by displaying a caret just before the caret
+character.  If \fItype\fR is \fBblock\fR, the
+caret position will be marked by displaying the caret character in
+reverse video.  If \fItype\fR is \fBoff\fR, then the caret position
+will not be marked with any sort of special display.  Finally, a \fItype\fR
+of \fBviblock\fR marks the caret position with a block when in vi mode
+and with a caret otherwise (this mode is only relevant for \fBtx\fR).
+The \fBcaret\fR command returns an empty string.
+.VE
+.TP
+\fBclean\fR
+Pretend that the contents of this window were just written to disk (but
+don't actually write anything).  Until the next time the file is
+modified, \fBmx\fR will assume that the window is ``clean'':  if you invoke
+commands like \fBquit\fR or \fBswitch\fR then \fBmx\fR will happily discard the
+contents of the window without warning you or giving you a chance to
+abort the command.
+.TP
+\fBcolumn \fImark\fR
+Return the column corresponding to the left edge of the character
+at the position indicated by \fImark\fR.  \fIMark\fR must be a valid
+mark.  Columns are computed by treating normal characters as one
+column wide, control characters as two columns wide, and tabs as
+wide enough to extend up to the next 8-column boundary.  Character 0
+of a line is at column 0.
+.TP
+\fBcontrol \fIoption string\fP
+This command performs control-character processing on \fIstring\fR,
+depending on the value of \fBoption\fR (abbreviations are OK):
+.RS
+.TP
+\fBcontrol backslash \fIstring\fR
+Returns a string that is identical to \fIstring\fR except that
+non-printing characters are replaced with backslash sequences.
+The newline control character is replaced with \fB\en\fR, tab is
+replaced with \fB\et\fR, backspace is replaced with \fB\eb\fR, and
+any other non-printing character is replaced with \fB\e\fIddd\fR
+where \fIddd\fR gives the octal value of the character.
+.TP
+\fBcontrol binding \fIstring\fR
+This command is used primarily to produce a printable description of
+a keystroke sequence that is bound to a command.  It returns a string
+consisting of space-separated fields corresponding to the characters
+of \fIstring\fR.  If a \fIstring\fR character is space, its
+corresponding field is ``SPACE'';  if the \fIstring\fR character
+is a normal printing character then the field is just that
+character;  if the \fIstring\fR character is
+rubout (177\d\s-18\s+1\u) the corresponding field is ``DEL'';
+if the \fIstring\fR character is a control character, the
+corresponding field is of the form ``C-a''; if the \fIstring\fR
+character has its high-order bit set (200\d\s-1\8\s+1\u), then the
+field is the same as if the high-order bit were not set, except that
+``M-'' is prepended (301\d\s-1\8\s+1\u translates to ``M-A'').
+.TP
+\fBcontrol make \fIstring\fR
+Returns a string of the same length as \fIstring\fR.  Each character in
+the result is the control equivalent
+of the \fIstring\fR character (e.g., ``a'' and ``A''
+convert to control-A).  The character ``?'' converts to
+rubout (177\d\s-1\8\s+1\u).
+You may not use this command to generate a null character (0).
+.RE
+.TP
+\fBdelete\fR \fImark1 \fR[\fImark2\fR [\fBnoviewchange\fR]]
+Delete all of the characters between \fImark1\fP and \fImark2\fP,
+inclusive.  If \fImark2\fR isn't specified, then delete the single
+character at \fImark1\fR.  Normally, this command changes the
+view in the window if necessary to ensure that the point of the
+deletion is visible;  if \fBnoviewchange\fR is specified then
+the view in the window will not be changed.  Returns an empty string.
+.TP
+\fBextract\fR \fImark1 \fR[\fImark2\fR]
+Return as result all of the characters in the file between the two
+marks \fImark1\fR and \fImark2\fR.  If \fImark2\fR is omitted, then
+return the single character at \fImark1\fR.
+.TP
+\fBfocus \fIwindow \fR[\fBclear\fR]
+Arrange for all future keyboard input to be directed to \fIwindow\fR,
+regardless of the mouse position.  \fIWindow\fR must have one of the
+following values (or a unique abbreviation for it):
+.RS
+.TP
+\fBcommand\fR
+The command window that appears at the bottom of the file.
+.TP
+\fBfile\fR
+The main window, which displays the file being edited.
+.TP
+\fBreplace\fR
+The replace entry, which is part of the search/replace window that
+appears just underneath the menu bar.
+.TP
+\fBsearch\fR
+The search entry in the search/replace window.
+.RE
+.IP
+If \fIwindow\fR isn't displayed when this command is invoked, \fBmx\fR
+displays it.  Ifthe \fBclear\fR option is specified (or any
+abbreviation of \fBclear\fR) then the contents of the given window
+are cleared.  The \fBclear\fR option is ignored if \fIwindow\fR
+is \fBfile\fR.  If input focussing has been disabled by the .Xdefaults
+file, then \fBfocus\fR will open and/or clear \fIwindow\fR, but will
+not focus on it.  Returns an empty string.
+.TP
+\fBgeometry \fIspec\fR
+Set the size and/or location of the window according to the information
+in \fIspec\fR.  \fISpec\fR should be in the standard format for X geometry
+specifications (\fB=80x24\fR, for example).  Returns an empty string.
+.TP
+\fBhistory\fR \fIoption\fR [\fIarg\fR]
+Control the history recording process.  The exact function
+depends on \fIoption\fR (which may be abbreviated uniquely):
+.RS
+.TP
+\fBhistory add \fIinfo\fR
+Append \fIinfo\fR to the current history record as if it had been
+invoked as a command.  Returns an empty string.
+.TP
+\fBhistory clear\fR
+Discard all of the information in the current history record.
+Returns an empty string.
+.TP
+\fBhistory ignore \fIcommand\fR
+Execute \fIcommand\fR but don't record it in the history record.
+Note that no \fBhistory\fR commands are ever recorded, even if they don't
+appear as the \fIcommand\fR argument to \fBhistory ignore\fR.
+Returns an empty string.
+.TP
+\fBhistory info\fR
+Returns the current history record, with commands separated by
+newlines.
+.TP
+\fBhistory next \fIvarName\fR [\fIcommand\fR]
+Store the current history record in the variable \fIvarName\fR,
+then clear the history record.  After clearing the history
+record, if \fIcommand\fR is specified then execute it but don't
+record it.  Returns an empty string.
+.TP
+\fBhistory off\fR
+Disable history recording.  Invocations of \fBhistory off\fR
+nest:  recording will not resume until an equal number of
+\fBhistory on\fR commands have been invoked.  Returns an empty string.
+.TP
+\fBhistory on\fR
+Re-enable history recording if the cumulative number of \fBhistory on\fR
+commands is greater than or equal to the number of \fBhistory off\fR
+commands.  This command is ignored if history recording is already
+enabled.  Returns an empty string.
+.RE
+.TP
+\fBindent\fR \fImark1 mark2\fR [\fB+\fR|\fB\-\fR] \fIamount\fR
+Change the indentation of all the lines between \fImark1\fP
+and \fImark2\fP, inclusive.  If no sign is given, then \fIamount\fP
+specifies an absolute indentation:  for each of the lines,
+the indentation will be set to \fIamount\fP.  If \fIamount\fP is
+preceded by a minus (plus) argument, then the indentation of each line will be
+reduced (increased) by \fIamount\fP units.
+To set the indentation for a line to \fIi\fP, \fBmx\fR deletes all the
+leading blanks and tabs in the line, then inserts \fIi\fP/8 tabs followed
+by (\fIi\fP mod 8) spaces.  Returns an empty string.
+.TP
+\fBinsert\fR \fIbytes\fR [\fImark\fR]
+If \fImark\fR is specified, it contains a mark;  \fBinsert\fR
+will insert the contents of the \fIbytes\fR
+argument just before the character at position \fImark\fR.  Otherwise
+the command will insert \fIbytes\fR at the position of the caret.
+Returns an empty string.
+.TP
+\fBmark\fI src op args\fR
+Return a position in the file in the form \fIline.char\fR, where
+\fIline\fR is a line in the file and \fIchar\fR is a character in
+the line (lines number from 1, characters from 0).
+\fISrc\fR must be a valid mark;
+the return value is computed
+by performing some operation on the position given by \fIsrc\fP,
+depending on \fIop\fR and \fIargs\fR:
+.RS
+.TP
+\fBmark \fIsrc\fR
+Return the value of mark \fIsrc\fR.  This form is used to retrieve
+the value of a built-in mark such as \fBsel.left\fR.
+.TP
+\fBmark \fIsrc direction amount units\fP
+Return the position of
+the character \fIamount units\fP away from \fIsrc\fP.  \fISrc\fP
+must be a valid mark.  \fIDirection\fP
+must be \fBforward\fP or \fBbackward\fP; it indicates which direction
+to move from \fIsrc\fP.  \fIAmount\fP is a decimal number indicating
+how far to move, and \fIunits\fP indicates the units for motion:
+\fBchars\fP, \fBwords\fP, or \fBlines\fP.  For example,
+\fBmark $b forward 1 word\fP will set variable \fBa\fP to
+point to the beginning of the word just after the one containing
+the position indicated by variable \fBb\fP.
+.TP
+\fBmark \fIsrc \fBchar \fIindex\fR
+Return the position of the \fIindex\fP'th character in the line
+given by \fIsrc\fP.  If \fIindex\fR is -1, then \fIdst\fP will
+refer to the last character on \fIsrc\fR's line.
+.TP
+\fBmark \fIsrc \fBcolumn \fIindex\fR
+Return the position of the character that covers column \fIindex\fR
+on the line containing \fIsrc\fR.  Columns are computed by treating
+normal characters as one space wide, control characters as two
+spaces wide, tabs as wide enough to extend up to the next 8-column
+boundary, and the newline at the end of the line as infinitely wide.
+Columns number from 0.
+.TP
+\fBmark \fIsrc \fBline \fIindex\fR
+Return the position whose line number is \fIindex\fP but whose
+character position is the same as \fIsrc\fP's.
+.TP
+\fBmark \fIsrc \fBparenthesis\fR [\fIvarName\fR]
+Return the position of the first character of the
+parenthesis that matches the one pointed
+to by \fIsrc\fP.  If \fIsrc\fP doesn't point to a parenthesis, then
+return \fIsrc\fP.  If \fIvarName\fP
+is specified, then it names a variable that is set to refer to the
+last character of the matching parenthesis (this feature is only useful
+for parentheses that are more than one character long).
+.TP
+\fBmark \fIsrc \fBsearch \fIdirection pattern\fR [\fIvarName\fR]
+Search for \fIpattern\fP and return the position of the first character
+of the matching range.  If \fIvarName\fP is given, it names a
+variable that is set to the
+last character of the matching range.  The search starts at the
+position given by \fIsrc\fP and continues in \fIdirection\fP,
+which must be either \fBforward\fP or \fBbackward\fP.  The search
+is circular:  if a forward search reaches the end of the file then
+it continues at the beginning;  if a backward search reaches the
+beginning of the file then it continues at the end.  If no match
+is found, then \fIsrc\fR is returned (and stored in the variable
+named by \fIvarName\fP, if specified).
+.RE
+.TP
+\fBmenu\fI option \fR[args\fR]
+The \fBmenu\fP command is used to manipulate the pull-down menus
+displayed at the top of the window.  It has several forms, depending
+on \fIoption\fP:
+.RS
+.TP
+\fBmenu append \fIname leftText centerText rightText color cmd\fR
+Append a new entry onto menu \fIname\fR, which must already exist.
+The \fIleftText\fP,
+\fIcenterText\fP, and \fIrightText\fP arguments give strings to be
+displayed left-justified, centered, and right-justified (respectively)
+in the menu entry.  If any of the arguments is an empty string or the
+single character ``-'', then no text is displayed in that position.
+\fIColor\fP gives the background color to use for the entry;  if it is
+an empty string or ``-'' then the standard background color for the
+window is used.  \fICmd\fP is a command to invoke whenever the menu
+entry is invoked.  Returns an empty string.
+.TP
+\fBmenu create \fIname leftText centerText rightText color cmd leftText ...\fR
+Create a new menu, which will be displayed to the right of any existing
+menus in the menu bar.  The new menu's name will be \fIname\fP.  If there is
+already a menu named \fIname\fR, then it will be replaced (the new menu
+will occupy the same position in the menu bar as the old menu).
+Following the \fIname\fP
+argument are any number of groups of five arguments, with each group
+describing one entry in the new menu from top down. The five arguments
+for each menu entry have the same meaning as for \fBmenu append\fP.
+Returns an empty string.
+.TP
+\fBmenu delete \fIname\fP
+Delete the menu named \fIname\fP and return an empty string.
+.TP
+\fBmenu info\fR
+Return a Tcl list whose entries are the names of the menus for this
+window, in order.
+.TP
+\fBmenu info \fIname\fR
+Returns a Tcl list containing information about menu \fIname\fR.  Each entry
+in the list corresponds to one entry in the menu, in order from top
+down.  Each entry is itself a Tcl list with four entries, which
+are the \fIleftText\fR, \fIcenterText\fR, \fIrightText\fR, and \fIcmd\fR
+values from \fBmenu create\fR or \fBmenu append\fR.
+.TP
+\fBmenu modify \fIname entryIndex leftText centerText rightText color cmd\fR
+Change the \fIentryIndex\fR'th entry in menu \fIname\fP as indicated
+by arguments \fIleftText\fP through \fIcmd\fP.  Each of these five
+arguments has the same meaning as in \fBmenu append\fP.  Entry 0 is
+the topmost entry in the menu.  Returns an empty string.
+.RE
+.VS
+.TP
+\fBmessage \fIstring\fR
+Display \fIstring\fR in the message subwindow.
+.VE
+.TP
+\fBnewline\fP
+Insert a newline character at the position of the caret, and
+adjust indentation.  If the caret's initial line
+consists of nothing but space, then all the space on the line is
+deleted.  If the caret's initial line contains leading space, it
+is reorganized to consist of zero or more tabs followed by zero or
+more space characters, such that the total width of white space is
+the same after the change as before (a tab counts for eight characters).
+Tabs and spaces are inserted on the caret's new line to match the
+indentation of the caret's initial line.
+.TP
+\fBopen \fR[\fIoptions\fR] \fIfile\fR \fIfile\fR ...
+.VS
+Open a new window.  \fIOptions\fR and
+\fIfile\fR arguments are treated just the same as they are treated
+on the command line, except for the following exceptions.  The \fB-D\fR
+option is not permitted, nor are options that specify a display.
+If \fIfile\fR is not specified, a new window is opened on the same
+file as the current window.  If no geometry specification is given in
+\fIoptions\fR, then \fBmx\fR uses the contents of the global variable
+\fBgeometry\fP as a default geometry;  if no \fBgeometry\fP variable
+exists, then \fBmx\fR picks a default geometry.  Other options, such
+as foreground color and font, default to the values from the invoking
+window, rather than looking for X defaults.
+\fBOpen\fR sets the global variable
+\fBnewWindow\fR in the invoking window
+to hold the id of the newly-created window.  This may
+be used in conjunction with the \fBsend\fR command to issue commands
+to the new window.  The return value is always an empty string.
+.VE
+.TP
+\fBquit\fP
+Destroy the window.  If this is the last remaining window on its file
+and if the file has been modified since the last time it was written,
+then the user is notified and given a chance to save the file or
+abort the command.  This command always returns an error, in order to
+abort any partially-executed commands that are in progress (execution
+of further commands on the window could cause a core dump).
+.TP
+\fBquote\fP
+.VS
+Quote the next input character.  The mapping for the next character will
+be ignored and the character will be inserted.  The return value is always
+an empty string.
+.VE
+.TP
+\fBread \fIfile\fR
+Read \fIfile\fP and insert its contents just before the caret.
+.TP
+\fBreplace \fR[\fIoption args\fR]
+Replace the selection, as determined by \fIoption\fR and \fIargs\fR:
+.RS
+.TP
+\fBreplace\fP
+If no \fIoption\fP is given, then replace the selection by the value
+of the \fBreplaceString\fP global variable.  If the
+search subwindow isn't visible, don't do any replacement but open
+the search subwindow and focus input on the replacement string entry.
+.TP
+\fBreplace range\fR \fIstart stop\fR [\fIpattern string\fR]
+Search the range of text between the marks \fIstart\fR and \fIstop\fR,
+inclusive for occurrences of \fIpattern\fP.
+Replace each occurrence with
+\fIstring\fP.  If \fIpattern\fP and \fIstring\fP aren't specified, then
+they are taken from the \fBsearchString\fP and \fBreplaceString\fR
+global variables.  If the search subwindow isn't visible, don't
+do any replacement but open the search subwindow and focus input
+on the replacement string entry.
+.VS
+By default, vi-style regular expressions are used for the pattern and
+replacement strings.
+If the variable ``noRegExps'' is set to ``1'', only simple matching is done:
+there are no wild cards.
+Matches must be within a single line of the file.
+.VE
+.TP
+\fBreplace selection \fIstring\fP
+Delete the selection and insert \fIstring\fP in its place.
+.RE
+The \fBreplace\fR command always returns an empty string.
+.TP
+\fBreset\fR
+.VS
+Discard the version of the file that is currently loaded in memory and
+re-load the file from its disk version.  Any changes that have been
+made since the last time the file was saved will be lost (but you'll
+be warned in this case and given a chance to skip the command).  This
+command will affect all of the windows open on the file.
+.VE
+.TP
+\fBsearch \fR[\fIdirection \fR[\fIpattern\fR]]
+Search for a pattern.  The search starts from the beginning of
+the selection (if there is a selection in the window's file),
+or from the caret if there's no selection.  \fIDirection\fR indicates which
+direction to search, and must be either \fBforward\fR or
+\fBbackward\fR.  If omitted, it defaults to \fBforward\fR.
+\fIPattern\fP gives a text string to search for;  if not
+given, it defaults to the global variable \fBsearchString\fP.  If the
+search subwindow isn't visible, don't do any searching but open the
+search subwindow and focus input on the search string entry.
+.VS
+By default, vi-style regular expressions are used for the pattern and
+replacement strings.
+If the variable ``noRegExps'' is set to ``1'', only simple matching is done:
+there are no wild cards.
+Matches must be within a single line of the file.
+.VE
+If a match is found, the matching range is selected and the caret
+is set to the beginning of the range.  Returns an empty string.
+.TP
+\fBsee \fImark\fP [\fBtop\fR|\fBcenter\fR|\fBbottom\fR]
+Adjust the view in the window so that the character at \fImark\fP
+is visible in the window.  If a \fBtop\fR or \fBcenter\fR or \fBbottom\fR
+option is given, then the mark will appear at the given position in
+the window.  If no position is given, then \fBmx\fR will check to see if
+\fImark\fR is already visible.  If so, it does nothing.  If not, it
+will center \fImark\fR in the window.  Returns an empty string.
+.TP
+\fBselection \fIoption \fR[\fIarg ...\fR]
+This command performs one of several selection-related operations,
+depending on \fIoption\fR:
+.RS
+.TP
+\fBselection\fR
+.TP
+\fBselection get\fR
+If \fBselection\fR is invoked with no \fIoption\fR, or if \fIoption\fR
+is \fBget\fR, then the command returns the contents of the selection.
+An error occurs if there's nothing selected.  The command \fBselection\fR
+is different from the command \fIextract sel.left sel.right\fR:
+\fBselection\fR will return the contents of the selection even if
+the selection is in another window, but
+\fBextract sel.left sel.right\fR can only return
+information from this window.
+.TP
+\fBselection clear\fR
+.VS
+If there is something selected in this window, the selection is cleared,
+so nothing will be selected.  If there is nothing selected in this window,
+there is no effect.  Returns an empty string.
+.VE
+.TP
+\fBselection here\fR
+Returns \fB1\fR if there is something selected in the file in this window.
+Returns \fB0\fR if there is no selection or if the selection is not in
+this window's file.
+.TP
+\fBselection set \fImark1 \fR[\fImark2\fR]
+Change the selection to consist of the characters between \fImark1\fP
+and \fImark2\fP, inclusive.  If \fImark2\fR isn't specified,
+then select the single character at \fImark1\fR.  Returns an empty string.
+.RE
+.TP
+\fBsend \fIwindow command\fR
+\fIWindow\fR must be the id of another window owned by this \fBmx\fR process
+(such as a value placed in \fBnewWindow\fR by \fBopen\fR).  The \fBsend\fR
+command will invoke the Tcl interpreter to process \fIcommand\fR in
+the context of \fIwindow\fR, rather than the window from which the
+\fBsend\fR command was issued.  \fBSend\fR will return the result
+of executing \fIcommand\fR in \fIwindow\fR.
+.TP
+\fBswitch \fIfileName\fR
+Change the window to display \fIfileName\fR instead of what's there
+currently.  If the file currently in the window has been modified, and
+if this is the only window on the file, then a notifier is popped up
+to warn the user and give him/her a chance to abort the command.
+.TP
+\fBtaginfo \fIname\fR
+Look up \fIname\fP in the tags file(s).  If
+it is found, then return a Tcl list whose first element is the file
+containing \fIname\fR and whose second element is a search pattern
+identifying the tag's location in the file.
+If the global variable \fBtagFiles\fR is defined, it must contain a list of
+tags files to check.  Those files will be
+checked for \fIname\fP in order.  If no \fBtagFiles\fP variable exists,
+then the file \fBtags\fP in the current directory is searched.
+.TP
+\fBundo \fR[\fBmore\fR]
+.TP
+\fBundo recover \fIfileName\fR
+Undo recent edits.  If \fBundo\fR is invoked without any arguments,
+the most recent modification to the file is undone;  multiple
+invocations will toggle the change.  If the
+\fBmore\fR argument is given, successive undo's work back through
+history;  successive \fBundo more\fP commands will undo every change
+back to the beginning of the edit session.  Modifications are undone
+in groups delimited by marks in an undo log;  normally,
+a mark is placed in the log before and after each user-invoked action
+(button click, menu selection, or keystroke) that modifies the file.
+Exceptions to this rule occur for keystrokes whose bindings have the
+``!'' prefix:  no marks are placed in the log for these actions.
+Returns an empty string.  If the \fBrecover\fR option is given, 
+then \fIfileName\fR must be the address of a \fBmx\fR log.  This command
+will read \fIfileName\fR, which describes changes made in a previous
+edit session, and apply those changes to the current file.
+.TP
+\fBupdate\fR
+Force the screen to get updated.  Normally the screen is updated only
+at the end of processing a command, just before waiting for more input
+from the user.  This command will force any pending redisplays to
+be performed immediately.  It's used mostly for debugging.
+Returns an empty string.
+.TP
+\fBwrite \fR[\fIfileName\fR]
+Write the file to disk.  If \fIfileName\fR is given then the
+file is written there;  otherwise it is written to the place from
+which it was read (i.e. the name displayed in the window's title
+bar).  Returns a message containing the file's name and number of
+lines.
+
+.SH "COMMAND PROCEDURES"
+In addition to the built-in commands described above, a number of Tcl
+command procedures are created by the default \fBmx\fR startup file.  They
+may be invoked just like built-in commands, and are described below.
+.TP
+\fBcaretinfo\fR
+Returns a string containing information about the file's length and
+the position of the caret.
+.TP
+\fBline \fIi\fR
+Selects line number \fIi\fR and adjusts the view in the window so that
+the line number is visible.  Returns an empty string.
+.TP
+\fBmove\fR
+This command moves the contents of the selection to the caret position.
+Returns an empty string.
+.TP
+\fBnext\fR
+.VS
+This command switches to the next \fIfile\fR of those specified on the
+command line by deleting the first element of the variable \fB$files\fR
+and switching the window to the new first element of \fB$files\fR.
+.VE
+.TP
+\fBshowBindings \fIbinding binding ...\fR
+Open a scratch window and display information about keystroke
+bindings in it.  If
+no \fIbinding\fR argument is given, then display information about all
+of the keystroke bindings that are currently defined.
+If one or more \fIbinding\fR arguments are given, then
+just display information for the given bindings.
+Returns an empty string.
+.TP
+\fBshowMenus \fIname name ...\fR
+Open a scratch window and display information about menus in it.  If
+no \fIname\fR argument is given, then display information for all the
+menus that are currently defined.
+If one or more \fIname\fR arguments are given, then
+just display information for the named menus.
+Returns an empty string.
+.TP
+\fBshowProcs \fIname name ...\fR
+Open a scratch window and display procedure information in it.  If
+no \fIname\fR argument is given, then display information about all
+the procedures that are currently defined.
+If one or more \fIname\fR arguments are given, then
+just display information for the named procedures.
+Returns an empty string.
+.TP
+\fBshowVars \fIname name ...\fR
+.VS
+Open a scratch window and display variable values in it.  If
+no \fIname\fR argument is given, then display the values of all
+variables known in the context of the caller of \fBshowVars\fR.
+If one or more \fIname\fR arguments are given, then
+just show the values of those variables. Returns an empty string.
+.VE
+.TP
+\fBtag \fIname\fR
+Invoke the \fBtaginfo\fR command to look up \fIname\fR, then open
+a new window on its file, select the definition of \fIname\fR,
+and make the selected line visible in the new window.
+Returns an empty string.
+.TP
+\fBwhere\fR
+.VS
+Open a scratch window and display information about where the
+last error occurred.  The error information is taken from the
+\fBerrorInfo\fR global variable.
+.VE
+
+.SH "COMMAND SUBWINDOW"
+The command subwindow allows commands to be typed in directly,
+instead of invoking them through keystroke bindings or menus.
+When active, it appears at the bottom of the \fBmx\fR window.  It can
+be activated with the \fBcommand\fR or \fBfocus\fR commands.
+Commands may be entered and
+edited in the command subwindow, and are invoked by typing
+carriage-return or by middle-clicking in the window.  When a command
+is invoked, it is not deleted from the command subwindow, in order
+to permit it to be re-invoked easily.  The
+command window is de-activated by typing \fB^Q\fR in it.
+
+.SH "SEARCH SUBWINDOW"
+The search subwindow is used to enter search and replacement strings.
+When active, it appears at the top of the \fBmx\fR window, just underneath
+the menu bar.  If it isn't active and a search or replacement command
+is invoked that requires one of its entries, then the window is
+activated.  It may also be activated using the \fBfocus\fR
+command.  The top entry in the window is used to enter a search
+pattern and the bottom entry is used to enter a replacement string.
+The values of these two entries are always available in the \fBsearchString\fR
+and \fBreplaceString\fR global variables, respectively.
+If carriage-return is typed in the ``Search:'' entry, or if the middle
+mouse button is clicked in the entry, then the the contents of the
+global variable \fBsearchCmd\fR are invoked as a Tcl command.
+If carriage-return is typed in the ``Replace:'' entry, or
+if it is middle-buttoned, then the contents of the global variable
+\fBreplaceCmd\fR are invoked as a Tcl command.
+The search subwindow can be deactivated by typing \fB^Q\fR in it.
+
+.SH KEYWORDS
+editor, mouse, window
+@
+
+
+1.17
+log
+@Document "reset" command.
+@
+text
+@d9 1
+a9 1
+'\" $Header: /sprite/src/cmds/mx/RCS/mx.man,v 1.16 90/03/22 15:56:53 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d743 1
+a744 1
+\fBquote\fP
+d963 1
+a964 1
+\fBshowVars \fIname name ...\fR
+d977 7
+@
+
+
+1.16
+log
+@Document "mxsync".
+@
+text
+@d9 1
+a9 1
+'\" $Header: /sprite/src/cmds/mx/RCS/mx.man,v 1.15 90/03/16 08:43:50 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d784 9
+@
+
+
+1.15
+log
+@Changed "showGlobals" to "showVars".
+@
+text
+@d9 1
+a9 1
+'\" $Header: /sprite/src/cmds/mx/RCS/mx.man,v 1.14 89/12/22 11:03:00 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d18 2
+d32 2
+a33 1
+like mail programs.
+d146 4
+@
+
+
+1.14
+log
+@Eliminate -notitle switch, add -showtitle.
+@
+text
+@d9 1
+a9 1
+'\" $Header: /sprite/src/cmds/mx/RCS/mx.man,v 1.13 89/07/16 12:27:59 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+a930 7
+\fBshowGlobals \fIname name ...\fR
+Open a scratch window and display global variable values in it.  If
+no \fIname\fR argument is given, then display the values of all global
+variables.  If one or more \fIname\fR arguments are given, then
+just show the values of those variables.
+Returns an empty string.
+.TP
+d946 9
+@
+
+
+1.13
+log
+@Modified "caret" command slightly, added "-f" switch.
+@
+text
+@d9 1
+a9 1
+'\" $Header: /a/newcmds/mx/RCS/mx.man,v 1.12 89/07/15 17:31:08 shirriff Exp Locker: ouster $ SPRITE (Berkeley)
+a66 2
+.IP "\fB\-notitle\fR" 15
+Do not display a title bar at the top of the window.
+d83 9
+d99 2
+a100 1
+color for the text window is used.
+d105 2
+a106 1
+color for the text window is used.
+d111 2
+a112 1
+color for the text window is used.
+@
+
+
+1.12
+log
+@updated manual for block cursor.
+@
+text
+@d9 1
+a9 1
+'\" $Header: /a/newcmds/mx/RCS/mx.man,v 1.11 89/06/22 17:01:50 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+d36 5
+d390 3
+a392 1
+\fBcaret \fIoperand\fR
+d394 12
+a405 10
+If the operand is ``caret'', ``block'', ``viblock'', or ``off'' the cursor type
+will be changed.
+Otherwise the caret is moved to just before the character at the
+position given by \fImark\fP.
+The operand ``caret'' sets the cursor to the normal caret.  The operand
+``block'' sets the cursor to a block cursor.  The operand ``viblock''
+is only applicable to tx.  It sets the cursor to a caret normally and
+to a block when inside visual mode.  The operand ``off'' disables the
+cursor.
+Returns an empty string.
+@
+
+
+1.11
+log
+@Added 'quote' function.
+@
+text
+@d9 1
+a9 1
+'\" $Header: /a/newcmds/mx/RCS/mx.man,v 1.10 89/06/09 15:40:36 ouster Exp $ SPRITE (Berkeley)
+d385 13
+a397 3
+\fBcaret \fImark\fR
+Move the caret to just before the character at the position given by
+\fImark\fP.  Returns an empty string.
+@
+
+
+1.10
+log
+@A few new switches.
+Plus version.
+@
+text
+@d9 1
+a9 1
+'\" $Header: /a/newcmds/mx/RCS/mx.man,v 1.9 89/06/08 17:07:47 ouster Exp $ SPRITE (Berkeley)
+d706 7
+@
+
+
+1.9
+log
+@Updates for a few new switches (-notitle, -display, etc.) plus
+$files and "next" command.
+@
+text
+@d9 1
+a9 1
+'\" $Header: /a/newcmds/mx/RCS/mx.man,v 1.8 89/06/05 12:17:08 shirriff Exp Locker: ouster $ SPRITE (Berkeley)
+d54 8
+d248 8
+@
+
+
+1.8
+log
+@Updated manual for regular expression matching.
+@
+text
+@d9 1
+a9 1
+'\" $Header: /a/newcmds/mx/RCS/mx.man,v 1.7 89/06/02 15:40:58 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+d17 1
+a17 1
+\fBmx \fR[\fIoptions\fR]  [\fIfile\fR]
+d19 18
+d41 21
+a61 8
+.IP "\fB\-bg \fIcolor\fR" 15
+Use \fIcolor\fR as the background color for the window.  If this switch
+isn't given then the \fBbackground\fR X default is used.  If it isn't given
+either, or if the display is a black-and-white one, then White is used.
+.IP "\fB\-bd \fIcolor\fR" 15
+Use \fIcolor\fR as the border color for the window.  If this switch
+isn't given then the \fBborderColor\fR X default is used.  If it isn't given
+either, then the foreground color is used.
+a66 5
+.IP "\fB\-sb \fIcolor\fR" 15
+Use \fIcolor\fR as the background color for the window's scrollbar.
+If this switch isn't given then the \fBscrollbar.background\fR
+X default is used.  If it isn't given either, then the background
+color for the text window is used.
+d72 8
+a84 5
+.IP "\fB\-tb \fIcolor\fR" 15
+Use \fIcolor\fR as the background color for the window's title bar.
+If this switch isn't given then the \fBtitle.background\fR
+X default is used.  If it isn't given either, then the background
+color for the text window is used.
+a89 10
+.IP "\fB\-fn \fIfont\fR" 15
+Use \fIfont\fR as the font for the window.  If this switch isn't given,
+then the \fBfont\fR X default is used as the font.  If it isn't given
+either, then the Sx default font is used.
+.IP "\fB\-t \fItag\fR" 15
+Look up \fItag\fP in the tags file of the current directory, open its
+file in the new window, and go to the line of the tag.
+.IP "\fB\-D\fR" 15
+Used most often when \fBmx\fR is being debugged.  Causes \fBmx\fR not to detach itself
+from its parent process.
+d103 2
+a104 3
+Use \fIgeometry\fR as the geometry specifier for the window.  If this
+switch is not specified, then the \fBgeometry\fR X default is
+used, if it exists.
+d106 2
+a107 3
+Use this argument to select the display on which to create the window.
+If not given, then the \fBDISPLAY\fR environment variable is used to indicate
+a display.
+d111 10
+a120 5
+system, the Sx supplementary library, and the Tcl command
+interpreter.  It displays a window containing
+\fIfile\fP and permits \fIfile\fP to be edited using the commands defined
+below.  If \fIfile\fR isn't specified, then \fBmx\fR displays a file
+containing a tutorial introduction on how to use \fBmx\fR.
+d181 8
+a188 1
+Set by \fBmx\fR to the name of the file loaded in the window.
+d646 1
+d650 1
+d663 13
+a675 8
+\fBopen \fIfile\fR [\fB=\fIgeometry\fR]
+Open a new window displaying \fIfile\fR.  The \fIgeometry\fP argument,
+if present,  describes the location
+and size of the new window in standard X fashion.  If \fIgeometry\fP
+isn't given, then \fBmx\fR uses the contents of the global variable \fBgeometry\fP
+as a default geometry;  if no \fBgeometry\fP variable exists, then
+\fBmx\fR picks a default geometry.  If \fIfile\fR is an empty string, then
+\fBmx\fR creates a scratch window, without any particular file association.
+d677 2
+a678 1
+\fBnewWindow\fR to hold the id of the newly-created window.  This may
+d681 1
+d713 1
+d719 1
+d736 1
+d742 1
+d772 1
+d776 1
+d862 7
+@
+
+
+1.7
+log
+@Added "selection clear"
+@
+text
+@d9 1
+a9 1
+'\" $Header: /a/newcmds/mx/RCS/mx.man,v 1.6 89/03/24 14:17:32 ouster Exp $ SPRITE (Berkeley)
+d186 5
+d675 5
+d696 5
+a700 2
+At present, only simple matching is done:  there are no wild cards.
+Furthermore, matches must be within a single line of the file.
+a718 5
+\fBselection clear\fR
+If there is something selected in this window, the selection is cleared,
+so nothing will be selected.  If there is nothing selected in this window,
+there is no effect.
+.TP
+d728 5
+@
+
+
+1.6
+log
+@Change comment sequence from ' to '\".
+@
+text
+@d9 1
+a9 1
+'\" $Header: /sprite/src/lib/tcl/RCS/Tcl.man,v 1.3 89/03/24 14:15:39 ouster Exp $ SPRITE (Berkeley)
+d705 5
+@
+
+
+1.5
+log
+@Added "message" command.
+@
+text
+@d1 10
+a10 1
+' $Header: /a/newcmds/mx/RCS/mx.man,v 1.4 89/01/07 13:55:15 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+@
+
+
+1.4
+log
+@More switches to support color better.
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/mx/RCS/mx.man,v 1.3 88/12/30 10:03:50 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d603 3
+@
+
+
+1.3
+log
+@More format upgrades.
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/mx/RCS/mx.man,v 1.2 88/12/23 15:09:59 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d18 34
+@
+
+
+1.2
+log
+@Document "noviewchange" arg to "delete".
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/mx/RCS/mx.man,v 1.1 88/12/22 10:50:37 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d10 1
+a10 1
+.IP "\fB-fg \fIcolor\fR" 15
+d12 1
+a12 1
+isn't given then the ``foreground'' X default is used.  If it isn't given
+d14 1
+a14 1
+.IP "\fB-bg \fIcolor\fR" 15
+d16 1
+a16 1
+isn't given then the ``background'' X default is used.  If it isn't given
+d18 1
+a18 1
+.IP "\fB-fn \fIfont\fR" 15
+d20 1
+a20 1
+then the ``font'' X default is used as the font.  If it isn't given
+d22 1
+a22 1
+.IP "\fB-t \fItag\fR" 15
+d25 2
+a26 2
+.IP "\fB-D\fR" 15
+Used most often when Mx is being debugged.  Causes Mx not to detach itself
+d42 1
+a42 1
+switch is not specified, then the ``geometry'' X default is
+d46 1
+a46 1
+If not given, then the DISPLAY environment variable is used to indicate
+d50 1
+a50 1
+Mx is a mouse-oriented editor that uses the facilities of the X window
+d54 2
+a55 2
+below.  If \fIfile\fR isn't specified, then Mx displays a file
+containing a tutorial introduction on how to use Mx.
+d57 1
+a57 1
+Almost all Mx actions are invoked using Tcl commands.  See the Tcl
+d59 2
+a60 2
+built-in Tcl commands.  Mx extends the Tcl built-in commands
+with additional commands for file editing;  the Mx commands are
+d65 1
+a65 1
+displayed at the bottom of the Mx window.  When it is displayed,
+d67 1
+a67 1
+top of the Mx window, and may be invoked by pressing a mouse button
+d86 1
+a86 1
+in the file, Mx checks for the existence of a file ``.mx'' in your
+d88 1
+a88 1
+environment variable HOME).  If the file exists, Mx
+d90 1
+a90 1
+with the \fBsource\fP command.  Then it checks for an .mx file in the
+d111 1
+a111 1
+There are several Tcl global variables that are set or used by Mx
+d116 1
+a116 1
+Set by Mx to the name of the file loaded in the window.
+d124 1
+a124 1
+Set by Mx to indicate
+d129 1
+a129 1
+Mx presets this variable to the location of the directory containing
+d133 1
+a133 1
+Mx automatically changes this variable on each mouse click to hold
+d140 1
+a140 1
+During the \fBopen\fR command, Mx sets this global variable to hold
+d149 1
+a149 1
+Set by Mx to hold the contents of the replacement entry subwindow.
+d157 1
+a157 1
+Set by Mx to hold the contents of the search entry subwindow.
+d162 1
+a162 1
+is read by Mx but not written.
+d228 1
+a228 1
+Mx continuously records all the top-level commands being executed,
+d237 1
+a237 1
+Under normal circumstances, Mx does not record information about
+d244 2
+a245 2
+bindings and menus established by the Mx startup file, so you can
+change it if you wish.  Only the mouse click behavior and Mx's refusal
+d250 1
+a250 1
+The Mx built-in commands are described below.  In addition to these
+d299 2
+a300 2
+modified, Mx will assume that the window is ``clean'':  if you invoke
+commands like \fBquit\fR or \fBswitch\fR then Mx will happily discard the
+d382 1
+a382 1
+If \fIwindow\fR isn't displayed when this command is invoked, Mx
+d436 1
+a436 1
+\fBindent\fR \fImark1 mark2\fR [\fB+\fR|\fB-\fR] \fIamount\fR
+d443 1
+a443 1
+To set the indentation for a line to \fIi\fP, Mx deletes all the
+d585 1
+a585 1
+isn't given, then Mx uses the contents of the global variable \fBgeometry\fP
+d587 2
+a588 2
+Mx picks a default geometry.  If \fIfile\fR is an empty string, then
+Mx creates a scratch window, without any particular file association.
+d649 1
+a649 1
+the window.  If no position is given, then Mx will check to see if
+d682 1
+a682 1
+\fIWindow\fR must be the id of another window owned by this Mx process
+d720 1
+a720 1
+then \fIfileName\fR must be the address of a Mx log.  This command
+d740 1
+a740 1
+command procedures are created by the default Mx startup file.  They
+d796 1
+a796 1
+When active, it appears at the bottom of the Mx window.  It can
+d807 1
+a807 1
+When active, it appears at the top of the Mx window, just underneath
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+' $Header: /sprite/src/lib/mx/RCS/mx.man,v 1.1 88/12/22 10:49:48 ouster Exp $ SPRITE (Berkeley)
+d349 1
+a349 1
+\fBdelete\fR \fImark1 \fR[\fImark2\fR]
+d352 4
+a355 1
+character at \fImark1\fR.  Returns an empty string.
+@

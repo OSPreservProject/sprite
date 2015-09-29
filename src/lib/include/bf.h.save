@@ -1,0 +1,193 @@
+/*
+ * bf.h --
+ *
+ *	Macros to manipulate bits in a string of bytes, simulating the
+ *	effect of bit fields.
+ *
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.5 90/01/12 12:03:25 douglis Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _BF
+#define _BF
+
+#define BfMin(a, b)    ((a) < (b) ? (a) : (b))
+
+#define BfMask(bits)   ((1 << (bits)) - 1)
+
+#define BfU(ptr)       (sizeof(*(ptr)) * 8)
+
+#define BfDx(ptr, x, d)     (((x) == 0) ? (d) & (BfU(ptr) - 1) : 0)
+
+#define BfS0(ptr, d, s)     (BfMin(BfU(ptr) - BfDx(ptr, 0, d), s))
+
+#define BfSumS0(ptr, d, s)  (BfS0(ptr, d, s))
+
+#define BfS1(ptr, d, s)     (BfMin(BfU(ptr) - BfDx(ptr, 1, d), \
+				(s) - BfSumS0(ptr, d, s)))
+
+#define BfSumS1(ptr, d, s)  (BfS0(ptr, d, s) + BfS1(ptr, d, s))
+
+#define BfS2(ptr, d, s)     (BfMin(BfU(ptr) - BfDx(ptr, 2, d), \
+				(s) - BfSumS1(ptr, d, s)))
+
+#define BfSumS2(ptr, d, s)  (BfSumS1(ptr, d, s) + BfS2(ptr, d, s))
+
+#ifdef BF_32_BITS
+
+#define BfS3(ptr, d, s)     (BfMin(BfU(ptr) - BfDx(ptr, 3, d), \
+				(s) - BfSumS2(ptr, d, s)))
+
+#define BfSumS3(ptr, d, s)  (BfSumS2(ptr, d, s) + BfS3(ptr, d, s))
+
+#define BfS4(ptr, d, s) (BfMin(BfU(ptr) - BfDx(ptr, 4, d), \
+				(s) - BfSumS3(ptr, d, s)))
+
+#define BfSumS4(ptr, d, s)  (BfSumS3(ptr, d, s) + BfS4(ptr, d, s))
+
+#define BfSx(ptr, x, d, s) 						\
+    (((x) == 0) ? BfS0(ptr, d, s) : (((x) == 1) ? BfS1(ptr, d, s) : 	\
+    (((x) == 2) ? BfS2(ptr, d, s) : (((x) == 3) ? BfS3(ptr, d, s) :	\
+    BfS4(ptr, d, s)))))
+
+#define BfSumSx(ptr, x, d, s) 						  \
+    (((x) == 0) ? BfSumS0(ptr, d, s) : (((x) == 1) ? BfSumS1(ptr, d, s) : \
+    (((x) == 2) ? BfSumS2(ptr, d, s) : (((x) == 3) ? BfSumS3(ptr, d, s) : \
+    BfSumS4(ptr, d, s)))))
+
+#else /* BF_32_BITS */
+
+#define BfSx(ptr, x, d, s) 						\
+    (((x) == 0) ? BfS0(ptr, d, s) : (((x) == 1) ? BfS1(ptr, d, s) : 	\
+	BfS2(ptr, d, s)))
+
+#define BfSumSx(ptr, x, d, s) 						  \
+    (((x) == 0) ? BfSumS0(ptr, d, s) : (((x) == 1) ? BfSumS1(ptr, d, s) : \
+	BfSumS2(ptr, d, s)))
+
+#endif /* BF_32_BITS */
+
+#define BfRx(ptr, x, d, s)   ((s) - BfSumSx(ptr, x, d, s))
+
+#define BfQx(ptr, x, d, s) \
+	    (sizeof(*(ptr)) - (BfDx(ptr, x, d) + BfSx(ptr, x, d, s)))
+
+#define BfVx(ptr, x, d, s, v) 						\
+    ((((v) >> BfRx(ptr, x, d, s)) & BfMask(BfSx(ptr, x, d, s))) << 	\
+	BfQx(ptr, x, d, s))
+
+#define NetBfIx(ptr, x, d) (((d) / BfU(ptr)) + (x))
+
+#define BfZx(ptr, x, d, s) \
+    ((ptr)[NetBfIx(ptr, x, d)] & BfVx(ptr, x, d, s, 0xffffffff))
+
+#define BfSetx(ptr, x, d, s, v)  {					\
+    if ((v) != BfMask(s)) {						\
+	(ptr)[NetBfIx(ptr, x, d)] &= ~BfVx(ptr, x, d, s, 0xffffffff); 	\
+    }									\
+    (ptr)[NetBfIx(ptr, x, d)] |= BfVx(ptr, x, d, s, v); 		\
+}
+
+#define BfTestx(ptr, x, d, s, v) \
+    (BfZx(ptr, x, d, s) == BfVx(ptr, x, d, s, v))
+
+#ifdef BF_32_BITS
+
+#define Bf_Set(ptr, d, s, v)  {					\
+    BfSetx(ptr, 0, d, s, v);					\
+    if (BfRx(ptr, 0, d, s) > 0) {				\
+	BfSetx(ptr, 1, d, s, v);				\
+	if (BfRx(ptr, 1, d, s) > 0) {				\
+	    BfSetx(ptr, 2, d, s, v);				\
+	    if (BfRx(ptr, 2, d, s) > 0) {	k		\
+		BfSetx(ptr, 3, d, s, v);			\
+		if (BfRx(ptr, 3, d, s) > 0) {			\
+		    BfSetx(ptr, 4, d, s, v);			\
+		}						\
+	    }							\
+	}							\
+    }								\
+}
+
+#define Bf_Test(ptr, d, s, v) 					\
+    ((BfRx(ptr, 0, d, s) <= 0) ? 				\
+	(BfTestx(ptr, 0, d, s, v)) : 				\
+	((BfRx(ptr, 1, d, s) <= 0) ?				\
+	    (BfTestx(ptr, 0, d, s, v) &&			\
+	    BfTestx(ptr, 1, d, s, v)) :				\
+	    ((BfRx(ptr, 2, d, s) <= 0) ?			\
+		(BfTestx(ptr, 0, d, s, v) &&			\
+		BfTestx(ptr, 1, d, s, v) &&			\
+		BfTestx(ptr, 2, d, s, v)) : 			\
+		((BfRx(ptr, 3, d, s) <= 0) ?			\
+		    (BfTestx(ptr, 0, d, s, v) &&		\
+		    BfTestx(ptr, 1, d, s, v) &&			\
+		    BfTestx(ptr, 2, d, s, v) &&			\
+		    BfTestx(ptr, 3, d, s, v)) :			\
+		    (BfTestx(ptr, 0, d, s, v) &&		\
+		    BfTestx(ptr, 1, d, s, v) &&			\
+		    BfTestx(ptr, 2, d, s, v) &&			\
+		    BfTestx(ptr, 3, d, s, v) &&			\
+		    BfTestx(ptr, 4, d, s, v))))))
+
+
+#define Bf_Get(ptr, d, s)	 					\
+    ((BfRx(ptr, 0, d, s) == 0) ? 					\
+	(BfZx(ptr, 0, d, s) >> BfQx(ptr, 0, d, s)) : 			\
+	((BfZx(ptr, 0, d, s) << BfRx(ptr, 0, d, s)) |			\
+	((BfRx(ptr, 1, d, s) == 0) ?   					\
+	    (BfZx(ptr, 1, d, s) >> BfQx(ptr, 1, d, s)) : 		\
+	    ((BfZx(ptr, 1, d, s) << BfRx(ptr, 1, d, s)) |		\
+	    ((BfRx(ptr, 2, d, s) == 0) ?   				\
+		(BfZx(ptr, 2, d, s) >> BfQx(ptr, 2, d, s)) :		\
+		((BfZx(ptr, 2, d, s) << BfRx(ptr, 2, d, s)) |		\
+		((BfRx(ptr, 3, d, s) == 0) ?				\
+		(BfZx(ptr, 3, d, s) >> BfQx(ptr, 3, d, s)) :		\
+		((BfZx(ptr, 3, d, s) << BfRx(ptr, 3, d, s)) |		\
+		(BfZx(ptr, 4, d, s) >> BfQx(ptr, 4, d, s))))))))))
+
+#else /* BF_32_BITS */
+
+#define Bf_Set(ptr, d, s, v)  {					\
+    BfSetx(ptr, 0, d, s, v);					\
+    if (BfRx(ptr, 0, d, s) > 0) {				\
+	BfSetx(ptr, 1, d, s, v);				\
+	if (BfRx(ptr, 1, d, s) > 0) {				\
+	    BfSetx(ptr, 2, d, s, v);				\
+	}							\
+    }								\
+}
+
+
+#define Bf_Test(ptr, d, s, v) 					\
+    ((BfRx(ptr, 0, d, s) <= 0) ? 				\
+	(BfTestx(ptr, 0, d, s, v)) : 				\
+	((BfRx(ptr, 1, d, s) <= 0) ?				\
+	    (BfTestx(ptr, 0, d, s, v) &&			\
+	    BfTestx(ptr, 1, d, s, v)) :				\
+	    (BfTestx(ptr, 0, d, s, v) &&			\
+	    BfTestx(ptr, 1, d, s, v) &&				\
+	    BfTestx(ptr, 2, d, s, v))))
+
+
+#define Bf_Get(ptr, d, s)	 				\
+    ((BfRx(ptr, 0, d, s) == 0) ? 				\
+	(BfZx(ptr, 0, d, s) >> BfQx(ptr, 0, d, s)) : 		\
+	((BfZx(ptr, 0, d, s) << BfRx(ptr, 0, d, s)) |		\
+	((BfRx(ptr, 1, d, s) == 0) ?   				\
+	    (BfZx(ptr, 1, d, s) >> BfQx(ptr, 1, d, s)) : 	\
+	    ((BfZx(ptr, 1, d, s) << BfRx(ptr, 1, d, s)) |	\
+	    (BfZx(ptr, 2, d, s) >> BfQx(ptr, 2, d, s))))))
+
+#endif /* BF_32_BITS */
+
+#endif /* _BF */
+

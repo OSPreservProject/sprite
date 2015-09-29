@@ -1,0 +1,34 @@
+L ADMIN.C;1                         	admin.c	dist/admin.c
+L CFUNCPRO.H;1                      	cfuncproto.h	dist/cfuncproto.h
+L DEV.C;1                           	dev.c	dist/dev.c.sprite
+D DIST                              	dist
+D DS3100_M                          	ds3100.md
+L HASH.C;1                          	hash.c	dist/hash.c
+L INDX.C;1                          	indx.c	dist/indx.c
+L JAQUITH.H;1                       	jaquith.h	dist/jaquith.h
+F JGETINT.H;1                       	jgetInt.h
+F JLSINT.H;1                        	jlsInt.h
+F JMGRINT.H;1                       	jmgrInt.h
+F JPUTINT.H;1                       	jputInt.h
+F JSTAT.MAN;1                       	jstat.man
+F JSTATINT.H;1                      	jstatInt.h
+F LOCAL.MK;1                        	local.mk
+L LOCK.C;1                          	lock.c	dist/lock.c
+F MAKEFIL0.;1                       	Makefile
+F MAKEFIL1.;1                       	makefile
+L MEM.C;1                           	mem.c	dist/mem.c
+L OPTION.C;1                        	option.c	dist/option.c
+L OPTION.H;1                        	option.h	dist/option.h
+L QUEUE.C;1                         	queue.c	dist/queue.c
+D RCS                               	RCS
+L REGEXP.C;1                        	regexp.c	dist/regexp.c
+L REGEXP.H;1                        	regexp.h	dist/regexp.h
+L SOCK.C;1                          	sock.c	dist/sock.c
+F STDLIB.C;1                        	stdlib.c
+L STR.C;1                           	str.c	dist/str.c
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md
+L TBUF.C;1                          	tbuf.c	dist/tbuf.c
+L TLOG.C;1                          	tlog.c	dist/tlog.c
+L TTIME.C;1                         	ttime.c	dist/ttime.c
+L UTILS.C;1                         	utils.c	dist/utils.c

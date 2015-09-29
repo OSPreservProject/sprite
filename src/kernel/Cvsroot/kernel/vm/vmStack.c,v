@@ -1,0 +1,931 @@
+head     9.6;
+branch   ;
+access   ;
+symbols  ds3100:9.6 sun3:9.6 sun4nw:9.6 symm:9.6 spur:9.6 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.6
+date     91.10.31.12.32.42;  author mgbaker;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     91.10.31.12.31.12;  author mgbaker;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.09.12.13.36.40;  author shirriff;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.09.11.10.45.01;  author shirriff;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.30.18.02.46;  author jhh;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.09.18.17.28.16;  author shirriff;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.23.20;  author douglis;  state Stable;
+branches ;
+next     8.7;
+
+8.7
+date     89.09.07.14.25.18;  author shirriff;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.08.03.23.17.06;  author rab;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.07.10.19.46.44;  author nelson;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.05.30.16.14.04;  author jhh;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.04.21.23.21.57;  author mgbaker;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.02.19.22.13.35;  author jhh;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.01.06.11.32.16;  author jhh;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.43.22;  author douglis;  state Stable;
+branches ;
+next     6.2;
+
+6.2
+date     88.10.28.18.20.08;  author mlgray;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.27.19.44.06;  author nelson;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.30.24;  author brent;  state Stable;
+branches ;
+next     5.7;
+
+5.7
+date     88.06.17.15.35.47;  author nelson;  state Exp;
+branches ;
+next     5.6;
+
+5.6
+date     88.05.04.17.25.28;  author nelson;  state Exp;
+branches ;
+next     5.5;
+
+5.5
+date     88.01.08.15.53.40;  author nelson;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     87.12.15.15.21.55;  author nelson;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     87.12.12.16.27.55;  author nelson;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.12.11.13.29.49;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.10.16.15.40.38;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.53.11;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.6
+log
+@*** empty log message ***
+@
+text
+@/* vmStack.c -
+ *
+ *     	This file contains routines to allocate and free kernel stacks.  It
+ *	is managed by its own monitor.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/vm/vmStack.c,v 9.5 91/10/31 12:31:12 mgbaker Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <vm.h>
+#include <vmInt.h>
+#include <list.h>
+#include <proc.h>
+#include <sched.h>
+#include <sync.h>
+#include <sys.h>
+#include <dbg.h>
+
+Address	vmStackBaseAddr;
+Address	vmStackEndAddr;
+
+/*
+ * Monitor declarations.
+ */
+Sync_Lock	stackLock;
+#define	LOCKPTR	&stackLock
+
+/*
+ * Stack list element.
+ */
+typedef struct {
+    List_Links	links;
+    Address	startAddr;
+} StackList;
+
+/*
+ * Array of stack list information.
+ */
+static	StackList	*stackListElements;
+
+/*
+ * There are two stack lists: in use stacks and free stacks.
+ */
+static	List_Links	activeListHdr;
+#define	activeList	(&activeListHdr)
+static	List_Links	freeListHdr;
+#define	freeList	(&freeListHdr)
+
+static	int	numStackPages;
+
+static StackList *GetFreeStack _ARGS_((void));
+static void FreeStack _ARGS_((Address stackBase));
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmStackInit --
+ *
+ *      Allocate and initialize the stack stuff.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Stack information is allocated and initialization.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+VmStackInit()
+{
+    Address	addr;
+    int		i;
+
+    Sync_LockInitDynamic(&stackLock, "Vm:stackLock");
+    stackListElements =
+	    (StackList *)Vm_BootAlloc(vmMaxProcesses * sizeof(StackList));
+    List_Init(activeList);
+    List_Init(freeList);
+    for (i = 0, addr = vmStackBaseAddr;
+	 addr < vmStackEndAddr;
+	 i++, addr += mach_KernStackSize) {
+	 stackListElements[i].startAddr = (Address) addr;
+	 List_Insert((List_Links *) &stackListElements[i], 
+		     LIST_ATREAR(freeList));
+    }
+    numStackPages = mach_KernStackSize >> vmPageShift;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Vm_GetKernelStack --
+ *
+ *      Allocate a stack for a kernel process.
+ *
+ * Results:
+ *      The base of the new stack.
+ *
+ * Side effects:
+ *      The kernels page table is modified to map in the new stack pages.
+ *
+ * ----------------------------------------------------------------------------
+ */
+Address
+Vm_GetKernelStack(invalidPage)
+    int	invalidPage;	/*Which of the stack pages to make invalid. */
+{
+    register	Vm_PTE		*ptePtr;
+    register	StackList	*stackListPtr;
+    register	int		i;
+    Vm_VirtAddr			virtAddr;
+
+    stackListPtr = GetFreeStack();
+    if (stackListPtr == (StackList *) NIL) {
+	return((Address)NIL);
+    }
+
+    /*
+     * Need to allocate stack pages and initialize the page table entry.
+     * We allocate page table entries for all pages except the first which
+     * is protected.
+     */
+    virtAddr.segPtr = vm_SysSegPtr;
+    virtAddr.page = ((unsigned int) stackListPtr->startAddr) >> vmPageShift;
+    virtAddr.offset = 0;
+    virtAddr.flags = 0;
+    virtAddr.sharedPtr = (Vm_SegProcList *)NIL;
+    for (i = 0, ptePtr = VmGetPTEPtr(vm_SysSegPtr, virtAddr.page);
+	 i < numStackPages;
+	 i++, VmIncPTEPtr(ptePtr, 1), virtAddr.page++) {
+	if (i != invalidPage) {
+	    *ptePtr |= VmPageAllocate(&virtAddr, VM_CAN_BLOCK);
+	    vmStat.kernStackPages++;
+	    VmPageValidate(&virtAddr);
+	}
+    }
+    return(stackListPtr->startAddr);
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Vm_FreeKernelStack --
+ *
+ *      Free up a kernel stack which was allocated at the given address.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      List of free stacks modified.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+Vm_FreeKernelStack(stackBase)
+    Address	stackBase;	/* Virtual address of the stack that is being
+				 * freed. */
+{
+    Vm_VirtAddr			virtAddr;
+    register	int		i;
+    register	Vm_PTE		*ptePtr;
+
+    /*
+     * Unmap the stack and free its pages.
+     */
+    virtAddr.segPtr = vm_SysSegPtr;
+    virtAddr.page = (unsigned int) (stackBase) >> vmPageShift;
+    virtAddr.offset = 0;
+    virtAddr.sharedPtr = (Vm_SegProcList *)NIL;
+    virtAddr.flags = 0;
+    for (i = 0, ptePtr = VmGetPTEPtr(vm_SysSegPtr, virtAddr.page);
+	 i < numStackPages; 
+	 i++, VmIncPTEPtr(ptePtr, 1), virtAddr.page++) {
+	if (*ptePtr & VM_PHYS_RES_BIT) {
+	    vmStat.kernStackPages--;
+	    VmPageFree(Vm_GetPageFrame(*ptePtr));
+	    VmPageInvalidate(&virtAddr);
+	}
+    }
+    FreeStack(stackBase);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetFreeStack --
+ *
+ *	Move a stack from the free list to the active list and return
+ *	a pointer to it.
+ *
+ * Results:
+ *	Pointer to free stack, NIL if there aren't any.
+ *
+ * Side effects:
+ *	Lists of free and active kernel stacks are modified..
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY static StackList *
+GetFreeStack()
+{
+    register	StackList	*stackListPtr;
+
+    LOCK_MONITOR;
+
+
+    /*
+     * Get the first free stack.
+     */
+    if (List_IsEmpty(freeList)) {
+	stackListPtr = (StackList *) NIL;
+    } else {
+	stackListPtr = (StackList *) List_First(freeList);
+	List_Move((List_Links *) stackListPtr, LIST_ATREAR(activeList));
+    }
+    UNLOCK_MONITOR;
+    return(stackListPtr);
+}
+/*
+ *----------------------------------------------------------------------
+ *
+ * FreeStack --
+ *
+ *	Move the stack from the active list to the free list.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Lists of free and active kernel stacks are modified..
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY static void
+FreeStack(stackBase)
+    Address	stackBase;	/* Virtual address of the stack that is being
+				 * freed. */
+{
+    register	StackList	*stackListPtr;
+
+    LOCK_MONITOR;
+
+
+    /*
+     * Put the stack back onto the free list.
+     */ 
+    if (List_IsEmpty(activeList)) {
+	panic("Vm_FreeKernelStack: active list empty\n");
+    }
+    stackListPtr = (StackList *) List_First(activeList);
+    List_Move((List_Links *) stackListPtr, LIST_ATREAR(freeList));
+    stackListPtr->startAddr = stackBase;
+
+    UNLOCK_MONITOR;
+}
+
+@
+
+
+9.5
+log
+@*** empty log message ***
+@
+text
+@a0 1
+Hello.
+d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/vm/vmStack.c,v 9.4 90/09/12 13:36:40 shirriff Exp $ SPRITE (Berkeley)";
+@
+
+
+9.4
+log
+@Changed includes from quotes to angles.
+@
+text
+@d1 1
+d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmStack.c,v 9.3 90/09/11 10:45:01 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+@
+
+
+9.3
+log
+@Added function prototyping.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm.ken/RCS/vmStack.c,v 9.2 89/10/30 18:02:46 jhh Exp Locker: shirriff $ SPRITE (Berkeley)";
+d14 9
+a22 9
+#include "sprite.h"
+#include "vm.h"
+#include "vmInt.h"
+#include "list.h"
+#include "proc.h"
+#include "sched.h"
+#include "sync.h"
+#include "sys.h"
+#include "dbg.h"
+@
+
+
+9.2
+log
+@too much stuff done with the monitor lock held
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmStack.c,v 9.1 89/09/18 17:28:16 shirriff Exp Locker: jhh $ SPRITE (Berkeley)";
+d56 2
+a57 2
+static	StackList	*GetFreeStack();
+static	void		FreeStack();
+@
+
+
+9.1
+log
+@changed NULL to NIL.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmStack.c,v 8.7 89/09/07 14:25:18 shirriff Exp $ SPRITE (Berkeley)";
+d56 3
+d112 1
+a112 1
+ENTRY Address
+d121 2
+a122 7
+    LOCK_MONITOR;
+
+    /*
+     * Get the first free stack.
+     */
+    if (List_IsEmpty(freeList)) {
+	UNLOCK_MONITOR;
+a124 2
+    stackListPtr = (StackList *) List_First(freeList);
+    List_Move((List_Links *) stackListPtr, LIST_ATREAR(activeList));
+a144 3
+
+    UNLOCK_MONITOR;
+
+d164 1
+a164 1
+ENTRY void
+a171 1
+    register	StackList	*stackListPtr;
+a172 2
+    LOCK_MONITOR;
+
+d190 66
+d259 2
+a260 1
+     */ if (List_IsEmpty(activeList)) {
+d269 1
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmStack.c,v 8.7 89/09/07 14:25:18 shirriff Exp Locker: douglis $ SPRITE (Berkeley)";
+d139 1
+a139 1
+    virtAddr.sharedPtr = (Vm_SegProcList *)NULL;
+d189 1
+a189 1
+    virtAddr.sharedPtr = (Vm_SegProcList *)NULL;
+@
+
+
+8.7
+log
+@Changes for shared memory.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /c/src/kernel/vm.ken/RCS/vmStack.c,v 1.2 89/08/15 12:01:42 shirriff Exp $ SPRITE (Berkeley)";
+@
+
+
+8.6
+log
+@Deleted include of "mem.h", which no longer exists.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmStack.c,v 8.5 89/07/10 19:46:44 nelson Exp Locker: rab $ SPRITE (Berkeley)";
+d139 1
+d189 1
+@
+
+
+8.5
+log
+@Incorporated changes from DECWRL.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmStack.c,v 8.4 89/05/30 16:14:04 jhh Exp $ SPRITE (Berkeley)";
+a17 1
+#include "mem.h"
+@
+
+
+8.4
+log
+@Removed call to Sync_LockRegister
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmStack.c,v 8.3 89/04/21 23:21:57 mgbaker Exp Locker: jhh $ SPRITE (Berkeley)";
+d139 1
+d189 1
+@
+
+
+8.3
+log
+@Twentieth Kernel for sun4:  I think we've finally squished the vm bugs that
+were causing various user processes to die shortly after forking.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmStack.c,v 8.2 89/02/19 22:13:35 jhh Exp Locker: mgbaker $ SPRITE (Berkeley)";
+a91 1
+    Sync_LockRegister(LOCKPTR);
+@
+
+
+8.2
+log
+@Changes due to lock registration
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmStack.c,v 8.1 89/01/06 11:32:16 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d201 1
+a201 2
+     */
+    if (List_IsEmpty(activeList)) {
+@
+
+
+8.1
+log
+@New Sync_Lock definition
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmStack.c,v 8.0 88/11/11 18:43:22 douglis Stable Locker: jhh $ SPRITE (Berkeley)";
+d31 1
+a31 1
+Sync_Lock	stackLock = SYNC_LOCK_INIT_STATIC();
+d79 1
+d92 1
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmStack.c,v 6.2 88/10/28 18:20:08 mlgray Exp Locker: douglis $ SPRITE (Berkeley)";
+d31 1
+a31 1
+Sync_Lock	stackLock = {0, 0};
+@
+
+
+6.2
+log
+@Converted to new C library.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmStack.c,v 6.1 88/08/27 19:44:06 nelson Exp Locker: mlgray $ SPRITE (Berkeley)";
+@
+
+
+6.1
+log
+@Fixed lint errors.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmStack.c,v 5.7 88/06/17 15:35:47 nelson Exp $ SPRITE (Berkeley)";
+d201 1
+a201 1
+	Sys_Panic(SYS_FATAL, "Vm_FreeKernelStack: active list empty\n");
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d171 1
+a171 1
+    int		stackBase;	/* Virtual address of the stack that is being
+d205 1
+a205 1
+    stackListPtr->startAddr = (Address) stackBase;
+@
+
+
+5.7
+log
+@Changed interface to match the new mach module interface.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmStack.c,v 5.6 88/05/04 17:25:28 nelson Exp $ SPRITE (Berkeley)";
+@
+
+
+5.6
+log
+@Handles fact that most of stack setup is done by mach module now.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmStack.c,v 5.5 88/01/08 15:53:40 nelson Exp $ SPRITE (Berkeley)";
+d110 2
+a111 1
+Vm_GetKernelStack()
+d136 1
+a136 2
+    virtAddr.page = 
+	    (((unsigned int) stackListPtr->startAddr) >> vmPageShift) + 1;
+d138 1
+a138 1
+    for (i = 1, ptePtr = VmGetPTEPtr(vm_SysSegPtr, virtAddr.page);
+d141 5
+a145 3
+	*ptePtr |= VmPageAllocate(&virtAddr, VM_CAN_BLOCK);
+	vmStat.kernStackPages++;
+	VmPageValidate(&virtAddr);
+d185 1
+a185 1
+    virtAddr.page = ((unsigned int) (stackBase) >> vmPageShift) + 1;
+d187 1
+a187 1
+    for (i = 1, ptePtr = VmGetPTEPtr(vm_SysSegPtr, virtAddr.page);
+d190 5
+a194 3
+	vmStat.kernStackPages--;
+	VmPageFree(Vm_GetPageFrame(*ptePtr));
+	VmPageInvalidate(&virtAddr);
+@
+
+
+5.5
+log
+@Added prefetch.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmStack.c,v 5.4 87/12/15 15:21:55 nelson Exp $ SPRITE (Berkeley)";
+a17 1
+#include "machine.h"
+d99 1
+a99 1
+ *      Allocate and initialize a stack for a kernel process.
+d109 2
+a110 8
+ENTRY int
+Vm_GetKernelStack(progCounter, startFunc)
+    int		progCounter;	/* Program counter of where to start 
+				 * execution of new process.  */
+    void	(*startFunc)();	/* The function to call when the process
+				 * first starts executing.  This function will
+				 * initialize things and then start the
+				 * process running at progCounter. */
+d124 1
+a124 1
+	return(-1);
+a145 6
+    /*
+     * Call hardware dependent routine to initialize the stack.
+     */
+    Mach_InitStack((int) stackListPtr->startAddr, startFunc,
+		    (Address) progCounter);
+
+d148 1
+a148 1
+    return((int) stackListPtr->startAddr);
+@
+
+
+5.4
+log
+@Comments.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmStack.c,v 5.3 87/12/12 16:27:55 nelson Exp $ SPRITE (Berkeley)";
+d148 1
+a148 1
+	*ptePtr |= VmPageAllocate(&virtAddr, TRUE);
+@
+
+
+5.3
+log
+@More work on moving out machine dependent stuff.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmStack.c,v 5.2 87/12/11 13:29:49 nelson Exp $ SPRITE (Berkeley)";
+d44 1
+a44 1
+ * Array ofstack list information.
+d100 1
+a100 2
+ *      Allocate and initialize a stack for a kernel process.  The stack is
+ *	returned so that it looks like it is in the middle of a context switch.
+d113 1
+a113 1
+				   execution of new process.  */
+d115 3
+a117 3
+				   first starts executing.  This function will
+				   initialize things and then start the
+				   process running at progCounter. */
+d176 1
+a176 1
+ *      None.
+d183 1
+a183 1
+				   freed. */
+@
+
+
+5.2
+log
+@New VM system where put machine dependent VM stuff into the SUN module.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmStack.c,v 5.1 87/10/16 15:40:38 nelson Exp $ SPRITE (Berkeley)";
+d203 1
+a203 1
+	VmPageFree(VmGetPageFrame(*ptePtr));
+@
+
+
+5.1
+log
+@More and better stats.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmStack.c,v 5.0 87/08/11 10:53:11 sprite Exp $ SPRITE (Berkeley)";
+a14 1
+#include "vmSunConst.h"
+d26 3
+a31 1
+
+d44 1
+a44 1
+ * There are an array of stack list elements, one per stack.
+d46 1
+a46 1
+static	StackList	stackListElements[VM_MAX_PROCESSES];
+d51 1
+a51 1
+List_Links	activeListHdr;
+d53 1
+a53 1
+List_Links	freeListHdr;
+d56 2
+d62 36
+a110 1
+
+d123 1
+a123 2
+    VmVirtAddr			virtAddr;
+    static	Boolean		init = FALSE;
+a126 15
+    if (!init) {
+	unsigned	int	addr;
+
+	init = TRUE;
+	List_Init(activeList);
+	List_Init(freeList);
+	for (i = 0, addr = VM_STACK_BASE_ADDR; 
+	     addr < VM_STACK_END_ADDR + VM_PAGE_SIZE;
+	     i++, addr += MACH_NUM_STACK_PAGES * VM_PAGE_SIZE) {
+	     stackListElements[i].startAddr = (Address) addr;
+	     List_Insert((List_Links *) &stackListElements[i], 
+			 LIST_ATREAR(freeList));
+	}
+    }
+
+d142 1
+a142 1
+    virtAddr.segPtr = vmSysSegPtr;
+d144 1
+a144 1
+	    (((unsigned int) stackListPtr->startAddr) >> VM_PAGE_SHIFT) + 1;
+d146 2
+a147 2
+    for (i = 1, ptePtr = VmGetPTEPtr(vmSysSegPtr, virtAddr.page);
+	 i < MACH_NUM_STACK_PAGES;
+d149 1
+a149 2
+	ptePtr->protection = VM_KRW_PROT;
+	ptePtr->pfNum = VmVirtToPhysPage(VmPageAllocate(&virtAddr, TRUE));
+a180 1
+
+d186 1
+a186 1
+    VmVirtAddr			virtAddr;
+d196 2
+a197 2
+    virtAddr.segPtr = vmSysSegPtr;
+    virtAddr.page = ((unsigned int) (stackBase) >> VM_PAGE_SHIFT) + 1;
+d199 2
+a200 2
+    for (i = 1, ptePtr = VmGetPTEPtr(vmSysSegPtr, virtAddr.page);
+	 i < MACH_NUM_STACK_PAGES; 
+d203 1
+a203 1
+	VmPageFree((int) VmPhysToVirtPage(ptePtr->pfNum));
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmStack.c,v 4.2 87/05/21 17:20:23 nelson Exp $ SPRITE (Berkeley)";
+d129 1
+d182 1
+@

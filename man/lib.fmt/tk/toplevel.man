@@ -1,0 +1,132 @@
+
+
+
+toplevel                  User Commands                  toplevel
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     toplevel - Create and manipulate toplevel widgets
+
+SSYYNNOOPPSSIISS
+     ttoopplleevveell _p_a_t_h_N_a_m_e ?--ssccrreeeenn  _s_c_r_e_e_n_N_a_m_e?  ?--ccllaassss  _c_l_a_s_s_N_a_m_e?
+     ?_o_p_t_i_o_n_s?
+
+SSTTAANNDDAARRDD OOPPTTIIOONNSS
+     bbaacckkggrroouunndd      ggeeoommeettrryy
+     bboorrddeerrWWiiddtthh     rreelliieeff
+
+     See the ``options'' manual entry for details on the standard
+     options.
+
+WWIIDDGGEETT--SSPPEECCIIFFIICC OOPPTTIIOONNSS
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The ttoopplleevveell command creates a new toplevel widget (given by
+     the   _p_a_t_h_N_a_m_e  argument).   Additional  options,  described
+     above, may be specified on the command line or in the option
+     database  to  configure  aspects of the toplevel such as its
+     background color and relief.  The ttoopplleevveell  command  returns
+     the path name of the new window.
+
+     A toplevel is similar to a frame except that it  is  created
+     as a top-level window:  its X parent is the root window of a
+     screen rather than the logical parent from  its  path  name.
+     The primary purpose of a toplevel is to serve as a container
+     for dialog boxes and other collections of widgets.  The only
+     features  of  a  toplevel  are  its  background color and an
+     optional 3-D border to make the toplevel  appear  raised  or
+     sunken.
+
+     Two special command-line options  may  be  provided  to  the
+     ttoopplleevveell  command:  --ccllaassss and --ssccrreeeenn.  If --ccllaassss is speci-
+     fied, then the new widget's class will be set  to  _c_l_a_s_s_N_a_m_e
+     instead  of  TToopplleevveell.   Changing  the  class  of a toplevel
+     widget may be useful in order to use a special class name in
+     database  options referring to this widget and its children.
+     The --ssccrreeeenn option may be used to place the window on a dif-
+     ferent  screen  than the window's logical parent.  Any valid
+     screen name may be used, even one  associated  with  a  dif-
+     ferent display.
+
+     Note:  --ccllaassss and --ssccrreeeenn are handled differently than other
+     command-line  options.   They may not be specified using the
+     option database (these  options  must  have  been  processed
+     before  the  new  window  has been created enough to use the
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+toplevel                  User Commands                  toplevel
+
+
+
+     option database; in particular,  the  new  class  name  will
+     affect the lookup of options in the database).  In addition,
+     --ccllaassss and --ssccrreeeenn may not be queried or changed  using  the
+     ccoonnffiigg  command  described  below.  However, the wwiinnffoo ccllaassss
+     command may be used to query the  class  of  a  window,  and
+     wwiinnffoo ssccrreeeenn may be used to query its screen.
+
+
+WWIIDDGGEETT CCOOMMMMAANNDD
+     The ttoopplleevveell command creates a new Tcl command whose name is
+     the  same  as  the path name of the toplevel's window.  This
+     command may be used to  invoke  various  operations  on  the
+     widget.  It has the following general form:
+
+          _p_a_t_h_N_a_m_e _o_p_t_i_o_n ?_a_r_g _a_r_g ...?
+     _P_a_t_h_N_a_m_e is the name of the command, which is  the  same  as
+     the toplevel widget's path name.  _O_p_t_i_o_n and the _a_r_gs deter-
+     mine the exact behavior of the command.  The following  com-
+     mands are possible for toplevel widgets:
+
+     _p_a_t_h_N_a_m_e ccoonnffiigguurree ?_o_p_t_i_o_n? ?_v_a_l_u_e _o_p_t_i_o_n _v_a_l_u_e ...?
+          Query  or  modify  the  configuration  options  of  the
+          widget.   If  no  _o_p_t_i_o_n  is  specified, returns a list
+          describing all of the available  options  for  _p_a_t_h_N_a_m_e
+          (see  TTkk__CCoonnffiigguurreeIInnffoo for information on the format of
+          this list).  If _o_p_t_i_o_n is specified with no _v_a_l_u_e, then
+          the  command  returns  a  list describing the one named
+          option (this list will be identical to the  correspond-
+          ing  sublist  of  the  value  returned  if no _o_p_t_i_o_n is
+          specified).  If one  or  more  _o_p_t_i_o_n-_v_a_l_u_e  pairs  are
+          specified,  then  the command modifies the given widget
+          option(s) to have the given value(s);  in this case the
+          command  returns  an empty string.  _O_p_t_i_o_n may have any
+          of the values accepted by the ttoopplleevveell command.
+
+
+BBIINNDDIINNGGSS
+     When a new toplevel is created,  it  has  no  default  event
+     bindings: toplevels are not intended to be interactive.
+
+
+KKEEYYWWOORRDDSS
+     toplevel, widget
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     2
+
+
+

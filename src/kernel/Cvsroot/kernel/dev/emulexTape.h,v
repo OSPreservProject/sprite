@@ -1,0 +1,247 @@
+head     9.0;
+branch   ;
+access   ;
+symbols  ds3100:9.0 sun3:9.0 sun4nw:9.0 symm:9.0 spur:9.0 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.0
+date     89.09.12.14.59.52;  author douglis;  state Stable;
+branches ;
+next     8.4;
+
+8.4
+date     89.05.24.07.49.53;  author rab;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.05.23.10.26.38;  author mendel;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.11.29.09.26.44;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.21.09.04.25;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.16.15.20.30;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Definitions for the Emulex controller
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@/*
+ * devSCSIEmulex.h
+ *
+ * Definitions for attach routine for Emulex tape drives.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ * $Header: /sprite/src/kernel/dev/sun3.md/RCS/emulexTape.h,v 8.4 89/05/24 07:49:53 rab Exp Locker: douglis $ SPRITE (Berkeley)
+ */
+
+#ifndef _DEVSCSIEMULEX
+#define _DEVSCSIEMULEX
+
+extern ReturnStatus DevEmulexAttach();
+
+#endif /* _DEVSCSIEMULEX */
+@
+
+
+8.4
+log
+@Changes to allow optimization.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/dev/sun3.md/RCS/emulexTape.h,v 8.3 89/05/23 10:26:38 mendel Exp Locker: rab $ SPRITE (Berkeley)
+@
+
+
+8.3
+log
+@Converted to use new SCSI Tape interface.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/dev.new/sun3.md/RCS/devEmulexTape.h,v 8.2 88/11/29 09:26:44 brent Exp Locker: mendel $ SPRITE (Berkeley)
+d25 1
+a25 1
+#endif _DEVSCSIEMULEX
+@
+
+
+8.2
+log
+@Added a block size constant
+@
+text
+@d4 1
+a4 2
+ * Definitions for sense data format and status information returned
+ * from Emulex tape drives.
+d17 1
+a17 1
+ * $Header: /sprite/src/kernel/dev/sun3.md/RCS/devSCSIEmulex.h,v 8.1 88/11/21 09:04:25 brent Exp Locker: brent $ SPRITE (Berkeley)
+d23 1
+a23 66
+/*
+ * The Emulex controller uses 512 byte blocks.
+ */
+#define DEV_EMULEX_BLOCK_SIZE	512
+
+/*
+ * Sense data returned from the Emulex tape controller in the shoeboxes.
+ */
+#define DEV_EMULEX_SENSE_BYTES	11
+typedef struct {
+    DevSCSIExtendedSense	extSense;	/* 8 Bytes */
+    unsigned char pad1		:1;
+    unsigned char error		:7;	/* Regular SCSI error code */
+    unsigned char highRetries;		/* High byte of retry count */
+    unsigned char lowRetries;		/* Low byte of retry count */
+} DevEmulexTapeSense;			/* Known to be 11 Bytes big */
+
+/*
+ * Sense data returned from the Emulex disk drive in the scsibox.  There's
+ * some more information available past the additional sense code, but we don't
+ * use it (at least for now).
+ */
+typedef struct {
+    DevSCSIExtendedSense	extSense;
+    unsigned char pad1;		/* reserved */
+    unsigned char pad2;		/* reserved */
+    unsigned char pad3;		/* reserved */
+    unsigned char pad4;		/* reserved */
+    unsigned char code2;	/* additional sense code */
+}  DevEmulexDiskSense;
+
+
+/*
+ * Definitions for the mode select command.  This is specific to the
+ * Emulex controller.  The mode select command is used to change from
+ * QIC_24 format (one standard, not the one we use) to QIC_02 format
+ * (the more common, older, standard that we do use).
+ */
+
+typedef struct DevEmulexModeSelBlock {
+    unsigned char density;		/* Density code */
+    unsigned char highCount;		/* Count of blocks at this density */
+    unsigned char midCount;		/*	middle byte of above */
+    unsigned char lowCount;		/*	low byte */
+    unsigned char pad1;			/* Reserved */
+    unsigned char highLength;		/* Length of the blocks */
+    unsigned char midLength;		/*	middle byte of above */
+    unsigned char lowLength;		/*	low byte */
+} DevEmulexModeSelBlock;
+
+/*
+ * Density values for the mode select block.
+ */
+#define SCSI_EMULEX_QIC_24	0x05
+#define SCSI_EMULEX_QIC_02	0x84
+
+typedef struct DevEmulexModeSelParams {
+    DevSCSIModeSelectHdr	header;
+    DevEmulexModeSelBlock	block;
+    unsigned char		:5;	/* Reserved */
+    unsigned char disableErase	:1;	/* disable erase ahead */
+    unsigned char autoLoadInhibit :1;
+    unsigned char softErrorCount  :1;
+} DevEmulexModeSelParams;
+
+void DevEmulexInit();
+@
+
+
+8.1
+log
+@Stable version after code reorganization
+@
+text
+@d18 1
+a18 1
+ * $Header: /sprite/src/kernel/dev/sun3.md/RCS/devSCSIEmulex.h,v 8.0 88/11/16 15:20:30 brent Exp $ SPRITE (Berkeley)
+d25 5
+d32 1
+d89 1
+a89 1
+
+@
+
+
+8.0
+log
+@New file for SCSI clean up
+@
+text
+@d18 1
+a18 1
+ * $Header: /sprite/src/kernel/dev/sun3.md/RCS/devSCSIEmulex.h,v 8.0 88/11/16 14:43:24 brent Exp $ SPRITE (Berkeley)
+d25 1
+a25 1
+ * Sense data returned from the Emulux tape controller in the shoeboxes.
+d33 1
+a33 1
+} DevEmuluxTapeSense;			/* Known to be 11 Bytes big */
+d52 1
+a52 1
+ * Emulux controller.  The mode select command is used to change from
+a55 9
+typedef struct DevEmuluxModeSelHdr {
+    unsigned char pad1;			/* Reserved */
+    unsigned char pad2;			/* Reserved */
+    unsigned char		:1;	/* Reserved */
+    unsigned char bufMode	:3;	/* == 1 */
+    unsigned char speed		:4;	/* == 0 */
+    unsigned char blockLength;		/* Length of block descriptors that
+					 * follow the header */
+} DevEmuluxModeSelHdr;
+d57 1
+a57 1
+typedef struct DevEmuluxModeSelBlock {
+d66 1
+a66 1
+} DevEmuluxModeSelBlock;
+d71 2
+a72 2
+#define SCSI_EMULUX_QIC_24	0x05
+#define SCSI_EMULUX_QIC_02	0x84
+d74 3
+a76 3
+typedef struct DevEmuluxModeSelParams {
+    DevEmuluxModeSelHdr		header;
+    DevEmuluxModeSelBlock	block;
+d81 1
+a81 1
+} DevEmuluxModeSelParams;
+@

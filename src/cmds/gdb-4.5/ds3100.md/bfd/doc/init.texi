@@ -1,0 +1,25 @@
+@section Initialization
+This is the initialization section
+@*
+@findex bfd_init
+@subsubsection @code{bfd_init}
+@strong{Synopsis}
+@example
+void bfd_init(void);
+@end example
+@strong{Description}@*
+This routine must be called before any other bfd function to
+initialize magical internal data structures.
+@*
+@findex bfd_check_init
+@subsubsection @code{bfd_check_init}
+@strong{Description}@*
+This routine is called before any other bfd function using
+initialized data is used to ensure that the structures have
+been initialized. Soon this function will go away, and the bfd
+library will assume that bfd_init has been called.
+@*
+@strong{Synopsis}
+@example
+void bfd_check_init(void);
+@end example

@@ -1,0 +1,6 @@
+F EXECL.C_V;1                       	execl.c,v
+F EXECLE.C_V;1                      	execle.c,v
+F EXECLP.C_V;1                      	execlp.c,v
+F EXECV.C_V;1                       	execv.c,v
+F EXECVP.C_V;1                      	execvp.c,v
+F _EXECARG.C_V;1                    	_ExecArgs.c,v

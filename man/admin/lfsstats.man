@@ -1,0 +1,27 @@
+'\" Copyright 1989 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/admin/lfsstats/RCS/lfsstats.man,v 1.2 91/06/13 17:29:57 kupfer Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS LFSSTATS cmds
+.BS
+.SH NAME
+lfsstats \- Display the statistics counters stored in an LFS file system.
+.SH SYNOPSIS
+.nf
+\fBlfsstats \fIdeviceName\fR
+
+.SH DESCRIPTION
+.PP
+\fBLfsstat\fR displays the LfsStats counters from the 
+checkpoint region or an LFS file system.  See lfsStats.h for
+the definition of the fields.
+.SH KEYWORDS
+filesystem, LFS, sprite
+

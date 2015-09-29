@@ -1,0 +1,109 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  sprited:1.1.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     91.10.17.11.19.40;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.10.17.10.46.13;  author jhh;  state Exp;
+branches 1.1.1.1;
+next     ;
+
+1.1.1.1
+date     91.10.31.13.37.18;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@added macros to disallow add, addi, sub, subi aren't allowed in the
+kernel
+@
+text
+@/*	@@(#)regdef.h	4.3	(ULTRIX)	9/30/88	*/
+/* ------------------------------------------------------------------ */
+/* | Copyright Unpublished, MIPS Computer Systems, Inc.  All Rights | */
+/* | Reserved.  This software contains proprietary and confidential | */
+/* | information of MIPS and its suppliers.  Use, disclosure or     | */
+/* | reproduction is prohibited without the prior express written   | */
+/* | consent of MIPS.                                               | */
+/* ------------------------------------------------------------------ */
+
+#define zero	$0	/* wired zero */
+#define AT	$at	/* assembler temp */
+#define v0	$2	/* return value */
+#define v1	$3
+#define a0	$4	/* argument registers */
+#define a1	$5
+#define a2	$6
+#define a3	$7
+#define t0	$8	/* caller saved */
+#define t1	$9
+#define t2	$10
+#define t3	$11
+#define t4	$12
+#define t5	$13
+#define t6	$14
+#define t7	$15
+#define s0	$16	/* callee saved */
+#define s1	$17
+#define s2	$18
+#define s3	$19
+#define s4	$20
+#define s5	$21
+#define s6	$22
+#define s7	$23
+#define t8	$24	/* code generator */
+#define t9	$25
+#define k0	$26	/* kernel temporary */
+#define k1	$27
+#define gp	$28	/* global pointer */
+#define sp	$29	/* stack pointer */
+#define s8	$30	/* one more callee saved */
+#define ra	$31	/* return address */
+
+#ifdef sprite
+#ifdef KERNEL
+/*
+ * Instructions that cause overflow exceptions are not allowed in kernel
+ * assembly code.  The trap handler may cause more overflow exceptions,
+ * causing in infinite loop.
+ */
+
+#define add Use ADDU instead of ADD in the kernel.
+#define addi Use ADDIU instead of ADDI in the kernel.
+#define sub Use SUBU instead of SUB in the kernel.
+#define subi Use SUBIU instead of SUBI in the kernel.
+
+#endif
+#endif
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d42 16
+@
+
+
+1.1.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@@

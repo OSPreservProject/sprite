@@ -1,0 +1,259 @@
+'\" Copyright 1989 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/man/files/RCS/man.man,v 1.2 89/02/22 14:00:39 ouster Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS man files "February 17, 1989"
+.BS
+.SH NAME
+man \- Ditroff macros for writing manual entries
+.BE
+
+.SH INTRODUCTION
+.PP
+Manual entries in Sprite are formatted with the \fBditroff\fR program
+using the \fB-man\fR macros.  This manual entry summarizes the features
+provided by the \fB-man\fR macros.  For more general information on
+how to write manual entries for Sprite, refer to \fIThe Sprite
+Engineering Manual\fR.  Templates of manual entries for programs and
+library procedures are available in \fB/sprite/lib/forms/cmd.man\fR
+and \fB/sprite/lib/forms/lib.man\fR respectively.
+.PP
+The Sprite \fB-man\fR macros are defined in two pieces.
+The first piece is \fB/sprite/lib/ditroff/tmac.an\fR;
+this file is read whenever you specify \fB-man\fR on a \fBditroff\fR
+command line.  The file \fBtmac.an\fR provides exactly the same set
+of macros that are available under UNIX (except that it defines the
+\fB]l\fR variable as discussed below).  Extra macros just for Sprite
+(such as \fB.AP\fR and \fB.BS\fR) are provided by the file
+\fB/sprite/lib/ditroff/tmac.sprite\fR.
+To include these macros, each Sprite manual entry should start with
+a line
+.DS
+\&\.so  \e*(]ltmac.sprite
+.DE
+The variable \fB]l\fR is defined by Sprite's \fBtmac.an\fR to be equal to
+\fB/sprite/lib/ditroff/\fR.  To distribute a Sprite manual entry to
+a non-Sprite system, send both the manual entry and \fBtmac.sprite\fR.
+In the other systems, the \fB]l\fR variable is not defined, so the
+file \fBtmac.sprite\fR must be in the same directory as the manual
+entry being printed.
+
+.SH MACROS
+.PP
+The \fB-man\fR macros are:
+.TP
+\&\fB.AP\fI type name inOut \fR[\fIindent\fR]
+Argument paragraph.  The \fItype\fR, \fIname\fR, and \fIinOut\fR
+arguments give information about this argument:  its type, its
+name, and a string indicating how the argument is used.  \fIInOut\fR
+must be either \fBin\fR (meaning the argument is used by the procedure
+but is not used to modify information in the caller's memory), \fBout\fR
+(meaning the argument points to information in the caller's memory
+which the procedure modifies without ever reading), or \fBin/out\fR
+(meaning the argument points to information in the caller's memory
+which is both read and written by the procedure).  Text following
+the \fB.AP\fR line provides a short description of the argument: it
+will be indented to appear to the right of \fItype\fR, \fIname\fR,
+and \fIinOut\fR.  If \fIindent\fR is specified, it determines the
+indentation of the following text in ens;  however, this argument
+is normally omitted, in which case a reasonable default is picked.
+In a sequence of argument descriptions, each with its own \fB.AP\fR
+call, the \fItype\fR, \fIname\fR, \fIinOut\fR, and description
+parts will be lined up in columns.  The \fB.AS\fR macro may be used
+to size the columns.
+.TP
+\&\fB.AS \fItype name\fR
+Set argument sizes for \fB.AP\fR.  \fIType\fR and \fIname\fR specify
+the largest such arguments that will be used in a following series
+of \fB.AP\fR calls;  tab stops are set for the following calls so
+that the \fItype\fR and \fIname\fR columns will line up with adequate
+spacing.  If this macro is never invoked, then default field widths
+will be chosen, which are valid for small arguments.
+.TP
+\&\fB.B\fR [\fIargs\fR]
+Print in boldface.  If any \fIargs\fR are given, then all of the
+arguments are printed in boldface (up to six of them).  Otherwise,
+everything on the next line of input is printed in boldface.  In
+either case, the font reverts to roman after the arguments or
+following line have been printed.
+.TP
+\&\fB.BE\fR
+End boxed text.  Close off a box started previously with \fB.BS\fR.
+.TP
+\&\fB.BS\fR
+Start boxed text.  Everything up to the matching \fB.BE\fR macro
+will be enclosed in a box.  This is used for the summary boxes at
+the tops of manual entries.
+.TP
+\&\fB.DE\fR
+End a display:  cancel the effects of the previous \fB.DS\fR macro,
+returning to normal indentation and fill mode.
+.TP
+\&\fB.DS\fR
+Start a display.  All lines up until the next \fB.DE\fR macro
+will be indented and output in no-fill mode.
+.TP
+\&\fB.DT\fR
+Reset tabs to default spacings (every half-inch).
+.TP
+\&\fB.IP\fI tag\fR [\fIindent\fR]
+This is identical to \fB.IP\fR in the \fB-ms\fR macros.  It
+starts an indented paragraph with \fItag\fR (if given) as an
+outdented tag.  If \fIindent\fR is given, it specifies how
+much the paragraph will be indented, in ens.
+.TP
+\&\fB.HP\fR
+Start a paragraph with a hanging indent (the first line will be
+outdented relative to the rest of the paragraph).
+.TP
+\&\fB.HS\fI section \fR[\fIdate\fR [\fIversion\fR]]
+Header for Sprite.  This macro should be used in place of \fB.TH\fR
+for all Sprite manual entries.  It should be the first thing in the
+entry's source file.  \fISection\fR indicates which section of the manual
+this entry belongs to, and should be one of:
+.RS
+.TP 12
+\fBadmin\fR
+The manual entry describes an administrative program (i.e. one whose
+binary is under \fB/sprite/admin\fR).  Administrative programs are
+not used by normal users.
+.TP
+\fBcmds\fR
+The manual entry describes a user-level application program.  This
+section is equivalent to section 1 of UNIX manuals.
+.TP
+\fBdaemons\fR
+The manual entry describes a daemon program.  Daemons are programs
+that run in background to provide various system services, such as
+\fBinetd\fR or \fBlpd\fR.  They
+are normally invoked automatically at boot-time or when needed, and
+aren't usually visible to ordinary users.
+.TP
+\fBdev\fR
+The manual entry describes the characteristics of
+a particular type of I/O device or pseudo-device,
+along with the I/O controls that may be applied to devices of that type.
+This section is equivalent to section 4 of UNIX manuals.
+.TP
+\fBfiles\fR
+The manual entry describes the format of a particular file or file
+type.  For example, the manual entry you are reading
+is in the \fBfiles\fR section.
+This section is equivalent to section 5 of UNIX manuals.
+.TP
+\fBlib\fR
+The manual entry describes one or more procedures in one of the standard
+C libraries.  This section is equivalent
+to the combination of sections 2 and 3 of UNIX manuals.
+.TP
+\fBtcl\fR
+The manual entry describes one or more procedures from the Tcl command
+language library.
+.PP
+The \fIdate\fR argument to \fB.HS\fR is optional and specifies the
+date on which the entry (or its corresponding program) was last
+modified.  The \fIversion\fR argument is optional and specifies the
+Sprite version number corresponding to this version of the manual entry.
+The current default is ``1.0''.
+.RE
+.TP
+\&\fB.I\fR [\fIargs\fR]
+Print in italics.  If any \fIargs\fR are given, then all of the
+arguments are printed in italics (up to six of them).  Otherwise,
+everything on the next line of input is printed in italics.  In
+either case, the font reverts to roman after the arguments or
+following line have been printed.
+.TP
+\&\fB.LG\fR [\fIargs\fR]
+Print in a larger font.  If any \fIargs\fR are given, then all of the
+arguments are printed in a larger font (up to six of them).  Otherwise,
+everything on the next line of input is printed in a larger font.  In
+either case, the font reverts to normal size after the arguments or
+following line have been printed.
+.TP
+\&\fB.LP\fR
+Start a new paragraph.  Same as \fB.PP\fR.
+.TP
+\&\fB.PD\fI distance\fR
+Set the spacing between paragraphs to \fIdistance\fR.
+.TP
+\&\fB.PP\fR
+Start a new paragraph.
+.TP
+\&\fB.RE\fR [\fIlevel\fR]
+End right-shifted text, moving the indentation level back to its
+previous level.  Normally, each \fB.RS\fR moves the indentation
+back one level (in the case of nested \fB.RS\fR calls).  However,
+if \fIlevel\fR is specified, it gives the index of the nesting
+level from which to return.  For example, \fB.RS 3\fR says to
+return from 3 levels of nesting to 2 levels (when this call is
+invoked, there better be at least three nested \fB.RS\fR calls
+in effect).  \fB.RS 0\fR says to return from all nested \fB.RS\fR
+calls.
+.TP
+\&\fB.RS\fR [\fIindent\fR]
+Right shift.
+From now on, indent all future text (up to the matching \fB.RE\fR)
+by an additional amount equal to \fIindent\fR ens.  If \fIindent\fR isn't
+specified, then use the current indentation (from the last \fB.TP\fR
+or \fB.IP\fR) as the amount of additional indentation.
+Pairs of \fB.RS\fR and \fB.RE\fR calls may be nested.  The \fB.SH\fR macro
+cancels all active \fB.RS\fR calls.
+.TP
+\&\fB.SH \fIname\fR [\fImoreName ...\fR]
+Start a new section named \fIname\fR.  The \fIname\fR may actually
+consist of up to six distinct arguments.
+.TP
+\&\fB.SS \fIname\fR [\fImoreName ... \fR]
+Start a new subsection named \fIname\fR.  The \fIname\fR may actually
+consist of up to six distinct arguments.
+.TP
+\&\fB.SM\fR [\fIargs\fR]
+Print in a smaller font.  If any \fIargs\fR are given, then all of the
+arguments are printed in a smaller font (up to six of them).  Otherwise,
+everything on the next line of input is printed in a smaller font.  In
+either case, the font reverts to normal size after the arguments or
+following line have been printed.
+.TP
+\&\fB.TH \fIname section \fR[\fIdate \fR[\fIversion\fR]]
+Set title and heading.
+This macro is obsolete.  It is used for old UNIX manual pages only.
+For Sprite man pages, the \fB.HS\fR macro should be used instead.
+\fIName\fR gives the name of the manual page, which will appear in
+the upper-right and upper-left corners of each page.  \fISection\fR
+gives the section number.  \fIDate\fR gives the last-modified-time
+for the program;  if not specified, it defaults to blank.  \fIVersion\fR
+gives the operating system version that this manual entry corresponds
+to.  The default for \fIversion\fR varies in time;  see the \fBtmac.an\fR
+source file for the current value.
+.TP
+\&\fB.TP\fR [\fIindent\fR]
+Start a tagged paragraph.  The following line contains a tag, and
+everything after that contains the contents of the paragraph.  The
+tag will be printed outdented to the normal left margin, and the
+paragraph will be indented relative to the tag.  If \fIindent\fR
+is specified, then the indent distance is changed to \fIindent\fR ens
+(the indent distance is sticky across calls to \fB.TP\fR and \fB.IP\fR
+but gets reset to a default value by \fB.PP\fR and \fB.SH\fR).  For
+example, each of the macro descriptions in this particular manual entry
+was formatted using the \fB.TP\fR macro.
+.TP
+\&\fB.VE\fR
+End vertical sidebar.  Starting with the output line following the
+current one, do not print vertical sidebars.
+.TP
+\&\fB.VS\fR
+Start vertical sidebar.  From now on, starting with the current output line,
+a vertical bar will appear at the right side of all output lines.
+This will continue until the next \fB.VE\fR call.  Sidebars should
+be used to indicate recent changes in the manual entry.
+
+.SH KEYWORDS
+ditroff, format, macros, -man, manual entry

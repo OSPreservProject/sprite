@@ -1,0 +1,68 @@
+
+
+
+sosp                  C Library Procedures                   sosp
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     initRead,  getHeader,   getNextRecord,   getNextRecordMerge,
+     migrateChildren  - Routines to extract trace events from the
+     sosp file system traces.
+
+SSYYNNOOPPSSIISS
+     It's probably not worth  it  to  use  the  library  routines
+     directly.   Instead,  make  use of the example template that
+     calls them correctly.
+     ##iinncclluuddee <<ssoosspp..hh>>
+
+     int
+     iinniittRReeaadd(_n_a_m_e, _a_r_g_c, _a_r_g_v)
+
+     int
+     ggeettHHeeaaddeerr(_f_i_l_e, _h_d_r)
+
+     int
+     ggeettNNeexxttRReeccoorrdd(_f_i_l_e, _b_u_f)
+
+     Boolean
+     mmiiggrraatteeCChhiillddrreenn(_f_l_a_g_s)
+
+     int
+     ggeettNNeexxttRReeccoorrddMMeerrggee(_b_u_f)
+
+AARRGGUUMMEENNTTSS
+     char   *_n_a_m_e   (in)      Like argv[0] - the name of the pro-
+                              cess.
+
+     int    _a_r_g_c    (in)      Number of elements in _a_r_g_v.
+
+     char   **_a_r_g_v  (in/out)  The  arguments  to  the  tracer   -
+                              including  startTime  and  endTime,
+                              files to ignore events for  in  the
+                              traces  and  the list of trace file
+                              names.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The interface to this library is arcane.   Look  instead  at
+     the  template  program that calls it.  This program includes
+     comments for where you need to fill in your code.
+
+KKEEYYWWOORRDDSS
+     traces, sosp, postprocessor
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  November 18, 1991                  1
+
+
+

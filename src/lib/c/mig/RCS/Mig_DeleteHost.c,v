@@ -1,0 +1,163 @@
+head     2.1;
+branch   ;
+access   ;
+symbols  no-auto-remigrate:2.1 installed:2.0;
+locks    ; strict;
+comment  @ * @;
+
+
+2.1
+date     90.06.22.14.58.17;  author douglis;  state Exp;
+branches ;
+next     2.0;
+
+2.0
+date     90.03.10.13.12.37;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     90.02.28.10.56.46;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.02.16.14.27.59;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Delete information about a host from the load average data base.
+This is done by performing an ioctl to the global server with
+the sprite ID of the host to be deleted.
+@
+
+
+2.1
+log
+@changes for alarms for timeouts with migd and for printing to stderr instead of syslog
+@
+text
+@/* 
+ * Mig_DeleteHost.c --
+ *
+ *	Delete information about a host from the load average data base.
+ *	This is done by performing an ioctl to the global server with
+ *	the sprite ID of the host to be deleted.
+ *
+ * Copyright 1988, 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/mig/RCS/Mig_DeleteHost.c,v 2.0 90/03/10 13:12:37 douglis Stable Locker: douglis $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+
+#include <sprite.h>
+#include <stdio.h>
+#include <mig.h>
+#include <errno.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mig_DeleteHost --
+ *
+ *	Tell the global daemon to remove a host from its records, so
+ *	the host won't be listed as being down.  This is useful if
+ *	a host is renamed or otherwise removed. 
+ *
+ * Results:
+ *	0 if successful, or -1 on error, with errno indicating the error.
+ *
+ * Side effects:
+ *	Does ioctl to server.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Mig_DeleteHost(hostID)
+    int hostID;			/* ID of host to remove. */
+{
+    int status;
+    
+    if (mig_GlobalPdev < 0) {
+	if (MigOpenPdev(TRUE) < 0) {
+	    return(-1);
+	}
+    }
+	    
+    if (MigSetAlarm() < 0) {
+	fprintf(stderr,
+		"Error setting alarm for contact with migd.\n");
+	return(-1);
+    }
+    status = Fs_IOControl(mig_GlobalPdev, IOC_MIG_KILL,
+				  sizeof(int), (char *) &hostID, 0,
+				  (char *) NULL);
+    if (MigClearAlarm() < 0) {
+	fprintf(stderr,
+		"Error clearing alarm for contact with migd.\n");
+    }
+    if (status != SUCCESS) {
+	fprintf(stderr,
+	       "Mig_DeleteHost: error during ioctl to global master: %s\n",
+	       Stat_GetMsg(status));
+	errno = Compat_MapCode(status);
+	return(-1);
+    }
+    return(0);
+}
+@
+
+
+2.0
+log
+@Changing version numbers.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/mig/RCS/Mig_DeleteHost.c,v 1.2 90/02/28 10:56:46 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+a26 1
+#include <syslog.h>
+d58 5
+d66 4
+d71 1
+a71 1
+	syslog(LOG_WARNING,
+@
+
+
+1.2
+log
+@changed Mig_OpenPdev to internal Mig routine.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/mig/RCS/Mig_DeleteHost.c,v 1.1 90/02/16 14:27:59 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /user2/douglis/pdev_mig/mig_p/RCS/Mig_DeleteHost.c,v 1.1 90/02/08 20:22:10 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d54 1
+a54 1
+	if (Mig_OpenPdev(TRUE) < 0) {
+@

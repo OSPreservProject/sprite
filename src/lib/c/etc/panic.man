@@ -1,0 +1,35 @@
+' Copyright 1989 Regents of the University of California
+' Permission to use, copy, modify, and distribute this
+' documentation for any purpose and without fee is hereby
+' granted, provided that this notice appears in all copies.
+' The University of California makes no representations about
+' the suitability of this material for any purpose.  It is
+' provided "as is" without express or implied warranty.
+' 
+' $Header: /sprite/src/lib/c/etc/RCS/panic.man,v 1.1 89/01/09 11:43:28 ouster Exp $ SPRITE (Berkeley)
+' 
+.so \*(]ltmac.sprite
+.HS panic lib
+.BS
+.SH NAME
+panic \- Print error message and kill process
+.SH SYNOPSIS
+.nf
+\fBvoid
+panic(\fIformat\fB, \fIarg\fB, \fIarg\fB, ...)\fR
+.SH ARGUMENTS
+.AS char *format
+.AP char *format in
+Format string for error message to print.
+.AP ??	arg in
+Optional  additional arguments providing information to print.
+.BE
+
+.SH DESCRIPTION
+\fBPanic\fR prints an error message on the standard error file and
+then kills the process by calling \fBabort\fR.  The \fIformat\fR and
+\fIarg\fR arguments control the printing of the message just as if
+they had been passed to \fBprintf\fR.
+
+.SH KEYWORDS
+abort, error, message, panic

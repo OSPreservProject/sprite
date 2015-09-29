@@ -1,0 +1,250 @@
+.EQ
+delim $$
+tdefine compose % { ~"\h'-0.15m'\
+\v'0.30m'\
+\(de\
+\h'0.15m'\
+\v'-0.30m'" } %
+ndefine compose % ~"o"~ %
+tdefine degree % \(de %
+ndefine degree % { nothing sup o } %
+tdefine circle % \(ci %
+ndefine circle % O %
+tdefine starprod % { ^ down 40 back 13 size +3 roman "*" ^ } %
+ndefine starprod % * %
+tdefine star % { up 8 back 28 size +1 roman "*" } %
+tdefine Star % { up 20 back 16 size +1 roman "*" } %
+ndefine Star % sup roman "*" %
+define quot % ^ \(di ^ %
+tdefine bottom %  { "\fB\
+\s7\
+\l'1.10m'\
+\h'-0.55m'\
+\L'-0.80m'\
+\h'0.55m'\
+\v'0.80m'\
+\s0\
+\fP" } %
+ndefine bottom % _| %
+tdefine botbar % { "\fB\
+\s7\
+\l'1.10m'\
+\h'-0.55m'\
+\L'-0.80m'\
+\h'-0.55m'\
+\fP\
+\v'-0.45m'\
+\l'0.7m'\
+\h'0.55m'\
+\v'1.25m'\
+\s0" } %
+ndefine botbar % _| bar %
+tdefine orsign % { ^ "\s-2\
+\h'.05m'\
+\v'.15m'\
+\z\
+\e\
+\e\
+\h'-.08m'\
+\z\(sl\
+\(sl\
+\h'-.1m'\
+\v'-.15m'\
+\s+2" ^ } %
+ndefine orsign % \/ %
+tdefine andsign % { ^ "\s-2\
+\v'.15m'\
+\z\(sl\
+\(sl\
+\h'-.3m'\
+\z\e\
+\e\
+\v'-.15m'\
+\s+2" ^ } %
+ndefine andsign % /\ %
+define xor % { ^ \(ci size +2 { back 70 down 6 + } ~ } %
+define dsum % xor %
+define dprod % { ^ \(ci back 70 times ^ } %
+tdefine exists % { "\s-3\
+\v'.2m'\
+\z\(em\
+\v'-.5m'\
+\z\(em\
+\v'-.5m'\
+\z\(em\
+\v'.85m'\
+\h'.9m'\
+\z\(br\
+\h'.004i'\
+\(br\
+\h'.02m'\
+\v'-.05m'\
+\s+3\
+\h'.2m'" ~} %
+tdefine !exist % { ~ { size -3 "\v'.2m'\
+\z\(em\
+\v'-.5m'\
+\z\(em\
+\v'-.5m'\
+\z\(em\
+\v'.85m'\
+\h'.9m'\
+\z\(br\
+\h'.004i'\
+\(br\
+\h'.02m'\
+\v'-.05m'\
+\h-.1m\
+\h'.3m'" { back 90 down 10 size +3 / }} ^ } %
+tdefine forall % { "\z\e\h'0.5m'\z\(sl\h'-.2m'\v'-.37m'\
+\s-4\fB\l'1m'\fP\s0\v'.37m'\h'0.25m'" ~ } %
+ndefine forall % V- %
+tdefine member % { ^ fat { \(mo } ^ } %
+ndefine member % C- %
+tdefine !member ' { ^ \(mo back 70 / ^ } '
+ndefine !member % C-/ %
+tdefine empty % { size +1 { fat \(es }  } %
+ndefine empty % O/ %
+tdefine therefore % { ~ "\s-2\(bu\v'-.5m'\(bu\v'.5m'\(bu\s+2" ~ } %
+ndefine therefore % .. ":" %
+tdefine dotprod % { up 10 size -3 \(bu } %
+ndefine dotprod % oxe %
+tdefine box % { ~ down 25 size 16 \(sq ~ } %
+ndefine box % HIX %
+tdefine endpf % { "\h'.25i'\v'+.35'\s18\
+\(sq\h'-.25m'\v'-.28m'\(sq\v'+.07m'\h'.25m-.25i'\s0" } %
+ndefine endpf % HIXHIX %
+tdefine quad % { "[\h'-12u']" } %
+ndefine quad % [] "_" sup "_" %
+define eq '~=~'
+tdefine !eq % { ~ = back 70 / ~ } %
+ndefine !eq % { ~ = "/" ~ } %
+tdefine equiv % { ~ size -3
+{ "\fB\v'-.14'\
+\l'1.2m'\h'-1.2m'\v'-.255m'\
+\l'1.2m'\h'-1.2m'\v'-.25m'\
+\l'1.2m'\fP\v'.645m'" }
+~ } %
+ndefine equiv '~ == ~'
+tdefine !equiv % { ~
+size -3 { "\fB\
+\v'-.14'\
+\l'1.2m'\h'-1.2m'\v'-.255m'\
+\l'1.2m'\h'-1.2m'\v'-.25m'\
+\l'1.2m'\v'.645m'\fP"}
+back 70 up 2  /
+~  } %
+ndefine !equiv '~== "/"~'
+tdefine =bydef % {  ~ up 45 { \s-1 DELTA  }  back 65 down 10  { "=" } \s+1 ~ } %
+ndefine =bydef % ="^" %
+tdefine iso % { ~= back 80  up 45 \(ap~ } %
+ndefine iso % ="~" %
+tdefine t- % { ~ "\(~=" ~ } %
+ndefine t- % _"~" %
+tdefine twiddle % \(ap %
+ndefine twiddle % "~" %
+tdefine hat % { up 31 back 75 roman "^" } %
+tdefine Hat % { up 56 back 70 roman "^" } %
+ndefine Hat % hat %
+tdefine tilde % { up 45 back 80 "\(ap" } %
+tdefine Tilde % { up 68 back 74 "\(ap" } %
+ndefine Tilde % tilde %
+define inf % { down 10 fat { size +3 \(if } } %
+tdefine propor % { ~ fat "\s+2\(pt\s-2"~ } %
+ndefine propor % oc %
+tdefine =dot  % { ~ = back 49 up 52 size -6 "\(bu" fwd 49 ~ } %
+define ne %  { ~ != ~ } %
+define le %  { ~ bold <= ~ } %
+define ge %  { ~ bold >= ~ } %
+define lt %  { ~ < ~ } %
+define gt %  { ~ > ~ } %
+tdefine <->  % { ^ <- back 32 -> ^  } %
+ndefine <-> % "<-->" %
+tdefine t< % { ~ "\z<\v'.5m'\(ap\v'-.5m'" ~ } %
+tdefine t> % { ~ "\z>\v'.5m'\(ap\v'-.5m'" ~ } %
+tdefine <=> % { ^ < back 40 = back 30 = back 60 > ^ } %
+ndefine <=> % "<=>" %
+tdefine => % { ^ = back 30 = back 60 > ^  } %
+ndefine => % "==>" %
+tdefine not< % {  ~ < back 47 fat "|" ~  } %
+ndefine not< % ~ <| ~ %
+tdefine not> % { ~ > back 57 fat "|" ~  } %
+ndefine not> % ~ |> ~ %
+tdefine div % { ^ fat "|" ^ } %
+ndefine div % ~ | ~ %
+tdefine !div %{ ^ fat "|" {back 40 /} ^ } %
+ndefine !div %^ "|/" ^%
+tdefine ang % { "\s-2\h'+.25m'\
+\v'-0.05m'\(sl\h'-.88m'\v'+0.05m'\l'.6m'\h'+.5m'\s+2"  } %
+ndefine ang % /_ %
+tdefine perpto % { ^"\fB\
+\s7\
+\l'0.80m'\
+\h'-0.66m'\
+\L'-0.80m'\
+\h'0.66m'\
+\v'0.80m'\
+\s0\
+\fP" ^ }  %
+ndefine perpto % L %
+tdefine l< % {  size -3 "\v'-.5m'\
+\(sl\v'+0.7m'\h'-0.87m'\e\v'-.2m'" } %
+ndefine l< % < %
+tdefine r> % { size -3 "\v'-.5m'\
+\e\v'+0.7m'\h'-.6m'\(sl\v'-.2m'\h'-.32m'" } %
+ndefine r> % > %
+define lset % { ^ "{" ~ } %
+define rset % { ~ "}" ^ } %
+tdefine [[ % { [ back 25 [ } %
+ndefine [[ % [[ %
+tdefine ]] % { ] back 25 ] } %
+ndefine ]] % ]] %
+define sthat % ~ | ~ %
+define || % "|" back 10 "|" %
+define lfloor % { \(lf ^ } %
+define rfloor % { ^ \(rf } %
+define lceil % { \(lc ^ } %
+define rceil % { ^ \(rc } %
+define !+- % { ^ up 10 fat { \(+- } ^ } %
+tdefine subset % { ^ \(sb ^ } %
+ndefine subset % C  %
+tdefine supset % { ^ \(sp ^ } %
+ndefine supset % "_)" sup "_" %
+tdefine ipsubset % { ^ up 10 \(sb back 72 down 10 "\l'0.35m'\h'0.35m'" ^ } %
+ndefine ipsubset % C_ %
+tdefine ipsupset % { ^ up 10 \(sp back 75 down 10 "\l'0.29m'\h'0.29m'" ^ } %
+ndefine ipsupset % "_" sup "_" "/)" %
+tdefine ipincl % { ~ "\v'-.35m'\s-1\z\h'+.1m'\
+\s-3\(or\s+3\h'-.2m'\v'-.35m'\z\
+\(em\v'.7m'\z\(em\v'.3m'\(em\v'-.55m'\s+1\h'+.1m'\v'+.3m'" ~ } %
+ndefine ipincl % C_ %
+tdefine incl % { ~ back 25 up 10 { size -4 up 10 { fat "|" } size -1
+{ back 24 down 28 fat "\(em" back 86 up 46 fat "\(em" } } ~ } %
+ndefine incl % ~ [ ~ %
+tdefine lub  % { ~ size -1
+{ fat "|" back 31 down 41 fat "\(em" back 13 fat "|" } ~ } %
+tdefine glb  % { ~ size -1
+{ fat "|" back 30 up 61  fat "\(em" back 13 fat "|" } ~ } %
+tdefine reals % { roman { I back 20 R }  } %
+ndefine reals % "RR"  %
+tdefine natnums % { roman { I back 20 N } } %
+ndefine natnums % "NN"  %
+define complex % { ~ { roman C back 50 up 20 { fat size -10 "|" }} ~ } %
+define rationals % { ~ { roman Q back 50 up 20 { fat size -10 "|" }} ~ } %
+define ints % { ~ { roman Z back 100 roman Z } ~ } %
+define xlist % { x sub 1 ,..., x sub n } %
+define xsubi % { x sub i } %
+define xsubj % { x sub j } %
+tdefine quarter % { size -3 {up 70 fwd 2 roman "1" }}
+back 54 { size +3 roman "/" } size -2 {back 60 up 10 roman "4" } %
+ndefine quarter % 1/4 %
+tdefine 3quarter % { size -3 {up 67 back 10 roman "3" }}
+back 54 { size +3 roman "/" } size -2 {back 60 up 5 roman "4" } %
+ndefine 3quarter % 3/4 %
+define where % { ~ bold "where" ~ } %
+define iff % { ~ roman "if and only if" ~ } %
+tdefine nbyn % { n back 10 times n } %
+ndefine nbyn % { n times n } %
+tdefine mbyn % { m back 15 times n } %
+ndefine mbyn % { m times n } %
+.EN

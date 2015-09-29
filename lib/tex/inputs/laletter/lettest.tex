@@ -1,0 +1,176 @@
+\documentstyle[12pt]{laletter}  % type size of 12 points
+
+%\documentstyle[11pt]{laletter} % type size of 11 points
+%\documentstyle{laletter}       % type size of 10 points
+%
+% This is a sample file to show you typical input for printing a
+% letter at the Los Alamos National Laboratory using LaTeX.
+% 
+% Notice that the '%' is the comment character.  The '%' and the
+% rest of the line are ignored by LaTeX.  All of the LaTeX letter
+% commands will appear in this file.  The ones not used by this
+% file will be commented out.  To look at the body of the letter,
+% skip down to the \begin{document} command.
+
+% When you print out the DVI file that is generated from this
+% source file, you will notice that the header doesn't look like
+% pre-printed letter paper.  That is because \headerfonts{texfonts}
+% is used here.  
+% 
+% If you are printing on a PostScript printer, use
+% \headerfonts{postscript} to get a good looking header.  The
+% \headerfonts{lafonts} command will also produce a nice header,
+% but you will need to have installed the LANL header fonts.  If
+% you use \headerfont{letterpaper}, put pre-printed letter paper
+% in your printer or copying machine.
+%
+  \headerfonts{texfonts}
+%  \headerfonts{postscript}
+%  \headerfonts{lafonts}
+%  \headerfonts{letterpaper}
+
+  \bodyfonts{texfonts}
+%  \bodyfonts{postscript}
+  \typeface{tt}
+%  \typeface{rm}
+
+% With no date command, today's date will be printed.
+%
+  \date{July 19, 1989}
+
+  \symbol{C-2}
+%  \serialnumber{5-213}
+  \mailstop{B253}
+  \telephone{(505) 665-0859\\(FTS) 843-0859}
+  \to{LaTeX Users \\
+      Los Alamos National Laboratory \\
+      Los Alamos, New Mexico 87545}
+  \salutation {Dear LaTeX users:}
+  \subject{typical letter}
+%  \reference{Office Procedures Manual}
+%  \nocallouts
+%  \thru{Alicia J. Lujan, Division Leader\\Life Physics Division}
+%  \via{Alicia J. Lujan, Division Leader\\Life Physics Division}
+
+  \complimentaryclose {Sincerely yours,}
+%  \complimentaryclose {Very truly yours,}
+  \signature {Steve Sydoriak}
+  \originator{SS}
+  \signer {SS}
+  \typist {SS}
+  \encas
+  \cy {CRMO (2), MS A111\\
+       File}
+
+%  \attachments{Graph, Gravitational Pull vs. Image Time, TP-3, MS B888}
+%  \attachmentas
+%  \attachmentsas
+%  \distribution{K. C. Jordan, C-5, MS B777\\
+%               T. S. Solomon, TP-1, MS B233}
+%  \enc{Letter, Smith to Jones, June 25, 1986\\
+%       Letter, Landau to Gresham, March 1, 1987}
+%  \attachmentspagebreak
+%  \cypagebreak
+%  \distributionpagebreak
+%  \encpagebreak
+
+%  \shortletterstyle % For letters of ten lines or less.
+%  \useattnasheader
+%  \usesubjectasheader
+%  \usetoasheader
+%  \useotherasheader{Library Management Meeting}
+
+%  \classlabel{u}  %  UNCLASSIFIED
+%  \classlabel{c}  %  CONFIDENTIAL
+%  \classlabel{s}  %  SECRET
+
+%  \expandtopmargin{.5in}
+%  \expandwidth{-.25in}
+
+%
+% If you use three or more \to commands, the addresses will be
+% split into two columns.  Use \leftto and \rightto if you want to
+% override this.
+%
+%  \leftto{Genie Electronics\\
+%     \attn{Mr. Robert Mercer, Sales Manager}\\
+%      P.O. Box 8501\\
+%      Midwest City, OK 73110}
+%  \leftto{John Binnington, Manager\\Technical Information Division\\
+%    Brookhaven National Laboratory\\Associated Universities, Inc.\\
+%    Upton, Long Island, NY  11973}
+%  \rightto{Juanita L. Garcia\\Library Science Specialist\\Technical
+%    Library\\Sandia National Laboratories\\Albuquerque, NM  87115}
+
+%  \letterpaperhcorr{4pt}
+%  \letterpapervcorr{-6pt}
+
+%  \makemaillabels
+%  \returnaddress{Ben Boyd \\ Los Alamos National Laboratory \\
+%                 Group AB-11, MS D444 \\
+%                 Los Alamos, NM 87545}
+%  \skiplabels{4}
+
+% The following default values set things up for producing
+% labels in two columns of seven 1-1/2" X 4" labels each,
+% suitable for reproducing onto Avery brand number 5362 address
+% labels.
+
+%  \maillabelheight{1.5in}
+%  \maillabeltopmargin{.25in}
+
+%  For 1" labels, use
+%  \maillabelheight{1in}
+%  \maillabeltopmargin{.5in}
+
+%  For 2" labels,use
+%  \maillabelheight{2in}
+%  \maillabeltopmargin{.5in}
+
+\begin{document}
+\opening
+
+This example shows what a typical letter might look like.  It uses
+the texfonts option for the header and the body of the letter.
+The texfonts option calls for use of TeX's Computer Modern fonts.
+The body has the typewriter typeface with a point size of 12.
+
+Remember that LaTeX interprets a blank line as the start of a new
+paragraph, and that any of the special characters \#,\$,\%, \&,
+\{, and \} must be preceded by a backslash.  To produce double
+quotes in typewriter typeface, use the " key on your keyboard.  To
+produce double quotes in Roman typeface, use `` and '' instead. 
+
+The file named lettest.tex that was used to print this letter can
+be used as a template to write your own letters.  All of the
+preamble commands that can be used by LaTeX letters are shown in
+lettest.tex.  Many of the commands are commented out.  They can be
+activated by removing the \% at the beginning of the line.
+
+The spacing and indentation of the preamble commands make the file
+easier to read; the outcome of your file is not affected.  The
+preamble begins with the $\backslash$documentstyle command and
+continues to the $\backslash$begin\{document\} command where the
+document section starts.  Your file must have a
+$\backslash$end\{document\} command to indicate the end of the
+letter.
+
+The texfonts option was chosen for the header of this letter
+because the Computer Modern fonts are available on any
+installation of TeX\@.  Use the postscript, lafonts, or
+letterpaper options in the $\backslash$headerfonts command to
+obtain a good looking header.
+
+There is a draft version of the {\em LaTeX Letter Reference} on CFS
+in any subdirectory of /latexletter.  It is an stexted, ASCII file
+that can be viewed on any screen or printed on any printer.
+The final version of the {\em LaTeX Letter Reference} will be
+available from the Computer Information Center in September or
+October.
+
+See {\em LaTeX, A Document Preparation System} by Leslie
+Lamport to learn all about the LaTeX commands that you can put
+in the body of your letter.
+
+\closing
+\end{document}

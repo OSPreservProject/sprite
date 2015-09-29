@@ -1,0 +1,66 @@
+
+
+
+NEWACCT                   User Commands                   NEWACCT
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     newacct - Request a new sprite account
+
+SSYYNNOOPPSSIISS
+     nneewwaacccctt
+
+DDEESSCCRRIIPPTTIIOONN
+     This program prompts the user for the information needed  to
+     create  a new user account.  It asks for the login id of the
+     new user, the group, office  number,  home  and  work  phone
+     number,  and  the project that the account will be used for.
+     Once all the information is collected, it is mailed  to  the
+     system administer, who will create the account.
+
+
+KKEEYYWWOORRDDSS
+     account, request, user
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  March 2, 1990                    1
+
+
+

@@ -1,0 +1,4 @@
+
+
+          log10 expr
+               Returns the logarithm base 10 of expr.

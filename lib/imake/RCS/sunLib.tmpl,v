@@ -1,0 +1,102 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     92.08.20.16.58.32;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.10.22.13.47.36;  author rab;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@checking in for rab -- jhh
+@
+text
+@XCOMM $XConsortium: sunLib.tmpl,v 1.11 91/07/31 11:32:08 rws Exp $
+
+/*
+ * SunOS shared library template
+ */
+
+#ifndef SharedXlibRev
+#define SharedXlibRev 4.10
+#endif
+#ifndef SharedOldXRev
+#define SharedOldXRev 4.10
+#endif
+#ifndef SharedXtRev
+#define SharedXtRev 4.10
+#endif
+#ifndef SharedXawRev
+#define SharedXawRev 5.0
+#endif
+#ifndef SharedXmuRev
+#define SharedXmuRev 4.10
+#endif
+#ifndef SharedXinputRev
+#define SharedXinputRev 4.10
+#endif
+
+SHLIBLDFLAGS = SharedLibraryLoadFlags
+PICFLAGS = PositionIndependentCFlags
+
+/*
+ * and now a little bit of magic for using imake without source tree; if we
+ * are using shared libraries, we really do not need to depend on anything
+ */
+#if SharedLibX
+          DEPXLIB = $(DEPEXTENSIONLIB) /* _UseCat($(USRLIBDIR),$(XLIBSRC),/libX11.sa.$(SOXLIBREV)) */
+             XLIB = $(EXTENSIONLIB) _Use(-lX11,-L$(XLIBSRC) -lX11)
+#endif
+#if SharedLibXmu
+        DEPXMULIB = _UseCat($(USRLIBDIR),$(XMUSRC),/libXmu.sa.$(SOXMUREV))
+           XMULIB = _Use(-lXmu,-L$(XMUSRC) -lXmu)
+#endif
+#if SharedOldLibX
+       DEPOLDXLIB = /* _UseCat($(USRLIBDIR),$(OLDXLIBSRC),/liboldX.sa.$(SOOLDXREV)) */
+          OLDXLIB = _Use(-loldX,-L$(OLDXLIBSRC) -loldX)
+#endif
+#if SharedLibXt
+      DEPXTOOLLIB = _UseCat($(USRLIBDIR),$(TOOLKITSRC),/libXt.sa.$(SOXTREV))
+         XTOOLLIB = _Use(-lXt,-L$(TOOLKITSRC) -lXt)
+#endif
+#if SharedLibXaw
+        DEPXAWLIB = _UseCat($(USRLIBDIR),$(AWIDGETSRC),/libXaw.sa.$(SOXAWREV))
+           XAWLIB = _Use(-lXaw,-L$(AWIDGETSRC) -lXaw)
+#endif
+#if SharedLibXinput
+        DEPXILIB = /* _UseCat($(USRLIBDIR),$(XILIBSRC),/libXi.sa.$(SOXINPUTREV)) */
+           XILIB = _Use(-lXi,-L$(XILIBSRC) -lXi)
+#endif
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@a21 3
+#ifndef SharedXextRev
+#define SharedXextRev 4.10
+#endif
+a32 4
+#if SharedLibXext
+  DEPEXTENSIONLIB = /* _UseCat($(USRLIBDIR),$(EXTENSIONSRC)/lib,/libXext.sa.$(SOXEXTREV)) */
+     EXTENSIONLIB = _Use(-lXext,-L$(EXTENSIONSRC)/lib -lXext)
+#endif
+@

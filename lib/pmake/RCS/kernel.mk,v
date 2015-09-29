@@ -1,0 +1,2848 @@
+head     1.91;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.91
+date     92.11.27.17.17.37;  author jhh;  state Exp;
+branches ;
+next     1.90;
+
+1.90
+date     92.06.15.21.48.47;  author jhh;  state Exp;
+branches ;
+next     1.89;
+
+1.89
+date     92.06.15.21.32.54;  author jhh;  state Exp;
+branches ;
+next     1.88;
+
+1.88
+date     92.06.10.13.05.17;  author jhh;  state Exp;
+branches ;
+next     1.87;
+
+1.87
+date     92.04.13.18.26.04;  author jhh;  state Exp;
+branches ;
+next     1.86;
+
+1.86
+date     92.03.13.14.23.21;  author jhh;  state Exp;
+branches ;
+next     1.85;
+
+1.85
+date     92.01.06.12.36.28;  author kupfer;  state Exp;
+branches ;
+next     1.84;
+
+1.84
+date     91.12.13.13.40.25;  author jhh;  state Exp;
+branches ;
+next     1.83;
+
+1.83
+date     91.12.13.13.31.11;  author jhh;  state Exp;
+branches ;
+next     1.82;
+
+1.82
+date     91.10.18.10.23.58;  author jhh;  state Exp;
+branches ;
+next     1.81;
+
+1.81
+date     91.10.17.13.44.47;  author jhh;  state Exp;
+branches ;
+next     1.80;
+
+1.80
+date     91.10.08.23.05.32;  author rab;  state Exp;
+branches ;
+next     1.79;
+
+1.79
+date     91.08.15.11.46.50;  author jhh;  state Exp;
+branches ;
+next     1.78;
+
+1.78
+date     91.04.30.12.09.21;  author kupfer;  state Exp;
+branches ;
+next     1.77;
+
+1.77
+date     91.04.26.17.16.42;  author jhh;  state Exp;
+branches ;
+next     1.76;
+
+1.76
+date     90.11.15.23.14.53;  author shirriff;  state Exp;
+branches ;
+next     1.75;
+
+1.75
+date     90.11.02.08.37.49;  author rab;  state Exp;
+branches ;
+next     1.74;
+
+1.74
+date     90.08.17.15.55.20;  author douglis;  state Exp;
+branches ;
+next     1.73;
+
+1.73
+date     90.08.17.15.54.44;  author douglis;  state Exp;
+branches ;
+next     1.72;
+
+1.72
+date     90.07.05.21.30.37;  author jhh;  state Exp;
+branches ;
+next     1.71;
+
+1.71
+date     90.07.05.21.28.12;  author douglis;  state Exp;
+branches ;
+next     1.70;
+
+1.70
+date     90.04.21.11.34.43;  author ouster;  state Exp;
+branches ;
+next     1.69;
+
+1.69
+date     90.04.13.14.17.54;  author rab;  state Exp;
+branches ;
+next     1.68;
+
+1.68
+date     90.03.14.13.49.25;  author jhh;  state Exp;
+branches ;
+next     1.67;
+
+1.67
+date     90.03.12.23.25.23;  author jhh;  state Exp;
+branches ;
+next     1.66;
+
+1.66
+date     90.03.08.17.20.47;  author rab;  state Exp;
+branches ;
+next     1.65;
+
+1.65
+date     90.03.08.16.51.25;  author douglis;  state Exp;
+branches ;
+next     1.64;
+
+1.64
+date     90.03.05.11.01.06;  author douglis;  state Exp;
+branches ;
+next     1.63;
+
+1.63
+date     89.11.30.13.56.23;  author rab;  state Exp;
+branches ;
+next     1.62;
+
+1.62
+date     89.10.09.06.55.31;  author rab;  state Exp;
+branches ;
+next     1.61;
+
+1.61
+date     89.10.02.10.04.59;  author rab;  state Exp;
+branches ;
+next     1.60;
+
+1.60
+date     89.09.27.17.59.24;  author douglis;  state Exp;
+branches ;
+next     1.59;
+
+1.59
+date     89.09.27.12.31.36;  author douglis;  state Exp;
+branches ;
+next     1.58;
+
+1.58
+date     89.09.15.07.33.35;  author rab;  state Exp;
+branches ;
+next     1.57;
+
+1.57
+date     89.09.13.07.48.21;  author douglis;  state Exp;
+branches ;
+next     1.56;
+
+1.56
+date     89.09.06.04.54.10;  author rab;  state Exp;
+branches ;
+next     1.55;
+
+1.55
+date     89.08.31.16.10.46;  author rab;  state Exp;
+branches ;
+next     1.54;
+
+1.54
+date     89.08.31.13.09.13;  author jhh;  state Exp;
+branches ;
+next     1.53;
+
+1.53
+date     89.07.21.18.29.33;  author douglis;  state Exp;
+branches ;
+next     1.52;
+
+1.52
+date     89.07.20.17.36.00;  author mgbaker;  state Exp;
+branches ;
+next     1.51;
+
+1.51
+date     89.07.13.13.53.31;  author nelson;  state Exp;
+branches ;
+next     1.50;
+
+1.50
+date     89.06.23.23.45.26;  author jhh;  state Exp;
+branches ;
+next     1.49;
+
+1.49
+date     89.05.26.08.55.28;  author ouster;  state Exp;
+branches ;
+next     1.48;
+
+1.48
+date     89.05.26.08.42.21;  author rab;  state Exp;
+branches ;
+next     1.47;
+
+1.47
+date     89.03.23.15.54.52;  author douglis;  state Exp;
+branches ;
+next     1.46;
+
+1.46
+date     89.03.23.15.47.10;  author mendel;  state Exp;
+branches ;
+next     1.45;
+
+1.45
+date     89.01.06.09.21.44;  author ouster;  state Exp;
+branches ;
+next     1.44;
+
+1.44
+date     88.12.12.16.27.25;  author ouster;  state Exp;
+branches ;
+next     1.43;
+
+1.43
+date     88.12.04.13.50.35;  author ouster;  state Exp;
+branches ;
+next     1.42;
+
+1.42
+date     88.11.15.12.15.10;  author douglis;  state Exp;
+branches ;
+next     1.41;
+
+1.41
+date     88.11.11.23.54.06;  author jhh;  state Exp;
+branches ;
+next     1.40;
+
+1.40
+date     88.11.05.16.38.31;  author douglis;  state Exp;
+branches ;
+next     1.39;
+
+1.39
+date     88.10.31.12.41.12;  author mendel;  state Exp;
+branches ;
+next     1.38;
+
+1.38
+date     88.08.26.15.14.56;  author ouster;  state Exp;
+branches ;
+next     1.37;
+
+1.37
+date     88.08.26.14.35.47;  author ouster;  state Exp;
+branches ;
+next     1.36;
+
+1.36
+date     88.08.23.22.34.09;  author douglis;  state Exp;
+branches ;
+next     1.35;
+
+1.35
+date     88.08.23.16.39.47;  author douglis;  state Exp;
+branches ;
+next     1.34;
+
+1.34
+date     88.08.20.09.55.39;  author ouster;  state Exp;
+branches ;
+next     1.33;
+
+1.33
+date     88.08.19.15.50.37;  author ouster;  state Exp;
+branches ;
+next     1.32;
+
+1.32
+date     88.08.18.15.52.27;  author ouster;  state Exp;
+branches ;
+next     1.31;
+
+1.31
+date     88.08.18.15.20.14;  author ouster;  state Exp;
+branches ;
+next     1.30;
+
+1.30
+date     88.08.12.10.56.09;  author ouster;  state Exp;
+branches ;
+next     1.29;
+
+1.29
+date     88.08.12.10.54.08;  author brent;  state Exp;
+branches ;
+next     1.28;
+
+1.28
+date     88.08.11.11.12.18;  author douglis;  state Exp;
+branches ;
+next     1.27;
+
+1.27
+date     88.08.05.10.15.06;  author ouster;  state Exp;
+branches ;
+next     1.26;
+
+1.26
+date     88.08.01.16.31.01;  author ouster;  state Exp;
+branches ;
+next     1.25;
+
+1.25
+date     88.07.27.17.44.13;  author nelson;  state Exp;
+branches ;
+next     1.24;
+
+1.24
+date     88.07.27.17.35.56;  author ouster;  state Exp;
+branches ;
+next     1.23;
+
+1.23
+date     88.07.26.11.36.58;  author douglis;  state Exp;
+branches ;
+next     1.22;
+
+1.22
+date     88.07.05.17.03.41;  author mendel;  state Exp;
+branches ;
+next     1.21;
+
+1.21
+date     88.07.02.12.12.26;  author ouster;  state Exp;
+branches ;
+next     1.20;
+
+1.20
+date     88.06.28.12.01.34;  author douglis;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     88.06.25.18.28.05;  author ouster;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     88.06.21.17.47.47;  author ouster;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     88.06.21.17.46.33;  author ouster;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     88.06.21.17.33.48;  author douglis;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     88.06.21.17.17.42;  author douglis;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     88.06.17.14.52.55;  author ouster;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     88.06.17.08.33.54;  author ouster;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     88.06.15.17.13.55;  author ouster;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     88.06.15.15.24.45;  author ouster;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     88.06.13.16.39.21;  author ouster;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     88.06.08.08.29.21;  author ouster;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     88.06.06.17.22.49;  author ouster;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.06.05.17.47.58;  author ouster;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.06.05.17.40.26;  author ouster;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.05.17.13.33.15;  author deboor;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.04.29.18.33.34;  author deboor;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.04.29.18.26.52;  author deboor;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.03.28.12.56.42;  author deboor;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.03.24.19.46.47;  author deboor;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Included makefile for kernel module source directory
+@
+
+
+1.91
+log
+@added separate flags optimization and debugging flags for debug and default
+targets. Support for personal lint libraries.
+@
+text
+@#
+# This is a library Makefile that is included by the Makefile's for
+# modules of the Sprite kernel.  The file that includes this one should
+# already have defined the following variables:
+# Variables:
+#	NAME		module name
+#	SRCS		all sources for the module for the current target
+#			machine
+#	ALLSRCS		all sources for the module, including all sources
+#			for all target machines
+#	ALLHDRS		all headers for the module
+#	OBJS		object files from which to create the module
+#	CLEANOBJS	object files to be removed as part of "make clean"
+#			(need not just be object files)
+#	HDRS		all header files for the module
+#	PUBHDRS		publicly-available headers for the module (this
+#			contains only machine-independent headers)
+#	MDPUBHDRS	machine-dependent public headers for the module
+#			(for the current TM)
+#	TM		target machine type for object files etc.
+#	MACHINES	list of all target machines currently available
+#			for this program.
+#
+# "Make install" installs the source before the object.  This is because
+# make depend may get confused and have files depend on Include files rather
+# than header files in this directory, and doing an installhdrs after
+# making the object files might result in remaking all the object files a
+# second time.  
+#
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.90 92/06/15 21:48:47 jhh Exp $ SPRITE (Berkeley)
+#
+
+#
+# Default certain variables so that Pmake won't barf during "make newtm"
+# operations.
+#
+CLEANOBJS	?=
+HDRS		?=
+MDPUBHDRS	?=
+OBJS		?=
+SRCS		?=
+INSTFILES	?=
+SACREDOBJS	?=
+
+#
+# Important directories.
+#
+BINDIR		?= /sprite/cmds.$(MACHINE)
+INCLUDEDIR	?= /sprite/src/kernel/Include
+INSTALLDIR	?= /sprite/src/kernel/Installed/$(NAME)
+LIBDIR		?= /sprite/src/kernel/$(TM).md
+LINTDIR		?= /sprite/src/kernel/Lint/$(TM).md
+PROFDIR		?= /sprite/src/kernel/Profiled/$(TM).md
+USERINCLUDEDIR	?= /sprite/lib/include
+SNAPDIR		?= /sprite/src/kernel/Snapshots
+
+CSRCS		?= $(SRCS:M*.c)
+SSRCS		?= $(SRCS:M*.s)
+POBJS		?= $(OBJS:S/.o$/.po/g)
+GOBJS		?= $(OBJS:S/.o$/.go/g)
+ALLCSRCS	?= $(ALLSRCS:M*.c)
+MDHDRS		?= $(HDRS:M*.md/*)
+MDSRCS		?= $(SRCS:M*.md/*)
+MDINSTFILES	?= $(INSTFILES:M*.md/*)
+
+#
+# Define search paths for libraries, include files and lint libraries
+#
+.PATH.a		:
+.PATH.h		:
+#ifdef FIRSTHDRDIRS
+.PATH.h		: $(FIRSTHDRDIRS)
+#endif
+.PATH.h		: $(TM).md . $(INCLUDEDIR)/$(TM).md $(INCLUDEDIR) \
+			$(USERINCLUDEDIR)/$(TM).md $(USERINCLUDEDIR) 
+.PATH.ln	: 
+#ifdef MYLINTDIR
+.PATH.ln	: $(MYLINTDIR)
+#endif
+.PATH.ln	: $(LINTDIR)
+.PATH.c		:
+.PATH.c		: $(TM).md
+.PATH.s		:
+.PATH.s		: $(TM).md
+
+#ifdef MYLINTDIR
+LINTINSTALLDIR = $(MYLINTDIR)
+#else
+LINTINSTALLDIR = $(LINTDIR)
+#endif 
+
+#
+# System programs -- assign conditionally so they may be redefined in
+# including makefile.
+#
+AS		?= $(BINDIR)/as
+CC		?= $(BINDIR)/cc
+CP		?= $(BINDIR)/cp
+CPP		?= $(BINDIR)/cpp -traditional -$
+CTAGS		?= $(BINDIR)/ctags
+ETAGS		?= /emacs/cmds/etags
+LD		?= $(BINDIR)/ld
+LINT		?= $(BINDIR)/lint
+MV		?= $(BINDIR)/mv
+MAKEDEPEND	?= $(BINDIR)/makedepend
+MKDIR		?= $(BINDIR)/mkdir
+RDIST		?= $(BINDIR)/rdist
+RM		?= $(BINDIR)/rm
+SCVS		?= $(BINDIR)/scvs
+SED		?= $(BINDIR)/sed
+TEST            ?= $(BINDIR)/test
+TOUCH		?= $(BINDIR)/touch
+UPDATE		?= $(BINDIR)/update
+
+#
+# Figure out what stuff we'll pass to sub-makes.
+#
+PASSVARS	= 'INSTALLDIR=$(INSTALLDIR)' $(.MAKEFLAGS)
+#ifdef		XCFLAGS
+PASSVARS	+= 'XCFLAGS=$(XCFLAGS)'
+#endif
+#ifdef		XAFLAGS
+PASSVARS	+= 'XAFLAGS=$(XAFLAGS)'
+#endif
+
+#
+# Flags. These are ones that are needed by *all* modules. Any other
+# ones should be added with the += operator in the local.mk makefile.
+# The FLAGS variables are defined with the += operator in case this file
+# is included after the main makefile has already defined them...
+#
+
+#include	<tm.mk>
+CTFLAGS		?= -wtd
+LINTFLAGS	?= -m$(TM)
+LINTFLAGS	+= -S -M -n -u -D$(TM)
+XCFLAGS		?=
+XAFLAGS		?=
+
+#include <debugflags.mk>
+
+# If we're compiling with gcc (i.e., on Suns), ask gcc to give all
+# warning messages.
+
+#if empty(TM:Mds3100) && empty(TM:Mds5000)
+GFLAG += -Wall
+#endif
+
+CFLAGS		+= -DKERNEL $(TMCFLAGS) $(XCFLAGS) 
+
+#
+# The .INCLUDES variable already includes directories that should be
+# used by cc and other programs by default.  Remove them, just so that
+# the command lines look cleaner.
+#
+# 
+# Since the dec compiler doesn't include /sprite/lib/include we must leave
+# the path as is when TM=ds3100.  Also the mips compiler doesn't include
+# /sprite/lib/include either so add these in for both as and cc.
+# For the sun4c, there is a problem with user include files pointing at
+# kernel include files, since the compiler will cause this sort of reference
+# to point at sun4 instead of sun4c, unless we specifically keep the reference
+# on the compile line.
+#
+
+#if !empty(TM:Mds3100) || !empty(TM:Mds5000)
+CFLAGS          += $(.INCLUDES)
+AFLAGS          += $(.INCLUDES) $(TMAFLAGS) $(XAFLAGS) -DKERNEL
+#else if !empty(TM:Msun4c)
+CFLAGS          += $(.INCLUDES)
+AFLAGS		+= $(TMAFLAGS) $(XAFLAGS) 
+#else
+CFLAGS		+= $(.INCLUDES:S|^-I/sprite/lib/include$||g:S|^-I/sprite/lib/include/$(TM).md$||g)
+AFLAGS		+= $(TMAFLAGS) $(XAFLAGS) 
+#endif
+
+#
+# Floating point coprocessor instructions should not be used
+# inside the kernel.
+#
+
+#if !empty(TM:Msun3) || !empty(TM:Mcleansun3)
+CFLAGS          += -msoft-float
+#endif
+
+#
+# Transformation rules: these have special features to place .o files
+# in md subdirectories, run preprocessor over .s files, and generate
+# .po files for profiling.
+#
+##	$(CC) -S $(CFLAGS) -p -DPROFILE $(.IMPSRC)
+##	$(AS) -o $(.TARGET) $(AFLAGS) $(.PREFIX).s
+##	$(RM) -f $(.PREFIX).s
+
+.SUFFIXES	: .go .po
+
+.c.o		:
+	$(RM) -f $(.TARGET)
+	$(CC) $(CFLAGS) $(OFLAG) $(GFLAG) -c $(.IMPSRC) -o $(.TARGET)
+.c.go		:
+	$(RM) -f $(.TARGET)
+	$(CC) $(CFLAGS)  $(GDFLAG) -c $(.IMPSRC) -o $(.TARGET)
+.c.po		:
+	$(RM) -f $(.TARGET)
+	$(CC) $(CFLAGS) $(OFLAG) $(GFLAG) -p -DPROFILE -c $(.IMPSRC) -o $(.TARGET)
+.s.po .s.o :
+#if empty(TM:Mds3100) && empty(TM:Mds5000)
+	$(CPP) $(CFLAGS:M-[IDU]*) -m$(TM) -D$(TM) -D_ASM $(.IMPSRC) > $(.PREFIX).pp
+	$(AS) -o $(.TARGET) $(AFLAGS) $(AGFLAG) $(.PREFIX).pp
+	$(RM) -f $(.PREFIX).pp
+#else
+	$(RM) -f $(.TARGET)
+	$(AS) $(AFLAGS) $(AGFLAG) $(.IMPSRC) -o $(.TARGET)
+#endif
+
+.s.go :
+#if empty(TM:Mds3100) && empty(TM:Mds5000)
+	$(CPP) $(CFLAGS:M-[IDU]*) -m$(TM) -D$(TM) -D_ASM $(.IMPSRC) > $(.PREFIX).pp
+	$(AS) -o $(.TARGET) $(AFLAGS) $(AGDFLAG) $(.PREFIX).pp
+	$(RM) -f $(.PREFIX).pp
+#else
+	$(RM) -f $(.TARGET)
+	$(AS) $(AFLAGS) $(AGDFLAG) $(.IMPSRC) -o $(.TARGET)
+#endif
+
+
+#
+# MAKEDEPEND usage:
+#	<dependency-file> : <sources> MAKEDEPEND
+#
+# Generate dependency file suitable for inclusion in future makes.  Must
+# mung the dependency file in two ways:  a) add a .md prefix on all the .o
+# file names;  b) for each entry for a .o file, generate an equivalent
+# entry for a .po file.
+
+MAKEDEPEND	: .USE
+	@@$(TOUCH) $(DEPFILE)
+#if empty(TM:Mds3100)  && empty(TM:Mds5000)
+	$(MAKEDEPEND) $(CFLAGS:M-[ID]*) -m $(TM) -w50 -f $(DEPFILE) $(.ALLSRC)
+#else
+	$(MAKEDEPEND) $(CFLAGS:M-[ID]*:S|^-I/sprite/lib/include$||g:S|^-I/sprite/lib/include/$(TM).md$||g) -m $(TM) -w50 -f $(DEPFILE) $(.ALLSRC)
+#endif
+	@@$(MV) -f $(DEPFILE) $(DEPFILE).tmp
+	@@$(SED) -e '/^#/!s|^\([^:]*\)\.o[ 	]*:|$(TM).md/\1.po $(TM).md/\1.go $(TM).md/&|' <$(DEPFILE).tmp > $(DEPFILE)
+	@@$(RM) -f $(DEPFILE).tmp
+
+#
+# Define the main targets.
+#
+
+$(TM).md/$(NAME).o	: $(OBJS)
+	$(RM) -f $(.TARGET)
+	$(LD) -r $(LDFLAGS) $(.ALLSRC) -o $(.TARGET)
+$(TM).md/$(NAME).go	: $(GOBJS)
+	$(RM) -f $(.TARGET)
+	$(LD) -r $(LDFLAGS) $(.ALLSRC) -o $(.TARGET)
+default			: $(TM).md/$(NAME).o
+debug			: $(TM).md/$(NAME).go
+
+clean tidy		:: .NOEXPORT
+	$(RM) -f $(CLEANOBJS) $(CLEANOBJS:S/.o$/.po/g) \
+		$(CLEANOBJS:S/.o$/.go/g) $(TM).md/$(NAME).o \
+		$(TM).md/$(NAME).po *~ $(TM).md/*~
+
+DEPFILE = $(TM).md/dependencies.mk
+depend			: $(DEPFILE)
+$(DEPFILE)		! $(SRCS:M*.c) $(SRCS:M*.s) MAKEDEPEND
+
+install			:: installobj installhdrs
+#if !empty(TM:Mds3100) || !empty(TM:Mds5000)
+install			:: instlint 
+#endif
+
+installhdrs		::
+	@@$(UPDATE) -t -n $(PUBHDRS) $(INCLUDEDIR)
+#if !empty(MDPUBHDRS)
+	@@-$(MKDIR) $(INCLUDEDIR)/$(TM).md > /dev/null 2>&1
+	@@$(UPDATE) -t -n $(MDPUBHDRS) $(INCLUDEDIR)/$(TM).md
+#endif
+instlint		:: $(LINTINSTALLDIR)/$(NAME).ln
+installobj		:: $(LIBDIR)/$(NAME).o tags TAGS
+installdbg		:: $(LIBDIR)/$(NAME).go
+
+$(LIBDIR)/$(NAME).o	: $(TM).md/$(NAME).o
+	$(UPDATE) -l -n $(TM).md/$(NAME).o $(LIBDIR)
+$(LIBDIR)/$(NAME).go	: $(TM).md/$(NAME).go
+	$(UPDATE) -l -n $(TM).md/$(NAME).go $(LIBDIR)
+
+lint			: $(TM).md/lint
+$(TM).md/lint		: $(LINTLIBS) $(CSRCS) 
+	$(RM) -f $(.TARGET)
+	$(LINT) $(LINTFLAGS) $(CFLAGS:M-[IDU]*) $(.ALLSRC) \
+		> $(.TARGET) 2>& 1
+$(TM).md/llib-l$(NAME).ln	: $(CSRCS) $(HDRS)
+	$(RM) -f $(.TARGET)
+	$(RM) -f llib-l$(NAME).ln
+	$(LINT) -C$(NAME) $(CFLAGS:M-[IDU]*) $(LINTFLAGS) $(.ALLSRC:M*.c)
+	$(MV) llib-l$(NAME).ln $(.TARGET)
+$(LINTINSTALLDIR)/$(NAME).ln	: $(TM).md/llib-l$(NAME).ln
+	$(RM) -f $(.TARGET)
+	$(CP) $(TM).md/llib-l$(NAME).ln $(.TARGET)
+
+mkmf			!
+	mkmf
+
+newtm			! .SILENT
+	if $(TEST) -d $(TM).md; then
+	    true
+	else
+	    mkdir $(TM).md;
+	    chmod 775 $(TM).md;
+	    mkmf -m$(TM)
+	fi
+
+profile			:: $(TM).md/$(NAME).po
+$(TM).md/$(NAME).po	: $(POBJS)
+	$(RM) -f $(.TARGET)
+	$(LD) -r $(LDFLAGS) $(.ALLSRC) -o $(.TARGET)
+
+tags			:: $(ALLCSRCS) $(HDRS)
+	$(CTAGS) $(CTFLAGS) $(ALLCSRCS) $(HDRS)
+
+TAGS			:: $(ALLCSRCS) $(HDRS)
+	$(ETAGS) $(ALLCSRCS)
+
+DISTFILES	?=
+
+dist            !
+#if defined(DISTDIR) && !empty(DISTDIR)
+	for i in Makefile local.mk $(TM).md/md.mk \
+	    $(DISTFILES) $(SRCS) $(HDRS) $(SACREDOBJS)
+	do
+	if $(TEST) -e $${i}; then
+	    $(UPDATE)  -l -n $${i} $(DISTDIR)/$${i} ;else true; fi
+	done
+#else
+	@@echo "Sorry, no distribution directory defined"
+#endif
+
+#include	<all.mk>
+
+# For rdist, take the standard kernel makefile.
+# Allow the user to specify extra flags (like -v) for the rdist via
+# the DISTFLAGS variable.
+
+DISTFILE 	?= /sprite/lib/misc/distfile.kernel
+DISTFLAGS	?= 
+
+Rdist		:: 
+	$(RDIST) $(DISTFLAGS) -f $(DISTFILE) -d DIR=`pwd`
+
+.MAKEFLAGS	: -C		# No compatibility needed
+
+update		::
+	$(SCVS) update
+
+SNAPFLAGS	?= 
+
+snapshot		::
+#ifdef SNAPVERSION
+	if $(TEST) -f $(SNAPDIR)/$(SNAPVERSION)/$(NAME)/.ssdone; then
+	    true
+	else
+	    for i in $(ALLSRCS) $(ALLHDRS) 
+	    do 
+	 $(UPDATE) $(SNAPFLAGS) $${i} $(SNAPDIR)/$(SNAPVERSION)/$(NAME)/$${i} 
+	    done
+	    $(TOUCH) $(SNAPDIR)/$(SNAPVERSION)/$(NAME)/.ssdone
+	fi
+#else
+	@@echo "You must specify a snapshot version number via SNAPVERSION
+#endif
+
+listsrcs:
+#ifdef LISTFILE
+	@@echo $(ALLSRCS) $(ALLHDRS) | tr ' ' '\012' >> $(LISTFILE)
+#else
+	@@echo $(ALLSRCS) $(ALLHDRS)
+#endif
+
+@
+
+
+1.90
+log
+@added FIRSTHDRDIRS
+@
+text
+@d30 1
+a30 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.89 92/06/15 21:32:54 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+d77 3
+d86 6
+d149 1
+a149 1
+CFLAGS		+= $(GFLAG) -DKERNEL $(TMCFLAGS) $(XCFLAGS) 
+d199 1
+a199 1
+	$(CC) $(CFLAGS) $(OFLAG) -c $(.IMPSRC) -o $(.TARGET)
+d202 1
+a202 1
+	$(CC) $(CFLAGS)  -c $(.IMPSRC) -o $(.TARGET)
+d205 12
+a216 2
+	$(CC) $(CFLAGS) $(OFLAG) -p -DPROFILE -c $(.IMPSRC) -o $(.TARGET)
+.s.po .s.o .s.go	:
+d219 1
+a219 1
+	$(AS) -o $(.TARGET) $(AFLAGS) $(.PREFIX).pp
+d223 1
+a223 1
+	$(AS) $(AFLAGS) $(.IMPSRC) -o $(.TARGET)
+d226 1
+d244 1
+a244 1
+	@@$(SED) -e '/^#/!s|^\([^:]*\)\.o[ 	]*:|$(TM).md/\1.po $(TM).md/&|' <$(DEPFILE).tmp > $(DEPFILE)
+d280 1
+a280 1
+instlint		:: $(LINTDIR)/$(NAME).ln
+d299 1
+a299 1
+$(LINTDIR)/$(NAME).ln	: $(TM).md/llib-l$(NAME).ln
+d315 2
+a316 2
+profile			:: $(PROFDIR)/$(NAME).o
+$(PROFDIR)/$(NAME).o	: $(POBJS)
+@
+
+
+1.89
+log
+@got rid of jhh and cleands3100 machine types, "clean" target removes
+.go files
+@
+text
+@d30 1
+a30 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.88 92/06/10 13:05:17 jhh Exp $ SPRITE (Berkeley)
+d71 3
+@
+
+
+1.88
+log
+@added debug target
+@
+text
+@d30 1
+a30 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.87 92/04/13 18:26:04 jhh Exp $ SPRITE (Berkeley)
+d61 1
+a61 1
+ALLCSRCS	?= $(ALLSRCS:M*.c:Nclean*:Njhh*)
+d133 1
+a133 1
+#if empty(TM:Mds3100) && empty(TM:Mjhh) && empty(TM:Mcleands3100) && empty(TM:Mds5000)
+d154 1
+a154 1
+#if !empty(TM:Mds3100) || !empty(TM:Mjhh) || !empty(TM:Mcleands3100) || !empty(TM:Mds5000)
+d215 1
+a215 1
+#if empty(TM:Mds3100)  && empty(TM:Mjhh) && empty(TM:Mcleands3100) && empty(TM:Mds5000)
+d238 2
+a239 1
+	$(RM) -f $(CLEANOBJS) $(CLEANOBJS:S/.o$/.po/g) $(TM).md/$(NAME).o \
+@
+
+
+1.87
+log
+@changed the way snapshots are done
+@
+text
+@d30 1
+a30 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.86 92/03/13 14:23:21 jhh Exp $ SPRITE (Berkeley)
+d60 1
+d137 1
+a137 1
+CFLAGS		+= $(GFLAG) $(OFLAG) -DKERNEL $(TMCFLAGS) $(XCFLAGS)
+d183 1
+a183 1
+.SUFFIXES	: .po
+d187 4
+a190 1
+	$(CC) $(CFLAGS) -c $(.IMPSRC) -o $(.TARGET)
+d193 3
+a195 3
+	$(CC) $(CFLAGS) -p -DPROFILE -c $(.IMPSRC) -o $(.TARGET)
+.s.po .s.o	:
+#if empty(TM:Mds3100) && empty(TM:Mjhh) && empty(TM:Mcleands3100) && empty(TM:Mds5000)
+d231 3
+d235 1
+d258 2
+d262 2
+@
+
+
+1.86
+log
+@header files are now passed to ctags, and the -d option makes it produce
+tags for #define's
+@
+text
+@d30 1
+a30 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.85 92/01/06 12:36:28 kupfer Exp $ SPRITE (Berkeley)
+d243 1
+a243 1
+	@@$(UPDATE) -t -l -n $(PUBHDRS) $(INCLUDEDIR)
+d246 1
+a246 1
+	@@$(UPDATE) -t -l -n $(MDPUBHDRS) $(INCLUDEDIR)/$(TM).md
+d325 5
+a329 2
+	for i in $(ALLSRCS) $(ALLHDRS) 
+	do 
+d331 3
+a333 1
+	done
+d337 8
+@
+
+
+1.85
+log
+@Make LINTFLAGS include -S, etc. even if tm.mk defines LINTFLAGS.  Pass
+along any -U flags to lint and cpp (when making .o files).
+@
+text
+@d30 1
+a30 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.84 91/12/13 13:40:25 jhh Exp Locker: kupfer $ SPRITE (Berkeley)
+d121 1
+a121 1
+CTFLAGS		?= -wt
+d285 1
+a285 1
+	$(CTAGS) $(CTFLAGS) $(ALLCSRCS)
+@
+
+
+1.84
+log
+@added comment for ALLHDRS
+@
+text
+@d30 1
+a30 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.83 91/12/13 13:31:11 jhh Exp $ SPRITE (Berkeley)
+d122 2
+a123 1
+LINTFLAGS	?= -S -M -n -u -m$(TM) -D$(TM)
+d192 1
+a192 1
+	$(CPP) $(CFLAGS:M-[ID]*) -m$(TM) -D$(TM) -D_ASM $(.IMPSRC) > $(.PREFIX).pp
+d256 1
+a256 1
+	$(LINT) $(LINTFLAGS) $(CFLAGS:M-[ID]*) $(.ALLSRC) \
+d261 1
+a261 1
+	$(LINT) -C$(NAME) $(CFLAGS:M-[ID]*) $(LINTFLAGS) $(.ALLSRC:M*.c)
+@
+
+
+1.83
+log
+@got rid of installsrc and rcssnapshot targets.  Added snapshot and 
+update targets.
+@
+text
+@d11 1
+d30 1
+a30 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.82 91/10/18 10:23:58 jhh Exp $ SPRITE (Berkeley)
+@
+
+
+1.82
+log
+@only define asm flag -DKERNEL for decstations
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.81 91/10/17 13:44:47 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+d54 1
+d95 1
+d235 1
+a235 1
+install			:: installobj installsrc
+d247 1
+a247 1
+installobj		:: $(LIBDIR)/$(NAME).o
+a249 11
+installsrc		:: installhdrs
+installsrc		::
+	@@rm -f $(INSTALLDIR)/*.[ch] 
+	@@$(UPDATE) -l -n $(SRCS:N*.md/*) $(HDRS:N*.md/*) $(INSTFILES:N*.md/*) \
+		$(INSTALLDIR)
+#if !empty(MDSRCS) || !empty(MDHDRS) || !empty(SACREDOBJS)
+	@@-$(MKDIR) $(INSTALLDIR)/$(TM).md > /dev/null 2>&1
+	@@rm -f $(INSTALLDIR)/$(TM).md/*.[chs.o]	    
+	@@$(UPDATE) -l -n $(MDSRCS) $(MDHDRS) $(MDINSTFILES) $(SACREDOBJS) \
+		$(INSTALLDIR)/$(TM).md
+#endif
+d316 4
+a319 1
+SNAPMACHINES	?= sun3.md sun4.md ds3100.md
+d321 9
+a329 4
+rcssnapshot		::
+	rcssnapshot -r${SNAPVERSION} ${SNAPNAME}
+	-for i in ${SNAPMACHINES}; do \
+	    (cd $i ; rcssnapshot -r${SNAPVERSION} ${SNAPNAME}); done
+@
+
+
+1.81
+log
+@assembler flags now have standard definitions
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.80 91/10/08 23:05:32 rab Exp $ SPRITE (Berkeley)
+d154 1
+a154 1
+AFLAGS		+= $(TMAFLAGS) $(XAFLAGS) -DKERNEL
+d157 1
+a157 1
+AFLAGS		+= $(TMAFLAGS) $(XAFLAGS) -DKERNEL
+@
+
+
+1.80
+log
+@Removed SOSP91.
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.79 91/08/15 11:46:50 jhh Exp Locker: rab $ SPRITE (Berkeley)
+d151 1
+a151 1
+AFLAGS          += $(.INCLUDES)
+d154 1
+a154 1
+AFLAGS		+= $(TMAFLAGS) $(XAFLAGS)
+d157 1
+a157 1
+AFLAGS		+= $(TMAFLAGS) $(XAFLAGS)
+@
+
+
+1.79
+log
+@include paths are now absolute
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.78 91/04/30 12:09:21 kupfer Exp $ SPRITE (Berkeley)
+d132 1
+a132 1
+CFLAGS		+= $(GFLAG) $(OFLAG) -DKERNEL -DSOSP91 $(TMCFLAGS) $(XCFLAGS)
+@
+
+
+1.78
+log
+@Set GFLAG and OFLAG in debugflags.mk.
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.77 91/04/26 17:16:42 jhh Exp Locker: kupfer $ SPRITE (Berkeley)
+d48 5
+a52 5
+INCLUDEDIR	?= ../Include
+INSTALLDIR	?= ../Installed/$(NAME)
+LIBDIR		?= ../$(TM).md
+LINTDIR		?= ../Lint/$(TM).md
+PROFDIR		?= ../Profiled/$(TM).md
+@
+
+
+1.77
+log
+@added SOSP91 flag to CFLAGS
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.76 90/11/15 23:14:53 shirriff Exp Locker: jhh $ SPRITE (Berkeley)
+d123 4
+a126 10
+#ifndef NOOPTIMIZATION
+#if !empty(TM:Mds3100) || !empty(TM:Mjhh) || !empty(TM:Mcleands3100) || !empty(TM:Mds5000)
+GFLAG = -g3
+#else
+GFLAG = -g
+#endif
+CFLAGS		+= $(GFLAG) -O -DKERNEL -DSOSP91 $(TMCFLAGS) $(XCFLAGS) 
+#else
+CFLAGS		+= -g -DKERNEL -DSOSP91 $(TMCFLAGS) $(XCFLAGS) 
+#endif
+d131 2
+@
+
+
+1.76
+log
+@Changes for ds5000
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.75 90/11/02 08:37:49 rab Exp Locker: shirriff $ SPRITE (Berkeley)
+d129 1
+a129 1
+CFLAGS		+= $(GFLAG) -O -DKERNEL $(TMCFLAGS) $(XCFLAGS)
+d131 1
+a131 1
+CFLAGS		+= -g -DKERNEL $(TMCFLAGS) $(XCFLAGS)
+d237 5
+a241 1
+install			:: installobj instlint installsrc
+@
+
+
+1.75
+log
+@Added -Wall to CFLAGS.
+Fixed profiling to not compile via assembly.
+Changed SACRED_OBJS to SACREDOBJS.
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.74 90/08/17 15:55:20 douglis Exp Locker: rab $ SPRITE (Berkeley)
+d124 1
+a124 1
+#if !empty(TM:Mds3100) || !empty(TM:Mjhh) || !empty(TM:Mcleands3100)
+d134 1
+a134 1
+#if empty(TM:Mds3100) && empty(TM:Mjhh) && empty(TM:Mcleands3100)
+d153 1
+a153 1
+#if !empty(TM:Mds3100) || !empty(TM:Mjhh) || !empty(TM:Mcleands3100)
+d191 1
+a191 1
+#if empty(TM:Mds3100) && empty(TM:Mjhh) && empty(TM:Mcleands3100)
+d211 1
+a211 1
+#if empty(TM:Mds3100)  && empty(TM:Mjhh) && empty(TM:Mcleands3100)
+@
+
+
+1.74
+log
+@do rm -f or else it may not remove unwritable files, it seems.
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.73 90/08/17 15:54:44 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+d134 4
+d178 3
+d189 1
+a189 3
+	$(CC) -S $(CFLAGS) -p -DPROFILE $(.IMPSRC)
+	$(AS) -o $(.TARGET) $(AFLAGS) $(.PREFIX).s
+	$(RM) -f $(.PREFIX).s
+d289 1
+a289 1
+	$(LD) -o $(.TARGET) -r $(.ALLSRC)
+d302 1
+a302 1
+	    $(DISTFILES) $(SRCS) $(HDRS) $(SACRED_OBJS)
+@
+
+
+1.73
+log
+@ken's changes.  dunno.
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.72 90/07/05 21:30:37 jhh Exp Locker: shirriff $ SPRITE (Berkeley)
+d245 1
+a245 1
+	@@rm $(INSTALLDIR)/*.[ch] 
+d250 1
+a250 1
+	@@rm $(INSTALLDIR)/$(TM).md/*.[chs.o]	    
+@
+
+
+1.72
+log
+@copies targets of symbolic links when installing, rather than copying
+the links themselves.
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.70 90/04/21 11:34:43 ouster Exp Locker: douglis $ SPRITE (Berkeley)
+d234 1
+a234 1
+	@@$(UPDATE) -t -l $(PUBHDRS) $(INCLUDEDIR)
+d237 1
+a237 1
+	@@$(UPDATE) -t -l $(MDPUBHDRS) $(INCLUDEDIR)/$(TM).md
+d242 1
+a242 1
+	$(UPDATE) -l $(TM).md/$(NAME).o $(LIBDIR)
+d246 1
+a246 1
+	@@$(UPDATE) -l $(SRCS:N*.md/*) $(HDRS:N*.md/*) $(INSTFILES:N*.md/*) \
+d251 1
+a251 1
+	@@$(UPDATE) -l $(MDSRCS) $(MDHDRS) $(MDINSTFILES) $(SACREDOBJS) \
+d300 1
+a300 1
+	    $(UPDATE)  -l $${i} $(DISTDIR)/$${i} ;else true; fi
+@
+
+
+1.71
+log
+@checking this in for Fred -- John H.
+@
+text
+@d234 1
+a234 1
+	@@$(UPDATE) -t $(PUBHDRS) $(INCLUDEDIR)
+d237 1
+a237 1
+	@@$(UPDATE) -t $(MDPUBHDRS) $(INCLUDEDIR)/$(TM).md
+d242 1
+a242 1
+	$(UPDATE) $(TM).md/$(NAME).o $(LIBDIR)
+d246 1
+a246 1
+	@@$(UPDATE) $(SRCS:N*.md/*) $(HDRS:N*.md/*) $(INSTFILES:N*.md/*) \
+d251 1
+a251 1
+	@@$(UPDATE) $(MDSRCS) $(MDHDRS) $(MDINSTFILES) $(SACREDOBJS) \
+d300 1
+a300 1
+	    $(UPDATE)  $${i} $(DISTDIR)/$${i} ;else true; fi
+@
+
+
+1.70
+log
+@Don't include header files explicitly in list of things to be
+linted: some header files can only be #include-d in context.
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.69 90/04/13 14:17:54 rab Exp Locker: ouster $ SPRITE (Berkeley)
+d58 1
+a58 1
+ALLCSRCS	?= $(ALLSRCS:M*.c)
+@
+
+
+1.69
+log
+@Added SACRED_OBJS to distribution.
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.68 90/03/14 13:49:25 jhh Exp Locker: rab $ SPRITE (Berkeley)
+d256 1
+a256 1
+$(TM).md/lint		: $(LINTLIBS) $(CSRCS) $(HDRS) 
+d258 1
+a258 1
+	$(LINT) $(LINTFLAGS) $(CFLAGS:M-[ID]*) $(.ALLSRC:N*.h) \
+@
+
+
+1.68
+log
+@defines SACREDOBJS if they aren't defined already
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.67 90/03/12 23:25:23 jhh Exp $ SPRITE (Berkeley)
+d296 2
+a297 1
+	for i in Makefile local.mk $(TM).md/md.mk $(DISTFILES) $(SRCS) $(HDRS)
+@
+
+
+1.67
+log
+@added support for compiling snapshots of the kernel sources
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.66 90/03/08 17:20:47 rab Exp Locker: jhh $ SPRITE (Berkeley)
+d42 1
+@
+
+
+1.66
+log
+@ Remove old installed stuff before installed the new stuff so old unused
+files don't sit around forever.
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.65 90/03/08 16:51:25 douglis Exp Locker: rab $ SPRITE (Berkeley)
+d41 1
+d52 1
+d60 1
+d68 1
+a68 1
+			/sprite/lib/include/$(TM).md /sprite/lib/include 
+d245 3
+a247 2
+	@@$(UPDATE) $(SRCS:N*.md/*) $(HDRS:N*.md/*) $(INSTALLDIR)
+#if !empty(MDSRCS) || !empty(MDHDRS)
+d249 3
+a251 2
+	@@rm $(INSTALLDIR)/$(TM).md/*.[chs]	    
+	@@$(UPDATE) $(MDSRCS) $(MDHDRS) $(INSTALLDIR)/$(TM).md
+@
+
+
+1.65
+log
+@handle recursive makes of TAGS file.
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.64 90/03/05 11:01:06 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+d241 1
+d245 1
+@
+
+
+1.64
+log
+@rab changes for dist
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.63 89/11/30 13:56:23 rab Exp Locker: rab $ SPRITE (Berkeley)
+d82 1
+d280 3
+@
+
+
+1.63
+log
+@Changed dist: to dist!,
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.62 89/10/09 06:55:31 rab Exp Locker: rab $ SPRITE (Berkeley)
+d284 1
+a284 1
+	for i in Makefile local.mk $(TM).md/md.mk $(SRCS) $(HDRS) $(DISTFILES)
+@
+
+
+1.62
+log
+@Fixed distribution stuff.
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.61 89/10/02 10:04:59 rab Exp Locker: rab $ SPRITE (Berkeley)
+d280 1
+a280 1
+DISTOBJS	?=
+d282 1
+a282 1
+dist:
+d284 1
+a284 1
+	for i in Makefile local.mk $(TM).md/md.mk $(SRCS) $(HDRS) $(DISTOBJS)
+@
+
+
+1.61
+log
+@Added Distribution stuff.
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.60 89/09/27 17:59:24 douglis Exp Locker: rab $ SPRITE (Berkeley)
+d90 1
+d264 1
+a264 1
+	if test -d $(TM).md; then
+d280 2
+d286 2
+a287 1
+	if test -e $${i}; then $(UPDATE)  $${i} $(DISTDIR)/$${i} ;fi
+@
+
+
+1.60
+log
+@enable -O for ds3100, with -g3 when needed
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.59 89/09/27 12:31:36 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+d278 10
+@
+
+
+1.59
+log
+@added clean* targets
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.58 89/09/15 07:33:35 rab Exp Locker: douglis $ SPRITE (Berkeley)
+d118 6
+a123 1
+CFLAGS		+= -g -O -DKERNEL $(TMCFLAGS) $(XCFLAGS)
+@
+
+
+1.58
+log
+@Added -m$(TM) flag to cpp.
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.57 89/09/13 07:48:21 douglis Exp Locker: rab $ SPRITE (Berkeley)
+d138 1
+a138 1
+#if !empty(TM:Mds3100) || !empty(TM:Mjhh)
+d154 1
+a154 1
+#if !empty(TM:Msun3)
+d175 1
+a175 1
+#if empty(TM:Mds3100) && empty(TM:Mjhh)
+d195 1
+a195 1
+#if empty(TM:Mds3100)  && empty(TM:Mjhh)
+@
+
+
+1.57
+log
+@rcssnapshot default machines changed
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.56 89/09/06 04:54:10 rab Exp Locker: douglis $ SPRITE (Berkeley)
+d176 1
+a176 1
+	$(CPP) $(CFLAGS:M-[ID]*) -D$(TM) -D_ASM $(.IMPSRC) > $(.PREFIX).pp
+@
+
+
+1.56
+log
+@Added -msoft-float switch for sun3.
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.55 89/08/31 16:10:46 rab Exp Locker: rab $ SPRITE (Berkeley)
+d288 1
+a288 1
+SNAPMACHINES	?= sun3.md
+@
+
+
+1.55
+log
+@Added -D_ASM to .s.o rule.
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.54 89/08/31 13:09:13 jhh Exp Locker: rab $ SPRITE (Berkeley)
+d147 9
+@
+
+
+1.54
+log
+@made jhh machine type the same as a ds3100
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.53 89/07/21 18:29:33 douglis Exp Locker: jhh $ SPRITE (Berkeley)
+d167 1
+a167 1
+	$(CPP) $(CFLAGS:M-[ID]*) -D$(TM) $(.IMPSRC) > $(.PREFIX).pp
+@
+
+
+1.53
+log
+@changed newtm to do mkmf for only the new machine type
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.52 89/07/20 17:36:00 mgbaker Exp Locker: douglis $ SPRITE (Berkeley)
+d132 4
+d138 1
+a138 1
+#if !empty(TM:Mds3100)
+d141 3
+d166 1
+a166 1
+#if empty(TM:Mds3100)
+d186 1
+d188 3
+@
+
+
+1.52
+log
+@Got rid of extra porting stuff for sun4.
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.51 89/07/13 13:53:31 nelson Exp Locker: mgbaker $ SPRITE (Berkeley)
+d243 1
+a243 1
+	    mkmf
+@
+
+
+1.51
+log
+@Added ds3100 support.
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.50 89/06/23 23:45:26 jhh Exp $ SPRITE (Berkeley)
+d129 2
+a130 2
+# Since the sun4 compiler doesn't include /sprite/lib/include we must leave
+# the path as is when TM=sun4.  Also the mips compiler doesn't include
+d134 1
+a134 5
+#if !empty(TM:Msun4)
+CFLAGS		+= $(.INCLUDES)
+AFLAGS		+= $(TMAFLAGS) $(XAFLAGS)
+
+#elif !empty(TM:Mds3100)
+@
+
+
+1.50
+log
+@moved "." after $(TM).md in include path so you get machine dependent
+versions before machine independent
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.49 89/05/26 08:55:28 ouster Exp Locker: jhh $ SPRITE (Berkeley)
+d130 2
+a131 1
+# the path as is when TM=sun4.
+d134 8
+a141 1
+#if empty(TM:Msun4)
+d143 1
+a143 2
+#else
+CFLAGS		+= $(.INCLUDES)
+a144 1
+AFLAGS		+= $(TMAFLAGS) $(XAFLAGS)
+d163 1
+d167 4
+d194 1
+a194 1
+	$(LD) -r $(.ALLSRC) -o $(.TARGET)
+@
+
+
+1.49
+log
+@Added NOOPTIMIZATION variable to disable -O switch.
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.48 89/05/26 08:42:21 rab Exp Locker: ouster $ SPRITE (Berkeley)
+d64 1
+a64 1
+.PATH.h		: $(TM).md $(INCLUDEDIR)/$(TM).md $(INCLUDEDIR) \
+d118 1
+a118 1
+CFLAGS		+= -g -O -DKERNEL $(TMCFLAGS) $(XCFLAGS) -I.
+d120 1
+a120 1
+CFLAGS		+= -g -DKERNEL $(TMCFLAGS) $(XCFLAGS) -I.
+@
+
+
+1.48
+log
+@*** empty log message ***
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.47 89/03/23 15:54:52 douglis Exp $ SPRITE (Berkeley)
+d116 7
+a127 2
+CFLAGS		+= -g -O -DKERNEL $(TMCFLAGS) $(XCFLAGS) -I.
+
+@
+
+
+1.47
+log
+@removed the -l option to update -- go back to installing
+symbolic links, to reflect reality.
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.46 89/03/23 15:47:10 mendel Exp Locker: douglis $ SPRITE (Berkeley)
+d64 2
+a65 2
+.PATH.h		: $(TM).md $(INCLUDEDIR) $(INCLUDEDIR)/$(TM).md \
+			/sprite/lib/include /sprite/lib/include/$(TM).md
+d121 2
+a122 1
+CFLAGS		+= -g -DKERNEL $(TMCFLAGS) $(XCFLAGS) -I.
+d181 1
+a181 1
+clean			:: .NOEXPORT
+@
+
+
+1.46
+log
+@Patch on compiling with the sun4 compiler runing on unix.
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.45 89/01/06 09:21:44 ouster Exp Locker: mendel $ SPRITE (Berkeley)
+d190 1
+a190 1
+	@@$(UPDATE) -l -t $(PUBHDRS) $(INCLUDEDIR)
+d193 1
+a193 1
+	@@$(UPDATE) -l -t $(MDPUBHDRS) $(INCLUDEDIR)/$(TM).md
+d201 1
+a201 1
+	@@$(UPDATE) -l $(SRCS:N*.md/*) $(HDRS:N*.md/*) $(INSTALLDIR)
+d204 1
+a204 1
+	@@$(UPDATE) -l $(MDSRCS) $(MDHDRS) $(INSTALLDIR)/$(TM).md
+@
+
+
+1.45
+log
+@Additional definitions so "make newtm" will work.
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.44 88/12/12 16:27:25 ouster Exp $ SPRITE (Berkeley)
+d122 6
+d129 3
+@
+
+
+1.44
+log
+@Added back "-M" flag.
+ 
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.43 88/12/04 13:50:35 ouster Exp $ SPRITE (Berkeley)
+d33 2
+a34 2
+# The code below is here temporarily for compatibility, while MODULE gets
+# renamed to NAME.
+d36 5
+a40 4
+
+#ifdef MODULE
+NAME		= $(MODULE)
+#endif
+@
+
+
+1.43
+log
+@"Final" (?) changes to kick in new C library.
+. 
+@
+text
+@d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.42 88/11/15 12:15:10 douglis Exp Locker: ouster $ SPRITE (Berkeley)
+d112 1
+a112 1
+LINTFLAGS	?= -S -n -u -m$(TM) -D$(TM)
+@
+
+
+1.42
+log
+@pass -D$(TM) to lint
+@
+text
+@d2 3
+a4 1
+# Included makefile for creating a kernel module.
+d6 1
+a6 1
+#	MODULE		module name
+d21 1
+a21 7
+#			for this program.  For each type <x> in this
+#			variable, the following targets are created:
+#			<x>		does a 'make' for <x>
+#			lint<x>		does 'make lint' for <x>
+#			profile<x>	does 'make profile' for <x>
+#			install<x>	does 'make install' for <x>
+#			instlint<x>	does 'make instlint' for <x>.
+d29 1
+a29 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.41 88/11/11 23:54:06 jhh Exp Locker: douglis $ SPRITE (Berkeley)
+d32 12
+d46 1
+a46 1
+INSTALLDIR	?= ../Installed/$(MODULE)
+a61 2
+.PATH.a		: /sprite/lib /sprite/att/lib
+#ifndef OLDLIB
+a63 5
+		/sprite/lib/include.new /sprite/lib/include.new/$(TM).md \
+		/sprite/lib/include.old /sprite/lib/include.old/$(TM).md
+#else
+.PATH.h		:
+.PATH.h		: $(TM).md $(INCLUDEDIR) $(INCLUDEDIR)/$(TM).md \
+a64 1
+#endif
+d76 2
+a77 6
+#ifndef OLDLIB
+CC		= /sprite/cmds.${MACHINE}/gcc
+#else
+CC		?= /sprite/cmds/cc
+#endif
+AS		?= /sprite/cmds/as
+d81 1
+a81 1
+LD		?= /sprite/cmds/ld
+d104 2
+a105 2
+# Flags. These are ones that are needed by *all* programs. Any other
+# ones should be added with the += operator in the command-specific makefile.
+d110 3
+a112 1
+#include	<tmflags.mk>
+d115 7
+a121 3
+CTFLAGS		?=
+LINTFLAGS	?= -S -n -u -m$(TM) -D$(TM)
+CFLAGS		+= $(TMCFLAGS) -DKERNEL -I. $(.INCLUDES) $(.LIBS) $(XCFLAGS)
+d141 1
+a141 1
+	$(CPP) $(CFLAGS:M-[ID]*) $(.IMPSRC) > $(.PREFIX).pp
+d162 1
+a162 4
+# Define the main targets (make, make install, make lint,
+# make clean, make depend).  For each general target type, three
+# different specifications are possible to control which target
+# machines apply:
+a163 10
+# 1. specify the target generically:  "make" or "make install"; this
+#    will make for the machine defined in the TM variable (which
+#    can be overridden on the command line).
+# 2. specify the target by appending a machine name: "make sun3" or
+#    "make installsun3":  this will make the given target for the
+#    given machine.
+# 3. specify the target by appending "all": "make all" or "make installall";
+#    this will run several makes to make the given target for all known
+#    machine types.
+#
+d165 1
+a165 1
+$(TM).md/$(MODULE).o	: $(OBJS)
+d168 1
+d170 3
+a172 5
+$(TM).md/llib-l$(MODULE).ln	: $(CSRCS) $(HDRS)
+	$(RM) -f $(.TARGET)
+	$(RM) -f llib-l$(MODULE).ln
+	$(LINT) -C$(MODULE) $(CFLAGS:M-[ID]*) $(LINTFLAGS) $(.ALLSRC:M*.c)
+	$(MV) llib-l$(MODULE).ln $(.TARGET)
+d174 3
+a176 3
+$(LINTDIR)/$(MODULE).ln : $(TM).md/llib-l$(MODULE).ln
+	$(RM) -f $(.TARGET)
+	$(CP) $(TM).md/llib-l$(MODULE).ln $(.TARGET)
+a177 7
+$(LIBDIR)/$(MODULE).o	: $(TM).md/$(MODULE).o
+	$(UPDATE) $(TM).md/$(MODULE).o $(LIBDIR)
+
+$(PROFDIR)/$(MODULE).o	: $(POBJS)
+	$(RM) -f $(.TARGET)
+	$(LD) -o $(.TARGET) -r $(.ALLSRC)
+
+d179 10
+a188 2
+installobj		:: $(LIBDIR)/$(MODULE).o
+instlint		:: $(LINTDIR)/$(MODULE).ln
+a195 6
+installhdrs		::
+	@@$(UPDATE) -l -t $(PUBHDRS) $(INCLUDEDIR)
+#if !empty(MDPUBHDRS)
+	@@-$(MKDIR) $(INCLUDEDIR)/$(TM).md > /dev/null 2>&1
+	@@$(UPDATE) -l -t $(MDPUBHDRS) $(INCLUDEDIR)/$(TM).md
+#endif
+a196 1
+profile			:: $(PROFDIR)/$(MODULE).o
+d202 8
+d211 2
+a212 3
+DEPFILE = $(TM).md/dependencies.mk
+depend			: $(DEPFILE)
+$(DEPFILE)		! $(SRCS:M*.c) $(SRCS:M*.s) MAKEDEPEND
+d214 8
+a221 3
+clean			:: .NOEXPORT
+	$(RM) -f $(CLEANOBJS) $(CLEANOBJS:S/.o$/.po/g) $(TM).md/$(MODULE).o \
+		$(TM).md/$(MODULE).po *~ $(TM).md/*~
+d223 5
+a232 2
+mkmf makemake	:: .NOTMAIN	# Does nothing. Says nothing
+
+a250 2
+	
+
+@
+
+
+1.41
+log
+@added TM variable after -m flag passed to lint
+@
+text
+@d33 1
+a33 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.40 88/11/05 16:38:31 douglis Exp Locker: jhh $ SPRITE (Berkeley)
+d118 1
+a118 1
+LINTFLAGS	?= -S -n -u -m$(TM)
+@
+
+
+1.40
+log
+@added .NOEXPORT to make clean.
+@
+text
+@d33 1
+a33 1
+# $Header: /sprite/lib/pmake/RCS/kernel.mk,v 1.39 88/10/31 12:41:12 mendel Exp Locker: douglis $ SPRITE (Berkeley)
+d118 1
+a118 1
+LINTFLAGS	?= -S -n -u -m
+@
+
+
+1.39
+log
+@Switch to use the new include and c library.
+@
+text
+@d33 1
+a33 1
+# $Header: kernel.mk,v 1.38 88/08/26 15:14:56 ouster Exp $ SPRITE (Berkeley)
+d225 1
+a225 1
+clean			::
+d243 1
+a243 1
+Rdist		::
+@
+
+
+1.38
+log
+@Change line width back, just for compatibility.
+@
+text
+@d33 1
+a33 1
+# $Header: kernel.mk,v 1.37 88/08/26 14:35:47 ouster Exp $ SPRITE (Berkeley)
+d55 1
+d58 5
+d64 1
+d76 5
+a81 1
+CC		?= /sprite/cmds/cc
+@
+
+
+1.37
+log
+@Switch to use newly-installed version of makedepend.
+@
+text
+@d33 1
+a33 1
+# $Header: kernel.mk,v 1.36 88/08/23 22:34:09 douglis Exp $ SPRITE (Berkeley)
+d143 1
+a143 1
+	$(MAKEDEPEND) $(CFLAGS:M-[ID]*) -m $(TM) -w60 -f $(DEPFILE) $(.ALLSRC)
+@
+
+
+1.36
+log
+@added -m flag to LINTFLAGS to keep lint from complaining
+about identical multiple declarations.
+@
+text
+@d33 1
+a33 1
+# $Header: kernel.mk,v 1.35 88/08/23 16:39:47 douglis Exp $ SPRITE (Berkeley)
+d77 1
+a77 1
+MAKEDEPEND	?= /sprite/cmds/makedepend
+d143 1
+a143 1
+	$(MAKEDEPEND) $(CFLAGS:M-[ID]*) -w50 -f $(DEPFILE) $(.ALLSRC)
+@
+
+
+1.35
+log
+@moved LINTLIBS to come before CSRCS for lint, at Adam's
+suggestion.
+@
+text
+@d33 1
+a33 1
+# $Header: kernel.mk,v 1.34 88/08/20 09:55:39 ouster Exp $ SPRITE (Berkeley)
+d107 1
+a107 1
+LINTFLAGS	?= -S -n -u
+@
+
+
+1.34
+log
+@Added lint flags -n and -u to work properly with kernel modules.
+@
+text
+@d33 1
+a33 1
+# $Header: kernel.mk,v 1.33 88/08/19 15:50:37 ouster Exp $ SPRITE (Berkeley)
+d205 1
+a205 1
+$(TM).md/lint		: $(CSRCS) $(HDRS) $(LINTLIBS) 
+@
+
+
+1.33
+log
+@Switch back once again to new cpp, using "$" switch (hopefully) to
+make everything finally work.
+@
+text
+@d33 1
+a33 1
+# $Header: kernel.mk,v 1.32 88/08/18 15:52:27 ouster Exp $ SPRITE (Berkeley)
+d107 1
+a107 1
+LINTFLAGS	?= -S
+@
+
+
+1.32
+log
+@Switch over to use new cpp.
+@
+text
+@d33 1
+a33 1
+# $Header: kernel.mk,v 1.31 88/08/18 15:20:14 ouster Exp $ SPRITE (Berkeley)
+d72 1
+a72 1
+CPP		?= $(BINDIR)/cpp -traditional
+@
+
+
+1.31
+log
+@Use new update, use current time when installing headers.
+@
+text
+@d33 1
+a33 1
+# $Header: kernel.mk,v 1.30 88/08/12 10:56:09 ouster Exp $ SPRITE (Berkeley)
+d72 1
+a72 1
+CPP		?= /sprite/lib/cpp
+@
+
+
+1.30
+log
+@Changed CCFLAGS -> XCFLAGS, CAFLAGS -> XAFLAGS.
+@
+text
+@d33 1
+a33 1
+# $Header: kernel.mk,v 1.29 88/08/12 10:54:08 brent Exp $ SPRITE (Berkeley)
+d83 1
+a83 1
+UPDATE		?= /sprite/cmds/update -i
+d197 1
+a197 1
+	@@$(UPDATE) -l $(PUBHDRS) $(INCLUDEDIR)
+d200 1
+a200 1
+	@@$(UPDATE) -l $(MDPUBHDRS) $(INCLUDEDIR)/$(TM).md
+@
+
+
+1.29
+log
+@Added rcssnapshot stuff
+@
+text
+@d33 1
+a33 1
+# $Header: kernel.mk,v 1.28 88/08/11 11:12:18 douglis Exp $ SPRITE (Berkeley)
+d89 2
+a90 2
+#ifdef		CCFLAGS
+PASSVARS	+= 'CCFLAGS=$(CCFLAGS)'
+d92 2
+a93 2
+#ifdef		CAFLAGS
+PASSVARS	+= 'CAFLAGS=$(CAFLAGS)'
+d104 2
+a105 2
+CCFLAGS		?=
+CAFLAGS		?=
+d108 2
+a109 2
+CFLAGS		+= $(TMCFLAGS) -DKERNEL -I. $(.INCLUDES) $(.LIBS) $(CCFLAGS)
+AFLAGS		+= $(TMAFLAGS) $(CAFLAGS)
+@
+
+
+1.28
+log
+@start at rcssnapshot addn., turning over to brent.
+@
+text
+@d33 1
+a33 1
+# $Header: kernel.mk,v 1.27 88/08/05 10:15:06 ouster Exp $ SPRITE (Berkeley)
+d237 2
+d240 3
+a242 1
+	rcssnapshot ${SNAPVERSION} ${SNAPFLAGS} 
+d244 1
+a244 1
+	
+@
+
+
+1.27
+log
+@Backup to /sprite/lib/cpp again;  gcc cpp can't handle "#" chars.
+in the middle of lines.
+@
+text
+@d33 1
+a33 1
+# $Header: kernel.mk,v 1.26 88/08/01 16:31:01 ouster Exp $ SPRITE (Berkeley)
+d236 5
+@
+
+
+1.26
+log
+@Add -DKERNEL to CFLAGS.
+@
+text
+@d33 1
+a33 1
+# $Header: kernel.mk,v 1.25 88/07/27 17:44:13 nelson Exp $ SPRITE (Berkeley)
+d72 1
+a72 1
+CPP		?= $(BINDIR)/cpp
+@
+
+
+1.25
+log
+@Fixed bug with CPP.
+@
+text
+@d33 1
+a33 1
+# $Header: kernel.mk,v 1.24 88/07/27 17:35:56 ouster Exp $ SPRITE (Berkeley)
+d108 1
+a108 1
+CFLAGS		+= $(TMCFLAGS) -I. $(.INCLUDES) $(.LIBS) $(CCFLAGS)
+@
+
+
+1.24
+log
+@Switch over to use new binary directory.
+@
+text
+@d33 1
+a33 1
+# $Header: kernel.mk,v 1.23 88/07/26 11:36:58 douglis Exp $ SPRITE (Berkeley)
+d72 1
+a72 1
+CPP		?= $(BINDIR)cpp
+@
+
+
+1.23
+log
+@added /sprite/lib/include/$(TM).md to search path to get
+dev to compile.
+@
+text
+@d33 1
+a33 1
+# $Header: kernel.mk,v 1.22 88/07/05 17:03:41 mendel Exp $ SPRITE (Berkeley)
+d36 1
+a36 1
+BINDIR		?= /sprite/cmds
+d69 2
+a70 2
+AS		?= $(BINDIR)/as
+CC		?= $(BINDIR)/cc
+d72 1
+a72 1
+CPP		?= /sprite/lib/cpp
+d74 1
+a74 1
+LD		?= $(BINDIR)/ld
+d77 1
+a77 1
+MAKEDEPEND	?= $(BINDIR)/makedepend
+d83 1
+a83 1
+UPDATE		?= $(BINDIR)/update -i
+@
+
+
+1.22
+log
+@Added machine dependent lint library support.
+@
+text
+@d33 1
+a33 1
+# $Header: kernel.mk,v 1.21 88/07/02 12:12:26 ouster Exp $ SPRITE (Berkeley)
+d57 1
+a57 1
+			/sprite/lib/include
+@
+
+
+1.21
+log
+@Add "-S" lint flag.
+@
+text
+@d33 1
+a33 1
+# $Header: kernel.mk,v 1.20 88/06/28 12:01:34 douglis Exp $ SPRITE (Berkeley)
+d40 1
+a40 1
+LINTDIR		?= ../Lint
+d169 1
+a169 1
+llib-l$(MODULE).ln	: $(CSRCS) $(HDRS)
+d171 1
+d173 1
+d175 1
+a175 1
+$(LINTDIR)/$(MODULE).ln : llib-l$(MODULE).ln
+d177 1
+a177 1
+	$(CP) llib-l$(MODULE).ln $(.TARGET)
+@
+
+
+1.20
+log
+@clear PATH.ln before putting in kernel lint directory,
+so pmake finds the kernel libc lint library instead of the user one.
+@
+text
+@d33 1
+a33 1
+# $Header: kernel.mk,v 1.19 88/06/25 18:28:05 ouster Exp $ SPRITE (Berkeley)
+d107 1
+a107 1
+LINTFLAGS	?=
+@
+
+
+1.19
+log
+@Use relative path names instead of absolute for installation
+(otherwise can't have multiple copies of kernel source tree).
+@
+text
+@d33 1
+a33 1
+# $Header: kernel.mk,v 1.18 88/06/21 17:47:47 ouster Exp $ SPRITE (Berkeley)
+d58 1
+@
+
+
+1.18
+log
+@Typo in last "fix".
+@
+text
+@d33 1
+a33 1
+# $Header: kernel.mk,v 1.17 88/06/21 17:46:33 ouster Exp $ SPRITE (Berkeley)
+d37 5
+a41 5
+INCLUDEDIR	?= /sprite/src/kernel/Include
+INSTALLDIR	?= /sprite/src/kernel/Installed/$(MODULE)
+LIBDIR		?= /sprite/src/kernel/$(TM).md
+LINTDIR		?= /sprite/src/kernel/Lint
+PROFDIR		?= /sprite/src/kernel/Profiled/$(TM).md
+@
+
+
+1.17
+log
+@Include header files in lint dependencies.
+@
+text
+@d33 1
+a33 1
+# $Header: kernel.mk,v 1.16 88/06/21 17:33:48 douglis Exp $ SPRITE (Berkeley)
+d204 1
+a204 1
+	$(LINT) $(LINTFLAGS) $(CFLAGS:M-[ID]*) $(ALLSRC:N*.h) \
+@
+
+
+1.16
+log
+@undid the lint change since it wasn't really doing the right
+thing...
+@
+text
+@d33 1
+a33 1
+# $Header: kernel.mk,v 1.15 88/06/21 17:17:42 douglis Exp $ SPRITE (Berkeley)
+d202 1
+a202 1
+$(TM).md/lint		: $(CSRCS) $(LINTLIBS) 
+d204 2
+a205 1
+	$(LINT) $(LINTFLAGS) $(CFLAGS:M-[ID]*) $(ALLSRC) > $(.TARGET) 2>& 1
+@
+
+
+1.15
+log
+@look for mach.ln, not sun.ln.  Make lint depend on header files
+but don't lint them in (so ALLSRC -> CSRCS + LINTLIBS).
+@
+text
+@d33 1
+a33 1
+# $Header: kernel.mk,v 1.14 88/06/17 14:52:55 ouster Exp $ SPRITE (Berkeley)
+d202 1
+a202 1
+$(TM).md/lint		: $(CSRCS) $(HDRS) $(LINTLIBS) 
+d204 1
+a204 1
+	$(LINT) $(LINTFLAGS) $(CFLAGS:M-[ID]*) $(CSRCS) $(LINTLIBS) > $(.TARGET) 2>& 1
+@
+
+
+1.14
+log
+@Pass flags to sub-makes.
+@
+text
+@d33 1
+a33 1
+# $Header: kernel.mk,v 1.13 88/06/17 08:33:54 ouster Exp $ SPRITE (Berkeley)
+d202 1
+a202 1
+$(TM).md/lint		: $(CSRCS) $(LINTLIBS) 
+d204 1
+a204 1
+	$(LINT) $(LINTFLAGS) $(CFLAGS:M-[ID]*) $(.ALLSRC) > $(.TARGET) 2>& 1
+@
+
+
+1.13
+log
+@Documentation updates.
+@
+text
+@d33 1
+a33 1
+# $Header: kernel.mk,v 1.12 88/06/15 17:13:55 ouster Exp $ SPRITE (Berkeley)
+d87 1
+a87 1
+PASSVARS	= 'INSTALLDIR=$(INSTALLDIR)'
+@
+
+
+1.12
+log
+@Don't pass CC to sub-makes:  must be determined based on machine type.
+@
+text
+@d13 4
+a16 1
+#	PUBHDRS		publicly-available headers for the module
+d33 1
+a33 1
+# $Header: kernel.mk,v 1.11 88/06/15 15:24:45 ouster Exp $ SPRITE (Berkeley)
+@
+
+
+1.11
+log
+@Allow POBJS to be overridden.
+@
+text
+@d30 1
+a30 1
+# $Header: kernel.mk,v 1.10 88/06/13 16:39:21 ouster Exp $ SPRITE (Berkeley)
+d84 1
+a84 1
+PASSVARS	= 'CC=$(CC)' 'INSTALLDIR=$(INSTALLDIR)'
+@
+
+
+1.10
+log
+@Use "-i" switch to update.
+@
+text
+@d30 1
+a30 1
+# $Header: kernel.mk,v 1.9 88/06/08 08:29:21 ouster Exp $ SPRITE (Berkeley)
+d40 6
+a45 6
+CSRCS		= $(SRCS:M*.c)
+SSRCS		= $(SRCS:M*.s)
+POBJS		= $(OBJS:S/.o$/.po/g)
+ALLCSRCS	= $(ALLSRCS:M*.c)
+MDHDRS		= $(HDRS:M*.md/*)
+MDSRCS		= $(SRCS:M*.md/*)
+@
+
+
+1.9
+log
+@For update to copy contents of symbolic links, not links themselves.
+Also set up search path for .s files.
+@
+text
+@d30 1
+a30 1
+# $Header: kernel.mk,v 1.8 88/06/06 17:22:49 ouster Exp $ SPRITE (Berkeley)
+d79 1
+a79 1
+UPDATE		?= $(BINDIR)/update
+@
+
+
+1.8
+log
+@Modify to have machine-dependent installation directories too.
+@
+text
+@d30 1
+a30 1
+# $Header: kernel.mk,v 1.7 88/06/05 17:47:58 ouster Exp $ SPRITE (Berkeley)
+d58 2
+d185 1
+a185 1
+	@@$(UPDATE) $(SRCS:N*.md/*) $(HDRS:N*.md/*) $(INSTALLDIR)
+d188 1
+a188 1
+	@@$(UPDATE) $(MDSRCS) $(MDHDRS) $(INSTALLDIR)/$(TM).md
+d191 1
+a191 1
+	@@$(UPDATE) $(PUBHDRS) $(INCLUDEDIR)
+d194 1
+a194 1
+	@@$(UPDATE) $(MDPUBHDRS) $(INCLUDEDIR)/$(TM).md
+@
+
+
+1.7
+log
+@Was missing headers in .md directories.
+@
+text
+@d30 1
+a30 1
+# $Header: kernel.mk,v 1.5 88/05/17 13:33:15 deboor Exp $ SPRITE (Berkeley)
+d44 2
+d53 2
+a54 1
+.PATH.h		: $(TM).md $(INCLUDEDIR) /sprite/lib/include
+d72 1
+d136 5
+a140 5
+	$(TOUCH) $(DEPFILE)
+	$(MAKEDEPEND) $(CFLAGS:M-[ID]*) -w60 -f $(DEPFILE) $(.ALLSRC)
+	$(MV) $(DEPFILE) $(DEPFILE).tmp
+	$(SED) -e '/^#/!s|^\([^:]*\)\.o[ 	]*:|$(TM).md/\1.po $(TM).md/&|' <$(DEPFILE).tmp > $(DEPFILE)
+	$(RM) -f $(DEPFILE).tmp
+d183 5
+a187 1
+	$(UPDATE) $(SRCS) $(INSTALLDIR)
+d189 5
+a193 2
+	@@${UPDATE} ${PUBHDRS} ${INCLUDEDIR}
+	@@${UPDATE} ${HDRS} ${INSTALLDIR}
+d224 1
+a224 1
+	$(RDIST) ${DISTFLAGS} -f ${DISTFILE} -d DIR=`pwd`
+@
+
+
+1.6
+log
+@Installed new Makefile stuff for kernel modules.
+@
+text
+@d51 1
+a51 1
+.PATH.h		: $(INCLUDEDIR) /sprite/lib/include
+@
+
+
+1.5
+log
+@Added tags rule
+@
+text
+@d5 7
+a11 3
+#	CSRCS		all C-code sources for the module
+#	SSRCS		all assembly-language sources for the module
+#	SRCS		both.
+d14 9
+a22 10
+#	DEFAULT		default machine type for which to create when
+#			install, profile, lint or nothing is specified
+#	MACHINES	the list of machine types for which the module can
+#			be compiled. For each machine type <x> in this variable,
+#			the following targets are created:
+#			<x>		does a 'make' in <x>.md
+#			lint<x>		does 'make lint' in <x>.md
+#			profile<x>	does 'make profile' in <x>.md
+#			install<x>	does 'make install' in <x>.md
+#			instlint<x>	does 'make instlint' in <x>.md
+d30 1
+a30 2
+# This makefile is structured in such a way that it is as easy as possible
+# to add new machine types.
+a31 7
+# $Header: kernel.mk,v 1.4 88/04/29 18:33:34 deboor Exp $ SPRITE (Berkeley)
+#
+ALL		= $(MACHINES)
+ALLLINT		= $(MACHINES:S/^/lint/g)
+ALLPROF		= $(MACHINES:S/^/profile/g)
+ALLINSTALL	= $(MACHINES:S/^/install/g)
+ALLINSTLINT	= $(MACHINES:S/^/instlint/g)
+d33 6
+a38 4
+INCLUDEDIR	= /sprite/src/kernel/Include
+INSTALLDIR	= /sprite/src/kernel/Installed/$(MODULE)
+LINTDIR		= /sprite/src/kernel/Lint
+UPDATE		= /sprite/cmds/update
+d40 4
+a43 6
+CTFLAGS		?=
+CCFLAGS		?=
+CAFLAGS		?=
+CFLAGS		+= -m68010 $(.INCLUDES) $(.LIBS) $(CCFLAGS)
+AFLAGS		+= -m68010 $(CAFLAGS)
+PASSVARS	= 'CCFLAGS=$(CCFLAGS)' 'CAFLAGS=$(CAFLAGS)'
+d51 1
+a51 1
+.PATH.h		: $(INCLUDEDIR)
+d53 2
+d56 18
+a73 1
+.MAKEFLAGS	: -C
+d76 1
+a76 3
+# .USE rules for making generic targets. MAKEDEFAULT recurses only to the
+# default machine-dependent directory. MAKEALL recurses to all the
+# machine-dependent directories.
+d78 7
+a84 6
+MAKEDEFAULT	: .USE .MAKE
+	(cd $(DEFAULT).md; $(MAKE) -l $(PASSVARS) $(.TARGET))
+MAKEALL		: .USE .MAKE
+	for i in $(ALL); do
+		(cd $$i.md; $(MAKE) -l $(PASSVARS) $(.TARGET))
+	done
+d87 4
+a90 1
+# Generic targets
+a91 5
+default		:: $(DEFAULT)
+install		:: installsrc install$(DEFAULT)
+instlint lint	:: MAKEDEFAULT
+profile		:: profile$(DEFAULT)
+tags		:: MAKEDEFAULT
+d93 8
+d102 3
+a104 1
+# Global generics -- apply to all machine types
+d106 16
+a121 3
+# installsrc		installs both source files and header files
+# installhdrs		installs headers only.
+# installobj		installs all object files
+d123 58
+a180 1
+installhdrs	::
+a182 1
+installhdrs	:: MAKEALL
+d184 5
+a188 4
+installsrc	:: installhdrs
+installsrc	::	
+	@@${UPDATE} ${SRCS} ${INSTALLDIR}
+installsrc	:: MAKEALL
+d190 3
+a192 1
+installobj	:: MAKEALL
+d194 3
+a196 3
+depend clean	:: MAKEALL
+clean		::
+	rm -f *~
+d198 2
+a199 5
+mkmf		:: .MAKE
+	for i in $(ALL);
+	do 
+		(cd $$i.md; mkmf && $(MAKE) -l $(PASSVARS) mkmf) 
+	done
+d201 4
+d213 1
+a213 1
+	rdist ${DISTFLAGS} -f ${DISTFILE} -d DIR=`pwd`
+d215 1
+a215 22
+#
+# 'all' targets
+#
+all		:: $(ALL)
+all-lint	:: $(ALLLINT)
+all-prof	:: $(ALLPROF)
+all-install	:: $(ALLINSTALL) installsrc
+all-instlint	:: instlint
+
+
+$(ALL)		:: .MAKE
+	cd $(.TARGET).md; ${MAKE} -l $(PASSVARS)
+$(ALLPROF)	:: .MAKE
+	cd $(.TARGET:S/^profile//).md; $(MAKE) -l $(PASSVARS) profile
+$(ALLINSTALL)	:: .MAKE
+	cd $(.TARGET:S/^install//).md; $(MAKE) -l $(PASSVARS) install
+$(ALLLINT)	:: .MAKE
+	cd $(.TARGET:S/^lint//).md; $(MAKE) -l $(PASSVARS) lint
+
+
+
+
+@
+
+
+1.4
+log
+@Added header
+@
+text
+@d13 8
+a20 1
+#			be compiled.
+d30 1
+a30 1
+# $Header$ SPRITE (Berkeley)
+d80 1
+a80 4
+
+tags		: ${HDRS} ${CSRCS}
+	rm -f tags
+	ctags ${CTFLAGS} ${HDRS} ${CSRCS}
+@
+
+
+1.3
+log
+@Adapted to *.md machine-dependent directories (instead of
+Object.*) and figured out how to use a variable with a list of machines
+so the including makefile can just set that and all will be well.
+@
+text
+@d21 3
+a23 2
+# to add new machine types. The 'expr' command is used to extract the
+# machine type of the target being made from the target's name. qv. expr(1).
+@
+
+
+1.2
+log
+@Added command-line variables for passing flags to CC and AS
+@
+text
+@d12 2
+d24 5
+a28 5
+ALL		= sun2 sun3
+ALLLINT		= lintsun2 lintsun3
+ALLPROF		= profilesun2 profilesun3
+ALLINSTALL	= installsun2 installsun3
+ALLINSTLINT	= instlintsun2 instlintsun3
+d52 1
+d54 12
+d70 1
+a70 1
+lint		:: lint$(DEFAULT)
+a71 1
+instlint	:: instlint$(DEFAULT)
+d77 7
+d87 1
+d89 2
+a90 1
+installsrc	! installhdrs .PRECIOUS
+d92 1
+d94 1
+a94 1
+installobj	:: $(ALLINSTALL)
+d96 1
+a96 8
+calls		: ${CSRCS}
+	/sprite/local/cmds/calls ${CFLAGS:M-[ID]*} ${CSRCS} > calls
+
+depend clean	:: .MAKE
+	for i in $(ALL);
+	do 
+		(cd Object.$$i; $(MAKE) -l $(PASSVARS) $(.TARGET))
+	done
+d100 1
+a100 1
+mkmf		::
+d103 1
+a103 1
+		(cd Object.$$i; mkmf && $(MAKE) -l $(PASSVARS) mkmf) 
+d123 1
+a123 1
+all-instlint	:: $(ALLINSTLINT)
+d127 5
+a131 1
+	cd Object.$(.TARGET); ${MAKE} -l $(PASSVARS)
+d133 1
+a133 19
+	cd Object.$(.TARGET:S/^lint//); $(MAKE) -l $(PASSVARS) lint
+$(ALLPROF)	:: .MAKE
+	cd Object.$(.TARGET:S/^profile//); $(MAKE) -l $(PASSVARS) profile
+
+#
+# Following targets are those that need to be imitated for each new machine
+# type (e.g. for "spur", need "${LINTDIR}/spur/${MODULE}.ln", "installspur",
+# "installspurobj" and "instlintspur". In addition, the ALL* variables should
+# be altered accordingly.
+#
+${LINTDIR}/sun3/${MODULE}.ln ${LINTDIR}/sun2/${MODULE}.ln: ${CSRCS} .MAKE
+	(cd Object.$(.TARGET:H:T); ${MAKE} -l $(PASSVARS) instlint)
+installsun2	:: installsun2obj instlintsun2
+installsun3	:: installsun3obj instlintsun3
+installsun3obj installsun2obj	:: .MAKE
+	(cd Object.$(.TARGET:S/^install//:S/obj$//); \
+		${MAKE} -l $(PASSVARS) installobj)
+instlintsun2	:: ${LINTDIR}/sun2/${MODULE}.ln
+instlintsun3	:: ${LINTDIR}/sun3/${MODULE}.ln
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d34 5
+a38 2
+CFLAGS		+= -m68010 $(.INCLUDES) $(.LIBS)
+AFLAGS		+= -m68010
+d76 4
+a79 1
+	for i in $(ALL); do (cd Object.$$i; $(MAKE) -l $(.TARGET)); done
+d84 4
+a87 1
+	for i in $(ALL); do (cd Object.$$i; mkmf && $(MAKE) -l mkmf); done
+d110 1
+a110 1
+	cd Object.$(.TARGET); ${MAKE} -l
+d112 1
+a112 1
+	cd Object.$(.TARGET:S/^lint//); $(MAKE) -l lint
+d114 1
+a114 1
+	cd Object.$(.TARGET:S/^profile//); $(MAKE) -l profile
+d123 1
+a123 1
+	(cd Object.$(.TARGET:H:T); ${MAKE} -l instlint)
+d127 2
+a128 1
+	(cd Object.$(.TARGET:S/^install//:S/obj$//); ${MAKE} -l installobj)
+@

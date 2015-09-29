@@ -1,0 +1,12 @@
+F SUNBW2_C.PAT;1                    	sunBW2.c.patch
+F SUNCG3C_.PAT;1                    	sunCG3C.c.patch
+F SUNCG4C_.PAT;1                    	sunCG4C.c.patch
+F SUNCG6C_.PAT;1                    	sunCG6C.c.patch
+F SUNCURSO.PAT;1                    	sunCursor.c.patch
+F SUNINIT_.PAT;1                    	sunInit.c.patch
+F SUNIO_C.PAT;1                     	sunIo.c.patch
+F SUNKBD_C.PAT;1                    	sunKbd.c.patch
+F SUNKEYMA.PAT;1                    	sunKeyMap.c.patch
+F SUNMOUSE.PAT;1                    	sunMouse.c.patch
+F SUNUTILS.PAT;1                    	sunUtils.c.patch
+F SUN_H.PAT;1                       	sun.h.patch

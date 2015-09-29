@@ -1,0 +1,8 @@
+To change an ultrix client partition from one host to another, just
+run /etc/dms as root/owner and modify the ethernet address of the client.
+The new machine will come up with the old machine's internet address.
+
+To change it from B&W to color or vice-versa, edit the file
+
+	/dlclient0/piquante.Berkeley.EDU.root/etc/ttys .
+

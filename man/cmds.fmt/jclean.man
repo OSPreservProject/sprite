@@ -1,0 +1,66 @@
+
+
+
+jclean                    User Commands                    jclean
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     jclean - Perform disk cleaning operation on Jaquith system.
+
+SSYYNNOOPPSSIISS
+     jjcclleeaann [[--aarrcchh _a_r_c_h_i_v_e-_p_a_t_t_e_r_n] [--rroooott _r_o_o_t_N_a_m_e]
+     [--mmggrrsseerrvveerr _h_o_s_t_n_a_m_e] [--mmggrrppoorrtt _p_o_r_t]
+
+OOPPTTIIOONNSS
+     --aarrcchh _a_r_c_h_i_v_e-_p_a_t_t_e_r_n
+                   Clean  only   archives   whose   names   match
+                   _a_r_c_h_i_v_e-_p_a_t_t_e_r_n" according to globbing rules.
+
+     --rroooott _r_o_o_t_n_a_m_e
+                   Root of index tree
+
+     --mmggrrsseerrvveerr _h_o_s_t_n_a_m_e
+                   Name of host where jukebox manager is running.
+
+     --mmggrrppoorrtt _p_o_r_t Port  where  jukebox   manager   is   running.
+                   Defaults to 20001 (decimal).
+_________________________________________________________________
+
+DDEESSCCRRIIPPTTIIOONN
+     JJcclleeaann is the  Jaquith  disk  cleaner.  By  and  large  it's
+     invoked  automatically as disk space becomes tight. (See the
+     --ddiisskkllooww and --ddiisskkhhiigghh options on Jaquith.)
+
+     However, Jclean  can  be  invoked  manually  if  needed.  By
+     default  it  cleans all archives listed in the Jaquith root.
+     i.e. it looks in all subdirectories **..aarrcchh  in  the  Jaquith
+     root.   Use  the  --aarrcchh option to restrict the cleaning to a
+     specific archive.
+
+     Jclean writes data to tape in Posix ttaarr format.   If  neces-
+     sary  data on Jaquith tapes can be retrieved using: ttaarr xxvvffbb
+     _d_e_v_i_c_e 6644.
+
+
+BBUUGGSS
+     None known.
+
+
+SSEEEE AALLSSOO
+     jaquith jmgr jls jstat jput jget jctrl jcopy jbuild
+
+
+KKEEYYWWOORRDDSS
+     jaquith archive
+
+
+
+
+
+Sprite v1.0                                                     1
+
+
+

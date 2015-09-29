@@ -1,0 +1,1656 @@
+head     9.3;
+branch   ;
+access   ;
+symbols  ds3100:9.3 sun3:9.3 sun4nw:9.3 symm:9.3 spur:9.3 Summer89:9.0 newlib:8.0 Summer88:6.0 sbc:5.4;
+locks    ; strict;
+comment  @ * @;
+
+
+9.3
+date     90.10.19.15.59.00;  author rab;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.09.06.18.17.51;  author jhh;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.22.22.55.29;  author jhh;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.21.28;  author douglis;  state Stable;
+branches ;
+next     8.7;
+
+8.7
+date     89.09.12.14.42.21;  author jhh;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.08.17.17.32.45;  author jhh;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.05.24.07.46.09;  author rab;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.05.23.09.45.23;  author mendel;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.03.15.16.00.02;  author brent;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.01.26.09.22.28;  author rab;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.30.12.16.30;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.40.12;  author douglis;  state Stable;
+branches ;
+next     6.2;
+
+6.2
+date     88.10.27.13.27.47;  author mendel;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.10.07.10.54.45;  author mendel;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.27.27;  author douglis;  state Stable;
+branches ;
+next     5.6;
+
+5.6
+date     88.06.06.11.32.23;  author mendel;  state Exp;
+branches ;
+next     5.5;
+
+5.5
+date     88.06.01.17.58.20;  author mendel;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     88.05.05.17.50.53;  author nelson;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     88.05.04.17.49.01;  author nelson;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     88.05.04.17.05.38;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.12.09.11.44.32;  author douglis;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.40.26;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.3
+log
+@Changes for profiling.
+@
+text
+@/*
+ * timerIntersil.c --
+ *
+ *	This file contains routines that manipulate the Intersil
+ *	ICM7170 real-time clock chip for the SUN-3.
+ *	(For a detailed explanation of the chip, see the data sheet
+ *	for the ICM7170 [Dec. 1985, 301680-005].)
+ *
+ *	The Intersil chip is used to provide perdiodic interrupts
+ *	and contains a set of free-running counters that keep track of time.
+ *	The routine in this file are used to setup the chip to
+ *	cause interrupts every 10 milliseconds (100th of second)
+ *	and maintain the time since the counters were initialized.
+ *
+ *      According to the Sun-3 Architecture manual (rev. 2.0, 25 July
+ *      1985), The chip's "interrupt output signal causes an interrupt
+ *      request on level 5 or 7 via the interrupt register." The routines
+ *      in this file set and reset the level-5 interrupt enable bit in the
+ *      interrupt register.  It also assumed that level-7 interrupts are
+ *      disabled.
+ *
+ *	The AMD timer chip on the Sun-2 provides several timers and
+ *	two of them are used by the Timer_ module for controlling the 
+ *	callback queue and profiling. Unfortunately the Intersil chip 
+ *	provides just one timer. The two timers used by the Timer module
+ *	are built from the chip's single timer. Thus whenever the
+ *	Intersil chip's timer interrupts, the two virtual timers
+ *	can appear to have gone off. Unlike the timers on the Sun-2,
+ *	the virtual timers can not cause indepdent interrupts.
+ *
+ *	The free-running counters on the Intersil chip can be used to
+ *	keep the time of day in Unix format (i.e. the time since 1/1/1970).
+ *	The counter is used here to keep track of the amount of time
+ *	since the system was booted.
+ *
+ *	Additional Timer_Counter routines are provided to convert from/to
+ *	32-bit interval values (described in timerClock.c) to/from time.
+ *	The interval represents an machine-dependent format for small 
+ *	time values. For the Sun-3, an interval is a fraction of second
+ *	because it is easily converted to the units that the free-running 
+ *	counters count in.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/timer/sun3.md/RCS/timerIntersil.c,v 9.2 90/09/06 18:17:51 jhh Exp Locker: rab $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <sys.h>
+#include <mach.h>
+#include <machConst.h>
+#include <devAddrs.h>
+#include <timer.h>
+#include <timerInt.h>
+#include <timerIntersilInt.h>
+#include <spriteTime.h>
+#include <stdio.h>
+#include <assert.h>
+
+/* For profiling call */
+#include "prof.h"
+/* For CallBack call */
+#include "timer.h"
+
+static volatile TimerDevice *timerRegsPtr = 
+    (volatile TimerDevice *) DEV_TIMER_ADDR;
+
+/*
+ * Flags to indicate whether a timer is enabled or not.
+ */
+static Boolean profileIntrsWanted = FALSE;
+static Boolean callbackIntrsWanted = FALSE;
+
+/*
+ * Initial state of the timer's interrupt enable/disable bit.
+ */
+
+static int timerIntrState = INTR_DISABLE;
+static int timerActive = FALSE;
+
+/*
+ * Frequency of the timer's interrupts.
+ */
+#define TIMER_INTR_FREQ 	S100TH_SEC_MASK
+
+/*
+ * Initial values of the free-running counters.
+ * According to the Intersil data sheet, the month and day
+ * counters start counting at 1.
+ */
+static    IntersilCounters	initialCounter = {
+    0,	/* hundredths */
+    0,	/* hours */
+    0,	/* minutes */
+    0,	/* seconds */
+    1,	/* month */
+    1,	/* day */
+    0,	/* year */
+    0,	/* dayOfWeek */
+};
+
+
+/*
+ * Routine to calculate a time value from the values in the free-running
+ * counters.
+ */
+
+static void CountersToTime();
+int Timer_TimerServiceInterrupt();
+
+
+
+/*
+ * Timer interval expressed as an integer and as a Time. This is the
+ * period between callbacks, so it is actually twice the timer period
+ * since we callback every other time. A tick on a sun3 is 1 ms and
+ * we callback every 20 ms.
+ */
+
+static unsigned int interval = TIMER_CALLBACK_INTERVAL_APPROX / 1000;
+static Time time = { 0, TIMER_CALLBACK_INTERVAL_APPROX};
+/*
+ * Constants used to convert the contents of the free-running counters
+ * to time in seconds and microseconds.
+ */
+
+#define SECS_PER_MIN	60
+#define SECS_PER_HOUR	SECS_PER_MIN * 60
+#define SECS_PER_DAY 	SECS_PER_HOUR * 24
+#define SECS_PER_YEAR	SECS_PER_DAY * 365
+
+/*
+ * Number of seconds since the beginning of the year to the
+ * beginning of a month.
+ */
+static int accumSecsPerMonth[13] = {
+    0,		/* nothing */
+    0 * SECS_PER_DAY,		/* Jan */
+    31 * SECS_PER_DAY,		/* Feb */
+    59 * SECS_PER_DAY,		/* Mar */
+    90 * SECS_PER_DAY,		/* Apr */
+    120 * SECS_PER_DAY,		/* May */
+    151 * SECS_PER_DAY,		/* Jun */
+    181 * SECS_PER_DAY,		/* Jul */
+    212 * SECS_PER_DAY,		/* Aug */
+    243 * SECS_PER_DAY,		/* Sep */
+    273 * SECS_PER_DAY,		/* Oct */
+    304 * SECS_PER_DAY,		/* Nov */
+    334 * SECS_PER_DAY,		/* Dec */
+};
+
+/*
+ * Version of above for leap years.
+ */
+static int accumSecsPerMonthLeap[13] = {
+    0,		/* nothing */
+    0 * SECS_PER_DAY,		/* Jan */
+    31 * SECS_PER_DAY,		/* Feb */
+    60 * SECS_PER_DAY,		/* Mar */
+    91 * SECS_PER_DAY,		/* Apr */
+    121 * SECS_PER_DAY,		/* May */
+    152 * SECS_PER_DAY,		/* Jun */
+    182 * SECS_PER_DAY,		/* Jul */
+    213 * SECS_PER_DAY,		/* Aug */
+    244 * SECS_PER_DAY,		/* Sep */
+    274 * SECS_PER_DAY,		/* Oct */
+    305 * SECS_PER_DAY,		/* Nov */
+    335 * SECS_PER_DAY,		/* Dec */
+};
+
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Timer_TimerInit --
+ *
+ *	Initialize the ICM7170 chip.
+ *
+ *	N.B. This routine must be called before Timer_TimerStart.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The timer is initialized and ready to start ticking.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*ARGSUSED*/
+void
+Timer_TimerInit(timer)
+    unsigned short 	timer;		/* Ignored for Sun-3 version. */
+{
+    static Boolean init = FALSE;
+    unsigned char c;
+
+    if (!init) {
+	init = TRUE;
+	/*
+	 * Register our call back function.
+	 */
+	 Mach_SetHandler(29, Timer_TimerServiceInterrupt, (ClientData) 0); 
+	/*
+	 * Tell the chip to prevent interrupts.
+	 */
+	timerIntrState = INTR_DISABLE;
+	timerRegsPtr->commandReg = IntersilCommand(RUN, timerIntrState);
+
+	/*
+	 * Tell the chip to cause periodic interrupts.
+	 */
+	timerRegsPtr->interruptReg = TIMER_INTR_FREQ;
+
+	/*
+	 * Read the chip's interrupt register to clear any pending inerrupts.
+	 */
+	c = timerRegsPtr->interruptReg;
+#ifdef lint
+	c = c;
+#endif
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Timer_TimerStart --
+ *
+ *	Start the timer so it will cause periodic interrupts.
+ *	N.B. The timer must have been initialized with Timer_TimerInit
+ *	before this routine is called.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The timer starts ticking.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Timer_TimerStart(timer)
+    unsigned short timer;
+{
+    if (timer == TIMER_CALLBACK_TIMER) {
+	callbackIntrsWanted = TRUE;
+    } else if (timer == TIMER_PROFILE_TIMER) {
+	profileIntrsWanted = TRUE;
+    } else {
+	panic("Timer_TimerStart: unknown timer %d\n", timer);
+    }
+    if (!timerActive) {
+	timerActive = TRUE;
+	/*
+	 * Tell the chip to start counting and allow it to cause interrupts.
+	 */
+	timerIntrState = INTR_ENABLE;
+	timerRegsPtr->commandReg = IntersilCommand(RUN, INTR_ENABLE);
+    
+	/*
+	 * Enable timer interrupts in the system's interrupt register.
+	 */
+    
+	*Mach_InterruptReg |= MACH_ENABLE_LEVEL5_INTR;
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Timer_TimerInactivate --
+ *
+ *	Stops the timer so that it will not cause interrupts.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The timer is stopped.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Timer_TimerInactivate(timer)
+    register unsigned short timer;
+{
+    if (timer == TIMER_CALLBACK_TIMER) {
+	callbackIntrsWanted = FALSE;
+    } else if (timer == TIMER_PROFILE_TIMER) {
+	profileIntrsWanted = FALSE;
+    } else {
+	panic("Timer_TimerInactivate: unknown timer %d\n", timer);
+    }
+
+    /*
+     * If neither type of timer interrupt is wanted, then disable
+     * timer interrupts.
+     */
+
+    if (!callbackIntrsWanted && !profileIntrsWanted) {
+	timerActive = FALSE;
+	*Mach_InterruptReg &= ~MACH_ENABLE_LEVEL5_INTR;
+	timerRegsPtr->commandReg = IntersilCommand(RUN, INTR_DISABLE);
+    }
+}
+
+
+#if 0
+/*
+ *----------------------------------------------------------------------
+ *
+ * Timer_TimerGetStatus --
+ *
+ *	Clears the interrupt pending bit in the interrupt register
+ *	and reads the interrupt status register (ISR) of the chip.
+ *	The ISR must be read in order to reset the interrupt, according
+ *	to the Intersil data sheet (p.6, "Periodic Interrupts").
+ *	(It seems that the value is always 0.) According to the
+ *	Sun-3 architure manual (p.31), the level-5 bit in the interrupt 
+ *	register must be toggled to clear the interrupt.
+ *
+ * Results:
+ *	The value of the status register.
+ *
+ * Side effects:
+ *	The interrupt is cleared.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifndef lint
+static unsigned short
+Timer_TimerGetStatus()
+{
+    unsigned char statusReg;
+    unsigned char intrReg;
+
+    intrReg = *Mach_InterruptReg & MACH_ENABLE_LEVEL7_INTR;
+
+    *Mach_InterruptReg &= ~(MACH_ENABLE_LEVEL5_INTR | 
+				MACH_ENABLE_ALL_INTERRUPTS | intrReg);
+
+    statusReg = timerRegsPtr->interruptReg;
+
+    *Mach_InterruptReg |= (MACH_ENABLE_LEVEL5_INTR | 
+				MACH_ENABLE_ALL_INTERRUPTS | intrReg);
+
+    /*
+     * Read the chip again in case an obscure race condition occurs.
+     * (This is how Sun handles it.)
+     */
+    statusReg = timerRegsPtr->interruptReg;
+
+    return(statusReg);
+}
+#endif
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Timer_TimerExamineStatus --
+ *
+ *	Assuming the interrupt is valid, return TRUE or FALSE if 
+ *	the interrupt is or is not allowed for the specified timer.
+ *	(The status register is always 0 on the Sun-3 so we can't tell
+ *	if the chip really did interrupt.)
+ *
+ *	This routine is used to decrease the frequency of
+ *	a virtual timer. The callback timer's frequency is
+ *	one-half of the real timer's frequency.
+ *
+ * Results:
+ *	TRUE		if the timer interrupted.
+ *	FALSE		if the timer did not interrupt.
+ *
+ * Side effects:
+ *	The callback virtual timer's toggle is changed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifndef lint
+/*ARGSUSED*/
+static Boolean
+Timer_TimerExamineStatus(statusReg, timer, spuriousPtr)
+    unsigned int statusReg;	/* Ignored because it is always 0. */
+    unsigned int timer;		/* Virtual Timer # */
+    Boolean *spuriousPtr;	/* Always set FALSE. */
+{
+    static Boolean callbackTimerToggle = FALSE;
+
+    /*
+     * Assume we never get a spurious interrupt because the statusReg
+     * value is always 0 on the Sun-3. 
+     */
+    *spuriousPtr = FALSE;
+
+    if (timer == TIMER_CALLBACK_TIMER) {
+	/*
+	 * Cut the timer's frequency in half.
+	 */
+	callbackTimerToggle = !callbackTimerToggle;
+	return(callbackTimerToggle);
+    } else if (timer == TIMER_PROFILE_TIMER) {
+	if (profileIntrsWanted) {
+	    return(TRUE);
+	} else {
+	    return(FALSE);
+	}
+    } else {
+	printf("Timer_TimerExamineStatus: unknown timer %d\n", 
+				timer);
+	return(FALSE);
+    }
+}
+#endif
+#endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  Timer_TimerServiceInterrupt --
+ *
+ *      This routine is called at every timer interrupt. 
+ *      It calls the timer callback queue handling if the callback timer 
+ *	expired and calls the profiling interrupt handling if the 
+ *	profile callback timer expired.
+ *
+ *  Results:
+ *	None.
+ *
+ *  Side Effects:
+ *	Routines on the timer queue may cause side effects. Profile
+ *	collect may take place. 
+ *	
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*ARGSUSED*/
+int
+Timer_TimerServiceInterrupt(clientData, stack)
+    ClientData	    clientData;
+    Mach_IntrStack stack;
+{ 
+    /*
+     *  Determine if the callback and profile timers have expired.
+     *  Timer_TimerExamineStatus has the side effect of clearing the timer's
+     *  "cause interrupt" bit if it was set. 
+     *
+     *  The profile timer is checked first because routines on the callback
+     *  queue might cause a delay in collecting profiling information.
+     */
+
+    unsigned short timerStatus;
+    register unsigned char intrReg;
+    static Boolean callbackTimerToggle = FALSE;
+
+    /*
+     * Begin in-lined Timer_TimerGetStatus().  This is done mostly
+     * to clear the interrupt as the status returned is always zero.
+     */
+    intrReg = *Mach_InterruptReg & MACH_ENABLE_LEVEL7_INTR;
+
+    *Mach_InterruptReg &= ~(MACH_ENABLE_LEVEL5_INTR | 
+				MACH_ENABLE_ALL_INTERRUPTS | intrReg);
+
+    timerStatus = timerRegsPtr->interruptReg;
+
+    *Mach_InterruptReg |= (MACH_ENABLE_LEVEL5_INTR | 
+				MACH_ENABLE_ALL_INTERRUPTS | intrReg);
+
+    /*
+     * Read the chip again in case an obscure race condition occurs.
+     * (This is how Sun handles it.)
+     */
+    timerStatus = timerRegsPtr->interruptReg;
+#ifdef lint
+    timerRegsPtr->interruptReg = timerStatus;
+#endif
+    /*
+     * End in-lined Timer_TimerGetStatus
+     */
+
+    if (mach_KernelMode) {
+	/*
+	 * Check for kernel profiling.  We'll sample the PC here.
+	 */
+	assert((stack.excStack.statusReg & MACH_SR_SUPSTATE) != 0);
+	if (profileIntrsWanted) {
+	    TIMER_PROFILE_ROUTINE(&stack);
+	}
+    } else {
+	/*
+	 * Save pc for user profiling.
+	 */
+	assert((stack.excStack.statusReg & MACH_SR_SUPSTATE) == 0);
+	Proc_GetCurrentProc()->Prof_PC = stack.excStack.pc;
+    }
+    /*
+     * Cut the call-back frequency in half.
+     */
+    callbackTimerToggle = !callbackTimerToggle;
+    if (callbackTimerToggle) {
+	TIMER_CALLBACK_ROUTINE(interval, time);
+    }
+    return 0;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Timer_CounterInit --
+ *
+ *	Initializes the chip's free-running counters.
+ *	The STOP command stops the counter and the RUN command turns
+ *	it back on.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Timer_CounterInit()
+{
+    timerRegsPtr->commandReg = IntersilCommand(STOP, timerIntrState);
+    timerRegsPtr->counter = initialCounter;
+    timerRegsPtr->commandReg = IntersilCommand(RUN, timerIntrState);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Timer_CounterRead --
+ *
+ *	Read the contents of the counters. Interrupts are assumed
+ *	to be disabled to assure that the counters are read atomically.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Timer_GetCurrentTicks(timePtr)
+    Timer_Ticks	*timePtr;	/* Time from the counters. */
+{
+    IntersilCounters	counter;
+
+    /*
+     * Read the chip's counters.
+     */
+
+    counter = timerRegsPtr->counter;
+    CountersToTime(&counter, timePtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CountersToTime --
+ *
+ *	Converts the values in the Intersil free-running counters
+ *	to a time value.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+CountersToTime(counterPtr, timePtr)
+    register IntersilCounters	*counterPtr;
+    register Time		*timePtr;
+{
+    register int seconds = 0;
+    register int *accumPtr;
+
+    if (counterPtr->year != 0) {
+	seconds += (counterPtr->year * SECS_PER_YEAR) +
+		   (((counterPtr->year + 3) / 4) * SECS_PER_DAY);
+    }
+
+    /*
+     * Is it a leap year?
+     */
+    if ((counterPtr->year % 4) == 0) {
+	accumPtr = accumSecsPerMonthLeap;
+    } else {
+	accumPtr = accumSecsPerMonth;
+    }
+
+    timePtr->seconds = seconds +
+		accumPtr[counterPtr->month] +
+		((counterPtr->day - 1) * SECS_PER_DAY) +
+		(counterPtr->hours * SECS_PER_HOUR) +
+		(counterPtr->minutes * 60) +
+		counterPtr->seconds;
+    timePtr->microseconds = (counterPtr->hundredths * HUNDREDTH_SECOND);
+}
+
+
+
+/*  @@#@@#@@#@@#@@#@@#@@#@@#@@#@@#@@    DEBUGGING CODE    @@#@@#@@#@@#@@#@@#@@#@@#@@#@@#@@  */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Timer_TimerGetInfo --
+ *
+ *	Debugging routine to print the contents of the free-running
+ *	counters.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*ARGSUSED*/
+void
+Timer_TimerGetInfo(data)
+    ClientData	data;		/* Ignored. */
+{
+    IntersilCounters  counter;
+    Time	time;
+
+    if ((int) data == 1) {
+	DISABLE_INTR();
+	timerRegsPtr->commandReg = IntersilCommand(RUN, INTR_ENABLE);
+	ENABLE_INTR();
+	return;
+    }
+
+    DISABLE_INTR();
+    counter = timerRegsPtr->counter;
+    ENABLE_INTR();
+
+    printf("Hundredths	%d\n", counter.hundredths);
+    printf("Seconds		%d\n", counter.seconds);
+    printf("Minutes		%d\n", counter.minutes);
+    printf("Hours		%d\n", counter.hours);
+    printf("Day		%d\n", counter.day);
+    printf("Month		%d\n", counter.month);
+    printf("Year		%d\n", counter.year);
+    printf("Day of Week	%d\n", counter.dayOfWeek);
+
+    CountersToTime(&counter, &time);
+    printf("Time:	%d.%06u\n", time.seconds, time.microseconds);
+}
+
+#ifdef NOT_USED
+
+static void
+TimeToCounters(time, counterPtr)
+    Time	time;
+    register IntersilCounters	*counterPtr;
+{
+    int	*accumPtr;
+    register int seconds;
+
+#define SECS_SINCE_1970_FOR(year) \
+(((year - 1970) * SECS_PER_YEAR) + ((((year - 1970) + 3) / 4) * SECS_PER_DAY))
+
+    seconds = time.seconds - SECS_SINCE_1970_FOR(1984);
+
+    if (seconds < 0) {
+	printf( "Tried to set time before 1984\n");
+	return;
+    }
+
+    counterPtr->year = seconds / SECS_PER_YEAR;
+    seconds %= SECS_PER_YEAR;
+    seconds -= ((counterPtr->year + 3) / 4) * SECS_PER_DAY;
+
+    if ((counterPtr->year % 4) == 0) {
+	accumPtr = accumSecsPerMonthLeap;
+    } else {
+	accumPtr = accumSecsPerMonth;
+    }
+
+    for (month = 1; month < 13; month++) {
+	if (seconds < accumPtr[month]) {
+	    seconds -= accumPtr[month];
+	    counterPtr->month = month;
+	    break;
+	}
+    }
+    counterPtr->day = (seconds / SECS_PER_DAY) + 1;
+    seconds %= SECS_PER_DAY;
+    counterPtr->hours = seconds / SECS_PER_HOUR;
+    seconds %= SECS_PER_HOUR;
+    counterPtr->minutes = seconds / 60;
+    counterPtr->seconds = seconds % 60;
+
+    counterPtr->tenths = time.microseconds / TENTH_SECOND;
+    counterPtr->hundredths = 
+		(time.microseconds % TENTH_SECOND) / HUNDREDTH_SECOND;
+}
+#endif /* NOT_USED */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimerHardwareUniversalTimeInit --
+ *
+ * 	Not implemented yet.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*ARGSUSED*/
+void
+TimerHardwareUniversalTimeInit(timePtr, localOffsetPtr, DSTPtr)
+    Time *timePtr;		/* Buffer to hold universal time. */
+    int  *localOffsetPtr;	/* Buffer to hold local offset. */
+    Boolean *DSTPtr;		/* Buffer to hold DST allowed flag. */
+{
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimerSetHardwareUniversalTime --
+ *
+ *	Not implemented yet.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*ARGSUSED*/
+void
+TimerSetHardwareUniversalTime(timePtr, localOffset, DST)
+    Time *timePtr;		/* universal time. */
+    int  localOffset;		/* local offset. */
+    Boolean DST;		/* DST allowed flag. */
+{
+}
+@
+
+
+9.2
+log
+@First pass at function prototypes
+@
+text
+@d49 1
+a49 1
+static char rcsid[] = "$Header: /sprite/src/kernel/timer/sun3.md/RCS/timerIntersil.c,v 9.1 89/10/22 22:55:29 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d52 11
+a62 11
+#include "sprite.h"
+#include "sys.h"
+#include "mach.h"
+#include "machConst.h"
+#include "devAddrs.h"
+#include "timer.h"
+#include "timerInt.h"
+#include "timerIntersilInt.h"
+#include "spriteTime.h"
+#include "stdio.h"
+
+d496 16
+a511 6
+    /*
+     * Check for kernel profiling.  We'll sample the PC here.
+     */
+    if (profileIntrsWanted) {
+	TIMER_PROFILE_ROUTINE(&stack);
+    } 
+@
+
+
+9.1
+log
+@Fixed lint errors
+@
+text
+@d49 1
+a49 1
+static char rcsid[] = "$Header: /sprite/src/kernel/timer/sun3.md/RCS/timerIntersil.c,v 9.0 89/09/12 15:21:28 douglis Stable Locker: jhh $ SPRITE (Berkeley)";
+d61 1
+a113 2
+static unsigned short Timer_TimerGetStatus();
+static Boolean Timer_TimerExamineStatus();
+d319 1
+d398 1
+a398 1
+    unsigned char statusReg;	/* Ignored because it is always 0. */
+d429 1
+d509 1
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d49 1
+a49 1
+static char rcsid[] = "$Header: /sprite/src/kernel/timer/sun3.md/RCS/timerIntersil.c,v 8.7 89/09/12 14:42:21 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d112 3
+a114 1
+void Timer_TimerServiceInterrupt();
+d117 1
+d125 1
+a125 1
+static int interval = TIMER_CALLBACK_INTERVAL_APPROX / 1000;
+d342 1
+d367 1
+d394 1
+d428 1
+d451 2
+a452 1
+void
+@
+
+
+8.7
+log
+@added routines for hardware TOD clock
+@
+text
+@d49 1
+a49 1
+static char rcsid[] = "$Header: /c/src/kernel/timer.jhh/sun3.md/RCS/timerIntersil.c,v 8.6 89/08/17 17:32:45 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+@
+
+
+8.6
+log
+@New timer interface
+@
+text
+@d49 1
+a49 1
+static char rcsid[] = "$Header: /sprite/src/kernel/timer/sun3.md/RCS/timerIntersil.c,v 8.5 89/05/24 07:46:09 rab Exp $ SPRITE (Berkeley)";
+d712 51
+@
+
+
+8.5
+log
+@Changes to allow optimiziation.
+@
+text
+@d49 1
+a49 1
+static char rcsid[] = "$Header: /sprite/src/kernel/timer/sun3.md/RCS/timerIntersil.c,v 8.4 89/05/23 09:45:23 mendel Exp Locker: rab $ SPRITE (Berkeley)";
+d114 10
+d498 1
+a498 1
+	TIMER_CALLBACK_ROUTINE();
+@
+
+
+8.4
+log
+@Changed to use interrupt callback registering.
+@
+text
+@d49 2
+a50 2
+static char rcsid[] = "$Header: /sprite/src/kernel/timer/sun3.md/RCS/timerIntersil.c,v 8.3 89/03/15 16:00:02 brent Exp $ SPRITE (Berkeley)";
+#endif not lint
+d68 2
+a69 1
+static TimerDevice *timerRegsPtr = (TimerDevice *) DEV_TIMER_ADDR;
+d473 1
+a473 1
+#endif lint
+d701 1
+a701 2
+#endif NOT_USED
+
+@
+
+
+8.3
+log
+@Trimmed down the interrupt handler by simplifying it.
+@
+text
+@d49 1
+a49 1
+static char rcsid[] = "$Header: /sprite/src/kernel/timer/sun3.md/RCS/timerIntersil.c,v 8.2 89/01/26 09:22:28 rab Exp Locker: rab $ SPRITE (Berkeley)";
+d111 1
+d193 4
+a196 1
+
+d434 2
+a435 1
+Timer_TimerServiceInterrupt(stack)
+@
+
+
+8.2
+log
+@Replaced Prof_CollectInfo and Timer_Callback with #define'ed
+procedures.
+@
+text
+@d49 1
+a49 1
+static char rcsid[] = "$Header: /sprite/src/kernel/timer/sun3.md/RCS/timerSun3.c,v 8.1 88/11/30 12:16:30 brent Exp Locker: rab $ SPRITE (Berkeley)";
+d81 1
+d244 14
+a257 12
+
+    /*
+     * Tell the chip to start counting and allow it to cause interrupts.
+     */
+    timerIntrState = INTR_ENABLE;
+    timerRegsPtr->commandReg = IntersilCommand(RUN, INTR_ENABLE);
+
+    /*
+     * Enable timer interrupts in the system's interrupt register.
+     */
+
+    *Mach_InterruptReg |= MACH_ENABLE_LEVEL5_INTR;
+d295 1
+d442 3
+a444 3
+    int profiled = FALSE;
+    unsigned short timerStatus =  Timer_TimerGetStatus();
+    Boolean spurious;
+d446 5
+a450 7
+    if (Timer_TimerExamineStatus(timerStatus, TIMER_PROFILE_TIMER, &spurious)) {
+	TIMER_PROFILE_ROUTINE(&stack);
+	profiled = TRUE;
+#	ifdef GATHER_STAT
+	timer_Statistics.profile++;
+#	endif
+    } 
+d452 2
+a453 4
+    if (Timer_TimerExamineStatus(timerStatus, TIMER_CALLBACK_TIMER, &spurious)) {
+	TIMER_CALLBACK_ROUTINE();
+    } else {
+	if (!profiled) {
+d455 1
+a455 7
+	    /*
+	     * An unwanted timer interrupt was received but it wasn't
+	     * spurious (this is o.k. -- see devTimerSun3.c).
+	     */
+	    if (!spurious) {
+		return;
+	    } 
+d457 2
+a458 4
+	    /* Spurious interrupt!!! */
+#ifdef GATHER_STAT
+	     timer_Statistics.spurious++;
+#endif
+d460 23
+a482 3
+	    printf("%c", 7);	/* ring the bell */
+
+	}
+@
+
+
+8.1
+log
+@Sys_Printf => printf  Sys_Panic => panic
+@
+text
+@d2 1
+a2 1
+ * timerSun3.c --
+d49 1
+a49 1
+static char rcsid[] = "$Header: /sprite/src/kernel/timer/sun3.md/RCS/timerSun3.c,v 8.0 88/11/11 18:40:12 douglis Stable Locker: brent $ SPRITE (Berkeley)";
+d59 1
+a59 1
+#include "timerSun3Int.h"
+d443 1
+a443 1
+	Prof_CollectInfo(&stack);
+d451 1
+a451 1
+	Timer_CallBack();
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d49 1
+a49 1
+static char rcsid[] = "$Header: /sprite/src/kernel/timer/sun3.md/RCS/timerSun3.c,v 6.2 88/10/27 13:27:47 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d241 1
+a241 1
+	Sys_Panic(SYS_FATAL,"Timer_TimerStart: unknown timer %d\n", timer);
+d283 1
+a283 1
+	Sys_Panic(SYS_FATAL,"Timer_TimerInactivate: unknown timer %d\n", timer);
+d398 1
+a398 1
+	Sys_Panic(SYS_WARNING,"Timer_TimerExamineStatus: unknown timer %d\n", 
+d468 1
+a468 1
+	    Sys_Printf("%c", 7);	/* ring the bell */
+d622 8
+a629 8
+    Sys_Printf("Hundredths	%d\n", counter.hundredths);
+    Sys_Printf("Seconds		%d\n", counter.seconds);
+    Sys_Printf("Minutes		%d\n", counter.minutes);
+    Sys_Printf("Hours		%d\n", counter.hours);
+    Sys_Printf("Day		%d\n", counter.day);
+    Sys_Printf("Month		%d\n", counter.month);
+    Sys_Printf("Year		%d\n", counter.year);
+    Sys_Printf("Day of Week	%d\n", counter.dayOfWeek);
+d632 1
+a632 1
+    Sys_Printf("Time:	%d.%06u\n", time.seconds, time.microseconds);
+d651 1
+a651 1
+	Sys_Panic(SYS_WARNING, "Tried to set time before 1984\n");
+@
+
+
+6.2
+log
+@Port to use new libc.a
+@
+text
+@d49 1
+a49 1
+static char rcsid[] = "$Header: timerSun3.c,v 6.1 88/10/07 10:54:45 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+6.1
+log
+@Moved the devTimer routines into the timer module.
+@
+text
+@d49 1
+a49 1
+static char rcsid[] = "$Header: devTimerSun3.c,v 5.6 88/06/06 11:32:23 mendel Exp $ SPRITE (Berkeley)";
+a59 1
+#ifdef NEWLIB
+a60 3
+#else
+#include "time.h"
+#endif
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d2 1
+a2 1
+ * devTimerSun3.c --
+d36 1
+a36 1
+ *	Additional Dev_Counter routines are provided to convert from/to
+d57 6
+a62 2
+#include "devTimer.h"
+#include "devTimerSun3Int.h"
+d64 1
+a106 4
+/*
+ * The interval value to represent one second. It must be at least 1000
+ * so that one milliscond can be be represented in an interval.
+ */
+a107 3
+#define ONE_SEC_INTERVAL	1000
+
+
+a108 10
+ * The maximum amount of time that an interval can represent.
+ */
+
+#define MAXINT ((unsigned int) 0xFFFFFFFF)
+static Time maxIntervalTime = {
+    MAXINT / ONE_SEC_INTERVAL,
+    ((MAXINT % ONE_SEC_INTERVAL) * ONE_SECOND) / ONE_SEC_INTERVAL,
+};
+
+/*
+d170 1
+a170 1
+ * Dev_TimerInit --
+d174 1
+a174 1
+ *	N.B. This routine must be called before Dev_TimerStart.
+d187 1
+a187 1
+Dev_TimerInit(timer)
+d221 1
+a221 1
+ * Dev_TimerStart --
+d224 1
+a224 1
+ *	N.B. The timer must have been initialized with Dev_TimerInit
+d237 1
+a237 1
+Dev_TimerStart(timer)
+d240 1
+a240 1
+    if (timer == DEV_CALLBACK_TIMER) {
+d242 1
+a242 1
+    } else if (timer == DEV_PROFILE_TIMER) {
+d245 1
+a245 1
+	Sys_Panic(SYS_FATAL,"Dev_TimerStart: unknown timer %d\n", timer);
+d265 1
+a265 1
+ * Dev_TimerInactivate --
+d279 1
+a279 1
+Dev_TimerInactivate(timer)
+d282 1
+a282 1
+    if (timer == DEV_CALLBACK_TIMER) {
+d284 1
+a284 1
+    } else if (timer == DEV_PROFILE_TIMER) {
+d287 1
+a287 1
+	Sys_Panic(SYS_FATAL,"Dev_TimerInactivate: unknown timer %d\n", timer);
+d305 1
+a305 1
+ * Dev_TimerGetStatus --
+d325 1
+a325 1
+Dev_TimerGetStatus()
+d353 1
+a353 1
+ * Dev_TimerExamineStatus --
+d376 1
+a376 1
+Dev_TimerExamineStatus(statusReg, timer, spuriousPtr)
+d389 1
+a389 1
+    if (timer == DEV_CALLBACK_TIMER) {
+d395 1
+a395 1
+    } else if (timer == DEV_PROFILE_TIMER) {
+d402 1
+a402 1
+	Sys_Panic(SYS_WARNING,"Dev_TimerExamineStatus: unknown timer %d\n", 
+d411 1
+a411 1
+ *  Dev_TimerServiceInterrupt --
+d430 1
+a430 1
+Dev_TimerServiceInterrupt(stack)
+d435 1
+a435 1
+     *  Dev_TimerExamineStatus has the side effect of clearing the timer's
+d443 1
+a443 1
+    unsigned short timerStatus =  Dev_TimerGetStatus();
+d446 1
+a446 1
+    if (Dev_TimerExamineStatus(timerStatus, DEV_PROFILE_TIMER, &spurious)) {
+d454 1
+a454 1
+    if (Dev_TimerExamineStatus(timerStatus, DEV_CALLBACK_TIMER, &spurious)) {
+d482 1
+a482 1
+ * Dev_CounterInit --
+d498 1
+a498 1
+Dev_CounterInit()
+d509 1
+a509 1
+ * Dev_CounterRead --
+d524 2
+a525 2
+Dev_CounterRead(timePtr)
+    DevCounter	*timePtr;	/* Time from the counters. */
+a587 155
+/*
+ *----------------------------------------------------------------------
+ *
+ *  Dev_CounterIntToTime --
+ *
+ *      Converts a 32-bit interval value into a standard time value.
+ *
+ *  Results:
+ *	A time value.
+ *
+ *  Side Effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Dev_CounterIntToTime(counter, resultPtr)
+    unsigned int counter;
+    Time *resultPtr;
+{
+    resultPtr->seconds = counter / ONE_SEC_INTERVAL;
+    resultPtr->microseconds = (counter % ONE_SEC_INTERVAL) * 
+				(ONE_SECOND/ONE_SEC_INTERVAL);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  Dev_CounterCountToTime --
+ *
+ *      Converts a DevCounter value into a standard time value.
+ *
+ *	This routine is meant for use by the Timer module only.
+ *
+ *  Results:
+ *	A time value.
+ *
+ *  Side Effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Dev_CounterCountToTime(count, resultPtr)
+    DevCounter count;
+    Time *resultPtr;
+{
+	/* 
+	 * DevCounter's and Timer's are the same for the Sun3.
+	 */
+
+	*resultPtr = count;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  Dev_CounterTimeToInt --
+ *
+ *      Converts a standard time value into a 32-bit interval value.
+ *
+ *  Results:
+ *	An interval value.
+ *
+ *  Side Effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Dev_CounterTimeToInt(time, resultPtr)
+    Time time;
+    unsigned int *resultPtr;
+{
+    if (Time_LE(time, maxIntervalTime)) {
+	*resultPtr = (time.seconds * ONE_SEC_INTERVAL) + 
+		 ((time.microseconds * ONE_SEC_INTERVAL) / ONE_SECOND);
+    } else {
+	Sys_Panic(SYS_WARNING, "Dev_CounterTimeToInt: time value too large\n");
+	*resultPtr = 0xFFFFFFFF;
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  Dev_CounterTimeToCounter --
+ *
+ *      Converts a standard time value into a DevCounter value.
+ *
+ *  Results:
+ *	A DevCounter value.
+ *
+ *  Side Effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Dev_CounterTimeToCount(time, resultPtr)
+    Time time;
+    DevCounter *resultPtr;
+{
+	/*
+	 * On the Sun3, the DevCounter is the same as a time value.
+	 */
+	*resultPtr = time;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  Dev_CounterAddIntToCount --
+ *
+ *      Add an interval value to a DevCounter value returning a
+ *	DevCounter value Int time units in the future. Signal overflow
+ *	if the value will not fit.
+ *	This routine is meant for use by the Timer module only.
+ *
+ *  Results:
+ *	A counter interval value.
+ *
+ *  Side Effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Dev_CounterAddIntToCount(count, interval, resultPtr, overflowPtr)
+    DevCounter	count;		/* Counter to add to */
+    unsigned int	interval;	/* Interval to add */	
+    DevCounter	*resultPtr;	/* Buffer to place the results */
+    unsigned int	*overflowPtr;	/* Overflow count */
+{
+    Time	tmp;
+    /*
+     * Since DevCounter is a time value, convert the interval to a time
+     * and use Timer_Add. It can't overflow.
+     */
+     
+    *overflowPtr = 0;	
+    Dev_CounterIntToTime(interval, &tmp);
+    Time_Add(count, tmp, resultPtr);
+
+}
+
+
+d593 1
+a593 1
+ * Dev_TimerGetInfo --
+d609 1
+a609 1
+Dev_TimerGetInfo(data)
+@
+
+
+5.6
+log
+@Modified to conform to new device independent interface to timers and
+counters.
+@
+text
+@d49 1
+a49 1
+static char rcsid[] = "$Header: devTimerSun3.c,v 5.5 88/06/01 17:58:20 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+5.5
+log
+@Moved to sun3.md directory. Removed unneeded #ifdef SUN3 from file.
+@
+text
+@d49 1
+a49 1
+static char rcsid[] = "$Header: devTimerSun3.c,v 5.4 88/05/05 17:50:53 nelson Exp $ SPRITE (Berkeley)";
+d61 6
+d336 1
+a336 1
+unsigned short
+d387 1
+a387 1
+Boolean
+d420 20
+d441 50
+d537 1
+a537 1
+    Time	*timePtr;	/* Time from the counters. */
+d626 17
+d644 13
+d685 67
+@
+
+
+5.4
+log
+@Changed to handle movement of functionality from sys to mach.
+@
+text
+@a46 1
+#ifdef SUN3
+d49 1
+a49 1
+static char rcsid[] = "$Header: devTimerSun3.c,v 5.3 88/05/04 17:49:01 nelson Exp $ SPRITE (Berkeley)";
+a682 1
+#endif SUN3
+@
+
+
+5.3
+log
+@Name change.
+@
+text
+@d50 1
+a50 1
+static char rcsid[] = "$Header: devTimerSun3.c,v 5.2 88/05/04 17:05:38 nelson Exp $ SPRITE (Berkeley)";
+a56 1
+#include "sunMon.h"
+@
+
+
+5.2
+log
+@Changed for new arrangement of mach module.
+@
+text
+@d50 1
+a50 1
+static char rcsid[] = "$Header: devTimerSun3.c,v 5.1 87/12/09 11:44:32 douglis Exp $ SPRITE (Berkeley)";
+d266 1
+a266 1
+    *SunInterruptReg |= MACH_ENABLE_LEVEL5_INTR;
+d304 1
+a304 1
+	*SunInterruptReg &= ~MACH_ENABLE_LEVEL5_INTR;
+d338 1
+a338 1
+    intrReg = *SunInterruptReg & MACH_ENABLE_LEVEL7_INTR;
+d340 1
+a340 1
+    *SunInterruptReg &= ~(MACH_ENABLE_LEVEL5_INTR | 
+d345 1
+a345 1
+    *SunInterruptReg |= (MACH_ENABLE_LEVEL5_INTR | 
+@
+
+
+5.1
+log
+@Added include of machineConst.h.
+@
+text
+@d50 1
+a50 1
+static char rcsid[] = "$Header: devTimerSun3.c,v 5.0 87/08/11 10:40:26 sprite Exp $ SPRITE (Berkeley)";
+d55 2
+a56 2
+#include "machine.h"
+#include "machineConst.h"
+d266 1
+a266 1
+    *SunInterruptReg |= SUN_ENABLE_LEVEL5_INTR;
+d304 1
+a304 1
+	*SunInterruptReg &= ~SUN_ENABLE_LEVEL5_INTR;
+d338 1
+a338 1
+    intrReg = *SunInterruptReg & SUN_ENABLE_LEVEL7_INTR;
+d340 2
+a341 2
+    *SunInterruptReg &= ~(SUN_ENABLE_LEVEL5_INTR | 
+				SUN_ENABLE_ALL_INTERRUPTS | intrReg);
+d345 2
+a346 2
+    *SunInterruptReg |= (SUN_ENABLE_LEVEL5_INTR | 
+				SUN_ENABLE_ALL_INTERRUPTS | intrReg);
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d50 1
+a50 1
+static char rcsid[] = "$Header: devTimerSun3.c,v 4.2 87/07/30 12:56:36 andrew Exp $ SPRITE (Berkeley)";
+d56 1
+@

@@ -1,0 +1,330 @@
+
+
+
+menubutton                User Commands                menubutton
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     menubutton - Create and manipulate menubutton widgets
+
+SSYYNNOOPPSSIISS
+     mmeennuubbuuttttoonn _p_a_t_h_N_a_m_e ?_o_p_t_i_o_n_s?
+
+SSTTAANNDDAARRDD OOPPTTIIOONNSS
+     aaccttiivveeBBaacckkggrroouunndd               bbiittmmaapp          ffoonnttrreelliieeff     |
+     aaccttiivveeFFoorreeggrroouunndd               bboorrddeerrWWiiddtthh     ffoorreeggrroouunnddtteexxtt |
+     aanncchhoorr          ccuurrssoorr         ppaaddXX            tteexxttVVaarriiaabbllee   |
+     bbaacckkggrroouunndd      ddiissaabblleeddFFoorreeggrroouunndd             ppaaddYYuunnddeerrlliinnee  |
+
+     See the ``options'' manual entry for details on the standard
+     options.
+
+WWIIDDGGEETT--SSPPEECCIIFFIICC OOPPTTIIOONNSS
+     Name:           hheeiigghhtt                                        |
+     Class:          HHeeiigghhtt                                        |
+     Command-Line Switch:--hheeiigghhtt                                   |
+
+                                                                        ||
+          Specifies  a  desired height for the menu button.  If a  |
+          bitmap is being displayed in the menu button  then  the  |
+          value is in screen units (i.e. any of the forms accept-  |
+          able to TTkk__GGeettPPiixxeellss); for text it is in lines of text.  |
+          If  this  option  isn't  specified,  the  menu button's  |
+          desired height is computed from the size of the  bitmap  |
+          or text being displayed in it.
+
+     Name:           mmeennuu
+     Class:          MMeennuuNNaammee
+     Command-Line Switch:--mmeennuu
+
+          Specifies the path name of  the  menu  associated  with
+          this menubutton.
+
+     Name:           ssttaattee
+     Class:          SSttaattee
+     Command-Line Switch:--ssttaattee
+
+          Specifies one of three  states  for  the  menu  button:
+          nnoorrmmaall,  aaccttiivvee, or ddiissaabblleedd.  In normal state the menu
+          button is displayed using the ffoorreeggrroouunndd and bbaacckkggrroouunndd
+          options.   The  active state is typically used when the
+          pointer is over the menu button.  In active  state  the
+          menu button is displayed using the aaccttiivveeFFoorreeggrroouunndd and
+          aaccttiivveeBBaacckkggrroouunndd options.  Disabled  state  means  that
+          the  menu  button  is insensitive:  it doesn't activate
+          and doesn't respond to mouse button presses.   In  this
+          state  the  ddiissaabblleeddFFoorreeggrroouunndd  and  bbaacckkggrroouunndd options
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+menubutton                User Commands                menubutton
+
+
+
+          determine how the button is displayed.
+
+     Name:           vvaarriiaabbllee
+     Class:          VVaarriiaabbllee
+     Command-Line Switch:--vvaarriiaabbllee
+
+          Specifies the name of a global variable to set whenever
+          this menubutton posts its menu.  Also serves as name of
+          group of  related  menubuttons  (allows  event  sharing
+          between  menubuttons  and  menus).  Defaults to ppoosstteedd--
+          MMeennuu.
+
+     Name:           wwiiddtthh                                         |
+     Class:          WWiiddtthh                                         |
+     Command-Line Switch:--wwiiddtthh                                    |
+
+                                                                        ||
+          Specifies  a  desired  width for the menu button.  If a  |
+          bitmap is being displayed in the menu button  then  the  |
+          value is in screen units (i.e. any of the forms accept-  |
+          able to TTkk__GGeettPPiixxeellss); for text it  is  in  characters.  |
+          If  this  option  isn't  specified,  the  menu button's  |
+          desired width is computed from the size of  the  bitmap  |
+          or text being displayed in it.
+_________________________________________________________________
+
+
+IINNTTRROODDUUCCTTIIOONN
+     The mmeennuubbuuttttoonn command creates a new window  (given  by  the
+     _p_a_t_h_N_a_m_e  argument)  and  makes it into a menubutton widget.
+     Additional options, described above, may be specified on the
+     command  line or in the option database to configure aspects
+     of the menubutton such as its colors, font, text,  and  ini-
+     tial  relief.   The  mmeennuubbuuttttoonn command returns its _p_a_t_h_N_a_m_e
+     argument.  At the time this command is invoked,  there  must
+     not  exist  a  window  named _p_a_t_h_N_a_m_e, but _p_a_t_h_N_a_m_e's parent
+     must exist.
+
+     A menubutton is a widget that displays a textual  string  or  |
+     bitmap  and  is  associated  with  a menu widget.  In normal
+     usage, pressing mouse button 1 over  the  menubutton  causes
+     the  associated  menu to be posted just underneath the menu-
+     button.  If the mouse is moved over the menu before  releas-
+     ing the mouse button, the button release causes the underly-
+     ing menu entry to be invoked.  When the button is  released,
+     the menu is unposted.
+
+     Menubuttons are organized into groups to  allow  menu  scan-
+     ning:  if  the  mouse  button is pressed over one menubutton
+     (causing it to post its menu) and the mouse  is  moved  over
+     another  menubutton  in the same group without releasing the
+     mouse button, then the  menu  of  the  first  menubutton  is
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+menubutton                User Commands                menubutton
+
+
+
+     unposted  and  the  menu  of  the  new  menubutton is posted
+     instead.  This makes it possible to scan a row of  pull-down
+     menus  to  find  a  particular entry.  Typically, all of the
+     menubuttons for an application are in the same group, but it
+     is possible to assign multiple groups:  this allows scanning
+     within a group but not between them.
+
+     Each menubutton is associated with a particular global vari-
+     able,  determined  by  the vvaarriiaabbllee option, and the variable
+     determines the menubutton's group:  all menubuttons with the
+     same  associated variable are in the same group.  Whenever a
+     menubutton posts its menu it stores the  path  name  of  the  |
+     menubutton  in  the  associated  variable.  Furthermore, the  |
+     menubutton monitors the value of that variable continuously.  |
+     When  the  variable  changes  value (e.g. because some other  |
+     menubutton posted its menu) then the menubutton will  unpost  |
+     its menu if the new value is different than the menubutton's  |
+     name or post its menu if the new value is the  same  as  the  |
+     menubutton's  name.   This  means you can cause a menu to be  |
+     posted or unposted just by changing the value of  the  vari-  |
+     able.
+
+
+WWIIDDGGEETT CCOOMMMMAANNDD
+     The mmeennuubbuuttttoonn command creates a new Tcl command whose  name
+     is  _p_a_t_h_N_a_m_e.   This  command  may be used to invoke various
+     operations on the widget.   It  has  the  following  general
+     form:
+
+          _p_a_t_h_N_a_m_e _o_p_t_i_o_n ?_a_r_g _a_r_g ...?
+     _O_p_t_i_o_n and the _a_r_gs determine the exact behavior of the com-
+     mand.   The  following  commands are possible for menubutton
+     widgets:
+
+     _p_a_t_h_N_a_m_e aaccttiivvaattee
+          Change the menu button's state to aaccttiivvee and  redisplay
+          the  menu  button using its active foreground and back-
+          ground colors instead of normal  colors.   The  command
+          returns  an  empty  string.  This command is ignored if  |
+          the menu button's state is ddiissaabblleedd.  This  command  is  |
+          obsolete and will eventually be removed; use ``_p_a_t_h_N_a_m_e  |
+          ccoonnffiigguurree --ssttaattee aaccttiivvee'' instead.
+
+     _p_a_t_h_N_a_m_e ccoonnffiigguurree ?_o_p_t_i_o_n? ?_v_a_l_u_e _o_p_t_i_o_n _v_a_l_u_e ...?
+          Query  or  modify  the  configuration  options  of  the
+          widget.   If  no  _o_p_t_i_o_n  is  specified, returns a list
+          describing all of the available  options  for  _p_a_t_h_N_a_m_e
+          (see  TTkk__CCoonnffiigguurreeIInnffoo for information on the format of
+          this list).  If _o_p_t_i_o_n is specified with no _v_a_l_u_e, then
+          the  command  returns  a  list describing the one named
+          option (this list will be identical to the  correspond-
+          ing  sublist  of  the  value  returned  if no _o_p_t_i_o_n is
+
+
+
+Sprite v1.0                                                     3
+
+
+
+
+
+
+menubutton                User Commands                menubutton
+
+
+
+          specified).  If one  or  more  _o_p_t_i_o_n-_v_a_l_u_e  pairs  are
+          specified,  then  the command modifies the given widget
+          option(s) to have the given value(s);  in this case the
+          command  returns  an empty string.  _O_p_t_i_o_n may have any
+          of the values accepted by the mmeennuubbuuttttoonn command.
+
+     _p_a_t_h_N_a_m_e ddeeaaccttiivvaattee
+          Change the menu button's state to nnoorrmmaall and  redisplay
+          the  menu  button using its normal foreground and back-
+          ground colors.  The command returns  an  empty  string.  |
+          This  command  is ignored if the menu button's state is  |
+          ddiissaabblleedd.  This command is obsolete and will eventually  |
+          be  removed;  use  ``_p_a_t_h_N_a_m_e ccoonnffiigguurree --ssttaattee nnoorrmmaall''  |
+          instead.
+
+     _p_a_t_h_N_a_m_e ppoosstt
+          Arrange for the  menubutton's  associated  menu  to  be
+          posted.   This  is done by executing a Tcl command with
+          the form
+
+                    _m_e_n_u ppoosstt _x _y _g_r_o_u_p
+
+          where _m_e_n_u is the path name of the associated  menu,  _x
+          and _y are the root-window coordinates of the lower-left
+          corner of the menubutton, and _g_r_o_u_p is the name of  the
+          menubutton's  group  (its  vvaarriiaabbllee option).  As a side
+          effect, the path name of the associated menu is  stored
+          in  the global variable associated with the menubutton.
+          Returns an empty string.  This command  is  ignored  if  |
+          the menu button's state is ddiissaabblleedd.
+
+     _p_a_t_h_N_a_m_e uunnppoosstt
+          Store an empty string in the variable  associated  with
+          the menubutton.  If the menubutton has posted its menu,
+          this will cause it to unpost its menu  by  executing  a
+          command of the form
+
+                    _m_e_n_u uunnppoosstt
+
+          where _m_e_n_u is the name of the associated menu.  If  any
+          other  menubutton  sharing the same variable has posted
+          its menu, then that menubutton will unpost its menu  in
+          a similar fashion.  Returns an empty string.
+
+
+DDEEFFAAUULLTT BBIINNDDIINNGGSS
+     Tk automatically creates class  bindings  for  menu  buttons  |
+     that give them the following default behavior:                |
+
+     [1]                                                                ||
+          A  menu button activates whenever the mouse passes over  |
+          it and deactivates whenever the mouse leaves it.         |
+
+
+
+Sprite v1.0                                                     4
+
+
+
+
+
+
+menubutton                User Commands                menubutton
+
+
+
+     [2]                                                                ||
+          A  menu  button's  relief is changed to raised whenever  |
+          mouse button 1 is pressed over it, and  the  relief  is  |
+          restored  to  its original value when button 1 is later  |
+          released or the mouse is dragged into another menu but-  |
+          ton in the same group.                                   |
+
+     [3]                                                                ||
+          When  mouse  button 1 is pressed over a menu button, or  |
+          when the mouse is dragged into a menu button with mouse  |
+          button  1  pressed, the associated menu is posted;  the  |
+          mouse can be dragged across the menu and released  over  |
+          an entry in the menu to invoke that entry.  The menu is  |
+          unposted when button 1 is released outside  either  the  |
+          menu  or  the  menu  button.  The menu is also unposted  |
+          when the mouse is dragged into another menu  button  in  |
+          the same group.                                          |
+
+     [4]                                                                ||
+          If  mouse  button  1 is pressed and released within the  |
+          menu button, then the menu stays  posted  and  keyboard  |
+          traversal  is possible as described in the manual entry  |
+          for ttkk__mmeennuuss.                                            |
+
+     [5]                                                                ||
+          Menubuttons  may also be posted by typing characters on  |
+          the keyboard.  See the manual entry  for  ttkk__mmeennuuss  for  |
+          full details on keyboard menu traversal.                 |
+
+     [6]                                                                ||
+          If  mouse  button  2 is pressed over a menu button then  |
+          the associated menu is posted and also  _t_o_r_n  _o_f_f:   it  |
+          can  then be dragged around on the screen with button 2  |
+          and the menu will not automatically unpost when entries  |
+          in  it  are  invoked.   To close a torn off menu, click  |
+          mouse button 1 over the associated menu button.          |
+
+     If the menu button's state is  ddiissaabblleedd  then  none  of  the  |
+     above  actions  occur:   the  menu button is completely non-  |
+     responsive.                                                   |
+
+     The behavior of menu buttons can be changed by defining  new  |
+     bindings  for  individual widgets or by redefining the class  |
+     bindings.
+
+
+KKEEYYWWOORRDDSS
+     menubutton, widget
+
+
+
+
+
+
+
+Sprite v1.0                                                     5
+
+
+

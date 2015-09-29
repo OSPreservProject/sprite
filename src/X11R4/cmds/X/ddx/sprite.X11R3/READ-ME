@@ -1,0 +1,42 @@
+
+	How to add CG6 support to Xsun for X11R3.
+
+modify sunInit.c :
+
+add the following to the list of extern's at the top of the file.
+
+	extern Bool sunCG6Probe();
+
+
+modify the sunFbDataRec declaration by adding an entry for the cg6 as
+follows:
+
+	#ifdef ZOIDS
+	sunFbDataRec sunFbData[] = {
+	    sunBW2Probe,  	"/dev/bwtwo0",	    neverProbed,	0, 0,
+	    sunCG2CProbe,  	"/dev/cgtwo0",	    neverProbed,	0, 0,
+	    sunCG3CProbe,  	"/dev/cgthree0",    neverProbed,	0, 0,
+	    sunCG4CProbe,  	"/dev/cgfour0",	    neverProbed,	0, 0,
+	    sunCG6Probe,  	"/dev/cgsix0",	    neverProbed,	0, 0,
+	};
+	#else  ZOIDS
+	sunFbDataRec sunFbData[] = {
+	    sunBW2Probe,  	"/dev/bwtwo0",	    neverProbed,
+	    sunCG2CProbe,  	"/dev/cgtwo0",	    neverProbed,
+	    sunCG3CProbe,  	"/dev/cgthree0",    neverProbed,
+	    sunCG4CProbe,  	"/dev/cgfour0",	    neverProbed,
+	    sunCG6Probe,  	"/dev/cgsix0",	    neverProbed,
+	};
+	#endif ZOIDS
+
+
+
+modify Imakefile:
+
+	Add sunCG6.c and sunCG6.o
+
+
+To start Xsun you MUST specify -dev /dev/cgsix0 or else the auto
+config code seems to think that it is a cg4.
+
+

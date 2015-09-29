@@ -1,0 +1,361 @@
+'\" Copyright 1989 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/lib/disk/RCS/Disk.man,v 1.8 92/08/31 12:20:45 voelker Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS Disk lib
+.BS
+.SH NAME
+.VS
+Disk_ReadLabel, Disk_WriteLabel, Disk_EraseLabel, Disk_NewLabel, Disk_ReadDecLabel, Disk_WriteDecLabel, Disk_ReadSunLabel,  Disk_WriteSunLabel, Disk_HasFilesystem, Disk_ReadLfsSuperBlock, Disk_WriteLfsSuperBlock, Disk_ReadLfsCheckpointHdr, Disk_WriteLfsCheckPointHdr, Disk_WriteLfsCheckPointArea, Disk_LfsCheckpointTrailer, Disk_ForEachCheckpointRegion, Disk_ReadDomainHeader, Disk_WriteDomainHeader, Disk_ReadSummaryInfo, Disk_WriteSummaryInfo, Disk_SectorRead, Disk_SectorWrite, Disk_BlockRead, Disk_BlockWrite, Disk_BadBlockRead, Disk_FragRead, Disk_FragWrite, Disk_PrintDomainHeader, Disk_PrintSummaryInfo, Disk_PrintFileDescBitmap, Disk_PrintDataBlockBitmap, Disk_PrintDirEntry, Disk_PrintLabel, Disk_PrintLfsSuperBlock, Disk_PrintLfsSuperBlockHdr, Disk_PrintLfsDescMapParams, Disk_PrintLfsSegUsageParams, Disk_PrintLfsFileLayoutParams, Disk_PrintLfsStableMemParams, Disk_PrintLfsCheckpointHdr, Disk_PrintLfsCheckpointRegion, Disk_PrintLfsCheckpointTrailer 
+\- Package for accessing OFS and LFS file systems via raw disks
+.VE
+.SH SYNOPSIS
+.nf
+.VS
+#include <disk.h>
+.VE
+.VS
+Disk_Label *
+\fBDisk_ReadLabel\fR(\fIfileID\fR)
+int
+\fBDisk_WriteLabel\fR(\fIfileID, labelPtr\fR)
+Disk_Label *
+\fBDisk_NewLabel\fR(\fIlabelType\fR)
+int
+\fBDisk_EraseLabel\fR(\fIfileID, labelType\fR)
+.VE
+.VS
+Dec_DiskLabel *
+\fBDisk_ReadDecLabel\fR(\fIfileID\fR)
+int
+\fBDisk_WriteDecLabel\fR(\fIfileID, decLabelPtr\fR)
+.VE
+Sun_DiskLabel *
+\fBDisk_ReadSunLabel\fR(\fIfileID\fR)
+.VS
+int
+\fBDisk_WriteSunLabel\fR(\fIfileID, sunLabelPtr\fR)
+.VE
+.VS
+Ofs_DomainHeader *
+\fBDisk_ReadDomainHeader\fR(\fIfileID, labelPtr\fR)
+int
+\fBDisk_WriteDomainHeader\fR(\fIfileID, labelPtr, headerPtr\fR)
+.VS
+Ofs_SummaryInfo *
+\fBDisk_ReadSummaryInfo\fR(\fIfileID, labelPtr\fR)
+int
+\fBDisk_WriteSummaryInfo\fR(\fIfileID, labelPtr, summaryPtr\fR)
+.VE
+.VE
+int
+\fBDisk_SectorRead\fR(\fIfileID, index, count, buffer\fR)
+int
+\fBDisk_SectorWrite\fR(\fIfileID, index, count, buffer\fR)
+int
+\fBDisk_BlockRead\fR(\fIfileID, headerPtr, index, count, buffer\fR)
+int
+\fBDisk_BlockWrite\fR(\fIfileID, headerPtr, index, count, buffer\fR)
+int
+\fBDisk_BadBlockRead\fR(\fIfileID, headerPtr, index, buffer\fR)
+int
+\fBDisk_FragRead\fR(\fIfileID, headerPtr, index, count, buffer\fR)
+int
+\fBDisk_FragWrite\fR(\fIfileID, headerPtr, index, count, buffer\fR)
+void
+\fBDisk_PrintDomainHeader\fR(\fIheaderPtr\fR)
+void
+\fBDisk_PrintSummaryInfo\fR(\fIsummaryPtr\fR)
+.VS
+\fBDisk_PrintLabel\fR(\fIlabelPtr\fR)
+.VE
+void
+\fBDisk_PrintFileDescBitmap\fR(\fIheaderPtr, bitmap\fR)
+void
+\fBDisk_PrintDataBlockBitmap\fR(\fIheaderPtr, bitmap\fR)
+void
+\fBDisk_PrintDirEntry\fR(\fIdirEntryPtr\fR)
+.VS
+int
+\fBDisk_HasFilesystem\fR(\fIfileID, labelptr\fR)
+LfsSuperBlock*
+\fBDisk_ReadLfsSuperBlock\fR(\fIfileId, labelPtr\fR)
+ReturnStatus
+\fBDisk_WriteLfsSuperBlock\fR(\fIfileId, lfsSuperPtr\fR)
+LfsCheckPointHdr*
+\fBDisk_ReadLfsCheckPointHdr\fR(\fIfileId, labelPtr, areaPtr\fR)
+ReturnStatus
+\fBDisk_WriteLfsCheckPointHdr\fR(\fIfileId, headerPtr, area, labelPtr\fR)
+ReturnStatus
+\fBDisk_WriteLfsCheckPointArea\fR(\fIfileId, headerPtr, area, labelPtr\fR)
+LfsCheckPointTrailer*
+\fBDisk_LfsCheckPointTrailer\fR(\fIcheckPointHdrPtr\fR)
+ReturnStatus
+\fBDisk_ForEachCheckPointRegion\fR(\fIcheckPointHdrPtr, regionProc\fR)
+void
+\fBDisk_PrintLfsSuperBlockHdr\fR(\fIlfsSuperHdrPtr\fR)
+void
+\fBDisk_PrintLfsStableMemParams\fR(\fIstableMemPtr\fR)
+void
+\fBDisk_PrintLfsDescMapParams\fR(\fIdescMapPtr\fR)
+void
+\fBDisk_PrintLfsSegUsageParams\fR(\fIsegUsagePtr\fR)
+void
+\fBDisk_PrintLfsFileLayoutParams\fR(\fIfileLayoutPtr\fR)
+void
+\fBDisk_PrintLfsSuperBlock\fR(\fIlfsSuperPtr\fR)
+void
+\fBDisk_PrintLfsCheckPointHdr\fR(\fIcheckPointHdr\fR)
+void
+\fBDisk_PrintLfsCheckPointRegion\fR(\fIregionPtr\fR)
+void
+\fBDisk_PrintLfsCheckPointTrailer\fR(\fItrailerPtr\fR)
+.VE
+.SH ARGUMENTS
+.AS Ofs_DomainHeader blockNumber
+.AP int fileID in
+File descriptor from \fBopen\fP of raw disk.
+.AP int partition in
+Index of partition to access, 0-7.
+.VS
+.AP Disk_Label *labelPtr in
+Basic disk information from \fBDisk_ReadLabel\fP.
+.AP Disk_NativeLabelType labelType in
+Type of machine-specific (native) disk label on the disk.
+.AP Dec_DiskLabel *decLabelPtr
+Native disk label for ds3100s.
+.AP Sun_DiskLabel *sunLabelPtr
+Native disk label for Suns.
+.VE
+.AP int index in
+Index of first (sector/block/fragment) to transfer.
+.AP int count in
+Number of (sectors/blocks/fragments) to transfer.
+.AP char *buffer in
+Buffer for data transferred.
+.AP Ofs_DomainHeader *headerPtr in
+Disk header information from \fBDisk_ReadDiskHeader\fP.
+.AP Ofs_SummaryInfo *summaryPtr in
+Disk summary information sector.
+.AP char *bitmap in
+Array of bitmap bytes.
+.AP Fslcl_DirEntry *dirEntryPtr in
+Directory entry structure.
+.AP LfsSuperBlock *lfsSuperPtr in
+LFS Super Block structure.
+.AP LfsSuperBlockHdr *lfsSuperHdrPtr in
+Static parameters describing LFS layout on disk.
+.AP LfsCheckPointHdr *checkPointHdrPtr in
+Structure describing and heading a LFS checkpoint area.
+.AP int areaPtr out
+If non-NULL, returns the checkpoint the header is for.
+.AP int area in
+Flag determining the checkpoint area (0 or 1).
+.AP LfsCheckPointTrailer *trailerPtr in
+Structure capping a LFS checkpoinit area.
+.AP int\ proc(LfsCheckPointRegion*) regionProc in
+Procedure used to iterate over the various checkpoint regions
+between the lfsCheckPointHdr and the lfsChecpointTrailer.
+.AP LfsStableMemParams *stableMemPtr in
+Configuration parameters for stable memory data structures.
+.AP LfsDescMapParams *descMapPtr in
+LFS descriptor map layout on disk.
+.AP LfsSegUsageParams *segUsagePtr in
+LFS segment usage array layout description on disk.
+.AP LfsFileLayoutParams *fileLayoutPtr in
+Number of file descriptors to pack together per block.
+.BE
+
+.SH INTRODUCTION
+.PP
+The \fBDisk\fP package is used to read and write raw disks that
+are formatted to contain Sprite file systems.  To use these routines correctly
+it is important to understand disk \fIpartitions\fP,
+file system \fIheader information\fP,
+file system \fIblocks\fP, and file system block \fIfragments\fP.
+.PP
+Each physical disk is divided into as many as 8 partitions.
+The letters 'a' through 'h' are used to distinguish these different
+partitions in the names of the special device files that are
+used to access them.  Thus ``/dev/rsd0a'' references the first (zero'th)
+partition on disk \fBrsd0\fP.  
+.VS
+The partitioning information is stored on the disk in the 
+``disk label''.
+This label is in a machine-dependent format, and is referred to as
+the ``native disk label''.
+Native disk labels are kept in a machine-dependent
+location on the disk. 
+This is usually in sector 0 or some other sector near
+the start of the first partition.
+The
+\fBfsmake\fP program also
+copies the label to a partition when it formats
+it into a file system.  
+The routines \fBDisk_ReadSunLabel\fP and \fBDisk_ReadDecLabel\fP
+can be used to read the native disk labels.
+.PP
+It is not always convenient to deal with native disk labels.
+For this reason a generic label type and associated routines have been
+provided.
+The type \fBDisk_Label\fR is a standard format for disk labels.
+The routine \fBDisk_ReadLabel\fR is used to read a native disk label
+off the disk and convert it into a \fBDisk_Label\fR.
+The routine \fBDisk_WriteLabel\fR will convert a \fBDisk_Label\fR
+into a native disk label and write it on the disk.
+Two more procedures are provided for manipulating disk labels.
+\fBDisk_EraseLabel\fR will erase a native disk label from the disk,
+and \fBDisk_NewLabel\fR is used to create a new label if the disk does not
+have one already.
+The contents of a \fBDisk_Label\fR are defined in <disk.h>.
+.VE
+.PP
+\fBDisk_HasFilesystem\fR returns the type of file system on the
+disk.  If the disk has a LFS file system, DISK_HAS_LFS is returned;
+if the disk has an OFS file system, DISK_HAS_OFS is returned;
+otherwise, DISK_HAS_NO_FS is returned.
+.PP
+The detailed structure of the old sprite file system is defined by a
+Ofs_DomainHeader structure that is located on the disk according to the
+\fBDisk_Label\fP.  This can be obtained with the
+\fBDisk_ReadDomainHeader\fP procedure.  The Ofs_DomainHeader structure
+is defined in <kernel/fsdm.h>, and is passed to the block and fragment
+I/O routines so they can correctly locate blocks and fragments.
+.PP
+.VS
+A secondary data structure called the summary information is kept on disk
+following the domain header.
+The summary information consists of a single sector and contains such
+information as the number of free blocks and file descriptors.
+The Ofs_SummaryInfo structure is defined in <kernel/fsdm.h>.
+The location of the summary sector is stored in the \fBDisk_Label\fR.
+The summary sector can be read and written using the 
+\fBDisk_ReadSummaryInfo\fR and \fBDisk_WriteSummaryInfo\fR procedures.
+.PP
+The detailed structure of a log structured file system is defined
+by a LfsSuperBlock structure whose location on disk is determined
+in <kernel/lfsSuperBlock.h>.  This structure can be read off of
+a disk using \fBDisk_ReadLfsSuperBlock\fR, and written using
+\fBDisk_WriteSuperBlock\fR.
+.PP
+\fBDisk_ReadLfsCheckpointHdr\fR returns the current LFS checkpoint
+header, which is also a front for the current checkpoint area
+whose bulk is hidden behind the \fBLfsCheckPointHdr\fR. If \fBareaPtr\fR
+is non-NULL, the area number that the header is for gets returned
+through the pointer.  (The area can be either zero or one, and only
+makes a difference if the checkpoint header is going to be written
+back out to disk.)
+\fBDisk_CheckPointTrailer\fR accesses the tail of the checkpoint
+area from a \fBLfsCheckPointHdr\fR returned from 
+\fBDisk_ReadLfsCheckPointHdr\fR. \fBDisk_WriteLfsCheckPointHdr\fR
+will write to disk only the \fBLfsCheckPointHdr\fR structure of the
+specified checkpoint area; \fBDisk_WriteLfsCheckPointArea\fR will
+write to disk the entire checkpoint area headed by a \fBLfsCheckPointHdr\fR,
+which is larger than just the structure itself (such as is returned
+by \fBDisk_ReadLfsCheckPointHdr\fR).
+\fBDisk_ForEachCheckPointRegions\fR takes a procedural argument
+and iterates over the \fBLfsCheckPointRegions\fR in the checkpoint area
+headed by a \fBLfsCheckPointHdr\fR, applying the procedural argument to
+every region in the checkpoint area.  If the procedure returns a
+non-zero value, then the iteration halts and that value is returned
+from \fBDisk_ForEachCheckPointRegion\fR.
+.SH "SECTOR I/O"
+.PP
+\fBDisk_SectorRead\fP and \fBDisk_SectorWrite\fP read and write sectors
+from the disk without regard to the underlying block structure.  Their
+\fIindex\fP argument specifies the first sector (starting from zero)
+to transfer, relative to the start of the partition.  The sector
+offsets given in the \fBDisk_Label\fP structure are useful with
+this routine.
+.SH "BLOCK I/O"
+.PP
+The file system is arranged in block-sized chunks on the disk.
+\fBFS_BLOCK_SIZE\fP defines how many bytes this is (currently 4 Kbytes).
+Due to disk geometry considerations consecutive blocks may or may not
+be contiguous on disk.  \fBDisk_BlockRead\fP and \fBDisk_BlockWrite\fP
+use geometry and block layout information in the Ofs_DomainHeader to
+correctly locate disk blocks.  The \fIindex\fP argument to these routines
+is a block index, counting from the beginning of the partition
+(see the warning below!).
+.PP
+\fBDisk_BadBlockRead\fP is used to re-read a bad file system block and
+determine which sectors are bad.  It returns a bitmask with bits
+set to indicate which of the sectors were successfully read.
+Bit \fIi\fP in the mask corresponds
+to sector \fIi\fP in the block.  \fBDISK_SECTORS_PER_BLOCK\fP defines
+how many sector there are in each file system block.
+.SH "FRAGMENT I/O"
+.PP
+Each file system block is sub-divided into fragments to optimize allocation
+of small files.  Currently the fragment size is 1 Kbyte, so there are
+4 fragments to each block.
+\fBDisk_FragRead\fP and \fBDisk_FragWrite\fP
+are used to read and write fragments.
+The \fIindex\fP argument to these routines
+is a fragment index, counting from the beginning of the partition
+(see the warning below!).  The \fIcount\fP argument to these routines
+should not be greater than the number of fragments per file system block.
+.SH "BLOCK AND FRAGMENT INDEXES"
+\fBWARNING:\fP there are several caveats about block numbers and
+fragment numbers as used by the Sprite file system.
+A partition is divided into areas for bitmaps, file descriptors,
+and data blocks.  These divisions are specified in the Ofs_DomainHeader
+structure in terms of block offsets and number of blocks.
+However, \fIblock numbers are not kept in disk maps, only fragment numbers\fP.
+When traversing the direct and indirect blocks that define where
+a file's blocks are, fragment indexes must be converted to block
+indexes before using either \fBDisk_BlockRead\fP or \fBDisk_BlockWrite\fP.
+Also, \fIdirect block pointers in the maps are fragment indexes
+relative to the start of the data block area of the file system\fP.
+Thus to convert from a direct block pointer to a physical fragment index:
+.DS
+fragIndex = blockPointer + (headerPtr->dataOffset * FS_FRAGMENTS_PER_BLOCK);
+blockIndex = fragIndex / FS_FRAGMENTS_PER_BLOCK;
+.DE
+.PP
+The last main caveat is that \fIindirect block pointers are
+physical fragment indexes\fP.  They do not need to be offset in the
+same way as direct block pointers.  This applies to any block pointer
+that points to an indirect block, never to a block pointer that points
+to a data block.
+.SH "PRINTING UTILITIES"
+.PP
+The last set of procedures in this package are used to print
+out contents of the file system.  \fBDisk_PrintDomainHeader\fP
+prints out the domain header information.
+\fBDisk_PrintSummaryInfo\fP prints out the summary disk sector.
+This sector is used to keep the prefix under which the disk is
+exported, the current number of blocks allocated and free,
+and whether or not the disk was safely sync'ed at last reboot.
+\fBDisk_PrintFileDescBitmap\fP and \fPDisk_PrintDataBlockBitmap\fP
+print out the file descriptor and data block bitmaps in hex.
+A zero bit represents a free descriptor or block.
+\fBDisk_PrintDirEntry\fP prints out a directory entry.
+\fBDisk_PrintLfsSuperBlock\fP prints out the contents of a
+LFS Super Block structure.
+\fBDisk_PrintLfsSuperBlockHdr\fP prints out the
+static parameters describing the LFS layout on disk.
+\fBDisk_PrintLfsCheckPointHdr\fP prints out the
+structure describing and heading a LFS checkpoint area.
+\fBDisk_PrintLfsCheckPointTrailer\fP prints out the
+structure capping a LFS checkpoinit area.
+\fBDisk_PrintLfsStableMemParams\fP prints out the
+configuration parameters for LFS stable memory data structures.
+\fBDisk_PrintLfsDescMapParams\fP prints out the
+LFS descriptor map layout on disk.
+\fBDisk_PrintLfsSegUsageParams\fP prints out the
+LFS segment usage array layout description on disk.
+\fBDisk_PrintLfsFileLayoutParams\fP prints out the
+number of file descriptors packed together per block.
+.SH SEE ALSO
+fscheck, fsmake, labeldisk, installboot
+.SH KEYWORDS
+disk, block, sector, fragment
+

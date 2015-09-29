@@ -1,0 +1,25 @@
+\expandafter\ifx\csname bsf\endcsname\relax \typeout{Document option `bsf':
+29 Feb 88} \def\bsf{\protect\pbsf} \newfam\sbffam
+\@addfontinfo\@vpt{\@prtct\bsfv@} \def\bsfv@{\def\pbsf{\@subfont\bsf\bf}}
+\@addfontinfo\@vipt{\@prtct\bsfvi@} \def\bsfvi@{\def\pbsf{\@subfont\bsf\bf}}
+\@addfontinfo\@viipt{\@prtct\bsfvii@}
+\def\bsfvii@{\def\pbsf{\@subfont\bsf\bf}}
+\@addfontinfo\@viiipt{\@prtct\bsfviii@}
+\def\bsfviii@{\def\pbsf{\@getfont\pbsf\sbffam\@viiipt{lsmssb8}}}
+\@addfontinfo\@ixpt{\@prtct\bsfx@}
+\def\bsfx@{\def\pbsf{\@getfont\pbsf\sbffam\@ixpt{lsmssb8\@halfmag}}}
+\@addfontinfo\@xpt{\@prtct\bsfx@}
+\def\bsfx@{\def\pbsf{\@getfont\pbsf\sbffam\@xpt{cmssbx10}}}
+\@addfontinfo\@xipt{\@prtct\bsfxi@}
+\def\bsfxi@{\def\pbsf{\@getfont\pbsf\sbffam\@xipt{cmssbx10\@halfmag}}}
+\@addfontinfo\@xiipt{\@prtct\bsfxii@}
+\def\bsfxii@{\def\pbsf{\@getfont\pbsf\sbffam\@xiipt{cmssbx10\@magscale1}}}
+\@addfontinfo\@xivpt{\@prtct\bsfxiv@}
+\def\bsfxiv@{\def\pbsf{\@getfont\pbsf\sbffam\@xivpt{cmssbx10\@magscale2}}}
+\@addfontinfo\@xviipt{\@prtct\bsfxvii@}
+\def\bsfxvii@{\def\pbsf{\@getfont\pbsf\sbffam\@xviipt{cmssbx10\@magscale3}}}
+\@addfontinfo\@xxpt{\@prtct\bsfxx@}
+\def\bsfxx@{\def\pbsf{\@getfont\pbsf\sbffam\@xxpt{cmssbx10\@magscale4}}}
+\@addfontinfo\@xxvpt{\@prtct\bsfxxv@}
+\def\bsfxxv@{\def\pbsf{\@getfont\pbsf\sbffam\@xxvpt{cmssbx10\@magscale5}}}
+\fi

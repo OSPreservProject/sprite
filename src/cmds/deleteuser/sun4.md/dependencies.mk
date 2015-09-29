@@ -1,0 +1,55 @@
+# DO NOT DELETE THIS LINE -- make depend depends on it.
+
+sun4.md/memmove.o: memmove.c
+sun4.md/memmove.o: /sprite/lib/include/string.h
+sun4.md/memmove.o: /sprite/lib/include/cfuncproto.h
+sun4.md/common.o: common.c
+sun4.md/common.o: common.h /sprite/lib/include/cfuncproto.h
+sun4.md/common.o: /sprite/lib/include/pwd.h
+sun4.md/common.o: /sprite/lib/include/sprite.h
+sun4.md/common.o: /sprite/lib/include/ctype.h
+sun4.md/common.o: /sprite/lib/include/errno.h
+sun4.md/common.o: /sprite/lib/include/fcntl.h
+sun4.md/common.o: /sprite/lib/include/stdio.h
+sun4.md/common.o: /sprite/lib/include/stdlib.h
+sun4.md/common.o: /sprite/lib/include/string.h
+sun4.md/common.o: /sprite/lib/include/sys/ioctl.h
+sun4.md/common.o: /sprite/lib/include/sys/ttychars.h
+sun4.md/common.o: /sprite/lib/include/sys/ttydev.h
+sun4.md/common.o: /sprite/lib/include/sys/fb.h
+sun4.md/common.o: /sprite/lib/include/sys/param.h
+sun4.md/common.o: /sprite/lib/include/sys/types.h
+sun4.md/common.o: /sprite/lib/include/signal.h
+sun4.md/common.o: /sprite/lib/include/machSignal.h
+sun4.md/common.o: /sprite/lib/include/sun4.md/machparam.h
+sun4.md/common.o: /sprite/lib/include/sun4.md/limits.h
+sun4.md/common.o: /sprite/lib/include/sys/wait.h
+sun4.md/common.o: /sprite/lib/include/sun4.md/machine/machparam.h
+sun4.md/common.o: /sprite/lib/include/time.h
+sun4.md/common.o: /sprite/lib/include/unistd.h
+sun4.md/deleteuser.o: deleteuser.c
+sun4.md/deleteuser.o: common.h /sprite/lib/include/cfuncproto.h
+sun4.md/deleteuser.o: /sprite/lib/include/pwd.h
+sun4.md/deleteuser.o: /sprite/lib/include/sprite.h
+sun4.md/deleteuser.o: /sprite/lib/include/bstring.h
+sun4.md/deleteuser.o: /sprite/lib/include/errno.h
+sun4.md/deleteuser.o: /sprite/lib/include/fcntl.h
+sun4.md/deleteuser.o: /sprite/lib/include/libc.h
+sun4.md/deleteuser.o: /sprite/lib/include/stdio.h
+sun4.md/deleteuser.o: /sprite/lib/include/stdlib.h
+sun4.md/deleteuser.o: /sprite/lib/include/string.h
+sun4.md/deleteuser.o: /sprite/lib/include/sys/file.h
+sun4.md/deleteuser.o: /sprite/lib/include/sys/ioctl.h
+sun4.md/deleteuser.o: /sprite/lib/include/sys/ttychars.h
+sun4.md/deleteuser.o: /sprite/lib/include/sys/ttydev.h
+sun4.md/deleteuser.o: /sprite/lib/include/sys/fb.h
+sun4.md/deleteuser.o: /sprite/lib/include/sys/param.h
+sun4.md/deleteuser.o: /sprite/lib/include/sys/types.h
+sun4.md/deleteuser.o: /sprite/lib/include/signal.h
+sun4.md/deleteuser.o: /sprite/lib/include/machSignal.h
+sun4.md/deleteuser.o: /sprite/lib/include/sun4.md/machparam.h
+sun4.md/deleteuser.o: /sprite/lib/include/sun4.md/limits.h
+sun4.md/deleteuser.o: /sprite/lib/include/sys/stat.h
+sun4.md/deleteuser.o: /sprite/lib/include/sys/wait.h
+sun4.md/deleteuser.o: /sprite/lib/include/sun4.md/machine/machparam.h
+sun4.md/deleteuser.o: /sprite/lib/include/unistd.h

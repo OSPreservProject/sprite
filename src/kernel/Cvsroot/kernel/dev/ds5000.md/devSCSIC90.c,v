@@ -1,0 +1,3969 @@
+head     1.10;
+branch   ;
+access   ;
+symbols  ds3100:1.10 sun3:1.10 sun4nw:1.7 symm:1.7 spur:1.7;
+locks    ; strict;
+comment  @ * @;
+
+
+1.10
+date     92.07.13.17.47.33;  author mottsmth;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     92.03.12.22.06.46;  author mottsmth;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     91.12.11.16.47.28;  author jhh;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     91.08.19.13.49.33;  author jhh;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     91.08.16.11.23.07;  author mottsmth;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.08.01.20.57.44;  author mottsmth;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.07.29.17.35.00;  author mottsmth;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.07.27.18.26.40;  author mottsmth;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.05.08.16.29.54;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.03.19.15.17.29;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.10
+log
+@Resurrect SCSI circular buffer to investigate 'cmd aborted'
+messages on Lust. 
+ 
+@
+text
+@/* 
+ * devSCSIC90.c --
+ *
+ *	Routines specific to the SCSI NCR 53C9X Host Adaptor.  This adaptor is
+ *	based on the NCR 53C90 chip.
+ *	The 53C90 supports connect/dis-connect.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/dev/ds5000.md/devSCSIC90.c,v 1.8 91/12/11 16:47:28 jhh Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include "sprite.h"
+#include "scsiC90.h"
+#include "mach.h"
+#include "dev.h"
+#include "scsiHBA.h"
+#include "scsiDevice.h"
+#include "sync.h"
+#include "stdio.h"
+#include "stdlib.h"
+#include "string.h"
+#include "bstring.h"
+#include "devSCSIC90.h"
+#include "devSCSIC90Int.h"
+
+/*
+ * Forward declarations.  
+ */
+
+static void		PrintMsg _ARGS_ ((unsigned int msg));
+static void		PrintPhase _ARGS_ ((unsigned int phase));
+static void		PrintLastPhase _ARGS_ ((unsigned int phase));
+static ReturnStatus     SendCommand _ARGS_ ((Device *devPtr,
+                                             ScsiCmd *scsiCmdPtr));
+static void             PrintRegs _ARGS_((volatile CtrlRegs *regsPtr));
+static void             PerformCmdDone _ARGS_((Controller *ctrlPtr,
+					       ReturnStatus status));
+static ReturnStatus     PerformSelect _ARGS_((Controller *ctrlPtr,
+					      unsigned int interruptReg,
+					      unsigned int sequenceReg));
+static ReturnStatus     PerformDataXfer _ARGS_((Controller *ctrlPtr,
+					      unsigned int interruptReg,
+					      unsigned int statusReg));
+static ReturnStatus     PerformStatus _ARGS_((Controller *ctrlPtr,
+					      unsigned int interruptReg));
+static ReturnStatus     PerformMsgIn _ARGS_(( Controller *ctrlPtr));
+static ReturnStatus     PerformReselect _ARGS_(( Controller *ctrlPtr,
+					      unsigned int interruptReg));
+static ReturnStatus     PerformExtendedMsgIn _ARGS_(( Controller *ctrlPtr,
+					      unsigned int message));
+static int              SpecialSenseProc _ARGS_((ScsiCmd *scsiCmdPtr,
+					    ReturnStatus status,
+					    int statusByte,
+					    int byteCount,
+					    int senseLength,
+					    Address senseDataPtr));
+static void             PutCircBuf _ARGS_((int type, char *object));
+
+/*
+ * devSCSIC90Debug - debugging level
+ *	2 - normal level
+ *	4 - one print per command in the normal case
+ *	5 - traces interrupts
+ */
+int devSCSIC90Debug = 2;
+Controller *Controllers[MAX_SCSIC90_CTRLS];
+
+char        circBuf[CIRCBUFLEN] = {""};
+int         circHead = 0;
+char numTab[16] = {
+    '0', '1', '2', '3', '4', '5', '6', '7',
+    '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
+    };
+     
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SendCommand --
+ *
+ *      Send a command to a SCSI controller.
+ *	NOTE: The caller is assumed to have the master lock of the controller
+ *	to which the device is attached held.
+ *      
+ *
+ * Results:
+ *	An error code.
+ *
+ * Side effects:
+ *	Those of the command (Read, write etc.)
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+SendCommand(devPtr, scsiCmdPtr)
+    Device	 *devPtr;		/* Device to sent to. */
+    ScsiCmd	*scsiCmdPtr;		/* Command to send. */
+{
+    volatile CtrlRegs	*regsPtr; /* Host Adaptor registers */
+    char	*charPtr;
+    Controller	*ctrlPtr;
+    int i;
+    int size;				/* Number of bytes to transfer */
+
+    /*
+     * Set current active device and command for this controller.
+     */
+    ctrlPtr = devPtr->ctrlPtr;
+    regsPtr = ctrlPtr->regsPtr;
+
+    if (ctrlPtr->devPtr != (Device *)NIL) {
+	panic("SCSIC90Command: can't send: host is busy\n");
+    }
+
+    SET_CTRL_BUSY(ctrlPtr,devPtr);
+    SET_DEV_BUSY(devPtr, scsiCmdPtr);
+
+    devPtr->scsiCmdPtr   = scsiCmdPtr;
+    size = scsiCmdPtr->bufferLen;
+    if (size == 0) {
+	devPtr->dmaState = DMA_INACTIVE;
+    } else {
+	devPtr->dmaState = (scsiCmdPtr->dataToDevice) ? DMA_SEND :
+							DMA_RECEIVE;
+    }
+
+    PUTCIRCBUF(CSTR, "send: targ ");
+    PUTCIRCBUF(CBYTE, (char *)devPtr->targetID);
+    PUTCIRCBUF(CSTR, ";cmd ");
+    PUTCIRCBUF(CINT, (char *)scsiCmdPtr);
+    PUTCIRCBUF(CSTR,";buf ");
+    PUTCIRCBUF(CINT, (char *)scsiCmdPtr->buffer);
+    PUTCIRCBUF(CSTR, ";len ");
+    PUTCIRCBUF(CINT, (char *)size);
+    PUTCIRCBUF(CSTR,";op ");
+    PUTCIRCBUF(CBYTE, (char *)scsiCmdPtr->commandBlock[0]);
+    PUTCIRCNULL;
+
+    /*
+     * SCSI SELECTION.
+     */
+
+    /*
+     * Set phase to selection and command phase so that we know what's happened
+     * in the next phase.
+     */
+    devPtr->lastPhase = PHASE_SELECTION;	/* Selection & command phase.*/
+    devPtr->commandStatus = 0;			/* No status yet. */
+    devPtr->activeBufPtr = scsiCmdPtr->buffer;
+    devPtr->activeBufLen = scsiCmdPtr->bufferLen;
+    /* Load select/reselect bus ID register with target ID. */
+    regsPtr->scsi_ctrl.write.destID = devPtr->targetID;
+    /* Load select/reselect timeout period. */
+    regsPtr->scsi_ctrl.write.timeout = SELECT_TIMEOUT;
+    /* Zero value for asynchronous transfer. */
+    regsPtr->scsi_ctrl.write.synchOffset = devPtr->synchOffset;
+    if (devPtr->synchOffset != 0) {
+	regsPtr->scsi_ctrl.write.synchPer = devPtr->synchPeriod;
+    }
+    /* Set the clock conversion register. */
+    regsPtr->scsi_ctrl.write.clockConv = CLOCKCONV;
+
+    EMPTY_BUFFER();
+
+    /* 
+     * There are 3 selection possibilities:
+     * 1) Without Attention (NATN) which says we don't do disconnect/reselect.
+     *    No need to use this anymore.
+     * 2) With Attention (ATN) which goes through arbitration, selection
+     *    and command phases, announcing that we do disconnect/reselect.
+     *    The usual mode.
+     * 3) With attention and stop (ATNS) which just goes through 
+     *    arbitration and selection phases and stops.  This gives
+     *    us a chance to send another message after the IDENTIFY msg
+     *    before sending the command.  For use in sending the 1st
+     *    message of the synchronous data xfer negotiation.
+     */
+
+    if (scsiCmdPtr->commandBlockLen != 6 &&
+	scsiCmdPtr->commandBlockLen != 10 &&
+	scsiCmdPtr->commandBlockLen != 12) {
+	printf("%s: Command is wrong length.\n");
+	PUTCIRCBUF(CSTR,"send: bad cmd len\n");
+	PUTCIRCNULL;
+	return DEV_INVALID_ARG; 	/* Is this the correct error? */
+    }
+
+
+    regsPtr->scsi_ctrl.write.FIFO = SCSI_DIS_REC_IDENTIFY | devPtr->handle.LUN;
+
+    if ((devPtr->synchPeriod < MIN_SYNCH_PERIOD) &&
+	(devPtr->msgFlag & ENABLEEXTENDEDMSG)) {
+	devPtr->msgFlag |= REQEXTENDEDMSG;
+	EMPTY_BUFFER();
+	regsPtr->scsi_ctrl.write.command = CR_SLCT_ATNS;
+	PUTCIRCBUF(CSTR,"send ATNS; per ");
+    } else {
+	/* Load FIFO with 6, 10, or 12 byte scsi command. */
+	charPtr = scsiCmdPtr->commandBlock;
+	for (i = 0; i < scsiCmdPtr->commandBlockLen; i++) {
+	    regsPtr->scsi_ctrl.write.FIFO = *charPtr;
+	    charPtr++;
+	}
+	PUTCIRCBUF(CSTR,"send ATN; per ");
+	EMPTY_BUFFER();
+	regsPtr->scsi_ctrl.write.command = CR_SLCT_ATN;
+    }
+    PUTCIRCBUF(CBYTE,(char *)(devPtr->synchPeriod));
+    PUTCIRCBUF(CSTR,"; off ");
+    PUTCIRCBUF(CBYTE,(char *)(devPtr->synchOffset));
+    PUTCIRCBUF(CSTR,"; cmd ");
+    PUTCIRCBUF(CBYTE,(char *)(*scsiCmdPtr->commandBlock));
+    PUTCIRCNULL;
+
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RequestDone --
+ *
+ *	Process a request that has finished. Unless a SCSI check condition
+ *	bit is present in the status returned, the request call back
+ *	function is called.  If check condition is set we fire off a
+ *	SCSI REQUEST SENSE to get the error sense bytes from the device.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The call back function may be called.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+RequestDone(devPtr,scsiCmdPtr,status,scsiStatusByte,amountTransferred)
+    Device	*devPtr;	/* Device for request. */
+    ScsiCmd	*scsiCmdPtr;	/* Request that finished. */
+    ReturnStatus status;	/* Status returned. */
+    unsigned char scsiStatusByte;	/* SCSI Status Byte. */
+    int		amountTransferred; /* Amount transferred by command. */
+{
+    ReturnStatus	senseStatus;
+    Controller	        *ctrlPtr = devPtr->ctrlPtr;
+    int i;
+
+    PUTCIRCBUF(CSTR,"done: targ ");
+    PUTCIRCBUF(CBYTE, (char *)devPtr->targetID);
+    PUTCIRCBUF(CSTR,";rc ");
+    PUTCIRCBUF(CBYTE, (char *)status);
+    PUTCIRCBUF(CSTR,";stat ");
+    PUTCIRCBUF(CBYTE, (char *)scsiStatusByte);
+    PUTCIRCBUF(CSTR,";cnt ");
+    PUTCIRCBUF(CBYTE, (char *)amountTransferred);
+    PUTCIRCNULL;
+
+    SET_CTRL_FREE(ctrlPtr);
+
+    /*
+     * First check to see if this is the reponse of a HBA-driver generated 
+     * REQUEST SENSE command.  If this is the case, we can process
+     * the callback of the frozen command for this device and
+     * allow the flow of command to the device to be resummed.
+     */
+    if (scsiCmdPtr->doneProc == SpecialSenseProc) {
+	PUTCIRCBUF(CSTR,"sense data:");
+	for (i=0; i<amountTransferred; i++) {
+	    circBuf[circHead] = ' ';
+	    circHead = (circHead + 1) % CIRCBUFLEN;
+	    PUTCIRCBUF(CBYTE, (char *)(devPtr->senseBuffer[i]));
+	}
+	PUTCIRCNULL;
+        MASTER_UNLOCK(&(ctrlPtr->mutex));
+	(devPtr->frozen.scsiCmdPtr->doneProc)(devPtr->frozen.scsiCmdPtr, 
+		SUCCESS,
+		devPtr->frozen.statusByte, 
+		devPtr->frozen.amountTransferred,
+		amountTransferred,
+		devPtr->senseBuffer);
+         MASTER_LOCK(&(ctrlPtr->mutex));
+	 SET_DEV_FREE(devPtr);
+	 return;
+    }
+    /*
+     * This must be an outside request finishing. If the request 
+     * suffered an error or the HBA or the scsi status byte
+     * says there is no error sense present, we can do the
+     * callback and free the controller.
+     */
+    if ((status != SUCCESS) ||
+	(scsiStatusByte != SCSI_STATUS_CHECK)) { 
+	MASTER_UNLOCK(&(ctrlPtr->mutex));
+	PUTCIRCBUF(CSTR,"done: callback before...");
+	(scsiCmdPtr->doneProc)(scsiCmdPtr, status, scsiStatusByte,
+			       amountTransferred, 0, (char *) 0);
+	MASTER_LOCK(&(ctrlPtr->mutex));
+	PUTCIRCBUF(CSTR,"after");
+	PUTCIRCNULL;
+	SET_DEV_FREE(devPtr);
+	return;
+    } 
+    /*
+     * If we got here than the SCSI command came back from the device
+     * with the CHECK bit set in the status byte.
+     * Need to perform a REQUEST SENSE.  Move the current request 
+     * into the frozen state and issue a REQUEST SENSE. 
+     */
+
+    PUTCIRCBUF(CSTR,"done: issue sense");
+    PUTCIRCNULL;
+    devPtr->synchPeriod = 0;
+    devPtr->synchOffset = 0;
+    devPtr->frozen.scsiCmdPtr = scsiCmdPtr;
+    devPtr->frozen.statusByte = scsiStatusByte;
+    devPtr->frozen.amountTransferred = amountTransferred;
+    DevScsiSenseCmd((ScsiDevice *)devPtr, DEV_MAX_SENSE_BYTES, 
+		    devPtr->senseBuffer, &(devPtr->SenseCmd));
+    devPtr->SenseCmd.doneProc = SpecialSenseProc;
+    senseStatus = SendCommand(devPtr, &(devPtr->SenseCmd));
+    
+   /*
+     * If we got an HBA error on the REQUEST SENSE we end the outside 
+     * command with the SUCCESS status but zero sense bytes returned.
+     */
+    if (senseStatus != SUCCESS) {
+	MASTER_UNLOCK(&(ctrlPtr->mutex));
+	(scsiCmdPtr->doneProc)(scsiCmdPtr, status, scsiStatusByte,
+				   amountTransferred, 0, (char *) 0);
+        MASTER_LOCK(&(ctrlPtr->mutex));
+	SET_DEV_FREE(devPtr);
+    }
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevEntryAvailProc --
+ *
+ *	Act upon an entry becomming available in the queue for this
+ *	controller. This routine is the Dev_Queue callback function that
+ *	is called whenever work becomes available for this controller. 
+ *	If the controller is not already busy we dequeue and start the
+ *	request.
+ *	NOTE: This routine is also called from DevSCSIC90Intr to start the
+ *	next request after the previously one finishes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Request may be dequeue and submitted to the device. Request callback
+ *	function may be called.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Boolean
+DevEntryAvailProc(clientData, newRequestPtr) 
+   ClientData	clientData;	/* Really the Device this request ready. */
+   List_Links *newRequestPtr;	/* The new SCSI request. */
+{
+    Device		*devPtr; 
+    Controller 		*ctrlPtr;
+    ScsiCmd		*scsiCmdPtr = (ScsiCmd *)newRequestPtr;
+    ReturnStatus	status;
+
+    devPtr = (Device *) clientData;
+    ctrlPtr = devPtr->ctrlPtr;
+    /*
+     * If we are busy (have an active request) just return. Otherwise 
+     * start the request.
+     */
+    
+    if ((IS_CTRL_FREE(ctrlPtr)) &&  (IS_DEV_FREE(devPtr))) {
+	PUTCIRCBUF(CSTR,"EAP: exec targ ");
+	PUTCIRCBUF(CBYTE, (char *)(devPtr->targetID));
+	PUTCIRCBUF(CSTR,"; mask ");
+	PUTCIRCBUF(CBYTE, (char *)(ctrlPtr->devQueuesMask));
+	PUTCIRCBUF(CSTR,"; cmd ptr ");
+	PUTCIRCBUF(CINT, (char *)newRequestPtr);
+	PUTCIRCNULL;
+    } else {
+	PUTCIRCBUF(CSTR,"EAP: NQ targ ");
+	PUTCIRCBUF(CBYTE, (char *)(devPtr->targetID));
+	PUTCIRCBUF(CSTR,"; mask ");
+	PUTCIRCBUF(CBYTE, (char *)(ctrlPtr->devQueuesMask));
+	PUTCIRCBUF(CSTR,"; cmd ptr ");
+	PUTCIRCBUF(CINT,(char *)newRequestPtr);
+	PUTCIRCBUF(CSTR,"; intDev ");
+	PUTCIRCBUF(CINT,(char *)(ctrlPtr->interruptDevPtr));
+	if (ctrlPtr->interruptDevPtr != (Device *)NIL) {
+	    PUTCIRCBUF(CSTR,"; intDevCmd ");
+	    PUTCIRCBUF(CINT,(char *)(ctrlPtr->interruptDevPtr->scsiCmdPtr));
+	}
+	PUTCIRCNULL;
+	return FALSE;
+    }
+
+again:
+    scsiCmdPtr = (ScsiCmd *) newRequestPtr;
+    devPtr = (Device *) clientData;
+    status = SendCommand(devPtr, scsiCmdPtr);
+
+    /*	
+     * If the command couldn't be started do the callback function.
+     */
+    if (status != SUCCESS) {
+	 PUTCIRCBUF(CSTR,"eap: send fail");
+	 PUTCIRCNULL;
+	 RequestDone(devPtr,scsiCmdPtr,status,0,0);
+	 newRequestPtr = Dev_QueueGetNextFromSet(ctrlPtr->devQueues,
+						 ctrlPtr->devQueuesMask,
+						 &clientData);
+	if (newRequestPtr != (List_Links *) NIL) { 
+	    PUTCIRCBUF(CSTR,"eap: no cmd");
+	    PUTCIRCNULL;
+	    goto again;
+	} else {
+	    PUTCIRCBUF(CSTR,"eap: cmd");
+	    PUTCIRCBUF(CINT,(char *)newRequestPtr);
+	    PUTCIRCNULL;
+	}
+    }
+
+    return TRUE;
+
+}   
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevSCSIC90Intr --
+ *
+ * Handle interrupts from the SCSI controller.
+ *
+ * Results:
+ *	TRUE if an SCSIC90 controller was responsible for the interrupt
+ *	and this routine handled it.
+ *
+ * Side effects:
+ *	Usually a process is notified that an I/O has completed.
+ *      Extreme headaches from trying to follow this absurd code.
+ * 
+ * Note:
+ *      Cannot use printf for debugging in this routine since 
+ *      printf re-enables interrupts.
+ *
+ *----------------------------------------------------------------------
+ */
+Boolean 
+DevSCSIC90Intr(clientDataArg)
+    ClientData	clientDataArg;
+{
+    Controller		*ctrlPtr;
+    volatile CtrlRegs	*regsPtr;
+    Device		*devPtr;
+    unsigned char	phase;
+    ReturnStatus	status = SUCCESS;
+    unsigned char	interruptReg;
+    unsigned char	statusReg;
+    unsigned char	sequenceReg;
+    int                 i;
+    char	        *charPtr;
+    char	        tempChar;
+
+    ctrlPtr = (Controller *) clientDataArg;
+    regsPtr = ctrlPtr->regsPtr;
+    devPtr = ctrlPtr->devPtr;
+
+    MASTER_LOCK(&(ctrlPtr->mutex));
+
+    /* Read registers.
+     * reading the interrupt register clears the status and sequence
+     * registers so it must be read last.
+     */
+    statusReg = regsPtr->scsi_ctrl.read.status;
+    sequenceReg = regsPtr->scsi_ctrl.read.sequence;
+    interruptReg = regsPtr->scsi_ctrl.read.interrupt;
+    phase = statusReg & SR_PHASE;
+    sequenceReg &= SEQ_MASK;
+
+    PUTCIRCBUF(CSTR,"intr: dev ");
+    PUTCIRCBUF(CINT,(char *)devPtr);
+    PUTCIRCBUF(CSTR,";int ");
+    PUTCIRCBUF(CBYTE, (char *)interruptReg);
+    PUTCIRCBUF(CSTR,";stat ");
+    PUTCIRCBUF(CBYTE, (char *)statusReg);
+    PUTCIRCBUF(CSTR,";seq ");
+    PUTCIRCBUF(CBYTE, (char *)sequenceReg);
+    if (devPtr != (Device *)NIL) {
+	PUTCIRCBUF(CSTR,";last ");
+	PUTCIRCBUF(CBYTE, (char *)devPtr->lastPhase);
+    }
+    PUTCIRCNULL;
+
+/*    printf("interruptReg 0x%02x, statusReg 0x%02x, sequenceReg 0x%02x\n",
+		interruptReg, statusReg, sequenceReg);
+*/
+    /* Check for errors. */
+    if (statusReg & SR_GE) {
+	panic("gross error 1\n");
+	printf("%s: some gross error happened.\n",
+		devPtr->handle.locationName);
+	status = FAILURE;
+    }
+    if (statusReg & SR_PE) {
+	printf("%s: a parity error happened.\n",
+		devPtr->handle.locationName);
+	status = FAILURE;
+    }
+
+    if (interruptReg & IR_SCSI_RST) {
+	printf("%s: SCSI reset detected.\n",
+		devPtr->handle.locationName);
+	status = FAILURE;
+    }
+    if (interruptReg & IR_ILL_CMD) {
+	if (ctrlPtr->interruptDevPtr != (Device *)NIL) {
+	    PUTCIRCBUF(CSTR,"ignoring illegal cmd interrupt");
+	    PUTCIRCNULL;
+	    MASTER_UNLOCK(&(ctrlPtr->mutex));
+	    return TRUE;
+	} else {
+	    printf("%s: illegal command.\n",
+		   devPtr->handle.locationName);
+	    status = FAILURE;
+	}
+    }
+    if (interruptReg & IR_SLCT_ATN) {
+	printf("%s: scsi controller selected with ATN which we don't allow.\n",
+		devPtr->handle.locationName);
+	status = FAILURE;
+    }
+    if (interruptReg & IR_SLCT) {
+	printf("%s: scsi controller selected as target which we don't allow.\n",
+		devPtr->handle.locationName);
+	status = FAILURE;
+    }
+    if (interruptReg & IR_RESLCT) {
+	PerformReselect(ctrlPtr, interruptReg);
+	MASTER_UNLOCK(&(ctrlPtr->mutex));
+	return TRUE;
+    }
+    if (IS_CTRL_FREE(ctrlPtr)) {
+	if (status == SUCCESS)
+	    panic("SCSIC90: Got interrupt but ctrl is free.\n");
+	MASTER_UNLOCK(&(ctrlPtr->mutex));
+	return TRUE;
+    }
+
+
+    /* Where did we come from? */
+    switch (devPtr->lastPhase) {
+    case PHASE_COMMAND:
+	break;
+    case PHASE_BUS_FREE:
+	/* nothing happening yet. */
+	break;
+    case PHASE_SELECTION:
+	status = PerformSelect(ctrlPtr, interruptReg, sequenceReg);
+	break;
+    case PHASE_DATA_IN:
+#ifdef sun4c
+	/* Drain remaining bytes in pack register to memory. */
+	dmaRegsPtr->ctrl |= DMA_DRAIN;
+#endif
+	status = PerformDataXfer(ctrlPtr, interruptReg, statusReg);
+	break;
+    case PHASE_DATA_OUT:
+	status = PerformDataXfer(ctrlPtr, interruptReg, statusReg);
+	break;
+    case PHASE_STATUS:
+	status = PerformStatus(ctrlPtr, interruptReg);
+	MASTER_UNLOCK(&(ctrlPtr->mutex));
+	return TRUE;
+	break;
+    case PHASE_MSG_OUT:
+	break;
+    case PHASE_MSG_IN:
+	status = PerformMsgIn(ctrlPtr);
+	MASTER_UNLOCK(&(ctrlPtr->mutex));
+	return TRUE;
+	break;
+    case PHASE_STAT_MSG_IN:
+	if (!(interruptReg & IR_DISCNCT)) {
+	    printf("SCSIC90: Should have seen end of I/O.\n");
+	    status = FAILURE;
+	}
+	break;
+    case PHASE_RDY_DISCON:
+	if (interruptReg & IR_DISCNCT) {
+	    PUTCIRCBUF(CSTR,"intr: targ ");
+	    PUTCIRCBUF(CBYTE, (char *)devPtr->targetID);
+	    PUTCIRCBUF(CSTR," discon.");
+	    PUTCIRCNULL;
+	    devPtr->lastPhase = PHASE_BUS_FREE;
+	    SET_CTRL_FREE(ctrlPtr);
+	    PerformCmdDone(ctrlPtr,status);
+	    MASTER_UNLOCK(&(ctrlPtr->mutex));
+	    return TRUE;
+	} else {
+	    printf("SCSIC90: expecting disconnect signal.\n");
+	    status = FAILURE;
+	}
+	break;
+    default:
+	/* We set this field, so this shouldn't happen. */
+	printf("SCSIC90Intr: We came from an unknown phase.\n");
+	status = FAILURE;
+	break;
+    }
+
+    if ((status != SUCCESS) || (interruptReg & IR_DISCNCT)) {
+        PUTCIRCBUF(CSTR,"intr: exit stat ");
+        PUTCIRCBUF(CBYTE,(char *)status);
+        PUTCIRCNULL;
+	RequestDone(devPtr,
+		    devPtr->scsiCmdPtr,
+		    status,
+		    devPtr->commandStatus,
+		    devPtr->scsiCmdPtr->bufferLen - devPtr->activeBufLen);
+	PerformCmdDone(ctrlPtr,status);
+	MASTER_UNLOCK(&(ctrlPtr->mutex));
+	return TRUE;
+    }
+
+    switch (phase) {
+
+    case SR_DATA_OUT:
+    case SR_DATA_IN:
+	devPtr->lastPhase = (phase == SR_DATA_OUT ? PHASE_DATA_OUT :
+			     PHASE_DATA_IN);
+	/*
+	 * It should be possible to do multiple blocks of DMA without
+	 * returning to the higher level, if we set the max transfer size
+	 * larger, but we don't handle that yet. XXX
+	 */
+#ifdef sun4c
+	dmaControllerActive++;	/* Resetting controller not allowed. */
+#endif
+	PUTCIRCBUF(CSTR,"start dma ptr: ");
+	PUTCIRCBUF(CINT,(char *)devPtr->activeBufPtr);
+	PUTCIRCBUF(CSTR,"; len: ");
+	PUTCIRCBUF(CINT,(char *)devPtr->activeBufLen);
+	PUTCIRCNULL;
+	DevStartDMA(ctrlPtr);
+	break;
+    case SR_COMMAND:
+	charPtr = devPtr->scsiCmdPtr->commandBlock;
+	PUTCIRCBUF(CSTR,"cmd:");
+	for (i = 0; i < devPtr->scsiCmdPtr->commandBlockLen; i++) {
+	    circBuf[circHead] = ' ';
+	    circHead = (circHead + 1) % CIRCBUFLEN;
+	    PUTCIRCBUF(CBYTE, (char *)*charPtr);
+	    regsPtr->scsi_ctrl.write.FIFO = *charPtr;
+	    charPtr++;
+	}
+	PUTCIRCNULL;
+	devPtr->lastPhase = PHASE_COMMAND;
+	regsPtr->scsi_ctrl.write.synchPer = devPtr->synchPeriod;
+	regsPtr->scsi_ctrl.write.synchOffset = devPtr->synchOffset;
+	regsPtr->scsi_ctrl.write.command = CR_XFER_INFO;
+	break;
+    case SR_STATUS:
+	/*
+	 * We're in status phase.  If all goes right, the next interrupt
+	 * will be after we've handled the message phase as well, although
+	 * the phase will say we're in message phase.
+	 */
+	devPtr->lastPhase = PHASE_STATUS;
+	regsPtr->scsi_ctrl.write.command = CR_INIT_COMP;
+	break;
+    case SR_MSG_OUT:
+	i = regsPtr->scsi_ctrl.read.FIFOFlags & FIFO_BYTES_MASK;
+	if (i > 0) {
+	    PUTCIRCBUF(CSTR,"msg-out: fifo: ");
+	    while (i-- > 0) {
+		circBuf[circHead] = ' ';
+		circHead = (circHead + 1) % CIRCBUFLEN;
+		tempChar = regsPtr->scsi_ctrl.read.FIFO;
+		PUTCIRCBUF(CBYTE,(char*)(tempChar));
+	    }
+	    PUTCIRCNULL;
+	}
+	PUTCIRCBUF(CSTR,"msg-out: msg: ");
+	for (i=0; i<devPtr->messageBufLen; i++) {
+	    circBuf[circHead] = ' ';
+	    circHead = (circHead + 1) % CIRCBUFLEN;
+	    PUTCIRCBUF(CBYTE, (char *)devPtr->messageBuf[i]);
+	    regsPtr->scsi_ctrl.write.FIFO = devPtr->messageBuf[i];
+	    devPtr->messageBuf[i] = '\0';
+	}
+	PUTCIRCNULL;
+	regsPtr->scsi_ctrl.write.command = CR_XFER_INFO;
+	devPtr->lastPhase = PHASE_MSG_OUT;
+	devPtr->messageBufLen = 0;
+	status = regsPtr->scsi_ctrl.read.status;
+	if (status & SR_GE) {
+	    panic("gross error 2");
+	}
+	break;
+    case SR_MSG_IN:
+	/* request incoming message xfer */
+	regsPtr->scsi_ctrl.write.command = CR_XFER_INFO;
+	devPtr->lastPhase = PHASE_MSG_IN;
+	break;
+    default:
+	printf("unknown scsi phase type: 0x%02x\n", (int)phase);
+	status = FAILURE;
+	break;
+    }
+
+    MASTER_UNLOCK(&(ctrlPtr->mutex));
+    return TRUE;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PerformCmdDone
+ *
+ *	Do cleanup after final phase of command.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Calls RequestDone routine to invoke callback
+ *      and then gets next item of queue set.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static void
+PerformCmdDone(ctrlPtr,status)
+    Controller   *ctrlPtr;
+    ReturnStatus status;
+{
+    List_Links		*newRequestPtr;
+    ClientData		clientData;
+
+    ctrlPtr->regsPtr->scsi_ctrl.write.command = CR_EN_SLCT;
+    if (IS_CTRL_FREE(ctrlPtr)) {
+	if (ctrlPtr->interruptDevPtr == (Device *)NIL) {
+	    newRequestPtr = Dev_QueueGetNextFromSet(ctrlPtr->devQueues,
+						ctrlPtr->devQueuesMask,
+						&clientData);
+	    PUTCIRCBUF(CSTR,"cdone: cmd ");
+	    PUTCIRCBUF(CINT,(char *)newRequestPtr);
+	    PUTCIRCNULL;
+	} else {
+	    clientData = (ClientData)(ctrlPtr->interruptDevPtr);
+	    newRequestPtr=(List_Links *)(ctrlPtr->interruptDevPtr->scsiCmdPtr);
+	    SET_DEV_FREE(ctrlPtr->interruptDevPtr);
+	    ctrlPtr->interruptDevPtr = (Device *)NIL;
+	    PUTCIRCBUF(CSTR,"cdone: resend dev ");
+	    PUTCIRCBUF(CINT, (char *)clientData);
+	    PUTCIRCBUF(CSTR," cmd ");
+	    PUTCIRCBUF(CINT,(char *)newRequestPtr);
+	    PUTCIRCNULL;
+	}
+	if (newRequestPtr != (List_Links *) NIL) {
+	    (void) DevEntryAvailProc(clientData, newRequestPtr);
+	}
+    } else {
+	PUTCIRCBUF(CSTR,"cdone: busy ");
+	PUTCIRCNULL;
+    }
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PerformSelect
+ *
+ *	Interpret select phase
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+PerformSelect(ctrlPtr, interruptReg, sequenceReg)
+Controller      *ctrlPtr;
+unsigned int	interruptReg;
+unsigned int	sequenceReg;
+{
+    Device   *devPtr = ctrlPtr->devPtr;
+    static char *errMsg[] = {
+	"No error",
+	"target timed out",
+	"no message-out phase",
+	"no command phase",
+	"command phase incomplete",
+	"unknown sequence error"
+	};
+    int msgNum;
+    ReturnStatus status = SUCCESS;
+
+    switch(sequenceReg) {
+    case SEQ_COMPLETE:
+	msgNum = 0;
+	break;
+    case SEQ_NO_SEL:
+	if (interruptReg & IR_DISCNCT) {
+	    msgNum = 1;
+	    status = DEV_NO_DEVICE;
+	} else if (!(devPtr->msgFlag & REQEXTENDEDMSG)) {
+	    msgNum = 2;
+	} else {
+	    msgNum = 0;
+	    devPtr->msgFlag &= ~REQEXTENDEDMSG;
+	    devPtr->messageBuf[0] = SCSI_EXTENDED_MESSAGE;
+	    devPtr->messageBuf[1] = 3;
+	    devPtr->messageBuf[2] = SCSI_EXTENDED_MSG_SYNC;
+	    devPtr->messageBuf[3] = NCR_TO_SCSI(MIN_SYNCH_PERIOD);
+	    devPtr->messageBuf[4] = MAX_SYNCH_OFFSET;
+	    devPtr->messageBufLen = 5;
+	}
+	break;
+    case SEQ_NO_CMD:
+	msgNum = 3;
+	break;
+    case SEQ_CMD_INCOMPLETE:
+	msgNum = 4;
+	break;
+    default:
+	msgNum = 5;
+	break;
+    }
+    
+    if (msgNum) {
+	ctrlPtr->regsPtr->scsi_ctrl.write.command = CR_FLSH_FIFO;
+	if (status == SUCCESS) {
+	    status = FAILURE;
+	}
+    }
+	
+    return status;
+
+} 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PerformDataXfer
+ *
+ *	Interpret data-in, data-out condition
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static ReturnStatus
+PerformDataXfer(ctrlPtr, interruptReg, statusReg)
+    Controller      *ctrlPtr;
+    unsigned int	interruptReg;
+    unsigned int	statusReg;
+{
+    ReturnStatus status = SUCCESS;
+    volatile CtrlRegs	*regsPtr = ctrlPtr->regsPtr;
+    Device         *devPtr = ctrlPtr->devPtr;
+    unsigned char  fifoCnt;
+    int            residual;
+    int		   amountXfered;
+
+    if (interruptReg & IR_DISCNCT) {
+	printf("%s disconnected or timed out during data xfer.\n",
+	       devPtr->handle.locationName);
+	return DEV_TIMEOUT;
+    }
+
+#ifdef sun4c
+    dmaControllerActive--;
+    MACH_DELAY(100);
+#endif
+    residual = regsPtr->scsi_ctrl.read.xCntLo;
+#ifdef sun4c
+    MACH_DELAY(100);
+#endif
+    residual += (regsPtr->scsi_ctrl.read.xCntHi << 8);
+    fifoCnt = regsPtr->scsi_ctrl.read.FIFOFlags & FIFO_BYTES_MASK;
+    residual += fifoCnt;
+    /*
+     * If the transfer was the maximum, 64K bytes, a 0 in the counter
+     * may mean that nothing was transfered...  What should I do? XXX
+     */
+
+    PUTCIRCBUF(CSTR,"residual: ");
+    PUTCIRCBUF(CINT,(char *)(residual));
+    PUTCIRCBUF(CSTR,"; fifoCnt ");
+    PUTCIRCBUF(CINT,(char *)(fifoCnt));
+    PUTCIRCNULL;
+    regsPtr->scsi_ctrl.write.command = CR_FLSH_FIFO;
+
+    /*
+     * Flush the cache on data in, since the dma put it into memory
+     * but didn't go through the cache.  We don't have to worry about this
+     * on writes, since the sparcstation has a write-through cache.
+     */
+    amountXfered = devPtr->activeBufLen - residual;
+    if (devPtr->lastPhase == PHASE_DATA_IN) {
+	FLUSH_BYTES((char *) ctrlPtr->buffer, devPtr->activeBufPtr, 
+		    amountXfered);
+    }
+    devPtr->activeBufPtr += amountXfered;
+    devPtr->activeBufLen = residual;
+
+    if (! (interruptReg & IR_BUS_SERV)) {
+	/* Target didn't request information transfer phase. */
+	printf("Didn't receive bus service signal after DMA xfer.\n");
+	status = FAILURE;
+    }
+
+    return status;
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PerformStatus
+ *
+ *	Interpret status condition
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+PerformStatus(ctrlPtr, interruptReg)
+Controller      *ctrlPtr;
+unsigned int	interruptReg;
+{
+    volatile CtrlRegs	*regsPtr = ctrlPtr->regsPtr;
+    Device              *devPtr = ctrlPtr->devPtr;
+    int			numBytes;
+    unsigned            char message;
+
+    devPtr->lastPhase = PHASE_STAT_MSG_IN;
+    /* Read bytes from FIFO. */
+    numBytes = regsPtr->scsi_ctrl.read.FIFOFlags & FIFO_BYTES_MASK;
+    if (numBytes != 2) {
+	/* We didn't get both phases. */
+	printf("SCSIC90: Missing message byte after status phase byte.\n");
+	return(FAILURE);
+    }
+    devPtr->commandStatus = regsPtr->scsi_ctrl.read.FIFO;
+    devPtr->commandStatus &= SCSI_STATUS_MASK;
+    message = regsPtr->scsi_ctrl.read.FIFO;
+    if (! (interruptReg & IR_FUNC_COMP)) {
+	printf("SCSIC90: Command didn't complete.\n");
+	return(FAILURE);
+    }
+
+    if (message != SCSI_COMMAND_COMPLETE) {
+	printf("SCSIC90: Expecting cmd_complete msg from %s, got ",
+	       ctrlPtr->devPtr->handle.locationName);
+	PrintMsg((unsigned int) message);
+	return(FAILURE);
+    }
+    regsPtr->scsi_ctrl.write.command = CR_MSG_ACCPT;
+    
+    return SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PerformMsgIn
+ *
+ *	Interpret msg_in condition
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+PerformMsgIn(ctrlPtr)
+Controller *ctrlPtr;
+{
+    ReturnStatus status = SUCCESS;
+    Device *devPtr = ctrlPtr->devPtr;
+    volatile CtrlRegs *regsPtr = ctrlPtr->regsPtr;
+    unsigned char message;
+
+    message = regsPtr->scsi_ctrl.read.FIFO;
+
+    PUTCIRCBUF(CSTR,"msg in: ");
+    PUTCIRCBUF(CBYTE, (char *)message);
+    PUTCIRCNULL;
+
+    if (devPtr->msgFlag & STARTEXTENDEDMSG) { 
+	status = PerformExtendedMsgIn(ctrlPtr,(unsigned int)message);
+	return status;
+    }
+
+    switch(message) {
+    case SCSI_COMMAND_COMPLETE:
+	/* this is handled in that stat_msg_in phase */
+	printf("not expecting command_complete msg.\n");
+	status = FAILURE;
+	break;
+    case SCSI_DISCONNECT:
+	devPtr->lastPhase = PHASE_RDY_DISCON;
+	break;
+    case SCSI_SAVE_DATA_POINTER:
+	/* No need to save anything since we keep the current
+	 * data ptr in activeBufPtr anyway. */
+	devPtr->lastPhase = PHASE_BUS_FREE;
+	PUTCIRCBUF(CSTR,"save: ptr ");
+	PUTCIRCBUF(CINT, (char *)devPtr->activeBufPtr);
+	PUTCIRCBUF(CSTR,"; len ");
+	PUTCIRCBUF(CINT, (char *)devPtr->activeBufLen);
+	PUTCIRCNULL;
+	break;
+    case SCSI_RESTORE_POINTERS:
+	/* No need to restore anything, since we keep the
+	 * current data ptr in activeBufPtr anyway. */
+	devPtr->lastPhase = PHASE_BUS_FREE;
+	PUTCIRCBUF(CSTR,"restore: ptr ");
+	PUTCIRCBUF(CINT, (char *)devPtr->activeBufPtr);
+	PUTCIRCBUF(CSTR,"; len ");
+	PUTCIRCBUF(CINT, (char *)devPtr->activeBufLen);
+	PUTCIRCNULL;
+	break;
+    case SCSI_IDENTIFY:
+	devPtr->lastPhase = PHASE_BUS_FREE;
+	break;
+    case SCSI_EXTENDED_MESSAGE:
+	if (devPtr->msgFlag & ENABLEEXTENDEDMSG) {
+	    devPtr->msgFlag |= STARTEXTENDEDMSG;
+	    status = PerformExtendedMsgIn(ctrlPtr,(unsigned int)message);
+	    return status;
+	} else {
+	    devPtr->lastPhase = PHASE_MSG_OUT;
+	    devPtr->messageBuf[0] = SCSI_MESSAGE_REJECT;
+	    devPtr->messageBufLen = 1;
+	    regsPtr->scsi_ctrl.write.command = CR_SET_ATN;
+	}
+	break;
+    case SCSI_MESSAGE_REJECT:
+	/* kill any synchronous agreement in effect */
+	devPtr->synchPeriod = MIN_SYNCH_PERIOD;
+	devPtr->synchOffset = 0;
+	devPtr->lastPhase = PHASE_BUS_FREE;
+	devPtr->msgFlag &= ~STARTEXTENDEDMSG;
+	break;
+    default:
+	PUTCIRCBUF(CSTR,"Msg-in: unknown msg");
+	PUTCIRCNULL;
+	printf("SCSIC90: Couldn't handle msg type: 0x%02x\n",message);
+	regsPtr->scsi_ctrl.write.command = CR_SET_ATN;
+	devPtr->lastPhase = PHASE_BUS_FREE;
+	break;
+    }
+
+    regsPtr->scsi_ctrl.write.command = CR_MSG_ACCPT;
+
+    return status;
+
+} /* PerformMsgIn */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PerformExtendedMsgIn
+ *
+ *	Interpret extended msg_in condition
+ *
+ * Results:
+ *	status.
+ *
+ * Side effects:
+ *      Sets the values for synchronous xfer in the device structure.
+ *
+ *	We get the bytes of the extended msg 1 at a time.
+ *      Format: extended msg indicator : 0x01 
+ *                       msg length    : 0x?? 
+ *                       msg code      : 0x03 (we only do 1 type) 
+ *                       msg param1    : 0x?? (should be synch_period)
+ *                       msg param2    : 0x?? (should be synch_offset)
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+PerformExtendedMsgIn(ctrlPtr, message)
+Controller *ctrlPtr;
+unsigned int message;
+{
+    ReturnStatus status = SUCCESS;
+    Device *devPtr      = ctrlPtr->devPtr;
+    volatile CtrlRegs *regsPtr = ctrlPtr->regsPtr;
+    int len             = devPtr->messageBufLen;
+    unsigned char periodInClks;
+    unsigned char period;
+    unsigned char offset;
+    int i;
+
+    devPtr->messageBuf[len] = message;
+    devPtr->messageBufLen++;
+
+    switch(len) {
+    case 0: /* extended msg code 0x01 */
+	devPtr->lastPhase = PHASE_BUS_FREE;
+	break;
+    case 1: /* msg length. i.e. # bytes to follow this one */
+	devPtr->lastPhase = PHASE_BUS_FREE;
+	break;
+    case 2: /* extended msg code */
+	if ((message != SCSI_EXTENDED_MSG_SYNC) ||
+	    (devPtr->messageBuf[1] != 3)) {
+	    PUTCIRCBUF(CSTR,"Msg-in: bad xtend msg: ");
+	    PUTCIRCBUF(CBYTE,(char *)(message));
+	    PUTCIRCBUF(CSTR,"; len ");
+	    PUTCIRCBUF(CBYTE,(char *)(devPtr->messageBuf[1]));
+	    PUTCIRCNULL;
+	    panic("bad xtend msg");
+	    devPtr->messageBuf[0] = SCSI_MESSAGE_REJECT;
+	    devPtr->messageBufLen = 1;
+	    regsPtr->scsi_ctrl.write.command = CR_SET_ATN;
+	    devPtr->lastPhase = PHASE_MSG_OUT;
+	    devPtr->msgFlag &= ~STARTEXTENDEDMSG;
+	} else {
+	    devPtr->lastPhase = PHASE_BUS_FREE;
+	}
+	break;
+    case 3: /* synch_period */
+	devPtr->lastPhase = PHASE_BUS_FREE;
+	break;
+    case 4: /* synch_offset */
+	/* 
+	 * Now we have both the period and the offset.
+	 */
+	period = devPtr->messageBuf[3];
+	offset = devPtr->messageBuf[4];
+	periodInClks = SCSI_TO_NCR(period);
+	/* if values are acceptable, install them else negotiate */
+	if ((periodInClks >= MIN_SYNCH_PERIOD) &&
+	    (offset <= MAX_SYNCH_OFFSET)) {
+	    PUTCIRCBUF(CSTR,"accept per: ");
+	    PUTCIRCBUF(CBYTE,(char *)period);
+	    PUTCIRCBUF(CSTR,"; per clk ");
+	    PUTCIRCBUF(CBYTE,(char *)periodInClks);
+	    PUTCIRCBUF(CSTR,"; off ");
+	    PUTCIRCBUF(CBYTE,(char *)offset);
+	    PUTCIRCNULL;
+	    devPtr->synchPeriod = periodInClks; 
+	    devPtr->synchOffset = offset;
+	    devPtr->lastPhase = PHASE_BUS_FREE;
+	    devPtr->msgFlag &= ~STARTEXTENDEDMSG;
+	} else {
+	    if (periodInClks < devPtr->synchPeriod) {
+		devPtr->messageBuf[3] = NCR_TO_SCSI(MIN_SYNCH_PERIOD);
+	    }
+	    if (offset > devPtr->synchOffset) {
+		devPtr->messageBuf[4] = MAX_SYNCH_OFFSET;
+	    }
+	    PUTCIRCBUF(CSTR,"negotiate per: ");
+	    PUTCIRCBUF(CBYTE,(char *)(devPtr->messageBuf[3]));
+	    PUTCIRCBUF(CSTR,"; off ");
+	    PUTCIRCBUF(CBYTE,(char *)(devPtr->messageBuf[4]));
+	    PUTCIRCNULL;
+	    regsPtr->scsi_ctrl.write.command = CR_SET_ATN;
+	    devPtr->lastPhase = PHASE_MSG_OUT;
+	    devPtr->msgFlag &= ~STARTEXTENDEDMSG;
+	}
+	break;
+    default:
+	printf("SCSIC90: xmsg case error\n");
+	devPtr->msgFlag &= ~STARTEXTENDEDMSG;
+	status = FALSE;
+	break;
+    }
+    PUTCIRCBUF(CSTR,"Xmsg-in: accept msg");
+    len = regsPtr->scsi_ctrl.read.FIFOFlags & FIFO_BYTES_MASK;
+    PUTCIRCBUF(CSTR,"; FIFO:");
+    for(i=0;i<len;i++) {
+	circBuf[circHead] = ' ';
+	circHead = (circHead + 1) % CIRCBUFLEN;
+	offset = regsPtr->scsi_ctrl.read.FIFO;
+	PUTCIRCBUF(CBYTE, (char *)offset);
+    }
+    PUTCIRCBUF(CSTR,"; mbuf:");
+    for(i=0;i<devPtr->messageBufLen;i++) {
+	circBuf[circHead] = ' ';
+	circHead = (circHead + 1) % CIRCBUFLEN;
+	PUTCIRCBUF(CBYTE, (char *)(devPtr->messageBuf[i]));
+    }
+    PUTCIRCNULL;
+    regsPtr->scsi_ctrl.write.command = CR_MSG_ACCPT;
+    return status;
+} 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PerformReselect
+ *
+ *	Reconnect a logical unit
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+PerformReselect(ctrlPtr, interruptReg)
+Controller      *ctrlPtr;
+unsigned int	interruptReg;
+{
+    volatile CtrlRegs *regsPtr = ctrlPtr->regsPtr;
+    Device            *devPtr;
+    unsigned char     target;
+    unsigned char     ourID;
+    unsigned char     message;
+    int               fifoCnt,i;
+
+    /* The ID of the target which is requesting reselection comes over 
+     * the bus encoded, not 0-7.  The encoding is the logical OR of 
+     * two bytes: one with the i'th bit set (for target #i) and
+     * one with the host's bit set (usually #7). Unfortunately,
+     * the host's ID is kindly provided to us in binary so we perform
+     * a little transformation...
+     */
+    target = regsPtr->scsi_ctrl.read.FIFO;
+    ourID = regsPtr->scsi_ctrl.read.config1 & C1_BUS_ID;
+    ourID = ~(1 << ourID);
+
+    switch(target & ourID) {
+    case 0x01:
+	target = 0;
+	break;
+    case 0x02:
+	target = 1;
+	break;
+    case 0x04:
+	target = 2;
+	break;
+    case 0x08:
+	target = 3;
+	break;
+    case 0x10:
+	target = 4;
+	break;
+    case 0x20:
+	target = 5;
+	break;
+    case 0x40:
+	target = 6;
+	break;
+    case 0x80:
+	target = 7;
+	break;
+    default:
+	printf("SCSIC90: couldn't decode target ID 0x%02x\n", target);
+	return FAILURE;
+    }
+
+    message = regsPtr->scsi_ctrl.read.FIFO;    
+
+    if (!(message & SCSI_IDENTIFY)) {
+	printf("SCSIC90: Expected Identify msg after reselect, got 0x%02x.\n",
+	       message);
+	return FAILURE;
+    }
+    message &= SCSI_IDENT_LUN_MASK;
+
+    devPtr = ctrlPtr->devicePtr[target][message];
+
+    fifoCnt = regsPtr->scsi_ctrl.read.FIFOFlags & FIFO_BYTES_MASK;
+    PUTCIRCBUF(CSTR,"resel: targ ");
+    PUTCIRCBUF(CBYTE, (char *)target);
+    PUTCIRCBUF(CSTR,"; lun ");
+    PUTCIRCBUF(CBYTE, (char *)message);
+    ourID = regsPtr->scsi_ctrl.read.command;
+    PUTCIRCBUF(CSTR,"; cmdreg:");
+    PUTCIRCBUF(CBYTE,(char *)ourID);
+    PUTCIRCBUF(CSTR,"; FIFO:");
+    for(i=0;i<fifoCnt;i++) {
+	circBuf[circHead] = ' ';
+	circHead = (circHead + 1) % CIRCBUFLEN;
+	ourID = regsPtr->scsi_ctrl.read.FIFO;
+	PUTCIRCBUF(CBYTE, (char *)ourID);
+    }
+    PUTCIRCNULL;
+
+    if (IS_DEV_FREE(devPtr)) {
+	panic("resel: device is free.\n");
+    }
+
+    /*
+     * It's possible for the reselection interrupt to occur just
+     * when we were sending a new command.  Three cases:
+     *  1) Interrupt happened before loading any cmd bytes.
+     *     Only indication is that controller is busy.
+     *  2) Interrupt happened before the send; part of the
+     *     cmd in the fifo.
+     *  3) Interrupt happened during the arbitration/selection
+     *     phases of the send; the bus_serv bit will be set.
+     * Note that the 53C90 doesn't handle this situation quite
+     * the same as the later 53C94, 53C95 chips. The older chip
+     * accepts cmd bytes after it shouldn't so there may be bytes
+     * in the FIFO now that should be here. See the manual.
+     */
+
+
+    /* An restore_data_ pointer cmd is implied by a reselect
+     * but we don't need to do anything */
+    regsPtr->scsi_ctrl.write.command = CR_MSG_ACCPT;
+
+    if (!(IS_CTRL_FREE(ctrlPtr)) ||
+	(interruptReg & IR_BUS_SERV) ||
+	(fifoCnt > 0)) {
+	PUTCIRCBUF(CSTR,"resel: save dev ");
+	PUTCIRCBUF(CINT, (char *)ctrlPtr->devPtr);
+	PUTCIRCBUF(CSTR," cmd ");
+	PUTCIRCBUF(CINT, (char *)ctrlPtr->devPtr->scsiCmdPtr);
+	PUTCIRCNULL;
+	ctrlPtr->interruptDevPtr = ctrlPtr->devPtr;
+	regsPtr->scsi_ctrl.write.command = CR_FLSH_FIFO;
+    }
+
+    SET_CTRL_BUSY(ctrlPtr,devPtr);
+
+    return SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ReleaseProc --
+ *
+ *	Device release proc for controller.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static ReturnStatus
+ReleaseProc(scsiDevicePtr)
+    ScsiDevice	*scsiDevicePtr;
+{
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevSCSIC90AttachDevice --
+ *
+ *	Attach a SCSI device using the Sun SCSIC90 HBA. 
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ScsiDevice   *
+DevSCSIC90AttachDevice(devicePtr, insertProc)
+    Fs_Device	*devicePtr;	 /* Device to attach. */
+    void	(*insertProc)(); /* Queue insert procedure. */
+{
+    Device *devPtr;
+    Controller	*ctrlPtr;
+    char   tmpBuffer[512];
+    int	   length;
+    int	   ctrlNum;
+    int	   targetID, lun;
+
+    /*
+     * First find the SCSIC90 controller this device is on.
+     */
+    ctrlNum = SCSI_HBA_NUMBER(devicePtr);
+    if ((ctrlNum > MAX_SCSIC90_CTRLS) ||
+	(Controllers[ctrlNum] == (Controller *) 0)) { 
+	return (ScsiDevice  *) NIL;
+    } 
+    ctrlPtr = Controllers[ctrlNum];
+    targetID = SCSI_TARGET_ID(devicePtr);
+    lun = SCSI_LUN(devicePtr);
+    /*
+     * Allocate a device structure for the device and fill in the
+     * handle part. This must be created before we grap the MASTER_LOCK.
+     */
+    devPtr = (Device *) malloc(sizeof(Device)); 
+    bzero((char *) devPtr, sizeof(Device));
+    devPtr->handle.devQueue = Dev_QueueCreate(ctrlPtr->devQueues,
+					      (1<<targetID),
+					      insertProc,
+					      (ClientData) devPtr);
+    devPtr->handle.locationName = "Unknown";
+    devPtr->handle.LUN = lun;
+    devPtr->handle.releaseProc = ReleaseProc;
+    devPtr->handle.maxTransferSize = MAX_TRANSFER_SIZE;
+    devPtr->targetID = targetID;
+    devPtr->ctrlPtr = ctrlPtr;
+    devPtr->synchPeriod = 0;
+    devPtr->synchOffset = 0;
+    devPtr->msgFlag = 0;
+    MASTER_LOCK(&(ctrlPtr->mutex));
+    /*
+     * A device pointer of zero means that targetID/LUN 
+     * conflicts with that of the HBA. A NIL means the
+     * device hasn't been attached yet.
+     */
+    if (ctrlPtr->devicePtr[targetID][lun] == (Device *) 0) {
+	MASTER_UNLOCK(&(ctrlPtr->mutex));
+	(void) Dev_QueueDestroy(devPtr->handle.devQueue);
+	free((char *) devPtr);
+	return (ScsiDevice *) NIL;
+    }
+    if (ctrlPtr->devicePtr[targetID][lun] != (Device *) NIL) {
+	MASTER_UNLOCK(&(ctrlPtr->mutex));
+	(void) Dev_QueueDestroy(devPtr->handle.devQueue);
+	free((char *) devPtr);
+	return (ScsiDevice *) (ctrlPtr->devicePtr[targetID][lun]);
+    }
+    SET_DEV_FREE(devPtr);
+    ctrlPtr->devicePtr[targetID][lun] = devPtr;
+    MASTER_UNLOCK(&(ctrlPtr->mutex));
+    (void) sprintf(tmpBuffer, "%s Target %d LUN %d", ctrlPtr->name, 
+			devPtr->targetID, devPtr->handle.LUN);
+    length = strlen(tmpBuffer);
+    devPtr->handle.locationName = (char *) strcpy(malloc(length+1),tmpBuffer);
+
+    if (devSCSIC90Debug > 3) {
+	printf("devSCSIC90Attach: attached device %s.\n", tmpBuffer);
+    }
+
+    return (ScsiDevice *) devPtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintMsg --
+ *
+ *	Print out the asci string for a scsi msg.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+PrintMsg(msg)
+    unsigned int msg;
+{
+
+    if (msg & SCSI_IDENTIFY) {
+	if (msg & SCSI_DIS_REC_IDENTIFY) {
+	    printf("dis_rec_identify (LUN 0x%02x) msg.\n",
+		   (int)(msg & SCSI_IDENT_LUN_MASK));
+	} else {
+	    printf("identify (LUN 0x%02x) msg.\n",
+		   (int)(msg & SCSI_IDENT_LUN_MASK));
+	}
+	return;
+    } 
+
+    switch (msg) {
+    case SCSI_COMMAND_COMPLETE:
+	printf("command_complete msg.\n");
+	break;
+    case SCSI_SAVE_DATA_POINTER:
+	printf("save_data_ptr msg.\n");
+	break;
+    case SCSI_RESTORE_POINTERS:
+	printf("restore_ptrs msg.\n");
+	break;
+    case SCSI_DISCONNECT:
+	printf("disconnect msg.\n");
+	break;
+    case SCSI_ABORT:
+	printf("abort msg.\n");
+	break;
+    case SCSI_MESSAGE_REJECT:
+	printf("msg_reject msg.\n");
+	break;
+    case SCSI_NO_OP:
+	printf("no_op msg.\n");
+	break;
+    case SCSI_MESSAGE_PARITY_ERROR:
+	printf("msg_parity msg.\n");
+	break;
+    case SCSI_BUS_RESET:
+	printf("bus_reset msg.\n");
+	break;
+    default:
+	printf("unknown msg %d.\n", msg);
+	break;
+    }
+
+    return;
+}
+
+#ifndef lint
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintPhase --
+ *
+ *	Print out the asci string for a scsi phase.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+PrintPhase(phase)
+    unsigned int	phase;
+{
+    
+    switch (phase) {
+    case SR_DATA_OUT:
+	printf("data out phase.\n");
+	break;
+    case SR_DATA_IN:
+	printf("data in phase.\n");
+	break;
+    case SR_COMMAND:
+	printf("command phase.\n");
+	break;
+    case SR_STATUS:
+	printf("status phase.\n");
+	break;
+    case SR_MSG_OUT:
+	printf("msg out phase.\n");
+	break;
+    case SR_MSG_IN:
+	printf("msg in phase.\n");
+	break;
+    default:
+	printf("unknown phase %d.\n", phase);
+	break;
+    }
+
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintLastPhase --
+ *
+ *	Print out the asci string for the last scsi phase we were in.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+PrintLastPhase(phase)
+    unsigned int	phase;
+{
+    switch (phase) {
+    case PHASE_BUS_FREE:
+	printf("bus free phase.\n");
+	break;
+    case PHASE_SELECTION:
+	printf("selection phase.\n");
+	break;
+    case PHASE_DATA_OUT:
+	printf("data out phase.\n");
+	break;
+    case PHASE_DATA_IN:
+	printf("data in phase.\n");
+	break;
+    case PHASE_STATUS:
+	printf("status phase.\n");
+	break;
+    case PHASE_MSG_IN:
+	printf("msg in phase.\n");
+	break;
+    case PHASE_STAT_MSG_IN:
+	printf("stat_msg in phase.\n");
+	break;
+    case PHASE_RDY_DISCON:
+	printf("rdy_discon phase.\n");
+	break;
+    default:
+	printf("unknown phase %d.\n", phase);
+	break;
+    }
+
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintRegs --
+ *
+ *	Print out the interesting registers.  This could be a macro but
+ *	then it couldn't be called from kdbx.  This routine is necessary
+ *	because kdbx doesn't print all the character values properly.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Data is displayed on the console or to the debugger.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+PrintRegs(regsPtr)
+    register volatile CtrlRegs *regsPtr;
+{
+
+    printf("Won't print interrupt register since that would clear it.\n");
+    printf("xCntLow: 0x%x, xCntHi: 0x%x, FIFO: 0x%x, command: 0x%x,\n",
+	    regsPtr->scsi_ctrl.read.xCntLo,
+	    regsPtr->scsi_ctrl.read.xCntHi,
+	    regsPtr->scsi_ctrl.read.FIFO,
+	    regsPtr->scsi_ctrl.read.command);
+    printf("status: 0x%x, sequence: 0x%x, FIFOFlags: 0x%x, config1: 0x%x,\n",
+	    regsPtr->scsi_ctrl.read.status,
+	    regsPtr->scsi_ctrl.read.sequence,
+	    regsPtr->scsi_ctrl.read.FIFOFlags,
+	    regsPtr->scsi_ctrl.read.config1);
+    printf("config2: 0x%x, config3: 0x%x\n",
+	    regsPtr->scsi_ctrl.read.config2,
+	    regsPtr->scsi_ctrl.read.config3);
+
+    return;
+}
+#endif /* LINT */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  SpecialSenseProc --
+ *
+ *	Special function used for HBA generated REQUEST SENSE. A SCSI
+ *	command request with this function as a call back proc will
+ *	be processed by routine RequestDone as a result of a 
+ *	REQUEST SENSE. This routine is never called.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static int
+SpecialSenseProc(scsiCmdPtr, status, statusByte, byteCount, senseLength,
+		 senseDataPtr)
+    ScsiCmd		*scsiCmdPtr;
+    ReturnStatus	status;
+    unsigned char	statusByte;
+    int			byteCount;
+    int			senseLength;
+    Address		senseDataPtr;
+{
+    return 0;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_ChangeScsiDebugLevel --
+ *
+ *	Change the level of debugging info for this scsi driver.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	A larger or lesser number of messages will be printed out.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Dev_ChangeScsiDebugLevel(level)
+    int	level;
+{
+    
+    printf("Changing scsi debug level: was %d, ", devSCSIC90Debug);
+    devSCSIC90Debug = level;
+    printf("and is now %d.\n", devSCSIC90Debug);
+
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PutCircBuf
+ *
+ *	Stuff data into the circular log buffer
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+PutCircBuf(type, object)
+int type;
+char *object;
+{
+    int num = (int)object;
+
+    switch(type) {
+    case CSTR:
+	while(*object) {
+	    circBuf[circHead] = *object++;
+	    circHead = (circHead + 1) % CIRCBUFLEN;
+	}
+	break;
+    case CBYTE:
+	circBuf[circHead] = CVTHEX(num,4);
+	circHead = (circHead + 1) % CIRCBUFLEN;
+	circBuf[circHead] = CVTHEX(num,0);
+	circHead = (circHead + 1) % CIRCBUFLEN;
+	break;
+    case CINT:
+	circBuf[circHead] = CVTHEX(num,28); 
+	circHead = (circHead + 1) % CIRCBUFLEN; 
+	circBuf[circHead] = CVTHEX(num,24); 
+	circHead = (circHead + 1) % CIRCBUFLEN; 
+	circBuf[circHead] = CVTHEX(num,20); 
+	circHead = (circHead + 1) % CIRCBUFLEN; 
+	circBuf[circHead] = CVTHEX(num,16); 
+	circHead = (circHead + 1) % CIRCBUFLEN; 
+	circBuf[circHead] = CVTHEX(num,12); 
+	circHead = (circHead + 1) % CIRCBUFLEN; 
+	circBuf[circHead] = CVTHEX(num,8); 
+	circHead = (circHead + 1) % CIRCBUFLEN; 
+	circBuf[circHead] = CVTHEX(num,4); 
+	circHead = (circHead + 1) % CIRCBUFLEN; 
+	circBuf[circHead] = CVTHEX(num,0); 
+	circHead = (circHead + 1) % CIRCBUFLEN;
+	break;
+    default:
+	panic("PutCircBuf: unknown type\n");
+	break;
+    }
+}
+
+@
+
+
+1.9
+log
+@*** empty log message ***
+@
+text
+@d67 1
+a69 2
+ * *** OBSOLETE ***
+ *
+d78 7
+d138 12
+d194 2
+d207 1
+d215 1
+d219 6
+d259 11
+d280 7
+d307 1
+d311 2
+d323 2
+d389 22
+a410 1
+    if ((!IS_CTRL_FREE(ctrlPtr)) ||  (!IS_DEV_FREE(devPtr))) {
+d423 2
+d430 2
+d433 4
+d480 1
+d498 17
+d535 2
+d608 4
+d630 3
+d657 5
+d666 1
+d668 3
+d674 1
+d690 12
+d703 3
+d709 1
+d764 3
+d772 5
+d781 3
+d915 5
+d1023 4
+d1045 5
+d1055 5
+d1084 3
+d1132 1
+d1147 5
+d1175 7
+d1193 5
+d1204 1
+d1209 16
+d1254 1
+a1254 1
+    int               fifoCnt;
+d1309 4
+d1314 10
+d1352 5
+d1751 59
+@
+
+
+1.8
+log
+@If the selection fails return DEV_NO_DEVICE so the upper levels know that
+the device doesn't even exist.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/dev/ds5000.md/devSCSIC90.c,v 1.7 91/08/19 13:49:33 jhh Exp $ SPRITE (Berkeley)";
+a66 1
+static void             PutCircBuf _ARGS_((int type, char *object));
+d69 2
+a78 7
+char        circBuf[CIRCBUFLEN] = {""};
+int         circHead = 0;
+char numTab[16] = {
+    '0', '1', '2', '3', '4', '5', '6', '7',
+    '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
+    };
+     
+a131 12
+    PUTCIRCBUF(CSTR, "send: targ ");
+    PUTCIRCBUF(CBYTE, (char *)devPtr->targetID);
+    PUTCIRCBUF(CSTR, ";cmd ");
+    PUTCIRCBUF(CINT, (char *)scsiCmdPtr);
+    PUTCIRCBUF(CSTR,";buf ");
+    PUTCIRCBUF(CINT, (char *)scsiCmdPtr->buffer);
+    PUTCIRCBUF(CSTR, ";len ");
+    PUTCIRCBUF(CINT, (char *)size);
+    PUTCIRCBUF(CSTR,";op ");
+    PUTCIRCBUF(CBYTE, (char *)scsiCmdPtr->commandBlock[0]);
+    PUTCIRCNULL;
+
+a175 2
+	PUTCIRCBUF(CSTR,"send: bad cmd len\n");
+	PUTCIRCNULL;
+a186 1
+	PUTCIRCBUF(CSTR,"send ATNS; per ");
+a193 1
+	PUTCIRCBUF(CSTR,"send ATN; per ");
+a196 6
+    PUTCIRCBUF(CBYTE,(char *)(devPtr->synchPeriod));
+    PUTCIRCBUF(CSTR,"; off ");
+    PUTCIRCBUF(CBYTE,(char *)(devPtr->synchOffset));
+    PUTCIRCBUF(CSTR,"; cmd ");
+    PUTCIRCBUF(CBYTE,(char *)(*scsiCmdPtr->commandBlock));
+    PUTCIRCNULL;
+a232 10
+    PUTCIRCBUF(CSTR,"done: targ ");
+    PUTCIRCBUF(CBYTE, (char *)devPtr->targetID);
+    PUTCIRCBUF(CSTR,";rc ");
+    PUTCIRCBUF(CBYTE, (char *)status);
+    PUTCIRCBUF(CSTR,";stat ");
+    PUTCIRCBUF(CBYTE, (char *)scsiStatusByte);
+    PUTCIRCBUF(CSTR,";cnt ");
+    PUTCIRCBUF(CBYTE, (char *)amountTransferred);
+    PUTCIRCNULL;
+
+a241 7
+	PUTCIRCBUF(CSTR,"sense data:");
+	for (i=0; i<amountTransferred; i++) {
+	    circBuf[circHead] = ' ';
+	    circHead = (circHead + 1) % CIRCBUFLEN;
+	    PUTCIRCBUF(CBYTE, (char *)(devPtr->senseBuffer[i]));
+	}
+	PUTCIRCNULL;
+a261 1
+	PUTCIRCBUF(CSTR,"done: callback before...");
+a264 2
+	PUTCIRCBUF(CSTR,"after");
+	PUTCIRCNULL;
+a274 2
+    PUTCIRCBUF(CSTR,"done: issue sense");
+    PUTCIRCNULL;
+d339 1
+a339 22
+    if ((IS_CTRL_FREE(ctrlPtr)) &&  (IS_DEV_FREE(devPtr))) {
+	PUTCIRCBUF(CSTR,"EAP: exec targ ");
+	PUTCIRCBUF(CBYTE, (char *)(devPtr->targetID));
+	PUTCIRCBUF(CSTR,"; mask ");
+	PUTCIRCBUF(CBYTE, (char *)(ctrlPtr->devQueuesMask));
+	PUTCIRCBUF(CSTR,"; cmd ptr ");
+	PUTCIRCBUF(CINT, (char *)newRequestPtr);
+	PUTCIRCNULL;
+    } else {
+	PUTCIRCBUF(CSTR,"EAP: NQ targ ");
+	PUTCIRCBUF(CBYTE, (char *)(devPtr->targetID));
+	PUTCIRCBUF(CSTR,"; mask ");
+	PUTCIRCBUF(CBYTE, (char *)(ctrlPtr->devQueuesMask));
+	PUTCIRCBUF(CSTR,"; cmd ptr ");
+	PUTCIRCBUF(CINT,(char *)newRequestPtr);
+	PUTCIRCBUF(CSTR,"; intDev ");
+	PUTCIRCBUF(CINT,(char *)(ctrlPtr->interruptDevPtr));
+	if (ctrlPtr->interruptDevPtr != (Device *)NIL) {
+	    PUTCIRCBUF(CSTR,"; intDevCmd ");
+	    PUTCIRCBUF(CINT,(char *)(ctrlPtr->interruptDevPtr->scsiCmdPtr));
+	}
+	PUTCIRCNULL;
+a351 2
+	 PUTCIRCBUF(CSTR,"eap: send fail");
+	 PUTCIRCNULL;
+a356 2
+	    PUTCIRCBUF(CSTR,"eap: no cmd");
+	    PUTCIRCNULL;
+a357 4
+	} else {
+	    PUTCIRCBUF(CSTR,"eap: cmd");
+	    PUTCIRCBUF(CINT,(char *)newRequestPtr);
+	    PUTCIRCNULL;
+a400 1
+    char	        tempChar;
+a417 17
+    PUTCIRCBUF(CSTR,"intr: dev ");
+    PUTCIRCBUF(CINT,(char *)devPtr);
+    PUTCIRCBUF(CSTR,";int ");
+    PUTCIRCBUF(CBYTE, (char *)interruptReg);
+    PUTCIRCBUF(CSTR,";stat ");
+    PUTCIRCBUF(CBYTE, (char *)statusReg);
+    PUTCIRCBUF(CSTR,";seq ");
+    PUTCIRCBUF(CBYTE, (char *)sequenceReg);
+    if (devPtr != (Device *)NIL) {
+	PUTCIRCBUF(CSTR,";last ");
+	PUTCIRCBUF(CBYTE, (char *)devPtr->lastPhase);
+    }
+    PUTCIRCNULL;
+
+/*    printf("interruptReg 0x%02x, statusReg 0x%02x, sequenceReg 0x%02x\n",
+		interruptReg, statusReg, sequenceReg);
+*/
+a437 2
+	    PUTCIRCBUF(CSTR,"ignoring illegal cmd interrupt");
+	    PUTCIRCNULL;
+a508 4
+	    PUTCIRCBUF(CSTR,"intr: targ ");
+	    PUTCIRCBUF(CBYTE, (char *)devPtr->targetID);
+	    PUTCIRCBUF(CSTR," discon.");
+	    PUTCIRCNULL;
+a526 3
+        PUTCIRCBUF(CSTR,"intr: exit stat ");
+        PUTCIRCBUF(CBYTE,(char *)status);
+        PUTCIRCNULL;
+a550 5
+	PUTCIRCBUF(CSTR,"start dma ptr: ");
+	PUTCIRCBUF(CINT,(char *)devPtr->activeBufPtr);
+	PUTCIRCBUF(CSTR,"; len: ");
+	PUTCIRCBUF(CINT,(char *)devPtr->activeBufLen);
+	PUTCIRCNULL;
+a554 1
+	PUTCIRCBUF(CSTR,"cmd:");
+a555 3
+	    circBuf[circHead] = ' ';
+	    circHead = (circHead + 1) % CIRCBUFLEN;
+	    PUTCIRCBUF(CBYTE, (char *)*charPtr);
+a558 1
+	PUTCIRCNULL;
+a573 12
+	i = regsPtr->scsi_ctrl.read.FIFOFlags & FIFO_BYTES_MASK;
+	if (i > 0) {
+	    PUTCIRCBUF(CSTR,"msg-out: fifo: ");
+	    while (i-- > 0) {
+		circBuf[circHead] = ' ';
+		circHead = (circHead + 1) % CIRCBUFLEN;
+		tempChar = regsPtr->scsi_ctrl.read.FIFO;
+		PUTCIRCBUF(CBYTE,(char*)(tempChar));
+	    }
+	    PUTCIRCNULL;
+	}
+	PUTCIRCBUF(CSTR,"msg-out: msg: ");
+a574 3
+	    circBuf[circHead] = ' ';
+	    circHead = (circHead + 1) % CIRCBUFLEN;
+	    PUTCIRCBUF(CBYTE, (char *)devPtr->messageBuf[i]);
+a577 1
+	PUTCIRCNULL;
+a631 3
+	    PUTCIRCBUF(CSTR,"cdone: cmd ");
+	    PUTCIRCBUF(CINT,(char *)newRequestPtr);
+	    PUTCIRCNULL;
+a635 6
+	    ctrlPtr->interruptDevPtr = (Device *)NIL;
+	    PUTCIRCBUF(CSTR,"cdone: resend dev ");
+	    PUTCIRCBUF(CINT, (char *)clientData);
+	    PUTCIRCBUF(CSTR," cmd ");
+	    PUTCIRCBUF(CINT,(char *)newRequestPtr);
+	    PUTCIRCNULL;
+a639 3
+    } else {
+	PUTCIRCBUF(CSTR,"cdone: busy ");
+	PUTCIRCNULL;
+a770 5
+    PUTCIRCBUF(CSTR,"residual: ");
+    PUTCIRCBUF(CINT,(char *)(residual));
+    PUTCIRCBUF(CSTR,"; fifoCnt ");
+    PUTCIRCBUF(CINT,(char *)(fifoCnt));
+    PUTCIRCNULL;
+a873 4
+    PUTCIRCBUF(CSTR,"msg in: ");
+    PUTCIRCBUF(CBYTE, (char *)message);
+    PUTCIRCNULL;
+
+a891 5
+	PUTCIRCBUF(CSTR,"save: ptr ");
+	PUTCIRCBUF(CINT, (char *)devPtr->activeBufPtr);
+	PUTCIRCBUF(CSTR,"; len ");
+	PUTCIRCBUF(CINT, (char *)devPtr->activeBufLen);
+	PUTCIRCNULL;
+a896 5
+	PUTCIRCBUF(CSTR,"restore: ptr ");
+	PUTCIRCBUF(CINT, (char *)devPtr->activeBufPtr);
+	PUTCIRCBUF(CSTR,"; len ");
+	PUTCIRCBUF(CINT, (char *)devPtr->activeBufLen);
+	PUTCIRCNULL;
+a920 3
+	PUTCIRCBUF(CSTR,"Msg-in: unknown msg");
+	PUTCIRCNULL;
+	printf("SCSIC90: Couldn't handle msg type: 0x%02x\n",message);
+a965 1
+    int i;
+a979 5
+	    PUTCIRCBUF(CSTR,"Msg-in: bad xtend msg: ");
+	    PUTCIRCBUF(CBYTE,(char *)(message));
+	    PUTCIRCBUF(CSTR,"; len ");
+	    PUTCIRCBUF(CBYTE,(char *)(devPtr->messageBuf[1]));
+	    PUTCIRCNULL;
+a1002 7
+	    PUTCIRCBUF(CSTR,"accept per: ");
+	    PUTCIRCBUF(CBYTE,(char *)period);
+	    PUTCIRCBUF(CSTR,"; per clk ");
+	    PUTCIRCBUF(CBYTE,(char *)periodInClks);
+	    PUTCIRCBUF(CSTR,"; off ");
+	    PUTCIRCBUF(CBYTE,(char *)offset);
+	    PUTCIRCNULL;
+a1013 5
+	    PUTCIRCBUF(CSTR,"negotiate per: ");
+	    PUTCIRCBUF(CBYTE,(char *)(devPtr->messageBuf[3]));
+	    PUTCIRCBUF(CSTR,"; off ");
+	    PUTCIRCBUF(CBYTE,(char *)(devPtr->messageBuf[4]));
+	    PUTCIRCNULL;
+a1019 1
+	printf("SCSIC90: xmsg case error\n");
+a1023 16
+    PUTCIRCBUF(CSTR,"Xmsg-in: accept msg");
+    len = regsPtr->scsi_ctrl.read.FIFOFlags & FIFO_BYTES_MASK;
+    PUTCIRCBUF(CSTR,"; FIFO:");
+    for(i=0;i<len;i++) {
+	circBuf[circHead] = ' ';
+	circHead = (circHead + 1) % CIRCBUFLEN;
+	offset = regsPtr->scsi_ctrl.read.FIFO;
+	PUTCIRCBUF(CBYTE, (char *)offset);
+    }
+    PUTCIRCBUF(CSTR,"; mbuf:");
+    for(i=0;i<devPtr->messageBufLen;i++) {
+	circBuf[circHead] = ' ';
+	circHead = (circHead + 1) % CIRCBUFLEN;
+	PUTCIRCBUF(CBYTE, (char *)(devPtr->messageBuf[i]));
+    }
+    PUTCIRCNULL;
+d1053 1
+a1053 1
+    int               fifoCnt,i;
+a1107 4
+    PUTCIRCBUF(CSTR,"resel: targ ");
+    PUTCIRCBUF(CBYTE, (char *)target);
+    PUTCIRCBUF(CSTR,"; lun ");
+    PUTCIRCBUF(CBYTE, (char *)message);
+a1108 10
+    PUTCIRCBUF(CSTR,"; cmdreg:");
+    PUTCIRCBUF(CBYTE,(char *)ourID);
+    PUTCIRCBUF(CSTR,"; FIFO:");
+    for(i=0;i<fifoCnt;i++) {
+	circBuf[circHead] = ' ';
+	circHead = (circHead + 1) % CIRCBUFLEN;
+	ourID = regsPtr->scsi_ctrl.read.FIFO;
+	PUTCIRCBUF(CBYTE, (char *)ourID);
+    }
+    PUTCIRCNULL;
+a1136 5
+	PUTCIRCBUF(CSTR,"resel: save dev ");
+	PUTCIRCBUF(CINT, (char *)ctrlPtr->devPtr);
+	PUTCIRCBUF(CSTR," cmd ");
+	PUTCIRCBUF(CINT, (char *)ctrlPtr->devPtr->scsiCmdPtr);
+	PUTCIRCNULL;
+a1530 59
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PutCircBuf
+ *
+ *	Stuff data into the circular log buffer
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+PutCircBuf(type, object)
+int type;
+char *object;
+{
+    int num = (int)object;
+
+    switch(type) {
+    case CSTR:
+	while(*object) {
+	    circBuf[circHead] = *object++;
+	    circHead = (circHead + 1) % CIRCBUFLEN;
+	}
+	break;
+    case CBYTE:
+	circBuf[circHead] = CVTHEX(num,4);
+	circHead = (circHead + 1) % CIRCBUFLEN;
+	circBuf[circHead] = CVTHEX(num,0);
+	circHead = (circHead + 1) % CIRCBUFLEN;
+	break;
+    case CINT:
+	circBuf[circHead] = CVTHEX(num,28); 
+	circHead = (circHead + 1) % CIRCBUFLEN; 
+	circBuf[circHead] = CVTHEX(num,24); 
+	circHead = (circHead + 1) % CIRCBUFLEN; 
+	circBuf[circHead] = CVTHEX(num,20); 
+	circHead = (circHead + 1) % CIRCBUFLEN; 
+	circBuf[circHead] = CVTHEX(num,16); 
+	circHead = (circHead + 1) % CIRCBUFLEN; 
+	circBuf[circHead] = CVTHEX(num,12); 
+	circHead = (circHead + 1) % CIRCBUFLEN; 
+	circBuf[circHead] = CVTHEX(num,8); 
+	circHead = (circHead + 1) % CIRCBUFLEN; 
+	circBuf[circHead] = CVTHEX(num,4); 
+	circHead = (circHead + 1) % CIRCBUFLEN; 
+	circBuf[circHead] = CVTHEX(num,0); 
+	circHead = (circHead + 1) % CIRCBUFLEN;
+	break;
+    default:
+	panic("PutCircBuf: unknown type\n");
+	break;
+    }
+}
+@
+
+
+1.7
+log
+@removed lint
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/jhh/dev/ds5000.md/RCS/devSCSIC90.c,v 1.6 91/08/16 11:23:07 mottsmth Exp $ SPRITE (Berkeley)";
+d828 1
+d855 3
+a857 4
+	status = FAILURE;
+	printf("%s: selection failed: %s\n",
+	       ctrlPtr->devPtr->handle.locationName,
+	       errMsg[msgNum]);
+@
+
+
+1.6
+log
+@Correctly reject synch transfer request if
+ENABLEEXTENDEDMSG is off.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/ds5000.md/RCS/devSCSIC90.c,v 1.5 91/08/01 20:57:44 mottsmth Exp $ SPRITE (Berkeley)";
+d61 6
+a66 1
+static int              SpecialSenseProc _ARGS_((void));
+d749 1
+d752 2
+a753 2
+Controller   *ctrlPtr;
+ReturnStatus status;
+d879 1
+d882 3
+a884 3
+Controller      *ctrlPtr;
+unsigned int	interruptReg;
+unsigned int	statusReg;
+d1549 1
+a1648 1
+
+d1689 1
+a1689 1
+
+d1709 1
+a1709 1
+
+d1711 8
+a1718 1
+SpecialSenseProc()
+@
+
+
+1.5
+log
+@Correct the calculation of the residual byte count
+by adding in the # bytes in the fifo.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/ds5000.md/RCS/devSCSIC90.c,v 1.4 91/07/29 17:35:00 mottsmth Exp $ SPRITE (Berkeley)";
+d1058 10
+a1067 3
+	devPtr->msgFlag |= STARTEXTENDEDMSG;
+	status = PerformExtendedMsgIn(ctrlPtr,(unsigned int)message);
+	return status;
+@
+
+
+1.4
+log
+@Remove an extraneous line of debug stuff.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/ds5000.md/RCS/devSCSIC90.c,v 1.3 91/07/27 18:26:40 mottsmth Exp Locker: mottsmth $ SPRITE (Berkeley)";
+a74 15
+static int         lastDiscon[8] = {
+    -1,-1,-1,-1,-1,-1,-1,-1
+    };
+static int         lastNegot[8] = {
+    -1,-1,-1,-1,-1,-1,-1,-1
+    };
+static int         lastReject[8] = {
+    -1,-1,-1,-1,-1,-1,-1,-1
+    };
+static int         lastConflict[8] = {
+    -1,-1,-1,-1,-1,-1,-1,-1
+    };
+static int         lastSense[8] = {
+    -1,-1,-1,-1,-1,-1,-1,-1
+    };
+a109 1
+    char tempChar;
+a123 2
+    devPtr->savedDataPtr = scsiCmdPtr->buffer;
+    devPtr->savedDataLen = scsiCmdPtr->bufferLen;
+a153 1
+    devPtr->residual = size;			/* No bytes transfered yet. */
+d155 2
+a199 1
+	lastNegot[devPtr->targetID] = circHead;
+a319 1
+    lastSense[devPtr->targetID] = circHead;
+a509 4
+    if ((IS_CTRL_FREE(ctrlPtr)) && !(interruptReg & IR_RESLCT)) {
+	panic("SCSIC90: Got int. but ctrl is free\n");
+    }
+
+a539 5
+    if (interruptReg & IR_RESLCT) {
+	PerformReselect(ctrlPtr, interruptReg);
+	MASTER_UNLOCK(&(ctrlPtr->mutex));
+	return TRUE;
+    }
+d550 12
+a602 1
+	    lastDiscon[devPtr->targetID] = circHead;
+d632 1
+a632 1
+		    devPtr->scsiCmdPtr->bufferLen - devPtr->residual);
+d652 5
+d881 4
+a884 1
+    Device   *devPtr = ctrlPtr->devPtr;
+d896 1
+a896 1
+    devPtr->residual = regsPtr->scsi_ctrl.read.xCntLo;
+d900 3
+a902 1
+    devPtr->residual += (regsPtr->scsi_ctrl.read.xCntHi << 8);
+d904 1
+a904 1
+     * If the transfer was the maximum, 16K bytes, a 0 in the counter
+d907 8
+a914 5
+    if (devPtr->residual != 0) {
+	PUTCIRCBUF(CSTR,"DMA xfer didn't finish: bytes left: ");
+	PUTCIRCBUF(CINT,(char *)(devPtr->residual));
+	PUTCIRCNULL;
+    }
+d920 1
+d922 1
+a922 4
+	int		amountXfered;
+	
+	amountXfered = devPtr->scsiCmdPtr->bufferLen - devPtr->residual;
+	FLUSH_BYTES((char *) ctrlPtr->buffer, devPtr->scsiCmdPtr->buffer, 
+d925 3
+a927 5
+    if (! (statusReg & SR_TC)) {
+	/* Transfer count didn't go to zero, or this bit would be set. */
+	PUTCIRCBUF(CSTR,"DMA: xfer cnt bit is 0");
+	PUTCIRCNULL;
+    }
+a1011 1
+    int residual;
+d1035 2
+d1038 5
+a1042 8
+	residual = regsPtr->scsi_ctrl.read.xCntLo;
+	residual += (regsPtr->scsi_ctrl.read.xCntHi << 8);
+	if (residual) {
+	    devPtr->savedDataPtr = devPtr->scsiCmdPtr->buffer +
+		                   devPtr->scsiCmdPtr->bufferLen -
+				   residual;
+	    devPtr->savedDataLen = residual;
+	}
+d1045 2
+a1046 1
+	/* an implicit restore_ptrs is done by reselect proc too */
+d1048 5
+a1052 2
+	devPtr->scsiCmdPtr->buffer = devPtr->savedDataPtr;
+	devPtr->scsiCmdPtr->bufferLen = devPtr->savedDataLen;
+d1063 1
+a1063 1
+	lastReject[devPtr->targetID] = circHead;
+d1331 2
+a1332 3
+    /* do an implied restore data pointer */
+    devPtr->scsiCmdPtr->buffer = devPtr->savedDataPtr;
+    devPtr->scsiCmdPtr->bufferLen = devPtr->savedDataLen;
+a1337 1
+	lastConflict[ctrlPtr->devPtr->targetID] = circHead;
+@
+
+
+1.3
+log
+@ Add disconnect/reselect support.
+Synchronous support also added,but disabled
+since it seems sensitive to cable length and/or
+proper target termination.
+Circular debug buffer left intact until this
+thing proves itself under combat conditions.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/ds5000.md/RCS/devSCSIC90.c,v 1.2 91/05/08 16:29:54 jhh Exp $ SPRITE (Berkeley)";
+a863 3
+	if (devPtr->targetID == 1) {
+	    panic("selection failed\n");
+	}
+@
+
+
+1.2
+log
+@ds5000 port
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun4c.md/RCS/devSCSIC90.c,v 1.4 90/12/19 12:37:58 mgbaker Exp $ SPRITE (Berkeley)";
+a25 1
+#include "devInt.h"
+d34 1
+a34 1
+#include "vm.h"
+a35 432
+#include "dbg.h"
+
+/*
+ *
+ *      Definitions for Sun's third(?) variant on the SCSI device interface.
+ *	The reference for the 53C90 is the NCR Advanced SCSI Processor
+ *	User's Guide, Micro-electronics Division, Revision 2.1, Aug. 1989.
+ */
+
+/*
+ * The control registers have different definitions depending on whether
+ * you are reading or writing them.  The fields require byte accesses, even
+ * though they are full-word aligned.
+ */
+typedef struct ReadRegs {
+    unsigned char xCntLo;	/* LSB of transfer counter. */
+    unsigned char pad1;
+    unsigned char pad2;
+    unsigned char pad3;
+    unsigned char xCntHi;	/* MSB of transfer counter. */
+    unsigned char pad5;
+    unsigned char pad6;
+    unsigned char pad7;
+    unsigned char FIFO;		/* FIFO. */
+    unsigned char pad9;
+    unsigned char pad10;
+    unsigned char pad11;
+    unsigned char command;	/* Command register. */
+    unsigned char pad13;
+    unsigned char pad14;
+    unsigned char pad15;
+    unsigned char status;	/* Status register. */
+    unsigned char pad17;
+    unsigned char pad18;
+    unsigned char pad19;
+    unsigned char interrupt;	/* Interrupt register. */
+    unsigned char pad21;
+    unsigned char pad22;
+    unsigned char pad23;
+    unsigned char sequence;	/* Sequnce step register. */
+    unsigned char pad25;
+    unsigned char pad26;
+    unsigned char pad27;
+    unsigned char FIFOFlags;	/* FIFO flags. */
+    unsigned char pad29;
+    unsigned char pad30;
+    unsigned char pad31;
+    unsigned char config1;	/* Configuration 1. */
+    unsigned char pad33;
+    unsigned char pad34;
+    unsigned char pad35;
+    unsigned char reserved1;	/* NCR reserved. */
+    unsigned char pad37;
+    unsigned char pad38;
+    unsigned char pad39;
+    unsigned char reserved2;	/* NCR reserved. */
+    unsigned char pad41;
+    unsigned char pad42;
+    unsigned char pad43;
+    unsigned char config2;	/* Configuration 2. */
+    unsigned char pad45;
+    unsigned char pad46;
+    unsigned char pad47;
+    unsigned char config3;	/* Configuration 3. */
+    unsigned char pad49;
+    unsigned char pad50;
+    unsigned char pad51;
+    unsigned char reserved3;	/* NCR reserved. */
+} ReadRegs;
+
+/*
+ * The following format applies when writing the registers.
+ */
+typedef struct WriteRegs {
+    unsigned char xCntLo;	/* LSB of transfer counter. */
+    unsigned char pad1;
+    unsigned char pad2;
+    unsigned char pad3;
+    unsigned char xCntHi;	/* MSB of transfer counter. */
+    unsigned char pad5;
+    unsigned char pad6;
+    unsigned char pad7;
+    unsigned char FIFO;		/* FIFO. */
+    unsigned char pad9;
+    unsigned char pad10;
+    unsigned char pad11;
+    unsigned char command;	/* Command register. */
+    unsigned char pad13;
+    unsigned char pad14;
+    unsigned char pad15;
+    unsigned char destID;	/* Destination ID. */
+    unsigned char pad17;
+    unsigned char pad18;
+    unsigned char pad19;
+    unsigned char timeout;	/* (Re)selection timeout. */
+    unsigned char pad21;
+    unsigned char pad22;
+    unsigned char pad23;
+    unsigned char synchPer;	/* Synchronous period. */
+    unsigned char pad25;
+    unsigned char pad26;
+    unsigned char pad27;
+    unsigned char synchOffset;	/* Synchronous offset. */
+    unsigned char pad29;
+    unsigned char pad30;
+    unsigned char pad31;
+    unsigned char config1;	/* Configuration 1. */
+    unsigned char pad33;
+    unsigned char pad34;
+    unsigned char pad35;
+    unsigned char clockConv;	/* Clock conversion factor. */
+    unsigned char pad37;
+    unsigned char pad38;
+    unsigned char pad39;
+    unsigned char test;		/* Test mode. */
+    unsigned char pad41;
+    unsigned char pad42;
+    unsigned char pad43;
+    unsigned char config2;	/* Configuration 2. */
+    unsigned char pad45;
+    unsigned char pad46;
+    unsigned char pad47;
+    unsigned char config3;	/* Configuration 3. */
+    unsigned char pad49;
+    unsigned char pad50;
+    unsigned char pad51;
+    unsigned char resFIFO;	/* Reserve FIFO byte. */
+} WriteRegs;
+
+/*
+ * The control register layout.
+ */
+typedef	struct	CtrlRegs {
+    union {
+	struct	ReadRegs	read;		/* scsi bus ctrl, read reg. */
+	struct	WriteRegs	write;		/* scsi bus crl, write reg. */
+    } scsi_ctrl;
+} CtrlRegs;
+
+
+/*
+ * Control bits in the 53C90 Command Register.
+ * The command register is a two deep, 8-bit read/write register.
+ * Up to 2 commands may be stacked in the command register.
+ * Reset chip, reset SCSI bus and target stop DMA execute immediately,
+ * all others wait for the previous command to complete.  Reading the
+ * command register has no effect on its contenets.
+ */
+#define	CR_DMA		0x80	/* If set, command is a DMA instruction. */
+#define CR_CMD		0x7F	/* The command code bits [6:0]. */
+
+/* Miscellaneous group. */
+#define	CR_NOP		0x00	/* NOP. */
+#define	CR_FLSH_FIFO	0x01	/* Flush FIFO. */
+#define	CR_RESET_CHIP	0x02	/* Reset chip. */
+#define	CR_RESET_BUS	0x03	/* Reset SCSI bus. */
+/* Disconnected state group. */
+#define	CR_RESLCT_SEQ	0x40	/* Reselect sequence. */
+#define	CR_SLCT_NATN	0x41	/* Select without ATN sequence. */
+#define	CR_SLCT_ATN	0x42	/* Select with ATN sequence. */
+#define	CR_SLCT_ATNS	0x43	/* Select with ATN and stop sequence. */
+#define	CR_EN_SLCT	0x44	/* Enable selection/reselection. */
+#define	CR_DIS_SLCT	0x45	/* Disable selection/reselection. */
+#define	CR_SLCT_ATN3	0x46	/* Select ATN3. */
+/* Target state group. */
+#define	CR_SEND_MSG	0x20	/* Send message. */
+#define	CR_SEND_STATUS	0x21	/* Send status. */
+#define	CR_SEND_DATA	0x22	/* Send data. */
+#define	CR_DIS_SEQ	0x23	/* Disconnect sequence. */
+#define	CR_TERM_SEQ	0x24	/* Terminate sequence. */
+#define	CR_TARG_COMP	0x25	/* Target command complete sequence. */
+#define	CR_DISCONNECT	0x27	/* Disconnect. */
+#define	CR_REC_MSG	0x28	/* Receive message. */
+#define	CR_REC_CMD	0x29	/* Receive command sequence. */
+#define	CR_REC_DATA	0x2A	/* Receive data. */
+#define	CR_TARG_ABRT	0x06	/* Target abort sequence. */
+/* #define	CR_REC_CMD	0x2B	Another receive command sequence? */
+/* Initiator state group */
+#define	CR_XFER_INFO	0x10	/* Transfer information. */
+#define	CR_INIT_COMP	0x11	/* Initiator command complete sequence. */
+#define	CR_MSG_ACCPT	0x12	/* Message accepted. */
+#define	CR_XFER_PAD	0x18	/* Transfer pad. */
+#define	CR_SET_ATN	0x1A	/* Set ATN. */
+#define	CR_RESET_ATN	0x1B	/* Reset ATN. */
+
+#define C1_SLOW		0x80	/* Slow cable mode. */
+#define	C1_REPORT	0x40	/* Disable reporting of interrupts from the
+				 * scsi bus reset command. */
+#define C1_PARITY_TEST	0x20	/* Enable parity test feature. */
+#define C1_PARITY	0x10	/* Enable parity checking. */
+#define C1_TEST		0x08	/* Enable chip test mode. */
+#define C1_BUS_ID	0x03	/* Bus ID. */
+
+#define C2_RESERVE_FIFO 0x80	/* Reserve fifo byte. */
+#define C2_PHASE_LATCH	0x40	/* Enable phase latch. */
+#define C2_BYTE_CONTROL	0x20	/* Enable byte control. */
+#define C2_DREQ_HIGH	0x10	/* Set the DREQ output to high impedence. */
+#define C2_SCSI2	0x08	/* Enable SCSI2 stuff. */
+#define C2_BAD_PARITY	0x04	/* Abort if bad parity detected. */
+#define C2_REG_PARITY	0x02	/* No idea. (see the documentation). */
+#define C2_DMA_PARITY	0x01	/* Enable parity on DMA transfers. */
+
+#define C3_RESIDUAL	0x04	/* Save residual byte. */
+#define C3_ALT_DMA	0x02	/* Alternate DMA mode. */
+#define C3_THRESHOLD8	0x01	/* Don't DMA until there are 8 bytes. */
+
+/*
+ * Bits in the 53C90 Status register (read only).
+ * This register contains flags that indicate certain events have occurred.
+ * Bits 7-3 are latched until the interrupt register is read.  The phase
+ * bits are not normally latched.  The interrupt bit (SR_INT) may be polled.
+ * Hardware reset or software reset or a read from the interrupt register
+ * will release an active INT signal and also clear this bit.
+ * See pages 15-16 for which bits cause interrupts and for how to clear them.
+ */
+#define	SR_INT		0x80	/* ASC interrupting processor. */
+#define	SR_GE		0x40	/* Gross error. */
+#define	SR_PE		0x20	/* Parity error. */
+#define	SR_TC		0x10	/* Terminal count. */
+#define	SR_VGC		0x08	/* Valid group code. */
+#define	SR_PHASE	0x07	/* Phase bits. */
+#define	SR_DATA_OUT	0x00	/* Data out w.r.t. initiator. */
+#define	SR_DATA_IN	0x01	/* Data in. */
+#define	SR_COMMAND	0x02	/* Command. */
+#define	SR_STATUS	0x03	/* Status. */
+#define	SR_MSG_OUT	0x06	/* Message out w.r.t. initiator. */
+#define	SR_MSG_IN	0x07	/* Message in. */
+
+/*
+ * Program/human-level description of phases.  The controller combines
+ * the arbitration, selection and command phases into one big "selection"
+ * phase.  Likewise, the status and msg-in phases are combined, but you can
+ * have one by itself.  The bus free phase isn't represented by phase bits
+ * in this controller, but rather by a disconnect after the MSG_IN phase.
+ * We use these defines to be the "last phase" we were in, and the phases
+ * above (SR_MSG_OUT, etc) to be the phase we are currently in.  Because
+ * of the combined phases, this makes the state machine easier if these
+ * aren't symmetrical.
+ */
+#define	PHASE_BUS_FREE		0x0
+#define	PHASE_SELECTION		0x1
+#define	PHASE_DATA_OUT		0x2
+#define	PHASE_DATA_IN		0x3
+#define	PHASE_STATUS		0x4
+#define	PHASE_MSG_IN		0x5
+
+/*
+ * Fifo flags register.
+ */
+#define	FIFO_BYTES_MASK	0x1F
+
+/*
+ * Destination ID register for write.destID(write-only).
+ */
+#define	DEST_ID_MASK	0x07	/* Lowest 3 bits give binary-encoded id. */
+
+/*
+ * Timeout period to load into write.timeout field:  the usual value
+ * is 250ms to meet ANSI standards.  To get the register value, we do
+ * (timeout period) * (CLK frequency) / 8192 * (clock conversion factor).
+ * The clock conversion factor is defined in the write.clockConv register.
+ * The values are
+ *	2	for	10MHz
+ *	3	for	15MHz
+ *	4	for	20MHz
+ *	5	for	25MHz		153 is reg val
+ */
+#define	SELECT_TIMEOUT	153
+
+/*
+ * Interrupt register. (read-only).  Used in conjuction with the status
+ * register and sequence step register to determine the cause of an interrupt.
+ * Reading this register when the interrupt output is true will clear all
+ * three registers.
+ */
+#define	IR_SCSI_RST	0x80	/* SCSI reset detected. */
+#define	IR_ILL_CMD	0x40	/* Illegal command. */
+#define	IR_DISCNCT	0x20	/* Target disconnected or time-out. */
+#define	IR_BUS_SERV	0x10	/* Another device wants bus service. */
+#define	IR_FUNC_COMP	0x08	/* Function complete. */
+#define	IR_RESLCT	0x04	/* Reselected. */
+#define	IR_SLCT_ATN	0x02	/* Selected with ATN. */
+#define	IR_SLCT		0x01	/* Selected. */
+
+/*
+ * The address register for DMA transfers.
+ */
+typedef int DMARegister;
+
+/*
+ * If this bit is set in the DMA Register then the transfer is a write.
+ */
+#define DMA_WRITE	0x80000000
+
+/*
+ * The transfer size is limited to 16 bits since the scsi ctrl transfer
+ * counter is only 2 bytes.  A 0 value means the biggest transfer size
+ * (2 ** 16) == 64k.
+ */
+#define MAX_TRANSFER_SIZE	(64 * 1024)
+
+
+/*
+ * Misc defines 
+ */
+
+/*
+ * devSCSIC90Debug - debugging level
+ *	2 - normal level
+ *	4 - one print per command in the normal case
+ *	5 - traces interrupts
+ */
+int devSCSIC90Debug = 2;
+
+int	dmaControllerActive = 0;
+
+/* Forward declaration. */
+typedef struct Controller Controller;
+
+/*
+ * Device - The data structure containing information about a device. One of
+ * these structure is kept for each attached device. Note that is structure
+ * is casted into a ScsiDevice and returned to higher level software.
+ * This implies that the ScsiDevice must be the first field in this
+ * structure.
+ */
+
+typedef struct Device {
+    ScsiDevice handle;			/* Scsi Device handle. This is the only
+   					 * part of this structure visible to
+					 * higher-level software. MUST BE FIRST
+					 * FIELD IN STRUCTURE. */
+    int	targetID;			/* SCSI Target ID of this device. Note
+					 * that the LUN is stored in the device
+					 * handle. */
+    Controller *ctrlPtr;		/* Controller to which device is
+					 * attached. */
+					/* The following part of this structure
+					 * is used to handle SCSI commands that
+					 * return CHECK status. To handle the
+					 * REQUEST SENSE command we must:
+					 * 1) Save the state of the current
+					 * command into the "struct
+					 * FrozenCommand".
+					 * 2) Submit a request sense command
+					 * formatted in SenseCmd to the device.
+					 */
+    struct FrozenCommand {		       
+	ScsiCmd	*scsiCmdPtr;	   	/* The frozen command. */
+	unsigned char statusByte; 	/* It's SCSI status byte, Will always
+					 * have the check bit set. */
+	int amountTransferred;    	/* Number of bytes transferred by this 
+				         * command. */
+    } frozen;	
+    char senseBuffer[DEV_MAX_SENSE_BYTES]; /* Data buffer for request sense */
+    ScsiCmd		SenseCmd;  	   /* Request sense command buffer. */
+} Device;
+
+/*
+ * Controller - The Data structure describing a sun SCSIC90 controller. One
+ * of these structures exists for each active SCSIC90 HBA on the system. Each
+ * controller may have from zero to 56 (7 targets each with 8 logical units)
+ * devices attached to it. 
+ */
+struct Controller {
+    volatile CtrlRegs	*regsPtr;	/* Pointer to the registers of
+					 * this controller. */
+    volatile DMARegister *dmaRegPtr;	/* Pointer to DMA register. */
+    int		dmaState;		/* DMA state for this controller,
+					 * defined below. */
+    char	*name;			/* String for error message for this
+					 * controller. */
+    DevCtrlQueues	devQueues;	/* Device queues for devices attached
+					 * to this controller. */
+    Sync_Semaphore	mutex;		/* Lock protecting controller's data
+					 * structures. */
+	/*
+	 * Until disconnect/reconnect is added we can have only one current
+	 * active device and scsi command.
+	 */
+    Device	*devPtr;	   	/* Current active command. */
+    ScsiCmd	*scsiCmdPtr;		/* Current active command. */
+    int		residual;		/* Residual bytes in xfer counter. */
+    int		lastPhase;		/* The scsi phase we were last in. */
+    unsigned char	commandStatus;	/* Status received from device. */
+    Device  *devicePtr[8][8];		/* Pointers to the device attached to
+					 * the controller index by
+					 * [targetID][LUN].  NIL if device not
+					 * attached yet. Zero if device
+					 * conflicts with HBA address. */
+    char	*buffer;		/* SCSI buffer address. */
+    int		slot;			/* Slot that this controller is in. */
+};
+
+/*
+ * Possible values for the dmaState state field of a controller.
+ *
+ * DMA_RECEIVE  - data is being received from the device, such as on
+ *	a read, inquiry, or request sense.
+ * DMA_SEND     - data is being send to the device, such as on a write.
+ * DMA_INACTIVE - no data needs to be transferred.
+ */
+
+#define DMA_RECEIVE  0x0
+#define	DMA_SEND     0x2
+#define	DMA_INACTIVE 0x4
+
+/*
+ * Test, mark, and unmark the controller as busy.
+ */
+#define	IS_CTRL_BUSY(ctrlPtr)	((ctrlPtr)->scsiCmdPtr != (ScsiCmd *) NIL)
+#define	SET_CTRL_BUSY(ctrlPtr,scsiCmdPtr) \
+		((ctrlPtr)->scsiCmdPtr = (scsiCmdPtr))
+#define	SET_CTRL_FREE(ctrlPtr)	((ctrlPtr)->scsiCmdPtr = (ScsiCmd *) NIL)
+
+/*
+ * MAX_SCSIC90_CTRLS - Maximum number of SCSIC90 controllers attached to the
+ *		     system. 
+ */
+#define	MAX_SCSIC90_CTRLS	4
+
+static Controller *Controllers[MAX_SCSIC90_CTRLS];
+/*
+ * Highest number controller we have probed for.
+ */
+static int numSCSIC90Controllers = 0;
+
+
+#define REG_OFFSET	0
+#define	DMA_OFFSET	0x40000
+#define BUFFER_OFFSET	0x80000
+#define ROM_OFFSET	0xc0000
+d40 1
+a42 3
+static Boolean          ProbeOnBoard _ARGS_ ((int address));
+static Boolean          ProbeSBus _ARGS_ ((int address));
+static void             Reset _ARGS_ ((Controller *ctrlPtr));
+d46 17
+a62 1
+static void             StartDMA _ARGS_ ((Controller *ctrlPtr));
+d65 4
+a68 3
+ * This is global for now, so that we can see what the last value of
+ * the register was while debugging.  Reading the real register clears
+ * 3 registers, so that isn't a good thing to do.
+d70 2
+a71 43
+unsigned char	interruptReg;
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Reset --
+ *
+ *	Reset a SCSI bus controlled by the SCSI-3 Sun Host Adaptor.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Reset the controller and SCSI bus.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+Reset(ctrlPtr)
+    Controller *ctrlPtr;
+{
+    volatile CtrlRegs *regsPtr = (volatile CtrlRegs *)ctrlPtr->regsPtr;
+
+    if (devSCSIC90Debug > 3) {
+	printf("Reset\n");
+    }
+    /* Reset scsi controller. */
+    regsPtr->scsi_ctrl.write.command = CR_RESET_CHIP;
+    regsPtr->scsi_ctrl.write.command = CR_DMA | CR_NOP;
+    ctrlPtr->dmaState = DMA_INACTIVE;
+    /*
+     * Don't interrupt when the SCSI bus is reset. Set our bus ID to 7.
+     */
+    regsPtr->scsi_ctrl.write.config1 |= C1_REPORT | 0x7;
+    regsPtr->scsi_ctrl.write.command = CR_RESET_BUS;
+    /*
+     * We initialize configuration, clock conv, synch offset, etc, in
+     * SendCommand.
+     * Parity is disabled by hardware reset or software.
+     * We never send ID with ATN, so reselection shouldn't ever happen?
+     */
+d73 22
+a94 2
+    return;
+}
+d125 1
+d132 11
+a142 2
+    SET_CTRL_BUSY(ctrlPtr, scsiCmdPtr);
+    ctrlPtr->devPtr = devPtr;
+d145 1
+a145 1
+	ctrlPtr->dmaState = DMA_INACTIVE;
+d147 1
+a147 1
+	ctrlPtr->dmaState = (scsiCmdPtr->dataToDevice) ? DMA_SEND :
+d150 12
+a161 7
+    if (devSCSIC90Debug > 3) {
+	printf("SCSIC90Command: %s addr %x size %d dma %s\n",
+		devPtr->handle.locationName, scsiCmdPtr->buffer, size,
+		(ctrlPtr->dmaState == DMA_INACTIVE) ? "not active" :
+		((ctrlPtr->dmaState == DMA_SEND) ? "send" : "receive"));
+	printf("TargetID = %d\n", devPtr->targetID);
+    }
+d171 3
+a173 3
+    ctrlPtr->lastPhase = PHASE_SELECTION;	/* Selection & command phase. */
+    ctrlPtr->residual = size;			/* No bytes transfered yet. */
+    ctrlPtr->commandStatus = 0;			/* No status yet. */
+a174 1
+    regsPtr->scsi_ctrl.write.destID = 0x7;
+d179 4
+a182 1
+    regsPtr->scsi_ctrl.write.synchOffset = 0;
+d184 1
+a184 2
+    regsPtr->scsi_ctrl.write.clockConv = 5;
+    /* Synchronous transfer period register not used for async xfer. */
+d186 1
+a186 10
+    Mach_EmptyWriteBuffer();
+    /*
+     * Selection without attention since we don't do disconnect/reconnect yet.
+     */
+    
+    /* Load FIFO with 6, 10, or 12 byte scsi command. */
+    if (devSCSIC90Debug > 5) {
+	printf("SCSIC90Command: %s stuffing command of %d bytes.\n", 
+		devPtr->handle.locationName, scsiCmdPtr->commandBlockLen);
+    }
+d188 20
+a207 4
+    charPtr = scsiCmdPtr->commandBlock;
+    if (scsiCmdPtr->commandBlockLen != 6 && scsiCmdPtr->commandBlockLen != 10
+	    && scsiCmdPtr->commandBlockLen != 12) {
+	printf("Command is wrong length.\n");
+a209 18
+    for (i = 0; i < scsiCmdPtr->commandBlockLen; i++) {
+	regsPtr->scsi_ctrl.write.FIFO = *charPtr;
+	charPtr++;
+    }
+    Mach_EmptyWriteBuffer();
+    /* Issue selection without attention command. */
+    regsPtr->scsi_ctrl.write.command = CR_SLCT_NATN;
+
+    if (devSCSIC90Debug > 5) {
+	printf("\n");
+    }
+
+    /*
+     * If all goes well, the chip will go through the arbitration,
+     * selection and command phases for us.
+     */
+    return SUCCESS;
+}
+a210 25
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StartDMA --
+ *
+ *	Issue the sequence of commands to the controller to start DMA.
+ *	This can be called by Dev_SCSIC90Intr in response to a DATA_{IN,OUT}
+ *	phase message.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	DMA is enabled.  No registers other than the control register are
+ *	to be accessed until DMA is disabled again.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+StartDMA(ctrlPtr)
+    Controller *ctrlPtr;
+{
+    volatile CtrlRegs	*regsPtr;
+    int			size;
+d212 1
+a212 1
+    size = ctrlPtr->scsiCmdPtr->bufferLen;
+d214 7
+a220 16
+    if (devSCSIC90Debug > 4) {
+	printf("StartDMA called for %s, dma %s, size = %d.\n", ctrlPtr->name,
+	    (ctrlPtr->dmaState == DMA_RECEIVE) ? "receive" :
+		((ctrlPtr->dmaState == DMA_SEND) ? "send" :
+						  "not-active!"), size);
+    }
+    if (ctrlPtr->dmaState == DMA_INACTIVE) {
+	printf("Returning, since DMA state isn't active.\n");
+	return;
+    }
+    regsPtr = ctrlPtr->regsPtr;
+    if (ctrlPtr->scsiCmdPtr->buffer == (Address) NIL) {
+	panic("DMA buffer was NIL before dma.\n");
+    }
+    if (ctrlPtr->dmaState == DMA_RECEIVE) {
+	*ctrlPtr->dmaRegPtr = 0;
+d222 16
+a237 15
+	bcopy((char *) ctrlPtr->scsiCmdPtr->buffer, ctrlPtr->buffer, size);
+	*ctrlPtr->dmaRegPtr = (unsigned int) DMA_WRITE;
+    }
+    /*
+     * Put transfer size in counter.  If this is 16k (max size), this puts
+     * a 0 in the counter, which is the correct thing to do.
+     */
+    /* High byte of size. */
+    regsPtr->scsi_ctrl.write.xCntHi = (unsigned char) ((size & 0xff00) >> 8);
+    /* Low byte of size. */
+    regsPtr->scsi_ctrl.write.xCntLo = (unsigned char) (size & 0x00ff);
+    /* Load count into counter by writing a DMA NOP command on C90 only */
+    regsPtr->scsi_ctrl.write.command = CR_DMA | CR_NOP;
+    /* Start scsi command. */
+    regsPtr->scsi_ctrl.write.command = CR_DMA | CR_XFER_INFO;
+d239 1
+a239 69
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintRegs --
+ *
+ *	Print out the interesting registers.  This could be a macro but
+ *	then it couldn't be called from kdbx.  This routine is necessary
+ *	because kdbx doesn't print all the character values properly.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Data is displayed on the console or to the debugger.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+PrintRegs(regsPtr)
+    register volatile CtrlRegs *regsPtr;
+{
+
+    printf("Won't print interrupt register since that would clear it,\n");
+    printf(" but the old interrupt register is 0x%x.\n", interruptReg);
+    printf("xCntLow: 0x%x, xCntHi: 0x%x, FIFO: 0x%x, command: 0x%x,\n",
+	    regsPtr->scsi_ctrl.read.xCntLo,
+	    regsPtr->scsi_ctrl.read.xCntHi,
+	    regsPtr->scsi_ctrl.read.FIFO,
+	    regsPtr->scsi_ctrl.read.command);
+    printf("status: 0x%x, sequence: 0x%x, FIFOFlags: 0x%x, config1: 0x%x,\n",
+	    regsPtr->scsi_ctrl.read.status,
+	    regsPtr->scsi_ctrl.read.sequence,
+	    regsPtr->scsi_ctrl.read.FIFOFlags,
+	    regsPtr->scsi_ctrl.read.config1);
+    printf("config2: 0x%x, config3: 0x%x\n",
+	    regsPtr->scsi_ctrl.read.config2,
+	    regsPtr->scsi_ctrl.read.config3);
+
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  SpecialSenseProc --
+ *
+ *	Special function used for HBA generated REQUEST SENSE. A SCSI
+ *	command request with this function as a call back proc will
+ *	be processed by routine RequestDone as a result of a 
+ *	REQUEST SENSE. This routine is never called.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+SpecialSenseProc()
+{
+    return 0;
+d272 11
+d284 1
+a285 5
+    if (devSCSIC90Debug > 3) {
+	printf("RequestDone for %s status 0x%x scsistatus 0x%x count %d\n",
+	    devPtr->handle.locationName, status,scsiStatusByte,
+	    amountTransferred);
+    }
+d293 7
+a300 3
+	if (devSCSIC90Debug > 3) {
+	    printf("Calling special sense proc for frozen command.\n");
+	}
+d308 1
+a308 1
+	 SET_CTRL_FREE(ctrlPtr);
+d317 4
+a320 5
+    if ((status != SUCCESS) || !SCSI_CHECK_STATUS(scsiStatusByte)) {
+        MASTER_UNLOCK(&(ctrlPtr->mutex));
+	if (devSCSIC90Debug > 3) {
+	    printf("Calling doneProc for regular command.\n");
+	}
+d322 1
+a322 1
+				   amountTransferred, 0, (char *) 0);
+d324 3
+a326 1
+	SET_CTRL_FREE(ctrlPtr);
+d335 6
+a340 3
+    if (devSCSIC90Debug > 3) {
+	printf("Check bit set, performing Request Sense.\n");
+    }
+d345 2
+a346 2
+	    devPtr->senseBuffer, &(devPtr->SenseCmd));
+    devPtr->SenseCmd.doneProc = SpecialSenseProc,
+d348 2
+a349 1
+    /*
+a354 3
+	if (devSCSIC90Debug > 3) {
+	    printf("Request sense failed.\n");
+	}
+d358 1
+a358 1
+	SET_CTRL_FREE(ctrlPtr);
+d366 1
+a366 1
+ * entryAvailProc --
+d386 2
+a387 2
+static Boolean
+entryAvailProc(clientData, newRequestPtr) 
+d393 1
+a393 1
+    ScsiCmd		*scsiCmdPtr;
+d402 23
+a424 2
+
+    if (IS_CTRL_BUSY(ctrlPtr)) { 
+d427 1
+d432 1
+d437 2
+d440 3
+a442 4
+    }
+    if (!IS_CTRL_BUSY(ctrlPtr)) { 
+        newRequestPtr = Dev_QueueGetNextFromSet(ctrlPtr->devQueues,
+				DEV_QUEUE_ANY_QUEUE_MASK,&clientData);
+d444 2
+d447 4
+d453 1
+d472 5
+d488 3
+a490 3
+    List_Links		*newRequestPtr;
+    ClientData		clientData;
+    char		statusReg;
+d492 3
+a494 3
+    int			numBytes;
+    unsigned char	message = 0;
+    ReturnStatus	status = SUCCESS;
+a495 3
+    if (devSCSIC90Debug > 4) {
+	printf("DevSCSIC90Intr: ");
+    }
+d502 4
+a505 1
+    /* Read registers */
+d510 1
+a510 20
+
+#ifdef NOTDEF
+    /*
+     * In order to have multiple controllers at this interrupt level on
+     * the scsi bus, we need to have some way of checking if we should be in
+     * this routine, unfortunately things like the status register
+     * interrupt bit don't seem to be set when we get here, so we just hope
+     * it's okay.  XXXX Is this still true?
+     */
+if ((statusReg & SR_INT) == 0 &&
+    (dmaReg & (DMA_INT_PEND | DMA_ERR_PEND)) == 0) {
+	printf("Is this spurious? interruptReg 0x%x, statusReg 0x%x, dmaReg 0x%x.\n",
+		interruptReg, statusReg, dmaReg);
+
+}
+    /* Check if we should we be in this routine. */
+    if ((statusReg & SR_INT) == 0 &&
+	    (dmaReg & (DMA_INT_PEND | DMA_ERR_PEND)) == 0) {
+	printf("spurious: interruptReg 0x%x, statusReg 0x%x, dmaCtrl 0x%x.\n",
+		interruptReg, statusReg, dmaReg);
+d512 11
+a522 1
+	return FALSE;
+d524 1
+a524 1
+#endif NOTDEF
+d526 1
+a526 3
+    if (devSCSIC90Debug > 4) {
+	printf(
+	"interruptReg 0x%x, statusReg 0x%x, sequenceReg 0x%x\n",
+d528 3
+a531 4
+    if (devSCSIC90Debug > 3) {
+	printf("LastPhase was ");
+	PrintLastPhase(ctrlPtr->lastPhase);
+    }
+d535 1
+d552 10
+a561 8
+	printf("%s: illegal command.\n",
+		devPtr->handle.locationName);
+	status = FAILURE;
+    }
+    if ((interruptReg & IR_DISCNCT) && ctrlPtr->lastPhase != PHASE_MSG_IN) {
+	printf("%s disconnected or timed out.\n",
+		devPtr->handle.locationName);
+	status = DEV_TIMEOUT;
+d564 3
+a566 3
+	printf("%s: target asked for reselection, which we aren't doing yet.\n",
+		devPtr->handle.locationName);
+	status = FAILURE;
+d580 6
+a585 1
+    switch (ctrlPtr->lastPhase) {
+d587 1
+a587 11
+	if (! (interruptReg & IR_BUS_SERV)) {
+	    if (devSCSIC90Debug > 4) {
+		printf("We came from selection phase, but didn't finish.\n");
+	    }
+	    /*
+	     * Save timeout error from above.
+	     */
+	    if (status != DEV_TIMEOUT) {
+		status = FAILURE;
+	    }
+	}
+d590 6
+d597 1
+a597 39
+	ctrlPtr->residual = regsPtr->scsi_ctrl.read.xCntLo;
+	ctrlPtr->residual += (regsPtr->scsi_ctrl.read.xCntHi << 8);
+	/*
+	 * If the transfer was the maximum, 16K bytes, a 0 in the counter
+	 * may mean that nothing was transfered...  What should I do? XXX
+	 */
+	if (ctrlPtr->residual != 0 && devSCSIC90Debug > 3) {
+	    printf("DMA transfer didn't finish. %d bytes left, xfered %d\n",
+		    ctrlPtr->residual,
+		    ctrlPtr->scsiCmdPtr->bufferLen - ctrlPtr->residual);
+	}
+	/*
+	 * Flush the cache on data in, since the dma put it into memory
+	 * but didn't go through the cache.  We don't have to worry about this
+	 * on writes, since the sparcstation has a write-through cache.
+	 */
+	if (ctrlPtr->lastPhase == PHASE_DATA_IN) {
+	    int		amountXfered;
+
+	    amountXfered = ctrlPtr->scsiCmdPtr->bufferLen - ctrlPtr->residual;
+	    bcopy((char *) ctrlPtr->buffer, ctrlPtr->scsiCmdPtr->buffer,
+		amountXfered);
+	}
+	if (! (statusReg & SR_TC)) {
+	    /* Transfer count didn't go to zero, or this bit would be set. */
+	    if (devSCSIC90Debug > 3) {
+		printf("After DMA, transfer count didn't go to zero.\n");
+	    }
+	}
+	if (interruptReg & IR_DISCNCT) {
+	    /* Target released BSY/ before count reached zero. */
+	    printf("Target disconnected during DMA transfer.\n");
+	    status = FAILURE;
+	}
+	if (! (interruptReg & IR_BUS_SERV)) {
+	    /* Target didn't request information transfer phase. */
+	    printf("Didn't receive bus service signal after DMA xfer.\n");
+	    status = FAILURE;
+	}
+d600 14
+a613 5
+	/* Read bytes from FIFO. */
+	numBytes = regsPtr->scsi_ctrl.read.FIFOFlags & FIFO_BYTES_MASK;
+	if (numBytes != 2) {
+	    /* We didn't get both phases. */
+	    printf("Missing message in phase after status phase.\n");
+a614 1
+	    break;
+d616 2
+a617 8
+	ctrlPtr->commandStatus = regsPtr->scsi_ctrl.read.FIFO;
+	message = regsPtr->scsi_ctrl.read.FIFO;
+	/* Would check status reg for parity here. */
+	if (phase != SR_MSG_IN || (interruptReg & IR_BUS_SERV)) {
+	    printf("Target wanted other phase than MSG_IN after status.\n");
+	    status = FAILURE;
+	    break;
+	}
+d619 12
+a630 1
+	    printf("Target released BSY/ signal before MSG_IN.\n");
+a631 1
+	    break;
+a632 10
+	if (! (interruptReg & IR_FUNC_COMP)) {
+	    printf("Command didn't complete.\n");
+	    status = FAILURE;
+	    break;
+	}
+	if (message != SCSI_COMMAND_COMPLETE) {
+	    printf("Warning: %s couldn't handle message 0x%x from %s.\n",
+		    ctrlPtr->name, message,
+		    ctrlPtr->devPtr->handle.locationName);
+	}
+a633 31
+    case PHASE_MSG_IN:
+	if (interruptReg & IR_BUS_SERV) {
+	    /* Request for another transfer. */
+	    printf("Another transfer requested after MSG_IN.\n");
+	    printf("We can't do this yet.\n");
+	    status = FAILURE;
+	    break;
+	}
+	if (!(interruptReg & IR_DISCNCT)) {
+	    printf("Should have seen end of I/O.\n");
+	    status = FAILURE;
+	    break;
+	}
+	/* End of I/O. */
+	if (devSCSIC90Debug > 3) {
+	    printf("End of I/O.\n");
+	}
+	ctrlPtr->lastPhase = PHASE_BUS_FREE;
+	RequestDone(devPtr, ctrlPtr->scsiCmdPtr, SUCCESS,
+		ctrlPtr->commandStatus,
+		ctrlPtr->scsiCmdPtr->bufferLen - ctrlPtr->residual);
+
+	if (! IS_CTRL_BUSY(ctrlPtr)) {
+	    newRequestPtr = Dev_QueueGetNextFromSet(ctrlPtr->devQueues,
+		    DEV_QUEUE_ANY_QUEUE_MASK, &clientData);
+	    if (newRequestPtr != (List_Links *) NIL) {
+		(void) entryAvailProc(clientData, newRequestPtr);
+	    }
+	}
+	MASTER_UNLOCK(&(ctrlPtr->mutex));
+	return TRUE;
+d636 1
+a636 1
+	printf("We came from an unknown phase.\n");
+a639 3
+    if (status != SUCCESS) {
+	goto HandleHardErrorAndGetNext;
+    }
+d641 12
+a652 4
+    /* No error so far. */
+
+    if (devSCSIC90Debug > 4 ) {
+	PrintPhase((unsigned int) phase);
+d656 1
+d659 2
+a660 2
+	ctrlPtr->lastPhase = (phase == SR_DATA_OUT ? PHASE_DATA_OUT :
+		PHASE_DATA_IN);
+d666 4
+a669 1
+	StartDMA(ctrlPtr);
+d672 14
+a685 2
+	printf("We shouldn't ever enter this phase.\n");
+	status = FAILURE;
+d693 1
+a693 1
+	ctrlPtr->lastPhase = PHASE_STATUS;
+d696 27
+a722 5
+    case SR_MSG_IN:
+	ctrlPtr->lastPhase = PHASE_MSG_IN;
+	/* Accept message */
+	if (devSCSIC90Debug > 3) {
+	    printf("Accepting message while in msg in phase.\n");
+a723 1
+	regsPtr->scsi_ctrl.write.command = CR_MSG_ACCPT;
+d725 4
+a728 3
+    case SR_MSG_OUT:
+	printf("MSG_OUT phase currently unused.  Why are we in it?!\n");
+	status = FAILURE;
+d731 1
+d736 54
+a789 3
+    if (status == SUCCESS) {
+	MASTER_UNLOCK(&(ctrlPtr->mutex));
+	return TRUE;
+d792 75
+a866 3
+HandleHardErrorAndGetNext:
+    if (devSCSIC90Debug > 3) {
+	PrintPhase((unsigned int) phase);
+d869 69
+a937 7
+    if (ctrlPtr->scsiCmdPtr != (ScsiCmd *) NIL) { 
+	if (devSCSIC90Debug > 3) {
+	    printf("Warning: %s reset and current command terminated.\n",
+		   devPtr->handle.locationName);
+	}
+	RequestDone(devPtr, ctrlPtr->scsiCmdPtr, status, 0,
+		ctrlPtr->scsiCmdPtr->bufferLen - ctrlPtr->residual);
+d939 4
+a942 8
+    Reset(ctrlPtr);
+    /*
+     * Use the queue entryAvailProc to start the next request for this device.
+     */
+    newRequestPtr = Dev_QueueGetNextFromSet(ctrlPtr->devQueues,
+				DEV_QUEUE_ANY_QUEUE_MASK,&clientData);
+    if (newRequestPtr != (List_Links *) NIL) { 
+	(void) entryAvailProc(clientData, newRequestPtr);
+d944 2
+a945 2
+    MASTER_UNLOCK(&(ctrlPtr->mutex));
+    return (TRUE);
+d952 1
+a952 1
+ * ReleaseProc --
+d954 1
+a954 1
+ *	Device release proc for controller.
+a963 1
+/*ARGSUSED*/
+d965 3
+a967 2
+ReleaseProc(scsiDevicePtr)
+    ScsiDevice	*scsiDevicePtr;
+d969 29
+a999 1
+
+d1004 9
+a1012 1
+ * DevSCSIC90Init --
+d1014 98
+a1111 2
+ *	Check for the existant of the Sun SCSIC90 HBA controller. If it
+ *	exists allocate data stuctures for it.
+d1113 6
+a1118 11
+ * Results:
+ *	TRUE if the controller exists, FALSE otherwise.
+ *
+ * Side effects:
+ *	Memory may be allocated.
+ *
+ *----------------------------------------------------------------------
+ */
+ClientData
+DevSCSIC90Init(ctrlLocPtr)
+    DevConfigController	*ctrlLocPtr;	/* Controller location. */
+d1120 8
+a1127 9
+    int			ctrlNum;
+    Boolean		found;
+    Controller 		*ctrlPtr;
+    int			i,j;
+    Mach_SlotInfo	slotInfo;
+    char		*slotAddr;
+    static char		*vendor = "DEC";
+    static char		*module = "PMAZ-AA";
+    ReturnStatus	status;
+d1129 2
+a1130 1
+    slotAddr = (char *) MACH_IO_SLOT_ADDR(ctrlLocPtr->slot);
+d1132 158
+a1289 3
+    status = Mach_GetSlotInfo(slotAddr + ROM_OFFSET, &slotInfo);
+    if (status != SUCCESS) {
+	return DEV_NO_CONTROLLER;
+d1291 65
+a1355 2
+    if (strcmp(slotInfo.vendor, vendor) || strcmp(slotInfo.module, module)) {
+	return DEV_NO_CONTROLLER;
+d1357 28
+a1384 43
+    /*
+     * It's there. Allocate and fill in the Controller structure.
+     */
+    ctrlNum = ctrlLocPtr->controllerID;
+    if (ctrlNum >= MAX_SCSIC90_CTRLS) {
+	printf("DevSCSIC90Init: too many controllers\n");
+	return DEV_NO_CONTROLLER;
+    }
+    if (ctrlNum+1 > numSCSIC90Controllers) {
+	numSCSIC90Controllers = ctrlNum+1;
+    }
+    Controllers[ctrlNum] = ctrlPtr = (Controller *) malloc(sizeof(Controller));
+    bzero((char *) ctrlPtr, sizeof(Controller));
+    ctrlPtr->regsPtr = (volatile CtrlRegs *) (slotAddr + REG_OFFSET);
+    ctrlPtr->dmaRegPtr = (volatile DMARegister *) (slotAddr + DMA_OFFSET);
+    ctrlPtr->buffer = slotAddr + BUFFER_OFFSET;
+    ctrlPtr->name = ctrlLocPtr->name;
+    ctrlPtr->slot = ctrlLocPtr->slot;
+    Sync_SemInitDynamic(&(ctrlPtr->mutex), ctrlPtr->name);
+    printf("SCSI controller \"%s\" in slot %d (%s %s %s %s)\n",
+	ctrlPtr->name, ctrlPtr->slot, slotInfo.module, slotInfo.vendor, 
+	slotInfo.revision, slotInfo.type);
+    /* 
+     * Initialized the name, device queue header, and the master lock.
+     * The controller comes up with no devices active and no devices
+     * attached.  Reserved the devices associated with the 
+     * targetID of the controller (7).
+     */
+    ctrlPtr->devQueues = Dev_CtrlQueuesCreate(&(ctrlPtr->mutex),
+	    entryAvailProc);
+    for (i = 0; i < 8; i++) {
+	for (j = 0; j < 8; j++) {
+	    ctrlPtr->devicePtr[i][j] = (i == 7) ? (Device *) 0 : (Device *) NIL;
+	}
+    }
+    ctrlPtr->scsiCmdPtr = (ScsiCmd *) NIL;
+    Controllers[ctrlNum] = ctrlPtr;
+    Mach_SetIOHandler(ctrlPtr->slot, (void (*)()) DevSCSIC90Intr, 
+	(ClientData) ctrlPtr);
+    Reset(ctrlPtr);
+
+    return (ClientData) ctrlPtr;
+}
+d1433 3
+a1435 1
+				1, insertProc, (ClientData) devPtr);
+d1442 3
+d1463 1
+a1463 1
+
+d1471 4
+d1478 67
+d1566 1
+d1632 6
+d1650 67
+d1740 61
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@a22 1
+#include "devAddrs.h"
+a35 1
+#include "/sprite/src/kernel/vm/vmInt.h"
+d222 2
+a223 1
+#define	CONFIG1_REPORT	0x40	/* Disable reporting of interrupts from the
+d225 18
+d321 9
+a329 28
+/* Board offsets of the dma and scsi registers accessed directly by driver */
+typedef struct DMARegs {
+    unsigned int	ctrl;	/* Control/status register. */
+    unsigned int	addr;	/* Address register. */
+    unsigned int	count;	/* Byte count register. */
+    unsigned int	diag;	/* Diagnostic register. */
+} DMARegs;
+
+/*
+ * This already seems to be mapped at this virtual address.  Should I remap it?
+ */
+volatile DMARegs	*dmaRegsPtr = (volatile DMARegs *) 0xffd14000;
+
+/* Format of DMA Control/Status register */
+#define	DMA_DEV_ID_MASK		0xF0000000	/* Device ID bits. */
+#define	DMA_TERM_CNT		0x00004000	/* Byte counter has expired. */
+#define	DMA_EN_CNT		0x00002000	/* Enable byte count reg. */
+#define	DMA_BYTE_ADDR		0x00001800	/* Next byte number. */
+#define	DMA_REQ_PEND		0x00000400	/* Request pending. */
+#define	DMA_EN_DMA		0x00000200	/* Enable DMA. */
+#define	DMA_READ		0x00000100	/* 0==WRITE. */
+#define	DMA_RESET		0x00000080	/* Like hardware reset. */
+#define	DMA_DRAIN		0x00000040	/* Drain remaining pack regs. */
+#define	DMA_FLUSH		0x00000020	/* Force pack cnt, err, to 0. */
+#define	DMA_INT_EN		0x00000010	/* Enable interrupts. */
+#define	DMA_PCK_CNT		0x00000006	/* # of bytes in pack reg. */
+#define	DMA_ERR_PEND		0x00000002	/* Error pending. */
+#define	DMA_INT_PEND		0x00000001	/* Interrupt pending. */
+d404 1
+d427 2
+d454 1
+a454 2
+ *		     system. Right now I set this to 1, since we'll just
+ *		     use the default built-in on-board slot.
+d456 1
+a456 1
+#define	MAX_SCSIC90_CTRLS	1
+d464 5
+a489 64
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProbeOnBoard --
+ *
+ *	Test for the existence for the interface.
+ *
+ * Results:
+ *	TRUE if the host adaptor was found.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static Boolean
+ProbeOnBoard(address)
+    int address;			/* Alledged controller address */
+{
+    ReturnStatus	status;
+    volatile CtrlRegs	*regsPtr = (volatile CtrlRegs *) address;
+    int			x;
+
+    /*
+     * Touch the device's status register.  Should I read something else?
+     */
+    status = Mach_Probe(sizeof (regsPtr->scsi_ctrl.read.status),
+	    (Address) &(regsPtr->scsi_ctrl.read.status), (Address) &x);
+    if (status != SUCCESS) {
+	if (devSCSIC90Debug > 3) {
+	    printf("Onboard SCSIC90 not found at address 0x%x\n",address);
+	}
+        return (FALSE);
+    }
+    if (devSCSIC90Debug > 3) {
+	printf("Onboard SCSIC90 found\n");
+    }
+    return(TRUE);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProbeSBus --
+ *
+ *	Probe memory for a host adaptor on the sbus.
+ *
+ * Results:
+ *	TRUE if the host adaptor was found, but right now we only handle
+ *	the on-board scsi controller.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static Boolean
+ProbeSBus(address)
+    int address;			/* Alledged controller address */
+{
+    /* We don't do this yet. */
+    return (FALSE);
+}
+d513 3
+a517 1
+    MACH_DELAY(200);
+a518 1
+    MACH_DELAY(200);
+d520 4
+a523 6
+    dmaControllerActive = 0;		/* Allow dma reset to happen. */
+    Dev_ScsiResetDMA();
+    MACH_DELAY(200);
+
+    regsPtr->scsi_ctrl.write.config1 |= CONFIG1_REPORT;
+    MACH_DELAY(200);
+a524 2
+    MACH_DELAY(800);
+
+a538 52
+ * Dev_ScsiResetDMA --
+ *
+ *	Reset the DMA controller.  The SCSI module owns the dma controller,
+ *	so it gets to decide when it may be reset or not.  The network
+ *	module also calls us to try to reset it.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	DMA chip reset.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Dev_ScsiResetDMA()
+{
+    Controller *ctrlPtr;
+    static	int	whichTime = 0;
+
+    if (whichTime > 1) {
+	return;
+    }
+
+    whichTime++;
+
+    if (dmaControllerActive > 0 && devSCSIC90Debug > 4) {
+	printf("Wanted to reset dma controller, but it was active: %d\n",
+		dmaControllerActive);
+	return;
+    }
+
+    /* Reset dma controller. */
+    dmaRegsPtr->ctrl = DMA_RESET;
+    MACH_DELAY(200);
+    /* Reset the dma reset bit. */
+    dmaRegsPtr->ctrl = dmaRegsPtr->ctrl & ~(DMA_RESET);
+    /* Allow dma interrupts. */
+    dmaRegsPtr->ctrl = DMA_INT_EN;
+    MACH_DELAY(200);
+
+    if (devSCSIC90Debug > 4) {
+	printf("Returning from Reset command.\n");
+    }
+
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+d584 1
+d599 1
+d606 1
+a606 1
+    regsPtr->scsi_ctrl.write.clockConv = 4;
+d609 1
+d630 1
+a630 1
+	
+a683 10
+    /*
+     * A DMA cannot cross a 16Mbyte boundary using this dma controller.
+     * We could remap pages if it does, but since the file system won't
+     * do this, we just panic for now.
+     */
+    if (((unsigned) ctrlPtr->scsiCmdPtr->buffer & 0xff000000) !=
+	    (((unsigned) ctrlPtr->scsiCmdPtr->buffer + size - 1) &
+	    0xff000000)) {
+	panic("DMA crosses 16Mbyte boundary.\n");
+    }
+d687 6
+a692 2
+    dmaRegsPtr->addr = (unsigned int) ctrlPtr->scsiCmdPtr->buffer;
+
+a702 6
+    /* Enable DMA */
+    if (ctrlPtr->dmaState == DMA_RECEIVE) {
+	dmaRegsPtr->ctrl = DMA_EN_DMA | DMA_READ | DMA_INT_EN;
+    } else {
+	dmaRegsPtr->ctrl = DMA_EN_DMA | DMA_INT_EN;
+    }
+a746 2
+    printf("DMA controller - ctrl: 0x%x, addr: 0x%x.\n", dmaRegsPtr->ctrl,
+	    dmaRegsPtr->addr);
+a977 1
+    unsigned int	dmaReg;
+a993 1
+    dmaReg = dmaRegsPtr->ctrl;
+d1007 1
+a1007 1
+	printf("Is this spurious? interruptReg 0x%x, statusReg 0x%x, dmaCtrl 0x%x.\n",
+d1023 2
+a1024 2
+	"interruptReg 0x%x, statusReg 0x%x, sequenceReg 0x%x, dmaCtrl 0x%x.\n",
+		interruptReg, statusReg, sequenceReg, dmaReg);
+a1072 5
+    if (dmaReg & DMA_ERR_PEND) {
+	printf("%s: DMA error.\n",
+		devPtr->handle.locationName);
+	status = FAILURE;
+    }
+a1089 5
+	/* Drain remaining bytes in pack register to memory. */
+	dmaRegsPtr->ctrl |= DMA_DRAIN;
+	/*
+	 * Fall through.
+	 */
+a1090 2
+	dmaControllerActive--;
+	MACH_DELAY(100);
+a1091 1
+	MACH_DELAY(100);
+d1111 2
+a1112 1
+	    VmMach_FlushByteRange(ctrlPtr->scsiCmdPtr->buffer, amountXfered);
+a1220 1
+	dmaControllerActive++;	/* Resetting controller not allowed. */
+d1329 11
+a1339 4
+    int	ctrlNum;
+    Boolean	found;
+    Controller *ctrlPtr;
+    int	i,j;
+d1341 7
+d1349 1
+a1349 1
+     * See if the controller is there. 
+d1352 2
+a1353 4
+    found =  (ctrlLocPtr->space == DEV_SBUS_OB) ?
+	    ProbeOnBoard(ctrlLocPtr->address) :
+	    ProbeSBus(ctrlLocPtr->address);
+    if (!found) {
+a1355 4
+
+    /*
+     * It's there. Allocate and fill in the Controller structure.
+     */
+d1361 3
+a1363 1
+    ctrlPtr->regsPtr = (volatile CtrlRegs *) (ctrlLocPtr->address);
+d1365 1
+d1367 3
+d1385 2
+d1467 1
+a1467 1
+    (void) sprintf(tmpBuffer, "%s#%d Target %d LUN %d", ctrlPtr->name, ctrlNum,
+@

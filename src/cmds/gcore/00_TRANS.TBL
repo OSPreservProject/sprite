@@ -1,0 +1,8 @@
+F BENCH.OUT;1                       	bench.out
+D DS3100_M                          	ds3100.md
+F GCORE.MAN;1                       	gcore.man
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md

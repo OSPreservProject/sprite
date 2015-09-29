@@ -1,0 +1,528 @@
+hostname
+anarchy.Berkeley.EDU
+sysstat -v
+anarchy              SPRITE VERSION srv.009 (ds3100) (2 Jun 92 21:54:59)
+	# sticky segments
+pwd
+/user5/kupfer/spriteserver/src/benchmarks/itc/itc/tmp
+uptime; loadavg -a | egrep "allspice|lust"
+         anarchy   dsmach   up   0+00:02 refuses  0.27  0.13  0.17 (0+00:00)
+            lust   ds5000   up   0+03:28   inuse  0.62  0.23  0.43 (0+03:28)
+        allspice     sun4   up   1+05:52 refuses  0.60  0.62  0.50 (0+03:26)
+********* Timing begins here *********
+date
+Tue Jun  2 22:00:37 PDT 1992
+Phase I: Creating directories
+mkdir testfs1 testfs1/include testfs1/include/sys testfs1/include/netinet
+mkdir testfs2 testfs2/include testfs2/include/sys testfs2/include/netinet
+mkdir testfs3 testfs3/include testfs3/include/sys testfs3/include/netinet
+mkdir testfs4 testfs4/include testfs4/include/sys testfs4/include/netinet
+mkdir testfs5 testfs5/include testfs5/include/sys testfs5/include/netinet
+date
+Tue Jun  2 22:00:39 PDT 1992
+********* Phase II: Copying files *********
+cp ../fscript/DrawString.c testfs1/DrawString.c
+cp ../fscript/MakeLoadable.c testfs1/MakeLoadable.c
+cp ../fscript/ProgramName.c testfs1/ProgramName.c
+cp ../fscript/RasterFile.h testfs1/RasterFile.h
+cp ../fscript/UserDrawS.c testfs1/UserDrawS.c
+cp ../fscript/arbitrator.c testfs1/arbitrator.c
+cp ../fscript/bres.s testfs1/bres.s
+cp ../fscript/cmr.c testfs1/cmr.c
+cp ../fscript/cvtalto.c testfs1/cvtalto.c
+cp ../fscript/cvtfont.c testfs1/cvtfont.c
+cp ../fscript/cvtv1v2.c testfs1/cvtv1v2.c
+cp ../fscript/display.h testfs1/display.h
+cp ../fscript/font.c testfs1/font.c
+cp ../fscript/font.h testfs1/font.h
+cp ../fscript/font.v0.h testfs1/font.v0.h
+cp ../fscript/font.v1.h testfs1/font.v1.h
+cp ../fscript/fontmanip.c testfs1/fontmanip.c
+cp ../fscript/fontmanip.h testfs1/fontmanip.h
+cp ../fscript/fontnaming.c testfs1/fontnaming.c
+cp ../fscript/framebuf.h testfs1/framebuf.h
+cp ../fscript/gacha12.c testfs1/gacha12.c
+cp ../fscript/graphicops.c testfs1/graphicops.c
+cp ../fscript/gxfind.c testfs1/gxfind.c
+cp ../fscript/keymap.h testfs1/keymap.h
+cp ../fscript/logo.c testfs1/logo.c
+cp ../fscript/makefile testfs1/makefile
+cp ../fscript/menu.c testfs1/menu.c
+cp ../fscript/menu.h testfs1/menu.h
+cp ../fscript/mkfont.c testfs1/mkfont.c
+cp ../fscript/mksail7.c testfs1/mksail7.c
+cp ../fscript/mouse.c testfs1/mouse.c
+cp ../fscript/mousedd.c testfs1/mousedd.c
+cp ../fscript/profile.c testfs1/profile.c
+cp ../fscript/putenv.c testfs1/putenv.c
+cp ../fscript/rasterop.c testfs1/rasterop.c
+cp ../fscript/sail7.c testfs1/sail7.c
+cp ../fscript/sun1bw.c testfs1/sun1bw.c
+cp ../fscript/sun1color.c testfs1/sun1color.c
+cp ../fscript/sunbitmap.c testfs1/sunbitmap.c
+cp ../fscript/suncolor.c testfs1/suncolor.c
+cp ../fscript/test.c testfs1/test.c
+cp ../fscript/timetest.c testfs1/timetest.c
+cp ../fscript/towindow.c testfs1/towindow.c
+cp ../fscript/usergraphics.c testfs1/usergraphics.c
+cp ../fscript/usergraphics.h testfs1/usergraphics.h
+cp ../fscript/util.h testfs1/util.h
+cp ../fscript/vec.c testfs1/vec.c
+cp ../fscript/window.c testfs1/window.c
+cp ../fscript/window.h testfs1/window.h
+cp ../fscript/windowops.c testfs1/windowops.c
+cp ../fscript/wm.c testfs1/wm.c
+cp ../fscript/include/assert.h testfs1/include/assert.h
+cp ../fscript/include/colorbuf.h testfs1/include/colorbuf.h
+cp ../fscript/include/ctype.h testfs1/include/ctype.h
+cp ../fscript/include/errno.h testfs1/include/errno.h
+cp ../fscript/include/fcntl.h testfs1/include/fcntl.h
+cp ../fscript/include/netdb.h testfs1/include/netdb.h
+cp ../fscript/include/sgtty.h testfs1/include/sgtty.h
+cp ../fscript/include/signal.h testfs1/include/signal.h
+cp ../fscript/include/stdio.h testfs1/include/stdio.h
+cp ../fscript/include/time.h testfs1/include/time.h
+cp ../fscript/include/netinet/in.h testfs1/include/netinet/in.h
+cp ../fscript/include/sys/dir.h testfs1/include/sys/dir.h
+cp ../fscript/include/sys/ioctl.h testfs1/include/sys/ioctl.h
+cp ../fscript/include/sys/socket.h testfs1/include/sys/socket.h
+cp ../fscript/include/sys/stat.h testfs1/include/sys/stat.h
+cp ../fscript/include/sys/ttychars.h testfs1/include/sys/ttychars.h
+cp ../fscript/include/sys/ttydev.h testfs1/include/sys/ttydev.h
+cp ../fscript/include/sys/types.h testfs1/include/sys/types.h
+cp ../fscript/include/sys/wait.h testfs1/include/sys/wait.h
+date
+Tue Jun  2 22:01:15 PDT 1992
+********* Phase III: Recursive directory stats *********
+find .  -print -exec ls -l {} \; 
+.
+total 6
+-rw-rw-r--  1 kupfer          0 Jun  2 22:00 LOCK.make
+drwxrwxr-x  3 kupfer       1536 Jun  2 22:00 testfs1
+drwxrwxr-x  3 kupfer        512 Jun  2 22:00 testfs2
+drwxrwxr-x  3 kupfer        512 Jun  2 22:00 testfs3
+drwxrwxr-x  3 kupfer        512 Jun  2 22:00 testfs4
+drwxrwxr-x  3 kupfer        512 Jun  2 22:00 testfs5
+./LOCK.make
+-rw-rw-r--  1 kupfer          0 Jun  2 22:00 ./LOCK.make
+./testfs1
+total 341
+-rw-r--r--  1 kupfer       5964 Jun  2 22:00 DrawString.c
+-rw-r--r--  1 kupfer       6946 Jun  2 22:00 MakeLoadable.c
+-rw-r--r--  1 kupfer         25 Jun  2 22:00 ProgramName.c
+-rw-r--r--  1 kupfer        669 Jun  2 22:00 RasterFile.h
+-rw-r--r--  1 kupfer       2678 Jun  2 22:00 UserDrawS.c
+-rw-r--r--  1 kupfer      10271 Jun  2 22:00 arbitrator.c
+-rw-r--r--  1 kupfer         21 Jun  2 22:00 bres.s
+-rw-r--r--  1 kupfer      13319 Jun  2 22:00 cmr.c
+-rw-r--r--  1 kupfer       4489 Jun  2 22:00 cvtalto.c
+-rw-r--r--  1 kupfer       1044 Jun  2 22:00 cvtfont.c
+-rw-r--r--  1 kupfer        994 Jun  2 22:00 cvtv1v2.c
+-rw-r--r--  1 kupfer       2164 Jun  2 22:00 display.h
+-rw-r--r--  1 kupfer       3723 Jun  2 22:00 font.c
+-rw-r--r--  1 kupfer       5585 Jun  2 22:00 font.h
+-rw-r--r--  1 kupfer       2792 Jun  2 22:00 font.v0.h
+-rw-r--r--  1 kupfer       4339 Jun  2 22:00 font.v1.h
+-rw-r--r--  1 kupfer       7237 Jun  2 22:00 fontmanip.c
+-rw-r--r--  1 kupfer        134 Jun  2 22:00 fontmanip.h
+-rw-r--r--  1 kupfer       1712 Jun  2 22:00 fontnaming.c
+-rw-r--r--  1 kupfer       7317 Jun  2 22:00 framebuf.h
+-rw-r--r--  1 kupfer      13044 Jun  2 22:00 gacha12.c
+-rw-r--r--  1 kupfer       1687 Jun  2 22:00 graphicops.c
+-rw-r--r--  1 kupfer       1231 Jun  2 22:00 gxfind.c
+drwxrwxr-x  4 kupfer        512 Jun  2 22:00 include
+-rw-r--r--  1 kupfer       1033 Jun  2 22:00 keymap.h
+-rw-r--r--  1 kupfer       1356 Jun  2 22:01 logo.c
+-rw-r--r--  1 kupfer       3300 Jun  2 22:01 makefile
+-rw-r--r--  1 kupfer      27894 Jun  2 22:01 menu.c
+-rw-r--r--  1 kupfer       1438 Jun  2 22:01 menu.h
+-rw-r--r--  1 kupfer        800 Jun  2 22:01 mkfont.c
+-rw-r--r--  1 kupfer        640 Jun  2 22:01 mksail7.c
+-rw-r--r--  1 kupfer       5421 Jun  2 22:01 mouse.c
+-rw-r--r--  1 kupfer       1768 Jun  2 22:01 mousedd.c
+-rw-r--r--  1 kupfer       4645 Jun  2 22:01 profile.c
+-rw-r--r--  1 kupfer        677 Jun  2 22:01 putenv.c
+-rw-r--r--  1 kupfer      10299 Jun  2 22:01 rasterop.c
+-rw-r--r--  1 kupfer      11593 Jun  2 22:01 sail7.c
+-rw-r--r--  1 kupfer      37498 Jun  2 22:01 sun1bw.c
+-rw-r--r--  1 kupfer      18389 Jun  2 22:01 sun1color.c
+-rw-r--r--  1 kupfer       5557 Jun  2 22:01 sunbitmap.c
+-rw-r--r--  1 kupfer       4699 Jun  2 22:01 suncolor.c
+-rw-r--r--  1 kupfer       3048 Jun  2 22:01 test.c
+-rw-r--r--  1 kupfer        437 Jun  2 22:01 timetest.c
+-rw-r--r--  1 kupfer      19772 Jun  2 22:01 towindow.c
+-rw-r--r--  1 kupfer       6785 Jun  2 22:01 usergraphics.c
+-rw-r--r--  1 kupfer       6791 Jun  2 22:01 usergraphics.h
+-rw-r--r--  1 kupfer         96 Jun  2 22:01 util.h
+-rw-r--r--  1 kupfer       2728 Jun  2 22:01 vec.c
+-rw-r--r--  1 kupfer      25236 Jun  2 22:01 window.c
+-rw-r--r--  1 kupfer       6897 Jun  2 22:01 window.h
+-rw-r--r--  1 kupfer      12333 Jun  2 22:01 windowops.c
+-rw-r--r--  1 kupfer        899 Jun  2 22:01 wm.c
+./testfs1/include
+total 26
+-rw-r--r--  1 kupfer        373 Jun  2 22:01 assert.h
+-rw-r--r--  1 kupfer       5221 Jun  2 22:01 colorbuf.h
+-rw-r--r--  1 kupfer        813 Jun  2 22:01 ctype.h
+-rw-r--r--  1 kupfer       3636 Jun  2 22:01 errno.h
+-rw-r--r--  1 kupfer        622 Jun  2 22:01 fcntl.h
+-rw-r--r--  1 kupfer       1260 Jun  2 22:01 netdb.h
+drwxrwxr-x  2 kupfer        512 Jun  2 22:00 netinet
+-rw-r--r--  1 kupfer        403 Jun  2 22:01 sgtty.h
+-rw-r--r--  1 kupfer       3464 Jun  2 22:01 signal.h
+-rw-r--r--  1 kupfer       1095 Jun  2 22:01 stdio.h
+drwxrwxr-x  2 kupfer        512 Jun  2 22:00 sys
+-rw-r--r--  1 kupfer       1572 Jun  2 22:01 time.h
+./testfs1/include/sys
+total 25
+-rw-r--r--  1 kupfer       3045 Jun  2 22:01 dir.h
+-rw-r--r--  1 kupfer       9532 Jun  2 22:01 ioctl.h
+-rw-r--r--  1 kupfer       3071 Jun  2 22:01 socket.h
+-rw-r--r--  1 kupfer       1017 Jun  2 22:01 stat.h
+-rw-r--r--  1 kupfer       1152 Jun  2 22:01 ttychars.h
+-rw-r--r--  1 kupfer        641 Jun  2 22:01 ttydev.h
+-rw-r--r--  1 kupfer       1040 Jun  2 22:01 types.h
+-rw-r--r--  1 kupfer       2743 Jun  2 22:01 wait.h
+./testfs1/include/sys/dir.h
+-rw-r--r--  1 kupfer       3045 Jun  2 22:01 ./testfs1/include/sys/dir.h
+./testfs1/include/sys/ioctl.h
+-rw-r--r--  1 kupfer       9532 Jun  2 22:01 ./testfs1/include/sys/ioctl.h
+./testfs1/include/sys/socket.h
+-rw-r--r--  1 kupfer       3071 Jun  2 22:01 ./testfs1/include/sys/socket.h
+./testfs1/include/sys/stat.h
+-rw-r--r--  1 kupfer       1017 Jun  2 22:01 ./testfs1/include/sys/stat.h
+./testfs1/include/sys/ttychars.h
+-rw-r--r--  1 kupfer       1152 Jun  2 22:01 ./testfs1/include/sys/ttychars.h
+./testfs1/include/sys/ttydev.h
+-rw-r--r--  1 kupfer        641 Jun  2 22:01 ./testfs1/include/sys/ttydev.h
+./testfs1/include/sys/types.h
+-rw-r--r--  1 kupfer       1040 Jun  2 22:01 ./testfs1/include/sys/types.h
+./testfs1/include/sys/wait.h
+-rw-r--r--  1 kupfer       2743 Jun  2 22:01 ./testfs1/include/sys/wait.h
+./testfs1/include/netinet
+total 3
+-rw-r--r--  1 kupfer       3060 Jun  2 22:01 in.h
+./testfs1/include/netinet/in.h
+-rw-r--r--  1 kupfer       3060 Jun  2 22:01 ./testfs1/include/netinet/in.h
+./testfs1/include/assert.h
+-rw-r--r--  1 kupfer        373 Jun  2 22:01 ./testfs1/include/assert.h
+./testfs1/include/colorbuf.h
+-rw-r--r--  1 kupfer       5221 Jun  2 22:01 ./testfs1/include/colorbuf.h
+./testfs1/include/ctype.h
+-rw-r--r--  1 kupfer        813 Jun  2 22:01 ./testfs1/include/ctype.h
+./testfs1/include/errno.h
+-rw-r--r--  1 kupfer       3636 Jun  2 22:01 ./testfs1/include/errno.h
+./testfs1/include/fcntl.h
+-rw-r--r--  1 kupfer        622 Jun  2 22:01 ./testfs1/include/fcntl.h
+./testfs1/include/netdb.h
+-rw-r--r--  1 kupfer       1260 Jun  2 22:01 ./testfs1/include/netdb.h
+./testfs1/include/sgtty.h
+-rw-r--r--  1 kupfer        403 Jun  2 22:01 ./testfs1/include/sgtty.h
+./testfs1/include/signal.h
+-rw-r--r--  1 kupfer       3464 Jun  2 22:01 ./testfs1/include/signal.h
+./testfs1/include/stdio.h
+-rw-r--r--  1 kupfer       1095 Jun  2 22:01 ./testfs1/include/stdio.h
+./testfs1/include/time.h
+-rw-r--r--  1 kupfer       1572 Jun  2 22:01 ./testfs1/include/time.h
+./testfs1/DrawString.c
+-rw-r--r--  1 kupfer       5964 Jun  2 22:00 ./testfs1/DrawString.c
+./testfs1/MakeLoadable.c
+-rw-r--r--  1 kupfer       6946 Jun  2 22:00 ./testfs1/MakeLoadable.c
+./testfs1/ProgramName.c
+-rw-r--r--  1 kupfer         25 Jun  2 22:00 ./testfs1/ProgramName.c
+./testfs1/RasterFile.h
+-rw-r--r--  1 kupfer        669 Jun  2 22:00 ./testfs1/RasterFile.h
+./testfs1/UserDrawS.c
+-rw-r--r--  1 kupfer       2678 Jun  2 22:00 ./testfs1/UserDrawS.c
+./testfs1/arbitrator.c
+-rw-r--r--  1 kupfer      10271 Jun  2 22:00 ./testfs1/arbitrator.c
+./testfs1/bres.s
+-rw-r--r--  1 kupfer         21 Jun  2 22:00 ./testfs1/bres.s
+./testfs1/cmr.c
+-rw-r--r--  1 kupfer      13319 Jun  2 22:00 ./testfs1/cmr.c
+./testfs1/cvtalto.c
+-rw-r--r--  1 kupfer       4489 Jun  2 22:00 ./testfs1/cvtalto.c
+./testfs1/cvtfont.c
+-rw-r--r--  1 kupfer       1044 Jun  2 22:00 ./testfs1/cvtfont.c
+./testfs1/cvtv1v2.c
+-rw-r--r--  1 kupfer        994 Jun  2 22:00 ./testfs1/cvtv1v2.c
+./testfs1/display.h
+-rw-r--r--  1 kupfer       2164 Jun  2 22:00 ./testfs1/display.h
+./testfs1/font.c
+-rw-r--r--  1 kupfer       3723 Jun  2 22:00 ./testfs1/font.c
+./testfs1/font.h
+-rw-r--r--  1 kupfer       5585 Jun  2 22:00 ./testfs1/font.h
+./testfs1/font.v0.h
+-rw-r--r--  1 kupfer       2792 Jun  2 22:00 ./testfs1/font.v0.h
+./testfs1/font.v1.h
+-rw-r--r--  1 kupfer       4339 Jun  2 22:00 ./testfs1/font.v1.h
+./testfs1/fontmanip.c
+-rw-r--r--  1 kupfer       7237 Jun  2 22:00 ./testfs1/fontmanip.c
+./testfs1/fontmanip.h
+-rw-r--r--  1 kupfer        134 Jun  2 22:00 ./testfs1/fontmanip.h
+./testfs1/fontnaming.c
+-rw-r--r--  1 kupfer       1712 Jun  2 22:00 ./testfs1/fontnaming.c
+./testfs1/framebuf.h
+-rw-r--r--  1 kupfer       7317 Jun  2 22:00 ./testfs1/framebuf.h
+./testfs1/gacha12.c
+-rw-r--r--  1 kupfer      13044 Jun  2 22:00 ./testfs1/gacha12.c
+./testfs1/graphicops.c
+-rw-r--r--  1 kupfer       1687 Jun  2 22:00 ./testfs1/graphicops.c
+./testfs1/gxfind.c
+-rw-r--r--  1 kupfer       1231 Jun  2 22:00 ./testfs1/gxfind.c
+./testfs1/keymap.h
+-rw-r--r--  1 kupfer       1033 Jun  2 22:00 ./testfs1/keymap.h
+./testfs1/logo.c
+-rw-r--r--  1 kupfer       1356 Jun  2 22:01 ./testfs1/logo.c
+./testfs1/makefile
+-rw-r--r--  1 kupfer       3300 Jun  2 22:01 ./testfs1/makefile
+./testfs1/menu.c
+-rw-r--r--  1 kupfer      27894 Jun  2 22:01 ./testfs1/menu.c
+./testfs1/menu.h
+-rw-r--r--  1 kupfer       1438 Jun  2 22:01 ./testfs1/menu.h
+./testfs1/mkfont.c
+-rw-r--r--  1 kupfer        800 Jun  2 22:01 ./testfs1/mkfont.c
+./testfs1/mksail7.c
+-rw-r--r--  1 kupfer        640 Jun  2 22:01 ./testfs1/mksail7.c
+./testfs1/mouse.c
+-rw-r--r--  1 kupfer       5421 Jun  2 22:01 ./testfs1/mouse.c
+./testfs1/mousedd.c
+-rw-r--r--  1 kupfer       1768 Jun  2 22:01 ./testfs1/mousedd.c
+./testfs1/profile.c
+-rw-r--r--  1 kupfer       4645 Jun  2 22:01 ./testfs1/profile.c
+./testfs1/putenv.c
+-rw-r--r--  1 kupfer        677 Jun  2 22:01 ./testfs1/putenv.c
+./testfs1/rasterop.c
+-rw-r--r--  1 kupfer      10299 Jun  2 22:01 ./testfs1/rasterop.c
+./testfs1/sail7.c
+-rw-r--r--  1 kupfer      11593 Jun  2 22:01 ./testfs1/sail7.c
+./testfs1/sun1bw.c
+-rw-r--r--  1 kupfer      37498 Jun  2 22:01 ./testfs1/sun1bw.c
+./testfs1/sun1color.c
+-rw-r--r--  1 kupfer      18389 Jun  2 22:01 ./testfs1/sun1color.c
+./testfs1/sunbitmap.c
+-rw-r--r--  1 kupfer       5557 Jun  2 22:01 ./testfs1/sunbitmap.c
+./testfs1/suncolor.c
+-rw-r--r--  1 kupfer       4699 Jun  2 22:01 ./testfs1/suncolor.c
+./testfs1/test.c
+-rw-r--r--  1 kupfer       3048 Jun  2 22:01 ./testfs1/test.c
+./testfs1/timetest.c
+-rw-r--r--  1 kupfer        437 Jun  2 22:01 ./testfs1/timetest.c
+./testfs1/towindow.c
+-rw-r--r--  1 kupfer      19772 Jun  2 22:01 ./testfs1/towindow.c
+./testfs1/usergraphics.c
+-rw-r--r--  1 kupfer       6785 Jun  2 22:01 ./testfs1/usergraphics.c
+./testfs1/usergraphics.h
+-rw-r--r--  1 kupfer       6791 Jun  2 22:01 ./testfs1/usergraphics.h
+./testfs1/util.h
+-rw-r--r--  1 kupfer         96 Jun  2 22:01 ./testfs1/util.h
+./testfs1/vec.c
+-rw-r--r--  1 kupfer       2728 Jun  2 22:01 ./testfs1/vec.c
+./testfs1/window.c
+-rw-r--r--  1 kupfer      25236 Jun  2 22:01 ./testfs1/window.c
+./testfs1/window.h
+-rw-r--r--  1 kupfer       6897 Jun  2 22:01 ./testfs1/window.h
+./testfs1/wm.c
+-rw-r--r--  1 kupfer        899 Jun  2 22:01 ./testfs1/wm.c
+./testfs1/windowops.c
+-rw-r--r--  1 kupfer      12333 Jun  2 22:01 ./testfs1/windowops.c
+./testfs2
+total 1
+drwxrwxr-x  4 kupfer        512 Jun  2 22:00 include
+./testfs2/include
+total 2
+drwxrwxr-x  2 kupfer        512 Jun  2 22:00 netinet
+drwxrwxr-x  2 kupfer        512 Jun  2 22:00 sys
+./testfs2/include/sys
+total 0
+./testfs2/include/netinet
+total 0
+./testfs3
+total 1
+drwxrwxr-x  4 kupfer        512 Jun  2 22:00 include
+./testfs3/include
+total 2
+drwxrwxr-x  2 kupfer        512 Jun  2 22:00 netinet
+drwxrwxr-x  2 kupfer        512 Jun  2 22:00 sys
+./testfs3/include/sys
+total 0
+./testfs3/include/netinet
+total 0
+./testfs4
+total 1
+drwxrwxr-x  4 kupfer        512 Jun  2 22:00 include
+./testfs4/include
+total 2
+drwxrwxr-x  2 kupfer        512 Jun  2 22:00 netinet
+drwxrwxr-x  2 kupfer        512 Jun  2 22:00 sys
+./testfs4/include/sys
+total 0
+./testfs4/include/netinet
+total 0
+./testfs5
+total 1
+drwxrwxr-x  4 kupfer        512 Jun  2 22:00 include
+./testfs5/include
+total 2
+drwxrwxr-x  2 kupfer        512 Jun  2 22:00 netinet
+drwxrwxr-x  2 kupfer        512 Jun  2 22:00 sys
+./testfs5/include/sys
+total 0
+./testfs5/include/netinet
+total 0
+du -s *
+0	LOCK.make
+397	testfs1
+4	testfs2
+4	testfs3
+4	testfs4
+4	testfs5
+date
+Tue Jun  2 22:02:01 PDT 1992
+********* Phase IV: Scanning each file *********
+find .  -exec grep kangaroo {} \;
+find . -exec wc {} \;
+       0       2     512 .
+       0       0       0 ./LOCK.make
+       5      16    1536 ./testfs1
+       2       4     512 ./testfs1/include
+       1       2     512 ./testfs1/include/sys
+      89     505    3045 ./testfs1/include/sys/dir.h
+     217    1478    9532 ./testfs1/include/sys/ioctl.h
+     109     474    3071 ./testfs1/include/sys/socket.h
+      36     150    1017 ./testfs1/include/sys/stat.h
+      44     179    1152 ./testfs1/include/sys/ttychars.h
+      45     113     641 ./testfs1/include/sys/ttydev.h
+      44     156    1040 ./testfs1/include/sys/types.h
+      75     422    2743 ./testfs1/include/sys/wait.h
+       0       1     512 ./testfs1/include/netinet
+     134     405    3060 ./testfs1/include/netinet/in.h
+       9      49     373 ./testfs1/include/assert.h
+     132     811    5221 ./testfs1/include/colorbuf.h
+      28      82     813 ./testfs1/include/ctype.h
+      90     628    3636 ./testfs1/include/errno.h
+      20     114     622 ./testfs1/include/fcntl.h
+      44     201    1260 ./testfs1/include/netdb.h
+      20      64     403 ./testfs1/include/sgtty.h
+      95     573    3464 ./testfs1/include/signal.h
+      51     139    1095 ./testfs1/include/stdio.h
+      66     248    1572 ./testfs1/include/time.h
+     191    1008    5964 ./testfs1/DrawString.c
+     319    1158    6946 ./testfs1/MakeLoadable.c
+       1       4      25 ./testfs1/ProgramName.c
+      21      99     669 ./testfs1/RasterFile.h
+     113     417    2678 ./testfs1/UserDrawS.c
+     381    1467   10271 ./testfs1/arbitrator.c
+       2       3      21 ./testfs1/bres.s
+     130    2182   13319 ./testfs1/cmr.c
+     189     655    4489 ./testfs1/cvtalto.c
+      55     153    1044 ./testfs1/cvtfont.c
+      45     141     994 ./testfs1/cvtv1v2.c
+      74     214    2164 ./testfs1/display.h
+     171     575    3723 ./testfs1/font.c
+     152     819    5585 ./testfs1/font.h
+      71     419    2792 ./testfs1/font.v0.h
+     121     602    4339 ./testfs1/font.v1.h
+     249     944    7237 ./testfs1/fontmanip.c
+       4      12     134 ./testfs1/fontmanip.h
+      79     234    1712 ./testfs1/fontnaming.c
+     215    1252    7317 ./testfs1/framebuf.h
+     128    2176   13044 ./testfs1/gacha12.c
+      62     293    1687 ./testfs1/graphicops.c
+      42     194    1231 ./testfs1/gxfind.c
+      27     135    1033 ./testfs1/keymap.h
+      69     261    1356 ./testfs1/logo.c
+     101     425    3300 ./testfs1/makefile
+    1124    4398   27894 ./testfs1/menu.c
+      62     171    1438 ./testfs1/menu.h
+      35     119     800 ./testfs1/mkfont.c
+      30      85     640 ./testfs1/mksail7.c
+     188     715    5421 ./testfs1/mouse.c
+      73     279    1768 ./testfs1/mousedd.c
+     189     793    4645 ./testfs1/profile.c
+      26     116     677 ./testfs1/putenv.c
+     476    1843   10299 ./testfs1/rasterop.c
+     130    2182   11593 ./testfs1/sail7.c
+    1583    6734   37498 ./testfs1/sun1bw.c
+     816    3124   18389 ./testfs1/sun1color.c
+     180     827    5557 ./testfs1/sunbitmap.c
+     155     623    4699 ./testfs1/suncolor.c
+     141     341    3048 ./testfs1/test.c
+      23      56     437 ./testfs1/timetest.c
+     726    2894   19772 ./testfs1/towindow.c
+     250     957    6785 ./testfs1/usergraphics.c
+     231     538    6791 ./testfs1/usergraphics.h
+       3       7      96 ./testfs1/util.h
+     127     482    2728 ./testfs1/vec.c
+     863    3510   25236 ./testfs1/window.c
+     203     931    6897 ./testfs1/window.h
+      47     107     899 ./testfs1/wm.c
+     461    1757   12333 ./testfs1/windowops.c
+       0       1     512 ./testfs2
+       0       1     512 ./testfs2/include
+       0       1     512 ./testfs2/include/sys
+       0       1     512 ./testfs2/include/netinet
+       0       1     512 ./testfs3
+       0       1     512 ./testfs3/include
+       0       1     512 ./testfs3/include/sys
+       0       1     512 ./testfs3/include/netinet
+       0       1     512 ./testfs4
+       0       1     512 ./testfs4/include
+       0       1     512 ./testfs4/include/sys
+       0       1     512 ./testfs4/include/netinet
+       0       1     512 ./testfs5
+       0       1     512 ./testfs5/include
+       0       1     512 ./testfs5/include/sys
+       0       1     512 ./testfs5/include/netinet
+date
+Tue Jun  2 22:03:01 PDT 1992
+********* Phase V: Compilation *********
+cd testfs1; make   -M -X
+../../../bin/gcc -B../../../bin/ -mspur -mlong-jumps -I./include -g -DDSHR  -c wm.c
+../../../bin/gcc -B../../../bin/ -mspur -mlong-jumps -I./include -g -DDSHR  -c arbitrator.c
+../../../bin/gcc -B../../../bin/ -mspur -mlong-jumps -I./include -g -DDSHR  -c menu.c
+In function DeleteIthMenuEntry:
+menu.c:397: warning: `DeleteIthMenuEntry' was declared implicitly `extern' and later `static'
+../../../bin/gcc -B../../../bin/ -mspur -mlong-jumps -I./include -g -DDSHR  -c window.c
+../../../bin/gcc -B../../../bin/ -mspur -mlong-jumps -I./include -g -DDSHR  -c mouse.c
+../../../bin/gcc -B../../../bin/ -mspur -mlong-jumps -I./include -g -DDSHR  -c windowops.c
+../../../bin/gcc -B../../../bin/ -mspur -mlong-jumps -I./include -g -DDSHR  -c towindow.c
+../../../bin/gcc -B../../../bin/ -mspur -mlong-jumps -I./include -g -DDSHR  -c profile.c
+../../../bin/gcc -B../../../bin/ -mspur -mlong-jumps -I./include -g -DDSHR  -c putenv.c
+../../../bin/gcc -B../../../bin/ -mspur -mlong-jumps -I./include -g -DDSHR  -c sun1bw.c
+In function BWDrawIcon:
+sun1bw.c:1313: warning: `BWDrawIcon' was declared implicitly `extern' and later `static'
+In function vlen:
+sun1bw.c:1569: warning: `vlen' was declared implicitly `extern' and later `static'
+../../../bin/gcc -B../../../bin/ -mspur -mlong-jumps -I./include -g -DDSHR  -c sun1color.c
+../../../bin/gcc -B../../../bin/ -mspur -mlong-jumps -I./include -g -DDSHR  -c font.c
+../../../bin/gcc -B../../../bin/ -mspur -mlong-jumps -I./include -g -DDSHR  -c fontnaming.c
+ar uv libdsp.a sun1bw.o sun1color.o font.o fontnaming.o; ar d libdsp.a __.SYMDEF; ../../../bin/sranlib libdsp.a
+ar: creating libdsp.a
+a - sun1bw.o
+a - sun1color.o
+a - font.o
+a - fontnaming.o
+ar: __.SYMDEF not found
+rm -f wm; ../../../bin/sld -r wm.o arbitrator.o  menu.o window.o mouse.o windowops.o towindow.o profile.o putenv.o libdsp.a -o wm
+../../../bin/gcc -B../../../bin/ -mspur -mlong-jumps -I./include -g -DDSHR  -c fontmanip.c
+../../../bin/gcc -B../../../bin/ -mspur -mlong-jumps -I./include -g -DDSHR  -c usergraphics.c
+../../../bin/gcc -B../../../bin/ -mspur -mlong-jumps -I./include -g -DDSHR  -c UserDrawS.c
+../../../bin/gcc -B../../../bin/ -mspur -mlong-jumps -I./include -g -DDSHR  -c ProgramName.c
+ar uv usergraphics.a usergraphics.o UserDrawS.o profile.o ProgramName.o fontmanip.o fontnaming.o font.o; ar d usergraphics.a __.SYMDEF; ../../../bin/sranlib usergraphics.a
+ar: creating usergraphics.a
+a - usergraphics.o
+a - UserDrawS.o
+a - profile.o
+a - ProgramName.o
+a - fontmanip.o
+a - fontnaming.o
+a - font.o
+ar: __.SYMDEF not found
+date
+Tue Jun  2 22:05:32 PDT 1992
+********* Timing ends here *********
+uptime; loadavg -a | egrep "allspice|lust"
+         anarchy   dsmach   up   0+00:07 refuses  1.85  1.52  1.39 (0+00:05)
+            lust   ds5000   up   0+03:33   inuse  0.24  0.46  0.49 (0+03:33)
+        allspice     sun4   up   1+05:57 refuses  0.24  0.40  0.43 (0+03:31)

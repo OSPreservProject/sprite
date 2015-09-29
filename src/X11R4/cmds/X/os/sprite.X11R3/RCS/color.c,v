@@ -1,0 +1,181 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.4
+date     89.10.25.18.06.38;  author tve;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.09.08.18.15.19;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.02.13.14.56.03;  author deboor;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     87.06.11.17.47.02;  author deboor;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@fake color resolution functions
+@
+
+
+1.4
+log
+@added color database code
+@
+text
+@/*-
+ * color.c --
+ *	
+ *
+ * Copyright (c) 1987 by the Regents of the University of California
+ * Copyright (c) 1987 by Adam de Boor, UC Berkeley
+ *
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ */
+#ifndef lint
+static char rcsid[] =
+	"$Header: color.c,v 1.3 88/09/08 18:15:19 ouster Exp $ SPRITE (Berkeley)";
+#endif lint
+
+#include <dbm.h>
+#include "rgb.h"
+#include    "spriteos.h"
+
+/*-
+ *-----------------------------------------------------------------------
+ * OsLookupColor --
+ *	Lookup a named color in the color database and return its rgb
+ *	value.
+ *
+ * Results:
+ *	TRUE if the color was found, FALSE otherwise.
+ *	If the color is found, *pRed, *pGreen and *pBlue will be altered.
+ *
+ * Side Effects:
+ *
+ *-----------------------------------------------------------------------
+ */
+int
+OsLookupColor (screen, name, len, pRed, pGreen, pBlue)
+    int	    	  screen;   	/* Screen number */
+    char    	  *name;    	/* Color name */
+    int	    	  len;	    	/* Length of name */
+    unsigned short *pRed,   	/* Pointer to red value */
+		   *pGreen, 	/* Pointer to green value */
+		   *pBlue;  	/* Pointer to blue value */
+{
+    datum		dbent;
+    RGB			rgb;
+    char	*lowername;
+
+    /* convert name to lower case */
+    lowername = (char *)ALLOCATE_LOCAL(len + 1);
+    if (!lowername)
+	return(0);
+    CopyISOLatin1Lowered ((unsigned char *) lowername, (unsigned char *) name,
+			  (int)len);
+
+    dbent.dptr = lowername;
+    dbent.dsize = len;
+    dbent = fetch (dbent);
+
+    DEALLOCATE_LOCAL(lowername);
+
+    if(dbent.dptr)
+    {
+	bcopy(dbent.dptr, (char *) &rgb, sizeof (RGB));
+	*pRed = rgb.red;
+	*pGreen = rgb.green;
+	*pBlue = rgb.blue;
+	return (1);
+    }
+    return TRUE;
+}
+@
+
+
+1.3
+log
+@Intermediate check-in while converting to new C library.
+@
+text
+@d20 1
+a20 1
+	"$Header: color.c,v 1.2 88/02/13 14:56:03 deboor Exp $ SPRITE (Berkeley)";
+d23 2
+d50 24
+a73 14
+    /*
+     * Special-case black and white.
+     */
+    if ((strncmp(name, "Black", len) == 0) ||
+	(strncmp(name, "black", len) == 0)) {
+	    *pRed = *pGreen = *pBlue = 0;
+    } else if ((strncmp(name, "White", len) == 0) ||
+	       (strncmp(name, "white", len) == 0)) {
+		   *pRed = *pGreen = *pBlue = ~0;
+    } else {
+	/*
+	 * Have no database yet...
+	 */
+	return FALSE;
+@
+
+
+1.2
+log
+@Added special handling for Black and White to allow conversions
+in the toolkit to work properly.
+@
+text
+@d20 1
+a20 1
+	"$Header: color.c,v 1.1 87/06/11 17:47:02 deboor Exp $ SPRITE (Berkeley)";
+d51 2
+a52 2
+    if ((String_NCompare(len, name, "Black") == 0) ||
+	(String_NCompare(len, name, "black") == 0)) {
+d54 2
+a55 2
+    } else if ((String_NCompare(len, name, "White") == 0) ||
+	       (String_NCompare(len, name, "white") == 0)) {
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d20 1
+a20 1
+	"$Header$ SPRITE (Berkeley)";
+d49 1
+a49 1
+     * Have no database yet...
+d51 13
+a63 1
+    return FALSE;
+@

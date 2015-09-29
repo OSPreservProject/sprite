@@ -1,0 +1,40 @@
+.TH MINCORE 2 "November 19, 1989"
+.UC 5
+.SH NAME
+mincore \- check if pages are in memory
+.SH SYNOPSIS
+.nf
+.ft B
+int mincore(addr, len, vec)
+caddr_t addr;
+int len;
+char vec[];
+.fi
+.ft R
+.SH DESCRIPTION
+.I Mincore
+checks pages to see if they are in physical memory and returns their state.
+.PP
+For each page in the address range starting at address
+.IR addr
+and extending for
+.IR len
+bytes,
+a residency value is returned in the return vector
+.IR vec .
+.PP
+The user must have allocated enough space in
+.IR "*vec"
+to hold the result vector.
+.SH "RETURN VALUE
+Mincore returns 0 for success and -1 for failure.
+The core values are returned in the vector vec.  0 indicates the page
+is not virtually present (i.e. is an invalid address).  1 indicates
+the page is paged out.  2 indicates the page is clean and unreferenced.
+3 indicates the page is clean and referenced.  4 indicates the page is
+dirty.
+.SH "BUGS
+This command is machine-dependent.  In particular, some machines may
+not be able to determine if a page has been referenced.
+.SH "SEE ALSO"
+mmap(2)

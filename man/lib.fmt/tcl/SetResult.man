@@ -1,0 +1,198 @@
+
+
+
+Tcl_SetResult         C Library Procedures          Tcl_SetResult
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tcl_SetResult,     Tcl_AppendResult,      Tcl_AppendElement,
+     Tcl_ResetResult - manipulate Tcl result string
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttccll..hh>>
+
+     TTccll__SSeettRReessuulltt(_i_n_t_e_r_p, _s_t_r_i_n_g, _f_r_e_e_P_r_o_c)                       |
+
+     TTccll__AAppppeennddRReessuulltt((_i_n_t_e_r_p, _s_t_r_i_n_g, _s_t_r_i_n_g, ... , ((cchhaarr **)) NNUULLLL)
+
+     TTccll__AAppppeennddEElleemmeenntt(_i_n_t_e_r_p, _s_t_r_i_n_g, _n_o_S_e_p)                      |
+
+     TTccll__RReesseettRReessuulltt(_i_n_t_e_r_p)                                       |
+
+     TTccll__FFrreeeeRReessuulltt(_i_n_t_e_r_p)                                        |
+
+AARRGGUUMMEENNTTSS
+     Tcl_Interp     *_i_n_t_e_r_p    (out)     Interpreter whose result
+                                         is to be modified.
+
+     char           *_s_t_r_i_n_g    (in)      String value  to  become
+                                         result  for _i_n_t_e_r_p or to
+                                         be appended to  existing
+                                         result.
+
+     Tcl_FreeProc   _f_r_e_e_P_r_o_c   (in)      Address of procedure  to  |
+                                         call  to release storage  |
+                                         at      _s_t_r_i_n_g,       or  |
+                                         TTCCLL__SSTTAATTIICC, TTCCLL__DDYYNNAAMMIICC,  |
+                                         or TTCCLL__VVOOLLAATTIILLEE.          |
+
+     int            _n_o_S_e_p      (in)                                     ||
+                                         If  non-zero  then don't  |
+                                         output a space character  |
+                                         before   this   element,  |
+                                         even  if   the   element  |
+                                         isn't the first thing in  |
+                                         the result string.
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The procedures described here are utilities for setting  the
+     result/error string in a Tcl interpreter.
+
+     TTccll__SSeettRReessuulltt arranges for _s_t_r_i_n_g to be  the  return  string
+     for  the current Tcl command in _i_n_t_e_r_p, replacing any exist-
+     ing result.  If _f_r_e_e_P_r_o_c is TTCCLL__SSTTAATTIICC it means that  _s_t_r_i_n_g  |
+     refers  to  an area of static storage that is guaranteed not  |
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+Tcl_SetResult         C Library Procedures          Tcl_SetResult
+
+
+
+     to be modified until at least the next call to TTccll__EEvvaall.  If  |
+     _f_r_e_e_P_r_o_c  is  TTCCLL__DDYYNNAAMMIICC it means that _s_t_r_i_n_g was allocated  |
+     with a call to mmaalllloocc(()) and is now the property of  the  Tcl  |
+     system.  TTccll__SSeettRReessuulltt will arrange for the string's storage  |
+     to be released by  calling  ffrreeee(())  when  it  is  no  longer  |
+     needed.   If  _f_r_e_e_P_r_o_c  is TTCCLL__VVOOLLAATTIILLEE it means that _s_t_r_i_n_g  |
+     points to an area of memory that is likely to be overwritten  |
+     when TTccll__SSeettRReessuulltt returns (e.g. it points to something in a  |
+     stack frame).  In this case TTccll__SSeettRReessuulltt will make  a  copy  |
+     of  the  string in dynamically allocated storage and arrange  |
+     for the copy to be the return string  for  the  current  Tcl  |
+     command.                                                      |
+
+     If _f_r_e_e_P_r_o_c isn't one of the values TTCCLL__SSTTAATTIICC, TTCCLL__DDYYNNAAMMIICC,  |
+     and TTCCLL__VVOOLLAATTIILLEE, then it is the address of a procedure that  |
+     Tcl should call to free the string.   This  allows  applica-  |
+     tions  to  use non-standard storage allocators.  When Tcl no  |
+     longer needs the  storage  for  the  string,  it  will  call  |
+     _f_r_e_e_P_r_o_c.   _F_r_e_e_P_r_o_c  should  have arguments and result that  |
+     match the type TTccll__FFrreeeePPrroocc:                                  |
+
+          typedef void Tcl_FreeProc(char *_b_l_o_c_k_P_t_r);               |
+
+     When _f_r_e_e_P_r_o_c is called, its _b_l_o_c_k_P_t_r will  be  set  to  the  |
+     value of _s_t_r_i_n_g passed to TTccll__SSeettRReessuulltt.
+
+     If  _s_t_r_i_n_g  is  NNUULLLL,   then   _f_r_e_e_P_r_o_c   is   ignored   and
+     TTccll__SSeettRReessuulltt re-initializes _i_n_t_e_r_p's result to point to the
+     pre-allocated result area,  with  an  empty  string  in  the
+     result area.
+
+     If TTccll__SSeettRReessuulltt is called at a time  when  _i_n_t_e_r_p  holds  a  |
+     result,  TTccll__SSeettRReessuulltt does whatever is necessary to dispose  |
+     of the old result  (see  the  TTccll__IInntteerrpp  manual  entry  for  |
+     details on this).
+
+     TTccll__AAppppeennddRReessuulltt makes it easy to build up  Tcl  results  in
+     pieces.   It  takes each of its _s_t_r_i_n_g arguments and appends
+     them in order to the current result associated with  _i_n_t_e_r_p.  |
+     If the result is in its initialized empty state (e.g. a com-  |
+     mand procedure was just invoked or TTccll__RReesseettRReessuulltt was  just  |
+     called),  then  TTccll__AAppppeennddRReessuulltt sets the result to the con-  |
+     catenation of its _s_t_r_i_n_g arguments.  TTccll__AAppppeennddRReessuulltt may be
+     called  repeatedly  as  additional  pieces of the result are
+     produced.  TTccll__AAppppeennddRReessuulltt takes care of  all  the  storage
+     management  issues associated with managing _i_n_t_e_r_p's result,
+     such as allocating a larger result area if  necessary.   Any
+     number  of  _s_t_r_i_n_g arguments may be passed in a single call;
+     the last argument in the list must be a NULL pointer.
+
+     TTccll__AAppppeennddEElleemmeenntt is similar to TTccll__AAppppeennddRReessuulltt in that  it  |
+     allows   results   to  be  built  up  in  pieces.   However,  |
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+Tcl_SetResult         C Library Procedures          Tcl_SetResult
+
+
+
+     TTccll__AAppppeennddEElleemmeenntt takes only a single _s_t_r_i_n_g argument and it  |
+     appends  that argument to the current result as a proper Tcl  |
+     list element.  TTccll__AAppppeennddEElleemmeenntt adds backslashes or  braces  |
+     if necessary to ensure that _i_n_t_e_r_p's result can be parsed as  |
+     a list and that _s_t_r_i_n_g will be extracted as  a  single  ele-  |
+     ment.  Under normal conditions, TTccll__AAppppeennddEElleemmeenntt will add a  |
+     space character to _i_n_t_e_r_p's result just  before  adding  the  |
+     new  list  element,  so that the list elements in the result  |
+     are properly separated.   However,  if  _i_n_t_e_r_p's  result  is  |
+     empty  when  TTccll__AAppppeennddEElleemmeenntt  is  called,  or if the _n_o_S_e_p  |
+     argument is 1, then no space is added.                        |
+
+     TTccll__RReesseettRReessuulltt clears the result for  _i_n_t_e_r_p,  freeing  the  |
+     memory  associated with it if the current result was dynami-  |
+     cally allocated.  It leaves the result in  its  normal  ini-  |
+     tialized  state  with  _i_n_t_e_r_p->_r_e_s_u_l_t  pointing  to a static  |
+     buffer containing TTCCLL__RREESSUULLTT__SSIIZZEE characters, of  which  the  |
+     first  character  is  zero.  TTccll__RReesseettRReessuulltt also clears the  |
+     error    state    managed    by     TTccll__AAddddEErrrroorrIInnffoo     and  |
+     TTccll__SSeettEErrrroorrCCooddee.                                             |
+
+     TTccll__FFrreeeeRReessuulltt is a macro that performs part of the work  of  |
+     TTccll__RReesseettRReessuulltt.   It  frees  up  the memory associated with  |
+     _i_n_t_e_r_p's result and sets _i_n_t_e_r_p->_f_r_e_e_P_r_o_c to  zero,  but  it  |
+     doesn't   change   _i_n_t_e_r_p->_r_e_s_u_l_t   or  clear  error  state.  |
+     TTccll__FFrreeeeRReessuulltt is most commonly used  when  a  procedure  is  |
+     about to replace one result value with another.
+
+
+SSEEEE AALLSSOO
+     Tcl_AddErrorInfo, Tcl_SetErrorCode, Tcl_Interp
+
+
+KKEEYYWWOORRDDSS
+     append, command, element, list, result, return value, inter-
+     preter
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     3
+
+
+

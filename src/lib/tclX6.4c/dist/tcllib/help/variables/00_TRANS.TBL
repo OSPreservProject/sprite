@@ -1,0 +1,8 @@
+F ARRAY.;1                          	array
+F ENV.;1                            	env
+F FOR_ARRA.;1                       	for_array_keys
+F GLOBAL.;1                         	global
+F SET.;1                            	set
+F TRACE.;1                          	trace
+F UNSET.;1                          	unset
+F UPVAR.;1                          	upvar

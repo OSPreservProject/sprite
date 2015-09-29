@@ -1,0 +1,133 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  sprited:1.3.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     88.07.25.09.15.40;  author ouster;  state Exp;
+branches 1.3.1.1;
+next     1.2;
+
+1.2
+date     88.06.21.17.25.01;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.19.14.31.18;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.3.1.1
+date     91.12.10.15.47.04;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@Was null procedure before, now it's complete (but unfortunately
+Fs_WriteBackID doesn't seem to work).
+@
+text
+@/* 
+ * fsync.c --
+ *
+ *	Procedure to map from Unix fsync system call to Sprite system call.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: fsync.c,v 1.2 88/06/21 17:25:01 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+
+#include "compatInt.h"
+#include <errno.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * fsync --
+ *
+ *	Procedure to map from Unix fsync system call to Sprite 
+ *	system call.
+ *
+ * Results:
+ *	UNIX_SUCCESS is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+fsync(fd)
+    int fd;			/* Identifier for stream to flush to disk. */
+{
+    ReturnStatus status;
+
+    status = Fs_WriteBackID(fd, -1, -1, 1);
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}
+@
+
+
+1.3.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/unixSyscall/RCS/fsync.c,v 1.3 88/07/25 09:15:40 ouster Exp $ SPRITE (Berkeley)";
+@
+
+
+1.2
+log
+@Various changes to make code compile under new library.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsync.c,v 1.1 88/06/19 14:31:18 ouster Exp $ SPRITE (Berkeley)";
+d38 2
+a39 1
+fsync()
+d41 9
+a49 1
+    return(UNIX_SUCCESS);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sigsetmask.c,v 1.1 86/04/17 15:21:06 douglis Exp $ SPRITE (Berkeley)";
+d16 2
+a17 2
+#include "compat.h"
+#include </usr/include/errno.h>
+@

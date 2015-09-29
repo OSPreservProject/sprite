@@ -1,0 +1,1584 @@
+
+
+
+canvas                    User Commands                    canvas
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     canvas - Create and manipulate canvas widgets
+
+SSYYNNOOPPSSIISS
+     ccaannvvaass _p_a_t_h_N_a_m_e ?_o_p_t_i_o_n_s?
+
+SSTTAANNDDAARRDD OOPPTTIIOONNSS
+     bbaacckkggrroouunndd      ccuurrssoorrBBoorrddeerrWWiiddtthh              sseelleeccttBBaacckkggrroouunnddyySSccrroollllCCoommmmaanndd
+     bboorrddeerrWWiiddtthh     ccuurrssoorrOOffffTTiimmee  sseelleeccttBBoorrddeerrWWiiddtthh
+     ccuurrssoorr          ccuurrssoorrOOnnTTiimmee   sseelleeccttFFoorreeggrroouunndd
+     ccuurrssoorrBBaacckkggrroouunndd               rreelliieeff          xxSSccrroollllCCoommmmaanndd
+
+     See the ``options'' manual entry for details on the standard
+     options.
+
+WWIIDDGGEETT--SSPPEECCIIFFIICC OOPPTTIIOONNSS
+     Name:           cclloosseeEEnnoouugghh
+     Class:          CClloosseeEEnnoouugghh
+     Command-Line Switch:--cclloosseeeennoouugghh
+
+          Specifies a floating-point value indicating  how  close
+          the  mouse  cursor must be to an item before it is con-
+          sidered to be ``inside'' the item.  Defaults to 1.0.
+
+     Name:           ccoonnffiinnee                                       |
+     Class:          CCoonnffiinnee                                       |
+     Command-Line Switch:--ccoonnffiinnee                                  |
+
+                                                                        ||
+          Specifies a boolean value that indicates whether or not  |
+          it should be allowable to set the canvas's view outside  |
+          the   region  defined  by  the  ssccrroollllRReeggiioonn  argument.  |
+          Defaults to true, which means that  the  view  will  be  |
+          constrained within the scroll region.
+
+     Name:           hheeiigghhtt
+     Class:          HHeeiigghhtt
+     Command-Line Switch:--hheeiigghhtt
+
+          Specifies a  desired  window  height  that  the  canvas
+          widget  should  request from its geometry manager.  The
+          value may be specified in any of the forms described in
+          the COORDINATES section below.
+
+     Name:           ssccrroollllIInnccrreemmeenntt
+     Class:          SSccrroollllIInnccrreemmeenntt
+     Command-Line Switch:--ssccrroolllliinnccrreemmeenntt
+
+          Specifies a distance used as  increment  during  scrol-
+          ling:   when  one of the arrow buttons on an associated
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+canvas                    User Commands                    canvas
+
+
+
+          scrollbar is pressed, the picture will  shift  by  this
+          distance.   The distance may be specified in any of the
+          forms described in the COORDINATES section below.
+
+     Name:           ssccrroollllRReeggiioonn
+     Class:          SSccrroollllRReeggiioonn
+     Command-Line Switch:--ssccrroollllrreeggiioonn
+
+          Specifies a list with four coordinates  describing  the
+          left, top, right, and bottom coordinates of a rectangu-
+          lar region.  This region is used for scrolling purposes
+          and is considered to be the boundary of the information
+          in the canvas.  Each of the coordinates may  be  speci-
+          fied  in any of the forms given in the COORDINATES sec-
+          tion below.
+
+     Name:           wwiiddtthh
+     Class:          wwiiddtthh
+     Command-Line Switch:--wwiiddtthh
+
+          Specifies a desired window width that the canvas widget
+          should  request  from  its geometry manager.  The value
+          may be specified in any of the forms described  in  the
+          COORDINATES section below.
+_________________________________________________________________
+
+
+IINNTTRROODDUUCCTTIIOONN
+     The ccaannvvaass command creates a new window (given by the  _p_a_t_h_-
+     _N_a_m_e  argument)  and  makes  it into a canvas widget.  Addi-
+     tional options, described above, may  be  specified  on  the
+     command  line or in the option database to configure aspects
+     of the canvas such as its colors and 3-D relief.  The ccaannvvaass
+     command  returns  its  _p_a_t_h_N_a_m_e  argument.  At the time this
+     command is invoked, there must  not  exist  a  window  named
+     _p_a_t_h_N_a_m_e, but _p_a_t_h_N_a_m_e's parent must exist.
+
+     Canvas widgets  implement  structured  graphics.   A  canvas
+     displays  any number of _i_t_e_m_s, which may be things like rec-
+     tangles, circles, lines, and text.  Items may be manipulated
+     (e.g.  moved  or  re-colored) and commands may be associated
+     with items in much the same way that the bbiinndd command allows
+     commands  to be bound to widgets.  For example, a particular
+     command may be associated with the <Button-1> event so  that
+     the command is invoked whenever button 1 is pressed with the
+     mouse cursor over an item.  This means that items in a  can-
+     vas  can  have behaviors defined by the Tcl scripts bound to
+     them.
+
+
+DDIISSPPLLAAYY LLIISSTT
+     The items in a canvas are ordered for purposes  of  display,
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+canvas                    User Commands                    canvas
+
+
+
+     with  the  first  item  in  the display list being displayed
+     first, followed by the next item in the  list,  and  so  on.
+     Items  later in the display list obscure those that are ear-
+     lier in the display list and are sometimes  referred  to  as
+     being  ``on  top''  of  earlier  items.   When a new item is
+     created it is placed at the end of the display list, on  top
+     of  everything  else.   Widget  commands  may be used to re-
+     arrange the order of the display list.
+
+
+IITTEEMM IIDDSS AANNDD TTAAGGSS
+     Items in a canvas widget may be named in either of two ways:
+     by  id or by tag.  Each item has a unique identifying number
+     which is assigned to that item when it is created.   The  id
+     of  an  item  never changes and id numbers are never re-used
+     within the lifetime of a canvas widget.
+
+     Each item may also have any number of _t_a_g_s  associated  with
+     it.   A  tag is just a string of characters, and it may take
+     any form except that of an integer.  For  example,  ``x123''
+     is  OK  but  ``123''  isn't.  The same tag may be associated
+     with many different items.  This is commonly done  to  group
+     items   in  various  interesting  ways;   for  example,  all
+     selected items might be given the tag ``selected''.
+
+     The tag aallll is implicitly associated with every item in  the
+     canvas;   it  may  be  used  to invoke operations on all the
+     items in the canvas.
+
+     The tag ccuurrrreenntt is managed automatically by Tk;  it  applies
+     to  the  _c_u_r_r_e_n_t _i_t_e_m, which is the topmost item whose drawn
+     area covers the position of the mouse cursor.  If the  mouse
+     is  not in the canvas widget or is not over an item, then no
+     item has the ccuurrrreenntt tag.
+
+     When specifying items in  canvas  widget  commands,  if  the
+     specifier  is  an integer then it is assumed to refer to the
+     single item with that  id.   If  the  specifier  is  not  an
+     integer,  then it is assumed to refer to all of the items in
+     the canvas that have a tag matching the specifier.  The sym-
+     bol  _t_a_g_O_r_I_d  is  used  below  to  indicate that an argument
+     specifies either an id that selects a single item or  a  tag
+     that  selects zero or more items.  Some widget commands only
+     operate on a single item at a time;  if _t_a_g_O_r_I_d is specified
+     in a way that names multiple items, then the normal behavior
+     is for the command to use the first (lowest) of these  items
+     in  the  display  list  that  is  suitable  for the command.
+     Exceptions are noted  in  the  widget  command  descriptions
+     below.
+
+
+
+
+
+
+Sprite v1.0                                                     3
+
+
+
+
+
+
+canvas                    User Commands                    canvas
+
+
+
+CCOOOORRDDIINNAATTEESS
+     All coordinates related to canvases are stored as  floating-
+     point  numbers.   Coordinates and distances are specified in
+     screen units, which are  floating-point  numbers  optionally
+     followed  by  one  of several letters.  If no letter is sup-
+     plied then the distance is in pixels.  If the  letter  is  mm
+     then the distance is in millimeters on the screen;  if it is
+     cc then the distance is in centimeters; ii means inches, and pp
+     means  printers  points  (1/72  inch).  Larger y-coordinates
+     refer to points lower on the screen;   larger  x-coordinates
+     refer to points farther to the right.
+
+
+TTRRAANNSSFFOORRMMAATTIIOONNSS
+     Normally the origin of the canvas coordinate  system  is  at
+     the  upper-left  corner of the window containing the canvas.
+     It is possible to adjust the origin of the canvas coordinate
+     system  relative to the origin of the window using the xxvviieeww
+     and yyvviieeww widget  commands;   this  is  typically  used  for
+     scrolling.   Canvases  do not support scaling or rotation of
+     the canvas coordinate system relative to the window  coordi-
+     nate system.
+
+     Indidividual items may be moved or scaled using widget  com-
+     mands described below, but they may not be rotated.
+
+
+IINNDDIICCEESS
+     Text items support the notion of an  _i_n_d_e_x  for  identifying
+     particular  positions within the item.  Indices are used for
+     commands such as inserting text, deleting a range of charac-
+     ters,  and  setting  the  cursor  position.  An index may be
+     specified in any of a number of ways, and different types of
+     items  may  support  different forms for specifying indices.
+     Text items support the following forms for an index;  if you
+     define  new  types of text-like items, it would be advisable
+     to support as many of these forms as practical.   Note  that
+     it is possible to refer to the character just after the last
+     one in the text item;  this is necessary for such  tasks  as
+     inserting new text at the end of the item.
+
+     _n_u_m_b_e_r    A  decimal  number  giving  the  position  of  the
+               desired  character within the text item.  0 refers
+               to the first character, 1 to the  next  character,
+               and  so on.  A number less than 0 is treated as if
+               it were zero, and a number greater than the length
+               of the text item is treated as if it were equal to
+               the length of the text item.
+
+     ccuurrssoorr    Refers to the  character  just  before  which  the
+               insertion cursor is drawn in this item.
+
+
+
+
+Sprite v1.0                                                     4
+
+
+
+
+
+
+canvas                    User Commands                    canvas
+
+
+
+     eenndd       Refers to the character just after the last one in
+               the  item (same as the number of characters in the
+               item).
+
+     sseell..ffiirrsstt Refers to the  first  selected  character  in  the
+               item.   If  the  selection isn't in this item then
+               this form is illegal.
+
+     sseell..llaasstt  Refers to the last selected character in the item.
+               If the selection isn't in this item then this form
+               is illegal.
+
+     @@_x,_y      Refers to the character at the point  given  by  _x
+               and  _y, where _x and _y are specified in the coordi-
+               nate system of the canvas.  If _x and _y lie outside
+               the  coordinates  covered  by  the text item, then
+               they refer to the first or last character  in  the
+               line that is closest to the given point.
+
+
+WWIIDDGGEETT CCOOMMMMAANNDD
+     The ccaannvvaass command creates a new Tcl command whose  name  is
+     _p_a_t_h_N_a_m_e.  This command may be used to invoke various opera-
+     tions on the widget.  It has the following general form:
+
+          _p_a_t_h_N_a_m_e _o_p_t_i_o_n ?_a_r_g _a_r_g ...?
+     _O_p_t_i_o_n and the _a_r_gs determine the exact behavior of the com-
+     mand.  The following widget commands are possible for canvas
+     widgets:
+
+     _p_a_t_h_N_a_m_e aaddddttaagg _t_a_g _s_e_a_r_c_h_S_p_e_c ?_a_r_g _a_r_g ...?
+          For each item that meets the constraints  specified  by
+          _s_e_a_r_c_h_S_p_e_c  and  the  _a_r_gs, add _t_a_g to the list of tags
+          associated with the item if it isn't already present on
+          that  list.   It is possible that no items will satisfy
+          the constraints given by _s_e_a_r_c_h_S_p_e_c _a_n_d _a_r_gs, in  which
+          case  the  command has no effect.  This command returns
+          an empty string as result.  _S_e_a_r_c_h_S_p_e_c  and  _a_r_g's  may
+          take any of the following forms:
+
+          aabboovvee _t_a_g_O_r_I_d
+               Selects the item just after (above) the one  given
+               by  _t_a_g_O_r_I_d  in  the  display  list.   If  _t_a_g_O_r_I_d
+               denotes more than one item, then  the  last  (top-
+               most) of these items in the display list is used.
+
+          aallll  Selects all the items in the canvas.
+
+          bbeellooww _t_a_g_O_r_I_d
+               Selects the item just before (below) the one given
+               by  _t_a_g_O_r_I_d  in  the  display  list.   If  _t_a_g_O_r_I_d
+               denotes  more  than  one  item,  then  the   first
+
+
+
+Sprite v1.0                                                     5
+
+
+
+
+
+
+canvas                    User Commands                    canvas
+
+
+
+               (lowest)  of  these  items  in the display list is
+               used.
+
+          cclloosseesstt _x _y ?_h_a_l_o? ?_s_t_a_r_t?
+               Selects the item closest to the point given  by  _x
+               and  _y.   If  more  than  one  item is at the same
+               closest  distance  (e.g.  two  items  overlap  the
+               point), then the top-most of these items (the last
+               one in the display list)  is  used.   If  _h_a_l_o  is
+               specified,  then  it must be a non-negative value.
+               Any item closer than _h_a_l_o to  the  point  is  con-
+               sidered  to overlap it.  The _s_t_a_r_t argument may be
+               used to step circularly through  all  the  closest
+               items.   If  _s_t_a_r_t  is specified, it names an item
+               using a tag or id (if by tag, it selects the first
+               item  in  the  display  list  with the given tag).
+               Instead of selecting  the  topmost  closest  item,
+               this  form  will  select  the topmost closest item
+               that is below _s_t_a_r_t in the display  list;   if  no
+               such item exists, then the selection behaves as if
+               the _s_t_a_r_t argument had not been specified.
+
+          eenncclloosseedd _x_1 _y_1 _x_2 _y_2
+               Selects all the items completely  enclosed  within
+               the  rectangular  region  given by _x_1, _y_1, _x_2, and
+               _y_2.  _X_1 must be no greater then _x_2 and _y_1 must  be
+               no greater than _y_2.
+
+          oovveerrllaappppiinngg _x_1 _y_1 _x_2 _y_2
+               Selects all the items that overlap or are enclosed
+               within the rectangular region given by _x_1, _y_1, _x_2,
+               and _y_2.  _X_1 must be no greater then _x_2 and _y_1 must
+               be no greater than _y_2.
+
+          wwiitthhttaagg _t_a_g_O_r_I_d
+               Selects all the items given by _t_a_g_O_r_I_d.
+
+     _p_a_t_h_N_a_m_e bbbbooxx _t_a_g_O_r_I_d ?_t_a_g_O_r_I_d _t_a_g_O_r_I_d ...?
+          Returns a list with four elements giving an approximate  |
+          bounding  box  for  all  the items named by the _t_a_g_O_r_I_d  |
+          arguments.  The list has the form ``_x_1 _y_1 _x_2 _y_2''  such  |
+          that  the  drawn  areas  of  all the named elements are  |
+          within the region bounded by _x_1 on the left, _x_2 on  the  |
+          right, _y_1 on the top, and _y_2 on the bottom.  The return  |
+          value may overestimate the actual bounding box by a few  |
+          pixels.  If no items match any of the _t_a_g_O_r_I_d arguments  |
+          then an empty string is returned.
+
+     _p_a_t_h_N_a_m_e bbiinndd _t_a_g_O_r_I_d ?_s_e_q_u_e_n_c_e? ?_c_o_m_m_a_n_d?
+          This command associates  _c_o_m_m_a_n_d  with  all  the  items
+          given  by _t_a_g_O_r_I_d such that whenever the event sequence
+          given by _s_e_q_u_e_n_c_e occurs  for  one  of  the  items  the
+
+
+
+Sprite v1.0                                                     6
+
+
+
+
+
+
+canvas                    User Commands                    canvas
+
+
+
+          command  will be invoked.  This widget command is simi-
+          lar to the bbiinndd command  except  that  it  operates  on
+          items  in a canvas rather than entire widgets.  See the
+          bbiinndd manual entry for complete details on the syntax of
+          _s_e_q_u_e_n_c_e  and  the  substitutions  performed on _c_o_m_m_a_n_d
+          before invoking it.  If  all  arguments  are  specified
+          then  a  new binding is created, replacing any existing
+          binding for the same _s_e_q_u_e_n_c_e and _t_a_g_O_r_I_d (if the first
+          character  of _c_o_m_m_a_n_d is ``+'' then _c_o_m_m_a_n_d augments an
+          existing binding rather than replacing  it).   In  this
+          case  the  return value is an empty string.  If _c_o_m_m_a_n_d
+          is omitted then the command returns the _c_o_m_m_a_n_d associ-
+          ated  with  _t_a_g_O_r_I_d  and  _s_e_q_u_e_n_c_e  (an error occurs if
+          there  is  no  such  binding).   If  both  _c_o_m_m_a_n_d  and
+          _s_e_q_u_e_n_c_e are omitted then the command returns a list of
+          all the sequences for which bindings have been  defined
+          for _t_a_g_O_r_I_d.
+
+          The only events for which bindings may be specified are
+          those related to the mouse and keyboard, such as EEnntteerr,
+          LLeeaavvee, BBuuttttoonnPPrreessss, MMoottiioonn, and KKeeyyPPrreessss.  The handling
+          of  events in canvases uses the current item defined in
+          ITEM IDS  AND  TAGS  above.   EEnntteerr  and  LLeeaavvee  events
+          trigger for an item when it becomes the current item or
+          ceases to be the current item;  note that these  events
+          are  different than EEnntteerr and LLeeaavvee events for windows.
+          Mouse-related events are directed to the current  item,
+          if  any.   Keyboard-related  events are directed to the
+          focus item, if any (see the ffooccuuss widget command  below
+          for more on this).
+
+          It is possible for multiple commands to be bound  to  a
+          single  event  sequence  for  a  single  object.   This
+          occurs, for example, if one command is associated  with
+          the item's id and another is associated with one of the
+          item's tags.  When  this  occurs,  the  first  matching
+          binding  is  used.   A  binding  for  the item's id has
+          highest priority, followed by the oldest  tag  for  the
+          item  and  proceeding through all of the item's tags up
+          through the most-recently-added one.  If a  binding  is
+          associated  with  the  tag  aallll,  the binding will have
+          lower priority than all other bindings associated  with
+          the item.
+
+     _p_a_t_h_N_a_m_e ccaannvvaassxx _s_c_r_e_e_n_x ?_g_r_i_d_s_p_a_c_i_n_g?
+          Given  a  screen  x-coordinate  _s_c_r_e_e_n_x  this   command
+          returns  the  canvas  x-coordinate that is displayed at
+          that location.  If _g_r_i_d_s_p_a_c_i_n_g is  specfied,  then  the
+          canvas coordinate is rounded to the nearest multiple of
+          _g_r_i_d_s_p_a_c_i_n_g units.
+
+     _p_a_t_h_N_a_m_e ccaannvvaassyy _s_c_r_e_e_n_y ?_g_r_i_d_s_p_a_c_i_n_g?
+
+
+
+Sprite v1.0                                                     7
+
+
+
+
+
+
+canvas                    User Commands                    canvas
+
+
+
+          Given  a  screen  y-coordinate  _s_c_r_e_e_n_y  this   command
+          returns  the  canvas  y-coordinate that is displayed at
+          that location.  If _g_r_i_d_s_p_a_c_i_n_g is  specfied,  then  the
+          canvas coordinate is rounded to the nearest multiple of
+          _g_r_i_d_s_p_a_c_i_n_g units.
+
+     _p_a_t_h_N_a_m_e ccoonnffiigguurree ??_o_p_t_i_o_n? ?_v_a_l_u_e? ?_o_p_t_i_o_n _v_a_l_u_e ...?
+          Query  or  modify  the  configuration  options  of  the
+          widget.   If  no  _o_p_t_i_o_n  is  specified, returns a list
+          describing all of the available  options  for  _p_a_t_h_N_a_m_e
+          (see  TTkk__CCoonnffiigguurreeIInnffoo for information on the format of
+          this list).  If _o_p_t_i_o_n is specified with no _v_a_l_u_e, then
+          the  command  returns  a  list describing the one named
+          option (this list will be identical to the  correspond-
+          ing  sublist  of  the  value  returned  if no _o_p_t_i_o_n is
+          specified).  If one  or  more  _o_p_t_i_o_n-_v_a_l_u_e  pairs  are
+          specified,  then  the command modifies the given widget
+          option(s) to have the given value(s);  in this case the
+          command  returns  an empty string.  _O_p_t_i_o_n may have any
+          of the values accepted by the ccaannvvaass command.
+
+     _p_a_t_h_N_a_m_e ccoooorrddss _t_a_g_O_r_I_d ?_x_0 _y_0 ...?
+          Query or modify the coordinates that  define  an  item.  |
+          If no coordinates are specified, this command returns a  |
+          list whose elements are the  coordinates  of  the  item  |
+          named  by  _t_a_g_O_r_I_d.  If coordinates are specified, then  |
+          they replace the  current  coordinates  for  the  named  |
+          item.   If  _t_a_g_O_r_I_d  refers to multiple items, then the  |
+          first one in the display list is used.
+
+     _p_a_t_h_N_a_m_e ccrreeaattee _t_y_p_e _x _y ?_x _y ...? ?_o_p_t_i_o_n _v_a_l_u_e ...?
+          Create a new item in _p_a_t_h_N_a_m_e of type _t_y_p_e.  The  exact
+          format of the arguments after ttyyppee depends on ttyyppee, but
+          usually they consist of the coordinates for one or more
+          points,  followed  by  specifications  for zero or more
+          item options.  See the subsections on  individual  item
+          types  below  for  more  on the syntax of this command.
+          This command returns the id for the new item.
+
+     _p_a_t_h_N_a_m_e ccuurrssoorr _t_a_g_O_r_I_d _i_n_d_e_x
+          Set the  position  of  the  insertion  cursor  for  the
+          item(s)  given  by _t_a_g_O_r_I_d to just before the character
+          whose position is given by _i_n_d_e_x.  If some  or  all  of
+          the  items  given by _t_a_g_O_r_I_d don't support an insertion
+          cursor then this command has no effect  on  them.   See
+          INDICES  above for a description of the legal forms for
+          _i_n_d_e_x.  Note:  the insertion cursor is  only  displayed
+          in  an  item  if  that  item currently has the keyboard
+          focus (see the widget command ffooccuuss,  below),  but  the
+          cursor  position  may be set even when the item doesn't
+          have the focus.  This command returns an empty string.
+
+
+
+
+Sprite v1.0                                                     8
+
+
+
+
+
+
+canvas                    User Commands                    canvas
+
+
+
+     _p_a_t_h_N_a_m_e ddcchhaarrss _t_a_g_O_r_I_d _f_i_r_s_t ?_l_a_s_t?
+          For each item given by _t_a_g_O_r_I_d, delete  the  characters
+          in  the  range  given by _f_i_r_s_t and _l_a_s_t, inclusive.  If
+          some of the items given by _t_a_g_O_r_I_d don't  support  text
+          operations,  then they are ignored.  _F_i_r_s_t and _l_a_s_t are
+          indices of characters within the item(s)  as  described
+          in  INDICES  above.  If _l_a_s_t is omitted, it defaults to
+          _f_i_r_s_t.  This command returns an empty string.
+
+     _p_a_t_h_N_a_m_e ddeelleettee _t_a_g_O_r_I_d
+          Delete each of the items given by _t_a_g_O_r_I_d,  and  return
+          an empty string.
+
+     _p_a_t_h_N_a_m_e ddttaagg _t_a_g_O_r_I_d ?tagToDelete?
+          For each of the items given by _t_a_g_O_r_I_d, delete the  tag
+          given  by _t_a_g_T_o_D_e_l_e_t_e from the list of those associated
+          with the item.  If an item doesn't have the tag  _t_a_g_T_o_-
+          _D_e_l_e_t_e  then the item is unaffected by the command.  If
+          _t_a_g_T_o_D_e_l_e_t_e is omitted then  it  defaults  to  _t_a_g_O_r_I_d.
+          This command returns an empty string.
+
+     _p_a_t_h_N_a_m_e ffiinndd _s_e_a_r_c_h_C_o_m_m_a_n_d ?_a_r_g _a_r_g ...?
+          This command returns a list consisting of all the items
+          that  meet  the  constraints specified by _s_e_a_r_c_h_C_o_m_m_a_n_d
+          and _a_r_g's.  _S_e_a_r_c_h_C_o_m_m_a_n_d and  _a_r_g_s  have  any  of  the
+          forms accepted by the aaddddttaagg command.
+
+     _p_a_t_h_N_a_m_e ffooccuuss ?_t_a_g_O_r_I_d?
+          Set the keyboard focus for the  canvas  widget  to  the
+          item  given  by  _t_a_g_O_r_I_d.  If _t_a_g_O_r_I_d refers to several
+          items, then the focus is set to the first such item  in
+          the  display  list  that supports the insertion cursor.
+          If _t_a_g_O_r_I_d doesn't refer to any items, or  if  none  of
+          them support the insertion cursor, then the focus isn't
+          changed.  If _t_a_g_O_r_I_d is an empty string, then the focus
+          item  is  reset  so  that  no  item  has the focus.  If
+          _t_a_g_O_r_I_d is not specified then the command  returns  the
+          id  for  the  item  that currently has the focus, or an
+          empty string if no item has the focus.
+
+          Once the focus has been set to an item, the  item  will
+          display  the  insertion  cursor and all keyboard events
+          will be directed to that item.  The focus item within a
+          canvas and the focus window on the screen (set with the
+          ffooccuuss command) are totally independent:  a  given  item
+          doesn't  actually  have  the input focus unless (a) its
+          canvas is the focus window and  (b)  the  item  is  the
+          focus  item  within  the  canvas.   In most cases it is
+          advisable to follow the ffooccuuss widget command  with  the
+          ffooccuuss command to set the focus window to the canvas (if
+          it wasn't there already).
+
+
+
+
+Sprite v1.0                                                     9
+
+
+
+
+
+
+canvas                    User Commands                    canvas
+
+
+
+          _p_a_t_h_N_a_m_e ggeettttaaggss _t_a_g_O_r_I_d
+               Return a list whose elements are the tags  associ-
+               ated  with  the item given by _t_a_g_O_r_I_d.  If _t_a_g_O_r_I_d
+               refers to more than one item, then  the  tags  are
+               returned  from  the first such item in the display
+               list.  If _t_a_g_O_r_I_d doesn't refer to any  items,  or
+               if the item contains no tags, then an empty string
+               is returned.
+
+     _p_a_t_h_N_a_m_e iinnddeexx _t_a_g_O_r_I_d _i_n_d_e_x
+          This command returns a decimal string giving the numer-
+          ical  index  within  _t_a_g_O_r_I_d  corresponding  to  _i_n_d_e_x.
+          _I_n_d_e_x gives a textual description of the desired  posi-
+          tion  as  described in INDICES above.  The return value
+          is guaranteed to lie between 0 and the number of  char-
+          acters  within  the item, inclusive.  If _t_a_g_O_r_I_d refers
+          to multiple items, then the index is processed  in  the
+          first  of these items that supports indexing operations
+          (in display list order).
+
+     _p_a_t_h_N_a_m_e iinnsseerrtt _t_a_g_O_r_I_d _b_e_f_o_r_e_T_h_i_s _s_t_r_i_n_g
+          For each of the items given by  _t_a_g_O_r_I_d,  if  the  item
+          supports  text  insertion  then _s_t_r_i_n_g is inserted into
+          the item's text just before the character  whose  index
+          is _b_e_f_o_r_e_T_h_i_s.  See INDICES above for information about
+          the forms allowed for _b_e_f_o_r_e_T_h_i_s.  This command returns
+          an empty string.
+
+     _p_a_t_h_N_a_m_e iitteemmccoonnffiigguurree _t_a_g_O_r_I_d  ?_o_p_t_i_o_n?  ?_v_a_l_u_e?  ?_o_p_t_i_o_n  _v_a_l_u_e
+          This command is similar to the ccoonnffiigguurree widget command
+          except that it modifies item-specific options  for  the
+          items given by _t_a_g_O_r_I_d instead of modifying options for
+          the overall canvas widget.  If no _o_p_t_i_o_n is  specified,
+          returns  a list describing all of the available options
+          for   the   first   item   given   by   _t_a_g_O_r_I_d    (see
+          TTkk__CCoonnffiigguurreeIInnffoo  for information on the format of this
+          list).  If _o_p_t_i_o_n is specified with no _v_a_l_u_e, then  the
+          command  returns a list describing the one named option
+          (this list will be identical to the corresponding  sub-
+          list  of the value returned if no _o_p_t_i_o_n is specified).
+          If one or more _o_p_t_i_o_n-_v_a_l_u_e pairs are  specified,  then
+          the command modifies the given widget option(s) to have
+          the given value(s)  in  each  of  the  items  given  by
+          _t_a_g_O_r_I_d;   in  this  case  the command returns an empty
+          string.  The _o_p_t_i_o_ns and _v_a_l_u_es are the same  as  those
+          permissible  in  the  ccrreeaattee  widget  command  when the
+          item(s) were created; see the sections describing indi-
+          vidual  item  types  below  for  details  on  the legal
+          options.
+
+     _p_a_t_h_N_a_m_e lloowweerr _t_a_g_O_r_I_d ?_b_e_l_o_w_T_h_i_s?
+          Move all of  the  items  given  by  _t_a_g_O_r_I_d  to  a  new
+
+
+
+Sprite v1.0                                                    10
+
+
+
+
+
+
+canvas                    User Commands                    canvas
+
+
+
+          position in the display list just before the item given
+          by _b_e_l_o_w_T_h_i_s.  If _t_a_g_O_r_I_d refers to more than one  item
+          then  all are moved but the relative order of the moved
+          items will not be changed.  _B_e_l_o_w_T_h_i_s is a tag  or  id;
+          if  it  refers  to  more  than  one item then the first
+          (lowest) of these items in the display list is used  as
+          the  destination  location  for  the moved items.  This
+          command returns an empty string.
+
+     _p_a_t_h_N_a_m_e mmoovvee _t_a_g_O_r_I_d _x_A_m_o_u_n_t _y_A_m_o_u_n_t
+          Move each of the items given by _t_a_g_O_r_I_d in  the  canvas
+          coordinate  space by adding _x_A_m_o_u_n_t to the x-coordinate
+          of each point associated with the item and  _y_A_m_o_u_n_t  to
+          the  y-coordinate  of  each  point  associated with the
+          item.  This command returns an empty string.
+
+     _p_a_t_h_N_a_m_e rraaiissee _t_a_g_O_r_I_d ?aboveThis?
+          Move all of the items given by _t_a_g_O_r_I_d to a  new  posi-
+          tion  in  the display list just after the item given by
+          _a_b_o_v_e_T_h_i_s.  If _t_a_g_O_r_I_d refers to  more  than  one  item
+          then  all are moved but the relative order of the moved
+          items will not be changed.  _A_b_o_v_e_T_h_i_s is a tag  or  id;
+          if  it refers to more than one item then the last (top-
+          most) of these items in the display list is used as the
+          destination location for the moved items.  This command
+          returns an empty string.
+
+     _p_a_t_h_N_a_m_e ssccaallee _t_a_g_O_r_I_d _x_O_r_i_g_i_n _y_O_r_i_g_i_n _x_S_c_a_l_e _y_S_c_a_l_e
+          Rescale all of the items given  by  _t_a_g_O_r_I_d  in  canvas
+          coordinate  space.   _X_O_r_i_g_i_n  and  _y_O_r_i_g_i_n identify the
+          origin for the scaling operation and _x_S_c_a_l_e and  _y_S_c_a_l_e
+          identify  the  scale  factors for x- and y-coordinates,
+          respectively (a scale factor of 1.0 implies  no  change
+          to  that  coordinate).  For each of the points defining
+          each item, the x-coordinate is adjusted to  change  the
+          distance  from  _x_O_r_i_g_i_n  by  a factor of _x_S_c_a_l_e.  Simi-
+          larly, each y-coordinate is adjusted to change the dis-
+          tance from _y_O_r_i_g_i_n by a factor of _y_S_c_a_l_e.  This command
+          returns an empty string.
+
+     _p_a_t_h_N_a_m_e ssccaann _o_p_t_i_o_n _a_r_g_s
+          This command is used to implement scanning on canvases.
+          It has two forms, depending on _o_p_t_i_o_n:
+
+          _p_a_t_h_N_a_m_e ssccaann mmaarrkk _x _y
+               Records _x and _y and  the  canvas's  current  view;
+               used  in  conjunction  with later ssccaann ddrraaggttoo com-
+               mands.  Typically this command is associated  with
+               a mouse button press in the widget and _x and _y are
+               the coordinates of the mouse.  It returns an empty
+               string.
+
+
+
+
+Sprite v1.0                                                    11
+
+
+
+
+
+
+canvas                    User Commands                    canvas
+
+
+
+          _p_a_t_h_N_a_m_e ssccaann ddrraaggttoo _x _y.
+               This command computes the difference between its _x
+               and _y arguments (which are typically mouse coordi-
+               nates) and the _x and _y arguments to the last  ssccaann
+               mmaarrkk  command for the widget.  It then adjusts the
+               view by 10 times the  difference  in  coordinates.
+               This  command  is  typically associated with mouse
+               motion events in the widget, to produce the effect
+               of  dragging  the canvas at high speed through its
+               window.  The return value is an empty string.
+
+     _p_a_t_h_N_a_m_e sseelleecctt _o_p_t_i_o_n ?_t_a_g_O_r_I_d _a_r_g?
+          Manipulates the  selection  in  one  of  several  ways,
+          depending  on  _o_p_t_i_o_n.  The command may take any of the
+          forms described below.   In  all  of  the  descriptions
+          below,  _t_a_g_O_r_I_d  must  refer  to  an item that supports
+          indexing and selection;  if it refers to multiple items
+          then  the first of these that supports indexing and the
+          selection is used.  _I_n_d_e_x gives a  textual  description
+          of  a  position within _t_a_g_O_r_I_d, as described in INDICES
+          above.
+
+          _p_a_t_h_N_a_m_e sseelleecctt aaddjjuusstt _t_a_g_O_r_I_d _i_n_d_e_x
+               Locate the end of the selection in _t_a_g_O_r_I_d nearest
+               to  the  character given by _i_n_d_e_x, and adjust that
+               end of the selection to be at _i_n_d_e_x (i.e.  includ-
+               ing but not going beyond _i_n_d_e_x).  The other end of
+               the selection is made the anchor point for  future
+               sseelleecctt   ttoo  commands.   If  the  selection  isn't
+               currently in _t_a_g_O_r_I_d then this command behaves the
+               same  as the sseelleecctt ttoo widget command.  Returns an
+               empty string.
+
+          _p_a_t_h_N_a_m_e sseelleecctt cclleeaarr
+               Clear the selection if it is in this  widget.   If
+               the  selection  isn't in this widget then the com-
+               mand has no effect.  Returns an empty string.
+
+          _p_a_t_h_N_a_m_e sseelleecctt ffrroomm _t_a_g_O_r_I_d _i_n_d_e_x
+               Set the selection anchor point for the  widget  to
+               be just before the character given by _i_n_d_e_x in the
+               item  given  by  _t_a_g_O_r_I_d.   This  command  doesn't
+               change  the selection;  it just sets the fixed end
+               of the selection for future  sseelleecctt  ttoo  commands.
+               Returns an empty string.
+
+          _p_a_t_h_N_a_m_e sseelleecctt iitteemm
+               Returns the id of the selected item, if the selec-
+               tion  is in an item in this canvas.  If the selec-
+               tion is not in this canvas then an empty string is
+               returned.
+
+
+
+
+Sprite v1.0                                                    12
+
+
+
+
+
+
+canvas                    User Commands                    canvas
+
+
+
+          _p_a_t_h_N_a_m_e sseelleecctt ttoo _t_a_g_O_r_I_d _i_n_d_e_x
+               Set the selection to consist of  those  characters
+               of  _t_a_g_O_r_I_d between the selection anchor point and
+               _i_n_d_e_x.  The new selection will include the charac-
+               ter  given by _i_n_d_e_x; it will include the character
+               given by the anchor point only if _i_n_d_e_x is greater
+               than  or  equal  to  the anchor point.  The anchor
+               point is determined  by  the  most  recent  sseelleecctt
+               aaddjjuusstt or sseelleecctt ffrroomm command for this widget.  If
+               the selection anchor point for  the  widget  isn't
+               currently  in  _t_a_g_O_r_I_d, then it is set to the same
+               character  given  by  _i_n_d_e_x.   Returns  an   empty
+               string.
+
+     _p_a_t_h_N_a_m_e ttyyppee _t_a_g_O_r_I_d
+          Returns the type of the item given by _t_a_g_O_r_I_d, such  as
+          rreeccttaannggllee  or tteexxtt.  If _t_a_g_O_r_I_d refers to more than one
+          item, then the type of the first item  in  the  display
+          list  is  returned.   If  _t_a_g_O_r_I_d  doesn't refer to any
+          items at all then an empty string is returned.
+
+     _p_a_t_h_N_a_m_e xxvviieeww _i_n_d_e_x
+          Change the view in the canvas so that the canvas  posi-
+          tion  given  by  _i_n_d_e_x  appears at the left edge of the
+          window.  This command is typically used  by  scrollbars
+          to  scroll the canvas.  _I_n_d_e_x counts in units of scroll
+          increments (the value of the  ssccrroollllIInnccrreemmeenntt  option):
+          a value of 0 corresponds to the left edge of the scroll
+          region (as defined  by  the  ssccrroollllRReeggiioonn  option),   a
+          value  of 1 means one scroll unit to the right of this,
+          and so on.  The return value is an empty string.
+
+     _p_a_t_h_N_a_m_e yyvviieeww _i_n_d_e_x
+          Change the view in the canvas so that the canvas  posi-
+          tion given by _i_n_d_e_x appears at the top edge of the win-
+          dow.  This command is typically used by  scrollbars  to
+          scroll  the  canvas.   _I_n_d_e_x  counts in units of scroll
+          increments (the value of the  ssccrroollllIInnccrreemmeenntt  option):
+          a  value of 0 corresponds to the top edge of the scroll
+          region (as defined  by  the  ssccrroollllRReeggiioonn  option),   a
+          value of 1 means one scroll unit below this, and so on.
+          The return value is an empty string.
+
+
+OOVVEERRVVIIEEWW OOFF IITTEEMM TTYYPPEESS
+     The sections below describe the various types of items  sup-
+     ported  by  canvas widgets.  Each item type is characterized
+     by two things: first, the form of the ccrreeaattee command used to
+     create  instances  of the type;  and second, a set of confi-
+     guration options for items of that type, which may  be  used
+     in the ccrreeaattee and iitteemmccoonnffiigguurree widget commands.  Most items
+     don't support indexing or selection or the commands  related
+
+
+
+Sprite v1.0                                                    13
+
+
+
+
+
+
+canvas                    User Commands                    canvas
+
+
+
+     to  them,  such as iinnddeexx and iinnsseerrtt.  Where items do support
+     these facilities, it is noted explicitly in the descriptions
+     below (at present, only text items provide this support).
+
+
+AARRCC IITTEEMMSS
+     Items of type  aarrcc  appear  on  the  display  as  arc-shaped  |
+     regions.   An  arc  is a section of an oval delimited by two  |
+     angles (specified by the --ssttaarrtt  and  --eexxtteenntt  options)  and  |
+     displayed  in  one  of several ways (specified by the --ssttyyllee  |
+     option).  Arcs are created with widget commands of the  fol-  |
+     lowing form:                                                  |
+
+          _p_a_t_h_N_a_m_e ccrreeaattee aarrcc _x_1 _y_1 _x_2 _y_2 ?_o_p_t_i_o_n _v_a_l_u_e _o_p_t_i_o_n _v_a_l_u_e ...?|
+     The arguments _x_1, _y_1, _x_2, and _y_2 give the coordinates of two  |
+     diagonally  opposite corners of a rectangular region enclos-  |
+     ing the oval that defines the arc.   After  the  coordinates  |
+     there may be any number of _o_p_t_i_o_n-_v_a_l_u_e pairs, each of which  |
+     sets one of the configuration options for the  item.   These  |
+     same  _o_p_t_i_o_n-_v_a_l_u_e pairs may be used in iitteemmccoonnffiigguurree widget  |
+     commands to change the item's configuration.  The  following  |
+     options are supported for arcs:                               |
+
+     --eexxtteenntt _d_e_g_r_e_e_s                                                    ||
+          Specifies the size of the angular range occupied by the  |
+          arc.  The  arc's  range  extends  for  _d_e_g_r_e_e_s  degrees  |
+          counter-clockwise  from the starting angle given by the  |
+          --ssttaarrtt option.  _D_e_g_r_e_e_s may be negative.                 |
+
+     --ffiillll _c_o_l_o_r                                                        ||
+          Fill  the region of the arc with _c_o_l_o_r.  _C_o_l_o_r may have  |
+          any of the forms accepted by TTkk__GGeettCCoolloorr.  If _c_o_l_o_r  is  |
+          an  empty  string (the default), then then the arc will  |
+          not be filled.                                           |
+
+     --oouuttlliinnee _c_o_l_o_r                                                     ||
+          _C_o_l_o_r  specifies  a  color to use for drawing the arc's  |
+          outline;  it may have any  of  the  forms  accepted  by  |
+          TTkk__GGeettCCoolloorr.   This  option  defaults to bbllaacckk.  If the  |
+          arc's style is aarrcc then this  option  is  ignored  (the  |
+          section of perimeter is filled using the --ffiillll option).  |
+          If _c_o_l_o_r is specified as an empty string then  no  out-  |
+          line is drawn for the arc.                               |
+
+     --ssttaarrtt _d_e_g_r_e_e_s                                                     ||
+          Specifies  the  beginning of the angular range occupied  |
+          by the arc.  _D_e_g_r_e_e_s is given in units of degrees meas-  |
+          ured counter-clockwise from the 3-o'clock position;  it  |
+          may be either positive or negative.                      |
+
+     --ssttiippppllee _b_i_t_m_a_p                                                    ||
+          Indicates  that  the  arc should be filled in a stipple  |
+
+
+
+Sprite v1.0                                                    14
+
+
+
+
+
+
+canvas                    User Commands                    canvas
+
+
+
+          pattern; _b_i_t_m_a_p specifies the stipple pattern  to  use,  |
+          in  any  of the forms accepted by TTkk__GGeettBBiittmmaapp.  If the  |
+          --ffiillll option hasn't been specified then this option has  |
+          no effect.  If _b_i_t_m_a_p is an empty string (the default),  |
+          then filling is done in a solid fashion.                 |
+
+     --ssttyyllee _t_y_p_e                                                        ||
+          Specifies  how  to  draw  the arc.  If _t_y_p_e is ppiieesslliiccee  |
+          (the default) then the arc's region  is  defined  by  a  |
+          section of the oval's perimiter plus two line segments,  |
+          one between the center of the oval and each end of  the  |
+          perimeter  section.   If  _t_y_p_e  is cchhoorrdd then the arc's  |
+          region is defined by a section of the  oval's  permiter  |
+          plus  a  single  line  segment  connecting  the two end  |
+          points of the perimiter section.  If _t_y_p_e is  aarrcc  then  |
+          the arc's region consists of a section of the perimeter  |
+          alone.  In this last case there is no outline  for  the  |
+          arc and the --oouuttlliinnee option is ignored.                  |
+
+     --ttaaggss _t_a_g_L_i_s_t                                                      ||
+          Specifies  a set of tags to apply to the item.  _T_a_g_L_i_s_t  |
+          consists of a list of  tag  names,  which  replace  any  |
+          existing  tags  for  the item.  _T_a_g_L_i_s_t may be an empty  |
+          list.                                                    |
+
+     --wwiiddtthh _o_u_t_l_i_n_e_W_i_d_t_h                                                ||
+          Specifies  the  width of the outline to be drawn around  |
+          the arc's region, in any of the forms described in  the  |
+          COORDINATES  section above.  If the --oouuttlliinnee option has  |
+          been specified as an empty string then this option  has  |
+          no effect.  Wide outlines will be drawn centered on the  |
+          edges of the arc's region.   This  option  defaults  to  |
+          1.0.                                                     |
+
+
+BBIITTMMAAPP IITTEEMMSS                                                       |
+     Items of type bbiittmmaapp appear on the display  as  images  with  |
+     two  colors, foreground and background.  Bitmaps are created  |
+     with widget commands of the following form:                   |
+
+          _p_a_t_h_N_a_m_e ccrreeaattee bbiittmmaapp _x _y ?_o_p_t_i_o_n _v_a_l_u_e _o_p_t_i_o_n _v_a_l_u_e ...?|
+     The arguments _x and _y specify the  coordinates  of  a  point  |
+     used  to position the bitmap on the display (see the --aanncchhoorr  |
+     option  below  for  more  information  on  how  bitmaps  are  |
+     displayed).   After  the coordinates there may be any number  |
+     of _o_p_t_i_o_n-_v_a_l_u_e pairs, each of which sets one of the  confi-  |
+     guration  options  for  the  item.   These same _o_p_t_i_o_n-_v_a_l_u_e  |
+     pairs may be used in iitteemmccoonnffiigguurree widget commands to change  |
+     the  item's  configuration.   The following options are sup-  |
+     ported for bitmaps:                                           |
+
+     --aanncchhoorr _a_n_c_h_o_r_P_o_s                                                  ||
+
+
+
+Sprite v1.0                                                    15
+
+
+
+
+
+
+canvas                    User Commands                    canvas
+
+
+
+          _A_n_c_h_o_r_P_o_s  tells how to position the bitmap relative to  |
+          the positioning point for the item;  it may have any of  |
+          the  forms  accepted  by TTkk__GGeettAAnncchhoorr.  For example, if  |
+          _a_n_c_h_o_r_P_o_s is cceenntteerr then the bitmap is centered on  the  |
+          point;  if _a_n_c_h_o_r_P_o_s is nn then the bitmap will be drawn  |
+          so that its top center  point  is  at  the  positioning  |
+          point.  This option defaults to cceenntteerr.                  |
+
+     --bbaacckkggrroouunndd _c_o_l_o_r                                                  ||
+          Specifies  a color to use for each of the bitmap pixels  |
+          whose value is 0.  _C_o_l_o_r may  have  any  of  the  forms  |
+          accepted  by  TTkk__GGeettCCoolloorr.  If this option isn't speci-  |
+          fied, or if it is specified as an  empty  string,  then  |
+          the background color for the canvas is used.             |
+
+     --bbiittmmaapp _b_i_t_m_a_p                                                     ||
+          Specifies  the  bitmap  to display in the item.  _B_i_t_m_a_p  |
+          may have any of the forms accepted by TTkk__GGeettBBiittmmaapp.      |
+
+     --ffoorreeggrroouunndd _c_o_l_o_r                                                  ||
+          Specifies  a color to use for each of the bitmap pixels  |
+          whose value is 1.  _C_o_l_o_r may  have  any  of  the  forms  |
+          accepted by TTkk__GGeettCCoolloorr and defaults to bbllaacckk.           |
+
+     --ttaaggss _t_a_g_L_i_s_t                                                      ||
+          Specifies  a set of tags to apply to the item.  _T_a_g_L_i_s_t  |
+          consists of a list of  tag  names,  which  replace  any  |
+          existing  tags  for  the item.  _T_a_g_L_i_s_t may be an empty  |
+          list.
+
+
+LLIINNEE IITTEEMMSS
+     Items of type lliinnee appear on the display as one or more con-
+     nected  line  segments  or  curves.   Lines are created with
+     widget commands of the following form:
+
+          _p_a_t_h_N_a_m_e ccrreeaattee lliinnee _x_1 _y_1... _x_n _y_n ?_o_p_t_i_o_n _v_a_l_u_e _o_p_t_i_o_n _v_a_l_u_e ...?
+     The arguments _x_1 through  _y_n  give  the  coordinates  for  a
+     series  of two or more points that describe a series of con-
+     nected line segments.  After the coordinates  there  may  be
+     any  number of _o_p_t_i_o_n-_v_a_l_u_e pairs, each of which sets one of
+     the  configuration  options  for  the  item.    These   same
+     _o_p_t_i_o_n-_v_a_l_u_e  pairs may be used in iitteemmccoonnffiigguurree widget com-
+     mands to change the  item's  configuration.   The  following
+     options are supported for lines:
+
+     --aarrrrooww _w_h_e_r_e
+          Indicates whether or not arrowheads are to be drawn  at
+          one  or  both ends of the line.  _W_h_e_r_e must have one of
+          the values nnoonnee (for  no  arrowheads),  ffiirrsstt  (for  an
+          arrowhead at the first point of the line), llaasstt (for an
+          arrowhead at the last point of the line), or bbootthh  (for
+
+
+
+Sprite v1.0                                                    16
+
+
+
+
+
+
+canvas                    User Commands                    canvas
+
+
+
+          arrowheads  at  both  ends).   This  option defaults to
+          nnoonnee.
+
+     --aarrrroowwsshhaappee _s_h_a_p_e
+          This option indicates  how  to  draw  arrowheads.   The
+          _s_h_a_p_e argument must be a list with three elements, each
+          specifying a distance in any of the forms described  in
+          the  COORDINATES  section  above.  The first element of
+          the list gives the distance along  the  line  from  the
+          neck  of  the arrowhead to its tip.  The second element
+          gives the distance along the  line  from  the  trailing
+          points  of the arrowhead to the tip, and the third ele-
+          ment gives the distance from the outside  edge  of  the
+          line  to  the  trailing  points.   If this option isn't
+          specified then Tk picks a ``reasonable'' shape.
+
+     --ccaappssttyyllee _s_t_y_l_e
+          Specifies the ways in which caps are to be drawn at the
+          endpoints of the line.  _S_t_y_l_e may have any of the forms
+          accepted  by  TTkk__GGeettCCaappSSttyyllee  (bbuutttt,   pprroojjeeccttiinngg,   or
+          rroouunndd).    If  this  option  isn't  specified  then  it
+          defaults to bbuutttt.  Where arrowheads are drawn  the  cap
+          style is ignored.
+
+     --ffiillll _c_o_l_o_r
+          _C_o_l_o_r specifies a color to use for drawing the line; it
+          may  have  any  of the forms acceptable to TTkk__GGeettCCoolloorr.
+          It may also be an empty string, in which case the  line
+          will be transparent.  This option defaults to bbllaacckk.
+
+     --jjooiinnssttyyllee _s_t_y_l_e
+          Specifies the ways in which joints are to be  drawn  at
+          the  vertices  of  the line.  _S_t_y_l_e may have any of the
+          forms accepted  by  TTkk__GGeettCCaappSSttyyllee  (bbeevveell,  mmiitteerr,  or
+          rroouunndd).    If  this  option  isn't  specified  then  it
+          defaults to mmiitteerr.   If  the  line  only  contains  two
+          points then this option is irrelevant.
+
+     --ssmmooootthh _b_o_o_l_e_a_n
+          _B_o_o_l_e_a_n  must  have  one  of  the  forms  accepted   by  |
+          TTkk__GGeettBBoooolleeaann.   It  indicates  whether or not the line  |
+          should be drawn as a curve.  If so, the  line  is  ren-  |
+          dered  as  a set of Bezier splines: one spline is drawn  |
+          for the first and second line  segments,  one  for  the  |
+          second  and  third,  and so on.  Straight-line segments  |
+          can be generated within  a  curve  by  duplicating  the  |
+          end-points of the desired line segment.                  |
+
+     --sspplliinneesstteeppss _n_u_m_b_e_r                                                ||
+          Specifies  the degree of smoothness desired for curves:  |
+          each spline will be approximated with _n_u_m_b_e_r line  seg-  |
+          ments.   This  option  is  ignored  unless  the --ssmmooootthh  |
+
+
+
+Sprite v1.0                                                    17
+
+
+
+
+
+
+canvas                    User Commands                    canvas
+
+
+
+          option is true.
+
+     --ssttiippppllee _b_i_t_m_a_p
+          Indicates that the line should be filled in  a  stipple
+          pattern;  _b_i_t_m_a_p  specifies the stipple pattern to use,
+          in any of the forms accepted by TTkk__GGeettBBiittmmaapp.  If  _b_i_t_-
+          _m_a_p  is  an empty string (the default), then filling is
+          done in a solid fashion.
+
+     --ttaaggss _t_a_g_L_i_s_t
+          Specifies a set of tags to apply to the item.   _T_a_g_L_i_s_t  |
+          consists  of  a  list  of  tag names, which replace any  |
+          existing tags for the item.  _T_a_g_L_i_s_t may  be  an  empty  |
+          list.
+
+     --wwiiddtthh _l_i_n_e_W_i_d_t_h
+          _L_i_n_e_W_i_d_t_h specifies the width of the line,  in  any  of
+          the  forms  described in the COORDINATES section above.
+          Wide lines will be drawn centered on the path specified
+          by  the points.  If this option isn't specified then it
+          defaults to 1.0.
+
+
+OOVVAALL IITTEEMMSS
+     Items of type oovvaall appear as circular or oval regions on the
+     display.   Each  oval  may have an outline, a fill, or both.
+     Ovals are created with  widget  commands  of  the  following
+     form:
+
+          _p_a_t_h_N_a_m_e ccrreeaattee oovvaall _x_1 _y_1 _x_2 _y_2 ?_o_p_t_i_o_n _v_a_l_u_e _o_p_t_i_o_n _v_a_l_u_e ...?
+     The arguments _x_1, _y_1, _x_2, and _y_2 give the coordinates of two
+     diagonally  opposite corners of a rectangular region enclos-
+     ing the oval.  The oval will touch this enclosing region  at
+     its  top,  bottom,  left, and right edges.  If the region is
+     square then the resulting oval is circular; othwerwise it is
+     elongated  in shape.  After the coordinates there may be any
+     number of _o_p_t_i_o_n-_v_a_l_u_e pairs, each of which sets one of  the
+     configuration options for the item.  These same _o_p_t_i_o_n-_v_a_l_u_e
+     pairs may be used in iitteemmccoonnffiigguurree widget commands to change
+     the  item's  configuration.   The following options are sup-
+     ported for ovals:
+
+     --ffiillll _c_o_l_o_r
+          Fill the area of the oval with _c_o_l_o_r.  _C_o_l_o_r  may  have
+          any  of the forms accepted by TTkk__GGeettCCoolloorr.  If _c_o_l_o_r is
+          an empty string (the default), then then the oval  will
+          not be filled.
+
+     --oouuttlliinnee _c_o_l_o_r
+          _C_o_l_o_r specifies a color to use for drawing  the  oval's
+          outline;   it  may  have  any  of the forms accepted by
+          TTkk__GGeettCCoolloorr.  This option defaults to bbllaacckk.  If  _c_o_l_o_r
+
+
+
+Sprite v1.0                                                    18
+
+
+
+
+
+
+canvas                    User Commands                    canvas
+
+
+
+          is  an  empty  string then no outline will be drawn for
+          the oval.
+
+     --ssttiippppllee _b_i_t_m_a_p
+          Indicates that the oval should be filled in  a  stipple
+          pattern;  _b_i_t_m_a_p  specifies the stipple pattern to use,
+          in any of the forms accepted by TTkk__GGeettBBiittmmaapp.   If  the
+          --ffiillll option hasn't been specified then this option has
+          no effect.  If _b_i_t_m_a_p is an empty string (the default),
+          then filling is done in a solid fashion.
+
+     --ttaaggss _t_a_g_L_i_s_t
+          Specifies a set of tags to apply to the item.   _T_a_g_L_i_s_t  |
+          consists  of  a  list  of  tag names, which replace any  |
+          existing tags for the item.  _T_a_g_L_i_s_t may  be  an  empty  |
+          list.
+
+     --wwiiddtthh _o_u_t_l_i_n_e_W_i_d_t_h
+          _o_u_t_l_i_n_e_W_i_d_t_h specifies the width of the outline  to  be
+          drawn around the oval, in any of the forms described in
+          the COORDINATES section above.  If the --oouuttlliinnee  option
+          hasn't  been  specified then this option has no effect.  |
+          Wide outlines are  drawn  centered  on  the  oval  path  |
+          defined by _x_1, _y_1, _x_2, and _y_2.  This option defaults to
+          1.0.
+
+
+PPOOLLYYGGOONN IITTEEMMSS
+     Items of type ppoollyyggoonn appear as polygonal or  curved  filled
+     regions  on  the  display.  Polygons are created with widget
+     commands of the following form:
+
+          _p_a_t_h_N_a_m_e ccrreeaattee ppoollyyggoonn _x_1 _y_1 ... _x_n _y_n ?_o_p_t_i_o_n _v_a_l_u_e _o_p_t_i_o_n _v_a_l_u_e ...?
+     The arguments _x_1 through  _y_n  specify  the  coordinates  for
+     three  or  more  points  that  define a closed polygon.  The
+     first and last points may be the same;  whether they are  or
+     not,  Tk  will  draw the polygon as a closed polygon.  After
+     the coordinates there may  be  any  number  of  _o_p_t_i_o_n-_v_a_l_u_e
+     pairs,  each  of which sets one of the configuration options
+     for the item.  These same _o_p_t_i_o_n-_v_a_l_u_e pairs may be used  in
+     iitteemmccoonnffiigguurree  widget  commands  to change the item's confi-
+     guration.  The following options are supported for polygons:
+
+     --ffiillll _c_o_l_o_r
+          _C_o_l_o_r specifies a color to use for filling the area  of
+          the polygon; it may have any of the forms acceptable to
+          TTkk__GGeettCCoolloorr.  If _c_o_l_o_r is  an  empty  string  then  the
+          polygon  will  be transparent.  This option defaults to
+          bbllaacckk.
+
+     --ssmmooootthh _b_o_o_l_e_a_n
+          _B_o_o_l_e_a_n  must  have  one  of  the  forms  accepted   by  |
+
+
+
+Sprite v1.0                                                    19
+
+
+
+
+
+
+canvas                    User Commands                    canvas
+
+
+
+          TTkk__GGeettBBoooolleeaann  It  indicates whether or not the polygon  |
+          should be drawn with a curved perimeter.   If  so,  the  |
+          outline of the polygon becomes a set of Bezier splines,  |
+          one spline for the first and second line segments,  one  |
+          for  the  second  and  third, and so on.  Straight-line  |
+          segments can be generated  in  a  smoothed  polygon  by  |
+          duplicating the end-points of the desired line segment.  |
+
+     --sspplliinneesstteeppss _n_u_m_b_e_r                                                ||
+          Specifies  the degree of smoothness desired for curves:  |
+          each spline will be approximated with _n_u_m_b_e_r line  seg-  |
+          ments.   This  option  is  ignored  unless  the --ssmmooootthh  |
+          option is true.
+
+     --ssttiippppllee _b_i_t_m_a_p
+          Indicates that the polygon should be filled in a  stip-
+          ple  pattern;  _b_i_t_m_a_p  specifies the stipple pattern to
+          use, in any of the forms accepted by TTkk__GGeettBBiittmmaapp.   If
+          _b_i_t_m_a_p  is  an empty string (the default), then filling
+          is done in a solid fashion.
+
+     --ttaaggss _t_a_g_L_i_s_t
+          Specifies a set of tags to apply to the item.   _T_a_g_L_i_s_t  |
+          consists  of  a  list  of  tag names, which replace any  |
+          existing tags for the item.  _T_a_g_L_i_s_t may  be  an  empty  |
+          list.
+
+
+RREECCTTAANNGGLLEE IITTEEMMSS
+     Items of type rreeccttaannggllee appear as rectangular regions on the
+     display.   Each  rectangle  may  have an outline, a fill, or
+     both.  Rectangles are created with widget  commands  of  the
+     following form:
+
+          _p_a_t_h_N_a_m_e ccrreeaattee rreeccttaannggllee _x_1 _y_1 _x_2 _y_2 ?_o_p_t_i_o_n _v_a_l_u_e _o_p_t_i_o_n _v_a_l_u_e ...?
+     The arguments _x_1, _y_1, _x_2, and _y_2 give the coordinates of two
+     diagonally  opposite  corners  of  the rectangle.  After the
+     coordinates there may be any number of  _o_p_t_i_o_n-_v_a_l_u_e  pairs,
+     each  of which sets one of the configuration options for the
+     item.  These same _o_p_t_i_o_n-_v_a_l_u_e pairs may be used in iitteemmccoonn--
+     ffiigguurree  widget  commands to change the item's configuration.
+     The following options are supported for rectangles:
+
+     --ffiillll _c_o_l_o_r
+          Fill the area of the rectangle with _c_o_l_o_r, which may be
+          specified  in any of the forms accepted by TTkk__GGeettCCoolloorr.
+          If _c_o_l_o_r is an empty string (the  default),  then  then
+          the rectangle will not be filled.
+
+     --oouuttlliinnee _c_o_l_o_r
+          Draw an outline around the edge  of  the  rectangle  in
+          _c_o_l_o_r.   _C_o_l_o_r  may  have  any of the forms accepted by
+
+
+
+Sprite v1.0                                                    20
+
+
+
+
+
+
+canvas                    User Commands                    canvas
+
+
+
+          TTkk__GGeettCCoolloorr.  This option defaults to bbllaacckk.  If  _c_o_l_o_r
+          is  an  empty  string then no outline will be drawn for
+          the rectangle.
+
+     --ssttiippppllee _b_i_t_m_a_p
+          Indicates that the rectangle  should  be  filled  in  a
+          stipple  pattern;  _b_i_t_m_a_p specifies the stipple pattern
+          to use, in any of the forms accepted  by  TTkk__GGeettBBiittmmaapp.
+          If  the  --ffiillll  option  hasn't been specified then this
+          option has no effect.  If _b_i_t_m_a_p  is  an  empty  string
+          (the default), then filling is done in a solid fashion.
+
+     --ttaaggss _t_a_g_L_i_s_t
+          Specifies a set of tags to apply to the item.   _T_a_g_L_i_s_t  |
+          consists  of  a  list  of  tag names, which replace any  |
+          existing tags for the item.  _T_a_g_L_i_s_t may  be  an  empty  |
+          list.
+
+     --wwiiddtthh _o_u_t_l_i_n_e_W_i_d_t_h
+          _O_u_t_l_i_n_e_W_i_d_t_h specifies the width of the outline  to  be
+          drawn  around  the  rectangle,  in  any  of  the  forms
+          described in the COORDINATES  section  above.   If  the
+          --oouuttlliinnee  option hasn't been specified then this option
+          has no effect.  Wide outlines are drawn centered on the  |
+          rectangular  path  defined by _x_1, _y_1, _x_2, and _y_2.  This
+          option defaults to 1.0.
+
+
+TTEEXXTT IITTEEMMSS
+     A text item displays a string of characters on the screen in
+     one  or  more lines.  Text items support indexing and selec-
+     tion, along with the following  text-related  canvas  widget
+     commands:   ccuurrssoorr,  ddcchhaarrss,  ffooccuuss,  iinnddeexx, iinnsseerrtt, sseelleecctt.
+     Text items are created with widget commands of the following
+     form:
+
+          _p_a_t_h_N_a_m_e ccrreeaattee tteexxtt _x _y ?_o_p_t_i_o_n _v_a_l_u_e _o_p_t_i_o_n _v_a_l_u_e ...?
+     The arguments _x and _y specify the  coordinates  of  a  point
+     used  to  position  the text on the display (see the options
+     below for more information on how text is displayed).  After
+     the  coordinates  there  may  be  any number of _o_p_t_i_o_n-_v_a_l_u_e
+     pairs, each of which sets one of the  configuration  options
+     for  the item.  These same _o_p_t_i_o_n-_v_a_l_u_e pairs may be used in
+     iitteemmccoonnffiigguurree widget commands to change  the  item's  confi-
+     guration.   The  following  options  are  supported for text
+     items:
+
+     --aanncchhoorr _a_n_c_h_o_r_P_o_s
+          _A_n_c_h_o_r_P_o_s tells how to position the  text  relative  to
+          the positioning point for the text;  it may have any of
+          the forms accepted by TTkk__GGeettAAnncchhoorr.   For  example,  if
+          _a_n_c_h_o_r_P_o_s  is  cceenntteerr  then the text is centered on the
+
+
+
+Sprite v1.0                                                    21
+
+
+
+
+
+
+canvas                    User Commands                    canvas
+
+
+
+          point;  if _a_n_c_h_o_r_P_o_s is nn then the text will  be  drawn
+          such  that  the  top  center  point  of the rectangular
+          region occupied by the text will be at the  positioning
+          point.  This option defaults to cceenntteerr.
+
+     --ffiillll _c_o_l_o_r
+          _C_o_l_o_r specifies a color to use  for  filling  the  text
+          characters;  it  may  have any of the forms accepted by
+          TTkk__GGeettCCoolloorr.  If this option isn't  specified  then  it
+          defaults to bbllaacckk.
+
+     --ffoonntt _f_o_n_t_N_a_m_e
+          Specifies the font to use for the text item.   _F_o_n_t_N_a_m_e
+          may  be  any string acceptable to TTkk__GGeettFFoonnttSSttrruucctt.  If
+          this option isn't specified, it defaults to  a  system-
+          dependent font.
+
+     --jjuussttiiffyy _h_o_w
+          Specifies how to justify the text within  its  bounding
+          region.   _H_o_w must be one of the values lleefftt, rriigghhtt, or
+          cceenntteerr.  This option will only matter if  the  text  is
+          displayed as multiple lines.  If the option is omitted,
+          it defaults to lleefftt.
+
+     --ssttiippppllee _b_i_t_m_a_p
+          Indicates that the text should be drawn in  a  stippled
+          pattern rather than solid; _b_i_t_m_a_p specifies the stipple
+          pattern to  use,  in  any  of  the  forms  accepted  by
+          TTkk__GGeettBBiittmmaapp.   If  _b_i_t_m_a_p  is  an  empty  string  (the
+          default) then the text is drawn in a solid fashion.
+
+     --ttaaggss _t_a_g_L_i_s_t
+          Specifies a set of tags to apply to the item.   _T_a_g_L_i_s_t  |
+          consists  of  a  list  of  tag names, which replace any  |
+          existing tags for the item.  _T_a_g_L_i_s_t may  be  an  empty  |
+          list.
+
+     --tteexxtt _s_t_r_i_n_g
+          _S_t_r_i_n_g specifies the characters to be displayed in  the
+          text  item.  Newline characters cause line breaks.  The
+          characters in the item may also  be  changed  with  the
+          iinnsseerrtt   and   ddeelleettee  widget  commands.   This  option
+          defaults to an empty string.
+
+     --wwiiddtthh _l_i_n_e_L_e_n_g_t_h
+          Specifies a maximum line length for the text, in any of
+          the  forms  described  in the COORDINATES section abov.
+          If this option is zero (the default) the text is broken
+          into  lines  only  at  newline characters.  However, if
+          this option is non-zero then any  line  that  would  be
+          longer  than  _l_i_n_e_L_e_n_g_t_h  is broken just before a space
+          character to make the  line  shorter  than  _l_i_n_e_L_e_n_g_t_h;
+
+
+
+Sprite v1.0                                                    22
+
+
+
+
+
+
+canvas                    User Commands                    canvas
+
+
+
+          the  space character is treated as if it were a newline
+          character.
+
+
+WWIINNDDOOWW IITTEEMMSS
+     Items of  type  wwiinnddooww  cause  a  particular  window  to  be  |
+     displayed  at  a given position on the canvas.  Window items  |
+     are created with widget commands of the following form:       |
+
+          _p_a_t_h_N_a_m_e ccrreeaattee wwiinnddooww _x _y ?_o_p_t_i_o_n _v_a_l_u_e _o_p_t_i_o_n _v_a_l_u_e ...?|
+     The arguments _x and _y specify the  coordinates  of  a  point  |
+     used  to position the window on the display (see the --aanncchhoorr  |
+     option  below  for  more  information  on  how  bitmaps  are  |
+     displayed).   After  the coordinates there may be any number  |
+     of _o_p_t_i_o_n-_v_a_l_u_e pairs, each of which sets one of the  confi-  |
+     guration  options  for  the  item.   These same _o_p_t_i_o_n-_v_a_l_u_e  |
+     pairs may be used in iitteemmccoonnffiigguurree widget commands to change  |
+     the  item's  configuration.   The following options are sup-  |
+     ported for window items:                                      |
+
+     --aanncchhoorr _a_n_c_h_o_r_P_o_s                                                  ||
+          _A_n_c_h_o_r_P_o_s  tells how to position the window relative to  |
+          the positioning point for the item;  it may have any of  |
+          the  forms  accepted  by TTkk__GGeettAAnncchhoorr.  For example, if  |
+          _a_n_c_h_o_r_P_o_s is cceenntteerr then the window is centered on  the  |
+          point;  if _a_n_c_h_o_r_P_o_s is nn then the window will be drawn  |
+          so that its top center  point  is  at  the  positioning  |
+          point.  This option defaults to cceenntteerr.                  |
+
+     --hheeiigghhtt _p_i_x_e_l_s                                                     ||
+          Specifies  the  height  to assign to the item's window.  |
+          _P_i_x_e_l_s may have any of the forms described in the COOR-  |
+          DINATES section above.  If this option isn't specified,  |
+          or if it is specified as an empty string, then the win-  |
+          dow is given whatever height it requests internally.     |
+
+     --ttaaggss _t_a_g_L_i_s_t                                                      ||
+          Specifies  a set of tags to apply to the item.  _T_a_g_L_i_s_t  |
+          consists of a list of  tag  names,  which  replace  any  |
+          existing  tags  for  the item.  _T_a_g_L_i_s_t may be an empty  |
+          list.                                                    |
+
+     --wwiiddtthh _p_i_x_e_l_s                                                      ||
+          Specifies  the  width  to  assign to the item's window.  |
+          _P_i_x_e_l_s may have any of the forms described in the COOR-  |
+          DINATES section above.  If this option isn't specified,  |
+          or if it is specified as an empty string, then the win-  |
+          dow is given whatever width it requests internally.      |
+
+     --wwiinnddooww _p_a_t_h_N_a_m_e                                                   ||
+          Specifies  the window to associate with this item.  The  |
+          window specified by _p_a_t_h_N_a_m_e must either be a child  of  |
+
+
+
+Sprite v1.0                                                    23
+
+
+
+
+
+
+canvas                    User Commands                    canvas
+
+
+
+          the  canvas  widget  or a child of some ancestor of the  |
+          canvas widget.  _P_a_t_h_N_a_m_e may not refer to  a  top-level  |
+          window.
+
+
+AAPPPPLLIICCAATTIIOONN--DDEEFFIINNEEDD IITTEEMM TTYYPPEESS
+     It is possible for individual  applications  to  define  new
+     item  types for canvas widgets using C code.  The interfaces
+     for this mechanism are not presently  documented,  and  it's
+     possible  they may change, but you should be able to see how
+     they work by examining the code for  some  of  the  existing
+     item types.
+
+
+BBIINNDDIINNGGSS
+     In the current implementation, new canvases  are  not  given
+     any  default  behavior:  you'll have to execute explicit Tcl
+     commands to give the canvas its behavior.
+
+
+CCRREEDDIITTSS
+     Tk's canvas widget is a blatant ripoff of  ideas  from  Joel
+     Bartlett's _e_z_d program.  _E_z_d provides structured graphics in
+     a Scheme environment and preceded canvases by a year or two.
+     Its  simple  mechanisms  for placing and animating graphical
+     objects inspired the functions of canvases.
+
+
+KKEEYYWWOORRDDSS
+     canvas, widget
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                    24
+
+
+

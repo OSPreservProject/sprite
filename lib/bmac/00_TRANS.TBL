@@ -1,0 +1,24 @@
+F AFTERPUN.;1                       	afterpunct
+F BEFOREPU.;1                       	beforepunct
+F BIB.HNF;1                         	bib.hnf
+L BIB.JHH;1                         	bib.jhh	/users/jhh/lib/bib/bib.jhh
+F BIB.SPE;1                         	bib.spe
+F BIBINC.FUL;1                      	bibinc.fullnames
+F BIBINC.PUB;1                      	bibinc.publishers
+F BIBINC.SHO;1                      	bibinc.shortnames
+F BIBMAC.ME;1                       	bibmac.me
+F BIB_ASTR.;1                       	bib.astro
+F BIB_COMP.;1                       	bib.compsurv
+F BIB_FOOT.;1                       	bib.foot
+F BIB_LIST.;1                       	bib.list
+F BIB_OPE0.;1                       	bib.opena
+F BIB_OPE1.;1                       	bib.openn
+F BIB_SPE2.;1                       	bib.spe2
+F BIB_STD0.;1                       	bib.stda
+F BIB_STD1.;1                       	bib.stdafull
+F BIB_STD2.;1                       	bib.stdn
+F BIB_STD3.;1                       	bib.stdsn
+F BIB_SUPN.;1                       	bib.supn
+F BMAC.OPE;1                        	bmac.open
+F BMAC.STD;1                        	bmac.std
+F COMMON.;1                         	common

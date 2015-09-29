@@ -1,0 +1,17 @@
+#include <Server.tmpl>
+
+SRCS = init.c qvss_io.c
+OBJS = init.o qvss_io.o
+INCLUDES = -I. -I../../mfb  -I../../mi -I../../../include -I$(INCLUDESRC) -I/usr/include/vaxuba
+LINTLIBS = ../../../dix/llib-ldix.ln ../../../os/4.2bsd/llib-los.ln \
+	   ../../mfb/llib-lmfb.ln ../../mi/llib-lmi.ln ../lk201/llib-llk201.ln
+
+all: $(OBJS)
+
+NormalLibraryObjectRule()
+NormalLintTarget($(SRCS))
+
+lintlib:
+
+DependTarget()
+InstallManPage(Xqvss,$(MANDIR))

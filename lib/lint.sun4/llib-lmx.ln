@@ -1,0 +1,3193 @@
+512
+llib-lsx:sxButton.c 2
+2
+10 150 32 0 0
+Sx_ButtonMake
+24 10016 1308
+15 0 0
+18 0 0
+24 640 -32768
+15 0 0
+15 0 0
+15 0 0
+15 0 0
+144 0 0
+20 0 0
+2
+15 270 47 0 0
+Sx_ButtonCreate
+24 10016 1308
+15 0 0
+4 0 0
+4 0 0
+4 0 0
+4 0 0
+4 0 0
+18 0 0
+24 640 -32768
+15 0 0
+15 0 0
+15 0 0
+15 0 0
+144 0 0
+20 0 0
+16
+0 288 15 0 0
+Sx_ButtonCreate
+512
+llib-lsx:sxEntry.c 2
+2
+9 205 32 0 0
+Sx_EntryMake
+24 10016 1308
+15 0 0
+15 0 0
+18 0 0
+24 640 -32768
+15 0 0
+15 0 0
+18 0 0
+4 0 0
+2
+14 337 47 0 0
+Sx_EntryCreate
+24 10016 1308
+15 0 0
+15 0 0
+4 0 0
+4 0 0
+4 0 0
+4 0 0
+4 0 0
+18 0 0
+24 640 -32768
+15 0 0
+15 0 0
+18 0 0
+4 0 0
+16
+0 348 15 0 0
+Sx_EntryCreate
+512
+llib-lsx:sxNotify.c 2
+2
+-8 175 36 0 0
+Sx_Notify
+24 10016 1308
+15 0 0
+4 0 0
+4 0 0
+4 0 0
+18 0 0
+24 640 -32768
+4 0 0
+512
+llib-lsx:sxNotify.c
+16
+0 461 4 0 0
+Sx_Notify
+2
+2 486 32 0 0
+Sx_Panic
+24 10016 1308
+18 0 0
+512
+llib-lsx:sxMenu.c 2
+2
+8 243 47 0 0
+Sx_MenuCreate
+24 10016 1308
+15 0 0
+18 0 0
+4 0 0
+24 192 30549
+24 640 -32768
+15 0 0
+15 0 0
+16
+0 406 15 0 0
+Sx_MenuCreate
+2
+3 438 36 0 0
+Sx_MenuSetMask
+24 10016 1308
+15 0 0
+4 0 0
+16
+0 462 4 0 0
+Sx_MenuSetMask
+2
+2 486 36 0 0
+Sx_MenuGetMask
+24 10016 1308
+15 0 0
+16
+0 497 4 0 0
+Sx_MenuGetMask
+2
+4 525 32 0 0
+Sx_MenuReplaceEntry
+24 10016 1308
+15 0 0
+4 0 0
+24 192 30549
+2
+6 627 36 0 0
+Sx_MenuGetInfo
+24 10016 1308
+15 0 0
+24 192 30549
+88 640 -32768
+31 0 0
+31 0 0
+16
+0 666 4 0 0
+Sx_MenuGetInfo
+2
+4 703 36 0 0
+Sx_MenuGetNames
+24 10016 1308
+15 0 0
+82 0 0
+31 0 0
+16
+0 731 4 0 0
+Sx_MenuGetNames
+2
+3 758 47 0 0
+Sx_MenuGetWindow
+24 10016 1308
+15 0 0
+18 0 0
+16
+0 783 15 0 0
+Sx_MenuGetWindow
+512
+llib-lsx:sxPack.c 2
+2
+9 164 32 0 0
+Sx_Pack
+24 10016 1308
+15 0 0
+15 0 0
+10 0 0
+4 0 0
+4 0 0
+4 0 0
+15 0 0
+15 0 0
+2
+9 333 47 0 0
+Sx_CreatePacked
+24 10016 1308
+15 0 0
+10 0 0
+4 0 0
+4 0 0
+4 0 0
+15 0 0
+15 0 0
+15 0 0
+16
+0 341 15 0 0
+Sx_CreatePacked
+2
+2 365 32 0 0
+Sx_Unpack
+24 10016 1308
+15 0 0
+2
+2 415 32 0 0
+Sx_PackUpdateOff
+24 10016 1308
+15 0 0
+2
+2 448 32 0 0
+Sx_PackUpdateOn
+24 10016 1308
+15 0 0
+512
+llib-lsx:sxTitle.c 2
+2
+9 137 32 0 0
+Sx_TitleMake
+24 10016 1308
+15 0 0
+24 640 -32768
+15 0 0
+15 0 0
+15 0 0
+18 0 0
+18 0 0
+18 0 0
+2
+12 284 47 0 0
+Sx_TitleCreate
+24 10016 1308
+15 0 0
+10 0 0
+4 0 0
+4 0 0
+24 640 -32768
+15 0 0
+15 0 0
+15 0 0
+18 0 0
+18 0 0
+18 0 0
+16
+0 292 15 0 0
+Sx_TitleCreate
+512
+llib-lsx:sxSelect.c 2
+2
+0 55 8 1568 8621
+tkWindow
+2
+0 59 24 1536 29659
+tkDisplayList
+2
+0 60 4 0 0
+debug
+2
+4 142 32 0 0
+Sx_SelectionSet
+24 10016 1308
+148 0 0
+144 0 0
+20 0 0
+2
+1 183 32 0 0
+Sx_SelectionClear
+24 10016 1308
+2
+6 243 36 0 0
+Sx_SelectionGet
+24 10016 1308
+18 0 0
+4 0 0
+4 0 0
+18 0 0
+18 0 0
+16
+0 274 4 0 0
+Sx_SelectionGet
+512
+llib-lsx:sxScrollbar.c 2
+2
+0 89 15 0 0
+scrollPattern
+2
+8 205 32 0 0
+Sx_ScrollbarMake
+24 10016 1308
+15 0 0
+4 0 0
+15 0 0
+15 0 0
+15 0 0
+144 0 0
+20 0 0
+2
+10 312 47 0 0
+Sx_ScrollbarCreate
+24 10016 1308
+15 0 0
+10 0 0
+4 0 0
+15 0 0
+15 0 0
+15 0 0
+15 0 0
+144 0 0
+20 0 0
+16
+0 322 15 0 0
+Sx_ScrollbarCreate
+2
+4 358 32 0 0
+Sx_ScrollbarSetRange
+24 10016 1308
+15 0 0
+7 0 0
+7 0 0
+2
+4 417 32 0 0
+Sx_ScrollbarGetRange
+24 10016 1308
+15 0 0
+22 0 0
+22 0 0
+2
+0 458 36 0 0
+Sx_ScrollbarWidth
+16
+0 460 4 0 0
+Sx_ScrollbarWidth
+512
+llib-lsx:sxUtils.c 2
+2
+0 40 4 0 0
+sxIgnoreBadWindow
+2
+1 71 32 0 0
+Sx_SetDefaultFont
+24 640 -32768
+2
+1 96 104 640 -32768
+Sx_GetDefaultFont
+24 10016 1308
+16
+0 107 24 640 -32768
+Sx_GetDefaultFont
+2
+2 131 36 0 0
+Sx_DefaultHeight
+24 10016 1308
+24 640 -32768
+16
+0 136 4 0 0
+Sx_DefaultHeight
+2
+1 160 36 0 0
+Sx_FocusEnabled
+24 10016 1308
+16
+0 174 4 0 0
+Sx_FocusEnabled
+2
+1 197 32 0 0
+SxFlashWait
+24 10016 1308
+2
+7 233 32 0 0
+SxDrawShadow
+24 10016 1308
+15 0 0
+24 896 22140
+4 0 0
+4 0 0
+4 0 0
+4 0 0
+2
+0 279 36 0 0
+Sx_NullProc
+16
+0 281 4 0 0
+Sx_NullProc
+2
+2 304 32 0 0
+SxUnmapCarefully
+24 10016 1308
+15 0 0
+2
+0 333 32 0 0
+Sx_SetErrorHandler
+2
+2 357 36 0 0
+SxErrorHandler
+24 10016 1308
+24 160 -32768
+16
+0 363 4 0 0
+SxErrorHandler
+512
+llib-lsx:tkSelect.c 2
+2
+5 216 32 0 0
+SxTk_CreateSelHandler
+24 0 30931
+15 0 0
+148 0 0
+20 0 0
+15 0 0
+2
+3 289 32 0 0
+SxTk_OwnSelection
+24 0 30931
+144 0 0
+20 0 0
+2
+4 380 36 0 0
+SxTk_GetSelection
+24 0 30931
+15 0 0
+148 0 0
+20 0 0
+16
+0 543 4 0 0
+SxTk_GetSelection
+2
+2 606 32 0 0
+SxTkSelEventProc
+24 0 30931
+25 768 23678
+512
+llib-lsx:tkSelect.c
+512
+llib-lsx:sxDispatch.c 2
+2
+5 234 104 0 19651
+Sx_HandlerCreate
+24 10016 1308
+15 0 0
+15 0 0
+144 0 0
+20 0 0
+16
+0 292 24 0 19651
+Sx_HandlerCreate
+2
+1 316 32 0 0
+Sx_HandlerDelete
+24 0 19651
+2
+1 394 32 0 0
+Sx_HandleEvent
+25 768 23678
+2
+5 559 32 0 0
+Sx_EnableFocus
+24 10016 1308
+15 0 0
+15 0 0
+144 0 0
+20 0 0
+2
+2 617 32 0 0
+Sx_Focus
+24 10016 1308
+15 0 0
+512
+llib-lsx:tkAtom.c 2
+2
+2 64 47 0 0
+Tk_InternAtom
+24 0 30931
+18 0 0
+16
+0 86 15 0 0
+Tk_InternAtom
+2
+2 116 98 0 0
+Tk_GetAtomName
+24 0 30931
+15 0 0
+16
+0 145 18 0 0
+Tk_GetAtomName
+512
+llib-lsx:tkError.c 2
+2
+6 95 104 0 8808
+Tk_CreateErrorHandler
+24 10016 1308
+4 0 0
+4 0 0
+4 0 0
+148 0 0
+20 0 0
+16
+0 139 24 0 8808
+Tk_CreateErrorHandler
+2
+1 168 32 0 0
+Tk_DeleteErrorHandler
+24 0 8808
+512
+llib-ltcl:panic.c 2
+2
+-9 49 32 0 0
+panic
+18 0 0
+18 0 0
+18 0 0
+18 0 0
+18 0 0
+18 0 0
+18 0 0
+18 0 0
+18 0 0
+512
+llib-ltcl:regexp.c 2
+2
+1 200 104 768 15344
+regcomp
+18 0 0
+16
+0 273 24 768 15344
+regcomp
+2
+2 714 36 0 0
+regexec
+24 768 15344
+18 0 0
+16
+0 767 4 0 0
+regexec
+512
+llib-ltcl:regexp.c
+512
+llib-ltcl:tclAssem.c 2
+2
+0 67 100 0 0
+Tcl_CreateCmdBuf
+16
+0 75 20 0 0
+Tcl_CreateCmdBuf
+2
+1 98 32 0 0
+Tcl_DeleteCmdBuf
+20 0 0
+2
+2 142 98 0 0
+Tcl_AssembleCmd
+20 0 0
+18 0 0
+16
+0 206 18 0 0
+Tcl_AssembleCmd
+512
+llib-ltcl:tclBasic.c 2
+2
+0 132 104 96 2461
+Tcl_CreateInterp
+16
+0 198 24 96 2461
+Tcl_CreateInterp
+2
+1 222 32 0 0
+Tcl_DeleteInterp
+24 96 2461
+2
+5 341 32 0 0
+Tcl_CreateCommand
+24 96 2461
+18 0 0
+148 0 0
+20 0 0
+144 0 0
+2
+2 390 36 0 0
+Tcl_DeleteCommand
+24 96 2461
+18 0 0
+16
+0 406 4 0 0
+Tcl_DeleteCommand
+2
+4 441 36 0 0
+Tcl_Eval
+24 96 2461
+18 0 0
+4 0 0
+82 0 0
+16
+0 796 4 0 0
+Tcl_Eval
+2
+4 849 100 0 0
+Tcl_CreateTrace
+24 96 2461
+4 0 0
+144 0 0
+20 0 0
+16
+0 861 20 0 0
+Tcl_CreateTrace
+2
+2 885 32 0 0
+Tcl_DeleteTrace
+24 96 2461
+20 0 0
+2
+2 929 32 0 0
+Tcl_AddErrorInfo
+24 96 2461
+18 0 0
+2
+-2 987 36 0 0
+Tcl_VarEval
+24 96 2461
+18 0 0
+16
+0 1037 4 0 0
+Tcl_VarEval
+512
+llib-ltcl:tclCkalloc.c
+2
+1 487 98 0 0
+Tcl_Ckalloc
+14 0 0
+16
+0 494 18 0 0
+Tcl_Ckalloc
+2
+1 509 32 0 0
+Tcl_Ckfree
+18 0 0
+2
+1 526 32 0 0
+Tcl_InitMemory
+24 96 2461
+512
+llib-ltcl:tclCmdAH.c 2
+2
+4 49 36 0 0
+Tcl_BreakCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 56 4 0 0
+Tcl_BreakCmd
+2
+4 82 36 0 0
+Tcl_CaseCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 196 4 0 0
+Tcl_CaseCmd
+2
+4 222 36 0 0
+Tcl_CatchCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 241 4 0 0
+Tcl_CatchCmd
+2
+4 267 36 0 0
+Tcl_ConcatCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 277 4 0 0
+Tcl_ConcatCmd
+2
+4 303 36 0 0
+Tcl_ContinueCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 310 4 0 0
+Tcl_ContinueCmd
+2
+4 336 36 0 0
+Tcl_ErrorCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 355 4 0 0
+Tcl_ErrorCmd
+2
+4 381 36 0 0
+Tcl_EvalCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 409 4 0 0
+Tcl_EvalCmd
+2
+4 435 36 0 0
+Tcl_ExprCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 443 4 0 0
+Tcl_ExprCmd
+2
+4 469 36 0 0
+Tcl_ForCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 521 4 0 0
+Tcl_ForCmd
+2
+4 547 36 0 0
+Tcl_ForeachCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 596 4 0 0
+Tcl_ForeachCmd
+2
+4 622 36 0 0
+Tcl_FormatCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 900 4 0 0
+Tcl_FormatCmd
+512
+llib-ltcl:tclCmdIL.c 2
+2
+4 56 36 0 0
+Tcl_IfCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 119 4 0 0
+Tcl_IfCmd
+2
+4 145 36 0 0
+Tcl_IncrCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 184 4 0 0
+Tcl_IncrCmd
+2
+4 210 36 0 0
+Tcl_InfoCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 544 4 0 0
+Tcl_InfoCmd
+2
+4 570 36 0 0
+Tcl_JoinCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 597 4 0 0
+Tcl_JoinCmd
+2
+4 623 36 0 0
+Tcl_LindexCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 659 4 0 0
+Tcl_LindexCmd
+2
+4 685 36 0 0
+Tcl_LinsertCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 743 4 0 0
+Tcl_LinsertCmd
+2
+4 769 36 0 0
+Tcl_ListCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 778 4 0 0
+Tcl_ListCmd
+2
+4 804 36 0 0
+Tcl_LlengthCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 825 4 0 0
+Tcl_LlengthCmd
+2
+4 851 36 0 0
+Tcl_LrangeCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 917 4 0 0
+Tcl_LrangeCmd
+2
+4 943 36 0 0
+Tcl_LreplaceCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 1034 4 0 0
+Tcl_LreplaceCmd
+2
+4 1060 36 0 0
+Tcl_LsearchCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 1083 4 0 0
+Tcl_LsearchCmd
+2
+4 1109 36 0 0
+Tcl_LsortCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 1126 4 0 0
+Tcl_LsortCmd
+512
+llib-ltcl:tclCmdMZ.c 2
+2
+4 72 36 0 0
+Tcl_RegexpCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 187 4 0 0
+Tcl_RegexpCmd
+2
+4 213 36 0 0
+Tcl_RegsubCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 415 4 0 0
+Tcl_RegsubCmd
+2
+4 441 36 0 0
+Tcl_RenameCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 477 4 0 0
+Tcl_RenameCmd
+2
+4 503 36 0 0
+Tcl_ReturnCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 513 4 0 0
+Tcl_ReturnCmd
+2
+4 539 36 0 0
+Tcl_ScanCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 744 4 0 0
+Tcl_ScanCmd
+2
+4 770 36 0 0
+Tcl_SplitCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 820 4 0 0
+Tcl_SplitCmd
+2
+4 846 36 0 0
+Tcl_StringCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 1080 4 0 0
+Tcl_StringCmd
+2
+4 1106 36 0 0
+Tcl_TraceCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 1252 4 0 0
+Tcl_TraceCmd
+2
+4 1383 36 0 0
+Tcl_WhileCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 1420 4 0 0
+Tcl_WhileCmd
+512
+llib-ltcl:tclEnv.c 2
+2
+1 89 32 0 0
+TclSetupEnv
+24 96 2461
+2
+2 205 32 0 0
+setenv
+18 0 0
+18 0 0
+2
+1 281 32 0 0
+unsetenv
+18 0 0
+512
+llib-ltcl:tclExpr.c 2
+2
+0 133 52 0 0
+precTable
+2
+0 153 114 0 0
+operatorStrings
+2
+3 1213 36 0 0
+Tcl_ExprLong
+24 96 2461
+18 0 0
+21 0 0
+16
+0 1232 4 0 0
+Tcl_ExprLong
+2
+3 1240 36 0 0
+Tcl_ExprDouble
+24 96 2461
+18 0 0
+23 0 0
+16
+0 1259 4 0 0
+Tcl_ExprDouble
+2
+3 1267 36 0 0
+Tcl_ExprBoolean
+24 96 2461
+18 0 0
+20 0 0
+16
+0 1286 4 0 0
+Tcl_ExprBoolean
+2
+2 1312 36 0 0
+Tcl_ExprString
+24 96 2461
+18 0 0
+16
+0 1336 4 0 0
+Tcl_ExprString
+512
+llib-ltcl:tclGet.c 2
+2
+3 49 36 0 0
+Tcl_GetInt
+24 96 2461
+18 0 0
+20 0 0
+16
+0 64 4 0 0
+Tcl_GetInt
+2
+3 92 36 0 0
+Tcl_GetDouble
+24 96 2461
+18 0 0
+23 0 0
+16
+0 107 4 0 0
+Tcl_GetDouble
+2
+3 137 36 0 0
+Tcl_GetBoolean
+24 96 2461
+18 0 0
+20 0 0
+16
+0 184 4 0 0
+Tcl_GetBoolean
+512
+llib-ltcl:tclGlob.c 2
+2
+2 398 98 0 0
+Tcl_TildeSubst
+24 96 2461
+18 0 0
+16
+0 473 18 0 0
+Tcl_TildeSubst
+2
+4 499 36 0 0
+Tcl_GlobCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 545 4 0 0
+Tcl_GlobCmd
+512
+llib-ltcl:tclHash.c 2
+2
+2 96 32 0 0
+Tcl_InitHashTable
+24 416 21282
+4 0 0
+2
+1 140 32 0 0
+Tcl_DeleteHashEntry
+24 160 485
+2
+1 180 32 0 0
+Tcl_DeleteHashTable
+24 416 21282
+2
+2 241 104 160 485
+Tcl_FirstHashEntry
+24 416 21282
+24 96 22764
+16
+0 246 24 160 485
+Tcl_FirstHashEntry
+2
+1 273 104 160 485
+Tcl_NextHashEntry
+24 96 22764
+16
+0 287 24 160 485
+Tcl_NextHashEntry
+2
+1 311 98 0 0
+Tcl_HashStats
+24 416 21282
+16
+0 359 18 0 0
+Tcl_HashStats
+512
+llib-ltcl:tclHistory.c 2
+2
+1 123 32 0 0
+Tcl_InitHistory
+24 96 2461
+2
+3 174 36 0 0
+Tcl_RecordAndEval
+24 96 2461
+18 0 0
+4 0 0
+16
+0 232 4 0 0
+Tcl_RecordAndEval
+2
+4 258 36 0 0
+Tcl_HistoryCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 509 4 0 0
+Tcl_HistoryCmd
+512
+llib-ltcl:tclParse.c 2
+2
+0 31 50 0 0
+tclTypeTable
+2
+2 135 34 0 0
+Tcl_Backslash
+18 0 0
+20 0 0
+16
+0 235 2 0 0
+Tcl_Backslash
+2
+6 281 36 0 0
+TclParseQuotes
+24 96 2461
+18 0 0
+4 0 0
+4 0 0
+82 0 0
+24 160 9122
+16
+0 358 4 0 0
+TclParseQuotes
+2
+5 398 36 0 0
+TclParseNestedCmd
+24 96 2461
+18 0 0
+4 0 0
+82 0 0
+24 160 9122
+16
+0 426 4 0 0
+TclParseNestedCmd
+2
+4 463 36 0 0
+TclParseBraces
+24 96 2461
+18 0 0
+82 0 0
+24 160 9122
+16
+0 537 4 0 0
+TclParseBraces
+2
+8 595 36 0 0
+TclParseWords
+24 96 2461
+18 0 0
+4 0 0
+4 0 0
+82 0 0
+20 0 0
+82 0 0
+24 160 9122
+16
+0 791 4 0 0
+TclParseWords
+2
+2 823 32 0 0
+TclExpandParseValue
+24 160 9122
+4 0 0
+2
+2 881 98 0 0
+TclWordEnd
+18 0 0
+4 0 0
+16
+0 955 18 0 0
+TclWordEnd
+2
+3 1078 98 0 0
+Tcl_ParseVar
+24 96 2461
+18 0 0
+82 0 0
+16
+0 1168 18 0 0
+Tcl_ParseVar
+512
+llib-ltcl:tclProc.c 2
+2
+4 55 36 0 0
+Tcl_ProcCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 157 4 0 0
+Tcl_ProcCmd
+2
+3 190 36 0 0
+TclGetFrame
+24 96 2461
+18 0 0
+88 576 541
+16
+0 245 4 0 0
+TclGetFrame
+2
+4 271 36 0 0
+Tcl_UplevelCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 329 4 0 0
+Tcl_UplevelCmd
+2
+2 354 104 96 16476
+TclFindProc
+24 3744 26008
+18 0 0
+16
+0 367 24 96 16476
+TclFindProc
+2
+1 390 104 96 16476
+TclIsProc
+24 96 18602
+16
+0 395 24 96 16476
+TclIsProc
+512
+llib-ltcl:tclUnixAZ.c 2
+2
+4 69 36 0 0
+Tcl_CdCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 97 4 0 0
+Tcl_CdCmd
+2
+4 123 36 0 0
+Tcl_CloseCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 169 4 0 0
+Tcl_CloseCmd
+2
+4 195 36 0 0
+Tcl_EofCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 212 4 0 0
+Tcl_EofCmd
+2
+4 238 36 0 0
+Tcl_ExecCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 308 4 0 0
+Tcl_ExecCmd
+2
+4 334 36 0 0
+Tcl_ExitCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 350 4 0 0
+Tcl_ExitCmd
+2
+4 376 36 0 0
+Tcl_FileCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 665 4 0 0
+Tcl_FileCmd
+2
+4 816 36 0 0
+Tcl_FlushCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 844 4 0 0
+Tcl_FlushCmd
+2
+4 870 36 0 0
+Tcl_GetsCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 944 4 0 0
+Tcl_GetsCmd
+2
+4 970 36 0 0
+Tcl_OpenCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 1119 4 0 0
+Tcl_OpenCmd
+2
+4 1145 36 0 0
+Tcl_PwdCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+512
+llib-ltcl:tclUnixAZ.c
+16
+0 1177 4 0 0
+Tcl_PwdCmd
+2
+4 1203 36 0 0
+Tcl_PutsCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 1242 4 0 0
+Tcl_PutsCmd
+2
+4 1268 36 0 0
+Tcl_ReadCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 1342 4 0 0
+Tcl_ReadCmd
+2
+4 1368 36 0 0
+Tcl_SeekCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 1410 4 0 0
+Tcl_SeekCmd
+2
+4 1436 36 0 0
+Tcl_SourceCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 1443 4 0 0
+Tcl_SourceCmd
+2
+4 1469 36 0 0
+Tcl_TellCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 1482 4 0 0
+Tcl_TellCmd
+2
+4 1508 36 0 0
+Tcl_TimeCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 1560 4 0 0
+Tcl_TimeCmd
+512
+llib-ltcl:tclUnixStr.c 2
+2
+0 45 98 0 0
+Tcl_ErrnoId
+16
+0 460 18 0 0
+Tcl_ErrnoId
+2
+1 483 98 0 0
+Tcl_SignalId
+4 0 0
+16
+0 592 18 0 0
+Tcl_SignalId
+2
+1 615 98 0 0
+Tcl_SignalMsg
+4 0 0
+16
+0 724 18 0 0
+Tcl_SignalMsg
+512
+llib-ltcl:tclUnixUtil.c 2
+2
+2 89 36 0 0
+Tcl_EvalFile
+24 96 2461
+18 0 0
+16
+0 148 4 0 0
+Tcl_EvalFile
+2
+0 172 36 0 0
+Tcl_Fork
+16
+0 222 4 0 0
+Tcl_Fork
+2
+3 254 36 0 0
+Tcl_WaitPids
+4 0 0
+20 0 0
+20 0 0
+16
+0 336 4 0 0
+Tcl_WaitPids
+2
+2 363 32 0 0
+Tcl_DetachPids
+4 0 0
+20 0 0
+2
+7 457 36 0 0
+Tcl_CreatePipeline
+24 96 2461
+4 0 0
+82 0 0
+84 0 0
+20 0 0
+20 0 0
+20 0 0
+16
+0 807 4 0 0
+Tcl_CreatePipeline
+2
+1 833 98 0 0
+Tcl_UnixError
+24 96 2461
+16
+0 840 18 0 0
+Tcl_UnixError
+2
+2 867 32 0 0
+TclMakeFileTable
+24 3744 26008
+4 0 0
+2
+3 962 36 0 0
+TclGetOpenFile
+24 96 2461
+18 0 0
+88 224 8633
+16
+0 1008 4 0 0
+TclGetOpenFile
+512
+llib-ltcl:tclUtil.c 2
+2
+0 52 18 0 0
+tclRegexpError
+2
+6 111 36 0 0
+TclFindElement
+24 96 2461
+18 0 0
+82 0 0
+82 0 0
+20 0 0
+20 0 0
+16
+0 273 4 0 0
+TclFindElement
+2
+3 301 32 0 0
+TclCopyAndCollapse
+4 0 0
+18 0 0
+18 0 0
+2
+4 359 36 0 0
+Tcl_SplitList
+24 96 2461
+18 0 0
+20 0 0
+338 0 0
+16
+0 412 4 0 0
+Tcl_SplitList
+2
+2 442 36 0 0
+Tcl_ScanElement
+18 0 0
+20 0 0
+16
+0 531 4 0 0
+Tcl_ScanElement
+2
+3 560 36 0 0
+Tcl_ConvertElement
+18 0 0
+18 0 0
+4 0 0
+16
+0 642 4 0 0
+Tcl_ConvertElement
+2
+2 669 98 0 0
+Tcl_Merge
+4 0 0
+82 0 0
+16
+0 713 18 0 0
+Tcl_Merge
+2
+2 738 98 0 0
+Tcl_Concat
+4 0 0
+82 0 0
+16
+0 784 18 0 0
+Tcl_Concat
+2
+2 810 36 0 0
+Tcl_StringMatch
+18 0 0
+18 0 0
+16
+0 915 4 0 0
+Tcl_StringMatch
+2
+3 943 32 0 0
+Tcl_SetResult
+24 96 2461
+18 0 0
+144 0 0
+2
+-2 1012 32 0 0
+Tcl_AppendResult
+24 96 2461
+18 0 0
+2
+3 1093 32 0 0
+Tcl_AppendElement
+24 96 2461
+18 0 0
+4 0 0
+2
+1 1214 32 0 0
+Tcl_ResetResult
+24 96 2461
+2
+-2 1258 32 0 0
+Tcl_SetErrorCode
+24 96 2461
+18 0 0
+2
+3 1313 36 0 0
+TclGetListIndex
+24 96 2461
+18 0 0
+20 0 0
+16
+0 1329 4 0 0
+TclGetListIndex
+2
+2 1360 104 768 15344
+TclCompileRegexp
+24 96 2461
+18 0 0
+16
+0 1420 24 768 15344
+TclCompileRegexp
+2
+1 1443 32 0 0
+regerror
+18 0 0
+512
+llib-ltcl:tclVar.c 2
+2
+3 85 98 0 0
+Tcl_GetVar
+24 96 2461
+18 0 0
+4 0 0
+16
+0 116 18 0 0
+Tcl_GetVar
+2
+4 152 98 0 0
+Tcl_GetVar2
+24 96 2461
+18 0 0
+18 0 0
+4 0 0
+16
+0 237 18 0 0
+Tcl_GetVar2
+2
+4 271 98 0 0
+Tcl_SetVar
+24 96 2461
+18 0 0
+18 0 0
+4 0 0
+16
+0 302 18 0 0
+Tcl_SetVar
+2
+5 341 98 0 0
+Tcl_SetVar2
+24 96 2461
+18 0 0
+18 0 0
+18 0 0
+4 0 0
+16
+0 501 18 0 0
+Tcl_SetVar2
+2
+3 532 36 0 0
+Tcl_UnsetVar
+24 96 2461
+18 0 0
+4 0 0
+16
+0 563 4 0 0
+Tcl_UnsetVar
+2
+4 594 36 0 0
+Tcl_UnsetVar2
+24 96 2461
+18 0 0
+18 0 0
+4 0 0
+16
+0 723 4 0 0
+Tcl_UnsetVar2
+2
+5 758 36 0 0
+Tcl_TraceVar
+24 96 2461
+18 0 0
+4 0 0
+402 0 0
+20 0 0
+16
+0 791 4 0 0
+Tcl_TraceVar
+2
+6 828 36 0 0
+Tcl_TraceVar2
+24 96 2461
+18 0 0
+18 0 0
+4 0 0
+402 0 0
+20 0 0
+16
+0 905 4 0 0
+Tcl_TraceVar2
+2
+5 936 32 0 0
+Tcl_UntraceVar
+24 96 2461
+18 0 0
+4 0 0
+402 0 0
+20 0 0
+2
+6 999 32 0 0
+Tcl_UntraceVar2
+24 96 2461
+18 0 0
+18 0 0
+4 0 0
+402 0 0
+20 0 0
+2
+5 1105 100 0 0
+Tcl_VarTraceInfo
+24 96 2461
+18 0 0
+4 0 0
+402 0 0
+20 0 0
+16
+0 1138 20 0 0
+Tcl_VarTraceInfo
+2
+6 1171 100 0 0
+Tcl_VarTraceInfo2
+24 96 2461
+18 0 0
+18 0 0
+4 0 0
+402 0 0
+20 0 0
+16
+0 1225 20 0 0
+Tcl_VarTraceInfo2
+2
+4 1251 36 0 0
+Tcl_SetCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 1275 4 0 0
+Tcl_SetCmd
+2
+4 1301 36 0 0
+Tcl_UnsetCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 1315 4 0 0
+Tcl_UnsetCmd
+2
+4 1341 36 0 0
+Tcl_AppendCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 1361 4 0 0
+Tcl_AppendCmd
+2
+4 1387 36 0 0
+Tcl_LappendCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 1407 4 0 0
+Tcl_LappendCmd
+2
+4 1433 36 0 0
+Tcl_ArrayCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 1633 4 0 0
+Tcl_ArrayCmd
+2
+4 1659 36 0 0
+Tcl_GlobalCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 1702 4 0 0
+Tcl_GlobalCmd
+2
+4 1728 36 0 0
+Tcl_UpvarCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 1804 4 0 0
+Tcl_UpvarCmd
+2
+2 1832 32 0 0
+TclDeleteVars
+24 3744 26008
+24 416 21282
+512
+llib-lmx:txWindow.c 2
+2
+8 209 36 0 0
+Tx_Make
+24 96 -32768
+24 10016 1308
+15 0 0
+24 480 -32768
+144 0 0
+144 0 0
+144 0 0
+20 0 0
+16
+0 469 4 0 0
+Tx_Make
+2
+2 509 32 0 0
+Tx_Output
+24 640 22124
+18 0 0
+2
+4 762 36 0 0
+Tx_Command
+24 10016 1308
+15 0 0
+18 0 0
+4 0 0
+16
+0 778 4 0 0
+Tx_Command
+2
+0 806 32 0 0
+Tx_Update
+2
+2 871 32 0 0
+TxMakePosExist
+24 0 7410
+8 64 -32768
+2
+2 1032 104 1920 8277
+TxGetMxWindow
+24 10016 1308
+15 0 0
+16
+0 1042 24 1920 8277
+TxGetMxWindow
+2
+1 1290 32 0 0
+Tx_WindowEventProc
+24 10016 1308
+2
+3 1323 36 0 0
+TxVt100Cmd
+24 1920 8277
+18 0 0
+4 0 0
+16
+0 1581 4 0 0
+TxVt100Cmd
+512
+llib-lmx:mxCmdNR.c 2
+2
+0 40 24 10016 1308
+mx_Display
+2
+4 69 36 0 0
+Mx_NewlineCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 93 4 0 0
+Mx_NewlineCmd
+2
+4 121 36 0 0
+Mx_OpenCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 443 4 0 0
+Mx_OpenCmd
+2
+4 470 36 0 0
+Mx_QuitCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 488 4 0 0
+Mx_QuitCmd
+2
+4 515 36 0 0
+Mx_QuoteCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 523 4 0 0
+Mx_QuoteCmd
+2
+4 549 36 0 0
+Mx_ReadCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 597 4 0 0
+Mx_ReadCmd
+2
+4 623 36 0 0
+Mx_ReplaceCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 782 4 0 0
+Mx_ReplaceCmd
+2
+4 808 36 0 0
+Mx_ResetCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 821 4 0 0
+Mx_ResetCmd
+512
+llib-lmx:regex.c
+512
+llib-lmx:regex.c 2
+2
+1 132 36 0 0
+re_set_syntax
+4 0 0
+16
+0 138 4 0 0
+re_set_syntax
+512
+llib-lmx:regex.c
+2
+3 195 98 0 0
+re_compile_pattern
+18 0 0
+4 0 0
+24 192 31849
+16
+0 665 18 0 0
+re_compile_pattern
+2
+1 711 32 0 0
+re_compile_fastmap
+24 192 31849
+2
+6 895 36 0 0
+re_search
+24 192 31849
+18 0 0
+4 0 0
+4 0 0
+4 0 0
+24 640 10807
+16
+0 898 4 0 0
+re_search
+2
+9 921 36 0 0
+re_search_2
+24 192 31849
+18 0 0
+4 0 0
+18 0 0
+4 0 0
+4 0 0
+4 0 0
+24 640 10807
+4 0 0
+16
+0 1010 4 0 0
+re_search_2
+2
+5 1019 36 0 0
+re_match
+24 192 31849
+18 0 0
+4 0 0
+4 0 0
+24 640 10807
+16
+0 1022 4 0 0
+re_match
+2
+0 1027 4 0 0
+re_max_failures
+2
+8 1054 36 0 0
+re_match_2
+24 192 31849
+28 0 0
+4 0 0
+28 0 0
+4 0 0
+4 0 0
+24 640 10807
+4 0 0
+16
+0 1555 4 0 0
+re_match_2
+512
+llib-lmx:mxHistory.c 2
+2
+4 57 36 0 0
+Mx_HistoryCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 138 4 0 0
+Mx_HistoryCmd
+2
+1 160 32 0 0
+MxHistoryInit
+24 1920 8277
+2
+1 188 32 0 0
+MxHistoryCleanup
+24 1920 8277
+2
+1 215 32 0 0
+MxHistoryOn
+24 1920 8277
+2
+1 246 32 0 0
+MxHistoryOff
+24 1920 8277
+2
+3 280 32 0 0
+MxHistoryNext
+24 1920 8277
+18 0 0
+4 0 0
+2
+2 311 32 0 0
+HistoryAdd
+24 1920 8277
+18 0 0
+2
+8 375 32 0 0
+HistoryProc
+24 1920 8277
+24 96 -32768
+4 0 0
+18 0 0
+148 0 0
+20 0 0
+4 0 0
+82 0 0
+512
+llib-lmx:mxIndent.c 2
+2
+2 45 36 0 0
+MxGetIndent
+24 0 7410
+4 0 0
+16
+0 64 4 0 0
+MxGetIndent
+2
+3 89 32 0 0
+MxSetIndent
+24 0 7410
+4 0 0
+4 0 0
+2
+2 161 32 0 0
+MxCleanIndent
+24 0 7410
+4 0 0
+512
+llib-lmx:mxUndo.c 2
+2
+3 205 104 0 24066
+Undo_LogCreate
+24 640 22124
+18 0 0
+18 0 0
+512
+llib-lmx:mxUndo.c
+16
+0 265 24 0 24066
+Undo_LogCreate
+2
+1 289 32 0 0
+Undo_LogDelete
+24 0 24066
+2
+1 327 32 0 0
+Undo_Mark
+24 0 24066
+2
+5 382 36 0 0
+Undo_FindLog
+18 0 0
+18 0 0
+18 0 0
+18 0 0
+24 96 -32768
+16
+0 533 4 0 0
+Undo_FindLog
+2
+2 562 32 0 0
+Undo_SetVersion
+24 0 24066
+18 0 0
+2
+3 630 36 0 0
+Undo_Last
+24 0 24066
+24 96 -32768
+24 1920 8277
+16
+0 639 4 0 0
+Undo_Last
+2
+3 674 36 0 0
+Undo_More
+24 0 24066
+24 96 -32768
+24 1920 8277
+16
+0 688 4 0 0
+Undo_More
+2
+3 717 36 0 0
+Undo_Recover
+24 0 7410
+18 0 0
+24 96 -32768
+16
+0 812 4 0 0
+Undo_Recover
+2
+7 849 32 0 0
+UndoSpyProc
+24 448 -32768
+24 0 7410
+4 0 0
+8 64 -32768
+8 64 -32768
+8 64 -32768
+18 0 0
+2
+3 1044 32 0 0
+BytesOut
+24 384 23058
+18 0 0
+4 0 0
+2
+2 1085 36 0 0
+BytesIn
+24 384 23058
+18 0 0
+16
+0 1106 4 0 0
+BytesIn
+2
+5 1145 36 0 0
+DoUndo
+24 448 -32768
+4 0 0
+20 0 0
+24 96 -32768
+24 1920 8277
+16
+0 1251 4 0 0
+DoUndo
+2
+1 1273 32 0 0
+FlushInserts
+24 448 -32768
+2
+1 1300 32 0 0
+CheckError
+24 448 -32768
+512
+llib-lmx:mxCmdAM.c 2
+2
+4 65 36 0 0
+Mx_BindCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 93 4 0 0
+Mx_BindCmd
+2
+3 101 36 0 0
+BindingProc
+20 0 0
+18 0 0
+18 0 0
+16
+0 119 4 0 0
+BindingProc
+2
+4 145 36 0 0
+Mx_CaretCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 181 4 0 0
+Mx_CaretCmd
+2
+4 207 36 0 0
+Mx_CleanCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 215 4 0 0
+Mx_CleanCmd
+2
+4 242 36 0 0
+Mx_ColumnCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 279 4 0 0
+Mx_ColumnCmd
+2
+4 306 36 0 0
+Mx_ControlCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 447 4 0 0
+Mx_ControlCmd
+2
+4 473 36 0 0
+Mx_DeleteCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 545 4 0 0
+Mx_DeleteCmd
+2
+4 571 36 0 0
+Mx_ExtractCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 650 4 0 0
+Mx_ExtractCmd
+2
+4 676 36 0 0
+Mx_FocusCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 737 4 0 0
+Mx_FocusCmd
+2
+4 763 36 0 0
+Mx_GeometryCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 834 4 0 0
+Mx_GeometryCmd
+2
+4 860 36 0 0
+Mx_IndentCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 910 4 0 0
+Mx_IndentCmd
+2
+4 936 36 0 0
+Mx_InsertCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 979 4 0 0
+Mx_InsertCmd
+2
+4 1005 36 0 0
+Mx_MarkCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 1236 4 0 0
+Mx_MarkCmd
+2
+4 1262 36 0 0
+Mx_MenuCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 1462 4 0 0
+Mx_MenuCmd
+2
+1 1471 98 0 0
+GetString
+18 0 0
+16
+0 1476 18 0 0
+GetString
+2
+2 1487 47 0 0
+GetColor
+24 10016 1308
+18 0 0
+16
+0 1510 15 0 0
+GetColor
+2
+4 1536 36 0 0
+Mx_MessageCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 1545 4 0 0
+Mx_MessageCmd
+512
+llib-lmx:mxCmdSZ.c 2
+2
+4 57 36 0 0
+Mx_SearchCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 163 4 0 0
+Mx_SearchCmd
+2
+4 189 36 0 0
+Mx_SeeCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 223 4 0 0
+Mx_SeeCmd
+2
+4 249 36 0 0
+Mx_SelectionCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 360 4 0 0
+Mx_SelectionCmd
+2
+4 386 36 0 0
+Mx_SendCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 410 4 0 0
+Mx_SendCmd
+2
+4 436 36 0 0
+Mx_SwitchCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 466 4 0 0
+Mx_SwitchCmd
+2
+4 492 36 0 0
+Mx_TaginfoCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 517 4 0 0
+Mx_TaginfoCmd
+2
+4 543 36 0 0
+Mx_UndoCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 559 4 0 0
+Mx_UndoCmd
+2
+4 586 36 0 0
+Mx_UpdateCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 595 4 0 0
+Mx_UpdateCmd
+2
+4 621 36 0 0
+Mx_WriteCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 723 4 0 0
+Mx_WriteCmd
+512
+llib-lmx:mxDisplay.c 2
+2
+1 113 32 0 0
+MxSetupRedisplay
+24 1920 8277
+2
+1 215 32 0 0
+MxCleanupRedisplay
+24 1920 8277
+2
+3 249 32 0 0
+MxScroll
+24 1920 8277
+7 0 0
+4 0 0
+2
+4 309 32 0 0
+MxGetInWindow
+24 1920 8277
+8 64 -32768
+4 0 0
+4 0 0
+2
+4 358 36 0 0
+MxFindPosition
+24 1920 8277
+4 0 0
+4 0 0
+24 64 -32768
+16
+0 373 4 0 0
+MxFindPosition
+2
+4 680 36 0 0
+MxMeasureChars
+24 1920 8277
+18 0 0
+4 0 0
+4 0 0
+16
+0 700 4 0 0
+MxMeasureChars
+2
+4 939 36 0 0
+MxCharToPoint
+24 1920 8277
+8 64 -32768
+20 0 0
+20 0 0
+16
+0 964 4 0 0
+MxCharToPoint
+2
+1 998 32 0 0
+MxUpdateWindow
+24 1920 8277
+2
+3 1267 32 0 0
+MxRedisplayRange
+24 1920 8277
+8 64 -32768
+8 64 -32768
+2
+5 1341 32 0 0
+MxRedisplayRegion
+24 1920 8277
+4 0 0
+4 0 0
+4 0 0
+4 0 0
+512
+llib-lmx:mxSelect.c 2
+2
+0 33 24 640 22124
+MxSelectedFile
+2
+0 35 24 288 24000
+MxSelection
+2
+3 65 32 0 0
+MxSelectionSet
+24 1920 8277
+8 64 -32768
+8 64 -32768
+2
+1 98 32 0 0
+MxSelectionClear
+24 1920 8277
+2
+3 255 36 0 0
+MxGetSelRange
+24 1920 8277
+24 64 -32768
+24 64 -32768
+16
+0 268 4 0 0
+MxGetSelRange
+512
+llib-lmx:mxWindow.c 2
+2
+0 74 4 0 0
+mx_FileCount
+2
+4 177 36 0 0
+Mx_Make
+24 10016 1308
+15 0 0
+24 480 -32768
+24 96 -32768
+16
+0 410 4 0 0
+Mx_Make
+2
+0 434 32 0 0
+Mx_Update
+2
+0 497 32 0 0
+Mx_Cleanup
+2
+2 532 104 1920 8277
+MxGetMxWindow
+24 10016 1308
+15 0 0
+16
+0 542 24 1920 8277
+MxGetMxWindow
+2
+2 571 36 0 0
+MxSwitchFile
+24 1920 8277
+18 0 0
+16
+0 620 4 0 0
+MxSwitchFile
+2
+1 647 36 0 0
+MxResetFile
+24 1920 8277
+16
+0 748 4 0 0
+MxResetFile
+512
+llib-lmx:mxEntry.c 2
+2
+1 62 32 0 0
+MxMakeCmdWindow
+24 1920 8277
+2
+1 179 32 0 0
+MxMakeSearchWindow
+24 1920 8277
+2
+1 243 32 0 0
+DestroySearchWindow
+24 1920 8277
+2
+2 402 32 0 0
+MxOutputMsg
+24 1920 8277
+18 0 0
+512
+llib-lmx:mxSearch.c 2
+2
+0 35 18 0 0
+regOldLine
+2
+6 74 36 0 0
+Mx_SearchPattern
+24 0 7410
+8 64 -32768
+8 64 -32768
+18 0 0
+24 64 -32768
+24 64 -32768
+16
+0 147 4 0 0
+Mx_SearchPattern
+2
+1 170 98 0 0
+Mx_CompileRegExp
+18 0 0
+16
+0 186 18 0 0
+Mx_CompileRegExp
+2
+5 223 36 0 0
+Mx_SearchRegExp
+24 0 7410
+8 64 -32768
+8 64 -32768
+24 64 -32768
+24 64 -32768
+16
+0 328 4 0 0
+Mx_SearchRegExp
+2
+5 365 32 0 0
+Mx_ReplaceRegExp
+24 1920 8277
+8 64 -32768
+8 64 -32768
+18 0 0
+24 64 -32768
+512
+llib-lmx:mxSearch.c
+2
+5 459 36 0 0
+Mx_SearchMask
+24 0 7410
+8 64 -32768
+8 64 -32768
+18 0 0
+24 64 -32768
+16
+0 502 4 0 0
+Mx_SearchMask
+2
+5 535 36 0 0
+Mx_SearchWord
+24 0 7410
+8 64 -32768
+18 0 0
+24 64 -32768
+24 64 -32768
+16
+0 569 4 0 0
+Mx_SearchWord
+2
+10 618 36 0 0
+Mx_SearchParen
+24 0 7410
+8 64 -32768
+8 64 -32768
+8 64 -32768
+82 0 0
+82 0 0
+24 64 -32768
+24 64 -32768
+24 64 -32768
+24 64 -32768
+16
+0 710 4 0 0
+Mx_SearchParen
+2
+6 746 36 0 0
+Mx_GetTag
+18 0 0
+18 0 0
+4 0 0
+82 0 0
+82 0 0
+24 96 -32768
+16
+0 884 4 0 0
+Mx_GetTag
+512
+llib-lmx:txCmdAZ.c 2
+2
+0 36 24 10016 1308
+tx_Display
+2
+4 65 32 0 0
+TxReplaceLines
+24 1920 8277
+4 0 0
+4 0 0
+4 0 0
+2
+4 115 36 0 0
+Tx_EscapeCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 136 4 0 0
+Tx_EscapeCmd
+2
+4 162 36 0 0
+Tx_InsertCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 178 4 0 0
+Tx_InsertCmd
+2
+4 206 36 0 0
+Tx_OpenCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 432 4 0 0
+Tx_OpenCmd
+2
+4 458 36 0 0
+Tx_OutputCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 467 4 0 0
+Tx_OutputCmd
+2
+4 494 36 0 0
+Tx_QuitCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 503 4 0 0
+Tx_QuitCmd
+2
+4 529 36 0 0
+Tx_SendCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 553 4 0 0
+Tx_SendCmd
+2
+4 580 36 0 0
+Tx_TitleCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 611 4 0 0
+Tx_TitleCmd
+2
+4 638 36 0 0
+Tx_UpdateCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 648 4 0 0
+Tx_UpdateCmd
+2
+4 674 36 0 0
+Tx_ViCmd
+24 1920 8277
+24 96 -32768
+4 0 0
+82 0 0
+16
+0 906 4 0 0
+Tx_ViCmd
+512
+llib-lmx:mxFile.c 2
+2
+0 36 8 64 -32768
+Mx_ZeroPosition
+2
+1 151 104 0 7410
+Mx_FileLoad
+18 0 0
+16
+0 261 24 0 7410
+Mx_FileLoad
+2
+1 289 32 0 0
+Mx_FileClose
+24 0 7410
+2
+3 336 36 0 0
+Mx_FileWrite
+24 0 7410
+18 0 0
+24 96 -32768
+16
+0 362 4 0 0
+Mx_FileWrite
+2
+3 391 98 0 0
+Mx_GetLine
+24 0 7410
+4 0 0
+20 0 0
+16
+0 403 18 0 0
+Mx_GetLine
+2
+3 433 40 64 -32768
+InsertBytes
+24 256 10758
+8 64 -32768
+18 0 0
+16
+0 526 8 64 -32768
+InsertBytes
+2
+3 552 32 0 0
+DeleteBytes
+24 256 10758
+8 64 -32768
+8 64 -32768
+2
+4 659 32 0 0
+Mx_ReplaceBytes
+24 0 7410
+8 64 -32768
+8 64 -32768
+18 0 0
+2
+4 793 104 0 22294
+Mx_SpyCreate
+24 0 7410
+4 0 0
+144 0 0
+20 0 0
+16
+0 819 24 0 22294
+Mx_SpyCreate
+2
+1 843 32 0 0
+Mx_SpyDelete
+24 0 22294
+2
+1 880 40 64 -32768
+Mx_EndOfFile
+24 0 7410
+16
+0 887 8 64 -32768
+Mx_EndOfFile
+2
+3 922 104 0 11537
+Mx_FloaterCreate
+24 0 7410
+24 64 -32768
+24 64 -32768
+16
+0 933 24 0 11537
+Mx_FloaterCreate
+2
+1 956 32 0 0
+Mx_FloaterDelete
+24 0 11537
+2
+3 1003 40 64 -32768
+Mx_Offset
+24 0 7410
+8 64 -32768
+4 0 0
+16
+0 1056 8 64 -32768
+Mx_Offset
+2
+1 1079 36 0 0
+Mx_FileModified
+24 0 7410
+16
+0 1085 4 0 0
+Mx_FileModified
+2
+1 1108 32 0 0
+Mx_MarkClean
+24 0 7410
+2
+2 1135 104 128 13846
+GetLinePtr
+24 256 10758
+4 0 0
+16
+0 1166 24 128 13846
+GetLinePtr
+2
+4 1194 32 0 0
+FloaterUpdate
+24 256 10758
+8 64 -32768
+8 64 -32768
+8 64 -32768
+512
+llib-lmx:txSprite.c 2
+2
+0 82 4 0 0
+tx_TypescriptCount
+2
+0 100 18 0 0
+tcFormat
+2
+0 101 18 0 0
+tc1
+2
+0 102 18 0 0
+tc2
+2
+0 103 18 0 0
+tc3
+2
+0 104 18 0 0
+tc4
+2
+0 105 18 0 0
+tc5
+2
+0 106 18 0 0
+tc6
+2
+0 107 18 0 0
+tc7
+2
+0 108 18 0 0
+tc8
+2
+5 156 36 0 0
+Tx_SetupAndFork
+24 96 -32768
+24 10016 1308
+15 0 0
+24 480 -32768
+82 0 0
+16
+0 306 4 0 0
+Tx_SetupAndFork
+512
+llib-lmx:mxCmdUtils.c 2
+2
+0 41 114 0 0
+mxOpenParens
+2
+0 42 114 0 0
+mxCloseParens
+2
+0 48 50 0 0
+mxWordMask
+2
+2 87 36 0 0
+MxCheckWritten
+24 1920 8277
+4 0 0
+16
+0 138 4 0 0
+MxCheckWritten
+2
+2 162 32 0 0
+MxKeyProc
+24 1920 8277
+24 480 -32768
+2
+4 271 32 0 0
+MxMakeMenu
+24 1920 8277
+18 0 0
+4 0 0
+24 192 30549
+2
+1 305 32 0 0
+MxMenuProc
+24 64 22544
+2
+3 359 36 0 0
+MxGetMark
+24 1920 8277
+18 0 0
+24 64 -32768
+16
+0 440 4 0 0
+MxGetMark
+2
+3 466 32 0 0
+MxCvtToPrintable
+18 0 0
+4 0 0
+18 0 0
+2
+2 572 32 0 0
+MxMarkParens
+24 640 22124
+8 64 -32768
+2
+2 620 32 0 0
+MxFocusProc
+24 1920 8277
+4 0 0
+2
+2 651 32 0 0
+MxMouseProc
+24 1920 8277
+24 480 -32768
+2
+8 972 47 0 0
+MxCreateWindow
+24 10016 1308
+18 0 0
+24 640 -32768
+4 0 0
+15 0 0
+15 0 0
+20 0 0
+20 0 0
+16
+0 1013 15 0 0
+MxCreateWindow
+2
+5 1045 32 0 0
+MxSetWMHints
+24 1920 8277
+18 0 0
+15 0 0
+4 0 0
+4 0 0
+2
+3 1152 36 0 0
+CollapseProc
+24 10016 1308
+24 480 -32768
+24 480 -32768
+16
+0 1177 4 0 0
+CollapseProc
+2
+2 1203 36 0 0
+MxDoCmd
+24 1920 8277
+18 0 0
+16
+0 1239 4 0 0
+MxDoCmd
+2
+1 1263 37 0 0
+MxLastMod
+18 0 0
+16
+0 1272 5 0 0
+MxLastMod
+2
+6 1304 32 0 0
+MxGetColor
+24 10016 1308
+18 0 0
+18 0 0
+18 0 0
+4 0 0
+31 0 0
+512
+llib-lmx:mxHighlight.c 2
+2
+0 42 15 0 0
+caret
+2
+0 43 15 0 0
+caretMask
+2
+4 77 104 288 24000
+MxHighlightCreate
+24 1920 8277
+8 64 -32768
+8 64 -32768
+4 0 0
+16
+0 100 24 288 24000
+MxHighlightCreate
+2
+1 123 32 0 0
+MxHighlightDelete
+24 288 24000
+2
+3 187 32 0 0
+MxHighlightGetRange
+24 288 24000
+24 64 -32768
+24 64 -32768
+2
+3 216 32 0 0
+MxHighlightSetRange
+24 288 24000
+8 64 -32768
+8 64 -32768
+2
+8 286 32 0 0
+DrawHighlight
+24 1920 8277
+18 0 0
+4 0 0
+4 0 0
+4 0 0
+4 0 0
+4 0 0
+4 0 0
+2
+6 449 32 0 0
+MxDisplayHighlights
+24 1920 8277
+8 64 -32768
+4 0 0
+4 0 0
+4 0 0
+18 0 0
+2
+3 532 32 0 0
+MxCaretSetPosition
+24 1920 8277
+8 64 -32768
+4 0 0
+2
+1 582 32 0 0
+MxCaretRedisplayText
+24 640 22124
+2
+1 620 32 0 0
+MxDisplayCaret
+24 1920 8277
+512
+llib-lmx:mxHighlight.c

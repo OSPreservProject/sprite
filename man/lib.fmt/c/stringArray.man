@@ -1,0 +1,68 @@
+
+
+
+String                C Library Procedures                 String
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     String_SaveArray, String_FreeArray - copy and destroy  null-
+     terminated string array
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<sspprriitteeSSttrriinngg..hh>>
+
+     char **
+     SSttrriinngg__SSaavveeAArrrraayy(_s_t_r_i_n_g_s_P_t_r)
+
+     char **
+     SSttrriinngg__FFrreeeeAArrrraayy(_s_t_r_i_n_g_s_P_t_r)
+
+AARRGGUUMMEENNTTSS
+     char   **_s_t_r_i_n_g_s_P_t_r   (in)      Pointer to a null-terminated
+                                     array of string pointers.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     These routines create and destroy null-terminated arrays  of
+     strings.   They  are  useful  for  making copies of the aarrggvv
+     argument array or of a host  alias  list.   SSttrriinngg__SSaavveeAArrrraayy
+     creates  new  copies  of  the  strings  and  of the array of
+     pointers.  SSttrriinngg__FFrreeeeAArrrraayy frees the strings and the array.
+     It  returns  a  nil  pointer that can be used to nil out the
+     given _s_t_r_i_n_g_s_P_t_r.
+
+
+KKEEYYWWOORRDDSS
+     string, copy
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  May 31, 1991                     1
+
+
+

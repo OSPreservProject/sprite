@@ -1,0 +1,68 @@
+
+
+
+RECOVINFO                 User Commands                 RECOVINFO
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     recovinfo - Print out statistics about the  potential  state
+     of recovery
+
+SSYYNNOOPPSSIISS
+     rreeccoovviinnffoo  -[_o_p_t_i_o_n_s]
+
+OOPPTTIIOONNSS
+     --vveerrbboossee      Print out all available information.
+
+     --ffiilleeIIDD       Include the unique file ID's  in  the  printed
+                   information.
+
+     --ssttrreeaammIInnffoo   Include information about streams  along  with
+                   the I/O handle information.
+
+     --ffiilleess        Print information only about objects  of  type
+                   local or remote file.
+
+     --aallll          Include information  about  I/O  handles  that
+                   wouldn't be recovered.
+
+     --nnaammeess        Print the names, reference  counts  and  cache
+                   information of the objects.
+
+     --sseerrvveerr _s_e_r_v_e_r_N_a_m_e
+                   Only include information  about  recovery  for
+                   objects on this server.
+
+_________________________________________________________________
+
+IINNTTRROODDUUCCTTIIOONN
+     This command prints  out  information  about  what  I/O  and
+     stream  handles  would  need  to  be  recovered if access to
+     servers were interrupted.  Without any  arguments,  it  just
+     prints  a  summary  of  information, including the number of
+     file I/O handles that would need to be recovered, the number
+     of files with no associated stream, the number of files with
+     no stream and no cache blocks, the number of files  with  no
+     stream  and  no dirty blocks, the number of files with dirty
+     blocks, and the total number of handles that would  need  to
+     be recovered at this time.  This summary information is use-
+     ful for  determining  where  we  can  discard  work  in  our
+     recovery system.
+
+KKEEYYWWOORRDDSS
+     recovery, handles
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  January 11, 1990                   1
+
+
+

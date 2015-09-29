@@ -1,0 +1,136 @@
+adduser
+adduser, 
+Create a user account
+user, account, 
+boot
+boot, 
+Description of Sprite boot options and behavior 
+boot, bootcmds, diskcmds, rootcmds, 
+checkIPServer
+checkIPServer, 
+make sure IP server is running
+IP server, 
+dailydump
+dailydump, 
+Script to do daily dumps
+dump, tape, backup, 
+deleteuser
+deleteuser, 
+Delete Sprite user accounts
+user, account, 
+diskwarn
+diskwarn, 
+send mail if a disk partition gets low on space
+disk, mail, free space, utilization, 
+dump
+dump, 
+A program that dumps directories
+dump, restore, tape, backup, tar, 
+dumpsize
+dumpsize, 
+Calculate size of dumps on a tape
+dump, tape, backup, restore, 
+exabyteStat
+exabyteStat, 
+Determine how much space left on exabyte tape
+dump, tape, backup, 
+fsattach
+fsattach, 
+Check disks and export prefixes 
+fsattach, fscheck, prefix, mount, disk, partition, crash, attach, boot , 
+fsindex
+fsindex, 
+Print the block index map for a file.
+block layout, disk, file, 
+fsmake
+fsmake, 
+Create a file system on a disk partition.
+filesystem, 
+fsmakeprompt
+fsmakeprompt, 
+Interactive front-end for \fBfsmake\fR.
+filesystem, disk, fsmake, 
+fsmount
+fsmount, 
+Check disks and export prefixes 
+fsmount, fscheck, prefix, fsinfo, fsdomain, mount, disk, partition, crash, attach, boot , 
+initdailydump
+initdailydump, 
+Script to initialize daily dumps
+dump, tape, backup, 
+installboot
+installboot, 
+Installs boot program on disk.
+boot, a.out , 
+jaquithDaily
+jaquithDaily, 
+Do daily Sprite dump to Jaquith server
+jaquith archive daily, 
+lfscheck
+lfscheck, 
+Check lfs disk for problems.
+lfs, disk, check, 
+lfschkpt
+lfschkpt, 
+Display or modify the checkpoint fields of an LFS file system.
+filesystem, LFS, sprite, 
+lfsquickcheck
+lfsquickcheck, 
+Quickly check lfs disk for problems.
+lfs, disk, check, 
+lfsrebuild
+lfsrebuild, 
+Rebuild a lfs file system.
+lfs, disk, check, rebuild, 
+lfsrecov
+lfsrecov, 
+Roll lfs disk forward after a crash.
+lfs, disk, recovery, 
+lfsstats
+lfsstats, 
+Display the statistics counters stored in an LFS file system.
+filesystem, LFS, sprite, 
+makeboot
+makeboot, 
+Strips a.out header off of bootstrap program
+boot, a.out , 
+mklfs
+mklfs, 
+Create an empty LFS file system on a disk partition.
+filesystem, LFS, sprite, 
+nullfile
+nullfile, 
+Create a file full of null characters.
+file, 
+restartIPServer
+restartIPServer, 
+restart IP server and dependent daemons
+IP server, 
+restore
+restore, 
+Restore a file, or set of files from a dump archive.
+dump, restore, tape, backup, tar, 
+rmold
+rmold, 
+Delete old files
+access, delete, modified, old, 
+rpcinfo
+rpcinfo, 
+report RPC information
+
+showlfssegment
+showlfssegment, 
+Show contents of a LFS segment.
+lfs, disk, segment, 
+traceroute
+traceroute, 
+print the route packets take to network host
+
+updatebootcmds
+updatebootcmds, 
+Keep /boot/cmds updated.
+boot, 
+weeklydump
+weeklydump, 
+Script to do weekly fully dumps
+dump, tape, backup, 

@@ -1,0 +1,68 @@
+
+
+
+MIGCOM                    User Commands                    MIGCOM
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     migcom - Back-end for Matchmaker Interface Generator
+
+SSYYNNOOPPSSIISS
+     mmiiggccoomm _s_t_u_f_f
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     MMiiggccoomm is the back-end for the MIG RPC stub generator.   See
+     the man page for mmiigg for further details.
+
+
+KKEEYYWWOORRDDSS
+     RPC, mig
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  April 9, 1992                    1
+
+
+

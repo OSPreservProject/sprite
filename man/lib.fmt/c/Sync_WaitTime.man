@@ -1,0 +1,68 @@
+
+
+
+Sync_WaitTime         C Library Procedures          Sync_WaitTime
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Sync_WaitTime - sleep for a specified amount of time
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttiimmee..hh>>
+     Boolean
+     SSyynncc__WWaaiittTTiimmee(_t_i_m_e)
+
+AARRGGUUMMEENNTTSS
+     Time      _t_i_m_e           (in)      The  amount  of  time  to
+                                        sleep.
+
+_________________________________________________________________
+
+DDEESSCCRRIIPPTTIIOONN
+     SSyynncc__WWaaiittTTiimmee causes the process to sleep  for  a  specified
+     amount of time.  The call will return FALSE when the process
+     is woken up because the time expired.  The call returns TRUE
+     if  the  process  was  woken  up  prematurely because of the
+     arrival of a signal.
+
+SSEEEE AALLSSOO
+     Sync
+
+KKEEYYWWOORRDDSS
+     wait, block, process, wakeup
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  April 7, 1989                    1
+
+
+

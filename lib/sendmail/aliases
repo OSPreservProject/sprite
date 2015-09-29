@@ -1,0 +1,387 @@
+#
+# Sprite mail alias file
+#
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# !!! THIS FILE IS UNDER RCS REVISION CONTROL                           !!!
+# !!! PLEASE: CHECK THIS FILE OUT, DO YOUR CHANGES AND CHECK IT BACK IN !!!
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#
+
+allmsgs:allmsgs@ucbvax.Berkeley.EDU
+csmsgs:csmsgs@ucbvax.Berkeley.EDU
+#decode: "|/usr/bin/uudecode"  see bks
+dumper: :include:/sprite/admin/dump/dumpalias
+operator:operator@sequoia.Berkeley.EDU
+peterv:peterv@ginger.CS.Berkeley.EDU
+root:spriters,bmiller
+admin:bmiller
+msgs: msgs@ginger
+sys: sys@ginger.CS.Berkeley.EDU
+nobody: /dev/null
+sklower:sklower@renoir.Berkeley.EDU
+postmaster: root
+mailer-daemon: postmaster
+daemon:root
+#
+# SPUR project mailing lists (mostly forwarded to ginger)
+#
+spur-retro: spur-retro@ginger
+#
+spur:	spur@ginger
+# SPUR Staff
+spur-staff: spur-staff@ginger
+# SPUR Hardware list
+# spur-h-folder@ucbarpa: /h/spur/spur-h-messages
+spur-h: spur-h@ginger
+spur-chip: spur-chip@ginger
+# SPUR Diagnostics Group
+spur-d: spur-d@ginger
+# SPUR Board lunch group
+spur-lunch: spur-lunch@ginger
+# SPUR simulator users
+spur-sim: spur-sim@ginger
+# SPUR Software list
+spur-s:	spur-s@ginger
+# SPUR operating system ("Sprite") list
+# sprite-log is a way to mail directly to the log without copying humans.
+spur-os:   sprite
+bugs:      spriters, sprite-log, margo@postgres
+sprite:    spriters, sprite-log
+spriters:  ouster, arc, douglis, deboor, mendel, mgbaker,
+	jhh, shirriff, eklee, pmchen-spritefolder, bmiller, theresa@ginger,
+	elm, kupfer, mottsmth, dlong, voelker, mani, secor
+# sprite-fans is for followers of sprite who don't care about programs and
+# such, but want to hear about TRs and other worthy news.
+sprite-fans: all-sprite-users, vijay@mica, kevin@mimsy.umd.edu, 
+	paris@sun1.cs.uh.edu, lauer@btc.kodak.com, raphael@ms.uky.edu,
+	theimer.pa@Xerox.COM, amnon@shum.huji.ac.il, zorn@ginger,
+	steve@umiacs.umd.edu, pat@orac.pgh.pa.us, welch@parc.xerox.com,
+	jtv@santra.hut.fi, iwamoto@cavax3.cis.canon.co.jp, 
+	swansonc@acc.stolaf.edu, kcs@cc.purdue.edu,
+	ryan@berlin-gw.diag.stratus.com,
+	Pierre-Louis.Neumann@inria.fr, shsieh@aerospace.aero.org
+
+# separate sprite-users into frequent and casual users.
+all-sprite-users: sprite-users, pattrsn, hilfingr, fwo, david, 
+	rafael, af, jamin, randi, fixen,
+        funk, sonia, chou, dougj, drewes, 
+	postgres-sprite-users@postgres, sahay,
+	sprite-ucsc, sprite-cory, sprite-parc
+
+sprite-users: sprite, sah, pfile, rquiros, bedk, lucco, klier, kyi, asah,
+	ghan, aresho, tea, wchen, atctemp,
+	ramon, dahlin, kkeeton, bmah, sahai, secor,
+	olson, colinp,
+	jolly, tester, diane, rywang,
+	gibbens, paxson, asplos, isca, voelker, smoot,
+	juels, clarsen, staelin,
+	forrest, deprit, asami,
+	gunter, vahdat, mani, dan, torek, gibson,
+	msilva, rohit, bks, joel, tonys, strange, ddgarcia,
+	dc, bertrand, dekai, hzhang, asw,
+	wallack, sethg, wallack, mib, negri, 
+	anvari, doong, andre, dfb, flb,
+	krste, hohmeyer, tockey, kriguer, chou,
+	stolcke, alc, randy, bmiller, culler, johnw, dedood,    
+	elm, fubar, schauser, glass, vojin, chiueh, ss, dlong,
+	tea@jericho, tve, hubertc
+
+all-sprite-users-request: sprite-users-request
+sprite-users-request: spriters
+owner-all-sprite-users: owner-sprite-users
+owner-sprite-users: spriters
+
+sprite-log: "|/users/sprite/cmds.gen/logger sprite log 'Sprite Log'"
+sprite-log-notification: nobody
+sprite-log-test: "|/users/sprite/cmds.gen/logger.test sprite log-test 'Sprite Log'"
+sprite-log-test-notification: nobody
+owner-sprite-log: jhh
+
+# old alias
+sprite-secretary: sprite-request
+
+sprite-request: bmiller
+sprite-ucsc: darrell, gunjan, noshpitz, jeffk, golding
+sprite-cory: lutz 
+sprite-parc: welch@parc.xerox.com
+
+# just for ds3100 owners
+ds3100-owners: culler,elm,eklee,tve,jhh,pmchen,randy,ouster,shirriff,alc,bmiller,pattrsn,douglis,vojin,mottsmth
+# just for sun4 owners
+sun4-owners: mgbaker, tve, jhh, mendel, eklee, elm, dedood,
+	sahay, ouster, kupfer
+
+# kernel hackers
+kernel-hackers: spriters, sullivan, alc
+#
+# SPUR instruction set list
+# spur-is-folder@ucbarpa: /h/spur/spur-is-messages
+# spur-is-folder: spur-is-folder@ucbarpa
+spur-is: larus, zorn, taylor, hilfingr, jkf, luigi, samples
+#
+# SPUR N2 users and problem log
+# spur-n2-folder@ucbarpa: /h/spur/spur-n2-messages
+# spur-n2-folder: spur-n2-folder@ucbarpa.Berkeley.EDU
+spur-n2: hansen, david, kong, eggers
+# SPUR hangers on.  For the moment, here to debug mailing list.
+spur-extra:sklower,mayo,fwo,gedye
+# Sprite emacs users
+sprite-emacs-users: douglis, luigi, alc, culler, schauser, elm,
+	kupfer, mottsmth, sethg, rab, gunter
+sprite-emacs-users-request: kupfer
+owner-sprite-emacs-users: kupfer
+# Gnu C++ users
+g++-users: msilva, tve, hohmeyer, eklee, rab
+#
+# XPRS aliases
+xprs-profs: xprs-profs@ginger
+raid-folder: /raid/mail/hw-folder
+xprs-hw: raid
+raid: randy, pattrsn@ginger, pmchen, gibson@ginger, lutz, eklee, theresa@ginger,
+	bmiller, mendel, alc, elm, drewes@ginger, margo@postgres,
+	raid-folder, chiueh, ss, jhh, pfile, shirriff, joel, mani,
+	vahdat, tea@jericho
+xprs-db: xprs-db@ginger
+xprs-os: xprs-os@ginger
+xprs-other: xprs-other@ginger
+xprs: xprs@ginger
+#
+# SPUR personal aliases
+pattrsn:pattrsn@ginger.CS.Berkeley.EDU
+ousterhout:ouster
+ouster:\ouster, ouster-log@ginger.CS.Berkeley.EDU
+eklee:eklee@ginger.CS.Berkeley.EDU
+elm:elm@ginger.CS.Berkeley.EDU
+eggers:eggers@ginger.CS.Berkeley.EDU
+gibson-local:\gibson
+gibson:gibson-local, gibson@ginger.CS.Berkeley.EDU
+pmchen-spritefolder:/users/pmchen/tmp/spritembox
+garth:gibson
+brent:welch@parc.xerox.com
+welch:welch@parc.xerox.com
+owner-bmiller: \bmiller
+pmchen:pmchen-local@ginger.CS.Berkeley.EDU, pmchen-local
+pmchen-local: \pmchen
+owner-douglis-local: \douglis
+owner-douglis: \douglis
+douglis-local: \douglis
+douglis: douglis@mitl.com
+mayo:mayo@ginger.CS.Berkeley.EDU
+mlgray:mgbaker
+#andrew:andrew@ginger.CS.Berkeley.EDU
+zorn:zorn@ginger.CS.Berkeley.EDU
+markhill:markhill@ginger.CS.Berkeley.EDU
+hill:markhill@ginger.CS.Berkeley.EDU
+larus:larus@ginger.CS.Berkeley.EDU
+david:david@ginger.CS.Berkeley.EDU
+gedye:gedye@ginger.CS.Berkeley.EDU
+deboor:adam%bsw.uucp@uunet.uu.net
+wood:david
+lutz:lutz@zworykin.Berkeley.EDU
+jhartman:jhh
+baker:mgbaker
+ethan:elm
+shiriff:shirriff
+shirrif:shirriff
+sheriff:shirriff
+sherriff:shirriff
+# mail to platinum is bouncing, let ginger queue it!
+dougj:dougj@ginger.CS.Berkeley.EDU
+johnson:dougj
+hilfingr:hilfingr@ginger.CS.Berkeley.EDU
+bk:bk@ginger.CS.Berkeley.EDU
+wookkoh:wookkoh@ginger.CS.Berkeley.EDU
+luigi:luigi@ginger.CS.Berkeley.EDU
+taxlaw:taxlaw@ginger.CS.Berkeley.EDU
+ho:ho@ginger.CS.Berkeley.EDU
+bennett:bennett@ginger.CS.Berkeley.EDU
+kong:kong@ginger.CS.Berkeley.EDU
+cori:cori@ginger.CS.Berkeley.EDU
+gaetano:gaetano@ginger.CS.Berkeley.EDU
+fwo:fwo@ginger.CS.Berkeley.EDU
+chang:chang@ginger.CS.Berkeley.EDU
+taylor:taylor@ginger.CS.Berkeley.EDU
+hartman:jhh
+daebum:daebum@ginger.CS.Berkeley.EDU
+betten:betten@ginger.CS.Berkeley.EDU
+castillo:castillo@ginger.CS.Berkeley.EDU
+vanroy:vanroy@ginger.CS.Berkeley.EDU
+carlton:carlton@ginger.CS.Berkeley.EDU
+lacy:lacy@ginger.CS.Berkeley.EDU
+magic:magic@ginger.CS.Berkeley.EDU
+cad:cad@ginger.CS.Berkeley.EDU
+guest:guest@ginger.CS.Berkeley.EDU
+kupfer:\kupfer,kupfer@eng.sun.com
+# the unconverted masses
+dkjeong:dkjeong@kilby.Berkeley.EDU
+jensen:jensen@ginger.CS.Berkeley.EDU
+hu:hu@ernie.Berkeley.EDU
+hansen:hansen@ucbarpa.Berkeley.EDU
+glenn:glenn@ernie.Berkeley.EDU
+sharad:sharad@ucbarpa.Berkeley.EDU
+richd:richd@ucbarpa.Berkeley.EDU
+jkf:jkf@franz.uucp
+samples:samples@cs.Berkeley.EDU
+baden:baden@ucbarpa.Berkeley.EDU
+sechrest:sechrest@eecs.umich.edu
+gusella:gusella@cs.Berkeley.EDU
+kathya:kathya@volta.Berkeley.EDU
+mottsmith:mottsmth
+mott-smith:mottsmth
+flaster:thshadow@athena.mit.edu
+tve:tve@ginger.cs.berkeley.edu
+jclee:jclee@next.com
+#
+# other aliases
+#
+theresa:theresa@ginger.CS.Berkeley.EDU
+deirdre:deirdre@janus.Berkeley.EDU
+# Patterson guest - see gibson
+ns:ns@ginger.CS.Berkeley.EDU
+eugene:eugene@ginger.CS.Berkeley.EDU
+
+dacosta:dacosta@janus.Berkeley.EDU
+smith:smith@cs.Berkeley.EDU
+
+# csgrad-social mailing list (Maintained by elm@sprite)
+# NOTE: the list was split because it was getting too big (over 1000
+# characters seems to be a problem).
+csgrad-social: csgrad-social-1,csgrad-social-2
+csgrad-social-request: elm@sprite
+owner-csgrad-social: elm@sprite
+csgrad-social-1: :include:/users/elm/Mail/lists/csgrad-social.1
+csgrad-social-2: :include:/users/elm/Mail/lists/csgrad-social.2
+
+# flag football mailing list (Maintained by elm@sprite)
+flag-football: :include:/users/elm/Mail/lists/flag-football-list
+flag-football-request: elm@sprite
+# softball mailing list (maintained by jhh@sprite)
+softball: :include:/users/jhh/Mail/lists/softball
+softball-request: jhh@sprite
+
+# cs150 tas (Fall 1990)
+cs150tas: wayne@bandit, hsheng@ic, hgkim@ernie, hoch@sim, paola@cory,
+	link@cory, flb@cory, vincze@janus, randy@sprite, tang@ocf
+
+
+# CS252 class aliases (Spring 1991), maintained by Schauser
+cs252: :include:/pcs/c252/class.email 
+
+# CS254 class aliases (Spring 1991), maintained by Bertrand
+cs254: :include:/users/bertrand/.cs254.aliases
+
+# CS298-7 class aliases (Spring 1991), maintained by Sethg
+plg: cs298-7
+cs298-7: :include:/users/sethg/.plg.alias
+
+#
+# CS298-15 Parallel Computer Architecture Seminar (FL 1990)
+# Maintained by schauser@sprite
+#
+#pararch: :include:/users/schauser/pararch.alias
+
+#
+# OS lunch run by Tom Anderson (tea@jericho)
+# List currently maintained by elm@sprite
+#
+oslunch-request: tea@cs, elm@cs
+oslunch: arvindk@cs, rywang@cs, markb@cs, ghorm@cs, kkeeton@cs,
+	piaw@centralsparc, jtkohl@cs, mottsmth@cs, mao@cs, 
+	eklee@cs, margo@cs, jhh@cs, hartzog@cory, mgbaker@cs,
+	ouster@cs, tea@cs, chiueh@cs, sullivan@cs, 
+	bostic@cs, harry@cs, elm@cs, ramon@cs, glass@cs,
+	dfb@cs, paxson@cs
+#
+# Sequoia hardware group (maintained by elm@sprite)
+#
+
+s2k-hw: alc@cs,dahlin@cs,elm@cs,joel@cs,kkeeton@cory,paxson@cs,randy@cs,
+	pattrsn@cs,ss@cs
+
+#
+# NTU-252 Long-distance 252 :-)
+# Maintained by schauser@sprite
+#
+ntu: :include:/users/schauser/ntu.email
+
+#
+# Mike's basketball list
+# Maintained by flaster@sprite
+# Now maintained by pfile@sprite (8/5/91)
+# Now maintained by ajay@cs (9/1/92)
+#
+basketball: basketball@miro
+basketball-request: ajay@cs
+
+#
+# Ted's volleyball & nfl lists
+# Maintained by kyi@sprite
+#
+volleyball: :include:/users/kyi/mail/volleyball.alias
+nfl: :include:/users/kyi/mail/nfl.alias
+
+#
+# Frameusers Mailing list 
+# Maintained by ss@ginger
+#
+frame-users: :include:/users/ss/Mail/frame.alias
+
+#
+# Parallel Computing Systems group aliases (maintained by tve@sprite)
+#
+tic-group:	tic-group@ginger
+tic-log:	pcs-log
+tic-bugs:	tic-bugs@ginger
+tic:		tic@ginger
+btm-group:	johnw, tve, bedk, krste, bertrand, dedood, schauser
+btm:		pcs-log, btm-group
+pcs-group:	tic-group, btm-group
+pcs:		pcs-log, pcs-group
+id-bugs:	id-bugs@ginger
+id-io:		id-io@ginger
+#	Logging program
+pcs-log:	"|/pcs/log/logger pcs log 'PCS Log'"
+pcs-log-notification: tve@ginger
+owner-pcs-log: tve@ginger
+
+#
+# Tcl mailing list (maintained by ouster@sprite)
+#
+tcl: comp-lang-tcl@ucbvax.berkeley.edu
+tcl-from-news: :include:/users/ouster/misc/tcl.alias
+tcl-admin: ouster
+tcl-request: ouster
+
+#
+# Mailing list for Grace Murray Hopper Award Committee
+# (maintained by ouster@sprite)
+#
+gmh: gls@think.com, redell@src.dec.com, danny@think.com,
+	frantz@dssdev.enet.dec.com, ouster
+
+#
+# Perl users mailing list maintained by jhh@sprite.
+#
+perl: :include:/users/jhh/Mail/lists/perl
+
+#
+# ICON-92 programm committee members.
+#
+no: mgbaker, margo@postgres
+
+#
+# Aliases for CS 60b Spring 1992, maintained by ouster@sprite
+#
+60btas: cihula@cory, zeina@cory, joel@ginger, srinivas@euler, secan@cory,
+	ouster
+60breaders: yua@cory, c164-hr@ara, c162-ay@danube, ronald@cory,
+	labb-1ac@web, c164-hs@ara, secan@cory, ouster
+
+#
+# Alias for tertiary storage group
+# Maintained by elm@cs
+#
+tertiary: elm@cs, dahlin@cs, joel@cs, alc@cs, rywang@cs, patterson@cs, tea@cs,
+	randy@cs, stonebraker@cs, lutz@cs, lubbers@postgres, forrest@postgres,
+	pmchen@cs
+tertiary-owner: elm@cs

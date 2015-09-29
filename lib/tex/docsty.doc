@@ -1,0 +1,7 @@
+Attached is DOCSTY.C (augh! a TeX program in C???), a
+program for converting .DOC files to .STY files.  It runs on VMS or
+UNIX.  The usage is 
+
+	% docsty docfile 
+
+without an extension...

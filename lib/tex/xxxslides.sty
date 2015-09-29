@@ -1,0 +1,361 @@
+% SLiTeX super-customization for the SLIDES style
+%	Instead of
+%
+%		\documentstyle[XXXslides]{slides}
+%
+%	the correct usage is
+%
+%		\documentstyle{XXXslides}
+%
+%	which will automatically include slides.sty
+
+\typeout{Document Style 'XXXslides' -- version 1.04, released 28 August 1986}
+
+\@ifundefined{oldstyle}{\input XXXcustom\relax \makeatletter}{}
+\let\@@options=\@options	\let\@options=\relax
+\input slides.sty
+\makeatletter			% backwards compatibility
+\let\@options=\@@options
+
+
+% Document style options:
+%   blackandwhite - don't use a secondary file
+%	    draft - generate black-boxes when boxes are overfull (NI)
+%	landscape - 11 x 8-1/2
+%	     xxxx - use ``Research and Technology Center'' in logo
+%	     oval - put an oval around title information
+%     pagenumbers - generate page numbers in left-hand corner of footer
+%	    plain - no logo in footer
+%	 portrait - 8-1/2 x 11
+%     proprietary - use ``PROPRIETARY'' in head/foot
+%	    small - make the slides a bit smaller than standard SLiTeX
+
+\def\ds@blackandwhite{%
+    \let\@document=\document
+    \def\document{%
+	\@document
+	\blackandwhite{null}
+	\@makingslidestrue
+    }%
+    \let\@enddocument=\enddocument
+    \def\enddocument{\@makingslidesfalse\@enddocument}%
+}
+
+\def\ds@draft{%
+    \overfullrule=5\p@
+    \def\XXX@corner{+}%
+}
+\let\XXX@corner=\empty
+
+\newif\if@landscape	\@landscapefalse
+\def\ds@landscape{%
+    \@landscapetrue
+    \textwidth=615\p@	\textheight=470\p@
+    \columnwidth=\textwidth
+}
+\def\ds@portrait{%
+    \@landscapefalse
+    \textwidth=470\p@	\textheight=615\p@
+    \columnwidth=\textwidth
+}
+
+\newif\if@xxxx		\@xxxxfalse
+\let\ds@xxxx=\@xxxxtrue
+
+\newif\if@ovaltitle	\@ovaltitlefalse
+\let\ds@oval=\@ovaltitletrue
+
+\newif\if@pagenumbers	\@pagenumbersfalse
+\let\ds@pagenumbers=\@pagenumberstrue
+
+%%% \def\XXX@logo{%
+%%%     \vtop{%
+%%% 	\halign{\hfil##\hfil\cr
+%%% 	    \headfont NORTHROP\cr
+%%% 	    \if@xxxx \hbox{\lowfont\kern-1.2em\raise.6em 
+%%% 			\hbox{Research and Technology Center}}\cr\fi
+%%% 	}%
+%%%     }%
+%%% }
+\let\XXX@logo=\empty
+\let\XXX@titlelogo=\XXX@logo
+\def\ds@plain{\def\XXX@logo{\XXX@corner}\let\XXX@titlelogo=\empty}
+
+\def\ds@proprietary{%
+    \def\XXX@prop{{\small\bf PROPRIETARY}\hfil}%
+}
+\let\XXX@prop=\empty
+
+\def\ds@small{%
+    \let\Huge=\huge
+    \let\huge=\LARGE
+    \let\LARGE=\Large
+    \let\Large=\large
+    \let\large=\normalsize
+    \let\normalsize=\small
+    \let\small=\tiny
+    \let\footnotesize=\small
+    \let\scriptsize=\small
+
+    \normalsize
+
+    \let\ds@small=\empty
+}
+
+\@namedef{ds@10pt}{\@latexerr{No '10pt' layout for slides}\eha}
+\@namedef{ds@11pt}{\@latexerr{No '11pt' layout for slides}\eha}
+\@namedef{ds@12pt}{\@latexerr{No '12pt' layout for slides}\eha}
+\def\ds@openbib{\@latexerr{No 'openbib' layout for slides}\@eha}
+\def\ds@titlepage{\@latexerr{No 'titlepage' layout for slides}\@eha}
+\def\ds@twocolumn{\@latexerr{No 'twocolumn' layout for slides}\@eha}
+\def\ds@twoside{\@latexerr{No 'twoside' layout for slides}\@eha}
+
+\@options
+
+
+% Parameters different than SLiTeX
+
+%%% \font\headfont=northrop20
+%%% \font\lowfont=bookx9
+%%% \font\notesfont=bookx12
+\def\notesfont{\scriptsize\rm}
+
+% Page Style
+
+\setbox\z@=\hbox{\@mainsize\XXX@logo}
+\ifdim \ht\z@>\footheight
+    \advance\textheight by-\footheight
+    \footheight=\ht\z@
+    \advance\textheight by\footheight
+    \footskip=\footheight	\advance\footskip by11\p@
+\fi
+
+\def\ps@XXXslides{%
+    \def\ps@slide{%
+	\def\@oddfoot{%
+	    \@mainsize\null
+	    \if@pagenumbers \hbox to3em{\theslide\hss}\fi
+	    \XXX@notes\hfil\hspace{2in}\XXX@prop\XXX@logo
+	}%
+	\def\@oddhead{\@mainsize\null \XXX@corner\hfil \XXX@prop\XXX@corner}%
+	\let\@evenfoot=\@oddfoot
+	\let\@evenhead=\@oddhead
+    }%
+    \def\ps@overlay{%
+	\def\@oddfoot{%
+	    \@mainsize\null
+	    \if@pagenumbers \hbox to 3em{\theoverlay\hss}\fi
+	    \hfil\XXX@corner
+	}%
+	\def\@oddhead{\@mainsize\null \XXX@corner\hfil \XXX@corner}%
+	\let\@evenfoot=\@oddfoot
+	\let\@evenhead=\@oddhead
+    }%
+    \def\ps@note{%
+	\def\@oddfoot{\@mainsize\null \hfil\thenote}%
+	\let\@oddhead=\empty
+	\let\@evenfoot=\@oddfoot
+	\let\@evenhead=\@oddhead
+    }%
+}
+
+\def\ps@title{%
+    \def\ps@slide{%
+	\def\@oddfoot{\@mainsize\null
+			\XXX@notes\hfil\hspace{2in}\XXX@prop\XXX@titlelogo}%
+	\def\@oddhead{\@mainsize\null \hfil\XXX@prop}%
+	\let\@evenfoot=\@oddfoot
+	\let\@evenhead=\@oddhead
+    }%
+    \def\ps@overlay{%
+	\let\@oddfoot=\empty
+	\let\@oddhead=\empty
+	\let\@evenfoot=\@oddfoot
+	\let\@evenhead=\@oddhead
+    }%
+    \def\ps@note{%
+	\let\@oddfoot=\empty
+	\let\@oddhead=\empty
+	\let\@evenfoot=\@oddfoot
+	\let\@evenhead=\@oddhead
+    }%
+    \ps@slide
+}
+
+
+% Titles (from article.sty)
+
+\def\maketitlepage{\begin{titlepage}\maketitle\end{titlepage}}
+
+\def\maketitle{%
+    \par
+    \begingroup
+	\def\thefootnote{\fnsymbol{footnote}}%
+	\def\@makefnmark{\hbox to\z@{$^{\@thefnmark}$\hss}}%
+	\newpage
+	\global\@topnum=\z@
+	\@maketitle
+	\thispagestyle{title}%
+	\@thanks
+    \endgroup
+    \setcounter{footnote}{\z@}
+    \global\let\@title=\empty
+    \global\let\@author=\empty
+    \global\let\@thanks=\empty
+}
+
+\newcount\title@ht	\newcount\title@wd
+\newcount\title@@ht	\newcount\title@@wd
+
+\def\@maketitle{%
+    \newpage
+    \null
+    \setbox\z@=\vbox{%
+	\ \vskip .75em
+	\begin{center}
+	    {\Large\bf \@title \par}%
+	    \vskip .5em
+	    {\large\bf
+		\lineskip=.25em 
+		\begin{tabular}[t]{c}
+		    \@author 
+		\end{tabular}
+		\par
+	    }%
+	    \vskip .5em
+	    {\large\bf \@date}%
+	\end{center}
+	\par
+	\vskip .75em
+    }%
+    \if@ovaltitle
+	\title@ht=\ht\z@	\title@wd=\wd\z@
+	\title@@ht=\ht\z@	\title@@wd=\wd\z@
+	\divide\title@@ht by2	\divide\title@@wd by2
+	\unitlength=1sp
+    \fi
+    \box\z@
+    \if@ovaltitle
+	\vskip -\title@ht\unitlength
+	{\centering
+	    \begin{picture}(\title@wd,\title@ht)
+		\put(\title@@wd,\title@@ht){\oval(\title@wd,\title@ht)}
+	    \end{picture}
+	\par}
+    \fi
+}
+
+\def\ctitle#1{%
+    \begin{center}
+	\large\bf#1%
+    \end{center}
+    \vskip.125in plus.25in
+}
+
+
+% Slides
+
+\def\bwslide{\let\XXX@notes=\empty \slide\empty}
+\let\endbwslide=\endslide
+
+\def\bwoverlay{\overlay\empty}
+\let\endbwoverlay=\endoverlay
+
+
+% Parts (parts is parts...)
+
+\newcounter{part}
+
+\def\part{\secdef\@part\@spart}
+
+\def\@part[#1]#2{%
+    \stepcounter{part}
+    \begin{center}
+	\Large\bf PART \thepart\\
+	\huge\bf #2%
+    \end{center}
+    \vskip1.25in plus.25in
+}
+
+\def\@spart#1{%
+    \begin{center}
+	\huge\bf #1%
+    \end{center}
+    \vskip1.15in plus.25in
+}
+
+\def\thepart{\Roman{part}}
+
+
+% Macros for circled lists (similar to itemize)
+
+\newcount\@xxxxdepth		\@xxxxdepth=\z@
+
+\def\xxxx{%
+    \ifnum \@xxxxdepth>2
+	\@toodeep
+    \else
+	\advance\@xxxxdepth by\@ne
+	\edef\@xxxxitem{labelxxxx\romannumeral\the\@xxxxdepth}%
+	\list{\csname\@xxxxitem\endcsname}{%
+	    \def\makelabel##1{\hss\llap{##1}}%
+	    \labelwidth=\leftmargini	\advance\labelwidth-\labelsep
+	    \ifcase\@xxxxdepth\or
+		\itemindent=-1em	\listparindent=\itemindent
+	        \leftmargin=3em
+		\parsep=\the\parsep plus.5\parsep minus.5\parsep
+		\topsep=\parsep
+	    \or
+		\itemindent=-2em	\listparindent=\itemindent
+	        \leftmargin=4em
+		\parsep=\the\parsep plus.5\parsep minus.5\parsep
+		\topsep=\parsep
+	    \else
+		\itemindent=-2em	\listparindent=\itemindent
+	        \leftmargin=2em
+	    \fi
+	    \rightmargin=\z@
+	}%
+    \fi
+}
+\let\endxxxx=\endlist
+
+\def\labelxxxxi{$\circ$}
+\let\labelxxxxii=\empty
+\let\labelxxxxiii=\empty
+\let\labelxxxxiv=\empty
+
+
+\def\slidenotes#1{\def\XXX@notes{\notesfont#1}}
+\let\XXX@notes=\empty
+
+
+% Macros for figures (PIC support)
+
+\let\slidepoint=\small
+
+\def\diagram{\@ifnextchar[{\@diagram}{\@diagram[]}}
+\def\@diagram[#1]#2{%
+    \let\@d@agram=\empty	\let\@di@gram=\empty
+    \@tfor\@tempa:=#1\do{%
+	\if\@tempa p
+	    \let\@d@agram=\slidepoint
+	    \def\@di@gram{\centerline{\box\graph}}\fi
+	\if\@tempa t
+	    \let\@d@agram=\slidepoint\fi	
+    }%
+    \@d@agram	\input #2\relax	\@di@gram
+}
+
+
+% Initialization
+
+\pagestyle{XXXslides}
+
+\uchyph=\z@
+\brokenpenalty=\@M
+\hyphenpenalty=\@M
+\tolerance=500
+\pretolerance=\@M
+\clubpenalty=\@M
+\widowpenalty=\@M	\displaywidowpenalty=\@M

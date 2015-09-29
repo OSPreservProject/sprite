@@ -1,0 +1,52 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     92.06.23.11.31.27;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     92.06.23.11.30.15;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@-lnet no longer exists
+@
+text
+@#
+# This file is included by Makefile.  Makefile is generated automatically
+# by mkmf, and this file provides additional local personalization.  The
+# variable SYSMAKEFILE is provdied by Makefile;  it's a system Makefile
+# that must be included to set up various compilation stuff.
+#
+
+#if empty(TM:Mds3100)
+CFLAGS += -Wall
+#endif
+
+#include	<$(SYSMAKEFILE)>
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@a11 2
+LIBS		+= -lnet
+
+@

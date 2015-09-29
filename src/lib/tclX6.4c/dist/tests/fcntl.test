@@ -1,0 +1,107 @@
+#
+# fcntl.test
+#
+# Tests for the fcntl command.
+#---------------------------------------------------------------------------
+# Copyright 1992 Karl Lehenbauer and Mark Diekhans.
+#
+# Permission to use, copy, modify, and distribute this software and its
+# documentation for any purpose and without fee is hereby granted, provided
+# that the above copyright notice appear in all copies.  Karl Lehenbauer and
+# Mark Diekhans make no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without express or
+# implied warranty.
+#------------------------------------------------------------------------------
+# $Id: fcntl.test,v 2.0 1992/10/16 04:49:41 markd Rel $
+#------------------------------------------------------------------------------
+#
+
+if {[info procs test] != "test"} then {source testlib.tcl}
+
+set testFH [open FCNTL.TMP w]
+close $testFH
+
+set testFH [open FCNTL.TMP r+]
+
+test fcntl-1.1 {fcntl tests} {
+    fcntl $testFH RDWR
+} {1}
+
+test fcntl-1.2 {fcntl tests} {
+    fcntl $testFH READ
+} {1}
+
+test fcntl-1.3 {fcntl tests} {
+    fcntl $testFH WRITE
+} {1}
+
+test fcntl-1.4 {fcntl tests} {
+    fcntl $testFH CLOEXEC 1
+    fcntl $testFH CLOEXEC
+} {1}
+
+test fcntl-1.5 {fcntl tests} {
+    fcntl $testFH CLOEXEC 0
+    fcntl $testFH CLOEXEC
+} {0}
+
+test fcntl-1.6 {fcntl tests} {
+    fcntl $testFH NONBLOCK 1
+    fcntl $testFH NONBLOCK
+} {1}
+
+test fcntl-1.7 {fcntl tests} {
+    fcntl $testFH append 1
+    list [fcntl $testFH append] [fcntl $testFH nonblock]
+} {1 1}
+
+test fcntl-1.8 {fcntl tests} {
+    fcntl $testFH APPEND 0
+    list [fcntl $testFH append] [fcntl $testFH nonblock]
+} {0 1}
+
+test fcntl-1.9 {fcntl tests} {
+    fcntl $testFH NONBLOCK 0
+    fcntl $testFH nonBlock
+} {0}
+
+test fcntl-1.10 {fcntl tests} {
+    fcntl $testFH NOBUF 1
+    fcntl $testFH NObuf
+} {1}
+
+test fcntl-1.11 {fcntl tests} {
+    list [catch "fcntl $testFH NOBUF 0" msg] $msg
+} {1 {Attribute "NOBUF" may not be cleared once set}}
+
+close $testFH
+set testFH [open FCNTL.TMP r+]  ;# Reopen, can not have both nobuf and linebuf
+
+test fcntl-1.12 {fcntl tests} {
+    fcntl $testFH LINEBUF 1
+    fcntl $testFH LINEBUF
+} {1}
+
+test fcntl-1.13 {fcntl tests} {
+    list [catch "fcntl $testFH LINEBUF 0" msg] $msg
+} {1 {Attribute "LINEBUF" may not be cleared once set}}
+
+test fcntl-1.14 {fcntl tests} {
+    list [catch "fcntl $testFH a b c" msg] $msg
+} {1 {wrong # args: fcntl handle attribute [value]}}
+
+test fcntl-1.15 {fcntl tests} {
+    list [catch "fcntl $testFH BAZ 1" msg] $msg
+} {1 {unknown attribute name "BAZ", expected one of APPEND, CLOEXEC, LINEBUF, NONBLOCK, NOBUF, READ, RDONLY, RDWR, WRITE, WRONLY}}
+
+test fcntl-1.16 {fcntl tests} {
+    list [catch "fcntl $testFH APPEND FOO" msg] $msg
+} {1 {expected boolean value but got "FOO"}}
+
+close $testFH
+
+test fcntl-1.15 {fcntl tests} {
+    list [catch "fcntl $testFH RDONLY" msg] $msg
+} [list 1 "file \"$testFH\" isn't open"]
+
+unlink FCNTL.TMP

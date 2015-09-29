@@ -1,0 +1,7 @@
+The "struct member_name" should be better encapsulated.  For example,
+there should probably be an init_name_from_stored function, rather
+than having scan() set the fields directly.
+
+Or, get rid of the "struct member_name" stuff and go back to using
+plain strings.  The one problem is you don't want multiple error
+(truncation) messages for the same name.

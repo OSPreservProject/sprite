@@ -1,0 +1,68 @@
+
+
+
+LPASS1                    User Commands                    LPASS1
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     lpass1 - First pass of lint program
+
+SSYYNNOOPPSSIISS
+     llppaassss11 [_o_p_t_i_o_n_s]
+
+OOPPTTIIOONNSS
+     See code for details.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     LLppaassss11 is a program used internally by lliinntt.  It  reads  its
+     standard input, checking for lint errors and outputting pro-
+     cedure linkage information to standard output for use by the
+     llppaassss22 program during lliinntt's second pass.
+
+
+KKEEYYWWOORRDDSS
+     check, lint, pass
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  October 25, 1989                   1
+
+
+

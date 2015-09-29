@@ -1,0 +1,3 @@
+L EMACS_KE.C;1                      	emacs_keymap.c	../../dist/readline/emacs_keymap.c
+L VI_KEYMA.C;1                      	vi_keymap.c	../../dist/readline/vi_keymap.c
+L VI_MODE.C;1                       	vi_mode.c	../../dist/readline/vi_mode.c

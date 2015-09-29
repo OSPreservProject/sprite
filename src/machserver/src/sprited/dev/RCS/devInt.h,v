@@ -1,0 +1,54 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  srv030:1.1 srv028:1.1 srv027:1.1 srv026:1.1 srv024:1.1 srv022:1.1 srv021:1.1 srv019:1.1 srv018:1.1 srv016:1.1 srv015:1.1 srv014:1.1 srv012:1.1 srv011:1.1 srv010:1.1 srv008:1.1 srv007:1.1 srv006:1.1 srv005:1.1 srv004:1.1 srv003:1.1 srv002:1.1 srv001:1.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     92.03.23.14.51.34;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Internal declarations for the dev module.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/*
+ * devInt.h --
+ *
+ *	Internal declarations for the dev module.
+ *
+ * Copyright 1992 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.8 92/03/02 15:32:57 bmiller Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _DEVINT
+#define _DEVINT
+
+#include <tty.h>
+#include <cfuncproto.h>
+
+#define DEV_CONSOLE_UNIT	0 /* unit number for the console */
+
+extern DevTty *DevTtyAttach _ARGS_((int unit));
+
+#endif /* _DEVINT */
+@

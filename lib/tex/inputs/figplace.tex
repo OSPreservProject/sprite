@@ -1,0 +1,197 @@
+%
+%Date: Tue, 25 Oct 88 14:11:06 +0100
+%From: Joost Zalmstra <mcvax!nat.vu.nl!jjaz@uunet.UU.NET>
+%Subject: Re:Page Make-up Challenge
+%
+%Maybe the following set of macros can contribute to the solution of
+%the problem posed by David Rogers in TeXhax #86. It implements a floating
+%insertion with the following properties:
+% - Every insertion must be put in a \vbox. Customised macros can then
+%   be used to place the white space for the figure and the figure caption
+%   in this box.
+% - The order in which these \vbox-es are inserted is maintained.
+% - No more than two boxes are placed on one page: the first on the top
+%   and the second on the bottom of the page.
+%
+%The proposed macro \figplace should create a \vbox with the correct layout
+%of the figure and then call \addfigure to put it in the insertionlist:
+%
+%\def\figplace#1#2#3#4{setbox0=\vbox{%
+%% here call macros to place figure and caption
+%}
+%\addfigure0}
+%
+%Note that the space separating the figure from the text should not
+%be included in the \vbox. The skipregister \figureskip is used for this
+%purpose.
+%
+%The macros are written in plain TeX, in fact the output routine given
+%here is an extension of the plain output routine (TeX-book page 364).
+%
+%The basic idea is that figures that won't fit on the current page
+%are kept on a list (the \box \figlist). This list is checked after
+%a \shipout and if not empty a maximum of two \vboxes is inserted
+%(using plains \topins) for the next page. As the insertions are \vboxes
+%it is easy to split the insertion and put one at the top and one at
+%the bottom of the page.
+%
+%Two further refinements should be mentioned here.
+%1) If the figures on a page take so much room that less than a specified
+%amount of space (given in dimen register \minpagesize) is left for
+%the text, this text is shifted through to the next page.
+%2) By inserting a \vbox with height \vsize (created by \vbox to \vsize..)
+%a page insert is created. No extra \figureskip will be include in this case.
+%
+%I have tested these macros with real input (16 pages with on the first
+%page the insertion of several figures) and it seems to work on the moment.
+%However, I'm not a TeX guru and I would expect that these macros can be
+%improved. One of the problems left is te fact that \addfigures must
+%be called in horizontal mode ( \vadjust won't work). I would therefore
+%apreciate comments, both on the macros as they stand and on how this
+%contributes to the Challenge.
+%
+%Joost Zalmstra.
+%
+%jjaz%nat.vu.nl@hearn.bitnet
+\newbox\figlist
+\newcount\figuresonpage  \figuresonpage=0
+\newcount\figuresonlist  \figuresonlist=0
+\newskip\figureskip      \figureskip=1.2 pc plus 1 pc
+\newdimen\pagesize
+\newdimen\minpagesize    \minpagesize=5 pc
+\newdimen\figuresizeonpage
+
+\def\addfigure#1{%	add figure in box #1 to the document
+    \ifnum\figuresonpage>1	% allready two figures on this page
+	\addtolist{#1}%		% so save for later
+    \else
+	\ifnum\figuresonlist>0	% figlist is not empty
+	    \addtolist{#1}	% so save for later
+	\else			% no figures left over, so try to fit this one
+	    \dimen0=\ht#1
+	    \ifdim\dimen0<\vsize% not a pagesize figure
+	       \advance\dimen0 by \dp#1   % size of the box
+	       \advance\dimen0 by \figureskip  % extra space below or above
+	    \fi
+	    \advance\dimen0 by \pagetotal
+	    \ifdim\dimen0>\pagegoal  % no space on this page
+		\addtolist{#1}	     % so save for later
+	    \else 
+		\advance\dimen0 by \figuresizeonpage
+		\ifdim\dimen0>\dimen\topins % exceding maximum insertion size
+		    \addtolist{#1}	      % so save for later
+		\else
+		    \figureinsert{#1}	      % insert the figure
+		\fi
+	    \fi
+	\fi
+    \fi
+}
+
+\def\addtolist#1{%	add box #1 to figlist
+    \global\setbox\figlist=\vbox{%
+	\nointerlineskip
+	\box#1
+	\unvbox\figlist}
+    \global\advance\figuresonlist by 1
+}
+
+\def\figureinsert#1{%	insert figure on this page
+    \ifdim\ht#1<\vsize
+        \insert\topins{\vbox{%
+	    \ifnum\figuresonpage=0
+	        \unvbox#1\vskip\figureskip	% skip below the figure
+	    \else
+	        \vskip\figureskip\unvbox#1	% skip above the figure
+	    \fi
+	}}
+    \else
+        \pageinsert
+	    \unvbox#1
+	\endinsert
+    \fi
+    \global\advance\figuresonpage by 1
+    \global\advance\figuresizeonpage by \ht#1
+    \global\advance\figuresizeonpage by \dp#1
+    \global\advance\figuresizeonpage by \figureskip
+}
+\def\checkfiglist{%	see if there is a figure in the list that will
+		  % fit on the next page
+    \ifnum\figuresonlist>0
+        \global\setbox\figlist=\vbox{%
+	    \unvbox\figlist
+	    \setbox0=\lastbox
+	    \global\advance\dimen0\ht0
+	    \ifdim\ht0<\vsize
+	        \global\advance\dimen0 by \dp0
+	        \global\advance\dimen0 by \figureskip
+	    \fi
+	    \ifdim\dimen0>\vsize
+	         \vbox{\box0}	% no room ; replace the figure
+	    \else
+	        \ifdim\dimen0>\dimen\topins
+      		    \vbox{\box0}
+  		\else
+		        \global\advance\figuresonlist by -1
+	        \fi
+	    \fi
+	    \global\setbox0=\box0
+	}
+    \else
+	{\setbox1=\box0		% make box0 void
+	\global\setbox0=\box0}
+    \fi
+}
+% Borrowing the macros from plain TeX
+
+\catcode`@=11
+\output{\myoutput}
+\def\myoutput{\shipout\vbox{\makeheadline\pagebody\makefootline}%
+  \advancepageno
+  \global\figuresonpage=0
+  \dimen0=0pt
+  \global\figuresizeonpage = 0pt
+  \checkfiglist     % check if there is figure waiting and return it in box 0 
+  \ifvoid0          % nothing left
+  \else
+      \figureinsert0% insert this figure
+      \checkfiglist % check for a second figure
+      \ifvoid0\else
+          \figureinsert0
+       \fi
+  \fi
+  \ifvoid255\else\unvbox255\penalty\outputpenalty\fi % unused page back on list
+  \ifnum\outputpenalty>-\@MM \else\dosupereject\fi}
+
+\def\pagecontents{%
+    \ifnum\figuresonpage>0      % check for insertion of figures
+	\unvbox\topins	% place the figure(s) on top
+	\ifnum\figuresonpage=2
+	    \setbox0=\lastbox   % remove the second figure
+	\fi
+	\setbox1=\lastbox
+	\unvbox1
+    \fi
+% Check box 255
+     \pagesize=\ht255
+     \advance\pagesize by \dp255	   % determine size of box 255
+     \ifdim\pagesize>\minpagesize
+         \dimen@=\dp255 \unvbox255  % the real page contents
+     \else
+	\message{tekstsize = \the\ht255, \the\dp255}
+	\ifdim\ht255=0pt            % box is empty
+	\else
+	   \vfil	           	   % to small so leave for next page
+	\fi
+     \fi
+% 
+    \ifnum\figuresonpage=2
+	\box0		% the second figure
+    \fi
+    \ifvoid\footins\else % footnote info is present
+      \vskip\skip\footins
+      \footnoterule
+      \unvbox\footins\fi
+    \ifr@ggedbottom \kern-\dimen@ \vfil \fi}
+
+\catcode`@=12	% at signs no longer letters

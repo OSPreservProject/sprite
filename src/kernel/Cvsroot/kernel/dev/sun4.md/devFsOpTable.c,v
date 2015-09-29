@@ -1,0 +1,703 @@
+head     9.13;
+branch   ;
+access   ;
+symbols  ds3100:9.11 sun3:9.11 sun4nw:9.3 symm:9.3 spur:9.3 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.13
+date     92.12.14.11.49.49;  author mgbaker;  state Exp;
+branches ;
+next     9.12;
+
+9.12
+date     92.12.13.18.12.57;  author mgbaker;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     92.10.26.13.33.25;  author mgbaker;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     92.10.23.15.04.38;  author elm;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     92.08.24.14.34.10;  author alc;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     92.08.17.14.21.29;  author elm;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     92.08.13.15.53.54;  author secor;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     92.06.29.12.40.26;  author elm;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     92.06.29.12.33.50;  author elm;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     92.03.12.22.11.11;  author mottsmth;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     91.09.18.22.20.30;  author jhh;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.10.19.15.39.47;  author mgbaker;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.01.05.13.17.44;  author ouster;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.01.01;  author douglis;  state Stable;
+branches ;
+next     1.3;
+
+1.3
+date     89.08.29.11.15.57;  author mendel;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.07.22.14.06.35;  author eklee;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.15.11.56.43;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.13
+log
+@Fixed typo.
+@
+text
+@/* 
+ * devFsOpTable.c --
+ *
+ *	The operation tables for the file system devices on Sun-4 hosts.
+ *
+ * Copyright 1987, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/dev/sun4.md/devFsOpTable.c,v 9.12 92/12/13 18:12:57 mgbaker Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <sprite.h>
+#include <dev.h>
+#include <devInt.h>
+#include <fs.h>
+#include <rawBlockDev.h>
+#include <devFsOpTable.h>
+#include <devTypes.h>
+
+/*
+ * Device specific include files.
+ */
+
+#include <devSyslog.h>
+#include <devNull.h>
+#include <devSCSIDisk.h>
+#include <devSCSITape.h>
+#include <devSCSIRobot.h>
+#include <xylogics450.h>
+#include <devNet.h>
+#include <devBlockDevice.h>
+#include <scsiHBADevice.h>
+#include <raidExt.h>
+#include <tty.h>
+#include <mouse.h>
+#include <devTMR.h>
+#include <devfb.h>
+#include <devVMElink.h>
+#include <devATC.h>
+#include <devSmem.h>
+#include <devXbus.h>
+#include <devClientDev.h>
+
+static ReturnStatus NoDevice();
+static ReturnStatus NullProc();
+
+
+/*
+ * Device type specific routine table:
+ *	This is for the file-like operations as they apply to devices.
+ *	DeviceOpen
+ *	DeviceRead
+ *	DeviceWrite
+ *	DeviceIOControl
+ *	DeviceClose
+ *	DeviceSelect
+ *	BlockDeviceAttach
+ *	DeviceReopen
+ *	DeviceMmap
+ */
+
+
+DevFsTypeOps devFsOpTable[] = {
+    /*
+     * Serial lines used to implement terminals.
+     */
+    {DEV_TERM,       DevTtyOpen, DevTtyRead, DevTtyWrite,
+		     DevTtyIOControl, DevTtyClose, DevTtySelect,
+		     DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+    /*
+     * The system error log.  If this is not open then error messages go
+     * to the console.
+     */
+    {DEV_SYSLOG,    Dev_SyslogOpen, Dev_SyslogRead, Dev_SyslogWrite,
+		    Dev_SyslogIOControl, Dev_SyslogClose, Dev_SyslogSelect,
+		    DEV_NO_ATTACH_PROC, Dev_SyslogReopen, NullProc},
+    /*
+     * SCSI Worm interface:  this device doesn't exist anymore.
+     */
+    {DEV_SCSI_WORM, Dev_TimerOpen, Dev_TimerRead, NullProc,
+                    Dev_TimerIOControl, NullProc, NullProc,
+                    DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+    /*
+     * The following device number is unused.
+     */
+    {DEV_PLACEHOLDER_2, NoDevice, NullProc, NullProc,
+		    Dev_NullIOControl, NullProc, NullProc,
+		    DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+    /*
+     * New SCSI Disk interface.
+     */
+    {DEV_SCSI_DISK, DevRawBlockDevOpen, DevRawBlockDevRead,
+		    DevRawBlockDevWrite, DevRawBlockDevIOControl, 
+		    DevRawBlockDevClose, NullProc, DevScsiDiskAttach,
+		    DevRawBlockDevReopen, NullProc},
+    /*
+     * SCSI Tape interface.
+     */
+    {DEV_SCSI_TAPE, DevSCSITapeOpen, DevSCSITapeRead, DevSCSITapeWrite,
+		    DevSCSITapeIOControl, DevSCSITapeClose, NullProc,
+		    DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+    /*
+     * /dev/null
+     */
+    {DEV_MEMORY,    NullProc, Dev_NullRead, Dev_NullWrite,
+		    Dev_NullIOControl, NullProc, Dev_NullSelect,
+		    DEV_NO_ATTACH_PROC, NullProc, NullProc},
+    /*
+     * Xylogics 450 disk controller.
+     */
+    {DEV_XYLOGICS, DevRawBlockDevOpen, DevRawBlockDevRead,
+		    DevRawBlockDevWrite, DevRawBlockDevIOControl, 
+		    DevRawBlockDevClose, NullProc, DevXylogics450DiskAttach,
+		    DevRawBlockDevReopen, NullProc},
+    /*
+     * Network devices.  The unit number specifies the ethernet protocol number.
+     */
+    {DEV_NET,      DevNet_FsOpen, DevNet_FsRead, DevNet_FsWrite, 
+		   DevNet_FsIOControl, DevNet_FsClose, DevNet_FsSelect, 
+		   DEV_NO_ATTACH_PROC, DevNet_FsReopen, NullProc},
+    /*
+     * Raw SCSI HBA interface.
+     */
+    {DEV_SCSI_HBA, DevSCSIDeviceOpen, Dev_NullRead, Dev_NullWrite,
+		    DevSCSIDeviceIOControl, DevSCSIDeviceClose, Dev_NullSelect,
+		    DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+    /*  
+     * RAID device.
+     */ 
+    {DEV_RAID, DevRawBlockDevOpen, DevRawBlockDevRead,
+                    DevRawBlockDevWrite, DevRawBlockDevIOControl,
+                    DevRawBlockDevClose, NullProc, DevRaidAttach,
+                    DevRawBlockDevReopen, NullProc},
+    /*  
+     * Debug device. (useful for debugging RAID device)
+     */ 
+    {DEV_DEBUG, DevRawBlockDevOpen, DevRawBlockDevRead,
+                    DevRawBlockDevWrite, DevRawBlockDevIOControl,
+                    DevRawBlockDevClose, NullProc, DevDebugAttach,
+                    DevRawBlockDevReopen, NullProc},
+    /*
+     * Event devices for window systems.
+     */
+    {DEV_MOUSE,    DevMouseOpen, DevMouseRead, DevMouseWrite,
+		   DevMouseIOControl, DevMouseClose, DevMouseSelect,
+		   DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+    /*
+     * Frame buffer device.
+     */
+    {DEV_GRAPHICS, DevFBOpen, NullProc, NullProc,
+                   DevFBIOControl, DevFBClose, NullProc,
+                   DEV_NO_ATTACH_PROC, NoDevice, DevFBMMap},
+
+    /*
+     * /dev/smem
+     */
+    {DEV_SMEM,     NullProc, Dev_SmemRead, Dev_SmemWrite,
+                   Dev_SmemIOControl, NullProc, Dev_SmemSelect,
+                   DEV_NO_ATTACH_PROC, NullProc, NullProc},
+     
+    /*
+     * The audio device may exist for the sun4.  If so, ignore it for now.
+     */
+    {DEV_AUDIO, NoDevice, NullProc, NullProc,
+		Dev_NullIOControl, NullProc, NullProc,
+		DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+    /*
+     * VME link board device.
+     */
+    {DEV_VMELINK, DevVMElinkOpen, DevVMElinkRead, DevVMElinkWrite,
+	 	  DevVMElinkIOControl, NullProc, NullProc,
+	 	  DEV_NO_ATTACH_PROC, NoDevice},
+    /*
+     * These devices don't exist on a sun4.
+     */
+    {17, NullProc, NullProc, NullProc, NullProc, NullProc, NullProc, 
+		   DEV_NO_ATTACH_PROC, NullProc, NullProc},
+    /*
+     * The following device number is unused.
+     */
+    {DEV_ATC, DevRawBlockDevOpen, DevRawBlockDevRead,
+                    DevRawBlockDevWrite, DevRawBlockDevIOControl,
+                    DevRawBlockDevClose, NullProc, DevATCDiskAttach,
+                    DevRawBlockDevReopen, NullProc},
+    /*
+     * The following device number is unused.
+     */
+    {DEV_PLACEHOLDER_5, NoDevice, NullProc, NullProc,
+		    NullProc, NullProc, NullProc, 
+		    DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+    /*
+     * The "jukebox", or tape/disk robot device.
+     */
+    {DEV_SCSI_ROBOT, DevSCSIExbRobotOpen, NullProc, NullProc,
+	            DevSCSIExbRobotIOControl, DevSCSIExbRobotClose,
+	            NullProc, DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+    /*
+     * Xbus board
+     */
+    {DEV_XBUS, DevXbusOpen, NullProc, NullProc, DevXbusIOControl,
+	 NullProc, NullProc, DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+    /*
+     * /dev/clients
+     */
+    {DEV_CLIENT_STATE,  DevClientStateOpen, DevClientStateRead, NullProc,
+                   DevClientStateIOControl, DevClientStateClose,
+                   NullProc, DEV_NO_ATTACH_PROC,
+                   NoDevice, NullProc},
+};
+
+int devNumDevices = sizeof(devFsOpTable) / sizeof(DevFsTypeOps);
+
+static ReturnStatus
+NullProc()
+{
+    return(SUCCESS);
+}
+
+
+static ReturnStatus
+NoDevice()
+{
+    return(FS_INVALID_ARG);
+}
+@
+
+
+9.12
+log
+@Fixed include file lines.  Added routines about client state device.
+
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/dev/sun4.md/devFsOpTable.c,v 9.11 92/10/26 13:33:25 mgbaker Exp $ SPRITE (Berkeley)";
+d216 1
+a216 1
+                   NulProc, DEV_NO_ATTACH_PROC,
+@
+
+
+9.11
+log
+@New device for monitoring network status.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/dev/sun4.md/devFsOpTable.c,v 9.10 92/10/23 15:04:38 elm Exp $ SPRITE (Berkeley)";
+d216 1
+a216 1
+                   DevClientStateSelect, DEV_NO_ATTACH_PROC,
+@
+
+
+9.10
+log
+@
+Updated version of RAID/xbus device modules.  These versions have all
+been tested and work as far as we know.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/dev/sun4.md/devFsOpTable.c,v 9.9 92/08/24 14:34:10 alc Exp $ SPRITE (Berkeley)";
+d21 7
+a27 7
+#include "sprite.h"
+#include "dev.h"
+#include "devInt.h"
+#include "fs.h"
+#include "rawBlockDev.h"
+#include "devFsOpTable.h"
+#include "devTypes.h"
+d33 19
+a51 18
+#include "devSyslog.h"
+#include "devNull.h"
+#include "devSCSIDisk.h"
+#include "devSCSITape.h"
+#include "devSCSIRobot.h"
+#include "xylogics450.h"
+#include "devNet.h"
+#include "devBlockDevice.h"
+#include "scsiHBADevice.h"
+#include "raidExt.h"
+#include "tty.h"
+#include "mouse.h"
+#include "devTMR.h"
+#include "devfb.h"
+#include "devVMElink.h"
+#include "devATC.h"
+#include "devSmem.h"
+#include "devXbus.h"
+d211 7
+@
+
+
+9.9
+log
+@ATC driver files.   
+
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/dev/sun4.md/devFsOpTable.c,v 9.8 92/08/17 14:21:29 elm Exp $ SPRITE (Berkeley)";
+d48 1
+a48 1
+#include "atc.h"
+d208 1
+a208 1
+    {DEV_XBUS, NullProc, NullProc, NullProc, DevXbusIOControl,
+@
+
+
+9.8
+log
+@
+VME link driver now supports block device-type reads and writes.  The
+Xbus driver is *always* installed, but only installs an interrupt
+handler (which should never be used except when the xbus board is
+present).
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/dev/sun4.md/devFsOpTable.c,v 9.7 92/08/13 15:53:54 secor Exp $ SPRITE (Berkeley)";
+d48 1
+d161 1
+d180 1
+a180 1
+	 	  DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+d182 1
+a182 1
+     * No such device on the sun4.
+d189 4
+a192 3
+    {DEV_PLACEHOLDER_4, NoDevice, NullProc, NullProc,
+		    NullProc, NullProc, NullProc, 
+		    DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+@
+
+
+9.7
+log
+@Added smem device to devFsOpTable and added files with smem procedures.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/dev/sun4.md/devFsOpTable.c,v 9.6 92/06/29 12:40:26 elm Exp $ SPRITE (Berkeley)";
+d49 1
+d178 1
+a178 1
+	 	  DEV_NO_ATTACH_PROC, NoDevice},
+d202 5
+@
+
+
+9.6
+log
+@
+Fixed merging bug (forgot to remove a >>>>>> line from the file).
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/dev/sun4.md/devFsOpTable.c,v 9.5 92/06/29 12:33:50 elm Exp $ SPRITE (Berkeley)";
+d48 1
+d160 1
+a160 1
+     * This exists only on the Symmetry, so use all null entries
+d162 3
+a164 3
+    {DEV_ZDC_DISK, NoDevice, NullProc, NullProc,
+		   Dev_NullIOControl, NullProc, NullProc,
+		   DEV_NO_ATTACH_PROC, NoDevice, NullProc},
+@
+
+
+9.5
+log
+@
+These files are an update to the VME link board device driver.  They enable
+the driver to access any location in A24D32 across the link.  The driver
+still needs modifications for DMA to work.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/dev/sun4.md/devFsOpTable.c,v 9.4 92/03/12 22:11:11 mottsmth Exp $ SPRITE (Berkeley)";
+a199 1
+>>>>>>> 9.4
+@
+
+
+9.4
+log
+@Minor fix by Mani.
+
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/dev/sun4.md/devFsOpTable.c,v 9.3 91/09/18 22:20:30 jhh Exp $ SPRITE (Berkeley)";
+d159 1
+a159 1
+     * VME link device.
+d161 13
+d178 1
+a178 1
+     * These devices don't exist on a sun4.
+a179 4
+    {15, NullProc, NullProc, NullProc, NullProc, NullProc, NullProc, 
+		   DEV_NO_ATTACH_PROC, NullProc, NullProc},
+    {16, NullProc, NullProc, NullProc, NullProc, NullProc, NullProc, 
+		   DEV_NO_ATTACH_PROC, NullProc, NullProc},
+d200 1
+@
+
+
+9.3
+log
+@added VME link support
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/jhh/dev/sun4.md/RCS/devFsOpTable.c,v 9.2 90/10/19 15:39:47 mgbaker Exp Locker: jhh $ SPRITE (Berkeley)";
+d37 1
+a157 1
+
+d164 27
+@
+
+
+9.2
+log
+@Added mmap switch entries.
+Somehow they must have gotten deleted before?
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun4.md/RCS/devFsOpTable.c,v 9.1 90/01/05 13:17:44 ouster Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d46 1
+d158 6
+@
+
+
+9.1
+log
+@Use new NULL procedures from /dev/null.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun4.md/RCS/devFsOpTable.c,v 9.0 89/09/12 15:01:01 douglis Stable Locker: ouster $ SPRITE (Berkeley)";
+d45 1
+d62 1
+d72 1
+a72 1
+		     DEV_NO_ATTACH_PROC, NoDevice},
+d79 1
+a79 1
+		    DEV_NO_ATTACH_PROC, Dev_SyslogReopen},
+d85 1
+a85 1
+                    DEV_NO_ATTACH_PROC, NoDevice},
+d91 1
+a91 1
+		    DEV_NO_ATTACH_PROC, NoDevice},
+d98 1
+a98 1
+		    DevRawBlockDevReopen},
+d104 1
+a104 1
+		    DEV_NO_ATTACH_PROC, NoDevice},
+d110 1
+a110 1
+		    DEV_NO_ATTACH_PROC, NullProc},
+d117 1
+a117 1
+		    DevRawBlockDevReopen},
+d123 1
+a123 1
+		   DEV_NO_ATTACH_PROC, DevNet_FsReopen},
+d129 1
+a129 1
+		    DEV_NO_ATTACH_PROC, NoDevice},
+d136 1
+a136 1
+                    DevRawBlockDevReopen},
+d143 1
+a143 1
+                    DevRawBlockDevReopen},
+d149 7
+a155 1
+		   DEV_NO_ATTACH_PROC, NoDevice},
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun4.md/RCS/devFsOpTable.c,v 1.3 89/08/29 11:15:57 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+a45 1
+static ReturnStatus NullSelectProc();
+d88 2
+a89 1
+		    NullProc, NullProc, NullProc, DEV_NO_ATTACH_PROC, NoDevice},
+d107 2
+a108 2
+		    NullProc, NullProc, NullSelectProc, DEV_NO_ATTACH_PROC,
+		    NullProc},
+d126 1
+a126 1
+		    DevSCSIDeviceIOControl, DevSCSIDeviceClose, NullSelectProc,
+a163 15
+}
+
+/*ARGSUSED*/
+static ReturnStatus
+NullSelectProc(devicePtr, readPtr, writePtr, exceptPtr)
+    Fs_Device	*devicePtr;	/* Ignored. */
+    int *readPtr;		/* Read bit */
+    int *writePtr;		/* Write bit */
+    int *exceptPtr;		/* Exception bit */
+{
+    /*
+     * Leave the read and write bits on.  This is used with /dev/null.
+     */
+    *exceptPtr = 0;
+    return(SUCCESS);
+@
+
+
+1.3
+log
+@Added TMR0.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun4.md/RCS/devFsOpTable.c,v 1.2 89/07/22 14:06:35 eklee Exp $ SPRITE (Berkeley)";
+@
+
+
+1.2
+log
+@Added DEV_RAID and DEV_DEBUG
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun4.md/RCS/devFsOpTable.c,v 1.1 89/07/15 11:56:43 ouster Exp Locker: eklee $ SPRITE (Berkeley)";
+d44 1
+d82 3
+a84 3
+    {DEV_SCSI_WORM, NoDevice, NullProc, NullProc,
+		    NullProc, NullProc, NullProc,
+		    DEV_NO_ATTACH_PROC, NoDevice},
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun4.md/RCS/devFsOpTable.c,v 1.4 89/07/08 15:15:53 mendel Exp Locker: eklee $ SPRITE (Berkeley)";
+a126 2
+
+#ifdef USE_RAID
+a140 7
+#else
+    {DEV_RAID, NoDevice, NullProc, NullProc,
+		    NullProc, NullProc, NullProc, DEV_NO_ATTACH_PROC, NoDevice},
+    {DEV_DEBUG, NoDevice, NullProc, NullProc,
+		    NullProc, NullProc, NullProc, DEV_NO_ATTACH_PROC, NoDevice},
+#endif /* USE_RAID */
+
+@

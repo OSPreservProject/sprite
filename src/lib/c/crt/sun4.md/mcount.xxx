@@ -1,0 +1,109 @@
+
+extern char profiling;
+
+void
+__mcount(selfpc, frompcindex)
+    char *selfpc;
+    unsigned short *frompcindex;
+{
+    register struct tostruct	*top;	
+    register struct tostruct	*prevtop;
+    register long		toindex;
+
+    /*
+     *	check that we are profiling
+     *	and that we aren't recursively invoked.
+     */
+    if (profiling) {
+	return;
+    }
+    profiling = 1;
+    /*
+     *	check that frompcindex is a reasonable pc value.
+     *	for example:	signal catchers get called from the stack,
+     *			not from text space.  too bad.
+     */
+    frompcindex = (unsigned short *)((long)frompcindex - (long)s_lowpc);
+    if ((unsigned long)frompcindex > s_textsize) {
+	goto done;
+    }
+    frompcindex = &froms[((long)frompcindex) / (HASHFRACTION * sizeof(*froms))];
+    toindex = *frompcindex;
+    if (toindex == 0) {
+	/*
+	 *	first time traversing this arc
+	 */
+	toindex = ++tos[0].link;
+	if (toindex >= tolimit) {
+	    goto overflow;
+	}
+	*frompcindex = toindex;
+	top = &tos[toindex];
+	top->selfpc = selfpc;
+	top->count = 1;
+	top->link = 0;
+	goto done;
+    }
+    top = &tos[toindex];
+    if (top->selfpc == selfpc) {
+	/*
+	 *	arc at front of chain; usual case.
+	 */
+	top->count++;
+	goto done;
+    }
+    /*
+     *	have to go looking down chain for it.
+     *	top points to what we are looking at,
+     *	prevtop points to previous top.
+     *	we know it is not at the head of the chain.
+     */
+    for (; /* goto done */; ) {
+	if (top->link == 0) {
+	    /*
+	     *	top is end of the chain and none of the chain
+	     *	had top->selfpc == selfpc.
+	     *	so we allocate a new tostruct
+	     *	and link it to the head of the chain.
+	     */
+	    toindex = ++tos[0].link;
+	    if (toindex >= tolimit) {
+		goto overflow;
+	    }
+	    top = &tos[toindex];
+	    top->selfpc = selfpc;
+	    top->count = 1;
+	    top->link = *frompcindex;
+	    *frompcindex = toindex;
+	    goto done;
+	}
+	/*
+	 *	otherwise, check the next arc on the chain.
+	 */
+	prevtop = top;
+	top = &tos[top->link];
+	if (top->selfpc == selfpc) {
+	    /*
+	     *	there it is.
+	     *	increment its count
+	     *	move it to the head of the chain.
+	     */
+	    top->count++;
+	    toindex = prevtop->link;
+	    prevtop->link = top->link;
+	    top->link = *frompcindex;
+	    *frompcindex = toindex;
+	    goto done;
+	}
+    }
+done:
+    profiling = 0;
+    return;
+
+overflow:
+    profiling++; /* halt further profiling */
+#define	TOLIMIT	"mcount: tos overflow\n"
+    write(2, TOLIMIT, sizeof(TOLIMIT));
+    return;
+}
+

@@ -1,0 +1,1568 @@
+# Some networking stuff that is defined in Dev is in callsNet
+
+# Here are typedefs that have function pointers in them:
+#
+# DevBlockDeviceHandle
+#   releaseProc: release resources; opposite of attach; doesn't keep a
+#     reference count
+#   blockIOProc: enqueue a block I/O request; calls doneProc when completed
+#   IOControlProc: takes command, byte-order flag, input & output buffers
+# DevBlockDeviceRequest
+#   doneProc: takes error status, number of bytes transferred; may be
+#     called before blockIOProc returns
+# DevFsTypeOps
+#   open: 
+#   read: takes buffer, dev. offset, ID info; returns amt.
+#     transferred, signal to generate (if any)
+#   write: (same as readProc)
+#   ioctl: takes command, byte-order flags, ID info, input &
+#     output buffers; same return info as readProc
+#   close: takes flags & refcounts
+#   select: returns read/write/exception flags (non-blocking).
+#   blockDevAttach: (attach a block device) no parms (other than
+#     Fs_Device pointer)
+#   reopen: (called during recovery) takes reference counts; returns
+#     flags
+#   mmap: takes requested starting virt. addr., amt. to map, offset in
+#     file; returns actual starting address.
+# DevTty
+#   rawProc: ?
+#   activateProc: like open?
+#   inputProc: if non-nil, called for every keystroke (e.g., to map
+#     keycode to ASCII)
+# ScsiTape
+#   tapeIOProc: ?
+#   specialCmdProc: ?
+#   errorProc: ?
+
+# The Mach device config table is in sun/conf.c.
+
+CookedProc			# keep.
+	dev/devTty.c
+DEV_AUDIO			# (major number for audio device) keep.
+	dev/devTypes.h
+DEV_AUX_DEVICE			# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_BUSY			# (some sort of error code) keep.
+	Include/user/status.h
+	dev/symm.md/devScedTape.c
+	dev/devSyslog.c
+DEV_BUTTON_DOWN_TYPE		# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_BUTTON_RAW_TYPE		# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_BUTTON_UP_TYPE		# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_BYTES_PER_SECTOR		# (size of disk sectors, changeable at
+				# your peril) keep; in startup code,
+				# verify is same as Mach DEV_BSIZE
+				# (sys/param.h).
+	dev/dev.h		# defined here
+	dev/symm.md/devDynixBlockDevice.c
+	dev/devSCSIDisk.c
+	dev/sun3.md/devXylogics450.c
+	fsdm/fsdm.h
+	fsdm/fsdmDisk.c
+	lfs/lfsIo.c
+	ofs/ofs.h
+	ofs/{ofsAlloc,ofsDisk,ofsIo}.c
+DEV_CONSOLE_DEVICE		# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_COUNTER_ADDR		# (address of Sparcstation h/w
+				# counter?) keep, but maybe delete
+				# later (if not needed for timer).
+	dev/sun4c.md/devAddrs.h 
+	timer/sun4c.md/timerSun4c.c
+DEV_CURSOR_ENPA			# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_CURSOR_ENPB			# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_CURSOR_ENRG1		# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_CURSOR_ENRG2		# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_CURSOR_FOPA			# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_CURSOR_FOPB			# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_CURSOR_FORG1		# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_CURSOR_FORG2		# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_CURSOR_HSHI			# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_CURSOR_LODSA		# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_CURSOR_LODSA		# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_CURSOR_TEST			# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_CURSOR_VBHI			# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_CURSOR_VBHI			# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_CURSOR_XHAIR		# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_CURSOR_XHCL1		# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_CURSOR_XHCLP		# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_CURSOR_XHWID		# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_DEBUG			# (major number for "debug" device,
+				# which is apparently a raw disk
+				# interface for use with RAID) keep.
+	dev/symm.md/devFsOpTable.c
+	dev/devTypes.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+DEV_EVENT_LEFT_BUTTON		# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_EVENT_LEFT_BUTTON		# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_EVENT_MIDDLE_BUTTON		# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_EVENT_MIDDLE_BUTTON		# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_EVENT_RIGHT_BUTTON		# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_EVENT_RIGHT_BUTTON		# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_EVROUND			# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_EVROUND(x)			# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_FRAME_BUF_ADDR		# (h/w frame buffer address) delete.
+	dev/sun4.md/devAddrs.h
+	dev/sun4c.md/devAddrs.h
+	vm/sun4.md/vmSun.c
+DEV_GRAPHICS			# (major number for frame buffer) keep.
+	dev/devTypes.h
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devTypesInt.h
+DEV_HARD_ERROR			# (status error code) keep.
+				# Figure out how Sprite driver
+				# will map Mach error code to this
+				# (needed for local disk access).
+	dev/devSCSI.c
+	dev/symm.md/{devScedTape,devDynixBlockDevice}.c
+	dev/devSCSIDisk.c
+	dev/sun3.md/{devJaguarHBA,devExabyteTape,devXylogics450}.c
+	dev/sun4.md/{devExabyteTape,devJaguarHBA,devXylogics450}.c
+	dev/ds3100.md/devExabyteTape.c
+	fscache/fscacheBlocks.c
+	fsutil/fsutilSubr.c
+DEV_HPPI_*			# (HPPI board stuff) keep (doesn't
+				# seem to be used anywhere)
+	Include/user/dev/hppi.h
+DEV_INTERRUPT_REG_ADDR		# (h/w addr of interrupt register) delete.
+	dev/sun3.md/devAddrs.h
+	dev/sun4.md/devAddrs.h
+	mach/sun3.md/mach.h
+	mach/sun4.md/mach.h
+	mach/sun4.md/machIntr.s
+	mach/sun4.md/sun4/reg.h
+DEV_INVALID_ARG			# (error status) keep.
+	dev/devSCSI.c
+	dev/symm.md/{devScedTape,devDynixBlockDevice}.c
+	dev/{devSCSIDisk,devSCSITape,devRawBlockDev}.c
+	net/sun3.md/{netIE,netUltra}.c
+	net/sun4.md/{netIE,netUltra}.c
+DEV_JOYSTICK_DEVICE		# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_KEYBOARD			# (major number for keyboard) keep,
+				# though unused.
+DEV_KEYBOARD_DEVICE		# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_KNOB_DEVICE			# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_MAXEVQ			# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_MAXEVQ			# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_MEMORY			# (major number for null device and
+				# kernel memory) keep.
+	dev/symm.md/devFsOpTable.c
+	dev/devTypes.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devTypesInt.h
+	dev/ds3100.md/devFsOpTable.c
+DEV_MOTION_TYPE			# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_MOTION_TYPE			# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_MOUSE			# (major number for mouse and
+				# keystroke info (for X)) keep.
+	dev/symm.md/devFsOpTable.c
+	dev/devTypes.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devTypesInt.h
+	dev/ds3100.md/devFsOpTable.c
+DEV_MOUSE_DEVICE		# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_MOUSE_DEVICE		# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_MOUSE_UNIT			# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_MOUSE_UNIT			# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_NET				# (major number for raw enet) keep.
+	dev/symm.md/devFsOpTable.c
+	dev/devTypes.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devTypesInt.h
+	dev/ds3100.md/devFsOpTable.c
+DEV_NO_ATTACH_PROC		# (null proc ptr) keep.
+	dev/devBlockDevice.h
+	dev/symm.md/devFsOpTable.c
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+	dev/devBlockDevice.c
+DEV_NULL_DEVICE			# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_OFFLINE			# (status code) keep.
+	dev/{devSCSI,devSCSIDisk}.c
+	dev/sun3.md/devXylogics450.c
+	dev/sun4.md/devXylogics450.c
+	dev/devSCSITape.c
+	fspdev/{fspdevSrv,fspdevSetup}.c
+DEV_PLACEHOLDER_2		# (major number for sockets, not fully
+				# implemented) keep.
+	dev/symm.md/devFsOpTable.c
+	dev/devTypes.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devTypesInt.h
+	dev/ds3100.md/devFsOpTable.c
+	fsio/fsioDevice.c
+DEV_PLACEHOLDER_3		# (unused major device number) keep.
+	dev/devTypes.h
+	dev/ds3100.md/devFsOpTable.c
+DEV_RAID			# (major number for raw disk array) keep.
+	dev/symm.md/devFsOpTable.c
+	dev/devTypes.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+DEV_RETRY_ERROR			# (status code) keep.
+	dev/sun3.md/devXylogics450.c
+	dev/sun4.md/devXylogics450.c
+	fscache/fscacheBlocks.c
+	fsutil/fsutilSubr.c
+DEV_SCSI_DISK			# (major number for SCSI disk) keep.
+	dev/symm.md/{devFsOpTable,devConfig}.c
+	dev/devTypes.h
+	dev/sun3.md/{devConfig,devFsOpTable}.c
+	dev/sun4.md/{devConfig,devFsOpTable}.c
+	dev/ds3100.md/devConfig.c
+	dev/ds3100.md/devTypesInt.h
+	dev/ds3100.md/devFsOpTable.c
+DEV_SCSI_HBA			# (major number for raw SCSI HBA
+				# device) keep.
+	dev/symm.md/devFsOpTable.c
+	dev/devTypes.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+DEV_SCSI_TAPE			# (major number for SCSI tape) keep.
+	dev/symm.md/devFsOpTable.c
+	dev/devTypes.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devTypesInt.h
+	dev/ds3100.md/devFsOpTable.c
+DEV_SCSI_WORM			# (major number for SCSI WORM) keep.
+	dev/symm.md/devFsOpTable.c
+	dev/devTypes.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devTypesInt.h
+	dev/ds3100.md/devFsOpTable.c
+DEV_SYSLOG			# (major number for syslog) keep.
+	dev/symm.md/devFsOpTable.c
+	dev/devTypes.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devTypesInt.h
+	dev/ds3100.md/devFsOpTable.c
+DEV_TABLET_DEVICE		# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_TABLET_RES			# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DEV_TAPE_EMULEX			# (tape support) keep
+	Include/user/dev/tape.h
+DEV_TAPE_SYSGEN			# (tape support) keep
+	Include/user/dev/tape.h
+DEV_TERM			# (major number for terminals) keep.
+	dev/symm.md/devFsOpTable.c
+	dev/devTypes.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+	fsio/fsioDevice.c
+DEV_TIMEOUT			# (status code) keep.
+	dev/sun3.md/{devSCSI3,devSCSI0,devXylogics450}.c
+	dev/sun4.md/{devSCSI0,devSCSI3,devXylogics450}.c
+	dev/ds3100.md/devSII.c
+	dev/devScsiDevice.c
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+DEV_TIMER_ADDR			# (h/w address for timer) delete.
+	timer/sun3.md/timerIntersil.c
+	timer/sun4.md/timerIntersil.c
+DEV_TYPE_INDEX			# (get index into device switch table
+				# from Fs_Device type field) keep.
+	fsdm/fsdmDisk.c
+	fsio/fsioDevice.c
+	fsrmt/fsrmtDevice.c
+	lfs/lfsIo.c
+	ofs/{ofsAlloc,ofsDisk}.c
+DEV_XYLOGICS			# (major number for Xylogics 450
+				# controller) keep.
+	dev/symm.md/devFsOpTable.c
+	dev/devTypes.h
+	dev/sun3.md/{devConfig,devFsOpTable}.c
+	dev/sun4.md/{devConfig,devFsOpTable}.c
+	dev/ds3100.md/devTypesInt.h
+	dev/ds3100.md/devFsOpTable.c
+DEV_ZDC_DISK			# (major number for some Sequent disk) keep.
+	dev/symm.md/{devFsOpTable,devConfig}.c
+	dev/devTypes.h
+Dev32BitDMABufferInit		# (device memory stuff) delete.
+	vm/sun4.md/vmSun.c
+DevBlockDeviceHandle		# (functions/info for calling a block
+				# device driver) Probably need to
+				# add a port for the device.
+				# releaseProc: may need to call
+				# device_close.  blockIOProc:
+				# call device read/write request
+				# routine.  XXX - where does reply
+				# port come from?  receiving the reply
+				# causes the doneProc to be called.
+				# IOControlProc: call device get/set
+				# status routine.
+	dev/{devBlockDevice,devSCSIDisk}.h
+	dev/symm.md/{devFsOpTable,devDynixBlockDevice}.c
+	dev/devSCSIDisk.c
+	dev/sun3.md/devXylogics450.c
+	dev/sun3.md/xylogics450.h
+	dev/sun4.md/devXylogics450.c
+	dev/sun4.md/xylogics450.h
+	dev/devFsOpTable.h
+	dev/devBlockDevice.c
+	dev/devRawBlockDev.c
+	ofs/ofs.h
+	ofs/ofsDisk.c
+DevBlockDeviceRequest		# (parameters for a block read/write
+				# request) keep.
+	dev/devBlockDevice.h
+	dev/symm.md/devDynixBuf.h
+	dev/symm.md/devDynixBlockDevice.c
+	dev/devSCSIDisk.c
+	dev/sun3.md/devXylogics450.c
+	dev/sun4.md/devXylogics450.c
+	dev/devBlockDevice.c
+	dev/devRawBlockDev.c
+	ofs/ofsIo.c
+DevBox				# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DevBufferInit			# (device memory stuff) delete.
+	vm/sun3.md/vmSun.c
+	vm/sun4.md/vmSun.c
+DevColorMap			# (ds graphics/mouse/keybd stuff) keep.
+	Include/user/dev/graphics.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	dev/ds5000.md/devGraphics.c
+	dev/ds3100.md/devGraphics.c
+	fs/fsStubs.c
+DevConsoleRawProc		# Always return 0 (for sun3, at least).
+	dev/symm.md/devTtyAttach.c
+	dev/symm.md/devConsole.c
+	dev/sun3.md/console.h
+	dev/sun3.md/devConsole.c
+	dev/sun3.md/devTtyAttach.c
+	dev/ds3100.md/console.h
+	dev/ds3100.md/devTtyAttach.c
+	dev/ds3100.md/devConsole.c
+DevCursor			# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+DevDiskStats			# (Sys_DiskStats plus "busy" flag)
+				# delete; change callers to use
+				# Sys_DiskStats or nothing
+	dev/diskStats.h
+	dev/devSCSIDisk.c
+	dev/sun3.md/devXylogics450.c
+	dev/sun4.md/devXylogics450.c
+	dev/devDiskStats.h
+	dev/devDiskStats.c
+DevEvent			# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DevEventQueue			# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DevFBClose			# keep
+	dev/sun3.md/devFsOpTable.c
+	dev/sun3.md/devfb.h
+	dev/sun4.md/devFsOpTable.c
+	dev/sun4.md/devGraphics.c
+	dev/sun4c.md/devFsOpTable.c
+DevFBIOControl			# Verify that FBIOGTYPE (get type),
+				# FBIOPUTCMAP (put color map?),
+				# FBIOGETCMAP (get color map?),
+				# FBIOSVIDEO (set on/off status),
+				# FBIOGVIDEO (get on/off status) are
+				# supported by Mach driver.
+	dev/sun3.md/devFsOpTable.c
+	dev/sun3.md/devfb.h
+	dev/sun4.md/devFsOpTable.c
+	dev/sun4.md/devGraphics.c
+	dev/sun4c.md/devFsOpTable.c
+DevFBMMap			# rewrite (see DevFsTypeOps).
+	dev/sun3.md/devFsOpTable.c
+	dev/sun3.md/devfb.h
+	dev/sun4.md/devFsOpTable.c
+	dev/sun4.md/devGraphics.c
+	dev/sun4c.md/devFsOpTable.c
+DevFBOpen			# rewrite to work with Mach driver
+	dev/sun3.md/devFsOpTable.c
+	dev/sun3.md/devfb.h
+	dev/sun4.md/devFsOpTable.c
+	dev/sun4.md/devGraphics.c
+	dev/sun4c.md/devFsOpTable.c
+DevFsTypeOps			# (defines device interface) Look in
+				# devFsOpTable.c for list of procs
+				# that need attention.  open: if not
+				# yet opened, call device_open, stash
+				# returned port in the Fs_Device ptr.
+				# read/write: call device_read, keep
+				# signal stuff.  ioctl: call
+				# device_get_status or
+				# device_set_status.  close: call
+				# device_close if no more references.
+				# select: may have to hack the device
+				# driver to give status information.
+				# blockDevAttach: cons up the
+				# DevBlockDeviceHandle.
+				# reopen: no change.  mmap: call
+				# device_map (if necessary) and then vm_map.
+DevHBADiskTest			# (SCSI HBA disk stuff) keep
+	Include/user/dev/hbatest.h
+DevKpCmd			# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+DevMouseClose
+	dev/sun3.md/devMouse.c
+	dev/sun3.md/mouse.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/sun4c.md/devFsOpTable.c
+DevMouseIOControl
+	dev/sun3.md/devMouse.c
+	dev/sun3.md/mouse.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/sun4c.md/devFsOpTable.c
+DevMouseOpen
+	dev/sun3.md/devMouse.c
+	dev/sun3.md/mouse.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/sun4c.md/devFsOpTable.c
+DevMouseRead
+	dev/sun3.md/devMouse.c
+	dev/sun3.md/mouse.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/sun4c.md/devFsOpTable.c
+DevMouseSelect
+	dev/sun3.md/devMouse.c
+	dev/sun3.md/mouse.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/sun4c.md/devFsOpTable.c
+DevMouseWrite
+	dev/sun3.md/devMouse.c
+	dev/sun3.md/mouse.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/sun4c.md/devFsOpTable.c
+DevPCCRegs			# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DevPrintIOStats			# ("temporary") delete.
+	dev/devDiskStats.h
+	dev/devDiskStats.c
+DevRawBlockDevClose
+	dev/symm.md/devFsOpTable.c
+	dev/rawBlockDev.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+	dev/devRawBlockDev.c
+DevRawBlockDevIOControl
+	dev/symm.md/devFsOpTable.c
+	dev/rawBlockDev.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+	dev/devRawBlockDev.c
+DevRawBlockDevOpen
+	dev/symm.md/devFsOpTable.c
+	dev/rawBlockDev.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+	dev/devRawBlockDev.c
+DevRawBlockDevRead
+	dev/symm.md/devFsOpTable.c
+	dev/rawBlockDev.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+	dev/devRawBlockDev.c
+DevRawBlockDevReopen
+	dev/symm.md/devFsOpTable.c
+	dev/rawBlockDev.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+	dev/devRawBlockDev.c
+DevRawBlockDevWrite
+	dev/symm.md/devFsOpTable.c
+	dev/rawBlockDev.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+	dev/devRawBlockDev.c
+DevSCSIDeviceClose
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/scsiHBADevice.h
+	dev/ds3100.md/devFsOpTable.c
+	dev/devSCSIHBA.c
+DevSCSIDeviceIOControl
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/scsiHBADevice.h
+	dev/ds3100.md/devFsOpTable.c
+	dev/devSCSIHBA.c
+DevSCSIDeviceOpen
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/scsiHBADevice.h
+	dev/ds3100.md/devFsOpTable.c
+	dev/devSCSIHBA.c
+DevSCSITapeClose
+	dev/devSCSITape.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+	dev/devSCSITape.c
+DevSCSITapeIOControl
+	dev/devSCSITape.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+	dev/devSCSITape.c
+DevSCSITapeOpen
+	dev/devSCSITape.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+	dev/devSCSITape.c
+DevSCSITapeRead
+	dev/devSCSITape.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+	dev/devSCSITape.c
+DevSCSITapeWrite
+	dev/devSCSITape.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+	dev/devSCSITape.c
+DevScreenInfo			# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+DevScsiDiskAttach		# no-op?
+	dev/devSCSIDisk.h
+	dev/devSCSIDisk.c
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+DevTimeCoord			# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+DevTty				# add port for tty; add input and output
+				# threads.  input thread calls device_read and
+				# Td_PutRaw.  output thread calls Td_GetRaw
+				# and device_write (if Td_GetRaw returns 0
+				# count, sleep).  keep "term",
+				# "notifyToken", "openCount", "selectState",
+				# and "rawProc" (handles most, but not all
+				# "rawProc" calls from Td).  rawProc: use
+				# {get,set}_status.  Get rid of everything
+				# else.
+				# [old activateProc: open tty if not
+				# already open inputProc: delete
+				# (assume will always get ASCII back
+				# from Mach).]
+	dev/tty.h
+	dev/devTty.c
+	dev/symm.md/ttyAttach.h
+	dev/symm.md/devTtyAttach.c
+	dev/symm.md/devConsole.c
+	dev/symm.md/devScedConsole.h
+	dev/sun3.md/console.h
+	dev/sun3.md/devMouse.c
+	dev/sun3.md/ttyAttach.h
+	dev/sun3.md/z8530.h
+	dev/sun3.md/devConsole.c
+	dev/sun3.md/devTtyAttach.c
+	dev/ds3100.md/devTtyAttach.c
+	dev/ds3100.md/ttyAttach.h
+	dev/ds3100.md/dc7085.h
+DevTtyAttach			# keep; track changes to DevTty.
+	dev/devTty.c
+	dev/symm.md/ttyAttach.h
+	dev/symm.md/devTtyAttach.c
+	dev/sun3.md/ttyAttach.h
+	dev/sun3.md/devTtyAttach.c
+	dev/ds3100.md/devTtyAttach.c
+	dev/ds3100.md/ttyAttach.h
+DevTtyClose			# keep.
+	dev/tty.h
+	dev/devTty.c
+	dev/symm.md/devFsOpTable.c
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+DevTtyIOControl			# keep.
+	dev/tty.h
+	dev/devTty.c
+	dev/symm.md/devFsOpTable.c
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+DevTtyOpen			# (finds existing DevTty for the device or
+				# creates new one and register it with Td).
+				# track changes to DevTty.
+	dev/tty.h
+	dev/devTty.c
+	dev/symm.md/devFsOpTable.c
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+DevTtyRead			# keep.
+	dev/tty.h
+	dev/devTty.c
+	dev/symm.md/devFsOpTable.c
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+DevTtySelect			# keep.
+	dev/tty.h
+	dev/devTty.c
+	dev/symm.md/devFsOpTable.c
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+DevTtyWrite			# keep.
+	dev/tty.h
+	dev/devTty.c
+	dev/symm.md/devFsOpTable.c
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+DevVDACRegs			# (ds graphics/mouse/keybd stuff) keep
+	Include/user/dev/graphics.h
+Dev_BlockDeviceAttach
+	dev/devBlockDevice.c
+	dev/devRawBlockDev.c
+	dev/devBlockDevice.h
+	raid/devRaid.c
+	raid/devRaidDisk.c
+	raid/devRaidLog.c
+Dev_BlockDeviceIO		# (macro for invoking blockIOProc) keep.
+	dev/devBlockDevice.c
+	dev/devBlockDevice.h
+	lfs/lfsSeg.c
+	raid/devRaidInitiate.c
+Dev_BlockDeviceIOControl
+	dev/devBlockDevice.c
+	dev/devRawBlockDev.c
+	dev/devBlockDevice.h
+Dev_BlockDeviceIOSync
+	dev/devBlockDevice.c
+	dev/devRawBlockDev.c
+	dev/devBlockDevice.h
+	ofs/ofsIo.c
+	raid/devRaid.c
+	raid/devRaidLog.c
+Dev_BlockDeviceRelease
+	dev/devBlockDevice.c
+	dev/devRawBlockDev.c
+	dev/devBlockDevice.h
+	raid/devRaidDisk.c
+Dev_CCSetCounters		# (spur) delete.
+	sched/schedule.c
+Dev_Config			# keep
+	main/sun3.md/mainInit.c
+	main/sun4.md/mainInit.c
+	main/ds3100.md/mainInit.c
+Dev_ConsoleOpen
+	main/ds3100.md/mainInit.c
+Dev_ConsoleRead
+	main/ds3100.md/mainInit.c
+Dev_ConsoleReset		# keep
+	utils/sun3.md/dumpEvents.c
+	utils/sun4.md/dumpEvents.c
+	utils/ds3100.md/dumpEvents.c
+Dev_CtrlQueuesCreate
+	dev/devQueue.h
+	dev/devQueue.c
+	dev/ds5000.md/devSCSIC90.c
+	dev/sun3.md/devSCSI3.c
+	dev/sun3.md/devSCSI0.c
+	dev/sun3.md/devJaguarHBA.c
+	dev/sun3.md/devXylogics450.c
+	dev/ds3100.md/devSII.c
+	dev/sun4c.md/devSCSIC90.c
+Dev_DC7085Interrupt
+	mach/ds3100.md/machCode.c
+Dev_DiskAddr
+	dev/dev.h
+	dev/sun3.md/devXylogics450.c
+	dev/sun4.md/devXylogics450.c
+	ofs/ofsDisk.c
+Dev_GatherDiskStats		# keep, but make no-op initially.  May
+				# have to hack kernel to get idle
+				# information.
+	timer/timerQueue.c
+Dev_GetDiskStats		# keep, but initially return 0's.
+	sys/sysCalls.c
+Dev_GraphicsPutc
+	mach/ds3100.md/machMon.c
+Dev_Hppi*			# (HPPI board stuff) keep (doesn't
+				# seem to be used anywhere)
+	Include/user/dev/hppi.h
+Dev_Init			# don't call graphics init initially.
+	dev/dev.h
+	dev/sun3.md/devInit.c
+	dev/sun4.md/devInit.c
+	dev/ds3100.md/devInit.c
+	main/sun3.md/mainInit.c
+	main/sun4.md/mainInit.c
+	main/ds3100.md/mainInit.c
+Dev_InvokeConsoleCmd		# make no-op initially; may want to
+				# keep if running w/o POE or single
+				# server to do debugging.
+	dev/devTty.c
+	dev/dev.h
+	dev/ds5000.md/devDC7085.c
+	dev/ds5000.md/devGraphics.c
+	dev/sun3.md/devConsole.c
+	dev/sun4.md/devConsole.c
+	dev/ds3100.md/devDC7085.c
+	dev/ds3100.md/devGraphics.c
+	dev/sun4c.md/devConsole.c
+	dev/devConsoleCmd.c
+	fs/fsCommand.c
+Dev_KbdQueueAttachProc
+	dev/dev.h 
+	dev/devConsoleCmd.c
+Dev_NullIOControl
+	dev/devNull.h
+	dev/devNull.c
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+Dev_NullRead
+	dev/devNull.h
+	dev/devNull.c
+	dev/symm.md/devFsOpTable.c
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+Dev_NullSelect
+	dev/devNull.h
+	dev/devNull.c
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+Dev_NullWrite
+	dev/devNull.h
+	dev/devNull.c
+	dev/symm.md/devFsOpTable.c
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+Dev_QueueCreate
+	dev/devQueue.h
+	dev/devQueue.c
+	dev/ds5000.md/devSCSIC90.c
+	dev/sun3.md/devSCSI3.c
+	dev/sun3.md/devSCSI0.c
+	dev/sun3.md/devJaguarHBA.c
+	dev/sun3.md/devXylogics450.c
+	dev/ds3100.md/devSII.c
+	dev/sun4c.md/devSCSIC90.c
+Dev_QueueDestroy
+	dev/devQueue.h
+	dev/devQueue.c
+	dev/ds5000.md/devSCSIC90.c
+	dev/sun3.md/devSCSI3.c
+	dev/sun3.md/devSCSI0.c
+	dev/sun3.md/devXylogics450.c
+	dev/sun4c.md/devSCSIC90.c
+Dev_QueueGetNext
+	dev/devQueue.h
+	dev/devQueue.c
+	dev/sun3.md/devJaguarHBA.c
+Dev_QueueGetNextFromSet
+	dev/devQueue.h
+	dev/devQueue.c
+	dev/ds5000.md/devSCSIC90.c
+	dev/sun3.md/devSCSI3.c
+	dev/sun3.md/devSCSI0.c
+	dev/sun3.md/devJaguarHBA.c
+	dev/sun3.md/devXylogics450.c
+	dev/ds3100.md/devSII.c
+	dev/sun4c.md/devSCSIC90.c
+Dev_QueueInsert
+	dev/devQueue.h
+	dev/devQueue.c
+	dev/devScsiDevice.c
+	dev/scsiDevice.h
+	dev/sun3.md/devXylogics450.c
+Dev_RegisterConsoleCmd		# make no-op initially; may want to
+				# keep if running w/o debugger.
+	dev/dev.h
+	dev/devConsoleCmd.c
+	utils/sun3.md/dumpEvents.c
+	utils/sun4.md/dumpEvents.c
+	utils/ds3100.md/dumpEvents.c
+	utils/symm.md/dumpEvents.c
+Dev_SIIIntr
+	mach/ds3100.md/machCode.c
+Dev_ScsiCommand			# (SCSI support) keep
+	Include/user/dev/scsi.h
+Dev_ScsiStatus			# (SCSI support) keep
+	Include/user/dev/scsi.h
+	dev/devScsiDevice.c
+Dev_StartIOStats		# keep.
+	sys/sysCalls.c
+Dev_StopIOStats			# keep.
+	sys/sysCalls.c
+Dev_SyslogClose
+	dev/symm.md/devFsOpTable.c
+	dev/devSyslog.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+	dev/devSyslog.c
+Dev_SyslogDebug
+	dbg/sun4.md/dbgMain.c
+	dbg/sun3.md/dbgMain.c
+	dbg/ds3100.md/dbgMain.c
+	sys/sysPrintf.c
+Dev_SyslogDisable
+	utils/dump.c
+Dev_SyslogIOControl
+	dev/symm.md/devFsOpTable.c
+	dev/devSyslog.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+	dev/devSyslog.c
+Dev_SyslogOpen
+	dev/symm.md/devFsOpTable.c
+	dev/devSyslog.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+	dev/devSyslog.c
+Dev_SyslogRead
+	dev/symm.md/devFsOpTable.c
+	dev/devSyslog.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+	dev/devSyslog.c
+Dev_SyslogReopen
+	dev/symm.md/devFsOpTable.c
+	dev/devSyslog.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+	dev/devSyslog.c
+Dev_SyslogReturnBuffer
+	dbg/sun4.md/dbgMain.c
+	dbg/sun3.md/dbgMain.c
+Dev_SyslogSelect
+	dev/symm.md/devFsOpTable.c
+	dev/devSyslog.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+	dev/devSyslog.c
+Dev_SyslogWrite			# initially no-op.
+	dev/symm.md/devFsOpTable.c
+	dev/devSyslog.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+	dev/devSyslog.c
+	sys/sysPrintf.c
+Dev_TapeCommand			# (tape support) keep
+	Include/user/dev/tape.h
+	dev/symm.md/devScedTape.c
+	dev/devSCSITape.c
+Dev_TapeStatus			# (tape support) keep
+	Include/user/dev/tape.h
+Dev_TimerIOControl
+	dev/sun3.md/devTMR.c
+	dev/sun3.md/devTMR.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+Dev_TimerOpen			# map the timer into the server
+				# address space
+	dev/sun3.md/devTMR.c
+	dev/sun3.md/devTMR.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+Dev_TimerProbe			# delete.
+	dev/sun3.md/devConfig.c
+	dev/sun3.md/devTMR.c
+	dev/sun3.md/devTMR.h
+	dev/sun4.md/devConfig.c
+Dev_TimerRead			# read from the mapped timer (see
+				# callsTimer). 
+	dev/sun3.md/devTMR.c
+	dev/sun3.md/devTMR.h
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+Dev_TimerReadReg		# delete.
+	dev/sun3.md/devTMR.c
+	dev/sun3.md/devTMR.h
+Dev_TimerReadRegInline		# delete.
+	dev/sun3.md/devTMR.c
+	dev/sun3.md/devTMR.h
+	net/kernelTime.h
+Dev_VidEnable			# keep; no-op initially
+	mach/symm.md/machSyscallTrace.c
+	dbg/sun4.md/dbgMain.c
+	dbg/sun3.md/dbgMain.c
+	dbg/ds3100.md/dbgMain.c
+	dev/symm.md/devVid.c
+	dev/devVid.h
+	dev/sun3.md/devVidSun3.s
+	dev/sun4.md/devVidSun4.s
+	dev/ds3100.md/devGraphics.c
+	proc/procRpc.c
+	sys/{sysPrintf,sysSysCall}.c
+	utils/dump.c
+Device
+	dev/sun3.md/{devSCSI3,devSCSI0,devJaguarHBA}.c
+	dev/sun4.md/{devJaguarHBA,devSCSI0,devSCSI3}.c
+	dev/ds3100.md/devSII.c
+	dev/devDiskStats.c
+FBIOGATTR			# (Sprite ioctl) keep
+	Include/user/sys/ioctl.h
+	dev/sun3.md/devGraphics.c
+	dev/sun4.md/devGraphics.c
+FBIOGETCMAP			# (Sprite ioctl) keep
+	Include/user/sys/ioctl.h
+	dev/sun3.md/devGraphics.c
+	dev/sun4.md/devGraphics.c
+FBIOGINFO			# (Sprite ioctl) keep
+	Include/user/sys/ioctl.h
+	dev/sun3.md/devGraphics.c
+	dev/sun4.md/devGraphics.c
+FBIOGPIXRECT			# (Sprite ioctl) keep
+	Include/user/sys/ioctl.h
+FBIOGTYPE			# (Sprite ioctl) keep
+	Include/user/sys/ioctl.h
+	dev/sun3.md/devGraphics.c
+	dev/sun4.md/devGraphics.c
+FBIOGVIDEO			# (Sprite ioctl) keep
+	Include/user/sys/ioctl.h
+	dev/sun3.md/devGraphics.c
+	dev/sun4.md/devGraphics.c
+FBIOPUTCMAP			# (Sprite ioctl) keep
+	Include/user/sys/ioctl.h
+	dev/sun3.md/devGraphics.c
+	dev/sun4.md/devGraphics.c
+FBIOSATTR			# (Sprite ioctl) keep
+	Include/user/sys/ioctl.h
+	dev/sun3.md/devGraphics.c
+	dev/sun4.md/devGraphics.c
+FBIOSVIDEO			# (Sprite ioctl) keep
+	Include/user/sys/ioctl.h
+	dev/sun3.md/devGraphics.c
+	dev/sun4.md/devGraphics.c
+FBIOVERTICAL			# (Sprite ioctl) keep
+	Include/user/sys/ioctl.h
+ID_SIZE				# (HPPI board stuff) keep (doesn't
+				# seem to be used anywhere)
+	Include/user/dev/hppi.h
+IOC_AUDIO*			# (SPARC audio ioctls) keep. (doesn't
+				# seem to be referenced anywhere in
+				# the kernel)
+	Include/user/dev/audio.h
+IOC_GRAPHICS			# (DECstation graphics, mouse, keybd
+				# ioctls) keep.
+	Include/user/dev/graphics.h
+IOC_GRAPHICS_COLOR_MAP		# (DECstation graphics, mouse, keybd
+				# ioctls) keep.
+	Include/user/dev/graphics.h
+	mach/ds3100.md/ioctl.c
+	mach/ds5000.md/ioctl.c
+	fs/fsStubs.c
+IOC_GRAPHICS_CURSOR_BIT_MAP	# (DECstation graphics, mouse, keybd
+				# ioctls) keep.
+	Include/user/dev/graphics.h
+	mach/ds3100.md/ioctl.c
+	mach/ds5000.md/ioctl.c
+	fs/fsStubs.c
+IOC_GRAPHICS_CURSOR_COLOR	# (DECstation graphics, mouse, keybd
+				# ioctls) keep.
+	Include/user/dev/graphics.h
+	mach/ds3100.md/ioctl.c
+	mach/ds5000.md/ioctl.c
+	fs/fsStubs.c
+IOC_GRAPHICS_GET_INFO		# (DECstation graphics, mouse, keybd
+				# ioctls) keep.
+	Include/user/dev/graphics.h
+	mach/ds3100.md/ioctl.c
+	mach/ds5000.md/ioctl.c
+	fs/fsStubs.c
+IOC_GRAPHICS_GET_INFO_ADDR	# (DECstation graphics, mouse, keybd
+				# ioctls) keep.
+	Include/user/dev/graphics.h
+	mach/ds3100.md/ioctl.c
+	mach/ds5000.md/ioctl.c
+	fs/fsStubs.c
+IOC_GRAPHICS_INIT_SCREEN	# (DECstation graphics, mouse, keybd
+				# ioctls) keep.
+	Include/user/dev/graphics.h
+	mach/ds3100.md/ioctl.c
+	mach/ds5000.md/ioctl.c
+	fs/fsStubs.c
+IOC_GRAPHICS_IS_COLOR		# (DECstation graphics, mouse, keybd
+				# ioctls) keep.
+	Include/user/dev/graphics.h
+IOC_GRAPHICS_KBD_CMD		# (DECstation graphics, mouse, keybd
+				# ioctls) keep.
+	Include/user/dev/graphics.h
+	mach/ds3100.md/ioctl.c
+	mach/ds5000.md/ioctl.c
+	fs/fsStubs.c
+IOC_GRAPHICS_KERN_LOOP		# (DECstation graphics, mouse, keybd
+				# ioctls) keep.
+	Include/user/dev/graphics.h
+	mach/ds3100.md/ioctl.c
+	mach/ds5000.md/ioctl.c
+	fs/fsStubs.c
+IOC_GRAPHICS_KERN_UNLOOP	# (DECstation graphics, mouse, keybd
+				# ioctls) keep.
+	Include/user/dev/graphics.h
+	mach/ds3100.md/ioctl.c
+	mach/ds5000.md/ioctl.c
+	fs/fsStubs.c
+IOC_GRAPHICS_MOUSE_POS		# (DECstation graphics, mouse, keybd
+				# ioctls) keep.
+	Include/user/dev/graphics.h
+	mach/ds3100.md/ioctl.c
+	mach/ds5000.md/ioctl.c
+	fs/fsStubs.c
+IOC_GRAPHICS_VIDEO_OFF		# (DECstation graphics, mouse, keybd
+				# ioctls) keep.
+	Include/user/dev/graphics.h
+	mach/ds3100.md/ioctl.c
+	mach/ds5000.md/ioctl.c
+	fs/fsStubs.c
+IOC_GRAPHICS_VIDEO_ON		# (DECstation graphics, mouse, keybd
+				# ioctls) keep.
+	Include/user/dev/graphics.h
+	mach/ds3100.md/ioctl.c
+	mach/ds5000.md/ioctl.c
+	fs/fsStubs.c
+IOC_HBA_DISK_IO_TEST		# (SCSI HBA disk stuff) keep
+	Include/user/dev/hbatest.h
+IOC_HBA_DISK_UNIT_TEST		# (SCSI HBA disk stuff) keep
+	Include/user/dev/hbatest.h
+IOC_HPPI*			# (HPPI board stuff) keep (doesn't
+				# seem to be used in kernel)
+	Include/user/dev/hppi.h
+IOC_SCSI			# (SCSI support) keep
+	Include/user/dev/scsi.h
+	dev/devSCSIDisk.c
+	dev/devSCSITape.c
+IOC_SCSI_COMMAND		# (SCSI support) keep
+	Include/user/dev/scsi.h
+	dev/devScsiDevice.c
+IOC_TAPE			# (tape support) keep
+	Include/user/dev/tape.h
+IOC_TAPE_BACKUP_BLOCKS		# (tape support) keep
+	Include/user/dev/tape.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	dev/devSCSITape.c
+IOC_TAPE_BACKUP_FILES		# (tape support) keep
+	Include/user/dev/tape.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	dev/symm.md/devScedTape.c
+	dev/devSCSITape.c
+IOC_TAPE_COMMAND		# (tape support) keep
+	Include/user/dev/tape.h
+	dev/symm.md/devScedTape.c
+	dev/devSCSITape.c
+IOC_TAPE_DONT_RETENSION		# (tape support) keep
+	Include/user/dev/tape.h
+	dev/symm.md/devScedTape.c
+IOC_TAPE_ERASE			# (tape support) keep
+	Include/user/dev/tape.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	dev/symm.md/devScedTape.c
+	dev/devSCSITape.c
+IOC_TAPE_NO_OP			# (tape support) keep
+	Include/user/dev/tape.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	dev/symm.md/devScedTape.c
+	dev/devSCSITape.c
+IOC_TAPE_OFFLINE		# (tape support) keep
+	Include/user/dev/tape.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	dev/symm.md/devScedTape.c
+	dev/devSCSITape.c
+IOC_TAPE_RETENSION		# (tape support) keep
+	Include/user/dev/tape.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	dev/symm.md/devScedTape.c
+	dev/devSCSITape.c
+IOC_TAPE_REWIND			# (tape support) keep
+	Include/user/dev/tape.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	dev/symm.md/devScedTape.c
+	dev/devSCSITape.c
+IOC_TAPE_SKIP_BLOCKS		# (tape support) keep
+	Include/user/dev/tape.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	dev/symm.md/devScedTape.c
+	dev/devSCSITape.c
+IOC_TAPE_SKIP_EOD		# (tape support) keep
+	Include/user/dev/tape.h
+	dev/symm.md/devScedTape.c
+IOC_TAPE_SKIP_FILES		# (tape support) keep
+	Include/user/dev/tape.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	dev/symm.md/devScedTape.c
+	dev/devSCSITape.c
+IOC_TAPE_STATUS			# (tape support) keep
+	Include/user/dev/tape.h
+	dev/symm.md/devScedTape.c
+	dev/devSCSITape.c
+IOC_TAPE_WEOF			# (tape support) keep
+	Include/user/dev/tape.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	dev/symm.md/devScedTape.c
+	dev/devSCSITape.c
+IOC_TTY				# (tty support) keep
+	Include/user/dev/tty.h
+IOC_TTY_ADD_EVENT		# (tty support) keep
+	Include/user/dev/tty.h
+IOC_TTY_BIC_LM			# (tty support) keep
+	Include/user/dev/tty.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+	libc/ttyDriver.c
+IOC_TTY_BIS_LM			# (tty support) keep
+	Include/user/dev/tty.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+	libc/ttyDriver.c
+IOC_TTY_CLEAR_BREAK		# (tty support) keep
+	Include/user/dev/tty.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+	libc/ttyDriver.c
+IOC_TTY_CLEAR_DTR		# (tty support) keep
+	Include/user/dev/tty.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+	libc/ttyDriver.c
+IOC_TTY_EXCL			# (tty support) keep
+	Include/user/dev/tty.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+	libc/ttyDriver.c
+IOC_TTY_FLUSH			# (tty support) keep
+	Include/user/dev/tty.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	libc/ttyDriver.c
+IOC_TTY_GETP			# (tty support) keep
+	Include/user/dev/tty.h
+	libc/ttyDriver.c
+IOC_TTY_GET_DISCIPLINE		# (tty support) keep
+	Include/user/dev/tty.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+	libc/ttyDriver.c
+IOC_TTY_GET_LM			# (tty support) keep
+	Include/user/dev/tty.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+	libc/ttyDriver.c
+IOC_TTY_GET_LTCHARS		# (tty support) keep
+	Include/user/dev/tty.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+	libc/ttyDriver.c
+IOC_TTY_GET_PARAMS		# (tty support) keep
+	Include/user/dev/tty.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+IOC_TTY_GET_TCHARS		# (tty support) keep
+	Include/user/dev/tty.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+	libc/ttyDriver.c
+IOC_TTY_GET_TERMIO		# (tty support) keep
+	Include/user/dev/tty.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+IOC_TTY_GET_WINDOW_SIZE		# (tty support) keep
+	Include/user/dev/tty.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+	libc/ttyDriver.c
+IOC_TTY_HUP_ON_CLOSE		# (tty support) keep
+	Include/user/dev/tty.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+	libc/ttyDriver.c
+IOC_TTY_INSERT_CHAR		# (tty support) keep
+	Include/user/dev/tty.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+	libc/ttyDriver.c
+IOC_TTY_NOT_CONTROL_TTY		# (tty support) keep
+	Include/user/dev/tty.h
+	libc/ttyDriver.c
+IOC_TTY_NXCL			# (tty support) keep
+	Include/user/dev/tty.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+	libc/ttyDriver.c
+IOC_TTY_SETN			# (tty support) keep
+	Include/user/dev/tty.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+	libc/ttyDriver.c
+IOC_TTY_SETP			# (tty support) keep
+	Include/user/dev/tty.h
+	libc/ttyDriver.c
+IOC_TTY_SET_BREAK		# (tty support) keep
+	Include/user/dev/tty.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+	libc/ttyDriver.c
+IOC_TTY_SET_DISCIPLINE		# (tty support) keep
+	Include/user/dev/tty.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+	libc/ttyDriver.c
+IOC_TTY_SET_DTR			# (tty support) keep
+	Include/user/dev/tty.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+	libc/ttyDriver.c
+IOC_TTY_SET_LM			# (tty support) keep
+	Include/user/dev/tty.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+	libc/ttyDriver.c
+IOC_TTY_SET_LTCHARS		# (tty support) keep
+	Include/user/dev/tty.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+	libc/ttyDriver.c
+IOC_TTY_SET_PARAMS		# (tty support) keep
+	Include/user/dev/tty.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+IOC_TTY_SET_TCHARS		# (tty support) keep
+	Include/user/dev/tty.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+	libc/ttyDriver.c
+IOC_TTY_SET_TERMIO		# (tty support) keep
+	Include/user/dev/tty.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+IOC_TTY_SET_WINDOW_SIZE		# (tty support) keep
+	Include/user/dev/tty.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+	libc/ttyDriver.c
+KBD_BELL_OFF			# (mouse/keybd stuff) keep
+	Include/user/dev/mouse.h
+KBD_BELL_ON			# (mouse/keybd stuff) keep
+	Include/user/dev/mouse.h
+KBD_CLICK_OFF			# (mouse/keybd stuff) keep
+	Include/user/dev/mouse.h
+KBD_CLICK_ON			# (mouse/keybd stuff) keep
+	Include/user/dev/mouse.h
+KBD_RESET			# (mouse/keybd stuff) keep
+	Include/user/dev/mouse.h
+KEYBOARD_EVENT			# (mouse/keybd stuff) keep
+	Include/user/dev/mouse.h
+	dev/sun3.md/devMouse.c
+	dev/sun4.md/devMouse.c
+KEY_UP				# (mouse/keybd stuff) keep
+	Include/user/dev/mouse.h
+	dev/ds5000.md/dc7085.h
+	dev/ds5000.md/devDC7085.c
+	dev/ds5000.md/devGraphics.c
+	dev/sun3.md/devMouse.c
+	dev/sun4.md/devMouse.c
+	dev/ds3100.md/devDC7085.c
+	dev/ds3100.md/dc7085.h
+	dev/ds3100.md/devGraphics.c
+MAX_HBA_TEST_VECTOR		# (SCSI HBA disk stuff) keep
+	Include/user/dev/hbatest.h
+MAX_HBA_UNIT_TESTS		# (SCSI HBA disk stuff) keep
+	Include/user/dev/hbatest.h
+MOUSE_EVENT			# (mouse/keybd stuff) keep
+	Include/user/dev/mouse.h
+	dev/sun3.md/devMouse.c
+	dev/sun4.md/devMouse.c
+Mouse_Event			# (mouse/keybd stuff) keep
+	Include/user/dev/mouse.h
+	dev/sun3.md/devMouse.c
+	dev/sun4.md/devMouse.c
+PACKET_COMMAND			# (HPPI board stuff) keep (doesn't
+				# seem to be used anywhere)
+	Include/user/dev/hppi.h
+PACKET_RESPONSE			# (HPPI board stuff) keep (doesn't
+				# seem to be used anywhere)
+	Include/user/dev/hppi.h
+QIOCADDR			# (Sprite ioctl) keep
+	Include/user/sys/ioctl.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+QIOCGINFO			# (Sprite ioctl) keep
+	Include/user/sys/ioctl.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+QIOCINIT			# (Sprite ioctl) keep
+	Include/user/sys/ioctl.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+QIOCKPCMD			# (Sprite ioctl) keep
+	Include/user/sys/ioctl.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+QIOCPMSTATE			# (Sprite ioctl) keep
+	Include/user/sys/ioctl.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+QIOISCOLOR			# (Sprite ioctl) keep
+	Include/user/sys/ioctl.h
+QIOKERNLOOP			# (Sprite ioctl) keep
+	Include/user/sys/ioctl.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+QIOKERNUNLOOP			# (Sprite ioctl) keep
+	Include/user/sys/ioctl.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+QIOSETCMAP			# (Sprite ioctl) keep
+	Include/user/sys/ioctl.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+QIOVIDEOOFF			# (Sprite ioctl) keep
+	Include/user/sys/ioctl.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+QIOVIDEOON			# (Sprite ioctl) keep
+	Include/user/sys/ioctl.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+QIOWCURSOR			# (Sprite ioctl) keep
+	Include/user/sys/ioctl.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+QIOWCURSORCOLOR			# (Sprite ioctl) keep
+	Include/user/sys/ioctl.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+RawProc				# if TD_RAW_OUTPUT_READY, wakeup output
+				# thread (rather than calling Transfer).
+				# otherwise keep.
+ScsiTape			# keep?  tapeIOProc: XXX?  specialCmdProc: XXX?
+				# errorProc: XXX?  Don't need initially.
+	dev/scsiTape.h
+	dev/sun3.md/devEmulexTape.c
+	dev/sun3.md/devSysgenTape.c
+	dev/sun3.md/emulexTape.h
+	dev/sun3.md/sysgenTape.h
+	dev/devSCSITape.c
+	dev/devExabyteTape.c
+	dev/exabyteTape.h
+TYPE_RAM			# (HPPI board stuff) keep (doesn't
+				# seem to be used anywhere)
+	Include/user/dev/hppi.h
+TYPE_ROM			# (HPPI board stuff) keep (doesn't
+				# seem to be used anywhere)
+	Include/user/dev/hppi.h
+Transfer			# delete.
+Tty_BasicParams			# (tty support) keep
+	Include/user/dev/tty.h
+Tty_Chars			# (tty support) keep
+	Include/user/dev/tty.h
+Tty_LocalChars			# (tty support) keep
+	Include/user/dev/tty.h
+devFlags
+	fsdm/fsdmDisk.c
+devFsDefaultDiskPartitions
+	dev/symm.md/devConfig.c
+	dev/sun3.md/devConfig.c
+	dev/sun4.md/devConfig.c
+	dev/devFsOpTable.h
+	dev/ds3100.md/devConfig.c
+	fs/fsInit.c
+devFsOpTable			# initially disallow everything.  In short
+				# term, only allow tty's.
+	dev/symm.md/devFsOpTable.c
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/devFsOpTable.h
+	dev/ds3100.md/devFsOpTable.c
+	dev/devBlockDevice.c
+	fsdm/fsdmDisk.c
+	fsio/fsioDevice.c
+	fsrmt/fsrmtDevice.c
+	lfs/lfsIo.c
+	ofs/{ofsAlloc,ofsDisk}.c
+devFsOpTable.h
+	fs/fsInit.c
+	fsdm/fsdmDisk.c
+	fsio/fsioDevice.c
+	fsrmt/fsrmtDevice.c
+	lfs/lfsIo.c
+	ofs/{ofsAlloc,ofsDisk}.c
+devHandlePtr
+	fsdm/fsdmDisk.c
+	fsio/fsioDevice.c
+	fsio/fsioDevice.h
+	fsrmt/fsrmtDevice.c
+devIndex
+	fsio/fsioDevice.c
+	fsrmt/fsrmtDevice.c
+devName
+	mach/sun3.md/machMon.h
+	mach/sun4.md/machMon.h
+devNetData
+	net/netCode.c
+	net/netTypes.h
+devNetEtherDebug
+	utils/symm.md/dumpEvents.c
+devNumDefaultDiskPartitions	# initially 0; should rename to
+				# dev_mumble.
+	dev/symm.md/devConfig.c
+	dev/sun3.md/devConfig.c
+	dev/sun4.md/devConfig.c
+	dev/devFsOpTable.h
+	dev/ds3100.md/devConfig.c
+	fs/fsInit.c
+devNumDevices			# keep; eventually rename to dev_mumble.
+	dev/symm.md/devFsOpTable.c
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/devFsOpTable.h
+	dev/ds3100.md/devFsOpTable.c
+	dev/devBlockDevice.c
+	fsio/fsioDevice.c
+	fsrmt/fsrmtDevice.c
+devPhysAddr			# delete.
+	vm/sun3.md/vmSun.c
+	vm/sun3.md/vmMach.h
+	vm/sun4.md/vmSun.c
+	vm/sun4.md/vmMach.h
+devStatusMappings		# (errno/status mappings) keep.
+	mach/ds3100.md/compatMapCode.c
+	libc/sun3.md/compatMapCode.c
+	libc/sun4.md/compatMapCode.c
+	libc/symm.md/compatMapCode.c
+dev_LastConsoleInput		# keep.
+	dev/devTty.c
+	dev/dev.h
+	dev/sun3.md/devMouse.c
+	dev/sun4.md/devMouse.c
+	dev/ds3100.md/devGraphics.c
+	sys/sysCalls.c
+
+Local Variables:
+fill-column: 78
+mode: xref
+End:

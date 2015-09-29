@@ -1,0 +1,1212 @@
+%
+%	VDM documentstyle option for LaTeX
+%
+%	M. Wolczko 
+%
+%	Created from the ashes of VDM.tex and CBJ's vdm86.tex
+%
+%	Uses the AMS msym fonts if available: if you don't have them,
+%	follow the instructions near the string FONT-CUSTOMIZING.
+%
+%	$Log:	vdm.doc,v $
+%	Revision 2.5  88/03/25  18:52:29  mario
+%	Improved use of AMS fonts.
+%	Improved efficiency by eliminating unnecessary macros.
+%	Enable line breaks after underscores in math mode.
+%	Fixed used of penalties....were in wrong placeto have any effect.
+%	Added \uniqueval, \cons, formbox environment, \R
+%	Fixed composite environments so that they can be used in horizontal
+%	mode.
+%	Fixed a bug in the proof environment.
+%
+%	Revision 2.4  87/11/12  12:31:07  mario
+%	Shortened lines for network mailers,
+%	Changed mathcodes of digits,
+%	Added \Rat, changed \DEF, added betweenFunctionAndPre hook,skip,
+%	and penalty, added \Conc
+%
+%	Revision 2.3  87/02/26  11:36:07  miw
+%	Absence of a blank line after \end{vdm} now forces \noindent.
+%	Can now have pre- and post-conditions in function defns.
+%	Added \mapinto macro.
+%
+%	Revision 2.2  86/12/18  12:00:17  miw
+%	Added \@changeMathmodeCatcodes to \begin{vdm} to avoid as many
+%	catcode problems with @ and _ as possible.
+%	Fixed a bug in \If (was adding extra blank lines).
+%	Added the \nexists macro.
+%	Added the *-form of fn (which had been inadvertently omitted).
+%	Fixed a bug in the proof environment (had a name clash with latex).
+%	
+%	Revision 2.1  86/11/24  13:08:34  miw
+%	**** MAJOR REWRITE/EXTENSION ****
+%	
+%	Entry to the vdm env now is a no-op!
+%	No mathcode changes to get the right letters in math mode.
+%	Double quotes now delimit text in math mode.
+%	\baselineskip within vdm mode is now \VDMbaselineskip.
+%	Added the \amssy font.
+%	Vertical VDM things (ops, fns, etc) shouldn't need blank lines
+%	around them. 
+%	Let the user choose whether some things are left- or right-aligned.
+%	Added *-forms of quantifiers.
+%	Added composite env and \scompose.
+%	Added proof env.
+%	
+%	Revision 1.8  86/10/08  14:11:36  miw
+%	Changed \or, \rd, \wr to \Or, \Rd, \Wr.
+%	Changed keyword font to sans-serif.
+%	Changed \makeNewKeyword to use \newcommand.
+%	Added \where keyword.
+%	Changed \Nat, \Int, \Bool, \Real to use `blackboard' font.
+%	Added `Strachey brackets' using \term.
+%	Added function composition, \compf.
+%	Added a *-form to the fn environment to omit parens on args.
+%	Added a *-form to \LambdaFn to place body on a new line.
+%	Added \min and \max monadic operators.
+%	Changed \serd and \busd to \rres and \rsub.
+%	Added \const for constants.
+%
+%	Revision 1.7  86/08/14  17:52:32  miw
+%	Fixed bugs in vdmfn and vdmop.
+%	Moved the pre..Hooks in operations and functions to occur earlier
+%	(allows one to change baselineskip).
+%
+%	Revision 1.6  86/06/03  12:23:05  miw
+%	Added the formula env, and fixed a bug in \type.
+%	
+%	
+%	Revision 1.5  86/05/07  17:51:48  miw
+%	Parameterised more vertical skips.  Changed many dimensions from pts
+%	to exs.  Fixed a bug in \type.  Altered externals so that field names
+%	are flush right.
+%	
+%	Revision 1.4  86/04/17  11:09:04  miw
+%	Tweaked some more.
+%
+%	Revision 1.3 86/03/14 20:44:22 miw
+%	Added left margin control with \VDMindent.
+%	Tweaked some penalties (esp. \hyphenpenalty)---first use of a
+%	\discretionary in quantified expresssion.
+%	Fixed a bug in IndentedPara (using box0 instead of copy0)
+%	
+%	Revision 1.2  86/03/12  16:26:23  miw
+%	Changed the fn env. and \Cases.  Added \@raggedRight.
+%	Fixed lots of other minor things.
+%
+%	Revision 1.1  86/03/03  18:42:40  miw
+%	Initial revision
+%
+%
+%	$Header: vdm.doc,v 2.5 88/03/25 18:52:29 mario Locked $
+%
+%
+%
+%----------------------------------------------------------------
+%
+%	Installation-dependent features
+%
+% FONT-CUSTOMIZING
+\newif\ifams@
+\ams@true  % change to \ams@false if you don't have the AMS fonts
+%\ams@false  % change to \ams@true if you have the AMS fonts
+
+\newif\ifps@ \ps@false % PostScript-based
+
+\def\@fmtname{lplain}
+\def\@psfmtname{pslplain}
+
+\def\@testcmsy{\if@usecmsy \else 
+  \@latexerr{Can't use vdm with this PSLaTeX}%
+	{This PSLaTeX does not have the CMSY symbols
+	available, and cannot be used with VDM style.  Get
+	a guru to rebuild PSLaTeX with the CMSY and CMMI
+	fonts included.}\fi}
+\def\@testcmmi{\if@usecmmi \else
+  \@latexerr{Can't use vdm with this PSLaTeX}%
+	{This PSLaTeX does not have the CMMI symbols
+	available, and cannot be used with VDM style.  Get
+	a guru to rebuild PSLaTeX with the CMSY and CMMI
+	fonts included.}\fi}
+
+\ifx\fmtname\@fmtname % standard LaTeX is OK
+\else \ifx\fmtname\@psfmtname \global\ps@true \@testcmsy \@testcmmi
+      \else \ams@false \fi\fi % don't use AMS for SliTeX
+
+\newfam\msxfam
+\newfam\msyfam
+
+\ifams@
+	% this is lifted from amssymbols.sty
+	\ifcase\@ptsize
+	 \font\tenmsx=msxm10
+	 \font\sevenmsx=msxm7
+	 \font\fivemsx=msxm5
+	 \font\tenmsy=msym10
+	 \font\sevenmsy=msym7
+	 \font\fivemsy=msym5
+	\or
+	 \font\tenmsx=msxm10 scaled \magstephalf
+	 \font\sevenmsx=msxm8
+	 \font\fivemsx=msxm6
+	 \font\tenmsy=msym10 scaled \magstephalf
+	 \font\sevenmsy=msym8
+	 \font\fivemsy=msym6
+	\or
+	 \font\tenmsx=msxm10 scaled \magstep1
+	 \font\sevenmsx=msxm8
+	 \font\fivemsx=msxm6
+	 \font\tenmsy=msym10 scaled \magstep1
+	 \font\sevenmsy=msym8
+	 \font\fivemsy=msym6
+	\fi
+
+	\textfont\msxfam=\tenmsx  \scriptfont\msxfam=\sevenmsx
+	  \scriptscriptfont\msxfam=\fivemsx
+	\textfont\msyfam=\tenmsy  \scriptfont\msyfam=\sevenmsy
+	  \scriptscriptfont\msyfam=\fivemsy
+
+	\def\hexnumber@#1{\ifnum#1<10 \number#1\else
+	 \ifnum#1=10 A\else\ifnum#1=11 B\else\ifnum#1=12 C\else
+	 \ifnum#1=13 D\else\ifnum#1=14 E\else
+	 \ifnum#1=15 F\fi\fi\fi\fi\fi\fi\fi}
+	\def\msx@{\hexnumber@\msxfam}
+	\def\msy@{\hexnumber@\msyfam}
+\fi
+
+%----------------------------------------------------------------
+%
+%	The vdm environment
+%
+\def\vdm{\@changeMathmodeCatcodes\@postUnderPenalty10000 }
+
+% after an \end{vdm} the next paragraph is not indented unless a \par
+% comes first
+\def\endvdm{\global\let\par=\@undonoindent
+  \global\everypar={{\setbox0=\lastbox}\global\everypar={}%
+			\global\let\par=\@@par}}
+
+\def\@undonoindent{\global\everypar={}\global\let\par=\@@par\@@par}
+
+%-----------------------------------------------------------------
+%
+% 	Controlling line and page breaks
+% 
+% Text within the vdm environment is essentially mathematical in
+% nature, so requires special care.  Whenever outer vertical mode is
+% entered, the \@beginVerticalVDM command should be used.  This sets
+% up \leftskip, \rightskip, \baselineskip, \lineskip and
+% \lineskiplimit to conform with the overall style.
+%
+% When entering unrestricted horizontal mode, the \@beginHorizontalVDM
+% command should be used.  This sets up:
+%	\leftskip and \rightskip to 0,
+%	\\ to do line breaking
+%	ragged right line breaking, with special penalties, and
+%	enters math mode.
+% \@endHorizontalVDM should be called when leaving unrestricted
+% horizontal mode.
+
+\def\@beginVerticalVDM{\@changeMargins\@changeBaselineskip}
+
+\def\@beginHorizontalVDM{\@restoreLineSeparator
+  \@restoreMargins\@raggedRight\noindent$\strut\relax}
+\def\@endHorizontalVDM{\relax\strut$}
+
+% \VDMindent is used for \leftskip within VDM, \VDMrindent for
+% \rightskip, \VDMbaselineskip for \baselineskip
+\newdimen\VDMindent \VDMindent=\parindent
+\newdimen\VDMrindent \VDMrindent=\parindent
+\def\VDMbaselineskip{\baselineskip}
+
+\def\@changeMargins{\leftskip=\VDMindent \rightskip=\VDMrindent}
+\def\@restoreMargins{\advance\hsize by-\leftskip
+  \advance\hsize by-\rightskip
+  \leftskip=0pt \rightskip=0pt}
+\def\@changeBaselineskip{\baselineskip=\VDMbaselineskip
+  \lineskip=0pt \lineskiplimit=0pt
+  % need to alter the size of struts, too
+  \setbox\strutbox\hbox{\vrule height.7\baselineskip
+      depth.3\baselineskip width\z@}}
+
+% these are used in externals, records and cases
+\def\@changeLineSeparator{\let\\=\cr} % for usr within \halign
+\def\@restoreLineSeparator{\let\\=\newline}
+
+\def\@raggedRight{\rightskip=0pt plus 1fil
+  \hyphenpenalty=-100 \linepenalty=200
+  \binoppenalty=10000 \relpenalty=10000 \pretolerance=-1}
+
+%------------------------------------------------------------------------
+%
+%	Font and Character Changes
+%
+% make a-zA-Z use the \it family within math mode, and ~ mean \hook.
+% Digits 0-9 remain as normal.
+\newcount\@mathFamily  \@mathFamily=\itfam
+\everymath=\expandafter{\the\everymath\fam\@mathFamily
+	\@changeMathmodeCatcodes}
+\everydisplay=\expandafter{\the\everydisplay\fam\@mathFamily
+	\@changeMathmodeCatcodes}
+\mathcode`\0="0030
+\mathcode`\1="0031
+\mathcode`\2="0032
+\mathcode`\3="0033
+\mathcode`\4="0034
+\mathcode`\5="0035
+\mathcode`\6="0036
+\mathcode`\7="0037
+\mathcode`\8="0038
+\mathcode`\9="0039
+
+% If the user really wants the normal codes, she can call \defaultMathcodes
+\def\defaultMathcodes{\@mathFamily=-1}
+
+% make a : into punctuation, a - into a letter, and | mean \mid
+\ifps@
+ \def\@changeOtherMathcodes{\mathcode`\:="603A \mathcode`\-="002D
+  \mathcode`\|="327C \mathchardef\Or="32DA % this is a rel to get 5mu spacing
+  \mathcode`\f="0166} % normal letter spacing
+\else
+ \def\@changeOtherMathcodes{\mathcode`\:="603A \mathcode`\-="042D
+  \mathcode`\|="326A \mathchardef\Or="325F }% this is a rel to get 5mu spacing
+\fi
+
+% alternative underscore
+\def\@VDMunderscore{\leavevmode
+  \kern.06em\vbox{\hrule\@height .2ex\@width .3em}\penalty\@postUnderPenalty
+  \hskip 0.1em}
+
+% Allow line breaks after an underscore, but not in vdm mode (see
+% \vdm).  This is so long identifiers can be broken when run
+% into paragraphs. 
+\newcount\@postUnderPenalty \@postUnderPenalty=200
+
+% now require some catcode trickery to enable us to change _ when we want to
+{\catcode`\_=\active \catcode`\"=\active
+ \gdef\@changeGlobalCatcodes{% make _ a normal char
+	\catcode`\_=\active \let_=\@VDMunderscore}
+ \gdef\@changeMathmodeCatcodes{%
+	% make ~ mean \hook, " do text, @ mean subscript
+	\let~=\hook
+	\catcode`\@=8
+	\catcode`\"=\active  \let"=\@mathText}
+ \gdef\underscoreoff{% make _ a normal char
+	\catcode`\_=\active \let_=\@VDMunderscore}
+ \gdef\underscoreon{% restore underscore to usual meaning
+	\catcode`\_=8}
+ \gdef\@mathText#1"{\hbox{\mathTextFont #1\/}}}
+
+\def\mathTextFont{\rm}
+
+%----------------------------------------------------------------
+%
+%	Keywords
+%
+\ifx\fmtname\@fmtname
+	\def\keywordFontBeginSequence{\small\sf}%	user-definable
+\else\ifx\fmtname\@psfmtname
+	\def\keywordFontBeginSequence{\sf}%	user-definable
+\else
+	\def\keywordFontBeginSequence{\bf}%	good for SliTeX
+\fi\fi
+
+\def\kw#1{\hbox{\keywordFontBeginSequence #1\/}}
+
+\def\makeNewKeyword#1#2{% use \newcommand for extra checks
+	\newcommand{#1}{\hbox{\keywordFontBeginSequence #2\/}}}
+
+\makeNewKeyword{\nil}{nil}
+\makeNewKeyword{\True}{true}
+\makeNewKeyword{\true}{true}
+\makeNewKeyword{\False}{false}
+\makeNewKeyword{\false}{false}
+
+\def\where{\par\moveright\VDMindent\hbox{\keywordFontBeginSequence where\/}}
+
+%----------------------------------------------------------------
+%
+%	monadic operator creation
+%
+\def\newMonadicOperator#1#2{\newcommand{#1}{\kw{#2\kern.16667em}\nobreak}}
+
+%----------------------------------------------------------------
+%
+%	primitive numeric types
+%
+% use the AMS fonts for these if possible
+
+\ifams@
+  \mathchardef\Bool="0\msy@42	% Booleans
+  \mathchardef\Nat="0\msy@4E	% Natural numbers
+  \def\Nati{\Nat_1}		% Positive natural numbers
+  \mathchardef\Int="0\msy@5A	% Integers
+  \mathchardef\Real="0\msy@52	% Reals
+  \mathchardef\Rat="0\msy@51	% Rationals
+\else
+  \def\Bool{\hbox{\bf B\/}}
+  \def\Nat{\hbox{\bf N\/}}
+  \def\Nati{\hbox{$\hbox{\bf N}_1$}}
+  \def\Int{\hbox{\bf Z\/}}
+  \def\Real{\hbox{\bf R\/}}
+  \def\Rat{\hbox{\bf Q\/}}
+\fi
+\let\Natone=\Nati % just for an alternative
+
+%----------------------------------------------------------------
+%
+%	Operations
+%
+% The op environment.  Within op you can specify args,
+% result, etc. which are gathered into registers, and output when the
+% op env. ends.
+%
+% The optional argument is the operation name
+
+% shorthand for an operation on its own: the vdmop env.
+\def\vdmop{\vdm\op} \def\endvdmop{\endop\endvdm}
+
+% registers constructed within an op environment
+\newtoks\@operationName
+\newbox\@operationNameBox
+\newif\ifArgumentListEncountered@
+\newtoks\@argumentListTokens
+\newtoks\@resultNameAndTypeTokens
+\newbox\@externalsBox
+\newbox\@preConditionBox
+\newbox\@postConditionBox
+
+\def\op{% clear temporaries, deal with optional arg
+	\setbox\@operationNameBox=\hbox{}
+	\@argumentListTokens={} \ArgumentListEncountered@false
+	\@resultNameAndTypeTokens={}
+	\setbox\@externalsBox=\box\voidb@x
+	\setbox\@preConditionBox=\box\voidb@x
+	\setbox\@postConditionBox=\box\voidb@x
+	\par\preOperationHook
+	\vskip\preOperationSkip
+	\@beginVerticalVDM
+	\@ifnextchar [{\@opname}{}}
+
+% breaking parameters
+\newcount\preOperationPenalty \preOperationPenalty=0
+\newcount\preExternalPenalty \preExternalPenalty=2000
+\newcount\prePreConditionPenalty \prePreConditionPenalty=800
+\newcount\prePostConditionPenalty \prePostConditionPenalty=500
+\newcount\postOperationPenalty \postOperationPenalty=-500
+
+% gaps between bits of operations
+\newskip\preOperationSkip \preOperationSkip=2ex plus 0.5ex minus 0.2ex
+\newskip\postOperationSkip \postOperationSkip=2ex plus 0.5ex minus 0.2ex
+\newskip\postHeaderSkip \postHeaderSkip=.5ex plus .2ex minus .2ex
+\newskip\postExternalsSkip \postExternalsSkip=.5ex plus .2ex minus .2ex
+\newskip\postPreConditionSkip \postPreConditionSkip=.5ex plus .2ex minus .2ex
+
+\def\endop{% make up operation
+	% IMPORTANT---don't remove the vskips in this macro
+	% if you don't want one, set it to 0pt
+	\vskip 0pt
+	\@setOperationHeader
+	\betweenHeaderAndExternalsHook
+	\vskip\postHeaderSkip
+	\ifvoid\@externalsBox
+	      \betweenExternalsAndPreConditionHook
+	\else \moveright\VDMindent\box\@externalsBox
+	      \betweenExternalsAndPreConditionHook
+	      \vskip\postExternalsSkip
+	\fi
+	\ifvoid\@preConditionBox
+	      \betweenPreAndPostConditionHook
+	\else \moveright\VDMindent\box\@preConditionBox
+	      \betweenPreAndPostConditionHook
+	      \vskip\postPreConditionSkip
+	\fi
+	\ifvoid\@postConditionBox
+	      \postOperationHook
+	\else \moveright\VDMindent\box\@postConditionBox
+	      \postOperationHook
+	      \vskip\postOperationSkip
+	\fi}
+
+% hooks for user-defined expansion
+% TeX is in outer vertical mode when these are called.
+% ALWAYS leave TeX in vertical mode after these macros have been called
+\def\preOperationHook{\penalty\preOperationPenalty }
+\def\betweenHeaderAndExternalsHook{\penalty\preExternalPenalty }
+\def\betweenExternalsAndPreConditionHook{\penalty\prePreConditionPenalty }
+\def\betweenPreAndPostConditionHook{\penalty\prePostConditionPenalty }
+\def\postOperationHook{\penalty\postOperationPenalty }
+
+% combine the operation name, argument list and result
+\def\@setOperationHeader{%
+	\moveright\VDMindent\vtop{%
+		\ifArgumentListEncountered@
+			\setbox\@operationNameBox=
+				\hbox{\unhbox\@operationNameBox\ $($}\fi
+		\hangindent=\wd\@operationNameBox \hangafter=1
+		\noindent\kern-.05em\box\@operationNameBox
+		\@beginHorizontalVDM
+		\ifArgumentListEncountered@\the\@argumentListTokens)\fi
+		\ \the\@resultNameAndTypeTokens
+		\@endHorizontalVDM}}
+
+% set the operation name
+% \opname{name-of-operation}
+\def\opname#1{\@opname[#1]}
+\def\@opname[#1]{\@operationName={#1}%
+  \global\setbox\@operationNameBox=\hbox{$\relax#1$\ }}
+
+% set up the argument list
+% \args{ argument \\ argument \\ argument... } where \\ forces a line break
+% This is also used in the fn environment
+\def\args{\global\ArgumentListEncountered@true \global\@argumentListTokens=}
+
+% result name and type
+\def\res{\global\@resultNameAndTypeTokens=}
+
+% externals list
+%
+% An external list could be either very long or very short, so we provide
+% two forms.  One is the short \ext{..} command, the other is the externals 
+% environment.
+% Externals are always separated by \\
+%
+
+% we have to mess a little to get the catcode of : right
+\def\ext{\bgroup\@makeColonActive\@ext}
+\def\@ext#1{\externals#1\endexternals\egroup}
+
+\def\externals{\global\setbox\@externalsBox=%
+	\@beginIndentedPara{\hsize}{ext }{\@setUpExternals}}
+\def\endexternals{\@endIndentedPara{\@endAlignment}}
+
+\def\@setUpExternals{\@makeColonActive\@changeLineSeparator\@beginAlignment}
+
+% more catcode trickery for :
+{\catcode`\:=\active
+ \gdef\@makeColonActive{\catcode`\:=\active \let:=&}}
+
+% the \expandafters are necessary because TeX doesn't expand
+% \halign specs when scanning for # and &
+\def\@beginAlignment{\expandafter\halign\expandafter\bgroup
+	\the\@extAlign\strut\enspace&:\enspace$##$\hfil\cr}
+\def\@endAlignment{\crcr\egroup}
+
+% the user can decide on the exact alignment of the field names
+\newtoks\@extAlign
+\def\leftExternals{\@extAlign={$##$\hfil}}
+\def\rightExternals{\@extAlign={\hfil$##$}}
+\leftExternals
+
+\makeNewKeyword{\Rd}{rd } \makeNewKeyword{\Wr}{wr }
+
+% pre-condition and post-condition
+%
+% once again we provide short forms \pre and \post, and environments
+% precond and postcond
+\def\pre#1{\precond#1\endprecond}
+\def\precond{\global\setbox\@preConditionBox=%
+	\@beginMathIndentedPara{\hsize}{pre }}
+\def\endprecond{\@endMathIndentedPara}
+
+\def\post#1{\postcond#1\endpostcond}
+\def\postcond{\global\setbox\@postConditionBox=%
+	\@beginMathIndentedPara{\hsize}{post }}
+\def\endpostcond{\@endMathIndentedPara}
+
+
+%----------------------------------------------------------------
+%
+%	Box man\oe uvres
+%
+% Here's where all the tricky box manipulation commands go
+%
+% \@beginIndentedPara begins construction of a \hbox of width #1
+% which contains keyword #2 to the left of a para in a vtop.
+% #3 is evaluated within the inner vtop.
+% endIndentedPara closes the box off; its arg. is evaluated just
+% before closing the box.
+%
+\def\@beginIndentedPara#1#2#3{\hbox to #1\bgroup \setbox0=\kw{#2}%
+	\copy0 \strut \vtop\bgroup \advance\hsize by -\wd0 #3}
+\def\@endIndentedPara#1{\strut#1\egroup\hss\egroup}
+
+% \@beginMathIndentedPara places the para in vdm mode
+\def\@beginMathIndentedPara#1#2{\@beginIndentedPara{#1}{#2}%
+	{\@beginHorizontalVDM}}
+\def\@endMathIndentedPara{\@endIndentedPara{\@endHorizontalVDM}}
+
+% \@belowAndIndent#1#2 places #2 in a vbox below and to the right of #1
+\def\@belowAndIndent#1#2{#1\hfil\break
+	\@beginMathIndentedPara{\hsize}{\qquad}#2\@endMathIndentedPara}
+
+%----------------------------------------------------------------
+%
+%	Constructions
+%
+% Here are all the standard constructions.
+% The only tricky one is \cases.
+% Those that construct a box must be made to make that box of 0 width,
+% and force a line break immediately afterwards.
+
+% \If mm-exp \Then mm-exp \Else mm-exp \Fi
+% multi-line indented if-then-else
+%
+\def\If#1\Then#2\Else#3\Fi{\vtop{%
+	\@beginMathIndentedPara{0pt}{if }#1\@endMathIndentedPara
+	\@beginMathIndentedPara{0pt}{then }#2\@endMathIndentedPara
+	\@beginMathIndentedPara{0pt}{else }#3\@endMathIndentedPara}}
+
+% \SIf mm-exp \Then mm-exp \Else mm-exp \Fi
+% single line if-then-else
+\def\SIf#1\Then#2\Else#3\Fi{\hbox to 0pt{\vtop{\@beginHorizontalVDM
+	\kw{if }\nobreak#1\penalty0\hskip 0.5em
+	\kw{then }\nobreak#2\penalty-100\hskip 0.5em % break here OK
+	\kw{else }\nobreak#3\@endHorizontalVDM}\hss}\hfil\break}
+
+% \Let mm-exp \In mm-exp2
+% multi-line let..in ; mm-exp2 is `curried'
+\def\Let#1\In{\vtop{%
+	\@beginMathIndentedPara{0pt}{let }#1\hskip 0.5em
+	\kw{in}\@endMathIndentedPara}\hfil\break}
+
+% \SLet mm-exp \In mm-exp
+% single-line let..in
+\def\SLet#1\In#2{\hbox to 0pt{\vtop{\@beginHorizontalVDM
+	\kw{let }\nobreak#1\hskip 0.5em
+	\kw{in }\penalty-200 #2\@endHorizontalVDM}\hss}\hfil\break}
+
+% multi-line cases
+% 
+% \Cases{ selecting-mm-exp }
+% from-case1 & to-case1 \\
+% from-case2 & to-case2 \\
+%	    ...
+% from-casen & to-casen
+% \Otherwise{ mm-exp }
+% \Endcases[optional text for the rest of the line]
+
+\newif\ifOtherwiseEncountered@
+\newtoks\@OtherwiseTokens
+
+\def\Cases#1{\hbox to 0pt\bgroup \vtop\bgroup
+		\@beginMathIndentedPara{\hsize}{cases }\strut
+			#1\hskip 0.5em\strut\kw{of}%
+		\@endMathIndentedPara
+		\bgroup % we might be in a nested case, so we have to
+			% save the \Otherwise bits we might lose
+		\OtherwiseEncountered@false \@changeLineSeparator 
+		\@beginCasesAlignment}
+
+% the user can decide on the exact alignment
+\newtoks\@casesDef
+\def\leftCases{\@casesDef={$##$\hfil}}
+\def\rightCases{\@casesDef={\hfil$##$}}
+\rightCases
+
+% the \expandafters are necessary because TeX doesn't expand
+% \halign specs when scanning for # and &
+\def\@beginCasesAlignment{\expandafter\halign\expandafter\bgroup
+	\the\@casesDef&$\,\rightarrow##$\hfil\cr}
+
+\def\Otherwise{\global\OtherwiseEncountered@true \global\@OtherwiseTokens=}
+
+\def\Endcases{\@endCasesAlignment \@setOtherwise \egroup \@setEndcases}
+\def\@endCasesAlignment{\crcr\egroup}
+\def\@setOtherwise{\ifOtherwiseEncountered@ % have an otherwise clause
+	\@beginMathIndentedPara{\hsize}{otherwise }%
+	\strut\the\@OtherwiseTokens\strut
+	\@endMathIndentedPara
+	\fi}
+
+% must test for the optional arg to follow the end
+\def\@setEndcases{\noindent
+	\strut\kw{end}\@ifnextchar [{\@unbracket}{\@finalCaseEnd}}
+\def\@unbracket[#1]{$#1$\@finalCaseEnd}
+\def\@finalCaseEnd{\egroup\hss\egroup\hfil\break}
+
+%----------------------------------------------------------------
+%
+%	special symbols
+
+% defined as
+\ifps@
+ \def\DEF{\raise.5ex
+	\hbox{\footnotesize\underline{$\mathchar"3\cmsy@34$}}}% a \triangle
+\else
+ \def\DEF{\raise.5ex
+	\hbox{\footnotesize\underline{$\mathchar"3234$}}}% a \triangle
+\fi
+
+% cross product
+\let\x=\times
+
+%	logical connectives
+%
+\def\Iff{\penalty-50\mskip 7mu plus 2mu minus 2mu
+	\Leftrightarrow\mskip 7mu plus 2mu minus 2mu}
+\let\iff=\Iff
+\def\Implies{\penalty-35\mskip 6mu plus 2mu minus 1mu \Rightarrow
+	\mskip 6mu plus 2mu minus 1mu}
+\let\implies=\Implies
+% see changeOtherMathcodes for \Or
+\let\And=\land
+\let\and=\And
+%  use \neg for logical not, or
+\let\Not=\neg
+
+%	quantification
+%
+\ifps@
+ \mathchardef\Exists="0224
+ \mathchardef\Forall="0222
+ \mathchardef\suchthat="22D7
+\else
+ \mathchardef\Exists="0239
+ \mathchardef\Forall="0238
+ \mathchardef\suchthat="2201
+\fi
+\def\exists{\@ifstar{\@splitExists}{\@normalExists}}
+\ifams@
+  \mathchardef\@nexists="0\msy@40 % crossed out existential quantifier
+\else
+  \def\@nexists{\hbox to 0pt{\raise0.15ex\hbox{/}\hss}\Exists}
+\fi
+\def\nexists{\@ifstar{\@splitNExists}{\@normalNExists}}
+\def\forall{\@ifstar{\@splitForall}{\@normalForall}}
+\def\unique{\@ifstar{\@splitUnique}{\@normalUnique}}
+\def\uniqueval{\@ifstar{\@splitUniqueval}{\@normalUniqueval}}
+
+\def\@normalExists#1#2{{\Exists#1}\suchthat #2}
+\def\@normalNExists#1#2{{\@nexists#1}\suchthat #2}
+\def\@normalForall#1#2{{\Forall#1}\suchthat #2}
+\def\@normalUnique#1#2{{\Exists!\,#1}\suchthat #2}
+\def\@normalUniqueval#1#2{{\iota\,#1}\suchthat #2}
+
+\def\@splitExists#1{\@belowAndIndent{\Exists#1\suchthat}}
+\def\@splitNExists#1{\@belowAndIndent{\@nexists#1\suchthat}}
+\def\@splitForall#1{\@belowAndIndent{\Forall#1\suchthat}}
+\def\@splitUnique#1{\@belowAndIndent{\Exists!\,#1\suchthat}}
+\def\@splitUniqueval#1{\@belowAndIndent{\iota\,#1\suchthat}}
+
+%	strachey brackets
+%
+% (see TeXbook, p.437)
+\def\term#1{[\mkern-\thinmuskip[#1\relax]\mkern-\thinmuskip]}
+
+%	function composition
+%
+\let\compf=\circ
+
+%----------------------------------------------------------------
+%
+%	function environment
+%
+% This environment is similar to the op environment, but is used for
+% function definition.  
+%
+% The mandatory first parameter is the name of the function, the
+% second is the argument list.
+%
+% The *-form simply doesn't force the parentheses round the argument list
+
+\def\fn{\parens@true\@beginVDMfunction}
+\@namedef{fn*}{\parens@false\@beginVDMfunction}
+\@namedef{endfn*}{\endfn}
+
+% short form
+\def\vdmfn{\vdm\parens@true \@beginVDMfunction}
+\def\endvdmfn{\endfn\endvdm}
+\@namedef{vdmfn*}{\vdm\parens@false \@beginVDMfunction}
+\@namedef{endvdmfn*}{\endfn\endvdm}
+
+% registers used within the fn environment
+\newtoks\@fnName
+\newbox\@fnNameBox
+\newif\ifsignatureEncountered@
+\newtoks\@signatureTokens
+\newbox\@fnDefnBox
+\newif\ifparens@
+
+\def\@beginVDMfunction#1#2{%
+	\@fnName={#1}
+	\setbox\@fnNameBox=\hbox{$#1$}%
+	\setbox\@preConditionBox=\box\voidb@x % for people who want to do
+	\setbox\@postConditionBox=\box\voidb@x% implicit defns
+	\@signatureTokens={}\signatureEncountered@false
+	\ifparens@
+		\@argumentListTokens={(#2)}%
+	\else
+		\@argumentListTokens={#2}%
+	\fi
+	\par\preFunctionHook
+	\vskip\preFunctionSkip
+	\@beginVerticalVDM 
+	\@beginFnDefn}
+
+% read in a signature
+\def\signature{\global\signatureEncountered@true \global\@signatureTokens=}
+
+\def\@beginFnDefn{\global\setbox\@fnDefnBox=\vtop\bgroup
+	\hangindent=2em \hangafter=1 \@beginHorizontalVDM
+	\advance\hsize by-2em % this fools vboxes within the
+	% function body about the hanging indent...yuk.
+	% If you change the size of the indent, change the
+	% corresponding line in \endfn.
+	\copy\@fnNameBox \the\@argumentListTokens 
+	\quad\DEF\penalty-100\quad }
+
+\newskip\preFunctionSkip \preFunctionSkip=2ex plus .5ex minus .2ex
+\newskip\postFunctionSkip \postFunctionSkip=2ex plus .5ex minus .2ex
+\newskip\betweenSignatureAndBodySkip
+\betweenSignatureAndBodySkip=1.2ex plus .3ex minus .2ex
+\newskip\betweenFunctionAndPreSkip
+\betweenFunctionAndPreSkip=1.2ex plus .3ex minus .2ex
+
+\def\endfn{%
+	\advance\hsize by 2em% matches the dirty \advance in \@beginFnDefn
+	\@endHorizontalVDM
+	\egroup  % this ends the vtop we started in \@beginFnDefn
+	\ifsignatureEncountered@
+		\setbox0=\hbox{\unhbox\@fnNameBox$\;\mathpunct:\,$}%
+		\dimen255=\wd0 \noindent \box0
+		\vtop{\advance\hsize by-\dimen255 \@beginHorizontalVDM
+			\the\@signatureTokens \@endHorizontalVDM}\par
+		\betweenSignatureAndBodyHook
+		\vskip\betweenSignatureAndBodySkip
+	\fi
+	\moveright\VDMindent\box\@fnDefnBox
+	\ifvoid\@preConditionBox
+	      \betweenPreAndPostConditionHook
+	      \vskip\postFunctionSkip
+	\else \betweenFunctionAndPreHook
+	      \vskip\betweenFunctionAndPreSkip
+	      \moveright\VDMindent\box\@preConditionBox
+	      \betweenPreAndPostConditionHook
+	      \vskip\postPreConditionSkip
+	\fi
+	\ifvoid\@postConditionBox
+	      \postFunctionHook
+	\else \moveright\VDMindent\box\@postConditionBox
+	      \postFunctionHook
+	      \vskip\postOperationSkip
+	\fi}
+
+\newcount\preFunctionPenalty \preFunctionPenalty=0
+\newcount\betweenSignatureAndBodyPenalty \betweenSignatureAndBodyPenalty=500
+\newcount\betweenFunctionAndPrePenalty \betweenFunctionAndPrePenalty=1000
+\newcount\postFunctionPenalty \postFunctionPenalty=-500
+
+% These are called in outer vertical mode---they must also exit in this mode
+\def\preFunctionHook{\penalty\preFunctionPenalty }
+\def\betweenSignatureAndBodyHook{\penalty\betweenSignatureAndBodyPenalty }
+\def\betweenFunctionAndPreHook{\penalty\betweenFunctionAndPrePenalty }
+\def\postFunctionHook{\penalty\postFunctionPenalty }
+
+%	other function-related things
+%
+
+% function arrow
+\def\to{\penalty-100\rightarrow}
+
+% explicit lamdba function
+\def\LambdaFn{\@ifstar{\@splitLambdaFn}{\@normalLambdaFn}}
+\def\@normalLambdaFn#1#2{{\lambda#1}\suchthat#2}
+\def\@splitLambdaFn#1#2{% place body in a separate box below and to the right
+	{\lambda#1}\suchthat\hfil\break
+	\@beginMathIndentedPara{\hsize}{\qquad}#2\@endMathIndentedPara}
+
+%----------------------------------------------------------------
+%
+%	Sets
+
+% new set type
+\def\setof#1{\kw{set of }#1}
+
+% set enumeration
+\def\set#1{\{#1\}}
+
+% empty set
+\def\emptyset{\{\,\}}
+
+% usual LaTeX operators apply: \in \notin \subset \subseteq
+\let\inter=\cap \let\intersection=\inter
+\let\Inter=\bigcap \let\Intersection=\Inter
+\let\union=\cup
+\let\Union=\bigcup
+\ifps@
+ \mathchardef\minus="222D
+\else
+ \mathchardef\minus="2200
+\fi
+\def\diff{\minus} \let\difference=\diff
+
+\newMonadicOperator{\card}{card}
+\newMonadicOperator{\Min}{min}
+\newMonadicOperator{\Max}{max}
+
+%----------------------------------------------------------------
+%
+% 	Map type
+
+% new map type
+\def\mapof#1#2{\kw{map }\nobreak#1\penalty-50\hskip .3em \kw{to }\nobreak#2}
+
+% one-one map
+\def\mapinto#1#2{\kw{map }\nobreak#1\penalty-50
+	\hskip .3em \kw{into }\nobreak#2}
+
+% map enumeration
+\def\map#1{\{#1\}}
+
+% empty map
+\def\emptymap{\{\,\}}
+
+%	map operators
+%
+% use \mapsto for |->
+% overwrite
+\def\owr{\dagger}
+
+\ifams@
+  % domain restriction
+  \mathchardef\dres="2\msx@43
+  % range restriction
+  \mathchardef\rres="2\msx@42 % the right hand version
+\else % for those without AMS fonts
+  \let\dres=\lhd
+  \let\rres=\rhd
+\fi
+
+% domain subtraction
+\ifps@
+ \def\dsub{\mathbin{\hbox{$\rlap{$\mathord\minus$}\mkern-1.5mu\dres$}}}
+\else
+ \def\dsub{\mathbin{\hbox{$\rlap{$\mathord\minus$}\mkern-1.5mu
+	\lower.1ex\hbox{$\dres$}$}}}
+\fi
+
+% range subtraction
+\ifps@
+ \def\rsub{\mathbin{\hbox{$\rlap{$\mathord\minus$}\mkern-1.5mu\rres$}}}
+\else
+ \def\rsub{\mathbin{\hbox{$\rlap{$\mathord\minus$}\mkern-1.5mu
+	\lower.1ex\hbox{$\rres$}$}}}
+\fi
+
+\newMonadicOperator{\dom}{dom}
+\newMonadicOperator{\rng}{rng}
+
+%----------------------------------------------------------------
+%
+%	Sequences
+%
+
+% new type
+\def\seqof#1{\kw{seq of }#1}
+
+% enumeration
+\def\seq#1{[#1]}
+
+% empty sequence
+\def\emptyseq{[\,]}
+
+\newMonadicOperator{\len}{len}
+\newMonadicOperator{\hd}{hd}
+\newMonadicOperator{\tl}{tl}
+\newMonadicOperator{\elems}{elems}
+\newMonadicOperator{\inds}{inds}
+\def\cons#1{\kw{cons}\nobreak(#1)}
+
+% sequence concatenation
+\ifams@
+  \mathchardef\sconc="2\msy@79
+\else
+  % this is truly yukky
+  \def\sconc{\mathbin{\hbox{\raise1ex\hbox{$\frown$}\kern-0.47em
+	\raise0.2ex\hbox{\it\char"12}}}}
+\fi
+
+% distributed concatenation
+\newMonadicOperator{\Conc}{conc}
+
+%----------------------------------------------------------------
+%
+%	type equation
+%
+\newtoks\@typeName
+\def\type#1#2{{\@typeName{#1} \preTypeHook \vskip\preTypeSkip
+	\@beginVerticalVDM
+	\moveright\VDMindent\vtop{\@beginHorizontalVDM #1=#2
+		\@endHorizontalVDM}
+	\postTypeHook \vskip\postTypeSkip}}
+
+\def\preTypeHook{} \def\postTypeHook{}
+\newskip\preTypeSkip \preTypeSkip=1.2ex plus .5ex minus .3ex
+\newskip\postTypeSkip \postTypeSkip=1.2ex plus .5ex minus .3ex
+
+%----------------------------------------------------------------
+%
+%	Composite Objects
+%
+
+% literal composition; we have a compose and a composite env.
+
+% single line compose
+\@namedef{composite*}#1{\kw{compose }$\relax#1\relax$\kw{ of }$\relax}
+\@namedef{endcomposite*}{\relax$\kw{ end}}
+
+% multiple line version
+\def\composite#1{\bgroup\vskip\preCompositeSkip
+    \@beginVerticalVDM
+    \moveright\VDMindent\vtop\bgroup
+	\@beginHorizontalVDM
+	\kw{compose }#1\kw{ of}%\hfil\break
+	\@endHorizontalVDM
+	\@makeColonActive\@changeLineSeparator
+	\expandafter\halign\expandafter\bgroup\expandafter\qquad
+		\the\@recordAlign\strut\enspace&:\enspace$##$\hfil\cr}
+\def\endcomposite{\crcr\egroup % closes \halign
+	\kw{end}\egroup % ends the \vtop
+	\vskip\postCompositeSkip\egroup}
+
+\def\scompose#1#2{\@nameuse{composite*}{#1}{#2}\@nameuse{endcomposite*}}
+
+\newskip\preCompositeSkip \preCompositeSkip=1.2ex plus .5ex minus .3ex
+\newskip\postCompositeSkip \postCompositeSkip=1.2ex plus .5ex minus .3ex
+
+% record composites; likewise we have a short and a long form
+\newtoks\@recordName
+
+\def\record#1{\@recordName{#1}
+  \par\preRecordHook
+  \vskip\preRecordSkip
+  \@beginVerticalVDM
+  \moveright\VDMindent\hbox\bgroup
+	  \setbox0=\hbox{$#1$\enspace::\enspace}%
+	  \@makeColonActive\@changeLineSeparator
+	  \advance\hsize by-\wd0 \box0
+	  \@restoreMargins
+	  %
+	  % the \expandafters are necessary because TeX doesn't expand
+	  % \halign specs when scanning for # and &
+	  \vtop\bgroup\expandafter\halign\expandafter\bgroup
+		  \the\@recordAlign\strut\enspace&:\enspace$##$\hfil\cr}
+
+\def\endrecord{\crcr\egroup% closes halign
+	\egroup% closes vtop
+	\egroup% closes hbox
+	\par\postRecordHook
+	\vskip\postRecordSkip}
+
+% the user can decide on the exact alignment of the field names
+\newtoks\@recordAlign
+\def\leftRecord{\@recordAlign={$##$\hfil}}
+\def\rightRecord{\@recordAlign={\hfil$##$}}
+\rightRecord
+
+% more catcode trickery
+\def\defrecord{\bgroup\@makeColonActive\@defrecord}
+\def\@defrecord#1#2{\record{#1}#2\endrecord\egroup}
+
+\newskip\preRecordSkip \preRecordSkip=.75ex plus .3ex minus .2ex
+\newskip\postRecordSkip \postRecordSkip=.75ex plus .3ex minus .2ex
+\newcount\preRecordPenalty \preRecordPenalty=0
+\newcount\postRecordPenalty \postRecordPenalty=-100
+\def\preRecordHook{\penalty\preRecordPenalty }
+\def\postRecordHook{\penalty\postRecordPenalty }
+
+% \chg: mu function on composites
+\def\chg#1#2#3{\mu(#1,#2\mapsto#3)}
+
+%----------------------------------------------------------------
+%
+%	Hooks
+%
+% hooked identifiers --- these are taken from the TeXbook, p.357, 359
+\ifps@
+ \def\leftharpoonupfill{$\m@th \mathord\leftharpoonup \mkern-6mu
+  \cleaders\hbox{$\mkern-2mu \mathchar"0\cmsy@00 \mkern-2mu$}\hfill
+  \mkern-6mu \mathchar"0\cmsy@00$}  % p.357, \leftarrowfill
+\else
+ \def\leftharpoonupfill{$\m@th \mathord\leftharpoonup \mkern-6mu
+  \cleaders\hbox{$\mkern-2mu \mathord\minus \mkern-2mu$}\hfill
+  \mkern-6mu \mathord\minus$}  % p.357, \leftarrowfill
+\fi
+\def\overleftharpoonup#1{{%
+  \boxmaxdepth=\maxdimen % this fixes Lamport's figures, but isn't necessary
+  			 % for versions after 15 Dec 87
+  \vbox{\ialign{##\crcr % p.359, \overleftarrow
+    \leftharpoonupfill\crcr\noalign{\kern-\p@\nointerlineskip}
+    $\hfil\displaystyle{#1}\hfil$\crcr}}}}
+
+\let\hook=\overleftharpoonup  % c'est simple comme bonjour
+
+%-----------------------------------------------------------------
+%
+% 	General formula environment, a bit like \[ \] but is
+%	indented to \VDMindent and will take \\
+%
+%
+\def\form#1{\formula #1\endformula}
+
+\def\formula{\par\preFormulaHook
+	\vskip\preFormulaSkip
+	\@beginVerticalVDM
+	\bgroup
+	\moveright\VDMindent\vtop\bgroup\@beginHorizontalVDM}
+\def\endformula{\@endHorizontalVDM\egroup % ends the vtop
+	\egroup % ends the overall group
+	\par\postFormulaHook
+	\vskip\postFormulaSkip}
+
+\newskip\preFormulaSkip \preFormulaSkip=1.2ex plus .5ex minus .3ex
+\newskip\postFormulaSkip \postFormulaSkip=1.2ex plus .5ex minus .3ex
+\newcount\preFormulaPenalty \preFormulaPenalty=0
+\newcount\postFormulaPenalty \postFormulaPenalty=-100
+\def\preFormulaHook{\penalty\preFormulaPenalty }
+\def\postFormulaHook{\penalty\postFormulaPenalty }
+
+%----------------------------------------------------------------
+%
+%	Formula within a box, when width is unknown
+%
+%	equivalent to \parbox[t]{\hsize}{\@beginHorizontalVDM
+%		...\@endHorizontalVDM}
+%
+\def\formbox{\vtop\bgroup\@beginHorizontalVDM}
+\def\endformbox{\strut\@endHorizontalVDM\egroup}
+
+%----------------------------------------------------------------
+%
+%	special font for constants
+%
+\def\constantFont{\sc}
+\def\const#1{\hbox{\constantFont #1\/}}
+
+%----------------------------------------------------------------
+%
+%	line break and indent
+%
+\def\T#1{\\\hbox to #1em{}}
+
+%----------------------------------------------------------------
+%
+%	line break and push line after to RHS
+%
+\def\R{\\\hspace*{\fill}}
+
+%----------------------------------------------------------------
+%
+%	Proofs
+%
+% a proof environment for typesetting proofs in the "natural
+% deduction" style.
+
+\newdimen\ProofIndent \ProofIndent=\VDMindent
+\newdimen\ProofNumberWidth \ProofNumberWidth=\parindent
+
+\def\proof{\par\preProofHook
+	\vskip\preProofSkip
+	\let\&=\@proofLine
+	\moveright\ProofIndent\vtop\bgroup
+		\@indentLevel=1
+		\advance\linewidth by-\ProofIndent
+		\begin{tabbing}%
+		\hbox to\ProofNumberWidth{}\=\kill}	% template line
+\def\endproof{\end{tabbing}\advance\linewidth by\ProofIndent
+	\egroup % ends the \vtop
+	\par\postProofHook
+	\vskip\postProofSkip}
+
+\newskip\preProofSkip \preProofSkip=1.2ex plus .5ex minus .3ex
+\newskip\postProofSkip \postProofSkip=1.2ex plus .5ex minus .3ex
+
+\newcount\preProofPenalty \preProofPenalty=-100
+\newcount\postProofPenalty \postProofPenalty=0
+\def\preProofHook{\penalty\preProofPenalty }
+\def\postProofHook{\penalty\postProofPenalty }
+
+\def\From{\@indentProof\kw{from }\=%
+	\global\advance\@indentLevel by 1
+	\@enterMathMode}
+\def\Infer{\global\advance\@indentLevel by-1
+	\@indentProof\kw{infer }\@enterMathMode}
+\def\@proofLine{\@indentProof\@enterMathMode}
+\def\by{\`}
+
+\newcount\@indentLevel
+\newcount\@indentCount
+\def\@indentProof{% do \>, \@indentLevel times
+	\global\@indentCount=\@indentLevel
+	\@gloop \>\global\advance\@indentCount by-1
+	\ifnum\@indentCount>0
+	\repeat}
+
+% need special loop macros that works in across boxes
+\def\@gloop#1\repeat{\gdef\@body{#1}\@giterate}
+\def\@giterate{\@body \global\let\@gloopNext=\@giterate
+	\else \global\let\@gloopNext=\relax \fi \@gloopNext}
+
+% this enters math mode and sets the LaTeX macros \@stopfield up
+% to exit math mode
+\def\@enterMathMode{\def\@stopfield{$\egroup}$}
+
+%----------------------------------------------------------------
+\def\VDMauthor{M.Wolczko,
+CS Dept.,
+Univ. of Manchester, UK. 
+mario@uk.ac.man.cs.ux
+mcvax!man.cs.r5!mario}
+
+\def\VDMversion{2.5}
+
+\typeout{vdm style option <25 Mar 88>}
+%----------------------------------------------------------------
+%
+%	Global changes
+%
+% All things that have to be invoked before the user's stuff appears
+% should go here.
+%
+% by default the math spacing and changes to @ and _ apply everywhere
+\@changeOtherMathcodes \@changeGlobalCatcodes
+%
+%-------------------the end--------------------------------------
+\endinput
+%
+%	Summary of penalties
+%
+%	Penalties in vertical mode
+%
+% \preOperationPenalty		before an op begins
+% \preExternalPenalty		between the header and externals of an op
+% \prePreConditionPenalty	before the precondition
+% \prePostConditionPenalty	before the postcondition
+% \postOperationPenalty		at the end of an op
+%
+% \preFunctionPenalty		before a fn begins
+% \betweenSignatureAndBodyPenalty 
+% \postFunctionPenalty		after a fn ends
+%
+% \preRecordPenalty		before a record
+% \postRecordPenalty		after a record
+%
+%	etc for formula, proof
+%
+%	Penalties in horizontal mode in boxes
+%
+% \linepenalty			101		\@raggedRight
+% `if mm-exp ^ then..'		0		\SIf
+% `if ... then mm-exp ^ else'	-100		\SIf
+% `let mm-exp in ^ ...'		-200		\SLet
+% `map mm-exp ^ to ...'		-50		\map
+% ^\iff				-50		\iff
+% ^\implies			-35		\implies
+% func(args) \DEF^		-100		\begin{fn}
+% \binoppenalty			10000
+% \relpenalty			10000
+% \hyphenpenalty		-100		\suchthat
+% ^\to				-100		\to
+% _^				100		\@VDMunderscore
+%

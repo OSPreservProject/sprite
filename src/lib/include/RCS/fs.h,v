@@ -1,0 +1,1120 @@
+head     1.21;
+branch   ;
+access   ;
+symbols  sprited:1.20.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.21
+date     91.12.04.14.27.03;  author jhh;  state Exp;
+branches ;
+next     1.20;
+
+1.20
+date     91.05.20.17.32.40;  author kupfer;  state Exp;
+branches 1.20.1.1;
+next     1.19;
+
+1.19
+date     90.10.11.18.55.01;  author rab;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     90.09.13.11.10.03;  author jhh;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     90.05.03.13.03.02;  author rab;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     90.02.20.18.13.46;  author jhh;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     90.01.16.17.57.38;  author brent;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     89.11.09.13.27.41;  author shirriff;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     89.08.30.08.21.09;  author brent;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     89.07.18.13.54.41;  author jhh;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     89.07.10.14.27.05;  author nelson;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     89.06.23.11.29.42;  author rab;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     89.06.08.12.49.44;  author brent;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     89.04.09.10.20.30;  author brent;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     89.02.27.17.51.45;  author mgbaker;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.10.14.10.24.35;  author brent;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.09.30.08.29.07;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.08.12.16.03.37;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.06.27.14.51.18;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.06.21.16.38.46;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.21.09.36.51;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.20.1.1
+date     91.08.05.17.28.29;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.21
+log
+@added IOC_READ and IOC_WRITE flags to those for IOC_GET_FLAGS and 
+IOC_SET_FLAGS
+@
+text
+@/*
+ * fs.h --
+ *
+ *	Definitions and types used in the user's interface to
+ *	the filesystem.
+ *
+ * Copyright 1985, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/lib/include/RCS/fs.h,v 1.20 91/05/20 17:32:40 kupfer Exp Locker: jhh $ SPRITE (Berkeley)
+ */
+
+#ifndef _FS_H
+#define _FS_H
+
+#include <spriteTime.h>
+#include <kernel/procTypes.h>
+
+/*
+ * The macros major and minor are defined in sys/types.h.  They are also
+ * the names of fields in a structure defined in fs.h.  Only gcc and ANSI
+ * C are clever enough to handle this.  (The field name isn't followed
+ * by an open paren...)  So, if you include this file and <sys/types.h>
+ * then you can use the major() and minor() macros.  However, <sys/types.h>
+ * also defines unix_major() and unix_minor, so you can use those.
+ */
+#ifndef __STDC__ 
+#ifdef major
+#undef	major
+#endif
+#ifdef minor 
+#undef	minor
+#endif 
+#endif /* ! __STDC__ */
+
+/*
+ * Global constants.
+ * FS_BLOCK_SIZE - the size of filesystem blocks
+ * FS_MAX_PATH_NAME_LENGTH - the maximum length of a complete pathname.
+ * FS_MAX_NAME_LENGTH - is the maximum length of one component of a name.
+ */
+#define	FS_BLOCK_SIZE		4096
+#define FS_MAX_PATH_NAME_LENGTH	1024
+#define FS_MAX_NAME_LENGTH	255
+
+
+
+/*
+ * Open stream flags that are passed to Fs_Open from user programs.  These
+ *	flags are kept in a kernel data structure along with some other
+ *	flags used by the operating system internally.  This fact is only
+ *	important to pseudo-device and pseudo-file-system servers which
+ *	may see the other flags, which are defined in <kernel/fs.h>.
+ *
+ *	FS_READ		- open the file for read access.
+ *	FS_WRITE	- open the file for write access, can be combined
+ *			  with FS_READ
+ *	FS_EXECUTE	- open the file for execute access.  This mode is used
+ *			  by the kernel when opening a.out files.  It can
+ *			  be used to limit the open to executables files.
+ *	FS_APPEND	- open for append mode. All writes get appended to the
+ *			  end of the file regardless of the file pointer.
+ *	FS_CLOSE_ON_EXEC - close the stream when the process execs.
+ *	FS_NON_BLOCKING - I/O operations don't block (if applicable) but
+ *			  instead return FS_WOULD_BLOCK.
+ *	FS_CREATE	- create the file if it doesn't exist.
+ *	FS_TRUNC	- truncate the file to zero length.
+ *	FS_EXCLUSIVE	- If specified with FS_CREATE the open/create will
+ *			  fail if the file already exists.
+ *	FS_NAMED_PIPE_OPEN - Open as a named pipe. (NOT IMPLEMENTED)
+ *	FS_PDEV_MASTER 	- Caller wants to be master of the pseudo-device.
+ *	FS_PFS_MASTER 	- Caller wants to be server of the pseudo-filesystem.
+ */
+#define FS_USER_FLAGS	  		0xfff
+#define FS_READ		  		0x001
+#define FS_WRITE	  		0x002
+#define FS_EXECUTE	  		0x004
+#define FS_APPEND	  		0x008
+#define FS_CLOSE_ON_EXEC		0x010
+#define FS_PDEV_MASTER			0x020
+#define FS_NAMED_PIPE_OPEN		0x040
+#define	FS_PFS_MASTER			0x080
+#define FS_NON_BLOCKING			0x100
+#define FS_CREATE	  		0x200
+#define FS_TRUNC	  		0x400
+#define FS_EXCLUSIVE	  		0x800
+/*			More high order bits are defined in <kernel/fs.h> !! */
+
+/*
+ * Flags for Fs_Select:
+ *
+ *	FS_READABLE	- Does the stream have data that can be read?
+ *	FS_WRITABLE	- Can data be written to the stream?
+ *	FS_EXCEPTION	- Are there any exception conditions that have
+ *			  raised for the stream? (e.g. out-of-band data).
+ */
+
+#define FS_READABLE	FS_READ
+#define FS_WRITABLE	FS_WRITE
+#define FS_EXCEPTION	FS_EXECUTE
+#define FS_EXCEPTABLE	FS_EXCEPTION
+
+
+
+/*
+ * The Fs_Attributes type is the information returned about a file
+ * from the Fs_GetAttributes and Fs_GetAttributesID system calls.
+ * This struct is also the input parameter for the Fs_SetAttributes
+ * and Fs_SetAttributesID system calls.
+ */
+typedef struct Fs_Attributes {
+    int	serverID;		/* Host ID of file server */
+    int domain;			/* Server-relative domain number of the file */
+    int fileNumber;		/* Domain-relative file number */
+    int type;			/* File types defined below */
+    int size;			/* Number of bytes in the file */
+    int numLinks;		/* Number of directory references to the file */
+    unsigned int permissions;	/* Permission bits defined below */
+    int uid;			/* User ID of file's owner */
+    int gid;			/* ID of file's owning group */
+    int devServerID;		/* ID of device server */
+    int devType;		/* Type of the device */
+    int devUnit;		/* Interpreted by the device driver */
+    Time createTime;		/* Time of the files creation */
+    Time accessTime;		/* Time of last access to the file */
+    Time descModifyTime;	/* Time the file descriptor was last modified */
+    Time dataModifyTime;	/* Time the file's data was last modified */
+    int  blocks;		/* The number of blocks taken by the file */
+    int  blockSize;		/* The size of each block */
+    int	version;		/* This is incremented when file is written */
+    int userType;		/* User defined file type */
+    int pad[4];			/* Reserved */
+} Fs_Attributes;
+
+/*
+ * The following are values for the fileOrLink argument to Fs_Set/GetAttributes.
+ *	FS_ATTRIB_LINK	Get the attributes of the named link, not of the
+ *		file the link refers to.
+ *	FS_ATTRIB_FILE	Get the attributes of the name file.  If the last
+ *		component of the file name is a link then use the file
+ *		to which the link refers.
+ */
+#define FS_ATTRIB_LINK			1
+#define FS_ATTRIB_FILE			2
+
+/*
+ * The following are values for the flags passed to Fs_SetAttr and Fs_SetAttrID
+ *	FS_SET_ALL_ATTRS - Attempt to set all settable attributes (see below)
+ *	FS_SET_TIMES	- Set data modify and file access times.
+ *	FS_SET_MODE	- Set the permission mode bits of the file.
+ *	FS_SET_OWNER	- Set the owner and group owner of a file.
+ *	FS_SET_FILE_TYPE - Set the user-defined file type of a file.
+ *	FS_SET_DEVICE	- Set device attributes - server, type, unit
+ */
+#define FS_SET_ALL_ATTRS	0x1F
+#define FS_SET_TIMES		0x01
+#define FS_SET_MODE		0x02
+#define FS_SET_OWNER		0x04
+#define FS_SET_FILE_TYPE	0x08
+#define FS_SET_DEVICE		0x10
+
+/*
+ * FS_LOCALHOST_ID is used as the device server ID for generic devices,
+ * those expected to exist on all hosts.  It is also used in the kernel
+ * when the "ioServerID" is the local host.
+ */
+#define FS_LOCALHOST_ID		-1
+
+/*
+ * File types kept in FsFileDescriptors on disk:
+ *	FS_FILE			ordinary disk file
+ *	FS_DIRECTORY		file used to implement the directory stucture
+ *	FS_SYMBOLIC_LINK	regular file used to implement links
+ *	FS_REMOTE_LINK		symbolic link used to mark the top of a domain
+ *	FS_DEVICE		Placeholder for peripheral device
+ *	FS_REMOTE_DEVICE	not used
+ *	FS_LOCAL_PIPE		Temporary half-duplex pipe
+ *	FS_NAMED_PIPE		Persistent half-duplex pipe (not implemented)
+ *	FS_PSEUDO_DEV		Full duplex communication to a user process
+ *	FS_PSEUDO_FS		Marks a domain controlled by a user process
+ *	FS_XTRA_FILE		Extra file type used to stage the
+ *				(re)implementation of standard file types
+ */
+
+#define	FS_FILE				0
+#define	FS_DIRECTORY			1
+#define	FS_SYMBOLIC_LINK		2
+#define	FS_REMOTE_LINK			3
+#define	FS_DEVICE			4
+#define	FS_REMOTE_DEVICE		5
+#define	FS_LOCAL_PIPE			6
+#define	FS_NAMED_PIPE			7
+#define	FS_PSEUDO_DEV			8
+#define FS_PSEUDO_FS			9
+#define FS_XTRA_FILE			10
+
+
+/*
+ * User-defined file types.  A number of types are standardized, but others
+ * may be defined by the user.
+ *
+ *	 FS_USER_TYPE_UNDEFINED		- no type set
+ *	 FS_USER_TYPE_TMP      		- temporary file
+ *	 FS_USER_TYPE_SWAP     		- swap file
+ *	 FS_USER_TYPE_OBJECT   		- ".o" file
+ *	 FS_USER_TYPE_BINARY   		- executable
+ *	 FS_USER_TYPE_OTHER   		- file that doesn't correspond to any
+ *					  specific type.  This is distinct from
+ *					  undefined, which says the type is
+ *					  uninitialized and may be inferred by
+ *					  parent directory or file name.
+ */
+#define FS_USER_TYPE_UNDEFINED  0
+#define FS_USER_TYPE_TMP        1
+#define FS_USER_TYPE_SWAP	2
+#define FS_USER_TYPE_OBJECT	3
+#define FS_USER_TYPE_BINARY	4
+#define FS_USER_TYPE_OTHER	5
+
+
+/*
+ * The Fs_FileID and Fs_UserIDs types are exported to user-level so that
+ * pseudo-filesystem servers can understand the arguments to lookup operations
+ * that are defined in fsNameOps.h
+ *
+ * Fs_FileID - Uniquely identify a filesystem object.  A type is the first
+ *	field, the hostID of the server is next, and the remaining fields 
+ *	are interpreted by the implementation of that type of filesystem object
+ *	(ie. files, devices, pipes, pseudo-devices, etc.)
+ *	A global hash table of filesystem objects, (called "handles")
+ *	is maintained with this Fs_FileID as the hash key.
+ */
+typedef struct Fs_FileID {
+    int		type;		/* Defined in kernel fsio.h (stream types).
+				 * Used in I/O switch, and implicitly
+				 * indicates what kind of structure follows
+				 * the FsHandleHeader in the Handle. */
+    int		serverID;	/* Host that controls the object.  (This would
+				 * have to be a multi-cast ID for objects
+				 * that support replication.) */
+    int		major;		/* First type specific identifier. */
+    int		minor;		/* Second type sepcific identifier. */
+} Fs_FileID;			/* 16 BYTES */
+
+/*
+ *	The FS_NUM_GROUPS constant limits the number of group IDs that
+ *	are used even though the proc table supports a variable number.
+ */
+#define FS_NUM_GROUPS	8
+
+typedef struct Fs_UserIDs {
+    int user;			/* Indicates effective user ID */
+    int numGroupIDs;		/* Number of valid entries in groupIDs */
+    int group[FS_NUM_GROUPS];	/* The set of groups the user is in */
+} Fs_UserIDs;			/* 40 BYTES */
+
+
+
+
+/*
+ * Generic IO Control operations.
+ *	IOC_REPOSITION		Reposition the current offset into the file.
+ *	IOC_GET_FLAGS		Return the flags associated with the stream.
+ *	IOC_SET_FLAGS		Set all the flags for the stream.
+ *	IOC_SET_BITS		Set some of the flags for the stream.
+ *	IOC_CLEAR_BITS		Clear some of the flags for the stream.
+ *	IOC_TRUNCATE		Truncate the stream to a given length.
+ *	IOC_LOCK		Lock the stream or underlying file.
+ *	IOC_UNLOCK		Unlock the stream.
+ *	IOC_NUM_READABLE	Return the number of bytes available.
+ *	IOC_GET_OWNER		Return the process or family that gets signals.
+ *	IOC_SET_OWNER		Set the process or family that gets signals.
+ *	IOC_MAP			Map the stream into the processes VM
+ *	IOC_PREFIX		Get the prefix under which the stream was
+ *				opened.  This is useful if a server is exporting
+ *				a domain under more than one name.  The getwd()
+ *				library call uses this feature.
+ *	IOC_WRITE_BACK		Write back any cached stream data.
+ *	IOC_MMAP_INFO		Provide server with information on
+ *				VM memory mapping.
+ *
+ *	IOC_GENERIC_LIMIT	This is the maximum IOC number that can be
+ *				used for the generic I/O controls supported
+ *				by the kernel.  Device drivers define I/O
+ *				control numbers above this limit.  This limit
+ *				is used in the kernel to optimize handling
+ *				generic vs. non-generic I/O controls.
+ */
+
+#define	IOC_REPOSITION			1
+#define	IOC_GET_FLAGS			2
+#define IOC_SET_FLAGS			3
+#define IOC_SET_BITS			4
+#define IOC_CLEAR_BITS			5
+#define IOC_TRUNCATE			6
+#define IOC_LOCK			7
+#define IOC_UNLOCK			8
+#define IOC_NUM_READABLE		9
+#define IOC_GET_OWNER			10
+#define IOC_SET_OWNER			11
+#define IOC_MAP				12
+#define IOC_PREFIX			13
+#define IOC_WRITE_BACK			14
+#define	IOC_MMAP_INFO			15
+#define IOC_GENERIC_LIMIT		((1<<16)-1)
+
+/*
+ * Maximum number of bytes that be copied in on an iocontrol.
+ */
+
+#define	IOC_MAX_BYTES	4096
+
+
+/*
+ * IOC_REPOSITION - reposition the file access position.
+ */
+
+typedef struct Ioc_RepositionArgs {
+    int base;	/* Base at which to start reposition: defines below */
+    int offset;	/* Offset from base */
+} Ioc_RepositionArgs;
+
+/*
+ * Base argument definitions:
+ *	IOC_BASE_ZERO		base is the beginning of the file.
+ *	IOC_BASE_CURRENT	base is the current position in the file.
+ *	IOC_BASE_EOF		base is the end of the file.
+ */
+
+#define IOC_BASE_ZERO		0
+#define IOC_BASE_CURRENT	1
+#define IOC_BASE_EOF		2
+
+
+
+/*
+ *	IOC_GET_FLAGS		Return the flags associated with the stream.
+ *	IOC_SET_FLAGS		Set all the flags for the stream.
+ *	IOC_SET_BITS		Set some of the flags for the stream.
+ *	IOC_CLEAR_BITS		Clear some of the flags for the stream.
+ *
+ *	A few of the low order bits in the flags field are reserved
+ *	for use by the kernel.  The rest bits are left for interpretation
+ *	by the (pseudo) device driver.
+ *		IOC_APPEND	Do append mode writes to the stream
+ *		IOC_NON_BLOCKING Do not block if I/O is not ready
+ *		IOC_ASYNCHRONOUS Dispatch I/O and signal when complete
+ *				 This is not implemented yet, 6/87
+ *		IOC_CLOSE_ON_EXEC This forces the stream to be closed when
+ *				the process execs another program.
+ *		IOC_READ	Stream is open for reading.
+ *		IOC_WRITE	Stream is open for writing.
+ */
+
+#define IOC_GENERIC_FLAGS	0xFF
+#define	IOC_APPEND		0x01
+#define IOC_NON_BLOCKING	0x02
+#define IOC_ASYNCHRONOUS	0x04
+#define IOC_CLOSE_ON_EXEC	0x08
+#define IOC_READ		0x10
+#define IOC_WRITE		0x20
+
+
+/*
+ *	IOC_LOCK		Lock the stream or underlying file.
+ *	IOC_UNLOCK		Unlock the stream.
+ */
+typedef struct Ioc_LockArgs {
+    int		flags;		/* IOC_LOCK_EXCLUSIVE, no other locks allowed
+				 * IOC_LOCK_SHARED, can have many of these,
+				 *	but no exclusive locks 
+				 * IOC_LOCK_NO_BLOCK, don't block if the lock
+				 *	can't be obtained, return FS_WOUD_BLOCK
+				 */
+    /*
+     * The following fields are set by the kernel and used by
+     * lower levels to notify when the lock is obtainable.  Pseudo-device
+     * masters use IOC_PDEV_LOCK_READY IOControl to do this notify.
+     */
+    int		hostID;		/* Set by the kernel */
+    Proc_PID	pid;		/* Set by the kernel */
+    int		token;		/* Set by the kernel */
+} Ioc_LockArgs;
+
+#define IOC_LOCK_SHARED			0x1
+#define IOC_LOCK_EXCLUSIVE		0x2
+#define IOC_LOCK_NO_BLOCK		0x8
+
+/*
+ *	IOC_GET_OWNER		Return the process or family that gets signals.
+ *	IOC_SET_OWNER		Set the process or family that gets signals.
+ */
+typedef struct Ioc_Owner {
+    Proc_PID	id;		/* Process or Family ID */
+    int		procOrFamily;	/* IOC_OWNER_FAMILY or IOC_OWNER_PROC */
+} Ioc_Owner;
+
+#define IOC_OWNER_FAMILY	0x1
+#define IOC_OWNER_PROC		0x2
+
+/*
+ *	IOC_MAP			Map the stream into the processes VM
+ */
+typedef struct Ioc_MapArgs {
+    int		numBytes;
+    Address	address;
+} Ioc_MapArgs;
+
+/*
+ *	IOC_PREFIX		Return prefix under which stream was opened.
+ */
+typedef struct Ioc_PrefixArgs {
+    char	prefix[FS_MAX_PATH_NAME_LENGTH];  /* Set by kernel */
+} Ioc_PrefixArgs;
+
+/*
+ *	IOC_WRITE_BACK		Write back the cached data of a file.
+ *				Although the arguments are in terms
+ *				of bytes, the cache will block align
+ *				the write-back so the bytes are fully
+ *				included in the blocks written back.
+ */
+typedef struct Ioc_WriteBackArgs {
+    int		firstByte;	/* Index of first byte to write back */
+    int		lastByte;	/* Index of last byte to write back */
+    Boolean	shouldBlock;	/* If TRUE, call blocks until write back done */
+} Ioc_WriteBackArgs;
+
+/*
+ *	IOC_MMAP_INFO		Give information to the server that a
+ *				client is mapping a stream into memory.
+ */
+typedef struct Ioc_MmapInfoArgs {
+    int		isMapped;	/* 1 if mapping, 0 if unmapping. */
+    int		clientID;	/* ID of the requesting client. */
+} Ioc_MmapInfoArgs;
+
+/*
+ * A mask of 9 permission bits is used to define the permissions on a file.
+ * A mask like this occurs in the FileDescriptor for a file.  A mask like
+ * this is also part of the state of each process.  It defines the maximal
+ * set of permissions that a newly created file can have. The following
+ * define the various permission bits.
+ *	FS_OWNER_{READ|WRITE|EXEC}	A process with a UID that matches the
+ *			file's UID has {READ|WRITE|EXEC} permission on the file.
+ *	FS_GROUP_{READ|WRITE|EXEC}	A process with one of its group IDS
+ *			that matches the file's GID has permission...
+ *	FS_WORLD_{READ|WRITE|EXEC}	Any process has permission if WORLD
+ *			permission bits are set.
+ */
+#define FS_OWNER_READ			00400
+#define FS_OWNER_WRITE			00200
+#define FS_OWNER_EXEC			00100
+#define FS_GROUP_READ			00040
+#define FS_GROUP_WRITE			00020
+#define FS_GROUP_EXEC			00010
+#define FS_WORLD_READ			00004
+#define FS_WORLD_WRITE			00002
+#define FS_WORLD_EXEC			00001
+
+/*
+ * Other permission bits:
+ *	FS_SET_UID	This bit set on a program image or shell script
+ *		causes the execed process to take on the user id of
+ *		the file.  (Thanks to Dennis Ritchie for this great idea.)
+ *	FS_SET_GID	As above, but for the group id.
+ */
+#define FS_SET_UID			04000
+#define FS_SET_GID			02000
+
+
+
+/*
+ * Values of the mode argument to the Fs_CheckAccess system call.
+ *	FS_EXISTS	does the file exists (can the caller see it)
+ *	FS_READ		does the caller have read access
+ *	FS_WRITE	does the caller have write access
+ *	FS_EXECUTE	does the caller have execution access
+ */
+#define FS_EXISTS		0x0
+
+/*
+ * Flag to Fs_GetNewID call that says choose any new stream ID.
+ */
+#define FS_ANYID			-1
+
+/*
+ * The Fs_AttachDisk system call takes flags that affect just what is
+ * done with the disk partition and the associated prefix.
+ *	FS_ATTACH_READ_ONLY	Set the disk up to be read only.
+ *	FS_DETACH		The disk becomes inaccessible.  Any modified
+ *				filesystem data is flushed first.
+ *	FS_ATTACH_LOCAL		The disk is attached locally and not exported
+ *	FS_DEFAULT_DOMAIN	The domain is being attached by the kernel
+ *				during boot as the default.
+ *
+ */
+#define FS_ATTACH_READ_ONLY		0x1
+#define FS_DETACH			0x2
+#define FS_ATTACH_LOCAL			0x4
+#define FS_DEFAULT_DOMAIN		0x8
+
+typedef struct Fs_TwoPaths {
+    int		pathLen1;	/* Length of the first path, including null */
+    int		pathLen2;	/* Length of the second path, including null */
+    char 	*path1;		/* First pathname */
+    char 	*path2;		/* Second pathname */
+} Fs_TwoPaths;
+
+/*
+ * Information about a file system domain (volume).
+ */
+typedef struct {
+    int	maxKbytes;		/* Total Kbytes in the domain.  The allocation
+				 * routine might reserve some (%10) of this */
+    int	freeKbytes;		/* The number of available blocks.  This
+				 * reflects any reservations made by the
+				 * allocator.  If this is positive, blocks
+				 * are available. */
+    int	maxFileDesc;		/* The total number of files that can be
+				 * created in the domain. */
+    int	freeFileDesc;		/* The number of free file descriptors */
+    int blockSize;		/* Bytes per block */
+    int optSize;		/* Optimal transfer size, in bytes */
+} Fs_DomainInfo;
+
+
+/*
+ * User visible prefix table entry.  This is used by the routine that
+ * copies individual entries out to user programs.
+ */
+#define FS_USER_PREFIX_LENGTH	64
+#define FS_NO_SERVER		0
+typedef struct Fs_Prefix {
+    int serverID;		/* From FsFileID of prefix, FS_NO_SERVER if 
+				 * no handle */
+    int domain;			/* ditto */
+    int fileNumber;		/* ditto */
+    int version;		/* ditto */
+    int flags;			/* Defined below */
+    char prefix[FS_USER_PREFIX_LENGTH];
+    Fs_DomainInfo domainInfo;	/* Information about the domain. */
+} Fs_Prefix;
+
+#ifndef FS_EXPORTED_PREFIX
+#define	FS_EXPORTED_PREFIX		0x1
+#define	FS_IMPORTED_PREFIX		0x2
+#define	FS_LOCAL_PREFIX			0x4
+#endif
+
+
+/*
+ * The Fs_ReadVector and Fs_WriteVector system calls take an array of
+ * I/O vectors. This allows data to be read to or written from non-contiguous
+ * areas of memory.
+ */
+typedef struct {
+    int		bufSize;	/* Size in bytes of the buffer */
+    Address	buffer;		/* For Fs_WriteVector, data to be written.
+				 * For Fs_ReadVector, place where read data 
+				 * is stored. */
+} Fs_IOVector;
+
+
+/*
+ * The structure below is use for creating devices with Fs_MakeDevice.
+ * It's also used internally by the kernel to hold the information passed
+ * to device specific routines so they can operate on their particular device.
+ */
+typedef struct Fs_Device {
+    int		serverID;	/* The host ID of the server that controls
+				 * the device. */
+    int		type;		/* The type of device.  This field is used to
+				 * index into an operation switch */
+    int		unit;		/* Type dependent unit specification. The
+				 * interpretation is up to the device driver */
+    ClientData	data;		/* Device type dependent data. This can be set
+				 * during the device open routine and should
+				 * be cleaned up in the device close routine. */
+} Fs_Device;
+
+/*
+ * Definitions for the FS dispatcher library.
+ */
+typedef ClientData Fs_TimeoutHandler;
+
+extern void		    Fs_Dispatch();
+extern void		    Fs_EventHandlerCreate();
+extern void 		    Fs_EventHandlerDestroy();
+extern ClientData 	    Fs_EventHandlerData();
+extern ClientData 	    Fs_EventHandlerChangeData();
+extern char		    *Fs_GetTempName();
+extern int		    Fs_GetTempFile();
+extern int                  Fs_IOControl();
+extern Boolean		    Fs_IsATerm();
+extern Fs_TimeoutHandler    Fs_TimeoutHandlerCreate();
+extern void 		    Fs_TimeoutHandlerDestroy();
+
+extern int                  Ioc_ClearBits();
+extern int                  Ioc_GetFlags();
+extern int                  Ioc_GetOwner();
+extern int                  Ioc_Lock();
+extern int                  Ioc_Map();
+extern int                  Ioc_NumReadable();
+extern int                  Ioc_SetBits();
+extern int                  Ioc_Reposition();
+extern int                  Ioc_SetFlags();
+extern int                  Ioc_SetOwner();
+extern int                  Ioc_Truncate();
+extern int                  Ioc_Unlock();
+extern int                  Ioc_WriteBack();
+
+#endif /* _FS_H */
+@
+
+
+1.20
+log
+@Fs_FileID types are defined in fsio.h, not user/fs.h.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/lib/include/RCS/fs.h,v 1.19 90/10/11 18:55:01 rab Exp Locker: kupfer $ SPRITE (Berkeley)
+d357 2
+d366 2
+@
+
+
+1.20.1.1
+log
+@Branch for Sprite server changes.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/lib/include/RCS/fs.h,v 1.20 91/05/20 17:32:40 kupfer Exp $ SPRITE (Berkeley)
+@
+
+
+1.19
+log
+@Changed definitions for major and minor so that this file can be
+used to compile stuff under unix, which defines major and minor as
+macros in types.h
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/lib/include/RCS/fs.h,v 1.18 90/09/13 11:10:03 jhh Exp Locker: rab $ SPRITE (Berkeley)
+d240 4
+a243 3
+    int		type;		/* Defined below. Used in I/O switch, and
+				 * implicitly indicates what kind of structure
+				 * follows the FsHandleHeader in the Handle. */
+@
+
+
+1.18
+log
+@fixed include of procTypes.h
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/lib/include/RCS/fs.h,v 1.17 90/05/03 13:03:02 rab Exp Locker: jhh $ SPRITE (Berkeley)
+d33 2
+a34 1
+#if !defined(__STDC__) && defined(_TYPES)
+d36 2
+d39 2
+a40 1
+#endif /* ! __STDC__ && _TYPES */
+@
+
+
+1.17
+log
+@Added declarations for library procedures.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/lib/include/RCS/fs.h,v 1.16 90/02/20 18:13:46 jhh Exp Locker: rab $ SPRITE (Berkeley)
+d23 1
+a23 1
+#include <proc.h>
+@
+
+
+1.16
+log
+@Added FS_DEFAULT_DOMAIN
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/lib/include/RCS/fs.h,v 1.15 90/01/16 17:57:38 brent Exp Locker: jhh $ SPRITE (Berkeley)
+d19 2
+a20 2
+#ifndef _FSUSER
+#define _FSUSER
+d584 25
+a608 11
+extern void		Fs_Dispatch();
+extern void		Fs_EventHandlerCreate();
+extern void 		Fs_EventHandlerDestroy();
+extern ClientData 	Fs_EventHandlerData();
+extern ClientData 	Fs_EventHandlerChangeData();
+extern Fs_TimeoutHandler Fs_TimeoutHandlerCreate();
+extern void 		Fs_TimeoutHandlerDestroy();
+
+extern Boolean		Fs_IsATerm();
+extern char		*Fs_GetTempName();
+extern int		Fs_GetTempFile();
+d610 1
+a610 1
+#endif /* _FSUSER */
+@
+
+
+1.15
+log
+@Patched up definitions of major() and minor() macros
+so they do not conflict with the major and minor fields
+of the Fs_FileID struct.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/lib/include/RCS/fs.h,v 1.14 89/11/09 13:27:41 shirriff Exp Locker: brent $ SPRITE (Berkeley)
+d491 3
+d498 2
+@
+
+
+1.14
+log
+@Change IOC_MAP back to old def.  Added IOC_MMAP_INFO.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/lib/include/RCS/fs.h,v 1.13 89/08/30 08:21:09 brent Exp Locker: shirriff $ SPRITE (Berkeley)
+d27 5
+a31 5
+ * the names of fields in a structure defined in fs.h.  Unfortunately, cpp
+ * on the sun4 expands the macros inside the structure field names, so I
+ * undefine and redefine them here around the inclusion of fs.h, so that
+ * source files that include both files don't complain.  Of course, this
+ * means they have to include them in the correct order, but they all do.
+d33 1
+a33 1
+#if (defined (sun4) || defined (mips)) && defined(_TYPES)
+d36 1
+a36 1
+#endif /* (sun4 || mips) && _TYPES */
+a589 5
+
+#if defined (sun4) && defined (_TYPES)
+#define major(x)        ((int)(((unsigned)(x)>>8)&0377))
+#define minor(x)        ((int)((x)&0377))
+#endif /* sun4 && _TYPES */
+@
+
+
+1.13
+log
+@Added IOC_WRITE_BACK
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/lib/include/RCS/fs.h,v 1.12 89/07/18 13:54:41 jhh Exp Locker: brent $ SPRITE (Berkeley)
+d280 2
+d305 1
+d402 2
+a403 2
+    int	numBytes;
+    Address address;
+d426 8
+@
+
+
+1.12
+log
+@added IOC_PREFIX ioctl
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/lib/include/RCS/fs.h,v 1.11 89/07/10 14:27:05 nelson Exp Locker: jhh $ SPRITE (Berkeley)
+d276 4
+a279 1
+ *				opened.
+d302 1
+d409 13
+@
+
+
+1.11
+log
+@Added mips ifdef same as sun4.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/lib/include/RCS/fs.h,v 1.10 89/06/23 11:29:42 rab Exp Locker: nelson $ SPRITE (Berkeley)
+d275 2
+d298 1
+d398 7
+@
+
+
+1.10
+log
+@*** empty log message ***
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/lib/include/RCS/fs.h,v 1.9 89/06/08 12:49:44 brent Exp Locker: rab $ SPRITE (Berkeley)
+d33 1
+a33 1
+#if defined (sun4) && defined(_TYPES)
+d36 1
+a36 1
+#endif /* sun4 && _TYPES */
+@
+
+
+1.9
+log
+@Changed Fs_DomainInfo to include a blockSize and an
+optimal transfer size.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/lib/include/RCS/fs.h,v 1.8 89/04/09 10:20:30 brent Exp Locker: brent $ SPRITE (Berkeley)
+d558 1
+a558 1
+#endif _FSUSER
+@
+
+
+1.8
+log
+@Updated the comment about the Open flags.  Pseudo-device and
+pseudo-file-system servers will see additional kernel-flags that
+are defined in <kernel/fs.h>
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/lib/include/RCS/fs.h,v 1.7 89/02/27 17:51:45 mgbaker Exp Locker: brent $ SPRITE (Berkeley)
+d100 3
+a102 3
+#define FS_READABLE	0x1
+#define FS_WRITABLE	0x2
+#define FS_EXCEPTION	0x4
+d465 1
+a465 1
+ * Information about a domain.
+d468 11
+a478 4
+    int	maxKbytes;
+    int	freeKbytes;
+    int	maxFileDesc;
+    int	freeFileDesc;
+d487 1
+d489 2
+a490 1
+    int serverID;		/* From FsFileID of prefix, -1 if no handle */
+@
+
+
+1.7
+log
+@Added hack to allow sun4 cpp to work with inclusion of both fs.h
+and types.h.  See fs.h for details.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/lib/include/RCS/fs.h,v 1.6 88/10/14 10:24:35 brent Exp Locker: mgbaker $ SPRITE (Berkeley)
+d51 5
+a55 1
+ * File descriptor flags that are passed to Fs_Open.
+d89 1
+@
+
+
+1.6
+log
+@Moved Fs_FileID and Fs_UserIDs here because of pseudo-filesystems
+@
+text
+@d16 1
+a16 1
+ * $Header: fs.h,v 1.5 88/09/30 08:29:07 brent Exp $ SPRITE (Berkeley)
+d26 13
+d538 5
+@
+
+
+1.5
+log
+@Added FS_PFS_MASTER flag for pseudo-filesystems
+@
+text
+@d16 1
+a16 1
+ * $Header: fs.h,v 1.4 88/08/12 16:03:37 brent Exp $ SPRITE (Berkeley)
+d203 38
+@
+
+
+1.4
+log
+@Added Fs_SetAttr flag definitions
+@
+text
+@d16 1
+a16 1
+ * $Header: fs.h,v 1.3 88/06/27 14:51:18 ouster Exp $ SPRITE (Berkeley)
+d55 3
+a57 4
+ *	FS_NAMED_PIPE_OPEN - Open as a named pipe.
+ *	FS_MASTER 	- Caller is master of the pseudo-device being opened.
+ *	FS_NEW_MASTER 	- Caller is master of the pseudo-device being opened.
+ *			  This is for the new version of pseudo-devices.
+d65 1
+a65 1
+#define FS_NEW_MASTER			0x020
+d67 1
+a67 1
+#define	FS_MASTER			0x080
+d155 2
+a156 2
+ *	FS_FILE		ordinary disk file
+ *	FS_DIRECTORY	regular file used to implement the directory stucture
+d162 1
+a162 1
+ *	FS_NAMED_PIPE		Persistent half-duplex pipe
+@
+
+
+1.3
+log
+@Move Fs_Device from kernel/fs.h to fs.h.
+@
+text
+@d16 1
+a16 1
+ * $Header: fs.h,v 1.2 88/06/21 16:38:46 ouster Exp $ SPRITE (Berkeley)
+d130 16
+@
+
+
+1.2
+log
+@Use "spriteTime.h" instead of "time.h" to avoid conflict with UNIX.
+@
+text
+@d16 1
+a16 1
+ * $Header: fs.h,v 1.1 88/06/21 09:36:51 ouster Exp $ SPRITE (Berkeley)
+d437 18
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+ * $Header: fs.h,v 2.9 88/04/16 11:38:15 brent Exp $ SPRITE (Berkeley)
+d22 2
+a23 2
+#include "time.h"
+#include "proc.h"
+@

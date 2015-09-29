@@ -1,0 +1,9636 @@
+# 1 "cfbpmax_io.c"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/stdio.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 44 "/sprite/lib/include/cfuncproto.h"
+
+
+# 52 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+
+# 59 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+# 65 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+# 71 "/sprite/lib/include/cfuncproto.h"
+
+typedef char *_VoidPtr;
+
+
+
+
+
+# 33 "/sprite/lib/include/stdio.h"
+
+# 36 "/sprite/lib/include/stdio.h"
+
+
+
+
+
+
+
+
+
+
+
+typedef int *ClientData;
+
+
+
+
+
+typedef char *va_list;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct _file {
+    unsigned char *lastAccess;	
+
+
+    int readCount;		
+
+
+    int writeCount;		
+
+
+
+
+
+    unsigned char *buffer;	
+
+    int bufSize;		
+
+
+    void (*readProc)	();
+				
+    void (*writeProc)	();
+				
+    int (*closeProc)	();
+				
+
+    ClientData clientData;	
+
+
+    int status;			
+
+
+    int flags;			
+
+    struct _file *nextPtr;	
+
+
+
+
+} FILE;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 214 "/sprite/lib/include/stdio.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern FILE stdioInFile, stdioOutFile, stdioErrFile;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        extern void	clearerr 	();
+        extern int	fclose 	();
+        extern FILE *	fdopen 	();
+        extern int	fflush 	();
+        extern int	fgetc 	();
+        extern char *	fgets 	();
+        extern int	fileno 	();
+        extern FILE *	fopen 	();
+        extern int	fputc 	();
+        extern int	fputs 	();
+        extern int	fread 
+	();
+        extern FILE *	freopen 
+	();
+        extern long	fseek 	();
+        extern long	ftell 	();
+        extern int	fwrite 
+	();
+        extern char *	gets 	();
+        extern int	getw 	();
+        extern void	perror 	();
+        extern FILE *	popen 	();
+        extern int	pclose 	();
+        extern int      remove 	();
+        extern int      rename 	();
+
+
+
+
+
+
+# 338 "/sprite/lib/include/stdio.h"
+
+
+
+
+
+
+
+
+        extern int	printf 	();
+        extern int	fprintf 	();
+        extern int	scanf 	();
+        extern char *	sprintf 	();
+        extern int	sscanf 	();
+        extern int	fscanf 	();
+        extern int	vfprintf 
+	();
+        extern int	vfscanf 
+	();
+        extern int	vprintf 	();
+        extern char *	vsprintf 
+	();
+
+
+        extern int	puts 	();
+        extern int	putw 	();
+        extern void	rewind 	();
+        extern void	setbuf 	();
+        extern void	setbuffer 	();
+        extern void	setlinebuf 	();
+        extern int	setvbuf 	();
+        extern FILE *	tmpfile 	();
+        extern char *	tmpnam 	();
+        extern char *	tempnam 	();
+        extern int	ungetc 	();
+        extern void	_cleanup 	();
+
+        extern void	Stdio_Setup 
+
+
+
+
+	();
+
+
+# 28 "cfbpmax_io.c"
+
+# 1 "/sprite/lib/include/sys/types.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef	unsigned char	u_char;
+typedef	unsigned short	u_short;
+typedef	unsigned int	u_int;
+typedef	unsigned long	u_long;
+typedef	unsigned short	ushort;		
+
+# 46 "/sprite/lib/include/sys/types.h"
+
+# 52 "/sprite/lib/include/sys/types.h"
+
+
+
+typedef struct  _physadr { int r[1]; } *physadr;
+typedef struct  label_t {
+        int     val[12];
+} label_t;
+
+
+
+
+
+typedef struct _quad {long val[2]; } quad;
+typedef	struct	_uquad {unsigned long val[2]; } u_quad;
+
+typedef	long	daddr_t;
+typedef	char *	caddr_t;
+typedef	long *	qaddr_t;	
+typedef	u_long	ino_t;
+typedef	long	swblk_t;
+
+
+typedef	int	size_t;
+
+
+
+typedef	long	time_t;
+typedef	long	clock_t;
+
+typedef	short	dev_t;
+typedef	long	off_t;
+typedef	short	uid_t;
+typedef	short	gid_t;
+typedef long	key_t;		
+
+
+
+
+
+
+
+
+
+
+
+
+typedef long	fd_mask;
+
+
+
+
+
+typedef	struct fd_set {
+	fd_mask	fds_bits[	(((256)+(( (sizeof(fd_mask) * 8		)	)-1))/( (sizeof(fd_mask) * 8		)	))];
+} fd_set;
+
+
+
+
+
+
+
+# 29 "cfbpmax_io.c"
+
+# 1 "/sprite/lib/include/sys/file.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 30 "cfbpmax_io.c"
+
+# 1 "/sprite/lib/include/sys/time.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 76 "/sprite/lib/include/cfuncproto.h"
+
+
+# 14 "/sprite/lib/include/sys/time.h"
+
+
+
+
+
+struct timeval {
+	long	tv_sec;		
+	long	tv_usec;	
+};
+
+struct timezone {
+	int	tz_minuteswest;	
+	int	tz_dsttime;	
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct	itimerval {
+	struct	timeval it_interval;	
+	struct	timeval it_value;	
+};
+
+
+
+# 1 "/sprite/lib/include/time.h"
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 76 "/sprite/lib/include/cfuncproto.h"
+
+
+# 13 "/sprite/lib/include/time.h"
+
+# 18 "/sprite/lib/include/time.h"
+
+
+
+
+
+struct tm {
+	int	tm_sec;
+	int	tm_min;
+	int	tm_hour;
+	int	tm_mday;
+	int	tm_mon;
+	int	tm_year;
+	int	tm_wday;
+	int	tm_yday;
+	int	tm_isdst;
+	long	tm_gmtoff;
+	char	*tm_zone;
+};
+
+        extern clock_t clock 	();
+        extern time_t time 	();
+        extern time_t mktime 	();
+        extern double difftime 	();
+        extern struct tm *gmtime 	();
+        extern struct tm *localtime 	();
+        extern char *asctime 	();
+        extern char *ctime 	();
+        extern int strftime 
+	();
+
+
+# 62 "/sprite/lib/include/sys/time.h"
+
+
+        extern int	getitimer 	();
+        extern int	gettimeofday 
+	();
+        extern int	settimeofday 
+	();
+        extern int	setitimer 
+	();
+        extern int	utimes 
+	();
+
+
+# 31 "cfbpmax_io.c"
+
+
+# 1 "/sprite/lib/include/dev/graphics.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef volatile struct {
+    unsigned short	cmdReg;	
+    unsigned short	pad1;
+    unsigned short	xPos;	
+    unsigned short	pad2;
+    unsigned short	yPos;	
+    unsigned short	pad3;
+    unsigned short	xMin1;
+    unsigned short	pad4;
+    unsigned short	xMax1;
+    unsigned short	pad5;
+    unsigned short	yMin1;
+    unsigned short	pad6;
+    unsigned short	yMax1;
+    unsigned short	pad7;
+    unsigned short	unused7;
+    unsigned short	padUnused7;
+    unsigned short	unused8;
+    unsigned short	padUnused8;
+    unsigned short	unused9;
+    unsigned short	padUnused9;
+    unsigned short	unusedA;
+    unsigned short	padUnusedA;
+    unsigned short	xMin2;
+    unsigned short	pad8;
+    unsigned short	xMax2;
+    unsigned short	pad9;
+    unsigned short	yMin2;
+    unsigned short	padA;
+    unsigned short	yMax2;
+    unsigned short	padB;
+    unsigned short	memory;
+    unsigned short	padC;
+} DevPCCRegs;
+
+
+
+
+typedef volatile struct {
+    unsigned char   mapWA;
+    unsigned char   pad0;
+    unsigned short  pad1;
+
+    unsigned char   map;
+    unsigned char   pad2;
+    unsigned short  pad3;
+
+    unsigned char   mask;
+    unsigned char   pad4;
+    unsigned short  pad5;
+
+    unsigned char   mapRA;
+    unsigned char   pad6;
+    unsigned short  pad7;
+
+    unsigned char   overWA;
+    unsigned char   pad8;
+    unsigned short  pad9;
+
+    unsigned char   over;
+    unsigned char   pad10;
+    unsigned short  pad11;
+
+    unsigned char   reserved;
+    unsigned char   pad12;
+    unsigned short  pad13;
+
+    unsigned char   overRA;
+    unsigned char   pad14;
+    unsigned short  pad15;
+} DevVDACRegs;
+
+
+
+
+typedef struct {
+        short	        x;		
+        short 	        y;		
+        unsigned int    time;		
+        unsigned char   type;		
+        unsigned char   key;		
+        unsigned char   index;		
+        unsigned char   device;		
+} DevEvent;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct {
+	unsigned int	time;
+	short		x, y;
+} DevTimeCoord;
+
+
+
+
+
+typedef struct {
+	DevEvent	*events;
+	unsigned int 	eSize;
+        unsigned int    eHead;
+        unsigned int    eTail;
+	unsigned long	timestampMS;
+	DevTimeCoord	*tcs;	
+	unsigned int	tcSize;
+	unsigned int	tcNext;	
+} DevEventQueue;
+
+
+
+
+typedef struct {
+        short x;
+        short y;
+} DevCursor;
+
+
+
+
+typedef struct {
+        short bottom;
+        short right;
+        short left;
+        short top;
+} DevBox;
+
+
+
+
+typedef struct {
+	char nbytes;		
+	unsigned char cmd;	
+				
+	unsigned char par[2];	
+} DevKpCmd;
+
+
+
+
+typedef struct {
+	DevEventQueue eventQueue;	
+	short	mswitches;		
+	DevCursor tablet;		
+	short	tswitches;		
+	DevCursor cursor;		
+	short	row;			
+	short	col;			
+	short	maxRow;			
+	short	maxCol;			
+	short	maxX;			
+	short	maxY;			
+	short	maxCurX;		
+	short	maxCurY;		
+	int	version;		
+	char	*bitmap;		
+        short   *scanmap;               
+	short	*cursorBits;		
+	short	*vaddr;			
+	char    *planeMask;		
+	DevCursor mouse;		
+	DevBox	mbox;			
+	short	mthreshold;		
+	short	mscale;			
+
+	short	minCurX;		
+	short	minCurY;		
+} DevScreenInfo;
+
+
+
+
+
+
+
+
+typedef struct {
+	DevEventQueue eventQueue;	
+	short	mswitches;		
+	DevCursor tablet;		
+	short	tswitches;		
+	DevCursor cursor;		
+	short	row;			
+	short	col;			
+	short	maxRow;			
+	short	maxCol;			
+	short	maxX;			
+	short	maxY;			
+	short	maxCurX;		
+	short	maxCurY;		
+	int	version;		
+	int	flags;			
+	char	*memPtr;		
+	char	*bufPtr;		
+	char	*bufPhysPtr;		
+	int	bufSize;		
+	DevCursor mouse;		
+	DevBox	mbox;			
+	short	mthreshold;		
+	short	mscale;			
+
+	short	minCurX;		
+	short	minCurY;		
+	char	*fooPtr;		
+	char	stampWidth;
+	char	stampHeight;
+	char	nPlanes;		
+	char	accPresent;		
+	char	dPlanes;		
+	char	zplanes;		
+	char	zzplanes;		
+	unsigned char cursBits[(64 * 64 / 4)];
+	int	cursFG;
+	int	cursBG;			
+	unsigned short cmapIndex;	
+	unsigned short cmapCount;	
+	int	colormap[256];
+	int	*sticPollReg;		
+	int	*sticReg;		
+	int	ptptPhys;		
+	int	ptptSize;		
+	int	*ptptPagein;		
+} DevScreenInfoExt;
+
+typedef struct {
+	short		map;
+	unsigned short	index;
+	struct {
+		unsigned short red;
+		unsigned short green;
+		unsigned short blue;
+	} entry;
+} DevColorMap;
+
+
+
+
+
+
+
+# 33 "cfbpmax_io.c"
+
+# 1 "/sprite/lib/include/sys/ioctl.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/sys/ttychars.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct ttychars {
+	char	tc_erase;	
+	char	tc_kill;	
+	char	tc_intrc;	
+	char	tc_quitc;	
+	char	tc_startc;	
+	char	tc_stopc;	
+	char	tc_eofc;	
+	char	tc_brkc;	
+	char	tc_suspc;	
+	char	tc_dsuspc;	
+	char	tc_rprntc;	
+	char	tc_flushc;	
+	char	tc_werasc;	
+	char	tc_lnextc;	
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 15 "/sprite/lib/include/sys/ioctl.h"
+
+
+
+# 1 "/sprite/lib/include/sys/ttydev.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 18 "/sprite/lib/include/sys/ioctl.h"
+
+
+
+
+# 1 "/sprite/lib/include/sys/fb.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct	fbtype {
+	int	fb_type;	
+	int	fb_height;	
+	int	fb_width;	
+	int	fb_depth;	
+	int	fb_cmsize;	
+	int	fb_size;	
+} fbtype;
+
+
+
+
+
+
+typedef struct	fbinfo {
+	int		fb_physaddr;	
+	int		fb_hwwidth;	
+	int		fb_hwheight;	
+	int		fb_addrdelta;	
+	unsigned char	*fb_ropaddr;	
+	int		fb_unit;	
+} fbinfo;
+
+
+
+
+
+
+typedef struct	fbcmap {
+	int		index;		
+	int		count;		
+	unsigned char	*red;		
+	unsigned char	*green;		
+	unsigned char	*blue;		
+} fbcmap;
+
+
+typedef struct fbsattr {
+	int	flags;			
+
+
+	int	emu_type;		
+	int	dev_specific[8	];	
+} fbsattr;
+
+
+typedef struct fbgattr {
+	int	real_type;		
+	int	owner;			
+	struct	fbtype fbtype;		
+	struct	fbsattr sattr;		
+	int	emu_types[4	];	
+						
+} fbgattr;
+
+struct	fbpixrect {
+    struct pixrect	*fbpr_pixrect;	
+};
+
+
+
+
+# 22 "/sprite/lib/include/sys/ioctl.h"
+
+
+
+# 1 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 76 "/sprite/lib/include/cfuncproto.h"
+
+
+# 25 "/sprite/lib/include/sys/ioctl.h"
+
+
+
+
+
+struct tchars {
+	char	t_intrc;	
+	char	t_quitc;	
+	char	t_startc;	
+	char	t_stopc;	
+	char	t_eofc;		
+	char	t_brkc;		
+};
+struct ltchars {
+	char	t_suspc;	
+	char	t_dsuspc;	
+	char	t_rprntc;	
+	char	t_flushc;	
+	char	t_werasc;	
+	char	t_lnextc;	
+};
+
+
+
+
+
+
+
+struct sgttyb {
+	char	sg_ispeed;		
+	char	sg_ospeed;		
+	char	sg_erase;		
+	char	sg_kill;		
+	short	sg_flags;		
+};
+
+
+
+
+
+
+
+
+
+
+struct winsize {
+	unsigned short	ws_row;			
+	unsigned short	ws_col;			
+	unsigned short	ws_xpixel;		
+	unsigned short	ws_ypixel;		
+};
+
+
+
+
+struct ttysize {
+	unsigned short	ts_lines;
+	unsigned short	ts_cols;
+	unsigned short	ts_xxx;
+	unsigned short	ts_yyy;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern int ioctl 	();
+
+
+# 34 "cfbpmax_io.c"
+
+
+# 1 "./sys/tty.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 109 "./sys/tty.h"
+
+
+# 1 "/sprite/lib/include/sys/ttychars.h"
+
+
+
+
+
+
+
+
+
+
+
+
+# 50 "/sprite/lib/include/sys/ttychars.h"
+
+# 111 "./sys/tty.h"
+
+# 1 "/sprite/lib/include/sys/ttydev.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 35 "/sprite/lib/include/sys/ttydev.h"
+
+# 112 "./sys/tty.h"
+
+# 1 "/sprite/lib/include/sys/termios.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct termios {
+	unsigned long	c_iflag;	
+	unsigned long	c_oflag;	
+	unsigned long	c_cflag;	
+	unsigned long	c_lflag;	
+	char		c_line;		
+	unsigned char	c_cc[17];	
+};
+
+
+
+# 113 "./sys/tty.h"
+
+
+
+
+
+
+
+
+
+
+
+struct clist {
+	int	c_cc;		
+	char	*c_cf;		
+	char	*c_cl;		
+};
+
+
+
+
+
+
+
+
+struct tty {
+	union {
+		struct {
+			struct	clist T_rawq;
+			struct	clist T_canq;
+		} t_t;
+		struct {
+			struct	buf *T_bufp;
+			char	*T_cp;
+			int	T_inbuf;
+			int	T_rec;
+		} t_n;
+	} t_nu;
+	struct {
+		struct	buf *H_bufp;	
+		char	*H_in;
+		char	*H_out;
+		char 	*H_base;
+		char	*H_top;
+		int	H_inbuf;
+		int	H_read_cnt;
+		} t_h;
+	struct	clist t_outq;		
+	int	(*t_oproc)();		
+	struct	proc *t_rsel;		
+	struct	proc *t_wsel;
+	caddr_t	T_LINEP;		
+	caddr_t	t_addr;			
+	dev_t	t_dev;			
+	unsigned int	t_flags;		
+	unsigned short	t_iflag;	
+	unsigned short	t_iflag_ext;	
+	unsigned short	t_oflag;	
+	unsigned short	t_oflag_ext;	
+	unsigned short	t_cflag;	
+	unsigned short	t_cflag_ext;	
+	unsigned short	t_lflag;	
+	unsigned short	t_lflag_ext;	
+	unsigned char	t_cc[17];	
+	unsigned int	t_state;	
+	short	t_pgrp;			
+	char	t_delct;		
+	char	t_line;			
+	char	t_col;			
+	char	t_rocount, t_rocol;	
+	struct	winsize t_winsize;	
+	union	local_ext *t_language;	
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 221 "./sys/tty.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 278 "./sys/tty.h"
+
+# 36 "cfbpmax_io.c"
+
+# 1 "/sprite/lib/include/errno.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern int	errno;		
+
+extern int	sys_nerr;	
+extern char	*sys_errlist[];	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 37 "cfbpmax_io.c"
+
+# 1 "./sys/devio.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct	devget	{
+	short	category;		
+	short	bus;			
+	char	interface[0x08		];	
+	char	device[0x08		];	
+	short	adpt_num;		
+	short	nexus_num;		
+	short	bus_num;		
+	short	ctlr_num;		
+	short	rctlr_num;		
+	short	slave_num;		
+	char	dev_name[0x08		];	
+	short	unit_num;		
+	unsigned soft_count;		
+	unsigned hard_count;		
+	long	stat;			
+	long	category_stat;		
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 38 "cfbpmax_io.c"
+
+# 1 "./machine/pmioctl.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 38 "./machine/pmioctl.h"
+
+
+# 1 "./machine/pmevent.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct  _event {
+        short	        x;		
+        short 	        y;		
+        unsigned int    time;		
+        unsigned char   type;		
+        unsigned char   key;		
+        unsigned char   index;		
+        unsigned char   device;		
+} pmEvent;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct _timecoord {
+	unsigned int	time;
+	short		x, y;
+} pmTimeCoord;
+
+
+
+
+
+
+typedef struct _eventqueue {
+	pmEvent 	*events;
+	unsigned int 	eSize;
+        unsigned int    eHead;
+        unsigned int    eTail;
+	unsigned	long	timestamp_ms;
+	pmTimeCoord	*tcs;	
+	unsigned int	tcSize;
+	unsigned int	tcNext;	
+} pmEventQueue;
+
+
+
+typedef struct _cursor {
+        short x;
+        short y;
+} pmCursor;
+
+
+
+typedef struct _box {
+        short bottom;
+        short right;
+        short left;
+        short top;
+} pmBox;
+
+
+# 40 "./machine/pmioctl.h"
+
+# 1 "/sprite/lib/include/sys/ioctl.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 314 "/sprite/lib/include/sys/ioctl.h"
+
+# 41 "./machine/pmioctl.h"
+
+# 1 "./machine/pmreg.h"
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct pcc_regs {
+        u_short 	cmdr;   
+	u_short		pad1;
+	u_short 	xpos;   
+	u_short		pad2;
+	u_short 	ypos;   
+	u_short		pad3;
+	u_short 	xmin1;  
+	u_short		pad4;
+	u_short 	xmax1;  
+	u_short		pad5;
+	u_short 	ymin1;  
+	u_short		pad6;
+	u_short 	ymax1;  
+	u_short		pad7;
+	u_short         unused7; 
+	u_short         padunused7; 
+	u_short         unused8; 
+	u_short         padunused8; 
+	u_short         unused9; 
+	u_short         padunused9; 
+	u_short         unusedA; 
+	u_short         padunusedA; 
+	u_short  	xmin2;   
+	u_short		pad8;
+	u_short		xmax2;   
+	u_short		pad9;
+	u_short		ymin2;   
+	u_short		pada;
+	u_short		ymax2;   
+	u_short		padb;
+	u_short 	memory;  
+	u_short		padc;
+};
+
+
+
+typedef volatile struct {
+    u_char   map_wr;
+    u_char   pad0;
+    u_short  pad1;
+
+    u_char   map_ram;
+    u_char   pad2;
+    u_short  pad3;
+
+    u_char   mask;
+    u_char   pad4;
+    u_short  pad5;
+
+    u_char   map_rd;
+    u_char   pad6;
+    u_short  pad7;
+
+    u_char   over_wr;
+    u_char   pad8;
+    u_short  pad9;
+
+    u_char   over_regs;
+    u_char   pad10;
+    u_short  pad11;
+
+    u_char   reserved;
+    u_char   pad12;
+    u_short  pad13;
+
+    u_char   over_rd;
+    u_char   pad14;
+    u_short  pad15;
+}vdac_regs ;
+
+# 42 "./machine/pmioctl.h"
+
+
+struct pm_kpcmd {
+	char nbytes;		
+	unsigned char cmd;	
+				
+	unsigned char par[2];	
+};
+
+typedef struct pm_info {
+	pmEventQueue qe;		
+	short	mswitches;		
+	pmCursor tablet;		
+	short	tswitches;		
+	pmCursor cursor;		
+	short	row;			
+	short	col;			
+	short	max_row;		
+	short	max_col;		
+	short	max_x;			
+	short	max_y;			
+	short	max_cur_x;		
+	short	max_cur_y;		
+	int	version;		
+	char	*bitmap;		
+        short   *scanmap;               
+	short	*cursorbits;		
+	short	*pmaddr;		
+	char    *planemask;		
+	pmCursor mouse;			
+	pmBox	mbox;			
+	short	mthreshold;		
+	short	mscale;			
+
+	short	min_cur_x;		
+	short	min_cur_y;		
+} PM_Info;
+
+typedef struct _ColorMap {
+	short  Map;
+	unsigned short index;
+	struct {
+		unsigned short red;
+		unsigned short green;
+		unsigned short blue;
+	} Entry;
+} ColorMap;
+
+
+
+
+
+# 109 "./machine/pmioctl.h"
+
+# 39 "cfbpmax_io.c"
+
+# 1 "./machine/dc7085cons.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct cn_reg {
+	u_short DZ_CSR;			
+	u_short pad1[3];
+	union {				
+		u_short DZ_RBUF;
+		u_short DZ_LPR;
+	} DZ_RBUF_LPR;
+	u_short pad2[3];
+	u_short DZ_TCR;			
+	u_short pad3[3];
+	union {				
+		u_short	DZ_MSR;
+		u_short DZ_TDR;
+	} DZ_MSR_TDR;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct mouse_report {
+	char state;			
+	short dx;			
+	short dy;			
+	char bytcnt;			
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct dzdevice {
+	short dzcsr;
+	short dzrbuf;
+	union {
+		struct {
+			char	dztcr0;
+			char	dzdtr0;
+			char	dztbuf0;
+			char	dzbrk0;
+		} dz11;
+		struct {
+			short	dzlcs0;
+			char	dztbuf0;
+			char	dzlnen0;
+		} dz32;
+	} dzun;
+};
+
+
+struct cnpdma {
+    	char *p_mem;
+	char *p_end;
+};
+
+
+
+struct	cn_softc {
+	struct	tty cn_tty[5 ];	
+	struct	dzdevice sc_dz;		
+	struct	cnpdma cn_pdma[5 ];
+	volatile struct cn_reg *sc_regs; 
+	long	sc_flags[5 ];	
+	long	sc_category_flags[5 ]; 
+	u_long	sc_softcnt[5 ];	
+	u_long	sc_hardcnt[5 ];	
+	char	sc_device[0x08		][5 ]; 
+};
+
+# 40 "cfbpmax_io.c"
+
+
+# 1 "/X11/R4/src/cmds/X/include/misc.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern unsigned long globalSerialNumber;
+extern unsigned long serverGeneration;
+
+# 42 "/X11/R4/src/cmds/X/include/misc.h"
+
+
+
+
+
+
+
+typedef unsigned char *pointer;
+typedef int Bool;
+typedef unsigned long PIXEL;
+typedef unsigned long ATOM;
+
+
+
+
+
+
+
+# 1 "/X11/R4/src/cmds/X/include/os.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/X11/R4/src/cmds/X/include/misc.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 148 "/X11/R4/src/cmds/X/include/misc.h"
+
+# 30 "/X11/R4/src/cmds/X/include/os.h"
+
+
+
+# 1 "/sprite/lib/include/ds3100.md/alloca.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 26 "/sprite/lib/include/ds3100.md/alloca.h"
+
+extern char *alloca();
+
+
+
+
+# 33 "/X11/R4/src/cmds/X/include/os.h"
+
+
+
+
+
+
+
+
+# 43 "/X11/R4/src/cmds/X/include/os.h"
+
+
+
+
+typedef pointer	FID;
+typedef struct _FontPathRec *FontPathPtr;
+typedef struct _NewClientRec *NewClientPtr;
+
+
+
+
+
+
+
+# 70 "/X11/R4/src/cmds/X/include/os.h"
+
+
+
+# 77 "/X11/R4/src/cmds/X/include/os.h"
+
+
+
+
+
+
+
+
+# 90 "/X11/R4/src/cmds/X/include/os.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int		ReadRequestFromClient();
+char		*strcat();
+char		*strncat();
+char		*strcpy();
+char		*strncpy();
+Bool		CloseDownConnection();
+FontPathPtr	GetFontPath();
+FontPathPtr	ExpandFontNamePattern();
+FID		FiOpenForRead();
+void		CreateWellKnownSockets();
+int		SetDefaultFontPath();
+void		FreeFontRecord();
+int		SetFontPath();
+void		ErrorF();
+void		Error();
+void		FatalError();
+void		ProcessCommandLine();
+void		Xfree();
+void		FlushAllOutput();
+void		FlushIfCriticalOutputPending();
+unsigned long	*Xalloc();
+unsigned long	*Xrealloc();
+long		GetTimeInMillis();
+
+
+# 60 "/X11/R4/src/cmds/X/include/misc.h"
+
+
+
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern void SwapLongs();
+extern void SwapShorts();
+
+typedef struct _DDXPoint *DDXPointPtr;
+typedef struct _Box *BoxPtr;
+
+
+# 42 "cfbpmax_io.c"
+
+# 1 "/X11/R4/lib/include/X11/X.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef unsigned long XID;
+
+typedef XID Window;
+typedef XID Drawable;
+typedef XID Font;
+typedef XID Pixmap;
+typedef XID Cursor;
+typedef XID Colormap;
+typedef XID GContext;
+typedef XID KeySym;
+
+typedef unsigned long Mask;
+
+typedef unsigned long Atom;
+
+typedef unsigned long VisualID;
+
+typedef unsigned long Time;
+
+typedef unsigned char KeyCode;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		       
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 43 "cfbpmax_io.c"
+
+
+# 1 "/X11/R4/lib/include/X11/Xproto.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/X11/R4/lib/include/X11/Xmd.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 37 "/X11/R4/lib/include/X11/Xmd.h"
+
+
+
+
+
+
+
+# 46 "/X11/R4/lib/include/X11/Xmd.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 62 "/X11/R4/lib/include/X11/Xmd.h"
+
+
+
+
+
+
+
+
+
+# 74 "/X11/R4/lib/include/X11/Xmd.h"
+
+
+
+
+
+
+
+
+# 85 "/X11/R4/lib/include/X11/Xmd.h"
+
+
+
+
+
+typedef long           INT32;
+typedef short          INT16;
+typedef char           INT8;
+
+typedef unsigned long CARD32;
+typedef unsigned short CARD16;
+typedef unsigned char  CARD8;
+
+typedef unsigned long		BITS32;
+typedef unsigned short		BITS16;
+typedef unsigned char		BYTE;
+
+typedef unsigned char            BOOL;
+
+
+
+
+
+# 115 "/X11/R4/lib/include/X11/Xmd.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 131 "/X11/R4/lib/include/X11/Xmd.h"
+
+
+
+
+  
+
+
+
+
+# 54 "/X11/R4/lib/include/X11/Xproto.h"
+
+# 1 "/X11/R4/lib/include/X11/Xprotostr.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/X11/R4/lib/include/X11/Xmd.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 139 "/X11/R4/lib/include/X11/Xmd.h"
+
+# 29 "/X11/R4/lib/include/X11/Xprotostr.h"
+
+
+
+typedef struct _xSegment {
+    INT16 x1 , y1 , x2 , y2 ;
+} xSegment;
+
+
+
+typedef struct _xPoint {
+	INT16		x , y ;
+} xPoint;
+
+typedef struct _xRectangle {
+    INT16 x , y ;
+    CARD16  width , height ;
+} xRectangle;
+
+
+
+typedef struct _xArc {
+    INT16 x , y ;
+    CARD16   width , height ;
+    INT16   angle1 , angle2 ;
+} xArc;
+
+
+# 55 "/X11/R4/lib/include/X11/Xproto.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef CARD16 KeyButMask;
+
+
+
+
+
+
+typedef struct {
+    CARD8	byteOrder;
+    BYTE	pad;
+    CARD16	majorVersion , minorVersion ;
+    CARD16	nbytesAuthProto ;	
+    CARD16	nbytesAuthString ;	
+    CARD16	pad2;
+} xConnClientPrefix;
+
+typedef struct {
+    BOOL           success;
+    BYTE           lengthReason; 
+    CARD16         majorVersion , 
+                   minorVersion ;
+    CARD16         length ;  
+} xConnSetupPrefix;
+
+
+typedef struct {
+    CARD32         release ;
+    CARD32         ridBase , 
+                   ridMask ;
+    CARD32         motionBufferSize ;
+    CARD16         nbytesVendor ;  
+    CARD16         maxRequestSize ;
+    CARD8          numRoots;          
+    CARD8          numFormats;        
+    CARD8          imageByteOrder;        
+    CARD8          bitmapBitOrder;        
+    CARD8          bitmapScanlineUnit,     
+                   bitmapScanlinePad;     
+    CARD8	   minKeyCode, maxKeyCode;
+    CARD32	   pad2 ;
+} xConnSetup;
+
+typedef struct {
+    CARD8          depth;
+    CARD8          bitsPerPixel;
+    CARD8          scanLinePad;
+    CARD8          pad1;
+    CARD32	   pad2 ;
+} xPixmapFormat;
+
+
+
+typedef struct {
+    CARD8 	depth;
+    CARD8 	pad1;
+    CARD16	nVisuals ;  
+    CARD32	pad2 ;
+    } xDepth;
+
+typedef struct {
+    CARD32 visualID ;
+# 302 "/X11/R4/lib/include/X11/Xproto.h"
+
+    CARD8 class;
+
+    CARD8 bitsPerRGB;
+    CARD16 colormapEntries ;
+    CARD32 redMask , greenMask , blueMask ;
+    CARD32 pad ;
+    } xVisualType;
+
+typedef struct {
+    CARD32         windowId ;
+    CARD32       defaultColormap ;
+    CARD32         whitePixel , blackPixel ;
+    CARD32         currentInputMask ;   
+    CARD16         pixWidth , pixHeight ;
+    CARD16         mmWidth , mmHeight ;
+    CARD16         minInstalledMaps , maxInstalledMaps ;
+    CARD32       rootVisualID ;
+    CARD8          backingStore;
+    BOOL           saveUnders;
+    CARD8          rootDepth;
+    CARD8          nDepths;  
+} xWindowRoot;
+
+
+
+
+
+
+
+
+
+typedef struct {
+    CARD32 time ;
+    INT16 x , y ;
+} xTimecoord;
+
+typedef struct {
+    CARD8 family;
+    BYTE pad;
+    CARD16 length ;
+} xHostEntry;
+
+typedef struct {
+    INT16 leftSideBearing ,
+	  rightSideBearing ,
+	  characterWidth ,
+	  ascent ,
+	  descent ;
+    CARD16 attributes ;
+} xCharInfo;
+
+typedef struct {
+    CARD32 name ;
+    CARD32 value ;
+} xFontProp;
+
+
+
+
+typedef struct {           
+    CARD8 len;	
+
+    INT8 delta;
+} xTextElt;
+
+
+typedef struct {        
+    CARD32 pixel ;
+    CARD16 red , green , blue ;
+    CARD8 flags;  
+    CARD8 pad;
+} xColorItem;
+
+
+typedef struct {
+    CARD16 red , green , blue , pad ;
+} xrgb;
+
+typedef CARD8 KEYCODE;
+
+
+
+
+
+
+
+
+# 945 "/X11/R4/lib/include/X11/Xproto.h"
+
+
+
+
+
+
+
+
+
+
+typedef struct {
+    BYTE type;                  
+    BYTE errorCode;
+    CARD16 sequenceNumber ;       
+    CARD32 resourceID ;
+    CARD16 minorCode ;
+    CARD8 majorCode;
+    BYTE pad1;
+    CARD32 pad3 ;
+    CARD32 pad4 ;
+    CARD32 pad5 ;
+    CARD32 pad6 ;
+    CARD32 pad7 ;
+} xError;
+
+
+
+
+
+
+
+
+
+
+typedef struct {
+    union {
+	struct {
+	    BYTE type;
+	    BYTE detail;
+	    CARD16 sequenceNumber ;
+	    } u;
+	struct {
+            CARD32 pad00 ;
+	    CARD32 time ;
+	    CARD32 root , event , child ;
+	    INT16 rootX , rootY , eventX , eventY ;
+	    KeyButMask state ;
+	    BOOL sameScreen;		
+	    BYTE pad1;
+	} keyButtonPointer;
+	struct {
+            CARD32 pad00 ;
+            CARD32 time ;
+	    CARD32 root , event , child ;
+	    INT16 rootX , rootY , eventX , eventY ;
+	    KeyButMask state ;
+	    BYTE mode; 			
+	    BYTE flags;		
+
+
+	} enterLeave;
+	struct {
+            CARD32 pad00 ;
+	    CARD32 window ;
+	    BYTE mode; 			
+	    BYTE pad1, pad2, pad3;
+	} focus;
+	struct {
+            CARD32 pad00 ;
+	    CARD32 window ;
+	    CARD16 x , y , width , height ;
+	    CARD16 count ;
+	    CARD16 pad2 ;
+	} expose;
+	struct {
+            CARD32 pad00 ;
+	    CARD32 drawable ;
+	    CARD16 x , y , width , height ;
+	    CARD16 minorEvent ;
+	    CARD16 count ;
+	    BYTE majorEvent;
+	    BYTE pad1, pad2, pad3;
+	} graphicsExposure;
+	struct {
+            CARD32 pad00 ;
+	    CARD32 drawable ;
+	    CARD16 minorEvent ;
+	    BYTE majorEvent;
+	    BYTE bpad;
+	} noExposure;
+	struct {
+            CARD32 pad00 ;
+	    CARD32 window ;
+	    CARD8 state;
+	    BYTE pad1, pad2, pad3;
+	} visibility;
+	struct {
+            CARD32 pad00 ;
+	    CARD32 parent , window ;
+	    INT16 x , y ;
+	    CARD16 width , height , borderWidth ;
+	    BOOL override;
+	    BYTE bpad;
+        } createNotify;
+
+
+
+
+
+
+
+
+	struct {
+            CARD32 pad00 ;
+	    CARD32 event , window ;
+	} destroyNotify;
+	struct {
+            CARD32 pad00 ;
+	    CARD32 event , window ;
+	    BOOL fromConfigure;
+	    BYTE pad1, pad2, pad3;
+        } unmapNotify;
+	struct {
+            CARD32 pad00 ;
+	    CARD32 event , window ;
+	    BOOL override;
+	    BYTE pad1, pad2, pad3;
+        } mapNotify;
+	struct {
+            CARD32 pad00 ;
+	    CARD32 parent , window ;
+        } mapRequest;
+	struct {
+            CARD32 pad00 ;
+	    CARD32 event , window , parent ;
+	    INT16 x , y ;
+	    BOOL override;
+	    BYTE pad1, pad2, pad3;
+	} reparent;
+	struct {
+            CARD32 pad00 ;
+	    CARD32 event , window , aboveSibling ;
+	    INT16 x , y ;
+	    CARD16 width , height , borderWidth ;
+	    BOOL override;		
+	    BYTE bpad;
+	} configureNotify;
+	struct {
+            CARD32 pad00 ;
+	    CARD32 parent , window , sibling ;
+	    INT16 x , y ;
+	    CARD16 width , height , borderWidth ;
+	    CARD16 valueMask ;
+	    CARD32 pad1 ;
+	} configureRequest;
+	struct {
+            CARD32 pad00 ;
+	    CARD32 event , window ;
+	    INT16 x , y ;
+	    CARD32 pad1, pad2, pad3, pad4;
+	} gravity;
+	struct {
+            CARD32 pad00 ;
+	    CARD32 window ;
+	    CARD16 width , height ;
+	} resizeRequest;
+	struct {
+
+
+            CARD32 pad00 ;
+	    CARD32 event , window , parent ;
+	    BYTE place;			
+	    BYTE pad1, pad2, pad3;
+	} circulate;
+	struct {
+            CARD32 pad00 ;
+	    CARD32 window ;
+	    CARD32 atom ;
+	    CARD32 time ;
+	    BYTE state;			
+	    BYTE pad1;
+	    CARD16 pad2 ;
+	} property;
+	struct {
+            CARD32 pad00 ;
+            CARD32 time ;     
+	    CARD32 window ;
+	    CARD32 atom ;
+	} selectionClear;
+	struct {
+            CARD32 pad00 ;
+            CARD32 time ;    
+	    CARD32 owner , requestor ;
+	    CARD32 selection , target , property ;
+	} selectionRequest;
+	struct {
+            CARD32 pad00 ;
+            CARD32 time ;   
+	    CARD32 requestor ;
+	    CARD32 selection , target , property ;
+	} selectionNotify;
+	struct {
+            CARD32 pad00 ;
+	    CARD32 window ;
+	    CARD32 colormap ;
+# 1152 "/X11/R4/lib/include/X11/Xproto.h"
+
+	    BOOL new;
+
+	    BYTE state;			
+	    BYTE pad1, pad2;
+	} colormap;
+	struct {
+	    CARD32 pad00 ;
+	    CARD8 request;
+	    CARD8 firstKeyCode;
+	    CARD8 count;
+	    BYTE pad1;
+	} mappingNotify;
+	struct {
+            CARD32 pad00 ;
+	    CARD32 window ;
+	    union {
+		struct {
+		    CARD32 type ;
+		    INT32 longs0 ;
+		    INT32 longs1 ;
+		    INT32 longs2 ;
+		    INT32 longs3 ;
+		    INT32 longs4 ;
+		} l;
+		struct {
+		    CARD32 type ;
+		    INT16 shorts0 ;
+		    INT16 shorts1 ;
+		    INT16 shorts2 ;
+		    INT16 shorts3 ;
+		    INT16 shorts4 ;
+		    INT16 shorts5 ;
+		    INT16 shorts6 ;
+		    INT16 shorts7 ;
+		    INT16 shorts8 ;
+		    INT16 shorts9 ;
+		} s;
+		struct {
+		    CARD32 type ;
+		    INT8 bytes[20];
+		} b;
+	    } u; 
+	} clientMessage;
+    } u;
+} xEvent;
+
+
+
+
+
+typedef struct {
+    BYTE type;
+    BYTE map[31];
+    } xKeymapEvent;
+
+
+
+
+
+
+
+
+
+
+# 1262 "/X11/R4/lib/include/X11/Xproto.h"
+
+
+
+
+
+
+
+
+
+
+
+typedef struct {
+	CARD8 reqType;
+	CARD8 data;            
+	CARD16 length ;         
+
+} xReq;
+
+
+
+
+
+
+
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD32 id ;  
+    } xResourceReq;
+
+typedef struct {
+    CARD8 reqType;
+    CARD8 depth;
+    CARD16 length ;
+    CARD32 wid , parent ;
+    INT16 x , y ;
+    CARD16 width , height , borderWidth ;  
+# 1303 "/X11/R4/lib/include/X11/Xproto.h"
+
+    CARD16 class ;
+
+    CARD32 visual ;
+    CARD32 mask ;
+} xCreateWindowReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD32 window ;
+    CARD32 valueMask ; 
+} xChangeWindowAttributesReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE mode;
+    CARD16 length ;
+    CARD32 window ;
+} xChangeSaveSetReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD32 window , parent ;
+    INT16 x , y ;
+} xReparentWindowReq;
+
+typedef struct {
+    CARD8 reqType;
+    CARD8 pad;
+    CARD16 length ;
+    CARD32 window ;
+    CARD16 mask ;
+    CARD16 pad2 ;
+} xConfigureWindowReq;
+
+typedef struct {
+    CARD8 reqType;
+    CARD8 direction;
+    CARD16 length ;
+    CARD32 window ;
+} xCirculateWindowReq;
+
+typedef struct {    
+    CARD8 reqType;
+    BOOL onlyIfExists;
+    CARD16 length ;
+    CARD16 nbytes  ;    
+    CARD16 pad ;
+} xInternAtomReq;
+
+typedef struct {
+    CARD8 reqType;
+    CARD8 mode;
+    CARD16 length ;
+    CARD32 window ;
+    CARD32 property , type ;
+    CARD8 format;
+    BYTE pad[3];
+    CARD32 nUnits ;     
+} xChangePropertyReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD32 window ;
+    CARD32 property ;
+} xDeletePropertyReq;
+
+typedef struct {
+    CARD8 reqType;
+# 1380 "/X11/R4/lib/include/X11/Xproto.h"
+
+    BOOL delete;
+
+    CARD16 length ;
+    CARD32 window ;
+    CARD32 property , type ;
+    CARD32 longOffset ;
+    CARD32 longLength ;
+} xGetPropertyReq;
+ 
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD32 window ;
+    CARD32 selection ;
+    CARD32 time ;
+} xSetSelectionOwnerReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD32 requestor ;
+    CARD32 selection , target , property ;
+    CARD32 time ;
+    } xConvertSelectionReq;
+
+
+
+typedef struct {
+    CARD8 reqType;
+    BOOL propagate;
+    CARD16 length ;
+    CARD32 destination ;
+    CARD32 eventMask ;
+# 1419 "/X11/R4/lib/include/X11/Xproto.h"
+
+    xEvent event;
+
+} xSendEventReq;
+
+
+
+typedef struct {
+    CARD8 reqType;
+    BOOL ownerEvents;
+    CARD16 length ;
+    CARD32 grabWindow ;
+    CARD16 eventMask ;
+    BYTE pointerMode, keyboardMode;
+    CARD32 confineTo ;
+    CARD32 cursor ;
+    CARD32 time ;
+} xGrabPointerReq;
+
+typedef struct {
+    CARD8 reqType;
+    BOOL ownerEvents;
+    CARD16 length ;
+    CARD32 grabWindow ;
+    CARD16 eventMask ;
+    BYTE pointerMode, keyboardMode;
+    CARD32 confineTo ;
+    CARD32 cursor ;
+    CARD8 button;
+    BYTE pad;
+    CARD16 modifiers ;
+} xGrabButtonReq;
+
+typedef struct {
+    CARD8 reqType;
+    CARD8 button;
+    CARD16 length ;
+    CARD32 grabWindow ;
+    CARD16 modifiers ;
+    CARD16 pad ;
+} xUngrabButtonReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD32 cursor ;
+    CARD32 time ;
+    CARD16 eventMask ;
+    CARD16 pad2 ;
+} xChangeActivePointerGrabReq;
+
+typedef struct {
+    CARD8 reqType;
+    BOOL ownerEvents;
+    CARD16 length ;
+    CARD32 grabWindow ;
+    CARD32 time ;
+    BYTE pointerMode, keyboardMode;  
+    CARD16 pad ;
+} xGrabKeyboardReq;
+
+typedef struct {
+    CARD8 reqType;
+    BOOL ownerEvents;
+    CARD16 length ;
+    CARD32 grabWindow ;
+    CARD16 modifiers ;
+    CARD8 key;
+    BYTE pointerMode, keyboardMode;  
+    BYTE pad1, pad2, pad3;
+} xGrabKeyReq;
+
+typedef struct {
+    CARD8 reqType;
+    CARD8 key;
+    CARD16 length ;
+    CARD32 grabWindow ;
+    CARD16 modifiers ;
+    CARD16 pad ;
+} xUngrabKeyReq;
+
+typedef struct {
+    CARD8 reqType;
+    CARD8 mode;
+    CARD16 length ;
+    CARD32 time ;
+} xAllowEventsReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD32 window ;
+    CARD32 start , stop ;
+} xGetMotionEventsReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD32 srcWid , dstWid ;
+    INT16 srcX , srcY ;
+} xTranslateCoordsReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD32 srcWid , dstWid ;
+    INT16 srcX , srcY ;
+    CARD16 srcWidth , srcHeight ;
+    INT16 dstX , dstY ;
+} xWarpPointerReq;
+
+typedef struct {
+    CARD8 reqType;
+    CARD8 revertTo;
+    CARD16 length ;
+    CARD32 focus ;
+    CARD32 time ;
+} xSetInputFocusReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD32 fid ;
+    CARD16 nbytes ;
+    BYTE pad1, pad2;	
+} xOpenFontReq;
+
+typedef struct {
+    CARD8 reqType;
+    BOOL oddLength;
+    CARD16 length ;
+    CARD32 fid ;
+    } xQueryTextExtentsReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD16 maxNames ;
+    CARD16 nbytes ;  
+} xListFontsReq;
+
+typedef xListFontsReq xListFontsWithInfoReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD16 nFonts ;
+    BYTE pad1, pad2;	
+} xSetFontPathReq;
+
+typedef struct {
+    CARD8 reqType;
+    CARD8 depth;
+    CARD16 length ;
+    CARD32 pid ;
+    CARD32 drawable ;
+    CARD16 width , height ;
+} xCreatePixmapReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD32 gc ;
+    CARD32 drawable ;
+    CARD32 mask ;
+} xCreateGCReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD32 gc ;
+    CARD32 mask ;
+} xChangeGCReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD32 srcGC , dstGC ;
+    CARD32 mask ;
+} xCopyGCReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD32 gc ;
+    CARD16 dashOffset ;
+    CARD16 nDashes ;        
+} xSetDashesReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE ordering;
+    CARD16 length ;
+    CARD32 gc ;
+    INT16 xOrigin , yOrigin ;
+} xSetClipRectanglesReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BOOL exposures;
+    CARD16 length ;
+    CARD32 window ;
+    INT16 x , y ;
+    CARD16 width , height ;
+} xClearAreaReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD32 srcDrawable , dstDrawable ;
+    CARD32 gc ;
+    INT16 srcX , srcY , dstX , dstY ;
+    CARD16 width , height ;
+} xCopyAreaReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD32 srcDrawable , dstDrawable ;
+    CARD32 gc ;
+    INT16 srcX , srcY , dstX , dstY ;
+    CARD16 width , height ;
+    CARD32 bitPlane ;
+} xCopyPlaneReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE coordMode;
+    CARD16 length ;
+    CARD32 drawable ;
+    CARD32 gc ;
+} xPolyPointReq;    
+
+typedef xPolyPointReq xPolyLineReq;  
+
+
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD32 drawable ;
+    CARD32 gc ;
+} xPolySegmentReq;    
+
+typedef xPolySegmentReq xPolyArcReq;
+typedef xPolySegmentReq xPolyRectangleReq;
+typedef xPolySegmentReq xPolyFillRectangleReq;
+typedef xPolySegmentReq xPolyFillArcReq;
+
+typedef struct _FillPolyReq {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD32 drawable ;
+    CARD32 gc ;
+    BYTE shape;
+    BYTE coordMode;
+    CARD16 pad1 ;
+} xFillPolyReq;    
+
+
+typedef struct _PutImageReq {
+    CARD8 reqType;
+    CARD8 format;
+    CARD16 length ;
+    CARD32 drawable ;
+    CARD32 gc ;
+    CARD16 width , height ;
+    INT16 dstX , dstY ;
+    CARD8 leftPad;
+    CARD8 depth;
+    CARD16 pad ;
+} xPutImageReq;    
+
+typedef struct {
+    CARD8 reqType;
+    CARD8 format;
+    CARD16 length ;
+    CARD32 drawable ;
+    INT16 x , y ;
+    CARD16 width , height ;
+    CARD32 planeMask ;
+} xGetImageReq;    
+
+
+
+typedef struct {
+    CARD8 reqType;
+    CARD8 pad;
+    CARD16 length ;
+    CARD32 drawable ;
+    CARD32 gc ;
+    INT16 x , y ;		
+} xPolyTextReq;    
+
+typedef xPolyTextReq xPolyText8Req;
+typedef xPolyTextReq xPolyText16Req;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE nChars;
+    CARD16 length ;
+    CARD32 drawable ;
+    CARD32 gc ;
+    INT16 x , y ;
+} xImageTextReq;    
+
+typedef xImageTextReq xImageText8Req;
+typedef xImageTextReq xImageText16Req;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE alloc;
+    CARD16 length ;
+    CARD32 mid ;
+    CARD32 window ;
+    CARD32 visual ;
+} xCreateColormapReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD32 mid ;
+    CARD32 srcCmap ;
+} xCopyColormapAndFreeReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD32 cmap ;
+    CARD16 red , green , blue ;
+    CARD16 pad2 ;
+} xAllocColorReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD32 cmap ;
+    CARD16 nbytes ;  
+    BYTE pad1, pad2;
+} xAllocNamedColorReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BOOL contiguous;
+    CARD16 length ;
+    CARD32 cmap ;
+    CARD16 colors , planes ;
+} xAllocColorCellsReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BOOL contiguous;
+    CARD16 length ;
+    CARD32 cmap ;
+    CARD16 colors , red , green , blue ;
+} xAllocColorPlanesReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD32 cmap ;
+    CARD32 planeMask ;
+} xFreeColorsReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD32 cmap ;
+} xStoreColorsReq;    
+
+typedef struct {
+    CARD8 reqType;
+    CARD8 flags;   
+    CARD16 length ;
+    CARD32 cmap ;
+    CARD32 pixel ;
+    CARD16 nbytes ;  
+    BYTE pad1, pad2;
+    } xStoreNamedColorReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD32 cmap ;
+} xQueryColorsReq;    
+
+typedef struct {    
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD32 cmap ;
+    CARD16 nbytes ;  
+    BYTE pad1, pad2;
+} xLookupColorReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD32 cid ;
+    CARD32 source , mask ;
+    CARD16 foreRed , foreGreen , foreBlue ;
+    CARD16 backRed , backGreen , backBlue ;
+    CARD16 x , y ;
+} xCreateCursorReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD32 cid ;
+    CARD32 source , mask ;
+    CARD16 sourceChar , maskChar ;
+    CARD16 foreRed , foreGreen , foreBlue ;
+    CARD16 backRed , backGreen , backBlue ;
+} xCreateGlyphCursorReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD32 cursor ;
+    CARD16 foreRed , foreGreen , foreBlue ;
+    CARD16 backRed , backGreen , backBlue ;
+} xRecolorCursorReq;    
+
+typedef struct {
+    CARD8 reqType;
+# 1870 "/X11/R4/lib/include/X11/Xproto.h"
+
+    CARD8 class;
+
+    CARD16 length ;
+    CARD32 drawable ;
+    CARD16 width , height ;
+} xQueryBestSizeReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD16 nbytes ;  
+    BYTE pad1, pad2;
+} xQueryExtensionReq;
+
+typedef struct {
+    CARD8   reqType;
+    CARD8   numKeyPerModifier;
+    CARD16  length ;
+} xSetModifierMappingReq;
+
+typedef struct {
+    CARD8 reqType;
+    CARD8 nElts;  
+    CARD16 length ;
+} xSetPointerMappingReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD8 firstKeyCode;
+    CARD8 count;
+    CARD16 pad1 ;
+} xGetKeyboardMappingReq;    
+
+typedef struct {
+    CARD8 reqType;
+    CARD8 keyCodes;
+    CARD16 length ;
+    CARD8 firstKeyCode;
+    CARD8 keySymsPerKeyCode;
+    CARD16 pad1 ;
+} xChangeKeyboardMappingReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD32 mask ;
+} xChangeKeyboardControlReq;    
+
+typedef struct {
+    CARD8 reqType;
+    INT8 percent;  
+    CARD16 length ;
+} xBellReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    INT16 accelNum , accelDenum ;
+    INT16 threshold ;             
+    BOOL doAccel, doThresh;
+} xChangePointerControlReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    INT16 timeout , interval ;
+    BYTE preferBlank, allowExpose;  
+    CARD16 pad2 ;
+} xSetScreenSaverReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE mode;
+    CARD16 length ;
+    CARD8 hostFamily;
+    BYTE pad;
+    CARD16 hostLength ;
+} xChangeHostsReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    } xListHostsReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE mode;
+    CARD16 length ;
+    } xChangeModeReq;
+
+typedef xChangeModeReq xSetAccessControlReq;
+typedef xChangeModeReq xSetCloseDownModeReq;
+typedef xChangeModeReq xForceScreenSaverReq;
+
+typedef struct { 
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length ;
+    CARD32 window ;
+    CARD16 nAtoms ;
+    INT16 nPositions ;
+    } xRotatePropertiesReq;
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 45 "cfbpmax_io.c"
+
+# 1 "/X11/R4/src/cmds/X/include/scrnintstr.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/X11/R4/src/cmds/X/include/screenint.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct _PixmapFormat *PixmapFormatPtr;
+typedef struct _Visual *VisualPtr;
+typedef struct _Depth  *DepthPtr;
+typedef struct _Screen *ScreenPtr;
+
+
+# 29 "/X11/R4/src/cmds/X/include/scrnintstr.h"
+
+# 1 "/X11/R4/src/cmds/X/include/miscstruct.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/X11/R4/src/cmds/X/include/misc.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 148 "/X11/R4/src/cmds/X/include/misc.h"
+
+# 29 "/X11/R4/src/cmds/X/include/miscstruct.h"
+
+extern unsigned long globalSerialNumber;
+typedef struct _DDXPoint {
+    short x, y;
+} DDXPointRec;
+
+typedef struct _Box {
+    short x1, y1, x2, y2;
+} BoxRec;
+
+typedef union _DevUnion {
+    pointer		ptr;
+    long		val;
+    unsigned long	uval;
+} DevUnion;
+
+
+# 30 "/X11/R4/src/cmds/X/include/scrnintstr.h"
+
+# 1 "/X11/R4/src/cmds/X/include/region.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct _Region *RegionPtr;
+
+
+
+
+
+
+# 31 "/X11/R4/src/cmds/X/include/scrnintstr.h"
+
+# 1 "/X11/R4/src/cmds/X/include/pixmap.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct _Drawable *DrawablePtr;	
+typedef struct _Pixmap *PixmapPtr;
+
+typedef union _PixUnion {
+    PixmapPtr		pixmap;
+    unsigned long	pixel;
+} PixUnion;
+
+
+
+
+
+
+
+
+# 32 "/X11/R4/src/cmds/X/include/scrnintstr.h"
+
+# 1 "/X11/R4/src/cmds/X/include/gc.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct _GCInterest *GCInterestPtr;
+typedef struct _GC    *GCPtr;
+extern void  ValidateGC();
+extern int ChangeGC();
+extern GCPtr CreateGC();
+extern int CopyGC();
+extern int FreeGC();
+extern void SetGCMask();
+extern GCPtr GetScratchGC();
+extern void  FreeScratchGC();
+
+# 33 "/X11/R4/src/cmds/X/include/scrnintstr.h"
+
+# 1 "/X11/R4/src/cmds/X/include/colormap.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 56 "/X11/R4/src/cmds/X/include/colormap.h"
+
+
+
+
+
+
+
+
+
+typedef unsigned long	Pixel;
+typedef struct _CMEntry *EntryPtr;
+typedef struct _ColormapRec *ColormapPtr;
+
+extern int CreateColormap();
+extern int FindColor();
+extern int FreeColormap();
+extern int TellLostMap();
+extern int TellGainedMap();
+extern int IsMapInstalled();
+extern void UninstallColormap();
+
+
+# 34 "/X11/R4/src/cmds/X/include/scrnintstr.h"
+
+
+typedef struct _PixmapFormat {
+    unsigned char	depth;
+    unsigned char	bitsPerPixel;
+    unsigned char	scanlinePad;
+    } PixmapFormatRec;
+    
+typedef struct _Visual {
+    unsigned long	vid;
+    short		class;
+    short		bitsPerRGBValue;
+    short		ColormapEntries;
+    short		nplanes;
+
+
+    unsigned long	redMask, greenMask, blueMask;
+    int			offsetRed, offsetGreen, offsetBlue;
+  } VisualRec;
+
+typedef struct _Depth {
+    unsigned char	depth;
+    short		numVids;
+    unsigned long	*vids;    
+  } DepthRec;
+
+typedef struct _Screen {
+    int			myNum;	
+    ATOM		id;
+    short		width, height;
+    short		mmWidth, mmHeight;
+    short		numDepths;
+    unsigned char      	rootDepth;
+    DepthPtr       	allowedDepths;
+    unsigned long      	rootVisual;
+    unsigned long	defColormap;
+    short		minInstalledCmaps, maxInstalledCmaps;
+    char                backingStoreSupport, saveUnderSupport;
+    unsigned long	whitePixel, blackPixel;
+    unsigned long	rgf;	
+    GCPtr		GCperDepth[8+1];
+			
+
+
+
+
+
+
+    PixmapPtr		PixmapPerDepth[1];
+    pointer		devPrivate;
+    short       	numVisuals;
+    VisualPtr		visuals;
+    int			WindowPrivateLen;
+    unsigned		*WindowPrivateSizes;
+    unsigned		totalWindowSize;
+    int			GCPrivateLen;
+    unsigned		*GCPrivateSizes;
+    unsigned		totalGCSize;
+
+    
+
+    Bool (* CloseScreen)();		
+    void (* QueryBestSize)();		
+    Bool (* SaveScreen)();		
+    void (* GetImage)();		
+
+    void (* GetSpans)();		
+
+    void (* PointerNonInterestBox)();	
+
+    void (* SourceValidate)();		
+
+    
+
+    Bool (* CreateWindow)();		
+    Bool (* DestroyWindow)();		
+    Bool (* PositionWindow)();		
+    Bool (* ChangeWindowAttributes)();	
+    Bool (* RealizeWindow)();		
+    Bool (* UnrealizeWindow)();		
+    int  (* ValidateTree)();		
+    void (* WindowExposures)();       
+
+    void (* PaintWindowBackground)();	
+    void (* PaintWindowBorder)();	
+    void (* CopyWindow)();		
+    void (* ClearToBackground)();	
+
+    
+
+    PixmapPtr (* CreatePixmap)(); 	
+    Bool (* DestroyPixmap)();		
+
+    
+
+    void (* SaveDoomedAreas)();		
+    RegionPtr (* RestoreAreas)();	
+    void (* ExposeCopy)();		
+					
+    RegionPtr (* TranslateBackingStore)();
+    RegionPtr (* ClearBackingStore)();	
+    void (* DrawGuarantee)();		
+    
+    
+
+    Bool (* RealizeFont)();		
+    Bool (* UnrealizeFont)();		
+
+    
+    void (* ConstrainCursor)();   	
+    void (* CursorLimits)();		
+    Bool (* DisplayCursor)();		
+    Bool (* RealizeCursor)();		
+    Bool (* UnrealizeCursor)();		
+    void (* RecolorCursor)();		
+    Bool (* SetCursorPosition)();	
+
+    
+
+    Bool (* CreateGC)();		
+
+    
+
+    Bool (* CreateColormap)();		
+    void (* DestroyColormap)();		
+    void (* InstallColormap)();		
+    void (* UninstallColormap)();	
+    int (* ListInstalledColormaps) (); 	
+    void (* StoreColors)();		
+    void (* ResolveColor)();		
+
+    
+
+    RegionPtr (* RegionCreate)(); 	
+    void (* RegionInit)();		
+    Bool (* RegionCopy)();		
+    void (* RegionDestroy)();		
+    void (* RegionUninit)();		
+    Bool (* Intersect)();		
+    Bool (* Union)();			
+    Bool (* Subtract)();		
+    Bool (* Inverse)();			
+    void (* RegionReset)();		
+    void (* TranslateRegion)();		
+    int (* RectIn)();			
+    Bool (* PointInRegion)();		
+    Bool (* RegionNotEmpty)();      	
+    void (* RegionEmpty)();        	
+    BoxPtr (* RegionExtents)(); 	
+    Bool (* RegionAppend)();		
+    Bool (* RegionValidate)();		
+    RegionPtr (* BitmapToRegion)();	
+    RegionPtr (* RectsToRegion)();	
+    void (* SendGraphicsExpose)();	
+
+    
+    void (* BlockHandler)();		
+    void (* WakeupHandler)();		
+    pointer blockData;
+    pointer wakeupData;
+
+    
+    DevUnion	*devPrivates;
+} ScreenRec;
+
+typedef struct _ScreenInfo {
+    int		imageByteOrder;
+    int		bitmapScanlineUnit;
+    int		bitmapScanlinePad;
+    int		bitmapBitOrder;
+    int		numPixmapFormats;
+    PixmapFormatRec
+		formats[8];
+    int		arraySize;
+    int		numScreens;
+    ScreenPtr	screens[3];
+} ScreenInfo;
+
+extern ScreenInfo screenInfo;
+
+extern int AllocateWindowPrivateIndex(), AllocateGCPrivateIndex();
+extern Bool AllocateWindowPrivate(), AllocateGCPrivate();
+
+
+# 46 "cfbpmax_io.c"
+
+# 1 "/X11/R4/src/cmds/X/include/pixmap.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 53 "/X11/R4/src/cmds/X/include/pixmap.h"
+
+# 47 "cfbpmax_io.c"
+
+# 1 "/X11/R4/src/cmds/X/include/input.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/X11/R4/src/cmds/X/include/misc.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 148 "/X11/R4/src/cmds/X/include/misc.h"
+
+# 28 "/X11/R4/src/cmds/X/include/input.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef unsigned long Leds;
+typedef struct _OtherClients *OtherClientsPtr;
+typedef struct _InputClients *InputClientsPtr;
+typedef struct _GrabRec *GrabPtr;
+
+typedef int (*DeviceProc)();
+typedef void (*ProcessInputProc)();
+
+typedef struct _DeviceRec {
+    pointer	devicePrivate;
+    ProcessInputProc processInputProc;
+    ProcessInputProc realInputProc;
+    Bool	on;			
+} DeviceRec, *DevicePtr;
+
+typedef struct {
+    int			click, bell, bell_pitch, bell_duration;
+    Bool		autoRepeat;
+    unsigned char	autoRepeats[32];
+    Leds		leds;
+} KeybdCtrl;
+
+typedef struct {
+    KeySym  *map;
+    KeyCode minKeyCode,
+	    maxKeyCode;
+    int     mapWidth;
+} KeySymsRec, *KeySymsPtr;
+
+typedef struct {
+    int		num, den, threshold;
+} PtrCtrl;
+
+typedef struct {
+    int         resolution, min_value, max_value;
+    int         integer_displayed;
+} IntegerCtrl;
+
+typedef struct {
+    int         max_symbols, num_symbols_supported;
+    int         num_symbols_displayed;
+    KeySym      *symbols;
+} StringCtrl;
+
+typedef struct {
+    int         percent, pitch, duration;
+} BellCtrl;
+
+typedef struct {
+    Leds        led_values;
+} LedCtrl;
+
+extern KeybdCtrl	defaultKeyboardControl;
+extern PtrCtrl		defaultPointerControl;
+
+extern DevicePtr AddInputDevice();
+extern Bool EnableDevice();
+extern Bool DisableDevice();
+extern void RegisterPointerDevice();
+extern void RegisterKeyboardDevice();
+extern DevicePtr LookupKeyboardDevice();
+extern DevicePtr LookupPointerDevice();
+
+extern void ProcessPointerEvent();
+extern void ProcessKeyboardEvent();
+
+extern Bool InitKeyClassDeviceStruct();
+extern Bool InitButtonClassDeviceStruct();
+extern Bool InitFocusClassDeviceStruct();
+extern Bool InitKbdFeedbackClassDeviceStruct();
+extern Bool InitPtrFeedbackClassDeviceStruct();
+extern Bool InitValuatorClassDeviceStruct();
+extern Bool InitPointerDeviceStruct();
+extern Bool InitKeyboardDeviceStruct();
+
+extern void CloseDownDevices();
+
+extern void WriteEventsToClient();
+
+
+# 48 "cfbpmax_io.c"
+
+# 1 "/X11/R4/src/cmds/X/include/cursorstr.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/X11/R4/src/cmds/X/include/cursor.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct _Cursor *CursorPtr;
+typedef struct _CursorMetric *CursorMetricPtr;
+
+extern CursorPtr rootCursor;
+
+# 29 "/X11/R4/src/cmds/X/include/cursorstr.h"
+
+# 1 "/X11/R4/src/cmds/X/include/pixmap.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 53 "/X11/R4/src/cmds/X/include/pixmap.h"
+
+# 30 "/X11/R4/src/cmds/X/include/cursorstr.h"
+
+# 1 "/X11/R4/src/cmds/X/include/misc.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 148 "/X11/R4/src/cmds/X/include/misc.h"
+
+# 31 "/X11/R4/src/cmds/X/include/cursorstr.h"
+
+
+
+
+
+
+
+
+typedef struct _CursorBits {
+    unsigned char *source;			
+    unsigned char *mask;			
+    unsigned short width, height, xhot, yhot;	
+    int refcnt;					
+    pointer devPriv[3];		
+} CursorBits, *CursorBitsPtr;
+
+typedef struct _Cursor {
+    CursorBitsPtr bits;
+    unsigned short foreRed, foreGreen, foreBlue; 
+    unsigned short backRed, backGreen, backBlue; 
+    int refcnt;
+    pointer devPriv[3];		
+} CursorRec;
+
+typedef struct _CursorMetric {
+    unsigned short width, height, xhot, yhot;
+} CursorMetricRec;
+
+extern int		FreeCursor();
+extern CursorPtr	AllocCursor();		
+extern int		AllocGlyphCursor();	
+				
+extern CursorPtr	CreateRootCursor();
+
+
+# 49 "cfbpmax_io.c"
+
+# 1 "/X11/R4/src/cmds/X/include/regionstr.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/X11/R4/src/cmds/X/include/region.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 38 "/X11/R4/src/cmds/X/include/region.h"
+
+
+
+
+
+# 29 "/X11/R4/src/cmds/X/include/regionstr.h"
+
+# 1 "/X11/R4/src/cmds/X/include/miscstruct.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 45 "/X11/R4/src/cmds/X/include/miscstruct.h"
+
+# 30 "/X11/R4/src/cmds/X/include/regionstr.h"
+
+
+
+
+typedef struct _RegData {
+    long	size;
+    long 	numRects;
+
+} RegDataRec, *RegDataPtr;
+
+typedef struct _Region {
+    BoxRec 	extents;
+    RegDataPtr	data;
+} RegionRec;
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 50 "cfbpmax_io.c"
+
+# 1 "/X11/R4/src/cmds/X/include/resource.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/X11/R4/src/cmds/X/include/misc.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 148 "/X11/R4/src/cmds/X/include/misc.h"
+
+# 28 "/X11/R4/src/cmds/X/include/resource.h"
+
+
+
+
+
+
+
+typedef unsigned long RESTYPE;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+RESTYPE CreateNewResourceType();
+RESTYPE CreateNewResourceClass();
+unsigned long FakeClientID();
+Bool AddResource();
+void FreeResource();
+void FreeClientResources();
+Bool LegalNewID();
+pointer LookupIDByType();
+pointer LookupIDByClass();
+
+
+# 51 "cfbpmax_io.c"
+
+# 1 "/X11/R4/src/cmds/X/include/dixstruct.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/X11/R4/src/cmds/X/include/dix.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/X11/R4/src/cmds/X/include/gc.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 65 "/X11/R4/src/cmds/X/include/gc.h"
+
+# 30 "/X11/R4/src/cmds/X/include/dix.h"
+
+# 1 "/X11/R4/src/cmds/X/include/window.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct _BackingStore *BackingStorePtr;
+typedef struct _Window *WindowPtr;
+
+
+# 31 "/X11/R4/src/cmds/X/include/dix.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct _TimeStamp *TimeStampPtr;
+typedef struct _Client *ClientPtr;
+extern ClientPtr requestingClient;
+extern ClientPtr *clients;
+extern ClientPtr serverClient;
+extern int currentMaxClients;
+
+extern int ProcAllowEvents();
+extern int ProcBell();
+extern int ProcChangeActivePointerGrab();
+extern int ProcChangeKeyboardControl();
+extern int ProcChangePointerControl();
+extern int ProcGetKeyboardMapping();
+extern int ProcGetPointerMapping();
+extern int ProcGetInputFocus();
+extern int ProcGetKeyboardControl();
+extern int ProcGetMotionEvents();
+extern int ProcGetPointerControl();
+extern int ProcGrabButton();
+extern int ProcGrabKey();
+extern int ProcGrabKeyboard();
+extern int ProcGrabPointer();
+extern int ProcQueryKeymap();
+extern int ProcQueryPointer();
+extern int ProcSetInputFocus();
+extern int ProcSetKeyboardMapping();
+extern int ProcSetPointerMapping();
+extern int ProcSendEvent();
+extern int ProcUngrabButton();
+extern int ProcUngrabKey();
+extern int ProcUngrabKeyboard();
+extern int ProcUngrabPointer();
+extern int ProcWarpPointer();
+extern int ProcRecolorCursor();
+
+extern WindowPtr LookupWindow();
+extern pointer LookupDrawable();
+
+extern void NoopDDA();
+
+
+# 30 "/X11/R4/src/cmds/X/include/dixstruct.h"
+
+# 1 "/X11/R4/src/cmds/X/include/resource.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 80 "/X11/R4/src/cmds/X/include/resource.h"
+
+# 31 "/X11/R4/src/cmds/X/include/dixstruct.h"
+
+# 1 "/X11/R4/src/cmds/X/include/cursor.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 33 "/X11/R4/src/cmds/X/include/cursor.h"
+
+# 32 "/X11/R4/src/cmds/X/include/dixstruct.h"
+
+# 1 "/X11/R4/src/cmds/X/include/gc.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 65 "/X11/R4/src/cmds/X/include/gc.h"
+
+# 33 "/X11/R4/src/cmds/X/include/dixstruct.h"
+
+# 1 "/X11/R4/src/cmds/X/include/pixmap.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 53 "/X11/R4/src/cmds/X/include/pixmap.h"
+
+# 34 "/X11/R4/src/cmds/X/include/dixstruct.h"
+
+
+
+
+
+
+typedef struct _TimeStamp {
+    unsigned long	months;			
+    unsigned long	milliseconds;
+} TimeStamp;
+
+# 47 "/X11/R4/src/cmds/X/include/dixstruct.h"
+
+
+typedef struct _Client {
+    int index;
+    Mask clientAsMask;
+    pointer requestBuffer;
+    pointer osPrivate;			
+    Bool swapped;
+    void (* pSwapReplyFunc)();		
+    XID	errorValue;
+    int sequence;
+    int closeDownMode;
+    int clientGone;
+    int noClientException;       
+    DrawablePtr lastDrawable;
+    Drawable lastDrawableID;
+    GCPtr lastGC;
+    GContext lastGCID;    
+    pointer *saveSet;
+    int numSaved;
+    pointer screenPrivate[3];
+    int (**requestVector)();
+# 72 "/X11/R4/src/cmds/X/include/dixstruct.h"
+
+} ClientRec;
+
+extern TimeStamp currentTime;
+extern void CloseDownClient();
+
+extern TimeStamp ClientTimeToServerTime();
+extern void UpdateCurrentTime();
+extern void UpdateCurrentTimeIf();
+
+
+# 52 "cfbpmax_io.c"
+
+
+# 1 "./cfbpmaxcolor.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern void cfbpmaxStoreColors();
+extern void cfbpmaxInstallColormap();
+extern void cfbpmaxUninstallColormap();
+extern int cfbpmaxListInstalledColormaps();
+
+extern int fdPM;   
+
+# 54 "cfbpmax_io.c"
+
+# 1 "../mi/mi.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/X11/R4/src/cmds/X/include/region.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 38 "/X11/R4/src/cmds/X/include/region.h"
+
+
+
+
+
+# 28 "../mi/mi.h"
+
+typedef struct _miDash *miDashPtr;
+
+
+
+extern void  miPutImage();
+extern void  miGetImage();
+extern RegionPtr  miCopyArea();
+extern RegionPtr  miCopyPlane();
+extern void  miClearToBackground();
+extern int   miValidateTree();
+extern void  miPolySegment();
+extern void  miPolyRectangle();
+extern void  miFillPolygon();
+extern int   miPolyText8();
+extern int   miPolyText16();
+extern void  miImageText8();
+extern void  miImageText16();
+extern int   miFillConvexPoly();
+extern int   miFillGeneralPoly();
+extern void miNotMiter();
+extern void miMiter();
+extern void miWideLine();
+extern void miWideDash();
+extern void  miPolyArc();
+extern void  miZeroPolyArc();
+extern void miPolyFillRect();
+extern void miPolyFillArc();
+extern void  miPolyGlyphBlt();
+extern void  miImageGlyphBlt();
+extern void  miZeroLine();
+extern void  miPaintWindow();
+extern miDashPtr   miDashLine();
+extern void  miPushPixels();
+extern void  miGetPts(), miRoundCap(), miOneSegWide();
+extern int   miPtToAngle();
+extern RegionPtr miRegionCreate();
+extern void miRegionInit();
+extern Bool miRegionCopy();
+extern void miRegionDestroy();
+extern void miRegionUninit();
+extern Bool miIntersect();
+extern Bool miInverse();
+extern Bool miUnion();
+extern int miSubtract();
+extern void miRegionReset();
+extern void miTranslateRegion();
+extern int miRectIn();
+extern Bool miRegionAppend();
+extern Bool miRegionValidate();
+extern RegionPtr miRectsToRegion();
+extern Bool miPointInRegion();
+extern Bool miRegionNotEmpty();
+extern void miRegionEmpty();
+extern BoxPtr miRegionExtents();
+extern Bool miRectAlloc();
+# 86 "../mi/mi.h"
+
+extern void miWindowExposures();
+extern void miSendGraphicsExpose();
+extern RegionPtr miHandleExposures();
+
+
+# 55 "cfbpmax_io.c"
+
+# 1 "../mfb/mfb.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/X11/R4/src/cmds/X/include/pixmap.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 53 "/X11/R4/src/cmds/X/include/pixmap.h"
+
+# 30 "../mfb/mfb.h"
+
+# 1 "/X11/R4/src/cmds/X/include/region.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 38 "/X11/R4/src/cmds/X/include/region.h"
+
+
+
+
+
+# 31 "../mfb/mfb.h"
+
+# 1 "/X11/R4/src/cmds/X/include/gc.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 65 "/X11/R4/src/cmds/X/include/gc.h"
+
+# 32 "../mfb/mfb.h"
+
+# 1 "/X11/R4/src/cmds/X/include/colormap.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 77 "/X11/R4/src/cmds/X/include/colormap.h"
+
+# 33 "../mfb/mfb.h"
+
+# 1 "/X11/R4/src/cmds/X/include/miscstruct.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 45 "/X11/R4/src/cmds/X/include/miscstruct.h"
+
+# 34 "../mfb/mfb.h"
+
+# 1 "../mi/mibstore.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct {
+    void	    (*SaveAreas)();
+    void	    (*RestoreAreas)();
+    void	    (*SetClipmaskRgn)();
+    PixmapPtr	    (*GetImagePixmap)();
+    PixmapPtr	    (*GetSpansPixmap)();
+} miBSFuncRec, *miBSFuncPtr;
+
+extern void miInitBackingStore();
+
+
+# 35 "../mfb/mfb.h"
+
+extern int InverseAlu[];
+
+extern Bool mfbScreenInit();
+extern Bool mfbCloseScreen();
+extern Bool mfbCreateDefColormap();
+extern void mfbQueryBestSize();
+extern Bool mfbCreateWindow();
+extern Bool mfbPositionWindow();
+extern Bool mfbChangeWindowAttributes();
+extern Bool mfbMapWindow();
+extern Bool mfbUnmapWindow();
+extern Bool mfbDestroyWindow();
+
+extern Bool mfbRealizeFont();
+extern Bool mfbUnrealizeFont();
+extern Bool mfbScreenSaver();
+extern Bool mfbCreateGC();
+extern int  mfbReduceRop();
+
+extern void mfbValidateGC(), mfbChangeGC(), mfbCopyGC();
+extern void mfbDestroyGC();
+extern void mfbChangeClip(), mfbDestroyClip(), mfbCopyClip();
+
+extern PixmapPtr mfbCreatePixmap();
+extern Bool mfbDestroyPixmap();
+
+extern void mfbCopyWindow();
+
+extern void mfbSaveAreas();
+extern void mfbRestoreAreas();
+
+
+extern void mfbPaintWindow();
+
+
+extern void mfbSolidWhiteArea();
+extern void mfbStippleWhiteArea();
+extern void mfbSolidBlackArea();
+extern void mfbStippleBlackArea();
+extern void mfbSolidInvertArea();
+extern void mfbStippleInvertArea();
+extern void mfbTileArea32();
+
+extern void mfbPolyFillRect();
+extern RegionPtr mfbCopyArea();
+extern void mfbPolyPoint();
+extern RegionPtr mfbCopyPlane();
+extern void mfbPolyFillArcSolid();
+
+extern void mfbSetSpans();
+extern void mfbGetSpans();
+extern void mfbWhiteSolidFS();
+extern void mfbBlackSolidFS();
+extern void mfbInvertSolidFS();
+extern void mfbWhiteStippleFS();
+extern void mfbBlackStippleFS();
+extern void mfbInvertStippleFS();
+extern void mfbTileFS();
+extern void mfbUnnaturalTileFS();
+extern void mfbUnnaturalStippleFS();
+
+extern void mfbGetImage();
+extern void mfbPutImage();
+
+extern void mfbLineSS();	
+				
+extern void mfbLineSD();
+extern void mfbSegmentSS();
+extern void mfbSegmentSD();
+extern void mfbZeroPolyArcSS();
+extern void mfbImageText8();
+extern void mfbImageText16();
+extern int mfbPolyText16();
+extern int mfbPolyText8();
+extern PixmapPtr mfbCopyPixmap();
+extern RegionPtr mfbPixmapToRegion();
+extern void mfbSolidPP();
+extern void mfbPushPixels();
+
+
+extern void mfbImageGlyphBltWhite();
+extern void mfbImageGlyphBltBlack();
+extern void mfbPolyGlyphBltWhite();
+extern void mfbPolyGlyphBltBlack();
+extern void mfbPolyGlyphBltInvert();
+
+
+extern void mfbTEGlyphBltWhite();	
+extern void mfbTEGlyphBltBlack();	
+
+extern int mfbListInstalledColormaps();
+extern void mfbInstallColormap();
+extern void mfbUninstallColormap();
+extern Bool mfbCreateColormap();
+extern void mfbDestroyColormap();
+extern void mfbResolveColor();
+
+extern void mfbCopyGCDest();
+
+extern void mfbCopyRotatePixmap();
+extern void mfbYRotatePixmap();
+extern void mfbXRotatePixmap();
+extern void mfbPadPixmap();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct {
+    unsigned char	rop;		
+    unsigned char	ropOpStip;	
+    unsigned char	ropFillArea;	
+    unsigned	fExpose:1;		
+    unsigned	freeCompClip:1;
+    PixmapPtr	pRotatedPixmap;		
+    RegionPtr	pCompositeClip;		
+
+    void 	(* FillArea)();		
+    } mfbPrivGC;
+typedef mfbPrivGC	*mfbPrivGCPtr;
+
+extern int  mfbGCPrivateIndex;		
+extern int  mfbWindowPrivateIndex;	
+
+
+typedef struct {
+    unsigned char fastBorder;	
+    unsigned char fastBackground;
+    unsigned short unused; 
+    DDXPointRec	oldRotate;
+    PixmapPtr	pRotatedBackground;
+    PixmapPtr	pRotatedBorder;
+    } mfbPrivWin;
+
+
+
+
+
+typedef struct _pos{
+    int xpos;		
+    int xchar;		
+    int leftEdge;
+    int rightEdge;
+    int topEdge;
+    int bottomEdge;
+    unsigned int *pdstBase;	
+    int widthGlyph;	
+} TEXTPOS;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 56 "cfbpmax_io.c"
+
+void cfbpmaxQueryBestSize();
+Bool cfbpmaxRealizeCursor();
+Bool cfbpmaxUnrealizeCursor();
+Bool cfbpmaxDisplayCursor();
+void cfbpmaxRecolorCursor();
+Bool cfbpmaxSetCursorPosition();
+void cfbpmaxCursorLimits();
+void cfbpmaxConstrainCursor();
+void cfbpmaxPointerNonInterestBox();
+void cfbpmaxChangeKeyboardControl();
+void cfbpmaxChangePointerControl();
+void cfbpmaxClick();
+
+extern Bool cfbScreenInit();
+extern void miRecolorCursor();
+extern void NoopDDA();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int			fdPM;
+
+static PM_Info		*info;
+static pmEventQueue	*queue;
+static pmBox		*mbox;
+static pmCursor		*mouse;
+static int		qLimit;
+static int		lastEventTime;
+static DevicePtr	pmKeyboard;
+static DevicePtr	pmPointer;
+static int		hotX, hotY;
+static BoxRec		cursorRange, cursorConstraint;
+static int              dpix = -1, dpiy = -1, dpi = -1;
+static char             *blackValue = 0, *whiteValue = 0;
+static int		class = 	3;
+static unsigned	        cursColors[6]; 
+
+
+
+
+
+
+
+
+
+# 118 "cfbpmax_io.c"
+
+
+
+
+
+
+static int
+ParseClass(className)
+    char *	className;
+{
+    static char *names[] = {
+	"StaticGray", "GrayScale", "StaticColor",
+	"PseudoColor", "TrueColor"};
+    
+
+
+    int i;
+    for (i = 0; i < sizeof(names)/sizeof(char *); i++)
+    {
+	if (strcmp(names[i], className) == 0)
+	    return i;
+    }
+    return -1;
+}
+
+static Bool
+commandLineMatch( argc, argv, pat, pmatch)
+    int         argc;           
+    char *      argv[];         
+    char *      pat;
+{
+    int         ic;
+
+    for ( ic=0; ic<argc; ic++)
+        if ( strcmp( argv[ic], pat) == 0)
+            return 1;
+    return 0;
+}
+
+static Bool
+commandLinePairMatch( argc, argv, pat, pmatch)
+    int         argc;           
+    char *      argv[];         
+    char *      pat;
+    char **     pmatch;         
+{
+    int         ic;
+
+    for ( ic=0; ic<argc; ic++)
+        if ( strcmp( argv[ic], pat) == 0)
+        {
+            *pmatch = argv[ ic+1];
+            return 1;
+	}
+    return 0;
+}
+
+static void
+colorNameToColor( pname, pred, pgreen, pblue)
+    char *      pname;
+    u_int *     pred;
+    u_int *     pgreen;
+    u_int *     pblue;
+{
+    if ( *pname == '#')
+    {
+        pname++;                
+        sscanf( pname, "%2x", pred);
+        *pred <<= 8;
+
+        pname += 2;
+        sscanf( pname, "%2x", pgreen);
+        *pgreen <<= 8;
+
+        pname += 2;
+        sscanf( pname, "%2x", pblue);
+        *pblue <<= 8;
+    }
+    else 
+    {
+        *pred = *pgreen = *pblue = 0; 
+        OsLookupColor( 0 , pname, strlen( pname),
+                pred, pgreen, pblue);
+    }
+}
+
+
+
+static Bool
+cfbpmaxSaveScreen(pScreen, on)
+    ScreenPtr pScreen;
+    int on;
+{
+    if (on !=   0)
+    {
+        lastEventTime = GetTimeInMillis();	
+	if (ioctl(fdPM, 	((int) (0x20000000	|('q'<<8)| 10))			) < 0)
+	    ErrorF("pmSaveScreen: failed to turn screen on.\n");
+    } else {
+	if (ioctl(fdPM, 	((int) (0x20000000	|('q'<<8)| 11))			) < 0)
+	    ErrorF("pmSaveScreen: failed to turn screen off.\n");
+    }
+    return 1;
+}
+
+Bool
+cfbpmaxScreenClose(index, pScreen)
+    int index;
+    ScreenPtr pScreen;
+{
+    
+
+
+    
+
+
+
+
+
+
+
+
+    return(1);
+}
+
+Bool
+cfbpmaxScreenInit(index, pScreen, argc, argv)
+    int index;
+    ScreenPtr pScreen;
+    int argc;
+    char **argv;
+{
+    register    PixmapPtr pPixmap;
+    ColormapPtr pColormap;
+    int		i;
+    static int  mapOnce = 0;
+
+
+    u_int blackred      = 0x0000;
+    u_int blackgreen    = 0x0000;
+    u_int blackblue     = 0x0000;
+
+    u_int whitered      = 0xffff;
+    u_int whitegreen    = 0xffff;
+    u_int whiteblue     = 0xffff;
+
+    if (mapOnce)
+    {
+	
+
+
+
+
+
+
+
+	if (ioctl(fdPM, 	((int) (0x20000000	|('q'<<8)| 10))			) < 0)
+	    ErrorF("pmSaveScreen: failed to turn screen on.\n");
+    }
+
+    if (! mapOnce) {
+	if ((fdPM = open("/dev/mouse", 	002		 | 	00004				, 0)) < 0)
+	{
+	    ErrorF("couldn't open /dev/mouse \n");
+	    return 0;
+	}
+
+	if (ioctl(fdPM, 		((int) (	0x40000000	|((sizeof( DevScreenInfo *)&0x1fff		)<<16)|('q'<<8)| 1))	, &info) < 0)
+	{
+	    extern int errno;
+	    int en = errno;
+	    fprintf((&stdioErrFile), "errno = %d, ", en);
+	    ErrorF("error getting address of pmax screen\n");
+	    close(fdPM);
+	    return 0;
+	}
+	ioctl(fdPM, 	((int) (0x20000000	|('q'<<8)| 8))   );
+
+	mapOnce = 1;
+    }
+
+    queue = &info->qe;
+    mouse = &info->mouse;
+    qLimit = queue->eSize - 1;
+    lastEventTime = GetTimeInMillis();
+
+    
+    queue->eHead = queue->eTail;
+
+    
+
+
+    {
+        int	    clicklevel;
+        char *      clickvolume;
+        char *      mouseAcceleration;
+        int         ma = 4;
+        char *      mouseThreshold;
+        int         mt = 4;
+        PtrCtrl     ctrl;
+
+        if ( commandLinePairMatch( argc, argv, "c", &clickvolume))
+	{
+		sscanf( clickvolume, "%d", &clicklevel);
+		cfbpmaxClick(clicklevel);
+	}
+
+        if ( commandLineMatch( argc, argv, "-c"))
+	{
+		cfbpmaxClick(0);
+	}
+	    
+        
+
+
+	if ( commandLinePairMatch( argc, argv, "-a", &mouseAcceleration))
+	    sscanf( mouseAcceleration, "%d", &ma);
+	if ( commandLinePairMatch( argc, argv, "-t", &mouseThreshold))
+	    sscanf( mouseThreshold, "%d", &mt);
+	ctrl.num = ma;
+	ctrl.den = 1;
+	ctrl.threshold = mt;
+	cfbpmaxChangePointerControl( (DevicePtr) 0, &ctrl);
+    }
+
+
+    cursorRange.x1 = -15;
+    cursorRange.x2 = info->max_x - 1;
+    cursorRange.y1 = -15;
+    cursorRange.y2 = info->max_y - 1;
+
+
+
+    if (dpi == -1) 
+    {
+        if (dpix == -1) 
+        {
+	    if (dpiy == -1)
+	    {
+	        dpix = 78;
+	        dpiy = 78;
+	    }
+	    else
+	        dpix = dpiy;
+        }
+        else
+        { 
+	    if (dpiy == -1)
+	        dpiy = dpix;
+        }
+    }
+    else
+    {
+	dpix = dpi;
+	dpiy = dpi;
+    }
+
+    pScreen->CloseScreen = cfbpmaxScreenClose;
+    pScreen->SaveScreen = cfbpmaxSaveScreen;
+    pScreen->RealizeCursor = cfbpmaxRealizeCursor;
+    pScreen->UnrealizeCursor = cfbpmaxUnrealizeCursor;
+    pScreen->DisplayCursor = cfbpmaxDisplayCursor;
+    pScreen->SetCursorPosition = cfbpmaxSetCursorPosition;
+    pScreen->CursorLimits = cfbpmaxCursorLimits;
+    pScreen->PointerNonInterestBox = cfbpmaxPointerNonInterestBox;
+    pScreen->ConstrainCursor = cfbpmaxConstrainCursor;
+    pScreen->RecolorCursor = cfbpmaxRecolorCursor;
+    pScreen->QueryBestSize = cfbpmaxQueryBestSize;
+
+    pScreen->StoreColors = cfbpmaxStoreColors;
+    pScreen->InstallColormap = cfbpmaxInstallColormap;
+    pScreen->UninstallColormap = cfbpmaxUninstallColormap;
+    pScreen->ListInstalledColormaps = cfbpmaxListInstalledColormaps;
+
+    if (!cfbScreenInit(pScreen, info->bitmap,      1024,
+			    864, dpix, dpiy,      1024, class,      1024) ||
+	!cfbCreateDefColormap (pScreen))
+    {
+	close (fdPM);
+	return 0;
+    }
+    return 1;
+}
+
+cfbpmaxPixelError(index)
+int index;
+{
+    ErrorF("Only 0 through 255 are acceptable pixels for device %d\n", index);
+}
+
+
+
+
+unsigned int
+cfbpmaxSetPlaneMask(planemask)
+    unsigned int planemask;
+{
+    static unsigned int currentmask = ~0;
+    unsigned int result;
+
+    result = currentmask;
+    currentmask = *(info->planemask) = planemask;
+    return result;
+}
+
+static void
+ChangeLED(led, on)
+    int led;
+    Bool on ;
+{
+    struct pm_kpcmd ioc;
+
+    switch (led) {
+       case 1:
+          ioc.par[0] = 	0x81		;
+          break;
+       case 2:
+          ioc.par[0] = 	0x82;
+          break;
+       case 3:
+          
+
+          ioc.par[0] = 	0x88;
+          break;
+       default:
+          return;   
+          }
+
+    ioc.cmd = on ? 0x13		 : 0x11		;
+    ioc.par[1] = 0;
+    ioc.nbytes = 1;
+    ioctl(fdPM, 	((int) (	0x80000000	|((sizeof( DevKpCmd)&0x1fff		)<<16)|('q'<<8)| 5))	, &ioc);
+}
+
+
+static void
+cfbpmaxClick(click)
+    int         click;
+{
+
+
+
+
+    struct pm_kpcmd ioc;
+
+    if (click == 0)    
+    {
+	ioc.nbytes = 0;
+	ioc.cmd = 0x99	;
+	ioctl(fdPM, 	((int) (	0x80000000	|((sizeof( DevKpCmd)&0x1fff		)<<16)|('q'<<8)| 5))	, &ioc);
+    }
+    else 
+    {
+        int volume;
+
+        volume = 7 - ((click / 14) & 7);
+	ioc.nbytes = 1;
+	ioc.cmd = 0x1b	;
+	ioc.par[0] = volume;
+	ioctl(fdPM, 	((int) (	0x80000000	|((sizeof( DevKpCmd)&0x1fff		)<<16)|('q'<<8)| 5))	, &ioc);
+    }
+
+
+
+
+}
+
+static void
+cfbpmaxChangeKeyboardControl(device, ctrl)
+    DevicePtr device;
+    KeybdCtrl *ctrl;
+{
+    int i;
+
+    cfbpmaxClick(ctrl->click);
+
+    
+    
+    
+
+    
+
+    
+    for (i=1; i<=3	; i++)
+        ChangeLED(i, (ctrl->leds & (1 << (i-1))));
+
+    
+
+    SetLKAutoRepeat(ctrl->autoRepeat);
+}
+
+static void
+cfbpmaxBell(loud, pDevice)
+    int loud;
+    DevicePtr pDevice;
+{
+    struct pm_kpcmd ioc;
+
+
+    loud = 7 - ((loud / 14) & 7);
+    ioc.nbytes = 1;
+    ioc.cmd = 0x23		;
+    ioc.par[0] = loud;
+    ioctl(fdPM, 	((int) (	0x80000000	|((sizeof( DevKpCmd)&0x1fff		)<<16)|('q'<<8)| 5))	, &ioc);
+
+    ioc.nbytes = 0;
+    ioc.cmd = 0xa7		;
+    ioctl(fdPM, 	((int) (	0x80000000	|((sizeof( DevKpCmd)&0x1fff		)<<16)|('q'<<8)| 5))	, &ioc);
+}
+
+
+
+
+
+static void
+cfbpmaxChangePointerControl(device, ctrl)
+    DevicePtr device;
+    PtrCtrl   *ctrl;
+{
+    info->mthreshold = ctrl->threshold;
+    if (!(info->mscale = ctrl->num / ctrl->den))
+	info->mscale = 1;	
+}
+
+static int
+cfbpmaxGetMotionEvents(pDevice, buff, start, stop)
+    CARD32 start, stop;
+    DevicePtr pDevice;
+    xTimecoord *buff;
+{
+    int     count = 0;
+    int     tcFirst = queue->tcNext;
+    int     tcLast = (tcFirst) ? tcFirst - 1 : queue->tcSize - 1;
+    register    pmTimeCoord * tcs;
+    int     i;
+
+    for (i = tcFirst;; i++) {
+	if (i = queue->tcSize)
+	    i = 0;
+	tcs = &queue->tcs[i];
+	if ((start <= tcs->time) && (tcs->time <= stop)) {
+	    buff[count].time = tcs->time;
+	    buff[count].x = tcs->x;
+	    buff[count].y = tcs->y;
+	    count++;
+	}
+	if (i == tcLast)
+	    return count;
+    }
+}
+
+int
+cfbpmaxMouseProc(pDev, onoff, argc, argv)
+    DevicePtr pDev;
+    int onoff, argc;
+    char *argv[];
+{
+    int     i;
+    BYTE    map[4];
+
+    switch (onoff)
+    {
+	case 0: 
+	    pmPointer = pDev;
+	    pDev->devicePrivate = (pointer) &queue;
+	    map[1] = 1;
+	    map[2] = 2;
+	    map[3] = 3;
+	    InitPointerDeviceStruct(
+		pmPointer, map, 3, cfbpmaxGetMotionEvents,
+		cfbpmaxChangePointerControl, 100);
+	    SetInputCheck(&queue->eHead, &queue->eTail);
+	    hotX = hotY = 0;	
+	    break;
+	case 1: 
+	    pDev->on = 1;
+	    AddEnabledDevice(fdPM); 
+	    break;
+	case 2: 
+	    pDev->on = 0;
+	    RemoveEnabledDevice(fdPM);
+	    break;
+	case 3:
+	    break;
+    }
+    return 	   0	;
+}
+
+
+
+
+int
+SetLKAutoRepeat (onoff)
+    Bool onoff;
+{
+    extern char *AutoRepeatLKMode();
+    extern char *UpDownLKMode();
+    
+    struct pm_kpcmd ioc;
+    register char  *divsets;
+    divsets = onoff ? (char *) AutoRepeatLKMode() : (char *) UpDownLKMode();
+    ioc.nbytes = 0;
+    while (ioc.cmd = *divsets++)
+	ioctl(fdPM, 	((int) (	0x80000000	|((sizeof( DevKpCmd)&0x1fff		)<<16)|('q'<<8)| 5))	, &ioc);
+    ioc.cmd = ((onoff > 0) ?  0xe3 : 0xe1);
+    return(ioctl(fdPM, 	((int) (	0x80000000	|((sizeof( DevKpCmd)&0x1fff		)<<16)|('q'<<8)| 5))	, &ioc));
+}
+
+int
+cfbpmaxKeybdProc(pDev, onoff, argc, argv)
+    DevicePtr pDev;
+    int onoff, argc;
+    char *argv[];
+{
+    KeySymsRec keySyms;
+    CARD8 modMap[256];
+
+    switch (onoff)
+    {
+	case 0: 
+
+	
+	    pmKeyboard = pDev;
+	    GetLK201Mappings( &keySyms, modMap);
+	    InitKeyboardDeviceStruct(
+		    pmKeyboard, &keySyms, modMap, cfbpmaxBell,
+		    cfbpmaxChangeKeyboardControl);
+            cfbpmaxClick(0);     	    
+	    
+	    Xfree(keySyms.map);
+	    break;
+	case 1: 
+	    pDev->on = 1;
+	    AddEnabledDevice(fdPM); 
+	    break;
+	case 2: 
+	    pDev->on = 0;
+	    RemoveEnabledDevice(fdPM);
+	    break;
+	case 3: 
+	    break;
+    }
+    return 	   0	;
+}
+
+
+
+
+
+extern int screenIsSaved;
+
+void
+ProcessInputEvents()
+{
+
+    xEvent x;
+    pmEvent e;
+    register int    i;
+
+    i = queue->eHead;
+    while (i != queue->eTail)
+    {
+	e = *((pmEvent *)&queue->events[i]);
+	if (screenIsSaved ==   0)
+	    SaveScreens( 1, 0);
+	x.u.keyButtonPointer.rootX = e.x + hotX;
+	x.u.keyButtonPointer.rootY = e.y + hotY;
+	x.u.keyButtonPointer.time = lastEventTime = e.time;
+	x.u.u.detail = e.key;
+
+	if (e.device == 2)
+	{
+	    switch (e.type)
+	    {
+		case        1: 
+		    x.u.u.type = 	2;
+		    (*pmKeyboard->processInputProc) (&x, pmKeyboard, 1);
+		    break;
+		case          0: 
+		    x.u.u.type = 	3;
+		    (*pmKeyboard->processInputProc) (&x, pmKeyboard, 1);
+		    break;
+		default: 	       
+		    ProcessLK201Input(&x, pmKeyboard);
+	    }
+	}
+	else
+	{
+	    switch (e.type)
+	    {
+		case        1: 
+		    x.u.u.type = 	4;
+		    break;
+		case          0: 
+		    x.u.u.type = 	5;
+		    break;
+		case             3: 
+		    x.u.u.type = 	6;
+		    break;
+		default: 
+		    printf("Unknown input event = %d\n",e.type);
+		    goto next;
+	    }
+	    (*pmPointer->processInputProc) (&x, pmPointer, 1);
+	}
+next:
+	if (i == qLimit)
+	    i = queue->eHead = 0;
+	else
+	    i = ++queue->eHead;
+    }
+
+}
+
+TimeSinceLastInputEvent()
+{
+    if (lastEventTime == 0)
+	lastEventTime = GetTimeInMillis();
+    return GetTimeInMillis() -  lastEventTime;
+}
+
+
+
+
+static void
+cfbpmaxConstrainCursor( pScr, pBox)
+    ScreenPtr	pScr;
+    BoxPtr	pBox;
+{
+    cursorConstraint = *pBox;
+    if (info)
+    {
+	info->max_cur_x = pBox->x2 - hotX - 1;
+	info->max_cur_y = pBox->y2 - hotY - 1;
+	info->min_cur_x = pBox->x1 - hotX;
+	info->min_cur_y = pBox->y1 - hotY;
+    }
+}
+
+Bool
+cfbpmaxSetCursorPosition( pScr, newx, newy, generateEvent)
+    ScreenPtr	pScr;
+    unsigned int	newx;
+    unsigned int	newy;
+    Bool		generateEvent;
+{
+    pmCursor pmCPos;
+    xEvent motion;
+
+    pmCPos.x = newx - hotX;
+    pmCPos.y = newy - hotY;
+
+    if (ioctl (fdPM, 	((int) (	0x80000000	|((sizeof( DevCursor)&0x1fff		)<<16)|('q'<<8)| 2))	, &pmCPos) < 0) {
+	ErrorF ("error warping cursor\n");
+	return 0;
+    }
+
+    if (generateEvent) {
+	if (queue->eHead != queue->eTail)
+	    ProcessInputEvents ();
+	motion.u.keyButtonPointer.rootX = newx;
+	motion.u.keyButtonPointer.rootY = newy;
+	motion.u.keyButtonPointer.time = currentTime.milliseconds;
+	motion.u.u.type = 	6;
+	(pmPointer->processInputProc)(&motion, pmPointer, 1);
+    }
+    return 1;
+}
+
+static Bool
+cfbpmaxDisplayCursor( pScr, pCurs)
+    ScreenPtr	pScr;
+    CursorPtr	pCurs;
+{
+    register    int		i;
+    int		x, y;
+    unsigned    *pColors;
+
+    
+
+
+    if ((hotX != pCurs->bits->xhot) || (hotY != pCurs->bits->yhot))
+    {
+	x = mouse->x + hotX;
+	y = mouse->y + hotY;
+	hotX = pCurs->bits->xhot;
+	hotY = pCurs->bits->yhot;
+	cfbpmaxSetCursorPosition(pScr, x, y, 0);
+	cfbpmaxConstrainCursor(pScr, &cursorConstraint);
+		
+    }
+    if ( ioctl( fdPM, 	((int) (	0x80000000	|((sizeof( short[32])&0x1fff		)<<16)|('q'<<8)| 7))	, pCurs->devPriv[ pScr->myNum]) < 0)
+    {
+	ErrorF( "error loading bits of new cursor\n");
+        return 0;
+    }
+
+
+    
+    cursColors[3] = pCurs->backRed;
+    cursColors[4] = pCurs->backGreen;
+    cursColors[5] = pCurs->backBlue;
+
+    
+    cursColors[0] = pCurs->foreRed;
+    cursColors[1] = pCurs->foreGreen;
+    cursColors[2] = pCurs->foreBlue;
+
+    
+
+
+
+    pColors = &cursColors[0];
+    if ( ioctl( fdPM, 	((int) (	0x80000000	|((sizeof( unsigned int [6])&0x1fff		)<<16)|('q'<<8)| 3))	, cursColors) < 0)
+    {
+	ErrorF( "error writing colors of new cursor\n");
+        return 0;
+    }
+
+    return (1);
+
+}
+
+static void
+cfbpmaxRecolorCursor (pScr, pCurs, displayed)
+    ScreenPtr	pScr;
+    CursorPtr	pCurs;
+    Bool	displayed;
+{
+    unsigned    *pColors;
+
+    if (!displayed)
+	return;
+
+    
+    cursColors[3] = pCurs->backRed;
+    cursColors[4] = pCurs->backGreen;
+    cursColors[5] = pCurs->backBlue;
+
+    
+    cursColors[0] = pCurs->foreRed;
+    cursColors[1] = pCurs->foreGreen;
+    cursColors[2] = pCurs->foreBlue;
+
+    
+
+
+
+    pColors = &cursColors[0];
+    if ( ioctl( fdPM, 	((int) (	0x80000000	|((sizeof( unsigned int [6])&0x1fff		)<<16)|('q'<<8)| 3))	, &pColors) < 0)
+    {
+	ErrorF( "error writing colors of new cursor\n");
+        return;
+    }
+
+    return;
+}
+
+static Bool
+cfbpmaxRealizeCursor( pScr, pCurs)
+    ScreenPtr	pScr;
+    CursorPtr	pCurs;	
+{
+    int	forecolor = 0;
+    int	backcolor = ~forecolor;
+    register short	*a, *b;	
+    register int *	mask;	
+    register int *	src;	
+    int		i;
+    int		cursorBytes = 32*sizeof(short);
+    int		lastRow = ((pCurs->bits->height < 16) ? pCurs->bits->height : 16);
+    register unsigned short widthmask = (1<<pCurs->bits->width)-1;
+				
+
+
+
+    pCurs->devPriv[ pScr->myNum] = (pointer)Xalloc(cursorBytes);
+    bzero((char *)pCurs->devPriv[ pScr->myNum], cursorBytes);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+    
+
+
+
+    for ( i=0,
+	  a = (short *)pCurs->devPriv[pScr->myNum],
+	  b = ((short *)pCurs->devPriv[pScr->myNum]) + 16,
+	
+
+	  src = (int *)pCurs->bits->source,
+	  mask = (int *)pCurs->bits->mask;
+
+	  i < lastRow;
+
+	  i++, a++, b++, src++, mask++)
+    {
+	*a = ((*src & forecolor) | (~*src & backcolor)) & *mask;
+	*b = *mask;
+	*a &= widthmask;
+	*b &= widthmask;
+    }
+    return 1;
+}
+
+static Bool
+cfbpmaxUnrealizeCursor( pScr, pCurs)
+    ScreenPtr	pScr;
+    CursorPtr	pCurs;
+{
+    Xfree( pCurs->devPriv[ pScr->myNum]);
+    return 1;
+}
+
+
+
+
+static void
+cfbpmaxCursorLimits( pScr, pCurs, pHotBox, pPhysBox)
+    ScreenPtr	pScr;
+    CursorPtr	pCurs;
+    BoxPtr	pHotBox;
+    BoxPtr	pPhysBox;	
+{
+    pPhysBox->x1 =  ((( pHotBox->x1) > ( cursorRange.x1 + (int) pCurs->bits->xhot)) ? ( pHotBox->x1) : ( cursorRange.x1 + (int) pCurs->bits->xhot));
+    pPhysBox->y1 =  ((( pHotBox->y1) > ( cursorRange.y1 + (int) pCurs->bits->yhot)) ? ( pHotBox->y1) : ( cursorRange.y1 + (int) pCurs->bits->yhot));
+    pPhysBox->x2 =  ((( pHotBox->x2) < ( cursorRange.x2 + 1)) ? ( pHotBox->x2) : ( cursorRange.x2 + 1));
+    pPhysBox->y2 =  ((( pHotBox->y2) < ( cursorRange.y2 + 1)) ? ( pHotBox->y2) : ( cursorRange.y2 + 1));
+}
+
+static void
+cfbpmaxPointerNonInterestBox( pScr, pBox)
+    ScreenPtr	pScr;
+    BoxPtr	pBox;
+{
+    info->mbox.bottom = pBox->y2;
+    info->mbox.top = pBox->y1;
+    info->mbox.left = pBox->x1;
+    info->mbox.right = pBox->x2;
+}
+
+static void
+cfbpmaxQueryBestSize(class, pwidth, pheight)
+    int class;
+    short *pwidth;
+    short *pheight;
+{
+    unsigned width, test;
+
+    if (*pwidth > 0)
+    {
+      switch(class)
+      {
+        case 	0	:
+	  *pwidth = 16;
+	  *pheight = 16;
+	  break;
+        case 	1	:
+        case 	2	:
+	  width = *pwidth;
+	  
+	  test = 0x80000000;
+	  
+	  while(!(test & width))
+	     test >>= 1;
+	  
+
+	  if((test - 1) & width)
+	     test <<= 1;
+	  *pwidth = test;
+	  
+	  break;
+       }
+    }
+}
+
+Bool
+mfbScreenClose(pScreen)
+    register ScreenPtr pScreen;
+{
+
+    if (pScreen->allowedDepths)
+    {
+	if (pScreen->allowedDepths->vids)
+		Xfree(pScreen->allowedDepths->vids);
+ 
+	Xfree(pScreen->allowedDepths);
+    }
+
+    
+
+
+
+    if(pScreen->devPrivate)
+	Xfree(pScreen->devPrivate);
+
+ 
+
+
+    return 1;
+}
+
+void
+SetLockLED (on)
+    Bool on;
+{
+    struct pm_kpcmd ioc;
+    ioc.cmd = on ? 0x13		 : 0x11		;
+    ioc.par[0] = 	0x84;
+    ioc.par[1] = 0;
+    ioc.nbytes = 1;
+    ioctl(fdPM, 	((int) (	0x80000000	|((sizeof( DevKpCmd)&0x1fff		)<<16)|('q'<<8)| 5))	, &ioc);
+}
+
+
+
+
+void
+AbortDDX()
+{
+}
+
+
+void
+ddxGiveUp()
+{
+}
+
+int
+ddxProcessArgument (argc, argv, i)
+    int argc;
+    char *argv[];
+    int i;
+{
+    int			argind=i;
+    int			skip;
+    static int		Once=0;
+    void		ddxUseMsg();
+
+    skip = 0;
+    if (!Once)
+    {
+        blackValue = 0;
+        whiteValue = 0;
+	Once = 1;
+    }
+
+    if (strcmp( argv[argind], "-dpix") == 0)
+    {
+	if (++argind < argc)
+	{
+	    dpix = atoi(argv[argind]);
+	    skip = 2;
+	}
+	else
+	    return 0;	
+    }
+    else if (strcmp( argv[argind], "-dpiy") == 0)
+    {
+	if (++argind < argc)
+	{
+	    dpiy = atoi(argv[argind]);
+	    skip = 2;
+	}
+	else
+	    return 0;
+    }
+    else if (strcmp( argv[argind], "-dpi") == 0)
+    {
+	if (++argind < argc)
+	{
+	    dpi = atoi(argv[argind]);
+	    dpix = dpi;
+	    dpiy = dpi;
+	    skip = 2;
+	}
+	else
+	    return 0;
+    }
+    else 
+    if(strcmp(argv[argind], "-bp") == 0 )
+    {
+	    if(++argind < argc)
+	    {
+		blackValue = argv[argind];
+		skip = 2;
+	    }
+	    else
+	        return 0;
+    }
+    else
+    if(strcmp(argv[argind], "-wp") == 0 )
+    {
+	    if(++argind < argc)
+	    {
+		whiteValue = argv[argind];
+		skip = 2;
+	    }
+	    else
+	        return 0;
+    }
+    else
+    if (strcmp(argv[argind], "-class") == 0 )
+    {
+	    if(++argind < argc)
+	    {
+		class = ParseClass(argv[argind]);
+		if (class == -1)
+		    return 0;
+		skip = 2;
+	    }
+	    else
+	        return 0;
+    }
+    return skip;
+}
+
+void
+ddxUseMsg()
+{
+    ErrorF ("\n");
+    ErrorF ("\n");
+    ErrorF ("Device Dependent Usage\n");
+    ErrorF ("\n");
+    ErrorF ("-dpix <n>          Dots per inch, x coordinate\n");
+    ErrorF ("-dpiy <n>          Dots per inch, y coordinate\n");
+    ErrorF ("-dpi <n>           Dots per inch, x and y coordinates\n");
+    ErrorF ("                   (overrides -dpix and -dpiy above)\n");
+    ErrorF ("-bp #XXX           color for BlackPixel for screen\n");
+    ErrorF ("-wp #XXX           color for WhitePixel for screen\n");
+    ErrorF ("-class <classname> type of Visual for root window\n");
+    ErrorF ("       one of StaticGray, StaticColor, PseudoColor,\n");
+    ErrorF ("       GrayScale, or even TrueColor!\n");
+}

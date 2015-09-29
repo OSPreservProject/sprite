@@ -1,0 +1,68 @@
+
+
+
+UPDATEBOOTCMDS            User Commands            UPDATEBOOTCMDS
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     updatebootcmds - Keep /boot/cmds updated.
+
+SSYYNNOOPPSSIISS
+     uuppddaatteebboooottccmmddss [_d_i_r_e_c_t_o_r_y _d_i_r_e_c_t_o_r_y ...]
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     UUppddaatteebboooottccmmddss is a script that keeps boot  commands  up-to-
+     date.  It  does  this  by  updating the commands from either
+     /_s_p_r_i_t_e/_c_m_d_s.$_M_A_C_H_I_N_E    or    /_s_p_r_i_t_e/_a_d_m_i_n.$_M_A_C_H_I_N_E     to
+     _b_o_o_t/_c_m_d_s.$_M_A_C_H_I_N_E.   Only those commands that already exist
+     in boot/cmds.$MACHINE are updated.  If you want to add a new
+     command to the boot commands you have to copy it there manu-
+     ally.   Updatebootcmds  will  update  the  commands  in  all
+     cmds.$MACHINE  directories  found  under the boot directory.
+     If uuppddaatteebboooottccmmddss is run without any options it will  update
+     /_b_o_o_t and /_t_1/_b_o_o_t.  If the command is followed by directory
+     names only those boot directories will be updated.
+
+
+KKEEYYWWOORRDDSS
+     boot
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  June 20, 1989                    1
+
+
+

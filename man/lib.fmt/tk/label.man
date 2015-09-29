@@ -1,0 +1,132 @@
+
+
+
+label                     User Commands                     label
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     label - Create and manipulate label widgets
+
+SSYYNNOOPPSSIISS
+     llaabbeell _p_a_t_h_N_a_m_e ?_o_p_t_i_o_n_s?
+
+SSTTAANNDDAARRDD OOPPTTIIOONNSS
+     aanncchhoorr          bboorrddeerrWWiiddtthh    ffoorreeggrroouunndd      rreelliieeff         |
+     bbaacckkggrroouunndd      ccuurrssoorr         ppaaddxx            tteexxtt           |
+     bbiittmmaapp          ffoonntt           ppaaddyy            tteexxttVVaarriiaabbllee   |
+
+     See the ``options'' manual entry for details on the standard
+     options.
+
+WWIIDDGGEETT--SSPPEECCIIFFIICC OOPPTTIIOONNSS
+     Name:           hheeiigghhtt                                        |
+     Class:          HHeeiigghhtt                                        |
+     Command-Line Switch:           --hheeiigghhtt                        |
+
+                                                                        ||
+          Specifies  a desired height for the label.  If a bitmap  |
+          is being displayed in the label then the  value  is  in  |
+          screen  units  (i.e.  any  of  the  forms acceptable to  |
+          TTkk__GGeettPPiixxeellss); for text it is in  lines  of  text.   If  |
+          this option isn't specified, the label's desired height  |
+          is computed from the size of the bitmap or  text  being  |
+          displayed in it.                                         |
+
+     Name:           wwiiddtthh                                         |
+     Class:          WWiiddtthh                                         |
+     Command-Line Switch:           --wwiiddtthh                         |
+
+                                                                        ||
+          Specifies  a  desired width for the label.  If a bitmap  |
+          is being displayed in the label then the  value  is  in  |
+          screen  units  (i.e.  any  of  the  forms acceptable to  |
+          TTkk__GGeettPPiixxeellss); for text it is in characters.   If  this  |
+          option  isn't  specified,  the label's desired width is  |
+          computed from the size of  the  bitmap  or  text  being  |
+          displayed in it.
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The llaabbeell command creates a new window (given by  the  _p_a_t_h_-
+     _N_a_m_e argument) and makes it into a label widget.  Additional
+     options, described above, may be specified  on  the  command
+     line  or  in the option database to configure aspects of the
+     label such as its colors, font, text,  and  initial  relief.
+     The  llaabbeell  command  returns  its _p_a_t_h_N_a_m_e argument.  At the
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+label                     User Commands                     label
+
+
+
+     time this command is invoked, there must not exist a  window
+     named _p_a_t_h_N_a_m_e, but _p_a_t_h_N_a_m_e's parent must exist.
+
+     A label is a widget that displays a textual string  or  bit-  |
+     map.   The  label  can  be manipulated in a few simple ways,
+     such as changing its relief  or  text,  using  the  commands
+     described below.
+
+
+WWIIDDGGEETT CCOOMMMMAANNDD
+     The llaabbeell command creates a new Tcl command  whose  name  is
+     _p_a_t_h_N_a_m_e.  This command may be used to invoke various opera-
+     tions on the widget.  It has the following general form:
+
+          _p_a_t_h_N_a_m_e _o_p_t_i_o_n ?_a_r_g _a_r_g ...?
+     _O_p_t_i_o_n and the _a_r_gs determine the exact behavior of the com-
+     mand.   The  following commands are possible for label widg-
+     ets:
+
+     _p_a_t_h_N_a_m_e ccoonnffiigguurree ?_o_p_t_i_o_n? ?_v_a_l_u_e _o_p_t_i_o_n _v_a_l_u_e ...?
+          Query  or  modify  the  configuration  options  of  the
+          widget.   If  no  _o_p_t_i_o_n  is  specified, returns a list
+          describing all of the available  options  for  _p_a_t_h_N_a_m_e
+          (see  TTkk__CCoonnffiigguurreeIInnffoo for information on the format of
+          this list).  If _o_p_t_i_o_n is specified with no _v_a_l_u_e, then
+          the  command  returns  a  list describing the one named
+          option (this list will be identical to the  correspond-
+          ing  sublist  of  the  value  returned  if no _o_p_t_i_o_n is
+          specified).  If one  or  more  _o_p_t_i_o_n-_v_a_l_u_e  pairs  are
+          specified,  then  the command modifies the given widget
+          option(s) to have the given value(s);  in this case the
+          command  returns  an empty string.  _O_p_t_i_o_n may have any
+          of the values accepted by the llaabbeell command.
+
+
+BBIINNDDIINNGGSS
+     When a new label is created, it has no default  event  bind-
+     ings: labels are not intended to be interactive.
+
+
+KKEEYYWWOORRDDSS
+     label, widget
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     2
+
+
+

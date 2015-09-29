@@ -1,0 +1,2272 @@
+head     1.15;
+branch   ;
+access   ;
+symbols  ;
+locks    eklee:1.15; strict;
+comment  @ * @;
+
+
+1.15
+date     92.12.09.16.37.08;  author jhh;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     92.08.31.12.20.42;  author voelker;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     91.10.07.17.39.57;  author voelker;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     91.09.23.10.47.33;  author voelker;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     91.09.14.15.16.47;  author mendel;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     90.03.16.17.41.12;  author jhh;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     90.02.16.16.09.23;  author shirriff;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     90.01.31.17.05.19;  author jhh;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     89.09.25.12.32.34;  author jhh;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.09.12.11.51.14;  author jhh;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.07.31.17.42.19;  author jhh;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.02.09.11.14.19;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.10.27.15.30.43;  author nelson;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.07.19.11.54.04;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.02.12.54.00;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Routines to read the disk header.
+@
+
+
+1.15
+log
+@Added Disk_ReadLfsSegSummary and Disk_WriteLfsSegSummary.
+@
+text
+@/* 
+ * diskHeader.c --
+ *
+ *	Routines to read in the disk header information.
+ *
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/disk/RCS/diskHeader.c,v 1.14 92/08/31 12:20:42 voelker Exp Locker: jhh $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "disk.h"
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+static Sun_DiskLabel 	*ConvertToSunLabel();
+static Dec_DiskLabel	*ConvertToDecLabel();
+static Disk_Label	*ConvertFromSunLabel();
+static Disk_Label	*ConvertFromDecLabel();
+static short		SeeSunCheckSum();
+static int		CheckSunCheckSum();
+static int		MakeSunCheckSum();
+
+/*
+ * BOOT_SECTOR		Where the boot sectors start on disk.
+ */
+#define	BOOT_SECTOR		1
+#define NUM_BOOT_SECTORS	15
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_ReadDecLabel --
+ *
+ *	Read the appropriate sector of a disk partition and see if its
+ *	a dec label.  If so, return a pointer to a Dec_DiskLabel.
+ *	Note:  This reads a Sprite-modified Dec label, which has
+ *	additional information.  If the label is a standard dec
+ *	label, the numHeads field will be set to -1 to indicate
+ *	the Sprite-dependent information is invalid.
+ *
+ * Results:
+ *	A pointer to the label data if could read it, 0 otherwise.
+ *
+ * Side effects:
+ *	Memory allocation.
+ *
+ *----------------------------------------------------------------------
+ */
+Dec_DiskLabel *
+Disk_ReadDecLabel(fileID)
+    int fileID;	/* Handle on raw disk */
+{
+    Address		buffer;
+    Dec_DiskLabel	*decLabelPtr;
+
+    buffer = (Address)malloc(DEV_BYTES_PER_SECTOR);
+
+    if (Disk_SectorRead(fileID, DEC_LABEL_SECTOR, 1, buffer) < 0) {
+	free((char *)buffer);
+	return((Dec_DiskLabel *)0);
+    } else {
+	decLabelPtr = (Dec_DiskLabel *)buffer;
+	if (decLabelPtr->magic != DEC_LABEL_MAGIC) {
+	    free((char*)buffer);
+	    return((Dec_DiskLabel *)0);
+	} else {
+	    if (decLabelPtr->spriteMagic != FSDM_DISK_MAGIC) {
+		/* Original dec label, not Sprite modified dec label. */
+		decLabelPtr->numHeads = -1;
+	    }
+	    if (decLabelPtr->version != DEC_LABEL_VERSION) {
+		printf("Warning: Wrong dec label version: %x vs. %x\n",
+			decLabelPtr->version, DEC_LABEL_VERSION);
+	    }
+	    return(decLabelPtr);
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_ReadSunLabel --
+ *
+ *	Read the first sector of a disk partition and see if its
+ *	a sun label.  If so, return a pointer to a Sun_DiskLabel.
+ *
+ * Results:
+ *	A pointer to the super block data if could read it, 0 otherwise.
+ *
+ * Side effects:
+ *	Memory allocation.
+ *
+ *----------------------------------------------------------------------
+ */
+Sun_DiskLabel *
+Disk_ReadSunLabel(fileID)
+    int fileID;	/* Handle on raw disk */
+{
+    Address		buffer;
+    Sun_DiskLabel	*sunLabelPtr;
+
+    buffer = (Address)malloc(DEV_BYTES_PER_SECTOR);
+
+    if (Disk_SectorRead(fileID, 0, 1, buffer) < 0) {
+	free((char *)buffer);
+	return((Sun_DiskLabel *)0);
+    } else {
+	sunLabelPtr = (Sun_DiskLabel *)buffer;
+	if (sunLabelPtr->magic != SUN_DISK_MAGIC) {
+	    free((char*)buffer);
+	    return((Sun_DiskLabel *)0);
+	} else {
+	    return(sunLabelPtr);
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_ReadDiskHeader --
+ *
+ *	Read the super block and return a pointer to it.
+ *
+ * Results:
+ *	A pointer to the super block data if could read it, 0 otherwise.
+ *
+ * Side effects:
+ *	Memory allocation.
+ *
+ *----------------------------------------------------------------------
+ */
+Fsdm_DiskHeader *
+Disk_ReadDiskHeader(openFileID)
+    int openFileID;	/* Handle on raw disk */
+{
+    Address		buffer;
+    Fsdm_DiskHeader	*diskHeaderPtr;
+
+    buffer = (Address) malloc(DEV_BYTES_PER_SECTOR);
+
+    if (Disk_SectorRead(openFileID, 0, 1, buffer) < 0) {
+	return((Fsdm_DiskHeader *)0);
+    } else {
+	diskHeaderPtr = (Fsdm_DiskHeader *)buffer;
+	if (diskHeaderPtr->magic != FSDM_DISK_MAGIC) {
+	    return((Fsdm_DiskHeader *)0);
+	} else {
+	    return(diskHeaderPtr);
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_ReadDomainHeader --
+ *
+ *	Read the domain header and return a pointer to it.
+ *
+ * Results:
+ *	A pointer to the domain header if could read it, NULL otherwise.
+ *
+ * Side effects:
+ *	Memory allocation.
+ *
+ *----------------------------------------------------------------------
+ */
+Ofs_DomainHeader *
+Disk_ReadDomainHeader(fileID, diskLabelPtr)
+    int fileID;			/* Stream to raw disk */
+    Disk_Label *diskLabelPtr;	/* Disk label */
+{
+    Ofs_DomainHeader	*headerPtr;
+
+    headerPtr = (Ofs_DomainHeader *)malloc((unsigned) 
+	(diskLabelPtr->numDomainSectors * DEV_BYTES_PER_SECTOR));
+
+    if (Disk_SectorRead(fileID, diskLabelPtr->domainSector,
+				    diskLabelPtr->numDomainSectors,
+				    (Address)headerPtr) < 0) {
+	return((Ofs_DomainHeader *)0);
+    } else {
+	if (headerPtr->magic != OFS_DOMAIN_MAGIC) {
+	    fprintf(stderr, "Disk_ReadDomainHeader, bad magic <%x>\n",
+		    headerPtr->magic);
+	    free((Address)headerPtr);
+	    return((Ofs_DomainHeader *)0);
+	} else {
+	    return(headerPtr);
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_WriteDomainHeader --
+ *
+ *	Write the domain header.
+ *
+ * Results:
+ *	SUCCESS if write succeeded, FAILURE otherwise
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Disk_WriteDomainHeader(fileID, diskLabelPtr, headerPtr)
+    int 		fileID;			/* Stream to raw disk */
+    Disk_Label 		*diskLabelPtr;		/* Disk label */
+    Ofs_DomainHeader	*headerPtr;		/* Domain header. */
+{
+
+    return Disk_SectorWrite(fileID, diskLabelPtr->domainSector,
+		    diskLabelPtr->numDomainSectors, (Address)headerPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_ReadSummaryInfo --
+ *
+ *	Read the summary information and return a pointer to it.
+ *
+ * Results:
+ *	A pointer to the summary information if it could be read,
+ *	NULL otherwise.
+ *
+ * Side effects:
+ *	Memory allocation.
+ *
+ *----------------------------------------------------------------------
+ */
+Ofs_SummaryInfo *
+Disk_ReadSummaryInfo(fileID, diskLabelPtr)
+    int fileID;			/* Stream to raw disk */
+    Disk_Label *diskLabelPtr;	/* Disk label */
+{
+    Ofs_SummaryInfo *summaryPtr;
+
+    summaryPtr = (Ofs_SummaryInfo *) malloc (sizeof(Ofs_SummaryInfo));
+
+    if (Disk_SectorRead(fileID, diskLabelPtr->summarySector, 
+		diskLabelPtr->numSummarySectors, (Address)summaryPtr) < 0) {
+	return((Ofs_SummaryInfo *)0);
+    } else {
+	return(summaryPtr);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_WriteSummaryInfo --
+ *
+ *	Write the summary information.
+ *
+ * Results:
+ *	SUCCESS if write succeeded, FAILURE otherwise
+ *
+ * Side effects:
+ *	The summary information is written to the disk.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Disk_WriteSummaryInfo(fileID, diskLabelPtr, summaryPtr)
+    int fileID;			/* Stream to raw disk */
+    Disk_Label *diskLabelPtr;	/* Disk label */
+    Ofs_SummaryInfo *summaryPtr; /* Summary information */
+{
+    return Disk_SectorWrite(fileID, diskLabelPtr->summarySector,
+		diskLabelPtr->numSummarySectors, (Address)summaryPtr);
+}
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_WriteDecLabel --
+ *
+ *	Write a DEC label to the appropriate sector of a disk partition.
+ *
+ * Results:
+ *	SUCCESS if write succeeded, FAILURE otherwise
+ *
+ * Side effects:
+ *	The label is written to the disk.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Disk_WriteDecLabel(fileID, labelPtr)
+    int 		fileID;		/* Handle on raw disk */
+    Dec_DiskLabel 	*labelPtr; 	/* Ptr to DEC label */
+{
+    return Disk_SectorWrite(fileID, DEC_LABEL_SECTOR, 1, (Address) labelPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_WriteSunLabel --
+ *
+ *	Write a Sun label to the appropriate sector of a disk partiton.
+ *
+ * Results:
+ *	0 if write succeeded, -1 otherwise
+ *
+ * Side effects:
+ *	The label is written to the disk.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Disk_WriteSunLabel(fileID, labelPtr)
+    int 		fileID;		/* Handle on raw disk */
+    Sun_DiskLabel	*labelPtr;	/* Ptr to Sun label */
+{
+    return Disk_SectorWrite(fileID, 0, 1, (Address) labelPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_ReadLabel --
+ *
+ *	Read a label off the disk and convert it to a Disk_Label.
+ *
+ * Results:
+ *	Pointer to Disk_Label if the label was read and converted,
+ *	NULL otherwise.
+ *
+ * Side effects:
+ *	Memory allocation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Disk_Label *
+Disk_ReadLabel(fileID)
+    int fileID;			/* Handle on raw disk */
+{
+    Sun_DiskLabel	*sunLabelPtr;
+    Dec_DiskLabel	*decLabelPtr;
+
+    sunLabelPtr = Disk_ReadSunLabel(fileID);
+    if (sunLabelPtr != (Sun_DiskLabel *)0) {
+	return ConvertFromSunLabel(fileID, sunLabelPtr);
+    } 
+    decLabelPtr = Disk_ReadDecLabel(fileID);
+    if (decLabelPtr != (Dec_DiskLabel *)0) {
+	return ConvertFromDecLabel(fileID, decLabelPtr);
+    }
+    return NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_WriteLabel --
+ *
+ *	Converts a Disk_Label into a machine-specific disk label and
+ *	writes it on the disk.
+ *
+ * Results:
+ *	0 if everything worked
+ *	-1 if the label could not be converted
+ *	-2 otherwise
+ *
+ * Side effects:
+ *	A label is written on the disk.
+ *	Memory allocation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Disk_WriteLabel(fileID, labelPtr)
+    int 		fileID;		/* Handle on raw disk */
+    Disk_Label		*labelPtr; 	/* Ptr to label to write. */
+{
+    int			status;	
+
+    switch(labelPtr->labelType) {
+	case DISK_SUN_LABEL: {
+	    Sun_DiskLabel	*sunLabelPtr;
+	    sunLabelPtr = ConvertToSunLabel(labelPtr);
+	    if (sunLabelPtr == NULL) {
+		return -1;
+	    }
+	    status = Disk_WriteSunLabel(fileID, sunLabelPtr);
+	    free((char *) sunLabelPtr);
+	    if (status < 0) {
+		return -2;
+	    }
+	    break;
+	}
+	case DISK_DEC_LABEL: {
+	    Dec_DiskLabel	*decLabelPtr;
+	    decLabelPtr = ConvertToDecLabel(labelPtr);
+	    if (decLabelPtr == NULL) {
+		return -1;
+	    }
+	    status = Disk_WriteDecLabel(fileID, decLabelPtr);
+	    free((char *) decLabelPtr);
+	    if (status < 0) {
+		return -2;
+	    }
+	    break;
+	}
+	default :
+	    fprintf(stderr, "Unknown label type %d\n", labelPtr->labelType);
+	    return -1;
+	    break;
+    }
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_NewLabel --
+ *
+ *	Creates a new disk label.
+ *
+ * Results:
+ *	NULL if there was an error, a new disk label otherwise.
+ *
+ * Side effects:
+ *	Memory allocation
+ *
+ *----------------------------------------------------------------------
+ */
+
+Disk_Label *
+Disk_NewLabel(labelType) 
+    Disk_NativeLabelType	labelType;	/* Native type of label. */
+{
+    Disk_Label		*labelPtr;
+
+    labelPtr = (Disk_Label *) malloc(sizeof(Disk_Label));
+    if (labelPtr == NULL) {
+	fprintf(stderr, "Disk_NewLabel: Out of memory.\n");
+	return NULL;
+    }
+    bzero((char *) labelPtr, sizeof(Disk_Label));
+    strcpy(labelPtr->asciiLabel, "New label");
+    switch(labelType) {
+	case DISK_SUN_LABEL: 
+	    labelPtr->asciiLabelLen = 128;
+	    labelPtr->numPartitions = SUN_NUM_DISK_PARTS;
+	    labelPtr->bootSector = SUN_BOOT_SECTOR;
+	    labelPtr->numBootSectors = SUN_SUMMARY_SECTOR - SUN_BOOT_SECTOR -1;
+	    labelPtr->summarySector = SUN_SUMMARY_SECTOR;
+	    labelPtr->numSummarySectors = 1;
+	    labelPtr->domainSector = SUN_DOMAIN_SECTOR;
+	    labelPtr->numDomainSectors = OFS_NUM_DOMAIN_SECTORS;
+	    labelPtr->labelType = labelType;
+	    labelPtr->labelPtr = NULL;
+	    labelPtr->labelSector = SUN_LABEL_SECTOR;
+	    break;
+	case DISK_DEC_LABEL: 
+	    labelPtr->asciiLabelLen = 128;
+	    labelPtr->numPartitions = DEC_NUM_DISK_PARTS;
+	    labelPtr->bootSector = DEC_BOOT_SECTOR;
+	    labelPtr->numBootSectors = DEC_SUMMARY_SECTOR - DEC_BOOT_SECTOR -1;
+	    labelPtr->summarySector = DEC_SUMMARY_SECTOR;
+	    labelPtr->numSummarySectors = 1;
+	    labelPtr->domainSector = DEC_DOMAIN_SECTOR;
+	    labelPtr->numDomainSectors = OFS_NUM_DOMAIN_SECTORS;
+	    labelPtr->labelType = labelType;
+	    labelPtr->labelPtr = NULL;
+	    labelPtr->labelSector = DEC_LABEL_SECTOR;
+	    break;
+	default : 
+	    fprintf(stderr, "Unknown label type %d\n", labelType);
+	    free((char *) labelPtr);
+	    labelPtr = NULL;
+	    break;
+    }
+    return labelPtr;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConvertFromSunLabel --
+ *
+ *	Makes a Disk_Label from a Sun_DiskLabel
+ *
+ * Results:
+ *	Pointer to Disk_Label if the label was read and converted,
+ *	NULL otherwise.
+ *
+ * Side effects:
+ *	Memory allocation
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Disk_Label *
+ConvertFromSunLabel(fileID, sunLabelPtr)
+    int 		fileID;		/* Handle on raw disk */
+    Sun_DiskLabel	*sunLabelPtr;	/* Sun label to be converted */
+{
+    Disk_Label		*labelPtr;
+    int			i;
+    char 		buffer[DEV_BYTES_PER_SECTOR * OFS_NUM_DOMAIN_SECTORS];
+    Ofs_DomainHeader	*domainHeaderPtr = (Ofs_DomainHeader *) buffer;
+    int			sectorsPerCyl;
+
+    labelPtr = (Disk_Label *) malloc(sizeof(Disk_Label));
+    if (labelPtr == NULL) {
+	fprintf(stderr, "Malloc failed.\n");
+	return NULL;
+    }
+    bzero((char *) labelPtr, sizeof(Disk_Label));
+    if (sunLabelPtr->magic != SUN_DISK_MAGIC) {
+	fprintf(stderr, "Bad magic number on disk <%x> not <%x>\n",
+	    sunLabelPtr->magic, SUN_DISK_MAGIC);
+    }
+    if (!CheckSunCheckSum(sunLabelPtr)) {
+	printf("Check sum incorrect, 0x%x not 0x%x\n",
+	    SeeSunCheckSum(sunLabelPtr), sunLabelPtr->checkSum);
+    }
+    labelPtr->numCylinders = sunLabelPtr->numCylinders;
+    labelPtr->numAltCylinders = sunLabelPtr->numAltCylinders;
+    labelPtr->numHeads = sunLabelPtr->numHeads;
+    labelPtr->numSectors = sunLabelPtr->numSectors;
+    labelPtr->asciiLabelLen = 128;
+    strncpy(labelPtr->asciiLabel, sunLabelPtr->asciiLabel, 128);
+    labelPtr->bootSector = BOOT_SECTOR;
+    labelPtr->numDomainSectors = OFS_NUM_DOMAIN_SECTORS;
+    /*
+     * Go looking for the domain header.  This allows us a variable
+     * number of boot sectors, without having to add additional fields
+     * to the Sun label.
+     */
+    for (i = BOOT_SECTOR + 1; 
+	 i < FSDM_MAX_BOOT_SECTORS + 3; 
+	 i+= FSDM_BOOT_SECTOR_INC) {
+	if (Disk_SectorRead(fileID, i, OFS_NUM_DOMAIN_SECTORS, buffer) < 0) {
+	    fprintf(stderr, "Can't read sector %d.\n", i);
+	    return(NULL);
+	}
+	if (domainHeaderPtr->magic == OFS_DOMAIN_MAGIC) {
+	    labelPtr->summarySector = i - 1;
+	    labelPtr->domainSector = i;
+	    labelPtr->numBootSectors = labelPtr->summarySector - 1;
+	    break;
+	}
+    }
+    /* 
+     * Check if we found a domain header.
+     */
+    if (i >= FSDM_MAX_BOOT_SECTORS + 3) {
+	labelPtr->summarySector = -1;
+	labelPtr->domainSector = -1;
+	labelPtr->numBootSectors = -1;
+    }
+    labelPtr->numSummarySectors = 1;
+    labelPtr->numPartitions = SUN_NUM_DISK_PARTS;
+    sectorsPerCyl = labelPtr->numHeads * labelPtr->numSectors;
+    for (i = 0; i < labelPtr->numPartitions; i++) {
+	labelPtr->partitions[i].firstCylinder = sunLabelPtr->map[i].cylinder;
+	if (sunLabelPtr->map[i].numBlocks % sectorsPerCyl != 0) {
+	    printf(
+    "Warning: size of partition %d (0x%x) is not multiple of cylinder size\n",
+		    i, sunLabelPtr->map[i].numBlocks);
+	}
+	labelPtr->partitions[i].numCylinders = 	
+	    sunLabelPtr->map[i].numBlocks / sectorsPerCyl;
+    }
+    labelPtr->labelSector = SUN_LABEL_SECTOR;
+    labelPtr->labelType = DISK_SUN_LABEL;
+    labelPtr->labelPtr = (char *) sunLabelPtr;
+    return labelPtr;
+}
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConvertFromDecLabel --
+ *
+ *	Makes a Disk_Label from a Dec_DiskLabel
+ *
+ * Results:
+ *	Pointer to Disk_Label if the label was read and converted,
+ *	NULL otherwise.
+ *
+ * Side effects:
+ *	Memory allocation
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static Disk_Label *
+ConvertFromDecLabel(fileID, decLabelPtr)
+    int 		fileID;		/* Handle on raw disk */
+    Dec_DiskLabel	*decLabelPtr;	/* DEC label to be converted */
+{
+    Disk_Label		*labelPtr;
+    int			bytesPerCyl;
+    int			i;
+
+    if (decLabelPtr->numHeads == -1) {
+	fprintf(stderr, "Dec label does not have Sprite extensions.\n");
+	return NULL;
+    }
+    labelPtr = (Disk_Label *) malloc(sizeof(Disk_Label));
+    if (labelPtr == NULL) {
+	fprintf(stderr, "Malloc failed.\n");
+	return NULL;
+    }
+    bzero((char *) labelPtr, sizeof(Disk_Label));
+    if (decLabelPtr->magic != DEC_LABEL_MAGIC) {
+	printf("Bad magic number on disk <%x> not <%x>\n",
+	    decLabelPtr->magic, DEC_LABEL_MAGIC);
+    }
+    labelPtr->numSectors = decLabelPtr->numSectors;
+    labelPtr->numHeads = decLabelPtr->numHeads;
+    labelPtr->numCylinders = decLabelPtr->numCylinders;
+    labelPtr->numAltCylinders = decLabelPtr->numAltCylinders;
+    labelPtr->asciiLabelLen = 128;
+    strncpy(labelPtr->asciiLabel, decLabelPtr->asciiLabel, 128);
+    labelPtr->bootSector = decLabelPtr->bootSector;
+    labelPtr->numDomainSectors = decLabelPtr->numDomainSectors;
+    labelPtr->numBootSectors = decLabelPtr->numBootSectors;
+    labelPtr->summarySector = decLabelPtr->summarySector;
+    labelPtr->domainSector = decLabelPtr->domainSector;
+    labelPtr->numDomainSectors = decLabelPtr->numDomainSectors;
+    labelPtr->numSummarySectors = 1;
+    labelPtr->numPartitions = DEC_NUM_DISK_PARTS;
+    bytesPerCyl = labelPtr->numHeads * labelPtr->numSectors *
+	    DEV_BYTES_PER_SECTOR;
+    for (i = 0; i < labelPtr->numPartitions; i++) {
+	if (decLabelPtr->map[i].offsetBytes % bytesPerCyl != 0) {
+	    printf(
+    "Warning: start of partition %d (0x%x) is not multiple of cylinder size\n",
+		    i, decLabelPtr->map[i].offsetBytes);
+	}
+	labelPtr->partitions[i].firstCylinder = 
+	    decLabelPtr->map[i].offsetBytes / bytesPerCyl;
+	if (decLabelPtr->map[i].numBytes % bytesPerCyl != 0) {
+	    printf(
+    "Warning: size of partition %d (0x%x) is not multiple of cylinder size\n",
+		    i, decLabelPtr->map[i].numBytes);
+	}
+	labelPtr->partitions[i].numCylinders = 
+	    decLabelPtr->map[i].numBytes / bytesPerCyl;
+    }
+    labelPtr->labelSector = DEC_LABEL_SECTOR;
+    labelPtr->labelType = DISK_DEC_LABEL;
+    labelPtr->labelPtr = (char *) decLabelPtr;
+    return labelPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  ConvertToSunLabel --
+ *
+ *	Makes a Sun_DiskLabel from a Disk_Label
+ *
+ * Results:
+ *	Pointer to Sun_DiskLabel if the label was converted and written,
+ *	NULL otherwise.
+ *
+ * Side effects:
+ *	Memory allocation
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Sun_DiskLabel *
+ConvertToSunLabel(labelPtr)
+    Disk_Label		*labelPtr;	/* Label to be converted */
+{
+    Sun_DiskLabel	*sunLabelPtr;
+    int			i;
+
+    if (labelPtr->numPartitions > SUN_NUM_DISK_PARTS) {
+	fprintf(stderr, "Too many disk partitions for a Sun label (%d > %d)\n",
+	    labelPtr->numPartitions, SUN_NUM_DISK_PARTS);
+	return NULL;
+    }
+    sunLabelPtr = (Sun_DiskLabel *) malloc(sizeof(Sun_DiskLabel));
+    if (sunLabelPtr == NULL) {
+	fprintf(stderr, "Malloc failed.\n");
+	return NULL;
+    }
+    bzero((char *) sunLabelPtr, sizeof(Sun_DiskLabel));
+    sunLabelPtr->magic = SUN_DISK_MAGIC;
+    sunLabelPtr->numCylinders = labelPtr->numCylinders;
+    sunLabelPtr->numAltCylinders = labelPtr->numAltCylinders;
+    sunLabelPtr->numHeads = labelPtr->numHeads;
+    sunLabelPtr->numSectors = labelPtr->numSectors;
+    strncpy(sunLabelPtr->asciiLabel, labelPtr->asciiLabel, 128);
+    sunLabelPtr->partitionID = 0;
+    sunLabelPtr->bhead = 0;
+    sunLabelPtr->gap1 = 65535;
+    sunLabelPtr->gap2 = 65535;
+    sunLabelPtr->interleave = 1;
+    for (i = 0; i < SUN_NUM_DISK_PARTS; i++) {
+	sunLabelPtr->map[i].cylinder = labelPtr->partitions[i].firstCylinder;
+	sunLabelPtr->map[i].numBlocks = labelPtr->partitions[i].numCylinders *
+	    labelPtr->numHeads * labelPtr->numSectors;
+    }
+    MakeSunCheckSum(sunLabelPtr);
+    return sunLabelPtr;
+}
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConvertToDecLabel --
+ *
+ *	Makes a Dec_DiskLabel from a Disk_Label
+ *
+ * Results:
+ *	Pointer to Dec_DiskLabel if the label was converted and written,
+ *	NULL otherwise.
+ *
+ * Side effects:
+ *	Memory allocation
+ *
+ *----------------------------------------------------------------------
+ */
+static Dec_DiskLabel *
+ConvertToDecLabel(labelPtr)
+    Disk_Label	*labelPtr;	/* Label to be converted */
+{
+    Dec_DiskLabel	*decLabelPtr;
+    int			bytesPerCyl;
+    int			i;
+
+    if (labelPtr->numPartitions > DEC_NUM_DISK_PARTS) {
+	fprintf(stderr, "Too many disk partitions for a DEC label (%d > %d)\n",
+	    labelPtr->numPartitions, DEC_NUM_DISK_PARTS);
+	return NULL;
+    }
+    decLabelPtr = (Dec_DiskLabel *) malloc(sizeof(Dec_DiskLabel));
+    if (decLabelPtr == NULL) {
+	fprintf(stderr, "Malloc failed.\n");
+	return NULL;
+    }
+    bzero((char *) decLabelPtr, sizeof(Dec_DiskLabel));
+    decLabelPtr->magic = DEC_LABEL_MAGIC;
+    decLabelPtr->spriteMagic = FSDM_DISK_MAGIC;
+    decLabelPtr->version = DEC_LABEL_VERSION;
+    decLabelPtr->isPartitioned = 1;
+    decLabelPtr->numHeads = labelPtr->numHeads;
+    decLabelPtr->numSectors = labelPtr->numSectors;
+    decLabelPtr->domainSector = labelPtr->domainSector;
+    decLabelPtr->numDomainSectors = labelPtr->numDomainSectors;
+    decLabelPtr->numCylinders = labelPtr->numCylinders;
+    decLabelPtr->numAltCylinders = labelPtr->numAltCylinders;
+    decLabelPtr->bootSector = labelPtr->bootSector;
+    decLabelPtr->numBootSectors = labelPtr->numBootSectors;
+    decLabelPtr->summarySector = labelPtr->summarySector;
+    strncpy(decLabelPtr->asciiLabel, labelPtr->asciiLabel, 128);
+    bytesPerCyl = labelPtr->numHeads *labelPtr->numSectors *
+	    DEV_BYTES_PER_SECTOR;
+    for (i = 0; i < DEC_NUM_DISK_PARTS; i++) {
+	decLabelPtr->map[i].numBytes = 
+	    labelPtr->partitions[i].numCylinders * bytesPerCyl;
+	decLabelPtr->map[i].offsetBytes = 
+	    labelPtr->partitions[i].firstCylinder * bytesPerCyl;
+    }
+    return decLabelPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sun checksum routines --
+ *
+ *	The following routines manipulate the checksum in a Sun label.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static short
+SeeSunCheckSum(sunLabelPtr)
+    Sun_DiskLabel *sunLabelPtr;
+{
+        short *sp, sum = 0;
+        short count = DEV_BYTES_PER_SECTOR/sizeof(short) - 1;
+
+        sp = (short *)sunLabelPtr;
+        while (count--)
+                sum ^= *sp++;
+        return (sum);
+}
+
+static int
+CheckSunCheckSum(sunLabelPtr)
+    Sun_DiskLabel *sunLabelPtr;
+{
+        short *sp, sum = 0;
+        short count = DEV_BYTES_PER_SECTOR/sizeof(short);
+
+        sp = (short *)sunLabelPtr;
+        while (count--)
+                sum ^= *sp++;
+        return (sum ? 0 : 1);
+}
+
+static int
+MakeSunCheckSum(sunLabelPtr)
+    Sun_DiskLabel *sunLabelPtr;
+{
+        short *sp, sum = 0;
+        short count = DEV_BYTES_PER_SECTOR/sizeof(short) - 1;
+
+        sunLabelPtr->checkSum = 0;
+        sp = (short *)sunLabelPtr;
+        while (count--)
+                sum ^= *sp++;
+        sunLabelPtr->checkSum = sum;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_EraseLabel --
+ *
+ *	Erase a label from the disk.
+ *
+ * Results:
+ *	0 if the label was erased properly
+ *	-1 otherwise.
+ *
+ * Side effects:
+ *	A sector is cleared on the disk.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Disk_EraseLabel(fileID, labelType)
+    int				fileID;		/* Handle on raw disk. */
+    Disk_NativeLabelType	labelType;	/* Type of label. */
+{
+    char	buffer[DEV_BYTES_PER_SECTOR];
+    int		sector;
+
+    switch (labelType) {
+	case DISK_SUN_LABEL:
+	    sector = SUN_LABEL_SECTOR;
+	    break;
+	case DISK_DEC_LABEL:
+	    sector = DEC_LABEL_SECTOR;
+	    break;
+	default:
+	    printf("Unknown label type.\n");
+	    return -1;
+    }
+    bzero(buffer, DEV_BYTES_PER_SECTOR);
+    return Disk_SectorWrite(fileID, sector, 1, buffer);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_HasFilesystem
+ *
+ *	Determines if a filesystem can be found on the disk stream.
+ *
+ * Results:
+ *	DISK_HAS_NO_FS if no filesystem could be found;
+ *      DISK_HAS_OFS if an old filesystem was found;
+ *      DISK_HAS_LFS if a log structured filesystem was found;
+ *
+ * Side effects:
+ *	Memory allocation.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Disk_HasFilesystem(fileID, diskLabelPtr)
+    int fileID;                /* Disk stream */
+    Disk_Label *diskLabelPtr;  /* Disk Label */ 
+{
+    Ofs_DomainHeader *headerPtr;
+    LfsSuperBlock    *superPtr;
+    int              status;
+    unsigned int     magic;
+
+    /*
+     * Note: We check for an OFS first because when an OFS is created
+     *       the old filesystem on the disk is not explicitly erased.
+     *       So if the old filesystem was a LFS, is is possible that
+     *       the LfsSuperBlock is still on the disk.  'fsmake' should
+     *       be changed to erase the old filesystem, but since the OFS
+     *       is rarely used it is not crucial.  'mklfs' does the
+     *       right thing.
+     *
+     *       Also, Disk_ReadDomainHeader() and Disk_ReadLfsSuperBlock()
+     *       were not used because we don't want any error messages
+     *       printed out.
+     */
+
+    /*
+     * check for an OFS by trying to read a domain header.  If one
+     * is found that has a valid magic number, then assume that
+     * an OFS is on the disk
+     */
+    headerPtr = (Ofs_DomainHeader *)malloc((unsigned) 
+	(diskLabelPtr->numDomainSectors * DEV_BYTES_PER_SECTOR));
+    if (headerPtr == NULL) {
+	perror("Disk_HasFilesystem:  allocating Ofs_DomainHeader");
+	exit(FAILURE);
+    }
+    /*
+     * if the domainSector is negative, then there is no Ofs_DomainHeader
+     * on the disk -- just check to see if it is an LFS then...
+     */
+    if (diskLabelPtr -> domainSector >= 0 && 
+	diskLabelPtr -> summarySector >= 0 ) {
+	status = Disk_SectorRead(fileID, diskLabelPtr -> domainSector,
+				 diskLabelPtr -> numDomainSectors,
+				 (Address)headerPtr);
+	magic = headerPtr -> magic;
+	free(headerPtr);
+    } else {
+	status = -1;
+    }
+    if (status < 0 || magic != OFS_DOMAIN_MAGIC) {
+	/*
+	 * check for a LFS by trying to read a LfsSuperBlock.  If
+	 * one is found that has a valid magic number, then assume that
+	 * a LFS is on the disk
+	 */
+	superPtr = (LfsSuperBlock *)malloc(LFS_SUPER_BLOCK_SIZE);
+	if (superPtr == NULL) {
+	    perror("Disk_HasFilesystem:  allocating LfsSuperBlock");
+	    exit(FAILURE);
+	}
+	status = Disk_SectorRead(fileID, LFS_SUPER_BLOCK_OFFSET,
+				 LFS_SUPER_BLOCK_SIZE / DEV_BYTES_PER_SECTOR,
+				 (Address)superPtr);
+	magic = superPtr ->hdr.magic;
+	free(superPtr);
+	if (status < 0 || magic != LFS_SUPER_BLOCK_MAGIC) {
+	    return DISK_HAS_NO_FS;
+	} else {
+	    return DISK_HAS_LFS;
+	}
+    } else {
+	return DISK_HAS_OFS;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_ReadLfsSuperBlock
+ *
+ *	Read the LFS SuperBlock from the stream.
+ *
+ * Results:
+ *	A pointer to the LFS SuperBlock if could read it, NULL otherwise.
+ *
+ * Side effects:
+ *	Memory allocation.
+ *
+ *----------------------------------------------------------------------
+ */
+LfsSuperBlock *
+Disk_ReadLfsSuperBlock(fileID, diskLabelPtr)
+    int fileID;                /* Disk stream */
+    Disk_Label *diskLabelPtr;  /* Disk Label */
+{
+    LfsSuperBlock    *superPtr;
+    int              fstype, status;
+    
+    fstype = Disk_HasFilesystem(fileID, diskLabelPtr);
+    if (fstype != DISK_HAS_LFS) {
+	return ((LfsSuperBlock *)NULL);
+    }
+    /*
+     * Note:  Reading of LfsSuperBlock is dependent on the blockSize constant
+     * set at the top of /sprite/src/admin/mklfs/mklfs.c
+     */
+    superPtr = (LfsSuperBlock *)malloc(LFS_SUPER_BLOCK_SIZE);
+    if (superPtr == NULL) {
+	perror("Disk_ReadLfsSuperBlock: allocating LfsSuperBlock");
+	exit(FAILURE);
+    }
+    status = Disk_SectorRead(fileID, LFS_SUPER_BLOCK_OFFSET,
+			     LFS_SUPER_BLOCK_SIZE / DEV_BYTES_PER_SECTOR,
+			     (Address)superPtr);
+    if (status < 0) {
+	free((Address)superPtr);
+	return ((LfsSuperBlock *)0);
+    } else {
+	if (superPtr -> hdr.magic != LFS_SUPER_BLOCK_MAGIC) {
+	    fprintf(stderr, "Disk_ReadLfsSuperBlock, bad magic <%x>\n",
+		    superPtr -> hdr.magic);
+	    free((Address)superPtr);
+	    return ((LfsSuperBlock *)0);
+	} else {
+	    return superPtr;
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_WriteLfsSuperBlock
+ *
+ *	Write the LFS SuperBlock to the stream.
+ *
+ * Results:
+ *	-1 if the SuperBlock could not be written, 0 if it could.
+ *
+ * Side effects:
+ *	Does the write.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Disk_WriteLfsSuperBlock(fileID, superPtr)
+    int 		fileID;			/* Stream to raw disk */
+    LfsSuperBlock	*superPtr;		/* Lfs SuperBlock */
+{
+    return Disk_SectorWrite(fileID, LFS_SUPER_BLOCK_OFFSET,
+		    LFS_SUPER_BLOCK_SIZE / DEV_BYTES_PER_SECTOR, 
+		    (Address)superPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_ReadLfsCheckPointHdr
+ *
+ *	Read the current checkpoint region in its entirety.  The caller
+ *      can choose which checkpoint region to read by specifying 
+ *      either `0' or `1' in the area argument (any other value
+ *      will return the current checkpoint).
+ *
+ * Results:
+ *	A pointer to the header of the checkpoint region upon
+ *      success, NULL otherwise.  Using the header, the other
+ *      sections of the checkpoint can be reached.
+ *
+ * Side effects:
+ *	Memory allocation.
+ *
+ *----------------------------------------------------------------------
+ */
+LfsCheckPointHdr *
+Disk_ReadLfsCheckPointHdr(fileID, labelPtr, areaPtr)
+    int        fileID;
+    Disk_Label *labelPtr;
+    int        *areaPtr;       /* return value specifying checkpoint area */
+{
+    LfsSuperBlock        *superPtr;
+    LfsCheckPointHdr     *checkPointHdrPtr;
+    LfsCheckPointTrailer *trailerPtr;
+    int                  checkPointOffset, checkPointSize;
+    int                  numSectors;
+    char                 *bufferPtr;
+    unsigned int         stamp0, stamp1;
+    int                  status;
+    
+    superPtr = Disk_ReadLfsSuperBlock(fileID, labelPtr);
+    if (superPtr == NULL) {
+	return ((LfsCheckPointHdr *)NULL);
+    }
+    /*
+     * Examine the two checkpoint areas to locate the checkpoint area with the
+     * newest timestamp.
+     */
+    numSectors = ((sizeof(LfsCheckPointHdr) + DEV_BYTES_PER_SECTOR) - 1) /
+	         DEV_BYTES_PER_SECTOR;
+    bufferPtr = (char *)malloc(numSectors * DEV_BYTES_PER_SECTOR);
+    if (bufferPtr == NULL) {
+	perror("Disk_ReadLfsCheckPointHdr: allocating LfsCheckPointHdr");
+	exit(FAILURE);
+    }
+    /*
+     * Checkpoint region one.
+     */
+    status = Disk_SectorRead(fileID, superPtr -> hdr.checkPointOffset[0],
+			     numSectors, bufferPtr);
+    if (status < 0) {
+	fprintf(stderr, "Disk_ReadCheckPointHdr: could not read header #0\n");
+	free(bufferPtr);
+	free(superPtr);
+	return (LfsCheckPointHdr *)NULL;
+    }
+    stamp0 = ((LfsCheckPointHdr *)bufferPtr) -> timestamp;
+    /*
+     * Checkpoint region two.
+     */
+    status = Disk_SectorRead(fileID, superPtr -> hdr.checkPointOffset[1],
+			     numSectors, bufferPtr);
+    if (status < 0) {
+	fprintf(stderr, "Disk_ReadCheckPointHdr: could not read header #1\n");
+	free(bufferPtr);
+	free(superPtr);
+	return (LfsCheckPointHdr *)NULL;
+    }
+    stamp1 = ((LfsCheckPointHdr *)bufferPtr) -> timestamp;
+    free(bufferPtr);
+    /*
+     * Get the latest checkpoint header, and return in `areaPtr' 
+     * which checkpoint area the header is for. (It should be in the
+     * structure, but it's not so oh well.)  If `areaPtr' 
+     * specifies which area to get, then get that one.
+     */
+    if (areaPtr != NULL && *areaPtr == 0) {
+	checkPointOffset = superPtr -> hdr.checkPointOffset[0];
+    } else if (areaPtr != NULL && *areaPtr == 1) {
+	checkPointOffset = superPtr -> hdr.checkPointOffset[1];
+    } else if (stamp0 < stamp1) {
+	if (areaPtr != NULL) {
+	    *areaPtr = 1;
+	}
+	checkPointOffset = superPtr -> hdr.checkPointOffset[1];
+    } else {
+	if (areaPtr != NULL) {
+	    *areaPtr = 0;
+	}
+	checkPointOffset = superPtr -> hdr.checkPointOffset[0];
+    }
+
+    checkPointSize = superPtr -> hdr.maxCheckPointBlocks *
+	             superPtr -> hdr.blockSize;
+    checkPointHdrPtr = (LfsCheckPointHdr *)malloc(checkPointSize);
+    if (checkPointHdrPtr == NULL) {
+	perror("allocating buffer for a full Lfs CheckPoint");
+	exit(FAILURE);
+    }
+    status = Disk_SectorRead(fileID, checkPointOffset, 
+			     superPtr -> hdr.maxCheckPointBlocks,
+			     (Address)checkPointHdrPtr);
+    free(superPtr);
+    if (status < 0) {
+	fprintf(stderr, "cannot read the entire checkpoint region");
+	free(checkPointHdrPtr);
+	return (LfsCheckPointHdr *)NULL;
+    }
+    /*
+     * if we cannot find a valid trailer, then the checkpoint is not valid
+     */
+    trailerPtr = Disk_LfsCheckPointTrailer(checkPointHdrPtr);
+    if (trailerPtr == NULL) {
+	free(checkPointHdrPtr);
+	return (LfsCheckPointHdr *)NULL;
+    }
+    return checkPointHdrPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_WriteLfsCheckPointHdr
+ *
+ *	Write the checkpoint header only.
+ *
+ * Results:
+ *	0 if the header was successfully written, -1 if it wasn't.
+ *
+ * Side effects:
+ *	Disk write.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Disk_WriteLfsCheckPointHdr(fileID, headerPtr, area, labelPtr)
+    int              fileID;
+    LfsCheckPointHdr *headerPtr;
+    int              area;   /* which checkpoint area this is: 0 or 1 */
+    Disk_Label       *labelPtr;
+{
+    LfsSuperBlock *superPtr;
+    int           numSectors;
+    int           status;
+
+    if (area < 0 || area > 1) {
+	return -1;
+    }
+    superPtr = Disk_ReadLfsSuperBlock(fileID, labelPtr);
+    if (superPtr == NULL) {
+	return -1;
+    }
+    numSectors = ((sizeof(LfsCheckPointHdr) + DEV_BYTES_PER_SECTOR) - 1) /
+	         DEV_BYTES_PER_SECTOR;
+    status = Disk_SectorWrite(fileID, superPtr->hdr.checkPointOffset[area],
+			     numSectors, (Address)headerPtr);
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_WriteLfsCheckPointArea
+ *
+ *	Write the checkpoint area, headed by an LfsCheckPointHdr,
+ *      to disk.  Such an area is returned from Disk_ReadLfsCheckPointHdr().
+ *      Note: this does not constitute an update.
+ *
+ * Results:
+ *	0 if the area was successfully written, -1 if it wasn't.
+ *
+ * Side effects:
+ *	Disk write.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Disk_WriteLfsCheckPointArea(fileID, areaPtr, area, labelPtr)
+    int              fileID;
+    LfsCheckPointHdr *areaPtr;
+    int              area;  /* which checkpoint area this is: 0 or 1 */
+    Disk_Label       *labelPtr;
+{
+    LfsSuperBlock *superPtr;
+    int           status;
+
+    if (area < 0 || area > 1) {
+	return -1;
+    }
+    superPtr = Disk_ReadLfsSuperBlock(fileID, labelPtr);
+    if (superPtr == NULL) {
+	return -1;
+    }
+    status = Disk_SectorWrite(fileID, 
+			      superPtr->hdr.checkPointOffset[area],
+			      superPtr->hdr.maxCheckPointBlocks,
+			      (Address)areaPtr);
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_LfsCheckPointTrailer
+ *
+ *	Find the trailer of the checkpoint region using the checkpoint header
+ *
+ * Results:
+ *	A pointer to the trailer of the checkpoint region upon
+ *      success, NULL otherwise.  
+ *
+ *      Note: the pointer returned is a pointer into the header.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+LfsCheckPointTrailer *
+Disk_LfsCheckPointTrailer(checkPointPtr)
+    LfsCheckPointHdr *checkPointPtr;
+{
+    char                 *bytePtr;
+    LfsCheckPointTrailer *trailerPtr;
+
+    bytePtr = (char *)checkPointPtr;
+    trailerPtr = (checkPointPtr == NULL) ? (LfsCheckPointTrailer *)NULL :
+	(LfsCheckPointTrailer *)(bytePtr + checkPointPtr -> size -
+				 sizeof(LfsCheckPointTrailer));
+    if (trailerPtr == NULL) {
+	fprintf(stderr, "Lfs CheckPoint does not have a valid trailer\n");
+	return (LfsCheckPointTrailer *)NULL;
+    } else if (checkPointPtr -> timestamp != trailerPtr -> timestamp) {
+	fprintf(stderr, "CheckPoint header timestamp <%d> does not match\n",
+		checkPointPtr -> timestamp);
+	fprintf(stderr, "trailer timestamp <%d>.\n", trailerPtr -> timestamp);
+	return (LfsCheckPointTrailer *)NULL;
+    }
+    return trailerPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_ForEachCheckPointRegion
+ *
+ *	For every checkpoint region found in the checkpoint header,
+ *      execute the procedure argument on that region.  The procedure
+ *      argument must take a LfsCheckPointRegion pointer as an
+ *      argument, and have a return value of ReturnStatus.  If the
+ *      procedure returns a non-zero return value, the region iteration
+ *      stops and that value is returned.
+ *
+ * Results:
+ *      0 if there were no problems and the procedure was invoked
+ *        with every checkpoit region as an argument;
+ *	-1 if the trailer could not be found from the header;
+ *      a non-zero return value from the procedure argument.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Disk_ForEachCheckPointRegion(checkPointPtr, regionProc)
+    LfsCheckPointHdr *checkPointPtr;
+    ReturnStatus (*regionProc)();
+{
+    char                 *bytePtr, *maxBytePtr;
+    LfsCheckPointTrailer *trailerPtr;
+    LfsCheckPointRegion  *regionPtr;
+    ReturnStatus status;
+
+    status = 0;
+    trailerPtr = Disk_LfsCheckPointTrailer(checkPointPtr);
+    if (trailerPtr == NULL) {
+	return -1;
+    }
+    bytePtr = (char *)checkPointPtr;
+    bytePtr += sizeof(LfsCheckPointHdr);
+    maxBytePtr = (char *)trailerPtr;
+    while (bytePtr < maxBytePtr) {
+	regionPtr = (LfsCheckPointRegion *)bytePtr;
+	status = regionProc(regionPtr);
+	if (status) {
+	    return status;
+	}
+	bytePtr += regionPtr -> size;
+    }
+    return 0;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_ReadLfsSegSummary --
+ *
+ *	Reads a segment summary block from an LFS segment. Each segment
+ *	contains a linked list of summary blocks. To read the first
+ *	one pass NULL as the prevSegPtr. For subsequent summary blocks
+ *	pass in a pointer to the previous block.
+ *
+ * Results:
+ *	Pointer to the segment summary block, or NULL if the indicated
+ *	block doesn't exist.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+LfsSegSummary	*
+Disk_ReadLfsSegSummary(fileID, superPtr, segment, prevSegPtr)
+    int			fileID;		/* Stream to raw disk. */
+    LfsSuperBlock	*superPtr;	/* Lfs SuperBlock */
+    int			segment;	/* Segment # to use. */
+    LfsSegSummary	*prevSegPtr;	/* Previous segment summary block
+					 * for the segment. */
+
+{
+    int			blockOffset = 1;
+    LfsSegSummary	*segPtr;
+    int			status;
+    int			segOffset;
+    int			blocksPerSeg;
+
+    if (prevSegPtr != NULL) {
+	blockOffset = prevSegPtr->nextSummaryBlock;
+    }
+    blocksPerSeg = superPtr->usageArray.segmentSize/DEV_BYTES_PER_SECTOR;
+    segPtr = (LfsSegSummary *) malloc(DEV_BYTES_PER_SECTOR);
+    segOffset = segment * blocksPerSeg + superPtr->hdr.logStartOffset;
+    status = Disk_SectorRead(fileID, segOffset + blocksPerSeg - blockOffset,
+		1, (Address) segPtr);
+    if (status < 0) {
+	free((char *) segPtr);
+	return NULL;
+    }
+    return segPtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_WriteLfsSegSummary --
+ *
+ *	Writes a segment summary block to an LFS segment. To write the first
+ *	one pass NULL as the prevSegPtr. For subsequent summary blocks
+ *	pass in a pointer to the previous block.
+ *
+ * Results:
+ *	Standard return status.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Disk_WriteLfsSegSummary(fileID, superPtr, segment, prevSegPtr, segPtr)
+    int			fileID;		/* Stream to raw disk. */
+    LfsSuperBlock	*superPtr;	/* Lfs SuperBlock */
+    int			segment;	/* Segment # to use. */
+    LfsSegSummary	*prevSegPtr;	/* Previous segment summary block
+					 * for the segment. */
+    LfsSegSummary	*segPtr;	/* Segment to write. */
+{
+    int			blockOffset = 1;
+    int			status;
+    int			segOffset;
+    int			blocksPerSeg;
+
+    if (prevSegPtr != NULL) {
+	blockOffset = prevSegPtr->nextSummaryBlock;
+    }
+    blocksPerSeg = superPtr->usageArray.segmentSize/DEV_BYTES_PER_SECTOR;
+    segOffset = segment * blocksPerSeg + superPtr->hdr.logStartOffset;
+    status = Disk_SectorWrite(fileID, segOffset + blocksPerSeg - blockOffset,
+		1, (Address) segPtr);
+    if (status < 0) {
+	return FAILURE;
+    }
+    return SUCCESS;
+}
+
+
+
+
+
+@
+
+
+1.14
+log
+@lfs routines. checked in by jhh
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/disk/RCS/diskHeader.c,v 1.13 91/10/07 17:39:57 voelker Exp Locker: voelker $ SPRITE (Berkeley)";
+d1349 97
+@
+
+
+1.13
+log
+@added routines to write out a LFS checkpoint header and a LFS
+checkpoint area to disk
+
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/disk/RCS/diskHeader.c,v 1.12 91/09/23 10:47:33 voelker Exp Locker: voelker $ SPRITE (Berkeley)";
+d1058 4
+a1061 1
+ *	Read the current checkpoint region in its entirety.
+d1074 2
+a1075 2
+Disk_ReadLfsCheckPointHdr(fileID, labelPtr)
+    int fileID;
+d1077 1
+d1118 1
+a1118 1
+    status = Disk_SectorRead(fileID, superPtr -> hdr.checkPointOffset[0],
+d1121 1
+a1121 1
+	fprintf(stderr, "Disk_ReadCheckPointHdr: could not read header #0\n");
+d1129 4
+a1132 1
+     * get the latest checkpoint header
+d1134 8
+a1141 1
+    if (stamp0 < stamp1) {
+d1144 3
+d1149 1
+@
+
+
+1.12
+log
+@*** empty log message ***
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/disk/RCS/diskHeader.c,v 1.11 91/09/14 15:16:47 mendel Exp Locker: voelker $ SPRITE (Berkeley)";
+d885 92
+d994 7
+a1000 4
+    LfsSuperBlock *superPtr;
+    Ofs_DomainHeader *headerPtr;
+
+/*    headerPtr = Disk_ReadDomainHeader(fileID, diskLabelPtr); */
+d1006 9
+a1014 3
+    if (Disk_SectorRead(fileID, LFS_SUPER_BLOCK_OFFSET,
+			LFS_SUPER_BLOCK_SIZE / DEV_BYTES_PER_SECTOR,
+			(Address)superPtr) < 0) {
+a1022 3
+	    if (headerPtr != NULL) {
+		printf("found OFS but also found superblock\n");
+	    }
+d1044 1
+a1044 1
+Disk_WriteLfsSuperBlock(fileID, diskLabelPtr, superPtr)
+a1045 1
+    Disk_Label 		*diskLabelPtr;		/* Disk label */
+d1075 11
+a1085 8
+    LfsSuperBlock      *superPtr;
+    LfsCheckPointHdr   checkPointHdr[2], *checkPointHdrPtr;
+    int                checkPointOffset, checkPointSize, status;
+    int                numSectors;
+    char               *bufferPtr;
+    unsigned int       stamp0, stamp1;
+
+    if ((superPtr = Disk_ReadLfsSuperBlock(fileID, NULL)) == NULL) {
+a1093 2
+    printf("size of header: %d\nnumSectors: %d\nbuffer size: %d\n",
+	   sizeof(LfsCheckPointHdr), numSectors, numSectors*DEV_BYTES_PER_SECTOR);
+d1095 10
+a1104 2
+    if ((Disk_SectorRead(fileID, superPtr -> hdr.checkPointOffset[0],
+			numSectors, bufferPtr)) < 0) {
+d1106 2
+d1111 6
+a1116 4
+    printf("size of header: %d\nnumSectors: %d\nbuffer size: %d\n",
+	   sizeof(LfsCheckPointHdr), numSectors, numSectors*DEV_BYTES_PER_SECTOR);
+    if ((Disk_SectorRead(fileID, superPtr -> hdr.checkPointOffset[0],
+			numSectors, bufferPtr)) < 0) {
+d1118 2
+d1123 1
+a1123 32
+
+/*    if (lseek(fileID, superPtr -> hdr.checkPointOffset[0], L_SET) == -1) {
+	perror("seeking for the Lfs CheckPoint Header");
+	exit(FAILURE);
+    }
+    status = read(fileID, (char *)(checkPointHdr + 0), 
+		  sizeof(LfsCheckPointHdr));
+    if (status == -1) {
+	perror("reading Lfs CheckPoint Header #0");
+	exit(FAILURE);
+    } else if (status != sizeof(LfsCheckPointHdr)) {
+	fprintf(stderr,"Can't read checkpoint header #0.\n");
+	checkPointHdr[0].timestamp = 0;
+	return (LfsCheckPointHdr *)NULL;
+    } */
+    /*
+     * Checkpoint region two.
+     */
+/*    if (lseek(fileID, superPtr -> hdr.checkPointOffset[1], L_SET) == -1) {
+	perror("seeking for the Lfs CheckPoint Header");
+	exit(FAILURE);
+    }
+    status = read(fileID, (char *)(checkPointHdr + 1), 
+		  sizeof(LfsCheckPointHdr));
+    if (status == -1) {
+	perror("reading Lfs CheckPoint Header #1");
+	exit(FAILURE);
+    } else if (status != sizeof(LfsCheckPointHdr)) {
+	fprintf(stderr,"Can't read checkpoint header #1.\n");
+	checkPointHdr[1].timestamp = 0;
+	return (LfsCheckPointHdr *)NULL;
+    } */
+a1126 1
+/*    if (checkPointHdr[0].timestamp < checkPointHdr[1].timestamp) { */
+d1133 3
+a1135 4
+	superPtr -> hdr.blockSize;
+    printf("check point size: %d\n", checkPointSize);
+    if ((checkPointHdrPtr = (LfsCheckPointHdr *)malloc(checkPointSize)) 
+	== NULL) {
+d1139 5
+a1143 3
+    if (Disk_SectorRead(fileID, checkPointOffset, 
+			superPtr -> hdr.maxCheckPointBlocks,
+			(Address)checkPointHdrPtr) < 0) {
+d1145 1
+d1151 3
+a1153 1
+    if (Disk_LfsCheckPointTrailer(checkPointHdrPtr) == NULL) {
+d1162 81
+d1307 1
+a1307 1
+    ReturnStatus (*regionProc)(LfsCheckPointRegion *);
+d1315 2
+a1316 1
+    if ((trailerPtr = Disk_LfsCheckPointTrailer(checkPointPtr)) == NULL) {
+d1332 4
+@
+
+
+1.11
+log
+@Changes to reflect the old Sprite file system name being OFS and the
+addition of LFS.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/disk/RCS/diskHeader.c,v 1.10 90/03/16 17:41:12 jhh Exp Locker: mendel $ SPRITE (Berkeley)";
+d880 285
+@
+
+
+1.10
+log
+@replaced DiskInfo abstraction with Disk_Label
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/disk/RCS/diskHeader.c,v 1.9 90/02/16 16:09:23 shirriff Exp $ SPRITE (Berkeley)";
+d180 1
+a180 1
+Fsdm_DomainHeader *
+d185 1
+a185 1
+    Fsdm_DomainHeader	*headerPtr;
+d187 1
+a187 1
+    headerPtr = (Fsdm_DomainHeader *)malloc((unsigned) 
+d193 1
+a193 1
+	return((Fsdm_DomainHeader *)0);
+d195 1
+a195 1
+	if (headerPtr->magic != FSDM_DOMAIN_MAGIC) {
+d199 1
+a199 1
+	    return((Fsdm_DomainHeader *)0);
+d225 1
+a225 1
+    Fsdm_DomainHeader	*headerPtr;		/* Domain header. */
+d248 1
+a248 1
+Fsdm_SummaryInfo *
+d253 1
+a253 1
+    Fsdm_SummaryInfo *summaryPtr;
+d255 1
+a255 1
+    summaryPtr = (Fsdm_SummaryInfo *) malloc (sizeof(Fsdm_SummaryInfo));
+d259 1
+a259 1
+	return((Fsdm_SummaryInfo *)0);
+d284 1
+a284 1
+    Fsdm_SummaryInfo *summaryPtr; /* Summary information */
+d470 1
+a470 1
+	    labelPtr->numDomainSectors = FSDM_NUM_DOMAIN_SECTORS;
+d483 1
+a483 1
+	    labelPtr->numDomainSectors = FSDM_NUM_DOMAIN_SECTORS;
+d523 2
+a524 2
+    char 		buffer[DEV_BYTES_PER_SECTOR * FSDM_NUM_DOMAIN_SECTORS];
+    Fsdm_DomainHeader	*domainHeaderPtr = (Fsdm_DomainHeader *) buffer;
+d548 1
+a548 1
+    labelPtr->numDomainSectors = FSDM_NUM_DOMAIN_SECTORS;
+d557 1
+a557 1
+	if (Disk_SectorRead(fileID, i, FSDM_NUM_DOMAIN_SECTORS, buffer) < 0) {
+d561 1
+a561 1
+	if (domainHeaderPtr->magic == FSDM_DOMAIN_MAGIC) {
+@
+
+
+1.9
+log
+@Added Dec disk label code.
+@
+text
+@d6 1
+a6 2
+ * Copyright (C) 1987 Regents of the University of California
+ * All rights reserved.
+d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/disk/RCS/diskHeader.c,v 1.8 90/01/31 17:05:19 jhh Exp Locker: shirriff $ SPRITE (Berkeley)";
+d20 1
+a20 1
+#include "diskUtils.h"
+d25 8
+a41 130
+ * Disk_ReadDiskInfo--
+ *
+ *	Read the first sector and determine the basic disk info.
+ *
+ * Results:
+ *	A pointer to Disk_Info for the disk if could read it, 0
+ *	otherwise.
+ *
+ * Side effects:
+ *	Memory allocation.
+ *
+ *----------------------------------------------------------------------
+ */
+Disk_Info *
+Disk_ReadDiskInfo(fileID, partition)
+    int fileID;			/* Handle on raw disk */
+    int partition;		/* Index of the partition to format */
+{
+    Sun_DiskLabel	*sunLabelPtr;
+    Dec_DiskLabel	*decLabelPtr;
+    Disk_Info		*diskInfoPtr;
+    char 		buffer[DEV_BYTES_PER_SECTOR * FSDM_NUM_DOMAIN_SECTORS];
+    Fsdm_DomainHeader	*domainHeaderPtr = (Fsdm_DomainHeader *) buffer;
+    int			i;
+
+    diskInfoPtr = (Disk_Info *)malloc(sizeof(Disk_Info));
+
+    sunLabelPtr = Disk_ReadSunLabel(fileID);
+    if (sunLabelPtr != (Sun_DiskLabel *)0) {
+	Sun_DiskMap *sunMapPtr;
+	/*
+	 * First sector looks like a sun label.
+	 */
+	sunMapPtr = &sunLabelPtr->map[partition];
+	(void)strcpy(diskInfoPtr->asciiLabel, sunLabelPtr->asciiLabel);
+	diskInfoPtr->bootSector = BOOT_SECTOR;
+	diskInfoPtr->numDomainSectors = FSDM_NUM_DOMAIN_SECTORS;
+	diskInfoPtr->firstCylinder = sunMapPtr->cylinder;
+	diskInfoPtr->numCylinders = sunMapPtr->numBlocks /
+		(sunLabelPtr->numHeads * sunLabelPtr->numSectors);
+	diskInfoPtr->numHeads = sunLabelPtr->numHeads;
+	diskInfoPtr->numSectors = sunLabelPtr->numSectors;
+	for (i = BOOT_SECTOR + 1; 
+	     i < FSDM_MAX_BOOT_SECTORS + 3; 
+	     i+= FSDM_BOOT_SECTOR_INC) {
+	    if (Disk_SectorRead(fileID, i, FSDM_NUM_DOMAIN_SECTORS, buffer) < 0) {
+		fprintf(stderr, "Can't read sector %d.\n", i);
+		return((Disk_Info *)0);
+	    }
+	    if (domainHeaderPtr->magic == FSDM_DOMAIN_MAGIC) {
+		diskInfoPtr->summarySector = i - 1;
+		diskInfoPtr->domainSector = i;
+		diskInfoPtr->numBootSectors = diskInfoPtr->summarySector - 1;
+		break;
+	    }
+	}
+	if (i >= FSDM_MAX_BOOT_SECTORS + 3) {
+	    diskInfoPtr->summarySector = -1;
+	    diskInfoPtr->domainSector = -1;
+	    diskInfoPtr->numBootSectors = -1;
+	}
+    } else {
+	Fsdm_DiskHeader *diskHeaderPtr;
+	Fsdm_DiskPartition *mapPtr;
+
+	/*
+	 * Not a sun label, try a dec or sprite label.
+	 */
+	diskHeaderPtr = Disk_ReadDiskHeader(fileID);
+	if (diskHeaderPtr != (Fsdm_DiskHeader *)0) {
+	    mapPtr = &diskHeaderPtr->map[partition];
+	    (void)strcpy(diskInfoPtr->asciiLabel, diskHeaderPtr->asciiLabel);
+	    diskInfoPtr->bootSector = diskHeaderPtr->bootSector;
+	    diskInfoPtr->numBootSectors = diskHeaderPtr->numBootSectors;
+	    diskInfoPtr->summarySector = diskHeaderPtr->summarySector;
+	    diskInfoPtr->domainSector = diskHeaderPtr->domainSector;
+	    diskInfoPtr->numDomainSectors = diskHeaderPtr->numDomainSectors;
+	    diskInfoPtr->firstCylinder = mapPtr->firstCylinder;
+	    diskInfoPtr->numCylinders = mapPtr->numCylinders;
+	    diskInfoPtr->numHeads = diskHeaderPtr->numHeads;
+	    diskInfoPtr->numSectors = diskHeaderPtr->numSectors;
+	} else {
+	    decLabelPtr = Disk_ReadDecLabel(fileID);
+	    if (decLabelPtr != (Dec_DiskLabel *)0) {
+		Dec_DiskMap *decMapPtr;
+		int	cylLength;
+		/*
+		 * Sector looks like a dec label.
+		 */
+		decMapPtr = &decLabelPtr->map[partition];
+		if (decLabelPtr->numHeads<0) {
+		    fprintf(stderr,"Warning: not a Sprite-modified %s",
+		    "Dec label.  Using defaults for #heads, etc.\n");
+		    diskInfoPtr->numHeads = 4;
+		    diskInfoPtr->numSectors = 33;
+		    diskInfoPtr->summarySector = -1;
+		    diskInfoPtr->domainSector = -1;
+		    diskInfoPtr->numBootSectors = -1;
+		} else {
+		    diskInfoPtr->numHeads = decLabelPtr->numHeads;
+		    diskInfoPtr->numSectors = decLabelPtr->numSectors;
+		}
+		cylLength = diskInfoPtr->numHeads * diskInfoPtr->numSectors *
+			DEV_BYTES_PER_SECTOR;
+		if (decMapPtr->numBytes % cylLength != 0 ||
+			decMapPtr->offsetBytes % cylLength != 0) {
+		    fprintf(stderr,"Warning: dec disk partition is not %s!\n",
+			    "a multiple of cylinder size");
+		}
+		(void)strcpy(diskInfoPtr->asciiLabel, decLabelPtr->asciiLabel);
+		diskInfoPtr->firstCylinder = decMapPtr->offsetBytes / cylLength;
+		diskInfoPtr->numCylinders = decMapPtr->numBytes / cylLength;
+		diskInfoPtr->bootSector = decLabelPtr->bootSector;
+		diskInfoPtr->numDomainSectors = decLabelPtr->numDomainSectors;
+		diskInfoPtr->numBootSectors = decLabelPtr->numBootSectors;
+		diskInfoPtr->summarySector = decLabelPtr->summarySector;
+		diskInfoPtr->domainSector = decLabelPtr->domainSector;
+		diskInfoPtr->numDomainSectors = decLabelPtr->numDomainSectors;
+	    } else {
+		fprintf(stderr, "Not a Sun, Sprite, or Dec label\n");
+		return((Disk_Info *)0);
+	    }
+	}
+    }
+    return(diskInfoPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+d133 1
+d169 1
+d181 1
+a181 1
+Disk_ReadDomainHeader(fileID, diskInfoPtr)
+d183 1
+a183 1
+    Disk_Info *diskInfoPtr;	/* Basic disk information */
+d187 2
+a188 2
+    headerPtr = (Fsdm_DomainHeader *)malloc(diskInfoPtr->numDomainSectors *
+					 DEV_BYTES_PER_SECTOR);
+d190 2
+a191 2
+    if (Disk_SectorRead(fileID, diskInfoPtr->domainSector,
+				    diskInfoPtr->numDomainSectors,
+d209 26
+d249 1
+a249 1
+Disk_ReadSummaryInfo(fileID, diskInfoPtr)
+d251 1
+a251 1
+    Disk_Info *diskInfoPtr;	/* Basic disk information */
+d257 2
+a258 2
+    if (Disk_SectorRead(fileID, diskInfoPtr->summarySector, 1,
+				    (Address)summaryPtr) < 0) {
+d273 1
+a273 1
+ *	0 if write succeeded, -1 otherwise
+d280 2
+a281 2
+int
+Disk_WriteSummaryInfo(fileID, diskInfoPtr, summaryPtr)
+d283 1
+a283 1
+    Disk_Info *diskInfoPtr;	/* Basic disk information */
+d286 572
+d859 21
+a879 2
+    return Disk_SectorWrite(fileID, diskInfoPtr->summarySector, 1,
+				    (Address)summaryPtr);
+d881 1
+@
+
+
+1.8
+log
+@added routines to read and write summary info
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/disk/RCS/diskHeader.c,v 1.7 89/09/25 12:32:34 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d54 1
+d101 1
+a101 1
+	 * Not a sun label, try a sprite label.
+d104 53
+a156 3
+	if (diskHeaderPtr == (Fsdm_DiskHeader *)0) {
+	    fprintf(stderr, "Neither Sun nor Sprite label\n");
+	    return((Disk_Info *)0);
+a157 11
+	mapPtr = &diskHeaderPtr->map[partition];
+	(void)strcpy(diskInfoPtr->asciiLabel, diskHeaderPtr->asciiLabel);
+	diskInfoPtr->bootSector = diskHeaderPtr->bootSector;
+	diskInfoPtr->numBootSectors = diskHeaderPtr->numBootSectors;
+	diskInfoPtr->summarySector = diskHeaderPtr->summarySector;
+	diskInfoPtr->domainSector = diskHeaderPtr->domainSector;
+	diskInfoPtr->numDomainSectors = diskHeaderPtr->numDomainSectors;
+	diskInfoPtr->firstCylinder = mapPtr->firstCylinder;
+	diskInfoPtr->numCylinders = mapPtr->numCylinders;
+	diskInfoPtr->numHeads = diskHeaderPtr->numHeads;
+	diskInfoPtr->numSectors = diskHeaderPtr->numSectors;
+d161 27
+d189 1
+d191 21
+d239 1
+d244 1
+@
+
+
+1.7
+log
+@Conforms to new fs module structure
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/disk/RCS/diskHeader.c,v 1.6 89/09/12 11:51:14 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d235 55
+d291 3
+@
+
+
+1.6
+log
+@fixed bug reading partition information
+.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/disk/RCS/diskHeader.c,v 1.5 89/07/31 17:42:19 jhh Exp $ SPRITE (Berkeley)";
+d55 2
+a56 2
+    char 		buffer[DEV_BYTES_PER_SECTOR * FS_NUM_DOMAIN_SECTORS];
+    FsDomainHeader	*domainHeaderPtr = (FsDomainHeader *) buffer;
+d70 1
+a70 1
+	diskInfoPtr->numDomainSectors = FS_NUM_DOMAIN_SECTORS;
+d77 3
+a79 3
+	     i < FS_MAX_BOOT_SECTORS + 3; 
+	     i+= FS_BOOT_SECTOR_INC) {
+	    if (Disk_SectorRead(fileID, i, FS_NUM_DOMAIN_SECTORS, buffer) < 0) {
+d83 1
+a83 1
+	    if (domainHeaderPtr->magic == FS_DOMAIN_MAGIC) {
+d90 1
+a90 1
+	if (i >= FS_MAX_BOOT_SECTORS + 3) {
+d96 2
+a97 2
+	FsDiskHeader *diskHeaderPtr;
+	FsDiskPartition *mapPtr;
+d103 1
+a103 1
+	if (diskHeaderPtr == (FsDiskHeader *)0) {
+d175 1
+a175 1
+FsDiskHeader *
+d180 1
+a180 1
+    FsDiskHeader	*diskHeaderPtr;
+d185 1
+a185 1
+	return((FsDiskHeader *)0);
+d187 3
+a189 3
+	diskHeaderPtr = (FsDiskHeader *)buffer;
+	if (diskHeaderPtr->magic != FS_DISK_MAGIC) {
+	    return((FsDiskHeader *)0);
+d210 1
+a210 1
+FsDomainHeader *
+d215 1
+a215 1
+    FsDomainHeader	*headerPtr;
+d217 1
+a217 1
+    headerPtr = (FsDomainHeader *)malloc(diskInfoPtr->numDomainSectors *
+d223 1
+a223 1
+	return((FsDomainHeader *)0);
+d225 1
+a225 1
+	if (headerPtr->magic != FS_DOMAIN_MAGIC) {
+d229 1
+a229 1
+	    return((FsDomainHeader *)0);
+@
+
+
+1.5
+log
+@variable number of boot sectors
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/disk/RCS/diskHeader.c,v 1.4 89/02/09 11:14:19 brent Exp $ SPRITE (Berkeley)";
+d107 1
+a107 1
+	mapPtr = &diskHeaderPtr->map[diskHeaderPtr->partition];
+@
+
+
+1.4
+log
+@Added Disk_ReadDomainHeader
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/disk/RCS/diskHeader.c,v 1.3 88/10/27 15:30:43 nelson Exp $ SPRITE (Berkeley)";
+d24 1
+a27 1
+ * NUM_BOOT_SECTORS	The number of boot sectors.
+d30 1
+a30 2
+#define	NUM_BOOT_SECTORS	15
+
+d35 1
+a35 1
+ * Disk_ReadDiskInfo --
+d55 3
+a69 3
+	diskInfoPtr->numBootSectors = NUM_BOOT_SECTORS;
+	diskInfoPtr->summarySector = SUN_SUMMARY_SECTOR;
+	diskInfoPtr->domainSector = SUN_DOMAIN_SECTOR;
+d76 19
+d122 1
+a214 1
+    Address		buffer;
+@
+
+
+1.3
+log
+@Ported to the new C library.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: diskHeader.c,v 1.2 88/07/19 11:54:04 douglis Exp $ SPRITE (Berkeley)";
+d173 41
+@
+
+
+1.2
+log
+@removed some lint.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: diskHeader.c,v 1.1 88/06/02 12:54:00 brent Exp $ SPRITE (Berkeley)";
+a20 2
+#include "sprite.h"
+#include "io.h"
+d22 2
+a23 3
+#include "mem.h"
+#include "byte.h"
+#include "string.h"
+d25 7
+d36 2
+a37 1
+ * ReadBasicDiskInfo --
+d41 2
+a42 1
+ *	A pointer to BasicDisInfo for the disk.
+d49 2
+a50 2
+BasicDiskInfo *
+ReadBasicDiskInfo(fileID, partition)
+d54 2
+a55 2
+    Sun_DiskLabel *sunLabelPtr;
+    BasicDiskInfo *diskInfoPtr;
+d57 1
+a57 1
+    diskInfoPtr = (BasicDiskInfo *)Mem_Alloc(sizeof(BasicDiskInfo));
+d59 1
+a59 1
+    sunLabelPtr = ReadSunLabel(fileID);
+d66 3
+a68 3
+	(void)String_Copy(sunLabelPtr->asciiLabel, diskInfoPtr->asciiLabel);
+	diskInfoPtr->bootSector = SUN_BOOT_SECTOR;
+	diskInfoPtr->numBootSectors = FS_NUM_BOOT_SECTORS;
+d84 1
+a84 1
+	diskHeaderPtr = ReadDiskHeader(fileID);
+d86 2
+a87 2
+	    Io_PrintStream(io_StdErr, "Neither Sun nor Sprite label\n");
+	    return((BasicDiskInfo *)0);
+d90 1
+a90 1
+	(void)String_Copy(diskHeaderPtr->asciiLabel, diskInfoPtr->asciiLabel);
+d103 1
+d108 1
+a108 1
+ * ReadSunLabel --
+d114 1
+a114 1
+ *	A pointer to the super block data.
+d122 1
+a122 1
+ReadSunLabel(fileID)
+d125 2
+a126 3
+    ReturnStatus status;
+    Address buffer;
+    Sun_DiskLabel *sunLabelPtr;
+d128 1
+a128 1
+    buffer = (Address) Mem_Alloc(DEV_BYTES_PER_SECTOR);
+d130 1
+a130 2
+    status = SectorRead(fileID, 0, 1, buffer);
+    if (status != SUCCESS) {
+d145 1
+a145 1
+ * ReadDiskHeader --
+d149 1
+a149 1
+ *	A pointer to the super block data.
+d157 1
+a157 1
+ReadDiskHeader(openFileID)
+d160 2
+a161 3
+    ReturnStatus status;
+    Address buffer;
+    FsDiskHeader *diskHeaderPtr;
+d163 1
+a163 1
+    buffer = (Address) Mem_Alloc(DEV_BYTES_PER_SECTOR);
+d165 1
+a165 2
+    status = SectorRead(openFileID, 0, 1, buffer);
+    if (status != SUCCESS) {
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: fsDiskUtils.c,v 1.4 87/06/02 11:20:32 nelson Exp $ SPRITE (Berkeley)";
+d26 1
+d60 1
+a60 1
+	String_Copy(sunLabelPtr->asciiLabel, diskInfoPtr->asciiLabel);
+d84 1
+a84 1
+	String_Copy(diskHeaderPtr->asciiLabel, diskInfoPtr->asciiLabel);
+@

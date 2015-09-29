@@ -1,0 +1,329 @@
+head     1.7;
+branch   ;
+access   ;
+symbols  sprited:1.7.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.7
+date     90.09.11.14.27.21;  author kupfer;  state Exp;
+branches 1.7.1.1;
+next     1.6;
+
+1.6
+date     90.02.08.17.19.05;  author jhh;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.06.19.14.15.12;  author jhh;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.07.28.17.18.31;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.07.25.14.12.40;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.07.20.18.12.12;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.10.16.23.33;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.7.1.1
+date     91.12.02.19.54.26;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.7
+log
+@Use function prototypes. Lint.
+@
+text
+@/* 
+ * StdioFileWriteProc.c --
+ *
+ *	Source code for the "StdioFileWriteProc" library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdio/RCS/StdioFileWriteProc.c,v 1.6 90/02/08 17:19:05 jhh Exp Locker: kupfer $ SPRITE (Berkeley)"; 
+#endif not lint
+
+#include "stdio.h"
+#include "fileInt.h"
+#include "stdlib.h"
+#include <errno.h>
+#include <unistd.h>
+
+/*
+ * Before the first I/O on stdin, stdout, or stderr their buffers
+ * aren't initialized.  For the output streams, there must be someplace
+ * to buffer the first character, temporarily, until the buffer-flush
+ * routine is called.  That's what the variable below is for.
+ */
+
+unsigned char stdioTempBuffer[4];
+
+/*
+ * Stderr cannot have a dynamically allocated buffer since we may end
+ * up calling malloc at at bad time (like inside of panic in the kernel).
+ * Allocate a static buffer for stderr.
+ */
+
+unsigned char stdioStderrBuffer[128];
+
+/*
+ * Space is allocated here for the structures for stdin, stdout, and
+ * stderr, and also for the array that holds pointers to all the
+ * streams asociated with files.
+ */
+
+FILE stdioInFile = {
+    0, 0, 0, 0, 0,
+    StdioFileReadProc, StdioFileWriteProc, StdioFileCloseProc,
+    (ClientData) 0, 0, STDIO_READ, NULL
+};
+
+FILE stdioOutFile = {
+    stdioTempBuffer-1, 0, 0, stdioTempBuffer, 0,
+    StdioFileReadProc, StdioFileWriteProc, StdioFileCloseProc,
+    (ClientData) 1, 0, STDIO_WRITE, &stdioInFile
+};
+
+FILE stdioErrFile = {
+    stdioTempBuffer-1, 0, 0, stdioTempBuffer, 0,
+    StdioFileReadProc, StdioFileWriteProc, StdioFileCloseProc,
+    (ClientData) 2, 0, STDIO_WRITE, &stdioOutFile
+};
+
+FILE *stdioFileStreams = &stdioErrFile;
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StdioFileWriteProc --
+ *
+ *	This procedure is invoked when the last character of space
+ *	in a stream's buffer is filled.  Its job is to write out the
+ *	contents of the buffer to the file system.  This procedure is
+ *	used for all streams that are associated with files (or pipes,
+ *	or anything for which the file-related system calls apply).
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	If the buffer is REALLY full (which it isn't the first time
+ *	a byte is written to stdOut or stdErr:  we fake a full
+ *	condition to ensure that this procedure gets called so it
+ *	can do initialization), then the bytes in stream's buffer
+ *	are written to the stream's file.  The status and end-of-file
+ *	fields in stream are set if any problems occur.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+StdioFileWriteProc(stream, flush)
+    register FILE *stream;	/* Stream whose buffer needs to be emptied.
+				 * The stream must be writable.  The clientData
+				 * field of stream gives a stream index to
+				 * pass to the operating system. */
+    int flush;			/* Non-zero means it's important to really
+				 * write everything out.  Otherwise, this
+				 * procedure only needs to write things if
+				 * the buffer is full. */
+{
+    int count;
+
+    /*
+     * If this stream doesn't have a buffer associated with it, create
+     * a new one, and retrieve the character just written (it was put in
+     * stdioTempBuffer).
+     */
+
+    if (stream->bufSize == 0) {
+	stream->bufSize = BUFSIZ;
+	if ((stream == stderr) || (stream == stdout)) {
+	    if (isatty((int) stream->clientData)) {
+		stream->flags |= STDIO_LINEBUF;
+	    }
+	}
+	if (stream != stderr) {
+	    stream->buffer = (unsigned char *) 
+		    malloc((unsigned) stream->bufSize);
+	} else { 
+	    stream->buffer = stdioStderrBuffer;
+	    stream->bufSize = 128;
+	}
+	stream->lastAccess = stream->buffer;
+	*stream->buffer = stdioTempBuffer[0];
+    }
+
+    count = stream->lastAccess + 1 - stream->buffer;
+    if ((count  == stream->bufSize) || flush) {
+	int	written;
+	stream->lastAccess = stream->buffer - 1;
+	do {
+	    written = write((int) stream->clientData, (char *) stream->buffer, 
+		count);
+	    if (written <= 0 ) {
+		stream->writeCount = 0;
+		stream->status = errno;
+		return;
+	    }
+	    count = count - written;
+	} while (count > 0);
+	stream->lastAccess = stream->buffer - 1;
+	stream->writeCount = stream->bufSize;
+    } else {
+	stream->writeCount = stream->bufSize - count;
+    }
+}
+@
+
+
+1.7.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdio/RCS/StdioFileWriteProc.c,v 1.7 90/09/11 14:27:21 kupfer Exp $ SPRITE (Berkeley)"; 
+@
+
+
+1.6
+log
+@handles short writes
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdio/RCS/StdioFileWriteProc.c,v 1.5 89/06/19 14:15:12 jhh Exp Locker: jhh $ SPRITE (Berkeley)"; 
+d24 1
+@
+
+
+1.5
+log
+@Made stderr buffer static
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: StdioFileWriteProc.c,v 1.4 88/07/28 17:18:31 ouster Exp $ SPRITE (Berkeley)"; 
+d132 1
+d134 10
+a143 6
+	if (write((int) stream->clientData, (char *) stream->buffer, count)
+		!= count) {
+	    stream->writeCount = 0;
+	    stream->status = errno;
+	    return;
+	}
+@
+
+
+1.4
+log
+@More lint.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: StdioFileWriteProc.c,v 1.3 88/07/25 14:12:40 ouster Exp $ SPRITE (Berkeley)"; 
+d26 1
+a26 1
+ * Before the first I/O on stdin, stdout, or stderr, their buffers
+d35 8
+d118 7
+a124 3
+	    if (stream == stderr) {
+		stream->bufSize = 128;
+	    }
+a125 1
+	stream->buffer = (unsigned char *) malloc((unsigned) stream->bufSize);
+@
+
+
+1.3
+log
+@Lint.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: StdioFileWriteProc.c,v 1.2 88/07/20 18:12:12 ouster Exp $ SPRITE (Berkeley)"; 
+d114 1
+a114 1
+	stream->buffer = (unsigned char *) malloc(stream->bufSize);
+@
+
+
+1.2
+log
+@Change file streams so that fdopen can be called more than once
+for a given stream id, and get separate buffers.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: StdioFileWriteProc.c,v 1.1 88/06/10 16:23:33 ouster Exp $ SPRITE (Berkeley)"; 
+d96 1
+a96 1
+    int count, bytesWritten;
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: atoi.c,v 1.1 88/04/28 17:20:23 ouster Exp $ SPRITE (Berkeley)"; 
+d43 1
+a43 1
+    (ClientData) 0, 0, STDIO_READ
+d49 1
+a49 1
+    (ClientData) 1, 0, STDIO_WRITE
+d55 1
+a55 1
+    (ClientData) 2, 0, STDIO_WRITE
+d58 1
+a58 4
+int		stdioNumFileStreams		= INIT_NUM_STREAMS;
+static FILE *	initStreams[INIT_NUM_STREAMS]	= {&stdioInFile,
+	&stdioOutFile, &stdioErrFile};
+FILE **		stdioFileStreams		= initStreams;
+@

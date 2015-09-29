@@ -1,0 +1,28 @@
+.TH CONSTYPE 1 "Release 4" "X Version 11"
+.SH NAME
+constype - print type of Sun console
+.SH SYNOPSIS
+.B "constype"
+.SH DESCRIPTION
+.I Consoletype
+prints on the standard output the Sun code for the type of display
+that the console is. It is one of:
+.sp 2
+.in +0.5i
+.nf
+bw?	Black and White, where ? is 1-4. (eg) 3-50s are bw2
+cg?	Colour Graphics display, where ? is 1-4
+gp?	Optional Graphics Processor board, where ? is 1-2
+ns?	Not Sun display - where ? is A-J
+.fi
+.in -0.5i
+.sp 2
+This is useful in determining startup values and defaults for window
+systems.
+.SH BUGS
+Not tested on all monitor types
+.SH COPYRIGHT 
+Copyright 1988, SRI
+.SH AUTHOR
+Doug Moran <moran@ai.sri.com>
+

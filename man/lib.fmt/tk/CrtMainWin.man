@@ -1,0 +1,330 @@
+
+
+
+Tk_CreateMainWindow   C Library Procedures    Tk_CreateMainWindow
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tk_CreateMainWindow,                        Tk_CreateWindow,
+     Tk_CreateWindowFromPath,                   Tk_DestroyWindow,
+     Tk_MakeWindowExist - create or delete window
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttkk..hh>>
+
+     Tk_Window
+     TTkk__CCrreeaatteeMMaaiinnWWiinnddooww(_i_n_t_e_r_p, _s_c_r_e_e_n_N_a_m_e, _b_a_s_e_N_a_m_e)
+
+     Tk_Window
+     TTkk__CCrreeaatteeWWiinnddooww(_i_n_t_e_r_p, _p_a_r_e_n_t, _n_a_m_e, _t_o_p_L_e_v_S_c_r_e_e_n)
+
+     Tk_Window
+     TTkk__CCrreeaatteeWWiinnddoowwFFrroommPPaatthh(_i_n_t_e_r_p, _t_k_w_i_n, _p_a_t_h_N_a_m_e, _t_o_p_L_e_v_S_c_r_e_e_n)
+
+     TTkk__DDeessttrrooyyWWiinnddooww(_t_k_w_i_n)
+
+     TTkk__MMaakkeeWWiinnddoowwEExxiisstt(_t_k_w_i_n)
+
+AARRGGUUMMEENNTTSS
+     Tcl_Interp   *_i_n_t_e_r_p         (out)     Tcl  interpreter   to
+                                            use for error report-
+                                            ing.   If  no   error
+                                            occurs,  then *_i_n_t_e_r_p
+                                            isn't modified.   For
+                                            TTkk__CCrreeaatteeMMaaiinnWWiinnddooww,
+                                            this  interpreter  is
+                                            associated       per-
+                                            manently   with   the
+                                            created  window,  and
+                                            Tk-related   commands
+                                            are  bound  into  the
+                                            interpeter.
+
+     char         *_s_c_r_e_e_n_N_a_m_e     (in)      String name of screen
+                                            on  which  to  create
+                                            window.  Has the form
+                                            _d_i_s_p_l_a_y_N_a_m_e.._s_c_r_e_e_n_N_u_m,
+                                            where _d_i_s_p_l_a_y_N_a_m_e  is
+                                            the name of a display
+                                            and  _s_c_r_e_e_n_N_u_m  is  a
+                                            screen   number.   If
+                                            the dot and _s_c_r_e_e_n_N_u_m
+                                            are    omitted,   the
+                                            screen         number
+                                            defaults  to  0.   If
+                                            _s_c_r_e_e_n_N_a_m_e is NULL or
+                                            empty         string,
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+Tk_CreateMainWindow   C Library Procedures    Tk_CreateMainWindow
+
+
+
+                                            defaults to  contents
+                                            of  DISPLAY  environ-
+                                            ment variable.
+
+     char         *_b_a_s_e_N_a_m_e       (in)      Name to use for  this
+                                            main   window.    See
+                                            below for details.
+
+     Tk_Window    _p_a_r_e_n_t          (in)      Token for the  window
+                                            that  is  to serve as
+                                            the logical parent of
+                                            the new window.
+
+     char         *_n_a_m_e           (in)      Name to use for  this
+                                            window.     Must   be
+                                            unique   among    all
+                                            children  of the same
+                                            _p_a_r_e_n_t.
+
+     char         *_t_o_p_L_e_v_S_c_r_e_e_n   (in)      Has  same  format  as
+                                            _s_c_r_e_e_n_N_a_m_e.  If NULL,
+                                            then  new  window  is
+                                            created  as an inter-
+                                            nal window.  If  non-
+                                            NULL,  new  window is
+                                            created  as  a   top-
+                                            level    window    on
+                                            screen  _t_o_p_L_e_v_S_c_r_e_e_n.
+                                            If _t_o_p_L_e_v_S_c_r_e_e_n is an
+                                            empty  string  (``'')
+                                            then  new  window  is
+                                            created as  top-level
+                                            window   of  _p_a_r_e_n_t's
+                                            screen.
+
+     Tk_Window    _t_k_w_i_n           (in)      Token for window.
+
+     char         *_p_a_t_h_N_a_m_e       (in)      Name of  new  window,
+                                            specified   as   path
+                                            name within  applica-
+                                            tion (e.g. ..aa..bb..cc).
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The three procedures  TTkk__CCrreeaatteeMMaaiinnWWiinnddooww,  TTkk__CCrreeaatteeWWiinnddooww,
+     and  TTkk__CCrreeaatteeWWiinnddoowwFFrroommPPaatthh  are used to create new windows
+     for use in Tk-based applications.  Each  of  the  procedures
+     returns a token that can be used to manipulate the window in
+     other calls to the Tk library.  If the  window  couldn't  be
+     created  successfully,  then  NULL  is  returned and _i_n_t_e_r_p-
+     >_r_e_s_u_l_t is modified to hold an error message.
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+Tk_CreateMainWindow   C Library Procedures    Tk_CreateMainWindow
+
+
+
+     Tk supports three different kinds of windows:  main windows,
+     internal  windows,  and top-level windows.  A main window is
+     the outermost window corresponding to an application.   Main
+     windows  correspond  to the independent units of an applica-
+     tion, such as a view on a file that is part of an editor, or
+     a  clock,  or a terminal emulator.  A main window is created
+     as a child of the root window of the screen indicated by the
+     _s_c_r_e_e_n_N_a_m_e.   Each main window, and all its descendants, are
+     typically associated with a single Tcl command  interpreter,
+     given   by   the  _i_n_t_e_r_p  argument  to  TTkk__CCrreeaatteeMMaaiinnWWiinnddooww.
+     TTkk__CCrreeaatteeMMaaiinnWWiinnddooww adds  all  the  Tk-related  commands  to
+     those already defined for _i_n_t_e_r_p.
+
+     TTkk__CCrreeaatteeMMaaiinnWWiinnddooww also registers _i_n_t_e_r_p so that it can  be
+     accessed  remotely  by  other Tk applications using the sseenndd
+     command and the name _b_a_s_e_N_a_m_e.  Normally, _b_a_s_e_N_a_m_e  consists
+     of  the  name  of the application followed by a space and an
+     identifier for this particular main window (if such an iden-
+     tifier  is  relevant).   For  example,  an  editor  named mmxx
+     displaying the file ffoooo..cc would  use  ``mx  foo.c''  as  the
+     basename.  An application that doesn't usually have multiple
+     instances, such as a clock program, would just use the  name
+     of the application, e.g. ``xclock''.  If _b_a_s_e_N_a_m_e is already
+     in  use  by  some   other   registered   interpreter,   then
+     TTkk__CCrreeaatteeMMaaiinnWWiinnddooww  extends  _b_a_s_e_N_a_m_e with a number to pro-
+     duce a unique name like ``mx foo.c #2'' or  ``xclock  #12''.
+     This  name  is used both as the name of the window (returned
+     by TTkk__NNaammee) and as the registered name of the interpreter.
+
+     An internal window is an interior window of  a  Tk  applica-
+     tion,  such  as  a  scrollbar or menu bar or button.  A top-
+     level window is one that is created as a child of a screen's
+     root window, rather than as an interior window, but which is
+     logically part of some existing main  window.   Examples  of
+     top-level windows are pop-up menus and dialog boxes.
+
+     Either internal or top-level windows may be created by  cal-
+     ling TTkk__CCrreeaatteeWWiinnddooww.  If the _t_o_p_L_e_v_S_c_r_e_e_n argument is NULL,
+     then  the  new  window  will  be  an  internal  window.   If
+     _t_o_p_L_e_v_S_c_r_e_e_n  is  non-NULL,  then  the  new window will be a
+     top-level window:  _t_o_p_L_e_v_S_c_r_e_e_n  indicates  the  name  of  a
+     screen  and the new window will be created as a child of the
+     root window of _t_o_p_L_e_v_S_c_r_e_e_n.  In either case  Tk  will  con-
+     sider  the new window to be the logical child of _p_a_r_e_n_t: the
+     new window's path name will reflect this fact,  options  may
+     be  specified  for the new window under this assumption, and
+     so on.  The only difference is that new X window for a  top-
+     level  window will not be a child of _p_a_r_e_n_t's X window.  For
+     example, a pull-down menu's _p_a_r_e_n_t would be the  button-like
+     window  used to invoke it, which would in turn be a child of
+     the  menu  bar  window.   A  dialog  box  might   have   the
+     application's  main  window  as  its  parent.  This approach
+
+
+
+Sprite v1.0                                                     3
+
+
+
+
+
+
+Tk_CreateMainWindow   C Library Procedures    Tk_CreateMainWindow
+
+
+
+     means that all the windows of an  application  fall  into  a
+     hierarchical  arrangement  with  a single logical root:  the
+     application's main window.
+
+     TTkk__CCrreeaatteeWWiinnddoowwFFrroommPPaatthh offers an alternate way of  specify-
+     ing  new windows.  In TTkk__CCrreeaatteeWWiinnddoowwFFrroommPPaatthh the new window
+     is specified with a token  for  any  window  in  the  target
+     application  (_t_k_w_i_n),  plus  a path name for the new window.
+     It produces the same effect as  TTkk__CCrreeaatteeWWiinnddooww  and  allows
+     both top-level and internal windows to be created, depending
+     on   the   value   of    _t_o_p_L_e_v_S_c_r_e_e_n.     In    calls    to
+     TTkk__CCrreeaatteeWWiinnddoowwFFrroommPPaatthh, as in calls to TTkk__CCrreeaatteeWWiinnddooww, the
+     parent of the new window must exist at the time of the call,
+     but the new window must not already exist.
+
+     In truth,  the  window-creation  procedures  don't  actually
+     issue  the  command  to X to create a window.  Instead, they
+     create a local data structure associated with the window and
+     defer issuing the command to X.  The window will actually be
+     created by the first call to TTkk__MMaappWWiinnddooww.  Deferred  window
+     creation  allows  various aspects of the window (such as its
+     size, background color, etc.) to be modified after its crea-
+     tion  without  incurring any overhead in the X server.  When
+     the window is finally mapped all of  the  window  attributes
+     can be set while creating the window.
+
+     The value returned by a window-creation procedure is not the
+     X  token  for  the  window (it can't be, since X hasn't been
+     asked to create the window yet).  Instead, it is a token for
+     Tk's  local  data  structure for the window.  Most of the Tk
+     library procedures take  Tk_Window  tokens,  rather  than  X
+     identifiers.    The   actual  X  window  identifier  can  be
+     retrieved  from  the  local   data   structure   using   the
+     TTkk__WWiinnddoowwIIdd macro;  see the manual entry for TTkk__WWiinnddoowwIIdd for
+     details.
+
+     TTkk__DDeessttrrooyyWWiinnddooww deletes a window and all the data strutures
+     associated  with  it,  including  any event handlers created
+     with TTkk__CCrreeaatteeEEvveennttHHaannddlleerr.  In  addition,  TTkk__DDeessttrrooyyWWiinnddooww
+     will  delete  any children of _t_k_w_i_n recursively (where chil-
+     dren are defined in the Tk sense, consisting of all  windows
+     that  were  created  with  the  given window as _p_a_r_e_n_t).  If
+     _t_k_w_i_n was  created  by  TTkk__CCrreeaatteeIInntteerrnnaallWWiinnddooww  then  event
+     handlers  interested  in  destroy events are invoked immedi-
+     ately.  If _t_k_w_i_n is a top-level or  main  window,  then  the
+     event  handlers  will be invoked later, after X has seen the
+     request and returned an event for it.
+
+     If a window has been created but hasn't been mapped, so no X
+     window exists, it is possible to force the creation of the X
+     window by calling TTkk__MMaakkeeWWiinnddoowwEExxiisstt.  This procedure issues
+     the X commands to instantiate the window given by _t_k_w_i_n.
+
+
+
+Sprite v1.0                                                     4
+
+
+
+
+
+
+Tk_CreateMainWindow   C Library Procedures    Tk_CreateMainWindow
+
+
+
+KKEEYYWWOORRDDSS
+     create, deferred creation, destroy, display,  internal  win-
+     dow, main window, register, screen, top-level window, window
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     5
+
+
+

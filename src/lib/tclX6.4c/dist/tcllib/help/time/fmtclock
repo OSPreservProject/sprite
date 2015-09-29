@@ -1,0 +1,49 @@
+
+
+          fmtclock clockval [format] [GMT|{}]
+               Converts a Unix integer time value, typically returned
+               by getclock, convertclock, or the atime, mtime, or
+               ctime options of the file command, to human-readable
+               form.  The format argument is a string that describes
+               how the date and time are to be formatted.  Field
+               descriptors consist of a ``%'' followed by a field
+               descriptor character.  All other characters are copied
+               into the result.  Valid field descriptors are:
+
+                   %% - Insert a %.
+                   %a - Abbreviated weekday name.
+                   %A - Full weekday name
+                   %b - Abbreviated month name.
+                   %B - Full month name.
+                   %d - Day of month (01 - 31).
+                   %D - Date as %m/%d/%y.
+                   %e - Day of month (1-31), no leading zeros.
+                   %h - Abbreviated month name.
+                   %H - Hour (00 - 23).
+                   %I - Hour (00 - 12).
+                   %j - Day number of year (001 - 366).
+                   %m - Month number (01 - 12).
+                   %M - Minute (00 - 59).
+                   %n - Insert a new line.
+                   %p - AM or PM.
+                   %r - Time as %I:%M:%S %p.
+                   %R - Time as %H:%M.
+                   %S - Seconds (00 - 59).
+                   %t - Insert a tab.
+                   %T - Time as %H:%M:%S.
+                   %U - Week number of year (01 - 52), Sunday is the first
+                        day of the week.
+                   %w - Weekday number (Sunday = 0).
+                   %W - Week number of year (01 - 52), Monday is the first
+                        day of the week.
+                   %x - Local specific date format.
+                   %X - Local specific time format.
+                   %y - Year within century (00 - 99).
+                   %Y - Year as ccyy (e.g. 1990)
+                   %Z - Time zone name.
+
+               If format is not specified, "%a %b %d %H:%M:%S %Z %Y"
+               is used.  If GMT is specified, the time will be
+               formated as Greenwich Mean Time. If the argument is not
+               specified or is empty, then the local timezone will be
+               used as defined by the TIMEZONE environment variable.

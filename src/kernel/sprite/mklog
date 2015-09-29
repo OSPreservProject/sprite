@@ -1,0 +1,101 @@
+#!/sprite/cmds/perl
+
+if ($#ARGV != 1) {
+    printf("$#ARGV\n");
+    printf("Usage: kdiff oldKernel newKernel\n");
+    exit;
+}
+if (! -e $ARGV[0]) {
+    die("File $ARGV[0] does not exist.\n");
+}
+if (! -e $ARGV[1]) {
+    die("File $ARGV[1] does not exist.\n");
+}
+open(fid, "strings $ARGV[0] |") || die ("Can't open pipe.\n");
+while (<fid>) {
+    if (/RCS/) {
+	($d1,$file, $version) = split;
+	$versionArray{$file} = $version;
+    }
+}
+
+open(fid, "strings $ARGV[1] |") || die ("Can't open pipe.\n");
+while (<fid>) {
+    if (/RCS/) {
+	($d1, $file, $version) = split;
+	if (! defined($versionArray{$file})) {
+	    $#newFiles++;
+	    $newFiles[$#newFiles] = $file;
+	} elsif ($version != $versionArray{$file}) {
+	    do SaveLog($file, $versionArray{$file}, $version);
+	}
+	$used{$file} = 1;
+    }
+}
+&PrintLog();
+if ($#newFiles > 0) {
+    printf("\nThe following files were added to the new kernel:\n\n");
+    for ($i = 0; $i <= $#newFiles; $i++) {
+	printf("$newFiles[$i]\n");
+    }
+}
+
+$headerPrinted = 0;
+while (($file, $version) = each(%versionArray)) {
+    if (! defined($used{$file})) {
+	if ($headerPrinted == 0) {
+	    printf(
+	"\nThe following files were not used in the new kernel:\n\n");
+	    $headerPrinted = 1;
+	}
+	printf("$file\n");
+    }
+}
+
+sub SaveLog {
+    local($stream);
+    local($start) = 0;
+    local($comment) = "";
+    local($file) = $_[0];
+    local($oldVersion) = $_[1];
+    local($newVersion) = $_[2];
+    open($stream, "rlog $file |") || die("Can't rlog $file\n");
+    while (<$stream>) {
+	($f1, $f2, $f3, $f4, $f5) = split(' ');
+	if (/^revision/) {
+	    if ($f2 eq $newVersion) {
+		$start = 1;
+	    } elsif ($f2 eq $oldVersion) {
+		if ($start == 0) {
+		    printf("File: $file\n");
+		    printf("New version %s appears older than old version %s\n",
+			$newVersion, $oldVersion);
+		    printf("Were the kernel arguments in the correct order?\n");
+		} else {
+		    $changes{$comment} = $changes{$comment} . $file . "\n";
+		}
+		last;
+	    }
+	    next;
+	}
+	if (/^date:/) {
+	    $_ = "$f2 $f5\n";
+	} elsif (/^[-]+$/) {
+	    next;
+	}
+	if ($start) {
+	    $comment = $comment . $_;
+	}
+    }
+}
+
+sub PrintLog {
+    foreach $comment (keys %changes) {
+	printf("-------------------------------\n");
+	printf($changes{$comment});
+	printf($comment);
+    }
+}
+
+
+

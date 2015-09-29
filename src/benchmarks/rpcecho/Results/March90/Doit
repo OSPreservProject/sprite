@@ -1,0 +1,3 @@
+#!/bin/csh -f
+date > $1.out.$$
+rpcecho -s -R -h $1 -n 1000 -r 5 >> $1.out.$$

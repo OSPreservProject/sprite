@@ -1,0 +1,56 @@
+%------------------------------------------------------------------------------
+% Beginning of dimacs-l.checklist
+%------------------------------------------------------------------------------
+
+		     Check List for Electronic Manuscripts
+
+				  DIMACS Volumes
+
+
+- The author should proofread the paper before submitting to the AMS.
+
+- The title on the first page should have the first letter of major words
+  and any proper names, in uppercase (CAPS); other words should be lowercase.
+
+- The running heads for the right-hand (odd-numbered pages) should have
+  the title (shortened if necessary) all in CAPS.
+
+- The author(s) name(s) on the first page should be in CAPS and lowercase.
+
+- The running heads for the left-hand (even-numbered pages) should have the
+  author(s) name(s) all in CAPS.  Names in running heads should match names
+  as given on the first page (shorten to fit only if necessary).
+
+- The subject classification numbers should be listed as the first unmarked
+  footnote on the first page.
+
+- Grant information and final publication information should be listed as
+  unmarked footnotes on the first page.
+
+- Citations in the manuscript should be coded using "\cite".
+
+- References should include all available information.
+
+- The address, current address (if different) and e-mail address of each author
+  should be included.
+
+- The .tex files should include NO "input" files.
+
+- All definitions should be  at the top of the file and none of them should
+  redefine any LaTeX commands.
+
+- Definitions should be used consistently throughout the paper.
+
+- No definitions should be used for formatting text; only the LaTeX 
+  environments should be used.
+
+- The file should contain no line and/or page breaks.
+
+- A covering letter should be included with the electronic submission.  The 
+  letter should clearly identify the author, title and intended publication
+  series.  It should also tell us where the author can be reached throughout
+  the publication process.  
+
+%------------------------------------------------------------------------------
+% End of dimacs-l.checklist
+%------------------------------------------------------------------------------

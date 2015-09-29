@@ -1,0 +1,266 @@
+
+
+
+FSATTACH                  User Commands                  FSATTACH
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     fsattach - Check disks and export prefixes
+
+SSYYNNOOPPSSIISS
+     ffssaattttaacchh [_o_p_t_i_o_n_s]
+
+OOPPTTIIOONNSS
+     --mm _f_i_l_e        Read mount table from _f_i_l_e.
+
+     --WW             Check disks, but do not write changes.
+
+     --ff             Don't check disks (fastboot).
+
+     --ss             Ignore group information found in mount table
+                    and run ffsscchheecckk sequentially.
+
+     --vv             Have both ffssaattttaacchh and ffsscchheecckk   output  ver-
+                    bose information while running.
+
+     --nn             Don't attach disks or export prefixes.
+
+     --pp             Print out actions but don't execute them.
+
+     --hheellpp          Print a summary of the  command-line  options
+                    and exit.
+
+     --dd _d_e_v_i_c_e_D_i_r_e_c_t_o_r_y
+                    Specifies the directory containing the device
+                    files.  The default is "/dev".
+
+     --kk             Produce debugging output.
+
+     --ii _s_p_r_i_t_e_I_D    Causes prefixes that this machine will export
+                    to  be  preloaded into the prefix table. This
+                    prevents the machine  from  broadcasting  for
+                    its  own  prefixes  while the disks are being
+                    checked.
+
+     --jj _m_a_x_J_o_b_s     The default behavior is for ffssaattttaacchh  to  run
+                    as  many  ffsscchheecckk jobs in parallel as it can.
+                    The parallelism is limited by  the  _g_r_o_u_p  of
+                    each device (see below), and the --jj flag.  If
+                    this  flag  is  used  then  at  most  _m_a_x_J_o_b_s
+                    _f_s_c_h_e_c_ks will be run at a time.
+
+     --ffsscchheecckk _f_s_c_h_e_c_k_P_r_o_g
+                    Use this to specify  an  alternative  fscheck
+                    program, i.e. when testing a new fscheck.
+
+     --cc 15          Conditionally check the disks.  If the  disks
+
+
+
+Sprite v.1.0       Printed:  January 23, 1991                   1
+
+
+
+
+
+
+FSATTACH                  User Commands                  FSATTACH
+
+
+
+                    were  just  checked by _f_s_c_h_e_c_k and we are now
+                    rebooting, then we don't have to check again.
+                    If  the  --cc  flag  is  present then the disks
+                    won't be rechecked.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     FFssaattttaacchh is used during system boot to check the  disks  for
+     inconsistencies  and to export prefixes.  The input to ffssaatt--
+     ttaacchh is a mount table, usually in  /_h_o_s_t_s/$_H_O_S_T/_m_o_u_n_t.   The
+     location  of  the mount table is specified by the --mm option.
+     FFssaattttaacchh uses the pass information in  the  mount  table  to
+     create  child processes that check the disk partitions using
+     ffsscchheecckk.  The output from ffsscchheecckk is appended to a file with
+     the  same  name  as  the  device  and the suffix ".fsc".  If
+     ffsscchheecckk completes normally, then the filesystem  is  mounted
+     and its prefix exported.
+
+MMOOUUNNTT TTAABBLLEE
+     The mount table contains information on checking  the  disks
+     and  on exporting prefixes.  Each line in the table consists
+     of a command and its arguments. Blank lines and  lines  that
+     begin  with  '#' are ignored.  The AAttttaacchh command is used to
+     check a disk partition and to attach the  partition  to  the
+     file system. AAttttaacchh commands have the following format:
+
+     AAttttaacchh _p_r_e_f_i_x _d_e_v_i_c_e _g_r_o_u_p _s_c_o_p_e _a_c_c_e_s_s
+
+     _P_r_e_f_i_x is the prefix under which to mount the partition.
+
+     The _d_e_v_i_c_e is the device on which  to  run  fscheck  and  to
+     attach.
+
+     The _g_r_o_u_p parameter is used to determine the parallelism  in
+     checking  the disks. FFsscchheecckk is a very IO constrained appli-
+     cation. Most of the execution time is spent waiting for  the
+     disk.  If  the system has more than one disk the overall run
+     time of ffssaattttaacchh can  be  decreased  by  checking  different
+     disks  at the same time.  _F_s_a_t_t_a_c_h will run jobs in parallel
+     if possible.  Any partitions that  are  in  the  same  group
+     will  NOT  be  checked  in  parallel.   A  group name is any
+     sequence of characters and is  case  sensitive.   The  group
+     name  "root"  has  special  significance.  It is used as the
+     group of the root  partition.   This  partition  is  checked
+     before  all  other  partitions,  and  the server may have to
+     reboot if an error is found in this partition.
+
+     The _s_c_o_p_e can be either local  or  export.  Partitions  with
+     local scope are attached only for the local machine, whereas
+     partitions with export scope are attached and exported under
+     the given prefix.  The prefix corresponding to the root par-
+     tition (usually /bootTmp) is attached during system boot and
+
+
+
+Sprite v.1.0       Printed:  January 23, 1991                   2
+
+
+
+
+
+
+FSATTACH                  User Commands                  FSATTACH
+
+
+
+     is not reattached by ffssaattttaacchh.  For this partition the scope
+     parameter does not have any effect.
+
+     The _a_c_c_e_s_s is used to set the access permissions of the pre-
+     fix.  If  the access is "r" then the prefix is read only. If
+     the access is "rw" then the prefix is can be both  read  and
+     written.   The  access parameter has no effect if the parti-
+     tion is the root partition.
+
+     The EExxppoorrtt command is used to export a prefix under  a  dif-
+     ferent name.  EExxppoorrtt commands have the following format:
+
+     EExxppoorrtt _p_r_e_f_i_x _l_o_c_a_l_P_a_t_h
+
+     _P_r_e_f_i_x is the name of the prefix to be exported.
+
+     _L_o_c_a_l_P_a_t_h is the name of a path that is to  be  exported  as
+     _p_r_e_f_i_x.
+
+     All other non-comment lines are  interpreted  as  containing
+     arguments to ffsscchheecckk.  The format of these lines is:
+
+     _d_e_v_i_c_e_N_a_m_e [_a_r_g_u_m_e_n_t_s]
+
+     _D_e_v_i_c_e_N_a_m_e is the name of the device for which ffsscchheecckk is to
+     use  the  _a_r_g_u_m_e_n_t_s. A device name of aallll will cause ffsscchheecckk
+     to use the arguments for all devices. Any  number  of  argu-
+     ments  can  follow the device name, as long as they fit on a
+     single line. The same device name can appear on  any  number
+     of lines.
+
+     The following is a sample mount table. The root partition is
+     /_d_e_v/_r_s_d_0_a  and  it is exported under the prefix /_t_1. /_t_2 is
+     another small partition on the same disk. /_b is a large par-
+     tition  on  the disk, and /_a is a large partition that is an
+     entire second disk.
+
+          #<Command>      <Prefix>        <Device/Path> <Group>   <Scope>       <Access>
+
+          Attach          /t1           /dev/rsd0a     root     export          rw
+          Attach          /t2             /dev/rsd0b      A       export          rw
+          Attach          /b              /dev/rsd0g      A       export          rw
+          Attach          /a              /dev/rsd1c      B       export          rw
+
+          Export         /foo      /t2
+
+          #<Device>       <Arguments to fscheck>
+
+          all             -readBlock 10
+          /dev/rsd0b      -outputFile foo
+
+
+
+
+
+Sprite v.1.0       Printed:  January 23, 1991                   3
+
+
+
+
+
+
+FSATTACH                  User Commands                  FSATTACH
+
+
+
+RREETTUURRNN CCOODDEESS
+     FFssaattttaacchh returns one of the following codes upon exit.
+
+     0    No error.
+
+     1    An error was found in the root  partition.  Reboot  the
+          system. See ffsscchheecckk for details.
+
+     2    A hard error occurred. There was some problem in either
+          ffssaattttaacchh,  ffsscchheecckk,  or  pprreeffiixx that prevented ffssaattttaacchh
+          from completing normally.
+
+     3    FFsscchheecckk returned a soft error indication.  See  ffsscchheecckk
+          for details.
+
+     4    An error was found  in  the  root  partition,  but  the
+          number of consecutive times that ffsscchheecckk was run and an
+          error found exceeds the limit.
+
+FFIILLEESS
+          /boot/cmds/fscheck            command to check disks
+          /hosts/$HOST/*.fsc            output from fscheck
+          /bootTmp/.fscheck.out              temporary output from fscheck
+
+KKEEYYWWOORRDDSS
+     fsattach, fscheck, prefix, mount,  disk,  partition,  crash,
+     attach, boot
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  January 23, 1991                   4
+
+
+

@@ -1,0 +1,15 @@
+D DS3100_M                          	ds3100.md
+F LABEL.OUT;1                       	label.out
+F LABELDIS.C;1                      	labeldisk.c
+F LABELDIS.MAN;1                    	labeldisk.man
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md
+F T.;1                              	t
+F TAGS.;1                           	tags
+F TMP.;1                            	tmp
+F TT.;1                             	tt
+F TT2.;1                            	tt2
+F TTT.;1                            	ttt

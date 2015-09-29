@@ -1,0 +1,5 @@
+          rename oldName newName
+               Rename the command that used to be  called  oldName  so
+               that  it is now called newName.  If newName is an empty
+               string (e.g. {}) then oldName is deleted.   The  rename
+               command returns an empty string as result.

@@ -1,0 +1,1662 @@
+From agate!apple!olivea!decwrl!amdcad!jetsun!pyramid!ctnews!unix386!mark Wed Apr  3 16:24:37 1991
+Article: 3613 of alt.sources
+Path: agate!apple!olivea!decwrl!amdcad!jetsun!pyramid!ctnews!unix386!mark
+From: mark@unix386.Convergent.COM (Mark Nudelman)
+Newsgroups: alt.sources
+Subject: less version 170, Patch #2
+Message-ID: <7152@unix386.Convergent.COM>
+Date: 3 Apr 91 05:14:25 GMT
+Organization: Unisys/Convergent, San Jose, CA
+Lines: 1649
+
+This is a set of patches to less version 170.
+
+Most of the patches included here are bug fixes and
+improvements to the documentation (man page and help file).
+There are just a few changes to functionality:
+
+1. The N command now reverses the direction of the last search
+   initiated by a / or ? command.  In version 170, N reversed
+   the direction of the last search, even if the last search
+   was initiated by an N command.  The new behavior matches 
+   that of vi.
+
+2. The | command now pipes data between the top line on the
+   screen and the marked line, inclusive.  This may be less
+   than the current screen.  Version 170 did not include the
+   marked line, and forced the piped data to include the 
+   current screen at a minimum.
+
+3. The LESSBINFMT variable has been extended to allow changing or
+   disabling the blinking mode used to display binary characters.
+
+4. A new variable LESSHELP has been added to specify an
+   alternate help file.
+
+This set of patches INCLUDES patch #1 which was previously 
+posted to fix a bug in the -? option.
+To minimize the size of this patch, changes to the man page 
+nroff source "less.nro" are included, but the corresponding 
+changes to the formatted man page "less.man" are not.
+
+Mark Nudelman
+{uunet,sun,decwrl,hplabs}!pyramid!ctnews!unix386!mark
+
+------------------------- cut here ------------------------- 
+
+*** less.170/ch.c	Wed Mar  6 12:16:40 1991
+--- less/ch.c	Tue Apr  2 23:38:26 1991
+***************
+*** 34,40 ****
+   * simply re-reading the file, but a pipe cannot be re-read.
+   */
+  
+! static struct filestate {
+  	struct buf *next, *prev;   /* Must be first to match struct buf */
+  	POSITION fpos;
+  	int nbufs;
+--- 34,40 ----
+   * simply re-reading the file, but a pipe cannot be re-read.
+   */
+  
+! struct filestate {
+  	struct buf *next, *prev;   /* Must be first to match struct buf */
+  	POSITION fpos;
+  	int nbufs;
+***************
+*** 65,70 ****
+--- 65,71 ----
+  extern int sigs;
+  #if LOGFILE
+  extern int logfile;
++ extern char *namelogfile;
+  #endif
+  
+  static int ch_addbuf();
+***************
+*** 167,173 ****
+  	 * If we have a log file, write the new data to it.
+  	 */
+  	if (logfile >= 0 && n > 0)
+! 		write(logfile, &bp->data[bp->datasize], n);
+  #endif
+  
+  	bp->datasize += n;
+--- 168,174 ----
+  	 * If we have a log file, write the new data to it.
+  	 */
+  	if (logfile >= 0 && n > 0)
+! 		write(logfile, (char *) &bp->data[bp->datasize], n);
+  #endif
+  
+  	bp->datasize += n;
+***************
+*** 242,247 ****
+--- 243,249 ----
+  	}
+  	close(logfile);
+  	logfile = -1;
++ 	namelogfile = NULL;
+  }
+  
+  /*
+***************
+*** 261,267 ****
+  		for (bp = buf_head;  bp != END_OF_CHAIN;  bp = bp->next)
+  			if (bp->block == block)
+  			{
+! 				write(logfile, bp->data, bp->datasize);
+  				break;
+  			}
+  }
+--- 263,269 ----
+  		for (bp = buf_head;  bp != END_OF_CHAIN;  bp = bp->next)
+  			if (bp->block == block)
+  			{
+! 				write(logfile, (char *) bp->data, bp->datasize);
+  				break;
+  			}
+  }
+*** less.170/charset.c	Wed Mar  6 12:16:50 1991
+--- less/charset.c	Wed Apr  3 00:50:41 1991
+***************
+*** 23,28 ****
+--- 23,29 ----
+  
+  static char chardef[256];
+  static char *binfmt = "\\%o";
++ public int binattr = BLINK;
+  
+  extern char *getenv();
+  
+***************
+*** 147,153 ****
+  
+  	s = getenv("LESSBINFMT");
+  	if (s != NULL && *s != '\0')
+! 		binfmt = s;
+  }
+  
+  /*
+--- 148,168 ----
+  
+  	s = getenv("LESSBINFMT");
+  	if (s != NULL && *s != '\0')
+! 	{
+! 		if (*s == '*')
+! 		{
+! 			switch (s[1])
+! 			{
+! 			case 'd':  binattr = BOLD;      break;
+! 			case 'k':  binattr = BLINK;     break;
+! 			case 'u':  binattr = UNDERLINE; break;
+! 			default:   binattr = NORMAL;    break;
+! 			}
+! 			s += 2;
+! 		}
+! 		if (*s != '\0')
+! 			binfmt = s;
+! 	}
+  }
+  
+  /*
+*** less.170/command.c	Wed Mar  6 12:16:41 1991
+--- less/command.c	Tue Apr  2 20:02:18 1991
+***************
+*** 80,86 ****
+   * Set up the display to start a new search command.
+   */
+  	static void
+! search_mca()
+  {
+  	switch (SRCH_DIR(search_type))
+  	{
+--- 80,86 ----
+   * Set up the display to start a new search command.
+   */
+  	static void
+! mca_search()
+  {
+  	switch (SRCH_DIR(search_type))
+  	{
+***************
+*** 97,116 ****
+  
+  	if (search_type & SRCH_FIRST_FILE)
+  		cmd_putstr("@");
+- 	else
+- 		cmd_putstr(" ");
+  
+  	if (search_type & SRCH_PAST_EOF)
+  		cmd_putstr("*");
+- 	else
+- 		cmd_putstr(" ");
+  
+- 	cmd_putstr(" ");
+- 
+  	if (search_type & SRCH_NOMATCH)
+  		cmd_putstr("!");
+- 	else
+- 		cmd_putstr(" ");
+  
+  	switch (SRCH_DIR(search_type))
+  	{
+--- 97,108 ----
+***************
+*** 338,344 ****
+  		if (flag != 0)
+  		{
+  			search_type ^= flag;
+! 			search_mca();
+  			return (MCA_MORE);
+  		}
+  		break;
+--- 330,336 ----
+  		if (flag != 0)
+  		{
+  			search_type ^= flag;
+! 			mca_search();
+  			return (MCA_MORE);
+  		}
+  		break;
+***************
+*** 541,547 ****
+  	register int nomore;
+  	char *curr_filename;
+  	int changed_file;
+- 	struct scrpos scrpos;
+  
+  	changed_file = 0;
+  	curr_filename = get_filename(curr_ifile);
+--- 533,538 ----
+***************
+*** 619,624 ****
+--- 610,616 ----
+  	register int c;
+  	register int action;
+  	register char *cbuf;
++ 	int save_search_type;
+  	char *s;
+  	char tbuf[2];
+  	PARG parg;
+***************
+*** 816,822 ****
+--- 808,816 ----
+  			 * Forward forever, ignoring EOF.
+  			 */
+  			cmd_exec();
++ 			jump_forw();
+  			ignore_eoi = 1;
++ 			hit_eof = 0;
+  			while (sigs == 0)
+  				forward(1, 0, 0);
+  			ignore_eoi = 0;
+***************
+*** 928,981 ****
+  			 */
+  			quit(0);
+  
+! 		case A_B_SEARCH:
+! 			search_type = SRCH_BACK;
+! 			goto do_search;
+  		case A_F_SEARCH:
+  			search_type = SRCH_FORW;
+! 		do_search:
+  			/*
+! 			 * Search for a pattern.
+  			 * Get the first char of the pattern.
+  			 */
+  			if (number <= 0)
+  				number = 1;
+! 			search_mca();
+  			c = getcc();
+  			goto again;
+  
+! 		case A_T_REVERSE_SEARCH:
+  			search_type |= SRCH_PAST_EOF;
+! 			/* FALLTHRU */
+  
+  		case A_REVERSE_SEARCH:
+  			/*
+  			 * Repeat previous search, in reverse direction.
+  			 */
+! 			c = SRCH_FLAG(search_type);
+! 			if (SRCH_DIR(search_type) == SRCH_BACK)
+! 				search_type = SRCH_FORW;
+! 			else
+! 				search_type = SRCH_BACK;
+! 			search_type |= c;
+! 			goto do_again_search;
+  
+! 		case A_T_AGAIN_SEARCH:
+! 			search_type |= SRCH_PAST_EOF;
+! 			goto do_again_search;
+! 
+! 		case A_AGAIN_SEARCH:
+! 			/*
+! 			 * Repeat previous search.
+  			 */
+! 		do_again_search:
+! 			if (number <= 0)
+! 				number = 1;
+! 			search_mca();
+! 			cmd_exec();
+! 			multi_search((char *)NULL, number);
+  			break;
+! 		
+  		case A_HELP:
+  			/*
+  			 * Help.
+--- 922,997 ----
+  			 */
+  			quit(0);
+  
+! /*
+!  * Define abbreviation for a commonly used sequence below.
+!  */
+! #define	DO_SEARCH()	if (number <= 0) number = 1;	\
+! 			mca_search();			\
+! 			cmd_exec();			\
+! 			multi_search((char *)NULL, number);
+! 
+! 
+  		case A_F_SEARCH:
++ 			/*
++ 			 * Search forward for a pattern.
++ 			 * Get the first char of the pattern.
++ 			 */
+  			search_type = SRCH_FORW;
+! 			if (number <= 0)
+! 				number = 1;
+! 			mca_search();
+! 			c = getcc();
+! 			goto again;
+! 
+! 		case A_B_SEARCH:
+  			/*
+! 			 * Search backward for a pattern.
+  			 * Get the first char of the pattern.
+  			 */
++ 			search_type = SRCH_BACK;
+  			if (number <= 0)
+  				number = 1;
+! 			mca_search();
+  			c = getcc();
+  			goto again;
+  
+! 		case A_AGAIN_SEARCH:
+! 			/*
+! 			 * Repeat previous search.
+! 			 */
+! 			DO_SEARCH();
+! 			break;
+! 		
+! 		case A_T_AGAIN_SEARCH:
+! 			/*
+! 			 * Repeat previous search, multiple files.
+! 			 */
+  			search_type |= SRCH_PAST_EOF;
+! 			DO_SEARCH();
+! 			break;
+  
+  		case A_REVERSE_SEARCH:
+  			/*
+  			 * Repeat previous search, in reverse direction.
+  			 */
+! 			save_search_type = search_type;
+! 			search_type = SRCH_REVERSE(search_type);
+! 			DO_SEARCH();
+! 			search_type = save_search_type;
+! 			break;
+  
+! 		case A_T_REVERSE_SEARCH:
+! 			/* 
+! 			 * Repeat previous search, 
+! 			 * multiple files in reverse direction.
+  			 */
+! 			save_search_type = search_type;
+! 			search_type = SRCH_REVERSE(search_type);
+! 			search_type |= SRCH_PAST_EOF;
+! 			DO_SEARCH();
+! 			search_type = save_search_type;
+  			break;
+! 
+  		case A_HELP:
+  			/*
+  			 * Help.
+*** less.170/edit.c	Wed Mar  6 12:16:47 1991
+--- less/edit.c	Wed Apr  3 01:14:52 1991
+***************
+*** 12,18 ****
+  extern int new_file;
+  extern int errmsgs;
+  extern int quit_at_eof;
+- extern int hit_eof;
+  extern int file;
+  extern int cbufs;
+  extern char *every_first_cmd;
+--- 12,17 ----
+***************
+*** 41,47 ****
+  	int just_looking;
+  {
+  	register int f;
+! 	register char *m;
+  	int answer;
+  	int no_display;
+  	struct scrpos scrpos;
+--- 40,46 ----
+  	int just_looking;
+  {
+  	register int f;
+! 	char *s;
+  	int answer;
+  	int no_display;
+  	struct scrpos scrpos;
+***************
+*** 74,80 ****
+  		error("%s", &parg);
+  		free(parg.p_string);
+  		return (1);
+! 	} else if (!force_open && !just_looking && binary_file(f))
+  	{
+  		parg.p_string = filename;
+  		answer = query("\"%s\" may be a binary file.  Continue? ",
+--- 73,79 ----
+  		error("%s", &parg);
+  		free(parg.p_string);
+  		return (1);
+! 	} else if (!force_open && !just_looking && bin_file(f))
+  	{
+  		parg.p_string = filename;
+  		answer = query("\"%s\" may be a binary file.  Continue? ",
+***************
+*** 107,114 ****
+  	}
+  
+  #if LOGFILE
+! 	if (f >= 0 && ISPIPE(f) && namelogfile != NULL && is_tty)
+! 		use_logfile();
+  #endif
+  
+  	/*
+--- 106,115 ----
+  	}
+  
+  #if LOGFILE
+! 	s = namelogfile;
+! 	end_logfile();
+! 	if (f >= 0 && ISPIPE(f) && s != NULL && is_tty)
+! 		use_logfile(s);
+  #endif
+  
+  	/*
+***************
+*** 364,381 ****
+   * We take care not to blindly overwrite an existing file.
+   */
+  	public void
+! use_logfile()
+  {
+  	register int exists;
+  	register int answer;
+  	PARG parg;
+  
+- 	end_logfile();
+- 
+  	/*
+  	 * {{ We could use access() here. }}
+  	 */
+! 	exists = open(namelogfile, 0);
+  	close(exists);
+  	exists = (exists >= 0);
+  
+--- 365,381 ----
+   * We take care not to blindly overwrite an existing file.
+   */
+  	public void
+! use_logfile(filename)
+! 	char *filename;
+  {
+  	register int exists;
+  	register int answer;
+  	PARG parg;
+  
+  	/*
+  	 * {{ We could use access() here. }}
+  	 */
+! 	exists = open(filename, 0);
+  	close(exists);
+  	exists = (exists >= 0);
+  
+***************
+*** 394,400 ****
+  		/*
+  		 * Ask user what to do.
+  		 */
+! 		parg.p_string = namelogfile;
+  		answer = query("Warning: \"%s\" exists; Overwrite, Append or Don't log? ", &parg);
+  	}
+  
+--- 394,400 ----
+  		/*
+  		 * Ask user what to do.
+  		 */
+! 		parg.p_string = filename;
+  		answer = query("Warning: \"%s\" exists; Overwrite, Append or Don't log? ", &parg);
+  	}
+  
+***************
+*** 405,411 ****
+  		/*
+  		 * Overwrite: create the file.
+  		 */
+! 		logfile = creat(namelogfile, 0644);
+  		break;
+  	case 'A': case 'a':
+  		/*
+--- 405,411 ----
+  		/*
+  		 * Overwrite: create the file.
+  		 */
+! 		logfile = creat(filename, 0644);
+  		break;
+  	case 'A': case 'a':
+  		/*
+***************
+*** 412,420 ****
+  		 * Append: open the file and seek to the end.
+  		 */
+  #if __MSDOS__
+! 		logfile = open(namelogfile, O_APPEND|O_WRONLY);
+  #else
+! 		logfile = open(namelogfile, 1);
+  #endif
+  		if (lseek(logfile, (offset_t)0, 2) == BAD_LSEEK)
+  		{
+--- 412,420 ----
+  		 * Append: open the file and seek to the end.
+  		 */
+  #if __MSDOS__
+! 		logfile = open(filename, O_APPEND|O_WRONLY);
+  #else
+! 		logfile = open(filename, 1);
+  #endif
+  		if (lseek(logfile, (offset_t)0, 2) == BAD_LSEEK)
+  		{
+***************
+*** 443,449 ****
+  		/*
+  		 * Error in opening logfile.
+  		 */
+! 		parg.p_string = namelogfile;
+  		error("Cannot write to \"%s\"", &parg);
+  	}
+  }
+--- 443,449 ----
+  		/*
+  		 * Error in opening logfile.
+  		 */
+! 		parg.p_string = filename;
+  		error("Cannot write to \"%s\"", &parg);
+  	}
+  }
+*** less.170/filename.c	Wed Mar  6 12:16:50 1991
+--- less/filename.c	Wed Apr  3 01:14:44 1991
+***************
+*** 62,67 ****
+--- 62,68 ----
+  	public char *
+  find_helpfile()
+  {
++ 	register char *helpfile;
+  #if __MSDOS__
+  	extern char *searchpath();
+  
+***************
+*** 78,85 ****
+  		helpfile = HELPFILE;
+  	else
+  		helpfile++;
+! 	return (searchpath(helpfile));
+  #else
+  	return (save(HELPFILE));
+  #endif
+  }
+--- 79,88 ----
+  		helpfile = HELPFILE;
+  	else
+  		helpfile++;
+! 	return (save(searchpath(helpfile)));
+  #else
++ 	if ((helpfile = getenv("LESSHELP")) != NULL)
++ 		return (save(helpfile));
+  	return (save(HELPFILE));
+  #endif
+  }
+***************
+*** 154,160 ****
+   * This is just a guess, and we need not try too hard to make it accurate.
+   */
+  	int
+! binary_file(f)
+  	int f;
+  {
+  	int i;
+--- 157,163 ----
+   * This is just a guess, and we need not try too hard to make it accurate.
+   */
+  	int
+! bin_file(f)
+  	int f;
+  {
+  	int i;
+*** less.170/forwback.c	Wed Mar  6 12:16:52 1991
+--- less/forwback.c	Sun Mar 10 17:47:17 1991
+***************
+*** 44,49 ****
+--- 44,51 ----
+  {
+  	POSITION pos;
+  
++ 	if (ignore_eoi)
++ 		return;
+  	if (sigs)
+  		return;
+  	/*
+***************
+*** 213,219 ****
+  		put_line();
+  	}
+  
+! 	if (eof && !sigs)
+  		hit_eof++;
+  	else
+  		eof_check();
+--- 215,223 ----
+  		put_line();
+  	}
+  
+! 	if (ignore_eoi)
+! 		hit_eof = 0;
+! 	else if (eof && !sigs)
+  		hit_eof++;
+  	else
+  		eof_check();
+*** less.170/funcs.h	Wed Mar  6 12:17:02 1991
+--- less/funcs.h	Tue Apr  2 18:48:25 1991
+***************
+*** 172,178 ****
+  	public HANDLER winch ();
+  	public void init_signals ();
+  	public void psignals ();
+! 	public int findtag ();
+  	public int tagsearch ();
+  	public void open_getchr ();
+  	public int getchr ();
+--- 172,178 ----
+  	public HANDLER winch ();
+  	public void init_signals ();
+  	public void psignals ();
+! 	public void findtag ();
+  	public int tagsearch ();
+  	public void open_getchr ();
+  	public int getchr ();
+*** less.170/ifile.c	Wed Mar  6 12:16:52 1991
+--- less/ifile.c	Wed Mar  6 11:56:31 1991
+***************
+*** 153,158 ****
+--- 153,160 ----
+  get_filename(ifile)
+  	IFILE ifile;
+  {
++ 	if (ifile == NULL)
++ 		return (NULL);
+  	return (int_ifile(ifile)->h_filename);
+  }
+  
+*** less.170/jump.c	Wed Mar  6 12:16:52 1991
+--- less/jump.c	Fri Mar 15 22:44:16 1991
+***************
+*** 17,22 ****
+--- 17,24 ----
+  	public void
+  jump_forw()
+  {
++ 	POSITION pos;
++ 
+  	if (ch_end_seek())
+  	{
+  		error("Cannot seek to end of file", NULL_PARG);
+***************
+*** 24,31 ****
+  	}
+  	/*
+  	 * Position the last line in the file at the last screen line.
+  	 */
+! 	jump_loc(back_line(ch_tell()), sc_height-1);
+  }
+  
+  /*
+--- 26,39 ----
+  	}
+  	/*
+  	 * Position the last line in the file at the last screen line.
++ 	 * Go back one line from the end of the file
++ 	 * to get to the beginning of the last line.
+  	 */
+! 	pos = back_line(ch_tell());
+! 	if (pos == NULL_POSITION)
+! 		jump_loc((POSITION)0, sc_height-1);
+! 	else
+! 		jump_loc(pos, sc_height-1);
+  }
+  
+  /*
+*** less.170/less.h	Wed Mar  6 12:16:38 1991
+--- less/less.h	Sun Mar 17 22:49:59 1991
+***************
+*** 89,96 ****
+  #define	SRCH_PAST_EOF	0200	/* Search past end-of-file, into next file */
+  #define	SRCH_FIRST_FILE	0400	/* Search starting at the first file */
+  
+! #define	SRCH_DIR(t)	((t) & 077)
+! #define	SRCH_FLAG(t)	((t) & 07700)
+  
+  /* Special chars used to tell put_line() to do something special */
+  #define	NORMAL		(0)
+--- 89,96 ----
+  #define	SRCH_PAST_EOF	0200	/* Search past end-of-file, into next file */
+  #define	SRCH_FIRST_FILE	0400	/* Search starting at the first file */
+  
+! #define	SRCH_DIR(t)	((t) & 01)
+! #define	SRCH_REVERSE(t)	((t) ^ 01)
+  
+  /* Special chars used to tell put_line() to do something special */
+  #define	NORMAL		(0)
+*** less.170/less.hlp	Wed Mar  6 12:16:54 1991
+--- less/less.hlp	Thu Mar 28 15:07:17 1991
+***************
+*** 24,34 ****
+  
+    /pattern          *  Search forward for (N-th) matching line.
+    ?pattern          *  Search backward for (N-th) matching line.
+-   ESC-/pattern      *  Search all files for (N-th) matching line.
+  
+!   /!pattern         *  Search forward for (N-th) NON-matching line.
+!   ?!pattern         *  Search backward for (N-th) NON-matching line.
+!   ESC-/!pattern     *  Search from all files for (N-th) NON-matching line.
+  
+    n                 *  Repeat previous search (for N-th occurrence).
+    N                 *  Repeat previous search in reverse direction.
+--- 24,34 ----
+  
+    /pattern          *  Search forward for (N-th) matching line.
+    ?pattern          *  Search backward for (N-th) matching line.
+  
+!   NOTE: search commands may be modified by one or more of:
+!         !  search for NON-matching lines.
+!         *  search multiple files.
+!         @  start search at first file (for /) or last file (for ?).
+  
+    n                 *  Repeat previous search (for N-th occurrence).
+    N                 *  Repeat previous search in reverse direction.
+***************
+*** 38,49 ****
+    g  <  ESC-<       *  Go to first line in file (or line N).
+    G  >  ESC->       *  Go to last line in file (or line N).
+    p  %              *  Go to beginning of file (or N percent into file).
+!   {                 *  Go to the } which matches the (N-th) { in the top line.
+!   }                 *  Go to the { which matches the (N-th) } in the top line.
+!   (                 *  Go to the ) which matches the (N-th) ( in the top line.
+!   )                 *  Go to the ( which matches the (N-th) ) in the top line.
+!   [                 *  Go to the ] which matches the (N-th) [ in the top line.
+!   ]                 *  Go to the [ which matches the (N-th) ] in the top line.
+    m<letter>            Mark the current position with <letter>.
+    '<letter>            Go to a previously marked position.
+    ''                   Go to the previous position.
+--- 38,51 ----
+    g  <  ESC-<       *  Go to first line in file (or line N).
+    G  >  ESC->       *  Go to last line in file (or line N).
+    p  %              *  Go to beginning of file (or N percent into file).
+!   {                 *  Go to the } matching the (N-th) { in the top line.
+!   }                 *  Go to the { matching the (N-th) } in the bottom line.
+!   (                 *  Go to the ) matching the (N-th) ( in the top line.
+!   )                 *  Go to the ( matching the (N-th) ) in the bottom line.
+!   [                 *  Go to the ] matching the (N-th) [ in the top line.
+!   ]                 *  Go to the [ matching the (N-th) ] in the bottom line.
+!   ESC-^F <c1> <c2>  *  Go to the c1 matching the (N-th) c2 in the top line
+!   ESC-^B <c1> <c2>  *  Go to the c2 matching the (N-th) c1 in the bottom line.
+    m<letter>            Mark the current position with <letter>.
+    '<letter>            Go to a previously marked position.
+    ''                   Go to the previous position.
+***************
+*** 70,75 ****
+--- 72,78 ----
+          Most flags may be changed either on the command line,
+          or from within less by using the - command.
+  
++   -?            Display help (from command line).
+    -a            Set forward search starting location.
+    -b [N]        Number of buffers.
+    -B            Automatically allocate buffers.
+***************
+*** 81,94 ****
+    -i            Ignore case in searches.
+    -j [N]        Screen position of target lines.
+    -k [file]     Use a lesskey file.
+-   -l [file]     Log file.
+-   -L [file]     Log file (unconditionally overwrite).
+    -m  -M        Set prompt style.
+    -n  -N        Use line numbers.
+    -P [prompt]   Define new prompt.
+    -q  -Q        Quiet the terminal bell.
+!   -r  -R        Translate control characters.
+    -s            Squeeze multiple blank lines.
+    -t [tag]      Find a tag.
+    -T [tagsfile] Use an alternate tags file.
+    -u  -U        Change handling of backspaces.
+--- 84,99 ----
+    -i            Ignore case in searches.
+    -j [N]        Screen position of target lines.
+    -k [file]     Use a lesskey file.
+    -m  -M        Set prompt style.
+    -n  -N        Use line numbers.
++   -o [file]     Log file.
++   -O [file]     Log file (unconditionally overwrite).
++   -p [pattern]  Start at pattern (from command line).
+    -P [prompt]   Define new prompt.
+    -q  -Q        Quiet the terminal bell.
+!   -r            Translate control characters.
+    -s            Squeeze multiple blank lines.
++   -S            Chop long lines.
+    -t [tag]      Find a tag.
+    -T [tagsfile] Use an alternate tags file.
+    -u  -U        Change handling of backspaces.
+*** less.170/less.nro	Wed Mar  6 12:16:35 1991
+--- less/less.nro	Wed Apr  3 01:00:20 1991
+***************
+*** 4,14 ****
+  .SH SYNOPSIS
+  .B "less -?"
+  .br
+! .B "less [-[+]aABcCdeEfimMnNqQrsSuUw] [-b\fIN\fP] [-x\fIN\fP] [-[z]\fIN\fP]"
+  .br
+! .B "     [-h\fIN\fP] [-y\fIN\fP] [-P[mM=]\fIstring\fP] [-[oO]\fIlogfile\fP] [-k\fIkeyfile\fP]"
+  .br
+! .B "     [-t\fItag\fP] [-T\fItagsfile\fP] [+\fIcmd\fP] [\fIfilename\fP]..."
+  
+  .SH DESCRIPTION
+  .I Less
+--- 4,18 ----
+  .SH SYNOPSIS
+  .B "less -?"
+  .br
+! .B "less [-[+]aBcCdeEfHimMnNqQrsSuUw]"
+  .br
+! .B "     [-b \fIbufs\fP] [-h \fIlines\fP] [-j \fIline\fP] [-k \fIkeyfile\fP]"
+  .br
+! .B "     [-{oO} \fIlogfile\fP] [-p \fIpattern\fP] [-P \fIprompt\fP] [-t \fItag\fP]"
+! .br
+! .B "     [-T \fItagfile\fP] [-x \fItab\fP] [-y \fIlines\fP] [-[z] \fIlines\fP]"
+! .br
+! .B "     [+[+]\fIcmd\fP] [\fIfilename\fP]..."
+  
+  .SH DESCRIPTION
+  .I Less
+***************
+*** 350,360 ****
+  .IP "| <m> shell-command"
+  <m> represents any mark letter.
+  Pipes a section of the input file to the given shell command.
+! The section of the file to be piped is between the current position and 
+! the position marked by the letter.
+  <m> may also be ^ or $ to indicate beginning or end of file respectively.
+  If <m> is . or newline, the current screen is piped.
+- The current screen is the minimum amount piped in any case.
+  .PP
+  .SH OPTIONS
+  Command line options are described below.
+--- 354,363 ----
+  .IP "| <m> shell-command"
+  <m> represents any mark letter.
+  Pipes a section of the input file to the given shell command.
+! The section of the file to be piped is between the first line on
+! the current screen and the position marked by the letter.
+  <m> may also be ^ or $ to indicate beginning or end of file respectively.
+  If <m> is . or newline, the current screen is piped.
+  .PP
+  .SH OPTIONS
+  Command line options are described below.
+***************
+*** 727,732 ****
+--- 730,742 ----
+  This octal format can be changed by 
+  setting the LESSBINFMT environment variable
+  to a printf-style format string; the default is '\\%o'.
++ The blinking mode display of control and binary characters can
++ be changed or disabled by preceding the LESSBINFMT format 
++ string with a "*" and one character to select the mode:
++ "*k" is blinking, "*d" is bold, "*u" is underlined,
++ and "*n" is normal (no special display attribute).
++ For example, if LESSBINFMT is "*u[%x]", binary characters
++ are displayed in underlined hexadecimal surrounded by brackets.
+  
+  .SH "PROMPTS"
+  The -P option allows you to tailor the prompt to your preference.
+***************
+*** 907,912 ****
+--- 917,924 ----
+  .IP LESSEDIT
+  Editor prototype string (used for the v command).
+  See discussion under PROMPTS.
++ .IP LESSHELP
++ Name of the help file.
+  .IP LINES
+  Sets the number of lines on the screen.
+  Takes precedence over the number of lines specified by the TERM variable.
+*** less.170/lesskey.c	Wed Mar  6 12:16:40 1991
+--- less/lesskey.c	Thu Mar 14 13:09:10 1991
+***************
+*** 307,312 ****
+--- 307,313 ----
+  		perror(outfile);
+  	else
+  		fwrite((char *)usertable, 1, up-usertable, out);
++ 	exit(0);
+  }
+  
+  /*
+*** less.170/line.c	Wed Mar  6 12:16:44 1991
+--- less/line.c	Wed Apr  3 00:45:15 1991
+***************
+*** 15,25 ****
+--- 15,28 ----
+  static int is_null_line;	/* There is no current line */
+  static char pendc;
+  
++ static int do_append();
++ 
+  extern int bs_mode;
+  extern int tabstop;
+  extern int linenums;
+  extern int ctldisp;
+  extern int twiddle;
++ extern int binattr;
+  extern int auto_wrap, ignaw;
+  extern int bo_s_width, bo_e_width;
+  extern int ul_s_width, ul_e_width;
+***************
+*** 332,338 ****
+  			 * Output in the (blinking) ^X format.
+  			 */
+  			s = prchar(c);  
+! 			a = BLINK;
+  
+  			/*
+  			 * Make sure we can get the entire representation
+--- 335,341 ----
+  			 * Output in the (blinking) ^X format.
+  			 */
+  			s = prchar(c);  
+! 			a = binattr;
+  
+  			/*
+  			 * Make sure we can get the entire representation
+***************
+*** 360,367 ****
+  pdone(endline)
+  	int endline;
+  {
+- 	register char c;
+- 
+  	if (pendc && (pendc != '\r' || !endline))
+  		/*
+  		 * If we had a pending character, put it in the buffer.
+--- 363,368 ----
+***************
+*** 374,380 ****
+  	 * Add a newline if necessary,
+  	 * and append a '\0' to the end of the line.
+  	 */
+! 	if (column < sc_width || !auto_wrap || ignaw)
+  	{
+  		linebuf[curr] = '\n';
+  		attr[curr] = NORMAL;
+--- 375,381 ----
+  	 * Add a newline if necessary,
+  	 * and append a '\0' to the end of the line.
+  	 */
+! 	if (column < sc_width || !auto_wrap || ignaw || ctldisp == 0)
+  	{
+  		linebuf[curr] = '\n';
+  		attr[curr] = NORMAL;
+*** less.170/linstall	Wed Mar  6 12:16:34 1991
+--- less/linstall	Thu Mar 28 14:42:41 1991
+***************
+*** 143,158 ****
+   * 0 if it does not.
+   */
+  #define	VOID		$x
+- #if VOID
+- #define	VOID_POINTER	void *
+- #else
+- #define	VOID_POINTER	char *
+- #endif
+  
+  EOF
+  
+  
+  
+  def=long
+  if [ $alldefault = 0 ]
+  then
+--- 143,175 ----
+   * 0 if it does not.
+   */
+  #define	VOID		$x
+  
+  EOF
+  
+  
+  
++ def=yes
++ x="void *"
++ if [ $alldefault = 0 ]
++ then
++ 	$ECHO "Does your C compiler support the \"void *\" type? [$def] \c"
++ 	read ans
++ 	case "X$ans" in
++ 	X[yY]*) x="void *" ;;
++ 	X[nN]*) x="char *" ;;
++ 	esac
++ 	$ECHO ""
++ fi
++ cat >>defines.h <<EOF
++ /*
++  * VOID_POINTER is the definition of a pointer to any object.
++  */
++ #define	VOID_POINTER	$x
++ 
++ EOF
++ 
++ 
++ 
+  def=long
+  if [ $alldefault = 0 ]
+  then
+***************
+*** 370,375 ****
+--- 387,421 ----
+  
+  EOF
+  
++ 
++ 
++ 
++ if [ "$sys" = "sys5" -a "$xenix" = "0" ]
++ then
++ 	def=yes; x=1
++ else
++ 	def=no; x=0
++ fi
++ if [ $alldefault = 0 ]
++ then
++ 	$ECHO "Some SCO System V systems need sys/ptem.h included to get"
++ 	$ECHO "the size of the screen (struct winsize)."
++ 	$ECHO "Does your system need sys/ptem.h? [$def] \c"
++ 	read ans
++ 	case "X$ans" in
++ 	X[yY]*) x=1 ;;
++ 	X[nN]*) x=0 ;;
++ 	esac
++ 	$ECHO ""
++ fi
++ cat >>defines.h <<EOF
++ /*
++  * NEED_PTEM_H is 1 if your system needs sys/ptem.h to declare struct winsize.
++  * This is normally the case only for SCOs System V.
++  */
++ #define	NEED_PTEM_H	$x
++ 
++ EOF
+  
+  
+  if [ "$sys" = "bsd" ]
+*** less.170/lsystem.c	Wed Mar  6 12:16:51 1991
+--- less/lsystem.c	Tue Apr  2 23:54:18 1991
+***************
+*** 205,218 ****
+  	tpos = position(TOP);
+  	if (tpos == NULL_POSITION)
+  		tpos = ch_zero();
+! 	bpos = position(BOTTOM_PLUS_ONE);
+  
+! 	if (mpos <= tpos)
+! 		return (pipe_data(cmd, mpos, bpos));
+! 	else if (bpos == NULL_POSITION || mpos <= bpos)
+! 		return (pipe_data(cmd, tpos, bpos));
+! 	else
+! 		return (pipe_data(cmd, tpos, mpos));
+  }
+  
+  /*
+--- 205,220 ----
+  	tpos = position(TOP);
+  	if (tpos == NULL_POSITION)
+  		tpos = ch_zero();
+! 	bpos = position(BOTTOM);
+  
+!  	if (c == '.') 
+!  		return (pipe_data(cmd, tpos, bpos));
+!  	else if (mpos <= tpos)
+!  		return (pipe_data(cmd, mpos, tpos));
+!  	else if (bpos == NULL_POSITION)
+!  		return (pipe_data(cmd, tpos, bpos));
+!  	else
+!  		return (pipe_data(cmd, tpos, mpos));
+  }
+  
+  /*
+***************
+*** 227,233 ****
+  {
+  	register FILE *f;
+  	register int c;
+- 	int inp;
+  	extern FILE *popen();
+  
+  	/*
+--- 229,234 ----
+***************
+*** 257,264 ****
+  	flush();
+  	raw_mode(0);
+  	init_signals(0);
+  
+! 	while (epos == NULL_POSITION || spos++ < epos)
+  	{
+  		/*
+  		 * Read a character from the file and give it to the pipe.
+--- 258,268 ----
+  	flush();
+  	raw_mode(0);
+  	init_signals(0);
++ #ifdef SIGPIPE
++ 	SIGNAL(SIGPIPE, SIG_IGN);
++ #endif
+  
+! 	while (epos == NULL_POSITION || spos++ <= epos)
+  	{
+  		/*
+  		 * Read a character from the file and give it to the pipe.
+***************
+*** 266,275 ****
+  		c = ch_forw_get();
+  		if (c == EOI)
+  			break;
+! 		putc(c, f);
+  	}
+  	pclose(f);
+  
+  	init_signals(1);
+  	raw_mode(1);
+  	init();
+--- 270,296 ----
+  		c = ch_forw_get();
+  		if (c == EOI)
+  			break;
+! 		if (putc(c, f) == EOF)
+! 			break;
+  	}
++ 
++ 	/*
++ 	 * Finish up the last line.
++ 	 */
++  	while (c != '\n' && c != EOI ) 
++  	{
++  		c = ch_forw_get();
++  		if (c == EOI)
++  			break;
++  		if (putc(c, f) == EOF)
++  			break;
++  	}
++ 
+  	pclose(f);
+  
++ #ifdef SIGPIPE
++ 	SIGNAL(SIGPIPE, SIG_DFL);
++ #endif
+  	init_signals(1);
+  	raw_mode(1);
+  	init();
+*** less.170/main.c	Wed Mar  6 12:16:46 1991
+--- less/main.c	Thu Mar 14 15:23:09 1991
+***************
+*** 19,25 ****
+  
+  extern int	file;
+  extern int	quit_at_eof;
+- extern int	hit_eof;
+  extern int	cbufs;
+  extern int	errmsgs;
+  extern int	screen_trashed;
+--- 19,24 ----
+***************
+*** 157,162 ****
+--- 156,162 ----
+  			quit(1);
+  		if (edit(tagfile, 0) || tagsearch())
+  			quit(1);
++ 		nofiles = 0;
+  	} else
+  #endif
+  	if (nifile() == 0)
+*** less.170/optfunc.c	Wed Mar  6 12:16:49 1991
+--- less/optfunc.c	Mon Mar 18 18:29:43 1991
+***************
+*** 76,82 ****
+  		namelogfile = glob(s);
+  		if (namelogfile == NULL)
+  			namelogfile = save(s);
+! 		use_logfile();
+  		sync_logfile();
+  		break;
+  	case QUERY:
+--- 76,82 ----
+  		namelogfile = glob(s);
+  		if (namelogfile == NULL)
+  			namelogfile = save(s);
+! 		use_logfile(s);
+  		sync_logfile();
+  		break;
+  	case QUERY:
+*** less.170/option.c	Wed Mar  6 12:16:48 1991
+--- less/option.c	Tue Apr  2 20:59:39 1991
+***************
+*** 15,20 ****
+--- 15,21 ----
+  
+  static char *propt();
+  static char *optstring();
++ static int flip_triple();
+  
+  extern int screen_trashed;
+  extern char *every_first_cmd;
+***************
+*** 82,88 ****
+  			plusoption = 1;
+  			if (*s == '+')
+  				every_first_cmd = save(++s);
+! 			ungetsc(s);
+  			s = optstring(s, c);
+  			continue;
+  		case '0':  case '1':  case '2':  case '3':  case '4':
+--- 83,90 ----
+  			plusoption = 1;
+  			if (*s == '+')
+  				every_first_cmd = save(++s);
+! 			else
+! 				ungetsc(s);
+  			s = optstring(s, c);
+  			continue;
+  		case '0':  case '1':  case '2':  case '3':  case '4':
+***************
+*** 122,128 ****
+  			if (set_default)
+  				*(o->ovar) = o->odefault;
+  			else
+! 				*(o->ovar) = toggle_triple(o->odefault,
+  						(o->oletter == c));
+  			break;
+  		case STRING:
+--- 124,130 ----
+  			if (set_default)
+  				*(o->ovar) = o->odefault;
+  			else
+! 				*(o->ovar) = flip_triple(o->odefault,
+  						(o->oletter == c));
+  			break;
+  		case STRING:
+***************
+*** 244,250 ****
+  			switch (how_toggle)
+  			{
+  			case OPT_TOGGLE:
+! 				*(o->ovar) = toggle_triple(*(o->ovar), 
+  						o->oletter == c);
+  				break;
+  			case OPT_UNSET:
+--- 246,252 ----
+  			switch (how_toggle)
+  			{
+  			case OPT_TOGGLE:
+! 				*(o->ovar) = flip_triple(*(o->ovar), 
+  						o->oletter == c);
+  				break;
+  			case OPT_UNSET:
+***************
+*** 251,257 ****
+  				*(o->ovar) = o->odefault;
+  				break;
+  			case OPT_SET:
+! 				*(o->ovar) = toggle_triple(o->odefault,
+  						o->oletter == c);
+  				break;
+  			}
+--- 253,259 ----
+  				*(o->ovar) = o->odefault;
+  				break;
+  			case OPT_SET:
+! 				*(o->ovar) = flip_triple(o->odefault,
+  						o->oletter == c);
+  				break;
+  			}
+***************
+*** 335,341 ****
+   * "Toggle" a triple-valued option.
+   */
+  	static int
+! toggle_triple(val, lc)
+  	int val;
+  	int lc;
+  {
+--- 337,343 ----
+   * "Toggle" a triple-valued option.
+   */
+  	static int
+! flip_triple(val, lc)
+  	int val;
+  	int lc;
+  {
+*** less.170/screen.c	Wed Mar  6 12:16:55 1991
+--- less/screen.c	Wed Apr  3 01:14:08 1991
+***************
+*** 31,37 ****
+--- 31,46 ----
+  #endif
+  #endif
+  
++ #if NEED_PTEM_H && defined(TIOCGWINSZ)
+  /*
++  * All this just to get struct winsize.  Sigh.
++  */
++ #include <sys/types.h>
++ #include <sys/stream.h>
++ #include <sys/ptem.h>
++ #endif
++ 
++ /*
+   * Strings passed to tputs() to do various terminal functions.
+   */
+  static char
+***************
+*** 199,205 ****
+   * Get size of the output screen.
+   */
+  	public void
+! get_scrsize(p_height, p_width)
+  	int *p_height;
+  	int *p_width;
+  {
+--- 208,214 ----
+   * Get size of the output screen.
+   */
+  	public void
+! scrsize(p_height, p_width)
+  	int *p_height;
+  	int *p_width;
+  {
+***************
+*** 277,283 ****
+  	/*
+  	 * Get size of the screen.
+  	 */
+! 	get_scrsize(&sc_height, &sc_width);
+  	pos_init();
+  	if (swindow < 0)
+  		swindow = sc_height - 1;
+--- 286,292 ----
+  	/*
+  	 * Get size of the screen.
+  	 */
+! 	scrsize(&sc_height, &sc_width);
+  	pos_init();
+  	if (swindow < 0)
+  		swindow = sc_height - 1;
+***************
+*** 448,478 ****
+  }
+  
+  /*
+-  * Return the "best" of the two given termcap strings.
+-  * The best, if both exist, is the one with the lower 
+-  * cost (see cost() function).
+-  */
+- 	static char *
+- cheaper(t1, t2, doit, def)
+- 	char *t1, *t2;
+- 	char *doit;
+- 	char *def;
+- {
+- 	if (*t1 == '\0' && *t2 == '\0')
+- 	{
+- 		cannot(doit);
+- 		return (def);
+- 	}
+- 	if (*t1 == '\0')
+- 		return (t2);
+- 	if (*t2 == '\0')
+- 		return (t1);
+- 	if (cost(t1) < cost(t2))
+- 		return (t1);
+- 	return (t2);
+- }
+- 
+- /*
+   * Return the cost of displaying a termcap string.
+   * We use the trick of calling tputs, but as a char printing function
+   * we give it inc_costcount, which just increments "costcount".
+--- 457,462 ----
+***************
+*** 496,501 ****
+--- 480,510 ----
+  	costcount = 0;
+  	tputs(t, sc_height, inc_costcount);
+  	return (costcount);
++ }
++ 
++ /*
++  * Return the "best" of the two given termcap strings.
++  * The best, if both exist, is the one with the lower 
++  * cost (see cost() function).
++  */
++ 	static char *
++ cheaper(t1, t2, doit, def)
++ 	char *t1, *t2;
++ 	char *doit;
++ 	char *def;
++ {
++ 	if (*t1 == '\0' && *t2 == '\0')
++ 	{
++ 		cannot(doit);
++ 		return (def);
++ 	}
++ 	if (*t1 == '\0')
++ 		return (t2);
++ 	if (*t2 == '\0')
++ 		return (t1);
++ 	if (cost(t1) < cost(t2))
++ 		return (t1);
++ 	return (t2);
+  }
+  
+  
+*** less.170/search.c	Wed Mar  6 12:16:53 1991
+--- less/search.c	Tue Apr  2 16:01:20 1991
+***************
+*** 10,20 ****
+  
+  extern int sigs;
+  extern int how_search;
+- extern int top_scroll;
+- extern int back_scroll;
+  extern int caseless;
+  extern int linenums;
+- extern int sc_height;
+  extern int jump_sline;
+  
+  /*
+--- 10,17 ----
+***************
+*** 32,38 ****
+  	char *pattern;
+  	int n;
+  {
+! 	POSITION pos, linepos;
+  	register char *p;
+  	register char *q;
+  	register int goforw;
+--- 29,35 ----
+  	char *pattern;
+  	int n;
+  {
+! 	POSITION pos, linepos, oldpos;
+  	register char *p;
+  	register char *q;
+  	register int goforw;
+***************
+*** 64,70 ****
+  	goforw = (SRCH_DIR(search_type) == SRCH_FORW);
+  	want_match = !(search_type & SRCH_NOMATCH);
+  
+! 	if (pattern != NULL && (is_caseless = caseless))
+  	{
+  		/*
+  		 * Search will ignore case, unless
+--- 61,67 ----
+  	goforw = (SRCH_DIR(search_type) == SRCH_FORW);
+  	want_match = !(search_type & SRCH_NOMATCH);
+  
+! 	if (pattern != NULL && *pattern != '\0' && (is_caseless = caseless))
+  	{
+  		/*
+  		 * Search will ignore case, unless
+***************
+*** 213,218 ****
+--- 210,216 ----
+  	}
+  
+  	linenum = find_linenum(pos);
++ 	oldpos = pos;
+  	for (;;)
+  	{
+  		/*
+***************
+*** 260,268 ****
+  		 * If we're using line numbers, we might as well
+  		 * remember the information we have now (the position
+  		 * and line number of the current line).
+  		 */
+! 		if (linenums)
+  			add_lnum(linenum, pos);
+  
+  		if (is_caseless)
+  		{
+--- 258,272 ----
+  		 * If we're using line numbers, we might as well
+  		 * remember the information we have now (the position
+  		 * and line number of the current line).
++ 		 * Don't do it for every line because it slows down
++ 		 * the search.  Remember the line number only if
++ 		 * we're "far" from the last place we remembered it.
+  		 */
+! 		if (linenums && abs(pos - oldpos) > 1024)
+! 		{
+  			add_lnum(linenum, pos);
++ 			oldpos = pos;
++ 		}
+  
+  		if (is_caseless)
+  		{
+***************
+*** 300,306 ****
+  		line_match = (re_exec(line) == 1);
+  #else
+  #if REGCOMP
+! 		linematch = regexec(regpattern, line);
+  #else
+  		line_match = match(pattern, line);
+  #endif
+--- 304,310 ----
+  		line_match = (re_exec(line) == 1);
+  #else
+  #if REGCOMP
+! 		line_match = regexec(regpattern, line);
+  #else
+  		line_match = match(pattern, line);
+  #endif
+*** less.170/tags.c	Wed Mar  6 12:17:00 1991
+--- less/tags.c	Tue Apr  2 18:47:35 1991
+***************
+*** 20,26 ****
+   * and "tagpattern" to the search pattern which should be used
+   * to find the tag.
+   */
+! 	public int
+  findtag(tag)
+  	register char *tag;
+  {
+--- 20,26 ----
+   * and "tagpattern" to the search pattern which should be used
+   * to find the tag.
+   */
+! 	public void
+  findtag(tag)
+  	register char *tag;
+  {
+*** less.170/ttyin.c	Wed Mar  6 12:17:01 1991
+--- less/ttyin.c	Thu Mar 28 14:36:51 1991
+***************
+*** 26,35 ****
+  	tty = open("CON", O_RDONLY|O_BINARY);
+  #else
+  	/*
+! 	 * Just use file descriptor 2, which in Unix
+! 	 * is usually attached to the screen and keyboard.
+  	 */
+! 	tty = 2;
+  #endif
+  }
+  
+--- 26,39 ----
+  	tty = open("CON", O_RDONLY|O_BINARY);
+  #else
+  	/*
+! 	 * Try /dev/tty.
+! 	 * If that doesn't work, use file descriptor 2,
+! 	 * which in Unix is usually attached to the screen,
+! 	 * but also usually lets you read from the keyboard.
+  	 */
+! 	tty = open("/dev/tty", 0);
+! 	if (tty < 0)
+! 		tty = 2;
+  #endif
+  }
+  
+*** less.170/version.c	Wed Mar  6 12:17:01 1991
+--- less/version.c	Tue Apr  2 20:11:21 1991
+***************
+*** 251,257 ****
+   *	v141: Add edit_list for editing >1 file.	2/8/90   mark
+   *	v142: Add :x command.				2/10/90  mark
+   *	v143: Add * and @ modifies to search cmds.	2/11/90  mark
+!  *	      Change ESC-/ cmd from /@* to /*.
+   *	v144: Messed around with ch_zero; 		3/1/90   mark
+   *	      no real change.
+   *	v145: Added -R and -v/-V for MSDOS;		3/2/90   mark
+--- 251,257 ----
+   *	v141: Add edit_list for editing >1 file.	2/8/90   mark
+   *	v142: Add :x command.				2/10/90  mark
+   *	v143: Add * and @ modifies to search cmds.	2/11/90  mark
+!  *	      Change ESC-/ cmd from /@* to / *.
+   *	v144: Messed around with ch_zero; 		3/1/90   mark
+   *	      no real change.
+   *	v145: Added -R and -v/-V for MSDOS;		3/2/90   mark
+***************
+*** 290,295 ****
+   *	v170: Add optimization for BSD _setjmp;		1/17/91  mark
+   *	      fix #include ioctl.h TERMIO problem.
+   *	      (thanks to Paul Eggert)
+   */
+  
+! char version[] = "@(#) less  version 170";
+--- 290,315 ----
+   *	v170: Add optimization for BSD _setjmp;		1/17/91  mark
+   *	      fix #include ioctl.h TERMIO problem.
+   *	      (thanks to Paul Eggert)
++  *		Posted to USENET.
++  *	-----------------------------------------------------------------
++  *	v171: Fix -? bug in get_filename.		3/6/91    mark
++  *	v172: Fix G bug in empty file.			3/15/91   mark
++  *	      Fix bug with ?\n and -i and uppercase
++  *	      pattern at EOF!
++  *	      (thanks to Paul Eggert)
++  *	v173: Change N cmd to not permanently change	3/17/91   mark
++  *	      direction. (thanks to Brian Matthews)
++  *	v174: Fix bug with namelogfile not getting	3/18/91   mark
++  *	      cleared when change files.
++  *	v175: Fix bug with ++cmd on command line.	3/18/91   mark
++  *	      (thanks to Jim Meyering)
++  *	v176: Change | to not force current screen,	4/2/91    mark
++  *	      include marked line, start/end from 
++  *	      top of screen.  Improve search speed.
++  *	      (thanks to Don Mears)
++  *	v177: Add LESSHELP variable.			4/2/91    mark
++  *	      Fix bug with F command with -e.
++  *	      Try /dev/tty for input before using fd 2.
+   */
+  
+! char version[] = "@(#) less  version 177";
+
+

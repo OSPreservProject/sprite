@@ -1,0 +1,15 @@
+EXPORTS = \
+	cursorfont.h \
+	decwcursor.h 
+
+all::
+
+INSTALLFLAGS = $(INSTINCFLAGS)
+
+install::
+	-mkdir $(INCDIR)
+
+InstallMultiple($(EXPORTS),$(INCDIR))
+
+depend:
+	@echo "depend: skipping X11"

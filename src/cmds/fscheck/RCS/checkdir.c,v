@@ -1,0 +1,4530 @@
+head     1.30;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.30
+date     90.11.01.23.28.33;  author jhh;  state Exp;
+branches ;
+next     1.29;
+
+1.29
+date     90.10.10.15.29.03;  author mendel;  state Exp;
+branches ;
+next     1.28;
+
+1.28
+date     90.10.10.11.22.10;  author jhh;  state Exp;
+branches ;
+next     1.27;
+
+1.27
+date     90.05.01.15.36.42;  author jhh;  state Exp;
+branches ;
+next     1.26;
+
+1.26
+date     90.02.14.15.55.27;  author jhh;  state Exp;
+branches ;
+next     1.25;
+
+1.25
+date     89.09.25.16.41.11;  author jhh;  state Exp;
+branches ;
+next     1.24;
+
+1.24
+date     89.08.29.17.28.15;  author jhh;  state Exp;
+branches ;
+next     1.23;
+
+1.23
+date     89.08.20.19.15.28;  author jhh;  state Exp;
+branches ;
+next     1.22;
+
+1.22
+date     89.06.22.17.50.37;  author jhh;  state Exp;
+branches ;
+next     1.21;
+
+1.21
+date     89.06.21.23.55.59;  author jhh;  state Exp;
+branches ;
+next     1.20;
+
+1.20
+date     89.02.28.12.22.19;  author jhh;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     88.12.05.14.33.50;  author douglis;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     88.09.20.15.14.07;  author nelson;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     88.07.19.11.47.29;  author douglis;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     88.06.02.12.59.45;  author brent;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     87.11.13.13.04.36;  author nelson;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     87.10.21.11.03.56;  author nelson;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     87.10.21.10.38.20;  author nelson;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     87.10.05.12.51.50;  author nelson;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     87.09.10.14.40.39;  author nelson;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     87.08.10.10.48.29;  author nelson;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     87.07.14.14.39.27;  author nelson;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     87.07.14.11.32.41;  author brent;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     87.06.03.19.31.02;  author nelson;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     87.06.01.15.42.12;  author nelson;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     86.12.16.13.22.11;  author nelson;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     86.11.26.17.49.57;  author nelson;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     86.11.10.11.33.47;  author nelson;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     86.09.19.18.18.11;  author nelson;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.07.27.12.52.57;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.30
+log
+@puts output in .fscheck.out even if disk already checked, updated ot
+ofs
+@
+text
+@/* 
+ * checkdir.c --
+ *
+ *	Routines to allow moving through a files block pointers.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/cmds/fscheck/RCS/checkdir.c,v 1.29 90/10/10 15:29:03 mendel Exp Locker: jhh $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "option.h"
+#include "fscheck.h"
+#include "list.h"
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+static	int		adding = 0;
+extern	int 		writeDisk;
+static	char		pathName[FS_MAX_PATH_NAME_LENGTH];
+static	FdInfo		*descInfoArray;
+static	int	
+lostFoundFileNum = -1;
+extern	int		patchRoot;
+int			outputFileNum = -1;
+int			partFID;
+Ofs_DomainHeader		*domainPtr;
+
+void			CheckDirEntry();
+static void		CheckDir();
+static ReturnStatus	AddToDirectory();
+
+Fsdm_FileDescriptor	*rootFDPtr;
+Fsdm_FileDescriptor	*lostFoundFDPtr;
+
+extern int verbose;
+
+#define DIRFULL 2
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FetchFileDesc --
+ *
+ *	Return a file descriptor.
+ *
+ * Results:
+ *	1 if the file descriptor is successfully read or 0 if the descriptor 
+ *	was unreadable.
+ *
+ * Side effects:
+ *	A file descriptor may be allocated.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+FetchFileDesc(fdNum, fdPtrPtr)
+    int			fdNum;		/* Number of descriptor to fetch. */
+    Fsdm_FileDescriptor	**fdPtrPtr;	/* Where to store ptr to descriptor. */
+{
+    ModListElement	*modElemPtr;
+    RelocListElement	*relocElemPtr;
+    static char		block[FS_BLOCK_SIZE];
+    int			blockNum;
+    int			offset;
+
+    descInfoArray[fdNum].flags &= ~FD_MODIFIED;
+
+    if (descInfoArray[fdNum].flags & FD_UNREADABLE) {
+	return(0);
+    }
+    if (descInfoArray[fdNum].flags & FD_RELOCATE) {
+	LIST_FORALL(relocList, (List_Links *)relocElemPtr) {
+	    if (relocElemPtr->origFdNum == fdNum) {
+		*fdPtrPtr = relocElemPtr->fdPtr;
+		return(1);
+	    }
+	}
+	Output(stderr, "FetchFileDesc: FD not found in relocate list.\n");
+	abort();
+    }
+    if (descInfoArray[fdNum].flags & ON_MOD_LIST) {
+	LIST_FORALL(modList, (List_Links *)modElemPtr) {
+	    if (modElemPtr->fdNum == fdNum) {
+		*fdPtrPtr = modElemPtr->fdPtr;
+		return(1);
+	    }
+	}
+	Output(stderr, "FetchFileDesc: FD not found in mod list.\n");
+	abort();
+    }
+    blockNum = domainPtr->fileDescOffset + fdNum / FSDM_FILE_DESC_PER_BLOCK;
+    offset = (fdNum & (FSDM_FILE_DESC_PER_BLOCK - 1)) * FSDM_MAX_FILE_DESC_SIZE;
+    if (Disk_BlockRead(partFID, domainPtr, blockNum, 1, 
+		       (Address) block) < 0) {
+	OutputPerror("FetchFileDesc: Read failed on previously readable block");
+	exit(EXIT_READ_FAILURE);
+    }
+    Alloc(*fdPtrPtr,Fsdm_FileDescriptor,1);
+    if (tooBig) {
+	return 0;
+    }
+    bcopy((Address)&block[offset], (Address)*fdPtrPtr, 
+	  sizeof(Fsdm_FileDescriptor));
+    return(1);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StoreFileDesc --
+ *
+ *	Store a file descriptor on disk.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	An FdCheckInfo struct is allocated.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+StoreFileDesc(fdNum, fdPtr)
+    int			fdNum;
+    Fsdm_FileDescriptor	*fdPtr;
+{
+    ModListElement	*modElemPtr;
+
+    if (descInfoArray[fdNum].flags & FD_MODIFIED) {
+	if (descInfoArray[fdNum].flags & ON_MOD_LIST) {
+	    LIST_FORALL(modList, (List_Links *)modElemPtr) {
+		if (modElemPtr->fdNum == fdNum) {
+		    /*
+		     * The old fd may be in use on another list so we can't
+		     * free it, but it may become unreferenced. 
+		     */
+		    modElemPtr->fdPtr = fdPtr;
+		    return;
+		}
+	    }
+	    Output(stderr, "StoreFileDesc: FD not found in list.\n");
+	    abort();
+	} else {
+	    ModListElement	*modElemPtr;
+
+	    Alloc(modElemPtr,ModListElement,1);
+	    if (tooBig) {
+		return;
+	    }
+	    descInfoArray[fdNum].flags |= ON_MOD_LIST;
+	    modElemPtr->fdNum = fdNum;
+	    modElemPtr->fdPtr = fdPtr;
+	    List_Insert((List_Links *)modElemPtr, LIST_ATREAR(modList));
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MakePtrAccessible --
+ *
+ *	Make the pointer to the directory entry accessible.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	*indexInfoPtr modified.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+MakePtrAccessible(indexInfoPtr)
+    register	DirIndexInfo *indexInfoPtr;
+{
+    register int 		*blockAddrPtr;
+    register Fsdm_FileDescriptor	*fdPtr;
+
+    fdPtr = indexInfoPtr->fdPtr;
+
+    blockAddrPtr = &indexInfoPtr->blockAddr;
+
+    if (indexInfoPtr->indexType == INDIRECT) {
+	*blockAddrPtr = fdPtr->indirect[0];
+    } else {
+	*blockAddrPtr = fdPtr->indirect[1];
+    }
+
+    /*
+     * Read first level block in.
+     */
+    if (indexInfoPtr->firstBlockNil) {
+	if (*blockAddrPtr == FSDM_NIL_INDEX) {
+	    return(1);
+	}
+	if (Disk_FragRead(partFID, domainPtr,
+			  *blockAddrPtr, FS_FRAGMENTS_PER_BLOCK,
+			  indexInfoPtr->firstBlock) < 0) {
+	    Output(stderr,"MakePtrAccessible: Read (1) failed block %d\n",
+			   *blockAddrPtr);
+	    return(0);
+	}
+	indexInfoPtr->firstBlockNil = 0;
+    }
+
+    *blockAddrPtr = *(int *) (indexInfoPtr->firstBlock +
+			      sizeof(int) * indexInfoPtr->firstIndex);
+    if (indexInfoPtr->indexType == INDIRECT) {
+	return(1);
+    }
+
+    /*
+     * Read second level block in.
+     */
+    if (*blockAddrPtr != FSDM_NIL_INDEX) {
+	if (Disk_FragRead(partFID, domainPtr,
+			  *blockAddrPtr, FS_FRAGMENTS_PER_BLOCK,
+			  indexInfoPtr->secondBlock) < 0) {
+	    Output(stderr,"MakePtrAccessible: Read (2) failed block %d\n",
+			   *blockAddrPtr);
+	    return(0);
+	}
+	indexInfoPtr->secondBlockNil = 0;
+	*blockAddrPtr = *(int *) (indexInfoPtr->secondBlock +
+				  sizeof(int) * indexInfoPtr->secondIndex);
+    }
+    return(1);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetFirstIndex --
+ *
+ *	Initialize the index structure.  This will set up the index info
+ *	structure so that it contains a pointer to the desired block pointer.
+ *
+ * Results:
+ *	1 if could set up the index, 0 if could not.
+ *
+ * Side effects:
+ *	The index structure is initialized.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+GetFirstIndex(blockNum, indexInfoPtr)
+    int			      blockNum;      /* Where to start indexing. */
+    register DirIndexInfo     *indexInfoPtr; /* Index structure to initialize.*/
+{
+    int			indirectBlock;
+    Fsdm_FileDescriptor	*fdPtr;
+
+    indexInfoPtr->firstBlockNil = 1;
+    indexInfoPtr->secondBlockNil = 1;
+    indexInfoPtr->blockNum = blockNum;
+    indexInfoPtr->dirDirty = 0;
+
+    fdPtr = indexInfoPtr->fdPtr;
+
+    if (blockNum < FSDM_NUM_DIRECT_BLOCKS) {
+	/*
+	 * This is a direct block.
+	 */
+	indexInfoPtr->indexType = DIRECT;
+	indexInfoPtr->firstIndex = blockNum;
+	indexInfoPtr->blockAddr = fdPtr->direct[blockNum];
+	return(1);
+    }
+
+    /*
+     * Is an indirect block.
+     */
+    blockNum -= FSDM_NUM_DIRECT_BLOCKS;
+    indirectBlock = blockNum / FSDM_INDICES_PER_BLOCK;
+    if (indirectBlock == 0) {
+	/*
+	 * This is a singly indirect block.
+	 */
+	indexInfoPtr->indexType = INDIRECT;
+	indexInfoPtr->firstIndex = blockNum;
+    } else {
+	/*
+	 * This a doubly indirect block.
+	 */
+	indexInfoPtr->indexType = DBL_INDIRECT;
+	indexInfoPtr->firstIndex = indirectBlock - 1;
+	indexInfoPtr->secondIndex = blockNum -
+				    indirectBlock * FSDM_INDICES_PER_BLOCK;
+    }
+
+    /*
+     * Finish off by making the block pointer accessible.  This may include
+     * reading indirect blocks into the cache.
+     */
+    return(MakePtrAccessible(indexInfoPtr));
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetNextIndex --
+ *
+ *	Put the correct pointers in the index structure to access the
+ *	block after the current block.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The allocation structure is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+GetNextIndex(indexInfoPtr)
+    register DirIndexInfo *indexInfoPtr; /* Index structure to set up. */
+{
+    int			accessible = 0;
+    register Fsdm_FileDescriptor	*fdPtr;
+
+    fdPtr = indexInfoPtr->fdPtr;
+
+    indexInfoPtr->blockNum++;
+    indexInfoPtr->dirDirty = 0;
+
+    /*
+     * Determine whether we are now in direct, indirect or doubly indirect
+     * blocks.
+     */
+    switch (indexInfoPtr->indexType) {
+	case DIRECT:
+	    if (indexInfoPtr->blockNum < FSDM_NUM_DIRECT_BLOCKS) {
+		/*
+		 * Still in the direct blocks.
+		 */
+		indexInfoPtr->firstIndex++;
+		indexInfoPtr->blockAddr = 
+				fdPtr->direct[indexInfoPtr->firstIndex];
+		accessible = 1;
+	    } else {
+		/*
+		 * Moved into indirect blocks.
+		 */
+		indexInfoPtr->indexType = INDIRECT;
+		indexInfoPtr->firstIndex = 0;
+	    }
+	    break;
+	case INDIRECT:
+	    if (indexInfoPtr->blockNum < FSDM_NUM_DIRECT_BLOCKS +
+			FSDM_INDICES_PER_BLOCK) {
+		/*
+		 * Still in singly indirect blocks.
+		 */
+		indexInfoPtr->firstIndex++;
+		indexInfoPtr->blockAddr = *(int *) (indexInfoPtr->firstBlock +
+				  sizeof(int) * indexInfoPtr->firstIndex);
+		accessible = 1;
+		break;
+	   } else {
+		/*
+		 * Moved into doubly indirect blocks.
+		 */
+		indexInfoPtr->firstIndex = 0;
+		indexInfoPtr->secondIndex = 0;
+		indexInfoPtr->indexType = DBL_INDIRECT;
+		/*
+		 * Free up the pointer block.
+		 */
+		indexInfoPtr->firstBlockNil = 1;
+	    }
+	    break;
+	case DBL_INDIRECT:
+	    indexInfoPtr->secondIndex++;
+	    if (indexInfoPtr->secondIndex == FSDM_INDICES_PER_BLOCK) {
+		indexInfoPtr->firstIndex++;
+		indexInfoPtr->secondIndex = 0;
+		indexInfoPtr->secondBlockNil = 1;
+	    } else {
+		indexInfoPtr->blockAddr = *(int *) (indexInfoPtr->secondBlock +
+			      sizeof(int) * indexInfoPtr->secondIndex);
+		accessible = 1;
+	    }
+	    break;
+    }
+
+    /*
+     * Make the block pointers accessible if necessary.
+     */
+    if (!accessible) {
+	return(MakePtrAccessible(indexInfoPtr));
+    } else {
+	return(1);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * OpenDir --
+ *
+ *	Set up the structure to allow moving through the given directory.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The index structure is set up and *dirEntryPtrPtr set to point to
+ *	the first directory entry.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+OpenDir(fdPtr, fdInfoPtr, indexInfoPtr, dirEntryPtrPtr)
+    Fsdm_FileDescriptor	*fdPtr;		/* The file descriptor for the
+					 * directory. */
+    FdInfo		*fdInfoPtr;	/* Descriptor status info for the
+					 * directory. */
+    DirIndexInfo 	*indexInfoPtr;	/* Index info struct */
+    Fslcl_DirEntry		**dirEntryPtrPtr; /* Where to return a pointer to
+					   * the first directory entry. */
+{
+    int			fragsToRead;
+
+    if (fdPtr->lastByte == -1) {
+	/*
+	 * Empty directory.
+	 */
+	*dirEntryPtrPtr = (Fslcl_DirEntry *) NULL;
+	return;
+    } else if ((fdPtr->lastByte + 1) % FSLCL_DIR_BLOCK_SIZE != 0) {
+	Output(stderr,
+    "Directory not multiple of directory block size. Directory corrected.\n");
+	foundError = 1;
+	fdPtr->lastByte = (fdPtr->lastByte & ~(FSLCL_DIR_BLOCK_SIZE - 1)) +
+			    FSLCL_DIR_BLOCK_SIZE - 1;
+	fdInfoPtr->flags |= FD_MODIFIED;
+    }
+    /*
+     * Initialize the index structure.
+     */
+    indexInfoPtr->fdPtr = fdPtr;
+    indexInfoPtr->fdInfoPtr = fdInfoPtr;
+    if (!GetFirstIndex(0, indexInfoPtr)) {
+	Output(stderr, "OpenDir: Error setting up index\n");
+	*dirEntryPtrPtr = (Fslcl_DirEntry *) NULL;
+	return;
+    }
+    /*
+     * Read in the first directory block.
+     */
+    if (fdPtr->lastByte >= FS_BLOCK_SIZE - 1) {
+	fragsToRead = FS_FRAGMENTS_PER_BLOCK;
+    } else {
+	fragsToRead = fdPtr->lastByte / FS_FRAGMENT_SIZE + 1;
+    }
+    indexInfoPtr->numFrags = fragsToRead;
+    if (Disk_FragRead(partFID, domainPtr,
+		      indexInfoPtr->blockAddr + 
+		      domainPtr->dataOffset * FS_FRAGMENTS_PER_BLOCK, 
+		      fragsToRead, indexInfoPtr->dirBlock) < 0) {
+	Output(stderr, "OpenDir: Read failed block %d\n",
+		       indexInfoPtr->blockAddr + 
+		               domainPtr->dataOffset * FS_FRAGMENTS_PER_BLOCK);
+	*dirEntryPtrPtr = (Fslcl_DirEntry *) NULL;
+	return;
+    } 
+    indexInfoPtr->dirOffset = 0;
+    *dirEntryPtrPtr = (Fslcl_DirEntry *) indexInfoPtr->dirBlock;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NextDirEntry --
+ *
+ *	Return a pointer to the next directory entry.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The index structure is modified and *dirEntryPtrPtr set to point
+ *	to the next directory entry.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+NextDirEntry(indexInfoPtr, dirEntryPtrPtr)
+    DirIndexInfo 	*indexInfoPtr;
+    Fslcl_DirEntry		**dirEntryPtrPtr;
+{
+    int			firstDirByte;
+    int			lastByte;
+    Fslcl_DirEntry		*dirEntryPtr;
+    int			fragsToRead;
+
+    dirEntryPtr = *dirEntryPtrPtr;
+    indexInfoPtr->dirOffset += dirEntryPtr->recordLength;
+    lastByte = indexInfoPtr->fdPtr->lastByte;
+    firstDirByte = 
+	 indexInfoPtr->dirOffset + indexInfoPtr->blockNum * FS_BLOCK_SIZE;
+    if (firstDirByte == lastByte + 1) {
+	/*
+	 * We reached the end of the directory.  Write out the directory
+	 * block if necessary.
+	 */
+	*dirEntryPtrPtr = (Fslcl_DirEntry *) NULL;
+	if (indexInfoPtr->dirDirty && writeDisk) {
+	    if (Disk_FragWrite(partFID, domainPtr,
+			      indexInfoPtr->blockAddr + 
+			      domainPtr->dataOffset * 
+			      FS_FRAGMENTS_PER_BLOCK, 
+			      indexInfoPtr->numFrags, 
+			      indexInfoPtr->dirBlock) < 0) {
+		Output(stderr, "NextDirEntry: Write failed block %d\n",
+			       indexInfoPtr->blockAddr + 
+			        domainPtr->dataOffset * FS_FRAGMENTS_PER_BLOCK);
+	    }
+	}
+	return;
+    }
+
+    if (indexInfoPtr->dirOffset < FS_BLOCK_SIZE) {
+	/*
+	 * The next directory entry is in the current block.
+	 */
+	dirEntryPtr = 
+	     (Fslcl_DirEntry *) &(indexInfoPtr->dirBlock[indexInfoPtr->dirOffset]);
+    } else {
+	/*
+	 * Have to move to the next directory block.  Write out the current
+	 * block if necessary.
+	 */
+	if (indexInfoPtr->dirDirty && writeDisk) {
+	    if (Disk_FragWrite(partFID, domainPtr,
+			      indexInfoPtr->blockAddr + 
+			      domainPtr->dataOffset * 
+			      FS_FRAGMENTS_PER_BLOCK, 
+			      indexInfoPtr->numFrags, 
+			      indexInfoPtr->dirBlock) < 0) {
+		Output(stderr, "NextDirEntry: Write (2) failed block %d\n",
+			       indexInfoPtr->blockAddr + 
+			        domainPtr->dataOffset * FS_FRAGMENTS_PER_BLOCK);
+		*dirEntryPtrPtr = (Fslcl_DirEntry *) NULL;
+		return;
+	    }
+	}
+	if (!GetNextIndex(indexInfoPtr)) {
+	    Output(stderr, "NextDirEntry: Get index failed\n");
+	    *dirEntryPtrPtr = (Fslcl_DirEntry *) NULL;
+	    return;
+	}
+	if (lastByte - firstDirByte + 1 >= FS_BLOCK_SIZE ||
+	    indexInfoPtr->blockNum >= FSDM_NUM_DIRECT_BLOCKS) {
+	    fragsToRead = FS_FRAGMENTS_PER_BLOCK;
+	} else {
+	    fragsToRead = (lastByte - firstDirByte) / FS_FRAGMENT_SIZE + 1;
+	}
+	indexInfoPtr->numFrags = fragsToRead;
+	if (Disk_FragRead(partFID, domainPtr,
+			  indexInfoPtr->blockAddr + 
+			  domainPtr->dataOffset * 
+			  FS_FRAGMENTS_PER_BLOCK, 
+			  fragsToRead, indexInfoPtr->dirBlock) < 0) {
+	    Output(stderr, "NextDirEntry: Read failed block %d\n",
+			    indexInfoPtr->blockAddr + 
+			    domainPtr->dataOffset * FS_FRAGMENTS_PER_BLOCK);
+	    *dirEntryPtrPtr = (Fslcl_DirEntry *) NULL;
+	    return;
+	}
+	indexInfoPtr->dirOffset = 0;
+	dirEntryPtr = (Fslcl_DirEntry *) indexInfoPtr->dirBlock;
+    }
+
+    *dirEntryPtrPtr = dirEntryPtr;
+}
+
+static	DirIndexInfo	lostDirIndex;
+static  Fslcl_DirEntry	*lostDirEntryPtr;
+
+static	DirIndexInfo	rootDirIndex;
+static  Fslcl_DirEntry	*rootDirEntryPtr;
+static	List_Links	orphanDirListHdr;
+static  List_Links	*orphanDirList = &orphanDirListHdr;
+typedef struct DirList {
+    List_Links	links;
+    int		dirNumber;
+} DirList;
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CloseDir --
+ *
+ *	Flushes the current directory block to disk, if necessary.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The index structure is modified and *dirEntryPtrPtr set to point
+ *	to the next directory entry.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+CloseDir(indexInfoPtr)
+    DirIndexInfo 	*indexInfoPtr;
+{
+
+    if (indexInfoPtr->dirDirty && writeDisk) {
+	if (Disk_FragWrite(partFID, domainPtr,
+			  indexInfoPtr->blockAddr + 
+			  domainPtr->dataOffset * 
+			  FS_FRAGMENTS_PER_BLOCK, 
+			  indexInfoPtr->numFrags, 
+			  indexInfoPtr->dirBlock) < 0) {
+	    Output(stderr, "CloseDir: Write (2) failed block %d\n",
+			   indexInfoPtr->blockAddr + 
+			    domainPtr->dataOffset * FS_FRAGMENTS_PER_BLOCK);
+	    return;
+	}
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CheckDirTree --
+ *
+ *	Traverse the directory tree taking care of unreferenced files and
+ *	ensuring that link counts are correct.
+ *
+ * Results:
+ *	A return status.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+CheckDirTree(partFIDParm, domainParmPtr, descInfoParm,fdBitmapPtr, bitmapPtr)
+    int			partFIDParm;
+    Ofs_DomainHeader	*domainParmPtr;
+    FdInfo		*descInfoParm;
+    u_char		*fdBitmapPtr;
+    u_char		*bitmapPtr;
+{
+    register	int	i;
+    register FdInfo	*fdInfoPtr;
+    Fslcl_DirEntry		*dirEntryPtr;
+    DirIndexInfo	dirIndex;
+    int			lostRootDirNum = -1;
+    int			unrefFiles = 0;
+    int			linkCountsCorrected = 0;
+    int			entryNum;
+    char		newFileName[100];
+    int			offset;
+    int			outputFileLength;
+    int			notAdded;
+
+    partFID = partFIDParm;
+    domainPtr = domainParmPtr;
+    descInfoArray = descInfoParm;
+
+    /*
+     * Check the root directory for consistency.
+     */
+    if (!FetchFileDesc(FSDM_ROOT_FILE_NUMBER, &rootFDPtr)) {
+	Output(stderr, "Unable to fetch file descriptor for root");
+	exit(EXIT_HARD_ERROR);
+    }
+
+    if ((rootFDPtr->flags & FSDM_FD_FREE) ||
+	rootFDPtr->fileType != FS_DIRECTORY ||
+	rootFDPtr->magic != FSDM_FD_MAGIC ||
+	rootFDPtr->lastByte == -1) {
+	char *fileName;
+
+	Output(stderr, "Root directory corrupted\n");
+	if (!patchRoot) {
+	    exit(EXIT_HARD_ERROR);
+	} 
+	/*
+	 * On 5/10/88 the root of a disk (/sprite) was overwritten.  It was
+	 * patched by looking for directories with a ".." entry that
+	 * referenced root, fileNumber == 2, and putting them into the
+	 * root just like other orphans are put into lost+found.
+	 */
+	Output(stderr, "Attempting to re-create the root\n");
+	lostRootDirNum = FSDM_ROOT_FILE_NUMBER;
+	List_Init(orphanDirList);
+	lostFoundFileNum = FSDM_ROOT_FILE_NUMBER + 1;
+	if (MakeRoot(domainPtr, bitmapPtr, rootFDPtr) != SUCCESS) {
+	    Output(stderr,"Unable to reinitialize root fd.\n");
+	    exit(EXIT_HARD_ERROR);
+	}
+	OpenDir(rootFDPtr, &descInfoArray[FSDM_ROOT_FILE_NUMBER], &rootDirIndex, 
+		&rootDirEntryPtr);
+	/*
+	 * Create the "." and ".." entries in the trashed directory.  The
+	 * above OpenDir call has set up rootDirEntryPtr to reference the
+	 * first bytes in the directory.
+	 */
+        descInfoArray[FSDM_ROOT_FILE_NUMBER].flags |= FD_ALLOCATED;
+	descInfoArray[FSDM_ROOT_FILE_NUMBER].flags |= FD_MODIFIED;
+	descInfoArray[FSDM_ROOT_FILE_NUMBER].flags |= IS_A_DIRECTORY;
+	MarkFDBitmap(FSDM_ROOT_FILE_NUMBER,fdBitmapPtr);
+	StoreFileDesc(FSDM_ROOT_FILE_NUMBER, rootFDPtr);
+	fileName = ".";
+	rootDirEntryPtr->fileNumber = lostRootDirNum;
+	rootDirEntryPtr->nameLength = strlen(fileName);
+	rootDirEntryPtr->recordLength =
+		Fslcl_DirRecLength(rootDirEntryPtr->nameLength);
+	(void)strcpy(rootDirEntryPtr->fileName, fileName);
+	offset = rootDirEntryPtr->recordLength;
+	NextDirEntry(&rootDirIndex, &rootDirEntryPtr);
+
+	fileName = "..";
+	rootDirEntryPtr->fileNumber = lostRootDirNum;
+	rootDirEntryPtr->nameLength = strlen(fileName);
+	rootDirEntryPtr->recordLength = FSLCL_DIR_BLOCK_SIZE - offset;
+	(void)strcpy(rootDirEntryPtr->fileName, fileName);
+	NextDirEntry(&rootDirIndex, &rootDirEntryPtr);
+	for(i = 1; i < FS_BLOCK_SIZE / FSLCL_DIR_BLOCK_SIZE; i++) {
+	    rootDirEntryPtr->fileNumber = 0;
+	    rootDirEntryPtr->recordLength = FSLCL_DIR_BLOCK_SIZE;
+	    rootDirEntryPtr->nameLength = 0;
+	    NextDirEntry(&rootDirIndex, &rootDirEntryPtr);
+	}
+	rootDirIndex.dirDirty = 1;
+	CloseDir(&rootDirIndex);
+	/*
+	 * If the root is corrupted then don't set the checked bit in the
+	 * summary sector. I'm kind of paranoid about the above code
+	 * working correctly.
+	 */
+	setCheckedBit = FALSE;
+    }
+    OpenDir(rootFDPtr, &descInfoArray[FSDM_ROOT_FILE_NUMBER], &dirIndex, 
+	    &dirEntryPtr);
+    if (dirEntryPtr == (Fslcl_DirEntry *)NULL) {
+	exit(EXIT_HARD_ERROR);
+    }
+
+    (void)strcpy(pathName, "/");
+    entryNum = 0;
+    if (outputFileName != NULL) {
+	outputFileLength = strlen(outputFileName);
+    }
+    while (dirEntryPtr != (Fslcl_DirEntry *) NULL) {
+	/*
+	 * Go through the root directory checking each directory entry.
+	 */
+	CheckDirEntry(entryNum, &dirIndex, dirEntryPtr);
+	if (dirEntryPtr->nameLength > 0 && 
+	    strncmp("lost+found", dirEntryPtr->fileName,
+		    dirEntryPtr->nameLength)  == 0) {
+	    lostFoundFileNum = dirEntryPtr->fileNumber;
+	} else if (rawOutput && outputFileName != NULL &&
+	    (dirEntryPtr->nameLength == outputFileLength) && 
+	    strncmp(outputFileName, dirEntryPtr->fileName, outputFileLength)
+		== 0) {
+	    outputFileNum = dirEntryPtr->fileNumber;
+	}
+	NextDirEntry(&dirIndex, &dirEntryPtr);
+	entryNum++;
+    }
+    CloseDir(&dirIndex);
+    if (tooBig) {
+	return;
+    }
+
+    if (lostFoundFileNum == -1) {
+	Output(stderr, "lost+found missing from root\n");
+	lostFoundFileNum = -1;
+    } else {
+	/*
+	 * Make sure that lost and found is consistent.
+	 */
+	if (!FetchFileDesc(lostFoundFileNum, &lostFoundFDPtr)) {
+	    Output(stderr, "Unable to fetch file descriptor for lost+found");
+	    exit(EXIT_HARD_ERROR);
+	}
+
+	(void)strcpy(pathName, "/lost+found/");
+	fdInfoPtr = &descInfoArray[lostFoundFileNum];
+	if (lostFoundFDPtr->fileType != FS_DIRECTORY) {
+	    Output(stderr,
+	     "Lost+found isn't a directory!  Should remove and recreate.\n");
+	    lostFoundFileNum = -1;
+	} else {
+	    int	dirOK;
+
+	    CheckDir(lostFoundFileNum, lostFoundFDPtr, fdInfoPtr,
+			FSDM_ROOT_FILE_NUMBER, lostRootDirNum,	&dirOK);
+	    if (dirOK) {
+		OpenDir(lostFoundFDPtr, fdInfoPtr, &lostDirIndex,
+				 &lostDirEntryPtr);
+		if (lostDirEntryPtr == (Fslcl_DirEntry *)NULL) {
+		    Output(stderr, "Could not open lost+found\n");
+		    lostFoundFileNum = -1;
+		} else {
+		    descInfoArray[lostFoundFileNum].flags |= FD_SEEN;
+		}
+	    } else {
+		lostFoundFileNum = -1;
+	    }
+	}
+    }
+    if (tooBig) {
+	return;
+    }
+
+    /*
+     * Check all file descriptors.  If we are re-creating the root this
+     * has a side-effect of preparing a list of the orphans of the root.
+     */
+    for (i = 0, fdInfoPtr = descInfoArray;
+	 i < domainPtr->numFileDesc; 
+	 i++, fdInfoPtr++) {
+	int			dirOK;
+	Fsdm_FileDescriptor	*newFDPtr;
+
+	if (!(fdInfoPtr->flags & FD_ALLOCATED) ||
+	     (fdInfoPtr->flags & FD_SEEN) ||
+	    !(fdInfoPtr->flags & IS_A_DIRECTORY)) {
+	    continue;
+	}
+	pathName[0] = '\0';
+	if (!FetchFileDesc(i, &newFDPtr)) {
+	    Output(stderr,
+		    "Unable to fetch file descriptor for directory <%d>.\n", i);
+	    continue;
+	}
+	CheckDir(i, newFDPtr, fdInfoPtr, FSDM_ROOT_FILE_NUMBER,
+	    lostRootDirNum, &dirOK);
+	StoreFileDesc(i, newFDPtr);
+    }
+
+    if (patchRoot && lostRootDirNum > 0) {
+	DirList *dirListPtr;
+
+	notAdded = 0;
+
+	/*
+	 * Go through the list of root-orphans, putting them into the root.
+	 */
+	OpenDir(rootFDPtr, &descInfoArray[FSDM_ROOT_FILE_NUMBER], &rootDirIndex, 
+		&rootDirEntryPtr);
+
+	LIST_FORALL(orphanDirList, (List_Links *)dirListPtr) {
+	    if (dirListPtr->dirNumber == lostFoundFileNum) {
+		(void) strncpy(newFileName,"lost+found",100);
+	    } else { 
+		(void) sprintf(newFileName, "%d", dirListPtr->dirNumber);
+	    }
+	    if (AddToDirectory(lostRootDirNum, rootFDPtr, &rootDirIndex,
+		     &rootDirEntryPtr, dirListPtr->dirNumber,
+		     newFileName,
+		     &descInfoArray[dirListPtr->dirNumber]) == DIRFULL) {
+		if (notAdded == 0) {
+		    Output(stderr, 
+			"Directory #%d full.  Couldn't insert file.\n", 
+			lostRootDirNum);
+		}
+		notAdded++;
+	    }
+	}
+	if (notAdded > 0) {
+	    Output(stderr, "%d files not added to directory %d.\n", notAdded,
+		lostRootDirNum);
+	}
+	if (rootDirIndex.dirDirty && writeDisk) {
+	    if (Disk_FragWrite(partFID, domainPtr,
+			    rootDirIndex.blockAddr + domainPtr->dataOffset * 
+			    FS_FRAGMENTS_PER_BLOCK, rootDirIndex.numFrags, 
+			    rootDirIndex.dirBlock) < 0) {
+		OutputPerror("CheckDirTree: Write failed");
+		exit(EXIT_WRITE_FAILURE);
+	    }
+	}
+    }
+    if (tooBig) {
+	return;
+    }
+    /*
+     * Now go through the file descriptors again this time putting all
+     * unreferenced files in the lost and found directory and correcting
+     * link counts.
+     */
+    notAdded = 0;
+    for (i = 0, fdInfoPtr = descInfoArray;
+	 i <= domainPtr->numFileDesc; 
+	 i++, fdInfoPtr++) {
+
+	/*
+	 * We have to do lost+found last because its link count is changed
+	 * when directories are added to it.
+	 */
+	if (i == lostFoundFileNum) {
+	    continue;
+	} else if (i == domainPtr->numFileDesc) {
+	    if (lostFoundFileNum == -1) {
+		break;
+	    }
+	    i = lostFoundFileNum;
+	    fdInfoPtr = &descInfoArray[lostFoundFileNum];
+	}
+	if (!(fdInfoPtr->flags & FD_ALLOCATED) ||
+	    (fdInfoPtr->flags & FD_UNREADABLE) ||
+	    i == FSDM_BAD_BLOCK_FILE_NUMBER) {
+	    continue;
+	}
+
+	if (!(fdInfoPtr->flags & FD_REFERENCED) && i != FSDM_ROOT_FILE_NUMBER) {
+	    if (verbose) {
+		Output(stderr, "File %d is unreferenced\n", i);
+	    }
+	    unrefFiles++;
+	    foundError = 1;
+	    fflush(stderr);
+	    if (lostFoundFileNum != -1) {
+		(void) sprintf(newFileName,"%d",i);
+		if (AddToDirectory(lostFoundFileNum, lostFoundFDPtr, 
+				&lostDirIndex, &lostDirEntryPtr, i, 
+				newFileName, fdInfoPtr) == DIRFULL) {
+		    if (notAdded == 0) {
+			Output(stderr, 
+			    "Directory #%d full.  Couldn't insert file.\n", 
+			    lostFoundFileNum);
+		    }
+		    notAdded++;
+		}
+	    }
+	} else if (fdInfoPtr->newLinkCount != fdInfoPtr->origLinkCount) {
+	    if (verbose) {
+		Output(stderr,
+		    "Link count corrected for file %d.  Is %d should be %d.\n", 
+		    i, fdInfoPtr->origLinkCount, fdInfoPtr->newLinkCount);
+	    }
+	    linkCountsCorrected++;
+	    foundError = 1;
+	    fflush(stderr);
+	    if (i == FSDM_ROOT_FILE_NUMBER) {
+		rootFDPtr->numLinks = fdInfoPtr->newLinkCount;
+		fdInfoPtr->flags |= FD_MODIFIED;
+	    } else if (i == lostFoundFileNum) {
+		lostFoundFDPtr->numLinks = fdInfoPtr->newLinkCount;
+		fdInfoPtr->flags |= FD_MODIFIED;
+	    } else {
+		Fsdm_FileDescriptor	*fdPtr;
+		if (!FetchFileDesc(i, &fdPtr)) {
+		    Output(stderr,
+      "Unable to fetch file descriptor for file <%d> to update link count", i);
+		} else {
+		    fdPtr->numLinks = fdInfoPtr->newLinkCount;
+		    fdInfoPtr->flags |= FD_MODIFIED;
+		    StoreFileDesc(i, fdPtr);
+		}
+	    }
+	}
+	if (i == lostFoundFileNum) {
+	    break;
+	}
+    }
+    if (notAdded > 0) {
+	Output(stderr, "%d files not added to directory %d.\n", notAdded,
+	    lostFoundFileNum);
+    }
+
+    if (unrefFiles > 0) {
+	Output(stderr, "%d unreferenced files\n", unrefFiles);
+    }
+    if (linkCountsCorrected) {
+	Output(stderr, "%d links counts corrected\n",
+		       linkCountsCorrected);
+    }
+
+    if (lostFoundFileNum != - 1 && lostDirIndex.dirDirty && writeDisk) {
+	if (Disk_FragWrite(partFID, domainPtr,
+			lostDirIndex.blockAddr + domainPtr->dataOffset * 
+				FS_FRAGMENTS_PER_BLOCK,
+			    lostDirIndex.numFrags, 
+			    lostDirIndex.dirBlock) < 0) {
+	    OutputPerror("CheckDirTree: Write failed");
+	    exit(EXIT_WRITE_FAILURE);
+	}
+    }
+
+    StoreFileDesc(FSDM_ROOT_FILE_NUMBER, rootFDPtr);
+    if (lostFoundFileNum != -1) {
+	StoreFileDesc(lostFoundFileNum, lostFoundFDPtr);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+* CheckDir --
+ *
+ *	Descend the directory tree starting from the given file descriptor.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+CheckDir(fdNum, fdPtr, fdInfoPtr, parentFdNum, lostDirNum, dirOKPtr)
+    int			fdNum;	/* Which file descriptor we are looking
+					   at. */
+    Fsdm_FileDescriptor	*fdPtr;		/* Pointer the file descriptor that
+					 * we are looking at. */
+    FdInfo		*fdInfoPtr;	/* Status of the file desc that we are
+					   looking at. */
+    int			parentFdNum;	/* File descriptor of parent directory.
+    int			lostDirNum;	/* For re-creating trashed directories.
+					 * This routine will add to a list
+					 * of directories that were ref'ed
+					 * by this 'lost directory' */
+    int			*dirOKPtr;	/* Return 1 if the directory is
+					 * not corrupted. */
+{
+    Fslcl_DirEntry	 *dirEntryPtr;
+    FdInfo	 *newFDInfoPtr;
+    DirIndexInfo dirIndex;
+    int		 entryNum;
+    int		nullIndex;
+
+    fdInfoPtr->flags |= FD_SEEN;
+    *dirOKPtr = 0;
+
+    /*
+     * Open the directory.
+     */
+    OpenDir(fdPtr, fdInfoPtr, &dirIndex, &dirEntryPtr);
+    nullIndex = strlen(pathName);
+    if (dirEntryPtr == (Fslcl_DirEntry *) NULL) {	
+	Output(stderr, "Empty directory %d %s changed to a file.\n",
+		        fdNum, pathName);
+	foundError = 1;
+	fdPtr->fileType = FS_FILE;
+	fdInfoPtr->flags |= FD_MODIFIED;
+	return;
+    }
+    /*
+     * Go through the directory.
+     */
+    entryNum = 0;
+    if (debug) {
+	Output(stderr,"Working on %s\n",pathName);
+    }
+    do {
+	CheckDirEntry(entryNum, &dirIndex, dirEntryPtr);
+	if (entryNum == 0) {
+	    /*
+	     * This should be "." and should point to the directory that
+	     * we are checking.
+	     */
+	    if (dirEntryPtr->fileNumber == 0 ||
+		strncmp(".", dirEntryPtr->fileName, 
+			dirEntryPtr->nameLength)  != 0) {
+		Output(stderr,
+			". missing in directory %d %s.  Changed to a file.\n",
+			       fdNum, pathName);
+		foundError = 1;
+		fdPtr->fileType = FS_FILE;
+		fdInfoPtr->flags |= FD_MODIFIED;
+		fdInfoPtr->flags &= ~IS_A_DIRECTORY;
+		return;
+	    }
+	    if (dirEntryPtr->fileNumber != fdNum) {
+		Output(stderr, 
+			    ". does not point to self for directory %d %s\n",
+			    fdNum, pathName);
+		foundError = 1;
+		dirEntryPtr->fileNumber = fdNum;
+		dirIndex.dirDirty = 1;
+	    }
+	    fdInfoPtr->newLinkCount++;
+	} else if (entryNum == 1) {
+	    /*
+	     * This should be ".."
+	     */
+	    if (dirEntryPtr->fileNumber == 0 ||
+		strncmp("..", dirEntryPtr->fileName, 
+			dirEntryPtr->nameLength) != 0) {
+		Output(stderr,
+			".. missing in directory %d %s.  Changed to a file.\n",
+			       fdNum, pathName);
+		foundError = 1;
+		fdPtr->fileType = FS_FILE;
+		fdInfoPtr->flags |= FD_MODIFIED;
+		fdInfoPtr->flags &= ~IS_A_DIRECTORY;
+		return;
+	    }
+	    if (dirEntryPtr->fileNumber != parentFdNum) {
+		Output(stderr, 
+		    ".. in directory %d %s pointed to %d, changed to %d.\n",
+			fdNum, pathName, dirEntryPtr->fileNumber, parentFdNum);
+		foundError = 1;
+		dirEntryPtr->fileNumber = parentFdNum;
+		dirIndex.dirDirty = 1;
+	    }
+	    /*
+	     * Look for orphans of lost directories.
+	     */
+	    if (lostDirNum > 0 &&
+		dirEntryPtr->fileNumber == lostDirNum &&
+		(fdNum != FSDM_ROOT_FILE_NUMBER ||
+		lostDirNum != FSDM_ROOT_FILE_NUMBER)) {
+		DirList *dirListPtr;
+		Alloc(dirListPtr,DirList,1);
+		if (!tooBig) {
+		    dirListPtr->dirNumber = fdNum;
+		    Output(stderr, "Found #%d, an orphan of dir #%d\n", 
+			    fdNum, lostDirNum);
+		    List_Insert((List_Links *)dirListPtr,
+				LIST_ATREAR(orphanDirList));
+		    fdInfoPtr->flags |= FD_REFERENCED;
+		    fdInfoPtr->newLinkCount++;
+		}
+	    } else {
+		descInfoArray[dirEntryPtr->fileNumber].newLinkCount++;
+	    }
+	} else if (dirEntryPtr->fileNumber != 0) {
+	    newFDInfoPtr = &descInfoArray[dirEntryPtr->fileNumber];
+	    newFDInfoPtr->newLinkCount++;
+	    newFDInfoPtr->flags |= FD_REFERENCED;
+	    if (!(newFDInfoPtr->flags & FD_SEEN) &&
+	       (newFDInfoPtr->flags & IS_A_DIRECTORY)) {
+		int	dirOK;
+		Fsdm_FileDescriptor	*newFDPtr;
+
+		/*
+		 * Recurse on the directory.
+		 */
+		(void)strncat(pathName, dirEntryPtr->fileName,
+			      dirEntryPtr->nameLength);
+		(void)strcat(pathName, "/");
+		if (!FetchFileDesc(dirEntryPtr->fileNumber, &newFDPtr)) {
+		    Output(stderr,
+		    "Unable to fetch file descriptor for directory <%d>.\n",
+			      dirEntryPtr->fileNumber);
+		} else {
+		    CheckDir(dirEntryPtr->fileNumber, newFDPtr, 
+			     newFDInfoPtr, fdNum, lostDirNum, &dirOK);
+		    pathName[nullIndex] = '\0';
+		    StoreFileDesc(dirEntryPtr->fileNumber, newFDPtr);
+		}
+	    } 
+	}
+	NextDirEntry(&dirIndex, &dirEntryPtr);
+	entryNum++;
+    } while (dirEntryPtr != (Fslcl_DirEntry *) NULL);
+
+    *dirOKPtr = 1;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CheckDirEntry --
+ *
+ *	Perform checks on the current directory entry to make sure that
+ *	it is has not been trashed.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The directory may be modified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+CheckDirEntry(entryNum, dirIndexPtr, dirEntryPtr)
+    int		entryNum;	
+    register	DirIndexInfo	*dirIndexPtr;
+    register	Fslcl_DirEntry	*dirEntryPtr;
+{
+    int			dirBlockOffset;
+    int			lastDirByte;
+    char		buf[FS_MAX_NAME_LENGTH + 1];
+    int			nameLength;
+    register	char	*strPtr;
+    int hadError = 0;
+
+    dirBlockOffset = dirIndexPtr->dirOffset & (FSLCL_DIR_BLOCK_SIZE - 1);
+    lastDirByte = dirBlockOffset + dirEntryPtr->recordLength;
+
+    if (dirEntryPtr->fileNumber == 0) {
+	nameLength = 0;
+    } else {
+	nameLength = dirEntryPtr->nameLength;
+    }
+
+    /*
+     * First check the record length.
+     */
+    if (lastDirByte > FSLCL_DIR_BLOCK_SIZE ||
+	lastDirByte % FSLCL_REC_LEN_GRAIN != 0 || 
+	(FSLCL_DIR_BLOCK_SIZE - lastDirByte < FSLCL_DIR_ENTRY_HEADER &&
+	 lastDirByte != FSLCL_DIR_BLOCK_SIZE) ||
+	dirEntryPtr->recordLength < Fslcl_DirRecLength(nameLength) ||
+	dirEntryPtr->recordLength < 0) {
+	Output(stderr,
+	"Bad record length in directory.  Directory entry deleted from %s\n",
+		       pathName);
+	foundError = 1;
+	hadError = 1;
+	/*
+	 * If the record length is screwed up, extend this record to the end
+	 * of the directory block and zap the file number.
+	 */
+	dirEntryPtr->recordLength = FSLCL_DIR_BLOCK_SIZE - dirBlockOffset;
+	dirEntryPtr->fileNumber = 0;
+	dirIndexPtr->dirDirty = 1;
+	return;
+    }
+    /*
+     * Check the name length.
+     */
+    if (dirEntryPtr->fileNumber != 0) {
+	int	nameError = 0;
+	nameLength = strnlen(dirEntryPtr->fileName,
+			     dirEntryPtr->recordLength - FSLCL_DIR_ENTRY_HEADER);
+	if (nameLength != dirEntryPtr->nameLength) {
+	    bcopy(dirEntryPtr->fileName, buf, nameLength);
+	    buf[nameLength] = '\0';
+	    Output(stderr,
+	    "Name length %d wrong for directory entry: %s. Should be %d.\n", 
+		dirEntryPtr->nameLength, buf, nameLength);
+	    foundError = 1;
+	    hadError = 1;
+	    dirEntryPtr->nameLength = nameLength;
+	    dirIndexPtr->dirDirty = 1;
+	    dirEntryPtr->recordLength = Fslcl_DirRecLength(nameLength);
+	}
+	/*
+	 * Make sure that the name contains printable characters.
+	 */
+	strPtr = dirEntryPtr->fileName;
+	while (*strPtr != '\0') {
+	    if (*strPtr < 0 || !isprint(*strPtr)) {
+		*strPtr = '?';
+		nameError = 1;
+	    }
+	    strPtr++;
+	}
+	if (nameError) {
+	    dirIndexPtr->dirDirty = 1;
+	    Output(stderr,
+	      "Non-printable characters in name for file %d in directory %s\n",
+	      dirEntryPtr->fileNumber, pathName);
+	    foundError = 1;
+	    hadError = 1;
+	}
+    }
+
+    /*
+     * Now check the file number.
+     */
+    if (dirEntryPtr->fileNumber < 0 ||
+        dirEntryPtr->fileNumber >= domainPtr->numFileDesc) {
+	Output(stderr, 
+	"Bad file number in directory.  Directory entry deleted from %s.\n", 
+		       pathName);
+	foundError = 1;
+	hadError = 1;
+	dirEntryPtr->fileNumber = 0;
+	dirIndexPtr->dirDirty = 1;
+    /*
+     * Here we want to allow the ".." entry (entryNum = 0) to reference a
+     * non-allocated file descriptor. What we have is an orphan directory so
+     * we shouldn't nuke it just because something bad happened to its parent.
+     */
+    } else if (dirEntryPtr->fileNumber != 0 &&
+              !(descInfoArray[dirEntryPtr->fileNumber].flags & FD_ALLOCATED) &&
+	      entryNum != 1)
+	      {
+	Output(stderr, 
+	    "File %s%s references non-allocated descriptor %d. File Deleted.\n",
+	    pathName, dirEntryPtr->fileName,dirEntryPtr->fileNumber);
+	foundError = 1;
+	hadError = 1;
+	dirEntryPtr->fileNumber = 0;
+	dirIndexPtr->dirDirty = 1;
+    }
+    if (!hadError && debug) {
+	Output(stderr,"Entry %s ok.\n",dirEntryPtr->fileName);
+    }
+    if (hadError) {
+	Output(stderr,
+    "Entry %s (%d) now has nameLength %d, recordLength %d, fileNumber %d.\n",
+	dirEntryPtr->fileName, entryNum, dirEntryPtr->nameLength, 
+	dirEntryPtr->recordLength, dirEntryPtr->fileNumber);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetDotDot --
+ *
+ *	Make ".." in the given directory point to a given directory.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	".." in the given directory is set to point to lost and found.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+SetDotDot(dirNumber, dirFDPtr, fdPtr, fdInfoPtr)
+    int			dirNumber;
+    Fsdm_FileDescriptor	*dirFDPtr;
+    Fsdm_FileDescriptor	*fdPtr;
+    FdInfo		*fdInfoPtr;
+{
+    Fslcl_DirEntry	 	*dirEntryPtr;
+    DirIndexInfo 	dirIndex;
+
+    /*
+     * Open the directory.
+     */
+    OpenDir(fdPtr, fdInfoPtr, &dirIndex, &dirEntryPtr);
+    if (dirEntryPtr == (Fslcl_DirEntry *)NULL) {
+	Output(stderr, "SetDotDot: Could not open dir\n");
+	return(0);
+    }
+    /*
+     * Move past "." to "..".  Note that it is assume that this directory
+     * has been checked and thus has both "." and "..".
+     */
+    NextDirEntry(&dirIndex, &dirEntryPtr);
+    if (dirEntryPtr == (Fslcl_DirEntry *)NULL) {
+	Output(stderr, "SetDotDot: Could not move from . to ..\n");
+	return(0);
+    }
+
+    descInfoArray[dirNumber].newLinkCount++;
+    descInfoArray[dirNumber].flags |= FD_MODIFIED;
+    dirEntryPtr->fileNumber = dirNumber;
+    if (writeDisk) {
+	if (Disk_FragWrite(partFID, domainPtr, 
+	   dirIndex.blockAddr + domainPtr->dataOffset * FS_FRAGMENTS_PER_BLOCK,
+	   dirIndex.numFrags, dirIndex.dirBlock) < 0) {
+	    Output(stderr, "SetDotDot: Write failed block %d\n",
+		    dirIndex.blockAddr + 
+		        domainPtr->dataOffset * FS_FRAGMENTS_PER_BLOCK);
+	    return(0);
+	}
+    }
+    return(1);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AddToDirectory --
+ *
+ *	Add the file descriptor to a directory.  
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The directory is modified to contain the orphaned file.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+AddToDirectory(dirNumber, dirFDPtr, dirIndexPtr, dirEntryPtrPtr, fileNumber,
+    fileName, fdInfoPtr)
+    int			dirNumber;
+    Fsdm_FileDescriptor	*dirFDPtr;
+    DirIndexInfo	*dirIndexPtr;
+    Fslcl_DirEntry		**dirEntryPtrPtr;
+    int		 	fileNumber;
+    char 		*fileName;
+    register	FdInfo	*fdInfoPtr;
+{
+    int		 	nameLength;
+    int		 	recordLength;
+    int		 	leftOver;
+    int			oldRecLength;
+    Fslcl_DirEntry		*dirEntryPtr;
+    Fsdm_FileDescriptor	*fdPtr;
+
+    adding = 1;
+    nameLength = strlen(fileName);
+    recordLength = Fslcl_DirRecLength(nameLength);
+
+    dirEntryPtr = *dirEntryPtrPtr;
+    while (dirEntryPtr != (Fslcl_DirEntry *) NULL) {
+	if (dirEntryPtr->fileNumber != 0) {
+	    oldRecLength = Fslcl_DirRecLength(dirEntryPtr->nameLength);
+	    leftOver = dirEntryPtr->recordLength - oldRecLength;
+	    if (leftOver >= recordLength) {
+		dirEntryPtr->recordLength = oldRecLength;
+		dirEntryPtr = 
+			(Fslcl_DirEntry *) ((int) dirEntryPtr + oldRecLength);
+		dirEntryPtr->recordLength = leftOver;
+		dirIndexPtr->dirOffset += oldRecLength;
+	    } else {
+		NextDirEntry(dirIndexPtr, &dirEntryPtr);
+		continue;
+	    }
+	} else if (dirEntryPtr->recordLength < recordLength) {
+	    NextDirEntry(dirIndexPtr, &dirEntryPtr);
+	    continue;
+	}
+
+	if (!FetchFileDesc(fileNumber, &fdPtr)) {
+	    Output(stderr,
+     "Unable to fetch file descriptor for file <%d> to add to directory <%d>\n",
+		      fileNumber, dirNumber);
+	    return FAILURE;
+	}
+	if (fdInfoPtr->flags & IS_A_DIRECTORY) {
+	    if (!SetDotDot(dirNumber, dirFDPtr, fdPtr, fdInfoPtr)) {
+		*dirEntryPtrPtr = dirEntryPtr;
+		return FAILURE;
+	    }
+	}
+	fdPtr->numLinks = fdInfoPtr->newLinkCount + 1;
+	fdInfoPtr->flags |= FD_MODIFIED;
+	StoreFileDesc(fileNumber, fdPtr);
+
+	dirEntryPtr->fileNumber = fileNumber;
+	dirEntryPtr->nameLength = nameLength;
+	dirIndexPtr->dirDirty = 1;
+	(void)strcpy(dirEntryPtr->fileName, fileName);
+	leftOver = dirEntryPtr->recordLength - recordLength;
+	if (leftOver > FSLCL_DIR_ENTRY_HEADER) {
+	    dirEntryPtr->recordLength = recordLength;
+	    dirEntryPtr =(Fslcl_DirEntry *) ((int) dirEntryPtr + recordLength);
+	    dirEntryPtr->fileNumber = 0;
+	    dirEntryPtr->recordLength = leftOver;
+	    dirIndexPtr->dirOffset += recordLength;
+	} else {
+	    NextDirEntry(dirIndexPtr, &dirEntryPtr);
+	}
+	*dirEntryPtrPtr = dirEntryPtr;
+	return SUCCESS;
+    }
+    return DIRFULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MakeRoot --
+ *
+ *	Set up the file descriptor for the root directory.
+ *
+ * Results:
+ *	Fill in the file descriptor.
+ *
+ * Side effects:
+ *	Marks block 0 in the bitmap as in use.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+MakeRoot(domainPtr, bitmapPtr, fdPtr)
+    Ofs_DomainHeader		*domainPtr;	/* Ptr to domain info */
+    u_char			*bitmapPtr;	/* Ptr to cylinder data block
+						 * bitmap */
+    Fsdm_FileDescriptor		*fdPtr;
+{
+    Time 	time;
+    int 	index;
+    u_char 	*bytePtr;
+
+    fdPtr->flags = FSDM_FD_ALLOC;
+    fdPtr->fileType = FS_DIRECTORY;
+    fdPtr->permissions = 0755;
+    fdPtr->uid = 0;
+    fdPtr->gid = 0;
+    fdPtr->lastByte = FS_BLOCK_SIZE-1;
+    fdPtr->firstByte = -1;
+    fdPtr->numLinks = 3;
+    /*
+     * Can't know device information because that depends on
+     * the way the system is configured.
+     */
+    fdPtr->devServerID  -1;
+    fdPtr->devType = -1;
+    fdPtr->devUnit = -1;
+
+    /*
+     * Set the time stamps.  This assumes that universal time, not local
+     * time, is used for time stamps.
+     */
+    Sys_GetTimeOfDay(&time, NULL, NULL);
+    fdPtr->createTime = time.seconds;
+    fdPtr->accessTime = 0;
+    fdPtr->descModifyTime = time.seconds;
+    fdPtr->dataModifyTime = time.seconds;
+
+    /*
+     * Place the data in the first filesystem block.
+     */
+    fdPtr->direct[0] = 0;
+    bytePtr = GetBitmapPtr(domainPtr, bitmapPtr, 0);
+    *bytePtr |= 0xf0;
+    for (index = 1; index < FSDM_NUM_DIRECT_BLOCKS ; index++) {
+	fdPtr->direct[index] = FSDM_NIL_INDEX;
+    }
+    for (index = 0; index < FSDM_NUM_INDIRECT_BLOCKS ; index++) {
+	fdPtr->indirect[index] = FSDM_NIL_INDEX;
+    }
+    fdPtr->numKbytes = 4;
+    fdPtr->version = 1;
+    return SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * strnlen --
+ *
+ *	This is identical to strlen except that it will return N
+ *	if the string length reaches N.
+ *
+ * Results:
+ *	The return value is the number of characters in the
+ *	string, not including the terminating zero byte.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+strnlen(string, numChars)
+    register char *string;		/* String whose length is wanted. */
+    int		   numChars;		/* Maximum number of chars to check. */
+{
+    register int result = -1;
+
+    do {
+	result += 1;
+    } while (result < numChars && *string++ != 0);
+    return(result);
+}
+@
+
+
+1.29
+log
+@Changes to reflect new OFS file system names.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/cmds/fscheck/RCS/checkdir.c,v 1.28 90/10/10 11:22:10 jhh Exp Locker: mendel $ SPRITE (Berkeley)";
+d429 1
+a429 1
+static void
+d505 1
+a505 1
+static void
+@
+
+
+1.28
+log
+@now can do raw output on any partition, fixed bug with ".."
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/cmds/fscheck.new/RCS/checkdir.c,v 1.27 90/05/01 15:36:42 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d31 2
+a32 1
+static	int		lostFoundFileNum = -1;
+d36 1
+a36 1
+Fsdm_DomainHeader		*domainPtr;
+d664 1
+a664 1
+    Fsdm_DomainHeader	*domainParmPtr;
+d1500 1
+a1500 1
+    Fsdm_DomainHeader		*domainPtr;	/* Ptr to domain info */
+@
+
+
+1.27
+log
+@ported to new Disk library
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/cmds/fscheck/RCS/checkdir.c,v 1.26 90/02/14 15:55:27 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d779 1
+a779 1
+	} else if (rootPart && outputFileName != NULL &&
+d815 1
+a815 1
+			lostRootDirNum,	&dirOK);
+d855 2
+a856 1
+	CheckDir(i, newFDPtr, fdInfoPtr, lostRootDirNum, &dirOK);
+d1034 1
+a1034 1
+CheckDir(fdNum, fdPtr, fdInfoPtr, lostDirNum, dirOKPtr)
+d1041 1
+d1122 8
+d1172 1
+a1172 1
+			     newFDInfoPtr, lostDirNum, &dirOK);
+@
+
+
+1.26
+log
+@support for no recheck on reboot
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /a/newcmds/fscheck/RCS/checkdir.c,v 1.25 89/09/25 16:41:11 jhh Exp $ SPRITE (Berkeley)";
+a20 1
+#include "diskUtils.h"
+@
+
+
+1.25
+log
+@Uses new fs module structure
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /a/newcmds/fscheck/RCS/checkdir.c,v 1.24 89/08/29 17:28:15 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d753 6
+@
+
+
+1.24
+log
+@if lost+found doesn't exist we don't die anymore
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /a/newcmds/fscheck/RCS/checkdir.c,v 1.23 89/08/20 19:15:28 jhh Exp $ SPRITE (Berkeley)";
+d36 1
+a36 1
+FsDomainHeader		*domainPtr;
+d42 2
+a43 2
+FsFileDescriptor	*rootFDPtr;
+FsFileDescriptor	*lostFoundFDPtr;
+d69 1
+a69 1
+    FsFileDescriptor	**fdPtrPtr;	/* Where to store ptr to descriptor. */
+d102 2
+a103 2
+    blockNum = domainPtr->fileDescOffset + fdNum / FS_FILE_DESC_PER_BLOCK;
+    offset = (fdNum & (FS_FILE_DESC_PER_BLOCK - 1)) * FS_MAX_FILE_DESC_SIZE;
+d109 1
+a109 1
+    Alloc(*fdPtrPtr,FsFileDescriptor,1);
+d114 1
+a114 1
+	  sizeof(FsFileDescriptor));
+d137 1
+a137 1
+    FsFileDescriptor	*fdPtr;
+d190 1
+a190 1
+    register FsFileDescriptor	*fdPtr;
+d206 1
+a206 1
+	if (*blockAddrPtr == FS_NIL_INDEX) {
+d228 1
+a228 1
+    if (*blockAddrPtr != FS_NIL_INDEX) {
+d266 1
+a266 1
+    FsFileDescriptor	*fdPtr;
+d275 1
+a275 1
+    if (blockNum < FS_NUM_DIRECT_BLOCKS) {
+d288 2
+a289 2
+    blockNum -= FS_NUM_DIRECT_BLOCKS;
+    indirectBlock = blockNum / FS_INDICES_PER_BLOCK;
+d303 1
+a303 1
+				    indirectBlock * FS_INDICES_PER_BLOCK;
+d335 1
+a335 1
+    register FsFileDescriptor	*fdPtr;
+d348 1
+a348 1
+	    if (indexInfoPtr->blockNum < FS_NUM_DIRECT_BLOCKS) {
+d365 2
+a366 2
+	    if (indexInfoPtr->blockNum < FS_NUM_DIRECT_BLOCKS +
+			FS_INDICES_PER_BLOCK) {
+d390 1
+a390 1
+	    if (indexInfoPtr->secondIndex == FS_INDICES_PER_BLOCK) {
+d431 1
+a431 1
+    FsFileDescriptor	*fdPtr;		/* The file descriptor for the
+d436 1
+a436 1
+    FsDirEntry		**dirEntryPtrPtr; /* Where to return a pointer to
+d445 1
+a445 1
+	*dirEntryPtrPtr = (FsDirEntry *) NULL;
+d447 1
+a447 1
+    } else if ((fdPtr->lastByte + 1) % FS_DIR_BLOCK_SIZE != 0) {
+d451 2
+a452 2
+	fdPtr->lastByte = (fdPtr->lastByte & ~(FS_DIR_BLOCK_SIZE - 1)) +
+			    FS_DIR_BLOCK_SIZE - 1;
+d462 1
+a462 1
+	*dirEntryPtrPtr = (FsDirEntry *) NULL;
+d481 1
+a481 1
+	*dirEntryPtrPtr = (FsDirEntry *) NULL;
+d485 1
+a485 1
+    *dirEntryPtrPtr = (FsDirEntry *) indexInfoPtr->dirBlock;
+d508 1
+a508 1
+    FsDirEntry		**dirEntryPtrPtr;
+d512 1
+a512 1
+    FsDirEntry		*dirEntryPtr;
+d525 1
+a525 1
+	*dirEntryPtrPtr = (FsDirEntry *) NULL;
+d546 1
+a546 1
+	     (FsDirEntry *) &(indexInfoPtr->dirBlock[indexInfoPtr->dirOffset]);
+d562 1
+a562 1
+		*dirEntryPtrPtr = (FsDirEntry *) NULL;
+d568 1
+a568 1
+	    *dirEntryPtrPtr = (FsDirEntry *) NULL;
+d572 1
+a572 1
+	    indexInfoPtr->blockNum >= FS_NUM_DIRECT_BLOCKS) {
+d586 1
+a586 1
+	    *dirEntryPtrPtr = (FsDirEntry *) NULL;
+d590 1
+a590 1
+	dirEntryPtr = (FsDirEntry *) indexInfoPtr->dirBlock;
+d597 1
+a597 1
+static  FsDirEntry	*lostDirEntryPtr;
+d600 1
+a600 1
+static  FsDirEntry	*rootDirEntryPtr;
+d664 1
+a664 1
+    FsDomainHeader	*domainParmPtr;
+d671 1
+a671 1
+    FsDirEntry		*dirEntryPtr;
+d689 1
+a689 1
+    if (!FetchFileDesc(FS_ROOT_FILE_NUMBER, &rootFDPtr)) {
+d694 1
+a694 1
+    if ((rootFDPtr->flags & FS_FD_FREE) ||
+d696 1
+a696 1
+	rootFDPtr->magic != FS_FD_MAGIC ||
+d711 1
+a711 1
+	lostRootDirNum = FS_ROOT_FILE_NUMBER;
+d713 1
+a713 1
+	lostFoundFileNum = FS_ROOT_FILE_NUMBER + 1;
+d718 1
+a718 1
+	OpenDir(rootFDPtr, &descInfoArray[FS_ROOT_FILE_NUMBER], &rootDirIndex, 
+d725 5
+a729 5
+        descInfoArray[FS_ROOT_FILE_NUMBER].flags |= FD_ALLOCATED;
+	descInfoArray[FS_ROOT_FILE_NUMBER].flags |= FD_MODIFIED;
+	descInfoArray[FS_ROOT_FILE_NUMBER].flags |= IS_A_DIRECTORY;
+	MarkFDBitmap(FS_ROOT_FILE_NUMBER,fdBitmapPtr);
+	StoreFileDesc(FS_ROOT_FILE_NUMBER, rootFDPtr);
+d734 1
+a734 1
+		FsDirRecLength(rootDirEntryPtr->nameLength);
+d742 1
+a742 1
+	rootDirEntryPtr->recordLength = FS_DIR_BLOCK_SIZE - offset;
+d745 1
+a745 1
+	for(i = 1; i < FS_BLOCK_SIZE / FS_DIR_BLOCK_SIZE; i++) {
+d747 1
+a747 1
+	    rootDirEntryPtr->recordLength = FS_DIR_BLOCK_SIZE;
+d754 1
+a754 1
+    OpenDir(rootFDPtr, &descInfoArray[FS_ROOT_FILE_NUMBER], &dirIndex, 
+d756 1
+a756 1
+    if (dirEntryPtr == (FsDirEntry *)NULL) {
+d765 1
+a765 1
+    while (dirEntryPtr != (FsDirEntry *) NULL) {
+d814 1
+a814 1
+		if (lostDirEntryPtr == (FsDirEntry *)NULL) {
+d837 1
+a837 1
+	FsFileDescriptor	*newFDPtr;
+d862 1
+a862 1
+	OpenDir(rootFDPtr, &descInfoArray[FS_ROOT_FILE_NUMBER], &rootDirIndex, 
+d925 1
+a925 1
+	    i == FS_BAD_BLOCK_FILE_NUMBER) {
+d929 1
+a929 1
+	if (!(fdInfoPtr->flags & FD_REFERENCED) && i != FS_ROOT_FILE_NUMBER) {
+d958 1
+a958 1
+	    if (i == FS_ROOT_FILE_NUMBER) {
+d965 1
+a965 1
+		FsFileDescriptor	*fdPtr;
+d1004 1
+a1004 1
+    StoreFileDesc(FS_ROOT_FILE_NUMBER, rootFDPtr);
+d1031 1
+a1031 1
+    FsFileDescriptor	*fdPtr;		/* Pointer the file descriptor that
+d1042 1
+a1042 1
+    FsDirEntry	 *dirEntryPtr;
+d1056 1
+a1056 1
+    if (dirEntryPtr == (FsDirEntry *) NULL) {	
+d1120 2
+a1121 2
+		(fdNum != FS_ROOT_FILE_NUMBER ||
+		lostDirNum != FS_ROOT_FILE_NUMBER)) {
+d1143 1
+a1143 1
+		FsFileDescriptor	*newFDPtr;
+d1165 1
+a1165 1
+    } while (dirEntryPtr != (FsDirEntry *) NULL);
+d1192 1
+a1192 1
+    register	FsDirEntry	*dirEntryPtr;
+d1201 1
+a1201 1
+    dirBlockOffset = dirIndexPtr->dirOffset & (FS_DIR_BLOCK_SIZE - 1);
+d1213 5
+a1217 5
+    if (lastDirByte > FS_DIR_BLOCK_SIZE ||
+	lastDirByte % FS_REC_LEN_GRAIN != 0 || 
+	(FS_DIR_BLOCK_SIZE - lastDirByte < FS_DIR_ENTRY_HEADER &&
+	 lastDirByte != FS_DIR_BLOCK_SIZE) ||
+	dirEntryPtr->recordLength < FsDirRecLength(nameLength) ||
+d1228 1
+a1228 1
+	dirEntryPtr->recordLength = FS_DIR_BLOCK_SIZE - dirBlockOffset;
+d1239 1
+a1239 1
+			     dirEntryPtr->recordLength - FS_DIR_ENTRY_HEADER);
+d1250 1
+a1250 1
+	    dirEntryPtr->recordLength = FsDirRecLength(nameLength);
+d1332 2
+a1333 2
+    FsFileDescriptor	*dirFDPtr;
+    FsFileDescriptor	*fdPtr;
+d1336 1
+a1336 1
+    FsDirEntry	 	*dirEntryPtr;
+d1343 1
+a1343 1
+    if (dirEntryPtr == (FsDirEntry *)NULL) {
+d1352 1
+a1352 1
+    if (dirEntryPtr == (FsDirEntry *)NULL) {
+d1393 1
+a1393 1
+    FsFileDescriptor	*dirFDPtr;
+d1395 1
+a1395 1
+    FsDirEntry		**dirEntryPtrPtr;
+d1404 2
+a1405 2
+    FsDirEntry		*dirEntryPtr;
+    FsFileDescriptor	*fdPtr;
+d1409 1
+a1409 1
+    recordLength = FsDirRecLength(nameLength);
+d1412 1
+a1412 1
+    while (dirEntryPtr != (FsDirEntry *) NULL) {
+d1414 1
+a1414 1
+	    oldRecLength = FsDirRecLength(dirEntryPtr->nameLength);
+d1419 1
+a1419 1
+			(FsDirEntry *) ((int) dirEntryPtr + oldRecLength);
+d1452 1
+a1452 1
+	if (leftOver > FS_DIR_ENTRY_HEADER) {
+d1454 1
+a1454 1
+	    dirEntryPtr =(FsDirEntry *) ((int) dirEntryPtr + recordLength);
+d1484 1
+a1484 1
+    FsDomainHeader		*domainPtr;	/* Ptr to domain info */
+d1487 1
+a1487 1
+    FsFileDescriptor		*fdPtr;
+d1493 1
+a1493 1
+    fdPtr->flags = FS_FD_ALLOC;
+d1505 1
+a1505 1
+    fdPtr->devServerID = -1;
+d1525 2
+a1526 2
+    for (index = 1; index < FS_NUM_DIRECT_BLOCKS ; index++) {
+	fdPtr->direct[index] = FS_NIL_INDEX;
+d1528 2
+a1529 2
+    for (index = 0; index < FS_NUM_INDIRECT_BLOCKS ; index++) {
+	fdPtr->indirect[index] = FS_NIL_INDEX;
+@
+
+
+1.23
+log
+@fixed link counts for lost+found, cleaned up lint errors
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /a/newcmds/fscheck/RCS/checkdir.c,v 1.22 89/06/22 17:50:37 jhh Exp $ SPRITE (Berkeley)";
+d790 1
+d917 3
+@
+
+
+1.22
+log
+@doesn't tell you about each file that couldn't be inserted in a full
+directory. Also fixed bug when output file is not specified in 
+root partition.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /a/newcmds/fscheck/RCS/checkdir.c,v 1.21 89/06/21 23:55:59 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+a30 2
+static	int		partFID;
+static	FsDomainHeader	*domainPtr;
+d35 2
+d38 3
+a40 3
+void	CheckDirEntry();
+void	CheckDir();
+ReturnStatus	AddToDirectory();
+d906 1
+a906 1
+	 i < domainPtr->numFileDesc; 
+d1213 2
+a1214 1
+	dirEntryPtr->recordLength < FsDirRecLength(nameLength)) {
+d1219 1
+a1219 1
+	    hadError = 1;
+d1239 3
+a1241 1
+	    Output(stderr,"Name length wrong for directory entry: %s.\n", buf);
+d1246 1
+d1300 6
+@
+
+
+1.21
+log
+@Various bug fixes
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /a/newcmds/fscheck/RCS/checkdir.c,v 1.20 89/02/28 12:22:19 jhh Exp $ SPRITE (Berkeley)";
+d40 1
+a40 1
+void	AddToDirectory();
+d47 2
+d680 1
+d762 3
+a764 1
+    outputFileLength = strlen(outputFileName);
+d856 2
+d870 15
+a884 4
+	    AddToDirectory(lostRootDirNum, rootFDPtr, &rootDirIndex,
+			    &rootDirEntryPtr, dirListPtr->dirNumber,
+			    newFileName,
+			    &descInfoArray[dirListPtr->dirNumber]);
+d904 1
+d934 10
+a943 2
+		AddToDirectory(lostFoundFileNum, lostFoundFDPtr, &lostDirIndex,
+				&lostDirEntryPtr, i, newFileName, fdInfoPtr);
+d976 5
+d1375 1
+a1375 1
+static void
+d1421 1
+a1421 1
+	    return;
+d1426 1
+a1426 1
+		return;
+d1448 1
+a1448 1
+	return;
+d1450 1
+a1450 3
+
+    Output(stderr, "Directory #%d full.  Couldn't insert %d\n", dirNumber,
+		   fileNumber);
+@
+
+
+1.20
+log
+@Converted to new C library, added lots of new functionality
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /a/newcmds/fscheck/RCS/checkdir.c,v 1.19 88/12/05 14:33:50 douglis Exp $ SPRITE (Berkeley)";
+d676 2
+d733 1
+d739 1
+a739 2
+	rootDirEntryPtr->recordLength =
+		FsDirRecLength(rootDirEntryPtr->nameLength);
+d742 6
+a747 1
+
+d759 1
+d770 3
+a772 3
+	    dirEntryPtr->nameLength > 0 && 
+	    strncmp(outputFileName, dirEntryPtr->fileName,
+		    dirEntryPtr->nameLength)  == 0) {
+d887 1
+a887 1
+	 ; 
+@
+
+
+1.19
+log
+@Converted over to the new C library.
+@
+text
+@d6 8
+a13 2
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+d17 1
+a17 1
+static char rcsid[] = "$Header: checkdir.c,v 1.18 88/09/20 15:14:07 nelson Exp $ SPRITE (Berkeley)";
+d36 1
+d71 1
+a71 1
+    char		block[FS_BLOCK_SIZE];
+a73 1
+    ReturnStatus	status;
+d83 1
+a83 1
+		*fdPtrPtr = &relocElemPtr->fd;
+d87 1
+a87 1
+	fprintf(stderr, "FetchFileDesc: FD not found in relocate list.\n");
+d93 1
+a93 1
+		*fdPtrPtr = &modElemPtr->fd;
+d97 1
+a97 1
+	fprintf(stderr, "FetchFileDesc: FD not found in mod list.\n");
+a99 1
+
+d104 2
+a105 2
+	perror("FetchFileDesc: Read failed on previously readable block");
+	exit(EXIT_HARD_ERR);
+d107 4
+a110 1
+    *fdPtrPtr = (FsFileDescriptor *)malloc(sizeof(FsFileDescriptor));
+d143 5
+d151 1
+a151 1
+	    fprintf(stderr, "StoreFileDesc: FD not found in list.\n");
+d155 5
+a159 1
+    
+a160 1
+	    modElemPtr = (ModListElement *)malloc(sizeof(ModListElement));
+d162 1
+a162 2
+	    bcopy((Address)fdPtr, (Address)&modElemPtr->fd,
+		  sizeof(FsFileDescriptor));
+a163 1
+	    free((Address)fdPtr);
+a166 1
+
+a188 1
+    ReturnStatus		status;
+d210 1
+a210 1
+	    fprintf(stderr,"MakePtrAccessible: Read (1) failed block %d\n",
+d230 1
+a230 1
+	    fprintf(stderr,"MakePtrAccessible: Read (2) failed block %d\n",
+d446 1
+a446 1
+	fprintf(stderr,
+d459 1
+a459 1
+	fprintf(stderr, "OpenDir: Error setting up index\n");
+d476 1
+a476 1
+	fprintf(stderr, "OpenDir: Read failed block %d\n",
+d531 1
+a531 1
+		fprintf(stderr, "NextDirEntry: Write failed block %d\n",
+d557 1
+a557 1
+		fprintf(stderr, "NextDirEntry: Write (2) failed block %d\n",
+d565 1
+a565 1
+	    fprintf(stderr, "NextDirEntry: Get index failed\n");
+d581 1
+a581 1
+	    fprintf(stderr, "NextDirEntry: Read failed block %d\n",
+d605 21
+d627 15
+d660 1
+a660 1
+CheckDirTree(partFIDParm, domainParmPtr, descInfoParm)
+d664 2
+d674 2
+d685 2
+a686 2
+	fprintf(stderr, "Unable to fetch file descriptor for root");
+	exit(EXIT_HARD_ERR);
+d691 1
+d693 3
+a695 1
+	fprintf(stderr, "Root directory corrupted\n");
+d697 2
+a698 5
+	    exit(EXIT_HARD_ERR);
+	} else if (rootFDPtr->lastByte == -1) {
+	    fprintf(stderr, "Can't fix empty root (can you?)\n");
+	    exit(EXIT_HARD_ERR);
+	}
+d705 1
+a705 1
+	fprintf(stderr, "Attempting to re-create the root\n");
+d709 4
+d715 51
+a765 2
+	if (rootDirEntryPtr == (FsDirEntry *)NULL) {
+	    exit(EXIT_HARD_ERR);
+d767 2
+a768 16
+    } else {
+	OpenDir(rootFDPtr, &descInfoArray[FS_ROOT_FILE_NUMBER], &dirIndex, 
+		&dirEntryPtr);
+    
+	(void)strcpy(pathName, "/");
+	while (dirEntryPtr != (FsDirEntry *) NULL) {
+	    /*
+	     * Go through the root directory checking each directory entry.
+	     */
+	    CheckDirEntry(&dirIndex, dirEntryPtr);
+	    if (strncmp("lost+found", dirEntryPtr->fileName,
+			dirEntryPtr->nameLength)  == 0) {
+		lostFoundFileNum = dirEntryPtr->fileNumber;
+	    }
+	    NextDirEntry(&dirIndex, &dirEntryPtr);
+	}
+d770 4
+d776 1
+a776 1
+	fprintf(stderr, "lost+found missing from root\n");
+d782 2
+a783 2
+	    fprintf(stderr, "Unable to fetch file descriptor for lost+found");
+	    exit(EXIT_HARD_ERR);
+d789 1
+a789 1
+	    fprintf(stderr,
+d801 1
+a801 1
+		    fprintf(stderr, "Could not open lost+found\n");
+d803 2
+d811 3
+d832 2
+a833 2
+	    fprintf(stderr,
+		    "Unable to fetch file descriptor for directory <%d>", i);
+a841 1
+	char *fileName;
+a843 29
+	 * Create the "." and ".." entries in the trashed directory.  The
+	 * above OpenDir call has set up rootDirEntryPtr to reference the
+	 * first bytes in the directory.
+	 */
+
+	fileName = ".";
+	rootDirEntryPtr->fileNumber = lostRootDirNum;
+	rootDirEntryPtr->nameLength = strlen(fileName);
+	rootDirEntryPtr->recordLength =
+		FsDirRecLength(rootDirEntryPtr->nameLength);
+	(void)strcpy(rootDirEntryPtr->fileName, fileName);
+	NextDirEntry(&rootDirIndex, &rootDirEntryPtr);
+
+	fileName = "..";
+	rootDirEntryPtr->fileNumber = lostRootDirNum;
+	rootDirEntryPtr->nameLength = strlen(fileName);
+	rootDirEntryPtr->recordLength =
+		FsDirRecLength(rootDirEntryPtr->nameLength);
+	(void)strcpy(rootDirEntryPtr->fileName, fileName);
+	NextDirEntry(&rootDirIndex, &rootDirEntryPtr);
+
+	while(rootDirEntryPtr != (FsDirEntry *)NULL) {
+	    CheckDirEntry(&rootDirIndex, rootDirEntryPtr);
+	    NextDirEntry(&rootDirIndex, &rootDirEntryPtr);
+	}
+	rootFDPtr->fileType = FS_DIRECTORY;
+	descInfoArray[FS_ROOT_FILE_NUMBER].flags |= FD_MODIFIED;
+
+	/*
+d850 5
+d857 1
+d865 2
+a866 2
+		perror("CheckDirTree: Write failed");
+		exit(EXIT_HARD_ERR);
+d870 3
+d879 1
+a879 1
+	 i < domainPtr->numFileDesc; 
+d882 10
+d900 1
+a900 1
+		fprintf(stderr, "File %d is unreferenced\n", i);
+d906 1
+d908 1
+a908 1
+				&lostDirEntryPtr, i, fdInfoPtr);
+d912 1
+a912 1
+		fprintf(stderr,
+d928 1
+a928 1
+		    fprintf(stderr,
+d937 3
+d942 1
+a942 1
+	fprintf(stderr, "%d unreferenced files\n", unrefFiles);
+d945 1
+a945 1
+	fprintf(stderr, "%d links counts corrected\n",
+d955 2
+a956 2
+	    perror("CheckDirTree: Write failed");
+	    exit(EXIT_HARD_ERR);
+d970 1
+a970 1
+ * CheckDir --
+d1013 1
+a1013 1
+	fprintf(stderr, "Empty directory %d %s changed to a file.\n",
+d1024 3
+d1028 1
+a1028 1
+	CheckDirEntry(&dirIndex, dirEntryPtr);
+d1037 1
+a1037 1
+		fprintf(stderr,
+d1047 1
+a1047 1
+		fprintf(stderr, 
+d1062 1
+a1062 1
+		fprintf(stderr,
+a1070 1
+	    descInfoArray[dirEntryPtr->fileNumber].newLinkCount++;
+d1075 3
+a1077 1
+		dirEntryPtr->fileNumber == lostDirNum) {
+d1079 12
+a1090 8
+		dirListPtr = (DirList *)malloc(sizeof(DirList));
+		dirListPtr->dirNumber = fdNum;
+		fprintf(stderr, "Found #%d, an orphan of dir #%d\n", 
+			fdNum, lostDirNum);
+		List_Insert((List_Links *)dirListPtr,
+			    LIST_ATREAR(orphanDirList));
+		fdInfoPtr->flags |= FD_REFERENCED;
+		fdInfoPtr->newLinkCount++;
+d1097 1
+a1097 1
+		(newFDInfoPtr->flags & IS_A_DIRECTORY)) {
+d1108 2
+a1109 2
+		    fprintf(stderr,
+		      "Unable to fetch file descriptor for directory <%d>.",
+d1117 1
+a1117 1
+	    }
+a1118 1
+
+d1145 2
+a1146 1
+CheckDirEntry(dirIndexPtr, dirEntryPtr)
+d1155 1
+d1174 1
+a1174 1
+	fprintf(stderr,
+d1178 1
+d1198 1
+a1198 1
+	    fprintf(stderr,"Name length wrong for directory entry: %s.\n", buf);
+d1200 1
+d1217 1
+a1217 1
+	    fprintf(stderr,
+d1221 1
+d1230 1
+a1230 1
+	fprintf(stderr, 
+d1234 1
+d1237 5
+d1243 6
+a1248 4
+               !(descInfoArray[dirEntryPtr->fileNumber].flags & FD_ALLOCATED)) {
+	fprintf(stderr, 
+	    "File %s%s references non-allocated descriptor.  File Deleted.\n",
+	    pathName, dirEntryPtr->fileName);
+d1250 1
+d1254 3
+d1290 1
+a1290 1
+	fprintf(stderr, "SetDotDot: Could not open dir\n");
+d1299 1
+a1299 1
+	fprintf(stderr, "SetDotDot: Could not move from . to ..\n");
+d1303 1
+a1303 1
+    dirFDPtr->numLinks++;
+d1310 1
+a1310 1
+	    fprintf(stderr, "SetDotDot: Write failed block %d\n",
+d1325 1
+a1325 2
+ *	Add the file descriptor to a directory.  Its name is taken
+ *	to be its file number.
+d1337 1
+a1337 1
+    fdInfoPtr)
+d1343 1
+a1345 1
+    char	 	fileName[100];
+a1353 1
+    sprintf(fileName, "%d", fileNumber);
+d1378 2
+a1379 2
+	    fprintf(stderr,
+      "Unable to fetch file descriptor for file <%d> to add to directory <%d>",
+d1400 1
+a1400 2
+	    dirEntryPtr = 
+			(FsDirEntry *) ((int) dirEntryPtr + recordLength);
+d1411 1
+a1411 1
+    fprintf(stderr, "Directory #%d full.  Couldn't insert %d\n", dirNumber,
+d1414 16
+a1429 1
+
+d1431 5
+a1435 1
+MakeLostAndFound()
+d1437 3
+a1439 2
+    return(SUCCESS);
+}
+d1441 41
+a1481 4
+ReturnStatus
+MakeRoot()
+{
+    return(SUCCESS);
+@
+
+
+1.18
+log
+@Changed it to print much less about errors unless verbose is on.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkdir.c,v 1.17 88/07/19 11:47:29 douglis Exp $ SPRITE (Berkeley)";
+a13 1
+#include "sprite.h"
+a14 1
+#include "io.h"
+d16 1
+a16 4
+#include "checkFS.h"
+#include "mem.h"
+#include "string.h"
+#include "byte.h"
+d18 3
+a20 1
+#include "char.h"
+d22 2
+a23 2
+static	Boolean		adding = FALSE;
+extern	Boolean 	writeDisk;
+d29 1
+a29 1
+extern	Boolean		patchRoot;
+d38 1
+a38 1
+extern Boolean verbose;
+d49 2
+a50 1
+ *	SUCCESS, or FAILURE if the descriptor was unreadable.
+d57 1
+a57 1
+ReturnStatus
+d59 2
+a60 2
+    int			fdNum;
+    FsFileDescriptor	**fdPtrPtr;
+d72 1
+a72 1
+	return(FAILURE);
+d78 1
+a78 1
+		return(SUCCESS);
+d81 2
+a82 1
+	Sys_Panic(SYS_FATAL, "FetchFileDesc: FD not found in relocate list.\n");
+d88 1
+a88 1
+		return(SUCCESS);
+d91 2
+a92 1
+	Sys_Panic(SYS_FATAL, "FetchFileDesc: FD not found in mod list.\n");
+d97 4
+a100 5
+    status = BlockRead(partFID, domainPtr, blockNum, 1, (Address) block);
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status,
+		      "FetchFileDesc: Read failed on previously readable block");
+	Proc_Exit(EXIT_HARD_ERR);
+d102 4
+a105 4
+    *fdPtrPtr = (FsFileDescriptor *)Mem_Alloc(sizeof(FsFileDescriptor));
+    Byte_Copy(sizeof(FsFileDescriptor), 
+	      (Address)&block[offset], (Address)*fdPtrPtr);
+    return(SUCCESS);
+d138 2
+a139 1
+	    Sys_Panic(SYS_FATAL, "StoreFileDesc: FD not found in list.\n");
+d144 1
+a144 1
+	    modElemPtr = (ModListElement *)Mem_Alloc(sizeof(ModListElement));
+d146 2
+a147 2
+	    Byte_Copy(sizeof(FsFileDescriptor), (Address)fdPtr,
+			    (Address)&modElemPtr->fd);
+d149 1
+a149 1
+	    Mem_Free((Address)fdPtr);
+d170 1
+a170 1
+static ReturnStatus
+d193 1
+a193 1
+	    return(SUCCESS);
+d195 1
+a195 1
+	status = FragRead(partFID, domainPtr,
+d197 4
+a200 6
+			  indexInfoPtr->firstBlock);
+	if (status != SUCCESS) {
+	    Io_PrintStream(io_StdErr,
+			   "MakePtrAccessible: Read (1) failed <%x> block %d\n",
+			   status, *blockAddrPtr);
+	    return(status);
+d202 1
+a202 1
+	indexInfoPtr->firstBlockNil = FALSE;
+d208 1
+a208 1
+	return(SUCCESS);
+d215 1
+a215 1
+	status = FragRead(partFID, domainPtr,
+d217 4
+a220 6
+			  indexInfoPtr->secondBlock);
+	if (status != SUCCESS) {
+	    Io_PrintStream(io_StdErr,
+			   "MakePtrAccessible: Read (2) failed <%x> block %d\n",
+			   status, *blockAddrPtr);
+	    return(status);
+d222 1
+a222 1
+	indexInfoPtr->secondBlockNil = FALSE;
+d226 1
+a226 1
+    return(SUCCESS);
+d239 1
+a239 1
+ *	None.
+d246 1
+a246 1
+static ReturnStatus
+d254 2
+a255 2
+    indexInfoPtr->firstBlockNil = TRUE;
+    indexInfoPtr->secondBlockNil = TRUE;
+d257 1
+a257 1
+    indexInfoPtr->dirDirty = FALSE;
+d268 1
+a268 1
+	return(SUCCESS);
+d316 1
+a316 1
+static ReturnStatus
+d320 1
+a320 1
+    Boolean			accessible = FALSE;
+d326 1
+a326 1
+    indexInfoPtr->dirDirty = FALSE;
+d341 1
+a341 1
+		accessible = TRUE;
+d359 1
+a359 1
+		accessible = TRUE;
+d371 1
+a371 1
+		indexInfoPtr->firstBlockNil = TRUE;
+d379 1
+a379 1
+		indexInfoPtr->secondBlockNil = TRUE;
+d383 1
+a383 1
+		accessible = TRUE;
+d394 1
+a394 1
+	return(SUCCESS);
+a424 1
+    ReturnStatus	status;
+d434 1
+a434 1
+	Io_PrintStream(io_StdErr,
+d436 1
+a436 1
+	foundError = TRUE;
+d446 2
+a447 4
+    status = GetFirstIndex(0, indexInfoPtr);
+    if (status != SUCCESS) {
+	Io_PrintStream(io_StdErr, "OpenDir: Error setting up index <%x>\n",
+		       status);
+d460 1
+a460 1
+    status = FragRead(partFID, domainPtr,
+d463 3
+a465 4
+		      fragsToRead, indexInfoPtr->dirBlock);
+    if (status != SUCCESS) {
+	Io_PrintStream(io_StdErr, "OpenDir: Read failed <%x> block %d\n",
+		       status, indexInfoPtr->blockAddr + 
+a495 1
+    ReturnStatus	status;
+d513 1
+a513 1
+	    status = FragWrite(partFID, domainPtr,
+d517 4
+a520 5
+			      indexInfoPtr->numFrags, indexInfoPtr->dirBlock);
+	    if (status != SUCCESS) {
+		Io_PrintStream(io_StdErr, 
+			   "NextDirEntry: Write failed <%x> block %d\n",
+			       status, indexInfoPtr->blockAddr + 
+d539 1
+a539 1
+	    status = FragWrite(partFID, domainPtr,
+d543 4
+a546 5
+			      indexInfoPtr->numFrags, indexInfoPtr->dirBlock);
+	    if (status != SUCCESS) {
+		Io_PrintStream(io_StdErr, 
+			   "NextDirEntry: Write (2) failed <%x> block %d\n",
+			       status, indexInfoPtr->blockAddr + 
+d552 2
+a553 4
+	status = GetNextIndex(indexInfoPtr);
+	if (status != SUCCESS) {
+	    Io_PrintStream(io_StdErr, 
+		       "NextDirEntry: Get index failed <%x>\n", status);
+d564 1
+a564 1
+	status = FragRead(partFID, domainPtr,
+d568 3
+a570 5
+			  fragsToRead, indexInfoPtr->dirBlock);
+	if (status != SUCCESS) {
+	    Io_PrintStream(io_StdErr, 
+		       "NextDirEntry: Read failed <%x> block %d\n",
+			   status, indexInfoPtr->blockAddr + 
+a616 1
+    ReturnStatus 	status;
+d632 3
+a634 2
+    if (FetchFileDesc(FS_ROOT_FILE_NUMBER, &rootFDPtr) != SUCCESS) {
+	Sys_Panic(SYS_FATAL, "Unable to fetch file descriptor for root");
+d640 1
+a640 1
+	Io_PrintStream(io_StdErr, "Root directory corrupted\n");
+d642 1
+a642 1
+	    Proc_Exit(EXIT_HARD_ERR);
+d644 2
+a645 2
+	    Io_PrintStream(io_StdErr, "Can't fix empty root (can you?)\n");
+	    Proc_Exit(EXIT_HARD_ERR);
+d653 1
+a653 1
+	Io_PrintStream(io_StdErr, "Attempting to re-create the root\n");
+d660 1
+a660 1
+	    Proc_Exit(EXIT_HARD_ERR);
+d666 1
+a666 1
+	(void)String_Copy("/", pathName);
+d672 2
+a673 2
+	    if (String_NCompare(dirEntryPtr->nameLength, 
+				"lost+found", dirEntryPtr->fileName) == 0) {
+d681 1
+a681 1
+	Io_PrintStream(io_StdErr, "lost+found missing from root\n");
+d686 3
+a688 3
+	if (FetchFileDesc(lostFoundFileNum, &lostFoundFDPtr) != SUCCESS) {
+	    Sys_Panic(SYS_FATAL,
+		      "Unable to fetch file descriptor for lost+found");
+d691 1
+a691 1
+	(void)String_Copy("/lost+found/", pathName);
+d694 1
+a694 1
+	    Io_PrintStream(io_StdErr,
+d698 1
+a698 1
+	    Boolean	dirOK;
+d706 1
+a706 1
+		    Io_PrintStream(io_StdErr, "Could not open lost+found\n");
+d722 1
+a722 1
+	Boolean			dirOK;
+d731 3
+a733 3
+	if (FetchFileDesc(i, &newFDPtr) != SUCCESS) {
+	    Sys_Panic(SYS_WARNING,
+		      "Unable to fetch file descriptor for directory <%d>", i);
+d752 1
+a752 1
+	rootDirEntryPtr->nameLength = String_Length(fileName);
+d755 1
+a755 1
+	(void)String_Copy(fileName, rootDirEntryPtr->fileName);
+d760 1
+a760 1
+	rootDirEntryPtr->nameLength = String_Length(fileName);
+d763 1
+a763 1
+	(void)String_Copy(fileName, rootDirEntryPtr->fileName);
+d785 1
+a785 1
+	    status = FragWrite(partFID, domainPtr,
+d787 4
+a790 5
+				    FS_FRAGMENTS_PER_BLOCK,
+			    rootDirIndex.numFrags, rootDirIndex.dirBlock);
+	    if (status != SUCCESS) {
+		Stat_PrintMsg(status, "CheckDirTree: Write failed");
+		Proc_Exit(EXIT_HARD_ERR);
+d811 1
+a811 1
+		Io_PrintStream(io_StdErr, "File %d is unreferenced\n", i);
+d814 2
+a815 2
+	    foundError = TRUE;
+	    Io_Flush(io_StdErr);
+d822 1
+a822 1
+		Io_PrintStream(io_StdErr,
+d827 2
+a828 2
+	    foundError = TRUE;
+	    Io_Flush(io_StdErr);
+d837 3
+a839 3
+		if (FetchFileDesc(i, &fdPtr) != SUCCESS) {
+		    Sys_Panic(SYS_WARNING,
+			      "Unable to fetch file descriptor for file <%d> to update link count", i);
+d849 1
+a849 1
+	Io_PrintStream(io_StdErr, "%d unreferenced files\n", unrefFiles);
+d852 2
+a853 1
+	Io_PrintStream(io_StdErr, "%d links counts corrected\n", unrefFiles);
+d857 2
+a858 2
+	status = FragWrite(partFID, domainPtr,
+			    lostDirIndex.blockAddr + domainPtr->dataOffset * 
+d860 4
+a863 4
+			    lostDirIndex.numFrags, lostDirIndex.dirBlock);
+	if (status != SUCCESS) {
+	    Stat_PrintMsg(status, "CheckDirTree: Write failed");
+	    Proc_Exit(EXIT_HARD_ERR);
+d902 1
+a902 1
+    int			*dirOKPtr;	/* Return TRUE if the directory is
+d912 1
+a912 1
+    *dirOKPtr = FALSE;
+d918 1
+a918 1
+    nullIndex = String_Length(pathName);
+d920 1
+a920 1
+	Io_PrintStream(io_StdErr, "Empty directory %d %s changed to a file.\n",
+d922 1
+a922 1
+	foundError = TRUE;
+d939 3
+a941 3
+		String_NCompare(dirEntryPtr->nameLength, ".", 
+				dirEntryPtr->fileName) != 0) {
+		Io_PrintStream(io_StdErr,
+d944 1
+a944 1
+		foundError = TRUE;
+d951 1
+a951 1
+		Io_PrintStream(io_StdErr, 
+d954 1
+a954 1
+		foundError = TRUE;
+d956 1
+a956 1
+		dirIndex.dirDirty = TRUE;
+d964 3
+a966 3
+		String_NCompare(dirEntryPtr->nameLength, "..", 
+				dirEntryPtr->fileName) != 0) {
+		Io_PrintStream(io_StdErr,
+d969 1
+a969 1
+		foundError = TRUE;
+d981 2
+a982 1
+		DirList *dirListPtr = Mem_New(DirList);
+d984 1
+a984 1
+		Io_PrintStream(io_StdErr, "Found #%d, an orphan of dir #%d\n", 
+d997 1
+a997 1
+		Boolean	dirOK;
+d1003 5
+a1007 7
+		(void)String_NCat(dirEntryPtr->nameLength,
+				  dirEntryPtr->fileName,
+			   pathName);
+		(void)String_Cat("/", pathName);
+		if (FetchFileDesc(dirEntryPtr->fileNumber, &newFDPtr) !=
+		    SUCCESS) {
+		    Sys_Panic(SYS_WARNING,
+d1023 1
+a1023 1
+    *dirOKPtr = TRUE;
+d1072 1
+a1072 1
+	Io_PrintStream(io_StdErr,
+d1075 1
+a1075 1
+	foundError = TRUE;
+d1082 1
+a1082 1
+	dirIndexPtr->dirDirty = TRUE;
+d1089 3
+a1091 4
+	Boolean	nameError = FALSE;
+	nameLength = 
+		String_NLength(dirEntryPtr->recordLength - FS_DIR_ENTRY_HEADER, 
+			       dirEntryPtr->fileName);
+d1093 1
+a1093 1
+	    Byte_Copy(nameLength, dirEntryPtr->fileName, buf);
+d1095 2
+a1096 3
+	    Io_PrintStream(io_StdErr,
+			"Name length wrong for directory entry: %s.\n", buf);
+	    foundError = TRUE;
+d1098 1
+a1098 1
+	    dirIndexPtr->dirDirty = TRUE;
+d1105 1
+a1105 1
+	    if (*strPtr < 0 || !Char_IsPrint(*strPtr)) {
+d1107 1
+a1107 1
+		nameError = TRUE;
+d1112 2
+a1113 2
+	    dirIndexPtr->dirDirty = TRUE;
+	    Io_PrintStream(io_StdErr,
+d1116 1
+a1116 1
+	    foundError = TRUE;
+d1125 1
+a1125 1
+	Io_PrintStream(io_StdErr, 
+d1128 1
+a1128 1
+	foundError = TRUE;
+d1130 1
+a1130 1
+	dirIndexPtr->dirDirty = TRUE;
+d1133 1
+a1133 1
+	Io_PrintStream(io_StdErr, 
+d1136 1
+a1136 1
+	foundError = TRUE;
+d1138 1
+a1138 1
+	dirIndexPtr->dirDirty = TRUE;
+d1158 1
+a1158 1
+static Boolean
+a1164 1
+    ReturnStatus 	status;
+d1173 2
+a1174 2
+	Io_PrintStream(io_StdErr, "SetDotDot: Could not open dir\n");
+	return(FALSE);
+d1182 2
+a1183 2
+	Io_PrintStream(io_StdErr, "SetDotDot: Could not move from . to ..\n");
+	return(FALSE);
+d1190 1
+a1190 1
+	status = FragWrite(partFID, domainPtr, 
+d1192 3
+a1194 4
+	   dirIndex.numFrags, dirIndex.dirBlock);
+	if (status != SUCCESS) {
+	    Io_PrintStream(io_StdErr, "SetDotDot: Write failed <%x> block %d\n",
+		status, dirIndex.blockAddr + 
+d1196 1
+a1196 1
+	    return(FALSE);
+d1199 1
+a1199 1
+    return(TRUE);
+d1237 3
+a1239 3
+    adding = TRUE;
+    Io_PrintString(fileName, "%d", fileNumber);
+    nameLength = String_Length(fileName);
+d1262 3
+a1264 3
+	if (FetchFileDesc(fileNumber, &fdPtr) != SUCCESS) {
+	    Sys_Panic(SYS_WARNING,
+		      "Unable to fetch file descriptor for file <%d> to add to directory <%d>",
+d1280 2
+a1281 2
+	dirIndexPtr->dirDirty = TRUE;
+	(void)String_Copy(fileName, dirEntryPtr->fileName);
+d1297 1
+a1297 2
+    Io_PrintStream(io_StdErr, 
+		   "Directory #%d full.  Couldn't insert %d\n", dirNumber,
+d1311 30
+@
+
+
+1.17
+log
+@Added ability to salvage and relocate file descriptors in unreadable
+blocks and to mark those blocks as unuseable (temporarily -- if readable
+again later, they will be reclaimed).
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkdir.c,v 1.16 88/06/02 12:59:45 brent Exp $ SPRITE (Berkeley)";
+d41 2
+d439 2
+a440 1
+	Io_PrintStream(io_StdErr, "Directory not multiple of directory block size. Directory corrected.\n");
+d638 2
+d818 1
+d826 4
+a829 1
+	    Io_PrintStream(io_StdErr, "File %d is unreferenced\n", i);
+d837 6
+a842 2
+	    Io_PrintStream(io_StdErr, "Link count corrected for file %d.  Is %d should be %d.\n", 
+		i, fdInfoPtr->origLinkCount, fdInfoPtr->newLinkCount);
+d864 6
+d956 2
+a957 1
+		Io_PrintStream(io_StdErr, ". missing in directory %d %s.  Changed to a file.\n",
+d981 2
+a982 1
+		Io_PrintStream(io_StdErr, ".. missing in directory %d %s.  Changed to a file.\n",
+d1024 1
+a1024 1
+			      "Unable to fetch file descriptor for directory <%d>.",
+d1088 3
+a1090 1
+	Io_PrintStream(io_StdErr, "Bad record length in directory.  Directory entry deleted from %s\n", pathName);
+d1112 2
+a1113 1
+	    Io_PrintStream(io_StdErr, "Name length wrong for directory entry: %s.\n", buf);
+d1143 3
+a1145 1
+	Io_PrintStream(io_StdErr, "Bad file number in directory.  Directory entry deleted from %s.\n", pathName);
+d1152 1
+a1152 1
+	    "File %s%s references non-allocated descriptor.  File Deleted\n",
+@
+
+
+1.16
+log
+@Added code to rebuild a trashed root directory
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkdir.c,v 1.15 87/11/13 13:04:36 nelson Exp $ SPRITE (Berkeley)";
+d50 1
+a50 1
+ *	None.
+d57 1
+a57 1
+void
+d63 1
+d71 12
+d87 1
+a87 1
+		return;
+d90 1
+a90 1
+	Sys_Panic(SYS_FATAL, "FetchFileDesc: FD not found in list.\n");
+d97 2
+a98 1
+	Stat_PrintMsg(status, "FetchFileDesc: Read failed");
+d104 1
+d643 3
+a645 1
+    FetchFileDesc(FS_ROOT_FILE_NUMBER, &rootFDPtr);
+d676 1
+a676 1
+	String_Copy("/", pathName);
+d696 4
+a699 1
+	FetchFileDesc(lostFoundFileNum, &lostFoundFDPtr);
+d701 1
+a701 1
+	String_Copy("/lost+found/", pathName);
+d741 5
+a745 1
+	FetchFileDesc(i, &newFDPtr);
+d765 1
+a765 1
+	String_Copy(fileName, rootDirEntryPtr->fileName);
+d773 1
+a773 1
+	String_Copy(fileName, rootDirEntryPtr->fileName);
+d814 1
+d840 8
+a847 4
+		FetchFileDesc(i, &fdPtr);
+		fdPtr->numLinks = fdInfoPtr->newLinkCount;
+		fdInfoPtr->flags |= FD_MODIFIED;
+		StoreFileDesc(i, fdPtr);
+d996 2
+a997 1
+		String_NCat(dirEntryPtr->nameLength, dirEntryPtr->fileName,
+d999 12
+a1010 6
+		String_Cat("/", pathName);
+		FetchFileDesc(dirEntryPtr->fileNumber, &newFDPtr);
+		CheckDir(dirEntryPtr->fileNumber, newFDPtr, 
+				  newFDInfoPtr, lostDirNum, &dirOK);
+		pathName[nullIndex] = '\0';
+		StoreFileDesc(dirEntryPtr->fileNumber, newFDPtr);
+d1256 6
+a1261 1
+	FetchFileDesc(fileNumber, &fdPtr);
+d1275 1
+a1275 1
+	String_Copy(fileName, dirEntryPtr->fileName);
+@
+
+
+1.15
+log
+@Can handle read and write errors and continue.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkdir.c,v 1.14 87/10/21 11:03:56 nelson Exp $ SPRITE (Berkeley)";
+d17 1
+a17 1
+#include "fsDisk.h"
+d22 1
+d32 1
+d36 1
+a36 1
+void	AddToLostAndFound();
+d85 1
+a85 1
+	Proc_Exit(status);
+d582 9
+d619 1
+d634 6
+a639 1
+	Proc_Exit(1);
+d641 4
+a644 10
+	MakeRoot(descInfo);
+	*/
+    }
+    OpenDir(rootFDPtr, &descInfoArray[FS_ROOT_FILE_NUMBER], &dirIndex, 
+	    &dirEntryPtr);
+
+    String_Copy("/", pathName);
+    while (dirEntryPtr != (FsDirEntry *) NULL) {
+	/*
+	 * Go through the root directory checking each directory entry.
+d646 8
+a653 4
+	CheckDirEntry(&dirIndex, dirEntryPtr);
+	if (String_NCompare(dirEntryPtr->nameLength, 
+			    "lost+found", dirEntryPtr->fileName) == 0) {
+	    lostFoundFileNum = dirEntryPtr->fileNumber;
+d655 16
+a670 1
+	NextDirEntry(&dirIndex, &dirEntryPtr);
+d677 1
+a677 1
+	 * Now that the root is ok, make sure that lost and found is consistent.
+d690 2
+a691 1
+	    CheckDir(lostFoundFileNum, lostFoundFDPtr, fdInfoPtr, &dirOK);
+d706 2
+a707 1
+     * Check all file descriptors.
+d722 1
+a722 1
+	CheckDir(i, newFDPtr, fdInfoPtr, &dirOK);
+d726 55
+d799 2
+a800 1
+		AddToLostAndFound(i, fdInfoPtr);
+d830 1
+a830 1
+	    Proc_Exit(status);
+d858 1
+a858 1
+CheckDir(fdNum, fdPtr, fdInfoPtr, dirOKPtr)
+d865 4
+d941 14
+d972 1
+a972 1
+				  newFDInfoPtr, &dirOK);
+d1104 1
+a1104 1
+ *	Make ".." in the given directory point to lost and found.
+d1115 3
+a1117 1
+SetDotDot(fdPtr, fdInfoPtr)
+d1143 3
+a1145 3
+    lostFoundFDPtr->numLinks++;
+    descInfoArray[lostFoundFileNum].flags |= FD_MODIFIED;
+    dirEntryPtr->fileNumber = lostFoundFileNum;
+d1164 1
+a1164 1
+ * AddToLostAndFound --
+d1166 2
+a1167 1
+ *	Add the file descriptor to the lost and found directory.
+d1173 1
+a1173 1
+ *	The lost and found directory may be modified.
+d1178 6
+a1183 1
+AddToLostAndFound(fileNumber, fdInfoPtr)
+d1192 1
+d1200 5
+a1204 4
+    while (lostDirEntryPtr != (FsDirEntry *) NULL) {
+	if (lostDirEntryPtr->fileNumber != 0) {
+	    oldRecLength = FsDirRecLength(lostDirEntryPtr->nameLength);
+	    leftOver = lostDirEntryPtr->recordLength - oldRecLength;
+d1206 5
+a1210 5
+		lostDirEntryPtr->recordLength = oldRecLength;
+		lostDirEntryPtr = 
+			(FsDirEntry *) ((int) lostDirEntryPtr + oldRecLength);
+		lostDirEntryPtr->recordLength = leftOver;
+		lostDirIndex.dirOffset += oldRecLength;
+d1212 1
+a1212 1
+		NextDirEntry(&lostDirIndex, &lostDirEntryPtr);
+d1215 2
+a1216 2
+	} else if (lostDirEntryPtr->recordLength < recordLength) {
+	    NextDirEntry(&lostDirIndex, &lostDirEntryPtr);
+d1222 2
+a1223 1
+	    if (!SetDotDot(fdPtr, fdInfoPtr)) {
+d1231 5
+a1235 5
+	lostDirEntryPtr->fileNumber = fileNumber;
+	lostDirEntryPtr->nameLength = nameLength;
+	lostDirIndex.dirDirty = TRUE;
+	String_Copy(fileName, lostDirEntryPtr->fileName);
+	leftOver = lostDirEntryPtr->recordLength - recordLength;
+d1237 6
+a1242 6
+	    lostDirEntryPtr->recordLength = recordLength;
+	    lostDirEntryPtr = 
+			(FsDirEntry *) ((int) lostDirEntryPtr + recordLength);
+	    lostDirEntryPtr->fileNumber = 0;
+	    lostDirEntryPtr->recordLength = leftOver;
+	    lostDirIndex.dirOffset += recordLength;
+d1244 1
+a1244 1
+	    NextDirEntry(&lostDirIndex, &lostDirEntryPtr);
+d1246 1
+d1251 1
+a1251 1
+		   "Lost and found directory full.  Couldn't insert %d\n", 
+@
+
+
+1.14
+log
+@Set error status flag on error.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkdir.c,v 1.13 87/10/21 10:38:20 nelson Exp $ SPRITE (Berkeley)";
+a111 3
+    char		block[FS_BLOCK_SIZE];
+    int			blockNum;
+    int			offset;
+d151 1
+a151 1
+static void
+d174 1
+a174 1
+	    return;
+d180 4
+a183 2
+	    Stat_PrintMsg(status, "MakePtrAccessible: Read failed (1)");
+	    Proc_Exit(status);
+d191 1
+a191 1
+	return;
+d202 4
+a205 2
+	    Stat_PrintMsg(status, "MakePtrAccessible: Read failed (2)");
+	    Proc_Exit(status);
+d211 1
+d231 1
+a231 1
+static void
+d253 1
+a253 1
+	return;
+d281 1
+a281 1
+    MakePtrAccessible(indexInfoPtr);
+d301 1
+a301 1
+static void
+d377 3
+a379 1
+	MakePtrAccessible(indexInfoPtr);
+d431 7
+a437 1
+    GetFirstIndex(0, indexInfoPtr);
+d452 5
+a456 2
+	Stat_PrintMsg(status, "OpenDir: Read failed");
+	Proc_Exit(status);
+a478 1
+
+d508 4
+a511 2
+		Stat_PrintMsg(status, "NextDirEntry: Write failed");
+		Proc_Exit(status);
+d535 6
+a540 2
+		Stat_PrintMsg(status, "NextDirEntry: Write failed (2)");
+		Proc_Exit(status);
+d543 7
+a549 1
+	GetNextIndex(indexInfoPtr);
+d563 6
+a568 2
+	    Stat_PrintMsg(status, "NextDirEntry: Read failed");
+	    Proc_Exit(status);
+d627 2
+a628 1
+    OpenDir(rootFDPtr, fdInfoPtr, &dirIndex, &dirEntryPtr);
+d664 4
+d1008 1
+a1008 1
+static void
+d1021 4
+d1030 4
+d1043 4
+a1046 2
+	    Stat_PrintMsg(status, "SetDotDot: Write failed");
+	    Proc_Exit(status);
+d1049 1
+d1106 3
+a1108 1
+	    SetDotDot(fdPtr, fdInfoPtr);
+@
+
+
+1.13
+log
+@Added ability to handle the bad block file.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkdir.c,v 1.12 87/10/05 12:51:50 nelson Exp $ SPRITE (Berkeley)";
+d417 1
+d676 1
+d684 1
+d764 1
+d785 1
+d795 1
+d809 1
+d893 1
+d915 1
+d935 1
+d945 1
+d953 1
+@
+
+
+1.12
+log
+@Checks for file in a directory that references a non-allocated descriptor.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkdir.c,v 1.11 87/09/10 14:40:39 nelson Exp $ SPRITE (Berkeley)";
+d668 2
+a669 1
+	if (!(fdInfoPtr->flags & FD_ALLOCATED)) {
+@
+
+
+1.11
+log
+@Checks for and fixes names in directories that have non-printable
+characters.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkdir.c,v 1.10 87/08/10 10:48:29 nelson Exp $ SPRITE (Berkeley)";
+d936 7
+a942 1
+	return;
+@
+
+
+1.10
+log
+@Changed to use new method that requires much less memory.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkdir.c,v 1.9 87/07/14 14:39:27 nelson Exp $ SPRITE (Berkeley)";
+d22 1
+d861 5
+a865 4
+    int		dirBlockOffset;
+    int		lastDirByte;
+    char	buf[FS_MAX_NAME_LENGTH + 1];
+    int		nameLength;
+d898 1
+d908 17
+@
+
+
+1.9
+log
+@Allow lost and found to be anywhere, not just fd 3.  This allows a corrupted
+lost and found directory to be easily recreated.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkdir.c,v 1.8 87/07/14 11:32:41 brent Exp $ SPRITE (Berkeley)";
+d32 2
+d35 3
+d42 99
+d153 1
+a153 1
+static ReturnStatus
+d158 1
+a158 1
+    register FsFileDescriptor	*descPtr;
+d161 2
+a162 1
+    descPtr = &(indexInfoPtr->descInfoPtr->fileDesc);
+d166 1
+a166 1
+	*blockAddrPtr = descPtr->indirect[0];
+d168 1
+a168 1
+	*blockAddrPtr = descPtr->indirect[1];
+d176 1
+a176 1
+	    return(SUCCESS);
+d182 2
+a183 1
+	    return(status);
+d191 1
+a191 1
+	return(SUCCESS);
+d197 8
+a204 9
+    if (*blockAddrPtr == FS_NIL_INDEX) {
+	return(SUCCESS);
+    }
+    status = FragRead(partFID, domainPtr,
+		      *blockAddrPtr, FS_FRAGMENTS_PER_BLOCK,
+		      indexInfoPtr->secondBlock);
+    if (status != SUCCESS) {
+	return(status);
+    } else {
+a207 1
+	return(SUCCESS);
+d221 1
+a221 2
+ *	A status indicating whether there was sufficient space to allocate
+ *	indirect blocks.
+d228 1
+a228 1
+static ReturnStatus
+d234 1
+a234 1
+    FsFileDescriptor	*descPtr;
+d241 1
+a241 1
+    descPtr = &indexInfoPtr->descInfoPtr->fileDesc;
+d249 2
+a250 2
+	indexInfoPtr->blockAddr = descPtr->direct[blockNum];
+	return(SUCCESS);
+d278 1
+a278 1
+    return(MakePtrAccessible(indexInfoPtr));
+d291 1
+a291 1
+ *	A status indicating whether indirect blocks could be read in.
+d298 1
+a298 1
+static ReturnStatus
+d303 1
+a303 1
+    register FsFileDescriptor	*descPtr;
+d305 1
+a305 1
+    descPtr = &(indexInfoPtr->descInfoPtr->fileDesc);
+d322 1
+a322 1
+				descPtr->direct[indexInfoPtr->firstIndex];
+d374 1
+a374 3
+	return(MakePtrAccessible(indexInfoPtr));
+    } else {
+	return(SUCCESS);
+d387 1
+a387 1
+ *	A return status.
+d395 6
+a400 3
+static ReturnStatus
+OpenDir(descInfoPtr, indexInfoPtr, dirEntryPtrPtr)
+    FdInfo		*descInfoPtr;	/* Descriptor for the directory. */
+d408 1
+a408 1
+    if (descInfoPtr->fileDesc.lastByte == -1) {
+d413 2
+a414 2
+	return(SUCCESS);
+    } else if ((descInfoPtr->fileDesc.lastByte + 1) % FS_DIR_BLOCK_SIZE != 0) {
+d416 3
+a418 3
+	descInfoPtr->fileDesc.lastByte = 
+		(descInfoPtr->fileDesc.lastByte & ~(FS_DIR_BLOCK_SIZE - 1)) +
+		    FS_DIR_BLOCK_SIZE - 1;
+d423 3
+a425 5
+    indexInfoPtr->descInfoPtr = descInfoPtr;
+    status = GetFirstIndex(0, indexInfoPtr);
+    if (status != SUCCESS) {
+	return(status);
+    }
+d429 1
+a429 1
+    if (descInfoPtr->fileDesc.lastByte >= FS_BLOCK_SIZE - 1) {
+d432 1
+a432 1
+	fragsToRead = descInfoPtr->fileDesc.lastByte / FS_FRAGMENT_SIZE + 1;
+d440 5
+a444 6
+	return(status);
+    } else {
+	indexInfoPtr->dirOffset = 0;
+	*dirEntryPtrPtr = (FsDirEntry *) indexInfoPtr->dirBlock;
+	return(SUCCESS);
+    }
+d456 1
+a456 1
+ *	A return status.
+d465 1
+a465 1
+ReturnStatus
+d478 1
+a478 1
+    lastByte = indexInfoPtr->descInfoPtr->fileDesc.lastByte;
+d494 2
+a495 1
+		return(status);
+d498 1
+a498 1
+	return(SUCCESS);
+d519 2
+a520 1
+		return(status);
+d523 1
+a523 4
+	status = GetNextIndex(indexInfoPtr);
+	if (status != SUCCESS) {
+	    return(status);
+	}
+d537 2
+a538 4
+	    return(status);
+	} else {
+	    indexInfoPtr->dirOffset = 0;
+	    dirEntryPtr = (FsDirEntry *) indexInfoPtr->dirBlock;
+d540 2
+a544 2
+
+    return(SUCCESS);
+d567 1
+a567 1
+ReturnStatus
+d575 1
+a575 1
+    register FdInfo	*descInfoPtr;
+d586 5
+a590 4
+    descInfoPtr = &descInfoArray[FS_ROOT_FILE_NUMBER];
+    if (descInfoPtr->fileDesc.flags & FS_FD_FREE ||
+	descInfoPtr->fileDesc.fileType != FS_DIRECTORY ||
+	descInfoPtr->fileDesc.lastByte == -1) {
+d592 1
+a592 1
+	return(FAILURE);
+d597 1
+a597 5
+    status = OpenDir(descInfoPtr, &dirIndex, &dirEntryPtr);
+    if (status != SUCCESS) {
+	Io_PrintStream(io_StdErr, "CheckDirTree: Disk error on root (1) <%x>\n", status);
+	return(status);
+    }
+a604 4
+	if (status != SUCCESS) {
+	    Io_PrintStream(io_StdErr, "CheckDirTree: Disk error on root (2) <%x>\n", status);
+	    return(status);
+	}
+d609 1
+a609 5
+	status = NextDirEntry(&dirIndex, &dirEntryPtr);
+	if (status != SUCCESS) {
+	    Io_PrintStream(io_StdErr, "CheckDirTree: Disk error on root (3) <%x>\n", status);
+	    return(status);
+	}
+d618 2
+d621 2
+a622 2
+	descInfoPtr = &descInfoArray[lostFoundFileNum];
+	if (descInfoPtr->fileDesc.fileType != FS_DIRECTORY) {
+d629 4
+a632 14
+	    status = CheckDir(lostFoundFileNum, descInfoPtr, &dirOK);
+	    if (status == SUCCESS) {
+		if (dirOK) {
+		    status = OpenDir(descInfoPtr, &lostDirIndex,
+				     &lostDirEntryPtr);
+		    if (status != SUCCESS) {
+			Io_PrintStream(io_StdErr,
+				"CheckDirTree: Couldn't open lost+found <%x>\n",
+				status);
+			return(status);
+		    }
+		} else {
+		    lostFoundFileNum = -1;
+		}
+d634 1
+a634 4
+		Io_PrintStream(io_StdErr,
+			       "CheckDirTree: Error checking lost+found <%x>\n",
+			       status);
+		return(status);
+d642 1
+a642 1
+    for (i = 0, descInfoPtr = descInfoArray;
+d644 3
+a646 2
+	 i++, descInfoPtr++) {
+	Boolean	dirOK;
+d648 3
+a650 3
+	if (descInfoPtr->seen ||
+	    !(descInfoPtr->fileDesc.flags & FS_FD_ALLOC) || 
+	    descInfoPtr->fileDesc.fileType != FS_DIRECTORY) {
+d654 3
+a656 6
+	status = CheckDir(i, descInfoPtr, &dirOK);
+	if (status != SUCCESS) {
+	    Io_PrintStream(io_StdErr,
+			"CheckDirTree: Could not read disk for file %d\n", i);
+	    return(status);
+	}
+d664 1
+a664 1
+    for (i = 0, descInfoPtr = descInfoArray;
+d666 2
+a667 2
+	 i++, descInfoPtr++) {
+	if (!(descInfoPtr->fileDesc.flags & FS_FD_ALLOC)) {
+d670 2
+a671 1
+	if (descInfoPtr->parentLinkCount == 0 && i != FS_ROOT_FILE_NUMBER) {
+d675 1
+a675 4
+		status = AddToLostAndFound(i, descInfoPtr);
+		if (status != SUCCESS) {
+		    Io_PrintStream(io_StdErr, "Could not add file to lost and found\n");
+		}
+d677 1
+a677 1
+	} else if (descInfoPtr->linkCount != descInfoPtr->fileDesc.numLinks) {
+d679 1
+a679 1
+		i, descInfoPtr->fileDesc.numLinks, descInfoPtr->linkCount);
+d681 13
+a693 1
+	    descInfoPtr->fileDesc.numLinks = descInfoPtr->linkCount;
+d702 4
+a705 3
+	return(status);
+    } else {
+	return(SUCCESS);
+d707 5
+d723 1
+a723 1
+ *	A return status.
+d731 3
+a733 3
+ReturnStatus
+CheckDir(descNum, descPtr, dirOKPtr)
+    int			descNum;	/* Which file descriptor we are looking
+d735 3
+a737 1
+    FdInfo		*descPtr;	/* Pointer to file desc that we are
+a741 1
+    ReturnStatus status;
+d743 1
+a743 1
+    FdInfo	 *fileDescPtr;
+d748 1
+a748 1
+    descPtr->seen = TRUE;
+d754 1
+a754 5
+    status = OpenDir(descPtr, &dirIndex, &dirEntryPtr);
+    if (status != SUCCESS) {
+	Io_PrintStream(io_StdErr, "CheckDir: Disk error (1) <%x>\n", status);
+	return(status);
+    }
+d758 4
+a761 3
+		        descNum, pathName);
+	descPtr->fileDesc.fileType = FS_FILE;
+	return(SUCCESS);
+d778 5
+a782 3
+			       descNum, pathName);
+		descPtr->fileDesc.fileType = FS_FILE;
+		return(SUCCESS);
+d784 1
+a784 1
+	    if (dirEntryPtr->fileNumber != descNum) {
+d787 2
+a788 2
+			    descNum, pathName);
+		dirEntryPtr->fileNumber = descNum;
+d791 1
+a791 1
+	    descPtr->linkCount++;
+d800 5
+a804 3
+			       descNum, pathName);
+		descPtr->fileDesc.fileType = FS_FILE;
+		return(SUCCESS);
+d806 1
+a806 1
+	    descInfoArray[dirEntryPtr->fileNumber].linkCount++;
+d808 5
+a812 5
+	    fileDescPtr = &descInfoArray[dirEntryPtr->fileNumber];
+	    fileDescPtr->linkCount++;
+	    fileDescPtr->parentLinkCount++;
+	    if (!fileDescPtr->seen && 
+		fileDescPtr->fileDesc.fileType == FS_DIRECTORY) {
+d814 2
+d822 3
+a824 1
+		status = CheckDir(dirEntryPtr->fileNumber, fileDescPtr, &dirOK);
+d826 1
+a826 5
+		if (status != SUCCESS) {
+		    Io_PrintStream(io_StdErr, "CheckDir: Disk error (2) <%x>\n",
+				   status);
+		    return(status);
+		}
+d830 1
+a830 5
+	status = NextDirEntry(&dirIndex, &dirEntryPtr);
+	if (status != SUCCESS) {
+	    Io_PrintStream(io_StdErr, "CheckDir: Disk error (3) <%x>\n",status);
+	    return(status);
+	}
+a834 1
+    return(SUCCESS);
+d936 4
+a939 3
+ReturnStatus
+SetDotDot(descPtr)
+    FdInfo		*descPtr;
+d941 3
+a943 3
+    ReturnStatus status;
+    FsDirEntry	 *dirEntryPtr;
+    DirIndexInfo dirIndex;
+d948 1
+a948 5
+    status = OpenDir(descPtr, &dirIndex, &dirEntryPtr);
+    if (status != SUCCESS) {
+	Io_PrintStream(io_StdErr, "SetDotDot: Disk error (1) <%x>\n", status);
+	return;
+    }
+d953 1
+a953 5
+    status = NextDirEntry(&dirIndex, &dirEntryPtr);
+    if (status != SUCCESS) {
+	Io_PrintStream(io_StdErr, "SetDotDot: Disk error (2) <%x>\n",status);
+	return;
+    }
+d955 2
+a956 1
+    descInfoArray[lostFoundFileNum].fileDesc.numLinks++;
+d959 1
+a959 1
+	(void) FragWrite(partFID, domainPtr, 
+d962 4
+d985 2
+a986 1
+AddToLostAndFound(fileNumber, descInfoPtr)
+d988 1
+a988 1
+    register	FdInfo	*descInfoPtr;
+a989 1
+    ReturnStatus 	status;
+d995 1
+a995 1
+    Boolean		needOne;
+a1002 1
+	needOne = FALSE;
+d1013 2
+a1014 1
+		needOne = TRUE;
+d1016 2
+a1017 9
+	}
+
+	if (needOne || lostDirEntryPtr->recordLength < recordLength) {
+	    status = NextDirEntry(&lostDirIndex, &lostDirEntryPtr);
+	    if (status != SUCCESS) {
+		Io_PrintStream(io_StdErr, "AddToLostAndFound: Disk error (1) <%x>\n", 
+			       status);
+		return(status);
+	    }
+d1021 3
+a1023 5
+	if (descInfoPtr->fileDesc.fileType == FS_DIRECTORY) {
+	    SetDotDot(descInfoPtr);
+	    descInfoPtr->fileDesc.numLinks++;
+	} else {
+	    descInfoPtr->fileDesc.numLinks = 1;
+d1025 3
+a1040 1
+	    return(SUCCESS);
+d1042 1
+a1042 6
+	    status = NextDirEntry(&lostDirIndex, &lostDirEntryPtr);
+	    if (status != SUCCESS) {
+		Io_PrintStream(io_StdErr, "AddToLostAndFound: Disk error (2) <%x>\n",
+				status);
+	    }
+	    return(status);
+d1044 1
+a1049 1
+    return(SUCCESS);
+@
+
+
+1.8
+log
+@Changed to include ioc.h.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkdir.c,v 1.7 87/06/03 19:31:02 nelson Exp $ SPRITE (Berkeley)";
+d29 1
+a478 1
+    Boolean		foundLostAndFound = FALSE;
+a504 1
+    foundLostAndFound = FALSE;
+d507 1
+a507 1
+	 * Go through the root directory checking each directry entry.
+d514 1
+a514 2
+	if (dirEntryPtr->fileNumber == FS_LOST_FOUND_FILE_NUMBER &&
+	    String_NCompare(dirEntryPtr->nameLength, 
+d516 1
+a516 1
+	    foundLostAndFound = TRUE;
+d524 2
+a525 1
+    if (!foundLostAndFound) {
+d527 12
+a538 1
+    }
+d540 21
+a560 14
+    /*
+     * Now that the root is ok, make sure that lost and found is consistent.
+     */
+    String_Copy("/lost+found/", pathName);
+    descInfoPtr = &descInfoArray[FS_LOST_FOUND_FILE_NUMBER];
+    if (descInfoPtr->fileDesc.flags & FS_FD_FREE || 
+	descInfoPtr->fileDesc.fileType != FS_DIRECTORY ||
+	descInfoPtr->fileDesc.lastByte != 
+			FS_NUM_LOST_FOUND_BLOCKS * FS_BLOCK_SIZE - 1) {
+	Io_PrintStream(io_StdErr, "Lost+found directory corrupted\n");
+	return(FAILURE);
+	/*
+	MakeLostAndFound(descInfo);
+	*/
+a561 8
+    status = CheckDir(FS_LOST_FOUND_FILE_NUMBER, descInfoPtr);
+    if (status == SUCCESS) {
+	status = OpenDir(descInfoPtr, &lostDirIndex, &lostDirEntryPtr);
+    }
+    if (status != SUCCESS) {
+	Io_PrintStream(io_StdErr, "CheckDirTree: Disk error on lost+found <%x>\n", status);
+	return(status);
+    }
+d569 2
+d577 1
+a577 1
+	status = CheckDir(i, descInfoPtr);
+d579 2
+a580 1
+	    Io_PrintStream(io_StdErr, "CheckDirTree: Could not read disk for file %d\n", i);
+d599 5
+a603 3
+	    status = AddToLostAndFound(i, descInfoPtr);
+	    if (status != SUCCESS) {
+		Io_PrintStream(io_StdErr, "Could not add file to lost and found\n");
+d613 1
+a613 1
+    if (lostDirIndex.dirDirty && writeDisk) {
+d642 1
+a642 1
+CheckDir(descNum, descPtr)
+d647 2
+d658 1
+d721 1
+d728 1
+a728 1
+		status = CheckDir(dirEntryPtr->fileNumber, fileDescPtr);
+d746 1
+a746 1
+
+d875 2
+a876 2
+    descInfoArray[FS_LOST_FOUND_FILE_NUMBER].fileDesc.numLinks++;
+    dirEntryPtr->fileNumber = FS_LOST_FOUND_FILE_NUMBER;
+@
+
+
+1.7
+log
+@Fixed bug with null directories.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkdir.c,v 1.6 87/06/01 15:42:12 nelson Exp $ SPRITE (Berkeley)";
+a16 1
+#include "ioc.h"
+@
+
+
+1.6
+log
+@Turns directores missing . and .. into files and when putting a directory
+into lost and found makes .. in directory to point to lost and found.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkdir.c,v 1.5 86/12/16 13:22:11 nelson Exp $ SPRITE (Berkeley)";
+d653 6
+d663 1
+a663 1
+    while (dirEntryPtr != (FsDirEntry *) NULL) {
+d677 3
+a679 3
+	    } else {
+		if (dirEntryPtr->fileNumber != descNum) {
+		    Io_PrintStream(io_StdErr, 
+d681 3
+a683 5
+  				descNum, pathName);
+		    dirEntryPtr->fileNumber = descNum;
+		    dirIndex.dirDirty = TRUE;
+		}
+		descPtr->linkCount++;
+d685 1
+a696 2
+	    } else {
+		descInfoArray[dirEntryPtr->fileNumber].linkCount++;
+d698 1
+d727 2
+a728 1
+    }
+@
+
+
+1.5
+log
+@Fixed various bugs and enhanced error statements.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkdir.c,v 1.4 86/11/26 17:49:57 nelson Exp $ SPRITE (Berkeley)";
+d20 3
+d24 6
+a29 1
+Boolean	adding = FALSE;
+a30 4
+extern Boolean writeDisk;
+
+char	pathName[FS_MAX_PATH_NAME_LENGTH];
+
+d45 1
+a45 1
+ *	None.
+a48 1
+
+a68 1
+
+d73 1
+a73 1
+	status = FragRead(indexInfoPtr->partFID, indexInfoPtr->domainPtr,
+a90 1
+
+d94 1
+a94 1
+    status = FragRead(indexInfoPtr->partFID, indexInfoPtr->domainPtr,
+a124 1
+
+a152 1
+
+a174 1
+
+d188 1
+a188 2
+ *	A status indicating whether there was sufficient space to allocate
+ *	indirect blocks if they were needed.
+a194 1
+
+a210 1
+
+a269 1
+
+d289 2
+a290 1
+ *	The index structure is set up.
+a293 1
+
+d295 5
+a299 6
+OpenDir(partFID, domainPtr, descInfoPtr, indexInfoPtr, dirEntryPtrPtr)
+    int			partFID;
+    FsDomainHeader	*domainPtr;
+    FdInfo		*descInfoPtr;
+    DirIndexInfo 	*indexInfoPtr;
+    FsDirEntry		**dirEntryPtrPtr;
+d305 3
+d311 2
+a312 2
+	    Io_PrintStream(io_StdErr, "Directory not multiple of directory block size. Directory corrected.\n");
+	    descInfoPtr->fileDesc.lastByte = 
+d314 1
+a314 1
+		FS_DIR_BLOCK_SIZE - 1;
+d316 3
+a318 2
+    indexInfoPtr->partFID = partFID;
+    indexInfoPtr->domainPtr = domainPtr;
+d324 3
+d333 1
+a333 1
+    status = FragRead(indexInfoPtr->partFID, indexInfoPtr->domainPtr,
+d358 2
+a359 1
+ *	The index structure is modified.
+a377 12
+#ifdef debug
+    if (adding) {
+	Io_PrintStream(io_StdErr, "Next: Recordlength = %d\n", 
+			    dirEntryPtr->recordLength);
+	Io_PrintStream(io_StdErr, "Offset %d blocknum %d\n",
+			indexInfoPtr->dirOffset, indexInfoPtr->blockNum);
+	Io_Flush(io_StdErr);
+	if (dirEntryPtr->recordLength == 0) {
+	    Proc_Exit(0);
+	}
+    }
+#endif
+d381 4
+d387 1
+a387 1
+	    status = FragWrite(indexInfoPtr->partFID, indexInfoPtr->domainPtr,
+d389 1
+a389 1
+			      indexInfoPtr->domainPtr->dataOffset * 
+d400 3
+d406 4
+d411 1
+a411 1
+	    status = FragWrite(indexInfoPtr->partFID, indexInfoPtr->domainPtr,
+d413 1
+a413 1
+			      indexInfoPtr->domainPtr->dataOffset * 
+d431 1
+a431 1
+	status = FragRead(indexInfoPtr->partFID, indexInfoPtr->domainPtr,
+d433 1
+a433 1
+			  indexInfoPtr->domainPtr->dataOffset * 
+a468 1
+
+d470 4
+a473 4
+CheckDirTree(partFID, domainPtr, descInfo)
+    int			partFID;
+    FsDomainHeader	*domainPtr;
+    FdInfo		*descInfo;
+d482 4
+d489 1
+a489 1
+    descInfoPtr = &descInfo[FS_ROOT_FILE_NUMBER];
+d499 1
+a499 1
+    status = OpenDir(partFID, domainPtr, descInfoPtr, &dirIndex, &dirEntryPtr);
+d534 2
+a535 3
+
+    String_Copy("/lost+found", pathName);
+    descInfoPtr = &descInfo[FS_LOST_FOUND_FILE_NUMBER];
+d546 1
+a546 2
+    status = CheckDir(partFID, domainPtr, descInfo, 
+		      FS_LOST_FOUND_FILE_NUMBER, descInfoPtr);
+d548 1
+a548 2
+	status = OpenDir(partFID, domainPtr, descInfoPtr, 
+			 &lostDirIndex, &lostDirEntryPtr);
+d558 1
+a558 2
+
+    for (i = 0, descInfoPtr = descInfo; 
+d566 2
+a567 2
+	String_Copy("#", pathName);
+	status = CheckDir(partFID, domainPtr, descInfo,  i, descInfoPtr);
+d579 1
+a579 2
+
+    for (i = 0, descInfoPtr = descInfo; 
+d588 1
+a588 1
+	    status = AddToLostAndFound(descInfoPtr, i);
+d601 4
+a604 5
+	status = FragWrite(lostDirIndex.partFID, lostDirIndex.domainPtr,
+			   lostDirIndex.blockAddr + 
+			       lostDirIndex.domainPtr->dataOffset * 
+			       FS_FRAGMENTS_PER_BLOCK,
+			   lostDirIndex.numFrags, lostDirIndex.dirBlock);
+d629 1
+a629 4
+CheckDir(partFID, domainPtr, descInfo, descNum, descPtr)
+    int			partFID;
+    FsDomainHeader	*domainPtr;
+    FdInfo		*descInfo;	/* Array of file descriptors.*/
+d647 1
+a647 2
+
+    status = OpenDir(partFID, domainPtr, descPtr, &dirIndex, &dirEntryPtr);
+a651 1
+
+a657 1
+	pathName[nullIndex] = '\0';
+a658 3
+	String_NCat(dirEntryPtr->nameLength, dirEntryPtr->fileName,
+		   pathName);
+	String_Cat("/", pathName);
+d667 1
+a667 1
+		Io_PrintStream(io_StdErr, ". missing in directory %d %s\n",
+d669 2
+a679 1
+		goto nextDir;
+d681 1
+a681 3
+	}
+	    
+	if (entryNum == 1) {
+d688 1
+a688 1
+		Io_PrintStream(io_StdErr, ".. missing in directory %d %s\n",
+d690 2
+d693 1
+a693 2
+		descInfo[dirEntryPtr->fileNumber].linkCount++;
+		goto nextDir;
+d695 2
+a696 4
+	}
+	
+	if (dirEntryPtr->fileNumber != 0) {
+	    fileDescPtr = &descInfo[dirEntryPtr->fileNumber];
+d704 5
+a708 2
+		status = CheckDir(partFID, domainPtr, descInfo, 
+				  dirEntryPtr->fileNumber, fileDescPtr);
+a711 1
+		    pathName[nullIndex] = '\0';
+a716 1
+nextDir:
+d724 1
+a724 1
+    pathName[nullIndex] = '\0';
+d803 1
+a803 1
+        dirEntryPtr->fileNumber >= dirIndexPtr->domainPtr->numFileDesc) {
+d815 51
+d878 2
+a879 2
+
+AddToLostAndFound(descInfoPtr, fileNumber)
+a880 1
+    int		 	fileNumber;
+a896 4
+#ifdef debug
+	Io_PrintStream(io_StdErr, "Add: Recordlength = %d\n", recordLength);
+	Io_Flush(io_StdErr);
+#endif
+d920 8
+a927 1
+	descInfoPtr->fileDesc.numLinks = 1;
+a932 3
+#ifdef debug
+	Io_PrintStream(io_StdErr, "Leftover %d\n", leftOver);
+#endif
+@
+
+
+1.4
+log
+@*** empty log message ***
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkdir.c,v 1.3 86/11/10 11:33:47 nelson Exp $ SPRITE (Berkeley)";
+d25 4
+a50 1
+    int				blockNum;
+a203 1
+    int				indBlock;
+a308 1
+    register FsDirEntry	*dirEntryPtr;
+d498 1
+a498 1
+	Io_PrintStream(io_StdErr, "Disk error reading root <%x>\n", status);
+d501 2
+d510 1
+a510 1
+	    Io_PrintStream(io_StdErr, "Disk error on root <%x>\n", status);
+d520 1
+a520 1
+	    Io_PrintStream(io_StdErr, "Disk error on root <%x>\n", status);
+d532 1
+d551 1
+a551 1
+	Io_PrintStream(io_StdErr, "Disk error on lost+found <%x>\n", status);
+d567 1
+d570 1
+a570 1
+	    Io_PrintStream(io_StdErr, "Could not read disk for file %d\n", i);
+d587 1
+a587 1
+	if (descInfoPtr->linkCount == 0) {
+d646 1
+d656 1
+a656 1
+	Io_PrintStream(io_StdErr, "Disk error\n");
+d660 1
+a663 1
+
+d666 1
+d668 3
+d679 2
+a680 2
+		Io_PrintStream(io_StdErr, ". missing in directory %d\n",
+			       descNum);
+d684 2
+a685 2
+				". does not point to self for directory %d\n",
+  				descNum);
+d701 2
+a702 2
+		Io_PrintStream(io_StdErr, ".. missing in directory %d\n",
+			       descNum);
+d712 1
+d721 3
+a723 1
+		    Io_PrintStream(io_StdErr, "Disk error\n");
+d732 1
+a732 1
+	    Io_PrintStream(io_StdErr, "Disk error\n");
+d737 2
+d759 1
+d764 2
+a765 2
+    int	dirBlockOffset;
+    int	lastDirByte;
+d767 1
+d772 6
+d785 2
+a786 2
+	dirEntryPtr->recordLength < FsDirRecLength(dirEntryPtr->nameLength)) {
+	Io_PrintStream(io_StdErr, "Bad record length in directory.  Directory entry deleted.\n");
+a799 1
+	int	nameLength;
+d817 1
+a817 1
+	Io_PrintStream(io_StdErr, "Bad file number in directory.  Directory entry deleted.\n");
+d881 2
+a882 1
+		Io_PrintStream(io_StdErr, "Disk error\n");
+d891 1
+a891 1
+	Byte_Copy(nameLength, fileName, lostDirEntryPtr->fileName);
+d907 2
+a908 1
+		Io_PrintStream(io_StdErr, "Disk error\n");
+@
+
+
+1.3
+log
+@Fixed bug in adding entries to the lost and found directory.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkdir.c,v 1.2 86/09/19 18:18:11 nelson Exp $ SPRITE (Berkeley)";
+d750 1
+d774 17
+d823 7
+a829 5
+    ReturnStatus status;
+    char	 fileName[100];
+    int		 nameLength;
+    int		 recordLength;
+    int		 leftOver;
+d837 1
+d842 15
+a856 2
+	if (lostDirEntryPtr->fileNumber != 0 ||
+	    lostDirEntryPtr->recordLength < recordLength) {
+d866 1
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkdir.c,v 1.1 86/07/27 12:52:57 nelson Exp $ SPRITE (Berkeley)";
+d21 2
+d376 12
+d584 1
+d592 1
+d811 1
+d817 4
+d835 3
+d844 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsIndex.c,v 1.8 86/07/16 14:21:13 nelson Exp $ SPRITE (Berkeley)";
+d575 2
+a576 1
+	    Io_PrintStream(io_StdErr, "Link count wrong for file %d\n", i);
+@

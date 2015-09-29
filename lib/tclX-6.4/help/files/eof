@@ -1,0 +1,6 @@
+          eof fileId
+               Returns 1 if an end-of-file condition has  occurred  on
+               fileId,  0 otherwise.  FileId must have been the return
+               value from a previous call to open, or it may be stdin,
+               stdout,  or  stderr to refer to one of the standard I/O
+               channels.

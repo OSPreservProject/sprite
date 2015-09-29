@@ -1,0 +1,24 @@
+# This is the mount file read by fsattach
+
+/dev/rsd0g	-argforg
+
+#Command	<Prefix> 	<Device/Path> <Pass>   <Scope>	     <Access>
+
+Attach		/		/dev/rsd0a	root	export		rw
+Attach		/t2		/dev/rsd0b	A	export		rw
+Attach		/a		/dev/rsd1c	B	export		rw
+Attach		/b		/dev/rsd0g	A	export		rw
+Attach		/c		/dev/rsd2c	C	export		rw
+#Attach		/d		/dev/rsd3c	D	export		rw
+
+Export		/t1		/local
+
+# The following are arguments to fscheck. The are on a per-device basis, 
+# although a device of "all" refers to all devices.
+
+/dev/rsd0a	-arga -argb 10
+/dev/rsd0a	-argc
+all		-allofthem
+/dev/rsd0b	-outputFile foo
+
+

@@ -1,0 +1,78 @@
+control/break	Exit the current loop.
+control/case	Select code block to execute base on matching a string against a pattern.
+control/catch	Trap errors while executing a command.
+control/continue	Continue execution of the next iteration of a loop.
+control/error	Return an error.
+control/errorCode	Variable holding symbolic error information.
+control/errorInfo	Variable holding stack trace of an error.
+control/eval	Command to evaluate strings as Tcl code.
+control/exit	Terminate the current process.
+control/for	Loop control command.
+control/foreach	Loop on each element of a list.
+control/if	Conditional command execution based on evaluating an expression.
+control/proc	Define a Tcl procedure.
+control/rename	Rename or delete a command or procedure.
+control/return	Exit the current procedure, optionally returning a value.
+control/source	Read and evaluate a file of Tcl code.
+control/uplevel	Execute a command in another environment up the procedure call stack.
+control/while	Loop while an expression is true.
+files/close	Close an open file or pipeline.
+files/eof	Test for end-of-file.
+files/file	Return status information about an file name, including parsing the name.
+files/flush	Flush a file buffer.
+files/gets	Read a line from a file.
+files/glob	Perform file name globbing.
+files/open	Open a file or pipeline.
+files/puts	Write a string to a file.
+files/read	Read bytes from a file.
+files/seek	Change the access position of a file.
+files/tell	Return the current access position of a file.
+intro/backslash	Tcl backslash substitution.
+intro/braces	Grouping arguments with braces.
+intro/brackets	Command substitution with brackets.
+intro/built-in-vars	Standard built-in Tcl variables.
+intro/comments	Inserting comments in Tcl code.
+intro/data_types	Tcl data types.
+intro/dollar	Variable Substitution With $.
+intro/double_quotes	Grouping arguments with double-quotes.
+intro/expressions	Tcl expressions.
+intro/procedures	Tcl procedures.
+intro/regexps	Regular expressions.
+intro/results	Results of a command execution.
+intro/semi-colons	Separating commands with semi-colons.
+intro/syntax	Basic Tcl command syntax.
+intro/variables	Tcl variables and arrays.
+libraries/unknown	Unknown command trap handler.
+lists/concat	Concatenates lists into a single list.
+lists/join	Join elements of a list into a string.
+lists/lappend	Append elements to an array variable.
+lists/lindex	Extract an element of a list.
+lists/linsert	Insert an new element in a list.
+lists/list	Generate a list.
+lists/llength	Return the number of elements in a list.
+lists/lrange	Extract a range of elements from a list.
+lists/lreplace	Replace elements of a list.
+lists/lsearch	Search a list for a pattern.
+lists/lsort	Sort the elements of a list.
+lists/split	Split a string into a list of elements.
+math/expr	Evaluate an expression.
+math/incr	Increment a variable.
+processes/exec	Run a Unix process.
+status/cd	Change the current working directory.
+status/history	Redo or list previously executed interactive commands.
+status/info	Provide state information on the Tcl interpreter.
+status/pwd	Return the current working directory.
+strings/append	Append strings to a variable.
+strings/format	Generate a formated string using a format specification.
+strings/regexp	Match a string against a regular expression.
+strings/regsub	Match a string against a regular expression and perform substitution on it.
+strings/scan	Parse a string based on a format specification.
+strings/string	Perform operations on a string.
+time/time	Return the execution time for a Tcl command.
+variables/array	Return information about an array variable.
+variables/env	Variable for accessing the program's environment.
+variables/global	Declare a variable as global.
+variables/set	Return or set the value of a variable.
+variables/trace	Trace access to variables.
+variables/unset	Delete a variable or array element.
+variables/upvar	Bind a variable to another variable up the procedure call stack.

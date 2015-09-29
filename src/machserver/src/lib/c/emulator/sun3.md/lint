@@ -1,0 +1,13 @@
+emuFork.c:
+emuInit.c:
+spriteSrvUser.c:
+mapStatus.c:
+syscalls.c:
+sleepTmp.c:
+_exit.c:
+getpid.c:
+execve.c:
+wait.c:
+gettimeofday.c:
+Vm_MapFileStub, arg. 5 used inconsistently	spriteSrvUser.c(1194)  ::  syscalls.c 2(123)
+Vm_MapFileStub, arg. 6 used inconsistently	spriteSrvUser.c(1194)  ::  syscalls.c 2(123)

@@ -1,0 +1,31 @@
+-- VM --
+
+Try to wire pages in the server.  Be sure to try the case where the
+page is known to be paged out.
+
+Dirty random pages in the heap and then clean them.  (The idea is to
+see whether a sparse backing file is created and how well that works.)
+
+Destroy a memory object that is mapped into a task.  What happens when
+the task tries to access the region?  (Should get a fault.)
+
+Create a random page of virtual memory in a user process.  Read it--it
+should be zero filled.
+
+Run a thrasher program and have the memory manager hang for some time
+(5 minutes?) before actually writing anything back.  At some point the
+system should come to a halt.
+
+Verify that, e.g., a bogus address passed to ioctl() will cause a
+protection failure rather than scribble over program text.
+
+-- signals --
+
+Various combinations of signals, signal handlers, asynchronous signals
+versus exceptions, Sprite state of the process.
+
+-- process management --
+
+Kill a task using mkill.  (May need a special version of mkill to get
+Sprite pids.)
+

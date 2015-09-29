@@ -1,0 +1,32 @@
+\xjunk=60 \yjunk=3
+\loop
+\drawline(0,0)(\xjunk,\yjunk)
+\drawline(0,0)(-\xjunk,\yjunk)
+\drawline(0,0)(\xjunk,-\yjunk)
+\drawline(0,0)(-\xjunk,-\yjunk)
+\put(\xjunk,\yjunk){\plotchar}
+\put(-\xjunk,\yjunk){\plotchar}
+\put(\xjunk,-\yjunk){\plotchar}
+\put(-\xjunk,-\yjunk){\plotchar}
+\put(\xjunk,\yjunk){\makebox(8,0)[l]{\ \ (\number\xjunk,\number\yjunk)}}
+\put(-\xjunk,\yjunk){\makebox(-4,0)[r]{(\number-\xjunk,\number\yjunk)}}
+\put(\xjunk,-\yjunk){\makebox(8,0)[l]{\ \ (\number\xjunk,\number-\yjunk)}}
+\put(-\xjunk,-\yjunk){\makebox(-4,0)[r]{(\number-\xjunk,\number-\yjunk)}}
+\ifnum\yjunk < 53 \advance\yjunk by 10 %will go till 53.
+\repeat
+\xjunk=3 \yjunk=60
+\loop
+\drawline(0,0)(\xjunk,\yjunk)
+\drawline(0,0)(-\xjunk,\yjunk)
+\drawline(0,0)(\xjunk,-\yjunk)
+\drawline(0,0)(-\xjunk,-\yjunk)
+\put(\xjunk,\yjunk){\plotchar}
+\put(-\xjunk,\yjunk){\plotchar}
+\put(\xjunk,-\yjunk){\plotchar}
+\put(-\xjunk,-\yjunk){\plotchar}
+\put(\xjunk,\yjunk){\makebox(0,7)[t]{(\number\xjunk,\number\yjunk)}}
+\put(-\xjunk,\yjunk){\makebox(0,5)[t]{(\number-\xjunk,\number\yjunk)}}
+\put(\xjunk,-\yjunk){\makebox(0,-4)[t]{(\number\xjunk,\number-\yjunk)}}
+\put(-\xjunk,-\yjunk){\makebox(0,-6)[t]{(\number-\xjunk,\number-\yjunk)}}
+\ifnum\xjunk < 53 \advance\xjunk by 10
+\repeat

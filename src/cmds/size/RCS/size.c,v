@@ -1,0 +1,354 @@
+head     1.7;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.7
+date     90.02.16.13.46.45;  author rab;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.07.26.23.45.20;  author rab;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.07.19.17.15.54;  author rab;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.05.16.23.51.58;  author jhh;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.09.23.17.50.15;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.08.07.12.19.12;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.08.07.12.02.19;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.7
+log
+@Added exit(0).
+@
+text
+@/*
+ * size.c --
+ *
+ *	This file contains the "size" command, which prints out
+ *	the sizes of the segments of one or more object files.
+ *
+ *	Adding a new machine type: Write a routine that prints out the
+ *	desired information if it recognizes the exec header. Look
+ *	at one of the existing routines for the parameter specifications. 
+ *      This routine should return SUCCESS if it printed out the size, 
+ *	and FAILURE otherwise. Add the name of this routine to the 
+ *	printProc array.
+ *
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /a/newcmds/size/RCS/size.c,v 1.6 89/07/26 23:45:20 rab Exp Locker: rab $";
+#endif /* not lint */
+
+#include <errno.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/file.h>
+#include "size.h"
+
+/*
+ * Array of routines to print out size.
+ */
+ReturnStatus (*(printProc[])) () = {
+    Print68k,   /* This should be `PrintSun' since it works for sparc too. */
+    PrintSpur,
+    PrintMips,
+};
+
+#define MACHINECOUNT (sizeof (printProc) / sizeof(*printProc))
+
+int hostFmt = HOST_FMT;
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	Main program for "size".
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints info on standard output.
+ *
+ *----------------------------------------------------------------------
+ */
+
+main(argc, argv)
+    int argc;
+    char *argv[];
+{
+    int 		i;
+    int			j;
+    Boolean 		printName;
+    char		*fileName;
+    int			filesToDo;
+    int			targetType;
+    int			lastType;
+    char		headerBuffer[HEADERSIZE];
+    int			amountRead;
+    FILE		*fp;
+    ReturnStatus	status;
+
+    lastType = -1;
+    if (argc < 2) {
+	filesToDo = 1;
+	fileName = "a.out";
+	printName = FALSE;
+    } else if (argc == 2) {
+	filesToDo = 1;
+	fileName = NULL;
+	printName = FALSE;
+    } else {
+	filesToDo = argc - 1;
+	fileName = NULL;
+	printName = TRUE;
+    }
+    for (i = 0; i < filesToDo; i++,fileName = NULL) {
+	if (fileName == NULL) {
+	    fileName = argv[i+1];
+	}
+	fp = fopen(fileName, "r");
+	if (fp == NULL) {
+	    fprintf(stderr, "Couldn't open \"%s\": %s.\n",
+		    fileName, strerror(errno));
+	    exit(1);
+	}
+	amountRead = fread(headerBuffer, sizeof(char), HEADERSIZE, fp);
+	if (amountRead < 0) {
+	    fprintf(stderr, "Couldn't read header for \"%s\": %s.\n",
+		    fileName, strerror(errno));
+	    exit(1);
+	}
+	status = FAILURE;
+	rewind(fp);
+	for (j = 0; j < MACHINECOUNT; j++) {
+	    status = printProc[j](fp, printName, fileName, 
+				 (j == lastType) ? FALSE : TRUE,
+				 amountRead, headerBuffer);
+	    if (status == SUCCESS) {
+		lastType = j;
+		break;
+	    }
+	}
+	if (status == FAILURE) {
+	    fprintf(stderr, 
+		  "\"%s\" isn't an object file for any known machine.\n",
+		    fileName);
+	}
+    }
+    exit(0);
+}
+@
+
+
+1.6
+log
+@Added support for ds3100.
+@
+text
+@d26 1
+a26 1
+static char rcsid[] = "$Header: /a/newcmds/size/RCS/size.c,v 1.5 89/07/19 17:15:54 rab Exp Locker: rab $";
+d127 1
+@
+
+
+1.5
+log
+@added support for ds3100
+@
+text
+@d26 1
+a26 1
+static char rcsid[] = "$Header$";
+d44 1
+a44 1
+int	machineCount = sizeof (printProc) / sizeof(int);
+d112 1
+a112 1
+	for (j = 0; j < machineCount; j++) {
+@
+
+
+1.4
+log
+@new machine independent version
+@
+text
+@d25 4
+d39 1
+a39 1
+    Print68k,
+d41 1
+@
+
+
+1.3
+log
+@Add Opt_Parse call.
+@
+text
+@d7 8
+a24 1
+#include <a.out.h>
+d29 1
+a30 1
+
+d32 1
+a32 14
+ *----------------------------------------------------------------------
+ *
+ * Size --
+ *
+ *	Read the header of an executable file and print
+ *	out the sizes of the text, data, and bss areas
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints size info on standard output.
+ *
+ *----------------------------------------------------------------------
+d34 4
+d39 1
+a39 8
+void
+Size(fileName, printName)
+    char *fileName;	/* File to print out. */
+    int printName;	/* Non-zero means we should print the name. */
+{
+    struct exec header;
+    int amountRead;
+    int fd;
+d41 1
+a41 27
+    fd = open(fileName, O_RDONLY, 0);
+    if (fd < 0) {
+	fprintf(stderr, "Couldn't open \"%s\": %s.\n",
+		fileName, strerror(errno));
+	return;
+    }
+    amountRead = read(fd, (char *) &header, sizeof(header));
+    if (amountRead < 0) {
+	fprintf(stderr, "Couldn't read header for \"%s\": %s.\n",
+		fileName, strerror(errno));
+	return;
+    }
+    if ((amountRead != sizeof(header)) || N_BADMAG(header)) {
+	fprintf(stderr, "\"%s\" isn't a program image.\n",
+		fileName);
+	return;
+    }
+    printf("%-7d %-7d %-7d %-7d %-7x",
+		   header.a_text, header.a_data, header.a_bss,
+		   header.a_text + header.a_data + header.a_bss,
+		   header.a_text + header.a_data + header.a_bss);
+    if (printName) {
+	printf("\t%s\n", fileName);
+    } else {
+	printf("\n");
+    }
+}
+d63 11
+a73 2
+    int i;
+    int printName;
+d75 1
+a75 1
+    printf("%-7s %-7s %-7s %-7s %-7s\n", "text", "data", "bss", "dec", "hex");
+d77 7
+a83 1
+	Size("a.out", 0);
+d85 35
+a119 3
+	printName = argc > 2;
+	for (i=1 ; i<argc ; i++) {
+	    Size(argv[i], printName);
+a121 1
+    exit(0);
+@
+
+
+1.2
+log
+@Use a.out by default.
+@
+text
+@a18 1
+#include <option.h>
+a22 10
+/*
+ * There aren't any switches to "size", but an option table is
+ * provided below to make the "-help" switch provide usage
+ * information.
+ */
+
+Option optionArray[] = {
+    OPT_DOC, (char *) NULL, (char *) NULL,
+	    "This program prints out the sizes of the text, data, and bss\n segments of one or more object files.\n Synopsis:  \"size file file ...\""
+};
+a99 2
+
+    argc = Opt_Parse(argc, argv, optionArray, Opt_Number(optionArray), 0);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d114 1
+d116 6
+a121 8
+	fprintf(stderr, "%s usage: must give one or more file names\n",
+		argv[0]);
+	exit(1);
+    }
+    printName = argc > 2;
+    printf("%-7s %-7s %-7s %-7s %-7s\n", "text", "data", "bss", "dec", "hex");
+    for (i=1 ; i<argc ; i++) {
+	Size(argv[i], printName);
+@

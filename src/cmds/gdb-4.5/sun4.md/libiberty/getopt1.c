@@ -1,0 +1,1 @@
+../../dist/libiberty/getopt1.c

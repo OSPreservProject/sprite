@@ -1,0 +1,1 @@
+../cc/dist/stupid.c

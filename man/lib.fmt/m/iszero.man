@@ -1,0 +1,68 @@
+
+
+
+isnan                 C Library Procedures                  isnan
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     iszero, isnormal, issubnormal, signbit -  Determine  proper-
+     ties of IEE double-precision floating point numbers.
+
+SSYYNNOOPPSSIISS
+     int
+     iisszzeerroo(_v_a_l_u_e)
+
+     int
+     iissnnoorrmmaall(_v_a_l_u_e)
+
+     int
+     iissssuubbnnoorrmmaall(_v_a_l_u_e)
+
+     int
+     ssiiggnnbbiitt(_v_a_l_u_e)
+
+AARRGGUUMMEENNTTSS
+     double    _v_a_l_u_e          (in)      Double-precision floating
+                                        point number to check.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     iissnnoorrmmaall returns 1  if  its  argument  is  an  IEEE  double-
+     precision  normal floating-point number.  iissnnoorrmmaall returns 0
+     otherwise.
+
+     iissssuubbnnoorrmmaall returns 1 if its argument  is  an  IEEE  double-
+     precision subnormal floating-point number.  iissnnoorrmmaall returns
+     0 otherwise.
+
+     iisszzeerroo returns 1 if its argument is an IEEE double-precision
+     0.  iissnnoorrmmaall returns 0 otherwise.
+
+     ssiiggnnbbiitt returns  1  if  its  argument  is  an  IEEE  double-
+     precision floating-point number with sign bit set.  iissnnoorrmmaall
+     returns 0 otherwise.
+
+KKEEYYWWOORRDDSS
+     not a number, infinity, IEEE, double
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  October 12, 1990                   1
+
+
+

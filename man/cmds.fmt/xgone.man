@@ -1,0 +1,132 @@
+
+
+
+XGONE                     User Commands                     XGONE
+
+
+
+NNAAMMEE
+     xgone - lock the screen under the X window system
+
+SSYYNNOOPPSSIISS
+     xxggoonnee _a_r_g_s
+
+DDEESSCCRRIIPPTTIIOONN
+     _X_g_o_n_e locks the screen until a keypress is entered.  While
+     waiting, it displays a message telling where the person went
+     and when they started the program and moves this text around
+     the screen to avoid burning them in at a particular loca-
+     tion.
+
+     If no _a_r_g_s _a_r_e _p_r_o_v_i_d_e_d, _t_h_e _p_r_o_g_r_a_m _d_i_s_p_l_a_y_s time.  If _a_r_g_s
+     are provided, then the concatenation of the arguments,
+     separated by spaces, is displayed instead of the default
+     string.
+
+     To leave _x_g_o_n_e, press any mouse key.  If password checking
+     is enabled, it will prompt you for your password, which will
+     not be echoed on the display.  End the password with
+     ``Return.''  As an accelerator, you may simply type your
+     password.  Password checking is disabled by default, so any
+     input will then cause _x_g_o_n_e to exit.
+
+OOPPTTIIOONNSS
+     -font     Specify the font to use for text on the screen.
+     -sleep    Specify the interval between moves of the block of
+               text on the screen.
+     -delay    Make the program drop in the background and delay
+               starting for a few seconds.  This is helpful when
+               invoking _x_g_o_n_e from a menu inside window managers
+               like _t_w_m which don't allow a "grab" of mouse for a
+               short time right at startup.
+     -passwd    Enable password  checking.
+
+DDEEFFAAUULLTTSS
+     xgone.Font:    fontname  (same as -font)
+     xgone.Text:    default text to use instead of "X Gone"
+     xgone.Sleep:   sleeptime in seconds   (same as -sleep)
+     xgone.Update:  interval between updates   (same as -update)
+     xgone.Delay:   boolean   (same as -delay)
+     xgone.Passwd:   boolean, with true indicating password
+                    checking should be done.
+
+FFIILLEESS
+     /etc/passwd
+
+SSEEEE AALLSSOO
+     lockscreen(1), xlock(l)
+
+
+
+
+
+Sprite v1.0             25 February 1987                        1
+
+
+
+
+
+
+XGONE                     User Commands                     XGONE
+
+
+
+AAUUTTHHOORR
+     Originally written for X10 by Tim Morgan at UCI.
+     Modified and extended for X11 by Richard Johnson also at
+     UCI.
+     Modified by Fred Douglis for Sprite.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0             25 February 1987                        2
+
+
+

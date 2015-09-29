@@ -1,0 +1,411 @@
+Info file bfd.info, produced by Makeinfo, -*- Text -*- from input
+file bfd.texinfo.
+
+   This file documents the BFD library.
+
+   Copyright (C) 1991 Free Software Foundation, Inc.
+
+   Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+   Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, subject to the
+terms of the GNU General Public License, which includes the provision
+that the entire resulting derived work is distributed under the terms
+of a permission notice identical to this one.
+
+   Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions.
+
+
+
+File: bfd.info,  Node: coff,  Next: Index,  Prev: BFD back end,  Up: Top
+
+coff backends
+=============
+
+   BFD supports a number of different flavours of coff format. The
+major difference between formats are the sizes and alignments of
+fields in structures on disk, and the occasional extra field.
+
+   Coff in all its varieties is implimented with a few common files
+and a number of implementation specific files. For example, The 88k
+bcs coff format is implemented in the file `m88k-bcs.c'. This file
+`#include's `m88k-bcs.h' which defines the external structure of the
+coff format for the 88k, and `internalcoff.h' which defines the
+internal structure. `m88k-bcs.c' also defines the relocations used by
+the 88k format *Note Relocations::. Then the major portion of coff
+code is included (`coffcode.h') which defines the methods used to act
+upon the types defined in `m88k-bcs.h' and `internalcoff.h'.
+
+   The Intel i960 processor version of coff is implemented in
+`icoff.c'. This file has the same structure as  `m88k-bcs.c', except
+that it includes `intel-coff.h' rather than `m88k-bcs.h'.
+
+Porting To A New Version of Coff
+--------------------------------
+
+   The recommended method is to select from the existing
+implimentations the version of coff which is most like the one you
+want to use, for our purposes, we'll say that i386 coff is the one
+you select, and that your coff flavour is called foo. Copy the
+`i386coff.c' to `foocoff.c', copy `../include/i386coff.h' to
+`../include/foocoff.h' and add the lines to `targets.c' and
+`Makefile.in' so that your new back end is used.
+
+   Alter the shapes of the structures in `../include/foocoff.h' so
+that they match what you need. You will probably also have to add
+`#ifdef's to the code in `internalcoff.h' and `coffcode.h' if your
+version of coff is too wild.
+
+   You can verify that your new BFD backend works quite simply by
+building `objdump' from the `binutils' directory, and making sure
+that its version of what's going on at your host systems idea
+(assuming it has the pretty standard coff dump utility (usually
+called `att-dump' or just `dump')) are the same.
+
+   Then clean up your code, and send what you've done to Cygnus. Then
+your stuff will be in the next release, and you won't have to keep
+integrating it.
+
+How The Coff Backend Works
+--------------------------
+
+Bit Twiddling
+.............
+
+   Each flavour of coff supported in BFD has its own header file
+descibing the external layout of the structures. There is also an
+internal description of the coff layout (in `internalcoff.h') file
+(`'). A major function of the coff backend is swapping the bytes and
+twiddling the bits to translate the external form of the structures
+into the normal internal form. This is all performed in the
+`bfd_swap'_thing_direction routines. Some elements are different
+sizes between different versions of coff, it is the duty of the coff
+version specific include file to override the definitions of various
+packing routines in `coffcode.h'. Eg the size of line number entry in
+coff is sometimes 16 bits, and sometimes 32 bits.  `#define'ing
+`PUT_LNSZ_LNNO' and `GET_LNSZ_LNNO' will select the correct one. No
+doubt, some day someone will find a version of coff which has a
+varying field size not catered for at the moment.  To port BFD, that
+person will have to add more `#defines'.
+
+   Three of the bit twiddling routines are exported to `gdb';
+`coff_swap_aux_in', `coff_swap_sym_in' and `coff_swap_linno_in'.
+`GDB' reads the symbol table on its own, but uses BFD to fix things up.
+
+Symbol Reading
+..............
+
+   The simple canonical form for symbols used by BFD is not rich
+enough to keep all the information available in a coff symbol table.
+The back end gets around this by keeping the original symbol table
+around, "behind the sceens".
+
+   When a symbol table is requested (through a call to
+`bfd_canonicalize_symtab', a request gets through to
+`get_normalized_symtab'. This reads the symbol table from the coff
+file and swaps all the structures inside into the internal form.  It
+also fixes up all the pointers in the table (represented in the file
+by offsets from the first symbol in the table) into physical pointers
+to elements in the new internal table. This involves some work since
+the meanings of fields changes depending upon context; a field that
+is a pointer to another structure in the symbol table at one moment
+may be the size in bytes of a structure in the next.
+
+   Another pass is made over the table. All symbols which mark file
+names (`C_FILE' symbols) are modified so that the internal string
+points to the value in the auxent (the real filename) rather than the
+normal text associated with the symbol (`".file"').
+
+   At this time the symbol names are moved around. Coff stores all
+symbols less than nine characters long physically within the symbol
+table, longer strings are kept at the end of the file in the string
+table. This pass moves all strings into memory, and replaces them
+with pointers to the strings.
+
+   The symbol table is massaged once again, this time to create the
+canonical table used by the BFD application. Each symbol is inspected
+in turn, and a decision made (using the `sclass' field) about the
+various flags to set in the `asymbol' *Note Symbols::. The generated
+canonical table shares strings with the hidden internal symbol table.
+
+   Any linenumbers are read from the coff file too, and attached to
+the symbols which own the functions the linenumbers belong to.
+
+Symbol Writing
+..............
+
+   Writing a symbol to a coff file which didn't come from a coff file
+will lose any debugging information. The `asymbol' structure
+remembers the BFD from which was born, and on output the back end
+makes sure that the same destination target as source target is
+present.
+
+   When the symbols have come from a coff file then all the debugging
+information is preserved.
+
+   Symbol tables are provided for writing to the back end in a vector
+of pointers to pointers. This allows applications like the linker to
+accumulate and output large symbol tables without having to do too
+much byte copying.
+
+   The symbol table is not output to a writable BFD until it is
+closed.  The order of operations on the canonical symbol table at
+that point are:
+
+`coff_renumber_symbols'
+     This function runs through the provided symbol table and patches
+     each symbol marked as a file place holder (`C_FILE') to point to
+     the next file place holder in the list. It also marks each
+     `offset' field in the list with the offset from the first symbol
+     of the current symbol.
+
+     Another function of this procedure is to turn the canonical
+     value form of BFD into the form used by coff. Internally, BFD
+     expects symbol values to be offsets from a section base; so a
+     symbol physically at 0x120, but in a section starting at 0x100,
+     would have the value 0x20.  Coff expects symbols to contain
+     their final value, so symbols have their values changed at this
+     point to reflect their sum with their owning section. Note that
+     this transformation uses the `output_section' field of the
+     `asymbol''s `asection' *Note Sections::.
+
+`coff_mangle_symbols'
+     This routine runs though the provided symbol table and uses the
+     offsets generated by the previous pass and the pointers
+     generated when the symbol table was read in to create the
+     structured hierachy required by coff. It changes each pointer to
+     a symbol to an index into the symbol table of the symbol being
+     referenced.
+
+`coff_write_symbols'
+     This routine runs through the symbol table and patches up the
+     symbols from their internal form into the coff way, calls the
+     bit twiddlers and writes out the tabel to the file.
+
+   The hidden information for an asymbol is:
+
+      typedef struct coff_ptr_struct
+      {
+
+   Remembers the offset from the first symbol in the file for this
+symbol. Generated by `coff_renumber_symbols'.
+
+        unsigned int offset;
+
+   Should the tag field of this symbol be renumbered.  Created by
+`coff_pointerize_aux'.
+
+        char fix_tag;
+
+   Should the endidx field of this symbol be renumbered.  Created by
+`coff_pointerize_aux'.
+
+        char fix_end;
+
+   The container for the symbol structure as read and translated from
+the file.
+
+        union {
+          union internal_auxent auxent;
+          struct internal_syment syment;
+        } u;
+      } combined_entry_type;
+
+   Each canonical asymbol really looks like this:
+
+      typedef struct coff_symbol_struct
+      {
+
+   The actual symbol which the rest of BFD works with
+
+        asymbol symbol;
+
+   A pointer to the hidden information for this symbol
+
+        combined_entry_type *native;
+
+   A pointer to the linenumber information for this symbol
+
+        struct lineno_cache_entry *lineno;
+      } coff_symbol_type;
+
+Writing Relocations
+...................
+
+   To write a relocations, all the back end does is step though the
+canonical relocation table, and create an `internal_reloc'. The
+symbol index to use is removed from the `offset' field in the symbol
+table supplied, the address comes directly from the sum of the
+section base address and the relocation offset and the type is dug
+directly from the howto field.
+
+   Then the `internal_reloc' is swapped into the shape of an
+`external_reloc' and written out to disk.
+
+Reading Linenumbers
+...................
+
+   Createing the linenumber table is done by reading in the entire
+coff linenumber table, and creating another table for internal use.
+
+   A coff line number table is structured so that each function is
+marked as having a line number of 0. Each line within the function is
+an offset from the first line in the function. The base of the line
+number information for the table is stored in the symbol associated
+with the function.
+
+   The information is copied from the external to the internal table,
+and each symbol which marks a function is marked by pointing its...
+
+   **How does this work  **
+
+Reading Relocations
+...................
+
+   Coff relocations are easily transformed into the internal BFD form
+(`arelent').
+
+   Reading a coff relocation table is done in the following stages:
+
+   * The entire coff relocation table is read into memory.
+
+   * Each relocation is processed in turn, first it is swapped from
+     the external to the internal form.
+
+   * The symbol referenced in the relocation's symbol index is turned
+     into a pointer into the canonical symbol table. Note that this
+     table is the same as the one returned by a call to
+     `bfd_canonicalize_symtab'.  The back end will call the routine
+     and save the result if a canonicalization hasn't been done.
+
+   * The reloc index is turned into a pointer to a howto structure,
+     in a back end specific way. For instance, the 386 and 960 use
+     the `r_type' to directly produce an index into a howto table
+     vector; the 88k subtracts a number from the `r_type' field and
+     creates an addend field.
+
+
+
+File: bfd.info,  Node: Index,  Next: Index,  Prev: BFD back end,  Up: Top
+
+Function Index
+**************
+
+* Menu:
+
+* BFD_CACHE_MAX_OPEN: File Caching.
+* HOWTO: Relocations.
+* aout_<size>_machine_type: aout.
+* aout_<size>_mkobject: aout.
+* aout_<size>_set_arch_mach: aout.
+* aout_<size>_some_aout_object_p: aout.
+* aout_<size>_swap_exec_header_in: aout.
+* aout_<size>_swap_exec_header_out: aout.
+* aout_<size>new_section_hook: aout.
+* bfd_alloc_size: Opening and Closing.
+* bfd_arch_compatible: Architectures.
+* bfd_architecture: Architectures.
+* bfd_cache_close: File Caching.
+* bfd_cache_init: File Caching.
+* bfd_cache_lookup: File Caching.
+* bfd_cache_lookup_worker: File Caching.
+* bfd_canonicalize_symtab: symbol handling functions.
+* bfd_check_format: Formats.
+* bfd_close: Opening and Closing.
+* bfd_core_file_failing_command: Core Files.
+* bfd_core_file_failing_signal: Core Files.
+* bfd_create: Opening and Closing.
+* bfd_fdopenr: Opening and Closing.
+* bfd_find_target: bfd_target.
+* bfd_format_string: Formats.
+* bfd_get_elt_at_index: Archives.
+* bfd_get_mtime: BFD front end.
+* bfd_get_next_mapent: Archives.
+* bfd_get_section_by_name: section prototypes.
+* bfd_get_section_contents: section prototypes.
+* bfd_get_size: Internal.
+* bfd_h_get_size: Internal.
+* bfd_h_put_size: Internal.
+* bfd_last_cache: File Caching.
+* bfd_log2: Internal.
+* bfd_make_empty_symbol: symbol handling functions.
+* bfd_make_section: section prototypes.
+* bfd_map_over_sections: section prototypes.
+* bfd_open_file: File Caching.
+* bfd_openr: Opening and Closing.
+* bfd_openr_next_archived_file: Archives.
+* bfd_openw: Opening and Closing.
+* bfd_perform_relocation: Relocations.
+* bfd_prinable_arch_mach: Architectures.
+* bfd_print_symbol_vandf: symbol handling functions.
+* bfd_put_size: Internal.
+* bfd_scan_arch_mach: Architectures.
+* bfd_set_arch_mach: Architectures.
+* bfd_set_archive_head: Archives.
+* bfd_set_format: Formats.
+* bfd_set_section_contents: section prototypes.
+* bfd_set_section_flags: section prototypes.
+* bfd_set_section_size: section prototypes.
+* bfd_set_start_address: BFD front end.
+* bfd_set_symtab: symbol handling functions.
+* bfd_target: Targets.
+* bfd_target_list: bfd_target.
+* core_file_matches_executable_p: Core Files.
+* get_symtab_upper_bound: symbol handling functions.
+* reloc_chain: Relocations.
+* reloc_howto_type: Relocations.
+* stuff: BFD front end.
+
+
+Index
+*****
+
+* Menu:
+
+* BFD: Overview.
+* BFD canonical format: Mechanism.
+* internal object-file format: Mechanism.
+* what is it?: Overview.
+
+
+ 
+   
+Tag Table:
+Node: Top823
+Node: Overview1087
+Node: History1992
+Node: How It Works2945
+Node: What BFD Version 1 Can Do4372
+Node: BFD information loss5398
+Node: Mechanism8013
+Node: BFD front end12349
+Node: Memory Usage17366
+Node: Sections18586
+Node: Section Input19059
+Node: Section Output20323
+Node: typedef asection21698
+Node: section prototypes26487
+Node: Symbols30021
+Node: Reading Symbols31610
+Node: Writing Symbols32567
+Node: typedef asymbol34097
+Node: symbol handling functions37543
+Node: Archives39405
+Node: Formats40854
+Node: Relocations42963
+Node: Core Files54841
+Node: Targets55736
+Node: bfd_target57455
+Node: Architectures66096
+Node: Opening and Closing69698
+Node: Internal71576
+Node: File Caching74036
+Node: BFD back end76541
+Node: What to Put Where76735
+Node: aout76864
+Node: coff82571
+Node: Index93539

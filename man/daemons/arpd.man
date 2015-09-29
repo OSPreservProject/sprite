@@ -1,0 +1,57 @@
+'\" Copyright 1989 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/daemons/arpd/RCS/arpd.man,v 1.1 90/01/03 09:31:21 ouster Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS ARPD cmds
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+arpd \- Respond to ARP and RARP requests
+.SH SYNOPSIS
+\fBarpd\fR [\fIoptions\fR]
+.SH OPTIONS
+.IP "\fB\-f \fIfileName\fR" 15
+Use \fIfileName\fR as the configuration file containing host network
+addresses.  The file \fB/etc/spritehosts\fR is used by default.  If
+this switch is given, \fIfileName\fR must have the same format as
+\fB/etc/spritehosts\fR.
+.IP "\fB\-v\fR" 15
+Verbose:  print information on standard output as requests are
+processed.
+.IP "\fB\-help\fR" 15
+Print a summary of the command-line options and exit immediately.
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBArpd\fR is a program that responds to requests made under the
+Internet Address Resolution Protocol (ARP) and Reverse Address
+Resolution Protocol (RARP).  See RFC826 for details on ARP and
+RFC903 for details on RARP.  \fBArpd\fR reads a configuration
+file (normally \fB/etc/spritehosts\fR) that describes a set of
+hosts and their Internet and Ethernet addresses;  it will respond
+to ARP and RARP requests for any
+host listed in the file.  Note that this differs from the common
+practice in many UNIX systems, where each host responds to ARP
+requests for itself;  the norm in Sprite is for a single \fBarpd\fR
+process to handle all requests for the Sprite network.
+.PP
+Although \fBarpd\fR caches the host information in its memory, it
+checks the last-modified time on the configuration file before responding
+to each request, and reloads its internal database if the configuration
+file has changed.
+.PP
+\fBArpd\fR generates diagnostic messages on its standard output.
+Normally, only major errors result in output, but if the \fB\-v\fR
+switch is given, then additional output is generated to describe
+all of the program's actions.
+
+.SH KEYWORDS
+arp, daemon, protocol, rarp, /etc/spritehosts

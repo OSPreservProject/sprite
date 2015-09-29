@@ -1,0 +1,10 @@
+L ACCOUNTG.;1                       	accountgone	../admin.$MACHINE/accountgone
+D BUGS                              	bugs
+F DISTFILE.;1                       	distfile
+D DUMP                              	dump
+F HOSTS.;1                          	hosts
+F MACHINET.;1                       	machineTypes
+D RCS                               	RCS
+F RDATE.;1                          	Rdate
+F RDIST.;1                          	Rdist
+L RESTORE.;1                        	restore	../admin.$MACHINE/restore

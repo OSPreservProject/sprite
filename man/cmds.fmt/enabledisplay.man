@@ -1,0 +1,68 @@
+
+
+
+ENABLEDISPLAY             User Commands             ENABLEDISPLAY
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     enabledisplay - Enables display on a machine
+
+SSYYNNOOPPSSIISS
+     eennaabblleeddiissppllaayy [[--ooffff]]
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This command enables or disables the display.   The  default
+     is to enable, and with any argument the display is disabled.
+     This command simply makes a call to Sys_EnableDisplay.
+
+
+KKEEYYWWOORRDDSS
+     enable, display
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  February 28, 1990                  1
+
+
+

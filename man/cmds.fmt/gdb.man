@@ -1,0 +1,132 @@
+
+
+
+GDB                       User Commands                       GDB
+
+
+
+NNAAMMEE
+     gdb - Project GNU's DeBugger
+
+SSYYNNOOPPSSIISS
+     ggddbb [ ooppttiioonnss ]   See documentation mentioned below.
+
+DDEESSCCRRIIPPTTIIOONN
+     _g_d_b is a source level symbolic debugger for C programs,
+     created by Richard M. Stallman (rms) for the GNU Project,
+     and distributed by the Free Software Foundation.  Eventually
+     GNU (Gnu's Not Unix) will be a complete replacement for
+     Berkeley Unix, all of which everyone will be able to use
+     freely.  See the _G_N_U _E_m_a_c_s man page for pointers to more
+     information.
+
+     _g_d_b has something of the flavor of _d_b_x, but has more
+     features and power.  It can also be used to debug o/s ker-
+     nels, but needs to be configured differently for that task.
+
+     Project GNU isn't using Unix man pages.  Its style of com-
+     plete documentation can be found by:
+
+     The help and info commands inside _g_d_b.
+
+     In the Info system in _G_N_U _E_m_a_c_s.  Type C-h i, and follow the
+     directions.  This is equivalent to the reference manual for
+     _g_d_b, and has about 55 pages of text.
+
+     _g_d_b could be extended to work with other languages (e.g.
+     Pascal) and machines (e.g. encores).  If you like, copy the
+     sources and give it a try.  When you have it working send
+     _d_i_f_f -_c's of the changed files to bug-gdb@prep.ai.mit.edu
+     (fuller details below), so they can benefit everyone.
+
+DDIISSTTRRIIBBUUTTIIOONN
+     _g_d_b is free; anyone may redistribute copies of _g_d_b to anyone
+     under the terms stated in the _g_d_b General Public License, a
+     copy of which accompanies each copy of _g_d_b, is readable with
+     the info command inside _g_d_b, and which also appears in the
+     _g_d_b reference manual.
+
+     Copies of _g_d_b may sometimes be received packaged with dis-
+     tributions of Unix systems, but it is never included in the
+     scope of any license covering those systems.  Such inclusion
+     would violate the terms on which distribution is permitted.
+     In fact, the primary purpose of the General Public License
+     is to prohibit anyone from attaching any other restrictions
+     to redistribution of _g_d_b.
+
+     You can order printed copies of the _g_d_b reference manual for
+     $10.00/copy postpaid from the Free Software Foundation,
+     which develops GNU software (contact them for quantity
+
+
+
+Sprite v1.0               13 April 1987                         1
+
+
+
+
+
+
+GDB                       User Commands                       GDB
+
+
+
+     prices on the manual).  Their address is:
+         Free Software Foundation
+         1000 Mass Ave.
+         Cambridge, MA  02138
+     As with all software and publications from FSF, everyone is
+     permitted to make and distribute copies of the _g_d_b reference
+     manual.  The TeX source to the _g_d_b reference manual is also
+     included in the _G_N_U _E_m_a_c_s source distribution.
+
+OOPPTTIIOONNSS
+     See documentation.
+
+EEXXAAMMPPLLEESS
+     See documentation.
+
+SSEEEE AALLSSOO
+     adb(1), sdb(1), dbx(1)
+
+BBUUGGSS
+     There is a mailing list, bug-gdb@prep.ai.mit.edu on the
+     internet (ucbvax!prep.ai.mit.edu!bug-gdb on UUCPnet), for
+     reporting _g_d_b bugs and fixes.  But before reporting some-
+     thing as a bug, please try to be sure that it really is a
+     bug, not a misunderstanding or a deliberate feature.  We ask
+     you to read the section ``Reporting Emacs Bugs'' near the
+     end of the _G_N_U _E_m_a_c_s reference manual (or Info system) for
+     hints on how and when to report bugs.  Also, include the
+     version number of the _g_d_b you are running in _e_v_e_r_y bug
+     report that you send in.
+
+     Do not expect a personal answer to a bug report.  The pur-
+     pose of reporting bugs is to get them fixed for everyone in
+     the next release, if possible.  For personal assistance,
+     look in the SERVICE file (see the _G_N_U _E_m_a_c_s man page) for a
+     list of people who offer it.
+
+     Please do not send anything but bug reports to this mailing
+     list.  Send other stuff to gnu@prep.ai.mit.edu (or the
+     corresponding UUCP address).  For more information about GNU
+     mailing lists, see the file MAILINGLISTS (see the _G_N_U _E_m_a_c_s
+     man page).  Bugs tend actually to be fixed if they can be
+     isolated, so it is in your interest to report them in such a
+     way that they can be easily reproduced.
+
+     No bugs are known at this time.
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0               13 April 1987                         2
+
+
+

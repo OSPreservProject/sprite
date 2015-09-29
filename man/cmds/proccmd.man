@@ -1,0 +1,17 @@
+.so \*(]ltmac.sprite
+.HS proccmd cmds
+.BS
+.SH NAME
+proccmd \- set Spur processor parameters.
+.SH SYNOPSIS
+\fBproccmd \fR[\fIoptions\fR]
+.SH OPTIONS
+.IP "\fB\-s \fIprocessor\fR" 20
+The specified processor is started.
+.IP "\fB\-i \fIprocessor\fR" 20
+The specified processor is idled.
+.SH INTRODUCTION
+.LP
+This command controls the processors of the Spur multiprocessor.
+.SH BUGS
+If all processors are idled, it is bad.

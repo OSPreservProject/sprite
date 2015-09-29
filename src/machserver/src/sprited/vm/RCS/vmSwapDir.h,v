@@ -1,0 +1,141 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  srv030:1.5 srv028:1.5 srv027:1.5 srv026:1.5 srv024:1.5 srv022:1.5 srv021:1.5 srv019:1.5 srv018:1.5 srv016:1.5 srv015:1.5 srv014:1.5 srv012:1.5 srv011:1.5 srv010:1.5 srv008:1.5 srv007:1.5 srv006:1.5 srv005:1.5 srv004:1.5 srv003:1.5 srv002:1.5 srv001:1.5;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     92.01.21.17.07.47;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.10.18.18.29.43;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.09.02.22.56.17;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.09.01.21.03.14;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.08.22.13.01.41;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.5
+log
+@Change VM code to use Sprite FS instead of UNIX.  
+@
+text
+@/*
+ * vmSwapDir.h --
+ *
+ *	Definitions for the swap directory monitor.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmSwapDir.h,v 1.4 91/10/18 18:29:43 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+ */
+
+#ifndef _VMSWAPDIR
+#define _VMSWAPDIR
+
+#include <fs.h>
+#include <procTypes.h>
+
+/*
+ * The name of the swap directory.
+ */
+#define	VM_SWAP_DIR_NAME	"/swap/"
+
+extern void Vm_OpenSwapDirectory _ARGS_((ClientData data, Proc_CallInfo *callInfoPtr));
+extern void VmReopenSwapDirectory _ARGS_((void));
+extern Fs_Stream *VmGetSwapStreamPtr _ARGS_((void));
+extern void VmDoneWithSwapStreamPtr _ARGS_((void));
+void VmSwapFileRemove _ARGS_((char *swapFileName));
+extern Boolean VmSwapStreamOk _ARGS_((void));
+
+#endif /* _VMSWAPDIR */
+@
+
+
+1.4
+log
+@Let the caller close the swap file (VmSwapFileRemove).
+@
+text
+@d10 1
+a10 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmSwapDir.h,v 1.3 91/09/02 22:56:17 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d16 1
+d20 1
+a20 2
+ * The name of the swap directory.  XXX put back to /swap/ when using 
+ * the real Sprite FS?  (/swap/test?).
+d22 1
+a22 1
+#define	VM_SWAP_DIR_NAME	"/usr0/SpriteSwap/"
+d26 1
+a26 1
+extern TempFs_Stream *VmGetSwapStreamPtr _ARGS_((void));
+@
+
+
+1.3
+log
+@Changes for module-based source organization.
+@
+text
+@d10 1
+a10 1
+ * $Header: /user6/kupfer/spriteserver/src/sprited/vm/RCS/vmSwapDir.h,v 1.2 91/09/01 21:03:14 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d28 1
+@
+
+
+1.2
+log
+@Snapshot.  Full VM support.
+@
+text
+@d10 1
+a10 1
+ * $Header: /user6/kupfer/spriteserver/src/printfd/RCS/vmSwapDir.h,v 1.1 91/08/22 13:01:41 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d15 2
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/vm/RCS/vmSwapDir.h,v 1.1 90/09/11 10:45:16 shirriff Exp $ SPRITE (Berkeley)
+d17 2
+a18 1
+ * The name of the swap directory.
+d20 1
+a20 1
+#define	VM_SWAP_DIR_NAME	"/swap/"
+d24 1
+a24 1
+extern Fs_Stream *VmGetSwapStreamPtr _ARGS_((void));
+@

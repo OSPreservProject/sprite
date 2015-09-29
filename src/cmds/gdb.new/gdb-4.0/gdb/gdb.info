@@ -1,0 +1,149 @@
+Info file gdb.info, produced by Makeinfo, -*- Text -*- from input
+file gdb-all.texi.
+
+   This file documents the GNU debugger GDB.
+
+   Copyright (C) 1988, 1989, 1990, 1991 Free Software Foundation, Inc.
+
+   Permission is granted to make and distribute verbatim copies of
+this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+   Permission is granted to copy and distribute modified versions of
+this
+manual under the conditions for verbatim copying, provided also that
+the section entitled "GNU General Public License" is included
+exactly as in the original, and provided that the entire resulting
+derived work is distributed under the terms of a permission notice
+identical to this one.
+
+   Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for
+modified versions, except that the section entitled "GNU General
+Public License" may be included in a translation approved by the
+Free Software Foundation instead of in the original English.
+
+Indirect:
+gdb.info-1: 1054
+gdb.info-2: 49653
+gdb.info-3: 98454
+gdb.info-4: 147012
+gdb.info-5: 195634
+gdb.info-6: 227137
+
+Tag Table:
+(Indirect)
+Node: Top1056
+Node: Summary7041
+Node: Free Software8074
+Node: Contributors8867
+Node: New Features12098
+Node: Sample Session15793
+Node: Invocation22357
+Node: Starting GDB22643
+Node: File Options23922
+Node: Mode Options25200
+Node: Leaving GDB27277
+Node: Shell Commands27953
+Node: Commands28747
+Node: Command Syntax28956
+Node: Help30790
+Node: Running34514
+Node: Compilation35139
+Node: Starting36549
+Node: Arguments39524
+Node: Environment40513
+Node: Working Directory43173
+Node: Input/Output43882
+Node: Attach45483
+Node: Kill Process47645
+Node: Stopping48589
+Node: Breakpoints49655
+Node: Set Breaks51611
+Node: Set Watchpoints56183
+Node: Exception Handling57007
+Node: Delete Breaks59484
+Node: Disabling61094
+Node: Conditions63686
+Node: Break Commands68375
+Node: Breakpoint Menus71821
+Node: Error in Breakpoints73364
+Node: Continuing and Stepping74264
+Node: Signals80159
+Node: Stack83782
+Node: Frames85163
+Node: Backtrace87450
+Node: Selection89170
+Node: Frame Info91649
+Node: Source93585
+Node: List94491
+Node: Search97635
+Node: Source Path98456
+Node: Machine Code101148
+Node: Data103555
+Node: Expressions104949
+Node: Variables106291
+Node: Arrays108579
+Node: Output formats110595
+Node: Memory112463
+Node: Auto Display117779
+Node: Print Settings121472
+Node: Value History126987
+Node: Convenience Vars129370
+Node: Registers131792
+Node: Floating Point Hardware135294
+Node: Cplusplus135752
+Node: Cplusplus expressions136256
+Node: Cplusplus commands138120
+Node: Symbols139581
+Node: Altering143905
+Node: Assignment144828
+Node: Jumping147014
+Node: Signaling148975
+Node: Returning149638
+Node: Calling150790
+Node: GDB Files151261
+Node: Files151493
+Node: Symbol Errors158949
+Node: Targets162287
+Node: Active Targets163127
+Node: Target Commands164198
+Node: Remote166528
+Node: i960-Nindy Remote168600
+Node: Nindy Startup169343
+Node: Nindy Options170026
+Node: Nindy reset171674
+Node: EB29K Remote172058
+Node: Comms (EB29K)172613
+Node: gdb-EB29K175832
+Node: Remote Log177197
+Node: VxWorks Remote177673
+Node: VxWorks connection179028
+Node: VxWorks download180023
+Node: VxWorks attach181564
+Node: Controlling GDB181960
+Node: Prompt182569
+Node: Editing183194
+Node: History183961
+Node: Screen Size186452
+Node: Numbers187727
+Node: Messages/Warnings188847
+Node: Sequences191870
+Node: Define192367
+Node: Command Files194390
+Node: Output195636
+Node: Emacs198013
+Node: GDB Bugs203976
+Node: Bug Criteria204690
+Node: Bug Reporting205461
+Node: Renamed Commands212478
+Node: Installing GDB214118
+Node: Subdirectories216134
+Node: Config Names219726
+Node: configure Options222638
+Node: Formatting Manual224889
+Node: Copying227139
+Node: Index246444
+
+End Tag Table

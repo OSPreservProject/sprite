@@ -1,0 +1,32 @@
+% SCREEN.STY is used to create a LaTeX document suitable for SCREENVIEWing.
+
+\oddsidemargin=0pt      % for 1in left margin (which SCREENVIEW removes!)
+\evensidemargin=0pt     % ditto
+\textwidth=400pt        % so SCREENVIEW output will fit within 80 columns
+
+% redefine all font sizes to be \normalsize
+\def\tiny{\normalsize}
+\def\scriptsize{\normalsize}
+\def\footnotesize{\normalsize}
+\def\small{\normalsize}
+\def\large{\normalsize}
+\def\Large{\normalsize}
+\def\LARGE{\normalsize}
+\def\huge{\normalsize}
+\def\Huge{\normalsize}
+
+% redefine all font types to be \tt
+\def\em{\tt}
+\def\bf{\tt}
+\def\it{\tt}
+\def\sl{\tt}
+\def\sf{\tt}
+\def\sc{\tt}
+\def\rm{\tt}
+
+% now typeset document using \tt and \raggedright
+\tt
+\raggedright
+
+
+

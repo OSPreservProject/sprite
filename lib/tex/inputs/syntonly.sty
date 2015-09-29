@@ -1,0 +1,150 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% SYNTONLY.STY						    July 1990      %
+%                                                                          %
+% This file is part of the AMS-LaTeX Version 1.0 distribution              %
+%   American Mathematical Society, Technical Support Group,                %
+%   P. O. Box 6248, Providence, RI 02940                                   %
+%   800-321-4AMS (321-4267) or 401-455-4080                                %
+%   Internet: Tech-Support@Math.AMS.com                                    %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% This is file `syntonly.sty' generated
+%% on <1990/6/30> with the docstrip utility (v1.1k).
+%%
+%% The original source file was `syntonly.doc'.
+%%
+%%
+%% Copyright (C) 1989,1990 by Frank Mittelbach, Rainer Schoepf.
+%% All rights reserved.
+%%
+%% IMPORTANT NOTICE:
+%%
+%% You are not allowed to change this file. You may however copy this file
+%% to a file with a different name and then change the copy.
+%%
+%% You are allowed to distribute this file under the condition that it is
+%% distributed together with all files mentioned in readme.mz3. If you
+%% receive only some of these files from someone, complain!
+%%
+%% You are NOT ALLOWED to distribute this file alone. You are NOT ALLOWED
+%% to take money for the distribution or use of either this file or a
+%% changed version, except for a nominal charge for copying etc.
+%%
+%% Error Reports in case of UNCHANGED versions to
+%%
+%% F. Mittelbach
+%% Eichenweg 29
+%% D-6500 Mainz 1
+%% Federal Republic of Germany
+%% Bitnet: <PZF5HZ@DRUEDS2>
+%%
+%% or:
+%% R. Sch\"opf
+%% Inst. f. Theor. Physik
+%% der Universit\"at Heidelberg
+%% Philosophenweg 16
+%% D-6900 Heidelberg
+%% Federal Republic of Germany
+%% Bitnet: <BK4@DHDURZ1>
+%%
+%%
+\def\fileversion{v1.0e}
+\def\filedate{90/04/05}
+\def\docdate {90/01/16}
+
+%% \CheckSum{205}
+%% \CharacterTable
+%%  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
+%%   Lower-case    \a\b\c\d\e\f\g\h\i\j\k\l\m\n\o\p\q\r\s\t\u\v\w\x\y\z
+%%   Digits        \0\1\2\3\4\5\6\7\8\9
+%%   Exclamation   \!     Double quote  \"     Hash (number) \#
+%%   Dollar        \$     Percent       \%     Ampersand     \&
+%%   Acute accent  \'     Left paren    \(     Right paren   \)
+%%   Asterisk      \*     Plus          \+     Comma         \,
+%%   Minus         \-     Point         \.     Solidus       \/
+%%   Colon         \:     Semicolon     \;     Less than     \<
+%%   Equals        \=     Greater than  \>     Question mark \?
+%%   Commercial at \@     Left bracket  \[     Backslash     \\
+%%   Right bracket \]     Circumflex    \^     Underscore    \_
+%%   Grave accent  \`     Left brace    \{     Vertical bar  \|
+%%   Right brace   \}     Tilde         \~}
+%%
+\@ifundefined{extract@font}
+   {\errmessage{The style option `syntonly' does not make sense if you
+                do not use a format with the new font selection scheme.}
+    \endinput}
+   {}
+\immediate\write\sixt@@n{Style Option: `syntonly'
+  \fileversion \space <\filedate>  (FMi and RmS)}
+\immediate\write\sixt@@n{English Documentation
+  \space\@spaces\@spaces <\docdate>  (FMi and RmS)}
+\font\dummyft@=dummy
+\fontdimen1 \dummyft@=\z@
+\fontdimen2 \dummyft@=\z@
+\fontdimen3 \dummyft@=\z@
+\fontdimen4 \dummyft@=\z@
+\fontdimen5 \dummyft@=\z@
+\fontdimen6 \dummyft@=\z@
+\fontdimen7 \dummyft@=\z@
+\fontdimen8 \dummyft@=\z@
+\fontdimen9 \dummyft@=\z@
+\fontdimen10 \dummyft@=\z@
+\fontdimen11 \dummyft@=\z@
+\fontdimen12 \dummyft@=\z@
+\fontdimen13 \dummyft@=\z@
+\fontdimen14 \dummyft@=\z@
+\fontdimen15 \dummyft@=\z@
+\fontdimen16 \dummyft@=\z@
+\fontdimen17 \dummyft@=\z@
+\fontdimen18 \dummyft@=\z@
+\fontdimen19 \dummyft@=\z@
+\fontdimen20 \dummyft@=\z@
+\fontdimen21 \dummyft@=\z@
+\fontdimen22 \dummyft@=\z@
+\newif\ifsyntax@
+\syntax@false
+\def\syntaxonly{
+   \syntax@true
+   \global\dummyft@
+   \count@\sixt@@n
+   \loop
+    \ifnum\count@ >\z@
+     \advance\count@\m@ne
+     \global\textfont\count@\dummyft@
+     \global\scriptfont\count@\dummyft@
+     \global\scriptscriptfont\count@\dummyft@
+    \repeat
+   \global\let\selectfont\relax
+   \global\let\mathversion\@gobble
+   \global\let\getanddefine@fonts\@gobbletwo
+   \tracinglostchars\z@
+   \nopages@
+   \frenchspacing
+   \hbadness\@M}
+\def\newtoks@{\alloc@5\toks\toksdef\@cclvi}
+\def\nopages@{%
+  \output {\setbox\z@\box\@cclv
+           \setbox\z@\box\footins
+           \deadcycles\z@}%
+  \newtoks@\output
+  \def\@xfloat##1[##2]{%
+    \def\@captype{##1}%
+    \ifinner\@parmoderr\fi
+    \setbox\@tempboxa\vbox\bgroup\@parboxrestore}%
+  \let\end@float\egroup
+  \def\marginpar{\ifinner\@parmoderr\fi
+    \begingroup \@ifnextchar [\@xmpar\@ympar}
+  \long\def\@xmpar[##1]{%
+    \setbox\@tempboxa\vbox{\@parboxrestore ##1}\@ympar}%
+  \long\def\@ympar##1{%
+    \setbox\@tempboxa\vbox{\@parboxrestore ##1}\endgroup}%
+}
+\begingroup
+  \def\do{\noexpand\do\noexpand}
+  \xdef\@preamblecmds{\@preamblecmds \do\syntaxonly}
+\endgroup
+
+\endinput
+%%
+%% End of file `syntonly.sty'.
+

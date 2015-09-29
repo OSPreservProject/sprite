@@ -1,0 +1,478 @@
+head     1.8;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @# @;
+
+
+1.8
+date     91.12.16.12.03.02;  author kupfer;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     91.06.04.16.20.28;  author kupfer;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     91.06.03.12.28.22;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.06.03.12.05.32;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.06.03.11.53.58;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.06.02.18.10.28;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.06.02.16.58.11;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.06.02.14.40.35;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Test copy of sendmail aliases.
+@
+
+
+1.8
+log
+@adduser: add kohl to "sprite-users".
+@
+text
+@#
+# Sprite mail alias file
+#
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# !!! THIS FILE IS UNDER RCS REVISION CONTROL                           !!!
+# !!! PLEASE: CHECK THIS FILE OUT, DO YOUR CHANGES AND CHECK IT BACK IN !!!
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#
+# $Header: /sprite/src/admin/adduser/test/RCS/aliases,v 1.7 91/06/04 16:20:28 kupfer Exp Locker: kupfer $
+
+allmsgs:allmsgs@@ucbvax.Berkeley.EDU
+csmsgs:csmsgs@@ucbvax.Berkeley.EDU
+#decode: "|/usr/bin/uudecode"  see bks
+dumper:mendel
+operator:operator@@sequoia.Berkeley.EDU
+peterv:peterv@@ginger.Berkeley.EDU
+root:spriters,bmiller
+admin:bmiller
+msgs: msgs@@ginger
+sys: sys@@ginger.Berkeley.EDU
+nobody: /dev/null
+sklower:sklower@@renoir.Berkeley.EDU
+postmaster: root
+mailer-daemon: postmaster
+daemon:root
+#
+# SPUR project mailing lists (mostly forwarded to ginger)
+#
+spur-retro: spur-retro@@ginger
+#
+spur:	spur@@ginger
+# SPUR Staff
+spur-staff: spur-staff@@ginger
+# SPUR Hardware list
+# spur-h-folder@@ucbarpa: /h/spur/spur-h-messages
+spur-h: spur-h@@ginger
+spur-chip: spur-chip@@ginger
+# SPUR Diagnostics Group
+spur-d: spur-d@@ginger
+# SPUR Board lunch group
+spur-lunch: spur-lunch@@ginger
+# SPUR simulator users
+spur-sim: spur-sim@@ginger
+# SPUR Software list
+spur-s:	spur-s@@ginger
+# SPUR operating system ("Sprite") list
+# sprite-log is a way to mail directly to the log without copying humans.
+spur-os:   sprite
+bugs:      spriters, sprite-log, margo@@postgres
+sprite:    spriters, sprite-log
+spriters:  ouster, andrew, douglis, deboor, mendel, mgbaker, tve,
+	jhh, shirriff, eklee, pmchen-spritefolder, bmiller, theresa@@ginger,
+	elm, kupfer, mottsmth, ss
+# sprite-fans is for followers of sprite who don't care about programs and
+# such, but want to hear about TRs and other worthy news.
+sprite-fans: all-sprite-users, vijay@@mica, kevin@@mimsy.umd.edu, 
+	paris@@sun1.cs.uh.edu, lauer@@btc.kodak.com, raphael@@ms.uky.edu,
+	theimer.pa@@Xerox.COM, amnon@@shum.huji.ac.il, zorn@@ginger,
+	steve@@umiacs.umd.edu, pat@@orac.pgh.pa.us, welch@@parc.xerox.com,
+	jtv@@santra.hut.fi, iwamoto@@cavax3.cis.canon.co.jp, 
+	swansonc@@acc.stolaf.edu, kcs@@cc.purdue.edu,
+	ryan@@berlin-gw.diag.stratus.com,
+	Pierre-Louis.Neumann@@inria.fr, shsieh@@aerospace.aero.org
+
+# separate sprite-users into frequent and casual users.
+all-sprite-users: sprite-users, ho, pattrsn, hilfingr, fwo, david, 
+	rafael, cheriton, af, jamin, randi, whitcomb, fmeyer, seth, fixen,
+        funk, rap, sonia, chou, luigi, dougj, drewes, zimet, rothman,
+	leong, cs292i, postgres-sprite-users@@postgres, heatherh, sahay,
+	sprite-ucsc, sprite-cory, sprite-parc
+
+sprite-users: spriters, sah, pfile, rquiros, bedk, lucco, klier, kyi, hunt, prova, kohl,
+	gunter, vahdat, mani, dan, torek, gibson,
+	msilva, rohit, bks, joel, tonys, strange, barsky, ddgarcia,
+	flaster, dc, decman, bertrand, dekai, hzhang, daniels, asw,
+	wallack, sethg, wallack, mib, oscarsso, negri, jon, horizon,
+	anvari, slater, doong, andre, manocha, dfb, dfb, flb,
+	krste, hohmeyer, bsmith, aho, tockey, kriguer, chou,
+	stolcke, alc, randy, bmiller, culler, johnw, dedood, wlo,   
+	elm, rbk, fubar, schauser, glass, vojin, chiueh, ss, jclee, dlong
+
+all-sprite-users-request: sprite-users-request
+sprite-users-request: spriters
+owner-all-sprite-users: owner-sprite-users
+owner-sprite-users: spriters
+
+sprite-log: "|/users/sprite/cmds.gen/logger sprite log 'Sprite Log'"
+sprite-log-notification: nobody
+owner-sprite-log: kupfer
+
+# old alias
+sprite-secretary: sprite-request
+
+sprite-request: bmiller
+sprite-ucsc: darrell, gunjan, noshpitz, jeffk, golding
+sprite-cory: lutz, ss
+sprite-parc: welch@@parc.xerox.com
+
+# just for ds3100 owners
+ds3100-owners: culler,elm,eklee,tve,jhh,pmchen,randy,ouster,shirriff,alc,bmiller,pattrsn,douglis,vojin,mottsmth
+# just for sun4 owners
+sun4-owners: mgbaker, tve, jhh, mendel, eklee, elm, dedood,
+	sahay, ouster, kupfer
+
+# kernel hackers
+kernel-hackers: spriters, sullivan, alc
+#
+# SPUR instruction set list
+# spur-is-folder@@ucbarpa: /h/spur/spur-is-messages
+spur-is-folder: spur-is-folder@@ucbarpa
+spur-is: larus, zorn, ho, taylor, hilfingr, jkf, luigi, samples, 
+	spur-is-folder@@ucbarpa
+#
+# SPUR N2 users and problem log
+# spur-n2-folder@@ucbarpa: /h/spur/spur-n2-messages
+spur-n2-folder: spur-n2-folder@@ucbarpa.Berkeley.EDU
+spur-n2: hansen, david, kong, eggers,
+	spur-n2-folder@@ucbarpa.Berkeley.EDU
+endot: harr@@ucbarpa, spur-n2-folder@@ucbarpa, ucbvax!decvax!cwruecmp!endot!harr,
+	ucbvax!endotsew!harr
+# SPUR hangers on.  For the moment, here to debug mailing list.
+spur-extra:sklower,mayo,fwo,gedye
+# Sprite emacs users
+sprite-emacs-users: douglis, luigi, ho, alc, culler, schauser, elm,
+	kupfer, mottsmth, sethg
+sprite-emacs-users-request: kupfer
+owner-sprite-emacs-users: kupfer
+# Gnu C++ users
+g++-users: msilva, tve, hohmeyer, eklee
+#
+# XPRS aliases
+xprs-profs: xprs-profs@@ginger
+raid-folder: /raid/mail/hw-folder
+xprs-hw: raid
+raid: randy, pattrsn@@ginger, pmchen, gibson@@ginger, lutz, eklee, theresa@@ginger,
+	bmiller, mendel, alc, elm, drewes@@ginger, margo@@postgres,
+	raid-folder, chiueh, ss, jhh, rquiros, pfile,
+	shirriff, joel
+xprs-db: xprs-db@@ginger
+xprs-os: xprs-os@@ginger
+xprs-other: xprs-other@@ginger
+xprs: xprs@@ginger
+#
+# SPUR personal aliases
+pattrsn:pattrsn@@ginger.Berkeley.EDU
+ousterhout:ouster
+eggers:eggers@@ginger.Berkeley.EDU
+gibson-local:\gibson
+gibson:gibson-local, gibson@@ginger.Berkeley.EDU
+pmchen-spritefolder:/users/pmchen/tmp/spritembox
+garth:gibson
+brent:welch@@parc.xerox.com
+welch:welch@@parc.xerox.com
+owner-bmiller: \bmiller
+pmchen:pmchen-local@@ginger.Berkeley.EDU, pmchen-local
+pmchen-local: \pmchen
+owner-douglis-local: \douglis
+owner-douglis: \douglis
+douglis-local: \douglis
+douglis: douglis@@cs.vu.nl
+mayo:mayo@@ginger.Berkeley.EDU
+mlgray:mgbaker
+#andrew:andrew@@ginger.Berkeley.EDU
+zorn:zorn@@ginger.Berkeley.EDU
+markhill:markhill@@ginger.Berkeley.EDU
+hill:markhill@@ginger.Berkeley.EDU
+larus:larus@@ginger.Berkeley.EDU
+david:david@@ginger.Berkeley.EDU
+gedye:gedye@@ginger.Berkeley.EDU
+deboor:adam%bsw.uucp@@uunet.uu.net
+wood:david
+lutz:lutz@@ucbear.Berkeley.EDU
+jhartman:jhh
+ethan:elm
+shiriff:shirriff
+shirrif:shirriff
+sheriff:shirriff
+sherriff:shirriff
+# mail to platinum is bouncing, let ginger queue it!
+dougj:dougj@@ginger.Berkeley.EDU
+johnson:dougj
+hilfingr:hilfingr@@ginger.Berkeley.EDU
+bk:bk@@ginger.Berkeley.EDU
+wookkoh:wookkoh@@ginger.Berkeley.EDU
+luigi:luigi@@ginger.Berkeley.EDU
+taxlaw:taxlaw@@ginger.Berkeley.EDU
+ho:ho@@ginger.Berkeley.EDU
+bennett:bennett@@ginger.Berkeley.EDU
+kong:kong@@ginger.Berkeley.EDU
+cori:cori@@ginger.Berkeley.EDU
+gaetano:gaetano@@ginger.Berkeley.EDU
+fwo:fwo@@ginger.Berkeley.EDU
+chang:chang@@ginger.Berkeley.EDU
+taylor:taylor@@ginger.Berkeley.EDU
+hartman:jhh
+daebum:daebum@@ginger.Berkeley.EDU
+betten:betten@@ginger.Berkeley.EDU
+castillo:castillo@@ginger.Berkeley.EDU
+vanroy:vanroy@@ginger.Berkeley.EDU
+carlton:carlton@@ginger.Berkeley.EDU
+lacy:lacy@@ginger.Berkeley.EDU
+magic:magic@@ginger.Berkeley.EDU
+cad:cad@@ginger.Berkeley.EDU
+guest:guest@@ginger.Berkeley.EDU
+# the unconverted masses
+dkjeong:dkjeong@@kilby.Berkeley.EDU
+jensen:jensen@@ginger.Berkeley.EDU
+hu:hu@@ernie.Berkeley.EDU
+hansen:hansen@@ucbarpa.Berkeley.EDU
+glenn:glenn@@ernie.Berkeley.EDU
+sharad:sharad@@ucbarpa.Berkeley.EDU
+richd:richd@@ucbarpa.Berkeley.EDU
+jkf:jkf@@ucbarpa.Berkeley.EDU
+samples:samples@@ucbarpa.Berkeley.EDU
+baden:baden@@ucbarpa.Berkeley.EDU
+sechrest:sechrest@@ucbarpa.Berkeley.EDU
+gusella:gusella@@ucbarpa.Berkeley.EDU
+kathya:kathya@@volta.Berkeley.EDU
+mottsmith:mottsmth
+mott-smith:mottsmth
+dlong:dlong@@oak.ucsc.edu
+#
+# other aliases
+#
+theresa:theresa@@ginger.Berkeley.EDU
+deirdre:deirdre@@janus.Berkeley.EDU
+# Patterson guest - see gibson
+ns:ns@@ginger.Berkeley.EDU
+eugene:eugene@@ginger.Berkeley.EDU
+
+dacosta:dacosta@@janus.Berkeley.EDU
+smith:smith@@ucbarpa.Berkeley.EDU
+
+# csgrad-social mailing list (Maintained by elm@@sprite)
+# NOTE: the list was split because it was getting too big (over 1000
+# characters seems to be a problem).
+csgrad-social: csgrad-social-1,csgrad-social-2
+csgrad-social-request: elm@@sprite
+owner-csgrad-social: elm@@sprite
+csgrad-social-1: :include:/users/elm/Mail/lists/csgrad-social.1
+csgrad-social-2: :include:/users/elm/Mail/lists/csgrad-social.2
+
+# flag football mailing list (Maintained by elm@@sprite)
+flag-football: :include:/users/elm/Mail/lists/flag-football-list
+# softball mailing list (maintained by elm@@sprite)
+softball: :include:/users/elm/Mail/lists/softball-list
+
+# cs150 tas (Fall 1990)
+cs150tas: wayne@@bandit, hsheng@@ic, hgkim@@ernie, hoch@@sim, paola@@cory,
+	link@@cory, flb@@cory, vincze@@janus, randy@@sprite, tang@@ocf
+
+
+# CS252 class aliases (Spring 1991), maintained by Schauser
+cs252: :include:/pcs/c252/class.email 
+
+# CS254 class aliases (Spring 1991), maintained by Bertrand
+cs254: :include:/users/bertrand/.cs254.aliases
+
+# CS298-7 class aliases (Spring 1991), maintained by Sethg
+plg: cs298-7
+cs298-7: :include:/users/sethg/.plg.alias
+
+#
+# CS298-15 Parallel Computer Architecture Seminar (FL 1990)
+# Maintained by schauser@@sprite
+#
+pararch: :include:/users/schauser/pararch.alias
+
+#
+# Parallel Computing Systems group aliases (maintained by tve@@sprite)
+#
+tic-group:	culler, johnw, tve, schauser, sethg, decman, flaster,
+		bertrand, kyi
+tic-log:	pcs-log
+tic-bugs:	tic-log, tic-group
+tic:		tic-log, tic-group
+btm-group:	johnw, tve, bedk, krste, bertrand, dedood, schauser
+btm:		pcs-log, btm-group
+pcs-group:	tic-group, btm-group
+pcs:		pcs-log, pcs-group
+pcs-bugs:	pcs-log, pcs-group
+id-bugs:	tic-bugs, shail@@lcs.mit.edu, rpaul@@lcs.mit.edu,
+		jamey@@lcs.mit.edu
+#	Logging program
+pcs-log:	"|/pcs/log/logger pcs log 'PCS Log'"
+pcs-log-notification: tve
+owner-pcs-log: tve
+
+#
+# Tcl mailing list (maintained by ouster@@sprite)
+#
+tcl: :include:/users/ouster/misc/tcl.alias
+tcl-admin: ouster
+tcl-request: ouster
+
+#
+# Mailing lists related to CS 60B (Spring 1991), maintained by
+# ouster@@sprite.
+#
+
+60bgsis: adnan@@zion, downey@@cory, srinivas@@tycho, joshi@@arpa, konig@@venus
+60breaders: ronald@@cory, darryl@@cory, achoi@@cory, mcleung@@cory,
+	ginger@@cory, labb-1ea@@web
+
+#
+# Perl users mailing list maintained by jhh@@sprite.
+#
+perl: :include:/users/jhh/Mail/lists/perl
+
+# tests for "deleteuser prova":
+end-of-line: adnan@@zion, downey@@cory, srinivas@@tycho, joshi@@arpa, prova,
+	foo, bar
+middle-of-line: foo, prova, bar
+last-in-list: foo, bar, prova
+only-on-line: adnan@@zion, downey@@cory, srinivas@@tycho, joshi@@arpa, konig@@venu,
+	prova,
+	doof
+only-on-line-2: adnan@@zion, downey@@cory, srinivas@@tycho, joshi@@arpa, 
+	konig@@venu,
+	prova
+only-in-list: prova
+twice: foo, prova, bar, prova
+thrice: foo, prova, prova, bar, prova
+prova: prova@@foobarbaz
+@
+
+
+1.7
+log
+@deleteuser: remove foo.
+@
+text
+@d9 1
+a9 1
+# $Header: /sprite/src/admin/deleteuser/test/RCS/aliases,v 1.6 91/06/03 12:28:22 kupfer Exp Locker: kupfer $
+d72 1
+a72 1
+sprite-users: spriters, sah, pfile, rquiros, bedk, lucco, klier, kyi, hunt, prova,
+@
+
+
+1.6
+log
+@adduser: add prova to "sprite-users".
+@
+text
+@d9 1
+a9 1
+# $Header: /sprite/src/admin/adduser/test/RCS/aliases,v 1.5 91/06/03 12:05:32 kupfer Exp Locker: kupfer $
+@
+
+
+1.5
+log
+@Add another test for deleteusers.
+@
+text
+@d9 1
+a9 1
+# $Header: /sprite/src/admin/adduser/test/RCS/aliases,v 1.4 91/06/03 11:53:58 kupfer Exp Locker: kupfer $
+d72 1
+a72 1
+sprite-users: spriters, sah, pfile, rquiros, bedk, lucco, klier, kyi, hunt,
+@
+
+
+1.4
+log
+@Add a bunch of test entries for deleteuser.
+@
+text
+@d9 1
+a9 1
+# $Header: /sprite/src/admin/adduser/test/RCS/aliases,v 1.3 91/06/02 18:10:28 kupfer Exp Locker: kupfer $
+d324 1
+@
+
+
+1.3
+log
+@deleteuser: remove prova from all lists.
+@
+text
+@d9 1
+a9 1
+# $Header: /sprite/src/admin/deleteuser/test/RCS/aliases,v 1.2 91/06/02 16:58:11 kupfer Exp Locker: kupfer $
+d72 1
+a72 1
+sprite-users: spriters, sah, pfile, rquiros, bedk, lucco, klier, kyi, hunt, 
+d309 15
+@
+
+
+1.2
+log
+@Add 'prova' to 'sprite-users'.
+@
+text
+@d9 1
+a9 1
+# $Header: /sprite/src/admin/adduser/test/RCS/aliases,v 1.1 91/06/02 14:40:35 kupfer Exp Locker: kupfer $
+d72 1
+a72 1
+sprite-users: spriters, sah, pfile, rquiros, bedk, lucco, klier, kyi, hunt, prova,
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d9 1
+a9 1
+# $Header: /sprite/lib/sendmail/RCS/aliases,v 1.167 91/05/29 17:28:35 mgbaker Exp $
+d72 1
+a72 1
+sprite-users: spriters, sah, pfile, rquiros, bedk, lucco, klier, kyi, hunt,
+@

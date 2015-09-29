@@ -1,0 +1,168 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     90.11.27.11.06.20;  author ouster;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.09.11.14.25.08;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.07.16.14.44.18;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.07.15.17.33.42;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.20.09.27.27;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.5
+log
+@Eliminated inclusion of <sys.h> (didn't work for user programs
+anyway), add explicit declaration for panic.
+@
+text
+@/* 
+ * List_Insert.c --
+ *
+ *	Source code for the List_Insert library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/list/RCS/List_Insert.c,v 1.4 90/09/11 14:25:08 kupfer Exp Locker: ouster $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <stdio.h>
+#include "list.h"
+
+extern void panic();
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * List_Insert --
+ *
+ *	Insert the list element pointed to by itemPtr into a List after 
+ *	destPtr.  Perform a primitive test for self-looping by returning
+ *	failure if the list element is being inserted next to itself.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The list containing destPtr is modified to contain itemPtr.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+List_Insert(itemPtr, destPtr)
+    register	List_Links *itemPtr;	/* structure to insert */
+    register	List_Links *destPtr;	/* structure after which to insert it */
+{
+    if (itemPtr == (List_Links *) NIL || destPtr == (List_Links *) NIL
+	    || !itemPtr || !destPtr) {
+	panic("List_Insert: itemPtr (%x) or destPtr (%x) is NIL.\n",
+		  (unsigned int) itemPtr, (unsigned int) destPtr);
+	return;
+    }
+    if (itemPtr == destPtr) {
+	panic("List_Insert: trying to insert something after itself.\n");
+	return;
+    }
+    itemPtr->nextPtr = destPtr->nextPtr;
+    itemPtr->prevPtr = destPtr;
+    destPtr->nextPtr->prevPtr = itemPtr;
+    destPtr->nextPtr = itemPtr;
+}
+@
+
+
+1.4
+log
+@Lint.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/list/RCS/List_Insert.c,v 1.3 88/07/16 14:44:18 ouster Exp Locker: kupfer $ SPRITE (Berkeley)";
+a20 1
+#include <sys.h>
+d22 2
+@
+
+
+1.3
+log
+@Change Sys_Panic back to panic.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: List_Insert.c,v 1.2 88/07/15 17:33:42 douglis Exp $ SPRITE (Berkeley)";
+d21 1
+@
+
+
+1.2
+log
+@changed error message to complain about NIL pointer or
+inserting something after itself rather than having the single message
+that inserting something would create a loop (when it might be a nil ptr).
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: List_Insert.c,v 1.1 88/06/20 09:27:27 ouster Exp $ SPRITE (Berkeley)";
+d47 1
+a47 2
+	Sys_Panic(SYS_FATAL,
+		  "List_Insert: itemPtr (%x) or destPtr (%x) is NIL.\n",
+d52 1
+a52 2
+	Sys_Panic(SYS_FATAL,
+		  "List_Insert: trying to insert something after itself.\n");
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: proto.c,v 1.2 88/03/11 08:39:08 ouster Exp $ SPRITE (Berkeley)";
+d46 10
+a55 2
+	    || !itemPtr || !destPtr || (itemPtr == destPtr)) {
+	panic("List_Insert: inserting this item would create a loop.\n");
+@

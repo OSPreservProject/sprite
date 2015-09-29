@@ -1,0 +1,102 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     91.03.14.12.16.01;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.19.14.34.03;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Panic if the monitor lock isn't held.
+@
+text
+@/* 
+ * Sync_SlowWait.c --
+ *
+ *	Source code for the Sync_SlowWait library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/sync/RCS/Sync_SlowWait.c,v 1.1 88/06/19 14:34:03 ouster Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <sync.h>
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Sync_SlowWait --
+ *
+ *      Wait on a condition.  Set waiting flag and perform system call to 
+ *	release the monitor lock and do the wait.  Reaquire the lock before
+ *	returning.
+ *
+ * Results:
+ *	TRUE if interrupted because of signal, FALSE otherwise.
+ *
+ * Side effects:
+ *      Put the process to sleep and release the monitor lock.
+ *	
+ * ----------------------------------------------------------------------------
+ */
+
+Boolean
+Sync_SlowWait(conditionPtr, lockPtr, wakeIfSignal)
+    Sync_Condition	*conditionPtr;	/* Condition to wait on. */
+    register Sync_Lock 	*lockPtr;	/* Lock to release. */
+    Boolean		wakeIfSignal;	/* TRUE => wake if signal pending. */
+{
+    ReturnStatus	status;
+
+    if (!lockPtr->inUse) {
+	panic("Sync_SlowWait: monitor lock not held");
+    }
+
+    conditionPtr->waiting = TRUE;
+
+    status = Sync_SlowWaitStub(conditionPtr, lockPtr, wakeIfSignal);
+
+    Sync_GetLock(lockPtr);
+
+    return(status);
+}
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: proto.c,v 1.2 88/03/11 08:39:08 ouster Exp $ SPRITE (Berkeley)";
+d49 4
+@

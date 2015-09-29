@@ -1,0 +1,1 @@
+../rn/sprite/inews.c

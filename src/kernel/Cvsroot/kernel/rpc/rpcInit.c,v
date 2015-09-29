@@ -1,0 +1,1587 @@
+head     9.14;
+branch   ;
+access   ;
+symbols  ds3100:9.14 sun3:9.14 sun4nw:9.13 symm:9.13 spur:9.13 sprited:9.13.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.14
+date     92.04.14.17.04.27;  author jhh;  state Exp;
+branches ;
+next     9.13;
+
+9.13
+date     90.10.09.11.58.48;  author jhh;  state Exp;
+branches 9.13.1.1;
+next     9.12;
+
+9.12
+date     90.10.02.16.29.40;  author mgbaker;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     90.06.21.15.52.05;  author mgbaker;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     90.04.04.10.12.00;  author mgbaker;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     90.04.03.14.41.34;  author mgbaker;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     90.03.29.12.46.28;  author mgbaker;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.03.22.12.13.43;  author mgbaker;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.03.22.12.03.47;  author mgbaker;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     89.11.27.10.22.11;  author brent;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     89.11.27.09.22.06;  author brent;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     89.11.26.10.56.04;  author brent;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.12.12.09.11;  author brent;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.03.12.55.03;  author brent;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.17.56;  author douglis;  state Stable;
+branches ;
+next     8.5;
+
+8.5
+date     89.08.17.17.29.55;  author jhh;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.06.02.12.57.42;  author mendel;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.03.15.15.18.44;  author brent;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.02.15.08.19.26;  author jhh;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.22.19.34.58;  author jhh;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.35.15;  author douglis;  state Stable;
+branches ;
+next     6.3;
+
+6.3
+date     88.10.28.19.24.11;  author mlgray;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.29.14.29.29;  author mlgray;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.26.18.26.39;  author mlgray;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.24.56;  author brent;  state Stable;
+branches ;
+next     5.8;
+
+5.8
+date     88.08.01.17.11.27;  author mlgray;  state Exp;
+branches ;
+next     5.7;
+
+5.7
+date     88.06.22.12.52.06;  author mendel;  state Exp;
+branches ;
+next     5.6;
+
+5.6
+date     88.06.15.10.36.22;  author brent;  state Exp;
+branches ;
+next     5.5;
+
+5.5
+date     88.03.04.14.38.15;  author brent;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     87.10.09.09.31.02;  author brent;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     87.09.11.09.49.05;  author brent;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.09.09.12.08.25;  author brent;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.08.27.10.43.51;  author brent;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.48.52;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.13.1.1
+date     91.10.22.15.24.19;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.14
+log
+@Uses new net definitions.
+Net_IDToRoute interface changed slightly.
+Got rid of bogus "new" rpc format. It was for the UltraNet and it didn't
+make much difference anyway.
+@
+text
+@/*
+ * rpcInit.c --
+ *
+ *	Initialize the data structures needed by the RPC system.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/rpc/rpcInit.c,v 9.13 90/10/09 11:58:48 jhh Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <stdio.h>
+#include <rpc.h>
+#include <rpcInt.h>
+#include <rpcClient.h>
+#include <rpcServer.h>
+#include <rpcTrace.h>
+#include <vm.h>
+#include <timer.h>
+#include <net.h>
+
+/*
+ * These are the rpc version numbers, both in native format and in
+ * byte-swapped format. 
+ */
+
+int	rpc_NativeVersion = RPC_NATIVE_VERSION;
+int	rpc_SwappedVersion = RPC_SWAPPED_VERSION;
+
+/*
+ * Constant parameters for the protocol.  The RpcConst structure keeps
+ * the complete set of constants.  Two sets of constants are defined,
+ * one that is appropriate for a local ethernet, one that has longer
+ * timeouts and is better for talking across gateways.
+ */
+RpcConst rpcEtherConst;
+RpcConst rpcInetConst;
+
+void RpcBufferInit();
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_Init --
+ *
+ *      Allocate and set up the tables used by the RPC system.  This
+ *      should be called after virtual memory allocation can be done and
+ *      before any RPCs are attempted.  This allocates the Client Channel
+ *	data structures and some stuff for the Rpc Servers' state.  The
+ *	number of client channels is fixed by rpcNumChannels, but the
+ *	number of RPC server processes can grow via the Rpc_Deamon process.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Allocate space for tables, and set the initial state for the
+ *	client channels and the servers.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Rpc_Init()
+{
+    int i;
+    register int frag;
+    extern void	RpcInitServerTraces();
+
+    /*
+     * Initialize sets of time parameters.  These structures are used in
+     * the RpcDoCall code.  This is much too hard coded, and someone
+     * should figure out how to dynamically determine these parameters.
+     *
+     * Ethernet - retry after 0.1 seconds, .5 seconds if fragmenting.
+     *	Double this until the retry interval is 1 second.
+     *	Retry at most 8 times, for a total timeout period of
+     *		.1 + .2 + .4 + .8 + 1.0 + 1.0 + 1.0 + 1.0 = 5.5
+     *		.5 + 1.0 + 1.0 + 1.0 + 1.0 + 1.0 + 1.0 + 1.0 = 7.5 (frag)
+     *	If we are recieving acks, then back off and probe every 5 seconds.
+     *	If we get acked 10 times then give a warning.
+     */
+    rpcEtherConst.retryMsec = 100;
+    rpcEtherConst.retryWait = 100 * timer_IntOneMillisecond;
+    rpcEtherConst.fragRetryMsec = 500;
+    rpcEtherConst.fragRetryWait = 500 * timer_IntOneMillisecond;
+    rpcEtherConst.maxAckMsec = 5000;
+    rpcEtherConst.maxAckWait = 5000 * timer_IntOneMillisecond;
+    rpcEtherConst.maxTimeoutMsec = 1000;
+    rpcEtherConst.maxTimeoutWait = 1000 * timer_IntOneMillisecond;
+    rpcEtherConst.maxTries = 8;
+    rpcEtherConst.maxAcks = 10;
+    /*
+     * Internet (IP) - retry after 0.5 seconds, 1.0 if fragmenting.
+     *	Double this until the retry interval is 4 seconds.
+     *	Retry at most 8 times, for a total timeout period of
+     *		.5 + 1.0 + 2.0 + 4.0 + 4.0 + 4.0 + 4.0 + 4.0 = 23.5
+     *		1.0 + 2.0 + 4.0 + 4.0 + 4.0 + 4.0 + 4.0 + 4.0 = 27.0 (frag)
+     *	If we are recieving acks, then back off and probe every 5 seconds.
+     *	If we get acked 10 times then give a warning.
+     */
+    rpcInetConst.retryMsec = 500;
+    rpcInetConst.retryWait = 500 * timer_IntOneMillisecond;
+    rpcInetConst.fragRetryMsec = 1000;
+    rpcInetConst.fragRetryWait = 1000 * timer_IntOneMillisecond;
+    rpcInetConst.maxAckMsec = 5000;
+    rpcInetConst.maxAckWait = 5000 * timer_IntOneMillisecond;
+    rpcInetConst.maxTimeoutMsec = 4000;
+    rpcInetConst.maxTimeoutWait = 4000 * timer_IntOneMillisecond;
+    rpcInetConst.maxTries = 8;
+    rpcInetConst.maxAcks = 10;
+
+    /*
+     * TRACE and HISTOGRAM initialization.
+     */
+    Trace_Init(rpcTraceHdrPtr, RPC_TRACE_LEN, sizeof(RpcHdr), 0);
+
+    rpcServiceTime[0] = (Rpc_Histogram *)NIL;
+    rpcCallTime[0] = (Rpc_Histogram *)NIL;
+    for (i=1 ; i<=RPC_LAST_COMMAND ; i++) {
+	rpcServiceTime[i] = Rpc_HistInit(RPC_NUM_HIST_BUCKETS, 1024);
+	rpcCallTime[i] = Rpc_HistInit(RPC_NUM_HIST_BUCKETS, 1024);
+    }
+
+    /*
+     * Set our preferred inter-fragment delay based on machine type.
+     * This is a microsecond value.  Our output rate starts the same
+     * as the input rate, although MyDelay could increase if a machine
+     * senses that it is overloaded.
+     */
+
+    RpcGetMachineDelay(&rpcMyDelay, &rpcOutputRate);
+
+    /*
+     * The client channel table is kept as a pointer to an array of pointers
+     * to client channels.  First allocate the table of pointers and then
+     * allocate storage for each channel.
+     */
+    rpcChannelPtrPtr = (RpcClientChannel **)
+	    Vm_RawAlloc(rpcNumChannels * sizeof(RpcClientChannel *));
+
+    /*
+     * Query the net module of the maximum size protocol header buffer 
+     * needed.
+     */
+    for (i=0 ; i<rpcNumChannels ; i++) {
+	register RpcClientChannel *chanPtr;
+
+	chanPtr = (RpcClientChannel *)Vm_RawAlloc(sizeof(RpcClientChannel));
+	rpcChannelPtrPtr[i] = chanPtr;
+
+	chanPtr->state = CHAN_FREE;
+	chanPtr->index = i;
+	chanPtr->serverID = -1;
+	Sync_SemInitDynamic(&chanPtr->mutex,"Rpc:RpcClientChannel.mutex");
+	Sync_SemRegister(&chanPtr->mutex);
+	chanPtr->waitCondition.waiting = FALSE;
+
+	/*
+	 * Set up header storage and the scatter/gather sets used to
+	 * refer to a whole message.  This is done for each type
+	 * of packet (request, reply ack), plus an array of these
+	 * things used for fragmenting our request.
+	 */
+	RpcBufferInit((RpcHdr *) &chanPtr->requestRpcHdr, &chanPtr->request,
+			chanPtr->index, -1);
+	RpcBufferInit(&chanPtr->replyRpcHdr, &chanPtr->reply,
+			chanPtr->index, -1);
+	RpcBufferInit(&chanPtr->ackHdr, &chanPtr->ack,
+			chanPtr->index, -1);
+
+	for (frag=0 ; frag < RPC_MAX_NUM_FRAGS ; frag++) {
+	    RpcBufferInit(&chanPtr->fragRpcHdr[frag], &chanPtr->fragment[frag],
+			    chanPtr->index, -1);
+	}
+
+    }
+    /*
+     * Initialize server nack info.
+     */
+    Sync_SemInitDynamic(&rpcNack.mutex,"Rpc:RpcNackData.mutex");
+    Sync_SemRegister(&rpcNack.mutex);
+    /*
+     * Set nack buffers to NIL until allocated when rpc system turned on.
+     */
+    rpcNack.numFree = 0;
+    rpcNack.rpcHdrArray = (RpcHdr *) NIL;
+    rpcNack.hdrState = (int *) NIL;
+    rpcNack.bufferSet = (RpcBufferSet *) NIL;
+
+    /*
+     * Initialize client's table on whether servers are sending negative
+     * acknowledgements or not (if channel ramping-down is used).
+     */
+    RpcInitServerChannelState();
+
+    /*
+     * Initialize neg-ack back-off constants on clients.
+     */
+    rpcNackRetryWait = 2 * timer_IntOneSecond;
+    rpcMaxNackWait = 15 * timer_IntOneSecond;
+
+    /*
+     * Initialize the servers' state table.  Most slots are left
+     * uninitialized.  They get filled in by Rpc_Deamon when it creates
+     * new server processes.  After creation, a server process
+     * claims a table entry with RpcServerInstall.
+     */
+    rpcServerPtrPtr = (RpcServerState **)
+	    Vm_RawAlloc(rpcAbsoluteMaxServers * sizeof(RpcServerState *));
+    for (i=0 ; i<rpcMaxServers ; i++) {
+	rpcServerPtrPtr[i] = (RpcServerState *)NIL;
+    }
+
+    /*
+     * Ask the net module to set up our Sprite ID.  It uses either
+     * existing (compiled in) addresses or Reverse ARP.  If we can't
+     * figure out our ID we use zero and rely on the RPC server to
+     * propogate our Sprite ID back in the first RPC reply message.
+     * We try all the interfaces until we get one that works.
+     */
+    for (i = 0; ; i++) {
+	Net_Interface	*interPtr;
+	interPtr = Net_NextInterface(TRUE, &i);
+	if (interPtr == (Net_Interface *) NIL) {
+	    break;
+	}
+	rpc_SpriteID = Net_AddrToID(&interPtr->netAddress[NET_PROTO_RAW]);
+	if (rpc_SpriteID > 0) {
+	    break;
+	}
+    }
+    if (rpc_SpriteID < 0) {
+	rpc_SpriteID = 0;
+    }
+
+    RpcInitServerTraces();
+
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcBufferInit --
+ *
+ *	Initialize a packet buffer for one of the various packets sent
+ *	via an RPC channel.  They all share the same packet format and
+ *	buffering system, and this call is used to initialize it.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Allocate memory with Vm_RawAlloc.  Give initial values to
+ *	the fields of the RPC header that never change.  These are:
+ *	version		# byte ordering version.
+ *	channel		# channel port number.
+ *	delay		# interfragment delay.
+ *	paramSize 0	# size of the parameter area of the message.
+ *	dataSize 0	# size of the data area of the message.
+ *	numFrags 0	# >0 if fragmented
+ *	fragMask 0	# fragmentID
+ *
+ *----------------------------------------------------------------------
+ */
+void
+RpcBufferInit(rpcHdrPtr, bufferSetPtr, channel, serverHint)
+    RpcHdr *rpcHdrPtr;		/* Storage for packet header */
+    RpcBufferSet *bufferSetPtr;	/* Scatter/gather vector for whole message */
+    int channel;		/* chanPtr->index */
+    int serverHint;		/* srvPtr->index */
+{
+    int maxHdrSize = NET_MAX_HEADER_SIZE;
+
+    bufferSetPtr->protoHdrBuffer.length = maxHdrSize;
+    bufferSetPtr->protoHdrBuffer.bufAddr = Vm_RawAlloc(maxHdrSize);
+    bufferSetPtr->protoHdrBuffer.mutexPtr = (Sync_Semaphore *)NIL;
+
+    bufferSetPtr->rpcHdrBuffer.length = sizeof(RpcHdr);
+    bufferSetPtr->rpcHdrBuffer.bufAddr = (Address)rpcHdrPtr;
+    bufferSetPtr->rpcHdrBuffer.mutexPtr = (Sync_Semaphore *)NIL;
+
+    bufferSetPtr->paramBuffer.length = 0;
+    bufferSetPtr->paramBuffer.bufAddr = (Address)NIL;
+    bufferSetPtr->paramBuffer.mutexPtr = (Sync_Semaphore *)NIL;
+
+    bufferSetPtr->dataBuffer.length = 0;
+    bufferSetPtr->dataBuffer.bufAddr = (Address)NIL;
+    bufferSetPtr->dataBuffer.mutexPtr = (Sync_Semaphore *)NIL;
+    /*
+     * Set up RPC header fields that don't change.
+     */
+    rpcHdrPtr->version = rpc_NativeVersion;
+    rpcHdrPtr->delay = rpcMyDelay;
+
+    rpcHdrPtr->clientID = rpc_SpriteID;
+    rpcHdrPtr->channel = channel;
+    rpcHdrPtr->serverID = rpc_SpriteID;
+    rpcHdrPtr->serverHint = serverHint;
+    /*
+     * And some that might not have to change.
+     */
+    rpcHdrPtr->numFrags = 0;
+    rpcHdrPtr->fragMask = 0;
+    rpcHdrPtr->paramSize = 0;
+    rpcHdrPtr->dataSize = 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcInitServerState --
+ *
+ *	Initialize a server state table entry.  This is called before
+ *	a server process is created to set up its state.  The state is
+ *	used as the primary communication mechanism between the server
+ *	process and the rest of the world.
+ *
+ * Results:
+ *	A pointer to an initialized server state table entry.  This
+ *	value needs to be saved in a table somewhere by the caller.
+ *
+ * Side effects:
+ *	Allocate memory with Vm_RawAlloc.  Give initial values to
+ *	all the elements of the table entry.  The "state" field of
+ *	the table is set to SRV_NOTREADY and a server process has
+ *	to claim the table entry with RpcServerInstall.
+ *
+ *----------------------------------------------------------------------
+ */
+RpcServerState *
+RpcInitServerState(index)
+    int index;		/* Caller's index of returned info.  This is saved
+			 * in the table and used as a hint to clients */
+{
+    register RpcServerState *srvPtr;	/* Server state that is initialized */
+    register int frag;			/* Index into array of headers used
+					 * for fragmenting */
+    static Sync_Semaphore mutexInit =
+	Sync_SemInitStatic("RpcServerState->mutex");
+
+    Sync_SemRegister(&mutexInit);
+
+    srvPtr = (RpcServerState *)Vm_RawAlloc(sizeof(RpcServerState));
+
+    srvPtr->state = SRV_NOTREADY;
+    srvPtr->ID = 0;
+    srvPtr->freeReplyProc = (int (*)())NIL;
+    srvPtr->freeReplyData = (ClientData)NIL;
+    srvPtr->index = index;
+    srvPtr->clientID = -1;
+    srvPtr->channel = -1;
+    srvPtr->mutex = mutexInit;
+    srvPtr->waitCondition.waiting = FALSE;
+
+    /*
+     * Set up the buffer address for the RPC header of replies
+     * and acks to point to the headers kept here in the server's state.
+     */
+    RpcBufferInit(&srvPtr->replyRpcHdr, &srvPtr->reply, -1, srvPtr->index);
+    RpcBufferInit(&srvPtr->ackRpcHdr, &srvPtr->ack, -1, srvPtr->index);
+    for (frag=0 ; frag < RPC_MAX_NUM_FRAGS ; frag++) {
+	RpcBufferInit(&srvPtr->fragRpcHdr[frag], &srvPtr->fragment[frag],
+			-1, srvPtr->index);
+    }
+    /*
+     * Set up the scatter vector for input requests to the server.
+     * Allocate buffer space for the largest possible request.
+     */
+    RpcBufferInit(&srvPtr->requestRpcHdr, &srvPtr->request, -1, srvPtr->index);
+    srvPtr->request.paramBuffer.bufAddr = Vm_RawAlloc(RPC_MAX_PARAMSIZE);
+    srvPtr->request.paramBuffer.length = RPC_MAX_PARAMSIZE;
+
+    srvPtr->request.dataBuffer.bufAddr = Vm_RawAlloc(RPC_MAX_DATASIZE);
+    srvPtr->request.dataBuffer.length = RPC_MAX_DATASIZE;
+
+    /*
+     * Initialize temporaries.
+     */
+    srvPtr->actualParamSize = 0;
+    srvPtr->actualDataSize = 0;
+
+    return(srvPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_Start --
+ *
+ *      Conduct the preliminary RPC's neccesary to start up the client
+ *      side of the RPC system.  A Get Time RPC is done to initialize the
+ *      boot time stamp.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Do a Get Time RPC to initialize rpcBootID;
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Rpc_Start()
+{
+    Time 	bootTime;	/* Time returned from the default server */
+    int 	tzMinutes;	/* Minutes west of Greenwich */
+    int 	tzDST;		/* Daylight savings flag */
+    ReturnStatus status;	/* Status code from the RPC */
+    char 	dateString[40];/* To hold a printable version of the time */
+    int 	seconds;
+    int 	spriteID;
+    Net_Route		*routePtr;
+    Sync_Semaphore	tmpMutex;
+    int			i;
+
+    /*
+     * Do a Sprite reverse Arp to discover our Sprite ID.  If it's still
+     * zero after this that inhibits the RPC system.  In that case we'd
+     * better be a diskfull machine so we find out our SpriteID by
+     * the user program that installs routes.  See Net_InstallRoute.
+     *
+     * We do a reverse arp on all the broadcast routes until one
+     * works.
+     */
+    spriteID = -1;
+    i = 0;
+    Sync_SemInitDynamic(&tmpMutex, "Rpc_Start:tmpMutex");
+    while (1) {
+	routePtr = Net_IDToRoute(NET_BROADCAST_HOSTID, i, FALSE, 
+			(Sync_Semaphore *) NIL, 0);
+	if (routePtr == (Net_Route *) NIL) {
+	    break;
+	}
+	MASTER_LOCK(&tmpMutex);
+	spriteID = Net_RevArp(routePtr, NET_PROTO_RAW,  
+			(Net_Address *) NIL, &tmpMutex); 
+	MASTER_UNLOCK(&tmpMutex);
+	Net_ReleaseRoute(routePtr);
+	if (spriteID > 0) {
+	    rpc_SpriteID = spriteID;
+	    printf("Reverse Arp, setting Sprite ID to %d\n", spriteID);
+	    break;
+	}
+	i++;
+    }
+
+    Rpc_StampTest();
+
+    status = Rpc_GetTime(RPC_BROADCAST_SERVER_ID, &bootTime, &tzMinutes,
+						 &tzDST);
+    if (status != SUCCESS) {
+	Timer_Ticks ticks;
+
+	printf("Rpc_Start: error (%x) from Get Time RPC\n", status);
+	Timer_GetCurrentTicks(&ticks);
+	Timer_TicksToTime(ticks, &bootTime);
+    } else {
+	Timer_SetTimeOfDay(bootTime, tzMinutes, tzDST);
+    }
+    rpcBootID = bootTime.seconds;
+
+    /*
+     * Convert from Greenwich Standard minutes to local minutes
+     * and print the time on the console.
+     */
+    seconds = bootTime.seconds + tzMinutes * 60;
+    Time_ToAscii(seconds, FALSE, dateString);
+    printf("%s\n", dateString);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_MaxSizes --
+ *
+ *      This function returns the maximum amount of data that can be sent
+ *      in one RPC.  A remote procedure has its inputs and outputs packed
+ *      into two buffers called the "data area" and the "parameter area".
+ *      Two values are returned, the maximums for the parameter and data
+ *      areas.
+ *
+ * Results:
+ *	The first parameter gets the maximum data size, the
+ *	second gets the maximum parameter size.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Rpc_MaxSizes(maxDataSizePtr, maxParamSizePtr)
+    int *maxDataSizePtr;
+    int *maxParamSizePtr;
+{
+    if (maxDataSizePtr != (int *)NIL){
+	*maxDataSizePtr = RPC_MAX_DATASIZE;
+    }
+    if (maxParamSizePtr != (int *)NIL){
+	*maxParamSizePtr = RPC_MAX_PARAMSIZE;
+    }
+}
+@
+
+
+9.13
+log
+@new net module
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcInit.c,v 9.12 90/10/02 16:29:40 mgbaker Exp Locker: jhh $ SPRITE (Berkeley)";
+a31 2
+int	rpc_NativeVersionNew = RPC_NATIVE_VERSION_NEW;
+int	rpc_SwappedVersionNew = RPC_SWAPPED_VERSION_NEW;
+d231 1
+a231 2
+	rpc_SpriteID = Net_AddrToID(interPtr->netType, NET_PROTO_RAW,
+				&interPtr->netAddress[NET_PROTO_RAW]);
+@
+
+
+9.13.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcInit.c,v 9.13 90/10/09 11:58:48 jhh Exp $ SPRITE (Berkeley)";
+@
+
+
+9.12
+log
+@More prototyping garbage.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcInit.c,v 9.11 90/06/21 15:52:05 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d32 2
+d71 1
+a71 1
+    register int i;
+a72 1
+    Net_EtherAddress etherAddress;
+d170 1
+a170 1
+	RpcBufferInit(&chanPtr->requestRpcHdr, &chanPtr->request,
+d225 1
+d227 12
+a238 2
+    Mach_GetEtherAddress(&etherAddress);
+    rpc_SpriteID = Net_AddrToID(0, NET_ROUTE_ETHER, (ClientData)&etherAddress);
+d280 1
+a280 1
+    int maxHdrSize = Net_MaxProtoHdrSize();
+d413 3
+a415 3
+    Time bootTime;	/* Time returned from the default server */
+    int tzMinutes;	/* Minutes west of Greenwich */
+    int tzDST;		/* Daylight savings flag */
+d417 6
+a422 4
+    char dateString[40];/* To hold a printable version of the time */
+    Net_EtherAddress etherAddr;
+    int seconds;
+    int spriteID;
+d429 3
+d433 20
+a452 6
+    
+    Mach_GetEtherAddress(&etherAddr);
+    spriteID = Net_RevArp(NET_ROUTE_ETHER, &etherAddr);
+    if (spriteID > 0) {
+	rpc_SpriteID = spriteID;
+	printf("Reverse Arp, setting Sprite ID to %d\n", spriteID);
+@
+
+
+9.11
+log
+@New stuff for negative acks.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcInit.c,v 9.10 90/04/04 10:12:00 mgbaker Exp $ SPRITE (Berkeley)";
+d14 10
+a23 8
+#include "sprite.h"
+#include "rpc.h"
+#include "rpcClient.h"
+#include "rpcServer.h"
+#include "rpcTrace.h"
+#include "vm.h"
+#include "timer.h"
+#include "net.h"
+a71 1
+    int	     maxHdrSize;
+d366 2
+a367 2
+    srvPtr->request.paramBuffer.bufAddr = Vm_RawAlloc(RPC_MAX_PARAM_SIZE);
+    srvPtr->request.paramBuffer.length = RPC_MAX_PARAM_SIZE;
+d369 2
+a370 2
+    srvPtr->request.dataBuffer.bufAddr = Vm_RawAlloc(RPC_MAX_DATA_SIZE);
+    srvPtr->request.dataBuffer.length = RPC_MAX_DATA_SIZE;
+@
+
+
+9.10
+log
+@More synchronization and static queuing for neg acks from server.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcInit.c,v 9.9 90/04/03 14:41:34 mgbaker Exp $ SPRITE (Berkeley)";
+d182 1
+a182 1
+     * Initialize server nack buffers.
+d186 7
+a192 6
+    rpcNack.numFree = sizeof (rpcNack.rpcHdrArray) / sizeof (RpcHdr);
+    for (i = 0; i < sizeof (rpcNack.rpcHdrArray) / sizeof (RpcHdr); i++) {
+	rpcNack.hdrState[i] = RPC_NACK_FREE;
+	RpcBufferInit(&(rpcNack.rpcHdrArray[i]),
+		&(rpcNack.bufferSet[i]), -1, -1);
+    }
+d195 1
+a195 1
+     * Initialize client's table on whether servers are sending negatvie
+@
+
+
+9.9
+log
+@Fixed synchronization problem on servers with negative acknowledgement
+buffers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcInit.c,v 9.8 90/03/29 12:46:28 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d186 6
+a191 2
+    rpcNack.busy = FALSE;
+    RpcBufferInit(&(rpcNack.rpcHdr), &(rpcNack.bufferSet), -1, -1);
+@
+
+
+9.8
+log
+@New negative ack stuff.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcInit.c,v 9.7 90/03/22 12:13:43 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d182 1
+a182 1
+     * Initiallize server nack buffers.
+d184 3
+@
+
+
+9.7
+log
+@After merge with rpc.mgb.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc.mgb/RCS/rpcInit.c,v 1.1 90/02/03 18:01:00 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+a22 11
+#ifdef NEG_ACK
+typedef struct	NackData {
+    RpcHdr		rpcHdr;
+    RpcBufferSet	bufferSet;
+    Sync_Semaphore	mutex;
+} NackData;
+extern	NackData	rpcNack;
+extern	int	nackRetryWait;
+extern	int	maxNackWait;
+#endif NEG_ACK
+
+d181 3
+a183 1
+#ifdef NEG_ACK
+d185 5
+d191 6
+a196 3
+    nackRetryWait = 2 * timer_IntOneSecond;
+    maxNackWait = 15 * timer_IntOneSecond;
+#endif NEG_ACK
+@
+
+
+9.6
+log
+@Prepare for merge.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcInit.c,v 9.5 89/11/27 10:22:11 brent Exp $ SPRITE (Berkeley)";
+d23 11
+d82 1
+d192 6
+d206 1
+a206 1
+	    Vm_RawAlloc(rpcMaxServers * sizeof(RpcServerState *));
+d222 4
+@
+
+
+9.5
+log
+@Removed lint
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcInit.c,v 9.4 89/11/27 09:22:06 brent Exp Locker: brent $ SPRITE (Berkeley)";
+@
+
+
+9.4
+log
+@Added RpcBufferInit
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcInit.c,v 9.3 89/11/26 10:56:04 brent Exp $ SPRITE (Berkeley)";
+a67 1
+    register Net_ScatterGather *bufferPtr;
+a147 1
+    maxHdrSize = Net_MaxProtoHdrSize();
+a301 4
+    register Net_ScatterGather *bufferPtr;	/* Tmp pointer to io vector
+					 * element.  Some of these are set
+					 * up here to reference headers also
+					 * kept in the server's state. */
+a303 1
+    int		maxHdrSize;
+@
+
+
+9.3
+log
+@Added initialization of acknowledgment packet buffer in the channel.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcInit.c,v 9.2 89/10/12 12:09:11 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d40 2
+d116 3
+d129 9
+d164 4
+a167 6
+	 * Precompute some scatter/gather vector elements.  Buffer space
+	 * for the RPC headers is part of the channel struct so the
+	 * scatter/gather elements that point to the RPC header can
+	 * be set up once here.  Similarly, the channel
+	 * of the request RPC header is set up once here as it
+	 * is always the same.
+d169 6
+a174 13
+	bufferPtr = &chanPtr->request.protoHdrBuffer;
+	bufferPtr->bufAddr = Vm_RawAlloc(maxHdrSize);
+	bufferPtr->length = maxHdrSize;
+	bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
+
+	bufferPtr = &chanPtr->request.rpcHdrBuffer;
+	bufferPtr->bufAddr = (Address)&chanPtr->requestRpcHdr;
+	bufferPtr->length = sizeof(RpcHdr);
+	bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
+	chanPtr->requestRpcHdr.version = rpc_NativeVersion;
+	chanPtr->requestRpcHdr.channel = chanPtr->index;
+	chanPtr->request.paramBuffer.mutexPtr = (Sync_Semaphore *)NIL;
+	chanPtr->request.dataBuffer.mutexPtr = (Sync_Semaphore *)NIL;
+d177 2
+a178 16
+
+	    bufferPtr = &chanPtr->fragment[frag].protoHdrBuffer;
+	    bufferPtr->bufAddr = Vm_RawAlloc(maxHdrSize);
+	    bufferPtr->length = maxHdrSize;
+	    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
+
+	    bufferPtr = &chanPtr->fragment[frag].rpcHdrBuffer;
+	    bufferPtr->bufAddr = (Address)&chanPtr->fragRpcHdr[frag];
+	    bufferPtr->length = sizeof(RpcHdr);
+	    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
+	    chanPtr->fragRpcHdr[frag].version = rpc_NativeVersion;
+	    chanPtr->fragRpcHdr[frag].channel = chanPtr->index;
+	    chanPtr->fragment[frag].paramBuffer.mutexPtr =
+			(Sync_Semaphore *)NIL;
+	    chanPtr->fragment[frag].dataBuffer.mutexPtr =
+			(Sync_Semaphore *)NIL;
+a180 36
+	bufferPtr = &chanPtr->reply.protoHdrBuffer;
+	bufferPtr->bufAddr = Vm_RawAlloc(maxHdrSize);
+	bufferPtr->length = maxHdrSize;
+	bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
+
+	bufferPtr = &chanPtr->reply.rpcHdrBuffer;
+	bufferPtr->bufAddr = (Address)&chanPtr->replyRpcHdr;
+	bufferPtr->length = sizeof(RpcHdr);
+	bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
+	chanPtr->reply.paramBuffer.mutexPtr = (Sync_Semaphore *)NIL;
+	chanPtr->reply.dataBuffer.mutexPtr = (Sync_Semaphore *)NIL;
+
+	/*
+	 * Initialize the buffer pointers and some of the packet
+	 * header fields for the explicit acknowledgement messages.
+	 */
+	bufferPtr = &chanPtr->ack.protoHdrBuffer;
+	bufferPtr->bufAddr = Vm_RawAlloc(maxHdrSize);
+	bufferPtr->length = maxHdrSize;
+	bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
+
+	bufferPtr = &chanPtr->ack.rpcHdrBuffer;
+	bufferPtr->bufAddr = (Address)&chanPtr->ackHdr;
+	bufferPtr->length = sizeof(RpcHdr);
+	bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
+	chanPtr->ack.paramBuffer.bufAddr = (Address)NIL;
+	chanPtr->ack.paramBuffer.length = 0;
+	chanPtr->ack.paramBuffer.mutexPtr = (Sync_Semaphore *)NIL;
+	chanPtr->ack.dataBuffer.bufAddr = (Address)NIL;
+	chanPtr->ack.dataBuffer.length = 0;
+	chanPtr->ack.dataBuffer.mutexPtr = (Sync_Semaphore *)NIL;
+	chanPtr->ackHdr.numFrags = 0;
+	chanPtr->ackHdr.fragMask = 0;
+	chanPtr->ackHdr.paramSize = 0;
+	chanPtr->ackHdr.dataSize = 0;
+
+a183 9
+     * Set our preferred inter-fragment delay based on machine type.
+     * This is a microsecond value.  Our output rate starts the same
+     * as the input rate, although MyDelay could increase if a machine
+     * senses that it is overloaded.
+     */
+
+    RpcGetMachineDelay(&rpcMyDelay, &rpcOutputRate);
+
+    /*
+d211 68
+a327 1
+    maxHdrSize = Net_MaxProtoHdrSize();
+d332 2
+a333 11
+    bufferPtr = &srvPtr->reply.protoHdrBuffer;
+    bufferPtr->bufAddr = Vm_RawAlloc(maxHdrSize);
+    bufferPtr->length = maxHdrSize;
+    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
+
+    bufferPtr = &srvPtr->reply.rpcHdrBuffer;
+    bufferPtr->bufAddr = (Address)&srvPtr->replyRpcHdr;
+    bufferPtr->length = sizeof(RpcHdr);
+    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
+    srvPtr->reply.paramBuffer.mutexPtr = (Sync_Semaphore *)NIL;
+    srvPtr->reply.dataBuffer.mutexPtr = (Sync_Semaphore *)NIL;
+d335 2
+a336 11
+	bufferPtr = &srvPtr->fragment[frag].protoHdrBuffer;
+	bufferPtr->bufAddr = Vm_RawAlloc(maxHdrSize);
+	bufferPtr->length = maxHdrSize;
+	bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
+
+	bufferPtr = &srvPtr->fragment[frag].rpcHdrBuffer;
+	bufferPtr->bufAddr = (Address)&srvPtr->fragRpcHdr[frag];
+	bufferPtr->length = sizeof(RpcHdr);
+	bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
+	srvPtr->fragment[frag].paramBuffer.mutexPtr = (Sync_Semaphore *)NIL;
+	srvPtr->fragment[frag].dataBuffer.mutexPtr = (Sync_Semaphore *)NIL;
+a337 21
+
+    bufferPtr = &srvPtr->ack.protoHdrBuffer;
+    bufferPtr->bufAddr = Vm_RawAlloc(maxHdrSize);
+    bufferPtr->length = maxHdrSize;
+    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
+
+    bufferPtr = &srvPtr->ack.rpcHdrBuffer;
+    bufferPtr->bufAddr = (Address)&srvPtr->ackRpcHdr;
+    bufferPtr->length = sizeof(RpcHdr);
+    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
+
+    bufferPtr = &srvPtr->ack.paramBuffer;
+    bufferPtr->bufAddr = (Address)NIL;
+    bufferPtr->length = 0;
+    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
+
+    bufferPtr = &srvPtr->ack.dataBuffer;
+    bufferPtr->bufAddr = (Address)NIL;
+    bufferPtr->length = 0;
+    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
+
+d342 3
+a344 15
+    
+    bufferPtr = &srvPtr->request.protoHdrBuffer;
+    bufferPtr->bufAddr = Vm_RawAlloc(maxHdrSize);
+    bufferPtr->length = maxHdrSize;
+    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
+
+    bufferPtr = &srvPtr->request.rpcHdrBuffer;
+    bufferPtr->bufAddr = (Address)&srvPtr->requestRpcHdr;
+    bufferPtr->length = sizeof(RpcHdr);
+    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
+
+    bufferPtr = &srvPtr->request.paramBuffer;
+    bufferPtr->bufAddr = Vm_RawAlloc(RPC_MAX_PARAM_SIZE);
+    bufferPtr->length = RPC_MAX_PARAM_SIZE;
+    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
+d346 2
+a347 4
+    bufferPtr = &srvPtr->request.dataBuffer;
+    bufferPtr->bufAddr = Vm_RawAlloc(RPC_MAX_DATA_SIZE);
+    bufferPtr->length = RPC_MAX_DATA_SIZE;
+    bufferPtr->mutexPtr = (Sync_Semaphore *)NIL;
+@
+
+
+9.2
+log
+@Added transaction ID to server state.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcInit.c,v 9.1 89/10/03 12:55:03 brent Exp $ SPRITE (Berkeley)";
+d155 1
+a155 3
+	 * is always the same.  Finally, the mutexPtr that is part
+	 * of the scatter/gather element is cleared because we don't
+	 * use this feature of the network module.
+d201 25
+@
+
+
+9.1
+log
+@Added initialization for rpcEtherConst and rpcInetConst
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcInit.c,v 8.5 89/08/17 17:29:55 jhh Exp $ SPRITE (Berkeley)";
+a38 8
+int	rpcMaxTries = 8;	/* Number of times to re-send before aborting.
+				 * If the initial timeout is .1 sec, and it
+				 * doubles until 1 sec, 8 retries means a
+				 * total timeout period of about 6 seconds. */
+int	rpcMaxAcks = 10;	/* Watchdog against lots of acks from a server.
+				 * This limit causes a warning message to be
+				 * printed every rpcMaxAcks, and if the RPC
+				 * is a broadcast it gets aborted. */
+d282 1
+a289 5
+    /*
+     * The sequence number of the client's last request is saved
+     * in our reply header.  We initialize it here.
+     */
+    srvPtr->replyRpcHdr.ID = 0;
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcInit.c,v 8.5 89/08/17 17:29:55 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d31 16
+d80 30
+a109 2
+     * Initialize some time parameters.  The 'rpc' structure is used in
+     * the RpcDoCall code.  The variables are used here for initialization
+d111 10
+a120 8
+    rpc.retryMsec = rpcRetryMsec;
+    rpc.retryWait = rpcRetryMsec * timer_IntOneMillisecond;
+    rpc.maxAckMsec = rpcMaxAckMsec;
+    rpc.maxAckWait = rpcMaxAckMsec * timer_IntOneMillisecond;
+    rpc.maxTimeoutMsec = rpcMaxTimeoutMsec;
+    rpc.maxTimeoutWait = rpcMaxTimeoutMsec * timer_IntOneMillisecond;
+    rpc.maxTries = rpcMaxTries;
+    rpc.maxAcks = rpcMaxAcks;
+@
+
+
+8.5
+log
+@made version number a variable
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcInit.c,v 8.4 89/06/02 12:57:42 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+8.4
+log
+@Changes for RPC on IP. 
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcInit.c,v 8.3 89/03/15 15:18:44 brent Exp $ SPRITE (Berkeley)";
+d23 8
+d130 1
+a130 1
+	chanPtr->requestRpcHdr.version = RPC_NATIVE_VERSION;
+d146 1
+a146 1
+	    chanPtr->fragRpcHdr[frag].version = RPC_NATIVE_VERSION;
+@
+
+
+8.3
+log
+@Fixed changes in Net_ScatterGather typedef.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcInit.c,v 8.2 89/02/15 08:19:26 jhh Exp Locker: brent $ SPRITE (Berkeley)";
+d53 1
+d85 5
+d113 4
+d129 5
+d146 5
+d227 1
+d249 1
+d254 5
+a258 1
+    
+d266 5
+d279 5
+d304 5
+d370 1
+a370 1
+    spriteID = Net_RevArp(&etherAddr);
+@
+
+
+8.2
+log
+@Updated Sync_Lock initialization
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcInit.c,v 8.1 88/11/22 19:34:58 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d23 1
+d103 1
+a103 1
+	 * is always the same.  Finally, the conditionPtr that is part
+d111 1
+a111 1
+	bufferPtr->conditionPtr = (Sync_Condition *)NIL;
+d114 2
+a115 2
+	chanPtr->request.paramBuffer.conditionPtr = (Sync_Condition *)NIL;
+	chanPtr->request.dataBuffer.conditionPtr = (Sync_Condition *)NIL;
+d122 1
+a122 1
+	    bufferPtr->conditionPtr = (Sync_Condition *)NIL;
+d125 4
+a128 4
+	    chanPtr->fragment[frag].paramBuffer.conditionPtr =
+			(Sync_Condition *)NIL;
+	    chanPtr->fragment[frag].dataBuffer.conditionPtr =
+			(Sync_Condition *)NIL;
+d134 3
+a136 3
+	bufferPtr->conditionPtr = (Sync_Condition *)NIL;
+	chanPtr->reply.paramBuffer.conditionPtr = (Sync_Condition *)NIL;
+	chanPtr->reply.dataBuffer.conditionPtr = (Sync_Condition *)NIL;
+d236 3
+a238 3
+    bufferPtr->conditionPtr = (Sync_Condition *)NIL;
+    srvPtr->reply.paramBuffer.conditionPtr = (Sync_Condition *)NIL;
+    srvPtr->reply.dataBuffer.conditionPtr = (Sync_Condition *)NIL;
+d243 3
+a245 3
+	bufferPtr->conditionPtr = (Sync_Condition *)NIL;
+	srvPtr->fragment[frag].paramBuffer.conditionPtr = (Sync_Condition *)NIL;
+	srvPtr->fragment[frag].dataBuffer.conditionPtr = (Sync_Condition *)NIL;
+d251 1
+a251 1
+    bufferPtr->conditionPtr = (Sync_Condition *)NIL;
+d256 1
+a256 1
+    bufferPtr->conditionPtr = (Sync_Condition *)NIL;
+d261 1
+a261 1
+    bufferPtr->conditionPtr = (Sync_Condition *)NIL;
+d271 1
+a271 1
+    bufferPtr->conditionPtr = (Sync_Condition *)NIL;
+d276 1
+a276 1
+    bufferPtr->conditionPtr = (Sync_Condition *)NIL;
+d281 1
+a281 1
+    bufferPtr->conditionPtr = (Sync_Condition *)NIL;
+@
+
+
+8.1
+log
+@new semaphore definition
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcInit.c,v 6.3 88/10/28 19:24:11 mlgray Exp $ SPRITE (Berkeley)";
+d92 2
+a93 1
+	SYNC_SEM_INIT_DYNAMIC(&chanPtr->mutex,"chanPtr->mutex");
+d207 3
+a209 1
+	SYNC_SEM_INIT_STATIC("RpcServerState->mutex");
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcInit.c,v 6.3 88/10/28 19:24:11 mlgray Exp Locker: douglis $ SPRITE (Berkeley)";
+d92 1
+a92 1
+	chanPtr->mutex = 0;
+d205 2
+d216 1
+a216 1
+    srvPtr->mutex = 0;
+@
+
+
+6.3
+log
+@Conversion to new C library.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcInit.c,v 6.2 88/08/29 14:29:29 mlgray Exp Locker: mlgray $ SPRITE (Berkeley)";
+@
+
+
+6.2
+log
+@lint
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: rpcInit.c,v 6.1 88/08/26 18:26:39 mlgray Exp $ SPRITE (Berkeley)";
+a113 10
+#ifdef RPC_TEST_BYTE_SWAP
+	bufferPtr = &chanPtr->swapRequest.rpcHdrBuffer;
+	bufferPtr->bufAddr = (Address)&chanPtr->swapRequestRpcHdr;
+	bufferPtr->length = sizeof(RpcHdr);
+	bufferPtr->conditionPtr = (Sync_Condition *)NIL;
+	chanPtr->requestRpcHdr.version = RPC_NATIVE_VERSION;
+	chanPtr->requestRpcHdr.channel = chanPtr->index;
+	chanPtr->request.paramBuffer.conditionPtr = (Sync_Condition *)NIL;
+	chanPtr->request.dataBuffer.conditionPtr = (Sync_Condition *)NIL;
+#endif /* RPC_TEST_BYTE_SWAP */
+d326 1
+a326 1
+	Sys_Printf("Reverse Arp, setting Sprite ID to %d\n", spriteID);
+d336 1
+a336 1
+	Sys_Printf("Rpc_Start: error (%x) from Get Time RPC\n", status);
+d350 1
+a350 1
+    Sys_Printf("%s\n", dateString);
+@
+
+
+6.1
+log
+@Fixed some lint errors.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: rpcInit.c,v 6.0 88/08/11 12:24:56 brent Stable $ SPRITE (Berkeley)";
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d1 1
+a1 1
+/* 
+d11 2
+a12 2
+static char rcsid[] = "$Header: rpcInit.c,v 5.8 88/08/01 17:11:27 mlgray Exp $ SPRITE (Berkeley)";
+#endif not lint
+d123 1
+a123 1
+#endif RPC_TEST_BYTE_SWAP
+@
+
+
+5.8
+log
+@Doing byte-swapping.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: rpcInit.c,v 5.7 88/06/22 12:52:06 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+5.7
+log
+@Move sun dependent interpacket delay code into a subroutine in the
+machine dependent directory.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: rpcInit.c,v 5.6 88/06/15 10:36:22 brent Exp $ SPRITE (Berkeley)";
+d114 10
+@
+
+
+5.6
+log
+@Added version number to packet header.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: rpcInit.c,v 5.5 88/03/04 14:38:15 brent Exp $ SPRITE (Berkeley)";
+a141 3
+     *
+     * Mach_GetMachineType is pretty SUN-specific, it returns byte values
+     * from the ID prom...
+d143 3
+a145 15
+    switch(Mach_GetMachineType()) {
+	default:
+	case SYS_SUN_2_120:
+	    rpcMyDelay = 2000;
+	    rpcOutputRate = 2000;
+	    break;
+	case SYS_SUN_2_50:	/* Same as SYS_SUN_2_160 */
+	    rpcMyDelay = 1000;
+	    rpcOutputRate = 1000;
+	    break;
+	case SYS_SUN_3_75:	/* Same as SYS_SUN_3_160 */
+	    rpcMyDelay = 500;
+	    rpcOutputRate = 500;
+	    break;
+    }
+@
+
+
+5.5
+log
+@Changed around the protocol constants, embedded them into a structure.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: rpcInit.c,v 5.4 87/10/09 09:31:02 brent Exp $ SPRITE (Berkeley)";
+d99 3
+a101 3
+	 * be set up once here.  Similarly, the channel and transport
+	 * field of the request RPC header are set up once here as they
+	 * are always the same.  Finally, the conditionPtr that is part
+d110 1
+a111 1
+	chanPtr->requestRpcHdr.transport = PROTO_ETHER;
+d121 1
+a122 1
+	    chanPtr->fragRpcHdr[frag].transport = PROTO_ETHER;
+@
+
+
+5.4
+log
+@Created Recov module and updated our calls into it.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: rpcInit.c,v 5.3 87/09/11 09:49:05 brent Exp $ SPRITE (Berkeley)";
+d53 13
+a135 7
+    /*
+     * Initialize some time parameters, the "Factors" can be patched
+     * in adb to vary the initial and maximum wait intervals.  These are
+     * declared and commented in rpcClient.c
+     */
+    rpcRetryWait = rpcRetryFactor * timer_IntOneMillisecond;
+    rpcMaxWait = rpcMaxFactor * timer_IntOneMillisecond;
+@
+
+
+5.3
+log
+@Moved rpcNotifyList init to rpcRecovery.c
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: rpcInit.c,v 5.2 87/09/09 12:08:25 brent Exp $ SPRITE (Berkeley)";
+a51 2
+
+    RpcInitRecovery();
+@
+
+
+5.2
+log
+@Fixes to GetTime and Rpc_Start: had been dependend on what
+lust returned.  Now use what a Sprite box would return. (for timezone...)
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: rpcInit.c,v 5.1 87/08/27 10:43:51 brent Exp $ SPRITE (Berkeley)";
+a52 1
+    List_Init(&rpcNotifyList);
+@
+
+
+5.1
+log
+@Added flags parameter to Trace_Init
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: rpcInit.c,v 5.0 87/08/11 10:48:52 sprite Exp $ SPRITE (Berkeley)";
+d352 1
+a352 8
+	Timer_SetTimeOfDay(bootTime, -tzMinutes, tzDST);
+	/*
+	Sys_Printf("Rpc_Start: time = %d.%06d, offset = %d, DST = %d\n", 
+		bootTime.seconds,
+		bootTime.microseconds,
+		-tzMinutes,
+		tzDST);
+	*/
+d360 1
+a360 1
+    seconds = bootTime.seconds - tzMinutes * 60;
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: rpcInit.c,v 4.6 87/08/09 19:38:15 andrew Exp $ SPRITE (Berkeley)";
+d56 1
+a56 1
+    Trace_Init(rpcTraceHdrPtr, RPC_TRACE_LEN, sizeof(RpcHdr));
+@

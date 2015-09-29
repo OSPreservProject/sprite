@@ -1,0 +1,68 @@
+
+
+
+Hash_DeleteTable      C Library Procedures       Hash_DeleteTable
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Hash_DeleteTable - release storage in hash table
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<hhaasshh..hh>>
+
+     HHaasshh__DDeelleetteeTTaabbllee(_t_a_b_l_e_P_t_r)
+
+AARRGGUUMMEENNTTSS
+     Hash_Table   *_t_a_b_l_e_P_t_r  (in)      Pointer  to   hash   table
+                                       whose  internal storage is
+                                       to be released.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     HHaasshh__DDeelleetteeTTaabbllee deletes all the entries in a hash table and
+     also  releases  the  table's internal bucket storage back to
+     the memory manager.  The Hash_Table structure  at  *_t_a_b_l_e_P_t_r
+     is  not  recycled to the memory manager (it is considered to
+     belong to the caller), but the  contents  of  *_t_a_b_l_e_P_t_r  are
+     reset to indicate that the table is void.  Future operations
+     on  the  table  will   result   in   core   dumps,    unless
+     HHaasshh__IInniittTTaabbllee gets called again to reset the table.
+
+
+KKEEYYWWOORRDDSS
+     delete, hash table
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  April 5, 1989                    1
+
+
+

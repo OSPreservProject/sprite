@@ -1,0 +1,54 @@
+          open fileName ?access?
+               Opens a file and returns an identifier that may be used
+               in future invocations of commands like read, write, and
+               close.  FileName gives the name of the file to open; if
+               it  starts  with  a  tilde  then  tilde substitution is
+               performed as  described  for  Tcl_TildeSubst.   If  the
+               first character of fileName is ``|'' then the remaining
+               characters  of  fileName  are  treated  as  a   command
+               pipeline  to invoke, in the same style as for exec.  In
+               this case, the identifier returned by open may be  used
+               to  write  to the command's input pipe or read from its
+               output pipe.  The access argument indicates the way  in
+               which the file (or command pipeline) is to be accessed.
+               It may have any of the following values:
+
+               r
+                    Open  the  file  for  reading  only; the file must
+                    already exist.
+
+               r+
+                    Open  the  file  for both reading and writing; the
+                    file must already exist.
+
+               w
+                    Open the file for writing only.  Truncate it if it
+                    exists.  If it doesn't exist, create a new file.
+
+               w+
+                    Open  the  file for reading and writing.  Truncate
+                    it if it exists.  If it doesn't  exist,  create  a
+                    new file.
+
+               a
+                    Open  the  file  for  writing only.  The file must
+                    already exist, and the file is positioned so  that
+                    new data is appended to the file.
+
+               a+
+                    Open  the  file for reading and writing.  The file
+                    must  already  exist,  and  the   initial   access
+                    position is set to the end of the file.
+
+               Access defaults to r.  If a file  is  opened  for  both
+               reading  and writing, then seek must be invoked between
+               a read and a write, or  vice  versa  (this  restriction
+               does  not apply to command pipelines opened with open).
+               When  fileName  specifies  a  command  pipeline  and  a
+               write-only  access  is  used, then standard output from
+               the pipeline is directed to the current standard output
+               unless   overridden  by  the  command.   When  fileName
+               specifies a command pipeline and a read-only access  is
+               used,  then  standard  input from the pipeline is taken
+               from the current standard input  unless  overridden  by
+               the command.

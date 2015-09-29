@@ -1,0 +1,1 @@
+../../c.orig/ctype/ispunct.c

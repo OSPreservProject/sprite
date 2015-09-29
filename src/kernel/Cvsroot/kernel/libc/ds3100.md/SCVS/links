@@ -1,0 +1,5 @@
+# This file is used by scvs and contains symbolic link
+# information.  Each line is of the form "link target"
+# $Header
+bcopy.c                  /sprite/src/lib/c/bstring/bcopy.c
+modf.o                   /sprite/src/lib/c/crt/ds3100.md/modf.o

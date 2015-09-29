@@ -1,0 +1,17 @@
+F DEPENDEN.MK;1                     	dependencies.mk
+L EXEC.C;1                          	exec.c	../dist/gdb/exec.c
+L INFPTRAC.C;1                      	infptrace.c	../dist/gdb/infptrace.c
+F INITIALI.C;1                      	initialized_all_files.c
+F MD.MK;1                           	md.mk
+L OPCODE.H;1                        	opcode.h	../dist/gdb/sparc-opcode.h
+L PINSN.C;1                         	pinsn.c	../dist/gdb/sparc-pinsn.c
+L PROCDEBU.C;1                      	procDebugRegs.c	../sprite/gdb/sparc_procDebugRegs.c
+L PROCDEBU.H;1                      	procDebugRegs.h	../sprite/gdb/procDebugRegs.h
+L PTRACE.C;1                        	ptrace.c	../sprite/gdb/ptraceSun.c
+L SPARC_OP.H;1                      	sparc-opcode.h	../dist/gdb/sparc-opcode.h
+L SPARC_TD.C;1                      	sparc-tdep.c	../dist/gdb/sparc-tdep.c
+L SPARC_XD.C;1                      	sparc-xdep.c	../dist/gdb/sparc-xdep.c
+L TM.H;1                            	tm.h	tm-sparc.h
+L TM_SPARC.H;1                      	tm-sparc.h	../dist/gdb/tm-sparc.h
+L XM.H;1                            	xm.h	xm-sparc.h
+L XM_SPARC.H;1                      	xm-sparc.h	../dist/gdb/xm-sparc.h

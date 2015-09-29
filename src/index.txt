@@ -1,0 +1,11 @@
+This directory contains non-proprietary source.
+
+X11R4:		X11 R4 source.  There are small modifications for Sprite.
+benchmarks:	Source code for a variety of benchmarks
+boot:		boot programs (net boot and disk boot)
+cmds:		commands
+daemons:	daemons
+kernel:		Sprite kernel source, along with its revision history.
+lib:		libraries
+machserver:	the Sprite server to run on Mach
+tests:		test programs that exercise parts of the system

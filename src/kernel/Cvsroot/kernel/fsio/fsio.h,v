@@ -1,0 +1,1582 @@
+head     9.13;
+branch   ;
+access   ;
+symbols  ds3100:9.12 sun3:9.12 sun4nw:9.11 symm:9.11 spur:9.11 sprited:9.9.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.13
+date     92.10.28.18.31.36;  author mgbaker;  state Exp;
+branches ;
+next     9.12;
+
+9.12
+date     92.08.10.17.26.44;  author mgbaker;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     91.09.10.18.38.16;  author rab;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     91.09.03.19.02.12;  author jhh;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     91.05.20.17.45.30;  author kupfer;  state Exp;
+branches 9.9.1.1;
+next     9.8;
+
+9.8
+date     91.03.30.17.12.18;  author mgbaker;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.12.06.21.56.57;  author jhh;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.10.08.15.45.37;  author mendel;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.09.11.11.39.26;  author mgbaker;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     89.12.18.14.41.25;  author brent;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     89.11.29.14.45.50;  author brent;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.11.27.14.27.02;  author mgbaker;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.23.12.33.27;  author brent;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.06.45;  author douglis;  state Stable;
+branches ;
+next     8.5;
+
+8.5
+date     89.08.21.15.26.44;  author mendel;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.08.15.18.43.07;  author rab;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.06.14.22.50.04;  author brent;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.02.28.14.52.14;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.01.30.09.22.49;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.21.15;  author douglis;  state Stable;
+branches ;
+next     7.0;
+
+7.0
+date     88.11.07.14.47.44;  author brent;  state Exp;
+branches ;
+next     6.7;
+
+6.7
+date     88.10.19.11.07.19;  author brent;  state Exp;
+branches ;
+next     6.6;
+
+6.6
+date     88.10.14.12.16.42;  author brent;  state Exp;
+branches ;
+next     6.5;
+
+6.5
+date     88.10.05.12.07.26;  author brent;  state Exp;
+branches ;
+next     6.4;
+
+6.4
+date     88.10.04.09.13.35;  author brent;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.09.16.14.20.45;  author brent;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.09.13.11.27.36;  author brent;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.30.13.16.41;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.16.59;  author brent;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.04.10.37.06;  author brent;  state Exp;
+branches ;
+next     ;
+
+9.9.1.1
+date     91.10.28.14.32.16;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@
+Definitions of the main operation switches
+@
+
+
+9.13
+log
+@Got rid of unused functions are variables.
+@
+text
+@/*
+ * fsio.h --
+ *
+ *	Declarations of stream IO routines.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/fsio/fsio.h,v 9.12 92/08/10 17:26:44 mgbaker Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _FSIO
+#define _FSIO
+
+#ifdef KERNEL
+#include <fs.h>
+#else
+#include <kernel/fs.h>
+#endif
+
+/*
+ * Structure that is transfered when a stream is migrated with a process
+ */
+
+typedef struct Fsio_MigInfo {
+    Fs_FileID	streamID;	/* Stream identifier. */
+    Fs_FileID    ioFileID;     	/* I/O handle for the stream. */
+    Fs_FileID	nameID;		/* ID of name of the file.  Used for attrs. */
+    Fs_FileID	rootID;		/* ID of the root of the file's domain. */
+    int		srcClientID;	/* Client transfering from. */
+    int         offset;     	/* File access position. */
+    int         flags;      	/* Usage flags from the stream. */
+} Fsio_MigInfo;
+
+/*
+ * Stream Types:
+ *	FSIO_STREAM		Top level type for stream with offset.  Streams
+ *				have an ID and are in the handle table to
+ *				support migration and shared stream offsets.
+ * The remaining types are for I/O handles
+ *	FSIO_LCL_FILE_STREAM	For a regular disk file stored locally.
+ *	FSIO_RMT_FILE_STREAM	For a remote Sprite file.
+ *	FSIO_LCL_DEVICE_STREAM	For a device on this host.
+ *	FSIO_RMT_DEVICE_STREAM	For a remote device.
+ *	FSIO_LCL_PIPE_STREAM	For an anonymous pipe buffered on this host.
+ *	FSIO_RMT_PIPE_STREAM	For an anonymous pipe bufferd on a remote host.
+ *				This type arises from process migration.
+ *	FSIO_CONTROL_STREAM	This is the stream used by the server for
+ *				a pseudo device to listen for new clients.
+ *	FSIO_SERVER_STREAM	The main state for a pdev request-response
+ *				connection.  Refereneced by the server's stream.
+ *	FSIO_LCL_PSEUDO_STREAM	A client's handle on a request-response
+ *				connection to a local pdev server.
+ *	FSIO_RMT_PSEUDO_STREAM	As above, but when the pdev server is remote.
+ *	FSIO_PFS_CONTROL_STREAM	Control stream for pseudo-filesystems.
+ *	FSIO_PFS_NAMING_STREAM	The request-response stream used for naming
+ *				operations in a pseudo-filesystem.  This
+ *				I/O handle is hung off the prefix table.
+ *	FSIO_LCL_PFS_STREAM	A clients' handle on a request-response
+ *				connection to a local pfs server.
+ *	FSIO_RMT_PFS_STREAM	As above, but when the pfs server is remote.
+ *	FSIO_RMT_CONTROL_STREAM	Needed only during get/set I/O attributes of
+ *				a pseudo-device whose server is remote.
+ *	FSIO_PASSING_STREAM	Used to pass streams from a pseudo-device
+ *				server to its client in response to an open.
+ *		Internet Protocols (Not implemented in the kernel (yet?))
+ *	FSIO_RAW_IP_STREAM	Raw Internet Protocol stream.
+ *	FSIO_UDP_STREAM		UDP protocol stream.
+ *	FSIO_TCP_STREAM		TCP protocol stream.
+ *
+ * The following streams are not implemented
+ *	FS_RMT_NFS_STREAM	NFS access implemented in kernel.
+ *	FS_RMT_UNIX_STREAM	For files on the old hybrid unix/sprite server.
+ *	FS_LCL_NAMED_PIPE_STREAM Stream to a named pipe whose backing file
+ *				is on the local host.
+ *	FS_RMT_NAMED_PIPE_STREAM Stream to a named pipe whose backing file
+ *				is remote. 
+ */
+#define FSIO_STREAM			0
+#define FSIO_LCL_FILE_STREAM		1
+#define FSIO_RMT_FILE_STREAM		2
+#define FSIO_LCL_DEVICE_STREAM		3
+#define FSIO_RMT_DEVICE_STREAM		4
+#define FSIO_LCL_PIPE_STREAM		5
+#define FSIO_RMT_PIPE_STREAM		6
+#define FSIO_CONTROL_STREAM		7
+#define FSIO_SERVER_STREAM		8
+#define FSIO_LCL_PSEUDO_STREAM		9
+#define FSIO_RMT_PSEUDO_STREAM		10
+#define FSIO_PFS_CONTROL_STREAM		11
+#define FSIO_PFS_NAMING_STREAM		12
+#define FSIO_LCL_PFS_STREAM		13
+#define FSIO_RMT_PFS_STREAM		14
+#define FSIO_RMT_CONTROL_STREAM		15
+#define FSIO_PASSING_STREAM		16
+#define FSIO_RAW_IP_STREAM		17
+#define FSIO_UDP_STREAM			18
+#define FSIO_TCP_STREAM			19
+
+#define FSIO_NUM_STREAM_TYPES		20
+
+/*
+ * Two arrays are used to map between local and remote types.  This has
+ * to happen when shipping Fs_FileIDs between clients and servers.
+ */
+extern int fsio_LclToRmtType[];
+extern int fsio_RmtToLclType[];
+/*
+ * Fsio_MapLclToRmtType(type) - Maps from a local to a remote stream type.
+ *	This returns -1 if the input type is out-of-range.
+ */
+#define Fsio_MapLclToRmtType(localType) \
+    ( ((localType) < 0 || (localType) >= FSIO_NUM_STREAM_TYPES) ? -1 : \
+	fsio_LclToRmtType[localType] )
+/*
+ * Fsio_MapRmtToLclType(type) - Maps from a remote to a local stream type.
+ *	This returns -1 if the input type is out-of-range.
+ */
+#define Fsio_MapRmtToLclType(remoteType) \
+    ( ((remoteType) < 0 || (remoteType) >= FSIO_NUM_STREAM_TYPES) ? -1 : \
+	fsio_RmtToLclType[remoteType] )
+
+
+
+
+/*
+ * STREAM SWITCH
+ *	These procedures are called by top-level procedures (i.e. Fs_Read,
+ *	or Fs_Select) to do stream-type specific processing.
+ */
+
+typedef struct Fsio_StreamTypeOps {
+    int		type;			/* Stream types defined above */
+    /*
+     **************** Setup operation for clients. *************************
+     *	This routine sets up an I/O handle for a stream.  It uses streamData
+     *  that was genereated by the nameOpen routine on the file server.  As
+     *  a side effect it fills in the nameInfoPtr->fileID for use later
+     *  when getting/setting attributes.
+     *
+     *	FooIoOpen(ioFileIDPtr, flagsPtr, clientID, data, name, hdrPtrPtr)
+     *		Fs_FileID	*ioFileIDPtr;	(indicates object)
+     *		int		*flagsPtr;	(from the stream)
+     *		int		clientID;	(who's opening it)
+     *		ClientData	data;		(stream data from nameOpen)
+     *		char 		*name;		(name for error messages)
+     *		Fs_HandleHeader	**hdrPtrPtr;	(Returned I/O handle)
+     */
+    ReturnStatus (*ioOpen) _ARGS_((Fs_FileID *ioFileIDPtr, int *flagsPtr, 
+				int clientID, ClientData streamData, 
+				char *name, Fs_HandleHeader **ioHandlePtrPtr));
+
+    /*
+     **************** Regular I/O operations. ******************************
+     *  These are the standard read/write routines.  Note:  they are passed
+     *  a stream pointer to support streams shared accross the network.
+     *  A shared stream is indicated by FS_RMT_SHARED in the ioPtr->flags.
+     *	Note that only the fileID and the ioHandlePtr of the streamPtr
+     *	is guaranteed to be valid.  The stream-specific routine should ignore
+     *	the flags and offset kept (or not kept) in the stream structure.
+     *
+     *	FooRead(streamPtr, ioPtr, waitPtr, replyPtr)
+     *	FooWrite(streamPtr, ioPtr, waitPtr, replyPtr)
+     *		Fs_Stream	*streamPtr;	(See above about valid fields )
+     *		Fs_IOParam	*ioPtr;		(Standard parameter block)
+     *		Sync_RemoteWaiter *waitPtr;	(For remote waiting)
+     *		Fs_IOReply	*reply;		(For return length and signal)
+     */
+    ReturnStatus (*read) _ARGS_((Fs_Stream *streamPtr, Fs_IOParam *readPtr, 
+				Sync_RemoteWaiter *remoteWaitPtr, 
+				Fs_IOReply *replyPtr));
+    ReturnStatus (*write) _ARGS_((Fs_Stream *streamPtr, Fs_IOParam *writePtr, 
+                                  Sync_RemoteWaiter *remoteWaitPtr, 
+				  Fs_IOReply *replyPtr));
+    /*
+     **************** VM I/O operations. ******************************
+     *  These are the read/write routines used by VM during paging.
+     *	The interface is the same as the regular read and write routines,
+     *	so those routines can be re-used, if appropriate.
+     *
+     *	FooPageRead(streamPtr, ioPtr, waitPtr, replyPtr)
+     *	FooPageWrite(streamPtr, ioPtr, waitPtr, replyPtr)
+     *		Fs_Stream	*streamPtr;	(See above about valid fields)
+     *		Fs_IOParam	*ioPtr;		(Standard parameter block)
+     *		Sync_RemoteWaiter *waitPtr;	(For remote waiting)
+     *		Fs_IOReply	*reply;		(For return length and signal)
+     * 
+     *	FooBlockCopy(srcHdrPtr, destHdrPtr, blockNum)
+     * 		Fs_HandleHeader *srcHdrPtr;  ( Handle for source file. )
+     * 		Fs_HandleHeader *destHdrPtr; ( Handle for dest file. )
+     * 		int		*blockNum;   ( Block number to copy. )
+     */
+    ReturnStatus (*pageRead) _ARGS_((Fs_Stream *streamPtr, Fs_IOParam *readPtr, 
+				Sync_RemoteWaiter *remoteWaitPtr, 
+				Fs_IOReply *replyPtr));
+    ReturnStatus (*pageWrite) _ARGS_((Fs_Stream *streamPtr,
+				      Fs_IOParam *writePtr, 
+                                      Sync_RemoteWaiter *remoteWaitPtr, 
+				      Fs_IOReply *replyPtr));
+    ReturnStatus (*blockCopy) _ARGS_((Fs_HandleHeader *srcHdrPtr, 
+					Fs_HandleHeader *dstHdrPtr, 
+					int blockNum));
+    /*
+     ***************** I/O Control. ****************************************
+     *  Stream-specific I/O controls.  The main procedure Fs_IOControl
+     *	handles some generic I/O controls, and then passes the I/O control
+     *	down to the stream-specific handler.
+     *
+     */
+    ReturnStatus (*ioControl) _ARGS_((Fs_Stream *streamPtr, 
+				      Fs_IOCParam *ioctlPtr, 
+				      Fs_IOReply *replyPtr));
+    /*
+     ***************** Select. *********************************************
+     *  The select interface includes three In/Out bit words.  There is
+     *  at most one bit set in each, and the selectability can be easily
+     *  turned off by clearing the word.  Never do anything to these
+     *  words other than leave them alone or clear them.
+     *
+     *	FooSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
+     *		Fs_HandleHeader		*hdrPtr;	(File handle)
+     *		Sync_RemoteWaiter	*waitPtr;	(Remote waiting info)
+     *		int			*readPtr;	(In/Out read bit)
+     *		int			*writePtr;	(In/Out write bit)
+     *		int			*exceptPtr;	(In/Out except bit)
+     */
+    ReturnStatus (*select)  _ARGS_((Fs_HandleHeader *hdrPtr, 
+				    Sync_RemoteWaiter *waitPtr, int *readPtr, 
+				    int *writePtr, int *exceptPtr));
+    /*
+     **************** Attribute operations on open streams. *****************
+     *	These just operate on the few attributes cached at the I/O server.
+     *  The name server is first contacted to set/initialize the attributes,
+     *  (either via the DOMAIN switch with pathnames,
+     *  or via the ATTRIBUTE switch with open streams)
+     *  and then these routines are called to complete the attributes from
+     *  ones cached on the I/O server, or to update the ones cached there.
+     *
+     *	FooGetIOAttr(fileIDPtr, clientID, attrPtr)
+     *	FooSetIOAttr(fileIDPtr, attrPtr, flags)
+     *		Fs_FileID		*fileIDPtr;	(Identfies file)
+     *		int			clientID;	(Client getting attrs)
+     *		Fs_Attributes		*attrPtr;	(Attrs to set/update)
+     *		int			flags;		(which attrs to set)
+     */
+    ReturnStatus (*getIOAttr) _ARGS_((Fs_FileID *fileIDPtr, int clientID, 
+				      Fs_Attributes *attrPtr));
+    ReturnStatus (*setIOAttr) _ARGS_((Fs_FileID *fileIDPtr, 
+				      Fs_Attributes *attrPtr, int flags));
+    /*
+     **************** Server verification of remote handle. *****************
+     *	This returns the server's file handle given a client's fileID.
+     *  There are two parts to this task.  The first is to map from the
+     *  client's fileID.type (i.e. FSIO_RMT_DEVICE_STREAM) to the server's
+     *  (i.e. FSIO_LCL_DEVICE_STREAM).  The second step is to check that the
+     *  client is recorded in the clientList of the I/O handle.  The domain
+     *	type is returned for use in naming operations.
+     *
+     *	Fs_HandleHeader *
+     *	FooClientVerify(fileIDPtr, clientID, domainTypePtr)
+     *		Fs_FileID	*fileIDPtr;		(Client's handle)
+     *		int		clientID;		(The client hostID)
+     *		int		*domainTypePtr;		(may be NIL)
+     */
+    Fs_HandleHeader *(*clientVerify) _ARGS_((Fs_FileID *fileIDPtr, 
+					     int clientID, int *domainTypePtr));
+    /*
+     *************** Migration calls. **************************************
+     *
+     *  The 'release' is called on the source client of migration via an RPC
+     *		from the I/O server.  Its job is to release any referneces
+     *		on the I/O handle that were due to a stream which has
+     *		now migrated away from the source client.
+     *  The 'migrate' is called from Fsio_DeencapStream to update client
+     *		book-keeping to reflect the migration.  The version on
+     *		remote clients just does an RPC to the I/O server to
+     *		invoke the appropriate migrate routine there.
+     *		Important:  If the FS_RMT_SHARED flag is present it means
+     *		that there is still a stream on the original client and its
+     *		references should not be removed from the I/O handle.
+     *		Also, if the FS_NEW_STREAM flag is present it means that
+     *		the stream is newly migrated to the client so references
+     *		should be added for the dstClient.
+     *  The 'migEnd' is called from Fsio_DeencapStream after the call to the
+     *		migrate procedure, but only the first time the stream
+     *		is migrated to the host.  (After that it suffices to
+     *		add references to the existing stream.)
+     *
+     *	FooRelease(hdrPtr, flags)
+     *		Fs_HandleHeader	*hdrPtr;		(File handle)
+     *		int		flags;			(From the stream)
+     *	FooMigEnd(migInfoPtr, size, data, hdrPtrPtr)
+     *		Fsio_MigInfo	migInfoPtr;		(Migration state)
+     *		int		size;			(size of data)
+     *		ClientData	data;			(data from migrate)
+     *		Fs_HandleHeader	**hdrPtrPtr;		(Returned handle)
+     *	FooSrvMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr sizePtr, dataPtr)
+     *    	Fsio_MigInfo	*migInfoPtr;		(Migration state)
+     *		int		dstClientID;		(ID of target client)
+     *		int		*flagsPtr;		(In/Out Stream flags)
+     *		int		*offsetPtr;		(Return - new offset)
+     *		int		*sizePtr;		(Return - size of data)
+     *		Address		*dataPtr;		(Return data)
+     */
+    ReturnStatus (*release) _ARGS_((Fs_HandleHeader *hdrPtr, int flags));
+    ReturnStatus (*migEnd) _ARGS_((Fsio_MigInfo *migInfoPtr, int size, 
+				  ClientData data, 
+				  Fs_HandleHeader **hdrPtrPtr));
+    ReturnStatus (*migrate) _ARGS_((Fsio_MigInfo *migInfoPtr, int dstClientID, 
+				    int *flagsPtr, int *offsetPtr, 
+				    int *sizePtr, Address *dataPtr));
+    /*
+     *************** Recovery calls. ****************************************
+     *  This (should be) two routines, one called on client host's top
+     *	reopen at the server, and one called on the server in response
+     *  to a client's reopen request.
+     *
+     *	FooReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
+     *		(The hdrPtr is only valid on clients.)
+     *		Fs_HandleHeader *hdrPtr;		(Handle to re-open)
+     *		(The following are only valid on servers.)
+     *		int		clientID;	(client doing the re-open)
+     *		ClientData	inData;		(state from the client)
+     *		int		*outSizePtr;	(sizeof outData)
+     *		ClientData	*outDataPtr;	(state returned to client)
+     */
+    ReturnStatus (*reopen)  _ARGS_((Fs_HandleHeader *hdrPtr, int clientID, 
+				    ClientData inData, int *outSizePtr,
+				    ClientData *outDataPtr));
+    /*
+     *************** Clean up operations. **********************************
+     * 'scavenge' is called periodically to clean up unneeded handles.
+     *		Important: the scavenge procedure must either remove or
+     *		unlock the handle it is still in use.
+     * 'clientKill' is called to clean up after dead clients.  This is
+     *		called before the scavenge routine if a periodic check
+     *		on the client fails, or called independently if some other
+     *		communication failure occurs.
+     * 'close' is called when the last reference to a stream is closed.
+     *		This routine should clean up any use/reference counts
+     *		due to the stream as indicated by the flags argument.
+     *
+     *	FooScavenge(hdrPtr)
+     *		Fs_HandleHeader	*hdrPtr;		(File handle)
+     *	FooClientKill(hdrPtr, clientID)
+     *		Fs_HandleHeader	*hdrPtr;		(File handle)
+     *		int		clientID;		(Client presumed down)
+     *	FooClose(hdrPtr, clientID, procID, flags, size, data)
+     *		Fs_HandleHeader	*hdrPtr;		(File handle)
+     *		int		clientID;		(Host ID of closer)
+     *		Proc_Pid	procID;			(ProcessID of closer)
+     *		int		flags;			(From the stream)
+     *		int		size;			(Size of data)
+     *		ClientData	data;			(Extra close data)
+     */
+    Boolean	 (*scavenge) _ARGS_((Fs_HandleHeader *hdrPtr));
+    void	 (*clientKill) _ARGS_((Fs_HandleHeader *hdrPtr, int clientID));
+    ReturnStatus (*close) _ARGS_((Fs_Stream *streamPtr, int clientID, 
+				  Proc_PID procID, int flags, int dataSize, 
+				  ClientData closeData));
+} Fsio_StreamTypeOps;
+
+extern Fsio_StreamTypeOps fsio_StreamOpTable[];
+
+typedef struct FsioStreamClient {
+    List_Links links;		/* This hangs off the stream */
+    int		clientID;	/* The sprite ID of the client */
+} FsioStreamClient;
+
+
+
+/*
+ * The following structures are subfields of the various I/O handles.
+ * First we define a use count structure to handle common book keeping needs.
+ */
+
+typedef struct Fsio_UseCounts {
+    int		ref;		/* The number of referneces to handle */
+    int		write;		/* The number of writers on handle */
+    int		exec;		/* The number of executors of handle */
+} Fsio_UseCounts;
+
+/*
+ * Exported type for async I/O requests.
+ */
+
+typedef struct Fsio_Request *Fsio_RequestToken;
+
+extern Fsio_RequestToken Fsio_DeviceBlockIOAsync();
+extern Fsio_DeviceBlockIOPoll();
+
+
+/*
+ * Recovery testing switch table.
+ */
+typedef struct Fsio_RecovTestInfo {
+    int		(*refFunc)();		/* number of references */
+    int		(*numBlocksFunc)();	/* number of blocks in the cache */
+    int		(*numDirtyBlocksFunc)();/* number of dirty blocks in cache */
+} Fsio_RecovTestInfo;
+
+extern	Fsio_RecovTestInfo	fsio_StreamRecovTestFuncs[];
+
+/*
+ * Initialization
+ */
+extern void Fsio_InstallStreamOps _ARGS_((int streamType,
+			Fsio_StreamTypeOps *streamOpsPtr));
+
+extern ReturnStatus Fsio_CreatePipe _ARGS_((Fs_Stream **inStreamPtrPtr, 
+			Fs_Stream **outStreamPtrPtr));
+
+extern void Fsio_Bin _ARGS_((void));
+extern void Fsio_InitializeOps _ARGS_((void));
+
+/*
+ * Stream client list functions.
+ */
+extern Boolean Fsio_StreamClientOpen _ARGS_((List_Links *clientList,
+			int clientID, int useFlags, Boolean *foundPtr));
+extern Boolean Fsio_StreamClientClose _ARGS_((List_Links *clientList, 
+			int clientID));
+extern Boolean Fsio_StreamClientFind _ARGS_((List_Links *clientList, 
+			int clientID));
+
+/*
+ * Stream manipulation routines.
+ */
+extern Fs_Stream *Fsio_StreamCreate _ARGS_((int serverID, int clientID,
+		    Fs_HandleHeader *ioHandlePtr, int useFlags, char *name));
+extern Fs_Stream *Fsio_StreamAddClient _ARGS_((Fs_FileID *streamIDPtr,
+			int clientID, Fs_HandleHeader *ioHandlePtr, 
+			int useFlags, char *name, Boolean *foundClientPtr, 
+			Boolean *foundStreamPtr));
+extern void Fsio_StreamMigClient _ARGS_((Fsio_MigInfo *migInfoPtr, 
+			int dstClientID, Fs_HandleHeader *ioHandlePtr, 
+			Boolean *closeSrcClientPtr));
+extern Fs_Stream *Fsio_StreamClientVerify _ARGS_((Fs_FileID *streamIDPtr, 
+			Fs_HandleHeader *ioHandlePtr, int clientID));
+extern void Fsio_StreamCreateID _ARGS_((int serverID, Fs_FileID *streamIDPtr));
+extern void Fsio_StreamCopy _ARGS_((Fs_Stream *oldStreamPtr,
+			Fs_Stream **newStreamPtrPtr));
+extern void Fsio_StreamDestroy _ARGS_((Fs_Stream *streamPtr));
+extern ReturnStatus Fsio_StreamMigCloseNew _ARGS_((Fs_Stream *streamPtr, 
+			Boolean *inUsePtr, int *offsetPtr));
+extern ReturnStatus Fsio_StreamReopen _ARGS_((Fs_HandleHeader *hdrPtr, 
+			int clientID, ClientData inData, int *outSizePtr, 
+			ClientData *outDataPtr));
+
+
+
+/*
+ * Migration support
+ */
+extern ReturnStatus Fsio_EncapStream _ARGS_((Fs_Stream *streamPtr, 
+			Address bufPtr));
+extern ReturnStatus Fsio_DeencapStream _ARGS_((Address bufPtr,
+			Fs_Stream **streamPtrPtr));
+extern void Fsio_MigrateUseCounts _ARGS_((int flags, 
+			Boolean closeSrcClient, Fsio_UseCounts *usePtr));
+extern void Fsio_MigrateClient _ARGS_((List_Links *clientList, int srcClientID,
+			int dstClientID, int flags, Boolean closeSrcClient));
+
+/*
+ * Null procs for switch tables.
+ */
+extern void Fsio_NullClientKill _ARGS_((Fs_HandleHeader *hdrPtr, int clientID));
+extern void Fsio_StreamClientKill _ARGS_((Fs_HandleHeader *hdrPtr, int clientID));
+extern ReturnStatus Fsio_NullProc ();
+extern ReturnStatus Fsio_NoProc ();
+extern Fs_HandleHeader *Fsio_NoHandle ();
+
+
+#endif
+@
+
+
+9.12
+log
+@Transparent server recovery now available.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/fsio/fsio.h,v 9.11 91/09/10 18:38:16 rab Exp $ SPRITE (Berkeley)
+a449 2
+extern ReturnStatus Fsio_StreamMigClose _ARGS_((Fs_Stream *streamPtr, 
+			Boolean *inUsePtr));
+@
+
+
+9.11
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/fsio/RCS/fsio.h,v 9.10 91/09/03 19:02:12 jhh Exp Locker: rab $ SPRITE (Berkeley)
+a408 9
+
+/*
+ * Recovery testing operations.
+ */
+extern	int	Fsio_FileRecovTestUseCount();
+extern	int	Fsio_FileRecovTestNumCacheBlocks();
+extern	int	Fsio_FileRecovTestNumDirtyCacheBlocks();
+extern	int	Fsio_DeviceRecovTestUseCount();
+extern	int	Fsio_PipeRecovTestUseCount();
+@
+
+
+9.10
+log
+@fix it up so it can be included by user programs
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/fsio/RCS/fsio.h,v 9.9 91/05/20 17:45:30 kupfer Exp Locker: jhh $ SPRITE (Berkeley)
+a363 1
+#ifdef SOSP91
+a365 5
+				  ClientData closeData, int *offsetPtr,
+				  int *rwFlagsPtr));
+#else
+    ReturnStatus (*close) _ARGS_((Fs_Stream *streamPtr, int clientID, 
+				  Proc_PID procID, int flags, int dataSize, 
+a366 1
+#endif
+@
+
+
+9.9
+log
+@Stream types are defined here, not fs.h.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/fsio/RCS/fsio.h,v 9.8 91/03/30 17:12:18 mgbaker Exp Locker: kupfer $ SPRITE (Berkeley)
+d21 1
+d23 3
+@
+
+
+9.9.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/fsio/RCS/fsio.h,v 9.9 91/05/20 17:45:30 kupfer Exp $ SPRITE (Berkeley)
+@
+
+
+9.8
+log
+@New client stream kill routine.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/fsio/RCS/fsio.h,v 9.7 90/12/06 21:56:57 jhh Exp $ SPRITE (Berkeley)
+d135 1
+a135 1
+    int		type;			/* Stream types defined in fs.h */
+@
+
+
+9.7
+log
+@Added sosp tracing code
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/fsio/RCS/fsio.h,v 9.6 90/10/08 15:45:37 mendel Exp $ SPRITE (Berkeley)
+d488 1
+@
+
+
+9.6
+log
+@Fixed include files to use <> rather than "".
+Added type Fsio_MigInfo that was in fs FsMigInfo in fs module.
+Added function prototyping. 
+Changed type name Fsutil_UseCounts to Fsio_UseCounts.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/fs.mendel/RCS/fsio.h,v 1.1 90/01/16 17:12:04 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d360 1
+d363 5
+d369 1
+@
+
+
+9.5
+log
+@Fixed broken comment and added extern for Fsio_RpcStreamMigCloseNew().
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/fsio/RCS/fsio.h,v 9.4 89/12/18 14:41:25 brent Exp Locker: mgbaker $ SPRITE (Berkeley)
+d21 1
+a21 1
+#include "fs.h"
+d24 14
+a124 33
+
+
+/*
+ * OPEN SWITCH
+ * The nameOpen procedure is used on the file server when opening streams or
+ * setting up an I/O fileID for a file or device.  It is keyed on
+ * disk file descriptor types( i.e. FS_FILE, FS_DIRECTORY, FS_DEVICE,
+ * FS_PSEUDO_DEVICE).  The nameOpen procedure returns an ioFileID
+ * used for I/O on the file, plus other data needed for the client's
+ * stream.  The streamIDPtr is NIL during set/get attributes, which
+ * indicates that the extra stream information isn't needed.
+ */
+
+typedef struct Fsio_OpenOps {
+    int		type;			/* One of the file descriptor types */
+    /*
+     * The calling sequence for the nameOpen routine is:
+     *	FooNameOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
+     *			sizePtr, dataPtr)
+     *		Fsio_FileIOHandle	*handlePtr;
+     *		int			clientID;
+     *		int			useFlags;	(From the stream)
+     *		Fs_FileID		ioFileIDPtr;	(Returned to client)
+     *	   (The following arguments are ignored during set/get attrs)
+     *	   (This case is indicated by a NIL streamIDPtr)
+     *		Fs_FileID		streamIDPtr;	(Returned to client,)
+     *		int			*sizePtr;	(Return size of data)
+     *		ClientData		*dataPtr;	(Extra return data)
+     */
+    ReturnStatus (*nameOpen)();
+} Fsio_OpenOps;
+
+extern Fsio_OpenOps fsio_OpenOpTable[];
+d151 4
+a154 1
+    ReturnStatus (*ioOpen)();
+d171 6
+a176 2
+    ReturnStatus (*read)();
+    ReturnStatus (*write)();
+d184 1
+a184 1
+     *	FoPageoWrite(streamPtr, ioPtr, waitPtr, replyPtr)
+d189 16
+a204 3
+     */
+    ReturnStatus (*pageRead)();
+    ReturnStatus (*pageWrite)();
+a210 8
+     *	FooIOControl(hdrPtr, command, byteOrder, inBufSize, inBuf, outBufSize, outBuf)
+     *		Fs_HandleHeader *hdrPtr;			(File handle)
+     *		int		command;		(Special operation)
+     *		int		byteOrder;		(client's byte order)
+     *		int		inBufSize;		(Size of inBuf)
+     *		Address		inBuf;			(Input data)
+     *		int		outBufSize;		(Size of outBuf)
+     *		Address		outBuf;			(Return data)
+d212 3
+a214 1
+    ReturnStatus (*ioControl)();
+d229 3
+a231 1
+    ReturnStatus (*select)();
+d248 4
+a251 2
+    ReturnStatus (*getIOAttr)();
+    ReturnStatus (*setIOAttr)();
+d267 2
+a268 1
+    Fs_HandleHeader *(*clientVerify)();
+d295 1
+a295 1
+     *		FsMigInfo	migInfoPtr;		(Migration state)
+d300 1
+a300 1
+     *    	FsMigInfo	*migInfoPtr;		(Migration state)
+d307 7
+a313 3
+    ReturnStatus (*release)();
+    ReturnStatus (*migEnd)();
+    ReturnStatus (*migrate)();
+d329 3
+a331 1
+    ReturnStatus (*reopen)();
+d358 5
+a362 3
+    Boolean	 (*scavenge)();
+    void	 (*clientKill)();
+    ReturnStatus (*close)();
+a371 14
+/*
+ * Structure that is transfered when a process is migrated.
+ * SHOULD CHANGE NAME TO Fsio_MigInfo
+ */
+
+typedef struct FsMigInfo {
+    Fs_FileID	streamID;	/* Stream identifier. */
+    Fs_FileID    ioFileID;     	/* I/O handle for the stream. */
+    Fs_FileID	nameID;		/* ID of name of the file.  Used for attrs. */
+    Fs_FileID	rootID;		/* ID of the root of the file's domain. */
+    int		srcClientID;	/* Client transfering from. */
+    int         offset;     	/* File access position. */
+    int         flags;      	/* Usage flags from the stream. */
+} FsMigInfo;
+a376 1
+ * SHOULD CHANGE NAME TO Fsio_UseCounts
+d379 1
+a379 1
+typedef struct Fsutil_UseCounts {
+d383 1
+a383 1
+} Fsutil_UseCounts;
+d388 1
+d418 2
+a419 2
+extern void Fsio_InstallStreamOps();
+extern void Fsio_InstallSrvOpenOp();
+d421 2
+a422 1
+extern ReturnStatus Fsio_CreatePipe();
+d424 2
+a425 2
+extern void Fsio_Bin();
+extern void Fsio_InitializeOps();
+d430 6
+a435 3
+extern Boolean		Fsio_StreamClientOpen();
+extern Boolean		Fsio_StreamClientClose();
+extern Boolean		Fsio_StreamClientFind();
+d440 23
+a462 32
+extern Fs_Stream	*Fsio_StreamCreate();
+extern Fs_Stream	*Fsio_StreamAddClient();
+extern void		Fsio_StreamMigClient();
+extern Fs_Stream	*Fsio_StreamClientVerify();
+extern void		Fsio_StreamCreateID();
+extern void		Fsio_StreamCopy();
+extern void		Fsio_StreamDestroy();
+extern Boolean		Fsio_StreamScavenge();
+extern ReturnStatus	Fsio_StreamReopen();
+
+/*
+ * flock() support
+ */
+extern void		Fsio_LockInit();
+extern ReturnStatus	Fsio_IocLock();
+extern ReturnStatus	Fsio_Lock();
+extern ReturnStatus	Fsio_Unlock();
+extern void		Fsio_LockClose();
+extern void		Fsio_LockClientKill();
+
+/*
+ * ftrunc() support
+ */
+extern ReturnStatus	Fsio_FileTrunc();
+
+
+/*
+ * Device support
+ */
+extern void Fsio_DevNotifyException();
+extern void Fsio_DevNotifyReader();
+extern void Fsio_DevNotifyWriter();
+a463 1
+extern ReturnStatus Fsio_VanillaDevReopen();
+d468 8
+a475 4
+extern ReturnStatus	Fsio_EncapStream();
+extern ReturnStatus	Fsio_DeencapStream();
+extern ReturnStatus	Fsio_MigrateUseCounts();
+extern void		Fsio_MigrateClient();
+d480 4
+a483 4
+extern void Fsio_NullClientKill();
+extern ReturnStatus Fsio_NoProc();
+extern ReturnStatus Fsio_NullProc();
+extern Fs_HandleHeader *Fsio_NoHandle();
+a484 1
+extern ReturnStatus Fsio_RpcStreamMigCloseNew();
+@
+
+
+9.4
+log
+@Added externs
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/fsio/RCS/fsio.h,v 9.3 89/11/29 14:45:50 brent Exp $ SPRITE (Berkeley)
+d394 1
+a394 1
+ *
+d493 1
+@
+
+
+9.3
+log
+@Changed cltOpen to ioOpen.
+Added pageRead and pageWrite routines.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/fsio/RCS/fsio.h,v 9.2 89/11/27 14:27:02 mgbaker Exp Locker: brent $ SPRITE (Berkeley)
+d391 8
+@
+
+
+9.2
+log
+@Adding new stats syscall command.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/fsio/RCS/fsio.h,v 9.1 89/10/23 12:33:27 brent Exp Locker: mgbaker $ SPRITE (Berkeley)
+d54 1
+a54 1
+ *		Internet Protocols
+d115 1
+a115 1
+ * The srvOpen procedure is used on the server when opening streams or
+d118 1
+a118 1
+ * FS_PSEUDO_DEVICE).  The server open procedure returns an ioFileID
+d127 2
+a128 2
+     * The calling sequence for the server-open routine is:
+     *	FooSrvOpen(handlePtr, clientID, useFlags, ioFileIDPtr, streamIDPtr,
+d140 1
+a140 1
+    ReturnStatus (*srvOpen)();
+d158 1
+a158 1
+     *  that was genereated by the srvOpen routine on the file server.  As
+d162 2
+a163 2
+     *	FooCltOpen(fileIDPtr, flagsPtr, clientID, data, name, hdrPtrPtr)
+     *		Fs_FileID	*fileIDPtr;	(indicates file)
+d166 1
+a166 1
+     *		ClientData	data;		(stream data from srvOpen)
+d170 1
+a170 1
+    ReturnStatus (*cltOpen)();
+d175 4
+a178 7
+     *  A shared stream is indicated by FS_RMT_SHARED in the flags.  In this
+     *  case the streamID should be passed to the I/O server who will use
+     *  its own copy of the stream read/write offset.
+     *  If not shared, the read/write routines are only guaranteed that the
+     *  ioHandlePtr field of the stream is defined.  (The stream is partially
+     *  defined this way on the server when a client is reading/writing its
+     *  cache and there is no stream.)
+d182 1
+a182 1
+     *		Fs_Stream	*streamPtr;	( !Only use ioHandlePtr field! )
+d189 15
+@
+
+
+9.1
+log
+@Added externs.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/fsio/RCS/fsio.h,v 9.0 89/09/12 15:06:45 douglis Stable Locker: brent $ SPRITE (Berkeley)
+d380 20
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/fsio/RCS/fsio.h,v 8.5 89/08/21 15:26:44 mendel Exp Locker: douglis $ SPRITE (Berkeley)
+d347 1
+a347 1
+typedef struct FsStreamClientInfo {
+d350 1
+a350 2
+    int		useFlags;	/* Usage flags from the stream */
+} FsStreamClientInfo;
+d354 1
+d371 1
+d381 14
+d412 3
+d422 3
+d428 3
+a430 5
+extern void Fsio_InstallStreamOps();
+extern void Fsio_InstallSrvOpenOp();
+
+extern ReturnStatus Fsio_CreatePipe();
+
+d437 11
+a451 1
+extern void Fsio_Bin();
+a452 1
+extern void Fsio_InitializeOps();
+@
+
+
+8.5
+log
+@Break up fs into many modules.    
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.2 89/01/07 04:12:44 rab Exp $ SPRITE (Berkeley)
+@
+
+
+8.4
+log
+@Commented #endif labels.
+@
+text
+@d2 1
+a2 1
+ * fsOpTable.h --
+d4 1
+a4 16
+ *	There are four operation switch tables defined here.  (See fsOpTable.c
+ *	for their initialization.)
+ *	1. The DOMAIN table used for naming operations like OPEN or REMOVE_DIR.
+ *		These operations take file names as arguments and have to
+ *		be pre-processed by the prefix table module in order to
+ *		chose the correct domain type and server.
+ *	2. The OPEN table is used on the server when opening files.  This
+ *		is keyed on disk file descriptor type, i.e. file, device,
+ *		pseudo-device.  The server has to set up state that the
+ *		client will use when setting up its own I/O stream.
+ *	3. The ATTR table is used when getting/setting attributes when
+ *		starting with an open stream (not with a file name).  This
+ *		is keyed on the type of the nameFileID in the stream.
+ *	4. The STREAM table is used for all other operations on open streams
+ *		and I/O handles.  It is keyed on the type of the ioFileID,
+ *		i.e. local file, remote device, local pipe, etc.
+d6 14
+a19 6
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/fs/RCS/fsOpTable.h,v 8.3 89/06/14 22:50:04 brent Exp Locker: rab $ SPRITE (Berkeley)
+ */
+d21 1
+a21 2
+#ifndef _FSOPTABLE
+#define _FSOPTABLE
+d24 63
+a86 9
+ * Name Domain Types:
+ *
+ *	FS_LOCAL_DOMAIN		The file is stored locally.
+ *	FS_REMOTE_SPRITE_DOMAIN	The file is stored on a Sprite server.
+ *	FS_PSEUDO_DOMAIN	The file system is implemented by
+ *				a user-level server process
+ *	FS_NFS_DOMAIN		The file is stored on an NFS server.
+ *
+ */
+d88 1
+a88 4
+#define FS_LOCAL_DOMAIN			0
+#define FS_REMOTE_SPRITE_DOMAIN		1
+#define FS_PSEUDO_DOMAIN		2
+#define FS_NFS_DOMAIN			3
+d90 20
+a109 24
+#define FS_NUM_DOMAINS			4
+
+/*
+ * DOMAIN SWITCH
+ * Domain specific operations that operate on file names for lookup.
+ * Naming operations are done through FsLookupOperation, which uses
+ * the prefix table to choose the domain type and the server for the name.
+ * It then branches through the fsDomainLookup table to complete the operation.
+ * The arguments to these operations are documented in fsNameOps.h
+ * because they are collected into structs (declared in fsNameOps.h)
+ * and passed through FsLookupOperation() to domain-specific routines.
+ */
+
+#define	FS_DOMAIN_IMPORT		0
+#define	FS_DOMAIN_EXPORT		1
+#define	FS_DOMAIN_OPEN			2
+#define	FS_DOMAIN_GET_ATTR		3
+#define	FS_DOMAIN_SET_ATTR		4
+#define	FS_DOMAIN_MAKE_DEVICE		5
+#define	FS_DOMAIN_MAKE_DIR		6
+#define	FS_DOMAIN_REMOVE		7
+#define	FS_DOMAIN_REMOVE_DIR		8
+#define	FS_DOMAIN_RENAME		9
+#define	FS_DOMAIN_HARD_LINK		10
+a110 3
+#define	FS_NUM_NAME_OPS			11
+
+extern	ReturnStatus (*fsDomainLookup[FS_NUM_DOMAINS][FS_NUM_NAME_OPS])();
+d124 1
+a124 1
+typedef struct FsOpenOps {
+d130 1
+a130 1
+     *		FsLocalFileIOHandle	*handlePtr;
+d141 1
+a141 3
+} FsOpenOps;
+
+extern FsOpenOps fsOpenOpTable[];
+d143 1
+a143 11
+/*
+ * ATTRIBUTE SWITCH
+ * A switch is used to get to the name server in set/get attributesID,
+ * which take an open stream.  The stream refereneces a nameFileID, and
+ * this switch is keyed on the nameFileID.type (i.e. local or remote file).
+ */
+
+typedef struct FsAttrOps {
+    ReturnStatus	(*getAttr)();
+    ReturnStatus	(*setAttr)();
+} FsAttrOps;
+a144 1
+extern FsAttrOps fsAttrOpTable[];
+d153 1
+a153 1
+typedef struct FsStreamTypeOps {
+d168 1
+a168 1
+     *		FsHandleHeader	**hdrPtrPtr;	(Returned I/O handle)
+d199 1
+a199 1
+     *		FsHandleHeader *hdrPtr;			(File handle)
+d216 1
+a216 1
+     *		FsHandleHeader		*hdrPtr;	(File handle)
+d245 2
+a246 2
+     *  client's fileID.type (i.e. FS_RMT_DEVICE_STREAM) to the server's
+     *  (i.e. FS_LCL_DEVICE_STREAM).  The second step is to check that the
+d250 1
+a250 1
+     *	FsHandleHeader *
+d256 1
+a256 1
+    FsHandleHeader *(*clientVerify)();
+d264 1
+a264 1
+     *  The 'migrate' is called from Fs_DeencapStream to update client
+d274 1
+a274 1
+     *  The 'migEnd' is called from Fs_DeencapStream after the call to the
+d280 1
+a280 1
+     *		FsHandleHeader	*hdrPtr;		(File handle)
+d286 1
+a286 1
+     *		FsHandleHeader	**hdrPtrPtr;		(Returned handle)
+d306 1
+a306 1
+     *		FsHandleHeader *hdrPtr;		(Handle to re-open)
+a314 33
+     *************** Cache Operations. **************************************
+     *  These should be moved out to a new switch, or passed into the
+     *  Fs_CacheInfoInit procedure, or something.
+     *
+     *	FooAllocate(hdrPtr, offset, bytes, blockAddrPtr, newBlockPtr)
+     *		FsHandleHeader *hdrPtr;			(File handle)
+     *		int		offset;			(Byte offset)
+     *		int		bytes;			(Bytes to allocate)
+     *		int		*blockAddrPtr;		(Returned block number)
+     *		Boolean		*newBlockPtr;		(TRUE if new block)
+     *	FooBlockRead(hdrPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
+     *		FsHandleHeader *hdrPtr;			(File handle)
+     *		int		flags;		(For compatibility with .read)
+     *		Address		buffer;			(Target of read)
+     *		int		*offsetPtr;		(Byte offset)
+     *		int		*lenPtr;		(Byte count)
+     *		Sync_RemoteWaiter *waitPtr;		(For remote waiting)
+     *	FooBlockWrite(hdrPtr, blockNumber, numBytes, buffer, lastDirtyBlock)
+     *		FsHandleHeader	*hdrPtr;		(File handle)
+     *		int		blockNumber;		(Disk block number)
+     *		int		numBytes;		(Byte count in block)
+     *		Address		buffer;			(Source of data)
+     *		Boolean		lastDirtyBlock;		(Indicates last block)
+     *	FooBlockCopy(srcHdrPtr, dstHdrPtr, blockNumber)
+     *		FsHandleHeader	*srcHdrPtr;		(Source file handle)
+     *		FsHandleHeader	*dstHdrPtr;		(Destination handle)
+     *		int		blockNumber;		(Block to copy)
+     */
+    ReturnStatus (*allocate)();
+    ReturnStatus (*blockRead)();
+    ReturnStatus (*blockWrite)();
+    ReturnStatus (*blockCopy)();
+    /*
+d328 1
+a328 1
+     *		FsHandleHeader	*hdrPtr;		(File handle)
+d330 1
+a330 1
+     *		FsHandleHeader	*hdrPtr;		(File handle)
+d333 1
+a333 1
+     *		FsHandleHeader	*hdrPtr;		(File handle)
+d343 80
+a422 1
+} FsStreamTypeOps;
+d424 1
+a424 1
+extern FsStreamTypeOps fsStreamOpTable[];
+d426 1
+a426 1
+#endif /* _FSOPTABLE */
+@
+
+
+8.3
+log
+@Changed the Read/Write interfaces to use Fs_IOParam and Fs_IOReply
+@
+text
+@d25 1
+a25 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsOpTable.h,v 8.2 89/02/28 14:52:14 brent Exp Locker: brent $ SPRITE (Berkeley)
+d357 1
+a357 1
+#endif _FSOPTABLE
+@
+
+
+8.2
+log
+@Fixed comments
+@
+text
+@d25 1
+a25 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsOpTable.h,v 8.1 89/01/30 09:22:49 brent Exp Locker: brent $ SPRITE (Berkeley)
+d160 4
+a163 7
+     *	FooRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
+     *	FooWrite(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
+     *		Fs_Stream	*streamPtr;	( !Only use ioHandlePtr! )
+     *		int		flags;		(from the stream)
+     *		Address		buffer;		(Target for data)
+     *		int		*offsetPtr;	(Byte offset In/Out)
+     *		int		*lenPtr;	(Byte count In/Out)
+d165 1
+@
+
+
+8.1
+log
+@Changed scavenge routine to a Boolean
+@
+text
+@d25 1
+a25 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsOpTable.h,v 7.0 88/11/07 14:47:44 brent Exp $ SPRITE (Berkeley)
+a137 1
+     *  BRENT - why can't nameFileID be set by the server?
+d139 1
+a139 1
+     *	FooCltOpen(fileIDPtr, flagsPtr, clientID, data, hdrPtrPtr)
+d144 1
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d25 1
+a25 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsOpTable.h,v 7.0 88/11/07 14:47:44 brent Exp Locker: douglis $ SPRITE (Berkeley)
+d330 1
+a330 1
+     *		unlock the handle it is passed.
+d352 1
+a352 1
+    void	 (*scavenge)();
+@
+
+
+7.0
+log
+@New version for conversion to new C library
+@
+text
+@d25 1
+a25 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsOpTable.h,v 6.7 88/10/19 11:07:19 brent Exp Locker: brent $ SPRITE (Berkeley)
+@
+
+
+6.7
+log
+@Changed migStart to release.  Migration is being restructured slightly
+to handle close/migrate races on shared streams.
+@
+text
+@d25 1
+a25 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsOpTable.h,v 6.6 88/10/14 12:16:42 brent Exp Locker: brent $ SPRITE (Berkeley)
+@
+
+
+6.6
+log
+@FsFileID FsUserID change
+@
+text
+@d25 1
+a25 1
+ * $Header: fsOpTable.h,v 6.5 88/10/05 12:07:26 brent Exp $ SPRITE (Berkeley)
+d239 4
+a242 6
+     *  The 'migStart' is called from Fs_EncapStream to save additional state
+     *		and to do additional book-keeping.  Important:  references on
+     *		the I/O handle should only be released if the FS_RMT_SHARED
+     *		flag is not present.  Otherwise there is still an instance
+     *		of the stream on the local host which references the I/O handle,
+     *		and eventually it will be closed to release the references.
+d258 1
+a258 1
+     *	FooMigStart(hdrPtr, flags, clientID, data)
+a260 2
+     *		int		clientID;		(Who is migrating)
+     *		ClientData	data;			(Buf. for mig. data)
+d262 1
+a262 1
+     *		FsMigINfo	migInfoPtr;		(Migration state)
+d274 1
+a274 1
+    ReturnStatus (*migStart)();
+@
+
+
+6.5
+log
+@Added domainTypePtr parameter to the clientVerify routine
+@
+text
+@d25 1
+a25 1
+ * $Header: fsOpTable.h,v 6.4 88/10/04 09:13:35 brent Exp $ SPRITE (Berkeley)
+d97 1
+a97 1
+     *		FsFileID		ioFileIDPtr;	(Returned to client)
+d100 1
+a100 1
+     *		FsFileID		streamIDPtr;	(Returned to client,)
+d141 1
+a141 1
+     *		FsFileID	*fileIDPtr;	(indicates file)
+d213 1
+a213 1
+     *		FsFileID		*fileIDPtr;	(Identfies file)
+d231 1
+a231 1
+     *		FsFileID	*fileIDPtr;		(Client's handle)
+@
+
+
+6.4
+log
+@Went from a DomainPrefix operation to DomainImport/DomainExport
+@
+text
+@d25 1
+a25 1
+ * $Header: fsOpTable.h,v 6.3 88/09/16 14:20:45 brent Exp $ SPRITE (Berkeley)
+d226 2
+a227 1
+     *  client is recorded in the clientList of the I/O handle.
+d230 1
+a230 1
+     *	FooClientVerify(fileIDPtr, clientID)
+d233 1
+@
+
+
+6.3
+log
+@Added processID to close procedures
+@
+text
+@d25 1
+a25 1
+ * $Header: fsOpTable.h,v 6.2 88/09/13 11:27:36 brent Exp $ SPRITE (Berkeley)
+d60 11
+a70 10
+#define	FS_DOMAIN_PREFIX		0
+#define	FS_DOMAIN_OPEN			1
+#define	FS_DOMAIN_GET_ATTR		2
+#define	FS_DOMAIN_SET_ATTR		3
+#define	FS_DOMAIN_MAKE_DEVICE		4
+#define	FS_DOMAIN_MAKE_DIR		5
+#define	FS_DOMAIN_REMOVE		6
+#define	FS_DOMAIN_REMOVE_DIR		7
+#define	FS_DOMAIN_RENAME		8
+#define	FS_DOMAIN_HARD_LINK		9
+d72 1
+a72 1
+#define	FS_NUM_NAME_OPS			10
+@
+
+
+6.2
+log
+@Added byte swapping code to IOControls
+@
+text
+@d25 1
+a25 1
+ * $Header: fsOpTable.h,v 6.1 88/08/30 13:16:41 brent Exp $ SPRITE (Berkeley)
+d345 1
+a345 1
+     *	FooClose(hdrPtr, clientID, flags, size, data)
+d347 2
+a348 1
+     *		int		clientID;		(Client doing the close)
+@
+
+
+6.1
+log
+@Nuked the old UNIX_DOMAIN and added the upcomming PSEUDO_DOMAIN
+@
+text
+@d25 1
+a25 1
+ * $Header: fsOpTable.h,v 6.0 88/08/11 12:16:59 brent Stable $ SPRITE (Berkeley)
+d176 1
+a176 1
+     *	FooIOControl(hdrPtr, command, inBufSize, inBuf, outBufSize, outBuf)
+d179 1
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d25 1
+a25 1
+ * $Header: fsOpTable.h,v 1.1 88/04/04 10:37:06 brent Exp $ SPRITE (Berkeley)
+d36 2
+a37 1
+ *	FS_REMOTE_UNIX_DOMAIN	The file is stored on a Unix server.
+d44 1
+a44 1
+#define FS_REMOTE_UNIX_DOMAIN		2
+d139 1
+a139 1
+     *	FooCltOpen(fileIDPtr, flagsPtr, clientID, data, nameInfoPtr, hdrPtrPtr)
+a143 1
+     *		FsNameInfo	*nameInfoPtr;	(fill in fileID part) XXX
+d210 1
+a210 1
+     *	FooSetIOAttr(fileIDPtr, attrPtr)
+d214 1
+d266 1
+a266 1
+     *	FooSrvMigrate(migInfoPtr, dstClientID, flagsPtr, sizePtr, dataPtr)
+d270 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d25 1
+a25 1
+ * $Header: fsOpTable.h,v 5.1 87/09/07 14:24:01 nelson Exp $ SPRITE (Berkeley)
+@

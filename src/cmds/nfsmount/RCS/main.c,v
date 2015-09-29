@@ -1,0 +1,492 @@
+head     1.11;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.11
+date     91.10.20.12.37.45;  author mottsmth;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     91.03.23.18.34.06;  author mottsmth;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     91.03.23.18.30.03;  author mottsmth;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     91.03.23.18.24.45;  author mottsmth;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     90.01.25.17.19.06;  author brent;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.06.16.08.50.31;  author brent;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.02.02.15.02.43;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.12.22.13.24.27;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.11.14.15.12.34;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.11.11.11.32.51;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.11.02.12.42.40;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Main program for NFS to Sprite gateway
+@
+
+
+1.11
+log
+@Add remote mount points to support the mounting
+of one NFS filesystem within another.
+@
+text
+@/*
+ * NFS pseudo-filesystem server.
+ *
+ * This program is for a server process that acts as a gateway between
+ * a Sprite pseudo-filesystem and a remote NFS server.  This allows a
+ * NFS filesystem to be transparenty integrated into the Sprite distributed
+ * filesystem.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/cmds/nfsmount/RCS/main.c,v 1.10 91/03/23 18:34:06 mottsmth Exp Locker: mottsmth $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "stdio.h"
+#include "option.h"
+#include "errno.h"
+#include "nfs.h"
+#include "strings.h"
+#include <syslog.h>
+
+char myhostname[1024];
+
+/*
+ * Command line options.
+ */
+char *prefix = "/nfs";
+char *host = "ginger.Berkeley.EDU";
+char *rfs = "/sprite";
+static int trace;
+int nfs_PdevWriteBehind = 1;
+
+Option optionArray[] = {
+	{OPT_DOC, "", (Address)NIL, "nfssrv [-t] rhost:/path /prefix"},
+	{OPT_DOC, "", (Address)NIL, "(or use -p, -h, -r flags)"},
+	{OPT_STRING, "p", (Address)&prefix,
+		"Sprite prefix"},
+	{OPT_STRING, "h", (Address)&host,
+		"NFS host"},
+	{OPT_STRING, "r", (Address)&rfs,
+		"Remote filesystem name"},
+	{OPT_FALSE, "sync", (Address)&nfs_PdevWriteBehind,
+		"Disable write-behind"},
+	{OPT_TRUE, "t", (Address)&trace,
+		"Turn on tracing"},
+	{OPT_GENFUNC, "m", (Address)NfsRecordMountPointProc,
+		"NFS sub-mount point"},
+};
+int numOptions = sizeof(optionArray) / sizeof(Option);
+
+struct timeval nfsTimeout = { 25, 0 };
+
+void DoOpt();
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	Main program for NFS pseudo-filesystem server.  First the NFS
+ *	system is mounted, and then the pseudo-filesystem is established.
+ *	Lastly we drop into an Fs_Dispatch loop to handle pfs requests
+ *	comming from the Sprite kernel.
+ * 
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Opens the pseudo-filesystem.
+ *
+ *----------------------------------------------------------------------
+ */
+
+main(argc, argv)
+    int argc;
+    char *argv[];
+{
+    NfsState *nfsPtr;
+    attrstat nfsAttr;
+    Fs_Attributes spriteAttr;
+    Fs_FileID rootID;
+
+    argc = Opt_Parse(argc, argv, optionArray, numOptions, OPT_ALLOW_CLUSTERING);
+
+    while (argc > 1) {
+	/*
+	 * Look for "host:name [prefix]"
+	 */
+	register char *colonPtr = index(argv[1], ':');
+	if (colonPtr != (char *)0) {
+	    host = argv[1];
+	    *colonPtr = '\0';
+	    rfs = colonPtr + 1;
+	    argc--;
+	    argv++;
+	} else {
+	    prefix = argv[1];
+	    argc--;
+	    argv++;
+	}
+    }
+
+    gethostname(myhostname, sizeof(myhostname));
+
+    nfsPtr = (NfsState *)malloc(sizeof(NfsState));
+    nfsPtr->host = host;
+    nfsPtr->prefix = prefix;
+    nfsPtr->nfsName = rfs;
+
+    nfsPtr->mountClnt = Nfs_MountInitClient(host);
+    if (nfsPtr->mountClnt == (CLIENT *)NULL) {
+	exit(1);
+    }
+    nfsPtr->nfsClnt = Nfs_InitClient(host);
+    if (nfsPtr->nfsClnt == (CLIENT *)NULL) {
+	exit(1);
+    }
+
+    nfsPtr->mountHandle = Nfs_Mount(nfsPtr->mountClnt, nfsPtr->nfsName);
+    if (nfsPtr->mountHandle == (nfs_fh *)NULL) {
+	exit(1);
+    }
+
+    /*
+     * Test NFS access by getting the attributes of the root.  This is
+     * needed in order to set the rootID properly so it matches any
+     * future stat() calls by clients.
+     */
+    if (!NfsProbe(nfsPtr, trace, &nfsAttr)) {
+	Nfs_Unmount(nfsPtr->mountClnt, rfs);
+	exit(1);
+    }
+    NfsToSpriteAttr(&nfsAttr.attrstat_u.attributes, &spriteAttr);
+    rootID.serverID = spriteAttr.serverID;
+    rootID.type = TYPE_ROOT;
+    rootID.major = spriteAttr.domain;
+    rootID.minor = spriteAttr.fileNumber;
+    /*
+     * Set ourselves up as the server of the pseudo-file-system.  We'll
+     * see requests via the call-backs in nfsNameService.
+     */
+    if (trace) {
+	printf("RootID <%d,%d,%d,%d>\n", rootID.serverID, rootID.type,
+		    rootID.major, rootID.minor);
+    }
+    nfsPtr->pfsToken = Pfs_Open(prefix, &rootID, &nfsNameService,
+	(ClientData)nfsPtr);
+    if (nfsPtr->pfsToken == (Pfs_Token)NULL)  {
+	if (trace) {
+            printf("%s\n", pfs_ErrorMsg);
+	}
+        syslog(LOG_ERR, "nfsmount: %s", pfs_ErrorMsg);
+	Nfs_Unmount(nfsPtr->mountClnt, rfs);
+	exit(1);
+    }
+
+    if (trace) {
+	pdev_Trace = pfs_Trace = trace;
+	printf("NFS (traced): ");
+    } else {
+	printf("NFS: ");
+    }
+    printf("%s => %s:%s\n", prefix, host, rfs);
+
+    if (!trace) {
+	Proc_Detach(0);
+    }
+
+    while (1) {
+	Fs_Dispatch();
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * BadProc --
+ *
+ *	Called by accident.
+ * 
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Enter the debugger.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+BadProc()
+{
+    panic("Bad callback\n");
+}
+
+
+@
+
+
+1.10
+log
+@typo
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/cmds/nfsmount/RCS/main.c,v 1.9 91/03/23 18:30:03 mottsmth Exp Locker: mottsmth $ SPRITE (Berkeley)";
+d53 2
+@
+
+
+1.9
+log
+@*** empty log message ***
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/cmds/nfsmount/RCS/main.c,v 1.8 91/03/23 18:24:45 mottsmth Exp Locker: mottsmth $ SPRITE (Berkeley)";
+d157 1
+@
+
+
+1.8
+log
+@Added message in the event that Pfs_Open fails.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/cmds/nfsmount/RCS/main.c,v 1.7 90/01/25 17:19:06 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+1.7
+log
+@Added -sync flag to disable write-behind
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /a/newcmds/nfsmount/RCS/main.c,v 1.6 89/06/16 08:50:31 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d27 1
+d155 3
+@
+
+
+1.6
+log
+@Fixed call to Pdev_Open so a good value of the rootID iss
+givento the kernel.
+./
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /a/newcmds/nfsmount/RCS/main.c,v 1.5 89/02/02 15:02:43 brent Exp $ SPRITE (Berkeley)";
+d37 1
+d48 2
+@
+
+
+1.5
+log
+@Fixed tracing variable
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /a/newcmds/nfsmount/RCS/main.c,v 1.4 88/12/22 13:24:27 brent Exp $ SPRITE (Berkeley)";
+d81 2
+d126 22
+a147 1
+    bzero((char *)&rootID, sizeof(rootID));
+@
+
+
+1.4
+log
+@Added OPT_DOC help lines
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /a/newcmds/nfssrv/RCS/main.c,v 1.3 88/11/14 15:12:34 brent Exp $ SPRITE (Berkeley)";
+d36 1
+d47 1
+a47 1
+	{OPT_TRUE, "t", (Address)&pdevTrace,
+d81 1
+a81 1
+    ClientData pfsToken;
+a83 1
+    DoOpt(argc, argv);
+d124 4
+a127 2
+    pfsToken = Pfs_Open(prefix, (ClientData)nfsPtr, nfsNameService);
+    if (pfsToken == (ClientData)NULL)  {
+d132 2
+a133 1
+    if (pdevTrace) {
+d140 1
+a140 1
+    if (!pdevTrace) {
+a146 21
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DoOpt --
+ *
+ *	Called from main to take action according to command line arguments.
+ * 
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Turns off tracing, etc.
+ *
+ *----------------------------------------------------------------------
+ */
+void DoOpt(argc, argv)
+    int argc;
+    char *argv[];
+{
+@
+
+
+1.3
+log
+@Added call to Proc_Detach()
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /a/newcmds/nfssrv/RCS/main.c,v 1.2 88/11/11 11:32:51 brent Exp $ SPRITE (Berkeley)";
+d38 2
+@
+
+
+1.2
+log
+@Last nfstest version
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/users/brent/nfstest/RCS/main.c,v 1.1 88/11/02 12:42:40 brent Exp $ SPRITE (Berkeley)";
+d28 2
+a35 2
+char *fileName = "users/brent";
+char *spriteName = "/etc/passwd";
+a36 5
+Boolean lookup		= FALSE;
+Boolean cat		= FALSE;
+Boolean writeTest	= FALSE;
+Boolean serveIt		= FALSE;
+
+a43 12
+	{OPT_STRING, "f", (Address)&fileName,
+		"Name relative to remote filesystem root"},
+	{OPT_STRING, "s", (Address)&spriteName,
+		"Name of Sprite file (for -W)"},
+	{OPT_TRUE, "S", (Address)&serveIt,
+		"Service a pseudo-filesystem"},
+	{OPT_TRUE, "L", (Address)&lookup,
+		"Do lookup test"},
+	{OPT_TRUE, "R", (Address)&cat,
+		"Do read test"},
+	{OPT_TRUE, "W", (Address)&writeTest,
+		"Do write test"},
+d101 2
+a121 21
+
+    if (!(serveIt | lookup | cat | writeTest)) {
+	NfsProbe(nfsPtr);
+	lookup = TRUE;
+    }
+    if (writeTest) {
+	NfsWriteTest(nfsPtr, spriteName, fileName);
+    }
+    if (lookup) {
+	NfsLookupTest(nfsPtr, fileName);
+    }
+    if (cat) {
+	NfsReadTest(nfsPtr, fileName);
+    }
+
+    if (!serveIt) {
+	Nfs_Unmount(nfsPtr->mountClnt, rfs);
+	printf("\nquitting\n");
+	exit(1);
+    }
+
+d134 4
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: fsPfs.c,v 6.0 88/10/11 15:52:49 brent Exp $ SPRITE (Berkeley)";
+d26 1
+d99 18
+@

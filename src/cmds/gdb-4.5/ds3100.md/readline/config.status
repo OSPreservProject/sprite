@@ -1,0 +1,5 @@
+#!/bin/sh
+# This file was generated automatically by configure.  Do not edit.
+# /sprite/src/cmds/gdb-4.5/ds3100.md/readline was configured as follows:
+../configure decstation -target=decstation -norecursion 
+# 

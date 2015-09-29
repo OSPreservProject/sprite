@@ -1,0 +1,524 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     89.04.06.08.24.45;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Pseudo-file-system library package
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@' $Header: /sprite/src/lib/c/etc/RCS/Pdev_Open.man,v 1.1 88/12/30 14:34:45 ouster Exp Locker: brent $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS Pfs lib
+.BS
+.SH NAME
+Pfs_Open, Pfs_OpenConnection, Pfs_SetHandler, Pfs_PassFile, Pfs_Close \- Package for servicing pseudo-file-systems.
+.SH SYNOPSIS
+\fB#include <pdev.h>\fR
+.sp
+Pfs_Token
+.br
+\fBPfs_Open\fR(\fIprefix, rootIDPtr, pfsService, clientData\fR)
+.br
+Pdev_Stream *
+.br
+\fBPfs_OpenConnection\fR(\fIpfsToken, fileIDPtr, reqBufSize, readBufSize, readBuf, selectBits, pdevService\fR)
+.br
+int (*
+.br
+\fBPfs_SetHandler\fR(\fIpfsToken, operation, handler\fP))()
+.br
+int
+.br
+\fBPfs_PassFile\fR(\fIpfsToken, streamID\fP)
+.br
+void
+.br
+\fBPfs_Close\fR(\fIpfsToken\fP)
+.SH ARGUMENTS
+.AS Pfs_CallBacks pdevService
+.AP char *prefix in
+File name prefix of the pseudo-file-system.
+.AP Fs_FileID *rootIDPtr in
+The server-defined ID of the root.
+.AP Pfs_CallBacks *pfsService in
+Set of name service call-back procedures.
+.AP ClientData clientData in
+User-defined data passed to service call-backs.
+.AP Pfs_Token pfsToken in
+Return value of \fBPfs_Open\fP.
+.AP Fs_FileID *fileIDPtr in
+Server's identifier for file in pseudo-file-system.
+.AP int reqBufSize in
+Preferred size for the request buffer.
+.AP int readBufSize in
+Size of read buffer.  Zero means no read buffering.
+.AP char *readBuf in
+Optional read buffer, or NULL.
+.AP int selectBits in
+\fBFS_READABLE\fR, \fBFS_WRITABLE\fR, \fBFS_EXCEPTION\fR
+.AP Pdev_CallBacks *pdevService in
+Set of pseudo-device service call-back procedures.
+.AP int streamID in
+A regular open file descriptor returned from \fBopen\fP.
+.BE
+.SH Pfs_Open
+.ta 1.0i 3.0i 3.5i
+.LP
+\fBPfs_Open\fR declares a server process for a pseudo-file-system
+and installs a set of service procedures for it.
+The service procedures are called when client processes
+do file naming operations on the pseudo-file-system,
+i.e. \fBopen\fR, \fBstat\fR, \fBunlink\fR, \fBmkdir\fR, \fBrmdir\fR, \fBrename\fR, and \fBlink\fR.
+As a side effect of opening a file in the pseudo-file-system the
+server can set up a pseudo-device connection for the open file.
+Thus the server can completely implement file system
+access to the pseudo-file-system.
+.PP
+The \fIprefix\fP argument indicates what part of the global file system
+hierarchy is controlled by the pseudo-file-system server.
+This prefix can be arbitrarily nested in the hierarchy
+but there must be a remote link that corresponds to it.
+(The command \fBln -r \fIprefix\fR creates a remote link for the prefix.)
+The existence of the remote link ensures that the kernel's lookup
+algorithm will automatically find the pseudo-file-system server.
+The pseudo-file-system is visible across the network as well.
+.PP
+The \fIrootIDPtr\fP defines the file ID for the root of the pseudo-file-system.
+This ID will be presented as the \fBprefixID\fP for pathnames that begin
+at the root (prefix) of the pseudo-file-system.  The file ID has the following
+format.  The server can define the file ID to fit its own needs.
+However, the special type value of -1 is reserved to indicate an
+invalid file ID.
+.DS
+typedef struct {
+    int type;
+    int serverID;
+    int major;
+    int minor;
+} Fs_FileID;
+.DE
+.LP
+The \fIpfsService\fP procedures are described in detail below.
+The \fIclientData\fP argument is passed to all the naming service
+procedures.  It is ordinarily used to get
+to the state of the pseudo-file-system.
+.LP
+The return value of \fBPfs_Open\fR is a token for the pseudo-file-system,
+which must be used in calls to \fBPfs_OpenConnection\fR,
+\fBPfs_PassFile\fP,
+\fBPfs_SetHandler\fR, and \fBPfs_Close\fP.
+If a pseudo-file-system couldn't be opened, then NULL is
+returned and \fBpfs_ErrorMsg\fR contains a string
+describing the problem.
+.LP
+The Pfs package uses the facilities of \fBFs_Dispatch\fR in order to keep
+track of the streams associated with the pseudo-file-system and ensure
+that Pfs is notified whenever those streams become readable.  In order
+to use Pfs, you must also use \fBFs_Dispatch\fR.
+.SH Pfs_OpenConnection
+.PP
+\fBPfs_OpenConnection\fP is used to create open file connections
+to the pseudo-file-system indicated by \fIpfsToken\fP.
+Open file connections can only be made during an \fBopen\fP call-back.
+The open file connection is the same as a connection to a pseudo-device
+with the addition of two new requests to handle
+\fBfstat\fR, \fBfchmod\fR, and \fBfchown\fR.
+The details of using the pseudo-device call-backs are given
+in the \fBPdev\fP man page.
+.PP
+The \fIfileIDPtr\fP is a server-defined identifier for the open file.
+The server can set the file ID fields to any values that make sense to it.
+However, by convention a type of -1 indicates an invalid fileID.
+This special case may occur when handling the \fBrename\fP and
+\fBhardLink\fP call-backs.
+Note that the file IDs for directories in the pseudo-file-system
+may be presented back to the server as a \fBprefixID\fP
+that indicates the starting point of the lookup operation.
+Thus a process can have a current directory inside the pseudo-file-system
+and name files relative to that directory.
+.PP
+The \fIpdevService\fP parameter is a set of pseudo-device call-backs.
+The use of these call-backs is described in detail in the \fBPdev\fP man page.
+.PP
+The \fIreqBufSize\fP parameter indicates the preferred size of the
+request buffer associated with the pseudo-device connection.  This size
+determines how many requests can be bufferred before the kernel has to
+wait on the server.  A minimum size is enforced by the library, so
+zero can be passed to get the default size (about 1 Kbyte).
+.PP
+The \fIreadBufSize\fP and \fIreadBuf\fP parameters indicate the size
+and location of an optional read buffer.
+No buffering is indicated by a zero read buffer size.
+See the library \fBPdev\fP and device \fPpdev\fP man pages for more details
+on using a read buffer.
+.SH Pfs_PassFile
+.PP
+\fBPfs_PassFile\fP is used to pass the open file descriptor of
+a regular file back to a client in response to an open request.
+If this is done then the pseudo-file-system server sees no further
+requests concerning this open file;  the file is handled in
+the regular way the by kernel.
+.PP
+\fBPfs_PassFile\fP exists, but the kernel doesn't support it, yet.
+.SH Pfs_Close
+.PP
+\fBPfs_Close\fP is used to end pseudo-file-system service.
+This closes the naming stream to the kernel and frees up any
+dynamically allocated storage.  After this call \fIpfsToken\fP
+should not be used.
+.PP
+\fBPfs_PassFile\fP exists, but the kernel doesn't support it, yet.
+.SH NAME SERVICE PROCEDURES
+.ta 2.0i
+.pp
+The callbacks are given to \fBPfs_Open\fP as a record
+of procedures:
+.DS
+typedef struct {
+    int (*open)();	/* PFS_OPEN */
+    int (*getAttr)();	/* PFS_GET_ATTR */
+    int (*setAttr)();	/* PFS_SET_ATTR */
+    int (*makeDevice)();	/* PFS_MAKE_DEVICE */
+    int (*makeDir)();	/* PFS_MAKE_DIR */
+    int (*remove)();	/* PFS_REMOVE */
+    int (*removeDir)();	/* PFS_REMOVE_DIR */
+    int (*rename)();	/* PFS_RENAME */
+    int (*hardLink)();	/* PFS_HARD_LINK */
+    int (*symLink)();	/* PFS_SYM_LINK */
+} Pfs_CallBacks;
+.DE
+.PP
+Any of the elements can
+be NULL to indicate that the operation should be handled by
+a default handler that is a no-op procedure that returns
+a file-not-found error.
+The \fIservice\fP parameter to \fBPfs_Open\fP
+itself can also be NULL to indicate default
+handling for all operations.  This is only useful during initial test.
+The global variable \fBpfs_Trace\fP can be set to a non-zero value
+to generate printfs to stderr when
+each service procedure (default or user-supplied) is invoked.
+.PP
+All the name service procedures have
+a similar calling sequence that includes a relative pathname,
+a record containing input parameters,
+and a buffer for \fIpathname redirection\fP.
+(The \fBrename\fP and \fBhardlink\fP procedures have slighly different
+calling sequences because they handle two pathnames.)
+The pathname is relative to a prefix indicated
+by a \fIprefixID\fR in the input parameters.
+This ID is either for the root as defined by
+the \fIrootIDPtr\fP argument to \fBPfs_Open\fP,
+or for some directory who's ID was defined by \fBPfs_OpenConnection\fP
+when the directory was entered by a client process.
+.LP
+The service procedures should return 0 to mean success,
+otherwise they should return a suitable errno value.
+There are no other return results.  Open file connections are
+created as a side effect using \fBPfs_OpenConnection\fP.
+.LP
+It is possible that the pathname may leave the pseudo-file-system
+during any lookup operation.
+This happens with remote links, symbolic links back to the root,
+or with enough ``..'' components to take the pathname out the
+top of the pseudo-file-system.  In this case the pseudo-file-system
+server should return the remaining, or new, pathname instead of
+attempting to follow it itself.  The return code \fBEREMOTE\fR is
+used to indicate this situation, and the \fIredirectPtr\fP argument is
+used to return the new name:
+.DS
+typedef struct FsRedirectInfo {
+    int	prefixLength;
+    char fileName[FS_MAX_PATH_NAME_LENGTH];
+} FsRedirectInfo;
+.DE
+.PP
+If the lookup hits a symbolic link to the root the server should
+expand the link and return the new absolute pathname in this buffer.
+A remote link is like a symbolic link, except it indicates a nested
+prefix and its contents are the prefix itself.  Expanding it will
+result in a new absolute pathname.
+The length of the prefix that is embedded in the absolute path
+should be returned in the \fBprefixLength\fP
+field.  With regular symbolic links this field should be zero.
+If the server hits a ``..'' component that leaves its root it should
+place the remaining pathname, including the offending ``..'' component,
+into the buffer.  The prefix length is again zero in this case.
+.SH open
+.ta 2.5i
+.DS
+int
+(*service->open)(clientData, name, openArgsPtr, redirectPtr)
+    ClientData clientData;	/* Passed into Pfs_Open */
+    char *name;	/* Relative pathname */
+    Fs_OpenArgs *openArgsPtr;	/* Identifies prefix and caller */
+    FsRedirectInfo *redirectPtr;	/* Return - new pathname and prefix info if
+	* name leaves the pseudo-file-system */
+.DE
+.LP
+The open service procedure is invoked in response to an \fBopen\fR system call
+by a client process.  The \fIclientData\fP argument is the
+value passed into \fBPfs_Open\fR and is generally used to get back to
+the state kept for the pseudo-file-system.
+The \fIname\fP is a relative pathname that begins at the prefix
+indicated by \fI*openArgsPtr\fP.  The \fBFsOpenArgs\fP structure
+identifies the root of the pseudo-file-system, the
+prefix or starting directory of the pathname,
+and the identity of the calling process:
+.DS
+typedef struct {
+    Fs_FileID prefixID;	/* File ID from prefix handle */
+    Fs_FileID rootID;	/* File ID of root. */
+    int useFlags;	/* Flags defined in fs.h */
+    int permissions;	/* Permission bits for created files.  Already
+	 * reflects per-process permission mask */
+    int type;	/* Used to contrain open to a specific type */
+    int clientID;	/* Host ID of client doing the open */
+    Fs_UserIDs id;	/* User and group IDs */
+} FsOpenArgs;
+.DE
+.LP
+The \fBprefixID\fR is either the fileID of the root of the pseudo-file-system,
+or the fileID of some directory in the pseudo-file-system that
+has been previously opened.
+The \fBuseFlags\fP is an or'd combination of flags defined in
+<fs.h> that include \fBFS_READ\fR, \fBFS_WRITE\fR, and \fBFS_EXECUTE\fR.
+The \fBpermissions\fR define the file mode when creating a file.
+File creation is indicated by the \fBFS_CREATE\fR usage flag.
+.PP
+The \fBtype\fR is used to constrain the open to a particular kind of file.
+Possible values are \fBFS_FILE\fR, which means any type will do,
+\fBFS_DIRECTORY\fR when changing the current directory,
+and \fBFS_SYMBOLIC_LINK\fR when reading links.
+.PP
+IMPORTANT:  \fBPfs_OpenConnection\fR and
+\fBPfs_PassFile\fR can only be called during the servicing of
+an open request.  If they are called (successfully) by the open call-back
+it must return 0, never a non-zero error status.
+.SH getAttr
+.ta 2.5i
+.DS
+int
+(*service->getAttr)(clientData, name, openArgsPtr, attrPtr, redirectInfoPtr)
+    ClientData clientData;	/* Passed into Pfs_Open */
+    char *name;	/* Relative pathname */
+    FsOpenArgs *openArgsPtr;	/* Bundled arguments */
+    Fs_Attributes *attrPtr;	/* Return - attributes of the file */
+    FsRedirectInfo *redirectInfoPtr;	/* Used when name leaves our domain */
+.DE
+.PP
+This call-back is made to get the attributes of a file in the pseudo-file-system
+given its pathname.  The arguments are similar to those of the \fBopen\fR
+call-back.  The \fIattrPtr\fP argument is used to return the attributes.
+.SH setAttr
+.ta 0.5i 2.5i
+.DS
+int
+(*service->setAttr)(clientData, name, openArgsPtr, flags, attrPtr,
+	redirectInfoPtr)
+    ClientData clientData;	/* Passed into Pfs_Open */
+    char *name;	/* Relative pathname */
+    FsOpenArgs *openArgsPtr;	/* Bundled arguments */
+    int flags;	/* Specifies which attrs to set */
+    Fs_Attributes *attrPtr;	/* New attributes of the file */
+    FsRedirectInfo *redirectInfoPtr;	/* Used when name leaves our domain */
+.DE
+.PP
+This call-back is made to set certain attributes of a file in
+the pseudo-file-system
+given its pathname.  The arguments are similar to those of the \fBopen\fR
+call-back.  Additionally, the \fIflags\fP argument indicates which attributes
+are to be set, and the \fIattrPtr\fP argument specifies their new values.
+The \fIflags\fP are an or'd combination of
+\fBFS_SET_TIMES\fR, \fBFS_SET_MODE\fR, \fBFS_SET_OWNER\fR,
+\fBFS_SET_FILE_TYPE\fR, \fBFS_SET_DEVICE\fR.
+.SH makeDevice
+.ta 2.5i
+.DS
+int
+(*service->makeDevice)(clientData, name, makeDevArgsPtr, redirectInfoPtr)
+    ClientData clientData;	/* Passed into Pfs_Open */
+    char *name;	/* Relative pathname */
+    FsMakeDeviceArgs *makeDevArgsPtr;	/* Bundled arguments */
+    FsRedirectInfo *redirectInfoPtr;	/* Used when name leaves our domain */
+.DE
+.PP
+This call-back is made to create a special device file in the
+pseudo-file-system.  The \fBFsMakeDeviceArgs\fP are similar to the
+\fBFsOpenArgs\fP with some addition information about the device:
+.DS
+typedef struct {
+    Fs_FileID prefixID;	/* FileID of the prefix */
+    Fs_FileID rootID;	/* FileID of the root */
+    Fs_Device device;	/* Device attributes */
+    int permissions;	/* Permissions already reflect per-process mask */
+    Fs_UserIDs id;	/* Identifies calling process */
+    int clientID;	/* Identifies host of calling process */
+} FsMakeDeviceArgs;
+.DE
+.SH makeDir
+.ta 2.5i
+.DS
+int
+(*service->makeDir)(clientData, name, openArgsPtr, redirectInfoPtr)
+    ClientData clientData;	/* Passed into Pfs_Open */
+    char *name;	/* Relative pathname */
+    FsOpenArgs *openArgsPtr;	/* Bundled arguments */
+    FsRedirectInfo *redirectInfoPtr;	/* Used when name leaves our domain */
+.DE
+.PP
+This call-back is made to create a directory.  The arguments are similar
+to those of the \fBopen\fP call-back.
+.SH remove
+.ta 2.5i
+.DS
+int
+(*service->remove)(clientData, name, lookupArgsPtr, redirectInfoPtr)
+    ClientData clientData;	/* Passed into Pfs_Open */
+    char *name;	/* Relative pathname */
+    FsLookupArgs *lookupArgsPtr;	/* Bundled arguments */
+    FsRedirectInfo *redirectInfoPtr;	/* Used when name leaves our domain */
+.DE
+.PP
+This call-back is made to remove a file in the pseudo-file-system.
+\fBFsLookupArgs\fP are a simplified sub-set of \fBFsOpenArgs\fP:
+.DS
+typedef struct {
+    Fs_FileID prefixID;	/* FileID of the prefix */
+    Fs_FileID rootID;	/* FileID of the root */
+    int useFlags;	/* not used */
+    Fs_UserIDs id;	/* User and group IDs of calling process */
+    int clientID;	/* Host ID of calling process */
+} FsLookupArgs;
+.DE
+.SH removeDir
+.ta 2.5i
+.DS
+int
+(*service->removeDir)(clientData, name, lookupArgsPtr, redirectInfoPtr)
+    ClientData clientData;	/* Passed into Pfs_Open */
+    char *name;	/* Relative pathname */
+    FsLookupArgs *lookupArgsPtr;	/* Bundled arguments */
+    FsRedirectInfo *redirectInfoPtr;	/* Used when name leaves our domain */
+.DE
+.PP
+This call-back is made to remove a directory in the pseudo-file-system.
+The server should check against removing non-empty directories.
+The arguments are the same as for \fBremove\fP.
+.SH rename
+.ta .5i 3.0i
+.DS
+int
+(*service->rename)(clientData, srcName, dstName, twoNameArgsPtr,
+	redirect2InfoPtr)
+    ClientData clientData;	/* Passed into Pfs_Open */
+    char *srcName;	/* Original name */
+    char *dstName;	/* New name */
+    Fs2PathParams *twoNameArgsPtr;	/* Lookup args plus prefixID2 */
+    Fs2PathRedirectInfo *redirect2InfoPtr;	/* Used when name leaves our domain */
+.DE
+.PP
+This call-back is made to change the name of a file in the pseudo-file-system.
+The arguments are bundled into the \fBFs2PathParams\fP structure:
+.DS
+typedef struct Fs2PathParams {
+    FsLookupArgs lookup;	/* Regular lookup parameters */
+    Fs_FileID prefixID2;	/* Prefix of second pathname */
+} Fs2PathParams;
+.DE
+.PP
+It is possible that the second pathname is not a part of the pseudo-file-system.
+The Sprite kernel still calls out to the pseudo-file-system in this case
+because the first pathname might be redirected out of the pseudo-file-system.
+If the second prefixID does not belong to the pseudo-file-system
+that is indicated by a \fBtype\fP value of -1.
+If the first pathname remains in the pseudo-file-system but the second
+prefixID is not in the pseudo-file-system
+then the error \fBEXDEV\fR should be returned.
+If either of the pathnames gets redirected, or an error occurs
+during pathname interpretation, the \fBFs2PathRedirectInfo\fP
+structure is used to return more information:
+.DS
+.ta 0.5i 2.0i
+typedef struct {
+    int name1ErrorP;	/* TRUE if redirection or other error applies
+		 * to the first pathname, FALSE if the error
+		 * applies to second pathname, or no error */
+    int prefixLength;	/* The length of the prefix embedded in
+		 * fileName.  This is used when a server hits
+		 * a remote link and has to return a new file
+		 * name plus an indication of a new prefix. */
+    char fileName[FS_MAX_PATH_NAME_LENGTH];
+		/* The new file name.  Returned
+		 * from the server when its lookup is about
+		 * to leave its domain. */
+} Fs2PathRedirectInfo;
+.DE
+.SH hardLink
+.ta .5i 3.0i
+.DS
+int
+(*service->hardLink)(clientData, srcName, dstName, twoNameArgsPtr,
+	redirect2InfoPtr)
+    ClientData clientData;	/* Passed into Pfs_Open */
+    char *srcName;	/* Original name */
+    char *dstName;	/* New name */
+    Fs2PathParams *twoNameArgsPtr;	/* Lookup args plus prefixID2 */
+    Fs2PathRedirectInfo *redirect2InfoPtr;	/* Used when name leaves our domain */
+.DE
+.PP
+This call-back is used to create a hard link between two files in the
+pseudo-file-system.  The arguments are the same as those for \fBrename\fP,
+and the same comments about pathname redirection apply.
+.SH symLink
+.DS
+int
+(*service->symLink)(clientData, linkName, value, openArgsPtr, redirectInfoPtr)
+    ClientData clientData;	/* returned from Pfs_Open */
+    char *linkName;	/* SymLink file name */
+    char *value;	/* Symlink value */
+    FsOpenArgs *openArgsPtr;	/* Open arguments */
+    FsRedirectInfo *redirectInfoPtr;	/* Used when srcName leaves our domain */
+.DE
+.PP
+This call-back is used to create a symbolic link in the
+pseudo-file-system.  The arguments are similar to those for \fBopen\fP,
+except there are two pathnames.
+Pathname redirection is only possible on the \fIlinkName\fR.
+The \fIvalue\fR pathname is simply used as the value of the link regardless
+of its location in the system.
+(This is not currently used.  Symbolic links are created instead by
+opening a file of type FS_SYMBOLIC_LINK and writing the link value
+into it.  This will change, although it currently works in NFS.)
+.PP
+The \fBtype\fP field in the open args is used differentiate between
+a regular symbolic link and a remote link.  A remote link is a circular
+symbolic link with a different file descriptor type than a symbolic
+link.  Remote links are used in native Sprite file systems to indicate
+a nested prefix that is stored elsewhere.  Bumping into a remote link
+causes a pathname redirection just like hitting a symbolic link back
+to the root.  Additionally, however, the redirection information also
+includes the length of the prefix that is embedded into the returned
+pathname.
+.SH SEE ALSO
+pfs (devices), Pdev, Swap_Buffer
+.SH KEYWORDS
+pseudo-file-system
+@

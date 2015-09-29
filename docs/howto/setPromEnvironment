@@ -1,0 +1,40 @@
+This is a short howto (get started, really) about the SparcStation PROM.
+The PROM has a FORTH interpreter in it that has oodles of functions.
+It has a set of environment variables that control things like
+your boot path and other system parameters.
+
+You can abort out of Sprite and enter the PROM, then return to Sprite
+and not loose your system.  Honest.  You might cause your workstation
+to recover with the file servers, but that should work.  Typing:
+
+ L1-a
+
+will abort to the monitor.  Usually the PROM monitor prompt is:
+
+ >
+
+You can type 'b', 'c', or 'n' to this prompt, to
+reboot, continue execution (i.e. return to Sprite), or enter the
+FORTH interpreter, respectively. If you type 'n', you get this prompt:
+
+ ok
+
+There are a zillion commands defined by the FORTH system in the PROM.
+
+ printenv
+
+will dump the environment variables.
+You will probably see that the default boot-from is "le()vmunix"
+You want to change that to "le()sun4c.md/sprite" or perhaps "le()sun4c.md/new"
+You can change it with:
+
+ setenv boot-from le()sun4c.md/sprite
+
+You can now resume Sprite with the "go" command.
+
+ go
+
+If you return to the PROM monitor from Sprite again, you'll go
+right into the FORTH interpreter and get the "ok " prompt in response to L1-a
+
+Type "help" and try it out.

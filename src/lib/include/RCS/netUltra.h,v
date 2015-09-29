@@ -1,0 +1,299 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  sprited:1.4.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     92.08.05.16.34.54;  author jhh;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.11.06.16.51.32;  author jhh;  state Exp;
+branches 1.4.1.1;
+next     1.3;
+
+1.3
+date     90.10.19.15.51.27;  author jhh;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.06.21.12.48.50;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.05.29.15.39.37;  author jhh;  state Exp;
+branches ;
+next     ;
+
+1.4.1.1
+date     91.10.21.22.16.57;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.5
+log
+@added compare and copy routines
+@
+text
+@/*
+ * netUltra.h --
+ *
+ *	Definitions for sending and receiving Ultranet packets.  Packets
+ *	are sent by putting a "Net_UltraHeader" at the start of the packet
+ *	then doing a write() on the Ultranet device.  Packets are read
+ *	by doing a read.
+ *
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/lib/include/RCS/netUltra.h,v 1.4 90/11/06 16:51:32 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+ */
+
+#ifndef _NETULTRA
+#define _NETULTRA
+
+#include "sprite.h"
+#include "machparam.h"
+
+/*
+ * The following macros are used to manipulate an Ultranet address.
+ */
+
+#define Net_UltraAddressSet(addrPtr, group, unit) { 		\
+    ((unsigned char *) (addrPtr))[4] = (group) >> 2; 		\
+    ((unsigned char *) (addrPtr))[5] = ((group) << 6) | (unit); \
+    ((unsigned char *) (addrPtr))[1] = 0x49;			\
+    ((unsigned char *) (addrPtr))[6] = 0xfe;			\
+}
+
+#define Net_UltraAddressGet(addrPtr, groupPtr, unitPtr) { 	\
+    *(groupPtr) = (((unsigned char *) (addrPtr))[4] << 2) | 	\
+		  (((unsigned char *) (addrPtr))[5] >> 6); 	\
+    *(unitPtr) = (((unsigned char *) (addrPtr))[5] & 0x3f); 	\
+}
+
+
+/*
+ * Definition of an Ultranet address.
+ */
+typedef struct Net_UltraAddress {
+    char		data[8];
+} Net_UltraAddress;
+
+#define Net_UltraAddrCmp(a,b) \
+    (!(((a).data[4] == (b).data[4]) && ((a).data[5] == (b).data[5])))
+
+#define Net_UltraAddrCopy(src, dest) ((dest) = (src))
+
+/*
+ * Ultranet Transport Layer Address Format.  This structure is used in
+ * the various request blocks that are sent to the adapter.
+ * Here are a few tips on filling this in.  The "addressSize" is 7.
+ * TSAP stands for "Transport Service Access Point".  The standard
+ * Ultranet software sets the size to 2 and puts the port in the TSAP.
+ * You'll have to follow suit if you want to write to a particular port
+ * on a Unix machine with an Ultranet.  On Sprite: the "localAddress" field of
+ * the header you just set the tsapSize to 2, and zero out the tsap.
+ * For the "remoteAddress" you should set the tsapSize to 2, and tsap[0] 
+ * and tsap[1] to something either than {0,0} and {0xff, 0xff}.
+ * Use the above macros to set the "address" field.
+ */
+
+#define NET_ULTRA_ADDR_SIZE		7 /* Value for "addressSize". */
+#define NET_ULTRA_TSAP_SIZE		4 /* Size of the TSAP. */
+
+typedef struct Net_UltraTLAddress {
+    unsigned char	addressSize;	/* Size of the address field. */
+    unsigned char	tsapSize;	/* NET_ULTRA_TSAP_SIZE */
+    unsigned char	tsap[4];	/* The TSAP, whatever that is. */
+    Net_UltraAddress	address;	/* The network address. */
+    char		pad[2];		/* Pad this out to 16 bytes. */
+} Net_UltraTLAddress;
+
+/*
+ * A "wildcard" transport layer address that matches any address. 
+ * This can be used in the "localAddress" field, as well as to initialize
+ * Net_UltraTLAddress structures before filling them in.
+ */
+
+#define Net_UltraTLWildcard(addrPtr) {				\
+    bzero((char *) (addrPtr), sizeof(Net_UltraTLAddress));	\
+    (addrPtr)->addressSize = 7;					\
+    (addrPtr)->tsapSize = 4;					\
+}
+
+/*
+ * Header on ultranet packets. If you want to use any of the fields other
+ * than the remote and local address you should look at the file
+ * "kernel/netUltra.h".  Those fields marked "unused" do not need to be
+ * used to send packets to or receive packets from the net device and must
+ * be set to zero.  Your best bet is to bzero the header before filling
+ * it in.
+ */
+
+typedef struct Net_UltraHeader {
+    unsigned char	cmd;		/* Unused. */
+    unsigned char	status;		/* Unused. */
+    unsigned short	reference;	/* Unused. */
+    int			foo;		/* Unused. */
+    Address		buffer;		/* Unused. */
+    int			size;		/* Unused. */
+    Net_UltraTLAddress	remoteAddress;	/* Address of remote host. */
+    Net_UltraTLAddress	localAddress;	/* Address of local host. */
+    unsigned short	options;	/* Unused. */
+    unsigned short	quality;	/* Unused. */
+    unsigned int	pad3;
+} Net_UltraHeader;
+
+/*
+ * Minimum and maximum Ultranet packet sizes (including the Net_UltraHeader).
+ */
+
+#define NET_ULTRA_MIN_BYTES 	0
+#define NET_ULTRA_MAX_BYTES 	(32768 + sizeof(Net_UltraHeader))
+
+#endif /* _NETULTRA */
+
+@
+
+
+1.4
+log
+@more features
+@
+text
+@d18 1
+a18 1
+ * $Header: /sprite/src/lib/include/RCS/netUltra.h,v 1.3 90/10/19 15:51:27 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+d44 1
+d51 5
+@
+
+
+1.4.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d18 1
+a18 1
+ * $Header: /sprite/src/lib/include/RCS/netUltra.h,v 1.4 90/11/06 16:51:32 jhh Exp $ SPRITE (Berkeley)
+@
+
+
+1.3
+log
+@got rid of bit fields
+@
+text
+@d4 4
+a7 1
+ *	Definitions for the Ultranet.
+d18 1
+a18 1
+ * $Header: /sprite/src/lib/include/RCS/netUltra.h,v 1.2 90/06/21 12:48:50 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+d27 4
+d34 2
+d44 3
+d54 9
+d65 2
+a66 1
+#define NET_ULTRA_TSAP_SIZE		4 /* Size of the mysterious TSAP. */
+d71 1
+a71 1
+    char		tsap[4];	/* The TSAP, whatever that is. */
+d77 12
+d92 3
+a94 1
+ * used to send packets to or receive packets from the net device.
+d112 1
+a112 1
+ * Minimum and maximum Ultranet packet sizes.
+d116 1
+a116 1
+#define NET_ULTRA_MAX_BYTES 	(32768 + sizeof(NetUltraDatagramRequest))
+@
+
+
+1.2
+log
+@initial ultra support
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/netUltra.h,v 1.1 90/05/29 15:39:37 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+d21 1
+d24 4
+a27 1
+#if (BYTE_ORDER == BIG_ENDIAN)
+d29 5
+a33 8
+typedef struct Net_UltraAddress {
+    char		pad1[4];	/* Adjust the following fields to
+					 * where the adapter expects them. */
+    unsigned int	group:10;	/* The adapter group. */
+    unsigned int	unit:6;		/* The unit number. */
+    char		pad2[2];	/* Make it the same size as a 
+					 * Net_Address. */
+} Net_UltraAddress;
+a34 2
+#else
+
+d36 1
+a36 6
+    char		pad1[4];	/* Adjust the following fields to
+					 * where the adapter expects them. */
+    unsigned int	unit:6;		/* The unit number. */
+    unsigned int	group:10;	/* The adapter group. */
+    char		pad2[2];	/* Make it the same size as a 
+					 * Net_Address. */
+a38 2
+#endif
+
+d51 1
+a68 1
+    unsigned short	pad1;
+a69 1
+    unsigned short	pad2;
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.5 90/01/12 12:03:25 douglis Exp $ SPRITE (Berkeley)
+d26 2
+a27 1
+    char		pad[2];		/* Pad this out to a word. */
+d30 2
+d37 2
+d41 2
+a42 1
+    char		pad[2];		/* Pad this out to a word. */
+d48 37
+d89 1
+a89 1
+#define NET_ULTRA_MAX_BYTES 	32768
+@

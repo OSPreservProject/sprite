@@ -1,0 +1,1138 @@
+# DevNet is raw ethernet (e.g., used by ipServer).  Don't bother supporting
+# initially.
+
+DevNetEtherHandler
+	dev/devNet.h
+DevNetHandler
+	dev/devNet.c
+DevNet_FsClose
+	dev/devNet.c
+	dev/devNet.h
+	dev/symm.md/devFsOpTable.c
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+DevNet_FsIOControl
+	dev/devNet.c
+	dev/devNet.h
+	dev/symm.md/devFsOpTable.c
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+DevNet_FsOpen
+	dev/devNet.c
+	dev/devNet.h
+	dev/symm.md/devFsOpTable.c
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+DevNet_FsRead
+	dev/devNet.c
+	dev/devNet.h
+	dev/symm.md/devFsOpTable.c
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+DevNet_FsReopen
+	dev/devNet.c
+	dev/devNet.h
+	dev/symm.md/devFsOpTable.c
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+DevNet_FsSelect
+	dev/devNet.c
+	dev/devNet.h
+	dev/symm.md/devFsOpTable.c
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+DevNet_FsWrite
+	dev/devNet.c
+	dev/devNet.h
+	dev/symm.md/devFsOpTable.c
+	dev/sun3.md/devFsOpTable.c
+	dev/sun4.md/devFsOpTable.c
+	dev/ds3100.md/devFsOpTable.c
+Dev_UltraAdapterInfo		# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+Dev_UltraDiag			# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+Dev_UltraEcho			# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+Dev_UltraExtendedDiag		# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+Dev_UltraGo			# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+Dev_UltraLoad			# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+Dev_UltraLoadBlock		# (ultranet support) keep
+	Include/user/dev/ultra.h
+Dev_UltraSendDgram		# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+Dev_UltraSink			# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+Dev_UltraStats			# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+IOC_NET				# (BSD socket emulation) keep
+	Include/user/dev/net.h
+IOC_NET_ACCEPT_CONN_1		# (BSD socket emulation) keep
+	Include/user/dev/net.h
+	mach/ds5000.md/socket.c
+	mach/ds3100.md/socket.c
+IOC_NET_ACCEPT_CONN_2		# (BSD socket emulation) keep
+	Include/user/dev/net.h
+	mach/ds5000.md/socket.c
+	mach/ds3100.md/socket.c
+IOC_NET_CONNECT			# (BSD socket emulation) keep
+	Include/user/dev/net.h
+	mach/ds5000.md/socket.c
+	mach/ds3100.md/socket.c
+IOC_NET_GET_LOCAL_ADDR		# (BSD socket emulation) keep
+	Include/user/dev/net.h
+	mach/ds5000.md/socket.c
+	mach/ds3100.md/socket.c
+IOC_NET_GET_OPTION		# (BSD socket emulation) keep
+	Include/user/dev/net.h
+	mach/ds5000.md/socket.c
+	mach/ds3100.md/socket.c
+IOC_NET_GET_REMOTE_ADDR		# (BSD socket emulation) keep
+	Include/user/dev/net.h
+	mach/ds5000.md/socket.c
+	mach/ds3100.md/socket.c
+IOC_NET_IS_OOB_DATA_NEXT	# (BSD socket emulation) keep
+	Include/user/dev/net.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+IOC_NET_LISTEN			# (BSD socket emulation) keep
+	Include/user/dev/net.h
+	mach/ds5000.md/socket.c
+	mach/ds3100.md/socket.c
+IOC_NET_RECV_FLAGS		# (BSD socket emulation) keep
+	Include/user/dev/net.h
+	mach/ds5000.md/socket.c
+	mach/ds3100.md/socket.c
+IOC_NET_RECV_FROM		# (BSD socket emulation) keep
+	Include/user/dev/net.h
+	mach/ds5000.md/socket.c
+	mach/ds3100.md/socket.c
+IOC_NET_SEND_INFO		# (BSD socket emulation) keep
+	Include/user/dev/net.h
+	mach/ds5000.md/socket.c
+	mach/ds3100.md/socket.c
+IOC_NET_SET_LOCAL_ADDR		# (BSD socket emulation) keep
+	Include/user/dev/net.h
+	mach/ds5000.md/socket.c
+	mach/ds3100.md/socket.c
+IOC_NET_SET_OPTION		# (BSD socket emulation) keep
+	Include/user/dev/net.h
+	mach/ds5000.md/socket.c
+	mach/ds3100.md/socket.c
+IOC_NET_SET_PROTOCOL		# (BSD socket emulation) keep
+	Include/user/dev/net.h
+	mach/ds5000.md/socket.c
+	mach/ds3100.md/socket.c
+IOC_NET_SHUTDOWN		# (BSD socket emulation) keep
+	Include/user/dev/net.h
+	mach/ds5000.md/socket.c
+	mach/ds3100.md/socket.c
+IOC_NET_STATS			# (BSD socket emulation) keep
+	Include/user/dev/net.h
+IOC_ULTRA			# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+IOC_ULTRA_ADDRESS		# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+IOC_ULTRA_BCOPY_TEST		# (ultranet support) keep
+	Include/user/dev/ultra.h
+IOC_ULTRA_CLEAR_STATS		# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+IOC_ULTRA_CLR			# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+IOC_ULTRA_COLLECT_STATS		# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+IOC_ULTRA_DEBUG			# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+IOC_ULTRA_DIAG			# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+IOC_ULTRA_DUMP			# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+IOC_ULTRA_ECHO			# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+IOC_ULTRA_EXTENDED_DIAG		# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+IOC_ULTRA_GET_ADAP_INFO		# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+IOC_ULTRA_GET_FLAGS		# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+IOC_ULTRA_GET_STATS		# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+IOC_ULTRA_GO			# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+IOC_ULTRA_HARD_RESET		# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+IOC_ULTRA_INIT			# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+IOC_ULTRA_INT			# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+IOC_ULTRA_LOAD			# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+IOC_ULTRA_MAP_THRESHOLD		# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+IOC_ULTRA_RESET			# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+IOC_ULTRA_RESET_FLAGS		# (ultranet support) keep
+	Include/user/dev/ultra.h
+IOC_ULTRA_SEND_DGRAM		# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+IOC_ULTRA_SET_FLAGS		# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+IOC_ULTRA_SG_BCOPY_TEST		# (ultranet support) keep
+	Include/user/dev/ultra.h
+IOC_ULTRA_SINK			# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+IOC_ULTRA_SOURCE		# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+IOC_ULTRA_START			# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+IOC_ULTRA_TRACE			# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+IOC_ULTRA_WFI			# (ultranet support) keep
+	Include/user/dev/ultra.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+NET_ADDRESS_COMPARE		# (network support) keep
+	Include/user/net.h
+	net/netRoute.c
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+NET_ARP_TYPE_ETHER		# (ethernet support) keep
+	Include/user/netEther.h
+NET_BROADCAST_HOSTID		# (network support) keep
+	Include/user/net.h
+	net/netRoute.c
+	net/netArp.c
+	recov/recovery.c
+	rpc/rpc.h
+	rpc/rpcInit.c
+	sig/signals.c
+	sys/rpc.h
+NET_ETHER_ADDR_COPY
+	mach/symm.md/machAutoconf.c
+	net/netRoute.c
+	net/sun3.md/{netIE,netLE}.c
+	net/sun4.md/netIE.c
+	net/netEther.c
+	net/ds3100.md/netLE.c
+	net/netArp.c
+NET_ETHER_ARP			# (ethernet support) keep
+	Include/user/netEther.h
+	dev/devNet.c
+	net/netArp.c
+	net/netCode.c
+NET_ETHER_COMPARE
+	net/netRoute.c
+	net/sun3.md/{netLEXmit,netIEXmit}.c
+	net/sun4.md/netIEXmit.c
+	net/ds3100.md/netLEXmit.c
+	net/symm.md/netSEXmit.c
+NET_ETHER_IP			# (ethernet support) keep
+	Include/user/netEther.h
+	dbg/sun4.md/dbgMain.c
+	dbg/sun3.md/dbgMain.c
+	dbg/ds3100.md/dbgMain.c
+	dbg/ds5000.md/dbgMain.c
+	dev/devNet.c
+	net/netRoute.c
+	net/netArp.c
+	net/netCode.c
+NET_ETHER_MAX_BYTES		# (ethernet support) keep
+	Include/user/netEther.h
+	dbg/sun4.md/dbgMain.c
+	dev/devNet.c
+	net/ds5000.md/netLE.c
+	net/ds5000.md/netLEInt.h
+	net/ds5000.md/netLEXmit.c
+	net/sun3.md/netIE.c
+	net/sun3.md/netLE.c
+	net/sun3.md/netLEXmit.c
+	net/sun3.md/netIEInt.h
+	net/sun3.md/netIEXmit.c
+	net/sun3.md/netLEInt.h
+	net/sun4.md/netIE.c
+	net/sun4.md/netIEInt.h
+	net/sun4.md/netIEXmit.c
+	net/ds3100.md/netLE.c
+	net/ds3100.md/netLEInt.h
+	net/ds3100.md/netLEXmit.c
+	net/symm.md/netSE.c
+	net/symm.md/netSEInt.h
+	net/symm.md/netSEXmit.c
+NET_ETHER_MIN_BYTES		# (ethernet support) keep
+	Include/user/netEther.h
+	net/ds5000.md/netLEXmit.c
+	net/sun3.md/netIE.c
+	net/sun3.md/netLEXmit.c
+	net/sun3.md/netIEXmit.c
+	net/sun4.md/netIE.c
+	net/sun4.md/netIEXmit.c
+	net/ds3100.md/netLEXmit.c
+	net/symm.md/netSEXmit.c
+NET_ETHER_MOP			# (ethernet support) keep
+	Include/user/netEther.h
+	dev/devNet.c
+NET_ETHER_PUP			# (ethernet support) keep
+	Include/user/netEther.h
+NET_ETHER_PUP_ADDR_TRANS	# (ethernet support) keep
+	Include/user/netEther.h
+NET_ETHER_REVARP		# (ethernet support) keep
+	Include/user/netEther.h
+	dev/devNet.c
+	net/netArp.c
+	net/netCode.c
+NET_ETHER_SPRITE		# (ethernet support) keep
+	Include/user/netEther.h
+	net/ds5000.md/netLEXmit.c
+	net/netRoute.c
+	net/sun3.md/netLEXmit.c
+	net/sun3.md/netIEXmit.c
+	net/sun4.md/netIEXmit.c
+	net/ds3100.md/netLEXmit.c
+	net/netArp.c
+	net/netCode.c
+NET_ETHER_SPRITE_ARP		# (ethernet support) keep
+	Include/user/netEther.h
+NET_ETHER_SPRITE_DEBUG		# (ethernet support) keep
+	Include/user/netEther.h
+NET_ETHER_SPRITE_DEBUG
+	dev/devNet.c
+	net/netCode.c
+NET_ETHER_TRAIL			# (ethernet support) keep
+	Include/user/netEther.h
+NET_ETHER_XNS_COMPAT		# (ethernet support) keep
+	Include/user/netEther.h
+NET_ETHER_XNS_IDP		# (ethernet support) keep
+	Include/user/netEther.h
+NET_FLAGS_VALID			# (network support) keep
+	Include/user/net.h
+NET_IFLAGS_BROADCAST
+	net/netRoute.c
+	net/sun3.md/{netIE,netLE}.c
+	net/sun4.md/netIE.c
+	net/ds3100.md/netLE.c
+	net/netTypes.h
+NET_IFLAGS_RUNNING
+	net/netCode.c
+	net/sun3.md/{netIE,netLE}.c
+	net/sun4.md/netIE.c
+	net/ds3100.md/netLE.c
+	net/netTypes.h
+NET_IP_MAX_TTL			# (inet support) keep
+	Include/user/netInet.h
+	dbg/sun4.md/dbgIP.c
+	dbg/sun3.md/dbgIP.c
+	dbg/ds3100.md/dbgIP.c
+	dbg/ds5000.md/dbgIP.c
+	net/netRoute.c
+NET_IP_MORE_FRAGS		# (inet support) keep
+	Include/user/netInet.h
+	dbg/sun4.md/dbgIP.c
+	dbg/sun3.md/dbgIP.c
+	dbg/ds3100.md/dbgIP.c
+	dbg/ds5000.md/dbgIP.c
+	net/netCode.c
+NET_IP_PROTOCOL_EGP		# (inet support) keep
+	Include/user/netInet.h
+	dbg/sun4.md/dbgIP.c
+	dbg/sun3.md/dbgIP.c
+	dbg/ds3100.md/dbgIP.c
+	dbg/ds5000.md/dbgIP.c
+NET_IP_PROTOCOL_ICMP		# (inet support) keep
+	Include/user/netInet.h
+	dbg/sun4.md/dbgIP.c
+	dbg/sun3.md/dbgIP.c
+	dbg/ds3100.md/dbgIP.c
+	dbg/ds3100.md/dbgMain.c
+	dbg/ds5000.md/dbgIP.c
+	dbg/ds5000.md/dbgMain.c
+NET_IP_PROTOCOL_TCP		# (inet support) keep
+	Include/user/netInet.h
+	dbg/sun4.md/dbgIP.c
+	dbg/sun3.md/dbgIP.c
+	dbg/ds3100.md/dbgIP.c
+	dbg/ds5000.md/dbgIP.c
+	fsio/fsioDevice.c
+NET_IP_PROTOCOL_UDP		# (inet support) keep
+	Include/user/netInet.h
+	dbg/sun4.md/dbgIP.c
+	dbg/sun3.md/dbgIP.c
+	dbg/ds3100.md/dbgIP.c
+	dbg/ds5000.md/dbgIP.c
+	fsio/fsioDevice.c
+NET_IP_VERSION			# (inet support) keep
+	Include/user/netInet.h
+	dbg/sun4.md/dbgIP.c
+	dbg/sun3.md/dbgIP.c
+	dbg/ds3100.md/dbgIP.c
+	dbg/ds5000.md/dbgIP.c
+	net/netRoute.c
+NET_MAX_FREE_ROUTES
+	net/netRoute.h
+NET_MAX_INTERFACES
+NET_MAX_NUM_CONNECTS		# (BSD socket emulation) keep
+	Include/user/dev/net.h
+NET_MAX_PROTOCOLS		# (network support) keep
+	Include/user/net.h
+	net/netRoute.c
+	net/netRoute.h
+	net/netTypes.h
+	net/netInterface.h
+NET_MIN_FREE_ROUTES
+NET_NETWORK_ETHER		# (network support) keep
+	Include/user/net.h
+	mach/ds5000.md/ioctl.c
+	mach/ds5000.md/machCode.c
+	dbg/sun4.md/dbgMain.c
+	dbg/sun3.md/dbgMain.c
+	dbg/ds3100.md/dbgMain.c
+	dbg/ds5000.md/dbgMain.c
+	dev/devNet.c
+	libc/Net_AddrToString.c
+	net/ds5000.md/netLE.c
+	net/netRoute.c
+	net/sun3.md/netIE.c
+	net/sun3.md/netLE.c
+	net/sun4.md/netIE.c
+	net/ds3100.md/netLE.c
+	net/symm.md/netSE.c
+	net/netArp.c
+	net/netCode.c
+	rpc/rpcDispatch.c
+	sys/sysCalls.c
+NET_NETWORK_ULTRA		# (network support) keep
+	Include/user/net.h
+	dev/devNet.c
+	libc/Net_AddrToString.c
+	net/netRoute.c
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+	net/netCode.c
+	rpc/rpcOutput.c
+NET_NUM_NETWORK_TYPES		# (network support) keep
+	Include/user/net.h
+NET_NUM_SPRITE_HOSTS
+NET_OPT_BROADCAST		# (BSD socket emulation) keep
+	Include/user/dev/net.h
+NET_OPT_DEBUG			# (BSD socket emulation) keep
+	Include/user/dev/net.h
+NET_OPT_DONT_ROUTE		# (BSD socket emulation) keep
+	Include/user/dev/net.h
+NET_OPT_ERROR			# (BSD socket emulation) keep
+	Include/user/dev/net.h
+NET_OPT_KEEP_ALIVE		# (BSD socket emulation) keep
+	Include/user/dev/net.h
+NET_OPT_LEVEL_SOCKET		# (BSD socket emulation) keep
+	Include/user/dev/net.h
+NET_OPT_LINGER			# (BSD socket emulation) keep
+	Include/user/dev/net.h
+NET_OPT_OOB_INLINE		# (BSD socket emulation) keep
+	Include/user/dev/net.h
+NET_OPT_RECV_BUF_SIZE		# (BSD socket emulation) keep
+	Include/user/dev/net.h
+NET_OPT_RECV_LOWAT		# (BSD socket emulation) keep
+	Include/user/dev/net.h
+NET_OPT_RECV_TIMEOUT		# (BSD socket emulation) keep
+	Include/user/dev/net.h
+NET_OPT_RESERVED_1		# (BSD socket emulation) keep
+	Include/user/dev/net.h
+NET_OPT_REUSE_ADDR		# (BSD socket emulation) keep
+	Include/user/dev/net.h
+NET_OPT_SEND_BUF_SIZE		# (BSD socket emulation) keep
+	Include/user/dev/net.h
+NET_OPT_SEND_LOWAT		# (BSD socket emulation) keep
+	Include/user/dev/net.h
+NET_OPT_SEND_TIMEOUT		# (BSD socket emulation) keep
+	Include/user/dev/net.h
+NET_OPT_TCP_MAX_SEG_SIZE	# (BSD socket emulation) keep
+	Include/user/dev/net.h
+NET_OPT_TCP_NO_DELAY		# (BSD socket emulation) keep
+	Include/user/dev/net.h
+NET_OPT_TYPE			# (BSD socket emulation) keep
+	Include/user/dev/net.h
+NET_OPT_USE_LOOPBACK		# (BSD socket emulation) keep
+	Include/user/dev/net.h
+NET_OUT_OF_BAND			# (BSD socket emulation) keep
+	Include/user/dev/net.h
+NET_PEEK			# (BSD socket emulation) keep
+	Include/user/dev/net.h
+NET_PROTO_INET			# (network support) keep
+	Include/user/net.h
+	libc/Net_AddrToString.c
+	net/netRoute.c
+	net/netArp.c
+	net/netCode.c
+	rpc/rpcCall.c
+	rpc/rpcDispatch.c
+NET_PROTO_RAW			# (network support) keep
+	Include/user/net.h
+	mach/ds5000.md/ioctl.c
+	mach/ds5000.md/machCode.c
+	libc/Net_AddrToString.c
+	net/ds5000.md/netLE.c
+	net/netRoute.c
+	net/sun3.md/netIE.c
+	net/sun3.md/netLE.c
+	net/sun3.md/netUltra.c
+	net/sun4.md/netIE.c
+	net/sun4.md/netUltra.c
+	net/ds3100.md/netLE.c
+	net/symm.md/netSE.c
+	net/netArp.c
+	net/netCode.c
+	rpc/rpcInit.c
+	rpc/rpcDispatch.c
+NET_ROUTE_VERSION		# (network support) keep
+	Include/user/net.h
+NET_SOCK_DGRAM			# (BSD socket emulation) keep
+	Include/user/dev/net.h
+NET_SOCK_RAW			# (BSD socket emulation) keep
+	Include/user/dev/net.h
+NET_SOCK_RDM			# (BSD socket emulation) keep
+	Include/user/dev/net.h
+NET_SOCK_SEQPACKET		# (BSD socket emulation) keep
+	Include/user/dev/net.h
+NET_SOCK_STREAM			# (BSD socket emulation) keep
+	Include/user/dev/net.h
+NET_STATS_DUMP			# (BSD socket emulation) keep
+	Include/user/dev/net.h
+NET_STATS_RESET			# (BSD socket emulation) keep
+	Include/user/dev/net.h
+NET_ULTRA_MAX_BYTES
+	dev/devNet.c
+NetOutputWakeup			# always do the multiprocessor case.
+	net/netCode.c
+	net/sun3.md/{netLEXmit,netIEXmit,netUltra}.c
+	net/sun4.md/{netIEXmit,netUltra}.c
+	net/ds3100.md/netLEXmit.c
+	net/netInt.h
+Net_AddrToID			# (maps network address to Sprite ID) keep.
+	net/net.h 
+	net/netRoute.c 
+	net/netArp.c 
+	rpc/rpcInit.c
+Net_AddrToString
+	libc/Net_AddrToString.c
+	net/netRoute.c
+	net/sun3.md/{netIE,netUltra}.c
+	net/sun4.md/{netIE,netUltra}.c
+Net_Address			# (network support) keep
+	Include/user/net.h
+	libc/Net_AddrToString.c
+	net/netRoute.c
+	net/net.h
+	net/netRoute.h
+	net/sun3.md/netIE.c
+	net/sun3.md/netUltra.c
+	net/sun4.md/netIE.c
+	net/sun4.md/netUltra.c
+	net/netEther.c
+	net/netInt.h
+	net/netTypes.h
+	net/netArp.c
+	net/netUltraInt.h
+	net/netInterface.h
+	net/netCode.c
+	rpc/rpcInit.c
+Net_ArpHeader			# (ethernet support) keep
+	Include/user/netEther.h
+Net_ArpPacket			# (ethernet support) keep
+	Include/user/netEther.h
+Net_Bin				# keep.
+	main/sun3.md/mainInit.c
+	main/sun4.md/mainInit.c
+	main/ds3100.md/mainInit.c
+	main/symm.md/mainInit.c
+	main/ds5000.md/mainInit.c
+	net/net.h
+	net/netCode.c
+Net_EtherAddrToString
+	libc/{Net_AddrToString,Net_EtherAddrToString}.c
+	net/ds3100.md/netLE.c
+Net_EtherAddress		# (ethernet support) keep
+	Include/user/netEther.h
+	dbg/ds3100.md/dbgMain.c
+	dbg/ds5000.md/dbgMain.c
+	fs/fsStubs.c
+	libc/Net_EtherAddrToString.c
+	mach/ds3100.md/ioctl.c
+	mach/ds3100.md/mach.h
+	mach/ds3100.md/machCode.c
+	mach/ds5000.md/ioctl.c
+	mach/ds5000.md/machCode.c
+	mach/sun3.md/mach.h
+	mach/sun4.md/mach.h
+	mach/sun4.md/sun4/reg.h
+	mach/symm.md/machAutoconf.c
+	net/ds3100.md/netLEInt.h
+	net/ds5000.md/netLE.c
+	net/ds5000.md/netLEInt.h
+	net/netArp.c
+	net/netArp.h
+	net/netEther.c
+	net/sun3.md/netIE.c
+	net/sun3.md/netIEInt.h
+	net/sun3.md/netLEInt.h
+	net/sun4.md/netIE.c
+	net/sun4.md/netIEInt.h
+	net/symm.md/netSEInt.h
+	net/symm.md/netScedEther.c
+	utils/symm.md/dumpEvents.c
+Net_EtherHdr			# (ethernet support) keep
+	Include/user/netEther.h
+	dbg/sun4.md/dbgMain.c
+	dbg/sun3.md/dbgMain.c
+	dbg/ds3100.md/dbgMain.c
+	dbg/ds5000.md/dbgMain.c
+	dev/devNet.c
+	net/ds5000.md/netLE.c
+	net/ds5000.md/netLERecv.c
+	net/ds5000.md/netLEXmit.c
+	net/netRoute.c
+	net/sun3.md/netIE.c
+	net/sun3.md/netLE.c
+	net/sun3.md/netLERecv.c
+	net/sun3.md/netLEXmit.c
+	net/sun3.md/netIEXmit.c
+	net/sun3.md/netIERecv.c
+	net/netArp.h
+	net/sun4.md/netIE.c
+	net/sun4.md/netIERecv.c
+	net/sun4.md/netIEXmit.c
+	net/ds3100.md/netLE.c
+	net/ds3100.md/netLEInt.h
+	net/ds3100.md/netLEXmit.c
+	net/netInt.h
+	net/symm.md/netSE.c
+	net/symm.md/netSEXmit.c
+	net/symm.md/netScedEther.c
+	net/netArp.c
+	net/netCode.c
+Net_EtherStats			# keep, but don't support initially; may have
+				# to do some driver hacking or drop some of
+				# the counts.
+	net/sun3.md/{netIEInt,netLEInt}.h
+	net/sun4.md/netIEInt.h
+	net/ds3100.md/netLEInt.h
+	net/{netInt,netTypes}.h
+	sys/sysCalls.c
+	utils/symm.md/dumpEvents.c
+Net_GatherCopy			# keep.
+	net/net.h
+	net/netCode.c
+	net/sun3.md/netIEXmit.c
+	net/sun3.md/netUltra.c
+	net/sun3.md/netLEXmit.c
+	net/ds3100.md/netLEXmit.c
+	net/symm.md/netSEXmit.c
+	rpc/rpcDebug.c
+Net_GenericAddress		# (network support) keep
+	Include/user/net.h
+Net_GetInterface
+	mach/ds5000.md/ioctl.c
+	mach/ds5000.md/machCode.c
+	dev/devNet.c
+Net_GetStats			# keep (don't need initially?).
+	net/net.h
+	net/netCode.c
+	sys/sysCalls.c
+Net_HdrDestString		# keep.
+	net/net.h
+	net/netRoute.c
+	rpc/rpcDispatch.c
+Net_HdrToID			# keep.
+	net/net.h
+	net/netRoute.c
+	rpc/rpcDispatch.c
+Net_Header			# (network support) keep.
+	Include/user/net.h
+	net/netRoute.c
+Net_HostPrint			# keep.
+	fs/fsPageOps.c
+	fsrmt/fsrmtDomain.c
+	fsutil/fsutilSubr.c
+	fsutil/fsutilRecovery.c
+	net/net.h
+	net/netRoute.c
+	rpc/rpcClient.c
+Net_HostToNetInt		# (network support) keep
+	Include/user/net.h
+	dbg/sun4.md/dbgIP.c
+	dbg/sun3.md/dbgIP.c
+	dbg/ds3100.md/dbgIP.c
+	dbg/ds5000.md/dbgIP.c
+	libc/Net_HostToNetInt.c
+	net/netArp.c
+Net_HostToNetShort		# (network support) keep
+	Include/user/net.h
+	dbg/sun4.md/dbgIP.c
+	dbg/sun3.md/dbgIP.c
+	dbg/ds3100.md/dbgIP.c
+	dbg/ds5000.md/dbgIP.c
+	dev/devNet.c
+	libc/Net_HostToNetShort.c
+	net/netRoute.c
+	net/netArp.c
+	net/netCode.c
+Net_ICMPHeader			# (inet support) keep
+	Include/user/netInet.h
+	dbg/ds3100.md/dbgMain.c
+	dbg/ds5000.md/dbgMain.c
+Net_IDToRoute			# keep.
+	net/net.h
+	net/netCode.c
+	net/netRoute.c
+	net/netArp.c
+	rpc/rpcInit.c
+	rpc/rpcOutput.c
+	rpc/rpcCall.c
+Net_IDToRouteStub		# keep.
+	net/net.h
+	net/netRoute.c
+	sys/sysCalls.c
+Net_IPHeader			# (inet support) keep
+	Include/user/netInet.h
+	dbg/sun4.md/dbg.h
+	dbg/sun4.md/dbgIP.c
+	dbg/sun4.md/dbgMain.c
+	dbg/sun3.md/dbg.h
+	dbg/sun3.md/dbgMain.c
+	dbg/sun3.md/dbgIP.c
+	dbg/ds3100.md/dbg.h
+	dbg/ds3100.md/dbgIP.c
+	dbg/ds3100.md/dbgMain.c
+	dbg/ds5000.md/dbg.h
+	dbg/ds5000.md/dbgIP.c
+	dbg/ds5000.md/dbgMain.c
+	net/netRoute.c
+	net/netRoute.h
+	net/netCode.c
+Net_IPPseudoHdr			# (inet support) keep
+	Include/user/netInet.h
+	dbg/sun4.md/dbgIP.c
+	dbg/sun3.md/dbgIP.c
+	dbg/ds3100.md/dbgIP.c
+	dbg/ds5000.md/dbgIP.c
+	libc/Net_InetHdrChecksum.c
+Net_InetAddress			# (inet support) keep
+	Include/user/netInet.h
+	dbg/sun4.md/dbg.h
+	dbg/sun4.md/dbgIP.c
+	dbg/sun4.md/dbgMain.c
+	dbg/sun3.md/dbg.h
+	dbg/sun3.md/dbgMain.c
+	dbg/sun3.md/dbgIP.c
+	dbg/ds3100.md/dbg.h
+	dbg/ds3100.md/dbgIP.c
+	dbg/ds3100.md/dbgMain.c
+	dbg/ds5000.md/dbg.h
+	dbg/ds5000.md/dbgIP.c
+	dbg/ds5000.md/dbgMain.c
+	libc/Net_InetAddrToString.c
+	net/netArp.c
+	utils/symm.md/dumpEvents.c
+Net_InetSocketAddr		# (inet support) keep
+	Include/user/netInet.h
+	mach/ds5000.md/socket.c
+	mach/ds3100.md/socket.c
+Net_Init			# keep.
+	main/sun3.md/mainInit.c
+	main/sun4.md/mainInit.c
+	main/ds3100.md/mainInit.c
+	main/symm.md/mainInit.c
+	main/ds5000.md/mainInit.c
+	net/net.h
+	net/netCode.c
+Net_Input			# Change to take separate header, since (a)
+				# the comments say that needs to be done; and
+				# (b) that's the way Mach provides the packet
+				# (though Dave Golub might change that soon -
+				# 24-Oct-91).
+	net/netCode.c
+	net/net.h
+	net/sun3.md/{netLERecv,netLEXmit,netIEXmit,netIERecv,netUltra}.c
+	net/sun4.md/{netIERecv,netIEXmit,netUltra}.c
+	net/ds3100.md/{netLERecv,netLEXmit}.c
+	net/symm.md/{netScedEther,netSEXmit}.c
+Net_InstallRouteStub		# keep.
+	mach/symm.md/machSyscallTrace.c
+	net/net.h
+	net/netRoute.c
+	sys/sysSysCall.c
+Net_Interface			# keep name, unit.  Add Mach ports: one for
+				# request and one for receiving packets.
+				# "init" routine should fill in the interface
+				# record (which has some device-specific
+				# fields).
+				# "output" routine should (a) put together the
+				# scatter-gather array; (b) call Net_Input if
+				# the packet is a loopback; (c) (else) do a
+				# device_write{,_request} (depending on
+				# whether synchronous send is requested).
+				# "ioctl" and "getStats" should do
+				# {get,set}_status.
+				# "reset" should do get_status (either direct
+				# reset, or bring down and up).
+				# Delete "intr", syncOutputMutex.
+				# Add "buffer" (to hold assembled packet);
+				# "mergePacket" (to merge header and body,
+				# allowing for variable-length headers, and
+				# fix up loopback packets).
+	dbg/sun4.md/dbg.h
+	dbg/sun4.md/dbgMain.c
+	dbg/sun3.md/dbg.h
+	dbg/sun3.md/dbgMain.c
+	dbg/ds3100.md/dbgMain.c
+	dev/{devNet,devConsoleCmd}.c
+	net/{netRoute,netCode}.c
+	net/{net,netRoute}.h
+	net/sun3.md/{netIE,netLE,netLEXmit,netConfig}.c
+	net/sun3.md/netIEInt.h
+	net/sun3.md/netIEXmit.c
+	net/sun3.md/netLEInt.h
+	net/sun3.md/netUltra.c
+	net/netArp.h
+	net/sun4.md/netIE.c
+	net/sun4.md/netIEInt.h
+	net/sun4.md/{netIEXmit,netConfig,netUltra}.c
+	net/netUltraInt.h
+	net/ds3100.md/{netConfig,netLE}.c
+	net/ds3100.md/netLEInt.h
+	net/ds3100.md/netLEXmit.c
+	net/netInt.h
+	net/netTypes.h
+	net/netArp.c
+	rpc/rpc.h
+	rpc/{rpcInit,rpcDispatch}.c
+	utils/dump.c
+Net_Intr			# delete.
+	mach/ds3100.md/machCode.c
+	net/netCode.c
+	net/net.h
+	net/sun3.md/{netIE,netLE,netUltra}.c
+	net/sun4.md/{netIE,netUltra}.c
+	net/ds3100.md/netLE.c
+Net_LingerInfo			# (BSD socket emulation) keep
+	Include/user/dev/net.h
+Net_NetToHostInt		# (network support) keep
+	Include/user/net.h
+	dbg/sun4.md/dbgIP.c
+	dbg/sun3.md/dbgIP.c
+	dbg/ds3100.md/dbgIP.c
+	dbg/ds5000.md/dbgIP.c
+	libc/Net_NetToHostInt.c
+	net/netRoute.c
+	net/netArp.c
+	net/netCode.c
+Net_NetToHostShort		# (network support) keep
+	Include/user/net.h
+	dbg/sun4.md/dbgIP.c
+	dbg/sun3.md/dbgIP.c
+	dbg/ds3100.md/dbgIP.c
+	dbg/ds3100.md/dbgMain.c
+	dbg/ds5000.md/dbgIP.c
+	dbg/ds5000.md/dbgMain.c
+	libc/Net_NetToHostShort.c
+	net/netArp.c
+	net/netCode.c
+Net_NetworkType			# (network support) keep
+	Include/user/net.h
+	dev/devNet.c
+	dev/devNet.h
+	libc/Net_AddrToString.c
+	net/netRoute.c
+	net/net.h
+	net/netTypes.h
+	net/netArp.c
+	net/netInterface.h
+	net/netCode.c
+Net_NextInterface		# keep.
+	dbg/sun4.md/dbgMain.c
+	dbg/sun3.md/dbgMain.c
+	dbg/ds3100.md/dbgMain.c
+	dbg/ds5000.md/dbgMain.c
+	dev/devConsoleCmd.c
+	net/net.h
+	net/netCode.c
+	rpc/rpcInit.c
+	utils/dump.c
+Net_Output			# keep.
+	net/net.h
+	net/netCode.c
+	rpc/rpcOutput.c
+Net_RawOutput
+	dbg/sun4.md/dbgMain.c
+	dbg/sun3.md/dbgMain.c
+	dbg/ds3100.md/dbgMain.c
+	dbg/sun4c.md/dbgMain.c
+	dbg/sun4nw.md/dbgMain.c
+	dbg/ds5000.md/dbgMain.c
+	net/net.h
+	net/netCode.c
+Net_RawOutputSync
+	dev/devNet.c
+	net/net.h
+	net/netCode.c
+Net_RecvPoll			# delete?
+	dbg/sun4.md/dbgMain.c
+	dbg/sun3.md/dbgMain.c
+	dbg/ds3100.md/dbgMain.c
+	dbg/sun4c.md/dbgMain.c
+	dbg/sun4nw.md/dbgMain.c
+	dbg/ds5000.md/dbgMain.c
+	main/ds3100.md/mainInit.c
+	main/ds5000.md/mainInit.c
+	net/net.h
+	net/netCode.c
+Net_ReleaseRoute		# keep.
+	net/net.h
+	net/netCode.c
+	net/netRoute.c
+	net/netArp.c
+	rpc/rpcInit.c
+	rpc/rpcOutput.c
+	rpc/rpcCall.c
+Net_RemovePacketHandler		# keep.
+	dev/devNet.c
+	net/net.h
+	net/netCode.c
+Net_Reset			# keep.
+	dev/devConsoleCmd.c
+	net/net.h
+	net/netCode.c
+	rpc/rpcDispatch.c
+	utils/dump.c
+Net_RevArp			# keep.
+	net/net.h
+	net/netRoute.c
+	net/netArp.c
+	rpc/rpcInit.c
+Net_Route			# keep.
+	net/net.h
+	net/netCode.c
+	net/netRoute.c
+	net/netArp.h
+	net/netInt.h
+	net/netArp.c
+	net/netRoute.h
+	rpc/rpcInit.c
+	rpc/rpcOutput.c
+	rpc/rpcCall.c
+Net_RouteInfo			# (network support) keep
+	Include/user/net.h
+	net/netRoute.c
+	net/net.h
+	sys/sysCalls.c
+Net_RouteInit			# keep.
+	main/sun3.md/mainInit.c
+	main/sun4.md/mainInit.c
+	main/ds3100.md/mainInit.c
+	main/symm.md/mainInit.c
+	main/ds5000.md/mainInit.c
+	net/net.h
+	net/netRoute.c
+Net_ScatterGather		# (callBackFunc and clientData were put in as
+				# part of (incomplete) transition from
+				# flag/mutex notification to callback
+				# notification for sent packets).
+				# Delete the synchronization fields ("done",
+				# "mutex", "callBackFunc", "clientData").
+	dbg/sun4.md/dbgMain.c
+	dbg/sun3.md/dbgMain.c
+	dbg/ds3100.md/dbgMain.c
+	dev/devNet.c
+	net/netCode.c
+	net/net.h
+	net/sun3.md/netLEXmit.c
+	net/sun3.md/netIEInt.h
+	net/sun3.md/netIEXmit.c
+	net/sun3.md/netLEInt.h
+	net/sun3.md/netUltra.c
+	net/netArp.h
+	net/sun4.md/netIEInt.h
+	net/sun4.md/{netIEXmit,netUltra}.c
+	net/netUltraInt.h
+	net/ds3100.md/netLEInt.h
+	net/ds3100.md/netLEXmit.c
+	net/netInt.h
+	net/netTypes.h
+	net/netArp.c
+	net/symm.md/netSEXmit.c
+	rpc/{rpcCall,rpcOutput}.c
+	rpc/rpcTypes.h
+	vm/sun3.md/vmSun.c
+	vm/sun3.md/vmMach.h
+	vm/sun4.md/vmSun.c
+	vm/sun4.md/vmMach.h
+Net_SendInfo			# (BSD socket emulation) keep
+	Include/user/dev/net.h
+	mach/ds5000.md/socket.c
+	mach/ds3100.md/socket.c
+Net_SetPacketHandler		# (sets "network device" packet handler, which
+				# would be called instead of (or in addition
+				# to), e.g., Rpc_Dispatch)
+				# panic initially; keep in long run.
+	dev/devNet.c
+	net/net.h
+	net/netCode.c
+Net_SpriteIDToMachType		# keep.
+	fslcl/fslclLookup.c
+	net/net.h
+	net/netRoute.c
+	proc/procRemote.c
+Net_SpriteIDToName		# keep.
+	fsprefix/fsprefixOps.c
+	net/net.h
+	net/netRoute.c
+	recov/recovery.c
+	rpc/rpcClient.c
+	sys/sysCode.c
+Net_SpriteRoute			# (network support) keep
+	Include/user/net.h
+Net_Stats			# keep.
+	net/netCode.c
+	net/sun3.md/{netIE,netLE}.c
+	net/sun3.md/{netIEInt,netLEInt}.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netIE.c
+	net/sun4.md/netIEInt.h
+	net/sun4.md/netUltra.c
+	net/ds3100.md/netLE.c
+	net/ds3100.md/netLEInt.h
+	net/netTypes.h
+	sys/sysCalls.c
+Net_UDPHeader			# (inet support) keep
+	Include/user/netInet.h
+	dbg/sun4.md/dbgIP.c
+	dbg/sun3.md/dbgIP.c
+	dbg/ds3100.md/dbgIP.c
+	dbg/ds5000.md/dbgIP.c
+Net_UltraAddressGet
+	libc/Net_AddrToString.c
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+Net_UltraHeader
+	net/{netRoute,netCode}.c
+	net/netRoute.h
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+Net_UltraTLAddress
+	net/netRoute.c
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+	net/netUltraInt.h
+SIOCRPHYSADDR			# (Sprite ioctl) keep
+	Include/user/sys/ioctl.h
+	mach/ds5000.md/ioctl.c
+	mach/ds3100.md/ioctl.c
+	fs/fsStubs.c
+devNetData
+	dev/devNet.c
+	net/netTypes.h
+	net/netCode.c
+	net/netInterface.h
+devNetDebug
+	dev/devNet.c
+devNetEtherDebug
+	utils/symm.md/dumpEvents.c
+netZeroAddress
+	net/{netRoute,netCode}.c
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+	net/netInt.h
+	net/netArp.c
+net_EtherStats
+	net/netCode.c
+	net/netInt.h
+	net/symm.md/{netScedEther,netSEXmit}.c
+	utils/symm.md/dumpEvents.c
+sockaddr_in			# (inet support) keep
+	Include/user/netinet/in.h
+	mach/ds5000.md/machUNIXSyscall.c
+	mach/ds5000.md/socket.c
+	mach/ds3100.md/socket.c
+	mach/ds3100.md/machUNIXSyscall.c
+
+Local variables:
+mode: xref
+fill-column: 78
+End:

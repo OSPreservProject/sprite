@@ -1,0 +1,21 @@
+This is the alpha release of the gdb port to MIPS-based machines.
+Only the (little-endian) DECstation3100 has been tested.
+
+Here I will try to list known problems:
+
+Calling a function in the debugger (as in 'print f(x)') normally
+works correctly. One known exception is if you pass a structure
+argument whose sizeof > 4. Currently, gdb will align it on
+an 8-byte boundary, while the compiler while depend on
+the alignment needed by the fields. (Unfortunately, the
+distributed varargs.h and stdarg.h are inconsistent with
+mips' compiler!)
+
+Fortran debugging could be made nicer, but a lot of that is a
+problem with the implementation-independent gdb.
+
+Code in include files is handled poorly (missing line numbers).
+
+Lots of testing is needed.
+E.g. is IN_SIGTRAMP (in infrun.c) correct?
+

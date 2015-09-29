@@ -1,0 +1,2 @@
+Mig_GetPdevName is a link to the source for the mig library to make it
+possible to get a different set of pdevs with changes to local.mk.

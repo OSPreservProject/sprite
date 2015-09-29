@@ -1,0 +1,23 @@
+This is a little note on how to get a kernel core image off anise.
+Date: Wed Dec 19 10:18:26 PST 1990
+
+Step 1) Make sure Anise is in the debugger. If not, put it in the debugger.
+
+Step 2) Login to allspice as root (or any other account that doesn't have
+	a home directory or search path on anise's disk.). Go to a file system
+	with > 20 megabytes free space. I suggest the directory /swap1/cores
+
+Step 2.5) Test to make sure that anise is in the debugger.  "kmsg -v anise"
+	  should work at this time.
+
+Step 3) Run kgcore as follows: "kgcore -v anise"
+        The -v is optional but I like it because it prints progress messages.
+	Note that this step can take several (~ 2) minutes.
+
+Step 4) Rename the file "vmcore" so something more meaningful such as 
+	"mv vmcore vmcore.anise.crash.11-21".   
+
+Step 5) Reboot anise.
+
+	Mendel
+

@@ -1,0 +1,79 @@
+/* 
+ * setregid.c --
+ *
+ *	Source code for the setregid library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/unixSyscall/RCS/setregid.c,v 1.1 88/11/17 13:30:50 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <proc.h>
+#include "compatInt.h"
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * setregid --
+ *
+ *	Procedure to map from Unix setregid system call to Sprite Proc_SetIDs.
+ *	Sprite doesn't have the notion of real and effective groud IDs;
+ *	instead, both gid arguments become the set of Sprite group IDs for
+ *	current process.
+ *
+ * Results:
+ *      UNIX_SUCCESS    - the call was successful.
+ *      UNIX_ERROR      - the call was not successful.
+ *                        The actual error code stored in errno.
+ *
+ * Side effects:
+ *	The previous group IDs are deleted.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+setregid(rgid, egid)
+    int	rgid, egid;
+{
+    ReturnStatus status = SUCCESS;
+    int array[2];
+    int num = 0;
+
+    /*
+     * Make the rgid and egid the group IDs for the process. If a gid is
+     * -1, it is ignored.
+     */
+
+    if (rgid != -1) {
+	array[0] = rgid;
+	num = 1;
+	if (egid != rgid && egid != -1) {
+	    array[1] = egid;
+	    num++;
+	}
+    } else if (egid != -1) {
+	array[0] = egid;
+	num++;
+    }
+    if (num > 0) {
+	status = Proc_SetGroupIDs(num, array);
+    }
+
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}

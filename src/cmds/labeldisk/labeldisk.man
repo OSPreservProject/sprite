@@ -1,0 +1,90 @@
+' $Header: /sprite/src/cmds/labeldisk/RCS/labeldisk.man,v 1.7 91/09/26 21:08:59 voelker Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS LABELDISK cmds
+.BS
+.SH NAME
+labeldisk \- read and write a disk's label
+.SH SYNOPSIS
+.IP \fBlabeldisk 10
+[\fB\-from fromDevice\fR]
+[\fB\-w\fR]
+[\fB\-q\fR]
+[\fB\-sun\fR]
+[\fB\-dec\fR]
+[\fB\-new\fR]
+\fIdevice\fP
+.SH OPTIONS
+.IP \fB\-from\ fromDevice\fP
+Read the label from this device.
+.IP \fB\-w\fP
+Write a new label.
+.IP \fB\-q\fP
+Write a new label quickly, without prompting for partition information.
+.IP \fB\-sun\fP
+Write out a Sun label.  The default is to write whatever type of label was
+read.
+.IP \fB\-dec\fP
+Write out a Dec label.
+.IP \fB\-new\fP
+Ignore any old label.
+.IP \fIdevice\fP
+The device file with the disk label.  Without \fB-from\fP it is the
+device that the label is read from and written to, otherwise it is
+the device that is written to.
+.BE
+
+.SH DESCRIPTION
+.LP
+This reads the disk label and verifies its checksum.  If the
+\fB-from fromDevice\fP option is present then the disk label is
+read from the \fBfromDevice\fP, and the \fBdevice\fP argument
+becomes the device to which the label is written to.
+.LP
+If the \fB\-w\fP
+option is present labeldisk interactively prompts for partition information.
+After this the user is presented with the new label and given
+the opportunity to commit the change or abort it.  The user is also
+given the chance to write the label to all of the valid partitions
+found on the device.  ``valid'' means that the partition has a positive
+number of cylinders associated with it, and that a file system
+exists on the partition.  If a partition on the
+disk is not ``valid'', then it is skipped.  An attempt is made to
+write the label to the raw disk in the improbable case that no
+valid partition starts on cylinder 0.  If labeldisk was not
+able to write the label to the raw disk or to a partition that
+begins at cylinder 0, then a warning is issued to that effect.
+.LP
+The \fB-q\fP option turns off the prompting for partition information
+only.  This is useful for copying a label from one partition
+on one device to other partitions on the same or different device
+if the user knows that the label on the from device has the
+correct information.  Overrides the \fB-w\fP option.
+.LP
+The \fB-dec\fP option converts the label being written to a dec label.
+.LP
+The \fB-sun\fP option converts the label being written to a dec label.
+.LP
+The \fB-new\fP option ignores any label read, and creates a new one
+instead.  If either the \fB-dec\fP or the \fB-sun\fP option is specified
+then the new label created is of the specified type.
+.LP
+Each disk is divided into 8 partitions, named ``ai'' thru ``gi''.
+Each partition is specified with a starting cylinder number and the
+number of cylinders it contains.  Unused partitions
+are indicated with a zero size.  Partitions can overlap, but
+overlapping partitions should never be used simultaneously!
+Traditionally partition ``ai'' is a small partition suitable for the root
+or a small /tmp.  Partition ``bi'' is a slightly larger system
+suitable for a single machine's swap directory.
+Partition ``ci'' is a single large partition that specifies the whole disk.
+Partitions ``di'' and ``ei'' are often used as large partitions
+beyond ``ai'' and ``bi''.
+Partition ``gi'' is usually set up as all the space after ``ai'' and ``bi''.
+Partitions ``fi'' and ``hi'' usually aren't used, but they can be.
+.LP
+Partitions are useful to quarantine different sets of users from
+one another, although they are a pain to change once a filesystem
+has been created on them.  Changing them requires recreating any affected
+filesystems. 
+.SH KEYWORDS
+disk, label

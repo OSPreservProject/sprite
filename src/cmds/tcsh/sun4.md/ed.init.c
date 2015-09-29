@@ -1,0 +1,1 @@
+../dist/ed.init.c

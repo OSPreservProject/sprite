@@ -1,0 +1,69 @@
+' Copyright 1989 Regents of the University of California
+' Permission to use, copy, modify, and distribute this
+' documentation for any purpose and without fee is hereby
+' granted, provided that this notice appears in all copies.
+' The University of California makes no representations about
+' the suitability of this material for any purpose.  It is
+' provided "as is" without express or implied warranty.
+' 
+' $Header: /sprite/src/lib/c/stdlib/RCS/strtol.man,v 1.1 89/01/05 17:59:48 ouster Exp $ SPRITE (Berkeley)
+' 
+.so \*(]ltmac.sprite
+.HS strtol cmds
+.BS
+.SH NAME
+strtol, strtoul \- Convert character string to integer
+.SH SYNOPSIS
+.nf
+\fB#include <stdlib.h>
+
+\fBlong int
+\fBstrtol(\fIstring\fR, \fIendPtr\fR, \fIbase\fR)
+
+\fBunsigned long int
+\fBstrtoul(\fIstring\fR, \fIendPtr\fR, \fIbase\fR)
+.SH ARGUMENTS
+.AS "char *" endPtr
+.AP char *string in
+String containing ASCII representation of integer.
+.AP char **endPtr out
+If not \fBNULL\fR, gives address of pointer to fill in with address of
+first character in \fIstring\fR following integer.
+.AP int base in
+Base to use for conversion;  see below for explanation.  Must be
+between 0 and 36, inclusive.
+.BE
+
+.SH DESCRIPTION
+.PP
+The \fBstrtol\fR and \fBstrtoul\fR procedures convert a character
+string to its corresponding integer representation and return the
+integer value.  Both procedures
+expect \fIstring\fR to point to a sequence of digits, optionally preceded
+by any amount of white space (as defined by the \fBisspace\fR procedure).
+\fBStrtol\fR also permits the digits to be preceded immediately by a
+minus sign, in which case the result is a negative integer.
+.PP
+If \fIbase\fR is between 2 and 36, inclusive, then the permissible
+``digits'' of the string consist of the first \fIbase\fR characters
+in the set \fB0\fR through \fB9\fR and \fBa\fR through \fBz\fR
+(or \fBA\fR through \fBZ\fR).  The integer result will be calculated
+using \fIbase\fR as the radix for conversion.  If the value of \fIbase\fR
+is 16, then the characters \fB0x\fR or \fB0X\fR may precede the digits,
+following the sign if it is present.
+.PP
+If \fIbase\fR is 0, then the radix for conversion is chosen based on
+the initial digits of the number.  If the initial digits are \fB0x\fR
+or \fB0X\fR, then base 16 will be used for conversion;  otherwise if
+the first digit is \fB0\fR then base 8 will be used for conversion;
+otherwise base 10 will be used.
+.PP
+\fBStrtol\fR and \fBstrtoul\fR convert as many characters as possible
+from \fIstring\fR, and return in \fI*endPtr\fR the address of the first
+character not forming a valid portion of the number.  If no conversion
+could be performed (\fIstring\fR was empty, or did not point to a
+number in the expected form), then \fIstring\fR will be stored in
+\fI*endPtr\fR and zero is returned.
+
+.SH KEYWORDS
+base, convert, integer, radix, string

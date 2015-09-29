@@ -1,0 +1,35 @@
+
+Sprite-specific changes to the distribution are contained in the sprite
+subdirectory. 
+
+
+Applying new patches:
+
+    Apply the patches to the sources in the dist subdirectory.
+    Go to the sprite subdirectory and check out any files whose version
+	in the dist directory have been modified by the patch.
+    Use rcsmerge to merge any Sprite changes into the new file.  You'll
+	have to look at the log to figure out which version to merge.
+	Usually it will be -r1.1 -r1.2.  Sometimes the changes to the
+	distribution means you won't need the Sprite version anymore.
+	Move the file and RCS file out of the way, change the symbolic
+	link in the parent directory.
+    Make a symbolic link for config.h in /sprite/src/cmds/perl:
+	ln -s '$MACHINE.md/config.h' .
+    Run Configure once for each machine type, e.g sun3, sun4, ds3100.
+	You have to run it on a machine of each type. This will create
+	a config.h for each type, which will be put in the machine
+	dependent directories via the symbolic link.
+    Delete the symbolic link for config.h.
+    Run mkmf.
+    cd to the 't' directory and run TEST.  All tests should pass, except
+	for a few on the sun3 but I've never worried about it since we
+	don't use the sun3's much anymore.
+    Install it.
+    Delete all the .orig file from the distribution.
+
+    You also need to install the programs a2p, s2p, and h2ph.
+
+
+John
+

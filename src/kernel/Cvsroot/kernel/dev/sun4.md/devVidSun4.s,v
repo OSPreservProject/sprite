@@ -1,0 +1,224 @@
+head     9.3;
+branch   ;
+access   ;
+symbols  ds3100:9.3 sun3:9.3 sun4nw:9.3 symm:9.3 spur:9.3 Summer89:9.0;
+locks    ; strict;
+comment  @| @;
+
+
+9.3
+date     91.10.17.01.39.36;  author dlong;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.09.11.12.30.26;  author rab;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.26.11.30.12;  author mgbaker;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.00.58;  author douglis;  state Stable;
+branches ;
+next     1.3;
+
+1.3
+date     89.08.29.12.24.22;  author mgbaker;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.08.09.12.51.03;  author mgbaker;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.15.11.56.44;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.3
+log
+@changed 0xffd1c001 to 0xffd1c010.  This works on a few SparcStations,
+but using FBIOSVIDEO is better.
+@
+text
+@/* devVid.c -
+ *
+ *     This file contains video routines.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+#include	"machConst.h"
+#include	"vmSunConst.h"
+
+.seg	"data"
+.asciz "$Header: /sprite/src/kernel/dev/sun4.md/RCS/devVidSun4.s,v 9.2 90/09/11 12:30:26 rab Exp $ SPRITE (Berkeley)"
+.align	8
+.seg	"text"
+
+#define	VIDEO_ENABLE_BIT	0x8
+#ifdef SUCCESS
+#undef SUCCESS
+#endif
+#define	SUCCESS			0
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Dev_VidEnable --
+ *
+ *	Enables or disables the video display on a Sun-4.
+ *	The Sun-4 video memory is enabled and disabled by manipulating the
+ *	video-enable bit in the system enable register.
+ *
+ *	status = Dev_VidEnable(onOff)
+ *		Boolean	onOff;		(true == on)
+ *
+ * Results:
+ *     SUCCESS - always returned (because it's from a system call).
+ *
+ * Side effects:
+ *     The display is enabled or disabled.
+ *
+ * ----------------------------------------------------------------------------
+ */
+.globl	_Dev_VidEnable
+_Dev_VidEnable:
+#ifndef sun4c
+	set	VMMACH_SYSTEM_ENABLE_REG, %OUT_TEMP1
+	lduba	[%OUT_TEMP1] VMMACH_CONTROL_SPACE, %OUT_TEMP2
+	tst	%o0
+	be	VidOff
+	nop
+	or	%OUT_TEMP2, VIDEO_ENABLE_BIT, %OUT_TEMP2
+	b	LeaveVidEnable
+	nop
+VidOff:
+	set	~VIDEO_ENABLE_BIT, %o0
+	and	%OUT_TEMP2, %o0, %OUT_TEMP2
+LeaveVidEnable:
+	stba	%OUT_TEMP2, [%OUT_TEMP1] VMMACH_CONTROL_SPACE
+	set	SUCCESS, %o0
+	retl
+	nop
+#else
+#ifdef NOTDEF
+/*
+ * Thorsten says this is breaking X on the sparcstations.
+ */
+	/*
+	 * Address of enable bit in video status register.
+	 */
+	set	0xffd1c010, %OUT_TEMP1
+	ldub	[%OUT_TEMP1], %OUT_TEMP2
+	tst	%o0
+	be	VidOff
+	nop
+	or	%OUT_TEMP2, 0x40, %OUT_TEMP2
+	b	LeaveVidEnable
+	nop
+VidOff:
+	set	~0x40, %o0
+	and	%OUT_TEMP2, %o0, %OUT_TEMP2
+LeaveVidEnable:
+	stb	%OUT_TEMP2, [%OUT_TEMP1]
+#endif NOTDEF
+	set	SUCCESS, %o0
+	retl
+	nop
+#endif
+@
+
+
+9.2
+log
+@Put #ifdef around re-declaration of SUCCESS.
+@
+text
+@d18 1
+a18 1
+.asciz "$Header: /sprite/src/kernel/dev/sun4.md/RCS/devVidSun4.s,v 9.1 89/10/26 11:30:12 mgbaker Exp Locker: rab $ SPRITE (Berkeley)"
+d75 1
+a75 1
+	set	0xffd1c001, %OUT_TEMP1
+@
+
+
+9.1
+log
+@Adding frame buffer support.
+@
+text
+@d18 1
+a18 1
+.asciz "$Header: /sprite/src/kernel/dev/sun4.md/RCS/devVidSun4.s,v 9.0 89/09/12 15:00:58 douglis Stable Locker: mgbaker $ SPRITE (Berkeley)"
+d23 3
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d18 1
+a18 1
+.asciz "$Header: /sprite/src/kernel/dev/sun4.md/RCS/devVidSun4.s,v 1.3 89/08/29 12:24:22 mgbaker Exp Locker: douglis $ SPRITE (Berkeley)"
+d65 4
+d85 1
+@
+
+
+1.3
+log
+@Trying to get the sun4 video disable stuff to work.
+@
+text
+@d18 1
+a18 1
+.asciz "$Header: /sprite/src/kernel/dev/sun4.md/RCS/devVidSun4.s,v 1.2 89/08/09 12:51:03 mgbaker Exp $ SPRITE (Berkeley)"
+@
+
+
+1.2
+log
+@Stable kernel now.
+The sun4c video stuff seems to work okay.  I don't know about screen
+blanks and such yet, though.
+@
+text
+@d18 1
+a18 1
+.asciz "$Header: /sprite/src/kernel/dev/sun4.md/RCS/devVidSun4.s,v 1.1 89/07/15 11:56:44 ouster Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d65 3
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d18 1
+a18 1
+.asciz "$Header: /sprite/src/kernel/dev.new/sun4.md/RCS/devVidSun4.s,v 1.6 89/05/02 23:26:44 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d47 1
+d64 18
+@

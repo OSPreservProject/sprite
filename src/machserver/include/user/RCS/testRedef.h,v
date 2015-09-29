@@ -1,0 +1,66 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  srv030:1.1 srv027:1.1 srv026:1.1 srv024:1.1 srv021:1.1 srv019:1.1 srv018:1.1 srv016:1.1 srv014:1.1 srv010:1.1 srv008:1.1 srv007:1.1 srv006:1.1 srv005:1.1 srv004:1.1 srv003:1.1 srv002:1.1 srv001:1.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     92.03.23.14.20.34;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Hack so that programs written using the Test_ I/O routines will still work
+with stdio and /dev/console in place.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/*
+ * testRedef.h --
+ *
+ *	Redefinitions of "test" routines for use with /dev/console.
+ *
+ * Copyright 1992 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.8 92/03/02 15:32:57 bmiller Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _TESTREDEF
+#define _TESTREDEF
+
+/* 
+ * This might cause some problems if this header file is included in the 
+ * middle of a function, but only if stdio.h wasn't already included.
+ */
+#include <stdio.h>
+
+/* 
+ * There isn't a trivial equivalent for Test_PutTime.  It was a 
+ * special-purpose hack, anyway, so don't bother fixing it here.
+ */
+
+#define Test_PutDecimal(val)	printf("%d", (val))
+#define Test_PutHex(val)	printf("0x%x", (val))
+#define Test_PutOctal(val)	printf("0%o", (val))
+#define Test_PutMessage(str)	printf("%s", (str))
+#define Test_PutString(str)	printf("%s", (str))
+#define Test_GetString(buf, bufLen)	fgets((buf), (bufLen), stdin)
+
+#endif /* _TESTREDEF */
+@

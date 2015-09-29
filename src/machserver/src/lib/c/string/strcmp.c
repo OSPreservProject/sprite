@@ -1,0 +1,1 @@
+../../c.orig/string/strcmp.c

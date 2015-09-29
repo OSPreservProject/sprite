@@ -1,0 +1,13 @@
+F H_DEC310.H;1                      	h-dec3100.h
+F H_DGUX.H;1                        	h-dgux.h
+F H_DOS.H;1                         	h_dos.h
+F H_HP300B.H;1                      	h-hp300bsd.h
+F H_HP9000.H;1                      	h-hp9000.h
+F H_I386V.H;1                       	h-i386v.h
+F H_RS6000.H;1                      	h-rs6000.h
+F H_RTBSD.H;1                       	h-rtbsd.h
+F H_SUN3.H;1                        	h-sun3.h
+F H_SUN4.H;1                        	h-sun4.h
+F H_TAHOEB.H;1                      	h-tahoebsd.h
+F H_VAXBSD.H;1                      	h-vaxbsd.h
+F H_VAXULT.H;1                      	h-vaxult.h

@@ -1,0 +1,28 @@
+% fntchoice.tex
+%
+% individual choices of fonts for \rm, \sl, etc., go in here.
+%
+% lfonts.tex contains other fonts which would not normally be varied
+
+%% FONT-CUSTOMIZING:  The following definitions define certain commands
+%% to be abbreviations for font names.
+%%
+\def\@rm{t-rom} % the font used for \rm
+\def\@it{t-ita} % the font used for \it
+\def\@bf{t-bol} % the font used for \bf
+\def\@sl{t-obl} % the font used for \sl
+\def\@tt{c-con} % the font used for \tt
+\def\@sf{h-red} % the font used for \sf
+\def\@sc{t-romsc}%the font used for \sc
+\def\@sy{s-med} % the symbols font
+\def\@ms{s-obl} % slanted symbols (for Greek)
+
+% this is invoked by \sf
+\def\@dosfchars{\@fixf \let\pcopyright\@copyrightH
+  \let\pregistered\@registeredH \let\ptrademark\@trademarkH}
+
+% this is invoked by \rm, \it, etc (except \sf)
+\def\@dononsf{\@fixf \let\pcopyright\@copyrightTR
+  \let\pregistered\@registeredTR \let\ptrademark\@trademarkTR}
+
+\def\PSfontversion{Times}

@@ -1,0 +1,22 @@
+ClientDone	client.c	/^ClientDone(data)$/
+ClientIOControl	client.c	/^ClientIOControl(data, size, reps)$/
+ClientRead	client.c	/^ClientRead(data, size, reps)$/
+ClientSetup	client.c	/^ClientSetup(dataPtr)$/
+ClientWrite	client.c	/^ClientWrite(data, size, reps)$/
+IntProc	server.c	29
+MdevBench	devBench.c	/^main(argc, argv)$/
+NullProc	server.c	/^NullProc(streamID, requestSize, requestBuf, replyS/
+PrintFsStats	printStats.c	/^PrintFsStats(stream, start, end, verbose)$/
+PrintIdleTime	printStats.c	/^PrintIdleTime(stream, startSchedPtr, endSchedPtr, /
+PrintTimes	printStats.c	/^PrintTimes(stream, usagePtr, timePtr)$/
+PrintVmStats	printStats.c	/^PrintVmStats(stream, start, end)$/
+Serve	server.c	/^Serve(data)$/
+ServeDup	server.c	/^ServeDup(streamID, requestSize, requestBuf, replyS/
+ServeIOControl	server.c	/^ServeIOControl(streamID, requestSize, requestBuf, /
+ServeOpen	server.c	/^ServeOpen(streamID, requestSize, requestBuf, reply/
+ServeRead	server.c	/^ServeRead(streamID, requestSize, requestBuf, reply/
+ServeRequest	server.c	/^ServeRequest(clientStreamID, opTable)$/
+ServeSelect	server.c	/^ServeSelect(streamID, requestSize, requestBuf, rep/
+ServeWrite	server.c	/^ServeWrite(streamID, requestSize, requestBuf, repl/
+ServerSetup	server.c	/^ServerSetup(numClients, dataPtr)$/
+sizeof	devBench.c	/^int numOptions = sizeof(optionArray) \/ sizeof(Opti/

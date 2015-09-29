@@ -1,0 +1,17 @@
+bootSysAsm.s
+mach.h
+machAsm.s
+machAsmDefs.h
+machCode.c
+machConst.h
+machEeprom.c
+machInt.h
+machIntr.s
+machMigrate.c
+machMon.c
+machMon.h
+machTrap.s
+machTypes.h
+machVector.s
+md.mk.sed
+sunSR.h

@@ -1,0 +1,44 @@
+#include <Server.tmpl>
+
+SRCS =	 cfbgc.c cfbwindow.c \
+	 cfbpntwin.c cfbmskbits.c cfbpixmap.c cfbbitblt.c \
+	 cfbfillsp.c cfbsetsp.c cfbscrinit.c \
+	 cfbgetsp.c cfbfillrct.c cfbtileodd.c \
+	 cfbcmap.c cfbzerarc.c cfbfillarc.c \
+	 cfbtegblt.c cfbbstore.c \
+	 cfb8bit.c cfbteblt8.c cfbglblt8.c \
+ 	 cfbpush8.c cfbrctstp8.c cfbpolypnt.c \
+	 cfbbres.c cfbline.c cfbhrzvert.c cfbbresd.c cfbimage.c
+
+OBJS =   cfbgc.o cfbwindow.o \
+	 cfbgetsp.o cfbfillrct.o cfbtileodd.o \
+	 cfbfillsp.o cfbsetsp.o cfbscrinit.o \
+	 cfbpntwin.o cfbmskbits.o cfbpixmap.o cfbbitblt.o \
+	 cfbcmap.o cfbzerarc.o cfbfillarc.o \
+	 cfbtegblt.o cfbbstore.o \
+	 cfb8bit.o cfbteblt8.o cfbglblt8.o \
+ 	 cfbpush8.o cfbrctstp8.o cfbpolypnt.o \
+	 cfbbres.o cfbline.o cfbhrzvert.o cfbbresd.o cfbimage.o cfbseg.o
+
+   INCLUDES = -I. -I../mfb -I../mi -I../../include -I$(INCLUDESRC)
+   LINTLIBS = ../../dix/llib-ldix.ln ../../os/4.2bsd/llib-los.ln \
+	     ../mfb/llib-lmfb.ln ../mi/llib-lmi.ln
+
+NormalLibraryObjectRule()
+NormalLibraryTarget(cfb,$(OBJS))
+LintLibraryTarget(cfb,$(SRCS))
+
+NormalLintTarget($(SRCS))
+
+#if HasSaberC
+saber_src:
+	/**/#load $(CFLAGS) $(SRCS)
+#endif
+
+DependTarget()
+
+cfbseg.c:
+	$(LN) cfbline.c cfbseg.c
+
+cfbseg.o: cfbseg.c cfbline.c
+	${CC} -DPOLYSEGMENT $(CFLAGS) -c cfbseg.c

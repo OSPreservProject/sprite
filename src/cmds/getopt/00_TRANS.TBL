@@ -1,0 +1,9 @@
+D DS3100_M                          	ds3100.md
+F GETOPT.C;1                        	getopt.c
+F GETOPT.MAN;1                      	getopt.man
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+F README.SAL;1                      	README.salz
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md
+D SYMM_MD                           	symm.md

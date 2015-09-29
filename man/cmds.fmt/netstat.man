@@ -1,0 +1,68 @@
+
+
+
+NETSTAT                   User Commands                   NETSTAT
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     netstat - Print out statistics about the network interface
+
+SSYYNNOOPPSSIISS
+     nneettssttaatt
+
+_________________________________________________________________
+
+IINNTTRROODDUUCCTTIIOONN
+     This command prints out statistics about the network  inter-
+     face,  such  as  number of packets received, number dropped,
+     etc.
+
+KKEEYYWWOORRDDSS
+     network, packets, trace, statistics
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  March 27, 1990                    1
+
+
+

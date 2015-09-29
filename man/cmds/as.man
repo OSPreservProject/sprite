@@ -1,0 +1,128 @@
+.\" @(#)as.1 1.2 86/07/23 SMI; from UCB 4.2
+.TH AS 1 "20 March 1986"
+.SH NAME
+as \- Sun-1, Sun-2 and Sun-3 assembler
+.SH SYNOPSIS
+.B as
+[ 
+.B \-d2
+] 
+[
+.B \-e
+]
+[ 
+.B \-h
+] 
+[ 
+.B \-j
+] 
+[ 
+.B \-J
+] 
+[
+.B \-L
+] 
+.if n .ti +.5i
+[
+.B \-mc68010
+]
+[
+.B \-mc68020
+]
+[ 
+.B \-o
+.I objfile
+] 
+.if n .ti +.5i
+[
+.B \-O
+]
+.if t .ti +.5i
+[ 
+.B \-R
+] 
+.I filename
+.SH DESCRIPTION
+.IX  as  ""  "\fLas\fP \(em assembler"
+.IX  "programming languages"  "assembler"
+\fIas\fP translates assembly code in the named \fIfilename\fP 
+into executable object code in the specified
+.IR objfile .
+.LP
+All undefined symbols in the assembly are treated as global.
+.LP
+The output of the assembly is left in the file \fIobjfile\fR.
+.SH OPTIONS
+.IP \fB\-d2\fR
+Specifies that instruction offsets involving forward or external references
+and having sizes unspecified in the assembly language are two bytes long.  The
+default is four bytes. See also the 
+.B \-j
+option.
+.IP \fB\-e\fR
+Allows control sections to begin on any two-byte boundary,
+rather than only four-byte boundaries.
+.IP \fB\-h\fR
+Suppress span-dependent instruction calculations and force all branches to be of
+medium length, but all calls to take the most general form.  
+This is used when assembly must be minimized, while program size and 
+run-time are unimportant.
+This option results in a smaller and faster program than that produced by the
+.B \-J
+option, but some very large programs may not be able to use it because of the
+limits of the medium-length branches.
+.IP \fB\-j\fR
+Use short (pc-relative) branches to resolve jump's and jsr's to externals.
+This is for compact programs which cannot use the
+.B -d2
+flag because of large program relocation.
+.IP \fB\-J\fR
+Suppress span-dependent instruction calculations and force all branches 
+and calls to take the most general form.  
+This is used when assembly time must be minimized,
+but program size and run time are not important.
+.IP \fB\-L\fR
+Save defined labels beginning with an `L', which are normally discarded
+to save space in the resultant symbol table.
+The compilers generate such temporary labels.
+.IP \fB\-mc68010\fR
+Accept only MC68010 instructions and addressing modes, and put
+the MC68010 machine-type tag in the object file.
+This is the default on Sun-2's.
+.IP \fB\-mc68020\fR
+Accept the full MC68020, MC68881 and the Sun FPA instruction sets 
+and addressing 
+modes, and put the MC68020 machine-type tag in the object file.
+This is the default on Sun 3's.
+.IP \fB\-o\fR
+The next argument is taken as the name of the object file to be produced.
+If the 
+.B \-o
+flag isn't used, the \fIobjfile\fR is named
+.IB a . out.
+.IP \fB\-O\fR
+Perform span-dependent instruction resolution over entire files
+rather than just over individual procedures.
+.IP \fB\-R\fR
+Make initialized data segments read-only by concatenating 
+them to the text segments.
+This eliminates the need to run editor scripts on assembly
+code to make initialized data read-only and shared.
+.SH FILES
+.TP 15
+.I /tmp/as\(**
+default temporary file
+.SH "SEE ALSO"
+ld(1),
+nm(1),
+adb(1),
+dbx(1),
+a.out(5)
+.LP
+.I "Assembly Language Reference Manual"
+.SH BUGS
+.LP
+The Pascal compiler, \fIpc\fP, qualifies a nested procedure name by
+chaining the names of the enclosing procedures.  This sometimes results in
+names long enough to abort the assembler, which 
+currently limits identifiers to 512 characters. 

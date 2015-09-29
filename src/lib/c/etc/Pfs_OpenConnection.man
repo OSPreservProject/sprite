@@ -1,0 +1,60 @@
+'\" Copyright 1989 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/lib/forms/RCS/proto.man,v 1.3 89/01/09 11:43:01 ouster Exp $ SPRITE (Berkeley)
+'\" 
+.so \*(]ltmac.sprite
+.HS Pfs_OpenConnection libcalls
+.BS
+.SH NAME
+Pfs_OpenConnection \- Create a pseudo-device connection to a pseudo-file-system
+.SH SYNOPSIS
+.nf
+\fB#include <pdev.h>\fR
+Pdev_Stream *
+\fBPfs_OpenConnection\fR(\fIpfsToken, idSize, idPtr, service\fR)
+.SH ARGUMENTS
+.AS ClientData *fileIDPtr
+.AP Pfs_Token *pfsToken in
+Return value of \fBPfs_Open\fP call.
+.AP int idSize in
+Size of the ID.
+.AP Address idPtr in
+Pointer to server's name for this connection.
+.AP Pdev_Callbacks *service in
+Array of pseudo-device call-back procedures.
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBPfs_OpenConnection\fP is used to establish a pseudo-device connection
+in response to an open request to a pseudo-file-system server.
+The \fIpfsToken\fP argument is the return value of the \fBPfs_Open\fP call
+used to establish the server of the pseudo-file-system.
+The \fIidPtr\fP references the server's identifier for the pseudo-device
+connection.  If the file being opened is a directory then this
+identifier may be passed back as the \fBprefixID\fP for
+naming operations that are relative to the directory.
+The \fIservice\fP argument is a set of call-back procedures that
+are invoked by the Pdev library in response to subsequent operations
+on the file.  See the \fBPdev_Open\fP man page for a description
+of how these call-backs are invoked.  Any of the elements of \fIservice\fP
+can be NULL pointers in which case a default, no-op handler is used
+by the Pdev library.
+.PP
+The return value of \fBPfs_OpenConnection\fP is a token for the
+connection.  It contains the streamID of the server's half of the
+connection on which various I/O controls can be done.  It also
+contains a \fBclientData\fP field for use by the caller of
+\fBPfs_OpenConnection\fP.  This token is passed into all of the
+pseudo-device service call-backs.
+.SH SEE ALSO
+Pfs_Open, Pdev_SetHandler, pdev
+.SH KEYWORDS
+pseudo-device, pseudo-file-system, call-back
+

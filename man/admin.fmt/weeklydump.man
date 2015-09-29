@@ -1,0 +1,134 @@
+
+
+
+WEEKLYDUMP                User Commands                WEEKLYDUMP
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     weeklydump - Script to do weekly fully dumps
+
+SSYYNNOOPPSSIISS
+     wweeeekkllyydduummpp [--ii] [_s_t_a_r_t_F_s]
+
+OOPPTTIIOONNSS
+     _s_t_a_r_t_F_s        Start dumping with the named filesystem.
+
+     -i             Initialize the tape drives first with  ``dump
+                    -s''.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This script does full (level 0) dumps of all the filesystems
+     that  are  normally backed up.  It is normally invoked manu-
+     ally over the weekend.
+
+     The script has hard-coded a list of tape devices.  It  dumps
+     filesystems  onto the first tape until it gets an error.  It
+     then continues with the second tape until  the  next  error,
+     etc.   If  it  runs  out of tapes before all the filesystems
+     have been dumped, it sends mail to the user dduummppeerr with  the
+     name  of the first filesystem in the list that has yet to be
+     dumped.
+
+     The  list  of  filesystems   to   dump   is   contained   in
+     //sspprriittee//aaddmmiinn//dduummpp//dduummpplliisstt.   If wweeeekkllyydduummpp is invoked with
+     the name of a filesystem, it starts  with  that  filesystem,
+     skipping  over  the filesystems that appear before it in the
+     list.  If wweeeekkllyydduummpp is not given the name of a  filesystem,
+     it     looks     for     the    starting    filesystem    in
+     //sspprriittee//aaddmmiinn//dduummpp//ddooiinnggwweeeekkllyy.   If  that  file  is  empty,
+     wweeeekkllyydduummpp simply starts at the top of the list.
+
+     WWeeeekkllyydduummpp  puts  the  name   of   the   current   user   in
+     //sspprriittee//aaddmmiinn//dduummpp//dduummppaalliiaass.   Mail  sent to the ``dumper''
+     alias is sent to the user named  in  this  file.  WWeeeekkllyydduummpp
+     also  creates the file //sspprriittee//aaddmmiinn//dduummpp//ddooiinnggwweeeekkllyy, which
+     disables the daily dumps.  This file  is  removed  when  the
+     weekly dumps complete.
+
+     If wweeeekkllyydduummpp detects an error, it sends mail to dduummppeerr  and
+     exits.   It  also  creates  a  status  file,  so that if the
+     machine running the weekly dumps crashes while the dumps are
+     running,  mail  will  be  sent  to  dduummppeerr  when the machine
+     reboots, telling about the crash.
+
+     If wweeeekkllyydduummpp is invoked with the --ii flag, it will  initial-
+     ize the tapes in both tape drives before starting.
+
+
+
+Sprite v.1.0      Printed:  September 28, 1991                  1
+
+
+
+
+
+
+WEEKLYDUMP                User Commands                WEEKLYDUMP
+
+
+
+FFIILLEESS
+     All the following files are in /sprite/admin/dump:
+
+     doingweekly    lock file to prevent daily dump from running.
+                    Names the filesystem currently being dumped.
+
+     doingweekly.active
+                    status file used to detect crashes.  Contains
+                    the name of the host running the dumps.
+
+     dumpalias      User name of the current  dumper,  for  error
+                    and status messages.
+
+     dumpdates      list of filesystems  dumped,  at  what  time,
+                    what tape, etc.
+
+     dumplist       list of file systems to dump.
+
+     dumplog        very large status log from the dump programs
+
+     tapelist       list of tape devices uses for the dump
+
+
+KKEEYYWWOORRDDSS
+     dump, tape, backup
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0      Printed:  September 28, 1991                  2
+
+
+

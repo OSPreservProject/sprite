@@ -1,0 +1,41 @@
+     COMMAND SUBSTITUTION WITH BRACKETS
+          If an open bracket occurs in a  field  of  a  command,  then
+          command  substitution  occurs (except for fields enclosed in
+          braces).  All of the text up to the matching  close  bracket
+          is  treated as a Tcl command and executed immediately.  Then
+          the result of that command is substituted for the  bracketed
+          text.  For example, consider the command
+
+               set a [set b]
+
+          When the set command has only a single argument, it  is  the
+          name  of  a  variable  and  set returns the contents of that
+          variable.  In this case, if variable b has  the  value  foo,
+          then the command above is equivalent to the command
+
+               set a foo
+          Brackets can be used in more complex ways.  For example,  if
+          the  variable b has the value foo and the variable c has the
+          value gorp, then the command
+
+               set a xyz[set b].[set c]
+
+          is equivalent to the command
+
+               set a xyzfoo.gorp
+
+          A bracketed command may contain multiple commands  separated
+          by  newlines  or  semi-colons in the usual fashion.  In this
+          case the value of the last command is used for substitution.
+          For example, the command
+
+               set a x[set b 22
+               expr $b+2]x
+
+          is equivalent to the command
+
+               set a x24x
+
+          If a field is enclosed in braces then the brackets  and  the
+          characters  between them are not interpreted specially; they
+          are passed through to the argument verbatim.

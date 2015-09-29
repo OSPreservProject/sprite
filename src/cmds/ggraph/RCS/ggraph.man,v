@@ -1,0 +1,299 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.3
+date     90.01.22.14.04.25;  author shirriff;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.01.02.00.36.27;  author tve;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.01.02.00.34.54;  author tve;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@original
+@
+
+
+1.3
+log
+@Made man page somewhat up to date.
+@
+text
+@.TH GGRAPH 1 "1 March 1986"
+.SH NAME
+ggraph
+.SH SYNOPSIS
+.PD 0
+.B "ggraph [input file [output file]]"
+.IP " " 5
+.RS
+.IP "\fBinput file" 12
+is the \fIggraph\fR input file.  If omitted, stdin is read.
+.IP "\fBoutput file" 12
+is the \fIggraph\fR output file.  If omitted, the file name is given
+in the \fIdra\fR command described below.  This is the preferred usage.
+.RE
+.PD .3
+.SH DESCRIPTION
+.PP
+\fIGgraph\fP is a program which will take points and produce gremlin
+files which may be displayed by \fIgremlin\fP or included in
+\fIditroff\fP documents.  \fIGgraph\fP takes as input \fIggraph\fP
+files and produces SUN gremlin files.  The minimum amount of
+information needed is a set of X and Y coordinates.  \fIGgraph\fP will
+automatically scale the points to fit the graph area.  Currently, four
+types of graphs are supported: linear (including curves), log graphs,
+histograms and bar graphs.  In addition all of the line types
+supported by \fIgremlin\fP are supported by \fIggraph\fP.
+\fIGgraph\fP is currently under development and therefore new features
+will be added from time to time.  In addition backwards compatibility
+is \fInot\fP guaranteed at this time.
+.PP
+A \fIggraph\fP input file is an ASCII file containing \fIggraph\fP
+commands and data.  Each command is on a separate line.  Blank lines
+may be inserted as separators with no problem.  The coordinates for the
+points of the graph are read as floats.  Whitespace may be used
+arbitrarily to seperate different elements of a line. Lastly, a
+semicolon is a comment character causing the rest of the line to be
+ignored.
+.sp
+.PP
+The following is a list of the \fIggraph\fR commands:
+.sp
+.ta 6m +1m +\w'<line name> <X pos> <Y pos> 'u +8m
+.nf
+.ul 1
+Command       Arguments	Meaning
+ com		<rest of line>	Comment             
+ cro		on|off	Turn on X/Y cross hair
+ crx		on|off	Turn on X axis cross hair
+ cry		on|off	Turn on Y axis cross hair
+ dae			Data set end        
+ das		<string>	Data start          
+ dra		<output file name>	Draw graph          
+ fir		on|off	First tick mark both axises on/off     
+ fra		on|off	Frame on or off 
+ frt		<size #>	Frame thickness
+ gti		<string>	Graph title          
+ gtp		<X pos> <Y pos>	Graph title position
+ lcu		<line name> <curve type>	Curve type           
+ leg		on|off	Turn on legend       
+ leb		on|off	Draw box around legend       
+ les		on/off	Legend position - right side/bottom
+ lla		<line name> on|off	Line label on/off   
+ llf		<font #>	Line label font
+ lls		<size #>	Line label size
+ llp		<line name> <X pos> <Y pos>	Line label position 
+ lof		<line name> on|off	Line on/off          
+ log		on|off	Log-log graph        
+ lox		on|off	X coordinates log    
+ loy		on|off	Y coordinates log    
+ lsy		<line name> <symbol #>	Line symbol          
+ lth		<size #>	Line thickness
+ lty		<line name> <type #>	Line type            
+ qui			Quit
+ rea		<file name>	Read a command file  
+ sla		<line name> <string>	Line label string   
+ sle		<line name> <label>	Set legend line label for a line       
+ slf		<font #>	Set legend title font       
+ slh		<label>	Set legend string       
+ sls		<size #>	Set legend title character size       
+ ssw		on|off	Symbols on or off    
+ sun		<value>	Set graph units
+ sxt		<min X value> <max X value> <number of ticks>
+			Set X axis scaling 
+.sp .3
+ syt		<min Y value> <max Y value> <number of ticks>
+			Set Y axis scaling   
+.sp .3
+ syz		<size #>	Set symbol size          
+ tif		on|off	Graph title on/off   
+ typ		<type #>	Type of graph        
+ ver		on|off	Y label vertical     
+ tft		<font #>	Title font           
+ tis		<size #>	Title text size      
+ xax		on|off|top|bottom|both	X axis on/off and position       
+ yax		on|off|left|right|both	Y axis on/off and position
+ xfi		on|off	First tick mark X axis on/off      
+ yfi		on|off	First tick mark Y axis on/off      
+ xft		<font #>	X label font         
+ yft		<font #>	Y label font         
+ xle		<length>	X axis length in units
+ yle		<length>	Y axis length in units
+ xgr		on|off	X grid on/off        
+ ygr		on|off	Y grid on/off        
+ xgt		<grid #>	X grid type          
+ ygt		<grid #>	Y grid type          
+ xla		<string>	X label              
+ yla		<string>	Y label              
+ xpr		<#> <#>	Precision for X tick labels            
+ ypr		<#> <#>	Precision for Y tick labels            
+ xst		<# of tick> [<delta> [<starting tick> [<dev org>]]]
+			Set X scaling (obsolete)
+.sp .3
+ yst		<# of tick> [<delta> [<starting tick> [<dev org>]]]
+			Set Y scaling (obsolete)
+.sp .3
+ xtf		<font #>	Set X tick label font               
+ ytf		<font #>	Set Y tick label font               
+ xtp		<X pos> <Y pos>	X label position
+ ytp		<X pos> <Y pos>	Y label position
+ xti		on|off|in|out|both	X ticks on/off       
+ yti		on|off|in|out|both	Y ticks on/off       
+ xtl		on|off	X label on/off       
+ ytl		on|off	Y label on/off       
+ xts		<size #>	X label text size    
+ yts		<size #>	Y label text size    
+ xtz		<size #>	Set X tick label character size               
+ ytz		<size #>	Set Y tick label character size               
+.fi
+.sp
+.PP
+There are seven line types supported by \fIggraph\fP and
+\fIgremlin\fP.  They are:
+.RS
+.nf
+BRUSH_INVISIBLE  0
+BRUSH_DOT        1
+BRUSH_ALT        2
+BRUSH_THICK      3
+BRUSH_DASH       4
+BRUSH_THIN       5
+BRUSH_NORMAL     6
+.fi
+.RE
+.sp
+.PP
+There are four fonts defined in \fIggraph\fP and \fIgremlin\fP.  These
+may be changed arbitrarily with \fIgrn\fP when the graph is printed.
+The fonts are:
+.RS
+.nf
+ROMAN       1
+ITALICS     2
+BOLD        3
+SPECIAL     4
+.fi
+.RE
+.sp
+.PP
+There are four font sizes supported by \fIggraph\fP and \fIgremlin\fP.
+See the \fIgremlin\fP manual for their comparative sizes.
+.RS
+.nf
+SMALL       1
+MEDIUM      2
+LARGE       3
+EXLARGE     4
+.fi
+.RE
+.sp
+.PP
+There are currently eleven symbols defined.  They are:
+.RS
+.nf
+NOSYMBOL        0
+BOX             1
+RING            2
+CROSS           3
+STAR            4
+TRIANGLE        5
+UTRIANGLE       6
+CROSSBOX        7
+STARBOX         8
+DIAMOND         9
+CROSSDIAMOND   10
+.fi
+.RE
+.sp 
+.SH FILES
+.PP
+None
+.SH AUTHOR
+Ed Hunter (edh@@Sun.COM)
+.SH SEE ALSO
+gremlin (l), grn (l), ditroff (l), pic (l)
+.SH BUGS
+.PP
+N/A
+.PP
+.ne 27
+.SH EXAMPLE
+.PP
+The following is a simple \fIggraph\fR input file:
+.sp
+.RS
+.nf
+com Sample ggraph input file
+xla Repetition count                   ;set the X axis label
+yla Sec                                ;set the Y axis label
+gti Total time by packet count         ;set the graph title
+das foo                                ;define a data set foo
+500 4                                  ;data points X, Y
+1000 8
+5000 53
+9000 82
+dae                                   ;end the dataset
+das bar                               ;start another dataset bar
+500 6
+1000 12
+5000 59
+9000 105
+dae                                   ;end the dataset
+syz 5                                 ;set symbol size to 4
+dra graph1                            ;draw a graph in file graph1
+sxt 0.0 10000.0 10                    ;set X axis scaling
+syt 0.0 200.0 10                      ;set Y axis scaling
+xgr off                               ;turn off X grid
+ygr off                               ;turn off Y grid
+lof foo off                           ;turn off line foo
+fra off                               ;turn the frame off
+dra graph2                            ;draw another graph
+.fi
+.RE
+@
+
+
+1.2
+log
+@les command described incorrectly
+@
+text
+@a45 2
+ clx		[<min value> [<max value>]]	Clip the X axis    
+ cly		[<min value> [<max value>]]	Clip the Y axis    
+d55 1
+d57 1
+d63 2
+d71 1
+d73 1
+a73 1
+ rat		<X> <Y>	Aspect ratio         
+d81 1
+d100 2
+d118 2
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d61 1
+a61 1
+ les		sid|bot	Legend position - right side or bottom
+@

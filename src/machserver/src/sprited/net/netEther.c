@@ -1,0 +1,209 @@
+/* 
+ * netEther.c --
+ *
+ *	Routines that know they're dealing with an ethernet.
+ *
+ * Copyright 1990, 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/net/RCS/netEther.c,v 1.1 91/11/14 10:06:41 kupfer Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <mach.h>
+#include <mach_error.h>
+#include <netInt.h>
+#include <netTypes.h>
+
+Net_Address	netEtherBroadcastAddress;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetEtherInit --
+ *
+ *	Initializes stuff for the ethernet.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NetEtherInit()
+{
+    static Net_EtherAddress	tmp = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+
+    NET_ETHER_ADDR_COPY(tmp, netEtherBroadcastAddress.ether);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetEtherInitInterface --
+ *
+ *	Fill in information about the given ethernet interface.
+ *
+ * Results:
+ *	Fills in the uninitialized fields of the interface record.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+NetEtherInitInterface(interPtr, infoPtr)
+    Net_Interface *interPtr;	/* the interface record to fill in; locked */
+    struct net_status *infoPtr;	/* info from Mach that we need */
+{
+    Address buffer;		/* will hold entire packet before shipping 
+				 * to Mach */
+    kern_return_t kernStatus;
+
+    buffer = 0;
+    kernStatus = vm_allocate(mach_task_self(), (vm_address_t *)&buffer,
+			     round_page(infoPtr->max_packet_size), TRUE);
+    if (kernStatus != KERN_SUCCESS) {
+	panic("NetEtherInitInterface: couldn't allocate buffer: %s\n",
+	      mach_error_string(kernStatus));
+    }
+
+    interPtr->netType = NET_NETWORK_ETHER;
+    interPtr->minBytes = infoPtr->min_packet_size - sizeof(Net_EtherHdr);
+    if (interPtr->minBytes < 0) {
+	panic("NetEtherInitInterface: bogus minimum packet size (%d)\n",
+	      interPtr->minBytes);
+    }
+    interPtr->maxBytes = infoPtr->max_packet_size - sizeof(Net_EtherHdr);
+    interPtr->buffer = buffer;
+    interPtr->broadcastAddress.ether = netEtherBroadcastAddress.ether;
+    interPtr->flags |= NET_IFLAGS_BROADCAST | NET_IFLAGS_RUNNING;
+    interPtr->output = NetMachOutput;
+    interPtr->reset = NetMachReset;
+    interPtr->ioctl = NetMachIoControl;
+    interPtr->getStats = NetMachGetStats;
+    interPtr->mergePacket = NetEtherMergePacket;
+    interPtr->getPacketType = NetEtherGetPacketType;
+
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetEtherGetPacketType --
+ *
+ *	Convert the ethernet packet type to the network-independent packet 
+ *	type. 
+ *
+ * Results:
+ *	Returns the machine-independent packet type.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+Net_PacketType
+NetEtherGetPacketType(headerPtr, headerLength)
+    Address headerPtr;		/* start of ethernet header */
+    int headerLength;		/* bytes in header */
+{
+    Net_EtherHdr *etherHdrPtr;
+    Net_PacketType packetType;
+    int ethernetType;
+
+    etherHdrPtr = (Net_EtherHdr *)headerPtr;
+    ethernetType = Net_NetToHostShort((unsigned short)
+				      NET_ETHER_HDR_TYPE(*etherHdrPtr));
+    switch (ethernetType) {
+    case NET_ETHER_SPRITE:
+	packetType = NET_PACKET_SPRITE;
+	break;
+    case NET_ETHER_ARP:
+	packetType = NET_PACKET_ARP;
+	break;
+    case NET_ETHER_REVARP:
+	packetType = NET_PACKET_RARP;
+	break;
+    case NET_ETHER_SPRITE_DEBUG:
+	packetType = NET_PACKET_DEBUG;
+	break;
+    case NET_ETHER_IP:
+	packetType = NET_PACKET_IP;
+	break;
+    default:
+	packetType = NET_PACKET_UNKNOWN;
+	break;
+    }
+
+    return packetType;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetEtherMergePacket --
+ *
+ *	Merge the packet header and scatter/gather array into a single 
+ *	contiguous packet, which it puts in the interface's buffer.
+ *
+ * Results:
+ *	Fills in the length of the header and the flag telling whether the 
+ *	packet is destined for the sending host.
+ *
+ * Side effects:
+ *	If the packet is a loopback, fills in the ethernet source field, so 
+ *	that the ethernet header is legal.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NetEtherMergePacket(interPtr, hdrPtr, scatterGatherPtr,
+		    scatterGatherLength, headerLengthPtr, isLoopbackPtr)
+    Net_Interface *interPtr;	/* the interface the packet is to go out 
+				 * on; should be locked. */
+    Address hdrPtr;		/* the start of the ethernet header */
+    Net_ScatterGather *scatterGatherPtr; /* Data portion of the packet. */
+    int	scatterGatherLength;	/* elements in data portion gather array. */
+    int *headerLengthPtr;	/* OUT: bytes in the header */
+    Boolean *isLoopbackPtr;	/* OUT: destination == sender */
+{
+    Net_EtherHdr *etherHeaderPtr = (Net_EtherHdr *)hdrPtr;
+    Address bufPtr;		/* pointer into interface's buffer */
+
+    *headerLengthPtr = sizeof(Net_EtherHdr);
+    if (NET_ETHER_COMPARE(etherHeaderPtr->destination,
+			  interPtr->netAddress[NET_PROTO_RAW].ether)) {
+	NET_ETHER_ADDR_COPY(interPtr->netAddress[NET_PROTO_RAW].ether,
+			    etherHeaderPtr->source);
+	*isLoopbackPtr = TRUE;
+    } else {
+	*isLoopbackPtr = FALSE;
+    }
+
+    bufPtr = interPtr->buffer;
+    bcopy(hdrPtr, bufPtr, sizeof(Net_EtherHdr));
+    bufPtr += sizeof(Net_EtherHdr);
+    Net_GatherCopy(scatterGatherPtr, scatterGatherLength, bufPtr);
+}

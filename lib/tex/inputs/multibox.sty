@@ -1,0 +1,63 @@
+% MULTIBOX.STY - a style option to provide multiple boxes in pictures
+% ============
+% Author: Brian HAMILTON KELLY, Royal Military College of Science,
+%                               Shrivenham, SWINDON, SN6 8LA, United Kingdom
+% Date:   13 October 1988
+%
+% This style file option provides two new commands for use in the picture
+% environment:
+%
+% \multimake(x,y)(dx,dy){n}(w,h)[<pos>]{Text_1}{Text_2}...{Text_n}
+% \multiframe(x,y)(dx,dy){n}(w,h)[<pos>]{Text_1}{Text_2}...{Text_n}
+%
+% These commands set the n texts Text_1..Text_n inside a \makebox or
+% \framebox respectively.  The first box has its lower-left corner at (x,y),
+% and successive boxes are located at (x+dx,y+dy),..,(x+(n-1)dx,y+(n-1)dy).
+% Each box has width and height determined by (w,h), and the optional
+% box placement parameter <pos> is applied to all the generated texts
+%
+
+\newtoks\multi@rg
+
+\def\multiframe{\let\@putitem=\@iframepicbox \multib@x}
+\def\multimake{\let\@putitem=\@imakepicbox \multib@x}
+
+\def\multib@x(#1,#2)(#3,#4)#5(#6,#7){\@xdim=#1\unitlength \@ydim=#2\unitlength
+  \def\@dxdim{#3} \def\@dydim{#4}
+  \@multicnt=#5 \def\@Xsize{#6} \def\@Ysize{#7}
+  \@ifnextchar [{\imultib@x}{\imultib@x[]}
+  }
+
+% The liberal use of % at the ends of lines is to prevent the ingestion of
+% superfluous spaces which would otherwise upset the horizontal positioning
+% of the boxes.
+
+\def\imultib@x[#1]{\@killglue\relax
+  \def\p@sarg{#1}%
+  \d@multi
+  }
+
+% We need the expanded definition of \i@putitem because \@imakepicbox DOESN'T
+% expand its #3 argument (the optional text placement bit).  However, it can
+% only recognize the letters b, t, l and r in this position, so \p@sarg is no
+% use.  Therefore we expand the arguments, producing an appropriate call.
+
+\def\d@multi{%
+  \ifnum\@multicnt > 0
+    \def\next@rg##1{%
+      \multi@rg={{##1}}% Assign the next argument of original text to \multi@rg
+      \edef\@iputitem{%
+	\noexpand\@putitem(\@Xsize,\@Ysize)[\p@sarg]{\the\multi@rg}%
+      }%
+      \raise\@ydim\hbox to \z@{\kern \@xdim \@iputitem\hss}%
+      \advance\@xdim by \@dxdim\unitlength \advance\@ydim by \@dydim\unitlength
+      \advance\@multicnt by \m@ne
+      \d@multi}% End of (re-)definition of \next@rg
+  \else
+    \let\next@rg=\ignorespaces
+  \fi      % Now execute \next@rg;
+  \next@rg % This will read the text, set it and then call \d@multi recursively
+  }
+
+
+

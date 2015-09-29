@@ -1,0 +1,48 @@
+#
+# This is the main configuration file used by Sprite's "man" program.
+# Each line contains several fields separated by spaces:
+#
+# First field:		Name of directory that contains man page sources.
+# Second field:		Name of directory that contains formatted man pages
+#			corresponding to those in source directory ("-"
+#			means that no formatted versions are to be kept for
+#			these man pages;  reformat each time they're needed).
+# Additional fields:	Any number of keywords:  if one of these is typed
+#			on the command line as a "section", then this
+#			directory will be checked.  The first of these fields
+#			is considered to be the official section name for the
+#			directory;  it is printed in "man -k" output.
+# Directories will be checked in the order they are listed here
+
+.			-			local
+/sprite/man/cmds	/sprite/man/cmds.fmt	cmds 1 1l 1n 1o
+/X11/R4/man/cmds	/X11/R4/man/cmds.fmt	x cmds 1
+/X11/R4/man/lib/Xlib	/X11/R4/man/lib.fmt/Xlib	x lib 3
+/X11/R4/man/lib/Xt	/X11/R4/man/lib.fmt/Xt	x lib 3
+/sprite/man/lib/c	/sprite/man/lib.fmt/c	lib lib/c 2 3 3s 3x 3n 3c
+/sprite/man/lib/m	/sprite/man/lib.fmt/m	lib lib/m 3 3m
+/sprite/man/lib/sunrpc	/sprite/man/lib.fmt/sunrpc	lib lib/sunrpc 3 sunrpc
+/sprite/man/lib/tcl	/sprite/man/lib.fmt/tcl	lib lib/tcl tcl 3
+/sprite/man/dev		/sprite/man/dev.fmt	dev 4
+/sprite/man/files	/sprite/man/files.fmt	files 5
+/sprite/man/admin       /sprite/man/admin.fmt   admin 8
+/usr/sww/man/man1	/usr/sww/man/cat1	cmds ALL 1
+/usr/sww/man/man2	/usr/sww/man/cat2	lib ALL 2
+/usr/sww/man/man3	/usr/sww/man/cat3	lib ALL 3
+/usr/sww/man/man4	/usr/sww/man/cat4	dev ALL 4
+/usr/sww/man/man5	/usr/sww/man/cat5	files ALL 5
+/usr/sww/man/man6	/usr/sww/man/cat6	games ALL 6
+/usr/sww/man/man7	/usr/sww/man/cat7	misc ALL 7
+/usr/sww/man/man8	/usr/sww/man/cat8	admin ALL 8
+/usr/sww/man/manl	/usr/sww/man/catl	local ALL l
+/usr/sww/man/mann	/usr/sww/man/catn	n ALL
+/usr/sww/X11/man/man1	/usr/sww/X11/man/cat1	cmds ALL 1
+/usr/sww/X11/man/man2	/usr/sww/X11/man/cat2	lib ALL 2
+/usr/sww/X11/man/man3	/usr/sww/X11/man/cat3	lib ALL 3
+/usr/sww/X11/man/man4	/usr/sww/X11/man/cat4	dev ALL 4
+/usr/sww/X11/man/man5	/usr/sww/X11/man/cat5	files ALL 5
+/usr/sww/X11/man/man6	/usr/sww/X11/man/cat6	games ALL 6
+/usr/sww/X11/man/man7	/usr/sww/X11/man/cat7	misc ALL 7
+/usr/sww/X11/man/man8	/usr/sww/X11/man/cat8	admin ALL 8
+/usr/sww/X11/man/manl	/usr/sww/X11/man/catl	local ALL l
+/usr/sww/X11/man/mann	/usr/sww/X11/man/catn	n ALL

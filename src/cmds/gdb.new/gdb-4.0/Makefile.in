@@ -1,0 +1,274 @@
+#
+# Makefile for directory with subdirs to build.
+#   Copyright (C) 1990, 1991 Cygnus Support
+#
+# This file is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
+#
+# Last Mod Tue Aug 20 12:48:54 PDT 1991, by rich@cygint.cygnus.com
+#
+# $Id: Makefile.in,v 1.27 1991/08/23 07:15:56 gnu Exp $
+
+srcdir = .
+destdir = /usr/local
+
+#CC = gcc -b$(target) # -B$(srcdir)/../gas/Host-$(host)/Target-$(target)/
+#CFLAGS = -g -nostdinc -nostdlib -I- -I/usr/local/lib/gcc/$(target)/1.92/include -I$(srcdir) -I$(srcdir)/../include -I$(OSINCLUDE)
+
+RANLIB = ranlib
+AR = ar
+AR_FLAGS = cqv
+BISONPATH = 
+
+BISON = `if [ -d $(srcdir)/../bison\`if [ -d $(srcdir)/bison.$(target) ] ; then echo .$(target) ; fi\`$(subdir) ] ; then echo $(srcdir)/../bison\`if [ -d $(srcdir)/bison.$(target) ] ; then echo .$(target) ; fi\`$(subdir)/bison -L $(srcdir)/../bison\`if [ -d $(srcdir)/bison.$(target) ] ; then echo .$(target) ; fi\`/; else echo yacc ; fi`
+
+SUBDIRS = libiberty readline bfd gdb binutils ld gas gcc gnulib
+OTHERS = 
+
+#### host and target specific makefile fragments come in here.
+###
+
+all:
+	$(MAKE) subdir_do DO=all "DODIRS=$(SUBDIRS) $(OTHERS)"
+
+subdir_do: force
+	for i in $(DODIRS); do \
+		if [ -d $(srcdir)/$$i -o -d $(srcdir)/$$i.$(target) ] ; then \
+			if (cd $(srcdir)/$$i`if [ -d $(srcdir)/$$i.$(target) ] ; \
+				then echo .$(target) ; fi`$(subdir); \
+				$(MAKE) \
+					"against=$(against)" \
+					"AR=$(AR)" \
+					"AR_FLAGS=$(AR_FLAGS)" \
+					"RANLIB=$(RANLIB)" \
+					"BISON=$(BISON)" $(DO)) ; then true ; \
+			else exit 1 ; fi ; \
+		else true ; fi ; \
+	done
+
+bootstrap:
+	$(MAKE) all
+	$(MAKE) stage1
+	$(MAKE) pass "stagepass=stage1"
+	$(MAKE) stage2
+	$(MAKE) pass "stagepass=stage2"
+	$(MAKE) comparison
+
+bootstrap2:
+	$(MAKE) pass "stagepass=stage1"
+	$(MAKE) stage2
+	$(MAKE) pass "stagepass=stage2"
+	$(MAKE) comparison
+
+bootstrap3:
+	$(MAKE) pass "stagepass=stage2"
+	$(MAKE) comparison
+
+pass:
+	cp $(srcdir)/gcc`if [ -d $(srcdir)/gcc.$(target) ] ; \
+                then echo .$(target) ; fi`/gstdarg.h $(srcdir)/gas/stdarg.h
+	$(MAKE) subdir_do DO=all "DODIRS=$(SUBDIRS)" \
+		"CC=$(srcdir)/../gcc`if [ -d $(srcdir)/gcc.$(target) ] ; \
+		then echo .$(target) ; fi`$(subdir)/$(stagepass)/gcc -O \
+		-B$(srcdir)/../gcc`if [ -d $(srcdir)/gcc.$(target) ] ; \
+		then echo .$(target) ; fi`$(subdir)/$(stagepass)/ \
+		-B$(srcdir)/../gas`if [ -d $(srcdir)/gas.$(target) ] ; \
+		then echo .$(target) ; fi`$(subdir)/$(stagepass)/" \
+		"AR=$(srcdir)/../binutils`if [ -d $(srcdir)/binutils.$(target) ] ; \
+		then echo .$(target) ; fi`$(subdir)/$(stagepass)/ar" \
+		"RANLIB=$(srcdir)/../binutils`if [ -d $(srcdir)/binutils.$(target) ] ; \
+		then echo .$(target) ; fi`$(subdir)/$(stagepass)/ranlib" \
+		"LOADLIBES=$(srcdir)/../gnulib`if [ -d $(srcdir)/binutils.$(target) ] ; \
+		then echo .$(target) ; fi`$(subdir)/$(stagepass)/gnulib.a /lib/libc.a" \
+		"LDFLAGS=-nostdlib /lib/crt0.o \
+		-L$(srcdir)/../gnulib`if [ -d $(srcdir)/gnulib.$(target) ] ; \
+		then echo .$(target) ; fi`$(subdir)/$(stagepass)/ \
+		-B$(srcdir)/../ld`if [ -d $(srcdir)/ld.$(target) ] ; \
+		then echo .$(target) ; fi`$(subdir)/$(stagepass)/"
+
+
+stage1:
+	$(MAKE) subdir_do DO=stage1 "DODIRS=$(SUBDIRS)"
+
+stage2:
+	$(MAKE) subdir_do DO=stage2 "DODIRS=$(SUBDIRS)"
+
+stage3:
+	$(MAKE) subdir_do DO=stage3 "DODIRS=$(SUBDIRS)"
+
+stage4:
+	$(MAKE) subdir_do DO=stage4 "DODIRS=$(SUBDIRS)"
+
+against=stage2
+
+comparison:; $(MAKE) subdir_do DO=comparison against=$(against) "DODIRS=$(SUBDIRS)"
+
+de-stage1:; $(MAKE) subdir_do DO=de-stage1 "DODIRS=$(SUBDIRS)"
+de-stage2:; $(MAKE) subdir_do DO=de-stage2 "DODIRS=$(SUBDIRS)"
+de-stage3:; $(MAKE) subdir_do DO=de-stage3 "DODIRS=$(SUBDIRS)"
+de-stage4:; $(MAKE) subdir_do DO=de-stage4 "DODIRS=$(SUBDIRS)"
+
+clean:
+	rm -rf *.a TEMP errs core *.o *~ \#* TAGS *.E
+	$(MAKE) subdir_do DO=clean "DODIRS=$(SUBDIRS) $(OTHERS)"
+
+install: install-dirs install-fixed-includes
+	$(MAKE) subdir_do DO=install "DODIRS=$(SUBDIRS) $(OTHERS)"
+
+install-dirs: force
+	- mkdir $(destdir)
+	- mkdir $(destdir)/bin
+	- mkdir $(destdir)/lib
+	- mkdir $(destdir)/include
+	- mkdir $(destdir)/man
+	- mkdir $(destdir)/man/man1
+	(cd  $(srcdir)/gcc`if [ -d $(srcdir)/gcc.$(target) ] ; \
+                then echo .$(target) ; fi`$(subdir) ; $(MAKE) install-dir)
+
+install-fixed-includes: force
+	(cd gcc ; $(MAKE) install-fixed-includes)
+
+etags tags: TAGS
+
+TAGS: FORCE
+	etags `$(MAKE) ls`
+
+ls:
+	@echo Makefile
+	@for i in $(SUBDIRS); \
+	do \
+		(cd $$i; \
+			pwd=`pwd`; \
+			wd=`basename $$pwd`; \
+			for j in `$(MAKE) ls`; \
+			do \
+				echo $$wd/$$j; \
+			done) \
+	done
+
+force:
+
+# with the gnu make, this is done automatically.
+
+Makefile: $(srcdir)/Makefile.in $(srcdir)/configure
+	(cd $(srcdir) ; \
+		./configure +destdir=$(destdir) +norecurse \
+		 `if [ "$(srcdir)" != "." ] ; then echo +subdirs; fi` \
+		$(host) +target=$(target))
+
+#
+# Build GDB distributions that contain BFD, Include, Libiberty, Readline, etc
+
+DEVO_SUPPORT= README README.configure Makefile.in configure configure.in \
+	config.sub 
+GDB_SUPPORT_DIRS= bfd include libiberty readline texinfo/fsf/texinfo.tex
+
+bfd.ilrt.tar.Z: force_update
+	./configure -template=./configure
+	./configure sun4
+	make clean
+	./configure -rm sun4
+	rm -f bfd.ilrt.tar.Z
+	chmod og=u `find $(DEVO_SUPPORT) $(GDB_SUPPORT_DIRS) -print`
+	tar cf - $(DEVO_SUPPORT) $(GDB_SUPPORT_DIRS) \
+		| compress -v >bfd.ilrt.tar.Z
+
+force_update:
+
+#
+# $Log: Makefile.in,v $
+# Revision 1.27  1991/08/23  07:15:56  gnu
+# Make README stick...
+#
+# Revision 1.26  1991/08/22  09:20:07  gnu
+# Build a top-level README for devo.
+#
+# Revision 1.25  1991/08/22  07:15:49  rich
+# Three part names, etc.
+#
+# Revision 1.24  1991/08/20  01:57:31  rich
+# Another try at passing gnulib's location.
+#
+# Revision 1.23  1991/08/16  21:47:41  rich
+# Pass on BISON as bison only if bison is here.
+#
+# Revision 1.22  1991/08/07  19:15:26  rich
+# +forcesubdirs -> +subdirs
+#
+# Revision 1.21  1991/07/31  18:07:59  gnu
+# Set file permissions the same for everyone before making tar file.
+#
+# Revision 1.20  1991/07/31  02:47:14  gnu
+# Add bfd.ilrt.tar.Z "make" rules.
+#
+# Revision 1.19  1991/07/27  07:46:34  rich
+# Changes to accomodate using the freshly built bison in place.
+#
+# Revision 1.18  1991/07/16  00:01:40  gnu
+# Add back gdb and readline.
+#
+# Revision 1.17  1991/06/18  15:30:55  rich
+# added install-dirs target.
+#
+# Revision 1.16  1991/06/14  13:35:40  rich
+# install fixed include files on install.
+#
+# Revision 1.15  1991/06/09  20:27:01  rich
+# added support for binary comparisons.
+#
+# Revision 1.14  1991/05/31  12:34:55  gnu
+# Avoid error stop from Make if a directory doesn't exist during subdir_do.
+#
+# Revision 1.13  1991/05/27  23:03:20  rich
+# Put gcc/gstdarg.h where gas can find it; gas/stdarg.h.
+#
+# Revision 1.12  1991/05/19  00:36:44  rich
+# Added gdb.
+#
+# Revision 1.11  1991/05/03  21:30:41  gnu
+# Rename getopt to libiberty.
+#
+# Revision 1.10  1991/04/24  16:50:53  rich
+# Three staging checkpoint.
+#
+# Revision 1.9  1991/04/17  01:34:36  rich
+# Added getopt for binutils, fixed problem with host dependancies in
+# configure.template.
+#
+# Revision 1.8  1991/04/15  23:43:45  rich
+# Now handles multiple hosts and targets.
+#
+# Revision 1.7  1991/04/13  13:06:16  tiemann
+# Don't depend `install' on `all'.  Actually, the way things work, all
+# depends on things being incrementally installed, and install depends
+# on everything happening in a topological fashion.
+#
+# This will need to be worked on further, but for now it's ok.
+#
+# Revision 1.6  1991/04/13  10:04:14  rich
+# Now can build gas for a29k on a29k.
+#
+# Revision 1.5  1991/04/13  07:40:41  rich
+# Fixed an ordering bug.  Now everything is built, and then installed.
+#
+# Revision 1.4  1991/04/13  02:11:09  rich
+# Config cut 3.  We now almost install a29k.
+#
+# Revision 1.3  1991/04/11  02:41:53  rich
+# Cut 2 config.  Subdirs.
+#
+#
+#
+
+# end of Makefile.in

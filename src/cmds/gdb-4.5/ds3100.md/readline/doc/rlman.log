@@ -1,0 +1,139 @@
+This is Common TeX, Version 2.9 (preloaded format=plain 92.2.12) 25 JUN 1992 20:08
+**&plain rlman.texinfo 
+(./rlman.texinfo (./texinfo.tex Loading texinfo package [Version 2.46]:
+Basics,
+\bindingoffset=\dimen16
+\normaloffset=\dimen17
+\pagewidth=\dimen18
+\pageheight=\dimen19
+\cornerlong=\dimen20
+\cornerthick=\dimen21
+\topandbottommargin=\dimen22
+\outerhsize=\dimen23
+\outervsize=\dimen24
+\EMsimple=\toks12
+\singlespaceskip=\skip18
+\mil=\dimen25
+ fonts,
+\sffam=\fam8
+\fontdepth=\count25
+\tclosesave=\dimen26
+\tcloserm=\dimen27
+ page headings,
+\titlepagetopglue=\skip19
+\titlepagebottomglue=\skip20
+\realeverypar=\toks13
+\evenheadline=\toks14
+\oddheadline=\toks15
+\evenfootline=\toks16
+\oddfootline=\toks17
+ tables,
+\tableindent=\dimen28
+\itemindent=\dimen29
+\itemmargin=\dimen30
+\itemmax=\dimen31
+\itemno=\count26
+ indexing,
+\initialskipamount=\skip21
+\secondaryindent=\skip22
+\partialpage=\box16
+\doublecolumnhsize=\dimen32
+\doublecolumnvsize=\dimen33
+\availdimen@=\dimen34
+ sectioning,
+\chapno=\count27
+\secno=\count28
+\subsecno=\count29
+\subsubsecno=\count30
+\appendixno=\count31
+\contentsfile=\write0
+\chapheadingskip=\skip23
+\subsecheadingskip=\skip24
+\secheadingskip=\skip25
+
+toc printing,
+\tocindent=\dimen35
+ environments,
+\dblarrowbox=\box17
+\longdblarrowbox=\box18
+\pushcharbox=\box19
+\bullbox=\box20
+\equivbox=\box21
+\errorbox=\box22
+\lispnarrowing=\skip26
+\aboveenvskipamount=\skip27
+ defuns,
+\defbodyindent=\skip28
+\defargsindent=\skip29
+\deftypemargin=\skip30
+\deflastargmargin=\skip31
+\parencount=\count32
+ cross reference,
+\auxfile=\write1
+\footnoteno=\count33
+
+and turning on texinfo input format.
+\defaultparindent=\dimen36
+) (./rlman.aux)
+@cpindfile=@write2
+@fnindfile=@write3
+@vrindfile=@write4
+@tpindfile=@write5
+@kyindfile=@write6
+@pgindfile=@write7
+ [1] [2]
+(./rluser.texinfo Appendix @char 65 [1] [2] [3] [4] [5] [6] [7] [8]
+[9]) (./rltech.texinfo Chapter 1 [10] [11] [12] [13] [14] [15] [16]
+[17] [18] [19] [20] [21] [22] [23] [24] [25] [26] [27] [28] [29]
+[30] [31]) (Concept Index) [32]
+Overfull \vbox (7.0pt too high) has occurred while \output is active
+\vbox(37.14322+2.25)x224.75974
+.\glue(\topskip) 37.39322
+.\hbox(6.75+2.25)x224.75974, glue set 142.38382fil
+..\hbox(0.0+0.0)x15.0
+..\indrm (
+..\indrm I
+..\indrm n
+..\indrm d
+..etc.
+
+
+Overfull \vbox (7.0pt too high) has occurred while \output is active
+\vbox(37.14322+2.25)x224.75974
+.\glue(\topskip) 37.39322
+.\hbox(6.75+2.25)x224.75974, glue set 142.38382fil
+..\hbox(0.0+0.0)x15.0
+..\indrm (
+..\indrm I
+..\indrm n
+..\indrm d
+..etc.
+
+
+(Function and Variable Index) [33] [34]
+Overfull \vbox (7.0pt too high) has occurred while \output is active
+\vbox(37.14322+2.25)x224.75974
+.\glue(\topskip) 37.39322
+.\hbox(6.75+2.25)x224.75974, glue set 142.38382fil
+..\hbox(0.0+0.0)x15.0
+..\indrm (
+..\indrm I
+..\indrm n
+..\indrm d
+..etc.
+
+
+Overfull \vbox (7.0pt too high) has occurred while \output is active
+\vbox(37.14322+2.25)x224.75974
+.\glue(\topskip) 37.39322
+.\hbox(6.75+2.25)x224.75974, glue set 142.38382fil
+..\hbox(0.0+0.0)x15.0
+..\indrm (
+..\indrm I
+..\indrm n
+..\indrm d
+..etc.
+
+
+[35] [36] (./rlman.toc) [-1] [-2]
+Output written on rlman.dvi (40 pages, 73936 bytes).

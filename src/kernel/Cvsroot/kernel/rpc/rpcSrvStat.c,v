@@ -1,0 +1,788 @@
+head     9.5;
+branch   ;
+access   ;
+symbols  ds3100:9.5 sun3:9.5 sun4nw:9.5 symm:9.5 spur:9.5 sprited:9.5.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.5
+date     90.11.29.21.01.56;  author kupfer;  state Exp;
+branches 9.5.1.1;
+next     9.4;
+
+9.4
+date     90.10.18.13.58.11;  author kupfer;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.10.02.16.30.19;  author mgbaker;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.09.11.11.35.47;  author mgbaker;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.03.29.12.46.41;  author mgbaker;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.18.36;  author douglis;  state Stable;
+branches ;
+next     8.5;
+
+8.5
+date     89.06.24.11.52.17;  author brent;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.05.30.16.13.52;  author jhh;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.02.15.08.19.56;  author jhh;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.01.06.11.28.17;  author jhh;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.12.04.15.29.49;  author ouster;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.36.17;  author douglis;  state Stable;
+branches ;
+next     6.2;
+
+6.2
+date     88.10.28.19.24.38;  author mlgray;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.26.18.27.00;  author mlgray;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.25.51;  author brent;  state Stable;
+branches ;
+next     5.1;
+
+5.1
+date     87.09.09.10.49.04;  author brent;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.49.07;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.5.1.1
+date     91.10.27.22.38.23;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.5
+log
+@Fold Mary's nack stats into Rpc_SrvStat.
+@
+text
+@/*
+ * rpcSrvStat.c --
+ *      Manipulation and printing of the statistics taken on the server
+ *      side of the RPC system.  The statistics are kept as simple event
+ *      counts.  The counts are incremented in unsynchronized sections of
+ *      code.  They are reset and printed out with a pair of synchronized
+ *      routines.  Clients of the RPC system can use these to trace long
+ *      term RPC exersices.  At any time an RPC client can declare itself
+ *      as entering the RPC system for tracing purposes.  Any number of
+ *      processes can enter the system for tracing.  After the last
+ *      process has left the tracing system the statistics are printed on
+ *      the console and then reset.  (There should be a routine that
+ *      forces a printout of the statistics... If one process messes up
+ *      and doesn't leave then the stats won't get printed.)
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcSrvStat.c,v 9.4 90/10/18 13:58:11 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+
+#include <sprite.h>
+#include <stdio.h>
+#include <bstring.h>
+#include <sync.h>
+#include <rpcSrvStat.h>
+#include <rpc.h>
+#include <rpcServer.h>
+
+/*
+ * Stats are taken during RPC to help make sure all parts
+ * of the algorithm are exersiced and to monitor the condition
+ * of the system.
+ * Two sets of statistics are kept, a total and a triptik.
+ */
+Rpc_SrvStat rpcTotalSrvStat;
+Rpc_SrvStat rpcSrvStat;
+static int numStats = sizeof(Rpc_SrvStat) / sizeof(int);
+
+#ifdef notdef
+/*
+ * This is the monitored data whichs keeps track of how many processes
+ * are using the RPC system.
+ */
+static int numTracedRpcServers;
+
+/*
+ * The entering and leaving monitored.
+ */
+static Sync_Lock rpcSrvTraceLock = Sync_LockInitStatic("Rpc:rpcSrvTraceLock");
+#define LOCKPTR (&rpcSrvTraceLock)
+#endif /* notdef */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_StartSrvTrace --
+ *
+ *      Start tracing of server statistics  This call should be followed
+ *      later by a call to Rpc_EndSrvTrace and then Rpc_PrintSrvTrace.
+ *      These procedures are used to start, stop, and print statistics on
+ *      the server side of the RPC system.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Increment the number of processes in the RPC system, initialize
+ *	the statistics structre at the entry of the first process.
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef notdef
+ENTRY void
+Rpc_StartSrvTrace()
+{
+    LOCK_MONITOR;
+
+
+    numTracedRpcServers++;
+    if (numTracedRpcServers == 1) {
+	RpcResetSrvStat();
+    }
+
+    UNLOCK_MONITOR;
+}
+#endif /* notdef */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcResetSrvStat --
+ *
+ *	Accumulate the server side stats in the Totals struct and
+ *	reset the current counters.  This is not synchronized with
+ *	interrupt time code so errors may occur.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Increment the counters in the Total struct and reset the
+ *	current counters to zero.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+RpcResetSrvStat()
+{
+    register int *totalIntPtr;
+    register int *deltaIntPtr;
+    register int index;
+
+    /*
+     * Add the current statistics to the totals and then
+     * reset the counters.  The statistic structs are cast
+     * into integer arrays to make this easier to maintain.
+     */
+    totalIntPtr = (int *)&rpcTotalSrvStat;
+    deltaIntPtr = (int *)&rpcSrvStat;
+    for (index = 0; index<numStats ; index++) {
+	*totalIntPtr += *deltaIntPtr;
+	totalIntPtr++;
+	deltaIntPtr++;
+    }
+    bzero((Address)&rpcSrvStat, sizeof(Rpc_SrvStat));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_EndSrvTrace --
+ *
+ *	Note that a process has left the RPC system for tracing.
+ *	After the last process leaves the RPC system this prints out the
+ *	statistics that have accrued so far.
+ *
+ * Results:
+ *	Maybe to the printfs.
+ *
+ * Side effects:
+ *	Decrement the number of processes in the RPC system.
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef notdef
+ENTRY void
+Rpc_EndSrvTrace()
+{
+    LOCK_MONITOR;
+
+    numTracedRpcServers--;
+    if (numTracedRpcServers <= 0) {
+	numTracedRpcServers = 0;
+
+	Rpc_PrintSrvStat();
+    }
+
+    UNLOCK_MONITOR;
+}
+#endif /* notdef */
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_PrintSrvStat --
+ *
+ *	Print the RPC server statistics.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Do the prints.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Rpc_PrintSrvStat()
+{
+    printf("Rpc Server Statistics\n");
+    printf("toServer        = %5d ", rpcSrvStat.toServer);
+    printf("noAlloc          = %4d ", rpcSrvStat.noAlloc);
+    printf("invClient        = %4d ", rpcSrvStat.invClient);
+    printf("\n");
+    printf("nacks            = %4d ", rpcSrvStat.nacks);
+    printf("mostNackBuffers  = %4d ", rpcSrvStat.mostNackBuffers);
+    printf("selfNacks        = %4d ", rpcSrvStat.selfNacks);
+    printf("\n");
+    printf("serverBusy       = %4d ", rpcSrvStat.serverBusy);
+    printf("requests        = %5d ", rpcSrvStat.requests);
+    printf("impAcks         = %5d ", rpcSrvStat.impAcks);
+    printf("handoffs        = %5d ", rpcSrvStat.handoffs);
+    printf("\n");
+    printf("fragMsgs        = %5d ", rpcSrvStat.fragMsgs);
+    printf("handoffAcks      = %4d ", rpcSrvStat.handoffAcks);
+    printf("fragAcks         = %4d ", rpcSrvStat.fragAcks);
+    printf("sentPartial      = %4d ", rpcSrvStat.recvPartial);
+    printf("\n");
+    printf("busyAcks         = %4d ", rpcSrvStat.busyAcks);
+    printf("resends          = %4d ", rpcSrvStat.resends);
+    printf("badState         = %4d ", rpcSrvStat.badState);
+    printf("extra            = %4d ", rpcSrvStat.extra);
+    printf("\n");
+    printf("reclaims         = %4d ", rpcSrvStat.reclaims);
+    printf("reassembly      = %5d ", rpcSrvStat.reassembly);
+    printf("dupFrag          = %4d ", rpcSrvStat.dupFrag);
+    printf("nonFrag          = %4d ", rpcSrvStat.nonFrag);
+    printf("\n");
+    printf("fragAborts       = %4d ", rpcSrvStat.fragAborts);
+    printf("recvPartial      = %4d ", rpcSrvStat.recvPartial);
+    printf("closeAcks        = %4d ", rpcSrvStat.closeAcks);
+    printf("discards         = %4d ", rpcSrvStat.discards);
+    printf("\n");
+    printf("unknownAcks      = %4d ", rpcSrvStat.unknownAcks);
+    printf("\n");
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_PrintServiceCount --
+ *
+ *	Print the RPC service call counts.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Do the prints.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Rpc_PrintServiceCount()
+{
+    register int call;
+
+    printf("Rpc Service Calls\n");
+    for (call=0 ; call<=RPC_LAST_COMMAND ; call++) {
+	printf("%-15s %8d\n", rpcService[call].name, rpcServiceCount[call]);
+    }
+}
+@
+
+
+9.5.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcSrvStat.c,v 9.5 90/11/29 21:01:56 kupfer Exp $ SPRITE (Berkeley)";
+@
+
+
+9.4
+log
+@Get rid of (unused) SpecialStat stuff.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcSrvStat.c,v 9.3 90/10/02 16:30:19 mgbaker Exp Locker: kupfer $ SPRITE (Berkeley)";
+d117 1
+d185 3
+a187 4
+    printf("toServer   = %5d ", rpcSrvStat.toServer);
+    printf("noAlloc     = %4d ", rpcSrvStat.noAlloc);
+    printf("nacks       = %4d ", rpcSrvStat.nacks);
+    printf("invClient   = %4d ", rpcSrvStat.invClient);
+d189 28
+a216 24
+    printf("serverBusy  = %4d ", rpcSrvStat.serverBusy);
+    printf("requests   = %5d ", rpcSrvStat.requests);
+    printf("impAcks    = %5d ", rpcSrvStat.impAcks);
+    printf("handoffs   = %5d ", rpcSrvStat.handoffs);
+    printf("\n");
+    printf("fragMsgs   = %5d ", rpcSrvStat.fragMsgs);
+    printf("handoffAcks = %4d ", rpcSrvStat.handoffAcks);
+    printf("fragAcks    = %4d ", rpcSrvStat.fragAcks);
+    printf("sentPartial = %4d ", rpcSrvStat.recvPartial);
+    printf("\n");
+    printf("busyAcks    = %4d ", rpcSrvStat.busyAcks);
+    printf("resends     = %4d ", rpcSrvStat.resends);
+    printf("badState    = %4d ", rpcSrvStat.badState);
+    printf("extra       = %4d ", rpcSrvStat.extra);
+    printf("\n");
+    printf("reclaims    = %4d ", rpcSrvStat.reclaims);
+    printf("reassembly = %5d ", rpcSrvStat.reassembly);
+    printf("dupFrag     = %4d ", rpcSrvStat.dupFrag);
+    printf("nonFrag     = %4d ", rpcSrvStat.nonFrag);
+    printf("\n");
+    printf("fragAborts  = %4d ", rpcSrvStat.fragAborts);
+    printf("recvPartial = %4d ", rpcSrvStat.recvPartial);
+    printf("closeAcks   = %4d ", rpcSrvStat.closeAcks);
+    printf("discards    = %4d ", rpcSrvStat.discards);
+d218 1
+a218 1
+    printf("unknownAcks = %4d ", rpcSrvStat.unknownAcks);
+@
+
+
+9.3
+log
+@More prototyping garbage.
+@
+text
+@a15 3
+ *	Also, there is one special tracing hook used internally by the RPC
+ *	system to trace unusual events.
+ *
+d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcSrvStat.c,v 9.2 90/09/11 11:35:47 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+a56 5
+static void SpecialSrvStat _ARGS_((int packetLength, int expectedLength));
+static void SpecialSrvStatReset _ARGS_((void));
+static void SpecialSrvStatPrint _ARGS_((void));
+
+
+a129 2
+
+    SpecialSrvStatReset();
+a215 2
+
+    SpecialSrvStatPrint();
+a240 64
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SpecialSrvStat --
+ *
+ *	Generic tracing hook.  This procedure gets changed to trace
+ *	different events.  This hides the details of the statistics
+ *	taking from the caller.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	rpcSrvStat.longs is getting incremented.  This is a trace of
+ *	the expected packet size and the actual packet size to
+ *	try and see what is happening.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static struct {
+    int		hits;
+    int		sumLength;
+    int		lastLength;
+    int		sumExpLength;
+    int		lastExpLength;
+} specialSrvStat;
+
+static void
+SpecialSrvStat(packetLength, expectedLength)
+    int packetLength, expectedLength;
+{
+    specialSrvStat.hits++;
+    specialSrvStat.sumLength += packetLength;
+    specialSrvStat.lastLength = packetLength;
+    specialSrvStat.sumExpLength += expectedLength;
+    specialSrvStat.lastExpLength = expectedLength;
+}
+
+static void
+SpecialSrvStatReset()
+{
+    specialSrvStat.hits = 0;
+    specialSrvStat.sumLength = 0;
+    specialSrvStat.lastLength = 0;
+    specialSrvStat.sumExpLength = 0;
+    specialSrvStat.lastExpLength = 0;
+}
+
+static void
+SpecialSrvStatPrint()
+{
+    if (specialSrvStat.hits) {
+	printf("Number of Special Stats: %d\n", specialSrvStat.hits);
+
+	printf("Last packet length (%d), last expected length (%d)\n",
+			     specialSrvStat.lastLength, specialSrvStat.lastExpLength);
+
+	printf("Ave packet length (%d), ave expected length (%d)\n",
+	    (specialSrvStat.sumLength / specialSrvStat.hits),
+	    (specialSrvStat.sumExpLength / specialSrvStat.hits));
+@
+
+
+9.2
+log
+@Added function prototypes (Mendel checking for mary)
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcSrvStat.c,v 9.1 90/03/29 12:46:41 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d28 7
+a34 5
+#include "sprite.h"
+#include "sync.h"
+#include "rpcSrvStat.h"
+#include "rpc.h"
+#include "rpcServer.h"
+@
+
+
+9.1
+log
+@New negative ack stuff.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcSrvStat.c,v 9.0 89/09/12 15:18:36 douglis Stable Locker: mgbaker $ SPRITE (Berkeley)";
+d31 1
+a31 1
+#include "rpcCall.h"
+d57 6
+d137 1
+a137 1
+    RpcSpecialSrvStatReset();
+d159 1
+a159 2
+Rpc_EndSrvTrace(pid)
+    int pid;
+d225 1
+a225 1
+    RpcSpecialSrvStatPrint();
+d257 1
+a257 1
+ * RpcSpecialSrvStat --
+d282 2
+a283 1
+RpcSpecialSrvStat(packetLength, expectedLength)
+d293 2
+a294 1
+RpcSpecialSrvStatReset()
+d303 2
+a304 1
+RpcSpecialSrvStatPrint()
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcSrvStat.c,v 8.5 89/06/24 11:52:17 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d189 1
+d191 1
+a192 1
+    printf("\n");
+d196 1
+a197 1
+    printf("\n");
+d201 1
+a202 1
+    printf("\n");
+d206 1
+a207 1
+    printf("\n");
+d211 1
+a212 1
+    printf("\n");
+d216 1
+@
+
+
+8.5
+log
+@Added syscall support to get call/service counters
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcSrvStat.c,v 8.4 89/05/30 16:13:52 jhh Exp $ SPRITE (Berkeley)";
+@
+
+
+8.4
+log
+@Removed call to Sync_LockRegister
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcSrvStat.c,v 8.3 89/02/15 08:19:56 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d31 2
+d219 26
+@
+
+
+8.3
+log
+@Updated Sync_Lock initialization
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcSrvStat.c,v 8.2 89/01/06 11:28:17 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+a80 1
+    Sync_LockRegister(&rpcSrvTraceLock);
+@
+
+
+8.2
+log
+@New Sync_Lock definition
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcSrvStat.c,v 8.1 88/12/04 15:29:49 ouster Exp Locker: jhh $ SPRITE (Berkeley)";
+d52 1
+a52 1
+static Sync_Lock rpcSrvTraceLock = SYNC_LOCK_INIT_STATIC();
+d80 2
+@
+
+
+8.1
+log
+@Stop using obsolete header files.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcSrvStat.c,v 8.0 88/11/11 18:36:17 douglis Stable Locker: ouster $ SPRITE (Berkeley)";
+d52 1
+a52 1
+static Sync_Lock rpcSrvTraceLock;
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcSrvStat.c,v 6.2 88/10/28 19:24:38 mlgray Exp Locker: douglis $ SPRITE (Berkeley)";
+a29 1
+#include "byte.h"
+@
+
+
+6.2
+log
+@Conversion to new C library.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcSrvStat.c,v 6.1 88/08/26 18:27:00 mlgray Exp Locker: mlgray $ SPRITE (Berkeley)";
+@
+
+
+6.1
+log
+@Fixed some lint errors.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: rpcSrvStat.c,v 6.0 88/08/11 12:25:51 brent Stable $ SPRITE (Berkeley)";
+d77 1
+a77 1
+void
+d127 1
+a127 1
+    Byte_Zero(sizeof(Rpc_SrvStat), (Address)&rpcSrvStat);
+d150 1
+a150 1
+void
+d184 31
+a214 31
+    Sys_Printf("Rpc Server Statistics\n");
+    Sys_Printf("toServer   = %5d ", rpcSrvStat.toServer);
+    Sys_Printf("noAlloc     = %4d ", rpcSrvStat.noAlloc);
+    Sys_Printf("invClient   = %4d ", rpcSrvStat.invClient);
+    Sys_Printf("serverBusy  = %4d ", rpcSrvStat.serverBusy);
+    Sys_Printf("\n");
+    Sys_Printf("requests   = %5d ", rpcSrvStat.requests);
+    Sys_Printf("impAcks    = %5d ", rpcSrvStat.impAcks);
+    Sys_Printf("handoffs   = %5d ", rpcSrvStat.handoffs);
+    Sys_Printf("fragMsgs   = %5d ", rpcSrvStat.fragMsgs);
+    Sys_Printf("\n");
+    Sys_Printf("handoffAcks = %4d ", rpcSrvStat.handoffAcks);
+    Sys_Printf("fragAcks    = %4d ", rpcSrvStat.fragAcks);
+    Sys_Printf("sentPartial = %4d ", rpcSrvStat.recvPartial);
+    Sys_Printf("busyAcks    = %4d ", rpcSrvStat.busyAcks);
+    Sys_Printf("\n");
+    Sys_Printf("resends     = %4d ", rpcSrvStat.resends);
+    Sys_Printf("badState    = %4d ", rpcSrvStat.badState);
+    Sys_Printf("extra       = %4d ", rpcSrvStat.extra);
+    Sys_Printf("reclaims    = %4d ", rpcSrvStat.reclaims);
+    Sys_Printf("\n");
+    Sys_Printf("reassembly = %5d ", rpcSrvStat.reassembly);
+    Sys_Printf("dupFrag     = %4d ", rpcSrvStat.dupFrag);
+    Sys_Printf("nonFrag     = %4d ", rpcSrvStat.nonFrag);
+    Sys_Printf("fragAborts  = %4d ", rpcSrvStat.fragAborts);
+    Sys_Printf("\n");
+    Sys_Printf("recvPartial = %4d ", rpcSrvStat.recvPartial);
+    Sys_Printf("closeAcks   = %4d ", rpcSrvStat.closeAcks);
+    Sys_Printf("discards    = %4d ", rpcSrvStat.discards);
+    Sys_Printf("unknownAcks = %4d ", rpcSrvStat.unknownAcks);
+    Sys_Printf("\n");
+d269 1
+a269 1
+	Sys_SafePrintf("Number of Special Stats: %d\n", specialSrvStat.hits);
+d271 1
+a271 1
+	Sys_SafePrintf("Last packet length (%d), last expected length (%d)\n",
+d274 1
+a274 1
+	Sys_SafePrintf("Ave packet length (%d), ave expected length (%d)\n",
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d1 1
+a1 1
+/* 
+d24 2
+a25 2
+static char rcsid[] = "$Header: rpcSrvStat.c,v 5.1 87/09/09 10:49:04 brent Exp $ SPRITE (Berkeley)";
+#endif not lint
+d55 1
+a55 1
+#endif notdef
+d89 1
+a89 1
+#endif notdef
+d165 1
+a165 1
+#endif notdef
+@
+
+
+5.1
+log
+@Cleaned up some lint
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: rpcSrvStat.c,v 5.0 87/08/11 10:49:07 sprite Exp $ SPRITE (Berkeley)";
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: rpcSrvStat.c,v 4.2 87/08/04 13:47:11 nelson Exp $ SPRITE (Berkeley)";
+d43 1
+d55 1
+@

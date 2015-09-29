@@ -1,0 +1,130 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  sprited:1.2.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     88.08.25.14.41.12;  author brent;  state Exp;
+branches 1.2.1.1;
+next     1.1;
+
+1.1
+date     88.06.19.14.32.11;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.2.1.1
+date     91.12.10.16.37.49;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Re-implemented using the new Fs_SetAttr system call
+@
+text
+@/* 
+ * utimes.c --
+ *
+ *	Procedure to map from Unix utimes system call to Sprite system call.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: utimes.c,v 1.1 88/06/19 14:32:11 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+#include "fs.h"
+
+#include "compatInt.h"
+#include <errno.h>
+#include <sys/time.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * utimes --
+ *
+ *	Procedure to map from Unix utimes system call to Sprite 
+ *	Fs_SetAttributes system call.
+ *
+ * Results:
+ *      UNIX_SUCCESS    - the call was successful.
+ *      UNIX_ERROR      - the call was not successful.
+ *                        The actual error code stored in errno.
+ *
+ * Side effects:
+ *	The protection of the specified file is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+utimes(path, tvp)
+    char *path;
+    struct timeval tvp[2];
+{
+    ReturnStatus status;	/* result returned by Sprite system calls */
+    Fs_Attributes attributes;	/* struct containing all file attributes,
+				 * only access/modify times looked at. */
+
+    attributes.accessTime.seconds = tvp[0].tv_sec;
+    attributes.accessTime.microseconds = tvp[0].tv_usec;
+    attributes.dataModifyTime.seconds = tvp[1].tv_sec;
+    attributes.dataModifyTime.microseconds = tvp[1].tv_usec;
+    status = Fs_SetAttr(path,  FS_ATTRIB_FILE, &attributes, FS_SET_TIMES);
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}
+@
+
+
+1.2.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/unixSyscall/RCS/utimes.c,v 1.2 88/08/25 14:41:12 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sigsetmask.c,v 1.1 86/04/17 15:21:06 douglis Exp $ SPRITE (Berkeley)";
+d46 3
+a48 2
+    ReturnStatus status;	   /* result returned by Sprite system calls */
+    Fs_Attributes attributes;  /* struct containing all file attributes */
+a49 5
+    status = Fs_GetAttributes(path, FS_ATTRIB_FILE, &attributes);
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    }
+d54 1
+a54 1
+    status = Fs_SetAttributes(path,  FS_ATTRIB_FILE, &attributes);
+@

@@ -1,0 +1,330 @@
+
+
+
+radiobutton               User Commands               radiobutton
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     radiobutton - Create and manipulate radio-button widgets
+
+SSYYNNOOPPSSIISS
+     rraaddiioobbuuttttoonn _p_a_t_h_N_a_m_e ?_o_p_t_i_o_n_s?
+
+SSTTAANNDDAARRDD OOPPTTIIOONNSS
+     aaccttiivveeBBaacckkggrroouunndd               bbiittmmaapp          ffoorreeggrroouunnddtteexxtt |
+     aaccttiivveeFFoorreeggrroouunndd               bboorrddeerrWWiiddtthh     ppaaddxxtteexxttVVaarriiaabbllee|
+     aanncchhoorr          ccuurrssoorr         ppaaddyy                           |
+     bbaacckkggrroouunndd      ffoonntt           rreelliieeff                         |
+
+     See the ``options'' manual entry for details on the standard
+     options.
+
+WWIIDDGGEETT--SSPPEECCIIFFIICC OOPPTTIIOONNSS
+     Name:           ccoommmmaanndd
+     Class:          CCoommmmaanndd
+     Command-Line Switch:--ccoommmmaanndd
+
+          Specifies a Tcl command to associate with  the  button.
+          This  command  is typically invoked when mouse button 1
+          is released over the button window.
+
+     Name:           hheeiigghhtt                                        |
+     Class:          HHeeiigghhtt                                        |
+     Command-Line Switch:--hheeiigghhtt                                   |
+
+                                                                        ||
+          Specifies a desired height for the button.  If a bitmap  |
+          is being displayed in the button then the value  is  in  |
+          screen  units  (i.e.  any  of  the  forms acceptable to  |
+          TTkk__GGeettPPiixxeellss); for text it is in  lines  of  text.   If  |
+          this  option  isn't  specified,  the  button's  desired  |
+          height is computed from the size of the bitmap or  text  |
+          being displayed in it.
+
+     Name:           sseelleeccttoorr
+     Class:          FFoorreeggrroouunndd
+     Command-Line Switch:--sseelleeccttoorr
+
+          Specifies the color to draw in the selector  when  this
+          button  is  selected.   If specified as an empty string  |
+          then no selector is drawn for the button.
+
+     Name:           vvaalluuee
+     Class:          VVaalluuee
+     Command-Line Switch:--vvaalluuee
+
+          Specifies value to store  in  the  button's  associated
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+radiobutton               User Commands               radiobutton
+
+
+
+          variable whenever this button is selected.  Defaults to
+          the name of the radio button.
+
+     Name:           vvaarriiaabbllee
+     Class:          VVaarriiaabbllee
+     Command-Line Switch:--vvaarriiaabbllee
+
+          Specifies name of global variable to set whenever  this
+          button  is  selected.   Changes  in  this variable also
+          cause  the  button  to  select  or   deselect   itself.
+          Defaults to the value sseelleecctteeddBBuuttttoonn.
+
+     Name:           wwiiddtthh                                         |
+     Class:          WWiiddtthh                                         |
+     Command-Line Switch:--wwiiddtthh                                    |
+
+                                                                        ||
+          Specifies  a desired width for the button.  If a bitmap  |
+          is being displayed in the button then the value  is  in  |
+          screen  units  (i.e.  any  of  the  forms acceptable to  |
+          TTkk__GGeettPPiixxeellss); for text it is in characters.   If  this  |
+          option  isn't  specified, the button's desired width is  |
+          computed from the size of  the  bitmap  or  text  being  |
+          displayed in it.
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The rraaddiioobbuuttttoonn command creates a new window (given  by  the
+     _p_a_t_h_N_a_m_e  argument)  and makes it into a radiobutton widget.
+     Additional options, described above, may be specified on the
+     command  line or in the option database to configure aspects
+     of the radio button such as its colors, font, text, and ini-
+     tial  relief.   The rraaddiioobbuuttttoonn command returns its _p_a_t_h_N_a_m_e
+     argument.  At the time this command is invoked,  there  must
+     not  exist  a  window  named _p_a_t_h_N_a_m_e, but _p_a_t_h_N_a_m_e's parent
+     must exist.
+
+     A radio button is a widget that displays a textual string or  |
+     bitmap  and a diamond called a _s_e_l_e_c_t_o_r.  A radio button has
+     all of the behavior of a simple button, including  the  fol-
+     lowing:  it  can  display  itself  in  either  of  two color
+     schemes, ``active'' or ``normal'';  it can be made to appear
+     raised,  sunken,  or  flat;  it can be made to flash; and it
+     invokes a Tcl command whenever mouse  button  1  is  clicked
+     over the check button.
+
+     In addition, radio buttons can be _s_e_l_e_c_t_e_d.  If a radio but-
+     ton  is  selected  then  a  special highlight appears in the
+     selector and a Tcl variable associated with the radio button
+     is  set  to  a particular value.  If the radio button is not
+     selected then the selector is drawn in a different  fashion.
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+radiobutton               User Commands               radiobutton
+
+
+
+     Typically, several radio buttons share a single variable and
+     the value of the variable indicates which radio button is to
+     be  selected.   When  a radio button is selected it sets the  |
+     value of the variable to indicate  that  fact;   each  radio  |
+     button also monitors the value of the variable and automati-  |
+     cally selects and deselects itself when the variable's value  |
+     changes.   By  default  the variable sseelleecctteeddBBuuttttoonn is used;
+     its contents give the name of the button that  is  selected,
+     or  the empty string if no button associated with that vari-
+     able is selected.  The name of the variable for a radio but-
+     ton, plus the variable to be stored into it, may be modified
+     with options on the command line or in the option  database.
+     By  default a radio button is configured to select itself on
+     button clicks.
+
+
+WWIIDDGGEETT CCOOMMMMAANNDD
+     The rraaddiioobbuuttttoonn command creates a new Tcl command whose name
+     is  _p_a_t_h_N_a_m_e.   This  command  may be used to invoke various
+     operations on the widget.   It  has  the  following  general
+     form:
+
+          _p_a_t_h_N_a_m_e _o_p_t_i_o_n ?_a_r_g _a_r_g ...?
+     _O_p_t_i_o_n and the _a_r_gs determine the exact behavior of the com-
+     mand.   The following commands are possible for radio-button
+     widgets:
+
+     _p_a_t_h_N_a_m_e aaccttiivvaattee
+          Redisplay the radio button using its active  foreground
+          and background colors instead of normal colors.
+
+     _p_a_t_h_N_a_m_e ccoonnffiigguurree ?_o_p_t_i_o_n? ?_v_a_l_u_e _o_p_t_i_o_n _v_a_l_u_e ...?
+          Query  or  modify  the  configuration  options  of  the
+          widget.   If  no  _o_p_t_i_o_n  is  specified, returns a list
+          describing all of the available  options  for  _p_a_t_h_N_a_m_e
+          (see  TTkk__CCoonnffiigguurreeIInnffoo for information on the format of
+          this list).  If _o_p_t_i_o_n is specified with no _v_a_l_u_e, then
+          the  command  returns  a  list describing the one named
+          option (this list will be identical to the  correspond-
+          ing  sublist  of  the  value  returned  if no _o_p_t_i_o_n is
+          specified).  If one  or  more  _o_p_t_i_o_n-_v_a_l_u_e  pairs  are
+          specified,  then  the command modifies the given widget
+          option(s) to have the given value(s);  in this case the
+          command  returns  an empty string.  _O_p_t_i_o_n may have any
+          of the values accepted by the rraaddiioobbuuttttoonn command.
+
+     _p_a_t_h_N_a_m_e ddeeaaccttiivvaattee
+          Redisplay the radio button using its normal  foreground
+          and background colors instead of active colors.
+
+     _p_a_t_h_N_a_m_e ddeesseelleecctt
+          Deselect the radio  button:   redisplay  it  without  a
+
+
+
+Sprite v1.0                                                     3
+
+
+
+
+
+
+radiobutton               User Commands               radiobutton
+
+
+
+          highlight  in the selector and set the associated vari-
+          able to an empty string.  If this radio button was  not
+          currently selected, then the command has no effect.
+
+     _p_a_t_h_N_a_m_e ffllaasshh
+          Flash  the  radio  button.   This  is  accomplished  by
+          redisplaying  the radio button several times, alternat-
+          ing between active and normal colors.  At  the  end  of
+          the  flash  the  radio  button  is  left  in  the  same
+          normal/active state as when the command was invoked.
+
+     _p_a_t_h_N_a_m_e iinnvvookkee
+          Does just what would have happened if the user  invoked  |
+          the  radio button with the mouse: select the button and  |
+          invoke its associated Tcl command,  if  there  is  one.  |
+          The  return value is the return value from the Tcl com-  |
+          mand, or an empty string if there is no command associ-  |
+          ated with the radio button.
+
+     _p_a_t_h_N_a_m_e sseelleecctt
+          Select the radio button:  display it with a highlighted
+          selector  and  set the associated variable to the value
+          corresponding to this widget.
+
+
+BBIINNDDIINNGGSS
+     Tk automatically creates class bindings  for  radio  buttons  |
+     that give them the following default behavior:                |
+
+     [1]                                                                ||
+          The  radio  button  activates whenever the mouse passes  |
+          over it and deactivates whenever the mouse  leaves  the  |
+          radio button.                                            |
+
+     [2]                                                                ||
+          The radio button's relief is changed to sunken whenever  |
+          mouse button 1 is pressed over it, and  the  relief  is  |
+          restored  to  its original value when button 1 is later  |
+          released.                                                |
+
+     [3]                                                                ||
+          If  mouse button 1 is pressed over the radio button and  |
+          later released over the radio button, the radio  button  |
+          is invoked (i.e. it is selected and the command associ-  |
+          ated with the button is  invoked,  if  there  is  one).  |
+          However, if the mouse is not over the radio button when  |
+          button 1 is released, then no invocation occurs.         |
+
+     The behavior of radio buttons can be changed by defining new  |
+     bindings  for  individual widgets or by redefining the class  |
+     bindings.
+
+
+
+
+Sprite v1.0                                                     4
+
+
+
+
+
+
+radiobutton               User Commands               radiobutton
+
+
+
+KKEEYYWWOORRDDSS
+     radio button, widget
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     5
+
+
+

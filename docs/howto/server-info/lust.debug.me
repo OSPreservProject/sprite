@@ -1,0 +1,123 @@
+.uh "How to Boot Lust"
+.pp
+I am ``Lust'', A Sprite file server.  
+To boot from disk after a power-up:
+.(l
+>>init
+\fI there will be a pause, then some info printed out\fP
+>>boot 5/rz0/new
+\fI the kernel should start up within a few seconds
+.)l
+If Lust won't boot you can try booting it off Allspice.
+The 'bootp', 'mopd', and 'arpd' daemons need to be running on Allspice.
+Then type:
+.(l
+>>boot 2/mop/new
+\fI there should be a delay of about 10 seconds before the kernel starts up\fP
+.)l
+.pp
+To reboot when running Sprite, use the shutdown command:
+.(l
+% sync
+% shutdown -q -r
+.)l
+The 'sync' command writes out the cache, is isn't required unless
+you are parnoid.  Shutdown will sync the disks as the last thing before
+rebooting.
+.pp
+If Lust is so wedged you can't do anything from its console,
+then attempt to sync the cache with:
+.(l
+F1-W
+.)l
+You should get a message about syncing the disks.
+You can abort to the PROM with
+.(l
+F1-A
+.)l
+Or, as a last resort, you can reset it with the reset button
+on the back.
+
+.uh "Debugging Tips"
+.pp
+If Lust acts up then you might try the following things.
+If you aren't logged in, log in as root.
+Useful commands are:
+.(l
+lust # rpcstat -srvr
+.)l
+Which dumps out the status of all the RPC server processes.  If a bunch
+are ``busy'', and they remain busy with the same RPC ID and client, then
+there may be a deadlock.
+If they are all in the ``wait'' state it means that the Rpc_Daemon process
+is not doing rebinding for some reason.
+.(l
+lust # ps -a
+.)l
+This will tell you if any important daemons have died.
+If the ipServer is in the DEBUG state you can restart it and
+the daemons that depend on it with /sprite/admin.ds3100/restartIPServer.
+.(l
+% rpcecho -h \fIhostname\fP -n 1000
+.)l
+This program, which is found in /sprite/src/benchmarks/rpcecho,
+and may or may not be installed in /sprite/cmds,
+will tell you if there timeouts when using the RPC protocol to
+talk to another host.  If you suspect that a host with an Intel
+ethernet interface is flaking out, you can try this command.
+Lot's of timeouts indicate trouble.
+You can reset a host's network interface from its console with
+either of these keystrokes.
+.(l
+Fl-N
+break-N
+Ll-N
+.)l
+On a regular DecStation keyboard you use the F1 key like a shift key.
+On a regular Sun keyboard you use the L1 key like a shift key.
+On an ascii terminal you use the break key like an escape key,
+hit break, then the key.
+
+.uh "Kernel Debugging"
+.pp
+If Lust is so hung you can't explore with user commands,
+then the best you can do is sync the disks with:
+.(l
+F1-W
+.)l
+This should print a message about queuing a call to sync the disks,
+and when it is done it should print a '.' and a newline.
+If you don't get the newline then Lust is deadlocked inside the
+file system cache, sigh.  Throw Lust into the debugger with:
+.(l
+F1-D
+.)l
+You should get
+a message about ``Entering the debugger...''.
+(If not, I think you're forced to reboot.)
+.pp
+You have to run the debugger from either a ds3100 or ds5000 running
+Sprite.
+Go to /sprite/src/kernel/sprite and run
+.(l
+% Kdbx  ds5000.\fIversion\fP lust
+.)l
+If there is a deadlock you can dump the process table:
+.(l
+(kdbx) set $pdump = 0
+.)l
+You can switch from process to process and to stack backtraces
+by using the 'set $index = pid' command.  You only need to specify the last
+two hex digits of the process ID.  If you only have a decimal ID,
+then you have to type the whole thing.
+File system deadlocks center around locked handles, usually.
+When you find a process stuck in Fsutil_HandleFetch of Fsutil_HandleLock
+you can try to find the culprit by looking at the *hdrPtr these
+guys are waiting on.  There is a 'lockProcessID' in the hdrPtr that
+is a pointer to a Proc_ControlBlock.  
+You cannot reboot Lust from within kdbx.  You have to abort it,
+or reset it with the reset button on the back of the machine,
+and then reboot it as described above.
+.uh "Modify date"
+.pp
+These notes were last updated by John Hartman on 5/29/91.

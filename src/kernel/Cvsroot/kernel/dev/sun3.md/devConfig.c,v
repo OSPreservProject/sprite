@@ -1,0 +1,688 @@
+head     9.5;
+branch   ;
+access   ;
+symbols  ds3100:9.5 sun3:9.5 sun4nw:9.5 symm:9.5 spur:9.5 Summer89:9.0 newlib:8.0 Summer88:6.0 sbc:5.4;
+locks    ; strict;
+comment  @ * @;
+
+
+9.5
+date     90.12.06.21.58.20;  author jhh;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.10.11.15.11.54;  author mendel;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.07.30.16.27.23;  author jhh;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.06.21.12.38.35;  author brent;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.12.01.12.18.45;  author brent;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.58.36;  author douglis;  state Stable;
+branches ;
+next     8.8;
+
+8.8
+date     89.07.15.11.09.09;  author ouster;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.06.16.08.58.25;  author mendel;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.05.24.07.50.35;  author rab;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.05.23.10.30.50;  author mendel;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     88.12.21.10.26.33;  author brent;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     88.12.07.12.43.05;  author root;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.11.28.08.20.02;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.21.14.00.51;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.13.41;  author douglis;  state Stable;
+branches ;
+next     6.2;
+
+6.2
+date     88.09.06.14.15.38;  author nelson;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.09.05.12.36.33;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.29.09;  author douglis;  state Stable;
+branches ;
+next     5.4;
+
+5.4
+date     88.05.25.19.36.27;  author douglis;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     88.05.23.21.42.45;  author douglis;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     88.04.11.10.22.18;  author douglis;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.12.09.11.43.09;  author douglis;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.39.37;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.5
+log
+@added the first default partition to the table twice in an attempt to
+get around the bus error problems.
+@
+text
+@/* 
+ * devConfig.c --
+ *
+ *	Configuration table for the devices in the system.  There is
+ *	a table for the possible controllers in the system, and
+ *	then a table for devices.  Devices are implicitly associated
+ *	with a controller.  This file should be automatically generated
+ *	by a config program, but it isn't.
+ *
+ * Copyright 1986, 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devConfig.c,v 9.4 90/10/11 15:11:54 mendel Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include "sprite.h"
+#include "devInt.h"
+#include "scsiHBA.h"
+#include "devTypes.h"
+
+/*
+ * Per device include files.
+ */
+#include "scsi3.h"
+#include "scsi0.h"
+#include "xylogics450.h"
+#include "jaguar.h"
+#include "devTMR.h"
+
+/*
+ * The controller configuration table.
+ */
+DevConfigController devCntrlr[] = {
+   /* Name     Address,  Addr space, ID, InitProc   IntrVector  IntrRoutine. */
+    { "SCSI3", 0x0FE12000,	DEV_OBIO,  0, DevSCSI3Init,26, DevSCSI3Intr },
+    { "SCSI3",  0x200000, DEV_VME_D16A24, 0, DevSCSI3Init, 64, DevSCSI3Intr },
+    { "SCSI0",  0x200000, DEV_VME_D16A24, 0, DevSCSI0Init, 64, DevSCSI0Intr },
+    { "Xylogics450", 0xee40, DEV_VME_D16A16,	 0, DevXylogics450Init,
+				    72, DevXylogics450Intr},
+    { "JaguarHBA", 0x8800, DEV_VME_D16A16, 0, DevJaguarInit, 211, 
+						DevJaguarIntr},
+    { "tmr0", 0x0FE14000, DEV_OBIO, 0, Dev_TimerProbe, 0, ((Boolean (*)())0)},
+
+};
+int devNumConfigCntrlrs = sizeof(devCntrlr) / sizeof(DevConfigController);
+
+/*
+ * Table of SCSI HBA types attached to this system.
+ */
+
+ScsiDevice *((*devScsiAttachProcs[]) _ARGS_((Fs_Device *devicePtr,
+		void (*insertProc) (List_Links *elementPtr,
+                                    List_Links *elementListHdrPtr)))) = {
+    DevSCSI3AttachDevice,		/* SCSI Controller type 0. */
+    DevSCSI0AttachDevice,		/* SCSI Controller type 1. */
+    DevJaguarAttachDevice,		/* SCSI Controller type 2. */
+};
+int devScsiNumHBATypes = sizeof(devScsiAttachProcs) / 
+			 sizeof(devScsiAttachProcs[0]);
+
+/*
+ * A list of disk devices that is used when probing for a root partition.
+ * The choices are:
+ * Drive 0 partition 0 of xylogics 450 controller 0.
+ * Drive 1 partition c of xylogics 450 controller 0.
+ * SCSI Disk target ID 0 LUN 0 partition 2 on SCSI0 HBA 0.
+ * SCSI Disk target ID 0 LUN 0 partition 2 on SCSI3 HBA 0. 
+ * SCSI Disk target ID 0 LUN 0 partition 0 on SCSI0 HBA 0.
+ * SCSI Disk target ID 0 LUN 0 partition 0 on SCSI3 HBA 0. 
+ */
+Fs_Device devFsDefaultDiskPartitions[] = { 
+    /*
+     * Mint boots from its 'a' partition.
+     */
+    { -1, DEV_XYLOGICS, 0, (ClientData) NIL },
+    /*
+     * Nadreck (at PARC) boots from disk LUN 1, partition c.
+     * (2 bits for LUN, then three bits for partition => 013)
+     */
+    { -1, DEV_XYLOGICS, 013, (ClientData) NIL },
+    { -1, SCSI_MAKE_DEVICE_TYPE(DEV_SCSI_DISK, DEV_SCSI0_HBA, 0, 0, 0, 2),
+	  SCSI_MAKE_DEVICE_UNIT(DEV_SCSI_DISK, DEV_SCSI0_HBA, 0, 0, 0, 2),
+		(ClientData) NIL }, 
+    /*
+     * The first entry is repeated to get around the problems with 
+     * unit attentions.  Right now the kernel will get a unit attention on
+     * the first access and will bail out.  Gross. jhh 12/6/90
+     */
+    { -1, SCSI_MAKE_DEVICE_TYPE(DEV_SCSI_DISK, DEV_SCSI0_HBA, 0, 0, 0, 2),
+	  SCSI_MAKE_DEVICE_UNIT(DEV_SCSI_DISK, DEV_SCSI0_HBA, 0, 0, 0, 2),
+		(ClientData) NIL }, 
+    { -1, SCSI_MAKE_DEVICE_TYPE(DEV_SCSI_DISK, DEV_SCSI3_HBA, 0, 0, 0, 2),
+	  SCSI_MAKE_DEVICE_UNIT(DEV_SCSI_DISK, DEV_SCSI3_HBA, 0, 0, 0, 2),
+		(ClientData) NIL },
+    { -1, SCSI_MAKE_DEVICE_TYPE(DEV_SCSI_DISK, DEV_SCSI0_HBA, 0, 0, 0, 0),
+	  SCSI_MAKE_DEVICE_UNIT(DEV_SCSI_DISK, DEV_SCSI0_HBA, 0, 0, 0, 0),
+		(ClientData) NIL }, 
+    { -1, SCSI_MAKE_DEVICE_TYPE(DEV_SCSI_DISK, DEV_SCSI3_HBA, 0, 0, 0, 0),
+	  SCSI_MAKE_DEVICE_UNIT(DEV_SCSI_DISK, DEV_SCSI3_HBA, 0, 0, 0, 0),
+		(ClientData) NIL }, 
+    };
+int devNumDefaultDiskPartitions = sizeof(devFsDefaultDiskPartitions) / 
+			  sizeof(Fs_Device);
+@
+
+
+9.4
+log
+@Added prototype to decls of scsi device attach procs.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devConfig.c,v 9.3 90/07/30 16:27:23 jhh Exp $ SPRITE (Berkeley)";
+d90 8
+@
+
+
+9.3
+log
+@made separate defaults for a and c partitions
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devConfig.c,v 9.2 90/06/21 12:38:35 brent Exp Locker: jhh $ SPRITE (Berkeley)";
+d60 3
+a62 1
+ScsiDevice *((*devScsiAttachProcs[])()) = {
+@
+
+
+9.2
+log
+@added Drive 1 partition c of xylogics 450 controller 0.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devConfig.c,v 9.1 89/12/01 12:18:45 brent Exp $ SPRITE (Berkeley)";
+d88 1
+a88 6
+    /*
+     * Try the 'c' partition (#2) first.  This is the whole disk.
+     * If really the 'a' partition is formatted, then Fsdm_AttachDisk
+     * will complain, but do the attach anyway.
+     */
+    { -1, SCSI_MAKE_DEVICE_TYPE(DEV_SCSI_DISK, DEV_SCSI0_HBA, 0, 0, 0, 0),
+d91 1
+a91 1
+    { -1, SCSI_MAKE_DEVICE_TYPE(DEV_SCSI_DISK, DEV_SCSI3_HBA, 0, 0, 0, 0),
+a93 4
+    /*
+     * Now try 'a' partiion (#0).  This is a smaller partition at the
+     * front of the disk.
+     */
+@
+
+
+9.1
+log
+@Changed default boot disk to be 'c' partition, not 'a'.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev.jo/sun3.md/RCS/devConfig.c,v 8.8 89/07/15 11:09:09 ouster Exp $ SPRITE (Berkeley)";
+d72 1
+d83 5
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devConfig.c,v 8.8 89/07/15 11:09:09 ouster Exp Locker: douglis $ SPRITE (Berkeley)";
+d72 2
+d78 19
+a96 1
+    { -1, DEV_XYLOGICS, 0, (ClientData) NIL },	
+@
+
+
+8.8
+log
+@Change devTypesInt.h => devTypes.h, also fix lint bug.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev.jo/sun3.md/RCS/devConfig.c,v 8.7 89/06/16 08:58:25 mendel Exp Locker: ouster $ SPRITE (Berkeley)";
+@
+
+
+8.7
+log
+@Added timer routine.
+@
+text
+@d10 8
+a17 2
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devConfig.c,v 8.6 89/05/24 07:50:35 rab Exp Locker: mendel $ SPRITE (Berkeley)";
+d28 1
+a28 1
+#include "devTypesInt.h"
+d51 1
+a51 1
+    { "tmr0", 0x0FE14000, DEV_OBIO, 0, Dev_TimerProbe, 0, ((int *(*)())0)},
+a85 2
+
+
+@
+
+
+8.6
+log
+@Changes to allow optimization.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devConfig.c,v 8.5 89/05/23 10:30:50 mendel Exp Locker: rab $ SPRITE (Berkeley)";
+d31 1
+d44 2
+a45 1
+						DevJaguarIntr}
+@
+
+
+8.5
+log
+@Added default disk partition and HBA table.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devConfig.c,v 8.4 88/12/21 10:26:33 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+8.4
+log
+@Added an entry for disk at SCSI targetID 1 so we can access
+a Wren drive and a Shoebox drive at the same time.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devConfig.c,v 8.3 88/12/07 12:43:05 root Exp $ SPRITE (Berkeley)";
+d21 3
+d27 4
+a30 2
+#include "devSCSI.h"
+#include "devXylogics.h"
+d36 9
+a44 16
+/*   address,  space, ID, initProc */
+    { "SCSI", 0x80000, DEV_MULTIBUS,	0, Dev_SCSIInitController, 0, 0,
+				    FALSE, Dev_SCSIIdleCheck, 0, 0},
+/*  { "SCSI", 0x84000, DEV_MULTIBUS,	1, Dev_SCSIInitController, 0, 0}, */
+    { "SCSI", 0x200000, DEV_VME_D16A24, 0, Dev_SCSIInitController, 64,
+				    Dev_SCSIIntrStub, 
+				    FALSE, Dev_SCSIIdleCheck, 0, 0},
+    { "SCSI", 0x0FE12000, DEV_OBIO,	0, Dev_SCSIInitController, 64,
+				    Dev_SCSIIntrStub, 
+				    FALSE, Dev_SCSIIdleCheck, 0, 0},
+    { "Xylogics", 0xee40, DEV_VME_D16A16,	 0, Dev_XylogicsInitController,
+				    72, Dev_XylogicsIntrStub,
+				    FALSE, Dev_XylogicsIdleCheck, 0, 0},
+    { "Xylogics", 0xee48, DEV_VME_D16A16,	 1, Dev_XylogicsInitController,
+				    73, Dev_XylogicsIntrStub, 
+				    FALSE, Dev_XylogicsIdleCheck, 0, 0},
+d49 17
+a65 14
+ * The device configuration table.  Device entries for non-existent controllers
+ * don't cost any time at startup.  Non-existent devices on existing
+ * controllers can cost an I/O bus timeout period at start up.
+ *
+ * NB: There is an implicit correspondence between filesystem device
+ * unit numbers ("minor" type) and disk entries in the table below.
+ * This dependence is based (up to) 8 disk partitions per disk.
+ * Several entries for the same kind of device result in a correspondence 
+ * between those devices and ranges of unit numbers.
+ *
+ * SCSI: The cntrlrID corresponds to the Host Bus Adaptor index (0 or 1).
+ *	The slaveId corresponds to the SCSI target ID [0-7]
+ *	The flags field embeds a type and the LUN (Logical Unit) of the
+ *		device within the SCSI target [0-7]
+d67 11
+a77 4
+DevConfigDevice devDevice[] = {
+/* cntrlrID, slaveID, flags, initproc */		/* Device unit # */
+    { 0, 0, 0 | SCSI_DISK, Dev_SCSIInitDevice},	/* rsd units 8-15 */
+    { 0, 0, 1 | SCSI_DISK, Dev_SCSIInitDevice},	/* rsd units 0-7 */
+a78 5
+    { 0, 1, 0 | SCSI_DISK, Dev_SCSIInitDevice},	/* rsd units 16-23 */
+/*  { 0, 1, 1 | SCSI_DISK, Dev_SCSIInitDevice},	/* rsd units 24-31 */
+    { 0, 3, 0 | SCSI_WORM, Dev_SCSIInitDevice},	/* scsiWorm 0-7 */
+    { 0, 4, 0 | SCSI_TAPE, Dev_SCSIInitDevice},	/* tape0 (shoebox) */
+    { 0, 5, 0 | SCSI_TAPE, Dev_SCSIInitDevice},	/* tape1 (exabyte) */
+a79 6
+    { 0, 0, 0, Dev_XylogicsInitDevice},			/* rxy units 0-7 */
+    { 0, 1, 0, Dev_XylogicsInitDevice},			/* rxy units 8-15 */
+    { 1, 0, 0, Dev_XylogicsInitDevice},			/* rxy units 16-23 */
+    { 1, 1, 0, Dev_XylogicsInitDevice},			/* rxy units 24-31 */
+};
+int devNumConfigDevices = sizeof(devDevice) / sizeof(DevConfigDevice);
+@
+
+
+8.3
+log
+@Reorderd configuration table so SCSI LUN 0 comes before LUN 1
+@
+text
+@d4 5
+a8 4
+ *	Configuration table for the devices in the system.  Devices fall
+ *	into two classes: those that are slaves of a controller,
+ *	and those that aren't.  As such there is a configuration table for
+ *	controllers and one for devices.
+d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devConfig.c,v 8.2 88/11/28 08:20:02 brent Exp Locker: root $ SPRITE (Berkeley)";
+d61 2
+a62 2
+ * SCSI: The cntrlrID corresponds to the Host Bus Adaptor.
+ *	The slaveId corresponds to the SCSI target ID.
+d64 1
+a64 1
+ *		device within the SCSI target. 
+d71 1
+a71 1
+/*  { 0, 1, 0 | SCSI_DISK, Dev_SCSIInitDevice},	/* rsd units 16-23 */
+@
+
+
+8.2
+log
+@Renumbered the disks so they correspond to the existing
+situation on oregano.  LUN 1 is rsd0, LUN 0 is rsd1 (thanks fred!)
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devConfig.c,v 8.1 88/11/21 14:00:51 brent Exp $ SPRITE (Berkeley)";
+d67 1
+a67 4
+    /*
+     * For historical reasons LUN 1 is initialized first and corresponds
+     * to rsd0, while LUN 0 comes second and maps to rsd1.
+     */
+a68 1
+    { 0, 0, 0 | SCSI_DISK, Dev_SCSIInitDevice},	/* rsd units 8-15 */
+@
+
+
+8.1
+log
+@Added SCSI LUN (logical unit numbers) to the flags field of the devConfig
+table.  Also nuked stuff for old SBC controller.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devConfig.c,v 8.0 88/11/11 18:13:41 douglis Stable Locker: brent $ SPRITE (Berkeley)";
+d67 9
+a75 4
+    { 0, 0, 0 | SCSI_DISK, Dev_SCSIInitDevice},	/* rsd units 0-7 */
+    { 0, 0, 1 | SCSI_DISK, Dev_SCSIInitDevice},	/* rsd units 8-15 */
+    { 0, 1, 0 | SCSI_DISK, Dev_SCSIInitDevice},	/* rsd units 16-23 */
+    { 0, 1, 1 | SCSI_DISK, Dev_SCSIInitDevice},	/* rsd units 24-31 */
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devConfig.c,v 6.2 88/09/06 14:15:38 nelson Exp Locker: douglis $ SPRITE (Berkeley)";
+a24 1
+#include "devSBC.h"
+d37 3
+a39 6
+    { "SBC", 0x0FE12000, DEV_OBIO, 0, Dev_SBCInitController, 64,
+				    Dev_SBCIntrStub, 
+				    FALSE, Dev_SBCIdleCheck, 0, 0},
+    { "SBC", 0x200000, DEV_VME_D16A24, 0, Dev_SBCInitController, 64,
+				    Dev_SBCIntrStub, 
+				    FALSE, Dev_SBCIdleCheck, 0, 0},
+d54 10
+a63 6
+ * NB: There is an implicit correspondence between filesystem unit numbers
+ * and particular disks.  Several entries for the same kind of device
+ * result in a correspondence between those devices and ranges of unit
+ * numbers. For disks, there are FS_NUM_DISK_PARTS different unit numbers
+ * associated with each disk, and successive disks have consequative
+ * ranges of unit numbers.
+d66 8
+a73 6
+/* cntrlrID, slaveID, flags, initproc */
+    { 0, 0, DEV_SCSI_DISK, Dev_SCSIInitDevice},		/* Units 0-7 */
+/*  { 0, 1, DEV_SCSI_DISK, Dev_SCSIInitDevice}, */
+    { 0, 3, DEV_SCSI_WORM, Dev_SCSIInitDevice},
+    { 0, 4, DEV_SCSI_TAPE, Dev_SCSIInitDevice},
+    { 0, 5, DEV_SCSI_WORM, Dev_SCSIInitDevice},
+d75 4
+a78 13
+/*
+ * Trying these in reverse order to see how that affects initialization.
+ */
+    { 0, 1, DEV_SCSI_DISK, Dev_SBCInitDevice},		/* Units 8-13 */
+    { 0, 0, DEV_SCSI_DISK, Dev_SBCInitDevice},		/* Units 0-7 */
+
+/*  { 1, 0, DEV_SCSI_DISK, Dev_SCSIInitDevice},		/* Units 8-15 */
+/*  { 1, 1, DEV_SCSI_DISK, Dev_SCSIInitDevice},		/* Units 16-23 */
+/*  { 1, 4, DEV_SCSI_TAPE, Dev_SCSIInitDevice},				*/
+    { 0, 0, 0, Dev_XylogicsInitDevice},			/* Units 0-7 */
+    { 0, 1, 0, Dev_XylogicsInitDevice},			/* Units 8-15 */
+    { 1, 0, 0, Dev_XylogicsInitDevice},			/* Units 16-23 */
+    { 1, 1, 0, Dev_XylogicsInitDevice},			/* Units 24-31 */
+@
+
+
+6.2
+log
+@Added disk idle stats and read/write counts.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: devConfig.c,v 6.1 88/09/05 12:36:33 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+6.1
+log
+@Added table entry for onboard SCSI driver
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: devConfig.c,v 5.4 88/05/25 19:36:27 douglis Exp $ SPRITE (Berkeley)";
+d32 2
+a33 1
+    { "SCSI", 0x80000, DEV_MULTIBUS,	0, Dev_SCSIInitController, 0, 0},
+d36 2
+a37 1
+					   Dev_SCSIIntrStub},
+d39 2
+a40 1
+					   Dev_SBCIntrStub},
+d42 2
+a43 1
+					   Dev_SBCIntrStub},
+d45 2
+a46 1
+						72, Dev_XylogicsIntrStub},
+d48 2
+a49 1
+						73, Dev_XylogicsIntrStub},
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d36 2
+@
+
+
+5.4
+log
+@no real effect, just changed the order of probing for slaves.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: devConfig.c,v 5.3 88/05/23 21:42:45 douglis Exp $ SPRITE (Berkeley)";
+@
+
+
+5.3
+log
+@added SBC.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: devConfig.c,v 5.2 88/04/11 10:22:18 douglis Exp $ SPRITE (Berkeley)";
+d65 4
+a69 1
+    { 0, 1, DEV_SCSI_DISK, Dev_SBCInitDevice},		/* Units 8-13 */
+@
+
+
+5.2
+log
+@Look for a second WORM when configuring.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: devConfig.c,v 5.1 87/12/09 11:43:09 douglis Exp $ SPRITE (Berkeley)";
+d25 1
+d36 2
+d64 3
+@
+
+
+5.1
+log
+@Added worm to configuration list.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: devConfig.c,v 5.0 87/08/11 10:39:37 sprite Exp $ SPRITE (Berkeley)";
+d60 1
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: devConfig.c,v 4.3 87/03/19 11:39:35 brent Exp $ SPRITE (Berkeley)";
+d58 1
+@

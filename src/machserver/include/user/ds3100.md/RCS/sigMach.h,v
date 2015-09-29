@@ -1,0 +1,94 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  srv030:1.2 srv027:1.2 srv026:1.2 srv024:1.2 srv021:1.2 srv019:1.2 srv018:1.2 srv016:1.2 srv014:1.2 srv010:1.2 srv008:1.2 srv007:1.2 srv006:1.2 srv005:1.2 srv004:1.2 srv003:1.2 srv002:1.2 srv001:1.2;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     92.02.28.19.57.17;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     92.02.27.21.39.32;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@DECstation-dependent signal definitions.
+@
+
+
+1.2
+log
+@Fix ifndef token.
+@
+text
+@/*
+ * sigMach.h --
+ *
+ *     Machine dependent data structures and procedure headers exported by the
+ *     the signal module.  These are are for the MIPS hardware.
+ *
+ * Copyright (C) 1989 by Digital Equipment Corporation, Maynard MA
+ *
+ *			All Rights Reserved
+ *
+ * Permission to use, copy, modify, and distribute this software and its 
+ * documentation for any purpose and without fee is hereby granted, 
+ * provided that the above copyright notice appear in all copies and that
+ * both that copyright notice and this permission notice appear in 
+ * supporting documentation, and that the name of Digital not be
+ * used in advertising or publicity pertaining to distribution of the
+ * software without specific, written prior permission.  
+ *
+ * Digitial disclaims all warranties with regard to this software, including
+ * all implied warranties of merchantability and fitness.  In no event shall
+ * Digital be liable for any special, indirect or consequential damages or
+ * any damages whatsoever resulting from loss of use, data or profits,
+ * whether in an action of contract, negligence or other tortious action,
+ * arising out of or in connection with the use or performance of this
+ * software.
+ *
+ * $Header: /user5/kupfer/spriteserver/include/user/ds3100.md/RCS/sigMach.h,v 1.1 92/02/27 21:39:32 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+ */
+
+#ifndef _SIGMACHUSER
+#define _SIGMACHUSER
+
+/*
+ * The different machine dependent codes for an arithmetic fault.
+ */
+#define SIG_OVERFLOW	1
+
+/*
+ * The different machine dependent codes for an illegal instruction signal
+ */
+#define SIG_FP_EXCEPTION	4
+
+#endif /* _SIGMACHUSER */
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d5 1
+a5 1
+ *     the signal module.  These are are for the sparc hardware.
+d27 1
+a27 1
+ * $Header: /sprite/src/lib/include/ds3100.md/RCS/sigMach.h,v 1.1 89/07/08 14:56:07 nelson Exp $ SPRITE (Berkeley)
+d30 2
+a31 2
+#ifndef _SIGMACH
+#define _SIGMACH
+d43 1
+a43 1
+#endif _SIGMACH
+@

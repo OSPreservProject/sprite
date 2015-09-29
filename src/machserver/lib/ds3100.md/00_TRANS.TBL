@@ -1,0 +1,7 @@
+F LIBC.A;1                          	libc.a
+F LIBC_A.013;1                      	libc.a.013
+F LIBC_A.OLD;1                      	libc.a.old
+L LIBC_G.A;1                        	libc_g.a	libc.a
+F LIBNET.A;1                        	libnet.a
+L LIBTERMC.A;1                      	libtermcap.a	/sprite/lib/ds3100.md/libtermcap.a
+L LIBTERML.A;1                      	libtermlib.a	/sprite/lib/ds3100.md/libtermlib.a

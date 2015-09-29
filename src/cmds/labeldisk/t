@@ -1,0 +1,22 @@
+/* 
+ * labeldisk.c --
+ *
+ *	Read and possibly change the disk label.
+ *
+ * Copyright (C) 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/cmds/labeldisk/RCS/labeldisk.c,v 1.15 92/02/06 12:05:21 voelker Exp Locker: voelker $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include "option.h"
+#include "disk.h"
+#include <sys/file.h>
+#include <stdio.h>
+#include <errno.h>
+#include <kernel/dev.h>
+
+#define Min(a,b) (((a) < (

@@ -1,0 +1,2 @@
+# this isn't full encap, but works for .o files.
+TDEFINES = -DDEFAULT_VECTOR=aout_big_vec

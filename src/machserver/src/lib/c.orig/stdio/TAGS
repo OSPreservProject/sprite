@@ -1,0 +1,148 @@
+
+StdioFileCloseProc.c,28
+StdioFileCloseProc(44,1268
+
+StdioFileOpenMode.c,27
+StdioFileOpenMode(46,1305
+
+StdioFileReadProc.c,27
+StdioFileReadProc(53,1679
+
+StdioFileWriteProc.c,28
+StdioFileWriteProc(94,2998
+
+Stdio_Setup.c,21
+Stdio_Setup(44,1358
+
+_cleanup.c,18
+_cleanup(41,1060
+
+clearerr.c,18
+clearerr(45,1377
+
+fclose.c,16
+fclose(42,1198
+
+fdopen.c,16
+fdopen(50,1551
+
+fflush.c,16
+fflush(40,1094
+
+fgetc.c,15
+fgetc(44,1313
+
+fgets.c,15
+fgets(44,1331
+
+fileno.c,16
+fileno(42,1126
+
+fopen.c,15
+fopen(45,1216
+
+fprintf.c,34
+fprintf(44,1173
+fprintf(62,1565
+
+fputc.c,15
+fputc(43,1269
+
+fputs.c,15
+fputs(41,1124
+
+fread.c,15
+fread(43,1272
+
+freopen.c,17
+freopen(45,1289
+
+fscanf.c,32
+fscanf(45,1211
+fscanf(64,1620
+
+fseek.c,15
+fseek(47,1417
+
+ftell.c,15
+ftell(48,1375
+
+fwrite.c,16
+fwrite(43,1267
+
+getchar.c,17
+getchar(44,1272
+
+gets.c,14
+gets(43,1282
+
+getw.c,14
+getw(43,1222
+
+perror.c,16
+perror(44,1104
+
+printf.c,32
+printf(44,1169
+printf(60,1487
+
+putchar.c,17
+putchar(41,1120
+
+puts.c,14
+puts(43,1219
+
+putw.c,14
+putw(40,1056
+
+rewind.c,16
+rewind(41,1105
+
+scanf.c,30
+scanf(45,1236
+scanf(61,1564
+
+setbuf.c,16
+setbuf(40,1069
+
+setbuffer.c,19
+setbuffer(40,1082
+
+setlinebuf.c,20
+setlinebuf(41,1110
+
+setvbuf.c,17
+setvbuf(51,1777
+
+sprintf.c,59
+StringWriteProc(43,1107
+sprintf(69,1679
+sprintf(93,2293
+
+sscanf.c,56
+StringReadProc(45,1160
+sscanf(73,1773
+sscanf(95,2357
+
+tmpnam.c,48
+tempnam(52,1160
+tmpfile(25,772
+tmpnam(39,996
+
+ungetc.c,16
+ungetc(47,1537
+
+vfprintf.c,54
+CvtFtoA(170,4261
+CvtUtoA(63,1709
+vfprintf(363,8997
+
+vfscanf.c,17
+vfscanf(60,1624
+
+vprintf.c,17
+vprintf(43,1159
+
+vsprintf.c,37
+WriteProc(85,2297
+vsprintf(51,1414

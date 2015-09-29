@@ -1,0 +1,16 @@
+F CMDS.C;1                          	cmds.c
+F CMDTAB.C;1                        	cmdtab.c
+F DOMACRO.C;1                       	domacro.c
+D DS3100_M                          	ds3100.md
+F FTP.C;1                           	ftp.c
+F FTP.MAN;1                         	ftp.man
+F FTP_VAR.H;1                       	ftp_var.h
+D GARBO                             	garbo
+F GLOB.C;1                          	glob.c
+F MAIN.C;1                          	main.c
+F MAKEFILE.;1                       	Makefile
+D NEW                               	new
+D RCS                               	RCS
+F RUSERPAS.C;1                      	ruserpass.c
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md

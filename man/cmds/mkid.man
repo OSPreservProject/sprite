@@ -1,0 +1,167 @@
+.TH MKID 1
+.SH NAME
+mkid \- make an id database
+.SH SYNOPSIS
+.B mkid
+.RB [ \-v ]
+.RB [ \-f \^out-file]
+.RB [ \-s \^directory]
+.RB [ \-r \^directory]
+.RB [ \-S \^scanarg]
+.RB [ \-a \^arg-file]
+.RB [ \- ]
+.RB [ \-u ]
+.RB [ files... ]
+.SH DESCRIPTION
+.I Mkid\^
+builds a database that stores numbers and identifier names, as well
+as the names of the files in which they occur.
+.I Mkid\^
+is particularly useful with large programs spread out across multiple
+source files.  It serves as an aid for program maintenance and as a
+.I guide\^
+for perusing a program.
+.PP
+The following options are recognized:
+.TP 10
+.B \-v
+Verbose.
+Report
+.IR mkid 's
+progress in building the database.  The output comes on standard error.
+.TP 10
+.BI \-f out-file\^
+Write the finished database into
+.IR out-file .
+.B ID\^
+is the default.
+.TP 10
+.BI \-s directory\^
+.TP 10
+.BI \-r directory\^
+If
+.IR mkid 's
+attempt to open a source-file fails, it will try to checkout the
+corresponding SCCS or RCS file if present.  The
+.B \-s
+option tells
+.I mkid\^
+which directory holds the SCCS file.
+Similarly, the
+.B \-r
+option tells
+.I mkid\^
+which directory holds the RCS file.
+If neither the RCS or SCCS directories are specified,
+.I mkid\^
+will first look for an SCCS file in the current directory, then in
+.BI sccs ,
+and finally in
+.BI SCCS .
+It will then look for an RCS file in the current directory, and finally in
+.BI RCS .
+.TP 10
+.BI \-a arg-file\^
+Open and read
+.I arg-file\^
+in order to obtain a list of source file arguments.  Source file names
+must appear one to a line.
+.BI \-S ,
+.BI \-r ,
+and
+.BI \-s
+arguments may also be placed one per line in
+.IR file .
+They are distinguished from source file names by their leading `-'.  If a file name begins
+with `-', it can be distinguished from an argument by explicitly prepending the current
+directory string: `./'.
+.TP 10
+.B \-
+This operates in the same manner as the
+.B \-a
+option described above, but reads from the standard input instead of a file.
+.TP 10
+.B \-u
+Update an existing database.  Only those files that have been modified
+since the database was built will be rescanned.  This is a significant
+time-saver for updating large databases where few sources have changed.
+.TP 10
+.B files...
+If neither the
+.BI \-a ,
+.BI \- ,
+nor
+.BI \-u ,
+arguments have been specified, take file names from the command line.
+.TP 10
+.BI \-S scanarg\^
+.I Mkid\^
+scans source files in order to obtain numbers and identifier names.
+Since the lexical rules of languages differ,
+.I mkid\^
+applies a different scanning function to each language in order
+to conform to that language's lexical rules.
+.I Mkid\^
+determines the source file's language by examining its filename
+suffix which commonly occurs after a dot (`.').
+The
+.B \-S
+argument is a way of passing language specific arguments to the
+scanner for that language.  This argument takes a number of forms:
+.br
+-S<suffix>=<language>
+.br
+-S<language>-<arg>
+.br
++S-<arg>
+.br
+The first form associates a suffix with a language.  You may find
+out which suffixes are defined for which languages with the following
+options: `-S<suffix>=?' tells which language is bound to
+.IR <suffix> ,
+`-S?=<language>' tells which suffixes are bound to 
+.IR <language> ,
+and `-S?=?' reports all bindings between suffixes and languages.
+.PP
+The second form passes an argument for processing by the scanner
+for a specific language.  The third form passes an argument to
+all scanners.
+.PP
+You may get a brief summary of the scanner-specific options for a
+language by supplying the following option: `-S<language>?'.
+.PP
+Here is a brief summary of the options for the
+.I `asm'\^
+(assembler) language.
+.PP
+The
+.B \-u\^
+option controls whether or not the assembler scanner should strip
+off a leading
+.I underscore\^
+(`_') character.  If your assembler prepends an
+.I underscore\^
+to external symbols, then you should tell the scanner to strip it
+off, so that references to the same symbol from assembly and from
+a high-level language will look the same.
+.PP
+The
+.B \-c<cc>\^
+option supplies the character(s) used to begin a comment that extends
+to the end of the line.
+.PP
+The
+.B \-a<cc>\^
+option indicates character(s) that are legal in names, in addition to
+the alpha-numeric characters.  If the option appears as `-a', names
+that contain these characters are ignored.  If it appears as `+a', these
+names are added to the database.
+.SH BUGS
+This manual page needs to be more complete about the scanner-specific
+arguments.
+.PP
+At the moment, the only scanners implemented are for C and assembly
+language.  There ought to be scanners for Ada, Pascal, Fortran, Lisp,
+nroff/troff, and TeX.
+.SH SEE ALSO
+lid(1).

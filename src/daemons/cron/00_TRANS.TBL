@@ -1,0 +1,9 @@
+F CRON.C;1                          	cron.c
+F CRON.MAN;1                        	cron.man
+F DEPENDEN.MK;1                     	dependencies.mk
+D DS3100_M                          	ds3100.md
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md

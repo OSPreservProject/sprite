@@ -1,0 +1,118 @@
+head     9.1;
+branch   ;
+access   ;
+symbols  ds3100:9.1 sun3:9.1 sun4nw:9.1 symm:9.1 spur:9.1 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.1
+date     90.09.11.10.46.52;  author shirriff;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.24.42;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     89.08.15.19.26.17;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.10.14.27.27;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Initial source from DECWRL.
+@
+
+
+9.1
+log
+@Added function prototyping.
+@
+text
+@/*
+ * vmMachInt.h
+ *
+ *     	Internal machine dependent virtual memory data structures and
+ *	procedure headers.
+ *
+ * Copyright (C) 1989 Digital Equipment Corporation.
+ * Permission to use, copy, modify, and distribute this software and
+ * its documentation for any purpose and without fee is hereby granted,
+ * provided that the above copyright notice appears in all copies.
+ * Digital Equipment Corporation makes no representations about the
+ * suitability of this software for any purpose.  It is provided "as is"
+ * without express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/vm/ds3100.md/RCS/vmMachInt.h,v 9.0 89/09/12 15:24:42 douglis Stable $ SPRITE (Berkeley)
+ */
+
+#ifndef _VMMACHINT
+#define _VMMACHINT
+
+/*
+ * Assembly language routines in vmPmaxAsm.s.
+ */
+extern ReturnStatus VmMachDoCopy _ARGS_((register int numBytes,
+	Address sourcePtr, Address destPtr));
+extern int VmMachCopyEnd _ARGS_((void));
+extern int VmMachWriteTLB _ARGS_((unsigned lowEntry, unsigned highEntry));
+extern void VmMachSetPID _ARGS_((int pid));
+
+#endif /* _VMMACHINT */
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/vm/ds3100.md/RCS/vmMachInt.h,v 1.2 89/08/15 19:26:17 rab Exp Locker: douglis $ SPRITE (Berkeley)
+d24 5
+a28 4
+extern	int	VmMachDoCopy();
+extern	int	VmMachCopyEnd();
+extern	int	VmMachWriteTLB();
+extern	void	VmMachSetPID();
+@
+
+
+1.2
+log
+@Commented #endif labels.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/vm/ds3100.md/RCS/vmMachInt.h,v 1.1 89/07/10 14:27:27 nelson Exp Locker: rab $ SPRITE (Berkeley)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d4 1
+a4 1
+ *     	Internal machine dependent virtual memory data structures and 
+d10 1
+a10 1
+ * provided that the above copyright notice appears in all copies.  
+d15 1
+a15 1
+ * $Header: vmMachInt.h,v 1.5 89/06/29 10:29:50 mnelson Exp $ SPRITE (Berkeley)
+d29 1
+a29 1
+#endif _VMMACHINT
+@

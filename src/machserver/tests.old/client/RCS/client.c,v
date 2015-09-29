@@ -1,0 +1,493 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  srv018:1.6 srv008:1.6;
+locks    ; strict;
+comment  @ * @;
+
+
+1.6
+date     91.08.30.16.06.00;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.08.25.22.06.17;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.08.12.16.13.13;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.07.22.11.37.32;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.07.19.15.22.50;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.07.18.14.32.34;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Simple test client, corresponding to /etc/init.
+@
+
+
+1.6
+log
+@Put back in support for shared area for low-level comm. with server.
+@
+text
+@/* 
+ * client.c --
+ *
+ *	Test program for printf server.
+ *
+ * Copyright 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/client/RCS/client.c,v 1.5 91/08/25 22:06:17 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <ctype.h>
+#include <mach.h>
+#include <mach_error.h>
+#include <status.h>
+#include <stdio.h>
+#include <user/proc.h>
+#include "spriteSrv.h"
+
+#define SHARED_ERROR_REGION	1
+
+mach_port_t serverPort;		/* port for making Sprite requests */
+
+/* Forward references */
+
+static int GetLength _ARGS_((char *fileName));
+static void MakeFile _ARGS_((char *fileName));
+static void MapFile _ARGS_((char *fileName, boolean_t readOnly,
+			    int length, Address *startAddrPtr));
+static void PrintBuffer _ARGS_((char *fileName, char *bufPtr, int length));
+static void WriteToBuffer _ARGS_((char *fileName, char *bufPtr, int length));
+
+main()
+{
+    kern_return_t kernStatus;
+#ifdef SHARED_ERROR_REGION
+    int *errorPtr = (int *)PROC_SHARED_REGION_START;
+#endif
+    char *fromName = "testInput"; /* name of file to copy from */
+    char *fromBuffer;		/* mapped "from" file */
+    char *toName = "testOutput"; /* name of file to copy to */
+    char *toBuffer;		/* mapped "to" file */
+    int fileLength;
+
+    kernStatus = task_get_bootstrap_port(mach_task_self(), &serverPort);
+    if (kernStatus != KERN_SUCCESS) {
+#if SHARED_ERROR_REGION
+	*errorPtr = kernStatus;
+#endif
+	thread_suspend(mach_thread_self());	
+    }
+
+    fileLength = GetLength(fromName);
+#if 0
+    if (fileLength < 0) {
+	Test_PutMessage(serverPort, "bailing out.\n");
+	goto bailOut;
+    }
+#endif
+
+    MapFile(fromName, TRUE, fileLength, &fromBuffer);
+    MapFile(toName, FALSE, fileLength, &toBuffer);
+
+    if (fromBuffer != 0 && toBuffer != 0) {
+	bcopy(fromBuffer, toBuffer, fileLength);
+    }
+
+ bailOut:
+    Sys_Shutdown(serverPort);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MapFile --
+ *
+ *	Map the named file into our address space.
+ *
+ * Results:
+ *	Fills in the starting location, which is set to 0 
+ *	if there was a problem.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+MapFile(fileName, readOnly, length, startAddrPtr)
+    char *fileName;		/* name of file to map */
+    boolean_t readOnly;		/* map read-only or read-write? */
+    int length;			/* number of bytes to map */
+    Address *startAddrPtr;	/* OUT: where the file was mapped to */
+{
+    kern_return_t kernStatus;
+    ReturnStatus status;
+
+    kernStatus = Vm_MapFileStub(serverPort, fileName, strlen(fileName)+1,
+			    readOnly, 0, length, &status, startAddrPtr);
+    if (kernStatus != KERN_SUCCESS) {
+	Test_PutMessage(serverPort, "Couldn't map file: ");
+	Test_PutMessage(serverPort, mach_error_string(kernStatus));
+	Test_PutMessage(serverPort, "\n");
+	*startAddrPtr = 0;
+    } else if (status != SUCCESS) {
+	Test_PutMessage(serverPort, "Couldn't map file: ");
+	Test_PutMessage(serverPort, Stat_GetMsg(status));
+	Test_PutMessage(serverPort, "\n");
+	*startAddrPtr = 0;
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetLength --
+ *
+ *	Get the length of a file.
+ *
+ * Results:
+ *	Returns the length of the file, in bytes.  Returns -1 if there 
+ *	was an error.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+GetLength(fileName)
+    char *fileName;
+{
+    ReturnStatus status;
+    int length;
+    kern_return_t kernStatus;
+
+    kernStatus = TempFs_LengthStub(serverPort, fileName, strlen(fileName)+1,
+				   &status, &length);
+    if (kernStatus != KERN_SUCCESS) {
+	Test_PutMessage(serverPort, "Couldn't get file length: ");
+	Test_PutMessage(serverPort, mach_error_string(kernStatus));
+	Test_PutMessage(serverPort, "\n");
+	return -1;
+    }
+    if (status != SUCCESS) {
+	Test_PutMessage(serverPort, "Couldn't get file length: ");
+	Test_PutMessage(serverPort, Stat_GetMsg(status));
+	Test_PutMessage(serverPort, "\n");
+	return -1;
+    }
+
+    return length;
+}
+@
+
+
+1.5
+log
+@Copy from "testInput" to "testOutput" by mapping the files and doing a
+bcopy.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/client/RCS/client.c,v 1.4 91/08/12 16:13:13 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d28 2
+d44 1
+d46 1
+d55 1
+d57 1
+@
+
+
+1.4
+log
+@Snapshot.  Program maps a fixed-length file, scribbles over it, and reads it back.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/client/RCS/client.c,v 1.3 91/07/22 11:37:32 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d43 4
+a46 2
+    char *fileName = "/usr0/kupfer/testInput"; /* name of file to map */
+    char *firstTime, *secondTime; /* buffers for mapped files */
+d55 2
+a56 1
+    fileLength = GetLength(fileName);
+d58 1
+d61 1
+d63 2
+a64 2
+    MapFile(fileName, FALSE, fileLength, &firstTime);
+    WriteToBuffer(fileName, firstTime, fileLength);
+d66 2
+a67 16
+    MapFile(fileName, TRUE, fileLength, &secondTime);
+    PrintBuffer(fileName, secondTime, fileLength);
+
+    kernStatus = vm_deallocate(mach_task_self(), (vm_address_t)firstTime,
+			       fileLength);
+    if (kernStatus != KERN_SUCCESS) {
+	Test_PutMessage(serverPort, "Couldn't deallocate first buffer: ");
+	Test_PutMessage(serverPort, mach_error_string(kernStatus));
+	Test_PutMessage(serverPort, "\n");
+    }
+    kernStatus = vm_deallocate(mach_task_self(), (vm_address_t)secondTime,
+			       fileLength);
+    if (kernStatus != KERN_SUCCESS) {
+	Test_PutMessage(serverPort, "Couldn't deallocate second buffer: ");
+	Test_PutMessage(serverPort, mach_error_string(kernStatus));
+	Test_PutMessage(serverPort, "\n");
+a69 3
+    MapFile(fileName, TRUE, fileLength, &secondTime);
+    PrintBuffer(fileName, secondTime, fileLength);
+
+a77 46
+ * PrintBuffer --
+ *
+ *	Copy the given buffer to stdout.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Maps the file into the process address space and leaves it 
+ *	there. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+PrintBuffer(fileName, bufPtr, length)
+    char *fileName;		/* name of file mapped into the buffer */
+    char *bufPtr;		/* start of buffer */
+    int length;			/* number of bytes to print */
+{
+    char *chPtr;		/* pointer into the file */
+    char buf[2];		/* buffer for 1 character & null */
+
+    buf[1] = '\0';
+    Test_PutMessage(serverPort, "-- ");
+    Test_PutMessage(serverPort, fileName);
+    Test_PutMessage(serverPort, " (");
+    Test_PutHex(serverPort, bufPtr);
+    Test_PutMessage(serverPort, " + ");
+    Test_PutDecimal(serverPort, length);
+    Test_PutMessage(serverPort, " bytes) --\n");
+    for (chPtr = bufPtr; chPtr < bufPtr + length; chPtr++) {
+	if (isascii(*chPtr) && (isprint(*chPtr) || isspace(*chPtr))) {
+	    buf[0] = *chPtr;
+	    Test_PutMessage(serverPort, buf);
+	} else {
+	    Test_PutMessage(serverPort, "\\");
+	    Test_PutOctal(serverPort, *chPtr);
+	}
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+a113 38
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WriteToBuffer --
+ *
+ *	Scribble over a buffer.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Fills the first "length" characters of the buffer with a 
+ *	string of characters.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+WriteToBuffer(fileName, bufferPtr, length)
+    char *fileName;		/* name of the file (unused) */
+    char *bufferPtr;		/* start of the buffer */
+    int length;			/* number of characters to overwrite */
+{
+    char *chPtr;
+    int numChars;		/* number of characters written */
+
+    /* Write with a pattern like "0.........1.........2..." */
+    for (chPtr = bufferPtr, numChars = 0; numChars < length;
+	 	chPtr++, numChars++) {
+	if ((numChars % 10) == 0) {
+	    *chPtr = '0' + ((numChars / 10) % 10);
+	} else {
+	    *chPtr = '.';
+	}
+@
+
+
+1.3
+log
+@Use shutdown call instead of going into infinite loop.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/client/RCS/client.c,v 1.2 91/07/19 15:22:50 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d20 1
+d22 2
+a23 1
+#include <userProc.h>
+d25 1
+d28 2
+d32 6
+a37 1
+static void CheckStatus();
+d41 5
+a45 4
+    mach_port_t serverPort;
+    kern_return_t status;
+    int i;
+    int *errorPtr = (int *)SHARED_REGION_START;
+d47 3
+a49 3
+    status = task_get_bootstrap_port(mach_task_self(), &serverPort);
+    if (status != KERN_SUCCESS) {
+	*errorPtr = status;
+d53 24
+a76 7
+    for (i = 0; i <= 20; i++) {
+	Sys_PutDecimal(serverPort, i);
+	Sys_PutMessage(serverPort, " ");
+	Sys_PutOctal(serverPort, i);
+	Sys_PutMessage(serverPort, " ");
+	Sys_PutHex(serverPort, i);
+	Sys_PutMessage(serverPort, "\n");
+d79 2
+a80 1
+    Sys_PutMessage(serverPort, "Hi, mom\n");
+d82 1
+d84 171
+@
+
+
+1.2
+log
+@Changes so can be started by server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/client/RCS/client.c,v 1.1 91/07/18 14:32:34 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d53 1
+a53 2
+ loop:
+    goto loop;
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.5 91/02/09 13:24:44 ouster Exp $ SPRITE (Berkeley)";
+d21 1
+a22 1
+#include <servers/netname.h>
+d34 1
+d36 1
+a36 2
+    status = netname_look_up(name_server_port, "*", "Sprite",
+			     &serverPort);
+d38 2
+a39 3
+	fprintf(stderr, "Can't get Sprite server port: %s\n",
+		mach_error_string(status));
+	exit(1);
+d43 6
+a48 6
+	CheckStatus(Sys_PutDecimal(serverPort, i));
+	CheckStatus(Sys_PutMessage(serverPort, " "));
+	CheckStatus(Sys_PutOctal(serverPort, i));
+	CheckStatus(Sys_PutMessage(serverPort, " "));
+	CheckStatus(Sys_PutHex(serverPort, i));
+	CheckStatus(Sys_PutMessage(serverPort, "\n"));
+d51 1
+a51 1
+    CheckStatus(Sys_PutMessage(serverPort, "Hi, mom\n"));
+d53 2
+a54 1
+    return 0;
+a55 30
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CheckStatus --
+ *
+ *	Verify that an operation succeeded.  Complain and exit if 
+ *	there was an error.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+CheckStatus(status)
+    kern_return_t status;
+{
+    if (status != KERN_SUCCESS) {
+	fprintf(stderr, "Couldn't do RPC: %s\n",
+		mach_error_string(status));
+	exit(1);
+    }
+}
+
+@

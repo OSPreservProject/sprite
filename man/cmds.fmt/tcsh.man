@@ -1,0 +1,1452 @@
+
+
+
+TCSH                      User Commands                      TCSH
+
+
+
+NNAAMMEE
+     tcsh - C shell with file name completion and command line
+     editing
+
+SSYYNNOOPPSSIISS
+     ttccsshh [ --bbcceeffiinnssttvvVVxxXX ] [ _a_r_g_u_m_e_n_t ... ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _T_c_s_h is an enhanced version of the Berkeley UNIX C shell _c_s_h
+     (_1). It behaves exactly like the C shell, except for the
+     added utilities of:
+
+       1)  Command line editing using Emacs-style commands.
+
+       2)  Visual step up/down through the history list.
+
+       3)  Terminal mode sanity checking and resetting.
+
+       4)  Interactive command, file name and user name comple-
+           tion.
+
+       5)  File/directory/user list in the middle of a typed com-
+           mand.
+
+       6)  Spelling correction of command, file, and user names.
+
+       7)  Lookup of command documentation in the middle of a
+           typed command.
+
+       8)  History saved between logouts.
+
+       9)  Automatic logout after long periods of idle time.
+
+       10) Automatic execution of a single command prior to
+           printing each prompt.
+
+       11) Automatic periodic command execution.
+
+       12) A new syntax for the prompt, and the ability to set
+           the prompt for "while" and "for" loops.
+
+       13) Time stamps in the history list.
+
+       14) An addition to the syntax of filenames to access
+           entries in the directory stack.
+
+       15) The ability to watch for logins and logouts by user or
+           terminal on the machine.
+
+       16) A scheduled event list, which specifies commands which
+           are to be executed at given times.
+
+
+
+
+Ohio State                 11 Feb 1989                          1
+
+
+
+
+
+
+TCSH                      User Commands                      TCSH
+
+
+
+       17) A new builtin that does a subset of _l_s (_1).
+
+       18) An addition to the file expression syntax for a char-
+           acter not in a set of characters.
+
+       19) New automatically initialized environment variables
+           _H_O_S_T and _H_O_S_T_T_Y_P_E.
+
+       20) Commands for debugging terminal capabilities.
+
+       21) Searching for the visual history mechinism.
+
+       22) A new builtin for the which(1) command.
+
+       23) Restarting a stopped editor with two keystrokes.
+
+       24) Automatic execution of a command when the current
+           working directory is changed.
+
+       25) Automatic execution of commands on an idle host.
+
+     For a description of standard C-shell features, see the _c_s_h
+     manual page.
+
+11.. CCOOMMMMAANNDD LLIINNEE EEDDIITTIINNGG
+     Commands that the user types in may be edited using the same
+     control characters that Gnu Emacs uses.  Arrow and function
+     key sequences are also allowed.  _T_c_s_h allows this by setting
+     the terminal to `CBREAK' mode and reading the input one
+     character at a time.  The following is a list of which con-
+     trol characters do what.
+
+           EMACS functions
+
+           set-mark-command         ^@
+           beginning-of-line        ^A
+           backward-char            ^B
+           tty-sigintr              ^C
+           delete-char-or-list      ^D
+           end-of-line              ^E
+           forward-char             ^F
+           backward-delete-char     ^H
+           complete-word            ^I
+           newline                  ^J
+           kill-line                ^K
+           clear-screen             ^L
+           newline                  ^M
+           down-history             ^N
+           tty-flush-output         ^O
+           up-history               ^P
+           tty-start-output         ^Q
+           redisplay                ^R
+
+
+
+Ohio State                 11 Feb 1989                          2
+
+
+
+
+
+
+TCSH                      User Commands                      TCSH
+
+
+
+           tty-stop-output          ^S
+           transpose-chars          ^T
+           universal-argument       ^U
+           quoted-insert            ^V
+           kill-region              ^W
+           extended-key-prefix      ^X
+           yank                     ^Y
+           tty-sigtsusp             ^Z
+           prefix-meta              ^[
+           tty-sigquit              ^\
+           tty-dsusp                ^]
+           digit                    0 through 9
+           self-insert-command      A through Z
+           self-insert-command      a through z
+           self-insert-command      SPACE ! # $ % & " ' ` * + , - . / \
+           self-insert-command      : ; ( ) < > { } [ ] = ? @ ^ _ | ~
+           backward-delete-char     ^?
+           list-choices             M-^D
+           backward-delete-word     M-^H
+           complete-word            M-^I
+           clear-screen             M-^L
+           run-fg-editor            M-^Z
+           complete-word            M-^[
+           spell-word               M-$
+           digit-argument           M-0 through M-9
+           which-command            M-?
+           backward-word            M-B
+           capitalize-word          M-C
+           delete-word              M-D
+           forward-word             M-F
+           run-help                 M-H
+           downcase-word            M-L
+           history-search-forward   M-N
+           function-key-prefix      M-O
+           history-search-backward  M-P
+           spell-word               M-S
+           upcase-word              M-U
+           copy-region-as-kill      M-W
+           function-key-prefix      M-[
+           backward-word            M-b
+           capitalize-word          M-c
+           delete-word              M-d
+           forward-word             M-f
+           run-help                 M-h
+           downcase-word            M-l
+           history-search-forward   M-n
+           history-search-backward  M-p
+           spell-word               M-s
+           upcase-word              M-u
+           copy-region-as-kill      M-w
+           backward-delete-word     M-^?
+
+
+
+
+Ohio State                 11 Feb 1989                          3
+
+
+
+
+
+
+TCSH                      User Commands                      TCSH
+
+
+
+           EMACS Extended mode functions (^X)
+
+           exchange-point-and-mark  ^X
+
+           VI Insert Mode functions
+
+           tty-sigintr              ^C
+           list-or-eof              ^D
+           backward-delete-char     ^H
+           complete-word            ^I
+           newline                  ^J
+           kill-line                ^K
+           clear-screen             ^L
+           newline                  ^M
+           tty-flush-output         ^O
+           tty-start-output         ^Q
+           redisplay                ^R
+           tty-stop-output          ^S
+           backward-kill-line       ^U
+           quoted-insert            ^V
+           backward-delete-word     ^W
+           prefix-meta              ^X
+           tty-dsusp                ^Y
+           tty-sigtsusp             ^Z
+           vi-cmd-mode              ^[  (escape key)
+           tty-sigquit              ^\
+           backward-delete-char     ^?  (delete key)
+           self-insert-command      0 thru 9, A thru Z, a thru z
+           self-insert-command      SPACE ! # $ % & " ' ` * + , - . / \
+           self-insert-command      : ; ( ) < > { } [ ] = ? @ ^ _ | ~
+
+           VI Command Mode functions
+
+           beginning-of-line        ^A
+           tty-sigintr              ^C
+           list-choices             ^D
+           end-of-line              ^E
+           backward-delete-char     ^H
+           complete-word            ^I
+           newline                  ^J
+           kill-line                ^K
+           clear-screen             ^L
+           newline                  ^M
+           down-history             ^N
+           tty-flush-output         ^O
+           up-history               ^P
+           tty-start-output         ^Q
+           redisplay                ^R
+           tty-stop-output          ^S
+           backward-kill-line       ^U
+           backward-delete-word     ^W
+           prefix-meta              ^[
+
+
+
+Ohio State                 11 Feb 1989                          4
+
+
+
+
+
+
+TCSH                      User Commands                      TCSH
+
+
+
+           tty-sigquit              ^\
+           forward-char             SPACE
+           end-of-line              $
+           vi-zero                  0
+           digit-argument           1 through 9
+           which-command            ?
+           vi-add-at-eol            A
+           backward-word            B
+           vi-chg-to-eol            C
+           kill-line                D
+           vi-insert-at-bol         I
+           history-search-forward   J
+           history-search-backward  K
+           function-key-prefix      O
+           vi-replace-mode          R
+           vi-substitute-line       S
+           forward-word             W
+           backward-delete-char     X
+           function-key-prefix      [
+           beginning-of-line        ^
+           vi-add                   a
+           backward-word            b
+           delete-word              d
+           backward-char            h
+           vi-insert                i
+           down-history             j
+           up-history               k
+           forward-char             l
+           vi-replace-char          r
+           vi-substitute-char       s
+           vi-beginning-of-next-word w
+           delete-char              x
+           backward-delete-char     ^?   (delete key)
+           run-help                 M-?
+           function-key-prefix      M-O
+           function-key-prefix      M-[
+
+           Alphabetical list of function names
+
+           "backward-char"
+           "backward-delete-char"
+           "backward-delete-word"
+           "backward-kill-line"
+           "backward-word"
+           "beginning-of-line"
+           "capitalize-word"
+           "clear-screen"
+           "complete-word"
+           "copy-region-as-kill"
+           "delete-char"
+           "delete-char-or-list"
+           "delete-word"
+
+
+
+Ohio State                 11 Feb 1989                          5
+
+
+
+
+
+
+TCSH                      User Commands                      TCSH
+
+
+
+           "digit"
+           "digit-argument"
+           "down-history"
+           "downcase-word"
+           "end-of-file"
+           "end-of-line"
+           "exchange-point-and-mark"
+           "extended-key-prefix"
+           "forward-char"
+           "forward-word"
+           "function-key-prefix"
+           "gosmacs-transpose-chars"
+           "history-search-backward"
+           "history-search-forward"
+           "insert-last-word"
+           "keyboard-quit"
+           "kill-line"
+           "kill-region"
+           "kill-whole-line"
+           "list-choices"
+           "list-or-eof"
+           "newline"
+           "prefix-meta"
+           "quoted-insert"
+           "redisplay"
+           "run-fg-editor"
+           "run-help"
+           "self-insert-command"
+           "set-mark-command"
+           "spell-word"
+           "transpose-chars"
+           "tty-dsusp"
+           "tty-flush-output"
+           "tty-sigintr"
+           "tty-sigquit"
+           "tty-sigtsusp"
+           "tty-start-output"
+           "tty-stop-output"
+           "universal-argument"
+           "up-history"
+           "upcase-word"
+           "vi-beginning-of-next-word"
+           "vi-cmd-mode"
+           "vi-add"
+           "vi-add-at-eol"
+           "vi-insert"
+           "vi-insert-at-bol"
+           "vi-replace-char"
+           "vi-replace-mode"
+           "vi-substitute-char"
+           "vi-substitute-line"
+           "vi-zero"
+
+
+
+Ohio State                 11 Feb 1989                          6
+
+
+
+
+
+
+TCSH                      User Commands                      TCSH
+
+
+
+           "which-command"
+           "yank"
+
+     There is a new shell command, _b_i_n_d, that allows the user to
+     redefine what any key does, or find out what any or all of
+     the keys do.
+
+     If given two arguments _b_i_n_d binds the function (first argu-
+     ment) to the given key (second argument).  The key may be:
+     the direct character or a caret-<letter> combination, which
+     is converted to control-<letter>; M-<letter> for an escaped
+     character; or X-<string> for a function key.  For the last
+     of these, the function key prefix must be bound to the func-
+     tion "extended-key-prefix" and the string specified to the
+     _b_i_n_d command must not include this prefix.  By default (in
+     both emacs and vi modes), "extended-key-prefix" is bound to
+     M-[ and M-O (capital-oh) for the arrow keys and F1 through
+     F20 function keys on ANSI terminals.
+
+     If given one argument _b_i_n_d takes the argument as the name
+     for a key and tells what that key does.
+
+     If given no arguments _b_i_n_d tells what all of the keys do.
+     If you give bind the single argument of 'defaults', it
+     resets each key to its default value (see the above list).
+
+22.. VVIISSUUAALL HHIISSTTOORRYY
+     The keys ^P and ^N are used to step up and down the history
+     list.  If the user has typed in the following:
+
+           > ls
+           foo  bar
+           > echo mumble
+           mumble
+           >
+
+     then enters ^_P, the shell will place "echo mumble" into the
+     editing buffer, and will put the cursor at the end of the
+     line.  If another ^_P is entered, then the editing line will
+     change to "ls".  More ^_Ps will make the bell ring, since
+     there are no more lines in the history.  ^_N works the same
+     way, except it steps down (forward in time).
+
+     An easy way to re-do a command is to type ^_P followed by
+     _R_e_t_u_r_n. Also, pieces of previous commands can be assembled
+     to make a new command.  The commands that work on regions
+     are especially useful for this.
+
+     ^_P and ^_N actually only copy commands from out of the his-
+     tory into the edit buffer; thus the user may step back into
+     the history and then edit things, but those changes do not
+     affect what is actually in _t_c_s_h's history.
+
+
+
+Ohio State                 11 Feb 1989                          7
+
+
+
+
+
+
+TCSH                      User Commands                      TCSH
+
+
+
+33.. TTTTYY MMOODDEE SSAANNIITTYY
+     As part of the editor, _t_c_s_h does a check and reset of the
+     terminal mode bits.  If the speed has been changed, then
+     _t_c_s_h will change to using that speed.  _t_c_s_h will also obey
+     changes in the padding needed by the tty.  Some changes to
+     the command keys will be obeyed, however if a command key is
+     unset, _t_c_s_h will reset it to what it was.  Also, the shell
+     will automatically turn off RAW and CBREAK modes, and will
+     turn on the tty driver's output processing.
+
+44.. WWOORRDD CCOOMMPPLLEETTIIOONN
+     In typing commands, it is no longer necessary to type a com-
+     plete name, only a unique abbreviation is necessary.  When
+     you type a TAB to _t_c_s_h it will complete the name for you,
+     echoing the full name on the terminal (and entering it into
+     the edit buffer).  If the prefix you typed matches no name,
+     the terminal bell is rung, unless the variable _n_o_b_e_e_p is
+     set.  The name may be partially completed if the prefix
+     matches several longer names.  If this is the case, the name
+     is extended up to the point of ambiguity, and the bell is
+     rung.  This works for file names, command names, and the
+     (csh) ~ user name convention.  The variable _f_i_g_n_o_r_e may be
+     set to a list of suffixes to be disregarded during comple-
+     tion.
+
+     _E_x_a_m_p_l_e
+
+     Assume the current directory contained the files:
+
+           DSC.TXT   bin       cmd       lib       memos
+           DSC.NEW   chaos     cmtest    mail      netnews
+           bench     class     dev       mbox      new
+
+     The command:
+
+           > gnumacs ch[TAB]
+
+     would cause _t_c_s_h to complete the command with the file name
+     chaos.  If instead, the user had typed:
+
+           > gnumacs D[TAB]
+
+     _t_c_s_h would have extended the name to DSC and rung the termi-
+     nal bell, indicating partial completion. However, if _f_i_g_n_o_r_e
+     had previously been set to a list containing .NEW as one
+     element, e.g. ( .o .NEW ), _t_c_s_h would have completed the `D'
+     to DSC.TXT.
+
+     File name completion works equally well when other direc-
+     tories are addressed.  Additionally, _t_c_s_h understands the C
+     shell tilde (~) convention for home directories.  Thus,
+
+
+
+
+Ohio State                 11 Feb 1989                          8
+
+
+
+
+
+
+TCSH                      User Commands                      TCSH
+
+
+
+           > cd ~speech/data/fr[TAB]
+
+     does what one might expect.  This may also be used to expand
+     login names only.  Thus,
+
+           > cd ~sy[TAB]
+
+     expands to
+
+           > cd ~synthesis
+
+
+     Command names may also be completed, for example,
+
+           > gnum[TAB]
+
+     will expand to "gnumacs" (assuming that there are no other
+     commands that begin with "gnum").
+
+     Completion also works when the cursor is in the middle of
+     the line, rather than just the end.  All of the text after
+     the cursor will be saved, the completion will work (possibly
+     adding to the current name), and then the saved text will be
+     restored in place, after the cursor.
+
+55.. LLIISSTTIINNGG OOFF PPOOSSSSIIBBLLEE NNAAMMEESS
+     At any point in typing a command, you may request "what
+     names are available".  Thus, when you have typed, perhaps:
+
+           > cd ~speech/data/fritz/
+
+     you may wish to know what files or subdirectories exist (in
+     ~speech/data/fritz), without, of course, aborting the com-
+     mand you are typing.  Typing the character Control-D (^D),
+     will list the names (files, in this case) available.  The
+     files are listed in multicolumn format, sorted column-wise.
+     Directories are indicated with a trailing `/', executable
+     files with a `*', symbolic links with a '@', sockets with a
+     '=', and FIFOs (named pipes) with a '<'.  Once printed, the
+     command is re-echoed for you to complete.
+
+     Additionally, one may want to know which files match a pre-
+     fix.  If the user had typed:
+
+           > cd ~speech/data/fr[^D]
+
+     all files and subdirectories whose prefix was ``fr'' would
+     be printed.  Notice that the example before was simply a
+     degenerate case of this with a null trailing file name. (The
+     null string is a prefix of all strings.) Notice also, that a
+     trailing slash is required to pass to a new directory for
+     both file name completion and listing.
+
+
+
+Ohio State                 11 Feb 1989                          9
+
+
+
+
+
+
+TCSH                      User Commands                      TCSH
+
+
+
+     The degenerate
+
+           > ~[^D]
+
+     will print a full list of login names on the current system.
+
+     The behavior of the completion can be changed by setting the
+     shell variable _r_e_c_e_x_a_c_t. This makes an exact command be
+     expanded rather than just ringing the bell.  For example,
+     assume the current directory has two subdirectories called
+     foo and food, then with _r_e_c_e_x_a_c_t set the following could be
+     done:
+
+           > cd fo[TAB]
+     to ...
+           > cd foo[TAB]
+     to ...
+           > cd foo/
+
+     rather than beeping on the second TAB.
+
+     For covert operation, the variable _n_o_b_e_e_p, can be set,
+     preventing the completion mechanism from actually beeping.
+
+CCoommmmaanndd NNaammee RReeccooggnniittiioonn
+     Command name recognition and completion works in the same
+     manner as file name recognition and completion above.  The
+     current value of the environment variable _P_A_T_H is used in
+     searching for the command.  For example
+
+           > newa[TAB]
+
+     might expand to
+
+           > newaliases
+
+     Also,
+
+           > new[^D]
+
+     would list all commands (along PATH) that begin with "new".
+
+     Note that Control-D has three different effects on _t_c_s_h. On
+     an empty line (one that contains nothing, not even spaces),
+     ^_D sends an EOF to _t_c_s_h just as it does for normal programs.
+     When the cursor is in the middle of a line of text, ^_D
+     deletes the character that the cursor is under.  Finally, a
+     ^_D at the end of a line of text lists the available names at
+     that point.  To get a list of available names when the cur-
+     sor is in the middle of a line (or on an empty line), a
+     Meta-Control-D should be typed (Escape followed by Control-
+     D).
+
+
+
+Ohio State                 11 Feb 1989                         10
+
+
+
+
+
+
+TCSH                      User Commands                      TCSH
+
+
+
+66.. SSPPEELLLLIINNGG CCOORRRREECCTTIIOONN
+     If while typing a command, the user mistypes or misspells a
+     file name, user name, or command name, _t_c_s_h can correct the
+     spelling.  When correcting a file name, each part of the
+     path is individually checked and corrected.  The key that
+     invokes the corrector is Meta-$ (Escape Dollar-sign).  For
+     example, suppose that the user has typed:
+
+           > cd /uxr/spol/news[ESC $]
+
+     _T_c_s_h will check the path for spelling, correct the mistakes,
+     and redraw the line as
+
+           > cd /usr/spool/news
+
+     leaving the cursor at the end of the line.  This, like the
+     other commands that affect names, works for command names
+     and user names also.
+
+77.. DDOOCCUUMMEENNTTAATTIIOONN LLOOOOKKUUPP
+     The editor function _r_u_n-_h_e_l_p (Meta-h) prints a help file on
+     the current command (using the same definition of current as
+     the completion routines use).  This help file is found by
+     searching the path list HPATH for files of the form
+     foo.help, foo.1, foo.8, or foo.6 in that order (assuming
+     that the current command is foo).  The file is just printed,
+     not paged in any way.  This is because _r_u_n-_h_e_l_p is meant to
+     be used to look up short help files, not manual pages
+     (although it can do manual pages also).
+
+88.. HHIISSTTOORRYY SSAAVVIINNGG
+     _T_c_s_h will save the history list between login sessions.  It
+     does this by writing the current list to the file "~/.his-
+     tory" on logout, and reading it in on login.  For example,
+     placing the line
+
+           set history=25 savehist=20
+
+     tells csh to save the last 25 commands on the history list,
+     and to save the last 20 of them between logins.  The
+     "savehist" variable may be set up to the size of history,
+     although it is an error to have _s_a_v_e_h_i_s_t larger than _h_i_s_-
+     _t_o_r_y.
+
+99.. AAUUTTOOMMAATTIICC LLOOGGOOUUTT
+     The automatic logout time is controlled by the variable
+     _a_u_t_o_l_o_g_o_u_t, the value of which is the number of minutes of
+     inactivity will be allowed before automatically logging the
+     user out.  When that many minutes have been reached, the
+     shell prints "autologout" and dies (without executing
+     ~/.logout).  The default for tcsh is to set _a_u_t_o_l_o_g_o_u_t for
+     60 minutes on login shells, and when the user is root.    To
+
+
+
+Ohio State                 11 Feb 1989                         11
+
+
+
+
+
+
+TCSH                      User Commands                      TCSH
+
+
+
+     disable autologout (for instance in a window system), unset
+     the shell variable _a_u_t_o_l_o_g_o_u_t. (_N_B: autologout is disabled
+     by default on sprite.)
+
+1100.. EEXXEECCUUTTIIOONN OOFF AA CCOOMMMMAANNDD PPRRIIOORR TTOO EEAACCHH PPRROOMMPPTT
+     _T_c_s_h supports a special alias, _p_r_e_c_m_d, which if set holds a
+     command that will be executed before printing each prompt.
+     For example, if the user has done
+
+           > alias precmd date
+
+     then the program _d_a_t_e will be run just before the shell
+     prompts for each command.  There are no limitations on what
+     precmd can be set to do, although discretion should be used.
+
+1111.. PPEERRIIOODDIICC CCOOMMMMAANNDD EEXXEECCUUTTIIOONN
+     _T_c_s_h is now capable of providing periodic command execution
+     through the use of the shell variable _t_p_e_r_i_o_d and the alias
+     _p_e_r_i_o_d_i_c. When these items are set, the alias _p_e_r_i_o_d_i_c will
+     be executed every _t_p_e_r_i_o_d minutes.  This provides a con-
+     venient means for checking on common but infrequent changes,
+     such as new messages.  Example:
+
+           > set tperiod = 30
+           > alias periodic checknews
+
+     This will cause the _c_h_e_c_k_n_e_w_s(1) program to be run every 30
+     minutes.  Having the alias _p_e_r_i_o_d_i_c set but with an unset
+     _t_p_e_r_i_o_d (or a value of 0 for _t_p_e_r_i_o_d) will cause _p_e_r_i_o_d_i_c to
+     degenerate to another form of _p_r_e_c_m_d.
+
+1122.. NNEEWW PPRROOMMPPTT FFOORRMMAATT
+     The format for the _p_r_o_m_p_t shell variable has been changed to
+     include many new things, such as the current time of day,
+     current working directory, etc..  The new format uses
+     "%<char>" to signal an expansion, much like _p_r_i_n_t_f(_3_S). The
+     available sequences are:
+
+           %d or %/    Current working directory.
+           %~          cwd.  If it starts with $HOME, that part is replaced
+                       by a ~.
+           %c or %.    Trailing component of cwd.
+           %h, %!      Current history event number.
+           %M          The full machine hostname
+           %m          The hostname up to the first "."
+           %S (%s)     Start (stop) standout mode.
+           %t or %@    Current time of day, in 12-hour, am/pm format (but see
+                       the "ampm" shell variable below).
+           %T          Current time of day, in 24-hour format.
+           %%          A single %.
+
+     The sequences for standout are often used to indicate that
+
+
+
+Ohio State                 11 Feb 1989                         12
+
+
+
+
+
+
+TCSH                      User Commands                      TCSH
+
+
+
+     this is an enabled (running as root) shell.  An example:
+
+           > set prompt="%m [%h] %S[%@]%s [%/] you rang? "
+           tut [37] [_2:_5_4_p_m] [/usr/accts/sys] you rang? _
+
+     In addition, there is a new variable, _p_r_o_m_p_t_2, which is used
+     to prompt for the body of while and for loops (wherever nor-
+     mal _c_s_h prompts with a question mark).  The default for
+     _p_r_o_m_p_t_2 is "\? ": a (quoted) question mark followed by a
+     space.
+
+1133.. TTIIMMEE--SSTTAAMMPPEEDD HHIISSTTOORRYY LLIISSTT
+     The history list in this csh now has a time-of-day stamp
+     attached to each history list event.  This time stamp is
+     printed whenever the history command is executed.  This
+     allows the user to keep track of when the various events
+     occurred.  The time stamps are not maintained on the saved
+     history list (also available in _t_c_s_h); thus, on logging back
+     in, all the saved history events will be recorded with the
+     login time as their time stamp.
+
+1144.. DDIIRREECCTTOORRYY SSTTAACCKK EELLEEMMEENNTT AACCCCEESSSS
+     _T_c_s_h will now allow the user to access all elements in the
+     directory stack directly.  The syntax "=<digit>" is recog-
+     nized by tcsh as indicating a particular directory in the
+     stack.  (This works for the file/command name recognition as
+     well.) This syntax is analogous to the ~ syntax for access
+     to users' home directories.  The stack is viewed as zero-
+     based, i.e., =0 is the same as $cwd, which is the same as
+     ".".  As a special case, the string "=-" is recognized as
+     indicating the last directory in the stack.  Thus,
+
+           > dirs
+           /usr/net/bin /usr/spool/uucp /usr/accts/sys
+           > echo =2
+           /usr/accts/sys
+           > ls -l =1/LOGFILE
+           -rw-r--r-- 1 uucp   2594 Jan 19 09:09 /usr/spool/uucp/LOGFILE
+           > echo =-/.cs*
+           /usr/accts/sys/.cshrc
+           > echo =4
+           Not that many dir stack entries.
+           >
+
+     Tcsh will complain if you ask for a directory stack item
+     which does not exist.
+
+     In the normal csh, saying "pushd +2" would rotate the entire
+     stack around through 2 stack elements, placing the entry
+     found there at the top of the stack.  If, however, the new
+     shell variable _d_e_x_t_r_a_c_t is set, then issuing "pushd +n" will
+     cause the nth directory stack element to be extracted from
+
+
+
+Ohio State                 11 Feb 1989                         13
+
+
+
+
+
+
+TCSH                      User Commands                      TCSH
+
+
+
+     its current position, which will then be pushed onto the top
+     of the stack.  Example:
+
+           > dirs
+           ~ /usr/spool/uucp /usr/net/bin /sys/src
+           > set dextract
+           > pushd +2
+           /usr/net/bin ~ /usr/spool/uucp /sys/src
+           > unset dextract
+           > pushd +2
+           /usr/spool/uucp /sys/src /usr/net/bin ~
+
+1155.. WWAATTCCHHIINNGG FFOORR LLOOGGIINNSS AANNDD LLOOGGOOUUTTSS
+     _T_c_s_h has a mechanism so that the user can watch for login
+     and logout activity of any user or terminal in the system.
+     This is accomplished using the new special shell variable
+     _w_a_t_c_h, which contains login/terminal name pairs to be
+     checked for activity.  For example:
+
+           > set watch=(sys ttyjd root console)
+
+     This setting will allow the user to check on when the user
+     "sys" logs in on /dev/ttyjd.  Similarly, it will inform the
+     user of root's activity on the console.  In order to be more
+     general, the word "any" may be substituted for either a
+     user's or a terminal's name, thus allowing
+
+           > set watch=(brad any any ttyh0)
+
+     which will check for user "brad" logging in or out of the
+     system on any terminal, as well as anyone logging in to
+     /dev/ttyh0.  Naturally, the completely general case
+
+           > set watch=(any any)
+
+     allows the user to check on any and all login/logout
+     activity in the the system.
+
+     By default, the interval between checks of users on the sys-
+     tem is 10 minutes; this can be changed by making the first
+     element of _w_a_t_c_h a number of minutes which should be used
+     instead, as in
+
+           > set watch=(40 any any)
+
+     which will check for any users logging in or out every 40
+     minutes.
+
+     There is also a new command, _l_o_g, which is used to cause csh
+     to inform the user of all users/terminals affected by _w_a_t_c_h
+     whether they have been announced before or not.  This is
+     useful if a user has been on for some time and cannot
+
+
+
+Ohio State                 11 Feb 1989                         14
+
+
+
+
+
+
+TCSH                      User Commands                      TCSH
+
+
+
+     remember if a particular person/terminal is online right now
+     or not.  _L_o_g will reset all indication of previous announce-
+     ment and give the user the login list all over again, as
+     well as printing the current value of _w_a_t_c_h.
+
+     The first time that _w_a_t_c_h is set at csh startup, all
+     affected users and terminals will be printed as though those
+     users/terminals had just logged on.  This may appear to be a
+     bug, but is generally considered a feature, since it allows
+     the user to see who is on when he first logs in.
+
+1166.. TTIIMMEEDD EEVVEENNTT LLIISSTT
+     _T_c_s_h now supports a scheduled-event list through the use of
+     the command _s_c_h_e_d. This command gives the user a mechanism
+     by which to arrange for other commands to be executed at
+     given times.  An event is added to the scheduled-event list
+     by saying
+
+           > sched [+]hh:mm <command>
+
+     as in
+
+           > sched 11:00 echo It\'s eleven o\'clock.
+
+     This will make an entry in the list at 11am for the echo
+     command to be run with the given arguments.  The time may be
+     specified in either absolute or relative time, and absolute
+     times may have a morning/afternoon specification as well,
+     using "am" or "pm." For example,
+
+           > sched +2:15 /usr/lib/uucp/uucico -r1 -sother
+           > sched 5pm set prompt='[%h] It\'s after 5; go home: >'
+           > sched +3am echo This syntax doesn\'t work.
+           Relative time inconsistent with am/pm.
+           >
+
+     Note that tcsh will complain if you try to make faulty time
+     specifications.
+
+     Printing the current time-event list is accomplished by giv-
+     ing the _s_c_h_e_d command with no arguments:
+
+           > sched
+                1  Wed Apr  4 15:42  /usr/lib/uucp/uucico -r1 -sother
+                2  Wed Apr  4 17:00  set prompt=[%h] It's after 5; go home: >
+           >
+
+     There is also a mechanism by which the user can remove an
+     item from the list:
+
+           > sched --3
+           Usage for delete: sched -<item#>.
+
+
+
+Ohio State                 11 Feb 1989                         15
+
+
+
+
+
+
+TCSH                      User Commands                      TCSH
+
+
+
+           > sched -3
+           Not that many scheduled events.
+           > sched -2
+           > sched
+                1  Wed Apr  4 15:42  /usr/lib/uucp/uucico -r1 -sother
+           >
+
+     All commands specified on the scheduled-event list will be
+     executed just prior to printing the first prompt immediately
+     following the time when the command is to be run.  Hence, it
+     is possible to miss the exact time when the command is to be
+     run, but tcsh will definitely get around to all commands
+     which are overdue at its next prompt.  Scheduled-event list
+     items which come due while tcsh is waiting for user input
+     will be executed immediately.  In no case, however, will
+     normal operation of already-running commands be interrupted
+     so that a scheduled-event list element may be run.
+
+     This mechanism is similar to, but not the same as, the _a_t(1)
+     command on some Unix systems.  Its major disadvantage is
+     that it does not necessarily run a command at exactly the
+     specified time (but only if another command is already being
+     run).  Its major advantage is that commands which run
+     directly from the csh, as sched commands are, have access to
+     shell variables and other structures.  This provides a
+     mechanism for changing one's working environment based on
+     the time of day.
+
+1177.. BBUUIILLTTIINN FFOORR llss --FF
+     There is a new builtin command called _l_s-_F which does the
+     same thing as the command "ls -aF" if the shell variable
+     _s_h_o_w_d_o_t_s has been set, and acts like "ls -F" otherwise.
+
+1188.. CCHHAARR IINN RRAANNGGEE SSYYNNTTAAXX CCHHAANNGGEE
+     The syntax for any character in a range (for example ".[a-
+     z]*") has been extended so as to conform with standard Unix
+     regular expression syntax (see _e_d(1)).  Specifically, after
+     an open bracket ("["), if the first character is a caret
+     ("^") then the character matched will be any not in the
+     range specified.  For example:
+
+           > cd ~
+           > echo .[a-z]*
+           > echo .[^.]*
+           >
+
+     Note that the second form includes .Xdefaults and .Xinit
+     because 'X' (and all the lower case letters) are outside of
+     the range of a single '.'.
+
+1199.. NNEEWW EENNVVIIRROONNMMEENNTT AANNDD SSHHEELLLL VVAARRIIAABBLLEESS
+     On startup, _t_c_s_h now automatically initializes the
+
+
+
+Ohio State                 11 Feb 1989                         16
+
+
+
+
+
+
+TCSH                      User Commands                      TCSH
+
+
+
+     environment variable _H_O_S_T to the name of the machine that it
+     is running on.  It does this by doing a _g_e_t_h_o_s_t_n_a_m_e(_2) sys-
+     tem call, and setting _H_O_S_T to the result.
+
+     _T_c_s_h also initializes the environment variable _H_O_S_T_T_Y_P_E to a
+     symbolic name for the type of computer that it is running
+     on.  The current possible values are:
+
+     _a_l_l_i_a_n_t        an Alliant FX series
+     _a_t_t_3_b_2         an AT&T 3b2
+     _a_t_t_3_b_5         an AT&T 3b5
+     _a_t_t_3_b_1_5        an AT&T 3b15
+     _a_t_t_3_b_2_0        an AT&T 3b15
+     _b_a_l_l_a_n_c_e       a Sequent Ballance (32000 based)
+     _b_u_t_t_e_r_f_l_y_R     _a _B_B_N _C_o_m_p_u_t_e_r _B_u_t_t_e_r_f_l_y _1_0_0_0
+     _c_o_n_v_e_x         a Convex
+     _h_p_9_0_0_0_s_3_0_0     an HP 9000, series 300 workstation
+     _h_p_9_0_0_0_s_8_0_0     an HP 9000, series 800 workstation
+     _h_p             an HP, but not an hp9000s800
+     _m_u_l_t_i_m_a_x       an Encore Computer Corp. Multimax (32000 based)
+     _m_a_c_2           an Apple Computer Macintosh II
+     _p_y_r_a_m_i_d        a Pyramid Technology computer (of any flavor)
+     _r_t             an IBM PC/RT running Mach
+     _r_t_p_c           an IBM PC/RT running IBM's BSD port
+     _s_u_n_2           a Sun Microsystems series 2 workstation (68010 based)
+     _s_u_n_3           a Sun Microsystems series 3 workstation (68020 based)
+     _s_u_n_4           a Sun Microsystems series 4 workstation (SPARC based)
+     _s_u_n_3_8_6_i        a Sun Microsystems 386i workstation (386 based)
+     _s_u_n            a Sun workstation of none of the above types
+     _s_y_m_m_e_t_r_y       a Sequent Symmetry (386 based)
+     _v_a_x            a Digital Equipment Corp. Vax (of any flavor)
+
+     (The names of the machines are usually trade marks of the
+     corresponding companies.)  This is useful when sharing a
+     single physical directory between several types of machines
+     (running NFS, for instance).  For example, if the following
+     is in ._l_o_g_i_n:
+
+        set path = (~/bin.$HOSTTYPE /usr/ucb /bin /usr/bin
+        /usr/games .)
+
+     and the user has directories named "bin._m_a_c_h_i_n_e" (where
+     _m_a_c_h_i_n_e is a name from the above list), then the user can
+     have the same programs compiled for different machines in
+     the appropriate "bin._m_a_c_h_i_n_e" directories and _t_c_s_h will run
+     the binary for the correct machine.
+
+     _T_c_s_h also initializes the shell variable _u_i_d to the value of
+     the current real user ID.  This is useful for telling what
+     user the shell is running as.
+
+
+
+
+
+Ohio State                 11 Feb 1989                         17
+
+
+
+
+
+
+TCSH                      User Commands                      TCSH
+
+
+
+2200.. CCOOMMMMAANNDDSS FFOORR DDEEBBUUGGGGIINNGG
+     Only two such commands are available at this point, both
+     concerned with testing termcap entries.
+     _t_e_l_l_t_c tells you, politely, what tcsh thinks of your termi-
+     nal, and _s_e_t_t_c `cap' `value' tells _t_c_s_h to believe that the
+     termcap capability `cap' ( as defined in _t_e_r_m_c_a_p(_5) ) has
+     the value `value'. No checking for sanity is performed, so
+     beware of improper use.
+
+2211.. SSEEAARRCCHHIINNGG FFOORR TTHHEE VVIISSUUAALL HHIISSTTOORRYY
+     Two new editor functions have been added: history-search-
+     backward, bound to M-p (and M-P), and history-search-
+     forward, bound to M-n (and M-N).  Each of these search back-
+     ward (or forward) through the history list for previous
+     (next) occurrence of the first word in the input buffer as a
+     command.  That is, if the user types:
+
+           > echo foo
+           foo
+           > ls
+           filea     fileb
+           > echo bar
+           bar
+           >
+
+     and then types "echo<ESC>p", the shell will place "echo bar"
+     in the editing buffer.  If another _M-_p was entered, the
+     editing buffer would change to "echo foo".  This capability
+     is compatable with the plain visual history; if the user
+     were to then enter ^_P the editing buffer would be changed to
+     "ls".
+
+2222.. BBUUIILLTTIINN WWHHIICCHH((11)) CCOOMMMMAANNDD
+     There is now a builtin version of the _w_h_i_c_h(1) command.  The
+     builtin version is just like the original, except that it
+     correctly reports aliases peculiar to this _t_c_s_h, and builtin
+     commands.  The only other difference is that the builtin
+     runs somewhere between 10 and 100 times faster.
+
+2233.. RREESSTTAARRTTIINNGG AA SSTTOOPPPPEEDD EEDDIITTOORR
+     There is another new editor function: run-fg-editor, which
+     is bound to _M-^_Z.  When typed, it saves away the current
+     input buffer, and looks for a stopped job with a name equal
+     to the file name part (last element) of either the EDITOR or
+     VISUAL environment variables (if not defined, the default
+     names are "ed" and "vi" respectively).  If such a job is
+     found, then it is restarted as if "fg %_n_a_m_e" had been typed.
+     This is used to toggle back and forth between an editor and
+     the shell easily.  Some people bind this function to ^_Z so
+     they can do this even more easily.
+
+
+
+
+
+Ohio State                 11 Feb 1989                         18
+
+
+
+
+
+
+TCSH                      User Commands                      TCSH
+
+
+
+2244.. EEXXEECCUUTTIIOONN OOFF AA CCOOMMMMAANNDD AAFFTTEERR CCHHAANNGGIINNGG TTHHEE CCUURRRREENNTT WWOORRKKIINNGG
+     DDIIRREECCTTOORRYY
+     _T_c_s_h now supports a special alias, _c_w_d_c_m_d, which if set
+     holds a command that will be executed after changing the
+     value of $cwd.  For example, if the user is running on an X
+     window system xterm, and has done
+
+           > alias cwdcmd 'echo -n "^[]0;"{$HOST}":$cwd^G"'
+           (where the ^[ is an ESC, and the ^G is a control-G.)
+
+     then the shell will change the title of the running xterm to
+     be the name of the host, a colon, and the full current work-
+     ing directory.  Note that if a user defines _c_w_d_c_m_d to con-
+     tain a _c_d, _p_u_s_h_d, or _p_o_p_d, command, an infinite loop may
+     result.  In this case, it is the author's opinion that said
+     user will get what he deserves.
+
+2255.. EEXXEECCUUTTIIOONN OOFF CCOOMMMMAANNDDSS OONN IIDDLLEE HHOOSSTTSS
+     _T_c_s_h on Sprite supports automatic migration of processes for
+     the purpose of load sharing.  This is accomplished using the
+     new special shell variable _p_o_l_i_c_y, which should contain a
+     numeric value between 0 and 4.  A value of 0, the default,
+     indicates that no migration should be performed.  The other
+     values of interest are 2, which indicates that all commands
+     should be migrated except those listed in the user's
+     ~/.export file, or 4, which indicates that commands not in
+     .export should be migrated when placed in the background.
+     The _e_x_p_o_r_t command rehashes the list of entries in .export,
+     and _e_x_p_o_r_t -_p_r_i_n_t lists the entries.  Finally, _e_x_p_o_r_t -_h_e_l_p
+     lists some information about the current status of exporta-
+     tion.
+
+     Note that not all commands are totally location-independent,
+     and that commands will take up idle hosts that other users
+     might be able to use.  Therefore, run commands remotely only
+     when they are CPU-intensive.  The file
+           /sprite/lib/tcsh/export
+     contains the default .export file.
+
+FFYYII
+     This shell uses cbreak mode but takes typed-ahead characters
+     anyway.  You can still use _s_t_t_y(1) to set some of the modes
+     of your terminal (but not bindings).
+
+     This shell will restore your tty to a sane mode if it
+     appears to return from some command in raw, cbreak, or noe-
+     cho mode.
+
+EENNVVIIRROONNMMEENNTT
+     HPATH -- path to look for command documentation
+     TERM -- used to tell how to handle the terminal
+
+
+
+
+Ohio State                 11 Feb 1989                         19
+
+
+
+
+
+
+TCSH                      User Commands                      TCSH
+
+
+
+NNEEWW SSHHEELLLL VVAARRIIAABBLLEESS
+     autologout -- number of minutes of inactivity before
+     automatic logout
+     dextract -- extract a directory on pushd rather than rotat-
+     ing
+     edit -- use the input editor, set by default
+     fignore -- list of file name suffixes to ignore during com-
+     plete
+     nobeep -- do not beep on non-unique expansion or excess edit
+     printexitvalue -- if an interactive program exits non-zero,
+     print the exit value.
+     prompt -- the string to prompt with
+     prompt2 -- the string to prompt for while and for loops with
+     pushdtohome -- make pushd with no args do a "pushd ~" (like
+     cd does)
+     pushdsilent -- do not print the dir stack on every pushd and
+     popd
+     recexact -- recognize exact matches even if they are ambigu-
+     ous
+     savehist -- number of history items to save between login
+     sessions
+     showdots -- show hidden files in list and complete opera-
+     tions
+     term -- the terminal type; see above
+     tperiod -- periodic command wait period (in min.)
+     uid -- the current real user ID
+     version -- the version ID stamp for this _t_c_s_h
+     watch -- list of events to watch
+     wordchars -- list of nonalphanumeric characters considered
+     part of a word-- defaults to "*?_-.[]~="
+
+NNEEWW SSPPEECCIIAALL AALLIIAASSEESS
+     periodic -- the command to be run every _t_p_e_r_i_o_d minutes
+     precmd -- the command to be run prior to printing each
+     prompt
+
+SSEEEE AALLSSOO
+     csh(1), chsh(1), termcap(5)
+
+BBUUGGSS
+     The screen update for lines longer than the screen width is
+     very poor if the terminal cannot move the cursor up (ie.
+     terminal type "dumb").
+
+     I am certain that there are bugs.  Bugs (preferably with
+     fixes) should be sent to Paul Placeway (paul@cis.ohio-
+     state.edu)
+
+AAUUTTHHOORRSS
+     Ken Greer, HP Labs, 1981 Wrote the command completion.
+
+     Mike Ellis, Fairchild, 1983 Added command name
+
+
+
+Ohio State                 11 Feb 1989                         20
+
+
+
+
+
+
+TCSH                      User Commands                      TCSH
+
+
+
+     recognition/completion.
+
+     Paul Placeway, Ohio State CIS dept., 1983 Added the command
+     line editor.
+
+     Rayan Zachariassen, University of Toronto, 1984 Added the
+     builtin _w_h_i_c_h feature to the editor, and the code for _l_s-_F .
+     Also numerous bug fixes, modifications, and performance
+     enhancements.
+
+     Chris Kingsley, Caltech.  Wrote the fast storage allocator
+     routines (nmalloc.c).
+
+     Karl Kleinpaste, CCI 1983-4 Added special aliases, directory
+     stack extraction stuff, login/logout watch, and scheduled
+     events.  Also came up with the idea of the new prompt for-
+     mat.
+
+     Paul Placeway, Ohio State CIS dept., 1987 Re-wrote the edi-
+     tor, cleaned up other code, and added the prompt routines,
+     added to the syntax for file name expressions, and sped up
+     the shell some.
+
+     Chris Grevstad, TRW, 1987 Ported the 4.3 csh sources to
+     tcsh.
+
+     Christos S. Zoulas, Cornell U. EE dept., 1987-89 ported tcsh
+     to HPUX, and System V rel. 2 and 3 and wrote a SysV version
+     of getwd.c
+
+     James J Dempsey, BBN, 1988, and Paul Placeway, OSU, 1988.
+     Re-ported tcsh to A/UX
+
+
+BBUUGGFFIIXXEESS AANNDD EENNHHAANNCCEEMMEENNTTSS
+     Hans J. Albertsson Added the ampm variable handeling
+
+     Michael Bloom Fixed some of the interupt handeling
+
+     Michael Fine, Digital Equipment Corp.  added the extended
+     key support
+
+     Daniel Long, NNSC, 1988 Added the wordchars variable
+
+     George Hartzell, MCD Biology, University of Colorado-
+     Boulder, 1988 fixed the allways reseting to DEL bug.
+
+     Patrick Wolfe, KAI, 1988 Cleaned up VI mode and wrote the
+     new editor discription (in section 1).
+
+     Jak Kirman, 1988 Fixed the SunOS 4 giant stack allocation
+     bug.
+
+
+
+Ohio State                 11 Feb 1989                         21
+
+
+
+
+
+
+TCSH                      User Commands                      TCSH
+
+
+
+     Bruce Robertson, Tektronix, 1989 Fixed setting erase and
+     kill (again).
+
+
+TTHHAANNKKSS TTOO
+     A special thanks to: Bryan Dunlap, Clayton Elwell, Karl
+     Kleinpaste, Bob Manson, Steve Romig, Diana Smetters, Bob
+     Sutterfield, Mark Verber, Elizabeth Zwicky, and all the
+     other people at Ohio State for suggestions and encourage-
+     ment.
+
+     Also, thanks to all the people on the net for putting up
+     with, reporting bugs in, and suggesting new additions to the
+     old tcsh editor.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Ohio State                 11 Feb 1989                         22
+
+
+

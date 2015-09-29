@@ -1,0 +1,310 @@
+This is Common TeX, Version 2.9 (preloaded format=plain 92.2.12) 25 JUN 1992 19:55
+**&plain bfd.texinfo 
+(./bfd.texinfo
+! I can't find file `texinfo.tex'.
+l.1 \input texinfo.tex
+                      
+Please type another input file name: ../../texinfo/fsf/texinfo.tex
+(./../../texinfo/fsf/texinfo.tex
+Loading texinfo package [Version 2.60]:  Basics,
+\bindingoffset=\dimen16
+\normaloffset=\dimen17
+\pagewidth=\dimen18
+\pageheight=\dimen19
+\cornerlong=\dimen20
+\cornerthick=\dimen21
+\topandbottommargin=\dimen22
+\outerhsize=\dimen23
+\outervsize=\dimen24
+\EMsimple=\toks12
+\singlespaceskip=\skip18
+\mil=\dimen25
+ fonts,
+\sffam=\fam8
+\fontdepth=\count25
+\tclosesave=\dimen26
+\tcloserm=\dimen27
+ page headings,
+\titlepagetopglue=\skip19
+\titlepagebottomglue=\skip20
+\realeverypar=\toks13
+\evenheadline=\toks14
+\oddheadline=\toks15
+\evenfootline=\toks16
+\oddfootline=\toks17
+
+tables,
+\tableindent=\dimen28
+\itemindent=\dimen29
+\itemmargin=\dimen30
+\itemmax=\dimen31
+\itemno=\count26
+ indexing,
+\initialskipamount=\skip21
+\secondaryindent=\skip22
+\partialpage=\box16
+\doublecolumnhsize=\dimen32
+\doublecolumnvsize=\dimen33
+\availdimen@=\dimen34
+ sectioning,
+\chapno=\count27
+\secno=\count28
+\subsecno=\count29
+\subsubsecno=\count30
+\appendixno=\count31
+\contentsfile=\write0
+\chapheadingskip=\skip23
+\subsecheadingskip=\skip24
+\secheadingskip=\skip25
+ toc printing,
+\contentsrightmargin=\skip26
+\tocindent=\dimen35
+ environments,
+\dblarrowbox=\box17
+\longdblarrowbox=\box18
+\pushcharbox=\box19
+\bullbox=\box20
+\equivbox=\box21
+\errorbox=\box22
+\lispnarrowing=\skip27
+\aboveenvskipamount=\skip28
+\circthick=\dimen36
+\cartouter=\dimen37
+\cartinner=\dimen38
+\normbskip=\skip29
+\normpskip=\skip30
+\normlskip=\skip31
+\lskip=\skip32
+\rskip=\skip33
+ defuns,
+\defbodyindent=\skip34
+\defargsindent=\skip35
+\deftypemargin=\skip36
+\deflastargmargin=\skip37
+\parencount=\count32
+
+cross reference,
+\auxfile=\write1
+\footnoteno=\count33
+ and turning on texinfo input format.
+\defaultparindent=\dimen39
+)
+@cpindfile=@write2
+@fnindfile=@write3
+@vrindfile=@write4
+@tpindfile=@write5
+@kyindfile=@write6
+@pgindfile=@write7
+ [1] [2]
+Chapter 1 [1] [2] [3] [4] Chapter 2 [5] (./bfd.texi [6] [7] [8] [9]
+[10]
+Overfull \hbox (19.04758pt too wide) in paragraph at lines 236--236
+ []     @texttt BFD_SEND (abfd, _bfd_find_nearest_line,  (abfd, sec, sym
+s, off, file, func,|
+
+@hbox(7.60416+2.43333)x469.75499
+.@glue(@leftskip) 28.90755
+.@hbox(0.0+0.0)x0.0
+.@glue 5.74869
+.@glue 5.74869
+.@glue 5.74869
+.etc.
+
+[11])
+Overfull \hbox (13.48251pt too wide) in paragraph at lines 374--380
+@textrm dated on a @texttt bfd_close[]@textrm ; for ex-am-ple, af-ter a 
+@texttt bfd_close[] @textrm the vec-tor passed to @texttt bfd_canonicali
+ze_symtab[]|
+
+@hbox(7.60416+2.43333)x469.75499, glue set - 1.0
+.@textrm d
+.@textrm a
+.@textrm t
+.@textrm e
+.@textrm d
+.etc.
+
+(./init.texi [12]) (./section.texi [13] [14] [15] [16]
+Overfull \hbox (13.29889pt too wide) in paragraph at lines 195--195
+ []         @texttt /* The size on disk of the sec-tion in bytes orig-i-
+nally.  Nor-mally this[] |
+
+@hbox(7.60416+2.43333)x469.75499
+.@glue(@leftskip) 28.90755
+.@hbox(0.0+0.0)x0.0
+.@glue 5.74869
+.@glue 5.74869
+.@glue 5.74869
+.etc.
+
+[17] [18] Cross reference values unknown; you must run TeX again.
+[19] [20] [21]
+Overfull \hbox (19.55092pt too wide) in paragraph at lines 441--444
+ [] []@textrm and some more too This rou-tine is front end to the back e
+nd func-tion @texttt _bfd_set_section_contents[]@textrm . |
+
+@hbox(7.60416+1.04173)x469.75499, glue set - 1.0
+.@glue(@leftskip) 21.68121
+.@hbox(0.0+0.0)x0.0
+.@glue 0.0
+.@hbox(4.86667+0.0)x0.0, glue set - 12.70244fil
+..@glue 0.0 plus 1.0fil minus 1.0fil
+..@mathon
+..@textsy ^^O
+..@mathoff
+..@glue 7.22743
+.@textrm a
+.etc.
+
+) (./syms.texi [22] [23] [24] [25] [26] [27]) (./archive.texi [28]
+[29]) (./format.texi [30]) (./reloc.texi [31] [32] [33] [34] [35]
+[36]
+Overfull \hbox (13.29889pt too wide) in paragraph at lines 290--290
+ []@texttt #define HOWTO(C, R,S,B, P, BI, ABS, O, SF, NAME, IN-PLACE, MA
+SKSRC, MASKDST, PC)|
+
+@hbox(7.60416+1.52081)x469.75499
+.@glue(@leftskip) 28.90755
+.@hbox(0.0+0.0)x0.0
+.@texttt #
+.@texttt d
+.@texttt e
+.etc.
+
+
+Overfull \hbox (76.53445pt too wide) in paragraph at lines 298--298
+ []@texttt #define NEWHOWTO( FUNC-TION, NAME,SIZE,REL,IN) HOWTO(0,0,SIZE
+,0,REL,0,false,false,FUNCTION,|
+
+@hbox(7.60416+1.52081)x469.75499
+.@glue(@leftskip) 28.90755
+.@hbox(0.0+0.0)x0.0
+.@texttt #
+.@texttt d
+.@texttt e
+.etc.
+
+[37] [38] [39]) (./core.texi [40]) (./targets.texi [41] [42] [43]
+Overfull \hbox (13.29889pt too wide) in paragraph at lines 199--199
+ []  @texttt SDEF (void,     _bfd_print_symbol, (bfd *, PTR, struct sym-
+bol_cache_entry  *,[] |
+
+@hbox(7.60416+2.43333)x469.75499
+.@glue(@leftskip) 28.90755
+.@hbox(0.0+0.0)x0.0
+.@glue 5.74869
+.@glue 5.74869
+.@texttt S
+.etc.
+
+[44]
+Overfull \hbox (59.28839pt too wide) in paragraph at lines 219--219
+ []  @texttt SDEF (bfd_byte *, _bfd_get_relocated_section_contents, (bfd
+*,struct bfd_seclet_struct|
+
+@hbox(7.60416+2.43333)x469.75499
+.@glue(@leftskip) 28.90755
+.@hbox(0.0+0.0)x0.0
+.@glue 5.74869
+.@glue 5.74869
+.@texttt S
+.etc.
+
+
+Overfull \hbox (30.54495pt too wide) in paragraph at lines 220--220
+ []  @texttt SDEF (boolean,_bfd_relax_section,(bfd *, struct sec *, stru
+ct sym-bol_cache_entry|
+
+@hbox(7.60416+2.43333)x469.75499
+.@glue(@leftskip) 28.90755
+.@hbox(0.0+0.0)x0.0
+.@glue 5.74869
+.@glue 5.74869
+.@texttt S
+.etc.
+
+[45]) (./archures.texi [46] [47] [48] [49] [50] [51] [52])
+(./opncls.texi [53] [54]) (./ctor.texi [55]) (./libbfd.texi [56]
+[57] [58]) (./cache.texi [59] [60]) Chapter 3 [61] (./aoutx.texi
+[62]
+Overfull \hbox (19.89075pt too wide) in paragraph at lines 78--82
+[]@textrm in the @texttt config/mt-XXX[] @textrm file, and mod-ify con-f
+ig-ure.in to use the @texttt mt-XXX[] @textrm file (by set-ting @texttt 
+"bfd_target=XXX[]"@textrm )|
+
+@hbox(8.2125+2.73749)x469.75499, glue set - 1.0
+.@hbox(0.0+0.0)x0.0
+.@textrm i
+.@textrm n
+.@glue 3.65 plus 1.825 minus 1.21666
+.@textrm t
+.etc.
+
+
+Overfull \hbox (12.19147pt too wide) in paragraph at lines 103--113
+[]@textrm void aout[][]@texttt <@textrm size@texttt >[][]@textrm swap[][
+]exec[][]header[][]in, (bfd *abfd, struct external[][]exec *raw[][]bytes
+, struct internal[][]exec|
+
+@hbox(8.2125+2.73749)x469.75499, glue set - 1.0
+.@hbox(0.0+0.0)x0.0
+.@textrm v
+.@kern-0.30418
+.@textrm o
+.@textrm i
+.etc.
+
+[63] [64]) (./coffcode.texi
+Overfull \hbox (12.00226pt too wide) in paragraph at lines 24--45
+@textrm that your coff flavour is called foo. Copy the @texttt i386coff.
+c[] @textrm to @texttt foocoff.c[]@textrm , copy @texttt ../include/i386
+coff.h[]|
+
+@hbox(7.60416+2.12917)x469.75499, glue set - 1.0
+.@textrm t
+.@textrm h
+.@textrm a
+.@textrm t
+.@glue 3.65 plus 1.825 minus 1.21666
+.etc.
+
+[65] [66] [67] [68] [69]
+Overfull \hbox (63.09764pt too wide) in paragraph at lines 236--240
+ @textrm cal sym-bol ta-ble. Note that this ta-ble is the same as the on
+e re-turned by a call to @texttt bfd_canonicalize_symtab[]@textrm .|
+
+@hbox(7.60416+2.43333)x469.75499, glue set - 1.0
+.@glue(@leftskip) 21.68121
+.@textrm c
+.@textrm a
+.@textrm l
+.@glue 3.65 plus 1.825 minus 1.21666
+.etc.
+
+) (Index) [70]
+Overfull \vbox (7.0pt too high) has occurred while \output is active
+\vbox(37.14322+2.25)x224.75974
+.\glue(\topskip) 37.39322
+.\hbox(6.75+2.25)x224.75974, glue set 136.25966fil
+..\hbox(0.0+0.0)x0.0
+..\indrm (
+..\indrm I
+..\indrm n
+..\indrm d
+..etc.
+
+
+Overfull \vbox (7.0pt too high) has occurred while \output is active
+\vbox(37.14322+2.25)x224.75974
+.\glue(\topskip) 37.39322
+.\hbox(6.75+2.25)x224.75974, glue set 136.25966fil
+..\hbox(0.0+0.0)x0.0
+..\indrm (
+..\indrm I
+..\indrm n
+..\indrm d
+..etc.
+
+
+[71] [72] (./bfd.toc [-1] [-2] [-3]) [-4]
+Output written on bfd.dvi (78 pages, 189332 bytes).

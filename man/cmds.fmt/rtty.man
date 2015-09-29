@@ -1,0 +1,68 @@
+
+
+
+RTTY                      User Commands                      RTTY
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     rtty - provide remote access to a raw tty using TCP
+
+SSYYNNOOPPSSIISS
+     rrttttyy _d_e_v_i_c_e [_p_o_r_t_N_u_m]
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This program will open _d_e_v_i_c_e, which must have  the  charac-
+     teristics  of  a  terminal  line, in raw mode.  It will then
+     open a TCP network connection and pass bits back  and  forth
+     between  the  network connection and the raw terminal.  Any-
+     thing received from the network connection will  be  written
+     to the terminal, and anything read from the terminal will be
+     written to the network connection.  RRttttyy buffers  characters
+     internally  to  prevent  any loss of information if one side
+     gets ahead of the other.
+
+     If _p_o_r_t_N_u_m is specified, is the decimal number of a  request
+     socket  to  use  for  network connections.  If _p_o_r_t_N_u_m isn't
+     given, then rrttttyy will attempt to find an  available  socket.
+     In  either  case,  it  prints  out the decimal number of the
+     socket is actually using.
+
+     RRttttyy is designed to be used in conjunction with the Tty pro-
+     gram: the port number printed by rrttttyy should be given to Tty
+     to ensure that it connects to the right  place.   RRttttyy  only
+     supports  a  single remote connection at a time.  If several
+     connections are attempted simultaneously, all but the  first
+     will be rejected.
+
+
+KKEEYYWWOORRDDSS
+     network, remote terminal access, terminal
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  April 5, 1989                    1
+
+
+

@@ -1,0 +1,17 @@
+D DS3100_M                          	ds3100.md
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+F SPRITESR.DEF;1                    	spriteSrv.defs
+F SPRITESR.H;1                      	spriteSrvServer.h
+F SPRITETY.DEF;1                    	spriteTypes.defs
+D SUN3_MD                           	sun3.md
+F SYS.H;1                           	sys.h
+F SYSCALLN.H;1                      	sysCallNums.h
+F SYSCALLS.C;1                      	sysCalls.c
+F SYSCODE.C;1                       	sysCode.c
+F SYSINT.H;1                        	sysInt.h
+F SYSPRINT.C;1                      	sysPrintf.c
+F SYSSYSCA.C;1                      	sysSysCall.c
+F SYSTESTC.C;1                      	sysTestCall.c
+D USER                              	user

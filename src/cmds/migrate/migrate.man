@@ -1,0 +1,103 @@
+' $Header: /sprite/src/cmds/migrate/RCS/migrate.man,v 1.8 91/04/03 12:20:01 kupfer Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS MIGRATE cmds
+.BS
+.SH NAME
+migrate \- Migrate a command to another machine
+.SH SYNOPSIS
+\fBmigrate\fR [\fB\-BbvlD\fR] [[\fB\-h \fIhost\fR] | [\fB\-H \fIhostID\fR]] [\fB\-p \fIprocessID\fR] [(\fB\-E \fIcmd\fR arg0 | \fIcmd\fR) \fIargs ...\fR]
+.BE
+.SH INTRODUCTION
+This command is used to execute commands remotely using the Sprite process
+migration facility.  It may be used to execute commands on a
+particular machine or to select from idle machines; and it may execute
+a command specified by the arguments to the \fBmigrate\fR program, or an
+interactive shell. 
+.SH "SELECTING A HOST"
+.IP "\fB\-B\fR"
+The \fB\-B\fR specifies that the host should be selected at
+``background'' priority, rather than at the priority used for other
+tasks such as compilations.
+.IP "\fB\-h\fR"
+.IP "\fB\-H\fR"
+By default, a host is selected from among the idle hosts
+available on the local network.  This host is then marked as being in
+use for the duration of the command being executed; the host will not
+be chosen for remote execution of other processes in the meantime.  If
+a host is specified with the \fB\-h\fR or \fB\-H\fR options, then the
+``in-use'' flag 
+is bypassed; this is useful when invoking \fBmigrate\fR as a ``remote
+login'' facility to execute commands directly on another host.   The
+\fB\-h\fR flag specifies a host by name, and the \fB\-H\fR flag
+specifies it by spriteID (thereby bypassing the host database lookup
+to convert from name to internal numeric identifier).
+.IP "\fB\-l\fR"
+If no host is specified and no idle host is available, the
+command is not executed unless the \fB\-l\fR option is specified, in
+which case the command is executed locally.   The ``\fB\-l\fR'' option similiarly
+affects the disposition of the command if migrating to the other host fails.
+.SH "EXECUTING A COMMAND"
+.PP
+To execute a single command remotely, the command may be specified by
+placing the command and its arguments after any options to \fBmigrate\fR.
+If no command is specified, an interactive shell is created.  If the
+\fBSHELL\fR environment variable is present, that shell is invoked,
+otherwise \fBcsh\fP is invoked.  In any case, the exit status from the
+subprocess is returned by \fBmigrate\fR.
+.IP "\fB\-E \fI command\fR"
+In some circumstances, programs may be invoked with \fBargv[0]\fR
+different from the name of the command.  In this case, 
+the \fB-E\fR option may be used to specify the name of a file to
+execute, and the first argument after the option list specifies the
+value of \fBargv[0]\fR.   Otherwise, \fBargv[0]\fR is set to the name
+of
+the command that is invoked.  
+.SH "MIGRATING A CURRENT PROCESS"
+.IP "\fB\-p\fR"
+To migrate a process that is already executing, invoke \fBmigrate\fR
+with the \fB\-p\fR option, giving the process ID of the process to
+migrate (in hex notation).  Each process must be migrated
+individually, in separate runs of \fBmigrate\fR.
+.SH "OTHER OPTIONS"
+.IP "\fB\-b\fR"
+The \fB\-b\fR option may be used to enter ``background mode'', in
+which \fBmigrate\fP executes a command and returns immediately, printing
+the process identifier of the migrated child.  Thus,
+.ce 1
+\fBmigrate xyzzy&\fP
+is different from
+.ce 1
+\fBmigrate -b xyzzy\fP.
+The process identifier for the former case is printed by the
+shell, and it corresponds to the \fBmigrate\fP process; while the process
+identifier in the latter case corresponds to the migrated child
+itself.  In the former case, normal \fBcsh\fP job control may be used
+to foreground and background the migrated child, but in the latter
+case, the process is not controlled by \fBcsh\fP.  
+.IP "\fB\-v\fR"
+The \fB\-v\fR option may be used to enter ``verbose mode'', in which
+case the host selected for migration is printed, or a message that no
+host could be selected is printed if the command is executed locally
+due to the \fB\-l\fR option.
+.IP "\fB\-D\fR"
+The \fB\-D\fR option enables ``debug mode'', which causes various
+debugging statements to be printed as the program executes.
+.SH "SEE ALSO"
+migrate, db, xload, pmake, loadavg, csh, ps
+.SH FILES
+\fB/sprite/admin/data/migInfo\fR - the global migration database file.
+.SH KEYWORDS
+process migration, load average, uptime, idle time, database, remote execution
+.SH BUGS
+If a process that is executing remotely is evicted when that
+machine is no longer available, the process will continue to execute
+locally.  This is nearly completely transparent to the user (\fBps
+-m\fR will no longer show the process as migrated).  Even if the host
+were not selected as an ``idle host'', the migrated process can be
+evicted if the other host goes from being available to being unavailable.
+.PP
+If another host is selected at random to migrate a process that is already 
+running, when that process exits the remote host, the remote host will remain
+flagged as ``in use'' for a short period of time.  This is because the
+\fBmigrate\fR
+process cannot conveniently wait for a process that isn't its child.

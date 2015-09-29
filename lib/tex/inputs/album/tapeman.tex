@@ -1,0 +1,243 @@
+\documentstyle[tape]{article}
+\setlength{\textwidth}{6.5in}
+\setlength{\textheight}{9in}
+\setlength{\oddsidemargin}{1in}
+\renewcommand{\baselinestretch}{1.25}
+\parindent=15pt
+\parskip=6pt plus 1pt
+\pagestyle{plain}
+\begin{document}
+
+\section*{Making Casette Tape Labels using \LaTeX}
+\begin{flushright}
+\begin{tabular}{@{}l@{}}
+Sunil Podar (podar@sbcs)\\
+S.U.N.Y.\ at Stony Brook.\\
+
+\end{tabular}
+\end{flushright}
+
+\vspace*{8mm}
+This document describes a way to maintain a simple ``album database'' and
+susequently print formatted casette tape labels. The commands to accomplish
+this have been implemented as a documentstyle option {\tt tape} and should be
+used with the {\it article} documentstyle, i.e., it should be invoked with
+the command:
+
+\verb|\documentstyle[tape]{article}|
+
+A casette has two sides and each side is assumed to hold one {\it album}.
+Each side of a casette tape label has three major fields of information,
+depicted in Figure 1.:
+
+\begin{description}
+\item[side\hfill] the textual information that goes on the front-flap. This
+is where most of the information goes.
+\item[title\hfill] the title given to the {\it side} that goes on the side
+face of the casette cover.
+\item[addendum\hfill] the textual information that goes on the back-flap of
+the casette tape cover.
+\end{description}
+
+\album{1}{\it side--1}{\it title--1}{\it addendum--1}
+\album{2}{\it side--2}{\it title--2}{\it addendum--2}
+\begin{figure}[hb]
+\begin{center}
+\renewcommand{\globaltapeid}{\footnotesize global\\tapeid}
+\small
+\maketape[tapeid]{1}{2}%
+\caption[]{The Layout of a Casette Tape Label and the Terminology Used}
+\end{center}
+\end{figure}
+
+\newpage
+Each side of the tape in the database is defined using the following
+command:
+
+{\it
+\verb|\album{|album-id\verb|}{|side\verb|}{|title\verb|}{|addendum\verb|}|}
+
+\verb|\album| command defines an album. More precisely, it defines one side
+of a casette tape. It takes four arguements: first one
+is a unique label assigned to every album, the other three being {\it side},
+{\it title} and {\it addendum}.
+
+A tape label holds information for two sides. Following command produces the
+tape label:
+
+{\it \verb|\maketape[|tape-id\verb|]{|album1-id\verb|}%
+{|album2-id\verb|}[|optional tape title\verb|]|}
+
+The album entry corresponding to {\it album1-id} goes on the left side of the
+tape label and those corresponding to {\it album2-id} on the right side. By
+default, individual titles are picked up from the album definition and
+formatted to appear under their own sides. If it is desired to have a single
+title as the case may be if both sides of a tape are by the same composer or
+group, then a title may be explicitly specified as the last arguement in
+which case individual titles of the two albums, as specified in their
+respective \verb|\album| definitions, are ignored.
+
+A tape label also has two minor
+fields of information, that go on the side face of the tape label, on either
+side of the title. They are:
+\begin{description}
+\item[globaltapeid\hfill] This goes on the left side of the title, almost
+flush with the left edge. This may hold information such as the owner's name.
+By default, it is empty and may be changed using a \verb|\renewcommand|.
+
+\item[tapeid\hfill] This is an identification for individual tapes and goes
+to the right of the title almost flush with the right edge. 
+\end{description}
+
+The width of the box in which the two fields described above are printed, is
+controlled by a variable \verb|\tapeidwidth| and may be changed using a 
+\verb|\setlength| command. Also, by default, a vertical line is drawn
+separating the two boxes from the title region. It may be changed by a
+\verb|\renewcommand| on the parameter \verb|\tapeidmarker| --- one may
+prefer a $\bullet$ (\verb|$\bullet$|) as the demarcator.
+
+The {\it side} and the {\it addendum} fields are set in a \verb|minipage|
+environment, thus any of the regular paragraph formatting commands of \LaTeX\
+may be used; various formatting environments, such as {\tt tabbing}, {\tt
+tabular}, {\tt itemize}, {\tt enumerate}, etc., can also be used. The other
+fields, i.e., {\it title}, {\it globaltapeid} and {\it tapeid} are set in a
+\verb|\parbox| thus only \verb|\\| command may be used with no blank lines in
+the fields -- a parbox permits only one simple paragraph. Just a reminder: to
+get indentation on a line following a \verb|\\| command, use \verb|\hspace*|
+instead of \verb|\hspace|; according to the manual, any \verb|\hspace| after
+a \verb|\\| is ignored.
+
+On the outside of the left hand edge of the tape label, three vertical lines
+are shown. In addition to enforcing a correct height for each of the three
+regions, they also serve as an indicator. Their height is invariant and in
+the case when more text has been typed in a region than will fit on the
+label, they indicate precisely by how much has the height been overshot. They
+should, of course, be left out when the label is cut.
+
+No choice of fonts or fontsizes is enforced and one is completely free to
+choose these, although it is suggested that a small-sized font (such as those
+obtained by \verb|\small|, \verb|\footnotesize| or \verb|\tiny| declarations)
+be used since the width of the paragraphs is rather small. Also, if more
+information need to be put than will fit, the inter-line spacing may be
+reduced using a \verb|\renewcommand| on the parameter \verb|\baselinestretch|.
+
+Two tape labels can be fit on a page, and a \verb|\newpage| declaration ought
+to be placed after every two \verb|\maketape| commands.
+
+It is assumed that each \verb|\album| describes one {\it side} of the tape
+label, which is also usually the case. If one side of a tape contains more
+than one album then one will have to declare it as a single \verb|\album|
+description. On the other hand, if a single album, or piece of music spans
+both sides of a casette tape, its description will have to be broken
+into two \verb|\album| declarations.
+
+The label can be cut out along the outer boundary -- the border lines are
+meant to be part of the label so the cut should be just along the outer edge
+of the lines.
+
+\section*{General Comments}
+
+The tape database is implemented by storing all fields as control sequences,
+thus it is suggested that the database be constructed using reasonable-sized
+files; subsequently to make tape labels, only the necessary files be
+\verb|\input|, otherwise \TeX\ may run out of memory.
+
+The tape database has been implemented with the aim that the database
+files be sharable amongst various users so long as every album has a unique
+{\it album-id}. In order to load a tape database, all one needs to do is
+\verb|\input| the appropriate files and subsequently type the
+\verb|\maketape| commands for each desired pair of albums.
+Following suggestions are made for conventions to be adopted
+so as to enable a large community to share files without much effort:
+\begin{itemize}
+\item Each album database file have a ``{\tt .bum}'' file-name
+extension\footnote{music album $\Leftrightarrow$ musical bum --- Benny Hill}.
+For such files, the extension will have to be explicitly specified in the
+\verb|\input| statement, otherwise \TeX\ will look for a file with a {\tt
+.tex} extension.
+
+\item Separate files be maintained for different composers or groups.
+
+\item Any character can be used in the {\it album-id}, thus following
+formats are suggested for {\it album-id}'s\\[1mm]
+\hspace*{0.5in}\verb|filename.#|, or\\
+\hspace*{0.5in}\verb|filename[#]|,  where {\tt \#} is an integer.
+
+For example, one may have a file {\tt mozart1.bum} with various album
+descriptions of Mozart's compositions, each having an album-id of the form 
+{\tt mozart1.1}, {\tt mozart1.2}, and so on. If a single piece of music
+spans both sides then we might label the two parts using another level of
+subscripts, for example {\tt mozart.12.1} and {\tt mozart.12.2}.
+\end{itemize}
+
+The only problem with above conventions is that if two users have a file with
+identical album-id's then the file will have to be
+copied and the album-id's changed.
+
+Following page contains an example. Commands used to generate the label would
+be:
+\leftmargini 25pt
+\begin{quote}
+\begin{verbatim}
+\documentstyle[tape]{article}
+\renewcommand{\globaltapeid}{\footnotesize\sf Sunil\\Podar}
+\begin{document}
+\input{example.bum}
+\maketape[\sf WC\\12]{vivaldi.1}{vivaldi.2}
+\end{document}
+\end{verbatim}
+\end{quote}
+
+\newpage
+\vspace*{-4mm}
+{%
+\input{tape.sty}
+\input{example.bum}
+\renewcommand{\globaltapeid}{\footnotesize\sf Sunil\\Podar}
+\begin{center}
+\small
+\maketape[\sf WC\\12]{vivaldi.1}{vivaldi.2}
+\end{center}%
+}
+
+\renewcommand{\baselinestretch}{0.85}
+\small\normalsize
+
+\noindent The file {\tt example.bum} contains:
+\begin{quote}
+\begin{verbatim}
+\album{vivaldi.1}{\small Vivaldi, Antonio\hfill (1678-1741)\\
+\begin{enumerate}
+\item Concerto in G Major for Two Mandolins, Strings \& Basso Continuo
+\item Concerto in C Major for Mandolin, Strings \& Basso Continuo
+\item Concerto in C Major for Two Mandolins, Two Theorboes,  Two flutes,
+Two ``Salmoe'', Two Violins, Cello, Strings \& Basso Continuo
+\item Concerto a dve Chori in B flat Major, ``Con Violino Discordato'',
+Strings \& Basso Continuo
+\end{enumerate}
+}%
+{\normalsize\sf Vivaldi\\Mandolin Concertos}%
+{\small {\it I Solisti Veneti} --- Claudio Scimone\\[1mm]
+Bonifacio Bianchi, Alessandro Pitrelli --- Mandolins
+}
+%%-----------------------------------------------------------
+\album{vivaldi.2}{\small Vivaldi, Antonio\\[1mm]
+{\bf \underline{The Four Seasons\rule[-0.7mm]{0mm}{1mm}}}
+
+\begin{enumerate}
+\item SPRING, Concerto No. 1 in E Major
+\item SUMMER, Concerto No. 2 in G Minor
+\item AUTUMN, Concerto No. 3 in F Major
+\item WINTER, Concerto No. 4 in F Minor
+\end{enumerate}
+
+Simon Standage --- Violin\\
+Trevor Pinnock --- Harpsichord\\[1mm]
+{\it The English Chamber Orchestra} on authentic instruments.
+}%
+{\normalsize\sf Vivaldi\\The Four Seasons}{}
+%%-----------------------------------------------------------
+\end{verbatim}
+\end{quote}
+
+\end{document}

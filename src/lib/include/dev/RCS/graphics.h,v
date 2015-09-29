@@ -1,0 +1,457 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     91.06.25.22.16.02;  author mottsmth;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.05.30.13.12.25;  author jhh;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.10.19.15.42.02;  author mgbaker;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.07.18.17.21.30;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.10.19.25.32;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Graphics io controls for the pmax graphics device.
+@
+
+
+1.5
+log
+@Add semicolon before end of DevScreenInfoExt struct
+@
+text
+@/*
+ * graphics.h --
+ *
+ *	This file defines the device-dependent IOControl calls and related
+ *	structures for graphics devices, which are used on DS3100's to
+ *	interact with the display and mouse.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/lib/include/dev/RCS/graphics.h,v 1.4 91/05/30 13:12:25 jhh Exp Locker: mottsmth $ SPRITE (Berkeley)
+ */
+
+#ifndef _GRAPHICS
+#define _GRAPHICS
+
+/*
+ * Constants:  these are the IOControl operations defined for tty's.
+ * The UNIX IOControl names are defined in ioctl.h.
+ */
+
+#define IOC_GRAPHICS (7 << 16)
+
+#define IOC_GRAPHICS_GET_INFO		(IOC_GRAPHICS | 0x1)
+#define IOC_GRAPHICS_MOUSE_POS		(IOC_GRAPHICS | 0x2)
+#define IOC_GRAPHICS_CURSOR_COLOR	(IOC_GRAPHICS | 0x3)
+#define IOC_GRAPHICS_INIT_SCREEN	(IOC_GRAPHICS | 0x4)
+#define IOC_GRAPHICS_KBD_CMD		(IOC_GRAPHICS | 0x5)
+#define IOC_GRAPHICS_GET_INFO_ADDR	(IOC_GRAPHICS | 0x6)
+#define IOC_GRAPHICS_CURSOR_BIT_MAP	(IOC_GRAPHICS | 0x7)
+#define IOC_GRAPHICS_KERN_LOOP		(IOC_GRAPHICS | 0x8)
+#define IOC_GRAPHICS_KERN_UNLOOP	(IOC_GRAPHICS | 0x9)
+#define IOC_GRAPHICS_VIDEO_ON		(IOC_GRAPHICS | 0xa)
+#define IOC_GRAPHICS_VIDEO_OFF		(IOC_GRAPHICS | 0xb)
+#define IOC_GRAPHICS_COLOR_MAP		(IOC_GRAPHICS | 0xc)
+#define IOC_GRAPHICS_IS_COLOR		(IOC_GRAPHICS | 0xd)
+
+/*
+ * Cursor command register bits.
+ *
+ *     DEV_CURSOR_ENPA	Enable cursor plane A.
+ *     DEV_CURSOR_FOPA	Force cursor plane A to output 1.
+ *     DEV_CURSOR_ENPB	Enable cursor plane B.
+ *     DEV_CURSOR_FOPB	Force cursor plane B to output 1.
+ *     DEV_CURSOR_XHAIR	
+ *     DEV_CURSOR_XHCLP	Clip crosshair inside region.	
+ *     DEV_CURSOR_XHCL1	Select crosshair clipping region.
+ *     DEV_CURSOR_XHWID	Crosshair cursor line width.
+ *     DEV_CURSOR_ENRG1	Enable region detector 1.
+ *     DEV_CURSOR_FORG1	Force region detector 1 to output 1.
+ *     DEV_CURSOR_ENRG2	Enable region detector 2.
+ *     DEV_CURSOR_FORG2	Force region detector 2 to output 1.
+ *     DEV_CURSOR_LODSA	Load/display sprite array.
+ *     DEV_CURSOR_VBHI	Vertical blank polarity.
+ *     DEV_CURSOR_HSHI	Horizontal sync polarity.
+ *     DEV_CURSOR_TEST	Diagnostic test.
+ */
+#define DEV_CURSOR_ENPA		0x0001
+#define DEV_CURSOR_FOPA		0x0002
+#define DEV_CURSOR_ENPB		0x0004
+#define DEV_CURSOR_FOPB		0x0008
+#define DEV_CURSOR_XHAIR	0x0010
+#define DEV_CURSOR_XHCLP	0x0020
+#define DEV_CURSOR_XHCL1	0x0040
+#define DEV_CURSOR_XHWID	0x0080
+#define DEV_CURSOR_ENRG1	0x0100
+#define DEV_CURSOR_FORG1	0x0200
+#define DEV_CURSOR_ENRG2	0x0400
+#define DEV_CURSOR_FORG2	0x0800
+#define DEV_CURSOR_LODSA	0x1000
+#define DEV_CURSOR_VBHI		0x2000
+#define DEV_CURSOR_HSHI		0x4000
+#define DEV_CURSOR_TEST		0x8000
+
+/*
+ * The cursor register.
+ */
+typedef volatile struct {
+    unsigned short	cmdReg;	/* Command register. */
+    unsigned short	pad1;
+    unsigned short	xPos;	/* X position. */
+    unsigned short	pad2;
+    unsigned short	yPos;	/* Y position. */
+    unsigned short	pad3;
+    unsigned short	xMin1;
+    unsigned short	pad4;
+    unsigned short	xMax1;
+    unsigned short	pad5;
+    unsigned short	yMin1;
+    unsigned short	pad6;
+    unsigned short	yMax1;
+    unsigned short	pad7;
+    unsigned short	unused7;
+    unsigned short	padUnused7;
+    unsigned short	unused8;
+    unsigned short	padUnused8;
+    unsigned short	unused9;
+    unsigned short	padUnused9;
+    unsigned short	unusedA;
+    unsigned short	padUnusedA;
+    unsigned short	xMin2;
+    unsigned short	pad8;
+    unsigned short	xMax2;
+    unsigned short	pad9;
+    unsigned short	yMin2;
+    unsigned short	padA;
+    unsigned short	yMax2;
+    unsigned short	padB;
+    unsigned short	memory;
+    unsigned short	padC;
+} DevPCCRegs;
+
+/*
+ * The VDAC register.
+ */
+typedef volatile struct {
+    unsigned char   mapWA;
+    unsigned char   pad0;
+    unsigned short  pad1;
+
+    unsigned char   map;
+    unsigned char   pad2;
+    unsigned short  pad3;
+
+    unsigned char   mask;
+    unsigned char   pad4;
+    unsigned short  pad5;
+
+    unsigned char   mapRA;
+    unsigned char   pad6;
+    unsigned short  pad7;
+
+    unsigned char   overWA;
+    unsigned char   pad8;
+    unsigned short  pad9;
+
+    unsigned char   over;
+    unsigned char   pad10;
+    unsigned short  pad11;
+
+    unsigned char   reserved;
+    unsigned char   pad12;
+    unsigned short  pad13;
+
+    unsigned char   overRA;
+    unsigned char   pad14;
+    unsigned short  pad15;
+} DevVDACRegs;
+
+/*
+ *  Events.
+ */
+typedef struct {
+        short	        x;		/* x position */
+        short 	        y;		/* y position */
+        unsigned int    time;		/* 1 millisecond units */
+        unsigned char   type;		/* button up/down/raw or motion */
+        unsigned char   key;		/* the key (button only) */
+        unsigned char   index;		/* which instance of device */
+        unsigned char   device;		/* which device */
+} DevEvent;
+
+/*
+ * type field
+ */
+#define DEV_BUTTON_UP_TYPE          0
+#define DEV_BUTTON_DOWN_TYPE        1
+#define DEV_BUTTON_RAW_TYPE         2
+#define DEV_MOTION_TYPE             3
+/*
+ * Key field.
+ */
+#define DEV_EVENT_LEFT_BUTTON	0x01
+#define DEV_EVENT_MIDDLE_BUTTON	0x02
+#define DEV_EVENT_RIGHT_BUTTON	0x03
+/*
+ * device field
+ */
+#define DEV_NULL_DEVICE	  	0	/* NULL event (for QD_GETEVENT ret) */
+#define DEV_MOUSE_DEVICE	1		/* mouse */
+#define DEV_KEYBOARD_DEVICE	2		/* main keyboard */
+#define DEV_TABLET_DEVICE	3		/* graphics tablet */
+#define DEV_AUX_DEVICE	  	4		/* auxiliary */
+#define DEV_CONSOLE_DEVICE	5		/* console */
+#define DEV_KNOB_DEVICE	  	8
+#define DEV_JOYSTICK_DEVICE	9
+
+#define DEV_MAXEVQ	64	/* must be power of 2 */
+#define DEV_EVROUND(x)	((x) & (DEV_MAXEVQ - 1))
+#define DEV_TABLET_RES	2
+
+typedef struct {
+	unsigned int	time;
+	short		x, y;
+} DevTimeCoord;
+
+/*
+ * The event queue. This structure is normally included in the info
+ * returned by the device driver.
+ */
+typedef struct {
+	DevEvent	*events;
+	unsigned int 	eSize;
+        unsigned int    eHead;
+        unsigned int    eTail;
+	unsigned long	timestampMS;
+	DevTimeCoord	*tcs;	/* history of pointer motions */
+	unsigned int	tcSize;
+	unsigned int	tcNext;	/* simple ring buffer, old events are tossed */
+} DevEventQueue;
+
+/* 
+ * mouse cursor position
+ */
+typedef struct {
+        short x;
+        short y;
+} DevCursor;
+
+/* 
+ * mouse motion rectangle
+ */
+typedef struct {
+        short bottom;
+        short right;
+        short left;
+        short top;
+} DevBox;
+
+/*
+ * Structures used by iocontrols.
+ */
+typedef struct {
+	char nbytes;		/* Number of bytes in parameter */
+	unsigned char cmd;	/* Command to be sent, peripheral bit will */
+				/* be forced by driver */
+	unsigned char par[2];	/* Bytes of parameters to be sent */
+} DevKpCmd;
+
+/*
+ * Information about the screen.
+ */
+typedef struct {
+	DevEventQueue eventQueue;	/* event & motion queues	*/
+	short	mswitches;		/* current value of mouse buttons */
+	DevCursor tablet;		/* current tablet position	*/
+	short	tswitches;		/* current tablet buttons NI!	*/
+	DevCursor cursor;		/* current cursor position	*/
+	short	row;			/* screen row			*/
+	short	col;			/* screen col			*/
+	short	maxRow;			/* max character row		*/
+	short	maxCol;			/* max character col		*/
+	short	maxX;			/* max x position		*/
+	short	maxY;			/* max y position		*/
+	short	maxCurX;		/* max cursor x position 	*/
+	short	maxCurY;		/* max cursor y position	*/
+	int	version;		/* version of driver		*/
+	char	*bitmap;		/* bit map position		*/
+        short   *scanmap;               /* scanline map position        */
+	short	*cursorBits;		/* cursor bit position		*/
+	short	*vaddr;			/* virtual address           	*/
+	char    *planeMask;		/* plane mask virtual location  */
+	DevCursor mouse;		/* atomic read/write		*/
+	DevBox	mbox;			/* atomic read/write		*/
+	short	mthreshold;		/* mouse motion parameter	*/
+	short	mscale;			/* mouse scale factor (if 
+					   negative, then do square).	*/
+	short	minCurX;		/* min cursor x position	*/
+	short	minCurY;		/* min cursor y position	*/
+} DevScreenInfo;
+
+/*
+ *  This screen info is an extended version used by the graphics accelerator
+ *  cards in the ds5000.
+ */
+
+#define DEV_CUR_SIZE (64 * 64 / 4)
+
+typedef struct {
+	DevEventQueue eventQueue;	/* event & motion queues	*/
+	short	mswitches;		/* current value of mouse buttons */
+	DevCursor tablet;		/* current tablet position	*/
+	short	tswitches;		/* current tablet buttons NI!	*/
+	DevCursor cursor;		/* current cursor position	*/
+	short	row;			/* screen row			*/
+	short	col;			/* screen col			*/
+	short	maxRow;			/* max character row		*/
+	short	maxCol;			/* max character col		*/
+	short	maxX;			/* max x position		*/
+	short	maxY;			/* max y position		*/
+	short	maxCurX;		/* max cursor x position 	*/
+	short	maxCurY;		/* max cursor y position	*/
+	int	version;		/* version of driver		*/
+	int	flags;			/* sync flags			*/
+	char	*memPtr;		/* memory on graphics board	*/
+	char	*bufPtr;		/* start of ring buffer		*/
+	char	*bufPhysPtr;		/* physical address of bufPtr	*/
+	int	bufSize;		/* size of ring buffer		*/
+	DevCursor mouse;		/* atomic read/write		*/
+	DevBox	mbox;			/* atomic read/write		*/
+	short	mthreshold;		/* mouse motion parameter	*/
+	short	mscale;			/* mouse scale factor (if 
+					   negative, then do square).	*/
+	short	minCurX;		/* min cursor x position	*/
+	short	minCurY;		/* min cursor y position	*/
+	char	*fooPtr;		
+	char	stampWidth;
+	char	stampHeight;
+	char	nPlanes;		/* primary buffer		*/
+	char	accPresent;		/* geometry accelerator present	*/
+	char	dPlanes;		/* double buffer		*/
+	char	zplanes;		/* Z buffer			*/
+	char	zzplanes;		/* extra buffer			*/
+	unsigned char cursBits[DEV_CUR_SIZE];
+	int	cursFG;
+	int	cursBG;			
+	unsigned short cmapIndex;	/* start CMAP update here	*/
+	unsigned short cmapCount;	/* update this # of CMAP entries*/
+	int	colormap[256];
+	int	*sticPollReg;		/* STIC polling register	*/
+	int	*sticReg;		/* STIC control registers	*/
+	int	ptptPhys;		/* phys addr: ptpt		*/
+	int	ptptSize;		/* # entries in ptpt		*/
+	int	*ptptPagein;		/* request server pagein	*/
+} DevScreenInfoExt;
+
+typedef struct {
+	short		map;
+	unsigned short	index;
+	struct {
+		unsigned short red;
+		unsigned short green;
+		unsigned short blue;
+	} entry;
+} DevColorMap;
+
+/*
+ * The unit number of /dev/mouse.
+ */
+#define DEV_MOUSE_UNIT	1
+
+#endif _GRAPHICS
+@
+
+
+1.4
+log
+@started adding stuff for graphics accelerators
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/lib/include/dev/RCS/graphics.h,v 1.3 90/10/19 15:42:02 mgbaker Exp $ SPRITE (Berkeley)
+d330 1
+a330 1
+	int	*ptptPagein		/* request server pagein	*/
+@
+
+
+1.3
+log
+@Added missing iocontrol define.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/lib/include/dev/RCS/graphics.h,v 1.2 89/07/18 17:21:30 ouster Exp Locker: mgbaker $ SPRITE (Berkeley)
+d277 55
+@
+
+
+1.2
+log
+@Moved a lot of stuff from the kernel devGraphics.h to here.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/lib/include/dev/RCS/graphics.h,v 1.1 89/07/10 19:25:32 nelson Exp Locker: ouster $ SPRITE (Berkeley)
+d42 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d2 1
+a2 1
+ * tty.h --
+d5 2
+a6 1
+ *	structres for graphics devices.
+d8 1
+a8 2
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+d17 1
+a17 1
+ * $Header: graphics.h,v 1.1 89/06/09 19:51:49 mnelson Exp $ SPRITE (Berkeley)
+d25 1
+a25 2
+ * For compatibility, the UNIX IOControl names are defined as well
+ * as the corresponding Sprite names.
+d42 249
+@

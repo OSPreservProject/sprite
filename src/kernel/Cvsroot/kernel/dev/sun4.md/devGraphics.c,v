@@ -1,0 +1,1849 @@
+head     1.12;
+branch   ;
+access   ;
+symbols  ds3100:1.12 sun3:1.12 sun4nw:1.12 symm:1.12 spur:1.12;
+locks    ; strict;
+comment  @ * @;
+
+
+1.12
+date     91.10.18.01.21.04;  author dlong;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     91.09.10.18.21.54;  author rab;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     90.12.18.13.47.06;  author mgbaker;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     90.11.27.13.05.06;  author mgbaker;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     90.11.03.13.50.27;  author mgbaker;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     90.10.30.16.45.32;  author mendel;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     90.09.25.18.39.36;  author mgbaker;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     90.09.11.13.57.21;  author rab;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.09.11.12.31.04;  author rab;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.08.30.19.01.56;  author mgbaker;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.08.30.18.34.05;  author mgbaker;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.08.14.18.46.35;  author mgbaker;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Added /dev/fb support.
+@
+
+
+1.12
+log
+@sun4c/sun4c2 merge
+@
+text
+@/* 
+ * devGraphics.c --
+ *
+ *	This module provides frame buffer device support.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun4.md/RCS/devGraphics.c,v 1.10 90/12/18 13:47:06 mgbaker Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include "sprite.h"
+#include "dev.h"
+#include <sys/ioctl.h>
+#include "devfb.h"
+#include "fs.h"
+#include "vmMach.h"
+#include "rpc.h"
+#include "stdio.h"
+#include "sys/types.h"
+#include "mon/eeprom.h"
+#include "machMon.h"
+#include "stdlib.h"
+#include "string.h"
+#include "bstring.h"
+#include "alloca.h"
+
+#define EEC_COLOR_TYPE_CG4      4       /* missing in mon/eeprom.h */
+#define EEC_COLOR_TYPE_CG6      6       /* missing in mon/eeprom.h */
+
+/*
+ * For BW2 frame buffer
+ */
+
+
+#ifdef sun3
+#define BW2_FB	((Address) 0x0fe20000)
+#elif sun4c
+#define BW2_FB	((Address) NIL)
+#elif sun4
+#define BW2_FB	((Address) 0xffd40000)
+#else
+#define	BW2_FB	((Address) NIL)
+#endif /* sun3 */
+
+
+/*
+ * For CG4 frame buffer
+ */
+#ifdef sun3
+#define CG4_FB     ((Address) 0x0fd00000)
+#define CG4_CM     ((Address) 0x0fe0e000)
+#define CG4_OV     ((Address) 0x0fe80000)
+#define CG4_EN     ((Address) 0x0fea0000)
+#else
+#define CG4_FB    ((Address) NIL)
+#define CG4_CM    ((Address) NIL)
+#define CG4_OV    ((Address) NIL)
+#define CG4_EN    ((Address) NIL)
+#endif /* sun3 */
+/*
+ * For CG6 frame buffer
+ */
+#define CG6_FB    ((Address) NIL)
+#define CG6_CM    ((Address) NIL)
+/*
+ * CG3 frame buffer.
+ */
+#define CG3_FB    ((Address) NIL)
+#define CG3_CM    ((Address) NIL)
+
+
+typedef	struct	FBDevice {
+    FBType	type;
+    FBInfo	info;
+    FBCMap	cmap;
+} FBDevice;
+
+/*
+ * Associates a string with each fb type so we can use a hack to look up
+ * the type per machine from a file rather than the prom...
+ */
+char	*fbNames[FBTYPE_LASTPLUSONE] = {
+	"bwone",
+	"cgone",
+	"bwtwo",
+	"cgtwo",
+	"FBTYPE_SUN_GP2",
+	"FBTYPE_SUN_CG5",
+	"cgthree",
+	"FBTYPE_MEMCOLOR",
+	"cgfour",
+	"FBTYPE_NOTSUN1",
+	"FBTYPE_NOTSUN2",
+	"FBTYPE_NOTSUN3",
+	"cgsix",
+	"FBTYPE_SUNROP_COLOR",
+	"FBTYPE_SUNFB_VIDEO",
+	"FBTYPE_RESERVED5",
+	"FBTYPE_RESERVED4",
+	"FBTYPE_RESERVED3",
+	"FBTYPE_RESERVED2",
+	"FBTYPE_RESERVED1"
+};
+
+/*
+ * Brooktree DAC
+ */
+volatile struct colormap {
+    unsigned int	addr;		/* colormap address register */
+    unsigned int	cmap;		/* colormap data register */
+    unsigned int	ctrl;		/* control register */
+    unsigned int	omap;		/* overlay map data register */
+} *fbCmap = (volatile struct colormap *) NIL;
+
+/* Copy of colormap (for CG4 only!) */
+static union {
+        unsigned char   map[256][3];    /* reasonable way to access */
+        unsigned int    raw[256*3/4];   /* unreasonable way used to load h/w */
+} fbCmapCopy;
+
+
+/*
+ * Addresses to know for the different frame buffers, overlay planes, etc.
+ */
+typedef	struct FBAddr {
+    Address	fb_buffer;		/* kernel virtual address */
+    Address	fb_overlay;		/* offset? */
+    Address	fb_enable;		/* offset? */
+    Address	fb_cmap;		/* cmap */
+} FBAddr;
+
+/*
+ * Addresses for frame buffer, overlay and enable.  This is in a separate
+ * array since it's different per machine type.  I only have it for
+ * one machine type right now (sun4c).
+ */
+FBAddr	fbaddrs[FBTYPE_LASTPLUSONE] = {
+    {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* bw1 */
+    {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* cg1 */
+    {BW2_FB, (Address) NIL, (Address) NIL, (Address) NIL},	  /* bw2 */
+    {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* cg2 */
+    {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* gp2 */
+    {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* cg5 */
+    {CG3_FB, (Address) NIL, (Address) NIL, CG3_CM},		  /* cg3 */
+    {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* ? */
+    {CG4_FB, CG4_OV, CG4_EN, CG4_CM},				  /* cg4 */
+    {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* cust. */
+    {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* cust. */
+    {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* cust. */
+    {CG6_FB, (Address) NIL, (Address) NIL, CG6_CM},		  /* cg6 */
+    {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* rop */
+    {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* video */
+    {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* res5 */
+    {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* res4 */
+    {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* res3 */
+    {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}, /* res2 */
+    {(Address) NIL, (Address) NIL, (Address) NIL, (Address) NIL}  /* res1 */
+};
+
+
+/*
+ * For convenience we store info about the frame buffer types here.  If we
+ * get the info from the prom, we overwrite the stuff here.
+ * Array indexed by fb_type, found in fb.h.
+ * An example of what would be overwritten is if we have a high resolution
+ * b&w screen, the info in the prom will give us
+ *	{high resolution bw2, 1280, 1600, 1, 2, 256*1024},	(* bw2h *)
+ * instead of the regular bw2.  Also, for cg3, we could have a second type:
+ *	{cg3b, 768, 1024, -1, -1, -1} 			(* cg3 B *)
+ */
+		/* type, height, width, depth, cmsize, size */
+FBType	fbarray[FBTYPE_LASTPLUSONE] = {
+	{FBTYPE_SUN1BW, -1, -1, -1, -1, -1},			/* bw1 */
+	{FBTYPE_SUN1COLOR, -1, -1, -1, -1, -1},			/* cg1 */
+	{FBTYPE_SUN2BW, 900, 1152, 1, 2, 128*1024},		/* bw2 */
+	{FBTYPE_SUN2COLOR, 900, 1152, 8, -1, -1},		/* cg2 */
+	{FBTYPE_SUN2GP, -1, -1, -1, -1, -1},			/* gp2 */
+	{FBTYPE_SUN5COLOR, -1, -1, -1, -1, -1},			/* cg5? |bw3? */
+	{FBTYPE_SUN3COLOR, 900, 1152, 8, 256, 1024*1024},	/* cg3 A */
+	{FBTYPE_MEMCOLOR, -1, -1, -1, -1, -1},			/* ? | bw4? */
+	{FBTYPE_SUN4COLOR, 900, 1152, 8, 256, 1024*1024},	/* cg4 */
+	{FBTYPE_NOTSUN1, -1, -1, -1, -1, -1},			/* customer */
+	{FBTYPE_NOTSUN2, -1, -1, -1, -1, -1},			/* customer */
+	{FBTYPE_NOTSUN3, -1, -1, -1, -1, -1},			/* customer */
+	{FBTYPE_SUNFAST_COLOR, 900, 1152, 8, 256, 1024*1024},	/* cg6=gx*/
+	{FBTYPE_SUNROP_COLOR, -1, -1, -1, -1, -1},
+	{FBTYPE_SUNFB_VIDEO, -1, -1, -1, -1, -1},
+	{FBTYPE_RESERVED5, -1, -1, -1, -1, -1},			/* don't use */
+	{FBTYPE_RESERVED4, -1, -1, -1, -1, -1},			/* don't use */
+	{FBTYPE_RESERVED3, -1, -1, -1, -1, -1},			/* don't use */
+	{FBTYPE_RESERVED2, -1, -1, -1, -1, -1},			/* don't use */
+	{FBTYPE_RESERVED1, -1, -1, -1, -1, -1}			/* don't use */
+};
+
+/*
+ *
+ * Thorsten's notes for the old user-level fbio stuff:
+ *
+ *
+ * Brooktree DAC/colormap information
+ *
+ * Operation theory (really: guesses)
+ *
+ * The DAC has four byte size "ports" (cpu accessible registers) which have to
+ * be used to access the three internal register files with the 256 colormap
+ * RGB entries, a few control registers and 4 overlay RGB entries.
+ * To access a control register: write the register number (0-7?) into
+ * "addr" (see struct below), then write the value into "ctrl".
+ * To access a RGB entry: write the entry number (0-255 or 0-3) into "addr"
+ * then write the R, G and B values (in that order) into "cmap" or "omap".
+ * After the access, the "addr" is automatically incremented to allow quick
+ * updates of successive colormap entries.
+ *
+ * Now, this was the meat and here comes the spice:
+ * On the CG6 board, the ports are on (mod 4)=0 addresses and require
+ * longword accesses. This means the value has to go into bits 24-31 of
+ * an int which is then written to the chip. (Similarly for reading.)
+ * On the CG4 board, things are even better: the ports are on (mod 4)=3
+ * addresses and require longword accesses. The value can thus reside
+ * in the low 8 bits of an int. However, colormap RGB values behave
+ * wonderfully different: one longword write to "cmap" or "omap" is
+ * turned (by the hardware) into four byte writes to the chip, the
+ * top byte first, the bottom one last. (Dunno 'bout reads.) This means
+ * that one write to "cmap" or "omap" writes 4/3 colormap RGB entries.
+ * For example, writing a "1" into "addr" and 0x01020304 into "cmap" will
+ * set green and blue of color 1 to 0x01 and 0x02 resp. and will set
+ * red and green of color 2 to 0x03 and 0x04 resp.!
+ *
+ * Note: I didn't build these suckers, I just poked at them and guessed
+ * the behaviour, and I might be wrong...
+ *                      Thorsten von Eicken, 2/19/90
+ */
+
+/*
+ * forward declarations for internal routines
+ */
+#ifdef sun4c
+static int CheckFBNode _ARGS_((unsigned int node, char *name));
+static int GetFBType _ARGS_((void));
+#endif
+static ReturnStatus PutCmap _ARGS_((int whichFb, FBCMap *cmap));
+static ReturnStatus GetCmap _ARGS_((int whichFb, FBCMap *cmap));
+static ReturnStatus SVideo _ARGS_((int whichFb, int *statePtr));
+static ReturnStatus GVideo _ARGS_((int whichFb, int *statePtr));
+static ReturnStatus InitCmap _ARGS_((FBDevice *devPtr));
+
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevFBOpen --
+ *
+ *      Open the system frame buffer device.
+ *
+ * Results:
+ *      SUCCESS         - the device was opened.
+ *      FAILURE         - something went wrong.
+ *
+ * Side effects:
+ *      The device is opened.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+DevFBOpen(devicePtr, useFlags, token, flagsPtr)
+    Fs_Device	*devicePtr;	/* Device info, unit number, etc. */
+    int		useFlags;	/* Flags from the stream being opened. */
+    Fs_NotifyToken	token;	/* Call-back token for input, unused here. */
+    int		*flagsPtr;	/* OUT: Device open flags. */
+{
+    FBDevice		*devPtr;
+#ifdef sun4c
+    extern	int	GetFBType();
+#endif
+    FBType	*typePtr;
+    int		machArch;
+    int		machType;
+    int		whichFb = -1;
+#ifndef sun4c
+    struct	eeprom	*eeprom;
+    struct	eed_conf	*eeconf;
+    int		i;
+#endif
+
+
+    devPtr = (FBDevice *) malloc(sizeof (FBDevice));
+    bzero((char *) devPtr, sizeof (FBDevice));
+
+    machArch = Mach_GetMachineArch();
+    machType = Mach_GetMachineType();
+
+    devPtr->type.fb_type = -1;
+
+#ifdef sun4c
+    whichFb = GetFBType();
+    if (whichFb == -1) {
+	whichFb = FBTYPE_SUN2BW;
+    }
+#else
+    switch (machArch) {
+    case SYS_SUN4:
+    case SYS_SUN3:
+	eeprom = (struct eeprom *)EEPROM_BASE;
+	eeconf = &(eeprom->ee_diag.eed_conf[0]);
+	for (i = 0; i < MAX_SLOTS; i++, eeconf++) {
+#ifdef  FOOBAR
+	    printf("card type %d\n", eeconf->eec_un.eec_type);
+#endif  FOOBAR
+	    /* end of card cage? */
+	    if (eeconf->eec_un.eec_type == EEC_TYPE_END) {
+		break;
+	    }
+	    /* color display? */
+	    if (eeconf->eec_un.eec_type == EEC_TYPE_COLOR) {
+#ifdef  FOOBAR
+		printf("\tcolor type %d\n",
+			eeconf->eec_un.eec_color.eec_color_type);
+#endif  FOOBAR
+		switch (eeconf->eec_un.eec_color.eec_color_type) {
+		case EEC_COLOR_TYPE_CG4:
+		    whichFb = FBTYPE_SUN4COLOR;
+		    break;
+		case EEC_COLOR_TYPE_CG6:
+		    whichFb = FBTYPE_SUNFAST_COLOR;
+		    break;
+		default:
+		    ; /* just ignore... */
+		}
+	    }
+	    /* b/w display? (note: give preference to color) */
+	    if (whichFb == -1 && eeconf->eec_un.eec_type == EEC_TYPE_BW) {
+		if (eeprom->ee_diag.eed_scrsize == EED_SCR_1600X1280) {
+		    whichFb = FBTYPE_SUN2BW;
+		    fbarray[whichFb].fb_height = 1280;
+		    fbarray[whichFb].fb_width = 1600;
+		    fbarray[whichFb].fb_size = 256 * 1024;
+		} else {
+		    whichFb = FBTYPE_SUN2BW;
+		}
+	    }
+	}
+	/* assume b/w as default */
+	if (whichFb == -1) {
+	    whichFb = FBTYPE_SUN2BW;
+	}
+	if ((whichFb == FBTYPE_SUN2BW) &&
+		(eeprom->ee_diag.eed_scrsize == EED_SCR_1600X1280)) {
+	    whichFb = FBTYPE_SUN2BW;
+	    fbarray[whichFb].fb_height = 1280;
+	    fbarray[whichFb].fb_width = 1600;
+	    fbarray[whichFb].fb_size = 256 * 1024;
+	}
+	break;
+
+    case SYS_DS3100:
+	printf("Can't do FB stuff for ds3100's yet.\n");
+	return FAILURE;
+    default:
+	printf("FB stuff won't handle this machine type yet.\n");
+	return FAILURE;
+    }
+#endif /* sun4c */
+
+    if (whichFb < 0 || whichFb >= FBTYPE_LASTPLUSONE) {
+	printf("FB type is out of range.\n");
+	return FAILURE;
+    }
+    typePtr = &fbarray[whichFb];
+    devPtr->type.fb_type = typePtr->fb_type;
+
+    devicePtr->data = (ClientData) devPtr;
+
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevFBIOControl --
+ *
+ *      Perform device-specific functions with the frame buffer.
+ *
+ * Results:
+ *      GEN_NOT_IMPLEMENTED if io control not supported.  GEN_INVALID_ARG
+ *	if something else went wrong.  SUCCESS otherwise, with the type
+ *	of the frame buffer described in the out-going buffer.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+/* ARGSUSED */
+ReturnStatus
+DevFBIOControl(devicePtr, ioctlPtr, replyPtr)
+    Fs_Device	*devicePtr;	/* Handle for device. */
+    Fs_IOCParam	*ioctlPtr;	/* Standard I/O Control parameter block. */
+    Fs_IOReply	*replyPtr;	/* Size of outBuffer and returned signal. */
+{
+    FBDevice	*devPtr;
+    FBType	*typePtr;
+
+    devPtr = (FBDevice *) (devicePtr->data);
+
+    switch (ioctlPtr->command) {
+    case FBIOGTYPE:
+	if (ioctlPtr->outBufSize < sizeof (FBType)) {
+	    printf("Bad outbuf size.\n");
+	    return GEN_INVALID_ARG;
+	}
+	if (devPtr->type.fb_type < 0 ||
+		devPtr->type.fb_type >= FBTYPE_LASTPLUSONE) {
+	    printf("fbtype was bad.\n");
+	    return FAILURE;
+	}
+	typePtr = &(fbarray[devPtr->type.fb_type]);
+	/* copy to outbuf */
+	devPtr->type.fb_height = typePtr->fb_height;
+	devPtr->type.fb_width = typePtr->fb_width;
+	devPtr->type.fb_depth = typePtr->fb_depth;
+	devPtr->type.fb_cmsize = typePtr->fb_cmsize;
+	devPtr->type.fb_size = typePtr->fb_size;
+
+	bcopy((char *) &(devPtr->type), (char *) ioctlPtr->outBuffer,
+		sizeof (FBType));
+
+	break;
+#ifdef NOTDEF
+    /*
+     * Does this ioctl really exist?  Is it used?
+     */
+    case FBIOGINFO:
+	if (ioctlPtr->outBufSize < sizeof (FBInfo)) {
+	    return GEN_INVALID_ARG;
+	}
+	devPtr->info.fb_physaddr = XX;
+	devPtr->info.fb_hwwidth = XX;
+	devPtr->info.fb_hwheight = XX;
+	devPtr->info.fb_addrdelta = XX;
+	devPtr->info.fb_ropaddr = XX;
+	devPtr->info.fb_unit = XX;
+
+	break;
+#endif /* NOTDEF */
+    case FBIOPUTCMAP:
+	if (ioctlPtr->inBufSize < sizeof (FBCMap)) {
+	    printf("Bad inbuf size.\n");
+	    return GEN_INVALID_ARG;
+	}
+
+	if (devPtr->type.fb_type < 0 ||
+		devPtr->type.fb_type >= FBTYPE_LASTPLUSONE) {
+	    printf("fbtype was bad.\n");
+	    return FAILURE;
+	}
+	if (fbCmap == (struct colormap *) NIL) {
+	    if (InitCmap(devPtr) != SUCCESS) {
+		printf("Couldn't initialize colormap.\n");
+		return FAILURE;
+	    }
+	}
+
+	if (PutCmap(devPtr->type.fb_type,
+		(FBCMap *) ioctlPtr->inBuffer) != SUCCESS) {
+	    return FAILURE;
+	}
+
+	break;
+
+    case FBIOGETCMAP:
+	if (ioctlPtr->outBufSize < sizeof (FBCMap)) {
+	    printf("Bad outbuf size.\n");
+	    return GEN_INVALID_ARG;
+	}
+	if (devPtr->type.fb_type < 0 ||
+		devPtr->type.fb_type >= FBTYPE_LASTPLUSONE) {
+	    printf("fbtype was bad.\n");
+	    return FAILURE;
+	}
+	if (fbCmap == (struct colormap *) NIL) {
+	    if (InitCmap(devPtr) != SUCCESS) {
+		printf("Couldn't initialize colormap.\n");
+		return FAILURE;
+	    }
+	}
+	if (GetCmap(devPtr->type.fb_type,
+		(FBCMap *) ioctlPtr->outBuffer) != SUCCESS) {
+	    return FAILURE;
+	}
+
+	break;
+
+    case FBIOSVIDEO:
+	if (ioctlPtr->inBufSize < sizeof (int)) {
+	    printf("Bad inbuf size.\n");
+	    return GEN_INVALID_ARG;
+	}
+
+	if (devPtr->type.fb_type < 0 ||
+		devPtr->type.fb_type >= FBTYPE_LASTPLUSONE) {
+	    printf("fbtype was bad.\n");
+	    return FAILURE;
+	}
+
+	/*
+	 * If the display is a color display, initialize the color map first.
+	 */
+	switch (devPtr->type.fb_type) {
+	case FBTYPE_SUN1COLOR:
+	case FBTYPE_SUN2COLOR:
+	case FBTYPE_SUN2GP:		/* color? */
+	case FBTYPE_SUN5COLOR:
+	case FBTYPE_SUN3COLOR:
+	case FBTYPE_MEMCOLOR:
+	case FBTYPE_SUN4COLOR:
+	case FBTYPE_SUNFAST_COLOR:
+	case FBTYPE_SUNROP_COLOR:
+	case FBTYPE_SUNFB_VIDEO:	/* color? */
+	    if (fbCmap == (struct colormap *) NIL) {
+		if (InitCmap(devPtr) != SUCCESS) {
+		    printf("Couldn't initialize colormap.\n");
+		    return FAILURE;
+		}
+	    }
+	    break;
+	default:
+	    /* Do nothing. */
+	    break;
+	}
+
+	if (SVideo(devPtr->type.fb_type,
+		(int *) ioctlPtr->inBuffer) != SUCCESS) {
+	    return FAILURE;
+	}
+
+	break;
+
+    case FBIOGVIDEO:
+	if (ioctlPtr->outBufSize < sizeof (int)) {
+	    printf("Bad outbuf size.\n");
+	    return GEN_INVALID_ARG;
+	}
+
+	if (devPtr->type.fb_type < 0 ||
+		devPtr->type.fb_type >= FBTYPE_LASTPLUSONE) {
+	    printf("fbtype was bad.\n");
+	    return FAILURE;
+	}
+	/*
+	 * If the display is a color display, initialize the color map first.
+	 */
+	switch (devPtr->type.fb_type) {
+	case FBTYPE_SUN1COLOR:
+	case FBTYPE_SUN2COLOR:
+	case FBTYPE_SUN2GP:		/* color? */
+	case FBTYPE_SUN5COLOR:
+	case FBTYPE_SUN3COLOR:
+	case FBTYPE_MEMCOLOR:
+	case FBTYPE_SUN4COLOR:
+	case FBTYPE_SUNFAST_COLOR:
+	case FBTYPE_SUNROP_COLOR:
+	case FBTYPE_SUNFB_VIDEO:	/* color? */
+	    if (fbCmap == (struct colormap *) NIL) {
+		if (InitCmap(devPtr) != SUCCESS) {
+		    printf("Couldn't initialize colormap.\n");
+		    return FAILURE;
+		}
+	    }
+	    break;
+	default:
+	    /* Do nothing. */
+	    break;
+	}
+
+	if (GVideo(devPtr->type.fb_type,
+		(int *) ioctlPtr->outBuffer) != SUCCESS) {
+	    return FAILURE;
+	}
+	
+	break;
+
+    case FBIOSATTR:
+    case FBIOGATTR:
+#ifdef NOTDEF
+    case FBIOGVERTICAL:
+#endif NOTDEF
+	printf("Not implemented.\n");
+	return GEN_NOT_IMPLEMENTED;
+    default:
+	printf("Default: invalid arg.\n");
+	return GEN_INVALID_ARG;
+    }
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevFBClose --
+ *
+ *      Close the frame buffer.
+ *
+ * Results:
+ *      SUCCESS         - always returned.
+ *
+ * Side effects:
+ *      The frame buffer is "closed".
+ *
+ *----------------------------------------------------------------------
+ */
+/* ARGSUSED */
+ReturnStatus
+DevFBClose(devicePtr, useFlags, openCount, writerCount)
+    Fs_Device   *devicePtr;		/* Information about device. */
+    int         useFlags;		/* Indicates whether stream being
+					 * closed was for reading and/or
+					 * writing:  OR'ed combination of
+					 * FS_READ and FS_WRITE. */
+    int         openCount;		/* # of times this particular stream
+					 * is still open. */
+    int         writerCount;		/* # of times this particular stream
+					 * is still open for writing. */
+{
+    if ((openCount == 0) && (devicePtr->data != (ClientData) NIL)) { 
+	free((Address) devicePtr->data);
+    }
+
+    return SUCCESS;
+}
+
+char	searchBuffer[1024];
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CheckFBNode --
+ *
+ *	Check the frame buffer node for the information we need.
+ *
+ * Results:
+ *	The frame buffer type.
+ *
+ * Side effects:
+ *	Info about the device from the prom gets put into the fb table.
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef sun4c
+static int
+CheckFBNode(node, name)
+    unsigned	int		node;
+    char			*name;
+{
+    int		length = 0;
+    struct	config_ops	*configPtr;
+    int		i;
+    int		whichFb;
+
+    configPtr = romVectorPtr->v_config_ops;
+#ifndef CLEAN
+    length = configPtr->devr_getproplen(node, "device_type");
+    if (length <= 0) {
+#ifdef DEBUG
+	printf("No device_type attribute found for %s.\n", name);
+#endif /* DEBUG */
+    } else {
+	configPtr->devr_getprop(node, "device_type", searchBuffer);
+	if (strcmp(searchBuffer, "display") != 0) {
+#ifdef DEBUG
+	    printf("device_type for %s was not \"display\".\n", name);
+#endif /* DEBUG */
+	    return 0;
+	}
+    }
+#endif
+    for (i = 0; i < FBTYPE_LASTPLUSONE; i++) {
+	if (strcmp(name, fbNames[i]) == 0) {
+	    whichFb = i;
+	    /* fill it in */
+	    length = configPtr->devr_getproplen(node, "height");
+	    if (length <= 0) {
+		printf("No height found for frame buffer in prom.\n");
+	    } else {
+		configPtr->devr_getprop(node, "height", searchBuffer);
+		if (fbarray[i].fb_height != *(int *) searchBuffer) {
+#ifdef DEBUG
+		    printf("Updating height for %s to 0x%x.\n",
+			    fbNames[whichFb], *(int *) searchBuffer);
+#endif /* DEBUG */
+		    fbarray[i].fb_height = *(int *) searchBuffer;
+		}
+	    }
+	    length = configPtr->devr_getproplen(node, "width");
+	    if (length <= 0) {
+		printf("No width found for frame buffer in prom.\n");
+	    } else {
+		configPtr->devr_getprop(node, "width", searchBuffer);
+		if (fbarray[i].fb_width != *(int *) searchBuffer) {
+#ifdef DEBUG
+		    printf("Updating width for %s to 0x%x.\n",
+			    fbNames[whichFb], *(int *) searchBuffer);
+#endif /* DEBUG */
+		    fbarray[i].fb_width = *(int *) searchBuffer;
+		}
+	    }
+	    length = configPtr->devr_getproplen(node, "depth");
+	    if (length <= 0) {
+		printf("No depth found for frame buffer in prom.\n");
+	    } else {
+		configPtr->devr_getprop(node, "depth", searchBuffer);
+		if (fbarray[i].fb_depth != *(int *) searchBuffer) {
+#ifdef DEBUG
+		    printf("Updating depth for %s to 0x%x.\n",
+			    fbNames[whichFb], *(int *) searchBuffer);
+#endif /* DEBUG */
+		    fbarray[i].fb_depth = *(int *) searchBuffer;
+		}
+	    }
+	    length = configPtr->devr_getproplen(node, "address");
+	    if (length <= 0) {
+		printf("No address found for frame buffer in prom.\n");
+	    } else {
+		configPtr->devr_getprop(node, "address", searchBuffer);
+		if (fbaddrs[i].fb_buffer !=
+			(Address) (*(int *) searchBuffer)) {
+#ifdef DEBUG
+		    printf("Updating address for %s to 0x%x.\n",
+			    fbNames[whichFb], *(int *) searchBuffer);
+#endif /* DEBUG */
+		    fbaddrs[i].fb_buffer =
+			    (Address) (*(int *) searchBuffer);
+		}
+	    }
+	    length = configPtr->devr_getproplen(node, "reg");
+	    if (length <= 0) {
+		printf("No registers found for frame buffer in prom.\n");
+	    } else {
+		MachDevReg *regs;
+		char *phys, *virt;
+		int nregs, reg_offset;
+
+		regs = (MachDevReg *)alloca(length);
+		nregs = length / sizeof(MachDevReg);
+		configPtr->devr_getprop(node, "reg", regs);
+		
+		switch (whichFb) {
+		case FBTYPE_SUNFAST_COLOR:
+		    reg_offset = 0x200000;
+		    break;
+		case FBTYPE_SUN2BW:
+		case FBTYPE_SUN3COLOR:
+		default:
+		    reg_offset = 0x400000;
+		}
+
+		if (romVectorPtr->v_romvec_version < 2
+			&& regs[0].addr >= (Address)SBUS_BASE
+			&& regs[0].bustype == 1) {	/* old style */
+		    phys = regs[0].addr + reg_offset;
+		} else {				/* new style */
+		    phys = regs[0].addr + SBUS_BASE +
+			   regs[0].bustype * SBUS_SIZE +
+			   reg_offset;
+		}
+		virt = VmMach_MapInDevice(phys, 1);
+#if 0
+		if (fbarray[i].fb_depth > 1 && fbaddrs[i].fb_cmap != virt) {
+#else
+		if (fbaddrs[i].fb_cmap != virt) {
+#endif
+#ifdef DEBUG
+		    printf("Updating colormap address for %s to 0x%x.\n",
+			    fbNames[whichFb], virt);
+#endif /* DEBUG */
+		    fbaddrs[i].fb_cmap = virt;
+		}
+	    }
+	    return whichFb;
+	}
+    }
+    return -1;
+}
+#endif /* sun4c */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetFBType --
+ *
+ *	Routine the find the frame buffer attributes from the PROM.
+ *
+ * Results:
+ *	Integer representing frame buffer type.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef sun4c
+static int
+GetFBType()
+{
+    struct	config_ops	*configPtr;
+    unsigned	int		root, fb_node;
+    int				size;
+    char			*fb_type;
+
+    configPtr = romVectorPtr->v_config_ops;
+    /*
+     * Find a frame buffer type:  First get the root node id of the tree of
+     * devices in the prom.  Then retrieve a pointer to the active frame
+     * buffer node.  Call CheckFBNode to pull all the required info from
+     * the PROM.
+     */
+    root = configPtr->devr_next(0);
+    configPtr->devr_getprop(root, "fb", &fb_node);
+    size = configPtr->devr_getproplen(fb_node, "name");
+    fb_type = (char *)alloca(size);
+    configPtr->devr_getprop(fb_node, "name", fb_type);
+
+    return CheckFBNode(fb_node, fb_type);
+}
+#endif /* sun4c */
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevFBMMap --
+ *
+ *	Map a device into user space.
+ *
+ * Results:
+ *	SUCCESS or FAILURE.
+ *
+ * Side effects:
+ *	Device area made accessible to user.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+DevFBMMap(devicePtr, startAddr, length, offset, newAddrPtr)
+    Fs_Device	*devicePtr;
+    Address	startAddr;
+    int		length;
+    int		offset;
+    Address	*newAddrPtr;
+{
+    FBDevice	*devPtr;
+    Address	kernelAddr;	/* Virtual address in kernel of device. */
+    Address	kernelAlignedAddr;	/* Aligned virtual addr in kernel. */
+    int		numBytes;
+    ReturnStatus	status;
+
+    devPtr = (FBDevice *) (devicePtr->data);
+
+    kernelAddr = (Address) (fbaddrs[devPtr->type.fb_type].fb_buffer);
+    if (kernelAddr == (Address) NIL) {
+	printf("FB device has no kernel address.\n");
+	return FAILURE;
+    }
+    /*
+     * Must align user address forwards rather than backwards.  They must
+     * have allocated an extra segment.
+     */
+    kernelAlignedAddr = (Address)
+	    (((unsigned int)kernelAddr) & ~(VMMACH_SEG_SIZE - 1));
+    numBytes = ((unsigned int)((kernelAddr + length) - kernelAlignedAddr) +
+	    (VMMACH_SEG_SIZE - 1)) & ~(VMMACH_SEG_SIZE - 1);
+    status = VmMach_IntMapKernelIntoUser((unsigned int) kernelAlignedAddr,
+	    numBytes, (unsigned int) startAddr, newAddrPtr);
+    if (status != SUCCESS) {
+	return status;
+    }
+    *newAddrPtr += (((unsigned int)kernelAddr) % VMMACH_SEG_SIZE);
+#ifdef DEBUG
+    printf("Real VA would be 0x%x\n", *newAddrPtr);
+#endif /* DEBUG */
+
+    return SUCCESS;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PutCmap --
+ *
+ *	Update the hardware colormap.
+ *
+ * Results:
+ *	SUCCESS or FAILURE.
+ *
+ * Side effects:
+ *	Memory updated.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+PutCmap(whichFb, cmap)
+    int		whichFb;
+    FBCMap	*cmap;
+{
+    unsigned char   *uPtr;
+    unsigned int    *iPtr;
+    int             c;
+    int             index = cmap->index;
+    int             count = cmap->count;
+    unsigned char   *rmap = cmap->red;
+    unsigned char   *gmap = cmap->green;
+    unsigned char   *bmap = cmap->blue;
+
+    if(index < 0) {
+	printf("cmap index was < 0.\n");
+	return FAILURE;
+    }
+
+    /* Handle colors 0..255 */
+    if (index >= 0 && index < 256) {
+	if (index+count > 256) {
+	    count = 256 - index;
+	}
+	if (whichFb == FBTYPE_SUN4COLOR || whichFb == FBTYPE_SUN3COLOR) {
+	    /* update the memory copy */
+	    uPtr = &fbCmapCopy.map[index][0];
+	    for (c = count; c != 0; --c) {
+		*uPtr++ = *rmap++;
+		*uPtr++ = *gmap++;
+		*uPtr++ = *bmap++;
+	    }
+
+	    /* update DAC: weird 4/3 entries per word mapping */
+#define D4M3(x) ((((x)>>2)<<1) + ((x)>>2))      /* (x/4)*3 */
+#define D4M4(x) ((x)&~0x3)                      /* (x/4)*4 */
+	    iPtr = &fbCmapCopy.raw[D4M3(index)];
+	    fbCmap->addr = D4M4(index);
+	    for (c = D4M3(index+count-1) - D4M3(index) + 3; c != 0; --c) {
+		fbCmap->cmap = *iPtr++;
+	    }
+	} else { /* FBTYPE_SUNFAST_COLOR */
+	    /* update the chip */
+	    fbCmap->addr = index << 24;
+	    for (c = count; c != 0; --c) {
+		fbCmap->cmap = (unsigned int)(*rmap++) << 24;
+		fbCmap->cmap = (unsigned int)(*gmap++) << 24;
+		fbCmap->cmap = (unsigned int)(*bmap++) << 24;
+	    }
+	}
+
+	/* What's left? */
+	index += count;
+	count = cmap->count-count;
+    }
+
+    /* Any overlay color changes? */
+    if (index >= 256 && count > 0) {
+/******* dunno how to do that */
+    }
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetCmap --
+ *
+ *	Return the hardware colormap.
+ *
+ * Results:
+ *	SUCCESS or FAILURE.
+ *
+ * Side effects:
+ *	Memory updated.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+GetCmap(whichFb, cmap)
+    int		whichFb;
+    FBCMap	*cmap;
+{
+    unsigned char   *uPtr;
+    int             c;
+    int             index = cmap->index;
+    int             count = cmap->count;
+    unsigned char   *rmap = cmap->red;
+    unsigned char   *gmap = cmap->green;
+    unsigned char   *bmap = cmap->blue;
+
+    if(index < 0) {
+	return FAILURE;
+    }
+
+    /* Handle colors 0..255 */
+    if(index >= 0 && index < 256) {
+	if(index+count > 256) {
+	    count = 256 - index;
+	}
+	if (whichFb == FBTYPE_SUN4COLOR || whichFb == FBTYPE_SUN3COLOR) {
+	    /* copy from the memory copy */
+	    uPtr = &fbCmapCopy.map[index][0];
+	    c = count;
+	    while(c--) {
+		*rmap++ = *uPtr++;
+		*gmap++ = *uPtr++;
+		*bmap++ = *uPtr++;
+	    }
+	} else { /* FBTYPE_SUNFAST_COLOR */
+	    /* get it from the chip */
+	    fbCmap->addr = index << 24;
+	    c = count;
+	    while(c--) {
+		*rmap++ = (unsigned char)(fbCmap->cmap >> 24);
+		*gmap++ = (unsigned char)(fbCmap->cmap >> 24);
+		*bmap++ = (unsigned char)(fbCmap->cmap >> 24);
+	    }
+	}
+
+	/* What's left? */
+	index += count;
+	count = cmap->count-count;
+    }
+
+    /* Any overlay color requested? */
+    if(index >= 256 && count > 0) {
+/******* dunno how to do that */
+    }
+
+    return SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SVideo --
+ *
+ *	Turn on or off the video.
+ *
+ * Results:
+ *	SUCCESS or FAILURE.
+ *
+ * Side effects:
+ *	Video turned on or off.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+SVideo(whichFb, statePtr)
+    int		whichFb;
+    int		*statePtr;
+{
+    int		onOff;
+
+    onOff = *statePtr;
+    switch (whichFb) {
+    case FBTYPE_SUN2BW:
+    case FBTYPE_SUN3COLOR:
+	/* this works for some color frame buffers too. -dl */
+	if (fbaddrs[whichFb].fb_cmap != (void *)NIL) {
+	    if (onOff) {
+		*(unsigned char *)(fbaddrs[whichFb].fb_cmap + 0x10) |= 0x40;
+	    } else {
+		*(unsigned char *)(fbaddrs[whichFb].fb_cmap + 0x10) &= ~0x40;
+	    }
+	}
+	return SUCCESS;
+    case FBTYPE_SUN4COLOR:
+    case FBTYPE_SUNFAST_COLOR:
+	/* get colormap access */
+	if(fbCmap == (struct colormap *) NIL) {
+	    printf("Colormap not yet set.\n");
+	    return FAILURE;
+	}
+
+	/* Twiddle command registers to turn video off */
+	if (onOff) {
+	     onOff = ~0;
+	}
+	if(whichFb == FBTYPE_SUNFAST_COLOR) {
+	    fbCmap->addr = 0x04 << 24;      /* read mask */
+	    fbCmap->ctrl = onOff;           /* color planes */
+	} else {
+	    /* overlay off for blanking */
+	    fbCmap->addr = 0x06;            /* command reg */
+	    fbCmap->ctrl = 0x70|(onOff&3);  /* overlay plane */
+	    /* read mask off for blanking */
+	    fbCmap->addr = 0x04;            /* read mask */
+	    fbCmap->ctrl = onOff;           /* color planes */
+	    if(!onOff) {
+		/* color 0 -> black for blanking */
+		fbCmap->addr = 0x00;
+		fbCmap->cmap = 0x00000000;
+	    } else {
+		/* restore colors */
+		fbCmap->addr = 0x00;
+		fbCmap->cmap = fbCmapCopy.raw[0];
+		fbCmap->cmap = fbCmapCopy.raw[1];
+		fbCmap->cmap = fbCmapCopy.raw[2];
+	    }
+	}
+	return SUCCESS;
+    default:
+	return FAILURE;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GVideo --
+ *
+ *	Get the on/off status of the video.
+ *
+ * Results:
+ *	SUCCESS or FAILURE.
+ *
+ * Side effects:
+ *	Video status returned in out parameter.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+GVideo(whichFb, statePtr)
+    int		whichFb;
+    int		*statePtr;
+{
+    int		rmask;
+
+    switch (whichFb) {
+    case FBTYPE_SUN2BW:
+    case FBTYPE_SUN3COLOR:
+	if (fbaddrs[whichFb].fb_cmap != (void *)NIL) {
+	    rmask = *(unsigned char *)(fbaddrs[whichFb].fb_cmap + 0x10);
+	    *statePtr = (rmask & 0x40) ? 1 : 0;
+	}
+	return SUCCESS;
+    case FBTYPE_SUN4COLOR:
+    case FBTYPE_SUNFAST_COLOR:
+	/* get colormap access */
+	if(fbCmap == (struct colormap *) NIL) {
+	    printf("Colormap not yet set.\n");
+	    return FAILURE;
+	}
+	/* Look hard at the control registers */
+	if(whichFb == FBTYPE_SUNFAST_COLOR) {
+	    fbCmap->addr = 0x04 << 24;      /* read mask */
+	    rmask = fbCmap->ctrl >> 24;     /* color planes */
+	} else {
+	    fbCmap->addr = 0x04;            /* read mask */
+	    rmask = fbCmap->ctrl;           /* color planes */
+	}
+	*statePtr = (rmask & 0xff) ? 1 : 0;
+	break;
+    default:
+	return FAILURE;
+    }
+    return SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * InitCmap --
+ *
+ *	Initialize the colormap.
+ *
+ * Results:
+ *	SUCCESS or FAILURE.
+ *
+ * Side effects:
+ *	Colormap data structures initialized.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+InitCmap(devPtr)
+    FBDevice	*devPtr;
+{
+    int		c;
+    int		whichFb;
+
+    whichFb = devPtr->type.fb_type;
+    fbCmap = fbaddrs[whichFb].fb_cmap;
+
+    if ((whichFb != FBTYPE_SUN4COLOR) && (whichFb != FBTYPE_SUNFAST_COLOR) &&
+	    (whichFb != FBTYPE_SUN3COLOR)) {
+	printf("Wrong fb type to have a colormap.\n");
+	return FAILURE;
+    }
+    /* Init colormap copy, overlay, etc.. */
+    if(whichFb == FBTYPE_SUNFAST_COLOR) {
+	fbCmap->addr = 0x06 << 24;      /* command register address */
+	fbCmap->ctrl = 0x70 << 24;      /* disable cursor overlay */
+    } else {
+	for (c = 0; c < 256 * 3 / 4; c++) {
+	    fbCmapCopy.raw[c] = fbCmap->cmap;
+	}
+	fbCmap->addr = 0x06;            /* command register address */
+	fbCmap->ctrl = 0x73;            /* enable overlay */
+	/* set overlay colors: bg: blue, fg: white */
+	fbCmap->addr = 0x00;
+	fbCmap->omap = 0x00000000;
+	fbCmap->omap = 0x00ff0000;
+	fbCmap->omap = 0x00ffffff;
+    }
+
+    return SUCCESS;
+}
+@
+
+
+1.11
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun4.md/RCS/devGraphics.c,v 1.10 90/12/18 13:47:06 mgbaker Exp Locker: rab $ SPRITE (Berkeley)";
+d34 1
+d47 1
+a47 1
+#define BW2_FB	((Address) 0xffd80000)
+a62 5
+#elif sun4c
+#define CG4_FB    ((Address) 0xffd80000)
+#define CG4_CM    ((Address) 0xffd1c000)
+#define CG4_OV    ((Address) 0x0)           /* ??? */
+#define CG4_EN    ((Address) 0x0)           /* ??? */
+a71 4
+#ifdef sun4c
+#define CG6_FB    ((Address) 0xffd80000)
+#define CG6_CM    ((Address) 0xffd1f000)
+#else
+a73 1
+#endif /* sun4c */
+d77 2
+a78 7
+#ifdef sun4c
+#define CG3_FB    ((Address) 0xffd80000)
+#define CG3_CM    ((Address) 0xffd1c000)
+#else
+#define CG3_FB    ((Address) 0xffd80000)
+#define CG3_CM    ((Address) 0xffd1c000)
+#endif /* sun4c */
+d135 4
+a138 4
+    Address fb_buffer;		/* kernel virtual address */
+    Address fb_overlay;		/* offset? */
+    Address fb_enable;		/* offset? */
+    Address fb_cmap;		/* cmap */
+d149 1
+a149 1
+    {BW2_FB, (Address) NULL, (Address) NULL, (Address) NULL},	  /* bw2 */
+d153 1
+a153 1
+    {CG3_FB, (Address) NULL, (Address) NULL, CG3_CM},		  /* cg3 */
+d159 1
+a159 1
+    {CG6_FB, (Address) NULL, (Address) NULL, CG6_CM},		  /* cg6 */
+d247 2
+a248 1
+static int SearchProm _ARGS_((unsigned int node));
+a249 1
+static int GetFBType _ARGS_((void));
+d284 1
+d286 1
+d291 1
+d295 1
+d306 6
+a313 15
+	if ((machType & SYS_SUN_ARCH_MASK) == SYS_SUN_4_C ) {
+#ifndef PROM_1_4
+	    whichFb = GetFBType();
+#else /* PROM_1_4 */
+	    /*
+	     * Boing can't handle getting this out of the prom.
+	     */
+	    whichFb = FBTYPE_SUN2BW;
+#endif /* PROM_1_4 */
+	    if (whichFb == -1) {
+		whichFb = FBTYPE_SUN2BW;
+	    }
+	    break;
+	}
+	/* Fall through for SYS_SUN4. */
+d374 1
+d651 1
+a651 1
+ * SearchProm --
+d653 1
+a653 1
+ *	Search through the prom devices to find which frame buffer we have.
+d665 1
+a665 1
+SearchProm(node)
+d667 1
+a668 1
+    unsigned	int		newNode;
+d675 117
+a791 67
+    while (node != 0) {
+	length = configPtr->devr_getproplen(node, "name");
+	if (length > 0) {
+	    if (length > sizeof (searchBuffer)) {
+		panic("SearchProm: buffer too small.\n");
+	    }
+	    configPtr->devr_getprop(node, "name", searchBuffer);
+	    for (i = 0; i < FBTYPE_LASTPLUSONE; i++) {
+		if (strcmp(searchBuffer, fbNames[i]) == 0) {
+		    whichFb = i;
+		    /* fill it in */
+		    length = configPtr->devr_getproplen(node, "address");
+		    if (length <= 0) {
+			printf("No address found for frame buffer in prom.\n");
+		    } else {
+			configPtr->devr_getprop(node, "address", searchBuffer);
+			if (fbaddrs[i].fb_buffer !=
+				(Address) (*(int *) searchBuffer)) {
+#ifdef DEBUG
+			    printf("Updating address for %s to 0x%x.\n",
+				    fbNames[whichFb], *(int *) searchBuffer);
+#endif /* DEBUG */
+			    fbaddrs[i].fb_buffer =
+				    (Address) (*(int *) searchBuffer);
+			}
+		    }
+		    length = configPtr->devr_getproplen(node, "height");
+		    if (length <= 0) {
+			printf("No height found for frame buffer in prom.\n");
+		    } else {
+			configPtr->devr_getprop(node, "height", searchBuffer);
+			if (fbarray[i].fb_height != *(int *) searchBuffer) {
+#ifdef DEBUG
+			    printf("Updating height for %s to 0x%x.\n",
+				    fbNames[whichFb], *(int *) searchBuffer);
+#endif /* DEBUG */
+			    fbarray[i].fb_height = *(int *) searchBuffer;
+			}
+		    }
+		    length = configPtr->devr_getproplen(node, "width");
+		    if (length <= 0) {
+			printf("No width found for frame buffer in prom.\n");
+		    } else {
+			configPtr->devr_getprop(node, "width", searchBuffer);
+			if (fbarray[i].fb_width != *(int *) searchBuffer) {
+#ifdef DEBUG
+			    printf("Updating width for %s to 0x%x.\n",
+				    fbNames[whichFb], *(int *) searchBuffer);
+#endif /* DEBUG */
+			    fbarray[i].fb_width = *(int *) searchBuffer;
+			}
+		    }
+		    length = configPtr->devr_getproplen(node, "depth");
+		    if (length <= 0) {
+			printf("No depth found for frame buffer in prom.\n");
+		    } else {
+			configPtr->devr_getprop(node, "depth", searchBuffer);
+			if (fbarray[i].fb_depth != *(int *) searchBuffer) {
+#ifdef DEBUG
+			    printf("Updating depth for %s to 0x%x.\n",
+				    fbNames[whichFb], *(int *) searchBuffer);
+#endif /* DEBUG */
+			    fbarray[i].fb_depth = *(int *) searchBuffer;
+			}
+		    }
+		    return whichFb;
+		}
+a792 4
+	}
+	newNode = configPtr->devr_child(node);
+	whichFb = SearchProm(newNode);
+	if (whichFb >= 0) {
+a794 1
+	node = configPtr->devr_next(node);
+d806 1
+a806 2
+ *	Temporary routine to find frame buffer type from a file rather than
+ *	from the prom.
+d816 1
+a819 1
+#ifdef sun4c
+d821 3
+a823 1
+    unsigned	int		node;
+d828 3
+a830 2
+     * devices in the prom.  Then traverse it depth-first to find some frame
+     * buffer.
+d832 5
+a836 1
+    node = configPtr->devr_next(0);
+d838 2
+a839 3
+    return SearchProm(node);
+#else
+    return -1;
+a840 1
+}
+d894 1
+d1078 9
+a1086 1
+/******* dunno how to do that */
+a1089 1
+    case FBTYPE_SUN3COLOR:
+d1152 5
+a1156 1
+	/* Don't know how to do this one. */
+a1159 1
+    case FBTYPE_SUN3COLOR:
+@
+
+
+1.10
+log
+@Changed BOING define to PROM_1_4 since that's the prom revision for
+sparcstations that's got the access problem.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun4.md/RCS/devGraphics.c,v 1.9 90/11/27 13:05:06 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d44 1
+a44 1
+#define BW2_FB	((void *)0x0fe20000)
+d46 1
+a46 1
+#define BW2_FB	((void *)0xffd80000)
+d48 1
+a48 1
+#define BW2_FB	((void *)0xffd40000)
+d50 1
+a50 1
+#define	BW2_FB	((void *)NIL)
+d58 4
+a61 4
+#define CG4_FB     ((void *)0x0fd00000)
+#define CG4_CM     ((void *)0x0fe0e000)
+#define CG4_OV     ((void *)0x0fe80000)
+#define CG4_EN     ((void *)0x0fea0000)
+d63 4
+a66 4
+#define CG4_FB    ((void *)0xffd80000)
+#define CG4_CM    ((void *)0xffd1c000)
+#define CG4_OV    ((void *)0x0)           /* ??? */
+#define CG4_EN    ((void *)0x0)           /* ??? */
+d68 4
+a71 4
+#define CG4_FB    ((void *)NIL)
+#define CG4_CM    ((void *)NIL)
+#define CG4_OV    ((void *)NIL)
+#define CG4_EN    ((void *)NIL)
+d77 2
+a78 2
+#define CG6_FB    ((void *)0xffd80000)
+#define CG6_CM    ((void *)0xffd1f000)
+d80 2
+a81 2
+#define CG6_FB    ((void *)NIL)
+#define CG6_CM    ((void *)NIL)
+d87 2
+a88 2
+#define CG3_FB    ((void *)0xffd80000)
+#define CG3_CM    ((void *)0xffd1c000)
+d90 2
+a91 2
+#define CG3_FB    ((void *)0xffd80000)
+#define CG3_CM    ((void *)0xffd1c000)
+d149 4
+a152 4
+    void	*fb_buffer;		/* kernel virtual address */
+    void	*fb_overlay;		/* offset? */
+    void	*fb_enable;		/* offset? */
+    void	*fb_cmap;		/* cmap */
+d161 20
+a180 20
+    {(void *) NIL, (void *) NIL, (void *) NIL, (void *) NIL},	/* bw1 */
+    {(void *) NIL, (void *) NIL, (void *) NIL, (void *) NIL},	/* cg1 */
+    {BW2_FB, (void *) NULL, (void *) NULL, (void *) NULL},	/* bw2 */
+    {(void *) NIL, (void *) NIL, (void *) NIL, (void *) NIL},	/* cg2 */
+    {(void *) NIL, (void *) NIL, (void *) NIL, (void *) NIL},	/* gp2 */
+    {(void *) NIL, (void *) NIL, (void *) NIL, (void *) NIL},	/* cg5 */
+    {CG3_FB, (void *) NULL, (void *) NULL, CG3_CM},		/* cg3 */
+    {(void *) NIL, (void *) NIL, (void *) NIL, (void *) NIL},	/* ? */
+    {CG4_FB, CG4_OV, CG4_EN, CG4_CM},				/* cg4 */
+    {(void *) NIL, (void *) NIL, (void *) NIL, (void *) NIL},	/* cust. */
+    {(void *) NIL, (void *) NIL, (void *) NIL, (void *) NIL},	/* cust. */
+    {(void *) NIL, (void *) NIL, (void *) NIL, (void *) NIL},	/* cust. */
+    {CG6_FB, (void *) NULL, (void *) NULL, CG6_CM},		/* cg6 */
+    {(void *) NIL, (void *) NIL, (void *) NIL, (void *) NIL},	/* rop */
+    {(void *) NIL, (void *) NIL, (void *) NIL, (void *) NIL},	/* video */
+    {(void *) NIL, (void *) NIL, (void *) NIL, (void *) NIL},	/* res5 */
+    {(void *) NIL, (void *) NIL, (void *) NIL, (void *) NIL},	/* res4 */
+    {(void *) NIL, (void *) NIL, (void *) NIL, (void *) NIL},	/* res3 */
+    {(void *) NIL, (void *) NIL, (void *) NIL, (void *) NIL},	/* res2 */
+    {(void *) NIL, (void *) NIL, (void *) NIL, (void *) NIL}	/* res1 */
+d710 1
+a710 1
+				(void *) (*(int *) searchBuffer)) {
+d716 1
+a716 1
+				    (void *) (*(int *) searchBuffer);
+d914 1
+a914 2
+	    c = count;
+	    while (c--) {
+a923 1
+	    c = D4M3(index+count-1) - D4M3(index) + 3;
+d925 1
+a925 1
+	    while (c--) {
+d931 1
+a931 2
+	    c = count;
+	    while (c--) {
+d1164 2
+a1165 2
+    if (whichFb != FBTYPE_SUN4COLOR && whichFb != FBTYPE_SUNFAST_COLOR &&
+	    whichFb != FBTYPE_SUN3COLOR) {
+@
+
+
+1.9
+log
+@Added ifdef's for poor boing.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun4.md/RCS/devGraphics.c,v 1.8 90/11/03 13:50:27 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d319 1
+a319 1
+#ifndef BOING
+d321 1
+a321 1
+#else /* BOING */
+d326 1
+a326 1
+#endif /* BOING */
+@
+
+
+1.8
+log
+@Fixed problem that was causing InitCMap to be called for b&w devices.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun4.md/RCS/devGraphics.c,v 1.7 90/10/30 16:45:32 mendel Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d319 1
+d321 6
+@
+
+
+1.7
+log
+@Patched DevFBClose() not to free memory still in use.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun4.md/RCS/devGraphics.c,v 1.6 90/09/25 18:39:36 mgbaker Exp Locker: mendel $ SPRITE (Berkeley)";
+d528 20
+a547 4
+	if (fbCmap == (struct colormap *) NIL) {
+	    if (InitCmap(devPtr) != SUCCESS) {
+		printf("Couldn't initialize colormap.\n");
+		return FAILURE;
+d549 4
+d554 1
+d573 19
+a591 4
+	if (fbCmap == (struct colormap *) NIL) {
+	    if (InitCmap(devPtr) != SUCCESS) {
+		printf("Couldn't initialize colormap.\n");
+		return FAILURE;
+d593 4
+d598 1
+@
+
+
+1.6
+log
+@Removed a debug statement.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun4.md/RCS/devGraphics.c,v 1.5 90/09/11 13:57:21 rab Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d608 3
+a610 4
+    /*
+     * Check a ref count?
+     */
+    free((Address) devicePtr->data);
+@
+
+
+1.5
+log
+@Casted some arguments to get -Wall to work.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun4.md/RCS/devGraphics.c,v 1.4 90/09/11 12:31:04 rab Exp Locker: rab $ SPRITE (Berkeley)";
+a392 2
+
+    printf("Frame buffer type is %d.\n", whichFb);
+@
+
+
+1.4
+log
+@Added prototypes.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun4.md/RCS/devGraphics.c,v 1.3 90/08/30 19:01:56 mgbaker Exp Locker: rab $ SPRITE (Berkeley)";
+d813 2
+a814 2
+    status = VmMach_IntMapKernelIntoUser(kernelAlignedAddr,
+	    numBytes, startAddr, newAddrPtr);
+@
+
+
+1.3
+log
+@Added correct machine type test.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun4.md/RCS/devGraphics.c,v 1.2 90/08/30 18:34:05 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d31 3
+a34 1
+
+d257 14
+d613 1
+a613 1
+    free(devicePtr->data);
+d636 2
+a637 1
+int
+a640 1
+#ifdef sun4c
+d725 1
+a726 1
+}
+a727 1
+
+d745 1
+a745 1
+int
+d761 2
+d842 1
+a842 1
+ReturnStatus
+d924 1
+a924 1
+ReturnStatus
+d994 1
+a994 1
+ReturnStatus
+d1062 1
+a1062 1
+ReturnStatus
+d1112 1
+a1112 1
+ReturnStatus
+@
+
+
+1.2
+log
+@Took out some debugging info.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun4.md/RCS/devGraphics.c,v 1.1 90/08/14 18:46:35 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d302 1
+a302 1
+	if (machType == SYS_SUN_4_C ) {
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev.mgb/sun4c.md/RCS/devGraphics.c,v 1.3 90/08/02 14:37:42 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d183 2
+a184 2
+ * Temporary way of storing frame buffer type information since we can't
+ * get it from the prom yet.
+d186 5
+a190 2
+ * The array is two-dimensional since there are multiple sizes for some
+ * frame buffer types.
+a196 1
+/*	{high resolution bw2, 1280, 1600, 1, 2, 256*1024}, */	/* bw2h */
+a200 1
+/*	{cg3b, 768, 1024, -1, -1, -1} */			/* cg3 B */
+a302 4
+	    /*
+	     * For now, get machine type from file.  Instead, we should get
+	     * this from the prom.
+	     */
+a304 1
+		printf("Couldn't find fbtype in file - setting to bw2.\n");
+a309 1
+	printf("Falling through for sun4.\n");
+a329 1
+		    printf("sun4color\n");
+a332 1
+		    printf("sun4fastcolor\n");
+a335 1
+		    printf("default\n");
+a344 1
+		    printf("High resolution fb.\n");
+a346 1
+		    printf("Was -1, setting to bw2.\n");
+a351 1
+	    printf("Assuming bw2 as default.\n");    
+a359 1
+	    printf("Setting bw2 to high resolution.\n");
+a632 1
+	printf("node: 0x%x\n", node);
+a633 1
+	printf("length: 0x%x\n", length);
+a638 1
+	    printf("buffer: %s\n", searchBuffer);
+d650 1
+d653 1
+d664 1
+d667 1
+d677 1
+d680 1
+d690 1
+d693 1
+d801 1
+d803 1
+@

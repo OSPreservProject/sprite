@@ -1,0 +1,382 @@
+head     9.1;
+branch   ;
+access   ;
+symbols  ds3100:9.1 sun3:9.1 sun4nw:9.1 symm:9.1 spur:9.1 sprited:9.1.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.1
+date     90.09.06.18.17.45;  author jhh;  state Exp;
+branches 9.1.1.1;
+next     9.0;
+
+9.0
+date     89.09.12.15.21.16;  author douglis;  state Stable;
+branches ;
+next     8.1;
+
+8.1
+date     89.04.14.02.53.35;  author rab;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.40.18;  author douglis;  state Stable;
+branches ;
+next     6.4;
+
+6.4
+date     88.10.27.13.27.59;  author mendel;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.10.07.10.54.53;  author mendel;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.25.22.35.30;  author douglis;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.25.22.23.42;  author douglis;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.28.23;  author brent;  state Stable;
+branches ;
+next     1.3;
+
+1.3
+date     88.06.27.10.39.02;  author mendel;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.05.27.16.27.39;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.05.27.12.43.24;  author mendel;  state Exp;
+branches ;
+next     ;
+
+9.1.1.1
+date     91.09.08.22.08.17;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Declarations for the Sun3 machine dependent clock timer.
+@
+
+
+9.1
+log
+@First pass at function prototypes
+@
+text
+@/*
+ * timerTick.h --
+ *
+ *      Declarations for the Sun3 machine dependent clock timer.
+ *
+ * Copyright 1985, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * rcsid: $Header: /sprite/src/kernel/timer/sun3.md/RCS/timerTick.h,v 9.0 89/09/12 15:21:16 douglis Stable Locker: jhh $ SPRITE (Berkeley) 
+ */
+
+#ifndef _TIMERTICK
+#define _TIMERTICK
+
+#include "spriteTime.h"
+
+/* DATA STRUCTURES: */
+
+
+/*
+ * On the Sun-3, Timer_Ticks is just a Time value because the free-running
+ * counter keeps track of time.
+ */
+typedef Time Timer_Ticks;
+
+
+/*
+ * Definitions for useful intervals and clock values. 
+ * See timer.h for more details.
+ */
+ 
+ extern unsigned int 	timer_IntZeroSeconds; 
+ extern unsigned int 	timer_IntOneMillisecond;   
+ extern unsigned int 	timer_IntOneSecond;
+ extern unsigned int 	timer_IntOneMinute;
+ extern unsigned int 	timer_IntOneHour; 
+ extern Timer_Ticks	timer_TicksZeroSeconds;
+ extern Time 		timer_MaxIntervalTime; 
+
+
+
+/*
+ * Because the Sun3's timer speaks in the same units as type Time, we can
+ * use the Time_ modules routines to Add and Subtract
+ */
+
+#ifdef lint
+#define Timer_AddTicks(a,b,c)      Time_Add((* ((Time *) &a)),\
+					    (* ((Time *) &b)), \
+					    (Time *) c)
+#define Timer_SubtractTicks(a,b,c) Time_Subtract((* ((Time *) &a)), \
+						 (* ((Time *) &b)), \
+						 (Time *) c)
+#else /* lint */
+#define Timer_AddTicks(a,b,c)      Time_Add(a,b,c)
+#define Timer_SubtractTicks(a,b,c) Time_Subtract(a,b,c)
+#endif /* lint */
+
+/*
+ * Conversion to Ticks to Time and Time to Ticks is fast too.
+ */
+
+#define Timer_TicksToTime(a,b)		*(b) = a;
+#define Timer_TimeToTicks(a,b)		*(b) = a;
+
+
+extern void Timer_AddIntervalToTicks _ARGS_((Timer_Ticks absolute, unsigned int interval, Timer_Ticks *resultPtr));
+extern void Timer_GetCurrentTicks();
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tick Comparisons --
+ *
+ *	Timer_TickLT:	tick1  <   tick2
+ *	Timer_TickLE:	tick1  <=  tick2
+ *	Timer_TickEQ:	tick1  ==  tick2
+ *	Timer_TickGE:	tick1  >=  tick2
+ *	Timer_TickGT:	tick1  >   tick2
+ *
+ * Results:
+ *     TRUE	- the relation holds for the 2 values.
+ *     FALSE	- the relation does not hold.
+ *
+ * Side effects:
+ *     None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifdef lint
+#define Timer_TickLT(a,b)	Time_LT((* ((Time *) &a)), (* ((Time *) &b)))
+#define Timer_TickLE(a,b)	Time_LE((* ((Time *) &a)), (* ((Time *) &b)))
+#define Timer_TickEQ(a,b)	Time_EQ((* ((Time *) &a)), (* ((Time *) &b)))
+#define Timer_TickGE(a,b)	Time_GE((* ((Time *) &a)), (* ((Time *) &b)))
+#define Timer_TickGT(a,b)	Time_GT((* ((Time *) &a)), (* ((Time *) &b)))
+#else /* lint */
+#define Timer_TickLT(a,b)	Time_LT(a,b)
+#define Timer_TickLE(a,b)	Time_LE(a,b)
+#define Timer_TickEQ(a,b)	Time_EQ(a,b)
+#define Timer_TickGE(a,b)	Time_GE(a,b)
+#define Timer_TickGT(a,b)	Time_GT(a,b)
+#endif /* lint */
+
+#endif /* _TIMERTICK */
+
+@
+
+
+9.1.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: /sprite/src/kernel/timer/sun3.md/RCS/timerTick.h,v 9.1 90/09/06 18:17:45 jhh Exp $ SPRITE (Berkeley) 
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: /sprite/src/kernel/timer/sun3.md/RCS/timerTick.h,v 8.1 89/04/14 02:53:35 rab Exp Locker: douglis $ SPRITE (Berkeley) 
+d73 1
+a73 1
+extern void Timer_AddIntervalToTicks();
+@
+
+
+8.1
+log
+@*** empty log message ***
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: /sprite/src/kernel/timer/sun3.md/RCS/timerTick.h,v 8.0 88/11/11 18:40:18 douglis Stable Locker: rab $ SPRITE (Berkeley) 
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: /sprite/src/kernel/timer/sun3.md/RCS/timerTick.h,v 6.4 88/10/27 13:27:59 mendel Exp Locker: douglis $ SPRITE (Berkeley) 
+d112 1
+a112 1
+#endif _TIMERTICK
+@
+
+
+6.4
+log
+@Port to use new libc.a
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: timerTick.h,v 6.3 88/10/07 10:54:53 mendel Exp $ SPRITE (Berkeley) 
+@
+
+
+6.3
+log
+@Moved the devTimer routines into the timer module.
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: timerTick.h,v 6.2 88/08/25 22:35:30 douglis Exp $ SPRITE (Berkeley) 
+a20 1
+#ifdef NEWLIB
+a21 3
+#else
+#include "time.h"
+#endif
+@
+
+
+6.2
+log
+@changed because last one was buggy (casting entire
+structs).  Changed to use #ifdef lint.
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: timerTick.h,v 6.1 88/08/25 22:23:42 douglis Exp $ SPRITE (Berkeley) 
+d21 3
+d25 1
+a25 1
+
+@
+
+
+6.1
+log
+@Added casts to keep lint from complaining about Timer_Ticks
+and Time structs being different.
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: timerTick.h,v 6.0 88/08/11 12:28:23 brent Stable $ SPRITE (Berkeley) 
+d54 11
+a64 2
+#define Timer_AddTicks(a,b,c)      Time_Add((Time) a,(Time) b, (Time *) c)
+#define Timer_SubtractTicks(a,b,c) Time_Subtract((Time) a,(Time) b, (Time *) c)
+d99 14
+a112 5
+#define Timer_TickLT(a,b)	Time_LT((Time) a, (Time) b)
+#define Timer_TickLE(a,b)	Time_LE((Time) a, (Time) b)
+#define Timer_TickEQ(a,b)	Time_EQ((Time) a, (Time) b)
+#define Timer_TickGE(a,b)	Time_GE((Time) a, (Time) b)
+#define Timer_TickGT(a,b)	Time_GT((Time) a, (Time) b)
+d114 1
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: timerTick.h,v 1.3 88/06/27 10:39:02 mendel Exp $ SPRITE (Berkeley) 
+d54 2
+a55 2
+#define Timer_AddTicks(a,b,c)		Time_Add(a,b,c)
+#define Timer_SubtractTicks(a,b,c)	Time_Subtract(a,b,c)
+d90 5
+a94 5
+#define Timer_TickLT(a,b)	Time_LT(a,b)
+#define Timer_TickLE(a,b)	Time_LE(a,b)
+#define Timer_TickEQ(a,b)	Time_EQ(a,b)
+#define Timer_TickGE(a,b)	Time_GE(a,b)
+#define Timer_TickGT(a,b)	Time_GT(a,b)
+@
+
+
+1.3
+log
+@Updated Copyright notice.
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: timerTick.h,v 1.2 88/05/27 16:27:39 mendel Exp $ SPRITE (Berkeley) 
+@
+
+
+1.2
+log
+@Added tick interval declarations.
+@
+text
+@d6 8
+a13 2
+ * Copyright 1985 Regents of the University of California
+ * All rights reserved.
+d15 1
+a15 1
+ * rcsid: $Header: timer.h,v 5.0 87/08/11 10:51:37 sprite Exp $ SPRITE (Berkeley) 
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d27 1
+d29 16
+a44 1
+ * Because of the Sun3's timer speaks in the same until as type Time, we can
+a57 1
+ /* PROCEDURES */
+a60 3
+extern void Timer_GetTimeOfDay();
+extern void Timer_GetRealTimeOfDay();
+extern void Timer_SetTimeOfDay();
+@

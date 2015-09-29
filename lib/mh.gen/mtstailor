@@ -1,0 +1,4 @@
+mmdfldir:	/sprite/spool/mail
+mmdflfil:	
+hostable:	/sprite/lib/mh/hosts
+servers:	localhost \01localnet

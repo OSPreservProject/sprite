@@ -1,0 +1,2046 @@
+
+
+
+RN                        User Commands                        RN
+
+
+
+NNAAMMEE
+     rn - new read news program
+
+SSYYNNOOPPSSIISS
+     rrnn [[ooppttiioonnss]] [[nneewwssggrroouuppss]]
+
+DDEESSCCRRIIPPTTIIOONN
+     _R_n is a replacement for the readnews(1) program that was
+     written to be as efficient as possible, particularly in
+     human interaction.  _R_n attempts to minimize the amount of
+     "dead" time spent reading news--it tries to get things done
+     while the user is reading or deciding whether to read, and
+     attempts to get useful information onto the screen as soon
+     as possible, highlighting spots that the eye makes frequent
+     reference to, like subjects and previously read lines.
+     Whether or not it's faster, it SEEMS faster.
+
+     If no newsgroups are specified, all the newsgroups which
+     have unread news are displayed, and then the user is asked
+     for each one whether he wants to read it, in the order in
+     which the newsgroups occur in the ._n_e_w_s_r_c file.  With a list
+     of newsgroups, _r_n will start up in "add" mode, using the
+     list as a set of patterns to add new newsgroups and restrict
+     which newsgroups are displayed.  See the discussion of the
+     'a' command on the newsgroup selection level.
+
+     _R_n operates on three levels: the newsgroup selection level,
+     the article selection level, and the paging level.  Each
+     level has its own set of commands, and its own help menu.
+     At the paging level (the bottom level), _r_n behaves much like
+     the _m_o_r_e(1) program.  At the article selection level, you
+     may specify which article you want next, or read them in the
+     default order, which is either in order of arrival on your
+     system, or by subject threads.  At the newsgroup selection
+     level (the top level), you may specify which newsgroup you
+     want next, or read them in the default order, which is the
+     order that the newsgroups occur in your ._n_e_w_s_r_c file.  (You
+     will therefore want to rearrange your ._n_e_w_s_r_c file to put
+     the most interesting newsgroups first.  This can be done
+     with the 'm' command on the Newsgroup Selection level.
+     WARNING: invoking readnews/vnews (the old user interface) in
+     any way (including as a news checker in your login
+     sequence!) will cause your ._n_e_w_s_r_c to be disarranged again.)
+
+     On any level, at ANY prompt, an 'h' may be typed for a list
+     of available commands.  This is probably the most important
+     command to remember, so don't you forget it.  Typing space
+     to any question means to do the normal thing.  You will know
+     what that is because every prompt has a list of several
+     plausible commands enclosed in square brackets.  The first
+     command in the list is the one which will be done if you
+     type a space.  (All input is done in cbreak mode, so
+
+
+
+Sprite v1.0                   LOCAL                             1
+
+
+
+
+
+
+RN                        User Commands                        RN
+
+
+
+     carriage returns should not be typed to terminate anything
+     except certain multi-character commands.  Those commands
+     will be obvious in the discussion below because they take an
+     argument.)
+
+     Upon startup, _r_n will do several things:
+
+     1.  It will look for your ._n_e_w_s_r_c file, which is your list
+         of subscribed-to newsgroups.  If _r_n doesn't find a
+         ._n_e_w_s_r_c, it will create one.  If it does find one, it
+         will back it up under the name ".oldnewsrc".
+
+     2.  It will input your ._n_e_w_s_r_c file, listing out the first
+         several newsgroups with unread news.
+
+     3.  It will perform certain consistency checks on your
+         ._n_e_w_s_r_c.  If your ._n_e_w_s_r_c is out of date in any of
+         several ways, _r_n will warn you and patch it up for you,
+         but you may have to wait a little longer for it to start
+         up.
+
+     4.  _R_n will next check to see if any new newsgroups have
+         been created, and give you the opportunity to add them
+         to your ._n_e_w_s_r_c.
+
+     5.  _R_n goes into the top prompt level--the newsgroup selec-
+         tion level.
+
+     NNeewwssggrroouupp SSeelleeccttiioonn LLeevveell
+
+     In this section the words "next" and "previous" refer to the
+     ordering of the newsgroups in your ._n_e_w_s_r_c file.  On the
+     newsgroup selection level, the prompt looks like this:
+
+     ******** 17 unread articles in talk.blurfl--read now? [ynq]
+
+     and the following commands may be given at this level:
+
+     y,SP    Do this newsgroup now.
+
+     .command
+             Do this newsgroup now, but execute _c_o_m_m_a_n_d before
+             displaying anything.  The command will be inter-
+             preted as if given on the article selection level.
+
+     =       Do this newsgroup now, but list subjects before
+             displaying articles.
+
+     n       Go to the next newsgroup with unread news.
+
+     N       Go to the next newsgroup.
+
+
+
+
+Sprite v1.0                   LOCAL                             2
+
+
+
+
+
+
+RN                        User Commands                        RN
+
+
+
+     p       Go to the previous newsgroup with unread news.  If
+             there is none, stay at the current newsgroup.
+
+     P       Go to the previous newsgroup.
+
+     -       Go to the previously displayed newsgroup (regardless
+             of whether it is before or after the current one in
+             the list).
+
+     1       Go to the first newsgroup.
+
+     ^       Go to the first newsgroup with unread news.
+
+     $       Go to the end of the newsgroups list.
+
+     g newsgroup
+             Go to _n_e_w_s_g_r_o_u_p.  If it isn't currently subscribed
+             to, you will be asked if you want to subscribe.
+
+     /pattern
+             Scan forward for a newsgroup matching _p_a_t_t_e_r_n.  Pat-
+             terns do globbing like filenames, i.e., use ? to
+             match a single character, * to match any sequence of
+             characters, and [] to specify a list of characters
+             to match.  ("all" may be used as a synonym for "*".)
+             Unlike normal filename globbing, newsgroup searching
+             is not anchored to the front and back of the
+             filename, i.e. "/ski" will find rec.skiing.  You may
+             use ^ or $ to anchor the front or back of the
+             search: "/^test$" will find newsgroup test and noth-
+             ing else If you want to include newsgroups with 0
+             unread articles, append /r.  If the newsgroup is not
+             found between the current newsgroup and the last
+             newsgroup, the search will wrap around to the begin-
+             ning.
+
+     ?pattern
+             Same as /, but search backwards.
+
+     u       Unsubscribe from current newsgroup.
+
+     l string
+             List newsgroups not subscribed to which contain the
+             string specified.
+
+     L       Lists the current state of the ._n_e_w_s_r_c, along with
+             status information.
+
+                  Status         Meaning
+                  <number>       Count of unread articles in newsgroup.
+                  READ           No unread articles in newsgroup.
+                  UNSUB          Unsubscribed newsgroup.
+
+
+
+Sprite v1.0                   LOCAL                             3
+
+
+
+
+
+
+RN                        User Commands                        RN
+
+
+
+                  BOGUS          Bogus newsgroup.
+                  JUNK           Ignored line in .newsrc
+                                 (e.g. readnews "options" line).
+
+             (A bogus newsgroup is one that is not in the list of
+             active newsgroups in the active file, which on most
+             systems is /usr/lib/news/active unless you use
+             NNTP.)
+
+     m name  Move the named newsgroup somewhere else in the
+             ._n_e_w_s_r_c.  If no name is given, the current newsgroup
+             is moved.  There are a number of ways to specify
+             where you want the newsgroup--type h for help when
+             it asks where you want to put it.
+
+     c       Catch up--mark all unread articles in this newsgroup
+             as read.
+
+     o pattern
+             Only display those newsgroups whose name matches
+             _p_a_t_t_e_r_n.  Patterns are the same as for the '/' com-
+             mand.  Multiple patterns may be separated by spaces,
+             just as on the command line.  The restriction will
+             remain in effect either until there are no articles
+             left in the restricted set of newsgroups, or another
+             restriction command is given.  Since _p_a_t_t_e_r_n is
+             optional, 'o' by itself will remove the restriction.
+
+     a pattern
+             Add new newsgroups matching _p_a_t_t_e_r_n.  Newsgroups
+             which are already in your ._n_e_w_s_r_c file, whether sub-
+             scribed to or not, will not be listed.  If any new
+             newsgroups are found, you will be asked for each one
+             whether you would like to add it. If you want to add
+             all new newsgroups, you can type  'Y' and they will
+             be added the the end of the ._n_e_w_s_r_c file.  After any
+             new newsgroups have been added, the 'a' command also
+             restricts the current set of newsgroups just like
+             the 'o' command does.
+
+     &       Print out the current status of command line
+             switches and any newsgroup restrictions.
+
+     &switch {switch}
+             Set additional command line switches.
+
+     &&      Print out the current macro definitions.
+
+     &&keys commands
+             Define additional macros.
+
+
+
+
+
+Sprite v1.0                   LOCAL                             4
+
+
+
+
+
+
+RN                        User Commands                        RN
+
+
+
+     !command
+             Escape to a subshell.  One exclamation mark (!)
+             leaves you in your own news directory.  A double
+             exclamation mark (!!) leaves you in the spool direc-
+             tory for news, which on most systems is
+             /usr/spool/news that don't use NNTP.  The environ-
+             ment variable SHELL will be used if defined.  If
+             _c_o_m_m_a_n_d is null, an interactive shell is started.
+
+     q       Quit.
+
+     x       Quit, restoring .newsrc to its state at startup of
+             _r_n.  The .newsrc you would have had if you had
+             exited with 'q' will be called .newnewsrc, in case
+             you didn't really want to type 'x'.
+
+     ^K      Edit the global KILL file.  This is a file which
+             contains /pattern/j commands (one per line) to be
+             applied to every newsgroup as it is started up, that
+             is, when it is selected on the newsgroup selection
+             level.  The purpose of a KILL file is to mark arti-
+             cles as read on the basis of some set of patterns.
+             This saves considerable wear and tear on your 'n'
+             key.  There is also a local KILL file for each news-
+             group.  Because of the overhead involved in search-
+             ing for articles to kill, it is better if possible
+             to use a local KILL file.  Local KILL files are
+             edited with a '^K' on the article selection level.
+             There are also automatic ways of adding search com-
+             mands to the local KILL file--see the 'K' command
+             and the K search modifier on the article selection
+             level.
+
+             If either of the environment variables VISUAL or
+             EDITOR is set, the specified editor will be invoked;
+             otherwise a default editor (normally vi(1)) is
+             invoked on the KILL file.
+
+     AArrttiiccllee SSeelleeccttiioonn LLeevveell
+
+     On the article selection level, _r_n selects (by default)
+     unread articles in numerical order (the order in which arti-
+     cles have arrived at your site).  If you do a subject search
+     (^N), the default order is modified to be numerical order
+     within each subject thread.  You may switch back and forth
+     between numerical order and subject thread order at will.
+     The --SS switch can be used to make subject search mode the
+     default.
+
+     On the article selection level you are _n_o_t asked whether you
+     want to read an article before the article is displayed;
+     rather, _r_n simply displays the first page (or portion of a
+
+
+
+Sprite v1.0                   LOCAL                             5
+
+
+
+
+
+
+RN                        User Commands                        RN
+
+
+
+     page, at low baud rates) of the article and asks if you want
+     to continue.  The normal article selection prompt comes at
+     the END of the article (though article selection commands
+     can be given from within the middle of the article (the
+     pager level) also).  The prompt at the end of an article
+     looks like this:
+
+     End of article 248 (of 257)--what next? [npq]
+
+     The following are the options at this point:
+
+     n,SP    Scan forward for next unread article.  (Note: the
+             'n' (next) command when typed at the end of an arti-
+             cle does not mark the article as read, since an
+             article is automaticaly marked as read after the
+             last line of it is printed.  It is therefore possi-
+             ble to type a sequence such as 'mn' and leave the
+             article marked as unread.  The fact that an article
+             is marked as read by typing 'n', 'N', '^N', 's', or
+             'S' within the MIDDLE of the article is in fact a
+             special case.)
+
+     N       Go to the next article.
+
+     ^N      Scan forward for the next article with the same sub-
+             ject, and make ^N default (subject search mode).
+
+     p       Scan backward for previous unread article.  If there
+             is none, stay at the current article.
+
+     P       Go to the previous article.
+
+     -       Go to the previously displayed article (regardless
+             of whether that article is before or after this
+             article in the normal sequence).
+
+     ^P      Scan backward for the previous article with the same
+             subject, and make ^N default (subject search mode).
+
+     ^R      Restart the current article.
+
+     v       Restart the current article verbosely, displaying
+             the entire header.
+
+     ^L      Refresh the screen.
+
+     ^X      Restart the current article, and decrypt as a rot13
+             message.
+
+     X       Refresh the screen, and decrypt as a rot13 message.
+
+
+
+
+
+Sprite v1.0                   LOCAL                             6
+
+
+
+
+
+
+RN                        User Commands                        RN
+
+
+
+     b       Back up one page.
+
+     q       Quit this newsgroup and go back to the newsgroup
+             selection level.
+
+     ^       Go to the first unread article.
+
+     $       Go to the last article (actually, one past the last
+             article).
+
+     number  Go to the numbered article.
+
+     range{,range} command{:command}
+             Apply a set of commands to a set of articles.  A
+             range consists of either <article number> or
+             <article number>-<article number>.  A dot '.'
+             represents the current article, and a dollar sign
+             '$' represents the last article.
+
+             Applicable commands include 'm' (mark as unread),
+             'M' (delayed mark as unread), 'j' (mark as read), "s
+             dest" (save to a destination), "!command" (shell
+             escape), "=" (print the subject) and "C" (cancel).
+
+     j       Junk the current article--mark it as read.  If this
+             command is used from within an article, you are left
+             at the end of the article, unlike 'n', which looks
+             for the next article.
+
+     m       Mark the current article as still unread.  (If you
+             are in subject search mode you probably want to use
+             M instead of m.  Otherwise the current article may
+             be selected as the beginning of the next subject
+             thread.)
+
+     M       Mark the current article as still unread, but not
+             until the newsgroup is exited.  Until then, the
+             current article will be marked as read.  This is
+             useful for returning to an article in another ses-
+             sion, or in another newsgroup.
+
+     /pattern
+             Scan forward for article containing _p_a_t_t_e_r_n in the
+             subject.  See the section on Regular Expressions.
+             Together with the escape substitution facility
+             described later, it becomes easy to search for vari-
+             ous attributes of the current article, such as sub-
+             ject, article ID, author name, etc.  The previous
+             pattern can be recalled with "<esc>/".  If _p_a_t_t_e_r_n
+             is omitted, the previous pattern is assumed.
+
+
+
+
+
+Sprite v1.0                   LOCAL                             7
+
+
+
+
+
+
+RN                        User Commands                        RN
+
+
+
+     /pattern/h
+             Scan forward for article containing _p_a_t_t_e_r_n in the
+             header.
+
+     /pattern/a
+             Scan forward for article containing _p_a_t_t_e_r_n anywhere
+             in article.
+
+     /pattern/r
+             Scan read articles also.
+
+     /pattern/c
+             Make search case sensitive.  Ordinarily upper and
+             lower case are considered the same.
+
+     /pattern/modifiers:command{:command}
+             Apply the commands listed to articles matching the
+             search command (possibly with h, a, or r modifiers).
+             Applicable commands include 'm' (mark as unread),
+             'M' (delayed mark as unread), 'j' (mark as read), "s
+             dest" (save to a destination), "!command" (shell
+             escape), "=" (print the subject) and "C" (cancel).
+             If the first command is 'm' or 'M', modifier r is
+             assumed.  A K may be included in the modifiers (not
+             the commands) to cause the entire command (sans K)
+             to be saved to the local KILL file, where it will be
+             applied to every article that shows up in the news-
+             group.
+
+             For example, to save all articles in a given news-
+             group to the line printer and mark them read, use
+             "/^/|lpr:j".  If you type "/^/K|lpr:j", this will
+             happen every time you enter the newsgroup.
+
+     ?pattern
+             Scan backward for article containing _p_a_t_t_e_r_n in the
+             subject.  May be modified as the forward search is:
+             ?pattern?modifiers[:commands].  It is likely that
+             you will want an r modifier when scanning backward.
+
+     k       Mark as read all articles with the same subject as
+             the current article.  (Note: there is no single
+             character command to temporarily mark as read (M
+             command) articles matching the current subject.
+             That can be done with "/<esc>s/M", however.)
+
+     K       Do the same as the k command, but also add a line to
+             the local KILL file for this newsgroup to kill this
+             subject every time the newsgroup is started up.  For
+             a discussion of KILL files, see the '^K' command
+             below.  See also the K modifier on searches above.
+
+
+
+
+Sprite v1.0                   LOCAL                             8
+
+
+
+
+
+
+RN                        User Commands                        RN
+
+
+
+     ^K      Edit the local KILL file for this newsgroup.  Each
+             line of the KILL file should be a command of the
+             form /pattern/j.  (With the exception that _r_n will
+             insert a line at the beginning of the form "THRU
+             <number>", which tells _r_n the maximum article number
+             that the KILL file has been applied to.  You may
+             delete the THRU line to force a rescan of current
+             articles.) You may also have reason to use the m, h,
+             or a modifiers.  Be careful with the M modifier in a
+             kill file--there are more efficient ways to never
+             read an article.  You might have reason to use it if
+             a particular series of articles is posted to multi-
+             ple newsgroups.  In this case, M would force you to
+             view the article in a different newsgroup.
+
+             To see only newgroup articles in the control news-
+             group, for instance, you might put
+
+             /^/j
+             /newgroup/m
+
+             which kills all subjects not containing "newgroup".
+             You can add lines automatically via the K command
+             and K search modifiers, but editing is the only way
+             to remove lines.  If either of the environment vari-
+             ables VISUAL or EDITOR is set, the specified editor
+             will be invoked; otherwise a default editor (nor-
+             mally vi) is invoked on the KILL file.
+
+             The KILL file may also contain switch setting lines
+             beginning with '&'.  Additionally, any line begin-
+             ning with 'X' is executed on exit from the newsgroup
+             rather than on entrance.  This can be used to set
+             switches back to a default value.
+
+     r       Reply through net mail.  The environment variables
+             MAILPOSTER and MAILHEADER may be used to modify the
+             mailing behavior of _r_n (see environment section).
+             If on a nonexistent article such as the "End of
+             newsgroup" pseudo-article (which you can get to with
+             a '$' command), invokes the mailer to nobody in par-
+             ticular.
+
+     R       Reply, including the current article in the header
+             file generated.  (See 'F' command below).  The YOU-
+             SAID environment variable controls the format of the
+             attribution line.
+
+     f       Submit a followup article.  If on a nonexistent
+             article such as the "End of newsgroup" pseudo-
+             article (which you can get to with a '$' command),
+             posts an original article (basenote).
+
+
+
+Sprite v1.0                   LOCAL                             9
+
+
+
+
+
+
+RN                        User Commands                        RN
+
+
+
+     F       Submit a followup article, and include the old arti-
+             cle, with lines prefixed either by ">" or by the
+             argument to a --FF switch.  _R_n will attempt to provide
+             an attribution line in front of the quoted article,
+             generated from the From: line of the article.
+             Unfortunately, the From: line doesn't always contain
+             the right name; you should double check it against
+             the signature and change it if necessary, or you may
+             have to apologize for quoting the wrong person.  The
+             environment variables NEWSPOSTER, NEWSHEADER and
+             ATTRIBUTION may be used to modify the posting
+             behavior of _r_n (see environment section).
+
+     C       Cancel the current article, but only if you are the
+             contributor or superuser.
+
+     c       Catch up in this newsgroup; i.e., mark all articles
+             as read.
+
+     u       Unsubscribe to this newsgroup.
+
+     s destination
+             Save to a filename or pipe using sh.  If the first
+             character of the destination is a vertical bar, the
+             rest of the command is considered a shell command to
+             which the article is passed through standard input.
+             The command is subject to filename expansion.  (See
+             also the environment variable PIPESAVER.) If the
+             destination does not begin with a vertical bar, the
+             rest of the command is assumed to be a filename of
+             some sort.  An initial tilde '~' will be translated
+             to the name of the home directory, and an initial
+             environment variable substitution is also allowed.
+             If only a directory name is specified, the environ-
+             ment variable SAVENAME is used to generate the
+             actual name.  If only a filename is specified (i.e.
+             no directory), the environment variable SAVEDIR will
+             be used to generate the actual directory.  If noth-
+             ing is specified, then obviously both variables will
+             be used.  Since the current directory for rn while
+             doing a save command is your private news directory,
+             typing "s ./filename" will force the file to your
+             news directory.  Save commands are also run through
+             % interpretation, so that you can enter "s
+             %O/filename" to save to the directory you were in
+             when you ran _r_n, and "s %t" to save to a filename
+             consisting of the Internet address of the sender.
+
+             After generating the full pathname of the file to
+             save to, _r_n determines if the file exists already,
+             and if so, appends to it.  _R_n will attempt to deter-
+             mine if an existing file is a mailbox or a normal
+
+
+
+Sprite v1.0                   LOCAL                            10
+
+
+
+
+
+
+RN                        User Commands                        RN
+
+
+
+             file, and save the article in the same format.  If
+             the output file does not yet exist, _r_n will by
+             default ask you which format you want, or you can
+             make it skip the question with either the --MM or --NN
+             switch.  If the article is to be saved in mailbox
+             format, the command to do so is generated from the
+             environment variable MBOXSAVER.  Otherwise, NORM-
+             SAVER is used.
+
+     S destination
+             Save to a filename or pipe using a preferred shell,
+             such as csh.  Which shell is used depends first on
+             what you have the environment variable SHELL set to,
+             and in the absence of that, on what your news
+             administrator set for the preferred shell when he or
+             she installed _r_n.
+
+     | command
+             Shorthand for "s | command".
+
+     w destination
+             The same as "s destination", but saves without the
+             header.
+
+     W destination
+             The same as "S destination", but saves without the
+             header.
+
+     &       Print out the current status of command line
+             switches.
+
+     &switch {switch}
+             Set additional command line switches.
+
+     &&      Print out current macro definitions.
+
+     &&keys commands
+             Define an additional macro.
+
+     !command
+             Escape to a subshell.  One exclamation mark (!)
+             leaves you in your own news directory.  A double
+             exclamation mark (!!) leaves you in the spool direc-
+             tory of the current newsgroup.  The environment
+             variable SHELL will be used if defined.  If _c_o_m_m_a_n_d
+             is null, an interactive shell is started.
+
+             You can use escape key substitutions described later
+             to get to many run-time values.  The command is also
+             run through % interpretation, in case it is being
+             called from a range or search command.
+
+
+
+
+Sprite v1.0                   LOCAL                            11
+
+
+
+
+
+
+RN                        User Commands                        RN
+
+
+
+     =       List subjects of unread articles.
+
+     #       Print last article number.
+
+     PPaaggeerr LLeevveell
+
+     At the pager level (within an article), the prompt looks
+     like this:
+
+     --MORE--(17%)
+
+     and a number of commands may be given:
+
+     SP      Display next page.
+
+     x       Display next page and decrypt as a rot13 message.
+
+     d,^D    Display half a page more.
+
+     CR      Display one more line.
+
+     q       Go to the end of the current article (don't mark it
+             either read or unread).  Leaves you at the "What
+             next?" prompt.
+
+     j       Junk the current article.  Mark it read and go to
+             the end of the article.
+
+     ^L      Refresh the screen.
+
+     X       Refresh the screen and decrypt as a rot13 message.
+
+     b,^B    Back up one page.
+
+     gpattern
+             Goto (search forward for) _p_a_t_t_e_r_n within current
+             article.  Note that there is no space between the
+             command and the pattern.  If the pattern is found,
+             the page containing the pattern will be displayed.
+             Where on the page the line matching the pattern goes
+             depends on the value of the --gg switch.  By default
+             the matched line goes at the top of the screen.
+
+     G       Search for g pattern again.
+
+     ^G      This is a special version of the 'g' command that is
+             for skipping articles in a digest.  It is equivalent
+             to setting "-g4" and then executing the command
+             "g^Subject:".
+
+     TAB     This is another special version of the 'g' command
+             that is for skipping inclusions of older articles.
+
+
+
+Sprite v1.0                   LOCAL                            12
+
+
+
+
+
+
+RN                        User Commands                        RN
+
+
+
+             It is equivalent to setting "-g4" and then executing
+             the command "g^[^c]", where _c is the first character
+             of the last line on the screen.  It searches for the
+             first line that doesn't begin with the same charac-
+             ter as the last line on the screen.
+
+     !command
+             Escape to a subshell.
+
+     The following commands skip the rest of the current article,
+     then behave just as if typed to the "What next?" prompt at
+     the end of the article.  See the documentation at the arti-
+     cle selection level for these commands.
+
+         # $ & / = ? c C f F k K ^K m M r R ^R u v Y ^
+         number
+         range{,range} command{:command}
+
+     The following commands also skip to the end of the article,
+     but have the additional effect of marking the current arti-
+     cle as read:
+
+         n N ^N s S | w W
+
+
+     MMiisscceellllaanneeoouuss ffaaccttss aabboouutt ccoommmmaannddss
+
+     An 'n' typed at either the "Last newsgroup" prompt or a
+     "Last article" prompt will cycle back to the top of the
+     newsgroup or article list, whereas a 'q' will quit the
+     level.  (Note that 'n' does not mean "no", but rather
+     "next".) A space will of course do whatever is shown as the
+     default, which will vary depending on whether rn thinks you
+     have more articles or newsgroups to read.
+
+     The 'b' (backup page) command may be repeated until the
+     beginning of the article is reached.  If _r_n is suspended
+     (via a ^Z), then when the job is resumed, a refresh (^L)
+     will automatically be done (Berkeley-type systems only).  If
+     you type a command such as '!' or 's' which takes you from
+     the middle of the article to the end, you can always get
+     back into the middle by typing '^L'.
+
+     In multi-character commands such as '!', 's', '/', etc, you
+     can interpolate various run-time values by typing escape and
+     a character.  To find out what you can interpolate, type
+     escape and 'h', or check out the single character % substi-
+     tutions for environment variables in the Interpretation and
+     Interpolation section, which are the same.  Additionally,
+     typing a double escape will cause any % substitutions in the
+     string already typed in to be expanded.
+
+
+
+
+Sprite v1.0                   LOCAL                            13
+
+
+
+
+
+
+RN                        User Commands                        RN
+
+
+
+     OOppttiioonnss
+
+     _R_n has a nice set of options to allow you to tailor the
+     interaction to your liking.  (You might like to know that
+     the author swears by "-e -m -S -/".) These options may be
+     set on the command line, via the RNINIT environment vari-
+     able, via a file pointed to by the RNINIT variable, or from
+     within rn via the & command.  Options may generally be unset
+     by typing "+switch".  Options include:
+
+     --cc   checks for news without reading news.  If a list of
+          newsgroups is given on the command line, only those
+          newsgroups will be checked; otherwise all subscribed-to
+          newsgroups are checked.  Whenever the --cc switch is
+          specified, a non-zero exit status from _r_n means that
+          there is unread news in one of the checked newsgroups.
+          The --cc switch does not disable the printing of news-
+          groups with unread news; this is controlled by the --ss
+          switch.  (The --cc switch is not meaningful when given
+          via the & command.)
+
+     --CC<<nnuummbbeerr>>
+          tells _r_n how often to checkpoint the ._n_e_w_s_r_c, in arti-
+          cles read.  Actually, this number says when to start
+          thinking about doing a checkpoint if the situation is
+          right.  If a reasonable checkpointing situation doesn't
+          arise within 10 more articles, the ._n_e_w_s_r_c is check-
+          pointed willy-nilly.
+
+     --dd<<ddiirreeccttoorryy nnaammee>>
+          sets the default save directory to something other than
+          ~/News.  The directory name will be globbed (via csh)
+          if necessary (and if possible).  Articles saved by _r_n
+          may be placed in the save directory or in a subdirec-
+          tory thereof depending on the command that you give and
+          the state of the environment variables SAVEDIR and
+          SAVENAME.  Any KILL files (see the K command in the
+          Article Selection section) also reside in this direc-
+          tory and its subdirectories, by default.  In addition,
+          shell escapes leave you in this directory.
+
+     --DD<<ffllaaggss>>
+          enables debugging output.  See common.h for flag
+          values.  Warning: normally _r_n attempts to restore your
+          ._n_e_w_s_r_c when an unexpected signal or internal error
+          occurs.  This is disabled when any debugging flags are
+          set.
+
+     --ee   causes each page within an article to be started at the
+          top of the screen, not just the first page.  (It is
+          similar to the --cc switch of _m_o_r_e(1).) You never have to
+          read scrolling text with this switch.  This is helpful
+
+
+
+Sprite v1.0                   LOCAL                            14
+
+
+
+
+
+
+RN                        User Commands                        RN
+
+
+
+          especially at certain baud rates because you can start
+          reading the top of the next page without waiting for
+          the whole page to be printed.  It works nicely in con-
+          juction with the --mm switch, especially if you use
+          half-intensity for your highlight mode.  See also the
+          --LL switch.
+
+     --EE<<nnaammee>>==<<vvaall>>
+          sets the environment variable <name> to the value
+          specified.  Within _r_n, "&-ESAVENAME=%t" is similar to
+          "setenv SAVENAME '%t'" in _c_s_h, or "SAVENAME='%t';
+          export SAVENAME" in _s_h.  Any environment variables set
+          with --EE will be inherited by subprocesses of _r_n.
+
+     --FF<<ssttrriinngg>>
+          sets the prefix string for the 'F' followup command to
+          use in prefixing each line of the quoted article.  For
+          example, "-F<tab>" inserts a tab on the front of each
+          line (which will cause long lines to wrap around,
+          unfortunately), "-F>>>>" inserts ">>>>" on every line,
+          and "-F" by itself causes nothing to be inserted, in
+          case you want to reformat the text, for instance.  The
+          initial default prefix is ">".
+
+     --gg<<lliinnee>>
+          tells _r_n which line of the screen you want searched-for
+          strings to show up on when you search with the 'g' com-
+          mand within an article.  The lines are numbered start-
+          ing with 1.  The initial default is "-g1", meaning the
+          first line of the screen.  Setting the line to less
+          than 1 or more than the number of lines on the screen
+          will set it to the last line of the screen.
+
+     --hh<<ssttrriinngg>>
+          hides (disables the printing of) all header lines
+          beginning with _s_t_r_i_n_g. For instance, -hexp will disable
+          the printing of the "Expires:" line.  Case is insigni-
+          ficant.  If <string> is null, all header lines except
+          Subject are hidden, and you may then use ++hh to select
+          those lines you want to see.  You may wish to use the
+          baud-rate switch modifier below to hide more lines at
+          lower baud rates.
+
+     --HH<<ssttrriinngg>>
+          works just like --hh except that instead of setting the
+          hiding flag for a header line, it sets the magic flag
+          for that header line.  Certain header lines have magic
+          behavior that can be controlled this way.  At present,
+          the following actions are caused by the flag for the
+          particular line: the Newsgroups line will only print
+          when there are multiple newsgroups, the Subject line
+          will be underlined, and the Expires line will always be
+
+
+
+Sprite v1.0                   LOCAL                            15
+
+
+
+
+
+
+RN                        User Commands                        RN
+
+
+
+          suppressed if there is nothing on it.  In fact, all of
+          these actions are the default, and you must use ++HH to
+          undo them.
+
+     --ii==<<nnuummbbeerr>>
+          specifies how long (in lines) to consider the initial
+          page of an article--normally this is determined
+          automatically depending on baud rate.  (Note that an
+          entire article header will always be printed regardless
+          of the specified initial page length.  If you are work-
+          ing at low baud rate and wish to reduce the size of the
+          headers, you may hide certain header lines with the --hh
+          switch.)
+
+     --ll   disables the clearing of the screen at the beginning of
+          each article, in case you have a bizarre terminal.
+
+     --LL   tells _r_n to leave information on the screen as long as
+          possible by not blanking the screen between pages, and
+          by using clear to end-of-line.  (The _m_o_r_e(1) program
+          does this.) This feature works only if you have the
+          requisite termcap capabilities.  The switch has no
+          effect unless the --ee switch is set.
+
+     --mm==<<mmooddee>>
+          enables the marking of the last line of the previous
+          page printed, to help the user see where to continue
+          reading.  This is most helpful when less than a full
+          page is going to be displayed.  It may also be used in
+          conjunction with the --ee switch, in which case the page
+          is erased, and the first line (which is the last line
+          of the previous page) is highlighted.  If --mm==ss is
+          specified, the standout mode will be used, but if --mm==uu
+          is specified, underlining will be used.  If neither ==ss
+          or ==uu is specified, standout is the default.  Use ++mm to
+          disable highlighting.
+
+     --MM   forces mailbox format in creating new save files.
+          Ordinarily you are asked which format you want.
+
+     --NN   forces normal (non-mailbox) format in creating new save
+          files.  Ordinarily you are asked which format you want.
+
+     --qq   bypasses the automatic check for new newsgroups when
+          starting _r_n.
+
+     --rr   causes _r_n to restart in the last newsgroup read during
+          a previous session with _r_n. It is equivalent to start-
+          ing up normally and then getting to the newsgroup with
+          a g command.
+
+     --ss   with no argument suppresses the initial listing of
+
+
+
+Sprite v1.0                   LOCAL                            16
+
+
+
+
+
+
+RN                        User Commands                        RN
+
+
+
+          newsgroups with unread news, whether --cc is specified or
+          not.  Thus --cc and --ss can be used together to test
+          "silently" the status of news from within your ._l_o_g_i_n
+          file.  If --ss is followed by a number, the initial list-
+          ing is suppressed after that many lines have been
+          listed.  Presuming that you have your ._n_e_w_s_r_c sorted
+          into order of interest, --ss55 will tell you the 5 most
+          interesting newsgroups that have unread news.  This is
+          also a nice feature to use in your ._l_o_g_i_n file, since
+          it not only tells you whether there is unread news, but
+          also how important the unread news is, without having
+          to wade through the entire list of unread newsgroups.
+          If no --ss switch is given --ss55 is assumed, so just put-
+          ting "rn -c" into your .login file is fine.
+
+     --SS<<nnuummbbeerr>>
+          causes _r_n to enter subject search mode (^N) automati-
+          cally whenever a newsgroup is started up with <number>
+          unread articles or more.  Additionally, it causes any
+          'n' typed while in subject search mode to be inter-
+          preted as '^N' instead.  (To get back out of subject
+          search mode, the best command is probably '^'.) If
+          <number> is omitted, 3 is assumed.
+
+     --tt   puts _r_n into terse mode.  This is more cryptic but use-
+          ful for low baud rates.  (Note that your system
+          administrator may have compiled _r_n with either verbose
+          or terse messages only to save memory.) You may wish to
+          use the baud-rate switch modifier below to enable terse
+          mode only at lower baud rates.
+
+     --TT   allows you to type ahead of rn.  Ordinarily rn will eat
+          typeahead to prevent your autorepeating space bar from
+          doing a very frustrating thing when you accidentally
+          hold it down.  If you don't have a repeating space bar,
+          or you are working at low baud rate, you can set this
+          switch to prevent this behavior.  You may wish to use
+          the baud-rate switch modifier below to disable typea-
+          head only at lower baud rates.
+
+     --vv   sets verification mode for commands.  When set, the
+          command being executed is displayed to give some feed-
+          back that the key has actually been typed.  Useful when
+          the system is heavily loaded and you give a command
+          that takes a while to start up.
+
+     --//   sets SAVEDIR to "%p/%c" and SAVENAME to "%a", which
+          means that by default articles are saved in a subdirec-
+          tory of your private news directory corresponding to
+          the name of the the current newsgroup, with the
+          filename being the article number.  ++// sets SAVEDIR to
+          "%p" and SAVENAME to "%^C", which by default saves
+
+
+
+Sprite v1.0                   LOCAL                            17
+
+
+
+
+
+
+RN                        User Commands                        RN
+
+
+
+          articles directly to your private news directory, with
+          the filename being the name of the current newsgroup,
+          first letter capitalized.  (Either ++// or --// may be
+          default on your system, depending on the feelings of
+          your news administrator when he, she or it installed
+          _r_n.) You may, of course, explicitly set SAVEDIR and
+          SAVENAME to other values--see discussion in the
+          environment section.
+
+     Any switch may be selectively applied according to the
+     current baud-rate.  Simply prefix the switch with +speed to
+     apply the switch at that speed or greater, and -speed to
+     apply the switch at that speed or less.  Examples:
+     -1200-hposted suppresses the Posted line at 1200 baud or
+     less; +9600-m enables marking at 9600 baud or more.  You can
+     apply the modifier recursively to itself also: +300-1200-t
+     sets terse mode from 300 to 1200 baud.
+
+     Similarly, switches may be selected based on terminal type:
+
+          -=vt100+T      set +T on vt100
+          -=tvi920-ETERM=mytvi     get a special termcap entry
+          -=tvi920-ERNMACRO=%./.rnmac.tvi
+                         set up special keymappings
+          +=paper-v      set verify mode if not hardcopy
+
+     Some switch arguments, such as environment variable values,
+     may require spaces in them.  Such spaces should be quoted
+     via ", ', or \ in the conventional fashion, even when passed
+     via RNINIT or the & command.
+
+     RReegguullaarr EExxpprreessssiioonnss
+
+     The patterns used in article searching are regular expres-
+     sions such as those used by _e_d(1).  In addition, \w matches
+     an alphanumeric character and \W a nonalphanumeric.  Word
+     boundaries may be matched by \b, and non-boundaries by \B.
+     The bracketing construct \( ... \) may also be used, and
+     \digit matches the digit'th substring, where digit can range
+     from 1 to 9.  \0 matches whatever the last bracket match
+     matched.  Up to 10 alternatives may given in a pattern,
+     separated by \|, with the caveat that \( ... \| ... \) is
+     illegal.
+
+     IInntteerrpprreettaattiioonn aanndd IInntteerrppoollaattiioonn
+
+     Many of the strings that _r_n handles are subject to interpre-
+     tations of several types.  Under filename expansion, an ini-
+     tial "~/" is translated to the name of your home directory,
+     and "~name" is translated to the login directory for the
+     user specified.  Filename expansion will also expand an ini-
+     tial environment variable, and also does the backslash,
+
+
+
+Sprite v1.0                   LOCAL                            18
+
+
+
+
+
+
+RN                        User Commands                        RN
+
+
+
+     uparrow and percent expansion mentioned below.
+
+     All interpreted strings go through backslash, uparrow and
+     percent interpretation.  The backslash escapes are the nor-
+     mal ones (such as \n, \t, \nnn, etc.).  The uparrow escapes
+     indicate control codes in the normal fashion.  Backslashes
+     or uparrows to be passed through should be escaped with
+     backslash.  The special percent escapes are similar to
+     printf percent escapes.  These cause the substitution of
+     various run-time values into the string.  The following are
+     currently recognized:
+
+     %a      Current article number.
+
+     %A      Full name of current article (%P/%c/%a).  (On a Eun-
+             ice system with the LINKART option, %P/%c/%a returns
+             the name of the article in the current newsgroup,
+             while %A returns the real name of the article, which
+             may be different if the current article was posted
+             to multiple newsgroups.)
+
+     %b      Destination of last save command, often a mailbox.
+
+     %B      The byte offset to the beginning of the part of the
+             article to be saved, set by the save command.  The
+             's' and 'S' commands set it to 0, and the 'w' and
+             'W' commands set it to the byte offset of the body
+             of the article.
+
+     %c      Current newsgroup, directory form.
+
+     %C      Current newsgroup, dot form.
+
+     %d      Full name of newsgroup directory (%P/%c).
+
+     %D      "Distribution:" line from the current article.
+
+     %f      "From:" line from the current article, or the
+             "Reply-To:" line if there is one.  This differs from
+             %t in that comments (such as the full name) are not
+             stripped out with %f.
+
+     %F      "Newsgroups:" line for a new article, constructed
+             from "Newsgroups:" and "Followup-To:" lines of
+             current article.
+
+     %h      Name of the header file to pass to the mail or news
+             poster, containing all the information that the
+             poster program needs in the form of a message
+             header.  It may also contain a copy of the current
+             article.  The format of the header file is con-
+             trolled by the MAILHEADER and NEWSHEADER environment
+
+
+
+Sprite v1.0                   LOCAL                            19
+
+
+
+
+
+
+RN                        User Commands                        RN
+
+
+
+             variables.
+
+     %H      Host name (your machine's name).
+
+     %i      "Message-I.D.:" line from the current article, with
+             <> guaranteed.
+
+     %I      The reference indication mark (see the --FF switch.)
+
+     %l      The news administrator's login name, if any.
+
+     %L      Login name (yours).
+
+     %m      The current mode of rn, for use in conditional mac-
+             ros.
+
+                  i    Initializing.
+                  n    Newsgroup selection level.
+                  a    Article selection level (What next?).
+                  p    Pager level (MORE prompt).
+                  A    Add this newsgroup?
+                  C    Catchup confirmation.
+                  D    Delete bogus newsgroups?
+                  M    Use mailbox format?
+                  R    Resubscribe to this newsgroup?
+
+             Note that yes/no questions are all upper-case modes.
+             If, for example, you wanted to disallow defaults on
+             all yes/no questions, you could define the following
+             macro:
+
+             \040 %(%m=[A-Z]?h: )
+
+     %M      The number of articles marked to return via the 'M'
+             command.  If the same article is Marked multiple
+             times, "%M" counts it multiple times in the current
+             implementation.
+
+     %n      "Newsgroups:" line from the current article.
+
+     %N      Full name (yours).
+
+     %o      Organization (yours).
+
+     %O      Original working directory (where you ran rn from).
+
+     %p      Your private news directory, normally ~/News.
+
+     %P      Public news spool directory, normally
+             /usr/spool/news on systems that don't use NNTP.
+
+
+
+
+
+Sprite v1.0                   LOCAL                            20
+
+
+
+
+
+
+RN                        User Commands                        RN
+
+
+
+     %r      Last reference on references line of current article
+             (parent article id).
+
+     %R      References list for a new article, constructed from
+             the references and article ID of the current arti-
+             cle.
+
+     %s      Subject, with all Re's and (nf)'s stripped off.
+
+     %S      Subject, with one "Re:" stripped off.
+
+     %t      "To:" line derived from the "From:" and "Reply-To:"
+             lines of the current article.  This always returns
+             an Internet format address.
+
+     %T      "To:" line derived from the "Path:" line of the
+             current article to produce a uucp path.
+
+     %u      The number of unread articles in the current news-
+             group.
+
+     %U      The number of unread articles in the current news-
+             group, not counting the current article.
+
+     %x      The news library directory.
+
+     %X      The rn library directory.
+
+     %z      The length of the current article in bytes.
+
+     %~      Your home directory.
+
+     %.      The directory containing your dot files, which is
+             your home directory unless the environment variable
+             DOTDIR is defined when rn is invoked.
+
+     %$      Current process number.
+
+     %/      Last search string.
+
+     %%      A percent sign.
+
+     %{name} or %{name-default}
+             The environment variable "name".
+
+     %[name] The value of header line "Name:" from the current
+             article.  The "Name: " is not included.  For example
+             "%D" and "%[distribution]" are equivalent.  The name
+             must be spelled out in full.
+
+     %`command`
+             Inserts the output of the command, with any embedded
+
+
+
+Sprite v1.0                   LOCAL                            21
+
+
+
+
+
+
+RN                        User Commands                        RN
+
+
+
+             newlines translated to space.
+
+     %"prompt"
+             Prints prompt on the terminal, then inputs one
+             string, and inserts it.
+
+     %(test_text=pattern?then_text:else_text)
+             If _t_e_s_t__t_e_x_t matches _p_a_t_t_e_r_n, has the value
+             _t_h_e_n__t_e_x_t, otherwise _e_l_s_e__t_e_x_t.  The ":else_text" is
+             optional, and if absent, interpolates the null
+             string.  The = may be replaced with != to negate the
+             test.  To quote any of the metacharacters ('=', '?',
+             ':', or ')'), precede with a backslash.
+
+     %digit  The digits 1 through 9 interpolate the string
+             matched by the nth bracket in the last pattern match
+             that had brackets.  If the last pattern had alterna-
+             tives, you may not know the number of the bracket
+             you want--%0 will give you the last bracket matched.
+
+     Modifiers: to capitalize the first letter, insert '^': "%^C"
+     produces something like "Net.jokes".  Inserting '_' causes
+     the first letter following the last '/' to be capitalized:
+     "%_c" produces "net/Jokes".
+
+EENNVVIIRROONNMMEENNTT
+     The following environment variables are paid attention to by
+     _r_n.  In general the default values assumed for these vari-
+     ables by _r_n are reasonable, so if you are using _r_n for the
+     first time, you can safely ignore this section.  Note that
+     the defaults below may not correspond precisely to the
+     defaults on your system.  To find the actual defaults you
+     would need to look in config.h and common.h in the rn source
+     directory, and the file INIT in the rn library.
+
+     Those variables marked (%) are subject to % interpolation,
+     and those marked (~) are subject to both % interpolation and
+     ~ interpretation.
+
+     ATTRIBUTION (%)
+             Gives the format of the attribution line in front of
+             the quoted article included by an F command.
+
+             Default: In article %i %f writes:
+
+     CANCEL (~)
+             The shell command used to cancel an article.
+
+             Default: inews -h < %h
+
+     CANCELHEADER (%)
+             The format of the file to pass to the CANCEL command
+
+
+
+Sprite v1.0                   LOCAL                            22
+
+
+
+
+
+
+RN                        User Commands                        RN
+
+
+
+             in order to cancel an article.
+
+             Default:
+             Newsgroups: %n
+             Subject: cmsg cancel %i
+             References: %R
+             Reply-To: %L@%H (%N)
+             Distribution: %D
+             Organization: %o
+
+             %i cancelled from rn.
+
+     DOTDIR  Where to find your dot files, if they aren't in your
+             home directory.  Can be interpolated using "%.".
+
+             Default: $HOME
+
+     EDITOR (~)
+             The name of your editor, if VISUAL is undefined.
+
+             Default: whatever your news administrator compiled
+             in, usually vi.
+
+     FIRSTLINE (%)
+             Controls the format of the line displayed at the top
+             of an article.  Warning: this may go away.
+
+             Default: Article %a %(%U%M!=^00$?(%U more%(%M!=^0$?
+             + %M Marked to return)\) )in %C:, more or less.
+
+     HIDELINE
+             If defined, contains a regular expression which
+             matches article lines to be hidden, in order, for
+             instance, to suppress quoted material.  A recom-
+             mended string for this purpose is "^>...", which
+             _d_o_e_s_n'_t hide lines with only '>', to give some indi-
+             cation that quoted material is being skipped.  If
+             you want to hide more than one pattern, you can use
+             "|" to separate the alternatives.  You can view the
+             hidden lines by restarting the article with the 'v'
+             command.
+
+             There is some overhead involved in matching each
+             line of the article against a regular expression.
+             You might wish to use a baud-rate modifier to enable
+             this feature only at low baud rates.
+
+             Default: undefined
+
+     HOME    Your home directory.  Affects ~ interpretation, and
+             the location of your dot files if DOTDIR is not
+             defined.
+
+
+
+Sprite v1.0                   LOCAL                            23
+
+
+
+
+
+
+RN                        User Commands                        RN
+
+
+
+             Default: $LOGDIR
+
+     KILLGLOBAL (~)
+             Where to find the KILL file to apply to every news-
+             group.  See the '^K' command at the newsgroup selec-
+             tion level.
+
+             Default: %p/KILL
+
+     KILLLOCAL (~)
+             Where to find the KILL file for the current news-
+             group.  See the commands 'K' and '^K' at the article
+             selection level, and the search modifier 'K'.
+
+             Default: %p/%c/KILL
+
+     LOGDIR  Your home directory if HOME is undefined.  Affects ~
+             interpretation, and the location of your dot files
+             if DOTDIR is not defined.
+
+             Default: none.
+
+             Explanation: you must have either $HOME or $LOGDIR.
+
+     LOGNAME Your login name, if USER is undefined.  May be
+             interpolated using "%L".
+
+             Default: value of getlogin().
+
+     MAILCALL (~)
+             What to say when there is new mail.
+
+             Default: (Mail)
+
+     MAILFILE (~)
+             Where to check for mail.
+
+             Default: /usr/spool/mail/%L
+
+     MAILHEADER (%)
+             The format of the header file for replies.  See also
+             MAILPOSTER.
+
+             Default:
+
+             To: %T
+             Subject: %(%i=^$?:Re: %S
+             Newsgroups: %n
+             In-Reply-To: %i)
+             %(%[references]!=^$?References\: %[references]
+             )Organization: %o
+             Cc:
+
+
+
+Sprite v1.0                   LOCAL                            24
+
+
+
+
+
+
+RN                        User Commands                        RN
+
+
+
+             Bcc: \n\n
+
+     MAILPOSTER (~)
+             The shell command to be used by the reply commands
+             (r and R) in order to allow you to enter and deliver
+             the response.  _R_n will not itself call upon an edi-
+             tor for replies--this is a function of the program
+             called by _r_n.  See also MAILHEADER.
+
+             Default: Rnmail -h %h
+
+     MBOXSAVER (~)
+             The shell command to save an article in mailbox for-
+             mat.
+
+             Default: %X/mbox.saver %A %P %c %a %B %C "%b" \
+             "From: %T %`date`"
+
+             Explanation: the first seven arguments are the same
+             as for NORMSAVER.  The eighth argument to the shell
+             script is the new From: line for the article,
+             including the posting date, derived either directly
+             from the Posted: line, or not-so-directly from the
+             Date: line.  Header munging at its finest.
+
+     MODSTRING
+             The string to insert in the group summary line,
+             which heads each article, for a moderated group.
+             See also NOPOSTRING.
+
+             Default: " (moderated)"
+
+     NAME    Your full name.  May be interpolated using "%N".
+
+             Default: name from /etc/passwd, or ~/.fullname.
+
+     NEWSHEADER (%)
+             The format of the header file for followups.  See
+             also NEWSPOSTER.
+
+             Default:
+
+             Newsgroups: %(%F=^$?%C:%F)
+             Subject: %(%S=^$?%"\n\nSubject: ":Re: %S)
+             Summary:
+             Expires:
+             %(%R=^$?:References: %R
+             )Sender:
+             Reply-To: %L@%H (%N)
+             Followup-To:
+             Distribution: %(%i=^$?%"\nDistribution: ":%D)
+             Organization: %o
+
+
+
+Sprite v1.0                   LOCAL                            25
+
+
+
+
+
+
+RN                        User Commands                        RN
+
+
+
+             Keywords: \n\n
+
+     NEWSPOSTER (~)
+             The shell command to be used by the followup com-
+             mands (f and F) in order to allow you to enter and
+             post a followup news article.  _R_n will not itself
+             call upon an editor for followups--this is a func-
+             tion of the program called by _r_n.  See also NEWS-
+             HEADER.
+
+             Default: Pnews -h %h
+
+     NOPOSTRING
+             The string to insert in the group summary line,
+             which heads each article, for a group to which local
+             posting is not allowed.  See also MODSTRING.
+
+             Default: " (no posting)"
+
+     NORMSAVER (~)
+             The shell command to save an article in the normal
+             (non-mailbox) format.
+
+             Default: %X/norm.saver %A %P %c %a %B %C "%b"
+
+     ORGANIZATION
+             Either the name of your organization, or the name of
+             a file containing the name of your organization.
+             May be interpolated using "%o".
+
+             Default: whatever your news administrator compiled
+             in.
+
+     PAGESTOP
+             If defined, contains a regular expression which
+             matches article lines to be treated as form-feeds.
+             There are at least two things you might want to do
+             with this.  To cause page breaks between articles in
+             a digest, you might define it as "^--------".  To
+             force a page break before a signature, you could
+             define it as "^-- $".  (Then, when you see "--" at
+             the bottom of the page, you can skip the signature
+             if you so desire by typing 'n' instead of space.) To
+             do both, you could use "^--".  If you want to break
+             on more than one pattern, you can use "|" to
+             separate the alternatives.
+
+             There is some overhead involved in matching each
+             line of the article against a regular expression.
+             You might wish to use a baud-rate modifier to enable
+             this feature only at low baud rates.
+
+
+
+
+Sprite v1.0                   LOCAL                            26
+
+
+
+
+
+
+RN                        User Commands                        RN
+
+
+
+             Default: undefined
+
+     PIPESAVER (%)
+             The shell command to execute in order to accomplish
+             a save to a pipe ("s | command" or "w | command").
+             The command typed by the user is substituted in as
+             %b.
+
+             Default: %(%B=^0$?<%A:tail +%Bc %A |) %b
+
+             Explanation: if %B is 0, the command is "<%A %b",
+             otherwise the command is "tail +%Bc %A | %b".
+
+     RNINIT  Default values for switches may be passed to _r_n by
+             placing them in RNINIT.  Any switch that is set in
+             RNINIT may be overruled on the command line, or via
+             the '&' command from within _r_n.  Binary-valued
+             switches that are set with "-switch" may be unset
+             using "+switch".
+
+             If RNINIT begins with a '/' it is assumed to be the
+             name of a file containing switches.  If you want to
+             set many environment variables but don't want to
+             keep them all in your environment, or if the use of
+             any of these variables conflicts with other pro-
+             grams, you can use this feature along with the --EE
+             switch to set the environment variables upon
+             startup.
+
+             Default: " ".
+
+     RNMACRO (~)
+             The name of the file containing macros and key map-
+             pings.  See the MACROS section.
+
+             Default: %./.rnmac
+
+     RNPREJUDICE
+             The name of a prejudice file.  This file contains a
+             list of mail addresses and comments.  When reading
+             news, the appropriate comment will be printed in the
+             header of any articles from posters named in the
+             prejudice file.  This feature allows you to keep
+             track of your opinions on posters.  The file con-
+             sists of a sequence of an unindented mail address
+             followed by comment lines indented by a tab.  For
+             example:
+
+             quayle@whitehouse.GOV
+                  Insightful political opinions.
+             chernenko@kremvax.UUCP
+                  Leftist slant to his articles.
+
+
+
+Sprite v1.0                   LOCAL                            27
+
+
+
+
+
+
+RN                        User Commands                        RN
+
+
+
+             For ease of use, add the line
+
+             *    !echo '%t' >> $RNPREJUDICE ; vi + $RNPREJUDICE\n
+
+             to your .rnmac file.  Then pressing the asterisk key
+             will automatically put you into vi on the RNPREJU-
+             DICE file.
+
+             Default: none
+
+     SAVEDIR (~)
+             The name of the directory to save to, if the save
+             command does not specify a directory name.
+
+             Default:
+                If --// is set: %p/%c
+                If ++// is set: %p
+
+     SAVENAME (%)
+             The name of the file to save to, if the save command
+             contains only a directory name.
+
+             Default:
+                If --// is set: %a
+                If ++// is set: %^C
+
+     SHELL   The name of your preferred shell.  It will be used
+             by the '!', 'S' and 'W' commands.
+
+             Default: whatever your news administrator compiled
+             in.
+
+     SUBJLINE (%)
+             Controls the format of the lines displayed by the
+             '=' command at the article selection level.
+
+             Default: %s
+
+     TERM    Determines which termcap entry to use, unless
+             TERMCAP contains the entry.
+
+     TERMCAP Holds either the name of your termcap file, or a
+             termcap entry.
+
+             Default: /etc/termcap, normally.
+
+     USER    Your login name.  May be interpolated using "%L".
+
+             Default: $LOGNAME
+
+     VISUAL (~)
+             The name of your editor.
+
+
+
+Sprite v1.0                   LOCAL                            28
+
+
+
+
+
+
+RN                        User Commands                        RN
+
+
+
+             Default: $EDITOR
+
+     YOUSAID (%)
+             Gives the format of the attribution line in front of
+             the quoted article included by an R command.
+
+             Default: In article %i you write:
+
+MMAACCRROOSS
+     When _r_n starts up, it looks for a file containing macro
+     definitions (see environment variable RNMACRO).  Any
+     sequence of commands may be bound to any sequence of keys,
+     so you could remap your entire keyboard if you desire.
+     Blank lines or lines beginning with # in the macro file are
+     considered comments; otherwise _r_n looks for two fields
+     separated by white space.  The first field gives the
+     sequence of keystrokes that trigger the macro, and the
+     second field gives the sequence of commands to execute.
+     Both fields are subject to % interpolation, which will also
+     translate backslash and uparrow sequences.  (The keystroke
+     field is interpreted at startup time, but the command field
+     is interpreted at macro execution time so that you may refer
+     to % values in a macro.) For example, if you want to reverse
+     the roles of carriage return and space in rn
+
+     ^J   \040
+     ^M   \040
+     \040 ^J
+
+     will do just that.  By default, all characters in the com-
+     mand field are interpreted as the canonical _r_n characters,
+     i.e. no macro expansion is done.  Otherwise the above pair
+     of macros would cause an infinite loop.  To force macro
+     expansion in the command field, enclose the macro call with
+     ^( ... ^) thusly:
+
+     @s   |mysavescript
+     @w   w^(@s^)
+
+     You can use the %() conditional construct to construct mac-
+     ros that work differently under different circumstances.  In
+     particular, the current mode (%m) of _r_n could be used to
+     make a command that only works at a particular level.  For
+     example,
+
+     ^[[O %(%m=p?\040)
+
+     will only allow the macro to work at the pager level.
+
+     %(%{TERM}=vt100?^[[O)    /^J
+
+     will do the binding only if the terminal type is vt100,
+
+
+
+Sprite v1.0                   LOCAL                            29
+
+
+
+
+
+
+RN                        User Commands                        RN
+
+
+
+     though if you have many of these it would be better to have
+     separate files for each terminal.
+
+     If you want to bind a macro to a function key that puts a
+     common garbage character after the sequence (such as the
+     carriage return on the end of Televideo 920 function
+     sequences), DO NOT put the carriage return into all the
+     sequences or you will waste a CONSIDERABLE amount of inter-
+     nal storage.  Instead of "^AF^M", put "^AF+1", which indi-
+     cates to _r_n that it should gobble up one character after the
+     F.
+
+AAUUTTHHOORR
+     Larry Wall <lwall@jpl-devvax.jpl.nasa.gov>
+     Stan Barber <sob@bcm.tmc.edu>
+     Regular expression routines are borrowed from emacs, by
+     James Gosling.
+
+FFIILLEESS
+     %./.newsrc  status of your news reading
+
+     %./.oldnewsrc
+                 backup copy of your ._n_e_w_s_r_c from start of ses-
+                 sion
+
+     %./.rnlock  lock file so you don't screw up your ._n_e_w_s_r_c
+
+     %./.rnlast  info from last run of rn
+
+     %./.rnsoft  soft pointers into /usr/lib/news/active to speed
+                 startup, synchronous with ._n_e_w_s_r_c
+
+     %./.rnhead  temporary header file to pass to a mailer or
+                 news poster
+
+     %./.rnmac   macro and keymap definitions
+
+     %p          your news save directory, usually ~/News
+
+     %x/active   the list of active newsgroups, usually
+                 /usr/lib/news/active on systems that don't use
+                 NNTP
+
+     %P          the public news spool directory, usually
+                 /usr/spool/news on systems that don't use NNTP
+
+     %X/INIT     system-wide default switches
+
+SSEEEE AALLSSOO
+     newsrc(5), more(1), readnews(1), Pnews(1), Rnmail(1)
+
+
+
+
+
+Sprite v1.0                   LOCAL                            30
+
+
+
+
+
+
+RN                        User Commands                        RN
+
+
+
+DDIIAAGGNNOOSSTTIICCSS
+     Generally self-documenting, as they say.
+
+BBUUGGSS
+     The --hh switch can only hide header lines that _r_n knows
+     about.
+
+     The '-' command doesn't cross newsgroup boundaries, and only
+     undoes the last article selection.
+
+     If you edit your ._n_e_w_s_r_c while _r_n is running, _r_n will hap-
+     pily wipe out your changes when it decides to write out the
+     ._n_e_w_s_r_c file.
+
+     _R_n doesn't do certain things (like ordering articles on
+     posting date) that the author feels should be handled by
+     inews.
+
+     Marking of duplicate articles as read in cross-referenced
+     newsgroups will not work unless the Xref patch is installed
+     in inews.
+
+     If you get carried away with % or escape substitutions, you
+     can overflow buffers.
+
+     There should be no fixed limit on the number of newsgroups.
+
+     Some of the more esoteric features may be missing on
+     machines with limited address space.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                   LOCAL                            31
+
+
+

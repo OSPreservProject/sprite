@@ -1,0 +1,494 @@
+head     8.1;
+branch   ;
+access   ;
+symbols  sun4nw:8.1 symm:8.1 spur:8.1 newlib:8.0;
+locks    ; strict;
+comment  @# @;
+
+
+8.1
+date     89.06.19.13.22.49;  author jhh;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.40.45;  author douglis;  state Stable;
+branches ;
+next     1.4;
+
+1.4
+date     88.10.27.13.26.19;  author mendel;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.09.12.09.42.50;  author mendel;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.08.23.10.22.20;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.08.10.19.02;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Routines for reading and writing SPUR Cache Controller register T0.
+@
+
+
+8.1
+log
+@added invalidate_ib calls
+@
+text
+@/* timerT0.s --
+ *
+ * 	Routines for reading and writing the T0 free running timer on the
+ *	Spur's Cache controller chip. 
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ * rcs = $Header: /sprite/src/kernel/timer/spur.md/RCS/timerSpurT0.s,v 8.0 88/11/11 18:40:45 douglis Stable Locker: jhh $ SPRITE (Berkeley)
+ *
+ *
+ * The routines in this file are callable from C. The C definitions are:
+ *
+ * extern void Timer_ReadT0(valPtr) 
+ *		Timer_Ticks	*valPtr;
+ * extern void Timer_ReadT0(valPtr)
+ *		Timer_Ticks	*valPtr;
+ *
+ *
+ *----------------------------------------------------------------------
+ * Timer_ReadT0 --
+ *
+ *	Read the current value of the SPUR Cache Controller register T0.
+ *
+ *	Results:
+ *		None. 
+ *
+ *	Side effects:
+ *		Node.
+ *
+ *----------------------------------------------------------------------
+ *
+ *
+ * Since the T0 register is used as a free running counter to keep track of
+ * time, we can not stop it to read it. Furthermore, the register can only
+ * be accessed one byte at a time. (See Wood, Eggers, Gibson : "SPUR 
+ * Memory System Architecture" UCB/CSD 87/394 for details [Wood87]). 
+ * In order to insure an accurate reading, we read the lower 32 bits of the
+ * T0 twice and check for excessive changes. The basic algorithm used in 
+ * presented in the following program:
+ *
+ * #include <sprite.h>
+ * 
+ *  *
+ *  * TIMERMATCHBITS - Mask of bits of T0's lower 32 bits to be used to compare
+ *  *		for a stable value.
+ *  
+ * #define MAXLOOPCOUNT	10
+ * #define TIMERMATCHBITS	~017
+ * 
+ * 
+ * 
+ * void
+ * Timer_ReadT0(val)
+ * 	Timer_Ticks *val;
+ * {
+ * 	register unsigned int	T0low, T0high, T0low2, temp1, temp2;
+ * 	unsigned int	get_timer();
+ * 
+ * 	T0low <-- get_timer(LOW_ORDER);
+ * 	do { 
+ * 		T0high <-- get_timer(HIGH_ORDER); 
+ * 		T0low2 <-- get_timer(LOW_ORDER);
+ * 		temp1 = T0low & TIMERMATCHBITS;
+ * 		temp2 = T0low2 & TIMERMATCHBITS;
+ * 		T0low = T0low2;
+ * 	} while (temp1 != temp2);
+ * 	val->low = T0low;
+ * 	val->high = T0high;
+ * 	return;
+ * }
+ */
+	.text
+	.align 2
+	.globl _Timer_ReadT0
+
+ /*
+  * Register assigment: 
+  * 	Local registers:
+  *		T0LOW	- First value of T0<31:0>
+  *		T0HIGH  - First value of T0<63:32>
+  *		T0LOW2	- Second value of T0<31:0>
+  *		TEMP	_ Temp register and masked T0LOW
+  *		TEMP1	- Masked T0LOW2
+  *	Inputs:
+  *		VALPTR  - Address of TimerT0Value, Input argument.
+  */
+
+#include "machConst.h"
+
+#define	VALPTR	r11
+#define	T0LOW	r12
+#define	T0HIGH	r13
+#define	T0LOW2	r14
+#define	TEMP	r15
+#define	TEMP1	r16
+#define	KPSW	r20
+
+ /*
+  * TIMERMASKBITS - a 14 bit mask (sign extented to form a 32bit mask) that is
+  * used to select the bits that must remain constant on consecutive reads of
+  * T0<31:0> in order the read to declared valid.  T0 is reportly updated
+  * every clock cycle so masking out too few bits will cause this routine
+  * to hang.  Masking out too many bits will cause the timer to possbly be
+  * discontinous.
+  *
+  */
+#define	TIMERMASKBITS	0xffffff00
+
+/*
+ * Make it into a 14bit signed constant.
+ */
+#define	TIMERMASKBITS14BIT	-((~TIMERMASKBITS)+1)
+
+_Timer_ReadT0:
+
+	/* 
+	 * T0LOW <- T0<31:0> a byte at a time.
+	 */
+	rd_kpsw		KPSW
+	and		TEMP1,KPSW,$~(MACH_KPSW_INTR_TRAP_ENA)
+	wr_kpsw		TEMP1, $0
+	ld_external	T0LOW, r0, $T00|RDREG
+	ld_external	TEMP, r0, $T01|RDREG
+	wr_insert	$1
+	insert		T0LOW, T0LOW, TEMP
+	ld_external	TEMP, r0,  $T02|RDREG
+	wr_insert	$2
+	insert		T0LOW, T0LOW, TEMP
+	ld_external	TEMP, r0,  $T03|RDREG
+	wr_insert	$3
+	insert		T0LOW, T0LOW, TEMP
+1:
+	/* 
+	 * T0HIGH <- T0<63:32> a byte at a time.
+	 */
+	ld_external	T0HIGH, r0, $T04|RDREG
+	ld_external	TEMP, r0, $T05|RDREG
+	wr_insert	$1
+	insert		T0HIGH, T0HIGH, TEMP
+	ld_external	TEMP, r0,  $T06|RDREG
+	wr_insert	$2
+	insert		T0HIGH, T0HIGH, TEMP
+	ld_external	TEMP, r0,  $T07|RDREG
+	wr_insert	$3
+	insert		T0HIGH, T0HIGH, TEMP
+	/* 
+	 * T0LOW2 <- T0<31:0> a byte at a time. 
+	 */
+	ld_external	T0LOW2, r0, $T00|RDREG
+	ld_external	TEMP, r0, $T01|RDREG
+	wr_insert	$1
+	insert		T0LOW2, T0LOW2, TEMP
+	ld_external	TEMP, r0,  $T02|RDREG
+	wr_insert	$2
+	insert		T0LOW2, T0LOW2, TEMP
+	ld_external	TEMP, r0,  $T03|RDREG
+	wr_insert	$3
+	insert		T0LOW2, T0LOW2, TEMP
+	/*
+	 * Mask in TEMP and TEMP2 the bits of the two readings of T0<31:0>. 
+	 * If ((LT0LOW2 & TIMERMASKBITS) != (T0LOW1 & TIMERMASKBITS)) { 
+	 *		- The timer changed too much for our liking.  Try 
+	 *		- reading the timer over again and hope for the 
+	 *		- best. Since we have a "fresh" T0<31:0> in T0LOW2 
+	 *		- we use it as a starting value and transfer it into
+	 *		- T0LOW and loop and try for a better read. 
+	 *  } else {
+	 *		- We got a good read.  Return it to the caller. 
+	 *		- We will use the second read, "T0LOW2", because
+	 *		- it is new than T0LOW.
+	 *  }
+	 */
+	and		TEMP, T0LOW, $TIMERMASKBITS14BIT
+	and		TEMP1, T0LOW2, $TIMERMASKBITS14BIT
+	cmp_br_delayed	ne, TEMP, TEMP1, 1b
+	add_nt		T0LOW, r0, T0LOW2
+
+	/*
+	 * We have a good value in T0LOW and T0HIGH. Store it thru the 
+	 * pointer argument VALPTR.
+	 */
+	st_32		T0LOW, VALPTR, $0
+	st_32		T0HIGH, VALPTR, $4
+	 wr_kpsw	KPSW, $0
+	 invalidate_ib
+	 return		r10,$8
+	 nop
+
+/*
+ *----------------------------------------------------------------------
+ * _Timer_WriteT0 --
+ *
+ *	Write the SPUR Cache Controller register T0. For best results 
+ *	interrupts should be disabled before calling this routine and 
+ *	the timer turned off.
+ *
+ *	Results:
+ *
+ *	Side effects:
+ *		The timer is updated.
+ *
+ *----------------------------------------------------------------------
+ */
+	.text
+	.align 2
+	.globl _Timer_WriteT0
+ /* 	
+  *	void
+  *	Timer_WriteT0(val)
+  * 		Timer_Ticks	*val;
+  * 
+  */
+_Timer_WriteT0: 
+
+ /*
+  * Register assigment: 
+  * 	Local registers:
+  *		TEMP	_ Temp register
+  *		HALF	- 32 bit half of new value to write.
+  *	Inputs:
+  *		VALPTR  - Address of Timer_Ticks value.
+  *	Outputs:
+  */
+#define	VALPTR	r11
+#define	HALF	r12
+#define	TEMP	r15
+	/*
+	 * Write register high order bytes first. 
+	 */
+	ld_32		HALF, VALPTR, $4
+	rd_kpsw		KPSW
+	and		TEMP,KPSW,$~(MACH_KPSW_INTR_TRAP_ENA)
+	wr_kpsw		TEMP, $0
+	extract		TEMP, HALF,$3
+	st_external	TEMP, r0, $T07|WRREG
+	extract		TEMP, HALF, $2
+	st_external	TEMP, r0, $T06|WRREG
+	extract		TEMP, HALF, $1
+	st_external	TEMP, r0, $T05|WRREG
+	st_external	HALF, r0, $T04|WRREG
+	/*
+	 * Then write low order bytes.
+	 */
+	ld_32		HALF, VALPTR, r0
+	extract		TEMP, HALF, $3
+	st_external	TEMP, r0, $T03|WRREG
+	extract		TEMP, HALF, $2
+	st_external	TEMP, r0, $T02|WRREG
+	extract		TEMP, HALF, $1
+	st_external	TEMP, r0, $T01|WRREG
+	st_external	HALF, r0, $T00|WRREG
+	wr_kpsw		KPSW, $0
+	invalidate_ib
+	return		r10,$8
+	nop
+
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+ * rcs = $Header: /sprite/src/kernel/timer/spur.md/RCS/timerSpurT0.s,v 1.4 88/10/27 13:26:19 mendel Exp Locker: douglis $ SPRITE (Berkeley)
+d193 1
+d261 1
+@
+
+
+1.4
+log
+@Intergated devTimer into timer module.
+@
+text
+@d16 1
+a16 1
+ * rcs = $Header: devTimerT0.s,v 1.3 88/09/12 09:42:50 mendel Exp $ SPRITE (Berkeley)
+@
+
+
+1.3
+log
+@Disable interrupts around st_externals.
+@
+text
+@d1 1
+a1 1
+/* DevTimerT0.s --
+d16 1
+a16 1
+ * rcs = $Header: devTimerT0.s,v 1.2 88/08/23 10:22:20 mendel Exp $ SPRITE (Berkeley)
+d21 4
+a24 4
+ * extern ReturnStatus Dev_TimerT0Read(valPtr) 
+ *		DevCounter	*valPtr;
+ * extern ReturnStatus Dev_TimerT0Write(valPtr)
+ *		DevCounter	*valPtr;
+d28 1
+a28 1
+ * _Dev_TimerT0Read --
+d33 1
+a33 1
+ *		ReturnStatus	SUCCESS or FAILURE 
+a58 4
+ * typedef struct timer_val {
+ * 	unsigned int	low;
+ * 	unsigned int	high;
+ * } DevCounter ;
+d60 3
+a62 3
+ * ReturnStatus
+ * Dev_TimerT0Read(val)
+ * 	DevCounter	*val;
+d77 1
+a77 1
+ * 	return SUCCESS;
+d82 1
+a82 1
+	.globl _Dev_TimerT0Read
+a93 2
+  *	Outputs:
+  *		RESULT	- Function result return register.
+a98 1
+#define	RESULT	r11
+d104 1
+d122 1
+a122 1
+#define	SUCCESS	0
+a123 2
+_Dev_TimerT0Read:
+
+d127 3
+d140 1
+a140 1
+ReadTimerT0ReadAgain:
+d183 1
+a183 1
+	cmp_br_delayed	ne, TEMP, TEMP1, ReadTimerT0ReadAgain
+d192 1
+a192 4
+	/*
+	 * Return the integer of SUCCESS
+	 */
+	 add_nt		RESULT, r0, $SUCCESS
+d198 1
+a198 1
+ * _Dev_TimerT0Write --
+a204 1
+ *		ReturnStatus	SUCCESS or FAILURE 
+d213 1
+a213 1
+	.globl _Dev_TimerT0Write
+d215 3
+a217 3
+  *	ReturnStatus
+  *	Dev_TimerT0Write(val)
+  * 		DevCounter	*val;
+d220 1
+a220 1
+_Dev_TimerT0Write: 
+d228 1
+a228 1
+  *		VALPTR  - Address of DevCounter value.
+a229 1
+  *		RESULT	- Function result return register.
+a231 1
+#define	RESULT	r11
+d238 3
+a240 3
+	rd_kpsw		r16
+	and		r17,r16,$~(MACH_KPSW_INTR_TRAP_ENA)
+	wr_kpsw		r17, $0
+d259 1
+a259 2
+	add_nt		RESULT, r0, $SUCCESS
+	wr_kpsw		r16, $0
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d16 1
+a16 1
+ * rcs = $Header: devTimerT0.s,v 1.1 88/06/08 10:19:02 mendel Exp $ SPRITE (Berkeley)
+d101 3
+d249 3
+d271 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d6 8
+a13 2
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+a14 1
+ * rcs = $Header: DevTimerT0.s 1.4 88/05/25 23:11:07 nelson Exp $ SPRITE (Berkeley)
+d16 1
+d18 1
+d246 1
+a246 2
+	wr_insert	$3
+	extract		TEMP, HALF, HALF
+d248 1
+a248 2
+	wr_insert	$2
+	extract		TEMP, HALF, HALF
+d250 1
+a250 2
+	wr_insert	$1
+	extract		TEMP, HALF, HALF
+d257 1
+a257 2
+	wr_insert	$3
+	extract		TEMP, HALF, HALF
+d259 1
+a259 2
+	wr_insert	$2
+	extract		TEMP, HALF, HALF
+d261 1
+a261 2
+	wr_insert	$1
+	extract		TEMP, HALF, HALF
+d264 1
+a264 1
+	add_nt		RESULT, r0, $STATUS
+@

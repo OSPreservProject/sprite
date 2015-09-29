@@ -1,0 +1,224 @@
+
+args.c,135
+clearup(122,2023
+LOCAL DOLPTR	copyargs(105,1745
+freeargs(87,1456
+INT	options(31,453
+VOID	setargs(72,1171
+DOLPTR	useargs(131,2157
+
+blok.c,100
+VOID	addblok(56,940
+ADDRESS	alloc(31,411
+#define busy(23,245
+chkbptr(92,1625
+VOID	free(81,1498
+
+brkincr.h,0
+
+builtin.c,14
+builtin(5,73
+
+cmd.c,356
+LOCAL VOID	chksym(372,5780
+LOCAL VOID	chkword(365,5723
+TREPTR	cmd(72,942
+LOCAL IOPTR	inout(321,5073
+LOCAL TREPTR	item(196,2697
+LOCAL TREPTR	list(123,1513
+TREPTR	makefork(35,460
+LOCAL TREPTR	makelist(48,641
+LOCAL VOID	prsym(380,5889
+LOCAL VOID	skipnl(315,4986
+LOCAL VOID	synbad(398,6175
+LOCAL REGPTR	syncase(157,2008
+LOCAL TREPTR	term(141,1750
+
+ctype.c,0
+
+ctype.h,396
+#define alphanum(91,2197
+#define astchar(92,2258
+#define defchar(87,1952
+#define digchar(89,2072
+#define	digit(84,1750
+#define dipchar(78,1546
+#define dolchar(86,1868
+#define eofmeta(75,1354
+#define eolchar(77,1480
+#define escchar(80,1672
+#define fngchar(85,1808
+#define	letter(90,2138
+#define qotchar(76,1420
+#define setchar(88,2012
+#define	space(74,1296
+#define subchar(79,1606
+
+defs.h,212
+#define		ADR(135,2336
+#define		BLK(132,2246
+#define		BYT(133,2276
+#define		STK(134,2306
+#define attrib(112,1765
+#define closepipe(114,1854
+#define eq(115,1912
+#define max(116,1942
+#define round(113,1802
+
+dup.h,0
+
+error.c,104
+done(69,912
+error(45,554
+exitset(19,208
+exitsh(51,595
+failed(35,436
+rmtemp(80,1054
+sigchk(24,250
+
+expand.c,80
+LOCAL VOID	addg(163,2620
+INT	expand(33,462
+gmatch(118,1954
+makearg(188,2961
+
+fault.c,115
+chktrap(101,1241
+clrsig(91,1110
+VOID	fault(24,296
+getsig(66,842
+ignsig(56,738
+oldsigs(75,939
+stdsigs(48,662
+
+io.c,150
+chkopen(70,887
+chkpipe(62,785
+copy(111,1348
+create(91,1119
+estabf(29,396
+initf(19,220
+pop(50,633
+push(40,534
+rename(81,1006
+tmpfil(102,1235
+
+mac.h,0
+
+macro.c,155
+LOCAL	comsubst(172,2986
+LOCAL STRING	copyto(22,262
+LOCAL	flush(232,4020
+LOCAL	getch(53,754
+STRING	macro(152,2631
+LOCAL	skipto(33,436
+subst(213,3737
+
+main.c,89
+Ldup(183,3158
+chkpr(169,2966
+LOCAL VOID	exfile(100,1611
+main(36,477
+settmp(177,3077
+
+mode.h,48
+#define Lcheat(59,1122
+#define Rcheat(60,1155
+
+msg.c,0
+
+name.c,463
+assign(119,1799
+assnum(169,2626
+LOCAL BOOL	chkid(217,3329
+VOID	countnam(310,4529
+dfault(110,1719
+VOID	exname(275,4034
+NAMPTR		lookup(189,2820
+STRING	make(176,2695
+namscan(234,3550
+LOCAL VOID	namwalk(241,3611
+VOID	printflg(286,4204
+VOID	printnam(251,3732
+VOID	pushnam(318,4597
+INT	readvar(129,1929
+replace(103,1649
+STRING	*setenv(326,4678
+setlist(52,807
+VOID	setname(67,1036
+VOID	setupenv(300,4424
+LOCAL STRING	staknam(264,3867
+syslook(32,541
+
+name.h,0
+
+print.c,126
+blank(25,244
+itos(75,728
+newline(21,220
+VOID	prc(46,441
+prn(69,684
+prp(29,266
+VOID	prs(36,346
+prt(54,504
+stoi(87,925
+
+service.c,352
+VOID	await(228,3590
+STRING	catpath(98,1529
+VOID	execa(117,1938
+LOCAL STRING	execs(132,2171
+INT	getarg(360,5693
+STRING	getpath(73,1137
+gocsh(184,2987
+LOCAL VOID	gsort(334,5246
+VOID	initio(36,406
+STRING	mactrim(303,4682
+INT	pathopen(88,1375
+VOID	post(213,3423
+postclr(204,3332
+STRING	*scan(311,4763
+LOCAL INT	split(377,5912
+trim(289,4532
+
+setbrk.c,15
+setbrk(16,168
+
+stak.c,154
+STKPTR	cpystak(81,1198
+STKPTR	endstak(53,726
+STKPTR	getstak(22,238
+STKPTR	locstak(34,444
+STKPTR	savstak(47,659
+stakchk(74,1118
+VOID	tdystak(62,911
+
+stak.h,202
+#define		absstak(20,374
+#define		curstak(28,607
+#define		fixstak(44,960
+#define		pushstak(22,455
+#define		relstak(19,337
+#define		setstak(21,414
+#define		usestak(34,747
+#define		zerostak(23,493
+
+string.c,72
+INT	any(27,307
+INT	cf(41,438
+INT	length(52,563
+STRING	movstr(20,227
+
+sym.h,0
+
+timeout.h,0
+
+word.c,65
+nextc(82,1528
+LOCAL	readb(128,2349
+readc(97,1765
+word(21,246
+
+xec.c,34
+execexp(425,8721
+execute(26,265

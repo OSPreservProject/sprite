@@ -1,0 +1,36 @@
+
+How to create a new machine type  from an existing one.
+
+    This document covers how to create a new machine type from an existing 
+machine type.  Creating a new machine type allows you to create 
+kernels for that are personalized in some manner. This is useful for
+testing kernel changes without affecting sources for kernels that other
+people are using. This document does not discuss how to add a new machine
+architecture to the system.
+
+    The first step is to chose a name for your new machine type. I suggest
+a unique name that is not used as the name of any files or directories 
+in the system. This avoids confusing "make" when you type "make <machine>".
+Your login is a particularly bad choice. Not only does it confuse "make",
+but it also confuses people. Let's assume that your new machine type is
+"foo", and the original machine type is "sun3".
+
+    Edit /sprite/lib/pmake/tm.mk. Make entries for foo from the entries
+for sun3. Add a flag "-Dsun3" to the TMCFLAGS for foo. Don't modify the 
+"-m" flag entry.
+
+    Create a foo.md directory in /sprite/lib/include or make a symbolic
+link to sun3.md. If you create a directory then make symbolic links from foo.md
+to all files in sun3.md.
+
+    Create a foo.md directory in /sprite/src/kernel/Include. Make symbolic 
+links to all the files in sun3.md. Make a symbolic link from foo.md/user
+to /sprite/lib/include/foo.md.
+
+    Create a foo.md subdirectory in each module of the kernel. Create a
+symbolic link to each source file in sun3.md to foo.md.  This includes 
+program sources as well as things like "md.mk.sed".  Find all references
+to TM=sun3 in local.mk files and add TM=foo as well.  for example, 
+"!empty(TM:Msun3)".
+
+    Run "mkmf" or "mkmf -m foo" in each module.

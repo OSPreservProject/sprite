@@ -1,0 +1,31 @@
+Exit	main.c	/^Exit()$/
+FileLoad	fileLoad.c	/^FileLoad(handlePtr)$/
+FsAttachDisk	fsDisk.c	/^FsAttachDisk(fsDevicePtr)$/
+FsDeviceBlockIO	fsDisk.c	/^FsDeviceBlockIO(readWriteFlag, devicePtr, fragNumb/
+FsFindComponent	fs.c	/^FsFindComponent(domainPtr, curHandlePtr, component/
+FsGetFileDesc	fs.c	/^FsGetFileDesc(domainPtr, fileNumber, descPtr)$/
+FsGetFirstIndex	fsIndex.c	/^FsGetFirstIndex(handlePtr, blockNum, indexInfoPtr)/
+FsGetNextIndex	fsIndex.c	/^FsGetNextIndex(handlePtr, indexInfoPtr)$/
+FsInitFileHandle	fs.c	/^FsInitFileHandle(domainPtr, fileNumber, handlePtr)/
+Fs_BlocksToDiskAddr	fsDisk.c	/^Fs_BlocksToDiskAddr(fragNumber, data, diskAddrPtr)/
+Fs_BlocksToSectors	fsDisk.c	/^Fs_BlocksToSectors(fragNumber, data)$/
+Fs_SectorsToRawDiskAddr	fsDisk.c	/^Fs_SectorsToRawDiskAddr(sector, numSectors, numHea/
+Mach_Probe	machStubs.c	/^Mach_Probe(size, srcAddress, destAddress)$/
+Mach_SetHandler	machStubs.c	/^Mach_SetHandler() { }$/
+MakePtrAccessible	fsIndex.c	/^MakePtrAccessible(handlePtr, indexInfoPtr, descPtr/
+Mmain	main.c	/^main()$/
+NullProc	sun4c.md/devFsOpTable.c	/^NullProc()$/
+Open	fs.c	/^Open(fileName, useFlags, permissions, handlePtrPtr/
+Read	fs.c	/^Read(handlePtr, offset, numBytes, buffer, readCoun/
+SunPromDevClose	sun4c.md/devSunProm.c	/^SunPromDevClose()$/
+SunPromDevOpen	sun4c.md/devSunProm.c	/^SunPromDevOpen(devicePtr)$/
+SunPromDevRead	sun4c.md/devSunProm.c	/^SunPromDevRead(devicePtr, ioPtr, replyPtr)$/
+_free	mem.c	/^_free(address)$/
+bcopy	byte.c	/^bcopy(sourcePtr, destPtr, numBytes)$/
+bzero	byte.c	/^bzero( destPtr, numBytes)$/
+dev_config	devConfig.c	/^dev_config(paramPtr, fsDevicePtr)$/
+free	mem.c	/^free(address)$/
+malloc	mem.c	/^malloc(numBytes)$/
+panic	stubs.c	/^void panic(string)$/
+printf	stubs.c	/^printf(format, arg1, arg2, arg3, arg4, arg5, arg6,/
+strcmp	byte.c	/^strcmp(s1, s2)$/

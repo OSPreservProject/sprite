@@ -1,0 +1,7 @@
+#!/sprite/cmds/csh -f
+date
+echo " "
+cat /sprite/admin/fsstats/{paprika,fenugreek,murder,thyme,sage,mace}/[0-9]* | \
+	awk -f fsstats.awk
+   
+

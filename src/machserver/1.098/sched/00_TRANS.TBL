@@ -1,0 +1,9 @@
+F MAKEFILE.;1                       	Makefile
+F SCHED.H;1                         	sched.h
+F SCHEDINT.H;1                      	schedInt.h
+F SCHEDQUE.C;1                      	schedQueue.c
+F SCHEDQUE.S;1                      	schedQueue.s
+F SCHEDULE.C;1                      	schedule.c
+F SCHEDULE.S;1                      	schedule.s
+D SUN4C_MD                          	sun4c.md
+D SUN4_MD                           	sun4.md

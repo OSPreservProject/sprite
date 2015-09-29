@@ -1,0 +1,740 @@
+head     9.3;
+branch   ;
+access   ;
+symbols  ds3100:9.3 sun3:9.3 sun4nw:9.3 symm:9.3 spur:9.3 sprited:9.3.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.3
+date     90.10.02.16.30.32;  author mgbaker;  state Exp;
+branches 9.3.1.1;
+next     9.2;
+
+9.2
+date     90.09.11.11.35.42;  author mgbaker;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.03.12.54.22;  author brent;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.18.19;  author douglis;  state Stable;
+branches ;
+next     8.1;
+
+8.1
+date     88.12.04.15.29.41;  author ouster;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.35.48;  author douglis;  state Stable;
+branches ;
+next     6.3;
+
+6.3
+date     88.10.28.19.24.43;  author mlgray;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.10.07.14.54.47;  author mlgray;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.26.18.27.11;  author mlgray;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.25.30;  author brent;  state Stable;
+branches ;
+next     5.1;
+
+5.1
+date     87.09.09.12.09.05;  author brent;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.09.09.10.34.35;  author brent;  state Exp;
+branches ;
+next     ;
+
+9.3.1.1
+date     91.10.21.21.20.48;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@First Sprite native copy
+@
+
+
+9.3
+log
+@More prototyping garbage.
+@
+text
+@/*
+ * rpcTest.c --
+ *
+ *	These are some utility routines that exercise the RPC system.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcTest.c,v 9.2 90/09/11 11:35:42 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <stdio.h>
+#include <bstring.h>
+#include <rpc.h>
+#include <rpcTrace.h>
+#include <rpcSrvStat.h>
+#include <rpcCltStat.h>
+#include <time.h>
+#include <timer.h>
+#include <proc.h>
+#include <stdlib.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_GetTime --
+ *
+ *	Get the time of day (in seconds since 1970) from the
+ *	specified server.
+ *
+ * Results:
+ *	The status code from the RPC. 0 means all went well.
+ *
+ * Side effects:
+ *	Fill in the time argument with the value returned from
+ *	the server.  The time is cleared to zeros if there is
+ *	an status from the server.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Rpc_GetTime(serverId, timePtr, timeZoneMinutesPtr, timeZoneDSTPtr)
+    int serverId;
+    Time *timePtr;
+    int *timeZoneMinutesPtr;
+    int *timeZoneDSTPtr;
+{
+    Rpc_Storage storage;
+    ReturnStatus status;
+    struct RpcTimeReturn {
+	Time	time;
+	int	timeZoneMinutes;
+	int	timeZoneDST;
+    } rpcTimeReturn;
+
+    storage.requestDataPtr = (Address)NIL;
+    storage.requestDataSize = 0;
+
+    storage.requestParamPtr = (Address)NIL;
+    storage.requestParamSize = 0;
+
+    storage.replyDataPtr = (Address)NIL;
+    storage.replyDataSize = 0;
+
+    storage.replyParamPtr = (Address)&rpcTimeReturn;
+    storage.replyParamSize = sizeof(rpcTimeReturn);
+
+    status = Rpc_Call(serverId, RPC_GETTIME, &storage);
+    if (status) {
+	timePtr->seconds = 0;
+	timePtr->microseconds = 0;
+	*timeZoneMinutesPtr = 0;
+	*timeZoneDSTPtr = 0;
+    } else {
+	*timePtr = rpcTimeReturn.time;
+	if (rpcTimeReturn.timeZoneMinutes > 0) {
+	    /*
+	     * This is a return from lust, and timeZoneMinutes are
+	     * really a unix kernel's tz_minuteswest, and the timeZoneDST
+	     * is a code for what kind of time zone correction to use.
+	     */
+	    printf("Warning: Rpc_Start, negative timezone offset.\n");
+	    *timeZoneMinutesPtr = -rpcTimeReturn.timeZoneMinutes;
+	    *timeZoneDSTPtr = TRUE;
+	} else {
+	    *timeZoneMinutesPtr = rpcTimeReturn.timeZoneMinutes;
+	    *timeZoneDSTPtr = rpcTimeReturn.timeZoneDST;
+	}
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_EchoTest --
+ *
+ *	Conduct a series of Echoes off the specified server.
+ *
+ * Results:
+ *	The status code from the RPC.
+ *
+ * Side effects:
+ *	Those of Rpc_Echo
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Rpc_EchoTest(serverId, numEchoes, size, inputPtr, returnPtr, deltaTimePtr)
+    int serverId;
+    int numEchoes;
+    int size;
+    Address inputPtr;
+    Address returnPtr;
+    Time *deltaTimePtr;		/* Return: the average time per RPC.  If
+				 * this is a NIL pointer then the results
+				 * are printed to the console */
+{
+    int			packetCount;
+    ReturnStatus	status;
+    Timer_Ticks		startTime;
+    Timer_Ticks		endTime;
+    Time		diff;
+    Address		localInBuffer;
+    Address		localOutBuffer;
+
+    localInBuffer = malloc(size);
+    bcopy(inputPtr, localInBuffer, size);
+    localOutBuffer = malloc(size);
+
+#ifdef notdef
+    /*
+     * These statistics, the overall packet loss and retries, is
+     * computable by the user program using the Rpc_Stat system call.
+     */
+    Rpc_StartSrvTrace();
+    Rpc_EnterProcess();      /* for tracing */
+#endif /* notdef */
+ 
+    if (deltaTimePtr == (Time *)NIL) {
+	printf("Echoing %d %d-byte messages\n", numEchoes, size);
+    }
+                 
+    Timer_GetCurrentTicks(&startTime);
+    packetCount = 0;
+    do {
+        packetCount++;
+        status = Rpc_Echo(serverId, localInBuffer, localOutBuffer, size);
+    } while ((status == SUCCESS) && (packetCount < numEchoes));
+ 
+    Timer_GetCurrentTicks(&endTime);
+ 
+    if ((deltaTimePtr == (Time *)NIL) && (status != SUCCESS)) {
+        printf("got error %x from Rpc_Echo\n", status);
+    }
+
+    /*
+     * Compute time per RPC.
+     */
+    Timer_SubtractTicks(endTime, startTime, &endTime);
+    Timer_TicksToTime(endTime, &diff);
+    Time_Divide(diff, packetCount, &diff);
+    if (deltaTimePtr == (Time *)NIL) {
+	printf("time per RPC %d.%06d\n",
+                        diff.seconds, diff.microseconds);
+    } else {
+	*deltaTimePtr = diff;
+    }
+/*
+ * Hack alert. Cache the last value of delta time for the RPC's.
+ */
+    rpcDeltaTime = diff;
+
+#ifdef notdef
+    Rpc_LeaveProcess();      /* for tracing */
+    Rpc_EndSrvTrace();
+#endif /* notdef */
+
+    bcopy(localOutBuffer, returnPtr, size);
+    free(localOutBuffer);
+    free(localInBuffer);
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_SendTest --
+ *
+ *	Send a bunch of packets to a server and time it.
+ *
+ * Results:
+ *	The status code from the RPC.
+ *
+ * Side effects:
+ *	Send off packets to the server.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Rpc_SendTest(serverId, numSends, size, inputPtr, deltaTimePtr)
+    int serverId;
+    int numSends;
+    int size;
+    Address inputPtr;
+    Time *deltaTimePtr;	/* Return: the average time per RPC.  If this is
+			 * a NIL pointer then the results are printed to
+			 * the console instead. */
+{
+    int			packetCount;
+    ReturnStatus	status;
+    Timer_Ticks		startTime;
+    Timer_Ticks		endTime;
+    Time		diff;
+    Address		localInBuffer;
+
+    localInBuffer = malloc(size);
+    bcopy(inputPtr, localInBuffer, size);
+
+#ifdef notdef
+    Rpc_StartSrvTrace();
+    Rpc_EnterProcess();      /* for tracing */
+#endif /* notdef */
+ 
+    if (deltaTimePtr == (Time *)NIL) {
+	printf("Sending %d %d-byte messages\n", numSends, size);
+    }
+                 
+    Timer_GetCurrentTicks(&startTime);
+    packetCount = 0;
+    do {
+        packetCount++;
+        status = Rpc_Send(serverId, localInBuffer, size);
+    } while ((status == SUCCESS) && (packetCount < numSends));
+ 
+    Timer_GetCurrentTicks(&endTime);
+ 
+    if ((deltaTimePtr == (Time *)NIL) && (status != SUCCESS)) {
+        printf("got error %x from Rpc_Send\n", status);
+    }
+
+    /*
+     * Compute time per RPC.
+     */
+    Timer_SubtractTicks(endTime, startTime, &endTime);
+    Timer_TicksToTime(endTime, &diff);
+    Time_Divide(diff, packetCount, &diff);
+    if (deltaTimePtr == (Time *)NIL) {
+	printf("time per RPC %d.%06d\n",
+                        diff.seconds, diff.microseconds);
+    } else {
+	*deltaTimePtr = diff;
+    }
+/*
+ * Hack alert. Cache the last value of delta time for the RPC's.
+ */
+    rpcDeltaTime = diff;
+#ifdef notdef
+    Rpc_LeaveProcess();      /* for tracing */
+    Rpc_EndSrvTrace();
+#endif /* notdef */
+
+    free(localInBuffer);
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_Echo --
+ *
+ *	Bounce data off of the specified server.
+ *
+ * Results:
+ *	The status code from the RPC.
+ *
+ * Side effects:
+ *	If the RPC is successful the input data is copied into
+ *	the return data.  This is an expensive copy...
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Rpc_Echo(serverId, inputPtr, returnPtr, size)
+    int serverId;
+    Address inputPtr;
+    Address returnPtr;
+    int size;
+{
+    Rpc_Storage storage;
+    ReturnStatus status;
+
+    storage.requestDataPtr = inputPtr;
+    storage.requestDataSize = size;
+
+    storage.replyDataPtr = returnPtr;
+    storage.replyDataSize = size;
+
+    storage.replyParamPtr = (Address)NIL;
+    storage.replyParamSize = 0;
+
+    storage.requestParamPtr = (Address)NIL;
+    storage.requestParamSize = 0;
+
+    status = Rpc_Call(serverId, RPC_ECHO_2, &storage);
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_Ping --
+ *
+ *	Ping a remote host by doing a low level echo RPC.  The RPC
+ *	is handled at interrupt level by the remote host for minimal impact.
+ *
+ * Results:
+ *	The status code from the RPC.
+ *
+ * Side effects:
+ *	If the RPC is successful the input data is copied into
+ *	the return data.  This is an expensive copy...
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Rpc_Ping(serverId)
+    int serverId;
+{
+    Rpc_Storage storage;
+    ReturnStatus status;
+
+    storage.requestDataPtr = (Address)NIL;
+    storage.requestDataSize = 0;
+    storage.replyDataPtr = (Address)NIL;
+    storage.replyDataSize = 0;
+    storage.replyParamPtr = (Address)NIL;
+    storage.replyParamSize = 0;
+    storage.requestParamPtr = (Address)NIL;
+    storage.requestParamSize = 0;
+
+    /*
+     * This should use RPC_ECHO_1, but it is unimplemented by the server.
+     */
+    status = Rpc_Call(serverId, RPC_ECHO_2, &storage);
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_Send --
+ *
+ *	Send data to the specified server.
+ *
+ * Results:
+ *	The status code from the RPC.
+ *
+ * Side effects:
+ *	Send the request to the server...
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Rpc_Send(serverId, inputPtr, size)
+    int serverId;
+    Address inputPtr;
+    int size;
+{
+    Rpc_Storage storage;
+    ReturnStatus status;
+
+    storage.requestDataPtr = inputPtr;
+    storage.requestDataSize = size;
+
+    storage.replyDataPtr = (Address)NIL;
+    storage.replyDataSize = 0;
+
+    storage.replyParamPtr = (Address)NIL;
+    storage.replyParamSize = 0;
+
+    storage.requestParamPtr = (Address)NIL;
+    storage.requestParamSize = 0;
+
+    status = Rpc_Call(serverId, RPC_SEND, &storage);
+    return(status);
+}
+@
+
+
+9.3.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcTest.c,v 9.3 90/10/02 16:30:32 mgbaker Exp $ SPRITE (Berkeley)";
+@
+
+
+9.2
+log
+@Added function prototypes (Mendel checking for mary)
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcTest.c,v 9.1 89/10/03 12:54:22 brent Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d14 11
+a24 9
+#include "sprite.h"
+#include "rpc.h"
+#include "rpcTrace.h"
+#include "rpcSrvStat.h"
+#include "rpcCltStat.h"
+#include "time.h"
+#include "timer.h"
+#include "proc.h"
+#include "stdlib.h"
+@
+
+
+9.1
+log
+@Fixed timing calculation so it used number of packets actually
+sent, not the number the user specified.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcTest.c,v 8.1 88/12/04 15:29:41 ouster Exp $ SPRITE (Berkeley)";
+d139 1
+a139 1
+    Rpc_EnterProcess(0);      /* for tracing */
+d177 1
+a177 1
+    Rpc_LeaveProcess(0);      /* for tracing */
+d224 1
+a224 1
+    Rpc_EnterProcess(0);      /* for tracing */
+d261 1
+a261 1
+    Rpc_LeaveProcess(0);      /* for tracing */
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcTest.c,v 8.1 88/12/04 15:29:41 ouster Exp Locker: douglis $ SPRITE (Berkeley)";
+d121 1
+a121 1
+    int			packetId;
+d147 1
+a147 1
+    packetId = 0;
+d149 1
+a149 1
+        packetId++;
+d151 1
+a151 1
+    } while ((status == SUCCESS) && (packetId < numEchoes));
+d164 1
+a164 1
+    Time_Divide(diff, numEchoes, &diff);
+d212 1
+a212 1
+    int			packetId;
+d232 1
+a232 1
+    packetId = 0;
+d234 1
+a234 1
+        packetId++;
+d236 1
+a236 1
+    } while ((status == SUCCESS) && (packetId < numSends));
+d249 1
+a249 1
+    Time_Divide(diff, numSends, &diff);
+@
+
+
+8.1
+log
+@Stop using obsolete header files.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcTest.c,v 8.0 88/11/11 18:35:48 douglis Stable Locker: ouster $ SPRITE (Berkeley)";
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcTest.c,v 6.3 88/10/28 19:24:43 mlgray Exp Locker: douglis $ SPRITE (Berkeley)";
+d22 1
+a22 2
+#include "mem.h"
+#include "byte.h"
+@
+
+
+6.3
+log
+@Conversion to new C library.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcTest.c,v 6.2 88/10/07 14:54:47 mlgray Exp Locker: mlgray $ SPRITE (Berkeley)";
+@
+
+
+6.2
+log
+@Fixed include file references.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: rpcTest.c,v 6.1 88/08/26 18:27:11 mlgray Exp $ SPRITE (Berkeley)";
+d85 1
+a85 1
+	    Sys_Panic(SYS_WARNING, "Rpc_Start, negative timezone offset.\n");
+d130 3
+a132 3
+    localInBuffer = Mem_Alloc(size);
+    Byte_Copy(size, inputPtr, localInBuffer);
+    localOutBuffer = Mem_Alloc(size);
+d144 1
+a144 1
+	Sys_Printf("Echoing %d %d-byte messages\n", numEchoes, size);
+d157 1
+a157 1
+        Sys_SafePrintf("got error %x from Rpc_Echo\n", status);
+d167 1
+a167 1
+	Sys_SafePrintf("time per RPC %d.%06d\n",
+d182 3
+a184 3
+    Byte_Copy(size, localOutBuffer, returnPtr);
+    Mem_Free(localOutBuffer);
+    Mem_Free(localInBuffer);
+d220 2
+a221 2
+    localInBuffer = Mem_Alloc(size);
+    Byte_Copy(size, inputPtr, localInBuffer);
+d229 1
+a229 1
+	Sys_Printf("Sending %d %d-byte messages\n", numSends, size);
+d242 1
+a242 1
+        Sys_SafePrintf("got error %x from Rpc_Send\n", status);
+d252 1
+a252 1
+	Sys_SafePrintf("time per RPC %d.%06d\n",
+d266 1
+a266 1
+    Mem_Free(localInBuffer);
+@
+
+
+6.1
+log
+@Fixed some lint errors.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: rpcTest.c,v 6.0 88/08/11 12:25:30 brent Stable $ SPRITE (Berkeley)";
+a15 1
+#include "rpcTrace.h"
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d1 1
+a1 1
+/* 
+d11 2
+a12 2
+static char rcsid[] = "$Header: rpcTest.c,v 5.1 87/09/09 12:09:05 brent Exp $ SPRITE (Berkeley)";
+#endif not lint
+d92 1
+a92 1
+	} 
+d136 1
+a136 1
+    /* 
+d142 1
+a142 1
+#endif notdef
+d179 1
+a179 1
+    Rpc_LeaveProcess(0);      /* for tracing */               
+d181 1
+a181 1
+#endif notdef
+d227 1
+a227 1
+#endif notdef
+d263 1
+a263 1
+    Rpc_LeaveProcess(0);      /* for tracing */               
+d265 1
+a265 1
+#endif notdef
+d348 1
+a348 1
+     */         
+@
+
+
+5.1
+log
+@Fixes to GetTime and Rpc_Start: had been dependend on what
+lust returned.  Now use what a Sprite box would return. (for timezone...)
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: rpcTest.c,v 5.0 87/08/11 10:49:24 sprite Exp $ SPRITE (Berkeley)";
+@
+
+
+5.0
+log
+@*** empty log message ***
+@
+text
+@d80 13
+a92 2
+	*timeZoneMinutesPtr = rpcTimeReturn.timeZoneMinutes;
+	*timeZoneDSTPtr = rpcTimeReturn.timeZoneDST;
+d328 64
+@

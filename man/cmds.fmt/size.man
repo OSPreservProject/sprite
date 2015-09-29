@@ -1,0 +1,68 @@
+
+
+
+SIZE                      User Commands                      SIZE
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     size - Print size of segments in program image
+
+SSYYNNOOPPSSIISS
+     ssiizzee [_f_i_l_e _f_i_l_e ...]
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     Each _f_i_l_e argument should be the name  of  a  program  image
+     file (e.g. aa..oouutt).  SSiizzee will print out in decimal the sizes
+     of the various segments in the file.  It will also print the
+     total  size  in  both  decimal  and hexadecimal.  If no _f_i_l_e
+     argument is given, aa..oouutt will be used by default.
+
+
+KKEEYYWWOORRDDSS
+     executable, image, program, size
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  July 22, 1989                    1
+
+
+

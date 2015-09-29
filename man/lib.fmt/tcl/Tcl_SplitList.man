@@ -1,0 +1,134 @@
+
+
+
+Tcl_SplitList     Tcl Command Language Library      Tcl_SplitList
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tcl_SplitList - break a Tcl list up into fields
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttccll..hh>>
+
+     int
+     TTccll__SSpplliittLLiisstt(_i_n_t_e_r_p, _l_i_s_t, _a_r_g_c_P_t_r, _a_r_g_v_P_t_r)
+
+AARRGGUUMMEENNTTSS
+     Tcl_Interp   *_i_n_t_e_r_p    (out)     Interpreter  to  use   for
+                                       error reporting.
+
+     char         *_l_i_s_t      (in)      Pointer to a  string  with
+                                       proper list structure.
+
+     int          *_a_r_g_c_P_t_r   (out)     Filled in with  number  of
+                                       elements in _l_i_s_t.
+
+     char         ***_a_r_g_v_P_t_r (out)     *_a_r_g_v_P_t_r will be filled in
+                                       with  the  address  of  an
+                                       array of pointers  to  the
+                                       strings   that   are   the
+                                       extracted   elements    of
+                                       _l_i_s_t.    There   will   be
+                                       *_a_r_g_c_P_t_r valid entries  in
+                                       the array.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     TTccll__SSpplliittLLiisstt is the inverse of TTccll__MMeerrggee.  Given a list, it
+     extracts  all  of  the  elements  of the list and returns an
+     array of pointers to them using _a_r_g_c_P_t_r and _a_r_g_v_P_t_r.   While
+     extracting  the  arguments,  TTccll__SSpplliittLLiisstt  obeys  the usual
+     rules for backslash substitutions and braces.  The  area  of
+     memory  pointed to by *_a_r_g_v_P_t_r is dynamically allocated;  in
+     addition to the array of pointers, it also holds  copies  of
+     all the list elements.  It is the caller's responsibility to
+     free up all of this storage by calling
+
+          free((char *) *_a_r_g_v_P_t_r)
+     when the list elements are no longer needed.
+
+     TTccll__SSpplliittLLiisstt normally returns TTCCLL__OOKK, which means the  list
+     was  successfully  parsed.   If  there was a syntax error in
+     _l_i_s_t, then TTCCLL__EERRRROORR is  returned  and  _i_n_t_e_r_p->_r_e_s_u_l_t  will
+     point to an error message describing the problem.
+
+
+
+
+
+
+Sprite v.1.0         Printed:  May 31, 1991                     1
+
+
+
+
+
+
+Tcl_SplitList     Tcl Command Language Library      Tcl_SplitList
+
+
+
+KKEEYYWWOORRDDSS
+     list, split, strings
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  May 31, 1991                     2
+
+
+

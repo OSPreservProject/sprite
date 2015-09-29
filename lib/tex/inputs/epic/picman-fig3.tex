@@ -1,0 +1,65 @@
+%Following commands were used to produce the graph on the next page.
+
+\newcommand{\plotcharms}{\makebox(0,0){$\otimes$}}
+\newcommand{\plotcharscs}{\circle{1.5}}
+\newcommand{\plotcharcs}{\makebox(0,0){$\diamond$}}
+\begin{figure}
+\begin{center}
+\begin{picture}(140,160)(-130,-10)
+\linethickness{0.4mm}
+\put(-130,0){\vector(1,0){140}}
+\put(-130,0){\vector(0,1){150}}
+\thicklines
+\multiput(0,-1)(-10,0){14}{\line(0,1){2}}
+\multiput(-131,0)(0,10){15}{\line(1,0){2}}
+\multiputlist(0,-4)(-20,0){0,50,100,150,200,250,300} %numbers along X-axis
+\multiputlist(-132,20)(0,20)[r]{10,20,30,40,50,60,70} %numbers along Y-axis
+\put(-60,-10){\makebox(0,0){Interarrival Times (msec.)}}
+\put(-141,75){\makebox(0,0){\shortstack{%
+N\\o\\r\\m\\a\\l\\i\\z\\e\\d\\[3ex]L\\i\\f\\e\\t\\i\\m\\e\\s}}}
+\thinlines
+\put(-120,150){\makebox(0,0)[tl]{\fbox{\shortstack[l]{
+ {\makebox(4,2)[lb]{\put(2,1){\plotcharms}}}: Message Switching\\[0.5mm]
+ {\makebox(4,3)[lb]{\put(2,1){\plotcharscs}}}: Staged Circuit Switching\\[0.5mm]
+ {\makebox(4,3)[lb]{\put(2,1){\plotcharcs}}}: Circuit Switching\\[0.5mm]
+ {\makebox(2,0)[b]{}}
+ }}}}
+%
+\begin{dottedjoin}{2}
+\thicklines
+\jput(-120.00000,  34.44896){\plotcharms}
+\jput( -60.00000,  35.55244){\plotcharms}
+\jput( -40.00000,  36.57292){\plotcharms}
+\jput( -30.00000,  37.71716){\plotcharms}
+\jput( -20.00000,  40.15218){\plotcharms}
+\jput( -12.00000,  48.16034){\plotcharms}
+\jput(  -8.00000,  67.75840){\plotcharms}
+\jput(  -7.60000,  74.27934){\plotcharms}
+\jput(  -7.20000,  83.02326){\plotcharms}
+\end{dottedjoin}
+%
+\begin{dashjoin}{2}
+\jput(-120.00000,  15.01202){\plotcharscs}
+\jput( -60.00000,  15.95818){\plotcharscs}
+\jput( -40.00000,  17.15990){\plotcharscs}
+\jput( -30.00000,  18.16152){\plotcharscs}
+\jput( -20.00000,  20.32388){\plotcharscs}
+\jput( -12.00000,  27.05212){\plotcharscs}
+\jput(  -8.00000,  41.58512){\plotcharscs}
+\jput(  -7.60000,  45.3435){\plotcharscs}
+\jput(  -7.20000,  51.52414){\plotcharscs}
+\end{dashjoin}
+%
+\begin{drawjoin}
+\jput(-120.00000,  15.17960){\plotcharcs}
+\jput( -80.00000,  16.71960){\plotcharcs}
+\jput( -60.00000,  18.29430){\plotcharcs}
+\jput( -56.00000,  19.81980){\plotcharcs}
+\jput( -52.00000,  20.31963){\plotcharcs}
+\jput( -48.00000,  50.24912){\plotcharcs}
+\jput( -44.00000,  56.96844){\plotcharcs}
+\end{drawjoin}
+\end{picture}
+\end{center}
+\caption[]{A real-life example of a graph}
+\end{figure}

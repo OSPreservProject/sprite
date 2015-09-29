@@ -1,0 +1,34 @@
+L ADDSUB.C;1                        	addsub.c	../sun4.md/addsub.c
+L BOOTSYSA.S;1                      	bootSysAsm.s	../sun4.md/bootSysAsm.s
+L COMPARE.C;1                       	compare.c	../sun4.md/compare.c
+D CVS_ADM                           	CVS.adm
+L DIV.C;1                           	div.c	../sun4.md/div.c
+L FASTBOOT.S;1                      	fastBootAsm.s	../sun4.md/fastBootAsm.s
+L FPU_SIMU.C;1                      	fpu_simulator.c	../sun4.md/fpu_simulator.c
+L FPU_SIMU.H;1                      	fpu_simulator.h	../sun4.md/fpu_simulator.h
+L GLOBALS.H;1                       	globals.h	../sun4.md/globals.h
+L IEEE.H;1                          	ieee.h	../sun4.md/ieee.h
+L IU_SIMUL.C;1                      	iu_simulator.c	../sun4.md/iu_simulator.c
+L MACH.H;1                          	mach.h	../sun4.md/mach.h
+L MACHASM.S;1                       	machAsm.s	../sun4.md/machAsm.s
+L MACHASMD.H;1                      	machAsmDefs.h	../sun4.md/machAsmDefs.h
+L MACHCODE.C;1                      	machCode.c	../sun4.md/machCode.c
+L MACHCONS.H;1                      	machConst.h	../sun4.md/machConst.h
+L MACHFPUG.C;1                      	machFPUGlue.c	../sun4.md/machFPUGlue.c
+L MACHINT.H;1                       	machInt.h	../sun4.md/machInt.h
+L MACHINTR.S;1                      	machIntr.s	../sun4.md/machIntr.s
+L MACHMIGR.C;1                      	machMigrate.c	../sun4.md/machMigrate.c
+L MACHMON.C;1                       	machMon.c	../sun4.md/machMon.c
+F MACHMON.H;1                       	machMon.h
+L MACHSIG.H;1                       	machSig.h	../sun4.md/machSig.h
+L MACHTRAP.S;1                      	machTrap.s	../sun4.md/machTrap.s
+L MACHTYPE.H;1                      	machTypes.h	../sun4.md/machTypes.h
+L MD_MK.SED;1                       	md.mk.sed	../sun4.md/md.mk.sed
+L MUL.C;1                           	mul.c	../sun4.md/mul.c
+L PACK.C;1                          	pack.c	../sun4.md/pack.c
+D SCVS                              	SCVS
+L SUN4.;1                           	sun4	../sun4.md/sun4
+L SYS.;1                            	sys	../sun4.md/sys
+L UNPACK.C;1                        	unpack.c	../sun4.md/unpack.c
+L UTILITY.C;1                       	utility.c	../sun4.md/utility.c
+L UWORD.C;1                         	uword.c	../sun4.md/uword.c

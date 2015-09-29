@@ -1,0 +1,270 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  sprited:1.5.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     88.10.01.10.18.08;  author ouster;  state Exp;
+branches 1.5.1.1;
+next     1.4;
+
+1.4
+date     88.07.25.13.12.49;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.07.22.09.11.38;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.07.20.18.12.17;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.10.16.23.42;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.5.1.1
+date     91.12.02.19.55.49;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.5
+log
+@Seek to eof on mode "a" (for UNIX compatibility).
+@
+text
+@/* 
+ * fdopen.c --
+ *
+ *	Source code for the "fdopen" library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: fdopen.c,v 1.4 88/07/25 13:12:49 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <stdio.h>
+#include <stdlib.h>
+#include "fileInt.h"
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * fdopen --
+ *
+ *	This procedure initializes a FILE structure for a file (or pipe
+ *	or similar OS-supplied thing) that has been opened or inherited
+ *	through some other mechanism.
+ *
+ * Results:
+ *	The return value may be used to perform buffered I/O on
+ *	streamID.  If streamID isn't valid, then NULL is returned.
+ *
+ * Side effects:
+ *	The internal list stdioFileStreams gets a new element.
+ *
+ * Implementation Warning:
+ *	To be compatible with BSD, this procedure must permit multiple
+ *	streams on the same file stream!  This seems like a very bad
+ *	idea for a seekable stream, but seems to get used for network
+ *	connection.
+ *
+ *----------------------------------------------------------------------
+ */
+
+FILE *
+fdopen(streamID, access)
+    int streamID;		/* Index of a stream identifier, such as
+				 * returned by open.  */
+    char *access;		/* Indicates the type of access to be
+				 * made on streamID, just as in fopen.
+				 * Must match the permissions on streamID.  */
+{
+    register FILE * 	stream;
+    int 		read, write;
+
+    if (streamID < 0) {
+	return NULL;
+    }
+
+    /*
+     * If this is for stdin, stdout, or stderr, try to use the standard
+     * FILE, unless it's already in use.  Otherwise allocate a new
+     * FILE structure.
+     */
+
+    if (streamID <= 2) {
+	if (streamID == 0) {
+	    stream = stdin;
+	} else if (streamID == 1) {
+	    stream = stdout;
+	} else if (streamID == 2) {
+	    stream = stderr;
+	}
+	if (stream->flags == 0) {
+	    goto gotStream;
+	}
+    }
+    stream = (FILE *) malloc(sizeof(FILE));
+    stream->nextPtr = stdioFileStreams;
+    stdioFileStreams = stream;
+
+    gotStream:
+    read = write = 0;
+    if ((access[1] == '+') || ((access[1] == 'b') && (access[2] == '+'))) {
+	read = write = 1;
+    } else if (access[0]  == 'r') {
+	read = 1;
+    } else {
+	write = 1;
+    }
+
+    /*
+     * Seek to the end of the file if we're in append mode (I'm not sure
+     * this should be necessary, but UNIX programs seem to depend on it).
+     */
+
+    if (access[0] == 'a') {
+	(void) lseek(streamID, 0, 2);
+    }
+
+    Stdio_Setup(stream, read, write, stdioTempBuffer, 0,
+	    StdioFileReadProc, StdioFileWriteProc, StdioFileCloseProc,
+	    (ClientData) streamID);
+    return(stream);
+}
+@
+
+
+1.5.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdio/RCS/fdopen.c,v 1.5 88/10/01 10:18:08 ouster Exp $ SPRITE (Berkeley)";
+@
+
+
+1.4
+log
+@Lint.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: fdopen.c,v 1.3 88/07/22 09:11:38 ouster Exp $ SPRITE (Berkeley)";
+d94 9
+@
+
+
+1.3
+log
+@Check for a bad stream identifier:  some UNIX procedures depend
+on this, apparently.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: fdopen.c,v 1.2 88/07/20 18:12:17 ouster Exp $ SPRITE (Berkeley)";
+d20 2
+a21 1
+#include "stdio.h"
+@
+
+
+1.2
+log
+@Change file streams so that fdopen can be called more than once
+for a given stream id, and get separate buffers.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: fdopen.c,v 1.1 88/06/10 16:23:42 ouster Exp $ SPRITE (Berkeley)";
+d34 1
+a34 1
+ *	streamID.
+d58 4
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: atoi.c,v 1.1 88/04/28 17:20:23 ouster Exp $ SPRITE (Berkeley)";
+d37 1
+a37 1
+ *	The internal array stdioFileStreams is modified.
+d39 6
+d60 3
+a62 1
+     * If the array of file streams isn't large enough, make it larger.
+d65 7
+a71 8
+    while (streamID >= stdioNumFileStreams) {
+	FILE **newStreams;
+	int i;
+
+	newStreams = (FILE **)
+		malloc((unsigned) 2*stdioNumFileStreams*sizeof(FILE *));
+	for (i = 0; i < stdioNumFileStreams; i++) {
+	    newStreams[i] = stdioFileStreams[i];
+d73 2
+a74 2
+	for (i = stdioNumFileStreams; i < 2*stdioNumFileStreams; i++) {
+	    newStreams[i] = NULL;
+a75 5
+	if (stdioNumFileStreams != INIT_NUM_STREAMS) {
+	    free((char *) stdioFileStreams);
+	}
+	stdioFileStreams = newStreams;
+	stdioNumFileStreams *= 2;
+d77 3
+d81 1
+a81 17
+    /*
+     * If there's already a structure for this stream, then free up its
+     * buffer.  Otherwise, allocate new space.
+     */
+
+    stream = stdioFileStreams[streamID];
+    if (stream != NULL) {
+	if ((stream->buffer != stdioTempBuffer)
+		&& (stream->buffer != NULL)
+		&& !(stream->flags & STDIO_NOT_OUR_BUF)) {
+	    free((char *) stream->buffer);
+	}
+    } else {
+	stream = (FILE *) malloc(sizeof(FILE));
+	stdioFileStreams[streamID] = stream;
+    }
+
+@

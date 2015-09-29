@@ -1,0 +1,7 @@
+This stuff almost builds.  The tm file needs to define TARGET_DEFAULT;
+this should probably be done by a higher-level tm file that includes
+tm-m68k.h.  There may be other things that the tm file needs to do;
+see ../cc/dist/config/tm-sun*.h to get an idea of what might be
+lacking.
+
+-mdk

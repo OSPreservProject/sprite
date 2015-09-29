@@ -1,0 +1,2966 @@
+head     9.13;
+branch   ;
+access   ;
+symbols  ds3100:9.13 sun3:9.13 sun4nw:9.11 symm:9.11 spur:9.11 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.13
+date     92.09.29.15.52.24;  author jhh;  state Exp;
+branches ;
+next     9.12;
+
+9.12
+date     92.03.20.16.45.10;  author jhh;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     91.09.10.18.18.43;  author rab;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     91.06.28.12.07.08;  author mgbaker;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     91.05.22.16.24.00;  author mgbaker;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     91.05.22.15.38.42;  author mgbaker;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.11.05.18.03.39;  author jhh;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.10.10.14.55.09;  author kupfer;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.10.09.11.50.55;  author jhh;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.09.26.12.23.25;  author kupfer;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.07.30.11.36.22;  author shirriff;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.07.18.14.55.17;  author shirriff;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.31.08.54.23;  author mendel;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.55.46;  author douglis;  state Stable;
+branches ;
+next     8.9;
+
+8.9
+date     89.08.30.11.01.19;  author douglis;  state Exp;
+branches ;
+next     8.8;
+
+8.8
+date     89.07.29.04.02.28;  author rab;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.07.21.12.27.20;  author rab;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.06.30.01.06.13;  author rab;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.06.10.11.21.31;  author rab;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.04.11.09.15.35;  author mendel;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.04.11.09.00.53;  author mendel;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.02.19.20.29.38;  author jhh;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.12.04.14.10.03;  author ouster;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.07.46;  author douglis;  state Stable;
+branches ;
+next     6.6;
+
+6.6
+date     88.11.07.14.05.59;  author mlgray;  state Exp;
+branches ;
+next     6.5;
+
+6.5
+date     88.11.01.09.29.05;  author mendel;  state Exp;
+branches ;
+next     6.4;
+
+6.4
+date     88.11.01.09.23.31;  author douglis;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.08.27.17.43.49;  author nelson;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.24.18.14.14;  author nelson;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.24.17.47.05;  author nelson;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.10.38;  author brent;  state Stable;
+branches ;
+next     5.11;
+
+5.11
+date     88.05.05.17.47.49;  author nelson;  state Exp;
+branches ;
+next     5.10;
+
+5.10
+date     88.05.04.16.54.04;  author nelson;  state Exp;
+branches ;
+next     5.9;
+
+5.9
+date     88.05.01.18.40.33;  author nelson;  state Exp;
+branches ;
+next     5.8;
+
+5.8
+date     88.01.18.15.00.24;  author nelson;  state Exp;
+branches ;
+next     5.7;
+
+5.7
+date     87.12.15.15.27.30;  author nelson;  state Exp;
+branches ;
+next     5.6;
+
+5.6
+date     87.12.12.16.32.56;  author nelson;  state Exp;
+branches ;
+next     5.5;
+
+5.5
+date     87.12.03.15.45.38;  author nelson;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     87.10.07.10.26.33;  author nelson;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     87.09.30.12.47.14;  author nelson;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.09.29.15.43.35;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.09.18.12.30.34;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.09.18.12.26.42;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.13
+log
+@Got rid of non-ethernet warning.
+@
+text
+@/* dbgMain.c -
+ *
+ *     This contains the routines which read and execute commands from kdbx.
+ *
+ *     All reads and writes to kdbx occur over channel A of the Rs232 line.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/dbg/sun3.md/dbgMain.c,v 9.12 92/03/20 16:45:10 jhh Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <dbg.h>
+#include <dbgInt.h>
+#include <main.h>
+#include <mach.h>
+#include <proc.h>
+#include <vm.h>
+#include <vmMach.h>
+#include <machMon.h>
+#include <net.h>
+#include <netEther.h>
+#include <netInet.h>
+#include <dev.h>
+#include <devVid.h>
+#include <bstring.h>
+#include <string.h>
+#include <stdio.h>
+
+/*
+ * This violates Sprite coding conventions and should be fixed.
+ */
+
+extern Address vmStackBaseAddr;
+extern Address vmStackEndAddr;
+extern Address vmBlockCacheBaseAddr;
+extern Address vmBlockCacheEndAddr;
+extern int VmMachGetKernelContext();
+extern void VmMachSetKernelContext();
+extern VmMachPTE VmMachGetPageMap();
+
+
+Boolean	dbg_BeingDebugged = FALSE;		/* TRUE if are under control
+						 * of kdbx.*/
+Boolean	dbg_UsingNetwork = FALSE;		/* TRUE if the debugger is
+						 * using the network interface*/
+char	requestBuffer[DBG_MAX_REQUEST_SIZE];	/* Buffer to receive request
+						 * into. */
+int	requestOffset;				/* Offset in buffer where next
+						 * bytes should be read from.*/
+char	replyBuffer[DBG_MAX_REPLY_SIZE];	/* Buffer to hold reply. */
+int	replyOffset = 0;			/* Offset in buffer where next
+						 * bytes in reply should go. */
+int	curMsgNum;				/* The current message that
+						 * is being processed. */
+int	dbgMonPC;				/* Place to get the PC from
+						 * if trap via the monitor.*/
+int	dbgTraceLevel;				/* The debugger tracing
+						 * level. */
+Boolean dbg_SyncedDisks = FALSE;                /* For determining in the
+                                                 * debugger whether the disks
+                                                 * got sync'd or not. */
+
+/*
+ * Number of times to poll before timing out and resending (about 2 seconds).
+ */
+#ifdef sun3
+int	dbgTimeout = 50000;
+#else
+int	dbgTimeout = 15000;
+#endif
+
+/*
+ * Information about the latest packet received.
+ */
+Boolean			gotPacket;	
+int			dbgPacketLength;
+Net_InetAddress		dbgMyIPAddr;
+Net_InetAddress		dbgSrcIPAddr;
+Net_InetAddress		dbgSrcPort;
+Net_EtherHdr		dbgEtherHdr;
+Net_ScatterGather	dbgGather;
+Net_Interface		*dbgInterPtr = (Net_Interface *) NIL;
+
+/*
+ * Size of debugging packet header and data.
+ */
+#define	PACKET_HDR_SIZE (sizeof(Net_EtherHdr) + Dbg_PacketHdrSize() + 4)
+#define PACKET_DATA_SIZE (DBG_MAX_REPLY_SIZE - PACKET_HDR_SIZE)
+
+/*
+ * Strings which describe each of the opcodes that kdbx can send us.
+ */
+static char *opcodeNames[] =  {
+	"Read all GPRS",
+	"Write GPR",
+	"Continue",
+	"Single Step",
+	"Detach",
+	"Inst Read",
+	"Inst Write",
+	"Data Read",
+	"Data Write",
+	"Process to walk stack for",
+	"Read information after stopped",
+	"Return version string",
+	"Divert syslog to the console",
+	"Reboot the machine",
+	"Set up things to start a call command",
+	"Clean up things after a call command has executed",
+	"UNKNOWN OPCODE"
+};
+
+/*
+ * Strings which describe the different exceptions that can occur.
+*/
+static char *exceptionNames[] = {
+  /* 0 */   "Reset",
+  /* 1 */   "UNKNOWN EXCEPTION",
+  /* 2 */   "Bus Error",
+  /* 3 */   "Address Error",
+  /* 4 */   "Illegal Instruction",
+  /* 5 */   "Zero Div",
+  /* 6 */   "CHK Instruction",
+  /* 7 */   "TrapV",
+  /* 8 */   "Privilege Violation",
+  /* 9 */   "Trace Trap",
+  /* 10 */  "EMU 1010",
+  /* 11 */  "EMU 1111",
+  /* 12 */  "UNKNOWN EXCEPTION",
+  /* 13 */  "Coprocessor Protocol Violation",
+  /* 14 */  "Stack Format Error",
+  /* 15 */  "Uninitialized Vector",
+  /* 16 */  "UNKNOWN EXCEPTION",
+  /* 17 */  "UNKNOWN EXCEPTION",
+  /* 18 */  "UNKNOWN EXCEPTION",
+  /* 19 */  "UNKNOWN EXCEPTION",
+  /* 20 */  "UNKNOWN EXCEPTION",
+  /* 21 */  "UNKNOWN EXCEPTION",
+  /* 22 */  "UNKNOWN EXCEPTION",
+  /* 23 */  "UNKNOWN EXCEPTION",
+  /* 24 */  "Spurious Interrupt",
+  /* 25 */  "Level 1 Interrupt",
+  /* 26 */  "Level 2 Interrupt",
+  /* 27 */  "Level 3 Interrupt",
+  /* 28 */  "Level 4 Interrupt",
+  /* 29 */  "Level 5 Interrupt",
+  /* 30 */  "Level 6 Interrupt",
+  /* 31 */  "Level 7 Interrupt",
+  /* 32 */  "TRAP #0",
+  /* 33 */  "Syscall Trap",
+  /* 34 */  "Signal Return Trap",
+  /* 35 */  "Bad Trap",
+  /* 36 */  "TRAP #4",
+  /* 37 */  "TRAP #5",
+  /* 38 */  "TRAP #6",
+  /* 39 */  "TRAP #7",
+  /* 40 */  "TRAP #8",
+  /* 41 */  "TRAP #9",
+  /* 42 */  "TRAP #10",
+  /* 43 */  "TRAP #11",
+  /* 44 */  "TRAP #12",
+  /* 45 */  "TRAP #13",
+  /* 46 */  "TRAP #14",
+  /* 47 */  "Breakpoint Trap",
+  /* 48 */  "FPU Unordered Condition",
+  /* 49 */  "FPU Inexact Result",
+  /* 50 */  "FPU Zero Divide",
+  /* 51 */  "FPU Underflow",
+  /* 52 */  "FPU Operand Error",
+  /* 53 */  "FPU Overflow",
+  /* 54 */  "FPU NaN",
+  /* 55 */  "UNKNOWN EXCEPTION",
+};
+
+/*
+ * The type of machine that we are on.
+ */
+int		machineType;
+
+/*
+ * Whether syslog should remain diverted on continue or not.
+ */
+static Boolean	syslogDiverted = FALSE;
+
+/*
+ * This is a typedef which is used to take care of the hole that is put in
+ * the stack when we are called.
+ */
+typedef struct {
+    char	hole[DBG_STACK_HOLE];
+} StackHole;
+
+/*
+ * All of the stuff that is put onto the stack when the debugger is entered.
+ */
+typedef struct {
+    int			gprs[MACH_NUM_GPRS];
+    Mach_TrapStack	trapStack;
+} DbgStack;
+
+/*
+ * Declare global variables.
+ */
+int		dbgSfcReg;
+int		dbgDfcReg;
+int 		dbgUserContext;
+int 		dbgKernelContext;
+DbgStack	dbgGlobalStack;
+int		dbgTermReason;
+int		dbgInDebugger;
+int		dbgIntPending;
+int		dbgExcType;
+Boolean		dbgPanic;
+int		dbgSavedSP;
+int		dbgMaxStackAddr;
+Boolean		dbg_UsingSyslog = FALSE;
+Boolean		dbgCanUseSyslog = TRUE;
+static	   int	oldContext;
+
+/*
+ * Saved exception stack stuff.
+ */
+static	int		savedDbgStackLength;
+static	int		savedExcStackLength;
+static	DbgStack	savedDbgStack;
+static	Boolean		callInProgress = FALSE;
+
+/* 
+ * Forward declarations:
+ */
+static void DbgCheckNmis _ARGS_((void));
+static char *	TranslateOpcode _ARGS_((Dbg_Opcode opcode));
+static char *	TranslateException _ARGS_((int exception));
+static Boolean	ReadRequest _ARGS_((Boolean timeout));
+static void	SendReply _ARGS_((void));
+static void	GetRequestBytes _ARGS_((int numBytes, Address dest));
+static void	PutReplyBytes _ARGS_((int numBytes, Address src));
+
+extern	void	Dbg_Main _ARGS_((StackHole stackHole,
+				 DbgStack dbgStack));
+				/* called from assembly code? */
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * DbgCheckNmis --
+ *
+ *	Turn Non-maskable-interrupts on and off to allow keyboard events to
+ *	take place.  Only needed on Sun-2's because of the funny mapping
+ *	between kernel and user address spaces - they are turned on in the
+ *	main debugging loop on Sun-3's.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static void
+DbgCheckNmis()
+{
+#ifdef sun2
+    int	oldContext;
+    oldContext = VmMachGetKernelContext(); 
+    VmMachSetKernelContext(VMMACH_KERN_CONTEXT);
+    Mach_MonStartNmi();
+    Mach_MonStopNmi();
+    VmMachSetKernelContext(oldContext);
+#endif
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Dbg_InRange --
+ *
+ *     Return true if the given address is a valid kernel address and false
+ *     otherwise.
+ *
+ * Results:
+ *     True if the given address is a valid kernel address and false
+ *     otherwise.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+Boolean Dbg_InRange(addr, numBytes, writeable) 
+    unsigned 	int addr; 	/* Beginning address to check. */
+    int		numBytes; 	/* Number of bytes to check. */
+    Boolean	writeable;	/* TRUE => address must be writeable. */
+{
+    VmMachPTE		pte;
+    int			i;
+    unsigned	int	prot;
+    int			firstPage;
+    int			lastPage;
+    unsigned	int	maxAddr;
+
+#ifdef sun2
+    maxAddr = 0x1000000;
+#else
+    /*
+     * Don't look at anything in device space. 
+     */
+    maxAddr = 0x10000000;
+#endif
+    if (addr > maxAddr || (addr + numBytes - 1) > maxAddr) {
+	return(FALSE);
+    }
+    /*
+     * Don't look at anything in device space. 
+     */
+    if (!(((addr + numBytes - 1) < VMMACH_DEV_START_ADDR) ||
+	 (addr >= VMMACH_DMA_START_ADDR))) {
+	return FALSE;
+    }
+    if ((int) (addr) & 0x1) {
+	printf("Dbg: odd address: %x\n", addr);
+	return(FALSE);
+    }
+
+    firstPage = ((unsigned int) addr) >> VMMACH_PAGE_SHIFT;
+    lastPage = (((unsigned int) addr) + numBytes - 1) >> VMMACH_PAGE_SHIFT;
+    for (i = firstPage; i <= lastPage; i++) {
+	pte = VmMachGetPageMap((Address)(i << VMMACH_PAGE_SHIFT));
+	prot = pte & VMMACH_PROTECTION_FIELD;
+	if (!(pte & VMMACH_RESIDENT_BIT)) {
+	    return(FALSE);
+	} else if (writeable) {
+	    if (prot != VMMACH_KRW_PROT && prot != VMMACH_URW_PROT) {
+		return(FALSE);
+	    }
+	} else {
+	    if (prot != VMMACH_KRW_PROT && prot != VMMACH_URW_PROT &&
+		prot != VMMACH_KR_PROT && prot != VMMACH_UR_PROT) {
+		return(FALSE);
+	    }
+	}
+    }
+
+    return(TRUE);
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * TranslateOpcode --
+ *
+ *     Return the string which describes the given opcode.
+ *
+ * Results:
+ *     The string which describes the given opcode.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static char *
+TranslateOpcode(opcode)
+    Dbg_Opcode opcode;		/* The opcode which is to be translated. */
+{
+	int index;
+
+	index = (int) opcode;
+	if (index < 0 || index > (int) DBG_UNKNOWN) {
+	    index = (int) DBG_UNKNOWN;
+	}
+
+	return(opcodeNames[index]);
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * TranslateException --
+ *
+ *     Return the string that describes the given exception.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static char *
+TranslateException(exception)
+    int exception;		/* The exception which is to be translated. */
+{
+
+	if (exception < 0 || exception > MACH_UNKNOWN_EXC) {
+	    exception = MACH_UNKNOWN_EXC;
+	}
+
+	return(exceptionNames[exception]);
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * DbgComplain --
+ *
+ *     Complain because we are already in the debugger.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+DbgComplain(trapStack)
+    Mach_TrapStack	trapStack;
+{
+    printf("%s exception in the debugger at pc %x addr %x\n",
+	   TranslateException(trapStack.trapType), 
+	   trapStack.excStack.pc,
+	   trapStack.excStack.tail.addrBusErr.faultAddr);
+    Mach_MonAbort();
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Dbg_Init --
+ *
+ *     Initialize the debugger.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     dbgMonPC and dbgDoTrace are initialized.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+Dbg_Init()
+{
+    dbgMonPC = 0;
+    dbgTraceLevel = 0;
+    dbgInDebugger = 0;
+    dbgIntPending = 0;
+    dbgPanic = FALSE;
+    dbg_BeingDebugged = FALSE;
+    machineType = Mach_GetMachineType();
+    Mach_MonPrintf("Machine type %d\n", machineType);
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Dbg_InputPacket --
+ *
+ *     See if the current packet is for us.  At the moment this only 
+ *	handles ethernet packets.
+ *
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     gotPacket is set to true if we got a packet that we liked.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+Dbg_InputPacket(interPtr, packetPtr, packetLength)
+    Net_Interface	*interPtr;
+    Address		packetPtr;
+    int			packetLength;
+{
+    Address	dataPtr;
+    int		dataLength;
+    Net_EtherHdr	*etherHdrPtr;
+
+    if (interPtr->netType != NET_NETWORK_ETHER) {
+	return;
+    }
+    etherHdrPtr = (Net_EtherHdr *)packetPtr;
+    if (etherHdrPtr->type != NET_ETHER_IP) {
+	if (dbgTraceLevel >= 5) {
+	    printf("Non-IP (Type=0x%x) ", (int)etherHdrPtr->type);
+	}
+	return;
+    }
+    if (gotPacket) {
+	if (dbgTraceLevel >= 4) {
+	    printf("Already have a packet.\n");
+	}
+	return;
+    }
+    if (dbgTraceLevel >= 4) {
+	printf("Validating packet\n");
+    }
+    if (Dbg_ValidatePacket(packetLength - sizeof(Net_EtherHdr),
+			   (Net_IPHeader *)(packetPtr + sizeof(Net_EtherHdr)),
+			   &dataLength, &dataPtr,
+			   &dbgMyIPAddr, &dbgSrcIPAddr, &dbgSrcPort)) {
+	if (dbgTraceLevel >= 4) {
+	    printf("Got a packet: length=%d\n", dataLength);
+	}
+	bcopy((Address)etherHdrPtr, (Address)&dbgEtherHdr,
+		sizeof(Net_EtherHdr));
+	gotPacket = TRUE;
+	bcopy(dataPtr, requestBuffer, dataLength);
+	/*
+	 * Set the interface we are using. 
+	 */
+	dbgInterPtr = interPtr;
+    }
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * ReadRequest --
+ *
+ *     Read the next request from kdbx.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     TRUE if didn't time out.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static Boolean
+ReadRequest(timeout)
+    Boolean	timeout;	/* TRUE if should timeout after waiting a 
+				 * while. */
+{
+	int	timeOutCounter;
+	Net_Interface	*interPtr;
+	int		i;
+
+	gotPacket = FALSE;
+	timeOutCounter = dbgTimeout;
+	do {
+	    DbgCheckNmis();
+	    /*
+	     * Listen on all the interfaces. The debugger is relatively
+	     * stateless so its easiest to just listen on them all.
+	     */
+	    for (i = 0; ; i++) {
+		interPtr = Net_NextInterface(TRUE, &i);
+		if (interPtr == (Net_Interface *) NIL) {
+		    break;
+		}
+		Net_RecvPoll(interPtr);
+		if (gotPacket) {
+		    break;
+		}
+	    }
+	    if (timeout) {
+		timeOutCounter--;
+	    }
+	} while(!gotPacket && timeOutCounter != 0);
+	if (gotPacket) {
+	    replyOffset = PACKET_HDR_SIZE;
+	    requestOffset = 4;
+	    curMsgNum = *(int *)(requestBuffer);
+	    if (dbgTraceLevel >= 4) {
+		printf("MsgNum = %d\n", curMsgNum);
+	    }
+	}
+
+	return(gotPacket);
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * GetRequestBytes --
+ *
+ *     Get the next numBytes bytes from the current request.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static void
+GetRequestBytes(numBytes, dest)
+    int		numBytes;
+    Address	dest;
+{
+	bcopy(requestBuffer + requestOffset, dest, numBytes);
+	requestOffset += numBytes;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * PutReplyBytes --
+ *
+ *     Put the given bytes into the reply buffer.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static void
+PutReplyBytes(numBytes, src)
+    int		numBytes;
+    Address	src;
+{
+    if (replyOffset + numBytes > DBG_MAX_REPLY_SIZE) {
+	printf("PutReplyBytes: Buffer overflow\n");
+	numBytes = DBG_MAX_REPLY_SIZE - replyOffset;
+    }
+    bcopy(src, &replyBuffer[replyOffset], numBytes);
+    replyOffset += numBytes;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * SendReply --
+ *
+ *     Send a reply to kdbx.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static void
+SendReply()
+{
+	Net_EtherHdr		*etherHdrPtr;
+
+	if (dbgTraceLevel >= 4) {
+	    printf("Sending reply\n");
+	}
+	etherHdrPtr = (Net_EtherHdr *) replyBuffer;
+	etherHdrPtr->source = dbgEtherHdr.destination;
+	etherHdrPtr->destination = dbgEtherHdr.source;
+	etherHdrPtr->type = dbgEtherHdr.type;
+	dbgGather.bufAddr = replyBuffer + sizeof(Net_EtherHdr);
+	dbgGather.length = replyOffset - sizeof(Net_EtherHdr);
+	dbgGather.mutexPtr = (Sync_Semaphore *) NIL;
+	*(int *)(replyBuffer + PACKET_HDR_SIZE - 4) = curMsgNum;
+	Dbg_FormatPacket(dbgMyIPAddr, dbgSrcIPAddr, dbgSrcPort,
+		     replyOffset - sizeof(Net_EtherHdr) - Dbg_PacketHdrSize(),
+		     replyBuffer + sizeof(Net_EtherHdr));
+	(void) Net_RawOutput(dbgInterPtr, (Address) etherHdrPtr, &dbgGather, 1);
+	if (dbgTraceLevel >= 4) {
+	    printf("Sent reply\n");
+	}
+}
+
+/*
+ * 68020 and 68010 moveml instructions work differently.  68010 stores
+ * original value of sp and 68020 stores sp - 4.  This has to be fixed
+ * when getting around the exception stack.
+ */
+#ifdef sun3
+#define STACK_INC	4
+#endif
+#ifdef sun2
+#define STACK_INC	0
+#endif
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Dbg_Main --
+ *
+ *     The main debugger loop.  This will read commands from the rs232 line
+ *     and call the proper routine to execute them.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+void
+Dbg_Main(stackHole, dbgStack)
+    StackHole		stackHole;	/* The hole put in the stack so that
+					 * kdbx can play around with the stack*/
+    DbgStack		dbgStack;	/* All of the stuff that is put onto the
+					 * stack because of the exception and
+					 * the trap handler. */
+{
+    short		trapCode;	/* Reason that we trapped that is sent
+					 * to kdbx. */
+    Boolean	  	done;		/* Boolean to tell us whether to leave
+					 * the main debugger loop */
+    int		  	dbgStackLength;/* The length of the trap stack */
+    int		  	excStackLength;	/* The length of the exception part 
+					 * of the trap stack */
+    Dbg_Opcode	  	opcode;		/* The operation that was requested */
+    short	  	tOpcode;	/* Temporary used to receive the opcode
+					 * which is sent as a short. */
+					/* Process table entry that we switched
+					 * stacks to. */
+    Proc_ControlBlock	*procPtr = (Proc_ControlBlock *) NIL;
+    Boolean		atInterruptLevel;/* TRUE if we were entered from an
+					  * interrupt handler. */
+
+#ifdef sun3
+    /*
+     * Turn on non-maskable interrupts.
+     */
+    Mach_MonStartNmi();
+#endif
+    /*
+     * Switch to kernel context so that we can access the monitor.
+     */
+    oldContext = VmMachGetKernelContext();
+    VmMachSetKernelContext(VMMACH_KERN_CONTEXT);
+
+#ifdef NOTDEF
+/*
+ * This code causes machines to seem to pop out of the debugger.
+ */
+    if (!dbg_BeingDebugged) {
+        /*
+         * Try to sync the disks if we aren't at interrupt level.  If we
+         * are don't bother because we'll just hang waiting for interrupts.
+         * Of course I could force interrupts to be enabled but I'm not sure
+         * if that's a great idea.
+         */
+        if (mach_NumDisableIntrsPtr[0] == 0 && !mach_AtInterruptLevel) {
+            Mach_EnableIntr();
+            Sys_SyncDisks(!MACH_BRKPT_TRAP);
+            dbg_SyncedDisks = TRUE;
+            Mach_DisableIntr();
+        }
+    }
+#endif NOTDEF
+
+    /*
+     * Put us at interrupt level so that printf won't accidently enable
+     * interrupts.
+     */
+    atInterruptLevel = mach_AtInterruptLevel;
+    mach_AtInterruptLevel = TRUE;
+
+
+    /*
+     * Force system log output to the console.
+     */
+    if (!syslogDiverted) {
+	Dev_SyslogDebug(TRUE);
+    }
+
+    /*
+     * We want to inform the user what caused the problem.  However we only
+     * tell him if: 1) we are debugging the debugger; 2) we are not under 
+     * debugger control (i.e. we don't want to inform the user on every trace 
+     * trap), 3) we got something besides a trace trap or a breakpoint trap
+     * exception.
+     */
+    if (dbgTraceLevel >= 1 || !dbg_BeingDebugged || 
+        (dbgStack.trapStack.trapType != MACH_TRACE_TRAP && 
+         dbgStack.trapStack.trapType != MACH_BRKPT_TRAP)) { 
+	Dev_VidEnable(TRUE);	/* unblank the screen */
+	printf("Entering debugger with a %s exception at PC 0x%x\r\n",
+		   TranslateException(dbgStack.trapStack.trapType),
+		   (unsigned) dbgStack.trapStack.excStack.pc);
+    }
+
+    /*
+     * The saved stack pointer points to all of the junk on the stack from
+     * the exception.  We need to move the saved stack pointer past all of
+     * this junk to the point where kdbx sees what it expects (it doesn't 
+     * understand exception stacks).  Also we need to copy all of the 
+     * trap stack to a global variable.  This allows access to this stack 
+     * through the debugger (kdbx doesn't know we are in this routine so the
+     * parameter dbgStack cannot be printed out in kdbx).
+     *
+     * NOTE:
+     *
+     * When kdbx does a "call" command it adds things onto the stack starting 
+     * from the saved stack pointer.  When it does this it will trash the 
+     * trap stack that we were passed.  Thus saving a copy of the trap
+     * stack also serves the purpose of preventing kdbx from trashing the
+     * original copy.
+     */
+    excStackLength = Mach_GetExcStackSize(&dbgStack.trapStack.excStack);
+    dbgStackLength = sizeof(DbgStack) - sizeof(Mach_ExcStack) + excStackLength;
+
+    bcopy((Address) &dbgStack, (Address) &dbgGlobalStack, dbgStackLength);
+
+    dbgGlobalStack.gprs[SP] += excStackLength + STACK_INC + 
+			       MACH_TRAP_INFO_SIZE;
+
+    /*
+     * Clear the trace bit from the status register.
+     */
+    dbgGlobalStack.trapStack.excStack.statusReg &= ~MACH_SR_TRACEMODE;
+
+    /*
+     * We need to tell kdbx what type of exception this is.  If the
+     * termReason is DBG_INTERRUPT_SIG then we set the trap code to
+     * interrupted.  Otherwise we don't know what caused us to get here so
+     * we have to check the exception type.  If the exception is either a
+     * trace trap of a breakpoint trap then we set the term reason to
+     * DBG_TRACE_TRAP_SIG and set the trap code appropriately.  Otherwise we 
+     * tell kdbx that the reason was an DBG_INTERRUPT_SIG and we set the trap
+     * code appropriately for the given exception.
+     */
+    trapCode = dbgStack.trapStack.trapType;
+    if (dbgTermReason == DBG_INTERRUPT_SIG) {
+	trapCode = DBG_INTERRUPT;
+    } else if (dbgPanic) {
+	dbgPanic = FALSE;
+	trapCode = DBG_INTERRUPT;
+        dbgTermReason = DBG_INTERRUPT_SIG;
+    } else if (dbgStack.trapStack.trapType == MACH_TRACE_TRAP ||
+	       dbgStack.trapStack.trapType == MACH_BRKPT_TRAP) {
+	dbgTermReason = DBG_TRACE_TRAP_SIG;
+    } else {
+	dbgTermReason = DBG_INTERRUPT_SIG;
+    }
+
+    dbg_UsingNetwork = TRUE;
+
+    /*
+     * If we are stopped after a continue or single step must write a
+     * null byte to the debugger at the other end.  It knows that if it sees
+     * a null byte we are stopped at this end.
+     */
+    if (dbg_BeingDebugged) {
+	unsigned	char	ch;
+
+	ch = 0;
+	PutReplyBytes(1, (Address)&ch);
+	SendReply();
+	do {
+	    if (ReadRequest(TRUE)) {
+		GetRequestBytes(2, (Address)&tOpcode);
+		opcode = (Dbg_Opcode) tOpcode;
+		if (opcode == DBG_GET_STOP_INFO) {
+		    break;
+		}
+	    }
+	    /*
+	     * We can only timeout if we are using network debugging.
+	     */
+	    (void) Net_RawOutput(dbgInterPtr, (Address) replyBuffer, 
+		    &dbgGather, 1);
+	    if (dbgTraceLevel >= 5) {
+		printf("DBG: Timeout\n");
+	    }
+	    printf("TI ");
+	} while (TRUE);
+    } else {
+	(void) ReadRequest(FALSE);
+	GetRequestBytes(2, (Address)&tOpcode);
+	opcode = (Dbg_Opcode) tOpcode;
+    }
+
+    /*
+     * Now read commands until kdbx tells us that we can return.
+     */
+    done = FALSE;
+    while (!done) {
+	if (dbgTraceLevel >= 2) {
+	    printf("Request: %s ", TranslateOpcode(opcode));
+	}
+
+	/*
+	 * Process the request 
+	 */
+	switch (opcode) {
+
+	    /*
+	     * The client wants to read some data from us ...
+	     */
+
+	    case DBG_GET_STOP_INFO: {
+		StopInfo	stopInfo;
+		extern void	Mach_ContextSwitch();
+		stopInfo.codeStart = (int)mach_CodeStart;
+		if (procPtr != (Proc_ControlBlock *) NIL &&
+		    procPtr->machStatePtr != (Mach_State *)NIL) {
+		    stopInfo.maxStackAddr =
+			(int)(procPtr->machStatePtr->kernStackStart + 
+			      mach_KernStackSize);
+		    bcopy((Address) procPtr->machStatePtr->switchRegs,
+			    (Address) stopInfo.genRegs,
+			    sizeof(procPtr->machStatePtr->switchRegs));
+		    stopInfo.pc = (int) ((Address) Mach_ContextSwitch);
+		} else {
+		    stopInfo.maxStackAddr = dbgMaxStackAddr;
+		    bcopy((Address) dbgGlobalStack.gprs, 
+			    (Address) stopInfo.genRegs,
+			    sizeof(dbgGlobalStack.gprs));
+		    stopInfo.pc = dbgGlobalStack.trapStack.excStack.pc;
+		}
+		stopInfo.termReason = dbgTermReason;
+		stopInfo.trapCode = trapCode;
+		stopInfo.statusReg = 
+		(unsigned short) dbgGlobalStack.trapStack.excStack.statusReg;
+		PutReplyBytes(sizeof(stopInfo), (Address)&stopInfo);
+		SendReply();
+		break;
+	    }
+	    case DBG_READ_ALL_GPRS:
+		if (procPtr != (Proc_ControlBlock *) NIL &&
+		    procPtr->machStatePtr != (Mach_State *)NIL) {
+		    PutReplyBytes(sizeof(procPtr->machStatePtr->switchRegs),
+				 (Address) procPtr->machStatePtr->switchRegs);
+		} else {
+		    PutReplyBytes(sizeof(dbgGlobalStack.gprs),
+			         (Address) dbgGlobalStack.gprs);
+		}
+		SendReply();
+		break;
+
+	    case DBG_GET_DUMP_BOUNDS: {
+		Dbg_DumpBounds bounds;
+		extern unsigned int end;
+		bounds.pageSize = vm_PageSize;
+		bounds.stackSize = mach_KernStackSize;
+		bounds.kernelCodeStart = (unsigned int) mach_KernStart;
+		bounds.kernelCodeSize  = 
+			(unsigned int) (((Address)(&end)) - mach_KernStart);
+		bounds.kernelDataStart	= ((unsigned int)(&end));
+		bounds.kernelDataSize	= (unsigned int) 
+				(vmMemEnd - ((Address)(&end)));
+		bounds.kernelStacksStart = (unsigned int)vmStackBaseAddr;
+		bounds.kernelStacksSize = (unsigned int) 
+				(vmStackEndAddr - vmStackBaseAddr);
+		bounds.fileCacheStart	= (unsigned int)vmBlockCacheBaseAddr;
+		bounds.fileCacheSize	= (unsigned int) (vmBlockCacheEndAddr - 
+						vmBlockCacheBaseAddr);
+
+		PutReplyBytes(sizeof(bounds), (char *)&bounds);
+		SendReply();
+		break;
+	    }
+	    
+	    case DBG_GET_VERSION_STRING: {
+		char	*version;
+
+		version = SpriteVersion();
+		PutReplyBytes(strlen(version) + 1, version);
+		SendReply();
+		break;
+	    }
+	    case DBG_INST_READ:
+	    case DBG_DATA_READ: {
+		Dbg_ReadMem	readMem;
+		int		status;
+
+		GetRequestBytes(sizeof(readMem), (Address) &readMem); 
+		if (dbgTraceLevel >= 2) {
+		    printf("Addr=%x Numbytes=%d ",
+				readMem.address, readMem.numBytes);
+		}
+
+		VmMachSetKernelContext(oldContext);
+		if (Dbg_InRange((unsigned int) readMem.address, readMem.numBytes,
+			    FALSE)) {
+		    status = 1;
+		    PutReplyBytes(sizeof(status), (Address)&status);
+		    PutReplyBytes(readMem.numBytes, (Address)readMem.address);
+		} else {
+		    if (dbgTraceLevel >= 2) {
+			printf("FAILURE ");
+		    }
+		    status = 0;
+		    PutReplyBytes(sizeof(status), (Address)&status);
+		}
+		VmMachSetKernelContext(VMMACH_KERN_CONTEXT);
+		SendReply();
+		break;
+	    }
+
+	    /*
+	     * The client wants to write something to us.
+	     */
+	    case DBG_SET_PID: {
+		Proc_PID	pid;
+
+		GetRequestBytes(sizeof(pid), (Address) &pid);
+		{
+		    int	dummy;
+
+		    PutReplyBytes(4, (Address) &dummy);
+		    SendReply();
+		}
+		if (dbgTraceLevel >= 2) {
+		    printf("pid %x ", pid);
+		}
+		if (pid == 0) {
+		    procPtr = (Proc_ControlBlock *) NIL;
+		} else {
+		    procPtr = Proc_GetPCB(pid);
+		    if (procPtr == (Proc_ControlBlock *) NIL ||
+		        procPtr == (Proc_ControlBlock *) 0 ||
+			procPtr->state == PROC_UNUSED ||
+		        procPtr->state == PROC_DEAD ||
+			procPtr->state == PROC_NEW) {
+			printf("Can't backtrace stack for process %x\n",
+					pid);
+			procPtr = (Proc_ControlBlock *) NIL;
+		    }
+		}
+		break;
+	    }
+	    case DBG_REBOOT: {
+		int	stringLength;
+		char	rebootString[100];
+		/*
+		 * For a reboot command first read the size of the string and
+		 * then the string itself.
+		 */
+		GetRequestBytes(sizeof(int), (Address)&stringLength);
+		if (stringLength != 0) {
+		    GetRequestBytes(stringLength, (Address)rebootString);
+		}
+		rebootString[stringLength] = '\0';
+		{
+		    int	dummy;
+
+		    PutReplyBytes(4, (Address) &dummy);
+		    SendReply();
+		}
+		Mach_MonReboot(rebootString);
+	    }
+	    case DBG_INST_WRITE:
+	    case DBG_DATA_WRITE: {
+		Dbg_WriteMem		writeMem;
+		unsigned	char	ch;
+		/*
+		 * For an instruction or a data write we first have to find out 
+		 * which address to write to and how many bytes to write.  Next
+		 * we have to make sure that the address is valid.  If it is
+		 * then we read the data and write it to the given address.  If
+		 * not we just report an error to kdbx.
+		 */
+		GetRequestBytes(2 * sizeof(int), (Address) &writeMem);
+		if (dbgTraceLevel >= 2) {
+		    printf("Addr=%x Numbytes=%d ",
+				writeMem.address, writeMem.numBytes);
+		}
+
+		VmMachSetKernelContext(oldContext);
+		if (Dbg_InRange((unsigned int) writeMem.address,
+			    writeMem.numBytes, opcode == DBG_DATA_WRITE)) {
+		    if (opcode == DBG_INST_WRITE) {
+			VmMach_SetProtForDbg(TRUE, writeMem.numBytes, 
+					     (Address)writeMem.address);
+		    }
+		    GetRequestBytes(writeMem.numBytes,
+				    (Address) writeMem.address);
+		    if (opcode == DBG_INST_WRITE) {
+			VmMach_SetProtForDbg(FALSE, writeMem.numBytes, 
+					     (Address)writeMem.address);
+		    }
+		    ch = 1;
+		} else {
+		    char	buf[100];
+
+		    if (dbgTraceLevel >= 2) {
+			printf("FAILURE ");
+		    }
+		    GetRequestBytes(writeMem.numBytes, buf);
+		    ch = 0;
+		}
+		VmMachSetKernelContext(VMMACH_KERN_CONTEXT);
+
+		PutReplyBytes(1, (char *) &ch);
+		SendReply();
+
+		break;
+	    }
+
+	    case DBG_WRITE_GPR: {                
+		Dbg_WriteGPR	writeGPR;
+
+		/*
+		 * First find out which register is being written and
+		 * then read the value.
+		 */
+		GetRequestBytes(sizeof(writeGPR), (Address)&writeGPR);
+		{
+		    int	dummy;
+
+		    PutReplyBytes(4, (Address) &dummy);
+		    SendReply();
+		}
+		if (dbgTraceLevel >= 2) {
+		    printf("register %d data %x ", writeGPR.regNum, 
+				writeGPR.regVal);
+		}
+		dbgGlobalStack.gprs[writeGPR.regNum] = writeGPR.regVal;
+		break;
+	    }
+
+	    case DBG_DIVERT_SYSLOG: 
+		GetRequestBytes(sizeof(Boolean), (Address)&syslogDiverted);
+		{
+		    int	dummy;
+
+		    PutReplyBytes(4, (Address) &dummy);
+		    SendReply();
+		}
+		break;
+
+	    case DBG_BEGIN_CALL:
+		/*
+		 * We are beginning a call command.  Fix up the stack
+		 * so that we will be able to continue.  We will put
+		 * it back when we are done.
+		 */
+		savedDbgStackLength = dbgStackLength;
+		savedExcStackLength = excStackLength;
+		bcopy((Address)&dbgGlobalStack, (Address)&savedDbgStack,
+			dbgStackLength);
+
+		dbgGlobalStack.trapStack.excStack.vor.stackFormat = MACH_SHORT;
+		excStackLength =
+		    Mach_GetExcStackSize(&dbgGlobalStack.trapStack.excStack);
+		dbgStackLength = excStackLength + sizeof(DbgStack) - 
+				 sizeof(Mach_ExcStack);
+
+		callInProgress = TRUE;
+		if (dbgCanUseSyslog) {
+		    dbg_UsingSyslog = TRUE;
+		}
+		  {
+		    int	dummy;
+
+		    PutReplyBytes(4, (Address) &dummy);
+		    SendReply();
+		}
+
+		break;
+	    case DBG_END_CALL: {
+		char	*buffer;
+		int	*firstIndexPtr;
+		int	*lastIndexPtr;
+		int	bufSize;
+		int	length;
+		if (callInProgress) {
+		    /*
+		     * Restore the state to the state before the
+		     * call was begun.  Note that the DBG_END_CALL command will
+		     * be executed until the sys log buffer is empty so only
+		     * need to restore our state if the callInProgress flag is
+		     * set.
+		     */
+		    dbgStackLength = savedDbgStackLength;
+		    excStackLength = savedExcStackLength;
+		    bcopy((Address)&savedDbgStack, (Address)&dbgGlobalStack,
+			    sizeof(dbgGlobalStack));
+		    callInProgress = FALSE;
+		}
+		/*
+		 * Dump the syslog buffer.
+		 */
+		Dev_SyslogReturnBuffer(&buffer, &firstIndexPtr,
+				       &lastIndexPtr, &bufSize);
+		if (*firstIndexPtr == -1) {
+		    length = 0;
+		    PutReplyBytes(4, (Address) &length);
+		    dbg_UsingSyslog = FALSE;
+		} else if (*firstIndexPtr <= *lastIndexPtr) {
+		    length = *lastIndexPtr - *firstIndexPtr + 1;
+		    if (length + 4 > PACKET_DATA_SIZE) {
+			length = PACKET_DATA_SIZE - 4;
+		    }
+		    PutReplyBytes(4, (Address) &length);
+		    PutReplyBytes(length,
+				  (Address)&buffer[*firstIndexPtr]);
+		    *firstIndexPtr += length;
+		    if (*firstIndexPtr > *lastIndexPtr) {
+			*firstIndexPtr = *lastIndexPtr = -1;
+		    }
+		} else {
+		    length = bufSize - *firstIndexPtr;
+		    if (length + 4 > PACKET_DATA_SIZE) {
+			length = PACKET_DATA_SIZE - 4;
+		    }
+		    PutReplyBytes(4, (Address) &length);
+		    PutReplyBytes(length,
+				  (Address)buffer[*firstIndexPtr]);
+		    *firstIndexPtr += length;
+		    if (*firstIndexPtr == bufSize) {
+			*firstIndexPtr = 0;
+		    }
+		}
+		SendReply();
+		break;
+	    }
+	    case DBG_CALL_FUNCTION: {
+		Dbg_CallFunc		callFunc;
+		int			returnVal;
+		static int		argBuf[128];
+		GetRequestBytes(2 * sizeof(int), (Address) &callFunc);
+		if (dbgTraceLevel >= 2) {
+		    printf("Addr=%x Numbytes=%d ",
+				callFunc.address, callFunc.numBytes);
+		}
+
+		if ((callFunc.numBytes >= 0 && callFunc.numBytes < 128) &&
+		     Dbg_InRange((unsigned int) callFunc.address,4,FALSE)) {
+		    GetRequestBytes(callFunc.numBytes,(Address) argBuf);
+		    returnVal = (* ((int (*)()) callFunc.address))(argBuf[0],
+		    argBuf[1],argBuf[2],argBuf[3],argBuf[4],argBuf[5],argBuf[6],
+		    argBuf[7],argBuf[8],argBuf[9]);
+		} else {
+
+		    if (dbgTraceLevel >= 2) {
+			printf("FAILURE ");
+		    }
+		    GetRequestBytes(callFunc.numBytes,(Address)argBuf);
+		    returnVal = -1;
+		}
+		PutReplyBytes(4, (char *) &returnVal);
+		SendReply();
+
+		break;
+	    }
+	    case DBG_CONTINUE: 
+		/*
+		 * The client wants to continue execution.
+		 */
+		GetRequestBytes(sizeof(int), 
+			    (Address) &dbgGlobalStack.trapStack.excStack.pc);
+		if (dbgTraceLevel >= 2) {
+		    printf("Continuing from pc %x ",
+				dbgGlobalStack.trapStack.excStack.pc);
+		}
+		 {
+		    int	dummy;
+
+		    PutReplyBytes(4, (Address) &dummy);
+		    SendReply();
+		}
+
+		dbg_BeingDebugged = TRUE;
+		done = TRUE;
+		break;
+
+	    case DBG_SINGLESTEP:
+		/*
+		 * The client wants to single step.
+		 */
+		GetRequestBytes(sizeof(int), 
+			    (Address) &dbgGlobalStack.trapStack.excStack.pc);
+		if (dbgTraceLevel >= 2) {
+		    printf("Stepping from pc %x ",
+				dbgGlobalStack.trapStack.excStack.pc);
+		}
+		 {
+		    int	dummy;
+
+		    PutReplyBytes(4, (Address) &dummy);
+		    SendReply();
+		}
+
+		/* 
+		 * Turn the trace bit on in the SR.
+		 */
+		dbgGlobalStack.trapStack.excStack.statusReg |= 
+							MACH_SR_TRACEMODE;
+		dbg_BeingDebugged = TRUE;
+		done = TRUE;
+		break;
+
+	    case DBG_DETACH:
+		/*
+		 * The debugger has terminated and wants to let us go about our
+		 * business.
+		 */
+		GetRequestBytes(sizeof(int), 
+			    (Address) &dbgGlobalStack.trapStack.excStack.pc);
+		if (dbgTraceLevel >= 2) {
+		    printf("Detaching at pc %x ",
+				dbgGlobalStack.trapStack.excStack.pc);
+		}
+		 {
+		    int	dummy;
+
+		    PutReplyBytes(4, (Address) &dummy);
+		    SendReply();
+		}
+
+		dbg_BeingDebugged = FALSE;
+		done = TRUE;
+		printf("Sprite is now detached from the debugger\r\n");
+		break;
+
+	    case DBG_UNKNOWN:
+		printf("debugger: unrecognized request\n");
+		break;
+	}
+
+	if (dbgTraceLevel >= 2) {
+	    printf("\r\n");
+	}
+	if (!done) {
+	    (void)ReadRequest(FALSE);
+	    GetRequestBytes(2, (Address)&tOpcode);
+	    opcode = (Dbg_Opcode) tOpcode;
+	}
+    }
+
+    /*
+     * Return from the debugger.  Before we return, we must push the trap
+     * stuff back onto the stack and restore the saved sp to point to the
+     * exception stuff on the stack.
+     */
+
+    dbgSavedSP = dbgGlobalStack.gprs[SP] - dbgStackLength;
+    dbgGlobalStack.gprs[SP] -= excStackLength + STACK_INC  +
+			          MACH_TRAP_INFO_SIZE;
+    bcopy((Address) &dbgGlobalStack, (Address) dbgSavedSP, dbgStackLength);
+
+    VmMachSetKernelContext(oldContext);
+    mach_AtInterruptLevel = atInterruptLevel;
+    dbg_UsingNetwork = FALSE;
+
+    /*
+     * Don't force system log output to the console.
+     */
+    if (!syslogDiverted) {
+	Dev_SyslogDebug(FALSE);
+    }
+#ifdef sun3
+    /*
+     * Turn off non-maskable interrupts.
+     */
+    Mach_MonStopNmi();
+#endif
+}
+@
+
+
+9.12
+log
+@No longer includes a bunch of internal vm header files.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/dbg/sun3.md/dbgMain.c,v 9.11 91/09/10 18:18:43 rab Exp $ SPRITE (Berkeley)";
+a495 2
+	printf("Got a debugger packet on non-ethernet interface %s\n",
+	    interPtr->name);
+@
+
+
+9.11
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dbg/sun3.md/RCS/dbgMain.c,v 9.10 91/06/28 12:07:08 mgbaker Exp Locker: rab $ SPRITE (Berkeley)";
+a21 1
+#include <vmInt.h>
+a22 1
+#include <vmMachInt.h>
+d32 13
+@
+
+
+9.10
+log
+@Took out disk sync so that machines will stay in the debugger.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dbg/sun3.md/RCS/dbgMain.c,v 9.9 91/05/22 16:24:00 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d358 1
+a358 1
+char *
+d388 1
+a388 1
+char *
+d671 1
+a671 1
+	Net_RawOutput(dbgInterPtr, (Address) etherHdrPtr, &dbgGather, 1);
+d871 1
+a871 1
+	    Net_RawOutput(dbgInterPtr, (Address) replyBuffer, 
+@
+
+
+9.9
+log
+@Fixed typo.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dbg/sun3.md/RCS/dbgMain.c,v 9.8 91/05/22 15:38:42 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d742 4
+d760 1
+@
+
+
+9.8
+log
+@Added code to sync disks for panics not at interrupt level.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dbg/sun3.md/RCS/dbgMain.c,v 9.7 90/11/05 18:03:39 jhh Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d751 1
+a751 1
+            Sys_SyncDisks(MACH_CALL_DBG_TRAP);
+@
+
+
+9.7
+log
+@removed debugging statements
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dbg/sun3.md/RCS/dbgMain.c,v 9.6 90/10/10 14:55:09 kupfer Exp $ SPRITE (Berkeley)";
+d52 3
+d742 15
+d763 1
+@
+
+
+9.6
+log
+@Fix typo.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dbg/sun3.md/RCS/dbgMain.c,v 9.5 90/10/09 11:50:55 jhh Exp Locker: kupfer $ SPRITE (Berkeley)";
+d444 1
+a444 1
+    dbgTraceLevel = 6;
+a554 1
+		printf("i = %d, interPtr = 0x%x\n", i, interPtr);
+@
+
+
+9.5
+log
+@new net module
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dbg/sun3.md/RCS/dbgMain.c,v 9.4 90/09/26 12:23:25 kupfer Exp Locker: jhh $ SPRITE (Berkeley)";
+d494 1
+a494 1
+	if (dbgTraceLeve >= 4) {
+@
+
+
+9.4
+log
+@Changes for function prototypes.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dbg/sun3.md/RCS/dbgMain.c,v 9.3 90/07/30 11:36:22 shirriff Exp Locker: kupfer $ SPRITE (Berkeley)";
+d72 1
+d297 3
+d305 7
+d444 1
+a444 1
+    dbgTraceLevel = 0;
+d459 3
+a461 1
+ *     See if the current packet is for us.
+d472 4
+a475 3
+Dbg_InputPacket(packetPtr, packetLength)
+    Address	packetPtr;
+    int		packetLength;
+d481 5
+d494 3
+d513 4
+d542 2
+d549 15
+a563 1
+	    Net_RecvPoll();
+d669 1
+a669 1
+	Net_OutputRawEther(etherHdrPtr, &dbgGather, 1);
+d848 2
+a849 1
+	    Net_OutputRawEther((Net_EtherHdr *)replyBuffer, &dbgGather, 1);
+@
+
+
+9.3
+log
+@Removed include of vmMachInt.h
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dbg/sun3.md/RCS/dbgMain.c,v 9.2 90/07/18 14:55:17 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d15 19
+a33 13
+#include "sprite.h"
+#include "dbg.h"
+#include "dbgInt.h"
+#include "mach.h"
+#include "proc.h"
+#include "vm.h"
+#include "vmInt.h"
+#include "vmMach.h"
+#include "machMon.h"
+#include "net.h"
+#include "netEther.h"
+#include "netInet.h"
+#include "dev.h"
+d170 13
+d217 14
+d250 1
+d392 1
+a392 1
+ *     Complain because we are allready in the debugger.
+d407 3
+a409 3
+			TranslateException(trapStack.trapType), 
+				trapStack.excStack.pc,
+				trapStack.excStack.tail.addrBusErr.faultAddr);
+d510 1
+a510 1
+Boolean
+a610 2
+    void	Dbg_FormatPacket();
+
+a633 12
+ * Whether syslog should remain diverted on continue or not.
+ */
+static Boolean	syslogDiverted = FALSE;
+/*
+ * This is a typedef which is used to take care of the hole that is put in
+ * the stack when we are called.
+ */
+typedef struct {
+    char	hole[DBG_STACK_HOLE];
+} StackHole;
+
+/*
+a899 1
+		char	*SpriteVersion();
+d1251 4
+@
+
+
+9.2
+log
+@Changed InRange to Dbg_InRange so I can use it externally.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dbg.ken/sun3.md/RCS/dbgMain.c,v 1.1 90/07/17 20:03:11 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+a19 1
+#include "vmMachInt.h"
+d22 1
+@
+
+
+9.1
+log
+@Removed lint.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dbg/sun3.md/RCS/dbgMain.c,v 8.9 89/08/30 11:01:19 douglis Exp $ SPRITE (Berkeley)";
+d233 1
+a233 1
+ * InRange --
+d247 1
+a247 1
+static Boolean InRange(addr, numBytes, writeable) 
+d900 1
+a900 1
+		if (InRange((unsigned int) readMem.address, readMem.numBytes,
+d987 1
+a987 1
+		if (InRange((unsigned int) writeMem.address,
+d1146 1
+a1146 1
+		     InRange((unsigned int) callFunc.address,4,FALSE)) {
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dbg/sun3.md/RCS/dbgMain.c,v 8.9 89/08/30 11:01:19 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d1156 1
+a1156 1
+		    GetRequestBytes(callFunc.numBytes,argBuf);
+@
+
+
+8.9
+log
+@reenable display before entering debugger.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dbg/sun3.md/RCS/dbgMain.c,v 8.8 89/07/29 04:02:28 rab Exp Locker: douglis $ SPRITE (Berkeley)";
+@
+
+
+8.8
+log
+@Fixed bug that caused kgdb.sun3 to not work right.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dbg/sun3.md/RCS/dbgMain.c,v 8.7 89/07/21 12:27:20 rab Exp Locker: rab $ SPRITE (Berkeley)";
+d702 1
+@
+
+
+8.7
+log
+@*** empty log message ***
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dbg/sun3.md/RCS/dbgMain.c,v 8.6 89/06/30 01:06:13 rab Exp Locker: rab $ SPRITE (Berkeley)";
+d747 1
+a747 2
+    trapCode = dbgStack.trapStack.trapType + 1;	/* MACH trap codes are one less
+						 * than DBG trap codes. */
+@
+
+
+8.6
+log
+@*** empty log message ***
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dbg/sun3.md/RCS/dbgMain.c,v 8.5 89/06/10 11:21:31 rab Exp Locker: rab $ SPRITE (Berkeley)";
+a30 3
+Boolean	dbg_Rs232Debug = FALSE;			/* TRUE if are using the RS232
+						 * line to debug, FALSE if are
+						 * using the network. */
+a163 8
+ * The RS 232 Port that we communicate with.  Channel A is used
+ * although one could argue for using port B.  However, facilities
+ * have welded a bracket to the 2/50 and 3/75 bodies which render
+ * the B port useless.  (Can't attach the connector...)
+ */
+Dbg_Rs232Channel		dbgChannel = DBG_RS232_CHANNELA;
+
+/*
+a355 89
+ * ReadBytes --
+ *
+ *     Read the given number of bytes into the given address from the 
+ *     rs232 line.  Acknowledge every third character.  This is done to 
+ *     prevent kdbx from overunning us.  We can do every third character 
+ *     because the receive buffer is of size three.  We also acknowledge the
+ *     last character sent.
+ *
+ * Results:
+ *     The bytes that were read are stored into bytePtr.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static
+ReadBytes(numBytes, bytePtr, ack)
+    int		numBytes;	/* The number of bytes to read */
+    Address	bytePtr;	/* Where to store the data that was read. */
+    Boolean	ack;		/* ack every 3rd character. */
+{
+    int		i;
+    Boolean	justAcked;
+
+    for (i = 0; i < numBytes; i++) {
+	justAcked = FALSE;
+	bytePtr[i] = DbgRs232ReadChar(dbgChannel);
+	if (dbgTraceLevel >= 4) {
+	    printf("Read byte = %x\n", bytePtr[i]);
+	}
+	if (ack && (i + 1) % 3 == 0) {
+	    if (dbgTraceLevel >= 4) {
+		printf("Acking read\n");
+	    }
+	    justAcked = TRUE;
+	    DbgRs232WriteChar(dbgChannel, 0);
+	}
+    }
+    if (ack && !justAcked) {
+	if (dbgTraceLevel >= 4) {
+	    printf("Acking read\n");
+	}
+	DbgRs232WriteChar(dbgChannel, 0);
+    }
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * WriteBytes --
+ *
+ *     Write the given number of bytes from the given address over the 
+ *     rs232 line.  We have to wait for an ack once we have sent a specified
+ *     number of bytes.  This is to prevent us from overrunning kdbx.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static
+WriteBytes(numBytes, bytePtr)
+    int		numBytes;	/* The number of bytes to write */
+    Address	bytePtr;
+{
+    int		  i;
+
+    if (dbgTraceLevel >= 3) {
+	bcopy(bytePtr, (char *) &i, 4);
+	printf("\r\nWriting: %d", i);
+    }
+
+    for (i = 0; i < numBytes; i++) {
+	DbgRs232WriteChar(dbgChannel, bytePtr[i]);
+	if ((i + 1) % DBG_ACK_SIZE == 0) {
+	    (void)DbgRs232ReadChar(dbgChannel);
+	}
+    }
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+a480 7
+    if (dbg_Rs232Debug) {
+	/*
+	 * Don't read anything yet - wait until the actual request for bytes.
+	 */
+	replyOffset = 0;
+	return(TRUE);
+    } else {
+a501 1
+    }
+a524 3
+    if (dbg_Rs232Debug) {
+	ReadBytes(numBytes, dest, TRUE);
+    } else {
+a526 1
+    }
+a578 3
+    if (dbg_Rs232Debug) {
+	WriteBytes(replyOffset, replyBuffer);
+    } else {
+a598 1
+    }
+d762 1
+a762 8
+    if (dbg_Rs232Debug) {
+	/*
+	 * Initialize the rs232 line
+	 */
+	DbgRs232Init();
+    } else {
+	dbg_UsingNetwork = TRUE;
+    }
+a792 19
+	if (dbg_Rs232Debug) {
+	    unsigned	char	ch;
+	    /*
+	     * Read in bytes until we get the sequence of 3 characters
+	     * 127, 27, 7.
+	     */
+	    while (TRUE) {
+		ReadBytes(1, (Address) &ch, FALSE);
+		if (ch == 127) {
+		    ReadBytes(1, (Address) &ch, FALSE);
+		    if (ch == 27) {
+			ReadBytes(1, (Address) &ch, FALSE);
+			if (ch == 7) {
+			    break;
+			}
+		    }
+		}
+	    }
+	}
+d924 1
+a924 1
+		if (!dbg_Rs232Debug) {
+d961 1
+a961 1
+		if (!dbg_Rs232Debug) {
+d1025 1
+a1025 1
+		if (!dbg_Rs232Debug) {
+d1041 1
+a1041 1
+		if (!dbg_Rs232Debug) {
+d1070 1
+a1070 1
+		if (!dbg_Rs232Debug) {
+d1174 1
+a1174 1
+		if (!dbg_Rs232Debug) {
+d1195 1
+a1195 1
+		if (!dbg_Rs232Debug) {
+d1222 1
+a1222 1
+		if (!dbg_Rs232Debug) {
+@
+
+
+8.5
+log
+@*** empty log message ***
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dbg/sun3.md/RCS/dbgMain.c,v 8.4 89/04/11 09:15:35 mendel Exp Locker: rab $ SPRITE (Berkeley)";
+d103 56
+a158 26
+    "Reset",
+    "Bus Error",
+    "Address Error",
+    "Illegal Instruction",
+    "Zero Div",
+    "CHK Instruction",
+    "TrapV",
+    "Privilege Violation",
+    "Trace Trap",
+    "EMU 1010",
+    "EMU 1111",
+    "Stack Format Error",
+    "Uninitialized Vector",
+    "Spurious Interrupt",
+    "Level 1 Interrupt",
+    "Level 2 Interrupt",
+    "Level 3 Interrupt",
+    "Level 4 Interrupt",
+    "Level 5 Interrupt",
+    "Level 6 Interrupt",
+    "Level 7 Interrupt",
+    "Syscall Trap",
+    "Signal Return Trap",
+    "Bad Trap",
+    "Breakpoint Trap",
+    "UNKNOWN EXCEPTION"
+@
+
+
+8.4
+log
+@Fixed type conflict caused by change in net module.
+@
+text
+@d12 2
+a13 2
+static char rcsid[] = "$Header: /sprite/src/kernel/dbg/sun3.md/RCS/dbgMain.c,v 8.3 89/04/11 09:00:53 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+#endif not lint
+@
+
+
+8.3
+log
+@Added the DBG_GET_DUMP_BOUNDS commands and increased the maximum transfer
+size to 1400 so 1k data packets can be sent.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dbg/sun2.md/RCS/dbgMain.c,v 8.2 89/02/19 20:29:38 jhh Exp Locker: mendel $ SPRITE (Berkeley)";
+d675 1
+a675 1
+	dbgGather.mutexPtr = (Sync_Condition *) NIL;
+@
+
+
+8.2
+log
+@Changes due to lock registration
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dbg/sun2.md/RCS/dbgMain.c,v 8.1 88/12/04 14:10:03 ouster Exp $ SPRITE (Berkeley)";
+d968 23
+a999 1
+	    
+@
+
+
+8.1
+log
+@Don't include byte.h anymore:  it isn't needed.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dbg/sun2.md/RCS/dbgMain.c,v 6.6 88/11/07 14:05:59 mlgray Exp $ SPRITE (Berkeley)";
+d675 1
+a675 1
+	dbgGather.conditionPtr = (Sync_Condition *) NIL;
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dbg/sun2.md/RCS/dbgMain.c,v 6.6 88/11/07 14:05:59 mlgray Exp Locker: douglis $ SPRITE (Berkeley)";
+a27 1
+#include "byte.h"
+d53 1
+a53 1
+#ifdef SUN3
+d200 1
+a200 1
+#ifdef SUN2
+d240 1
+a240 1
+#ifdef SUN2
+d704 1
+a704 1
+#ifdef SUN3
+d707 1
+a707 1
+#ifdef SUN2
+d752 1
+a752 1
+#ifdef SUN3
+d1225 29
+d1356 1
+a1356 1
+#ifdef SUN3
+@
+
+
+6.6
+log
+@Converting to new C library.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dbg/sun2.md/RCS/dbgMain.c,v 6.5 88/11/01 09:29:05 mendel Exp Locker: mlgray $ SPRITE (Berkeley)";
+@
+
+
+6.5
+log
+@Added validated on pid's to SET_PID command.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dbg/sun2.md/RCS/dbgMain.c,v 6.4 88/11/01 09:23:31 douglis Exp $ SPRITE (Berkeley)";
+d250 1
+a250 1
+	Sys_Printf("Dbg: odd address: %x\n", addr);
+d367 1
+a367 1
+	    Sys_Printf("Read byte = %x\n", bytePtr[i]);
+d371 1
+a371 1
+		Sys_Printf("Acking read\n");
+d379 1
+a379 1
+	    Sys_Printf("Acking read\n");
+d411 2
+a412 2
+	Byte_Copy(4, bytePtr, (char *) &i);
+	Sys_Printf("\r\nWriting: %d", i);
+d443 1
+a443 1
+    Sys_Printf("%s exception in the debugger at pc %x addr %x\n",
+d507 1
+a507 1
+	    Sys_Printf("Non-IP (Type=0x%x) ", (int)etherHdrPtr->type);
+d515 1
+a515 1
+	Sys_Printf("Validating packet\n");
+d522 1
+a522 1
+	    Sys_Printf("Got a packet: length=%d\n", dataLength);
+d524 2
+a525 2
+	Byte_Copy(sizeof(Net_EtherHdr), (Address)etherHdrPtr,
+		 (Address)&dbgEtherHdr);
+d527 1
+a527 1
+	Byte_Copy(dataLength, dataPtr, requestBuffer);
+d575 1
+a575 1
+		Sys_Printf("MsgNum = %d\n", curMsgNum);
+d607 1
+a607 1
+	Byte_Copy(numBytes, requestBuffer + requestOffset, dest);
+d634 1
+a634 1
+	Sys_Printf("PutReplyBytes: Buffer overflow\n");
+d637 1
+a637 1
+    Byte_Copy(numBytes, src, &replyBuffer[replyOffset]);
+d668 1
+a668 1
+	    Sys_Printf("Sending reply\n");
+d683 1
+a683 1
+	    Sys_Printf("Sent reply\n");
+d766 1
+a766 1
+     * Put us at interrupt level so that Sys_Printf won't accidently enable
+d789 1
+a789 1
+	Sys_Printf("Entering debugger with a %s exception at PC 0x%x\r\n",
+d814 1
+a814 1
+    Byte_Copy(dbgStackLength, (Address) &dbgStack, (Address) &dbgGlobalStack);
+d882 1
+a882 1
+		Sys_Printf("DBG: Timeout\n");
+d884 1
+a884 1
+	    Sys_Printf("TI ");
+d917 1
+a917 1
+	    Sys_Printf("Request: %s ", TranslateOpcode(opcode));
+d938 3
+a940 3
+		    Byte_Copy(sizeof(procPtr->machStatePtr->switchRegs),
+			    (Address) procPtr->machStatePtr->switchRegs,
+			    (Address) stopInfo.genRegs);
+d944 3
+a946 3
+		    Byte_Copy(sizeof(dbgGlobalStack.gprs),
+			    (Address) dbgGlobalStack.gprs, 
+			    (Address) stopInfo.genRegs);
+d974 1
+a974 1
+		PutReplyBytes(String_Length(version) + 1, version);
+d986 1
+a986 1
+		    Sys_Printf("Addr=%x Numbytes=%d ",
+d998 1
+a998 1
+			Sys_Printf("FAILURE ");
+d1022 1
+a1022 1
+		    Sys_Printf("pid %x ", pid);
+d1033 1
+a1033 1
+			Sys_Printf("Can't backtrace stack for process %x\n",
+d1073 1
+a1073 1
+		    Sys_Printf("Addr=%x Numbytes=%d ",
+d1095 1
+a1095 1
+			Sys_Printf("FAILURE ");
+d1123 1
+a1123 1
+		    Sys_Printf("register %d data %x ", writeGPR.regNum, 
+d1148 2
+a1149 2
+		Byte_Copy(dbgStackLength, (Address)&dbgGlobalStack,
+			  (Address)&savedDbgStack);
+d1185 2
+a1186 2
+		    Byte_Copy(sizeof(dbgGlobalStack), (Address)&savedDbgStack,
+			      (Address)&dbgGlobalStack);
+d1233 1
+a1233 1
+		    Sys_Printf("Continuing from pc %x ",
+d1254 1
+a1254 1
+		    Sys_Printf("Stepping from pc %x ",
+d1281 1
+a1281 1
+		    Sys_Printf("Detaching at pc %x ",
+d1293 1
+a1293 1
+		Sys_Printf("Sprite is now detached from the debugger\r\n");
+d1298 1
+a1298 1
+	    Sys_Printf("\r\n");
+d1316 1
+a1316 1
+    Byte_Copy(dbgStackLength, (Address) &dbgGlobalStack, (Address) dbgSavedSP);
+@
+
+
+6.4
+log
+@print out PC when entering debugger, in case we don't actually make
+it all the way into the debugger.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dbg/sun2.md/RCS/dbgMain.c,v 6.3 88/08/27 17:43:49 nelson Exp Locker: douglis $ SPRITE (Berkeley)";
+d1028 3
+a1030 1
+		    if (procPtr->state == PROC_UNUSED ||
+@
+
+
+6.3
+log
+@Fixed lint errors.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: dbgMain.c,v 6.2 88/08/24 18:14:14 nelson Exp $ SPRITE (Berkeley)";
+d788 4
+a791 3
+         dbgStack.trapStack.trapType != MACH_BRKPT_TRAP)) {
+	Sys_Printf("Entering debugger with a %s exception\r\n",
+			    TranslateException(dbgStack.trapStack.trapType));
+@
+
+
+6.2
+log
+@Fixed lint errors.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: dbgMain.c,v 6.1 88/08/24 17:47:05 nelson Exp $ SPRITE (Berkeley)";
+d518 1
+a518 1
+			   packetPtr + sizeof(Net_EtherHdr),
+d524 2
+a525 1
+	Byte_Copy(sizeof(Net_EtherHdr), etherHdrPtr, &dbgEtherHdr);
+d728 1
+d870 1
+a870 1
+		GetRequestBytes(2, &tOpcode);
+d879 1
+a879 1
+	    Net_OutputRawEther(replyBuffer, &dbgGather, 1);
+d906 1
+a906 1
+	GetRequestBytes(2, &tOpcode);
+d1044 1
+a1044 1
+		GetRequestBytes(sizeof(int), &stringLength);
+d1079 1
+a1079 1
+					     writeMem.address);
+d1085 1
+a1085 1
+					     writeMem.address);
+d1145 2
+a1146 1
+		Byte_Copy(dbgStackLength, &dbgGlobalStack, &savedDbgStack);
+d1182 2
+a1183 2
+		    Byte_Copy(sizeof(dbgGlobalStack), &savedDbgStack,
+			      &dbgGlobalStack);
+d1298 2
+a1299 2
+	    ReadRequest(FALSE);
+	    GetRequestBytes(2, &tOpcode);
+@
+
+
+6.1
+log
+@Handles write protected code.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: dbgMain.c,v 5.11 88/05/05 17:47:49 nelson Exp $ SPRITE (Berkeley)";
+a408 1
+    char 	input;
+d418 1
+a418 1
+	    input = DbgRs232ReadChar(dbgChannel);
+a1086 1
+		    int		i;
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d46 4
+d229 4
+a232 3
+static Boolean InRange(addr, numBytes) 
+    unsigned 	int addr; 
+    int		numBytes; 
+d236 1
+a236 1
+    unsigned	int	protection;
+d258 2
+a259 4
+	protection = pte & VMMACH_PROTECTION_FIELD;
+	if (!(pte & VMMACH_RESIDENT_BIT) || 
+	    (protection != VMMACH_KR_PROT && protection != VMMACH_KRW_PROT &&
+	     protection != VMMACH_UR_PROT && protection != VMMACH_URW_PROT)) {
+d261 9
+d989 2
+a990 1
+		if (InRange((unsigned int) readMem.address, readMem.numBytes)) {
+d1075 5
+a1079 1
+			    writeMem.numBytes)) {
+d1082 4
+@
+
+
+5.11
+log
+@Changed to handle fields moved from sys to mach.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: dbgMain.c,v 5.10 88/05/04 16:54:04 nelson Exp $ SPRITE (Berkeley)";
+@
+
+
+5.10
+log
+@Handles new trap handling stuff.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: dbgMain.c,v 5.9 88/05/01 18:40:33 nelson Exp $ SPRITE (Berkeley)";
+d23 1
+a23 1
+#include "sunMon.h"
+d201 2
+a202 2
+    Mon_StartNmi();
+    Mon_StopNmi();
+d436 1
+a436 1
+    Mon_Abort();
+d465 1
+a465 1
+    Mon_Printf("Machine type %d\n", machineType);
+d744 1
+a744 1
+    Mon_StartNmi();
+d756 2
+a757 2
+    atInterruptLevel = sys_AtInterruptLevel;
+    sys_AtInterruptLevel = TRUE;
+d1041 1
+a1041 1
+		Mon_Reboot(rebootString);
+d1294 1
+a1294 1
+    sys_AtInterruptLevel = atInterruptLevel;
+d1307 1
+a1307 1
+    Mon_StopNmi();
+@
+
+
+5.9
+log
+@*** empty log message ***
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: dbgMain.c,v 5.8 88/01/18 15:00:24 nelson Exp $ SPRITE (Berkeley)";
+a15 1
+#include "exc.h"
+d18 1
+a18 1
+#include "machine.h"
+d142 8
+d156 1
+a156 1
+Exc_TrapStack	dbgTrapStack;
+d171 1
+a171 1
+static	int		savedTrapStackLength;
+d173 1
+a173 1
+static	Exc_TrapStack	savedTrapStack;
+d315 2
+a316 2
+	if (exception < 0 || exception > EXC_UNKNOWN_EXC) {
+	    exception = EXC_UNKNOWN_EXC;
+d430 1
+a430 1
+    Exc_TrapStack	trapStack;
+d433 3
+a435 2
+			TranslateException(dbgExcType), trapStack.excStack.pc,
+			trapStack.excStack.tail.addrBusErr.faultAddr);
+a715 1
+
+d717 1
+a717 1
+Dbg_Main(stackHole, trapStack)
+d720 3
+a722 2
+    Exc_TrapStack	trapStack;	/* All of the stuff that is put onto the
+					 * stack by the trap handler */
+d728 1
+a728 1
+    int		  	trapStackLength;/* The length of the trap stack */
+d774 2
+a775 2
+        (trapStack.trapType != EXC_TRACE_TRAP && 
+         trapStack.trapType != EXC_BRKPT_TRAP)) {
+d777 1
+a777 1
+					TranslateException(trapStack.trapType));
+d787 1
+a787 1
+     * parameter trapStack cannot be printed out in kdbx).
+d797 2
+a798 3
+    trapStackLength = Exc_GetTrapStackSize(&trapStack);
+    excStackLength = trapStackLength - 
+			    (sizeof(Exc_TrapStack) - sizeof(Exc_ExcStack));
+d800 1
+a800 1
+    Byte_Copy(trapStackLength, (Address) &trapStack, (Address) &dbgTrapStack);
+d802 2
+a803 1
+    dbgTrapStack.genRegs[mach_SP] += excStackLength + STACK_INC;
+d808 1
+a808 1
+    dbgTrapStack.excStack.statusReg &= ~SUN_SR_TRACEMODE;
+d820 2
+a821 2
+    trapCode = trapStack.trapType + 1;	/* EXC trap codes are one less than
+					 * DBG trap codes. */
+d828 2
+a829 2
+    } else if (trapStack.trapType == EXC_TRACE_TRAP ||
+	       trapStack.trapType == EXC_BRKPT_TRAP) {
+d917 1
+a917 1
+		extern void	MachContextSwitch();
+d919 7
+a925 5
+		if (procPtr != (Proc_ControlBlock *) NIL) {
+		    stopInfo.maxStackAddr = 
+		    		procPtr->stackStart + mach_KernStackSize;
+		    Byte_Copy(sizeof(procPtr->saveRegs),
+			    (Address) procPtr->saveRegs,
+d927 1
+a927 1
+		    stopInfo.pc = (int) ((Address) MachContextSwitch);
+d930 2
+a931 2
+		    Byte_Copy(sizeof(dbgTrapStack.genRegs),
+			    (Address) dbgTrapStack.genRegs, 
+d933 1
+a933 1
+		    stopInfo.pc = dbgTrapStack.excStack.pc;
+d938 1
+a938 1
+			(unsigned short) dbgTrapStack.excStack.statusReg;
+d944 4
+a947 3
+		if (procPtr != (Proc_ControlBlock *) NIL) {
+		    PutReplyBytes(sizeof(procPtr->saveRegs),
+				 (Address) procPtr->saveRegs);
+d949 2
+a950 2
+		    PutReplyBytes(sizeof(dbgTrapStack.genRegs),
+			         (Address) dbgTrapStack.genRegs);
+d1102 1
+a1102 1
+		dbgTrapStack.genRegs[writeGPR.regNum] = writeGPR.regVal;
+d1122 1
+a1122 1
+		savedTrapStackLength = trapStackLength;
+d1124 1
+a1124 1
+		Byte_Copy(trapStackLength, &dbgTrapStack, &savedTrapStack);
+d1126 5
+a1130 4
+		dbgTrapStack.excStack.vor.stackFormat = EXC_SHORT;
+		trapStackLength = Exc_GetTrapStackSize(&dbgTrapStack);
+		excStackLength = trapStackLength - 
+		    (sizeof(Exc_TrapStack) - sizeof(Exc_ExcStack));
+d1158 1
+a1158 1
+		    trapStackLength = savedTrapStackLength;
+d1160 2
+a1161 2
+		    Byte_Copy(sizeof(dbgTrapStack), &savedTrapStack,
+			      &dbgTrapStack);
+d1206 1
+a1206 1
+				(Address) &dbgTrapStack.excStack.pc);
+d1209 1
+a1209 1
+				dbgTrapStack.excStack.pc);
+d1227 1
+a1227 1
+				(Address) &dbgTrapStack.excStack.pc);
+d1230 1
+a1230 1
+				dbgTrapStack.excStack.pc);
+d1242 2
+a1243 1
+		dbgTrapStack.excStack.statusReg |= SUN_SR_TRACEMODE;
+d1254 1
+a1254 1
+				(Address) &dbgTrapStack.excStack.pc);
+d1257 1
+a1257 1
+				dbgTrapStack.excStack.pc);
+d1288 4
+a1291 3
+    dbgSavedSP = dbgTrapStack.genRegs[mach_SP] - trapStackLength;
+    dbgTrapStack.genRegs[mach_SP] -= excStackLength + STACK_INC;
+    Byte_Copy(trapStackLength, (Address) &dbgTrapStack, (Address) dbgSavedSP);
+@
+
+
+5.8
+log
+@Added extra debugging information for Non-IP packets.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: dbgMain.c,v 5.7 87/12/15 15:27:30 nelson Exp $ SPRITE (Berkeley)";
+d909 1
+d917 1
+a917 1
+		    stopInfo.pc = (int) ((Address) Mach_ContextSwitch);
+@
+
+
+5.7
+log
+@Fixed lint errors.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: dbgMain.c,v 5.6 87/12/12 16:32:56 nelson Exp $ SPRITE (Berkeley)";
+d488 1
+a488 1
+	    Sys_Printf("Got Non-IP ");
+@
+
+
+5.6
+log
+@Handles moving of hardware dependencies from vm to sun.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: dbgMain.c,v 5.5 87/12/03 15:45:38 nelson Exp $ SPRITE (Berkeley)";
+d29 1
+d171 1
+d640 2
+@
+
+
+5.5
+log
+@*** empty log message ***
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: dbgMain.c,v 5.4 87/10/07 10:26:33 nelson Exp $ SPRITE (Berkeley)";
+d21 1
+d190 2
+a191 2
+    oldContext = Vm_GetKernelContext(); 
+    Vm_SetKernelContext(VM_KERN_CONTEXT);
+d194 1
+a194 1
+    Vm_SetKernelContext(oldContext);
+d220 1
+a220 1
+    Vm_PTE		pte;
+d225 1
+d227 8
+d240 2
+a241 2
+    firstPage = ((unsigned int) addr) >> VM_PAGE_SHIFT;
+    lastPage = (((unsigned int) addr) + numBytes - 1) >> VM_PAGE_SHIFT;
+d243 5
+a247 5
+	VM_PTE_TO_INT(pte) = Vm_GetPageMap(i << VM_PAGE_SHIFT);
+	protection = pte.protection;
+	if (!pte.resident || 
+	    (protection != VM_KR_PROT && protection != VM_KRW_PROT &&
+	     protection != VM_UR_PROT && protection != VM_URW_PROT)) {
+d737 2
+a738 2
+    oldContext = Vm_GetKernelContext();
+    Vm_SetKernelContext(VM_KERN_CONTEXT);
+d791 1
+a791 1
+    dbgTrapStack.genRegs[MACH_STACK_PTR] += excStackLength + STACK_INC;
+d905 1
+a905 1
+		stopInfo.codeStart = MACH_CODE_START;
+d907 2
+a908 2
+		    stopInfo.maxStackAddr = procPtr->stackStart + 
+					MACH_NUM_STACK_PAGES*VM_PAGE_SIZE;
+d960 1
+a960 1
+		Vm_SetKernelContext(oldContext);
+d972 1
+a972 1
+		Vm_SetKernelContext(VM_KERN_CONTEXT);
+d1044 1
+a1044 1
+		Vm_SetKernelContext(oldContext);
+d1060 1
+a1060 1
+		Vm_SetKernelContext(VM_KERN_CONTEXT);
+d1270 2
+a1271 2
+    dbgSavedSP = dbgTrapStack.genRegs[MACH_STACK_PTR] - trapStackLength;
+    dbgTrapStack.genRegs[MACH_STACK_PTR] -= excStackLength + STACK_INC;
+d1274 1
+a1274 1
+    Vm_SetKernelContext(oldContext);
+@
+
+
+5.4
+log
+@Added commands to mark the beginning and the end of call commands.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: dbgMain.c,v 5.3 87/09/30 12:47:14 nelson Exp $ SPRITE (Berkeley)";
+d156 1
+d1106 3
+a1108 1
+		dbg_UsingSyslog = TRUE;
+@
+
+
+5.3
+log
+@Added new command for rebooting from the debugger.  Also added the DBG
+prefix to all opcodes.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: dbgMain.c,v 5.2 87/09/29 15:43:35 nelson Exp $ SPRITE (Berkeley)";
+d45 1
+d67 1
+a67 1
+ * Size of debugging packet header.
+d70 1
+d90 2
+d155 1
+d158 8
+d600 4
+d1079 1
+a1079 1
+	    case DBG_DIVERT_SYSLOG:
+d1089 82
+@
+
+
+5.2
+log
+@Added ability to redirect syslog output back to the console under control
+of kdbx.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: dbgMain.c,v 5.1 87/09/18 12:30:34 nelson Exp $ SPRITE (Berkeley)";
+d85 3
+d254 2
+a255 2
+	if (index < 0 || index > (int) UNKNOWN) {
+	    index = (int) UNKNOWN;
+d819 1
+a819 1
+		if (opcode == GETSTOPINFO) {
+d875 1
+a875 1
+	    case GETSTOPINFO: {
+d900 1
+a900 1
+	    case READALLGPRS:
+d911 1
+a911 1
+	    case GET_VERSION_STRING: {
+d921 2
+a922 2
+	    case INSTREAD:
+	    case DATAREAD: {
+d952 1
+a952 1
+	    case SETPID: {
+d979 22
+a1000 2
+	    case INSTWRITE:
+	    case DATAWRITE: {
+d1040 1
+a1040 1
+	    case WRITEGPR: {                
+d1062 1
+a1062 1
+	    case DIVERT_SYSLOG:
+d1072 1
+a1072 1
+	    case CONTINUE: 
+d1093 1
+a1093 1
+	    case SINGLESTEP:
+d1118 1
+a1118 1
+	    case DETACH:
+@
+
+
+5.1
+log
+@Added returning of version string (again)
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: dbgMain.c,v 5.2 87/09/15 15:29:13 nelson Exp $ SPRITE (Berkeley)";
+d634 4
+d719 3
+a721 1
+    Dev_SyslogDebug(TRUE);
+d953 6
+d1025 6
+d1039 11
+a1049 1
+	    case CONTINUE:
+d1146 3
+a1148 1
+    Dev_SyslogDebug(FALSE);
+@
+
+
+5.0
+log
+@*** empty log message ***
+@
+text
+@d902 10
+@

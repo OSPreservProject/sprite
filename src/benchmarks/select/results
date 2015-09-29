@@ -1,0 +1,30 @@
+Results of running the "select" benchmark on different
+configurations.  This benchmark issues repeated selects
+(with a 0 timeout) and times how long it took per select.
+The first test selects on only a single pipe, which isn't
+ready;  the second test selects on 10 pipes, none of which
+is ready;  and the last test selects on 10 pipes, all of
+which are ready.
+
+Configuration				1	    10		10 ready
+-------------				-	    --		--------
+
+DS5000 Ultrix 3.1D 3/20/90		 44 us	      91 us	  90 us
+DS3100 Sprite FD.035 9/29/89		 76 us	     240 us	 226 us
+DS3100 Ultrix 3.1 10/25/89		 81 us	     153 us	 151 us
+DS3100 Mach 2.5 4/3/90			 95 us	     178 us	 166 us
+Sun-4 SunOS 4.0.3 3/25/90		103 us	     232 us	 213 us
+SS1 SunOS 4.0.3c 3/25/90		110 us	     221 us	 204 us
+DS3100 Ultrix 3.0 9/20/89		114 us	     273 us	 254 us
+VAX 8800 Ultrix 3.0 9/19/89		120 us	     265 us	 310 us
+HP835 HP-UX 4/13/90			122 us	     227 us	 213 us
+Sun-4 Sprite 1.022 9/19/89		126 us	     396 us	 356 us
+SS1 Sprite 1.061 3/25/90		138 us	     372 us	 344 us
+DS3100 Sprite 1.022 9/19/89		145 us	     415 us	 397 us
+Sun-4 Mach 2.5 4/4/90			150 us	     300 us	 266 us
+RS/6000-320 AIX 3.1 5/9/90		167 us	     298 us	 294 us
+Sun-3 Sprite 1.016 9/19/89		413 us	    1840 us	1700 us
+Sun-3 SunOS 3.5 9/19/89			448 us	    1190 us	1012 us
+RT-APC Mach 2.5 11/8/89			701 us	    1270 us	1270 us
+MVAX2 Ultrix 3.0 9/27/89		740 us	    1610 us	1820 us
+M2000 RISC/os 4.0 10/3/89	       10.0 ms	    10.0 ms	 108 us

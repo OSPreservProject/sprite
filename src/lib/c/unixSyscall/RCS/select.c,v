@@ -1,0 +1,134 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  sprited:1.2.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     89.03.22.12.20.49;  author douglis;  state Exp;
+branches 1.2.1.1;
+next     1.1;
+
+1.1
+date     88.06.19.14.31.55;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.2.1.1
+date     91.12.10.16.17.15;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@make sure to zero out the bits as well as returning 0 when
+hitting a timeout, in the interests of unix compatibility
+@
+text
+@/* 
+ * select.c --
+ *
+ *	Procedure to map from Unix select system call to Sprite.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/unixSyscall/RCS/select.c,v 1.1 88/06/19 14:31:55 ouster Exp Locker: douglis $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+#include "status.h"
+#include "fs.h"
+#include "compatInt.h"
+#include <sys/time.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * select --
+ *
+ *	Procedure to map from Unix select system call to Sprite Fs_Select.
+ *
+ * Results:
+ *	UNIX_ERROR is returned upon error, with the actual error code
+ *	stored in errno.  The number of ready descriptors is returned
+ *	upon success.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+select(width, readfds, writefds, exceptfds, timeout)
+    int width, *readfds, *writefds, *exceptfds;
+    struct timeval *timeout;
+{
+    ReturnStatus status;	/* result returned by Fs_Select */
+    int numReady;
+    Time spriteTimeout;
+    Time *timeoutPtr = NULL;
+
+    if (timeout != NULL) {
+	spriteTimeout.seconds = timeout->tv_sec;
+	spriteTimeout.microseconds = timeout->tv_usec;
+	timeoutPtr = &spriteTimeout;
+    }
+    status = Fs_RawSelect(width, timeoutPtr, readfds, writefds,
+			  exceptfds, &numReady);
+
+    if (status != SUCCESS) {
+	if (status == FS_TIMEOUT) {
+	    if (readfds != NULL) {
+		*readfds = 0;
+	    }
+	    if (writefds != NULL) {
+		*writefds = 0;
+	    }
+	    if (exceptfds != NULL) {
+		*exceptfds = 0;
+	    }
+	    return(0);
+	} else {
+	    errno = Compat_MapCode(status);
+	    return(UNIX_ERROR);
+	}
+    } else {
+	return(numReady);
+    }
+}
+@
+
+
+1.2.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/unixSyscall/RCS/select.c,v 1.2 89/03/22 12:20:49 douglis Exp $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: select.c,v 1.7 88/05/19 15:53:52 deboor Exp $ SPRITE (Berkeley)";
+d59 9
+@

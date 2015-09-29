@@ -1,0 +1,198 @@
+
+
+
+Tk_WindowId           C Library Procedures            Tk_WindowId
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tk_WindowId,  Tk_Display,  Tk_DisplayName,  Tk_ScreenNumber,
+     Tk_Screen,  Tk_X,  Tk_Y,  Tk_Width,  Tk_Height,  Tk_Changes,
+     Tk_Attributes,   Tk_IsMapped,   Tk_ReqWidth,   Tk_ReqHeight,
+     Tk_InternalBorderWidth  -  retrieve  information  from  Tk's
+     local data structure
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttkk..hh>>
+
+     Window
+     TTkk__WWiinnddoowwIIdd(_t_k_w_i_n)
+
+     Tk_Window
+     TTkk__PPaarreenntt(_t_k_w_i_n)
+
+     Display *
+     TTkk__DDiissppllaayy(_t_k_w_i_n)
+
+     char *
+     TTkk__DDiissppllaayyNNaammee(_t_k_w_i_n)
+
+     int
+     TTkk__SSccrreeeennNNuummbbeerr(_t_k_w_i_n)
+
+     Screen *
+     TTkk__SSccrreeeenn(_t_k_w_i_n)
+
+     int
+     TTkk__XX(_t_k_w_i_n)
+
+     int
+     TTkk__YY(_t_k_w_i_n)
+
+     int
+     TTkk__WWiiddtthh(_t_k_w_i_n)
+
+     int
+     TTkk__HHeeiigghhtt(_t_k_w_i_n)
+
+     XWindowChanges *
+     TTkk__CChhaannggeess(_t_k_w_i_n)
+
+     XSetWindowAttributes *
+     TTkk__AAttttrriibbuutteess(_t_k_w_i_n)
+
+     int
+     TTkk__IIssMMaappppeedd(_t_k_w_i_n)
+
+     int
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+Tk_WindowId           C Library Procedures            Tk_WindowId
+
+
+
+     TTkk__RReeqqWWiiddtthh(_t_k_w_i_n)
+
+     int
+     TTkk__RReeqqHHeeiigghhtt(_t_k_w_i_n)
+
+     int
+     TTkk__IInntteerrnnaallBBoorrddeerrWWiiddtthh(_t_k_w_i_n)
+
+AARRGGUUMMEENNTTSS
+     Tk_Window   _t_k_w_i_n   (in)      Token for window.
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     TTkk__WWiinnddoowwIIDD and the other names listed above are all  macros
+     that return fields from Tk's local data structure for _t_k_w_i_n.
+     None of these  macros  requires  any  interaction  with  the
+     server;  it is safe to assume that all are fast.
+
+     TTkk__WWiinnddoowwIIdd returns the X identifier for _t_k_w_i_n, or  NNUULLLL  if
+     no  X  window  has  been  created  for  _t_k_w_i_n  yet  (see the
+     TTkk__CCrreeaatteeMMaaiinnWWiinnddooww manual entry for details).
+
+     TTkk__PPaarreenntt returns Tk's  token  for  the  logical  parent  of
+     _t_k_w_i_n.   The  parent  is  the  token that was specified when
+     _t_k_w_i_n was created, or NULL for main windows.
+
+     TTkk__DDiissppllaayy returns a pointer to the Xlib  display  structure
+     corresponding  to  _t_k_w_i_n.   TTkk__DDiissppllaayyNNaammee  returns an ASCII
+     string identifying _t_k_w_i_n's display.  TTkk__SSccrreeeennNNuummbbeerr returns
+     the index of _t_k_w_i_n's screen among all the screens of _t_k_w_i_n's
+     display.  TTkk__SSccrreeeenn returns a pointer to the Xlib  structure
+     corresponding to _t_k_w_i_n's screen.
+
+     TTkk__XX, TTkk__YY, TTkk__WWiiddtthh, and TTkk__HHeeiigghhtt return information about
+     _t_k_w_i_n'_s  location within its parent and its size.  The loca-
+     tion information refers to the upper-left pixel in the  win-
+     dow,  or  its  border if there is one.  The width and height
+     information refers to the interior size of the  window,  not
+     including  any  border.   TTkk__CChhaannggeess  returns a pointer to a
+     structure containing all of the above information plus a few
+     other   fields.   TTkk__AAttttrriibbuutteess  returns  a  pointer  to  an
+     XSetWindowAttributes structure describing all of the  attri-
+     butes  of  the  _t_k_w_i_n's  window,  such as background pixmap,
+     event mask, and so on (Tk keeps track of all  this  informa-
+     tion  as  it  is  changed  by the application).  Note: it is
+     essential  that  applications   use   Tk   procedures   like
+     TTkk__RReessiizzeeWWiinnddooww  instead of X procedures like XXRReessiizzeeWWiinnddooww,
+     so that Tk can keep its data structures up-to-date.
+
+     TTkk__IIssMMaappppeedd returns a non-zero value if _t_k_w_i_n is mapped  and
+     zero if _t_k_w_i_n isn't mapped.
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+Tk_WindowId           C Library Procedures            Tk_WindowId
+
+
+
+     TTkk__RReeqqWWiiddtthh and TTkk__RReeqqHHeeiigghhtt return  information  about  the
+     window's  requested  size.   These  values correspond to the
+     last call to TTkk__GGeeoommeettrryyRReeqquueesstt for _t_k_w_i_n.
+
+     TTkk__IInntteerrnnaallBBoorrddeerrWWiiddtthh returns the width of internal  border
+     that  has  been  requested  for  _t_k_w_i_n,  or 0 if no internal
+     border was requested.  The return value is simply  the  last
+     value passed to TTkk__SSeettIInntteerrnnaallBBoorrddeerr for _t_k_w_i_n.
+
+
+KKEEYYWWOORRDDSS
+     attributes, display, height, geometry  manager,  identifier,
+     mapped, requested size, screen, width, window, x, y
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     3
+
+
+

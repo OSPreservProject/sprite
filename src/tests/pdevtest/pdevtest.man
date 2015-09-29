@@ -1,0 +1,82 @@
+'\" Copyright 1989 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/lib/forms/RCS/proto.man,v 1.5 89/01/27 08:36:02 ouster Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS PDEVTEST cmds
+.BS
+.SH NAME
+pdevtest \- Test program for pseudo-devices
+.SH SYNOPSIS
+.nf
+\fBpdevtest\fR [\fIoptions\fR]
+.SH OPTIONS
+.IP "\fB\-S\fR" 14
+Run as a slave process.
+.IP "\fB\-M \fInumSlaves\fR" 14
+Run as the master of \fInumSlaves\fR.
+.IP "\fB\-o \fIoutFile\fR" 14
+Name of the output file.
+.IP "\fB\-p \fIpseudoDevice\fR" 14
+Name of the pseudo-device.
+.IP "\fB\-i\fR" 14
+Echo data to/from the pseudo-device using ioctl.
+.IP "\fB\-r\fR" 14
+Test reading from a pseudo-device.
+.IP "\fB\-w\fR" 14
+Test writing to a pseudo-device.
+.IP "\fB\-W\fR" 14
+Enable write-behind (use with \fB-M\fP).
+.IP "\fB\-s\fR" 14
+Use select, too.
+.IP "\fB\-c\fR" 14
+Fork the client process.
+.IP "\fB\-n \fInumReps\fR" 14
+Number of test repetitions.
+.IP "\fB\-d \fInumBytes\fR" 14
+Number of bytes to transfer.
+.IP "\fB\-P \fInumLoops\fR" 14
+Loop \fInumLoops\fP times before replying (with \fB-M\fP).
+.IP "\fB\-z\fR" 14
+Force Master to use select with 1 client.
+.IP "\fB\-b\fR" 14
+Test switching request buffers (use with \fB-M\fP).
+.IP "\fB\-x\fR" 14
+Turn off all tracing.
+.IP "\fB\-h\fR" 14
+Except leave histogram taking on (ok with \fB-x\fP).
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBpdevtest\fP is used to test various features of pseudo-devices.
+Several instances of the program are run for a single test.
+One master process (\fB-M\fP) is run first;
+it is the pseudo-device server.
+The master can enable write-behind (\fB-W\fP),
+pause before replying (\fB-P\fP),
+and switch request buffers (\fB-b\fP).
+Ordinarily if there is only one slave a slightly faster service
+loop is used to does not use select.
+The master process can be forced to use select even in this case with \fB-z\fP.
+After the master has started several slave (\fB-S\fP) processes are started.
+Each slave can do a different test (\fB-i -r -w\fP).
+The number of repetitions and the amount of data to transfer
+are specified with the \fB-n\fP and \fB-d\fP options.
+Additionally, a slave process can fork (\fB-c\fP) to test stream sharing,
+and use select (\fB-s\fP).
+.pp
+\fBpdevtest\fP generates output to the file specified by the \fB-o\fP option.
+It can also use a specific pseudo-device file (\fB-p\fP).
+Finally, system tracing can be turned off (\fB-x\fP),
+which makes the tests run faster.
+
+.SH KEYWORDS
+pseudo-device, test
+

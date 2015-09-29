@@ -1,0 +1,11 @@
+#!/bin/csh -f
+#
+# Reindex the man pages.
+# Ken Shirriff 9/90
+
+foreach i (`awk '/^\//{print $1}' /sprite/lib/man/config`)
+    echo $i
+    cd $i
+#Skip directories without an index file; e.g. sww man pages
+    if (-e index) man -i *.man > index
+end

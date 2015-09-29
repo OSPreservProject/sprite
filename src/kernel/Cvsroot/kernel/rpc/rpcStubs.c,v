@@ -1,0 +1,1421 @@
+head     9.9;
+branch   ;
+access   ;
+symbols  ds3100:9.7 sun3:9.7 sun4nw:9.6 symm:9.6 spur:9.6 sprited:9.6.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.9
+date     92.12.13.18.21.39;  author mgbaker;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     92.10.28.19.00.42;  author mgbaker;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     92.10.26.14.38.41;  author mgbaker;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.10.09.15.46.27;  author mendel;  state Exp;
+branches 9.6.1.1;
+next     9.5;
+
+9.5
+date     90.10.02.16.30.29;  author mgbaker;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.09.11.16.08.29;  author mendel;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.09.11.11.35.50;  author mgbaker;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.05.03.17.33.54;  author douglis;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.09.18.13.42.45;  author brent;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.18.40;  author douglis;  state Stable;
+branches ;
+next     8.3;
+
+8.3
+date     89.08.29.17.28.33;  author mgbaker;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.08.11.11.58.34;  author jhh;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.02.15.08.19.59;  author jhh;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.36.22;  author douglis;  state Stable;
+branches ;
+next     6.5;
+
+6.5
+date     88.11.11.14.43.22;  author douglis;  state Exp;
+branches ;
+next     6.4;
+
+6.4
+date     88.10.19.17.52.00;  author douglis;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.10.19.17.51.28;  author mlgray;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.29.14.30.05;  author mlgray;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.26.18.27.04;  author mlgray;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.25.55;  author brent;  state Stable;
+branches ;
+next     5.11;
+
+5.11
+date     88.08.05.14.07.11;  author mlgray;  state Exp;
+branches ;
+next     5.10;
+
+5.10
+date     88.08.04.17.52.17;  author mlgray;  state Exp;
+branches ;
+next     5.9;
+
+5.9
+date     88.08.01.17.11.50;  author mlgray;  state Exp;
+branches ;
+next     5.8;
+
+5.8
+date     88.07.19.12.19.46;  author mlgray;  state Exp;
+branches ;
+next     5.7;
+
+5.7
+date     88.01.08.11.14.37;  author brent;  state Exp;
+branches ;
+next     5.6;
+
+5.6
+date     87.12.10.12.30.31;  author brent;  state Exp;
+branches ;
+next     5.5;
+
+5.5
+date     87.10.09.09.31.14;  author brent;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     87.10.04.16.02.48;  author brent;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     87.09.21.16.27.15;  author brent;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.09.16.11.53.11;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.09.09.12.09.09;  author brent;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.49.21;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.6.1.1
+date     91.10.27.22.38.39;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.9
+log
+@Code for server-driven recovery.
+@
+text
+@/*
+ * rpcStubs.c --
+ *
+ *	The stub procedures for the Rpc service procedures.
+ *
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/rpc/rpcStubs.c,v 9.8 92/10/28 19:00:42 mgbaker Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+
+#include <stdlib.h>
+#include <rpc.h>
+#include <rpcInt.h>
+#include <rpcServer.h>
+#include <fsrmtRpcStubs.h>
+#include <fsconsist.h>
+#include <fsutil.h>
+#include <procMigrate.h>
+#include <timer.h>
+#include <sync.h>
+#include <sig.h>
+#include <fsio.h>
+#include <fsioRpc.h>
+
+/*
+ * The RPC service procedure switch.  This table and the arguments
+ * to the RPC's themselves define the network interface to Sprite.
+ * Change things carefully!  You can either add new RPCs to the end,
+ * or you can change the RPC_VERSION number defined in rpcPacket.h
+ * and create a new in-compatible network interface.
+ */
+
+RpcService rpcService[RPC_LAST_COMMAND+1] = {
+        RpcNull, "0",                  		/* 0 - nothing */
+        RpcNull, "echo intr",			/* 1 - ECHO1, interrupt level */
+        RpcEcho, "echo",			/* 2 - ECHO2, server process */
+	RpcEcho, "send",			/* 3 - SEND, server process */
+        RpcNull,  "receive",			/* 4 - RECEIVE, unimplemented */
+        RpcGetTime, "get time",			/* 5 - GETTIME */
+	Fsrmt_RpcPrefix, "prefix",		/* 6 - FS_PREFIX */
+	Fsrmt_RpcOpen, "open",			/* 7 - FS_OPEN */
+        Fsrmt_RpcRead, "read",			/* 8 - FS_READ */
+        Fsrmt_RpcWrite, "write",		/* 9 - FS_WRITE */
+        Fsrmt_RpcClose, "close",		/* 10 - FS_CLOSE */
+        Fsrmt_RpcRemove, "remove",		/* 11 - FS_UNLINK */
+        Fsrmt_Rpc2Path, "rename",		/* 12 - FS_RENAME */
+        Fsrmt_RpcMakeDir, "makeDir",		/* 13 - FS_MKDIR */
+        Fsrmt_RpcRemove, "rmDir",		/* 14 - FS_RMDIR */
+	Fsrmt_RpcMakeDev, "make dev",		/* 15 - FS_MKDEV */
+        Fsrmt_Rpc2Path, "hard link",		/* 16 - FS_LINK */
+        RpcNull, "sym link",			/* 17 - FS_SYM_LINK */
+	Fsrmt_RpcGetAttr, "get attr",		/* 18 - FS_GET_ATTR */
+	Fsrmt_RpcSetAttr, "set attr",		/* 19 - FS_SET_ATTR */
+	Fsrmt_RpcGetAttrPath, "stat",		/* 20 - FS_GET_ATTR_PATH */
+	Fsrmt_RpcSetAttrPath, "setAttrPath",	/* 21 - FS_SET_ATTR_PATH */
+	Fsrmt_RpcGetIOAttr, "getIOAttr",	/* 22 - FS_GET_IO_ATTR */
+	Fsrmt_RpcSetIOAttr, "setIOAttr",	/* 23 - FS_SET_IO_ATTR */
+	Fsrmt_RpcDevOpen, "dev open",		/* 24 - FS_DEV_OPEN */
+	Fsrmt_RpcSelectStub, "select",		/* 25 - FS_SELECT */
+	Fsrmt_RpcIOControl, "io control",	/* 26 - FS_IO_CONTROL */
+	Fsconsist_RpcConsist, "consist",	/* 27 - FS_CONSIST */
+	Fsconsist_RpcConsistReply, "consist done",/* 28 - FS_CONSIST_REPLY */
+	Fsrmt_RpcBlockCopy, "copy block",	/* 29 - FS_COPY_BLOCK */
+	Fsrmt_RpcMigrateStream, "migrate",	/* 30 - FS_MIGRATE */
+	RpcNull, "release",			/* 31 - FS_RELEASE */
+	Fsrmt_RpcReopen, "reopen",		/* 32 - FS_REOPEN */
+	Fsutil_RpcRecovery, "recover",		/* 33 - FS_RECOVERY */
+	Fsrmt_RpcDomainInfo, "domain info",	/* 34 - FS_DOMAIN_INFO */
+	Proc_RpcMigCommand, "mig command",	/* 35 - PROC_MIG_COMMAND */
+	Proc_RpcRemoteCall, "rmt call",		/* 36 - PROC_REMOTE_CALL */
+	Proc_RpcRemoteWait, "remote wait",	/* 37 - PROC_REMOTE_WAIT */
+	Proc_RpcGetPCB, "get PCB",		/* 38 - PROC_GETPCB */
+	Sync_RemoteNotifyStub, "rmt notify",	/* 39 - REMOTE_WAKEUP */
+	Sig_RpcSend, "send signal",		/* 40 - SIG_SEND */
+	Fsio_RpcStreamMigCloseNew, "new release",/* 41 - FS_RELEASE_NEW */
+	Fsrmt_RpcBulkReopen, "bulkReopen",	/* 42 - FS_BULK_REOPEN */
+	Fsrmt_RpcServerReopen, "serverReopen",	/* 43 - FS_SERVER_REOPEN */
+};
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_FreeMem --
+ *
+ *	Free the memory that was allocated for a reply.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Memory is freed.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Rpc_FreeMem(freeReplyData)
+    ClientData		freeReplyData;
+{
+    Rpc_ReplyMem	*replyMemPtr = (Rpc_ReplyMem *) freeReplyData;
+    if (replyMemPtr->paramPtr != (Address) NIL) {
+	free(replyMemPtr->paramPtr);
+    }
+    if (replyMemPtr->dataPtr != (Address) NIL) {
+	free(replyMemPtr->dataPtr);
+    }
+    free((Address) replyMemPtr);
+    return(0);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcNull --
+ *
+ *	The stub for the null procedure call.
+ *
+ * Results:
+ *	Always return the error code RPC_INVALID_RPC.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+RpcNull(srvToken, clientID, command, storagePtr)
+    ClientData srvToken;	/* Handle on server process passed to
+				 * Rpc_Reply */
+    int clientID;		/* Sprite ID of client host */
+    int command;		/* Command identifier */
+    Rpc_Storage *storagePtr;	/* The request fields refer to the request
+				 * buffers and also indicate the exact amount
+				 * of data in the request buffers.  The reply
+				 * fields are initialized to NIL for the
+				 * pointers and 0 for the lengths.  This can
+				 * be passed to Rpc_Reply */
+{
+    return(RPC_INVALID_RPC);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcEcho --
+ *
+ *	Service an echo request.  The input data is simply turned around
+ *	to the client.  This type of RPC is used for benchmarks, and
+ *	by hosts to query the status of other hosts (pinging).
+ *
+ * Results:
+ *	SUCCESS.
+ 
+ * Side effects:
+ *	The echo.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+int
+RpcEcho(srvToken, clientID, command, storagePtr)
+    ClientData srvToken;	/* Handle on server process passed to
+				 * Rpc_Reply */
+    int clientID;		/* Sprite ID of client host */
+    int command;		/* Command identifier */
+    Rpc_Storage *storagePtr;	/* The request fields refer to the request
+				 * buffers and also indicate the exact amount
+				 * of data in the request buffers.  The reply
+				 * fields are initialized to NIL for the
+				 * pointers and 0 for the lengths.  This can
+				 * be passed to Rpc_Reply */
+{
+    if (command == RPC_ECHO_2) {
+	/*
+	 * The data is stored in buffers specified by the buffer set for
+	 * the request message.  The correct length of the two parts is
+	 * computed by the dispatcher and saved in the "actual" size fields.
+	 */
+	storagePtr->replyParamPtr  = storagePtr->requestParamPtr;
+	storagePtr->replyParamSize = storagePtr->requestParamSize;
+	storagePtr->replyDataPtr   = storagePtr->requestDataPtr;
+	storagePtr->replyDataSize  = storagePtr->requestDataSize;
+    } else {
+	/*
+	 * RPC_SEND has a null reply already set up by Rpc_Server.
+	 */
+    }
+    Rpc_Reply(srvToken, SUCCESS, storagePtr, (int(*)()) NIL, (ClientData) NIL);
+    return (SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcGetTime --
+ *
+ *	Return the time of day.  The RPC_GET_TIME is done at boot time
+ *	by machines and used to initialize their rpcBootID, as well as
+ *	set their clock.  The point of the rpcBootID is to have a different
+ *	one each time a host boots so others can detect a reboot.  The
+ *	time obtained with this is usually overridden, however, with
+ *	an 'rdate' done by the bootcmds (much) later in the boot sequence.
+ *
+ * Results:
+ *	If SUCCESS is returned then reply has been sent.  Otherwise caller
+ *	will send the error reply.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+RpcGetTime(srvToken, clientID, command, storagePtr)
+    ClientData srvToken;	/* Handle on server process passed to
+				 * Rpc_Reply */
+    int clientID;		/* Sprite ID of client host */
+    int command;		/* Command identifier */
+    Rpc_Storage *storagePtr;	/* The request fields refer to the request
+				 * buffers and also indicate the exact amount
+				 * of data in the request buffers.  The reply
+				 * fields are initialized to NIL for the
+				 * pointers and 0 for the lengths.  This can
+				 * be passed to Rpc_Reply */
+{
+    Rpc_ReplyMem	*replyMemPtr;
+    struct timeReturn {
+	Time time;
+	int offset;
+	Boolean DST;
+    } *timeReturnPtr;
+    
+    timeReturnPtr =
+	(struct timeReturn *)malloc(sizeof(struct timeReturn));
+    Timer_GetTimeOfDay(&timeReturnPtr->time, &timeReturnPtr->offset,
+					 &timeReturnPtr->DST);
+    storagePtr->replyParamPtr = (Address)timeReturnPtr;
+    storagePtr->replyParamSize = sizeof(struct timeReturn);
+
+    replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
+    replyMemPtr->paramPtr = storagePtr->replyParamPtr;
+    replyMemPtr->dataPtr = (Address) NIL;
+
+    Rpc_Reply(srvToken, SUCCESS, storagePtr, Rpc_FreeMem,
+	    (ClientData) replyMemPtr);
+    return(SUCCESS);
+}
+
+@
+
+
+9.8
+log
+@Getting rid of old "release" rpc.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/rpc/rpcStubs.c,v 9.7 92/10/26 14:38:41 mgbaker Exp $ SPRITE (Berkeley)";
+d88 1
+@
+
+
+9.7
+log
+@Support for bulk reopen rpcs.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/rpc/rpcStubs.c,v 9.6 90/10/09 15:46:27 mendel Exp $ SPRITE (Berkeley)";
+d76 1
+a76 1
+	Fsio_RpcStreamMigClose, "release",	/* 31 - FS_RELEASE */
+@
+
+
+9.6
+log
+@Added include of fsioRpc.h
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcStubs.c,v 9.5 90/10/02 16:30:29 mgbaker Exp Locker: mendel $ SPRITE (Berkeley)";
+d87 1
+@
+
+
+9.6.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcStubs.c,v 9.6 90/10/09 15:46:27 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+9.5
+log
+@More prototyping garbage.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcStubs.c,v 9.4 90/09/11 16:08:29 mendel Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d34 1
+@
+
+
+9.4
+log
+@Cleaned up some lint from prototypes.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcStubs.c,v 9.3 90/09/11 11:35:50 mgbaker Exp $ SPRITE (Berkeley)";
+d20 1
+a20 1
+#include "sprite.h"
+d22 12
+a33 12
+#include "stdlib.h"
+#include "rpc.h"
+#include "rpcInt.h"
+#include "rpcServer.h"
+#include "fsrmtRpcStubs.h"
+#include "fsconsist.h"
+#include "fsutil.h"
+#include "procMigrate.h"
+#include "timer.h"
+#include "sync.h"
+#include "sig.h"
+#include "fsio.h"
+@
+
+
+9.3
+log
+@Added function prototypes (Mendel checking for mary)
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcStubs.c,v 9.2 90/05/03 17:33:54 douglis Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d105 2
+a106 2
+Rpc_FreeMem(replyMemPtr)
+    Rpc_ReplyMem	*replyMemPtr;
+d108 1
+@
+
+
+9.2
+log
+@added new Fs_Release rpc.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.3 90/01/12 12:03:36 douglis Exp $ SPRITE (Berkeley)";
+d32 2
+@
+
+
+9.1
+log
+@Updated to new FS names
+@
+text
+@d6 8
+a13 2
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcStubs.c,v 9.0 89/09/12 15:18:40 douglis Stable Locker: brent $ SPRITE (Berkeley)";
+a19 1
+
+d83 1
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcStubs.c,v 8.3 89/08/29 17:28:33 mgbaker Exp Locker: douglis $ SPRITE (Berkeley)";
+d21 3
+a23 1
+#include "fsRpcStubs.h"
+a24 1
+#include "fs.h"
+d43 11
+a53 11
+	Fs_RpcPrefix, "prefix",			/* 6 - FS_PREFIX */
+	Fs_RpcOpen, "open",			/* 7 - FS_OPEN */
+        Fs_RpcRead, "read",			/* 8 - FS_READ */
+        Fs_RpcWrite, "write",			/* 9 - FS_WRITE */
+        Fs_RpcClose, "close",			/* 10 - FS_CLOSE */
+        Fs_RpcRemove, "remove",			/* 11 - FS_UNLINK */
+        Fs_Rpc2Path, "rename",			/* 12 - FS_RENAME */
+        Fs_RpcMakeDir, "makeDir",		/* 13 - FS_MKDIR */
+        Fs_RpcRemove, "rmDir",			/* 14 - FS_RMDIR */
+	Fs_RpcMakeDev, "make dev",		/* 15 - FS_MKDEV */
+        Fs_Rpc2Path, "hard link",		/* 16 - FS_LINK */
+d55 17
+a71 17
+	Fs_RpcGetAttr, "get attr",		/* 18 - FS_GET_ATTR */
+	Fs_RpcSetAttr, "set attr",		/* 19 - FS_SET_ATTR */
+	Fs_RpcGetAttrPath, "stat",		/* 20 - FS_GET_ATTR_PATH */
+	Fs_RpcSetAttrPath, "setAttrPath",	/* 21 - FS_SET_ATTR_PATH */
+	Fs_RpcGetIOAttr, "getIOAttr",		/* 22 - FS_GET_IO_ATTR */
+	Fs_RpcSetIOAttr, "setIOAttr",		/* 23 - FS_SET_IO_ATTR */
+	Fs_RpcDevOpen, "dev open",		/* 24 - FS_DEV_OPEN */
+	Fs_RpcSelectStub, "select",		/* 25 - FS_SELECT */
+	Fs_RpcIOControl, "io control",		/* 26 - FS_IO_CONTROL */
+	Fs_RpcConsist, "consist",		/* 27 - FS_CONSIST */
+	Fs_RpcConsistReply, "consist done",	/* 28 - FS_CONSIST_REPLY */
+	Fs_RpcBlockCopy, "copy block",		/* 29 - FS_COPY_BLOCK */
+	Fs_RpcMigrateStream, "migrate",		/* 30 - FS_MIGRATE */
+	Fs_RpcReleaseStream, "release",		/* 31 - FS_RELEASE */
+	Fs_RpcReopen, "reopen",			/* 32 - FS_REOPEN */
+	Fs_RpcRecovery, "recover",		/* 33 - FS_RECOVERY */
+	Fs_RpcDomainInfo, "domain info",	/* 34 - FS_DOMAIN_INFO */
+@
+
+
+8.3
+log
+@Fixed broken ECHO server stub.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcStubs.c,v 8.2 89/08/11 11:58:34 jhh Exp Locker: mgbaker $ SPRITE (Berkeley)";
+@
+
+
+8.2
+log
+@this was writable so I'm checking it in
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcStubs.c,v 8.1 89/02/15 08:19:59 jhh Exp $ SPRITE (Berkeley)";
+d153 2
+a154 3
+ *	SUCCESS usually, except if rpcServiceEnabled is off, when
+ *	RPC_SERVICE_DISABLED is returned.
+ *
+d190 1
+@
+
+
+8.1
+log
+@Updated Sync_Lock initialization
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcStubs.c,v 6.5 88/11/11 14:43:22 douglis Exp $ SPRITE (Berkeley)";
+d22 1
+d28 5
+a32 1
+ * The service procedure switch.
+d41 36
+a76 36
+	Fs_RpcOpen, "open",			/* 5 - OPEN */
+        Fs_RpcRead, "read",			/* 6 - READ */
+        Fs_RpcWrite, "write",			/* 7 - WRITE */
+        Fs_RpcClose, "close",			/* 8 - CLOSE */
+        Fs_RpcRemove, "remove",			/* 9 - UNLINK */
+        Fs_Rpc2Path, "rename",			/* 10 - RENAME */
+        Fs_RpcMakeDir, "makeDir",		/* 11 - MKDIR */
+        Fs_RpcRemove, "rmDir",			/* 12 - RMDIR */
+        Fs_Rpc2Path, "hard link",		/* 13 - LINK */
+        RpcGetTime, "get time",			/* 14 - GETTIME */
+	Fs_RpcPrefix, "prefix",			/* 15 - FS_PREFIX */
+	Fs_RpcGetAttr, "get attr",		/* 16 - FS_GET_ATTR */
+	Fs_RpcSetAttr, "set attr",		/* 17 - FS_SET_ATTR */
+	Fs_RpcGetAttrPath, "stat",		/* 18 - FS_GET_ATTR_PATH */
+	Fs_RpcSetAttrPath, "setAttrPath",	/* 19 - FS_SET_ATTR_PATH */
+	Fs_RpcGetIOAttr, "getIOAttr",		/* 20 - FS_GET_IO_ATTR */
+	Fs_RpcSetIOAttr, "setIOAttr",		/* 21 - FS_SET_IO_ATTR */
+	Proc_RpcMigInit, "mig init",		/* 22 - PROC_MIG_INIT */
+	Proc_RpcMigInfo, "mig info",		/* 23 - PROC_MIG_INFO */
+	Proc_RpcRemoteCall, "rmt call",		/* 24 - PROC_REMOTE_CALL */
+	Fs_RpcStartMigration, "migrate",	/* 25 - FS_MIGRATE */
+	Fs_RpcConsist, "consist",		/* 26 - FS_CONSIST */
+	Fs_RpcDevOpen, "dev open",		/* 27 - FS_DEV_OPEN */
+	Sync_RemoteNotifyStub, "rmt notify",	/* 28 - REMOTE_WAKEUP */
+	Proc_RpcRemoteWait, "remote wait",	/* 29 - PROC_REMOTE_WAIT */
+	Fs_RpcSelectStub, "select",		/* 30 - FS_SELECT */
+	Fs_RpcIOControl, "io control",		/* 31 - FS_RPC_IO_CONTROL */
+	Fs_RpcConsistReply, "consist done",	/* 32 - FS_RPC_CONSIST_REPLY */
+	Fs_RpcBlockCopy, "copy block",		/* 33 - FS_COPY_BLOCK */
+	Fs_RpcMakeDev, "make dev",		/* 34 - FS_MKDEV */
+	Sig_RpcSend, "send signal",		/* 35 - SIG_SEND */
+	Fs_RpcReopen, "reopen",			/* 36 - FS_REOPEN */
+	Fs_RpcDomainInfo, "domain info",	/* 37 - FS_DOMAIN_INFO */
+	Fs_RpcDevReopen, "dev reopen",		/* 38 - FS_DEV_REOPEN */
+	Fs_RpcRecovery, "recover",		/* 39 - FS_RECOVERY */
+	Proc_RpcGetPCB, "get PCB",		/* 40 - PROC_GETPCB */
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcStubs.c,v 6.5 88/11/11 14:43:22 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d17 1
+a17 1
+#include "mem.h"
+@
+
+
+6.5
+log
+@changed RpcProc* to Proc_Rpc* and moved into proc module.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcStubs.c,v 6.4 88/10/19 17:52:00 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+@
+
+
+6.4
+log
+@added Proc_RpcGetPCB
+.,
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcStubs.c,v 6.3 88/10/19 17:51:28 mlgray Exp Locker: douglis $ SPRITE (Berkeley)";
+a21 1
+#include "procMigrate.h"
+d53 3
+a55 3
+	RpcProcMigInit, "mig init",		/* 22 - PROC_MIG_INIT */
+	RpcProcMigInfo, "mig info",		/* 23 - PROC_MIG_INFO */
+	RpcProcRemoteCall, "rmt call",		/* 24 - PROC_REMOTE_CALL */
+a246 143
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcProcMigInit --
+ *
+ *	Handle a request to start process migration.
+ *
+ * Results:
+ *	A return status.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+RpcProcMigInit(srvToken, clientID, command, storagePtr)
+    ClientData srvToken;	/* Handle on server process passed to
+				 * Rpc_Reply */
+    int clientID;		/* Sprite ID of client host */
+    int command;		/* Command identifier */
+    Rpc_Storage *storagePtr;	/* The request fields refer to the request
+				 * buffers and also indicate the exact amount
+				 * of data in the request buffers.  The reply
+				 * fields are initialized to NIL for the
+				 * pointers and 0 for the lengths.  This can
+				 * be passed to Rpc_Reply */
+{
+    ReturnStatus status;
+
+    status = Proc_AcceptMigration(clientID);
+    Rpc_Reply(srvToken, status, storagePtr, (int(*)()) NIL, (ClientData) NIL);
+
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcProcMigInfo --
+ *
+ *	Handle a request to transfer information for process migration.
+ *
+ * Results:
+ *	A return status.
+ *
+ * Side effects:
+ *	Process state (process control block, virtual memory, or file state)
+ * 	is copied onto the remote workstation (the RPC server).
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+RpcProcMigInfo(srvToken, clientID, command, storagePtr)
+    ClientData srvToken;	/* Handle on server process passed to
+				 * Rpc_Reply */
+    int clientID;		/* Sprite ID of client host */
+    int command;		/* Command identifier */
+    Rpc_Storage *storagePtr;	/* The request fields refer to the request
+				 * buffers and also indicate the exact amount
+				 * of data in the request buffers.  The reply
+				 * fields are initialized to NIL for the
+				 * pointers and 0 for the lengths.  This can
+				 * be passed to Rpc_Reply */
+{
+    ReturnStatus status;
+    Rpc_ReplyMem	*replyMemPtr;
+    Proc_MigrateReply *returnInfoPtr;
+
+    returnInfoPtr = (Proc_MigrateReply *) malloc(sizeof(Proc_MigrateReply));
+    status = Proc_MigReceiveInfo(clientID,
+            (Proc_MigrateCommand *) storagePtr->requestParamPtr,
+	    storagePtr->requestDataSize,
+ 	    storagePtr->requestDataPtr,
+	    returnInfoPtr);
+    if (status == SUCCESS) {
+	storagePtr->replyParamPtr = (Address) returnInfoPtr;
+	storagePtr->replyParamSize = sizeof(Proc_MigrateReply);
+	
+	replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
+	replyMemPtr->paramPtr = (Address) returnInfoPtr;
+	replyMemPtr->dataPtr = (Address) NIL;
+	Rpc_Reply(srvToken, SUCCESS, storagePtr, Rpc_FreeMem,
+		(ClientData) replyMemPtr);
+    }
+
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcProcRemoteCall --
+ *
+ *	Handle a system call for a migrated process.
+ *
+ * Results:
+ *	A return status.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+RpcProcRemoteCall(srvToken, clientID, command, storagePtr)
+    ClientData srvToken;	/* Handle on server process passed to
+				 * Rpc_Reply */
+    int clientID;		/* Sprite ID of client host */
+    int command;		/* Command identifier */
+    Rpc_Storage *storagePtr;	/* The request fields refer to the request
+				 * buffers and also indicate the exact amount
+				 * of data in the request buffers.  The reply
+				 * fields are initialized to NIL for the
+				 * pointers and 0 for the lengths.  This can
+				 * be passed to Rpc_Reply */
+{
+    Rpc_ReplyMem	*replyMemPtr;
+    Address returnData = (Address) NIL;
+    int returnDataLength = 0;
+    ReturnStatus status;
+
+    status = Proc_RpcRemoteCall((Proc_RemoteCall *)storagePtr->requestParamPtr,
+ 	    storagePtr->requestDataPtr, storagePtr->requestDataSize,
+ 	    &returnData, &returnDataLength);
+    
+    storagePtr->replyDataPtr = returnData;
+    storagePtr->replyDataSize = returnDataLength;
+
+    replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
+    replyMemPtr->paramPtr = (Address) NIL;
+    replyMemPtr->dataPtr = returnData;
+    Rpc_Reply(srvToken, status, storagePtr, Rpc_FreeMem,
+	    (ClientData) replyMemPtr);
+
+    return(status);
+}
+@
+
+
+6.3
+log
+@temporary checkin for Fred to edit the file.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcStubs.c,v 6.2 88/08/29 14:30:05 mlgray Exp Locker: mlgray $ SPRITE (Berkeley)";
+d72 1
+@
+
+
+6.2
+log
+@lint
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: rpcStubs.c,v 6.1 88/08/26 18:27:04 mlgray Exp $ SPRITE (Berkeley)";
+a31 1
+#ifndef OLD_RPC_NUMBERS
+a71 58
+#else /* OLD_RPC_NUMBERS */
+        RpcNull, "0",                  		/* 0 - nothing */
+        RpcNull, "echo intr",			/* 1 - ECHO, interrupt level */
+        RpcEcho, "echo",			/* 2 - ECHO2, server process */
+        Fs_RpcOpen, "open",			/* 3 - FS_SPRITE_OPEN */
+        RpcNull,  "unix name",			/* 4 - NAME unix */
+        RpcNull,  "old, locate",		/* 5 - LOCATE unused */
+        Fs_RpcRead, "read",			/* 6 - READ */
+        Fs_RpcWrite, "write",			/* 7 - WRITE */
+        Fs_RpcClose, "close",			/* 8 - CLOSE */
+        RpcNull, "unix trunc",			/* 9 - TRUNC unix */
+        RpcNull, "unix append",			/* 10 - APPEND unix */
+        RpcNull, "unix stat",			/* 11 - STAT unix  */
+        Fs_RpcRemove, "remove",			/* 12 - UNLINK */
+        Fs_Rpc2Path, "rename",			/* 13 - RENAME */
+        Fs_RpcMakeDir, "makeDir",		/* 14 - MKDIR */
+        Fs_RpcRemove, "rmDir",			/* 15 - RMDIR */
+        RpcNull, "unix chmod",			/* 16 - CHMOD */
+        RpcNull, "unix chown",			/* 17 - CHOWN */
+        Fs_Rpc2Path, "hard link",		/* 18 - LINK */
+        RpcNull, "unix prefix",			/* 19 - FS_UNIX_PREFIX */
+        RpcNull, "old, pull-in",		/* 20 - PULLIN old */
+        RpcNull, "unix updat",			/* 21 - UPDAT unix */
+        RpcGetTime, "get time",			/* 22 - GETTIME */
+        RpcNull, "unix open",			/* 23 - FS_UNIX_OPEN */
+        RpcEcho, "send",			/* 24 - SEND */
+	Fs_RpcPrefix, "prefix",			/* 25 - FS_SPRITE_PREFIX */
+	Fs_RpcGetAttr, "get attr",		/* 26 - FS_GET_ATTR */
+	Fs_RpcSetAttr, "set attr",		/* 27 - FS_SET_ATTR */
+	RpcProcMigInit, "mig init",		/* 28 - PROC_MIG_INIT */
+	RpcProcMigInfo, "mig info",		/* 29 - PROC_MIG_INFO */
+	RpcProcRemoteCall, "rmt call",		/* 30 - PROC_REMOTE_CALL */
+	Fs_RpcStartMigration, "start mig",	/* 31 - FS_START_MIGRATION */
+	RpcNull, "old, wakeup",			/* 32 - FS_REMOTE_WAKEUP old */
+	Fs_RpcConsist, "consist",		/* 33 - FS_CONSIST */
+	Fs_RpcDevOpen, "dev open",		/* 34 - FS_DEV_OPEN */
+	RpcNull, "sig mig send",		/* 35 - SIG_MIG_SEND - gone */
+	Sync_RemoteNotifyStub, "rmt notify",	/* 36 - REMOTE_NOTIFY */
+	RpcNull, "old, lock",			/* 37 - FS_LOCK  old */
+	Proc_RpcRemoteWait, "remote wait",	/* 38 - PROC_REMOTE_WAIT */
+	Fs_RpcSelectStub, "select",		/* 39 - FS_SELECT */
+	RpcNull, "end mig",			/* 40 - FS_START_MIGRATION */
+	Fs_RpcIOControl, "io control",		/* 41 - FS_RPC_IO_CONTROL */
+	Fs_RpcConsistReply, "consist done",	/* 42 - FS_RPC_CONSIST_REPLY */
+	Fs_RpcBlockCopy, "copy block",		/* 43 - FS_COPY_BLOCK */
+	Fs_RpcMakeDev, "make dev",		/* 44 - FS_MKDEV */
+	Fs_RpcGetAttrPath, "stat",		/* 45 - FS_GET_ATTR_PATH */
+	Sig_RpcSend, "send signal",		/* 46 - SIG_SEND */
+	Fs_RpcReopen, "reopen",			/* 47 - FS_REOPEN */
+	Fs_RpcDomainInfo, "domain info",	/* 48 - FS_DOMAIN_INFO */
+	Fs_RpcDevReopen, "dev reopen",		/* 49 - FS_DEV_REOPEN */
+	Fs_RpcRecovery, "recover",		/* 50 - FS_RECOVERY */
+	RpcNull, "request", 			/* 51 - FS_REQUEST */
+	RpcNull, "reply", 			/* 52 - FS_REPLY */
+	Fs_RpcSetAttrPath, "setAttrPath",	/* 53 - FS_GET_ATTR_PATH */
+	Fs_RpcGetIOAttr, "getIOAttr",		/* 54 - FS_GET_IO_ATTR */
+	Fs_RpcSetIOAttr, "setIOAttr",		/* 55 - FS_SET_IO_ATTR */
+#endif /* OLD_RPC_NUMBERS */
+d95 1
+a95 1
+	Mem_Free(replyMemPtr->paramPtr);
+d98 1
+a98 1
+	Mem_Free(replyMemPtr->dataPtr);
+d100 1
+a100 1
+    Mem_Free((Address) replyMemPtr);
+d232 1
+a232 1
+	(struct timeReturn *)Mem_Alloc(sizeof(struct timeReturn));
+d238 1
+a238 1
+    replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
+d320 1
+a320 1
+    returnInfoPtr = (Proc_MigrateReply *) Mem_Alloc(sizeof(Proc_MigrateReply));
+d330 1
+a330 1
+	replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
+d382 1
+a382 1
+    replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
+@
+
+
+6.1
+log
+@Fixed some lint errors.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: rpcStubs.c,v 6.0 88/08/11 12:25:55 brent Stable $ SPRITE (Berkeley)";
+a228 1
+
+d244 1
+a244 1
+    Rpc_Reply(srvToken, SUCCESS, storagePtr, NIL, NIL);
+d301 2
+a302 1
+    Rpc_Reply(srvToken, SUCCESS, storagePtr, Rpc_FreeMem, replyMemPtr);
+d339 1
+a339 1
+    Rpc_Reply(srvToken, status, storagePtr, NIL, NIL);
+d392 2
+a393 1
+	Rpc_Reply(srvToken, SUCCESS, storagePtr, Rpc_FreeMem, replyMemPtr);
+d444 2
+a445 1
+    Rpc_Reply(srvToken, status, storagePtr, Rpc_FreeMem, replyMemPtr);
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d1 1
+a1 1
+/* 
+d11 2
+a12 2
+static char rcsid[] = "$Header: rpcStubs.c,v 5.11 88/08/05 14:07:11 mlgray Exp $ SPRITE (Berkeley)";
+#endif not lint
+d73 1
+a73 1
+#else OLD_RPC_NUMBERS
+d130 1
+a130 1
+#endif OLD_RPC_NUMBERS
+d270 1
+d322 1
+a322 1
+
+d338 1
+a338 1
+    status = Proc_AcceptMigration(clientID); 
+d361 1
+a361 1
+
+d384 1
+a384 1
+	    returnInfoPtr);		 
+d414 1
+a414 1
+
+@
+
+
+5.11
+log
+@Lint fix.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: rpcStubs.c,v 5.10 88/08/04 17:52:17 mlgray Exp $ SPRITE (Berkeley)";
+@
+
+
+5.10
+log
+@In preparation for installing.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: rpcStubs.c,v 5.9 88/08/01 17:11:50 mlgray Exp $ SPRITE (Berkeley)";
+d179 1
+d215 1
+a245 33
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * RpcFsUnixPrefix --
+ *
+ *	This is the broadcast made by the Unix Server and to which
+ *	we don't reply.
+ *
+ * Results:
+ *	RPC_NO_REPLY
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+ReturnStatus
+RpcFsUnixPrefix(srvToken, clientID, command, storagePtr)
+    ClientData srvToken;	/* Handle on server process passed to
+				 * Rpc_Reply */
+    int clientID;		/* Sprite ID of client host */
+    int command;		/* Command identifier */
+    Rpc_Storage *storagePtr;	/* The request fields refer to the request
+				 * buffers and also indicate the exact amount
+				 * of data in the request buffers.  The reply
+				 * fields are initialized to NIL for the
+				 * pointers and 0 for the lengths.  This can
+				 * be passed to Rpc_Reply */
+{
+    return(RPC_NO_REPLY);
+@
+
+
+5.9
+log
+@Doing byte-swapping.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: rpcStubs.c,v 5.8 88/07/19 12:19:46 mlgray Exp $ SPRITE (Berkeley)";
+d32 1
+a32 1
+#ifdef NEW_RPC_NUMBERS
+d61 13
+a73 14
+	RpcSigMigSend, "sig mig send",		/* 28 - SIG_MIG_SEND */
+	Sync_RemoteNotifyStub, "rmt notify",	/* 29 - REMOTE_WAKEUP */
+	Proc_RpcRemoteWait, "remote wait",	/* 30 - PROC_REMOTE_WAIT */
+	Fs_RpcSelectStub, "select",		/* 31 - FS_SELECT */
+	Fs_RpcIOControl, "io control",		/* 32 - FS_RPC_IO_CONTROL */
+	Fs_RpcConsistReply, "consist done",	/* 33 - FS_RPC_CONSIST_REPLY */
+	Fs_RpcBlockCopy, "copy block",		/* 34 - FS_COPY_BLOCK */
+	Fs_RpcMakeDev, "make dev",		/* 35 - FS_MKDEV */
+	Sig_RpcSend, "send signal",		/* 36 - SIG_SEND */
+	Fs_RpcReopen, "reopen",			/* 37 - FS_REOPEN */
+	Fs_RpcDomainInfo, "domain info",	/* 38 - FS_DOMAIN_INFO */
+	Fs_RpcDevReopen, "dev reopen",		/* 39 - FS_DEV_REOPEN */
+	Fs_RpcRecovery, "recover",		/* 40 - FS_RECOVERY */
+#else NEW_RPC_NUMBERS
+d109 1
+a109 1
+	RpcSigMigSend, "sig mig send",		/* 35 - SIG_MIG_SEND */
+d130 1
+a130 1
+#endif NEW_RPC_NUMBERS
+a473 40
+
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcSigMigSend --
+ *
+ *	Signal a migrated process.
+ *
+ * Results:
+ *	A ReturnStatus.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+ReturnStatus
+RpcSigMigSend(srvToken, clientID, command, storagePtr)
+    ClientData srvToken;	/* Handle on server process passed to
+				 * Rpc_Reply */
+    int clientID;		/* Sprite ID of client host */
+    int command;		/* Command identifier */
+    Rpc_Storage *storagePtr;	/* The request fields refer to the request
+				 * buffers and also indicate the exact amount
+				 * of data in the request buffers.  The reply
+				 * fields are initialized to NIL for the
+				 * pointers and 0 for the lengths.  This can
+				 * be passed to Rpc_Reply */
+{
+    ReturnStatus status;
+
+    status = Sig_RpcMigSend(storagePtr->requestParamPtr, clientID);
+
+    Rpc_Reply(srvToken, status, storagePtr, NIL, NIL);
+@
+
+
+5.8
+log
+@ready for testing
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: rpcStubs.c,v 5.7 88/01/08 11:14:37 brent Exp $ SPRITE (Berkeley)";
+d94 1
+a94 1
+        RpcFsUnixPrefix, "unix prefix",		/* 19 - FS_UNIX_PREFIX */
+d115 1
+a115 1
+	Fs_RpcFinishMigration, "end mig",	/* 40 - FS_START_MIGRATION */
+d126 2
+a127 2
+	Fs_RpcRequest, "request", 		/* 51 - FS_REQUEST */
+	Fs_RpcReply, "reply", 			/* 52 - FS_REPLY */
+@
+
+
+5.7
+log
+@Moved fs stubs over to fs.o
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: rpcStubs.c,v 5.6 87/12/10 12:30:31 brent Exp $ SPRITE (Berkeley)";
+d32 1
+d34 42
+d131 1
+a131 1
+
+@
+
+
+5.6
+log
+@Changed Rpc_FreeMem to return an int for compatibility with Rpc_Reply
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: rpcStubs.c,v 5.5 87/10/09 09:31:14 brent Exp $ SPRITE (Berkeley)";
+d79 10
+a88 6
+	Fs_RpcReopen, "reopen",			/* 47 - FS_RPC_REOPEN */
+	Fs_RpcDomainInfo, "domain info",	/* 48 - FS_RPC_DOMAIN_INFO */
+	Fs_RpcDevReopen, "dev reopen",		/* 49 - FS_RPC_DEV_REOPEN */
+	Fs_RpcRecovery, "recover",		/* 50 - FS_RPC_RECOVERY */
+	Fs_RpcRequest, "request", 		/* 51 - FS_RPC_REQUEST */
+	Fs_RpcReply, "reply", 			/* 52 - FS_RPC_REPLY */
+a90 8
+Fs_RpcRequest()
+{
+    return(RPC_INVALID_ARG);
+}
+Fs_RpcReply()
+{
+    return(RPC_INVALID_ARG);
+}
+@
+
+
+5.5
+log
+@Implemented the Recovery RPC over in fs.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: rpcStubs.c,v 5.4 87/10/04 16:02:48 brent Exp $ SPRITE (Berkeley)";
+d111 1
+a111 1
+void
+d122 1
+@
+
+
+5.4
+log
+@Added stubs
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: rpcStubs.c,v 5.3 87/09/21 16:27:15 brent Exp $ SPRITE (Berkeley)";
+a86 4
+Fs_RpcRecovery()
+{
+    return(RPC_INVALID_ARG);
+}
+@
+
+
+5.3
+log
+@Added dev-reopen RPC
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: rpcStubs.c,v 5.2 87/09/16 11:53:11 nelson Exp $ SPRITE (Berkeley)";
+d82 3
+d87 12
+a131 21
+ * Rpc_GetClientId --
+ *
+ *	Return the Sprite ID of the host.  This should go away.
+ *
+ * Results:
+ *	The Sprite ID.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Rpc_GetClientId()
+{
+    return(rpc_SpriteID);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+d167 2
+a168 1
+ *	to the client.  This type of RPC is used for testing only.
+d171 2
+a172 1
+ *	An error code.
+a207 1
+
+@
+
+
+5.2
+log
+@Added stubs for recovery and getting domain information.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: rpcStubs.c,v 5.1 87/09/09 12:09:09 brent Exp $ SPRITE (Berkeley)";
+d80 2
+a81 1
+	Fs_RpcDomainInfo, "get domain info",	/* 48 - FS_RPC_DOMAIN_INFO */
+@
+
+
+5.1
+log
+@Fixes to GetTime and Rpc_Start: had been dependend on what
+lust returned.  Now use what a Sprite box would return. (for timezone...)
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: rpcStubs.c,v 5.0 87/08/11 10:49:21 sprite Exp $ SPRITE (Berkeley)";
+d79 2
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: rpcStubs.c,v 4.4 87/06/19 16:18:59 brent Exp $ SPRITE (Berkeley)";
+d252 6
+a257 1
+ *	Return the time of day.
+d281 13
+a293 12
+    /*
+     * Ugly hack so that only one machine is a time server...
+     */
+    if (rpc_SpriteID != 1) {
+	return(RPC_NO_REPLY);
+    } else {
+	Rpc_ReplyMem	*replyMemPtr;
+	struct timeReturn {
+	    Time time;
+	    int offset;
+	    Boolean DST;
+	} *timeReturnPtr;
+d295 3
+a297 6
+	timeReturnPtr =
+	    (struct timeReturn *)Mem_Alloc(sizeof(struct timeReturn));
+	Timer_GetTimeOfDay(&timeReturnPtr->time, &timeReturnPtr->offset,
+					     &timeReturnPtr->DST);
+	storagePtr->replyParamPtr = (Address)timeReturnPtr;
+	storagePtr->replyParamSize = sizeof(struct timeReturn);
+d299 2
+a300 7
+	replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
+	replyMemPtr->paramPtr = storagePtr->replyParamPtr;
+	replyMemPtr->dataPtr = (Address) NIL;
+
+	Rpc_Reply(srvToken, SUCCESS, storagePtr, Rpc_FreeMem, replyMemPtr);
+	return(SUCCESS);
+    }
+a333 1
+    Rpc_ReplyMem	*replyMemPtr;
+@

@@ -1,0 +1,97 @@
+# This file contains a database of all the machines currently known
+# to this Sprite system.  Each line describes one machine
+# and has the following format:
+#
+# <spriteID> <netType> <netAddr> <inetAddr> <machType> <name> <aliases>
+#
+# Where the fields are as follows:
+#	spriteID	    The Sprite ID for the host (small number)
+#	netType 	    Type of local network by which the machine is
+#	    	  	    connected. Currently, only "ether" is
+#	    	  	    understood.
+#	netAddr	  	    The host's address on its local network (format
+#			    depends on type of local network).
+#	inetAddr  	    The internet address of the host.
+#	machType	    The machine type.  This string value is used
+#			    when expanding $MACHINE in pathnames.
+#	name	  	    The official name for the machine.
+#	aliases	  	    Other names for the machine.
+#
+1  ether  8:0:28:1:0f:EC 128.32.150.11  spur lust.Berkeley.EDU lust
+2  ether  8:0:2b:0d:78:5b 128.32.150.90  ds3100 kvetching.Berkeley.EDU kvetching
+#2  ether  8:0:20:1:20:f6 128.32.150.25  sun2 cayenne.Berkeley.EDU cayenne
+3  ether 8:0:20:1:be:34 128.32.150.7   sun3 nutmeg.Berkeley.EDU nutmeg
+4  ether 8:0:2b:e:f8:b8 128.32.150.15  ds3100 dill.Berkeley.EDU dill
+5  ether 8:0:20:1:c8:73 128.32.150.16  sun3 basil.Berkeley.EDU basil
+6  ether 8:0:2b:10:73:47 128.32.150.13  ds3100 pride.Berkeley.EDU pride
+#7  ether 8:0:20:1:40:41 128.32.150.56  sun2 savory.Berkeley.EDU savory
+8  ether 8:0:20:0:26:ED 128.32.150.55  sun3 fenugreek.Berkeley.EDU fenugreek
+9  ether 8:0:2b:f:40:78 128.32.150.105  ds3100 piracy.Berkeley.EDU piracy
+10 ether 8:0:20:1:44:10 128.32.150.4   sun3 saffron.Berkeley.EDU saffron
+11 ether 8:0:20:1:48:2E 128.32.150.8   sun3 paprika.Berkeley.EDU paprika
+12 ether 8:0:20:1:10:C3 128.32.150.10  sun3 earth.Berkeley.EDU earth
+13 ether 8:0:20:1:c8:ae 128.32.150.14  sun3 sloth.Berkeley.EDU sloth
+14 ether 8:0:20:0:5:6d  128.32.150.27  sun4 allspice.Berkeley.EDU allspice
+#15 at bottom of file
+#16 ether 8:0:20:1:c8:d3 128.32.150.20  sun3 pepper.Berkeley.EDU pepper
+16 ether 8:0:2b:10:75:3b 128.32.150.20  ds3100 pepper.Berkeley.EDU pepper
+#16 ether 8:0:2b:f:45:25 128.32.150.20  ds3100 pepper.Berkeley.EDU pepper
+17 ether 8:0:20:0:FA:48 128.32.150.9   sun3 murder.Berkeley.EDU murder
+18 ether 8:0:20:7:ac:11 128.32.150.89   sun4 jaywalk.Berkeley.EDU jaywalk
+#19 at bottom of file
+20 ether 8:0:2b:f:45:25 128.32.150.100  ds3100 sedition.Berkeley.EDU sedition
+#20 ether 8:0:2b:f:45:25 128.32.150.19 	ds3100 parsley.Berkeley.EDU parsley
+21 ether 8:0:20:1:B8:81 128.32.150.42  sun3 hecuba.Berkeley.EDU hecuba
+#22 ether 8:0:20:1:2e:29 128.32.150.43  sun2 priam.Berkeley.EDU priam
+22 ether 8:0:2b:10:72:63 128.32.150.86 ds3100 apathy.Berkeley.EDU apathy
+23 ether 8:0:20:1:3F:4D 128.32.150.37  sun3 turmeric.Berkeley.EDU turmeric
+24 ether 8:0:2b:d:78:65  128.32.150.22 ds3100 greed.Berkeley.EDU greed
+#25 ether 8:0:20:1:d:c8  128.32.150.21  sun2 anger.Berkeley.EDU anger
+25 ether 8:0:2b:10:73:b9  128.32.150.106 ds3100 assault.Berkeley.EDU assault 
+26 ether 8:0:20:1:48:51 128.32.150.17  sun3 thyme.Berkeley.EDU thyme
+27 ether 8:0:20:1:cf:16 128.32.150.54  sun3 mace.Berkeley.EDU mace
+#28 is in use as ohm in cory hall
+29 ether 8:0:20:8:7:65 128.32.150.41  sun4 sassafras.Berkeley.EDU sassafras
+#30 at bottom of file
+31 ether 8:0:2b:10:75:a1 128.32.150.95 ds3100 hijack.Berkeley.EDU hijack
+32 ether 8:0:20:1:5c:ce 128.32.150.52  sun3 mint.Berkeley.EDU mint
+33 ether 8:0:20:1:7B:FC 128.32.150.6   sun3 sage.Berkeley.EDU sage
+34 ether 8:0:20:1:3d:e3 128.32.150.31  sun3 fennel.Berkeley.EDU fennel
+35 ether 8:0:20:1:C7:5  128.32.150.46  sun3 paris.Berkeley.EDU paris
+36 ether 8:0:20:1:47:7F 128.32.150.45  sun3 helen.Berkeley.EDU helen
+37 ether 8:0:20:0:27:21 128.32.150.50  sun3 homer.Berkeley.EDU homer
+38 ether 8:0:20:1:DC:B5 128.32.150.29  sun3 oregano.Berkeley.EDU oregano
+39 ether 8:0:2b:10:75:1f 128.32.150.39  ds3100 cardamom.Berkeley.EDU cardamom
+#40 ether 8:0:20:1:4c:42 128.32.150.35  sun3 coriander.Berkeley.EDU coriander
+41 ether 8:0:20:1:3e:2c 128.32.150.32  sun3 cinnamon.Berkeley.EDU cinnamon
+42 ether 8:0:2b:10:73:e8 128.32.150.104 ds3100 violence.Berkeley.EDU violence
+#42 ether 8:0:20:1:24:85 128.32.150.58 sun2 shallot.Berkeley.EDU shallot
+43 ether 8:0:2b:10:75:24 128.32.150.93 ds3100 forgery.Berkeley.EDU forgery
+44 ether 8:0:2b:f:7a:a8  128.32.150.38 ds3100 mustard.Berkeley.EDU mustard
+#45 at bottom of file
+46 ether 8:0:20:0:33:83 128.32.150.44	sun3 tully.Berkeley.EDU tully
+47 ether 8:0:20:1:BD:31 128.32.150.26 	sun3 chilli.Berkeley.EDU chilli
+48 ether 8:0:20:1:C8:25 128.32.150.74 	sun3 catnip.Berkeley.EDU catnip
+49 ether 8:0:20:0:EF:48 128.32.150.34 	sun4 anise.Berkeley.EDU anise
+50 ether 8:0:2b:f:40:63 128.32.150.101 ds3100 subversion.Berkeley.EDU subversion
+51 ether 8:0:2b:d:c0:4b 128.32.150.85  ds3100 piquante.Berkeley.EDU piquante
+52 ether 8:0:2b:d:c4:ba 128.32.150.113 ds3100 gluttony.Berkeley.EDU gluttony
+53 ether 8:0:20:7:f1:e1 128.32.150.115	sun4 treason.Berkeley.EDU treason
+54 ether 8:0:20:0:55:9b 128.32.150.117  sun3 buzz.Berkeley.EDU buzz
+55 ether 8:0:20:7:a2:a8 128.32.150.118	 sun4 crackle.Berkeley.EDU crackle
+56 ether 8:0:20:7:cf:ea  128.32.150.119  sun4 burble.Berkeley.EDU burble
+57 ether 8:0:2b:10:74:bc 128.32.150.2  ds3100 clove.Berkeley.EDU clove
+58 ether 8:0:20:1:48:a4 128.32.150.5  sun3 garlic.Berkeley.EDU garlic
+59 ether 8:0:2b:10:72:ed 128.32.150.107 ds3100 adultery.Berkeley.EDU adultery
+60 ether 8:0:2b:0f:10:c 128.32.150.108   ds3100 arson.Berkeley.EDU arson
+#60 ether 8:0:2b:0f:10:c 128.32.150.3   ds3100 salt.Berkeley.EDU salt
+61 ether 8:0:2b:0f:0c:95 128.32.150.109 ds3100 bribery.Berkeley.EDU bribery
+62 ether 8:0:20:7:d3:fb 128.32.150.102 sun4 terrorism.Berkeley.EDU terrorism
+63 ether 8:0:20:7:e8:36 128.32.150.99 sun4 sabotage.Berkeley.EDU sabotage
+#
+# internets have to come last for now
+#
+15 inet  8:0:2b:3:bc:d6 128.32.156.151 sun3 tonkawa.Berkeley.EDU tonkawa
+19 inet  8:0:2b:3:bc:d6 128.32.156.149 sun3 ponca.Berkeley.EDU ponca
+30 inet	 8:0:2b:3:bc:d6 128.32.156.104 sun4 raid.Berkeley.EDU raid
+45 inet  8:0:2b:3:bc:d6 128.32.156.157 spur spur1.Berkeley.EDU spur1

@@ -1,0 +1,66 @@
+Sept. 15, 1989
+Without new VmMachQuickNDirtyCopy optimization for cross-context copies.
+Using pdev /hosts/anise/./pdevD1
+Write 1 bytes 1000 times , time =    9.0  
+Write 2 bytes 1000 times , time =    9.0  
+Write 4 bytes 1000 times , time =    8.670
+Write 8 bytes 1000 times , time =    8.840
+Write 16 bytes 1000 times , time =    8.640
+Write 32 bytes 1000 times , time =    8.480
+Write 64 bytes 1000 times , time =    8.630
+Write 128 bytes 1000 times , time =    8.670
+Write 256 bytes 1000 times , time =    8.490
+Write 512 bytes 1000 times , time =    8.730
+Write 1024 bytes 1000 times , time =    9.20 
+Write 2048 bytes 1000 times , time =    8.770
+Write 4096 bytes 1000 times , time =    9.380
+Write 8192 bytes 1000 times , time =   10.110
+Read 1 bytes 1000 times , time =    8.770
+Read 2 bytes 1000 times , time =    8.550
+Read 4 bytes 1000 times , time =    8.590
+Read 8 bytes 1000 times , time =    8.780
+Read 16 bytes 1000 times , time =    8.360
+Read 32 bytes 1000 times , time =    8.540
+Read 64 bytes 1000 times , time =    8.560
+Read 128 bytes 1000 times , time =    8.380
+Read 256 bytes 1000 times , time =    8.600
+Read 512 bytes 1000 times , time =    8.630
+Read 1024 bytes 1000 times , time =    8.750
+Read 2048 bytes 1000 times , time =    8.930
+Read 4096 bytes 1000 times , time =    9.350
+Read 8192 bytes 1000 times , time =   10.180
+Software termination
+
+
+With new VmMachQuickNDirtyCopy optimization for cross-context copies.
+Using pdev /hosts/anise/./pdevD1
+Write 1 bytes 1000 times , time =    1.590
+Write 2 bytes 1000 times , time =    1.940
+Write 4 bytes 1000 times , time =    1.590
+Write 8 bytes 1000 times , time =    1.590
+Write 16 bytes 1000 times , time =    1.780
+Write 32 bytes 1000 times , time =    1.610
+Write 64 bytes 1000 times , time =    1.590
+Write 128 bytes 1000 times , time =    1.610
+Write 256 bytes 1000 times , time =    1.990
+Write 512 bytes 1000 times , time =    1.670
+Write 1024 bytes 1000 times , time =    2.100
+Write 2048 bytes 1000 times , time =    1.900
+Write 4096 bytes 1000 times , time =    2.280
+Write 8192 bytes 1000 times , time =    3.210
+Read 1 bytes 1000 times , time =    1.650
+Read 2 bytes 1000 times , time =    1.820
+Read 4 bytes 1000 times , time =    1.620
+Read 8 bytes 1000 times , time =    1.640
+Read 16 bytes 1000 times , time =    1.830
+Read 32 bytes 1000 times , time =    1.630
+Read 64 bytes 1000 times , time =    1.630
+Read 128 bytes 1000 times , time =    1.820
+Read 256 bytes 1000 times , time =    1.640
+Read 512 bytes 1000 times , time =    1.660
+Read 1024 bytes 1000 times , time =    1.880
+Read 2048 bytes 1000 times , time =    1.790
+Read 4096 bytes 1000 times , time =    2.70 
+Read 8192 bytes 1000 times , time =    2.790
+Software termination
+

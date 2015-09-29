@@ -1,0 +1,943 @@
+head     9.5;
+branch   ;
+access   ;
+symbols  ds3100:9.5 sun3:9.5 sprited:9.4.1 sun4nw:9.5 symm:9.5 spur:9.5 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.5
+date     91.09.10.18.22.38;  author rab;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     91.02.01.16.28.51;  author shirriff;  state Exp;
+branches 9.4.1.1;
+next     9.3;
+
+9.3
+date     91.01.08.16.27.06;  author shirriff;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.12.06.21.57.18;  author jhh;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.10.08.11.00.59;  author mendel;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.03.01;  author douglis;  state Stable;
+branches ;
+next     8.3;
+
+8.3
+date     89.08.21.15.22.36;  author mendel;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.08.15.18.43.00;  author rab;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.06.14.22.47.26;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.21.07;  author douglis;  state Stable;
+branches ;
+next     7.0;
+
+7.0
+date     88.11.07.14.47.39;  author brent;  state Exp;
+branches ;
+next     6.6;
+
+6.6
+date     88.11.04.10.17.45;  author brent;  state Exp;
+branches ;
+next     6.5;
+
+6.5
+date     88.11.04.09.42.40;  author brent;  state Exp;
+branches ;
+next     6.4;
+
+6.4
+date     88.10.14.10.27.42;  author brent;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.10.14.09.47.45;  author brent;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.10.11.15.51.50;  author brent;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.13.11.21.48;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.16.53;  author brent;  state Stable;
+branches ;
+next     1.5;
+
+1.5
+date     88.08.03.17.20.47;  author mlgray;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.05.05.16.36.18;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.04.20.14.25.47;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.04.11.18.17.27;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.04.10.35.41;  author brent;  state Exp;
+branches ;
+next     ;
+
+9.4.1.1
+date     91.11.15.13.26.49;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Definitions of the interface to the naming operations
+@
+
+
+9.5
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@/*
+ * fsNameOps.h --
+ *
+ *	Definitions for pathname related operations.  These data structures
+ *	define the file system's naming interface.  This is used internally,
+ *	for network RPCs, and for the interface to pseudo-file-systems.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/fs/RCS/fsNameOps.h,v 9.4 91/02/01 16:28:51 shirriff Exp Locker: rab $ SPRITE (Berkeley)
+ */
+
+#ifndef _FSNAMEOPS
+#define _FSNAMEOPS
+
+/*
+ *
+ *	There are twp operation switch tables defined here.  (See fsOpTable.c
+ *	for their initialization.)
+ *	1. The DOMAIN table used for naming operations like OPEN or REMOVE_DIR.
+ *		These operations take file names as arguments and have to
+ *		be pre-processed by the prefix table module in order to
+ *		chose the correct domain type and server.
+ *	2. The ATTR table is used when getting/setting attributes when
+ *		starting with an open stream (not with a file name).  This
+ *		is keyed on the type of the nameFileID in the stream.
+ *
+ * Name Domain Types:
+ *
+ *	FS_LOCAL_DOMAIN		The file is stored locally.
+ *	FS_REMOTE_SPRITE_DOMAIN	The file is stored on a Sprite server.
+ *	FS_PSEUDO_DOMAIN	The file system is implemented by
+ *				a user-level server process
+ *	FS_NFS_DOMAIN		The file is stored on an NFS server.
+ *
+ */
+
+#define FS_LOCAL_DOMAIN			0
+#define FS_REMOTE_SPRITE_DOMAIN		1
+#define FS_PSEUDO_DOMAIN		2
+#define FS_NFS_DOMAIN			3
+
+#define FS_NUM_DOMAINS			4
+
+/*
+ * DOMAIN SWITCH
+ * Domain specific operations that operate on file names for lookup.
+ * Naming operations are done through Fsprefix_LookupOperation, which uses
+ * the prefix table to choose the domain type and the server for the name.
+ * It then branches through the fs_DomainLookup table to complete the operation.
+ * The arguments to these operations are documented in fsNameOps.h
+ * because they are collected into structs (declared in fsNameOps.h)
+ * and passed through Fsprefix_LookupOperation() to domain-specific routines.
+ */
+
+#define	FS_DOMAIN_IMPORT		0
+#define	FS_DOMAIN_EXPORT		1
+#define	FS_DOMAIN_OPEN			2
+#define	FS_DOMAIN_GET_ATTR		3
+#define	FS_DOMAIN_SET_ATTR		4
+#define	FS_DOMAIN_MAKE_DEVICE		5
+#define	FS_DOMAIN_MAKE_DIR		6
+#define	FS_DOMAIN_REMOVE		7
+#define	FS_DOMAIN_REMOVE_DIR		8
+#define	FS_DOMAIN_RENAME		9
+#define	FS_DOMAIN_HARD_LINK		10
+
+#define	FS_NUM_NAME_OPS			11
+
+extern	ReturnStatus (*fs_DomainLookup[FS_NUM_DOMAINS][FS_NUM_NAME_OPS])();
+
+/*
+ * ATTRIBUTE SWITCH
+ * A switch is used to get to the name server in set/get attributesID,
+ * which take an open stream.  The stream refereneces a nameFileID, and
+ * this switch is keyed on the nameFileID.type (i.e. local or remote file).
+ */
+
+typedef struct Fs_AttrOps {
+    ReturnStatus	(*getAttr) _ARGS_((Fs_FileID *fileIDPtr, int clientID,
+						Fs_Attributes *attrPtr));
+
+    ReturnStatus	(*setAttr) _ARGS_((Fs_FileID *fileIDPtr, 
+					  Fs_Attributes *attrPtr, 
+					  Fs_UserIDs *idPtr, int flags));
+} Fs_AttrOps;
+
+extern Fs_AttrOps fs_AttrOpTable[];
+
+
+/*
+ * The arguments and results of the various lookup operations have to
+ * be packaged into a struct so they can be passed through Fsprefix_LookupOperation()
+ * and into the domain specific lookup routine.  The following typedefs
+ * are for those arguments and results.
+ *
+ * Pseudo-file-systems:  These structures are also used in the interface
+ *	to pseudo-file-system servers.  See <dev/pfs.h>
+ */
+
+/*
+ * 	Fs_OpenArgs are used for the DOMAIN_OPEN, DOMAIN_GET_ATTR,
+ *	DOMAIN_SET_ATTR, DOMAIN_MAKE_DIR and DOMAIN_MAKE_DEVICE operations.
+ *	(Actually, Fs_MakeDeviceArgs & Fs_SetAttrArgs embed Fs_OpenArgs)
+ *
+ *	The arguments for open specify the starting point of the lookup,
+ *	then the root file of the lookup domain, then other parameters
+ *	identifying the client and its intended use of the file.
+ *
+ *	The results of the open fileIDs for the I/O server, the name server,
+ *	and the top-level stream to the file.  There is also some data that
+ *	is specific to the file type
+ *
+ */
+
+typedef struct Fs_OpenArgs {
+    Fs_FileID	prefixID;	/* File ID from prefix handle, MUST BE FIRST */
+    Fs_FileID	rootID;		/* File ID of root.  MUST FOLLOW prefix ID.
+				 * Used to trap ".." past the root. */
+    int		useFlags;	/* Flags defined in fs.h */
+    int		permissions;	/* Permission bits for created files.  Already
+				 * reflects per-process permission mask */
+    int		type;		/* Used to contrain open to a specific type */
+    int		clientID;	/* True Host ID of client doing the open */
+    int		migClientID;	/* Logical host ID if migrated (the home node)*/
+    Fs_UserIDs	id;		/* User and group IDs */
+} Fs_OpenArgs;
+
+typedef struct Fs_OpenResults {
+    Fs_FileID	ioFileID;	/* FileID used to get to I/O server.  This is
+				 * set by the name server, although the I/O
+				 * server has the right to modify the major
+				 * and minor numbers */
+    Fs_FileID	streamID;	/* File ID of the stream being opened */
+    Fs_FileID	nameID;		/* FileID used to get to the name of the file.*/
+    int		dataSize;	/* Size of extra streamData */
+    ClientData	streamData;	/* Pointer to stream specific extra data */
+} Fs_OpenResults;
+
+/*
+ * Fs_LookupArgs are used for the DOMAIN_REMOVE and DOMAIN_REMOVE_DIR
+ * operations.  Also, Fs_2PathParams embeds Fs_LookupArgs.
+ */
+typedef struct Fs_LookupArgs {
+    Fs_FileID prefixID;	/* FileID of the prefix, MUST BE FIRST */
+    Fs_FileID rootID;	/* FileID of the root, MUST FOLLOW prefixID */
+    int useFlags;	/* FS_EXECUTE or FS_RENAME */
+    Fs_UserIDs id;	/* User and group IDs */
+    int clientID;	/* True HostID, needed to expand $MACHINE */
+    int migClientID;	/* Logical host ID if migrated (the home node) */
+} Fs_LookupArgs;
+
+/*
+ * FS_DOMAIN_GET_ATTR results.
+ */
+typedef struct Fs_GetAttrResults {
+    Fs_FileID		*fileIDPtr;	/* File ID that indicates I/O server */
+    Fs_Attributes	*attrPtr;	/* Returned results */
+} Fs_GetAttrResults;
+
+/*
+ * Rpc storage reply parameter for both redirected and unredirected calls.
+ */
+typedef	union	Fs_GetAttrResultsParam {
+    int	prefixLength;
+    struct	AttrResults {
+	Fs_FileID	fileID;
+	Fs_Attributes	attrs;
+    } attrResults;
+} Fs_GetAttrResultsParam;
+
+/*
+ * FS_DOMAIN_SET_ATTR arguments.
+ */
+typedef struct Fs_SetAttrArgs {
+    Fs_OpenArgs		openArgs;
+    Fs_Attributes	attr;
+    int			flags;	/* Set attr flags defined in user/fs.h */
+} Fs_SetAttrArgs;
+
+/*
+ * FS_DOMAIN_MAKE_DEVICE arguments and results.
+ */
+typedef struct Fs_MakeDeviceArgs {
+    Fs_OpenArgs open;
+    Fs_Device device;
+} Fs_MakeDeviceArgs;
+
+/*
+ * FS_DOMAIN_RENAME and FS_DOMAIN_HARD_LINK
+ */
+typedef struct Fs_2PathParams {
+    Fs_LookupArgs	lookup;
+    Fs_FileID		prefixID2;
+} Fs_2PathParams;
+
+typedef struct Fs_2PathData {
+    char		path1[FS_MAX_PATH_NAME_LENGTH];
+    char		path2[FS_MAX_PATH_NAME_LENGTH];
+} Fs_2PathData;
+
+typedef struct Fs_2PathReply {
+    int		prefixLength;	/* Length of returned prefix on re-direct */
+    Boolean	name1ErrorP;	/* TRUE if the error returned, which is either
+				 * a re-direct or stale-handle, applies to
+				 * the first of the two pathnames, FALSE if
+				 * it applies to the second pathname */
+} Fs_2PathReply;
+
+/*
+ * All pathname operations may potentially return new prefix information
+ * from the server, or redirected lookups.
+ */
+typedef struct Fs_RedirectInfo {
+    int	prefixLength;		/* The length of the prefix embedded in
+				 * fileName.  This is used when a server hits
+				 * a remote link and has to return a new file
+				 * name plus an indication of a new prefix. */
+    char fileName[FS_MAX_PATH_NAME_LENGTH];	/* A new file name.  Returned
+				 * from the server when its lookup is about
+				 * to leave its domain. */
+} Fs_RedirectInfo;
+
+typedef struct Fs_2PathRedirectInfo {
+    int name1ErrorP;		/* TRUE if redirection or other error applies
+				 * to the first pathname, FALSE if the error
+				 * applies to second pathname, or no error */
+    int	prefixLength;		/* The length of the prefix embedded in
+				 * fileName.  This is used when a server hits
+				 * a remote link and has to return a new file
+				 * name plus an indication of a new prefix. */
+    char fileName[FS_MAX_PATH_NAME_LENGTH];	/* A new file name.  Returned
+				 * from the server when its lookup is about
+				 * to leave its domain. */
+} Fs_2PathRedirectInfo;
+
+
+/*
+ * Table of name lookup routine maintained by each domain type.
+ */
+typedef struct Fs_DomainLookupOps {
+     ReturnStatus (*import) _ARGS_((char *prefix, int serverID, 
+		    Fs_UserIDs *idPtr, int *domainTypePtr,
+		    Fs_HandleHeader **hdrPtrPtr));
+     ReturnStatus (*export) _ARGS_((Fs_HandleHeader *hdrPtr, int clientID,
+		    Fs_FileID *ioFileIDPtr, int *dataSizePtr, 
+		    ClientData *clientDataPtr));
+     ReturnStatus (*open) _ARGS_((Fs_HandleHeader *prefixHandlePtr,
+		    char *relativeName, Address argsPtr, Address resultsPtr, 
+		    Fs_RedirectInfo **newNameInfoPtrPtr));
+     ReturnStatus (*getAttrPath) _ARGS_((Fs_HandleHeader *prefixHandlePtr,
+		    char *relativeName, Address argsPtr, Address resultsPtr,
+		    Fs_RedirectInfo **newNameInfoPtrPtr));
+     ReturnStatus (*setAttrPath) _ARGS_((Fs_HandleHeader *prefixHandlePtr,
+		    char *relativeName, Address argsPtr, Address resultsPtr,
+		    Fs_RedirectInfo **newNameInfoPtrPtr));
+     ReturnStatus (*makeDevice) _ARGS_((Fs_HandleHeader *prefixHandle, 
+		    char *relativeName, Address argsPtr, Address resultsPtr,
+		    Fs_RedirectInfo **newNameInfoPtrPtr));
+     ReturnStatus (*makeDir) _ARGS_((Fs_HandleHeader *prefixHandle, 
+		    char *relativeName, Address argsPtr, Address resultsPtr, 
+		    Fs_RedirectInfo **newNameInfoPtrPtr));
+     ReturnStatus (*remove) _ARGS_((Fs_HandleHeader *prefixHandle, 
+		    char *relativeName, Address argsPtr, Address resultsPtr, 
+		    Fs_RedirectInfo **newNameInfoPtrPtr));
+     ReturnStatus (*removeDir) _ARGS_((Fs_HandleHeader *prefixHandle, 
+		    char *relativeName, Address argsPtr, Address resultsPtr, 
+		    Fs_RedirectInfo **newNameInfoPtrPtr));
+     ReturnStatus (*rename) _ARGS_((Fs_HandleHeader *prefixHandle1, 
+		    char *relativeName1, Fs_HandleHeader *prefixHandle2, 
+		    char *relativeName2, Fs_LookupArgs *lookupArgsPtr, 
+		    Fs_RedirectInfo **newNameInfoPtrPtr, 
+		    Boolean *name1ErrorPtr));
+     ReturnStatus (*hardLink) _ARGS_((Fs_HandleHeader *prefixHandle1, 
+		    char *relativeName1, Fs_HandleHeader *prefixHandle2,
+		    char *relativeName2, Fs_LookupArgs *lookupArgsPtr, 
+		    Fs_RedirectInfo **newNameInfoPtrPtr, 
+		    Boolean *name1ErrorPtr));
+} Fs_DomainLookupOps;
+
+
+/*
+ * Forward references.
+ */
+extern void Fs_SetIDs _ARGS_((Proc_ControlBlock *procPtr, Fs_UserIDs *idPtr));
+extern void Fs_InstallDomainLookupOps _ARGS_((int domainType, 
+		Fs_DomainLookupOps *nameLookupOpsPtr, 
+		Fs_AttrOps *attrOpTablePtr));
+
+#endif _FSNAMEOPS
+@
+
+
+9.4
+log
+@Added client ID to attribute tracing.
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsNameOps.h,v 9.3 91/01/08 16:27:06 shirriff Exp $ SPRITE (Berkeley)
+a80 1
+#ifdef SOSP91
+a82 12
+						Fs_Attributes *attrPtr,
+						int hostID, int userID));
+
+    ReturnStatus	(*setAttr) _ARGS_((Fs_FileID *fileIDPtr, 
+					  Fs_Attributes *attrPtr, 
+					  Fs_UserIDs *idPtr, int flags,
+					  int clientID, int hostID,
+					  int userID));
+} Fs_AttrOps;
+#else
+typedef struct Fs_AttrOps {
+    ReturnStatus	(*getAttr) _ARGS_((Fs_FileID *fileIDPtr, int clientID,
+a88 1
+#endif
+a129 16
+
+#ifdef SOSP91
+typedef struct Fs_OpenArgsSOSP {
+    Fs_FileID	prefixID;	/* File ID from prefix handle, MUST BE FIRST */
+    Fs_FileID	rootID;		/* File ID of root.  MUST FOLLOW prefix ID.
+				 * Used to trap ".." past the root. */
+    int		useFlags;	/* Flags defined in fs.h */
+    int		permissions;	/* Permission bits for created files.  Already
+				 * reflects per-process permission mask */
+    int		type;		/* Used to contrain open to a specific type */
+    int		clientID;	/* True Host ID of client doing the open */
+    int		migClientID;	/* Logical host ID if migrated (the home node)*/
+    Fs_UserIDs	id;		/* User and group IDs */
+    int		realID;
+} Fs_OpenArgsSOSP;
+#endif
+@
+
+
+9.4.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/fs/fsNameOps.h,v 9.4 91/02/01 16:28:51 shirriff Exp $ SPRITE (Berkeley)
+@
+
+
+9.3
+log
+@Changed getAttr/setAttr to log the UserID
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsNameOps.h,v 9.2 90/12/06 21:57:18 jhh Exp Locker: shirriff $ SPRITE (Berkeley)
+d90 2
+a91 1
+					  int hostID, int userID));
+@
+
+
+9.2
+log
+@Added sosp tracing code
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsNameOps.h,v 9.1 90/10/08 11:00:59 mendel Exp $ SPRITE (Berkeley)
+d81 1
+d84 11
+d101 1
+@
+
+
+9.1
+log
+@Added function prototypes.   Added Fs_InstallDomainLookupOps to support
+multiple fs domain types.
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/fs.mendel/RCS/fsNameOps.h,v 8.3 89/08/21 15:22:36 mendel Exp $ SPRITE (Berkeley)
+d130 16
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsNameOps.h,v 8.3 89/08/21 15:22:36 mendel Exp Locker: douglis $ SPRITE (Berkeley)
+d82 6
+a87 2
+    ReturnStatus	(*getAttr)();
+    ReturnStatus	(*setAttr)();
+d241 44
+d287 4
+a290 1
+extern void Fs_SetIDs();
+@
+
+
+8.3
+log
+@Break up fs to sperate modules.
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsNameOps.h,v 8.1 89/06/14 22:47:26 brent Exp $ SPRITE (Berkeley)
+@
+
+
+8.2
+log
+@Commented #endif labels.
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsNameOps.h,v 8.1 89/06/14 22:47:26 brent Exp Locker: rab $ SPRITE (Berkeley)
+d19 71
+d91 1
+a91 1
+ * be packaged into a struct so they can be passed through FsLookupOperation()
+d100 1
+a100 1
+ * 	FsOpenArgs are used for the DOMAIN_OPEN, DOMAIN_GET_ATTR,
+d102 1
+a102 1
+ *	(Actually, FsMakeDeviceArgs & FsSetAttrArgs embed FsOpenArgs)
+d114 1
+a114 1
+typedef struct FsOpenArgs {
+d125 1
+a125 1
+} FsOpenArgs;
+d127 1
+a127 1
+typedef struct FsOpenResults {
+d136 1
+a136 1
+} FsOpenResults;
+d139 2
+a140 2
+ * FsLookupArgs are used for the DOMAIN_REMOVE and DOMAIN_REMOVE_DIR
+ * operations.  Also, Fs2PathParams embeds FsLookupArgs.
+d142 1
+a142 1
+typedef struct FsLookupArgs {
+d149 1
+a149 1
+} FsLookupArgs;
+d154 1
+a154 1
+typedef struct FsGetAttrResults {
+d157 1
+a157 1
+} FsGetAttrResults;
+d162 1
+a162 1
+typedef	union	FsGetAttrResultsParam {
+d168 1
+a168 1
+} FsGetAttrResultsParam;
+d173 2
+a174 2
+typedef struct FsSetAttrArgs {
+    FsOpenArgs		openArgs;
+d177 1
+a177 1
+} FsSetAttrArgs;
+d182 2
+a183 2
+typedef struct FsMakeDeviceArgs {
+    FsOpenArgs open;
+d185 1
+a185 1
+} FsMakeDeviceArgs;
+d190 2
+a191 2
+typedef struct Fs2PathParams {
+    FsLookupArgs	lookup;
+d193 1
+a193 1
+} Fs2PathParams;
+d195 1
+a195 1
+typedef struct Fs2PathData {
+d198 1
+a198 1
+} Fs2PathData;
+d200 1
+a200 1
+typedef struct Fs2PathReply {
+d206 1
+a206 1
+} Fs2PathReply;
+d212 1
+a212 1
+typedef struct FsRedirectInfo {
+d220 1
+a220 1
+} FsRedirectInfo;
+d222 1
+a222 1
+typedef struct Fs2PathRedirectInfo {
+d233 1
+a233 1
+} Fs2PathRedirectInfo;
+d239 1
+a239 1
+extern void FsSetIDs();
+d241 1
+a241 1
+#endif /* _FSNAMEOPS */
+@
+
+
+8.1
+log
+@Added migrated clientID to open parameters so opening
+of generic devices when migrated "does the right thing"
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsNameOps.h,v 7.0 88/11/07 14:47:39 brent Exp $ SPRITE (Berkeley)
+d170 1
+a170 1
+#endif _FSNAMEOPS
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d4 3
+a6 1
+ *	Definitions for pathname related operations.
+d12 1
+a12 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsNameOps.h,v 7.0 88/11/07 14:47:39 brent Exp Locker: douglis $ SPRITE (Berkeley)
+d23 3
+d29 4
+a32 1
+ * FS_DOMAIN_OPEN
+d40 1
+d51 2
+a52 1
+    int		clientID;	/* Host ID of client doing the open */
+d68 2
+a69 1
+ * FS_DOMAIN_LOOKUP arguments and results.
+d76 2
+a77 1
+    int clientID;	/* Needed to expand $MACHINE */
+d112 1
+a112 2
+    Fs_FileID prefixID;	/* FileID of the prefix, MUST BE FIRST */
+    Fs_FileID rootID;	/* FileID of the root, MUST BE SECOND */
+a113 3
+    int permissions;	/* Permissions already reflect per-process mask */
+    Fs_UserIDs id;
+    int clientID;
+@
+
+
+7.0
+log
+@New version for conversion to new C library
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsNameOps.h,v 6.6 88/11/04 10:17:45 brent Exp Locker: brent $ SPRITE (Berkeley)
+@
+
+
+6.6
+log
+@Changed a field name
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsNameOps.h,v 6.5 88/11/04 09:42:40 brent Exp $ SPRITE (Berkeley)
+@
+
+
+6.5
+log
+@Moved 2Path operation typedefs from fsSpriteDomain.h to fsNameOps.h
+so they can be used by the pseudo-filesystem implementation
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsNameOps.h,v 6.4 88/10/14 10:27:42 brent Exp $ SPRITE (Berkeley)
+d112 1
+a112 1
+    FsLookupArgs	lookupArgs;
+@
+
+
+6.4
+log
+@Changed FsFileID and FsUserIDs to Fs_*
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsNameOps.h,v 6.3 88/10/14 09:47:45 brent Exp Locker: brent $ SPRITE (Berkeley)
+d109 21
+d142 13
+@
+
+
+6.3
+log
+@Extracted out FsUnionData
+@
+text
+@d10 1
+a10 1
+ * $Header: fsNameOps.h,v 6.2 88/10/11 15:51:50 brent Exp $ SPRITE (Berkeley)
+d35 2
+a36 2
+    FsFileID	prefixID;	/* File ID from prefix handle, MUST BE FIRST */
+    FsFileID	rootID;		/* File ID of root.  MUST FOLLOW prefix ID.
+d43 1
+a43 1
+    FsUserIDs	id;		/* User and group IDs */
+d47 1
+a47 1
+    FsFileID	ioFileID;	/* FileID used to get to I/O server.  This is
+d51 2
+a52 2
+    FsFileID	streamID;	/* File ID of the stream being opened */
+    FsFileID	nameID;		/* FileID used to get to the name of the file.*/
+d61 2
+a62 2
+    FsFileID prefixID;	/* FileID of the prefix, MUST BE FIRST */
+    FsFileID rootID;	/* FileID of the root, MUST FOLLOW prefixID */
+d64 1
+a64 1
+    FsUserIDs id;	/* User and group IDs */
+d72 1
+a72 1
+    FsFileID		*fileIDPtr;	/* File ID that indicates I/O server */
+d82 1
+a82 1
+	FsFileID	fileID;
+d100 2
+a101 2
+    FsFileID prefixID;	/* FileID of the prefix, MUST BE FIRST */
+    FsFileID rootID;	/* FileID of the root, MUST BE SECOND */
+d104 1
+a104 1
+    FsUserIDs id;
+@
+
+
+6.2
+log
+@Moved the FsUnionData typedef here and nuked fsRpcInt.h
+@
+text
+@d10 1
+a10 1
+ * $Header: fsNameOps.h,v 6.1 88/08/13 11:21:48 brent Exp $ SPRITE (Berkeley)
+a15 4
+#include "fsFile.h"
+#include "fsDevice.h"
+#include "fsPdevState.h"
+
+a55 16
+
+/*
+ * The stream data is a reference to the following union.  The union is used
+ * to facilitate byte-swaping in the RPC stubs.
+ */
+typedef	union	FsUnionData {
+    FsFileState		fileState;
+    FsDeviceState	devState;
+    FsPdevState		pdevState;
+} FsUnionData;
+
+typedef	struct	FsOpenResultsParam {
+    int			prefixLength;
+    FsOpenResults	openResults;
+    FsUnionData		openData;
+} FsOpenResultsParam;
+@
+
+
+6.1
+log
+@Added set attributes flags
+@
+text
+@d10 1
+a10 1
+ * $Header: fsNameOps.h,v 1.5 88/08/03 17:20:47 mlgray Exp $ SPRITE (Berkeley)
+d18 1
+a18 2
+#include "fsPdev.h"
+#include "fsRpcInt.h"
+d28 8
+a35 4
+ * FS_DOMAIN_OPEN arguments.  The results of a lookup is a stream-type
+ * specific chunk of data used to set up the I/O handle.
+ * FS_DOMAIN_PREFIX also gets FsOpenArgs, although it installs a complete
+ * handle and returns a pointer to that.
+d62 2
+a63 1
+ * Rpc storage reply parameter for both redirected and unredirected calls.
+d65 6
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d103 1
+a104 1
+
+@
+
+
+1.5
+log
+@works on Spur.
+@
+text
+@d10 1
+a10 1
+ * $Header: fsNameOps.h,v 1.4 88/05/05 16:36:18 brent Exp $ SPRITE (Berkeley)
+@
+
+
+1.4
+log
+@Added support for $MACHINE expansion during pathname lookup
+@
+text
+@d10 1
+a10 1
+ * $Header: fsNameOps.h,v 1.3 88/04/20 14:25:47 brent Exp $ SPRITE (Berkeley)
+d16 5
+d59 9
+d85 11
+@
+
+
+1.3
+log
+@Fixed FsMakeDeviceArgs
+@
+text
+@d10 1
+a10 1
+ * $Header: fsNameOps.h,v 1.2 88/04/11 18:17:27 brent Exp $ SPRITE (Berkeley)
+d61 1
+@
+
+
+1.2
+log
+@Added rootID to open arguments, and nameID to open results
+@
+text
+@d10 1
+a10 1
+ * $Header: fsNameOps.h,v 1.1 88/04/04 10:35:41 brent Exp $ SPRITE (Berkeley)
+d85 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d10 1
+a10 1
+ * $Header: fsNameOps.h,v 5.0 87/08/11 10:41:19 sprite Exp $ SPRITE (Berkeley)
+d32 2
+d48 1
+d58 1
+@

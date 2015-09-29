@@ -1,0 +1,386 @@
+' $Header: /sprite/src/lib/c/list/RCS/List.man,v 1.2 89/12/14 12:27:51 shirriff Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS List lib
+.BS
+.SH NAME
+List \- overview of circular linked list routines.
+.SH SYNOPSIS
+.nf
+\fB#include <list.h>\fR
+.sp
+\fBList_Init\fR(\fIheaderPtr\fP)
+\fBList_InitElement\fR(\fIitemPtr\fP)
+\fBList_Insert\fR(\fIitemPtr\fP, \fIdestPtr\fP)
+\fBList_ListInsert\fR(\fIheaderPtr\fP, \fIdestPtr\fP)
+\fBList_Remove\fR(\fIitemPtr\fP)
+\fBList_Move\fR(\fIitemPtr\fP, \fIdestPtr\fP)
+.sp
+\fBLIST_AFTER\fR(\fIitemPtr\fP)
+\fBLIST_BEFORE\fR(\fIitemPtr\fP)
+\fBLIST_ATFRONT\fR(\fIheaderPtr\fP)
+\fBLIST_ATREAR\fR(\fIheaderPtr\fP)
+.sp
+\fBLIST_FORALL\fR(\fIheaderPtr\fP, \fIitemPtr\fP)
+.sp
+\fBList_IsEmpty\fR\fR\fB(\fIheaderPtr\fP)
+\fBList_IsAtEnd\fR(\fIheaderPtr\fP, \fIitemPtr\fP)
+\fBList_First\fR\fR\fB(\fIheaderPtr\fP)
+\fBList_Last\fR\fR\fB(\fIheaderPtr\fP)
+\fBList_Prev\fR\fR\fB(\fIitemPtr\fP)
+\fBList_Next\fR\fR\fB(\fIitemPtr\fP)
+.SH ARGUMENTS
+.AS List_Links *headerPtr in
+.AP List_Links *headerPtr in
+Pointer to the header of a list.
+.AP List_Links *itemPtr in 
+Pointer to a member of a list (possibly the header).
+.AP List_Links *destPtr in 
+Pointer to the member after which to insert or move another member.
+.BE
+
+.SH INTRODUCTION
+.PP
+The \fBList_\fR\ routines define the ``list'' abstraction, 
+which enables one to link
+together arbitrary data structures.  Lists are doubly-linked and
+circular.  A list contains a header followed by its real members, if
+any.  (An empty list therefore consists of a single element, the
+header,  whose \fInextPtr\fR and \fIprevPtr\fR fields point to itself).
+To refer
+to a list as a whole, the user keeps a pointer to the header; that
+header is initialized by a call to \fBList_Init()\fR, which
+creates an empty
+list given a pointer to a List_Links structure (described below).
+.PP
+The links are contained in a two-element structure called List_Links.
+A list joins List_Links records (that is, each List_Links structure
+points to other List_Links structures), but if the List_Links is the
+first field within a larger structure, then the larger structures are
+effectively linked together as shown in Figure 1.
+.if t \{
+.bp
+.sp 2
+.br
+.nr g1 999u
+.nr g2 499u
+.GS C
+.nr g3 \n(.f
+.nr g4 \n(.s
+\0
+.sp -1
+\D's -1u'\D't 5u'
+.sp -1
+\D'l 0u 499u'\D'l 999u 0u'\D'l 0u -499u'\D'l -999u 0u'
+.sp -1
+.ft R
+.ps 16
+.nr g8 \n(.d
+.ds g9 "Figure 1: Structure of a list.
+.sp 443u
+\h'110u'\&\*(g9
+.sp |\n(g8u
+\D's 4u'\D't 1u'
+.sp -1
+.sp 165u
+\h'825u'\D'l -166u 0u'
+.sp -1
+.ft R
+.ps 36
+.nr g8 \n(.d
+.ds g9 "...
+.sp 146u
+\h'756u'\h-\w\*(g9u/2u\&\*(g9
+.sp |\n(g8u
+.ft R
+.ps 16
+.nr g8 \n(.d
+.ds g9 "struct
+.sp 112u
+\h'749u'\h-\w\*(g9u/2u\&\*(g9
+.sp |\n(g8u
+.ft R
+.ps 16
+.nr g8 \n(.d
+.ds g9 "rest of
+.sp 49u
+\h'749u'\h-\w\*(g9u/2u\&\*(g9
+.sp |\n(g8u
+\D's -1u'\D't 3u'
+.sp -1
+.sp -97u
+\h'659u'\D'l 0u 264u'\D'l 166u 0u'\D'l 0u -264u'\D'l -166u 0u'
+.sp -1
+\D't 1u'
+.sp -1
+.sp 77u
+\h'825u'\D'l 10u 6u'\D'l -4u -6u'\D'l 4u -6u'\D'l -10u 6u'
+.sp -1
+.ft R
+.ps 10
+.nr g8 \n(.d
+.ds g9 "List_Links
+.sp -21u
+\h'742u'\h-\w\*(g9u/2u\&\*(g9
+.sp |\n(g8u
+.ft R
+.ps 16
+.nr g8 \n(.d
+.ds g9 "first elt.
+.sp -91u
+\h'749u'\h-\w\*(g9u/2u\&\*(g9
+.sp |\n(g8u
+\D's 4u'
+.sp -1
+.sp 20u
+\h'339u'\D'l -166u 0u'
+.sp -1
+.ft R
+.ps 36
+.nr g8 \n(.d
+.ds g9 "...
+.sp 146u
+\h'256u'\h-\w\*(g9u/2u\&\*(g9
+.sp |\n(g8u
+.ft R
+.ps 16
+.nr g8 \n(.d
+.ds g9 "struct
+.sp 112u
+\h'249u'\h-\w\*(g9u/2u\&\*(g9
+.sp |\n(g8u
+.ft R
+.ps 16
+.nr g8 \n(.d
+.ds g9 "rest of
+.sp 49u
+\h'249u'\h-\w\*(g9u/2u\&\*(g9
+.sp |\n(g8u
+\D's -1u'\D't 3u'
+.sp -1
+.sp -97u
+\h'173u'\D'l 0u 264u'\D'l 166u 0u'\D'l 0u -264u'\D'l -166u 0u'
+.sp -1
+.ft R
+.ps 36
+.nr g8 \n(.d
+.ds g9 "...
+.sp 28u
+\h'61u'\h-\w\*(g9u/2u\&\*(g9
+.sp |\n(g8u
+.ft R
+.ps 36
+.nr g8 \n(.d
+.ds g9 "...
+.sp 77u
+\h'61u'\h-\w\*(g9u/2u\&\*(g9
+.sp |\n(g8u
+.ft R
+.ps 36
+.nr g8 \n(.d
+.ds g9 "...
+.sp 77u
+\h'950u'\h-\w\*(g9u/2u\&\*(g9
+.sp |\n(g8u
+.ft R
+.ps 36
+.nr g8 \n(.d
+.ds g9 "...
+.sp 35u
+\h'950u'\h-\w\*(g9u/2u\&\*(g9
+.sp |\n(g8u
+\D't 1u'
+.sp -1
+.sp 77u
+\h'825u'\D'l 10u 6u'\D'l -4u -6u'\D'l 4u -6u'\D'l -10u 6u'
+.sp -1
+\h'902u'\D'l -77u 0u'
+.sp -1
+\h'659u'\D'l -77u 0u'
+.sp -1
+\h'582u'\D'l 10u 6u'\D'l -4u -6u'\D'l 4u -6u'\D'l -10u 6u'
+.sp -1
+\h'416u'\D'l -77u 0u'
+.sp -1
+\h'96u'\D'l 10u 6u'\D'l -4u -6u'\D'l 4u -6u'\D'l -10u 6u'
+.sp -1
+\h'173u'\D'l -77u 0u'
+.sp -1
+.ft R
+.ps 10
+.nr g8 \n(.d
+.ds g9 "List_Links
+.sp -21u
+\h'256u'\h-\w\*(g9u/2u\&\*(g9
+.sp |\n(g8u
+.sp -49u
+\h'905u'\D'l -9u -6u'\D'l 3u 6u'\D'l -3u 6u'\D'l 9u -6u'
+.sp -1
+\h'829u'\D'l 76u 0u'
+.sp -1
+\h'582u'\D'l 77u 0u'
+.sp -1
+\h'659u'\D'l -10u -6u'\D'l 4u 6u'\D'l -4u 6u'\D'l 10u -6u'
+.sp -1
+.ft R
+.ps 16
+.nr g8 \n(.d
+.ds g9 "last elt.
+.sp -42u
+\h'263u'\h-\w\*(g9u/2u\&\*(g9
+.sp |\n(g8u
+\h'416u'\D'l -10u -6u'\D'l 3u 6u'\D'l -3u 6u'\D'l 10u -6u'
+.sp -1
+\h'339u'\D'l 77u 0u'
+.sp -1
+\h'173u'\D'l -10u -6u'\D'l 3u 6u'\D'l -3u 6u'\D'l 10u -6u'
+.sp -1
+\h'96u'\D'l 77u 0u'
+.sp -1
+.ft R
+.ps 16
+.nr g8 \n(.d
+.ds g9 "header
+.sp -42u
+\h'499u'\h-\w\*(g9u/2u\&\*(g9
+.sp |\n(g8u
+\D't 3u'
+.sp -1
+.sp -28u
+\h'416u'\D'l 0u 97u'\D'l 166u 0u'\D'l 0u -97u'\D'l -166u 0u'
+.sp -1
+.ft R
+.ps 10
+.nr g8 \n(.d
+.ds g9 "List_Links
+.sp 56u
+\h'506u'\h-\w\*(g9u/2u\&\*(g9
+.sp |\n(g8u
+\D't 1u'
+.sp -1
+.sp 77u
+\h'339u'\D'l 10u 6u'\D'l -4u -6u'\D'l 4u -6u'\D'l -10u 6u'
+.sp -1
+\h'825u'\D'l 10u 6u'\D'l -4u -6u'\D'l 4u -6u'\D'l -10u 6u'
+.sp -1
+.sp 354u
+\D't 3u'\D's -1u'
+.br
+.ft \n(g3
+.ps \n(g4
+.GE
+.\}
+.PP
+A typical structure might be something like:
+
+.nf
+     typedef struct {
+                 List_Links links;
+                 char ch;
+                 int flags;
+     } EditChar;
+.fi
+.LP
+It is possible to link structures through List_Links fields that are
+not at the beginning of the larger structure, but it is then necessary
+to perform an additional pointer indirection to find the beginning of
+the larger 
+structure, given a pointer to some point within it.  The easiest way to do 
+this is to define a structure that contains a List_Links field and a pointer
+to the larger structure, such as:
+.nf
+     typedef struct {
+                 List_Links links;
+                 LargeStruct *structPtr;
+     } LargeStructLink;
+.fi
+.LP
+By including a ``LargeStructLink'' within a ``LargeStruct'' and setting the
+structPtr field of the LargeStructLink to point to the LargeStruct
+itself, LargeStruct structures may be linked together in a list
+that is contained in the middle of the structure rather than the beginning.
+
+.SH USAGE
+.PP
+After a list has been initialized by calling \fBList_Init\fR, elements may
+be inserted, deleted, or moved within the list.  
+Before an element is inserted in a list for the first time it must
+be initialized by calling the routine \fBList_InitElement\fR.  To insert a
+List_Links element into a list, \fBList_Insert\fR is called with two
+arguments.  The first argument is a pointer to the structure to be
+inserted into a list, and the second argument is a pointer to the list
+member after which it is to be inserted.  Typically, the following
+macros are used to select the insertion point or the destination of a
+\fBList_Move\fR:
+.IP
+.RS
+.IP "\(bu \fBLIST_BEFORE\fR(\fIitemPtr\fR)" 30
+Insert the element before \fI*itemPtr\fR.
+.IP "\(bu \fBLIST_AFTER\fR(\fIitemPtr\fR)" 30
+Insert the element after \fI*itemPtr\fR.
+.IP "\(bu \fBLIST_ATFRONT\fR(\fIheaderPtr\fR)" 30
+Insert the element at the front of the list.
+.IP "\(bu \fBLIST_ATREAR\fR(\fIheaderPtr\fR)" 30
+Insert the element at the end of the list.
+.RE
+.VS
+.PP
+To insert a list into another list, call \fBList_ListInsert\fR with the
+header of the list to be inserted and a pointer to the member of the second
+list after which the first list is to be inserted.  After calling
+\fBList_ListInsert\fP, the header of the first list is no longer valid
+and may be destroyed.
+.VE
+.PP
+To remove a structure from a list, call \fBList_Remove\fR with a
+pointer to the structure to be removed.  
+To move a structure, call \fBList_Move\fR with two arguments: a pointer to
+the structure to be moved, and a pointer to the structure after which
+it is to be placed.  \fBList_Move\fR(\fIitemPtr\fR, \fIdestPtr\fR) is therefore
+equivalent to \fBList_Remove\fR(\fIitemPtr\fR) followed by \fBList_Insert\fR(\fIitemPtr\fR,
+\fIdestPtr\fR).
+
+.SH ADDITIONAL UTILITIES
+.PP
+Several other macros are available for the manipulation of List_Links.
+\fBLIST_FORALL\fR(\fIheaderPtr\fR, \fIitemPtr\fR) is used to step through each element
+in the list pointed to by headerPtr, setting itemPtr to point to each
+element in turn.  \fBLIST_FORALL\fR is used typically by casting \fIitemPtr\fR as
+a pointer to the entire structure, as in:
+.nf
+	List_Links *headerPtr;	/* pointer to head of existing list */
+	List_Links *itemPtr;	/* place-holder during loop */
+	EditChar   *charPtr;	/* pointer to entire EditChar structure */
+
+	LIST_FORALL(headerPtr, itemPtr) {
+		charPtr = (EditChar *) itemPtr;
+		/* operations using charPtr */
+	}
+.fi
+.PP
+The following macros may be useful to those who use List_Links at a
+``lower'' level than looping through an entire list:
+.RS
+.IP "\(bu \fBList_IsEmpty\fR(\fIheaderPtr\fR) " 30
+returns TRUE if \fIheaderPtr\fR points to an empty
+list.
+.IP "\(bu \fBList_IsAtEnd\fR(\fIheaderPtr\fR, \fIitemPtr\fR)" 30
+returns TRUE if \fIitemPtr\fR is
+past the end of the list; i.e., it points to the header.
+.IP "\(bu \fBList_First\fR(\fIheaderPtr\fR) " 30
+.IP "\(bu \fBList_Last\fR(\fIheaderPtr\fR) " 30
+\fBList_First\fR returns the first member in a list, and
+\fBList_Last\fR returns the last member.  If the list is empty,
+the header is considered to be the first and last member.
+.IP "\(bu \fBList_Prev\fR(\fIitemPtr\fR) " 30
+returns a pointer to the member preceding the given
+member in its list.
+Note:  if the given member is the first element
+of the list, \fBList_Prev\fR will return the list header.
+.IP "\(bu \fBList_Next\fR(\fIitemPtr\fR)" 30
+returns the next
+member of the list.
+Note:  if the given member is the last element
+of the list, \fBList_Next\fR will return the list header.
+.RE
+.SH KEYWORDS
+list, linked, circular, List_Links, data structures

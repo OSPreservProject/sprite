@@ -1,0 +1,7 @@
+D CVS_ADM                           	CVS.adm
+D SCVS                              	SCVS
+F TIMERINT.C;1                      	timerIntersil.c
+F TIMERINT.H;1                      	timerIntersilInt.h
+F TIMERMAC.H;1                      	timerMach.h
+F TIMERTIC.C;1                      	timerTick.c
+F TIMERTIC.H;1                      	timerTick.h

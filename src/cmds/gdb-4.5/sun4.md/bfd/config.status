@@ -1,0 +1,5 @@
+#!/bin/sh
+# This file was generated automatically by configure.  Do not edit.
+# /user6/secor/gdbtemp/gdb-4.5/bfd was configured as follows:
+../configure sun4 -target=sun4 -v -norecursion 
+#  and "./config/sparc-aout.mt"

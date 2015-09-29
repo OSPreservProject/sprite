@@ -1,0 +1,24 @@
+L CCL.C;1                           	ccl.c	dist/ccl.c
+L DFA.C;1                           	dfa.c	dist/dfa.c
+D DIST                              	dist
+D DS3100_M                          	ds3100.md
+L ECS.C;1                           	ecs.c	dist/ecs.c
+L FLEX.MAN;1                        	flex.man	dist/flex.1
+L FLEX.SKE;1                        	flex.skel	dist/flex.skel
+L FLEXDEF.H;1                       	flexdef.h	dist/flexdef.h
+L GEN.C;1                           	gen.c	dist/gen.c
+F LOCAL.MK;1                        	local.mk
+L MAIN.C;1                          	main.c	dist/main.c
+F MAKEFILE.;1                       	Makefile
+L MISC.C;1                          	misc.c	dist/misc.c
+L NFA.C;1                           	nfa.c	dist/nfa.c
+F PARSE.H;1                         	parse.h
+L PARSE.Y;1                         	parse.y	dist/parse.y
+D RCS                               	RCS
+L SCAN.C;1                          	scan.c	dist/initscan.c
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md
+L SYM.C;1                           	sym.c	dist/sym.c
+L TBLCMP.C;1                        	tblcmp.c	dist/tblcmp.c
+L YYLEX.C;1                         	yylex.c	dist/yylex.c
+F Y_OUTPUT.;1                       	y.output

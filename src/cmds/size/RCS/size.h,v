@@ -1,0 +1,121 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     89.07.26.23.45.34;  author rab;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.07.19.17.16.04;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.05.16.23.52.31;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@Added support for ds3100.
+@
+text
+@/*
+ * size.h --
+ *
+ *	Declarations for the size program. To port this program to a new
+ *	machine you have to define HOST_FMT to be the format 
+ *	of the new host. Look at fmt.h for supported host formats.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /a/newcmds/size/RCS/size.h,v 1.2 89/07/19 17:16:04 rab Exp Locker: rab $ SPRITE (Berkeley)
+ */
+
+#ifndef _SIZE
+#define _SIZE
+
+#include <sprite.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <fmt.h>
+
+
+#define HEADERSIZE	100
+
+/*
+ * A rather awkward way of determining the host machine type. There should
+ * be one entry for each machine this program runs on.
+ */
+#if (defined(sun2) || defined(sun3))
+#define HOST_FMT FMT_68K_FORMAT
+#elif defined(spur)
+#define HOST_FMT FMT_SPUR_FORMAT
+#elif defined(ds3100)
+#define HOST_FMT FMT_MIPS_FORMAT
+#else
+#define HOST_FMT FMT_68K_FORMAT
+#endif
+
+extern int hostFmt;
+
+/*
+ * Routines to print out size of object file.
+ */
+extern ReturnStatus	Print68k();
+extern ReturnStatus	PrintSpur();
+extern ReturnStatus     PrintMips();
+
+#endif /* _SIZE */
+
+@
+
+
+1.2
+log
+@added support for ds3100
+@
+text
+@d17 1
+a17 1
+ * $Header: /a/newcmds/size/RCS/size.h,v 1.1 89/05/16 23:52:31 jhh Exp Locker: rab $ SPRITE (Berkeley)
+d37 1
+a37 1
+#elif (defined(spur))
+d39 1
+a39 1
+#elif (defined(ds3100)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/users/jhh/src/size/RCS/size.h,v 1.1 89/03/30 16:34:53 jhh Exp $ SPRITE (Berkeley)
+d39 2
+d52 1
+a52 1
+
+@

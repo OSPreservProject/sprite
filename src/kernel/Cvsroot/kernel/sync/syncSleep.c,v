@@ -1,0 +1,650 @@
+head     9.4;
+branch   ;
+access   ;
+symbols  ds3100:9.4 sun3:9.4 sun4nw:9.4 symm:9.4 spur:9.4 sprited:9.4.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.4
+date     91.03.20.11.31.06;  author kupfer;  state Exp;
+branches 9.4.1.1;
+next     9.3;
+
+9.3
+date     90.10.05.17.50.30;  author mendel;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.10.05.17.35.18;  author shirriff;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.21.17.26.53;  author jhh;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.20.01;  author douglis;  state Stable;
+branches ;
+next     8.4;
+
+8.4
+date     89.08.17.17.31.58;  author jhh;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.08.01.20.44.02;  author jhh;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.02.19.22.15.31;  author jhh;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.22.19.36.40;  author jhh;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.38.03;  author douglis;  state Stable;
+branches ;
+next     6.2;
+
+6.2
+date     88.10.30.21.14.33;  author jhh;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.25.22.40.03;  author douglis;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.27.09;  author brent;  state Stable;
+branches ;
+next     5.5;
+
+5.5
+date     88.05.05.18.00.31;  author nelson;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     88.03.08.16.16.45;  author nelson;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     87.12.15.16.50.21;  author nelson;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.12.12.16.41.30;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.08.26.18.15.34;  author andrew;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.51.04;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.4.1.1
+date     91.08.15.21.35.41;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.4
+log
+@Flush Sync_EventWait and Sync_EventWakeup.
+@
+text
+@/* 
+ * syncSleep.c --
+ *
+ *	Interface between the timer module and processes that wish to sleep
+ * 	for a specified period of time.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/sync/RCS/syncSleep.c,v 9.3 90/10/05 17:50:30 mendel Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+
+#include <sprite.h>
+#include <sync.h>
+#include <syncInt.h>
+#include <proc.h>
+#include <sched.h>
+#include <sig.h>
+#include <stdlib.h>
+#include <timer.h>
+
+static Boolean WaitTimeSubr _ARGS_((Timer_Ticks wakeupTime));
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sync_WaitTime --
+ *
+ *	Sleep for the specified period of time.
+ *
+ * Results:
+ *	TRUE if aborted because of a signal, FALSE otherwise.
+ *
+ * Side effects:
+ *	Process is put to sleep.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Boolean
+Sync_WaitTime(time)
+    Time time;		/* Amount of time the process will sleep */
+{
+    Timer_Ticks ticks;
+    Timer_Ticks wakeupTime;
+    Timer_Ticks	currentTime;		
+
+    /*
+     * Convert the passed-in time to ticks format.
+     */
+
+    Timer_TimeToTicks(time, &ticks);
+    Timer_GetCurrentTicks(&currentTime);
+    Timer_AddTicks(currentTime, ticks, &wakeupTime);
+
+    return(WaitTimeSubr(wakeupTime));
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sync_WaitTimeInTicks --
+ *
+ *	Sleep for the specified period of time. 
+ *
+ * Results:
+ *	TRUE if aborted because of a signal, FALSE otherwise.
+ *
+ * Side effects:
+ *	Process is put to sleep.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Boolean
+Sync_WaitTimeInTicks(time)
+    Timer_Ticks time;		/* Amount of time the process will sleep */
+{
+    Timer_Ticks	currentTime;		
+    Timer_Ticks wakeupTime;
+
+    Timer_GetCurrentTicks(&currentTime);
+    Timer_AddTicks(currentTime, time, &wakeupTime);
+
+    return(WaitTimeSubr(wakeupTime));
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sync_WaitTimeInterval --
+ *
+ *	Sleep for the specified period of time.
+ *
+ * Results:
+ *	TRUE if aborted because of a signal, FALSE otherwise.
+ *
+ * Side effects:
+ *	Process is put to sleep.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Boolean
+Sync_WaitTimeInterval(interval)
+    unsigned int interval;	/* Amount of time the process will sleep */
+{
+    Timer_Ticks wakeupTime;
+    Timer_Ticks	currentTime;		
+
+    /*
+     * Convert the passed-in time to ticks format.
+     */
+
+    Timer_GetCurrentTicks(&currentTime);
+    Timer_AddIntervalToTicks(currentTime, interval, &wakeupTime);
+
+    return(WaitTimeSubr(wakeupTime));
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WaitTimeSubr --
+ *
+ *	Sleep until the specified time.  This is done by
+ *	atomically scheduling a call to Sync_WakeupProcess and causing
+ *	the current process to wait on an event corresponding to its
+ *	process control block pointer.
+ *
+ * Results:
+ *	TRUE if aborted because of a signal, FALSE otherwise.
+ *
+ * Side effects:
+ *	Process is put to sleep.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Boolean
+WaitTimeSubr(wakeupTime)
+    Timer_Ticks wakeupTime;		/* Time when process will wakeup */
+{
+    Proc_ControlBlock 	*procPtr;	
+    Timer_QueueElement 	wakeupElement;
+    Boolean 		wokeUp = FALSE;
+    Timer_Ticks		currentTime;		
+    Boolean		sigPending;
+    int			pnum;
+
+    
+    procPtr = Proc_GetCurrentProc();
+    pnum = Mach_GetProcessorNumber();
+    wakeupElement.routine    = Sync_WakeupProcess; 
+    wakeupElement.clientData = (ClientData) procPtr;
+    wakeupElement.time       = wakeupTime;
+
+    /*
+     * Get the scheduler master lock here.  This is done to ensure that
+     * the wakeup call cannot precede the process's going to sleep.
+     * SyncEventWaitInt expects the sched_MutexPtr lock to be held upon entry.
+     */
+
+    MASTER_LOCK(sched_MutexPtr);
+    Timer_ScheduleRoutine(&wakeupElement, FALSE);
+
+    /*
+     * Sleep until the designated time passes.  This is done in a loop,
+     * since a process may be awakened by a spurious broadcast.
+     */
+
+    do {
+	if (wokeUp) {
+	    sync_Instrument[pnum].numSpuriousWakeups++;
+#ifdef DEBUG
+	    printf("Sync_WaitTime: woke up for wrong reason.\n");
+#endif /* DEBUG */
+	}
+	sigPending = SyncEventWaitInt((unsigned int) procPtr, TRUE);
+	wokeUp = TRUE;
+	Timer_GetCurrentTicks(&currentTime);
+    } while (Timer_TickLT(currentTime, wakeupTime) && !sigPending);
+
+    (void) Timer_DescheduleRoutine(&wakeupElement);
+#ifdef spur
+    Mach_InstCountEnd(1);
+#endif
+    MASTER_UNLOCK(sched_MutexPtr);
+
+    return(sigPending);
+}
+
+
+
+/* STUB procedure */
+ENTRY ReturnStatus
+Sync_Sleep(time)
+    Time time;				  /* time process will sleep */
+{
+    Timer_Ticks ticks;
+    /*
+     * Convert the passed-in time to ticks format.
+     */
+    Timer_TimeToTicks(time, &ticks);
+    if (Sync_WaitTimeInTicks(ticks)) {
+	return(GEN_ABORTED_BY_SIGNAL);
+    } else {
+	return(SUCCESS);
+    }
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sync_WakeupProcess --
+ *
+ *	Perform a broadcast to wake up a process after a timer event
+ *	has gone off.  
+ *
+ *	This routine is equivalent to Sync_SlowBroadcast without the wait flag
+ *	and with interrupts disabled.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Make the process that was waiting for the timer event runnable.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+void
+Sync_WakeupProcess(time, procAddress)
+    Timer_Ticks time;		/* passed by Timer module but ignored */
+    ClientData procAddress;	/* address of PCB of process to wake up */
+{
+    MASTER_LOCK(sched_MutexPtr);
+    SyncEventWakeupInt((unsigned int) procAddress);
+    MASTER_UNLOCK(sched_MutexPtr);
+}
+@
+
+
+9.4.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sync/RCS/syncSleep.c,v 9.4 91/03/20 11:31:06 kupfer Exp $ SPRITE (Berkeley)";
+@
+
+
+9.3
+log
+@Did function prototypeing and fixed include files.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sync/RCS/syncSleep.c,v 9.2 90/10/05 17:35:18 shirriff Exp Locker: mendel $ SPRITE (Berkeley)";
+d248 3
+a250 1
+    Sync_EventWakeup((unsigned int) procAddress);
+@
+
+
+9.2
+log
+@Added include of vmMach.h (mendel checking for ken)
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sync/RCS/syncSleep.c,v 9.1 89/10/21 17:26:53 jhh Exp Locker: shirriff $ SPRITE (Berkeley)";
+d16 8
+a23 7
+#include "sprite.h"
+#include "sync.h"
+#include "proc.h"
+#include "sched.h"
+#include "sig.h"
+#include "stdlib.h"
+#include "timer.h"
+d25 1
+a25 1
+static Boolean WaitTimeSubr();
+@
+
+
+9.1
+log
+@Lint fixes
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sync/RCS/syncSleep.c,v 9.0 89/09/12 15:20:01 douglis Stable Locker: jhh $ SPRITE (Berkeley)";
+a22 1
+#include "vmMach.h"
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sync/RCS/syncSleep.c,v 8.4 89/08/17 17:31:58 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d192 1
+a192 1
+    Timer_DescheduleRoutine(&wakeupElement);
+@
+
+
+8.4
+log
+@Added instruction counting for spur
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sync/RCS/syncSleep.c,v 8.3 89/08/01 20:44:02 jhh Exp $ SPRITE (Berkeley)";
+@
+
+
+8.3
+log
+@Rewrite of lock information gathering
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sync/RCS/syncSleep.c,v 8.2 89/02/19 22:15:31 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d193 3
+@
+
+
+8.2
+log
+@Changes due to lock registration
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sync/RCS/syncSleep.c,v 8.1 88/11/22 19:36:40 jhh Exp $ SPRITE (Berkeley)";
+d157 1
+d161 1
+d182 1
+a182 1
+	    sync_Instrument.numSpuriousWakeups++;
+@
+
+
+8.1
+log
+@new semaphore definition
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sync/RCS/syncSleep.c,v 6.2 88/10/30 21:14:33 jhh Exp $ SPRITE (Berkeley)";
+d21 1
+a21 1
+#include "mem.h"
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sync/RCS/syncSleep.c,v 6.2 88/10/30 21:14:33 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d167 1
+a167 1
+     * SyncEventWaitInt expects the sched_Mutex lock to be held upon entry.
+d170 1
+a170 1
+    MASTER_LOCK(sched_Mutex);
+d191 1
+a191 1
+    MASTER_UNLOCK(sched_Mutex);
+@
+
+
+6.2
+log
+@multiprocessor port, change to new C lib
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sync/RCS/syncSleep.c,v 6.1 88/08/25 22:40:03 douglis Exp Locker: jhh $ SPRITE (Berkeley)";
+@
+
+
+6.1
+log
+@
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: syncSleep.c,v 6.0 88/08/11 12:27:09 brent Stable $ SPRITE (Berkeley)";
+d182 1
+a182 1
+	    Sys_Printf("Sync_WaitTime: woke up for wrong reason.\n");
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d12 2
+a13 2
+static char rcsid[] = "$Header: syncSleep.c,v 5.5 88/05/05 18:00:31 nelson Exp $ SPRITE (Berkeley)";
+#endif not lint
+d183 1
+a183 1
+#endif DEBUG
+@
+
+
+5.5
+log
+@Handles move of functionality from sys to mach.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: syncSleep.c,v 5.4 88/03/08 16:16:45 nelson Exp $ SPRITE (Berkeley)";
+@
+
+
+5.4
+log
+@Removed un-needed calls to VmMach_SetupContext
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: syncSleep.c,v 5.3 87/12/15 16:50:21 nelson Exp $ SPRITE (Berkeley)";
+d159 1
+a159 1
+    procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+@
+
+
+5.3
+log
+@Fixed lint errors.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: syncSleep.c,v 5.2 87/12/12 16:41:30 nelson Exp $ SPRITE (Berkeley)";
+a191 1
+    VmMach_SetupContext(procPtr);
+@
+
+
+5.2
+log
+@Moved call to set up the context out of the master lock so that it could
+be monitored.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: syncSleep.c,v 5.1 87/08/26 18:15:34 andrew Exp $ SPRITE (Berkeley)";
+d23 1
+@
+
+
+5.1
+log
+@removed Mem_Alloc from WaitTimeSubr.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: syncSleep.c,v 5.0 87/08/11 10:51:04 sprite Exp $ SPRITE (Berkeley)";
+d191 1
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: syncSleep.c,v 3.5 86/11/09 18:02:58 andrew Exp $ SPRITE (Berkeley)";
+d152 1
+a152 1
+    Timer_QueueElement 	*wakeupElementPtr;
+d159 3
+a161 5
+    wakeupElementPtr = 
+		(Timer_QueueElement *) Mem_Alloc(sizeof(Timer_QueueElement));
+    wakeupElementPtr->routine    = Sync_WakeupProcess; 
+    wakeupElementPtr->clientData = (ClientData) procPtr;
+    wakeupElementPtr->time       = wakeupTime;
+d170 1
+a170 1
+    Timer_ScheduleRoutine(wakeupElementPtr, FALSE);
+d189 1
+a189 1
+    Timer_DescheduleRoutine(wakeupElementPtr);
+a190 1
+    Mem_Free((Address) wakeupElementPtr);
+@

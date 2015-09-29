@@ -1,0 +1,311 @@
+@section Targets
+
+@*
+@strong{Description}@*
+Each port of BFD to a different machine requries the creation
+of a target back end. All the back end provides to the root
+part of BFD is a structure containing pointers to functions
+which perform certain low level operations on files. BFD
+translates the applications's requests through a pointer into
+calls to the back end routines. 
+When a file is opened with @code{bfd_openr}, its format and
+target are unknown. BFD uses various mechanisms to determine
+how to interpret the file. The operations performed are:
+@itemize @bullet
+@item First a BFD is created by calling the internal routine
+@code{new_bfd}, then @code{bfd_find_target} is called with the
+target string supplied to @code{bfd_openr} and the new BFD pointer. @item If a null target string was provided to @code{bfd_find_target},
+it looks up the environment variable @code{GNUTARGET} and uses
+that as the target string. @item If the target string is still NULL, or the target string is
+@code{default}, then the first item in the target vector is used
+as the target type. @xref{bfd_target}.@item Otherwise, the elements in the target vector are inspected
+one by one, until a match on target name is found. When found,
+that is used. @item Otherwise the error @code{invalid_target} is returned to
+@code{bfd_openr}.@item @code{bfd_openr} attempts to open the file using
+@code{bfd_open_file}, and returns the BFD.
+Once the BFD has been opened and the target selected, the file
+format may be determined. This is done by calling
+@code{bfd_check_format} on the BFD with a suggested format. The
+routine returns @code{true} when the application guesses right.
+@menu
+* bfd_target::
+@end menu
+@end itemize
+@*
+@node bfd_target,  , Targets, Targets
+@subsection bfd_target
+
+@*
+@strong{Description}@*
+This structure contains everything that BFD knows about a
+target. It includes things like its byte order, name, what
+routines to call to do various operations, etc.   
+Every BFD points to a target structure with its @code{xvec}
+member. 
+Shortcut for declaring fields which are prototyped function
+pointers, while avoiding anguish on compilers that don't
+support protos.
+@example
+#define SDEF(ret, name, arglist) \
+                PROTO(ret,(*name),arglist)
+#define SDEF_FMT(ret, name, arglist) \
+                PROTO(ret,(*name[bfd_type_end]),arglist)
+@end example
+These macros are used to dispatch to functions through the
+bfd_target vector. They are used in a number of macros further
+down in @file{bfd.h}, and are also used when calling various
+routines by hand inside the BFD implementation.  The "arglist"
+argument must be parenthesized; it contains all the arguments
+to the called function. 
+@example
+#define BFD_SEND(bfd, message, arglist) \
+               ((*((bfd)->xvec->message)) arglist)
+@end example
+For operations which index on the BFD format 
+@example
+#define BFD_SEND_FMT(bfd, message, arglist) \
+            (((bfd)->xvec->message[(int)((bfd)->format)]) arglist)
+@end example
+This is the struct which defines the type of BFD this is.  The
+@code{xvec} member of the struct @code{bfd} itself points here.  Each
+module that implements access to a different target under BFD,
+defines one of these.
+FIXME, these names should be rationalised with the names of
+the entry points which call them. Too bad we can't have one
+macro to define them both! 
+@example
+typedef struct bfd_target
+@{
+@end example
+identifies the kind of target, eg SunOS4, Ultrix, etc 
+@example
+  char *name;
+@end example
+The "flavour" of a back end is a general indication about the contents
+of a file.
+@example
+  enum target_flavour @{
+    bfd_target_unknown_flavour,
+    bfd_target_aout_flavour,
+    bfd_target_coff_flavour,
+    bfd_target_elf_flavour,
+    bfd_target_ieee_flavour,
+    bfd_target_oasys_flavour,
+    bfd_target_srec_flavour@} flavour;
+@end example
+The order of bytes within the data area of a file.
+@example
+  boolean byteorder_big_p;
+@end example
+The order of bytes within the header parts of a file.
+@example
+  boolean header_byteorder_big_p;
+@end example
+This is a mask of all the flags which an executable may have set -
+from the set @code{NO_FLAGS}, @code{HAS_RELOC}, ...@code{D_PAGED}.
+@example
+  flagword object_flags;       
+@end example
+This is a mask of all the flags which a section may have set - from
+the set @code{SEC_NO_FLAGS}, @code{SEC_ALLOC}, ...@code{SET_NEVER_LOAD}.
+@example
+  flagword section_flags;
+@end example
+The pad character for filenames within an archive header.
+@example
+  char ar_pad_char;            
+@end example
+The maximum number of characters in an archive header.
+@example
+ unsigned short ar_max_namelen;
+@end example
+The minimum alignment restriction for any section.
+@example
+  unsigned int align_power_min;
+@end example
+Entries for byte swapping for data. These are different to the other
+entry points, since they don't take BFD as first arg.  Certain other handlers
+could do the same.
+@example
+  SDEF (bfd_vma,      bfd_getx64, (bfd_byte *));
+  SDEF (void,         bfd_putx64, (bfd_vma, bfd_byte *));
+  SDEF (bfd_vma, bfd_getx32, (bfd_byte *));
+  SDEF (void,         bfd_putx32, (bfd_vma, bfd_byte *));
+  SDEF (bfd_vma, bfd_getx16, (bfd_byte *));
+  SDEF (void,         bfd_putx16, (bfd_vma, bfd_byte *));
+@end example
+Byte swapping for the headers
+@example
+  SDEF (bfd_vma,   bfd_h_getx64, (bfd_byte *));
+  SDEF (void,          bfd_h_putx64, (bfd_vma, bfd_byte *));
+  SDEF (bfd_vma,  bfd_h_getx32, (bfd_byte *));
+  SDEF (void,          bfd_h_putx32, (bfd_vma, bfd_byte *));
+  SDEF (bfd_vma,  bfd_h_getx16, (bfd_byte *));
+  SDEF (void,          bfd_h_putx16, (bfd_vma, bfd_byte *));
+@end example
+Format dependent routines, these turn into vectors of entry points
+within the target vector structure; one for each format to check.
+Check the format of a file being read.  Return bfd_target * or zero. 
+@example
+  SDEF_FMT (struct bfd_target *, _bfd_check_format, (bfd *));
+@end example
+Set the format of a file being written.  
+@example
+  SDEF_FMT (boolean,            _bfd_set_format, (bfd *));
+@end example
+Write cached information into a file being written, at bfd_close. 
+@example
+  SDEF_FMT (boolean,            _bfd_write_contents, (bfd *));
+@end example
+The following functions are defined in @code{JUMP_TABLE}. The idea is
+that the back end writer of @code{foo} names all the routines
+@code{foo_}@var{entry_point}, @code{JUMP_TABLE} will built the entries
+in this structure in the right order.
+Core file entry points
+@example
+  SDEF (char *, _core_file_failing_command, (bfd *));
+  SDEF (int,    _core_file_failing_signal, (bfd *));
+  SDEF (boolean, _core_file_matches_executable_p, (bfd *, bfd *));
+@end example
+Archive entry points
+@example
+ SDEF (boolean, _bfd_slurp_armap, (bfd *));
+ SDEF (boolean, _bfd_slurp_extended_name_table, (bfd *));
+ SDEF (void,   _bfd_truncate_arname, (bfd *, CONST char *, char *));
+ SDEF (boolean, write_armap, (bfd *arch, 
+                              unsigned int elength,
+                              struct orl *map,
+                              unsigned int orl_count, 
+                              int stridx));
+@end example
+Standard stuff.
+@example
+  SDEF (boolean, _close_and_cleanup, (bfd *));
+  SDEF (boolean, _bfd_set_section_contents, (bfd *, sec_ptr, PTR,
+                                            file_ptr, bfd_size_type));
+  SDEF (boolean, _bfd_get_section_contents, (bfd *, sec_ptr, PTR, 
+                                            file_ptr, bfd_size_type));
+  SDEF (boolean, _new_section_hook, (bfd *, sec_ptr));
+@end example
+Symbols and reloctions
+@example
+  SDEF (unsigned int, _get_symtab_upper_bound, (bfd *));
+  SDEF (unsigned int, _bfd_canonicalize_symtab,
+           (bfd *, struct symbol_cache_entry **));
+  SDEF (unsigned int, _get_reloc_upper_bound, (bfd *, sec_ptr));
+  SDEF (unsigned int, _bfd_canonicalize_reloc, (bfd *, sec_ptr, arelent **,
+                                               struct symbol_cache_entry**));
+  SDEF (struct symbol_cache_entry  *, _bfd_make_empty_symbol, (bfd *));
+  SDEF (void,     _bfd_print_symbol, (bfd *, PTR, struct symbol_cache_entry  *,
+                                      bfd_print_symbol_type));
+#define bfd_print_symbol(b,p,s,e) BFD_SEND(b, _bfd_print_symbol, (b,p,s,e))
+  SDEF (alent *,   _get_lineno, (bfd *, struct symbol_cache_entry  *));
+
+  SDEF (boolean,   _bfd_set_arch_mach, (bfd *, enum bfd_architecture,
+                                       unsigned long));
+
+  SDEF (bfd *,  openr_next_archived_file, (bfd *arch, bfd *prev));
+  SDEF (boolean, _bfd_find_nearest_line,
+        (bfd *abfd, struct sec  *section,
+         struct symbol_cache_entry  **symbols,bfd_vma offset,
+        CONST char **file, CONST char **func, unsigned int *line));
+  SDEF (int,    _bfd_stat_arch_elt, (bfd *, struct stat *));
+
+  SDEF (int,    _bfd_sizeof_headers, (bfd *, boolean));
+
+  SDEF (void, _bfd_debug_info_start, (bfd *));
+  SDEF (void, _bfd_debug_info_end, (bfd *));
+  SDEF (void, _bfd_debug_info_accumulate, (bfd *, struct sec  *));
+  SDEF (bfd_byte *, _bfd_get_relocated_section_contents, (bfd*,struct bfd_seclet_struct *));
+  SDEF (boolean,_bfd_relax_section,(bfd *, struct sec *, struct symbol_cache_entry **));
+@end example
+Special entry points for gdb to swap in coff symbol table parts
+@example
+  SDEF(void, _bfd_coff_swap_aux_in,(
+       bfd            *abfd ,
+       PTR             ext,
+       int             type,
+       int             class ,
+       PTR             in));
+
+  SDEF(void, _bfd_coff_swap_sym_in,(
+       bfd            *abfd ,
+       PTR             ext,
+       PTR             in));
+
+  SDEF(void, _bfd_coff_swap_lineno_in,  (
+       bfd            *abfd,
+       PTR            ext,
+       PTR             in));
+
+@end example
+Special entry points for gas to swap coff parts
+@example
+ SDEF(unsigned int, _bfd_coff_swap_aux_out,(
+       bfd   	*abfd,
+       PTR	in,
+       int    	type,
+       int    	class,
+       PTR    	ext));
+
+ SDEF(unsigned int, _bfd_coff_swap_sym_out,(
+      bfd      *abfd,
+      PTR	in,
+      PTR	ext));
+
+ SDEF(unsigned int, _bfd_coff_swap_lineno_out,(
+      	bfd   	*abfd,
+      	PTR	in,
+	PTR	ext));
+
+ SDEF(unsigned int, _bfd_coff_swap_reloc_out,(
+      	bfd     *abfd,
+     	PTR	src,
+	PTR	dst));
+
+ SDEF(unsigned int, _bfd_coff_swap_filehdr_out,(
+      	bfd  	*abfd,
+	PTR 	in,
+	PTR 	out));
+
+ SDEF(unsigned int, _bfd_coff_swap_aouthdr_out,(
+      	bfd 	*abfd,
+	PTR 	in,
+	PTR	out));
+
+ SDEF(unsigned int, _bfd_coff_swap_scnhdr_out,(
+      	bfd  	*abfd,
+      	PTR	in,
+	PTR	out));
+
+@} bfd_target;
+@end example
+@*
+@findex bfd_find_target
+@subsubsection @code{bfd_find_target}
+@strong{Description}@*
+Returns a pointer to the transfer vector for the object target
+named target_name.  If target_name is NULL, chooses the one in
+the environment variable GNUTARGET; if that is null or not
+defined thenthe first entry in the target list is chosen.
+Passing in the string "default" or setting the environment
+variable to "default" will cause the first entry in the target
+list to be returned, and "target_defaulted" will be set in the
+BFD.  This causes @code{bfd_check_format} to loop over all the
+targets to find the one that matches the file being read.
+@*
+@strong{Synopsis}
+@example
+bfd_target *bfd_find_target(CONST char *, bfd *);
+@end example
+@findex bfd_target_list
+@subsubsection @code{bfd_target_list}
+@strong{Description}@*
+This function returns a freshly malloced NULL-terminated
+vector of the names of all the valid BFD targets. Do not
+modify the names
+@*
+@strong{Synopsis}
+@example
+CONST char **bfd_target_list(void);
+@end example

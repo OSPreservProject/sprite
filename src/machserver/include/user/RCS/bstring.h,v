@@ -1,0 +1,100 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  srv030:1.3 srv027:1.3 srv026:1.3 srv024:1.3 srv021:1.3 srv019:1.3 srv018:1.3 srv016:1.3 srv014:1.3 srv010:1.3 srv008:1.3 srv007:1.3 srv006:1.3 srv005:1.3 srv004:1.3 srv003:1.3 srv002:1.3 srv001:1.3;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     91.11.11.23.07.09;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.10.04.11.49.28;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.09.28.19.12.36;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@Use _VoidPtr and size_t, to be more standard.
+@
+text
+@/*
+ * bstring.h --
+ *
+ *	Declarations of BSD library procedures for byte manipulation.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /r3/kupfer/spriteserver/include/user/RCS/bstring.h,v 1.2 91/10/04 11:49:28 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+ */
+
+#ifndef _BSTRING
+#define _BSTRING
+
+#include <cfuncproto.h>
+#include <sys/types.h>
+
+extern int	bcmp _ARGS_((_CONST _VoidPtr sourcePtr,
+			     _CONST _VoidPtr destPtr,
+			     size_t numBytes));
+extern void	bcopy _ARGS_((_CONST _VoidPtr sourcePtr, _VoidPtr destPtr,
+			      size_t numBytes));
+extern void	bzero _ARGS_((_VoidPtr destPtr, size_t numBytes));
+extern int	ffs _ARGS_((int i));
+
+#endif /* _BSTRING */
+@
+
+
+1.2
+log
+@Add _CONST for Posix (?) compatibility.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/include/user/RCS/bstring.h,v 1.1 91/09/28 19:12:36 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d22 1
+d24 6
+a29 5
+extern int	bcmp _ARGS_((_CONST char *sourcePtr, _CONST char *destPtr,
+			     int numBytes));
+extern void	bcopy _ARGS_((_CONST char *sourcePtr, char *destPtr,
+			      int numBytes));
+extern void	bzero _ARGS_((char *destPtr, int numBytes));
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/bstring.h,v 1.4 90/09/11 14:32:01 kupfer Exp $ SPRITE (Berkeley)
+d23 4
+a26 2
+extern int	bcmp _ARGS_((char *sourcePtr, char *destPtr, int numBytes));
+extern void	bcopy _ARGS_((char *sourcePtr, char *destPtr, int numBytes));
+@

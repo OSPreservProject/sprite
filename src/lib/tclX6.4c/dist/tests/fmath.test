@@ -1,0 +1,246 @@
+#
+# fmath.test
+#
+# Tests for the following floating point math commands:
+#   acos, asin, atan,  cos,  sin,  tan,   cosh, sinh, tanh, 
+#   exp,  log,  log10, sqrt, fabs, floor, ceil, fmod, pow.
+#---------------------------------------------------------------------------
+# Copyright 1992 Karl Lehenbauer and Mark Diekhans.
+#
+# Permission to use, copy, modify, and distribute this software and its
+# documentation for any purpose and without fee is hereby granted, provided
+# that the above copyright notice appear in all copies.  Karl Lehenbauer and
+# Mark Diekhans make no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without express or
+# implied warranty.
+#------------------------------------------------------------------------------
+# $Id: fmath.test,v 2.1 1992/11/09 07:33:02 markd Exp $
+#------------------------------------------------------------------------------
+#
+
+if {[info procs test] != "test"} then {source testlib.tcl}
+
+set F_E	        2.71828
+set F_LN10	2.30258
+set F_PI	3.14159265358979
+set F_PI_180    0.0174533
+set F_PI_4      0.785398
+set F_PI_2      1.5708
+set F_SQRT2	1.41421
+
+# Check that a floating point value is reasonably within range.  If so, return
+# 1, if not, return a message.
+
+proc fchecknum {got expect} {
+    global ModuleName
+
+    set lowExpect [expr {$expect * 0.9999}]
+    set hiExpect  [expr {$expect * 1.0001}]
+
+    if {($got < $lowExpect) || ($got > $hiExpect)} {
+      return [format {wanted something close to %s, got %s} $expect $got]
+    }
+    return 1
+}
+
+test fmath-1.1 {acos tests} {
+    list [catch acos msg] $msg
+} {1 {wrong # args: acos expr}}
+test fmath-1.2 {acos tests} {
+    list [catch {acos 1 1} msg] $msg
+} {1 {wrong # args: acos expr}}
+test fmath-1.3 {acos tests} {
+    fchecknum [acos 0] 1.5708
+} 1
+test fmath-1.4 {acos tests} {
+    fchecknum [acos $F_PI_180-.5] 2.07436
+} 1
+test fmath-1.5 {acos tests} {
+    fchecknum [acos $F_PI_4] 0.667457
+} 1
+test fmath-1.6 {acos tests} {
+    fchecknum [acos .25*.25] 1.50826
+} 1
+
+
+test fmath-2.1 {asin tests} {
+    list [catch {asin} msg] $msg
+} {1 {wrong # args: asin expr}}
+test fmath-2.2 {asin tests} {
+    list [catch {asin 1 1} msg] $msg
+} {1 {wrong # args: asin expr}}
+test fmath-2.3 {asin tests} {
+    fchecknum [asin 1.3-.4] 1.11977
+} 1
+
+test fmath-3.1 {atan tests} {
+    list [catch {atan} msg] $msg
+} {1 {wrong # args: atan expr}}
+test fmath-3.2 {atan tests} {
+    list [catch {atan 1 1} msg] $msg
+} {1 {wrong # args: atan expr}}
+test fmath-3.3 {atan tests} {
+    fchecknum [atan 1.0-.25] 0.643501
+} 1
+
+test fmath-4.1 {cos tests} {
+    list [catch {cos} msg] $msg
+} {1 {wrong # args: cos expr}}
+test fmath-4.1 {cos tests} {
+    list [catch {cos 1 1} msg] $msg
+} {1 {wrong # args: cos expr}}
+
+test fmath-5.1 {sin tests} {
+    list [catch {sin} msg] $msg
+} {1 {wrong # args: sin expr}}
+test fmath-5.2 {sin tests} {
+    list [catch {sin 1 1} msg] $msg
+} {1 {wrong # args: sin expr}}
+test fmath-5.3 {sin tests} {
+    fchecknum [sin 1.0-.1] 0.783327
+} 1
+
+test fmath-6.1 {tan tests} {
+    list [catch {tan} msg] $msg
+} {1 {wrong # args: tan expr}}
+test fmath-6.2 {tan tests} {
+    list [catch {tan 1 1} msg] $msg
+} {1 {wrong # args: tan expr}}
+test fmath-6.3 {tan tests} {
+    fchecknum [tan .01*10] 0.100335
+} 1
+
+test fmath-7.1 {cosh tests} {
+    list [catch {cosh} msg] $msg
+} {1 {wrong # args: cosh expr}}
+test fmath-7.2 {cosh tests} {
+    list [catch {cosh 1 1} msg] $msg
+} {1 {wrong # args: cosh expr}}
+test fmath-7.3 {cosh tests} {
+    fchecknum [cosh 1.2] 1.81066
+} 1
+
+test fmath-8.1 {sinh tests} {
+    list [catch {sinh} msg] $msg
+} {1 {wrong # args: sinh expr}}
+test fmath-8.2 {sinh tests} {
+    list [catch {sinh 1 1} msg] $msg
+} {1 {wrong # args: sinh expr}}
+test fmath-8.3 {sinh tests} {
+    fchecknum [sinh .25+10] 14141.3
+} 1
+
+test fmath-9.1 {tanh tests} {
+    list [catch {tanh} msg] $msg
+} {1 {wrong # args: tanh expr}}
+test fmath-9.2 {tanh tests} {
+    list [catch {tanh 1 1} msg] $msg
+} {1 {wrong # args: tanh expr}}
+test fmath-9.3 {tanh tests} {
+    fchecknum [tanh 1.5/2] 0.635149
+} 1
+
+test fmath-10.1 {exp tests} {
+    list [catch {exp} msg] $msg
+} {1 {wrong # args: exp expr}}
+test fmath-10.2 {exp tests} {
+    list [catch {exp 1 1} msg] $msg
+} {1 {wrong # args: exp expr}}
+test fmath-10.3 {exp tests} {
+    fchecknum [exp 1.4] 4.0552
+} 1
+
+test fmath-11.1 {log tests} {
+    list [catch {log} msg] $msg
+} {1 {wrong # args: log expr}}
+test fmath-11.2 {log tests} {
+    list [catch {log 1 1} msg] $msg
+} {1 {wrong # args: log expr}}
+test fmath-11.3 {log tests} {
+    fchecknum [log (110%3)*8] 2.77259
+} 1
+
+test fmath-12.1 {log10 tests} {
+    list [catch {log10} msg] $msg
+} {1 {wrong # args: log10 expr}}
+test fmath-12.2 {log10 tests} {
+    list [catch {log10 1 1} msg] $msg
+} {1 {wrong # args: log10 expr}}
+test fmath-12.3 {log10 tests} {
+    fchecknum [log10 0.5*10] 0.69897
+} 1
+
+test fmath-13.1 {sqrt tests} {
+    list [catch {sqrt} msg] $msg
+} {1 {wrong # args: sqrt expr}}
+test fmath-13.2 {sqrt tests} {
+    list [catch {sqrt 1 1} msg] $msg
+} {1 {wrong # args: sqrt expr}}
+test fmath-13.3 {sqrt tests} {
+    fchecknum [sqrt 1.2*2] 1.54919
+} 1
+
+test fmath-14.1 {fabs tests} {
+    list [catch {fabs} msg] $msg
+} {1 {wrong # args: fabs expr}}
+test fmath-14.2 {fabs tests} {
+    list [catch {fabs 1 1} msg] $msg
+} {1 {wrong # args: fabs expr}}
+test fmath-14.3 {fabs tests} {
+    fchecknum [fabs 1.2-10.5] 9.3
+} 1
+
+test fmath-15.1 {floor tests} {
+    list [catch {floor} msg] $msg
+} {1 {wrong # args: floor expr}}
+test fmath-15.2 {floor tests} {
+    list [catch {floor 1 1} msg] $msg
+} {1 {wrong # args: floor expr}}
+test fmath-15.3 {floor tests} {
+    fchecknum [floor 1.2*10.3] 12
+} 1
+
+test fmath-16.1 {ceil tests} {
+    list [catch {ceil} msg] $msg
+} {1 {wrong # args: ceil expr}}
+test fmath-16.2 {ceil tests} {
+    list [catch {ceil 1 1} msg] $msg
+} {1 {wrong # args: ceil expr}}
+test fmath-16.3 {ceil tests} {
+    fchecknum [ceil 1.5*2.6] 4
+} 1
+
+test fmath-17.1 {fmod tests} {
+    list [catch {fmod} msg] $msg
+} {1 {wrong # args: fmod expr divisor}}
+test fmath-17.2 {fmod tests} {
+    list [catch {fmod 1 1 1} msg] $msg
+} {1 {wrong # args: fmod expr divisor}}
+test fmath-17.3 {fmod tests} {
+    list [catch {fmod 1 1 1} msg] $msg
+} {1 {wrong # args: fmod expr divisor}}
+test fmath-17.4 {fmod tests} {
+    fchecknum [fmod 1.2*3 1.0/.25] 3.6
+} 1
+
+test fmath-18.1 {pow tests} {
+    list [catch {pow} msg] $msg
+} {1 {wrong # args: pow expr exp}}
+test fmath-18.2 {pow tests} {
+    list [catch {pow 1 1 1} msg] $msg
+} {1 {wrong # args: pow expr exp}}
+test fmath-18.3 {pow tests} {
+    fchecknum [pow 13.6*.78 1.2] 17.0122
+} 1
+
+test fmath-19.1 {math error tests} {
+    list [catch {sqrt -1} msg] $msg
+} {1 {floating point domain error}}
+test fmath-19.2 {math error tests} {
+    list [catch {acos 1000} msg] $msg
+} {1 {floating point domain error}}
+test fmath-19.3 {math error tests} {
+    list [catch {pow 10000 100000} msg] $msg
+} {1 {floating point overflow error}}
+
+

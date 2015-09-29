@@ -1,0 +1,21 @@
+' $Header: /a/newcmds/true/RCS/true.man,v 1.2 88/12/29 13:09:51 ouster Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS TRUE cmds
+.BS
+.SH NAME
+true \- Return a zero status
+.SH SYNOPSIS
+\fBtrue\fR
+.BE
+
+.SH DESCRIPTION
+.PP
+This command does nothing except return a zero status.
+It is normally used in Bourne shell scripts for loop control
+and other conditional operations.
+
+.SH "SEE ALSO"
+false, sh
+
+.SH KEYWORDS
+shell, status, true

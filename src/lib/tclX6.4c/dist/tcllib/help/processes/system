@@ -1,0 +1,10 @@
+
+
+          system command
+               Executes command via the system(3) call.  Differs from
+               exec in that system doesn't return the executed
+               command's standard output as the result string, and
+               system goes through the default shell to provide
+               wildcard expansion, redirection, etc, as is normal from
+               an sh command line.  The exit code of the command is
+               returned.

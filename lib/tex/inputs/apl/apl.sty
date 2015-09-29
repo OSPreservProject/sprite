@@ -1,0 +1,588 @@
+%APL
+% This is APL.DOC or APL.STY,
+% as of 22 October 1990
+%
+% APL.STY - A LaTeX Document-Style Option
+% for Typesetting Documents Containing
+% APL Symbols With Standard LaTeX Fonts.
+%
+% V1.0 G.Neumann, A.Geyer-Schulz, R.Vogel,
+% Vienna University of Economics and
+% Business Administration, December 1987
+% 11pt, proportional spacing, emphasized,
+% normalsize for APL2, Dyalog-APL.
+%
+% V2.0 A.Geyer-Schulz, J.Matulka
+% (ANDREAS@AWIWUW11.BITNET),
+% (MATULKA@AWIWUW11.BITNET),
+% Vienna University of Economics and
+% Business Administration,
+% Augasse 2-6, A-1090 Vienna, Austria
+% April 1990,
+% 10/11/12pt, proportional/fixed spacing,
+% all type styles, all sizes, for APL2,
+% Dyalog-APL, I-APL, Sharp-APL, APL.68000.
+%
+% V2.1 A.Geyer-Schulz, J.Matulka
+% \parshape in \APLline macro corrected
+% October 1990.
+%
+% V2.2 A.Geyer-Schulz, J.Matulka, G.Neumann
+% use \endlinechar=-1 instead of % 
+% \hss added in APLmb to center fixed 
+%   spaced characters
+% new environment APLfnsline
+% refinement of linebreaking (APLbr and 
+%   \APLgb)
+% \raggedright replaced by \rightskip=... 
+% October 1990.
+%
+% Usage: Option for standard LaTeX styles:
+%        \documentstyle[11pt,apl]{article}
+%
+% Notes: TeX with large memory recommended
+% (262 141 words of memory). Otherwise,
+% many APL symbols on one page may cause
+% TeX memory overflow.
+%
+% Contents:
+% 1) Quads need special macros:
+%    \@APLsq     \quad and combinations
+%    \@APLsqa    \quadrightarrow ...
+%    \@APLblop   the quote of \quadquote
+% 2) Macros for "building" symbols:
+%    \@APLmath   for symbols in a math
+%                environment
+%    \@APLmraise for raising symbols
+%                in a math environment
+%    \@APLovly   simulates "backspacing"
+%                by overlaying two symbols
+% 3) Line breaking, fixed spacing,
+%    missings
+%    \APLbr      for breaking long APL 
+%                lines
+%    \APLgb      prefered break in long 
+%                APL lines
+%    \APLmb      for simulating a
+%                fixed spaced font
+%    \APLmiss    for nonprintable values
+%                in the atomic vector
+% 4) Alphabets and numbers
+%    the letters A - Z
+%    the letters a - z
+%    the underlined letters A - Z
+%    the underlined letters a - z
+%    the numbers 0 - 9
+% 5) Special Symbols
+% 6) APL Symbols
+%    simple APL2 symbols
+%    compound APL2 symbols
+%    simple Dyalog APL symbols
+%    compound I-APL symbols
+%    compound Dyalog APL symbols
+%    compound Sharp APL symbols
+%    compound APL.68000 symbols
+%    compound dictionary APL symbols
+%    future extensions (other APLs)
+% 7) Macros for typesetting APL code,
+%    not just one character at a time
+%    \APLindent       APL user input is
+%                     six spaces indented
+%    \begin{APLline}  a direct definition,
+%    \end{APLline}    one line of APL code
+%    \begin{APLfnsline} definition of a
+%    \end{APLfnsline} line of APL code
+%                     in del-editor 
+%                     represenation
+%    \begin{APLfns}   an APL function or
+%    \end{APLfns}     operator displayed
+%                     by the del-editor
+%    \begin{APLcr}    canonical function
+%    \end{APLcr}      representation
+%    \begin{APLarray} for typesetting
+%    \end{APLarray}   an APL array
+%    \begin{APLexpr}  for typesetting
+%    \end{APLexpr}    an APL expression
+% 8) A special environment for bold
+%    \begin{APLbold}  for bold APL symbols
+%    \end{APLbold}
+%
+% SIDE EFFECT: after the environments of (7)
+%    the value of \endlinechar is set to ^M
+ 
+\message{Document-Style Option `apl' %
+Version 2.2 <22 October 1990>}
+ 
+\newdimen\@APLdimen % dimensions of boxes
+\newdimen\@APLrule  % to save \fboxrule
+\@APLrule=\fboxrule % initialize \@APLrule
+ 
+%      (1) Quads need special macros:
+ 
+% \quad and its combinations
+\def\@APLsq{{\fboxsep=0pt%
+\fboxrule=\@APLrule%
+\mathsurround=0pt\setbox1=\hbox{$\div$}%
+\setbox2=\hbox{$\backslash$}%
+\setbox3=\hbox{$\phantom{.}$}%
+\@APLdimen=\wd1\advance\@APLdimen by
+-4\@APLrule\wd3=\@APLdimen\ht3=\ht2%
+\dp3=\dp2\fbox{\box3}}}
+ 
+% boxes for APL.68000 compound symbols
+\def\@APLsqa{{\fboxsep=0pt%
+\fboxrule=\@APLrule%
+\mathsurround=0pt%
+\setbox1=\hbox{$\rightarrow$}%
+\setbox2=\hbox{$\backslash$}%
+\setbox3=\hbox{$\phantom{.}$}%
+\@APLdimen=\wd1\advance\@APLdimen by
+-4\@APLrule\wd3=\@APLdimen\ht3=\ht2%
+\dp3=\dp2\fbox{\box3}}}
+ 
+% generates the quote of quotequad
+\def\@APLblop{\fboxsep=0pt%
+\mathsurround=0pt%
+\setbox1=\hbox{$\div$}%
+\setbox2=\hbox{$\backslash$}%
+\setbox3=\hbox{$\phantom{.}$}%
+\@APLdimen=\wd1\advance\@APLdimen by
+-4\fboxrule\wd3=\@APLdimen\@APLdimen=\ht2%
+\ht3=\@APLdimen\dp3=\dp2%
+\hbox{\rule[0.6\ht3]{0.1\wd3}{0.4\ht3}}}
+ 
+% (2) Macros for "building" symbols:
+ 
+% to put APL symbols into a
+% mathematical environment
+\def\@APLmath#1{\leavevmode%
+\hbox{\mathsurround=0.1em$#1$}}
+ 
+% to put APL symbols into a mathematical
+% environment and raise them
+\def\@APLmraise#1{\leavevmode%
+\raisebox{0.4ex}{\hbox{%
+\mathsurround=0.1em$#1$}}}%
+ 
+% to put symbol #2 over symbol #1,
+% generating a box with dimensions
+% of the larger character
+\def\@APLovly#1#2{\leavevmode%
+\setbox1=\hbox{#1}\setbox2=\hbox{#2}%
+\ifdim\wd1>\wd2\@APLdimen=\wd1%
+\else\@APLdimen=\wd2\fi%
+\hbox to\@APLdimen{\hfil#1\hfil}%
+\kern-\@APLdimen%
+\hbox to\@APLdimen{\hfil#2\hfil}}%
+ 
+% (3) Line breaking, fixed spacing and
+%     "missing" values
+ 
+% linebreaks in long APL lines
+%\def\APLbr{\hskip 0pt plus 0pt \relax}
+\def\APLbr{\unskip\penalty-1\relax}
+
+% preferred linebreaks in long APL lines
+\def\APLgb{\unskip\penalty-10\relax}
+ 
+% to generate fixed spaced APL symbols
+% put them in a box of fixed length
+\def\APLmb#1{\leavevmode\hbox to%
+1em{\hss#1\hss}}
+ 
+% Missing Values
+\def\APLmiss#1{{\tiny #1}}
+ 
+% (4) Alphabets and numbers
+ 
+% (4.1) Letters A - Z
+ 
+\let\APLA=A\let\APLB=B\let\APLC=C
+\let\APLD=D\let\APLE=E\let\APLF=F
+\let\APLG=G\let\APLH=H\let\APLI=I
+\let\APLJ=J\let\APLK=K\let\APLL=L
+\let\APLM=M\let\APLN=N\let\APLO=O
+\let\APLP=P\let\APLQ=Q\let\APLR=R
+\let\APLS=S\let\APLT=T\let\APLU=U
+\let\APLV=V\let\APLW=W\let\APLX=X
+\let\APLY=Y\let\APLZ=Z
+ 
+% (4.2) Letters a - z
+ 
+\let\APLa=a\let\APLb=b\let\APLc=c
+\let\APLd=d\let\APLe=e\let\APLf=f
+\let\APLg=g\let\APLh=h\let\APLi=i
+\let\APLj=j\let\APLk=k\let\APLl=l
+\let\APLm=m\let\APLn=n\let\APLo=o
+\let\APLp=p\let\APLq=q\let\APLr=r
+\let\APLs=s\let\APLt=t\let\APLu=u
+\let\APLv=v\let\APLw=w\let\APLx=x
+\let\APLy=y\let\APLz=z
+ 
+% (4.3) Underlined Letters A - Z
+ 
+\def\APLuA{\underline{A}}
+\def\APLuB{\underline{B}}
+\def\APLuC{\underline{C}}
+\def\APLuD{\underline{D}}
+\def\APLuE{\underline{E}}
+\def\APLuF{\underline{F}}
+\def\APLuG{\underline{G}}
+\def\APLuH{\underline{H}}
+\def\APLuI{\underline{I}}
+\def\APLuJ{\underline{J}}
+\def\APLuK{\underline{K}}
+\def\APLuL{\underline{L}}
+\def\APLuM{\underline{M}}
+\def\APLuN{\underline{N}}
+\def\APLuO{\underline{O}}
+\def\APLuP{\underline{P}}
+\def\APLuQ{\underline{Q}}
+\def\APLuR{\underline{R}}
+\def\APLuS{\underline{S}}
+\def\APLuT{\underline{T}}
+\def\APLuU{\underline{U}}
+\def\APLuV{\underline{V}}
+\def\APLuW{\underline{W}}
+\def\APLuX{\underline{X}}
+\def\APLuY{\underline{Y}}
+\def\APLuZ{\underline{Z}}
+ 
+% (4.4) Underlined Letters a - z
+ 
+\def\APLua{\underline{a}}
+\def\APLub{\underline{b}}
+\def\APLuc{\underline{c}}
+\def\APLud{\underline{d}}
+\def\APLue{\underline{e}}
+\def\APLuf{\underline{f}}
+\def\APLug{\underline{g}}
+\def\APLuh{\underline{h}}
+\def\APLui{\underline{i}}
+\def\APLuj{\underline{j}}
+\def\APLuk{\underline{k}}
+\def\APLul{\underline{l}}
+\def\APLum{\underline{m}}
+\def\APLun{\underline{n}}
+\def\APLuo{\underline{o}}
+\def\APLup{\underline{p}}
+\def\APLuq{\underline{q}}
+\def\APLur{\underline{r}}
+\def\APLus{\underline{s}}
+\def\APLut{\underline{t}}
+\def\APLuu{\underline{u}}
+\def\APLuv{\underline{v}}
+\def\APLuw{\underline{w}}
+\def\APLux{\underline{x}}
+\def\APLuy{\underline{y}}
+\def\APLuz{\underline{z}}
+ 
+% (4.5) Numbers 0 - 9
+ 
+\let\APLone=1\let\APLtwo=2\let\APLthree=3
+\let\APLfour=4\let\APLfive=5\let\APLsix=6
+\let\APLseven=7\let\APLeight=8
+\let\APLnine=9\let\APLzero=0
+ 
+% (4.6) Space
+ 
+%\def\APLspace{\ \strut\APLgb}
+\def\APLspace{\hskip 0.4em\strut\APLgb}
+ 
+% (5) Special Symbols
+ 
+\def\APLampersand{\&\APLgb}
+\def\APLpercent{\%\APLgb}
+\def\APLcent{\hbox{\rm\rlap/c}\APLgb}
+\def\APLverticalbar{\APLstile\APLgb}
+\def\APLexclamation{\@APLmath{!}\APLgb}
+\def\APLdollar{\$\APLgb}
+\def\APLnot{\@APLmath\neg\APLgb}
+\def\APLsplitbar{\@APLmath{\@APLovly{%
+\hbox{\rule[0ex]{0.04em}{0.5ex}}}%
+{\hbox{\rule[1.0ex]{0.04em}{0.5ex}}}}\APLgb}
+\def\APLaccent{\@APLmath{`}\APLgb}
+\def\APLpound{\@APLmath{\#}\APLgb}
+\def\APLat{\@APLmath{@}\APLgb}
+\def\APLdoublequote{\@APLmath{\hbox{"}}%
+\APLgb}
+\def\APLnattilde{\APLtilde\APLgb}
+\def\APLleftbrace{\@APLmath{\{}\APLgb}
+\def\APLrightbrace{\@APLmath{\}}\APLgb}
+\def\APLnatbackslash{\@APLmath\backslash%
+\APLgb}
+ 
+% (6) APL Symbols
+ 
+% (6.1)  Simple APL2 Symbols
+ 
+\def\APLdieresis{\@APLmath{%
+\ddot{\phantom{a}}}\APLgb}
+\def\APLoverbar{\@APLmath%
+{\rule[1.52ex]{0.4em}{0.03em}}}
+\def\APLunderbar{\@APLmath%
+{\rule{0.4em}{0.03em}}\APLgb}
+\def\APLless{\@APLmraise{<}\APLgb}
+\def\APLnotgreater{\@APLmraise{\leq}\APLgb}
+\def\APLequal{\@APLmraise{=}\APLgb}
+\def\APLnotless{\@APLmraise{\geq}\APLgb}
+\def\APLgreater{\@APLmraise{>}\APLgb}
+\def\APLnotequal{\@APLmraise\ne\APLgb}
+\def\APLdowncaret{\@APLmath\lor\APLgb}
+\def\APLupcaret{\@APLmath\land\APLgb}
+\def\APLmathbar{\@APLmraise{-}\APLgb}
+\let\APLbar=\APLmathbar
+\def\APLdivide{\@APLmraise{\div}\APLgb}
+\def\APLplus{\@APLmraise{+}\APLgb}
+\def\APLtimes{\@APLmraise{\times}\APLgb}
+\def\APLquery{\@APLmath{?}\APLgb}
+\def\APLomega{\@APLmath\omega\APLgb}
+\def\APLepsilon{\@APLmath\epsilon\APLgb}
+\def\APLrho{\@APLmath\rho\APLgb}
+\def\APLtilde{\@APLmraise{\sim}\APLgb}
+\def\APLuparrow{\@APLmraise{\uparrow}\APLgb}
+\def\APLdownarrow{\@APLmraise{\downarrow}%
+\APLgb}
+\def\APLiota{\@APLmath\imath\APLgb}
+\def\APLcircle{\@APLmraise\bigcirc\APLgb}
+\def\APLstar{\@APLmraise\star\APLgb}
+\def\APLrightarrow{\@APLmraise\rightarrow%
+\APLgb}
+\def\APLleftarrow{\@APLmraise\leftarrow%
+\APLgb}
+\def\APLalpha{\@APLmath\alpha\APLgb}
+\def\APLupstile{\@APLmraise\lceil\APLgb}
+\def\APLdownstile{\@APLmraise\lfloor\APLgb}
+\def\APLdel{\@APLmraise\bigtriangledown%
+\APLgb}
+\def\APLdelta{\@APLmath\bigtriangleup}
+\def\APLjot{\@APLmraise\circ\APLgb}
+\def\APLquote{\@APLmraise%
+{\hbox{\tt\char13}}\APLgb}
+\def\APLquad{\@APLmraise\@APLsq}
+\def\APLleftparen{\@APLmraise{(}\APLgb}
+\def\APLrightparen{\@APLmraise{)}\APLgb}
+\def\APLleftbracket{\@APLmraise{[}\APLgb}
+\def\APLrightbracket{\@APLmraise{]}\APLgb}
+\def\APLleftshoe{\@APLmraise\subset\APLgb}
+\def\APLrightshoe{\@APLmraise\supset\APLgb}
+\def\APLupshoe{\@APLmath\cap\APLgb}
+\def\APLdownshoe{\@APLmath\cup\APLgb}
+\def\APLdowntack{\@APLmath\bot\APLgb}
+\def\APLuptack{\@APLmath\top\APLgb}
+\def\APLstile{\@APLmraise{\mid}\APLgb}
+\def\APLsemicolon{\@APLmath{;}\APLgb}
+\def\APLcolon{\@APLmath{:}\APLgb}
+\def\APLcomma{\@APLmath{,}\APLgb}
+\def\APLdot{\@APLmath{.}\APLgb}
+\def\APLslope{\@APLmraise\backslash\APLgb}
+\def\APLslash{\@APLmraise{/}\APLgb}
+ 
+% (6.2) Compound APL2 Symbols
+ 
+\def\APLdowncarettilde{\@APLovly%
+\APLdowncaret{\raisebox{-0.2ex}%
+{\APLtilde}}\APLgb}
+\def\APLupcarettilde{\@APLovly\APLupcaret%
+{\raisebox{-0.2ex}{\APLtilde}}\APLgb}
+\def\APLdelstile{\@APLovly{\raisebox%
+{0.2ex}{\APLdel}}{\APLstile}\APLgb}
+\def\APLdeltastile{\@APLovly{%
+\raisebox{0.2ex}{\APLdelta}}{\APLstile}%
+\APLgb}
+\def\APLcirclestile{\@APLovly%
+\APLcircle\APLstile\APLgb}
+\def\APLcircleslope{\@APLovly%
+\APLcircle\APLslope\APLgb}
+\def\APLcirclebar{\@APLovly%
+\APLcircle{\rule[0.75ex]{0.8em}{0.05ex}}%
+\APLgb}
+\def\APLcirclestar{\@APLovly%
+\APLcircle\APLstar\APLgb}
+\def\APLdowntackuptack{\@APLovly%
+\APLdowntack\APLuptack\APLgb}
+\def\APLdeltilde{\@APLovly\APLdel%
+{\raisebox{-0.2ex}{\APLtilde}}\APLgb}
+\def\APLdowntackjot{\@APLovly\APLdowntack%
+{\raisebox{-0.4ex}{\APLjot}}\APLgb}
+\def\APLuptackjot{\@APLovly\APLuptack%
+{\raisebox{-0.1ex}{\APLjot}}\APLgb}
+\def\APLslopebar{\@APLovly%
+\APLslope\APLmathbar\APLgb}
+\def\APLslashbar{\@APLovly%
+\APLslash\APLmathbar\APLgb}
+\def\APLupshoejot{\@APLovly%
+\APLupshoe\APLjot\APLgb}
+\def\APLquadquote{\@APLmraise{\@APLovly%
+\@APLsq\@APLblop}\APLgb}
+\def\APLquotedot{\@APLmath{!}\APLgb}
+\def\APLquaddivide{\@APLmraise%
+{\@APLovly\@APLsq{$\div$}}\APLgb}
+\def\APLdeltaunderbar{\@APLmath%
+{\underline{\bigtriangleup}}}
+\def\APLquadslope{\@APLmraise{%
+\@APLovly\@APLsq{$\backslash$}}\APLgb}
+\def\APLquadjot{\@APLmraise{%
+\@APLovly\@APLsq{$\circ$}}\APLgb}
+\def\APLleftbracketrightbracket%
+{\@APLmath{\lbrack\!\rbrack}\APLgb}
+\def\APLdieresisdot{\@APLmath%
+{\ddot{\mbox{\APLdot}}}\APLgb}
+\def\APLequalunderbar{\@APLmraise\equiv%
+\APLgb}
+\def\APLepsilonunderbar{\@APLmath{%
+\hbox{\underline{$\epsilon$}}}\APLgb}
+\def\APLiotaunderbar{\@APLmath{%
+\hbox{\underline{$\imath$}}}\APLgb}
+ 
+% (6.3) Simple Dyalog APL Symbols
+ 
+\def\APLtheta{\@APLmath\theta\APLgb}
+\def\APLlefttack{\@APLmath\vdash\APLgb}
+\def\APLrighttack{\@APLmath\dashv\APLgb}
+\def\APLasciipound{\pounds\APLgb}
+\def\APLcaret{\@APLmath{%
+\hat{\phantom{a}}}\APLgb}
+\def\APLdiamond{\@APLmath\diamond\APLgb}
+ 
+% (6.4) Compound Dyalog APL Symbols
+ 
+\def\APLstilebar{\@APLovly%
+{\APLstile}{\APLmathbar}\APLgb}
+\def\APLdieresistilde{\@APLmath%
+{\ddot{\APLtilde}}\APLgb}
+\def\APLnotequalunderbar{%
+\@APLmraise{\not\equiv}\APLgb}
+ 
+% (6.5) Compound I-APL Symbols
+ 
+\def\APLbarcomma{\@APLovly%
+\APLmathbar\APLcomma\APLgb}
+\def\APLdieresisstar{\@APLmath%
+{\ddot{\APLstar}}\APLgb}
+\def\APLdieresisuptack{\@APLmath%
+{\ddot{\hbox{\APLuptack}}}\APLgb}
+\def\APLdieresisdel{\@APLmath%
+{\ddot{\APLdel}}\APLgb}
+ 
+% (6.6) Compound SHARP APL Symbols
+ 
+\def\APLdieresiscircle{\@APLmath%
+{\ddot{\APLcircle}}\APLgb}
+\def\APLdieresisjot{\@APLmath%
+{\ddot{\APLjot}}\APLgb}
+ 
+% (6.7) Compound APL.68000 Symbols
+ 
+\def\APLOUT{\leavevmode\hbox{\@APLovly{%
+\hbox{\APLO}}{\hbox{\@APLovly%
+{\hbox{\APLU}}%
+{\hbox{\APLT}}}}}\APLgb}
+\def\APLquaduparrow{\@APLmraise{%
+\@APLovly\@APLsq{$\uparrow$}}\APLgb}
+\def\APLquaddownarrow{\@APLmraise{%
+\@APLovly\@APLsq{$\downarrow$}}\APLgb}
+\def\APLquadrightarrow{\@APLmraise{%
+\@APLovly\@APLsqa{$\rightarrow$}}\APLgb}
+\def\APLquadleftarrow{\@APLmraise{%
+\@APLovly\@APLsqa{$\leftarrow$}}\APLgb}
+ 
+% (6.8) Iverson's Dictionary APL
+ 
+\def\APLalphaunderbar{\@APLmath{\hbox%
+{\underline{$\alpha$}}}\APLgb}
+\def\APLomegaunderbar{\@APLmath{\hbox%
+{\underline{$\omega$}}}\APLgb}
+\def\APLdieresisgreater{%
+\@APLmraise{\ddot{>}}\APLgb}
+\def\APLlessstilebar{%
+\@APLmraise{\@APLovly%
+{\hbox{$<$}}{\hbox{\@APLovly{\hbox{$-$}}%
+{\hbox{$\mid$}}}}}\APLgb}
+ 
+% (6.9) Symbols for other APL dialects
+%       should be inserted here
+ 
+% (7) Macros for typesetting APL code,
+%     not just one character at a time
+ 
+% the indentation of user input (6 spaces)
+\def\APLindent{\protect\hspace*{3em}}
+ 
+% Environment APLline: to typeset one
+% APL line or a direct definition
+\def\APLline{\begin{trivlist}\item[]%
+\rightskip=0pt plus 6em%
+\endlinechar=-1\@APLdimen=\linewidth
+\advance\@APLdimen by -3em
+\parshape 2 0pt\linewidth 3em\@APLdimen}
+\def\endAPLline{\par\end{trivlist}
+\endlinechar=`\^^M}
+
+% Environment APLfnsline: to typeset one
+% APL line with line number and nabla sign
+\newenvironment{APLfnsline}[2]%
+{\begin{APLline}\leavevmode\hbox to%
+3em{#1\hss#2}}%
+{\end{APLline}}
+ 
+% Environment APLfns: to typeset an APL
+% function as displayed by the del-editor
+\def\APLfns{\begin{trivlist}%
+\endlinechar=-1\partopsep=0pt\topsep=0pt
+\parskip=0pt\parsep=0pt\itemsep=0pt
+\parindent=0pt\item[]}
+\def\endAPLfns{\endlinechar=`\^^M%
+\end{trivlist}}
+ 
+% Environment APLcr: to typeset the
+% canonical function representation
+% (APLfns and APLcr are identical
+% in this release)
+\let\APLcr\APLfns
+\let\endAPLcr\endAPLfns
+ 
+% Environment APLarray:
+% to typeset an APL array
+\def\APLarray{\hbadness10000\hfuzz10pt%
+\begin{trivlist}\raggedright%
+\endlinechar=-1\partopsep=0pt
+\topsep=0pt\parskip=0pt\parsep=0pt
+\itemsep=0pt\parindent=0pt\item[]}
+\def\endAPLarray{\endlinechar=`\^^M%
+\end{trivlist}}
+ 
+% Environment APLexpr:
+% to typeset an APL expression
+\def\APLexpr{\begin{trivlist}%
+\rightskip=0pt plus 6em%
+\endlinechar=-1\partopsep=0pt\topsep=0pt%
+\parskip=0pt\parsep=0pt\itemsep=0pt%
+\parshape 2 0pt\linewidth 0pt\linewidth%
+\parindent=0pt\sloppy\item[]\APLindent}
+\def\endAPLexpr{\endlinechar=`\^^M%
+\end{trivlist}}
+ 
+% (8) Changing to a bold type style
+%     requires a special environment
+ 
+\newenvironment{APLbold}%
+{\begin{bf}\boldmath\@APLrule=1.5\fboxrule
+
+\def\APLoverbar{\@APLmath%
+{\rule[1.52ex]{0.4em}{0.045em}}}%
+\def\APLunderbar{\@APLmath%
+{\rule{0.4em}{0.045em}}}%
+\def\APLsplitbar{\@APLmath{\@APLovly%
+{\hbox{\rule[0ex]{0.06em}{0.5ex}}}%
+{\hbox{\rule[1.0ex]{0.06em}{0.5ex}}}}}%
+}{\end{bf}}%
+ 
+% This is the end of APL.STY/DOC
+\endinput
+
+
+
+
+
+

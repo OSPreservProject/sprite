@@ -1,0 +1,146 @@
+/*
+ * emuAsm.s --
+ *
+ *	DECstation assembly code for the sprited emulator.
+ *
+ * Copyright 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#include <regdef.h>
+#include "spriteEmuMach.h"
+
+	.data
+	.asciiz "$Header: /r3/kupfer/spriteserver/src/lib/c/emulator/ds3100.md/RCS/emuAsm.s,v 1.1 91/11/14 11:33:24 kupfer Exp $ SPRITE (Berkeley)"
+	.text
+	.set	reorder
+
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * SpriteEmuMach_SaveState --
+ *
+ *	Save state for the child process of a fork.
+ *
+ *	SpriteEmuMach_SaveState(stateArray)
+ *	    long *stateArray;
+ *
+ *	where "stateArray" is allocated by the caller.
+ *
+ * Results:
+ *	Returns a non-zero value (to indicate to the caller that it's
+ *	the parent process).
+ *
+ * Side effects:
+ *	Saves the RA, GP, SP, and S registers, the FPA control word,
+ *	and FPA registers f20-f31.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+	.globl	SpriteEmuMach_SaveState
+SpriteEmuMach_SaveState:
+	sw	ra, STATE_RA(a0)
+	sw	gp, STATE_GP(a0)
+	sw	sp, STATE_SP(a0)
+	sw	s0, STATE_S0(a0)
+	sw	s1, STATE_S1(a0)
+	sw	s2, STATE_S2(a0)
+	sw	s3, STATE_S3(a0)
+	sw	s4, STATE_S4(a0)
+	sw	s5, STATE_S5(a0)
+	sw	s6, STATE_S6(a0)
+	sw	s7, STATE_S7(a0)
+	sw	s8, STATE_S8(a0)
+	swc1	$f20, STATE_F20(a0)
+	swc1	$f21, STATE_F21(a0)
+	swc1	$f22, STATE_F22(a0)
+	swc1	$f23, STATE_F23(a0)
+	swc1	$f24, STATE_F24(a0)
+	swc1	$f25, STATE_F25(a0)
+	swc1	$f26, STATE_F26(a0)
+	swc1	$f27, STATE_F27(a0)
+	swc1	$f28, STATE_F28(a0)
+	swc1	$f29, STATE_F29(a0)
+	swc1	$f30, STATE_F30(a0)
+	swc1	$f31, STATE_F31(a0)
+	cfc1	v0, $31
+	sw	v0, STATE_FPA_CTL(a0)
+
+	li	v0, 1			/* set return value */
+	j	ra
+
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * SpriteEmuMach_ChildInit --
+ *
+ *	Initialization for a child process.  sp
+ *	currently points to the state array saved by
+ *	SpriteEmuMach_SaveState. 
+ *
+ * Results:
+ *	Returns 0.
+ *
+ * Side effects:
+ *	Does Mach and emulation library initialization.  Restores the
+ *	registers from the state array.
+ *
+ * ----------------------------------------------------------------------
+ */
+	.globl	SpriteEmu_Init
+	.globl	SpriteEmuMach_ChildInit
+SpriteEmuMach_ChildInit:
+	move	a0, sp			/* a0 = addr of state array */
+
+	/* 
+	 * Restore everything except the return address and s0.
+	 */
+	lw	sp, STATE_SP(a0)
+	lw	gp, STATE_GP(a0)
+	lw	s1, STATE_S1(a0)
+	lw	s2, STATE_S2(a0)
+	lw	s3, STATE_S3(a0)
+	lw	s4, STATE_S4(a0)
+	lw	s5, STATE_S5(a0)
+	lw	s6, STATE_S6(a0)
+	lw	s7, STATE_S7(a0)
+	lw	s8, STATE_S8(a0)
+	lwc1	$f20, STATE_F20(a0)
+	lwc1	$f21, STATE_F21(a0)
+	lwc1	$f22, STATE_F22(a0)
+	lwc1	$f23, STATE_F23(a0)
+	lwc1	$f24, STATE_F24(a0)
+	lwc1	$f25, STATE_F25(a0)
+	lwc1	$f26, STATE_F26(a0)
+	lwc1	$f27, STATE_F27(a0)
+	lwc1	$f28, STATE_F28(a0)
+	lwc1	$f29, STATE_F29(a0)
+	lwc1	$f30, STATE_F30(a0)
+	lwc1	$f31, STATE_F31(a0)
+	lw	v0, STATE_FPA_CTL(a0)
+	ctc1	v0, $31
+
+	/*
+	 * Stash the address of the state array in s0, which will be
+	 * preserved across the initialization call.
+	 */
+	move	s0, a0
+	jal	SpriteEmu_Init
+
+	/*
+	 * Restore the return address and s0.
+	 */
+	lw	ra, STATE_RA(s0)
+	lw	s0, STATE_S0(s0)
+
+	add	v0, zero, zero			/* set return value */
+	j	ra

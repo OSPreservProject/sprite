@@ -1,0 +1,12 @@
+#!/sprite/cmds/perl
+#
+# fsmount: check and attach file systems found on disk devices.
+#
+#
+require("/sprite/lib/perl/sprite.ph");
+require("/sprite/lib/perl/sys/wait.ph");
+require("/sprite/src/admin/fsmount/constants.ph");
+require("/sprite/src/admin/fsmount/option.pl");
+
+#exit($FSCHECK_BAD_ARG);
+exit(0);

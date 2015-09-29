@@ -1,0 +1,171 @@
+[paprika] (36)% pmake -k
+--- sun3.md/conv.o ---
+rm -f sun3.md/conv.o
+cc  -g -O -msun3   -I. -Isun3.md -c conv.c -o sun3.md/conv.o
+--- sun3.md/dviclass.o ---
+rm -f sun3.md/dviclass.o
+cc  -g -O -msun3   -I. -Isun3.md -c dviclass.c -o sun3.md/dviclass.o
+--- sun3.md/error.o ---
+rm -f sun3.md/error.o
+cc  -g -O -msun3   -I. -Isun3.md -c error.c -o sun3.md/error.o
+--- sun3.md/findpost.o ---
+rm -f sun3.md/findpost.o
+cc  -g -O -msun3   -I. -Isun3.md -c findpost.c -o sun3.md/findpost.o
+--- sun3.md/fio.o ---
+rm -f sun3.md/fio.o
+cc  -g -O -msun3   -I. -Isun3.md -c fio.c -o sun3.md/fio.o
+--- sun3.md/font.o ---
+rm -f sun3.md/font.o
+cc  -g -O -msun3   -I. -Isun3.md -c font.c -o sun3.md/font.o
+--- sun3.md/font_subr.o ---
+rm -f sun3.md/font_subr.o
+cc  -g -O -msun3   -I. -Isun3.md -c font_subr.c -o sun3.md/font_subr.o
+--- sun3.md/gfclass.o ---
+rm -f sun3.md/gfclass.o
+cc  -g -O -msun3   -I. -Isun3.md -c gfclass.c -o sun3.md/gfclass.o
+--- sun3.md/font.o ---
+font.c:29: parse error before `need'
+font.c: In function fontinit:
+font.c:108: `FONTDESC' undeclared (first use this function)
+font.c:108: (Each undeclared identifier is reported only once
+font.c:108: for each function it appears in.)
+font.c: In function readconf:
+font.c:133: warning: `readconf' was declared implicitly `extern' and later `static'
+font.c: In function setfont:
+--- sun3.md/gffont.o ---
+rm -f sun3.md/gffont.o
+cc  -g -O -msun3   -I. -Isun3.md -c gffont.c -o sun3.md/gffont.o
+--- sun3.md/font.o ---
+font.c:195: warning: `setfont' was declared implicitly `extern' and later `static'
+font.c: In function badcf:
+font.c:226: warning: `badcf' was declared implicitly `extern' and later `static'
+font.c: In function getafont:
+--- sun3.md/gripes.o ---
+rm -f sun3.md/gripes.o
+--- sun3.md/font.o ---
+font.c:333: warning: `getafont' was declared `extern' and later `static'
+font.c:296: warning: previous declaration of `getafont'
+*** Error code 1
+--- sun3.md/gffont.o ---
+gffont.c: In function gf_read:
+gffont.c:158: warning: `gf_read' was declared `extern' and later `static'
+--- sun3.md/gripes.o ---
+cc  -g -O -msun3   -I. -Isun3.md -c gripes.c -o sun3.md/gripes.o
+--- sun3.md/magfactor.o ---
+rm -f sun3.md/magfactor.o
+cc  -g -O -msun3   -I. -Isun3.md -c magfactor.c -o sun3.md/magfactor.o
+--- sun3.md/pkfont.o ---
+rm -f sun3.md/pkfont.o
+cc  -g -O -msun3   -I. -Isun3.md -c pkfont.c -o sun3.md/pkfont.o
+--- sun3.md/pxlfont.o ---
+rm -f sun3.md/pxlfont.o
+cc  -g -O -msun3   -I. -Isun3.md -c pxlfont.c -o sun3.md/pxlfont.o
+--- sun3.md/pkfont.o ---
+pkfont.c: In function pk_read:
+pkfont.c:243: warning: `pk_read' was declared `extern' and later `static'
+pkfont.c:23: warning: previous declaration of `pk_read'
+pkfont.c: In function scan_characters:
+--- sun3.md/pxlfont.o ---
+pxlfont.c: In function pxl_read:
+pxlfont.c:71: warning: `pxl_read' was declared `extern' and later `static'
+--- sun3.md/scaletfm.o ---
+rm -f sun3.md/scaletfm.o
+cc  -g -O -msun3   -I. -Isun3.md -c scaletfm.c -o sun3.md/scaletfm.o
+--- sun3.md/scanpost.o ---
+rm -f sun3.md/scanpost.o
+cc  -g -O -msun3   -I. -Isun3.md -c scanpost.c -o sun3.md/scanpost.o
+--- sun3.md/pkfont.o ---
+pkfont.c:319: warning: `scan_characters' was declared implicitly `extern' and later `static'
+pkfont.c: In function pk_getgly:
+--- sun3.md/gffont.o ---
+gffont.c:29: warning: previous declaration of `gf_read'
+gffont.c: In function gf_getgly:
+--- sun3.md/pkfont.o ---
+pkfont.c:418: warning: `pk_getgly' was declared `extern' and later `static'
+pkfont.c:23: warning: previous declaration of `pk_getgly'
+pkfont.c: In function pk_rasterise:
+--- sun3.md/seek.o ---
+rm -f sun3.md/seek.o
+--- sun3.md/gffont.o ---
+gffont.c:767: warning: `gf_getgly' was declared `extern' and later `static'
+gffont.c:29: warning: previous declaration of `gf_getgly'
+gffont.c: In function gf_rasterise:
+gffont.c:900: warning: `gf_rasterise' was declared `extern' and later `static'
+gffont.c:29: warning: previous declaration of `gf_rasterise'
+gffont.c: In function gf_freefont:
+gffont.c:912: warning: `gf_freefont' was declared `extern' and later `static'
+gffont.c:29: warning: previous declaration of `gf_freefont'
+--- sun3.md/seek.o ---
+cc  -g -O -msun3   -I. -Isun3.md -c seek.c -o sun3.md/seek.o
+--- sun3.md/pkfont.o ---
+pkfont.c:511: warning: `pk_rasterise' was declared `extern' and later `static'
+pkfont.c:23: warning: previous declaration of `pk_rasterise'
+pkfont.c: In function pk_freefont:
+pkfont.c:763: warning: `pk_freefont' was declared `extern' and later `static'
+pkfont.c:23: warning: previous declaration of `pk_freefont'
+--- sun3.md/strsave.o ---
+rm -f sun3.md/strsave.o
+cc  -g -O -msun3   -I. -Isun3.md -c strsave.c -o sun3.md/strsave.o
+--- sun3.md/tfmfont.o ---
+rm -f sun3.md/tfmfont.o
+cc  -g -O -msun3   -I. -Isun3.md -c tfmfont.c -o sun3.md/tfmfont.o
+--- sun3.md/pxlfont.o ---
+pxlfont.c:22: warning: previous declaration of `pxl_read'
+pxlfont.c: In function pxl_getgly:
+pxlfont.c:167: warning: `pxl_getgly' was declared `extern' and later `static'
+pxlfont.c:22: warning: previous declaration of `pxl_getgly'
+pxlfont.c: In function pxl_rasterise:
+--- sun3.md/tfmfont.o ---
+tfmfont.c: In function box_read:
+tfmfont.c:68: warning: `box_read' was declared `extern' and later `static'
+tfmfont.c:35: warning: previous declaration of `box_read'
+tfmfont.c: In function blank_read:
+tfmfont.c:79: warning: `blank_read' was declared `extern' and later `static'
+tfmfont.c:35: warning: previous declaration of `blank_read'
+tfmfont.c: In function invis_read:
+tfmfont.c:90: warning: `invis_read' was declared `extern' and later `static'
+tfmfont.c:35: warning: previous declaration of `invis_read'
+--- sun3.md/pxlfont.o ---
+pxlfont.c:243: warning: `pxl_rasterise' was declared `extern' and later `static'
+--- sun3.md/tfmfont.o ---
+tfmfont.c: In function do_read:
+tfmfont.c:101: warning: `do_read' was declared implicitly `extern' and later `static'
+tfmfont.c: In function tfm_getgly:
+tfmfont.c:142: warning: `tfm_getgly' was declared `extern' and later `static'
+--- sun3.md/pxlfont.o ---
+pxlfont.c:22: warning: previous declaration of `pxl_rasterise'
+pxlfont.c: In function pxl_freefont:
+pxlfont.c:292: warning: `pxl_freefont' was declared `extern' and later `static'
+pxlfont.c:22: warning: previous declaration of `pxl_freefont'
+--- sun3.md/tfmfont.o ---
+tfmfont.c:36: warning: previous declaration of `tfm_getgly'
+tfmfont.c: In function tfm_rasterise:
+tfmfont.c:181: warning: `tfm_rasterise' was declared `extern' and later `static'
+tfmfont.c:36: warning: previous declaration of `tfm_rasterise'
+tfmfont.c: In function tfm_freefont:
+tfmfont.c:243: warning: `tfm_freefont' was declared `extern' and later `static'
+tfmfont.c:36: warning: previous declaration of `tfm_freefont'
+--- sun3.md/rotate.o ---
+rm -f sun3.md/rotate.o
+cc  -g -O -msun3   -I. -Isun3.md -c rotate.c -o sun3.md/rotate.o
+--- sun3.md/search.o ---
+rm -f sun3.md/search.o
+cc  -g -O -msun3   -I. -Isun3.md -c search.c -o sun3.md/search.o
+--- sun3.md/split.o ---
+rm -f sun3.md/split.o
+cc  -g -O -msun3   -I. -Isun3.md -c split.c -o sun3.md/split.o
+--- sun3.md/rotate.o ---
+rotate.c: In function RotateClockwise:
+--- sun3.md/tfm.o ---
+rm -f sun3.md/tfm.o
+cc  -g -O -msun3   -I. -Isun3.md -c tfm.c -o sun3.md/tfm.o
+--- sun3.md/rotate.o ---
+rotate.c:65: warning: `RotateClockwise' was declared implicitly `extern' and later `static'
+--- sun3.md/tfm.o ---
+tfm.c: In function trd_header:
+tfm.c:74: warning: `trd_header' was declared implicitly `extern' and later `static'
+tfm.c: In function trd_ci:
+tfm.c:88: warning: `trd_ci' was declared implicitly `extern' and later `static'
+tfm.c: In function trd_fix:
+tfm.c:107: warning: `trd_fix' was declared implicitly `extern' and later `static'
+`default' not remade because of errors.

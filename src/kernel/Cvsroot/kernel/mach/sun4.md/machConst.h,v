@@ -1,0 +1,1982 @@
+head     9.13;
+branch   ;
+access   ;
+symbols  ds3100:9.13 sun3:9.13 sun4nw:9.12 symm:9.12 spur:9.12 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.13
+date     92.08.10.17.58.53;  author mgbaker;  state Exp;
+branches ;
+next     9.12;
+
+9.12
+date     91.10.18.01.23.09;  author dlong;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     91.09.24.12.40.52;  author mgbaker;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     91.08.27.16.06.41;  author mgbaker;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     91.08.02.18.42.23;  author mgbaker;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     91.07.26.17.04.25;  author shirriff;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     91.06.29.16.25.07;  author mgbaker;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     91.06.27.12.10.33;  author mgbaker;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     91.03.29.17.57.06;  author shirriff;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.08.14.18.42.39;  author mgbaker;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     89.11.27.14.52.35;  author mgbaker;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.11.07.18.51.25;  author shirriff;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.22.23.46.46;  author shirriff;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.52.39;  author douglis;  state Stable;
+branches ;
+next     1.34;
+
+1.34
+date     89.09.08.16.21.46;  author mgbaker;  state Exp;
+branches ;
+next     1.33;
+
+1.33
+date     89.08.30.12.19.02;  author mgbaker;  state Exp;
+branches ;
+next     1.32;
+
+1.32
+date     89.08.25.13.49.43;  author jhh;  state Exp;
+branches ;
+next     1.31;
+
+1.31
+date     89.08.17.15.18.03;  author mgbaker;  state Exp;
+branches ;
+next     1.30;
+
+1.30
+date     89.08.09.12.34.21;  author mgbaker;  state Exp;
+branches ;
+next     1.29;
+
+1.29
+date     89.07.20.16.59.04;  author mgbaker;  state Exp;
+branches ;
+next     1.28;
+
+1.28
+date     89.06.25.14.00.11;  author mendel;  state Exp;
+branches ;
+next     1.27;
+
+1.27
+date     89.06.16.09.04.22;  author mendel;  state Exp;
+branches ;
+next     1.26;
+
+1.26
+date     89.05.21.18.24.32;  author mgbaker;  state Exp;
+branches ;
+next     1.25;
+
+1.25
+date     89.05.02.23.26.03;  author mgbaker;  state Exp;
+branches ;
+next     1.24;
+
+1.24
+date     89.04.21.23.14.02;  author mgbaker;  state Exp;
+branches ;
+next     1.23;
+
+1.23
+date     89.04.09.13.23.41;  author mgbaker;  state Exp;
+branches ;
+next     1.22;
+
+1.22
+date     89.04.01.13.02.36;  author mgbaker;  state Exp;
+branches ;
+next     1.21;
+
+1.21
+date     89.03.30.23.24.03;  author mgbaker;  state Exp;
+branches ;
+next     1.20;
+
+1.20
+date     89.03.26.20.16.40;  author mgbaker;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     89.03.24.15.39.28;  author mgbaker;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     89.03.22.14.07.24;  author mgbaker;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     89.03.19.01.21.49;  author mgbaker;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     89.03.18.15.40.42;  author mgbaker;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     89.03.09.17.08.14;  author mgbaker;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     89.03.06.12.01.36;  author mgbaker;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     89.03.03.15.39.42;  author mgbaker;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     89.03.02.00.20.43;  author mgbaker;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     89.02.28.12.47.53;  author mgbaker;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     89.02.24.21.57.15;  author mgbaker;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     89.02.24.16.38.26;  author mgbaker;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     89.01.29.17.21.38;  author mgbaker;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     89.01.29.13.10.06;  author mgbaker;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.01.25.22.52.47;  author mgbaker;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.01.22.23.45.08;  author mgbaker;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.01.22.20.32.42;  author mgbaker;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.01.17.14.54.57;  author mgbaker;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.01.16.14.48.07;  author mgbaker;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.01.14.15.42.31;  author mgbaker;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Header file for Third Kernel.  Filling in some of the constants and such.
+@
+
+
+9.13
+log
+@Changes for transparent server recovery.
+@
+text
+@/*
+ * machConst.h --
+ *
+ *     Machine dependent constants.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/mgbaker/mach/sun4.md/machConst.h,v 1.1 92/04/30 12:38:23 mgbaker Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _MACHCONST
+#define _MACHCONST
+
+#ifdef KERNEL
+#include <sprite.h>
+#include <vmSunConst.h>
+#include <sysSysCall.h>
+#include <sys.h>
+#include <status.h>
+#else
+#include <kernel/vmSunConst.h>
+#include <kernel/sysSysCall.h>
+#include <kernel/sys.h>
+#include <status.h>
+#endif
+
+
+/*
+ * Return codes from some trap routines.
+ *
+ *    MACH_OK		Successfully handled.
+ *    MACH_KERN_ERROR	Debugger must be called.
+ *    MACH_USER_ERROR	User process error (bad stack, etc).  Kill user process.
+ *    MACH_SIG_RETURN	Returning from signal handler.
+ *
+ */
+#define	MACH_OK		0
+#define	MACH_KERN_ERROR	1
+#define	MACH_USER_ERROR	2
+#define	MACH_SIG_RETURN	3
+
+/*
+ * Here are the different types of exceptions, represented by the contents
+ * of the trap type bits in the trap base register..  These are listed in order
+ * of highest priority to lowest. All the MACH_TRAP_INSTR's are of the same
+ * priority.
+ *
+ * Trap Name			Trap Type Field
+ */
+#define	MACH_RESET		0x000
+#define	MACH_INSTR_ACCESS	0x010
+#define	MACH_ILLEGAL_INSTR	0x020
+#define	MACH_PRIV_INSTR		0x030
+#define	MACH_FP_DISABLED	0x040
+#define	MACH_CP_DISABLED	0x240		/* 36 */
+#define	MACH_WINDOW_OVERFLOW	0x050
+#define	MACH_WINDOW_UNDERFLOW	0x060
+#define	MACH_MEM_ADDR_ALIGN	0x070
+#define	MACH_FP_EXCEP		0x080
+#define	MACH_CP_EXCEP		0x280		/* 40 */
+#define	MACH_DATA_ACCESS	0x090
+#define	MACH_TAG_OVERFLOW	0x0a0
+#define	MACH_TRAP_INSTR_FIRST	0x800		/* 128 */
+#define	MACH_TRAP_INSTR_1	0x810		/* 129 */
+#define	MACH_TRAP_INSTR_2	0x820		/* 130 */
+#define	MACH_TRAP_INSTR_3	0x830		/* 131 */
+#define	MACH_TRAP_INSTR_4	0x840		/* 132 */
+#define	MACH_TRAP_INSTR_5	0x850		/* 133 */
+#define	MACH_TRAP_INSTR_LAST	0xff0
+
+#define	MACH_LEVEL0_INT		0x100		/* 16 */
+#define	MACH_LEVEL1_INT		0x110		/* 17 */
+#define	MACH_LEVEL2_INT		0x120
+#define	MACH_LEVEL3_INT		0x130
+#define	MACH_LEVEL4_INT		0x140
+#define	MACH_LEVEL5_INT		0x150
+#define	MACH_LEVEL6_INT		0x160
+#define	MACH_LEVEL7_INT		0x170
+#define	MACH_LEVEL8_INT		0x180
+#define	MACH_LEVEL9_INT		0x190
+#define	MACH_LEVEL10_INT	0x1a0
+#define	MACH_LEVEL11_INT	0x1b0
+#define	MACH_LEVEL12_INT	0x1c0
+#define	MACH_LEVEL13_INT	0x1d0
+#define	MACH_LEVEL14_INT	0x1e0
+#define	MACH_LEVEL15_INT	0x1f0
+
+#define	MACH_TRAP_UNIX_SYSCALL	MACH_TRAP_INSTR_FIRST
+#define	MACH_TRAP_DEBUGGER	MACH_TRAP_INSTR_1
+#define	MACH_TRAP_SYSCALL	MACH_TRAP_INSTR_3
+#define	MACH_TRAP_SIG_RETURN	MACH_TRAP_INSTR_4
+#define	MACH_TRAP_FLUSH_WINDOWS	MACH_TRAP_INSTR_5
+
+/*
+ * Our trap type is the 2 second to the last hex digits of the tbr register.
+ * So "trap type 3" shows up in the last 3 digits of the tbr as 0x030, and
+ * trap type 15 shows up as 0x1f0.  The trap types for the software trap
+ * instructions start at trap type 128 (0x800 in the tbr).  To get the arguments
+ * to a software trap instruction, we take the trap type, subtract off 0x800,
+ * and then shift it right by 4 bits to chop off the lowest hex digit.
+ * Thus the trap instruction "ta 0" has a trap type of 128 == 0x80 (== 0x800 in
+ * the tbr), and ta 1 has a trap type of 129 showing up as 0x810 in the tbr.
+ */
+/* trap instruction number is trap type - trap type 128 = 0x80 (== -0x800) */
+#define	MACH_CALL_DBG_TRAP	((MACH_TRAP_DEBUGGER - 0x800) >>4)
+#define	MACH_BRKPT_TRAP		((MACH_TRAP_INSTR_2 - 0x800) >>4)
+#define	MACH_SYSCALL_TRAP	((MACH_TRAP_SYSCALL - 0x800) >> 4)
+#define	MACH_RET_FROM_SIG_TRAP	((MACH_TRAP_SIG_RETURN - 0x800) >> 4)
+#define	MACH_FLUSH_WINDOWS_TRAP	((MACH_TRAP_FLUSH_WINDOWS - 0x800) >> 4)
+
+/*
+ * Mask for extracting the trap type from the tbr.
+ */
+#define	MACH_TRAP_TYPE_MASK	0xFF0
+/*
+ * Mask for extracting the trap base address from the tbr.
+ */
+#define MACH_TRAP_ADDR_MASK	0xFFFFF000
+
+/*
+ *  Masks for 16 interrupt priority levels:
+ *   lowest = 0,   highest = 15.
+ */
+#define	MACH_SR_PRIO_0		0x0000
+#define	MACH_SR_PRIO_1		0x0100
+#define	MACH_SR_PRIO_2		0x0200
+#define	MACH_SR_PRIO_3		0x0300
+#define	MACH_SR_PRIO_4		0x0400
+#define	MACH_SR_PRIO_5		0x0500
+#define	MACH_SR_PRIO_6		0x0600
+#define	MACH_SR_PRIO_7		0x0700
+#define	MACH_SR_PRIO_8		0x0700
+#define	MACH_SR_PRIO_9		0x0700
+#define	MACH_SR_PRIO_10		0x0700
+#define	MACH_SR_PRIO_11		0x0700
+#define	MACH_SR_PRIO_12		0x0700
+#define	MACH_SR_PRIO_13		0x0700
+#define	MACH_SR_PRIO_14		0x0700
+#define	MACH_SR_PRIO_15		0x0700
+
+/*
+ *  State priorities in the processor state register (psr):
+ *
+ *	MACH_SR_HIGHPRIO	Supervisor mode + interrupts disabled, traps on
+ *	MACH_SR_LOWPRIO		Supervisor mode + interrupts enabled, traps on
+ *	MACH_SR_USERPRIO	User mode, traps on
+ *
+ *	For the sun4, these are macros in machAsmDefs.h.  I can't just move
+ *	values into the psr the way the sun3 and sun2 do, since that would
+ *	change the window we're in, etc.
+ */
+
+/*
+ * Constants to access bits in the psr register.
+ */
+#define	MACH_ENABLE_INTR		0xFFFFF0FF	/* and with psr */
+#define	MACH_DISABLE_INTR		(~MACH_ENABLE_INTR)	/* or w/ psr */
+#define MACH_ENABLE_FPP			0x1000
+#define	MACH_CWP_BITS			0x1f	/* cwp bits in psr */
+#define	MACH_ENABLE_TRAP_BIT		0x20	/* or with %psr */
+#define	MACH_DISABLE_TRAP_BIT		0xFFFFFFDF	/* and with %psr */
+#define	MACH_SUPER_BIT			0x80
+#define	MACH_PS_BIT			0x40	/* and with psr - prev. state */
+#define	MACH_FIRST_USER_PSR		0x080	/* traps off, interrupts on,
+						 * previous mode not supervisor,
+						 * current mode supervisor. */
+#define	MACH_PSR_SIG_RESTORE		0xF00000 /* Bits to restore from sig */ 
+#define	MACH_NO_INTR_USER_PSR		0xF80
+#define MACH_CARRY_BIT			0x00100000
+#define MACH_CARRY_BITMASK		(~MACH_CARRY_BIT)
+/*
+ * psr value for interrupts disabled, traps enabled and window 0.
+ * Both supervisor and previous supervisor mode bits are set.
+ */
+#define	MACH_HIGH_PRIO_PSR		0x00000FE0
+
+/*
+ * FPU fsr bits.
+ */
+
+#define	MACH_FSR_QUEUE_NOT_EMPTY	 0x2000
+#define	MACH_FSR_TRAP_TYPE_MASK		0x1c000
+#define	MACH_FSR_NO_TRAP		0x00000
+#define	MACH_FSR_IEEE_TRAP		0x04000
+#define	MACH_FSR_UNFINISH_TRAP		0x08000
+#define	MACH_FSR_UNIMPLEMENT_TRAP	0x0c000
+#define	MACH_FSR_SEQ_ERRROR_TRAP	0x10000
+
+/*
+ * Bits to enable interrupts in interrupt register.
+ */
+#define	MACH_ENABLE_ALL_INTERRUPTS	0x1
+#define	MACH_ENABLE_LEVEL1_INTR		0x2
+#define	MACH_ENABLE_LEVEL4_INTR		0x4
+#define	MACH_ENABLE_LEVEL6_INTR		0x8
+#define	MACH_ENABLE_LEVEL8_INTR		0x10
+#define	MACH_ENABLE_LEVEL10_INTR	0x20
+#define	MACH_ENABLE_LEVEL14_INTR	0x80
+/*
+ * Bit to enable in interrupt register for timer.
+ */
+#ifdef sun4c
+#define	MACH_ENABLE_COUNTER0_INTR_LEVEL	MACH_ENABLE_LEVEL10_INTR
+#define	MACH_ENABLE_COUNTER1_INTR_LEVEL	MACH_ENABLE_LEVEL14_INTR
+#else
+#define	MACH_ENABLE_TIMER_INTR_LEVEL	MACH_ENABLE_LEVEL10_INTR
+#endif
+
+/*
+ * Bits to access bus error register.
+ */
+#ifdef sun4c
+#define	MACH_SIZE_ERROR		0x02
+#define	MACH_SB_ERROR		0x10
+#define	MACH_TIMEOUT_ERROR	0x20
+#define	MACH_PROT_ERROR		0x40
+#define	MACH_INVALID_ERROR	0x80
+#else
+#define	MACH_SIZE_ERROR		0x02
+#define	MACH_VME_ERROR		0x10
+#define	MACH_TIMEOUT_ERROR	0x20
+#define	MACH_PROT_ERROR		0x40
+#define	MACH_INVALID_ERROR	0x80
+#endif
+
+/*
+ * MACH_KERN_START	The address where the kernel image is loaded at.
+ * MACH_CODE_START	The address where the kernel code is loaded at.
+ * MACH_STACK_START The address of the base of the stack.  1st word is unusable.
+ * MACH_STACK_BOTTOM	The address of the bottom of the kernel stack for the
+ *			main process that is initially run.
+ * MACH_KERN_END	The address where the last kernel virtual address is
+ *			at.
+ * MACH_KERN_STACK_SIZE Number of bytes in a kernel stack.
+ * MACH_BARE_STACK_OFFSET	Offset of where a bare kernel stack starts.
+ *				It doesn't start at the very top because
+ *				the debugger requires a couple of integers
+ *				of padding on the top.
+ * MAGIC		A magic number which is pushed onto the stack before
+ *			a context switch.  Used to verify that the stack
+ *			doesn't get trashed.
+ * MACH_UNIX_ERRNO_OFFSET	Errno offset in Proc_ControlBlock
+ */
+#define	MACH_KERN_START		0xf6000000
+#define	MACH_STACK_START	(MACH_KERN_START + MACH_KERN_STACK_SIZE)
+#define	MACH_CODE_START		(MACH_STACK_START + 0x20)
+#define	MACH_STACK_BOTTOM	MACH_KERN_START
+#define MACH_KERN_END		VMMACH_NET_MAP_START
+#define	MACH_KERN_STACK_SIZE	0x6000
+#define	MACH_BARE_STACK_OFFSET	(MACH_KERN_STACK_SIZE - 8)
+#define	MACH_UNIX_ERRNO_OFFSET	696	/* Offset checked in Mach_Init. */
+
+/*
+ * Constants for the user's address space.
+ *
+ * MACH_FIRST_USER_ADDR		The lowest possible address in the user's VAS.
+ * MACH_LAST_USER_ADDR		The highest possible address in the user's VAS.
+ * MACH_LAST_USER_STACK_PAGE	The highest page in the user stack segment.
+ * MACH_MAX_USER_STACK_ADDR	The highest value that the user stack pointer
+ *				can have.  Note that the stack pointer must be
+ *				decremented before anything can be stored on
+ *				the stack.  Also note that on the sun4 we must
+ *				strip off the high couple of bits, since 0's
+ *				and 1's in them point to the same entry in the
+ *				segment table.
+ *				ACTUALLY: it turns out we can't just strip
+ *				those bits, since doing so may put us in the
+ *				invalid hole, since the kernel doesn't start
+ *				right at the bottom of the top part after the
+ *				hole.  I'll have to deal with the user stack
+ *				not being contiguous in some way, so it can
+ *				start beneath the kernel and continue across
+ *				the hole, but for now, I just shrink everything
+ *				so the user process stack must start at the
+ *				top address beneath the hole.  Yuckola.
+ *
+ */
+#define	MACH_FIRST_USER_ADDR		VMMACH_PAGE_SIZE
+#define	MACH_LAST_USER_ADDR		(VMMACH_BOTTOM_OF_HOLE - 1)
+#define	MACH_LAST_USER_STACK_PAGE	((MACH_MAX_USER_STACK_ADDR - 1) / VMMACH_PAGE_SIZE)
+#define	MACH_MAX_USER_STACK_ADDR	VMMACH_SHARED_START_ADDR
+
+/*
+ * The control space offset of the VME interrupt vector.
+ */
+#define	MACH_VME_INTR_VECTOR		0xE0000000
+
+/*
+ * Instruction executed from stack to cause a return trap to the kernel from
+ * a signal handler.  This is "ta MACH_RET_FROM_SIG_TRAP" instruction.
+ */
+#define	MACH_SIG_TRAP_INSTR	0x91d02004
+/*
+ * Constants for getting to offsets in structures:  To make sure these
+ * constants are correct, there is code in machCode.c that will cause
+ * the kernel to die upon booting if the offsets aren't what's here.
+ * All sizes are in bytes.
+ */
+/*
+ * Byte offsets from beginning of a Mach_RegState structure to the fields
+ * for the various types of registers.
+ */
+#define	MACH_LOCALS_OFFSET	0
+#define	MACH_INS_OFFSET		(MACH_LOCALS_OFFSET + MACH_NUM_LOCALS * 4)
+#define	MACH_GLOBALS_OFFSET	(MACH_INS_OFFSET + (MACH_NUM_INS * 2) * 4 + \
+				 MACH_NUM_EXTRA_ARGS * 4)
+#define	MACH_FPU_FSR_OFFSET	(MACH_GLOBALS_OFFSET + (MACH_NUM_GLOBALS * 4))
+#define	MACH_FPU_QUEUE_COUNT	(MACH_FPU_FSR_OFFSET + 4)
+#define	MACH_FPU_REGS_OFFSET	(MACH_FPU_QUEUE_COUNT + 4)
+#define	MACH_FPU_QUEUE_OFFSET	(MACH_FPU_REGS_OFFSET + (MACH_NUM_FPS * 4))
+
+#define	MACH_SIG_STUFF_SIZE	((MACH_SAVED_STATE_FRAME + 8 + 4) + 20)
+						/* skip over calleeInputs too */
+/*
+ * Byte offset from beginning of a Mach_State structure to various register
+ * fields, the savedSps field, the savedRegs field, the savedMask field, 
+ * the kernStackStart, and the FPU status field.
+ */
+#define	MACH_TRAP_REGS_OFFSET	0
+#define	MACH_SWITCH_REGS_OFFSET	(MACH_TRAP_REGS_OFFSET + 4)
+#define	MACH_SAVED_REGS_OFFSET	(MACH_SWITCH_REGS_OFFSET + 4)
+
+#define	MACH_SAVED_MASK_OFFSET	(MACH_SAVED_REGS_OFFSET + (MACH_MAX_WINDOWS *\
+				MACH_NUM_WINDOW_REGS * 4))
+#define	MACH_SAVED_SPS_OFFSET	(MACH_SAVED_MASK_OFFSET + 4)
+#define	MACH_KSP_OFFSET		(MACH_SAVED_SPS_OFFSET + (MACH_MAX_WINDOWS * 4))
+#define	MACH_FPU_STATUS_OFFSET  (MACH_KSP_OFFSET + 4)
+
+/*
+ * Maximum number of processors configurable.
+ */
+
+#define	MACH_MAX_NUM_PROCESSORS		1
+
+/*
+ * Fast restart constants.
+ */
+#ifndef RECOV_NOCOPY
+#define	MACH_RESTART_DATA_SIZE	0x14000		/* Enough space for the
+						 * initialized data of the
+						 * kernel to be stored in
+						 * a buffer. */
+#else
+#define	MACH_RESTART_DATA_SIZE	0x14000		/* No space needed. */
+#endif /* RECOV_NOCOPY */
+
+#ifdef RECOV_TRANSPARENT
+/* This must be a multiple of the page size for now. */
+#define	MACH_RESTART_TABLE_SIZE	0xAA000		/* Space for a restart table. */
+#else
+#define	MACH_RESTART_TABLE_SIZE	0x4		/* No space needed. */
+#endif /* RECOV_TRANSPARENT */
+
+/*
+ * More window-related constants
+ */
+#ifdef sun4c
+
+#ifdef _ASM			/* force error */
+
+#define	MACH_NUM_WINDOWS	%%
+#define	MACH_VALID_WIM_BITS	%%
+
+#else /* _ASM */
+
+#define	MACH_NUM_WINDOWS	machNumWindows	/* # of implemented windows */
+						/* is wim value in range? */
+#define	MACH_VALID_WIM_BITS	((1 << machNumWindows) - 1)
+
+#endif /* _ASM */
+
+#else /* sun4c */
+
+#define	MACH_NUM_WINDOWS	7		/* # of implemented windows */
+#define	MACH_VALID_WIM_BITS	0x0000007f	/* is wim value in range? */
+
+#endif /* sun4c */
+
+#define	MACH_MAX_WINDOWS	8		/* for allocating array space */
+
+/*
+ * The size of the floating point state size in Mach_RegState.
+ */
+#define	MACH_FP_STATE_SIZE (8 + (MACH_NUM_FPS*4) + (MACH_FPU_MAX_QUEUE_DEPTH*8))
+/*
+ * The size of a single saved window (locals and ins) in bytes.
+ */
+#define	MACH_SAVED_WINDOW_SIZE	(MACH_NUM_LOCALS * 4 + MACH_NUM_INS * 4)
+
+/*
+ * The size of the state frame that's saved on interrupts, etc.  This must
+ * be the size of Mach_RegState, and this is checked in machCode.c.  We
+ * shouldn't succeed in booting if these constants are out of whack.  Keep
+ * it this way!  Size is in bytes.
+ */
+#define	MACH_SAVED_STATE_FRAME	(MACH_SAVED_WINDOW_SIZE + MACH_INPUT_STORAGE +\
+				MACH_NUM_EXTRA_ARGS * 4 + MACH_NUM_GLOBALS * 4\
+				+ MACH_FP_STATE_SIZE)
+
+/*
+ * The compiler stores parameters to C routines in its caller's stack frame,
+ * so this is at %fp + some_amount.  "Some_amount has to be below (higher addr)
+ * than the saved window area, so this means all routines that call C routines
+ * with arguments must have a stack frame that is at least
+ * MACH_SAVED_WINDOW_SIZE + MACH_INPUT_STORAGE = 96 bytes.  If the
+ * frame is also being used for trap state, then it's
+ * MACH_SAVED_STATE_FRAME + MACH_INPUT_STORAGE.  This MACH_INPUT_STORAGE is
+ * the space for calleeInputs in the Mach_Reg_State structure.
+ */
+#define	MACH_INPUT_STORAGE	(MACH_NUM_INS * 4)
+
+/*
+ * Ugh, there are only 6 input register storage slots, and one "hidden param"
+ * slot for an agregate return value.  This is the space before the area
+ * where parameters past the 6th begin.
+ */
+#define	MACH_ACTUAL_HIDDEN_AND_INPUT_STORAGE	(7 * 4)
+/*
+ * Number of input registers really used as parameters.
+ */
+#define	MACH_NUM_REAL_IN_REGS	6
+
+/*
+ * This doesn't include the space for extra params, since we never use
+ * it where extra params are needed.
+ */
+#define	MACH_FULL_STACK_FRAME	(MACH_SAVED_WINDOW_SIZE + MACH_INPUT_STORAGE)
+
+
+/*
+ * Constant for offset of first argument in a saved window area.
+ */
+#define	MACH_ARG0_OFFSET	(MACH_NUM_LOCALS * 4)
+
+/*
+ * Constant for offset of fp in saved window area.  Fp is %i6.
+ */
+#define	MACH_FP_OFFSET		(MACH_NUM_LOCALS * 4 + 6 * 4)
+#define	MACH_FP_REG		6
+
+/*
+ * Constant for offset of return pc in saved window area.  RetPC is %i7.
+ */
+#define	MACH_RETPC_OFFSET	(MACH_NUM_LOCALS * 4 + 7 * 4)
+
+/*
+ * Constant for offset of return from trap pc reg in saved window area.
+ * RetFromTrap pc is %l1.
+ */
+#define	MACH_TRAP_PC_OFFSET	(4)
+
+/*
+ * Constant for offset of saved psr in trap regs in saved window area.
+ * CurPsr is %l0.
+ */
+#define	MACH_PSR_OFFSET		(0)
+
+/*
+ * Number of parameters beyond the sixth that are allowed on trap entry (for
+ * system calls.
+ */
+#define	MACH_NUM_EXTRA_ARGS	(SYS_MAX_ARGS - 6)
+
+/*
+ * The number of registers.
+ * MACH_NUM_GLOBALS - Number of %g registers in sparc.
+ * MACH_NUM_INS     - Number of %i registers in sparc.
+ * MACH_NUM_LOCALS  - Number of %l registers in sparc.
+ * MACH_NUM_WINDOW_REGS - Number of registers in each window.
+ * MACH_NUM_FPS     - Number of %f registers in sparc. This registers may be
+ *		      used as MACH_NUM_FPS floats or MACH_NUM_FPS/2 doubles or
+ *		      MACH_NUM_FPS/4 extendeds.
+ * MACH_FPU_MAX_QUEUE_DEPTH - The maximum number of entires in the FPU queue
+ *			      of unfinished instructions.  This number is 
+ *			      implementation dependent with the current 
+ *			      value set to match SunOS 4.0.3.
+ * 
+ */
+#define	MACH_NUM_GLOBALS		8
+#define	MACH_NUM_INS			8
+#define	MACH_NUM_LOCALS			8
+#define	MACH_NUM_WINDOW_REGS		(MACH_NUM_LOCALS + MACH_NUM_INS)
+#define	MACH_NUM_FPS			32
+#define	MACH_FPU_MAX_QUEUE_DEPTH	16
+/*
+ * The amount to shift left by to multiply a number by the number of registers
+ * per window.  How would I get this from the constant above?
+ */
+#define	MACH_NUM_REG_SHIFT		4
+
+/*
+ * Definitions of registers.
+ *
+ *
+ * The different types of registers.
+ *
+ *	r0 to r7	globals		g0 to g7
+ *	r8 to r15	outs		o0 to o7
+ *	r16 to r23	locals		l0 to l7
+ *	r24 to r31	ins		i0 to i7
+ *	f0 to f31	floating points
+ *
+ *		Special Registers:
+ *	current sp		= o6 = r14
+ *	current fp		= i6 = r30 = caller's sp
+ *	"0 & discard reg"	= g0 = r0
+ *	ret addr from C call	= o7 = r15 in old window
+ *	ret value from C call	= o0 = r8 in old window
+ *	ret addr to C call	= i7 = r31 in new window
+ *	ret val to C call	= i0 = r24 in new window
+ *	psr saved into		= l0 = r16 as first part of trap
+ *	ret pc from trap	= l1 = r17 in new window
+ *	ret npc from trap	= l2 = r18 in new window
+ *	tbr from trap		= l3 = r19 as first part of trap
+ *	y from trap		= l4 = r20 as first part of trap
+ *
+ * System routines may end up using a window pointed to by wim if a trap
+ * was taken before we got a window overflow.  In this case, they can use
+ * the local registers, but not the in or out registers, since they may be
+ * in use.  They can use global registers known to be free.
+ *
+ * NOTE: the order of the what's stored into the local routines is important
+ * since that's what gets saved on a stack frame for interrupts, etc.  If this
+ * changes, the corresponding changes need to be made in machAsmDefs.h and
+ * the mach.h definition of Mach_RegState.
+ *
+ *	RETURN_ADDR_REG	(r15)	Where the return address from a function call
+ *				is stored at call-time.
+ *	RETURN_ADDR_REG_CHILD (r31)
+ *				Where the called window finds return addr.
+ *	CUR_PSR_REG	(r16)	Register where psr is stored at trap time.
+ *	CUR_PC_REG	(r17)	Register where the first PC is stored on a trap.
+ *	NEXT_PC_REG	(r18)	Register where the 2nd PC is stored on a trap.
+ *	CUR_TBR_REG	(r19)	Register where the tbr is stored on a trap.
+ *	CUR_Y_REG	(r20)	Register where the y reg is stored on a trap.
+ *	SAFE_TEMP	(r21) 	Register that cannot be modified by macros or
+ *				subroutines within the same window.
+ *	VOL_TEMP[1-2]	(r22-r23)
+ *				Volatile temporary registers.  Means that
+ *				macros in machAsmDefs.h can modify these
+ *				registers.
+ *	RETURN_VAL_REG	(r8)	Where a value is returned from a C routine.
+ *	RETURN_VAL_REG_CHILD (r24)
+ *				Where to return a value to our caller.
+ *
+ */
+#define	RETURN_ADDR_REG		r15		/* o7 */
+#define	RETURN_ADDR_REG_CHILD	r31		/* i7 */
+#define	CUR_PSR_REG		r16		/* l0 */
+#define	CUR_PC_REG		r17		/* l1 */
+#define	NEXT_PC_REG		r18		/* l2 */
+#define	CUR_TBR_REG		r19		/* l3 */
+#define	CUR_Y_REG		r20		/* l4 */
+#define	SAFE_TEMP		r21		/* l5 */
+#define	VOL_TEMP1		r22		/* l6 */
+#define	VOL_TEMP2		r23		/* l7 */
+#define	RETURN_VAL_REG		r8		/* o0 */
+#define	RETURN_VAL_REG_CHILD	r24		/* i0 */
+#define	OUT_TEMP1		r12		/* o4 */
+#define	OUT_TEMP2		r13		/* o5 */
+
+
+#endif /* _MACHCONST */
+@
+
+
+9.12
+log
+@sun4c/sun4c2 merge
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 9.9 91/08/02 18:42:23 mgbaker Exp $ SPRITE (Berkeley)
+d336 19
+@
+
+
+9.11
+log
+@Fixed constant that was breaking shared memory.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 9.10 91/08/27 16:06:41 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d26 1
+a26 1
+#include "status.h"
+d247 1
+a247 1
+#define	MACH_STACK_START	(MACH_KERN_START + 0x6000)
+d251 1
+a251 1
+#define	MACH_KERN_STACK_SIZE	(MACH_STACK_START - MACH_STACK_BOTTOM)
+d283 1
+a283 1
+#define	MACH_MAX_USER_STACK_ADDR	(VMMACH_BOTTOM_OF_HOLE - VMMACH_USER_SHARED_PAGES*VMMACH_PAGE_SIZE)
+d324 2
+a325 1
+#define	MACH_SAVED_MASK_OFFSET	(MACH_SAVED_REGS_OFFSET + (MACH_NUM_WINDOWS *\
+d328 1
+a328 1
+#define	MACH_KSP_OFFSET		(MACH_SAVED_SPS_OFFSET + (MACH_NUM_WINDOWS * 4))
+d340 18
+a357 1
+#define	MACH_NUM_WINDOWS		7	/* # of implemented windows */
+d359 4
+@
+
+
+9.10
+log
+@Fixed kernel includes to use angle brackets.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 9.9 91/08/02 18:42:23 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d281 1
+a281 1
+#define	MACH_LAST_USER_ADDR		(MACH_MAX_USER_STACK_ADDR - 1)
+d283 1
+a283 5
+#ifdef NOTDEF
+#define	MACH_MAX_USER_STACK_ADDR	(VMMACH_MAP_SEG_ADDR & VMMACH_ADDR_MASK)
+#else
+#define	MACH_MAX_USER_STACK_ADDR	(0x20000000 - VMMACH_USER_SHARED_PAGES*VMMACH_PAGE_SIZE)
+#endif /* NOTDEF */
+@
+
+
+9.9
+log
+@Sped up underflow trap handler.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 9.8 91/07/26 17:04:25 shirriff Exp $ SPRITE (Berkeley)
+d17 5
+a21 5
+#include "sprite.h"
+#include "vmSunConst.h"
+#include "sysSysCall.h"
+#include "sys.h"
+#include "status.h"
+@
+
+
+9.8
+log
+@Large install for unix compatibility
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 9.5 91/03/29 17:57:06 shirriff Exp $ SPRITE (Berkeley)
+d253 1
+a253 2
+#define	MACH_UNIX_ERRNO_OFFSET	696
+#define MACH_PROC_REGS_OFFSET	(MACH_UNIX_ERRNO_OFFSET+28)
+a332 3
+#define	MACH_UNDER1_OFFSET	(MACH_FPU_STATUS_OFFSET + MACH_SIG_STUFF_SIZE \
+				+ 8)
+#define	MACH_UNDER2_OFFSET	(MACH_UNDER1_OFFSET + (4 * MACH_NUM_WINDOWS))
+@
+
+
+9.7
+log
+@Moving kernel back up again.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 9.6 91/06/27 12:10:33 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d169 1
+d254 1
+d319 1
+d334 3
+@
+
+
+9.6
+log
+@Moving kernel down.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 9.5 91/03/29 17:57:06 shirriff Exp Locker: mgbaker $ SPRITE (Berkeley)
+d245 1
+a245 1
+#define	MACH_KERN_START		0xf5800000
+@
+
+
+9.5
+log
+@Did stuff for unix compatibility.  In particular errno handling.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 9.4 90/08/14 18:42:39 mgbaker Exp $ SPRITE (Berkeley)
+d245 1
+a245 1
+#define	MACH_KERN_START		0xf6000000
+@
+
+
+9.4
+log
+@Took out unnecessary definition.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 9.3 89/11/27 14:52:35 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d90 1
+d114 1
+a114 1
+ * Mask for extracting the trap type from the psr.
+d118 1
+a118 1
+ * Mask for extracting the trap base address from the psr.
+d170 2
+d243 1
+d252 1
+@
+
+
+9.3
+log
+@Notdef'ing debug stuff.
+floating point additions to state structure.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 9.2 89/11/07 18:51:25 shirriff Exp $ SPRITE (Berkeley)
+a516 1
+#define	TBR_REG			r6		/* g6 */
+@
+
+
+9.2
+log
+@Removed reference to vm.ken/sunConst.h
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 9.1 89/10/22 23:46:46 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+a28 5
+/*
+ * Turn on code for floating point compilation.
+ *
+    #define	FP_ENABLED	1
+ */
+a164 11
+#ifdef FP_ENABLED
+#define	MACH_FIRST_USER_PSR		0x1080	/* traps off, interrupts on,
+						 * previous mode not supervisor,
+						 * current mode supervisor. */
+#define	MACH_NO_INTR_USER_PSR		0x1F80
+/*
+ * psr value for interrupts disabled, traps enabled and window 0.
+ * Both supervisor and previous supervisor mode bits are set.
+ */
+#define	MACH_HIGH_PRIO_PSR		0x00001FE0
+#else
+a173 1
+#endif /* FP_ENABLED */
+d175 11
+d307 5
+d315 2
+a316 2
+ * fields, the savedSps field, the savedRegs field, the savedMask field, and
+ * the kernStackStart field.
+d325 1
+d339 4
+a342 1
+
+a353 5
+#ifdef FP_ENABLED
+#define	MACH_SAVED_STATE_FRAME	(MACH_SAVED_WINDOW_SIZE + MACH_INPUT_STORAGE +\
+				MACH_NUM_EXTRA_ARGS * 4 + MACH_NUM_GLOBALS * 4 \
+				+ MACH_NUM_FPS * 4)
+#else
+d355 2
+a356 2
+				MACH_NUM_EXTRA_ARGS * 4 + MACH_NUM_GLOBALS * 4)
+#endif /* FP_ENABLED */
+d424 12
+a440 1
+#ifdef FP_ENABLED
+d442 1
+a442 1
+#endif /* FP_ENABLED */
+d520 1
+@
+
+
+9.1
+log
+@Moved stack down to make room for shared memory.
+@
+text
+@d10 1
+a10 1
+ * $Header: /c/src/kernel/mach.ken/sun4.md/RCS/machConst.h,v 1.1 89/09/30 23:51:00 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+d18 1
+a18 2
+/* ***TEMP*** */
+#include "/sprite/src/kernel/vm.ken/sun4.md/vmSunConst.h"
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.34 89/09/08 16:21:46 mgbaker Exp Locker: douglis $ SPRITE (Berkeley)
+d18 2
+a19 1
+#include "vmSunConst.h"
+d287 1
+a287 1
+#define	MACH_MAX_USER_STACK_ADDR	0x20000000
+@
+
+
+1.34
+log
+@Preparing for next install.  (More _ASM inclusions.)
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.33 89/08/30 12:19:02 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+@
+
+
+1.33
+log
+@Change for VM constant-derived value.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.32 89/08/25 13:49:43 jhh Exp Locker: mgbaker $ SPRITE (Berkeley)
+d17 1
+d19 3
+d24 3
+a510 13
+
+/*
+ * GROSS STUFF: that is actually in header files elsewhere that I can't
+ * include 'cause they're for C code and not assembly headers.  I will
+ * separate them out and fix ths.
+ */
+#define	SYS_MAX_ARGS		10
+#define	SYS_NUM_SYSCALLS	96
+#define	SYS_ARG_NOACCESS	0x00020000
+#define	SYS_INVALID_ARG		0x00020001
+#define	SYS_INVALID_SYSTEM_CALL	0x00020002
+#define	PROC_TERM_DESTROYED	4
+#define	PROC_BAD_STACK		1
+@
+
+
+1.32
+log
+@Mary checking this in for jhh.  I need to make changes to move net
+map area below device mapping area.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.31 89/08/17 15:18:03 mgbaker Exp Locker: jhh $ SPRITE (Berkeley)
+d244 1
+a244 1
+#define MACH_KERN_END		VMMACH_DEV_START_ADDR
+@
+
+
+1.31
+log
+@tmp checkin
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.30 89/08/09 12:34:21 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d511 1
+a511 1
+#define	SYS_NUM_SYSCALLS	95
+@
+
+
+1.30
+log
+@Stable kernel.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.29 89/07/20 16:59:04 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d183 1
+a183 1
+#endif FP_ENABLED
+d237 1
+a237 1
+ *			a context switch.  Used to verify that the stack 
+d250 1
+a250 1
+ * 
+d255 2
+a256 2
+ *				can have.  Note that the stack pointer must be 
+ *				decremented before anything can be stored on 
+d271 1
+a271 1
+ *				
+d351 1
+a351 1
+#endif FP_ENABLED
+d426 1
+a426 1
+#endif FP_ENABLED
+d443 1
+a443 1
+ *	f0 to f31	floating points	
+d481 2
+a482 2
+ *				Volatile temporary registers.  Means that 
+ *				macros in machAsmDefs.h can modify these 
+d487 1
+a487 1
+ *	
+@
+
+
+1.29
+log
+@Checkin before changing interrupt stuff
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.28 89/06/25 14:00:11 mendel Exp Locker: mgbaker $ SPRITE (Berkeley)
+d199 4
+d204 1
+d209 7
+d221 1
+@
+
+
+1.28
+log
+@Checking this in for Mendel.  The address of MACH_STACK_START
+has changed to give more room for the kernel stack.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.27 89/06/16 09:04:22 mendel Exp $ SPRITE (Berkeley)
+d498 1
+a498 1
+#define	SYS_NUM_SYSCALLS	94
+@
+
+
+1.27
+log
+@Many changes and bug fixes.  Added floating point support. Moved kernel
+down in memory.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.26 89/05/21 18:24:32 mgbaker Exp $ SPRITE (Berkeley)
+d228 1
+a228 1
+#define	MACH_STACK_START	(MACH_KERN_START + 0x4000)
+@
+
+
+1.26
+log
+@checkin before spring cleaning
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.25 89/05/02 23:26:03 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d227 1
+a227 1
+#define	MACH_KERN_START		0xff000000
+@
+
+
+1.25
+log
+@New interrupts, device interface, etc.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.24 89/04/21 23:14:02 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d23 6
+a154 1
+
+d163 11
+a177 1
+
+d183 1
+d287 1
+a287 1
+ * for the various types of registers..
+d331 5
+d338 1
+d411 3
+d430 1
+@
+
+
+1.24
+log
+@Twentieth Kernel: Maybe, finally, we have squished this bug???!!!!
+It was the difference between a "bg" and a "bgu" in VmMachSegMapCopy()...
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.23 89/04/09 13:23:41 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d65 1
+d254 5
+a477 1
+
+@
+
+
+1.23
+log
+@Seems to have fixed some interrupt problems, but now there's seg fault
+problems that don't print anything, so I'm removing some printf's to
+see what happens and I'm removing and changing some stuff that gets
+put into the debug buffer.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.22 89/04/01 13:02:36 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d467 2
+a469 1
+#define	SYS_INVALID_ARG		0x00020001
+@
+
+
+1.22
+log
+@Contains some changes for forking user processes.  Strangely enough, though,
+forking kernel processes and exec'ing first user process still work,
+even though the code changes affect them!
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.21 89/03/30 23:24:03 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d97 2
+a98 2
+#define	MACH_CALL_DBG_TRAP	(MACH_TRAP_DEBUGGER - 0x800)
+#define	MACH_BRKPT_TRAP		(MACH_TRAP_INSTR_2 - 0x800)
+@
+
+
+1.21
+log
+@Paranoia checkin.  Lots of new signal code.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.20 89/03/26 20:16:40 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d357 12
+@
+
+
+1.20
+log
+@Seventeenth Kernel.  It executes its first system call: Sys_Shutdown().
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.19 89/03/24 15:39:28 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d61 2
+d83 3
+d100 2
+d160 1
+a160 1
+#define	MACH_NO_INTR_USER_PSER		0xF80
+d252 5
+@
+
+
+1.19
+log
+@Trying to get user procs to work.  I've just changed some stack-checking
+code.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.18 89/03/22 14:07:24 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d81 14
+a94 4
+			/* trap instruction number is trap type - 128 */
+#define	MACH_CALL_DBG_TRAP	(MACH_TRAP_DEBUGGER - 128)
+#define	MACH_BRKPT_TRAP		(MACH_TRAP_INSTR_2 - 128)
+#define	MACH_SYSCALL_TRAP	(MACH_TRAP_SYSCALL - 128)
+@
+
+
+1.18
+log
+@User process starts and gets successful page fault on its stack.
+I don't think it's returning to the user process correctly, though.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.17 89/03/19 01:21:49 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d143 1
+@
+
+
+1.17
+log
+@More stuff.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.16 89/03/18 15:40:42 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d213 11
+d228 1
+d230 3
+@
+
+
+1.16
+log
+@Kernel processes work again, with a lot of user support.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.15 89/03/09 17:08:14 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d140 3
+d313 1
+@
+
+
+1.15
+log
+@Keyboard interrupts work.  Checking in before I've made too many
+further changes.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.14 89/03/06 12:01:36 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d23 14
+d60 1
+a60 1
+#deifne	MACH_TRAP_INSTR_3	0x830		/* 131 */
+d84 1
+a84 1
+#deifne	MACH_SYSCALL_TRAP	(MACH_TRAP_SYSCALL - 128)
+d139 1
+d164 9
+d175 1
+a175 7
+ * MACH_STACK_START The address of the base of the stack. (1st word is
+ *							unusable.)
+#ifdef NOTDEF
+	    No -- I'm allocating this as a variable now, for testing.
+ * MACH_DEBUG_STACK_START The address of the base of the debugger stack.
+#endif NOTDEF
+ *						(1st word is unusable.)
+a190 3
+#ifdef NOTDEF
+#define	MACH_DEBUG_STACK_START	(MACH_KERN_START + 0x2000)
+#endif NOTDEF
+d217 1
+a217 1
+ * Constants for getting to offsets in state structure.  To make sure these
+d222 21
+a242 5
+#define	MACH_TRAP_REGS_OFFSET		0
+#define	MACH_SWITCH_REGS_OFFSET		4
+#define	MACH_LOCALS_OFFSET		0
+#define	MACH_INS_OFFSET			(MACH_LOCALS_OFFSET + 8 * 4)
+#define	MACH_GLOBALS_OFFSET		(MACH_INS_OFFSET + 8 * 4)
+d268 2
+a269 1
+#define	MACH_SAVED_STATE_FRAME	(MACH_SAVED_WINDOW_SIZE + MACH_NUM_GLOBALS * 4)
+d272 1
+a272 1
+ * The compiler store parameters to C routines in its caller's stack frame,
+d278 2
+a279 1
+ * MACH_SAVED_STATE_FRAME + MACH_INPUT_STORAGE.
+d282 16
+a298 1
+#define	MACH_FULL_TRAP_FRAME	(MACH_SAVED_STATE_FRAME + MACH_INPUT_STORAGE)
+d317 6
+d329 5
+d405 13
+@
+
+
+1.14
+log
+@Sixteenth Kernel.  Kernel processes work and play tag over a monitor
+lock.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.13 89/03/03 15:39:42 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d46 1
+d66 1
+d68 1
+a68 1
+#define	MACH_CALL_DBG		(MACH_TRAP_DEBUGGER - 128)
+d70 1
+@
+
+
+1.13
+log
+@Fifteenth Kernel.  Initializes all kernel procs and gets to idle loop.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.12 89/03/02 00:20:43 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d229 22
+a263 8
+
+/*
+ * The size of the state frame that's saved on interrupts, etc.  This must
+ * be the size of Mach_RegState, and this is checked in machCode.c.  We
+ * shouldn't succeed in booting if these constants are out of whack.  Keep
+ * it this way!  Size is in bytes.
+ */
+#define	MACH_SAVED_STATE_FRAME	(MACH_SAVED_WINDOW_SIZE + MACH_NUM_GLOBALS * 4)
+@
+
+
+1.12
+log
+@Kernel procs exist now, but it deadlocks.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.11 89/02/28 12:47:53 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d127 1
+a127 1
+#define	MACH_HIGH_PRIO_PSR		0x000000E0
+@
+
+
+1.11
+log
+@Added more interrupt-handling support
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.10 89/02/24 21:57:15 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d123 5
+d129 1
+d205 1
+d227 16
+@
+
+
+1.10
+log
+@Fourteenth Kernel.  Debugger works, uses mem module and stdlib.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.9 89/02/24 16:38:26 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d45 1
+d65 1
+a65 1
+						    /* trap type gets 128 + 1 */
+d67 1
+@
+
+
+1.9
+log
+@Thirteenth Kernel.  sun4 finishes vm init now.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.8 89/01/29 17:21:38 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d142 2
+d145 1
+d162 1
+d164 1
+@
+
+
+1.8
+log
+@Tenth Kernel.  Net module works for receiving, and I seem to set up
+state and enter the debugger from a debugger trap correctly.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.7 89/01/29 13:10:06 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d17 1
+a17 1
+#include "vmSun4Const.h"
+d19 1
+a19 1
+#include <kernel/vmSun4Const.h>
+d158 4
+a161 4
+#define	MACH_STACK_START	0xff004000
+#define	MACH_DEBUG_STACK_START	0xff002000
+#define	MACH_CODE_START		0xff004020
+#define	MACH_STACK_BOTTOM	0xff000000
+a164 1
+#define	MAGIC			0xFeedBabe
+d175 4
+a178 1
+ *				the stack.
+d183 1
+a183 1
+#define	MACH_MAX_USER_STACK_ADDR	VMMACH_MAP_SEG_ADDR
+d297 2
+@
+
+
+1.7
+log
+@Putting in net module and debugger.  There are still problems,
+but this is progress.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.6 89/01/25 22:52:47 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d44 1
+d63 4
+d142 2
+d159 1
+@
+
+
+1.6
+log
+@Ninth Kernel.  Timer interrupts and overflow and underflow traps still
+are all it does functionally, but now I save and restore state in a fancy
+way that will allow nested interrupts, avoids duplicating saved state,
+and works the same way for the debugger.  See README and the code for
+details.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.5 89/01/22 23:45:08 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d150 4
+a153 4
+#define	MACH_KERN_START		0xe000000
+#define	MACH_STACK_START	0xe004000
+#define	MACH_CODE_START		0xe004020
+#define	MACH_STACK_BOTTOM	0xe000000
+@
+
+
+1.5
+log
+@Interrupts seem to work again, but I've got lots of debugging
+code in here.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.4 89/01/22 20:32:42 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+a131 1
+#ifdef NOTDEF
+a132 24
+ * Different stack formats on a 68000
+ */
+#define	MACH_SHORT		0x0
+#define	MACH_THROWAWAY		0x1
+#define	MACH_INST_EXCEPT	0x2
+#define	MACH_MC68010_BUS_FAULT	0x8
+#define	MACH_COPROC_MID_INSTR	0x9
+#define	MACH_SHORT_BUS_FAULT	0xa
+#define	MACH_LONG_BUS_FAULT	0xb
+
+/*
+ * The sizes of the different stack formats.
+ */
+#define	MACH_SHORT_SIZE			8
+#define MACH_THROWAWAY_SIZE		8
+#define	MACH_INST_EXCEPT_SIZE		12
+#define MACH_MC68010_BUS_FAULT_SIZE	58
+#define MACH_COPROC_MID_INSTR_SIZE	20
+#define MACH_SHORT_BUS_FAULT_SIZE	32
+#define	MACH_LONG_BUS_FAULT_SIZE	92
+
+#endif /* NOTDEF */
+
+/*
+d181 2
+a182 4
+#define	MACH_TRAP_REGS_OFFSET		8
+#define	MACH_GLOBALS_OFFSET		8
+#define	MACH_OUTS_OFFSET		(MACH_GLOBALS_OFFSET + 8 * 4)
+#define	MACH_LOCALS_OFFSET		(MACH_OUTS_OFFSET + 8 * 4)
+d184 1
+a184 4
+#define	MACH_PSR_OFFSET			(MACH_INS_OFFSET + 8 * 4)
+#define	MACH_Y_OFFSET			(MACH_PSR_OFFSET + 4)
+#define	MACH_TBR_OFFSET			(MACH_PSR_OFFSET + 8)
+#define	MACH_WIM_OFFSET			(MACH_PSR_OFFSET + 12)
+a185 5
+#ifdef NOTDEF
+#define	MACH_PC_OFFSET			(MACH_PSR_OFFSET + 16)
+#define	MACH_NEXT_PC_OFFSET		(MACH_PSR_OFFSET + 20)
+#endif NOTDEF
+
+d200 1
+a200 2
+ * The size of a single saved window (locals and ins) and all of the saved
+ * windows (in bytes).
+d202 1
+a202 3
+#define	MACH_SAVED_WINDOW_SIZE	64	/* in bytes */
+#define	MACH_SAVED_REG_SET_SIZE		\
+				(MACH_NUM_WINDOWS * MACH_SAVED_WINDOW_SIZE)
+d204 8
+d214 4
+a217 6
+#define	MACH_NUM_GLOBAL_REGS		8
+#define	MACH_NUM_REGS_PER_WINDOW	16
+#define	MACH_NUM_ACTIVE_REGS		32
+#define	MACH_TOTAL_REGS			(MACH_NUM_GLOBAL_REGS + \
+					 MACH_NUM_REGS_PER_WINDOW * \
+					 MACH_NUM_WINDOWS)
+d238 1
+d241 2
+a242 1
+ *	psr saved into		= l0 = r16 as first part of trap
+d246 1
+a246 1
+ * the local registers, but not thein or out registers, since they may be
+d249 5
+d261 6
+a266 2
+ *	VOL_TEMP[1-2]	(r19-r20)
+ *				Volatile temporary register.  Means that 
+a268 6
+ *	SAFE_TEMP	(r21)
+ *				Register that cannot be modified by macros or
+ *				subroutines within the same window.
+ *	NON_INTR_TEMP[1-2] (r22-r23)
+ *				Registers that cannot be modified by interrupt
+ *				handlers.
+d279 2
+a280 2
+#define	VOL_TEMP1		r19		/* l3 */
+#define	VOL_TEMP2		r20		/* l4 */
+d282 2
+a283 2
+#define	NON_INTR_TEMP1		r22		/* l6 */
+#define	NON_INTR_TEMP2		r23		/* l7 */
+@
+
+
+1.4
+log
+@Checkpoint.  Traps work and interrupts remain enabled correctly.
+>> I've #ifdef'd out the code where I start the timer and try to take
+>> timer interrupts.  When I do that, interrupts get permanently disabled,
+>> somehow.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.3 89/01/17 14:54:57 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d130 1
+a130 1
+#define	MACH_ENABLE_TIMER_INTR_LEVEL	MACH_ENABLE_LEVEL14_INTR
+@
+
+
+1.3
+log
+@Sixth Kernel!  It now uses my simple versions of the overflow and
+underflow trap handlers and my trap preamble and return-from-trap
+routines.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.2 89/01/16 14:48:07 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+a70 1
+#ifdef NOTDEF
+a71 54
+ * The offsets for the various things on the exception stack
+ */
+#define	MACH_PC_OFFSET	2
+#define	MACH_VOR_OFFSET	6
+
+/*
+ * Offsets of the fields in the Mach_State structure.
+ */
+#define	MACH_USER_SP_OFFSET		0
+#define MACH_TRAP_REGS_OFFSET		(MACH_USER_SP_OFFSET + 4)
+#define	MACH_EXC_STACK_PTR_OFFSET	(MACH_TRAP_REGS_OFFSET + 64)
+#define	MACH_LAST_SYS_CALL_OFFSET	(MACH_EXC_STACK_PTR_OFFSET + 4)
+#define	MACH_SWITCH_REGS_OFFSET		(MACH_LAST_SYS_CALL_OFFSET + 4)
+#define	MACH_KERN_STACK_START_OFFSET	(MACH_SWITCH_REGS_OFFSET + 64)
+#define	MACH_SET_JUMP_STATE_PTR_OFFSET	(MACH_KERN_STACK_START_OFFSET + 4)
+#define	MACH_SIG_EXC_STACK_SIZE_OFFSET	(MACH_SET_JUMP_STATE_PTR_OFFSET + 4)
+#define	MACH_SIG_EXC_STACK_OFFSET	(MACH_SIG_EXC_STACK_SIZE_OFFSET + 4)
+
+/*
+ * Amount of data that is pushed onto the stack after a trap occurs.
+ */
+#define	MACH_TRAP_INFO_SIZE	24
+
+/*
+ * Return codes from Exc_Trap.
+ *
+ *   MACH_OK		The trap was handled successfully.
+ *   MACH_KERN_ERROR	The trap could not be handled so the debugger must be
+ *			called.
+ *   MACH_USER_ERROR	A cross address space copy to/from user space failed
+ *			because of a bad address.
+ *   MACH_SIG_RETURN	Are returning from a signal handler.
+ */
+#define	MACH_OK		0
+#define	MACH_KERN_ERROR	1
+#define	MACH_USER_ERROR	2
+#define	MACH_SIG_RETURN	3
+
+/*
+ *  Definition of bits in the 68010 status register (SR)
+ *	
+ *	MACH_SR_TRACEMODE	Trace mode mask
+ *	MACH_SR_SUPSTATE	Supervisor state mask
+ *	MACH_SR_INTMASK		Interrupt level mask
+ *	MACH_SR_CC		Condition codes mask
+ */
+
+#define	MACH_SR_TRACEMODE	0x8000
+#define	MACH_SR_SUPSTATE	0x2000
+#define	MACH_SR_INTMASK		0x0700
+#define	MACH_SR_CC		0x001F
+
+
+/*
+a90 1
+#endif /* NOTDEF */
+a92 1
+ *  HOW ARE THESE USED?  AS MASKS?  AND THEN CHECKED FOR EQUALITY?
+d98 4
+a102 3
+#define	MACH_SR_HIGHPRIO	0xFA0
+#define	MACH_SR_LOWPRIO		0x0A0
+#define	MACH_SR_USERPRIO	0x020
+d108 2
+a109 2
+#define	MACH_ENABLE_ALL_INTERRUPTS	0x0020
+#define	MACH_ENABLE_LEVEL15_INTR	0x0F00
+d112 3
+a114 1
+#define	MACH_ENABLE_TRAP_BIT		0x20
+d116 1
+d118 1
+a118 1
+ * Window-related constants
+d120 11
+a130 2
+#define	MACH_NWINDOWS		7		/* # of implemented windows */
+#define	MACH_VALID_WIM_BITS	0x0000007f	/* is wim value in range? */
+d160 1
+a160 1
+ * MACH_KERN_STACK_START The address of the base of the stack. (1st word is
+d176 1
+a176 1
+#define	MACH_KERN_STACK_START	0xe004000
+d180 1
+a180 1
+#define	MACH_KERN_STACK_SIZE	(MACH_CODE_START - MACH_STACK_BOTTOM)
+d200 15
+d216 5
+d228 1
+a228 2
+ * Minimum stack frame (in bytes) needed to save window
+ * registers (locals and ins).
+d230 2
+a231 1
+#define	MACH_MIN_STACK_FRAME	64
+d233 1
+d235 17
+d301 13
+a313 12
+#define	RETURN_ADDR_REG		r15
+#define	RETURN_ADDR_REG_CHILD	r31
+#define	CUR_PSR_REG		r16
+#define	CUR_PC_REG		r17
+#define	NEXT_PC_REG		r18
+#define	VOL_TEMP1		r19
+#define	VOL_TEMP2		r20
+#define	SAFE_TEMP		r21
+#define	NON_INTR_TEMP1		r22
+#define	NON_INTR_TEMP2		r23
+#define	RETURN_VAL_REG		r8
+#define	RETURN_VAL_REG_CHILD	r24
+@
+
+
+1.2
+log
+@Fourth kernel!  It copies itself to high memory, the 32 byte offset
+is explained, and I can now set the stack pointer to my own stack
+successfully.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.1 89/01/14 15:42:31 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d23 3
+a25 2
+ * Here are the different types of exceptions.  These are listed in order of
+ * highest priority to lowest. All the MACH_TRAP_INSTR's are of the same
+d30 15
+a44 15
+#define	MACH_RESET		0
+#define	MACH_INSTR_ACCESS	1
+#define	MACH_ILLEGAL_INSTR	2
+#define	MACH_PRIV_INSTR		3
+#define	MACH_FP_DISABLED	4
+#define	MACH_CP_DISABLED	36
+#define	MACH_WINDOW_OVERFLOW	5
+#define	MACH_WINDOW_UNDERFLOW	6
+#define	MACH_MEM_ADDR_ALIGN	7
+#define	MACH_FP_EXCEP		8
+#define	MACH_CP_EXCEP		40
+#define	MACH_DATA_ACCESS	9
+#define	MACH_TAG_OVERFLOW	10
+#define	MACH_TRAP_INSTR_FIRST	128
+#define	MACH_TRAP_INSTR_LAST	255
+d46 15
+a60 15
+#define	MACH_LEVEL1_INT		17
+#define	MACH_LEVEL2_INT		18
+#define	MACH_LEVEL3_INT		19
+#define	MACH_LEVEL4_INT		20
+#define	MACH_LEVEL5_INT		21
+#define	MACH_LEVEL6_INT		22
+#define	MACH_LEVEL7_INT		23
+#define	MACH_LEVEL8_INT		24
+#define	MACH_LEVEL9_INT		25
+#define	MACH_LEVEL10_INT	26
+#define	MACH_LEVEL11_INT	27
+#define	MACH_LEVEL12_INT	28
+#define	MACH_LEVEL13_INT	29
+#define	MACH_LEVEL14_INT	30
+#define	MACH_LEVEL15_INT	31
+a61 6
+#define	MACH_SYSCALL_TRAP	21
+#define	MACH_SIG_RET_TRAP	22
+#define	MACH_BAD_TRAP		23
+#define	MACH_BRKPT_TRAP		24
+#define	MACH_UNKNOWN_EXC	25
+
+d168 1
+d170 5
+d204 2
+d250 6
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun2.md/RCS/machConst.h,v 8.2 88/12/12 14:50:45 nelson Exp $ SPRITE (Berkeley)
+a174 1
+
+d217 2
+a218 1
+#define	MACH_CODE_START		0xe004000
+@

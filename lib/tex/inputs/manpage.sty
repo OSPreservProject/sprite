@@ -1,0 +1,319 @@
+% MANPAGE DOCUMENT STYLE -- Created 25 May 1990, Updated 25 November 1990
+% manpage.sty
+
+% Rong Chen (rchen@cs.uiuc.edu)
+% Department of Computer Science
+% University of Illinois at Urbana-Champaign
+% Urbana, IL 61801
+
+% Copyright (c) 1990 by Rong Chen 
+% Permission to copy all or part of this work is granted, provided
+% that the copies are not made or distributed for resale, and that
+% the copyright notice and this notice are retained.
+% 
+% THIS WORK IS PROVIDED ON AN "AS IS" BASIS.  THE AUTHOR PROVIDES NO
+% WARRANTY WHATSOEVER, EITHER EXPRESS OR IMPLIED, REGARDING THE WORK,
+% INCLUDING WARRANTIES WITH RESPECT TO ITS MERCHANTABILITY OR FITNESS
+% FOR ANY PARTICULAR PURPOSE.
+
+% This style option is designed to work with both report and article
+% document styles of LaTeX version 2.09.
+% The author uses \documentstyle[11pt,twoside,manpage]{report}
+% 
+% This LaTeX style file is similar to the UNIX troff man macros in format and
+% is specially tuned for documenting the C++ library that the author wrote.
+%
+% The commands that are created in the style file are:
+%
+% \begin{manpage}{Title}{Module}{Version}  % see an example, all will be clear
+%                 % latex supplies the current date if no \date{} is specified
+% \end{manpage}   % end of manpage environment
+% \variable{#1}  (e.g., \variable{int foo}) % with \medskip added
+% \variable*{#1} (e.g., \variable*{int bar})% no extra spacing
+% \function{#1}  (e.g., \function{void demo(int dummy)}) % with \medskip added
+% \function*{#1} (e.g., \function*{void demo(int dummy)})% no extra spacing
+% \subtitle{#1}  (e.g., \subtitle{AUTHOR}) % fit in the same line if possible
+% \subtitle*{#1} (e.g., \subtitle*{AUTHOR})% always break a newline
+% "#1"           (e.g., "dummy_variable")  % argument is in italic&unbreakable
+% \separator		% draw a thin line to separate subtitle from the text
+% \header{#1}{#2}{#3}	% in case you want to have a header and 
+% \footer{#1}{#2}{#3}	% a footer outside of the manpage environment
+%
+% In the \function macro, data types and their dummy arguments are separated
+% by a space. So if you have a function like "int f(const int n)", you should
+% document it as \function{int f(const~int n)}.  The argument n is optional.
+% In the \subtitle macro, two lines of text may be divided by "\\".
+%
+% The following characters (control-sequents) are defined (or redefined) as:
+%
+% \" --- print the double quote character ("), use $\ddot{\rm#1}$ for accent
+% \~ --- defined as $\sim$ being raised 0.6ex, use $\tilde{\rm#1}$ for accent
+% \* --- the same as $\ast$
+% \< --- the same as $\langle$
+% \> --- the same as $\rangle$
+% <  --- the same as $<$
+% >  --- the same as $>$
+% _  --- the same as \_,  use $\sb{#1}$ for subscript (see TeXbook pp. 135)
+% +  --- the same as $+$
+% |  --- the same as $\mid$
+% ^  --- {\small $\wedge$} being raised 0.6ex, superscript is now $\sp{#1}$
+% "  --- the same as {\tt "} when outside of the manpage environment,
+%        otherwise use \" instead
+
+\headheight 24pt                    % see the LaTeX book for definitions
+\headsep 12pt
+\textwidth 6.25in
+\textheight 8.0in
+\topmargin 0in
+\marginparwidth 0pt
+\oddsidemargin 0pt
+\evensidemargin 0pt
+\marginparsep 0pt
+\parindent 0pt
+\parskip 10pt plus 1pt
+
+\newdimen\funindent \funindent 0pt % indentation for function/variable entries
+\newdimen\argindent \argindent -1pt % indentation for function arguments
+
+% when \argindent >= 0pt, subsequent lines of arguments have fixed indentation
+% i.e., \argindent (e.g., 3em).  See the following example:
+%       int foo ( int x, int y, int w,
+%             int h, char a, char b,
+%             char c, char d )
+%
+% when \argindent < 0pt (value doesn't matter), arguments are auto-indented:
+%       int foo ( int x, int y, int w,
+%                 int h, char a, char b,
+%                 char c, char d )
+
+% \tableofcontents and \chapter macros are also modified in manpage.sty.
+% The standard LaTeX \tableofcontents couldn't handle \chapter* correctly.
+% In the table of contents each manpage has the same indentation as a section.
+% Chapter titles have smaller font and they are pushed to the right margin.
+
+% > From: Vick Khera <khera@cs.duke.edu>
+% > one more thing you may like... we have this cprog.sty style
+% > (formatting of C programs, by \'Eamonn McManus <emcmanus@cs.tcd.ie>)
+% > that lets you place C, C++, Pascal, and Modula-2 source code in your
+% > LaTeX source directly. no more verbatim mode, which i think is ugly
+% > for C code.  just be sure to include it *before* you include manpage.sty
+% > or things break.  i don't know why, but i can live with it:
+% > \documentstyle[cprog,manpage]{report} will do the trick. then just replace
+% > those pesky \begin{verbatim}\end{verbatim} with \begin{cprog}\end{cprog}
+% > and it looks much better.  i also like to put after the \documentstyle
+% > the command \let\ctextfont=\sf so the code is typeset in the \sf font
+% > to differentiate it from normal text.
+% (you may do the same with \let\ccommentfont=\sl and \let\cstringfont=\sf)
+
+% the latest versions of manpage.sty and manpage-sample.tex are saved
+% at the clarkson archives, sun.soe.clarkson.edu (128.153.12.3).
+% the files are in /pub/latex-style directory for anonymous ftp.
+% cprog.sty should also be there.  check it out.
+
+% If you make any improvements, I'd like to hear about them.
+%
+% STOP STOP STOP -- comments end here :-(
+
+\newcommand{\header}[3]{\gdef\@header{{#1}{#2}{#3}}}
+\newcommand{\footer}[3]{\gdef\@footer{{#1}{#2}{#3}}}
+
+\def\separator{\rule{\linewidth}{0.5pt}}
+
+\catcode`\"=\active
+\def\arg@quote#1"{\hbox{\it #1\/}}
+\def\tt@quote{\hbox{\tt \char34}}
+\let"=\tt@quote
+\let\"=\tt@quote
+
+\def\variable{\pagebreak[3]\@ifstar{\var@star}{\var@norm}}
+\def\var@star#1{\expandafter\print@var#1\@@\\ }
+\def\var@norm#1{\expandafter\print@var#1\@@\medskip\\ }
+
+\def\print@var#1\@@{\expandafter\parse@var#1 =\@@}
+\def\parse@var#1=#2\@@{
+  \print@name#1\@@
+  \ifx #2\@nil\else{\unskip\rm\ \(=\)\ }\strip@eq#2\fi
+}
+
+\def\function{\pagebreak[3]\@ifstar{\@func@star}{\@func@norm}}
+\def\@func@star#1{\expandafter\@function#1 \\ }
+\def\@func@norm#1{\expandafter\@function#1 \medskip\\ }
+
+\newdimen\arg@dim         % temp variables that you don't want to know
+\newdimen\arg@indent
+\newdimen\line@siz
+\newbox\arg@box
+
+\def\@function#1(#2)#3 {
+  \expandafter\print@name#1 \@@
+  \setbox\arg@box=\hbox{\rm\ \((\)\ }%
+  \global\advance\arg@dim\wd\arg@box
+  \unskip\box\arg@box
+  \edef\@fortmp{#2}%
+  \ifx\@fortmp\@empty {\rm \()\)#3}\else
+    \setbox\arg@box=\hbox{\rm\ \()\);}%
+    \global\line@siz\linewidth \global\advance\line@siz-\wd\arg@box
+    \ifdim\argindent<0pt
+      \global\arg@indent\arg@dim \else\global\arg@indent\argindent\fi
+    \def\@comma{}%
+    \@for\@tempa:=#2\do{%   
+      \setbox\arg@box=\hbox{\@comma}%
+      \global\advance\arg@dim\wd\arg@box
+      \unskip\@comma\def\@comma{\nobreak,\penalty-\@m\ }%
+      \expandafter\print@arg\@tempa\@@
+    }%
+    \unskip\nobreak\hbox{\rm\ \()\)#3}%
+  \fi
+}
+
+\def\print@name#1#2 #3\@@{%
+  \edef\tmp@name{#3}%
+  \ifx\tmp@name\@empty
+    \setbox\arg@box=\hbox{\bf #1#2}%
+    \else\setbox\arg@box=\hbox{\rm #1#2 \bf #3\unskip}\fi
+  \global\arg@dim\funindent \global\advance\arg@dim\wd\arg@box
+  \unskip\hspace{\funindent}\box\arg@box
+}
+
+\def\print@arg#1\@@{\expandafter\print@type#1 \@@}
+
+\def\print@type#1#2 #3\@@{%
+  \setbox\arg@box=\hbox{{\rm #1#2}%
+    \ifx #3\@nil\else\expandafter\print@dummy#3=\@@\fi
+    \unskip\/}%
+  \global\advance\arg@dim\wd\arg@box
+  \ifdim\arg@dim>\line@siz
+    \global\arg@dim\arg@indent \global\advance\arg@dim\wd\arg@box
+    \hfill\penalty-\@m\hbox{}\kern\arg@indent\fi
+  \box\arg@box
+}
+
+\def\print@dummy#1=#2\@@{%
+  \edef\tmp@name{#1}\def\a@space{ }%
+  \ifx\tmp@name\a@space\else
+    {\unskip\it\ #1\/}%
+    \ifx #2\@nil\else{\unskip\rm\ \(=\)\ }\strip@eq#2\fi
+  \fi
+}
+
+\def\strip@eq#1={\rm \expandafter\ignorespaces#1\unskip}
+
+\def\subtitle{\pagebreak[3]\@ifstar{\@subtit@star}{\@subtit@norm}}
+
+\def\@subtit@star#1{
+  \item[\hbox{\large\bf\begin{tabular}[t]{l}#1\end{tabular}}\hfill]
+  \hfil\par
+  \expandafter{\let\par=\space\ignorespaces\let\par=\endgraf}
+}
+
+\def\@subtit@norm#1{
+  \setbox\arg@box=\hbox{\large\bf\begin{tabular}[t]{l}#1\end{tabular}}
+  \ifdim \wd\arg@box > \labelwidth \item[\copy\arg@box\hfill]\hfil\par
+  \else \dp\arg@box=0pt \item[\copy\arg@box\hfill] \fi
+  \expandafter{\let\par=\space\ignorespaces\let\par=\endgraf}
+}
+
+\newenvironment{manpage}[3]{\@beginManpage#1\@@#2\@@#3\@@}{\@endManpage}
+
+\def\@beginManpage#1\@@#2\@@#3\@@{
+  \pagestyle{headings}
+  \addcontentsline{toc}{section}{#2}
+  \clearpage
+  \gdef\@header{{#2}{#1}{#2}}
+  \gdef\@footer{{#3}{\thepage}{\@date}}
+  \begin{list}{}{
+    \setlength\labelwidth{1.2in}
+    \setlength\leftmargin{\labelwidth}
+    \addtolength\leftmargin{\labelsep}
+    \topsep  5pt plus 2pt minus 2pt
+    \itemsep 5pt plus 2pt minus 2pt
+    \parsep 10pt plus 2pt minus 2pt
+  }
+  \raggedbottom
+  \let"=\arg@quote
+}
+
+\def\@endManpage{
+  \end{list} \clearpage \flushbottom
+  \let"=\tt@quote
+}
+
+\def\@first#1#2#3{#1}
+\def\@second#1#2#3{#2}
+\def\@third#1#2#3{#3}
+
+\def\ps@headings{
+  \def\@oddhead{\parbox{\textwidth}{
+    {\rm\ \ \expandafter\@first\@header\hfill
+      \expandafter\@second\@header\hfill
+      \expandafter\@third\@header\ \ } \\[.1cm]
+    \hbox{}\rule[12pt]{\textwidth}{1pt}
+  }}
+  \def\@evenhead{\parbox{\textwidth}{
+    {\rm\ \ \expandafter\@third\@header\hfill
+      \expandafter\@second\@header\hfill
+      \expandafter\@first\@header\ \ } \\[.1cm]
+    \hbox{}\rule[12pt]{\textwidth}{1pt}
+  }}
+  \def\@oddfoot{\parbox{\textwidth}{
+    \hbox{}\rule{\textwidth}{1pt} \\[.1cm]
+    {\sl\ \ \expandafter\@first\@footer\hfill
+      \rm\expandafter\@second\@footer\hfill
+      \sl\expandafter\@third\@footer\ }
+  }}
+  \def\@evenfoot{\parbox{\textwidth}{
+    \hbox{}\rule{\textwidth}{1pt} \\[.1cm]
+    {\sl\ \ \expandafter\@third\@footer\hfill
+      \rm\expandafter\@second\@footer\hfill
+      \sl\expandafter\@first\@footer\ }
+  }}
+}
+
+\gdef\@header{{}{}{}}
+\gdef\@footer{{}{}{}}
+
+\def\tableofcontents{\@restonecolfalse
+  \newskip\@savskip \@savskip=\parskip
+  \parskip 0pt plus 1pt
+  \clearpage \thispagestyle{plain} \global\@topnum\z@ \@afterindentfalse
+  \@makeschapterhead{{Contents\@mkboth{CONTENTS}{CONTENTS}}}
+  \@afterheading \@starttoc{toc}
+  \parskip=\@savskip
+}
+
+\def\@makechapterhead#1{
+  \vspace*{50pt}
+  { \raggedleft
+    \Large\bf Chapter \thechapter \par \vskip 15pt
+    \huge\bf #1\par
+    \nobreak \vskip 30pt
+  }
+}
+
+\def\@makeschapterhead#1{ 
+  \vspace*{50pt}
+  { \raggedleft 
+    \huge\bf #1\par
+    \nobreak \vskip 30pt 
+  }
+}
+
+\def\@schapter#1{
+  \addcontentsline{toc}{chapter}{#1}
+  \@makeschapterhead{#1} 
+  \@afterheading
+}
+
+\catcode`\<=\active \def\mit@less{\hbox{\(\char60\)}} \let<=\mit@less
+\catcode`\>=\active \def\mit@more{\hbox{\(\char62\)}} \let>=\mit@more
+\def\<{\(\langle\)}
+\def\>{\(\rangle\)}
+\def\*{\(\ast\)}
+\def\~{\(\raise.6ex\hbox{\(\sim\)}\)}
+% \catcode`\_=\active \def_={\hbox{\kern.1em\vbox{\hrule width.3em}}}
+\catcode`\_=\active \global\let_=\_
+\def\mit@wedge{\hbox{\raise.6ex\hbox{\small \(\wedge\)}}}
+\catcode`\^=\active \let^=\mit@wedge
+\catcode`\+=\active \def\mit@add{\hbox{\(\char43\)}} \let+=\mit@add
+\catcode`\|=\active \def\mit@mid{\hbox{\(\mid\)}} \let|=\mit@mid
+

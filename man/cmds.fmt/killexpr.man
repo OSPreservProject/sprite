@@ -1,0 +1,68 @@
+
+
+
+KILLEXPR                  User Commands                  KILLEXPR
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     killexpr  -  Kill  all  processes  who   match   the   given
+     expression(s)
+
+SSYYNNOOPPSSIISS
+     kkiilllleexxpprr [_o_p_t_i_o_n_s] _e_x_p_r _e_x_p_r...
+
+OOPPTTIIOONNSS
+     --hh _h_o_s_t        Kills processes  on  the  machine  _h_o_s_t.  The
+                    default  is  to  kill  processes on the local
+                    host.
+
+     --hheellpp          Print a summary of the command-line options.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The kkiilllleexxpprr command is used to  a  user's  processes  whose
+     command  line  contains one of a set of regular expressions.
+     The regular expression arguments are 'or'ed together to form
+     a  single  expression  that compared to the command lines of
+     the user's processes.  If a match is found  the  process  is
+     sent  a  SIGTERM  signal, followed by a SIGKILL signal.  The
+     expression arguments are often simple strings,  but  can  be
+     more  complex regular expressions of the form found in Perl.
+     A process will be killed even if the expression matches only
+     part  of  a  word.  If  you  want the expression to match an
+     entire word in the command line then you should surround the
+     argument with spaces.
+
+EEXXAAMMPPLLEESS
+     killexpr foo
+          Kills all processes that  have  the  pattern  'foo'  in
+          their command line.
+
+     killexpr ' foo '
+          Kills all processes that have the word 'foo'  in  their
+          command line.
+
+     killexpr foo bar
+          Kills all processes that have either the pattern  'foo'
+          or the pattern 'bar' in their command line.
+
+     killexpr '^foo'
+          Kills all processes whose command line starts with  the
+          pattern 'foo'.
+
+KKEEYYWWOORRDDSS
+     kill
+
+
+
+
+
+Sprite v.1.0        Printed:  March 11, 1990                    1
+
+
+

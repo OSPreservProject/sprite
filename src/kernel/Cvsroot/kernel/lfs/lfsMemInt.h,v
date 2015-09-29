@@ -1,0 +1,85 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ds3100:1.2 sun3:1.2 sun4nw:1.1 symm:1.1 spur:1.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     92.09.03.18.13.29;  author shirriff;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.10.19.16.03.47;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Internals of LFS memory management routines.
+@
+
+
+1.2
+log
+@Moved type declarations into lfsTypes.h.
+@
+text
+@/*
+ * lfsMemInt.h --
+ *
+ *	Declarations of Lfs memory resource management routines and
+ *	data structures.
+ *
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/lfs/lfsMemInt.h,v 1.1 90/10/19 16:03:47 mendel Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _LFSMEMINT
+#define _LFSMEMINT
+
+
+/* data structures */
+
+/* procedures */
+
+extern void LfsMemInit _ARGS_((struct Lfs *lfsPtr));
+extern void LfsMemDetach _ARGS_((struct Lfs *lfsPtr));
+extern void LfsMemReserve _ARGS_((struct Lfs *lfsPtr, int *cacheBlocksPtr,
+				char **memPtrPtr));
+extern void LfsMemRelease _ARGS_((struct Lfs *lfsPtr, int cacheBlocks, 
+				char *memPtr));
+
+#endif /* _LFSMEMINT */
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.5 90/01/12 12:03:25 douglis Exp $ SPRITE (Berkeley)
+a23 8
+
+/*
+ * LfsMem - Per LFS file system resource list.
+ */
+typedef struct LfsMem {
+    int	cacheBlocksReserved; /* Number of cache blocks reserved for this file
+			      * system. */
+} LfsMem;
+@

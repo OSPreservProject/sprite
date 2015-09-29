@@ -1,0 +1,120 @@
+Build_Dirs_and_chdir	checkout.c	/^Build_Dirs_and_chdir(dir)$/
+Build_Entry	build_entry.c	/^Build_Entry(message)$/
+Checkin	checkin.c	/^Checkin(revision, message)$/
+Collect_Sets	collect_sets.c	/^Collect_Sets(argc, argv)$/
+Create_Admin	create_admin.c	/^Create_Admin(repository, initrecord)$/
+Entries2Files	entries_file.c	/^Entries2Files()$/
+Find_Names	find_names.c	/^Find_Names(pargc, argv, which)$/
+Get_Options	options.c	/^Get_Options(argc, argv)$/
+Locate_RCS	locate_rcs.c	/^Locate_RCS()$/
+Lock_Cleanup	set_lock.c	/^Lock_Cleanup(sig)$/
+Make_Date	maketime.c	/^Make_Date(a,b) const char *a; char *b; { str2date(/
+Mmain	main.c	/^main(argc, argv)$/
+Name_Repository	name_repository.c	/^Name_Repository()$/
+No_Difference	no_difference.c	/^No_Difference(doGlist)$/
+P	maketime.c	/^#define P(x) ()$/
+Reader_Lock	set_lock.c	/^Reader_Lock()$/
+Register	register.c	/^Register(fname, vn, ts)$/
+Scratch_Entry	scratch_entry.c	/^Scratch_Entry(fname)$/
+Update_Logfile	commit.c	/^Update_Logfile(repository, message)$/
+VERSION	maketime.c	/^#define VERSION(x) x$/
+Version_Number	version_number.c	/^Version_Number(rcs, tag, date, vers)$/
+Version_TS	version_ts.c	/^Version_TS(rcs, tag, user)$/
+Writer_Lock	set_lock.c	/^Writer_Lock()$/
+add	add.c	/^add(argc, argv)$/
+add_directory	add.c	/^add_directory(dir)$/
+add_link	add.c	/^add_link(link)$/
+add_usage	add.c	/^add_usage()$/
+addname	find_names.c	/^addname(pargc, argv, name)$/
+branch_number	commit.c	/^branch_number(rcs, branch)$/
+cat_module	modules.c	/^cat_module()$/
+checkout	checkout.c	/^checkout(argc, argv)$/
+checkout_usage	checkout.c	/^checkout_usage()$/
+close_module	modules.c	/^close_module(db)$/
+commit	commit.c	/^commit(argc, argv)$/
+commit_process_lists	commit.c	/^commit_process_lists(message, rev)$/
+commit_usage	commit.c	/^commit_usage()$/
+copy_file	subr.c	/^copy_file(from, to)$/
+datecmp	version_number.c	/^datecmp(date1, date2)$/
+diff	diff.c	/^diff(argc, argv)$/
+diff_usage	diff.c	/^diff_usage()$/
+do_editor	commit.c	/^do_editor(message)$/
+do_module	modules.c	/^do_module(db, mname, m_type, msg)$/
+error	subr.c	/^error(doperror, fmt, va_alist)$/
+faterror	maketime.c	/^#define faterror(x,y) error(0,x,y)$/
+find_rcs	find_names.c	/^find_rcs(dir, pargc, argv)$/
+fix_rcs_modes	commit.c	/^fix_rcs_modes(rcs, user)$/
+fmt	commit.c	/^fmt(fp, instring, prefix)$/
+free_names	subr.c	/^free_names(pargc, argv)$/
+get_branch	version_number.c	/^get_branch(fp, rev)$/
+get_branch_date	version_number.c	/^get_branch_date(fp, date, rev, version)$/
+get_date	version_number.c	/^get_date(fp, date, rev, version)$/
+get_rcsdate	patch.c	/^get_rcsdate(rcs, rev, date)$/
+get_tag	version_number.c	/^get_tag(fp, tag, rev, vers)$/
+get_version	version_number.c	/^get_version(fp, tag, date, rev, vers)$/
+given	partime.c	/^#define given(v) (0 <= (v))$/
+goodzone	partime.c	/^goodzone(t, offset, am)$/
+isdir	subr.c	/^isdir(file)$/
+isemptydir	update.c	/^isemptydir(dir)$/
+isfile	subr.c	/^isfile(file)$/
+islink	subr.c	/^islink(file)$/
+isreadable	subr.c	/^isreadable(file)$/
+iswritable	subr.c	/^iswritable(file)$/
+join	join.c	/^join(argc, argv)$/
+join_file	join.c	/^join_file(file)$/
+join_usage	join.c	/^join_usage()$/
+libId	maketime.c	/^#define libId(x,y) static char x[] = y;$/
+line2argv	subr.c	/^line2argv(pargc, argv, line)$/
+lock_RCS	commit.c	/^lock_RCS(rev)$/
+log	log.c	/^log(argc, argv)$/
+log_usage	log.c	/^log_usage()$/
+logfile_write	commit.c	/^logfile_write(repository, filter, title, message)$/
+make_directory	subr.c	/^make_directory(name)$/
+maketime	maketime.c	/^maketime(atm,zone)$/
+numdots	subr.c	/^numdots(s)$/
+open_file	subr.c	/^open_file(name, mode)$/
+open_module	modules.c	/^open_module()$/
+partime	partime.c	/^partime(astr, atm, zone)$/
+patch	patch.c	/^patch(argc, argv)$/
+patch_cleanup	patch.c	/^patch_cleanup(sig)$/
+patch_file	patch.c	/^patch_file(rcs)$/
+patch_usage	patch.c	/^patch_usage()$/
+patched	patch.c	/^patched(rcs)$/
+ppstrcmp	subr.c	/^ppstrcmp(pp1, pp2)$/
+ppstrcmp_files	subr.c	/^ppstrcmp_files(pp1, pp2)$/
+process_module	modules.c	/^process_module(argc, argv, m_type, keyp)$/
+pt12hack	partime.c	/^pt12hack(tm, aval)$/
+ptitoken	partime.c	/^ptitoken(tkp)$/
+ptmatchstr	partime.c	/^ptmatchstr(astr,cnt,astruc)$/
+ptstash	partime.c	/^ptstash(adr,val)$/
+pttoken	partime.c	/^pttoken(tkp)$/
+readers_exist	set_lock.c	/^readers_exist()$/
+remove	remove.c	/^remove(argc, argv)$/
+remove_usage	remove.c	/^remove_usage()$/
+rename_file	subr.c	/^rename_file(from, to)$/
+restore_branch	checkin.c	/^restore_branch()$/
+set_lock	set_lock.c	/^set_lock(lckdir)$/
+setup_tmpfile	commit.c	/^setup_tmpfile(fp, prefix)$/
+status	status.c	/^status(argc, argv)$/
+status_usage	status.c	/^status_usage()$/
+str2date	maketime.c	/^str2date(source, target)$/
+tag	tag.c	/^tag(argc, argv)$/
+tag_file	tag.c	/^tag_file(rcs)$/
+tag_usage	tag.c	/^tag_usage()$/
+tagit	tag.c	/^tagit(rcs)$/
+time2date	maketime.c	/^time2date(unixtime,date)$/
+time2tm	maketime.c	/^time2tm(unixtime)$/
+time_stamp	version_ts.c	/^time_stamp(file, ts)$/
+tmwent	partime.c	/^struct tmwent {$/
+token	partime.c	/^struct token {$/
+update	update.c	/^update(argc, argv)$/
+update_descend	update.c	/^update_descend(doalldirs)$/
+update_descend_dir	update.c	/^update_descend_dir(dir)$/
+update_make_dirs	update.c	/^update_make_dirs(doit)$/
+update_process_lists	update.c	/^update_process_lists()$/
+update_usage	update.c	/^update_usage()$/
+usage	main.c	/^usage()$/
+warn	subr.c	/^warn(doperror, fmt, va_alist)$/
+xchmod	subr.c	/^xchmod(fname, writable)$/
+xcmp	subr.c	/^xcmp(file1, file2)$/
+xmalloc	subr.c	/^xmalloc(bytes)$/

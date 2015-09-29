@@ -1,0 +1,68 @@
+
+
+
+Tcl_Merge         Tcl Command Language Library          Tcl_Merge
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tcl_Merge - generate a Tcl list from a collection of strings
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttccll..hh>>
+
+     char *
+     TTccll__MMeerrggee(_a_r_g_c, _a_r_g_v)
+
+AARRGGUUMMEENNTTSS
+     int       _a_r_g_c           (in)      Number of strings.
+
+     char      *_a_r_g_v[]        (in)      Array of strings to  com-
+                                        bine   into  list.   Must
+                                        have _a_r_g_c entries.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     TTccll__MMeerrggee is a utility procedure used by several of the  Tcl
+     commands.   Given  a  collection  of strings, it generates a
+     result string that has proper list structure, such that  the
+     iinnddeexx  Tcl  command  may be used to extract out the original
+     strings.  In order to do this, TTccll__MMeerrggee  may  have  to  add
+     braces and/or backslashes.  The result string is dynamically
+     allocated  using  mmaalllloocc(());   the  caller  must   eventually
+     release the space using ffrreeee(()).
+
+
+KKEEYYWWOORRDDSS
+     list, strings
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0          Printed:  May 2, 1991                     1
+
+
+

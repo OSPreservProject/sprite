@@ -1,0 +1,556 @@
+# See newVm for the data structures to be maintained by the VM interface.
+
+VM_CODE				# (segment type) keep; delete later?
+	Include/user/vm.h.
+VM_COUNT_DIRTY_PAGES		# VM command: not supported?  (Maybe
+				# supportable with MK69 and later.)
+	Include/user/vm.h.
+VM_DO_COPY_IN			# VM command: keep (perf test).
+	Include/user/vm.h.
+VM_DO_COPY_OUT			# VM command: keep (perf test).
+	Include/user/vm.h.
+VM_DO_MAKE_ACCESS_IN		# VM command: keep (perf test).
+	Include/user/vm.h.
+VM_DO_MAKE_ACCESS_OUT		# VM command: keep (perf test).
+	Include/user/vm.h.
+VM_END_TRACING			# VM command: keep (debugging).
+	Include/user/vm.h.
+VM_FIRST_MACH_CMD		# VM command: delete (or keep and check in
+				# Vm_Cmd that the user doesn't pass in any
+				# unknown commands; eventually want to delete,
+				# though)
+	Include/user/vm.h.
+VM_FLUSH_SEGMENT		# VM command: not supported (at least
+				# initially)
+	Include/user/vm.h.
+VM_GET_STATS			# VM command: keep (want stats version #).
+	Include/user/vm.h.
+VM_HEAP				# (segment type) keep; delete later?
+	Include/user/vm.h.
+VM_MAX_PAGE_OUT_PROCS		# keep.
+	proc/procServer.h
+VM_NUM_SEGMENTS			# keep for compatibility (e.g., maintain size
+				# of structs); ditch later.
+				# callers must be fixed to not care about
+				# segment info (? - return information about
+				# different regions or memory objects in the
+				# task?)
+	proc/procMisc.c
+VM_OBJ_FILE_NAME_LENGTH		# keep
+	Include/user/vm.h.
+VM_OVERWRITE_ACCESS		# VM_PROT_WRITE.
+	mach/ds3100.md/machUNIXSyscall.c
+	proc/{procFork,procRemote}.c
+	rpc/rpcDebug.c
+	sys/sysCalls.c
+VM_READONLY_ACCESS		# VM_PROT_READ | VM_PROT_EXECUTE.
+	mach/ds3100.md/machCode.c
+	proc/{procID,procExec,procRpc,procRemote,procEnviron}.c
+	rpc/rpcDebug.c
+VM_READWRITE_ACCESS	# VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE.
+	proc/procRemote.c
+	sync/syncUser.c
+VM_RESET_FS_STATS		# VM command: ignore (at least initially)
+	Include/user/vm.h.
+VM_SET_ALWAYS_REFUSE		# VM command: ignore (at least initially)
+	Include/user/vm.h.
+VM_SET_ALWAYS_SAY_YES		# VM command: ignore (at least initially)
+	Include/user/vm.h.
+VM_SET_CLOCK_INTERVAL		# VM command: not supported
+	Include/user/vm.h.
+VM_SET_CLOCK_PAGES		# VM command: not supported
+	Include/user/vm.h.
+VM_SET_COPY_SIZE		# VM command: keep (perf testing)
+	Include/user/vm.h.
+VM_SET_COR_READ_ONLY		# VM command: not supported
+	Include/user/vm.h.
+VM_SET_COW			# VM command: not supported
+	Include/user/vm.h.
+VM_SET_FREE_WHEN_CLEAN		# VM command: not supported
+	Include/user/vm.h.
+VM_SET_FS_PENALTY		# VM command: ignore (at least initially)
+	Include/user/vm.h.
+VM_SET_NUM_PAGE_GROUPS		# VM command: ignore (at least initially)
+	Include/user/vm.h.
+VM_SET_MAX_DIRTY_PAGES		# VM command: not supported
+	Include/user/vm.h.
+VM_SET_PAGEOUT_PROCS		# VM command: keep.
+	Include/user/vm.h.
+VM_SET_PREFETCH			# VM command: keep.
+	Include/user/vm.h.
+VM_SET_USE_FS_READ_AHEAD	# VM command: keep.
+	Include/user/vm.h.
+VM_SET_WRITEABLE_PAGEOUT	# VM command: not supported initially
+	Include/user/vm.h.
+VM_SET_WRITEABLE_REF_PAGEOUT	# VM command: not supported initially
+	Include/user/vm.h.
+VM_SHARED			# (segment type) keep; delete later?
+	Include/user/vm.h.
+VM_STACK			# (segment type) keep; delete later?
+	Include/user/vm.h.
+VM_START_TRACING		# VM command: keep.
+	Include/user/vm.h.
+VM_SYSTEM			# (segment type) keep; delete later?
+	Include/user/vm.h.
+VmMach_DMAAlloc			# not needed by Mach drivers.
+	dev/devSCSIDisk.c
+	dev/sun3.md/{devSCSI3,devSCSI0,devXylogics450}.c
+	dev/sun4.md/{devSCSI0,devSCSI3,devXylogics450}.c
+VmMach_DMAFree			# not needed by Mach drivers.
+	dev/devSCSIDisk.c
+	dev/sun3.md/{devSCSI3,devSCSI0,devJaguarHBA,devXylogics450}.c
+	dev/sun4.md/{devJaguarHBA,devSCSI0,devSCSI3,devXylogics450}.c
+VmMach_FlushCurrentContext	# (sun4 only) no-op; eventually delete
+VmMach_FreeContext		# no-op; eventually delete
+	proc/procExit.c
+VmMach_MapKernelIntoUser	# map portion of kernel memory into
+				# user addr. space (usually video memory).
+				# unneeded (at least initially).  Change
+				# user programs to use standard mmap
+				# interface?
+	mach/symm.md/machSyscallTrace.c
+	sys/sysSysCall.c
+VmMach_ProcData			# machine-dependent per-process VM data;
+				# DS3100 allocates static copy for first
+				# process; can delete.
+	mach/ds3100.md/machCode.c
+VmMach_ReinitContext		# ("free the current context and set up another
+				# one") no-op.  Check callers (esp. exec and
+				# mapping operations) that want to add (bzw.
+				# remove) regions to (from) the user address
+				# space.
+	proc/{procExec,procRemote}.c
+	sys/sysCalls.c
+VmMach_SetupContext		# used for context switches and initializing
+				# processes (usually just the first process).
+				# call thread_set_state; check caller for
+				# changes (or have caller use
+				# thread_set_state?)  Also look for calls that
+				# manipulate a process's VM segments.
+	mach/sun3.md/machAsm.s
+	mach/sun4.md/machAsm.s
+	mach/ds3100.md/machAsm.s
+	mach/ds3100.md/machCode.c
+	mach/symm.md/machCode.c
+	proc/procTable.c
+VmPageFlush			# call memory_object_lock_request, wait until
+				# done.  Change arguments to be based on
+				# offset & length in memory object , not
+				# address range in task.
+	vm/vmInt.h
+	vm/vmPage.c
+	vm/vmSubr.c
+	vm/vmSysCall.c
+Vm_BootAlloc			# call malloc
+	mach/symm.md/machAutoconf.c
+	net/ds3100.md/{netLE,netLERecv}.c
+	proc/procTable.c
+	timer/timerQueue.c
+Vm_BootInit			# set vm_PageSize, zero out stats; set
+				# vmMemEnd if it doesn't go away
+	main/sun3.md/mainInit.c
+	main/sun4.md/mainInit.c
+	main/ds3100.md/mainInit.c
+	main/symm.md/mainInit.c
+Vm_ChangeCodeProt		# call vm_protect (not
+				# memory_object_lock_request).  If the request
+				# is to make writable a page that backed by
+				# the initial file, copy the page to the swap
+				# file and change the mapping in the memory
+				# object.
+	mach/ds3100.md/machCode.c
+	proc/procDebug.c
+Vm_CleanupSharedFile		# use vm_region to get list of regions for the
+				# file.  Deallocate them.
+	fs/fsSysCall.c
+Vm_Clock			# no-op (later delete).
+	main/sun3.md/mainInit.c
+	main/sun4.md/mainInit.c
+	main/ds3100.md/mainInit.c
+	main/symm.md/mainInit.c
+Vm_Cmd				# see specific commands
+	Include/user/vm.h.
+	mach/symm.md/machSyscallTrace.c
+	sys/sysSysCall.c
+Vm_CopyIn			# call vm_read.  Check callers to verify that
+				# "toKernel" flag is set correctly (need to
+				# distinguish between copy into server memory
+				# from copy into user memory).
+	mach/sun3.md/machCode.c
+	mach/sun4.md/{machCode,machFPUGlue}.c
+	mach/sun4.md/machAsm.s
+	mach/ds3100.md/{fcntl,ioctl,signals,socket,machCode,compatSig}.c
+	mach/ds3100.md/machUNIXSyscall.c
+	mach/symm.md/machTrap.c
+	fs/{fsCommand,fsSelect,fsSysCall}.c
+	fscache/fsCacheOps.c
+	fsio/{fsPipe,fsDevice}.c
+	fspdev/fsPdev.c
+	fsrmt/fsSpriteIO.c
+	net/netRoute.c
+	proc/{procDebug,procExit,procRpc,procRemote}.c
+	sig/signals.c
+	sync/syncSysV.c
+	sys/sysCalls.c
+Vm_CopyInProc			# call vm_read
+	fspdev/fsPdev.c
+	proc/procDebug.c
+	prof/profProfil.c
+Vm_CopyOut			# call vm_write (note that UX server does
+				# copyout by tacking the bits onto the reply
+				# message; the MIG stub copies the bits in the
+				# user address space?)
+	mach/sun3.md/machCode.c
+	mach/sun4.md/{machCode,machFPUGlue}.c
+	mach/sun4.md/machAsm.s
+	mach/ds3100.md/{cvtStat,fcntl,ioctl,signals,socket,machCode}.c
+	mach/ds3100.md/machUNIXSyscall.c
+	mach/symm.md/machTrap.c
+	fs/{fsSelect,fsSysCall}.c
+	fscache/fsCacheOps.c
+	fsio/{fsPipe,fsDevice}.c
+	fspdev/{fsPdev,fsPdevControl}.c
+	fsprefix/fsPrefix.c
+	fsrmt/fsSpriteIO.c
+	net/netRoute.c
+	proc/{procDebug,procExit,procExec,procMisc,procRpc,procRemote,procMigrate,procEnviron}.c
+	recov/recovery.c
+	rpc/{rpcDebug,rpcHistogram}.c
+	sig/signals.c
+	sync/{syncLockStat,syncSysV}.c
+	sys/{sysCalls,sysSysCall}.c
+	utils/trace.c
+Vm_CopyOutProc			# call vm_write.  See additional remarks for
+				# Vm_CopyInProc.
+	fspdev/fsPdev.c
+	proc/procDebug.c
+	prof/profProfil.c
+Vm_CopySharedMem		# more or less the same
+	proc/procFork.c
+Vm_CreateVA			# If vm_region says the requested range is
+				# already in the heap return (no-op).
+				# Otherwise, if any addresses in the requested
+				# range are allocated by some object other
+				# than the heap, return failure.  Otherwise,
+				# for each unallocated part of the requested
+				# range, grow the heap and vm_map it into the
+				# user's address space.  Update the break to
+				# be (the highest allocated address)+1.
+	Include/user/vm.h.
+	mach/ds3100.md/machUNIXSyscall.c
+	mach/symm.md/machSyscallTrace.c
+	sys/sysSysCall.c
+Vm_DeencapState			# not supported initially (initially panic)
+	proc/procMigrate.c
+Vm_DeleteSharedSegment		# (used in exit & when a mapped file is
+				# closed).
+				# more or less unchanged.
+	proc/procExit.c
+Vm_DestroyVA			# call vm_deallocate
+	Include/user/vm.h.
+	mach/symm.md/machSyscallTrace.c
+	sys/sysSysCall.c
+Vm_EncapSegInfo			# delay (initially panic)
+	proc/procMisc.c
+Vm_EncapState			# delay (initially panic)
+				# (will wait for the task's memory objects to
+				# be cleaned, which was initiated by
+				# Vm_InitiateMigration; deallocate the
+				# process's VM; encapsulate info about the
+				# memory objects)
+	proc/procMigrate.c
+Vm_ExecInfo			# keep.
+	proc/procExec.c
+Vm_FileChanged			# (used to "remove" an unused sticky segment)
+				# no-op (no sticky segments) initially.
+	fsio/fsFile.c
+	fsrmt/fsRmtFile.c
+Vm_FindCode			# keep
+				# XXX - the test with vm_NoStickySegments (in
+				# FindCode) is probably wrong (there's no
+				# check that some process is currently using
+				# the file/segment)
+	proc/procExec.c
+Vm_FinishMigration		# delete (obsolete)
+	proc/procMigrate.c
+Vm_FlushCode			# (flush hardware cache, esp. when debugging
+				# [e.g., setting breakpoints])
+				# no-op (not needed).
+				# caller may need changes to deal with
+				# different debugging support.
+	mach/ds3100.md/machCode.c
+	proc/procDebug.c
+Vm_FreeKernelStack		# no-op; delete later
+	mach/sun3.md/machCode.c
+	mach/sun4.md/machCode.c
+	mach/ds3100.md/machCode.c
+	mach/symm.md/machCode.c
+Vm_FsCacheSize			# call vm_statistics and do something
+				# reasonable.
+	fscache/fscacheBlocks.c
+Vm_GetKernelStack		# no-op; delete later
+	mach/sun3.md/machCode.c
+	mach/sun4.md/machCode.c
+	mach/ds3100.md/machCode.c
+	mach/symm.md/machCode.c
+Vm_GetPageSize			# return vm_page_size.
+	fscache/fscacheBlocks.c
+Vm_GetRefTime			# initially return 0, so that the FS cache can
+				# grow up to some (predetermined,
+				# not-very-big) maximum. later maybe fix to
+				# tell the truth
+	fscache/fscacheBlocks.c
+Vm_GetSegInfo			# keep (use per-process list of memory
+				# objects).
+	Include/user/vm.h.
+	mach/symm.md/machSyscallTrace.c
+	sys/sysSysCall.c
+Vm_Init				# initialize whatever data structures we use
+	main/sun3.md/mainInit.c
+	main/sun4.md/mainInit.c
+	main/ds3100.md/mainInit.c
+	main/symm.md/mainInit.c
+Vm_InitCode			# (fills in a few remaining fields of the
+				# segment and puts a pointer to the segment in
+				# the file handle)
+				# Do something similar with memory object.
+				# May also want to always broadcast on
+				# codeSegCondition.
+	proc/procExec.c
+Vm_InitiateMigration		# delay.
+				# (will initiate cleaning of dirty pages,
+				# check for shared heap [which disallows
+				# migration])
+	proc/procMigrate.c
+Vm_MakeAccessible		# (maps a portion of the user VAS into the
+				# kernel VAS, plus range checks).  Convert
+				# caller to use CopyIn/CopyOut, with
+				# appropriate locking of the process.
+	mach/ds3100.md/{machCode,machUNIXSyscall}.c
+	proc/{procID,procExec,procFork,procRpc,procRemote,procEnviron}.c
+	rpc/rpcDebug.c
+	sys/sysCalls.c
+Vm_MakeUnaccessible		# convert caller to use CopyIn/CopyOut.
+	mach/ds3100.md/{machCode,machUNIXSyscall}.c
+	proc/{procID,procExec,procFork,procRpc,procRemote,procEnviron}.c
+	rpc/rpcDebug.c
+	sys/sysCalls.c
+Vm_MapBlock			# (on Sun4, too expensive to keep mappings for
+				# entire file cache wired all the time)
+				# wire the page into (the server's) memory
+				# (using vm_pageable). do you have to touch
+				# the page in case it's not currently
+				# resident?
+	fscache/fscacheBlocks.c
+Vm_Mincore			# (residency info, incl. info about
+				# cleanliness)
+				# unsupported initially (supportable in MK69
+				# and later?)
+	mach/ds3100.md/machUNIXSyscall.c
+	mach/symm.md/machSyscallTrace.c
+	sys/sysSysCall.c
+Vm_Mlock			# (system call to pin pages)
+				# use vm_pageable
+	mach/symm.md/machSyscallTrace.c
+	sys/sysSysCall.c
+Vm_Mmap				# make/get a pager for the file, then map in
+				# the requested portion.  Don't need
+				# initially?
+	mach/ds3100.md/machUNIXSyscall.c
+	mach/symm.md/machSyscallTrace.c
+	sys/sysSysCall.c
+Vm_Mprotect			# use vm_protect
+	sys/sysSysCall.c
+Vm_Msync			# use vm_region to figure out what part of
+				# what memory object(s) to clean.  use
+				# VmPageFlush to clean dirty pages.  (if
+				# user's range spans multiple memory objects,
+				# would be better to do the
+				# memory_object_lock_requests ourself, in
+				# parallel.  This is a performance
+				# optimization.)
+				# keep process locked during all this?
+	mach/symm.md/machSyscallTrace.c
+	sys/sysSysCall.c
+Vm_Munlock			# (unpin memory). call vm_pageable
+	mach/symm.md/machSyscallTrace.c
+	sys/sysSysCall.c
+Vm_Munmap			# call vm_deallocate
+	mach/ds3100.md/machUNIXSyscall.c
+	mach/symm.md/machSyscallTrace.c
+	sys/sysSysCall.c
+Vm_PageIn			# gut and use in memory_object_data_request.
+				# SetupVM can just use vm_write after mapping
+				# the program in)
+	mach/sun3.md/machCode.c
+	mach/sun4.md/machTrap.s
+	mach/sun4.md/machCode.c
+	mach/symm.md/machTrap.c
+	proc/procExec.c
+Vm_PageSize			# ask the kernel for the page size (in the
+				# emulation library)
+	Include/user/vm.h.
+	mach/symm.md/machSyscallTrace.c
+	sys/sysSysCall.c
+Vm_PinUserMem			# lock-related system calls
+				# check requested access (don't allow write to
+				# text), otherwise like Vm_Mlock.
+	sync/syncUser.c
+# in Mach, currently pinning is only available to the uniserver (the
+# kernel knows that the uniserver is started at a particular point,
+# and it sets a privilege bit in the task)
+Vm_ProcInfo			# change per description in newVm
+Vm_ProcInit			# per-process initialization of whatever
+				# replaces Vm_ProcInfo
+	proc/{procTable,procFork,procRpc,procMigrate}.c
+Vm_RawAlloc			# call malloc
+	mach/sun3.md/machCode.c
+	mach/sun4.md/machCode.c
+	mach/symm.md/machCode.c
+	dev/devNet.c
+	fscache/fscacheBlocks.c
+	mem/memSubr.c
+	proc/{procTable,procServer}.c
+	prof/sun3.md/profSubr.c
+	prof/sun4.md/profSubr.c
+	prof/ds3100.md/profSubr.c
+	rpc/rpcInit.c
+	utils/trace.c
+Vm_Recovery			# (wakes up pending frame allocations & makes
+				# sure there are page out processes for dirty
+				# pages.)  delete.
+	fsutil/fsRecovery.c
+Vm_SegProcList			# drastically simplified (kernel keeps track
+				# of which parts of the memory object are in
+				# use)
+Vm_SegmentDelete		# Decrement reference count.  Destroy the
+				# memory object if the count goes to zero.
+				# Check callers that assume that the
+				# corresponding user virtual memory region is
+				# deallocated.
+	proc/{procExit,procExec,procFork}.c
+Vm_SegmentDup			# clone new memory object from an old one,
+				# with new backing file (for copying stack &
+				# heap in fork()).  Use vm_copy?
+	proc/procFork.c
+Vm_SegmentID			# keep
+	Include/user/vm.h.
+	proc/procMisc.c
+Vm_SegmentIncRef		# Increment the reference count.
+	proc/procFork.c
+Vm_SegmentInfo			# keep, but some fields will be meaningless.
+				# Will eventually want to clean up.
+	Include/user/vm.h.
+	proc/proc.h
+	proc/procMisc.c
+Vm_SegmentNew			# replace with code to create new memory
+				# object.  Call Fsio_StreamCopy to bump the
+				# reference count for the given file.
+	proc/procExec.c
+Vm_Stat				# keep, though some fields will be useless;
+				# will want to clean up later.
+	Include/user/vmStat.h
+Vm_StoreTraceTime		# keep
+	timer/timerQueue.c
+Vm_StringNCopy			# (like copy{in,out}, but with strncpy)
+				# XXX verify that is only used for copy in
+	fs/{fsSysCall.c,fsStubs.c}
+	fsprefix/fsprefixOps.c
+	fsutil/fsutil.h
+	proc/procStubs.c
+	prof/sun3.md/profSubr.c
+	prof/sun4.md/profSubr.c
+	prof/ds3100.md/profSubr.c
+Vm_UnmapBlock			# unwire the page (vm_pageable)
+	fscache/fscacheBlocks.c
+Vm_UnpinUserMem			# call vm_pageable
+	sync/syncUser.c
+Vm_ValidatePages		# no-op
+	proc/procExec.c
+Vm_VirtAddr			# change references either to Address or to a
+				# new {memory object, offset} type.  Many
+				# references will go away anyway.
+user/vm.h
+	sys/sysSysCall.c
+vm.h
+	mach/sun3.md/machCode.c
+	mach/sun4.md/{machCode,machFPUGlue}.c
+	mach/ds3100.md/{machCode,machUNIXSyscall}.c
+	mach/symm.md/{machCode,machArchdep,machTrap}.c
+	dbg/sun4.md/dbgMain.c
+	dbg/sun3.md/dbgMain.c
+	dbg/ds3100.md/dbgMain.c
+	dev/devNet.c
+	dev/devSCSI.c
+	dev/symm.md/{devSced,devScedDisk,devConfScedDisk,devScedConsole}.c
+	dev/symm.md/{devScedTape,devDynixBlockDevice,devZDCDisk,devZDCInit}.c
+	dev/sun3.md/devInit.c
+	dev/sun3.md/devInt.h
+	dev/sun3.md/{devTMR,devXylogics450}.c
+	dev/sun4.md/devInit.c
+	dev/sun4.md/devInt.h
+	dev/sun4.md/{devXylogics450,devTMR}.c
+	dev/ds3100.md/{devInit,devGraphics}.c
+	fs/{fsSysCall,fsPageOps,fsStreamOps}.c
+	fscache/{fsCacheOps,fsBlockCache}.c
+	fsconsist/fsCacheConsist.c
+	fsio/{fsPipe,fsFile}.c
+	fslcl/{fsLocalDomain,fsLocalLookup}.c
+	fsprefix/fsPrefix.c
+	fsrmt/{fsRmtFile,fsRmtPipe,fsSpriteDomain,fsSpriteIO}.c
+	fsutil/{fsHandleScavenge,fsSync,fsTrace,fsSubr,fsRecovery}.c
+	main/sun3.md/mainInit.c
+	main/sun4.md/mainInit.c
+	main/ds3100.md/mainInit.c
+	main/symm.md/mainInit.c
+	mem/memSubr.c
+	net/sun3.md/{netIE,netLE,netIECmd,netLERecv,netLEXmit,netIEMem}.c
+	net/sun3.md/netIESubr.c
+	net/sun4.md/{netIE,netIECmd,netIEMem,netIESubr}.c
+	net/ds3100.md/{netLE,netLERecv,netLEXmit}.c
+	net/symm.md/{netSE,netScedEther,netSEXmit}.c
+	proc/{procDebug,procExit,procID,procExec,procTable,procMisc}.c
+	proc/{procFork,cprocRpc,procRemote,procServer,procMigrate}.c
+	proc/procEnviron.c
+	prof/sun3.md/profSubr.c
+	prof/sun4.md/profSubr.c
+	prof/ds3100.md/profSubr.c
+	prof/profProfil.c
+	rpc/{rpcInit,rpcDebug,rpcDispatch}.c
+	sig/signals.c
+	sync/syncUser.c
+	sys/{sysCalls,sysCode,sysSysCall}.c
+	timer/symm.md/timerSym.c
+	timer/timerQueue.c
+	utils/trace.c
+vmMemEnd			# delete
+	mach/symm.md/machAutoconf.c
+	dbg/sun3.md/dbgMain.c
+	dbg/sun4.md/dbgMain.c
+	main/sun3.md/mainInit.c
+	main/sun4.md/mainInit.c
+	main/main.h
+	main/ds3100.md/mainInit.c
+	main/symm.md/mainInit.c
+vmShmDebug			# (debugging flag) keep
+	dbg/sun4.md/vmInt.h
+	dbg/sun3.md/vmInt.h
+	proc/procExit.c
+	sync/syncSysV.c
+vmStat				# keep
+	Include/user/vmStat.h
+vm_PageSize			# keep; make sure gets initialized correctly
+	mach/ds3100.md/machUNIXSyscall.c
+	dbg/sun3.md/dbgMain.c
+	proc/procExec.c
+vm_Tracing			# keep
+	timer/timerQueue.c
+vmInt.h
+	mach/symm.md/{machCode,machTrap}.c
+	dbg/sun4.md/dbgMain.c
+	dbg/sun3.md/dbgMain.c
+
+Local Variables:
+mode: xref
+fill-column: 78
+End:

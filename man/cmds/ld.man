@@ -1,0 +1,292 @@
+.\" @(#)ld.1 1.4 86/07/29 SMI;  
+.TH LD 1 "17 July 1986"
+.SH NAME
+ld \- link editor
+.SH SYNOPSIS
+.B ld
+[
+.BI \-align " datum"
+]
+[
+.BI \-A " name"
+] 
+[ \fB\-d\fP ] 
+[ \fB\-D\ \fP\^\fIhex\fP ] 
+.if n .ti +0.5i
+[ \fB\-e\ \fP\^\fIentry\fP ]
+[ \fB\-l\fIx\fR ] 
+[ \fB\-L\fIdir\fR ]
+[ \fB\-M\fP ]
+.if t .ti +0.5i
+[ \fB\-n\fP ]
+.if n .ti +0.5i
+[ \fB\-N\fP ] 
+[
+.BI \-o \ name
+] 
+[
+.B \-r
+]
+[
+.B \-s
+] 
+[
+.B \-S
+]
+[
+.B \-t
+] 
+.if n .ti +0.5i
+[
+.BR \-T \|[\| text \|]\| \fIhex\fR
+] 
+[
+.BI \-Tdata \ hex
+]
+.if t .ti +0.5i
+[
+.BI \-u \ name
+]
+.if n .ti +0.5i
+[
+.B \-x
+] 
+[
+.B \-X
+] 
+[
+.BI \-y sym
+] 
+[
+\fB\-z\fP
+] 
+.IR filename .\|.\|.
+.SH DESCRIPTION
+.IX  "ld command"  ""  "\fLld\fP \(em link editor"
+.IX  "programming tools"  "ld command"  ""  "\fLld\fP \(em link editor"
+.IX  "link editor"  ""  "link editor \(em \fLld\fP"
+.I ld
+combines several object programs into one, resolves external references,
+and searches libraries.  In the simplest case several object
+.IR filename s
+are given, and
+.I ld
+combines them, producing an object module which can either be executed or
+become the input for a subsequent
+.I ld
+run.  In the latter case, the
+.B \-r
+option must be given to preserve the relocation bits. The output of
+.I ld
+is left on a file called
+.IB a . out
+if not otherwise specified.  The output file 
+is made executable only if no errors occurred during link editing.
+.LP
+Files specified by the argument
+.I filename .\|.\|.
+are concatenated in the order specified.  The entry
+point of the output is the beginning of the first routine, unless the
+\fB\-e\fP option is specified.
+.LP
+If a
+named file
+is a library, it is searched exactly once at the point it
+is encountered in the argument list.  Only those routines defining an
+unresolved external reference are loaded.  If a routine from a library
+references another routine in the same library, and the library has not been
+processed by
+.IR ranlib ,
+the referenced routine must appear after the referencing routine in the
+library.  Thus the order of programs within libraries may be important.
+The first member of a library should be a file named `\_\^\_.SYMDEF',
+which is understood to be a dictionary for the library as produced by
+.IR ranlib ;
+the dictionary is searched iteratively to satisfy as many references as possible.
+.LP
+The symbols \fB\_etext\fP, \fB\_edata\fP and \fB\_end\fP (\fBetext\fP,
+\fBedata\fP and \fBend\fP in C) are reserved, and if referred to, are set
+to the first location above the program, the first location above initialized
+data, and the first location above all data, respectively.
+It is erroneous to define these symbols.
+.SH OPTIONS
+Options should appear before the 
+.IR filenames , 
+except abbreviated library
+names specified by the
+.B \-l
+option, which can appear anywhere.
+.TP 
+.BI \-align \ datum
+.I datum 
+(usually a 
+.SM FORTRAN 
+common block) is increased in length
+to be a multiple of the page size; its beginning 
+is set at a page boundary.
+.TP
+.BI \-A \ name
+Incremental loading: linking is to be done in a manner so that the
+resulting object may be read into an already executing program. 
+.I name
+is the name of a file whose symbol table is taken as a basis
+on which to define additional symbols.  Only newly linked material is 
+entered into the text and data portions of 
+.IB a . out,
+but the new symbol table will reflect all symbols defined before and after
+the incremental load.  This argument must appear before any other object
+file in the argument list.  One or both of the 
+.B \-T
+options may be used as well, and will be taken to mean that the newly linked
+segment will commence at the corresponding addresses (which must be a multiple
+of the page size).  The default value is the old value of 
+.BR _end .
+.TP 
+.B  \-d
+Force definition of common storage even if the 
+.B \-r
+flag is present.
+.TP
+.BI \-D \ hex
+Pad the data segment with zero-valued bytes to make it \fIhex\fP
+bytes long.
+.TP
+.BI \-e \ entry
+Define the \fBe\fPntry point: the \fIentry\fP argument is made the 
+name of the entry point of the loaded program.
+.TP 
+.BI \-l x
+This option is an abbreviation for the library name
+\fBlib\fIx\fB.a\fR,
+where
+.I x
+is a string.  
+.I ld
+searches for libraries first in any directories specified with
+.B \-L
+options, then in the standard directory \fB/sprite/lib/\fItm\fB.md\fR,
+where \fItm\fR is the target machine on which the linked program
+is intended to execute.  \fITm\fR defaults to the value of the
+\fBMACHINE\fR environment variable, but may be overridden with
+the \fB\-m\fR switch.
+A library is searched when its name is encountered, 
+so the placement of a
+.B  \-l
+is significant.
+.TP
+.BI \-L dir
+Add
+.I dir
+to the list of directories in which libraries are searched for.
+Directories specified with 
+.B \-L
+are searched before the standard directory.
+.TP
+.B \-m\fItm\fR
+Use \fItm\fR as the target machine for this link, rather than the
+\fBMACHINE\fR environment variable.  This switch determines where
+the linker looks for libraries (see the \fB\-l\fR switch above).
+.TP
+.B \-M
+Produce a primitive load map, listing the names of the files
+which will be loaded.
+.TP 
+.B  \-n
+Arrange (by giving the output file a 0410 `magic number') that when the output
+file is executed, the text portion will be read-only and shared among all
+processes executing the file.  This involves moving the data areas up to the first
+possible segment boundary following the end of the text.
+.TP
+.B \-N
+Do not make the text portion read-only or sharable.  (Use `magic number' 0407.)
+.TP 
+.BI  \-o \ name
+.I Name
+is made the name of the
+.I ld
+output file, instead of
+.BR a.out .
+.TP 
+.B  \-r
+Generate relocation bits in the output file
+so that it can be the subject of another
+.I ld
+run.  This flag also prevents final definitions from being given to common
+symbols, and suppresses the `undefined symbol' diagnostics.
+.TP 
+.B  \-s
+Strip the output, that is, remove the symbol table and relocation bits to save
+space (but impair the usefulness of the debuggers).  This information can also
+be removed by
+.IR  strip (1).
+.TP
+.B \-S
+Strip the output by removing all symbols except locals and globals.
+.TP
+.B \-t
+Trace: display the name of each file as it is processed.
+.TP
+.BR \-T \|[\| text \|]\| \fIhex\fR
+Start the text segment at location \fIhex\fP.  Specifying 
+.B \-T
+is the same as using the
+.BR \-Ttext
+option.
+.TP
+.BI \-Tdata \ hex
+Start the data segment at location \fIhex\fP.  This option is only of use
+to programmers wishing to write code for 
+.SM PROM\s0s,
+since the resulting code cannot be executed by the
+.SM UNIX
+system.
+.TP 
+.BI  \-u \ name
+Enter \fIname\fP as an \fBu\fPndefined symbol.  This is useful for loading
+wholly from a library, since initially the symbol table is empty and an
+unresolved reference is needed to force the loading of the first routine.
+.TP 
+.B  \-x
+Preserve only global (non-\|\fB.globl\fP) symbols in the output symbol
+table; only enter external symbols.
+This option saves some space in the output file.
+.TP 
+.B  \-X
+Record local symbols, except for those whose names begin with `L'.
+This option is used by
+.I cc
+to discard internally generated labels while
+retaining symbols local to routines.
+.TP
+\fB\-y\fIsym\fR
+Display each file in which
+.I sym
+appears, its type and whether the file defines or references it.
+Many such options may be given to trace many symbols.
+It is usually necessary to begin
+.I sym
+with an `_', as external C, FORTRAN and Pascal variables begin
+with underscores.
+.TP
+.B \-z
+Arrange for the process to be loaded on demand from the resulting executable
+file (0413 `magic number') rather than preloaded.  This is the default.
+Results in a (32-byte) header on the output file followed by
+text and data segments, each of which has a multiple of page-size
+bytes (being padded out with nulls in the file if necessary).
+With this format the first few BSS segment symbols may actually end up
+in the data segment;
+this is to avoid wasting the space resulting from rounding the data 
+segment size.
+The text is read-only and shared among all processes executing the file.
+.SH FILES
+.ta \w'/usr/local/lib/lib*.a\ \ 'u
+/lib/lib*.a	libraries
+.br
+/usr/lib/lib*.a	more libraries
+.br
+/usr/local/lib/lib*.a	still more libraries
+.br
+a.out	output file
+.SH "SEE ALSO"
+as(1), ar(1), cc(1V), ranlib(1), strip(1)

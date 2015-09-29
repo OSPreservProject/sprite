@@ -1,0 +1,79 @@
+head     9.4;
+branch   ;
+access   ;
+symbols  ds3100:9.4 sun3:9.4;
+locks    ; strict;
+comment  @@;
+
+
+9.4
+date     92.08.11.15.23.35;  author mgbaker;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     92.08.10.23.01.48;  author mgbaker;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     92.04.14.17.17.06;  author jhh;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     92.04.14.17.08.18;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.4
+log
+@Fixed glitch.
+@
+text
+@#
+# This file is included by Makefile.  Makefile is generated automatically
+# by mkmf, and this file provides additional local personalization.  The
+# variable SYSMAKEFILE is provided by Makefile;  it's a system Makefile
+# that must be included to set up various compilation stuff.
+#
+
+#include	<$(SYSMAKEFILE)>
+@
+
+
+9.3
+log
+@Changes for transparent server recovery.
+@
+text
+@a8 1
+.PATH.h:	/sprite/src/kernel/mgbaker/hdrs
+@
+
+
+9.2
+log
+@NEW_NET is now in kernel.mk
+@
+text
+@d9 1
+a9 1
+
+@
+
+
+9.1
+log
+@Added Net_GetRoutes and Net_DeleteRoute.
+@
+text
+@a7 2
+CFLAGS		+= -DNEW_NET
+
+@

@@ -1,0 +1,122 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     90.02.16.11.10.44;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.01.06.09.52.11;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Man page for the bench program
+@
+
+
+1.2
+log
+@Option to start server on signal
+@
+text
+@' $Header: /a/newcmds/bench/RCS/bench.man,v 1.1 89/01/06 09:52:11 brent Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS BENCH cmds
+.BS
+.SH NAME
+bench \- Benchmark harness that coordinates multiple processes
+.SH SYNOPSIS
+\fBbench\fR [\fIoptions\fR] \fB-c\fP \fIcommand\fP
+.br
+\fBbench\fR \fB\-M\fP [\fIoptions\fR]
+.SH "OPTIONS"
+.IP "\fB\-M \fInumClients\fR" 14
+Run as master of the number of clients indicated.
+The master bench process should be started before any slaves.
+.IP "\fB\-S\fR" 14
+Run as a slave.  Use \fB-c\fP to specify a command.  The slave
+process will wait until all other slaves have registered with
+the master before executing their benchmark.
+.IP "\fB\-c \fIcommand args ...\fR" 14
+Follow this with the command to benchmark.  Execution search paths
+are not used (yet).  The command can be followed with any required arguments.
+.IP "\fB\-p\fR" 14
+Name of the pseudo-device used for coordination.
+.IP "\fB\-o \fIoutfile\fR" 14
+Output file in which execution statistics are placed.
+.IP "\fB\-f\fR" 14
+Flush the file system cache before executing the benchmark.
+.IP "\fB\-x\fR" 14
+Disable all system tracing before executing the benchmark.
+.IP "\fB\-h\fR" 14
+Enable taking of RPC timing histograms.  This is ok with -x.
+.IP "\fB\-d\fR" 14
+Don't sync the file system cache at the end of the benchmark.  Normally
+this is done after the benchmark completes and before the file system
+I/O statistics are taken.
+.IP "\fB\-s\fR" 14
+Use signals instead of pseudo-devices for rendez-vous.
+.IP "\fB\-P \fIseconds\fR" 14
+Pause for some seconds before getting the final statistics.  Only
+applies to the master bench process.
+.IP "\fB\-w\fR" 14
+Causes the master process to wait for a USR1 signal before it allows the
+slaves to begin running.  This option must be used with the \fI-M\fR option,
+and cannot be used with the \fI-s\fR option.
+.BE
+
+.SH DESCRIPTION
+.PP
+Bench is a harness for other programs that executes them and
+takes system statistics.
+The command to benchmark follows the \fB-c\fP option.  Currently
+bench does not used the execution search path, so the command
+has to be a valid pathname.  (This should be fixed!)
+In its simplest form (no \fB-S\fP or \fB-M\fP) bench executes a
+single process and generates output to ``bench.out'' or
+to the file specified by the -o option.
+The default behavior is that the execution time and CPU utilization
+are recorded after the benchmarked process completes,
+then the file system cache is written back and
+file system statistics are recorded.
+The file system cache can be flushed before the benchmark using
+the \fB-f\fP option.  The cache write-back at the end of the
+run can be disabled with the \fB-d\fP option.  The \fB-x\fP option
+turns off various kernel tracing that can slow down execution.
+.PP
+Multiple processes can be coordinated using the
+\fB-M\fP and \fB-S\fP options.  First a master bench process is
+started with the \fB-M\fP option.  This option is followed by an
+integer that indicates the number of slaves to expect.  The
+master process creates a pseudo-device that will be used to
+coordinate the slaves.  Each slave benchmark is started
+using the \fB-S\fP option.  The slaves contact the master,
+and after they all make contact the master lets them proceed.
+The master bench process also takes system statistics during
+the execution of all the slaves.  It is generally run on
+the file server in order to measure the load presented by the slaves.
+Note that the master doesn't run a command itself, so no \fB-c\fP
+argument is needed with \fB-M\fP.
+.SH KEYWORDS
+benchmark, statistics, timing
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/prefix/RCS/prefix.man,v 1.2 88/12/30 10:08:40 ouster Exp $ SPRITE (Berkeley)
+d41 4
+@

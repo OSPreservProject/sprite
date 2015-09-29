@@ -1,0 +1,463 @@
+head     1.9;
+branch   ;
+access   ;
+symbols  sprited:1.6.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.9
+date     92.06.05.12.36.11;  author voelker;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     92.03.26.20.15.47;  author voelker;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     92.03.08.22.43.02;  author voelker;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     90.11.06.16.51.15;  author jhh;  state Exp;
+branches 1.6.1.1;
+next     1.5;
+
+1.5
+date     89.06.23.11.30.42;  author rab;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.06.05.14.27.31;  author mendel;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.06.05.14.22.22;  author mendel;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.07.02.16.41.25;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.29.14.51.42;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.6.1.1
+date     92.06.07.20.36.16;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.9
+log
+@new host library
+@
+text
+@/*
+ * host.h --
+ *	Header file for users of the Host_ functions. These functions
+ *	access a database of all Sprite hosts on the local network, giving
+ *	various information about the host that is needed to communicate
+ *	with it in various ways...
+ *
+ * Copyright (c) 1987 by the Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *	"$Header: /sprite/src/lib/include/RCS/host.h,v 1.8 92/03/26 20:15:47 voelker Exp Locker: voelker $ SPRITE (Berkeley)"
+ */
+
+#ifndef _HOST
+#define _HOST
+
+#ifndef _TYPES
+#include <sys/types.h>
+#endif
+#ifndef _IN
+#include <netinet/in.h>
+#endif
+
+#include <sys/stat.h>
+#include <net.h>
+
+/*
+ * A host information file contains two types of lines.  The
+ * first type of line describes a Sprite host:
+ *
+ *        <spriteID> <machType> <fullname> <aliases>
+ *
+ * The second type of line describes the types of networks that
+ * the host is connected to:
+ *
+ *        <netType> <netAddr> <inetAddr> 
+ *
+ * The fields are as follows:
+ *
+ *	spriteID	    The Sprite ID for the host (small number)
+ *	machType	    The machine type.  This string value is used
+ *			    when expanding $MACHINE in pathnames.
+ *	fullname	    The official name for the machine.
+ *	aliases	  	    Other names for the machine.
+ *
+ *	netType 	    Type of local network by which the machine is
+ *	    	  	    connected.  Currently, only `ether', `ultra',
+ *	    	  	    and `fddi' are understood.
+ *	netAddr	  	    Address for the local network of the given type.
+ *	inetAddr  	    The internet address of the network interface
+ *                          of the host.
+ *
+ * Each network interface has a given Internet address, so the Internet
+ * address can uniquely identify a specific network interface.  But,
+ * a host may have multiple network interfaces, so an Internet address
+ * does not uniquely identify a host.
+ *
+ * After each line that defines a Sprite host follow the lines describing
+ * the networks that the host is connected to.
+ *
+ */
+
+/*
+ * Should be the same as NET_MAX_INTERFACES in netTypes.h
+ */
+#define HOST_MAX_INTERFACES         3
+
+/*
+ * A Host_NetInt structure defines the internet and network addresses
+ * for a network interface on a host. 
+ */
+typedef struct Host_NetInt {
+    Net_InetAddress     inetAddr;   /* Internet Address */
+    Net_Address         netAddr;    /* Address of network interface */
+} Host_NetInt;
+
+/*
+ * A Host_Entry structure contains the name, etc., of a host, plus
+ * the addresses of its network interfaces.  Empty interfaces are
+ * denoted by having nets[].netAddr.type set to NET_ADDRESS_NONE.
+ */
+typedef struct {
+    char    	  	*name;      /* Primary name */
+    char    	  	**aliases;  /* Other names */
+    int	    	  	id;	    /* Sprite ID */
+   char			*machType;  /* Machine type, i.e "sun3", "spur" */
+   int			numNets;    /* Number of network interfaces. */
+   Host_NetInt          nets[HOST_MAX_INTERFACES];
+                                    /* Internet and physical address for
+				     * each possible network interface */
+} Host_Entry;
+
+/*
+ * Accessor functions
+ */
+Host_Entry *	Host_ByID();		/* Find host entry by Sprite ID */
+Host_Entry *	Host_ByInetAddr();	/* Find by Internet address */
+Host_Entry *	Host_ByName();		/* Find entry by name */
+Host_Entry *	Host_ByNetAddr();	/* Find by LAN address */
+void		Host_End();		/* Close host description file */
+Host_Entry *	Host_Next();		/* Retrieve next entry in file */
+int		Host_SetFile();		/* Change file to read for info */
+int		Host_Start();		/* Open host description file */
+
+#endif /* _HOST */
+@
+
+
+1.8
+log
+@updated to use the Net module structures and library
+@
+text
+@d17 1
+a17 1
+ *	"$Header: /sprite/src/lib/include/RCS/host.h,v 1.7 92/03/08 22:43:02 voelker Exp Locker: voelker $ SPRITE (Berkeley)"
+a30 3
+
+#ifdef NEW_HOST
+
+d49 2
+a50 2
+ *	name	  	    The official name for the machine
+ *	aliases	  	    Other names for the machine
+a51 2
+ *	inetAddr  	    The internet address of the network interface
+ *                          of the host.
+d56 2
+d64 1
+a64 1
+ * After each line that defines a Sprite host follows the lines describing
+a69 18
+ * A Host_Entry contains the broken out fields of the host table line
+ * for a host.
+ *
+ * Sprite hosts may be connected to the network by different local-area-nets
+ * (LANs). The netType field of the Host_Entry tells what type of network
+ * it is. The Addr field in the netAddr union should be chosen based on
+ * this type.
+ *
+ */
+typedef enum {
+    HOST_ETHER,
+/*    HOST_INET   <--- is it deadly to remove this? */
+    HOST_ULTRA,
+    HOST_FDDI,
+    HOST_NONE
+} Host_NetType;
+
+/*
+d75 2
+a76 8
+ * This should go into net.h when we can get a lock on it.
+ */
+#ifndef NET_ADDRESS_NONE
+#define NET_ADDRESS_NONE            0
+#endif
+
+/*
+ * Should get these from the net include files.
+a77 4
+#define HOST_ETHER_ADDRESS_SIZE     6
+#define HOST_ULTRA_ADDRESS_SIZE     8 /* ? */
+#define HOST_FDDI_ADDRESS_SIZE      6
+
+d83 5
+a91 9
+/* remove */
+    struct in_addr	inetAddr;   /* Internet address */
+    Host_NetType  	netType;    /* Network used to connect to host */
+    union {
+	unsigned char	etherAddr[HOST_ETHER_ADDRESS_SIZE];
+				    /* Ethernet address of machine or 
+				     * first gateway if netType is HOST_INET. */
+    }	    	  	netAddr;    /* Address for that network */
+/* end remove */
+d93 1
+a109 65
+
+#else /* NEW_HOST */
+
+/*
+ * A host information file contains lines of the following form:
+ *
+ * <spriteID> <netType> <netAddr> <inetAddr> <machType> <name> <aliases>
+ *
+ * Where the fields are as follows:
+ *	spriteID	    The Sprite ID for the host (small number)
+ *	netType 	    Type of local network by which the machine is
+ *	    	  	    connected. Currently, only "ether" and "inet" 
+ *	    	  	    are understood.
+ *	netAddr	  	    Address for the local network
+ *	inetAddr  	    The internet address of the host
+ *	machType	    The machine type.  This string value is used
+ *			    when expanding $MACHINE in pathnames.
+ *	name	  	    The official name for the machine
+ *	aliases	  	    Other names for the machine
+ */
+
+/*
+ * A Host_Entry contains the broken out fields of the host table line
+ * for a host.
+ *
+ * Sprite hosts may be connected to the network by different local-area-nets
+ * (LANs). The netType field of the Host_Entry tells what type of network
+ * it is. The Addr field in the netAddr union should be chosen based on
+ * this type.
+ *
+ */
+typedef enum {
+    HOST_ETHER,
+    HOST_INET
+} Host_NetType;
+
+#define HOST_ETHER_ADDRESS_SIZE 6
+
+typedef struct {
+    char    	  	*name;      /* Primary name */
+    char    	  	**aliases;  /* Other names */
+    int	    	  	id;	    /* Sprite ID */
+    struct in_addr	inetAddr;   /* Internet address */
+    Host_NetType  	netType;    /* Network used to connect to host */
+    union {
+	unsigned char	etherAddr[HOST_ETHER_ADDRESS_SIZE];
+				    /* Ethernet address of machine or 
+				     * first gateway if netType is HOST_INET. */
+    }	    	  	netAddr;    /* Address for that network */
+   char			*machType;  /* Machine type, i.e "sun3", "spur" */
+} Host_Entry;
+
+/*
+ * Accessor functions
+ */
+Host_Entry *	Host_ByID();		/* Find host entry by Sprite ID */
+Host_Entry *	Host_ByInetAddr();	/* Find by Internet address */
+Host_Entry *	Host_ByName();		/* Find entry by name */
+Host_Entry *	Host_ByNetAddr();	/* Find by LAN address */
+void		Host_End();		/* Close host description file */
+Host_Entry *	Host_Next();		/* Retrieve next entry in file */
+int		Host_SetFile();		/* Change file to read for info */
+int		Host_Start();		/* Open host description file */
+
+#endif /* NEW_HOST */
+@
+
+
+1.7
+log
+@changed fields to handle multiple network interfaces for a single host
+@
+text
+@d17 1
+a17 1
+ *	"$Header: /sprite/src/lib/include/RCS/host.h,v 1.6 90/11/06 16:51:15 jhh Exp Locker: voelker $ SPRITE (Berkeley)"
+d32 1
+a32 1
+#ifdef NEW_NET
+d34 2
+d90 11
+a100 1
+#define HOST_NUM_NET_TYPES          3
+d109 4
+a112 12
+typedef struct Host_NetLink {
+    struct in_addr      inetAddr;   /* Internet Address */
+    Host_NetType        netType;    /* Type of network */
+    union {
+	unsigned char   etherAddr[HOST_ETHER_ADDRESS_SIZE];
+	                            /* Ethernet address of interface */
+	unsigned char   ultraAddr[HOST_ULTRA_ADDRESS_SIZE];
+	                            /* Ultranet address of interface */
+	unsigned char   fddiAddr[HOST_FDDI_ADDRESS_SIZE];
+	                            /* FDDI address of interface */
+    }                   netAddr;    /* Address of network interface */
+} Host_NetLink;
+d128 1
+a128 1
+   Host_NetLink         netLinks[HOST_NUM_NET_TYPES];
+d130 1
+a130 2
+				     * each possible network interface,
+				     * indexed by netType */
+d145 1
+a145 1
+#else /* NEW_NET */
+d208 1
+a208 1
+#endif /* NEW_NET */
+@
+
+
+1.6
+log
+@includes stat.h
+@
+text
+@d17 1
+a17 1
+ *	"$Header: /sprite/src/lib/include/RCS/host.h,v 1.5 89/06/23 11:30:42 rab Exp $ SPRITE (Berkeley)"
+d31 113
+d204 2
+@
+
+
+1.6.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+ *	"$Header: /sprite/src/lib/include/RCS/host.h,v 1.6 90/11/06 16:51:15 jhh Exp $ SPRITE (Berkeley)"
+@
+
+
+1.5
+log
+@*** empty log message ***
+@
+text
+@d17 1
+a17 1
+ *	"$Header: /sprite/src/lib/include/RCS/host.h,v 1.4 89/06/05 14:27:31 mendel Exp Locker: rab $ SPRITE (Berkeley)"
+d30 1
+@
+
+
+1.4
+log
+@Fixed comment.
+@
+text
+@d17 1
+a17 1
+ *	"$Header: /sprite/src/lib/include/RCS/host.h,v 1.2 88/07/02 16:41:25 ouster Exp Locker: mendel $ SPRITE (Berkeley)"
+d28 1
+a28 1
+#endif _IN
+d91 1
+a91 1
+#endif _HOST
+@
+
+
+1.3
+log
+@Added HOST_INET type.
+@
+text
+@d73 2
+a74 1
+				    /* Ethernet address */
+@
+
+
+1.2
+log
+@Make etherAddr unsigned:  easier to compare.
+@
+text
+@d17 1
+a17 1
+ *	"$Header: host.h,v 1.1 88/05/03 13:37:22 brent Exp $ SPRITE (Berkeley)"
+d38 2
+a39 2
+ *	    	  	    connected. Currently, only "ether" is
+ *	    	  	    understood.
+d59 2
+a60 1
+    HOST_ETHER
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+/*-
+d23 3
+d27 1
+a27 1
+#include    <netinet/in.h>
+d71 1
+a71 1
+	char		etherAddr[HOST_ETHER_ADDRESS_SIZE];
+@

@@ -1,0 +1,64 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     91.06.03.17.03.10;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Manual page for adduser.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@'\" Copyright 1991 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/lib/forms/RCS/cmd.man,v 1.3 91/01/07 17:52:58 mottsmth Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS ADDUSER admin
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+adduser \- Create a user account
+.SH SYNOPSIS
+\fBadduser\fR
+.BE
+
+.SH DESCRIPTION
+.PP
+The
+.B adduser
+program creates a new user account.  This involves gathering
+information for the account (user's name, password, etc.), creating an
+entry for the user in the password file, creating and initializing the
+user's home directory, and adding the user's account to the
+.B sprite-users
+mailing list.
+.PP
+.B Adduser
+is basically menu-driven; its usage should be self-explanatory.  If it
+runs into problems or you kill it halfway through, it will try to
+clean up after itself.
+
+.SH KEYWORDS
+user, account
+@

@@ -1,0 +1,68 @@
+
+
+
+CHECKIPSERVER             User Commands             CHECKIPSERVER
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     checkIPServer - make sure IP server is running
+
+SSYYNNOOPPSSIISS
+     cchheecckkIIPPSSeerrvveerr [_o_p_t_i_o_n_s]
+
+OOPPTTIIOONNSS
+     mmaaiill           Send mail to sspprriitteerrss if a problem was found.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This script is normally run via ccrroonn.  It checks that the IP
+     server  exists  and  is  not  in the debugger.  If that test
+     fails, it invokes a script that kills off the IP server  and
+     any dependent daemons and restarts them all.
+
+     If //hhoossttss//$$HHOOSSTT//rreessttaarrttIIPPSSeerrvveerr exists, that script is  used
+     as       the       ``restart''      script.       Otherwise,
+     //sspprriittee//aaddmmiinn..$$MMAACCHHIINNEE//rreessttaarrttIIPPSSeerrvveerr is used.
+
+
+KKEEYYWWOORRDDSS
+     IP server
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  November 12, 1990                  1
+
+
+

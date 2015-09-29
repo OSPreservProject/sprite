@@ -1,0 +1,191 @@
+.\" @(#)vi.1 1.20 88/02/25 SMI; from UCB 4.2
+.TH VI 1 "22 December 1987"
+.SH NAME
+vi, view \- visual display editor based on ex(1)
+.SH SYNOPSIS
+.B vi
+[
+.B \-lrRx
+]
+[
+.B \-t
+.I tag
+]
+[
+.BI \-w nnn
+]
+[
+.BI + command
+]
+.IR filename .\|.\|.
+.LP
+.BR view .\|.\|.
+.IX  "vi command"  ""  "\fLvi\fP \(em visual editor"
+.IX  "screen-oriented editor"  ""  "screen-oriented editor \(em \fLvi\fP"
+.IX  "display editor"  ""  "display editor \(em \fLvi\fP"
+.IX  "visual editor"  ""  "visual editor \(em \fLvi\fP"
+.IX  "text editing"  vi  ""  "\fLvi\fP \(em visual editor"
+.SH DESCRIPTION
+.LP
+.B vi
+(visual) is a display oriented text editor based on
+.BR ex (1).
+.B ex
+and
+.B vi
+are, in fact, the same text editor; it is
+possible to get to the command mode of
+.B ex
+from within
+.B vi
+and vice-versa.
+.LP
+The
+.B view
+command runs
+.B vi
+with the
+.B readonly
+variable set.  With
+.BR view ,
+you can browse through files interactively without making any changes.
+.SH OPTIONS
+.TP
+.B \-l
+Set up for editing
+.SM LISP
+programs.
+.TP
+.B \-r
+Recover the named files after a crash.
+.TP
+.B \-R
+Edit files in read only state.  This has the same effect as the
+.B view
+command.
+.TP
+.B \-x
+Prompt for a key with which to encrypt the file or files being edited.
+.TP
+.BI \-t " tag"
+Edit the file containing
+.IR tag .
+There must be a tags database in the directory, built by
+.BR ctags (1),
+that contains a reference to
+.IR tag .
+.TP
+.BI + command
+Start the editing session by executing
+.IR command .
+.TP
+.BI + command
+Start the editing session by executing
+.IR command .
+.SH ENVIRONMENT
+.LP
+The editor recognizes the environment variable
+.SB EXINIT
+as a command (or list of commands separated by
+.B |
+characters) to run when it starts up.  If this variable is
+undefined, the editor checks for startup commands in the file
+.B ~/.exrc
+file, which you must own.  However, if there is a
+.B \&.exrc
+owned by you in the current directory, the editor takes its
+startup commands from this file \(em overriding both the
+file in your home directory and the environment variable.
+.SH FILES
+.PD 0
+.TP 20
+.B 
+.PD
+.SH SEE ALSO
+.BR ctags (1),
+.BR ex (1)
+.LP
+.TX TEXT
+.br
+.TX GSBG
+.SH BUGS
+.LP
+Software
+.SM TAB
+characters using
+.SM CTRL-T
+work only immediately after the
+.BR autoindent .
+.LP
+.SM SHIFT\s0-left
+and
+.SM SHIFT\s0-right
+on intelligent terminals do not make use of
+insert and delete character operations in the terminal.
+.LP
+The
+.B wrapmargin
+option can be fooled since it looks at output columns when blanks are
+typed.  If a long word passes through the margin and onto the next line
+without a break, then the line will not be broken.
+.LP
+Repeating a change which wraps over the margin when
+.B wrapmargin
+is in effect does not generally work well:
+sometimes it just makes a mess
+of the change, and sometimes even leaves you in insert mode.  A
+way to work around the problem is to replicate the changes using
+.B y
+(yank)
+and
+.B p
+(put).
+.LP
+Insert/delete within a line can be slow if
+.SM TAB
+characters are present on intelligent
+terminals, since the terminals need help in doing this correctly.
+.LP
+Saving text on deletes in the named buffers is somewhat inefficient.
+.LP
+The
+.I source
+command does not work when executed as
+.RB ` :source ';
+there is no way to use the
+.RB ` :append ',
+.RB ` :change ',
+and
+.RB ` :insert '
+commands, since it is not possible to give
+more than one line of input to a
+.RB ` : '
+escape.  To use these on a
+.RB ` :global '
+you must
+.B Q
+to
+.I ex
+command mode,
+execute them, and then reenter the screen editor with
+.B vi
+or
+.BR open .
+.LP
+When using the
+.B \-r
+option to recover a file, you must write the recovered
+text before quitting or you will lose it.
+.B vi
+does not prevent you
+from exiting without writing unless you make changes.
+.LP
+.B vi
+does not adjust when the SunView window in which it runs is
+resized.
+.SH RESTRICTIONS
+.LP
+The encryption facilities of
+.B vi
+are not available on software
+shipped outside the U.S.

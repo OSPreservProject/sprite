@@ -1,0 +1,110 @@
+head     9.1;
+branch   ;
+access   ;
+symbols  ds3100:9.1 sun3:9.1 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.1
+date     91.11.04.14.06.05;  author mgbaker;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.59.58;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     89.05.24.07.49.59;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.05.23.10.38.55;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@V/SCSI 4210 Jaguar SCSI HBA driver.
+@
+
+
+9.1
+log
+@More externs.
+@
+text
+@/*
+ * scsi3.h --
+ *
+ *	Declarations of interface to the Sun Jaguar driver routines.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/dev/sun3.md/RCS/jaguar.h,v 1.2 89/05/24 07:49:59 rab Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _DEVJaguar
+#define _DEVJaguar
+
+#include "devInt.h"
+#include "scsiHBA.h"
+
+extern ClientData DevJaguarInit _ARGS_ ((DevConfigController *ctrlLocPtr));
+extern Boolean DevJaguarIntr _ARGS_ ((ClientData clientData));
+extern ScsiDevice   *DevJaguarAttachDevice _ARGS_ ((Fs_Device *devicePtr,
+    void (*insertProc) _ARGS_ ((List_Links *elementPtr,
+                                List_Links *elementListHdrPtr))));
+
+#endif /* _DEVJaguar */
+
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/dev/sun3.md/RCS/jaguar.h,v 1.2 89/05/24 07:49:59 rab Exp Locker: douglis $ SPRITE (Berkeley)
+d21 1
+d24 5
+a28 3
+extern ClientData DevJaguarInit();
+extern Boolean DevJaguarIntr();
+extern ScsiDevice   *DevJaguarAttachDevice();
+@
+
+
+1.2
+log
+@Changes to allow optimization.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/dev/sun3.md/RCS/jaguar.h,v 1.1 89/05/23 10:38:55 mendel Exp Locker: rab $ SPRITE (Berkeley)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.2 89/01/07 04:12:44 rab Exp $ SPRITE (Berkeley)
+@

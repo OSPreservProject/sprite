@@ -1,0 +1,37 @@
+fsstat.c:
+fsstat.c(188): warning: degenerate unsigned comparison
+fsstat.c(197): warning: degenerate unsigned comparison
+fsstat.c(202): warning: degenerate unsigned comparison
+fsstat.c(216): warning: degenerate unsigned comparison
+fsstat.c(249): warning: degenerate unsigned comparison
+fsstat.c(270): warning: degenerate unsigned comparison
+fsstat.c(287): warning: degenerate unsigned comparison
+fsstat.c(376): warning: degenerate unsigned comparison
+fsstat.c(474): warning: degenerate unsigned comparison
+fsstat.c(485): warning: degenerate unsigned comparison
+fsstat.c(612): warning: degenerate unsigned comparison
+fsstat.c(619): warning: degenerate unsigned comparison
+fsstat.c(711): warning: degenerate unsigned comparison
+fsstat.c(711): warning: degenerate unsigned comparison
+print.c:
+print.c(233): warning: degenerate unsigned comparison
+print.c(244): warning: degenerate unsigned comparison
+print.c(253): warning: degenerate unsigned comparison
+print.c(262): warning: degenerate unsigned comparison
+print.c(280): warning: degenerate unsigned comparison
+print.c(306): warning: degenerate unsigned comparison
+vmTotals.c:
+Fs_Command, arg. 3 used inconsistently	llib-lc:syscalls.c 2(75)  ::  fsstat.c(113)
+Vm_Cmd, arg. 3 used inconsistently	llib-lc:syscalls.c 2(577)  ::  fsstat.c(118)
+Fs_Command, arg. 3 used inconsistently	llib-lc:syscalls.c 2(75)  ::  fsstat.c(128)
+Fs_Command, arg. 3 used inconsistently	llib-lc:syscalls.c 2(75)  ::  fsstat.c(322)
+bzero, arg. 1 used inconsistently	llib-lc:bzero.c 2(58)  ::  print.c(102)
+fs_TypeStats defined( /users/kupfer/spriteserver/include/user/kernel/fsStat.h(537) ), but never used
+Vm_PageSize returns value which is always ignored
+PrintTimes defined( print.c(43) ), but never used
+PrintFs_Stats defined( print.c(97) ), but never used
+PrintDiskStats defined( print.c(389) ), but never used
+TotalPageTimes defined( vmTotals.c(96) ), but never used
+fflush returns value which is always ignored
+fprintf returns value which is always ignored
+printf returns value which is always ignored

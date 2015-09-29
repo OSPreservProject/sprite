@@ -1,0 +1,1 @@
+../../../../dist/lib/readline/doc/hsuser.texinfo

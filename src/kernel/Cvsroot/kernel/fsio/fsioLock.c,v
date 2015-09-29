@@ -1,0 +1,1198 @@
+head     9.2;
+branch   ;
+access   ;
+symbols  ds3100:9.2 sun3:9.2 sprited:9.2.1 sun4nw:9.2 symm:9.2 spur:9.2 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.2
+date     90.10.08.15.53.48;  author mendel;  state Exp;
+branches 9.2.1.1;
+next     9.1;
+
+9.1
+date     90.02.01.19.55.38;  author brent;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.05.42;  author douglis;  state Stable;
+branches ;
+next     8.6;
+
+8.6
+date     89.08.21.15.25.52;  author mendel;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.08.17.17.21.21;  author jhh;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.06.16.12.07.05;  author brent;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.02.28.08.48.31;  author brent;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.12.06.10.02.08;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.28.12.48.10;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.19.56;  author douglis;  state Stable;
+branches ;
+next     7.0;
+
+7.0
+date     88.11.11.15.31.43;  author brent;  state Exp;
+branches ;
+next     6.6;
+
+6.6
+date     88.10.14.13.23.13;  author douglis;  state Exp;
+branches ;
+next     6.5;
+
+6.5
+date     88.10.14.12.15.39;  author brent;  state Exp;
+branches ;
+next     6.4;
+
+6.4
+date     88.09.28.13.32.30;  author brent;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.09.28.08.37.57;  author brent;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.09.19.11.23.23;  author brent;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.09.16.16.49.55;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.16.06;  author brent;  state Stable;
+branches ;
+next     1.3;
+
+1.3
+date     88.06.15.17.22.25;  author douglis;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.04.28.09.11.32;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.04.10.34.23;  author brent;  state Exp;
+branches ;
+next     ;
+
+9.2.1.1
+date     91.11.15.15.58.12;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@File locking module
+@
+
+
+9.2
+log
+@Changed name to fsioLock.c
+Fixed include files to use <> rather than "".
+Added function prototyping.  
+@
+text
+@/* 
+ * fsLock.c --
+ *
+ *	File locking routines.  The Fsio_LockState data structure keeps info
+ *	about shared and exlusive locks.  This includes a list of waiting
+ *	processes, and a list of owning processes.  The ownership list
+ *	is used to recover from processes that exit before unlocking their
+ *	file, and to recover from hosts that crash running processes that
+ *	held file locks.  Synchronization over these routines is assumed
+ *	to be done by the caller via Fsutil_HandleLock.
+ *
+ * Copyright (C) 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/fs.mendel/RCS/fsLock.c,v 1.1 90/01/16 17:10:57 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsioLock.h>
+#include <fsNameOps.h>
+#include <proc.h>
+#include <rpc.h>
+#include <net.h>
+
+#include <stdio.h>
+
+Boolean fsio_LockDebug = FALSE;
+
+/*
+ * A  counter is incremented each time a process waits for a lock.
+ * This is used to track locking activity.
+ */
+int fsio_NumLockWaits = 0;
+
+/*
+ * A list of lock owners is kept for files for error recovery.
+ * If a process exits without unlocking a file, or a host crashes
+ * that had processes with locks, then the locks are broken.
+ */
+typedef struct FsLockOwner {
+    List_Links links;		/* A list of these hangs from Fsio_LockState */
+    int hostID;			/* SpriteID of process that got the lock */
+    int procID;			/* ProcessID of owning process */
+    Fs_FileID streamID;		/* Stream on which lock call was made */
+    int flags;			/* IOC_LOCK_EXCLUSIVE, IOC_LOCK_SHARED */
+} FsLockOwner;
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsio_LockInit --
+ *
+ *	Initialize lock state.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Initializes the wait list, zeros out counters, etc.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Fsio_LockInit(lockPtr)
+    register Fsio_LockState *lockPtr;	/* Locking state for a file. */
+{
+    List_Init(&lockPtr->waitList);
+    List_Init(&lockPtr->ownerList);
+    lockPtr->flags = 0;
+    lockPtr->numShared = 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsio_IocLock --
+ *
+ *	Top-level locking/unlocking routine that handles I/O control
+ *	related byte swapping.  If the lock I/O control has been issued
+ *	from a client with a different archetecture the data block containing
+ *	the lock arguments has to be byte swapped.
+ *
+ * Results:
+ *	SUCCESS or FS_WOULD_BLOCK
+ *
+ * Side effects:
+ *	Lock or unlock the file, see Fsio_Lock and Fsio_Unlock.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Fsio_IocLock(lockPtr, ioctlPtr, streamIDPtr)
+    register Fsio_LockState *lockPtr;	/* Locking state for a file. */
+    Fs_IOCParam *ioctlPtr;		/* I/O control parameter block */
+    Fs_FileID	*streamIDPtr;		/* ID of stream associated with lock */
+{
+    register Ioc_LockArgs *lockArgsPtr;
+    register ReturnStatus status = SUCCESS;
+    Ioc_LockArgs lockArgs;
+
+    lockArgsPtr = (Ioc_LockArgs *) NIL;
+    if (ioctlPtr->format != mach_Format) {
+	int size = sizeof(Ioc_LockArgs);
+	int inSize = ioctlPtr->inBufSize;
+	int fmtStatus;
+	fmtStatus = Fmt_Convert("w4", ioctlPtr->format, &inSize, 
+			ioctlPtr->inBuffer, mach_Format, &size, 
+			(Address) &lockArgs);
+	if (fmtStatus != 0) {
+	    printf("Format of ioctl failed <0x%x>\n", fmtStatus);
+	    status = GEN_INVALID_ARG;
+	}
+	if (size != sizeof(Ioc_LockArgs)) {
+	    status = GEN_INVALID_ARG;
+	} else {
+	    lockArgsPtr = &lockArgs;
+	}
+    } else if (ioctlPtr->inBufSize < sizeof(Ioc_LockArgs)) {
+	status = GEN_INVALID_ARG;
+    } else {
+	lockArgsPtr = (Ioc_LockArgs *)ioctlPtr->inBuffer;
+    }
+    if (status == SUCCESS) {
+	if (ioctlPtr->command == IOC_LOCK) {
+	    status = Fsio_Lock(lockPtr, lockArgsPtr, streamIDPtr);
+	} else {
+	    status = Fsio_Unlock(lockPtr, lockArgsPtr, streamIDPtr);
+	}
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsio_Lock --
+ *
+ *	Try to get a lock a stream.  If the lock is already held then
+ *	the caller is added to the waitlist for the lock and FS_WOULD_BLOCK
+ *	is returned.  Otherwise, the lock is marked as held and our
+ *	caller is put on the ownership list for the lock.
+ *
+ * Results:
+ *	SUCCESS or FS_WOULD_BLOCK
+ *
+ * Side effects:
+ *	If the lock is available then update the lock state of the file.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Fsio_Lock(lockPtr, argPtr, streamIDPtr)
+    register Fsio_LockState *lockPtr;	/* Locking state for a file. */
+    Ioc_LockArgs *argPtr;		/* IOC_LOCK_EXCLUSIVE|IOC_LOCK_SHARED */
+    Fs_FileID	*streamIDPtr;		/* Stream that owns the lock */
+{
+    ReturnStatus status = SUCCESS;
+    register int operation = argPtr->flags;
+
+    /*
+     * Attempt to lock the file.  Exclusive locks can't co-exist with
+     * any locks, while shared locks can exist with other shared locks.
+     */
+    if (operation & IOC_LOCK_EXCLUSIVE) {
+	if (lockPtr->flags & (IOC_LOCK_SHARED|IOC_LOCK_EXCLUSIVE)) {
+	    status = FS_WOULD_BLOCK;
+	} else {
+	    lockPtr->flags |= IOC_LOCK_EXCLUSIVE;
+	}
+    } else if (operation & IOC_LOCK_SHARED) {
+	if (lockPtr->flags & IOC_LOCK_EXCLUSIVE) {
+	    status = FS_WOULD_BLOCK;
+	} else {
+	    lockPtr->flags |= IOC_LOCK_SHARED;
+	    lockPtr->numShared++;
+	}
+    } else {
+	status = GEN_INVALID_ARG;
+    }
+    if (status == SUCCESS) {
+	register FsLockOwner *lockOwnerPtr;
+	/*
+	 * Put the calling process on the lock ownership list.
+	 */
+	lockOwnerPtr = mnew(FsLockOwner);
+	List_InitElement((List_Links *)lockOwnerPtr);
+	lockOwnerPtr->hostID = argPtr->hostID;
+	lockOwnerPtr->procID = argPtr->pid;
+	if (streamIDPtr != (Fs_FileID *)NIL) {
+	    lockOwnerPtr->streamID = *streamIDPtr;
+	} else {
+	    lockOwnerPtr->streamID.type = -1;
+	}
+	lockOwnerPtr->flags = operation & (IOC_LOCK_EXCLUSIVE|IOC_LOCK_SHARED);
+	List_Insert((List_Links *)lockOwnerPtr,
+		    LIST_ATREAR(&lockPtr->ownerList));
+	if (fsio_LockDebug) {
+	    printf("Stream <%d,%d> locked %x by proc %x\n", streamIDPtr->major,
+		streamIDPtr->minor, lockOwnerPtr->flags, argPtr->pid);
+	}
+    } else if (status == FS_WOULD_BLOCK) {
+	Sync_RemoteWaiter wait;
+	/*
+	 * Put the potential waiter on the file's lockWaitList.
+	 */
+	if (argPtr->hostID > NET_NUM_SPRITE_HOSTS) {
+	    printf( "Fsio_Lock: bad hostID %d.\n",
+		      argPtr->hostID);
+	} else {
+	    wait.hostID = argPtr->hostID;
+	    wait.pid = argPtr->pid;
+	    wait.waitToken = argPtr->token;
+	    Fsutil_FastWaitListInsert(&lockPtr->waitList, &wait);
+	    if (fsio_LockDebug) {
+		printf("Stream <%d,%d> Blocked, proc %x\n", streamIDPtr->major,
+		    streamIDPtr->minor, argPtr->pid);
+	    }
+	}
+    } else if (fsio_LockDebug) {
+	printf("Stream <%d,%d> locking error %x\n", streamIDPtr->major,
+		    streamIDPtr->minor, status);
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsio_Unlock --
+ *
+ *	Release a lock a stream.  The ownership list is checked here, but
+ *	the lock is released anyway.
+ *
+ * Results:
+ *	SUCCESS or FS_WOULD_BLOCK
+ *
+ * Side effects:
+ *	If the lock is available then update the lock state of the file.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Fsio_Unlock(lockPtr, argPtr, streamIDPtr)
+    register Fsio_LockState *lockPtr;	/* Locking state for the file. */
+    Ioc_LockArgs *argPtr;	/* Lock flags and process info for waiting */
+    Fs_FileID	*streamIDPtr;	/* Verified against the lock ownership list */ 
+{
+    ReturnStatus status = SUCCESS;
+    register int operation = argPtr->flags;
+    register FsLockOwner *lockOwnerPtr;
+
+    if (operation & IOC_LOCK_EXCLUSIVE) {
+	if (lockPtr->flags & IOC_LOCK_EXCLUSIVE) {
+	    LIST_FORALL(&lockPtr->ownerList, (List_Links *)lockOwnerPtr) {
+		if ((lockOwnerPtr->procID == argPtr->pid) ||
+		    (streamIDPtr != (Fs_FileID *)NIL &&
+		     lockOwnerPtr->streamID.major == streamIDPtr->major &&
+		     lockOwnerPtr->streamID.minor == streamIDPtr->minor &&
+		     lockOwnerPtr->streamID.serverID == streamIDPtr->serverID)){
+		    lockPtr->flags &= ~IOC_LOCK_EXCLUSIVE;
+		    List_Remove((List_Links *)lockOwnerPtr);
+		    free((Address)lockOwnerPtr);
+		    break;
+		}
+	    }
+	    if (lockPtr->flags & IOC_LOCK_EXCLUSIVE) {
+		/*
+		 * Oops, unlocking process didn't match lock owner.
+		 */
+		if (!List_IsEmpty(&lockPtr->ownerList)) {
+		    lockOwnerPtr =
+			(FsLockOwner *)List_First(&lockPtr->ownerList);
+#ifdef notdef
+		    printf("Fsio_Unlock, non-owner <%x> unlocked, owner <%x>\n",
+			argPtr->pid, lockOwnerPtr->procID);
+#endif
+		    List_Remove((List_Links *)lockOwnerPtr);
+		    free((Address)lockOwnerPtr);
+		} else {
+		    printf( "Fsio_Unlock, no lock owner\n");
+		}
+		lockPtr->flags &= ~IOC_LOCK_EXCLUSIVE;
+	    }
+	} else {
+	    status = FS_NO_EXCLUSIVE_LOCK;
+	}
+    } else if (operation & IOC_LOCK_SHARED) {
+	if (lockPtr->flags & IOC_LOCK_SHARED) {
+	    status = FAILURE;
+	    lockPtr->numShared--;
+	    LIST_FORALL(&lockPtr->ownerList, (List_Links *)lockOwnerPtr) {
+		if ((lockOwnerPtr->procID == argPtr->pid) ||
+		    (streamIDPtr != (Fs_FileID *)NIL &&
+		     lockOwnerPtr->streamID.major == streamIDPtr->major &&
+		     lockOwnerPtr->streamID.minor == streamIDPtr->minor &&
+		     lockOwnerPtr->streamID.serverID == streamIDPtr->serverID)){
+		    status = SUCCESS;
+		    List_Remove((List_Links *)lockOwnerPtr);
+		    free((Address)lockOwnerPtr);
+		    break;
+		}
+	    }
+	    if (status != SUCCESS) {
+		/*
+		 * Oops, unlocking process didn't match lock owner.
+		 */
+#ifdef notdef
+		printf("Fsio_Unlock, non-owner <%x> did shared unlock\n",
+		    argPtr->pid);
+#endif
+		status = SUCCESS;
+	    }
+	    if (lockPtr->numShared == 0) {
+		lockPtr->flags &= ~IOC_LOCK_SHARED;
+	    }
+	} else {
+	    status = FS_NO_SHARED_LOCK;
+	}
+    } else {
+	status = GEN_INVALID_ARG;
+    }
+    if (status == SUCCESS) {
+	/*
+	 * Go through the list of waiters and notify them.  There is only
+	 * a single waiting list for both exclusive and shared locks.  This
+	 * means that exclusive lock attempts will be retried even if the
+	 * shared lock count has not gone to zero.
+	 */
+	Fsutil_FastWaitListNotify(&lockPtr->waitList);
+	if (fsio_LockDebug) {
+	    printf("Stream <%d,%d> Unlocked %x, proc %x\n", streamIDPtr->major,
+		streamIDPtr->minor, operation, argPtr->pid);
+	}
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsio_LockClose --
+ *
+ *	Check that the stream owns a lock on this file,
+ *	and if it does then break that lock.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Cleans up the lock and frees owner information.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Fsio_LockClose(lockPtr, streamIDPtr)
+    register Fsio_LockState *lockPtr;	/* Locking state for the file. */
+    Fs_FileID *streamIDPtr;		/* Stream being closed */
+{
+    register FsLockOwner *lockOwnerPtr;
+
+    LIST_FORALL(&lockPtr->ownerList, (List_Links *)lockOwnerPtr) {
+	if (streamIDPtr != (Fs_FileID *)NIL &&
+	    lockOwnerPtr->streamID.major == streamIDPtr->major &&
+	    lockOwnerPtr->streamID.minor == streamIDPtr->minor &&
+	    lockOwnerPtr->streamID.serverID == streamIDPtr->serverID) {
+	    if (fsio_LockDebug) {
+		printf("Stream <%d,%d> Lock Closed %x\n",
+		    streamIDPtr->major, streamIDPtr->minor,
+		    lockOwnerPtr->flags);
+	    }
+	    lockPtr->flags &= ~lockOwnerPtr->flags;
+	    List_Remove((List_Links *)lockOwnerPtr);
+	    free((Address)lockOwnerPtr);
+	    Fsutil_FastWaitListNotify(&lockPtr->waitList);
+	    Fsutil_WaitListDelete(&lockPtr->waitList);
+	    break;
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsio_LockClientKill --
+ *
+ *	Go through the list of lock owners and release any locks
+ *	held by processes on the given client.  This is called after
+ *	the client is assumed to be down.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Releases locks held by processes on the client.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Fsio_LockClientKill(lockPtr, clientID)
+    register Fsio_LockState *lockPtr;	/* Locking state for the file. */
+    int clientID;			/* SpriteID of crashed client. */
+{
+    register FsLockOwner *lockOwnerPtr;
+    register FsLockOwner *nextOwnerPtr;
+    register Boolean breakLock = FALSE;
+
+    nextOwnerPtr = (FsLockOwner *)List_First(&lockPtr->ownerList);
+    while (!List_IsAtEnd(&lockPtr->ownerList, (List_Links *)nextOwnerPtr)) {
+	lockOwnerPtr = nextOwnerPtr;
+	nextOwnerPtr = (FsLockOwner *)List_Next((List_Links *)lockOwnerPtr);
+
+	if (lockOwnerPtr->hostID == clientID) {
+	    breakLock = TRUE;
+	    lockPtr->flags &= ~lockOwnerPtr->flags;
+	    if (fsio_LockDebug) {
+		printf("Stream <%d,%d> Lock Broken %x Client %d\n",
+		    lockOwnerPtr->streamID.major, lockOwnerPtr->streamID.minor,
+		    lockOwnerPtr->flags, clientID);
+	    }
+	    List_Remove((List_Links *)lockOwnerPtr);
+	    free((Address)lockOwnerPtr);
+	}
+    }
+    if (breakLock) {
+	Fsutil_FastWaitListNotify(&lockPtr->waitList);
+    }
+}
+
+@
+
+
+9.2.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fsio/fsioLock.c,v 9.2 90/10/08 15:53:48 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+9.1
+log
+@Nuked warings about non-owning process doing an unlock.
+Perhaps the whole ownership mechanism should be ripped out.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsio/RCS/fsLock.c,v 9.0 89/09/12 15:05:42 douglis Stable Locker: brent $ SPRITE (Berkeley)";
+d21 8
+a28 8
+#include "sprite.h"
+#include "fs.h"
+#include "fsutil.h"
+#include "fsioLock.h"
+#include "fsNameOps.h"
+#include "proc.h"
+#include "rpc.h"
+#include "net.h"
+d30 2
+d108 1
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsio/RCS/fsLock.c,v 8.6 89/08/21 15:25:52 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d237 1
+a237 1
+ *	the lock is released anyway (so far).
+d279 2
+a280 2
+		    printf(
+			"Fsio_Unlock, non-owner <%x> unlocked, owner <%x>\n",
+d282 1
+d313 2
+a314 2
+		printf(
+		    "Fsio_Unlock, non-owner <%x> did shared unlock\n",
+d316 1
+@
+
+
+8.6
+log
+@Break up fs into many modules.    
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsLock.c,v 8.4 89/06/16 12:07:05 brent Exp Locker: jhh $ SPRITE (Berkeley)";
+@
+
+
+8.5
+log
+@Changed to use Fmt_Convert
+@
+text
+@d4 1
+a4 1
+ *	File locking routines.  The FsLockState data structure keeps info
+d10 1
+a10 1
+ *	to be done by the caller via FsHandleLock.
+d20 1
+d23 3
+a25 3
+#include "fsInt.h"
+#include "fsLock.h"
+#include "fsOpTable.h"
+d30 1
+a30 1
+Boolean fsLockDebug = FALSE;
+d36 1
+a36 1
+int fsLockWaits = 0;
+d44 1
+a44 1
+    List_Links links;		/* A list of these hangs from FsLockState */
+d54 1
+a54 1
+ * FsLockInit --
+d68 2
+a69 2
+FsLockInit(lockPtr)
+    register FsLockState *lockPtr;	/* Locking state for a file. */
+d80 1
+a80 1
+ * FsIocLock --
+d91 1
+a91 1
+ *	Lock or unlock the file, see FsLock and FsUnlock.
+d97 2
+a98 2
+FsIocLock(lockPtr, ioctlPtr, streamIDPtr)
+    register FsLockState *lockPtr;	/* Locking state for a file. */
+d129 1
+a129 1
+	    status = FsLock(lockPtr, lockArgsPtr, streamIDPtr);
+d131 1
+a131 1
+	    status = FsUnlock(lockPtr, lockArgsPtr, streamIDPtr);
+d140 1
+a140 1
+ * FsLock --
+d157 2
+a158 2
+FsLock(lockPtr, argPtr, streamIDPtr)
+    register FsLockState *lockPtr;	/* Locking state for a file. */
+d202 1
+a202 1
+	if (fsLockDebug) {
+d212 1
+a212 1
+	    printf( "FsLock: bad hostID %d.\n",
+d218 2
+a219 2
+	    FsFastWaitListInsert(&lockPtr->waitList, &wait);
+	    if (fsLockDebug) {
+d224 1
+a224 1
+    } else if (fsLockDebug) {
+d234 1
+a234 1
+ * FsUnlock --
+d249 2
+a250 2
+FsUnlock(lockPtr, argPtr, streamIDPtr)
+    register FsLockState *lockPtr;	/* Locking state for the file. */
+d280 1
+a280 1
+			"FsUnlock, non-owner <%x> unlocked, owner <%x>\n",
+d285 1
+a285 1
+		    printf( "FsUnlock, no lock owner\n");
+d313 1
+a313 1
+		    "FsUnlock, non-owner <%x> did shared unlock\n",
+d333 2
+a334 2
+	FsFastWaitListNotify(&lockPtr->waitList);
+	if (fsLockDebug) {
+d345 1
+a345 1
+ * FsLockClose --
+d360 2
+a361 2
+FsLockClose(lockPtr, streamIDPtr)
+    register FsLockState *lockPtr;	/* Locking state for the file. */
+d371 1
+a371 1
+	    if (fsLockDebug) {
+d379 2
+a380 2
+	    FsFastWaitListNotify(&lockPtr->waitList);
+	    FsWaitListDelete(&lockPtr->waitList);
+d389 1
+a389 1
+ * FsLockClientKill --
+d405 2
+a406 2
+FsLockClientKill(lockPtr, clientID)
+    register FsLockState *lockPtr;	/* Locking state for the file. */
+d421 1
+a421 1
+	    if (fsLockDebug) {
+d431 1
+a431 1
+	FsFastWaitListNotify(&lockPtr->waitList);
+@
+
+
+8.4
+log
+@Updated I/O Control interface
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsLock.c,v 8.3 89/02/28 08:48:31 brent Exp $ SPRITE (Berkeley)";
+a19 1
+
+a27 1
+#include "swapBuffer.h"
+d105 1
+a105 1
+    if (ioctlPtr->byteOrder != mach_ByteOrder) {
+d107 9
+a115 3
+	Swap_Buffer(ioctlPtr->inBuffer, ioctlPtr->inBufSize,
+		    ioctlPtr->byteOrder, mach_ByteOrder,
+		    "wwww", (Address)&lockArgs, &size);
+@
+
+
+8.3
+log
+@Changed object-specific select routines to handle NIL waitPtr information
+so they can avoid setting up wait lists.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsLock.c,v 8.2 88/12/06 10:02:08 brent Exp $ SPRITE (Berkeley)";
+d98 1
+a98 1
+FsIocLock(lockPtr, command, byteOrder, inBufPtr, streamIDPtr)
+d100 1
+a100 3
+    int		command;		/* IOC_LOCK, IOC_UNLOCK */
+    int		byteOrder;		/* Client's byte ordering */
+    Fs_Buffer	*inBufPtr;		/* Buffer containing Ioc_LockArgs */
+d107 1
+a107 1
+    if (byteOrder != mach_ByteOrder) {
+d109 2
+a110 1
+	Swap_Buffer(inBufPtr->addr, inBufPtr->size, byteOrder, mach_ByteOrder,
+d117 1
+a117 1
+    } else if (inBufPtr->size < sizeof(Ioc_LockArgs)) {
+d120 1
+a120 1
+	lockArgsPtr = (Ioc_LockArgs *)inBufPtr->addr;
+d123 1
+a123 1
+	if (command == IOC_LOCK) {
+@
+
+
+8.2
+log
+@Added debug print statments, although the bug was in the
+user-level library that was still cleaning up locks.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsLock.c,v 8.1 88/11/28 12:48:10 brent Exp $ SPRITE (Berkeley)";
+d214 1
+a214 1
+	    FsWaitListInsert(&lockPtr->waitList, &wait);
+d329 1
+a329 1
+	FsWaitListNotify(&lockPtr->waitList);
+d375 2
+a376 1
+	    FsWaitListNotify(&lockPtr->waitList);
+d427 1
+a427 1
+	FsWaitListNotify(&lockPtr->waitList);
+@
+
+
+8.1
+log
+@Fixed FsLockClose so it doesn't pay attention to processIDs,
+but only to streamIDs.  This prevents, apparently, a forked
+child's exit from releasing locks.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsLock.c,v 7.0 88/11/11 15:31:43 brent Exp $ SPRITE (Berkeley)";
+d31 2
+d198 4
+d215 4
+d220 3
+d330 4
+d367 5
+d416 5
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsLock.c,v 7.0 88/11/11 15:31:43 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d326 1
+a326 1
+ *	Check that that calling process owns a lock on this file,
+d339 1
+a339 1
+FsLockClose(lockPtr, procID, streamIDPtr)
+a340 1
+    Proc_PID procID;			/* ProcessID of closing process. */
+d346 4
+a349 5
+	if ((lockOwnerPtr->procID == procID) ||
+	    (streamIDPtr != (Fs_FileID *)NIL &&
+	     lockOwnerPtr->streamID.major == streamIDPtr->major &&
+	     lockOwnerPtr->streamID.minor == streamIDPtr->minor &&
+	     lockOwnerPtr->streamID.serverID == streamIDPtr->serverID)) {
+@
+
+
+7.0
+log
+@New version for conversion to new C library
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsLock.c,v 6.6 88/10/14 13:23:13 douglis Exp Locker: brent $ SPRITE (Berkeley)";
+@
+
+
+6.6
+log
+@Fixed uninitialized status bug
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsLock.c,v 6.5 88/10/14 12:15:39 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d184 1
+a184 1
+	lockOwnerPtr = Mem_New(FsLockOwner);
+d202 1
+a202 1
+	    Sys_Panic(SYS_WARNING, "FsLock: bad hostID %d.\n",
+d251 1
+a251 1
+		    Mem_Free((Address)lockOwnerPtr);
+d262 1
+a262 1
+		    Sys_Panic(SYS_WARNING,
+d266 1
+a266 1
+		    Mem_Free((Address)lockOwnerPtr);
+d268 1
+a268 1
+		    Sys_Panic(SYS_WARNING, "FsUnlock, no lock owner\n");
+d287 1
+a287 1
+		    Mem_Free((Address)lockOwnerPtr);
+d295 1
+a295 1
+		Sys_Panic(SYS_WARNING,
+d354 1
+a354 1
+	    Mem_Free((Address)lockOwnerPtr);
+d397 1
+a397 1
+	    Mem_Free((Address)lockOwnerPtr);
+@
+
+
+6.5
+log
+@FsFileID FsUserID change
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: fsLock.c,v 6.4 88/09/28 13:32:30 brent Exp $ SPRITE (Berkeley)";
+d104 1
+a104 1
+    register ReturnStatus status;
+@
+
+
+6.4
+log
+@Added include for extern definitions
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: fsLock.c,v 6.3 88/09/28 08:37:57 brent Exp $ SPRITE (Berkeley)";
+d46 1
+a46 1
+    FsFileID streamID;		/* Stream on which lock call was made */
+d101 1
+a101 1
+    FsFileID	*streamIDPtr;		/* ID of stream associated with lock */
+d154 1
+a154 1
+    FsFileID	*streamIDPtr;		/* Stream that owns the lock */
+d188 1
+a188 1
+	if (streamIDPtr != (FsFileID *)NIL) {
+d235 1
+a235 1
+    FsFileID	*streamIDPtr;	/* Verified against the lock ownership list */ 
+d245 1
+a245 1
+		    (streamIDPtr != (FsFileID *)NIL &&
+d281 1
+a281 1
+		    (streamIDPtr != (FsFileID *)NIL &&
+d342 1
+a342 1
+    FsFileID *streamIDPtr;		/* Stream being closed */
+d348 1
+a348 1
+	    (streamIDPtr != (FsFileID *)NIL &&
+@
+
+
+6.3
+log
+@Changed IOControl interface to take Fs_Buffer's instead of
+separate size/address parameters.  Need to pass user space
+flag along to get pseudo-devices right after migration!
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: fsLock.c,v 6.2 88/09/19 11:23:23 brent Exp $ SPRITE (Berkeley)";
+d24 1
+d29 1
+@
+
+
+6.2
+log
+@Updated locking routines to take a streamID in order to record
+the owner of a lock.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: fsLock.c,v 6.1 88/09/16 16:49:55 brent Exp $ SPRITE (Berkeley)";
+d94 1
+a94 1
+FsIocLock(lockPtr, command, byteOrder, inBuffer, inBufSize, streamIDPtr)
+d98 1
+a98 2
+    Address	inBuffer;		/* Ref to Ioc_LockArgs */
+    int		inBufSize;		/* Size of inBuffer */
+d107 1
+a107 1
+	Swap_Buffer(inBuffer, inBufSize, byteOrder, mach_ByteOrder,
+d114 1
+a114 1
+    } else if (inBufSize < sizeof(Ioc_LockArgs)) {
+d117 1
+a117 1
+	lockArgsPtr = (Ioc_LockArgs *)inBuffer;
+@
+
+
+6.1
+log
+@Added cleanup procedures that release locks if processes close
+files without releasing locks, or hosts crash with locks held.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: fsLock.c,v 6.0 88/08/11 12:16:06 brent Stable $ SPRITE (Berkeley)";
+d44 1
+d77 1
+a77 1
+ * FsFileLock --
+d79 4
+a82 2
+ *	Try to get a lock a file in the local domain.  If the lock cannot
+ *	be taken then return FS_WOULD_BLOCK so our caller can wait.
+d88 56
+d150 1
+a150 1
+FsFileLock(lockPtr, argPtr)
+d153 1
+d187 5
+d201 1
+a201 1
+	    Sys_Panic(SYS_WARNING, "FsFileLock: bad hostID %d.\n",
+d216 1
+a216 1
+ * FsFileUnlock --
+d218 2
+a219 1
+ *	Release a lock a file in the local domain.
+d231 1
+a231 1
+FsFileUnlock(lockPtr, argPtr)
+d234 1
+d243 5
+a247 1
+		if (lockOwnerPtr->procID == argPtr->pid) {
+d262 1
+a262 1
+			"FsFileUnlock, non-owner <%x> unlocked, owner <%x>\n",
+d267 1
+a267 1
+		    Sys_Panic(SYS_WARNING, "FsFileUnlock, no lock owner\n");
+d279 5
+a283 1
+		if (lockOwnerPtr->procID == argPtr->pid) {
+d295 1
+a295 1
+		    "FsFileUnlock, non-owner <%x> did shared unlock\n",
+d338 1
+a338 1
+FsLockClose(lockPtr, procID)
+d341 1
+d346 5
+a350 1
+	if (lockOwnerPtr->procID == procID) {
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d4 7
+a10 2
+ *	File locking routines.  They are monitored to synchronize
+ *	access to the locking state.
+d17 1
+a17 1
+static char rcsid[] = "$Header: fsLock.c,v 1.3 88/06/15 17:22:25 douglis Exp $ SPRITE (Berkeley)";
+d34 12
+d68 1
+d118 13
+a130 1
+    if (status == FS_WOULD_BLOCK) {
+d171 1
+a172 3
+    /*
+     * Release the lock on the file.
+     */
+d175 25
+a199 2
+	    status = SUCCESS;
+	    lockPtr->flags &= ~IOC_LOCK_EXCLUSIVE;
+d205 1
+a205 1
+	    status = SUCCESS;
+d207 17
+d243 79
+@
+
+
+1.3
+log
+@Put in check against bad wait information.  Probably not needed
+because the problem was in Fs_IOControl - waiting wasn't implemented.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: fsLock.c,v 1.2 88/04/28 09:11:32 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+1.2
+log
+@Changed flags from FS_ to the IOC_LOCK_ ones
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: fsLock.c,v 1.1 88/04/04 10:34:23 brent Exp $ SPRITE (Berkeley)";
+d22 1
+d105 9
+a113 4
+	wait.hostID = argPtr->hostID;
+	wait.pid = argPtr->pid;
+	wait.waitToken = argPtr->token;
+	FsWaitListInsert(&lockPtr->waitList, &wait);
+d123 1
+a123 1
+ *	Release a lock a file in the local domain..
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: fsLock.c,v 5.0 87/08/11 10:43:12 sprite Exp $ SPRITE (Berkeley)";
+d84 1
+a84 1
+	if (lockPtr->flags & (FS_SHARED_LOCK|FS_EXCLUSIVE_LOCK)) {
+d87 1
+a87 1
+	    lockPtr->flags |= FS_EXCLUSIVE_LOCK;
+d90 1
+a90 1
+	if (lockPtr->flags & FS_EXCLUSIVE_LOCK) {
+d93 1
+a93 1
+	    lockPtr->flags |= FS_SHARED_LOCK;
+d140 1
+a140 1
+	if (lockPtr->flags & FS_EXCLUSIVE_LOCK) {
+d142 1
+a142 1
+	    lockPtr->flags &= ~FS_EXCLUSIVE_LOCK;
+d147 1
+a147 1
+	if (lockPtr->flags & FS_SHARED_LOCK) {
+d151 1
+a151 1
+		lockPtr->flags &= ~FS_SHARED_LOCK;
+@

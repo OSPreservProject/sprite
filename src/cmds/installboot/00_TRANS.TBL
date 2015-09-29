@@ -1,0 +1,14 @@
+D DS3100_M                          	ds3100.md
+F INSTALL0.;1                       	installcmd
+F INSTALL1.;1                       	installcmd2
+F INSTALLB.C;1                      	installboot.c
+F INSTALLB.MAN;1                    	installboot.man
+F INSTALLC.SUN;1                    	installcmd.sun4c
+F INSTALLD.C;1                      	installdec.c
+F INSTALLS.C;1                      	installsun.c
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+F MAKEFILE.UNI;1                    	Makefile.UNIX
+D RCS                               	RCS
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md

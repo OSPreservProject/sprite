@@ -1,0 +1,1007 @@
+head     1.7;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.7
+date     91.12.16.12.10.27;  author kupfer;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     91.12.12.12.26.01;  author shirriff;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.06.04.16.48.40;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.06.03.21.46.18;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.06.03.16.37.00;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.05.31.21.39.35;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.06.22.11.41.53;  author rab;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.7
+log
+@Be less generous with permissions on files.
+@
+text
+@/* 
+ * deleteuser.c --
+ *
+ *	Delete a users account, remove all their files, remove
+ *      them from /etc/passwd and take them off the sprite-users
+ *      mailing list.
+ *      
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/admin/deleteuser/RCS/deleteuser.c,v 1.6 91/12/12 12:26:01 shirriff Exp Locker: kupfer $";
+#endif /* not lint */
+
+
+#include "common.h"
+#include <sprite.h>
+#include <bstring.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <libc.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/file.h>
+#include <sys/ioctl.h>
+#include <sys/param.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
+/* Forward references: */
+static void removeFromMailingLists _ARGS_((CONST char *username));
+static void deletePasswdEntry _ARGS_((CONST char *username));
+static void removeHomeDirectory _ARGS_((CONST char *homedir));
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	Process arguments, set uid and signals; then remove users.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+main(argc, argv)
+    int argc;
+    CONST char **argv;
+{
+    int i;
+    CONST char *username;
+    struct passwd *pwd;
+    char homeDir[MAXPATHLEN];
+
+    if(argc < 2 || *argv[1] == '-') {
+	(void) fprintf(stderr, "Usage: %s username [username ...]\n", argv[0]);
+	(void) fprintf(stderr, "Remove sprite accounts.\n");
+	exit(EXIT_FAILURE);
+    }
+#ifndef TEST
+    /* 
+     * Verify that we're running as root, so as to avoid unpleasant 
+     * surprises later.  Because the program is installed setuid, make 
+     * sure that the invoking user is in the wheel group.
+     */
+    SecurityCheck();
+#endif
+    printf("This program will delete the accounts and erase\n");
+    printf("all the files in the home directories.\n");
+    if (!yes("Are you sure you want to do this?")) {
+	printf("\nquitting\n");
+	exit(EXIT_FAILURE);
+    }
+    (void) signal(SIGHUP, SIG_IGN);
+    (void) signal(SIGINT, SIG_IGN);
+    (void) signal(SIGQUIT, SIG_IGN);
+    (void) signal(SIGTSTP, SIG_IGN);
+
+    /* 
+     * For each username, try to get the home directory from the 
+     * password file.  If that fails, ask the user if we should 
+     * continue (e.g., maybe the user was already removed from the 
+     * password file, but not the aliases file).  If the user says to
+     * continue, we guess at the home directory.  (XXX We should ask
+     * the user.)
+     */
+    setpwfile(MASTER_PASSWD_FILE);
+    if (setpwent() == 0) {
+	fprintf(stderr, "Can't change password file to %s\n",
+		MASTER_PASSWD_FILE);
+	exit(EXIT_FAILURE);
+    }
+    for (i = 1; i < argc; ++i) {
+	username = argv[i];
+	if ((pwd = getpwnam(username)) == NULL) {
+	    fprintf(stderr, "%s: no such user\n", username);
+	    if (yes("Skip this user?")) {
+		continue;
+	    }
+	}
+	removeFromMailingLists(username);
+
+	/* 
+	 * If we don't know what the user's home directory is, guess 
+	 * that it's the default.
+	 */
+	if (pwd != NULL) {
+	    removeHomeDirectory(pwd->pw_dir);
+	} else {
+	    strcpy(homeDir, USER_DIR);
+	    strcat(homeDir, "/");
+	    strcat(homeDir, username);
+	    removeHomeDirectory(homeDir);
+	}
+	deletePasswdEntry(username);
+    }
+    exit(EXIT_SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  deletePasswdEntry --
+ *
+ *      Removes a user's entry from the password file.
+ *
+ * Results:
+ *	none.
+ *
+ * Side effects:
+ *
+ *      Exits if there is a system error.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+deletePasswdEntry(username)
+    CONST char *username;
+{
+    FILE *tmpfile;
+    int fd;
+    struct passwd *pwd;
+    int found = 0;
+    char from[MAXPATHLEN], to[MAXPATHLEN], *tend, *fend;
+    char buf1[16], buf2[16];
+
+
+    (void) printf("Removing %s from %s.\n", username, MASTER_PASSWD_FILE);
+    if ((fd = open(PTMP_FILE, O_CREAT|O_EXCL|O_RDWR, 0600)) < 0) {
+	(void) fprintf(stderr, "Cannot open %s: %s\n",
+	    PTMP_FILE, strerror(errno));
+	exit(EXIT_FAILURE);
+    }
+    if ((tmpfile = fdopen(fd, "w")) == NULL) {
+	(void) fprintf(stderr, "Absurd fdopen failure - seek help\n");
+	(void) unlink(PTMP_FILE);
+	exit(EXIT_FAILURE);
+    }
+    while ((pwd = getpwent()) != NULL) {
+	if (strcmp(pwd->pw_name, username) == 0) {
+	    ++found;
+	} else {
+	    if (pwd->pw_change==0) {
+		*buf1 = '\0';
+	    } else {
+		sprintf(buf1,"%l",pwd->pw_change);
+	    }
+	    if (pwd->pw_expire==0) {
+		*buf2 = '\0';
+	    } else {
+		sprintf(buf2,"%l",pwd->pw_expire);
+	    }
+	    fprintf(tmpfile, "%s:%s:%d:%d:%s:%s:%s:%s:%s:%s\n",
+			pwd->pw_name,
+			pwd->pw_passwd,
+			pwd->pw_uid,
+			pwd->pw_gid,
+			pwd->pw_class,
+			buf1,
+			buf2,
+			pwd->pw_gecos,
+			pwd->pw_dir,
+			pwd->pw_shell);
+	}
+    }
+    (void) endpwent();
+    (void) fclose(tmpfile);
+
+    if (found == 0) {
+	(void) fprintf(stderr, "There is no entry for %s in %s.\n",
+		       username, MASTER_PASSWD_FILE);
+	(void) unlink(PTMP_FILE);
+	return;
+    }
+    if (makedb(PTMP_FILE)) {
+	(void) fprintf(stderr, "makedb failed!\n");
+	exit(EXIT_FAILURE);
+    }
+
+    /*
+     * possible race; have to rename four files, and someone could slip
+     * in between them.  LOCK_EX and rename the ``passwd.dir'' file first
+     * so that getpwent(3) can't slip in; the lock should never fail and
+     * it's unclear what to do if it does.  Rename ``ptmp'' last so that
+     * passwd/vipw/chpass can't slip in.
+     */
+    fend = strcpy(from, PTMP_FILE) + strlen(PTMP_FILE);
+    tend = strcpy(to, PASSWD_FILE) + strlen(PASSWD_FILE);
+    bcopy(".dir", fend, 5);
+    bcopy(".dir", tend, 5);
+    if ((fd = open(from, O_RDONLY, 0)) >= 0) {
+	(void)flock(fd, LOCK_EX);
+	/* here we go... */
+	if (rename(from, to)) {
+	    (void) fprintf(stderr, "Cannot rename %s: %s\n",
+		from, strerror(errno));
+	}
+	bcopy(".pag", fend, 5);
+	bcopy(".pag", tend, 5);
+	if (rename(from, to)) {
+	    (void) fprintf(stderr, "Cannot rename %s: %s\n",
+		from, strerror(errno));
+	}
+    }
+    bcopy(".orig", fend, 6);
+    if (rename(PASSWD_FILE, PASSWD_BAK)) {
+	(void) fprintf(stderr, "Cannot rename %s: %s\n",
+	    from, strerror(errno));
+    }
+    if (rename(MASTER_PASSWD_FILE, MASTER_BAK)) {
+	(void) fprintf(stderr, "Cannot rename %s: %s\n",
+	    MASTER_PASSWD_FILE, strerror(errno));
+    }
+    if (rename(from, PASSWD_FILE)) {
+	(void) fprintf(stderr, "Cannot rename %s: %s\n",
+	    PASSWD_FILE, strerror(errno));
+    }
+    if (rename(PTMP_FILE, MASTER_PASSWD_FILE)) {
+	(void) fprintf(stderr, "Cannot rename %s: %s\n",
+	    PTMP_FILE, strerror(errno));
+    }
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  removeFromMailingLists --
+ * 
+ *      Remove a user from all the mailing list.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *      Modifies /sprite/lib/sendmail/aliases.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+removeFromMailingLists(username)
+    CONST char *username;
+{
+    int status;			/* exit status from subprocesses */
+    char message[4096];		/* log message for "ci" and user prompt */
+    
+    /* 
+     * For the time being, rather than try to get string manipulation 
+     * code right, just invoke an editor and let the user remove all 
+     * instances of the name.
+     */
+    sprintf(message, "Remove %s from the aliases file?", username);
+    if (!yes(message)) {
+	return;
+    }
+
+    sprintf(message, "-mdeleteuser: remove %s.", username);
+    
+    status = rcsCheckOut(ALIASES);
+    if (status < 0) {
+	exit(EXIT_FAILURE);
+    } else if (status != 0) {
+	goto error;
+    }
+
+    /* 
+     * Give the user ownership of the file, so that she can edit it.
+     */
+    if (chown(ALIASES, getuid(), -1)  != 0) {
+	perror("Can't chown the aliases file");
+	goto error;
+    }
+
+    if (Misc_InvokeEditor(ALIASES) != 0) {
+	fprintf(stderr, "Couldn't invoke editor.\n");
+	goto error;
+    }
+
+    /* 
+     * Check the aliases file back in, even if we didn't actually make 
+     * any changes.
+     */
+    status = rcsCheckIn(ALIASES, message);
+    if (status == 0) {
+	printf("Removed %s from aliases file.\n", username);
+    } else {
+	fprintf(stderr, "\nPlease check the aliases file.\n");
+	fprintf(stderr, "(Make sure that `%s' is no longer in any lists\n",
+	       username);
+	fprintf(stderr, "and that the file was checked in.)\n\n");
+    }
+    return;
+
+ error:
+    fprintf(stderr,
+	    "\nWarning: unable to remove `%s' from the aliases file.\n",
+	    username);
+    fprintf(stderr, "You'll have to edit the aliases file by hand.\n\n");
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * removeHomeDirectory --
+ *
+ *	Remove a home directory.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Deletes all the files in the directory and then unlinks it.  
+ *	If the given directory is really a symbolic link, removes the 
+ *	link and the directory it points to.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+removeHomeDirectory(givenDir)
+    CONST char *givenDir;	/* path to the directory, usually a 
+				 * link to the real home directory */
+{
+    char actualDir[MAXPATHLEN]; /* the real home directory */
+    char command[MAXPATHLEN + 20]; /* passed to system() */
+    struct stat statBuf;
+    int n;
+
+    if (lstat(givenDir, &statBuf) < 0) {
+	fprintf(stderr, "Can't stat %s: %s\n", givenDir,
+		strerror(errno));
+	return;
+    }
+    if ((statBuf.st_mode & S_IFMT) == S_IFDIR) {
+	strcpy(actualDir, givenDir);
+    } else if ((statBuf.st_mode & S_IFMT) == S_IFLNK) {
+	n = readlink(givenDir, actualDir, sizeof(actualDir));
+	if (n < 0) {
+	    fprintf(stderr, "Cannot read link %s: %s.\n",
+		    givenDir, strerror(errno));
+	    return;
+	}
+	actualDir[n] = '\0';
+    } else {
+	fprintf(stderr,
+		"%s isn't a link or a directory; not removing.\n", 
+		givenDir);
+	return;
+    }
+
+    /* 
+     * actualDir now contains the path for the directory we want to 
+     * delete.
+     */
+
+    if ((statBuf.st_mode & S_IFMT) == S_IFLNK) {
+	printf("removing symbolic link: %s\n", givenDir);
+	if (unlink(givenDir)) {
+	    (void) fprintf(stderr, "Cannot unlink %s: %s\n",
+			   givenDir, strerror(errno));
+	}
+    }
+    printf("removing home directory: %s\n", actualDir);
+    (void) sprintf(command, "rm -rf %s", actualDir);
+    if (system(command) != 0) {
+	(void) fprintf(stderr, "Error deleting files from %s.\n", actualDir);
+    }
+    return;
+}
+@
+
+
+1.6
+log
+@Fixed a problem with deleteuser messing up the password file.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/admin/deleteuser/RCS/deleteuser.c,v 1.5 91/06/04 16:48:40 kupfer Exp Locker: shirriff $";
+d167 1
+a167 1
+    if ((fd = open(PTMP_FILE, O_CREAT|O_EXCL|O_RDWR, 0660)) < 0) {
+@
+
+
+1.5
+log
+@Make sure the invoking user is in the wheel group.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/admin/deleteuser/RCS/deleteuser.c,v 1.4 91/06/03 21:46:18 kupfer Exp Locker: kupfer $";
+d163 1
+d165 1
+d167 1
+a167 1
+    if ((fd = open(PTMP_FILE, O_CREAT|O_EXCL|O_RDWR, 0644)) < 0) {
+d181 21
+a201 8
+	    (void) fprintf(tmpfile, "%s:%s:%d:%d:%s:%s:%s\n",
+		           pwd->pw_name,
+			   pwd->pw_passwd,
+			   pwd->pw_uid,
+			   pwd->pw_gid,
+			   pwd->pw_gecos,
+			   pwd->pw_dir,
+			   pwd->pw_shell);
+d206 1
+d231 11
+a241 11
+    }
+    /* here we go... */
+    if (rename(from, to)) {
+	(void) fprintf(stderr, "Cannot rename %s: %s\n",
+	    from, strerror(errno));
+    }
+    bcopy(".pag", fend, 5);
+    bcopy(".pag", tend, 5);
+    if (rename(from, to)) {
+	(void) fprintf(stderr, "Cannot rename %s: %s\n",
+	    from, strerror(errno));
+@
+
+
+1.4
+log
+@Have the user manually edit the aliases file, rather than trying to update it automatically.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/admin/deleteuser/RCS/deleteuser.c,v 1.3 91/06/03 16:37:00 kupfer Exp Locker: kupfer $";
+d77 8
+a84 7
+#ifndef TEST    
+    if (setreuid(0, 0)) {
+	(void) fprintf(stderr, "Cannot set uid to root: %s\n", strerror(errno));
+	(void) fprintf(stderr, "This program must be installed setuid.\n");
+	exit(1);
+    }
+#endif    
+d286 8
+@
+
+
+1.3
+log
+@The aliases file is under RCS control.  Share code with adduser.
+Better testing support.  Lots of lint.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/admin/deleteuser/RCS/deleteuser.c,v 1.2 91/05/31 21:39:35 rab Exp Locker: kupfer $";
+d28 1
+d252 1
+a252 3
+ *      Remove a user from all the mailing lists.  Entries of the form
+ *      `username@@machine' will not be removed, but just `username'
+ *      will be.
+d258 1
+a259 2
+ *      Modifies /sprite/lib/sendmail/aliases
+ *
+a265 5
+    int found = 0;
+    FILE *tmpfile;
+    FILE *aliases;
+    int fd;
+    char line[0x1000];
+d267 1
+a267 1
+    char logMsg[4096];		/* log message for "ci" */
+d269 11
+a279 2
+    (void) printf("Removing %s from mailing lists.\n", username);
+    sprintf(logMsg, "-mdeleteuser: remove %s from all lists.", username);
+d288 3
+a290 60
+    /* 
+     * Copy the aliases file to a temporary, removing the instances of 
+     * the user name. 
+     */
+    if ((aliases = fopen(ALIASES, "r")) == NULL) {
+	(void) fprintf(stderr, "Cannot open %s: %s\n",
+		       ALIASES, strerror(errno));
+	exit(EXIT_FAILURE);
+    }
+    if ((fd = open(ALIASES_TMP, O_CREAT|O_RDWR, 0644)) < 0) {
+	(void) fprintf(stderr, "Cannot open %s: %s\n",
+		       ALIASES_TMP, strerror(errno));
+	exit(EXIT_FAILURE);
+    }
+    if ((tmpfile = fdopen(fd, "w")) == NULL) {
+	(void) fprintf(stderr, "Absurd fdopen failure - seek help\n");
+	(void) unlink(ALIASES_TMP);
+	exit(EXIT_FAILURE);
+    }
+    while (fgets(line, sizeof(line), aliases)) {
+	int c;
+	char *s, *t;
+
+	if (strlen(line) >= sizeof(line) - 1) {
+	    fprintf(stderr, "Line too long in %s\n", ALIASES);
+	    exit(EXIT_FAILURE);
+	}
+	if (line[0] != '#' && ((s = strstr(line, username)) != NULL)
+	    && ((c = s[-1]) == ' ' || c == '\t' || c == ',' || c == ':')) {
+	    t = s + strlen(username);
+            if (*t == ' ' || *t == '\t' || *t == ',' || *t == '\n') {
+		while (*t == ' ' || *t == '\t' || *t == ',') {
+		    ++t;
+		} 
+		found = 1;
+		memmove(s, t, strlen(t) + 1);
+	    }
+	}
+	fputs(line, tmpfile);
+    }
+    fclose(aliases);
+    fclose(tmpfile);
+
+    /* 
+     * If we made any changes, make the temporary file be the new 
+     * aliases file.
+     */
+    if (found) {
+	if (unlink(ALIASES)) {
+	    (void) fprintf(stderr, "Cannot unlink %s: %s.\n",
+		aliases, strerror(errno));
+	    exit(EXIT_FAILURE);
+	}
+	if (rename(ALIASES_TMP, ALIASES) < 0) {
+	    (void) fprintf(stderr, "Cannot rename %s: %s\n",
+		ALIASES_TMP, strerror(errno));
+	    exit(EXIT_FAILURE);
+	}
+    } else {
+	(void) unlink(ALIASES_TMP);
+d297 1
+a297 1
+    status = rcsCheckIn(ALIASES, logMsg);
+@
+
+
+1.2
+log
+@Changes for shadow password file and I'm not sure what else (Mike 
+checking in for Bob).
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/admin/deleteuser/RCS/deleteuser.c,v 1.1 90/06/22 11:41:53 rab Exp Locker: rab $";
+d23 5
+d31 4
+a34 3
+#include <fcntl.h>
+#include <errno.h>
+#include <pwd.h>
+a35 4
+#include <sys/stat.h>
+#include <sys/param.h>
+#include <sys/ioctl.h>
+#include <sys/file.h>
+d37 1
+d39 4
+a42 3
+#ifndef __STDC__
+#define const
+#endif
+d44 1
+a44 36
+#ifdef TEST
+#undef  _PATH_PASSWD
+#define _PATH_PASSWD       "test/passwd"
+#undef  _PATH_PTMP
+#define _PATH_PTMP         "test/ptmp"
+#undef	_PATH_MASTERPASSWD
+#define	_PATH_MASTERPASSWD "test/master.passwd"
+#define ALIASES      "test/aliases"
+#define TMP_ALIASES  "test/aliases.deleteusers"
+#else
+#define ALIASES         "/sprite/lib/sendmail/aliases"
+#define TMP_ALIASES     "/sprite/lib/sendmail/aliases.deleteusers"
+#endif
+
+#define PASSWD_BAK          "/etc/passwd.deleteuser.BAK"
+#define MASTER_BAK          "/etc/master.deleteuser.BAK"
+
+extern int errno;
+
+#ifdef __STDC__
+static void prompt(const char *question);
+static void removeFromMailingLists(const char *username);
+static void deletePasswdEntry(const char *username);
+static void removeHomeDirectory(const char *homedir);
+static int raw_getchar(void);
+static int makedb(char *file);
+#else
+static void prompt();
+static void removeFromMailingLists();
+static void removeFromSpriteUsers();
+static void deletePasswdEntry();
+static void removeHomeDirectory();
+static int raw_getchar();
+static int makedb();
+#endif
+
+d48 1
+a48 1
+ * <procName> --
+d50 1
+a50 1
+ *	<description>
+d64 1
+a64 1
+    const char **argv;
+d67 1
+a67 2
+    char homedir[MAXPATHLEN];
+    const char *username;
+d69 1
+d83 6
+a88 3
+    (void) fprintf(stderr, "This program will delete the accounts and erase\n");
+    (void) fprintf(stderr, "all the files in the home directories.\n");
+    prompt("Are you sure you want to do this?");
+d94 14
+d112 3
+a114 1
+	    continue;
+d117 13
+a129 1
+	removeHomeDirectory(pwd->pw_dir);
+d135 1
+d141 1
+a141 1
+ *      Removes a user's entry from /etc/passwd.
+d154 1
+a154 1
+    const char *username;
+d162 2
+a163 2
+    (void) printf("Removing %s from %s.\n", username, _PATH_MASTERPASSWD);
+    if ((fd = open(_PATH_PTMP, O_CREAT|O_EXCL|O_RDWR, 0644)) < 0) {
+d165 1
+a165 1
+	    _PATH_PTMP, strerror(errno));
+d170 1
+a170 1
+	(void) unlink(_PATH_PTMP);
+d190 3
+a192 3
+	(void) fprintf(stderr, "There is no entry for %s in /etc/passwd.\n",
+	    username);
+	(void) unlink(_PATH_PTMP);
+d195 1
+a195 1
+    if (makedb(_PATH_PTMP)) {
+a199 1
+
+d207 2
+a208 2
+    fend = strcpy(from, _PATH_PTMP) + strlen(_PATH_PTMP);
+    tend = strcpy(to, _PATH_PASSWD) + strlen(_PATH_PASSWD);
+d226 1
+a226 1
+    if (rename(_PATH_PASSWD, PASSWD_BAK)) {
+d230 1
+a230 1
+    if (rename(_PATH_MASTERPASSWD, MASTER_BAK)) {
+d232 1
+a232 1
+	    _PATH_MASTERPASSWD, strerror(errno));
+d234 3
+a236 7
+    if (rename(from, _PATH_PASSWD)) {
+	(void) fprintf(stderr, "Cannot rename %s: %s\n",
+	    _PATH_PASSWD, strerror(errno));
+    }
+    if (rename(_PATH_PTMP, _PATH_MASTERPASSWD)) {
+	(void) fprintf(stderr, "Cannot rename %s: %s\n",
+	    _PATH_PTMP, strerror(errno));
+d238 1
+a238 1
+    if (rename(_PATH_PTMP, _PATH_MASTERPASSWD) < 0) {
+d240 1
+a240 1
+	    _PATH_PTMP, strerror(errno));
+d245 1
+d266 1
+a266 1
+    const char *username;
+d268 1
+a268 1
+   int found;
+d273 12
+d286 4
+a289 1
+    (void) printf("Removing %s from mailing lists.\n", username);
+d292 1
+a292 1
+	    ALIASES, strerror(errno));
+d295 1
+a295 1
+    if ((fd = open(TMP_ALIASES, O_CREAT|O_RDWR, 0644)) < 0) {
+d297 1
+a297 1
+	    TMP_ALIASES, strerror(errno));
+d302 1
+a302 1
+	(void) unlink(TMP_ALIASES);
+d328 5
+d339 1
+a339 1
+	if (rename(TMP_ALIASES, ALIASES) < 0) {
+d341 1
+a341 1
+		TMP_ALIASES, strerror(errno));
+d345 15
+a359 1
+	(void) unlink(TMP_ALIASES);
+d362 7
+d371 1
+d383 3
+a385 1
+ *	Deletes all the files in the directory and then unlinks it.
+d390 3
+a392 2
+removeHomeDirectory(homedir)
+    const char *homedir;
+d394 3
+a396 2
+    char linkbuf[MAXPATHLEN];
+    char buf[MAXPATHLEN + 20];
+d399 13
+a411 7
+    if ((n = readlink(homedir, linkbuf, sizeof(linkbuf))) < 0) {
+	if (errno == EINVAL) {
+	    strcpy(buf, homedir);
+	} else {
+	    (void) fprintf(stderr, "Cannot read link to %s: %s.\n",
+		homedir, strerror(errno));
+	    exit(EXIT_FAILURE);
+d413 1
+d415 4
+a418 11
+#ifndef TEST	
+	printf("removing symbolic link: %s\n", homedir);
+	if (unlink(homedir)) {
+	    (void) fprintf(stderr, "Cannot unlink %s: %s\n",
+		homedir, strerror(errno));
+	    exit(EXIT_FAILURE);
+	}
+#else	
+    printf("unlink(%s)\n", homedir);
+#endif	
+	linkbuf[n] = '\0';
+a419 11
+    printf("removing home directory: %s\n", linkbuf);
+    (void) sprintf(buf, "rm -rf %s", linkbuf);
+#ifndef TEST    
+    if (system(buf) != 0) {
+	(void) fprintf(stderr, "Error deleting files from %s.\n", linkbuf);
+    }
+#else
+    printf("system(%s)\n", buf);
+#endif    
+    return;
+}
+d421 4
+a424 23
+/*
+ *----------------------------------------------------------------------
+ *
+ * prompt --
+ *
+ *	Print a prompt, and wait for a yes or no answer.
+ *      If the answer is no, then exit with non-zero status.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Exits if a negative response is given.
+ *
+ *----------------------------------------------------------------------
+ */
+static void    
+prompt(question)
+    const char *question;
+{
+    for (;;) {
+	(void) fprintf(stderr, "%s (y/n) ", question);
+	switch (raw_getchar()) {
+d426 5
+a430 13
+	case 'y':
+	case 'Y':
+	    printf("\n\n");
+	    break;
+
+	case 'n':
+	case 'N':
+	    (void) fprintf(stderr, "\n\nquitting\n");
+	    exit(EXIT_FAILURE);
+
+	default:
+	    (void) fprintf(stderr, "\n\nPlease enter `y' or `n'.\n");
+	    continue;
+d432 5
+a436 1
+	break;
+a439 51
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * raw_getchar --
+ *
+ *	Get a character in cbreak mode, without waiting for a carriage
+ *      return.
+ *
+ * Results:
+ *	Returns the character read, or EOF if no more input is available.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+raw_getchar()
+{
+    struct sgttyb sgtty_buf;
+    int c;
+
+    ioctl(0, TIOCGETP, &sgtty_buf);
+    sgtty_buf.sg_flags |= CBREAK;
+    ioctl(0, TIOCSETP, &sgtty_buf);
+    c = getchar();
+    sgtty_buf.sg_flags &= ~CBREAK;
+    ioctl(0, TIOCSETP, &sgtty_buf);
+    return c;
+}
+
+static int
+makedb(file)
+        char *file;
+{
+        int status, pid, w;
+
+        if (!(pid = vfork())) {
+                execl(_PATH_MKPASSWD, "mkpasswd", "-p", file, NULL);
+                (void) fprintf(stderr, "Can't exec %s: %s\n",
+		    _PATH_MKPASSWD, strerror(errno));
+                _exit(127);
+        }
+        while ((w = wait(&status)) != pid && w != -1) {
+	    continue;
+	}
+        return (w == -1 || status);
+}
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header$";
+d33 2
+d41 6
+a46 2
+#define PTMP         "test/ptmp"
+#define PASSWD       "test/passwd"
+a49 2
+#define PTMP        "/etc/ptmp"
+#define PASSWD      "/etc/passwd"
+d54 3
+d65 1
+d73 1
+d159 1
+d161 4
+a164 3
+    (void) printf("Removing %s from %s.\n", username, PASSWD);
+    if ((fd = open(PTMP, O_CREAT|O_EXCL|O_RDWR, 0644)) < 0) {
+	(void) fprintf(stderr, "Cannot open %s: %s\n", PTMP, strerror(errno));
+d169 1
+a169 1
+	(void) unlink(PTMP);
+d191 1
+a191 1
+	(void) unlink(PTMP);
+d194 2
+a195 3
+    if (unlink(PASSWD)) {
+	(void) fprintf(stderr, "Cannot unlink %s: %s.\n",
+	    PASSWD, strerror(errno));
+d198 47
+a244 3
+    if (rename(PTMP, PASSWD) < 0) {
+	(void) fprintf(stderr, "Cannot rename %s: %s\n", PTMP, strerror(errno));
+	exit(EXIT_FAILURE);
+d462 18
+@

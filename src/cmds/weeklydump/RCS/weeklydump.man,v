@@ -1,0 +1,234 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.5
+date     91.09.28.15.57.10;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.09.28.15.54.23;  author shirriff;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.08.29.19.13.30;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.08.26.11.48.14;  author shirriff;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.12.17.18.20.12;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Man page for the script that does full dumps.
+@
+
+
+1.5
+log
+@Store the name of the host running the dumps in the .active file.
+@
+text
+@'\" Copyright 1990 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/admin/weeklydump/RCS/weeklydump.man,v 1.4 91/09/28 15:54:23 shirriff Exp Locker: kupfer $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS WEEKLYDUMP cmds
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+weeklydump \- Script to do weekly fully dumps
+.SH SYNOPSIS
+\fBweeklydump\fR [\fB\-i\fR] [\fIstartFs\fR]
+.SH OPTIONS
+.IP "\fIstartFs\fR" 15
+Start dumping with the named filesystem.
+.IP "\-i" 15
+Initialize the tape drives first with ``dump -s''.
+.BE
+
+.SH DESCRIPTION
+.PP
+This script does full (level 0) dumps of all the filesystems that are
+normally backed up.  It is normally invoked manually over the weekend.
+.PP
+The script has hard-coded a list of tape devices.  It
+dumps filesystems onto the first tape until it gets an error.  It then
+continues with the second tape until the next error, etc.  If it runs
+out of tapes before all the filesystems have been dumped, it sends
+mail to the user 
+.B dumper
+with the name of the first filesystem in the list that has yet to be
+dumped.
+.PP
+The list of filesystems to dump is contained in
+.BR /sprite/admin/dump/dumplist .
+If
+.B weeklydump
+is invoked with the name of a filesystem, it starts with that
+filesystem, skipping over the filesystems that appear before it in the
+list.  If
+.B weeklydump
+is not given the name of a filesystem, it looks for the starting
+filesystem in
+.BR /sprite/admin/dump/doingweekly .
+If that file is empty, 
+.B weeklydump
+simply starts at the top of the list.
+.PP
+.B Weeklydump
+puts the name of the current user in
+.BR /sprite/admin/dump/dumpalias .
+Mail sent to the ``dumper'' alias is sent to the user named in this
+file.  
+.B Weeklydump
+also creates the file
+.BR /sprite/admin/dump/doingweekly ,
+which disables the daily dumps.  This
+file is removed when the weekly dumps complete.
+.PP
+If 
+.B weeklydump
+detects an error, it sends mail to
+.B dumper
+and exits.  It also creates a status file, so that if the machine
+running the weekly dumps
+crashes while the dumps are running, mail will be sent to
+.B dumper
+when the machine reboots, telling about the crash.
+.PP
+If
+.B weeklydump
+is invoked with the 
+.B \-i 
+flag, it will initialize the tapes in both tape
+drives before starting.
+
+.SH FILES
+All the following files are in /sprite/admin/dump:
+.IP doingweekly 15
+lock file to prevent daily dump from running.  Names the filesystem
+currently being dumped.
+.IP doingweekly.active 15
+status file used to detect crashes.  Contains the name of the host
+running the dumps.
+.IP dumpalias 15
+User name of the current dumper, for error and status messages.
+.IP dumpdates 15
+list of filesystems dumped, at what time, what tape, etc.
+.IP dumplist 15
+list of file systems to dump.
+.IP dumplog 15
+very large status log from the dump programs
+.IP tapelist 15
+list of tape devices uses for the dump
+
+.SH KEYWORDS
+dump, tape, backup
+@
+
+
+1.4
+log
+@Documented tapelist file.
+@
+text
+@d9 1
+a9 1
+'\" $Header: /sprite/src/admin/weeklydump/RCS/weeklydump.man,v 1.3 91/08/29 19:13:30 kupfer Exp $ SPRITE (Berkeley)
+d89 2
+a90 1
+status file used to detect crashes.
+@
+
+
+1.3
+log
+@Explain how errors are handled.  Explanation of magic dump-related
+files.  Minor tweaks.
+@
+text
+@d9 1
+a9 1
+'\" $Header: /sprite/src/admin/weeklydump/RCS/weeklydump.man,v 1.2 91/08/26 11:48:14 shirriff Exp Locker: kupfer $ SPRITE (Berkeley)
+d98 2
+@
+
+
+1.2
+log
+@Updated documentation.
+@
+text
+@d9 1
+a9 1
+'\" $Header: /sprite/src/admin/weeklydump/RCS/weeklydump.man,v 1.1 90/12/17 18:20:12 kupfer Exp Locker: shirriff $ SPRITE (Berkeley)
+d18 1
+a18 1
+\fBweeklydump\fR [-i] [\fIstartFs\fR]
+d22 2
+a23 2
+.IP "-i" 15
+Initialize the tape drives first with "dump -r -f [device]".
+d40 2
+d46 8
+a53 1
+list.
+d56 19
+a74 3
+also modifies the "dumper" mail alias and creates the file
+"/sprite/admin/dump/doingweekly".  This file disables the daily dumps.  The
+file is removed when weekly dumps complete.
+d78 5
+a82 6
+is invoked with the "-i" flag, it will initialize the tapes in both tape
+drives and then continue with the dump.
+.PP
+It's a good idea to check 
+.B /sprite/admin/dump/dumplog
+after finishing the dumps, to see if there were any errors.
+d84 14
+a97 2
+.PP
+/sprite/admin/dump/dumplist contains the file systems to dump.
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d9 1
+a9 1
+'\" $Header: /sprite/lib/forms/RCS/cmd.man,v 1.2 90/02/20 17:11:01 douglis Exp $ SPRITE (Berkeley)
+d18 1
+a18 1
+\fBweeklydump\fR [\fIstartFs\fR]
+d22 2
+d31 1
+a31 1
+The script has hard-coded a list of filesystems and tape devices.  It
+d46 10
+d59 3
+@

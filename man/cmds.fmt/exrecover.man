@@ -1,0 +1,68 @@
+
+
+
+EXRECOVER                 User Commands                 EXRECOVER
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     exrecover - Used by ex and vi to recover partial edits after
+     a crash
+
+SSYYNNOOPPSSIISS
+     eexxrreeccoovveerr [_o_p_t_i_o_n_s] _a_r_g_s
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This program is invoked by eexx and vvii in response to  the  --rr
+     switch.   Its  job is to recover edits that had been made by
+     not saved on disk at the time of a program or system  crash.
+     For  more  details  on the arguments to eexxrreeccoovveerr and how it
+     works, read the code for eexxrreeccoovveerr and eexx.
+
+     This program should not  normally  be  invoked  directly  by
+     users;  it is run automatically by vvii and eexx.
+
+
+KKEEYYWWOORRDDSS
+     crash, partial edits, recovery
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0      Printed:  September 26, 1991                  1
+
+
+

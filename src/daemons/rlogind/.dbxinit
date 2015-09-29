@@ -1,0 +1,13 @@
+alias c cont
+alias d delete
+alias f func
+alias l list
+alias n next
+alias ni nexti
+alias p print
+alias q quit
+alias r run
+alias s stop
+alias si stepi
+alias st step
+alias w where

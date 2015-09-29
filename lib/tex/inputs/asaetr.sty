@@ -1,0 +1,573 @@
+% asaetr.sty v0.9 01 Jan 91
+% James Darrell McCauley (jdm5548@diamond.tamu.edu)
+% This is part of a four file set:
+%  asaetr.sty - LaTeX style for TRANSACTIONS OF THE ASAE (American Society for
+%               Agricultural Engineers)
+%  asaetr.bst - BiBTeX style for TRANSACTIONS OF THE ASAE
+%  asaetr.tex - example usage of and documentation for above
+%  asaetr.bib - part of the above example
+%
+% Modified from article.sty by 
+%  James Darrell McCauley
+%  Department of Agricultural Engineering
+%  Texas A&M University
+%  College Station, TX 77843-2117
+%  jdm5548@diamond.tamu.edu
+%  jdm5548@tamagen.bitnet
+% An attempt to mimic {\em Transactions of the ASAE}.
+% Although I've used bits and pieces of other people's work,
+% this style is hereby placed in the public domain.
+% NO WARRANTY OR GUARANTEES OF ANY KIND.
+% Please let me know of any improvements that you make.
+%
+% In creating this style, I utilized the existing public domain stuff:
+%      article.sty art10.sty openbib.sty drop.sty twocolumn.sty
+% This style (asaetr.sty) is for use with the accompanying BiBTeX
+% style asaetr.bst.  The file 'asaetr.tex' documents its usage.
+
+\typeout{Document Style `asaetr' Version 0.9 <01 Jan 91>.}
+\typeout{Unofficial style for Transactions of the ASAE}
+
+%%%%%%%%%%%%%%%%%% BEGIN EXAMPLE USAGE %%%%%%%%%%%%%%%%%%%%%%%
+% \documentstyle{asaetr}
+% \title{A Dumb Title}
+% \author{J.~D.~McCauley \associate } : format is: name \membership_grade, 
+%       \and                        : where membership_grade is one of 
+%       E.~A.~Hiler, \fellow        : \member, \associate, \student, 
+%       \and                        : \affiliate, \fellow 
+%       D.~C.~Bullock \student 
+% \begin{document}
+% \bibliographystyle{asaetr}        : see the file asaetr.bst
+% \maketitle                        : produces the title
+
+% \begin{abstract}
+% A short abstract. \keywords{key, word, example}
+% \end{abstract}
+
+% \levelone{Introduction}
+% \drop{T}he example introduction.  : must use \drop{} for first section
+%                                   : after abstract
+% \leveltwo{Objective}
+% An example of a leveltwo heading.
+
+% \levelthree{Finer Objectives}
+% An example of a levelthree heading.
+
+% \levelfour{Even More Detail}      
+%                                   : please note that the usual use of
+% For more detail, see the \LaTeX\  : the \cite command has been changed.
+% book \cite{ll:86} (Lamport, 1986),: This is because you can cite by
+% or even D.~E.~Knuth's \TeXbook    : author and year, or just by year
+% \cite{dk:84} (1984).              : if you've mentioned the author's
+%                                   : name. 
+
+% \levelone{Conclusion}
+
+% \bibliography{mybib}              : the name of your database
+% \end{document}
+%%%%%%%%%%%%%%%%%%% END EXAMPLE USAGE %%%%%%%%%%%%%%%%%%%%%%%
+\def\@ptsize{0} \@namedef{ds@11pt}{\def\@ptsize{1}}
+\@namedef{ds@12pt}{\def\@ptsize{2}} 
+\def\ds@twoside{\@twosidetrue \@mparswitchtrue} \def\ds@draft{\overfullrule
+5pt} 
+\@options
+%\input art1\@ptsize.sty\relax
+
+% taken from drop.sty
+%  Macro written by David G. Cantor, and published Fri, 12 Feb 88, in
+%  TeXhax, 1988 #16.  
+%  Internet:  dgc@math.ucla.edu
+%  UUCP:      ...!{ihnp4, randvax, sdcrdcf, ucbvax}!ucla-cs!dgc
+%
+%  Modified for use with LaTeX by Dominik Wujastyk, February 17, 1988
+%  Internet:   dow@wjh12.harvard.edu
+%  Bitnet:     dow@harvunxw.bitnet
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  This LaTeX macro is for dropping and enlarging the first letter(s) of a
+%  paragraph.  The argument may be one or more letters.
+%
+\font\largefont= cmr10 scaled \magstep5
+\def\drop#1#2{{\noindent
+    \setbox0\hbox{\largefont #1}\setbox1\hbox{#2}\setbox2\hbox{(}%
+    \count0=\ht0\advance\count0 by\dp0\count1\baselineskip
+    \advance\count0 by-\ht1\advance\count0by\ht2
+    \dimen1=.5ex\advance\count0by\dimen1\divide\count0 by\count1
+    \advance\count0 by1\dimen0\wd0
+    \advance\dimen0 by.25em\dimen1=\ht0\advance\dimen1 by-\ht1
+    \global\hangindent\dimen0\global\hangafter-\count0
+    \hskip-\dimen0\setbox0\hbox to\dimen0{\raise-\dimen1\box0\hss}%
+    \dp0=0in\ht0=0in\box0}#2}
+% end of drop.sty
+%%%%%% begin art10.sty modifications
+
+\lineskip 1pt \normallineskip 1pt
+\def\baselinestretch{1}
+
+\def\@normalsize{\@setsize\normalsize{12pt}\xpt\@xpt
+\abovedisplayskip 10pt plus2pt minus5pt\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip \z@ plus3pt\belowdisplayshortskip 6pt plus3pt
+minus3pt\let\@listi\@listI} 
+\def\small{\@setsize\small{11pt}\ixpt\@ixpt
+\abovedisplayskip 8.5pt plus 3pt minus 4pt\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip \z@ plus2pt\belowdisplayshortskip 4pt plus2pt minus 2pt
+\def\@listi{\leftmargin\leftmargini \topsep 4pt plus 2pt minus 2pt\parsep 2pt
+plus 1pt minus 1pt
+\itemsep \parsep}}
+\def\footnotesize{\@setsize\footnotesize{9.5pt}\viiipt\@viiipt
+\abovedisplayskip 6pt plus 2pt minus 4pt\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip \z@ plus 1pt\belowdisplayshortskip 3pt plus 1pt minus
+2pt
+\def\@listi{\leftmargin\leftmargini \topsep 3pt plus 1pt minus 1pt\parsep 2pt
+plus 1pt minus 1pt
+\itemsep \parsep}}
+\def\scriptsize{\@setsize\scriptsize{8pt}\viipt\@viipt}
+\def\tiny{\@setsize\tiny{6pt}\vpt\@vpt}
+\def\large{\@setsize\large{14pt}\xiipt\@xiipt}
+\def\Large{\@setsize\Large{18pt}\xivpt\@xivpt}
+\def\LARGE{\@setsize\LARGE{22pt}\xviipt\@xviipt}
+\def\huge{\@setsize\huge{25pt}\xxpt\@xxpt}
+\def\Huge{\@setsize\Huge{30pt}\xxvpt\@xxvpt}
+\normalsize 
+
+\if@twoside \oddsidemargin 44pt \evensidemargin 82pt \marginparwidth 107pt
+\else \oddsidemargin 63pt \evensidemargin 63pt
+ \marginparwidth 90pt 
+\fi
+\marginparsep 11pt 
+ \topmargin 27pt \headheight 12pt \headsep 25pt \footskip 30pt 
+
+\textheight = 43\baselineskip
+\advance\textheight by \topskip
+\textwidth 345pt \columnsep 10pt \columnseprule 0pt 
+
+\footnotesep 6.65pt 
+\skip\footins 9pt plus 4pt minus 2pt 
+\floatsep 12pt plus 2pt minus 2pt \textfloatsep 20pt plus 2pt minus 4pt
+\intextsep 12pt plus 2pt minus 2pt \@maxsep 20pt \dblfloatsep 12pt plus 2pt
+minus 2pt \dbltextfloatsep 20pt plus 2pt minus 4pt \@dblmaxsep 20pt 
+\@fptop 0pt plus 1fil \@fpsep 8pt plus 2fil \@fpbot 0pt plus 1fil 
+\@dblfptop 0pt plus 1fil \@dblfpsep 8pt plus 2fil \@dblfpbot 0pt plus 1fil
+\marginparpush 5pt 
+
+\parskip 0pt plus 1pt \parindent 15pt \partopsep 2pt plus 1pt minus 1pt 
+\@lowpenalty 51 \@medpenalty 151 \@highpenalty 301 
+\@beginparpenalty -\@lowpenalty \@endparpenalty -\@lowpenalty \@itempenalty
+-\@lowpenalty 
+
+
+\def\part{\par \addvspace{4ex} \@afterindentfalse \secdef\@part\@spart} 
+\def\@part[#1]#2{\ifnum \c@secnumdepth >\m@ne \refstepcounter{part}
+\addcontentsline{toc}{part}{\thepart \hspace{1em}#1}\else
+\addcontentsline{toc}{part}{#1}\fi { \parindent 0pt \raggedright 
+ \ifnum \c@secnumdepth >\m@ne \Large \bf Part \thepart \par \nobreak \fi \huge
+\bf #2\markboth{}{}\par } \nobreak \vskip 3ex \@afterheading } 
+\def\@spart#1{{\parindent 0pt \raggedright 
+ \huge \bf 
+ #1\par} \nobreak \vskip 3ex \@afterheading } 
+
+% \@startsection {NAME}{LEVEL}{INDENT}{BEFORESKIP}{AFTERSKIP}{STYLE}
+%            optional * [ALTHEADING]{HEADING}
+%    Generic command to start a section.
+%    NAME       : e.g., 'subsection'
+%    LEVEL      : a number, denoting depth of section -- e.g., chapter=1,
+%                 section = 2, etc.
+%    INDENT     : Indentation of heading from left margin
+%    BEFORESKIP : Absolute value = skip to leave above the heading.
+%                 If negative, then paragraph indent of text following
+%                 heading is suppressed.
+%    AFTERSKIP  : if positive, then skip to leave below heading, else
+%                 negative of skip to leave to right of run-in heading.
+%    STYLE      : commands to set style
+\def\section{\@startsection {section}{1}{\z@}{-3.5ex plus -1ex minus 
+ -.2ex}{0.2ex plus .1ex}{\Large\sc}} %{if\thesection=2 \drop{\@nextchar} \fi }}
+\def\subsection{\@startsection{subsection}{2}{\z@}{-3.25ex plus -1ex minus 
+ -.2ex}{.2ex plus .1ex}{\large\sc}}
+\def\subsubsection{\@startsection{subsubsection}{3}{\z@}{-3.25ex plus 
+-1ex minus -.2ex}{.2ex plus .1ex}{\normalsize\sc}}
+\def\paragraph{\@startsection
+ {paragraph}{4}{\z@}{3.25ex plus 1ex minus .2ex}{-1em}{\normalsize\sc}}
+\def\subparagraph{\@startsection
+ {subparagraph}{4}{\parindent}{3.25ex plus 1ex minus 
+ .2ex}{-1em}{\normalsize\sc}}
+
+
+\setcounter{secnumdepth}{3}
+
+\def\appendix{\par
+ \setcounter{section}{0}
+ \setcounter{subsection}{0}
+ \def\thesection{\Alph{section}}}
+
+
+\leftmargini 25pt
+\leftmarginii 22pt \leftmarginiii 18.7pt \leftmarginiv 17pt \leftmarginv 10pt
+\leftmarginvi 10pt
+\leftmargin\leftmargini
+\labelsep 5pt
+\labelwidth\leftmargini\advance\labelwidth-\labelsep
+\def\@listI{\leftmargin\leftmargini \parsep 4pt plus 2pt minus 1pt\topsep 8pt
+plus 2pt minus 4pt\itemsep 4pt plus 2pt minus 1pt}
+\let\@listi\@listI
+\@listi 
+\def\@listii{\leftmargin\leftmarginii
+ \labelwidth\leftmarginii\advance\labelwidth-\labelsep
+ \topsep 4pt plus 2pt minus 1pt
+ \parsep 2pt plus 1pt minus 1pt
+ \itemsep \parsep}
+\def\@listiii{\leftmargin\leftmarginiii
+ \labelwidth\leftmarginiii\advance\labelwidth-\labelsep
+ \topsep 2pt plus 1pt minus 1pt 
+ \parsep \z@ \partopsep 1pt plus 0pt minus 1pt
+ \itemsep \topsep}
+\def\@listiv{\leftmargin\leftmarginiv
+ \labelwidth\leftmarginiv\advance\labelwidth-\labelsep}
+\def\@listv{\leftmargin\leftmarginv
+ \labelwidth\leftmarginv\advance\labelwidth-\labelsep}
+\def\@listvi{\leftmargin\leftmarginvi
+ \labelwidth\leftmarginvi\advance\labelwidth-\labelsep}
+
+
+%%%%%% end of art10.sty input/modifications
+\def\labelenumi{\theenumi.} 
+\def\theenumi{\arabic{enumi}} 
+\def\labelenumii{(\theenumii)}
+\def\theenumii{\alph{enumii}}
+\def\p@enumii{\theenumi}
+\def\labelenumiii{\theenumiii.}
+\def\theenumiii{\roman{enumiii}}
+\def\p@enumiii{\theenumi(\theenumii)}
+\def\labelenumiv{\theenumiv.}
+\def\theenumiv{\Alph{enumiv}} 
+\def\p@enumiv{\p@enumiii\theenumiii}
+
+\def\labelitemi{$\bullet$}
+\def\labelitemii{\bf --}
+\def\labelitemiii{$\ast$}
+\def\labelitemiv{$\cdot$}
+
+\def\verse{\let\\=\@centercr 
+ \list{}{\itemsep\z@ \itemindent -1.5em\listparindent \itemindent 
+ \rightmargin\leftmargin\advance\leftmargin 1.5em}\item[]}
+\let\endverse\endlist
+\def\quotation{\list{}{\listparindent 1.5em
+ \itemindent\listparindent
+ \rightmargin\leftmargin \parsep 0pt plus 1pt}\item[]}
+\let\endquotation=\endlist
+\def\quote{\list{}{\rightmargin\leftmargin}\item[]}
+\let\endquote=\endlist
+
+\def\descriptionlabel#1{\hspace\labelsep \bf #1}
+\def\description{\list{}{\labelwidth\z@ \itemindent-\leftmargin
+ \let\makelabel\descriptionlabel}}
+\let\enddescription\endlist
+
+\def\theequation{\arabic{equation}}
+
+
+\def\titlepage{\@restonecolfalse\if@twocolumn\@restonecoltrue\onecolumn
+ \else \newpage \fi \thispagestyle{empty}\c@page\z@}
+\def\endtitlepage{\if@restonecol\twocolumn \else \newpage \fi}
+
+\arraycolsep 5pt \tabcolsep 6pt \arrayrulewidth .4pt \doublerulesep 2pt 
+\tabbingsep \labelsep 
+
+\skip\@mpfootins = \skip\footins
+\fboxsep = 3pt \fboxrule = .4pt 
+
+\newcounter{part}
+\newcounter {section}
+\newcounter {subsection}[section]
+\newcounter {subsubsection}[subsection]
+\newcounter {paragraph}[subsubsection]
+\newcounter {subparagraph}[paragraph]
+
+\def\thepart{\Roman{part}} \def\thesection {\arabic{section}}
+\def\thesubsection {\thesection.\arabic{subsection}}
+\def\thesubsubsection {\thesubsection .\arabic{subsubsection}}
+\def\theparagraph {\thesubsubsection.\arabic{paragraph}}
+\def\thesubparagraph {\theparagraph.\arabic{subparagraph}}
+
+\def\@pnumwidth{1.55em}
+\def\@tocrmarg {2.55em}
+\def\@dotsep{4.5}
+\setcounter{tocdepth}{3}
+
+\def\tableofcontents{\section*{Contents\@mkboth{CONTENTS}{CONTENTS}}
+ \@starttoc{toc}}
+\def\l@part#1#2{\addpenalty{\@secpenalty}
+ \addvspace{2.25em plus 1pt} 
+ \begingroup
+   \@tempdima 3em \parindent \z@ \rightskip \@pnumwidth \parfillskip
+  -\@pnumwidth 
+   {\large \bf \leavevmode #1\hfil \hbox to\@pnumwidth{\hss #2}}\par
+   \nobreak 
+ \endgroup}
+
+\def\l@section#1#2{\addpenalty{\@secpenalty}  
+  \addvspace{1.0em plus 1pt}
+  \@tempdima 1.5em  % perhaps this is where I could get rid of the numbers
+  \begingroup
+    \parindent \z@ \rightskip \@pnumwidth 
+    \parfillskip -\@pnumwidth 
+    \bf \leavevmode \advance\leftskip\@tempdima 
+    \hskip -\leftskip #1\nobreak\hfil
+    \nobreak\hbox to\@pnumwidth{\hss #2}\par
+  \endgroup}
+ 
+\def\l@subsection{\@dottedtocline{2}{1.5em}{2.3em}}
+\def\l@subsubsection{\@dottedtocline{3}{3.8em}{3.2em}}
+\def\l@paragraph{\@dottedtocline{4}{7.0em}{4.1em}}
+\def\l@subparagraph{\@dottedtocline{5}{10em}{5em}}
+\def\listoffigures{\section*{List of Figures\@mkboth
+ {LIST OF FIGURES}{LIST OF FIGURES}}\@starttoc{lof}}
+\def\l@figure{\@dottedtocline{1}{1.5em}{2.3em}}
+\def\listoftables{\section*{List of Tables\@mkboth
+ {LIST OF TABLES}{LIST OF TABLES}}\@starttoc{lot}}
+\let\l@table\l@figure
+
+% thebibliography adapted from openbib.sty
+\newdimen\bibindent
+\bibindent=1.5em
+\def\thebibliography#1{\section*{References\@mkboth
+ {REFERENCES}{REFERENCES}}\list
+ {}{
+ \advance\leftmargin\bibindent
+ \itemindent -\bibindent
+ \listparindent \itemindent
+ \parsep \z@
+ \usecounter{enumi}}
+% \def\newblock{\par}
+ \def\newblock{\hskip 0em}
+ \sloppy
+ \sfcode`\.=1000\relax}
+\let\endthebibliography=\endlist
+
+\newif\if@restonecol
+\def\theindex{\@restonecoltrue\if@twocolumn\@restonecolfalse\fi
+\columnseprule \z@
+\columnsep 35pt\twocolumn[\section*{Index}]
+ \@mkboth{INDEX}{INDEX}\thispagestyle{plain}\parindent\z@
+ \parskip\z@ plus .3pt\relax\let\item\@idxitem}
+\def\@idxitem{\par\hangindent 40pt}
+\def\subitem{\par\hangindent 40pt \hspace*{20pt}}
+\def\subsubitem{\par\hangindent 40pt \hspace*{30pt}}
+\def\endtheindex{\if@restonecol\onecolumn\else\clearpage\fi}
+\def\indexspace{\par \vskip 10pt plus 5pt minus 3pt\relax}
+
+\def\footnoterule{\kern-3\p@ 
+ \hrule width .4\columnwidth 
+ \kern 2.6\p@} 
+
+\long\def\@makefntext#1{\parindent 1em\noindent 
+ \hbox to 1.8em{\hss$^{\@thefnmark}$}#1}
+
+
+\setcounter{topnumber}{2}
+\def\topfraction{.7}
+\setcounter{bottomnumber}{1}
+\def\bottomfraction{.3}
+\setcounter{totalnumber}{3}
+\def\textfraction{.2}
+\def\floatpagefraction{.5}
+\setcounter{dbltopnumber}{2}
+\def\dbltopfraction{.7}
+\def\dblfloatpagefraction{.5}
+ 
+% to set widths of hrules in tables
+% top and bottom lines always \thickhline
+% others: \thinhline
+\def\thinhline{\noalign{\ifnum0=`}\fi\hrule \@height \arrayrulewidth 
+   \futurelet \@tempa\@xhline}
+\def\thickhline{\noalign{\ifnum0=`}\fi\hrule \@height 2\arrayrulewidth 
+   \futurelet \@tempa\@xhline}
+\def\@xhline{\ifx\@tempa\hline\vskip \doublerulesep\fi
+      \ifnum0=`{\fi}}
+
+
+% @makecaption makes Figure 1 -- Caption text.
+%                and Table 1: Caption text.
+\long\def\@makecaption#1#2{
+  \def\tmpcs{figure}
+ \ifx\@captype\tmpcs \def\separator{ -- }  
+ \else \def\separator{.\ }
+ \fi
+ \vskip 5pt 
+ \setbox\@tempboxa\hbox{#1\separator #2}
+ \ifdim \wd\@tempboxa >\hsize #1\separator #2\par \else \hbox
+to\hsize{\hfil\box\@tempboxa\hfil} 
+ \fi}
+
+
+\newcounter{figure}
+\def\thefigure{\@arabic\c@figure}
+\def\fps@figure{tbp}
+\def\ftype@figure{1}
+\def\ext@figure{lof}
+\def\fnum@figure{\small\bf Figure \thefigure}
+\def\figure{\@float{figure}}
+\let\endfigure\end@float
+\@namedef{figure*}{\@dblfloat{figure}}
+\@namedef{endfigure*}{\end@dblfloat}
+
+\newcounter{table}
+\def\thetable{\@arabic\c@table}
+\def\fps@table{tbp}
+\def\ftype@table{2}
+\def\ext@table{lot}
+\def\fnum@table{\small\bf Table \thetable}
+\def\table{\@float{table}}
+\let\endtable\end@float
+\@namedef{table*}{\@dblfloat{table}}
+\@namedef{endtable*}{\end@dblfloat}
+
+
+\def\maketitle{\par
+ \begingroup
+ \def\thefootnote{\fnsymbol{footnote}}
+ \def\@makefnmark{\hbox 
+ to 0pt{$^{\@thefnmark}$\hss}} 
+ \if@twocolumn 
+ \twocolumn[\@maketitle] 
+ \else \newpage
+ \global\@topnum\z@ \@maketitle \fi\thispagestyle{plain}\@thanks
+ \endgroup
+ \setcounter{footnote}{0}
+ \let\maketitle\relax
+ \let\@maketitle\relax
+ \gdef\@thanks{}\gdef\@author{}\gdef\@title{}\let\thanks\relax}
+
+\def\@maketitle{\newpage
+ \null
+ \vskip 2em 
+ \begin{center}
+   {\LARGE \sc \@title \par} 
+   \vskip 1.5em 
+   {\large \lineskip .5em
+     \begin{tabular}[t]{c}
+       \@author 
+     \end{tabular}\par} 
+   \vskip 1em {\large \@date} 
+ \end{center}
+ \par
+ \vskip 1.5em} 
+
+\def\keywords{ {\sc Keywords.\ }} % just make "keywords" in small caps
+
+%\def\abstract{ \if@twocolumn
+%\section*{Abstract}
+%\else \small 
+%\begin{center}
+%{\bf Abstract\vspace{-.5em}\vspace{0pt}} 
+%\end{center}
+%\quotation 
+%\fi}
+%\def\endabstract{\if@twocolumn\keywords\else\endquotation\fi}
+
+\def\abstract{ \section*{Abstract} } 
+\def\endabstract{\hfil}
+
+\mark{{}{}} 
+
+\if@twoside \def\ps@headings{
+  \let\@mkboth\markboth
+  \def\@oddfoot{}
+  \def\@evenfoot{}
+  \def\@evenhead{\rm \thepage\hfil \sl \leftmark}
+  \def\@oddhead{\hbox{}\sl \rightmark \hfil \rm\thepage}
+  \def\sectionmark##1{\markboth {\uppercase{\ifnum \c@secnumdepth
+>\z@
+    \thesection\hskip 1em\relax \fi ##1}}{}} 
+  \def\subsectionmark##1{\markright
+    {\ifnum \c@secnumdepth >\@ne
+    \thesubsection\hskip 1em\relax \fi ##1}}
+}
+\else \def\ps@headings{
+  \let\@mkboth\markboth
+  \def\@oddfoot{}
+  \def\@evenfoot{}
+  \def\@oddhead{\hbox {}\sl \rightmark \hfil \rm\thepage}
+  \def\sectionmark##1{\markright {\uppercase{\ifnum \c@secnumdepth
+>\z@
+ \thesection\hskip 1em\relax \fi ##1}}}
+}
+\fi
+\def\ps@myheadings{\let\@mkboth\@gobbletwo
+  \def\@oddhead{\hbox{}\sl\rightmark \hfil \rm\thepage}
+  \def\@oddfoot{}
+  \def\@evenhead{\rm \thepage\hfil\sl\leftmark\hbox {}}
+  \def\@evenfoot{}
+  \def\sectionmark##1{}
+  \def\subsectionmark##1{}}
+
+
+\def\today{\ifcase\month\or
+ January\or February\or March\or April\or May\or June\or
+ July\or August\or September\or October\or November\or December\fi
+ \space\number\day, \number\year}
+
+\ps@plain \pagenumbering{arabic} \onecolumn 
+\if@twoside\else\raggedbottom\fi 
+
+% twocolumn.sty  27 Jan 85
+\twocolumn
+\sloppy
+\flushbottom
+\parindent 1em
+\leftmargini 2em
+\leftmarginv .5em
+\leftmarginvi .5em
+\oddsidemargin 30pt 
+\evensidemargin 30pt
+\marginparwidth 48pt 
+\marginparsep 10pt 
+\textwidth 410pt 
+
+\topmargin 0pt
+\advance \topmargin by -2\headheight
+\advance \topmargin by -\headsep
+     
+\textheight 8.9in
+     
+\oddsidemargin 0pt
+\evensidemargin \oddsidemargin
+\marginparwidth 0.25in
+     
+\textwidth 7in
+
+\columnsep .25in
+
+% title stuff -- membership grade
+\def\asae{\normalsize\sc ASAE} 
+\def\nonmember{}
+\def\member{\\ {\normalsize\sc Member} \\ \asae }
+\def\associate{\\ {\normalsize\sc Assoc.\ Member} \\ \asae}
+\def\student{\\ {\normalsize\sc Student Member} \\ \asae}
+\def\fellow{\\ {\normalsize\sc Fellow} \\ \asae}
+\date{}
+
+
+
+% rename sectioning commands, easy way to avoid problems with them
+% dern numbers
+\def\levelone{\section*}
+\def\leveltwo{\subsection*}
+\def\levelthree{\subsubsection*}
+\def\levelfour#1{\noindent\sc #1.}
+
+% some favorite stuff
+\newcommand{\Cpp}{C{\tt ++}} % C++
+\def\PS{{\tt P\small OST\tt S\small CRIPT}}
+\def\ATT{{AT{\attand \&}T}}
+\def\MF{{METAFONT}}
+\def\Cplusplus{{\rm C\raise.5ex\hbox{\small ++}}}
+\def\AmSTeX{{$\cal A\kern-.1667em\lower.5ex\hbox{$\cal M$}\kern-.125em
+S$-\TeX}}
+\def\BiBTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+                                                                      
+% defined this way in latex.tex: \def\@cite#1#2{[{#1\if@tempswa , #2\fi}]}
+\def\@cite#1#2{}
+% defined this way in latex.tex: \def\@biblabel#1{[#1]\hfill}
+%\def\@biblabel#1{}
+

@@ -1,0 +1,132 @@
+
+
+
+DTERM                     User Commands                     DTERM
+
+
+
+NNAAMMEE
+     dterm - ditroff output interpreter for terminals
+
+SSYYNNOOPPSSIISS
+     ddtteerrmm [ _o_p_t_i_o_n_s ] [ _f_i_l_e ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _D_t_e_r_m interprets its input (standard input default) as out-
+     put from _d_i_t_r_o_f_f(I) and sends its output to standard out.
+     _D_t_e_r_m is intended as a vveerryy rough previewer for seeing how a
+     paper will be layed out.  Input processed for any typesetter
+     is mapped into a terminal's resolution to place characters
+     approximately where they would appear on the final output
+     device.  This is _n_o_t meant to be readable (except with the
+     --aa option, see below), and some characters will be missing.
+     Typical usage:
+
+
+                    ditroff -t file | dterm
+                                or
+                    ditroff -P`dev' -t file > intermediate
+                    dterm intermediate
+
+     At the end of each page _d_t_e_r_m prompts the user and waits for
+     a newline (empty line) from the keyboard before continuing
+     on to the next page.  In this wait state, _d_t_e_r_m accepts a
+     few commands.  Enter ?? to print the list of available com-
+     mands.
+
+     The command line options are:
+
+     --cc   Don't wait between pages; for directing output to _m_o_r_e
+          or into a file.
+
+     --oo_l_i_s_t
+          prints only the pages enumerated in _l_i_s_t.  The list
+          consists of pages and page ranges (e.g., 5-17)
+          separated by commas. The range _n- goes from _n to the
+          end; the range -_n goes from the beginning to and
+          including page _n.
+
+     --hh_n  Set the horizontal resolution (in characters per inch)
+          to _n; default is 10.0.
+
+     --vv_n  Set the vertical resolution (in lines per inch) to _n;
+          default is 6.0.
+
+     --ll_n  Set the maximum line length (in characters) to _n;
+          default is 79.
+
+     --mm   Allow printing of margins (default action is for dterm
+          to print out only enough to show what's on the page).
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+DTERM                     User Commands                     DTERM
+
+
+
+          -m forces printing a page from the upper-left corner.
+
+     --aa   force text to come out in a readable form (meant to
+          look something like ``ditroff -a'').  This usually
+          pushes the text farther right than it was meant to go.
+          It also does not prevent lines of text from a coming
+          out on top of each other.
+
+     --LL   Put a form feed (^L) at the end of each page.
+
+     --ww   Equivalent to ``-c -L -h20 -v12 -l131'' to format for
+          extra-large printouts on a line-printer.
+
+     --ff_s  Get special character file (see below) from _s instead
+          of the default /usr/lib/font/devter/specfile.
+
+     The ``specfile'' is a file of special character translations
+     that map troff special character names to strings to print
+     on a terminal.  Each line in the file consists of two
+     strings separated by a space.  The first string is the spe-
+     cial character name in troff and the second is what to print
+     on the terminal.  Special characters NOT in this file will
+     not print anything.
+
+SSEEEE AALLSSOO
+     ditroff(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     2
+
+
+

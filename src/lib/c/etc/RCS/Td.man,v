@@ -1,0 +1,661 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.5
+date     90.03.30.15.45.44;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.07.19.09.00.04;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.06.03.16.47.29;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.04.06.09.32.05;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.04.05.17.52.41;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.5
+log
+@Updated call to Td_ControlCooked
+@
+text
+@'\" Copyright 1989 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/lib/c/etc/RCS/Td.man,v 1.4 89/07/19 09:00:04 ouster Exp Locker: brent $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS Td lib
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+Td_Create, Td_Delete, Td_PutRaw, Td_GetRaw, Td_ControlRaw,
+Td_Open, Td_Close, Td_PutCooked, Td_GetCooked,
+Td_ControlCooked, Td_CreatePdev,
+Td_DeletePdev \- Terminal driver implementing 4.3 BSD operations.
+.SH SYNOPSIS
+.nf
+\fB#include <td.h>\fR
+.sp
+Td_Terminal
+\fBTd_Create\fR(\fIbufferSize\fR, \fIcookedProc\fR, \fIcookedData\fR, \fIrawProc\fR, \fIrawData\fR)
+.sp
+\fBTd_Delete\fR(\fIterminal\fR)
+.sp
+\fBTd_PutRaw\fR(\fIterminal\fR, \fInumBytes\fR, \fIbuffer\fR)
+.sp
+int
+\fBTd_GetRaw\fR(\fIterminal\fR, \fInumBytes\fR, \fIbuffer\fR)
+.sp
+\fBTd_ControlRaw\fR(\fIterminal\fR, \fIoperation\fR)
+.sp
+int
+\fBTd_Open\fR(\fIterminal\fR, \fIselectBitsPtr\fR)
+.sp
+\fBTd_Close\fR(\fIterminal\fR)
+.sp
+int
+\fBTd_PutCooked\fR(\fIterminal\fR, \fInumBytesPtr\fR, \fIbuffer\fR, \fIsigNumPtr\fR, \fIselectBitsPtr\fR)
+.sp
+int
+\fBTd_GetCooked\fR(\fIterminal\fR, \fIpID\fR, \fIfamilyID\fR, \fInumBytesPtr\fR, \fIbuffer\fR, \fIsigNumPtr\fR, \fIselectBitsPtr\fR)
+.sp
+int
+\fBTd_ControlCooked\fR(\fIterminal\fR, \fIcommand\fR, \fIformat\fR, \fIinputSize\fR, \fIinput\fR, \fIoutputSizePtr\fR, \fIoutput\fR, \fIsigNumPtr\fR, \fIselectBitsPtr\fR)
+.sp
+Td_Pdev
+\fBTd_CreatePdev\fR(\fIname\fR, \fIrealNamePtr\fR, \fItermPtr\fR, \fIrawProc\fR, \fIrawData\fR)
+.sp
+\fBTd_DeletePdev\fR(\fIttyPdev\fR)
+.SH ARGUMENTS
+.AS Td_Terminal (*cookedProc)()
+.AP int bufferSize in
+Size of output buffer to use for terminal.  This is not an exact
+specification, in that the terminal driver may actually allow more
+characters than this to be buffered, but it will always allow at
+least this many characters to be buffered.
+.AP int (*cookedProc)() in
+Procedure to call for control operations on cooked side of driver.
+.AP ClientData cookedData in
+Additional value to pass to \fIcookedProc\fR.
+.AP int (*rawProc)() in
+Procedure to call for control operations on raw side of driver.
+.AP ClientData rawData in
+Additional value to pass to \fIrawProc\fR.
+.AP Td_Terminal terminal in
+Token for terminal;  must have been returned by some previous call
+to \fBTd_Create\fR.
+.AP int numBytes in
+Total number of bytes to get or put for/from raw side of terminal.
+.AP char *buffer in/out
+Buffer containing characters to be written, or containing space in
+which to place characters being read.
+.AP int operation in
+Control operation being invoked from raw side of terminal.  Currently
+no operations are defined.
+.AP int *selectBitsPtr in/out
+Points to word whose bits (\fBFS_READABLE\fR and \fBFS_WRITABLE\fR)
+indicate whether read or write operations can complete
+successfully.  Different procedures may modify either or both of
+these bits.
+.AP int *numBytesPtr in/out
+Points to maximum number of bytes to read or write.  Gets overwritten
+with actual number of bytes read or written.
+.AP int *sigNumPtr out
+Overwritten with signal number to apply to invoking process.  Zero
+means no signal.
+.AP int pID in
+Identifier of process invoking operation.
+.AP int familyID in
+Process group that \fIpID\fR belongs to.
+.AP int command in
+Number of IOControl operation.  Note:  these are Sprite IOControl
+numbers, not UNIX ioctl numbers.  See \fB<dev/tty.h>\fR for definitions.
+.AP Fmt_Format format in
+Byte ordering and alignment format for the buffers used in an IOControl.
+Usually the constant \fBFMT_MY_FORMAT\fP can be passed in for this parameter.
+.AP int inputSize in
+Number of bytes of information in \fIinput\fR
+.AP char *input in
+Input buffer for IOControl operation.  Its structure depends on the
+IOControl.
+.AP int *outputSizePtr in/out
+Points to word specifiying total number of bytes of output buffer
+space available at \fIoutput\fR.  Modified to hold
+the actual number of output bytes provided by the IOControl.
+.AP char *output in
+Output buffer for IOControl operation.  Its structure depends on the
+IOControl.
+.AP char *name in
+Name of file to use for terminal pseudo-device.  May be either full
+name or root.
+.AP char **realNamePtr out
+Where to store actual name of terminal pseudo-device used.  NULL means
+\fIname\fR is a root;  non-NULL means \fIname\fR is the full path
+name.
+.AP Td_Terminal *termPtr out
+If non-NULL, token for terminal gets stored in the word pointed to
+by \fItermPtr\fR.
+.AP Td_Pdev ttyPdev in
+Token for terminal-driven pseudo-device to destroy.  Must have been
+returned previously by \fBTd_CreatePdev\fR.
+.BE
+
+.SH INTRODUCTION
+.PP
+The Td library procedures implement a terminal driver with
+the same features as the terminal driver implemented in the 4.3 BSD
+kernel.  The data structures managed
+by the Td library are called Td_Terminals and have
+two interfaces:  cooked and raw.  The raw interface is used to
+communicate between the Td procedures and the low-level device
+corresponding to the terminal (usually a serial line device
+or a window on a screen).  The cooked interface is used to communicate
+with processes accessing the 4.3-BSD-like terminal.  In between, the
+Td library provides input and output character buffering, echoing
+and line editing, flow control, interrupt characters, and all the other
+features of the 4.3 BSD terminal driver.
+.PP
+Each of the cooked and raw interfaces has at least four procedures associated
+with it.  Three of the procedures are provided by Td:  one to pass
+characters into the terminal driver (e.g. a character that was just
+typed on the keyboard, or a character that a user process wishes
+to ouput on the terminal), one to extract characters from
+the terminal driver (e.g. to pass them to a waiting user process, or
+to output them onto the terminal), and one to invoke control operations
+on the terminal.  The fourth procedure for each interface is provided
+by the program in which Td is embedded.  These procedures are called
+back by Td to notify the program of various events, for example, that
+characters are waiting in the terminal's output buffer, or that a
+full line is present in the terminal's input buffer.
+.PP
+Most of the procedures in the Td library are generic in
+that they can be used in many different situations, including both
+user programs and the Sprite kernel.  Two additional procedures,
+\fBTd_CreatePdev\fR and \fBTd_DeletePdev\fR are provided to connect
+the cooked side of a Td_Terminal to a pseudo-device.  These procedures
+are used by user-level Sprite programs like \fBrlogind\fR
+and window-based terminal emulators.
+
+.SH "CREATING AND DELETING TERMINALS"
+.PP
+The \fBTd_Create\fR procedure is used to create a Td_Terminal.  It
+returns a token that must be passed to most of the other Td procedures.
+Several Td_Terminals may exist at the same time, each created by a
+separate call to \fBTd_Create\fR.  Each Td_Terminal corresponds to
+one logical terminal with its own input and output buffers.  The
+\fIcookedProc\fR and \fIrawProc\fR procedures, and their associated
+ClientData values, are used to invoke control operations on the two
+sides of the terminal.  The use of these two procedures
+is described in the sections below.  The \fIbufferSize\fR argument
+is described in the \fBBUFFERING\fR section below.
+.PP
+\fBTd_Delete\fR simulates a hangup on a Td_Terminal,
+then destroys all of the state associated with the terminal.
+After it is called, the \fIterminal\fR argument should never be used
+again by the caller.
+
+.SH "RAW INTERFACE"
+.PP
+The raw interface is used to communicate between the terminal driver
+and the ``dumb'' terminal device.  It consists of the three procedures
+\fBTd_PutRaw\fR, \fBTd_GetRaw\fR, \fBTd_ControlRaw\fR, and the
+\fIrawProc\fR procedure passed to \fBTd_Create\fR.
+.PP
+When characters are typed on the keyboard associated with the raw terminal,
+they should be passed to the temrinal driver by calling \fBTd_PutRaw\fR.
+The Td library will then perform input processing such as echoing and
+line editing.
+.PP
+The procedure \fBTd_GetRaw\fR should be invoked to remove characters
+from the terminal's output buffer and copy them to \fIbuffer\fR.
+The return value indicates how many characters were actually copied,
+up to either \fInumBytes\fR or the total number of characters in
+the output buffer.  The return value is zero if the output buffer
+is empty.  The caller of \fBTd_GetRaw\fR should then pass the characters
+to the raw serial device, or display them on the screen if the terminal
+is being emulated in a window.  Note that it is up to the application
+in which Td is embedded to decide when to call \fBTd_GetRaw\fR.  However,
+Td calls \fIrawProc\fR to notify the application that the terminal's
+output buffer contains characters;  see below for details.
+.PP
+The procedure \fBTd_ControlRaw\fR should be called when certain
+interesting events occur on the raw terminal.  The \fIoperation\fR
+argument identifies the event that occurred, and must be one of:
+.RS
+.IP \fBTD_BREAK\fR 20
+Means that a break just occurred on the raw device.  \fBTd_ControlRaw\fR
+should only be called when the break condition ends.
+.IP \fBTD_GOT_CARRIER\fR 20
+Means that there is now carrier present on the raw device (e.g. a
+modem connection was just made).
+.IP \fBTD_LOST_CARRIER\fR 20
+Means that carrier just went away on the raw device (e.g. the party
+on the other end hung up the phone).
+.RE
+.PP
+The Td module will invoke the procedure \fIrawProc\fR, which was
+passed to \fBTd_Create\fR, to ask for special actions on the raw terminal
+device, or to provide additional information that may be useful in
+managing the raw terminal device.  \fIRawProc\fR must have the
+following structure:
+.DS
+\fCint
+rawProc(rawData, operation, inputSize, input, outputSize, output)
+    ClientData rawData;
+    int operation;
+    int inputSize;
+    char *input;
+    int outputSize;
+    char *output;
+{
+ ...
+}\fR
+.DE
+The \fIrawData\fR argument will be the same as the \fIrawData\fR
+argument passed to \fBTd_Create\fR.  It usually refers to a data structure
+describing the raw device, which will be used by \fIrawProc\fR.  The
+\fIoperation\fR parameter gives the reason for the call, the \fIinputSize\fR
+and \fIinput\fR arguments describe an area of data that Td is making
+available to \fIrawProc\fR, and \fIoutputSize\fR and \fIoutput\fR
+describe a buffer in which \fIrawProc\fR may place data that it wishes
+to return to Td.  The return value from \fIrawProc\fR indicates how many
+bytes of data were actually placed at \fIoutput\fR;  it must not be
+greater than \fIouptutSize\fR.  At present, \fIoperation\fR must be
+one of the following:
+.RS
+.IP \fBTD_RAW_START_BREAK\fR 30
+Initiate a break condition on the raw device, if the device supports it.
+There is no input data or output data for this operation.
+.IP \fBTD_RAW_STOP_BREAK\fR 30
+End a break condition on the raw device, if the device supports it.
+There is no input data or output data for this operation.
+.IP \fBTD_RAW_SET_DTR\fR 30
+Set the ``data terminal ready'' condition on the raw device, if
+it supports such an operation.
+There is no input data or output data for this operation.
+.IP \fBTD_RAW_CLEAR_DTR\fR 30
+Clear the ``data terminal ready'' condition on the raw device, if
+it supports such an operation.
+There is no input data or output data for this operation.
+.IP \fBTD_RAW_SHUTDOWN\fR 30
+The terminal has been closed and is being shut down.  The raw
+device should now be shut down too (e.g. hang up a modem).
+There is no input data or output data for this operation.
+.IP \fBTD_RAW_OUTPUT_READY\fR 30
+This operation indicates that the output buffer for the terminal
+has just become non-empty.  At some point in the future, the application
+should invoke \fBTd_GetRaw\fR and output the characters to the device.
+There is no input data or output data for this operation.
+.IP \fBTD_RAW_FLUSH_OUTPUT\fR 30
+If there are any characters buffered for output on the raw device
+but not yet output, they should be discarded without outputting them.
+There is no input data or output data for this operation.
+.IP \fBTD_RAW_FLOW_CHARS\fR 30
+The flow-control characters for the terminal have just been modified.
+The \fIinput\fR argument points to a structure with the following
+format:
+.DS
+.ta 4c
+\fCtypedef struct {
+    char stop;
+    char start;
+} Td_FlowChars;\fR
+.DE
+.IP
+Whenever \fIstop\fR is received from the raw terminal, output should
+be stopped until \fIstart\fR is received.  \fIStop\fR and \fIstart\fR
+may be the same character.
+This call is made so that the driver for the raw device may implement
+flow control directly in order to provide faster response to the
+\fIstart\fR and \fIstop\fR characters.  The raw device driver may
+ignore these calls and simply pass the flow control characters to
+the terminal driver, in which case Td will implement flow control,
+albeit with slower response.  If either \fIstop\fR or \fIstart\fR
+is -1, then the raw driver must not implement flow control.  There is
+no output data for this operation.
+.IP \fBTD_RAW_SET_BAUD_RATE\fR 30
+Someone has just asked to change the baud rate for the device.  Both the
+\fIinput\fR and \fIoutput\fR arguments point to structures with the
+following format:
+.DS
+.ta 4c
+\fCtypedef struct {
+    char ispeed;
+    char ospeed;
+} Td_BaudRate;\fR
+.DE
+.IP
+The \fBispeed\fR and \fBospeed\fR fields have the same values as
+they would in an \fBsgttyb\fR structure, such as \fBB9600\fR.  The
+\fIinput\fR argument gives the requested baud rates.  \fIRawProc\fR
+may either accept these speeds or override them and return the
+actual speeds it used in the \fIoutput\fR area.  If the \fIinput\fR
+speeds are accepted, then \fIrawProc\fR need not modify the \fIoutput\fR
+area;  it can simply return 0.
+.IP \fBTD_RAW_GET_BAUD_RATE\fR 30
+This operation is invoked to fetch the current input and output speeds
+for the raw device.  There is no \fIinput\fR area, but \fIoutput\fR
+refers to a \fBTd_BaudRate\fR structure as described above for
+\fBTD_RAW_SET_BAUD_RATE\fR.  \fIRawProc\fR should fill in the current
+speeds for the device at \fI*output\fR and return \fBsizeof(Td_BaudRate)\fR.
+.RE
+
+.SH "COOKED INTERFACE"
+.PP
+The cooked interface is used to communicate between the terminal
+driver and the processes wishing to access a device with full
+4.3 BSD terminal semantics.  As with the raw interface, it consists
+of a collection of Td procedures that the enclosing application
+invokes, plus one procedure in the enclosing application that
+Td invokes.
+.PP
+Whenever a process attempts to open the terminal device, the
+procedure \fBTd_Open\fR should be called.  If the terminal is
+in ``exclusive'' mode (meaning opens are being refused), then
+a UNIX error number is returned.  Otherwise zero is returned and
+the \fBFS_READABLE\fR and \fBFS_WRITABLE\fR bits of
+\fI*selectBitsPtr\fR are set to indicate whether there are input
+characters or output buffer space available, respectively.
+.PP
+When the terminal is closed, \fBTd_Close\fR should be invoked.
+There should be exactly one \fBTd_Close\fR call for each \fBTd_Open\fR
+call:  if an open stream is \fBdup\fR-ed, \fBTd_Close\fR shouldn't
+be called until the last \fBdup\fR-ed copy is closed.
+.PP
+When a process writes data to the cooked terminal, \fBTd_PutCooked\fR
+should be invoked to pass the data to the terminal driver.  The
+characters will be added to the terminal's output buffer after
+performing output processing on them.  The return value is always
+zero (meaning that the characters are always accepted).  The
+\fBFS_WRITABLE\fR bit in \fI*selectBitsPtr\fR will be updated to reflect
+whether the terminal's output buffer is now ``full'' (see the
+\fBBUFFERING\fR section below for more on what this means).  If so, then
+no more calls should be made to \fBTd_PutCooked\fR until the terminal
+driver gives notice that there is more space in the output buffer
+(this is done by calling \fIcookedProc\fR as described below).
+\fBTd_PutCooked\fR overwrites the value at \fI*sigNumPtr\fR;  if
+the value written is non-zero then it is a UNIX signal number that should
+be applied to the calling process.
+.PP
+When a process wishes to read characters from the cooked terminal,
+\fBTd_GetCooked\fR should be called.  This procedure will remove characters
+from the terminal's input buffer (up to \fI*numBytesPtr\fR of them)
+and copy them to \fIbuffer\fR.  The
+value at \fI*numBytesPtr\fR will be updated to reflect the actual
+number of characters returned.  The return value from \fBTd_GetCooked\fR
+will normally be zero;  if an error occurred, then the return value
+will be a UNIX error number.  If the terminal's input buffer is empty,
+then the return value will be \fBEWOULDBLOCK\fR and \fI*numBytesPtr\fR
+will be set to zero.  The \fBFS_READABLE\fR bit of \fI*selectBitsPtr\fR
+will be updated to reflect whether there are still more characters ready in
+the terminal's input buffer.  \fBTd_PutCooked\fR overwrites the
+value at \fI*sigNumPtr\fR;  if
+the value written is non-zero then it is a UNIX signal number that should
+be applied to the calling process (this is used, for example, to
+generate \fBSIGTTIN\fR signals).
+.PP
+When a process invokes an IOControl operation on the terminal,
+\fBTd_ControlCooked\fR should be called.  The arguments to
+\fBTd_ControlCooked\fR indicate the IOControl number (\fIcommand\fR),
+plus an input buffer (\fIinputSize\fR and \fIinput\fR) and an
+output buffer (\fI*outputSizePtr\fR and \fIoutput\fR).  The
+value at \fI*outputSizePtr\fR will be modified to reflect the
+actualy number of bytes of output data written at \fIoutput\fR
+(this will be no more than the original value of \fI*outputSizePtr\fR).
+The contents of the input and output buffers are determined by the
+specific \fIcommand\fR being requested.  See the documentation on
+the 4.3 BSD terminal driver for details.
+The byte ordering and structure alignment of the input and output buffers
+is specified by the \fIformat\fP parameter.  The normal value to pass in
+is for \fIformat\fP is \fBFMT_MY_FORMAT\fP, which is defined in ``fmt.h''.
+\fBTd_ControlCooked\fR will
+reformat the input and output buffers, if necessary, to match the
+byte ordering of a remote client process.
+\fBTd_ControlCooked\fR
+will modify the \fBFS_READABLE\fR and \fBFS_WRITABLE\fR bits of
+\fI*selectBitsPtr\fR to reflect the state of the terminal's
+input and output buffers when the IOControl completes.
+\fBTd_PutCooked\fR overwrites the value at \fI*sigNumPtr\fR;  if
+the value written is non-zero then it is a UNIX signal number that should
+be applied to the calling process.
+.PP
+The Td library will invoke the \fIcookedProc\fR, which was passed
+as an argument to \fBTd_Create\fR, when it wishes to give notice
+of interesting events related to the cooked side of the terminal.
+\fICookedProc\fR should have the following structure:
+.DS
+\fCint
+cookedProc(cookedData, operation, inputSize, input, outputSize, output)
+    ClientData cookedData;
+    int operation;
+    int inputSize;
+    char *input;
+    int outputSize;
+    char *output;
+{
+ ...
+}\fR
+.DE
+The \fIcookedData\fR argument will be the same as the \fIcookedData\fR
+argument passed to \fBTd_Create\fR.  It usually refers to a data structure
+describing the interface to processes using the cooked terminal.
+The other arguments to \fIcookedProc\fR and its result
+have the same meaning as the arguments and result
+for \fIrawProc\fR, except that  \fIoperation\fR has different meanings.  The
+values currently defined for \fIoperation\fR are:
+.RS
+.IP \fBTD_COOKED_SIGNAL\fR 30
+A signal should be generated for the controlling process group
+associated with the terminal.  \fIInput\fR will point to a structure
+with the following format:
+.DS
+.ta 4c
+\fCtypedef struct {
+    int sigNum;
+    int groupID;
+} Td_Signal;\fR
+.DE
+.IP
+The \fIsigNum\fR field gives a UNIX signal number (e.g. \fBSIGINT\fR),
+and \fIgroupID\fR identifies the controlling process group for
+the terminal.  \fICookedProc\fR is not expected
+to return any output data.
+.IP \fBTD_COOKED_READS_OK\fR 30
+There is now readable data in the input buffer associated with the
+terminal, so that the next call to \fBTd_GetCooked\fR will not
+return \fBEWOULDBLOCK\fR.  If there is a waiting process, it should
+probably be woken up.  There is no input data or output data for
+this operation.
+.IP \fBTD_COOKED_WRITES_OK\fR 30
+The output buffer for the terminal is now empty.  If there is a process
+waiting to do output, it should probably be woken up.
+There is no input data or output data for this operation.
+.RE
+
+.SH "PSEUDO-DEVICE INTERFACE"
+.PP
+The Td library also contains routines to connect the cooked side of
+a terminal to a pseudo-device.  The pseudo-device routines use the
+facilities of the Pdev library, which in turn requires that the
+application use the \fBFs_Select\fR library to manage I/O channels.
+The non-pseudo-device portions of the Td library may be used without
+also using \fBFs_Select\fR.
+.PP
+\fBTd_CreatePdev\fR creates a pseudo-device file and arranges for the
+file to have terminal-like behavior by associating it with a terminal
+managed by the Td library.  Once \fBTd_CreatePdev\fR has been called,
+the pseudo-device and the cooked side of its terminal will be managed
+automatically.  However, it is up to \fBTd_CreatePdev\fR's caller to manage
+the raw side of the pseudo-terminal.  The \fIrawProc\fR and \fIrawData\fR
+arguments to \fBTd_CreatePdev\fR are the same as the corresponding arguments
+to \fBTd_Create\fR (\fBTd_CreatePdev\fR passes them to \fBTd_Create\fR
+when it creates the terminal).  If the \fItermPtr\fR argument to
+\fBTd_CreatePdev\fR is not NULL, then \fBTd_CreatePdev\fR stores
+the Td_Terminal token for the pseudo-terminal at \fI*termPtr\fR; this
+allows the application to invoke procedures like \fBTd_PutRaw\fR.
+.PP
+The name of the pseudo-device file created by \fBTd_CreatePdev\fR
+may be specified in either of two ways.  If the \fIrealNamePtr\fR
+argument to \fBTd_CreatePdev\fR is NULL, then the \fIname\fR
+argument gives the complete name of the pseudo-device file.
+If \fIrealNamePtr\fR is not NULL, then the pseudo-device file will
+be created in a host-specific directory for the machine on which
+the program is running, and the file name will have the form
+\fInameXX\fR, where \fIXX\fR is a small integer chosen to avoid
+conflict with other files that have the same \fIname\fR.  A pointer
+to the complete name will be stored in \fI*realNamePtr\fR;  the
+storage for the name is allocated by \fBmalloc\fR and should eventually
+be freed by \fBTd_CreatePdev\fR's caller.
+.PP
+\fBTd_CreatePdev\fR normally returns a token for the pseudo-terminal.
+If the pseudo-device couldn't be opened, then NULL is
+returned and the variable \fBpdev_ErrorMsg\fR points to a string
+describing what went wrong.
+.PP
+The only use for the token returned by \fBTd_CreatePdev\fR
+is to pass it to \fBTd_DeletePdev\fR.
+When this happens, the pseudo-device is closed and the associated
+terminal is destroyed by calling \fBTd_Delete\fR.
+
+.SH BUFFERING
+.PP
+The input buffer for a Td_Terminal grows automatically to accommodate
+as much data as is present:  there is no upper limit on its size.  The
+output buffer will also grow automatically:  \fBTd_PutCooked\fR
+always accepts all the data passed to it.  However, it is usually
+a bad idea to buffer a very large number of characters on output, since
+these characters will have to be output even if the process is killed
+with a control-C.  The \fIbufferSize\fR argument to \fBTd_Create\fR
+specifies a nominal output buffer size;  whenever more than this many
+characters are buffered, \fBTd_PutCooked\fR will turn off the
+\fBFS_WRITABLE\fR bit in \fI*selectBitsPtr\fR to indicate that the
+buffer is nominally full;  the enclosing application should then
+refuse to accept more characters for output (e.g., by suspending
+the process).  When the output buffer empties, \fIcookedProc\fR
+will be invoked with a \fBTD_COOKED_WRITES_OK\fR command.
+
+.SH EXAMPLES
+.PP
+The best way to learn how to use the Td library is to look
+at examples in the Sprite source code.  The simplest example is the
+\fBmktty\fR program;  other examples are \fBrlogind\fR (the remote-login
+server) and \fBtx\fR (a window-based terminal emulator).
+
+.SH KEYWORDS
+4.3 BSD, pseudo-device, terminal driver
+@
+
+
+1.4
+log
+@Document support for baud-rate changes.
+@
+text
+@d9 1
+a9 1
+'\" $Header: /sprite/src/lib/c/etc/RCS/Td.man,v 1.3 89/06/03 16:47:29 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d48 1
+a48 1
+\fBTd_ControlCooked\fR(\fIterminal\fR, \fIcommand\fR, \fIinputSize\fR, \fIinput\fR, \fIoutputSizePtr\fR, \fIoutput\fR, \fIsigNumPtr\fR, \fIselectBitsPtr\fR)
+d98 3
+d392 8
+a399 1
+the 4.3 BSD terminal driver for details.  \fBTd_ControlCooked\fR
+@
+
+
+1.3
+log
+@Several changes:  TD_HANGUP is now TD_GOT_CARRIER and TD_LOST_CARRIER,
+added TD_RAW_BAUD_RATE callback, changed TD_COOKED_SIGNAL to provide
+both signal number and controlling process group.
+@
+text
+@d9 1
+a9 1
+'\" $Header: /sprite/src/lib/c/etc/RCS/Td.man,v 1.2 89/04/06 09:32:05 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d298 4
+a301 3
+.IP \fBTD_RAW_BAUD_RATE\fR 30
+The requested baud rate for the device has just been modified.  The
+\fBinput\fR argument points to a structure with the following format:
+d310 13
+a322 3
+The \fIispeed\fR and \fIospeed\fR fields have the same values as
+they would in an \fBsgttyb\fR structure, such as \fBB9600\fR.  There is
+no output data for this operation.
+@
+
+
+1.2
+log
+@Trivial editorial change.
+@
+text
+@d9 1
+a9 1
+'\" $Header: /sprite/src/lib/c/etc/RCS/Td.man,v 1.1 89/04/05 17:52:41 ouster Exp $ SPRITE (Berkeley)
+d194 1
+a194 1
+up to either \fInumBytes\fR or that total number of characters in
+d210 6
+a215 3
+.IP \fBTD_HANGUP\fR 20
+Means that a hangup just occurred on the modem associated with the
+raw device.
+d262 3
+a264 3
+.IP \fBTD_RAW_HANGUP\fR 30
+Hangup the modem associated with the raw device,
+if the device supports it.
+d296 16
+a311 1
+is -1, then the raw driver must not implement flow control.
+d413 13
+a425 3
+associated with the terminal.  \fIInput\fR will contain a single
+integer value, which is the UNIX signal number to send to the
+process group (e.g. \fBSIGINT\fR).  \fICookedProc\fR is not expected
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d9 1
+a9 1
+'\" $Header: /sprite/lib/forms/RCS/proto.man,v 1.5 89/01/27 08:36:02 ouster Exp $ SPRITE (Berkeley)
+d174 2
+a175 1
+\fBTd_Delete\fR destroys all of the state associated with a Td_Terminal.
+@

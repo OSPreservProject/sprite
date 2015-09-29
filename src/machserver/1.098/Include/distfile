@@ -1,0 +1,6 @@
+FILES = (*.h)
+
+HOSTS = (lust)
+
+${FILES} -> ${HOSTS}
+	install -w /usr/sprite/lib/include/kernel;

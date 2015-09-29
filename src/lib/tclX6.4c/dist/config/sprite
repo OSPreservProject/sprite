@@ -1,0 +1,20 @@
+#------------------------------------------------------------------------------
+# Sprite
+#------------------------------------------------------------------------------
+# $Id: bsd-4.3,v 2.2 1992/11/08 17:24:26 markd Exp $
+#------------------------------------------------------------------------------
+#
+SYS_DEP_FLAGS= -Dsprite -Uultrix -DTCL_HAVE_SETLINEBUF -DTCL_32_BIT_RANDOM \
+	-DTCL_TM_GMTOFF -DTCL_IEEE_FP_MATH -DTCL_NO_FILE_LOCKING \
+	-DSIG_ERR=BADSIG
+LIBS=-lm
+RANLIB_CMD=ranlib
+MCS_CMD=true
+SUPPORT_FLAGS=-DTCL_HAS_TM_ZONE
+TCL_TK_LIBS= -lX11 -lm
+
+TCL_MAN_SEPARATOR=
+
+MAKEFLAGS= -f Makefile.sprite -B
+SUPPORT_OBJS= strftime.o
+CPLUSOBJS=

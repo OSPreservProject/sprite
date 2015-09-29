@@ -1,0 +1,26 @@
+% Written by Charles Karney (Karney%PPC.MFENET@NMFECC.ARPA) 1986/07/28.
+% The cyrillic style option loads up the cyrillic fonts.  It is assumed that
+% cyracc.def is on the system.  Only \textfont, \scriptfont, and
+% \scriptscriptfont sizes are provided.  10pt, 11pt, 12pt styles are
+% supported.  The fonts are accessed via \cyr.  E.g., {\cyr Zhurnal}.
+
+\input cyracc.def
+\ifcase\@ptsize
+ \font\tencyr=mcyr10
+ \font\sevencyr=mcyr7
+ \font\fivecyr=mcyr6
+\or
+ \font\tencyr=mcyr10 scaled \magstephalf
+ \font\sevencyr=mcyr8
+ \font\fivecyr=mcyr6
+\or
+ \font\tencyr=mcyr10 scaled \magstep1
+ \font\sevencyr=mcyr8
+ \font\fivecyr=mcyr6
+\fi
+
+\newfam\cyrfam
+\textfont\cyrfam=\tencyr  \scriptfont\cyrfam=\sevencyr
+  \scriptscriptfont\cyrfam=\fivecyr
+
+\def\cyr{\fam\cyrfam\tencyr\cyracc}

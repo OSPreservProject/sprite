@@ -1,0 +1,105 @@
+' $Header: /a/newcmds/spritemon/RCS/spritemon.man,v 1.7 89/10/17 13:24:47 douglis Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS SPRITEMON cmds
+.BS
+.SH NAME
+spritemon \- X widget to display system events
+.SH SYNOPSIS
+\fBspritemon\fB -\fR[\fBuRafvpPiorw\fR] [\fB\-N \fInum\fR] [\fB-disks\fR] [\fB\-D \fInum\fR] [\fB\-T \fIinterval\fR] [\fB\-A \fIavailInterval\fR] [\fB\-%M\fR] [\fB\-H \fIheight\fR]
+.SH "OPTIONS"
+.IP "\fB\-T \fIinterval\fR"
+Sets the interval at which the display is updated.  Default is 5 seconds.
+.IP "\fB\-H \fIheight\fR"
+Sets the height of each graph displayed.  Default is 40 pixels.
+.IP "\fB\-u\fR"
+Display CPU utilization on a scale from 0.0 to 1.0.
+.IP "\fB\-N \fInum CPUs\fR"
+Do CPU utilization for more than one CPU.
+.IP "\fB\-R\fR"
+Display the number of remote processes belonging to this host (in 10's).
+.IP "\fB\-a\fR"
+Display the number of hosts to which this host can migrate (in 10's).
+.IP "\fB\-A \fIavailInterval\fR"
+Sets the interval at which the count of available hosts is updated.  
+Default is 15 seconds.
+.IP "\fB\-f\fR"
+Display file system cache size.
+.IP "\fB\-v\fR"
+Display amount of physical memory devoted to user virtual memory.
+.IP "\fB\-%\fR"
+Display cache size (\fB\-f\fR) or VM size (\fB\-v\fR) as a percentage of main memory.
+.IP "\fB\-M\fR"
+Display cache size (\fB\-f\fR) or VM size (\fB\-v\fR) in megabytes.
+.IP "\fB\-p\fR"
+Display the number of page-ins (in 100's).
+This is a sum of text, heap, and stack page-ins.
+.IP "\fB\-P\fR"
+Display the number of pages written out to swap files (in 100's).
+.IP "\fB\-i\fR"
+Display the number of ethernet packets received (in 100's).
+.IP "\fB\-o\fR"
+Display the number of ethernet packets sent out (in 100's).
+.IP "\fB\-disks\fR"
+Display disk statistics for all disks in the system (superceeds -D).
+.IP "\fB\-D \fInum\fR"
+Display disk #\fInum\fR utilization on a scale from 0.0 to 1.0.
+.IP "\fB\-r\fR"
+Display the number of disk read transfers (in 100's).  Use with \fB\-D\fR or \fB-disks\fP.
+.IP "\fB\-w\fR"
+Display the number of disk write transfers (in 100's).  Use with \fB\-D\fR or \fB-disks\fR.
+.BE
+.SH INTRODUCTION
+This widget displays operating system parameters as a running graph.
+It is an X toolkit widget and so it
+needs to run under the X window system.  This is a
+``load widget'', which displays a value every \fIinterval\fP
+seconds, and has a title but no
+vertical scale.  Instead, horizontal lines are drawn
+to represent increments in the native unit of whatever
+is being displayed.  For some parameters, like
+percentage of memory devoted to the file system cache,
+the displayed value is always between 0 and 1 so there
+are no horizontal scale lines.  For the megabytes of
+filesystem cache there will be horizontal lines
+that represent megabytes, for remote processes there will be
+horizontal lines to represent 10's of remote processes,
+and for paging and network traffic there will be horizontal lines to
+represent 100's of events.
+The value displayed is truncated to the largest value that can
+be displayed without causing the horizontal lines to
+completely occupy the display.
+This value is equal to half the pane height.
+.PP
+Several system parameters can be viewed at once;
+the load meters are organized into a vertical pane with
+each meter of equal height.
+It is best to let spritemon determine its own geometry at startup
+(it will use the default pane height times the number of parameters being
+displayed),
+or you can specify a geometry argument on the command line
+and spritemon will evenly divide the window into panes.
+Otherwise, if you drag out a window size, the VPane widget
+does a poor job of picking the heights of individual panes.
+.PP
+The disk related options only work on machines with disks.
+The \fB\-D\fR option specifies which disk to display
+information about, or \fB-disks\fP can be used to display
+information about all the disks in the system.  Utilization is displayed,
+and \fB\-r\fR and \fB\-w\fR are used to display raw read and write counts.
+The number to specify to \fB\-D\fR corresponds to a kernel table entry
+that is indexed starting at zero.
+.SH "BUGS"
+.PP
+The \fB\-i\fR option needs to be glommed together with another option,
+i.e. \fB\-io\fR, or it gets interpreted by the X toolkit and \fBspritemon\fR
+starts out iconic.
+.PP
+The value of the argument to \fB\-D\fR is un-intuitive.
+.PP
+The disk information should display the file system name,
+but kernel support is needed for this.
+.SH "SEE ALSO"
+vmStat, migcmd
+.SH KEYWORDS
+system, page faults, file system cache, virtual memory, network
+interface, migration

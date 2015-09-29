@@ -1,0 +1,18 @@
+F ALLOCA.H;1                        	alloca.h
+F A_OUT.H;1                         	a.out.h
+F FLOAT.H;1                         	float.h
+F GMON.H;1                          	gmon.h
+L KERNEL.;1                         	kernel	../../../src/kernel/Include/sun3.md
+F LIMITS.H;1                        	limits.h
+L MACHINE.;1                        	machine	.
+F MACHPARA.H;1                      	machparam.h
+F MATH_688.H;1                      	math-68881.h
+D MON                               	mon
+F SETJMP.H;1                        	setjmp.h
+F SIGMACH.H;1                       	sigMach.h
+F STDARG.H;1                        	stdarg.h
+L SUN3.;1                           	sun3	.
+L SUN3.MD;1                         	sun3.md	sun3.md
+D SYS                               	sys
+F VARARGS.H;1                       	varargs.h
+F VMMACH.H;1                        	vmMach.h

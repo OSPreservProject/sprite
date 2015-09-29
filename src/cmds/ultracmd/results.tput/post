@@ -1,0 +1,29 @@
+#!/sprite/cmds/perl
+
+do 'getopts.pl';
+do Getopts('trl');
+
+$currentSize = -1;
+
+if ((!(defined($opt_t))) && (!(defined($opt_r)))) {
+    printf("You must specify one of -r and -t\n");
+    exit(1);
+}
+
+while(<>) {
+    if (/^[0-9]+/) {
+	($size, $sent, $recv, $time) = split(" ");
+	if (defined($opt_t)) {
+	    $packets = $sent;
+	} else {
+	    $packets = $recv;
+	}
+	if (defined($opt_l)) {
+	    printf("%6.2f %6.4f\n", $size / 1024, ($time / $packets) * 1000);
+	} else {
+	    printf("%6.2f %6.4f\n", $size / 1024, 
+		(($packets * $size) / $time) / (1024 * 1024));
+	}
+    }
+}
+

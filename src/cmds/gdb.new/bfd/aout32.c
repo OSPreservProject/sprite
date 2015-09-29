@@ -1,0 +1,1 @@
+../dist/bfd/aout32.c

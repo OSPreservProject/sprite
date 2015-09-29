@@ -1,0 +1,131 @@
+/*
+ * bf.h --
+ *
+ *	Macros to manipulate bits in a string of bytes, simulating the
+ *	effect of bit fields.
+ *
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.5 90/01/12 12:03:25 douglis Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _BF
+#define _BF
+
+#define BfMin(a, b)    ((a) < (b) ? (a) : (b))
+
+#define BfMask(bits)   ((1 << (bits)) - 1)
+
+#define BfDx(x, d)     (((x) == 0) ? (d) & 7 : 0)
+
+#define BfS0(d, s)     (BfMin(8 - BfDx(0, d), s))
+
+#define BfSumS0(d, s)  (BfS0(d, s))
+
+#define BfS1(d, s)     (BfMin(8 - BfDx(1, d), (s) - BfSumS0(d, s)))
+
+#define BfSumS1(d, s)  (BfS0(d, s) + BfS1(d, s))
+
+#define BfS2(d, s)     (BfMin(8 - BfDx(2, d), (s) - BfSumS1(d, s)))
+
+#define BfSumS2(d, s)  (BfSumS1(d, s) + BfS2(d, s))
+
+#define BfS3(d, s)     (BfMin(8 - BfDx(3, d), (s) - BfSumS2(d, s)))
+
+#define BfSumS3(d, s)  (BfSumS2(d, s) + BfS3(d, s))
+
+#define BfS4(d, s)     (BfMin(8 - BfDx(4, d), (s) - BfSumS3(d, s)))
+
+#define BfSumS4(d, s)  (BfSumS3(d, s) + BfS4(d, s))
+
+#define BfSx(x, d, s) 						\
+    (((x) == 0) ? BfS0(d, s) : (((x) == 1) ? BfS1(d, s) : 	\
+    (((x) == 2) ? BfS2(d, s) : (((x) == 3) ? BfS3(d, s) :	\
+    BfS4(d, s)))))
+
+#define BfSumSx(x, d, s) \
+    (((x) == 0) ? BfSumS0(d, s) : (((x) == 1) ? BfSumS1(d, s) : \
+    (((x) == 2) ? BfSumS2(d, s) : (((x) == 3) ? BfSumS3(d, s) :	\
+    BfSumS4(d, s)))))
+
+#define BfRx(x, d, s)   ((s) - BfSumSx(x, d, s))
+
+#define BfQx(x, d, s) (8 - (BfDx(x, d) + BfSx(x, d, s)))
+
+#define BfVx(x, d, s, v) \
+    ((((v) >> BfRx(x, d, s)) & BfMask(BfSx(x, d, s))) << BfQx(x, d, s))
+
+#define BfZx(ptr, x, d, s) \
+    (((volatile unsigned char *) ptr)[(x)] & BfVx(x, d, s, 0xffffffff))
+
+#define BfSetx(ptr, x, d, s, v)  {			\
+    ((volatile unsigned char *) ptr)[(x)] &= BfVx(x, d, s, 0xffffffff); \
+    ((volatile unsigned char *) ptr)[(x)] |= BfVx(x, d, s, v); \
+}
+
+#define Bf_Set(ptr, d, s, v)  {					\
+    BfSetx(ptr, 0, d, s, v);					\
+    if (BfRx(0, d, s) > 0) {					\
+	BfSetx(ptr, 1, d, s, v);				\
+	if (BfRx(1, d, s) > 0) {				\
+	    BfSetx(ptr, 2, d, s, v);				\
+	    if (BfRx(2, d, s) > 0) {				\
+		BfSetx(ptr, 3, d, s, v);			\
+		if (BfRx(3, d, s) > 0) {			\
+		    BfSetx(ptr, 4, d, s, v);			\
+		}						\
+	    }							\
+	}							\
+    }								\
+}
+
+#define BfTestx(ptr, x, d, s, v) \
+    (BfZx(ptr, x, d, s) == BfVx(x, d, s, v))
+
+#define Bf_Test(ptr, d, s, v) 					\
+    ((BfRx(0, d, s) <= 0) ? 					\
+	(BfTestx(ptr, 0, d, s, v)) : 				\
+	((BfRx(1, d, s) <= 0) ?					\
+	    (BfTestx(ptr, 0, d, s, v) &&			\
+	    BfTestx(ptr, 1, d, s, v)) :				\
+	    ((BfRx(2, d, s) <= 0) ?				\
+		(BfTestx(ptr, 0, d, s, v) &&			\
+		BfTestx(ptr, 1, d, s, v) &&			\
+		BfTestx(ptr, 2, d, s, v)) : 			\
+		((BfRx(3, d, s) <= 0) ?				\
+		    (BfTestx(ptr, 0, d, s, v) &&		\
+		    BfTestx(ptr, 1, d, s, v) &&			\
+		    BfTestx(ptr, 2, d, s, v) &&			\
+		    BfTestx(ptr, 3, d, s, v)) :			\
+		    (BfTestx(ptr, 0, d, s, v) &&		\
+		    BfTestx(ptr, 1, d, s, v) &&			\
+		    BfTestx(ptr, 2, d, s, v) &&			\
+		    BfTestx(ptr, 3, d, s, v) &&			\
+		    BfTestx(ptr, 4, d, s, v))))))
+
+
+#define Bf_Get(ptr, d, s, valuePtr) 					\
+    ((*(valuePtr)) = 							\
+	((BfRx(0, d, s) == 0) ? 					\
+	    (BfZx(ptr, 0, d, s) >> BfQx(0, d, s)) : 			\
+	    ((BfZx(ptr, 0, d, s) << BfRx(0, d, s)) |			\
+	    ((BfRx(1, d, s) == 0) ?   					\
+		(BfZx(ptr, 1, d, s) >> BfQx(1, d, s)) : 		\
+		((BfZx(ptr, 1, d, s) << BfRx(1, d, s)) |		\
+		((BfRx(2, d, s) == 0) ?   				\
+		    (BfZx(ptr, 2, d, s) >> BfQx(2, d, s)) :		\
+		    ((BfZx(ptr, 2, d, s) << BfRx(2, d, s)) |		\
+		    ((BfRx(3, d, s) == 0) ?				\
+		    (BfZx(ptr, 3, d, s) >> BfQx(3, d, s)) :		\
+		    ((BfZx(ptr, 3, d, s) << BfRx(3, d, s)) |		\
+		    (BfZx(ptr, 4, d, s) >> BfQx(4, d, s)))))))))))
+
+#endif /* _BF */
+

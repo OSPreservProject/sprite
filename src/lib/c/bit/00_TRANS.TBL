@@ -1,0 +1,14 @@
+F BIT.MAN;1                         	Bit.man
+F BITINT.H;1                        	bitInt.h
+F BIT_ANYS.C;1                      	Bit_AnySet.c
+F BIT_EXPA.C;1                      	Bit_Expand.c
+F BIT_FIN0.C;1                      	Bit_FindFirstClear.c
+F BIT_FIN1.C;1                      	Bit_FindFirstSet.c
+F BIT_INTE.C;1                      	Bit_Intersect.c
+F BIT_UNIO.C;1                      	Bit_Union.c
+D DS3100_M                          	ds3100.md
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md
+D SYMM_MD                           	symm.md

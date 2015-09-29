@@ -1,0 +1,229 @@
+head     9.3;
+branch   ;
+access   ;
+symbols  ds3100:9.3 sun3:9.3 sprited:9.3.1 sun4nw:9.3 symm:9.3 spur:9.3 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.3
+date     90.02.20.15.35.50;  author shirriff;  state Exp;
+branches 9.3.1.1;
+next     9.2;
+
+9.2
+date     90.02.14.22.31.56;  author shirriff;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.02.07.14.26.19;  author shirriff;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.16.25;  author douglis;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.14.13.11.03;  author nelson;  state Exp;
+branches ;
+next     ;
+
+9.3.1.1
+date     91.11.13.20.17.48;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Initial code from DECWRL.
+@
+
+
+9.3
+log
+@Added PROC_CODE_FILE_OFFSET function.
+@
+text
+@/*
+ * procAOUT.h --
+ *
+ *	The a.out format for an object file.
+ *
+ * Copyright (C) 1989 Digital Equipment Corporation.
+ * Permission to use, copy, modify, and distribute this software and
+ * its documentation for any purpose and without fee is hereby granted,
+ * provided that the above copyright notice appears in all copies.  
+ * Digital Equipment Corporation makes no representations about the
+ * suitability of this software for any purpose.  It is provided "as is"
+ * without express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/proc/ds3100.md/RCS/procMach.h,v 9.2 90/02/14 22:31:56 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+ */
+
+#ifndef _PROCMACH
+#define _PROCMACH
+
+#include "sprite.h"
+
+/*
+ * File header magic number.
+ */
+#define	PROC_OBJ_MAGIC	0x0162
+
+/*
+ * A.out header magic number.
+ */
+#define	PROC_OMAGIC	0407		/* Impure format */
+#define	PROC_NMAGIC	0410		/* Shared text format */
+#define	PROC_ZMAGIC	0413		/* Demand load format */
+#define	PROC_LIBMAGIC	0443		/* Share library format */
+
+/*
+ * Description of the file.
+ */
+typedef struct {
+    unsigned short	magic;		/* The magic number. */
+    unsigned short	numSections;	/* The number of sections. */
+    long		timeDateStamp;	/* Time and date stamp. */		
+    long		symPtr;		/* File pointer to symbolic header. */	
+    long		numSyms;	/* Size of symbolic header. */
+    unsigned short	optHeader;	/* Size of optional header. */
+    unsigned short	flags;		/* Flags. */
+} ProcFileHeader;
+
+/*
+ * A.out header.
+ */
+typedef struct {
+    short		magic;		/* Magic number. */
+    short		verStamp;	/* Version stamp. */
+    long		codeSize;	/* Code size in bytes. */
+    long		heapSize;	/* Initialized data size in bytes. */
+    long		bssSize;	/* Uninitialized data size in bytes. */
+    Address		entry;		/* Entry point. */
+    Address		codeStart;	/* Base of code used for this file. */
+    Address		heapStart;	/* Base of heap used for this file. */
+    Address		bssStart;	/* Base of bss used for this file. */
+    long		gprMask;	/* General purpose register mask. */
+    long		cprMask[4];	/* Co-processor register masks. */
+    long		gpValue;	/* The gp value for this object. */
+} ProcAOUTHeader;
+
+/*
+ * Section header.
+ */
+typedef struct {
+    char		name[8];	/* Section name. */
+    long		physAddr;	/* Section physical address. */
+    long		virtAddr;	/* Section virtual address. */
+    long		size;		/* Section size. */
+    long		sectionPtr;	/* File pointer to section data.  */
+    long		relocPtr;	/* File pointer to relocation data.  */
+    long		lnnoPtr;	/* File pointer to gp tables. */
+    unsigned short	numReloc;	/* Number of relocation entries. */
+    unsigned short	numLnno;	/* Numberof gp tables. */
+    long		flags;		/* Section flags. */
+} ProcSectionHeader;
+
+/*
+ * The header at the beginning of each file.
+ */
+typedef struct {
+    ProcFileHeader	fileHeader;
+    ProcAOUTHeader	aoutHeader;
+} ProcExecHeader;
+
+/*
+ * Default place for a text segment.
+ */
+#define DEFAULT_TEXT	0x00400000
+
+/*
+ * Determine the offset of the text segment in the file, given the header.
+ * (This is the same function as N_TXTOFF)
+ */
+#define PROC_CODE_FILE_OFFSET(hdr) \
+    ( ((hdr).fileHeader.magic==PROC_ZMAGIC)? 0 : \
+	((sizeof(ProcExecHeader) + \
+	    (hdr).fileHeader.numSections*sizeof(ProcSectionHeader) + \
+	    ((hdr).aoutHeader.verStamp<23?7:15)) & \
+		~((long)(((hdr).aoutHeader.verStamp<23?7:15))) ) )
+
+#define PROC_DATA_FILE_OFFSET(x) \
+    (PROC_CODE_FILE_OFFSET(x) + (x).aoutHeader.codeSize)
+
+#endif /* _PROCMACH */
+@
+
+
+9.3.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d14 1
+a14 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/proc/ds3100.md/procMach.h,v 9.3 90/02/20 15:35:50 shirriff Exp $ SPRITE (Berkeley)
+@
+
+
+9.2
+log
+@Added TextOffset function to get start of text in a.out file.
+@
+text
+@d14 1
+a14 1
+ * $Header: /sprite/src/kernel/proc/ds3100.md/RCS/procMach.h,v 9.1 90/02/07 14:26:19 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+d97 1
+d99 2
+a100 2
+#define TextOffset(hdr) \
+    ( ((hdr)->fileHeader.magic==PROC_ZMAGIC)? 0 : \
+d102 6
+a107 3
+	    (hdr)->fileHeader.numSections*sizeof(ProcSectionHeader) + \
+	    ((hdr)->aoutHeader.verStamp<23?7:15)) & \
+		~((long)(((hdr)->aoutHeader.verStamp<23?7:15))) ) )
+@
+
+
+9.1
+log
+@Changes to allow OMAGIC files.
+@
+text
+@d14 1
+a14 1
+ * $Header: /sprite/src/kernel/proc/ds3100.md/RCS/procMach.h,v 9.0 89/09/12 15:16:25 douglis Stable Locker: shirriff $ SPRITE (Berkeley)
+d94 10
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d14 1
+a14 1
+ * $Header: /sprite/src/kernel/proc/ds3100.md/RCS/procMach.h,v 1.1 89/07/14 13:11:03 nelson Exp Locker: douglis $ SPRITE (Berkeley)
+d30 2
+d33 1
+d67 16
+d89 5
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d14 1
+a14 1
+ * $Header: procMach.h,v 1.2 89/06/29 10:11:44 mnelson Exp $ SPRITE (Berkeley)
+@

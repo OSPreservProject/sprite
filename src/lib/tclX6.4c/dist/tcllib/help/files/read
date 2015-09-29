@@ -1,0 +1,17 @@
+          read fileId
+
+          read fileId nonewline
+
+          read fileId numBytes
+               In  the first form, all of the remaining bytes are read
+               from the file given by fileId; they are returned as the
+               result of the command.  If nonewline is specified as an
+               additional argument, then the  last  character  of  the
+               file  is  discarded  if  it is a newline.  In the third
+               form, the extra argument specifies how  many  bytes  to
+               read;   exactly  this  many  bytes  will  be  read  and
+               returned, unless there are fewer  than  numBytes  bytes
+               left in the file; in this case, all the remaining bytes
+               are returned.  FileId must be stdin or the return value
+               from  a  previous call to open; it must refer to a file
+               that was opened for reading.

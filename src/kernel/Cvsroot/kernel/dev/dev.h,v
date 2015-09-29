@@ -1,0 +1,505 @@
+head     9.3;
+branch   ;
+access   ;
+symbols  ds3100:9.3 sun3:9.3 sun4nw:9.3 symm:9.3 spur:9.3 Summer89:9.0 newlib:8.0 Summer88:6.0 sbc:5.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.3
+date     91.04.16.17.13.00;  author jhh;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.10.11.17.16.43;  author rab;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.09.11.12.12.35;  author rab;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.58.27;  author douglis;  state Stable;
+branches ;
+next     8.7;
+
+8.7
+date     89.07.19.15.49.47;  author ouster;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.07.19.15.14.22;  author ouster;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.07.18.14.51.28;  author ouster;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.07.14.17.18.59;  author ouster;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.05.24.07.52.39;  author rab;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.05.23.09.50.51;  author mendel;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.12.20.14.52.14;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.08.55;  author douglis;  state Stable;
+branches ;
+next     6.3;
+
+6.3
+date     88.10.07.10.55.30;  author mendel;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.09.06.14.16.42;  author nelson;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.23.17.07.34;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.11.07;  author brent;  state Stable;
+branches ;
+next     5.4;
+
+5.4
+date     88.07.20.22.10.21;  author douglis;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     88.07.15.17.29.35;  author mendel;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     88.06.05.16.23.11;  author mendel;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     88.06.04.14.06.24;  author mendel;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.38.57;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.3
+log
+@fixed include statements
+@
+text
+@/*
+ * dev.h --
+ *
+ *     Types, constants, and macros exported by the device module.
+ *
+ * Copyright 1985, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ * $Header: /sprite/src/kernel/dev/RCS/dev.h,v 9.2 90/10/11 17:16:43 rab Exp Locker: jhh $ SPRITE (Berkeley)
+ */
+
+#ifndef _DEV
+#define _DEV
+
+#include <status.h>
+#ifdef KERNEL
+#include <devSyslog.h>
+#include <user/sysStats.h>
+#else
+#include <kernel/devSyslog.h>
+#include <sysStats.h>
+#endif
+#ifndef _SPRITETIME
+#include <spriteTime.h>
+#endif
+
+/*
+ * The filesystem and the device module cooperate to translate from
+ * filesystem block numbers to disk addresses.  Hence, this simple
+ * type and the bytes per sector are exported.
+ */
+typedef struct Dev_DiskAddr {
+    int cylinder;
+    int head;
+    int sector;
+} Dev_DiskAddr;
+/*
+ *	DEV_BYTES_PER_SECTOR the common size for disk sectors.
+ */
+#define DEV_BYTES_PER_SECTOR	512
+
+extern Time	dev_LastConsoleInput;
+
+extern void Dev_ConsoleReset _ARGS_ ((int toConsole));
+extern void Dev_Init _ARGS_((void));
+extern void Dev_Config _ARGS_((void));
+
+extern void Dev_GatherDiskStats _ARGS_((void));
+extern int Dev_GetDiskStats _ARGS_((Sys_DiskStats *diskStatArr,int numEntries));
+extern void Dev_RegisterConsoleCmd _ARGS_((int commandChar,
+    void (*proc)(ClientData clientData), ClientData clientData));
+extern void Dev_InvokeConsoleCmd _ARGS_((int commandChar));
+extern int Dev_KbdQueueAttachProc _ARGS_((int character, 
+    void (*proc)(ClientData clientData), ClientData clientData));
+
+#endif /* _DEV */
+@
+
+
+9.2
+log
+@Fixed incorrect prototype for Dev_RegisterConsoleCmd() and Dev_KbdQueueAttachProc().
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/dev/RCS/dev.h,v 9.1 90/09/11 12:12:35 rab Exp Locker: rab $ SPRITE (Berkeley)
+d22 1
+a22 1
+#include "status.h"
+d24 2
+a25 2
+#include "devSyslog.h"
+#include "user/sysStats.h"
+@
+
+
+9.1
+log
+@Added prototypes.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/dev/RCS/dev.h,v 9.0 89/09/12 14:58:27 douglis Stable Locker: rab $ SPRITE (Berkeley)
+d57 2
+a58 2
+extern void Dev_RegisterConsoleCmd _ARGS_((char commandChar, void (*proc)(void),
+    ClientData clientData));
+d60 2
+a61 2
+extern int Dev_KbdQueueAttachProc _ARGS_((char character, void (*proc)(void),
+    ClientData clientData));
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/dev/RCS/dev.h,v 8.7 89/07/19 15:49:47 ouster Exp Locker: douglis $ SPRITE (Berkeley)
+d25 1
+d28 1
+d51 11
+a61 7
+extern void	Dev_ConsoleReset();
+extern void	Dev_Init();
+extern void	Dev_Config();
+extern void	Dev_GatherDiskStats();
+extern int	Dev_GetDiskStats();
+extern void	Dev_InvokeConsoleCmd();
+extern void	Dev_RegisterConsoleCmd();
+@
+
+
+8.7
+log
+@Declare Dev_ConsoleReset().
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/dev/RCS/dev.h,v 8.6 89/07/19 15:14:22 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+@
+
+
+8.6
+log
+@Added dev_LastConsoleInput.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/dev/RCS/dev.h,v 8.5 89/07/18 14:51:28 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d49 1
+@
+
+
+8.5
+log
+@Removed include of devDependent.h
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/dev/RCS/dev.h,v 8.4 89/07/14 17:18:59 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d28 3
+a30 1
+
+d46 2
+@
+
+
+8.4
+log
+@Changes for new terminal driver.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/dev.jo/RCS/dev.h,v 8.3 89/05/24 07:52:39 rab Exp Locker: ouster $ SPRITE (Berkeley)
+a24 1
+#include "devDependent.h"
+a26 1
+#include <kernel/devDependent.h>
+@
+
+
+8.3
+log
+@Changes to allow optimization.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/dev/RCS/dev.h,v 8.2 89/05/23 09:50:51 mendel Exp Locker: rab $ SPRITE (Berkeley)
+a24 2
+#include "devConsole.h"
+#include "devKeyboard.h"
+a27 2
+#include <kernel/devConsole.h>
+#include <kernel/devKeyboard.h>
+d47 6
+a52 4
+extern void Dev_Init();
+extern void Dev_Config();
+extern void Dev_GatherDiskStats();
+extern int  Dev_GetDiskStats();
+@
+
+
+8.2
+log
+@Removed machine dependent and out-of-date constants.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/dev.new/RCS/dev.h,v 8.1 88/12/20 14:52:14 brent Exp Locker: mendel $ SPRITE (Berkeley)
+d56 1
+a56 1
+#endif _DEV
+@
+
+
+8.1
+log
+@Added DEV_MAX_IO_BUF_SIZE and DEV_MAX_TRANSFER_SIZE
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/dev/RCS/dev.h,v 6.3 88/10/07 10:55:30 mendel Exp Locker: jhh $ SPRITE (Berkeley)
+a23 1
+#include "vm.h"
+a28 1
+#include <kernel/vm.h>
+a49 12
+
+/*
+ *	DEV_MAX_TRANSFER_SIZE the maximum size of a device read or write.
+ *		This limit stems from the memory maps used in VM.  This
+ *		is one hardware pagesize less than the max range that
+ *		each controller reserves for mapping.
+ *	DEV_MAX_IO_BUF_SIZE the size of the virtual memory range that
+ *		has to be reserved by a device controller for mapping.
+ *		(FIX TO DEPEND ON A VM_ CONSTANT)
+ */
+#define DEV_MAX_IO_BUF_SIZE	(128 * 1024)
+#define DEV_MAX_TRANSFER_SIZE	(DEV_MAX_IO_BUF_SIZE - VMMACH_PAGE_SIZE_INT)
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/dev/RCS/dev.h,v 6.3 88/10/07 10:55:30 mendel Exp Locker: douglis $ SPRITE (Berkeley)
+d24 1
+d30 1
+d53 11
+@
+
+
+6.3
+log
+@Removed reference to devTimer.h.
+@
+text
+@d16 1
+a16 1
+ * $Header: dev.h,v 6.2 88/09/06 14:16:42 nelson Exp $ SPRITE (Berkeley)
+@
+
+
+6.2
+log
+@Added procedure header for routine to retrieve stats.
+@
+text
+@d16 1
+a16 1
+ * $Header: dev.h,v 6.1 88/08/23 17:07:34 brent Exp $ SPRITE (Berkeley)
+a23 1
+#include "devTimer.h"
+a28 1
+#include <kernel/devTimer.h>
+@
+
+
+6.1
+log
+@AAdded #ifdef KERNEL to includes
+@
+text
+@d16 1
+a16 1
+ * $Header: dev.h,v 6.0 88/08/11 12:11:07 brent Stable $ SPRITE (Berkeley)
+d56 2
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+ * $Header: dev.h,v 5.4 88/07/20 22:10:21 douglis Exp $ SPRITE (Berkeley)
+d23 1
+a27 4
+/* 
+ * Machine dependent exported definitions.
+ */
+ 
+d29 7
+@
+
+
+5.4
+log
+@include the console & keyboard headers, since they're 
+device independent now.
+@
+text
+@d16 1
+a16 1
+ * $Header: dev.h,v 5.3 88/07/15 17:29:35 mendel Exp $ SPRITE (Berkeley)
+@
+
+
+5.3
+log
+@Updated copyright.
+@
+text
+@d16 1
+a16 1
+ * $Header: dev.h,v 5.2 88/06/05 16:23:11 mendel Exp $ SPRITE (Berkeley)
+d25 2
+@
+
+
+5.2
+log
+@Corrected typo 
+@
+text
+@d6 8
+a13 2
+ * Copyright 1985 Regents of the University of California
+ * All rights reserved.
+d16 1
+a16 1
+ * $Header: dev.h,v 5.1 88/06/04 14:06:24 mendel Exp $ SPRITE (Berkeley)
+@
+
+
+5.1
+log
+@Removed device dependent #include's and replace them with a include of
+devDependent.h
+@
+text
+@d10 1
+a10 1
+ * $Header: dev.h,v 5.0 87/08/11 10:38:57 sprite Exp $ SPRITE (Berkeley)
+d24 1
+a24 1
+"
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d10 1
+a10 1
+ * $Header: dev.h,v 4.2 87/06/30 18:51:31 nelson Exp $ SPRITE (Berkeley)
+a16 1
+#include "devZilog.h"
+a17 2
+#include "devKeyboard.h"
+#include "devConsole.h"
+d19 6
+@

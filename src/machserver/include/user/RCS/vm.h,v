@@ -1,0 +1,100 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  srv030:1.3 srv027:1.3 srv026:1.3 srv024:1.3 srv021:1.3 srv019:1.3 srv018:1.3 srv016:1.3 srv014:1.3 srv010:1.3 srv008:1.3 srv007:1.3 srv006:1.3 srv005:1.3 srv004:1.3 srv003:1.3 srv002:1.3 srv001:1.3;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     92.04.16.11.11.43;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.12.12.22.25.44;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.09.26.12.27.44;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@User-visible virtual memory declarations.
+@
+
+
+1.3
+log
+@Include the user vmTypes.h for the benefit of user programs.
+@
+text
+@/*
+ * vm.h --
+ *
+ *     User virtual memory structures.
+ *
+ * Copyright 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /user5/kupfer/spriteserver/include/user/RCS/vm.h,v 1.3 92/04/16 11:10:02 kupfer Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _VMUSER
+#define _VMUSER
+
+#include <sprite.h>
+#include <cfuncproto.h>
+#include <mach.h>
+#include <sys/types.h>
+#ifdef SPRITED
+#include <user/vmTypes.h>
+#else
+#include <vmTypes.h>
+#endif
+
+/*
+ * System calls (or what used to be system calls).
+ */
+
+extern ReturnStatus	Vm_MapFile _ARGS_((char *fileName, Boolean readOnly,
+				off_t offset, vm_size_t length,
+				Address *startAddrPtr));
+extern ReturnStatus	Vm_PageSize _ARGS_((int *pageSizePtr));
+
+#endif /* _VMUSER */
+@
+
+
+1.2
+log
+@Add Vm_PageSize.  Declare function prototypes.
+@
+text
+@d10 1
+a10 1
+ * $Header: /r3/kupfer/spriteserver/include/user/RCS/vm.h,v 1.1 91/09/26 12:27:44 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d20 5
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/lib/include/RCS/vm.h,v 1.8 91/03/01 22:11:43 kupfer Exp $ SPRITE (Berkeley)
+d17 3
+d22 1
+a22 1
+ * System calls.
+d25 4
+a28 1
+extern ReturnStatus	Vm_MapFile();
+@

@@ -1,0 +1,14 @@
+D DS3100_M                          	ds3100.md
+F GATE.MAN;1                        	Gate.man
+F GATEINT.H;1                       	gateInt.h
+F GATE_BYD.C;1                      	Gate_ByDesc.c
+F GATE_BYI.C;1                      	Gate_ByInetAddr.c
+F GATE_BYN.C;1                      	Gate_ByNetAddr.c
+F GATE_END.C;1                      	Gate_End.c
+F GATE_NEX.C;1                      	Gate_Next.c
+F GATE_SET.C;1                      	Gate_SetFile.c
+F GATE_STA.C;1                      	Gate_Start.c
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md

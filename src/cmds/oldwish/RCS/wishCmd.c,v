@@ -1,0 +1,2807 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    mgbaker:1.5; strict;
+comment  @ * @;
+
+
+1.5
+date     89.01.19.16.51.50;  author mgbaker;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.01.11.11.30.30;  author mlgray;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.11.03.19.44.00;  author mlgray;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.11.02.14.49.18;  author mlgray;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.10.03.12.45.42;  author mlgray;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@X11: works pretty much now.
+@
+
+
+1.5
+log
+@Fixed printing string in WishPrintTclError.  I still don't understand
+why I must copy it to a buffer first.
+@
+text
+@/* 
+ * wishCmd.c --
+ *
+ *	Commands for wish.
+ *
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /a/newcmds/wish/RCS/wishCmd.c,v 1.4 89/01/11 11:30:30 mlgray Exp Locker: mgbaker $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include "sx.h"
+#include "util.h"
+typedef	int	Boolean;
+#define	FALSE	0
+#define	TRUE	1
+#include "monitorClient.h"
+#include "wishInt.h"
+
+/*
+ * Range of chars for which the standard insert binding is to be used,
+ * unless overridden by something else.
+ */
+static	char	insertFirst = 040;
+static	char	insertLast = 0176;
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WishBindCmd --
+ *
+ *	Create (or replace or delete) a keystroke binding.  I should change
+ *	this to match mx so that a missing command argument means to return
+ *	the enumeration of the bindings with the prefix, rather than to
+ *	delete the binding.
+ *
+ * Syntax:
+ *	bind sequence [command]
+ *
+ * Results:
+ *	Returns TCL results.
+ *
+ * Side effects:
+ *	A new keystroke binding gets added to or deleted from the
+ *	window's command table.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+WishBindCmd(aWindow, interp, argc, argv)
+    WishWindow	*aWindow;
+    Tcl_Interp		*interp;
+    int			argc;
+    char		**argv;
+{
+    if ((argc != 3) && (argc != 2)) {
+	sprintf(interp->result, "%s should be \"%.50s [sequence [command]]\"",
+		"wrong number of args:", argv[0]);
+	return TCL_ERROR;
+    }
+    if (argc == 3) {
+	Cmd_BindingCreate(aWindow->cmdTable, argv[1], argv[2]);
+    } else {
+	Cmd_BindingDelete(aWindow->cmdTable, argv[1]);
+    }
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WishChangeDirCmd --
+ *
+ *	Change the directory of the display.  Force associated shell
+ *	window(s) to update current directory also.
+ *
+ * Syntax:
+ *	changeDirectory dirName
+ *
+ * Results:
+ *	Returns TCL_OK if all went well, or various TCL errors if not.
+ *
+ * Side effects:
+ *	Current directory changes.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+WishChangeDirCmd(aWindow, interp, argc, argv)
+    WishWindow	*aWindow;
+    Tcl_Interp		*interp;
+    int			argc;
+    char		**argv;
+{
+    struct	stat	dirAtts;
+    char		*newDir;
+
+    if (argc != 2) {
+	sprintf(interp->result, "%s \"%.50s dirName\"",
+		"wrong # args: should be", argv[0]);
+	return TCL_ERROR;
+    }
+    if ((newDir = Util_CanonicalDir(argv[1], aWindow->dir, (char *) NULL))
+	    == NULL) {
+	sprintf(interp->result,
+		"Couldn't figure out directory name %s.", argv[1]);
+	return TCL_ERROR;
+    }
+    /* Check the validity of the new dir. */
+    if (lstat(newDir, &dirAtts) != 0) {
+	sprintf(interp->result,
+		"Cannot switch to dir %s.  Maybe it doesn't exist?", newDir);
+	free(newDir);
+	return TCL_ERROR;	/* should above message be passed to routine? */
+    }
+    if ((dirAtts.st_mode & S_IFMT) != S_IFDIR) {	/* not a directory */
+	sprintf(interp->result, "%s is not a directory.", newDir);
+	free(newDir);
+	return TCL_ERROR;	/* should above message be passed to routine? */
+    }
+    WishChangeDir(aWindow, newDir);	/* does everything */
+    free(newDir);
+
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WishChangeFieldsCmd --
+ *
+ *	Change the fields displayed with each file.
+ *
+ * Syntax:
+ *	changeFields [fields]
+ *
+ * Results:
+ *	Returns TCL_OK if all went well, or TCL errors if not.
+ *
+ * Side effects:
+ *	The fields displayed for each file will change.  The user will be
+ *	prompted to see if he wishes to make the new sorting method the
+ *	default method for the directory.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+WishChangeFieldsCmd(aWindow, interp, argc, argv)
+    WishWindow	*aWindow;
+    Tcl_Interp		*interp;
+    int			argc;
+    char		**argv;
+{
+    int	which;
+    int	length;
+    int	arg;
+    int	didEnter = 0;
+    int	didExpose = 0;
+    int	didMouse = 0;
+
+    /*
+     * any number of args may be okay here, depending on how many fields they
+     * wish to display.
+     */
+    aWindow->displayInstructions = 0;
+    if (argc > 1) {
+	for (arg = 1; arg < argc; arg++) {
+	    length = strlen(argv[arg]);
+	    if (strncmp(argv[arg], "name", length) == 0 ||
+		    strncmp(argv[arg], "Name", length) == 0) { /* default */
+		continue;
+	    }
+	    /*
+	     * atime = access time = time file data last read or modified.
+	     * ctime = desc modify time = time file status last changed, by
+	     *		writing or inode changes.
+	     * mtime = data modify time = time data last modified.
+	     */
+
+	    if (strncmp(argv[arg], "size", length) == 0 ||
+		    strncmp(argv[arg], "Size", length) == 0) {
+		aWindow->displayInstructions |= WISH_SIZE_FIELD;
+		continue;
+	    }
+	    if (strncmp(argv[arg], "atime", length) == 0 ||
+		    strncmp(argv[arg], "Atime", length) == 0 ||
+		    strncmp(argv[arg], "accesstime", length) == 0 ||
+		    strncmp(argv[arg], "accessTime", length) == 0 ||
+		    strncmp(argv[arg], "AccessTime", length) == 0) {
+		aWindow->displayInstructions |= WISH_ATIME_FIELD;
+		continue;
+	    }
+	    if (strncmp(argv[arg], "ctime", length) == 0 ||
+		    strncmp(argv[arg], "Ctime", length) == 0 ||
+		    strncmp(argv[arg], "descmodtime", length) == 0 ||
+		    strncmp(argv[arg], "descModTime", length) == 0 ||
+		    strncmp(argv[arg], "DescModTime", length) == 0 ||
+		    strncmp(argv[arg], "descmodifytime", length) == 0 ||
+		    strncmp(argv[arg], "descModifyTime", length) == 0 ||
+		    strncmp(argv[arg], "DescModifyTime", length) == 0 ||
+		    strncmp(argv[arg], "descriptormodifytime", length) == 0 ||
+		    strncmp(argv[arg], "descriptorModifyTime", length) == 0 ||
+		    strncmp(argv[arg], "DescriptorModifyTime", length) == 0) {
+		aWindow->displayInstructions |= WISH_DTIME_FIELD;
+		continue;
+	    }
+	    if (strncmp(argv[arg], "mtime", length) == 0 ||
+		    strncmp(argv[arg], "Mtime", length) == 0 ||
+		    strncmp(argv[arg], "datamodtime", length) == 0 ||
+		    strncmp(argv[arg], "dataModTime", length) == 0 ||
+		    strncmp(argv[arg], "DataModTime", length) == 0 ||
+		    strncmp(argv[arg], "datamodifytime", length) == 0 ||
+		    strncmp(argv[arg], "dataModifyTime", length) == 0 ||
+		    strncmp(argv[arg], "DataModifyTime", length) == 0) {
+		aWindow->displayInstructions |= WISH_MTIME_FIELD;
+		continue;
+	    }
+	    sprintf(interp->result, "%s %s %s", "bad argument, the possible",
+		    "arguments are size, atime (AccessTime),",
+		    "mtime (DataModifyTime), and dtime (DescriptorModifyTime)");
+	    return TCL_ERROR;
+	}
+	goto finishedFields;
+    }
+
+    /* Protect data structure from redraws initiated in Sx_Notify */
+    aWindow->notifierP = TRUE;
+    which = Sx_Notify(wishDisplay, aWindow->surroundingWindow, -1, -1, 0,
+	    "Display Size?", NULL, TRUE, "Yes", "No", "Stop",
+	    (char *) NULL);
+    if (which == 0) {
+	aWindow->displayInstructions |= WISH_SIZE_FIELD;
+    } else if (which == 2) {
+	goto finishedFields;
+    }
+    which = Sx_Notify(wishDisplay, aWindow->surroundingWindow, -1, -1, 0,
+	    "Display AccessTime?", NULL, TRUE, "Yes", "No", "Stop",
+	    (char *) NULL);
+    if (which == 0) {
+	aWindow->displayInstructions |= WISH_ATIME_FIELD;
+    } else if (which == 2) {
+	goto finishedFields;
+    }
+    which = Sx_Notify(wishDisplay, aWindow->surroundingWindow, -1, -1, 0,
+	    "Display DataModifyTime?", NULL, TRUE, "Yes", "No", "Stop",
+	    (char *) NULL);
+    if (which == 0) {
+	aWindow->displayInstructions |= WISH_MTIME_FIELD;
+    } else if (which == 2) {
+	goto finishedFields;
+    }
+    which = Sx_Notify(wishDisplay, aWindow->surroundingWindow, -1, -1, 0,
+	    "Display DescriptorModifyTime?", NULL, TRUE, "Yes", "No",
+	    "Stop", (char *) NULL);
+    if (which == 0) {
+	aWindow->displayInstructions |= WISH_DTIME_FIELD;
+    } else if (which == 2) {
+	goto finishedFields;
+    }
+finishedFields:
+    ;	/* nothing */
+
+    /* Safe now. */
+    aWindow->notifierP = FALSE;
+
+    if (aWindow->dontDisplayChangesP == FALSE) {
+	/* update display */
+	if (aWindow->firstElement == UNINITIALIZED) {
+	    aWindow->firstElement = 1;
+	}
+	WishSetPositions(aWindow);
+    }
+
+    return TCL_OK;
+}
+
+#ifdef NOTDEF
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WishChangeGroupsCmd --
+ *
+ *	Change the definition of a group.
+ *
+ * Syntax:
+ *	changeGroups
+ *
+ * Results:
+ *	Returns TCL_OK if all went well, or TCL errors if not.
+ *	error occurred.
+ *
+ * Side effects:
+ *	The pattern matching rules or associated command bindings for the
+ *	group may change.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+WishChangeGroupsCmd(aWindow, interp, argc, argv)
+    WishWindow	*aWindow;
+    Tcl_Interp		*interp;
+    int			argc;
+    char		**argv;
+{
+    static	int	count = 0;
+    FILE	*stream;
+    int	pid;
+    char	buffer[MAXPATHLEN];
+    char	**args;
+    int	pidArray[1];
+    WishGroup	*grpPtr;
+    int	childPid;
+
+    if (strcmp(argv[0], "deleteGroup") == 0 ||
+	    strcmp(argv[0], "deletegroup") == 0) {
+	/* delete the group and clean up */
+    }
+    if (
+    /*
+     * open a file
+     */
+    Proc_GetIDs(&pid, NULL, NULL, NULL, NULL);
+    sprintf(buffer, "%s%d.%d", "/tmp/tmpWish", pid, count);
+    count++;
+    if ((stream = fopen(buffer, "w")) == NULL) {
+	sprintf(interp->result, "%s %s %s",
+		"Couldn't open file", buffer,
+		"in which to let you edit the selection rules.");
+	return TCL_ERROR;
+    }
+    for (grpPtr = aWindow->groupList; grpPtr != NULL;
+	    grpPtr = grpPtr->nextPtr) {
+	fputs("Select:\n", stream);
+	fputs(grpPtr->rule, stream);
+	fputs("\n", stream);
+	if (grpPtr->name != NULL) {
+	    fputs("GroupName:\n", stream);
+	    fputs(grpPtr->name, stream);
+	    fputs("\n\n", stream);
+	}
+    }
+    fclose(stream);
+    /* I should be checking ferror for above PutStrings and Close return. */
+    /* close file and mx it. */
+    /* parse file when mx returns. */
+    if (Proc_Fork(TRUE, &childPid) == PROC_CHILD_PROC) {
+	/*child*/
+	/* what to do about this pathname? */
+	args = (char **) malloc(4 * sizeof (char *));
+	args[0] = Util_Strcpy(NULL, "mx");
+	args[1] = Util_Strcpy(NULL, "-D");
+	args[2] = Util_Strcpy(NULL, buffer);	/* CORE LEAK */
+	args[3] = NULL;
+	Proc_Exec("/sprite2/users/ouster/mx10/mx", args, FALSE);
+	/* error if returned. */
+	sprintf(wishErrorMsg, "Exec of %s returned.",
+		"/sprite2/users/ouster/mx10/mx");
+	aWindow->notifierP = TRUE;
+	Sx_Notify(wishDisplay, aWindow->surroundingWindow, -1, -1, 0,
+		wishErrorMsg, NULL, TRUE, "Skip command", (char *) NULL);
+	aWindow->notifierP = FALSE;
+	exit(-1);
+    } else {
+	/*parent waits */
+	pidArray[0] = childPid;
+	Proc_Wait(1, pidArray, PROC_WAIT_BLOCK, NULL, NULL, NULL, NULL, NULL);
+    }
+    if ((stream = fopen(buffer, "a")) == NULL) {
+	sprintf(wishErrorMsg, "%s %s %s",
+		"Couldn't open file", buffer,
+		"in which you edited the selection rules.");
+	aWindow->notifierP = TRUE;
+	Sx_Notify(wishDisplay, aWindow->surroundingWindow, -1, -1, 0,
+		wishErrorMsg, NULL, TRUE, "Skip command", (char *) NULL);
+	aWindow->notifierP = FALSE;
+	return TCL_ERROR;
+    }
+    if (aWindow->sortingInstructions & WISH_ALPHA_SORT) {
+	if (aWindow->sortingInstructions & WISH_REVERSE_SORT) {
+	    fputs("Sort:\nAlphaReverse\n\n", stream);
+	} else {
+	    fputs("Sort:\nAlpha\n\n", stream);
+	}
+    }
+    if (aWindow->sortingInstructions & WISH_ATIME_SORT) {
+	if (aWindow->sortingInstructions & WISH_REVERSE_SORT) {
+	    fputs("Sort:\nAccessTimeReverse\n\n", stream);
+	} else {
+	    fputs("Sort:\nAccessTime\n\n", stream);
+	}
+    }
+    if (aWindow->sortingInstructions & WISH_MTIME_SORT) {
+	if (aWindow->sortingInstructions & WISH_REVERSE_SORT) {
+	    fputs("Sort:\nDataModifyTimeReverse\n\n", stream);
+	} else {
+	    fputs("Sort:\nDataModifyTime\n\n", stream);
+	}
+    }
+    if (aWindow->sortingInstructions & WISH_DTIME_SORT) {
+	if (aWindow->sortingInstructions & WISH_REVERSE_SORT) {
+	    fputs("Sort:\nDescriptorModifyTimeReverse\n\n", stream);
+	} else {
+	    fputs("Sort:\nDescriptorModifyTime\n\n", stream);
+	}
+    }
+    if (aWindow->sortingInstructions & WISH_SIZE_SORT) {
+	if (aWindow->sortingInstructions & WISH_REVERSE_SORT) {
+	    fputs("Sort:\nSizeReverse\n\n", stream);
+	} else {
+	    fputs("Sort:\nSize\n\n", stream);
+	}
+    }
+    if (aWindow->displayInstructions & WISH_NAME_FIELD) {
+	fputs("Display:\nName\n\n", stream);
+    }
+    if (aWindow->displayInstructions & WISH_ATIME_FIELD) {
+	fputs("Display:\nAccessTime\n\n", stream);
+    }
+    if (aWindow->displayInstructions & WISH_MTIME_FIELD) {
+	fputs("Display:\nDataModifyTime\n\n", stream);
+    }
+    if (aWindow->displayInstructions & WISH_DTIME_FIELD) {
+	fputs("Display:\nDescriptorModifyTime\n\n", stream);
+    }
+    if (aWindow->displayInstructions & WISH_SIZE_FIELD) {
+	fputs("Display:\nSize\n\n", stream);
+    }
+    fclose(stream);
+
+    WishGarbageCollect(aWindow);
+#ifdef FUTURE
+    /*
+     * This routine was changed not to take second arg!
+     */
+    if (WishGatherNames(aWindow, buffer) != TCL_OK) {
+	return bad value and switch directories?
+	error string will be displayed in top-level display thingy?
+    }
+#endif FUTURE
+	
+    /* should it repick the size here if aWindow->pickSizeP is true? */
+    aWindow->firstElement = 1;
+    WishSetPositions(aWindow);
+    /* WishRedraw will be called from event caused in WishSetPositions() */
+
+    /* ask if they want to make it permanent. */
+
+    return TCL_OK;
+}
+#endif NOTDEF
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WishChangeGroupCmd --
+ *
+ *	Change the definition of a group.
+ *
+ * Syntax:
+ *	changeGroup name newDefType newDef
+ *
+ * Results:
+ *	Returns TCL_OK if all went well, or TCL errors if not.
+ *
+ * Side effects:
+ *	The specified group will be changed.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+WishChangeGroupCmd(aWindow, interp, argc, argv)
+    WishWindow	*aWindow;
+    Tcl_Interp		*interp;
+    int			argc;
+    char		**argv;
+{
+    WishGroup	*grpPtr;
+    WishGroup	*newGrpPtr;
+    WishGroup	*bPtr;
+
+    if (argc != 4) {
+	sprintf(interp->result, "%s %s", "Wrong # of args. Must be 4 args,",
+		"\"changeGroup name newDefType newDef\"");
+	return TCL_ERROR;
+    }
+
+    /* Make sure no other group already has the new definition. */
+    for (grpPtr = aWindow->groupList; grpPtr != NULL;
+	    grpPtr = grpPtr->nextPtr) {
+	if (strcmp(argv[3], grpPtr->rule) == 0) {
+	    if (grpPtr->fileList == NULL && aWindow->hideEmptyGroupsP) {
+		    sprintf(interp->result, "%s %s, %s",
+		    "A group already has the definition", argv[3],
+		    "but it may not be visible since no files match it.");
+	    } else {
+		sprintf(interp->result, "A group already has the definition %s",
+			argv[3]);
+	    }
+	    return TCL_ERROR;
+	}
+    }
+
+    /* find group to replace */
+    if (aWindow->groupList == NULL) {
+	sprintf(interp->result,
+		"No groups have been defined in order to change one");
+	return TCL_ERROR;
+    }
+
+    bPtr = NULL;
+    for (grpPtr = aWindow->groupList; grpPtr != NULL;
+	    grpPtr = grpPtr->nextPtr) {
+	if (strcmp(argv[1], grpPtr->rule) == 0) {
+	    break;
+	}
+	bPtr = grpPtr;
+    }
+
+    if (grpPtr == NULL) {
+	sprintf(interp->result, "No group with that definition");
+	return TCL_ERROR;
+    }
+
+
+    newGrpPtr = (WishGroup *) malloc(sizeof (WishGroup));
+
+    /* test the new group's definition */
+    if (GetNewGroup(aWindow, interp, argv + 2, newGrpPtr) != TCL_OK) {
+	free(newGrpPtr);
+	return TCL_ERROR;
+    }
+
+    newGrpPtr->nextPtr = grpPtr->nextPtr;
+
+    WishGarbageGroup(aWindow, grpPtr);
+
+    if (bPtr == NULL) {
+	aWindow->groupList = newGrpPtr;
+    } else {
+	bPtr->nextPtr = newGrpPtr;
+    }
+    if (aWindow->dontDisplayChangesP == FALSE) {
+	/* update display */
+	if (aWindow->firstElement == UNINITIALIZED) {
+	    aWindow->firstElement = 1;
+	}
+	WishSetPositions(aWindow);
+    }
+	
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetNewGroup --
+ *
+ *	Initialize and collect files for a new group.
+ *
+ * Results:
+ *	Returns TCL_OK if all went well, or TCL errors if not.
+ *
+ * Side effects:
+ *	Memory will be allocated for various things.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+GetNewGroup(aWindow, interp, argv, newGrpPtr)
+    WishWindow	*aWindow;
+    Tcl_Interp		*interp;
+    char		**argv;
+    WishGroup		*newGrpPtr;
+{
+    int		procArgc;
+    char	**procArgv;
+    int		num;
+
+    /* parse command arguments */
+    if (strcmp("comparison", argv[0]) == 0) {	/* simple comp stuff */
+	newGrpPtr->defType = COMPARISON;
+	newGrpPtr->rule = Util_Strcpy((char *) NULL, argv[1]);
+	/* test new grp def */
+	if (Pattern_Match(newGrpPtr->rule, "x") < 0) {
+	    sprintf(interp->result,
+		    "The comparison rule {%s} contains an error",
+		    newGrpPtr->rule);
+	    free(newGrpPtr->rule);
+	    return TCL_ERROR;
+	}
+    } else if (strcmp("proc", argv[0]) != 0) {	/* bad def */
+	sprintf(interp->result, "Bad group definition type %s", argv[0]);
+	return TCL_ERROR;
+    } else {		/* TCL proc */
+	newGrpPtr->defType = PROC;
+	/* get name of proc */
+	if (Tcl_SplitList(interp, argv[1], &procArgc, &procArgv) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	newGrpPtr->rule = Util_Strcpy((char *) NULL, procArgv[1]);
+	if (Tcl_Eval(interp, argv[1], '\0', NULL) != TCL_OK) {
+	    free(newGrpPtr->rule);
+	    free(procArgv);
+	    return TCL_ERROR;
+	}
+	/* Will this really free it?  Tcl man page says so... */
+	free(procArgv);
+
+	/* test new grp def */
+	if (WishDoTclSelect(interp, newGrpPtr->rule, "x", &num) != TCL_OK) {
+		free(newGrpPtr->rule);
+		return TCL_ERROR;
+	}
+    }
+    newGrpPtr->nextPtr = NULL;
+    newGrpPtr->myColumn = UNINITIALIZED;
+    newGrpPtr->headerWindow = UNINITIALIZED;
+    newGrpPtr->x = UNINITIALIZED;
+    newGrpPtr->y = UNINITIALIZED;
+    newGrpPtr->width = 0;
+    newGrpPtr->height = 0;
+    newGrpPtr->fileList = NULL;
+    newGrpPtr->groupBindings = NULL;
+    newGrpPtr->selectedP = FALSE;
+    newGrpPtr->highlightP = FALSE;
+    /*
+     * If this is too slow, then change this so it does not actually
+     * gather the files?
+     */
+    if (WishGatherSingleGroup(aWindow, newGrpPtr) != TCL_OK) {
+	/* eliminate group definition? */
+	free(newGrpPtr->rule);
+	return TCL_ERROR;
+    }
+
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WishPrintTclError --
+ *
+ *	Print out a tcl interpreter error message.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+WishPrintTclError(aWindow)
+    WishWindow	*aWindow;
+{
+    char	c;
+    char	stupidBuffer[TCL_RESULT_SIZE + 1];	/* I can't seem to
+   							 * print interpreter
+							 * result without
+							 * copying it! */
+
+    /*
+     * Capitalize first character of error message.
+     */
+    c = aWindow->interp->result[0];
+    if ((c >= 'a') && (c <= 'z')) {
+	aWindow->interp->result[0] += 'A' - 'a';
+    }
+    strcpy(stupidBuffer, aWindow->interp->result, TCL_RESULT_SIZE);
+    /*
+     * output message - should call routine that uses 1-line window
+     * if possible.
+     */
+    aWindow->notifierP = TRUE;
+    Sx_Notify(wishDisplay, aWindow->surroundingWindow, -1, -1, 0,
+	    stupidBuffer, NULL, TRUE, "Continue", (char *) NULL);
+    aWindow->notifierP = FALSE;
+    /* replace lower case */
+    aWindow->interp->result[0] = c;
+
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WishDefineGroupCmd --
+ *
+ *	Add the definition of a new group.
+ *	Currently, this only will add it to the end of the list of groups.
+ *
+ * Syntax:
+ *	defineGroup defType def
+ *
+ * Results:
+ *	Returns TCL_OK if all went well, or TCL errors if not.
+ *
+ * Side effects:
+ *	A new group will be added.  It will not be displayed until something
+ *	causes a redisplay.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+WishDefineGroupCmd(aWindow, interp, argc, argv)
+    WishWindow	*aWindow;
+    Tcl_Interp		*interp;
+    int			argc;
+    char		**argv;
+{
+    WishGroup	*grpPtr;
+    WishGroup	*newGrpPtr;
+
+    if (argc != 3) {
+	sprintf(interp->result, "%s %s", "Wrong # of args. Must be 3 args,",
+		"\"defineGroup defType def\"");
+	return TCL_ERROR;
+    }
+
+    for (grpPtr = aWindow->groupList; grpPtr != NULL;
+	    grpPtr = grpPtr->nextPtr) {
+	if (strcmp(argv[2], grpPtr->rule) == 0) {
+	    if (grpPtr->fileList == NULL && aWindow->hideEmptyGroupsP) {
+		    sprintf(interp->result, "%s %s, %s",
+		    "A group already has the definition", argv[2],
+		    "but it may not be visible since no files match it.");
+	    } else {
+		sprintf(interp->result, "A group already has the definition %s",
+			argv[2]);
+	    }
+	    return TCL_ERROR;
+	}
+    }
+
+    newGrpPtr = (WishGroup *) malloc(sizeof (WishGroup));
+
+    /* test the new group's definition */
+    if (GetNewGroup(aWindow, interp, argv + 1, newGrpPtr) != TCL_OK) {
+	free(newGrpPtr);
+	WishPrintTclError(aWindow);
+	WishDoCmd(aWindow, "close");
+	/*
+	 * It seems weird to return with TCL_ERROR here, but if i don't,
+	 * something will try to unmap the previously destroyed window.
+	 * Strangely, nothing wrong seems to happen this way, such as
+	 * something trying to print out a message in a deleted interpreter...
+	 */
+	return TCL_ERROR;
+    }
+
+    /* attach new group to end of list */
+    if (aWindow->groupList == NULL) {
+	aWindow->groupList = newGrpPtr;
+    } else {
+	for (grpPtr = aWindow->groupList; grpPtr->nextPtr != NULL;
+		grpPtr = grpPtr->nextPtr) {
+	    /* nothing */
+	}
+	grpPtr->nextPtr = newGrpPtr;
+    }
+    if (aWindow->dontDisplayChangesP == FALSE) {
+	/* update display */
+	if (aWindow->firstElement == UNINITIALIZED) {
+	    aWindow->firstElement = 1;
+	}
+	WishSetPositions(aWindow);
+    }
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WishSelectionCmd --
+ *
+ *	Return the current value of the selection set in interp->result.
+ *
+ * Syntax:
+ *	selection
+ *
+ * Results:
+ *	Returns TCL_OK if all went well, or TCL_ERROR if any sort of
+ *	error occurred.
+ *
+ * Side effects:
+ *	None except memory allocation.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+int
+WishSelectionCmd(aWindow, interp, argc, argv)
+    WishWindow	*aWindow;
+    Tcl_Interp		*interp;
+    int			argc;
+    char		**argv;
+{
+    if (argc > 1) {
+	sprintf(interp->result, "Too many args to selection command.");
+	return TCL_ERROR;
+    }
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WishSortFilesCmd --
+ *
+ *	Add or change the method of sorting directory entries.
+ *
+ * Syntax:
+ *	changeSort [method]
+ *
+ * Results:
+ *	Returns TCL_OK if all went well, or TCL_ERROR if any sort of
+ *	error occurred.
+ *
+ * Side effects:
+ *	The order of the files displayed will change if the new sorting
+ *	method is different.  In this case, the user will be prompted
+ *	to see if he wishes to make the new sorting method the default
+ *	method for the directory.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+WishSortFilesCmd(aWindow, interp, argc, argv)
+    WishWindow	*aWindow;
+    Tcl_Interp		*interp;
+    int			argc;
+    char		**argv;
+{
+    int	which;
+
+    if (argc > 3) {
+	sprintf(interp->result, "Too many args: 3 arg maximum to sort command");
+	return TCL_ERROR;
+    }
+    if (argc == 1) {
+	/*
+	 * Get the sorting method from the user.  It would be nice if this
+	 * could all be in one notifier or in a check-list like window, but
+	 * Sx_Notify puts all the buttons in a single line at the top of the
+	 * notifier and there are too many buttons to fit on the window here
+	 * if the "reverse" options are included.  So for now it's done with
+	 * 2 notifiers, one to get what to sort by and the next to say
+	 * forwards or backwards.
+	 *
+	 * Protect the data structure from redraws initiated in Sx_Notify.
+	 */
+	aWindow->notifierP = TRUE;
+	which = Sx_Notify(wishDisplay, aWindow->surroundingWindow, -1, -1, 0,
+		"Pick sorting method", NULL, TRUE, "Alpha", "AccessTime",
+		"DataModifyTime", "DescriptorModifyTime", "Size",
+		(char *) NULL);
+	aWindow->notifierP = FALSE;
+	switch(which) {
+	case 0:
+	    aWindow->sortingInstructions = WISH_ALPHA_SORT;
+	    break;
+	case 1:
+	    aWindow->sortingInstructions = WISH_ATIME_SORT;
+	    break;
+	case 2:
+	    aWindow->sortingInstructions = WISH_MTIME_SORT;
+	    break;
+	case 3:
+	    aWindow->sortingInstructions = WISH_DTIME_SORT;
+	    break;
+	case 4:
+	    aWindow->sortingInstructions = WISH_SIZE_SORT;
+	    break;
+	default:
+	    sprintf(wishErrorMsg, "%s %s", "Something is wrong.",
+		    "The sorthing method just entered is unrecognized.");
+	    aWindow->notifierP = TRUE;
+	    Sx_Notify(wishDisplay, aWindow->surroundingWindow, -1, -1, 0,
+		    wishErrorMsg, "Skip command", (char *) NULL);
+	    aWindow->notifierP = FALSE;
+	    return TCL_ERROR;
+	}
+	aWindow->notifierP = TRUE;
+	which = Sx_Notify(wishDisplay, aWindow->surroundingWindow, -1, -1, 0,
+		"Sort in forwards or reverse order?", NULL, TRUE,
+		"Forwards", "Reverse", (char *) NULL);
+	aWindow->notifierP = FALSE;
+	if (which == 1) {
+	    aWindow->sortingInstructions |= WISH_REVERSE_SORT;
+	}
+	WishSetSort(aWindow, NULL, NULL);
+    } else if (argc == 2) {		/* parse command */
+	WishSetSort(aWindow, argv[1], NULL);
+    } else {
+	WishSetSort(aWindow, argv[1], argv[2]);
+    }
+    /*
+     * Now ask if they want to make this change be the default sort
+     * method for this directory.
+     */
+    /* soon. */
+
+    if (aWindow->dontDisplayChangesP == FALSE) {
+	/* update display */
+	if (aWindow->firstElement == UNINITIALIZED) {
+	    aWindow->firstElement = 1;
+	}
+	WishSetPositions(aWindow);
+    }
+
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WishSetSort --
+ *
+ *	Change the sorting information and resort files.
+ *	If the reverse argument is non-null, do the reverse sort of the
+ *	sortMethod argument.  If the sortMethod argument is NULL, then the
+ *	aWindow->sortingInstructions field is already set.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The order of the files displayed will change if the new sorting
+ *	method is different.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+WishSetSort(aWindow, sortMethod, reverse)
+    WishWindow	*aWindow;
+    char		*sortMethod;
+    char		*reverse;
+{
+    int		getAttrsP = FALSE;
+    WishFile	*tmpPtr;
+    WishGroup	*grpPtr;
+    int		(*compareProc)();
+    WishFile	**fileArray;
+    int		i, arraySize;
+
+    if (sortMethod != NULL) {
+	aWindow->sortingInstructions = 0;
+	if (reverse != NULL) {
+	    aWindow->sortingInstructions |= WISH_REVERSE_SORT;
+	}
+	if (strcmp(sortMethod, "alpha") == 0 ||
+		strcmp(sortMethod, "Alpha") == 0) {
+	    aWindow->sortingInstructions |= WISH_ALPHA_SORT;
+	}
+	if (strcmp(sortMethod, "accessTime") == 0 ||
+		strcmp(sortMethod, "AccessTime") == 0 ||
+		strcmp(sortMethod, "atime") == 0 ||
+		strcmp(sortMethod, "aTime") == 0 ||
+		strcmp(sortMethod, "Atime") == 0) {
+	    aWindow->sortingInstructions |= WISH_ATIME_SORT;
+	}
+	if (strcmp(sortMethod, "modifyTime") == 0 ||
+		strcmp(sortMethod, "ModifyTime") == 0 ||
+		strcmp(sortMethod, "datamodtime") == 0 ||
+		strcmp(sortMethod, "dataModTime") == 0 ||
+		strcmp(sortMethod, "DataModTime") == 0 ||
+		strcmp(sortMethod, "datamodifytime") == 0 ||
+		strcmp(sortMethod, "dataModifyTime") == 0 ||
+		strcmp(sortMethod, "DataModifyTime") == 0 ||
+		strcmp(sortMethod, "mtime") == 0 ||
+		strcmp(sortMethod, "mTime") == 0 ||
+		strcmp(sortMethod, "Mtime") == 0) {
+	    aWindow->sortingInstructions |= WISH_MTIME_SORT;
+	}
+	if (strcmp(sortMethod, "descModifyTime") == 0 ||
+		strcmp(sortMethod, "DescModifyTime") == 0 ||
+		strcmp(sortMethod, "descmodifytime") == 0 ||
+		strcmp(sortMethod, "descmodtime") == 0 ||
+		strcmp(sortMethod, "descModTime") == 0 ||
+		strcmp(sortMethod, "DescModTime") == 0 ||
+		strcmp(sortMethod, "descriptormodifytime") == 0 ||
+		strcmp(sortMethod, "descriptorModifyTime") == 0 ||
+		strcmp(sortMethod, "DescriptorModifyTime") == 0 ||
+		strcmp(sortMethod, "dtime") == 0 ||
+		strcmp(sortMethod, "dTime") == 0 ||
+		strcmp(sortMethod, "Dtime") == 0) {
+	    aWindow->sortingInstructions |= WISH_DTIME_SORT;
+	}
+	if (strcmp(sortMethod, "size") == 0 ||
+		strcmp(sortMethod, "Size") == 0) {
+	    aWindow->sortingInstructions |= WISH_SIZE_SORT;
+	}
+    }
+
+    /* Now sort the files -- get attr's if necessary */
+    getAttrsP = WISH_ATTR_NECESSARY_P;
+    if (aWindow->groupList == NULL) {
+	return;
+    }
+    /* need comparison function that takes ptrs to WishFiles */
+    WishGetCompareProc(aWindow, &compareProc, TRUE);
+    for (grpPtr = aWindow->groupList; grpPtr != NULL;
+	    grpPtr = grpPtr->nextPtr) {
+	/* if 0 or 1 files, don't sort */
+	if (grpPtr->fileList == NULL || grpPtr->fileList->nextPtr == NULL) {
+	    continue;
+	}
+	for (i = 0, tmpPtr = grpPtr->fileList; tmpPtr != NULL;
+		tmpPtr = tmpPtr->nextPtr, i++) {
+	    if (getAttrsP && tmpPtr->attrPtr == NULL) {
+		tmpPtr->attrPtr = (struct stat *)
+			malloc(sizeof (struct stat));
+		if (lstat(tmpPtr->name, tmpPtr->attrPtr) != 0) {
+		    /* skip this file */
+		    sprintf(wishErrorMsg, "%s %s.",
+			    "Couldn't get attributes for file", tmpPtr->name);
+		    aWindow->notifierP = TRUE;
+		    Sx_Notify(wishDisplay, aWindow->surroundingWindow, -1, -1,
+			    0, wishErrorMsg, NULL, TRUE, "Continue",
+			    (char *) NULL);
+		    aWindow->notifierP = FALSE;
+		    bzero((char *) tmpPtr->attrPtr, sizeof (struct stat));
+		}
+	    }
+	}
+	arraySize = i;
+	fileArray = (WishFile **) malloc(arraySize *
+		sizeof (WishFile *));
+	for (tmpPtr = grpPtr->fileList, i = 0; tmpPtr != NULL;
+		tmpPtr = tmpPtr->nextPtr, i++) {
+	    fileArray[i] = tmpPtr;
+	}
+	qsort(fileArray, arraySize, sizeof (WishFile *), compareProc);
+	for (i = 0; i < arraySize - 1; i++) {
+	    fileArray[i]->nextPtr = fileArray[i+1];
+	}
+	fileArray[arraySize - 1]->nextPtr = NULL;
+	grpPtr->fileList = fileArray[0];
+	free(fileArray);
+    }
+
+    return;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WishCloseCmd --
+ *
+ *	Close the window.  This should do some more cleaning up.
+ *
+ * Syntax:
+ *	close
+ *
+ * Results:
+ *	TCL_OK.
+ *
+ * Side effects:
+ *	Closes the window, deletes the Tcl interpreter for the window, and
+ *	frees up the window data structures.  If this was the last window,
+ *	we may exit.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+int
+WishCloseCmd(aWindow, interp, argc, argv)
+    register	WishWindow	*aWindow;
+    Tcl_Interp	*interp;
+    int		argc;
+    char	**argv;
+{
+    if (!MonClient_DeleteDir(aWindow->dir,
+	    (ClientData) aWindow->surroundingWindow)) {
+	/* what should I do here?  Does it matter? */
+    }
+    XDeleteContext(wishDisplay, aWindow->surroundingWindow,
+	    wishWindowContext);
+    /* DeleteHandlers? */
+    WishGarbageCollect(aWindow);
+    XDestroyWindow(wishDisplay, aWindow->surroundingWindow);
+    Tcl_DeleteInterp(aWindow->interp);
+    free(aWindow);
+    wishWindowCount--;
+    if (wishWindowCount <= 0) {
+	exit(0);
+    }
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WishExecCmd --
+ *
+ *	Execute a command in an associated shell window.
+ *
+ * Syntax:
+ *	exec command
+ *
+ * Results:
+ *	Returns TCL_OK if all went well, or TCL_ERROR if an associated
+ *	shell window could not be found or there was no shell command
+ *	given.  Whether or not the command
+ *	given to the shell executes happily is another matter.  Maybe I'll
+ *	decide that its return status should be available, but I don't know
+ *	how to do that...
+ *
+ * Side effects:
+ *	Almost anything -- it depends what the shell command does.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+int
+WishExecCmd(aWindow, interp, argc, argv)
+    WishWindow	*aWindow;
+    Tcl_Interp	*interp;
+    int		argc;
+    char	**argv;
+{
+    int		i;
+    char	*command;
+    int		length;
+    int		result;
+
+    length = argc - 1;	/* spaces between command words + insert word */
+    for (i = 1; i < argc; i++) {	/* skip first "exec" word */
+	length += strlen(argv[i]);
+    }
+    length += strlen("insert");
+    command = (char *) malloc(length + 1);	/* plus null char */
+    strcpy(command, "insert");
+    for (i = 1; i < argc; i++) {	/* skip first "exec" word */
+	strcat(command, " ");
+	strcat(command, argv[i]);
+    }
+    result = Tx_Command(wishDisplay, aWindow->txOutsideWindow, command);
+    free(command);
+
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WishGroupBindCmd --
+ *
+ *	Add a command binding to a group.  This will bind a command
+ *	to a particular button (or button combination).
+ *
+ * Syntax:
+ *	groupbind groupname buttonMask command
+ *
+ * Results:
+ *	Returns TCL_OK if all went well, or TCL errors if not.
+ *
+ * Side effects:
+ *	A new command binding will be added to the group.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+WishGroupBindCmd(aWindow, interp, argc, argv)
+    WishWindow	*aWindow;
+    Tcl_Interp		*interp;
+    int			argc;
+    char		**argv;
+{
+    WishGroup	*grpPtr;
+    char	**buttonArgv;
+    int		buttonArgc;
+    int		button = 0;
+    int		test;
+    int		i;
+
+    if (argc != 4) {
+	sprintf(interp->result,
+		"Wrong # of args to groupBind command, %s",
+		"\"groupBind groupName buttonMask command\"");
+	return TCL_ERROR;
+    }
+    for (grpPtr = aWindow->groupList; grpPtr != NULL;
+	    grpPtr = grpPtr->nextPtr) {
+	if (strcmp(grpPtr->rule, argv[1]) == 0) {
+	    break;
+	}
+    }
+    if (grpPtr == NULL) {
+	sprintf(interp->result, "No such group %s", argv[1]);
+	return TCL_ERROR;
+    }
+
+    if (Tcl_SplitList(interp, argv[2], &buttonArgc, &buttonArgv) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    for (i = 0; i < buttonArgc; i++) {
+	test = WishWhichButton(buttonArgv[i]);
+	if (test == 0) {
+	    sprintf(interp->result, "Bad button name %s", argv[i]);
+	    /* will this really free it?  Tcl man page says so... */
+	    free(buttonArgv);
+	    return TCL_ERROR;
+	}
+	button |= test;
+    }
+    /* will this really free it?  Tcl man page says so... */
+    free(buttonArgv);
+    WishAddGroupBinding(grpPtr, button, argv[3]);
+
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WishMenuCmd --
+ *
+ *	Create, delete, and modify menus.
+ *
+ * Syntax:
+ *	menu append name leftText centerText rightText color cmd
+ *	menu create name leftText centerText rightText color cmd leftText ...
+ *	menu delete name
+ *	menu modify name entryIndex leftText centerText rightText color cmd
+ *
+ * Results:
+ *	Returns TCL_OK if all went well, or TCL_ERROR if any sort of
+ *	error occurred.
+ *
+ * Side effects:
+ *	The menu structure for the current window gets modified.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+WishMenuCmd(aWindow, interp, argc, argv)
+    register	WishWindow	*aWindow;
+    Tcl_Interp	*interp;
+    int		argc;
+    char	**argv;
+{
+#ifdef NOTDEF
+    MxMenuInfo *miPtr;
+#endif NOTDEF
+    int length;
+    Sx_MenuEntry entries[SX_MAX_MENU_ENTRIES];
+
+    extern char *GetString();		/* Forward references */
+
+    if (argc < 2) {
+	sprintf(interp->result, "wrong # args: must be \"%.50s option [args]\"",
+		argv[0]);
+	return TCL_ERROR;
+    }
+    length = strlen(argv[1]);
+    if (strncmp(argv[1], "append", length) == 0) {
+	Window window;
+	XFontStruct *fontPtr;
+	int numEntries;
+	unsigned long fg, bg;
+
+	if (argc != 8) {
+	    sprintf(interp->result, "wrong # args: should be \"%.50s append name left center right color cmd\"",
+		    argv[0]);
+	    return TCL_ERROR;
+	}
+	window = Sx_MenuGetWindow(wishDisplay, aWindow->menuBar, argv[2]);
+	if (window == NULL) {
+	    goto menuNameBad;
+	}
+	numEntries = Sx_MenuGetInfo(wishDisplay, window, entries, &fontPtr,
+		&fg, &bg);
+	if (numEntries >= SX_MAX_MENU_ENTRIES) {
+	    return TCL_OK;
+	}
+	entries[numEntries].leftText = GetString(argv[3]);
+	entries[numEntries].centerText = GetString(argv[4]);
+	entries[numEntries].rightText = GetString(argv[5]);
+	entries[numEntries].background =
+		Util_StringToColor(wishDisplay, argv[6]);
+/* should check to see if it returns -1 value!!!! */
+	entries[numEntries].proc = WishMenuProc;
+    /* Mx uses a structure with both command AND aWindow fields.  Should I? */
+	entries[numEntries].clientData = (ClientData) Util_Strcpy(NULL,
+		argv[7]);
+	Sx_MenuCreate(wishDisplay, aWindow->menuBar, argv[2], numEntries+1,
+		entries, fontPtr, fg, bg);
+	return TCL_OK;
+    }
+    if (strncmp(argv[1], "create", length) == 0) {
+	int numEntries, i, arg;
+
+	numEntries = (argc - 3)/5;
+	if ((argc-3) != (numEntries*5)) {
+	    sprintf(interp->result, "wrong # args: should be \"%.50s create name [left center right color cmd] ...\"",
+		    argv[0]);
+	    return TCL_ERROR;
+	}
+	if (numEntries > SX_MAX_MENU_ENTRIES) {
+	    sprintf(interp->result,
+		    "can't create a menu with more than %d entries",
+		    SX_MAX_MENU_ENTRIES);
+	    return TCL_ERROR;
+	}
+
+	for (i = 0, arg = 3; i < numEntries; i++, arg += 5) {
+	    entries[i].leftText = GetString(argv[arg]);
+	    entries[i].centerText = GetString(argv[arg+1]);
+	    entries[i].rightText = GetString(argv[arg+2]);
+	    entries[i].background =
+		    Util_StringToColor(wishDisplay, argv[arg+3]);
+/* should check to see if it returns -1 value! */
+	    entries[i].proc = WishMenuProc;
+	    entries[i].clientData = (ClientData) Util_Strcpy(NULL, argv[arg+4]);
+	}
+	Sx_MenuCreate(wishDisplay, aWindow->menuBar, argv[2], numEntries,
+		entries, aWindow->fontPtr, aWindow->menuForeground,
+		aWindow->menuBackground);
+	return TCL_OK;
+    } else if (strncmp(argv[1], "delete",length) == 0) {
+	Window window;
+	int count;
+
+	if (argc != 3) {
+	    sprintf(interp->result,
+		    "wrong # args: should be \"%.50s delete name\"",
+		    argv[0]);
+	    return TCL_ERROR;
+	}
+	window = Sx_MenuGetWindow(wishDisplay, aWindow->menuBar, argv[2]);
+	if (window == NULL) {
+	    goto menuNameBad;
+	}
+	count = Sx_MenuGetInfo(wishDisplay, window, entries,
+		(XFontStruct **) NULL, (int *) NULL, (int *) NULL);
+	for (count--; count >= 0; count--) {
+	    free(entries[count].clientData);
+	}
+	XDestroyWindow(wishDisplay, window);
+	return TCL_OK;
+#ifdef NOTDEF
+    } else if (strncmp(argv[1], "info", length) == 0) {
+	Window window;
+	int count, i;
+	char *names[SX_MAX_MENUS];
+	char *entryStrings[SX_MAX_MENU_ENTRIES];
+	char *pieces[4];
+
+	if (argc == 2) {
+	    count = Sx_MenuGetNames(mxwPtr->display, mxwPtr->menuBar, names,
+		    (Window *) NULL);
+	    interp->result = Tcl_Merge(count, names);
+	    interp->dynamic = 1;
+	    return TCL_OK;
+	}
+	if (argc != 3) {
+	    sprintf(interp->result,
+		    "wrong # args: should be \"%.50s info [name]\"",
+		    argv[0]);
+	    return TCL_ERROR;
+	}
+	window = Sx_MenuGetWindow(mxwPtr->display, mxwPtr->menuBar, argv[2]);
+	if (window == NULL) {
+	    goto menuNameBad;
+	}
+	count = Sx_MenuGetInfo(mxwPtr->display, window, entries,
+		(XFontStruct **) NULL, (unsigned long *) NULL,
+		(unsigned long *) NULL);
+	for (i = 0; i < count; i++) {
+	    pieces[0] = entries[i].leftText;
+	    if (pieces[0] == NULL) {
+		pieces[0] = "";
+	    }
+	    pieces[1] = entries[i].centerText;
+	    if (pieces[1] == NULL) {
+		pieces[1] = "";
+	    }
+	    pieces[2] = entries[i].rightText;
+	    if (pieces[2] == NULL) {
+		pieces[2] = "";
+	    }
+	    pieces[3] = ((MxMenuInfo *) entries[i].clientData)->command;
+	    if (pieces[3] == NULL) {
+		pieces[3] = "";
+	    }
+	    entryStrings[i] = Tcl_Merge(4, pieces);
+	}
+	interp->result = Tcl_Merge(count, entryStrings);
+	interp->dynamic = 1;
+	for (i = 0; i < count; i++) {
+	    free(entryStrings[i]);
+	}
+	return TCL_OK;
+#endif NOTDEF
+    } else if (strncmp(argv[1], "modify", length) == 0) {
+	Window window;
+	Sx_MenuEntry entry;
+	int index;
+
+	if (argc != 9) {
+	    sprintf(interp->result, "wrong # args: should be \"%.50s modify name index left center right color cmd\"",
+		    argv[0]);
+	    return TCL_ERROR;
+	}
+	window = Sx_MenuGetWindow(wishDisplay, aWindow->menuBar, argv[2]);
+	if (window == NULL) {
+	    goto menuNameBad;
+	}
+	index = atoi(argv[3]);
+	if ((index < 0) || (index >= Sx_MenuGetInfo(wishDisplay, window,
+		entries, (XFontStruct **) NULL, (int *) NULL, (int *) NULL))) {
+	    sprintf(interp->result,
+		    "there's no entry %d in menu \"%.50s\"",
+		    index, argv[2]);
+	    return TCL_ERROR;
+	}
+	free(entries[index].clientData);
+	entry.leftText = GetString(argv[4]);
+	entry.centerText = GetString(argv[5]);
+	entry.rightText = GetString(argv[6]);
+/* should check to see if it returns -1 value! */
+	entry.background = Util_StringToColor(wishDisplay, argv[7]);
+	entry.proc = WishMenuProc;
+	entry.clientData = (ClientData) Util_Strcpy(NULL, argv[8]);
+	Sx_MenuReplaceEntry(wishDisplay, window, index, &entry);
+	return TCL_OK;
+    } else {
+	sprintf(interp->result, "bad \"%.50s\" option: must be append, create, delete, or modify\"",
+		argv[0]);
+	return TCL_ERROR;
+    }
+
+    menuNameBad:
+    sprintf(interp->result, "there's no menu named \"%.50s\".", argv[2]);
+    return TCL_ERROR;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WishOpenCmd --
+ *
+ *	Create another wish window.
+ *	Eventually this will be create another Wish window, with an
+ *	argument to say whether it should be a flat or tree window.  If
+ *	the argument is not supplied, it should default to the type of
+ *	window where the command was called from.
+ *
+ * Syntax:
+ *	open directory
+ *
+ * Results:
+ *	Returns TCL_OK if all went well, various TCL errors if not.
+ *
+ * Side effects:
+ *	A new window should be created.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+WishOpenCmd(aWindow, interp, argc, argv)
+    WishWindow	*aWindow;
+    Tcl_Interp		*interp;
+    int			argc;
+    char		**argv;
+{
+    if (argc > 2) {
+	sprintf(interp->result, "%s %s", "Too many args to open command:",
+		"open [directory]");
+	return TCL_ERROR;
+    }
+    if (argc == 2) {
+	if (WishCreate(aWindow, argv[1]) == NULL) {
+	    return TCL_ERROR;
+	}
+    } else if (WishCreate(aWindow, NULL) == NULL) {
+	return TCL_ERROR;
+    }
+
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WishPatternCompareCmd --
+ *
+ *	Compare two strings.  In the interpreter, return 0 for a match,
+ *	and < 0 for an error.  Return > 0 for failure to match.
+ *
+ * Syntax:
+ *	pattern	string1 string2
+ *
+ * Results:
+ *	TCL_OK if everything went okay, TCL_ERROR if not.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+int
+WishPatternCompareCmd(aWindow, interp, argc, argv)
+    register	WishWindow	*aWindow;
+    Tcl_Interp	*interp;
+    int		argc;
+    char	**argv;
+{
+    int	result;
+
+    if (argc != 3) {
+	sprintf(interp->result, "pattern command requires 3 args");
+	return TCL_ERROR;
+    }
+    result = Pattern_Match(argv[1], argv[2]);
+    sprintf(interp->result, "%d", result);
+
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WishQuitCmd --
+ *
+ *	Exit the program.
+ *
+ * Syntax:
+ *	quit
+ *
+ * Results:
+ *	Exits.
+ *
+ * Side effects:
+ *	Exits.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+int
+WishQuitCmd(aWindow, interp, argc, argv)
+    register	WishWindow	*aWindow;
+    Tcl_Interp	*interp;
+    int		argc;
+    char	**argv;
+{
+    /*
+     * I should go through and call MonClient_DeleteDir for each remaining 
+     * window.
+     */
+    exit(0);
+}
+
+#ifdef NOTDEF
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WishRestartCmd --
+ *
+ *	Resource the startup files and rebuild the display of the current
+ *	directory.
+ *
+ * Syntax:
+ *	restart
+ *
+ * Results:
+ *	Returns TCL_OK if all went well, or TCL_ERROR if any sort of
+ *	error occurred.
+ *
+ * Side effects:
+ *	The display may change if the startup files have changed.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+WishRestartCmd(aWindow, interp, argc, argv)
+    WishWindow	*aWindow;
+    int			argc;
+    char		**argv;
+{
+    if (argc != 1) {
+	sprintf(interp->result, "too many args to restart command. 1 arg max");
+	return TCL_ERROR;
+    }
+    WishGarbageCollect(aWindow);
+    /* delete interpreter and start new one? */
+    if (WishGatherNames(aWindow) != TCL_OK) {
+	/* Fix here too. */
+    }
+    /* should it repick the size here if aWindow->pickSizeP is true? */
+    aWindow->firstElement = 1;
+    WishSetPositions(aWindow);
+    /* WishRedraw will be called from event caused in WishSetPositions() */
+
+    return TCL_OK;
+}
+#endif NOTDEF
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WishRedrawCmd --
+ *
+ *	Redraw the window.
+ *
+ * Syntax:
+ *	redraw
+ *
+ * Results:
+ *	TCL_OK.
+ *
+ * Side effects:
+ *	Redraws the window.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+int
+WishRedrawCmd(aWindow, interp, argc, argv)
+    register	WishWindow	*aWindow;
+    Tcl_Interp	*interp;
+    int		argc;
+    char	**argv;
+{
+    if (aWindow->dontDisplayChangesP == FALSE) {
+	WishRedraw(aWindow);
+    }
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WishResizeCmd --
+ *
+ *	Resize the window.
+ *
+ * Syntax:
+ *	redraw newheight newwidth
+ *
+ * Results:
+ *	TCL_OK if everything goes well, TCL_ERROR if not.
+ *
+ * Side effects:
+ *	Resizes the window.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+WishResizeCmd(aWindow, interp, argc, argv)
+    register	WishWindow	*aWindow;
+    Tcl_Interp	*interp;
+    int		argc;
+    char	**argv;
+{
+    int	height, width;
+    char	*cptr;
+
+    if (argc != 3) {
+	sprintf(interp->result, "Wrong # of args to resize command: %s",
+	    "\"resize newheight newwidth\"");
+	return TCL_ERROR;
+    }
+    if ((height = strtol(argv[1], &cptr, 10)) == 0 && cptr == argv[1]) {
+	sprintf(interp->result, "Bad height arg to resize command: %s",
+	    argv[1]);
+	return TCL_ERROR;
+    }
+    if ((width = strtol(argv[2], &cptr, 10)) == 0 && cptr == argv[2]) {
+	sprintf(interp->result, "Bad width arg to resize command: %s", argv[2]);
+	return TCL_ERROR;
+    }
+	
+    WishSetWindowAndRowInfo(aWindow, height, width);
+
+    if (aWindow->dontDisplayChangesP == FALSE) {
+	/* update display */
+	if (aWindow->firstElement == UNINITIALIZED) {
+	    aWindow->firstElement = 1;
+	}
+	WishSetPositions(aWindow);
+	/*
+	 * WishRedraw will be called from event caused in WishSetPostions().
+	 */
+    }
+
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WishToggleSelEntryCmd --
+ *
+ *	Toggle the selection status of the given entry.
+ *
+ * Syntax:
+ *	toggleSelectionEntry x y [wholeLine]
+ *
+ * Results:
+ *	TCL_OK if everything went well.  TCL_ERROR if not.
+ *
+ * Side effects:
+ *	Toggles the chosen entry.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+int
+WishToggleSelEntryCmd(aWindow, interp, argc, argv)
+    register	WishWindow	*aWindow;
+    Tcl_Interp	*interp;
+    int		argc;
+    char	**argv;
+{
+    int		x, y;
+    WishFile	*filePtr;
+    WishGroup	*groupPtr = NULL;
+    int	lineP = 0;
+    char	*cptr;
+
+    if (argc < 3 || argc > 4) {
+	sprintf(aWindow->interp->result, "Wrong # of args to toggleSelection");
+	return TCL_ERROR;
+    }
+    if ((x = strtol(argv[1], &cptr, 10)) == 0 && cptr == argv[1]) {
+	sprintf(aWindow->interp->result, "Bad window x coordinate %s", argv[1]);
+	return TCL_ERROR;
+    }
+    if ((y = strtol(argv[2], &cptr, 10)) == 0 && cptr == argv[2]) {
+	sprintf(aWindow->interp->result, "Bad window y coordinate %s", argv[2]);
+	return TCL_ERROR;
+    }
+    if (argc == 4) {
+	if ((lineP = strtol(argv[3], &cptr, 10)) == 0 && cptr == argv[3]) {
+	    sprintf(aWindow->interp->result, "Bad 3rd arg to toggleSelection");
+	    return TCL_ERROR;
+	}
+    }
+	
+    filePtr = WishMapCoordsToFile(aWindow, x, y);
+    if (filePtr == NULL && groupPtr == NULL) {
+	sprintf(aWindow->interp->result,
+		"No entry to select at those coordinates: %d %d", x, y);
+	return TCL_ERROR;
+    }
+    if (filePtr != NULL) {
+	WishChangeSelection(aWindow, (ClientData) filePtr, TRUE, lineP, TRUE);
+    } else {
+	WishChangeSelection(aWindow, (ClientData) groupPtr, FALSE, FALSE,
+		TRUE);
+    }
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WishToggleSelectionCmd --
+ *
+ *	Select or deselect given file.
+ *
+ * Syntax:
+ *	toggleSelection x y [wholeLine]
+ *
+ * Results:
+ *	TCL_OK if everything went well.  TCL_ERROR if not.
+ *
+ * Side effects:
+ *	Changes the selection variable to be given file or empty.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+WishToggleSelectionCmd(aWindow, interp, argc, argv)
+    register	WishWindow	*aWindow;
+    Tcl_Interp	*interp;
+    int		argc; char	**argv;
+{
+    int		x, y;
+    WishFile	*filePtr = NULL;
+    WishGroup	*groupPtr = NULL;		/* not used yet */
+    int	lineP = 0;
+    char	*cptr;
+
+    if (argc < 3 || argc > 4) {
+	sprintf(aWindow->interp->result, "Wrong # of args to toggleSelection");
+	return TCL_ERROR;
+    }
+    if ((x = strtol(argv[1], &cptr, 10)) == 0 && cptr == argv[1]) {
+	sprintf(aWindow->interp->result, "Bad window x coordinate %s", argv[1]);
+	return TCL_ERROR;
+    }
+    if ((y = strtol(argv[2], &cptr, 10)) == 0 && cptr == argv[2]) {
+	sprintf(aWindow->interp->result, "Bad window y coordinate %s", argv[2]);
+	return TCL_ERROR;
+    }
+    if (argc == 4) {
+	if ((lineP = strtol(argv[3], &cptr, 10)) == 0 && cptr == argv[3]) {
+	    sprintf(aWindow->interp->result, "Bad 3rd arg to toggleSelection");
+	    return TCL_ERROR;
+	}
+    }
+	
+    filePtr = WishMapCoordsToFile(aWindow, x, y);
+    if (filePtr == NULL && groupPtr == NULL) {
+	sprintf(aWindow->interp->result,
+		"No entry to select at those coordinates: %d %d", x, y);
+	return TCL_ERROR;
+    }
+    if (filePtr != NULL) {
+	WishChangeSelection(aWindow, (ClientData) filePtr, TRUE, lineP,
+		FALSE);
+    } else {
+	WishChangeSelection(aWindow, (ClientData) groupPtr, FALSE, FALSE,
+		FALSE);
+    }
+
+    return TCL_OK;
+}
+
+void
+WishCmdTableInit(cmdTablePtr, interpPtr, commands, clientData)
+    Cmd_Table	*cmdTablePtr;
+    Tcl_Interp	**interpPtr;
+    CmdInfo	commands[];
+    ClientData	clientData;
+{
+    CmdInfo	*cmd;
+    int		i;
+
+    *cmdTablePtr = Cmd_TableCreate();
+    *interpPtr = Tcl_CreateInterp(); 
+    for (cmd = commands; cmd->name != NULL; cmd++) {
+	Tcl_CreateCommand(*interpPtr, cmd->name, cmd->proc, clientData,
+		(void (*)()) NULL);
+    }
+    for (i = insertFirst; i <= insertLast; i++) {
+	char	string[2];
+
+	string[0] = i;
+	string[1] = 0;
+	Cmd_BindingCreate(*cmdTablePtr, string, "!@@");
+    }
+
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WishAddGroupBinding --
+ *
+ *	Add a command binding to a file group.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	New command binding added to given group.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+WishAddGroupBinding(grpPtr, button, command)
+    WishGroup		*grpPtr;
+    int			button;			/* button binding */
+    char		*command;
+{
+    WishGroupBinding	*bPtr;
+
+    for (bPtr = grpPtr->groupBindings; bPtr != NULL; bPtr = bPtr->nextPtr) {
+	if (bPtr->button == button) {
+	    /* substitute command and return */
+	    if (bPtr->command != NULL) {
+		free(bPtr->command);
+	    }
+	    bPtr->command = Util_Strcpy(NULL, command);
+	    return;
+	}
+    }
+    /* Not there already */
+    bPtr = (WishGroupBinding *) malloc(sizeof (WishGroupBinding));
+    bPtr->button = button;
+    bPtr->command = Util_Strcpy(NULL, command);
+    bPtr->nextPtr = grpPtr->groupBindings;
+    grpPtr->groupBindings = bPtr;
+
+    return;
+}
+
+void
+WishDeleteGroupBindings(grpPtr)
+    WishGroup	*grpPtr;
+{
+    WishGroupBinding	*bPtr, *nPtr;
+
+    for (bPtr = grpPtr->groupBindings; bPtr != NULL; ) {
+	nPtr = bPtr->nextPtr;
+	free(bPtr->command);
+	free(bPtr);
+	bPtr = nPtr;
+    }
+    grpPtr->groupBindings = NULL;
+
+    return;
+}
+
+void
+WishDeleteGroupBinding(grpPtr, button)
+    WishGroup	*grpPtr;
+    int		button;
+{
+    WishGroupBinding	*bPtr, *nPtr;
+
+    if (grpPtr->groupBindings == NULL) {
+	return;
+    }
+    if (grpPtr->groupBindings->button == button) {
+	bPtr = grpPtr->groupBindings;
+	grpPtr->groupBindings = grpPtr->groupBindings->nextPtr;
+	free(bPtr->command);
+	free(bPtr);
+
+	return;
+    }
+    for (bPtr = grpPtr->groupBindings; bPtr->nextPtr != NULL;
+	    bPtr = bPtr->nextPtr ) {
+	nPtr = bPtr->nextPtr;
+	if (nPtr->button == button) {
+	    bPtr->nextPtr = nPtr->nextPtr;
+	    free(nPtr->command);
+	    free(nPtr);
+	    return;
+	}
+    }
+
+    return;
+}
+
+
+
+char *
+WishGetGroupBinding(grpPtr, button)
+    WishGroup	*grpPtr;
+    int		button;
+{
+    WishGroupBinding	*bPtr;
+
+    for (bPtr = grpPtr->groupBindings; bPtr != NULL; bPtr = bPtr->nextPtr) {
+	if (bPtr->button == button) {
+	    break;
+	}
+    }
+    if (bPtr == NULL) {
+	return NULL;
+    }
+    return bPtr->command;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WishDoCmd --
+ *
+ *	Execute a given Tcl command in a given window, and display
+ *	error information if the command doesn't complete successfully.
+ *
+ * Results:
+ *	Returns the result code from the command: TCL_OK, etc.
+ *
+ * Side effects:
+ *	Can be almost arbitrary, depending on the command.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+WishDoCmd(aWindow, command)
+    WishWindow	*aWindow;
+    char	*command;
+{
+    int		result;
+
+    result = Tcl_Eval(aWindow->interp, command, 0, (char **) 0);
+    if (result == TCL_OK) {
+#ifdef NOTDEF
+	if (*aWindow->interp->result != 0) {
+/* this won't work with close command, interpreter and window structure gone! */
+	    /*
+	     * output message - should call routine that uses 1-line window
+	     * if possible.
+	     */
+	}
+#endif NOTDEF
+	return result;
+    }
+
+    WishPrintTclError(aWindow);
+
+    return result;
+}
+
+
+/*
+ * Local procedure used to turn empty or "-" strings into NULLs.
+ */
+static char *
+GetString(string)
+    char *string;
+{
+    if ((string[0] == 0) || ((string[0] == '-') && (string[1] == 0))) {
+	return NULL;
+    }
+    return string;
+}
+
+int
+WishWhichButton(token)
+    char	*token;
+{
+
+    if (strcmp(token, "Left") == 0 ||
+	    strcmp(token, "left") == 0) {
+	return WISH_LEFT_BUTTON;
+    }
+    if (strcmp(token, "Middle") == 0 ||
+	    strcmp(token, "middle") == 0) {
+	return WISH_MIDDLE_BUTTON;
+    }
+    if (strcmp(token, "Right") == 0 ||
+	    strcmp(token, "right") == 0) {
+	return WISH_RIGHT_BUTTON;
+    }
+    if (strcmp(token, "Meta") == 0 ||
+	    strcmp(token, "meta") == 0) {
+	return WISH_META_BUTTON;
+    }
+    if (strcmp(token, "Shift") == 0 ||
+	    strcmp(token, "shift") == 0) {
+	return WISH_SHIFT_BUTTON;
+    }
+    return 0;
+}
+@
+
+
+1.4
+log
+@Temporary checkin
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /a/newcmds/wish/RCS/wishCmd.c,v 1.3 88/11/03 19:44:00 mlgray Exp Locker: mlgray $ SPRITE (Berkeley)";
+d679 4
+d691 1
+d698 1
+a698 1
+	    aWindow->interp->result, NULL, TRUE, "Continue", (char *) NULL);
+@
+
+
+1.3
+log
+@Fixed many bugs - notifiers no longer trash the display.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /a/newcmds/wish/RCS/wishCmd.c,v 1.2 88/11/02 14:49:18 mlgray Exp Locker: mlgray $ SPRITE (Berkeley)";
+@
+
+
+1.2
+log
+@fsflat changed to wish
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: wishCmd.c,v 1.1 88/10/03 12:45:42 mlgray Exp $ SPRITE (Berkeley)";
+d147 1
+a147 1
+ *	Change the method of sorting directory entries.
+d172 3
+d197 1
+a197 1
+		aWindow->displayInstructions |= FSFLAT_SIZE_FIELD;
+d205 1
+a205 1
+		aWindow->displayInstructions |= FSFLAT_ATIME_FIELD;
+d219 1
+a219 1
+		aWindow->displayInstructions |= FSFLAT_DTIME_FIELD;
+d230 1
+a230 1
+		aWindow->displayInstructions |= FSFLAT_MTIME_FIELD;
+d240 3
+d247 1
+a247 1
+	aWindow->displayInstructions |= FSFLAT_SIZE_FIELD;
+d255 1
+a255 1
+	aWindow->displayInstructions |= FSFLAT_ATIME_FIELD;
+d263 1
+a263 1
+	aWindow->displayInstructions |= FSFLAT_MTIME_FIELD;
+d271 1
+a271 1
+	aWindow->displayInstructions |= FSFLAT_DTIME_FIELD;
+d278 3
+d373 2
+a374 1
+		"/sprite2/users/oustser/mx10/mx");
+d377 1
+d388 1
+d391 1
+d394 2
+a395 2
+    if (aWindow->sortingInstructions & FSFLAT_ALPHA_SORT) {
+	if (aWindow->sortingInstructions & FSFLAT_REVERSE_SORT) {
+d401 2
+a402 2
+    if (aWindow->sortingInstructions & FSFLAT_ATIME_SORT) {
+	if (aWindow->sortingInstructions & FSFLAT_REVERSE_SORT) {
+d408 2
+a409 2
+    if (aWindow->sortingInstructions & FSFLAT_MTIME_SORT) {
+	if (aWindow->sortingInstructions & FSFLAT_REVERSE_SORT) {
+d415 2
+a416 2
+    if (aWindow->sortingInstructions & FSFLAT_DTIME_SORT) {
+	if (aWindow->sortingInstructions & FSFLAT_REVERSE_SORT) {
+d422 2
+a423 2
+    if (aWindow->sortingInstructions & FSFLAT_SIZE_SORT) {
+	if (aWindow->sortingInstructions & FSFLAT_REVERSE_SORT) {
+d429 1
+a429 1
+    if (aWindow->displayInstructions & FSFLAT_NAME_FIELD) {
+d432 1
+a432 1
+    if (aWindow->displayInstructions & FSFLAT_ATIME_FIELD) {
+d435 1
+a435 1
+    if (aWindow->displayInstructions & FSFLAT_MTIME_FIELD) {
+d438 1
+a438 1
+    if (aWindow->displayInstructions & FSFLAT_DTIME_FIELD) {
+d441 1
+a441 1
+    if (aWindow->displayInstructions & FSFLAT_SIZE_FIELD) {
+d691 1
+d694 1
+d869 2
+d872 1
+d877 1
+d880 1
+a880 1
+	    aWindow->sortingInstructions = FSFLAT_ALPHA_SORT;
+d883 1
+a883 1
+	    aWindow->sortingInstructions = FSFLAT_ATIME_SORT;
+d886 1
+a886 1
+	    aWindow->sortingInstructions = FSFLAT_MTIME_SORT;
+d889 1
+a889 1
+	    aWindow->sortingInstructions = FSFLAT_DTIME_SORT;
+d892 1
+a892 1
+	    aWindow->sortingInstructions = FSFLAT_SIZE_SORT;
+d897 1
+d900 1
+d903 1
+d907 1
+d909 1
+a909 1
+	    aWindow->sortingInstructions |= FSFLAT_REVERSE_SORT;
+d970 1
+a970 1
+	    aWindow->sortingInstructions |= FSFLAT_REVERSE_SORT;
+d974 1
+a974 1
+	    aWindow->sortingInstructions |= FSFLAT_ALPHA_SORT;
+d981 1
+a981 1
+	    aWindow->sortingInstructions |= FSFLAT_ATIME_SORT;
+d994 1
+a994 1
+	    aWindow->sortingInstructions |= FSFLAT_MTIME_SORT;
+d1008 1
+a1008 1
+	    aWindow->sortingInstructions |= FSFLAT_DTIME_SORT;
+d1012 1
+a1012 1
+	    aWindow->sortingInstructions |= FSFLAT_SIZE_SORT;
+d1017 1
+a1017 1
+    getAttrsP = FSFLAT_ATTR_NECESSARY_P;
+d1038 1
+d1042 1
+d1151 2
+a1152 2
+    length = argc;	/* spaces between command words + insert word */
+    for (i = 0; i < argc; i++) {
+d1158 1
+a1158 1
+    for (i = 0; i < argc; i++) {
+d2064 1
+a2064 1
+	return FSFLAT_LEFT_BUTTON;
+d2068 1
+a2068 1
+	return FSFLAT_MIDDLE_BUTTON;
+d2072 1
+a2072 1
+	return FSFLAT_RIGHT_BUTTON;
+d2076 1
+a2076 1
+	return FSFLAT_META_BUTTON;
+d2080 1
+a2080 1
+	return FSFLAT_SHIFT_BUTTON;
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d2 1
+a2 1
+ * fsflatCmd.c --
+d4 1
+a4 1
+ *	Commands for fsflat.
+d18 1
+a18 1
+static char rcsid[] = "$Header: fsflatCmd.c,v 1.8 88/06/10 13:13:49 mlgray Exp $ SPRITE (Berkeley)";
+d29 1
+a29 1
+#include "fsflatInt.h"
+d43 1
+a43 1
+ * FsflatBindCmd --
+d63 2
+a64 2
+FsflatBindCmd(aWindow, interp, argc, argv)
+    FsflatWindow	*aWindow;
+d86 1
+a86 1
+ * FsflatChangeDirCmd --
+d103 2
+a104 2
+FsflatChangeDirCmd(aWindow, interp, argc, argv)
+    FsflatWindow	*aWindow;
+d135 1
+a135 1
+    FsflatChangeDir(aWindow, newDir);	/* does everything */
+d145 1
+a145 1
+ * FsflatChangeFieldsCmd --
+d163 2
+a164 2
+FsflatChangeFieldsCmd(aWindow, interp, argc, argv)
+    FsflatWindow	*aWindow;
+d237 1
+a237 1
+    which = Sx_Notify(fsflatDisplay, aWindow->surroundingWindow, -1, -1, 0,
+d245 1
+a245 1
+    which = Sx_Notify(fsflatDisplay, aWindow->surroundingWindow, -1, -1, 0,
+d253 1
+a253 1
+    which = Sx_Notify(fsflatDisplay, aWindow->surroundingWindow, -1, -1, 0,
+d261 1
+a261 1
+    which = Sx_Notify(fsflatDisplay, aWindow->surroundingWindow, -1, -1, 0,
+d277 1
+a277 1
+	FsflatSetPositions(aWindow);
+d288 1
+a288 1
+ * FsflatChangeGroupsCmd --
+d306 2
+a307 2
+FsflatChangeGroupsCmd(aWindow, interp, argc, argv)
+    FsflatWindow	*aWindow;
+d318 1
+a318 1
+    FsflatGroup	*grpPtr;
+d330 1
+a330 1
+    sprintf(buffer, "%s%d.%d", "/tmp/tmpFsflat", pid, count);
+d363 1
+a363 1
+	sprintf(fsflatErrorMsg, "Exec of %s returned.",
+d365 2
+a366 2
+	Sx_Notify(fsflatDisplay, aWindow->surroundingWindow, -1, -1, 0,
+		fsflatErrorMsg, NULL, TRUE, "Skip command", (char *) NULL);
+d374 1
+a374 1
+	sprintf(fsflatErrorMsg, "%s %s %s",
+d377 2
+a378 2
+	Sx_Notify(fsflatDisplay, aWindow->surroundingWindow, -1, -1, 0,
+		fsflatErrorMsg, NULL, TRUE, "Skip command", (char *) NULL);
+d433 1
+a433 1
+    FsflatGarbageCollect(aWindow);
+d438 1
+a438 1
+    if (FsflatGatherNames(aWindow, buffer) != TCL_OK) {
+d446 2
+a447 2
+    FsflatSetPositions(aWindow);
+    /* FsflatRedraw will be called from event caused in FsflatSetPositions() */
+d460 1
+a460 1
+ * FsflatChangeGroupCmd --
+d476 2
+a477 2
+FsflatChangeGroupCmd(aWindow, interp, argc, argv)
+    FsflatWindow	*aWindow;
+d482 3
+a484 3
+    FsflatGroup	*grpPtr;
+    FsflatGroup	*newGrpPtr;
+    FsflatGroup	*bPtr;
+d530 1
+a530 1
+    newGrpPtr = (FsflatGroup *) malloc(sizeof (FsflatGroup));
+d540 1
+a540 1
+    FsflatGarbageGroup(aWindow, grpPtr);
+d552 1
+a552 1
+	FsflatSetPositions(aWindow);
+d576 1
+a576 1
+    FsflatWindow	*aWindow;
+d579 1
+a579 1
+    FsflatGroup		*newGrpPtr;
+d616 1
+a616 1
+	if (FsflatDoTclSelect(interp, newGrpPtr->rule, "x", &num) != TCL_OK) {
+d636 1
+a636 1
+    if (FsflatGatherSingleGroup(aWindow, newGrpPtr) != TCL_OK) {
+d649 1
+a649 1
+ * FsflatPrintTclError --
+d662 2
+a663 2
+FsflatPrintTclError(aWindow)
+    FsflatWindow	*aWindow;
+d678 1
+a678 1
+    Sx_Notify(fsflatDisplay, aWindow->surroundingWindow, -1, -1, 0,
+d690 1
+a690 1
+ * FsflatDefineGroupCmd --
+d708 2
+a709 2
+FsflatDefineGroupCmd(aWindow, interp, argc, argv)
+    FsflatWindow	*aWindow;
+d714 2
+a715 2
+    FsflatGroup	*grpPtr;
+    FsflatGroup	*newGrpPtr;
+d738 1
+a738 1
+    newGrpPtr = (FsflatGroup *) malloc(sizeof (FsflatGroup));
+d743 2
+a744 2
+	FsflatPrintTclError(aWindow);
+	FsflatDoCmd(aWindow, "close");
+d769 1
+a769 1
+	FsflatSetPositions(aWindow);
+d778 1
+a778 1
+ * FsflatSelectionCmd --
+d796 2
+a797 2
+FsflatSelectionCmd(aWindow, interp, argc, argv)
+    FsflatWindow	*aWindow;
+d813 1
+a813 1
+ * FsflatSortFilesCmd --
+d833 2
+a834 2
+FsflatSortFilesCmd(aWindow, interp, argc, argv)
+    FsflatWindow	*aWindow;
+d855 1
+a855 1
+	which = Sx_Notify(fsflatDisplay, aWindow->surroundingWindow, -1, -1, 0,
+d876 1
+a876 1
+	    sprintf(fsflatErrorMsg, "%s %s", "Something is wrong.",
+d878 2
+a879 2
+	    Sx_Notify(fsflatDisplay, aWindow->surroundingWindow, -1, -1, 0,
+		    fsflatErrorMsg, "Skip command", (char *) NULL);
+d882 1
+a882 1
+	which = Sx_Notify(fsflatDisplay, aWindow->surroundingWindow, -1, -1, 0,
+d888 1
+a888 1
+	FsflatSetSort(aWindow, NULL, NULL);
+d890 1
+a890 1
+	FsflatSetSort(aWindow, argv[1], NULL);
+d892 1
+a892 1
+	FsflatSetSort(aWindow, argv[1], argv[2]);
+d905 1
+a905 1
+	FsflatSetPositions(aWindow);
+d915 1
+a915 1
+ * FsflatSetSort --
+d932 2
+a933 2
+FsflatSetSort(aWindow, sortMethod, reverse)
+    FsflatWindow	*aWindow;
+d938 2
+a939 2
+    FsflatFile	*tmpPtr;
+    FsflatGroup	*grpPtr;
+d941 1
+a941 1
+    FsflatFile	**fileArray;
+d998 2
+a999 2
+    /* need comparison function that takes ptrs to FsflatFiles */
+    FsflatGetCompareProc(aWindow, &compareProc, TRUE);
+d1013 1
+a1013 1
+		    sprintf(fsflatErrorMsg, "%s %s.",
+d1015 2
+a1016 2
+		    Sx_Notify(fsflatDisplay, aWindow->surroundingWindow, -1, -1,
+			    0, fsflatErrorMsg, NULL, TRUE, "Continue",
+d1023 2
+a1024 2
+	fileArray = (FsflatFile **) malloc(arraySize *
+		sizeof (FsflatFile *));
+d1029 1
+a1029 1
+	qsort(fileArray, arraySize, sizeof (FsflatFile *), compareProc);
+d1046 1
+a1046 1
+ * FsflatCloseCmd --
+d1065 2
+a1066 2
+FsflatCloseCmd(aWindow, interp, argc, argv)
+    register	FsflatWindow	*aWindow;
+d1075 2
+a1076 2
+    XDeleteContext(fsflatDisplay, aWindow->surroundingWindow,
+	    fsflatWindowContext);
+d1078 2
+a1079 2
+    FsflatGarbageCollect(aWindow);
+    XDestroyWindow(fsflatDisplay, aWindow->surroundingWindow);
+d1082 2
+a1083 2
+    fsflatWindowCount--;
+    if (fsflatWindowCount <= 0) {
+d1093 1
+a1093 1
+ * FsflatExecCmd --
+d1115 2
+a1116 2
+FsflatExecCmd(aWindow, interp, argc, argv)
+    FsflatWindow	*aWindow;
+d1137 1
+a1137 1
+    result = Tx_Command(fsflatDisplay, aWindow->txOutsideWindow, command);
+d1147 1
+a1147 1
+ * FsflatGroupBindCmd --
+d1164 2
+a1165 2
+FsflatGroupBindCmd(aWindow, interp, argc, argv)
+    FsflatWindow	*aWindow;
+d1170 1
+a1170 1
+    FsflatGroup	*grpPtr;
+d1198 1
+a1198 1
+	test = FsflatWhichButton(buttonArgv[i]);
+d1209 1
+a1209 1
+    FsflatAddGroupBinding(grpPtr, button, argv[3]);
+d1218 1
+a1218 1
+ * FsflatMenuCmd --
+d1238 2
+a1239 2
+FsflatMenuCmd(aWindow, interp, argc, argv)
+    register	FsflatWindow	*aWindow;
+d1269 1
+a1269 1
+	window = Sx_MenuGetWindow(fsflatDisplay, aWindow->menuBar, argv[2]);
+d1273 1
+a1273 1
+	numEntries = Sx_MenuGetInfo(fsflatDisplay, window, entries, &fontPtr,
+d1282 1
+a1282 1
+		Util_StringToColor(fsflatDisplay, argv[6]);
+d1284 1
+a1284 1
+	entries[numEntries].proc = FsflatMenuProc;
+d1288 1
+a1288 1
+	Sx_MenuCreate(fsflatDisplay, aWindow->menuBar, argv[2], numEntries+1,
+d1313 1
+a1313 1
+		    Util_StringToColor(fsflatDisplay, argv[arg+3]);
+d1315 1
+a1315 1
+	    entries[i].proc = FsflatMenuProc;
+d1318 1
+a1318 1
+	Sx_MenuCreate(fsflatDisplay, aWindow->menuBar, argv[2], numEntries,
+d1332 1
+a1332 1
+	window = Sx_MenuGetWindow(fsflatDisplay, aWindow->menuBar, argv[2]);
+d1336 1
+a1336 1
+	count = Sx_MenuGetInfo(fsflatDisplay, window, entries,
+d1341 1
+a1341 1
+	XDestroyWindow(fsflatDisplay, window);
+d1407 1
+a1407 1
+	window = Sx_MenuGetWindow(fsflatDisplay, aWindow->menuBar, argv[2]);
+d1412 1
+a1412 1
+	if ((index < 0) || (index >= Sx_MenuGetInfo(fsflatDisplay, window,
+d1424 2
+a1425 2
+	entry.background = Util_StringToColor(fsflatDisplay, argv[7]);
+	entry.proc = FsflatMenuProc;
+d1427 1
+a1427 1
+	Sx_MenuReplaceEntry(fsflatDisplay, window, index, &entry);
+d1445 1
+a1445 1
+ * FsflatOpenCmd --
+d1447 1
+a1447 1
+ *	Create another fsflat window.
+d1465 2
+a1466 2
+FsflatOpenCmd(aWindow, interp, argc, argv)
+    FsflatWindow	*aWindow;
+d1477 1
+a1477 1
+	if (FsflatCreate(aWindow, argv[1]) == NULL) {
+d1480 1
+a1480 1
+    } else if (FsflatCreate(aWindow, NULL) == NULL) {
+d1491 1
+a1491 1
+ * FsflatPatternCompareCmd --
+d1509 2
+a1510 2
+FsflatPatternCompareCmd(aWindow, interp, argc, argv)
+    register	FsflatWindow	*aWindow;
+d1531 1
+a1531 1
+ * FsflatQuitCmd --
+d1548 2
+a1549 2
+FsflatQuitCmd(aWindow, interp, argc, argv)
+    register	FsflatWindow	*aWindow;
+d1566 1
+a1566 1
+ * FsflatRestartCmd --
+d1584 2
+a1585 2
+FsflatRestartCmd(aWindow, interp, argc, argv)
+    FsflatWindow	*aWindow;
+d1593 1
+a1593 1
+    FsflatGarbageCollect(aWindow);
+d1595 1
+a1595 1
+    if (FsflatGatherNames(aWindow) != TCL_OK) {
+d1600 2
+a1601 2
+    FsflatSetPositions(aWindow);
+    /* FsflatRedraw will be called from event caused in FsflatSetPositions() */
+d1611 1
+a1611 1
+ * FsflatRedrawCmd --
+d1628 2
+a1629 2
+FsflatRedrawCmd(aWindow, interp, argc, argv)
+    register	FsflatWindow	*aWindow;
+d1635 1
+a1635 1
+	FsflatRedraw(aWindow);
+d1644 1
+a1644 1
+ * FsflatResizeCmd --
+d1660 2
+a1661 2
+FsflatResizeCmd(aWindow, interp, argc, argv)
+    register	FsflatWindow	*aWindow;
+d1684 1
+a1684 1
+    FsflatSetWindowAndRowInfo(aWindow, height, width);
+d1691 1
+a1691 1
+	FsflatSetPositions(aWindow);
+d1693 1
+a1693 1
+	 * FsflatRedraw will be called from event caused in FsflatSetPostions().
+d1704 1
+a1704 1
+ * FsflatToggleSelEntryCmd --
+d1721 2
+a1722 2
+FsflatToggleSelEntryCmd(aWindow, interp, argc, argv)
+    register	FsflatWindow	*aWindow;
+d1728 2
+a1729 2
+    FsflatFile	*filePtr;
+    FsflatGroup	*groupPtr = NULL;
+d1752 1
+a1752 1
+    filePtr = FsflatMapCoordsToFile(aWindow, x, y);
+d1759 1
+a1759 1
+	FsflatChangeSelection(aWindow, (ClientData) filePtr, TRUE, lineP, TRUE);
+d1761 1
+a1761 1
+	FsflatChangeSelection(aWindow, (ClientData) groupPtr, FALSE, FALSE,
+d1771 1
+a1771 1
+ * FsflatToggleSelectionCmd --
+d1787 2
+a1788 2
+FsflatToggleSelectionCmd(aWindow, interp, argc, argv)
+    register	FsflatWindow	*aWindow;
+d1793 2
+a1794 2
+    FsflatFile	*filePtr = NULL;
+    FsflatGroup	*groupPtr = NULL;		/* not used yet */
+d1817 1
+a1817 1
+    filePtr = FsflatMapCoordsToFile(aWindow, x, y);
+d1824 1
+a1824 1
+	FsflatChangeSelection(aWindow, (ClientData) filePtr, TRUE, lineP,
+d1827 1
+a1827 1
+	FsflatChangeSelection(aWindow, (ClientData) groupPtr, FALSE, FALSE,
+d1835 1
+a1835 1
+FsflatCmdTableInit(cmdTablePtr, interpPtr, commands, clientData)
+d1865 1
+a1865 1
+ * FsflatAddGroupBinding --
+d1878 2
+a1879 2
+FsflatAddGroupBinding(grpPtr, button, command)
+    FsflatGroup		*grpPtr;
+d1883 1
+a1883 1
+    FsflatGroupBinding	*bPtr;
+d1896 1
+a1896 1
+    bPtr = (FsflatGroupBinding *) malloc(sizeof (FsflatGroupBinding));
+d1906 2
+a1907 2
+FsflatDeleteGroupBindings(grpPtr)
+    FsflatGroup	*grpPtr;
+d1909 1
+a1909 1
+    FsflatGroupBinding	*bPtr, *nPtr;
+d1923 2
+a1924 2
+FsflatDeleteGroupBinding(grpPtr, button)
+    FsflatGroup	*grpPtr;
+d1927 1
+a1927 1
+    FsflatGroupBinding	*bPtr, *nPtr;
+d1957 2
+a1958 2
+FsflatGetGroupBinding(grpPtr, button)
+    FsflatGroup	*grpPtr;
+d1961 1
+a1961 1
+    FsflatGroupBinding	*bPtr;
+d1979 1
+a1979 1
+ * FsflatDoCmd --
+d1993 2
+a1994 2
+FsflatDoCmd(aWindow, command)
+    FsflatWindow	*aWindow;
+d2013 1
+a2013 1
+    FsflatPrintTclError(aWindow);
+d2033 1
+a2033 1
+FsflatWhichButton(token)
+@

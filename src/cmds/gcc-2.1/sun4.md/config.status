@@ -1,0 +1,3 @@
+#!/bin/sh
+# GCC was configured as follows:
+../dist/configure sparc-sun-sunos4.1

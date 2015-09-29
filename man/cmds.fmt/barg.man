@@ -1,0 +1,198 @@
+
+
+
+BARG                      User Commands                      BARG
+
+
+
+NNAAMMEE
+     barg - draw a bar graph in gremlin format
+
+SSYYNNOOPPSSIISS
+     barg [input_file_name [output_file_name]]
+
+DDEESSCCRRIIPPTTIIOONN
+     _B_a_r_g is used to generate bar graphs in gremlin format.  It
+     takes up to two arguments.  The first argument is the name
+     of the _b_a_r_g input file.  The second argument is the name of
+     the gremlin file to store the output of _b_a_r_g into.  If the
+     output file is not specified then output goes to standard
+     output.  If the input file is also missing then input is
+     read from standard input.
+
+     A _b_a_r_g input file is an ASCII file containing _b_a_r_g commands
+     and data.  Each command is on a separate line.  White space
+     can be used to separate the different arguments to each com-
+     mand. Lines beginning with a "#" and blank lines are
+     ignored.  All command arguments that affect the dimensions
+     of the graph are specified in pixels.
+
+     Graphs are divided up into sets of bars.  Each set can con-
+     tain from 1 to 8 bars and there can be any number of sets.
+     The program is fully parameterized such that the bar width,
+     inner bar spacing, inner set spacing, graph height and graph
+     width can all be specified.  All parameters that are not
+     specified, except for the number of sets and the number of
+     bars in each set which must be specified, will either
+     default to preset values or be calculated.  If the inner set
+     spacing is not specified or it is specified as -1, it will
+     be calculated from the bar width, inner bar spacing and
+     graph width.  Likewise if the inner set spacing is set but
+     the bar width is not then it will be calculated from the
+     other parameters.
+
+     The following is a summary of the _b_a_r_g commands:
+
+     _C_o_m_m_a_n_d        _A_r_g_u_m_e_n_t_s
+
+     b         <left border width> <right border width>
+     d         <data set label>
+     h         <graph height>
+     k         <left key border> <right key border> <key width> <key height>
+     lx        <x-axis label>
+     ly        <y-axis label>
+     n         <num bar sets> <num bars per set>
+     p
+     s         <inner bar space> <inner set space>
+     t         <graph title>
+     w         <graph width>
+     y         <# of ticks> <delta> <starting value>
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+BARG                      User Commands                      BARG
+
+
+
+     W         <bar width>
+     1         <bar type> <bar label>
+     2         <bar type> <bar label>
+     3         <bar type> <bar label>
+     4         <bar type> <bar label>
+     5         <bar type> <bar label>
+     6         <bar type> <bar label>
+     7         <bar type> <bar label>
+     8         <bar type> <bar label>
+
+     The following explains each command in more detail:
+
+     b    Define the left and right border in pixels.  The left
+          border width is the number of pixels between the y-axis
+          and the first bar graph.  The right border width is the
+          number of pixels that the x-axis extends past the last
+          bar graph.
+
+     d    Define a bar graph set.  These commands should be the
+          last commands in the input file.  The label is the
+          string to draw at the bottom of the bar graph set.  The
+          following lines up until a line beginning with an "e"
+          is found are taken as floating point y values for bars
+          in the bar graph set. The line with the "e" marks the
+          end of the bar graph set.  There cannot be more than
+          the number of bars per set lines of data between the
+          "d" and "e" commands.
+
+     h    The graph height in pixels.
+
+     k    Bar graph key information.  At the bottom of each graph
+          each of the different bar types is drawn along with the
+          associated label (see the 1-8 commands below).  The
+          left key border specifies the number of pixels between
+          the y-axis and the first key.  The right key border is
+          the number of pixels between the end of the x-axis and
+          the rightmost key.  The key width and height define the
+          size of the bar that is drawn that represents the key.
+
+     lx   Label to print on the x-axis.
+
+     ly   Label to print on the y-axis.
+
+     n    Define the number of bar sets and the number of bars in
+          each set.  This command must come after the dimensions
+          of the graph are defined and before the data sets are
+          defined with the "d" command.
+
+     p    Print a percent sign after each value on the y-axis.
+
+     s    Define the number of pixels between each bar and
+          between each set of bars.
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+BARG                      User Commands                      BARG
+
+
+
+     t    Title the graph.
+
+     w    The width of the graph in pixels.
+
+     y    Define the range of the y-axis.  The # of ticks is the
+          number of pieces to divide the y-axis into, the delta
+          is the size of each piece and the starting value is the
+          base value for y.
+
+     W    The width of each bar.
+
+     [1-8]
+          Define the type of the ith bar in a set.  The type must
+          be between 0 and 7 and corresponds to the 8 gremlin
+          filled polygon types.  The label is used to print out
+          the bar type key.
+
+SSEEEE AALLSSOO
+     _g_r_e_m_l_i_n(_1)
+
+AAUUTTHHOORR
+     Michael N. Nelson
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     3
+
+
+

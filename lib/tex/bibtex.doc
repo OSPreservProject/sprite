@@ -1,0 +1,167 @@
+@
+The |built_in| function {\.{+}} pops the top two (integer) literals
+and pushes their sum.  If either isn't an integer literal, it
+complains and pushes the integer 0.
+@
+The |built_in| function {\.{-}} pops the top two (integer) literals
+and pushes their difference (the first subtracted from the second).
+If either isn't an integer literal, it complains and pushes the
+integer 0.
+@
+The |built_in| function {\.{>}} pops the top two (integer) literals,
+compares them, and pushes the integer 1 if the second is greater than
+the first, 0 otherwise.  If either isn't an integer literal, it
+complains and pushes the integer 0.
+@
+The |built_in| function {\.{<}} pops the top two (integer) literals,
+compares them, and pushes the integer 1 if the second is less than the
+first, 0 otherwise.  If either isn't an integer literal, it complains
+and pushes the integer 0.
+@
+The |built_in| function {\.{=}} pops the top two (integer or string)
+literals, compares them, and pushes the integer 1 if they're equal, 0
+otherwise.  If they're not either both string or both integer, it
+complains and pushes the integer 0.
+@
+The |built_in| function {\.{*}} pops the top two (string) literals,
+concatenates them (in reverse order, that is, the order in which
+pushed), and pushes the resulting string back onto the stack.  If
+either isn't a string literal, it complains and pushes the null
+string.
+@
+The |built_in| function {\.{:=}} pops the top two literals and assigns
+to the second (which must be an |int_entry_var|, a |str_entry_var|, an
+|int_global_var|, or a |str_global_var|) the value of the first;
+it complains if the value isn't of the appropriate type.
+@
+The |built_in| function {\.{add.period\$}} pops the top (string)
+literal, adds a |period| to it if the last non-|right_brace| character
+isn't a |period|, |question_mark|, or |exclamation_mark|, and pushes
+this resulting string back onto the stack.  If the literal isn't a
+string, it complains and pushes the null string.
+@
+The |built_in| function {\.{call.type\$}} executes the function
+specified in |type_list| for this entry unless it's |undefined|, in
+which case it executes the default function \.{default.type} defined
+in the \.{.bst} file, or unless it's |empty|, in which case it does
+nothing.
+@
+The |built_in| function {\.{change.case\$}} pops the top two (string)
+literals; it changes the case of the second according to the
+specifications of the first, as follows.  (Note: The word `letters' in
+the next sentence refers only to those at brace-level~0, the top-most
+brace level; no other characters are changed.)  If the first literal
+is the string \.{ul}, it converts all letters to lower case except the
+very first character in the string, which it converts to upper case;
+if it's the string \.{uu}, it converts all letters to upper case; if
+it's the string \.{ll}, it converts all letters to lower case; if it's
+the string \.{lu}, it converts all letters to upper case except the
+very first character in the string, which it converts to lower case;
+and if it's anything else, it complains and does no conversion.  It
+then pushes this resulting string.  If either type is incorrect, it
+complains and pushes the null string; however, if both types are
+correct but the specification string (i.e., the first string) isn't
+one of the legal ones, it merely pushes the second back onto the
+stack, after complaining.  (Another note: It ignores case differences
+in the specification string; for example, the strings \.{uL} and
+\.{ul} are equivalent for the purposes of this |built_in| function.)
+@
+The |built_in| function {\.{chr.to.int\$}} pops the top (string)
+literal, makes sure it's a single character, converts it to the
+corresponding |ASCII_code| integer, and pushes this integer.  If the
+literal isn't an appropriate string, it complains and pushes the
+integer~0.
+@
+The |built_in| function {\.{cite\$}} pushes the appropriate string
+from |cite_list| onto the stack.
+@
+The |built_in| function {\.{duplicate\$}} pops the top literal from
+the stack and pushes two copies of it.
+@
+The |built_in| function {\.{format.name\$}} pops the top three
+literals (they are a string, an integer, and a string literal, in that
+order).  The last string literal represents a name list (each name
+corresponding to a person), the integer literal specifies which name
+to pick from this list, and the first string literal specifies how to
+format this name, as specified in the TO-BE-ADDED.  Finally, this
+function pushes the formatted name.  If any of the types is incorrect,
+it complains and pushes the null string.
+@
+The |built_in| function {\.{if\$}} pops the top three literals (they
+are two function literals and an integer literal, in that order); if
+the integer is greater than 0, it executes the second literal, else it
+executes the first.  If any of the types is incorrect, it complains
+but does nothing else.
+@
+The |built_in| function {\.{int.to.chr\$}} pops the top (integer)
+literal, interpreted as the |ASCII_code| of a single character,
+converts it to the corresponding single-character string, and pushes
+this string.  If the literal isn't an appropriate integer, it
+complains and pushes the null string.
+@
+The |built_in| function {\.{int.to.str\$}} pops the top (integer)
+literal, converts it to its (unique) string equivalent, and pushes
+this string.  If the literal isn't an integer, it complains and pushes
+the null string.
+@
+The |built_in| function {\.{missing\$}} pops the top literal and
+pushes the integer 1 if it's a missing field, 0 otherwise.  If the
+literal isn't a missing field or a string, it complains and pushes 0.
+@
+The |built_in| function {\.{newline\$}} writes whatever has
+accumulated in the output buffer |out_buf| onto the \.{.bbl} file.
+@
+The |built_in| function {\.{num.names\$}} pops the top (string)
+literal; it pushes the number of names the string represents---one
+plus the number of occurrences of the substring "and" surrounded by
+nonnull |white_space| (ignoring case differences) at the top brace
+level.  If the literal isn't a string, it complains and pushes the
+value 0.
+@
+The |built_in| function {\.{purify\$}} pops the top (string) literal,
+converts upper-case letters to lower case, removes nonalphanumeric
+characters except for |white_space| characters (one or more
+consecutive ones get compressed to a single |space|), and pushes the
+resulting string.  If the literal isn't a string, it complains and
+pushes the null string.
+@
+The |built_in| function {\.{quote\$}} pushes the string consisting of
+the |double_quote| character.
+@
+The |built_in| function {\.{skip\$}} is a no-op.
+@
+The |built_in| function {\.{stack\$}} pops and prints the whole stack.
+@
+The |built_in| function {\.{substring\$}} pops the top three literals
+(they are the two integers literals |pop_lit1| and |pop_lit2| and a
+string literal, in that order).  It pushes the substring of the (at
+most) |pop_lit1| consecutive characters starting at the |pop_lit2|th
+character (assuming 1-based indexing) if |pop_lit2| is positive, and
+ending at the |-pop_lit2|th character from the end if |pop_lit2| is
+negative (where the first character from the end is the last
+character).  If any of the types is incorrect, it complains and pushes
+the null string.
+@
+The |built_in| function {\.{swap\$}} pops the top two literals from
+the stack and pushes them back swapped.
+@
+The |built_in| function {\.{top\$}} pops and prints the top of the
+stack.
+@
+The |built_in| function {\.{type\$}} pushes the appropriate string
+from |type_list| onto the stack (unless either it's |empty| or
+|undefined|, in which case it pushes the null string).
+@
+The |built_in| function {\.{while\$}} pops the top two (function)
+literals, and keeps executing the second as long as the (integer)
+value left on the stack by executing the first is greater than 0.  If
+either type is incorrect, it complains but does nothing else.
+@
+The |built_in| function {\.{width\$}} pops the top (string) literal
+and pushes the integer that represents its width in units specified by
+the |char_width| array.  If the literal isn't a string, it complains
+and pushes 0.
+@
+The |built_in| function {\.{write\$}} pops the top (string) literal
+and writes it on the \.{.bbl} file.  If the literal isn't a string, it
+complains but does nothing else.

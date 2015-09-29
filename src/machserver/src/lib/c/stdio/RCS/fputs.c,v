@@ -1,0 +1,98 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  srv030:1.2 srv028:1.2 srv027:1.2 srv026:1.2 srv024:1.2 srv022:1.2 srv021:1.2 srv019:1.2 srv018:1.2 srv016:1.2 srv014:1.2 srv010:1.2 srv008:1.2 srv007:1.2 srv006:1.2 srv005:1.2 srv004:1.2 srv003:1.2 srv002:1.2 srv001:1.2;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     91.12.12.22.09.21;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.12.04.17.08.34;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Lint.
+@
+text
+@/* 
+ * fputs.c --
+ *
+ *	Source code for the "fputs" library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/lib/c/stdio/RCS/fputs.c,v 1.1 91/12/04 17:08:34 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <stdio.h>
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * fputs --
+ *
+ *	Writes a string out onto a stream.
+ *
+ * Results:
+ *	The return value is EOF if an error occurred while writing
+ *	the stream.
+ *
+ * Side effects:
+ *	The characters of string are written to stream, in order,
+ *	up to but not including the terminating null character.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+fputs(string, stream)
+    register char *string;		/* String to output. */
+    register FILE *stream;		/* Stream on which to write string. */
+{
+    register int result = 0;
+
+    while (*string != 0) {
+	result = putc(*string, stream);
+	string++;
+    }
+    return result;
+}
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: fputs.c,v 1.1 88/06/10 16:23:48 ouster Exp $ SPRITE (Berkeley)";
+d20 1
+a20 1
+#include "stdio.h"
+d45 1
+a45 1
+    register int result;
+@

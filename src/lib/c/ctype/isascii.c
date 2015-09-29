@@ -1,0 +1,45 @@
+/* 
+ * isascii.c --
+ *
+ *	Contains the C library procedure "isascii".
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: isascii.c,v 1.1 88/04/27 18:03:26 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "ctype.h"
+#undef isascii
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * isascii --
+ *
+ *	Tell whether a character is an alphanumeric one or not.
+ *
+ * Results:
+ *	Returns non-zero if c is a letter or digit, zero otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+isascii(c)
+    int c;			/* Character value to test.  Must be an
+				 * ASCII value or EOF. */
+{
+    return ((c & ~0x7f) == 0);
+}

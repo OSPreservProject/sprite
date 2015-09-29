@@ -1,0 +1,35 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     89.07.14.09.20.57;  author rab;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/* @@(#) sunmon.h 1.2@@(#) */
+#if sun2
+#include "../sun2/sunmon.h"
+#endif
+#if sun3
+#include "../sun3/sunmon.h"
+#endif
+#if sun4
+#include "../sun4/sunmon.h"
+#endif
+@

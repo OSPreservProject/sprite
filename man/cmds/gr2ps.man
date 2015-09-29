@@ -1,0 +1,154 @@
+.TH GR2PS L "10/20/87"
+.UC 4
+.if t .ds PS P\s-2OST\s+2S\s-2CRIPT\s+2
+.if n .ds PS PostScript
+.if t .ds LW L\s-2ASER\s+2W\s-2RITER\s+2
+.if n .ds LW LaserWriter
+.if t .ds TX T\h'-2p'\v'3p'E\v'-3p'\h'-1p'X
+.if n .ds TX TeX
+.SH NAME
+.PP
+.I gr2ps
+\- convert Gremlin files to \*(PS
+.SH SYNOPSIS
+.PP
+.I gr2ps
+[ \-n
+] [ \-p
+.I X
+.I Y
+] [ \-s
+.I X
+.I Y
+] [ \-t
+.I X
+.I Y
+] [
+.I input
+]
+.SH DESCRIPTION
+.PP
+This program takes a picture description produced by the Gremlin
+picture editor and converts it a \*(PS page that can be printed
+on any printer that supports this language, such as the Apple \*(LW.
+.I Gr2ps
+handles the different types of elements in this Gremlin output
+to produces a good looking page on a \*(LW.
+.PP
+It takes the name of a Gremlin file (default is standard input)
+and writes the resulting \*(PS file to its standard output,
+unless the \-o option (see below) is given, in which case it
+writes to the specified file.
+.PP
+.I Gr2ps
+produces a file that can be included into another page description.
+This is meant to be used when a \*(PS file is being imbedded into a
+document of another type (such as \*(TX, using \\special).
+If the file is to be printed directly, the user must add a call to
+.B showpage
+to the ``%%Trailer'' section at the end.
+.PP
+The gremlin coordinates are normally coppied out directly to \*(PS
+coordinates (the inherited user space).
+This behavior can be modified with the \-s and \-t options (see below).
+Note that if scaling and translation are both specified, the translation
+is performed
+.I after
+the scaling (i.e., the translation factor is not affected by the scale).
+This is unlike \*(PS, where the order of the operations matters.
+Also, the lower-left corner of the picture may be placed at any location
+on the page with the \-p option.
+.PP
+By default, the four troff fonts, R, I, B and S are mapped to the
+\*(LW fonts
+.BR Times-Roman ,
+.BR Times-Italic ,
+.B Times-Bold
+and
+.B Courier-Bold
+respectively.
+This action can be changed with the \-R, \-I, \-B and \-S options.
+.PP
+.I Gr2ps
+obeys of the Adobe \*(PS file structuring conventions.
+In particular, each file begins with a set of comments which introduce
+the file as \*(PS code and specify the bounding box of the figure along
+with other information.
+.SH OPTIONS
+.IP \-R
+set the ``roman'' font to the given \*(LW font (default
+.BR Times-Roman ).
+.IP \-I
+set the ``italic'' font to the given \*(LW font (default
+.BR Times-Italic ).
+.IP \-B
+set the ``bold'' font to the given \*(LW font (default
+.BR Times-Bold ).
+.IP \-S
+set the ``special'' font to the given \*(LW font (default
+.BR Courier-Bold ).
+.IP \-n
+force interpretation of the gremlin file in newer format
+(that produced by the Sun version) rather than the older Gremlin format.
+If the gremlin file was produced by the Sun gremlin, this newer
+format is automatically assumed.
+.IP \-o
+write output to a certain file rather than the standard output.
+The \-o option must take as an argument the name of a file which
+it can create.
+.IP \-p
+place the lower-left point of the figure at the coordinate given by
+the two floating-point option arguments.
+For example, ``\-p 0 0'' can be used to place the figure at the origin
+no matter where Gremlin put it.
+Note that this is a translation, so only one of \-t and \-p
+may be specified.
+.IP \-s
+scale every coordinate by the scale factor given by the two
+floating-point numbers which are the option arguments.
+This has the effect of scaling the resulting picture.
+Using ``\-s 0.75 1.0'' would scale to 75% in the X direction and leave
+the Y direction scale as it was, producing a narrower picture.
+.IP \-t
+translate every coordinate by the two floating-point numbers which
+are the option arguments.
+Note: in \*(PS the point 0, 0 is at the left bottom corner of the
+page, even though the laser writer can't actually paint at this point.
+Using ``\-t 10.0 10.0'' would move the figure ten units up and to the
+right on the page.
+The translation is applied
+.i after
+the coordinates have been scaled.
+.SH "SEE ALSO
+.IR gremlin (L),
+.IR grn (L),
+.IR tex (L)
+.SH AUTHOR
+.nf
+John Coker,
+University of California, Berkeley
+john@renoir.Berkeley.EDU
+.sp
+Peehong Chen,
+University of California, Berkeley
+phc@renoir.Berkeley.EDU
+.SH NOTES
+.PP
+\*(PS is a trademark of Adobe Systems, Inc.
+.br
+Apple and \*(LW are trademarks of Apple Computers.
+.SH BUGS
+.PP
+Because the Gremlin coordinate system is different from the
+\*(PS one, the \-s and \-t options are almost always necessary to
+get the output sized and placed properly.
+Of course, they can be emulated in \*(PS with the
+.B scale
+and
+.B translate
+operators.
+.PP
+The grey scale used does not really correspond in any rational
+way with the set of gremlin stipples.
+It would be possible to use bit rasters in \*(PS to emulate the
+gremlin stipple patterns, but the author thought this of dubious use.

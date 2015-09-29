@@ -1,0 +1,132 @@
+
+
+
+BISON                     User Commands                     BISON
+
+
+
+NNAAMMEE
+     bison - GNU Project parser generator (yacc replacement)
+
+SSYYNNOOPPSSIISS
+     bbiissoonn [ --ddllvvttyy ] file
+
+DDEESSCCRRIIPPTTIIOONN
+     _B_i_s_o_n is a parser generator in the style of _y_a_c_c(1).  It
+     should be upwardly compatible with input files designed for
+     _y_a_c_c.
+
+     Input files should follow the _y_a_c_c convention of ending in
+     ``.y''.  Unlike _y_a_c_c, the generated files do not have fixed
+     names, but instead use the prefix of the input file.  For
+     instance, a grammar description file named ppaarrssee..yy would
+     produce the generated parser in a file named ppaarrssee..ttaabb..cc,
+     instead of _y_a_c_c's yy..ttaabb..cc.
+
+     _B_i_s_o_n takes five optional flags.
+
+     --dd   Produce a ..ttaabb..hh file, similar to _y_a_c_c's yy..ttaabb..hh file.
+
+     --ll   Omit ##lliinnee lines in the parser output file. Error mes-
+          sages from the C compiler will then be associated with
+          lines in the parser output file, instead of lines in
+          the original grammar file.
+
+     --tt   Turn on debugging. This option causes the _b_i_s_o_n output
+          to have debugging code made available via the C pre-
+          processor.  The external variable yyyyddeebbuugg should be
+          made non-zero to have the debugging code actually pro-
+          duce output.
+
+     --vv   Be verbose. Analogous to the same flag for _y_a_c_c.
+
+     --yy   Use fixed output file names. I.e., force the output to
+          be in files yy..ttaabb..cc, yy..ttaabb..hh, and so on. This is for
+          full _y_a_c_c compatibility.
+
+     If _b_i_s_o_n is invoked with the name _y_a_c_c, it will behave like
+     _y_a_c_c does. This is equivalent to simply supplying the --yy
+     flag.
+
+FFIILLEESS
+     /usr/local/lib/bison.simple   simple parser
+     /usr/local/lib/bison.hairy    complicated parser
+
+SSEEEE AALLSSOO
+     _y_a_c_c(1)
+     The _B_i_s_o_n _R_e_f_e_r_e_n_c_e _M_a_n_u_a_l, included as the file
+     bbiissoonn..tteexxiinnffoo in the _b_i_s_o_n source distribution.
+
+
+
+
+Sprite v1.0                   local                             1
+
+
+
+
+
+
+BISON                     User Commands                     BISON
+
+
+
+DDIIAAGGNNOOSSTTIICCSS
+     ``Self explanatory.''
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                   local                             2
+
+
+

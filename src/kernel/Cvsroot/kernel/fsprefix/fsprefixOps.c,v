@@ -1,0 +1,5433 @@
+head     9.16;
+branch   ;
+access   ;
+symbols  ds3100:9.16 sun3:9.16 sprited:9.13.1 sun4nw:9.14 symm:9.14 spur:9.14 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.16
+date     92.07.14.15.36.18;  author jhh;  state Exp;
+branches ;
+next     9.15;
+
+9.15
+date     92.04.17.13.56.02;  author jhh;  state Exp;
+branches ;
+next     9.14;
+
+9.14
+date     91.09.10.18.39.32;  author rab;  state Exp;
+branches ;
+next     9.13;
+
+9.13
+date     91.05.10.12.42.18;  author mgbaker;  state Exp;
+branches 9.13.1.1;
+next     9.12;
+
+9.12
+date     91.04.24.10.46.36;  author shirriff;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     90.12.06.17.36.30;  author shirriff;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     90.12.04.16.09.22;  author jhh;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     90.12.03.21.46.37;  author shirriff;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     90.11.26.13.22.13;  author jhh;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.10.19.15.47.50;  author mendel;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.10.08.13.03.53;  author mendel;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.10.01.23.29.01;  author jhh;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.02.08.09.55.44;  author brent;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.01.29.17.43.02;  author brent;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.13.16.56.24;  author brent;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.09.15.14.30.27;  author jhh;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.09.02;  author douglis;  state Stable;
+branches ;
+next     8.20;
+
+8.20
+date     89.08.30.17.12.17;  author brent;  state Exp;
+branches ;
+next     8.19;
+
+8.19
+date     89.08.30.17.07.46;  author brent;  state Exp;
+branches ;
+next     8.18;
+
+8.18
+date     89.08.21.15.28.25;  author mendel;  state Exp;
+branches ;
+next     8.17;
+
+8.17
+date     89.08.18.17.56.07;  author jhh;  state Exp;
+branches ;
+next     8.16;
+
+8.16
+date     89.08.17.17.18.25;  author brent;  state Exp;
+branches ;
+next     8.15;
+
+8.15
+date     89.08.17.12.14.00;  author brent;  state Exp;
+branches ;
+next     8.14;
+
+8.14
+date     89.08.12.10.38.21;  author brent;  state Exp;
+branches ;
+next     8.13;
+
+8.13
+date     89.07.17.12.31.35;  author shirriff;  state Exp;
+branches ;
+next     8.12;
+
+8.12
+date     89.07.15.16.24.47;  author jhh;  state Exp;
+branches ;
+next     8.11;
+
+8.11
+date     89.06.30.15.26.54;  author brent;  state Exp;
+branches ;
+next     8.10;
+
+8.10
+date     89.06.15.09.40.44;  author brent;  state Exp;
+branches ;
+next     8.9;
+
+8.9
+date     89.06.09.12.36.06;  author jhh;  state Exp;
+branches ;
+next     8.8;
+
+8.8
+date     89.05.30.16.10.10;  author jhh;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.05.30.12.17.14;  author mgbaker;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.04.21.15.09.17;  author brent;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.03.14.10.46.56;  author brent;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.03.03.08.11.46;  author brent;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.02.14.10.55.42;  author jhh;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.01.06.11.17.23;  author jhh;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.01.04.08.48.45;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.16.46;  author douglis;  state Stable;
+branches ;
+next     7.0;
+
+7.0
+date     88.11.11.15.27.51;  author brent;  state Exp;
+branches ;
+next     6.16;
+
+6.16
+date     88.10.20.15.37.32;  author brent;  state Exp;
+branches ;
+next     6.15;
+
+6.15
+date     88.10.16.10.25.30;  author brent;  state Exp;
+branches ;
+next     6.14;
+
+6.14
+date     88.10.14.12.12.39;  author brent;  state Exp;
+branches ;
+next     6.13;
+
+6.13
+date     88.10.10.09.42.06;  author brent;  state Exp;
+branches ;
+next     6.12;
+
+6.12
+date     88.10.05.12.30.05;  author brent;  state Exp;
+branches ;
+next     6.11;
+
+6.11
+date     88.09.29.16.34.17;  author brent;  state Exp;
+branches ;
+next     6.10;
+
+6.10
+date     88.09.23.13.32.21;  author brent;  state Exp;
+branches ;
+next     6.9;
+
+6.9
+date     88.09.22.11.45.21;  author brent;  state Exp;
+branches ;
+next     6.8;
+
+6.8
+date     88.09.09.12.44.38;  author brent;  state Exp;
+branches ;
+next     6.7;
+
+6.7
+date     88.09.09.11.16.33;  author brent;  state Exp;
+branches ;
+next     6.6;
+
+6.6
+date     88.09.07.16.50.06;  author brent;  state Exp;
+branches ;
+next     6.5;
+
+6.5
+date     88.09.06.15.39.21;  author brent;  state Exp;
+branches ;
+next     6.4;
+
+6.4
+date     88.09.06.10.07.23;  author brent;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.09.06.09.43.33;  author brent;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.09.01.17.21.30;  author brent;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.31.12.02.46;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.13.47;  author brent;  state Stable;
+branches ;
+next     1.8;
+
+1.8
+date     88.08.08.13.52.11;  author mlgray;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.06.06.09.35.37;  author brent;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.06.01.16.48.31;  author brent;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.05.06.12.39.04;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.05.05.17.31.49;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.04.28.12.53.07;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.04.11.18.18.55;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.04.10.39.33;  author brent;  state Exp;
+branches ;
+next     ;
+
+9.13.1.1
+date     91.11.15.16.38.35;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@The prefix table module
+@
+
+
+9.16
+log
+@Fsprefix_Clear didn't unlock the monitor on one error condition.
+I changed it so it only returns in one place. Also, Fsprefix_Clear
+returns a ReturnStatus, even though it previously was defined to
+return Boolean.
+
+@
+text
+@/* 
+ * fsPrefix.c --
+ *
+ *	Implementation of the prefix table.  The prefix table is used
+ *	to determine the server for a file depending on the
+ *	first part of the file's name.  Operations on pathnames get
+ *	passed through Fsprefix_LookupOperation (and Fsprefix_TwoNameOperation) that
+ *	handles the iteration over the prefix table that is due to redirections
+ *	from servers as a pathname wanders from domain to domain.  There
+ *	is also set of low-level procedures for direct operations on the prefix
+ *	table itself; add, delete, initialize, etc.
+ *
+ *	TODO: Extract the recovery related junk.  The prefix table is used
+ *	as a convenient place to record recovery state and synchronize
+ *	opens with re-opens, but the recov module's user-state flags should be
+ *	used instead.
+ *
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fsprefix/fsprefixOps.c,v 9.15 92/04/17 13:56:02 jhh Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <sprite.h>
+#include <fs.h>
+#include <fsprefix.h>
+#include <fsprefixInt.h>
+#include <fsNameOps.h>
+#include <fsutil.h>
+#include <fsStat.h>
+#include <fsio.h>
+#include <vm.h>
+#include <rpc.h>
+#include <proc.h>
+#include <dbg.h>
+#include <string.h>
+
+static List_Links prefixListHeader;
+static List_Links *prefixList = &prefixListHeader;
+
+static Sync_Lock prefixLock = Sync_LockInitStatic("Fs:prefixLock");
+#define LOCKPTR (&prefixLock)
+
+/*
+ * Forward references.
+ */
+static char *NameOp _ARGS_((int lookupOperation));
+static Fsprefix *PrefixInsert _ARGS_((char *prefix, int serverID, 
+		Fs_HandleHeader *hdrPtr, int domainType, int flags));
+static void PrefixUpdate _ARGS_((Fsprefix *prefixPtr, int serverID, 
+		Fs_HandleHeader *hdrPtr, int domainType, int flags));
+static ReturnStatus LocatePrefix _ARGS_((char *fileName, int serverID, 
+		int *domainTypePtr, Fs_HandleHeader **hdrPtrPtr));
+static ReturnStatus GetPrefix _ARGS_((char *fileName, Boolean follow, 
+		Fs_HandleHeader **hdrPtrPtr, Fs_FileID *rootIDPtr,
+		char **lookupNamePtr, int *domainTypePtr,
+		Fsprefix **prefixPtrPtr));
+static void GetNilPrefixes _ARGS_((List_Links *listPtr));
+static ReturnStatus DumpExportList _ARGS_((Fsprefix *prefixPtr, int size, 
+		char *buffer));
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsprefix_LookupOperation --
+ *
+ *	This uses the prefix table to choose a server and domain-type for
+ *	a pathname lookup operation.  This is called by the routines in
+ *	fsNameOps.c to do opens, removes, mkdir, rmdir, etc. etc.  The
+ *	domain-type name lookup routines may return pathnames instead of
+ *	results	if the pathname left the domain of the server originally
+ *	chosen by the prefix table.  This routine handles these "re-directed"
+ *	pathnames and hides the iteration between the prefix table and
+ *	the various servers.
+ *
+ * Results:
+ *	The results of the lookup operation.
+ *
+ * Side effects:
+ *	This may fault new entries into the prefix table.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fsprefix_LookupOperation(fileName, operation, follow, argsPtr, resultsPtr, nameInfoPtr)
+    char 	*fileName;	/* File name to lookup */
+    int 	operation;	/* Operation to perform on the file */
+    Boolean	follow;		/* TRUE if lookup will follow links.  FALSE
+				 * means we won't indirect via a prefix which
+				 * matches the name exactly. */
+    Address 	argsPtr;	/* Operation specific arguments.  NOTE: it
+				 * is assumed that the first thing in the
+				 * arguments is a prefix file ID, except on
+				 * the IMPORT/EXPORT operations.  We set the
+				 * prefix fileID here as a convenience to
+				 * the name lookup routines we branch to. */
+    Address 	resultsPtr;	/* Operation specific results */
+    Fs_NameInfo	*nameInfoPtr;	/* If non-NIL, set up to contain state needed
+				 * to get back to the name server.  This is
+				 * used with FS_DOMAIN_OPEN which passes
+				 * in the nameInfoPtr from the stream. */
+{
+    ReturnStatus 	status;		/* General error code */
+    int 		domainType;	/* Set from the prefix table lookup */
+    Fs_HandleHeader 	*hdrPtr;	/* Set from the prefix table lookup */
+    char 		*lookupName;	/* Returned from the prefix table 
+					 * lookup */
+    Fs_RedirectInfo 	*redirectInfoPtr;/* Returned from servers if their
+					 * lookup leaves their domain */
+    Fs_RedirectInfo 	*oldInfoPtr;	/* Needed to free up the new name
+					 * buffer allocated by the domain
+					 * lookup routine. */
+    Fs_FileID		rootID;		/* ID of domain root */
+    Fsprefix 		*prefixPtr;	/* Returned from prefix table lookup 
+					 * and saved in the file handle */
+    int 		numRedirects = 0;/* Number of iterations between 
+					  * servers. This is used to catch the 
+					  * looping occurs with absolute links
+					  * that are circular. */
+
+    redirectInfoPtr = (Fs_RedirectInfo *) NIL;
+    oldInfoPtr = (Fs_RedirectInfo *) NIL;
+
+    if (sys_ShuttingDown) {
+	/*
+	 * Lock processes out of the filesystem during a shutdown.
+	 */
+	return(FAILURE);
+    }
+    do {
+	status = GetPrefix(fileName, follow, &hdrPtr, &rootID, &lookupName,
+			    &domainType, &prefixPtr);
+	if (status == SUCCESS) {
+	    switch(operation) {
+		case FS_DOMAIN_IMPORT:
+		case FS_DOMAIN_EXPORT:
+		    break;
+		case FS_DOMAIN_OPEN:
+		default: {
+		    /*
+		     * It is assumed that the first part of the bundled
+		     * arguments are the prefix fileID, which indicates the
+		     * start of the lookup, and the prefix rootID, which
+		     * indicates the top of the domain.
+		     */
+		    register Fs_LookupArgs *lookupArgsPtr =
+			    (Fs_LookupArgs *)argsPtr;
+		    lookupArgsPtr->prefixID = hdrPtr->fileID;
+		    lookupArgsPtr->rootID = rootID;
+		    break;
+		}
+	    }
+	    /*
+	     * Fork out to the domain lookup operation.
+	     */
+	    status = (*fs_DomainLookup[domainType][operation])
+	       (hdrPtr, lookupName, argsPtr, resultsPtr, &redirectInfoPtr);
+	    switch (status) {
+	        case FS_LOOKUP_REDIRECT: {
+		    /*
+		     * Lookup left the domain of the server chosen on the
+		     * basis of the prefix table.  Generate an absolute name
+		     * from the one returned by the server and loop back to
+		     * the prefix table lookup.  We are careful to save a
+		     * pointer to the redirect info because it contains the
+		     * current pathname.  We also free any redirect info
+		     * from previous iterations to prevent a core leak.
+		     */
+		    fs_Stats.prefix.redirects++; numRedirects++;
+		    if (numRedirects > FS_MAX_LINKS) {
+			status = FS_NAME_LOOP;
+			fs_Stats.prefix.loops++;
+		    } else {
+			status = FsprefixLookupRedirect(redirectInfoPtr, prefixPtr,
+								  &fileName);
+			if (oldInfoPtr != (Fs_RedirectInfo *)NIL) {
+			    free((Address)oldInfoPtr);
+			}
+			oldInfoPtr = redirectInfoPtr;
+			redirectInfoPtr = (Fs_RedirectInfo *)NIL;
+		    }
+		    break;
+		}
+	        case SUCCESS: {
+		    if (nameInfoPtr != (Fs_NameInfo *)NIL) {
+			/*
+			 * Set up the name info for the file.  The back pointer
+			 * to the prefix table is used by us later to handle
+			 * re-directs.  The rootID is noted here and passed
+			 * to the server during relative lookups to trap
+			 * ascending off the root of a domain via "..".
+			 * The fileID is used by the attributes routines to get
+			 * to the name server for open streams.
+			 */
+			nameInfoPtr->fileID =
+				((Fs_OpenResults *)resultsPtr)->nameID;
+			nameInfoPtr->rootID = rootID;
+			nameInfoPtr->domainType = domainType;
+			nameInfoPtr->prefixPtr = prefixPtr;
+		    }
+		    break;
+		}
+		case RPC_TIMEOUT:
+		case RPC_SERVICE_DISABLED:
+		case FS_STALE_HANDLE: {
+		    /*
+		     * Block waiting for regular recovery of the prefix handle.
+		     */
+		    if (status == FS_STALE_HANDLE) {
+			fs_Stats.prefix.stale++;
+		    } else {
+			fs_Stats.prefix.timeouts++;
+		    }
+		    Fsutil_WantRecovery(hdrPtr);
+		    printf("%s of \"%s\" waiting for recovery\n",
+				NameOp(operation), fileName);
+		    status = Fsutil_WaitForRecovery(hdrPtr, status);
+		    if (status == SUCCESS) {
+			/*
+			 * Successfully waited for the server to reboot.
+			 * Set the status to redirect so we go around the
+			 * loop again.
+			 */
+			status = FS_LOOKUP_REDIRECT;
+		    } else if ((status != GEN_ABORTED_BY_SIGNAL) &&
+		               (fileName[0] == '/')) {
+			/*
+			 * Recovery failed, so we clear handle of the prefix
+			 * used to get to the server and try again in case
+			 * the prefix is served elsewhere.
+			 */
+			Fsprefix_HandleClose(prefixPtr, FSPREFIX_IMPORTED);
+			status = FS_LOOKUP_REDIRECT;
+		    }
+		    break;
+		}
+		default:
+		    break;
+	    }
+	}
+    } while (status == FS_LOOKUP_REDIRECT);
+    if (oldInfoPtr != (Fs_RedirectInfo *)NIL) {
+	free((Address) oldInfoPtr);
+    }
+
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsprefix_TwoNameOperation --
+ *
+ *	This is a version of Fsprefix_LookupOperation that deals with two
+ *	pathnames.  The operation, either Rename or HardLink, will only
+ *	be attempted if the two pathnames are part of the same domain.
+ *	Two pathnames are determined to be in the same domain in part
+ *	by the domain specific lookup routine, and in part by us in
+ *	the following way.  The standard iteration over prefix table
+ *	for the first pathname (the already existing file) is done,
+ *	and the prefix info and relative name for it are passed to
+ *	the domain specific procedure along with our first guess as
+ *	to the domain and relative name of the second pathname.  The
+ *	domain specific procedure will abort with a CROSS_DOMAIN error
+ *	if it thinks the second pathname is served elsewhere.  In this case
+ *	this procedure has to verify that by getting the attributes of
+ *	the parent directory of the second name.  This may cause more
+ *	iteration over the prefix table to get the final prefix info
+ *	and relative name for the second name.  At that point we can
+ *	finally determine if the pathnames are in the same domain.
+ *
+ * Results:
+ *	The results of the two pathname operation.
+ *
+ * Side effects:
+ *	This may fault new entries into the prefix table.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fsprefix_TwoNameOperation(operation, srcName, dstName, lookupArgsPtr)
+    int			operation;   /* FS_DOMAIN_RENAME, FS_DOMAIN_HARD_LINK */
+    char		*srcName;	/* Name of existing file */
+    char		*dstName; 	/* New name, or link name */
+    Fs_LookupArgs	*lookupArgsPtr; /* ID information */
+{
+    ReturnStatus	status;		/* General error code */
+    int			srcDomain;	/* Domain type of srcName */
+    int 		dstDomain;
+    Fs_HandleHeader	*srcHdrPtr;	/* Prefix handle of srcName */
+    Fs_HandleHeader 	*dstHdrPtr;
+    char		*srcLookupName;	/* Relative version of srcName */
+    char 		*dstLookupName;
+    Fsprefix		*srcPrefixPtr;	/* Prefix entry for srcName */
+    Fsprefix 		*dstPrefixPtr;
+    Fs_FileID		srcRootID;	/* ID of srcName domain root */
+    Fs_FileID		dstRootID;
+    int			numRedirects;	/* To detect loops in directories */
+    Boolean		srcNameError;	/* TRUE if redirect info or stale
+					 * handle error applies to srcName,
+					 * FALSE if it applies to dstName. */
+    /*
+     * The domain-lookup routine allocates a buffer for a redirected pathname.
+     * FsprefixLookupRedirect() subsequently generates a new absolute pathname
+     * in this buffer.  We have to carefully hold onto this buffer during
+     * the next iteration of the lookup loop, and still be able to free
+     * it later to avoid core leaks.  The 'src' and 'dst' buffers are
+     * used for this reason.
+     */
+    Fs_RedirectInfo	*redirectInfoPtr = (Fs_RedirectInfo *) NIL;
+    Fs_RedirectInfo	*srcRedirectPtr = (Fs_RedirectInfo *) NIL;
+    Fs_RedirectInfo	*dstRedirectPtr = (Fs_RedirectInfo *) NIL;
+
+    if (sys_ShuttingDown) {
+	/*
+	 * Lock processes out of the filesystem during a shutdown.
+	 */
+	return(FAILURE);
+    }
+    numRedirects = 0;
+getSrcPrefix:
+    status = GetPrefix(srcName, 0, &srcHdrPtr, &srcRootID, &srcLookupName,
+				    &srcDomain, &srcPrefixPtr);
+    if (status != SUCCESS) {
+	goto exit;
+    }
+    lookupArgsPtr->prefixID = srcHdrPtr->fileID;
+    lookupArgsPtr->rootID = srcRootID;
+getDstPrefix:
+    status = GetPrefix(dstName, 0, &dstHdrPtr, &dstRootID, &dstLookupName,
+				    &dstDomain, &dstPrefixPtr);
+    if (status != SUCCESS) {
+	goto exit;
+    }
+retry:
+    status = (*fs_DomainLookup[srcDomain][operation])
+       (srcHdrPtr, srcLookupName, dstHdrPtr, dstLookupName, lookupArgsPtr,
+		    &redirectInfoPtr, &srcNameError);
+    switch(status) {
+	case RPC_SERVICE_DISABLED:
+	case RPC_TIMEOUT:
+	    srcNameError = TRUE;
+	    /*
+	     * FALL THROUGH to regular recovery.
+	     */
+	case FS_STALE_HANDLE: {
+	    Fs_HandleHeader *staleHdrPtr;
+	    staleHdrPtr = (srcNameError ? srcHdrPtr : dstHdrPtr);
+	    Fsutil_WantRecovery(staleHdrPtr);
+	    printf("%s of \"%s\" and \"%s\" waiting for recovery\n",
+			    NameOp(operation), srcName, dstName);
+	    status = Fsutil_WaitForRecovery(staleHdrPtr, status);
+	    if (status == SUCCESS) {
+		goto retry;
+	    } else if (status != GEN_ABORTED_BY_SIGNAL) {
+		/*
+		 * Recovery failed.  On absolute paths clear handle of the
+		 * prefix used to get to the server and try again.
+		 */
+		if ((srcNameError) && (srcName[0] == '/')) {
+		    Fsprefix_HandleClose(srcPrefixPtr, FSPREFIX_IMPORTED);
+		    status = FS_LOOKUP_REDIRECT;
+		} else if ((!srcNameError) && (dstName[0] == '/')) {
+		    Fsprefix_HandleClose(dstPrefixPtr, FSPREFIX_IMPORTED);
+		    status = FS_LOOKUP_REDIRECT;
+		}
+	    }
+	    break;
+	}
+	case FS_LOOKUP_REDIRECT:
+	    /*
+	     * The pathname left the server's domain, and it has returned
+	     * us a new name.  We generate a new absolute pathname and
+	     * save the pointer to the buffer.  It is now safe to free
+	     * the buffer used during the last iteration as well.
+	     */
+	    fs_Stats.prefix.redirects++;
+	    numRedirects++;
+	    if (numRedirects > FS_MAX_LINKS) {
+		status = FS_NAME_LOOP;
+		fs_Stats.prefix.loops++;
+	    } else if (srcNameError) {
+		status = FsprefixLookupRedirect(redirectInfoPtr, srcPrefixPtr,
+					  &srcName);
+		if (srcRedirectPtr != (Fs_RedirectInfo *)NIL) {
+		    free((Address)srcRedirectPtr);
+		}
+		srcRedirectPtr = redirectInfoPtr;
+		redirectInfoPtr = (Fs_RedirectInfo *)NIL;
+	    } else {
+		status = FsprefixLookupRedirect(redirectInfoPtr, dstPrefixPtr,
+					  &dstName);
+		if (dstRedirectPtr != (Fs_RedirectInfo *)NIL) {
+		    free((Address)dstRedirectPtr);
+		}
+		dstRedirectPtr = redirectInfoPtr;
+		redirectInfoPtr = (Fs_RedirectInfo *)NIL;
+	    }
+	    break;
+	case FS_CROSS_DOMAIN_OPERATION: {
+	    /*
+	     * The server thinks the second name is not served by it.
+	     * Here we attempt to get the attributes of the second name
+	     * in order to bounce through links and end up with a good prefix.
+	     */
+	    ReturnStatus	status2;
+	    Fs_OpenArgs		openArgs;
+	    Fs_GetAttrResults	getAttrResults;
+	    Fs_Attributes	dstAttr;	/* Attrs of destination */
+	    Fs_FileID		dstFileID;
+
+	    openArgs.useFlags = FS_FOLLOW;
+	    openArgs.permissions = 0;
+	    openArgs.type = FS_FILE;
+	    openArgs.clientID = rpc_SpriteID;
+	    Fs_SetIDs((Proc_ControlBlock *)NIL, &openArgs.id);
+
+	    openArgs.prefixID = dstHdrPtr->fileID;
+	    openArgs.rootID = dstRootID;
+
+	    getAttrResults.attrPtr = &dstAttr;
+	    getAttrResults.fileIDPtr = &dstFileID;
+getAttr:
+	    status2 = (*fs_DomainLookup[dstDomain][FS_DOMAIN_GET_ATTR])
+			(dstHdrPtr, dstLookupName, (Address)&openArgs,
+			(Address)&getAttrResults, &redirectInfoPtr);
+	    switch(status2) {
+		default:
+		    if (dstRootID.serverID != srcRootID.serverID ||
+			dstRootID.major != srcRootID.major) {
+			/*
+			 * Really is a cross-domain operation.
+			 */
+			status = FS_CROSS_DOMAIN_OPERATION;
+			break;
+		    } else {
+			goto retry;
+		    }
+		case FS_LOOKUP_REDIRECT: {
+		    fs_Stats.prefix.redirects++;
+		    numRedirects++;
+		    if (numRedirects > FS_MAX_LINKS) {
+			status = FS_NAME_LOOP;
+			fs_Stats.prefix.loops++;
+		    } else {
+			status = FsprefixLookupRedirect(redirectInfoPtr, dstPrefixPtr,
+						  &dstName);
+			if (dstRedirectPtr != (Fs_RedirectInfo *)NIL) {
+			    free((Address)dstRedirectPtr);
+			}
+			dstRedirectPtr = redirectInfoPtr;
+			redirectInfoPtr = (Fs_RedirectInfo *)NIL;
+			srcNameError = FALSE;
+			/*
+			 * Will fall out and then zip up to getDstPrefix.
+			 */
+		    }
+		    break;
+		}
+		case RPC_SERVICE_DISABLED:
+		case RPC_TIMEOUT:
+		case FS_STALE_HANDLE: {
+		    Fsutil_WantRecovery(dstHdrPtr);
+		    printf("Get Attr of \"%s\" waiting for recovery\n",
+				     dstName);
+		    status2 = Fsutil_WaitForRecovery(dstHdrPtr, status2);
+		    if (status2 == SUCCESS) {
+			goto getAttr;
+		    } else if ((status != GEN_ABORTED_BY_SIGNAL) &&
+		               (dstName[0] == '/')) {
+			Fsprefix_HandleClose(dstPrefixPtr, FSPREFIX_IMPORTED);
+			status = FS_LOOKUP_REDIRECT;
+			srcNameError = FALSE;
+		    }
+		    break;
+		}
+	    }
+	    break;
+	}
+	default:
+	    /*
+	     * SUCCESS or simple lookup failure.
+	     */
+	    break;
+    }
+    if (status == FS_LOOKUP_REDIRECT) {
+	if (srcNameError) {
+	    goto getSrcPrefix;
+	} else {
+	    goto getDstPrefix;
+	}
+    }
+exit:
+    if (srcRedirectPtr != (Fs_RedirectInfo *)NIL) {
+	free((Address)srcRedirectPtr);
+    }
+    if (dstRedirectPtr != (Fs_RedirectInfo *)NIL) {
+	free((Address)dstRedirectPtr);
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsprefixLookupRedirect --
+ *
+ *	Process a filename returned from a server after the lookup left
+ *	the server's domain.  This takes any prefix information and adds
+ *	to new entries to the prefix table, then it recomputes a new filename
+ *	and returns that so the caller can re-iterate the lookup.
+ *
+ * Results:
+ *	A return status, and a new file name.
+ *
+ * Side effects:
+ *	If the server tells us about a prefix it gets added to the
+ *	prefix table, but with no token or domain type.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+FsprefixLookupRedirect(redirectInfoPtr, prefixPtr, fileNamePtr)
+    Fs_RedirectInfo	*redirectInfoPtr;/* New name and prefix from server */
+    Fsprefix		*prefixPtr;	/* Prefix table entry used to select
+					 * the server. */
+    char **fileNamePtr;			/* Return, new name to lookup. This is a
+					 * pointer into the fileName buffer of
+					 * *redirectInfoPtr.  This means that the
+					 * caller has to be careful and not
+					 * reference *fileNamePtr after it calls
+					 * the domain lookup routine which will
+					 * overwrite *redirectInfoPtr */
+{
+    register char *prefix;
+
+    if (redirectInfoPtr->prefixLength > 0) {
+	/*
+	 * We are being told about a new prefix after the server
+	 * hit a remote link.  The prefix is embedded in the
+	 * beginning of the returned complete pathname.
+	 */
+	prefix = (char *)malloc(redirectInfoPtr->prefixLength + 1);
+	(void)strncpy(prefix, redirectInfoPtr->fileName,
+			redirectInfoPtr->prefixLength);
+	prefix[redirectInfoPtr->prefixLength] = '\0';
+	Fsprefix_Load(prefix, RPC_BROADCAST_SERVER_ID, FSPREFIX_IMPORTED);
+	free((Address) prefix);
+    }
+    if (redirectInfoPtr->fileName[0] == '.' &&
+	redirectInfoPtr->fileName[1] == '.') {
+	register int i;
+	register int preLen;
+	register char *fileName;
+	/*
+	 * The server ran off the top of its domain.  Compute a new name
+	 * from the prefix for the domain and the relative name returned.
+	 * Again, we use the redirectInfoPtr buffer to construct the new
+	 * name so we have to be careful not to use fileName after the
+	 * domain lookup routine returns.  At this point
+	 * prefix = "/pre/fix"
+	 * fileName = "../rest/of/path"
+	 * and we need
+	 * fileName = "/pre/rest/of/path"
+	 */
+	prefix = prefixPtr->prefix;
+	fileName = redirectInfoPtr->fileName;
+	preLen = strlen(prefix);
+	/*
+	 * Scan the prefix from the right end for the first '/'
+	 */
+	for (i = preLen-1; i >= 0 ; i--) {
+	    if (prefix[i] == '/') {
+		break;
+	    }
+	}
+	preLen = i+1;
+	if (preLen == 1) {
+	    /*
+	     * Have to shift the name to the left, up against the beginning /
+	     */
+	    for (i=3; ; i++) {
+		fileName[i-2] = fileName[i];
+		if (fileName[i] == '\0') {
+		    break;
+		}
+	    }
+	} else {
+	    /*
+	     * Shift the fileName over to the right so the beginning of the
+	     * prefix can be inserted before it.  The magic 2 refers to the
+	     * length of ".."
+	     */
+	    for (i = strlen(fileName); i >= 2; i--) {
+		fileName[i + preLen - 2] = fileName[i];
+	    }
+	}
+	/*
+	 * Insert the prefix.
+	 */
+	for (i = 0 ; i < preLen ; i++) {
+	    fileName[i] = prefix[i];
+	}
+    }
+    if (redirectInfoPtr->fileName[0] == '/') {
+	/*
+	 * Either just computed a new pathname or the server returned
+	 * an absolute name to us.
+	 */
+	*fileNamePtr = redirectInfoPtr->fileName;
+	return(FS_LOOKUP_REDIRECT);
+    } else {
+	printf(
+	  "Fsprefix_LookupOperation: Bad format of returned file name \"%s\".\n",
+	  redirectInfoPtr->fileName);
+	return(FAILURE);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NameOp --
+ *
+ *	Return a string for a name operation.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Set up the list links.
+ *
+ *----------------------------------------------------------------------
+ */
+static char *
+NameOp(lookupOperation)
+    int lookupOperation;
+{
+    switch(lookupOperation) {
+	case FS_DOMAIN_IMPORT:
+	    return("import");
+	case FS_DOMAIN_EXPORT:
+	    return("export");
+	case FS_DOMAIN_OPEN:
+	    return("open");
+	case FS_DOMAIN_GET_ATTR:
+	    return("get attr");
+	case FS_DOMAIN_SET_ATTR:
+	    return("set attr");
+	case FS_DOMAIN_MAKE_DEVICE:
+	    return("make device");
+	case FS_DOMAIN_MAKE_DIR:
+	    return("make directory");
+	case FS_DOMAIN_REMOVE:
+	    return("remove");
+	case FS_DOMAIN_REMOVE_DIR:
+	    return("remove directory");
+	case FS_DOMAIN_RENAME:
+	    return("rename");
+	case FS_DOMAIN_HARD_LINK:
+	    return("link");
+	default:
+	    return("(unknown lookup operation)");
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsprefix_Init --
+ *
+ *	Initialize the prefix table.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Set up the list links.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Fsprefix_Init()
+{
+    List_Init(prefixList);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsprefix_Install --
+ *
+ *	Add an entry to the prefix table.
+ *
+ * Results:
+ *	A pointer to the prefix table entry.
+ *
+ * Side effects:
+ *	Add an entry to the prefix table.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY Fsprefix *
+Fsprefix_Install(prefix, hdrPtr, domainType, flags)
+    char		*prefix;	/* String to install as a prefix */
+    Fs_HandleHeader	*hdrPtr;	/* Handle from server of the prefix */
+    int			domainType;	/* Default domain type for prefix. */
+    int			flags;	/* FSPREFIX_EXPORTED | FSPREFIX_IMPORTED. */
+{
+    register Fsprefix *prefixPtr;
+
+    LOCK_MONITOR;
+
+    LIST_FORALL(prefixList, (List_Links *)prefixPtr) {
+	if (strcmp(prefixPtr->prefix, prefix) == 0) {
+	    /*
+	     * Update information in the table.
+	     */
+	    PrefixUpdate(prefixPtr, FS_NO_SERVER, hdrPtr, domainType, flags);
+	    UNLOCK_MONITOR;
+	    return(prefixPtr);
+	}
+    }
+    prefixPtr = PrefixInsert(prefix, FS_NO_SERVER, hdrPtr, domainType, flags);
+    UNLOCK_MONITOR;
+    return(prefixPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsprefix_Load --
+ *
+ *	Force a prefix to occur in the prefix table.  This is needed because
+ *	the Unix Domain server does not do REDIRECTS right so we have
+ *	no other way to forcibly load a prefix.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Add an entry to the prefix table.  
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+Fsprefix_Load(prefix, serverID, flags)
+    char *prefix;		/* String to install as a prefix */
+    int  serverID;		/* Id of server for prefix */
+    int flags;			/* Prefix flags from fsPrefix.h */
+{
+    register Fsprefix *prefixPtr;
+
+    LOCK_MONITOR;
+
+    LIST_FORALL(prefixList, (List_Links *)prefixPtr) {
+	if (strcmp(prefixPtr->prefix, prefix) == 0) {
+	    /*
+	     * Update information in the table.
+	     */
+	    PrefixUpdate(prefixPtr, serverID, (Fs_HandleHeader *)NIL, -1, 
+		flags);	
+	    UNLOCK_MONITOR;
+	    return;
+	}
+    }
+    /*
+     * Add new entry to the table.
+     */
+    (void)PrefixInsert(prefix, serverID, (Fs_HandleHeader *)NIL, -1,
+			flags);
+    UNLOCK_MONITOR;
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrefixInsert --
+ *
+ *	Insert an entry into the prefix table. If the hdtPtr is not
+ *	NIL then the serverID it contains is used, otherwise the
+ *	serverID parameter is used.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Sets the hdrPtr, etc. of the prefix.  Also resets number of
+ *	active opens/delay opens state for the prefix.
+ *
+ *----------------------------------------------------------------------
+ */
+static INTERNAL Fsprefix *
+PrefixInsert(prefix, serverID, hdrPtr, domainType, flags)
+    char		*prefix;	/* The prefix itself */
+    int			serverID;	/* Id of server for prefix */
+    Fs_HandleHeader	*hdrPtr;	/* Handle for the prefix from server */
+    int			domainType;	/* Domain type of handle */
+    int			flags;		/* import, export, etc. */
+{
+    register Fsprefix *prefixPtr;
+    register char *prefixCopy;
+
+    prefixPtr = (Fsprefix *)malloc(sizeof(Fsprefix));
+    if (hdrPtr != (Fs_HandleHeader *)NIL) {
+	prefixPtr->serverID	= hdrPtr->fileID.serverID;
+    } else {
+	prefixPtr->serverID	= serverID;
+    }
+    prefixPtr->prefixLength	= strlen(prefix);
+    prefixCopy			= (char *)malloc(prefixPtr->prefixLength+1);
+    (void)strcpy(prefixCopy, prefix);
+    prefixPtr->prefix		= prefixCopy;
+    prefixPtr->hdrPtr		= hdrPtr;
+    prefixPtr->domainType	= domainType;
+    prefixPtr->flags		= flags;
+    prefixPtr->activeOpens	= 0;
+    prefixPtr->delayOpens	= FALSE;
+    List_Init(&prefixPtr->exportList);
+
+    /*
+     * At this point one could think about sorting the prefix table
+     * in some way.  However, for now we just add new prefixes
+     * to the end.  The PrefixLookup look scans the whole list anyway.
+     * Finally, there is a silly dependency on the ordering from
+     * the use of a prefix table entry to block OPENS during recovery.
+     * The first prefix that is controlled by a particular server is
+     * used to synchronize OPENS and REOPENS.  If this stupid
+     * dependency were removed (by using a different data
+     * structure, please, than the prefix table (I did all this to
+     * myself - my thanks to whoever fixes it)) then the prefix
+     * table could be sorted in order of increasing prefix length
+     * so that the prefix table scan could halt at the first non
+     * matching prefix.
+     */
+    List_Insert((List_Links *)prefixPtr, LIST_ATREAR(prefixList));
+    return(prefixPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrefixUpdate --
+ *
+ *	Update a prefix table entry.  This is called in several cases:
+ *	during lookup redirection (via Fs_PrefixLoad), when exporting
+ *	a local domain as part of bootstrap, and when setting up the
+ *	serverID for domains not reachable by broadcast.  Basically,
+ *	if there is no handle associated with the prefix then the
+ *	handle that was passed in is installed.  Otherwise, we let
+ *	the flags change in order to export an existing entry, and
+ *	we let the serverID field be set in order to by-pass broadcast.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Reinitializes the hdrPtr, etc. of the prefix.  Also resets number of
+ *	active opens/delay opens state for the prefix.
+ *
+ *----------------------------------------------------------------------
+ */
+static INTERNAL void
+PrefixUpdate(prefixPtr, serverID, hdrPtr, domainType, flags)
+    Fsprefix		*prefixPtr;	/* Table entry to update */
+    int			serverID;	/* Id of server for prefix */
+    Fs_HandleHeader	*hdrPtr;	/* Handle for the prefix from server */
+    int			domainType;	/* Domain type of handle */
+    int			flags;		/* import, export, etc. */
+{
+    if (prefixPtr->hdrPtr == (Fs_HandleHeader *)NIL) {
+	/*
+	 * No handle, we are being updated during a pathname redirection.
+	 */
+	prefixPtr->hdrPtr	= hdrPtr;
+	prefixPtr->domainType	= domainType;
+	prefixPtr->delayOpens	= FALSE;
+	prefixPtr->activeOpens	= 0;
+	if (hdrPtr != (Fs_HandleHeader *)NIL) {
+	    prefixPtr->serverID = hdrPtr->fileID.serverID;
+	}
+	if (prefixPtr->flags & FSPREFIX_REMOTE) {
+	    /*
+	     * Save hard-wired information about the server location.
+	     * Can only reset that info via Fsprefix_Clear.
+	     */
+	    flags |= FSPREFIX_REMOTE;
+	} else if ((hdrPtr == (Fs_HandleHeader *)NIL) &&
+		   (prefixPtr->hdrPtr == (Fs_HandleHeader *)NIL)) {
+	    /*
+	     * No handle on prefix, no input handle.  Cache the input
+	     * serverID and we'll contact it to establish
+	     * the prefix handle.  At this point either serverID is the
+	     * broadcast address, or serverID has a specific value and
+	     * the FSREMOTE_PREFIX flag is set.
+	     */
+	    prefixPtr->serverID = serverID;
+	}
+	prefixPtr->flags	= flags & ~FSPREFIX_OVERRIDE;
+    } else {
+	/*
+	 * Verify the new flags for the prefix table entry.
+	 */
+	if (flags & FS_EXPORTED_PREFIX) {
+	    /*
+	     * A local prefix is being exported.  This happens during bootstrap.
+	     */
+	    prefixPtr->flags	|= FS_EXPORTED_PREFIX;
+	}
+    }
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsprefix_Lookup --
+ *
+ *	Find an entry in the prefix table.  It is the caller's responsibility
+ *	to broadcast to get the handle for the prefix, if necessary.
+ *
+ * Results:
+ *	SUCCESS means there was a prefix match.  Still, *hdrPtr and
+ *	*domainTypePtr may be NIL to indicate that they are not
+ *	instantiated.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY ReturnStatus
+Fsprefix_Lookup(fileName, flags, clientID, hdrPtrPtr, rootIDPtr, lookupNamePtr, 
+		serverIDPtr, domainTypePtr, prefixPtrPtr)
+    register char *fileName;	/* File name to match against */
+    int 	flags;		/* FSPREFIX_IMPORTED | FSPREFIX_EXACT and
+				 * one of FSPREFIX_EXPORTED|FSPREFIX_LOCAL */
+    int		clientID;	/* Use to check export list */
+    Fs_HandleHeader **hdrPtrPtr;	/* Return, the handle for the prefix.  This is
+				 * NOT LOCKED and has no extra references. */
+    Fs_FileID	*rootIDPtr;	/* Return, ID of the root of the domain */
+    char 	**lookupNamePtr;/* Return, If FS_NO_HANDLE this is the prefix
+				 * itself.  If SUCCESS, this is the relative
+				 * name after the prefix */
+    int		*serverIDPtr;	/* Return, If FS_NO_HANDLE this is the id
+				 * of the server for the prefix */
+    int		*domainTypePtr;	/* Return, the domain of the prefix */
+    Fsprefix	**prefixPtrPtr;	/* Return, prefix used to find the file */
+{
+    register Fs_ProcessState	*fsPtr;	   	    /* For this process, to
+						     * return working dir.*/
+    register Fsprefix 		*longestPrefixPtr;  /* Longest match */
+    register Fsprefix		*prefixPtr;	    /* Pointer to table entry */
+    register Fs_NameInfo		*nameInfoPtr;	    /* Name info for prefix */
+    ReturnStatus		status = SUCCESS;   /* Return value */
+    Boolean			exactMatch;	    /* TRUE the fileName has
+						     * to match the prefix in 
+						     * the table exactly */
+    Boolean			wantLink;	    /* TRUE if caller wants to
+						     * inhibit indirection via
+						     * a prefix so it can lstat
+						     * the link file itself. */
+
+    LOCK_MONITOR;
+
+    longestPrefixPtr = (Fsprefix *) NIL;
+    exactMatch = (flags & FSPREFIX_EXACT);
+    wantLink = (flags & FSPREFIX_LINK_NOT_PREFIX);
+    flags &= ~(FSPREFIX_EXACT|FSPREFIX_LINK_NOT_PREFIX);
+    if (fileName[0] != '/') {
+	/*
+	 * For relative names just return the handle from the current
+	 * working directory.  Also, don't accept relative names with
+	 * exact matches - that happens occasionally in error conditions.
+	 */
+	fs_Stats.prefix.relative++;
+	fsPtr = (Proc_GetEffectiveProc())->fsPtr;
+	if (!exactMatch && fsPtr->cwdPtr != (Fs_Stream *)NIL) {
+	    *hdrPtrPtr = fsPtr->cwdPtr->ioHandlePtr;
+	    nameInfoPtr = fsPtr->cwdPtr->nameInfoPtr;
+	    *rootIDPtr = nameInfoPtr->rootID;
+	    *lookupNamePtr = fileName;
+	    *domainTypePtr = nameInfoPtr->domainType;
+	    *prefixPtrPtr = nameInfoPtr->prefixPtr;
+	} else {
+	    status = FS_FILE_NOT_FOUND;
+	}
+    } else {
+	fs_Stats.prefix.absolute++;
+	LIST_FORALL(prefixList, (List_Links *) prefixPtr) {
+	    if (strncmp(prefixPtr->prefix, fileName, prefixPtr->prefixLength)
+					== 0) {
+		char	lastChar;
+
+		if (!(flags & prefixPtr->flags)) {
+		    /*
+		     * Only hit on imported or exported prefixes, as requested.
+		     */
+		    continue;
+		}
+		lastChar = fileName[prefixPtr->prefixLength];
+		if (exactMatch && lastChar != '\0') {
+		    /*
+		     * Need an exact match, but there is more filename left.
+		     */
+		    continue;
+		} else if (wantLink && lastChar == '\0' &&
+			    prefixPtr->prefixLength != 1) {
+		    /*
+		     * The opposite of exact match.  We skip an exact match
+		     * if we are trying to open a remote link.  This makes
+		     * lstat() behave the same on all remote links, whether
+		     * or not there is an installed prefix for the link.
+		     */
+		    continue;
+		} else if ((prefixPtr->prefixLength == 1) ||
+			   (lastChar == '\0') || (lastChar == '/')) {
+		    /*
+		     * The prefix is "/", or the prefix matches up through
+		     * a complete pathname component.  This implies that
+		     * /spur is not a valid prefix of /spurios.
+		     */
+		    if (longestPrefixPtr == (Fsprefix *)NIL) {
+			longestPrefixPtr = prefixPtr;
+		    } else if (longestPrefixPtr->prefixLength <
+			       prefixPtr->prefixLength) {
+			longestPrefixPtr = prefixPtr;
+		    }
+		}
+	    }
+	}
+	if (longestPrefixPtr != (Fsprefix *)NIL) {
+	    if ((flags & FSPREFIX_EXPORTED) && (clientID >= 0) &&
+		(! List_IsEmpty(&longestPrefixPtr->exportList))) {
+		/*
+		 * Check the export list to see if the remote client has
+		 * access.  An empty export list implies everyone has access.
+		 */
+		register FsprefixExport *exportPtr;
+		status = FS_NO_ACCESS;
+		LIST_FORALL(&longestPrefixPtr->exportList,
+			    (List_Links *)exportPtr) {
+		    if (exportPtr->spriteID == clientID) {
+			status = SUCCESS;
+			break;
+		    }
+		}
+	    }
+	    if (status == SUCCESS) {
+		*hdrPtrPtr = longestPrefixPtr->hdrPtr;
+		*domainTypePtr = longestPrefixPtr->domainType;
+		if (*hdrPtrPtr == (Fs_HandleHeader *)NIL) {
+		    /*
+		     * Return our caller the prefix instead of a relative name
+		     * so it can broadcast to get the prefix's handle.  If
+		     * the prefix has been installed under a specific serverID
+		     * then we return that so internet RPC (presumably) can
+		     * be used to contact the server.  Otherwise we'll
+		     * broadcast to locate the server.
+		     */
+		    *lookupNamePtr = longestPrefixPtr->prefix;
+		    if (longestPrefixPtr->flags & FSPREFIX_REMOTE) {
+			*serverIDPtr = longestPrefixPtr->serverID;
+		    } else {
+			*serverIDPtr = RPC_BROADCAST_SERVER_ID;
+		    }
+		    *prefixPtrPtr = (Fsprefix *)NIL;
+		    status = FS_NO_HANDLE;
+		} else {
+		    /*
+		     * All set, return our caller the name after the prefix.
+		     * A name not starting with a slash is returned as the
+		     * relative name.  This is because of domains that
+		     * think that a name starting with a slash is absolute.
+		     */
+		    *rootIDPtr = (*hdrPtrPtr)->fileID;
+		    *lookupNamePtr = &fileName[longestPrefixPtr->prefixLength];
+		    while (**lookupNamePtr == '/') {
+			(*lookupNamePtr)++;
+		    }
+		    *prefixPtrPtr = longestPrefixPtr;
+		}
+	    }
+	} else {
+	    status = FS_FILE_NOT_FOUND;
+	}
+    }
+    UNLOCK_MONITOR;
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsprefix_Export --
+ *
+ *	Add (or subtract) a client from the export list associated with
+ *	a prefix.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Update the export list of the prefix.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+Fsprefix_Export(prefix, clientID, delete)
+    char *prefix;		/* Update this prefix'es export list */
+    int clientID;		/* Host ID of client to which to export */
+    Boolean delete;		/* If TRUE, remove the client */
+{
+    register Fsprefix *prefixPtr;
+    register FsprefixExport *exportPtr;
+    Boolean found = FALSE;
+
+    LOCK_MONITOR;
+
+    LIST_FORALL(prefixList, (List_Links *)prefixPtr) {
+	if (strcmp(prefixPtr->prefix, prefix) == 0) {
+	    LIST_FORALL(&prefixPtr->exportList, (List_Links *)exportPtr) {
+		if (exportPtr->spriteID == clientID) {
+		    if (delete) {
+			List_Remove((List_Links *)exportPtr);
+			free((Address)exportPtr);
+		    }
+		    found = TRUE;
+		    break;
+		}
+	    }
+	    if (!found && !delete) {
+		exportPtr = mnew(FsprefixExport);
+		List_InitElement((List_Links *)exportPtr);
+		exportPtr->spriteID = clientID;
+		List_Insert((List_Links *)exportPtr,
+			    LIST_ATREAR(&prefixPtr->exportList));
+	    }
+	    break;
+	}
+    }
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsprefix_Clear --
+ *
+ *	Clear a prefix table entry.  If the deleteFlag argument is set
+ *	then the entry is removed altogether, otherwise just the
+ *	handle is closed and then cleared.  This is called from Fs_Command
+ *	and used during testing.  This won't delete the root prefix,
+ *	although it will clear its handle so subsequent lookups will
+ *	rebroadcast.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Delete a prefix or just clear its handle.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY ReturnStatus
+Fsprefix_Clear(prefix, deleteFlag, forced)
+    char *prefix;		/* String to install as a prefix */
+    int deleteFlag;		/* If TRUE then the prefix is removed from
+				 * the table.  Otherwise just the handle
+				 * information is cleared. */
+    Boolean forced;		/* If true, then this command is being forced
+				 * from user-level.
+				 */
+{
+    register Fsprefix *prefixPtr;
+    Fsprefix *targetPrefixPtr = (Fsprefix *)NIL;
+    Fs_FileID prefixID;
+    Boolean okToNuke = TRUE;
+    ReturnStatus status = SUCCESS;
+
+
+    LOCK_MONITOR;
+
+    /*
+     * First pass to scan the table for the prefix and get the
+     * flags and fileID associated with the prefix table entry.
+     */
+    LIST_FORALL(prefixList, (List_Links *)prefixPtr) {
+	if (strcmp(prefixPtr->prefix, prefix) == 0) {
+	    if (prefixPtr->flags & (FSPREFIX_EXPORTED|FSPREFIX_LOCAL)) {
+		/*
+		 * We export the prefix and have to be careful about
+		 * deleting the prefix table entry for it.  Only if
+		 * there is another prefix corresponding to the same
+		 * domain can we delete this one.  This situation occurs
+		 * during bootstrap where "/bootTmp" is aliased to "/"
+		 * but eventually we want to nuke the local "/" so
+		 * we can hook up to the network "/".
+		 */
+		if (prefixPtr->hdrPtr != (Fs_HandleHeader *)NIL) {
+		    prefixID = prefixPtr->hdrPtr->fileID;
+		    okToNuke = FALSE;
+		}
+	    }
+	    targetPrefixPtr = prefixPtr;
+	    break;
+	}
+    }
+    /*
+     * Second pass to look for an alias prefix.
+     */
+    if (!okToNuke) {
+	LIST_FORALL(prefixList, (List_Links *)prefixPtr) {
+	    if (strcmp(prefixPtr->prefix, prefix) != 0) {
+		if (prefixPtr->hdrPtr != (Fs_HandleHeader *)NIL) {
+		    register Fs_HandleHeader *hdrPtr = prefixPtr->hdrPtr;
+		    if (prefixID.type != hdrPtr->fileID.type ||
+			prefixID.serverID != hdrPtr->fileID.serverID ||
+			prefixID.major != hdrPtr->fileID.major ||
+			prefixID.minor != hdrPtr->fileID.minor) {
+			continue;
+		    }
+		    /*
+		     * Found an alias.
+		     */
+		    goto nukeIt;
+		}
+	    }
+	}
+	/*
+	 * No other alias
+	 */
+	status = FAILURE;
+	goto done;
+    }
+nukeIt:
+    if (targetPrefixPtr == (Fsprefix *)NIL) {
+	/*
+	 * No prefix match.
+	 */
+	status = FAILURE;
+    } else {
+	/*
+	 * Was this a force-loaded prefix?  We can only delete it if this
+	 * command is also being forced from user level.
+	 */
+	if ((targetPrefixPtr->flags & FSPREFIX_FORCED) && !forced) {
+	    status = FAILURE;
+	    goto done;
+	}
+	if (targetPrefixPtr->hdrPtr != (Fs_HandleHeader *)NIL) {
+	    FsprefixHandleCloseInt(targetPrefixPtr, FSPREFIX_ANY);
+	}
+	targetPrefixPtr->serverID = RPC_BROADCAST_SERVER_ID;
+	targetPrefixPtr->flags &= ~(FSPREFIX_EXPORTED|FSPREFIX_LOCAL);
+	if (deleteFlag && targetPrefixPtr->prefixLength != 1) {
+	    free((Address) targetPrefixPtr->prefix);
+	    while (! List_IsEmpty(&targetPrefixPtr->exportList)) {
+		register FsprefixExport *exportPtr;
+		exportPtr =
+		    (FsprefixExport *)List_First(&targetPrefixPtr->exportList);
+		List_Remove((List_Links *)exportPtr);
+		free((Address)exportPtr);
+	    }
+    
+	    List_Remove((List_Links *)targetPrefixPtr);
+	    free((Address) targetPrefixPtr);
+	}
+	status = SUCCESS;
+    }
+done:
+    UNLOCK_MONITOR;
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsprefix_HandleClose --
+ *
+ *	Close the handle associated with a prefix.  This is called when
+ *	cleaning up a prefix table entry.  The flags argument indicates
+ *	what sort of prefix we export to nuke, and this is used for
+ *	consistency checking.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None here, see the internal routine called inside the monitor lock.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Fsprefix_HandleClose(prefixPtr, flags)
+    Fsprefix *prefixPtr;
+    int flags;			/* FSPREFIX_ANY, FSPREFIX_EXPORTED */
+{
+    LOCK_MONITOR;
+    FsprefixHandleCloseInt(prefixPtr, flags);
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsprefixHandleCloseInt --
+ *
+ *	Close the handle associated with a prefix.  The serverID from
+ *	the handle is saved for use in recovery later.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Sets the prefix's hdrPtr to NIL.  This notifies the okToRecover
+ *	condition if there were active opens on the prefix so that
+ *	recovery can proceed on this very handle.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+FsprefixHandleCloseInt(prefixPtr, flags)
+    Fsprefix *prefixPtr;
+    int flags;
+{
+    register Fs_HandleHeader *hdrPtr;
+    Fs_Stream dummy;
+
+    if (prefixPtr->hdrPtr != (Fs_HandleHeader *)NIL) {
+	if ((flags & FSPREFIX_IMPORTED) &&
+		(prefixPtr->flags & (FSPREFIX_EXPORTED|FSPREFIX_LOCAL))) {
+	    printf("Fsprefix_HandleClose: \"%s\" is exported (mounted)\n",
+		    prefixPtr->prefix);
+	    return;
+	} else if ((flags & FSPREFIX_EXPORTED) &&
+		(prefixPtr->flags & (FSPREFIX_EXPORTED|FSPREFIX_LOCAL) == 0)){
+	    printf("Fsprefix_HandleClose: \"%s\" is not exported (mounted)\n",
+		    prefixPtr->prefix);
+	    return;
+	}
+	if (prefixPtr->prefix != (char *) NIL) {
+	    printf("Fsprefix_HandleClose deleting \"%s\"\n", prefixPtr->prefix);
+	}
+	hdrPtr = prefixPtr->hdrPtr;
+	prefixPtr->hdrPtr = (Fs_HandleHeader *)NIL;
+	Fsutil_HandleLock(hdrPtr);
+	dummy.ioHandlePtr = hdrPtr;
+	dummy.hdr.fileID.type = -1;
+	(void)(*fsio_StreamOpTable[hdrPtr->fileID.type].close)(&dummy,
+		    rpc_SpriteID, 0, 0, 0, (ClientData)NIL);
+#ifdef lint
+	(void) Fsio_FileClose(&dummy, rpc_SpriteID, 0,
+		    0, 0, (ClientData)NIL);
+	(void) FsrmtFileClose(&dummy, rpc_SpriteID, 0,
+		    0, 0, (ClientData)NIL);
+	(void) Fsio_PipeClose(&dummy, rpc_SpriteID, 0,
+		    0, 0, (ClientData)NIL);
+	(void) Fsio_DeviceClose(&dummy, rpc_SpriteID, 0,
+		    0, 0, (ClientData)NIL);
+	(void) Fsrmt_IOClose(&dummy, rpc_SpriteID, 0,
+		    0, 0, (ClientData)NIL);
+	(void) FspdevControlClose(&dummy, rpc_SpriteID, 0,
+		    0, 0, (ClientData)NIL);
+	(void) FspdevPseudoStreamClose(&dummy, rpc_SpriteID, 0,
+		    0, 0, (ClientData)NIL);
+	(void) FspdevServerStreamClose(&dummy, rpc_SpriteID, 0,
+		    0, 0, (ClientData)NIL);
+#endif /* lint */
+
+	if (prefixPtr->activeOpens > 0) {
+	    prefixPtr->activeOpens = 0;
+	    Sync_Broadcast(&prefixPtr->okToRecover);
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LocatePrefix --
+ *
+ *	Call a domain specific routine to get the token for a prefix.
+ *
+ * Results:
+ *	The token for the prefix table and a return code.
+ *
+ * Side effects:
+ *	Those of the domain specific Prefix routine.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+LocatePrefix(fileName, serverID, domainTypePtr, hdrPtrPtr)
+    char	*fileName;	/* The prefix to find the server of */
+    int		serverID;	/* Id of server for prefix. */
+    int		*domainTypePtr;	/* In/Out the type of the domain.  If -1 on
+				 * entry then all domain prefix routines
+				 * are polled in order to find the domain.
+				 * Set upon return to domain type for prefix */
+    Fs_HandleHeader **hdrPtrPtr;	/* The handle that the domain prefix routine
+				 * returns for the prefix */
+{
+    register ReturnStatus	status;
+    register int		domainType;
+    Fs_UserIDs			ids;
+
+    Fs_SetIDs(Proc_GetEffectiveProc(), &ids);
+    for (domainType = 0; domainType < FS_NUM_DOMAINS; domainType++) {
+	status = (*fs_DomainLookup[domainType][FS_DOMAIN_IMPORT])
+		    (fileName, serverID, &ids, domainTypePtr, hdrPtrPtr);
+#ifdef lint
+	status = FsrmtImport(fileName, serverID, &ids, domainTypePtr,
+				hdrPtrPtr);
+#endif /* lint */
+	if (status == SUCCESS) {
+	    return(FS_NEW_PREFIX);
+	} else if (status == RPC_FS_NO_PREFIX) {
+	    /* Delete prefix.  This won't delete it if load was also forced. */
+	    (void) Fsprefix_Clear(fileName, FALSE, FALSE);
+	}
+    }
+    return(FS_FILE_NOT_FOUND);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetPrefix --
+ *
+ *	A common loop to deal with prefixes that have no handle yet.
+ *	This takes care of finding the handle for a prefix if needed.
+ *
+ * Results:
+ *	The handle for the prefix of the file.
+ *
+ * Side effects:
+ *	May call LocatePrefix and Fsprefix_Install.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+GetPrefix(fileName, follow, hdrPtrPtr, rootIDPtr, lookupNamePtr, domainTypePtr,
+	    prefixPtrPtr)
+    char 	*fileName;		/* File name that needs to be 
+					 * operated on */
+    Boolean	follow;			/* TRUE means lookup will follow links.
+					 * FALSE allows opening of links */
+    Fs_HandleHeader **hdrPtrPtr;		/* Result, handle for the prefix */
+    Fs_FileID	*rootIDPtr;		/* Result, ID of domain root */
+    char 	**lookupNamePtr;	/* Result, remaining pathname to 
+					 * lookup */
+    int 	*domainTypePtr;		/* Result, domain type of the prefix */
+    Fsprefix 	**prefixPtrPtr;		/* Result, reference to prefix table */
+{
+    ReturnStatus status;
+    register int flags = FSPREFIX_IMPORTED;
+    int		 serverID;
+
+    if (!follow) {
+	flags |= FSPREFIX_LINK_NOT_PREFIX;
+    }
+    do {
+	status = Fsprefix_Lookup(fileName, flags, FS_LOCALHOST_ID, hdrPtrPtr,
+			rootIDPtr, lookupNamePtr, &serverID, domainTypePtr, 
+			prefixPtrPtr);
+	if (status == FS_NO_HANDLE) {
+	    /*
+	     * The prefix exists but there is not a valid file handle for it.
+	     * Fsprefix_Lookup has returned us the prefix in lookupName.
+	     */
+	    /*
+	     * If the server is ourself then return.  The prefix has 
+	     * probably been installed because we are going to export it
+	     * later and we shouldn't bother broadcasting for
+	     * it now.
+	     */
+	    if (serverID == rpc_SpriteID) {
+		return FAILURE;
+	    }
+	    if (serverID == RPC_BROADCAST_SERVER_ID) {
+		printf("Broadcasting for server of \"%s\"\n", *lookupNamePtr);
+	    } else {
+		printf("Contacting server %d for \"%s\" prefix\n", serverID,
+		    *lookupNamePtr);
+	    }
+	    status = LocatePrefix(*lookupNamePtr, serverID, domainTypePtr,
+						    hdrPtrPtr);
+	    if (status == FS_NEW_PREFIX) {
+		char hostname[128];
+
+		fs_Stats.prefix.found++;
+
+		Net_SpriteIDToName((*hdrPtrPtr)->fileID.serverID, 128, 
+			hostname);
+		if (hostname[0] != '\0') {
+		    printf("Importing \"%s\" from %s\n", *lookupNamePtr,
+				hostname);
+		} else {
+		    printf("Importing \"%s\" from host #%d\n", *lookupNamePtr,
+			(*hdrPtrPtr)->fileID.serverID);
+		}
+		(void)Fsprefix_Install(*lookupNamePtr, *hdrPtrPtr,*domainTypePtr,
+				FSPREFIX_IMPORTED);
+	    }
+	}
+    } while (status == FS_NEW_PREFIX);
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsprefix_Reopen --
+ *
+ *	This is called to enter the re-open phase of recovery.
+ *	This finds prefix table entries that have been
+ *	cleared out (because the server went away) and tries
+ *	to re-establish these - the prefix token is needed when
+ *	re-opening other handles..
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Retries nil'ed prefixes.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+Fsprefix_Reopen(serverID)
+    int serverID;		/* Server we are recovering with */
+{
+    Fsprefix *prefixPtr;
+    ReturnStatus status;
+    Fs_HandleHeader *hdrPtr;
+    int domainType;
+    List_Links nilPrefixList;
+
+    GetNilPrefixes(&nilPrefixList);
+    while (!List_IsEmpty(&nilPrefixList)) {
+	prefixPtr = (Fsprefix *)List_First(&nilPrefixList);
+	if (prefixPtr->serverID == serverID ||
+	    prefixPtr->serverID == RPC_BROADCAST_SERVER_ID) {
+	    /*
+	     * Attempt to re-establish the prefix table entry before
+	     * re-opening files under that prefix.  This is needed
+	     * because the prefix table slot is a point of synchronization
+	     * between opens and re-opens.
+	     */
+	    domainType = -1;
+	    status = LocatePrefix(prefixPtr->prefix, prefixPtr->serverID,
+			    &domainType, &hdrPtr);
+	    if (status == FS_NEW_PREFIX) {
+		(void)Fsprefix_Install(prefixPtr->prefix, hdrPtr, domainType,
+			    FSPREFIX_IMPORTED);
+	    }
+	}
+	List_Remove((List_Links *)prefixPtr);
+	free(prefixPtr->prefix);
+	free((Address)prefixPtr);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetNilPrefixes --
+ *
+ *	Return a list of prefixes that have lost their handles.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	mallocs, our caller should free each element in the list.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY static void
+GetNilPrefixes(listPtr)
+    List_Links *listPtr;	/* Header for list of prefix table entries */
+{
+    Fsprefix *prefixPtr;
+
+    LOCK_MONITOR;
+
+    List_Init(listPtr);
+    LIST_FORALL(prefixList, (List_Links *)prefixPtr) {
+	if (prefixPtr->hdrPtr == (Fs_HandleHeader *)NIL) {
+	    register Fsprefix *newPrefixPtr;
+
+	    newPrefixPtr = mnew(Fsprefix);
+	    *newPrefixPtr = *prefixPtr;
+	    newPrefixPtr->prefix = (Address)malloc(newPrefixPtr->prefixLength + 1);
+	    (void)strcpy(newPrefixPtr->prefix, prefixPtr->prefix);
+	    List_Insert((List_Links *)newPrefixPtr, LIST_ATREAR(listPtr));
+	}
+    }
+
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsprefix_OpenCheck --
+ *
+ *	This is called to indicate that an open is occurring in
+ *	this domain.  This will fail if recovery is in progress
+ *	with the server.
+ *
+ * Results:
+ *	FS_DOMAIN_UNAVAILABLE if the prefix is locked up because recovery
+ *	actions are in progress.
+ *
+ * Side effects:
+ *	Blocks recovery until
+ *	Fsprefix_OpenDone is called.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY ReturnStatus
+Fsprefix_OpenCheck(prefixHdrPtr)
+    Fs_HandleHeader *prefixHdrPtr;	/* Handle from the prefix table */
+{
+    register ReturnStatus status;
+    Fsprefix *prefixPtr;
+    LOCK_MONITOR;
+
+    LIST_FORALL(prefixList, (List_Links *)prefixPtr) {
+	if ((prefixPtr->hdrPtr != (Fs_HandleHeader *)NIL) &&
+	    (prefixPtr->hdrPtr->fileID.serverID ==
+		prefixHdrPtr->fileID.serverID)) {
+	    if (prefixPtr->delayOpens) {
+		printf( 
+		    "Fsprefix_OpenCheck waiting for recovery\n");
+		if (Sync_Wait(&prefixPtr->okToOpen, TRUE)) {
+		    /*
+		     * Wait was interrupted by a signal.
+		     */
+		    status = FS_DOMAIN_UNAVAILABLE;
+		    printf("Fsprefix_OpenCheck aborted\n");
+		} else {
+		    prefixPtr->activeOpens++;
+		    status = SUCCESS;
+		    printf("Fsprefix_OpenCheck ok\n");
+		}
+	    } else {
+		prefixPtr->activeOpens++;
+		status = SUCCESS;
+	    }
+	    UNLOCK_MONITOR;
+	    return(status);
+	}
+    }
+    /*
+     * No match with the prefix handle.
+     */
+    printf( "PrefixOpenCheck: didn't find prefix");
+    UNLOCK_MONITOR;
+    return(FS_DOMAIN_UNAVAILABLE);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsprefix_OpenDone --
+ *
+ *	The complement of FsPrefixOpenStart, this takes away the
+ *	open reference count on the prefix and notifies any
+ *	waiting recovery processes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Notifies the prefix okToRecover condition if activeOpens is zero.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+Fsprefix_OpenDone(prefixHdrPtr)
+    Fs_HandleHeader *prefixHdrPtr;	/* Handle from the prefix table */
+{
+    Fsprefix *prefixPtr;
+    LOCK_MONITOR;
+
+    LIST_FORALL(prefixList, (List_Links *)prefixPtr) {
+	if ((prefixPtr->hdrPtr != (Fs_HandleHeader *)NIL) &&
+	    (prefixPtr->hdrPtr->fileID.serverID ==
+		prefixHdrPtr->fileID.serverID)) {
+	    prefixPtr->activeOpens--;
+	    if (prefixPtr->activeOpens < 0) {
+		printf( "Fsprefix_OpenDone, neg open cnt\n");
+		prefixPtr->activeOpens = 0;
+	    }
+	    if (prefixPtr->activeOpens == 0) {
+		Sync_Broadcast(&prefixPtr->okToRecover);
+	    }
+	    UNLOCK_MONITOR;
+	    return;
+	}
+    }
+    /*
+     * No match with the prefix handle.
+     */
+    printf( "PrefixOpenDone: no handle match\n");
+    UNLOCK_MONITOR;
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsprefix_RecoveryCheck --
+ *
+ *	This is called to indicate that we want to recover handles with
+ *	this server.  This will block the calling process until any
+ *	outstanding opens are completed so that opens and re-opens don't race.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Blocks recovery until Fsprefix_OpenDone is called.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+Fsprefix_RecoveryCheck(serverID)
+    int serverID;
+{
+    Fsprefix *prefixPtr;
+    LOCK_MONITOR;
+
+    LIST_FORALL(prefixList, (List_Links *)prefixPtr) {
+	if ((prefixPtr->hdrPtr != (Fs_HandleHeader *)NIL) &&
+	    (prefixPtr->hdrPtr->fileID.serverID == serverID)) {
+	    while (prefixPtr->activeOpens > 0) {
+		(void)Sync_Wait(&prefixPtr->okToRecover, FALSE);
+	    }
+	    prefixPtr->delayOpens = TRUE;
+	    UNLOCK_MONITOR;
+	    return;
+	}
+    }
+    /*
+     * No match with the prefix handle means the other host isn't a server.
+     * There is no possibility of opens to race with re-opens.  We will
+     * still need to re-open handles, however, because of remote devices.
+     */
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsprefix_AllowOpens --
+ *
+ *	As part of recovery, regular opens to a server are blocked
+ *	until all the re-opens have been done.  This procedure indicates
+ *	that the re-open phase is done and regular opens can proceed.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Notifies the prefix okToOpen condition and clears the
+ *	delayOpens boolean.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+Fsprefix_AllowOpens(serverID)
+    int serverID;		/* Server we are recovering with */
+{
+    Fsprefix *prefixPtr;
+
+    LOCK_MONITOR;
+
+    LIST_FORALL(prefixList, (List_Links *)prefixPtr) {
+	if ((prefixPtr->hdrPtr != (Fs_HandleHeader *)NIL) &&
+	    (prefixPtr->hdrPtr->fileID.serverID == serverID)) {
+	    prefixPtr->delayOpens = FALSE;
+	    Sync_Broadcast(&prefixPtr->okToOpen);
+	}
+    }
+    UNLOCK_MONITOR;
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsprefix_FromFileID --
+ *
+ *	Return the prefix table entry given the fileID for the prefix.
+ *	This reverse mapping is needed during recovery in order to
+ *	re-establish the back pointer from a handle to the prefix
+ *	table entry.  This in turn is used in ".." processing.
+ *
+ * Results:
+ *	A pointer to the prefix table for the prefix rooted at
+ *	the input fileID, or NIL if not found.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY Fsprefix *
+Fsprefix_FromFileID(fileIDPtr)
+    Fs_FileID	*fileIDPtr;		/* FileID from a client */
+{
+    Fsprefix *prefixPtr;
+    LOCK_MONITOR;
+
+    LIST_FORALL(prefixList, (List_Links *)prefixPtr) {
+	if ((prefixPtr->hdrPtr != (Fs_HandleHeader *)NIL) &&
+	    (prefixPtr->hdrPtr->fileID.serverID ==
+		fileIDPtr->serverID) &&
+	    (prefixPtr->hdrPtr->fileID.major ==	fileIDPtr->major) &&
+	    (prefixPtr->hdrPtr->fileID.minor ==	fileIDPtr->minor)) {
+	    UNLOCK_MONITOR;
+	    return(prefixPtr);
+	}
+    }
+    /*
+     * No match with the fileID.
+     */
+    UNLOCK_MONITOR;
+    return((Fsprefix *)NIL);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsprefix_OpenInProgress --
+ *
+ *	This is called to find out if opens are in progress in
+ *	a particular domain.  This is used by the cache consistency
+ *	routines to decide if a consistency message might apply
+ *	to an open hasn't quite completed.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Blocks recovery until
+ *	Fsprefix_OpenDone is called.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY int
+Fsprefix_OpenInProgress(fileIDPtr)
+    Fs_FileID *fileIDPtr;		/* ID for some file */
+{
+    int activeOpens;
+    Fsprefix *prefixPtr;
+    LOCK_MONITOR;
+
+    LIST_FORALL(prefixList, (List_Links *)prefixPtr) {
+	if ((prefixPtr->hdrPtr != (Fs_HandleHeader *)NIL) &&
+	    (prefixPtr->hdrPtr->fileID.serverID == fileIDPtr->serverID) &&
+	    (prefixPtr->hdrPtr->fileID.major ==	fileIDPtr->major)) {
+	    activeOpens = prefixPtr->activeOpens;
+	    UNLOCK_MONITOR;
+	    return(activeOpens);
+	}
+    }
+    /*
+     * No match with any prefix, must not be any active opens.
+     */
+    UNLOCK_MONITOR;
+    return(0);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsPrefixInterate --
+ *
+ *	This is called to loop through the prefix table entries.
+ *	Our caller is given 'read-only' access to the prefix table
+ *	entry.  This is used for the 'df' and 'prefix' programs
+ *	which call Fsprefix_Dump.
+ *	
+ *	Upon entry, the *prefixPtr should be NIL to indicate the
+ *	beginning of the iteration.
+ *
+ * Results:
+ *	A pointer to the next prefix table entry.
+ *
+ * Side effects:
+ *	Marks the next prefix table entry as non-deletable, and
+ *	returns a pointer to it.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+FsprefixIterate(prefixPtrPtr)
+    Fsprefix **prefixPtrPtr;		/* In/Out pointer to prefix entry */
+{
+    register Fsprefix *prefixPtr;
+    LOCK_MONITOR;
+
+    prefixPtr = *prefixPtrPtr;
+    if (prefixPtr == (Fsprefix *)NIL) {
+	prefixPtr = (Fsprefix *)List_First(prefixList);
+    } else {
+	prefixPtr->flags &= ~FSPREFIX_LOCKED;
+	prefixPtr = (Fsprefix *)List_Next(((List_Links *)prefixPtr));
+	if (List_IsAtEnd(prefixList, (List_Links *)prefixPtr)) {
+	    prefixPtr = (Fsprefix *)NIL;
+	}
+    }
+    if (prefixPtr != (Fsprefix *)NIL) {
+	prefixPtr->flags |= FSPREFIX_LOCKED;
+    }
+    *prefixPtrPtr = prefixPtr;
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsprefixDone --
+ *
+ *	This is called to terminate a prefix table iteration.  The
+ *	current entry is unlocked so it could be deleted.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Clears the FSPREFIX_LOCKED bit in the prefix table entry.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+FsprefixDone(prefixPtr)
+    Fsprefix *prefixPtr;
+{
+    LOCK_MONITOR;
+
+    if (prefixPtr != (Fsprefix *)NIL) {
+	prefixPtr->flags &= ~FSPREFIX_LOCKED;
+    }
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsprefix_Dump --
+ *
+ *	Dump out the prefix table to the console, or copy individual
+ *	elements out to user space.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Console prints.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Fsprefix_Dump(index, argPtr)
+    int index;		/* Prefix table index, -1 means dump to console */
+    Address argPtr;	/* Buffer space for entry */
+{
+    Fsprefix *prefixPtr;		/* Pointer to table entry */
+    Boolean	foundPrefix = FALSE;
+    int i;
+
+    i = 0;
+    prefixPtr = (Fsprefix *)NIL;
+    FsprefixIterate(&prefixPtr);
+    while (prefixPtr != (Fsprefix *)NIL) {
+	if (index < 0) {
+	    /*
+	     * Dump the prefix entry to the console.
+	     */
+	    printf("%-20s ", prefixPtr->prefix);
+	    if (prefixPtr->hdrPtr != (Fs_HandleHeader *)NIL) {
+		printf("(%d,%d,%d,%x) ",
+			      prefixPtr->hdrPtr->fileID.serverID,
+			      prefixPtr->hdrPtr->fileID.type,
+			      prefixPtr->hdrPtr->fileID.major,
+			      prefixPtr->hdrPtr->fileID.minor);
+	    } else {
+		printf(" (no handle) ");
+	    }
+	    if (prefixPtr->flags & FSPREFIX_LOCAL) {
+		printf(" import ");
+	    }
+	    if (prefixPtr->flags & FSPREFIX_IMPORTED) {
+		printf(" import ");
+	    }
+	    if (prefixPtr->flags & FSPREFIX_EXPORTED) {
+		printf(" export ");
+	    }
+	    printf("\n");
+	} else if (i == index) {
+	    Fs_Prefix userPrefix;
+	    if (prefixPtr->hdrPtr != (Fs_HandleHeader *)NIL) {
+		/*
+		 * Call down to a domain-specific routine to get the
+		 * information about the domain.  We pass in a copy
+		 * of the file ID here because pseudo-file-system's
+		 * will change the ID to match the user-visible one,
+		 * not the internal one we use in the kernel.
+		 */
+		Fs_FileID fileID;
+		register Fs_FileID *fileIDPtr = &fileID;
+
+		*fileIDPtr = prefixPtr->hdrPtr->fileID;
+		(void) Fsutil_DomainInfo(fileIDPtr, &userPrefix.domainInfo);
+		userPrefix.serverID	= fileIDPtr->serverID;
+		userPrefix.domain	= fileIDPtr->major;
+		userPrefix.fileNumber	= fileIDPtr->minor;
+		userPrefix.version	= fileIDPtr->type;
+	    } else {
+		userPrefix.serverID	= RPC_BROADCAST_SERVER_ID;
+		userPrefix.domain	= -1;
+		userPrefix.fileNumber	= -1;
+		userPrefix.version	= -1;
+		userPrefix.domainInfo.maxKbytes = -1;
+		userPrefix.domainInfo.freeKbytes = -1;
+		userPrefix.domainInfo.maxFileDesc = -1;
+		userPrefix.domainInfo.freeFileDesc = -1;
+		userPrefix.domainInfo.blockSize = -1;
+		userPrefix.domainInfo.optSize = -1;
+	    }
+	    userPrefix.flags = prefixPtr->flags & ~FSPREFIX_LOCKED;
+	    if (prefixPtr->prefixLength >= FS_USER_PREFIX_LENGTH) {
+		bcopy((Address)prefixPtr->prefix, (Address)userPrefix.prefix, FS_USER_PREFIX_LENGTH);
+		userPrefix.prefix[FS_USER_PREFIX_LENGTH-1] = '\0';
+	    } else {
+		(void)strcpy(userPrefix.prefix, prefixPtr->prefix);
+	    }
+	    Vm_CopyOut(sizeof(Fs_Prefix), (Address)&userPrefix, argPtr);
+	    foundPrefix = TRUE;
+	}
+	i++;
+	if (!foundPrefix) {
+	    FsprefixIterate(&prefixPtr);
+	} else {
+	    FsprefixDone(prefixPtr);
+	    break;
+	}
+    }
+    if (index < 0 || foundPrefix) {
+	return(SUCCESS);
+    } else {
+	return(FS_INVALID_ARG);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsprefix_DumpExport --
+ *
+ *	Return the export list of a prefix to user space.  The input
+ *	buffer contains a prefix upon entry, and we then overwrite
+ *	that with an array of SpriteIDs that corresponds to the export list.
+ *	The end of the list is indicated by a spriteID of zero.
+ *
+ * Results:
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	Copies stuff out to user space.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Fsprefix_DumpExport(size, buffer)
+    int size;		/* Size of buffer in bytes */
+    Address buffer;	/* Buffer space for prefix then export list */
+{
+    Fsprefix *prefixPtr;	/* Pointer to table entry */
+    char     prefix[FS_MAX_NAME_LENGTH];
+    Fs_HandleHeader *hdrPtr;
+    Fs_FileID rootID;
+    char *name;
+    int domain;
+    int length;
+    int serverID;
+    ReturnStatus status;
+
+    if (Fsutil_StringNCopy(FS_MAX_NAME_LENGTH, buffer, prefix, &length) !=
+	    SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    } else if (length == FS_MAX_NAME_LENGTH) {
+	return(FS_INVALID_ARG);
+    }
+    status = Fsprefix_Lookup(prefix, FSPREFIX_EXACT|FSPREFIX_EXPORTED, -1,
+	    &hdrPtr, &rootID, &name, &serverID, &domain, &prefixPtr);
+    if (status == SUCCESS) {
+	status = DumpExportList(prefixPtr, size, buffer);
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DumpExportList --
+ *
+ *	A monitored routine to copy out the export list to user space.
+ *
+ * Results:
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	Copies stuff out to user space.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+DumpExportList(prefixPtr, size, buffer)
+    Fsprefix *prefixPtr;
+    int size;
+    char *buffer;
+{
+    int *exportList;
+    int *iPtr;
+    ReturnStatus status;
+    FsprefixExport *exportPtr;
+
+    LOCK_MONITOR;
+    if (size > 1000 * sizeof(int)) {
+	status = FS_INVALID_ARG;
+    } else {
+	exportList = (int *)malloc(size);
+	bzero((Address)exportList, size);
+	iPtr = exportList;
+	LIST_FORALL(&prefixPtr->exportList, (List_Links *)exportPtr) {
+	    *iPtr = exportPtr->spriteID;
+	    iPtr++;
+	}
+	status = Vm_CopyOut(size, (Address)exportList, (Address)buffer);
+	free((char *) exportList);
+    }
+    UNLOCK_MONITOR;
+    return(status);
+}
+
+@
+
+
+9.15
+log
+@Patched a memory leak.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fsprefix/fsprefixOps.c,v 9.14 91/09/10 18:39:32 rab Exp $ SPRITE (Berkeley)";
+d1178 1
+a1178 1
+ENTRY Boolean
+d1192 2
+d1246 2
+a1247 2
+	UNLOCK_MONITOR;
+	return(FAILURE);
+d1254 1
+a1254 2
+	UNLOCK_MONITOR;
+	return(FAILURE);
+d1261 2
+a1262 1
+	    return FAILURE; 
+d1282 1
+a1282 2
+	UNLOCK_MONITOR;
+	return(SUCCESS);
+d1284 3
+@
+
+
+9.14
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsprefix/RCS/fsprefixOps.c,v 9.13 91/05/10 12:42:18 mgbaker Exp Locker: rab $ SPRITE (Berkeley)";
+d2160 1
+@
+
+
+9.13
+log
+@Fixed infinite recovery loop due to stale prefixes.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsprefix/RCS/fsprefixOps.c,v 9.12 91/04/24 10:46:36 shirriff Exp $ SPRITE (Berkeley)";
+a39 1
+#include <fsutilTrace.h>
+a47 11
+#ifdef SOSP91
+#include <sospRecord.h>
+#endif
+
+#ifdef SOSP91
+int SOSPLookupNum = 0;		/* Number of name lookups. */
+int SOSPLookupComponent = 0;	/* Number of name components. */
+int SOSPLookupPrefixComponent = 0; /* Number of prefix components. */
+int SOSPLookupAbs = 0;		/* Number of absolute lookups. */
+#endif
+
+a54 5
+ * Debuging variables.
+ */
+Boolean fsprefix_FileNameTrace = FALSE;
+
+/*
+a150 2
+		    FSUTIL_TRACE_NAME(FSUTIL_TRACE_LOOKUP_START, lookupName);
+		    /* Fall Through */
+a169 3
+	    if (fsprefix_FileNameTrace) {
+		printf("\treturns <%x>\n", status);
+	    }
+a350 3
+    if (fsprefix_FileNameTrace) {
+	printf("\treturns <%x>\n", status);
+    }
+a548 4
+    if (fsprefix_FileNameTrace) {
+	printf("FsRedirect: \"%s\" (%d)\n", redirectInfoPtr->fileName,
+				redirectInfoPtr->prefixLength);
+    }
+a1100 21
+#ifdef SOSP91
+    if (status==SUCCESS) {
+	register char *ptr;
+	register int nameComponent, restComponent;
+	SOSPLookupNum++;
+	nameComponent = 1; /* Components in incoming path. */
+	for (ptr = fileName+1;*ptr != '\0';ptr++) {
+	    if (*ptr=='/') {
+		nameComponent++;
+	    }
+	}
+	restComponent = 1; /* Components in returned path. */
+	for (ptr = *lookupNamePtr;*ptr != '\0';ptr++) {
+	    if (*ptr=='/') {
+		restComponent++;
+	    }
+	}
+	SOSPLookupPrefixComponent += nameComponent-restComponent;
+	SOSPLookupComponent += nameComponent;
+    }
+#endif
+a1358 5
+#ifdef SOSP91
+	(void)(*fsio_StreamOpTable[hdrPtr->fileID.type].close)(&dummy,
+		    rpc_SpriteID, 0, 0, 0, (ClientData)NIL, (int *) NIL,
+		    (int *) NIL);
+#else
+a1360 1
+#endif
+a1468 3
+#ifdef SOSP91
+    SOSP_IN_NAME_LOOKUP_FIELD = 2;
+#endif
+a1473 3
+	if (fsprefix_FileNameTrace) {
+	    printf("Lookup: %s,", fileName);
+	}
+a1488 3
+#ifdef SOSP91
+		SOSP_IN_NAME_LOOKUP_FIELD = 0;
+#endif
+a1517 3
+#ifdef SOSP91
+		SOSP_IN_NAME_LOOKUP_FIELD = 0;
+#endif
+@
+
+
+9.13.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fsprefix/fsprefixOps.c,v 9.13 91/05/10 12:42:18 mgbaker Exp $ SPRITE (Berkeley)";
+@
+
+
+9.12
+log
+@Removed debug code.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsprefix/RCS/fsprefixOps.c,v 9.11 90/12/06 17:36:30 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d1229 1
+a1229 1
+Fsprefix_Clear(prefix, deleteFlag)
+d1234 3
+d1305 7
+d1483 3
+@
+
+
+9.11
+log
+@Added sosp measurements of components in pathnames.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsprefix/RCS/fsprefixOps.c,v 9.7 90/10/19 15:47:50 mendel Exp Locker: jhh $ SPRITE (Berkeley)";
+a57 1
+extern int vmShmDebug;		/* Ken's handy debug flag. */
+a1133 3
+	if (vmShmDebug) {
+	    printf("name: %s, ret: %s\n", fileName, *lookupNamePtr);
+	}
+@
+
+
+9.10
+log
+@added rw flags to close operation
+@
+text
+@d53 8
+d1131 24
+@
+
+
+9.9
+log
+@checking this in for Ken -- jhh
+@
+text
+@d1373 2
+a1374 1
+		    rpc_SpriteID, 0, 0, 0, (ClientData)NIL, (int *) NIL);
+@
+
+
+9.8
+log
+@SOSP changes
+@
+text
+@d49 4
+d194 1
+a194 1
+		     * from previous iteTrations to prevent a core leak.
+d1483 3
+d1509 3
+d1541 3
+@
+
+
+9.7
+log
+@Removed infinite recovery loops when user tries to abort an open with a
+signal.   Also, removed word "nuking" from printf.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsprefix/RCS/fsprefixOps.c,v 9.6 90/10/08 13:03:53 mendel Exp $ SPRITE (Berkeley)";
+d1367 1
+d1369 3
+d1373 1
+@
+
+
+9.6
+log
+@Changed name to fsprefixOps.c.
+Fixed include to use <> rather name "".
+Added function prototypes.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs.mendel/RCS/fsPrefix.c,v 1.1 90/01/16 17:11:21 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d190 1
+a190 1
+		     * from previous iterations to prevent a core leak.
+d248 2
+a249 1
+		    } else if (fileName[0] == '/') {
+d381 1
+a381 1
+	    } else {
+d495 2
+a496 1
+		    } else if (dstName[0] == '/') {
+d1360 1
+a1360 1
+	    printf("Fsprefix_HandleClose nuking \"%s\"\n", prefixPtr->prefix);
+@
+
+
+9.5
+log
+@new parameters to Net_SpriteIDToName
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsprefix.jhh/RCS/fsPrefix.c,v 9.4 90/02/08 09:55:44 brent Exp Locker: jhh $ SPRITE (Berkeley)";
+d34 14
+a47 14
+#include "sprite.h"
+#include "fsutil.h"
+#include "fs.h"
+#include "fsprefix.h"
+#include "prefixInt.h"
+#include "fsNameOps.h"
+#include "fsutilTrace.h"
+#include "fsStat.h"
+#include "fsio.h"
+#include "vm.h"
+#include "rpc.h"
+#include "proc.h"
+#include "dbg.h"
+#include "string.h"
+d63 15
+a77 9
+ReturnStatus FsprefixLookupRedirect();
+static ReturnStatus LocatePrefix();
+static ReturnStatus GetPrefix();
+static void PrefixUpdate();
+static Fsprefix *PrefixInsert();
+static void GetNilPrefixes();
+static char *NameOp();
+extern void FsprefixHandleCloseInt();
+static ReturnStatus DumpExportList();
+@
+
+
+9.4
+log
+@Fixed things so that hard-wired serverIDs for prefixes do not
+get forgotten accidentally during pathname redirection.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsprefix/RCS/fsPrefix.c,v 9.3 90/01/29 17:43:02 brent Exp $ SPRITE (Berkeley)";
+d35 1
+a39 1
+#include "fsutil.h"
+d1500 1
+a1500 1
+		char *hostname;
+d1504 3
+a1506 2
+		Net_SpriteIDToName((*hdrPtrPtr)->fileID.serverID, &hostname);
+		if (hostname != (char *)NIL) {
+@
+
+
+9.3
+log
+@Added "Importing <domain> from host foo" message
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsprefix/RCS/fsPrefix.c,v 9.2 89/10/13 16:56:24 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d873 1
+a873 1
+ *	handled that was passed in is installed.  Otherwise, we let
+d894 1
+a894 3
+    if (hdrPtr != (Fs_HandleHeader *)NIL) {
+	prefixPtr->serverID	= hdrPtr->fileID.serverID;
+    } else {
+d896 1
+a896 5
+	 * The serverID field is used when locating the server for
+	 * a prefix.  Here we set this field whether the prefix
+	 * table entry has been established or not.  This lets us
+	 * associate a prefix with a particular remote server,
+	 * i.e. a server that is not contacted via broadcast.
+a897 3
+	prefixPtr->serverID	= serverID;
+    }
+    if (prefixPtr->hdrPtr == (Fs_HandleHeader *)NIL) {
+a899 1
+	prefixPtr->flags	= flags & ~FSPREFIX_OVERRIDE;
+d902 21
+@
+
+
+9.2
+log
+@Changed PrefixInsert to add new prefixes to the end of the list.
+I'm hoping that this fixes the "Neg open count" error message
+that comes from PrefixOpenDone.  That can happen if a new
+prefix is added, with the same server, between the beginning
+and end of an open.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsprefix/RCS/fsPrefix.c,v 9.1 89/09/15 14:30:27 jhh Exp $ SPRITE (Berkeley)";
+d1489 2
+d1492 9
+@
+
+
+9.1
+log
+@sometimes prefixes don't have a name, so don't print it
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsprefix/RCS/fsPrefix.c,v 8.20 89/08/30 17:12:17 brent Exp $ SPRITE (Berkeley)";
+d844 16
+a859 1
+    List_Insert((List_Links *)prefixPtr, LIST_ATFRONT(prefixList));
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsprefix/RCS/fsPrefix.c,v 8.20 89/08/30 17:12:17 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d1325 3
+a1327 1
+	printf("Fsprefix_HandleClose nuking \"%s\"\n", prefixPtr->prefix);
+@
+
+
+8.20
+log
+@Removed lint
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsprefix/RCS/fsPrefix.c,v 8.19 89/08/30 17:07:46 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+8.19
+log
+@Fixed buggy call to stream-specific close routine
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsprefix/RCS/fsPrefix.c,v 8.18 89/08/21 15:28:25 mendel Exp $ SPRITE (Berkeley)";
+a1281 3
+    register Fs_HandleHeader *hdrPtr;
+    Fs_Stream dummy;
+
+d1334 16
+a1349 16
+	status = Fsio_FileClose(&dummy, rpc_SpriteID, 0,
+		0, 0, (ClientData)NIL);
+	status = FsrmtFileClose(&dummy, rpc_SpriteID, 0,
+		0, 0, (ClientData)NIL);
+	status = Fsio_PipeClose(&dummy, rpc_SpriteID, 0,
+		0, 0, (ClientData)NIL);
+	status = Fsio_DeviceClose(&dummy, rpc_SpriteID, 0,
+		0, 0, (ClientData)NIL);
+	status = Fsrmt_IOClose(&dummy, rpc_SpriteID, 0,
+		0, 0, (ClientData)NIL);
+	status = FspdevControlClose(&dummy, rpc_SpriteID, 0,
+		0, 0, (ClientData)NIL);
+	status = FspdevPseudoStreamClose(&dummy, rpc_SpriteID, 0,
+		0, 0, (ClientData)NIL);
+	status = FspdevServerStreamClose(&dummy, rpc_SpriteID, 0,
+		0, 0, (ClientData)NIL);
+@
+
+
+8.18
+log
+@
+Break up fs into many modules.    
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPrefix.c,v 8.14 89/08/12 10:38:21 brent Exp $ SPRITE (Berkeley)";
+d1335 20
+a1354 1
+		    rpc_SpriteID, 0, 0, (ClientData)NIL);
+@
+
+
+8.17
+log
+@need to update flags when changchanging a local prefix to an exported
+@
+text
+@d7 1
+a7 1
+ *	passed through FsLookupOperation (and FsTwoNameOperation) that
+d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPrefix.c,v 8.16 89/08/17 17:18:25 brent Exp $ SPRITE (Berkeley)";
+d36 2
+a37 2
+#include "fsInt.h"
+#include "fsPrefix.h"
+d39 2
+a40 3
+#include "fsOpTable.h"
+#include "fsRecovery.h"
+#include "fsTrace.h"
+d42 1
+d58 1
+a58 1
+Boolean fsFileNameTrace = FALSE;
+d63 1
+a63 1
+ReturnStatus FsLookupRedirect();
+d67 1
+a67 1
+static FsPrefix *PrefixInsert();
+d70 2
+a71 1
+extern void FsPrefixHandleCloseInt();
+d77 1
+a77 1
+ * FsLookupOperation --
+d97 1
+a97 1
+FsLookupOperation(fileName, operation, follow, argsPtr, resultsPtr, nameInfoPtr)
+d110 1
+a110 1
+    FsNameInfo	*nameInfoPtr;	/* If non-NIL, set up to contain state needed
+d117 1
+a117 1
+    FsHandleHeader 	*hdrPtr;	/* Set from the prefix table lookup */
+d120 1
+a120 1
+    FsRedirectInfo 	*redirectInfoPtr;/* Returned from servers if their
+d122 1
+a122 1
+    FsRedirectInfo 	*oldInfoPtr;	/* Needed to free up the new name
+d126 1
+a126 1
+    FsPrefix 		*prefixPtr;	/* Returned from prefix table lookup 
+d133 2
+a134 2
+    redirectInfoPtr = (FsRedirectInfo *) NIL;
+    oldInfoPtr = (FsRedirectInfo *) NIL;
+d151 1
+a151 1
+		    FS_TRACE_NAME(FS_TRACE_LOOKUP_START, lookupName);
+d160 2
+a161 2
+		    register FsLookupArgs *lookupArgsPtr =
+			    (FsLookupArgs *)argsPtr;
+d170 1
+a170 1
+	    status = (*fsDomainLookup[domainType][operation])
+d172 1
+a172 1
+	    if (fsFileNameTrace) {
+d186 1
+a186 1
+		    fsStats.prefix.redirects++; numRedirects++;
+d189 1
+a189 1
+			fsStats.prefix.loops++;
+d191 1
+a191 1
+			status = FsLookupRedirect(redirectInfoPtr, prefixPtr,
+d193 1
+a193 1
+			if (oldInfoPtr != (FsRedirectInfo *)NIL) {
+d197 1
+a197 1
+			redirectInfoPtr = (FsRedirectInfo *)NIL;
+d202 1
+a202 1
+		    if (nameInfoPtr != (FsNameInfo *)NIL) {
+d213 1
+a213 1
+				((FsOpenResults *)resultsPtr)->nameID;
+d227 1
+a227 1
+			fsStats.prefix.stale++;
+d229 1
+a229 1
+			fsStats.prefix.timeouts++;
+d231 1
+a231 1
+		    FsWantRecovery(hdrPtr);
+d234 1
+a234 1
+		    status = FsWaitForRecovery(hdrPtr, status);
+d248 1
+a248 1
+			FsPrefixHandleClose(prefixPtr, FS_IMPORTED_PREFIX);
+d258 1
+a258 1
+    if (oldInfoPtr != (FsRedirectInfo *)NIL) {
+d268 1
+a268 1
+ * FsTwoNameOperation --
+d270 1
+a270 1
+ *	This is a version of FsLookupOperation that deals with two
+d297 1
+a297 1
+FsTwoNameOperation(operation, srcName, dstName, lookupArgsPtr)
+d301 1
+a301 1
+    FsLookupArgs	*lookupArgsPtr; /* ID information */
+d306 2
+a307 2
+    FsHandleHeader	*srcHdrPtr;	/* Prefix handle of srcName */
+    FsHandleHeader 	*dstHdrPtr;
+d310 2
+a311 2
+    FsPrefix		*srcPrefixPtr;	/* Prefix entry for srcName */
+    FsPrefix 		*dstPrefixPtr;
+d320 1
+a320 1
+     * FsLookupRedirect() subsequently generates a new absolute pathname
+d326 3
+a328 3
+    FsRedirectInfo	*redirectInfoPtr = (FsRedirectInfo *) NIL;
+    FsRedirectInfo	*srcRedirectPtr = (FsRedirectInfo *) NIL;
+    FsRedirectInfo	*dstRedirectPtr = (FsRedirectInfo *) NIL;
+d352 1
+a352 1
+    status = (*fsDomainLookup[srcDomain][operation])
+d355 1
+a355 1
+    if (fsFileNameTrace) {
+d366 1
+a366 1
+	    FsHandleHeader *staleHdrPtr;
+d368 1
+a368 1
+	    FsWantRecovery(staleHdrPtr);
+d371 1
+a371 1
+	    status = FsWaitForRecovery(staleHdrPtr, status);
+d380 1
+a380 1
+		    FsPrefixHandleClose(srcPrefixPtr, FS_IMPORTED_PREFIX);
+d383 1
+a383 1
+		    FsPrefixHandleClose(dstPrefixPtr, FS_IMPORTED_PREFIX);
+d396 1
+a396 1
+	    fsStats.prefix.redirects++;
+d400 1
+a400 1
+		fsStats.prefix.loops++;
+d402 1
+a402 1
+		status = FsLookupRedirect(redirectInfoPtr, srcPrefixPtr,
+d404 1
+a404 1
+		if (srcRedirectPtr != (FsRedirectInfo *)NIL) {
+d408 1
+a408 1
+		redirectInfoPtr = (FsRedirectInfo *)NIL;
+d410 1
+a410 1
+		status = FsLookupRedirect(redirectInfoPtr, dstPrefixPtr,
+d412 1
+a412 1
+		if (dstRedirectPtr != (FsRedirectInfo *)NIL) {
+d416 1
+a416 1
+		redirectInfoPtr = (FsRedirectInfo *)NIL;
+d426 2
+a427 2
+	    FsOpenArgs		openArgs;
+	    FsGetAttrResults	getAttrResults;
+d435 1
+a435 1
+	    FsSetIDs((Proc_ControlBlock *)NIL, &openArgs.id);
+d443 1
+a443 1
+	    status2 = (*fsDomainLookup[dstDomain][FS_DOMAIN_GET_ATTR])
+d459 1
+a459 1
+		    fsStats.prefix.redirects++;
+d463 1
+a463 1
+			fsStats.prefix.loops++;
+d465 1
+a465 1
+			status = FsLookupRedirect(redirectInfoPtr, dstPrefixPtr,
+d467 1
+a467 1
+			if (dstRedirectPtr != (FsRedirectInfo *)NIL) {
+d471 1
+a471 1
+			redirectInfoPtr = (FsRedirectInfo *)NIL;
+d482 1
+a482 1
+		    FsWantRecovery(dstHdrPtr);
+d485 1
+a485 1
+		    status2 = FsWaitForRecovery(dstHdrPtr, status2);
+d489 1
+a489 1
+			FsPrefixHandleClose(dstPrefixPtr, FS_IMPORTED_PREFIX);
+d512 1
+a512 1
+    if (srcRedirectPtr != (FsRedirectInfo *)NIL) {
+d515 1
+a515 1
+    if (dstRedirectPtr != (FsRedirectInfo *)NIL) {
+d524 1
+a524 1
+ * FsLookupRedirect --
+d541 3
+a543 3
+FsLookupRedirect(redirectInfoPtr, prefixPtr, fileNamePtr)
+    FsRedirectInfo	*redirectInfoPtr;/* New name and prefix from server */
+    FsPrefix		*prefixPtr;	/* Prefix table entry used to select
+d555 1
+a555 1
+    if (fsFileNameTrace) {
+d569 1
+a569 1
+	Fs_PrefixLoad(prefix, RPC_BROADCAST_SERVER_ID, FS_IMPORTED_PREFIX);
+d636 1
+a636 1
+	  "FsLookupOperation: Bad format of returned file name \"%s\".\n",
+d692 1
+a692 1
+ * FsPrefixInit --
+d705 1
+a705 1
+FsPrefixInit()
+d713 1
+a713 1
+ * FsPrefixInstall --
+d725 2
+a726 2
+ENTRY FsPrefix *
+FsPrefixInstall(prefix, hdrPtr, domainType, flags)
+d728 1
+a728 1
+    FsHandleHeader	*hdrPtr;	/* Handle from server of the prefix */
+d730 1
+a730 1
+    int			flags;	/* FS_EXPORTED_PREFIX | FS_IMPORTED_PREFIX. */
+d732 1
+a732 1
+    register FsPrefix *prefixPtr;
+d754 1
+a754 1
+ * Fs_PrefixLoad --
+d769 1
+a769 1
+Fs_PrefixLoad(prefix, serverID, flags)
+d774 1
+a774 1
+    register FsPrefix *prefixPtr;
+d783 1
+a783 1
+	    PrefixUpdate(prefixPtr, serverID, (FsHandleHeader *)NIL, -1, 
+d792 1
+a792 1
+    (void)PrefixInsert(prefix, serverID, (FsHandleHeader *)NIL, -1,
+d816 1
+a816 1
+static INTERNAL FsPrefix *
+d820 1
+a820 1
+    FsHandleHeader	*hdrPtr;	/* Handle for the prefix from server */
+d824 1
+a824 1
+    register FsPrefix *prefixPtr;
+d827 2
+a828 2
+    prefixPtr = (FsPrefix *)malloc(sizeof(FsPrefix));
+    if (hdrPtr != (FsHandleHeader *)NIL) {
+d873 1
+a873 1
+    FsPrefix		*prefixPtr;	/* Table entry to update */
+d875 1
+a875 1
+    FsHandleHeader	*hdrPtr;	/* Handle for the prefix from server */
+d879 1
+a879 1
+    if (hdrPtr != (FsHandleHeader *)NIL) {
+d891 1
+a891 1
+    if (prefixPtr->hdrPtr == (FsHandleHeader *)NIL) {
+d894 1
+a894 1
+	prefixPtr->flags	= flags & ~FS_OVERRIDE_PREFIX;
+d914 1
+a914 1
+ * FsPrefixLookup --
+d930 1
+a930 1
+FsPrefixLookup(fileName, flags, clientID, hdrPtrPtr, rootIDPtr, lookupNamePtr, 
+d933 2
+a934 2
+    int 	flags;		/* FS_IMPORTED_PREFIX | FS_EXACT_PREFIX and
+				 * one of FS_EXPORTED_PREFIX|FS_LOCAL_PREFIX */
+d936 1
+a936 1
+    FsHandleHeader **hdrPtrPtr;	/* Return, the handle for the prefix.  This is
+d945 1
+a945 1
+    FsPrefix	**prefixPtrPtr;	/* Return, prefix used to find the file */
+d949 3
+a951 3
+    register FsPrefix 		*longestPrefixPtr;  /* Longest match */
+    register FsPrefix		*prefixPtr;	    /* Pointer to table entry */
+    register FsNameInfo		*nameInfoPtr;	    /* Name info for prefix */
+d963 4
+a966 4
+    longestPrefixPtr = (FsPrefix *) NIL;
+    exactMatch = (flags & FS_EXACT_PREFIX);
+    wantLink = (flags & FS_LINK_NOT_PREFIX);
+    flags &= ~(FS_EXACT_PREFIX|FS_LINK_NOT_PREFIX);
+d973 1
+a973 1
+	fsStats.prefix.relative++;
+d986 1
+a986 1
+	fsStats.prefix.absolute++;
+d1020 1
+a1020 1
+		    if (longestPrefixPtr == (FsPrefix *)NIL) {
+d1029 2
+a1030 2
+	if (longestPrefixPtr != (FsPrefix *)NIL) {
+	    if ((flags & FS_EXPORTED_PREFIX) && (clientID >= 0) &&
+d1036 1
+a1036 1
+		register FsPrefixExport *exportPtr;
+d1049 1
+a1049 1
+		if (*hdrPtrPtr == (FsHandleHeader *)NIL) {
+d1059 1
+a1059 1
+		    if (longestPrefixPtr->flags & FS_REMOTE_PREFIX) {
+d1064 1
+a1064 1
+		    *prefixPtrPtr = (FsPrefix *)NIL;
+d1092 1
+a1092 1
+ * Fs_PrefixExport --
+d1106 1
+a1106 1
+Fs_PrefixExport(prefix, clientID, delete)
+d1111 2
+a1112 2
+    register FsPrefix *prefixPtr;
+    register FsPrefixExport *exportPtr;
+d1130 1
+a1130 1
+		exportPtr = mnew(FsPrefixExport);
+d1145 1
+a1145 1
+ * Fs_PrefixClear --
+d1163 1
+a1163 1
+Fs_PrefixClear(prefix, deleteFlag)
+d1169 2
+a1170 2
+    register FsPrefix *prefixPtr;
+    FsPrefix *targetPrefixPtr = (FsPrefix *)NIL;
+d1182 1
+a1182 1
+	    if (prefixPtr->flags & (FS_EXPORTED_PREFIX|FS_LOCAL_PREFIX)) {
+d1192 1
+a1192 1
+		if (prefixPtr->hdrPtr != (FsHandleHeader *)NIL) {
+d1207 2
+a1208 2
+		if (prefixPtr->hdrPtr != (FsHandleHeader *)NIL) {
+		    register FsHandleHeader *hdrPtr = prefixPtr->hdrPtr;
+d1229 1
+a1229 1
+    if (targetPrefixPtr == (FsPrefix *)NIL) {
+d1236 2
+a1237 2
+	if (targetPrefixPtr->hdrPtr != (FsHandleHeader *)NIL) {
+	    FsPrefixHandleCloseInt(targetPrefixPtr, FS_ANY_PREFIX);
+d1240 1
+a1240 1
+	targetPrefixPtr->flags &= ~(FS_EXPORTED_PREFIX|FS_LOCAL_PREFIX);
+d1244 1
+a1244 1
+		register FsPrefixExport *exportPtr;
+d1246 1
+a1246 1
+		    (FsPrefixExport *)List_First(&targetPrefixPtr->exportList);
+d1262 1
+a1262 1
+ * FsPrefixHandleClose --
+d1278 3
+a1280 3
+FsPrefixHandleClose(prefixPtr, flags)
+    FsPrefix *prefixPtr;
+    int flags;			/* FS_ANY_PREFIX, FS_EXPORTED_PREFIX */
+d1282 1
+a1282 1
+    register FsHandleHeader *hdrPtr;
+d1286 1
+a1286 1
+    FsPrefixHandleCloseInt(prefixPtr, flags);
+d1293 1
+a1293 1
+ * FsPrefixHandleCloseInt --
+d1309 2
+a1310 2
+FsPrefixHandleCloseInt(prefixPtr, flags)
+    FsPrefix *prefixPtr;
+d1313 1
+a1313 1
+    register FsHandleHeader *hdrPtr;
+d1316 4
+a1319 4
+    if (prefixPtr->hdrPtr != (FsHandleHeader *)NIL) {
+	if ((flags & FS_IMPORTED_PREFIX) &&
+		(prefixPtr->flags & (FS_EXPORTED_PREFIX|FS_LOCAL_PREFIX))) {
+	    printf("FsPrefixHandleClose: \"%s\" is exported (mounted)\n",
+d1322 3
+a1324 3
+	} else if ((flags & FS_EXPORTED_PREFIX) &&
+		(prefixPtr->flags & (FS_EXPORTED_PREFIX|FS_LOCAL_PREFIX) == 0)){
+	    printf("FsPrefixHandleClose: \"%s\" is not exported (mounted)\n",
+d1328 1
+a1328 1
+	printf("FsPrefixHandleClose nuking \"%s\"\n", prefixPtr->prefix);
+d1330 2
+a1331 2
+	prefixPtr->hdrPtr = (FsHandleHeader *)NIL;
+	FsHandleLock(hdrPtr);
+d1334 1
+a1334 1
+	(void)(*fsStreamOpTable[hdrPtr->fileID.type].close)(&dummy,
+d1366 1
+a1366 1
+    FsHandleHeader **hdrPtrPtr;	/* The handle that the domain prefix routine
+d1373 1
+a1373 1
+    FsSetIDs(Proc_GetEffectiveProc(), &ids);
+d1375 1
+a1375 1
+	status = (*fsDomainLookup[domainType][FS_DOMAIN_IMPORT])
+d1378 1
+a1378 1
+	status = FsSpriteImport(fileName, serverID, &ids, domainTypePtr,
+d1401 1
+a1401 1
+ *	May call LocatePrefix and FsPrefixInstall.
+d1412 1
+a1412 1
+    FsHandleHeader **hdrPtrPtr;		/* Result, handle for the prefix */
+d1417 1
+a1417 1
+    FsPrefix 	**prefixPtrPtr;		/* Result, reference to prefix table */
+d1420 1
+a1420 1
+    register int flags = FS_IMPORTED_PREFIX;
+d1424 1
+a1424 1
+	flags |= FS_LINK_NOT_PREFIX;
+d1427 1
+a1427 1
+	if (fsFileNameTrace) {
+d1430 1
+a1430 1
+	status = FsPrefixLookup(fileName, flags, FS_LOCALHOST_ID, hdrPtrPtr,
+d1436 1
+a1436 1
+	     * FsPrefixLookup has returned us the prefix in lookupName.
+d1456 3
+a1458 3
+		fsStats.prefix.found++;
+		(void)FsPrefixInstall(*lookupNamePtr, *hdrPtrPtr,*domainTypePtr,
+				FS_IMPORTED_PREFIX);
+d1468 1
+a1468 1
+ * FsPrefixReopen --
+d1485 1
+a1485 1
+FsPrefixReopen(serverID)
+d1488 1
+a1488 1
+    FsPrefix *prefixPtr;
+d1490 1
+a1490 1
+    FsHandleHeader *hdrPtr;
+d1496 1
+a1496 1
+	prefixPtr = (FsPrefix *)List_First(&nilPrefixList);
+d1509 2
+a1510 2
+		(void)FsPrefixInstall(prefixPtr->prefix, hdrPtr, domainType,
+			    FS_IMPORTED_PREFIX);
+d1538 1
+a1538 1
+    FsPrefix *prefixPtr;
+d1544 2
+a1545 2
+	if (prefixPtr->hdrPtr == (FsHandleHeader *)NIL) {
+	    register FsPrefix *newPrefixPtr;
+d1547 1
+a1547 1
+	    newPrefixPtr = mnew(FsPrefix);
+d1561 1
+a1561 1
+ * FsPrefixOpenCheck --
+d1573 1
+a1573 1
+ *	FsPrefixOpenDone is called.
+d1578 2
+a1579 2
+FsPrefixOpenCheck(prefixHdrPtr)
+    FsHandleHeader *prefixHdrPtr;	/* Handle from the prefix table */
+d1582 1
+a1582 1
+    FsPrefix *prefixPtr;
+d1586 1
+a1586 1
+	if ((prefixPtr->hdrPtr != (FsHandleHeader *)NIL) &&
+d1591 1
+a1591 1
+		    "FsPrefixOpenCheck waiting for recovery\n");
+d1597 1
+a1597 1
+		    printf("FsPrefixOpenCheck aborted\n");
+d1601 1
+a1601 1
+		    printf("FsPrefixOpenCheck ok\n");
+d1622 1
+a1622 1
+ * FsPrefixOpenDone --
+d1637 2
+a1638 2
+FsPrefixOpenDone(prefixHdrPtr)
+    FsHandleHeader *prefixHdrPtr;	/* Handle from the prefix table */
+d1640 1
+a1640 1
+    FsPrefix *prefixPtr;
+d1644 1
+a1644 1
+	if ((prefixPtr->hdrPtr != (FsHandleHeader *)NIL) &&
+d1649 1
+a1649 1
+		printf( "FsPrefixOpenDone, neg open cnt\n");
+d1670 1
+a1670 1
+ * FsPrefixRecoveryCheck --
+d1680 1
+a1680 1
+ *	Blocks recovery until FsPrefixOpenDone is called.
+d1685 1
+a1685 1
+FsPrefixRecoveryCheck(serverID)
+d1688 1
+a1688 1
+    FsPrefix *prefixPtr;
+d1692 1
+a1692 1
+	if ((prefixPtr->hdrPtr != (FsHandleHeader *)NIL) &&
+d1713 1
+a1713 1
+ * FsPrefixAllowOpens --
+d1729 1
+a1729 1
+FsPrefixAllowOpens(serverID)
+d1732 1
+a1732 1
+    FsPrefix *prefixPtr;
+d1737 1
+a1737 1
+	if ((prefixPtr->hdrPtr != (FsHandleHeader *)NIL) &&
+d1750 1
+a1750 1
+ * FsPrefixFromFileID --
+d1766 2
+a1767 2
+ENTRY FsPrefix *
+FsPrefixFromFileID(fileIDPtr)
+d1770 1
+a1770 1
+    FsPrefix *prefixPtr;
+d1774 1
+a1774 1
+	if ((prefixPtr->hdrPtr != (FsHandleHeader *)NIL) &&
+d1787 1
+a1787 1
+    return((FsPrefix *)NIL);
+d1793 1
+a1793 1
+ * FsPrefixOpenInProgress --
+d1805 1
+a1805 1
+ *	FsPrefixOpenDone is called.
+d1810 1
+a1810 1
+FsPrefixOpenInProgress(fileIDPtr)
+d1814 1
+a1814 1
+    FsPrefix *prefixPtr;
+d1818 1
+a1818 1
+	if ((prefixPtr->hdrPtr != (FsHandleHeader *)NIL) &&
+d1841 1
+a1841 1
+ *	which call Fs_PrefixDump.
+d1856 2
+a1857 2
+FsPrefixIterate(prefixPtrPtr)
+    FsPrefix **prefixPtrPtr;		/* In/Out pointer to prefix entry */
+d1859 1
+a1859 1
+    register FsPrefix *prefixPtr;
+d1863 2
+a1864 2
+    if (prefixPtr == (FsPrefix *)NIL) {
+	prefixPtr = (FsPrefix *)List_First(prefixList);
+d1866 2
+a1867 2
+	prefixPtr->flags &= ~FS_PREFIX_LOCKED;
+	prefixPtr = (FsPrefix *)List_Next(((List_Links *)prefixPtr));
+d1869 1
+a1869 1
+	    prefixPtr = (FsPrefix *)NIL;
+d1872 2
+a1873 2
+    if (prefixPtr != (FsPrefix *)NIL) {
+	prefixPtr->flags |= FS_PREFIX_LOCKED;
+d1882 1
+a1882 1
+ * FsPrefixDone --
+d1891 1
+a1891 1
+ *	Clears the FS_PREFIX_LOCKED bit in the prefix table entry.
+d1896 2
+a1897 2
+FsPrefixDone(prefixPtr)
+    FsPrefix *prefixPtr;
+d1901 2
+a1902 2
+    if (prefixPtr != (FsPrefix *)NIL) {
+	prefixPtr->flags &= ~FS_PREFIX_LOCKED;
+d1910 1
+a1910 1
+ * Fs_PrefixDump --
+d1925 1
+a1925 1
+Fs_PrefixDump(index, argPtr)
+d1929 1
+a1929 1
+    FsPrefix *prefixPtr;		/* Pointer to table entry */
+d1934 3
+a1936 3
+    prefixPtr = (FsPrefix *)NIL;
+    FsPrefixIterate(&prefixPtr);
+    while (prefixPtr != (FsPrefix *)NIL) {
+d1942 1
+a1942 1
+	    if (prefixPtr->hdrPtr != (FsHandleHeader *)NIL) {
+d1951 1
+a1951 1
+	    if (prefixPtr->flags & FS_LOCAL_PREFIX) {
+d1954 1
+a1954 1
+	    if (prefixPtr->flags & FS_IMPORTED_PREFIX) {
+d1957 1
+a1957 1
+	    if (prefixPtr->flags & FS_EXPORTED_PREFIX) {
+d1963 1
+a1963 1
+	    if (prefixPtr->hdrPtr != (FsHandleHeader *)NIL) {
+d1975 1
+a1975 1
+		(void) FsDomainInfo(fileIDPtr, &userPrefix.domainInfo);
+d1992 1
+a1992 1
+	    userPrefix.flags = prefixPtr->flags & ~FS_PREFIX_LOCKED;
+d2004 1
+a2004 1
+	    FsPrefixIterate(&prefixPtr);
+d2006 1
+a2006 1
+	    FsPrefixDone(prefixPtr);
+d2020 1
+a2020 1
+ * Fs_PrefixDumpExport --
+d2037 1
+a2037 1
+Fs_PrefixDumpExport(size, buffer)
+d2041 1
+a2041 1
+    FsPrefix *prefixPtr;	/* Pointer to table entry */
+d2043 1
+a2043 1
+    FsHandleHeader *hdrPtr;
+d2051 1
+a2051 1
+    if (Fs_StringNCopy(FS_MAX_NAME_LENGTH, buffer, prefix, &length) !=
+d2057 1
+a2057 1
+    status = FsPrefixLookup(prefix, FS_EXACT_PREFIX|FS_EXPORTED_PREFIX, -1,
+d2081 1
+a2081 1
+ENTRY ReturnStatus
+d2083 1
+a2083 1
+    FsPrefix *prefixPtr;
+d2090 1
+a2090 1
+    FsPrefixExport *exportPtr;
+@
+
+
+8.16
+log
+@Nuked warning statement.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPrefix.c,v 8.15 89/08/17 12:14:00 brent Exp $ SPRITE (Berkeley)";
+d852 8
+a859 3
+ *	Reset the hdrPtr for an existing prefix. If the hdtPtr is not
+ *	NIL then the serverID it contains is used, otherwise the
+ *	serverID parameter is used.
+d893 1
+a893 1
+	prefixPtr->flags	= flags;
+d896 10
+@
+
+
+8.15
+log
+@Added more checks against inadvertent erasing of prefix table entries.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPrefix.c,v 8.14 89/08/12 10:38:21 brent Exp $ SPRITE (Berkeley)";
+d876 7
+d885 1
+a885 5
+    if ((prefixPtr->hdrPtr != (FsHandleHeader *)NIL) &&
+	(hdrPtr == (FsHandleHeader *)NIL)) {
+	printf("PrefixUpdate: \"%s\" almost lost its handle\n",
+	    prefixPtr->prefix);
+    } else {
+@
+
+
+8.14
+log
+@Added consistency checks to FsPrefixHandleClose so that a server
+doesn't stupidly erase a prefix table entry for one of its own
+disks.  Had to make Fs_PrefixClear smart about prefix aliases because
+during bootstrap we have to clear one alias, but in generate we
+don't want people to be able to clear a prefix without unmounting.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPrefix.c,v 8.13 89/07/17 12:31:35 shirriff Exp $ SPRITE (Berkeley)";
+d878 11
+a888 5
+    prefixPtr->hdrPtr		= hdrPtr;
+    prefixPtr->domainType	= domainType;
+    prefixPtr->flags		= flags;
+    prefixPtr->delayOpens	= FALSE;
+    prefixPtr->activeOpens	= 0;
+d1309 1
+@
+
+
+8.13
+log
+@Fixed typographical errors.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPrefix.c,v 8.12 89/07/15 16:24:47 jhh Exp Locker: shirriff $ SPRITE (Berkeley)";
+d247 1
+a247 1
+			FsPrefixHandleClose(prefixPtr);
+d379 1
+a379 1
+		    FsPrefixHandleClose(srcPrefixPtr);
+d382 1
+a382 1
+		    FsPrefixHandleClose(dstPrefixPtr);
+d488 1
+a488 1
+			FsPrefixHandleClose(dstPrefixPtr);
+d1145 3
+d1151 4
+d1157 13
+a1169 13
+	    if (prefixPtr->hdrPtr != (FsHandleHeader *)NIL) {
+		FsPrefixHandleCloseInt(prefixPtr);
+	    }
+	    prefixPtr->serverID = RPC_BROADCAST_SERVER_ID;
+	    prefixPtr->flags &= ~FS_EXPORTED_PREFIX;
+	    if (deleteFlag && prefixPtr->prefixLength != 1) {
+		free((Address) prefixPtr->prefix);
+		while (! List_IsEmpty(&prefixPtr->exportList)) {
+		    register FsPrefixExport *exportPtr;
+		    exportPtr =
+			(FsPrefixExport *)List_First(&prefixPtr->exportList);
+		    List_Remove((List_Links *)exportPtr);
+		    free((Address)exportPtr);
+a1170 3
+
+		List_Remove((List_Links *)prefixPtr);
+		free((Address) prefixPtr);
+d1172 24
+a1195 2
+	    UNLOCK_MONITOR;
+	    return(SUCCESS);
+d1197 5
+d1203 29
+a1231 2
+    UNLOCK_MONITOR;
+    return(FAILURE);
+d1240 3
+a1242 1
+ *	cleaning up a prefix table entry.
+d1253 1
+a1253 1
+FsPrefixHandleClose(prefixPtr)
+d1255 1
+d1261 1
+a1261 1
+    FsPrefixHandleCloseInt(prefixPtr);
+d1284 1
+a1284 1
+FsPrefixHandleCloseInt(prefixPtr)
+d1286 1
+d1292 11
+@
+
+
+8.12
+log
+@removed FS_OVERRIDE_PREFIX flag
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPrefix.c,v 8.11 89/06/30 15:26:54 brent Exp $ SPRITE (Berkeley)";
+d82 1
+a82 1
+ *	results	if the pathname left the domain of the server orignially
+d103 1
+a103 1
+				 * is assummed that the first thing in the
+d992 1
+a992 1
+		     * a complete pathname component.  This implis that
+d1464 1
+a1464 1
+ *	This is called to indicate that an open is occuring in
+@
+
+
+8.11
+log
+@Added check against FS_REMOTE_PREFIX so domains don't get
+"stuck" on a particular server unless they have been
+explicitly assigned to a server from Fs_Command(FS_PREFIX_LOAD...)
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPrefix.c,v 8.10 89/06/15 09:40:44 brent Exp $ SPRITE (Berkeley)";
+d763 1
+a763 3
+ *	Add an entry to the prefix table.  If the FS_OVERRIDE_PREFIX flag
+ *	is present then the existing flags (like import/export) will be
+ *	over-written by the passed-in flags.
+d779 5
+a783 3
+	    if (flags & FS_OVERRIDE_PREFIX) {
+		prefixPtr->flags = flags & ~FS_OVERRIDE_PREFIX;
+	    }
+d792 1
+a792 1
+			flags & ~FS_OVERRIDE_PREFIX);
+@
+
+
+8.10
+log
+@Added iteration routines so FsDomainInfo is called
+outside the monitor lock.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPrefix.c,v 8.9 89/06/09 12:36:06 jhh Exp $ SPRITE (Berkeley)";
+d1027 5
+a1031 1
+		     * so it can broadcast to get the prefix's handle.
+d1034 5
+a1038 1
+		    *serverIDPtr = longestPrefixPtr->serverID;
+@
+
+
+8.9
+log
+@Added ability to specify a server for a prefix.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPrefix.c,v 8.8 89/05/30 16:10:10 jhh Exp $ SPRITE (Berkeley)";
+a518 40
+#ifdef notdef
+FooProc()
+{
+    status = Fs_GetAttributes(srcFile, FS_ATTR_FILE, &srcAttr);
+    if (status != SUCCESS) {
+	return(status);
+    }
+    /*
+     * Massage the dstName to get the name of its parent.
+     * We copy the destination name and note the slash that
+     * delimits the last component of the name.
+     */
+    dstParentName = (char *)malloc(FS_MAX_PATH_NAME_LENGTH);
+    pPtr = parentName;
+    lastSlash = (char *)NIL;
+    for (cPtr = dstName ; *cPtr ; cPtr++) {
+	if (*cPtr == '/') {
+	    lastSlash = cPtr;
+	}
+	*pPtr = *cPtr;
+    }
+    if (lastSlash == (char *)NIL) {
+	free((Address)dstParentName);
+	dstParentName = ".";
+    } else {
+	*lastSlash = '\0';
+    }
+    status = Fs_GetAttributes(dstParentName, FS_ATTR_FILE, &dstParentAttr);
+    if (lastSlash != (char *)NIL) {
+	free((Address)dstParentName);
+    }
+    if (status != SUCCESS) {
+	return(status);
+    }
+    if (srcAttr.serverID != dstParentAttr.serverID ||
+	srcAttr.domain != dstParentAttr.domain) {
+	status = FS_CROSS_DOMAIN_OPERATION;
+    }
+}
+#endif notdef
+d1270 4
+d1729 74
+d1817 1
+a1817 1
+ENTRY ReturnStatus
+d1822 1
+a1822 1
+    register FsPrefix *prefixPtr;	/* Pointer to table entry */
+a1825 2
+    LOCK_MONITOR;
+
+d1827 3
+a1829 1
+    LIST_FORALL(prefixList, (List_Links *)prefixPtr) {
+d1857 7
+a1863 1
+
+d1882 2
+d1885 1
+a1885 1
+	    userPrefix.flags = prefixPtr->flags;
+d1894 6
+a1901 1
+	i++;
+a1902 1
+    UNLOCK_MONITOR;
+@
+
+
+8.8
+log
+@Removed call to Sync_LockRegister
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPrefix.c,v 8.7 89/05/30 12:17:14 mgbaker Exp Locker: jhh $ SPRITE (Berkeley)";
+d608 1
+a608 1
+	Fs_PrefixLoad(prefix, FS_IMPORTED_PREFIX);
+d780 1
+a780 1
+	    PrefixUpdate(prefixPtr, hdrPtr, domainType, flags);
+d785 1
+a785 1
+    prefixPtr = PrefixInsert(prefix, hdrPtr, domainType, flags);
+d810 1
+a810 1
+Fs_PrefixLoad(prefix, flags)
+d812 1
+d831 1
+a831 1
+    (void)PrefixInsert(prefix, (FsHandleHeader *)NIL, -1,
+d842 3
+a844 1
+ *	Insert an entry into the prefix table.
+d856 1
+a856 1
+PrefixInsert(prefix, hdrPtr, domainType, flags)
+d858 1
+d870 1
+a870 1
+	prefixPtr->serverID	= -1;
+d892 3
+a894 1
+ *	Reset the hdrPtr for an existing prefix.
+d906 1
+a906 1
+PrefixUpdate(prefixPtr, hdrPtr, domainType, flags)
+d908 1
+d916 1
+a916 1
+	prefixPtr->serverID	= -1;
+d946 1
+a946 1
+		domainTypePtr, prefixPtrPtr)
+d957 2
+d1070 1
+d1185 1
+d1292 1
+a1292 1
+LocatePrefix(fileName, domainTypePtr, hdrPtrPtr)
+d1294 1
+d1309 1
+a1309 1
+		    (fileName, &ids, domainTypePtr, hdrPtrPtr);
+d1350 2
+d1360 2
+a1361 1
+			rootIDPtr, lookupNamePtr, domainTypePtr, prefixPtrPtr);
+d1367 16
+a1382 2
+	    printf("Broadcasting for server of \"%s\"\n", *lookupNamePtr);
+	    status = LocatePrefix(*lookupNamePtr, domainTypePtr,
+d1427 1
+a1427 1
+	    prefixPtr->serverID == -1) {
+d1435 2
+a1436 1
+	    status = LocatePrefix(prefixPtr->prefix, &domainType, &hdrPtr);
+d1830 1
+a1830 1
+		userPrefix.serverID	= -1;
+d1891 1
+d1901 1
+a1901 1
+	    &hdrPtr, &rootID, &name, &domain, &prefixPtr);
+@
+
+
+8.7
+log
+@Checking this in for Mary -- John
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPrefix.c,v 8.6 89/04/21 15:09:17 brent Exp Locker: mgbaker $ SPRITE (Berkeley)";
+a745 1
+    Sync_LockRegister(&prefixLock);
+@
+
+
+8.6
+log
+@Split FsPrefixHandleClose into an external and an internal routine
+because it needs to be called from within the prefix table monitor.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPrefix.c,v 8.5 89/03/14 10:46:56 brent Exp $ SPRITE (Berkeley)";
+d70 1
+@
+
+
+8.5
+log
+@Fixed up interface to FsDomainInfo
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPrefix.c,v 8.4 89/03/03 08:11:46 brent Exp $ SPRITE (Berkeley)";
+d1173 1
+a1173 1
+		FsPrefixHandleClose(prefixPtr);
+d1202 2
+a1203 2
+ *	Close the handle associated with a prefix.  We do remember the
+ *	serverID from the handle as this is used in recovery later.
+d1209 28
+d1244 1
+a1244 1
+FsPrefixHandleClose(prefixPtr)
+a1249 1
+    LOCK_MONITOR;
+a1262 1
+    UNLOCK_MONITOR;
+@
+
+
+8.4
+log
+@Fixed static procedure declarations
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPrefix.c,v 8.3 89/02/14 10:55:42 jhh Exp $ SPRITE (Berkeley)";
+d1763 6
+a1768 2
+		register Fs_FileID *fileIDPtr =
+			&prefixPtr->hdrPtr->fileID;
+a1772 7
+		if (FsDomainInfo(prefixPtr->hdrPtr,
+				 &userPrefix.domainInfo) != SUCCESS) {
+		    userPrefix.domainInfo.maxKbytes = -1;
+		    userPrefix.domainInfo.freeKbytes = -1;
+		    userPrefix.domainInfo.maxFileDesc = -1;
+		    userPrefix.domainInfo.freeFileDesc = -1;
+		}
+@
+
+
+8.3
+log
+@Update Sync_Lock initialization and registration
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPrefix.c,v 8.2 89/01/06 11:17:23 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d64 6
+a69 7
+ReturnStatus LocatePrefix();
+ReturnStatus GetPrefix();
+void PrefixUpdate();
+FsPrefix *PrefixInsert();
+void GetNilPrefixes();
+void DoReopen();
+char *NameOp();
+d852 1
+a852 1
+INTERNAL FsPrefix *
+d899 1
+a899 1
+INTERNAL void
+d1254 1
+a1254 1
+ReturnStatus
+@
+
+
+8.2
+log
+@new Sync_Lock definition
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPrefix.c,v 8.1 89/01/04 08:48:45 brent Exp $ SPRITE (Berkeley)";
+d52 1
+a52 1
+static Sync_Lock prefixLock = SYNC_LOCK_INIT_STATIC();
+d746 1
+a746 3
+    prefixLock.inUse = FALSE;
+    prefixLock.waiting = FALSE;
+
+@
+
+
+8.1
+log
+@Notify prefixPtr->okToRecover when closing the prefix's handle.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPrefix.c,v 7.0 88/11/11 15:27:51 brent Exp $ SPRITE (Berkeley)";
+d52 1
+a52 1
+static Sync_Lock prefixLock;
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPrefix.c,v 7.0 88/11/11 15:27:51 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d1212 3
+a1214 1
+ *	Sets the prefix's hdrPtr to NIL
+d1234 4
+@
+
+
+7.0
+log
+@New version for conversion to new C library
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPrefix.c,v 6.16 88/10/20 15:37:32 brent Exp Locker: brent $ SPRITE (Berkeley)";
+@
+
+
+6.16
+log
+@Moved extern from fsPrefix.c to fsPrefix.h
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPrefix.c,v 6.15 88/10/16 10:25:30 brent Exp $ SPRITE (Berkeley)";
+d172 1
+a172 1
+		Sys_Printf("\treturns <%x>\n", status);
+d193 1
+a193 1
+			    Mem_Free((Address)oldInfoPtr);
+d231 1
+a231 1
+		    Sys_Printf("%s of \"%s\" waiting for recovery\n",
+d258 1
+a258 1
+	Mem_Free((Address) oldInfoPtr);
+d355 1
+a355 1
+	Sys_Printf("\treturns <%x>\n", status);
+d368 1
+a368 1
+	    Sys_Printf("%s of \"%s\" and \"%s\" waiting for recovery\n",
+d404 1
+a404 1
+		    Mem_Free((Address)srcRedirectPtr);
+d412 1
+a412 1
+		    Mem_Free((Address)dstRedirectPtr);
+d467 1
+a467 1
+			    Mem_Free((Address)dstRedirectPtr);
+d482 1
+a482 1
+		    Sys_Printf("Get Attr of \"%s\" waiting for recovery\n",
+d512 1
+a512 1
+	Mem_Free((Address)srcRedirectPtr);
+d515 1
+a515 1
+	Mem_Free((Address)dstRedirectPtr);
+d531 1
+a531 1
+    dstParentName = (char *)Mem_Alloc(FS_MAX_PATH_NAME_LENGTH);
+d541 1
+a541 1
+	Mem_Free((Address)dstParentName);
+d548 1
+a548 1
+	Mem_Free((Address)dstParentName);
+d595 1
+a595 1
+	Sys_Printf("FsRedirect: \"%s\" (%d)\n", redirectInfoPtr->fileName,
+d604 3
+a606 3
+	prefix = (char *)Mem_Alloc(redirectInfoPtr->prefixLength + 1);
+	(void)String_NCopy(redirectInfoPtr->prefixLength,
+		     redirectInfoPtr->fileName, prefix);
+d609 1
+a609 1
+	Mem_Free((Address) prefix);
+d611 2
+a612 1
+    if (String_NCompare(2, "..", redirectInfoPtr->fileName) == 0) {
+d629 1
+a629 1
+	preLen = String_Length(prefix);
+d655 1
+a655 1
+	    for (i = String_Length(fileName); i >= 2; i--) {
+d674 1
+a674 1
+	Sys_Panic(SYS_WARNING,
+d779 1
+a779 1
+	if (String_Compare(prefixPtr->prefix, prefix) == 0) {
+d822 1
+a822 1
+	if (String_Compare(prefixPtr->prefix, prefix) == 0) {
+d865 1
+a865 1
+    prefixPtr = (FsPrefix *)Mem_Alloc(sizeof(FsPrefix));
+d871 3
+a873 3
+    prefixPtr->prefixLength	= String_Length(prefix);
+    prefixCopy			= (char *)Mem_Alloc(prefixPtr->prefixLength+1);
+    (void)String_Copy(prefix, prefixCopy);
+d997 2
+a998 2
+	    if (String_NCompare(prefixPtr->prefixLength, prefixPtr->prefix,
+							fileName) == 0) {
+d1118 1
+a1118 1
+	if (String_Compare(prefixPtr->prefix, prefix) == 0) {
+d1123 1
+a1123 1
+			Mem_Free((Address)exportPtr);
+d1130 1
+a1130 1
+		exportPtr = Mem_New(FsPrefixExport);
+d1174 1
+a1174 1
+	if (String_Compare(prefixPtr->prefix, prefix) == 0) {
+d1180 1
+a1180 1
+		Mem_Free((Address) prefixPtr->prefix);
+d1186 1
+a1186 1
+		    Mem_Free((Address)exportPtr);
+d1190 1
+a1190 1
+		Mem_Free((Address) prefixPtr);
+d1220 1
+a1220 1
+    register FsHandleHeader *hdrPtr = prefixPtr->hdrPtr;
+d1223 9
+a1231 2
+    if (hdrPtr == (FsHandleHeader *)NIL) {
+	return;
+d1233 1
+a1233 6
+    FsHandleLock(hdrPtr);
+    dummy.ioHandlePtr = hdrPtr;
+    dummy.hdr.fileID.type = -1;
+    (void)(*fsStreamOpTable[hdrPtr->fileID.type].close)(&dummy, rpc_SpriteID,
+		    0, 0, (ClientData)NIL);
+    prefixPtr->hdrPtr = (FsHandleHeader *)NIL;
+d1314 1
+a1314 1
+	    Sys_Printf("Lookup: %s,", fileName);
+d1323 1
+a1323 1
+	    Sys_Printf("Broadcasting for server of \"%s\"\n", *lookupNamePtr);
+d1384 2
+a1385 2
+	Mem_Free(prefixPtr->prefix);
+	Mem_Free((Address)prefixPtr);
+d1400 1
+a1400 1
+ *	Mem_Allocs, our caller should free each element in the list.
+d1417 1
+a1417 1
+	    newPrefixPtr = Mem_New(FsPrefix);
+d1419 2
+a1420 2
+	    newPrefixPtr->prefix = Mem_Alloc(newPrefixPtr->prefixLength + 1);
+	    (void)String_Copy(prefixPtr->prefix, newPrefixPtr->prefix);
+d1460 1
+a1460 1
+		Sys_Panic(SYS_WARNING, 
+d1467 1
+a1467 1
+		    Sys_Printf("FsPrefixOpenCheck aborted\n");
+d1471 1
+a1471 1
+		    Sys_Printf("FsPrefixOpenCheck ok\n");
+d1484 1
+a1484 1
+    Sys_Panic(SYS_WARNING, "PrefixOpenCheck: didn't find prefix");
+d1519 1
+a1519 1
+		Sys_Panic(SYS_WARNING, "FsPrefixOpenDone, neg open cnt\n");
+d1532 1
+a1532 1
+    Sys_Panic(SYS_WARNING, "PrefixOpenDone: no handle match\n");
+d1737 1
+a1737 1
+	    Sys_Printf("%-20s ", prefixPtr->prefix);
+d1739 1
+a1739 1
+		Sys_Printf("(%d,%d,%d,%x) ",
+d1745 1
+a1745 1
+		Sys_Printf(" (no handle) ");
+d1748 1
+a1748 1
+		Sys_Printf(" import ");
+d1751 1
+a1751 1
+		Sys_Printf(" import ");
+d1754 1
+a1754 1
+		Sys_Printf(" export ");
+d1756 1
+a1756 1
+	    Sys_Printf("\n");
+d1785 1
+a1785 2
+		Byte_Copy(FS_USER_PREFIX_LENGTH, (Address)prefixPtr->prefix,
+				(Address)userPrefix.prefix);
+d1788 1
+a1788 1
+		(void)String_Copy(prefixPtr->prefix, userPrefix.prefix);
+d1882 2
+a1883 2
+	exportList = (int *)Mem_Alloc(size);
+	Byte_Zero(size, (Address)exportList);
+@
+
+
+6.15
+log
+@Changed FsPrefixInstall to return pointer to installed entry
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: fsPrefix.c,v 6.14 88/10/14 12:12:39 brent Exp $ SPRITE (Berkeley)";
+a65 1
+void FsPrefixHandleClose();
+@
+
+
+6.14
+log
+@FsFileID FsUserID change
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: fsPrefix.c,v 6.13 88/10/10 09:42:06 brent Exp $ SPRITE (Berkeley)";
+d66 1
+a66 1
+void PrefixHandleClear();
+d68 1
+a68 1
+void PrefixInsert();
+d248 1
+a248 1
+			PrefixHandleClear(prefixPtr);
+d380 1
+a380 1
+		    PrefixHandleClear(srcPrefixPtr);
+d383 1
+a383 1
+		    PrefixHandleClear(dstPrefixPtr);
+d489 1
+a489 1
+			PrefixHandleClear(dstPrefixPtr);
+d760 1
+a760 1
+ *	A return code.
+d767 1
+a767 1
+ENTRY void
+d785 1
+a785 1
+	    return;
+d788 1
+a788 1
+    PrefixInsert(prefix, hdrPtr, domainType, flags);
+d790 1
+a790 1
+    return;
+d833 2
+a834 1
+    PrefixInsert(prefix, (FsHandleHeader *)NIL, -1, flags&~FS_OVERRIDE_PREFIX);
+d855 1
+a855 1
+INTERNAL void
+d883 1
+d1176 1
+a1176 1
+		PrefixHandleClear(prefixPtr);
+d1203 1
+a1203 1
+ * PrefixHandleClear --
+d1217 1
+a1217 1
+PrefixHandleClear(prefixPtr)
+d1326 1
+a1326 1
+		FsPrefixInstall(*lookupNamePtr, *hdrPtrPtr, *domainTypePtr, 
+d1377 1
+a1377 1
+		FsPrefixInstall(prefixPtr->prefix, hdrPtr, domainType,
+@
+
+
+6.13
+log
+@Patched Fs_PrefixClear so you can't delete the root prefix.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: fsPrefix.c,v 6.12 88/10/05 12:30:05 brent Exp $ SPRITE (Berkeley)";
+d125 1
+a125 1
+    FsFileID		rootID;		/* ID of domain root */
+d312 2
+a313 2
+    FsFileID		srcRootID;	/* ID of srcName domain root */
+    FsFileID		dstRootID;
+d429 1
+a429 1
+	    FsFileID		dstFileID;
+d947 1
+a947 1
+    FsFileID	*rootIDPtr;	/* Return, ID of the root of the domain */
+d1259 1
+a1259 1
+    FsUserIDs			ids;
+d1297 1
+a1297 1
+    FsFileID	*rootIDPtr;		/* Result, ID of domain root */
+d1634 1
+a1634 1
+    FsFileID	*fileIDPtr;		/* FileID from a client */
+d1677 1
+a1677 1
+    FsFileID *fileIDPtr;		/* ID for some file */
+d1756 1
+a1756 1
+		register FsFileID *fileIDPtr =
+d1828 1
+a1828 1
+    FsFileID rootID;
+@
+
+
+6.12
+log
+@Changed from FS_DOMAIN_PREFIX to FS_DOMAIN_IMPORT
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: fsPrefix.c,v 6.11 88/09/29 16:34:17 brent Exp $ SPRITE (Berkeley)";
+d1148 3
+a1150 1
+ *	and used during testing.
+d1177 1
+a1177 1
+	    if (deleteFlag) {
+a1193 3
+    /*
+     * Not found, oh well.
+     */
+@
+
+
+6.11
+log
+@Modified prefix table access to not redirect via the prefix table
+if the lookup wanted a link, and the link had a prefix installed
+for it.  This makes lstat() of remote links work consistently.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: fsPrefix.c,v 6.10 88/09/23 13:32:21 brent Exp $ SPRITE (Berkeley)";
+d106 1
+a106 1
+				 * the FS_DOMAIN_PREFIX operation.  We set the
+d146 20
+a165 2
+	    if (operation == FS_DOMAIN_OPEN) {
+		FS_TRACE_NAME(FS_TRACE_LOOKUP_START, lookupName);
+a167 10
+	     * It is assumed that the first part of the bundled arguments
+	     * are the prefix fileID, which indicates the start of the lookup,
+	     * and the prefix rootID, which indicates the top of the domain.
+	     */
+	    if (operation != FS_DOMAIN_PREFIX) {
+		register FsLookupArgs *lookupArgsPtr = (FsLookupArgs *)argsPtr;
+		lookupArgsPtr->prefixID = hdrPtr->fileID;
+		lookupArgsPtr->rootID = rootID;
+	    }
+	    /*
+d701 4
+a704 2
+	case FS_DOMAIN_PREFIX:
+	    return("prefix");
+d1258 3
+a1260 4
+    ReturnStatus	status;
+    FsUserIDs		ids;
+    Proc_ControlBlock	*procPtr;	/* Used to get process IDs */
+    int			domainType;
+d1262 6
+a1267 15
+    procPtr = Proc_GetEffectiveProc();
+    FsSetIDs(procPtr, &ids);
+    domainType = *domainTypePtr;
+    if (domainType < 0) {
+	/*
+	 * Iterate through the domain prefix location routines because
+	 * we don't know what kind of domain it is.
+	 */
+	for (domainType = 0; domainType < FS_NUM_DOMAINS; domainType++) {
+	    status = (*fsDomainLookup[domainType][FS_DOMAIN_PREFIX])
+			((ClientData)NIL, fileName, (Address)&ids,
+			 (Address)hdrPtrPtr, (FsRedirectInfo **)NIL);
+	    if (status == SUCCESS) {
+		break;
+	    }
+a1268 7
+    } else {
+	/*
+	 * Have seen this prefix before so we try the same type of domain.
+	 */
+	status = (*fsDomainLookup[domainType][FS_DOMAIN_PREFIX])
+		    ((ClientData)NIL, fileName, (Address)&ids,
+		     (Address)hdrPtrPtr, (FsRedirectInfo **)NIL);
+d1270 1
+a1270 6
+    if (status == SUCCESS) {
+	*domainTypePtr = domainType;
+	return(FS_NEW_PREFIX);
+    } else {
+	return(FS_FILE_NOT_FOUND);
+    }
+@
+
+
+6.10
+log
+@Tweaked print statements and changed reaction to failed recovery
+so any bad status causes the clearing of a prefix, not just
+FS_STALE_HANDLE.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: fsPrefix.c,v 6.9 88/09/22 11:45:21 brent Exp $ SPRITE (Berkeley)";
+d97 1
+a97 1
+FsLookupOperation(fileName, operation, argsPtr, resultsPtr, nameInfoPtr)
+d100 3
+d143 1
+a143 1
+	status = GetPrefix(fileName, &hdrPtr, &rootID, &lookupName,
+d330 1
+a330 1
+    status = GetPrefix(srcName, &srcHdrPtr, &srcRootID, &srcLookupName,
+d338 1
+a338 1
+    status = GetPrefix(dstName, &dstHdrPtr, &dstRootID, &dstLookupName,
+d953 4
+d962 2
+a963 1
+    flags &= ~FS_EXACT_PREFIX;
+d990 3
+a994 8
+
+		/*
+		 * The string matches the prefix.  See if the prefix is
+		 * '/' (length == 1). If not, make sure that the prefix
+		 * matches the name up through a complete pathname
+		 * component by checking the next character in the fileName.
+		 * This implies that /spur is not a prefix of /spurious.
+		 */
+d997 3
+d1001 9
+d1012 5
+d1303 2
+a1304 1
+GetPrefix(fileName, hdrPtrPtr, rootIDPtr, lookupNamePtr, domainTypePtr, prefixPtrPtr)
+d1307 2
+d1317 4
+d1325 2
+a1326 3
+	status = FsPrefixLookup(fileName, FS_IMPORTED_PREFIX,
+				FS_LOCALHOST_ID, hdrPtrPtr, rootIDPtr,
+				lookupNamePtr, domainTypePtr, prefixPtrPtr);
+@
+
+
+6.9
+log
+@Did the final fix on two-name operations that bounce through
+links but ultimately end up in the same domain.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: fsPrefix.c,v 6.8 88/09/09 12:44:38 brent Exp $ SPRITE (Berkeley)";
+d231 1
+a231 2
+		    } else if ((status == FS_STALE_HANDLE) &&
+				(fileName[0] == '/')) {
+d234 2
+a235 1
+			 * used to get to the server and try again.
+d363 1
+a363 1
+	    } else if (status == FS_STALE_HANDLE) {
+d477 4
+a480 6
+		    } else if (status2 == FS_STALE_HANDLE) {
+			if (dstName[0] == '/') {
+			    PrefixHandleClear(dstPrefixPtr);
+			    status = FS_LOOKUP_REDIRECT;
+			    srcNameError = FALSE;
+			}
+d1450 1
+d1454 1
+@
+
+
+6.8
+log
+@Fixed FsPrefixLookup to support Fs_PrefixDumpExport
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: fsPrefix.c,v 6.7 88/09/09 11:16:33 brent Exp $ SPRITE (Berkeley)";
+d410 3
+a412 3
+	     * Should try to get the attributes of the parent in order
+	     * to get the correct prefix handle and relative name for
+	     * the destination pathname.
+d414 73
+a486 7
+#ifdef notyet
+	    Fs_Attributes	srcAttr;	/* Attrs of source file */
+	    Fs_Attributes	dstParentAttr;	/* Attrs of parent of the
+						 * destination */
+	    char *lastSlash, *cPtr, *pPtr;	/* Used to make dstParentName */
+	    char *dstParentName;		/* The parent of dstName */
+#endif /* not yet */
+@
+
+
+6.7
+log
+@Tidied up handling of ^C and lookup operations that are blocking
+on recovery.  Added utility routines to copy the export list
+out to user level.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: fsPrefix.c,v 6.6 88/09/07 16:50:06 brent Exp $ SPRITE (Berkeley)";
+d943 1
+a943 1
+	    if ((flags & FS_EXPORTED_PREFIX) &&
+d1761 1
+a1761 1
+    status = FsPrefixLookup(prefix, FS_EXACT_PREFIX, rpc_SpriteID,
+@
+
+
+6.6
+log
+@Moved name from stream to I/O handle.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: fsPrefix.c,v 6.5 88/09/06 15:39:21 brent Exp $ SPRITE (Berkeley)";
+d227 1
+a227 1
+			 * Set the status to redirect so can go around the
+d231 2
+a232 1
+		    } else if (fileName[0] == '/') {
+d237 1
+a237 1
+			PrefixHandleClear(prefixPtr, status);
+a241 39
+#ifdef notdef
+		case RPC_TIMEOUT: {
+		    /*
+		     * The server is down (RPC_TIMEOUT) so we clean up
+		     * the prefix table entry so the next try might find
+		     * a hot standby.
+		     */
+		    fsStats.prefix.timeouts++;
+		    if (fileName[0] == '/') {
+			/*
+			 * The handle we sent the server came from the prefix
+			 * table so we clear that handle to cause a broadcast
+			 * the next time the prefix matches.
+			 */
+			PrefixHandleClear(prefixPtr, status);
+			/*
+			 * Simulate a re-direct so we look again into the
+			 * prefix table which makes us broadcast to look for
+			 * alternate servers.
+			 */
+			numBroadcasts++;
+			if (numBroadcasts < 2) {
+			    status = FS_LOOKUP_REDIRECT;
+			}
+		    } else {
+			/*
+			 * We had a relative name and sent the handle from
+			 * the current working directory.  Initiate recovery
+			 * and wait for the server to come back.
+			 */
+			FsWantRecovery(hdrPtr);
+			status = FsWaitForRecovery(hdrPtr, status);
+			if (status == SUCCESS) {
+			    status = FS_LOOKUP_REDIRECT;
+			}
+		    }
+		    break;
+		}
+#endif	/* old RPC_TIMEOUT code */
+d363 12
+d1078 1
+a1078 1
+		PrefixHandleClear(prefixPtr, SUCCESS);
+d1122 1
+a1122 1
+PrefixHandleClear(prefixPtr, status)
+a1123 1
+    ReturnStatus status;
+a1130 8
+    if (status != SUCCESS) {
+	/*
+	 * The handle is invalid because of a server timeout or
+	 * because a server reboot made it go stale.  This call
+	 * ensures that we pay attention to the server reboot.
+	 */
+	FsWantRecovery(hdrPtr);
+    }
+d1195 3
+a1197 1
+	status = FS_NEW_PREFIX;
+a1198 1
+    return(status);
+d1721 19
+d1741 4
+a1744 2
+int
+FsTurnOnFileNameTracing()
+d1746 21
+a1766 2
+    fsFileNameTrace = TRUE;
+    return 0;
+d1768 16
+d1785 5
+a1789 2
+int
+FsTurnOffFileNameTracing()
+d1791 20
+a1810 2
+    fsFileNameTrace = FALSE;
+    return 0;
+d1812 1
+@
+
+
+6.5
+log
+@Fixed parameters to TwoNameOperations so there is only one
+Boolean to indicate that an error or redirection applies
+to the first or second pathname.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: fsPrefix.c,v 6.4 88/09/06 10:07:23 brent Exp $ SPRITE (Berkeley)";
+d71 1
+d199 1
+a199 2
+			 * to the name server for open streams.  Finally, the
+			 * name is kept as a convenience for error reporting.
+a205 9
+			nameInfoPtr->name = (char *)Mem_Alloc(
+				  String_Length(prefixPtr->prefix) +
+				      String_Length(lookupName) +
+				      sizeof("{} ") + 1
+				);
+			(void)String_Copy("{", nameInfoPtr->name);
+			(void)String_Cat(prefixPtr->prefix, nameInfoPtr->name);
+			(void)String_Cat("} ", nameInfoPtr->name);
+			(void)String_Cat(lookupName, nameInfoPtr->name);
+d221 2
+d396 2
+d629 45
+@
+
+
+6.4
+log
+@Fixed typo
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: fsPrefix.c,v 6.3 88/09/06 09:43:33 brent Exp $ SPRITE (Berkeley)";
+a117 1
+    FsFileID		rootID;		/* ID of domain root */
+d121 1
+d130 1
+a141 3
+	    /*
+	     * Prefix match, fork out to the domain lookup operation.
+	     */
+d156 1
+a156 4
+	     * The domain lookup routine may allocate a buffer for a re-directed
+	     * pathname.  This call to the lookup routine may be using a
+	     * buffer allocated the last time through this loop. We are
+	     * careful and free the buffer after there is no more use for it.
+a157 2
+	    oldInfoPtr = redirectInfoPtr;
+	    redirectInfoPtr = (FsRedirectInfo *)NIL;
+d169 4
+a172 1
+		     * the prefix table lookup.
+d181 5
+a289 3
+	    if (oldInfoPtr != (FsRedirectInfo *)NIL) {
+		Mem_Free((Address)oldInfoPtr);
+	    }
+d292 2
+a293 2
+    if (redirectInfoPtr != (FsRedirectInfo *)NIL) {
+	Mem_Free((Address) redirectInfoPtr);
+d315 1
+a315 1
+ *	if it thinks the second pathname is served elsewhere.  However,
+d349 14
+a362 3
+    Boolean		srcNameRedirect;/* TRUE if redirect info for srcName */
+    Boolean		srcHandleStale;	/* TRUE if src prefix handle is stale */
+    FsRedirectInfo	*redirectInfoPtr;/* Returned from the server */
+a363 1
+    redirectInfoPtr = (FsRedirectInfo *) NIL;
+d388 1
+a388 1
+		    &redirectInfoPtr, &srcNameRedirect, &srcHandleStale);
+d395 1
+a395 1
+	    srcHandleStale = TRUE;
+d401 1
+a401 1
+	    staleHdrPtr = (srcHandleStale ? srcHdrPtr : dstHdrPtr);
+d410 6
+d421 1
+a421 1
+	    } else if (srcNameRedirect) {
+d424 2
+a425 2
+		if (status == FS_LOOKUP_REDIRECT) {
+		    goto getSrcPrefix;
+d427 2
+d432 2
+a433 2
+		if (status == FS_LOOKUP_REDIRECT) {
+		    goto getDstPrefix;
+d435 2
+d461 1
+a461 1
+	if (srcNameRedirect) {
+d468 5
+a472 2
+    if (redirectInfoPtr != (FsRedirectInfo *) NIL) {
+	Mem_Free((Address) redirectInfoPtr);
+@
+
+
+6.3
+log
+@Initial set of fixes for TwoName operations to handle pathname
+redirections.  This isn't complete, but now Fs_Rename will work
+on pathnames that redirect to the same server.  Paths that redirect
+first to a different server, but then back to the right server,
+are still not handled correctly.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: fsPrefix.c,v 6.2 88/09/01 17:21:30 brent Exp $ SPRITE (Berkeley)";
+d414 1
+a414 1
+		status = FsLookupRedirect(redirectInfoPtr, dstPrefixPtr
+@
+
+
+6.2
+log
+@Fixed FsPrefixLookup to fail on FS_EXACT_MATCH if the
+pathname is not absolute.  A bad FS_RPC_PREFIX request
+from a 3/50 crashed the whole network because Fs_RpcPrefix
+didn't like what FsPrefixLookup returned...
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: fsPrefix.c,v 6.1 88/08/31 12:02:46 brent Exp $ SPRITE (Berkeley)";
+a58 2
+Boolean fsFileNameDebug = FALSE;
+Boolean fs2FileNameDebug = FALSE;
+d116 2
+a117 2
+    FsRedirectInfo 	*redirectInfoPtr;/* Returned from servers if their lookup
+					 * leaves their domain */
+a127 3
+    int			numBroadcasts = 0;/* Count for times we've had a timeout
+					   * and had to broadcast to find
+					   * a different server */
+a136 3
+    if (fsFileNameDebug) {
+	DBG_CALL;
+    }
+d149 2
+a150 1
+	     * are the prefix fileID.
+d217 2
+d223 5
+a227 1
+		    fsStats.prefix.stale++;
+d237 7
+d247 1
+d285 1
+d309 14
+d333 1
+a333 1
+FsTwoNameOperation(operation, fileName1, fileName2, lookupArgsPtr)
+d335 2
+a336 2
+    char		*fileName1;  /* The first file name */
+    char		*fileName2;  /* The second file name */
+d340 14
+a353 15
+    int			domainType1;	/* Set from the prefix table lookup of
+					  * fileName1 */
+    FsHandleHeader	*hdr1Ptr;	/* Set from the prefix table lookup of
+					  * fileName1 */
+    char		*lookupName1;	/* Returned from the prefix table
+					 * lookup of fileName1 */
+    FsPrefix		*prefix1Ptr;	/* Returned from prefix table lookup */
+    int 		domainType2;
+    FsHandleHeader 	*hdr2Ptr;
+    char 		*lookupName2;
+    FsPrefix 		*prefix2Ptr;
+    FsFileID		rootID1, rootID2;
+    FsRedirectInfo	*redirectInfoPtr;/* Returned from the server about
+					 * fileName1 only */
+    Boolean		name1redirect;	/* TRUE if redirect info for name 1 */
+d362 6
+a367 3
+    if (operation != FS_DOMAIN_RENAME && operation != FS_DOMAIN_HARD_LINK) {
+	Sys_Panic(SYS_WARNING, "FsTwoNameOperation got bad operation\n");
+	return(FS_INVALID_ARG);
+d369 7
+a375 2
+    if (fs2FileNameDebug) {
+	DBG_CALL;
+d377 23
+a399 5
+    do {
+	status = GetPrefix(fileName1, &hdr1Ptr, &rootID1, &lookupName1,
+					&domainType1, &prefix1Ptr);
+	if (status != SUCCESS) {
+	    continue;
+d401 19
+a419 16
+	status = GetPrefix(fileName2, &hdr2Ptr, &rootID2, &lookupName2,
+					&domainType2, &prefix2Ptr);
+	if (status != SUCCESS) {
+	    continue;
+	}
+	/* 
+	 * We are limited to only attempting the operation if the initial
+	 * guess at the domain is the same for both files.  It is difficult,
+	 * for example, to deal with a second filename that starts in some
+	 * other domain and then ends up in the correct place after a re-direct.
+	 * To do that you need to try and open/create the second file first,
+	 * then check to see where it is, then delete it again.
+	 */
+	if (hdr1Ptr->fileID.serverID != hdr2Ptr->fileID.serverID ||
+	    hdr1Ptr->fileID.major != hdr2Ptr->fileID.major) {
+	    status = FS_CROSS_DOMAIN_OPERATION;
+d421 14
+d436 1
+a436 9
+	lookupArgsPtr->prefixID = hdr1Ptr->fileID;
+	lookupArgsPtr->rootID = rootID1;
+	status = (*fsDomainLookup[domainType1][operation])
+	   (hdr1Ptr, lookupName1, hdr2Ptr, lookupName2, lookupArgsPtr,
+			&redirectInfoPtr, &name1redirect);
+	if (fsFileNameTrace) {
+	    Sys_Printf("\treturns <%x>\n", status);
+	}
+	if (status == FS_LOOKUP_REDIRECT) {
+d438 1
+a438 1
+	     * Can fix this and the above problem some day.
+d440 7
+a446 1
+	    status = FS_CROSS_DOMAIN_OPERATION;
+d448 2
+a449 2
+    } while (status == FS_LOOKUP_REDIRECT);
+
+d455 40
+d610 2
+a611 1
+	      "FsLookupOperation: Unexpected format of returned file name.\n");
+@
+
+
+6.1
+log
+@Removed lint.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: fsPrefix.c,v 6.0 88/08/11 12:13:47 brent Stable $ SPRITE (Berkeley)";
+d757 2
+a758 1
+	 * working directory.
+d762 1
+a762 1
+	if (fsPtr->cwdPtr != (Fs_Stream *)NIL) {
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: fsPrefix.c,v 1.8 88/08/08 13:52:11 mlgray Exp $ SPRITE (Berkeley)";
+d217 4
+a220 4
+			String_Copy("{", nameInfoPtr->name);
+			String_Cat(prefixPtr->prefix, nameInfoPtr->name);
+			String_Cat("} ", nameInfoPtr->name);
+			String_Cat(lookupName, nameInfoPtr->name);
+d439 1
+a439 1
+	String_NCopy(redirectInfoPtr->prefixLength,
+d657 1
+a657 1
+    String_Copy(prefix, prefixCopy);
+d1208 1
+a1208 1
+	    String_Copy(prefixPtr->prefix, newPrefixPtr->prefix);
+d1575 1
+a1575 1
+		String_Copy(prefixPtr->prefix, userPrefix.prefix);
+@
+
+
+1.8
+log
+@Padding fix to deal with network interface.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: fsPrefix.c,v 1.7 88/06/06 09:35:37 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+1.7
+log
+@Changed close interface to pass back the streamID so the server's
+shadow streams can be closed too.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: fsPrefix.c,v 1.6 88/06/01 16:48:31 brent Exp $ SPRITE (Berkeley)";
+d508 1
+a508 1
+	      "FsLookupOperation: Unexpected format of returned file name");
+d1589 14
+@
+
+
+1.6
+log
+@Fixed up tracing stuff
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: fsPrefix.c,v 1.5 88/05/06 12:39:04 brent Exp $ SPRITE (Berkeley)";
+d988 1
+d1002 3
+a1004 1
+    (void)(*fsStreamOpTable[hdrPtr->fileID.type].close)(hdrPtr, rpc_SpriteID,
+@
+
+
+1.5
+log
+@Changed proc table -> file system interface
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: fsPrefix.c,v 1.4 88/05/05 17:31:49 brent Exp $ SPRITE (Berkeley)";
+d153 1
+a153 1
+		FS_TRACE_NAME(FS_TRACE_1, lookupName);
+@
+
+
+1.4
+log
+@Nuked Sys_GetProcessorNumber
+@
+text
+@d8 1
+a8 1
+ *	handles the iteration over the prefix table.  There may be redirections
+d13 5
+d30 1
+a30 1
+static char rcsid[] = "$Header: fsPrefix.c,v 1.3 88/04/28 12:53:07 brent Exp $ SPRITE (Berkeley)";
+d739 1
+a739 1
+    register Proc_ControlBlock	*procPtr;	    /* For this process, to
+d760 4
+a763 4
+	procPtr = Proc_GetEffectiveProc();
+	if (procPtr->cwdPtr != (Fs_Stream *)NIL) {
+	    *hdrPtrPtr = procPtr->cwdPtr->ioHandlePtr;
+	    nameInfoPtr = procPtr->cwdPtr->nameInfoPtr;
+@
+
+
+1.3
+log
+@Bad arguments to domain open switch finally crashed with
+lookup redirection, oops.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: fsPrefix.c,v 1.2 88/04/11 18:18:55 brent Exp $ SPRITE (Berkeley)";
+d755 1
+a755 1
+	procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+d1031 1
+a1031 1
+    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+@
+
+
+1.2
+log
+@Fixed handling of nameInfoPtr so the prefix table does all the mucking.
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: fsPrefix.c,v 1.1 88/04/04 10:39:33 brent Exp $ SPRITE (Berkeley)";
+d168 1
+a168 2
+	       (hdrPtr, lookupName, argsPtr, resultsPtr, nameInfoPtr,
+		       &redirectInfoPtr);
+d1042 1
+a1042 2
+			 (Address)hdrPtrPtr, (FsNameInfo *)NIL,
+			 (FsRedirectInfo **)NIL);
+d1053 1
+a1053 2
+		     (Address)hdrPtrPtr, (FsNameInfo *)NIL,
+		     (FsRedirectInfo **)NIL);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d25 1
+a25 1
+static char rcsid[] = "$Header: fsPrefix.c,v 1.1 88/04/04 10:38:53 brent Exp $ SPRITE (Berkeley)";
+d113 3
+a115 2
+    FsRedirectInfo 	*newNameInfoPtr;/* Returned from servers if their lookup
+			 		 * leaves their domain */
+d129 1
+a129 1
+    newNameInfoPtr = (FsRedirectInfo *) NIL;
+d141 2
+a142 2
+	status = GetPrefix(fileName, &hdrPtr, &lookupName, &domainType,
+				       &prefixPtr);
+d157 1
+d165 2
+a166 2
+	    oldInfoPtr = newNameInfoPtr;
+	    newNameInfoPtr = (FsRedirectInfo *)NIL;
+d168 2
+a169 1
+	       (hdrPtr, lookupName, argsPtr, resultsPtr, &newNameInfoPtr);
+d186 1
+a186 1
+			status = FsLookupRedirect(newNameInfoPtr, prefixPtr,
+d196 5
+a200 3
+			 * re-directs.  The fileID is set up later by the
+			 * client open routine and used by the attributes
+			 * routines to get to the name server.  Finally, the
+d203 4
+a206 2
+/*			nameInfoPtr->fileID    gets set later */
+			nameInfoPtr->nameDomain = domainType;
+d282 2
+a283 2
+    if (newNameInfoPtr != (FsRedirectInfo *)NIL) {
+	Mem_Free((Address) newNameInfoPtr);
+d325 2
+a326 1
+    FsRedirectInfo	*newNameInfoPtr;/* Returned from the server about
+d330 1
+a330 1
+    newNameInfoPtr = (FsRedirectInfo *) NIL;
+d345 2
+a346 2
+	status = GetPrefix(fileName1, &hdr1Ptr, &lookupName1, &domainType1,
+					&prefix1Ptr);
+d350 1
+a350 1
+	status = GetPrefix(fileName2, &hdr2Ptr, &lookupName2,
+d368 2
+d372 1
+a372 1
+			&newNameInfoPtr, &name1redirect);
+d384 2
+a385 2
+    if (newNameInfoPtr != (FsRedirectInfo *) NIL) {
+	Mem_Free((Address) newNameInfoPtr);
+d410 2
+a411 2
+FsLookupRedirect(newNameInfoPtr, prefixPtr, fileNamePtr)
+    FsRedirectInfo	*newNameInfoPtr;/* New name and prefix from server */
+d416 1
+a416 1
+					 * *newNameInfoPtr.  This means that the
+d420 1
+a420 1
+					 * overwrite *newNameInfoPtr */
+d425 2
+a426 2
+	Sys_Printf("FsRedirect: \"%s\" (%d)\n", newNameInfoPtr->fileName,
+				newNameInfoPtr->prefixLength);
+d428 1
+a428 1
+    if (newNameInfoPtr->prefixLength > 0) {
+d434 4
+a437 4
+	prefix = (char *)Mem_Alloc(newNameInfoPtr->prefixLength + 1);
+	String_NCopy(newNameInfoPtr->prefixLength,
+		     newNameInfoPtr->fileName, prefix);
+	prefix[newNameInfoPtr->prefixLength] = '\0';
+d441 1
+a441 1
+    if (String_NCompare(2, "..", newNameInfoPtr->fileName) == 0) {
+d448 1
+a448 1
+	 * Again, we use the newNameInfoPtr buffer to construct the new
+d457 1
+a457 1
+	fileName = newNameInfoPtr->fileName;
+d495 1
+a495 1
+    if (newNameInfoPtr->fileName[0] == '/') {
+d500 1
+a500 1
+	*fileNamePtr = newNameInfoPtr->fileName;
+d720 1
+a720 1
+FsPrefixLookup(fileName, flags, clientID, hdrPtrPtr, lookupNamePtr, 
+d728 1
+d739 1
+d759 2
+d762 2
+a763 2
+	    *domainTypePtr = procPtr->cwdPtr->nameInfoPtr->nameDomain;
+	    *prefixPtrPtr = procPtr->cwdPtr->nameInfoPtr->prefixPtr;
+d821 1
+a821 1
+		     * Return the caller the prefix instead of a relative name
+d829 1
+a829 1
+		     * All set, return the caller the name after the prefix.
+d831 2
+a832 2
+		     * relative name.  This is because of the Unix domain which
+		     * thinks that a name starting with a slash is absolute.
+d834 1
+d1043 2
+a1044 1
+			 (Address)hdrPtrPtr, (FsRedirectInfo **)NIL);
+d1055 2
+a1056 1
+		     (Address)hdrPtrPtr, (FsRedirectInfo **)NIL);
+d1083 1
+a1083 1
+GetPrefix(fileName, hdrPtrPtr, lookupNamePtr, domainTypePtr, prefixPtrPtr)
+d1087 1
+d1099 1
+a1099 1
+				FS_LOCALHOST_ID, hdrPtrPtr, 
+@

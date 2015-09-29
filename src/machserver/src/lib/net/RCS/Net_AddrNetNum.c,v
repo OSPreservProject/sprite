@@ -1,0 +1,82 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  srv030:1.1 srv028:1.1 srv027:1.1 srv026:1.1 srv024:1.1 srv022:1.1 srv021:1.1 srv019:1.1 srv018:1.1 srv016:1.1 srv014:1.1 srv010:1.1 srv008:1.1 srv007:1.1 srv006:1.1 srv005:1.1 srv004:1.1 srv003:1.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     88.11.21.09.09.53;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Formed from net.c of src/lib/old/net.c.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/* 
+ * Net_InetAddrNetNum.c --
+ *
+ *	Return the network part of an internet address.
+ *
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: net.c,v 2.0 87/08/11 09:34:20 brent Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include "sprite.h"
+#include "net.h"
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_InetAddrNetNum --
+ *
+ *	Return the network portion of an internet address.
+ *	Handles class A/B/C network #'s.
+ *
+ * Results:
+ *	The network number of an IP address.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+unsigned int
+Net_InetAddrNetNum(addr)
+    Net_InetAddress addr;
+{
+    register Net_InetAddress i = Net_NetToHostInt(addr);
+
+    if (NET_INET_CLASS_A_ADDR(i)) {
+	return (((i) & NET_INET_CLASS_A_NET_MASK) >> NET_INET_CLASS_A_SHIFT);
+    } else if (NET_INET_CLASS_B_ADDR(i)) {
+	return (((i) & NET_INET_CLASS_B_NET_MASK) >> NET_INET_CLASS_B_SHIFT);
+    } else {
+	return (((i) & NET_INET_CLASS_C_NET_MASK) >> NET_INET_CLASS_C_SHIFT);
+    }
+}
+
+@

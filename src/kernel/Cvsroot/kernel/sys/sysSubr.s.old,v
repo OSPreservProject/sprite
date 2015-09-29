@@ -1,0 +1,210 @@
+head     9.0;
+branch   ;
+access   ;
+symbols  ds3100:9.0 sun3:9.0 sun4nw:9.0 symm:9.0 spur:9.0 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @# @;
+
+
+9.0
+date     89.09.12.15.20.22;  author douglis;  state Stable;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.38.29;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.27.26;  author brent;  state Stable;
+branches ;
+next     5.1;
+
+5.1
+date     88.05.04.17.23.24;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.51.10;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@|* sunSubr.s --
+|*
+|*     Contains misc. assembler routines for the SUN.
+|*
+|* Copyright (C) 1985 Regents of the University of California
+|* All rights reserved.
+|*
+|* rcs = $Header: /sprite/src/kernel/sys/RCS/sysSubr.s,v 8.0 88/11/11 18:38:29 douglis Stable Locker: douglis $ SPRITE (Berkeley)
+|*
+
+#include "machConst.h"
+#include "asmDefs.h"
+
+|*---------------------------------------------------------------------
+|*
+|* Sys_SetIntrLevel  --
+|*     
+|*	Enables interrupts of a certain level and above.
+|*	Input is a mask which specifies the interrupt level.
+|*
+|* Results:
+|*	The mask of the interrupt level
+|*
+|* Side effects:
+|*	Interrupts may be enabled or disabled.
+|*	Trace bit is always set to 0.
+|*
+|*---------------------------------------------------------------------
+
+	.text
+	.globl	_Sys_SetIntrLevel
+_Sys_SetIntrLevel:
+	link	a6,#0
+	movl	a6@@(8),d1		| copy argument to d1
+
+    					| input error check:
+	andw	#MACH_SR_INTMASK,d1	| make sure the arg. has just
+					| the interrupt bits set.
+
+	orw	#MACH_SR_SUPSTATE,d1	| set the supervisor state bit
+
+	clrl	d0
+	movw	sr,d0			| save status register in d0
+	andw	#MACH_SR_INTMASK,d0	| return previous interrupt level mask
+
+	movw	d1,sr			| put new value in status register
+	unlk	a6
+	rts
+
+#define	SAVED_REGS 	0xFCFC
+
+|*
+|* ----------------------------------------------------------------------
+|*
+|* SysSetJump --
+|*
+|*	Prepare for a non-local goto (i.e. Sys_LongJump).  This saves the
+|*	program counter and all local registers in the given Sys_SetJumpState
+|*	struct.
+|*	
+|*	SysSetJump(setJumpStatePtr)
+|*	    Sys_SetJumpState	*setJumpStatePtr;
+|*
+|* Results:
+|*	None.
+|*
+|* Side effects:
+|*	None.
+|*
+|* ----------------------------------------------------------------------
+|*
+
+	.globl	_SysSetJump
+_SysSetJump:
+	movl	sp@@(4),a0		| Get the address of where to store the 
+					|     registers in a register.
+	moveml	#SAVED_REGS,a0@@(4)	| Save registers.
+	movl	sp@@,a0@@			| Save program counter of caller.
+	clrl	d0			| Return zero
+	rts
+
+|*
+|* ----------------------------------------------------------------------
+|*
+|* Sys_LongJump --
+|*
+|*	Prepare for a non-local goto (i.e. Sys_LongJump).  This saves the
+|*	program counter and all local registers in the given Sys_SetJumpState
+|*	struct.
+|*	
+|* Results:
+|*	None.
+|*
+|* Side effects:
+|*	None.
+|*
+|* ----------------------------------------------------------------------
+|*
+
+	.globl	_Sys_LongJump
+_Sys_LongJump:
+	movl	sp@@(4),a0		| Get address of saved state.
+	moveml	a0@@(4),#SAVED_REGS	| Restore registers (this causes the 
+					|     stack to be changed).
+	movl	a0@@,sp@@			| Push the program counter onto the 
+					|     stack.
+	movl	#1,d0			| Return FAILURE.
+	rts	
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d8 1
+a8 1
+|* rcs = $Header: /sprite/src/kernel/sys/RCS/sysSubr.s,v 6.0 88/08/11 12:27:26 brent Stable Locker: douglis $ SPRITE (Berkeley)
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d8 1
+a8 1
+|* rcs = $Header: sysSubr.s,v 5.1 88/05/04 17:23:24 nelson Exp $ SPRITE (Berkeley)
+@
+
+
+5.1
+log
+@Changed to handle new structure of mach module.
+@
+text
+@d8 1
+a8 1
+|* rcs = $Header: sysSubr.s,v 5.0 87/08/11 10:51:10 sprite Exp $ SPRITE (Berkeley)
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d8 1
+a8 1
+|* rcs = $Header: sysSubr.s,v 3.1 86/12/01 11:13:28 nelson Exp $ SPRITE (Berkeley)
+d11 1
+a11 3
+#include "sunSR.h"
+#include "vmSunConst.h"
+#include "machineConst.h"
+d37 1
+a37 1
+	andw	#SUN_SR_INTMASK,d1	| make sure the arg. has just
+d40 1
+a40 1
+	orw	#SUN_SR_SUPSTATE,d1	| set the supervisor state bit
+d44 1
+a44 1
+	andw	#SUN_SR_INTMASK,d0	| return previous interrupt level mask
+@

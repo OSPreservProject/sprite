@@ -1,0 +1,331 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.5
+date     90.02.16.11.08.38;  author douglis;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.04.07.14.24.33;  author douglis;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.12.30.09.50.53;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.12.22.10.02.52;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.12.06.13.49.37;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@manual page for migcmd.
+@
+
+
+1.5
+log
+@better documentation
+@
+text
+@' $Header: /a/newcmds/migcmd/RCS/migcmd.man,v 1.4 89/04/07 14:24:33 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS MIGCMD cmds
+.BS
+.SH NAME
+migcmd \- Print or update information relating to process migration
+.SH SYNOPSIS
+\fBmigcmd\fR [\fB\-sSZptT\fR] [\fB\-[IE] (none|all|root)\fR] [\fB\-[il] (0|1)\fR] [\fB\-l (0|1)\fR] [\fB\-P \fInumRecs\fR] [\fB\-d \fIdebugLevel\fR] [\fB\-V \fImigrationVersion\fR] 
+.SH OPTIONS
+.IP "\fB\-s\fR" 20
+A message is printed to indicate the status of process migration on the 
+current host, including the migration level and the conditions under
+which migration is permitted.
+.IP "\fB\-S\fR" 20
+Migration statistics are printed.  These include such values as the
+average time to migrate an active process, the average time to perform
+a remote exec, and the total number of migrations, evictions, and
+remote execs performed.
+.IP "\fB\-Z\fR" 20
+The kernel migrations statistics are reset to 0.
+.IP "\fB\-I\fR" 20
+Change the import restrictions for process migration.  (The caller must be root.)
+.IP "\fB\-E\fR" 20
+Change the export restrictions for process migration.  (The caller must be root.)
+.IP "\fB\-i\fR" 20
+Change whether idle time is considered when determining the availability of 
+this host.  (The caller must be root.)
+.IP "\fB\-l\fR" 20
+Change whether load average is considered when determining the availability of 
+this host.  (The caller must be root.)
+.IP "\fB\-p\fR" 20
+Process migration trace records are printed.  The number of records
+may be altered by the \fB\-P\fR option.
+.IP "\fB\-P \fInumRecs\fR" 20
+The number of trace records to print is modified to be \fInumRecs\fR.  This
+option must be used with the \fB\-p\fR option.
+.IP "\fB\-t\fR" 20
+Process migration tracing is enabled for the current host.
+.IP "\fB\-T\fR" 20
+Process migration tracing is disabled for the current host.
+.IP "\fB\-d \fIdebugLevel\fR" 20
+The kernel process migration debug level is set to \fIdebugLevel\fR.
+.IP "\fB\-V \fImigrationVersion\fR" 20
+The kernel process migration version is set to \fImigrationVersion\fR.
+The caller must be root.
+.BE
+.SH INTRODUCTION
+.LP
+This command is used to perform functions related to process migration.
+\fBMigcmd\fR  is normally used to print the status of process migration 
+availability or migration statistics.  \fBMigcmd\fR may also be used
+to restrict which users may export or import processes from or to 
+the local host (the caller must be root to do so); change whether load
+average and/or idle time are considered when deciding whether the
+current host is available for imports;
+print process
+migration trace  records; enable or disable tracing of process
+migration activity; or set the kernel's migration ``debugging level''
+or ``migration version''.
+.SH "MIGRATION STATE"
+.LP
+\fBMigcmd\fR prints the status of process migration
+availability if the \fB\-s\fR flag is specified.
+As root, one may modify the restrictions on process migration.  For
+both exporting and importing processes, root may choose to restrict
+migration to processes owned by root, or not allow migration at all,
+or allow all users to migrate.  These options are specified to the
+\fB\-E\fR and \fB\-I\fR flags as \fBroot\fR, \fBnone\fR, and \fBall\fR
+respectively.  In addition, root is permitted to instruct the
+\fBloadavg\fR daemon whether to consider idle time and/or load average
+when announcing the availability of the host for importation.  These
+options are \fB\-i\fR and \fB\-l\fR, respectively, and take an integer
+argument: \fB1\fR specifies that the criterion should be ignored, and
+\fB0\fR specifies that it should be considered.
+.SH "STATISTICS"
+.LP
+The \fB-S\fR flag causes \fBMigcmd\fR  to print statistics on its
+standard output.  These statistics change too rapidly to list the
+format here.  The format is (hopefully) self-explanatory.
+.SH "TRACING"
+.LP
+The \fB\-p\fR flag may be used to dump process migration trace records.
+The maximum number of records defaults to 200 but may be modified with
+the \fB\-P\fR option.  By default, tracing is disabled and no trace
+records will be printed.  To enable tracing, one may specify the
+\fB\-t\fR flag, and to disable it, one may specify the \fB\-T\fR flag.  
+.SH "MIGRATION DEBUG LEVEL"
+.LP
+The kernel's debug level may be modified using the \fB\-d\fR  option.
+Subsequently higher values for the debug level will cause more
+debugging statements 
+to be executed. For example, to have no migration debugging enabled
+whatsoever, the level may be set to 0.  To enable error messages that
+indicate unusual but non-fatal events, the level may be 2 (this is the
+current default).  To enable more messages about the internal
+operation of migration within the kernel, such as forwarded system
+calls, the level may be set to values from 3-10.  ``Less interesting''
+events are conditioned on higher values of the debug level.
+.SH "MIGRATION VERSION"
+.LP
+The kernel's migration version may be modified by root using the
+\fB\-V\fR  option.  This should be done only when the kernel is
+compiled with an incorrect version for some reason, in order to cause
+the kernel to be compatible vis-a-vis migration with a different class
+of kernels.
+.SH "SEE ALSO"
+mig
+.SH KEYWORDS
+debug level, eviction, process migration, remote execution 
+@
+
+
+1.4
+log
+@changed to handle new kernel state variable.
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/migcmd/RCS/migcmd.man,v 1.3 88/12/30 09:50:53 ouster Exp Locker: douglis $ SPRITE (Berkeley)
+d8 1
+a8 1
+\fBmigcmd\fR [\fB\-mptT\fR] [\fB\-[IE] (none|all|root)\fR]  [\fB\-[il] (0|1)\fR] [\fB\-l (0|1)\fR] [\fB\-P \fInumRecs\fR] [\fB\-d \fIdebugLevel\fR]
+d10 1
+a10 1
+.IP "\fB\-m\fR" 20
+d12 9
+a20 1
+current host.
+d43 3
+d50 3
+a52 2
+The default operation is to print the status of process migration 
+availability.  \fBMigcmd\fR may also be used to restrict which users may export or import processes from or to
+d58 2
+a59 1
+migration activity; or set the kernel's migration ``debugging level''.
+d62 2
+a63 3
+By default, \fBmigcmd\fR prints the status of process migration
+availability.
+This is also done if the \fB\-m\fR flag is specified.
+d75 5
+d99 7
+@
+
+
+1.3
+log
+@More format upgrades.
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/migcmd/RCS/migcmd.man,v 1.2 88/12/22 10:02:52 ouster Exp $ SPRITE (Berkeley)
+d8 1
+a8 1
+\fBmigcmd\fR [\fB\-marptT\fR] [\fB\-P \fInumRecs\fR] [\fB\-d \fIdebugLevel\fR]
+d11 12
+a22 5
+A message is printed to indicate whether process migration is enabled.
+.IP "\fB\-a\fR" 20
+Process migration is enabled for the current host.  (The caller must be root.)
+.IP "\fB\-r\fR" 20
+Process migration is disabled for the current host.  (The caller must be root.)
+d39 6
+a44 3
+The default operation is to print whether process migration is
+enabled.  \fBMigcmd\fR may also be used to enable or disable migration to
+the local host (the caller must be root to do so); print process
+d49 14
+a62 4
+By default, \fBmigcmd\fR prints whether process migration is enabled on the
+current host.  This is also done if the \fB\-m\fR flag is specified.
+As root, one may disable or enable process migration using the
+\fB\-r\fR  (refuse) and \fB\-a\fR (accept) flags, respectively.
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/migcmd/RCS/migcmd.man,v 1.1 88/12/06 13:49:37 douglis Exp $ SPRITE (Berkeley)
+d8 1
+a8 1
+\fBmigcmd\fR [\fB-marptT\fR] [\fB-P \fInumRecs\fR] [\fB-d \fIdebugLevel\fR]
+d10 1
+a10 1
+.IP "\fB-m\fR" 20
+d12 1
+a12 1
+.IP "\fB-a\fR" 20
+d14 1
+a14 1
+.IP "\fB-r\fR" 20
+d16 1
+a16 1
+.IP "\fB-p\fR" 20
+d18 2
+a19 2
+may be altered by the \fB-P\fR option.
+.IP "\fB-P \fInumRecs\fR" 20
+d21 2
+a22 2
+option must be used with the \fB-p\fR option.
+.IP "\fB-t\fR" 20
+d24 1
+a24 1
+.IP "\fB-T\fR" 20
+d26 1
+a26 1
+.IP "\fB-d \fIdebugLevel\fR" 20
+d33 1
+a33 1
+enabled.  Migcmd may also be used to enable or disable migration to
+d39 2
+a40 2
+By default, migcmd prints whether process migration is enabled on the
+current host.  This is also done if the \fB-m\fR flag is specified.
+d42 1
+a42 1
+\fB-r\fR  (refuse) and \fB-a\fR (accept) flags, respectively.
+d45 1
+a45 1
+The \fB-p\fR flag may be used to dump process migration trace records.
+d47 1
+a47 1
+the \fB-P\fR option.  By default, tracing is disabled and no trace
+d49 1
+a49 1
+\fB-t\fR flag, and to disable it, one may specify the \fB-T\fR flag.  
+d52 1
+a52 1
+The kernel's debug level may be modified using the \fB-d\fR  option.
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 3
+a3 2
+' $Header: /a/newcmds/mig/RCS/mig.man,v 1.1 88/11/21 13:29:02 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+.TH migcmd prog
+d5 1
+a5 1
+.NA
+d7 2
+a8 3
+.SY
+\fBmigcmd\fR \fI[-marptT]\fR \fI[-P numRecs]\fR \fI[-d debugLevel]\fR
+.BE
+d18 1
+a18 1
+may be altered by the \fI-P\fR option.
+d21 1
+a21 1
+option must be used with the \fI-p\fR option.
+d28 1
+d40 1
+a40 1
+current host.  This is also done if the \fI-m\fR flag is specified.
+d42 1
+a42 1
+\fI-r\fR  (refuse) and \fI-a\fR (accept) flags, respectively.
+d45 1
+a45 1
+The \fI-p\fR flag may be used to dump process migration trace records.
+d47 1
+a47 1
+the \fI-P\fR option.  By default, tracing is disabled and no trace
+d49 1
+a49 1
+\fI-t\fR flag, and to disable it, one may specify the \fI-T\fR flag.  
+d52 1
+a52 1
+The kernel's debug level may be modified using the \fI-d\fR  option.
+d65 1
+a65 1
+process migration, remote execution, eviction, debug level
+@

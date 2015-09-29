@@ -1,0 +1,320 @@
+#
+# mxedit.menus
+#	Definitions for the menus used in the mxedit application.
+#	This defines the following procedures that operate on menus
+#	by their label name instead of by their TK widget name.
+#	This makes it easier for users to understand customization.
+#	mxMenu - define a menu by name
+#	mxMenuAdd - add an entry to a menu
+#	mxMenuBind - define a keyboard accelerator for a menu item.
+#	mxMenuEntryConfigure - change a menu entry
+#
+# Copyright (c) 1992 Xerox Corporation.
+# Use and copying of this software and preparation of derivative works based
+# upon this software are permitted. Any distribution of this software or
+# derivative works must comply with all applicable United States export
+# control laws. This software is made available AS IS, and Xerox Corporation
+# makes no warranty about the software, its performance or its conformity to
+# any specification.
+
+# Imported globals
+# file - the name of the current file
+
+# Exported globals
+# For each menu defined by mxMenu under label "Foo", there is a
+# global variable called menuFoo defined that holds the identity of
+# the menu widget.  This is relied on by mxMenuAdd and mxMenuBind
+
+# File globals
+# menubar - the frame that holds menubuttons
+
+# mxMenuSetup --
+# Called from mxsetup to create the menubar frame
+
+proc mxMenuSetup { parent } {
+    global menubar
+    set menubar [buttonFrame $parent .buttons 2]
+    return $menubar
+}
+
+# mxCreateMenus --
+#	This is invoked from mxsetup in order to fill out the menubar
+
+proc mxCreateMenus { } {
+    foreach menuProc { mxFileMenu mxEditMenu mxSearchMenu mxWindowMenu
+		       mxHelpMenu mxGeometryMenu} {
+	if [catch $menuProc msg] {
+	    puts stderr "$menuProc failed: $msg"
+	}
+    }
+}
+
+# mxMenu --
+#	Add a new menu and associated menubutton to the mxedit menubar.
+#	The name of the menu widget is remembered for later use
+#	with mxMenuBind and mxMenuBind
+
+proc mxMenu { label {where {left}} } {
+    global menubar
+    set name .${label}
+    set menu [basicMenu $menubar${name}Menu]
+    packedMenuButton $menubar ${name}Buttton $label $menu $where
+
+    # Remember the widget name under a variable derived from the label.
+    # This allows mxMenuBind to be passed the label instead of the widget.
+    global menu${label}
+    set menu${label} $menu
+
+    return $menu
+}
+# mxMenuBind --
+# Bind a keystroke sequence to a menu entry.
+# Use this procedure in order to keep the menus up-to-date
+# with keyboard accelerators.
+# This hardwires the binding to the mxedit widget.
+
+proc mxMenuBind { sequence menuName label } {
+    global mxedit
+    global menu${menuName}
+    set menu [set menu${menuName}]
+
+    if [catch {
+	set command [lindex [$menu entryconfigure $label -command] 4]
+	bind $mxedit $sequence $command
+	$menu entryconfigure [$menu index $label] -accelerator $sequence
+    } msg] {
+	mxFeedback "mxMenuBind $sequence $menuName $label: $msg"
+    }
+}
+
+# mxMenuUnBind --
+# Remove a binding from an menu entry
+# Use this procedure in order to keep the menus up-to-date
+# with keyboard accelerators.
+
+proc mxMenuUnBind { menuName label } {
+    global mxedit
+    global menu${menuName}
+    set menu [set menu${menuName}]
+
+    if [catch {
+	set sequence [lindex [$menu entryconfigure $label -accelerator] 4]
+	bind $mxedit $sequence {}
+	$menu entryconfigure [$menu index $label] -accelerator {}
+    } msg] {
+	mxFeedback "mxMenuUnBind $menuName $label: $msg"
+    }
+}
+
+# mxMenuAdd --
+#	Add an item to a menu.
+
+proc mxMenuAdd { menuName label command } {
+    global menu${menuName}
+    set menu [set menu${menuName}]
+    if [catch {$menu add command -label $label -command $command} msg] {
+	mxFeedback "menu add $menu \"$label\" failed: $msg"
+    }
+}
+
+# mxMenuAddSeparator --
+#	Add a separator to a menu.
+
+proc mxMenuAddSeparator { menuName label } {
+    global menu${menuName}
+    set menu [set menu${menuName}]
+    if [catch {$menu add separator -label $label} msg] {
+	mxFeedback "menu add separator $menu \"$label\" failed: $msg"
+    }
+}
+
+# mxMenuEntryConfigure --
+#	Change an item in a menu.
+
+proc mxMenuEntryConfigure { menuName label args } {
+    global menu${menuName}
+    set menu [set menu${menuName}]
+    if [catch [concat $menu entryconfigure \"$label\" $args] msg] {
+	mxFeedback "menu entryconfigure $menu \"$label\" failed: $msg"
+    }
+}
+
+# mxFileMenu --
+#	Define the FILE menu
+
+proc mxFileMenu { } {
+    global file
+
+    mxMenu File
+    mxMenuAdd File "Save and quit" 	{save ; quit}
+    mxMenuAdd File "Save" 		{save}
+    mxMenuAdd File "Save in file SEL" 	{saveSel}
+    mxMenuAdd File "Open new window" 	{mxopen $file}
+    mxMenuAdd File "Open file SEL" 	{applyToSelection mxopen} 
+    mxMenuAdd File "Switch to file SEL" {applyToSelection switch} 
+    mxMenuAdd File "Switch to previous file" 	{switchBack}
+    mxMenuAdd File "Switch to tag SEL" 	{applyToSelection tag} 
+    mxMenuAdd File "Open on tag SEL" 	{applyToSelection tagOpen}
+    mxMenuAdd File "Go to line SEL" 	{history next history \
+						{applyToSelection line}}
+    mxMenuAdd File "Reset" 		{reset}
+    mxMenuAdd File "Quit" 		{quit}
+}
+
+# mxEditMenu --
+#	Define the Edit menu
+
+proc mxEditMenu { } {
+    mxMenu Edit
+    mxMenuAdd Edit "Undo" 		{undo}
+    mxMenuAdd Edit "Do Again" 		{history ignore redo}
+    mxMenuAdd Edit "Delete SEL"		{deleteSel}
+    mxMenuAdd Edit "Paste"		{paste}
+    mxMenuAdd Edit "Move SEL"		{moveSel}
+    mxMenuAdd Edit "Indent line" 	{indentLine}
+    mxMenuAdd Edit "Indent SEL"		{indentSel}
+    mxMenuAdd Edit "Outdent line" 	{outdentLine}
+    mxMenuAdd Edit "Outdent SEL" 	{outdentSel}
+}
+
+# mxSearchMenu --
+proc mxSearchMenu { } {
+    mxMenu Search
+    mxMenuAdd Search "Forward" 		{findInner forward}
+    mxMenuAdd Search "Forward for SEL" 	{findInner forwSel}
+    mxMenuAdd Search "Backward" 	{findInner backward} 
+    mxMenuAdd Search "Backward for SEL"	{findInner backSel}
+    mxMenuAdd Search "Replace" 		{findInner replace} 
+    mxMenuAdd Search "Replace in SEL" 	{findInner replaceSel}
+    mxMenuAdd Search "Replace Everywhere" {findInner replaceEverywhere}
+}
+
+# mxWindowMenu --
+proc mxWindowMenu { } {
+    mxMenu Window
+
+    mxCommandMenuEntry Window
+
+    mxMenuAdd Window "Search" 		{find}
+}
+
+# mxHelpMenu --
+proc mxHelpMenu { } {
+    mxMenu Help
+    mxMenuAdd Help "Show key bindings" 		{showBindings}
+    mxMenuAdd Help "Show variables" 		{showVars}
+    mxMenuAdd Help "Show procedures" 		{showProcs}
+    mxMenuAdd Help "Emacs bindings" 		{emacsBindings}
+}
+
+# mxGeometryMenu --
+proc mxGeometryMenu { } {
+    mxMenu Right {right}
+    mxMenu Left {right}
+
+    mxMenuAdd Right "Upper Right"	{upperRight}
+    mxMenuAdd Right "Lower Right"	{lowerRight}
+    mxMenuAdd Right "Full Right"	{fullRight}
+
+    mxMenuAdd Left "Upper Left"		{upperLeft}
+    mxMenuAdd Left "Lower Left"		{lowerLeft}
+    mxMenuAdd Left "Full Left"		{fullLeft}
+}
+# upperRight --
+proc upperRight { } {
+    setupTilingGeometry charsWide linesHigh right left top bottom
+    geometry ${charsWide}x${linesHigh}+${right}+${top}
+}
+# upperRight --
+proc lowerRight { } {
+    setupTilingGeometry charsWide linesHigh right left top bottom
+    geometry ${charsWide}x${linesHigh}+${right}+${bottom}
+}
+# upperLeft --
+proc upperLeft { } {
+    setupTilingGeometry charsWide linesHigh right left top bottom
+    geometry ${charsWide}x${linesHigh}+${left}+${top}
+}
+# lowerLeft --
+proc lowerLeft { } {
+    setupTilingGeometry charsWide linesHigh right left top bottom
+    geometry ${charsWide}x${linesHigh}+${left}+${bottom}
+}
+# fullRight --
+proc fullRight { } {
+    global rightMenu
+    setupFullGeometry Right \
+		charsWide linesHigh right left top
+    geometry ${charsWide}x${linesHigh}+${right}+${top}
+}
+# fullLeft --
+proc fullLeft { } {
+    global leftMenu
+    setupFullGeometry Left charsWide linesHigh right left top
+    geometry ${charsWide}x${linesHigh}+${left}+${top}
+}
+
+# setupTilingGeometry
+#	This uses the size of the screen and the size of the window to
+#	figure out how to place the window in different tiled locations
+
+proc setupTilingGeometry { charsWide linesHigh right left top bottom } {
+    upvar 1 $charsWide wide $linesHigh high $left L $right R $top T $bottom B
+
+    scan [wm geometry .] "%dx%d" wide high
+    scan [winfo geometry .] "%dx%d+%d+%d" mainWidth mainHeight xoff yoff
+
+    set L 0
+    set T 0
+    if {[screenwidth] > (2 * $mainWidth)} {
+	set R [expr {10 + $mainWidth}]
+    } else {
+	set R [expr {[screenwidth] - $mainWidth}]
+    }
+
+    if {[screenheight] > (2 * ($mainHeight+20))} {
+	set B [expr {40 + $mainHeight}]
+    } else {
+	set B [expr {[screenheight] - $mainHeight}]
+    }
+}
+
+# setupFullGeometry
+#	This uses the size of the screen and the size of the window to
+#	figure out how to make a full sized window
+
+proc setupFullGeometry { menuName charsWide linesHigh right left top } {
+    upvar 1 $charsWide wide $linesHigh high $left L $right R $top T
+
+    # Happily, the wm grid command reports the original size of the window,
+    # even if it has been resized.  winfo, happily, returns the current size
+    # so that the following computation alternately computes a full sized
+    # and original sized window
+    scan [wm grid .] "%d %d %d %d" wide high xinc yinc
+    scan [winfo geometry .] "%dx%d+%d+%d" mainWidth mainHeight xoff yoff
+    set extraHeight [expr {$mainHeight - ($yinc * $high)}]
+    set availHeight [expr {[screenheight] - $extraHeight}]
+    set oldHigh $high
+    set high [expr {($availHeight / $yinc) - 1}]
+
+    set L 0
+    set T 0
+    if {[screenwidth] > (2 * $mainWidth)} {
+	set R [expr {10 + $mainWidth}]
+    } else {
+	set R [expr {[screenwidth] - $mainWidth}]
+    }
+    # Fix up the menu so it reflects what will happen next
+    # Remember that menuName is "Right" or "Left", and that
+    # the value of menuLeft is the menu under the Left label...
+
+    global menu${menuName}
+    set menu [set menu${menuName}]
+
+    if {$high > $oldHigh} {
+	$menu entryconfigure "Full $menuName" -label "Small $menuName"
+    } else {
+	$menu entryconfigure "Small $menuName" -label "Full $menuName"
+    }
+}
+

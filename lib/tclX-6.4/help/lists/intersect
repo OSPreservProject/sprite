@@ -1,0 +1,4 @@
+
+
+          intersect lista listb
+               Return the logical intersection of two lists.

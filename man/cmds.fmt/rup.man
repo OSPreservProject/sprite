@@ -1,0 +1,68 @@
+
+
+
+RUP                       User Commands                       RUP
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     rup - display the migration load average and idle time data-
+     base
+
+SSYYNNOOPPSSIISS
+     rruupp [_w] [_h_o_s_t _o_r _t_y_p_e ...]
+
+_________________________________________________________________
+
+IINNTTRROODDUUCCTTIIOONN
+     This command is used to display the migration load  average,
+     idle  time,  machine  location,  and  kernel in a convenient
+     fashion.  If no hosts are  specified,  information  for  all
+     hosts is displayed; otherwise, information is displayed only
+     for the specified hosts.
+
+     If the _w option (note: not -_w) is specified, rruupp  lists  the
+     "owner" of each machine.
+
+     The output of rruupp is similar to that  displayed  by  llooaaddaavvgg
+     --aa.   Refer to the manual page for llooaaddaavvgg for more informa-
+     tion on the format of the output.
+
+FFIILLEESS
+     /etc/spritehosts, /sprite/admin/hosts
+
+SSEEEE AALLSSOO
+     loadavg
+
+KKEEYYWWOORRDDSS
+     idle time, load average, process migration, uptime
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  August 27, 1991                   1
+
+
+

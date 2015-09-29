@@ -1,0 +1,304 @@
+head     9.4;
+branch   ;
+access   ;
+symbols  ds3100:9.3 sun3:9.3 sun4nw:9.3 symm:9.3 spur:9.3 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.4
+date     93.01.06.20.09.18;  author mgbaker;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     91.09.10.18.18.24;  author rab;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.10.12.17.43.18;  author mendel;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.07.30.11.35.03;  author shirriff;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.53.53;  author douglis;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     89.08.17.15.18.10;  author mgbaker;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@
+
+
+
+
+initial checkin
+@
+
+
+9.4
+log
+@Can now run sparcstation kernel with no proprietary software floating point
+emulation code.
+@
+text
+@/* 
+ * machFPUGlue.c --
+ *
+ *	Routines that emulate the SunOS routines called by the
+ *	SunOS floating point simulator for SPARC.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/mach/sun4.md/machFPUGlue.c,v 9.4 93/01/06 17:03:45 mgbaker Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+/*
+ * Too much of the sun fpu stuff just won't lint.
+ */
+#ifndef lint
+
+#ifndef NO_FLOATING_POINT
+
+#include "sys/types.h"
+#include "fpu_simulator.h"
+#include "vm.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * fuword --
+ *
+ *	Read a word from the user's address space.
+ *
+ * Results:
+ *	The word read or -1 if read fails.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+fuword(address)
+    caddr_t address;
+{
+    ReturnStatus status;
+    int		value;
+    status = Vm_CopyIn(sizeof(int), (Address) address, (Address) &value);
+
+     return (status == SUCCESS) ? value : -1;
+
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * fubyte --
+ *
+ *	Read a byte from the user's address space.
+ *
+ * Results:
+ *	The byte read or -1 if read fails.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+fubyte(address)
+    caddr_t address;
+{
+    ReturnStatus status;
+    unsigned char	value;
+    status = Vm_CopyIn(sizeof(char), (Address) address, (Address) &value);
+
+     return (status == SUCCESS) ? value : -1;
+
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * suword --
+ *
+ *	Store a word into the user's address space.
+ *
+ * Results:
+ *	The 0 if SUCCESS or -1 if write fails.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+suword(address,value)
+    caddr_t address;
+    int	value;
+{
+    ReturnStatus status;
+    status = Vm_CopyOut(sizeof(int), (Address) &value, (Address) address);
+
+     return (status == SUCCESS) ? 0 : -1;
+
+}
+
+#include <sun4/fpu/globals.h>
+
+void
+MachFPU_Emulate(processID, instAddr, userRegsPtr, curWinPtr)
+    int		processID;
+    Address	instAddr;
+    Mach_RegState 	*userRegsPtr;
+    Mach_RegWindow	*curWinPtr;
+{
+    enum ftt_type result;
+
+    fptrapaddr = (char *) instAddr;	/* bad inst addr in case we trap */
+    _fp_current_pfregs = userRegsPtr;
+    result = fpu_simulator(instAddr, (fsr_type *) & (userRegsPtr->fsr));
+    switch (result) {
+    case ftt_none:
+	break;
+    case ftt_ieee:
+	(void) Sig_Send(SIG_ARITH_FAULT, SIG_ILL_INST_CODE, processID, FALSE,
+		(Address)0);
+	break;
+    case ftt_unimplemented:
+	(void) Sig_Send(SIG_ILL_INST, SIG_ILL_INST_CODE, processID, FALSE,
+		(Address)0);
+	break;
+    case ftt_alignment:
+	(void) Sig_Send(SIG_ADDR_FAULT, SIG_ADDR_ERROR, processID,FALSE,
+		(Address)0);
+	break;
+    case ftt_fault:
+	(void) Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL, processID, FALSE,
+		(Address)0);
+    case ftt_7:
+    default:
+	break;
+    }
+}
+#endif /* NO_FLOATING_POINT */
+
+#endif /* lint */
+@
+
+
+9.3
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/mach/sun4.md/RCS/machFPUGlue.c,v 9.2 90/10/12 17:43:18 mendel Exp Locker: rab $ SPRITE (Berkeley)";
+d26 2
+d156 1
+@
+
+
+9.2
+log
+@Modified to not touch change pc and next_pc during instruction simulation.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/mach/sun4.md/RCS/machFPUGlue.c,v 9.1 90/07/30 11:35:03 shirriff Exp Locker: mgbaker $ SPRITE (Berkeley)";
+a125 4
+	union {
+		int		i;
+		fp_inst_type	inst;
+	}		kluge;
+@
+
+
+9.1
+log
+@Added Address field to Sig_Send.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/mach.mendel/sun4.md/RCS/machFPUGlue.c,v 9.0 89/09/12 14:53:53 douglis Stable Locker: mendel $ SPRITE (Berkeley)";
+d117 1
+d126 4
+d132 3
+a134 1
+    result = fp_emulator(instAddr, userRegsPtr, curWinPtr, userRegsPtr);
+a157 2
+_fp_read_pfreg() { } 
+_fp_write_pfreg() { }
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/mach/sun4.md/RCS/machFPUGlue.c,v 1.1 89/08/17 15:18:10 mgbaker Exp Locker: douglis $ SPRITE (Berkeley)";
+d119 1
+a119 1
+MachFPU_Emulate(processID, instAddr, userRegsPtr, curWinPtr, fpuStatePtr)
+a123 1
+    Mach_FPUState	*fpuStatePtr;
+d127 1
+a127 1
+    result = fp_emulator(instAddr, userRegsPtr, curWinPtr, fpuStatePtr);
+d132 2
+a133 1
+	(void) Sig_Send(SIG_ARITH_FAULT, SIG_ILL_INST_CODE, processID, FALSE);
+d136 2
+a137 1
+	(void) Sig_Send(SIG_ILL_INST, SIG_ILL_INST_CODE, processID, FALSE);
+d140 2
+a141 1
+	(void) Sig_Send(SIG_ADDR_FAULT, SIG_ADDR_ERROR, processID,FALSE);
+d144 2
+a145 1
+	(void) Sig_Send(SIG_ADDR_FAULT, SIG_ACCESS_VIOL, processID, FALSE);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.2 89/01/07 04:12:18 rab Exp $ SPRITE (Berkeley)";
+@

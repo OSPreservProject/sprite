@@ -1,0 +1,13 @@
+F DEPENDEN.MK;1                     	dependencies.mk
+L FSSTUBS.S;1                       	fsStubs.s	../sun3.md/fsStubs.s
+F MD.MK;1                           	md.mk
+L NETSTUBS.S;1                      	netStubs.s	../sun3.md/netStubs.s
+L PROCSTUB.S;1                      	procStubs.s	../sun3.md/procStubs.s
+L PROFSTUB.S;1                      	profStubs.s	../sun3.md/profStubs.s
+D RCS                               	RCS
+L SIGSTUBS.S;1                      	sigStubs.s	../sun3.md/sigStubs.s
+L SYNCSTUB.S;1                      	syncStubs.s	../sun3.md/syncStubs.s
+L SYSSTUBS.S;1                      	sysStubs.s	../sun3.md/sysStubs.s
+L TESTSTUB.S;1                      	testStubs.s	../sun3.md/testStubs.s
+F USERSYSC.H;1                      	userSysCallInt.h
+L VMSTUBS.S;1                       	vmStubs.s	../sun3.md/vmStubs.s

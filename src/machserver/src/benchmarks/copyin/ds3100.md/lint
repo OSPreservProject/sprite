@@ -1,0 +1,9 @@
+copyin.c:
+gettimeofday, arg. 2 used inconsistently	llib-lc:gettimeofday.c 2(45)  ::  copyin.c(114)
+Vm_Cmd, arg. 3 used inconsistently	llib-lc:syscalls.c(577)  ::  copyin.c(122)
+gettimeofday, arg. 2 used inconsistently	llib-lc:gettimeofday.c 2(45)  ::  copyin.c(138)
+exit value declared inconsistently	llib-lc:exit.c 2(57)  ::  copyin.c(178)
+bzero value declared inconsistently	llib-lc:bzero.c 2(58)  ::  copyin.c(119)
+gettimeofday returns value which is always ignored
+fprintf returns value which is always ignored
+printf returns value which is always ignored

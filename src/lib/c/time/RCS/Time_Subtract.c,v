@@ -1,0 +1,112 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  sprited:1.2.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     88.06.27.17.23.37;  author ouster;  state Exp;
+branches 1.2.1.1;
+next     1.1;
+
+1.1
+date     88.06.19.14.33.02;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.2.1.1
+date     91.10.22.14.49.53;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Use spriteTime.h instead of time.h.
+@
+text
+@/* 
+ * Time_Subtract.c --
+ *
+ *	Source code for the Time_Subtract library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: Time_Subtract.c,v 1.1 88/06/19 14:33:02 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <spriteTime.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Time_Subtract --
+ *
+ *      Subtracts one time value from another.
+ *
+ * Results:
+ *     The difference of the 2 times.
+ *
+ * Side effects:
+ *     None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Time_Subtract(time1, time2, resultPtr)
+    Time 	  time1;
+    Time 	  time2;
+    register Time *resultPtr;
+{
+    resultPtr->seconds      = time1.seconds      - time2.seconds;
+    resultPtr->microseconds = time1.microseconds - time2.microseconds;
+
+    if (resultPtr->microseconds < 0) {
+	resultPtr->seconds	-= 1;
+	resultPtr->microseconds += ONE_SECOND;
+    }
+}
+@
+
+
+1.2.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/time/RCS/Time_Subtract.c,v 1.2 88/06/27 17:23:37 ouster Exp $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: proto.c,v 1.2 88/03/11 08:39:08 ouster Exp $ SPRITE (Berkeley)";
+d21 1
+a21 1
+#include "time.h"
+@

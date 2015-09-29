@@ -1,0 +1,140 @@
+#! /sprite/cmds/csh -f
+#
+#   weeklydump [ startFs ]
+#
+#	Perform a weekly, level 0, dump.
+#	Dump all the filesystems that we want backed up.  If startFs
+#	is specified, we start dumping with that file system,
+#	presumably because the ones ahead of it in the list were
+#	already dumped.
+#
+# $Header: /sprite/src/admin/weeklydump/RCS/weeklydump,v 1.13 91/10/09 16:31:35 jhh Exp $
+#
+
+# This is our exit status.
+set result=0
+
+set tapeDrives = `grep -v '^#' /sprite/admin/dump/tapelist`
+if ($#tapeDrives < 1) then
+    echo "No tape drives in /sprite/admin/dump/tapelist?"
+    exit -1
+endif
+
+set dump = dump
+
+# Tell the world what's happening
+touch /sprite/admin/dump/doingweekly
+if ( $USER == "root") then
+    touch /sprite/admin/dump/dumpalias
+    echo -n '$USER' "is root, so /sprite/admin/dump/dumpalias will remain "
+    cat /sprite/admin/dump/dumpalias
+else
+    echo $USER >! /sprite/admin/dump/dumpalias
+endif
+
+# This is the list of filesystems that we want to dump.
+set filesystems=(`cat /sprite/admin/dump/dumplist`)
+
+# If the user says to reinitialize the tape, do it.
+if ($#argv > 0) then
+    if ("$argv[1]" == "-i") then
+	set goodTape = ()
+	foreach tape ($tapeDrives)
+	    echo "initializing" $tape
+	    $dump -s -f $tape
+	    set stat = $status
+	    if ($stat == 123) then
+		echo -n "Init: tape recently used. Reuse anyway [y/n]? "
+		setenv answer $<
+		if (($answer != "y") && ($answer != "Y")) then
+		    exit
+		else
+		    $dump -r -f $tape		    
+	        endif
+	    else if ($stat != 0) then
+		echo "Init failed on tape $tape"
+	    else
+		set goodTape = ($goodTape $tape)
+	    endif
+	end
+	shift
+	set tapeDrives=($goodTape)
+    endif
+endif
+
+set drivesLeft=($tapeDrives)
+
+if ($#drivesLeft == 0) then
+    echo "No good tape drives"
+    exit
+endif
+
+echo "Tape drive list: $drivesLeft"
+
+# If the user specified a starting filesystem, skip over the ones in
+# front of it.
+
+set start = ""
+
+if ($#argv > 0) then
+    set start = "$argv[1]"
+else
+    set start = `cat /sprite/admin/dump/doingweekly`
+endif
+if ("$start" != "") then
+	while (_$filesystems[1] != _$start)
+		if ($#filesystems == 1) then
+			echo $start "isn't in the list of filesystems."
+			echo $start "isn't in the list of filesystems. |\
+			    mail -s "Dump error" dumper
+			exit 1
+		endif
+		shift filesystems
+	end
+	echo "Starting with filesystem $start"
+endif
+
+/sprite/cmds/hostname >! /sprite/admin/dump/doingweekly.active
+
+# Run through the list of filesystems.  When we get to a dump that
+# fails, we assume it's because the tape filled up, so switch to the
+# next tape.  If we run out of tapes, send mail to the dumper with the
+# name of the next filesystem to be dumped.
+
+while ($#filesystems > 0)
+	set fs=$filesystems[1]
+	set tape=$drivesLeft[1]
+	echo $fs >! /sprite/admin/dump/doingweekly
+	$dump -f $tape -l 0 $fs
+	if ($status == 0) then
+		shift filesystems
+		continue
+	endif
+
+	# Try to switch to another tape and retry the same filesystem.
+	if ($#drivesLeft > 1) then
+		shift drivesLeft
+	else
+		(echo "Please insert new tape(s) and resume with $fs :" ;\
+		echo "weeklydump -i $fs") | \
+		  mail -s "Dumps not completed" dumper
+		set result=1
+		break
+	endif
+end
+
+# Rewind the tapes.
+
+foreach tape ($tapeDrives)
+	tape -r -t $tape
+end
+
+if ($result == 0) then
+    (echo "Dump done.  Put in new tape for daily dump and do:" ; \
+    echo "dailydump -i") | mail -s "Dump done" dumper
+    echo "" >! /sprite/admin/dump/doingweekly
+endif
+
+rm -f /sprite/admin/dump/doingweekly.active
+
+exit $result

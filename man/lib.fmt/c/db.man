@@ -1,0 +1,266 @@
+
+
+
+Db                    C Library Procedures                     Db
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Db - manipulate simple database files
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee  <<ddbb..hh>>
+
+     int
+     DDbb__WWrriitteeEEnnttrryy(_f_i_l_e, _b_u_f_f_e_r, _i_n_d_e_x, _s_i_z_e, _l_o_c_k_H_o_w)
+
+     int
+     DDbb__RReeaaddEEnnttrryy(_f_i_l_e, _b_u_f_f_e_r, _i_n_d_e_x, _s_i_z_e, _l_o_c_k_H_o_w)
+
+     int
+     DDbb__OOppeenn(_f_i_l_e, _s_i_z_e, _h_a_n_d_l_e_P_t_r, _w_r_i_t_i_n_g, _l_o_c_k_W_h_e_n, _l_o_c_k_H_o_w, _n_u_m_B_u_f)
+
+     int
+     DDbb__PPuutt(_h_a_n_d_l_e_P_t_r, _b_u_f_f_e_r, _i_n_d_e_x)
+
+     int
+     DDbb__GGeett(_h_a_n_d_l_e_P_t_r, _b_u_f_f_e_r, _i_n_d_e_x)
+
+     int
+     DDbb__CClloossee(_h_a_n_d_l_e_P_t_r)
+
+
+AARRGGUUMMEENNTTSS
+     char          *_f_i_l_e        (in)      The name of a  database
+                                          file  on  which to per-
+                                          form operations.
+
+     char          *_b_u_f_f_e_r      (in/out)  A pointer to  the  area
+                                          from  which or to which
+                                          to transfer the record.
+
+     int           _i_n_d_e_x        (out)     Which record to  access
+                                          in  a  database  opera-
+                                          tion.
+
+     int           _s_i_z_e         (in)      The size of a record.
+
+     Db_LockHow    _l_o_c_k_H_o_w      (in)      Method  to   use   when
+                                          locking the database.
+
+     Db_Handle     *_h_a_n_d_l_e_P_t_r   (in/out)  A pointer to a  ``data-
+                                          base handle''.
+
+     int           _w_r_i_t_i_n_g      (in)      If non-zero, the  data-
+                                          base  file is opened in
+                                          write-only mode, other-
+                                          wise in read-only mode.
+
+
+
+Sprite v.1.0       Printed:  February 20, 1989                  1
+
+
+
+
+
+
+Db                    C Library Procedures                     Db
+
+
+
+     Db_LockWhen   _l_o_c_k_W_h_e_n     (in)      Determines when to lock
+                                          the  database for long-
+                                          term accesses.
+
+     int           _n_u_m_B_u_f       (in)      Number  of  records  to
+                                          buffer   when   reading
+                                          from database.
+
+_________________________________________________________________
+
+DDEESSCCRRIIPPTTIIOONN
+     These functions provide shared access  to  files  containing
+     arbitrary  numbers  of  fixed-length records.  There are two
+     ways to access the files.  The  simplest  way  to  access  a
+     database  file  is to use DDbb__WWrriitteeEEnnttrryy(()) and DDbb__RReeaaddEEnnttrryy(())
+     to open the file, access a record, and close the file again.
+     An alternative method is to use DDbb__OOppeenn(()) to obtain a hhaannddllee
+     for the file, use DDbb__PPuutt(()) or  DDbb__GGeett(())  to  write  or  read
+     entries,  respectively, and use Db_Close() to close the file
+     when it is no longer needed.  In this case, the _n_u_m_B_u_f argu-
+     ment  is  used  to specify how many records to buffer inter-
+     nally when doing reads  (it  must  be  specified  as  0  for
+     writes).
+
+     The Db library provides a simple locking facility  to  allow
+     shared  access  to files, built on top of the fflloocckk(()) system
+     call.  Database files can be accessed without  using  locks,
+     or  using  the  standard  fflloocckk(())  call  in blocking or non-
+     blocking mode.  Unfortunately, hosts  can  hold  locks  when
+     they crash, so a program that performs a blocking lock could
+     wait indefinitely for a lock if no additional  mechanism  is
+     used.   The  Db library allows locks to time out, and it can
+     optionally break a lock if the lock times out.  The time-out
+     period is currently fixed.  The different options are speci-
+     fied by the Db_LockHow type:
+
+          typedef enum {
+              DDBB__LLOOCCKK__NNOO__BBLLOOCCKK,       /* return immediately with error */
+              DDBB__LLOOCCKK__PPOOLLLL,           /* poll the lock; time out if necessary */
+              DDBB__LLOOCCKK__WWAAIITT,           /* wait indefinitely */
+              DDBB__LLOOCCKK__BBRREEAAKK,      /* poll, plus break the lock if needed */
+              DDBB__LLOOCCKK__NNOONNEE,           /* do not lock the file at all */
+          } Db_LockHow;
+
+     The DDbb__WWrriitteeEEnnttrryy(()) and  DDbb__RReeaaddEEnnttrryy(())  procedures  take  a
+     Db_LockHow  parameter  to determine how to lock the database
+     file the one time it is accessed.  In addition to  a Db_Lock
+     parameter, DDbb__OOppeenn(()) takes a Db_LockWhen argument to specify
+     when to perform the lock.  Generally, when a file  is  going
+     to  be  read or written sequentially, one would like to lock
+     it before starting to do I/O and unlock it after  finishing.
+     If  a  file  is  going to be accessed repeatedly over a long
+     period of time, however, it should be opened once but locked
+     only during each access.  These options are DDBB__LLOOCCKK__OOPPEENN and
+
+
+
+Sprite v.1.0       Printed:  February 20, 1989                  2
+
+
+
+
+
+
+Db                    C Library Procedures                     Db
+
+
+
+     DDBB__LLOOCCKK__AACCCCEESSSS, respectively.  If the file is  never  to  be
+     locked,  then  the  Db_LockWhen argument may be specified as
+     DDBB__LLOOCCKK__NNEEVVEERR or the Db_LockHow argument may be specified as
+     DDBB__LLOOCCKK__NNOONNEE.
+
+     DDbb__WWrriitteeEEnnttrryy(()) and DDbb__RReeaaddEEnnttrryy(()) provide access to a  sin-
+     gle record.  They take the _f_i_l_e_n_a_m_e to access; an _i_n_d_e_x into
+     the file, the _s_i_z_e of a record; a pointer to a data  _b_u_f_f_e_r;
+     and  the  method  of  locking  the  database,  _l_o_c_k_H_o_w.  All
+     records must have the same size.  The index  is  zero-based,
+     so _i_n_d_e_x 0 refers to the first record in the file.
+
+     DDbb__OOppeenn(()) takes the same _f_i_l_e, _s_i_z_e, and  _l_o_c_k_H_o_w  arguments
+     as  DDbb__WWrriitteeEEnnttrryy(())  and  DDbb__RReeaaddEEnnttrryy(()).   It also takes an
+     argument, _w_r_i_t_i_n_g, which indicates whether  access  will  be
+     writing  (1)  or  reading (0); and another argument, _n_u_m_B_u_f,
+     which specifies how many records to read from  the  file  at
+     once  when  doing reads.  The _l_o_c_k_W_h_e_n argument is described
+     above; it indicates whether locking should be done for  each
+     access or at the time the file is opened.  DDbb__OOppeenn(()) returns
+     a database handle in *_h_a_n_d_l_e_P_t_r.  The storage for the handle
+     must  be allocated by the caller of DDbb__OOppeenn(()).  A pointer to
+     the  handle  must  be  used  in  later  calls  to  DDbb__PPuutt(()),
+     DDbb__GGeett(()), or DDbb__CClloossee(()).
+
+     DDbb__PPuutt(()) and DDbb__GGeett(()) are analogous to  DDbb__WWrriitteeEEnnttrryy(())  and
+     DDbb__RReeaaddEEnnttrryy(()).   They  are  used in cases when the database
+     file is opened by DDbb__OOppeenn(()), for use over an extended period
+     of  time.  The _h_a_n_d_l_e_P_t_r  argument must be a handle returned
+     by DDbb__OOppeenn(()). The _b_u_f_f_e_r  must be a pointer to  an  area  of
+     the  size specified in the call to DDbb__OOppeenn(()).  The _i_n_d_e_x  is
+     an integer: if non-negative, it specifies a  record  number,
+     like  in  calls  to  DDbb__WWrriitteeEEnnttrryy(()) and DDbb__RReeaaddEEnnttrryy(()).  If
+     _i_n_d_e_x  is -1, it specifies that the access should be sequen-
+     tial:  the  record  to  be  operated  upon should be the one
+     immediately following the last record read or  written.   If
+     DDbb__PPuutt(())  or  DDbb__GGeett(())  is called for the first time with an
+     _i_n_d_e_x  of -1, the first record is written or read.
+
+     DDbb__CClloossee(()) closes a file that  was  opened  with  DDbb__OOppeenn(()).
+     _H_a_n_d_l_e_P_t_r  must  point  to  a handle that was initialized by
+     DDbb__OOppeenn(()).
+
+DDIIAAGGNNOOSSTTIICCSS
+     All routines return 0 if they complete  successfully.   Upon
+     error, they return -1 and the _e_r_r_n_o variable  contains addi-
+     tional information about what error occurred.
+
+KKEEYYWWOORRDDSS
+     database, data base, lock, record, handle
+
+
+
+
+
+Sprite v.1.0       Printed:  February 20, 1989                  3
+
+
+
+
+
+
+Db                    C Library Procedures                     Db
+
+
+
+SSEEEE AALLSSOO
+     mig, ulog, flock, dbm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  February 20, 1989                  4
+
+
+

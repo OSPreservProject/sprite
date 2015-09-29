@@ -1,0 +1,3322 @@
+head     9.7;
+branch   ;
+access   ;
+symbols  ds3100:9.7 sun3:9.7 sun4nw:9.6 symm:9.6 spur:9.6 Summer89:9.0 newlib:8.0 Summer88:6.0 sbc:5.9;
+locks    ; strict;
+comment  @ * @;
+
+
+9.7
+date     92.03.20.13.47.46;  author jhh;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     91.09.10.18.19.37;  author rab;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     91.08.19.13.41.50;  author jhh;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     91.04.19.12.09.34;  author jhh;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     91.04.12.17.54.17;  author jhh;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.09.11.12.23.09;  author rab;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.01.27.14.39.50;  author mendel;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.57.28;  author douglis;  state Stable;
+branches ;
+next     8.10;
+
+8.10
+date     89.07.31.17.26.08;  author mendel;  state Exp;
+branches ;
+next     8.9;
+
+8.9
+date     89.07.10.19.40.58;  author nelson;  state Exp;
+branches ;
+next     8.8;
+
+8.8
+date     89.05.23.10.02.18;  author mendel;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.02.19.22.01.49;  author jhh;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     88.12.21.10.23.27;  author brent;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     88.11.28.08.18.59;  author brent;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     88.11.22.19.07.43;  author jhh;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     88.11.21.09.03.04;  author brent;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.11.16.14.36.50;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.16.14.27.48;  author mendel;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.13.01;  author douglis;  state Stable;
+branches ;
+next     6.5;
+
+6.5
+date     88.11.07.14.55.12;  author mlgray;  state Exp;
+branches ;
+next     6.4;
+
+6.4
+date     88.10.30.21.36.35;  author jhh;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.09.07.11.29.10;  author nelson;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.09.06.14.16.13;  author nelson;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.09.05.12.44.14;  author mendel;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.29.55;  author douglis;  state Stable;
+branches ;
+next     5.11;
+
+5.11
+date     88.07.12.18.02.11;  author douglis;  state Exp;
+branches ;
+next     5.10;
+
+5.10
+date     88.06.08.17.00.05;  author douglis;  state Exp;
+branches ;
+next     5.9;
+
+5.9
+date     88.05.23.21.41.30;  author douglis;  state Exp;
+branches ;
+next     5.8;
+
+5.8
+date     88.04.07.17.47.57;  author brent;  state Exp;
+branches ;
+next     5.7;
+
+5.7
+date     88.04.07.17.46.55;  author brent;  state Exp;
+branches ;
+next     5.6;
+
+5.6
+date     88.04.07.17.00.45;  author brent;  state Exp;
+branches ;
+next     5.5;
+
+5.5
+date     88.03.08.14.26.59;  author douglis;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     88.02.21.15.43.07;  author douglis;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     87.12.15.16.23.26;  author douglis;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.12.09.19.51.23;  author douglis;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.12.09.11.38.42;  author douglis;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.40.01;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.7
+log
+@Removed a couple of annoying printfs.
+SCSI commands that abort are retried.
+@
+text
+@/* 
+ * devSCSI.c --
+ *
+ *	SCSI = Small Computer System Interface. The routines in this file
+ *	are indented to aid in formatting SCSI command blocks.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/dev/devSCSI.c,v 9.6 91/09/10 18:19:37 rab Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <sprite.h>
+#include <mach.h>
+#include <dev.h>
+#include <devInt.h>
+#include <sys/scsi.h>
+#include <scsiDevice.h>
+#include <dbg.h>
+#include <vm.h>
+#include <sys.h>
+#include <sync.h>
+#include <fs.h>
+#include <sched.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <bstring.h>
+
+/*
+ * The error codes for class 0-6 sense data are class specific.
+ * The follow arrays of strings are used to print error messages.
+ */
+static char *Class0Errors[] = {
+    "No sense data",
+    "No index signal",
+    "No seek complete",
+    "Write fault",
+    "Drive notready",
+    "Drive not selected",
+    "No Track 00",
+    "Multiple drives selected",
+    "No address acknowledged",
+    "Media not loaded",
+    "Insufficient capacity",
+};
+static char *Class1Errors[] = {
+    "ID CRC error",
+    "Unrecoverable data error",
+    "ID address mark not found",
+    "Data address mark not found",
+    "Record not found",
+    "Seek error",
+    "DMA timeout error",
+    "Write protected",
+    "Correctable data check",
+    "Bad block found",
+    "Interleave error",
+    "Data transfer incomplete",
+    "Unformatted or bad format on drive",
+    "Self test failed",
+    "Defective track (media errors)",
+};
+static char *Class2Errors[] = {
+    "Invalid command",
+    "Illegal block address",
+    "Aborted",
+    "Volume overflow",
+};
+int devScsiNumErrors[] = {
+    sizeof(Class0Errors) / sizeof (char *),
+    sizeof(Class1Errors) / sizeof (char *),
+    sizeof(Class2Errors) / sizeof (char *),
+    0, 0, 0, 0, 0,
+};
+char **devScsiErrors[] = {
+    Class0Errors,
+    Class1Errors,
+    Class2Errors,
+};
+
+int devSCSIDebug = FALSE;
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevScsiMapSense --
+ *
+ *	Map a SCSI Class7 Sense data structure into a Sprite ReturnStatus
+ *	and a printable error string.
+ *
+ * Results:
+ *	TRUE if the mapping succeeded. FALSE if the argument is not 
+ *	Class7 sense data.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+Boolean
+DevScsiMapClass7Sense(senseLength,senseDataPtr,statusPtr,errorString)
+    int		senseLength;	/* Length of the sense data at senseDataPtr. */
+    char	*senseDataPtr;	/* The sense data. */
+    ReturnStatus *statusPtr;	/* OUT - The Sprite ReturnStatus. */
+    char	*errorString;	/* OUT - A buffer to write a printable string
+				 * describing the data. Must be at least 
+				 * MAX_SCSI_ERROR_STRING in length. */
+{
+    register ScsiClass7Sense	*sensePtr = (ScsiClass7Sense *) senseDataPtr;
+    ReturnStatus	status;
+
+    /*
+     * Default to no error string. 
+     */
+    *errorString = 0;
+
+    if (senseLength < sizeof(ScsiClass7Sense)) {
+	return (FALSE);
+    }
+    if (sensePtr->error7 != 0x70) {
+	return (FALSE);
+    }
+
+    switch (sensePtr->key) {
+	case SCSI_CLASS7_NO_SENSE:
+	    status = SUCCESS;
+	    break;
+	case SCSI_CLASS7_RECOVERABLE:
+	    /*
+	     * The drive recovered from an error.
+	     */
+	     (void) sprintf(errorString,
+		    "recoverable error - info bytes 0x%x 0x%x 0x%x 0x%x",
+		     sensePtr->info1, sensePtr->info2,
+		     sensePtr->info3,sensePtr->info4);
+	    status = SUCCESS;
+	    break;
+	case SCSI_CLASS7_NOT_READY:
+	    status = DEV_OFFLINE;
+	    break;
+	case SCSI_CLASS7_MEDIA_ERROR:
+	case SCSI_CLASS7_HARDWARE_ERROR:
+	     (void) sprintf(errorString,
+		 "%s error - info bytes 0x%x 0x%x 0x%x 0x%x",
+		(sensePtr->key == SCSI_CLASS7_MEDIA_ERROR) ? "media" :
+							     "hardware",
+		sensePtr->info1 & 0xff,
+		sensePtr->info2 & 0xff,
+		sensePtr->info3 & 0xff,
+		sensePtr->info4 & 0xff);
+	    status = DEV_HARD_ERROR;
+	    break;
+	case SCSI_CLASS7_ILLEGAL_REQUEST:
+	    /*
+	     * Probably a programming error.
+	     */
+	    (void) sprintf(errorString,"illegal request");
+	    status = DEV_INVALID_ARG;
+	    break;
+	case SCSI_CLASS7_UNIT_ATTN:
+	    /*
+	     * This is an error that occurs after the drive is reset.
+	     */
+	    (void) sprintf(errorString,"unit attention");
+	    status = DEV_RESET;
+	    break;
+	case SCSI_CLASS7_WRITE_PROTECT:
+	    (void) sprintf(errorString,"write protected");
+	    status = FS_NO_ACCESS;
+	    break;
+	case SCSI_CLASS7_BLANK_CHECK:
+	    (void) sprintf(errorString,
+		"blank check - info bytes  0x%x 0x%x 0x%x 0x%x",
+		sensePtr->info1,
+		sensePtr->info2,
+		sensePtr->info3,
+		sensePtr->info4);
+	    status = DEV_HARD_ERROR;
+	    break;
+	case SCSI_CLASS7_ABORT:
+	    (void) sprintf(errorString,"command aborted");
+	    status = DEV_RETRY_ERROR;
+	    break;
+	case SCSI_CLASS7_VENDOR:
+	case SCSI_CLASS7_EQUAL:
+	case SCSI_CLASS7_OVERFLOW:
+	    (void) sprintf(errorString,"unsupported class7 error 0x%x\n",
+		    sensePtr->key);
+	    status = DEV_HARD_ERROR;
+	    break;
+	default: {
+	    (void) sprintf(errorString,
+		"unknown class7 error 0x%x\n", sensePtr->key);
+	    status = DEV_HARD_ERROR;
+	    break;
+	}
+    }
+    *statusPtr = status;
+    return TRUE;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevScsiGroup0Cmd --
+ *
+ *      Setup a ScsiCmd block for a SCSI Group0 command.
+ *
+ * Results:
+ *	SUCCESS if the command block was filled in correctly, FAILURE
+ *	otherwise
+ *
+ * Side effects:
+ *	Set the various fields in the control block.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+DevScsiGroup0Cmd(devPtr, cmd, blockNumber,countNumber,scsiCmdPtr)
+    ScsiDevice	*devPtr; /* SCSI device target for this command. */
+    int		cmd;	 /* Group0 scsi command. */
+    unsigned int blockNumber;	/* The starting block number for the transfer */
+    unsigned int countNumber;	/* Number of sectors (or bytes!) to transfer */
+    register ScsiCmd	*scsiCmdPtr; /* Scsi command block to be filled in. */
+{
+    register  ScsiGroup0Cmd	*c;
+
+    if ((cmd < 0) || (cmd > 0x1f)) {
+	panic("Bad SCSI command 0x%x giving to DevScsiGroup0Cmd.\n",cmd);
+    }
+    if (blockNumber > 0x1fffff) {
+	printf("DevScsiGroup0Cmd: block number too big (%d > %d)\n",
+	    blockNumber, 0x1fffff);
+	return FAILURE;
+    }
+    if (countNumber > 0x100) {
+	printf("DevScsiGroup0Cmd: count too big (%d > %d)\n",
+	    countNumber, 0x100);
+	return FAILURE;
+    }
+    bzero((char *)scsiCmdPtr, sizeof(ScsiCmd));
+    scsiCmdPtr->commandBlockLen = sizeof(ScsiGroup0Cmd);
+    c = (ScsiGroup0Cmd *) scsiCmdPtr->commandBlock;
+    c->command = cmd;
+    c->unitNumber = devPtr->LUN;
+    c->highAddr = (blockNumber & 0x1f0000) >> 16;
+    c->midAddr =  (blockNumber & 0x00ff00) >> 8;
+    c->lowAddr =  (blockNumber & 0x0000ff);
+    c->blockCount =  countNumber;
+    return SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CopyAndTerminateString --
+ *
+ *	Copy a fixed length string into a null terminate string stripping
+ *	off the trailing blanks.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+CopyAndTerminateString(length, string, outString)
+    int		length;	/* Length of the input string argument string. */
+    char	*string; /* Input string. */
+    char	*outString; /* Output string area. Must be at least (length+1) 
+			     * bytes. */
+{
+    /*
+     * Find last non blank charater in string. Update length of string.
+     */
+    while ( (length > 0) && (string[length] == ' ') ) {
+	length--;
+    }
+    /*
+     * Copy the string, terminate, and return.
+     */
+    bcopy(string, outString, length);
+    outString[length] = 0;
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevScsiFormatInquiry --
+ *
+ *	Format SCSI inquiry data into a ascii string suitable for printing.
+ *
+ * Results:
+ *	The string length.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+DevScsiFormatInquiry(dataPtr, outputString)
+    ScsiInquiryData *dataPtr;		/* Data structure returned by the 
+					 * SCSI inquiry command. 
+					 */
+    char	*outputString;		/* String to format into. */
+{
+    static char *deviceTypeNames[] = {
+	"Disk", "Tape", "Printer", "Processor", "WORM", "ROM",
+    };
+
+    if (dataPtr->type > (sizeof(deviceTypeNames)/sizeof(char *))) {
+	/*
+	 * If the device type is SCSI_NODEVICE_TYPE the rest of the
+	 * data is not really meaningful so we return.
+	 */
+	if (dataPtr->type == SCSI_NODEVICE_TYPE) {
+	    (void) sprintf(outputString,"Logical unit not present");
+	    return strlen(outputString);
+	} else {
+	    (void) sprintf(outputString,"Unknown 0x%x",dataPtr->type);
+	    return strlen(outputString);
+	}
+    } else {
+	(void) sprintf(outputString,"%s",deviceTypeNames[dataPtr->type]);
+    }
+    if (dataPtr->length < 0x1f) {
+	return strlen(outputString);
+    } else {
+#ifdef notdef
+	char	v[32], p[32], f[32];
+	CopyAndTerminateString(8,dataPtr->vendorInfo, v);
+	CopyAndTerminateString(8,dataPtr->productInfo, p);
+	CopyAndTerminateString(4,dataPtr->firmwareInfo, f);
+	(void) sprintf(outputString + strlen(outputString),"%s %s %s",v,p,f);
+#endif
+	char	v[32], p[32], rl[32], rd[32];
+	CopyAndTerminateString(8,(char *) (dataPtr->vendorID), v);
+	CopyAndTerminateString(16,(char *) (dataPtr->productID), p);
+	CopyAndTerminateString(4,(char *) (dataPtr->revLevel), rl);
+	CopyAndTerminateString(8,(char*) (dataPtr->revData), rd);
+	(void) sprintf(outputString + strlen(outputString),
+	    "%s %s %s", v, p, rl, rd);
+    }
+    return strlen(outputString);
+}
+
+@
+
+
+9.6
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devSCSI.c,v 9.5 91/08/19 13:41:50 jhh Exp Locker: rab $ SPRITE (Berkeley)";
+d175 1
+d191 4
+a195 1
+	case SCSI_CLASS7_ABORT:
+@
+
+
+9.5
+log
+@fixed #include, DevScsiMapClass7Sense returns DEV_RESET if the device
+returned unit attention
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev.jhh/RCS/devSCSI.c,v 9.4 91/04/19 12:09:34 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d143 1
+a143 1
+	     sprintf(errorString,
+d154 2
+a155 1
+	     sprintf(errorString, "%s error - info bytes 0x%x 0x%x 0x%x 0x%x",
+d168 1
+a168 1
+	    sprintf(errorString,"illegal request");
+d178 1
+a178 1
+	    sprintf(errorString,"write protected");
+d182 2
+a183 1
+	    sprintf(errorString,"blank check - info bytes  0x%x 0x%x 0x%x 0x%x",
+d194 1
+a194 1
+	    sprintf(errorString,"unsupported class7 error 0x%x\n",
+d199 2
+a200 1
+	    sprintf(errorString,"unknown class7 error 0x%x\n", sensePtr->key);
+@
+
+
+9.4
+log
+@fixed stupid bug in test of count limit in scsi group 0 command
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devSCSI.c,v 9.3 91/04/12 17:54:17 jhh Exp $ SPRITE (Berkeley)";
+d23 16
+a38 16
+#include "sprite.h"
+#include "mach.h"
+#include "dev.h"
+#include "devInt.h"
+#include "scsi.h"
+#include "scsiDevice.h"
+#include "dbg.h"
+#include "vm.h"
+#include "sys.h"
+#include "sync.h"
+#include "fs.h"
+#include "sched.h"
+#include "stdio.h"
+#include "stdlib.h"
+#include "string.h"
+#include "bstring.h"
+a172 1
+	     * It can probably be ignored.
+d174 1
+a174 1
+	    status = SUCCESS;
+@
+
+
+9.3
+log
+@use extended read/write commands for big devices
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devSCSI.c,v 9.2 90/09/11 12:23:09 rab Exp $ SPRITE (Berkeley)";
+d241 1
+a241 1
+    if (countNumber > 0xff) {
+d243 1
+a243 1
+	    countNumber, 0xff);
+@
+
+
+9.2
+log
+@Fixed routines expecting wrong value from sprintf().
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devSCSI.c,v 9.1 90/01/27 14:39:50 mendel Exp Locker: rab $ SPRITE (Berkeley)";
+d215 2
+a216 1
+ *	None.
+d223 1
+a223 1
+void
+d236 10
+d255 1
+@
+
+
+9.1
+log
+@Fixed printf which should of been an sprintf.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devSCSI.c,v 8.10 89/07/31 17:26:08 mendel Exp $ SPRITE (Berkeley)";
+d34 2
+d37 2
+a38 1
+#include "sched.h"
+a306 1
+    int	len;
+d317 2
+a318 2
+	    len = sprintf(outputString,"Logical unit not present");
+	    return len;
+d320 2
+a321 1
+	    len = sprintf(outputString,"Unknown 0x%x",dataPtr->type);
+d324 1
+a324 1
+	len = sprintf(outputString,"%s",deviceTypeNames[dataPtr->type]);
+d327 1
+a327 1
+	return len;
+d334 1
+a334 1
+	len += sprintf(outputString+len,"%s %s %s",v,p,f);
+d341 2
+a342 1
+	len += sprintf(outputString+len,"%s %s %s", v, p, rl, rd);
+d344 1
+a344 1
+    return len;
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devSCSI.c,v 8.10 89/07/31 17:26:08 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d151 1
+a151 1
+	     printf(errorString, "%s error - info bytes 0x%x 0x%x 0x%x 0x%x",
+@
+
+
+8.10
+log
+@Removed lint.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devSCSI.c,v 8.9 89/07/10 19:40:58 nelson Exp $ SPRITE (Berkeley)";
+@
+
+
+8.9
+log
+@Incorporated changes from DECWRL.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devSCSI.c,v 8.8 89/05/23 10:02:18 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d334 4
+a337 4
+	CopyAndTerminateString(8,dataPtr->vendorID, v);
+	CopyAndTerminateString(16,dataPtr->productID, p);
+	CopyAndTerminateString(4,dataPtr->revLevel, rl);
+	CopyAndTerminateString(8,dataPtr->revData, rd);
+@
+
+
+8.8
+log
+@Changed to only contain define independent SCSI command formatting and
+error handling routines.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devSCSI.c,v 8.7 89/02/19 22:01:49 jhh Exp $ SPRITE (Berkeley)";
+d326 1
+d332 7
+@
+
+
+8.7
+log
+@Changes due to lock registration
+@
+text
+@d4 2
+a5 2
+ *	SCSI = Small Computer System Interface.
+ *	Device driver for the SCSI disk and tape interface.
+d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devSCSI.c,v 8.6 88/12/21 10:23:27 brent Exp Locker: jhh $ SPRITE (Berkeley)";
+d28 1
+a28 7
+#include "devSCSI.h"
+#include "devSCSI3Regs.h"	/* To get UDC control block size */
+#include "devMultibus.h"
+#include "devDiskLabel.h"
+#include "devSCSIDisk.h"
+#include "devSCSITape.h"
+#include "devSCSIWorm.h"
+a32 1
+#include "proc.h"	/* for Mach_SetJump */
+a37 10
+ * State for each SCSI controller.
+ */
+static DevSCSIController *scsi[SCSI_MAX_CONTROLLERS];
+
+/*
+ * SetJump stuff needed when probing for the existence of a device.
+ */
+Mach_SetJumpState scsiSetJumpState;
+
+/*
+d41 1
+a41 1
+char *scsiClass0Errors[] = {
+d54 1
+a54 1
+char *scsiClass1Errors[] = {
+d71 1
+a71 1
+char *scsiClass2Errors[] = {
+d77 4
+a80 4
+int scsiNumErrors[] = {
+    sizeof(scsiClass0Errors) / sizeof (char *),
+    sizeof(scsiClass1Errors) / sizeof (char *),
+    sizeof(scsiClass2Errors) / sizeof (char *),
+d83 4
+a86 4
+char **scsiErrors[] = {
+    scsiClass0Errors,
+    scsiClass1Errors,
+    scsiClass2Errors,
+a89 8
+
+/*
+ * Forward declarations.
+ */
+
+ReturnStatus	DevSCSITest();
+void		DevSCSISetupCommand();
+
+d94 1
+a94 1
+ * Dev_SCSIInitController --
+d96 2
+a97 4
+ *	Initialize an SCSI controller.  This probes for the existence
+ *	of an SCSI controller (of various types).  If found it initializes
+ *	the main data structure for the controller and allocates some
+ *	associated buffers.
+d100 2
+a101 1
+ *	Returns TRUE if the controller is alive.
+d104 1
+a104 2
+ *	Allocate buffer space associated with the controller.
+ *	Do a hardware reset of the controller.
+d109 89
+a197 24
+Dev_SCSIInitController(cntrlrPtr)
+    DevConfigController *cntrlrPtr;	/* Config info for the controller */
+{
+    DevSCSIController *scsiPtr;		/* SCSI specific state */
+    int bufferSize;			/* Total size of small buffers that
+					 * have to be in special DMA memory */
+    Address dmaAreaBuffer;		/* Area with a physical page behind it*/
+
+    /*
+     * Allocate space for SCSI specific state and
+     * initialize the controller itself.
+     */
+#ifdef sun2
+    /*
+     * Define these away so we don't have to load the SCSI3 code
+     */
+#define DevSCSI3ProbeOnBoard(address, scsiPtr)		FALSE
+#define DevSCSI3ProbeVME(address, scsiPtr, vector)	FALSE
+#endif
+    scsiPtr = (DevSCSIController *)malloc(sizeof(DevSCSIController));
+    if (cntrlrPtr->space == DEV_OBIO) {
+	if (!DevSCSI3ProbeOnBoard(cntrlrPtr->address, scsiPtr)) {
+	    free((char *)scsiPtr);
+	    return(FALSE);
+a198 36
+    } else if (!DevSCSI0Probe(cntrlrPtr->address, scsiPtr) &&
+	       !DevSCSI3ProbeVME(cntrlrPtr->address, scsiPtr,
+				   cntrlrPtr->vectorNumber)) {
+	free((char *)scsiPtr);
+	return(FALSE);
+    }
+    scsi[cntrlrPtr->controllerID] = scsiPtr;
+    scsiPtr->number = cntrlrPtr->controllerID;
+    scsiPtr->regsPtr = (Address)cntrlrPtr->address;
+
+    (*scsiPtr->resetProc)(scsiPtr);
+
+    /*
+     * Allocate the mapped DMA memory to buffers:  one small buffer
+     * for sense data, a one sector buffer for the label, and one buffer
+     * for reading and writing filesystem blocks.  One physical page is
+     * obtained for the all the small things.  The general buffer gets
+     * mapped just before a read or write.  
+     */
+    bufferSize = sizeof(DevSCSISense) +
+		  DEV_BYTES_PER_SECTOR;
+#ifndef sun2
+    if (scsiPtr->onBoard) {
+	bufferSize += sizeof(DevUDCDMAtable);
+    }
+#endif
+    dmaAreaBuffer = VmMach_DevBufferAlloc(&devIOBuffer, bufferSize);
+    VmMach_GetDevicePage(dmaAreaBuffer);
+
+    scsiPtr->senseBuffer = (DevSCSISense *)dmaAreaBuffer;
+    dmaAreaBuffer += sizeof(DevSCSISense);
+    scsiPtr->labelBuffer = dmaAreaBuffer;
+#ifndef sun2
+    if (scsiPtr->onBoard) {
+	dmaAreaBuffer += DEV_BYTES_PER_SECTOR;
+	scsiPtr->udcDmaTable = (DevUDCDMAtable *)dmaAreaBuffer;
+d200 2
+a201 18
+#endif
+
+    scsiPtr->IOBuffer = VmMach_DevBufferAlloc(&devIOBuffer, DEV_MAX_IO_BUF_SIZE);    
+    /*
+     * Initialize synchronization variables and set the controllers
+     * state to alive and not busy.
+     */
+    scsiPtr->flags = SCSI_CNTRLR_ALIVE;
+    Sync_SemInitDynamic(&scsiPtr->mutex,"Dev:scsiPtr mutex");   
+    scsiPtr->IOComplete.waiting = 0;
+    scsiPtr->readyForIO.waiting = 0;
+    scsiPtr->configPtr = cntrlrPtr;
+
+    scsiPtr->numRecoverableErrors = 0;
+    scsiPtr->numHardErrors = 0;
+    scsiPtr->numUnitAttns = 0;
+
+    return(TRUE);
+a202 1
+
+d207 1
+a207 1
+ * Dev_SCSIIdleCheck --
+d209 1
+a209 1
+ *	Check to see if the controller is idle.
+d215 1
+a215 2
+ *	Increments the idle check count and possibly the idle count in
+ *	the controller entry.
+d220 27
+a246 17
+Dev_SCSIIdleCheck(cntrlrPtr)
+    DevConfigController *cntrlrPtr;	/* Config info for the controller */
+{
+    DevSCSIController *scsiPtr;
+
+    scsiPtr = scsi[cntrlrPtr->controllerID];
+    if (scsiPtr != (DevSCSIController *)NIL) {
+	cntrlrPtr->numSamples++;
+	if (!(scsiPtr->flags & SCSI_CNTRLR_BUSY)) {
+	    cntrlrPtr->idleCount++;
+	}
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+d248 2
+a249 1
+ * Dev_SCSIInitDevice --
+a250 5
+ *	Initialize a device hanging off an SCSI controller.
+ *	This keeps track of how many times it is called with
+ *	for disks and tapes so that it can properly correlate
+ *	filesystem unit numbers to particular devices.
+ *
+d255 1
+a255 3
+ *	Disks:  The label sector is read and the partitioning of
+ *	the disk is set up.  The partitions correspond to device
+ *	files of the same type but with different unit number.
+a258 7
+Boolean
+Dev_SCSIInitDevice(devConfPtr)
+    DevConfigDevice *devConfPtr;	/* Config info about the device */
+{
+    ReturnStatus status;
+    DevSCSIController *scsiPtr;	/* SCSI specific controller state */
+    DevSCSIDevice *devPtr;	/* Device specific state */
+d260 28
+a287 55
+    /*
+     * Increment disk/tape/worm index before checking for the controller so the
+     * unit numbers match up right.  ie. each controller accounts
+     * for DEV_NUM_DISK_PARTS unit numbers, and the unit number is
+     * used to index the devDisk array (div DEV_NUM_DISK_PARTS).
+     * For example, if a host has two controllers, we don't want the unit
+     * numbers of devices on the second to change if the first controller
+     * isn't powered up.
+     */
+    switch(devConfPtr->flags & SCSI_TYPE_MASK) {
+	case SCSI_DISK:
+	    scsiDiskIndex++;
+	    break;
+	case SCSI_TAPE:
+	    scsiTapeIndex++;
+	    break;
+	case SCSI_WORM: 
+	    scsiWormIndex++;
+	    break;
+	default:
+	    printf("Dev_SCSIInitDevice, unknown SCSI device type <%x>\n",
+		devConfPtr->flags);
+	    return(FAILURE);
+    }
+
+    scsiPtr = scsi[devConfPtr->controllerID];
+    if (scsiPtr == (DevSCSIController *)NIL ||
+	scsiPtr == (DevSCSIController *)0) {
+	return(FALSE);
+    }
+
+    devPtr = (DevSCSIDevice *)malloc(sizeof(DevSCSIDevice));
+    devPtr->scsiPtr = scsiPtr;
+    devPtr->targetID = devConfPtr->slaveID;
+    devPtr->LUN = devConfPtr->flags & SCSI_LUN_MASK;
+    switch(devConfPtr->flags & SCSI_TYPE_MASK) {
+	case SCSI_DISK:
+	    status = DevSCSIDiskInit(devPtr);
+	    break;
+	case SCSI_TAPE:
+	    status = DevSCSITapeInit(devPtr);
+	    break;
+	case SCSI_WORM: 
+	    status = DevSCSIWormInit(devPtr);
+	    break;
+    }
+    if (status != SUCCESS) {
+	free((Address)devPtr);
+	return(FALSE);
+    }
+    return(TRUE);
+}
+
+/*
+ *----------------------------------------------------------------------
+a288 4
+ * DevSCSITest --
+ *
+ *	Test an SCSI device to see if it is ready.
+ *
+d290 1
+a290 1
+ *	SUCCESS if the device is ok, DEV_OFFLINE otherwise.
+a292 49
+ *	none.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+DevSCSITest(devPtr)
+    DevSCSIDevice *devPtr;
+{
+    register ReturnStatus status;
+    register DevSCSIController *scsiPtr;
+
+    /*
+     * Synchronize with the interrupt handling routine and with other
+     * processes that are trying to initiate I/O with this controller.
+     * FIX HERE TO ENQUEUE REQUESTS - GOES WITH CONNECT/DIS-CONNECT
+     */
+    scsiPtr = devPtr->scsiPtr;
+    MASTER_LOCK(&scsiPtr->mutex);
+    Sync_SemRegister(&scsiPtr->mutex);
+    while (scsiPtr->flags & SCSI_CNTRLR_BUSY) {
+	Sync_MasterWait(&scsiPtr->readyForIO, &scsiPtr->mutex, FALSE);
+    }
+    scsiPtr->flags |= SCSI_CNTRLR_BUSY;
+
+	DevSCSISetupCommand(SCSI_TEST_UNIT_READY, devPtr, 0, 0);
+
+	status = (*devPtr->scsiPtr->commandProc)(devPtr->targetID,
+		devPtr->scsiPtr, 0, (Address)0, WAIT);
+	if (status == DEV_TIMEOUT) {
+	    status = DEV_OFFLINE;
+	}
+
+    scsiPtr->flags &= ~SCSI_CNTRLR_BUSY;
+    Sync_MasterBroadcast(&scsiPtr->readyForIO);
+    MASTER_UNLOCK(&scsiPtr->mutex);
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevSCSISetupCommand --
+ *
+ *      Setup a control block for a command.  The control block can then
+ *      be passed to DevSCSICommand.  The control block specifies the a
+ *      sub-unit to the controller, the command, and the device address of
+ *      the transfer.
+ *
+ * Results:
+a294 43
+ * Side effects:
+ *	Set the various fields in the control block.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+DevSCSISetupCommand(command, devPtr, blockNumber, numSectors)
+    char command;	/* One of six standard SCSI commands */
+    DevSCSIDevice *devPtr;	/* Device state */
+    int blockNumber;	/* The starting block number for the transfer */
+    int numSectors;	/* Number of sectors (or bytes!) to transfer */
+{
+    register DevSCSIControlBlock *controlBlockPtr;
+
+    devPtr->scsiPtr->devPtr = devPtr;
+    controlBlockPtr = &devPtr->scsiPtr->controlBlock;
+    bzero((Address)controlBlockPtr,sizeof(DevSCSIControlBlock));
+    controlBlockPtr->command = command;
+    controlBlockPtr->unitNumber = devPtr->LUN;
+    controlBlockPtr->highAddr = (blockNumber & 0x1f0000) >> 16;
+    controlBlockPtr->midAddr =  (blockNumber & 0x00ff00) >> 8;
+    controlBlockPtr->lowAddr =  (blockNumber & 0x0000ff);
+    controlBlockPtr->blockCount =  numSectors;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevSCSIRequestSense --
+ *
+ *	Do a request-sense command to obtain the sense data that an
+ *	SCSI device returns after some error conditions.  Unfortunately,
+ *	the format of the sense data varies with different controllers.
+ *	The "sysgen" drive on 2/120's has a format described by
+ *	the DevSCSITapeSense type, while the shoebox drives use the
+ *	more standard error "class 7" format.
+ *
+ * Results:
+ *	SUCCESS if the sense data is benign.
+ *
+ * Side effects:
+ *	Does an SCSI_REQUEST_SENSE command.
+ *
+d297 11
+a307 10
+ReturnStatus
+DevSCSIRequestSense(scsiPtr, devPtr)
+    DevSCSIController *scsiPtr;	/* Controller state */
+    DevSCSIDevice *devPtr;	/* Device state needed for error checking */
+{
+    ReturnStatus status = SUCCESS;
+    register DevSCSISense *sensePtr = scsiPtr->senseBuffer;
+    int command;	/* Previous command that generated sense data */
+    int residual;	/* Previous command's residual.  This'll get overwritten
+			 * by our command to get the sense bytes */
+d309 1
+a309 3
+    if (scsiPtr->flags & SCSI_GETTING_STATUS) {
+	printf("Warning: DevSCSIRequestSense recursed");
+    } else {
+d311 2
+a312 3
+	 * The regular SetupCommand procedure is used, although the
+	 * "numSectors" parameter needs to be a byte count indicating
+	 * the size of the sense data buffer.
+d314 5
+a318 17
+	bzero((Address)sensePtr, sizeof(DevSCSISense));
+	scsiPtr->flags |= SCSI_GETTING_STATUS;
+	command = scsiPtr->command;
+	residual = scsiPtr->residual;
+	DevSCSISetupCommand(SCSI_REQUEST_SENSE, devPtr, 0,sizeof(DevSCSISense));
+	status = (*scsiPtr->commandProc)(devPtr->targetID, scsiPtr,
+			    sizeof(DevSCSISense), (Address)sensePtr, WAIT);
+	scsiPtr->command = command;
+	scsiPtr->flags &= ~SCSI_GETTING_STATUS;
+	if (devPtr->type == SCSI_TAPE &&
+	    ((DevSCSITape *)devPtr->data)->type == SCSI_UNKNOWN) {
+	    /*
+	     * Heuristically determine the drive type by examining the
+	     * amount of data returned.
+	     */
+	    DevSCSITapeType(sizeof(DevSCSISense) - scsiPtr->residual,
+			((DevSCSITape *)devPtr->data));
+d320 11
+a330 2
+	status = (*devPtr->errorProc)(devPtr, sensePtr);
+	scsiPtr->residual = residual;
+d332 1
+a332 1
+    return(status);
+a333 27
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_SCSIIntr --
+ *
+ *	Handle interrupts from the SCSI controller.  This has to poll
+ *	through the possible SCSI controllers to find the one generating
+ *	the interrupt.  The usual action is to wake up whoever is waiting
+ *	for I/O to complete.  This may also start up another transaction
+ *	with the controller if there are things in its queue.
+ *
+ * Results:
+ *	TRUE if an SCSI controller was responsible for the interrupt
+ *	and this routine handled it.
+ *
+ * Side effects:
+ *	Usually a process is notified that an I/O has completed.
+ *
+ *----------------------------------------------------------------------
+ */
+Boolean
+Dev_SCSIIntr()
+{
+    int index;
+    register DevSCSIController *scsiPtr;
+    register int serviced;
+a334 11
+    for (index = 0; index < SCSI_MAX_CONTROLLERS ; index++) {
+	scsiPtr = scsi[index];
+	if (scsiPtr != (DevSCSIController *)NIL) {
+	    serviced = (*scsiPtr->intrProc)(scsiPtr);
+	    if (serviced) {
+		return(TRUE);
+	    }
+	}
+    }
+    return(FALSE);
+}
+@
+
+
+8.6
+log
+@Fixed allocation of DMA space so there is a larger general I/O buffer
+and so only a single hardware page is used for the other things
+like the sense data and the label buffer
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devSCSI.c,v 8.5 88/11/28 08:18:59 brent Exp $ SPRITE (Berkeley)";
+d41 1
+a41 1
+#include "mem.h"
+d206 1
+a206 1
+    SYNC_SEM_INIT_DYNAMIC(&scsiPtr->mutex,"scsiPtr->mutex");   
+d361 1
+@
+
+
+8.5
+log
+@Added synchronization to DevSCSITest so that it won't
+find a busy SCSI bus and abort.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devSCSI.c,v 8.4 88/11/22 19:07:43 jhh Exp $ SPRITE (Berkeley)";
+d29 1
+d140 3
+d148 7
+d174 1
+a174 1
+     * Allocate the mapped multibus memory to buffers:  one small buffer
+d176 3
+a178 5
+     * for reading and writing filesystem blocks.  A physical page is
+     * obtained for the sense data and the label.  The general buffer gets
+     * mapped just before a read or write.  It has to be twice as large as
+     * the maximum transfer size so that an unaligned block can be mapped
+     * into it.
+d180 9
+a188 4
+    scsiPtr->senseBuffer =
+	    (DevSCSISense *)VmMach_DevBufferAlloc(&devIOBuffer,
+					       sizeof(DevSCSISense));
+    VmMach_GetDevicePage((Address)scsiPtr->senseBuffer);
+d190 9
+a198 3
+    scsiPtr->labelBuffer = VmMach_DevBufferAlloc(&devIOBuffer,
+					     DEV_BYTES_PER_SECTOR);
+    VmMach_GetDevicePage((Address)scsiPtr->labelBuffer);
+d200 1
+a200 4
+    scsiPtr->IOBuffer = VmMach_DevBufferAlloc(&devIOBuffer,
+            2 * max(FS_BLOCK_SIZE,
+		    MAX_WORM_SECTORS_IO * DEV_BYTES_PER_WORM_SECTOR));
+    
+d445 3
+a447 1
+    int command;
+d460 1
+d476 1
+@
+
+
+8.4
+log
+@new semaphore definition
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devSCSI.c,v 8.3 88/11/21 09:03:04 brent Exp $ SPRITE (Berkeley)";
+d335 1
+d337 11
+a347 1
+    DevSCSISetupCommand(SCSI_TEST_UNIT_READY, devPtr, 0, 0);
+d349 11
+a359 5
+    status = (*devPtr->scsiPtr->commandProc)(devPtr->targetID, devPtr->scsiPtr,
+		    0, (Address)0, WAIT);
+    if (status == DEV_TIMEOUT) {
+	status = DEV_OFFLINE;
+    }
+@
+
+
+8.3
+log
+@Stable version after code reorganization
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devSCSI.c,v 8.2 88/11/16 14:36:50 brent Exp $ SPRITE (Berkeley)";
+a138 2
+    static Sync_Semaphore mutexInit	/* Used to initialize mutex field */
+	= SYNC_SEMAPHORE_INIT("scsiPtr->mutex");
+d189 1
+a189 1
+    scsiPtr->mutex = mutexInit;
+@
+
+
+8.2
+log
+@Removed Host Adaptor specific code
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devSCSI.c,v 6.5 88/11/07 14:55:12 mlgray Exp $ SPRITE (Berkeley)";
+d51 1
+a51 1
+static Mach_SetJumpState setJumpState;
+d97 1
+a97 1
+    0, 0, 0, 0,
+d139 2
+a140 2
+    register DevSCSIRegs *regsPtr;	/* Control registers for SCSI */
+    int x;				/* Used when probing the controller */
+d160 1
+a160 1
+    scsiPtr->regsPtr = cntrlrPtr->address;
+d191 1
+a191 1
+    scsiPtr->mutex = 0;
+d273 14
+a286 6
+    if (devConfPtr->flags == DEV_SCSI_DISK) {
+	scsiDiskIndex++;
+    } else if (devConfPtr->flags == DEV_SCSI_TAPE) {
+	scsiTapeIndex++;
+    } else if (devConfPtr->flags == DEV_SCSI_WORM) {
+	scsiWormIndex++;
+d297 12
+a308 12
+    devPtr->subUnitID = 0;
+    devPtr->slaveID = devConfPtr->slaveID;
+    if (devConfPtr->flags == DEV_SCSI_DISK) {
+	status = DevSCSIDiskInit(scsiPtr, devPtr);
+    } else if (devConfPtr->flags == DEV_SCSI_TAPE) {
+	status = DevSCSITapeInit(scsiPtr, devPtr);
+    } else if (devConfPtr->flags == DEV_SCSI_WORM) {
+	status = DevSCSIWormInit(scsiPtr, devPtr);
+    } else {
+	printf("Dev_SCSIInitDevice, unknown SCSI device type <%x>\n",
+	    devConfPtr->flags);
+	status = FAILURE;
+d340 1
+a340 1
+    status = (*devPtr->scsiPtr->commandProc)(devPtr->slaveID, devPtr->scsiPtr,
+d379 1
+a379 1
+    controlBlockPtr->unitNumber = devPtr->subUnitID;
+a413 1
+    int senseSize;
+d420 2
+a421 1
+	 * "numSectors" parameter needs to be a byte count...
+d427 1
+a427 1
+	status = (*scsiPtr->commandProc)(devPtr->slaveID, scsiPtr,
+d434 2
+a435 4
+	     * Heuristically determine the drive type...  We ask for the max
+	     * possible sense bytes, and this gets returned by the sysgen
+	     * controller.  The emulux controller returns less.  We might
+	     * also be able to depend on the class7 sense class below...
+d437 2
+a438 13
+	    senseSize = sizeof(DevSCSISense) - scsiPtr->residual;
+	    printf("RequestSense, sense size %d\n", senseSize);
+	    switch(senseSize) {
+		case sizeof(DevQICIISense):
+		    ((DevSCSITape *)devPtr->data)->type = SCSI_SYSGEN;
+		    break;
+		case sizeof(DevEmulexTapeSense):
+		    ((DevSCSITape *)devPtr->data)->type = SCSI_EMULUX;
+		    break;
+		case sizeof(DevExabyteSense):
+		    ((DevSCSITape *)devPtr->data)->type = SCSI_EXABYTE;
+		    break;
+	    }
+@
+
+
+8.1
+log
+@Added patches to make onboard interface work
+@
+text
+@d9 7
+d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devSCSI.c,v 8.0 88/11/11 18:13:01 douglis Stable Locker: mendel $ SPRITE (Berkeley)";
+a28 1
+#include "devSCSIWorm.h"
+d31 3
+a48 23
+ * State for each SCSI disk.  The state for all SCSI disks are kept
+ * together so that the driver can easily find the disk and partition
+ * that correspond to a filesystem unit number.
+ */
+
+DevSCSIDevice *scsiDisk[SCSI_MAX_DISKS];
+static int scsiDiskIndex = -1;
+
+/*
+ * State for each SCSI tape drive.  This used to map from unit numbers
+ * back to the controller for the drive.
+ */
+static int scsiTapeIndex = -1;
+DevSCSIDevice *scsiTape[SCSI_MAX_TAPES];
+
+/*
+ * State for each SCSI worm drive.  This used to map from unit numbers
+ * back to the controller for the drive.
+ */
+static int scsiWormIndex = -1;
+DevSCSIDevice *scsiWorm[SCSI_MAX_WORMS];
+
+/*
+a107 7
+ * Variable shared between the SCSI and SBC drivers to indicate that a
+ * SCSI device has been successfully located.
+ */
+	
+Boolean devSCSIFound = FALSE;
+
+/*
+a110 1
+void		DevSCSIReset();
+a111 1
+void		DevSCSIDoLabel();
+a112 3
+ReturnStatus	DevSCSICommand();
+ReturnStatus	DevSCSIStatus();
+ReturnStatus	DevSCSIWait();
+a113 4
+extern ReturnStatus DevSCSIDiskError();
+extern ReturnStatus DevSCSITapeError();
+extern ReturnStatus DevSCSIWormError();
+
+d120 4
+a123 1
+ *	Initialize an SCSI controller.
+d147 3
+a149 23
+    scsi[cntrlrPtr->controllerID] = scsiPtr;
+    scsiPtr->number = cntrlrPtr->controllerID;
+
+    /*
+     * Poke at the controller's registers to see if it works
+     * or we get a bus error.
+     */
+    scsiPtr->regsPtr = (DevSCSIRegs *)cntrlrPtr->address;
+    regsPtr = scsiPtr->regsPtr;
+    if (Mach_SetJump(&setJumpState) == SUCCESS) {
+	x = regsPtr->dmaCount;
+#ifdef lint
+	regsPtr->dmaCount = x;
+#endif
+	regsPtr->dmaCount = (short)0xBABE;
+	if (regsPtr->dmaCount != (short)0xBABE) {
+#ifdef notdef
+	    printf("SCSI-%d: dmaCount register: wrote %x read back %x\n",
+				 scsiPtr->number, 0xBABE, regsPtr->dmaCount);
+#endif 
+	    Mach_UnsetJump();
+	    free((Address) scsiPtr);
+	    scsi[cntrlrPtr->controllerID] = (DevSCSIController *)NIL;
+d152 4
+a155 7
+    } else {
+	Mach_UnsetJump();
+	/*
+	 * Got a bus error. Zap the info about the non-existent controller.
+	 */
+	free((Address) scsiPtr);
+	scsi[cntrlrPtr->controllerID] = (DevSCSIController *)NIL;
+d158 3
+a160 1
+    Mach_UnsetJump();
+d162 1
+a162 1
+    DevSCSIReset(regsPtr);
+a164 6
+     * Initialize autovector index for VME based boxes.
+     */
+    if (cntrlrPtr->vectorNumber > 0) {
+	regsPtr->intrVector = cntrlrPtr->vectorNumber;
+    }
+    /*
+d190 1
+a193 1
+    scsiPtr->flags = SCSI_CNTRLR_ALIVE;
+d196 4
+a199 6
+    /*
+     * This is used for communication between the SCSI and SBC drivers
+     * since they apparently can't find out a priori.
+     */
+    devSCSIFound = TRUE;
+    
+d264 9
+a273 6
+	/*
+	 * Increment this before checking for the controller so the
+	 * unit numbers match up right.  ie. each controller accounts
+	 * for DEV_NUM_DISK_PARTS unit numbers, and the unit number is
+	 * used to index the devDisk array (div DEV_NUM_DISK_PARTS).
+	 */
+d292 1
+a292 26
+	register DevSCSIDisk *diskPtr;
+	/*
+	 * Check that the disk is on-line.  This means we won't find a disk
+	 * if its powered down upon boot.
+	 */
+	devPtr->type = SCSI_DISK;
+	devPtr->errorProc = DevSCSIDiskError;
+	devPtr->sectorSize = DEV_BYTES_PER_SECTOR;
+	status = DevSCSITest(devPtr);
+	if (status != SUCCESS) {
+	    free((Address)devPtr);
+	    return(FALSE);
+	}
+	/*
+	 * Set up a slot in the disk list. See above about scsiDiskIndex.
+	 */
+	if (scsiDiskIndex >= SCSI_MAX_DISKS) {
+	    printf("SCSI: Too many disks configured\n");
+	    free((Address)devPtr);
+	    return(FALSE);
+	}
+	diskPtr = (DevSCSIDisk *) malloc(sizeof(DevSCSIDisk));
+	devPtr->data = (ClientData)diskPtr;
+	diskPtr->type = SCSI_SHOEBOX_DISK;
+	scsiDisk[scsiDiskIndex] = devPtr;
+	DevSCSIDoLabel(devPtr);
+d294 1
+a294 21
+	register DevSCSITape *tapePtr;
+
+	/*
+	 * Don't try to talk to the tape drive at boot time.  It may be doing
+	 * stuff after the SCSI bus reset like auto load.
+	 */
+	if (scsiTapeIndex >= SCSI_MAX_TAPES) {
+	    printf("SCSI: Too many tape drives configured\n");
+	    free((Address)devPtr);
+	    return(FALSE);
+	}
+	devPtr->type = SCSI_TAPE;
+	devPtr->errorProc = DevSCSITapeError;
+	devPtr->sectorSize = DEV_BYTES_PER_SECTOR;
+	tapePtr = (DevSCSITape *) malloc(sizeof(DevSCSITape));
+	devPtr->data = (ClientData)tapePtr;
+	tapePtr->state = SCSI_TAPE_CLOSED;
+	tapePtr->type = SCSI_UNKNOWN;
+	scsiTape[scsiTapeIndex] = devPtr;
+	printf("SCSI-%d tape %d at slave %d\n",
+		    scsiPtr->number, scsiTapeIndex, devPtr->slaveID);
+d296 5
+a300 24
+	register DevSCSIWorm *wormPtr;
+	/*
+	 * Check that the worm is on-line.  This means we won't find a disk
+	 * if it's powered down upon boot.
+	 */
+	devPtr->type = SCSI_WORM;
+	devPtr->errorProc = DevSCSIWormError;
+	devPtr->sectorSize = DEV_BYTES_PER_WORM_SECTOR;
+	status = DevSCSITest(devPtr);
+	if (status != SUCCESS) {
+	    free((Address)devPtr);
+	    return(FALSE);
+	}
+	if (scsiWormIndex >= SCSI_MAX_WORMS) {
+	    printf("SCSI: Too many worm drives configured\n");
+	    free((Address)devPtr);
+	    return(FALSE);
+	}
+	wormPtr = (DevSCSIWorm *) malloc(sizeof(DevSCSIWorm));
+	wormPtr->state = SCSI_WORM_CLOSED;
+	devPtr->data = (ClientData)wormPtr;
+	scsiWorm[scsiWormIndex] = devPtr;
+	printf("SCSI-%d worm %d at slave %d\n",
+		    scsiPtr->number, scsiWormIndex, devPtr->slaveID);
+d302 4
+a311 24
+ * DevSCSIReset --
+ *
+ *	Reset the controller.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Reset the controller.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+DevSCSIReset(regsPtr)
+    DevSCSIRegs *regsPtr;
+{
+    regsPtr->control = SCSI_RESET;
+    MACH_DELAY(100);
+    regsPtr->control = 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+d332 2
+a333 2
+    status = DevSCSICommand(devPtr->slaveID, devPtr->scsiPtr, 0,
+				(Address)0, WAIT);
+a342 155
+ * DevSCSIDoLabel --
+ *
+ *	Read the label of the disk and record the partitioning info.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Define the disk partitions that determine which part of the
+ *	disk each different disk device uses.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+DevSCSIDoLabel(devPtr)
+    DevSCSIDevice *devPtr;
+{
+    register DevSCSIController *scsiPtr = devPtr->scsiPtr;
+    DevSCSIDisk *diskPtr;
+    register ReturnStatus status;
+    Sun_DiskLabel *diskLabelPtr;
+    int part;
+
+    DevSCSISetupCommand(SCSI_READ, devPtr, 0, 1);
+
+    status = DevSCSICommand(devPtr->slaveID, scsiPtr, DEV_BYTES_PER_SECTOR,
+			    scsiPtr->labelBuffer, WAIT);
+    if (status != SUCCESS) {
+	printf("SCSI-%d: couldn't read the disk%d label\n",
+			     scsiPtr->number, devPtr->slaveID);
+	return;
+    }
+    diskLabelPtr = (Sun_DiskLabel *)scsiPtr->labelBuffer;
+    printf("SCSI-%d disk%d: %s\n", scsiPtr->number, devPtr->slaveID,
+			diskLabelPtr->asciiLabel);
+
+    diskPtr = (DevSCSIDisk *)devPtr->data;
+    diskPtr->numCylinders = diskLabelPtr->numCylinders;
+    diskPtr->numHeads = diskLabelPtr->numHeads;
+    diskPtr->numSectors = diskLabelPtr->numSectors;
+
+    printf(" Partitions ");
+    for (part = 0; part < DEV_NUM_DISK_PARTS; part++) {
+	diskPtr->map[part].firstCylinder =
+		diskLabelPtr->map[part].cylinder;
+	diskPtr->map[part].numCylinders =
+		diskLabelPtr->map[part].numBlocks /
+		(diskLabelPtr->numHeads * diskLabelPtr->numSectors) ;
+	printf(" (%d,%d)", diskPtr->map[part].firstCylinder,
+				   diskPtr->map[part].numCylinders);
+    }
+    printf("\n");
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevSCSIDiskIO --
+ *
+ *      Read or Write (to/from) a raw SCSI disk file. The deviceUnit
+ *      number is mapped to a particular partition on a particular disk.
+ *      The starting coordinate, firstSector,  is relocated to be relative
+ *      to the corresponding disk partition.  The transfer is checked
+ *      against the partition size to make sure that the I/O doesn't cross
+ *      a disk partition.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The number of sectors to transfer gets trimmed down if it would
+ *	cross into the next partition.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+DevSCSIDiskIO(command, deviceUnit, buffer, firstSector, numSectorsPtr)
+    int command;			/* SCSI_READ or SCSI_WRITE */
+    int deviceUnit;			/* Unit from the filesystem that
+					 * indicates a disk and partition */
+    char *buffer;			/* Target buffer */
+    int firstSector;			/* First sector to transfer. Should be
+					 * relative to the start of the disk
+					 * partition corresponding to the unit*/
+    int *numSectorsPtr;			/* Upon entry, the number of sectors to
+					 * transfer.  Upon return, the number
+					 * of sectors actually transferred. */
+{
+    ReturnStatus status;
+    int disk;		/* Disk number of disk that has the partition that
+			 * corresponds to the unit number */
+    int part;		/* Partition of disk that corresponds to unit number */
+    DevSCSIDevice *devPtr;		/* Generic SCSI device state */
+    register DevSCSIDisk *diskPtr;	/* State of the disk */
+    int totalSectors;		/* The total number of sectors to transfer */
+    int numSectors;		/* The number of sectors to transfer at
+				 * one time, up to a blocks worth. */
+    int lastSector;	/* Last sector of the partition */
+    int totalRead;	/* The total number of sectors actually transferred */
+
+    disk = deviceUnit / DEV_NUM_DISK_PARTS;
+    part = deviceUnit % DEV_NUM_DISK_PARTS;
+    devPtr = scsiDisk[disk];
+    diskPtr = (DevSCSIDisk *)devPtr->data;
+
+    /*
+     * Do bounds checking to keep the I/O within the partition.
+     */
+    lastSector = diskPtr->map[part].numCylinders *
+		 (diskPtr->numHeads * diskPtr->numSectors) - 1;
+    totalSectors = *numSectorsPtr;
+
+    if (firstSector > lastSector) {
+	/*
+	 * The offset is past the end of the partition.
+	 */
+	*numSectorsPtr = 0;
+	return(SUCCESS);
+    } else if ((firstSector + totalSectors - 1) > lastSector) {
+	/*
+	 * The transfer is at the end of the partition.  Reduce the
+	 * sector count so there is no overrun.
+	 */
+	totalSectors = lastSector - firstSector + 1;
+    }
+    /*
+     * Relocate the disk address to be relative to this partition.
+     */
+    firstSector += diskPtr->map[part].firstCylinder *
+		    (diskPtr->numHeads * diskPtr->numSectors);
+    /*
+     * Chop up the IO into blocksize pieces.
+     */
+    totalRead = 0;
+    do {
+	if (totalSectors > SECTORS_PER_BLOCK) {
+	    numSectors = SECTORS_PER_BLOCK;
+	} else {
+	    numSectors = totalSectors;
+	}
+	status = DevSCSISectorIO(command, devPtr, firstSector, &numSectors, buffer);
+	if (status == SUCCESS) {
+	    firstSector += numSectors;
+	    totalSectors -= numSectors;
+	    buffer += numSectors * DEV_BYTES_PER_SECTOR;
+	    totalRead += numSectors;
+	}
+    } while (status == SUCCESS && totalSectors > 0);
+    *numSectorsPtr = totalRead;
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+a380 633
+ * DevSCSISetupTapeCommand --
+ *
+ *	A variation on DevSCSISetupCommand that creates a control block
+ *	designed for tape drives.  SCSI tape drives read from the current
+ *	tape position, so there is only a block count, no offset.  There
+ *	is a special code that modifies the command in the tape control
+ *	block.  The value of the code is a function of the command and the
+ *	type of the tape drive (ugh.)  The correct code is determined here.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Set the various fields in the tape control block.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+DevSCSISetupTapeCommand(command, devPtr, countPtr)
+    int command;		/* One of SCSI_* commands */
+    DevSCSIDevice *devPtr;	/* Device state */
+    int *countPtr;		/* In - Transfer count, blocks or bytes!
+				 * Out - The proper dma byte count for caller */
+{
+    register DevSCSITapeControlBlock	*tapeControlBlockPtr;
+    register DevSCSITape		*tapePtr;
+    char code = 0;					/* Modifies command */
+    int dmaCount = *countPtr;		/* DMA count needed by host interface */
+    int count = *countPtr;		/* Count put in the control block */
+
+    devPtr->scsiPtr->devPtr = devPtr;
+    tapeControlBlockPtr =
+	    (DevSCSITapeControlBlock *)&devPtr->scsiPtr->controlBlock;
+    bzero((Address)tapeControlBlockPtr,sizeof(DevSCSITapeControlBlock));
+    /*
+     * Need to mess with the code here for drive specific wierdness.
+     * There is a more compact version of this code in the boot
+     * source for devSCSI.c - One switch on command with a few
+     * special checks against the controller type.
+     */
+    tapePtr = (DevSCSITape *)devPtr->data;
+    switch (tapePtr->type) {
+	default:
+	case SCSI_SYSGEN: {
+	    switch (command) {
+		case SCSI_TEST_UNIT_READY:
+		    break;
+		case SCSI_REWIND:
+		    /*
+		     * Can also do a tape retension by setting vendor57 bit.
+		     */
+		    if (tapePtr->state & SCSI_TAPE_RETENSION) {
+			tapePtr->state &= ~SCSI_TAPE_RETENSION;
+			tapeControlBlockPtr->vendor57 = 1;
+		    }
+		    tapePtr->state &= ~SCSI_TAPE_AT_EOF;
+		    break;
+		case SCSI_REQUEST_SENSE:
+		    dmaCount = count = sizeof(DevSCSISense);
+		    break;
+		case SCSI_READ:
+		case SCSI_WRITE:
+		    dmaCount = count * DEV_BYTES_PER_SECTOR;
+		    break;
+		case SCSI_WRITE_EOF:
+		    dmaCount = 0;
+		    count = 1;
+		    break;
+		case SCSI_SPACE:
+		case SCSI_SPACE_FILES:
+		    dmaCount = 0;
+		    code = 1;
+		    command = SCSI_SPACE;
+		    tapePtr->state &= ~SCSI_TAPE_AT_EOF;
+		    break;
+		case SCSI_SPACE_BLOCKS:
+		    dmaCount = 0;
+		    code = 0;
+		    command = SCSI_SPACE;
+		    break;
+		case SCSI_SPACE_EOT:
+		    dmaCount = 0;
+		    code = 3;
+		    command = SCSI_SPACE;
+		    tapePtr->state |= SCSI_TAPE_AT_EOF;
+		    break;
+		case SCSI_ERASE_TAPE:
+		    break;
+	    }
+	    break;
+	}
+	case SCSI_EMULUX: {
+	    switch (command) {
+		case SCSI_TEST_UNIT_READY:
+		    break;
+		case SCSI_REWIND:
+		    /*
+		     * Can do tape retension by using SCSI_START_STOP
+		     * and setting count to 3 (wild but true)
+		     */
+		    if (tapePtr->state & SCSI_TAPE_RETENSION) {
+			tapePtr->state &= ~SCSI_TAPE_RETENSION;
+			command = SCSI_START_STOP;
+			dmaCount = 0;
+			count = 3;
+		    }
+		    tapePtr->state &= ~SCSI_TAPE_AT_EOF;
+		    break;
+		case SCSI_REQUEST_SENSE:
+		    dmaCount = count = sizeof(DevEmuluxSense);
+		    break;
+		case SCSI_MODE_SELECT:
+		    break;
+		case SCSI_READ:
+		case SCSI_WRITE:
+		    code = 1;
+		    dmaCount = count * DEV_BYTES_PER_SECTOR;
+		    break;
+		case SCSI_WRITE_EOF:
+		    count = 1;
+		    dmaCount = 0;
+		    break;
+		case SCSI_SPACE:
+		case SCSI_SPACE_FILES:
+		    dmaCount = 0;
+		    code = 1;
+		    command = SCSI_SPACE;
+		    tapePtr->state &= ~SCSI_TAPE_AT_EOF;
+		    break;
+		case SCSI_SPACE_BLOCKS:
+		    dmaCount = 0;
+		    code = 0;
+		    command = SCSI_SPACE;
+		    break;
+		case SCSI_SPACE_EOT:
+		    dmaCount = 0;
+		    code = 3;
+		    command = SCSI_SPACE;
+		    tapePtr->state |= SCSI_TAPE_AT_EOF;
+		    break;
+		case SCSI_ERASE_TAPE:
+		    code = 1;
+		    break;
+	    }
+	    break;
+	}
+    }
+    tapeControlBlockPtr->command = command & 0xff;
+    tapeControlBlockPtr->code = code;
+    tapeControlBlockPtr->unitNumber = devPtr->subUnitID;
+    tapeControlBlockPtr->highCount = (count & 0x1f0000) >> 16;
+    tapeControlBlockPtr->midCount =  (count & 0x00ff00) >> 8;
+    tapeControlBlockPtr->lowCount =  (count & 0x0000ff);
+    *countPtr = dmaCount;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevSCSISectorIO --
+ *
+ *      Lower level routine to read or write an SCSI device.  The
+ *      interface here is in terms of a particular SCSI disk and the
+ *      number of sectors to transfer.  This routine takes care of mapping
+ *      its buffer into the special multibus memory area that is set up
+ *      for Sun DMA.  It retries in the event of errors.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+DevSCSISectorIO(command, devPtr, firstSector, numSectorsPtr, buffer)
+    int command;			/* SCSI_READ or SCSI_WRITE */
+    DevSCSIDevice *devPtr;		/* Which disk to do I/O with */
+    int firstSector;			/* The sector at which the transfer
+					 * begins. */
+    int *numSectorsPtr;			/* Upon entry, the number of sectors to
+					 * transfer.  Upon return, the number
+					 * of sectors transferred. */
+    char *buffer;			/* Target buffer */
+{
+    ReturnStatus status;
+    register DevSCSIController *scsiPtr; /* Controller for the disk */
+    int i;
+
+    /*
+     * Synchronize with the interrupt handling routine and with other
+     * processes that are trying to initiate I/O with this controller.
+     */
+    scsiPtr = devPtr->scsiPtr;
+    MASTER_LOCK(scsiPtr->mutex);
+    if (command == SCSI_READ) {
+	scsiPtr->configPtr->diskReads++;
+    } else {
+	scsiPtr->configPtr->diskWrites++;
+    }
+    /*
+     * Here we are using a condition variable and the scheduler to
+     * synchronize access to the controller.  An alternative would be
+     * to have a command queue associated with the controller.  We can't
+     * rely on the mutex variable because that is relinquished later
+     * when the process using the controller waits for the I/O to complete.
+     */
+    while (scsiPtr->flags & SCSI_CNTRLR_BUSY) {
+	Sync_MasterWait(&scsiPtr->readyForIO, &scsiPtr->mutex, FALSE);
+    }
+    scsiPtr->flags |= SCSI_CNTRLR_BUSY;
+
+    /*
+     * Map the buffer into the special area of multibus memory that
+     * the device can DMA into.
+     */
+    buffer = VmMach_DevBufferMap(*numSectorsPtr * devPtr->sectorSize,
+			     buffer, scsiPtr->IOBuffer);
+    /*
+     * Retry the operation if we hit a hard error. This is because
+     * many hard errors seem to work when retried.  Retry recovered
+     * errors too, though that may not be necessary.  (Alternatively,
+     * convert the error status to success on a recovered error.)
+     */
+    i = -1;
+    do {
+	i++;
+
+	scsiPtr->flags &= ~SCSI_IO_COMPLETE;
+	DevSCSISetupCommand(command, devPtr, firstSector, *numSectorsPtr);
+	status = DevSCSICommand(devPtr->slaveID, scsiPtr,
+				 *numSectorsPtr * devPtr->sectorSize,
+				 buffer, INTERRUPT);
+	/*
+	 * Wait for the command to complete.  The interrupt handler checks
+	 * for I/O errors, computes the residual, and notifies us.
+	 */
+	if (status == SUCCESS) {
+	    while((scsiPtr->flags & SCSI_IO_COMPLETE) == 0) {
+		Sync_MasterWait(&scsiPtr->IOComplete, &scsiPtr->mutex,
+				      FALSE);
+	    }
+	    status = scsiPtr->status;
+	}
+    } while ((status == DEV_HARD_ERROR || status == DEV_RETRY_ERROR ||
+	      status == DEV_DMA_FAULT) && i < SCSI_NUM_HARD_ERROR_RETRIES);
+    if (i >= SCSI_NUM_HARD_ERROR_RETRIES) {
+	if (devSCSIDebug > 2) {
+	    panic("SCSI: Too many retries after error.\n");
+	} else {
+	    printf("Warning: SCSI: Too many retries after error.\n");
+	}
+    }
+    *numSectorsPtr -= (scsiPtr->residual / devPtr->sectorSize);
+    scsiPtr->flags &= ~SCSI_CNTRLR_BUSY;
+    Sync_MasterBroadcast(&scsiPtr->readyForIO);
+    MASTER_UNLOCK(scsiPtr->mutex);
+    /*
+     * Voluntarily give up the CPU in case anyone else wants to use the
+     * disk.
+     */
+    Sched_ContextSwitch(PROC_READY);
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevSCSITapeIO --
+ *
+ *      Low level routine to read or write an SCSI tape device.  The
+ *      interface here is in terms of a particular SCSI tape and the
+ *      number of sectors to transfer.  This routine takes care of mapping
+ *      its buffer into the special multibus memory area that is set up
+ *      for Sun DMA.  Each IO involves one tape block, and all tape blocks
+ *	are multiples of the underlying device block size (DEV_BYTES_PER_SECTOR)
+ *
+ *	This should be combined with DevSCSISectorIO as it is so similar.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+DevSCSITapeIO(command, devPtr, buffer, countPtr)
+    int command;			/* SCSI_READ, SCSI_WRITE, etc. */
+    register DevSCSIDevice *devPtr; 	/* State info for the tape */
+    char *buffer;			/* Target buffer */
+    int *countPtr;			/* Upon entry, the number of sectors to
+					 * transfer, or general count for
+					 * skipping blocks, etc. Upon return,
+					 * the number of sectors transferred. */
+{
+    ReturnStatus status;
+    register DevSCSIController *scsiPtr; /* Controller for the drive */
+
+    /*
+     * Synchronize with the interrupt handling routine and with other
+     * processes that are trying to initiate I/O with this controller.
+     */
+    scsiPtr = devPtr->scsiPtr;
+    MASTER_LOCK(scsiPtr->mutex);
+
+    /*
+     * Here we are using a condition variable and the scheduler to
+     * synchronize access to the controller.  An alternative would be
+     * to have a command queue associated with the controller.  We can't
+     * rely on the mutex variable because that is relinquished later
+     * when the process using the controller waits for the I/O to complete.
+     */
+    while (scsiPtr->flags & SCSI_CNTRLR_BUSY) {
+	Sync_MasterWait(&scsiPtr->readyForIO, &scsiPtr->mutex, FALSE);
+    }
+    scsiPtr->flags |= SCSI_CNTRLR_BUSY;
+    scsiPtr->flags &= ~SCSI_IO_COMPLETE;
+
+    if (command == SCSI_READ || command == SCSI_WRITE) {
+	/*
+	 * Map the buffer into the special area of multibus memory that
+	 * the device can DMA into.  Probably have to worry about
+	 * the buffer size.
+	 */
+	buffer = VmMach_DevBufferMap(*countPtr * DEV_BYTES_PER_SECTOR,
+				 buffer, scsiPtr->IOBuffer);
+    }
+    DevSCSISetupTapeCommand(command, devPtr, countPtr);
+    status = DevSCSICommand(devPtr->slaveID, scsiPtr, *countPtr, buffer,
+			    INTERRUPT);
+    /*
+     * Wait for the command to complete.  The interrupt handler checks
+     * for I/O errors, computes the residual, and notifies us.
+     */
+    if (status == SUCCESS) {
+	while((scsiPtr->flags & SCSI_IO_COMPLETE) == 0) {
+	    Sync_MasterWait(&scsiPtr->IOComplete, &scsiPtr->mutex, FALSE);
+	}
+	status = scsiPtr->status;
+    }
+    if (scsiPtr->residual) {
+	printf("Warning: SCSI residual %d, cmd %x\n", scsiPtr->residual,
+			    command);
+    }
+    *countPtr -= scsiPtr->residual;
+    if (command == SCSI_READ || command == SCSI_WRITE) {
+	*countPtr /= DEV_BYTES_PER_SECTOR;
+    }
+    scsiPtr->flags &= ~SCSI_CNTRLR_BUSY;
+    Sync_MasterBroadcast(&scsiPtr->readyForIO);
+    MASTER_UNLOCK(scsiPtr->mutex);
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevSCSICommand --
+ *
+ *      Send a command to a controller on the SCSI
+ *      bus controlled through scsiPtr.  The control block needs to have
+ *      been set up previously with DevSCSISetupCommand.  If the interrupt
+ *      argument is WAIT (FALSE) then this waits around for the command to
+ *      complete and checks the status results.  Otherwise Dev_SCSIIntr
+ *      will be invoked later to check completion status.
+ *
+ *	Note: the ID of the controller is never placed on the bus
+ *	(contrary to standard protocol, but necessary for the early Sun
+ *	SCSI interface).
+ *
+ * Results:
+ *	An error code.
+ *
+ * Side effects:
+ *	Those of the command (Read, write etc.)
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+DevSCSICommand(slaveID, scsiPtr, size, addr, interrupt)
+    int slaveID;			/* Id of the SCSI device to select */
+    DevSCSIController *scsiPtr;		/* The SCSI controller that will be
+					 * doing the command. The control block
+					 * within this specifies the unit
+					 * number and device address of the
+					 * transfer */
+    int size;				/* Number of bytes to transfer */
+    Address addr;			/* Kernel address of transfer */
+    int interrupt;			/* WAIT or INTERRUPT.  If INTERRUPT
+					 * then this procedure returns
+					 * after initiating the command
+					 * and the device interrupts
+					 * later.  If WAIT this polls
+					 * the SCSI interface register
+					 * until the command completes. */
+{
+    register ReturnStatus status;
+    register DevSCSIRegs *regsPtr;	/* Host Adaptor registers */
+    char *charPtr;			/* Used to put the control block
+					 * into the commandStatus register */
+    int i;
+    int bits = 0;			/* variable bits to OR into control */
+    Boolean checkMsg = FALSE;		/* have DevSCSIWait check for
+					   a premature message */
+#undef WORM_DEBUG
+#ifdef WORM_DEBUG
+    Boolean oldDebug;
+#endif WORM_DEBUG
+
+    /*
+     * Save some state needed by the interrupt handler to check errors.
+     */
+    scsiPtr->command = scsiPtr->controlBlock.command;
+
+    regsPtr = scsiPtr->regsPtr;
+    /*
+     * Check against a continuously busy bus.  This stupid condition would
+     * fool the code below that tries to select a device.
+     */
+    for (i=0 ; i < SCSI_WAIT_LENGTH ; i++) {
+	if ((regsPtr->control & SCSI_BUSY) == 0) {
+	    break;
+	} else {
+	    MACH_DELAY(10);
+	}
+    }
+    if (i == SCSI_WAIT_LENGTH) {
+	DevSCSIReset(regsPtr);
+	printf("SCSI bus stuck busy\n");
+	return(FAILURE);
+    }
+    /*
+     * Select the device.  Sun's SCSI Programmer's Manual recommends
+     * resetting the SCSI_WORD_MODE bit so that the byte packing hardware
+     * is reset and the data byte that has the target ID gets transfered
+     * correctly.  After this, the target's ID is put in the data register,
+     * the SELECT bit is set, and we wait until the device responds
+     * by setting the BUSY bit.  The ID bit of the host adaptor is not
+     * put in the data word because of problems with Sun's Host Adaptor.
+     */
+    regsPtr->control = 0;
+    regsPtr->data = (1 << slaveID);
+    regsPtr->control = SCSI_SELECT;
+    status = DevSCSIWait(regsPtr, SCSI_BUSY, NO_RESET, FALSE);
+    if (status != SUCCESS) {
+	regsPtr->data = 0;
+	regsPtr->control = 0;
+	if (scsiPtr->controlBlock.command != SCSI_TEST_UNIT_READY) {
+	    printf("SCSI-%d: can't select slave %d\n", 
+				 scsiPtr->number, slaveID);
+	}
+	return(status);
+    }
+    /*
+     * Set up the interface's registers for the transfer.  The DMA address
+     * is relative to the multibus memory so the kernel's base address
+     * for multibus memory is subtracted from 'addr'. The host adaptor
+     * increments the dmaCount register until it reaches -1, hence the
+     * funny initialization. See page 4 of Sun's SCSI Prog. Manual.
+     */
+    regsPtr->dmaAddress = (int)(addr - DEV_MULTIBUS_BASE);
+    regsPtr->dmaCount = -size - 1;
+    bits = SCSI_WORD_MODE | SCSI_DMA_ENABLE;
+    if (interrupt == INTERRUPT) {
+	bits |= SCSI_INTERRUPT_ENABLE;
+    } 
+    regsPtr->control = bits;
+
+    /*
+     * Stuff the control block through the commandStatus register.
+     * The handshake on the SCSI bus is visible here:  we have to
+     * wait for the Request line on the SCSI bus to be raised before
+     * we can send the next command byte to the controller.  All commands
+     * are of "group 0" which means they are 6 bytes long.
+     */
+    charPtr = (char *)&scsiPtr->controlBlock;
+#ifdef WORM_DEBUG
+    oldDebug = devSCSIDebug;
+    if (scsiPtr->devPtr->type == SCSI_WORM) {
+	devSCSIDebug = TRUE;
+    }
+#endif WORM_DEBUG
+    if (scsiPtr->devPtr->type == SCSI_WORM) {
+	checkMsg = TRUE;
+    }
+    for (i=0 ; i<sizeof(DevSCSIControlBlock) ; i++) {
+	status = DevSCSIWait(regsPtr, SCSI_REQUEST, RESET, checkMsg);
+/*
+ * This is just a guess.
+ */
+	if (status == DEV_EARLY_CMD_COMPLETION) {
+#ifdef WORM_DEBUG
+	    devSCSIDebug = oldDebug;
+#endif WORM_DEBUG
+	    return(SUCCESS);
+	}
+	if (status != SUCCESS) {
+	    printf("SCSI-%d: couldn't send command block (i=%d)\n",
+				 scsiPtr->number, i);
+#ifdef WORM_DEBUG
+	    devSCSIDebug = oldDebug;
+#endif WORM_DEBUG
+	    return(status);
+	}
+	/*
+	 * The device keeps the Control/Data line set while it
+	 * is accepting control block bytes.
+	 */
+	if ((regsPtr->control & SCSI_COMMAND) == 0) {
+	    DevSCSIReset(regsPtr);
+	    printf("SCSI-%d: device dropped command line\n",
+				 scsiPtr->number);
+#ifdef WORM_DEBUG
+	    devSCSIDebug = oldDebug;
+#endif WORM_DEBUG
+	    return(DEV_HANDSHAKE_ERROR);
+	}
+	regsPtr->commandStatus = *charPtr;
+	charPtr++;
+    }
+#ifdef WORM_DEBUG
+    devSCSIDebug = oldDebug;
+#endif WORM_DEBUG
+    if (interrupt == WAIT) {
+	/*
+	 * A synchronous command.  Wait here for the command to complete.
+	 */
+	status = DevSCSIWait(regsPtr, SCSI_INTERRUPT_REQUEST, RESET, FALSE);
+	if (status == SUCCESS) {
+	    scsiPtr->residual = -regsPtr->dmaCount -1;
+	    status = DevSCSIStatus(scsiPtr);
+	} else {
+	    printf("SCSI-%d: couldn't wait for command to complete\n",
+				 scsiPtr->number);
+	}
+    } else {
+	status = SUCCESS;
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevSCSIStatus --
+ *
+ *	Complete an SCSI command by getting the status bytes from
+ *	the device and waiting for the ``command complete''
+ *	message that follows the status bytes.  If the command has
+ *	additional ``sense data'' then this routine issues the
+ *	SCSI_REQUEST_SENSE command to get the sense data.
+ *
+ * Results:
+ *	An error code if the status didn't come through or it
+ *	indicated an error.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+DevSCSIStatus(scsiPtr)
+    DevSCSIController *scsiPtr;
+{
+    register ReturnStatus status;
+    register DevSCSIRegs *regsPtr;
+    short message;
+    char statusByte;
+    char *statusBytePtr;
+    int numStatusBytes = 0;
+
+    regsPtr = scsiPtr->regsPtr;
+    statusBytePtr = (char *)&scsiPtr->statusBlock;
+    bzero((Address)statusBytePtr, sizeof(DevSCSIStatusBlock));
+    for ( ; ; ) {
+	/*
+	 * Could probably wait either on the INTERUPT_REQUEST bit or the
+	 * REQUEST bit.  Reading the byte out of the commandStatus
+	 * register acknowledges the REQUEST and clears these bits.  Here
+	 * we grab bytes until the MESSAGE bit indicates that all the
+	 * status bytes have been received and that the byte in the
+	 * commandStatus register is the message byte.
+	 */
+	status = DevSCSIWait(regsPtr, SCSI_REQUEST, RESET, FALSE);
+	if (status != SUCCESS) {
+	    printf("SCSI-%d: wait error after %d status bytes\n",
+				 scsiPtr->number, numStatusBytes);
+	    break;
+	}
+	if (regsPtr->control & SCSI_MESSAGE) {
+	    message = regsPtr->commandStatus & 0xff;
+	    if (message != SCSI_COMMAND_COMPLETE) {
+		printf("SCSI-%d: Unexpected message 0x%x\n",
+				     scsiPtr->number, message);
+	    }
+	    break;
+	}  else {
+	    /*
+	     * This is another status byte.  Place the first few status
+	     * bytes into the status block.
+	     */
+	    statusByte = regsPtr->commandStatus;
+	    if (numStatusBytes < sizeof(DevSCSIStatusBlock)) {
+		*statusBytePtr = statusByte;
+		statusBytePtr++;
+	    }
+	    numStatusBytes++;
+	}
+    }
+    if (status == SUCCESS) {
+	/*
+	 * The status may indicate that further ``sense'' data is
+	 * available.  This is obtained by another SCSI command
+	 * that uses DMA to transfer the sense data.
+	 */
+	if (scsiPtr->statusBlock.check) {
+	    status = DevSCSIRequestSense(scsiPtr, scsiPtr->devPtr);
+	}
+	if (scsiPtr->statusBlock.error) {
+	    printf("SCSI-%d: host adaptor error bit set\n",
+				 scsiPtr->number);
+	}
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+d406 1
+d415 1
+d418 3
+a420 4
+	DevSCSISetupCommand(SCSI_REQUEST_SENSE, devPtr, 0,
+				sizeof(DevSCSISense));
+	status = DevSCSICommand(devPtr->slaveID, scsiPtr, sizeof(DevSCSISense),
+				(Address)sensePtr, WAIT);
+d431 12
+a442 5
+	    printf("RequestSense, residual is %d\n", scsiPtr->residual);
+	    if (scsiPtr->residual == 0) {
+		((DevSCSITape *)devPtr->data)->type = SCSI_SYSGEN;
+	    } else {
+		((DevSCSITape *)devPtr->data)->type = SCSI_EMULUX;
+a452 78
+ * DevSCSIWait --
+ *
+ *	Wait for a condition in the SCSI controller.
+ *
+ * Results:
+ *	SUCCESS if the condition occurred before a threashold time limit,
+ *	DEV_TIMEOUT otherwise.
+ *
+ * Side effects:
+ *	This resets the SCSI bus if the reset parameter is true and
+ *	the condition bits are not set by the controller before timeout..
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+DevSCSIWait(regsPtr, condition, reset, checkMsg)
+    DevSCSIRegs *regsPtr;
+    int condition;
+    Boolean reset;
+    Boolean checkMsg;
+{
+    register int i;
+    ReturnStatus status = DEV_TIMEOUT;
+    register int control;
+
+    if (devSCSIDebug && checkMsg) {
+	printf("DevSCSIWait: checking for message.\n");
+    }
+    for (i=0 ; i<SCSI_WAIT_LENGTH ; i++) {
+	control = regsPtr->control;
+        /*
+	 * For debugging of WORM: 
+	 *  .. using printf because using kdbx causes different behavior.
+	 */
+	if (devSCSIDebug && i < 5) {
+	    printf("%d/%x ", i, control);
+	}
+/* this is just a guess too. */
+	if (checkMsg) {
+	    register int mask = SCSI_REQUEST | SCSI_INPUT | SCSI_MESSAGE | SCSI_COMMAND;
+	    if ((control & mask) == mask) {
+		register int msg;
+	    
+		msg = regsPtr->commandStatus & 0xff;
+		printf("DevSCSIWait: Unexpected message 0x%x\n", msg);
+		if (msg == SCSI_COMMAND_COMPLETE) {
+		    return(DEV_EARLY_CMD_COMPLETION);
+		} else {
+		    return(DEV_HANDSHAKE_ERROR);
+		}
+	    }
+	}
+	if (control & condition) {
+	    return(SUCCESS);
+	}
+	if (control & SCSI_BUS_ERROR) {
+	    printf("SCSI: bus error\n");
+	    status = DEV_DMA_FAULT;
+	    break;
+	} else if (control & SCSI_PARITY_ERROR) {
+	    printf("SCSI: parity error\n");
+	    status = DEV_DMA_FAULT;
+	    break;
+	}
+	MACH_DELAY(10);
+    }
+    if (devSCSIDebug) {
+	printf("DevSCSIWait: timed out, control = %x.\n", control);
+    }
+    if (reset) {
+	DevSCSIReset(regsPtr);
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+d475 1
+a475 1
+    register DevSCSIRegs *regsPtr;
+a476 4
+     if (!devSCSIFound) {
+        extern Boolean Dev_SBCIntr();
+	return (Dev_SBCIntr());
+    }
+d479 3
+a481 30
+	if (scsiPtr == (DevSCSIController *)NIL) {
+	    continue;
+	}
+	regsPtr = scsiPtr->regsPtr;
+	if (regsPtr->control & SCSI_INTERRUPT_REQUEST) {
+	    if (regsPtr->control & SCSI_BUS_ERROR) {
+		if (regsPtr->dmaCount >= 0) {
+		    /*
+		     * A DMA overrun.  Unlikely with a disk but could
+		     * happen while reading a large tape block.  Consider
+		     * the I/O complete with no residual bytes
+		     * un-transferred.
+		    scsiPtr->residual = 0;
+		    scsiPtr->flags |= SCSI_IO_COMPLETE;
+		} else {
+		    /*
+		     * A real Bus Error.  Complete the I/O but flag an error.
+		     * The residual is computed because the Bus Error could
+		     * have occurred after a number of sectors.
+		     */
+		    scsiPtr->residual = -regsPtr->dmaCount -1;
+		    scsiPtr->flags |= SCSI_IO_COMPLETE;
+		}
+		/*
+		 * The board needs to be reset to clear the Bus Error
+		 * condition so no status bytes are grabbed.
+		 */
+		DevSCSIReset(scsiPtr->regsPtr);
+		scsiPtr->status = DEV_DMA_FAULT;
+		Sync_MasterBroadcast(&scsiPtr->IOComplete);
+a482 28
+	    } else {
+		/*
+		 * Normal command completion.  Compute the residual,
+		 * the number of bytes not transferred, check for
+		 * odd transfer sizes, and finally get the completion
+		 * status from the device.
+		 */
+		scsiPtr->residual = -regsPtr->dmaCount -1;
+		if (regsPtr->control & SCSI_ODD_LENGTH) {
+		    /*
+		     * On a read the last odd byte is left in the data
+		     * register.  On both reads and writes the number
+		     * of bytes transferred as determined from dmaCount
+		     * is off by one.  See Page 8 of Sun's SCSI
+		     * Programmers' Manual.
+		     */
+		    if (scsiPtr->controlBlock.command == SCSI_READ) {
+			*(char *)(DEV_MULTIBUS_BASE + regsPtr->dmaAddress) =
+			    regsPtr->data;
+			scsiPtr->residual--;
+		    } else {
+			scsiPtr->residual++;
+		    }
+		}
+		scsiPtr->status = DevSCSIStatus(scsiPtr);
+		scsiPtr->flags |= SCSI_IO_COMPLETE;
+		Sync_MasterBroadcast(&scsiPtr->IOComplete);
+		return(TRUE);
+a486 72
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevSCSIWormIO --
+ *
+ *      Read or Write (to/from) a raw SCSI worm disk.  This just
+ *	maps multiple-sector operations into separate IO's.  They may
+ *	be combined for efficiency at a later time.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+DevSCSIWormIO(command, deviceUnit, buffer, firstSector, numSectorsPtr)
+    int command;			/* SCSI_READ or SCSI_WRITE */
+    int deviceUnit;			/* Unit from the filesystem that
+					 * indicates a disk */
+    char *buffer;			/* Target buffer */
+    int firstSector;			/* First sector to transfer. Should be
+					 * relative to the start of the disk
+					 * partition corresponding to the unit*/
+    int *numSectorsPtr;			/* Upon entry, the number of sectors to
+					 * transfer.  Upon return, the number
+					 * of sectors actually transferred. */
+{
+    ReturnStatus status;
+    int worm;		/* Number of worm that corresponds to the unit number */
+    DevSCSIDevice *devPtr;		/* Generic SCSI device state */
+    register DevSCSIWorm *wormPtr;	/* State of the worm */
+    int totalSectors;		/* The total number of sectors to transfer */
+    int numSectors;		/* The number of sectors to transfer at
+				 * one time, up to a blocks worth. */
+    int totalXfer;	/* The total number of sectors actually transferred */
+
+    worm = deviceUnit;
+    devPtr = scsiWorm[worm];
+    wormPtr = (DevSCSIWorm *)devPtr->data;
+    totalSectors = *numSectorsPtr;
+
+    /*
+     * Chop up the IO into pieces of the maximum transfer size.
+     * 
+     *
+     * Flag the stored sense as invalid just before sending the command to
+     * the drive.
+     */
+    totalXfer = 0;
+    do {
+	if (totalSectors > MAX_WORM_SECTORS_IO) {
+	    numSectors = MAX_WORM_SECTORS_IO;
+	} else {
+	    numSectors = totalSectors;
+	}
+	wormPtr->state &= ~SCSI_WORM_VALID_SENSE;
+	status = DevSCSISectorIO(command, devPtr, firstSector, &numSectors, buffer);
+	if (status == SUCCESS) {
+	    firstSector += numSectors;
+	    totalSectors -= numSectors;
+	    buffer += numSectors * DEV_BYTES_PER_WORM_SECTOR;
+	    totalXfer += numSectors;
+	}
+    } while (status == SUCCESS && totalSectors > 0);
+    *numSectorsPtr = totalXfer;
+    return(status);
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devSCSI.c,v 6.5 88/11/07 14:55:12 mlgray Exp Locker: douglis $ SPRITE (Berkeley)";
+d1472 4
+@
+
+
+6.5
+log
+@Converted to new  C library.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devSCSI.c,v 6.4 88/10/30 21:36:35 jhh Exp Locker: mlgray $ SPRITE (Berkeley)";
+@
+
+
+6.4
+log
+@multiprocessor port, change to new C lib
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devSCSI.c,v 6.3 88/09/07 11:29:10 nelson Exp Locker: jhh $ SPRITE (Berkeley)";
+d173 1
+a173 1
+    scsiPtr = (DevSCSIController *)Mem_Alloc(sizeof(DevSCSIController));
+d195 1
+a195 1
+	    Mem_Free((Address) scsiPtr);
+d204 1
+a204 1
+	Mem_Free((Address) scsiPtr);
+d340 1
+a340 1
+    devPtr = (DevSCSIDevice *)Mem_Alloc(sizeof(DevSCSIDevice));
+d355 1
+a355 1
+	    Mem_Free((Address)devPtr);
+d363 1
+a363 1
+	    Mem_Free((Address)devPtr);
+d366 1
+a366 1
+	diskPtr = (DevSCSIDisk *) Mem_Alloc(sizeof(DevSCSIDisk));
+d380 1
+a380 1
+	    Mem_Free((Address)devPtr);
+d386 1
+a386 1
+	tapePtr = (DevSCSITape *) Mem_Alloc(sizeof(DevSCSITape));
+d404 1
+a404 1
+	    Mem_Free((Address)devPtr);
+d409 1
+a409 1
+	    Mem_Free((Address)devPtr);
+d412 1
+a412 1
+	wormPtr = (DevSCSIWorm *) Mem_Alloc(sizeof(DevSCSIWorm));
+@
+
+
+6.3
+log
+@Fixed lint errors.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: devSCSI.c,v 6.2 88/09/06 14:16:13 nelson Exp $ SPRITE (Berkeley)";
+a31 1
+#include "user/byte.h"
+d191 1
+a191 1
+	    Sys_Printf("SCSI-%d: dmaCount register: wrote %x read back %x\n",
+d362 1
+a362 1
+	    Sys_Printf("SCSI: Too many disks configured\n");
+d379 1
+a379 1
+	    Sys_Printf("SCSI: Too many tape drives configured\n");
+d391 1
+a391 1
+	Sys_Printf("SCSI-%d tape %d at slave %d\n",
+d408 1
+a408 1
+	    Sys_Printf("SCSI: Too many worm drives configured\n");
+d416 1
+a416 1
+	Sys_Printf("SCSI-%d worm %d at slave %d\n",
+d508 1
+a508 1
+	Sys_Printf("SCSI-%d: couldn't read the disk%d label\n",
+d513 1
+a513 1
+    Sys_Printf("SCSI-%d disk%d: %s\n", scsiPtr->number, devPtr->slaveID,
+d521 1
+a521 1
+    Sys_Printf(" Partitions ");
+d528 1
+a528 1
+	Sys_Printf(" (%d,%d)", diskPtr->map[part].firstCylinder,
+d531 1
+a531 1
+    Sys_Printf("\n");
+d661 1
+a661 1
+    Byte_Zero(sizeof(DevSCSIControlBlock), (Address)controlBlockPtr);
+d706 1
+a706 1
+    Byte_Zero(sizeof(DevSCSITapeControlBlock), (Address)tapeControlBlockPtr);
+d921 5
+a925 2
+	Sys_Panic((devSCSIDebug > 2) ? SYS_FATAL : SYS_WARNING,
+	    "SCSI: Too many retries after error.\n");
+d1017 1
+a1017 1
+	Sys_Panic(SYS_WARNING, "SCSI residual %d, cmd %x\n", scsiPtr->residual,
+d1104 1
+a1104 1
+	Sys_Printf("SCSI bus stuck busy\n");
+d1124 1
+a1124 1
+	    Sys_Printf("SCSI-%d: can't select slave %d\n", 
+d1173 1
+a1173 1
+	    Sys_Printf("SCSI-%d: couldn't send command block (i=%d)\n",
+d1186 1
+a1186 1
+	    Sys_Printf("SCSI-%d: device dropped command line\n",
+d1208 1
+a1208 1
+	    Sys_Printf("SCSI-%d: couldn't wait for command to complete\n",
+d1250 1
+a1250 1
+    Byte_Zero(sizeof(DevSCSIStatusBlock), (Address)statusBytePtr);
+d1262 1
+a1262 1
+	    Sys_Printf("SCSI-%d: wait error after %d status bytes\n",
+d1269 1
+a1269 1
+		Sys_Printf("SCSI-%d: Unexpected message 0x%x\n",
+d1296 1
+a1296 1
+	    Sys_Printf("SCSI-%d: host adaptor error bit set\n",
+d1333 1
+a1333 1
+	Sys_Panic(SYS_WARNING, "DevSCSIRequestSense recursed");
+d1355 1
+a1355 1
+	    Sys_Printf("RequestSense, residual is %d\n", scsiPtr->residual);
+d1396 1
+a1396 1
+	Sys_Printf("DevSCSIWait: checking for message.\n");
+d1405 1
+a1405 1
+	    Sys_Printf("%d/%x ", i, control);
+d1414 1
+a1414 1
+		Sys_Printf("DevSCSIWait: Unexpected message 0x%x\n", msg);
+d1426 1
+a1426 1
+	    Sys_Printf("SCSI: bus error\n");
+d1430 1
+a1430 1
+	    Sys_Printf("SCSI: parity error\n");
+d1437 1
+a1437 1
+	Sys_Printf("DevSCSIWait: timed out, control = %x.\n", control);
+@
+
+
+6.2
+log
+@Added disk idle stats and read/write counts.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: devSCSI.c,v 6.1 88/09/05 12:44:14 mendel Exp $ SPRITE (Berkeley)";
+d33 1
+d231 1
+a231 1
+    VmMach_GetDevicePage((int)scsiPtr->senseBuffer);
+d235 1
+a235 1
+    VmMach_GetDevicePage((int)scsiPtr->labelBuffer);
+d914 2
+a915 1
+		Sync_MasterWait(&scsiPtr->IOComplete, &scsiPtr->mutex, FALSE);
+@
+
+
+6.1
+log
+@Removed lint
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: devSCSI.c,v 5.11 88/07/12 18:02:11 douglis Exp $ SPRITE (Berkeley)";
+d248 1
+d258 1
+d263 32
+d869 5
+a873 1
+
+d927 5
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d185 3
+d193 1
+a193 1
+#endif notdef
+@
+
+
+5.11
+log
+@retry in the case of hard errors.  changed terminology (targetID -> slaveID).
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: devSCSI.c,v 5.10 88/06/08 17:00:05 douglis Exp $ SPRITE (Berkeley)";
+@
+
+
+5.10
+log
+@use devSCSIFound variable to tell SBC not to try initializing the
+controller.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: devSCSI.c,v 5.9 88/05/23 21:41:30 douglis Exp $ SPRITE (Berkeley)";
+d801 1
+a801 1
+ *      for Sun DMA.
+d824 1
+a843 1
+    scsiPtr->flags &= ~SCSI_IO_COMPLETE;
+a850 4
+    DevSCSISetupCommand(command, devPtr, firstSector, *numSectorsPtr);
+    status = DevSCSICommand(devPtr->slaveID, scsiPtr,
+			     *numSectorsPtr * devPtr->sectorSize,
+			     buffer, INTERRUPT);
+d852 4
+a855 2
+     * Wait for the command to complete.  The interrupt handler checks
+     * for I/O errors, computes the residual, and notifies us.
+d857 18
+a874 3
+    if (status == SUCCESS) {
+	while((scsiPtr->flags & SCSI_IO_COMPLETE) == 0) {
+	    Sync_MasterWait(&scsiPtr->IOComplete, &scsiPtr->mutex, FALSE);
+d876 5
+a880 1
+	status = scsiPtr->status;
+d985 1
+a985 1
+ *      Send a command to a controller specified by targetID on the SCSI
+d992 4
+d1005 2
+a1006 2
+DevSCSICommand(targetID, scsiPtr, size, addr, interrupt)
+    int targetID;			/* Id of the SCSI device to select */
+d1067 1
+a1067 1
+    regsPtr->data = (1 << targetID);
+d1075 1
+a1075 1
+				 scsiPtr->number, targetID);
+@
+
+
+5.9
+log
+@some changes corresponding to the expunging of the sun prefix, not
+done by me.  Removed some of the constants like INTERRUPT/WAIT and
+put them in scsi.h.  
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: devSCSI.c,v 5.8 88/04/07 17:47:57 brent Exp $ SPRITE (Berkeley)";
+d122 7
+d246 6
+@
+
+
+5.8
+log
+@Added clean up so SCSI  initialization doesn't get
+messed up by second variant ("SCB") of the SCSI controller.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: devSCSI.c,v 5.6 88/04/07 17:00:45 brent Exp $ SPRITE (Berkeley)";
+d17 1
+d20 1
+d23 2
+a24 4
+
+#include "multibus.h"
+#include "sunMon.h"
+#include "sunDiskLabel.h"
+d29 1
+a29 1
+#include "proc.h"	/* for Sys_SetJump */
+d65 1
+a65 1
+static Sys_SetJumpState setJumpState;
+a67 35
+ * DevSCSICommand() takes a Boolean that indicates whether it should cause
+ * an interupt when the command is complete or whether it should busy wait
+ * until the command finishes.  These defines make the calls clearer.
+ */
+#define INTERRUPT	TRUE
+#define WAIT		FALSE
+
+/*
+ * DevSCSIWait() takes a Boolean that indicates whether it should reset
+ * the SCSI bus if the condition being waited on never occurs.
+ */
+#define RESET		TRUE
+#define NO_RESET	FALSE
+
+/*
+ * SECTORS_PER_BLOCK
+ */
+#define SECTORS_PER_BLOCK	(FS_BLOCK_SIZE / DEV_BYTES_PER_SECTOR)
+#define SECTORS_PER_WORM_BLOCK	(FS_BLOCK_SIZE / DEV_BYTES_PER_WORM_SECTOR)
+
+/*
+ * Define the maximum number of sectors that may be transferred to the
+ * RXT in one shot.  Since we allocate space from the kernel's address
+ * space statically, we don't want to make it too much even though
+ * the drive can handle 256 blocks in a shot.  Besides, the drive only
+ * transfers 32 sectors at a time.
+ */
+#define MAX_WORM_SECTORS_IO 32
+
+/*
+ * This utility macro should probably be defined in some global header file.
+ */
+#define max(a,b) (((a) >= (b)) ? (a) : (b))
+
+/*
+d146 1
+a146 1
+ *	None.
+d176 1
+a176 1
+    if (Sys_SetJump(&setJumpState) == SUCCESS) {
+d184 1
+a184 1
+	    Sys_UnsetJump();
+d190 1
+a190 1
+	Sys_UnsetJump();
+d198 1
+a198 1
+    Sys_UnsetJump();
+d214 2
+a215 1
+     * a filesystem block so that an unaligned block can be mapped into it.
+d318 1
+d392 1
+a392 1
+    DELAY(100);
+d1015 1
+a1015 1
+	    DELAY(10);
+d1052 1
+a1052 1
+    regsPtr->dmaAddress = (int)(addr - MULTIBUS_BASE);
+d1350 1
+a1350 1
+	DELAY(10);
+d1438 1
+a1438 1
+			*(char *)(MULTIBUS_BASE + regsPtr->dmaAddress) =
+a1492 1
+    int lastSector;	/* Last sector of the partition */
+@
+
+
+5.7
+log
+@Fixed typo
+@
+text
+@d220 2
+@
+
+
+5.6
+log
+@Minor experimenting (mostly undone) that discovered that
+there are two kinds of Sun SCSI interfaces!
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: devSCSI.c,v 5.5 88/03/08 14:26:59 douglis Exp $ SPRITE (Berkeley)";
+d214 1
+a214 1
+	if (regsPtr->dmaCount != (short)0xABE) {
+@
+
+
+5.5
+log
+@Changed MAX_WORM_SECTORS_IO to be 32, the number of sectors the drive
+can transfer in one operation.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: devSCSI.c,v 5.4 88/02/21 15:43:07 douglis Exp $ SPRITE (Berkeley)";
+d214 5
+a218 3
+	if (regsPtr->dmaCount != (short)0xBABE) {
+	    Sys_Printf("SCSI-%d: control register read-back problem\n",
+				 scsiPtr->number);
+d1050 1
+a1051 1
+	DevSCSIReset(regsPtr);
+@
+
+
+5.4
+log
+@Changed maximum transfer size for WORM to 16 2K sectors.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: devSCSI.c,v 5.3 87/12/15 16:23:26 douglis Exp $ SPRITE (Berkeley)";
+d92 2
+a93 1
+ * the drive can handle 256 blocks in a shot. 
+d95 1
+a95 1
+#define MAX_WORM_SECTORS_IO 16
+@
+
+
+5.3
+log
+@Vm_Dev -> VMMach_Dev.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: devSCSI.c,v 5.2 87/12/09 19:51:23 douglis Exp $ SPRITE (Berkeley)";
+d89 13
+d256 2
+a257 1
+					  2 * FS_BLOCK_SIZE);
+d1530 2
+a1531 2
+     * Chop up the IO into blocksize pieces.  For now, let's try ignoring
+     * the FS blocksize and just do a single worm block at a time.
+d1538 5
+a1542 1
+	numSectors = 1;
+@
+
+
+5.2
+log
+@Got rid of wormPtr->type.  Like the mag disk, we'll just have one type.
+Also turn off SCSI_WORM_VALID_SENSE bit before issuing command, and
+changed a debugging printing statement.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: devSCSI.c,v 5.1 87/12/09 11:38:42 douglis Exp $ SPRITE (Berkeley)";
+d234 1
+a234 1
+	    (DevSCSISense *)Vm_DevBufferAlloc(&devIOBuffer,
+d236 1
+a236 1
+    Vm_GetDevicePage((int)scsiPtr->senseBuffer);
+d238 1
+a238 1
+    scsiPtr->labelBuffer = Vm_DevBufferAlloc(&devIOBuffer,
+d240 1
+a240 1
+    Vm_GetDevicePage((int)scsiPtr->labelBuffer);
+d242 1
+a242 1
+    scsiPtr->IOBuffer = Vm_DevBufferAlloc(&devIOBuffer,
+d850 1
+a850 1
+    buffer = Vm_DevBufferMap(*numSectorsPtr * devPtr->sectorSize,
+d934 1
+a934 1
+	buffer = Vm_DevBufferMap(*countPtr * DEV_BYTES_PER_SECTOR,
+@
+
+
+5.1
+log
+@Added code for worm.  This is a first pass, checked in just after
+successfully writing a block and reading it back, but before things
+like REQUEST_SENSE are fully set up.
+
+Major changes include: checking for premature end of command during
+DevSCSIWait, and parameterizing the sector size for SectorIO.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: devSCSI.c,v 5.0 87/08/11 10:40:01 sprite Exp $ SPRITE (Berkeley)";
+a377 1
+	wormPtr->type = SCSI_RXT;
+d1325 1
+a1325 1
+    if (checkMsg) {
+d1518 3
+d1525 1
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: devSCSI.c,v 4.9 87/06/02 14:46:54 brent Exp $ SPRITE (Berkeley)";
+d20 1
+d56 7
+d86 1
+d140 2
+d156 1
+d295 2
+d317 1
+d327 1
+a327 1
+	    Sys_Printf("SCSI: To many disks configured\n");
+d343 1
+a343 1
+	    Sys_Printf("SCSI: To many tape drives configured\n");
+d349 1
+d357 26
+d851 1
+a851 1
+    buffer = Vm_DevBufferMap(*numSectorsPtr * DEV_BYTES_PER_SECTOR,
+d855 1
+a855 1
+			     *numSectorsPtr * DEV_BYTES_PER_SECTOR,
+d867 1
+a867 1
+    *numSectorsPtr -= (scsiPtr->residual / DEV_BYTES_PER_SECTOR);
+d1008 7
+d1050 1
+a1050 1
+    status = DevSCSIWait(regsPtr, SCSI_BUSY, NO_RESET);
+d1069 1
+d1071 3
+a1073 5
+	regsPtr->control = SCSI_WORD_MODE|SCSI_DMA_ENABLE|
+			    SCSI_INTERRUPT_ENABLE;
+    } else {
+	regsPtr->control = SCSI_WORD_MODE|SCSI_DMA_ENABLE;
+    }
+d1083 9
+d1093 10
+a1102 1
+	status = DevSCSIWait(regsPtr, SCSI_REQUEST, RESET);
+d1106 3
+d1119 3
+d1127 3
+d1134 1
+a1134 1
+	status = DevSCSIWait(regsPtr, SCSI_INTERRUPT_REQUEST, RESET);
+d1191 1
+a1191 1
+	status = DevSCSIWait(regsPtr, SCSI_REQUEST, RESET);
+d1237 1
+a1237 1
+ * DevSCSIReqeustSense --
+d1316 1
+a1316 1
+DevSCSIWait(regsPtr, condition, reset)
+d1320 1
+d1324 1
+d1326 3
+d1330 24
+a1353 1
+	if (regsPtr->control & condition) {
+d1355 2
+a1356 1
+	} else if (regsPtr->control & SCSI_BUS_ERROR) {
+d1360 4
+d1367 3
+d1468 65
+@

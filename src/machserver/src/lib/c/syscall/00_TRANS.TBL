@@ -1,0 +1,22 @@
+D DS3100_M                          	ds3100.md
+F FS_READV.C;1                      	Fs_ReadVector.c
+F FS_TRUNC.C;1                      	Fs_Truncate.c
+F FS_WRITE.C;1                      	Fs_WriteVector.c
+L IOC_CLEA.C;1                      	Ioc_ClearBits.c	../../c.orig/syscall/Ioc_ClearBits.c
+L IOC_GETF.C;1                      	Ioc_GetFlags.c	../../c.orig/syscall/Ioc_GetFlags.c
+L IOC_GETO.C;1                      	Ioc_GetOwner.c	../../c.orig/syscall/Ioc_GetOwner.c
+L IOC_LOCK.C;1                      	Ioc_Lock.c	../../c.orig/syscall/Ioc_Lock.c
+L IOC_MAP.C;1                       	Ioc_Map.c	../../c.orig/syscall/Ioc_Map.c
+L IOC_NUMR.C;1                      	Ioc_NumReadable.c	../../c.orig/syscall/Ioc_NumReadable.c
+F IOC_REPO.C;1                      	Ioc_Reposition.c
+L IOC_SETB.C;1                      	Ioc_SetBits.c	../../c.orig/syscall/Ioc_SetBits.c
+L IOC_SETF.C;1                      	Ioc_SetFlags.c	../../c.orig/syscall/Ioc_SetFlags.c
+L IOC_SETO.C;1                      	Ioc_SetOwner.c	../../c.orig/syscall/Ioc_SetOwner.c
+F IOC_TRUN.C;1                      	Ioc_Truncate.c
+L IOC_UNLO.C;1                      	Ioc_Unlock.c	../../c.orig/syscall/Ioc_Unlock.c
+L IOC_WRIT.C;1                      	Ioc_WriteBack.c	../../c.orig/syscall/Ioc_WriteBack.c
+L LOCAL.MK;1                        	local.mk	../etc/local.mk
+F LOCK.MAK;1                        	LOCK.make
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+D SUN3_MD                           	sun3.md

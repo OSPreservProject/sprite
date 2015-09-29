@@ -1,0 +1,183 @@
+head     9.0;
+branch   ;
+access   ;
+symbols  ds3100:9.0 sun3:9.0 sun4nw:9.0 symm:9.0 spur:9.0 Summer89:9.0 newlib:8.0 Summer88:6.0 argString:5.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.0
+date     89.09.12.15.14.35;  author douglis;  state Stable;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.29.14;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.21.39;  author brent;  state Stable;
+branches ;
+next     5.2;
+
+5.2
+date     88.04.18.09.07.17;  author ouster;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     88.03.24.14.53.11;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.46.43;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@/*
+ * procAOUT.h --
+ *
+ *	The a.out format for an object file.
+ *
+ * Copyright (C) 1985, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ * $Header: /sprite/src/kernel/proc/RCS/procAOUT.h,v 8.0 88/11/11 18:29:14 douglis Stable Locker: douglis $ SPRITE (Berkeley)
+ */
+
+#ifndef _PROCAOUT
+#define _PROCAOUT
+
+#include "sprite.h"
+#include "vm.h"
+
+#define	NEW_PAGE_SIZE		0x2000
+#define	NEW_SEG_SIZE		0x20000
+
+/*
+ * Header prepended to each a.out file.
+ */
+
+typedef struct {
+    unsigned short 	machineType;	/* machine type */
+    unsigned short 	magic;		/* magic number */
+    unsigned long	code;		/* Size of code segment */
+    unsigned long	data;		/* Size of initialized data */
+    unsigned long	bss;		/* Size of uninitialized data */
+    unsigned long	syms;		/* Size of symbol table */
+    unsigned long	entry;		/* Entry point */
+    unsigned long	trsize;		/* Size of text relocation */
+    unsigned long	drsize;		/* Size of data relocation */
+} Proc_AOUT;
+
+#define	PROC_OMAGIC	0407		/* Old impure format */
+#define	PROC_NMAGIC	0410		/* Read-only text */
+#define	PROC_ZMAGIC	0413		/* Demand load format */
+#define PROC_MC68010	1		/* runs on '10 or '20 */
+#define PROC_MC68020	2		/* runs on '20 only */
+
+/*
+ * Macros which take exec structures as arguments and tell whether
+ * the file has a reasonable magic number or offsets to text|symbols|strings.
+ */
+#define	PROC_BAD_MAGIC_NUMBER(x) \
+    (((x).magic)!=PROC_ZMAGIC)
+
+#define	PROC_CODE_FILE_OFFSET(x) \
+	((x).magic==PROC_ZMAGIC ? 0 : sizeof (Proc_AOUT))
+#define	PROC_DATA_FILE_OFFSET(x) \
+	(PROC_CODE_FILE_OFFSET(x) + (x).code)
+
+/*
+ * Macros which take exec structures as arguments and tell where the
+ * various pieces will be loaded.
+ */
+#define PROC_CODE_LOAD_ADDR(x) NEW_PAGE_SIZE
+#define PROC_DATA_LOAD_ADDR(x) \
+	(((x).magic==PROC_OMAGIC)? (PROC_CODE_LOAD_ADDR(x)+(x).code) \
+	: (NEW_SEG_SIZE+((PROC_CODE_LOAD_ADDR(x)+(x).code-1) & ~(NEW_SEG_SIZE-1))))
+#define PROC_BSS_LOAD_ADDR(x)  (PROC_DATA_LOAD_ADDR(x)+(x).data)
+
+#endif _PROCAOUT
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/proc/RCS/procAOUT.h,v 6.0 88/08/11 12:21:39 brent Stable Locker: douglis $ SPRITE (Berkeley)
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+ * $Header: procAOUT.h,v 5.2 88/04/18 09:07:17 ouster Exp $ SPRITE (Berkeley)
+@
+
+
+5.2
+log
+@Lint cleanup, change copyright notices.
+@
+text
+@d16 1
+a16 1
+ * $Header: procAOUT.h,v 5.1 88/03/24 14:53:11 nelson Exp $ SPRITE (Berkeley)
+@
+
+
+5.1
+log
+@Made ZMAGIC the only valid executable type.
+@
+text
+@d6 8
+a13 2
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+d16 1
+a16 1
+ * $Header: procAOUT.h,v 5.0 87/08/11 10:46:43 sprite Exp $ SPRITE (Berkeley)
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d10 1
+a10 1
+ * $Header: procAOUT.h,v 1.1 86/04/08 13:03:47 nelson Exp $ SPRITE (Berkeley)
+d49 1
+a49 1
+    (((x).magic)!=PROC_OMAGIC && ((x).magic)!=PROC_NMAGIC && ((x).magic)!=PROC_ZMAGIC)
+@

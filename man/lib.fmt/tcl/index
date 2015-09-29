@@ -1,0 +1,25 @@
+Tcl Tcl, overview of tool command language facilities
+
+Tcl_Backslash   Tcl_Backslash,   parse   a   backslash   sequence
+backslash,  parse, Tcl_CreateCommand Tcl_CreateCommand, define an
+application-specific  command  binding  bind,  command,   create,
+interpreter,  Tcl_CreateInterp Tcl_CreateInterp, set up a new Tcl
+command interpreter command, create, interpreter, Tcl_CreateTrace
+Tcl_CreateTrace,  arrange for command execution to be traced com-
+mand,    create,    interpreter,     trace,     Tcl_DeleteCommand
+Tcl_DeleteCommand,  remove  a command from a Tcl interpreter com-
+mand,  delete,  interpreter,  Tcl_DeleteInterp  Tcl_DeleteInterp,
+destroy  a  Tcl command interpreter command, delete, interpreter,
+Tcl_DeleteTrace Tcl_DeleteTrace, remove a  previously-established
+command trace delete, interpreter, trace, Tcl_Eval Tcl_Eval, exe-
+cute a Tcl command string command, execute, interpreter, Tcl_Expr
+Tcl_Expr, evaluate an expression evaluate, expression, Tcl_GetVar
+Tcl_GetVar, return the value of a Tcl variable interpreter,  glo-
+bal,   local,  variable,  Tcl_Interp  Tcl_Interp,  client-visible
+fields of interpreter structures  dynamic,  interpreter,  result,
+Tcl_Merge  Tcl_Merge,  generate  a  Tcl list from a collection of
+strings list, strings, Tcl_Return Tcl_Return, set up a Tcl result
+string  command,  result,  return  value, interpreter, Tcl_SetVar
+Tcl_SetVar, change the value of a Tcl variable interpreter, vari-
+able,  Tcl_SplitList  Tcl_SplitList,  break  a  Tcl  list up into
+fields list, split, strings,

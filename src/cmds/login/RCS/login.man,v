@@ -1,0 +1,190 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.4
+date     89.04.07.18.43.21;  author douglis;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.02.09.10.26.18;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.12.30.09.43.07;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.12.21.15.33.12;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.4
+log
+@documentation for timeout, login arg, -d arg.
+@
+text
+@' $Header: /a/newcmds/login/RCS/login.man,v 1.3 89/02/09 10:26:18 ouster Exp Locker: douglis $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS LOGIN cmds
+.BS
+.SH NAME
+login \- Allow a user to login
+.SH SYNOPSIS
+\fBlogin\fR [\fIoptions\fR] [\fIuser\fR]
+.SH OPTIONS
+.IP "\fB\-help\fR" 15
+Print a summary of the command-line options and exit without
+performing any logins.
+.IP "\fB\-l\fR"
+Don't record information about the user in a file of logins.
+The default is to record the login and logout in a file
+of logins used by programs like \fBfinger\fR.
+.IP "\fB\-P \fIportNum\fR"
+Use \fIportNum\fR as the port number associated with this login in
+the file of logins (ignored if the \fB\-l\fR option is given).
+.IP "\fB\-r\f"
+Repeat:  when a login shell exits, prompt for another account and
+password, and start another login shell.  The default is for \fBlogin\fR
+to exit as soon as its login shell exits.
+.IP "\fB\-d \fIdevice\fR"
+Use \fIdevice\fR for the login rather than the current tty.
+.BE
+
+.SH DESCRIPTION
+.PP
+If an extra argument is given, \fBlogin\fR uses that name as the name
+of the user to log in.  Otherwise, it prompts for an account name.  In
+either case, \fBlogin\fR prompts for a password.  If the
+password matches the account, the user is logged in and a command
+shell is run for the user.  Information about the account, password,
+home directory, and login shell is taken from \fB/etc/passwd\fR.  If
+the password does not match the account, or the account doesn't exist,
+\fBlogin\fR will prompt for a new account and password.  
+.PP
+If \fIdevice\fR is given, then \fBlogin\fR attempts to use it for the
+standard input, standard output, and standard error channels
+associated with the login.  If no \fIdevice\fR is given, then \fBlogin\fR
+uses the standard I/O channels provided to it by the shell.
+.PP
+Normally, \fBlogin\fR waits for the login shell to exit, which signals
+the end of the login session, and then \fBlogin\fR exits.  If, however,
+the \fB\-r\fR switch is given, then \fBlogin\fR will repeat itself, asking
+for another account and password, and running another login shell.
+This will repeat indefinitely.  If the repeat switch is not given,
+logins will time out after 60 seconds if they are not completed.
+.PP
+If the \fB\-l\fR switch isn't given, then \fBlogin\fR will record information
+about the login and logout in a file for use by programs like Finger.
+The \fB\-P\fR switch is used to indicate which of several ports to
+associate with the login.  If \fB\-l\fR is given, then no login information
+is recorded.
+.PP
+
+.SH KEYWORDS
+account, login, password, user
+@
+
+
+1.3
+log
+@Editorial touch-up.
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/login/RCS/login.man,v 1.2 88/12/30 09:43:07 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d8 1
+a8 1
+\fBlogin\fR [\fIoptions\fR] \fIdevice\fR
+d24 2
+a25 3
+.IP "\fB\-u \fIuser\fR"
+Instead of prompting for a login user, use \fIuser\fR as the account
+for the login.
+d30 3
+a32 1
+This program prompts for an account name and password.  If the
+d35 3
+a37 1
+home directory, and login shell is taken from \fB/etc/passwd\fR.
+d48 2
+a49 1
+This will repeat indefinitely.
+d56 1
+@
+
+
+1.2
+log
+@More format upgrades.
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/login/RCS/login.man,v 1.1 88/12/21 15:33:12 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d29 1
+a29 1
+.SH INTRODUCTION
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+' $Header: login,v 1.1 88/08/24 15:25:15 ouster Exp $ SPRITE (Berkeley)
+d10 1
+a10 1
+.IP "\fB-help\fR" 15
+d13 1
+a13 1
+.IP "\fB-l\fR"
+d16 2
+a17 2
+of logins used by programs like Finger.
+.IP "\fB-P \fIportNum\fR"
+d19 2
+a20 2
+the file of logins (ignored if the \fB-l\fR option is given).
+.IP "\fB-r\f"
+d22 1
+a22 1
+password, and start another login shell.  The default is for Login
+d24 1
+a24 1
+.IP "\fB-u \fIuser\fR"
+d36 1
+a36 1
+If \fIdevice\fR is given, then Login attempts to use it for the
+d38 1
+a38 1
+associated with the login.  If no \fIdevice\fR is given, then Login
+d41 3
+a43 3
+Normally, Login waits for the login shell to exit, which signals
+the end of the login session, and then Login exits.  If, however,
+the \fB-r\fR switch is given, then Login will repeat itself, asking
+d47 1
+a47 1
+If the \fB-l\fR switch isn't given, then Login will record information
+d49 2
+a50 2
+The \fB-P\fR switch is used to indicate which of several ports to
+associate with the login.  If \fB-l\fR is given, then no login information
+@

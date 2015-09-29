@@ -1,0 +1,1456 @@
+head     9.10;
+branch   ;
+access   ;
+symbols  ds3100:9.10 sun3:9.10 sun4nw:9.10 symm:9.10 spur:9.10 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.10
+date     91.07.26.17.03.15;  author shirriff;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     91.03.29.17.53.48;  author shirriff;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     91.03.26.17.03.14;  author jhh;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.12.07.23.40.55;  author rab;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.10.19.15.45.40;  author rab;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.10.03.13.52.43;  author mgbaker;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.09.11.10.48.26;  author mendel;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.08.31.13.28.09;  author jhh;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.02.08.09.48.12;  author rab;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.11.09.14.18.56;  author rab;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.51.50;  author douglis;  state Stable;
+branches ;
+next     8.14;
+
+8.14
+date     89.09.11.23.43.31;  author rab;  state Exp;
+branches ;
+next     8.13;
+
+8.13
+date     89.08.17.17.24.22;  author jhh;  state Exp;
+branches ;
+next     8.12;
+
+8.12
+date     89.06.16.13.06.19;  author rab;  state Exp;
+branches ;
+next     8.11;
+
+8.11
+date     89.05.24.08.00.16;  author rab;  state Exp;
+branches ;
+next     8.10;
+
+8.10
+date     89.05.24.02.03.54;  author rab;  state Exp;
+branches ;
+next     8.9;
+
+8.9
+date     89.05.23.08.43.39;  author mendel;  state Exp;
+branches ;
+next     8.8;
+
+8.8
+date     89.04.14.02.52.26;  author rab;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.04.06.11.54.27;  author douglis;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.03.15.18.02.36;  author jhh;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.01.09.21.55.17;  author douglis;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     88.11.30.13.27.34;  author brent;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     88.11.28.12.25.48;  author jhh;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.11.22.11.40.18;  author douglis;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.15.12.36.27;  author rab;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.04.21;  author douglis;  state Stable;
+branches ;
+next     6.4;
+
+6.4
+date     88.10.28.14.35.49;  author mendel;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.09.12.14.32.06;  author brent;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.25.12.21.14;  author nelson;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.24.14.39.30;  author nelson;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.09.45;  author brent;  state Stable;
+branches ;
+next     1.9;
+
+1.9
+date     88.07.17.19.37.31;  author nelson;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     88.07.12.14.46.54;  author brent;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.07.07.15.14.22;  author nelson;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.07.07.11.14.07;  author douglis;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.06.25.19.22.20;  author ouster;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.06.17.15.54.53;  author mendel;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.05.05.17.55.01;  author nelson;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.05.04.16.40.36;  author nelson;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.05.04.15.52.46;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@New trap handling code with machine state struct per proc.
+@
+
+
+9.10
+log
+@Large install for unix compatibility
+@
+text
+@/*
+ * mach.h --
+ *
+ *     Exported structures for the mach module.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/mach/sun3.md/RCS/mach.h,v 9.9 91/03/29 17:53:48 shirriff Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _MACH
+#define _MACH
+
+#ifdef KERNEL
+#include <devAddrs.h>
+#include <machTypes.h>
+#include <procMigrate.h>
+#include <user/fmt.h>
+#else
+#include <kernel/devAddrs.h>
+#include <kernel/machTypes.h>
+#include <kernel/procMigrate.h>
+#include <fmt.h>
+#endif
+
+
+/*
+ * Macros to disable and enable interrupts.
+ */
+#define	Mach_DisableIntr()	asm("movw #0x2700,sr")
+#define	Mach_EnableIntr()	asm("movw #0x2000,sr")
+#define DISABLE_INTR() \
+    if (!Mach_AtInterruptLevel()) { \
+	Mach_DisableIntr(); \
+	if (mach_NumDisableIntrsPtr[0] < 0) { \
+	    panic("Negative interrupt count.\n"); \
+	} \
+	mach_NumDisableIntrsPtr[0]++; \
+    }
+#define ENABLE_INTR() \
+    if (!Mach_AtInterruptLevel()) { \
+	mach_NumDisableIntrsPtr[0]--; \
+	if (mach_NumDisableIntrsPtr[0] < 0) { \
+	    panic("Negative interrupt count.\n"); \
+	} \
+	if (mach_NumDisableIntrsPtr[0] == 0) { \
+	    Mach_EnableIntr(); \
+	} \
+    }
+
+/*
+ * Macro to get level of nesting of disabled interrupts.
+ */
+#define Mach_IntrNesting(cpu) (mach_NumDisableIntrsPtr[(cpu)])
+
+/*
+ * A macro to test if the current processor is at interrupt level.
+ */
+
+#define	Mach_AtInterruptLevel()	(mach_AtInterruptLevel)
+
+/*
+ * A macro to test if the current processor is in kernel mode.
+ */
+
+#define	Mach_KernelMode() (mach_KernelMode)
+
+/*
+ * Delay for N microseconds.
+ */
+#ifdef sun3
+#define	MACH_DELAY(n)	{ register int N = (n)<<1; N--; while (N > 0) {N--;} }
+#else
+#define	MACH_DELAY(n)	{ register int N = (n)>>1; N--; while (N > 0) {N--;} }
+#endif
+
+/*
+ * The interrupt register on a sun3.
+ */
+#define	Mach_InterruptReg  ((volatile unsigned char *) DEV_INTERRUPT_REG_ADDR)
+
+/*
+ * Dispatch tables for kernel calls.
+ */
+extern ReturnStatus (*(mach_NormalHandlers[]))();
+extern ReturnStatus (*(mach_MigratedHandlers[]))();
+
+/*
+ * Macro to get processor number
+ */
+#define	Mach_GetProcessorNumber() 	0
+
+/*
+ * Macro to get the user's stack pointer.
+ */
+#define Mach_UserStack() (machCurStatePtr->userState.userStackPtr)
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_GetPC --
+ *
+ *	Returns the PC of the current instruction.
+ *
+ * Results:
+ *	Current PC
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifdef lint
+#define Mach_GetPC() 	0
+#else
+#define Mach_GetPC() \
+    ({\
+	register Address __pc; \
+	asm volatile ("1:\n\tlea\t1b,%0\n":"=a" (__pc));\
+	(__pc);\
+    })
+#endif
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_GetCallerPC --
+ *
+ *	Returns the PC of the caller of the current routine.
+ *
+ * Results:
+ *	Our caller's PC.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifdef lint
+#define Mach_GetCallerPC() 	0
+#else
+#define Mach_GetCallerPC() \
+    ({\
+	register Address __pc; \
+	asm volatile ("\tmovl a6@@(4),%0\n":"=a" (__pc));\
+	__pc;\
+    })
+#endif
+
+/*
+ * Suns don't have a write buffer, but this macro makes it easier to
+ * write machine-independent device drivers for both the Decstations and Suns.
+ */
+#define Mach_EmptyWriteBuffer()
+
+#define Mach_SetErrno(err) Proc_GetActualProc()->unixErrno = (err)
+
+extern	Boolean	mach_KernelMode;
+extern	int	mach_NumProcessors;
+extern	Boolean	mach_AtInterruptLevel;
+extern	int	*mach_NumDisableIntrsPtr;
+/*
+ * mach_MachineType is a string used to expand $MACHINE in pathnames.
+ */
+extern	char	*mach_MachineType;
+/*
+ * mach_Format defines a byte ordering/structure alignment type
+ * used when servicing IOControls.  The input and output buffers for
+ * IOControls have to be made right by the server.
+ */
+extern	Fmt_Format	mach_Format;
+
+/*
+ * Routine to initialize mach module.  Must be called first as part of boot 
+ * sequence.
+ */
+extern void Mach_Init _ARGS_((void));
+
+
+
+/*
+ * Routines to munge machine state struct.
+ */
+extern void Mach_InitFirstProc _ARGS_((Proc_ControlBlock *procPtr));
+extern ReturnStatus Mach_SetupNewState _ARGS_((Proc_ControlBlock *procPtr, Mach_State *fromStatePtr, void (*startFunc)(), Address startPC, Boolean user));
+extern void Mach_SetReturnVal _ARGS_((Proc_ControlBlock *procPtr, int retVal,
+	int retVal2));
+extern void Mach_StartUserProc _ARGS_((Proc_ControlBlock *procPtr, Address entryPoint));
+extern void Mach_ExecUserProc _ARGS_((Proc_ControlBlock *procPtr, Address userStackPtr, Address entryPoint));
+extern void Mach_FreeState _ARGS_((Proc_ControlBlock *procPtr));
+extern void Mach_CopyState _ARGS_((Mach_State *statePtr, Proc_ControlBlock *destProcPtr));
+extern void Mach_GetDebugState _ARGS_((Proc_ControlBlock *procPtr, Proc_DebugState *debugStatePtr));
+extern void Mach_SetDebugState _ARGS_((Proc_ControlBlock *procPtr, Proc_DebugState *debugStatePtr));
+extern Address Mach_GetUserStackPtr _ARGS_((Proc_ControlBlock *procPtr));
+
+/*
+ * Migration routines.
+ */
+extern ReturnStatus Mach_EncapState _ARGS_((register Proc_ControlBlock *procPtr, int hostID, Proc_EncapInfo *infoPtr, Address buffer));
+extern ReturnStatus Mach_DeencapState _ARGS_((register Proc_ControlBlock *procPtr, Proc_EncapInfo *infoPtr, Address buffer));
+extern ReturnStatus Mach_GetEncapSize _ARGS_((Proc_ControlBlock *procPtr, int hostID, Proc_EncapInfo *infoPtr));
+extern Boolean Mach_CanMigrate _ARGS_((Proc_ControlBlock *procPtr));
+extern int Mach_GetLastSyscall _ARGS_((void));
+
+/*
+ * Other routines.
+ */
+extern void Mach_InitSyscall _ARGS_((int callNum, int numArgs, ReturnStatus (*normalHandler)(), ReturnStatus (*migratedHandler)()));
+extern void Mach_SetHandler _ARGS_((int vectorNumber, int (*handler)(), ClientData clientData));
+extern int Mach_GetExcStackSize _ARGS_((Mach_ExcStack *excStackPtr));
+extern Mach_ProcessorStates Mach_ProcessorState _ARGS_((int processor));
+extern int Mach_GetNumProcessors _ARGS_((void));
+
+extern ReturnStatus	Mach_Probe _ARGS_((int byteCount, Address readAddress, Address writeAddress));
+
+/*
+ * Machine dependent routines.
+ */
+extern  Net_EtherAddress        *Mach_GetEtherAddress _ARGS_((Net_EtherAddress *etherAddress));
+extern  void    Mach_ContextSwitch _ARGS_((Proc_ControlBlock *fromProcPtr, Proc_ControlBlock *toProcPtr));
+extern  int     Mach_TestAndSet _ARGS_((int *intPtr));
+extern  int     Mach_GetMachineType _ARGS_((void));
+extern int Mach_GetMachineArch _ARGS_((void));
+extern void Mach_CheckSpecialHandling _ARGS_((int pnum));
+extern int Mach_GetBootArgs _ARGS_((int argc, int bufferSize, char **argv, char *buffer));
+extern	Address	Mach_GetStackPointer _ARGS_((void));
+extern void Mach_Return2 _ARGS_((int val));
+extern int Mach_SigreturnStub _ARGS_((void));
+
+/*
+ * spriteStart is defined in bootSys.s with an underscore.
+ */
+extern	int		spriteStart;
+extern	int		endBss;
+extern	int		endText;
+
+/*
+ * Machine dependent variables.
+ */
+extern	Address	mach_KernStart;
+extern	Address	mach_CodeStart;
+extern	Address	mach_StackBottom;
+extern	int	mach_KernStackSize;
+extern	Address	mach_KernEnd;
+extern	Address	mach_FirstUserAddr;
+extern	Address	mach_LastUserAddr;
+extern	Address	mach_MaxUserStackAddr;
+extern	int	mach_LastUserStackPage;
+extern	Mach_State	*machCurStatePtr;
+
+#endif /* _MACH */
+@
+
+
+9.9
+log
+@Added new declarations.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/mach/sun3.md/RCS/mach.h,v 9.8 91/03/26 17:03:14 jhh Exp Locker: shirriff $ SPRITE (Berkeley)
+d100 5
+d260 1
+@
+
+
+9.8
+log
+@Added null Mach_EmptyWriteBuffer() macro.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/mach/sun3.md/RCS/mach.h,v 9.7 90/12/07 23:40:55 rab Exp Locker: jhh $ SPRITE (Berkeley)
+d192 2
+a193 1
+extern void Mach_SetReturnVal _ARGS_((Proc_ControlBlock *procPtr, int retVal));
+d233 2
+a234 1
+
+@
+
+
+9.7
+log
+@Unix compatiblity
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/mach/sun3.md/RCS/mach.h,v 9.6 90/10/19 15:45:40 rab Exp Locker: rab $ SPRITE (Berkeley)
+d155 6
+@
+
+
+9.6
+log
+@Fixed header files so that everything is defined properly.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/mach/sun3.md/RCS/mach.h,v 9.5 90/10/03 13:52:43 mgbaker Exp Locker: rab $ SPRITE (Berkeley)
+d155 2
+@
+
+
+9.5
+log
+@Prototyping.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/mach/sun3.md/RCS/mach.h,v 9.4 90/09/11 10:48:26 mendel Exp Locker: mgbaker $ SPRITE (Berkeley)
+d22 4
+a25 3
+#include "devAddrs.h"
+#include "machTypes.h"
+#include "user/fmt.h"
+d29 1
+@
+
+
+9.4
+log
+@Moved typedefs in machTypes.h
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/mach/sun3.md/RCS/mach.h,v 9.3 90/08/31 13:28:09 jhh Exp Locker: mendel $ SPRITE (Berkeley)
+d173 1
+a173 1
+extern void	Mach_Init();
+d175 2
+d180 10
+a189 10
+extern	void		Mach_InitFirstProc();
+extern	ReturnStatus	Mach_SetupNewState();
+extern	void		Mach_SetReturnVal();
+extern	void		Mach_StartUserProc();
+extern	void		Mach_ExecUserProc();
+extern	void		Mach_FreeState();
+extern	void		Mach_CopyState();
+extern	void		Mach_GetDebugState();
+extern	void		Mach_SetDebugState();
+extern	Address		Mach_GetUserStackPtr();
+d194 5
+a198 4
+extern ReturnStatus		Mach_EncapState();
+extern ReturnStatus		Mach_DeencapState();
+extern ReturnStatus		Mach_GetEncapSize();
+extern Boolean			Mach_CanMigrate();
+d203 5
+a207 6
+extern void			Mach_InitSyscall();
+extern void			Mach_SetHandler();
+extern int			Mach_GetExcStackSize();
+extern Mach_ProcessorStates	Mach_ProcessorState();
+extern ReturnStatus		Mach_Probe();
+extern int			Mach_GetNumProcessors();
+d209 2
+d214 9
+a222 8
+extern	void	Mach_GetEtherAddress();
+extern	void	Mach_ContextSwitch();
+extern	int	Mach_TestAndSet();
+extern	int	Mach_GetMachineType();
+extern	int	Mach_GetMachineArch();
+extern	Address	Mach_GetStackPointer();
+extern 	void	Mach_CheckSpecialHandling();
+extern 	int	Mach_GetBootArgs();	
+@
+
+
+9.3
+log
+@fixed Mach_GetPC to avoid complaints by gcc, and added Mach_GetCallerPC
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/mach/sun3.md/RCS/mach.h,v 9.2 90/02/08 09:48:12 rab Exp Locker: jhh $ SPRITE (Berkeley)
+d23 1
+a23 1
+#include "machConst.h"
+d27 1
+a27 1
+#include <kernel/machConst.h>
+a30 8
+/*
+ * The state of each processor: user mode or kernel mode.
+ */
+typedef enum {
+    MACH_USER,
+    MACH_KERNEL
+} Mach_ProcessorStates;
+
+a91 269
+
+/*
+ * The format for the vector offset register.
+ */
+typedef struct {
+    unsigned	int	stackFormat:4;		/* Format of the stack */
+    unsigned	int	   	   :2;		/* Filler */
+    unsigned	int	vectorOffset:10;	/* Vector offset */
+} Mach_VOR;
+    
+/*
+ * The format for the special status word.
+ */
+typedef	struct {
+    unsigned 	int 	rerun: 1,	 /* Rerun bus cycle (0 = processor
+					    rerun, 1 = software rerun) */
+    			fill1: 1,	 /* Reserved */
+    			ifetch: 1,	 /* Instruction fetch to instruction
+					    buffer (1 = true) */
+			dfetch: 1,	 /* Data fetch to the data input
+					    buffer (1 = true) */
+			readModWrite: 1, /* Read-Modify-Write cycle */
+    			highByte: 1,	 /* High byte transfer */
+			byteTrans: 1,	 /* Byte transfer flag */
+    			readWrite: 1,	 /* Read/Write flag (0 = write, 
+					    1 = read) */
+    			fill2: 4,	 /* Reserved */
+    			funcCode : 4;	 /* The function code */
+} Mach_SpecStatWord;
+
+/*
+ * 68020 stack formats are defined in "MC68020 32-Bit Microprocessor User's 
+ * Manual" on pages 6-19 to 6-24.  68010 stack formats are defined in 
+ * "MC68000  16/32-Bit Microprocessor Programmers Reference Manual" on pages
+ * 33 to 48.
+ */
+
+#ifdef sun3
+/*
+ * Address and bus error info that is stored on the stack for a  68020 short
+ * bus or address fault.
+ */
+typedef struct {
+    unsigned	int	:16;
+    Mach_SpecStatWord	specStatWord;	
+    short		pipeStageC;
+    short		pipeStageB;
+    int			faultAddr;
+    unsigned 	int	:16;
+    unsigned 	int	:16;
+    int			dataOutBuf;
+    unsigned 	int	:16;
+    unsigned 	int	:16;
+} Mach_ShortAddrBusErr;
+
+/*
+ * Address and bus error info that is stored on the stack for a 68020 long
+ * bus or address fault.
+ */
+typedef struct {
+    unsigned	int	:16;
+    Mach_SpecStatWord	specStatWord;	
+    short		pipeStageC;
+    short		pipeStageB;
+    int			faultAddr;
+    unsigned 	int	int1;
+    int			dataOutBuf;
+    unsigned	int	int2[2];
+    int			stageBAddr;
+    unsigned 	int	int3;
+    int			dataInBuf;
+    unsigned	int	int4[11];
+} Mach_LongAddrBusErr;
+
+/*
+ * The default stack is the long one.  Anyone who actually plays with these
+ * stacks will have to look at the exception type and figure things out
+ * for themselves.
+ */
+typedef	Mach_LongAddrBusErr	Mach_AddrBusErr;
+
+/*
+ * The structure of the exception stack
+ */
+typedef struct {
+    short		statusReg;		/* Status register */
+    int			pc;			/* Program counter */
+    Mach_VOR		vor;			/* The vector offset register */
+    union {
+	int		instrAddr;		/* Instruction that caused
+						 * the fault. */
+	Mach_AddrBusErr	addrBusErr;		/* Address or bus error info */
+    } tail;
+} Mach_ExcStack;
+
+#else
+/*
+ * Address and bus error info that is stored on the stack.
+ */
+typedef struct {
+    Mach_SpecStatWord	specStatWord;	
+    int			faultAddr;
+    unsigned 	int	:16;
+    short		dataOutBuf;
+    unsigned 	int	:16;
+    short		dataInBuf;
+    unsigned 	int	:16;
+    short		instInBuf;
+    short		internal[16];
+} Mach_AddrBusErr;
+
+/*
+ * The structure of the exception stack
+ */
+typedef struct {
+    short		statusReg;		/* Status register */
+    int			pc;			/* Program counter */
+    Mach_VOR		vor;			/* The vector offset register */
+    union {
+	Mach_AddrBusErr	addrBusErr;		/* Address or bus error info */
+    } tail;
+} Mach_ExcStack;
+
+#endif
+
+/*
+ * Bus error register 
+ */
+#ifdef sun3
+typedef struct {
+    unsigned	int	fill:24,	/* Filler to make it a long. */
+			pageInvalid: 1,	/* The page accessed did not have the
+					   valid bit set. */
+			protError: 1,	/* Protection error. */
+			timeOut: 1,	/* Timeout error. */
+			vmeBusErr: 1,	/* VME bus error. */
+			fpaBusErr: 1,	/* FPA bus error. */
+			fpaEnErr: 1,	/* FPA Enable error. */
+			res1:1,		/* Reserved. */
+			watchdog:1;	/* Watchdog or user reset. */
+} Mach_BusErrorReg;
+#else
+typedef struct {
+    unsigned	int	fill:16,	/* Filler to make it a long. */
+			res1:8,		/* Reserved */
+			resident:1,	/* Valid bit set */
+			busErr:1,	/* System bus error */
+			res2:2,		/* Reserved */
+			protErr:1,	/* Protection error */
+			timeOut:1,	/* Timeout error */
+			parErrU:1,	/* Parity error upper byte */
+			parErrL:1;	/* Parity error lower byte */
+} Mach_BusErrorReg;
+
+#endif
+
+/*
+ * State for each process.
+ *
+ * IMPORTANT NOTE: If the order or size of fields in these structures change
+ *		   then the constants which give the offsets must be
+ *		   changed in "machConst.h".
+ */
+
+/*
+ * The register state of a user process which is passed to debuggers.
+ */
+typedef struct {
+    int			regs[MACH_NUM_GPRS];	/* General purpose registers.*/
+    int			pc;			/* The program counter. */
+    int			statusReg;		/* The status register. */
+} Mach_RegState;
+
+#ifdef sun3
+/*
+ * The structure of the fpu state frames is described in
+ * section 6.4.2 of the Motorola 68881/2 User's Manual.
+ */
+struct fpuState {
+    unsigned char version;
+    unsigned char state;
+    unsigned short xxx1;
+    unsigned long  xxx2[(MACH_FP_STATE_SIZE/4) - 1];
+};
+
+#define     MACH_68881_IDLE_STATE     0x18
+#define     MACH_68882_IDLE_STATE     0x38
+#define     MACH_68881_BUSY_STATE     0xb4
+#define     MACH_68882_BUSY_STATE     0xd4
+
+extern const unsigned long      mach68881Present;
+extern const unsigned long      mach68881NullState;
+extern const unsigned char      mach68881Version;
+extern const struct fpuState    mach68881IdleState;
+#endif
+
+/*
+ * The user state for a process.
+ */
+typedef struct {
+    Address		userStackPtr;		/* The user stack pointer */
+    int			trapRegs[MACH_NUM_GPRS];/* General purpose registers.*/
+    Mach_ExcStack	*excStackPtr;		/* The exception stack */
+    int			lastSysCall;		/* Last system call. */
+#ifdef sun3
+    long    trapFpRegs[MACH_NUM_FPRS][3];       /* Floating point registers */
+    long    trapFpCtrlRegs[3];                  /* fpu control registers */
+    struct fpuState trapFpuState;               /* internal state of the fpu*/
+#endif
+} Mach_UserState;
+
+/*
+ * The kernel and user state for a process.
+ */
+typedef struct Mach_State {
+    Mach_UserState  userState;		        /* User state for a process. */
+    long	 switchRegs[MACH_NUM_GPRS];     /* Where registers are saved
+						 * and restored to/from during
+						 * context switches. */
+    Address      kernStackStart;		/* Address of the beginning of
+						 * the kernel stack. */
+    int	         sigExcStackSize;	        /* Amount of valid data in the
+						 * signal exception stack. */
+    Mach_ExcStack   sigExcStack;		/* Place to store sig exception 
+						 * stack on return from signal
+						 * handler.*/
+#if 0
+    long  switchFpRegs[MACH_NUM_FPRS][3];       /* Where fpu registers are
+                                                 * saved and restored to/from
+						 * during context switches. */
+    long  switchFpCtrlRegs[3];                  /* fpu control registers */
+    struct fpuState switchFpuState;             /* internal state of the fpu*/
+#endif
+} Mach_State;
+
+/*
+ * The stack that is created when a trap occurs.   If you change the size
+ * of this structure then you must also change the MACH_TRAP_INFO_SIZE constant
+ * in machConst.h.
+ */
+typedef struct {
+    int			trapType;	/* Type of trap. */
+    Mach_BusErrorReg	busErrorReg;	/* Bus error register at time of trap.*/
+    int			tmpRegs[4];	/* The tmp registers d0, d1, a0 and 
+					 * a1.*/
+    Mach_ExcStack	excStack;	/* The exception stack. */
+} Mach_TrapStack;
+
+/*
+ * The stack that is created when an interrupt occurs.
+ */
+typedef struct {
+    int			tmpRegs[4];	/* The tmp registers d0, d1, a0 and 
+					 * a1.*/
+    Mach_ExcStack	excStack;	/* The exception stack. */
+} Mach_IntrStack;
+
+/*
+ * The machine dependent signal structure.
+ */
+typedef struct {
+    int		  	trapInst;	/* The trap instruction that is
+					 * executed upon return. */
+    Mach_UserState	userState;	/* The user process machine state
+					 * info. */
+    Mach_ExcStack	excStack;	/* The exception stack that would
+					 * have been restored if this signal
+					 * were not taken. */
+} Mach_SigContext;
+@
+
+
+9.2
+log
+@Fixed assembler label for Mach_GetPC.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/mach/sun3.md/RCS/mach.h,v 9.1 89/11/09 14:18:56 rab Exp Locker: rab $ SPRITE (Berkeley)
+d375 17
+d398 1
+a398 1
+	asm volatile ("1:\n\tlea\t1b,%1\n":"=a" (__pc):"a"(__pc));\
+d400 28
+@
+
+
+9.1
+log
+@Changed '#ifdef 0' to '#if 0' so the sunOS compile won't barf.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/mach/sun3.md/RCS/mach.h,v 9.0 89/09/12 14:51:50 douglis Stable Locker: rab $ SPRITE (Berkeley)
+d381 1
+a381 1
+	asm volatile ("1$:\n\tlea\t1$,%1\n":"=a" (__pc):"a"(__pc));\
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/mach/sun3.md/RCS/mach.h,v 8.14 89/09/11 23:43:31 rab Exp Locker: douglis $ SPRITE (Berkeley)
+d326 1
+a326 1
+#ifdef 0
+@
+
+
+8.14
+log
+@Changes to fix floating point migration.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/mach/sun3.md/RCS/mach.h,v 8.13 89/08/17 17:24:22 jhh Exp Locker: rab $ SPRITE (Berkeley)
+@
+
+
+8.13
+log
+@now uses Fmt_Convert
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/mach/sun3.md/RCS/mach.h,v 8.12 89/06/16 13:06:19 rab Exp Locker: jhh $ SPRITE (Berkeley)
+d119 1
+a119 1
+    			dfetch: 1,	 /* Data fetch to the data input
+d273 23
+d307 1
+a307 1
+    long    trapFpuState[MACH_FP_STATE_SIZE/4]; /* internal state of the fpu*/
+d326 1
+a326 1
+#ifdef sun3
+d331 1
+a331 1
+    long  switchFpuState[MACH_FP_STATE_SIZE/4]; /* internal state of the fpu*/
+@
+
+
+8.12
+log
+@*** empty log message ***
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/mach/sun3.md/RCS/mach.h,v 8.11 89/05/24 08:00:16 rab Exp Locker: rab $ SPRITE (Berkeley)
+d24 1
+d28 1
+d372 1
+a372 1
+ * mach_ByteOrder defines a byte ordering/structure alignment type
+d376 1
+a376 1
+extern	int	mach_ByteOrder;
+@
+
+
+8.11
+log
+@*** empty log message ***
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/mach/sun3.md/RCS/mach.h,v 8.10 89/05/24 02:03:54 rab Exp Locker: rab $ SPRITE (Berkeley)
+d279 5
+d302 1
+a302 1
+    long        switchFpRegs[MACH_NUM_FPRS][3]; /* Where fpu registers are
+d305 2
+a306 2
+    long        switchFpCtrlRegs[3];            /* fpu control registers */
+    long        fpuState[MACH_FP_STATE_SIZE/4]; /* internal state of the fpu*/
+@
+
+
+8.10
+log
+@Changes to support floating point.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/mach/sun3.md/RCS/mach.h,v 8.9 89/05/23 08:43:39 mendel Exp Locker: rab $ SPRITE (Berkeley)
+d91 1
+a91 1
+#define	Mach_InterruptReg	((unsigned char *) DEV_INTERRUPT_REG_ADDR)
+d121 1
+a121 1
+    			byteTrans: 1,	 /* Byte transfer flag */
+@
+
+
+8.9
+log
+@*** empty log message ***
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/mach/sun3.md/RCS/mach.h,v 8.8 89/04/14 02:52:26 rab Exp $ SPRITE (Berkeley)
+d119 1
+a119 1
+    			readModWrite: 1, /* Read-Modify-Write cycle */
+d285 2
+a286 2
+    Mach_UserState	userState;		/* User state for a process. */
+    int			switchRegs[MACH_NUM_GPRS];/* Where registers are saved
+d289 1
+a289 1
+    Address		kernStackStart;		/* Address of the beginning of
+d291 1
+a291 6
+    int			padding;		/* This used to be a pointer 
+						 * to the set jump state and
+						 * can go away when the tricky
+						 * constants in machConst.h
+						 * are updated. */
+    int			sigExcStackSize;	/* Amount of valid data in the
+d293 1
+a293 1
+    Mach_ExcStack	sigExcStack;		/* Place to store sig exception 
+d296 7
+@
+
+
+8.8
+log
+@*** empty log message ***
+@
+text
+@d6 8
+a13 2
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+d15 1
+a15 1
+ * $Header: /sprite/src/kernel/mach/sun3.md/RCS/mach.h,v 8.7 89/04/06 11:54:27 douglis Exp Locker: rab $ SPRITE (Berkeley)
+a36 7
+/*
+ * Structure for a Mach_SetJump and Mach_LongJump.
+ */
+typedef struct Mach_SetJumpState {
+    int		pc;
+    int		regs[12];
+} Mach_SetJumpState;
+d291 5
+a295 1
+    Mach_SetJumpState	*setJumpStatePtr;	/* Pointer to set jump state.*/
+d404 1
+a404 2
+extern ReturnStatus		Mach_SetJump();
+extern void			Mach_UnsetJump();
+@
+
+
+8.7
+log
+@changes for table-driven migration encapsulation.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/mach/sun3.md/RCS/mach.h,v 8.6 89/03/15 18:02:36 jhh Exp Locker: douglis $ SPRITE (Berkeley)
+d437 1
+a437 1
+#endif _MACH
+@
+
+
+8.6
+log
+@added macro to get nesting level of disable interrupts
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/mach/sun2.md/RCS/mach.h,v 8.5 89/01/09 21:55:17 douglis Exp $ SPRITE (Berkeley)
+d389 1
+a389 1
+extern void			Mach_EncapState();
+d391 2
+a392 1
+extern int			Mach_GetEncapSize();
+@
+
+
+8.5
+log
+@added declaration for Mach_GetNumProcessors (system call).
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/mach/sun2.md/RCS/mach.h,v 8.4 88/11/30 13:27:34 brent Exp Locker: douglis $ SPRITE (Berkeley)
+d64 5
+d414 1
+@
+
+
+8.4
+log
+@Sys_Panic => panic
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/mach/sun2.md/RCS/mach.h,v 8.3 88/11/28 12:25:48 jhh Exp Locker: brent $ SPRITE (Berkeley)
+d397 1
+@
+
+
+8.3
+log
+@added Mach_GetPC macro, did it right this time
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/mach/sun2.md/RCS/mach.h,v 8.2 88/11/22 11:40:18 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+d48 1
+a48 1
+	    Sys_Panic(SYS_FATAL, "Negative interrupt count.\n"); \
+d56 1
+a56 1
+	    Sys_Panic(SYS_FATAL, "Negative interrupt count.\n"); \
+@
+
+
+8.2
+log
+@FD checking in for JHH.... Mach_GetPC definition.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/mach/sun2.md/RCS/mach.h,v 8.1 88/11/15 12:36:27 rab Exp Locker: jhh $ SPRITE (Berkeley)
+d338 1
+a338 1
+#define Mach_GetPC() (Address) \
+d340 2
+a341 2
+	register unsigned int __pc; \
+	asm volatile ("1$:\n\tlea\t1$,a0\n\tmovl\ta0,d0\n":"=r" (__pc):"r"(__pc));\
+@
+
+
+8.1
+log
+@changed SUN to sun
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/mach/sun2.md/RCS/mach.h,v 8.0 88/11/11 18:04:21 douglis Stable Locker: rab $ SPRITE (Berkeley)
+d335 10
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/mach/sun2.md/RCS/mach.h,v 6.4 88/10/28 14:35:49 mendel Exp Locker: douglis $ SPRITE (Berkeley)
+d78 1
+a78 1
+#ifdef SUN3
+d131 1
+a131 1
+#ifdef SUN3
+d222 1
+a222 1
+#ifdef SUN3
+@
+
+
+6.4
+log
+@Added macro references on mach_KernelMode.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/mach/sun2.md/RCS/mach.h,v 6.3 88/09/12 14:32:06 brent Exp Locker: mendel $ SPRITE (Berkeley)
+@
+
+
+6.3
+log
+@Added mach_ByteOrder
+@
+text
+@d9 1
+a9 1
+ * $Header: mach.h,v 6.2 88/08/25 12:21:14 nelson Exp $ SPRITE (Berkeley)
+d45 1
+a45 1
+    if (!mach_AtInterruptLevel) { \
+d53 1
+a53 1
+    if (!mach_AtInterruptLevel) { \
+d64 12
+d335 1
+d397 1
+a417 1
+
+@
+
+
+6.2
+log
+@Changed the user state around so that the debugger can get at appropriate
+info.
+@
+text
+@d9 1
+a9 1
+ * $Header: mach.h,v 6.1 88/08/24 14:39:30 nelson Exp $ SPRITE (Berkeley)
+d327 3
+d331 7
+@
+
+
+6.1
+log
+@Added the last system call field to the machine dependent struct and
+moved the user register stuff into a separate struct and moved set jump
+from a macro to a C routine.
+@
+text
+@d9 1
+a9 1
+ * $Header: mach.h,v 1.9 88/07/17 19:37:31 nelson Exp $ SPRITE (Berkeley)
+d15 1
+d18 4
+d247 1
+a247 1
+ * The register state of a user process when it traps into the kernel.
+d250 3
+a252 2
+    Address		userStackPtr;		/* The user stack pointer */
+    int			trapRegs[MACH_NUM_GPRS];/* General purpose registers.*/
+d259 2
+a260 1
+    Mach_RegState	regState;		/* Register state. */
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@a34 6
+ * Macro to perform a set jump.
+ */
+#define	Mach_SetJump(setJumpPtr) \
+    MachSetJump((Proc_GetCurrentProc())->machStatePtr->setJumpStatePtr = setJumpPtr)
+
+/*
+d242 8
+d253 1
+a253 3
+    Address		userStackPtr;		/* The user stack pointer */
+    int			trapRegs[MACH_NUM_GPRS];/* General purpose registers
+						 * when trap into kernel. */
+d255 1
+d355 1
+@
+
+
+1.9
+log
+@Added the call to retrieve the user stack pointer out of the mach state
+struct.  This required saving the user's stack pointer even on system
+call traps.
+@
+text
+@d9 1
+a9 1
+ * $Header: mach.h,v 1.8 88/07/12 14:46:54 brent Exp $ SPRITE (Berkeley)
+@
+
+
+1.8
+log
+@Added mach_MachineType
+@
+text
+@d9 1
+a9 1
+ * $Header: mach.h,v 1.7 88/07/07 15:14:22 nelson Exp $ SPRITE (Berkeley)
+d338 1
+@
+
+
+1.7
+log
+@Changed around signal interface a little bit.
+@
+text
+@d9 1
+a9 1
+ * $Header: mach.h,v 1.6 88/07/07 11:14:07 douglis Exp $ SPRITE (Berkeley)
+a64 10
+ * Macro to get processor number
+ */
+#define	Mach_GetProcessorNumber() 	0
+
+extern	Boolean	mach_KernelMode;
+extern	int	mach_NumProcessors;
+extern	Boolean	mach_AtInterruptLevel;
+extern	int	*mach_NumDisableIntrsPtr;
+
+/*
+d319 1
+@
+
+
+1.6
+log
+@added migration routine declarations.
+@
+text
+@d9 1
+a9 1
+ * $Header: mach.h,v 1.5 88/06/25 19:22:20 ouster Exp $ SPRITE (Berkeley)
+d306 13
+@
+
+
+1.5
+log
+@Eliminate unwanted arg to Proc_GetCurrentProc().
+@
+text
+@d9 1
+a9 1
+ * $Header: mach.h,v 1.4 88/06/17 15:54:53 mendel Exp $ SPRITE (Berkeley)
+d334 7
+@
+
+
+1.4
+log
+@Added Mach_GetMachineArch().
+@
+text
+@d9 1
+a9 1
+ * $Header: mach.h,v 1.3 88/05/05 17:55:01 nelson Exp $ SPRITE (Berkeley)
+d38 1
+a38 1
+    MachSetJump((Proc_GetCurrentProc(0))->machStatePtr->setJumpStatePtr = setJumpPtr)
+@
+
+
+1.3
+log
+@Handles move of functionality from sys to mach.
+@
+text
+@d9 1
+a9 1
+ * $Header: mach.h,v 1.2 88/05/04 16:40:36 nelson Exp $ SPRITE (Berkeley)
+d351 1
+@
+
+
+1.2
+log
+@Comments.
+@
+text
+@d9 1
+a9 1
+ * $Header: exc.h,v 5.3 88/04/13 11:25:14 ouster Exp $ SPRITE (Berkeley)
+d19 1
+a19 3
+ * Macros to disable and enable interrupts.  These macros do not handle
+ * nested calls.  The macros DISABLE_INTR and ENABLE_INTR are the more general
+ * purpose macros which handle nesting.
+d21 22
+d45 18
+d65 10
+d277 1
+d308 9
+d338 5
+a342 3
+extern void	Mach_InitSyscall();
+extern void	Mach_SetHandler();
+extern int	Mach_GetExcStackSize();
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d259 1
+a259 1
+ * Initialization mach module.  Must be called first as part of boot 
+d287 1
+a288 1
+extern	void	Mach_GetEtherAddress();
+a289 1
+extern	void	Mach_Init();
+@

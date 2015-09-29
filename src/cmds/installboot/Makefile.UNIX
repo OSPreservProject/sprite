@@ -1,0 +1,21 @@
+
+CFLAGS=         -g -I/usr/include -I. -I../sproot/sprite/lib/include \
+                    -I../sproot/sprite/lib/include/kernel \
+                    -I../sproot/sprite/lib/include/sun3.md \
+                    -I../sproot/sprite/lib/include/kernel/sun3.md
+
+OBJS=           installboot.o installdec.o installsun.o \
+                diskHeader.o diskIO.o option.o strerror.o
+
+
+installboot:    $(OBJS)
+                $(CC) -Bstatic -g -o installboot $(OBJS)
+
+installboot.o:  installboot.c
+installsun.o:   installsun.c
+installdec.o:   installdec.c
+diskHeader.o:   diskHeader.c
+diskIO.o:       diskIO.c
+option.o:       option.c
+strerror.o:     strerror.c
+

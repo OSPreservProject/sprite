@@ -1,0 +1,320 @@
+head     9.3;
+branch   ;
+access   ;
+symbols  ds3100:9.3 sun3:9.3 sun4nw:9.3 symm:9.3 spur:9.3 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.3
+date     90.02.20.14.33.45;  author shirriff;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.01.29.18.01.12;  author shirriff;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.01.23.19.02.28;  author shirriff;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.54.29;  author douglis;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.11.17.55.51;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Original source from DECWRL.
+@
+
+
+9.3
+log
+@Moved around declarations of Dec prom routines.
+@
+text
+@/* 
+ * machMon.c --
+ *
+ *	Routines to access the PMAX prom monitor.
+ *
+ *	Copyright (C) 1989 Digital Equipment Corporation.
+ *	Permission to use, copy, modify, and distribute this software and
+ *	its documentation for any purpose and without fee is hereby granted,
+ *	provided that the above copyright notice appears in all copies.  
+ *	Digital Equipment Corporation makes no representations about the
+ *	suitability of this software for any purpose.  It is provided "as is"
+ *	without express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/mach/ds3100.md/RCS/machMon.c,v 9.2 90/01/29 18:01:12 shirriff Exp Locker: shirriff $ SPRITE (DECWRL)";
+#endif not lint
+
+#include "sprite.h"
+#define _MONFUNCS
+#include "machMon.h"
+#include "machConst.h"
+#include "machInt.h"
+#include "ctype.h"
+#include "mach.h"
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_MonAbort --
+ *
+ *     Abort to prom.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     Aborts to monitor.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+Mach_MonAbort()
+{
+	mach_MonFuncs.restart();
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_MonPutChar --
+ *
+ *     Call the monitor put character routine
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+int
+Mach_MonPutChar(ch)
+    int		ch;
+{
+    return(Dev_GraphicsPutc(ch));
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_MonReboot --
+ *
+ *     	Reboot the system.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     System rebooted.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+Mach_MonReboot(rebootString)
+    char	*rebootString;
+{
+    char *bootpath;
+    if (*rebootString != '\0') {
+	mach_MonFuncs.setenv2("bootpath",rebootString);
+    } else {
+	bootpath = mach_MonFuncs.getenv2("bootpath");
+	if (bootpath == (char *)NULL || *bootpath == '\0') {
+	    /*
+	     * Hardware doesn't have a bootpath.
+	     */
+	    mach_MonFuncs.setenv2("bootpath",DEFAULT_REBOOT);
+	    printf("Using default %s\n",DEFAULT_REBOOT);
+	}
+	/*
+	 * Otherwise use hardware's bootpath.
+	 */
+    }
+    *MACH_USE_NON_VOLATILE |= MACH_NON_VOLATILE_FLAG;
+    mach_MonFuncs.autoboot();
+    panic("Mach_MonReboot: Reboot failed (I'm still alive aren't I?)\n");
+}
+@
+
+
+9.2
+log
+@Made rebooting work.  Made command line arguments work.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/mach/ds3100.md/RCS/machMon.c,v 9.1 90/01/23 19:02:28 shirriff Exp Locker: shirriff $ SPRITE (DECWRL)";
+d20 1
+a26 45
+Mach_MonFuncs mach_MonFuncs = {
+    (int (*)()) MACH_MON_RESET,
+    (int (*)()) MACH_MON_EXEC,
+    (int (*)()) MACH_MON_RESTART,
+    (int (*)()) MACH_MON_REINIT,
+    (int (*)()) MACH_MON_REBOOT,
+    (int (*)()) MACH_MON_AUTOBOOT,
+    (int (*)()) MACH_MON_OPEN,
+    (int (*)()) MACH_MON_READ,
+    (int (*)()) MACH_MON_WRITE,
+    (int (*)()) MACH_MON_IOCTL,
+    (int (*)()) MACH_MON_CLOSE,
+    (int (*)()) MACH_MON_LSEEK,
+    (int (*)()) MACH_MON_GETCHAR,
+    (int (*)()) MACH_MON_PUTCHAR,
+    (int (*)()) MACH_MON_SHOWCHAR,
+    (int (*)()) MACH_MON_GETS,
+    (int (*)()) MACH_MON_PUTS,
+    (int (*)()) MACH_MON_PRINTF,
+    (int (*)()) MACH_MON_MEM1,
+    (int (*)()) MACH_MON_MEM2,
+    (int (*)()) MACH_MON_SAVEREGS,
+    (int (*)()) MACH_MON_LOADREGS,
+    (int (*)()) MACH_MON_JUMPS8,
+    (char *(*)()) MACH_MON_GETENV2,
+    (int (*)()) MACH_MON_SETENV2,
+    (int (*)()) MACH_MON_ATONUM,
+    (int (*)()) MACH_MON_STRCMP,
+    (int (*)()) MACH_MON_STRLEN,
+    (char *(*)()) MACH_MON_STRCPY,
+    (char *(*)()) MACH_MON_STRCAT,
+    (int (*)()) MACH_MON_GETCMD,
+    (int (*)()) MACH_MON_GETNUMS,
+    (int (*)()) MACH_MON_ARGPARSE,
+    (int (*)()) MACH_MON_HELP,
+    (int (*)()) MACH_MON_DUMP,
+    (int (*)()) MACH_MON_SETENV,
+    (int (*)()) MACH_MON_UNSETENV,
+    (int (*)()) MACH_MON_PRINTENV,
+    (int (*)()) MACH_MON_JUMP2S8,
+    (int (*)()) MACH_MON_ENABLE,
+    (int (*)()) MACH_MON_DISABLE,
+    (int (*)()) MACH_MON_ZEROB,
+};
+
+d31 1
+a31 1
+ * Mach_MonPutChar --
+d33 1
+a33 1
+ *     Call the monitor put character routine
+d39 1
+a39 1
+ *     None.
+d43 2
+a44 3
+int
+Mach_MonPutChar(ch)
+    int		ch;
+d46 1
+a46 1
+    return(Dev_GraphicsPutc(ch));
+a47 1
+
+d52 1
+a52 1
+ * Mach_MonAbort --
+d54 1
+a54 1
+ *     	Abort to the monitor.
+d64 3
+a66 2
+void
+Mach_MonAbort()
+d68 1
+a68 1
+    mach_MonFuncs.restart();
+d70 1
+a109 23
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_ArgParse --
+ *
+ *	Parse a string into ds3100 string table form.
+ *
+ * Results:
+ *     Returns argc.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+int
+Mach_ArgParse(string,table)
+char *string;
+MachStringTable *table;
+{
+    mach_MonFuncs.argparse(string,table);
+@
+
+
+9.1
+log
+@Added more prom functions; made rebooting work.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/mach/ds3100.md/RCS/machMon.c,v 1.1 89/07/11 17:55:51 nelson Exp $ SPRITE (DECWRL)";
+d50 1
+a50 1
+    (int (*)()) MACH_MON_GETENV2,
+d55 2
+a56 2
+    (int (*)()) MACH_MON_STRCPY,
+    (int (*)()) MACH_MON_STRCAT,
+d135 16
+a150 1
+    mach_MonFuncs.setenv2("bootpath",rebootString);
+d154 23
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/mach/ds3100.md/RCS/machMon.c,v 1.1 89/07/11 17:55:51 nelson Exp Locker: douglis $ SPRITE (DECWRL)";
+d45 24
+d135 3
+a137 1
+    mach_MonFuncs.reboot(rebootString);
+a139 1
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: machMon.c,v 1.6 89/06/29 10:04:34 mnelson Exp $ SPRITE (DECWRL)";
+@

@@ -1,0 +1,80 @@
+#!/bin/sh
+#
+#   This script file makes a new TeX PK font, because one wasn't
+#   found.  Parameters are:
+#
+#   name dpi bdpi magnification [mode]
+#
+#   `name' is the name of the font, such as `cmr10'.  `dpi' is
+#   the resolution the font is needed at.  `bdpi' is the base
+#   resolution, useful for figuring out the mode to make the font
+#   in.  `magnification' is a string to pass to MF as the
+#   magnification.  `mode', if supplied, is the mode to use.
+#
+#   Note that this file must execute Metafont, and then gftopk,
+#   and place the result in the correct location for the PostScript
+#   driver to find it subsequently.  If this doesn't work, it will
+#   be evident because MF will be invoked over and over again.
+#
+#   Of course, it needs to be set up for your site.
+#
+# DESTDIR=/LocalLibrary/Fonts/TeXFonts/pk
+DESTDIR=/home/fonts
+# TEMPDIR=/tmp
+TEMPDIR=.
+NAME=$1
+DPI=$2
+BDPI=$3
+MAG=$4
+MODE=$5
+FINALNAME=$DESTDIR/$NAME.$DPI'pk'
+cd $TEMPDIR
+# if test -r /usr/local/lib/tex/fonts/pk/$NAME.$DPI'pk'
+if test -r $DESTDIR/$NAME.$DPI'pk'
+then
+#    echo "$NAME.$DPI'pk' already exists in /usr/lib/tex/fonts/pk"
+   echo "$NAME.$DPI'pk' already exists in /home/fonts"
+   exit
+fi
+if test -r $FINALNAME
+then
+   echo "$FINALNAME already exists!"
+   exit
+fi
+if test ! -w $DESTDIR
+then
+   mkdir $DESTDIR
+   if test ! -w $DESTDIR
+   then
+      echo "Can't write to $DESTDIR"
+      exit
+   fi
+fi
+if test "$MODE" = ""
+then
+   if test $BDPI = 300
+   then
+      MODE=imagen
+   elif test $BDPI = 400
+   then
+      MODE=nexthi
+   elif test $BDPI = 100
+   then
+      MODE=nextscreen
+   else
+      echo "I don't know the mode for $BDPI"
+      echo "Have your system admin update MakeTeXPK"
+      exit
+   fi
+fi
+mf "\mode:=$MODE; mag:=$MAG; scrollmode; input $NAME"
+if test ! -r $NAME.$DPI'gf'
+then
+   echo "Metafont failed for some reason on $NAME.$DPI"gf
+   exit
+fi
+gftopk $NAME.$DPI'gf' $NAME.$DPI'pk'
+cp $NAME.$DPI'pk' $DESTDIR
+chmod 666 $FINALNAME
+rm $NAME.log $NAME.$DPI'pk' $NAME.$DPI'gf' $NAME.tfm
+exit

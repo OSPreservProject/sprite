@@ -1,0 +1,66 @@
+emuFork.c:
+emuInit.c:
+_exit.c:
+spriteSrvUser.c:
+mapStatus.c:
+syscalls.c:
+getpid.c:
+ioctl.c:
+sleepTmp.c:
+Fs_Read.c:
+Fs_Select.c:
+Fs_Write.c:
+Ioc_GetOwner.c:
+Ioc_SetOwner.c:
+Sig_Pause.c:
+brk.c:
+fcntl.c:
+mknod.c:
+open.c:
+proc.c:
+select.c:
+stat.c:
+umask.c:
+utimes.c:
+Fs_IOControl.c:
+Fs_WriteBack.c:
+getuid.c:
+signals.c:
+Sys_CallName.c:
+access.c:
+chdir.c:
+chmod.c:
+chown.c:
+close.c:
+creat.c:
+dup.c:
+fsync.c:
+geteuid.c:
+getgroups.c:
+getitimer.c:
+getpgrp.c:
+getppid.c:
+getrusage.c:
+getrusage.c(51): warning: argument who unused in function getrusage
+link.c:
+mkdir.c:
+pipe.c:
+readlink.c:
+rename.c:
+rmdir.c:
+setgroups.c:
+setpgrp.c:
+setregid.c:
+setreuid.c:
+symlink.c:
+unlink.c:
+bcopy, arg. 1 used inconsistently	spriteSrvUser.c(2136)  ::  syscalls.c(614)
+bcopy, arg. 2 used inconsistently	spriteSrvUser.c(2136)  ::  syscalls.c(614)
+bcopy, arg. 3 used inconsistently	spriteSrvUser.c(2136)  ::  syscalls.c(614)
+fprintf: variable # of args.	syscalls.c(459)  ::  ioctl.c(603)
+panic: variable # of args.	mapStatus.c(108)  ::  brk.c(95)
+bcopy, arg. 2 used inconsistently	spriteSrvUser.c(2136)  ::  proc.c(478)
+bcopy, arg. 3 used inconsistently	spriteSrvUser.c(2136)  ::  proc.c(478)
+bcopy, arg. 1 used inconsistently	spriteSrvUser.c(2136)  ::  proc.c(525)
+bcopy, arg. 2 used inconsistently	spriteSrvUser.c(2136)  ::  proc.c(525)
+Fs_Close returns value which is always ignored

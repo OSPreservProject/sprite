@@ -1,0 +1,2264 @@
+head     1.20;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.20
+date     89.10.23.18.21.54;  author tve;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     89.10.23.17.43.49;  author tve;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     88.09.16.10.57.22;  author ouster;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     88.09.08.18.15.32;  author ouster;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     88.08.27.11.42.10;  author deboor;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     88.01.27.17.03.30;  author deboor;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     87.11.29.19.48.34;  author deboor;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     87.11.01.20.18.53;  author deboor;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     87.09.08.13.05.23;  author deboor;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     87.08.21.20.41.50;  author deboor;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     87.08.21.20.29.27;  author deboor;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     87.07.07.18.16.52;  author deboor;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     87.06.30.19.12.25;  author deboor;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     87.06.24.12.51.17;  author deboor;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     87.06.23.13.30.21;  author deboor;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     87.06.20.19.58.07;  author deboor;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     87.06.16.12.22.57;  author deboor;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     87.06.13.11.21.46;  author deboor;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     87.06.11.18.41.34;  author deboor;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     87.06.11.17.47.03;  author deboor;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@functions for manipulating connections to clients
+@
+
+
+1.20
+log
+@error stream goes to /tmp/HOST:DISPLAY.X11R3
+@
+text
+@/*-
+ * connect.c --
+ *	Functions to handle generic connections and their I/O.
+ *
+ * Copyright (c) 1987 by the Regents of the University of California
+ *
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ */
+#ifndef lint
+static char rcsid[] =
+"$Header: /mic/X11R3/src/cmds/Xsp/os/sprite/RCS/connect.c,v 1.19 89/10/23 17:43:49 tve Exp Locker: tve $ SPRITE (Berkeley)";
+#endif lint
+
+#include    "Xproto.h"
+#include    "spriteos.h"
+#include    "dix.h"
+#include    "osstruct.h"
+
+#include    <bit.h>
+#include    <signal.h>
+#include    <stdio.h>
+#include    <string.h>
+
+/*-
+ *-----------------------------------------------------------------------
+ * CreateWellKnownSockets --
+ *	Create listening points via which we can accept connections from
+ *	clients. It also finishes off the initialization needed by the
+ *	OS layer.
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	PseudoDevice is set to the streamID of the server's pseudo device.
+ *	All the select masks are allocated and initialized.
+ *	NumActiveStreams is initialized. Vectors interrupts to HangUp.
+ *
+ *-----------------------------------------------------------------------
+ */
+void
+CreateWellKnownSockets()
+{
+    char    	  errorfile[50];    /* Path to error file */
+    int	    	  whichbyte;	    /* Used to figure out whether this machine
+				     * is LSB or MSB */
+    void	  HangUp();
+    int	    	  Reset();
+    struct	  sigvec irq;
+    int	    	  oldPermMask;	    /* Previous permission mask */
+    char    	  hostname[64];
+    char    	  *cp;
+
+    gethostname(hostname, sizeof(hostname));
+    cp = index(hostname, '.');
+    if (cp != (char *)NULL) {
+	*cp = '\0';
+    }
+
+    oldPermMask = umask(0);
+
+    sprintf (errorfile, "/tmp/%s:%s.X11R3", hostname, display);
+    fclose (stderr);
+    fopen (errorfile, "w+");		/* Will go to stderr. */
+
+    (void) umask(oldPermMask);
+
+
+#ifdef TCPCONN
+    TCP_Init();
+    NumActiveStreams = max(NumActiveStreams, TCP_Conn+1);
+#endif TCPCONN
+
+    Pdev_Init(hostname);
+    NumActiveStreams = max(NumActiveStreams, Pdev_Conn+1);
+    
+    /*
+     * Allocate all the global bit masks. I'd prefer to do such things
+     * in OsInit, but they leave me little choice, since this function
+     * is called after OsInit...
+     */
+    Bit_Alloc (NumActiveStreams, AllStreamsMask);
+    Bit_Alloc (NumActiveStreams, LastSelectMask);
+    Bit_Alloc (NumActiveStreams, EnabledDevicesMask);
+    Bit_Alloc (NumActiveStreams, ClientsWithInputMask);
+    Bit_Alloc (NumActiveStreams, AllClientsMask);
+    Bit_Alloc (NumActiveStreams, SavedAllClientsMask);
+    Bit_Alloc (NumActiveStreams, SavedAllStreamsMask);
+
+#ifdef TCPCONN
+    Bit_Set (TCP_Conn, AllStreamsMask);
+#endif TCPCONN
+    Bit_Set (Pdev_Conn, AllStreamsMask);
+
+    whichbyte = 1;
+
+    if (*(char *)&whichbyte) {
+	whichByteIsFirst = 'l';
+    } else {
+	whichByteIsFirst = 'B';
+    }
+
+    irq.sv_handler = /*(int (*)())*/ HangUp;
+    irq.sv_mask = 0;
+    irq.sv_onstack = 0;
+    sigvec(SIGINT, &irq, (struct sigvec *) 0);
+    sigvec(SIGTERM, &irq, (struct sigvec *) 0);
+}
+
+    
+/*-
+ *-----------------------------------------------------------------------
+ * CloseDownConnection --
+ *	Some client is being booted. Free up its connection resources.
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	The pseudo-device streams are closed and the private data marked
+ *	inactive. The stream is removed from these masks:
+ *	    AllStreamsMask, SavedAllStreamsMask, AllClientsMask,
+ *	    SavedAllClientsMask, ClientsWithInputMask
+ *
+ *-----------------------------------------------------------------------
+ */
+CloseDownConnection (client)
+    ClientPtr    client;    	/* Client whose connection should
+				 * be closed */
+{
+    register ClntPrivPtr    pPriv;
+    register int  	    i;
+
+    pPriv = (ClntPrivPtr) client->osPrivate;
+
+    if (DBG(CONN)) {
+	ErrorF ("CloseDownConnection: client %d being booted\n", client->index);
+    }
+
+    (* pPriv->closeProc) (pPriv);
+
+    Bit_Free (pPriv->mask);
+    Bit_Free (pPriv->ready);
+    free ((char *) pPriv);
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * AddEnabledDevice --
+ *	Add another device to keep track of.
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	The select masks may be expanded. EnabledDevicesMask will be
+ *	altered.
+ *
+ *-----------------------------------------------------------------------
+ */
+AddEnabledDevice (streamID)
+    int	    streamID;
+{
+    ExpandMasks (0, streamID);
+
+    Bit_Set (streamID, AllStreamsMask);
+    Bit_Set (streamID, SavedAllStreamsMask);
+    Bit_Set (streamID, EnabledDevicesMask);
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * RemoveEnabledDevice --
+ *	Stop paying attention to some device.
+ *
+ * Results:
+ *
+ * Side Effects:
+ *
+ *-----------------------------------------------------------------------
+ */
+RemoveEnabledDevice (streamID)
+    int	    streamID;
+{
+    Bit_Clear (streamID, AllStreamsMask);
+    Bit_Clear (streamID, SavedAllStreamsMask);
+    Bit_Clear (streamID, EnabledDevicesMask);
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * OnlyListenToOneClient --
+ *	Only pay attention to requests from one client. We continue to
+ *	accept new connections, of course, but only take protocol requests
+ *	from this single connection.
+ *	Once this is done, GrabDone will be set TRUE and and changes to
+ *	AllStreamsMask and AllClientsMask should be done to their Saved
+ *	copies.
+ *	Devices are unaffected, of course.
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	AllStreamsMask and AllClientsMask are copied into SavedAllStreamsMask
+ *	and SavedAllClientsMask, respectively, and have all the other
+ *	client bits removed from them.
+ *	ClientsWithInputMask has all other clients's bits removed from it.
+ *	GrabDone is set TRUE.
+ *
+ *-----------------------------------------------------------------------
+ */
+OnlyListenToOneClient (client)
+    ClientPtr	    client;
+{
+    ClntPrivPtr	  pPriv = (ClntPrivPtr) client->osPrivate;
+    int	    	  *tempMask;
+
+    /*
+     * First take everyone but the given client out of the ClientsWithInputMask
+     * We have to allocate a new mask b/c there's no guarantee that the
+     * private mask will be as wide as the regular masks, though it
+     * usually is.
+     */
+    Bit_Alloc (NumActiveStreams, tempMask);
+    (void) Bit_Copy (pPriv->maskWidth, pPriv->mask, tempMask);
+    (void) Bit_Intersect (NumActiveStreams, tempMask,
+			  ClientsWithInputMask, ClientsWithInputMask);
+
+    if (DBG(CONN)) {
+	ErrorF("Server grabbed by client %d\n", client->index);
+    }
+    if (!GrabDone) {
+	/*
+	 * If a grab has not already been done, duplicate the AllStreams
+	 * and AllClients masks.
+	 */
+	  
+	Bit_Copy (NumActiveStreams, AllStreamsMask, SavedAllStreamsMask);
+	Bit_Copy (NumActiveStreams, AllClientsMask, SavedAllClientsMask);
+
+    }
+    (void) Bit_Union (NumActiveStreams, tempMask, EnabledDevicesMask,
+		      AllStreamsMask);
+    Bit_Copy (NumActiveStreams, pPriv->mask, AllClientsMask);
+    Bit_Free (tempMask);
+
+    GrabDone = TRUE;
+    grabbingClient = client;
+}
+	
+/*-
+ *-----------------------------------------------------------------------
+ * ListenToAllClients --
+ *	Undo a grab: start paying attention to cries from other clients.
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	GrabDone is set FALSE and the AllClients and AllStreams masks are
+ *	restored from their Saved counterparts.
+ *
+ *-----------------------------------------------------------------------
+ */
+ListenToAllClients()
+{
+    if (GrabDone) {
+	if (DBG(CONN)) {
+	    ErrorF ("Server ungrabbed again\n");
+	}
+	Bit_Copy (NumActiveStreams, SavedAllStreamsMask, AllStreamsMask);
+	Bit_Copy (NumActiveStreams, SavedAllClientsMask, AllClientsMask);
+	GrabDone = FALSE;
+    }
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * ReadRequestFromClient --
+ *	Read a single request from a client. This is just a front-end that
+ *	passes the buck to the connection-specific function...
+ *
+ * Results:
+ *	What he said.
+ *
+ * Side Effects:
+ *	Not here..
+ *
+ *-----------------------------------------------------------------------
+ */
+char *
+ReadRequestFromClient (client, pStatus, oldbuf)
+    ClientPtr	  	client;	    /* Client with input */
+    int	    	  	*pStatus;   /* Result of read:
+				     * >0 -- number of bytes in the request
+				     * 0 -- not all the request is there
+				     * <0 -- indicates an error */
+    char    	  	*oldbuf;    /* The previous buffer (IGNORED) */
+{
+    ClntPrivPtr	  	pPriv;	    /* Private data for the client */
+
+    pPriv = (ClntPrivPtr) client->osPrivate;
+
+    oldbuf = (* pPriv->readProc) (pPriv, pStatus, oldbuf);
+    if (*pStatus > 0) {
+	SchedPacket(client);
+    }
+    return (oldbuf);
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * WriteToClient --
+ *	Function to write stuff to a client. Just a front-end for the
+ *	connection-specific stuff.
+ *
+ * Results:
+ *	What he said.
+ *
+ * Side Effects:
+ *	Elsewhere.
+ *
+ *-----------------------------------------------------------------------
+ */
+int
+WriteToClient (client, numBytes, buf)
+    ClientPtr	  	client;	    /* Client to receive the data */
+    int	    	  	numBytes;   /* Number of bytes to transmit */
+    char    	  	*buf;	    /* Buffer to send */
+{
+    ClntPrivPtr	  	pPriv;	    /* OS-private data */
+
+    pPriv = (ClntPrivPtr) client->osPrivate;
+
+    return ((* pPriv->writeProc) (pPriv, numBytes, buf));
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * ExpandMasks --
+ *	Given a newly-opened stream, expand all the thousands of
+ *	select masks to encompass that stream. This includes the private
+ *	mask for the client.
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	The masks will be moved and the old ones freed..
+ *
+ *-----------------------------------------------------------------------
+ */
+void
+ExpandMasks (pPriv, newStream)
+    ClntPrivPtr	  pPriv;    	/* Private data for client.
+				 * Should be 0 if it wasn't opened for a client
+				 * (e.g. it's for a device) */
+    int	    	  newStream;	/* The new stream's ID number */
+{
+    if (newStream >= NumActiveStreams) {
+	register int newNumStreams = newStream + 1;
+	
+	AllStreamsMask =    	Bit_Expand (newNumStreams, NumActiveStreams,
+					    AllStreamsMask);
+	LastSelectMask =    	Bit_Expand (newNumStreams, NumActiveStreams,
+					    LastSelectMask);
+	EnabledDevicesMask = 	Bit_Expand (newNumStreams, NumActiveStreams,
+					    EnabledDevicesMask);
+	ClientsWithInputMask = 	Bit_Expand (newNumStreams, NumActiveStreams,
+					    ClientsWithInputMask);
+	AllClientsMask =    	Bit_Expand (newNumStreams, NumActiveStreams,
+					    AllClientsMask);
+	SavedAllClientsMask =	Bit_Expand (newNumStreams, NumActiveStreams,
+					    SavedAllClientsMask);
+	SavedAllStreamsMask =	Bit_Expand (newNumStreams, NumActiveStreams,
+					    SavedAllStreamsMask);
+	NumActiveStreams = newNumStreams;
+    }
+
+    /*
+     * We need to also expand the private mask for the client to
+     * encompass the new stream.
+     */
+    if (pPriv) {
+	if (newStream >= pPriv->maskWidth) {
+	    pPriv->mask = Bit_Expand (newStream+1, pPriv->maskWidth,
+				      pPriv->mask);
+	    pPriv->ready = Bit_Expand (newStream+1, pPriv->maskWidth,
+				       pPriv->ready);
+	    pPriv->maskWidth = newStream + 1;
+	}
+	Bit_Set (newStream, pPriv->mask);
+    }
+}
+@
+
+
+1.19
+log
+@changes for X11R3
+@
+text
+@d19 1
+a19 1
+"$Header: /mic/X11R3/src/cmds/Xsprite/os/sprite/RCS/connect.c,v 1.18 88/09/16 10:57:22 ouster Exp Locker: tve $ SPRITE (Berkeley)";
+d70 1
+a70 1
+    sprintf (errorfile, "/tmp/%s.X%smsgs", hostname, display);
+@
+
+
+1.18
+log
+@In changing to new C library goofed umask arguments.
+@
+text
+@d19 1
+a19 1
+"$Header: connect.c,v 1.17 88/09/08 18:15:32 ouster Exp $ SPRITE (Berkeley)";
+d55 1
+a55 1
+    int	    	  HangUp();
+d111 1
+a111 1
+    irq.sv_handler = (int (*)()) HangUp;
+@
+
+
+1.17
+log
+@Intermediate check-in while converting to new C library.
+@
+text
+@d19 1
+a19 1
+"$Header: connect.c,v 1.16 88/08/27 11:42:10 deboor Exp $ SPRITE (Berkeley)";
+d68 1
+a68 1
+    oldPermMask = umask(0777);
+@
+
+
+1.16
+log
+@Added OLDPDEV defines
+@
+text
+@d19 1
+a19 1
+"$Header: connect.c,v 1.15 88/01/27 17:03:30 deboor Exp $ SPRITE (Berkeley)";
+d27 5
+d57 1
+a57 1
+    Sig_Action	  irq;	    	    /* Action when interrupted */
+d62 2
+a63 2
+    Sys_GetHostName (sizeof(hostname), hostname);
+    cp = String_FindChar(hostname, '.');
+a66 2
+    
+    (void) Fs_SetDefPerm (0777, &oldPermMask);
+d68 1
+a68 3
+    Io_PrintString (errorfile, "/tmp/%s.X%smsgs", hostname, display);
+    Io_Close (io_StdErr);
+    io_StdErr = Io_Open (errorfile, "w+");
+d70 3
+a72 1
+    (void) Fs_SetDefPerm (oldPermMask, &oldPermMask);
+d74 1
+a75 4
+#ifdef OLDPDEV
+    Pdev_Init(hostname);
+    NumActiveStreams = Pdev_Conn + 1;
+#endif OLDPDEV
+d82 2
+a83 4
+#ifdef NEWPDEV
+    NewPdev_Init(hostname);
+    NumActiveStreams = max(NumActiveStreams, NewPdev_Conn+1);
+#endif NEWPDEV
+a97 3
+#ifdef OLDPDEV
+    Bit_Set (Pdev_Conn, AllStreamsMask);
+#endif OLDPDEV    
+d101 1
+a101 3
+#ifdef NEWPDEV
+    Bit_Set (NewPdev_Conn, AllStreamsMask);
+#endif NEWPDEV
+d111 5
+a115 8
+    irq.action = SIG_HANDLE_ACTION;
+    irq.handler = HangUp;
+    irq.sigHoldMask = 0;
+
+    Sig_SetAction (SIG_INTERRUPT, &irq, (Sig_Action *)0);
+
+    irq.handler = HangUp;
+    Sig_SetAction (SIG_TERM, &irq, (Sig_Action *)0);
+d152 1
+a152 1
+    Mem_Free (pPriv);
+@
+
+
+1.15
+log
+@Added trimming of domain name from hostname
+@
+text
+@d19 1
+a19 1
+"$Header: connect.c,v 1.14 87/11/29 19:48:34 deboor Exp $ SPRITE (Berkeley)";
+d72 1
+d75 1
+d100 1
+d102 1
+d124 1
+a124 1
+    irq.handler = Reset;
+@
+
+
+1.14
+log
+@Added support for new pseudo-devices and conditional debugging
+@
+text
+@d19 1
+a19 1
+"$Header: connect.c,v 1.13 87/11/01 20:18:53 deboor Exp $ SPRITE (Berkeley)";
+d55 1
+d58 5
+@
+
+
+1.13
+log
+@Generalized connection interface to allow multiple types of connections.
+For now, this is TCP and Pdev.
+@
+text
+@d19 1
+a19 1
+"$Header: connect.c,v 1.12 87/09/08 13:05:23 deboor Exp $ SPRITE (Berkeley)";
+d71 1
+a71 1
+    NumActiveStreams = max(NumActiveStreams, TCP_Conn);
+d73 5
+d96 3
+d144 3
+a146 1
+    ErrorF ("CloseDownConnection: client %d being booted\n", client->index);
+d238 3
+a240 1
+    ErrorF("Server grabbed by client %d\n", client->index);
+d277 3
+a279 1
+	ErrorF ("Server ungrabbed again\n");
+d314 3
+a316 1
+    SchedPacket(client);
+@
+
+
+1.12
+log
+@Adapted to new pseudo-device stuff
+@
+text
+@d3 1
+a3 1
+ *	Functions to handle connections.
+d19 1
+a19 1
+"$Header: connect.c,v 1.11 87/08/21 20:41:50 deboor Exp $ SPRITE (Berkeley)";
+a26 11
+/*
+ * Template for the pseudo-device through which we communicate. Given to
+ * one of the Io_Print functions and expects two arguments: the name of the
+ * local host and the display number we're using.
+ */
+#define	DEVICE_TEMPLATE	"/hosts/%s/X%s"
+
+#define REASONABLE_TIME	    5
+
+int	PseudoDevice;	/* Stream open to pseudodevice */
+
+a47 1
+    char    	  deviceName[100];  /* Path to pseudo-device */
+a49 2
+    int	    	  oldPermMask;	    /* Previous permission mask */
+    Sig_Action	  irq;	    	    /* Action when interrupted */
+d52 3
+a54 1
+    char    	  hostname[64];	    /* Our hostname */
+a55 4
+    /*
+     * Create the pseudo-device, making sure it's readable and writeable
+     * by everyone.
+     */
+d57 1
+a58 10
+    Io_PrintString (deviceName, DEVICE_TEMPLATE, hostname, display);
+    if ((Fs_SetDefPerm (0777, &oldPermMask) != SUCCESS) ||
+    	(Fs_Open (deviceName,
+		  FS_NON_BLOCKING | FS_CREATE | FS_READ | FS_MASTER,
+		  0666,
+		  &PseudoDevice) != SUCCESS)) {
+		      Error (deviceName);
+		      FatalError ("Could not open pseudo-device %s",
+				  deviceName);
+    }
+d65 8
+a72 1
+    NumActiveStreams = PseudoDevice + 1;
+d87 4
+a90 1
+    Bit_Set (PseudoDevice, AllStreamsMask);
+a109 27
+/*-
+ *-----------------------------------------------------------------------
+ * ReadConn --
+ *	Read a connection for an exact amount of data. If the client
+ *	doesn't write the data within a reasonable time, or doesn't
+ *	write enough data, an error is returned.
+ *
+ * Results:
+ *      SUCCESS or an error status.
+ *
+ * Side Effects:
+ *	The buffer has data read into it.
+ *
+ *-----------------------------------------------------------------------
+ */
+static ReturnStatus
+ReadConn (streamID, selMask, bufSize, bufPtr)
+    int	    	  	streamID;   /* Stream to read */
+    int	    	  	*selMask;   /* Pre-allocate select mask (not set) */
+    int	    	  	bufSize;    /* Amount of data needed */
+    char    	  	*bufPtr;    /* Buffer in which to store data */
+{
+    Pdev_Request	pdev;
+    Pdev_EasyReply	reply;
+    SpriteTime	  	timeout;
+    int	    	  	numReady;
+    int	    	  	numBytes;
+a110 48
+
+    Bit_Set (streamID, selMask);
+    timeout.seconds = REASONABLE_TIME;
+    timeout.microseconds = 0;
+
+    if ((Fs_Select (streamID + 1, &timeout, selMask, (int *)0, (int *)0,
+		   &numReady) != SUCCESS) ||
+	(numReady != 1)) {
+	    if (numReady == 0) {
+		return (FS_TIMEOUT);
+	    } else {
+		return (stat_LastError);
+	    }
+    }
+    
+    if (Fs_Read (streamID, sizeof(pdev), &pdev, &numBytes) != SUCCESS) {
+	Error ("ReadConn");
+	return (FAILURE);
+    }
+    if (pdev.magic != PDEV_REQUEST_MAGIC) {
+	ErrorF ("Request magic numbers don't match\n");
+	return (FAILURE);
+    }
+    if (pdev.operation != PDEV_WRITE) {
+	ErrorF ("ReadConn: operation not a write\n");
+	return (FAILURE);
+    }
+
+    /*
+     * However many bytes the client wrote, we will read them all (or we'll
+     * close down the connection...)
+     */
+    reply.replySize = sizeof(int);
+    reply.data = pdev.requestSize;
+    reply.status = SUCCESS;
+    reply.selectBits = FS_WRITABLE;
+    reply.magic = PDEV_REPLY_MAGIC;
+    if (Fs_Write (streamID, sizeof(reply), &reply, &numBytes) != SUCCESS) {
+	return (FAILURE);
+    }
+    
+    if ((Fs_Read (streamID, bufSize, bufPtr, &numBytes) != SUCCESS) ||
+	(numBytes != bufSize)){
+	    return (FAILURE);
+    }
+    return (SUCCESS);
+}
+
+a112 506
+ * ClientAuthorized --
+ *	See if a client is authorized to use this server.
+ *
+ *    	Sent by the client at connection setup:
+ *                typedef struct _xConnClientPrefix {
+ *                   CARD8	byteOrder;
+ *                   BYTE	pad;
+ *                   CARD16	majorVersion, minorVersion;
+ *                   CARD16	nbytesAuthProto;    
+ *                   CARD16	nbytesAuthString;   
+ *                 } xConnClientPrefix;
+ *	followed by the bytes of the AuthProto and the AuthString.
+ *
+ *     	It is hoped that eventually one protocol will be agreed upon.  In the
+ *        mean time, a server that implements a different protocol than the
+ *        client expects, or a server that only implements the host-based
+ *        mechanism, will simply ignore this information.
+ *
+ * Results:
+ *	Returns TRUE if the client may use the server.
+ *	*pswapped is set TRUE if the client uses a different byte-order
+ *	than we.
+ *
+ * Side Effects:
+ *	*pswapped is alterred.
+ *
+ *-----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static int
+ClientAuthorized (conn, pswapped, uid, hostid)
+    int	    	  	conn; 	    /* Stream of connection */
+    Bool    	  	*pswapped;  /* Set TRUE if client is byte-swapped */
+    int	    	  	uid;  	    /* User ID of connecting client */
+    int	    	  	hostid;	    /* Host ID of connecting client */
+{
+    xConnClientPrefix 	xccp;	    /* Prefix from client */
+    Pdev_Reply  	openRep;    /* Reply to OPEN request */
+    int	    	  	*selMask;   /* Place for selection mask */
+    int	    	  	numBytes;
+
+    /*
+     * Respond to the open call. This is where access control would come in.
+     */
+    openRep.magic = PDEV_REPLY_MAGIC;
+    openRep.status = SUCCESS;
+    openRep.selectBits = FS_WRITABLE | FS_READABLE;
+    openRep.replySize = 0;
+    (void) Fs_Write (conn, sizeof(openRep), &openRep, &numBytes);
+    
+    /*
+     * Since the client was blocked awaiting our response to the OPEN, we must
+     * wait for it to write something to us. If it doesn't write within a
+     * decent amount of time, we bitch.
+     */
+    Bit_Alloc (conn+1, selMask);
+
+    if (ReadConn (conn, selMask, sizeof(xccp), &xccp) != SUCCESS) {
+	Error ("Reading client prefix");
+	return (0);
+    }
+    
+    if (xccp.byteOrder != whichByteIsFirst) {
+	ErrorF ("Byte-swapping this client; sounds fun!\n");
+	SwapConnClientPrefix (&xccp);
+	*pswapped = TRUE;
+    } else {
+	*pswapped = FALSE;
+    }
+
+    if ((xccp.majorVersion != X_PROTOCOL) ||
+	(xccp.minorVersion != X_PROTOCOL_REVISION)) {
+	    ErrorF ("Not an alpha release library\n");
+	    return (0);
+    }
+    
+    /*
+     * Discard authorization-protocol string, if any
+     */
+    if (xccp.nbytesAuthProto != 0) {
+	char	  *authProto;
+
+	authProto = (char *)ALLOCATE_LOCAL(xccp.nbytesAuthProto);
+	if (ReadConn(conn, selMask, xccp.nbytesAuthProto,
+		     authProto) != SUCCESS){
+			 return (0);
+	}
+	DEALLOCATE_LOCAL (authProto);
+    }
+
+    /*
+     * And the authorization string, if any
+     */
+    if (xccp.nbytesAuthString != 0) {
+	char	  *authString;
+
+	authString = (char *)ALLOCATE_LOCAL(xccp.nbytesAuthString);
+	if (ReadConn(conn, selMask, xccp.nbytesAuthString,
+		     authString)!=SUCCESS){
+			 return (0);
+	}
+	DEALLOCATE_LOCAL (authString);
+    }
+
+    return (1);
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * ExpandMasks --
+ *	Given a newly-opened stream, expand all the thousands of
+ *	select masks to encompass that stream. This includes the private
+ *	mask for the client.
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	The masks will be moved and the old ones freed..
+ *
+ *-----------------------------------------------------------------------
+ */
+static void
+ExpandMasks (client, newStream)
+    ClientPtr	  client;   	/* The client for which the stream was opened.
+				 * Should be 0 if it wasn't opened for a client
+				 * (e.g. it's for a device) */
+    int	    	  newStream;	/* The new stream's ID number */
+{
+    ClntPrivPtr	  pPriv = (ClntPrivPtr)(client ? client->osPrivate : 0);
+    
+    if (newStream >= NumActiveStreams) {
+	register int newNumStreams = newStream + 1;
+	
+	AllStreamsMask =    	Bit_Expand (newNumStreams, NumActiveStreams,
+					    AllStreamsMask);
+	LastSelectMask =    	Bit_Expand (newNumStreams, NumActiveStreams,
+					    LastSelectMask);
+	EnabledDevicesMask = 	Bit_Expand (newNumStreams, NumActiveStreams,
+					    EnabledDevicesMask);
+	ClientsWithInputMask = 	Bit_Expand (newNumStreams, NumActiveStreams,
+					    ClientsWithInputMask);
+	AllClientsMask =    	Bit_Expand (newNumStreams, NumActiveStreams,
+					    AllClientsMask);
+	SavedAllClientsMask =	Bit_Expand (newNumStreams, NumActiveStreams,
+					    SavedAllClientsMask);
+	SavedAllStreamsMask =	Bit_Expand (newNumStreams, NumActiveStreams,
+					    SavedAllStreamsMask);
+	NumActiveStreams = newNumStreams;
+    }
+
+    /*
+     * We need to also expand the private mask for the client to
+     * encompass the new stream.
+     */
+    if (pPriv) {
+	if (newStream >= pPriv->maskWidth) {
+	    pPriv->mask = Bit_Expand (newStream+1, pPriv->maskWidth,
+				      pPriv->mask);
+	    pPriv->ready = Bit_Expand (newStream+1, pPriv->maskWidth,
+				       pPriv->ready);
+	    pPriv->maskWidth = newStream + 1;
+	}
+	Bit_Set (newStream, pPriv->mask);
+    }
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * ConnectionClosed --
+ *	Some connection has been closed for some reason. The private
+ *	ClntStreamPtr for the stream is given as the argument. The
+ *	stream is closed and, if this stream was the last open one
+ *	for the client, the client is closed down.
+ *
+ * Results:
+ *	Always returns 0.
+ *
+ * Side Effects:
+ *	The client stream is closed and the ClntStreamRec is deallocated.
+ *	The streamID is removed from the two appropriate masks.
+ *
+ *-----------------------------------------------------------------------
+ */
+int
+ConnectionClosed (pStream)
+    ClntStreamPtr pStream;	    /* The stream to close */
+{
+    ClntPrivPtr	  pPriv;    	    /* Private data for this stream */
+    LstNode 	  ln;	    	    /* Node of the pStream in the client's
+				     * Lst of streams */
+    
+    ErrorF ("ConnectionClosed: client %d, stream %d\n", pStream->client->index,
+	    pStream->streamID);
+    Fs_Close (pStream->streamID);
+    
+    pPriv = (ClntPrivPtr) pStream->client->osPrivate;
+    
+    ln = Lst_Member (pPriv->streams, (ClientData)pStream);
+    if (ln == NILLNODE) {
+	ErrorF ("ConnectionClosed: stream %d already gone?!\n",
+		pStream->streamID);
+	return (1);
+    }
+    if (ln == pPriv->lastStream) {
+	/*
+	 * If this stream was the last stream handled by ReadRequestFromClient,
+	 * then we have to shift the focus to the previous one or we're liable
+	 * to get screwed when we reference through this deallocated LstNode.
+	 * (Note that since the streams list is circular, Lst_Pred will always
+	 * give a decent LstNode except when ln is the last node in the list,
+	 * in which case the whole thing will be going away soon anyway...)
+	 */
+	pPriv->lastStream = Lst_Pred(ln);
+    }
+    if (Lst_Remove (pPriv->streams, ln) != SUCCESS) {
+	FatalError ("Couldn't remove node from private streams list");
+    }
+
+    ln = Lst_Member (allStreams, (ClientData)pStream);
+    if (Lst_Remove (allStreams, ln) != SUCCESS) {
+	FatalError ("Couldn't remove node from allStreams list");
+    }
+    
+    if (pStream->buffer) {
+	Mem_Free (pStream->buffer);
+    }
+    Bit_Clear (pStream->streamID, pPriv->mask);
+    Bit_Clear (pStream->streamID, ClientsWithInputMask);
+
+    if (GrabDone) {
+	Bit_Clear (pStream->streamID, SavedAllStreamsMask);
+	Bit_Clear (pStream->streamID, SavedAllClientsMask);
+    } else {
+	Bit_Clear (pStream->streamID, AllStreamsMask);
+	Bit_Clear (pStream->streamID, AllClientsMask);
+    }
+
+    Mem_Free (pStream);
+    return (0);
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * CmpPdevID --
+ *	Callback function for EstablishNewConnections to find the
+ *	ClntStreamRec for an old pdev ID.
+ *
+ * Results:
+ *	0 if the pdevID of the ClntStreamPtr matches the given pdevID
+ *	and non-zero otherwise.
+ *
+ * Side Effects:
+ *	None.
+ *
+ *-----------------------------------------------------------------------
+ */
+static int
+CmpPdevID (pStream, pdevID)
+    ClntStreamPtr pStream;
+    int	    	  pdevID;
+{
+    return (pStream->pdevID - pdevID);
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * ConnFail --
+ *	Inform a client that it has been denied access.
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	None.
+ *
+ *-----------------------------------------------------------------------
+ */
+static void
+ConnFail (streamID, swapped)
+    int	    	  	streamID;   /* ID of failing stream */
+    Bool    	  	swapped;    /* TRUE if client is byte-swapped */
+{
+    int	    	  	*selMask;   /* Mask for selecting on stream */
+    SpriteTime	  	timeout;    /* Timeout for select */
+    int	    	  	numReady;   /* Number of ready streams from select */
+    int	    	  	numBytes;   /* Number of bytes read/written */
+    Pdev_Request	req;	    /* Request from client */
+    Pdev_Reply  	reply;	    /* Reply for bad request */
+    struct {
+	Pdev_Reply  	    reply;
+	xConnSetupPrefix    c;
+    } 	    	  	fail;	    /* Reply to read request */
+    
+    Bit_Alloc (streamID+1, selMask);
+    Bit_Set (streamID, selMask);
+    timeout.seconds = REASONABLE_TIME;
+    timeout.microseconds = 0;
+    
+    fail.reply.magic = reply.magic = PDEV_REPLY_MAGIC;
+    fail.reply.selectBits = reply.selectBits = 0;
+
+    if ((Fs_Select (streamID+1, &timeout, selMask, (int *)0,
+		    (int *)0, &numReady) != SUCCESS) ||
+	(numReady != 1)) {
+	    ErrorF ("ConnFail: didn't read in a reasonable time\n");
+	    Bit_Free (selMask);
+	    return;
+    }
+    Bit_Free (selMask);
+
+    (void) Fs_Read (streamID, sizeof(req), &req, &numBytes);
+    if (req.operation != PDEV_READ) {
+	reply.status = FS_DEVICE_OP_INVALID;
+	reply.replySize = 0;
+	(void) Fs_Write (streamID, sizeof(reply), &reply, &numBytes);
+	ErrorF ("ConnFail: Didn't get a READ operation\n");
+	return;
+    }
+
+    fail.c.success = xFalse;
+    if (!swapped) {
+	fail.c.length = 0;
+	fail.c.majorVersion = X_PROTOCOL;
+	fail.c.minorVersion = X_PROTOCOL_REVISION;
+    } else {
+	fail.c.length = lswaps(0);
+	fail.c.majorVersion = lswaps(X_PROTOCOL);
+	fail.c.minorVersion = lswaps(X_PROTOCOL_REVISION);
+    }
+    
+    fail.reply.status = SUCCESS;
+    fail.reply.replySize = sizeof(fail.c);
+    (void) Fs_Write(streamID, sizeof(fail), &fail, &numBytes);
+}
+
+    
+/*-
+ *-----------------------------------------------------------------------
+ * EstablishNewConnections --
+ *	Accept connections from a new clients. If the request on the
+ *	control stream is just a duplication of another stream,
+ *	the new stream is added to the private data of the same
+ *	client (this is what the StreamToClient map is used for) and
+ *	no new client is created.
+ *
+ * Results:
+ *	None returned. pNewClients and *pNumNew are filled in.
+ *
+ * Side Effects:
+ *	AllClientsMask and AllStreamsMask are altered. Fields in the
+ *	private structure for the new clients are filled in and the
+ *	clients's connections marked active.
+ *
+ *-----------------------------------------------------------------------
+ */
+void
+EstablishNewConnections (pNewClients, pNumNew)
+    ClientPtr  	  *pNewClients;	/* Array to fill in */
+    int	    	  *pNumNew; 	/* Number of new connections established */
+{
+    Bool    	  swapped;  	/* True if data from client s/b swapped */
+    Pdev_Request  pdev;    	/* Notification from client */
+    int	    	  numRead;  	/* Junk number of chars read */
+    ClientPtr  	  client; 	/* Client record for new client */
+    ClntPrivPtr	  pPriv;    	/* Our private data for the client */
+    ReturnStatus  rstat;    	/* Syscall return status */
+    ClntStreamPtr pStream;  	/* Stream descriptor for new stream */
+    Pdev_Notify   note;	    	/* Notification from control stream */
+    register int  newID;
+    register int  i;
+    Pdev_Reply 	  reply;
+    int	    	  numWritten;
+
+    *pNumNew = 0;
+    
+    reply.magic = PDEV_REPLY_MAGIC;
+    reply.selectBits = FS_WRITABLE | FS_READABLE;
+
+    while (1) {
+	/*
+	 * Read requests from the control stream until there
+	 * are no more to read. The stream is non-blocking, so no need
+	 * to Fs_Select.
+	 */
+	if (Fs_Read(PseudoDevice, sizeof (note), &note, &numRead) != SUCCESS){
+	    return;
+	}
+	if (note.magic != PDEV_NOTIFY_MAGIC) {
+	    continue;
+	}
+	newID = note.newStreamID;
+
+	if ((Fs_Read (newID, sizeof(pdev), &pdev, &numRead) != SUCCESS) ||
+	    (pdev.magic != PDEV_REQUEST_MAGIC)) {
+		Fs_Close (newID);
+		continue;
+	}
+
+	if (pdev.operation == PDEV_OPEN) {
+	    if (!ClientAuthorized (newID, &swapped,
+				   pdev.param.open.uid,
+				   pdev.param.open.hostID)) {
+				       ErrorF ("Unauthorized connection\n");
+				       ConnFail (newID, swapped);
+				       Fs_Close (newID);
+				       continue;
+	    }
+	    client = NextAvailableClient();
+	    if (client == NullClient) {
+		/*
+		 * If we can't get an ID for this client, we won't get one
+		 * for any other ones, but we have to acknowledge their
+		 * device opens so they don't hang forever in later writes.
+		 * Hence, we continue the loop rather than break out of it.
+		 */
+		ErrorF ("No more clients!\n");
+		ConnFail (newID, swapped);
+		Fs_Close (newID);
+		continue;
+	    }
+	    
+	    pPriv = (ClntPrivPtr) Mem_Alloc (sizeof(ClntPrivRec));
+	    client->osPrivate = (pointer) pPriv;
+	    client->swapped = swapped;
+	    
+	    pPriv->streams = Lst_Init (TRUE);
+	    pPriv->outBuf = Buf_Init (0);
+
+	    ErrorF ("New connection: client %d (newID = %d)\n", client->index,
+		    newID);
+	    pStream = (ClntStreamPtr) Mem_Alloc (sizeof(ClntStreamRec));
+	    pStream->streamID = newID;
+	    pStream->clientFlags = pdev.param.open.flags;
+
+	    (void) Lst_AtEnd (pPriv->streams, (ClientData)pStream);
+	    pPriv->lastStream = Lst_First(pPriv->streams);
+	    
+	    pPriv->ready = pPriv->mask = (int *)0;
+	    pPriv->maskWidth = 0;
+	    
+	    *pNewClients = client;
+	    pNewClients++;
+	    (*pNumNew)++;
+	} else if (pdev.operation == PDEV_DUP) {
+	    ClntStreamPtr	pOldStream;
+	    LstNode	    	ln;
+		
+	    reply.status = SUCCESS;
+	    reply.replySize = 0;
+	    (void) Fs_Write (newID, sizeof(reply), &reply, &numWritten);
+	    
+	    ln = Lst_Find (allStreams, (ClientData)pdev.param.open.clientID,
+			   CmpPdevID);
+	    pOldStream = (ClntStreamPtr) Lst_Datum (ln);
+	    client = pOldStream->client;
+	    ErrorF ("Duplicating stream for client %d (newID = %d)\n",
+		    client->index, newID);
+	    
+	    pStream = (ClntStreamPtr) Mem_Alloc (sizeof(ClntStreamRec));
+	    pStream->streamID = newID;
+	    pStream->clientFlags = pOldStream->clientFlags;
+	    pPriv = (ClntPrivPtr) client->osPrivate;
+	    (void) Lst_AtEnd (pPriv->streams, (ClientData)pStream);
+	} else {
+	    continue;
+	}
+
+	/*
+	 * Common code for both duplication and connection. 
+	 */
+	pStream->client = client;
+	pStream->pdevID = pdev.param.open.clientID;
+	pStream->buffer = (Address)NULL;
+	pStream->numBytes = 0;
+	pStream->needData = TRUE;
+	
+	ExpandMasks (client, newID);
+	
+	Ioc_SetBits (newID, IOC_NON_BLOCKING);
+
+	(void) Lst_AtEnd (allStreams, (ClientData)pStream);
+	
+	/*
+	 * If we're only listening to one client, add the new client's
+	 * stream to the saved AllClients and AllStreams masks so it is
+	 * included when the grab is released. Otherwise, we can just
+	 * add the stream to the regular AllClients and AllStreams
+	 * masks.
+	 */
+	if (GrabDone) {
+	    Bit_Set (newID, SavedAllClientsMask);
+	    Bit_Set (newID, SavedAllStreamsMask);
+	    if (client == grabbingClient) {
+		Bit_Set (newID, AllClientsMask);
+		Bit_Set (newID, AllStreamsMask);
+	    }
+	} else {
+	    Bit_Set (newID, AllClientsMask);
+	    Bit_Set (newID, AllStreamsMask);
+	}
+    }
+}
+    
+/*-
+ *-----------------------------------------------------------------------
+a132 1
+    register ClntStreamPtr  pStream;
+d138 1
+a138 1
+    Lst_ForEach (pPriv->streams, ConnectionClosed, (ClientData)0);
+a141 2
+    Lst_Destroy (pPriv->streams, NOFREE);
+    Buf_Destroy (pPriv->outBuf, TRUE);
+d144 1
+d269 117
+@
+
+
+1.11
+log
+@Confused Lst_Prev for Lst_Pred...
+@
+text
+@d19 1
+a19 1
+"$Header: connect.c,v 1.10 87/08/21 20:29:27 deboor Exp $ SPRITE (Berkeley)";
+d188 1
+d249 1
+d503 1
+d574 1
+a574 1
+    Pdev_Reply    reply;
+d580 1
+a675 1
+	pStream->waiting = FALSE;
+@
+
+
+1.10
+log
+@Fixed problem with closing the most-recently-ready stream
+@
+text
+@d19 1
+a19 1
+"$Header: connect.c,v 1.9 87/07/07 18:16:52 deboor Exp $ SPRITE (Berkeley)";
+d410 1
+a410 1
+	 * (Note that since the streams list is circular, Lst_Prev will always
+d414 1
+a414 1
+	pPriv->lastStream = Lst_Prev(ln);
+@
+
+
+1.9
+log
+@???
+@
+text
+@d19 1
+a19 1
+"$Header: connect.c,v 1.8 87/06/30 19:12:25 deboor Exp $ SPRITE (Berkeley)";
+d32 1
+a32 1
+#define	DEVICE_TEMPLATE	"/dev/%s/X11%s"
+d65 1
+a67 6
+#ifdef not_yet
+    Io_PrintString (errorfile, "/admin/X%smsgs", display);
+    Io_Close (io_StdErr);
+    io_StdErr = Io_Open (errorfile, "w+");
+#endif not_yet
+
+d72 2
+a73 1
+    Sys_GetHostName (hostname, sizeof(hostname));
+d84 4
+d120 3
+d400 16
+a424 1
+    Buf_Destroy (pStream->outBuf, TRUE);
+d626 1
+d628 2
+d655 2
+a656 1
+	    ErrorF ("Duplicating stream for client %d\n", client->index);
+a671 1
+	pStream->outBuf = Buf_Init (0);
+d737 1
+a739 21
+#ifdef notdef
+/*-
+ *-----------------------------------------------------------------------
+ * ReallyMarkConnectionClosed --
+ *	There doesn't seem to be any difference between marking a
+ *	connection closed and Really marking it closed in the BSD library,
+ *	so I'm not going to do anything special, here.
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	None.
+ *
+ *-----------------------------------------------------------------------
+ */
+ReallyMarkConnectionClosed (client)
+    int	    client;
+{
+}
+#endif notdef
+@
+
+
+1.8
+log
+@Adapted to beta-1
+@
+text
+@d19 1
+a19 1
+"$Header: connect.c,v 1.7 87/06/24 12:51:17 deboor Exp $ SPRITE (Berkeley)";
+d158 1
+a158 1
+	    if (stat_LastStatus == SUCCESS) {
+d161 1
+a161 1
+		return (stat_LastStatus);
+@
+
+
+1.7
+log
+@Adapted to new Dup mechanism
+@
+text
+@d19 1
+a19 1
+"$Header: connect.c,v 1.6 87/06/23 13:30:21 deboor Exp $ SPRITE (Berkeley)";
+d28 3
+a30 3
+ * This should look like
+ *	/<hostname>/X<display-number>
+ * but the machines don't have local /hostname systems yet...
+d32 1
+a32 1
+#define	DEVICE_NAME	"/tmp/X11"
+d59 1
+a59 1
+    char    	  deviceName[50];   /* Path to pseudo-device */
+d65 1
+d77 2
+a78 1
+    Io_PrintString (deviceName, "%s%s", DEVICE_NAME, display);
+d144 2
+a145 2
+    Fs_PdevRequest	pdev;
+    Fs_PdevEasyReply	reply;
+d169 1
+a169 1
+    if (pdev.magic != FS_PDEV_REQUEST_MAGIC) {
+d173 1
+a173 1
+    if (pdev.operation != FS_PDEV_WRITE) {
+d185 1
+a185 1
+    reply.magic = FS_PDEV_REPLY_MAGIC;
+d236 1
+a236 1
+    Fs_PdevReply  	openRep;    /* Reply to OPEN request */
+d243 1
+a243 1
+    openRep.magic = FS_PDEV_REPLY_MAGIC;
+d281 3
+a283 2
+	if (ReadConn(conn, selMask, xccp.nbytesAuthProto, authProto) != SUCCESS){
+	    return (0);
+d295 3
+a297 2
+	if (ReadConn(conn, selMask, xccp.nbytesAuthString, authString)!=SUCCESS){
+	    return (0);
+d321 5
+a325 5
+ExpandMasks (clientID, newStream)
+    int	    clientID;	    /* The client for which the stream was opened.
+			     * Should be 0 if it wasn't opened for a client
+			     * (e.g. it's for a device) */
+    int	    newStream;	    /* The new stream's ID number */
+d327 1
+a327 1
+    ClntPrivPtr	  pPriv = &clientPriv[clientID];
+d353 1
+a353 1
+    if (clientID > 0) {
+d390 1
+a390 1
+    ErrorF ("ConnectionClosed: client %d, stream %d\n", pStream->clientID,
+d394 1
+a394 1
+    pPriv = &clientPriv[pStream->clientID];
+d397 3
+a399 1
+    Lst_Remove (pPriv->streams, ln);
+d402 3
+a404 1
+    Lst_Remove (allStreams, ln);
+d470 2
+a471 2
+    Fs_PdevRequest	req;	    /* Request from client */
+    Fs_PdevReply  	reply;	    /* Reply for bad request */
+d473 1
+a473 1
+	Fs_PdevReply  	    reply;
+d482 1
+a482 1
+    fail.reply.magic = reply.magic = FS_PDEV_REPLY_MAGIC;
+d494 1
+a494 1
+    if (req.operation != FS_PDEV_READ) {
+d540 1
+a540 1
+    NewClientPtr  pNewClients;	/* Array to fill in */
+d544 1
+a544 1
+    Fs_PdevRequest pdev;    	/* Notification from client */
+d546 1
+a546 1
+    int	    	  clientID; 	/* Client number for new client */
+d549 2
+a550 2
+    ClntStreamPtr pStream;
+    Fs_PdevNotify note;	    	/* Notification from control stream */
+d553 1
+a553 1
+    Fs_PdevReply  reply;
+a554 1
+    int	    	  fsBits = IOC_NON_BLOCKING;
+d558 1
+a558 1
+    reply.magic = FS_PDEV_REPLY_MAGIC;
+d569 1
+a569 1
+	if (note.magic != FS_PDEV_NOTIFY_MAGIC) {
+d575 1
+a575 1
+	    (pdev.magic != FS_PDEV_REQUEST_MAGIC)) {
+d580 1
+a580 1
+	if (pdev.operation == FS_PDEV_OPEN) {
+d589 2
+a590 2
+	    clientID = NextAvailableClientID();
+	    if (clientID == -1) {
+d603 4
+a606 1
+	    pPriv = (ClntPrivPtr) &clientPriv[clientID];
+d619 1
+a619 2
+	    pNewClients->id = clientID;
+	    pNewClients->swapped = swapped;
+d622 1
+a622 4
+	    if (clientID > LastClient) {
+		LastClient = clientID;
+	    }
+	} else if (pdev.operation == FS_PDEV_DUP) {
+d633 2
+a634 2
+	    clientID = pOldStream->clientID;
+	    ErrorF ("Duplicating stream for client %d\n", clientID);
+d639 1
+a639 1
+	    pPriv = &clientPriv[clientID];
+d648 1
+a648 1
+	pStream->clientID = clientID;
+d656 1
+a656 1
+	ExpandMasks (clientID, newID);
+d658 1
+a658 1
+	IOC_SetBits (newID, fsBits);
+d672 1
+a672 1
+	    if (clientID == grabbingClientID) {
+d699 2
+a700 2
+CloseDownConnection (clientID)
+    int	    clientID;	    	/* Client number whose connection should
+d707 1
+a707 1
+    pPriv = &clientPriv[clientID];
+d709 2
+a714 1
+    pPriv->ready = (int *)0;
+d716 1
+d718 1
+a718 1
+
+d738 1
+a738 1
+
+d805 2
+a806 2
+OnlyListenToOneClient (clientID)
+    int	    clientID;
+d808 1
+a808 1
+    ClntPrivPtr	  pPriv = &clientPriv[clientID];
+d822 1
+a822 1
+    ErrorF("Server grabbed by client %d\n", clientID);
+d839 1
+a839 1
+    grabbingClientID = clientID;
+@
+
+
+1.6
+log
+@Adapted to Buf library usage
+@
+text
+@d19 1
+a19 1
+"$Header: connect.c,v 1.5 87/06/20 19:58:07 deboor Exp $ SPRITE (Berkeley)";
+a342 2
+	StreamToClient = (int *)Xrealloc (StreamToClient,
+					  NumActiveStreams * sizeof(int));
+a358 4
+    /*
+     * Finally, we add the streamID to clientID translation to our table.
+     */
+    StreamToClient[newStream] = clientID;
+d394 4
+d419 1
+a419 1
+ * CmpStreamID --
+d421 1
+a421 1
+ *	ClntStreamRec for an old streamID.
+d424 1
+a424 1
+ *	0 if the streamID of the ClntStreamPtr matches the given streamID
+d433 1
+a433 1
+CmpStreamID (pStream, streamID)
+d435 1
+a435 1
+    int	    	  streamID;
+d437 1
+a437 1
+    return (pStream->streamID - streamID);
+a619 3
+	    clientID = StreamToClient[pdev.param.dup.oldStreamID];
+		
+	    ErrorF ("Duplicating stream for client %d\n", clientID);
+d624 2
+a625 2
+	    ln = Lst_Find (pPriv->streams, pdev.param.dup.oldStreamID,
+			   CmpStreamID);
+d627 2
+d633 2
+d643 1
+d653 2
+@
+
+
+1.5
+log
+@adapted to Beta-0 and "debugged"
+@
+text
+@d19 1
+a19 1
+"$Header: connect.c,v 1.4 87/06/16 12:22:57 deboor Exp $ SPRITE (Berkeley)";
+d400 1
+a400 1
+    Lst_Destroy (pStream->outPackets, Mem_Free);
+d549 1
+d644 1
+a644 2
+	pStream->outPackets = Lst_Init (FALSE);
+	pStream->lenPackets = 0;
+d651 2
+@
+
+
+1.4
+log
+@Adapted to new protocol?
+@
+text
+@d19 1
+a19 1
+"$Header: connect.c,v 1.3 87/06/13 11:21:46 deboor Exp $ SPRITE (Berkeley)";
+d255 1
+d392 2
+d404 2
+d490 1
+a490 1
+	reply.replySize;
+d623 1
+d648 1
+d796 2
+a797 1
+    ClntPrivPtr	  pPriv;
+d801 3
+d805 3
+a807 1
+    (void) Bit_Intersect (NumActiveStreams, pPriv->mask,
+d810 1
+d821 1
+a821 1
+    (void) Bit_Union (NumActiveStreams, pPriv->mask, EnabledDevicesMask,
+d824 1
+d847 1
+@
+
+
+1.3
+log
+@Altered connection protocol to account for new Pdev protocol
+@
+text
+@d19 1
+a19 1
+"$Header: connect.c,v 1.2 87/06/11 18:41:34 deboor Exp $ SPRITE (Berkeley)";
+d59 1
+d76 1
+d78 1
+a78 1
+    	(Fs_Open (DEVICE_NAME,
+d82 1
+d84 1
+a84 1
+				  DEVICE_NAME);
+d122 75
+a232 1
+    int	    	  	numRead;    /* Number of bytes read last time */
+d234 1
+a234 4
+    Fs_PdevRequest	pdev;	    /* The PDEV_WRITE request */
+    Fs_PdevEasyReply	writeRep;   /* Reply to said write request */
+    SpriteTime	  	timeout;    /* Timeout for selection */
+    int	    	  	numWritten; /* Number of bytes written in Fs_Write */
+d236 1
+a236 1
+    int	    	  	numReady;   /* Number of ready streams (from select) */
+d239 8
+a251 15
+    Bit_Set (conn, selMask);
+    timeout.seconds = REASONABLE_TIME;
+    timeout.microseconds = 0;
+    
+    if ((Fs_Select (conn+1, &timeout, selMask, (int *)0,
+		    (int *)0, &numReady) != SUCCESS) ||
+	(numReady != 1)) {
+	    Bit_Free (selMask);
+	    return (0);
+    }
+    if ((Fs_Read (conn, sizeof(pdev), &pdev, &numRead) != SUCCESS) ||
+	(pdev.magic != FS_PDEV_REQUEST_MAGIC) ||
+	(pdev.operation != FS_PDEV_WRITE)) {
+	    return (0);
+    }
+d253 2
+a254 10
+    /*
+     * However many bytes the client wrote, we will read them all (or we'll
+     * close down the connection...)
+     */
+    writeRep.replySize = 0;
+    writeRep.data = pdev.requestSize;
+    writeRep.status = SUCCESS;
+    writeRep.magic = FS_PDEV_REPLY_MAGIC;
+    if (Fs_Write (conn, sizeof(writeRep), &writeRep, &numWritten) != SUCCESS) {
+	return (0);
+a256 7
+    if ((Fs_Read (conn, sizeof(xccp), &xccp, &numRead) != SUCCESS) ||
+	(numRead != sizeof(xccp))){
+	    return (0);
+    }
+
+    pdev.requestSize -= numRead;
+    
+d274 2
+a275 3
+    if ((xccp.nbytesAuthProto != 0) &&
+	(pdev.requestSize >= xccp.nbytesAuthProto)) {
+	    char	  *authProto;
+d277 5
+a281 7
+	    authProto = (char *)ALLOCATE_LOCAL(xccp.nbytesAuthProto);
+	    if (Fs_Read (conn, xccp.nbytesAuthProto,
+			 authProto, &numRead) != SUCCESS) {
+			     return (0);
+	    }
+	    pdev.requestSize -= numRead;
+	    DEALLOCATE_LOCAL (authProto);
+d287 2
+a288 3
+    if ((xccp.nbytesAuthString != 0) &&
+	(pdev.requestSize >= xccp.nbytesAuthString)) {
+	    char	  *authString;
+d290 5
+a294 7
+	    authString = (char *)ALLOCATE_LOCAL(xccp.nbytesAuthString);
+	    if (Fs_Read (conn, xccp.nbytesAuthString,
+			 authString, &numRead) != SUCCESS) {
+			     return (0);
+	    }
+	    pdev.requestSize -= numRead;
+	    DEALLOCATE_LOCAL (authString);
+d297 1
+a297 9
+    /*
+     * If there were extra bytes sent, we fail (the principle of the
+     * thing)
+     */
+    if (pdev.requestSize != 0) {
+	return (0);
+    } else {
+	return (1);
+    }
+d439 71
+d555 1
+a555 1
+	if ((Fs_Read(PseudoDevice, sizeof (note), &note, &numRead) != SUCCESS){
+d574 1
+a574 5
+				       reply.status = FS_NO_ACCESS;
+				       reply.replySize = 0;
+				       (void) Fs_Write (newID,
+							sizeof(reply),
+							&reply, &numWritten);
+d587 1
+a587 4
+		reply.status = FAILURE;
+		reply.replySize = 0;
+		(void) Fs_Write (newID, sizeof(reply), &reply,
+				 &numWritten);
+@
+
+
+1.2
+log
+@Converted to use Bit_Expand
+@
+text
+@d19 1
+a19 1
+"$Header: connect.c,v 1.1 87/06/11 17:47:03 deboor Exp $ SPRITE (Berkeley)";
+d30 1
+a30 1
+ * but there's no way to get the hostname in Sprite, yet...
+a34 2
+#define INIT_NUM_STREAMS    2
+#define INC_NUM_STREAMS	    2
+a35 6
+/*
+ * IOControls supported by the server. These definitions should be copied
+ * to the Xlibos.h file in the sprite Xlib directory.
+ */
+#define IOC_X_NUM_READABLE  0x80000001
+
+d150 4
+a153 4
+    int	    conn; 	/* Stream of connection */
+    Bool    *pswapped;	/* Set TRUE if client is byte-swapped */
+    int	    uid;
+    int	    hostid;
+d155 8
+a162 9
+    int	    	  	lastRead;
+    int	    	  	totRead;
+    xConnClientPrefix 	xccp;
+    Fs_PdevRequest	pdev;
+    Fs_PdevEasyReply	writeRep;
+    SpriteTime	  	timeout;
+    int	    	  	numWritten;
+    int	    	  	*selMask;
+    int	    	  	numReady;
+d180 4
+a183 2
+    if (Fs_Read (conn, sizeof(pdev), &pdev, &lastRead) != SUCCESS) {
+	return (0);
+a184 1
+    totRead = 0;
+d186 4
+d193 4
+a196 1
+    Fs_Write (conn, sizeof(writeRep), &writeRep, &numWritten);
+d198 2
+a199 2
+    if ((Fs_Read (conn, sizeof(xccp), &xccp, &lastRead) != SUCCESS) ||
+	(lastRead != sizeof(xccp))){
+d203 1
+a203 2
+    pdev.requestSize -= lastRead;
+    totRead += lastRead;
+d225 1
+d228 1
+a228 1
+			 authProto, &lastRead) != SUCCESS) {
+d231 1
+a231 2
+	    pdev.requestSize -= lastRead;
+	    totRead += lastRead;
+d241 1
+d244 1
+a244 1
+			 authString, &lastRead) != SUCCESS) {
+d247 1
+a247 2
+	    totRead += lastRead;
+	    pdev.requestSize -= lastRead;
+d279 4
+a282 2
+    int	    clientID;
+    int	    newStream;
+d310 1
+a310 2
+     * encompass the new stream. Again, we only reallocate if the
+     * mask will really be bigger.
+d337 1
+a337 1
+ *	None.
+d340 2
+a341 1
+ *	The client is terminated.
+d345 1
+a345 1
+void
+d347 1
+a347 1
+    ClntStreamPtr 	    pStream;	    /* The stream to close */
+d349 3
+a351 2
+    register int  	    i;
+    register ClntPrivPtr    pPriv;
+a352 2
+    Io_Close (pStream->inStream);
+    Io_Close (pStream->outStream);
+a353 1
+    pStream->active = FALSE;
+d356 6
+a361 4
+    for (i = pPriv->numStreams; i; i--) {
+	if (pPriv->streams[i-1].active) {
+	    break;
+	}
+d363 7
+a369 2
+    if (i == 0) {
+	CloseDownClient (clients[pStream->clientID]);
+d371 3
+d378 3
+a380 3
+ * HandleIOControl --
+ *	Some client has performed some IOControl on the request-response
+ *	stream.
+d383 2
+a384 1
+ *	None.
+d387 1
+a387 2
+ *	The response to the IOControl is written as a reply on the private
+ *	stream.
+d391 4
+a394 7
+static void
+HandleIOControl (streamID, command, inBufSize, inBufPtr, pStream)
+    int	    	  streamID; 	/* Request/response stream */
+    int	    	  command;  	/* Command from client */
+    int	    	  inBufSize;	/* Size of input buffer */
+    Address 	  inBufPtr; 	/* Input buffer */
+    ClntStreamPtr pStream;  	/* Real stream structure */
+d396 1
+a396 23
+    int	    	  numWritten;
+
+    switch (command) {
+	case IOC_X_NUM_READABLE: {
+	    Fs_PdevEasyReply	reply;
+
+	    reply.status = SUCCESS;
+	    reply.replySize = sizeof(int);
+	    reply.data = pStream->outStream->lastAccess -
+		pStream->outStream->buffer + 1;
+
+	    (void) Fs_Write (streamID, sizeof(reply), &reply, &numWritten);
+	    break;
+	}
+	default: {
+	    Fs_PdevReply    	reply;
+
+	    reply.status = FS_DEVICE_OP_INVALID;
+	    reply.replySize = 0;
+	    (void) Fs_Write (streamID, sizeof(reply), &reply, &numWritten);
+	    break;
+	}
+    }
+d430 2
+a431 1
+    int	    	  newStreamID;	/* New stream ID to use */
+d438 2
+d446 1
+a446 3
+	rstat = Fs_Read (PseudoDevice, sizeof (newStreamID),
+			 &newStreamID, &numRead);
+	if (rstat != SUCCESS) {
+d449 1
+a449 4
+
+	rstat = Fs_Read (newStreamID, sizeof (pdev), &pdev, &numRead);
+	if (rstat != SUCCESS) {
+	    Fs_Close (newStreamID);
+d452 1
+d454 6
+d461 1
+a461 1
+	    if (!ClientAuthorized (newStreamID, &swapped,
+d467 1
+a467 1
+				       (void) Fs_Write (newStreamID,
+d470 1
+a470 1
+				       Fs_Close (newStreamID);
+d484 1
+a484 1
+		(void) Fs_Write (newStreamID, sizeof(reply), &reply,
+d486 1
+a486 1
+		Fs_Close (newStreamID);
+d491 4
+a494 8
+	    pPriv->numStreams = INIT_NUM_STREAMS;
+	    pPriv->streams = (ClntStreamPtr)Xalloc (INIT_NUM_STREAMS *
+						    sizeof(ClntStreamRec));
+	    for (i = 1; i < INIT_NUM_STREAMS; i++) {
+		pPriv->streams[i].active = FALSE;
+	    }
+	    pStream = pPriv->streams;
+	    pStream->streamID = newStreamID;
+d496 4
+d512 1
+d518 1
+a518 1
+	    (void) Fs_Write (newStreamID, sizeof(reply), &reply, &numWritten);
+d520 6
+a525 36
+	    /*
+	     * Search the client's "streams" table for an open slot
+	     * in which to insert this new stream. If one is found,
+	     * "i" will be its index and will be less than
+	     * "pPriv->numStreams"
+	     */
+	    pPriv = &clientPriv[clientID];
+	    for (i = 0; i < pPriv->numStreams; i++) {
+		if (!pPriv->streams[i].active) {
+		    break;
+		} else if (pPriv->streams[i].streamID ==
+			   pdev.param.dup.oldStreamID){
+			       pOldStream = &pPriv->streams[i];
+		}
+	    }
+	    if (i == pPriv->numStreams) {
+		/*
+		 * There was no more room in the streams table, so we
+		 * need to reallocate it to make room for this new
+		 * stream. The newly-allocate ClntStreamRec's are
+		 * all marked as inactive and i is set to the index of
+		 * the first one.
+		 */
+		pPriv->numStreams += INC_NUM_STREAMS;
+		pPriv->streams =
+		    (ClntStreamPtr) Xrealloc (pPriv->streams,
+					      pPriv->numStreams *
+					      sizeof (ClntStreamRec));
+		while (i < pPriv->numStreams) {
+		    pPriv->streams[i].active = FALSE;
+		    i++;
+		}
+		i = pPriv->numStreams - INC_NUM_STREAMS;
+	    }
+	    pStream = &pPriv->streams[i];
+	    pStream->streamID = newStreamID;
+d532 1
+a532 2
+	 * Common code for both duplication and connection. Pdev_Init
+	 * is called to initialize the pseudo-device streams.
+a533 1
+	pStream->active = TRUE;
+d535 5
+a539 7
+	Pdev_Init (pStream->streamID,
+		   FS_NON_BLOCKING,
+		   pStream->clientFlags,
+		   &pStream->inStream,
+		   &pStream->outStream,
+		   ConnectionClosed, pStream,
+		   HandleIOControl, pStream);
+d541 1
+a541 1
+	ExpandMasks (clientID, pStream->streamID);
+d551 2
+a552 2
+	    Bit_Set (pStream->streamID, SavedAllClientsMask);
+	    Bit_Set (pStream->streamID, SavedAllStreamsMask);
+d554 2
+a555 2
+		Bit_Set (pStream->streamID, AllClientsMask);
+		Bit_Set (pStream->streamID, AllStreamsMask);
+d558 2
+a559 2
+	    Bit_Set (pStream->streamID, AllClientsMask);
+	    Bit_Set (pStream->streamID, AllStreamsMask);
+d590 1
+a590 16
+    for (i = 0, pStream = &pPriv->streams[0];
+	 i < pPriv->numStreams;
+	 i++, pStream++) {
+	     if (pStream->active) {
+		 Io_Close (pStream->inStream);
+		 Io_Close (pStream->outStream);
+		 Fs_Close (pStream->streamID);
+		 if (GrabDone) {
+		     Bit_Clear (pStream->streamID, SavedAllStreamsMask);
+		     Bit_Clear (pStream->streamID, SavedAllClientsMask);
+		 } else {
+		     Bit_Clear (pStream->streamID, AllStreamsMask);
+		     Bit_Clear (pStream->streamID, AllClientsMask);
+		 }
+	     }
+    }
+d595 1
+a595 2
+    Xfree (pPriv->streams);
+
+a687 1
+    int	    	  *tempMask;	    /* Mask for streamIDs */
+d692 1
+a692 4
+    Bit_Alloc (NumActiveStreams, tempMask);
+    Bit_Copy (pPriv->maskWidth, pPriv->mask, tempMask);
+    
+    (void) Bit_Intersect (NumActiveStreams, tempMask,
+d705 1
+a705 1
+    (void) Bit_Union (NumActiveStreams, tempMask, EnabledDevicesMask,
+d707 1
+a707 2
+    Bit_Copy (NumActiveStreams, tempMask, AllClientsMask);
+    Bit_Free (tempMask);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d19 1
+a19 1
+"$Header$ SPRITE (Berkeley)";
+d287 17
+a303 48
+	if (Bit_NumInts(newStream + 1) > Bit_NumInts(NumActiveStreams)) {
+	    /*
+	     * First we expand the size of the standard masks. Note this
+	     * is only done if the new masks will take up more space
+	     * (in longwords). This is to avoid reallocating too often.
+	     * It does, however, assume that the masks are allocated in
+	     * longword chunks.
+	     */
+	    register int newNumStreams = newStream + 1;
+	    register int *tempMask;
+	    
+	    Bit_Alloc (newNumStreams, tempMask);
+	    Bit_Copy  (newNumStreams, AllStreamsMask, tempMask);
+	    Bit_Free  (AllStreamsMask);
+	    AllStreamsMask =	    tempMask;
+	    
+	    Bit_Alloc (newNumStreams, tempMask);
+	    Bit_Copy  (newNumStreams, LastSelectMask, tempMask);
+	    Bit_Free  (LastSelectMask);
+	    LastSelectMask =	    tempMask;
+	    
+	    Bit_Alloc (newNumStreams, tempMask);
+	    Bit_Copy  (newNumStreams, EnabledDevicesMask, tempMask);
+	    Bit_Free  (EnabledDevicesMask);
+	    EnabledDevicesMask =    tempMask;
+	    
+	    Bit_Alloc (newNumStreams, tempMask);
+	    Bit_Copy  (newNumStreams, ClientsWithInputMask, tempMask);
+	    Bit_Free  (ClientsWithInputMask);
+	    ClientsWithInputMask =  tempMask;
+	    
+	    Bit_Alloc (newNumStreams, tempMask);
+	    Bit_Copy  (newNumStreams, AllClientsMask, tempMask);
+	    Bit_Free  (AllClientsMask);
+	    AllClientsMask =	    tempMask;
+	    
+	    Bit_Alloc (newNumStreams, tempMask);
+	    Bit_Copy  (newNumStreams, SavedAllClientsMask, tempMask);
+	    Bit_Free  (SavedAllClientsMask);
+	    SavedAllClientsMask =   tempMask;
+	    
+	    Bit_Alloc (newNumStreams, tempMask);
+	    Bit_Copy  (newNumStreams, SavedAllStreamsMask, tempMask);
+	    Bit_Free  (SavedAllStreamsMask);
+	    SavedAllStreamsMask =   tempMask;
+	    
+	}
+	NumActiveStreams = newStream + 1;
+d313 6
+a318 17
+    if ((clientID > 0) && (newStream >= pPriv->maskWidth)) {
+	if (Bit_NumInts (newStream + 1) > Bit_NumInts (pPriv->maskWidth)) {
+	    int	  *tempMask;
+
+	    Bit_Alloc (newStream + 1, tempMask);
+	    if (pPriv->mask) {
+		Bit_Copy (pPriv->maskWidth, pPriv->mask, tempMask);
+		Bit_Free (pPriv->mask);
+	    }
+	    pPriv->mask = tempMask;
+
+	    Bit_Alloc (newStream + 1, tempMask);
+	    if (pPriv->ready) {
+		Bit_Copy (pPriv->maskWidth, pPriv->ready, tempMask);
+		Bit_Free (pPriv->ready);
+	    }
+	    pPriv->ready = tempMask;
+@

@@ -1,0 +1,68 @@
+
+
+
+RECOVSERVERINFO           User Commands           RECOVSERVERINFO
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     recovserverinfo - Print out information about the number  of
+     times clients attmepted recovery with a server
+
+SSYYNNOOPPSSIISS
+     rreeccoovvsseerrvveerriinnffoo -[_o_p_t_i_o_n_s]
+
+OOPPTTIIOONNSS
+     --dduurraattiioonn     Print out only the start and finish  times  of
+                   all  recovery  per host.  Do not print out the
+                   start and finish times for each attempt  of  a
+                   host, if there's more than one attempt.
+
+     --nnooHHaannddlleess    Do not include the default  information  about
+                   the  number  of  handles  requested to be reo-
+                   pened.
+
+     --ssuucccceessss      Specify the number of  reopens  that  returned
+                   success,   as   well   as  the  number  merely
+                   requested.
+
+_________________________________________________________________
+
+IINNTTRROODDUUCCTTIIOONN
+     This command  prints  out  information  about  what  clients
+     attempted  recovery  with  a  server,  how  many  times they
+     attempted it, and how long it took to recover.  For now, the
+     command  must  be  executed  on the server in question.  The
+     first line, per host, gives the  duration  of  recovery  for
+     that host, while further lines per host (if -duration is not
+     specified) give the start and finish times of each  recovery
+     attempt,  including  the  first.  The first line is included
+     simply for convenience of interpretation.
+
+KKEEYYWWOORRDDSS
+     recovery, server
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  March 26, 1990                    1
+
+
+

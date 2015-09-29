@@ -1,0 +1,113 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  sprited:1.2.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     88.07.28.17.18.45;  author ouster;  state Exp;
+branches 1.2.1.1;
+next     1.1;
+
+1.1
+date     88.06.10.16.23.58;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.2.1.1
+date     91.12.02.20.02.23;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@More lint.
+@
+text
+@/* 
+ * setbuffer.c --
+ *
+ *	Source code for the "setbuffer" library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: setbuffer.c,v 1.1 88/06/10 16:23:58 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "stdio.h"
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * setbuffer --
+ *
+ *	Reset the buffering strategy to use for stream.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	If buf is NULL, stream will be unbuffered from now on.  Otherwise,
+ *	buf will be used as the buffer for stream.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+setbuffer(stream, buf, size)
+    FILE *stream;		/* Stream to be re-buffered. */
+    char *buf;			/* New buffer to use for stream.   NULL means
+				 * make stream unbuffered.  Otherwise, this
+				 * space must persist until the stream is
+				 * closed or rebuffered. */
+    int size;			/* Number of bytes of storage space at
+				 * buf. */
+{
+    if (buf == 0) {
+	(void) setvbuf(stream, (char *) 0, _IONBF, 1);
+    } else {
+	(void) setvbuf(stream, buf, _IOFBF, size);
+    }
+}
+@
+
+
+1.2.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdio/RCS/setbuffer.c,v 1.2 88/07/28 17:18:45 ouster Exp $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: atoi.c,v 1.1 88/04/28 17:20:23 ouster Exp $ SPRITE (Berkeley)";
+d50 1
+a50 1
+	(void) setvbuf(stream, 0, _IONBF, 1);
+@

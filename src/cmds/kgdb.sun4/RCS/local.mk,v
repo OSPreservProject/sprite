@@ -1,0 +1,63 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    shirriff:1.2; strict;
+comment  @@;
+
+
+1.2
+date     91.04.26.16.13.12;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.11.16.14.58.05;  author rab;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Changed path and cflags.
+@
+text
+@#
+# This file is included by Makefile.  Makefile is generated automatically
+# by mkmf, and this file provides additional local personalization.  The
+# variable SYSMAKEFILE is provdied by Makefile;  it's a system Makefile
+# that must be included to set up various compilation stuff.
+#
+
+NAME		= kgdb.sun4.new
+
+LIBS		+= -ltermlib 
+
+#include	<$(SYSMAKEFILE)>
+
+.PATH.h		: . gdb gdb/sun4.md gdb/sprite gdb/dist gdb/dist/readline \
+		    /sprite/src/lib/include/sun4.md
+
+CFLAGS          += -DKGDB -I. -Igdb -Igdb/sun4.md -Igdb/sprite \
+                    -Igdb/dist -Igdb/dist/readline \
+		    -I/sprite/src/lib/include/sun4.md
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d8 2
+d11 1
+d13 3
+a15 1
+XCFLAGS 	+= -DKGDB
+d17 3
+@

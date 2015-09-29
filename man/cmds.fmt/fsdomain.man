@@ -1,0 +1,134 @@
+
+
+
+PROGNAME                  User Commands                  PROGNAME
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     fsdomain - changes the domain prefix of a file system
+
+SSYYNNOOPPSSIISS
+     ffssddoommaaiinn _d_e_v_i_c_e [_o_p_t_i_o_n_s]
+
+OOPPTTIIOONNSS
+     --hheellpp          Print a summary of the  command-line  options
+                    and exit.
+
+     --nnaammee ddoommaaiinn__nnaammee
+                    Change the domain name.
+
+     --dd ddoommaaiinn__nnuumm  Change the domain number.
+
+     --iidd sseerrvveerrIIDD   Change the server ID.
+
+     --pprreevv          Use the previous (older) checkpoint.
+
+     --pprriinntt         Print out the file system structures.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     ffssddoommaaiinn displays  or  changes  various  parameters  of  the
+     domain  of  a  file  system.   If no options are given, then
+     ffssddoommaaiinn displays the domain name, domain number,  and  ser-
+     verID  of  the  filesystem  on  the  given  device.  And the
+     options allow you to selectively change any of those values.
+     (Note: the disk device should be unmounted if you change any
+     of the domain parameters.)
+
+     The --pprriinntt option prints out file system structures.  For an
+     OFS,  tthhee  OOffss__SSuummmmaarryyIInnffoo and OOffss__DDoommaaiinnHHeeaaddeerr are printed;
+     for  an  LFS,  ffssddoommaaiinn  prints  the  LLffssCChheecckkPPooiinnttHHddrr,  the
+     LLffssCChheecckkPPooiinnttTTrraaiilleerr,   and   all  the  LLffssCChheecckkPPooiinnttRReeggiioonnss
+     between the header and the trailer.
+
+     The --pprreevv option applies the above actions to  the  previous
+     checkpoint.   For  some  reason, the kernel and the disk can
+     become out of sync  with  regard  to  which  region  is  the
+     current  checkpoint.   This  option  should  be  able to get
+     around that problem.
+
+
+
+SSEEEE AALLSSOO
+     fsinfo, fsmake, mklfs, labeldisk
+
+
+
+
+
+
+Sprite v.1.0        Printed:  March 15, 1992                    1
+
+
+
+
+
+
+PROGNAME                  User Commands                  PROGNAME
+
+
+
+KKEEYYWWOORRDDSS
+     disk, partition, filesystem, domain, prefix
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  March 15, 1992                    2
+
+
+

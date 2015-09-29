@@ -1,0 +1,20 @@
+' $Header: /a/newcmds/debug.prog/RCS/debug.man,v 1.2 88/12/30 09:24:32 ouster Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS DEBUG cmds
+.BS
+.SH NAME
+debug \- Start a command and put it immediately into the debugger
+.SH SYNOPSIS
+\fBdebug\fR \fIcommand\fR [\fIoptions\fR]
+.BE
+
+.SH INTRODUCTION
+.PP
+The \fBdebug\fR command is used to initiate a process but force the process
+into the debugger before it executes any instructions, in order to
+facilitate debugging.  \fICommand\fR is the name of the command;
+if \fIoptions\fR are present, they will be passed to \fIcommand\fR
+as options.
+
+.SH KEYWORDS
+debug

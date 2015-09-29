@@ -1,0 +1,55 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  srv030:1.1 srv027:1.1 srv026:1.1 srv024:1.1 srv021:1.1 srv019:1.1 srv018:1.1 srv016:1.1 srv014:1.1 srv010:1.1 srv008:1.1 srv007:1.1 srv006:1.1 srv005:1.1 srv004:1.1 srv003:1.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     92.04.29.22.35.00;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Declarations that should be in Mach header files, but aren't or are
+unusable.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/*
+ * machCalls.h --
+ *
+ *	Declarations that should properly be in Mach header files, but
+ *	aren't or can't be used.  (Example: mach.h and mach_traps.h can't
+ *	be included together, at least as of 2-Oct-91, because cpp gags.)
+ *
+ * Copyright 1992 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.8 92/03/02 15:32:57 bmiller Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _MACHCALLS
+#define _MACHCALLS
+
+#include <cfuncproto.h>
+#include <mach.h>
+
+extern mach_port_t mach_host_self _ARGS_((void));
+
+#endif /* _MACHCALLS */
+@

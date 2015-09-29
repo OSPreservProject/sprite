@@ -1,0 +1,330 @@
+
+
+
+MMAP                  C Library Procedures                   MMAP
+
+
+
+NNAAMMEE
+     mmap - map an open file into the process's address space
+
+SSYYNNOOPPSSIISS
+     NNOOTTEE:: tthhiiss mmaann ppaaggee iiss iinnaaccccuurraattee..  IItt wwaass bboorrrroowweedd ffrroomm aannootthheerr mmaacchhiinnee
+     aanndd hhaassnn''tt bbeeeenn uuppddaatteedd ttoo mmaakkee iitt ccoorrrreecctt..
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<ssyyss//mmmmaann..hh>>
+
+     mmmmaapp((aaddddrr,, lleenn,, pprroott,, sshhaarree,, ffdd,, ppooss))
+     ccaaddddrr__tt aaddddrr;;   //** ssttaarrttiinngg vviirrtt--aaddddrr **//
+     iinntt     lleenn;;    //** lleennggtthh ((bbyytteess)) ttoo mmaapp **//
+     iinntt     pprroott;;   //** RROO,, RRWW eennccooddiinngg **//
+     iinntt     sshhaarree;;  //** pprriivvaattee//sshhaarreedd mmooddiiffiiccaattiioonnss **//
+     iinntt     ffdd;;     //** ooppeenn ffiillee ttoo bbee mmaappppeedd **//
+     ooffff__tt   ppooss;;    //** wwhheerree iinn ffiillee ttoo bbeeggiinn mmaapp **//
+
+DDEESSCCRRIIPPTTIIOONN
+     _M_m_a_p causes the file referenced by _f_d, starting at byte _p_o_s
+     for _l_e_n bytes in the file, to be mapped into the calling
+     process's address space, starting at virtual address _a_d_d_r
+     for _l_e_n bytes, using protection specified by _p_r_o_t; modifica-
+     tions to the mapped memory are either private to the process
+     or shared, as specified by _s_h_a_r_e.  _M_m_a_p can be used to allo-
+     cate regions of shared memory, to map files into memory, and
+     to access special regions of the physical address space.
+
+     _F_d must reference an open regular (IFREG) or character spe-
+     cial (IFCHR) file.  The device driver that implements the
+     IFCHR special file must support mapping for this to succeed.
+     Typically, a regular file is used to map shared memory.
+
+     The _s_h_a_r_e argument specifies whether modifications to a
+     mapped file are to be kept private to the calling process or
+     shared with other processes accessing the file.  If _s_h_a_r_e is
+     MAP_SHARED, all modifications to the file are shared with
+     others who have it concurrently mapped.  If _s_h_a_r_e is
+     MAP_PRIVATE, all modifications are local to the calling pro-
+     cess; this doesn't restrict other processes from mapping the
+     file.  MAP_SHARED and MAP_PRIVATE have no relation to
+     _f_l_o_c_k(2), and do not restrict _r_e_a_d and _w_r_i_t_e system-calls.
+     If _s_h_a_r_e is MAP_ZEROFILL, the space indicated from _a_d_d_r for
+     _l_e_n bytes is replaced by private pages that are zero-filled
+     when referenced.  MAP_ZEROFILL ignores the _f_d argument, and
+     _p_o_s is ignored other than being checked for alignment
+     (specifying fd and pos = 0 is recommended).
+
+     The _p_r_o_t argument should be PROT_WRITE for write access to
+     the mapped region, PROT_READ for read access, PROT_EXEC for
+     executable access.  These values can be ORed to obtain
+     read-write access, etc.  For programming convenience,
+     PROT_RDWR is defined as (PROT_READ|PROT_WRITE).  The file
+
+
+
+DYNIX                                                           1
+
+
+
+
+
+
+MMAP                  C Library Procedures                   MMAP
+
+
+
+     access permissions on _f_d must allow the requested access.
+     The _p_r_o_t argument affects only the calling process; other
+     processes mapping the same file may have different access.
+
+     The _a_d_d_r, _l_e_n, and _p_o_s arguments must be integral multiples
+     of the system page size, as defined by _g_e_t_p_a_g_e_s_i_z_e(2).  It
+     is possible to map over previously mapped pages.  If _a_d_d_r
+     and _l_e_n specify a nonexistent part of the process's address
+     space, the process's data segment is grown to accommodate
+     the request, and the process ``break'' (see _b_r_k(2)) is set
+     to the high end of the mapped region.  Reference to any
+     ``holes'' between the mapped region and the rest of the data
+     segment result in a segmentation fault (SIGSEGV).  _m_m_a_p does
+     not allow mapping over text or stack pages.
+
+     When memory is mapped to a regular file, the file acts like
+     a paging area for the mapped memory region.  _R_e_a_d and _w_r_i_t_e
+     operations to mapped regions of the file also affect the
+     corresponding memory.  The memory contents are copied out to
+     the file when the process is swapped or when it exits, or
+     when the region is otherwise unmapped by the last process
+     that has it mapped.  For programs that use shared memory but
+     do not need a permanent disk image of the memory, the file
+     associated with _f_d can be _u_n_l_i_n_ked (see _u_n_l_i_n_k(2)) even
+     before the call to _m_m_a_p: if the file is _u_n_l_i_n_ked when the
+     region is unmapped, the disk space will not be updated.
+
+     Regular files have their size rounded up to a file-system
+     block boundary.  Any non-existent space in the file at the
+     time of the _m_m_a_p request (for example, in a sparse file) is
+     allocated, and filled with zeroes when referenced.  Both of
+     these operations require write access to the file.
+
+     The type of file referenced may impose further restrictions
+     on the _p_o_s, _o_f_f_s_e_t, or other parameters.  Refer to the
+     manual entry of the relevant device driver (for example,
+     _p_m_a_p(4)) for details.
+
+     Closing a file descriptor previously used in an _m_m_a_p opera-
+     tion unmaps all pages mapped by that file descriptor (see
+     also _m_u_n_m_a_p(2)).  (Note: this may change in order to provide
+     compatibility with sunOS.) If the file-descriptor has been
+     _d_u_ped prior to being closed, no unmap takes place.
+
+     _M_m_a_p can be called multiple times with the same file
+     descriptor, resulting in several (possibly overlapping)
+     mapped regions.  A process can have up to 8 regions mapped
+     simultaneously; mappings that are completely overlapped by
+     subsequent mappings are not counted in this total.  Mappings
+     which use the same file descriptor, and addr and pos argu-
+     ments which align virtually with a previous mapping, also
+     don't count in this total; the simplest case is mapping more
+
+
+
+DYNIX                                                           2
+
+
+
+
+
+
+MMAP                  C Library Procedures                   MMAP
+
+
+
+     of a file, starting from the end of a previous mapping.
+
+     All mapped files remain mapped in both the parent and child
+     process after a _f_o_r_k.  All flavors of the _e_x_e_c and _e_x_i_t sys-
+     tem calls, when successful, remove all maps the calling pro-
+     cess had established.  If a process has any maps, _v_f_o_r_k
+     behaves exactly like _f_o_r_k.  A child of a _v_f_o_r_k that has not
+     yet _e_x_e_ced a new image cannot successfully execute _m_m_a_p.
+
+     There are three types of mapping: paged, physical, and non-
+     paged memory.  The type of mapping is determined by the type
+     of file being mapped.  Paged maps support shared memories
+     and mapped regular files.  Physical maps deal with hardware
+     that has restrictive access capability (for example, the
+     MULTIBUS address space, including Atomic Lock Memory).
+     Non-paged memory maps are typically used for special
+     reserved areas of system memory; they are assumed to behave
+     exactly like memory, supporting accesses of arbitrary size
+     and alignment, DMA, etc.
+
+     System services (raw IO, read/write, stat, etc.) are sup-
+     ported in paged and non-paged memory maps; attempts at such
+     services in physically mapped address space result in an
+     error, typically EFAULT.  Core dumps include a copy of any
+     mapped address space; however, physically mapped addresses
+     read as zero.
+
+     Regular files (IFREG) are always page-mapped.  Character
+     special files (IFCHR) can support paged, physical, or non-
+     paged maps, depending on the underlying hardware.  Physical
+     and non-paged maps are always valid in the process address
+     space; references won't cause a page fault.
+
+     When _m_m_a_p increases a program's address space, it also
+     attempts to increase its allowable resident set size.
+
+RREETTUURRNN VVAALLUUEE
+     _M_m_a_p returns the address of the mapped region when success-
+     ful.  (Note: this may change, as some Unix machines return
+     0.) Otherwise it returns -1 and places the error number in
+     the global variable _e_r_r_n_o.
+
+EEXXAAMMPPLLEESS
+     The following code sets up a 1-Mbyte region of shared memory
+     at the first page boundary above the current program
+     ``break.'' This region will be shared with the process's
+     children and with any other process that maps the file
+     ``shmem''.  pgsz = getpagesize(); shm_base = (char *) (
+     ((int)sbrk(0) + (pgsz-1)) & ~(pgsz-1) ); fd = open ("shmem",
+     O_CREAT | O_RDWR, 0666); mmap (shm_base, 0x100000,
+     PROT_RDWR, MAP_SHARED, fd, 0);
+
+
+
+
+DYNIX                                                           3
+
+
+
+
+
+
+MMAP                  C Library Procedures                   MMAP
+
+
+
+     The following code maps the first page of Atomic Lock Memory
+     into the process's virtual address space at address
+     0x200000.  This region will be shared with the process's
+     children and with any other process that maps the file
+     ``/dev/alm/alm00''.  pgsz = getpagesize(); fd = open
+     ("/dev/alm/alm00", O_RDWR, 0); mmap (0x200000, pgsz,
+     PROT_RDWR, MAP_SHARED, fd, 0);
+
+EERRRROORRSS
+     [EINVAL]       _A_d_d_r, _p_o_s, or _l_e_n is not a multiple of the
+                    system page size.
+
+     [EINVAL]       _P_r_o_t did not specify at least one of
+                    PROT_WRITE or PROT_READ; _s_h_a_r_e did not
+                    specify MAP_SHARED, MAP_PRIVATE, or
+                    MAP_ZEROFILL; or _s_h_a_r_e specified MAP_ZEROFILL
+                    but _p_r_o_t did not contain PROT_RDWR.
+
+     [EINVAL]       _F_d does not represent a regular or character
+                    special file.
+
+     [EINVAL]       The process is the child of a _v_f_o_r_k.
+
+     [EINVAL]       The area defined by the _a_d_d_r and _l_e_n argu-
+                    ments overlaps text or stack pages of the
+                    process.
+
+     [ENODEV]       The device driver indicated by _f_d does not
+                    support mapping.
+
+     [ENOMEM]       There is no swap space for the page table of
+                    a mapped regular file, or you are trying to
+                    create too large a process.
+
+     [EMFILE]       The system-defined per-process limit on the
+                    number of _m_m_a_ped files (currently 8) was
+                    exceeded.
+
+     [ENFILE]       The system-wide limit on the number of mapped
+                    regular files was exceeded.  This limit is
+                    defined by the variable _n_m_f_i_l_e in
+                    /_s_y_s/_c_o_n_f/_p_a_r_a_m._c.
+
+     [EACCES]       _F_d does not allow the desired access (read or
+                    write), or a write-only file descriptor was
+                    used.
+
+     [EACCES]       A mapped regular file must be extended to a
+                    file-system block boundary, or the file must
+                    have space allocated, and the file descriptor
+                    is read-only.
+
+
+
+
+DYNIX                                                           4
+
+
+
+
+
+
+MMAP                  C Library Procedures                   MMAP
+
+
+
+     [ENOSPC]       A mapped regular file was sparse and there
+                    was insufficient space in the file-system to
+                    satisfy the request.
+
+     [EFBIG]        The _p_o_s and _l_e_n arguments would create too
+                    large a file.
+
+     [others]       Other error values may be returned by some
+                    device drivers when requested to map.  See
+                    the relevant driver manual entry for details.
+
+SSEEEE AALLSSOO
+     munmap(2), pmap(4), vm_ctl(2), fork(2), exec(2), get-
+     pagesize(2), msync(2), mlock(2), munlock(2), mincore(2)
+     _G_u_i_d_e _t_o _P_a_r_a_l_l_e_l _P_r_o_g_r_a_m_m_i_n_g
+
+BBUUGGSS
+     A mapped file may not be truncated.
+
+     If a file is extended to a file-system block boundary, its
+     original size is lost.
+
+     Current restrictions on what parts of the address space can
+     be re-mapped should be lifted.
+
+NNOOTTEESS
+     Due to a hardware restriction, PROT_WRITE implies PROT_READ
+     also.  PROT_EXEC is ignored.
+
+     To minimize overhead, mapped regions should be kept as close
+     as possible to the low end of process memory.
+
+     Address space holes under the process ``break'' read as
+     zeroes in core files.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+DYNIX                                                           5
+
+
+

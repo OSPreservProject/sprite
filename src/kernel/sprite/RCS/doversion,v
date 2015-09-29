@@ -1,0 +1,172 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @# @;
+
+
+1.5
+date     92.06.04.13.33.12;  author jhh;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.02.09.08.42.18;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.01.31.16.47.45;  author mgbaker;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.11.28.11.34.15;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.11.28.08.34.35;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Script to generate a version string for a kernel
+@
+
+
+1.5
+log
+@fixed up problems with quotes
+@
+text
+@#! /sprite/cmds/csh -f
+#
+#	Usage: doversion releaseNumber versionInfo outFile
+#
+#	releaseNumber is the major number for the version (currently 1)
+#	versionInfo controls the minor number of the version. If it is
+#		TRUE then the version is incremented from the last build, if
+#		it is FALSE it is not incremented, and any other value is taken
+#		to be the version number to use.
+#	outFile is the name of the .h file to generate.
+#
+# $Header: /sprite/src/kernel/sprite/RCS/doversion,v 1.4 90/02/09 08:42:18 brent Exp $ SPRITE (Berkeley)
+#
+# Copyright 1989 Regents of the University of California
+# Permission to use, copy, modify, and distribute this
+# software and its documentation for any purpose and without
+# fee is hereby granted, provided that the above copyright
+# notice appear in all copies.  The University of California
+# makes no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without
+# express or implied warranty.
+#
+
+set release = $1
+set versionInfo = $2
+set outFile = $3
+
+set log = "no"
+
+set version = `cat version`
+switch($versionInfo) 
+    case "TRUE":
+    case "true":
+	@@ version++
+	echo $version > version
+	set log = "yes"
+	breaksw
+    case "FALSE":
+    case "false":
+	breaksw
+    default:
+	set version = $versionInfo
+	set log = "yes"
+	breaksw
+endsw
+echo $version > version
+if ($version < 10 ) then
+    set version = "00"$version
+else if ($version < 100) then
+    set version = "0"$version
+endif
+
+if ("$log" == "yes") then
+    co -l versionLog
+    echo "" >> versionLog
+    echo "$release.$version	`date`" >> versionLog
+    echo ""
+    echo "Please log message for $release.$version in versionLog"
+    echo ""
+endif
+
+echo $version
+
+mkversion -p "SPRITE VERSION $release.$version (MACHINE)" > $outFile
+
+@
+
+
+1.4
+log
+@Added echo of the version number
+@
+text
+@d12 1
+a12 1
+# $Header: /sprite/src/kernel/sprite/RCS/doversion,v 1.3 90/01/31 16:47:45 mgbaker Exp $ SPRITE (Berkeley)
+d33 1
+d39 1
+d53 1
+a53 1
+if ($log == "yes") then
+@
+
+
+1.3
+log
+@Added checkout of versionLog since it seems to be checked in.
+@
+text
+@d12 1
+a12 1
+# $Header: /sprite/src/kernel/sprite/RCS/doversion,v 1.2 89/11/28 11:34:15 brent Exp Locker: mgbaker $ SPRITE (Berkeley)
+d59 2
+@
+
+
+1.2
+log
+@Added logging support
+@
+text
+@d12 1
+a12 1
+# $Header: /sprite/lib/forms/RCS/proto.csh,v 1.2 89/01/16 11:13:37 ouster Exp $ SPRITE (Berkeley)
+d52 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d3 2
+a4 1
+#	Usage: doversion releaseNumber versionInfo
+d7 4
+a10 3
+#	TRUE then the version is incremented from the last build, if
+#	it is FALSE it is not incremented, and any other value is taken
+#	to be the version number to use.
+d26 4
+d35 1
+d41 1
+d51 9
+a59 1
+mkversion -p "SPRITE VERSION $release.$version (MACHINE)" 
+@

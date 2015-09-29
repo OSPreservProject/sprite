@@ -1,0 +1,20 @@
+maillog
+maillog, 
+repository for sprite-related mail, indexed by subject
+Sprite, log, index, keyword, bug, mail, 
+man
+man, 
+Ditroff macros for writing manual entries
+ditroff, format, macros, -man, manual entry, 
+migInfo
+/sprite/admin/migInfo, 
+file containing the migration status of all Sprite hosts 
+process migration, load average, idle time, database, 
+spritehosts
+/etc/spritehosts, 
+file containing Sprite host information
+host, spriteID, 
+userLog
+/sprite/admin/userLog, /sprite/admin/lastLog, 
+files containing information about user logins
+database, user log, 

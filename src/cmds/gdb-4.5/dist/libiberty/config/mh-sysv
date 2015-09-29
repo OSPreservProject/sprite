@@ -1,0 +1,2 @@
+HDEFINES = -DUSG
+RANLIB=echo >/dev/null

@@ -1,0 +1,267 @@
+*** /tmp/,RCSt1528697	Mon Nov  4 17:41:11 1991
+--- sunCG3C.c	Tue Jan  8 23:00:47 1991
+***************
+*** 37,52 ****
+  
+  #include    "sun.h"
+  
+  #include    <sys/mman.h>
+  #include    <pixrect/memreg.h>
+  /*
+  #include    <sundev/cg4reg.h>
+  */
+  #include    "colormap.h"
+  #include    "colormapst.h"
+  #include    "resource.h"
+! #include    <struct.h>
+  
+  /*-
+   * The cg3 frame buffer is divided into several pieces.
+   *	1) an array of 8-bit pixels
+--- 37,65 ----
+  
+  #include    "sun.h"
+  
++ 
+  #include    <sys/mman.h>
++ #include    <kernel/vmMach.h>
++ #ifndef	sprite
+  #include    <pixrect/memreg.h>
+  /*
+  #include    <sundev/cg4reg.h>
+  */
++ #include    <struct.h>
++ #endif	sprite
++ 
++ #include <sys/types.h>
+  #include    "colormap.h"
+  #include    "colormapst.h"
+  #include    "resource.h"
+! 
+! #include "sys/ioctl.h"
+! 
+! #include "sys/fb.h"
+! #undef MAP_NEW
+  
++ struct fbtype fbType;
++ 
+  /*-
+   * The cg3 frame buffer is divided into several pieces.
+   *	1) an array of 8-bit pixels
+***************
+*** 86,91 ****
+--- 99,105 ----
+  static CG3ACPtr CG3ACfb = NULL;
+  static CG3BCPtr CG3BCfb = NULL;
+  
++ 
+  static int  sunCG3CScreenIndex;
+  
+  /* XXX - next line means only one CG3 - fix this */
+***************
+*** 100,106 ****
+      int		index, count;
+      u_char	*rmap, *gmap, *bmap;
+  {
+!     struct fbcmap sunCmap;
+  
+      sunCmap.index = index;
+      sunCmap.count = count;
+--- 114,120 ----
+      int		index, count;
+      u_char	*rmap, *gmap, *bmap;
+  {
+!     fbcmap sunCmap;
+  
+      sunCmap.index = index;
+      sunCmap.count = count;
+***************
+*** 163,168 ****
+--- 177,183 ----
+  	break;
+      }
+      (void) ioctl(sunFbs[pScreen->myNum].fd, FBIOSVIDEO, &state);
++ 
+      return( TRUE );
+  }
+  
+***************
+*** 191,197 ****
+      pScreen->CloseScreen = (Bool (*)()) pScreen->devPrivates[sunCG3CScreenIndex].ptr;
+      ret = (*pScreen->CloseScreen) (i, pScreen);
+  
+! /* the following 2 lines are to fix rr clear_colormap bug */
+      rmap[255] = gmap[255] = bmap[255] = 0;
+      sunCG3CUpdateColormap(pScreen, 255, 1, rmap, gmap, bmap);
+  
+--- 206,212 ----
+      pScreen->CloseScreen = (Bool (*)()) pScreen->devPrivates[sunCG3CScreenIndex].ptr;
+      ret = (*pScreen->CloseScreen) (i, pScreen);
+  
+!     /* the following 2 lines are to fix rr clear_colormap bug */
+      rmap[255] = gmap[255] = bmap[255] = 0;
+      sunCG3CUpdateColormap(pScreen, 255, 1, rmap, gmap, bmap);
+  
+***************
+*** 380,387 ****
+--- 395,406 ----
+      char    	  **argv;   	/* The arguments themselves. Don't change! */
+  {
+      if (!cfbScreenInit (pScreen,
++ #ifndef sprite
+  			(sunFbs[index].info.fb_width == CG3A_WIDTH) ?
+  			(int *) CG3ACfb->cpixel : (int *) CG3BCfb->cpixel,
++ #else
++ 			sunFbs[index].fb,
++ #endif
+  			sunFbs[index].info.fb_width,
+  			sunFbs[index].info.fb_height,
+  			monitorResolution, monitorResolution,
+***************
+*** 460,496 ****
+      }
+  #else	_MAP_NEW
+      if (fbType.fb_width == CG3A_WIDTH) {
+  	CG3ACfb = (CG3ACPtr) valloc(CG3AC_MONOLEN + 
+  	    CG3AC_ENBLEN + CG3AC_IMAGELEN);
+  	if (CG3ACfb == (CG3ACPtr) NULL) {
+  	    ErrorF("Could not allocate room for frame buffer.\n");
+  	    return FALSE;
+  	}
+  
+  	if (mmap((caddr_t) CG3ACfb, CG3AC_MONOLEN + 
+  	    CG3AC_ENBLEN + CG3AC_IMAGELEN,
+  	    PROT_READ | PROT_WRITE,
+  	    MAP_SHARED, fd, 0) < 0) {
+  	    Error("Mapping cg3c");
+  	    (void) close(fd);
+  	    return FALSE;
+  	}
+      }
+      else if (fbType.fb_width == CG3B_WIDTH) {
+  	CG3BCfb = (CG3BCPtr) valloc(CG3BC_MONOLEN + 
+  	    CG3BC_ENBLEN + CG3BC_IMAGELEN);
+  	if (CG3BCfb == (CG3BCPtr) NULL) {
+  	    ErrorF("Could not allocate room for frame buffer.\n");
+  	    return FALSE;
+  	}
+! 
+  	if (mmap((caddr_t) CG3BCfb, CG3BC_MONOLEN + 
+  	    CG3BC_ENBLEN + CG3BC_IMAGELEN,
+  	    PROT_READ | PROT_WRITE,
+  	    MAP_SHARED, fd, 0) < 0) {
+  	    Error("Mapping cg3c");
+  	    (void) close(fd);
+  	    return FALSE;
+  	}
+      }
+      else {
+--- 479,552 ----
+      }
+  #else	_MAP_NEW
+      if (fbType.fb_width == CG3A_WIDTH) {
++ #ifdef sprite
++ 	int	sizeToUse;
++ 
++ 	sizeToUse = ((fbType.fb_size + VMMACH_SEG_SIZE) & ~(VMMACH_SEG_SIZE-1))
++ 		+ VMMACH_SEG_SIZE;
++ 	CG3ACfb = (CG3ACPtr) malloc(sizeToUse);
++ 	printf("original CG3ACfb addr: 0x%x, original size: 0x%x\n",
++ 		CG3ACfb, sizeToUse);
++ #else
+  	CG3ACfb = (CG3ACPtr) valloc(CG3AC_MONOLEN + 
+  	    CG3AC_ENBLEN + CG3AC_IMAGELEN);
++ #endif /* sprite */
+  	if (CG3ACfb == (CG3ACPtr) NULL) {
+  	    ErrorF("Could not allocate room for frame buffer.\n");
+  	    return FALSE;
+  	}
+  
++ #ifdef sprite
++ 	CG3ACfb = (CG3ACPtr) mmap((caddr_t) CG3ACfb, fbType.fb_size,
++ 	    PROT_READ | PROT_WRITE,
++ 	    MAP_SHARED, fd, 0);
++ 	if (CG3ACfb == (CG3ACPtr) NULL) {
++ #else
+  	if (mmap((caddr_t) CG3ACfb, CG3AC_MONOLEN + 
+  	    CG3AC_ENBLEN + CG3AC_IMAGELEN,
+  	    PROT_READ | PROT_WRITE,
+  	    MAP_SHARED, fd, 0) < 0) {
++ #endif /* sprite */
+  	    Error("Mapping cg3c");
+  	    (void) close(fd);
+  	    return FALSE;
++ 	} else {
++ 	    printf("new addr for CG3ACfb: 0x%x\n", CG3ACfb);
+  	}
+      }
+      else if (fbType.fb_width == CG3B_WIDTH) {
++ #ifdef sprite
++ 	int	sizeToUse;
++ 
++ 	sizeToUse = ((fbType.fb_size + VMMACH_SEG_SIZE) & ~(VMMACH_SEG_SIZE-1))
++ 		+ VMMACH_SEG_SIZE;
++ 	CG3BCfb = (CG3BCPtr) malloc(sizeToUse);
++ 	printf("original CG3BCfb addr: 0x%x, original size: 0x%x\n",
++ 		CG3BCfb, sizeToUse);
++ #else
+  	CG3BCfb = (CG3BCPtr) valloc(CG3BC_MONOLEN + 
+  	    CG3BC_ENBLEN + CG3BC_IMAGELEN);
++ #endif /* sprite */
+  	if (CG3BCfb == (CG3BCPtr) NULL) {
+  	    ErrorF("Could not allocate room for frame buffer.\n");
+  	    return FALSE;
+  	}
+! #ifdef sprite
+! 	CG3BCfb = (CG3BCPtr) mmap((caddr_t) CG3BCfb, fbType.fb_size,
+! 	    PROT_READ | PROT_WRITE,
+! 	    MAP_SHARED, fd, 0);
+! 	if (CG3BCfb == (CG3BCPtr) NULL) {
+! #else
+  	if (mmap((caddr_t) CG3BCfb, CG3BC_MONOLEN + 
+  	    CG3BC_ENBLEN + CG3BC_IMAGELEN,
+  	    PROT_READ | PROT_WRITE,
+  	    MAP_SHARED, fd, 0) < 0) {
++ #endif /* sprite */
+  	    Error("Mapping cg3c");
+  	    (void) close(fd);
+  	    return FALSE;
++ 	} else {
++ 	    printf("new addr for CG3BCfb: 0x%x\n", CG3BCfb);
+  	}
+      }
+      else {
+***************
+*** 500,512 ****
+      }
+  #endif	_MAP_NEW
+  
+-     sunFbs[index].fd = fd;
+      sunFbs[index].info = fbType;
+  /*  sunFbs[index].EnterLeave = sunCG3CSwitch;	*/
+!     if (fbType.fb_width == CG3A_WIDTH)
+  	sunFbs[index].fb = (pointer) CG3ACfb;
+!     else
+  	sunFbs[index].fb = (pointer) CG3BCfb;
+      sunSupportsDepth8 = TRUE;
+      return TRUE;
+  }
+--- 556,573 ----
+      }
+  #endif	_MAP_NEW
+  
+      sunFbs[index].info = fbType;
+  /*  sunFbs[index].EnterLeave = sunCG3CSwitch;	*/
+! #ifndef sprite
+!     sunFbs[index].fb = (pointer) fb_Addr.fb_buffer;
+! #else
+!     if (fbType.fb_width == CG3A_WIDTH) {
+  	sunFbs[index].fb = (pointer) CG3ACfb;
+!     } else if (fbType.fb_width == CG3B_WIDTH) {
+  	sunFbs[index].fb = (pointer) CG3BCfb;
++     }
++ #endif /*sprite*/
++     sunFbs[index].fd = fd;
+      sunSupportsDepth8 = TRUE;
+      return TRUE;
+  }

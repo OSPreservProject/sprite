@@ -1,0 +1,50 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     91.09.17.20.03.46;  author rab;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@' $Header: /sprite/src/cmds/recovinfo/RCS/recovinfo.man,v 1.1 89/12/12 17:54:14 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS NEWTEE cmds
+.BS
+.SH NAME
+newtee \- Copy input to both stdout and the listed files without blocking.
+.SH SYNOPSIS
+\fBnewtee\fR  -[\fIoptions\fR] outputfile1 ...
+.SH OPTIONS
+.IP "\fB\-append\fR" 14
+Append output to listed output files rather than overwrite them.
+.IP "\fB\-inputFile\fR"
+Use the given file as input rather than stdin.
+.IP "\fB\-keepGoing\fR"
+Keep waiting for more input, even at end-of-file, as is done in "tail -f."
+.BE
+.SH INTRODUCTION
+Copy data from input (either a file or stdin) to stdout and also to the
+listed output files.  The data is not buffered and also the data will be
+copied to stdout even if writing to the output files blocks (due to server
+failure, etc).  This is useful for reading /dev/syslog and sending the stdout
+to an X window while copying the data also to a file so that you can read the
+syslog for the machine from anywhere and not just the console.
+.SH KEYWORDS
+tee syslog cat X copy
+@

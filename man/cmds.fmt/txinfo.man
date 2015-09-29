@@ -1,0 +1,68 @@
+
+
+
+TXINFO                    User Commands                    TXINFO
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     txinfo - Return up-to-date termcap information
+
+SSYYNNOOPPSSIISS
+     ttxxiinnffoo
+
+_________________________________________________________________
+
+IINNTTRROODDUUCCTTIIOONN
+     This command will output on its standard  output  two  shell
+     commands,  which  will  set the TERM and TERMCAP enivornment
+     variables to contain correct information for the  ttxx  window
+     attached  to  /dev/tty.   For this command to work properly,
+     the controlling terminal for the process (/dev/tty) must  be
+     attached  to a ttxx window;  ttxxiinnffoo outputs ttxx commands to the
+     window and reads back information supplied by ttxx.
+
+     This command is  particularly  useful  in  .login  files  on
+     machines  that  do  not have ``tx'' entries in their termcap
+     files (and right now there are no machines with "tx" termcap
+     entries),  so  that you can rlogin from your workstation and
+     get the TERM and TERMCAP environment variables defined.  For
+     example,  you  might include the following shell commands in
+     your .login files:
+
+
+          if ( $TERM == tx ) then
+               set noglob
+               eval `txinfo`
+               unset noglob
+          endif
+
+     The nnoogglloobb variable must be unset while processing  the  the
+     TERMCAP entry because it contains special characters like [[,
+     which will confuse the shell unless nnoogglloobb is set.
+
+
+SSEEEE AALLSSOO
+     tx
+
+
+KKEEYYWWOORRDDSS
+     termcap, terminal emulator, typescript, window
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  July 6, 1989                     1
+
+
+

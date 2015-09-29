@@ -1,0 +1,289 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  srv030:1.3 srv028:1.3 srv027:1.3 srv026:1.3 srv024:1.3 srv022:1.3 srv021:1.3 srv019:1.3 srv018:1.3 srv016:1.3 srv015:1.3 srv014:1.3 srv012:1.3 srv011:1.3 srv010:1.3 srv008:1.3 srv007:1.3 srv006:1.3 srv005:1.3 srv004:1.3 srv003:1.3 srv002:1.3 srv001:1.3;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     92.01.21.15.47.55;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.12.01.21.59.10;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.11.18.12.48.56;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@Fix Fsutil_Sync to flush dirty VM pages.
+@
+text
+@/* 
+ * fsutilSync.c --
+ *
+ * Routines controlling the syncing of cached data to disk or the server.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/fsutil/RCS/fsutilSync.c,v 1.2 91/12/01 21:59:10 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <sprite.h>
+
+#include <fs.h>
+#include <vm.h>
+#include <rpc.h>
+#include <fsutil.h>
+#include <fsdm.h>
+#include <fslcl.h>
+#include <fsNameOps.h>
+#include <fsprefix.h>
+#include <fsStat.h>
+#include <sync.h>
+#include <timer.h>
+#include <proc.h>
+#include <trace.h>
+#include <hash.h>
+#include <fsrmt.h>
+
+
+#define	MAX_WAIT_INTERVALS	5
+
+
+Boolean fsutil_ShouldSyncDisks;
+
+int		fsWriteBackInterval = 30;	/* How long blocks have to be
+						 * dirty before they are
+						 * written back. */
+int		fsWriteBackCheckInterval = 5;	/* How often to scan the
+						 * cache for blocks to write
+						 * back. */
+Boolean		fsutil_ShouldSyncDisks = TRUE;	/* TRUE means that we should
+						 * sync the disks when
+						 * Fsutil_SyncProc is called. */
+int		lastHandleWBTime = 0;		/* Last time that wrote back
+						 * file handles. */
+
+#define min(a, b)	((a) < (b) ? (a) : (b))
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_SyncProc --
+ *
+ *	Process to loop and write back things every thiry seconds.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+void
+Fsutil_SyncProc(data, callInfoPtr)
+    ClientData		data;		/* IGNORED */
+    Proc_CallInfo	*callInfoPtr;
+{
+    int	blocksLeft;
+
+    if (Fsutil_TimeInSeconds() - lastHandleWBTime >= fsWriteBackInterval) {
+	(void) Fsutil_HandleDescWriteBack(FALSE, -1);
+	lastHandleWBTime = Fsutil_TimeInSeconds();
+    }
+
+    if (fsutil_ShouldSyncDisks) {
+	Fscache_WriteBack((unsigned) (Fsutil_TimeInSeconds() -
+				      fsWriteBackInterval),
+			  &blocksLeft);
+    }
+    Time_Multiply(timer_IntOneSecond,
+		  min(fsWriteBackCheckInterval, fsWriteBackInterval),
+		  &callInfoPtr->interval);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_Sync --
+ *
+ *	Write back bit maps, file descriptors, and all dirty cache buffers.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Fsutil_Sync(writeBackTime, shutdown)
+    unsigned int writeBackTime;	/* Write back all blocks in the cache and file
+			           descriptors that were dirtied before 
+				   this time. */
+    Boolean	shutdown;	/* TRUE if the kernel is being shutdown. */
+{
+    int		blocksLeft = 0;
+
+    /* 
+     * Flush any dirty VM pages.
+     */
+    Vm_SyncAll();
+
+    /*
+     * Force all file descriptors into the cache.
+     */
+    (void) Fsutil_HandleDescWriteBack(shutdown, -1);
+    /*
+     * Write back the cache.
+     */
+    Fscache_WriteBack(writeBackTime, &blocksLeft);
+    if (shutdown) {
+	if (blocksLeft) {
+	    printf("Fsutil_Sync: %d blocks still locked\n", blocksLeft);
+	}
+#ifdef notdef
+	Fscache_CleanBlocks((ClientData) FALSE, (Proc_CallInfo *) NIL);
+#endif
+    }
+#ifdef SPRITED_LOCALDISK
+    /*
+     * Finally write all domain information to disk.  This will mark each
+     * domain to indicate that we went down gracefully and recovery is in
+     * fact possible.
+     */
+    Fsdm_DomainWriteBack(-1, shutdown, FALSE);
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_SyncStub --
+ *
+ *	Procedure bound to the L1-w keystoke.  This is called at
+ *	keyboard interrupt time and so it makes a Proc_CallFunc
+ *	to invoke the Fsutil_Sync procedure.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Attempts to sync the disks.
+ *
+ *----------------------------------------------------------------------
+ */
+void SyncCallBack();
+
+void
+Fsutil_SyncStub(data)
+    ClientData		data;
+{
+    printf("Queueing call to Fsutil_Sync() ... ");
+    Proc_CallFunc(SyncCallBack, data, time_ZeroSeconds);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_SyncCallBack --
+ *
+ *	Procedure called via Proc_CallFunc to sync the disks.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Syncs the disk.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+SyncCallBack(data, callInfoPtr)
+    ClientData		data;
+    Proc_CallInfo	*callInfoPtr;
+{
+    printf("Syncing disks");
+    Fsutil_Sync(-1, (Boolean)data);
+    callInfoPtr->interval = time_ZeroSeconds;
+    printf(".\n");
+}
+
+@
+
+
+1.2
+log
+@Snapshot.  FS appears to work.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/fsutil/RCS/fsutilSync.c,v 1.1 91/11/18 12:48:56 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d122 6
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsutil/RCS/fsutilSync.c,v 9.2 91/01/26 15:35:47 mgbaker Exp $ SPRITE (Berkeley)";
+a38 1
+#include <stdio.h>
+d56 3
+d89 2
+a90 6
+		fsWriteBackInterval), &blocksLeft, FALSE);
+    }
+    if (fsWriteBackCheckInterval < fsWriteBackInterval) {
+	callInfoPtr->interval = fsWriteBackCheckInterval * timer_IntOneSecond;
+    } else {
+	callInfoPtr->interval = fsWriteBackInterval * timer_IntOneSecond;
+d92 3
+a94 1
+
+d129 1
+a129 1
+    Fscache_WriteBack(writeBackTime, &blocksLeft, shutdown);
+d138 1
+d145 1
+d172 1
+a172 1
+    Proc_CallFunc(SyncCallBack, data, 0);
+d198 1
+a198 1
+    callInfoPtr->interval = 0;
+@

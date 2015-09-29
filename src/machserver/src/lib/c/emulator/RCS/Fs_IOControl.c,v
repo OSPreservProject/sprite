@@ -1,0 +1,164 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  srv030:1.3 srv028:1.3 srv027:1.3 srv026:1.3 srv024:1.3 srv022:1.3 srv021:1.3 srv019:1.3 srv018:1.3 srv016:1.3 srv014:1.3 srv010:1.3 srv008:1.3 srv007:1.3 srv006:1.3 srv005:1.3 srv004:1.3 srv003:1.3 srv002:1.3 srv001:1.3;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     92.03.12.19.22.35;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.12.12.21.41.10;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.12.08.15.05.26;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@Add sigPending parameter to Sprite calls.
+@
+text
+@/* 
+ * Fs_IOControl.c --
+ *
+ *	Source code for the Fs_IOControl library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/lib/c/emulator/RCS/Fs_IOControl.c,v 1.2 91/12/12 21:41:10 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <mach.h>
+#include <status.h>
+#include <fs.h>
+#include <spriteEmuInt.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_IOControl --
+ *
+ *      The "normal" Fs_IOControl interface for user code.
+ *	Retries some operations when GEN_ABORTED_BY_SIGNAL is
+ *	returned from the kernel.  The list of operations is not
+ *	yet inclusive.  
+ *
+ * Results:
+ *	An error code.
+ *
+ * Side effects:
+ *	Variable.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Fs_IOControl(streamID, command, inBufSize, inBuffer, outBufSize, outBuffer)
+    int 	streamID;	/* User's handle on the stream */
+    int 	command;	/* IOControl command */
+    int 	inBufSize;	/* Size of inBuffer */
+    Address 	inBuffer;	/* Command specific input parameters */
+    int 	outBufSize;	/* Size of outBuffer */
+    Address 	outBuffer;	/* Command specific output parameters */
+{
+    ReturnStatus status;
+    kern_return_t kernStatus;
+    Boolean sigPending;
+
+    do {
+	kernStatus = Fs_IOControlStub(SpriteEmu_ServerPort(), streamID,
+				      command, inBufSize,
+				      (vm_address_t)inBuffer,
+				      outBufSize, (vm_address_t)outBuffer,
+				      &status, &sigPending);
+	if (kernStatus != KERN_SUCCESS) {
+	    status = Utils_MapMachStatus(kernStatus);
+	}
+	if (sigPending) {
+	    SpriteEmu_TakeSignals();
+	}
+	if (status == GEN_ABORTED_BY_SIGNAL) {
+	    switch(command) {
+#ifdef notdef
+/*
+ * IOC_LOCK can block forever unexpectedly if a signal is suppressed.
+ */
+		case IOC_LOCK:
+#endif
+		case IOC_UNLOCK:
+		case IOC_NUM_READABLE:
+		case IOC_TRUNCATE:
+		case IOC_GET_OWNER:
+		case IOC_SET_OWNER:
+		case IOC_MAP:
+		case IOC_REPOSITION:
+		case IOC_SET_FLAGS: 
+		case IOC_CLEAR_BITS:
+		break;
+
+		default:
+		return(status);
+	    }
+	}
+    } while (status == GEN_ABORTED_BY_SIGNAL);
+    return(status);
+}
+@
+
+
+1.2
+log
+@Changes for sprited.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/lib/c/emulator/RCS/Fs_IOControl.c,v 1.1 91/12/08 15:05:26 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d57 1
+d64 1
+a64 1
+				      &status);
+d67 3
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/syscall/RCS/Fs_IOControl.c,v 1.2 89/09/27 16:52:47 douglis Exp $ SPRITE (Berkeley)";
+d21 1
+d24 1
+d56 2
+d59 8
+a66 2
+	status = Fs_RawIOControl(streamID, command, inBufSize, inBuffer,
+				 outBufSize, outBuffer);
+@

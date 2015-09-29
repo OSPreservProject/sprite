@@ -1,0 +1,2798 @@
+head     9.15;
+branch   ;
+access   ;
+symbols  ds3100:9.15 sun3:9.15 sprited:9.13.1 sun4nw:9.13 symm:9.13 spur:9.13 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.15
+date     92.04.10.16.42.00;  author kupfer;  state Exp;
+branches ;
+next     9.14;
+
+9.14
+date     92.01.06.15.19.02;  author kupfer;  state Exp;
+branches ;
+next     9.13;
+
+9.13
+date     90.10.19.15.40.14;  author shirriff;  state Exp;
+branches 9.13.1.1;
+next     9.12;
+
+9.12
+date     90.10.05.16.16.00;  author mendel;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     90.08.29.10.59.56;  author mendel;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     90.07.30.11.40.23;  author shirriff;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     90.06.29.18.14.40;  author douglis;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     90.06.27.12.44.38;  author douglis;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.06.27.11.18.36;  author douglis;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.05.27.15.24.16;  author shirriff;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.03.26.12.16.39;  author mgbaker;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     89.12.12.18.05.33;  author mgbaker;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     89.11.27.14.46.24;  author mgbaker;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.11.07.14.44.12;  author jhh;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.26.15.07.59;  author douglis;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.19.32;  author douglis;  state Stable;
+branches ;
+next     8.16;
+
+8.16
+date     89.08.29.17.21.44;  author douglis;  state Exp;
+branches ;
+next     8.15;
+
+8.15
+date     89.07.31.17.58.08;  author douglis;  state Exp;
+branches ;
+next     8.14;
+
+8.14
+date     89.07.19.11.38.51;  author shirriff;  state Exp;
+branches ;
+next     8.13;
+
+8.13
+date     89.06.09.17.53.51;  author douglis;  state Exp;
+branches ;
+next     8.12;
+
+8.12
+date     89.05.23.15.01.19;  author douglis;  state Exp;
+branches ;
+next     8.11;
+
+8.11
+date     89.05.10.14.20.23;  author douglis;  state Exp;
+branches ;
+next     8.10;
+
+8.10
+date     89.04.27.11.31.48;  author douglis;  state Exp;
+branches ;
+next     8.9;
+
+8.9
+date     89.04.14.11.08.22;  author douglis;  state Exp;
+branches ;
+next     8.8;
+
+8.8
+date     89.02.19.22.11.27;  author jhh;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.01.27.09.30.08;  author brent;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.01.06.11.28.43;  author jhh;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.01.02.13.57.00;  author douglis;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     88.12.04.15.33.24;  author ouster;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     88.11.30.15.34.39;  author douglis;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.11.16.09.48.59;  author douglis;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.15.11.40.12;  author douglis;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.37.31;  author douglis;  state Stable;
+branches ;
+next     6.4;
+
+6.4
+date     88.11.03.09.50.53;  author douglis;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.10.30.21.19.05;  author jhh;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.10.07.14.54.23;  author mlgray;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.09.26.10.22.59;  author nelson;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.26.42;  author brent;  state Stable;
+branches ;
+next     5.14;
+
+5.14
+date     88.08.05.14.21.11;  author mlgray;  state Exp;
+branches ;
+next     5.13;
+
+5.13
+date     88.08.01.14.52.50;  author douglis;  state Exp;
+branches ;
+next     5.12;
+
+5.12
+date     88.07.26.11.07.45;  author douglis;  state Exp;
+branches ;
+next     5.11;
+
+5.11
+date     88.07.25.18.45.03;  author douglis;  state Exp;
+branches ;
+next     5.10;
+
+5.10
+date     88.07.07.15.22.09;  author nelson;  state Exp;
+branches ;
+next     5.9;
+
+5.9
+date     88.07.07.15.13.38;  author nelson;  state Exp;
+branches ;
+next     5.8;
+
+5.8
+date     88.05.05.17.59.50;  author nelson;  state Exp;
+branches ;
+next     5.7;
+
+5.7
+date     88.05.04.17.22.22;  author nelson;  state Exp;
+branches ;
+next     5.6;
+
+5.6
+date     88.04.27.19.08.57;  author nelson;  state Exp;
+branches ;
+next     5.5;
+
+5.5
+date     88.04.13.11.29.10;  author ouster;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     88.01.29.10.37.18;  author brent;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     88.01.20.15.48.25;  author nelson;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.10.15.12.09.05;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.10.15.10.12.48;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.49.58;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.13.1.1
+date     92.01.26.22.57.45;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.15
+log
+@Change the default action from IGNORE to KILL.  Use names, not
+numbers, for UNIX-specific signals.
+@
+text
+@/* 
+ * signals.c --
+ *
+ * Copyright 1988 Regents of the University of California.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * This contains routines that deal with Sprite signals.  See the man pages
+ * on signals for an explanation of the Sprite signaling facilities.  The
+ * only thing that is explained in these comments is the implementation of
+ * these facilities.
+ *
+ * SYNCHRONIZATION
+ *
+ * Whenever the signal state of a process is modified, the sig monitor lock
+ * is usually grabbed, and the process is usually locked (e.g., LocalSend).
+ * Code that doesn't obtain the sig monitor lock is in migration and
+ * signals initialization (e.g., fork & exec); the process is locked in
+ * these cases.  Currently (18-Dec-1991) code that doesn't lock the process
+ * (e.g., some calls to SigClearPendingMask) only works on the current
+ * process (i.e., a process is changing its own pending signals list), and
+ * is therefore unlikely to interfere with the code that didn't obtain the
+ * sig monitor lock.  (XXX This really ought to get cleaned up.)
+ * 
+ * When the signal state is looked at no locking is done.  It is assumed
+ * that there are two ways that the signal state will be looked at:
+ *
+ *      1) A process in the middle of executing a system call
+ *         will check to see if any signals are pending before waiting for
+ *         an extended period (i.e. waiting for a read to complete).  If
+ *         not then it will go to sleep until either a signal comes in or
+ *         the thing that it is waiting for completes.  This does not
+ *         require any synchronization on reading because the routine
+ *         which is used to put a process to sleep (see Sync_WaitEventInt)
+ *         will check for signals with the master lock down before the
+ *         process is put to sleep.  If there are signals pending, then
+ *         the sleep call will return immediately.  Otherwise if a signal
+ *         comes in after the process goes to sleep then it will be
+ *         awakened by the Sig_Send which calls Sync_WakeWaitingProcess which
+ *	   synchronizes correctly with the Sync_Wait calls.  Thus there
+ *	   is no way to miss a signal in this case.
+ *
+ *	2) A process is returning to user mode after trapping into the kernel
+ *	   for some reason and it wants to see if signals are pending before
+ *	   it returns.  In this case the trap handler (see Exc_Trap) will 
+ *	   disable interrupts before checking to see if signals are pending.  
+ *	   If they are then it will enable interrupts and process the signal.
+ *	   Otherwise it will return to user mode with interrupts being enabled
+ *	   on the return to user mode.  If a signal came in when 
+ *	   interrupts were disabled then once interrupts are enabled the 
+ *	   process will be interrupted and return back into the kernel.  
+ *	   Likewise once the user process returns to user mode if a signal is 
+ *	   delivered then the user process will be interrupted.  Interruption
+ *	   is possible of course only on a multi-processor. Once interrupted it
+ *	   will be forced back into the kernel where it will discover a
+ *	   signal.  Thus a signal cannot be missed in this case either.
+ *
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/sig/signals.c,v 9.14 92/01/06 15:19:02 kupfer Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <stdlib.h>
+#include <sig.h>
+#include <sync.h>
+#include <dbg.h>
+#include <list.h>
+#include <proc.h>
+#include <procMigrate.h>
+#include <status.h>
+#include <sched.h>
+#include <sigInt.h>
+#include <rpc.h>
+#include <net.h>
+#include <vm.h>
+#include <bstring.h>
+#include <stdio.h>
+
+unsigned int 	sigBitMasks[SIG_NUM_SIGNALS];
+int		sigDefActions[SIG_NUM_SIGNALS];
+int		sigCanHoldMask;
+
+Sync_Lock	sigLock;
+Sync_Condition	signalCondition;
+
+static void LocalSend _ARGS_((Proc_ControlBlock *procPtr, int sigNum, int code,
+			Address addr));
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_Init --
+ *
+ *	Initialize the signal data structures.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The set of bit masks and the set of default actions are set up.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Sig_Init()
+{
+    int	i;
+
+    Sync_LockInitDynamic(&sigLock, "Sig:sigLock");
+
+    for (i = SIG_MIN_SIGNAL; i < SIG_NUM_SIGNALS; i++) {
+	sigBitMasks[i] = Sig_NumberToMask(i);
+	sigDefActions[i] = SIG_KILL_ACTION;
+    }
+
+    /* 
+     * Note that SIG_RESUME uses the "kill" action, even though it's not 
+     * actually used to kill the process.
+     */
+    sigDefActions[SIG_DEBUG]		= SIG_DEBUG_ACTION;
+    sigDefActions[SIG_ARITH_FAULT]	= SIG_DEBUG_ACTION;
+    sigDefActions[SIG_ILL_INST] 	= SIG_DEBUG_ACTION;
+    sigDefActions[SIG_ADDR_FAULT] 	= SIG_DEBUG_ACTION;
+    sigDefActions[SIG_BREAKPOINT] 	= SIG_DEBUG_ACTION;
+    sigDefActions[SIG_TRACE_TRAP] 	= SIG_DEBUG_ACTION;
+    sigDefActions[SIG_MIGRATE_TRAP] 	= SIG_MIGRATE_ACTION;
+    sigDefActions[SIG_MIGRATE_HOME] 	= SIG_MIGRATE_ACTION;
+    sigDefActions[SIG_SUSPEND]		= SIG_SUSPEND_ACTION;
+    sigDefActions[SIG_TTY_INPUT]	= SIG_SUSPEND_ACTION;
+    sigDefActions[SIG_URGENT]		= SIG_IGNORE_ACTION;
+    sigDefActions[SIG_CHILD]		= SIG_IGNORE_ACTION;
+    sigDefActions[SIG_TTY_SUSPEND]	= SIG_SUSPEND_ACTION;
+    sigDefActions[SIG_TTY_OUTPUT]	= SIG_SUSPEND_ACTION;
+    sigDefActions[SIG_IO_READY]		= SIG_IGNORE_ACTION;
+    sigDefActions[SIG_WINDOW_CHANGE]	= SIG_IGNORE_ACTION;
+
+    sigCanHoldMask = 
+	      ~(sigBitMasks[SIG_ARITH_FAULT] | sigBitMasks[SIG_ILL_INST] |
+		sigBitMasks[SIG_ADDR_FAULT]  | sigBitMasks[SIG_KILL] |
+		sigBitMasks[SIG_BREAKPOINT]  | sigBitMasks[SIG_TRACE_TRAP] |
+		sigBitMasks[SIG_MIGRATE_HOME] | sigBitMasks[SIG_SUSPEND]);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_ProcInit --
+ *
+ *	Initialize the signal data structures for the first process.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Signal state initialized.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Sig_ProcInit(procPtr)
+    register	Proc_ControlBlock	*procPtr;
+{
+    procPtr->sigHoldMask = 0;
+    procPtr->sigPendingMask = 0;
+    bcopy((Address)sigDefActions,(Address)procPtr->sigActions,
+              sizeof(sigDefActions));
+    bzero((Address)procPtr->sigMasks,sizeof(procPtr->sigMasks)); 
+    bzero((Address)procPtr->sigCodes,sizeof(procPtr->sigCodes));
+    procPtr->sigFlags = 0;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_Fork --
+ *
+ *	Copy over the parents signal state into the child.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Signal state copied from parent to child and pending mask cleared in
+ *	child.  Migration is held until the first return into user mode.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Sig_Fork(parProcPtr, childProcPtr)
+    register	Proc_ControlBlock	*parProcPtr;
+    register	Proc_ControlBlock	*childProcPtr;
+{
+    /*
+     * Copy the parent's signal state to the child.  Set up migration
+     * to be held initially.  On the first return to user mode, after
+     * signals are processed, migration will be reenabled.
+     */
+    childProcPtr->sigHoldMask = parProcPtr->sigHoldMask |
+	    Sig_NumberToMask(SIG_MIGRATE_TRAP);
+    childProcPtr->sigPendingMask = 0;
+    bcopy((Address)parProcPtr->sigActions, 
+	  (Address)childProcPtr->sigActions,
+	  sizeof(childProcPtr->sigActions)); 
+    bcopy((Address)parProcPtr->sigMasks, 
+	  (Address)childProcPtr->sigMasks,
+    	  sizeof(childProcPtr->sigMasks)); 
+    bzero((Address)childProcPtr->sigCodes,sizeof(childProcPtr->sigCodes));
+    childProcPtr->sigFlags = 0;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_Exec --
+ *
+ *	Clear all signal handlers on exec.  Assumed called with the proc
+ * 	table entry locked such that signals against this process are
+ *	prevented.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	All signal handlers are cleared and the pending mask is cleared.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Sig_Exec(procPtr)
+    Proc_ControlBlock	*procPtr;
+{
+    register	int	*actionPtr;
+    register	int	i;
+
+    for (i = SIG_MIN_SIGNAL, actionPtr = &procPtr->sigActions[SIG_MIN_SIGNAL]; 
+	 i < SIG_NUM_SIGNALS;
+	 i++, actionPtr++) {
+	if (*actionPtr > SIG_SUSPEND_ACTION) {
+	    /*
+	     * The action contains a signal handler to call.  Reset back to
+	     * the default action.
+	     */
+	    *actionPtr = sigDefActions[i];
+	    procPtr->sigMasks[i] = 0;
+	}
+    }
+    procPtr->sigPendingMask = 0;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_ChangeState --
+ *
+ *	Set the entire signal state of the process to that given.  When
+ *	setting the state verify that improper signals are not blocked or
+ *	ignored.  The process is assumed to be locked.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The signal actions and hold mask will be set for the process.  
+ *	Might change the suspend/resume flags in the PCB.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+Sig_ChangeState(procPtr, actions, sigMasks, pendingMask, sigCodes, holdMask)
+    register	Proc_ControlBlock	*procPtr;
+    int					actions[];
+    register	int			sigMasks[];
+    int					pendingMask;
+    int					sigCodes[];
+    int					holdMask;
+{
+    register	int	i;
+    register	int	*actionPtr;
+
+    LOCK_MONITOR;
+
+    for (i = SIG_MIN_SIGNAL, actionPtr = &actions[SIG_MIN_SIGNAL]; 
+	 i < SIG_NUM_SIGNALS; 
+	 i++, actionPtr++) {
+	if (i == SIG_KILL) {
+	    continue;
+	}
+	procPtr->sigActions[i] = *actionPtr;
+	if (*actionPtr == SIG_IGNORE_ACTION) {
+	    /*
+	     * If is ignore action then make sure that is not one of the
+	     * signals that cannot be ignored.  If not then remove the signal
+	     * from the pending mask.
+	     */
+	    if (sigBitMasks[i] & sigCanHoldMask) {
+		pendingMask &= ~sigBitMasks[i];
+	    } else {
+		procPtr->sigActions[i] = sigDefActions[i];
+	    }
+	} else if (*actionPtr > SIG_NUM_ACTIONS) {
+	    /*
+	     * If greater than one of the actions then must be the address
+	     * of a signal handler so store the signal mask.
+	     */
+	    procPtr->sigMasks[i] = sigMasks[i] & sigCanHoldMask;
+	}
+    }
+
+    procPtr->sigPendingMask = pendingMask;
+    
+    /* 
+     * Make sure the suspend/resume flags are consistent with the pending 
+     * signals mask.
+     */
+    procPtr->genFlags &= ~PROC_RESUME_PROCESS;
+    if (pendingMask & Sig_NumberToMask(SIG_SUSPEND)) {
+	procPtr->genFlags |= PROC_PENDING_SUSPEND;
+    } else {
+	procPtr->genFlags &= ~PROC_PENDING_SUSPEND;
+    }
+
+    procPtr->sigHoldMask = holdMask & sigCanHoldMask;
+    bcopy((Address) sigCodes, (Address) procPtr->sigCodes,
+          sizeof(procPtr->sigCodes));
+    procPtr->specialHandling = 1;
+
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_UserSend --
+ *	Send a signal to a process.  Call the internal routine to do the
+ *	work.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus	
+Sig_UserSend(sigNum, pid, familyID)
+    int		sigNum;		/* The signal to send. */
+    Proc_PID	pid;		/* The id number of the process or process
+				   family. */
+    Boolean	familyID;	/* Whether the id is a process id or a process
+				   group id. */
+{
+    return(Sig_Send(sigNum, SIG_NO_CODE, pid, familyID, (Address)0));
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LocalSend --
+ *
+ *	Send a signal to a process on the local machine.  It assumed that the
+ *	process is locked down when we are called.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Signal pending mask and code modified.  The process's suspend and 
+ *	resume flags might also get changed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY static void
+LocalSend(procPtr, sigNum, code, addr)
+    register	Proc_ControlBlock	*procPtr;
+    int					sigNum;
+    int					code;
+    Address				addr;
+{
+    int	sigBitMask;
+
+    LOCK_MONITOR;
+
+    /*
+     * Signals can't be sent to kernel processes unless the system is being
+     * shutdown since kernel processes never get the opportunity to handle
+     * signals.
+     */
+    if ((procPtr->genFlags & PROC_KERNEL) && !sys_ShuttingDown) {
+	UNLOCK_MONITOR;
+	return;
+    }
+
+    if ((procPtr->sigActions[sigNum] == SIG_DEBUG_ACTION) &&
+	proc_KillMigratedDebugs && (procPtr->genFlags & PROC_FOREIGN)) {
+	/*
+	 * Kill the process rather than letting it go silently into that
+	 * good night (on the wrong machine).   Debugging migrated
+	 * processes is nasty.  It would be nice if we could redirect
+	 * the printf to the process's home node, too.
+	 */
+	sigNum = SIG_KILL;
+	if (proc_MigDebugLevel > 1) {
+	    printf("Warning: killing a migrated process that would have gone into the debugger, pid %x rpid %x uid %d.\n",
+	        procPtr->processID, (int) procPtr->peerProcessID, 
+		procPtr->userID);
+
+	}
+    }
+
+    /*
+     * Only send the signal if it shouldn't be ignored and if it isn't
+     * a signal to migrate an unmigrated process.  (The latter can easily
+     * happen when signalling a process family to migrate home.)
+     */
+    if ((procPtr->sigActions[sigNum] != SIG_IGNORE_ACTION) &&
+	!((sigNum == SIG_MIGRATE_HOME) && (procPtr->peerHostID == NIL))) {
+
+	if (sigNum == SIG_RESUME) {
+	    /* 
+	     * Resume the suspended process.
+	     */
+	    Proc_ResumeProcess(procPtr, FALSE);
+	}
+	if (procPtr->sigActions[sigNum] == SIG_SUSPEND_ACTION &&
+		   procPtr->state == PROC_SUSPENDED) {
+	    /*
+	     * Are sending a suspend signal to a process that is already
+	     * suspended.  In this case just notify the parent that the 
+	     * process has been suspended.  This is necessary because resume
+	     * signals are sent by processes to debugged processes which do not
+	     * really get resumed.  However, the signaling process will not
+	     * be informed that the process it sent the signal to did not get
+	     * resumed (SIG_RESUME works regardless whether it actually 
+	     * resumes anything or not).  Thus a process may believe that
+	     * a process is running even though it really isn't and it may
+	     * send a suspend signal to an already suspended process.
+	     *
+	     * There is a potential race here between a process getting
+	     * suspended and us checking here but it doesn't matter.  If
+	     * it gets suspended after we check then the parent will get 
+	     * notified anyway.
+	     */
+	    Proc_InformParent(procPtr, PROC_SUSPEND_STATUS);
+	} else if (sigNum != SIG_RESUME ||
+		procPtr->sigActions[sigNum] != SIG_KILL_ACTION) {
+	    sigBitMask = sigBitMasks[sigNum];
+	    procPtr->sigPendingMask |= sigBitMask;
+	    procPtr->sigCodes[sigNum] = code;
+	    procPtr->sigAddr = (int)addr;
+	    if (sigNum == SIG_SUSPEND) {
+		/* 
+		 * Set the "pending suspend" flag in case the process is 
+		 * resumed before it actually suspends.  Clear the "resume" 
+		 * flag in case the process is resumed and then suspended 
+		 * again before the first suspend is processed.
+		 */
+		procPtr->genFlags |= PROC_PENDING_SUSPEND;
+		procPtr->genFlags &= ~PROC_RESUME_PROCESS;
+	    }
+	    if (procPtr->sigHoldMask & sigBitMask & ~sigCanHoldMask) {
+		/*
+		 * We received a signal that was blocked but can't be blocked
+		 * by users.  It only can be blocked if we are in the middle of
+		 * executing a signal handler for the signal.  So we set things
+		 * up to take the default action and make the signal unblocked
+		 * so that we don't get an infinite loop of errors.
+		 */
+		procPtr->sigHoldMask &= ~sigBitMask;
+		procPtr->sigActions[sigNum] = sigDefActions[sigNum];
+	    }
+	    procPtr->specialHandling = 1;
+	    /*
+	     * If the process is waiting then wake it up.
+	     */
+	    Sync_WakeWaitingProcess(procPtr);
+	    if (sigNum == SIG_KILL || sigNum == SIG_MIGRATE_TRAP ||
+		sigNum == SIG_MIGRATE_HOME) {
+		if (sigNum == SIG_KILL && procPtr->state == PROC_NEW &&
+		    (procPtr->genFlags & PROC_FOREIGN)) {
+		    /*
+		     * The process was only partially created.  We can't make
+		     * it runnable so we have to reclaim it directly.
+		     * Do this in the background so that
+		     * Proc_DestroyMigratedProc has to wait for Sig_Send
+		     * to unlock the process and we avoid a race condition.
+		     */
+		    Proc_CallFunc(Proc_DestroyMigratedProc,
+				  (ClientData) procPtr->processID, 0);
+		} else {
+		    /*
+		     * Resume the process so that we can perform the signal.
+		     * If we're killing it, we tell Proc_ResumeProcess so it
+		     * will even wake up a debugged process.
+		     */
+		    Proc_ResumeProcess(procPtr,
+				       (sigNum == SIG_KILL) ? TRUE : FALSE);
+		}
+	    }
+	}
+    }
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_SendProc --
+ *
+ *	Store the signal in the pending mask and store the code for the given
+ *	process.  The code and addr are passed to the user interrupt
+ *	handler.  The code indicates the cause of the signal.  The addr
+ *	indicates the address of the fault.
+ *
+ *	NOTE: Assumes that we are called without the master lock down and
+ *	with the process locked.
+ *
+ * Results:
+ *	In the case of a local process, SUCCESS is returned.  If the process
+ *	is migrated, error conditions such as RPC_TIMEOUT may be returned.
+ *
+ * Side effects:
+ *	Signal pending mask and code modified.  If the process being signalled
+ *	is migrated, an RPC is sent.  If the process is local, the sched_Mutex
+ *	master lock is grabbed.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Sig_SendProc(procPtr, sigNum, code, addr)
+    register	Proc_ControlBlock *procPtr;
+    int				  sigNum;
+    int				  code;
+    Address			  addr;
+{
+    ReturnStatus status;
+
+    /*
+     * Make sure that the signal is in range.
+     */
+    if (sigNum < SIG_MIN_SIGNAL || sigNum >= SIG_NUM_SIGNALS) {
+	if (sigNum == 0) {
+	    return(SUCCESS);
+	} else {
+	    return(SIG_INVALID_SIGNAL);
+	}
+    }
+
+    /*
+     * Handle migrated processes specially. There's a race condition
+     * when sending a signal to a migrated process, since it can
+     * migrate back to this host while we're doing it.  Therefore,
+     * if the problem was that the process didn't exist, check
+     * to see if it has migrated back to this host (it's no longer MIGRATED).
+     * We don't have to check for MIGRATING, since SigMigSend waits for
+     * a migration in progress to complete.   Also make sure that while the
+     * signal is sent and the process is unlocked, it processID doesn't change.
+     */
+    if (procPtr->state == PROC_MIGRATED ||
+        (procPtr->genFlags & PROC_MIGRATING)) {
+	Proc_PID processID;
+	processID = procPtr->processID;
+	status = SigMigSend(procPtr, sigNum, code, addr);
+	if (processID != procPtr->processID) {
+	    return(status);
+	}
+	if ((status != PROC_INVALID_PID) ||
+	    (procPtr->state == PROC_MIGRATED)) {
+	    return(status);
+	}
+    }
+    if (procPtr->state == PROC_EXITING) {
+	return(PROC_INVALID_PID);
+    } else if (procPtr->state == PROC_NEW) {
+	if (procPtr->genFlags & PROC_FOREIGN && proc_MigDebugLevel > 0) {
+	    printf("Warning: got signal for process %x before migration complete.\n",
+		   procPtr->processID);
+	}
+	return(PROC_INVALID_PID);
+    } else {
+	LocalSend(procPtr, sigNum, code, addr);
+	return(SUCCESS);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_Send --
+ *
+ *	Send a signal to a process.  This entails marking the signal into
+ *	the signal pending mask for the process and waking up the process
+ *	if it is asleep.   
+ *
+ * Results:
+ *	An error is the signal or the process id are invalid.  SUCCESS 
+ *	otherwise.
+ *
+ * Side effects:
+ *	The signal information in the proc table for the process that
+ *	is being sent the signal may be modified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus	
+Sig_Send(sigNum, code, id, familyID, addr)
+    int		sigNum;		/* The signal to send. */
+    int		code;		/* The code that goes with the signal. */
+    Proc_PID	id;		/* The id number of the process or process
+				   family. */
+    Boolean	familyID;	/* Whether the id is a process id or a process
+				   group id. */
+    Address	addr;		/* The address of the fault */
+{
+    register	Proc_ControlBlock	*procPtr;
+    Proc_PCBLink			*procLinkPtr;
+    ReturnStatus			status;
+    List_Links				*familyList;
+    int					userID;
+    int					hostID;
+
+    if (!Proc_ComparePIDs(id, PROC_MY_PID)) {
+	hostID = Proc_GetHostID(id);
+	if (hostID != rpc_SpriteID) {
+	    /*
+	     * Send a remote signal.
+	     */
+	    if (hostID == NET_BROADCAST_HOSTID ||
+		hostID >  NET_NUM_SPRITE_HOSTS || hostID < 0) {
+		return(PROC_INVALID_PID);
+	    } else {
+		return(SigSendRemoteSignal(hostID, sigNum, code, id,
+					   familyID, addr));
+	    }
+	}
+    }
+    /*
+     * Get the pointer to the control block if this is a valid process id.
+     */
+    if (!familyID) {
+	if (Proc_ComparePIDs(id, PROC_MY_PID)) {
+	    procPtr = Proc_GetEffectiveProc();
+	    if (procPtr == (Proc_ControlBlock *) NIL) {
+		panic("Sig_Send: procPtr == NIL\n");
+	    }
+	    Proc_Lock(procPtr);
+	} else {
+	    procPtr = Proc_LockPID(id);
+	    if (procPtr == (Proc_ControlBlock *) NIL) {
+		return(PROC_INVALID_PID);
+	    }
+	    if (!Proc_HasPermission(procPtr->effectiveUserID)) {
+		Proc_Unlock(procPtr);
+		return(PROC_UID_MISMATCH);
+	    }
+	}
+	status = Sig_SendProc(procPtr, sigNum, code, addr);
+	Proc_Unlock(procPtr);
+    } else {
+	Proc_PID *pidArray;
+	int i;
+	int numProcs;
+	
+	status = Proc_LockFamily((int)id, &familyList, &userID);
+	if (status != SUCCESS) {
+	    return(status);
+	}
+	if (!Proc_HasPermission(userID)) {
+            Proc_UnlockFamily((int)id);
+            return(PROC_UID_MISMATCH);
+        }
+
+	/*
+	 * Send a signal to everyone in the given family.  We do this
+	 * by grabbing a list of process IDs and then sending the signals
+	 * with the family not locked, to avoid deadlocks resulting from
+	 * signals being sent with the family locked.
+	 */
+
+	numProcs = 0;
+	LIST_FORALL(familyList, (List_Links *) procLinkPtr) {
+	    numProcs++;
+	}
+	pidArray = (Proc_PID *) malloc(numProcs * sizeof(Proc_PID));
+	i = 0;
+	LIST_FORALL(familyList, (List_Links *) procLinkPtr) {
+	    procPtr = procLinkPtr->procPtr;
+	    Proc_Lock(procPtr);
+	    pidArray[i] = procPtr->processID;
+	    Proc_Unlock(procPtr);
+	    i++;
+	    if (i > numProcs) {
+		panic("Sig_Send: process family changed size while locked.\n");
+		free((Address) pidArray);
+		return(FAILURE);
+	    }
+	}
+	Proc_UnlockFamily((int)id);
+	for (i = 0; i < numProcs; i++) {
+	    procPtr = Proc_LockPID(pidArray[i]);
+	    if (procPtr == (Proc_ControlBlock *) NIL) {
+		/*
+		 * Race condition: process got removed.
+		 */
+		continue;
+	    }
+	    status = Sig_SendProc(procPtr, sigNum, code, addr);
+	    Proc_Unlock(procPtr); 
+	    if (status != SUCCESS) {
+		break;
+	    }
+	}
+	free((Address) pidArray);
+    }
+
+    return(status);
+}
+
+typedef struct {
+	int		sigNum;
+	int		code;
+	Proc_PID	id;
+	Boolean		familyID;
+	int		effUid;
+	Address		addr;
+} SigParms;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SigSendRemoteSignal --
+ *
+ *	Send a signal to a process on a remote machine.
+ *
+ * Results:
+ *	Return the status from the remote machine.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus	
+SigSendRemoteSignal(hostID, sigNum, code, id, familyID, addr)
+    int		hostID;		/* Host to send message to. */
+    int		sigNum;		/* Signal to send. */
+    int		code;		/* Code to send. */
+    Proc_PID	id;		/* ID to send it to. */
+    Boolean	familyID;	/* TRUE if are sending to a process family. */
+    Address	addr;		/* Address of signal. */
+{
+    SigParms		sigParms;
+    Rpc_Storage		storage;
+    Proc_ControlBlock	*procPtr;
+
+    sigParms.sigNum = sigNum;
+    sigParms.code = code;
+    sigParms.id = id;
+    sigParms.familyID = familyID;
+    procPtr = Proc_GetEffectiveProc();
+    sigParms.effUid = procPtr->effectiveUserID;
+    sigParms.addr = addr;
+
+    storage.requestParamPtr = (Address)&sigParms;
+    storage.requestParamSize = sizeof(sigParms);
+    storage.requestDataPtr = (Address)NIL;
+    storage.requestDataSize = 0;
+    storage.replyParamPtr = (Address)NIL;
+    storage.replyParamSize = 0;
+    storage.replyDataPtr = (Address)NIL;
+    storage.replyDataSize = 0;
+
+    return(Rpc_Call(hostID, RPC_SIG_SEND, &storage));
+
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_RpcSend --
+ *
+ *	Stub to handle a remote signal RPC.
+ *
+ * Results:
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	Reply is sent.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus	
+Sig_RpcSend(srvToken, clientID, command, storagePtr)
+    ClientData 		 srvToken;	/* Handle on server process passed to
+				 	 * Rpc_Reply */
+    int 		 clientID;	/* Sprite ID of client host */
+    int 		 command;	/* Command identifier */
+    register Rpc_Storage *storagePtr;	/* The request fields refer to the 
+					 * request buffers and also indicate 
+					 * the exact amount of data in the 
+					 * request buffers.  The reply fields 
+					 * are initialized to NIL for the
+				 	 * pointers and 0 for the lengths.  
+					 * This can be passed to Rpc_Reply */
+{
+    SigParms		*sigParmsPtr;
+    ReturnStatus	status;
+    Proc_ControlBlock	*procPtr;
+    int			effUid;
+
+    sigParmsPtr = (SigParms *) storagePtr->requestParamPtr;
+    procPtr = Proc_GetCurrentProc();
+    effUid = procPtr->effectiveUserID;
+    procPtr->effectiveUserID = sigParmsPtr->effUid;
+    status = Sig_Send(sigParmsPtr->sigNum, sigParmsPtr->code, sigParmsPtr->id,
+		      sigParmsPtr->familyID, sigParmsPtr->addr);
+    procPtr->effectiveUserID = effUid;
+    Rpc_Reply(srvToken, status, storagePtr, (int(*)())NIL, (ClientData)NIL);
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_SetHoldMask --
+ *
+ *	Set the signal hold mask for the current process.  Return the
+ *	old mask.  No synchronization required since the only process
+ *	that can modify the hold mask is this process.
+ *
+ * Results:
+ *	Error if the place to store the old mask is invalid,  SUCCESS
+ *	otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus	
+Sig_SetHoldMask(newMask, oldMaskPtr)
+    int	newMask;	/* Mask to set the hold mask to. */
+    int	*oldMaskPtr;	/* Where to store the old mask. */
+{
+    register	Proc_ControlBlock	*procPtr;
+
+    /*
+     * Get out the old mask value and store the new one.
+     */
+
+    procPtr = Proc_GetActualProc();
+
+    if (oldMaskPtr != USER_NIL) {
+	if (Vm_CopyOut(sizeof(procPtr->sigHoldMask), 
+		       (Address) &(procPtr->sigHoldMask),
+		       (Address) oldMaskPtr) != SUCCESS) {
+	    return(SYS_ARG_NOACCESS);
+	}
+    }
+
+    procPtr->sigHoldMask = newMask & sigCanHoldMask;
+    procPtr->specialHandling = 1;
+
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_SetAction --
+ *
+ *	Set the action for a particular signal.
+ *
+ * Results:
+ *	Error if the action, signal, or handler is invalid.
+ *
+ * Side effects:
+ *	The sigAction and sigMasks fields may be modified for the
+ *	particular signal.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus	
+Sig_SetAction(sigNum, newActionPtr, oldActionPtr)
+    int		sigNum;	       /* The signal for which the action is to be 
+				  set. */
+    Sig_Action	*newActionPtr; /* The actions to take for the signal. */
+    Sig_Action	*oldActionPtr; /* The action that was taken for the signal. */
+{
+    Proc_ControlBlock	*procPtr;
+    Address		dummy;
+    Sig_Action		action;
+
+    /*
+     * Make sure that the signal is in range.
+     */
+    if (sigNum < SIG_MIN_SIGNAL || sigNum >= SIG_NUM_SIGNALS || 
+	sigNum == SIG_KILL || sigNum == SIG_SUSPEND) {
+	return(SIG_INVALID_SIGNAL);
+    }
+
+    procPtr = Proc_GetActualProc();
+
+    /* 
+     * Copy out the current action.  There are two cases:
+     *
+     *    1) The current action really contains a handler to call.  Thus
+     *	     the current action is SIG_HANDLE_ACTION.
+     *	  2) The current action is one of the other four actions.
+     */
+
+    if (oldActionPtr != (Sig_Action *) USER_NIL) {
+	if (procPtr->sigActions[sigNum] > SIG_NUM_ACTIONS) {
+	    action.action = SIG_HANDLE_ACTION;
+	    action.handler = (int (*)())procPtr->sigActions[sigNum];
+	    action.sigHoldMask = procPtr->sigMasks[sigNum];
+	} else {
+	    if (procPtr->sigActions[sigNum] == sigDefActions[sigNum]) {
+		action.action = SIG_DEFAULT_ACTION;
+	    } else {
+		action.action = procPtr->sigActions[sigNum];
+	    }
+	}
+	if (Vm_CopyOut(sizeof(action), (Address) &action, 
+		(Address) oldActionPtr) != SUCCESS) {
+	    return(SYS_ARG_NOACCESS);
+	}
+    }
+
+    /*
+     * Copy in the action to take.
+     */
+
+    if (Vm_CopyIn(sizeof(action), (Address) newActionPtr, 
+		(Address) &action) != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    }
+
+    /*
+     * Make sure that the action is valid.
+     */
+
+    if (action.action < 0 || action.action > SIG_NUM_ACTIONS) {
+	return(SIG_INVALID_ACTION);
+    }
+
+    if (action.action == SIG_DEFAULT_ACTION) {
+	action.action = sigDefActions[sigNum];
+    }
+
+    /*
+     * Store the action.  If it is SIG_HANDLE_ACTION then the handler is stored
+     * in place of the action.
+     */
+
+    if (action.action == SIG_HANDLE_ACTION) {
+	if (Vm_CopyIn(4, (Address) ((unsigned int) (action.handler)), 
+			(Address) &dummy) != SUCCESS) {
+	    return(SYS_ARG_NOACCESS);
+	}
+	procPtr->sigMasks[sigNum] = 
+		(sigBitMasks[sigNum] | action.sigHoldMask) & sigCanHoldMask;
+	procPtr->sigActions[sigNum] = (unsigned int) action.handler;
+    } else if (action.action == SIG_IGNORE_ACTION) {
+
+	/*
+	 * Only actions that can be blocked can be ignored.  This prevents a
+	 * user from ignoring a signal such as a bus error which would cause
+	 * the process to take a bus error repeatedly.
+	 */
+
+	if (sigBitMasks[sigNum] & sigCanHoldMask) {
+	    procPtr->sigActions[sigNum] = SIG_IGNORE_ACTION;
+	    Proc_Lock(procPtr);
+	    SigClearPendingMask(procPtr, sigNum);
+	    if (sigNum == SIG_SUSPEND) {
+		procPtr->genFlags &= ~(PROC_PENDING_SUSPEND |
+				       PROC_RESUME_PROCESS);
+	    }
+	    Proc_Unlock(procPtr);
+	} else {
+	    return(SIG_INVALID_SIGNAL);
+	}
+	procPtr->sigMasks[sigNum] = 0;
+    } else {
+	procPtr->sigActions[sigNum] = action.action;
+	procPtr->sigMasks[sigNum] = 0;
+    }
+
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_Pause --
+ *
+ *	Atomically change signal hold mask and wait for a signal to arrive.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY ReturnStatus	
+Sig_Pause(sigHoldMask)
+    int	sigHoldMask;	/* The value that the mask of held signals is to be set
+			   to while waiting for a signal to arrive. */
+{
+    register	Proc_ControlBlock	*procPtr;
+    ReturnStatus status;
+    int migMask;
+
+    LOCK_MONITOR;
+
+    procPtr = Proc_GetActualProc();
+
+    /*
+     * The signal mask cannot be restored until the signal handler has
+     * had a chance to be called for the signal that caused Sig_Pause
+     * to return.  To allow this the current hold mask is stored in the
+     * proc table and the flag sigPause is set to be true to indicate that
+     * the hold mask has to be restored after the signal handler has had a
+     * chance to be called.
+     */
+
+    procPtr->oldSigHoldMask = procPtr->sigHoldMask;
+    procPtr->sigFlags |= SIG_PAUSE_IN_PROGRESS;
+    procPtr->sigHoldMask = sigHoldMask & sigCanHoldMask;
+    procPtr->specialHandling = 1;
+
+    /*
+     * Wait on the signal condition.  As it turns out since a signal
+     * wakes up the process regardless what it is sleeping on, this condition
+     * variable is never broadcasted on, but we have to wait on something in 
+     * order to release the monitor lock.
+     *
+     * Don't let a Sig_Pause be interrupted by a migrate trap signal.
+     * So, if none of the signal bits are set besides migration-related
+     * signals, and a migration-related signal bit is set, let the user-level
+     * code retry  the signal.
+     */
+    (void) Sync_Wait(&signalCondition, TRUE);
+
+    migMask = (Sig_NumberToMask(SIG_MIGRATE_TRAP)) |
+	(Sig_NumberToMask(SIG_MIGRATE_HOME));
+    if ((! (procPtr->sigPendingMask & ~migMask)) &&
+	(procPtr->sigPendingMask & migMask)) {
+	status = GEN_ABORTED_BY_SIGNAL;
+    } else {
+	status = SUCCESS;
+    }
+    
+    UNLOCK_MONITOR;
+
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SigClearPendingMask --
+ *
+ *	Remove the given signal from the pending mask.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Pending mask for process modified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+SigClearPendingMask(procPtr, sigNum)
+    register	Proc_ControlBlock	*procPtr;
+    int					sigNum;
+{
+    LOCK_MONITOR;
+
+    procPtr->sigPendingMask &= ~sigBitMasks[sigNum];
+
+    UNLOCK_MONITOR;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * Routines for signal handlers --
+ *
+ * A signal handler is called right before a process is to return to 
+ * user space.  In order to do this the current state before the signal
+ * is taken must be saved, the signal handler called, and then the state
+ * restored when the signal handler returns.  It is this modules responsibility
+ * to handle the signal state;  all of the actual saving and restoring of
+ * machine state and the calling of the handler is done in the machine
+ * dependent routines in the mach module.
+ */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_Handle --
+ *
+ *	Set things up so that the signal handler is called for one of the
+ *	signals that are pending for the current process.  This is done
+ *	by saving the old trap stack and modifying the current one.
+ *
+ * Results:
+ *	Return TRUE if a signal is setup to be handled by the user.
+ *
+ * Side effects:
+ *	*trapStackPtr is modified and also the user stack is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+Boolean		
+Sig_Handle(procPtr, sigStackPtr, pcPtr)
+    register	Proc_ControlBlock	*procPtr;
+    register	Sig_Stack		*sigStackPtr;
+    Address				*pcPtr;
+{
+    int					sigs;
+    int					sigNum;
+    unsigned	int			*bitMaskPtr;
+    int					sigBitMask;
+
+    /*
+     * Find out which signals are pending.
+     */
+    sigs = procPtr->sigPendingMask & ~procPtr->sigHoldMask;
+    if (sigs == 0) {
+	return(FALSE);
+    }
+
+    /*
+     * Check for the signal SIG_KILL.  This is processed specially because
+     * it is how processes that have some problem such as being unable
+     * to write to swap space on the file server are destroyed.
+     */
+    if (sigs & sigBitMasks[SIG_KILL]) {
+	if (procPtr->sigCodes[SIG_KILL] != SIG_NO_CODE) {
+	    Proc_ExitInt(PROC_TERM_DESTROYED, 
+			procPtr->sigCodes[SIG_KILL], 0);
+	} else {
+	    Proc_ExitInt(PROC_TERM_SIGNALED, SIG_KILL, 0);
+	}
+    }
+
+    for (sigNum = SIG_MIN_SIGNAL, bitMaskPtr = &sigBitMasks[SIG_MIN_SIGNAL];
+	 !(sigs & *bitMaskPtr);
+	 sigNum++, bitMaskPtr++) {
+    }
+
+    SigClearPendingMask(procPtr, sigNum);
+
+    /*
+     * Process the signal.
+     */
+    switch (procPtr->sigActions[sigNum]) {
+	case SIG_IGNORE_ACTION:
+	    printf("Warning: %s\n",
+	    "Sig_Handle:  An ignored signal was in a signal pending mask.");
+	    return(FALSE);
+
+	case SIG_KILL_ACTION:
+	    if (sigNum == SIG_KILL || !(procPtr->genFlags & PROC_DEBUGGED)) {
+		Proc_ExitInt(PROC_TERM_SIGNALED, sigNum,
+			procPtr->sigCodes[sigNum]);
+		panic("Sig_Handle: Proc_Exit returned!\n");
+	    } else {
+		/* Fall through */
+	    }
+
+	case SIG_SUSPEND_ACTION:
+	case SIG_DEBUG_ACTION:
+	    /* 
+	     * A suspended process and a debugged process are basically
+	     * the same.  A suspended process can be debugged just like
+	     * a process in the debug state.   The only difference is that
+	     * a suspended process does not go onto the debug list; it can
+	     * only be debugged by a debugger that specifically asks for
+	     * it.
+	     *
+	     * Suspend the process.
+	     */
+	    Proc_SuspendProcess(procPtr,
+			procPtr->sigActions[sigNum] == SIG_DEBUG_ACTION,
+			PROC_TERM_SIGNALED, sigNum, 
+			procPtr->sigCodes[sigNum]);
+	    return(FALSE);
+
+	case SIG_MIGRATE_ACTION:
+	    /*
+	     * If the process was in the middle of a page fault,
+	     * its PC in the trap stack is not useable.
+	     * Reset the pending condition but hold it until we get out of
+	     * the kernel.
+	     */
+	    if (!Mach_CanMigrate(procPtr)) {
+		LocalSend(procPtr, sigNum, procPtr->sigCodes[sigNum],
+		    (Address)procPtr->sigAddr);
+		procPtr->sigHoldMask |= Sig_NumberToMask(SIG_MIGRATE_TRAP);
+		return(FALSE);
+	    }
+
+	    /*
+	     * Double-check against process not allowed to migrate.  This
+	     * can happen if a process migrates, opens a pdev as master,
+	     * and gets signalled to migrate home.
+	     */
+	    if (procPtr->genFlags & PROC_DONT_MIGRATE) {
+		if (proc_MigDebugLevel > 0) {
+		    printf("Proc_Migrate: process %x is not allowed to migrate.\n",
+			       procPtr->processID);
+		}
+		return(FALSE);
+	    }
+	    if (procPtr->peerHostID != NIL) {
+		if (proc_MigDebugLevel > 6) {
+		    printf("Sig_Handle calling Proc_MigrateTrap for process %x.\n",
+			       procPtr->processID);
+		}
+		Proc_MigrateTrap(procPtr);
+	    }
+	    return(FALSE);
+
+	case SIG_DEFAULT_ACTION:
+	    panic("Sig_Handle: SIG_DEFAULT_ACTION found in array of actions?\n");
+    }
+
+    /*
+     * Set up our part of the signal stack.
+     */
+    sigStackPtr->sigNum = sigNum;
+    sigStackPtr->sigCode = procPtr->sigCodes[sigNum];
+    sigStackPtr->sigAddr = procPtr->sigAddr;
+    /*
+     * If this signal handler is being called after a call to Sig_Pause then
+     * the real signal hold mask has to be restored after the handler returns.
+     * This is assured by pushing the real hold mask which is stored in 
+     * the proc table onto the stack.
+     */
+    if (procPtr->sigFlags & SIG_PAUSE_IN_PROGRESS) {
+	procPtr->sigFlags &= ~SIG_PAUSE_IN_PROGRESS;
+	sigStackPtr->contextPtr->oldHoldMask = procPtr->oldSigHoldMask;
+    } else {
+	sigStackPtr->contextPtr->oldHoldMask = procPtr->sigHoldMask;
+    }
+
+    procPtr->sigHoldMask |= procPtr->sigMasks[sigNum];
+    sigBitMask = sigBitMasks[sigNum];
+    if (sigBitMask & ~sigCanHoldMask) {
+	/*
+	 * If this is a non-blockable signal then add it to the hold mask
+	 * so that if we get it again we know that it can't be handled.
+	 */
+	procPtr->sigHoldMask |= sigBitMask;
+    }
+    procPtr->specialHandling = 1;
+    *pcPtr = (Address)procPtr->sigActions[sigNum];
+    return(TRUE);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_Return --
+ *
+ *	Process a return from signal.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The trap stack is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+void		
+Sig_Return(procPtr, sigStackPtr)
+    register Proc_ControlBlock	*procPtr;	/* Process that is returning
+						 * from a signal. */
+    Sig_Stack			*sigStackPtr;	/* Signal stack. */
+{
+    procPtr->sigHoldMask = sigStackPtr->contextPtr->oldHoldMask;
+    procPtr->specialHandling = 1;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_AllowMigration --
+ *
+ *	Set up a process to allow migration.  This is a special call
+ *	because normally the SIG_MIGRATE_TRAP signal is not holdable in
+ *	the first place.
+ *
+ *	This could be a macro and be called directly from
+ *	Mach_StartUserProc, once things are stable....
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The process's hold mask is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+void		
+Sig_AllowMigration(procPtr)
+    register Proc_ControlBlock	*procPtr;	/* process to modify */
+{
+    if (procPtr->sigHoldMask &&
+	(procPtr->sigHoldMask & sigBitMasks[SIG_MIGRATE_TRAP])) {
+    	procPtr->sigHoldMask &= ~sigBitMasks[SIG_MIGRATE_TRAP];
+	procPtr->specialHandling = 1;
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_CheckForKill --
+ *
+ *	Check if a process has a kill signal and kill it if so.
+ *	Otherwise return.  this is for calling in difficult places where
+ *	we can't allow any signals that would be handled in user mode to
+ *	occur.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Process may be killed.
+ *
+ *----------------------------------------------------------------------
+ */
+void		
+Sig_CheckForKill(procPtr)
+    Proc_ControlBlock	*procPtr;
+{
+    int					sigs;
+
+    /*
+     * Find out which signals are pending.
+     */
+    sigs = procPtr->sigPendingMask & ~procPtr->sigHoldMask;
+    if (sigs == 0) {
+	return;
+    }
+
+    /*
+     * Check for the signal SIG_KILL.  This is processed specially because
+     * it is how processes that have some problem such as being unable
+     * to write to swap space on the file server are destroyed.
+     */
+    if (sigs & sigBitMasks[SIG_KILL]) {
+	if (procPtr->sigCodes[SIG_KILL] != SIG_NO_CODE) {
+	    Proc_ExitInt(PROC_TERM_DESTROYED, 
+			procPtr->sigCodes[SIG_KILL], 0);
+	} else {
+	    Proc_ExitInt(PROC_TERM_SIGNALED, SIG_KILL, 0);
+	}
+    }
+    return;
+}
+@
+
+
+9.14
+log
+@Fix comments about synchronization.  Use Sig_NumberToMask instead of
+SigGetBitMask.  Keep PCB's genFlags consistent with pending signals
+bitmask.
+@
+text
+@d66 1
+a66 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/sig/signals.c,v 9.13 90/10/19 15:40:14 shirriff Exp $ SPRITE (Berkeley)";
+d122 1
+a122 1
+	sigDefActions[i] = SIG_IGNORE_ACTION;
+d125 4
+a128 2
+    sigDefActions[SIG_INTERRUPT]	= SIG_KILL_ACTION;
+    sigDefActions[SIG_KILL]		= SIG_KILL_ACTION;
+a137 1
+    sigDefActions[SIG_RESUME]		= SIG_KILL_ACTION;
+d139 2
+a140 3
+    sigDefActions[SIG_PIPE]		= SIG_KILL_ACTION;
+    sigDefActions[SIG_TIMER]		= SIG_KILL_ACTION;
+    sigDefActions[SIG_TERM]		= SIG_KILL_ACTION;
+d143 2
+@
+
+
+9.13
+log
+@Added some documentation.
+@
+text
+@d20 12
+a31 4
+ * Whenever the signal state of a process is modified a monitor lock is
+ * grabbed.  When the signal state is looked at no locking is done. 
+ * It is assumed that there are two ways that the signal state will be
+ * looked at:
+d66 1
+a66 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/signals.c,v 9.12 90/10/05 16:16:00 mendel Exp $ SPRITE (Berkeley)";
+a85 2
+#define	SigGetBitMask(sig) (1 << (sig - 1))
+
+d121 1
+a121 1
+	sigBitMasks[i] = SigGetBitMask(i);
+d209 1
+a209 1
+	    SigGetBitMask(SIG_MIGRATE_TRAP);
+d269 1
+a269 1
+ *	ignored.
+d275 2
+a276 1
+ *	The signal actions and hold mask will be set for the process.
+d323 11
+d384 2
+a385 1
+ *	Signal pending mask and code modified.
+d435 1
+d468 10
+d1001 1
+d1003 5
+d1077 2
+a1078 2
+    migMask = (SigGetBitMask(SIG_MIGRATE_TRAP)) |
+	(SigGetBitMask(SIG_MIGRATE_HOME));
+d1238 1
+a1238 1
+		procPtr->sigHoldMask |= SigGetBitMask(SIG_MIGRATE_TRAP);
+@
+
+
+9.13.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/sig/signals.c,v 9.13 90/10/19 15:40:14 shirriff Exp $ SPRITE (Berkeley)";
+@
+
+
+9.12
+log
+@Fixed include files to use <> rather than "".
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/signals.c,v 9.11 90/08/29 10:59:56 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d499 3
+a501 1
+ *	process.
+@
+
+
+9.11
+log
+@Added function prototypes.
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/signals.c,v 9.10 90/07/30 11:40:23 shirriff Exp $ SPRITE (Berkeley)";
+d61 14
+a74 14
+#include "sprite.h"
+#include "stdlib.h"
+#include "sig.h"
+#include "sync.h"
+#include "dbg.h"
+#include "list.h"
+#include "proc.h"
+#include "procMigrate.h"
+#include "status.h"
+#include "sched.h"
+#include "sigInt.h"
+#include "rpc.h"
+#include "net.h"
+#include "vm.h"
+d76 1
+@
+
+
+9.10
+log
+@Added address field to Sig_Send.
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig.ken/RCS/signals.c,v 1.1 90/07/12 17:58:14 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d74 2
+d85 3
+@
+
+
+9.9
+log
+@clear SIG_MIGRATE_TRAP from holdmask if set.  before, was clearing only
+if set in pending mask, which is unnecessarily restrictive.
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/signals.c,v 9.8 90/06/27 12:44:38 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d344 1
+a344 1
+    return(Sig_Send(sigNum, SIG_NO_CODE, pid, familyID));
+d366 1
+a366 1
+LocalSend(procPtr, sigNum, code)
+d370 1
+d396 4
+a399 2
+	    printf("Warning: killing a migrated process that would have gone into the debugger, pid %x.\n",
+		   procPtr->processID);
+d441 1
+d510 1
+a510 1
+Sig_SendProc(procPtr, sigNum, code)
+d514 1
+d543 1
+a543 1
+	status = SigMigSend(procPtr, sigNum, code);
+d561 1
+a561 1
+	LocalSend(procPtr, sigNum, code);
+d588 1
+a588 1
+Sig_Send(sigNum, code, id, familyID)
+d595 1
+d615 1
+a615 1
+					   familyID));
+d639 1
+a639 1
+	status = Sig_SendProc(procPtr, sigNum, code);
+d689 1
+a689 1
+	    status = Sig_SendProc(procPtr, sigNum, code);
+d707 1
+d727 1
+a727 1
+SigSendRemoteSignal(hostID, sigNum, code, id, familyID)
+d733 1
+d745 1
+d801 1
+a801 1
+		      sigParmsPtr->familyID);
+d1192 2
+a1193 1
+		LocalSend(procPtr, sigNum, procPtr->sigCodes[sigNum]);
+d1228 1
+@
+
+
+9.8
+log
+@handle the case where the procPtr gets recycled while it's unlocked.
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/signals.c,v 9.7 90/06/27 11:18:36 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d1296 2
+a1297 1
+    if (procPtr->sigPendingMask & sigBitMasks[SIG_MIGRATE_TRAP]) {
+@
+
+
+9.7
+log
+@clear SIG_MIGRATE_TRAP bit if it's set and enable specialHandling too.
+(this is on Sig_AllowMigration).
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/signals.c,v 9.6 90/05/27 15:24:16 shirriff Exp Locker: douglis $ SPRITE (Berkeley)";
+d531 2
+a532 1
+     * a migration in progress to complete.
+d536 2
+d539 5
+a543 1
+	if (!(status == PROC_INVALID_PID && procPtr->state != PROC_MIGRATED)) {
+@
+
+
+9.6
+log
+@Fix for dbx so ^C doesn't kill something in the debugger.
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/signals.c,v 9.5 90/03/26 12:16:39 mgbaker Exp Locker: shirriff $ SPRITE (Berkeley)";
+d1289 4
+a1292 1
+    procPtr->sigHoldMask &= ~SigGetBitMask(SIG_MIGRATE_TRAP);
+@
+
+
+9.5
+log
+@New signal routine to check for a KILL signal and kill the proc without
+dealing with any other signals (for places where the process cannot go
+back out to user mode to handle other signals).
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/signals.c,v 9.4 89/12/12 18:05:33 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d1142 7
+a1148 2
+	    Proc_ExitInt(PROC_TERM_SIGNALED, sigNum, procPtr->sigCodes[sigNum]);
+	    panic("Sig_Handle: Proc_Exit returned!\n");
+@
+
+
+9.4
+log
+@Took out debugging stuff.
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/signals.c,v 9.3 89/11/27 14:46:24 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d1287 48
+@
+
+
+9.3
+log
+@debugging stuff taken in and out.
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/signals.c,v 9.2 89/11/07 14:44:12 jhh Exp Locker: mgbaker $ SPRITE (Berkeley)";
+a511 15
+
+#ifdef NOTDEF
+#ifdef sun4c
+    if (procPtr->argString != NIL &&
+	    (strncmp(procPtr->argString, "tx", 2) == 0 ||
+	    strncmp(procPtr->argString, "/sprite/daemons/ipServer",
+	    strlen("/sprite/daemons/ipServer")) == 0)) {
+	printf("Sig_Send: sending sig %d to proc 0x%x with name %s\n",
+		sigNum, procPtr->processID, procPtr->argString);
+	if (sigNum >= SIG_DEBUG && sigNum <= SIG_ADDR_FAULT) {
+	    panic("Sig_Send: Nasty signal sent to ipServer or tx.\n");
+	}
+    }
+#endif /* sun4c */
+#endif NOTDEF
+@
+
+
+9.2
+log
+@fixed incorrect comment
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/signals.c,v 9.1 89/10/26 15:07:59 douglis Exp $ SPRITE (Berkeley)";
+d512 16
+@
+
+
+9.1
+log
+@removed some lint, and an extraneous parameter to Proc_InformParent.
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/signals.c,v 9.0 89/09/12 15:19:32 douglis Stable Locker: douglis $ SPRITE (Berkeley)";
+d561 1
+a561 2
+ *	if it is asleep.  When we go to a multi-processor this routine must
+ *	be rewritten to possibly interrupt a running process.
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/signals.c,v 8.16 89/08/29 17:21:44 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d62 1
+a371 1
+    Proc_PID pid;
+d432 1
+a432 1
+	    Proc_InformParent(procPtr, PROC_SUSPEND_STATUS, TRUE);
+@
+
+
+8.16
+log
+@don't lock family while sending signals -- can deadlock due to migration.
+don't cause sigpause() to repeat unless only signal was migration-related.
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/signals.c,v 8.15 89/07/31 17:58:08 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+@
+
+
+8.15
+log
+@call Proc_DestroyMigratedProc rather than calling ProcExitProcess directly -- else could do it at wrong time and cause non-ready proc on ready queue
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/signals.c,v 8.14 89/07/19 11:38:51 shirriff Exp Locker: douglis $ SPRITE (Berkeley)";
+d629 4
+d643 4
+a646 1
+	 * Send a signal to everyone in the given family.
+d649 1
+d651 5
+d657 19
+a675 1
+	    Proc_Lock(procPtr); 
+d682 1
+a682 1
+	Proc_UnlockFamily((int)id);
+d984 1
+d1011 3
+d1017 4
+a1020 2
+    if (procPtr->sigPendingMask & ((SigGetBitMask(SIG_MIGRATE_TRAP)) |
+				   (SigGetBitMask(SIG_MIGRATE_HOME)))) {
+@
+
+
+8.14
+log
+@Changed continue signal so it is received by process, like in Unix.
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/signals.c,v 8.13 89/06/09 17:53:51 douglis Exp Locker: shirriff $ SPRITE (Berkeley)";
+d371 1
+d461 3
+d465 2
+a466 5
+		    Proc_Unlock(procPtr);
+		    Proc_RemoveMigDependency(procPtr->processID);
+		    ProcExitProcess(procPtr, PROC_TERM_DESTROYED,
+				    (int) PROC_NO_PEER, 0, FALSE);
+		    Proc_Lock(procPtr);
+@
+
+
+8.13
+log
+@if a signal comes along when the process is migrating home, it could get
+lost -- try delivering it locally in that case.
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/signals.c,v 8.12 89/05/23 15:01:19 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d411 2
+a412 1
+	} else if (procPtr->sigActions[sigNum] == SIG_SUSPEND_ACTION &&
+d432 2
+a433 1
+	} else {
+d856 1
+a856 1
+	    (int) action.handler = procPtr->sigActions[sigNum];
+@
+
+
+8.12
+log
+@check for getting a signal before migration is complete
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/signals.c,v 8.11 89/05/10 14:20:23 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d508 1
+d520 9
+d531 6
+a536 2
+	return(SigMigSend(procPtr, sigNum, code));
+    } else if (procPtr->state == PROC_EXITING) {
+@
+
+
+8.11
+log
+@fixed typo.
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/signals.c,v 8.10 89/04/27 11:31:48 douglis Exp $ SPRITE (Berkeley)";
+d523 6
+@
+
+
+8.10
+log
+@Double-check against process not allowed to migrate.  This
+can happen if a process migrates, opens a pdev as master,
+and gets signalled to migrate home.
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/signals.c,v 8.9 89/04/14 11:08:22 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d1124 1
+a1124 1
+			       pid);
+@
+
+
+8.9
+log
+@don't allow signals to be sent to exiting processes. 
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/signals.c,v 8.8 89/02/19 22:11:27 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d1115 13
+a1127 1
+		
+@
+
+
+8.8
+log
+@Changes due to lock registration
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/signals.c,v 8.7 89/01/27 09:30:08 brent Exp Locker: jhh $ SPRITE (Berkeley)";
+d522 2
+@
+
+
+8.7
+log
+@Added SIG_TTY_OUTPUT
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/signals.c,v 8.6 89/01/06 11:28:43 jhh Exp $ SPRITE (Berkeley)";
+d80 1
+a80 1
+Sync_Lock	sigLock = SYNC_LOCK_INIT_STATIC();
+d104 2
+@
+
+
+8.6
+log
+@New Sync_Lock definition
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/signals.c,v 8.5 89/01/02 13:57:00 douglis Exp Locker: jhh $ SPRITE (Berkeley)";
+d127 1
+@
+
+
+8.5
+log
+@if proc_KillMigratedDebugs is TRUE and we are putting a migrated
+process into the debugger, kill it instead.
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/signals.c,v 8.4 88/12/04 15:33:24 ouster Exp Locker: douglis $ SPRITE (Berkeley)";
+d80 1
+a80 1
+Sync_Lock	sigLock = {0, 0};
+@
+
+
+8.4
+log
+@Stop using obsolete header files.
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/signals.c,v 8.3 88/11/30 15:34:39 douglis Exp Locker: ouster $ SPRITE (Berkeley)";
+d379 15
+@
+
+
+8.3
+log
+@SIG_KILL to partially-migrated procs will perform exit on behalf of
+them rather than trying to resume them, since they aren't runnable yet.
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/signals.c,v 8.2 88/11/16 09:48:59 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+a68 1
+#include "byte.h"
+@
+
+
+8.2
+log
+@renamed SigSendRemoteSignal.
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/signals.c,v 8.1 88/11/15 11:40:12 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d436 20
+a455 7
+		/*
+		 * Resume the process so that we can perform the signal.
+		 * If we're killing it, we tell Proc_ResumeProcess so it
+		 * will even wake up a debugged process.
+		 */
+		Proc_ResumeProcess(procPtr,
+				   (sigNum == SIG_KILL) ? TRUE : FALSE);
+@
+
+
+8.1
+log
+@check for bogus hostID in processID before sending remote 
+signal.
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/signals.c,v 8.0 88/11/11 18:37:31 douglis Stable Locker: douglis $ SPRITE (Berkeley)";
+d546 2
+a547 1
+		return(SendRemoteSignal(hostID, sigNum, code, id, familyID));
+d614 1
+a614 1
+ * SendRemoteSignal --
+d627 1
+a627 1
+SendRemoteSignal(hostID, sigNum, code, id, familyID)
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/signals.c,v 6.4 88/11/03 09:50:53 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d73 1
+d542 2
+a543 1
+	    if (hostID == NET_BROADCAST_HOSTID) {
+@
+
+
+6.4
+log
+@fixed typo with || instead of | for bit mask.
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/signals.c,v 6.3 88/10/30 21:19:05 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+@
+
+
+6.3
+log
+@multiprocessor port, change to new C lib
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/signals.c,v 6.2 88/10/07 14:54:23 mlgray Exp Locker: jhh $ SPRITE (Berkeley)";
+d924 1
+a924 1
+    if (procPtr->sigPendingMask & ((SigGetBitMask(SIG_MIGRATE_TRAP)) ||
+@
+
+
+6.2
+log
+@Fixed include file references, etc.
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: signals.c,v 6.1 88/09/26 10:22:59 nelson Exp $ SPRITE (Berkeley)";
+d157 4
+a160 4
+    Byte_Copy(sizeof(sigDefActions), (Address)sigDefActions, 
+	      (Address)procPtr->sigActions);
+    Byte_Zero(sizeof(procPtr->sigMasks), (Address)procPtr->sigMasks);
+    Byte_Zero(sizeof(procPtr->sigCodes), (Address)procPtr->sigCodes);
+d195 7
+a201 7
+    Byte_Copy(sizeof(childProcPtr->sigActions), 
+	      (Address)parProcPtr->sigActions, 
+	      (Address)childProcPtr->sigActions);
+    Byte_Copy(sizeof(childProcPtr->sigMasks), 
+	      (Address)parProcPtr->sigMasks, 
+	      (Address)childProcPtr->sigMasks);
+    Byte_Zero(sizeof(childProcPtr->sigCodes), (Address)childProcPtr->sigCodes);
+d308 2
+a309 2
+    Byte_Copy(sizeof(procPtr->sigCodes), (Address) sigCodes, 
+		(Address) procPtr->sigCodes);
+d555 1
+a555 1
+		Sys_Panic(SYS_FATAL, "Sig_Send: procPtr == NIL\n");
+d1042 2
+a1043 2
+	    Sys_Panic(SYS_WARNING, 
+	    "Sig_Handle:  An ignored signal was in a signal pending mask.\n");
+d1048 1
+a1048 1
+	    Sys_Panic(SYS_FATAL, "Sig_Handle: Proc_Exit returned!\n");
+d1083 1
+a1083 1
+		    Sys_Printf("Sig_Handle calling Proc_MigrateTrap for process %x.\n",
+d1091 1
+a1091 2
+	    Sys_Panic(SYS_FATAL, 
+		 "Sig_Handle: SIG_DEFAULT_ACTION found in array of actions?\n");
+@
+
+
+6.1
+log
+@Fixed lint errors.
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: signals.c,v 5.14 88/08/05 14:21:11 mlgray Exp $ SPRITE (Berkeley)";
+a69 1
+#include "sync.h"
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d572 1
+a572 1
+	status = Proc_LockFamily(id, &familyList, &userID);
+d577 1
+a577 1
+            Proc_UnlockFamily(id);
+d594 1
+a594 1
+	Proc_UnlockFamily(id);
+@
+
+
+5.14
+log
+@Lint fix.
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: signals.c,v 5.13 88/08/01 14:52:50 douglis Exp $ SPRITE (Berkeley)";
+@
+
+
+5.13
+log
+@if sending a suspended process a migrate signal, wake it up so it'll take
+the signal.
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: signals.c,v 5.12 88/07/26 11:07:45 douglis Exp $ SPRITE (Berkeley)";
+d672 1
+@
+
+
+5.12
+log
+@Call Mach_CanMigrate to decide if the state of the process will
+allow migration.  If not, reissue the signal and hold it.  MachUserReturn
+will call Sig_AllowMigration to unmask the hold bit again and let
+the process trap after it exits the kernel.
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: signals.c,v 5.11 88/07/25 18:45:03 douglis Exp $ SPRITE (Berkeley)";
+d434 2
+a435 1
+	    if (sigNum == SIG_KILL) {
+d437 3
+a439 1
+		 * Resume the process so that we can kill it.
+d441 2
+a442 1
+		Proc_ResumeProcess(procPtr, TRUE);
+@
+
+
+5.11
+log
+@Added code to disallow and allow the SIG_MIGRATE_TRAP signal during
+the time a process is first created.
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: signals.c,v 5.10 88/07/07 15:22:09 nelson Exp $ SPRITE (Berkeley)";
+a1064 1
+#ifdef notdef
+d1066 4
+a1069 3
+	     * If the process was just created, don't migrate it yet.
+	     * Just reissue the signal.
+	     * .. FIXME -- this shouldn't be necessary.
+d1071 1
+a1071 2
+	    if (procPtr->genFlags & PROC_DONT_MIGRATE) {
+		procPtr->genFlags &= ~PROC_DONT_MIGRATE;
+d1073 1
+a1075 1
+#endif notdef
+@
+
+
+5.10
+log
+@*** empty log message ***
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: signals.c,v 5.9 88/07/07 15:13:38 nelson Exp $ SPRITE (Berkeley)";
+d179 1
+a179 1
+ *	child.
+d188 7
+a194 1
+    childProcPtr->sigHoldMask = parProcPtr->sigHoldMask;
+d1065 13
+d1148 28
+@
+
+
+5.9
+log
+@Changed to handle new signal stack format
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: signals.c,v 5.8 88/05/05 17:59:50 nelson Exp $ SPRITE (Berkeley)";
+a519 2
+    register	Proc_ControlBlock	*curProcPtr;
+    register	Proc_ControlBlock	*famProcPtr;
+d831 1
+a831 1
+	if (Vm_CopyIn(4, (Address) action.handler, 
+d837 1
+a837 1
+	procPtr->sigActions[sigNum] = (int) action.handler;
+@
+
+
+5.8
+log
+@Handles move of functionality from sys to mach.
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: signals.c,v 5.7 88/05/04 17:22:22 nelson Exp $ SPRITE (Berkeley)";
+d1088 1
+a1088 1
+	sigStackPtr->oldHoldMask = procPtr->oldSigHoldMask;
+d1090 1
+a1090 1
+	sigStackPtr->oldHoldMask = procPtr->sigHoldMask;
+d1129 1
+a1129 1
+    procPtr->sigHoldMask = sigStackPtr->oldHoldMask;
+@
+
+
+5.7
+log
+@Rearranged signal stack so that it matches the new mach module stuff.
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: signals.c,v 5.6 88/04/27 19:08:57 nelson Exp $ SPRITE (Berkeley)";
+d546 1
+a546 1
+	    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+d632 1
+a632 1
+    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+d684 1
+a684 1
+    procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+d725 1
+a725 1
+    procPtr = Proc_GetActualProc(Sys_GetProcessorNumber());
+d778 1
+a778 1
+    procPtr = Proc_GetActualProc(Sys_GetProcessorNumber());
+d890 1
+a890 1
+    procPtr = Proc_GetActualProc(Sys_GetProcessorNumber());
+@
+
+
+5.6
+log
+@Changed it over to handle the new suspend and resume stuff.
+@
+text
+@d58 1
+a58 1
+static char rcsid[] = "$Header: signals.c,v 5.5 88/04/13 11:29:10 ouster Exp $ SPRITE (Berkeley)";
+a64 1
+#include "exc.h"
+d67 1
+a69 1
+#include "machine.h"
+d955 176
+@
+
+
+5.5
+log
+@Changes to make kernel calls much faster.
+@
+text
+@d20 4
+a23 5
+ * Whenever the signal state of a process is modified a master lock on the
+ * schedule mutex is grabed.  A master lock is used instead of a monitor lock
+ * so that signals can be sent at interrupt time.  The schedule mutex is 
+ * used because sending a signal requires looking at and modifying the 
+ * proc table.
+a24 3
+ * When the signal state is looked at no locking is done.  It is assumed 
+ * that there are two ways that the signal state will be looked at:
+ *
+d36 3
+a38 2
+ *         awakened by the Sig_Send.  Thus there is no way to miss a
+ *         signal in this case.
+d58 1
+a58 1
+static char rcsid[] = "$Header: signals.c,v 5.4 88/01/29 10:37:18 brent Exp $ SPRITE (Berkeley)";
+a286 1
+
+a296 1
+
+d369 1
+a369 1
+     * shutdown since kernel processes never get the oppurtunity to handle
+d384 7
+a390 2
+	sigBitMask = sigBitMasks[sigNum];
+	if (sigNum != SIG_RESUME) {
+d392 15
+a406 2
+	     * A resume signal just resumes a process - it does not leave any
+	     * state around.  All other types of signals leave state.
+d408 3
+d413 12
+a424 2
+	}
+	if (procPtr->sigHoldMask & sigBitMask & ~sigCanHoldMask) {
+d426 1
+a426 5
+	     * We received a signal that was blocked but can't be blocked
+	     * by users.  It only can be blocked if we are in the middle of
+	     * executing a signal handler for the signal.  So we set things
+	     * up to take the default action and make the signal unblocked
+	     * so that we don't get an infinite loop of errors.
+d428 6
+a433 29
+	    procPtr->sigHoldMask &= ~sigBitMask;
+	    procPtr->sigActions[sigNum] = sigDefActions[sigNum];
+	}
+	procPtr->specialHandling = 1;
+
+	/*
+	 * If the process is waiting or suspended then wake it up.
+	 */
+	Sync_WakeWaitingProcess(procPtr);
+	if (sigNum == SIG_RESUME) {
+	    Proc_Resume(procPtr);
+	}
+
+	if (sigNum == SIG_KILL) {
+	    /*
+	     * If the process is in the debug state or suspended then make it 
+	     * runnable so that it can die.
+	     *
+	     * SYNCHRONIZATION NOTE:
+	     *
+	     *     We are the only ones that can put a process into and out of
+	     *     the debuggable and suspended state since we have the
+	     *	   monitor lock down.  Therefore there are no race conditions
+	     *     on accessing the state of the destination process.
+	     */
+	    if (procPtr->state == PROC_DEBUGABLE) {
+		Proc_TakeOffDebugList(procPtr);
+	    } else if (procPtr->state == PROC_SUSPENDED) {
+		Proc_Resume(procPtr);
+a462 1
+
+@
+
+
+5.4
+log
+@Moved the check against signal type AFTER the check for the
+process ID.  This means you can try sending signal 0 to a
+processID to find out if that process exists.  This is
+UNIX compatible.
+@
+text
+@d4 8
+a11 2
+ * Copyright 1985 Regents of the University of California
+ * All rights reserved.
+d61 1
+a61 1
+static char rcsid[] = "$Header: signals.c,v 5.3 88/01/20 15:48:25 nelson Exp $ SPRITE (Berkeley)";
+d311 1
+d409 1
+d739 1
+d907 1
+@
+
+
+5.3
+log
+@Brought inheritance in line with Unix.
+@
+text
+@d55 1
+a55 1
+static char rcsid[] = "$Header: signals.c,v 5.2 87/10/15 12:09:05 nelson Exp $ SPRITE (Berkeley)";
+d463 11
+a521 7
+
+    /*
+     * Make sure that the signal is in range.
+     */
+    if (sigNum < SIG_MIN_SIGNAL || sigNum >= SIG_NUM_SIGNALS) {
+	return(SIG_INVALID_SIGNAL);
+    }
+@
+
+
+5.2
+log
+@Only resume a process after a resume signal or a kill signal.  Needed
+for Unix compatibility.
+@
+text
+@d55 1
+a55 1
+static char rcsid[] = "$Header: signals.c,v 5.1 87/10/15 10:12:48 nelson Exp $ SPRITE (Berkeley)";
+d140 1
+a140 3
+ *	Initialize the signal data structures for a process.  It is assumed
+ *	that this routine is able to muck with the signaling stuff in
+ *	the proc table without having to grab any lock or anything.
+d146 1
+a146 1
+ *	The set of bit masks and the set of default actions are set up.
+a149 1
+
+a153 1
+    procPtr->sigFlags = 0;
+d156 6
+d163 33
+a195 2
+    Byte_Copy(sizeof(sigDefActions), (Address) sigDefActions, 
+	      (Address) procPtr->sigActions);
+d202 40
+d844 1
+d847 1
+@
+
+
+5.1
+log
+@Added SIG_TTY_SUSPEND.
+@
+text
+@d55 1
+a55 1
+static char rcsid[] = "$Header: signals.c,v 5.0 87/08/11 10:49:58 sprite Exp $ SPRITE (Berkeley)";
+d334 3
+a336 1
+	Proc_Resume(procPtr);
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d55 1
+a55 1
+static char rcsid[] = "$Header: signals.c,v 4.9 87/08/06 14:04:01 nelson Exp $ SPRITE (Berkeley)";
+a73 1
+#define	KILL_BIT_MASK	SIG_BIT_MASK(SIG_KILL)
+d125 1
+d131 1
+a131 1
+		sigBitMasks[SIG_MIGRATE_HOME]);
+a687 1
+
+d689 1
+a689 1
+	sigNum == SIG_KILL) {
+@

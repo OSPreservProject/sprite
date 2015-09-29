@@ -1,0 +1,978 @@
+head     1.7;
+branch   ;
+access   ;
+symbols  ;
+locks    shirriff:1.7; strict;
+comment  @ * @;
+
+
+1.7
+date     90.11.06.17.20.04;  author jhh;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     90.11.06.16.46.25;  author shirriff;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     90.03.29.14.53.03;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.01.25.17.50.58;  author shirriff;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.11.16.02.11.39;  author rab;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.08.22.10.01.31;  author nelson;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.20.16.15.32;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.7
+log
+@added ds5000 support
+@
+text
+@/*
+ * bootp.c --
+ *
+ */
+
+#ifndef lint
+static char sccsid[] = "@@(#)bootp.c	1.1 (Stanford) 1/22/86";
+#endif
+
+/*
+ * BOOTP (bootstrap protocol) server daemon.
+ *
+ * Answers BOOTP request packets from booting client machines.
+ * See [SRI-NIC]<RFC>RFC951.TXT for a description of the protocol.
+ */
+
+/*
+ * history
+ * 01/22/86	Croft	created.
+ */
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <sys/file.h>
+
+#include <net/if.h>
+#include <netinet/in.h>
+#define	iaddr_t struct in_addr
+#include "bootp.h"
+
+#include <signal.h>
+#include <stdio.h>
+#include <strings.h>
+#include <errno.h>
+#include <ctype.h>
+#include <netdb.h>
+#include <setjmp.h>
+#include <varargs.h>
+#include <time.h>
+
+static int	debug;
+extern	int errno;
+static struct	sockaddr_in sin = { AF_INET };
+static int	s;		/* socket fd */
+static struct	sockaddr_in from;
+static int	fromlen;
+static u_char	buf[1024];	/* receive packet buffer */
+extern long	time();	        /* time of day */
+static struct	ifreq ifreq[10]; /* holds interface configuration */
+static struct	ifconf ifconf;	/* int. config. ioctl block (points to ifreq) */
+static struct	arpreq arpreq;	/* arp request ioctl block */
+
+/*
+ * Globals below are associated with the bootp database file (bootptab).
+ */
+
+static char	*bootptab = "/etc/spritehosts";
+static char	*bootplog = "/sprite/admin/bootplog";
+static FILE	*fp;
+static int	f;
+static char	line[256];	/* line buffer for reading bootptab */
+static char	*linep;		/* pointer to 'line' */
+static int	linenum;	/* current ilne number in bootptab */
+
+/* bootfile homedirectory */
+static char	homedir[] = "/sprite/boot";
+static char	defaultboot[] = "ds3100"; /* default file to boot */
+
+#define	MHOSTS	512	/* max number of 'hosts' structs */
+
+static struct hosts {
+	char	host[31];	/* host name (and suffix) */
+	u_char	htype;		/* hardware type */
+	u_char	haddr[6];	/* hardware address */
+	iaddr_t	iaddr;		/* internet address */
+	char	bootfile[32];	/* default boot file name */
+} hosts[MHOSTS];
+
+static int	nhosts;		/* current number of hosts */
+static long	modtime;	/* last modification time of bootptab */
+
+static struct in_addr myAddr;
+
+static void log();
+static void request();
+static void reply();
+static void sendreply();
+static int nmatch();
+static void setarp();
+static void getfield();
+static void readtab();
+
+void
+main(argc, argv)
+	char *argv[];
+{
+	register struct bootp *bp;
+	register int n;
+	char hostname[100];
+	struct hostent *hostentPtr;
+
+	if (gethostname(hostname, 100) < 0) {
+	    perror("gethostname");
+	    exit(1);
+	}
+
+	hostentPtr = gethostbyname(hostname);
+	if (hostentPtr == (struct hostent *)NULL) {
+	    perror("gethostbyname");
+	    exit(2);
+	}
+	myAddr = *(struct in_addr *)hostentPtr->h_addr_list[0];
+	{
+	    unsigned char *addrPtr;
+
+	    addrPtr = (unsigned char *)&myAddr;
+	    log("My name and addr: %s %d:%d:%d:%d\n", hostname,
+			    addrPtr[0], addrPtr[1], addrPtr[2], addrPtr[3]);
+	}
+
+	for (argc--, argv++ ; argc > 0 ; argc--, argv++) {
+		if (argv[0][0] == '-') {
+			switch (argv[0][1]) {
+			case 'd':
+				debug++;
+				break;
+			}
+		}
+	}
+	
+	if (debug == 0) {
+		int t;
+		if (fork())
+			exit(0);
+		for (f = 0; f < 10; f++)
+			(void) close(f);
+		(void) open("/", 0);
+		(void) dup2(0, 1);
+		(void) dup2(0, 2);
+		t = open("/dev/tty", 2);	
+		if (t >= 0) {
+			ioctl(t, TIOCNOTTY, (char *)0);
+			(void) close(t);
+		}
+	}
+
+	log("BOOTP server starting up.");
+
+reopenSocket:
+
+	while ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+		log("socket call failed");
+		sleep(5);
+	}
+#ifdef notdef
+	ifconf.ifc_len = sizeof ifreq;
+	ifconf.ifc_req = ifreq;
+	if (ioctl(s, SIOCGIFCONF, (caddr_t)&ifconf) < 0
+	    || ifconf.ifc_len <= 0) {
+		log("'get interface config' ioctl failed");
+		exit(1);
+	}
+#endif
+	sin.sin_port = htons(IPPORT_BOOTPS);
+	while (bind(s, (caddr_t)&sin, sizeof (sin), 0) < 0) {
+		perror("bind");
+		log("bind call failed");
+		sleep(5);
+	}
+	for (;;) {
+		fromlen = sizeof (from);
+		n = recvfrom(s, buf, sizeof buf, 0, (caddr_t)&from, &fromlen);
+		if (n <= 0) {
+		    log("recvfrom failed: %s\n", strerror(errno));
+		    if (errno==ESTALE || errno==EIO) {
+			close(s);
+			log("restarting socket");
+			goto reopenSocket;
+		    }
+		    sleep(10);
+		    continue;
+		}
+		bp = (struct bootp *) buf;
+		if (n < sizeof *bp) {
+			continue;
+		}
+		readtab();	/* (re)read bootptab */
+		switch (bp->bp_op) {
+		case BOOTREQUEST:
+			request();
+			break;
+
+		case BOOTREPLY:
+			reply();
+			break;
+		}
+	}
+}
+
+
+/*
+ * Process BOOTREQUEST packet.
+ *
+ * (Note, this version of the bootp.c server never forwards 
+ * the request to another server.  In our environment the 
+ * stand-alone gateways perform that function.)
+ *
+ * (Also this version does not interpret the hostname field of
+ * the request packet;  it COULD do a name->address lookup and
+ * forward the request there.)
+ */
+static void
+request()
+{
+	register struct bootp *rq = (struct bootp *)buf;
+	struct bootp rp;
+	char *strPtr;
+	char path[64], file[64];
+	register struct hosts *hp;
+	register n;
+
+	rp = *rq;	/* copy request into reply */
+	rp.bp_op = BOOTREPLY;
+	if (rq->bp_ciaddr.s_addr == 0) { 
+		/*
+		 * client doesnt know his IP address, 
+		 * search by hardware address.
+		 */
+		for (hp = &hosts[0], n = 0 ; n < nhosts ; n++,hp++)
+			if (rq->bp_htype == hp->htype
+			   && bcmp(rq->bp_chaddr, hp->haddr, 6) == 0)
+				break;
+		if (n == nhosts)
+			return;	/* not found */
+		rp.bp_yiaddr = hp->iaddr;
+	} else {
+		/* search by IP address */
+		for (hp = &hosts[0], n = 0 ; n < nhosts ; n++,hp++)
+			if (rq->bp_ciaddr.s_addr == hp->iaddr.s_addr)
+				break;
+		if (n == nhosts)
+			return;
+	}
+	if (strcmp(rq->bp_file, "sunboot14") == 0)
+		rq->bp_file[0] = 0;	/* pretend it's null */
+	strPtr = strchr(rq->bp_file,' ');
+	if (strPtr != (char *)NULL) {
+	    *strPtr = 0;
+	}
+	log("request from %s for '%s'", hp->host, rq->bp_file);
+	strcpy(path, homedir);
+	strcat(path, "/");
+	strcat(path, hp->bootfile);
+	strcat(path, ".md/");
+	if (rq->bp_file[0] == 0) { /* if client didnt specify file */
+		if (hp->bootfile[0] == 0)
+			strcpy(file, defaultboot);
+		else
+			strcpy(file, hp->bootfile);
+	} else {
+		/* client did specify file */
+
+	    /*
+	     * For now the ds5000 always returns an extra '/' at the beginning
+	     * of the path name. 
+	     */
+	     if (!strcmp(hp->bootfile, "ds5000")) {
+		 strcpy(file, &rq->bp_file[1]);
+	     } else {
+		strcpy(file, rq->bp_file);
+	     }
+	}
+	if (file[0] == '/')	/* if absolute pathname */
+		strcpy(path, file);
+	else
+		strcat(path, file);
+	/* try first to find the file with a ".host" suffix */
+	n = strlen(path);
+	strcat(path, ".");
+	strcat(path, hp->host);
+	if (access(path, R_OK) < 0) {
+		path[n] = 0;	/* try it without the suffix */
+		if (access(path, R_OK) < 0) {
+			if (rq->bp_file[0])  /* client wanted specific file */
+				return;		/* and we didnt have it */
+			log("boot file %s* missing?", path);
+		}
+	}
+	log("replyfile %s", path);
+	strcpy(rp.bp_file, path);
+	sendreply(&rp, 0);
+	return;
+}
+
+
+/*
+ * Process BOOTREPLY packet (something is using us as a gateway).
+ */
+static void
+reply()
+{
+	struct bootp *bp = (struct bootp *)buf;
+
+	sendreply(bp, 1);
+	return;
+}
+
+
+/*
+ * Send a reply packet to the client.  'forward' flag is set if we are
+ * not the originator of this reply packet.
+ */
+static void
+sendreply(bp, forward)
+	register struct bootp *bp;
+{
+	iaddr_t dst;
+	struct sockaddr_in to;
+
+	to = sin;
+	to.sin_port = htons(IPPORT_BOOTPC);
+	/*
+	 * If the client IP address is specified, use that
+	 * else if gateway IP address is specified, use that
+	 * else make a temporary arp cache entry for the client's NEW 
+	 * IP/hardware address and use that.
+	 */
+	if (bp->bp_ciaddr.s_addr) {
+		dst = bp->bp_ciaddr;
+		if (debug) log("reply ciaddr");
+	} else if (bp->bp_giaddr.s_addr && forward == 0) {
+		dst = bp->bp_giaddr;
+		to.sin_port = htons(IPPORT_BOOTPS);
+		if (debug) log("reply giaddr");
+	} else {
+		dst = bp->bp_yiaddr;
+		if (debug) log("reply yiaddr %x", dst.s_addr);
+		setarp(&dst, bp->bp_chaddr, bp->bp_hlen);
+	}
+
+	if (forward == 0) {
+		/*
+		 * If we are originating this reply, we
+		 * need to find our own interface address to
+		 * put in the bp_siaddr field of the reply.
+		 * If this server is multi-homed, pick the
+		 * 'best' interface (the one on the same net
+		 * as the client).
+		 */
+		int maxmatch = 0;
+		int len, m;
+		register struct ifreq *ifrp, *ifrmax;
+
+#ifdef notdef
+		ifrmax = ifrp = &ifreq[0];
+		len = ifconf.ifc_len;
+		for ( ; len > 0 ; len -= sizeof ifreq[0], ifrp++) {
+			if ((m = nmatch((caddr_t)&dst,
+			    (caddr_t)&((struct sockaddr_in *)
+			     (&ifrp->ifr_addr))->sin_addr)) > maxmatch) {
+				maxmatch = m;
+				ifrmax = ifrp;
+			}
+		}
+		if (bp->bp_giaddr.s_addr == 0) {
+			if (maxmatch == 0) {
+				log("missing gateway address");
+				return;
+			}
+			bp->bp_giaddr = ((struct sockaddr_in *)
+				(&ifrmax->ifr_addr))->sin_addr;
+		}
+#endif
+		bp->bp_siaddr = myAddr;
+	}
+	to.sin_addr = dst;
+	if (sendto(s, (caddr_t)bp, sizeof *bp, 0, &to, sizeof to) < 0)
+		log("send failed");
+	return;
+}
+
+
+/*
+ * Return the number of leading bytes matching in the
+ * internet addresses supplied.
+ */
+static int
+nmatch(ca,cb)
+	register char *ca, *cb;
+{
+	register n,m;
+
+	for (m = n = 0 ; n < 4 ; n++) {
+		if (*ca++ != *cb++)
+			return(m);
+		m++;
+	}
+	return(m);
+}
+
+
+/*
+ * Setup the arp cache so that IP address 'ia' will be temporarily
+ * bound to hardware address 'ha' of length 'len'.
+ */
+static void
+setarp(ia, ha, len)
+	iaddr_t *ia;
+	u_char *ha;
+{
+#ifdef notdef
+	struct sockaddr_in *si;
+
+	arpreq.arp_pa.sa_family = AF_INET;
+	si = (struct sockaddr_in *)&arpreq.arp_pa;
+	si->sin_addr = *ia;
+	bcopy(ha, arpreq.arp_ha.sa_data, len);
+	if (ioctl(s, SIOCSARP, (caddr_t)&arpreq) < 0)
+		log("set arp ioctl failed");
+#endif
+	return;
+}
+
+static void
+readtab()
+{
+    struct stat st;
+    register char *cp;
+    int v;
+    register i;
+    char temp[64], tempcpy[64];
+    register struct hosts *hp;
+    char spriteID[8];
+    char netType[20];
+
+    if (fp == NULL) {
+	if ((fp = fopen(bootptab, "r")) == NULL) {
+            log("can't open %s", bootptab);
+	    exit(1);
+	}
+    }
+    fstat(fileno(fp), &st);
+    if (st.st_mtime == modtime && st.st_nlink) {
+	return;	/* hasnt been modified or deleted yet */
+    }
+    fclose(fp);
+    if ((fp = fopen(bootptab, "r")) == NULL) {
+	log("can't open %s", bootptab);
+	exit(1);
+    }
+    fstat(fileno(fp), &st);
+    log("(re)reading %s", bootptab);
+    modtime = st.st_mtime;
+    nhosts = 0;
+    hp = &hosts[0];
+    linenum = 0;
+
+    /*
+     * read and parse each line in the file.
+     */
+    for (;;) {
+	if (fgets(line, sizeof line, fp) == NULL) {
+	    break;	/* done */
+	}
+	if ((i = strlen(line))) {
+	    line[i-1] = 0;	/* remove trailing newline */
+	}
+	linep = line;
+	linenum++;
+	/* skip leading whitespace */
+	while (isspace(*linep)) {
+	    ++linep;
+	}
+	if (*linep == '#' || *linep == '\0') {
+	    continue;	/* skip comment lines */
+	}
+	/* fill in host table */
+	/* get spriteid */
+	getfield(spriteID, sizeof(spriteID));
+	if (!isdigit(*spriteID)) {
+	    log("bad sprite ID at line %d of %s", linenum, bootptab);
+	    exit(1);
+	}
+	getfield(netType, sizeof(netType));
+	if (debug && strcmp(netType, "ether") && strcmp(netType, "inet")) {
+	    log("unrecognized network type: %s, line %d, %s\n",
+		netType, linenum, bootptab);
+	}
+	hp->htype = 1;
+	getfield(temp, sizeof temp);
+	strcpy(tempcpy, temp);
+	cp = tempcpy;
+	/* parse hardware address */
+	for (i = 0 ; i < sizeof hp->haddr ; i++) {
+	    char *cpold;
+	    char c;
+	    cpold = cp;
+	    while (*cp != '.' && *cp != ':' && *cp != 0) {
+		cp++;
+	    }
+	    c = *cp;	/* save original terminator */
+	    *cp = 0;
+	    cp++;
+	    if (sscanf(cpold, "%x", &v) != 1) {
+		goto badhex;
+	    }
+	    hp->haddr[i] = v;
+	    if (c == 0) {
+		break;
+	    }
+	}
+	if (i != 5) {
+badhex:     log("bad hex address: %s, at line %d of bootptab", temp, linenum);
+            continue;
+	}
+	getfield(temp, sizeof temp);
+	if ((i = inet_addr(temp)) == -1 || i == 0) {
+	    log("bad internet address: %s, at line %d of bootptab",
+		temp, linenum);
+	    continue;
+	}
+	hp->iaddr.s_addr = i;
+	getfield(hp->bootfile, sizeof hp->bootfile);
+	if (debug &&
+	    strcmp(hp->bootfile, "ds3100") && strcmp(hp->bootfile, "sun3") &&
+	    strcmp(hp->bootfile, "sun4") && strcmp(hp->bootfile, "sun4c") &&
+	    strcmp(hp->bootfile, "spur") && strcmp(hp->bootfile, "ds5000")) {
+	      log("unrecognized machine type: %s, line %d, %s\n",
+		  hp->bootfile, linenum, bootptab);
+	}
+	if ((strcmp(hp->bootfile, "ds3100") != 0) &&
+	    (strcmp(hp->bootfile, "ds5000") != 0)) {
+	    /* bootp is only used for decStations */
+	    continue;
+	}
+	getfield(hp->host, sizeof hp->host);
+	if (++nhosts >= MHOSTS) {
+	    log("'hosts' table length exceeded");
+	    exit(1);
+	}
+	hp++;
+    }
+    return;
+}
+
+
+/*
+ * Get next field from 'line' buffer into 'str'.  'linep' is the 
+ * pointer to current position.
+ */
+static void
+getfield(str, len)
+	char *str;
+{
+    register char *cp = str;
+
+    for (; *linep && (*linep == ' ' || *linep == '\t') ; linep++) {
+	continue;   /* skip spaces/tabs */
+    }
+    if (*linep == '\0') {
+	*cp = '\0';
+	return;
+    }
+    len--;  /* save a spot for a null */
+    for (; *linep && *linep != ' ' & *linep != '\t' ; linep++) {
+	*cp++ = *linep;
+	if (--len <= 0) {
+	    *cp = '\0';
+	    log("string truncated: %s, on line %d of bootptab",	str, linenum);
+	    return;
+	}
+    }
+    *cp = '\0';
+    return;
+}
+
+#if 0
+/*
+ * Read bootptab database file.  Avoid rereading the file if the
+ * write date hasnt changed since the last time we read it.
+ */
+static void
+readtab()
+{
+	struct stat st;
+	register char *cp;
+	int v;
+	register i;
+	char temp[64], tempcpy[64];
+	register struct hosts *hp;
+	int skiptopercent;
+
+	if (fp == 0) {
+		if ((fp = fopen(bootptab, "r")) == NULL) {
+			log("can't open %s", bootptab);
+			exit(1);
+		}
+	}
+	fstat(fileno(fp), &st);
+	if (st.st_mtime == modtime && st.st_nlink)
+		return;	/* hasnt been modified or deleted yet */
+	fclose(fp);
+	if ((fp = fopen(bootptab, "r")) == NULL) {
+		log("can't open %s", bootptab);
+		exit(1);
+	}
+	fstat(fileno(fp), &st);
+	log("(re)reading %s", bootptab);
+	modtime = st.st_mtime;
+	homedir[0] = defaultboot[0] = 0;
+	nhosts = 0;
+	hp = &hosts[0];
+	linenum = 0;
+	skiptopercent = 1;
+
+	/*
+	 * read and parse each line in the file.
+	 */
+	for (;;) {
+		if (fgets(line, sizeof line, fp) == NULL)
+			break;	/* done */
+		if ((i = strlen(line)))
+			line[i-1] = 0;	/* remove trailing newline */
+		linep = line;
+		linenum++;
+		if (line[0] == '#' || line[0] == 0 || line[0] == ' ')
+			continue;	/* skip comment lines */
+		/* fill in fixed leading fields */
+		if (homedir[0] == 0) {
+			getfield(homedir, sizeof homedir);
+			continue;
+		}
+		if (defaultboot[0] == 0) {
+			getfield(defaultboot, sizeof defaultboot);
+			continue;
+		}
+		if (skiptopercent) {	/* allow for future leading fields */
+			if (line[0] != '%')
+				continue;
+			skiptopercent = 0;
+			continue;
+		}
+		/* fill in host table */
+		getfield(hp->host, sizeof hp->host);
+		getfield(temp, sizeof temp);
+		sscanf(temp, "%d", &v);
+		hp->htype = v;
+		getfield(temp, sizeof temp);
+		strcpy(tempcpy, temp);
+		cp = tempcpy;
+		/* parse hardware address */
+		for (i = 0 ; i < sizeof hp->haddr ; i++) {
+			char *cpold;
+			char c;
+			cpold = cp;
+			while (*cp != '.' && *cp != ':' && *cp != 0)
+				cp++;
+			c = *cp;	/* save original terminator */
+			*cp = 0;
+			cp++;
+			if (sscanf(cpold, "%x", &v) != 1)
+				goto badhex;
+			hp->haddr[i] = v;
+			if (c == 0)
+				break;
+		}
+		if (hp->htype == 1 && i != 5) {
+	badhex:		log("bad hex address: %s, at line %d of bootptab",
+				temp, linenum);
+			continue;
+		}
+		getfield(temp, sizeof temp);
+		if ((i = inet_addr(temp)) == -1 || i == 0) {
+			log("bad internet address: %s, at line %d of bootptab",
+				temp, linenum);
+			continue;
+		}
+		hp->iaddr.s_addr = i;
+		getfield(hp->bootfile, sizeof hp->bootfile);
+		if (++nhosts >= MHOSTS) {
+			log("'hosts' table length exceeded");
+			exit(1);
+		}
+		hp++;
+	}
+	return;
+}
+
+
+/*
+ * Get next field from 'line' buffer into 'str'.  'linep' is the 
+ * pointer to current position.
+ */
+static void
+getfield(str, len)
+	char *str;
+{
+	register char *cp = str;
+
+	for ( ; *linep && (*linep == ' ' || *linep == '\t') ; linep++)
+		;	/* skip spaces/tabs */
+	if (*linep == 0) {
+		*cp = 0;
+		return;
+	}
+	len--;	/* save a spot for a null */
+	for ( ; *linep && *linep != ' ' & *linep != '\t' ; linep++) {
+		*cp++ = *linep;
+		if (--len <= 0) {
+			*cp = 0;
+			log("string truncated: %s, on line %d of bootptab",
+				str, linenum);
+			return;
+		}
+	}
+	*cp = 0;
+	return;
+}
+#endif
+
+/*
+ * log an error message 
+ *
+ */
+static void
+log(va_alist)
+    va_dcl
+{
+	FILE *fp;
+	char *format;
+	va_list args;
+	time_t now;
+	char *t;
+
+	va_start(args);
+	time(&now);
+	t = asctime(localtime(&now));
+	/* remove the newline */
+	t[24] = '\0';
+	if ((fp = fopen(bootplog, "a+")) == NULL)
+		return;
+	fprintf(fp, "[%s]: ", t);
+	format = va_arg(args, char *);
+	vfprintf(fp, format, args);
+	putc('\n', fp);
+	fclose(fp);
+	return;
+}
+@
+
+
+1.6
+log
+@Added logging to record if socket is restarted.
+@
+text
+@d60 1
+a60 1
+static char	*bootplog = "/usr/adm/bootplog";
+d68 1
+a68 1
+static char	homedir[] = "/sprite/boot/ds3100.md";
+d255 2
+d264 8
+d273 1
+d529 1
+a529 1
+	    strcmp(hp->bootfile, "spur")) {
+d533 2
+a534 1
+	if (strcmp(hp->bootfile, "ds3100") != 0) {
+@
+
+
+1.5
+log
+@Fixed error handling.
+@
+text
+@d151 2
+d177 5
+@
+
+
+1.4
+log
+@Changed bootp to truncate request string at first space.  This is becuase
+the ds3100 gives bootp the args, which bootp should ignore.
+@
+text
+@d110 1
+a110 1
+	if (hostentPtr == (struct hostent *)-1) {
+d112 1
+@
+
+
+1.3
+log
+@Changed to use /etc/spritehosts instead of /etc/bootptab.
+@
+text
+@d50 1
+a50 1
+static long	time();	        /* time of day */
+d211 1
+d240 4
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d1 5
+a21 1
+
+d41 1
+d43 1
+a43 2
+
+int	debug;
+d45 9
+a53 9
+struct	sockaddr_in sin = { AF_INET };
+int	s;		/* socket fd */
+struct	sockaddr_in from;
+int	fromlen;
+u_char	buf[1024];	/* receive packet buffer */
+long	time(), tloc;	/* time of day */
+struct	ifreq ifreq[10]; /* holds interface configuration */
+struct	ifconf ifconf;	/* int. config. ioctl block (points to ifreq) */
+struct	arpreq arpreq;	/* arp request ioctl block */
+d59 11
+a69 9
+char	*bootptab = "/etc/bootptab";
+char	*bootplog = "/usr/adm/bootplog";
+FILE	*fp;
+int	f;
+char	line[256];	/* line buffer for reading bootptab */
+char	*linep;		/* pointer to 'line' */
+int	linenum;	/* current ilne number in bootptab */
+char	homedir[64];	/* bootfile homedirectory */
+char	defaultboot[64]; /* default file to boot */
+d73 1
+a73 1
+struct hosts {
+d81 4
+a84 2
+int	nhosts;		/* current number of hosts */
+long	modtime;	/* last modification time of bootptab */
+d86 8
+a93 1
+struct in_addr myAddr;
+d95 1
+d148 1
+a148 2
+	time(&tloc);
+	log("#\n#    BOOTP server starting at %s#", ctime(&tloc));
+d172 7
+a178 1
+		if (n <= 0)
+d180 1
+a180 3
+		bp = (struct bootp *)buf;
+		if (n < sizeof *bp)
+			continue;
+d206 1
+d270 1
+d277 1
+d283 1
+d291 1
+d357 1
+d365 1
+d384 1
+d399 122
+d525 31
+d559 1
+d663 1
+d671 1
+d694 1
+d696 1
+a696 1
+
+d702 1
+d709 2
+d713 4
+d719 1
+d724 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d36 1
+d78 1
+a79 1
+
+d85 20
+d139 1
+d147 1
+d150 1
+d308 1
+d327 2
+a328 2
+		bp->bp_siaddr = ((struct sockaddr_in *)
+			(&ifrmax->ifr_addr))->sin_addr;
+d362 1
+d371 1
+d518 2
+a519 2
+log(fmt, args)
+char *fmt;
+d522 2
+d525 1
+d528 2
+a529 1
+	vfprintf(fp, fmt, &args);
+@

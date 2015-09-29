@@ -1,0 +1,34 @@
+############################
+# Makefile for BibTeX in C #
+############################
+
+OPT=-O
+SITEDIR=..
+CFLAGS=$(OPT) -I$(SITEDIR)
+LDFLAGS=-s
+RM=/bin/rm
+TANGLE=../texware/tangle
+
+bibtex:		bibtex.o bibext.o
+		$(CC) $(LDFLAGS) $(CFLAGS) -o bibtex bibtex.o bibext.o
+
+
+bibtex.o:	bibtex.c bibtex.h $(SITEDIR)/site.h
+bibext.o:	bibext.c $(SITEDIR)/site.h
+
+bibtex.c:	bibtex.p bibtex.defines
+		cat bibtex.defines bibtex.p \
+			| ../web2cdir/web2c -hbibtex.h \
+			| sed -f sed.script \
+			| ../web2cdir/fixwrites > bibtex.c
+		mv -f coerce.h xcoerce.h
+		sed -e 's/(buftype)//g' -e 's/(pdstype)//g' < xcoerce.h > coerce.h
+		$(RM) -f xcoerce.h bibtex.pool
+
+bibtex.p:	bibtex.web bibtex.ch
+		$(TANGLE) bibtex.web bibtex.ch
+
+clean:
+		rm -f bibtex *.o xcoerce.h bibtex.pool bibtex.p
+veryclean:	clean
+		rm -f bibtex.c coerce.h

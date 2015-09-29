@@ -1,0 +1,664 @@
+head     9.3;
+branch   ;
+access   ;
+symbols  Summer89:9.0 newlib:8.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.3
+date     91.09.03.17.07.33;  author mendel;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.10.11.13.27.36;  author kupfer;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.10.08.12.42.40;  author mendel;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.08.27;  author douglis;  state Stable;
+branches ;
+next     8.4;
+
+8.4
+date     89.08.21.15.28.03;  author mendel;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.07.08.18.39.41;  author brent;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.06.29.16.15.54;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.01.24.12.25.47;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.25.15;  author douglis;  state Stable;
+branches ;
+next     7.0;
+
+7.0
+date     88.11.11.15.36.02;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.10.11.15.54.07;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.10.03.09.05.40;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Debugging trace for pseudo-devices
+@
+
+
+9.3
+log
+@Turned off tracing.
+@
+text
+@/* 
+ * fsPdevTrace.c --
+ *
+ *	Routines for tracing the pseudo-device request-response protocol.
+ *
+ * Copyright 1987, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/fspdev/RCS/fspdevTrace.c,v 9.2 90/10/11 13:27:36 kupfer Exp Locker: mendel $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <fs.h>
+#include <fsconsist.h>
+#include <fsutil.h>
+#include <fspdev.h>
+#include <trace.h>
+
+/*
+ * Prevent tracing by defining CLEAN here before this next include
+ */
+#undef CLEAN
+#include <fspdevInt.h>
+Boolean fspdev_Debug = FALSE;		/* Turns on print statements */
+Trace_Header fspdevTraceHdr;
+Trace_Header *fspdevTraceHdrPtr = &fspdevTraceHdr;
+int fspdevTraceLength = 50;
+Boolean fspdevTracing = FALSE;		/* Turns on circular trace */
+int fspdevMaxTraceDataSize;
+int fspdevTraceIndex = 0;
+
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * Fspdev_TraceInit --
+ *
+ *	Initialize the pseudo-device trace buffer.  Used for debugging
+ *	and profiling.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Calls to the Trace module to allocate the trace buffer, etc.
+ *
+ *----------------------------------------------------------------------------
+ *
+ */
+ReturnStatus
+Fspdev_TraceInit()
+{
+    Trace_Init(fspdevTraceHdrPtr, fspdevTraceLength, sizeof(FspdevTraceRecord),
+		TRACE_NO_TIMES);
+    return SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * Fspdev_PrintRec --
+ *
+ *	Print a record of the pseudo-device trace buffer.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	printf's
+ *
+ *----------------------------------------------------------------------------
+ *
+ */
+ReturnStatus
+Fspdev_PrintRec(clientData, event, printHeaderFlag)
+    ClientData clientData;	/* Client data in the trace record */
+    int event;			/* Type, or event, from the trace record */
+    Boolean printHeaderFlag;	/* If TRUE, a header line is printed */
+{
+    FspdevTraceRecord *recPtr = (FspdevTraceRecord *)clientData;
+    FspdevTraceRecType pdevEvent = (FspdevTraceRecType)event;
+    if (printHeaderFlag) {
+	/*
+	 * Print column headers and a newline.
+	 */
+	printf("%6s %17s %8s\n", "REC", "  <File ID>  ", " Event ");
+    }
+    if (recPtr != (FspdevTraceRecord *)NIL) {
+	/*
+	 * Print out the fileID that's part of each record.
+	 */
+	printf("%5d| ", recPtr->index);
+	printf("<%8x,%8x> ",
+	  recPtr->fileID.major, recPtr->fileID.minor);
+
+	switch(pdevEvent) {
+	    case PDEVT_SRV_OPEN:
+		printf("Srv Open");
+		printf(" refs %d writes %d",
+			    recPtr->un.use.ref,
+			    recPtr->un.use.write);
+		break;
+	    case PDEVT_CLT_OPEN:
+		printf("Clt Open");
+		printf(" refs %d writes %d",
+			    recPtr->un.use.ref,
+			    recPtr->un.use.write);
+		 break;
+	    case PDEVT_SRV_CLOSE:
+		printf("Srv Close");
+		printf(" refs %d writes %d",
+			    recPtr->un.use.ref,
+			    recPtr->un.use.write);
+		 break;
+	    case PDEVT_CLT_CLOSE:
+		printf("Clt Close");
+		printf(" refs %d writes %d",
+			    recPtr->un.use.ref,
+			    recPtr->un.use.write);
+		 break;
+	    case PDEVT_SRV_READ:
+		printf("Srv Read"); break;
+	    case PDEVT_SRV_READ_WAIT:
+		printf("Srv Read Blocked"); break;
+	    case PDEVT_SRV_SELECT:
+		printf("Srv Select Wait"); break;
+	    case PDEVT_SRV_WRITE:
+		printf("Srv Write"); break;
+	    case PDEVT_CNTL_READ:
+		printf("Control Read"); break;
+	    case PDEVT_READ_WAIT:
+		printf("Wait for Read"); break;
+	    case PDEVT_WAIT_LIST:
+		printf("Wait List Notify"); break;
+	    case PDEVT_SELECT: {
+		printf("Select "); 
+		if (recPtr != (FspdevTraceRecord *)NIL ) {
+		    if (recPtr->un.selectBits & FS_READABLE) {
+			printf("R");
+		    }
+		    if (recPtr->un.selectBits & FS_WRITABLE) {
+			printf("W");
+		    }
+		    if (recPtr->un.selectBits & FS_EXCEPTION) {
+			printf("E");
+		    }
+		}
+		break;
+	    }
+	    case PDEVT_WAKEUP: {
+		/*
+		 * Print the process ID from the wait info,
+		 * and the select bits stashed in the wait info token.
+		 */
+		printf("Wakeup");
+		if (recPtr != (FspdevTraceRecord *)NIL ) {
+		    printf(" %x ", recPtr->un.wait.procID);
+		    if (recPtr->un.wait.selectBits & FS_READABLE) {
+			printf("R");
+		    }
+		    if (recPtr->un.wait.selectBits & FS_WRITABLE) {
+			printf("W");
+		    }
+		    if (recPtr->un.wait.selectBits & FS_EXCEPTION) {
+			printf("E");
+		    }
+		}
+		break;
+	    }
+	    case PDEVT_REQUEST: {
+		printf("Request");
+		if (recPtr != (FspdevTraceRecord *)NIL) {
+		    switch(recPtr->un.requestHdr.operation) {
+			case PDEV_OPEN:
+			    printf(" OPEN"); break;
+#ifdef notdef
+			case PDEV_DUP:
+			    printf(" DUP"); break;
+#endif notdef
+			case PDEV_CLOSE:
+			    printf(" CLOSE"); break;
+			case PDEV_READ:
+			    printf(" READ"); break;
+			case PDEV_WRITE:
+			    printf(" WRITE"); break;
+			case PDEV_WRITE_ASYNC:
+			    printf(" WRITE_ASYNC"); break;
+			case PDEV_IOCTL:
+			    printf(" IOCTL"); break;
+			default:
+			    printf(" ??"); break;
+		    }
+		}
+		break;
+	    }
+	    case PDEVT_REPLY: {
+		printf("Reply");
+		if (recPtr != (FspdevTraceRecord *)NIL) {
+		    printf(" <%x> ", recPtr->un.reply.status);
+		    if (recPtr->un.reply.selectBits & FS_READABLE) {
+			printf("R");
+		    }
+		    if (recPtr->un.reply.selectBits & FS_WRITABLE) {
+			printf("W");
+		    }
+		}
+		break;
+	    }
+	    default:
+		printf("<%d>", event); break;
+
+	}
+    }
+    return SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fspdev_PrintTrace --
+ *
+ *	Dump out the pdev trace.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Fspdev_PrintTrace(clientData)
+    ClientData clientData;
+{
+    int numRecs = (int)clientData;
+
+    if (numRecs < 0) {
+	numRecs = fspdevTraceLength;
+    }
+    printf("PDEV TRACE\n");
+    (void)Trace_Print(fspdevTraceHdrPtr, numRecs, Fspdev_PrintRec);
+}
+@
+
+
+9.2
+log
+@Fspdev_PrintTrace should take a ClientData.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fspdev/RCS/fspdevTrace.c,v 9.1 90/10/08 12:42:40 mendel Exp Locker: kupfer $ SPRITE (Berkeley)";
+d36 1
+a36 1
+Boolean fspdevTracing = TRUE;		/* Turns on circular trace */
+@
+
+
+9.1
+log
+@Fixed header files to use <> rather than "".
+Tracing off by default.
+Fixed lint.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs.mendel/RCS/fsPdevTrace.c,v 1.1 90/01/16 17:11:16 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d242 2
+a243 2
+Fspdev_PrintTrace(numRecs)
+    int numRecs;
+d245 2
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fspdev/RCS/fsPdevTrace.c,v 8.4 89/08/21 15:28:03 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d20 7
+a26 4
+#include "sprite.h"
+#include "fs.h"
+#include "fsutil.h"
+#include "fspdev.h"
+d31 1
+a31 1
+#include "fspdevInt.h"
+d36 1
+a36 1
+Boolean fspdevTracing = FALSE;		/* Turns on circular trace */
+d63 1
+d222 1
+@
+
+
+8.4
+log
+@Break up fs into many modules.    
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPdevTrace.c,v 8.3 89/07/08 18:39:41 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+8.3
+log
+@Trimmed size of trace buffer
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPdevTrace.c,v 8.2 89/06/29 16:15:54 brent Exp $ SPRITE (Berkeley)";
+d22 2
+a23 1
+#include "fsInt.h"
+d28 8
+a35 8
+#include "fsPdev.h"
+Boolean fsPdevDebug = FALSE;		/* Turns on print statements */
+Trace_Header pdevTraceHdr;
+Trace_Header *pdevTraceHdrPtr = &pdevTraceHdr;
+int pdevTraceLength = 50;
+Boolean pdevTracing = FALSE;		/* Turns on circular trace */
+int pdevMaxTraceDataSize;
+int pdevTraceIndex = 0;
+d41 1
+a41 1
+ * FsPdevTraceInit --
+d56 1
+a56 1
+FsPdevTraceInit()
+d58 1
+a58 1
+    Trace_Init(pdevTraceHdrPtr, pdevTraceLength, sizeof(PdevTraceRecord),
+d65 1
+a65 1
+ * Fs_PdevPrintRec --
+d79 1
+a79 1
+Fs_PdevPrintRec(clientData, event, printHeaderFlag)
+d84 2
+a85 2
+    PdevTraceRecord *recPtr = (PdevTraceRecord *)clientData;
+    PdevTraceRecType pdevEvent = (PdevTraceRecType)event;
+d92 1
+a92 1
+    if (recPtr != (PdevTraceRecord *)NIL) {
+d141 1
+a141 1
+		if (recPtr != (PdevTraceRecord *)NIL ) {
+d160 1
+a160 1
+		if (recPtr != (PdevTraceRecord *)NIL ) {
+d176 1
+a176 1
+		if (recPtr != (PdevTraceRecord *)NIL) {
+d202 1
+a202 1
+		if (recPtr != (PdevTraceRecord *)NIL) {
+d223 1
+a223 1
+ * Fs_PdevPrintTrace --
+d237 1
+a237 1
+Fs_PdevPrintTrace(numRecs)
+d241 1
+a241 1
+	numRecs = pdevTraceLength;
+d244 1
+a244 1
+    (void)Trace_Print(pdevTraceHdrPtr, numRecs, Fs_PdevPrintRec);
+@
+
+
+8.2
+log
+@Turned off pseudo-device tracing by default
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPdevTrace.c,v 8.1 89/01/24 12:25:47 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d31 1
+a31 1
+int pdevTraceLength = 200;
+@
+
+
+8.1
+log
+@Added PDEV_WRITE_ASYNC
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPdevTrace.c,v 7.0 88/11/11 15:36:02 brent Exp $ SPRITE (Berkeley)";
+d32 1
+a32 1
+Boolean pdevTracing = TRUE;		/* Turns on circular trace */
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPdevTrace.c,v 7.0 88/11/11 15:36:02 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d179 1
+d182 1
+d189 2
+@
+
+
+7.0
+log
+@New version for conversion to new C library
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPdevTrace.c,v 1.2 88/10/11 15:54:07 brent Exp Locker: brent $ SPRITE (Berkeley)";
+@
+
+
+1.2
+log
+@Fiddled with tracing, upped version number to match the rest of fs.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: fsPdevTrace.c,v 1.1 88/10/03 09:05:40 brent Exp $ SPRITE (Berkeley)";
+d72 1
+a72 1
+ *	Sys_Printf's
+d89 1
+a89 1
+	Sys_Printf("%6s %17s %8s\n", "REC", "  <File ID>  ", " Event ");
+d95 2
+a96 2
+	Sys_Printf("%5d| ", recPtr->index);
+	Sys_Printf("<%8x,%8x> ",
+d101 2
+a102 2
+		Sys_Printf("Srv Open");
+		Sys_Printf(" refs %d writes %d",
+d107 2
+a108 2
+		Sys_Printf("Clt Open");
+		Sys_Printf(" refs %d writes %d",
+d113 2
+a114 2
+		Sys_Printf("Srv Close");
+		Sys_Printf(" refs %d writes %d",
+d119 2
+a120 2
+		Sys_Printf("Clt Close");
+		Sys_Printf(" refs %d writes %d",
+d125 1
+a125 1
+		Sys_Printf("Srv Read"); break;
+d127 1
+a127 1
+		Sys_Printf("Srv Read Blocked"); break;
+d129 1
+a129 1
+		Sys_Printf("Srv Select Wait"); break;
+d131 1
+a131 1
+		Sys_Printf("Srv Write"); break;
+d133 1
+a133 1
+		Sys_Printf("Control Read"); break;
+d135 1
+a135 1
+		Sys_Printf("Wait for Read"); break;
+d137 1
+a137 1
+		Sys_Printf("Wait List Notify"); break;
+d139 1
+a139 1
+		Sys_Printf("Select "); 
+d142 1
+a142 1
+			Sys_Printf("R");
+d145 1
+a145 1
+			Sys_Printf("W");
+d148 1
+a148 1
+			Sys_Printf("E");
+d158 1
+a158 1
+		Sys_Printf("Wakeup");
+d160 1
+a160 1
+		    Sys_Printf(" %x ", recPtr->un.wait.procID);
+d162 1
+a162 1
+			Sys_Printf("R");
+d165 1
+a165 1
+			Sys_Printf("W");
+d168 1
+a168 1
+			Sys_Printf("E");
+d174 1
+a174 1
+		Sys_Printf("Request");
+d178 1
+a178 1
+			    Sys_Printf(" OPEN"); break;
+d180 1
+a180 1
+			    Sys_Printf(" DUP"); break;
+d182 1
+a182 1
+			    Sys_Printf(" CLOSE"); break;
+d184 1
+a184 1
+			    Sys_Printf(" READ"); break;
+d186 1
+a186 1
+			    Sys_Printf(" WRITE"); break;
+d188 1
+a188 1
+			    Sys_Printf(" IOCTL"); break;
+d190 1
+a190 1
+			    Sys_Printf(" ??"); break;
+d196 1
+a196 1
+		Sys_Printf("Reply");
+d198 1
+a198 1
+		    Sys_Printf(" <%x> ", recPtr->un.reply.status);
+d200 1
+a200 1
+			Sys_Printf("R");
+d203 1
+a203 1
+			Sys_Printf("W");
+d209 1
+a209 1
+		Sys_Printf("<%d>", event); break;
+d238 1
+a238 1
+    Sys_Printf("PDEV TRACE\n");
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: fsPdev.c,v 6.15 88/09/28 15:24:19 douglis Exp $ SPRITE (Berkeley)";
+d176 1
+a176 1
+		    switch(recPtr->un.request.operation) {
+@

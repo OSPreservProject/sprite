@@ -1,0 +1,7 @@
+D DS3100_M                          	ds3100.md
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+F TAGS.;1                           	TAGS
+F TSET.C;1                          	tset.c
+F TSET_DEL.H;1                      	tset.delays.h

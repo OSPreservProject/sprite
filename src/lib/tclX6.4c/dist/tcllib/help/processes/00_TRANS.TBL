@@ -1,0 +1,6 @@
+F EXEC.;1                           	exec
+F EXECL.;1                          	execl
+F FORK.;1                           	fork
+F KILL.;1                           	kill
+F SYSTEM.;1                         	system
+F WAIT.;1                           	wait

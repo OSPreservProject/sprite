@@ -1,0 +1,96 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  srv030:1.1 srv028:1.1 srv027:1.1 srv026:1.1 srv024:1.1 srv022:1.1 srv021:1.1 srv019:1.1 srv018:1.1 srv016:1.1 srv014:1.1 srv010:1.1 srv008:1.1 srv007:1.1 srv006:1.1 srv005:1.1 srv004:1.1 srv003:1.1 srv002:1.1 srv001:1.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     92.03.12.19.26.48;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@UNIX getuid().
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/* 
+ * getuid.c --
+ *
+ *	Emulate the UNIX getuid call.
+ *
+ * Copyright 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.5 91/02/09 13:24:44 ouster Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <mach.h>
+#include <sprite.h>
+#include <compatInt.h>
+#include <errno.h>
+#include <spriteEmuInt.h>
+#include <spriteSrv.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * getuid --
+ *
+ *	Procedure to map from Unix getuid system call to Sprite Proc_GetIDs.
+ *
+ * Results:
+ *	UNIX_ERROR is returned upon error, with the actual error code
+ *	stored in errno.  Upon success, the real user ID of the current
+ *	process is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+getuid()
+{
+    ReturnStatus status;
+    int userId;			/* real user ID of current process */
+    kern_return_t kernStatus;
+    Proc_PID dummyPid;
+    int dummyId;
+    Boolean sigPending;
+
+    kernStatus = Proc_GetIDsStub(SpriteEmu_ServerPort(), &dummyPid,
+				 &dummyPid, &userId, &dummyId,
+				 &sigPending);
+    status = (kernStatus == KERN_SUCCESS) ? 
+	SUCCESS : Utils_MapMachStatus(kernStatus);
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(userId);
+    }
+}
+@

@@ -1,0 +1,215 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  sprited:1.6.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.6
+date     88.07.28.17.18.43;  author ouster;  state Exp;
+branches 1.6.1.1;
+next     1.5;
+
+1.5
+date     88.07.28.16.41.16;  author ouster;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.07.25.14.12.01;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.07.21.09.37.44;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.07.11.16.02.24;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.10.16.23.57;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.6.1.1
+date     91.12.02.20.02.03;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.6
+log
+@More lint.
+@
+text
+@/* 
+ * scanf.c --
+ *
+ *	Source code for the "scanf" library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: scanf.c,v 1.5 88/07/28 16:41:16 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <stdio.h>
+#include <varargs.h>
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * scanf --
+ *
+ *	Read characters from stdin and parse them into internal
+ *	representations.
+ *
+ * Results:
+ *	The values indicated by va_alist are modified to hold
+ *	information scanned from stream.  The return value is the
+ *	number of fields successfully scanned, or EOF if the string
+ *	is empty.  See the man page for details.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifndef lint
+int
+scanf(va_alist)
+    va_dcl			/* char *format, then any number of pointers to
+				 * values to be scanned from stdin under
+				 * control of format. */
+{
+    char *format;
+    va_list args;
+
+    va_start(args);
+    format = va_arg(args, char *);
+    return vfscanf(stdin, format, args);
+}
+#else
+/* VARARGS1 */
+/* ARGSUSED */
+int
+scanf(format)
+    char *format;
+{
+    return 0;
+}
+#endif lint
+@
+
+
+1.6.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdio/RCS/scanf.c,v 1.6 88/07/28 17:18:43 ouster Exp $ SPRITE (Berkeley)";
+@
+
+
+1.5
+log
+@Still cleaning stuff related to lint libraries.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: scanf.c,v 1.4 88/07/25 14:12:01 ouster Exp $ SPRITE (Berkeley)";
+d59 1
+@
+
+
+1.4
+log
+@Generate more complete lint library information.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: scanf.c,v 1.3 88/07/21 09:37:44 ouster Exp $ SPRITE (Berkeley)";
+d43 1
+a43 1
+#ifndef LINTLIB
+d65 1
+a65 1
+#endif LINTLIB
+@
+
+
+1.3
+log
+@Change to use vfscanf instead of _doscan.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: scanf.c,v 1.2 88/07/11 16:02:24 ouster Exp $ SPRITE (Berkeley)";
+d43 1
+a43 1
+	/* VARARGS0 */
+d57 9
+@
+
+
+1.2
+log
+@If using varargs, don't have any arguments preceding the va_alist.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: scanf.c,v 1.1 88/06/10 16:23:57 ouster Exp $ SPRITE (Berkeley)";
+d55 1
+a55 1
+    return _doscan(format, &args, stdin);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: atoi.c,v 1.1 88/04/28 17:20:23 ouster Exp $ SPRITE (Berkeley)";
+d20 2
+a21 2
+#include "stdio.h"
+#include "varargs.h"
+d43 1
+d45 4
+a48 6
+scanf(format, va_alist)
+    char *format;		/* Contains literal text and format control
+				 * sequences indicating how string is to be
+				 * parsed.  See the manual page for details. */
+    va_dcl			/* Variable number of values to be formatted
+				 * and printed. */
+d50 1
+d54 1
+@

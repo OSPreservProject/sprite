@@ -1,0 +1,57 @@
+'\" Copyright 1989 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/cmds/rawstat/RCS/rawstat.man,v 1.5 90/11/28 15:06:17 mgbaker Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS RAWSTAT cmds
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+rawstat \- Print kernel statistics in a raw format: <field value>
+.SH SYNOPSIS
+\fBrawstat\fR [\fIoptions\fR]
+.SH OPTIONS
+.IP "\fB\-all\fR" 10
+Dump all the following stats.
+.IP "\fB\-fs\fR" 10
+Dump FS stats defined in <kernel/fsStat.h>.
+.IP "\fB\-proc\fR" 10
+Dump migration stats defined in <kernel/procMigrate.h>.
+.IP "\fB\-recov\fR" 10
+Dump recovery stats defined in <kernel/recov.h>.
+.IP "\fB\-rpc\fR" 10
+Dump RPC stats defined in <rpc.h>.
+.IP "\fB\-vm\fR" 10
+Dump VM stats defined in <vmStat.h>.
+.IP "\fB\-zero\fR" 10
+Print out zero valued fields, too.
+.IP "\fB\-noidle\fR" 10
+Don't dump idle ticks.
+.BE
+
+.SH DESCRIPTION
+.PP
+This program prints out kernel statistics in a raw, uninterpreted format.
+This allows all the counters kept by the kernel to be dumped and
+processed later.  The program first prints a line containing
+the host's name and the current time.
+Then, if \fB-noidle\fP is not specified,
+the kernel's Sched_Instruments information is printed.
+This includes the idle time of the host (see <kernel/sched.h>).
+Then other statistics are printed depending on the options.
+See the indicated header files for further documentation.
+If \fB-zero\fP is specified then all fields, even those with
+a zero valued counter, are printed.
+.PP
+This program is semi-automatically generated with the help
+of the printFields awk script that is kept in the source directory.
+
+.SH KEYWORDS
+statistics
+

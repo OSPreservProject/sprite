@@ -1,0 +1,151 @@
+/* 
+ * newacct.c --
+ *
+ *	Collect infomation on a new account request.
+ *      Make sure the information is valid.  Then mail it
+ *      to the staff.
+ *
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/cmds/newacct/RCS/newacct.c,v 1.2 90/06/28 23:22:38 rab Exp $";
+#endif
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <pwd.h>
+#include <grp.h>
+
+#ifndef __STDC__
+#define const
+#endif
+
+#define MAIL_WHO        "admin"
+#define BUFFER_SIZE     0x100
+
+extern int  yes();
+extern void getString();
+extern void getPasswd();
+extern char *getShell();
+extern void mail();
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	Prompts the user for information needed to create a new
+ *      account.  Sticks all the info into a buffer and mails it
+ *      to the person who will create the account.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Sends mail.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+main()
+{
+    static char login_name[BUFFER_SIZE];
+    static char full_name[BUFFER_SIZE];
+    static char group[BUFFER_SIZE];
+    static char home_phone[BUFFER_SIZE];
+    static char office[BUFFER_SIZE];
+    static char office_phone[BUFFER_SIZE];
+    static char project[BUFFER_SIZE];
+    static char encrypted_passwd[BUFFER_SIZE];
+    static char machine[BUFFER_SIZE];
+    const char *shell;
+    char *p;
+    int y;
+    char buffer[0x1000];
+    struct group *grp;
+    struct passwd *pwd;
+
+    for (;;) {
+	printf("Please enter the following information:\n");
+	for (;;) {
+	    getString(":",  "Login name  ", login_name);
+	    if ((pwd = getpwnam(login_name)) != NULL) {
+		char *p = pwd->pw_gecos;
+
+		while (*p && *p != ',') {
+		    ++p;
+		}
+		*p = '\0';
+		printf("Sorry, `%s' is already in use: %s\n",
+		    login_name, pwd->pw_gecos);
+		continue;
+	    }
+	    break;
+	}
+	getString(":",  "Full name   ", full_name);
+	for (;;) {
+	    getString(":",  "Group       ", group);
+	    if (isdigit(*group)) {
+		grp = getgrgid(atoi(group));
+	    } else {
+		grp = getgrnam(group);
+	    }
+	    if (grp == NULL) {
+		printf("%s is not a valid group\n", group);
+		printf("Please try again\n");
+		continue;
+	    }
+	    break;
+	}
+	getString(":,", "Office      ", office);
+	getString(":,", "Office phone", office_phone);
+	getString(":,", "Home phone  ", home_phone);
+	shell = getShell();
+	getPasswd(encrypted_passwd);
+	getString("",   "Project     ", project);
+	getString("",   "Machine to forward mail to", machine);
+	printf("\n\n\n");
+	printf("Login name:   %s\n", login_name);
+	printf("Full name:    %s\n", full_name);
+	printf("Group:        %s %d\n", grp->gr_name, grp->gr_gid);
+	printf("Office:       %s\n", office);
+	printf("Office phone: %s\n", office_phone);
+	printf("Home phone:   %s\n", home_phone);
+	printf("Shell:        %s\n", shell);
+	printf("Project:      %s\n", project);
+	printf("Mail forwarded to: %s\n", machine);
+	printf("\n");
+	if (yes("Is this correct?")) {
+	    break;
+	}
+    }
+    sprintf(buffer,
+	"%s\n%s\n%s%s\n%s%s\n%s%s\n%s%s\n%s%s\n%s%s\n%s%s\n%s%s\n%s%s\n%s%s\n",
+        "Request for New Account",
+        "-----------------------",
+	"Login name:   ", login_name,
+	"password:     ", encrypted_passwd,
+	"Full name:    ", full_name,
+	"Group:        ", grp->gr_name,
+	"Office:       ", office,
+	"Office phone: ", office_phone,
+	"Home phone:   ", home_phone,
+	"Shell:        ", shell,
+	"Project:      ", project,
+	"Mail forwarded to: ", machine);
+    printf("Sending mail to %s ...", MAIL_WHO);
+    mail(MAIL_WHO, buffer);
+    printf("\nThank you.  The account will be ready in a few days.\n");
+    exit(0);
+}
+

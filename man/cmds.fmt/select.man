@@ -1,0 +1,68 @@
+
+
+
+SELECT                    User Commands                    SELECT
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     select - Print the selection
+
+SSYYNNOOPPSSIISS
+     sseelleecctt
+
+_________________________________________________________________
+
+DDEESSCCRRIIPPTTIIOONN
+     This command will retrieve the Sx selection in ``text'' for-
+     mat  and output it onto the standard output.  If there is no
+     selection, no output is generated.  The main purpose of this
+     command is to allow you to write shell commands that use the
+     selection, e.g. to print it or to delete a file  whose  name
+     is selected.
+
+
+KKEEYYWWOORRDDSS
+     selection, window
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  February 24, 1989                  1
+
+
+

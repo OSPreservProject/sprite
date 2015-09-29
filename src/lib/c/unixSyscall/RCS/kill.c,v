@@ -1,0 +1,110 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     89.04.19.17.07.12;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.19.14.31.35;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Wasn't sending "kill(0, X)" to whole group, only to calling process.
+@
+text
+@/* 
+ * kill.c --
+ *
+ *	Procedure to map from Unix kill system call to Sprite Sig_Send call.
+ *	Note: many Unix signals are not supported under Sprite.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: kill.c,v 1.1 88/06/19 14:31:35 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+#include "sig.h"
+
+#include "compatInt.h"
+#include "proc.h"
+#include <signal.h>
+#include <errno.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * kill --
+ *
+ *	Procedure to map from Unix kill system call to Sprite 
+ *	Sig_Send.
+ *
+ * Results:
+ *	UNIX_ERROR is returned upon error, with the actual error code
+ *	stored in errno.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+kill(pid, sig)
+    int pid;
+    int sig;
+{
+    ReturnStatus status;
+    int		 spriteSignal;
+
+    if (pid == 0) {
+	return killpg(getpgrp(0), sig);
+    }
+    status = Compat_UnixSignalToSprite(sig, &spriteSignal);
+    if (status == FAILURE || (spriteSignal == NULL && sig != 0)) {
+	errno = EINVAL;
+	return(UNIX_ERROR);
+    }
+    status = Sig_Send(spriteSignal, pid, FALSE);
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);	
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: kill.c,v 1.2 88/03/22 19:42:15 deboor Exp $ SPRITE (Berkeley)";
+d50 3
+a56 3
+    }
+    if (pid == 0) {
+	pid = PROC_MY_PID;
+@

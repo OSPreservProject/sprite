@@ -1,0 +1,161 @@
+/*
+ * read.c --
+ *	Benchmark for the read system call.
+ *	This can also do stress testing by passing in bogus arguments.
+ */
+#include "sprite.h"
+#include "sys/time.h"
+#include "sys/file.h"
+#include "fs.h"
+#include "sig.h"
+#include "stdio.h"
+#include "option.h"
+
+static char *buffer;
+
+int	repeats = 1;
+int	blockSize = 16384;
+Boolean errorTest = FALSE;
+
+Option optionArray[] = {
+    {OPT_INT, "r", (Address) &repeats,
+     "\tNumber of times to repeat read (Default 1)."},
+    {OPT_INT, "b", (Address) &blockSize, 
+     "\tBlock size to use for reading (Default 16384)."},
+    {OPT_TRUE, "e", (Address)&errorTest,
+     "\tTest error cases. "},
+};
+int numOptions = sizeof(optionArray) / sizeof(Option);
+
+int Handler();
+int gotSig = FALSE;
+
+main(argc, argv)
+int argc;
+char **argv;
+{
+    int 		cnt, total;
+    double 		rate, tmp;
+    struct timeval	before, after;
+    int			newOffset;
+    ReturnStatus	status;
+    Sig_Action		newAction, oldAction;
+    register	int	i;
+
+    argc = Opt_Parse(argc, argv, optionArray, numOptions, 0);
+
+    /*
+     * Set up signal handling, trap interrupts in order to test
+     * the GEN_INTERRUPTED_BY_SIGNAL return code.
+     */
+    newAction.action = SIG_HANDLE_ACTION;
+    newAction.handler = Handler;
+    newAction.sigHoldMask = 0;
+    Sig_SetAction(SIG_INTERRUPT, &newAction, &oldAction);
+
+    buffer = (char *)malloc(blockSize);
+
+    if (errorTest) {
+	int numErrors = 0;
+	printf("Read Error Tests\n"); fflush();
+
+	cnt = write(1, "? ", sizeof("? "));
+	cnt = read(-2, 0, 0);
+	if (cnt >= 0) {
+	    printf("ERROR: read(fd == -2) worked!\n");
+	    numErrors++;
+	} else {
+	    perror("read(fd == -2)");
+	}
+
+	cnt = write(1, "? ", sizeof("? "));
+	cnt = read(0, -1, 10);
+	if (cnt >= 0) {
+	    printf("ERROR: read{buffer = -1} worked!\n");
+	    numErrors++;
+	} else {
+	    perror(status, "read{buffer = -1}");
+	}
+
+	write(1, "? ", 3);
+	cnt = read(0, buffer, -1);
+	if (cnt >= 0) {
+	    printf("ERROR: read{count < 0} worked!\n");
+	    numErrors++;
+	} else {
+	    perror(status, "read{count < 0}");
+	}
+
+	{
+	    int outFD2;
+	    outFD2 = open("/dev/null", O_WRONLY, 0);
+	    if (outFD2 < 0) {
+		perror("Can't open /dev/null for writing");
+	    } else {
+		cnt = read(outFD2, buffer, 10);
+		if (cnt >= 0) {
+		    printf("ERROR: read{writeonly stream} worked!\n");
+		    numErrors++;
+		} else {
+		    perror(status, "read{writeonly stream}");
+		}
+	    }
+	}
+
+	{
+	    char *newBuf = (char *)malloc(100 * 1024);
+	    printf("Starting 100K read... "); fflush();
+	    status = Fs_RawRead(0, 100 * 1024, newBuf, &cnt);
+	    if (gotSig) {
+		printf("Got Signal, "); fflush();
+	    }
+	    if (status == SUCCESS) {
+		printf("Read %d bytes\n", cnt);
+	    } else {
+		Stat_PrintMsg(status, "read");
+	    }
+	}
+
+	close(0);
+	write(1, "? ", 3);
+	cnt = read(0, buffer, 10);
+	if (cnt >= 0) {
+	    printf("ERROR: read{closed stream} worked!\n");
+	    numErrors++;
+	} else {
+	    perror("read{closed stream}");
+	}
+	if (numErrors) {
+	    printf("Read Error Test had %d errors\n", numErrors);
+	} else {
+	    printf("No errors\n");
+	}
+	exit(numErrors);
+    } else {
+	total = 0;
+	gettimeofday(&before, NULL);
+	for ( ; repeats > 0; repeats--) {
+	    Ioc_Reposition(0, IOC_BASE_ZERO, 0, &newOffset);
+	    while (1) {
+		cnt = read(0, buffer, blockSize);
+		total += cnt;
+		if (cnt < blockSize) break;
+	    }
+	}
+	gettimeofday(&after, NULL);
+	rate = after.tv_sec - before.tv_sec;
+	rate += (after.tv_usec - before.tv_usec)*.000001;
+	if (total <= 0) {
+	    printf("%d bytes read in sec.\n", total, rate);
+	} else {
+	    rate = total/rate;
+	    printf("%d bytes read at %.0f bytes/sec.\n", total, rate);
+	}
+    }
+}
+
+int
+Handler()
+{
+    gotSig = TRUE;
+}

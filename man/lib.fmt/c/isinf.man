@@ -1,0 +1,68 @@
+
+
+
+isnan                 C Library Procedures                  isnan
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     isnan, isinf - Determine whether  double-precision  floating
+     point numbers are not-a-number or infinity.
+
+SSYYNNOOPPSSIISS
+     int
+     iissnnaann(_v_a_l_u_e)
+
+     int
+     iissiinnff(_v_a_l_u_e)
+
+AARRGGUUMMEENNTTSS
+     double    _v_a_l_u_e          (in)      Double-precision floating
+                                        point number to check for
+                                        type.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     iissnnaann returns 1 if its argument is an IEEE  double-precision
+     floating-point  number  corresponding to NaN (not a number).
+     iissnnaann returns 0 otherwise.
+
+     iissiinnff returns 1 if its argument is an IEEE  double-precision
+     floating-point  number  corresponding  to  infinity.   iissiinnff
+     returns 0 otherwise.
+
+KKEEYYWWOORRDDSS
+     not a number, infinity, IEEE, double
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  November 28, 1989                  1
+
+
+

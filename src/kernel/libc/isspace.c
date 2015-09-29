@@ -1,0 +1,1 @@
+/sprite/src/lib/c/ctype/isspace.c

@@ -1,0 +1,1030 @@
+head     1.11;
+branch   ;
+access   ;
+symbols  srv030:1.11 srv028:1.10 srv027:1.10 srv026:1.10 srv024:1.10 srv022:1.10 srv021:1.10 srv019:1.10 srv018:1.10 srv016:1.10 srv015:1.10 srv014:1.10 srv012:1.10 srv011:1.10 srv010:1.10 srv008:1.10 srv007:1.10 srv006:1.10 srv005:1.10 srv004:1.10 srv003:1.9 srv002:1.9 srv001:1.9;
+locks    ; strict;
+comment  @ * @;
+
+
+1.11
+date     92.07.16.18.06.52;  author kupfer;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     92.05.08.15.06.12;  author kupfer;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     92.02.27.16.28.54;  author kupfer;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     92.01.21.16.04.38;  author kupfer;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     91.12.01.21.59.28;  author kupfer;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     91.11.14.10.02.27;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.10.18.18.00.23;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.10.04.11.37.30;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.09.23.14.19.49;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.09.02.22.53.57;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.08.19.12.26.40;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Routines to create new processes.
+@
+
+
+1.11
+log
+@Split spriteSrv.h into user and server versions.
+@
+text
+@/* 
+ *  procFork.c --
+ *
+ *	Routines to create new processes.  No monitor routines are required
+ *	in this file.  Synchronization to proc table entries is by a call
+ *	to the proc table monitor to get a PCB and calls to the family monitor
+ *	to put a newly created process into a process family.
+ *
+ * Copyright (C) 1985, 1988, 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/proc/RCS/procFork.c,v 1.10 92/05/08 15:06:12 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <byte.h>
+#include <ckalloc.h>
+#include <cthreads.h>
+#include <mach.h>
+#include <mach_error.h>
+#include <status.h>
+#include <string.h>
+#include <stdio.h>
+
+#include <fs.h>
+#include <main.h>
+#include <proc.h>
+#include <procInt.h>
+#include <procMachInt.h>
+#include <procTypes.h>
+#include <sig.h>
+#include <spriteSrvServer.h>
+#include <utils.h>
+#include <vm.h>
+
+/* 
+ * This is the maximum expected length for a process's name.  Longer names 
+ * won't break anything, but they won't get recorded in the C Threads name. 
+ */
+#define PROC_MAX_NAME_LENGTH	50
+
+/* 
+ * This struct packages up the arguments used to initialize a server thread.
+ */
+typedef struct {
+    Proc_ControlBlock *procPtr;	/* the pcb for the "kernel" process */
+    Proc_ProcessRoot workProc;	/* the function to execute */
+} ServerThreadInfo;
+
+
+/* Forward references: */
+
+static ReturnStatus ProcMakeServerThread _ARGS_((Proc_ControlBlock *procPtr,
+						 Proc_ProcessRoot startProc));
+static ReturnStatus ProcSetUserState _ARGS_((Proc_ControlBlock *procPtr,
+				Proc_ControlBlock *parentProcPtr,
+				Address startPC, Address stateAddr));
+static any_t ServerThreadInit _ARGS_((any_t arg));
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_NewProc --
+ *
+ *	Create a new process.  This routine is used to fork user processes
+ *	(current proc and new proc are both user), create new server
+ *	processes (current proc and new proc are both "kernel"), and start
+ *	up the first user process (current proc is kernel, and new proc is
+ *	user).
+ *
+ * Results:
+ *	Returns a status code and fills in the process ID for the new 
+ *	process.
+ *
+ * Side effects:
+ *	Allocates a PCB entry and fills it in.  If creating a user
+ *	process, creates its task and thread, plus does some other
+ *	initialization.  For a "kernel" process, just creates a new
+ *	thread in the server.  In both cases sets up the process's 
+ *	state and makes it runnable.
+ *
+ *----------------------------------------------------------------------
+ */
+    
+ReturnStatus
+Proc_NewProc(startPC, stateAddr, procType, shareHeap, pidPtr, procName)
+    Address	startPC;	/* The start address for the new process */
+    Address	stateAddr;	/* the address of the saved user state
+				 * (when a user process forks a child) */
+    int		procType;	/* One of PROC_KERNEL or PROC_USER. */
+    Boolean	shareHeap;	/* TRUE if share heap, FALSE if not. */
+    Proc_PID	*pidPtr;	/* A pointer to where to return the process
+				   ID in; possibly null. */
+    char	*procName;	/* Name for process control block, possibly 
+				 * NULL */
+{
+    ReturnStatus	status = SUCCESS;
+    Proc_ControlBlock 	*procPtr;	/* The new process being created */
+    Proc_ControlBlock 	*parentProcPtr;	/* The parent of the new process,
+					 * the one that is making this call */
+    Boolean		migrated = FALSE;
+
+    if (shareHeap) {
+	/* 
+	 * What we really want to do in this case is just create a new
+	 * thread, use the parent's task (increment the reference
+	 * count for the task).
+	 */
+	panic("Proc_NewProc: shared heap not implemented yet.\n");
+    }
+    if (!main_MultiThreaded) {
+	panic("Proc_NewProc called too early during startup.\n");
+    }
+
+    parentProcPtr = Proc_GetActualProc();
+
+    if (parentProcPtr->genFlags & PROC_FOREIGN) {
+	migrated = TRUE;
+    }
+
+    procPtr = (Proc_ControlBlock *)ProcGetUnusedPCB();
+    if (pidPtr != NULL) {
+	*pidPtr		= procPtr->processID;
+    }
+
+    /*
+     * Sanity checks.
+     */
+    if (procPtr->rpcClientProcess != NULL) {
+	panic("Proc_NewProc: non-null rpcClientProcess.\n");
+    }
+    if (procPtr->locksHeld != 0) {
+	panic("Proc_NewProc: new process has locks.\n");
+    }
+#ifdef LOCKDEP
+    if (procPtr->lockStackSize != 0) {
+	panic("Proc_NewProc: new process has locks registered.\n");
+    }
+#endif
+
+#ifdef SPRITED_PROFILING
+    procPtr->Prof_Scale = 0;
+    Prof_Enable(procPtr, parentProcPtr->Prof_Buffer, 
+        parentProcPtr->Prof_BufferSize, parentProcPtr->Prof_Offset,
+	parentProcPtr->Prof_Scale);
+#endif
+
+    procPtr->genFlags 		|= procType;
+    procPtr->syncFlags		= 0;
+    procPtr->exitFlags		= 0;
+
+    if (!migrated) {
+	procPtr->parentID 	= parentProcPtr->processID;
+    } else {
+	procPtr->parentID 	= parentProcPtr->peerProcessID;
+    }
+    procPtr->familyID 		= parentProcPtr->familyID;
+    procPtr->userID 		= parentProcPtr->userID;
+    procPtr->effectiveUserID 	= parentProcPtr->effectiveUserID;
+
+    procPtr->currCondPtr	= NULL;
+    procPtr->unixProgress	= parentProcPtr->unixProgress;
+
+    /* 
+     * Free up the old argument list, if any.  Note, this could be put
+     * in Proc_Exit, but is put here for consistency with the other
+     * reinitializations of control block fields.  
+     */
+
+    if (procPtr->argString != (Address) NIL) {
+	ckfree((Address) procPtr->argString);
+	procPtr->argString = (Address) NIL;
+    }
+
+    /*
+     * Create the argument list for the child.  If no name specified, take
+     * the list from the parent.  If one is specified, just make a one-element
+     * list containing that name.
+     */
+    if (procName != NULL) {
+	procPtr->argString = ckstrdup(procName);
+    } else if (parentProcPtr->argString != (Address) NIL) {
+	procPtr->argString = ckstrdup(parentProcPtr->argString);
+    }
+
+    if (!migrated) {
+	if (ProcFamilyInsert(procPtr, procPtr->familyID) != SUCCESS) {
+	    panic("Proc_NewProc: ProcFamilyInsert failed\n");
+	}
+    }
+
+    /*
+     *  Initialize our child list to remove any old links.
+     *  If not migrated, insert this PCB entry into the list
+     *  of children of our parent.
+     */
+    List_Init((List_Links *) procPtr->childList);
+    if (!migrated) {
+	List_Insert((List_Links *) &(procPtr->siblingElement), 
+		    LIST_ATREAR(parentProcPtr->childList));
+    }
+    Sig_Fork(parentProcPtr, Proc_AssertLocked(procPtr));
+
+    if (!migrated) {
+	procPtr->peerHostID = NIL;
+	procPtr->peerProcessID = NIL;
+    } else {
+	status = ProcRemoteFork(parentProcPtr, procPtr);
+	if (status != SUCCESS) {
+	    /*
+	     * We couldn't fork on the home node, so free up the new
+	     * process that we were in the process of allocating.
+	     */
+	    ProcFreePCB(Proc_AssertLocked(procPtr));
+	    goto done;
+	}
+
+	/*
+	 * Change the returned process ID to be the process ID on the home
+	 * node.
+	 */
+	if (pidPtr != (Proc_PID *) NIL) {
+	    *pidPtr = procPtr->peerProcessID;
+	}
+    }
+
+    /* 
+     * The PCB fields should now be consistent, so it's okay to unlock the 
+     * PCB.
+     */
+    Proc_Unlock(Proc_AssertLocked(procPtr));
+
+    /* 
+     * We now have the following state left to set up: machine state, 
+     * environment variables, and FS state.  For user processes, they are 
+     * done in this order because (a) setting up the machine state could 
+     * fail, (b) the other two routines can't be conveniently undone, and 
+     * (c) we can keep the child from running until initialization is 
+     * complete.  For "kernel" processes the machine state is done last 
+     * because (a) none of the routines should fail and (b) we don't have a 
+     * convenient way to keep the child from running once its machine state 
+     * has been set up.
+     */
+    if (procType == PROC_KERNEL) {
+	ProcSetupEnviron(procPtr);
+	Fs_InheritState(parentProcPtr, procPtr);
+	Proc_SetState(procPtr, PROC_READY);
+	status = ProcMakeServerThread(procPtr, (Proc_ProcessRoot)startPC);
+	if (status != SUCCESS) {
+	    panic("Proc_NewProc: couldn't make server thread.\n");
+	}
+    } else {
+	/* 
+	 * Set up the Mach task, thread, and ports, and set its state.
+	 */
+	status = ProcMakeTaskThread(procPtr, parentProcPtr);
+	if (status == SUCCESS) {
+	    status = ProcSetUserState(procPtr, parentProcPtr, startPC,
+				      stateAddr);
+	    if (status != SUCCESS) {
+		Proc_Lock(procPtr);
+		ProcFreeTaskThread(Proc_AssertLocked(procPtr));
+		Proc_Unlock(Proc_AssertLocked(procPtr));
+	    }
+	}
+	if (status != SUCCESS) {
+	    /*
+	     * We couldn't set up the process, so free whatever stuff
+	     * we've already allocated for it.
+	     */
+	    if (migrated) {
+		Proc_Lock(procPtr);
+	    } else {
+		ProcFamilyRemove(procPtr);
+		Proc_Lock(procPtr);
+		List_Remove((List_Links *) &(procPtr->siblingElement));
+	    }
+	    ProcFreePCB(Proc_AssertLocked(procPtr));
+	    goto done;
+	}
+
+	/*
+	 * Set up the environment and FS state for the process.
+	 */
+	if (!migrated) {
+	    ProcSetupEnviron(procPtr);
+	}
+	Fs_InheritState(parentProcPtr, procPtr);
+    }
+
+    /* 
+     * Notify the user when the "init" process is started.
+     */
+    if ((parentProcPtr->genFlags & PROC_KERNEL) &&
+	(procPtr->genFlags & PROC_USER)) {
+	printf("Starting %s\n", main_InitPath);
+    }
+
+    /* 
+     * Start the process.  (Kernel processes were started above.  We could 
+     * do the kernel and user processes at the same time if we relax the 
+     * process state sanity checks.)
+     */
+    if (procPtr->genFlags & PROC_USER) {
+	Proc_Lock(procPtr);
+	Proc_MakeReady(Proc_AssertLocked(procPtr));
+	Proc_Unlock(Proc_AssertLocked(procPtr));
+    }
+
+ done:
+    return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcMakeServerThread --
+ *
+ *	Create a thread for a "kernel" process.
+ *
+ * Results:
+ *	Returns a status code.  Because cthread_fork never fails, this 
+ *	should always be SUCCESS.
+ *
+ * Side effects:
+ *	The thread is created and detached.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+ProcMakeServerThread(procPtr, startProc)
+    Proc_ControlBlock *procPtr;	/* the PCB for the new process */
+    Proc_ProcessRoot startProc;	/* where the new thread should start 
+				 * executing */
+{
+    cthread_t newThreadPtr;
+    ServerThreadInfo *infoPtr;
+
+    infoPtr = (ServerThreadInfo *)ckalloc(sizeof(ServerThreadInfo));
+    if (infoPtr == NULL) {
+	panic("ProcMakeServerThread: out of memory.\n");
+    }
+    infoPtr->procPtr = procPtr;
+    infoPtr->workProc = startProc;
+
+    newThreadPtr = cthread_fork(ServerThreadInit, (any_t)infoPtr);
+    if (newThreadPtr == NO_CTHREAD) {
+	/* "can't happen" */
+	panic("ProcMakeServerThread: no more threads.\n");
+    }
+
+    cthread_detach(newThreadPtr);
+
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ServerThreadInit --
+ *
+ *	Initialization for a server thread.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Sets the name and PCB context for the thread.  Before exiting, 
+ *	resets the thread name and frees the argument list that was 
+ *	passed in.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static any_t
+ServerThreadInit(arg)
+    any_t arg;			/* arguments for the new thread */
+{
+    ServerThreadInfo *infoPtr = (ServerThreadInfo *)arg;
+    Proc_ControlBlock *procPtr;
+    char threadName[PROC_MAX_NAME_LENGTH + 50];
+
+    /* 
+     * If debugging is turned on, wire the current C Thread to a 
+     * kernel thread, so that gdb will be able to find it.
+     */
+    if (main_DebugFlag) {
+	cthread_wire();
+    }
+
+    /* 
+     * Set the thread's name to be the pid of the server process.  Note 
+     * that we don't return from this process until the thread is done, so 
+     * there's no need to make a safe copy of the thread name.
+     */
+    procPtr = infoPtr->procPtr;
+    if (procPtr->argString != NULL &&
+	    strlen(procPtr->argString) < PROC_MAX_NAME_LENGTH) {
+	sprintf(threadName, "%s (pid %x)", procPtr->argString,
+		infoPtr->procPtr->processID);
+    } else {
+	sprintf(threadName, "(pid %x)", infoPtr->procPtr->processID);
+    }
+    cthread_set_name(cthread_self(), threadName);
+
+    /*
+     * Set the thread's context to the given PCB.
+     */
+    Proc_SetCurrentProc(infoPtr->procPtr);
+
+    /* 
+     * Call the given routine.
+     */
+    (*(infoPtr->workProc))();
+
+    /* 
+     * The thread is done, so clean up after it.
+     */
+    printf("thread for pid %x is exiting.\n", infoPtr->procPtr->processID);
+    ckfree(infoPtr);
+    Proc_Exit(0);
+
+    return 0;			/* lint */
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcSetUserState --
+ *
+ *	Set up the VM and registers for a user process.
+ *
+ * Results:
+ *	SUCCESS or an error code.
+ *
+ * Side effects:
+ *	Mucks with the given process's VM and registers.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+ProcSetUserState(procPtr, parentProcPtr, startPC, stateAddr)
+    Proc_ControlBlock *procPtr;	/* the process to initialize */
+    Proc_ControlBlock *parentProcPtr; /* its parent */
+    Address startPC;		/* the start address for the child (not
+				 * used for the first user process) */
+    Address stateAddr;		/* address of saved state for the child */
+{
+    ReturnStatus status = SUCCESS;
+
+    /* 
+     * If the parent process is a "kernel" process, then we're starting the 
+     * very first user process.  Just exec the "init" program.
+     */
+    if (parentProcPtr->genFlags & PROC_KERNEL) {
+	return Proc_KernExec(procPtr, main_InitPath, main_InitArgArray);
+    }
+
+    /* 
+     * To create a user process from another user process, make a copy of 
+     * the parent.  Then set its PC and stack pointer to the values given 
+     * us. 
+     */
+    status = Vm_Fork(procPtr, parentProcPtr);
+    if (status != SUCCESS) {
+	return status;
+    }
+    return ProcMachSetRegisters(procPtr, stateAddr, startPC);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_ForkStub --
+ *
+ *	Process a fork request for a user process.
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code and "pending
+ *	signals" flag.  If successful, fills in the child's process ID.
+ *
+ * Side effects:
+ *	The user process is cloned, its stack pointer and PC are set to the 
+ *	given values, and the child process is set in motion.
+ *
+ *----------------------------------------------------------------------
+ */
+
+kern_return_t
+Proc_ForkStub(serverPort, startAddr, startStack, statusPtr, pidPtr,
+	      sigPendingPtr)
+    mach_port_t serverPort;	/* request port */
+    vm_address_t startAddr;	/* starting PC for the child */
+    vm_address_t startStack;	/* starting stack pointer for the child */
+    ReturnStatus *statusPtr;	/* OUT: status code */
+    Proc_PID *pidPtr;		/* OUT: child's process ID */
+    boolean_t *sigPendingPtr;	/* OUT: is there a signal pending */
+{
+#ifdef lint
+    serverPort = serverPort;
+#endif
+    *statusPtr = Proc_NewProc((Address)startAddr, (Address)startStack,
+			      PROC_USER, FALSE, pidPtr, (char *)NULL);
+    *sigPendingPtr = Sig_Pending(Proc_GetCurrentProc());
+    return KERN_SUCCESS;
+}
+@
+
+
+1.10
+log
+@Don't keep PCB locked so long during Proc_NewProc, and don't lock the
+parent at all.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/proc/RCS/procFork.c,v 1.9 92/02/27 16:28:54 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d40 1
+a40 1
+#include <spriteSrv.h>
+@
+
+
+1.9
+log
+@Snapshot.  Can kill, suspend, and resume processes.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/proc/RCS/procFork.c,v 1.8 92/01/21 16:04:38 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d61 1
+a61 1
+static ReturnStatus ProcMakeServerThread _ARGS_((Proc_LockedPCB *procPtr,
+d63 2
+a64 2
+static ReturnStatus ProcSetUserState _ARGS_((Proc_LockedPCB *procPtr,
+				Proc_LockedPCB *parentProcPtr,
+a124 1
+    Proc_Lock(parentProcPtr);
+d211 1
+a211 1
+    Sig_Fork(Proc_AssertLocked(parentProcPtr), Proc_AssertLocked(procPtr));
+d237 2
+a238 4
+     * If we're starting up a "kernel" process, mark it ready before 
+     * actually starting the process.  This is to keep the process state 
+     * machinery happy in case the child process tries to lock itself 
+     * before the parent process has released its lock.
+d240 13
+d254 2
+d257 1
+a257 2
+	status = ProcMakeServerThread(Proc_AssertLocked(procPtr),
+				      (Proc_ProcessRoot)startPC);
+d265 1
+a265 2
+	status = ProcMakeTaskThread(Proc_AssertLocked(procPtr),
+				    Proc_AssertLocked(parentProcPtr));
+d267 2
+a268 3
+	    status = ProcSetUserState(Proc_AssertLocked(procPtr),
+				      Proc_AssertLocked(parentProcPtr),
+				      startPC, stateAddr);
+d270 1
+d272 1
+d280 3
+a282 1
+	    if (!migrated) {
+d284 1
+a289 1
+    }
+d291 7
+a297 6
+    /*
+     * Set up the environment of the process.
+     */
+
+    if (!migrated) {
+	ProcSetupEnviron(procPtr);
+a298 2
+    
+    Fs_InheritState(parentProcPtr, procPtr);
+d314 1
+d316 1
+a317 1
+    Proc_Unlock(Proc_AssertLocked(procPtr));
+a319 1
+    Proc_Unlock(Proc_AssertLocked(parentProcPtr));
+d343 1
+a343 1
+    Proc_LockedPCB *procPtr;	/* the locked PCB for the new process */
+d354 1
+a354 1
+    infoPtr->procPtr = (Proc_ControlBlock *)procPtr;
+a423 7
+     * Try to obtain the process's lock.  This keeps the thread from 
+     * proceeding until the parent has finished initializing the new process.
+     */
+    Proc_Lock(infoPtr->procPtr);
+    Proc_Unlock(Proc_AssertLocked(infoPtr->procPtr));
+
+    /* 
+d457 2
+a458 2
+    Proc_LockedPCB *procPtr;	/* the process to initialize (locked) */
+    Proc_LockedPCB *parentProcPtr; /* its parent */
+d469 1
+a469 1
+    if (parentProcPtr->pcb.genFlags & PROC_KERNEL) {
+@
+
+
+1.8
+log
+@For "kernel" processes, record the Sprite process name in the server C
+thread.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/proc/RCS/procFork.c,v 1.7 91/12/01 21:59:28 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d39 1
+d212 1
+a212 3
+#ifdef SPRITED_SIGNALS
+    Sig_Fork(parentProcPtr, procPtr);
+#endif
+d254 2
+a255 1
+	status = ProcMakeTaskThread(Proc_AssertLocked(procPtr), parentProcPtr);
+d489 2
+a490 2
+ *	Returns KERN_SUCCESS and fills in the Sprite status code.  If 
+ *	successful, fills in the child's process ID.
+d500 2
+a501 1
+Proc_ForkStub(serverPort, startAddr, startStack, statusPtr, pidPtr)
+d507 1
+d514 1
+@
+
+
+1.7
+log
+@Snapshot.  FS appears to work.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/proc/RCS/procFork.c,v 1.6 91/11/14 10:02:27 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d44 6
+d380 2
+a381 1
+    char threadName[100];
+d392 3
+a394 1
+     * Set the thread's name to be the pid of the server process.
+d396 8
+a403 1
+    sprintf(threadName, "pid %x", infoPtr->procPtr->processID);
+@
+
+
+1.6
+log
+@Snapshot. net, rpc, recov modules added.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/proc/RCS/procFork.c,v 1.5 91/10/18 18:00:23 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a26 1
+#include <libc.h>
+d31 1
+d33 1
+a279 4
+    /*
+     * Have the new process inherit filesystem state.
+     */
+#ifdef SPRITED_REALFS
+a280 1
+#endif
+@
+
+
+1.5
+log
+@Use ckalloc/ckfree rather than malloc/free.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/proc/RCS/procFork.c,v 1.4 91/10/04 11:37:30 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d94 1
+a94 1
+				   ID in. */
+d112 3
+d183 1
+a183 2
+	procPtr->argString = (char *) ckalloc(strlen(procName) + 1);
+	(void) strcpy(procPtr->argString, procName);
+d185 1
+a185 3
+	procPtr->argString =
+		(char *) ckalloc(strlen(parentProcPtr->argString) + 1);
+	(void) strcpy(procPtr->argString, parentProcPtr->argString);
+d336 1
+a336 1
+    infoPtr = ckalloc(sizeof(ServerThreadInfo));
+d495 3
+d499 1
+a499 1
+			      PROC_USER, FALSE, pidPtr, NULL);
+@
+
+
+1.4
+log
+@Snapshot.  fork/exec work.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/proc/RCS/procFork.c,v 1.3 91/09/23 14:19:49 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d25 1
+d170 1
+a170 1
+	free((Address) procPtr->argString);
+d180 1
+a180 1
+	procPtr->argString = (char *) malloc(strlen(procName) + 1);
+d184 1
+a184 1
+		(char *) malloc(strlen(parentProcPtr->argString) + 1);
+d336 1
+a336 1
+    infoPtr = malloc(sizeof(ServerThreadInfo));
+d415 1
+a415 1
+    free(infoPtr);
+@
+
+
+1.3
+log
+@Snapshot.  Server is multithreaded internally.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/sprited/proc/RCS/procFork.c,v 1.2 91/09/02 22:53:57 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d35 1
+d37 1
+d39 1
+d55 2
+a56 1
+					    Proc_ControlBlock *parentProcPtr));
+d86 4
+a89 3
+Proc_NewProc(startProc, procType, shareHeap, pidPtr, procName)
+    Proc_ProcessRoot startProc;	/* The function to call (kernel 
+				 * processes only) */
+d94 2
+a95 1
+    char	*procName;	/* Name for process control block */
+d178 1
+a178 1
+    if (procName != (char *)NIL) {
+d238 2
+a239 1
+	status = ProcMakeServerThread(Proc_AssertLocked(procPtr), startProc);
+d250 2
+a251 1
+				      parentProcPtr);
+d438 1
+a438 1
+ProcSetUserState(procPtr, parentProcPtr)
+d440 4
+a443 1
+    Proc_ControlBlock *parentProcPtr; /* its parent */
+a445 1
+    char *initArgs[10];		/* arguments to pass to user program */
+d447 14
+a460 11
+    if (parentProcPtr->genFlags & PROC_USER) {
+	/* 
+	 * What we really want to do here is copy the state of the 
+	 * parent process.
+	 */
+	panic("ProcSetUserState: don't know how to fork yet.\n");
+    }
+
+    initArgs[0] = main_InitPath;
+    initArgs[1] = (char *)NIL;
+    status = Proc_KernExec(procPtr, main_InitPath, initArgs);
+a461 2
+	printf("ProcSetUserState: load failed: %s\n",
+	       Stat_GetMsg(status));
+d464 1
+a464 2
+    
+    return status;
+d467 31
+@
+
+
+1.2
+log
+@Changes for module-based source organization.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/sprited/proc/RCS/procFork.c,v 1.1 91/08/19 12:26:40 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a23 1
+#include <bstring.h>
+d25 2
+d29 1
+d38 9
+d49 6
+d61 5
+a65 1
+ *	Create a new, locked process.
+d68 2
+a69 1
+ *	Returns a status code and a pointer to the new PCB.
+d72 5
+a76 3
+ *	If creating a user process, creates its task and thread, plus 
+ *	does some other initialization.  For a "kernel" process, just
+ *	creates a new thread in the server.
+d82 3
+a84 3
+Proc_NewProc(pc, procType, shareHeap, procPtrPtr, procName)
+    Address 	pc;		/* The program counter where to start 
+				 * (kernel processes only) . */
+d87 2
+a88 1
+    Proc_ControlBlock 	**procPtrPtr; /* OUT: the new PCB */
+d91 5
+a95 2
+    kern_return_t kernStatus;
+    Proc_ControlBlock *procPtr;	/* local copy of the new pcb */
+a96 3
+    if (procType == PROC_KERNEL) {
+	panic("Proc_NewProc: tried to create kernel process");
+    }
+d99 3
+a101 3
+	 * What we really want to do here is just create a new thread, 
+	 * use the parent's task (increment the reference count for 
+	 * the task).
+d103 93
+a195 1
+	panic("Proc_NewProc: shared heap.");
+d197 17
+d215 8
+a222 23
+    procPtr = ProcGetUnusedPCB();
+    *procPtrPtr = procPtr;
+
+    /* 
+     * Create the task and thread and fill in the fields in the 
+     * Proc_ControlBlock. 
+     */
+
+    /* XXX we won't always be the parent */
+    kernStatus = task_create(mach_task_self(), FALSE,
+			     &procPtr->taskInfoPtr->task);
+    if (kernStatus != KERN_SUCCESS) {
+	printf("Couldn't create child task: %s\n",
+	       mach_error_string(kernStatus));
+	return Utils_MapMachStatus(kernStatus);
+    }
+    kernStatus = thread_create(procPtr->taskInfoPtr->task, &procPtr->thread);
+    if (kernStatus != KERN_SUCCESS) {
+	printf("Couldn't create child thread: %s\n",
+	       mach_error_string(kernStatus));
+	procPtr->taskInfoPtr = ProcReleaseTaskInfo(procPtr->taskInfoPtr);
+	return Utils_MapMachStatus(kernStatus);
+    }
+d225 39
+a263 2
+     * Set up the exception and system call request ports for the 
+     * process.
+d265 4
+d270 15
+a284 3
+    procPtr->syscallPort = ProcMakeServicePort(procPtr, (mach_port_t)procPtr);
+    procPtr->exceptionPort = ProcMakeServicePort(procPtr,
+					(mach_port_t)&procPtr->backPtr);
+d286 52
+a337 16
+     * XXX only set bootstrap port for first process.  After that, 
+     * syscall port will be passed back via the fork stub.
+     */
+    kernStatus = task_set_bootstrap_port(procPtr->taskInfoPtr->task,
+					 procPtr->syscallPort);
+    if (kernStatus != KERN_SUCCESS) {
+	printf("can't install system call request port: %s\n",
+	       mach_error_string(kernStatus));
+	panic("Proc_NewProc");
+    }
+    kernStatus = thread_set_exception_port(procPtr->thread,
+					   procPtr->exceptionPort);
+    if (kernStatus != KERN_SUCCESS) {
+	printf("can't install exception port: %s\n",
+	       mach_error_string(kernStatus));
+	panic("Proc_NewProc");
+d340 1
+a340 2
+    procPtr->state = PROC_READY; /* XXX do elsewhere? */
+    /* XXX start the process here? */
+d343 112
+@
+
+
+1.1
+log
+@Snapshot: Code reorg. and locking for processes & segments.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procFork.c,v 9.8 91/07/26 16:59:50 shirriff Exp $ SPRITE (Berkeley)";
+a28 5
+#include "main.h"
+#include "proc.h"
+#include "procInt.h"
+#include "procTypes.h"
+#include "util.h"
+d30 6
+d95 1
+a95 1
+	return Util_MapMachStatus(kernStatus);
+d102 1
+a102 1
+	return Util_MapMachStatus(kernStatus);
+@

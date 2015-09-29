@@ -1,0 +1,799 @@
+head     9.2;
+branch   ;
+access   ;
+symbols  ds3100:9.2 sun3:9.2 sun4nw:9.2 symm:9.2 spur:9.2 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.2
+date     90.10.19.15.47.24;  author jhh;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.11.16.15.17.08;  author rab;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.13.20;  author douglis;  state Stable;
+branches ;
+next     8.4;
+
+8.4
+date     89.05.24.07.58.21;  author rab;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.01.31.14.02.02;  author mendel;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.11.30.12.32.40;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.30.11.50.43;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.27.25;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.20.34;  author brent;  state Stable;
+branches ;
+next     5.2;
+
+5.2
+date     88.06.27.10.46.04;  author mendel;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     88.05.05.17.58.39;  author brent;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.46.19;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.2
+log
+@Rewrite to support multiple interfaces and the Ultranet
+@
+text
+@/* netIERecv.c -
+ *
+ * Routines to manage the receive unit of the Intel ethernet chip.
+ *
+ * Copyright 1985, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/net.jhh/sun3.md/RCS/netIERecv.c,v 9.3 90/09/20 21:13:42 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+#endif
+
+#include <sprite.h>
+#include <netIEInt.h>
+#include <sys.h>
+#include <list.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetIERecvUnitInit --
+ *
+ *	Initialize the receive buffer lists for the receive unit and start
+ *	it going.
+ *
+ *	NOTE: One more buffer descriptor is allocated than frame descriptor
+ *	      because Sun claims that this gets rid of a microcode bug.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The receive frame descriptor and buffer lists are initialized.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NetIERecvUnitInit(statePtr)
+    NetIEState		*statePtr;
+{
+    int i;
+    register volatile NetIERecvBufDesc   *recvBufDescPtr;
+    register volatile NetIERecvFrameDesc *recvFrDescPtr;
+    register	volatile NetIESCB           *scbPtr;
+    int		bufferSize;
+
+    bufferSize = NET_IE_RECV_BUFFER_SIZE - sizeof(Net_EtherHdr);
+    /*
+     * Allocate the receive buffer descriptors.  
+     */
+
+    for (i = 0; i < NET_IE_NUM_RECV_BUFFERS; i++) {
+	recvBufDescPtr = (volatile NetIERecvBufDesc *) NetIEMemAlloc(statePtr);
+	if (recvBufDescPtr == (volatile NetIERecvBufDesc *) NIL) {
+	    panic("No memory for a receive buffer descriptor pointer\n");
+	}
+
+	*(short *)recvBufDescPtr = 0;	/* Clear out the status word */
+
+	if (i == 0) {
+	    statePtr->recvBufDscHeadPtr = recvBufDescPtr;
+	    statePtr->recvBufDscTailPtr = recvBufDescPtr;
+	} else {
+	    statePtr->recvBufDscTailPtr->nextRBD = 
+			NetIEOffsetFromSUNAddr((int) recvBufDescPtr,
+				statePtr);
+	    statePtr->recvBufDscTailPtr->realNextRBD = recvBufDescPtr;
+	    statePtr->recvBufDscTailPtr = recvBufDescPtr;
+	}
+
+	/*
+	 * Point the header to its buffer.  It is pointed to the buffer plus
+	 * the size of the ethernet header so that when we receive the 
+	 * packet we can fill in the ethernet header.
+	 */
+
+	recvBufDescPtr->bufAddr = 
+		NetIEAddrFromSUNAddr((int) (statePtr->netIERecvBuffers[i] + 
+			sizeof(Net_EtherHdr)));
+	recvBufDescPtr->realBufAddr = statePtr->netIERecvBuffers[i];
+	NetBfShortSet(recvBufDescPtr->bits2, BufSizeHigh, bufferSize >> 8);
+	NetBfShortSet(recvBufDescPtr->bits2, BufSizeLow, bufferSize & 0xff);
+	NetBfShortSet(recvBufDescPtr->bits2, RBDEndOfList, 0);
+    }
+
+    /*
+     * Link the last element to the first to make it circular and mark the last
+     * element as the end of the list.
+     */
+
+    recvBufDescPtr->nextRBD = 
+		NetIEOffsetFromSUNAddr((int) statePtr->recvBufDscHeadPtr,
+			statePtr);
+    recvBufDescPtr->realNextRBD = statePtr->recvBufDscHeadPtr;
+    NetBfShortSet(recvBufDescPtr->bits2, RBDEndOfList, 1);
+
+    /*
+     * Now allocate the receive frame headers.
+     */
+
+    for (i = 0; i < NET_IE_NUM_RECV_BUFFERS - 1; i++) {
+	recvFrDescPtr = (volatile NetIERecvFrameDesc *) NetIEMemAlloc(statePtr);
+	if (recvFrDescPtr == (volatile NetIERecvFrameDesc *) NIL) {
+	    panic("No memory for a receive frame descriptor pointer\n");
+	}
+
+	*(short *)recvFrDescPtr = 0;	/* Clear out the status word */
+
+	NetBfWordSet(recvFrDescPtr->bits, EndOfList, 0);
+	NetBfWordSet(recvFrDescPtr->bits, Suspend, 0);
+
+	if (i == 0) {
+	    statePtr->recvFrDscHeadPtr = recvFrDescPtr;
+	    statePtr->recvFrDscTailPtr = recvFrDescPtr;
+
+	    /*
+	     * The first receive frame descriptor points to the list of buffer
+	     * descriptors.
+	     */
+
+	    recvFrDescPtr->recvBufferDesc = 
+		    NetIEOffsetFromSUNAddr((int) statePtr->recvBufDscHeadPtr,
+			    statePtr);
+
+	} else {
+	    recvFrDescPtr->recvBufferDesc = NET_IE_NULL_RECV_BUFF_DESC;
+	    statePtr->recvFrDscTailPtr->nextRFD = 
+			NetIEOffsetFromSUNAddr((int) recvFrDescPtr,
+				statePtr);
+	    statePtr->recvFrDscTailPtr->realNextRFD = recvFrDescPtr;
+	    statePtr->recvFrDscTailPtr = recvFrDescPtr;
+	}
+    }
+
+    /*
+     * Link the last element to the first to make it circular.
+     */
+
+    recvFrDescPtr->nextRFD = 
+		    NetIEOffsetFromSUNAddr((int) statePtr->recvFrDscHeadPtr,
+			    statePtr);
+    recvFrDescPtr->realNextRFD = statePtr->recvFrDscHeadPtr;
+
+    NetBfWordSet(recvFrDescPtr->bits, EndOfList, 1);
+
+    scbPtr = statePtr->scbPtr;
+
+    /*
+     * Now start up the receive unit.  To do this we first make sure that
+     * it is idle.  Then we start it up.
+     */
+
+    if (!NetBfShortTest(scbPtr->statusWord, RecvUnitStatus, NET_IE_RUS_IDLE)) {
+	printf("Intel: The receive unit is not idle!!!\n");
+
+	NetBfShortSet(scbPtr->cmdWord, RecvUnitCmd, NET_IE_RUC_ABORT);
+
+	NET_IE_CHANNEL_ATTENTION(statePtr);
+	NetIECheckSCBCmdAccept(scbPtr);
+    }
+
+    scbPtr->recvFrameAreaOffset = 
+		    NetIEOffsetFromSUNAddr((int) statePtr->recvFrDscHeadPtr,
+			    statePtr);
+    NetBfShortSet(scbPtr->cmdWord, RecvUnitCmd, NET_IE_RUC_START);
+
+    NET_IE_CHANNEL_ATTENTION(statePtr);
+    NetIECheckSCBCmdAccept(scbPtr);
+
+    NET_IE_DELAY(NetBfShortTest(scbPtr->statusWord, RecvUnitStatus, 
+	NET_IE_RUS_READY));
+
+    if (!NetBfShortTest(scbPtr->statusWord, RecvUnitStatus, NET_IE_RUS_READY)){
+	printf("Intel: Receive unit never became ready.\n");
+    }
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetIERecvProcess --
+ *
+ *	Process a newly received packet.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NetIERecvProcess(dropPackets, statePtr)
+    Boolean	dropPackets;	/* Drop all packets. */
+    NetIEState	*statePtr;
+{
+    register	volatile NetIERecvBufDesc	*recvBufDescPtr;
+    register	volatile NetIERecvFrameDesc	*recvFrDescPtr;
+    register	volatile Net_EtherHdr		*etherHdrPtr;
+    volatile    NetIERecvFrameDesc		*newRecvFrDescPtr;
+    int		size;
+    int		num;
+
+
+    recvFrDescPtr = statePtr->recvFrDscHeadPtr;
+
+    /*
+     * If not initialized then forget the interrupt.
+     */
+
+    if (recvFrDescPtr == (NetIERecvFrameDesc *) NIL) {
+	return;
+    }
+
+    /*
+     * Loop as long as there are packets to process.
+     */
+
+    while (NetBfWordTest(recvFrDescPtr->bits, Done, 1)) {
+
+	statePtr->stats.packetsRecvd++;
+
+	/*
+	 * If this packet has a buffer associated with it then process it.
+	 */
+
+	if ((unsigned short) recvFrDescPtr->recvBufferDesc != 
+			NET_IE_NULL_RECV_BUFF_DESC) {
+
+	    recvBufDescPtr = statePtr->recvBufDscHeadPtr;
+	    size = NetBfShortGet(recvBufDescPtr->bits1, CountLow) +
+		(NetBfShortGet(recvBufDescPtr->bits1, CountHigh) << 8) + 
+		sizeof(Net_EtherHdr);
+
+	    /*
+	     * Put the ethernet header into the packet.
+	     */
+
+	    etherHdrPtr = (Net_EtherHdr *) recvBufDescPtr->realBufAddr;
+	    etherHdrPtr->source = recvFrDescPtr->srcAddr;
+	    etherHdrPtr->destination = recvFrDescPtr->destAddr;
+	    etherHdrPtr->type = recvFrDescPtr->type;
+
+	    /*
+	     * Call higher level protocol to process the packet.
+	     */
+	    if (!dropPackets) {
+		Net_Input(statePtr->interPtr, (Address)etherHdrPtr, size);
+	    }
+
+	    /*
+	     * Make the element that was just processed the last element in the
+	     * list.  Since this is circular list, no relinking has to be done.
+	     */
+
+	    *(short *) recvBufDescPtr = 0;	/* Clear out the status word. */
+	    NetBfShortSet(recvBufDescPtr->bits2, RBDEndOfList, 1);
+	    NetBfShortSet(statePtr->recvBufDscTailPtr->bits2, RBDEndOfList, 0);
+	    statePtr->recvBufDscTailPtr = recvBufDescPtr;
+	    statePtr->recvBufDscHeadPtr = recvBufDescPtr->realNextRBD;
+	}
+	/*
+	 * Make the element that was just processed the last element in the
+	 * list.  Since this is circular list, no relinking has to be done.
+	 */
+
+	newRecvFrDescPtr = recvFrDescPtr->realNextRFD;
+	recvFrDescPtr->recvBufferDesc = NET_IE_NULL_RECV_BUFF_DESC;
+	NetBfWordSet(recvFrDescPtr->bits, EndOfList, 1);
+	*(short *) recvFrDescPtr = 0;
+	NetBfWordSet(statePtr->recvFrDscTailPtr->bits, EndOfList, 0);
+	statePtr->recvFrDscTailPtr = recvFrDescPtr;
+
+	statePtr->recvFrDscHeadPtr = newRecvFrDescPtr;
+	recvFrDescPtr = newRecvFrDescPtr;
+    }
+
+    /*
+     * Record statistics about packets.
+     */
+
+    if (statePtr->scbPtr->crcErrors != 0) {
+	num = statePtr->scbPtr->crcErrors;
+	statePtr->scbPtr->crcErrors = 0;
+	statePtr->stats.crcErrors += NetIEShortSwap(num);
+    }
+
+    if (statePtr->scbPtr->alignErrors != 0) {
+	num = statePtr->scbPtr->alignErrors;
+	statePtr->scbPtr->alignErrors = 0;
+	statePtr->stats.frameErrors += NetIEShortSwap(num);
+    }
+
+    if (statePtr->scbPtr->resourceErrors != 0) {
+	num = statePtr->scbPtr->resourceErrors;
+	statePtr->scbPtr->resourceErrors = 0;
+	statePtr->stats.recvPacketsDropped += NetIEShortSwap(num);
+    }
+
+    if (statePtr->scbPtr->overrunErrors != 0) {
+	num = statePtr->scbPtr->overrunErrors;
+	statePtr->scbPtr->overrunErrors = 0;
+	statePtr->stats.overrunErrors += NetIEShortSwap(num);
+    }
+
+    /*
+     * See if the receive unit is ready.  If it is, then return.
+     */
+
+    if (NetBfShortTest(statePtr->scbPtr->statusWord, RecvUnitStatus, 
+	NET_IE_RUS_READY)) {
+	return;
+    }
+
+    /*
+     * Otherwise reinitialize the receive unit.  To do this set the head
+     * receive frame pointer to point to the head of the list of buffer
+     * headers and give the reinit command to the chip.
+     */
+
+    printf("Reinit recv unit\n");
+
+    statePtr->recvFrDscHeadPtr->recvBufferDesc = 
+		NetIEOffsetFromSUNAddr((int) statePtr->recvBufDscHeadPtr,
+			statePtr);
+    statePtr->scbPtr->recvFrameAreaOffset =
+		NetIEOffsetFromSUNAddr((int) statePtr->recvFrDscHeadPtr,
+			statePtr);
+    NET_IE_CHECK_SCB_CMD_ACCEPT(statePtr->scbPtr);
+    NetBfShortSet(statePtr->scbPtr->cmdWord, RecvUnitCmd, NET_IE_RUC_START);
+    NET_IE_CHANNEL_ATTENTION(statePtr);
+    return;
+}
+@
+
+
+9.1
+log
+@Checked volatiles.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIERecv.c,v 9.0 89/09/12 15:13:20 douglis Stable Locker: rab $ SPRITE (Berkeley)";
+d19 4
+a22 6
+#include "sprite.h"
+#include "netIEInt.h"
+#include "net.h"
+#include "netInt.h"
+#include "sys.h"
+#include "list.h"
+d46 2
+a47 1
+NetIERecvUnitInit()
+a55 1
+
+d61 1
+a61 1
+	recvBufDescPtr = (volatile NetIERecvBufDesc *) NetIEMemAlloc();
+d69 2
+a70 2
+	    netIEState.recvBufDscHeadPtr = recvBufDescPtr;
+	    netIEState.recvBufDscTailPtr = recvBufDescPtr;
+d72 5
+a76 4
+	    netIEState.recvBufDscTailPtr->nextRBD = 
+			NetIEOffsetFromSUNAddr((int) recvBufDescPtr);
+	    netIEState.recvBufDscTailPtr->realNextRBD = recvBufDescPtr;
+	    netIEState.recvBufDscTailPtr = recvBufDescPtr;
+d86 6
+a91 5
+			NetIEAddrFromSUNAddr((int) (netIERecvBuffers[i] + sizeof(Net_EtherHdr)));
+	recvBufDescPtr->realBufAddr = netIERecvBuffers[i];
+	recvBufDescPtr->bufSizeHigh = bufferSize >> 8;
+	recvBufDescPtr->bufSizeLow = bufferSize & 0xff;
+	recvBufDescPtr->endOfList = 0;
+d100 4
+a103 3
+		NetIEOffsetFromSUNAddr((int) netIEState.recvBufDscHeadPtr);
+    recvBufDescPtr->realNextRBD = netIEState.recvBufDscHeadPtr;
+    recvBufDescPtr->endOfList = 1;
+d110 1
+a110 1
+	recvFrDescPtr = (volatile NetIERecvFrameDesc *) NetIEMemAlloc();
+d117 2
+a118 2
+	recvFrDescPtr->endOfList = 0;
+	recvFrDescPtr->suspend = 0;
+d121 2
+a122 2
+	    netIEState.recvFrDscHeadPtr = recvFrDescPtr;
+	    netIEState.recvFrDscTailPtr = recvFrDescPtr;
+d130 2
+a131 1
+		    NetIEOffsetFromSUNAddr((int) netIEState.recvBufDscHeadPtr);
+d135 5
+a139 4
+	    netIEState.recvFrDscTailPtr->nextRFD = 
+			NetIEOffsetFromSUNAddr((int) recvFrDescPtr);
+	    netIEState.recvFrDscTailPtr->realNextRFD = recvFrDescPtr;
+	    netIEState.recvFrDscTailPtr = recvFrDescPtr;
+d148 3
+a150 2
+		    NetIEOffsetFromSUNAddr((int) netIEState.recvFrDscHeadPtr);
+    recvFrDescPtr->realNextRFD = netIEState.recvFrDscHeadPtr;
+d152 1
+a152 1
+    recvFrDescPtr->endOfList = 1;
+d154 1
+a154 1
+    scbPtr = netIEState.scbPtr;
+d161 1
+a161 1
+    if (scbPtr->statusWord.recvUnitStatus != NET_IE_RUS_IDLE) {
+d164 1
+a164 1
+	scbPtr->cmdWord.recvUnitCmd = NET_IE_RUC_ABORT;
+d166 1
+a166 1
+	NET_IE_CHANNEL_ATTENTION;
+d171 3
+a173 2
+		    NetIEOffsetFromSUNAddr((int) netIEState.recvFrDscHeadPtr);
+    scbPtr->cmdWord.recvUnitCmd = NET_IE_RUC_START;
+d175 1
+a175 1
+    NET_IE_CHANNEL_ATTENTION;
+d178 2
+a179 1
+    NET_IE_DELAY(scbPtr->statusWord.recvUnitStatus != NET_IE_RUS_READY);
+d181 1
+a181 1
+    if (scbPtr->statusWord.recvUnitStatus != NET_IE_RUS_READY) {
+d205 1
+a205 1
+NetIERecvProcess(dropPackets)
+d207 1
+a210 1
+    register	volatile NetIEState		*netIEStatePtr;
+a215 1
+    netIEStatePtr = &netIEState;
+d217 1
+a217 1
+    recvFrDescPtr = netIEStatePtr->recvFrDscHeadPtr;
+d231 1
+a231 1
+    while (recvFrDescPtr->done) {
+d233 1
+a233 1
+	net_EtherStats.packetsRecvd++;
+d242 4
+a245 4
+	    recvBufDescPtr = netIEStatePtr->recvBufDscHeadPtr;
+
+	    size = recvBufDescPtr->countLow +
+	           (recvBufDescPtr->countHigh << 8) + sizeof(Net_EtherHdr);
+d260 1
+a260 1
+		Net_Input((Address)etherHdrPtr, size);
+d269 4
+a272 4
+	    recvBufDescPtr->endOfList = 1;
+	    netIEStatePtr->recvBufDscTailPtr->endOfList = 0; 
+	    netIEStatePtr->recvBufDscTailPtr = recvBufDescPtr;
+	    netIEStatePtr->recvBufDscHeadPtr = recvBufDescPtr->realNextRBD;
+a273 1
+
+d281 1
+a281 1
+	recvFrDescPtr->endOfList = 1;
+d283 2
+a284 2
+	netIEStatePtr->recvFrDscTailPtr->endOfList = 0;
+	netIEStatePtr->recvFrDscTailPtr = recvFrDescPtr;
+d286 1
+a286 1
+	netIEStatePtr->recvFrDscHeadPtr = newRecvFrDescPtr;
+d294 4
+a297 4
+    if (netIEStatePtr->scbPtr->crcErrors != 0) {
+	num = netIEStatePtr->scbPtr->crcErrors;
+	netIEStatePtr->scbPtr->crcErrors = 0;
+	net_EtherStats.crcErrors += NetIEShortSwap(num);
+d299 17
+a315 17
+
+    if (netIEStatePtr->scbPtr->alignErrors != 0) {
+	num = netIEStatePtr->scbPtr->alignErrors;
+	netIEStatePtr->scbPtr->alignErrors = 0;
+	net_EtherStats.frameErrors += NetIEShortSwap(num);
+    }
+
+    if (netIEStatePtr->scbPtr->resourceErrors != 0) {
+	num = netIEStatePtr->scbPtr->resourceErrors;
+	netIEStatePtr->scbPtr->resourceErrors = 0;
+	net_EtherStats.recvPacketsDropped += NetIEShortSwap(num);
+    }
+
+    if (netIEStatePtr->scbPtr->overrunErrors != 0) {
+	num = netIEStatePtr->scbPtr->overrunErrors;
+	netIEStatePtr->scbPtr->overrunErrors = 0;
+	net_EtherStats.overrunErrors += NetIEShortSwap(num);
+d322 2
+a323 1
+    if (netIEStatePtr->scbPtr->statusWord.recvUnitStatus == NET_IE_RUS_READY) {
+d333 1
+a333 1
+printf("Reinit recv unit\n");
+d335 9
+a343 7
+    netIEStatePtr->recvFrDscHeadPtr->recvBufferDesc = 
+		NetIEOffsetFromSUNAddr((int) netIEStatePtr->recvBufDscHeadPtr);
+    netIEStatePtr->scbPtr->recvFrameAreaOffset =
+		NetIEOffsetFromSUNAddr((int) netIEStatePtr->recvFrDscHeadPtr);
+    NET_IE_CHECK_SCB_CMD_ACCEPT(netIEStatePtr->scbPtr);
+    netIEStatePtr->scbPtr->cmdWord.recvUnitCmd = NET_IE_RUC_START;
+    NET_IE_CHANNEL_ATTENTION;
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d16 2
+a17 2
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIERecv.c,v 8.4 89/05/24 07:58:21 rab Exp Locker: douglis $ SPRITE (Berkeley)";
+#endif not lint
+d63 2
+a64 2
+	recvBufDescPtr = (NetIERecvBufDesc *) NetIEMemAlloc();
+	if (recvBufDescPtr == (NetIERecvBufDesc *) NIL) {
+d109 2
+a110 2
+	recvFrDescPtr = (NetIERecvFrameDesc *) NetIEMemAlloc();
+	if (recvFrDescPtr == (NetIERecvFrameDesc *) NIL) {
+d178 1
+d337 1
+@
+
+
+8.4
+log
+@Changes to allow optimization.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIERecv.c,v 8.3 89/01/31 14:02:02 mendel Exp Locker: rab $ SPRITE (Berkeley)";
+@
+
+
+8.3
+log
+@Modifications for the sun4.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIERecv.c,v 8.2 88/11/30 12:32:40 brent Exp Locker: mendel $ SPRITE (Berkeley)";
+d51 4
+a54 4
+    register	NetIERecvBufDesc   *recvBufDescPtr;
+    register	NetIERecvFrameDesc *recvFrDescPtr;
+    register	NetIESCB 	   *scbPtr;
+    int				   bufferSize;
+d201 7
+a207 7
+    register	NetIERecvBufDesc	*recvBufDescPtr;
+    register	NetIERecvFrameDesc	*recvFrDescPtr;
+    register	NetIEState		*netIEStatePtr;
+    register	Net_EtherHdr		*etherHdrPtr;
+    NetIERecvFrameDesc			*newRecvFrDescPtr;
+    int					size;
+    int					num;
+@
+
+
+8.2
+log
+@Fixed a goof.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIERecv.c,v 8.1 88/11/30 11:50:43 brent Exp $ SPRITE (Berkeley)";
+d75 1
+a75 1
+			NetIEOffsetFrom68000Addr((int) recvBufDescPtr);
+d87 1
+a87 1
+			NetIEAddrFrom68000Addr((int) (netIERecvBuffers[i] + sizeof(Net_EtherHdr)));
+d100 1
+a100 1
+		NetIEOffsetFrom68000Addr((int) netIEState.recvBufDscHeadPtr);
+d129 1
+a129 1
+		    NetIEOffsetFrom68000Addr((int) netIEState.recvBufDscHeadPtr);
+d134 1
+a134 1
+			NetIEOffsetFrom68000Addr((int) recvFrDescPtr);
+d145 1
+a145 1
+		    NetIEOffsetFrom68000Addr((int) netIEState.recvFrDscHeadPtr);
+d167 1
+a167 1
+		    NetIEOffsetFrom68000Addr((int) netIEState.recvFrDscHeadPtr);
+d330 1
+a330 1
+		NetIEOffsetFrom68000Addr((int) netIEStatePtr->recvBufDscHeadPtr);
+d332 1
+a332 1
+		NetIEOffsetFrom68000Addr((int) netIEStatePtr->recvFrDscHeadPtr);
+@
+
+
+8.1
+log
+@Sys_Printf => printf   Sys_Panic => panic
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIERecv.c,v 8.0 88/11/11 18:27:25 douglis Stable Locker: brent $ SPRITE (Berkeley)";
+d65 1
+a65 1
+	    "No memory for a receive buffer descriptor pointer\n");
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIERecv.c,v 6.0 88/08/11 12:20:34 brent Stable Locker: douglis $ SPRITE (Berkeley)";
+d65 1
+a65 1
+	    Sys_Panic(SYS_FATAL, "No memory for a receive buffer descriptor pointer\n");
+d111 1
+a111 1
+	    Sys_Panic(SYS_FATAL, "No memory for a receive frame descriptor pointer\n");
+d158 1
+a158 1
+	Sys_Printf("Intel: The receive unit is not idle!!!\n");
+d176 1
+a176 1
+	Sys_Printf("Intel: Receive unit never became ready.\n");
+d327 1
+a327 1
+Sys_Printf("Reinit recv unit\n");
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: netIERecv.c,v 5.2 88/06/27 10:46:04 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+5.2
+log
+@Updated copyright notice and cleaned up comment typos.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: netIERecv.c,v 5.1 88/05/05 17:58:39 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+5.1
+log
+@Conversion to use Mach module
+@
+text
+@d5 8
+a12 2
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+d16 1
+a16 1
+static char rcsid[] = "$Header: netIERecv.c,v 5.0 87/08/11 10:46:19 sprite Exp $ SPRITE (Berkeley)";
+d20 1
+a20 1
+#include "netIE.h"
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: netIERecv.c,v 4.6 87/06/08 15:50:02 nelson Exp $ SPRITE (Berkeley)";
+a13 1
+#include "machine.h"
+@

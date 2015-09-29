@@ -1,0 +1,6 @@
+
+
+          max num1 num2 [..numN]
+               Returns the argument that has the highest numeric
+               value. The arguments, numN may be any interger or
+               floating point values.

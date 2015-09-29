@@ -1,0 +1,68 @@
+
+
+
+CPP                       User Commands                       CPP
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     cpp - C pre-processor
+
+SSYYNNOOPPSSIISS
+     ccpppp [_o_p_t_i_o_n_s]
+
+OOPPTTIIOONNSS
+     See the man  page  for  cccc  to  find  about  about  the  ccpppp
+     switches.
+
+_________________________________________________________________
+
+
+IINNTTRROODDUUCCTTIIOONN
+     CCpppp is the GNU C preprocessor.  CCcc invokes it  automatically
+     to  expand macros and perform conditional compilation before
+     compiling.  This program is rarely invoked by normal  users.
+     The options to ccpppp are all described in the man page for the
+     C compiler.
+
+
+KKEEYYWWOORRDDSS
+     compiler, GNU, macro, preprocessor
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  April 20, 1989                    1
+
+
+

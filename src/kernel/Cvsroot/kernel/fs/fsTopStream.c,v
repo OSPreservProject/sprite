@@ -1,0 +1,2723 @@
+head     9.1;
+branch   ;
+access   ;
+symbols  ds3100:9.1 sun3:9.1 sprited:9.1.1 sun4nw:9.1 symm:9.1 spur:9.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.1
+date     90.10.08.11.35.29;  author mendel;  state Exp;
+branches 9.1.1.1;
+next     9.0;
+
+9.0
+date     89.09.12.15.03.35;  author douglis;  state Stable;
+branches ;
+next     8.15;
+
+8.15
+date     89.08.21.15.23.07;  author mendel;  state Exp;
+branches ;
+next     8.14;
+
+8.14
+date     89.07.01.17.37.14;  author brent;  state Exp;
+branches ;
+next     8.13;
+
+8.13
+date     89.06.15.09.35.01;  author brent;  state Exp;
+branches ;
+next     8.12;
+
+8.12
+date     89.05.30.16.12.03;  author jhh;  state Exp;
+branches ;
+next     8.11;
+
+8.11
+date     89.05.18.16.05.25;  author brent;  state Exp;
+branches ;
+next     8.10;
+
+8.10
+date     89.05.14.15.23.11;  author brent;  state Exp;
+branches ;
+next     8.9;
+
+8.9
+date     89.04.06.17.42.28;  author mgbaker;  state Exp;
+branches ;
+next     8.8;
+
+8.8
+date     89.03.28.09.33.41;  author mgbaker;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.02.14.10.56.33;  author jhh;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.02.07.14.22.49;  author brent;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.01.30.14.03.42;  author brent;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.01.30.09.23.55;  author brent;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.01.06.11.20.05;  author jhh;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.12.21.10.17.39;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.17.09.57.12;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.22.34;  author douglis;  state Stable;
+branches ;
+next     7.0;
+
+7.0
+date     88.11.11.15.33.14;  author brent;  state Exp;
+branches ;
+next     6.11;
+
+6.11
+date     88.11.04.08.25.51;  author brent;  state Exp;
+branches ;
+next     6.10;
+
+6.10
+date     88.10.22.15.15.28;  author brent;  state Exp;
+branches ;
+next     6.9;
+
+6.9
+date     88.10.20.15.44.23;  author brent;  state Exp;
+branches ;
+next     6.8;
+
+6.8
+date     88.10.14.17.17.38;  author mlgray;  state Exp;
+branches ;
+next     6.7;
+
+6.7
+date     88.10.14.12.17.17;  author brent;  state Exp;
+branches ;
+next     6.6;
+
+6.6
+date     88.10.14.10.40.36;  author douglis;  state Exp;
+branches ;
+next     6.5;
+
+6.5
+date     88.10.13.10.11.11;  author douglis;  state Exp;
+branches ;
+next     6.4;
+
+6.4
+date     88.10.11.15.46.53;  author brent;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.10.05.12.06.36;  author brent;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.09.07.16.54.13;  author brent;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.31.12.06.42;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.17.45;  author brent;  state Stable;
+branches ;
+next     1.11;
+
+1.11
+date     88.08.04.15.05.59;  author mlgray;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     88.08.04.14.56.42;  author brent;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     88.06.15.17.14.57;  author brent;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     88.06.08.15.01.50;  author brent;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.06.06.09.39.24;  author brent;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.06.02.11.36.32;  author brent;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.05.10.11.22.43;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.05.06.12.39.37;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.05.05.17.35.14;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.04.11.17.41.47;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.04.10.42.52;  author brent;  state Exp;
+branches ;
+next     ;
+
+9.1.1.1
+date     91.11.15.13.55.57;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@
+
+Stream creation/handling module
+@
+
+
+9.1
+log
+@Fixed include files to use <> rather than "".  Added function prototype.
+@
+text
+@/* 
+ * fsStream.c --
+ *
+ *	The  procedures handle the mapping from streams to
+ *	user-level stream IDs,	which are indexes into a per-process array
+ *	of stream pointers.
+ *
+ * Copyright (C) 1987 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/fs.mendel/RCS/fsTopStream.c,v 8.15 89/08/21 15:23:07 mendel Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsio.h>
+#include <fsNameOps.h>
+#include <fsconsist.h>
+#include <fsStat.h>
+#include <proc.h>
+#include <sync.h>
+#include <rpc.h>
+
+
+/*
+ * Forward declarations. 
+ */
+static ReturnStatus GrowStreamList _ARGS_((Fs_ProcessState *fsPtr, 
+					int newLength));
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_GetStreamID --
+ *
+ *	Save the stream pointer in the process's list of stream pointers
+ *	and return its index in that list.  The index is used as
+ *	a handle for the stream.  E.g. the user supplies the index
+ *	in read and write calls and the kernel gets the file pointer
+ *	from the list.
+ *
+ * Results:
+ *	SUCCESS		- the operation was successful.
+ *	others		- value returned by GrowStreamList.
+ *
+ * Side effects:
+ *	It adds the input streamPtr to the end of the process's list,
+ *	if the list is too short (or empty) it is expanded (or created).
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fs_GetStreamID(streamPtr, streamIDPtr)
+    Fs_Stream	*streamPtr;	/* A reference to an open file */
+    int		*streamIDPtr;	/* Return value, the index of the file pointer
+				 * in the process's list of open files */
+{
+    register Fs_ProcessState	*fsPtr;		/* From process's proc table 
+						 * entry */
+    register Fs_Stream		**streamPtrPtr;	/* Process's list of open 
+						 * streams. */
+    register int		index;		/* Index into list of open 
+						 * streams */
+    ReturnStatus		status;		/* Error from growing file 
+						 * list. */
+
+    fsPtr = (Proc_GetEffectiveProc())->fsPtr;
+
+    if (streamPtr == (Fs_Stream *)0) {
+	panic( "Zero valued streamPtr");
+    }
+    if (fsPtr->streamList == (Fs_Stream **)NIL) {
+	/*
+	 * Allocate the initial array of file pointers.
+	 */
+	(void)GrowStreamList(fsPtr, 8);
+    }
+
+    /*
+     * Take the first free streamID, or add a new one to the end.
+     */
+    for (index = 0, streamPtrPtr = fsPtr->streamList; 
+	 index < fsPtr->numStreams; 
+	 index++, streamPtrPtr++) {
+	if (*streamPtrPtr == (Fs_Stream *)NIL) {
+	    *streamPtrPtr = streamPtr;
+	    *streamIDPtr = index;
+	    fsPtr->streamFlags[index] = 0;
+	    return(SUCCESS);
+	}
+    }
+    /*
+     * Ran out of room in the original array, allocate a larger
+     * array, copy the contents of the original into the beginning,
+     * then pick the first empty slot.
+     */
+    index = fsPtr->numStreams;
+    status = GrowStreamList(fsPtr, fsPtr->numStreams * 2);
+    if (status == SUCCESS) {
+	*streamIDPtr = index;
+	fsPtr->streamList[index] = streamPtr;
+	fsPtr->streamFlags[index] = 0;
+    }
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_ClearStreamID --
+ *
+ *	This invalidates a stream ID.  This is called in conjuction
+ *	with Fs_Close to close a stream.  The open stream is identified
+ *	by the stream ID which this routine invalidates.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The stream pointer entry in the open stream list is cleared.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Fs_ClearStreamID(streamID, procPtr)
+    int streamID;		/* Stream ID to invalidate */
+    Proc_ControlBlock *procPtr;	/* (Optional) process pointer */
+{
+    if (procPtr == (Proc_ControlBlock *)NIL) {
+	procPtr = Proc_GetEffectiveProc();
+    }
+    procPtr->fsPtr->streamList[streamID] = (Fs_Stream *)NIL;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GrowStreamList --
+ *
+ *	Grow a stream ID list.  This routine
+ *	allocates another array of file pointers and copies the
+ *	values from the original array into the new one.  It also
+ *	initializes the new array elements to NIL.  The original
+ *	array of pointers is free'd and the pointer to the
+ *	array is reset to point to the new array.
+ *
+ * Results:
+ *	SUCCESS		- the operation was successful.
+ *	(One could limit the number of streams here, but we don't.)
+ *
+ * Side effects:
+ *	Grows the stream list and the associated array of flag bytes.
+ *	The number of streams in the file system state is updated.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+GrowStreamList(fsPtr, newLength)
+    Fs_ProcessState *fsPtr;	/* The file system state */
+    int newLength;		/* The length of the new array */
+{
+    register int index;
+    register Fs_Stream **streamList;
+    register char *streamFlags;
+
+    streamList = (Fs_Stream **)malloc(newLength * sizeof(Fs_Stream *));
+    streamFlags = (char *)malloc(newLength * sizeof(char));
+
+    if (fsPtr->numStreams > 0) {
+	bcopy((Address)fsPtr->streamList, (Address)streamList, sizeof(Fs_Stream *) * fsPtr->numStreams);
+	bcopy((Address)fsPtr->streamFlags, (Address)streamFlags, sizeof(char) * fsPtr->numStreams);
+
+	free((Address)fsPtr->streamList);
+	free((Address)fsPtr->streamFlags);
+    
+	for (index=0 ; index < fsPtr->numStreams ; index++) {
+	    if ((int)streamList[index] != NIL &&
+		(unsigned int)streamList[index] < 1024) {
+		panic( "GrowStreamList copied bad streamPtr, %x\n",
+				       streamList[index]);
+	    }
+	}
+    }
+
+    fsPtr->streamList = streamList;
+    fsPtr->streamFlags =  streamFlags;
+
+    for (index=fsPtr->numStreams ; index < newLength ; index++) {
+	fsPtr->streamList[index] = (Fs_Stream *)NIL;
+	fsPtr->streamFlags[index] = 0;
+    }
+    fsPtr->numStreams = newLength;
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_GetStreamPtr --
+ *
+ *	This converts a users stream id into a pointer to the
+ *	stream structure for the open stream.  The stream id is
+ *	an index into a per-process open stream list.  This does
+ *	bounds checking the open stream list and returns the
+ *	indexed stream pointer.
+ *
+ * Results:
+ *	SUCCESS		- the operation was successful.
+ *	FS_INVALID_ARG	- the stream ID was out of range or the streamPtr
+ *			  for streamID was NIL.
+ *
+ * Side effects:
+ *	*streamPtrPtr is set to reference the stream structure indexed
+ *	by the streamID.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fs_GetStreamPtr(procPtr, streamID, streamPtrPtr)
+    Proc_ControlBlock	*procPtr;	/* The owner of an open file list */
+    int			streamID;	/* A possible index into the list */
+    Fs_Stream		**streamPtrPtr;	/* The pointer from the list*/
+{
+    if (streamID < 0 || streamID >= procPtr->fsPtr->numStreams) {
+	return(FS_INVALID_ARG);
+    } else {
+	register Fs_Stream *streamPtr;
+
+	streamPtr = procPtr->fsPtr->streamList[streamID];
+	if (streamPtr == (Fs_Stream *)NIL) {
+	    return(FS_INVALID_ARG);
+	} else if ((unsigned int)streamPtr < 1024) {
+	    /*
+	     * There was a time when control stream pointers were not
+	     * being passed right, or being passed a second time after
+	     * already being converted to a streamID, which resulted in
+	     * small integers being kept in the stream list instead of
+	     * valid stream pointers.  Not sure if that still happens.
+	     */
+	    panic( "Stream Ptr # %d was an int %d!\n",
+				streamID, streamPtr);
+	    return(FS_INVALID_ARG);
+	} else {
+	    *streamPtrPtr = streamPtr;
+	    return(SUCCESS);
+	}
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_GetNewID --
+ *
+ *	This gets a new stream ID that refers to the same open file
+ *	as the first argument.  After the call the new stream ID will
+ *	be equivalent to the old one - system calls that take a stream
+ *	ID could be passed either stream ID.  There are two uses of this
+ *	routine.  If it doesn't matter what the new stream ID is then
+ *	the second argument should point to FS_ANYID.  If the new stream
+ *	ID should have a value then the second argument should point
+ *	to that value.  If that value was a valid stream ID then the
+ *	stream is first closed.
+ *
+ * Results:
+ *	SUCCESS		- the operation was successful.
+ *	FS_INVALID_ARG	- newStreamIDPtr was bad or had a bad value.
+ *	other		- value returned by FsGrowList.
+ *
+ * Side effects:
+ *	The second argument gets instantiated to a new stream ID.
+ *	If the second argument refered to a valid stream ID on entry
+ *	(as opposed to pointing to FS_ANYID) then that stream is first closed.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fs_GetNewID(streamID, newStreamIDPtr)
+    int streamID;
+    int *newStreamIDPtr;
+{
+    register ReturnStatus 	status;
+    Fs_Stream 			*streamPtr;
+    Proc_ControlBlock		*procPtr;
+    register Fs_ProcessState	*fsPtr;
+
+    if (newStreamIDPtr == (int *)NIL) {
+	return(FS_INVALID_ARG);
+    }
+    procPtr = Proc_GetEffectiveProc();
+    status = Fs_GetStreamPtr(procPtr, streamID, &streamPtr);
+    if (status != SUCCESS) {
+	return(status);
+    }
+    fsPtr = procPtr->fsPtr;
+    if (*newStreamIDPtr == FS_ANYID) {
+	Fs_Stream		*newStreamPtr;
+
+	Fsio_StreamCopy(streamPtr, &newStreamPtr);
+	status = Fs_GetStreamID(newStreamPtr, newStreamIDPtr);
+	if (status != SUCCESS) {
+	    (void)Fs_Close(newStreamPtr);
+	}
+	return(status);
+    } else {
+	if (*newStreamIDPtr == streamID) {
+	    /*
+	     * Probably a user error.  We just return without fiddling
+	     * with reference counts.
+	     */
+	    return(SUCCESS);
+	} else {
+	    /*
+	     * Trying to get a specific stream ID.
+	     */
+	    register int newStreamID;
+
+	    newStreamID = *newStreamIDPtr;
+	    if (newStreamID < 0) {
+		return(FS_INVALID_ARG);
+	    }
+	    if (newStreamID >= fsPtr->numStreams) {
+		register int maxID;
+		/*
+		 * Need to grow the file list to accomodate this stream ID.
+		 * We do a sanity check on the value of stream ID so
+		 * we don't nuke ourselves with a huge array.
+		 */
+		maxID = 2 * fsPtr->numStreams;
+		maxID = (maxID<128 ? 128 : maxID);
+		if (newStreamID > maxID) {
+		    return(FS_NEW_ID_TOO_BIG);
+		}
+		status = GrowStreamList(fsPtr, newStreamID + 1 );
+		if (status != SUCCESS) {
+		    return(status);
+		}
+	    } else {
+		/*
+		 * Check to see if *newStreamIDPtr is a valid (Fs_Stream *)
+		 * and close it if it is.
+		 */
+		register Fs_Stream *oldFilePtr;
+
+		oldFilePtr = fsPtr->streamList[newStreamID];
+		if (oldFilePtr != (Fs_Stream *)NIL) {
+		    (void)Fs_Close(oldFilePtr);
+		}
+	    }
+	    Fsio_StreamCopy(streamPtr, &fsPtr->streamList[newStreamID]);
+	    return(SUCCESS);
+	}
+    }
+}
+@
+
+
+9.1.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fs/fsTopStream.c,v 9.1 90/10/08 11:35:29 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsTopStream.c,v 8.15 89/08/21 15:23:07 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d24 10
+a33 10
+#include "sprite.h"
+#include "fs.h"
+#include "fsutil.h"
+#include "fsio.h"
+#include "fsNameOps.h"
+#include "fsconsist.h"
+#include "fsStat.h"
+#include "proc.h"
+#include "sync.h"
+#include "rpc.h"
+d39 2
+a40 1
+static ReturnStatus GrowStreamList();
+@
+
+
+8.15
+log
+@Break up fs to sperate modules.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsStream.c,v 8.14 89/07/01 17:37:14 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+8.14
+log
+@Fixed two migration bugs:
+1) Wasn't releasing the reference to the stream at the source client.
+2) Was polluting the streamPtr->flags with FS_NEW_STREAM.
+(Handling of the streamPtr->offset and streamPtr->flags is still ugly!)
+@
+text
+@d4 1
+a4 10
+ *	There are two sets of procedures here.  The first manage the stream
+ *	as it relates to the handle table; streams are installed in this
+ *	table so that handle synchronization primitives can be used, and
+ *	so that streams can be found after migration.  The golden rule is
+ *	that the stream's refCount reflects local use, and its client list
+ *	is used to reflect remote use of a stream.  Thus I/O server's
+ *	don't keep references, only client list entries, unless there is
+ *	a local user.
+ *
+ *	The second set of procedures handle the mapping from streams to
+d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsStream.c,v 8.13 89/06/15 09:35:01 brent Exp $ SPRITE (Berkeley)";
+d26 4
+a29 5
+#include "fsInt.h"
+#include "fsStream.h"
+#include "fsOpTable.h"
+#include "fsClient.h"
+#include "fsMigrate.h"
+a34 7
+/*
+ * Monitor to synchronize access to the streamCount variable.
+ */
+static	Sync_Lock	streamLock = Sync_LockInitStatic("Fs:streamLock");
+#define LOCKPTR (&streamLock)
+
+static int	streamCount;	/* Used to generate fileIDs for streams*/
+a38 1
+static ReturnStatus StreamMigCallback();
+d45 1
+a45 757
+ * FsStreamNewClient --
+ *
+ *	Create a new stream for a client.  This chooses a unique minor number
+ *	for the	fileID of the stream, installs it in the handle table,
+ *	and initializes the client list to contain the client.  This is
+ *	used on the file server to remember clients of regular files, and
+ *	when creating pipe streams which need client info for migration.
+ *
+ * Results:
+ *	A pointer to a locked stream with 1 reference and one client entry.
+ *
+ * Side effects:
+ *	Install the new stream into the handle table and increment the global
+ *	streamCount used to generate IDs.  The stream is returned locked and
+ *	with one reference.  Our caller should release this reference if
+ *	this is just a shadow stream.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY Fs_Stream *
+FsStreamNewClient(serverID, clientID, ioHandlePtr, useFlags, name)
+    int			serverID;	/* I/O server for stream */
+    int			clientID;	/* Client of the stream */
+    FsHandleHeader	*ioHandlePtr;	/* I/O handle to attach to stream */
+    int			useFlags;	/* Usage flags from Fs_Open call */
+    char		*name;		/* Name for error messages */
+{
+    register Boolean found;
+    register Fs_Stream *streamPtr;
+    Fs_Stream *newStreamPtr;
+    Fs_FileID fileID;
+
+    LOCK_MONITOR;
+
+    /*
+     * The streamID is uniquified by using our own host ID for the major
+     * field (for network uniqueness), and then choosing minor
+     * numbers until we don't have a local conflict.
+     */
+    fileID.type = FS_STREAM;
+    fileID.serverID = serverID;
+    fileID.major = rpc_SpriteID;
+
+    do {
+	fileID.minor = ++streamCount;
+	found = FsHandleInstall(&fileID, sizeof(Fs_Stream), name,
+				(FsHandleHeader **)&newStreamPtr);
+	if (found) {
+	    /*
+	     * Don't want to conflict with existing streams.
+	     */
+	    FsHandleRelease(newStreamPtr, TRUE);
+	}
+    } while (found);
+
+    streamPtr = newStreamPtr;
+    streamPtr->offset = 0;
+    streamPtr->flags = useFlags;
+    streamPtr->ioHandlePtr = ioHandlePtr;
+    streamPtr->nameInfoPtr = (FsNameInfo *)NIL;
+    List_Init(&streamPtr->clientList);
+    fsStats.object.streams++;
+
+    (void)FsStreamClientOpen(&streamPtr->clientList, clientID, useFlags,
+	    (Boolean *)NIL);
+
+    UNLOCK_MONITOR;
+    return(streamPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsStreamAddClient --
+ *
+ *	Find a stream and add another client to its client list.
+ *
+ * Results:
+ *	A pointer to a locked stream with 1 reference and one client entry.
+ *	Our call should release this reference if this is just a shadow stream.
+ *
+ * Side effects:
+ *	Install the new stream into the handle table and increment the global
+ *	streamCount used to generate IDs.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY Fs_Stream *
+FsStreamAddClient(streamIDPtr, clientID, ioHandlePtr, useFlags, name,
+	    foundClientPtr, foundStreamPtr)
+    Fs_FileID		*streamIDPtr;	/* File ID for stream */
+    int			clientID;	/* Client of the stream */
+    FsHandleHeader	*ioHandlePtr;	/* I/O handle to attach to stream */
+    int			useFlags;	/* Usage flags from Fs_Open call */
+    char		*name;		/* Name for error messages */
+    /*
+     * These two boolean pointers may be NIL if their info is not needed.
+     */
+    Boolean		*foundClientPtr;/* True if Client already existed */
+    Boolean		*foundStreamPtr;/* True if stream already existed */
+{
+    register Boolean found;
+    register Fs_Stream *streamPtr;
+    Fs_Stream *newStreamPtr;
+
+    found = FsHandleInstall(streamIDPtr, sizeof(Fs_Stream), name,
+			    (FsHandleHeader **)&newStreamPtr);
+    streamPtr = newStreamPtr;
+    if (!found) {
+	streamPtr->offset = 0;
+	streamPtr->flags = useFlags;
+	streamPtr->ioHandlePtr = ioHandlePtr;
+	streamPtr->nameInfoPtr = (FsNameInfo *)NIL;
+	List_Init(&streamPtr->clientList);
+	fsStats.object.streams++;
+    } else if (streamPtr->ioHandlePtr == (FsHandleHeader *)NIL) {
+	streamPtr->ioHandlePtr = ioHandlePtr;
+    }
+    (void)FsStreamClientOpen(&streamPtr->clientList, clientID, useFlags,
+	    foundClientPtr);
+    if (foundStreamPtr != (Boolean *)NIL) {
+	*foundStreamPtr = found;
+    }
+    UNLOCK_MONITOR;
+    return(streamPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsStreamMigClient --
+ *
+ *	This is called on the I/O server for to move client streams refs.
+ *	This makes a callback to the source client to release the reference
+ *	to the stream which has (now) moved away.
+ *	Note:  this operation locks the stream in order to serialize
+ *	with a close comming in from a remote client who has dup'ed the
+ *	stream, migrated one refernece, and closed the other reference.
+ *	Also, on the client the callback and the regular close will both
+ *	try to lock the stream in order to release a reference.  Deadlock
+ *	cannot occur because if the close happens first there will be two
+ *	references at the client.  The close at the client will release
+ *	one reference and not try to contact us.  If the callback occurs
+ *	first then the close will come through to us, but it will have
+ *	to wait until we are done with this migration.
+ *
+ * Results:
+ *	TRUE if the stream is shared across the network after migration.
+ *
+ * Side effects:
+ *	Shifts the client list entry from one host to another.  This does
+ *	not add/subtract any references to the stream here on this host.
+ *	However, the call-back releases a reference at the source client.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+FsStreamMigClient(migInfoPtr, dstClientID, ioHandlePtr, closeSrcClientPtr)
+    FsMigInfo		*migInfoPtr;	/* Encapsulated stream */
+    int			dstClientID;	/* New client of the stream */
+    FsHandleHeader	*ioHandlePtr;	/* I/O handle to attach to stream */
+    Boolean		*closeSrcClientPtr;	/* Return - TRUE if the src
+					 * client stopped using stream */
+{
+    register Boolean found;
+    register Fs_Stream *streamPtr;
+    Fs_Stream *newStreamPtr;
+    int newClientStream = migInfoPtr->flags & FS_NEW_STREAM;
+    ReturnStatus status;
+    Boolean shared;
+
+    /*
+     * Get the stream and synchronize with closes from the client.
+     * The I/O handle has to be unlocked while the stream is locked
+     * in order to prevent deadlock with un-related open/close activity.
+     */
+    FsHandleUnlock(ioHandlePtr);
+    found = FsHandleInstall(&migInfoPtr->streamID, sizeof(Fs_Stream),
+			    (char *)NIL, (FsHandleHeader **)&newStreamPtr);
+    streamPtr = newStreamPtr;
+    if (!found) {
+	streamPtr->offset = migInfoPtr->offset;
+	streamPtr->flags = migInfoPtr->flags & ~FS_NEW_STREAM;
+	streamPtr->ioHandlePtr = ioHandlePtr;
+	streamPtr->nameInfoPtr = (FsNameInfo *)NIL;
+	List_Init(&streamPtr->clientList);
+	fsStats.object.streams++;
+    } else if (streamPtr->ioHandlePtr == (FsHandleHeader *)NIL) {
+	streamPtr->ioHandlePtr = ioHandlePtr;
+    }
+    if ((streamPtr->flags & FS_RMT_SHARED) == 0) {
+	/*
+	 * We don't think the stream is being shared so we
+	 * grab the offset from the client.
+	 */
+	streamPtr->offset = migInfoPtr->offset;
+    }
+    if (migInfoPtr->srcClientID != rpc_SpriteID) {
+	/*
+	 * Call back to the client to tell it to release its reference
+	 * on the stream.  We can't hold the I/O handle locked because
+	 * an unrelated close from the source client might have the
+	 * I/O handle locked over there.  By unlocking this I/O handle
+	 * we allow unrelated closes to complete, while the stream
+	 * lock prevents closes of other references to this stream
+	 * from comming in and changing the state.
+	 */
+	status = StreamMigCallback(migInfoPtr, &shared);
+    } else {
+	/*
+	 * The stream has been migrated away from us, the I/O server.
+	 * Decrement the stream ref count.  The I/O handle references
+	 * are left alone here on the I/O server.
+	 */
+	FsHandleDecRefCount((FsHandleHeader *)streamPtr);
+	shared = (streamPtr->hdr.refCount > 1);
+	status = SUCCESS;
+    }
+
+    if (status != SUCCESS || !shared) {
+	/*
+	 * The client doesn't perceive sharing of the stream so
+	 * it must be its last reference so we indicate an I/O close is needed.
+	 */
+	*closeSrcClientPtr = TRUE;
+	(void)FsStreamClientClose(&streamPtr->clientList,
+				  migInfoPtr->srcClientID);
+    } else {
+	*closeSrcClientPtr = FALSE;
+    }
+    /*
+     * Mark (unmark) the stream if it is being shared.  This is checked
+     * in the read and write RPC stubs in order to know what offset to use,
+     * the one here in the shadow stream, or the one from the client.
+     */
+    if (FsStreamClientOpen(&streamPtr->clientList, dstClientID,
+			    migInfoPtr->flags, (Boolean *)NIL)) {
+	streamPtr->flags |= FS_RMT_SHARED;
+    } else {
+	streamPtr->flags &= ~FS_RMT_SHARED;
+    }
+    migInfoPtr->flags = streamPtr->flags | newClientStream;
+    migInfoPtr->offset = streamPtr->offset;
+    FsHandleRelease(streamPtr, TRUE);
+    FsHandleLock(ioHandlePtr);
+}
+
+/*
+ * Parameters and results for RPC_FS_RELEASE that is called
+ * to release a reference to a stream on the source of a migration.
+ */
+typedef struct {
+    Fs_FileID streamID;		/* Stream from which to release a reference */
+} FsStreamReleaseParam;
+
+typedef struct {
+    Boolean	inUse;		/* TRUE if stream still in use after release */
+} FsStreamReleaseReply;
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StreamMigCallback --
+ *
+ *	Call back to the source client of a migration and tell it to
+ *	release its stream.  This invokes FsStreamMigrate on the
+ *	remote client
+ *
+ * Results:
+ *	A return status.
+ *
+ * Side effects:
+ *      None.
+ *	
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+StreamMigCallback(migInfoPtr, sharedPtr)
+    FsMigInfo	*migInfoPtr;	/* Encapsulated information */
+    Boolean	*sharedPtr;	/* TRUE if stream still used on client */
+{
+    register ReturnStatus	status;
+    Rpc_Storage 		storage;
+    FsStreamReleaseParam	param;
+    FsStreamReleaseReply	reply;
+
+    param.streamID = migInfoPtr->streamID;
+    storage.requestParamPtr = (Address) &param;
+    storage.requestParamSize = sizeof(param);
+    storage.requestDataPtr = (Address)NIL;
+    storage.requestDataSize = 0;
+
+    reply.inUse = FALSE;
+    storage.replyParamPtr = (Address)&reply;
+    storage.replyParamSize = sizeof(reply);
+    storage.replyDataPtr = (Address) NIL;
+    storage.replyDataSize = 0;
+
+    status = Rpc_Call(migInfoPtr->srcClientID, RPC_FS_RELEASE, &storage);
+
+    *sharedPtr = reply.inUse;
+    if (status != SUCCESS && fsMigDebug) {
+	printf("StreamMigCallback: status %x from RPC.\n", status);
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_RpcReleaseStream --
+ *
+ *	The service stub for FsStreamMigCallback.
+ *	This invokes the StreamMigrate routine that releases a reference
+ *	to a stream on this host.  Our reply message indicates if
+ *	the stream is still in use on this host.
+ *
+ * Results:
+ *	FS_STALE_HANDLE if handle that if client that is migrating the file
+ *	doesn't have the file opened on this machine.  Otherwise return
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+Fs_RpcReleaseStream(srvToken, clientID, command, storagePtr)
+    ClientData srvToken;	/* Handle on server process passed to
+				 * Rpc_Reply */
+    int clientID;		/* Sprite ID of client host */
+    int command;		/* Command identifier */
+    Rpc_Storage *storagePtr;    /* The request fields refer to the request
+				 * buffers and also indicate the exact amount
+				 * of data in the request buffers.  The reply
+				 * fields are initialized to NIL for the
+				 * pointers and 0 for the lengths.  This can
+				 * be passed to Rpc_Reply */
+{
+    register FsStreamReleaseParam	*paramPtr;
+    register Fs_Stream			*streamPtr;
+    register ReturnStatus		status;
+    register FsStreamReleaseReply	*replyPtr;
+    register Rpc_ReplyMem		*replyMemPtr;
+
+    paramPtr = (FsStreamReleaseParam *) storagePtr->requestParamPtr;
+
+    streamPtr = FsStreamClientVerify(&paramPtr->streamID, rpc_SpriteID);
+    if (streamPtr == (Fs_Stream *) NIL) {
+	printf("Fs_RpcReleaseStream, unknown stream <%d>, client %d\n",
+	    paramPtr->streamID.major, clientID);
+	return(FS_STALE_HANDLE);
+    }
+    replyPtr = mnew(FsStreamReleaseReply);
+    storagePtr->replyParamPtr = (Address)replyPtr;
+    storagePtr->replyParamSize = sizeof(FsStreamReleaseReply);
+    storagePtr->replyDataPtr = (Address)NIL;
+    storagePtr->replyDataSize = 0;
+
+    status = FsStreamRelease(streamPtr, &replyPtr->inUse);
+
+    replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
+    replyMemPtr->paramPtr = storagePtr->replyParamPtr;
+    replyMemPtr->dataPtr = (Address) NIL;
+    Rpc_Reply(srvToken, status, storagePtr, Rpc_FreeMem,
+		(ClientData)replyMemPtr);
+    return(SUCCESS);
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * FsStreamRelease --
+ *
+ *	This is called to release a reference to a stream at the source
+ *	of a migration.  We are told to release the reference by the
+ *	I/O server during its FsStreamMigClient call.  The timing of our
+ *	call ensures that a simultaneous Fs_Close on the stream will be
+ *	properly synchronized - the I/O server has to know how many
+ *	stream references we, the source of a migration, really have.
+ *
+ * Results:
+ *	SUCCESS unless the stream isn't even found.  This sets the FS_RMT_SHARED
+ *	flag in the *flagsPtr field if the stream is still in use here,
+ *	otherwise it clears this flag.
+ *
+ * Side effects:
+ *	This releases one reference to the stream.  If it is the last
+ *	reference then this propogates the close down to the I/O handle
+ *	by calling the stream-specific release procedure.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+/*ARGSUSED*/
+ReturnStatus
+FsStreamRelease(streamPtr, inUsePtr)
+    Fs_Stream *streamPtr;	/* Stream to release, should be locked */
+    Boolean *inUsePtr;		/* TRUE if still in use after release */
+{
+    /*
+     * Release the refernece that has now migrated away.
+     */
+    FsHandleDecRefCount((FsHandleHeader *)streamPtr);
+    /*
+     * If this is the last refernece then call down to the I/O handle
+     * so it can decrement use counts that come from the stream.
+     * (Remember there is still one reference from Fs_RpcReleaseStream)
+     */
+    if (streamPtr->hdr.refCount <= 1) {
+	(*fsStreamOpTable[streamPtr->ioHandlePtr->fileID.type].release)
+		(streamPtr->ioHandlePtr, streamPtr->flags);
+	if (FsStreamClientClose(&streamPtr->clientList, rpc_SpriteID)) {
+	    /*
+	     * No references, no other clients, nuke it.
+	     */
+	    *inUsePtr = FALSE;
+	    FsStreamDispose(streamPtr);
+	    return(SUCCESS);
+	}
+    }
+    *inUsePtr = TRUE;
+    FsHandleRelease(streamPtr, TRUE);
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsStreamNewID --
+ *
+ *	Generate a new streamID for a client.  This chooses a unique minor
+ *	number for the	fileID of the stream and returns the fileID.  This
+ *	is used on the file server to generate IDs for remote device streams.
+ *	This ID will be used to create matching streams on the device I/O server
+ *	and on the client's machine.
+ *
+ * Results:
+ *	A unique fileID for a stream to the given I/O server.
+ *
+ * Side effects:
+ *	Increment the global streamCount used to generate IDs.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+FsStreamNewID(serverID, streamIDPtr)
+    int			serverID;	/* I/O server for stream */
+    Fs_FileID		*streamIDPtr;	/* Return - FileID for the stream */
+{
+    register Boolean found;
+    Fs_Stream *newStreamPtr;
+    Fs_FileID fileID;
+
+    LOCK_MONITOR;
+
+    /*
+     * The streamID is uniquified by using our own host ID for the major
+     * field (for network uniqueness), and then choosing minor
+     * numbers until we don't have a local conflict.
+     */
+    fileID.type = FS_STREAM;
+    fileID.serverID = serverID;
+    fileID.major = rpc_SpriteID;
+
+    do {
+	fileID.minor = ++streamCount;
+	found = FsHandleInstall(&fileID, sizeof(Fs_Stream), (char *)NIL,
+				(FsHandleHeader **)&newStreamPtr);
+	if (found) {
+	    /*
+	     * Don't want to conflict with existing streams.
+	     */
+	    FsHandleRelease(newStreamPtr, TRUE);
+	}
+    } while (found);
+    *streamIDPtr = newStreamPtr->hdr.fileID;
+    FsHandleRelease(newStreamPtr, TRUE);
+    FsHandleRemove(newStreamPtr);
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_StreamCopy --
+ *
+ *	Duplicate a stream.  This ups the reference count on the stream
+ *	so that it won't go away until its last user closes it.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The reference count on the stream is incremented.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+Fs_StreamCopy(oldStreamPtr, newStreamPtrPtr)
+    Fs_Stream *oldStreamPtr;
+    Fs_Stream **newStreamPtrPtr;
+{
+    *newStreamPtrPtr = FsHandleDupType(Fs_Stream, oldStreamPtr);
+    FsHandleUnlock(oldStreamPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsStreamClientVerify --
+ *
+ *	Verify that the remote client is known for the stream, and return
+ *	a locked pointer to the stream's handle.
+ *
+ * Results:
+ *	A pointer to the handle for the stream, or NIL if
+ *	the client is bad.
+ *
+ * Side effects:
+ *	The handle is returned locked and with its refCount incremented.
+ *	It should be released with FsHandleRelease(..., TRUE)
+ *
+ *----------------------------------------------------------------------
+ */
+
+Fs_Stream *
+FsStreamClientVerify(streamIDPtr, clientID)
+    Fs_FileID	*streamIDPtr;	/* Client's stream ID */
+    int		clientID;	/* Host ID of the client */
+{
+    register FsStreamClientInfo *clientPtr;
+    register Fs_Stream *streamPtr;
+    Boolean found = FALSE;
+
+    streamPtr = FsHandleFetchType(Fs_Stream, streamIDPtr);
+    if (streamPtr != (Fs_Stream *)NIL) {
+	LIST_FORALL(&streamPtr->clientList, (List_Links *) clientPtr) {
+	    if (clientPtr->clientID == clientID) {
+		found = TRUE;
+		break;
+	    }
+	}
+	if (!found) {
+	    register FsHandleHeader *tHdrPtr = streamPtr->ioHandlePtr;
+	    printf("FsStreamClientVerify, unknown client %d for stream <%d>\n",
+		clientID, tHdrPtr->fileID.minor);
+	    FsHandleRelease(streamPtr, TRUE);
+	    streamPtr = (Fs_Stream *)NIL;
+	}
+    } else {
+	printf("No stream <%d> for client %d\n", streamIDPtr->minor, clientID);
+    }
+    return(streamPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsStreamDispose --
+ *
+ *	Discard a stream.  This call removes the stream from the handle
+ *	table and frees associated storage.  The I/O handle pointer part
+ *	should have already been cleaned up by its handler.
+ *
+ *	If the stream still has associated clients, release the reference
+ *	to the stream but don't get rid of the stream, since it is a shadow
+ *	stream.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Remove the stream handle from the handle table.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Boolean fsStreamDisposeDebug = TRUE;
+
+ENTRY void
+FsStreamDispose(streamPtr)
+    register Fs_Stream *streamPtr;
+{
+    Boolean noClients = TRUE;
+    
+    if (!List_IsEmpty(&streamPtr->clientList)) {
+	noClients = FALSE;
+	if (fsStreamDisposeDebug) {
+	    register FsStreamClientInfo *clientPtr;
+
+	    LIST_FORALL(&streamPtr->clientList, (List_Links *) clientPtr) {
+
+		printf("FsStreamDispose, client %d still in list for stream <%d,%d>, refCount %d\n",
+			  clientPtr->clientID, streamPtr->hdr.fileID.major,
+			  streamPtr->hdr.fileID.minor, streamPtr->hdr.refCount);
+		if (streamPtr->ioHandlePtr != (FsHandleHeader *)NIL) {
+		    printf("\tI/O handle: %s <%d,%d>, refCount %d\n",
+			       FsFileTypeToString(streamPtr->ioHandlePtr->fileID.type),
+			       streamPtr->ioHandlePtr->fileID.major,
+			       streamPtr->ioHandlePtr->fileID.minor,
+			       streamPtr->ioHandlePtr->refCount);
+		}
+	    }
+	}
+    } 
+
+    FsHandleRelease(streamPtr, TRUE);
+    if (noClients) {
+	if (streamPtr->nameInfoPtr != (FsNameInfo *)NIL) {
+	    free((Address)streamPtr->nameInfoPtr);
+	}
+	FsHandleRemove(streamPtr);
+	fsStats.object.streams--;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsStreamScavenge --
+ *
+ *	Scavenge a stream.  Servers may have no references to a stream handle,
+ *	but still have some things on its client list.  Clients have
+ *	references, but no client list.  A stream with neither references
+ *	or a client list is scavengable.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Removes the stream handle if it has no references and no clients.
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef notdef
+Boolean
+FsStreamScavenge(hdrPtr)
+    FsHandleHeader *hdrPtr;
+{
+    register Fs_Stream *streamPtr = (Fs_Stream *)hdrPtr;
+
+    if (streamPtr->hdr.refCount == 0 &&
+	List_IsEmpty(&streamPtr->clientList)) {
+	printf( "FsStreamScavenge, removing stream <%d,%d>\n",
+		streamPtr->hdr.fileID.serverID,
+		streamPtr->hdr.fileID.minor);
+	FsHandleRemove((FsHandleHeader *)streamPtr);
+	fsStats.object.streams--;
+	return(TRUE);
+    } else {
+	FsHandleUnlock((FsHandleHeader *)streamPtr);
+	return(FALSE);
+    }
+}
+#endif notdef
+
+
+typedef struct StreamReopenParams {
+    Fs_FileID	streamID;
+    Fs_FileID	ioFileID;
+    int		useFlags;
+    int		offset;
+} StreamReopenParams;
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsStreamReopen --
+ *
+ *	This is called initially on the client side from FsHandleReopen.
+ *	That instance then does an RPC to the server, which again invokes
+ *	this routine.  On the client side we don't do much except pass
+ *	over the streamID and the ioHandle fileID so the server can
+ *	re-create state.  On the server we have to re-setup the stream,
+ *	which is sort of a pain because it must reference the correct
+ *	I/O handle.
+ *
+ * Results:
+ *	SUCCESS if the stream was reopened.
+ *
+ * Side effects:
+ *	On the client, do an RPC to the server.
+ *	On the server, re-create the stream.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ENTRY ReturnStatus
+FsStreamReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
+    FsHandleHeader	*hdrPtr;	/* Stream's handle header */
+    int			clientID;
+    ClientData		inData;		/* Non-NIL on the server */
+    int			*outSizePtr;	/* Non-NIL on the server */
+    ClientData		*outDataPtr;	/* Non-NIL on the server */
+{
+    register Fs_Stream	*streamPtr = (Fs_Stream *)hdrPtr;
+    ReturnStatus status;
+
+    if (inData == (ClientData)NIL) {
+	/*
+	 * Called on the client side.  We contact the server to invoke
+	 * this procedure there with some input parameters.
+	 */
+	StreamReopenParams reopenParams;
+	int outSize = 0;
+
+	reopenParams.streamID = hdrPtr->fileID;
+	reopenParams.ioFileID = streamPtr->ioHandlePtr->fileID;
+	reopenParams.useFlags = streamPtr->flags;
+	reopenParams.offset   = streamPtr->offset;
+	status = FsSpriteReopen(hdrPtr, sizeof(reopenParams),
+		    (Address)&reopenParams, &outSize, (Address)NIL);
+    } else {
+	/*
+	 * Called on the server side.  We need to first make sure there
+	 * is a corresponding I/O handle for the stream, and then we
+	 * can set up the stream.
+	 */
+	StreamReopenParams	*reopenParamsPtr;
+	register Fs_FileID	*fileIDPtr;
+	FsHandleHeader		*ioHandlePtr;
+
+	reopenParamsPtr = (StreamReopenParams *)inData;
+	fileIDPtr = &reopenParamsPtr->ioFileID;
+	ioHandlePtr = (*fsStreamOpTable[fileIDPtr->type].clientVerify)
+			(fileIDPtr, clientID, (int *)NIL);
+	if (ioHandlePtr != (FsHandleHeader *)NIL) {
+	    streamPtr = FsStreamAddClient(&reopenParamsPtr->streamID, clientID,
+		    ioHandlePtr, reopenParamsPtr->useFlags, ioHandlePtr->name,
+		    (Boolean *)NIL, (Boolean *)NIL);
+	    /*
+	     * BRENT Have to worry about the shared offset here.
+	     */
+	    streamPtr->offset = reopenParamsPtr->offset;
+
+	    FsHandleRelease(ioHandlePtr, TRUE);
+	    FsHandleRelease(streamPtr, TRUE);
+	    status = SUCCESS;
+	} else {
+	    printf(
+		"FsStreamReopen, %s I/O handle <%d,%d> not found\n",
+		FsFileTypeToString(fileIDPtr->type),
+		fileIDPtr->major, fileIDPtr->minor);
+	    status = FAILURE;
+	}
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsGetStreamID --
+d64 1
+a64 1
+FsGetStreamID(streamPtr, streamIDPtr)
+d122 1
+a122 1
+ * FsClearStreamID --
+d137 1
+a137 1
+FsClearStreamID(streamID, procPtr)
+d213 1
+a213 1
+ * FsGetStreamPtr --
+d233 1
+a233 1
+FsGetStreamPtr(procPtr, streamID, streamPtrPtr)
+d306 1
+a306 1
+    status = FsGetStreamPtr(procPtr, streamID, &streamPtr);
+d314 2
+a315 2
+	Fs_StreamCopy(streamPtr, &newStreamPtr);
+	status = FsGetStreamID(newStreamPtr, newStreamIDPtr);
+d365 1
+a365 1
+	    Fs_StreamCopy(streamPtr, &fsPtr->streamList[newStreamID]);
+@
+
+
+8.13
+log
+@Added a new RPC RPC_FS_STREAM_RELEASE so we don't have to
+overload RPC_FS_MIGRATE with the function of releasing
+a reference to a stream at the source client.
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsStream.c,v 8.12 89/05/30 16:12:03 jhh Exp $ SPRITE (Berkeley)";
+d245 1
+a245 1
+	streamPtr->flags = migInfoPtr->flags;
+d467 4
+d473 1
+a473 3
+     * (The funky check against 2 is because there have been two fetches
+     * of the stream.  One by Fs_RpcReleaseStream, plus there is the
+     * original ref from the stream that has migrated.  Thus 2 is the minimum.)
+d475 1
+a475 1
+    if (streamPtr->hdr.refCount <= 2) {
+@
+
+
+8.12
+log
+@Removed call to Sync_LockRegister
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsStream.c,v 8.11 89/05/18 16:05:25 brent Exp Locker: jhh $ SPRITE (Berkeley)";
+d311 12
+d345 3
+a347 3
+    Rpc_Storage 	storage;
+    FsMigInfo		migInfo;
+    FsMigParam		migParam;
+d349 3
+a351 8
+    /*
+     * We want to call FsStreamMigrate, so we change the ioFileID to
+     * the streamID before passing it.
+     */
+    migInfo = *migInfoPtr;
+    migInfo.ioFileID = migInfoPtr->streamID;
+    storage.requestParamPtr = (Address) &migInfo;
+    storage.requestParamSize = sizeof(FsMigInfo);
+d355 3
+a357 2
+    storage.replyParamPtr = (Address)&migParam;
+    storage.replyParamSize = sizeof(FsMigParam);
+d361 1
+a361 4
+    status = Rpc_Call(migInfoPtr->srcClientID, RPC_FS_MIGRATE, &storage);
+
+    if (status == SUCCESS) {
+	FsMigrateReply	*migReplyPtr;
+d363 3
+a365 6
+	migReplyPtr = &(migParam.migReply);
+	*sharedPtr = migReplyPtr->flags & FS_RMT_SHARED;
+    } else if (fsMigDebug) {
+	printf(
+	  "StreamMigCallback: status %x from remote migrate routine.\n",
+		  status);
+d371 65
+d438 1
+a438 1
+ * FsStreamMigrate --
+a446 4
+ *	FIXME: this uses FS_RPC_MIGRATE instead of a new RPC.  This requires
+ *	a patch in the RPC stub for FS_RPC_MIGRATE, and a patch here because
+ *	there are more references to the stream that originally thought.
+ *
+d454 2
+a455 1
+ *	reference then this propogates the close down to the I/O handle.
+d462 3
+a464 7
+FsStreamMigrate(migInfoPtr, dstClientID, flagsPtr, offsetPtr, sizePtr, dataPtr)
+    FsMigInfo	*migInfoPtr;	/* Migration state */
+    int		dstClientID;	/* ID of target client */
+    int		*flagsPtr;	/* In/Out Stream usage flags */
+    int		*offsetPtr;	/* Return - new stream offset (not needed) */
+    int		*sizePtr;	/* Return - 0 */
+    Address	*dataPtr;	/* Return - NIL */
+a465 21
+    register Fs_Stream *streamPtr;
+
+    *sizePtr = 0;
+    *dataPtr = (Address)NIL;
+    /*
+     * Fetch the stream but don't increment the refernece count while
+     * keeping it locked.
+     */
+    streamPtr = FsHandleFetchType(Fs_Stream, &migInfoPtr->streamID);
+    if (streamPtr == (Fs_Stream *)NIL) {
+	printf(
+		"FsStreamMigrate, no stream <%d> for %s handle <%d,%d>\n",
+		migInfoPtr->streamID.minor,
+		FsFileTypeToString(migInfoPtr->ioFileID.type),
+		migInfoPtr->ioFileID.major, migInfoPtr->ioFileID.minor);
+	return(FS_FILE_NOT_FOUND);
+    }
+    FsHandleDecRefCount((FsHandleHeader *)streamPtr);
+
+    *flagsPtr = streamPtr->flags;
+    *offsetPtr = streamPtr->offset;
+d470 2
+a471 4
+     * of the stream.  One by Fs_RpcStartMigration, and one by use.  We
+     * decrement our reference above, but there is still an extra from
+     * Fs_RpcStartMigration.  Plus there is the original ref from the
+     * stream that has migrated.  Thus 2 is the minimum.)
+d480 1
+a480 1
+	    *flagsPtr &= ~FS_RMT_SHARED;
+d485 1
+a485 1
+    *flagsPtr |= FS_RMT_SHARED;
+@
+
+
+8.11
+log
+@Correctly fixed the deadlock problem in migration.
+The stream and the I/O handle cannot be locked at the same time
+during the migration book-keeping done on the I/O server.
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsStream.c,v 8.10 89/05/14 15:23:11 brent Exp Locker: brent $ SPRITE (Berkeley)";
+a95 1
+    Sync_LockRegister(&streamLock);
+@
+
+
+8.10
+log
+@Fixed StreamMigrateCallback to unlock the I/O handle
+so that migrations and unrelated closes do not deadlock.
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsStream.c,v 8.9 89/04/06 17:42:28 mgbaker Exp $ SPRITE (Berkeley)";
+d237 2
+d240 1
+a270 1
+	FsHandleUnlock(ioHandlePtr);
+a271 1
+	FsHandleLock(ioHandlePtr);
+d308 1
+@
+
+
+8.9
+log
+@Changed panic to a printf in the StreamClientVerify procedure.
+Also fixed a typecast.
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsStream.c,v 8.8 89/03/28 09:33:41 mgbaker Exp $ SPRITE (Berkeley)";
+d261 6
+a266 1
+	 * on the stream.
+d268 1
+d270 1
+d285 1
+a285 1
+	 * it must be its last reference so we do an I/O close.
+@
+
+
+8.8
+log
+@Fixed a comparison between an address and a low integer so that the address
+will be treated as unsigned.  The test was failing on the sun4, since
+addresses are high enough to be negative signed integers.
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsStream.c,v 8.7 89/02/14 10:56:33 jhh Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d564 1
+a564 1
+	    panic("FsStreamClientVerify, client %d not known for stream <%d>\n",
+d918 1
+a918 1
+		(int)streamList[index] < 1024) {
+@
+
+
+8.7
+log
+@Update Sync_Lock initialization and registration
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsStream.c,v 8.6 89/02/07 14:22:49 brent Exp Locker: jhh $ SPRITE (Berkeley)";
+d973 1
+a973 1
+	} else if ((int)streamPtr < 1024) {
+@
+
+
+8.6
+log
+@Removed Lint
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsStream.c,v 8.5 89/01/30 14:03:42 brent Exp $ SPRITE (Berkeley)";
+d48 1
+a48 1
+static	Sync_Lock	streamLock = SYNC_LOCK_INIT_STATIC();
+d96 1
+d654 1
+d674 1
+@
+
+
+8.5
+log
+@Added object stats
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsStream.c,v 8.4 89/01/30 09:23:55 brent Exp Locker: brent $ SPRITE (Berkeley)";
+a93 1
+    FsStreamClientInfo *clientPtr;
+a166 1
+    Boolean foundClient;
+d611 1
+a611 2
+		printf( 
+			  "FsStreamDispose, client %d still in list for stream <%d,%d>, refCount %d\n",
+@
+
+
+8.4
+log
+@Changed scavenge routine to a Boolean
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsStream.c,v 8.3 89/01/06 11:20:05 jhh Exp $ SPRITE (Berkeley)";
+d40 1
+d125 1
+d127 2
+a128 5
+    clientPtr = mnew(FsStreamClientInfo);
+    clientPtr->clientID = clientID;
+    clientPtr->useFlags = useFlags;
+    List_InitElement((List_Links *)clientPtr);
+    List_Insert((List_Links *) clientPtr, LIST_ATFRONT(&streamPtr->clientList));
+d168 1
+d179 1
+d248 1
+d634 1
+d668 1
+@
+
+
+8.3
+log
+@new Sync_Lock definition
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsStream.c,v 8.2 88/12/21 10:17:39 brent Exp Locker: jhh $ SPRITE (Berkeley)";
+d653 1
+a653 1
+ENTRY void
+d665 1
+d668 1
+@
+
+
+8.2
+log
+@Double migration bug fix
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsStream.c,v 8.1 88/11/17 09:57:12 brent Exp $ SPRITE (Berkeley)";
+d47 1
+a47 1
+static	Sync_Lock	streamLock = {0, 0};
+@
+
+
+8.1
+log
+@Downgraded a panic in FsStreamClientVerify to a warning.
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsStream.c,v 7.0 88/11/11 15:33:14 brent Exp $ SPRITE (Berkeley)";
+d221 1
+a221 1
+FsStreamMigClient(migInfoPtr, dstClientID, ioHandlePtr)
+d225 2
+d279 1
+d282 2
+d364 6
+a369 7
+ *	This is called from the stub for RPC_FS_MIGRATE on a host that
+ *	is the source of a migration.  At this point this host can
+ *	release its reference on a stream that migrated.  We are told
+ *	by the I/O server during the I/O migrate call in order
+ *	to properly synchronize with closes to the stream.  For example,
+ *	a stream often gets duped, then one refernce migrates and the olther
+ *	reference gets closed.
+d371 3
+a373 3
+ *	Note.  This is wedged into the mold of an I/O handle migrate routine
+ *	because the RPC system is in flux and it isn't convenient to add
+ *	a new RPC.
+d381 2
+a382 1
+ *	Does an RPC to the source client and logs a message if that fails.
+d421 5
+d427 1
+a427 1
+    if (streamPtr->hdr.refCount <= 1) {
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsStream.c,v 7.0 88/11/11 15:33:14 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d559 1
+a559 1
+	panic("No stream <%d> for client %d\n", streamIDPtr->minor, clientID);
+@
+
+
+7.0
+log
+@New version for conversion to new C library
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsStream.c,v 6.11 88/11/04 08:25:51 brent Exp Locker: brent $ SPRITE (Berkeley)";
+@
+
+
+6.11
+log
+@Fixed use of FS_RMT_SHARED bit so it gets cleared on the server
+when sharing stops.  This is required to make MigrateUseCounts
+do the right thing.
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsStream.c,v 6.10 88/10/22 15:15:28 brent Exp $ SPRITE (Berkeley)";
+a40 2
+#include "mem.h"
+#include "byte.h"
+d125 1
+a125 1
+    clientPtr = Mem_New(FsStreamClientInfo);
+d347 1
+a347 1
+	Sys_Panic(SYS_WARNING,
+d402 1
+a402 1
+	Sys_Panic(SYS_WARNING,
+d553 1
+a553 2
+	    Sys_Panic((fsMigDebug > 0) ? SYS_FATAL : SYS_WARNING,
+		"FsStreamClientVerify, client %d not known for stream <%d>\n",
+d559 1
+a559 3
+	Sys_Panic((fsMigDebug > 0) ? SYS_FATAL : SYS_WARNING,
+		  "No stream <%d> for client %d\n",
+		  streamIDPtr->minor, clientID);
+d601 1
+a601 1
+		Sys_Panic(SYS_WARNING, 
+d606 1
+a606 1
+		    Sys_Printf("\tI/O handle: %s <%d,%d>, refCount %d\n",
+d619 1
+a619 1
+	    Mem_Free((Address)streamPtr->nameInfoPtr);
+d651 1
+a651 1
+	Sys_Panic(SYS_WARNING, "FsStreamScavenge, removing stream <%d,%d>\n",
+d743 1
+a743 1
+	    Sys_Panic(SYS_WARNING,
+d792 1
+a792 1
+	Sys_Panic(SYS_FATAL, "Zero valued streamPtr");
+d890 2
+a891 2
+    streamList = (Fs_Stream **)Mem_Alloc(newLength * sizeof(Fs_Stream *));
+    streamFlags = (char *)Mem_Alloc(newLength * sizeof(char));
+d894 2
+a895 4
+	Byte_Copy(sizeof(Fs_Stream *) * fsPtr->numStreams,
+		  (Address)fsPtr->streamList, (Address)streamList);
+	Byte_Copy(sizeof(char) * fsPtr->numStreams,
+		  (Address)fsPtr->streamFlags, (Address)streamFlags);
+d897 2
+a898 2
+	Mem_Free((Address)fsPtr->streamList);
+	Mem_Free((Address)fsPtr->streamFlags);
+d903 1
+a903 1
+		Sys_Panic(SYS_FATAL, "GrowStreamList copied bad streamPtr, %x\n",
+d965 1
+a965 1
+	    Sys_Panic(SYS_FATAL, "Stream Ptr # %d was an int %d!\n",
+@
+
+
+6.10
+log
+@Minor tweaking
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsStream.c,v 6.9 88/10/20 15:44:23 brent Exp $ SPRITE (Berkeley)";
+d282 5
+a288 3
+	/*
+	 * We detected network sharing so we mark the stream.
+	 */
+d290 2
+d361 4
+a364 3
+ *	This is used to tell the source of a migration that it is ok to
+ *	release its reference on the stream that migrated.  This has to
+ *	done from the I/O server during the I/O migrate call in order
+@
+
+
+6.9
+log
+@Changed FsStreamMigClient so it does a callback to the source client
+to tell it to release a refernece to a stream which has migrated
+away.  This is because Fs_EncapStream is now completely side-effect
+free so migrations and closes of duplicated streams don't race.
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsStream.c,v 6.8 88/10/14 17:17:38 mlgray Exp $ SPRITE (Berkeley)";
+d590 1
+a590 1
+    Fs_Stream *streamPtr;
+d597 1
+a597 2
+	    FsStreamClientInfo *clientPtr;
+	    char *FsFileTypeToString();
+@
+
+
+6.8
+log
+@Patched FsStreamMigClient so it preserves the FS_NEW_STREAM bit.
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: fsStream.c,v 6.7 88/10/14 12:17:17 brent Exp $ SPRITE (Berkeley)";
+d57 1
+d155 2
+a156 1
+FsStreamAddClient(streamIDPtr, clientID, ioHandlePtr, useFlags, name, foundPtr)
+d162 5
+a166 1
+    Boolean		*foundPtr;	/* True if client already existed */
+a183 1
+
+d185 4
+a188 2
+	    foundPtr);
+
+d196 1
+a196 1
+ * FsStreamAddClient --
+d198 13
+a210 4
+ *	Find a stream and move a client from one host to another.  The
+ *	FS_RMT_SHARED stream flag is used to detect if the stream is
+ *	being shared by more than one client.  This may be already set by
+ *	the source client, or we may set it if we detect sharing here.
+d217 2
+a218 1
+ *	not add/subtract any references to the stream itself.
+d223 2
+a224 4
+FsStreamMigClient(streamIDPtr, srcClientID, dstClientID, ioHandlePtr,
+	    offsetPtr, flagsPtr)
+    Fs_FileID		*streamIDPtr;	/* File ID for stream */
+    int			srcClientID;	/* Original client of the stream */
+a226 2
+    int			*offsetPtr;	/* Offset from migration info */
+    int			*flagsPtr;	/* Stream use flags */
+d231 3
+a233 1
+    int newClientStream = *flagsPtr & FS_NEW_STREAM;
+d235 5
+a239 2
+    found = FsHandleInstall(streamIDPtr, sizeof(Fs_Stream), (char *)NIL,
+			    (FsHandleHeader **)&newStreamPtr);
+d242 2
+a243 2
+	streamPtr->offset = *offsetPtr;
+	streamPtr->flags = *flagsPtr;
+d255 1
+a255 1
+	streamPtr->offset = *offsetPtr;
+d257 1
+a257 1
+    if ((*flagsPtr & FS_RMT_SHARED) == 0) {
+d259 17
+d279 2
+a280 1
+	(void)FsStreamClientClose(&streamPtr->clientList, srcClientID);
+d282 2
+a283 2
+    if (FsStreamClientOpen(&streamPtr->clientList, dstClientID, *flagsPtr,
+			    (Boolean *)NIL)) {
+d289 120
+a408 1
+    *flagsPtr = streamPtr->flags | newClientStream;
+d410 17
+d428 1
+a486 1
+#ifdef notdef
+a489 47
+ * FsStreamFind --
+ *
+ *	Find a stream given its fileID.  If it isn't found then a local
+ *	instance is installed.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Install the new stream into the handle table.
+ *
+ *----------------------------------------------------------------------
+ */
+Fs_Stream *
+FsStreamFind(streamIDPtr, ioHandlePtr, useFlags, name, foundPtr)
+    Fs_FileID *streamIDPtr;
+    FsHandleHeader *ioHandlePtr;
+    int useFlags;
+    char *name;
+    Boolean *foundPtr;
+{
+    register Boolean found;
+    register Fs_Stream *streamPtr;
+    Fs_Stream *newStreamPtr;
+
+    found = FsHandleInstall(streamIDPtr, sizeof(Fs_Stream), name,
+			    (FsHandleHeader **)&newStreamPtr);
+    streamPtr = newStreamPtr;
+    if (!found) {
+	streamPtr->offset = 0;
+	streamPtr->flags = useFlags;
+	streamPtr->ioHandlePtr = ioHandlePtr;
+	streamPtr->nameInfoPtr = (FsNameInfo *)NIL;
+	List_Init(&streamPtr->clientList);
+    } else if (streamPtr->ioHandlePtr == (FsHandleHeader *)NIL) {
+	streamPtr->ioHandlePtr = ioHandlePtr;
+    }
+    if (foundPtr != (Boolean *)NIL) {
+	*foundPtr = found;
+    }
+    return(streamPtr);
+}
+#endif notdef
+
+/*
+ *----------------------------------------------------------------------
+ *
+d734 1
+a734 1
+		    (Boolean *)NIL);
+@
+
+
+6.7
+log
+@FsFileID FsUserID change
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: fsStream.c,v 6.6 88/10/14 10:40:36 douglis Exp $ SPRITE (Berkeley)";
+d218 1
+d253 1
+a253 1
+    *flagsPtr = streamPtr->flags;
+@
+
+
+6.6
+log
+@Added debugging hook
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: fsStream.c,v 6.5 88/10/13 10:11:11 douglis Exp $ SPRITE (Berkeley)";
+d93 1
+a93 1
+    FsFileID fileID;
+d155 1
+a155 1
+    FsFileID		*streamIDPtr;	/* File ID for stream */
+d208 1
+a208 1
+    FsFileID		*streamIDPtr;	/* File ID for stream */
+d279 1
+a279 1
+    FsFileID		*streamIDPtr;	/* Return - FileID for the stream */
+d283 1
+a283 1
+    FsFileID fileID;
+d332 1
+a332 1
+    FsFileID *streamIDPtr;
+d407 1
+a407 1
+    FsFileID	*streamIDPtr;	/* Client's stream ID */
+d537 2
+a538 2
+    FsFileID	streamID;
+    FsFileID	ioFileID;
+d598 1
+a598 1
+	register FsFileID	*fileIDPtr;
+@
+
+
+6.5
+log
+@just fixed typo in FsStreamClientVerify error msg.
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: fsStream.c,v 6.4 88/10/11 15:46:53 brent Exp $ SPRITE (Berkeley)";
+d39 1
+d424 1
+a424 1
+	    Sys_Panic(SYS_WARNING,
+d431 3
+a433 2
+	Sys_Panic(SYS_WARNING, "No stream <%d> for client %d\n",
+	    streamIDPtr->minor, clientID);
+@
+
+
+6.4
+log
+@Changed the stream creation primatives to match their higher-level
+use better.  Also added new function to manipulate client lists
+in response to a migration.
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: fsStream.c,v 6.3 88/10/05 12:06:36 brent Exp $ SPRITE (Berkeley)";
+d424 1
+a424 1
+		"FsClientVerify, client %d not known for stream <%d>\n",
+@
+
+
+6.3
+log
+@Added domainTypePtr parameter to the clientVerify routine
+@
+text
+@d7 5
+a11 3
+ *	so that streams can be found after migration.  The second set of
+ *	procedures handle the mapping from streams to user-level stream IDs,
+ *	which are indexes into a per-process array of stream pointers.
+d13 4
+d29 1
+a29 1
+static char rcsid[] = "$Header: fsStream.c,v 6.2 88/09/07 16:54:13 brent Exp $ SPRITE (Berkeley)";
+d54 1
+a54 1
+ * Forward routines. 
+d62 1
+a62 1
+ * FsStreamNew --
+d64 5
+a68 3
+ *	Create a new stream.  This chooses a unique minor number for the
+ *	fileID of the stream, installs it in the handle table,
+ *	and initializes fields.
+d71 1
+a71 1
+ *	None.
+d75 3
+a77 1
+ *	streamCount used to generate IDs.
+d82 1
+a82 1
+FsStreamNew(serverID, ioHandlePtr, useFlags, name)
+d84 1
+d93 1
+d125 6
+d138 178
+d358 1
+d604 3
+a606 4
+	    Boolean found;
+
+	    streamPtr = FsStreamFind(&reopenParamsPtr->streamID, ioHandlePtr,
+		     reopenParamsPtr->useFlags, ioHandlePtr->name, &found);
+d612 1
+a612 12
+	    (void)FsStreamClientOpen(&streamPtr->clientList, clientID,
+			reopenParamsPtr->useFlags);
+
+	    if (!found) {
+		/*
+		 * If the stream wasn't found it means we have to leave
+		 * a refernece on the I/O handle for it.
+		 */
+		FsHandleUnlock(ioHandlePtr);
+	    } else {
+		FsHandleRelease(ioHandlePtr, TRUE);
+	    }
+@
+
+
+6.2
+log
+@Moved name from stream to I/O handle.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: fsStream.c,v 6.1 88/08/31 12:06:42 brent Exp $ SPRITE (Berkeley)";
+d405 1
+a405 1
+			(fileIDPtr, clientID);
+@
+
+
+6.1
+log
+@Removed lint.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: fsStream.c,v 6.0 88/08/11 12:17:45 brent Stable $ SPRITE (Berkeley)";
+d72 1
+a72 1
+FsStreamNew(serverID, ioHandlePtr, useFlags)
+d74 3
+a76 2
+    FsHandleHeader	*ioHandlePtr;
+    int			useFlags;
+d96 1
+a96 1
+	found = FsHandleInstall(&fileID, sizeof(Fs_Stream),
+d134 1
+a134 1
+FsStreamFind(streamIDPtr, ioHandlePtr, useFlags, foundPtr)
+d138 1
+d145 1
+a145 1
+    found = FsHandleInstall(streamIDPtr, sizeof(Fs_Stream),
+a294 3
+	    if (streamPtr->nameInfoPtr->name != (char *)NIL) {
+		Mem_Free((Address)streamPtr->nameInfoPtr->name);
+	    }
+d410 1
+a410 1
+				     reopenParamsPtr->useFlags, &found);
+d431 4
+a434 1
+	    Sys_Panic(SYS_WARNING, "FsStreamReopen, I/O handle not found\n");
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: fsStream.c,v 1.11 88/08/04 15:05:59 mlgray Exp $ SPRITE (Berkeley)";
+d177 1
+a177 1
+ENTRY ReturnStatus
+a183 1
+    return(SUCCESS);
+d417 1
+a417 1
+	    FsStreamClientOpen(&streamPtr->clientList, clientID,
+d713 4
+a716 6
+	status = Fs_StreamCopy(streamPtr, &newStreamPtr);
+	if (status == SUCCESS) {
+	    status = FsGetStreamID(newStreamPtr, newStreamIDPtr);
+	    if (status != SUCCESS) {
+		Fs_Close(newStreamPtr);
+	    }
+d764 2
+a765 3
+	    status =
+		Fs_StreamCopy(streamPtr, &fsPtr->streamList[newStreamID]);
+	    return(status);
+@
+
+
+1.11
+log
+@merging changes from fs into fs.new
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: fsStream.c,v 1.12 88/07/22 12:46:44 douglis Exp $ SPRITE (Berkeley)";
+@
+
+
+1.10
+log
+@Mary checking in for Brent.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: fsStream.c,v 1.9 88/06/15 17:14:57 brent Exp $ SPRITE (Berkeley)";
+d47 4
+d58 3
+a60 2
+ *	Create a new stream.  This chooses a fileID for the stream (because
+ *	the stream gets put into the handle table) and initializes fields.
+d73 3
+a75 3
+    int serverID;
+    FsHandleHeader *ioHandlePtr;
+    int useFlags;
+d84 5
+a90 5
+    /*
+     * The streamID is made unique by using our hostID for the major
+     * number (we are the chooser), and installing under a new minor
+     * number until we don't hit an existing stream.
+     */
+d92 1
+d98 3
+a141 1
+    FsFileID;
+d247 4
+d259 3
+d266 7
+a272 3
+    while (!List_IsEmpty(&streamPtr->clientList)) {
+	FsStreamClientInfo *clientPtr;
+	char *FsFileTypeToString();
+d274 14
+a287 10
+	clientPtr = (FsStreamClientInfo *)List_First(&streamPtr->clientList);
+	Sys_Panic(SYS_WARNING, 
+	    "FsStreamDispose, client %d still in list for stream <%d,%d>\n",
+	    clientPtr->clientID, streamPtr->hdr.fileID.major,
+	    streamPtr->hdr.fileID.minor);
+	if (streamPtr->ioHandlePtr != (FsHandleHeader *)NIL) {
+	    Sys_Printf("\tI/O handle: %s <%d,%d>\n",
+		FsFileTypeToString(streamPtr->ioHandlePtr->fileID.type),
+		streamPtr->ioHandlePtr->fileID.major,
+		streamPtr->ioHandlePtr->fileID.minor);
+d289 1
+a289 3
+	List_Remove((List_Links *)clientPtr);
+	Mem_Free((Address)clientPtr);
+    }
+d292 6
+a297 3
+    if (streamPtr->nameInfoPtr != (FsNameInfo *)NIL) {
+	if (streamPtr->nameInfoPtr->name != (char *)NIL) {
+	    Mem_Free((Address)streamPtr->nameInfoPtr->name);
+d299 1
+a299 1
+	Mem_Free((Address)streamPtr->nameInfoPtr);
+a300 1
+    FsHandleRemove(streamPtr);
+@
+
+
+1.9
+log
+@Took out extraneous monitor lock
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: fsStream.c,v 1.8 88/06/08 15:01:50 brent Exp $ SPRITE (Berkeley)";
+d37 1
+d81 6
+a86 2
+    fileID.major = 0;
+
+a91 3
+	    /*
+	     * Don't want to conflict with existing streams.
+	     */
+d251 17
+a267 2
+    if (!List_IsEmpty(&streamPtr->clientList)) {
+	Sys_Panic(SYS_FATAL, "FsStreamDispose, client list not empty\n");
+d269 1
+@
+
+
+1.8
+log
+@Plugged core leak
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: fsStream.c,v 1.7 88/06/06 09:39:24 brent Exp $ SPRITE (Berkeley)";
+a337 1
+    LOCK_MONITOR;
+a395 1
+    UNLOCK_MONITOR;
+@
+
+
+1.7
+log
+@Fixed stream handle locking protocol
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: fsStream.c,v 1.6 88/06/02 11:36:32 brent Exp $ SPRITE (Berkeley)";
+d249 3
+d254 3
+@
+
+
+1.6
+log
+@Removed ifdef'ed out code that is old and ugly
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: fsStream.c,v 1.5 88/05/10 11:22:43 brent Exp $ SPRITE (Berkeley)";
+d190 2
+a191 2
+ *	The handle is returned unlocked but with its refCount incremented.
+ *	It should be released with FsHandleRelease(..., FALSE)
+d219 1
+a219 2
+	} else {
+	    FsHandleUnlock(streamPtr);
+@
+
+
+1.5
+log
+@Fixed close-on-exec
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: fsStream.c,v 1.4 88/05/06 12:39:37 brent Exp $ SPRITE (Berkeley)";
+a360 18
+#ifdef notdef
+	switch (fileIDPtr->type) {
+	    case FS_RMT_FILE_STREAM:
+		fileIDPtr->type = FS_LCL_FILE_STREAM;
+		status = FsLocalFileHandleInit(fileIDPtr,
+			    (FsLocalFileIOHandle **)ioHandlePtr);
+		break;
+	    case FS_RMT_DEVICE_STREAM:
+		fileIDPtr->type = FS_LCL_DEVICE_STREAM;
+		(void)FsDeviceHandleInit(fileIDPtr,
+			    (FsLocalFileIOHandle **)ioHandlePtr);
+		status = SUCCESS;
+		break;
+	    default:
+		Sys_Panic(SYS_FATAL, "Unsupported type in FsStreamReopen\n");
+		return(FAILURE);
+	}
+#endif
+@
+
+
+1.4
+log
+@Changed proc table -> file system interface
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: fsStream.c,v 1.3 88/05/05 17:35:14 brent Exp $ SPRITE (Berkeley)";
+d554 5
+a558 4
+    Byte_Copy(sizeof(Fs_Stream *) * fsPtr->numStreams,
+	      (Address)fsPtr->streamList, (Address)streamList);
+    Byte_Copy(sizeof(char) * fsPtr->numStreams,
+	      (Address)fsPtr->streamFlags, (Address)streamFlags);
+d560 11
+a570 2
+    Mem_Free((Address)fsPtr->streamList);
+    Mem_Free((Address)fsPtr->streamFlags);
+a574 6
+    for (index=0 ; index < fsPtr->numStreams ; index++) {
+	if ((int)streamList[index] < 1024) {
+	    Sys_Panic(SYS_FATAL, "GrowStreamList copied bad streamPtr, %x\n",
+				   streamList[index]);
+	}
+    }
+@
+
+
+1.3
+log
+@Nuked Sys_GetProcessorNumber
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: fsStream.c,v 1.2 88/04/11 17:41:47 brent Exp $ SPRITE (Berkeley)";
+d441 1
+a441 1
+    register Proc_ControlBlock	*procPtr;	/* This process's proc table 
+d450 1
+a450 1
+    procPtr = Proc_GetEffectiveProc();
+d455 1
+a455 1
+    if (procPtr->streamList == (Fs_Stream **)NIL) {
+d459 1
+a459 9
+#define LENGTH	8
+	streamPtrPtr = 
+		(Fs_Stream **)Mem_Alloc(LENGTH * sizeof(Fs_Stream *));
+	procPtr->streamList = streamPtrPtr;
+	procPtr->numStreams = LENGTH;
+	for (index = 0; index < LENGTH; index++, streamPtrPtr++) {
+	    *streamPtrPtr = (Fs_Stream *)NIL;
+	}
+#undef LENGTH
+d465 2
+a466 2
+    for (index = 0, streamPtrPtr = procPtr->streamList; 
+	 index < procPtr->numStreams; 
+d471 1
+d480 2
+a481 2
+    status = GrowStreamList(&procPtr->streamList, procPtr->numStreams,
+			procPtr->numStreams * 2);
+d483 3
+a485 3
+	*streamIDPtr = procPtr->numStreams;
+	procPtr->streamList[*streamIDPtr] = streamPtr;
+	procPtr->numStreams *= 2;
+d516 1
+a516 1
+    procPtr->streamList[streamID] = (Fs_Stream *)NIL;
+d525 1
+a525 2
+ *	Grow a stream ID list.  The caller passes in a pointer
+ *	to an array of file pointers => ***Fs_Stream.  This routine
+d537 2
+a538 3
+ *	The original array refered to by *streamListPtr is free'd.
+ *	A new array of (Fs_Stream *) is allocated and *streamListPtr
+ *	is reset to point to it.
+d543 2
+a544 3
+GrowStreamList(streamListPtr, oldLength, newLength)
+    Fs_Stream ***streamListPtr;	/* Pointer to an array of (Fs_Stream *) */
+    int oldLength;		/* The length of the orignal array */
+d548 2
+a549 1
+    Fs_Stream **streamList;
+a550 3
+    if (newLength <= oldLength) {
+	Sys_Panic(SYS_FATAL, "GrowStreamList, stupid call\n");
+    }
+d552 1
+d554 4
+a557 2
+    Byte_Copy(sizeof(Fs_Stream *) * oldLength,
+	      (Address)*streamListPtr, (Address)streamList);
+d559 2
+a560 1
+    Mem_Free((Address)*streamListPtr);
+d562 7
+a568 4
+    for (index=0 ; index<oldLength ; index++) {
+	if (streamList[index] == (Fs_Stream *)0) {
+	    Sys_Panic(SYS_FATAL, "FsGrowList copied zero streamPtr, #%d\n",
+				   index);
+d571 3
+a573 2
+    for (index=oldLength ; index<newLength ; index++) {
+	streamList[index] = (Fs_Stream *)NIL;
+d575 1
+a575 1
+    *streamListPtr = streamList;
+d608 1
+a608 1
+    if (streamID < 0 || streamID >= procPtr->numStreams) {
+d613 1
+a613 1
+	streamPtr = procPtr->streamList[streamID];
+d616 10
+a625 2
+	} else if (streamPtr == (Fs_Stream *)0) {
+	    Sys_Panic(SYS_WARNING, "Stream Ptr # %d was zero\n", streamID);
+d667 4
+a670 3
+    ReturnStatus 	status;
+    Fs_Stream 		*streamPtr;
+    Proc_ControlBlock	*procPtr;
+d680 1
+d709 1
+a709 1
+	    if (newStreamID >= procPtr->numStreams) {
+d716 1
+a716 1
+		maxID = 2 * procPtr->numStreams;
+d721 1
+a721 3
+		status = GrowStreamList(&procPtr->streamList,
+				   procPtr->numStreams,
+				   newStreamID + 1 );
+a723 2
+		} else {
+		    procPtr->numStreams = newStreamID + 1;
+d732 1
+a732 1
+		oldFilePtr = procPtr->streamList[newStreamID];
+d738 1
+a738 1
+		Fs_StreamCopy(streamPtr, &procPtr->streamList[newStreamID]);
+@
+
+
+1.2
+log
+@Nuked old procedure
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: fsStream.c,v 1.1 88/04/04 10:42:52 brent Exp $ SPRITE (Berkeley)";
+d450 1
+a450 1
+    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+d521 1
+a521 1
+	procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+d670 1
+a670 1
+    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: fsStream.c,v 5.2 87/09/24 13:15:15 brent Exp $ SPRITE (Berkeley)";
+a291 32
+
+#ifdef notdef
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsStreamCloseCheck --
+ *
+ *	Return TRUE if an actual close should be performed on the stream
+ *	because this is the last reference to a particular open.
+ *	MUST BE CALLED WITH stream handle LOCKED so it is safe to
+ *	look at the reference count of the handle.
+ *
+ * Results:
+ *	TRUE if an actual close should be performed on this stream.
+ *
+ * Side effects:
+ *	Reference count of the stream is decremented.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY Boolean
+FsStreamCloseCheck(streamPtr)
+    Fs_Stream	*streamPtr;
+{
+    register Boolean	shouldClose;
+    LOCK_MONITOR;
+    streamPtr->refCount--;
+    shouldClose = (streamPtr->refCount == 0);
+    UNLOCK_MONITOR;
+    return(shouldClose);
+}
+#endif notdef
+@

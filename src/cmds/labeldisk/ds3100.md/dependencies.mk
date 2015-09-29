@@ -1,0 +1,47 @@
+# DO NOT DELETE THIS LINE -- make depend depends on it.
+
+ds3100.md/labeldisk.o: labeldisk.c
+ds3100.md/labeldisk.o: /sprite/lib/include/sprite.h
+ds3100.md/labeldisk.o: /sprite/lib/include/cfuncproto.h
+ds3100.md/labeldisk.o: /sprite/lib/include/option.h disk.h
+ds3100.md/labeldisk.o: /sprite/lib/include/sys/file.h
+ds3100.md/labeldisk.o: /sprite/lib/include/kernel/fs.h
+ds3100.md/labeldisk.o: /sprite/lib/include/kernel/sys.h
+ds3100.md/labeldisk.o: /sprite/lib/include/sys.h
+ds3100.md/labeldisk.o: /sprite/lib/include/status.h
+ds3100.md/labeldisk.o: /sprite/lib/include/spriteTime.h
+ds3100.md/labeldisk.o: /sprite/lib/include/kernel/syncTypes.h
+ds3100.md/labeldisk.o: /sprite/lib/include/sync.h
+ds3100.md/labeldisk.o: /sprite/lib/include/kernel/procTypes.h
+ds3100.md/labeldisk.o: /sprite/lib/include/proc.h
+ds3100.md/labeldisk.o: /sprite/lib/include/kernel/sigTypes.h
+ds3100.md/labeldisk.o: /sprite/lib/include/ds3100.md/kernel/machTypes.h
+ds3100.md/labeldisk.o: /sprite/lib/include/ds3100.md/kernel/machConst.h
+ds3100.md/labeldisk.o: /sprite/lib/include/ds3100.md/kernel/vmPmaxConst.h
+ds3100.md/labeldisk.o: /sprite/lib/include/fmt.h
+ds3100.md/labeldisk.o: /sprite/lib/include/sig.h
+ds3100.md/labeldisk.o: /sprite/lib/include/vmTypes.h
+ds3100.md/labeldisk.o: /sprite/lib/include/kernel/syncLock.h
+ds3100.md/labeldisk.o: /sprite/lib/include/list.h
+ds3100.md/labeldisk.o: /sprite/lib/include/kernel/timer.h
+ds3100.md/labeldisk.o: /sprite/lib/include/ds3100.md/kernel/timerTick.h
+ds3100.md/labeldisk.o: /sprite/lib/include/ds3100.md/kernel/timerMach.h
+ds3100.md/labeldisk.o: /sprite/lib/include/fs.h
+ds3100.md/labeldisk.o: /sprite/lib/include/kernel/dev.h
+ds3100.md/labeldisk.o: /sprite/lib/include/kernel/devSyslog.h
+ds3100.md/labeldisk.o: /sprite/lib/include/user/fs.h
+ds3100.md/labeldisk.o: /sprite/lib/include/sysStats.h
+ds3100.md/labeldisk.o: /sprite/lib/include/kernel/fsdm.h
+ds3100.md/labeldisk.o: /sprite/lib/include/kernel/ofs.h
+ds3100.md/labeldisk.o: /sprite/lib/include/kernel/fslcl.h
+ds3100.md/labeldisk.o: /sprite/lib/include/kernel/devBlockDevice.h
+ds3100.md/labeldisk.o: /sprite/lib/include/kernel/devDiskLabel.h
+ds3100.md/labeldisk.o: /sprite/lib/include/kernel/lfsDesc.h
+ds3100.md/labeldisk.o: /sprite/lib/include/kernel/lfsDescMap.h
+ds3100.md/labeldisk.o: /sprite/lib/include/kernel/lfsStableMem.h
+ds3100.md/labeldisk.o: /sprite/lib/include/kernel/lfsFileLayout.h
+ds3100.md/labeldisk.o: /sprite/lib/include/kernel/lfsSegLayout.h
+ds3100.md/labeldisk.o: /sprite/lib/include/kernel/lfsSuperBlock.h
+ds3100.md/labeldisk.o: /sprite/lib/include/kernel/lfsUsageArray.h
+ds3100.md/labeldisk.o: /sprite/lib/include/stdio.h
+ds3100.md/labeldisk.o: /sprite/lib/include/errno.h

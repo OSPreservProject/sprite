@@ -1,0 +1,1320 @@
+head     1.13;
+branch   ;
+access   ;
+symbols  srv030:1.13 srv028:1.13 srv027:1.13 srv026:1.12 srv024:1.11 srv022:1.10 srv021:1.10 srv019:1.9 srv018:1.8 srv016:1.7 srv014:1.7 srv010:1.7 srv008:1.6 srv007:1.5 srv006:1.5 srv005:1.5 srv004:1.5 srv003:1.4;
+locks    ; strict;
+comment  @ * @;
+
+
+1.13
+date     92.07.13.14.09.44;  author kupfer;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     92.07.09.15.49.09;  author kupfer;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     92.07.08.12.50.28;  author kupfer;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     92.07.02.16.47.13;  author kupfer;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     92.06.29.16.15.02;  author kupfer;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     92.06.25.16.02.02;  author kupfer;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     92.06.03.22.18.25;  author kupfer;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     92.06.02.15.06.09;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     92.05.08.15.14.23;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     92.04.29.22.17.23;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     92.04.24.00.02.40;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     92.04.16.13.24.40;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     92.04.14.14.11.40;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.13
+log
+@Move the routines for totalling counts and times into a separate file.
+@
+text
+@/* 
+ * vmstat.c --
+ *
+ *	Statistics generation for the virtual memory module.
+ *
+ * Copyright 1986, 1992 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/cmds/vmstat/RCS/vmstat.c,v 1.12 92/07/09 15:49:09 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <bstring.h>
+#include <vm.h>
+#include <vmStat.h>
+#include <option.h>
+#include <spriteTime.h>
+#include <stdio.h>
+#include "vmTotals.h"
+
+/*
+ * Flags to command-line options:
+ */
+int	checkTime = -1;			/* If != -1 indicates how often to
+					 * print a line of stats.  0 means 
+					 * just print one line and quit, 
+					 * non-zero means print a line
+					 * every checkTime seconds. */
+int	printSegInfo = 0;		/* Non-zero means print info for
+					 * all segments. */
+int	whenToPrintHdr = 25;		/* Number of lines of stats after 
+					 * which to print the header. */
+int	faultThreshold = 0;		/* Number of page faults after which
+					 * to print line of stats. */
+int	pageOutThreshold = 0;		/* Number of page outs after which
+					 * to print line of stats. */
+int	relToLastPrint = 0;		/* Non-zero means print stats relative
+					 * to last time printed, not last
+					 * interval of lengh checkTime. */
+int	printMod = 0;			/* Non-zero means replace printing out
+					 * of kernel stack pages with number
+					 * of modified pages in memory. */
+int	maxTimes = -1;			/* Maximum number can skip printing
+					 * a line of info because of 
+					 * faultThreshold or pageOutThreshold.*/
+int	zeroCounters = 0;		/* Reset counters to zero */
+#ifdef DO_VERBOSE
+int	verbose = 0;			/* Print extra more obscure vm 
+					 * stats. */
+#endif
+
+Option optionArray[] = {
+#ifdef DO_SEG_INFO
+    {OPT_TRUE, "s", (Address)&printSegInfo,
+	"Print out information about all in-use segments"},
+#endif
+#ifdef DO_VERBOSE
+    {OPT_TRUE, "v", (Address)&verbose,
+	"Print out extra, more obscure vm statistics"},
+#endif
+    {OPT_INT, "t", (Address)&checkTime,
+	"Print out incremental vm info at this interval"},
+    {OPT_INT, "T", (Address)&maxTimes,
+	"Maximum times skip printing because of -f or -p flags. Used with -t."},
+    {OPT_INT, "l", (Address)&whenToPrintHdr,
+      "Lines to print before should print header (default: 25). Used with -t."},
+#ifdef DO_FAULT_THRESHOLD
+    {OPT_INT, "f", (Address)&faultThreshold, 
+   "Page faults per second before print out info (default: 0).  Used with -t."},
+#endif
+#ifdef DO_PAGEOUT_THRESHOLD
+    {OPT_INT, "p", (Address) &pageOutThreshold,
+    "Page outs per second before print out info (default: 0).  Used with -t."},
+#endif
+    {OPT_TRUE, "P", (Address)&relToLastPrint,
+ "Print out all info since last print, not since last interval. Used with -t."},
+#ifdef DO_MOD_PAGES
+    {OPT_TRUE, "m", (Address)&printMod,
+    "Print out number of modified pages, not kern stack pages.  Used with -t."},
+#endif
+    {OPT_TRUE, "z", (Address)&zeroCounters,
+	 "Reset the current VM counters to zero."},
+};
+int	numOptions = Opt_Number(optionArray);
+
+Vm_Stat 	vmStat;
+Vm_Stat		prevStat;	/* previous copy of vmStat */
+
+int	totalPagesRead;		/* sum of vmStat.pagesRead counts */
+int	totalPartialPagesRead;	/* etc. */
+int	totalPagesZeroed;
+int	totalPagesWritten;
+int	totalPagesCleaned;
+int	prevPagesRead;		/* previous totalPagesRead */
+int	prevPartialPagesRead;	/* etc. */
+int	prevPagesZeroed;
+int	prevPagesWritten;
+
+int		kbPerPage;
+
+/* forward references: */
+
+static void PutTime();
+static void PutPageCounts();
+static void PutPageTimes();
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	The main program for vmstat.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints information on standard output.
+ *
+ *----------------------------------------------------------------------
+ */
+main(argc, argv)
+    int argc;
+    char *argv[];
+{
+    int		pageSize;
+
+    (void)Opt_Parse(argc, argv, optionArray, numOptions, 0);
+    (void)Vm_PageSize(&pageSize);
+    kbPerPage = pageSize / 1024;
+
+    if (zeroCounters) {
+	(void)Vm_Cmd(VM_CLEAR_COUNTERS, 0, NULL);
+    } else if (printSegInfo) {
+	PrintSegInfo();
+    } else if (checkTime == 0) {
+	PrintWide();
+	printf("\n");
+    } else if (checkTime == -1) {
+	PrintSummary();
+    } else {
+	while (1) {
+	    PrintWide();
+	    sleep(checkTime);
+	}
+    }
+    exit(0);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintSegInfo --
+ *
+ *	Print vm info about all segments.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints information on standard output.
+ *
+ *----------------------------------------------------------------------
+ */
+PrintSegInfo()
+{
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintWide --
+ *
+ *	Print a one summary of vm stats.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints information on standard output.
+ *
+ *----------------------------------------------------------------------
+ */
+PrintWide()
+{
+    static	int	numLines = 0;
+    static	int	numCalls = 0;
+
+    (void)Vm_Cmd(VM_GET_STATS, sizeof(vmStat), &vmStat);
+
+#if defined(DO_FAULT_THRESHOLD) || defined(DO_PAGEOUT_THRESHOLD)
+    if (checkTime != 0 && numCalls != maxTimes) {
+	if ((vmStat.totalFaults - prevStat.totalFaults) / checkTime < 
+		faultThreshold &&
+	    (vmStat.pagesWritten - prevStat.pagesWritten) / checkTime < 
+	        pageOutThreshold) {
+	    if (relToLastPrint) {
+		bcopy((Address)&vmStat, (Address)&prevStat, sizeof(Vm_Stat));
+	    }
+	    numCalls++;
+	    return;
+	}
+    }
+#endif
+
+    TotalPageCounts(&vmStat, &totalPagesRead, &totalPartialPagesRead,
+	       &totalPagesZeroed, &totalPagesWritten, &totalPagesCleaned);
+    numCalls = 0;
+    if (numLines % whenToPrintHdr == 0) {
+	if (numLines > 0) {
+	    printf("\n");
+	}
+	printf("%-8s%-8s%-8s%-8s%-8s%-8s",
+	       "  PGS RD", " PGS ZRD", " PGS WRT", " SEG CRT", " SEG DES",
+	       " S LKUPS");
+    }
+    numLines++;
+    printf("\n%8d%8d%8d%8d%8d%8d",
+	   (totalPagesRead - prevPagesRead +
+	    totalPartialPagesRead - prevPartialPagesRead),
+	   totalPagesZeroed - prevPagesZeroed,
+	   totalPagesWritten - prevPagesWritten,
+	   vmStat.segmentsCreated - prevStat.segmentsCreated,
+	   vmStat.segmentsDestroyed - prevStat.segmentsDestroyed,
+	   vmStat.segmentLookups - prevStat.segmentLookups);
+
+    bcopy((Address)&vmStat, (Address)&prevStat, sizeof(Vm_Stat));
+    prevPagesRead = totalPagesRead;
+    prevPartialPagesRead = totalPartialPagesRead;
+    prevPagesZeroed = totalPagesZeroed;
+    prevPagesWritten = totalPagesWritten;
+    fflush(stdout);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintSummary --
+ *
+ *	Print a verbose summary of all vm statistics.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints information on standard output.
+ *
+ *----------------------------------------------------------------------
+ */
+PrintSummary()
+{
+    char timeBuf[1024];
+    Time totalReadTime;		/* sum of Vm_Stat page read times */
+    Time totalReadCopyTime;	/* etc. */
+    Time totalWriteTime;
+
+    (void)Vm_Cmd(VM_GET_STATS, sizeof(vmStat), &vmStat);
+    TotalPageCounts(&vmStat, &totalPagesRead, &totalPartialPagesRead,
+		    &totalPagesZeroed, &totalPagesWritten,
+		    &totalPagesCleaned);
+    TotalPageTimes(&vmStat, &totalReadTime, &totalReadCopyTime,
+		   &totalWriteTime);
+    printf("MEMORY STATS:\n");
+    printf("\tPage Size:\t%-8d\n", 1024 * kbPerPage);
+    printf("\tMemory Size:\t%-8d\n", vmStat.numPhysPages * kbPerPage);
+    printf("\tSync calls:\t%-8d\n", vmStat.syncCalls);
+
+    printf("PAGER STATS:\n");
+    printf("  Full pages reads: %d\n", totalPagesRead);
+    PutPageCounts(vmStat.pagesRead);
+    printf("  Partial pages reads: %d\n", totalPartialPagesRead);
+    PutPageCounts(vmStat.partialPagesRead);
+    printf("  Pages zero-filled: %d\n", totalPagesZeroed);
+    PutPageCounts(vmStat.pagesZeroed);
+    printf("  Read request time: %d.%-03d\n    Avg:\t%.2f ms\n",
+	   totalReadTime.seconds,
+	   (totalReadTime.microseconds + 500) / 1000,
+	   (float)Time_Average(Time_ToMs(totalReadTime),
+			       (totalPagesRead + totalPartialPagesRead + 
+				totalPagesZeroed)));
+    PutPageTimes(vmStat.readTime);
+    printf("  Read copy time: %d.%-03d\n",
+	   totalReadCopyTime.seconds,
+	   (totalReadCopyTime.microseconds + 500) / 1000);
+    PutPageTimes(vmStat.readCopyTime);
+    printf("  Pages written: %d\n", totalPagesWritten);
+    PutPageCounts(vmStat.pagesWritten);
+    printf("  Pages cleaned: %d\n", totalPagesCleaned);
+    PutPageCounts(vmStat.pagesCleaned);
+    printf("  Write request time: %d.%-03d\n    Avg:\t%.2f ms\n",
+	   totalWriteTime.seconds,
+	   (totalWriteTime.microseconds + 500) / 1000,
+	   (float)Time_Average(Time_ToMs(totalWriteTime),
+			       totalPagesWritten));
+    PutPageTimes(vmStat.writeTime);
+    printf("  init: %d calls, %d.%-03d sec (%.2f ms avg.)\n",
+	   vmStat.initCalls, vmStat.initTime.seconds,
+	   (vmStat.initTime.microseconds + 500) / 1000,
+	   (float)Time_Average(Time_ToMs(vmStat.initTime),
+			       vmStat.initCalls));
+    printf("    forced init: %d calls\n", vmStat.forcedInits++);
+    printf("  terminate: %d calls, %d.%-03d sec (%.2f ms avg.)\n",
+	   vmStat.terminateCalls, vmStat.terminateTime.seconds,
+	   (vmStat.terminateTime.microseconds + 500) / 1000,
+	   (float)Time_Average(Time_ToMs(vmStat.terminateTime),
+			       vmStat.terminateCalls));
+    printf("  return calls: %d\n", vmStat.returnCalls);
+    printf("  lock complete: %d calls, %d.%-03d sec (%.2f ms avg.)\n",
+	   vmStat.lockCompletedCalls, vmStat.lockCompletedTime.seconds,
+	   (vmStat.lockCompletedTime.microseconds + 500) / 1000,
+	   (float)Time_Average(Time_ToMs(vmStat.lockCompletedTime),
+			       vmStat.lockCompletedCalls));
+
+    printf("SEGMENT STATS:\n");
+    printf("\tSegments created:\t%-8d\tDestroyed:\t%-8d\n",
+	   vmStat.segmentsCreated, vmStat.segmentsDestroyed);
+    printf("\t\tSegments needlessly destroyed: %d\n",
+	   vmStat.segmentsNeedlesslyDestroyed);
+    printf("\t\tPages wasted: %d\n", vmStat.swapPagesWasted);
+    printf("\tQueue overflows:\t%-8d\n", vmStat.queueOverflows);
+    printf("\tSegment lookups:\t%-8d\n", vmStat.segmentLookups);
+    printf("\tSegments looked at:\t%-8d\tAvg per lookup:\t%-8.2f\n",
+	   vmStat.segmentsLookedAt,
+	   (vmStat.segmentLookups != 0
+	    ? (float)vmStat.segmentsLookedAt / vmStat.segmentLookups
+	    : 0.));
+    printf("\tSegments copied: %-8d\tPages copied: %-8d\n",
+	   vmStat.segmentCopies, vmStat.pagesCopied);
+    printf("\tAvg. init file: %-8.2f pages\tAvg. swap file: %-8.2f pages\n",
+	   (float)vmStat.objPagesCopied / vmStat.segmentCopies,
+	   (float)vmStat.swapPagesCopied / vmStat.segmentCopies);
+    Time_ToAscii(vmStat.forkTime.seconds, TRUE, timeBuf);
+    printf("\tTime in Vm_Fork: %s.%03d    Avg per fork:\t%-8.2f msec\n",
+	   timeBuf,
+	   (vmStat.forkTime.microseconds+500)/1000,
+	   (float)Time_Average(Time_ToMs(vmStat.forkTime),
+			       vmStat.segmentCopies / 2));
+    printf("\t\tvm_region: %d.%03d (%-8.2f msec avg)\n",
+	   vmStat.findRegionTime.seconds,
+	   (vmStat.findRegionTime.microseconds+500)/1000,
+	   (float)Time_Average(Time_ToMs(vmStat.findRegionTime),
+			       vmStat.segmentCopies / 2));
+    printf("\t\tVmSegByName: %d.%03d (%-8.2f msec avg)\n",
+	   vmStat.segLookupTime.seconds,
+	   (vmStat.segLookupTime.microseconds+500)/1000,
+	   (float)Time_Average(Time_ToMs(vmStat.segLookupTime),
+			       vmStat.segmentCopies / 2));
+    printf("\t\tVmSegmentCopy: %d.%03d (%-8.2f msec avg)\n",
+	   vmStat.segCopyTime.seconds,
+	   (vmStat.segCopyTime.microseconds+500)/1000,
+	   (float)Time_Average(Time_ToMs(vmStat.segCopyTime),
+			       vmStat.segmentCopies / 2));
+    printf("\t\tCopyRegion: %d.%03d (%-8.2f msec avg)\n",
+	   vmStat.regionCopyTime.seconds,
+	   (vmStat.regionCopyTime.microseconds+500)/1000,
+	   (float)Time_Average(Time_ToMs(vmStat.regionCopyTime),
+			       vmStat.segmentCopies / 2));
+    printf("\tSource faults during copy: %d zero %d swap\n",
+	   vmStat.sourceCopyZeroed, vmStat.sourceCopyRead);
+    printf("\tTarget faults during copy: %d zero %d swap\n",
+	   vmStat.targetCopyZeroed, vmStat.targetCopyRead);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PutPageCounts --
+ *
+ *	Write out each of the per-segment-type page counts.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+PutPageCounts(countsPtr)
+    int *countsPtr;
+{
+    if (VM_NUM_SEGMENT_TYPES != 5) {
+	fprintf(stderr, "vmstat: how many segment types are there?\n");
+    }
+    printf("%8d sys %8d code %8d heap %8d stack %8d shared\n",
+	   countsPtr[VM_SYSTEM], countsPtr[VM_CODE], countsPtr[VM_HEAP],
+	   countsPtr[VM_STACK], countsPtr[VM_SHARED]);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PutPageTimes --
+ *
+ *	Write out each of the per-segment-type times.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+PutPageTimes(timesPtr)
+    Time *timesPtr;
+{
+    PutTime(timesPtr[VM_SYSTEM]);
+    printf(" sys ");
+    PutTime(timesPtr[VM_CODE]);
+    printf(" code ");
+    PutTime(timesPtr[VM_HEAP]);
+    printf(" heap ");
+    PutTime(timesPtr[VM_STACK]);
+    printf(" stack ");
+    PutTime(timesPtr[VM_SHARED]);
+    printf(" shared\n");
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PutTime --
+ *
+ *	Print out a single time value.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+PutTime(aTime)
+    Time aTime;
+{
+    printf("%4d.%-03d", aTime.seconds, (aTime.microseconds + 500) / 1000);
+}
+@
+
+
+1.12
+log
+@Add swapPagesWasted field to vmStat.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/cmds/vmstat/RCS/vmstat.c,v 1.11 92/07/08 12:50:28 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d26 1
+a112 2
+static void TotalPageCounts();
+static void TotalPageTimes();
+a372 92
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TotalPageCounts --
+ *
+ *	Total up the per segment type page counts.
+ *
+ * Results:
+ *	Fills in the totals.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+TotalPageCounts(statsPtr, pagesReadPtr, partialPagesReadPtr, pagesZeroedPtr,
+		pagesWrittenPtr, pagesCleanedPtr)
+    Vm_Stat *statsPtr;		/* holds the counts to sum up */
+    int *pagesReadPtr;		/* OUT: sum of pagesRead counts */
+    int *partialPagesReadPtr;	/* OUT: sum of partialPagesRead counts */
+    int *pagesZeroedPtr;	/* OUT: sum of pagesZeroed counts */
+    int *pagesWrittenPtr;	/* OUT: sum of pagesWritten counts */
+    int *pagesCleanedPtr;	/* OUT: sum of pagesCleaned counts */
+{
+    int i;
+    int pagesRead = 0;
+    int partialPagesRead = 0;
+    int pagesZeroed = 0;
+    int pagesWritten = 0;
+    int pagesCleaned = 0;
+
+    for (i = 0; i < VM_NUM_SEGMENT_TYPES; i++) {
+	pagesRead += statsPtr->pagesRead[i];
+	partialPagesRead += statsPtr->partialPagesRead[i];
+	pagesZeroed += statsPtr->pagesZeroed[i];
+	pagesWritten += statsPtr->pagesWritten[i];
+	pagesCleaned += statsPtr->pagesCleaned[i];
+    }
+
+    *pagesReadPtr = pagesRead;
+    *partialPagesReadPtr = partialPagesRead;
+    *pagesZeroedPtr = pagesZeroed;
+    *pagesWrittenPtr = pagesWritten;
+    *pagesCleanedPtr = pagesCleaned;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TotalPageTimes --
+ *
+ *	Total up the per-segment-type page operation times.
+ *
+ * Results:
+ *	Fills in the totals.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+TotalPageTimes(statsPtr, readTimePtr, readCopyTimePtr, writeTimePtr)
+    Vm_Stat *statsPtr;		/* holds the per-segment-type times */
+    Time *readTimePtr;		/* OUT: total of read times */
+    Time *readCopyTimePtr;	/* OUT: total of read-copy times */
+    Time *writeTimePtr;		/* OUT: total of write times */
+{
+    int i;
+    Time readTime;
+    Time readCopyTime;
+    Time writeTime;
+
+    readTime = time_ZeroSeconds;
+    readCopyTime = time_ZeroSeconds;
+    writeTime = time_ZeroSeconds;
+    for (i = 0; i < VM_NUM_SEGMENT_TYPES; i++) {
+	Time_Add(statsPtr->readTime[i], readTime, &readTime);
+	Time_Add(statsPtr->readCopyTime[i], readCopyTime, &readCopyTime);
+	Time_Add(statsPtr->writeTime[i], writeTime, &writeTime);
+    }
+
+    *readTimePtr = readTime;
+    *readCopyTimePtr = readCopyTime;
+    *writeTimePtr = writeTime;
+@
+
+
+1.11
+log
+@Make page read/write instrumentation be per segment type.  Add
+segmentsNeedlesslyDestroyed count.  Lint.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/cmds/vmstat/RCS/vmstat.c,v 1.10 92/07/02 16:47:13 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d331 1
+@
+
+
+1.10
+log
+@Display forcedInits count.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/cmds/vmstat/RCS/vmstat.c,v 1.9 92/06/29 16:15:02 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d95 10
+d107 8
+a198 1
+    Vm_Stat		vmStat;
+d217 2
+d230 4
+a233 4
+	   (vmStat.pagesRead - prevStat.pagesRead +
+	    vmStat.partialPagesRead - prevStat.partialPagesRead),
+	   vmStat.pagesZeroed - prevStat.pagesZeroed,
+	   vmStat.pagesWritten - prevStat.pagesWritten,
+d239 4
+d265 3
+d270 5
+d281 28
+a308 20
+    printf("\tFull pages reads:\t%-8d\tPartial:\t%-8d\n",
+	   vmStat.pagesRead, vmStat.partialPagesRead);
+    printf("\tPages zero-filled:\t%-8d\n", vmStat.pagesZeroed);
+    printf("\tRead request time: %d.%-03d\tAvg:\t%.2f ms\n",
+	   vmStat.readTime.seconds,
+	   (vmStat.readTime.microseconds + 500) / 1000,
+	   (float)Time_Average(Time_ToMs(vmStat.readTime),
+			       (vmStat.pagesRead + vmStat.partialPagesRead + 
+				vmStat.pagesZeroed)));
+    printf("\t\tRead copy time: %d.%-03d\n",
+	   vmStat.readCopyTime.seconds,
+	   (vmStat.readCopyTime.microseconds + 500) / 1000);
+    printf("\tPages written:\t%-8d\n", vmStat.pagesWritten);
+    printf("\t\t(cleaned:\t%-8d)\n", vmStat.pagesCleaned);
+    printf("\tWrite request time: %d.%-03d\tAvg:\t%.2f ms\n",
+	   vmStat.writeTime.seconds,
+	   (vmStat.writeTime.microseconds + 500) / 1000,
+	   (float)Time_Average(Time_ToMs(vmStat.writeTime),
+			       vmStat.pagesWritten));
+    printf("\tinit: %d calls, %d.%-03d sec (%.2f ms avg.)\n",
+d313 2
+a314 2
+    printf("\t\tforced init: %d calls\n", vmStat.forcedInits++);
+    printf("\tterminate: %d calls, %d.%-03d sec (%.2f ms avg.)\n",
+d319 2
+a320 2
+    printf("\treturn calls: %d\n", vmStat.returnCalls);
+    printf("\tlock complete: %d calls, %d.%-03d sec (%.2f ms avg.)\n",
+d329 2
+d373 178
+@
+
+
+1.9
+log
+@More instrumentation for Vm_Fork.  Instrument all of the pager calls.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/cmds/vmstat/RCS/vmstat.c,v 1.8 92/06/25 16:02:02 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d274 1
+@
+
+
+1.8
+log
+@Fix "per fork" average time: two segment copies per fork.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/cmds/vmstat/RCS/vmstat.c,v 1.7 92/06/03 22:18:25 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d259 3
+d269 16
+d306 20
+@
+
+
+1.7
+log
+@vmStat.segmentLookups might be zero.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/cmds/vmstat/RCS/vmstat.c,v 1.6 92/06/02 15:06:09 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d287 1
+a287 1
+			       vmStat.segmentCopies));
+@
+
+
+1.6
+log
+@Display vmStat.readTime & writeTime.  Tweaks.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/cmds/vmstat/RCS/vmstat.c,v 1.5 92/05/08 15:14:23 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d274 3
+a276 1
+	   (float)vmStat.segmentsLookedAt / vmStat.segmentLookups);
+@
+
+
+1.5
+log
+@Track new segment copying stats (vm_read/vm_write, instead of by
+cleaning and copying the memory object).
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/cmds/vmstat/RCS/vmstat.c,v 1.4 92/04/29 22:17:23 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d20 1
+d253 6
+d261 5
+d281 1
+a281 1
+    printf("\tTime spent copying: %s.%03d    Avg per copy:\t%-8.2f msec\n",
+@
+
+
+1.4
+log
+@More instrumentation for segment copying.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/cmds/vmstat/RCS/vmstat.c,v 1.3 92/04/24 00:02:40 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d263 6
+a268 5
+    printf("\tSegments copied:\t%-8d\n", vmStat.segmentCopies);
+    printf("\tAvg segment size: %-8.2f pages\tAvg. pages copied: %-8.2f\n",
+	   (float)vmStat.pagesCopied / vmStat.segmentCopies,
+	   (float)vmStat.realPagesCopied / vmStat.segmentCopies);
+    Time_ToAscii(vmStat.segmentCopyTime.seconds, TRUE, timeBuf);
+d271 2
+a272 2
+	   (vmStat.segmentCopyTime.microseconds+500)/1000,
+	   (float)Time_Average(Time_ToMs(vmStat.segmentCopyTime),
+d274 4
+a277 14
+    printf("\t\tavg segment alloc: %.2f msec\n",
+	   (float)Time_Average(Time_ToMs(vmStat.getSegTime),
+			       vmStat.segmentCopies));
+    printf("\t\tavg cleaning: %.2f msec\tavg writeback: %.2f msec\n",
+	   (float)Time_Average(Time_ToMs(vmStat.cleanTime),
+			       vmStat.segmentCopies),
+	   (float)Time_Average(Time_ToMs(vmStat.writeBackTime),
+			       vmStat.segmentCopies));
+    printf("\t\tavg file copy: %.2f msec\n",
+	   (float)Time_Average(Time_ToMs(vmStat.fileCopyTime),
+			       vmStat.segmentCopies));
+    printf("\t\tavg write-enable: %.2f msec\n",
+	   (float)Time_Average(Time_ToMs(vmStat.unprotSegTime),
+			       vmStat.segmentCopies));
+@
+
+
+1.3
+log
+@Vm_Cmd now takes a buffer length argument.  Additional instrumentation
+for copying segments.  Lint.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/cmds/vmstat/RCS/vmstat.c,v 1.2 92/04/16 13:24:40 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d264 3
+@
+
+
+1.2
+log
+@Get working with sprited.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/cmds/vmstat/RCS/vmstat.c,v 1.1 92/04/14 14:11:40 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d23 1
+d119 1
+a119 1
+    Vm_PageSize(&pageSize);
+d123 1
+a123 1
+	(void)Vm_Cmd(VM_CLEAR_COUNTERS, NULL);
+d182 1
+a182 1
+    (void)Vm_Cmd(VM_GET_STATS, &vmStat);
+d240 1
+d242 1
+a242 1
+    (void)Vm_Cmd(VM_GET_STATS, &vmStat);
+d264 20
+a283 4
+    printf("\tTime spent copying:\t%d.%03d sec\tAvg per copy:\t%-8.2f msec\n",
+	   vmStat.copyTime.seconds, (vmStat.copyTime.microseconds+500)/1000,
+	   ((float)(vmStat.copyTime.seconds * 1000) +
+	    (float)vmStat.copyTime.microseconds/1000) / vmStat.segmentCopies);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d6 8
+a13 2
+ * Copyright (C) 1986 Regents of the University of California
+ * All rights reserved.
+d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/cmds/vmstat/RCS/vmstat.c,v 1.8 90/07/03 16:26:25 mendel Exp $ SPRITE (Berkeley)";
+a21 2
+#include <kernel/vm.h>
+#include "/sprite/src/kernel/vm/vmInt.h"
+a22 1
+#include <sys/time.h>
+d50 2
+d54 1
+d57 1
+d60 2
+d64 1
+d71 1
+d74 2
+d78 1
+d81 1
+d84 3
+a89 1
+#define	NUM_SEGMENTS	256
+d91 1
+d93 2
+a94 1
+int	kbPerPage;
+d121 3
+a123 1
+    if (printSegInfo) {
+a156 66
+    int			actCodePages = 0;
+    int			inactCodePages = 0;
+    int			actCodeSegs = 0;
+    int			inactCodeSegs = 0;
+    int			heapPages = 0;
+    int			heapSegs = 0;
+    int			stackPages = 0;
+    int			stackSegs = 0;
+    Vm_SegmentInfo	seg;
+    int			i;
+    char		*typePtr;
+    char		*fileNamePtr;
+    ReturnStatus	status;
+
+    printf("%-10s%-10s%-10s%-10s%-10s%s\n\n", "SEG-NUM", "TYPE",
+		"  SIZE", "RES-SIZE", "NUM-REFS", "OBJECT-FILE-NAME");
+    for (i = 1; i < NUM_SEGMENTS; i++) {
+	fileNamePtr = " ";
+	status = Vm_GetSegInfo(NULL, i, sizeof(Vm_SegmentInfo), &seg);
+	if (status != SUCCESS) {
+	    (void) fprintf(stderr,
+			   "Couldn't read segment info for segment %d: %s\n",
+			   i,  Stat_GetMsg(status));
+	    return;
+	}
+	if (seg.flags & VM_SEG_FREE) {
+	    continue;
+	}
+	switch (seg.type) {
+	    case VM_CODE:
+	        if (seg.flags & VM_SEG_INACTIVE) {
+		    typePtr = "Inactive";
+		    inactCodePages += seg.resPages;
+		    inactCodeSegs++;
+		} else {
+		    typePtr = "Code";
+		    actCodePages += seg.resPages;
+		    actCodeSegs++;
+		}
+		fileNamePtr = seg.objFileName;
+		seg.objFileName[VM_OBJ_FILE_NAME_LENGTH - 1] = '\0';
+		break;
+	    case VM_HEAP:
+		typePtr = "Heap";
+		heapPages += seg.resPages;
+		heapSegs++;
+		break;
+	    case VM_STACK:
+		typePtr = "Stack";
+		stackPages += seg.resPages;
+		stackSegs++;
+		break;
+	}
+	printf("%-10d%-10s   %-7d   %-7d   %-7d%s\n",
+		       i, typePtr,seg.numPages * kbPerPage,
+		       seg.resPages * kbPerPage, seg.refCount, fileNamePtr);
+    }
+    printf("\n%-20s%-15s%-15s\n\n", "TYPE", "NUM-SEGS", "RES-SIZE");
+    printf("%-20s%-15d%-15d\n", "Active-code", actCodeSegs, actCodePages);
+    printf("%-20s%-15d%-15d\n", "Inactive-code", inactCodeSegs,
+	     inactCodePages);
+    printf("%-20s%-15d%-15d\n", "Heap", heapSegs, heapPages);
+    printf("%-20s%-15d%-15d\n", "Stack", stackSegs, stackPages);
+    printf("%-20s%-15d%-15d\n", "TOTAL", 
+	     actCodeSegs + inactCodeSegs + heapSegs + stackSegs,
+	 (actCodePages + inactCodePages + heapPages + stackPages) * kbPerPage);
+a158 2
+static Vm_Stat	prevStat;
+
+d183 1
+d196 2
+d203 3
+a205 11
+	if (printMod) {
+	printf("%-8s%-8s%-8s%-8s%-8s%-8s%-8s%-8s%-8s%-8s",
+	    " AVAIL", "  FREE", "  USER", " MOD%", " KMEM",
+	    "  FS$", "PF-NUM",
+	    "PF-SWP", " PF-FS", " POUTS");
+	} else {
+	    printf("%-8s%-8s%-8s%-8s%-8s%-8s%-8s%-8s%-8s%-8s",
+		" AVAIL", "  FREE", "  USER",  " KMEM",
+		" KSTK", "  FS$", "PF-NUM",
+		"PF-SWP", " PF-FS", " POUTS");
+	}
+d208 8
+a216 29
+    if (printMod) {
+	int	numModifiedPages;
+
+	(void)Vm_Cmd(VM_COUNT_DIRTY_PAGES, &numModifiedPages);
+	printf("\n%6d%8d%8d%8.2f%7d%8d%9d%8d%8d%8d",
+		 vmStat.numPhysPages * kbPerPage,
+		 vmStat.numFreePages * kbPerPage, 
+		 (vmStat.numDirtyPages + vmStat.numUserPages) * kbPerPage,
+		 (float)numModifiedPages /
+		   (float)(vmStat.numDirtyPages + vmStat.numUserPages) * 100.0,
+		 (vmStat.kernMemPages + vmStat.kernStackPages) * kbPerPage, 
+		 (vmStat.fsMap - vmStat.fsUnmap) * kbPerPage,
+		 vmStat.totalFaults - prevStat.totalFaults, 
+		 vmStat.psFilled - prevStat.psFilled,
+		 vmStat.fsFilled - prevStat.fsFilled,
+		 vmStat.pagesWritten - prevStat.pagesWritten);
+    } else {
+	printf("\n%6d%8d%8d%7d%8d%8d%9d%8d%8d%8d",
+		 vmStat.numPhysPages * kbPerPage,
+		 vmStat.numFreePages * kbPerPage, 
+		 (vmStat.numDirtyPages + vmStat.numUserPages) * kbPerPage,
+		 vmStat.kernMemPages * kbPerPage, 
+		 vmStat.kernStackPages * kbPerPage,
+		 (vmStat.fsMap - vmStat.fsUnmap) * kbPerPage,
+		 vmStat.totalFaults - prevStat.totalFaults, 
+		 vmStat.psFilled - prevStat.psFilled,
+		 vmStat.fsFilled - prevStat.fsFilled,
+		 vmStat.pagesWritten - prevStat.pagesWritten);
+    }
+d239 2
+a240 57
+    int			actCodePages = 0;
+    int			inactCodePages = 0;
+    int			actCodeSegs = 0;
+    int			inactCodeSegs = 0;
+    int			heapPages = 0;
+    int			heapSegs = 0;
+    int			stackPages = 0;
+    int			stackSegs = 0;
+    Vm_SegmentInfo	seg;
+    int			i;
+    Vm_Stat 		vmStat;
+    int			totPages;
+    int			inusePages;
+    int			numModifiedPages;
+    int			totPercent;
+    int			totFaults;
+    int			heapPercent;
+    int			stkPercent;
+    int			quickPercent;	
+    int			totHits;
+    int			totPrefetches;
+    int			hitPct;
+    ReturnStatus	status;
+
+    Vm_Cmd(VM_GET_STATS, &vmStat);
+    Vm_Cmd(VM_COUNT_DIRTY_PAGES, &numModifiedPages);
+    for (i = 1; i < NUM_SEGMENTS; i++) {
+	status = Vm_GetSegInfo(NULL, i, sizeof(Vm_SegmentInfo), &seg);
+	if (status != SUCCESS) {
+	    (void) fprintf(stderr,
+			   "Couldn't read segment info for segment %d: %s\n",
+			   i,  Stat_GetMsg(status));
+	    return;
+	}
+	if (seg.flags & VM_SEG_FREE) {
+	    continue;
+	}
+	switch (seg.type) {
+	    case VM_CODE:
+	        if (seg.flags & VM_SEG_INACTIVE) {
+		    inactCodePages += seg.resPages;
+		    inactCodeSegs++;
+		} else {
+		    actCodePages += seg.resPages;
+		    actCodeSegs++;
+		}
+		break;
+	    case VM_HEAP:
+		heapPages += seg.resPages;
+		heapSegs++;
+		break;
+	    case VM_STACK:
+		stackPages += seg.resPages;
+		stackSegs++;
+		break;
+	}
+    }
+d244 9
+a252 20
+    printf("\tKernel Memory:\t%-8d (Code+Data=%d Stacks=%d Reserved=%d)\n",
+	     (vmStat.kernMemPages + vmStat.kernStackPages +
+		    vmStat.numReservePages) * kbPerPage,
+	     vmStat.kernMemPages * kbPerPage, 
+	     vmStat.kernStackPages * kbPerPage,
+	     vmStat.numReservePages * kbPerPage);
+    inusePages = vmStat.numDirtyPages + vmStat.numUserPages;
+    printf("\tUser Memory:\t%-8d (Dirty=%d Clean=%d)\n",
+	    inusePages * kbPerPage, 
+	    numModifiedPages * kbPerPage, 
+	    (inusePages - numModifiedPages) * kbPerPage);
+    printf("\tFS Memory:\t%-8d (Min=%d Max=%d)\n", 
+		(vmStat.fsMap - vmStat.fsUnmap) * kbPerPage, 
+		vmStat.minFSPages * kbPerPage,
+		vmStat.maxFSPages * kbPerPage);
+    printf("\tFree Memory:\t%d\n", vmStat.numFreePages * kbPerPage);
+    if (verbose) {
+	printf("\tMod page stats:\tPot-mod=%d Not-mod=%d Not-hard-mod=%d\n",
+	    vmStat.potModPages, vmStat.notModPages, vmStat.notHardModPages);
+    }
+d254 12
+a265 205
+    printf("\tAct-code:\tNum-segs=%-3d Res-size=%d\n", actCodeSegs,
+					      actCodePages * kbPerPage);
+    printf("\tInact-code:\tNum-segs=%-3d Res-size=%d\n", inactCodeSegs,
+					      inactCodePages * kbPerPage);
+    printf("\tHeap:\t\tNum-segs=%-3d Res-size=%d\n", heapSegs, 
+					      heapPages * kbPerPage);
+    printf("\tStack:\t\tNum-segs=%-3d Res-size=%d\n", stackSegs, 
+					      stackPages*kbPerPage);
+    printf("FAULT STATS:\n");
+    printf("\tTotal:\t\t%d\n", vmStat.totalFaults);
+    printf("\tFault-type:\tZero=%-6d FS=%-8d Swap=%-9d Quick=%d\n", 
+	     vmStat.zeroFilled, vmStat.fsFilled,
+	     vmStat.psFilled, vmStat.quickFaults -
+		(vmStat.numCOWStkFaults + vmStat.numCOWHeapFaults +
+		 vmStat.numCORStkFaults + vmStat.numCORHeapFaults));
+    printf("\t\t\tCOW=%-7d COR=%-7d COR-mod=%-5d\n",
+	     vmStat.numCOWStkFaults + vmStat.numCOWHeapFaults,
+	     vmStat.numCORStkFaults + vmStat.numCORHeapFaults,
+	     vmStat.numCORCOWStkFaults + vmStat.numCORCOWHeapFaults);
+    printf("\tSeg-type:\tCode=%-6d Heap=%-6d Stack=%-6d\n", 
+	     vmStat.codeFaults, vmStat.heapFaults, vmStat.stackFaults);
+    printf("\tCollisions:\t%d\n", vmStat.collFaults);
+    printf("PAGE-OUTS:\n");
+    printf("\tPages written:\t%d\n", vmStat.pagesWritten);
+    if (verbose) {
+	printf("\tClean Wait:\t%d\n", vmStat.cleanWait);
+	printf("\tCleaner starts:\t%d\n", vmStat.pageoutWakeup);
+    }
+    printf("COPY-ON-WRITE:\n");
+    totPages = vmStat.numCOWStkPages + vmStat.numCOWHeapPages;
+    totFaults = vmStat.numCOWStkFaults + vmStat.numCOWHeapFaults;
+    if (vmStat.numCOWHeapPages > 0) {
+	heapPercent = 100.0 * ((float)vmStat.numCOWHeapFaults / 
+				      vmStat.numCOWHeapPages);
+    } else {
+	heapPercent = 0;
+    }
+    if (vmStat.numCOWStkPages > 0) {
+	stkPercent = 100.0 * ((float)vmStat.numCOWStkFaults / 
+				      vmStat.numCOWStkPages);
+    } else {
+	stkPercent = 0;
+    }
+    if (totPages > 0) {
+	totPercent = 100.0 * ((float)totFaults / totPages);
+    } else {
+	totPercent = 0;
+    }
+    if (totFaults > 0) {
+	quickPercent = 100.0 * ((float)vmStat.quickCOWFaults / totFaults);
+    } else {
+	quickPercent = 0;
+    }
+    printf("\tCOW:\t\tHeap (%d/%d)=%d%%\tStack (%d/%d)=%d%%\n",
+	    vmStat.numCOWHeapFaults, vmStat.numCOWHeapPages, heapPercent,
+	    vmStat.numCOWStkFaults, vmStat.numCOWStkPages, stkPercent);
+    printf("\t\t\tTot  (%d/%d)=%d%%\tQuick (%d/%d)=%d%%\n",
+	    totFaults, totPages, totPercent,
+	    vmStat.quickCOWFaults, totFaults, quickPercent);
+    /*
+     * Copy on reference.
+     */
+    totPages = vmStat.numCORStkPages + vmStat.numCORHeapPages;
+    totFaults = vmStat.numCORStkFaults + vmStat.numCORHeapFaults;
+    if (vmStat.numCORHeapPages > 0) {
+	heapPercent = 100.0 * ((float)vmStat.numCORHeapFaults / 
+				      vmStat.numCORHeapPages);
+    } else {
+	heapPercent = 0;
+    }
+    if (vmStat.numCORStkPages > 0) {
+	stkPercent = 100.0 * ((float)vmStat.numCORStkFaults / 
+				      vmStat.numCORStkPages);
+    } else {
+	stkPercent = 0;
+    }
+    if (totPages > 0) {
+	totPercent = 100.0 * ((float)totFaults / totPages);
+    } else {
+	totPercent = 0;
+    }
+    printf("\tCOR:\t\tHeap (%d/%d)=%d%%\tStack (%d/%d)=%d%%\n",
+	    vmStat.numCORHeapFaults, vmStat.numCORHeapPages, heapPercent,
+	    vmStat.numCORStkFaults, vmStat.numCORStkPages, stkPercent,
+	    totFaults, totPages, totPercent);
+    printf("\t\t\tTot  (%d/%d)=%d%%\n",
+	    totFaults, totPages, totPercent);
+    totPages = vmStat.numCORStkFaults + vmStat.numCORHeapFaults;
+    totFaults = vmStat.numCORCOWStkFaults + vmStat.numCORCOWHeapFaults;
+    if (vmStat.numCORCOWHeapFaults > 0) {
+	heapPercent = 100.0 * ((float)vmStat.numCORCOWHeapFaults / 
+				      vmStat.numCORHeapFaults);
+    } else {
+	heapPercent = 0;
+    }
+    if (vmStat.numCORCOWStkFaults > 0) {
+	stkPercent = 100.0 * ((float)vmStat.numCORCOWStkFaults / 
+				      vmStat.numCORStkFaults);
+    } else {
+	stkPercent = 0;
+    }
+    if (totPages > 0) {
+	totPercent = 100.0 * ((float)totFaults / totPages);
+    } else {
+	totPercent = 0;
+    }
+    if (vmStat.numCORCOWHeapFaults > 0) {
+	printf("\tCOR-mod:\tHeap (%d/%d)=%d%%\tStack (%d/%d)=%d%%\n",
+	    vmStat.numCORCOWHeapFaults, vmStat.numCORHeapFaults, heapPercent,
+	    vmStat.numCORCOWStkFaults, vmStat.numCORStkFaults, stkPercent,
+	    vmStat.numCORCOWHeapFaults + vmStat.numCORCOWStkFaults);
+	printf("\t\t\tTot  (%d/%d)=%d%%\n",
+	    vmStat.numCORCOWHeapFaults + vmStat.numCORCOWStkFaults,
+	    vmStat.numCORHeapFaults + vmStat.numCORStkFaults, totPercent);
+    }
+    if (verbose) {
+	printf("ALLOCATION STATS:\n");
+	printf("\tVm allocs:\t%d\t(Free=%d From-FS=%d From-alloc-list=%d)\n",
+		 vmStat.numAllocs, vmStat.gotFreePage, vmStat.gotPageFromFS, 
+		 vmStat.pageAllocs);
+	printf("\tVM-FS stats:\tFS-asked=%d Had-free-page=%d\n",
+		 vmStat.fsAsked, vmStat.haveFreePage);
+	printf("\t\t\tFS-map=%d FS-unmap=%d\n", vmStat.fsMap, vmStat.fsUnmap);
+	printf("\tList searches:\t%d (Free=%d In-use=%d)\n",
+		 vmStat.numListSearches, vmStat.usedFreePage, 
+		 vmStat.numListSearches - vmStat.usedFreePage);
+	printf("\tExtra-searches:\t%d (Lock=%d Ref=%d Dirty=%d)\n",
+		 vmStat.lockSearched + vmStat.refSearched + vmStat.dirtySearched,
+		 vmStat.lockSearched, vmStat.refSearched, vmStat.dirtySearched);
+	printf("LIST STATS:\n");
+	printf("\tAlloc-list:\t%d\n", vmStat.numUserPages);
+	printf("\tDirty-list:\t%d\n", vmStat.numDirtyPages);
+	printf("\tFree-list:\t%d\n", vmStat.numFreePages);
+	printf("\tReserve-list:\t%d\n", vmStat.numReservePages);
+#ifdef notdef
+	totPrefetches = vmStat.codePrefetches + vmStat.heapFSPrefetches +
+			vmStat.heapSwapPrefetches + vmStat.stackPrefetches;
+	if (totPrefetches > 0) {
+	    totHits = vmStat.codePrefetchHits + vmStat.heapFSPrefetchHits +
+		      vmStat.heapSwapPrefetchHits + vmStat.stackPrefetchHits;
+	    printf("Prefetch stats:\n");
+	    if (vmStat.codePrefetches > 0) {
+		hitPct = 100 * ((float)vmStat.codePrefetchHits / 
+				(float)vmStat.codePrefetches);
+		printf("    code (%d/%d)=%d%%\n",
+			vmStat.codePrefetchHits, vmStat.codePrefetches, hitPct);
+	    }
+	    if (vmStat.heapFSPrefetches > 0) {
+		hitPct = 100 * ((float)vmStat.heapFSPrefetchHits / 
+				(float)vmStat.heapFSPrefetches);
+		printf("    heap-fs (%d/%d)=%d%%\n",
+		    vmStat.heapFSPrefetchHits, vmStat.heapFSPrefetches, hitPct);
+	    }
+	    if (vmStat.heapSwapPrefetches > 0) {
+		hitPct = 100 * ((float)vmStat.heapSwapPrefetchHits / 
+				(float)vmStat.heapSwapPrefetches);
+		printf("    heap-swp (%d/%d)=%d%%\n",
+		    vmStat.heapSwapPrefetchHits, vmStat.heapSwapPrefetches, 
+		    hitPct);
+	    }
+	    if (vmStat.stackPrefetches > 0) {
+		hitPct = 100 * ((float)vmStat.stackPrefetchHits / 
+				(float)vmStat.stackPrefetches);
+		printf("    stack (%d/%d)=%d%%\n",
+		    vmStat.stackPrefetchHits, vmStat.stackPrefetches, hitPct);
+	    }
+	    hitPct = 100 * ((float)totHits / (float)totPrefetches);
+	    printf("    total (%d/%d)=%d%%\n",
+		    totHits, totPrefetches, hitPct);
+	    printf("    aborts=   %d\n", vmStat.prefetchAborts);
+	}
+#endif
+	printf("PAGE MAPPING STATS:\n");
+	printf("\tMap page wait:\t%d\n", vmStat.mapPageWait);
+#ifdef sun2
+	printf("HARDWARE_STATS:\n");
+	printf("\tCtxts stolen:\t%d\n", vmStat.machDepStat.stealContext);
+	printf("\tPmegs stolen:\t%d\n", vmStat.machDepStat.stealPmeg);
+#endif
+#ifdef sun3
+	printf("HARDWARE_STATS:\n");
+	printf("\tCtxts stolen:\t%d\n", vmStat.machDepStat.stealContext);
+	printf("\tPmegs stolen:\t%d\n", vmStat.machDepStat.stealPmeg);
+#endif
+#ifdef sun4
+	printf("HARDWARE_STATS:\n");
+	printf("\tCtxts stolen:\t%d\n", vmStat.machDepStat.stealContext);
+	printf("\tPmegs stolen:\t%d\n", vmStat.machDepStat.stealPmeg);
+#endif
+#ifdef spur
+	printf("HARDWARE_STATS:\n");
+	printf("\tRef bit faults:\t%d\n", vmStat.machDepStat.refBitFaults);
+	printf("\tDirty bit faults:\t%d\n", vmStat.machDepStat.dirtyBitFaults);
+#endif
+#ifdef ds3100
+	printf("HARDWARE_STATS:\n");
+#ifdef notdef 
+	/* 
+	 * Not currently implemented by kernel.
+	 */
+	printf("\tTlb entries stolen:\t%d\n", vmStat.machDepStat.stealTLB);
+#endif
+	printf("\tPids stolen:\t%d\n", vmStat.machDepStat.stealPID);
+#endif
+    }
+a266 1
+
+@

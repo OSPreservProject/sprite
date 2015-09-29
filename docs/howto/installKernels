@@ -1,0 +1,72 @@
+This is a first pass at a description of how to install a new kernel.  Feel
+free to add to it and make corrections as needed.
+
+1) find out what files are checked out, if any, and make sure they're
+checked in:
+
+% cd /sprite/src/kernel
+% ~sprite/cmds.gen/listRcsinfo `cat Modules` /sprite/src/lib/include
+
+1a) make sure the dependencies are up to date:
+
+% pmake dependall
+
+2) install all the headers:
+
+% pmake installhdrsall
+% (cd /sprite/src/lib/include; pmake install)
+
+3) *for each machine type*, recompile all the kernel directories:
+
+% pmake TM=... clean
+% pmake TM=...
+
+4) install all the modules:
+
+Move the existing .new kernels out of the way if you want to keep them.
+If they are to be kept you should move the "sprite" kernel to "old",
+and the "new" kernel to "sprite".  This should be done in /tftpboot
+on ginger also.
+
+% pmake TM=... install
+
+5) make kernels in your own directory for each machine type, and test them
+on as many machine types as possible, especially machines with disks.
+To clean up space in /sprite/src/kernel/sprite, remove old kernels that are not
+booted on any machine, nor are a default kernel.  The command "oldkernels"
+(in /local/cmds) will tell you what old kernels may be removed.
+Once a kernel version has been removed its source snapshot can be deleted.
+Snapshots are stored in /sprite/src/kernel/Installed.
+
+
+6) make kernels in /sprite/src/kernel/sprite and test them.  make sure
+the version number is incremented only for the first compile.  for
+example:
+
+% pmake ds3100
+% pmake NEWVERSION=FALSE sun4
+% pmake NEWVERSION=FALSE sun4c
+% pmake NEWVERSION=FALSE sun3
+
+7) update kernel/sprite/versionLog to indicate what is different about
+the new kernel.  
+
+8) update the notes on the servers' consoles if necessary to say what kernel
+should be booted and where the debuggable copies exist.  Updating the notes
+on the servers also means checking that there aren't old misleading notes
+still on the consoles.
+
+10) Make sure the kernels get copied to ginger for debugging.  Kernels are
+kept in /home/ginger/sprite/kernels.  Copies of the kernels should also
+be placed in /allspiceA and /assaultA.
+
+If space on /home/ginger/sprite is tight (as it usually is), you can
+free up 15-20 MB by deleting the source snapshot for an old or broken
+kernel.  The snapshots are rdist'd every night from
+/sprite/src/kernel/Installed to
+/home/ginger/sprite/backup/src/kernel/Installed.  To keep the snapshot
+from reappearing, you must either remove it from
+/sprite/src/kernel/Installed, or you can add it to the KERNEL_EXCEPT
+list in /sprite/admin/distfile.
+
+[last revised: $Date: 91/04/08 16:10:10 $]

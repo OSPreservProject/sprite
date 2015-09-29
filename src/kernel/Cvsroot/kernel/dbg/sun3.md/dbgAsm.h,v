@@ -1,0 +1,163 @@
+head     9.0;
+branch   ;
+access   ;
+symbols  ds3100:9.0 sun3:9.0 sun4nw:9.0 symm:9.0 spur:9.0 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.0
+date     89.09.12.14.55.33;  author douglis;  state Stable;
+branches ;
+next     8.1;
+
+8.1
+date     89.07.14.09.33.18;  author rab;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.07.14;  author douglis;  state Stable;
+branches ;
+next     6.1;
+
+6.1
+date     88.11.01.09.20.30;  author mendel;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.10.27;  author brent;  state Stable;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.38.35;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@/*
+ * dbgAsm.h --
+ *
+ *     Termination type constants.  These are in a separate file
+ *     because this file is included by the assembler file and assemblers
+ *     can't handle C types.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/dbg/sun3.md/RCS/dbgAsm.h,v 8.1 89/07/14 09:33:18 rab Exp Locker: douglis $ SPRITE (Berkeley)
+ */
+
+#ifndef _DBGASM
+#define _DBGASM
+
+/*
+ * Reasons for termination.  These are Unix signal numbers that dbx expects.
+ * Therefore don't change these numbers or kdbx will break.  The reasons are:
+ *
+ *	DBG_NOREASON_SIG	Unknown reason
+ *	DBG_INTERRUPT_SIG	Interrupt
+ *	DBG_TRACETRAP_SIG	Trace trap
+ */
+
+#define	DBG_NO_REASON_SIG	0
+#define	DBG_INTERRUPT_SIG	2
+#define	DBG_TRACE_TRAP_SIG	5
+
+/*
+ * The size of the hole to leave in the debuggers stack when it is called.
+ * This hole is so that kdbx can play with the stack without ruining the
+ * the debuggers stack.  The size is in bytes. The size must be a mutiple
+ * of 4 to allow the code in dbgTrap.s to conform to the gcc C calling
+ * sequence.
+ */
+
+#define	DBG_STACK_HOLE	52
+
+#endif /* _DBGASM */
+@
+
+
+8.1
+log
+@*** empty log message ***
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/dbg/sun3.md/RCS/dbgAsm.h,v 8.0 88/11/11 18:07:14 douglis Stable Locker: rab $ SPRITE (Berkeley)
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d5 1
+a5 1
+ *     because this file is included by the assembler file and assemblers 
+d12 1
+a12 1
+ * $Header: /sprite/src/kernel/dbg/sun2.md/RCS/dbgAsm.h,v 6.1 88/11/01 09:20:30 mendel Exp Locker: douglis $ SPRITE (Berkeley)
+d19 1
+a19 1
+ * Reasons for termination.  These are Unix signal numbers that dbx expects.  
+d33 1
+a33 1
+ * This hole is so that kdbx can play with the stack without ruining the 
+d41 1
+a41 1
+#endif _DBGASM
+@
+
+
+6.1
+log
+@Patch for switch to gcc compiled kernel.
+@
+text
+@d12 1
+a12 1
+ * $Header: dbgAsm.h,v 6.0 88/08/11 12:10:27 brent Stable $ SPRITE (Berkeley)
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d12 1
+a12 1
+ * $Header: dbgAsm.h,v 5.0 87/08/11 10:38:35 sprite Exp $ SPRITE (Berkeley)
+d34 3
+a36 1
+ * the debuggers stack.  The size is in bytes.
+d39 1
+a39 1
+#define	DBG_STACK_HOLE	50
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d12 1
+a12 1
+ * $Header: dbgAsm.h,v 1.4 85/07/15 13:44:55 nelson Exp $ SPRITE (Berkeley)
+@

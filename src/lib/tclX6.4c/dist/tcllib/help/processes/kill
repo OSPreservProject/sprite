@@ -1,0 +1,9 @@
+
+
+          kill [signal] processlist
+               Send a signal to the each process in the list
+               processlist, if permitted.  Signal, if present, is the
+               signal number or the symbolic name of the signal, see
+               the signal system call manual page.  The leading
+               ``SIG'' is optional when the signal is specified by its
+               symbolic name.  The default for signo is 15, SIGTERM.

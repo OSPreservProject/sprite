@@ -1,0 +1,6 @@
+This is the timestamps on the files when they were copied out of
+/sprite/src/cmds/netroute.  netroute.c was at RCS version 1.14,
+checked out to JHH.
+
+  -rw-rw-r--  1 kupfer        373 Oct  5  1990 local.mk
+  -rw-r--r--  1 kupfer      16134 Dec  2  1990 netroute.c

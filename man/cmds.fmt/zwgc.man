@@ -1,0 +1,1122 @@
+
+
+
+ZWGC                      User Commands                      ZWGC
+
+
+
+NNAAMMEE
+     zwgc - Zephyr Windowgram Client program
+
+SSYYNNOOPPSSIISS
+     zzwwggcc [ -reenter ] [ -nofork ] [ -ttymode ] [ -f _f_i_l_e_n_a_m_e ] [
+     -subfile _f_i_l_e_n_a_m_e ] [ -default _p_o_r_t_n_a_m_e ] [ -disable _p_o_r_t_-
+     _n_a_m_e ] ... [ output driver options ] [ X Toolkit options...
+     ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _Z_w_g_c is the main _z_e_p_h_y_r(_1) client.  It is responsible for
+     receiving selected zephyr notices on behalf of the user,
+     formatting them, and displaying them using one or more of
+     the output devices.
+
+
+     SSeelleeccttiioonn ooff ZZeepphhyyrr NNoottiicceess
+
+     _Z_w_g_c subscribes to various notice classes and instances on
+     behalf of the user.  Only notices in the subscription list
+     will be received.  The subscription list is composed of the
+     default subscriptions (stored on the server), the user's
+     subscriptions file, and any subscriptions made using
+     _z_c_t_l(1).  The user's subscription file defaults to
+     $_H_O_M_E/._z_e_p_h_y_r._s_u_b_s, or it can be specified with the -subfile
+     option.  If "-" is specified as the subscription filename,
+     the subscriptions will be read from standard input.
+
+
+     The _z_c_t_l command is used to manipulate and change subscrip-
+     tions.  See the _z_c_t_l(1) man page for details.
+
+
+     ZZeepphhyyrr DDeessccrriippttiioonn FFiilleess
+
+     _Z_w_g_c formats its output messages according to the commands
+     in its description file.  The user's description file
+     ($_H_O_M_E/._z_w_g_c._d_e_s_c by default, or whatever is specified by
+     -f) is read, or the system file is read if the user's does
+     not exist.
+
+     Every time a notice is received, _z_w_g_c runs through the
+     description file, and executes the appropriate commands.
+
+
+     ZZeepphhyyrr DDeessccrriippttiioonn FFiillee SSyynnttaaxx
+
+     A description file is simply a list of commands.  Whitespace
+     (spaces, tabs, and line breaks) is used to separate tokens.
+     The type and amount of whitespace separating tokens is
+     irrelevant.  Comments can be delimited by # and newline (for
+     line-oriented comments, e.g. "# this is a comment" on a line
+
+
+
+MIT Project Athena      November 30, 1989                       1
+
+
+
+
+
+
+ZWGC                      User Commands                      ZWGC
+
+
+
+     by itself) or by /* and */ (e.g. "/* this is a comment */").
+
+
+DDEESSCCRRIIPPTTIIOONN LLAANNGGUUAAGGEE
+     EExxpprreessssiioonnss
+     Expressions are used by certain commands.  They are composed
+     from string literals, variable references, function calls,
+     and operators.  Parentheses can be used anywhere in an
+     expression to group expressions or increase readability.
+
+     String literals are specified by putting the contents in
+     "double quotes".
+
+     Variables are set using the sseett command (see "COMMANDS",
+     below).  They are referenced in an expression by using the
+     form $_v_a_r_n_a_m_e.  Some variables are set by default for each
+     notice.  All other variables retain their values between
+     notice interpretations, so that if you set a variable, it
+     retains that value until later modified.
+
+     Functions are called using a C-like syntax,
+     ffnnaammee(_e_x_p_r_1,_e_x_p_r_2), where ffnnaammee is the function name and
+     _e_x_p_rnn are the arguments.
+
+     Binary operators use infix notation, such as "a == b".
+
+     Some commands use an expression list (exprlist), which is
+     simply a set of expressions separated by whitespace (e.g.
+     $var1 "lit1" $var2).
+
+
+     DDeeffaauulltt vvaarriiaabblleess
+
+     The following variables are always available:
+
+     11,, ......
+          Numeric variables are assigned values corresponding to
+          that field in the notice (the body of each notice is
+          conceptually an array of fields, each terminated with a
+          null character).  If the number is greater than the
+          number of fields actually in the notice, the value is
+          "".  For example, the standard zwrite messages have two
+          fields: $1 is the signature, and $2 is the text of the
+          message.
+
+     aauutthh An indication of the authenticity of the notice.
+          ``yes'' means the notice is authentic, ``no'' means it
+          is not, and ``forged'' means that the message claimed
+          to be authentic but the verification of the claim
+          failed.  The ``forged'' indication usually appears when
+          a user has changed his Kerberos tickets with _k_i_n_i_t(1)
+          but has not run ``zctl sub'' to register this change
+
+
+
+MIT Project Athena      November 30, 1989                       2
+
+
+
+
+
+
+ZWGC                      User Commands                      ZWGC
+
+
+
+          with the Zephyr servers.
+
+     ccllaassss
+          The class of the current notice.
+
+     ddaattee The date on which the notice was sent.
+
+     ddeeffaauulltt
+          The default output format for the current notice
+
+     eerrrroorr
+          An error message from the port read/write commands.
+
+     ffrroommhhoosstt
+          The full name of the host from which the notice appears
+          to have been sent. _T_h_i_s _i_s _n_o_t _f_u_l_l_y _r_e_l_i_a_b_l_e, as the
+          information used to determine this hostname is not
+          guaranteed to be correct (even for authentic messages).
+
+     ffuullllsseennddeerr
+          The notice sender's name, including the zephyr realm
+          name.
+
+     iinnssttaannccee
+          The instance of the current notice.
+
+     kkiinndd The kind of notice.
+
+     mmeessssaaggee
+          The full text of the message, with nulls converted to
+          newlines.
+
+     nnuummbbeerr__ooff__ffiieellddss
+          The number of fields in the message (a string represen-
+          tation of a decimal number).
+
+     ooppccooddee
+          The opcode of the current notice.
+
+     oouuttppuutt__ddrriivveerr
+          The name of the output driver in use.
+
+     ppoorrtt The port from which the notice was sent.
+
+     rreeaallmm
+          The local zephyr realm.
+
+     rreecciippiieenntt
+          The recipient for the current notice.  If the notice is
+          a multicast (sent to several people), the recipient is
+          set to ``*''.
+
+
+
+
+MIT Project Athena      November 30, 1989                       3
+
+
+
+
+
+
+ZWGC                      User Commands                      ZWGC
+
+
+
+     sseennddeerr
+          Usually a shortened version of fullsender.  If the
+          realm of the sender is equal to the realm of the reci-
+          pient, _s_e_n_d_e_r omits the realm name.
+
+     ttiimmee The time of day at which the notice was sent.
+
+     uusseerr The full zephyr name of the user (e.g.
+          marc@ATHENA.MIT.EDU).
+
+     vveerrssiioonn
+          The current version of _z_w_g_c.
+
+     zzeepphhyyrr__vveerrssiioonn
+          The protocol version of the notice.
+
+     All of these variables (except for error, output_driver, and
+     version) are re-set before each notice is processed.
+
+
+     FFuunnccttiioonnss
+
+     Following is a list of functions available for use in the
+     description file.
+
+     bbuuffffeerr()
+          The contents of the current output buffer.
+
+     ddoowwnnccaassee(_e_x_p_r)
+          Returns the value of _e_x_p_r, converted to lower case.
+
+     ggeett(_e_x_p_r)
+          Returns a line from the port named _e_x_p_r.  If there is
+          no text waiting on the port (e.g. the program connected
+          to the port has not printed any output), this function
+          will wait until it can read a line of text from the
+          port.
+
+     ggeetteennvv(_e_x_p_r)
+          Returns the value of the environment variable _e_x_p_r, or
+          the empty string if it does not exist.
+
+
+     llaannyy(_e_x_p_r_1, _e_x_p_r_2), rraannyy(_e_x_p_r_1, _e_x_p_r_2)
+          Return a number of characters equal to the length of
+          _e_x_p_r_2 from the beginning (llaannyy) or end (rraannyy) of _e_x_p_r_1
+          (e.g. lany("1234567890","foo") would return "123").  If
+          _e_x_p_r_1 is a variable reference, the variable is modified
+          to remove the characters returned.  If _e_x_p_r_2 is longer
+          than _e_x_p_r_1, the value of _e_x_p_r_1 is returned (and _e_x_p_r_1
+          is set to "", if a variable).
+
+
+
+
+MIT Project Athena      November 30, 1989                       4
+
+
+
+
+
+
+ZWGC                      User Commands                      ZWGC
+
+
+
+     llbbrreeaakk(_e_x_p_r_1, _e_x_p_r_2), rrbbrreeaakk(_e_x_p_r_1, _e_x_p_r_2)
+          _E_x_p_r_2 defines a set of characters.  The function
+          returns the longest initial (llbbrreeaakk) or final (rrbbrreeaakk)
+          string from _e_x_p_r_1 composed of characters _n_o_t in this
+          set (e.g. lbreak("characters", "tuv") would return
+          "charac").  If _e_x_p_r_1 is a variable reference, the vari-
+          able is modified to remove the characters returned.  If
+          no characters in _e_x_p_r_2 are in _e_x_p_r_1, then _e_x_p_r_1 is
+          returned (and _e_x_p_r_1 is set to "", if a variable).
+
+     llssppaann(_e_x_p_r_1, _e_x_p_r_2), rrssppaann(_e_x_p_r_1, _e_x_p_r_2)
+          These functions are the negation of the bbrreeaakk func-
+          tions; the returned string consists of characters _i_n
+          the set defined by _e_x_p_r_2
+
+     pprrootteecctt(_e_x_p_r)
+          Returns a string which will be evaluated identically to
+          _e_x_p_r, but will not affect any surrounding environments.
+          That is, any characters which could close outside
+          environments are quoted, and any environments in _e_x_p_r
+          which are not closed at the end are closed.
+
+     ssuubbssttiittuuttee(_e_x_p_r)
+          Evaluates variable references of the form $_v_a_r_i_a_b_l_e in
+          expr and converts $$ to $.
+
+     uuppccaassee(_e_x_p_r)
+          Returns the value of _e_x_p_r, converted to upper case.
+
+     vveerrbbaattiimm(_e_x_p_r)
+          Returns a string that will be displayed exactly as _e_x_p_r
+          looks.  Anything which could be mistaken for an
+          environment is quoted.
+
+     zzvvaarr(_e_x_p_r)
+          Returns the value of the zephyr variable _e_x_p_r, or the
+          empty string if it does not exist.  [Zephyr variables
+          can be set and examined with _z_c_t_l(1).]
+
+
+     OOppeerraattoorrss
+
+     Following is a list of operators which can be used in the
+     description file to compose expressions:
+
+     _e_x_p_r_1 ++ _e_x_p_r_2
+          String concatenation of _e_x_p_r_1 and _e_x_p_r_2
+
+     _e_x_p_r_1 ==== _e_x_p_r_2
+          True if the two expressions are equal, false otherwise.
+
+     _e_x_p_r ==~~ _e_x_p_r_2
+
+
+
+MIT Project Athena      November 30, 1989                       5
+
+
+
+
+
+
+ZWGC                      User Commands                      ZWGC
+
+
+
+          True if the regular expression pattern _e_x_p_r_2 matches
+          _e_x_p_r_1.
+
+     _e_x_p_r_1 !!~~ _e_x_p_r_2
+          Negation of "=~".
+
+     _e_x_p_r_1 !!== _e_x_p_r_2
+          Negation of "=="
+
+     _e_x_p_r_1 aanndd _e_x_p_r_2, _e_x_p_r_1 && _e_x_p_r_2
+          True if _e_x_p_r_1 and _e_x_p_r_2 are both true.
+
+     _e_x_p_r_1 oorr _e_x_p_r_2, _e_x_p_r_1 || _e_x_p_r_2
+          True if either of _e_x_p_r_1 or _e_x_p_r_2 are true.
+
+     !! _e_x_p_r_1, nnoott _e_x_p_r_1
+          The logical negation of _e_x_p_r_1.
+
+
+     CCoommmmaannddss
+
+     Following is a list of the commands usable in the descrip-
+     tion language:
+
+     aappppeennddppoorrtt _e_x_p_r_1 _e_x_p_r_2
+          Creates a port called _e_x_p_r_1.  All output to the port
+          will be appended to the file _e_x_p_r_2.  There is no input.
+          If the file is created, its mode is set to read-write,
+          owner only (no access for others).
+
+     bbrreeaakk
+          Exits the innermost if, case, or while block.
+
+     ccaassee _e_x_p_r_1 [ ((mmaattcchh _e_x_p_r [,_e_x_p_r ...]) | ddeeffaauulltt) _c_o_m_m_a_n_d_s ] ... eennddccaassee
+          Evaluates _e_x_p_r_1.  Then, each of the match expressions
+          is evaluated in order.  The first time an expression
+          matches _e_x_p_r_1, then the body of commands under it is
+          executed, and the rest of the case statement is
+          skipped.  This compare is case-insensitive.  default
+          always matches, so it should always appear as the last
+          set of commands.  See the default description file for
+          an example of use.
+
+     cclleeaarrbbuuff
+          Clears the output buffer (see below for details on
+          buffering).
+
+     cclloosseeiinnppuutt _e_x_p_r
+          Closes the file associated with _e_x_p_r.
+
+     cclloosseeoouuttppuutt _e_x_p_r
+          Sends an EOF (end-of-file) to the process if _e_x_p_r was a
+
+
+
+MIT Project Athena      November 30, 1989                       6
+
+
+
+
+
+
+ZWGC                      User Commands                      ZWGC
+
+
+
+          port created by execport, or closes the file if it was
+          created by outputport or appendport.
+
+     cclloosseeppoorrtt _e_x_p_r
+          Closes both input and output of _e_x_p_r as defined above.
+
+     ffiieellddss _v_a_r_i_a_b_l_e_1 ...
+          sets the list of variables to be equal to the fields in
+          the notice.  If there are more variables than fields,
+          the extra variables are left empty.
+
+     eexxeecc _e_x_p_r_l_i_s_t
+          Executes a program without any input or output.  A com-
+          mand named by _e_x_p_r_l_i_s_t is executed.  Each expression is
+          used as an argument to the program; the first expres-
+          sion names the program (it may be either an absolute
+          pathname, or a program name; the user's PATH is
+          searched to find simple program names).
+
+     eexxeeccppoorrtt _e_x_p_r_1 _e_x_p_r_l_i_s_t
+          Creates a port called _e_x_p_r_1.  A command named by
+          _e_x_p_r_l_i_s_t is executed, as described above for eexxeecc.  All
+          output to the port is sent to the standard input of the
+          process.  Reading from the port will return the stan-
+          dard output of the process.
+
+     eexxiitt Completes processing of the current notice.  The
+          remainder of the description file is ignored after exe-
+          cution of this command.
+
+     iiff _e_x_p_r_1 tthheenn _c_o_m_m_a_n_d_s_1 [eellsseeiiff _e_x_p_r_2 tthheenn _c_o_m_m_a_n_d_s_2] ... [eellssee _c_o_m_m_a_n_d_s_n] eennddiiff
+          If _e_x_p_r_1 evaluates to true, execute _c_o_m_m_a_n_d_s_1, _e_t_c. [_A
+          _c_o_n_d_i_t_i_o_n_a_l _c_o_n_s_t_r_u_c_t, _s_i_m_i_l_a_r _t_o _t_h_e _c_o_n_s_t_r_u_c_t_s _i_n _t_h_e
+          _C _s_h_e_l_l (_c_s_h).]
+
+     iinnppuuttppoorrtt _e_x_p_r_1 _e_x_p_r_2
+          Creates a port called _e_x_p_r_1.  All input from the port
+          comes from the file _e_x_p_r_2.  There is no output.
+
+     nnoooopp does nothing
+
+     oouuttppuuttppoorrtt _e_x_p_r_1 _e_x_p_r_2
+          Creates a port called _e_x_p_r_1.  The file _e_x_p_r_2 will be
+          truncated, or created if it does not exist.  All output
+          to the port will be appended to the file _e_x_p_r_2.  There
+          is no input.  If the file is created, its mode is set
+          to read-write, owner only (no access for others).
+
+     pprriinntt _e_x_p_r_1 ...
+          adds the values of the expressions to the current out-
+          put buffer.  The values of the expressions are
+          separated by spaces in the output.
+
+
+
+MIT Project Athena      November 30, 1989                       7
+
+
+
+
+
+
+ZWGC                      User Commands                      ZWGC
+
+
+
+     ppuutt [_e_x_p_r [_e_x_p_r_l_i_s_t]]
+          Sends data to a port.  If _e_x_p_r is provided, then it is
+          used as the port, otherwise the port used is the port
+          corresponding to the default output device.  If
+          _e_x_p_r_l_i_s_t is provided, the expressions in the list are
+          sent to the port, separated by spaces.  If it is omit-
+          ted, then the contents of the output buffer are sent as
+          the data.
+
+     sseett _v_a_r_i_a_b_l_e == _e_x_p_r
+          sets _v_a_r_i_a_b_l_e equal to _e_x_p_r.  Variable can later be
+          referenced by $_v_a_r_i_a_b_l_e.
+
+     sshhooww _t_e_x_t eennddsshhooww
+          Appends text to the output buffer.  This command is
+          special, because the string does not need to be quoted.
+          Whitespace at the beginning or end of the lines of text
+          is ignored.  The _e_n_d_s_h_o_w must appear as the first token
+          on a line (it may only be preceded on that line by whi-
+          tespace).  Variable substitutions and formatting com-
+          mands (but not expressions or functions) are processed
+          in the text.  Example:
+          show
+             this is some text
+             from: $sender
+          endshow
+
+     wwhhiillee _e_x_p_r ddoo _s_t_a_t_e_m_e_n_t_s eennddwwhhiillee
+          Executes _s_t_a_t_e_m_e_n_t_s until _e_x_p_r is false.
+
+
+PPOORRTTSS
+     Ports are an abstraction encompassing all I/O forms of which
+     zwgc is capable.  There are pre-existing output ports
+     corresponding to each of the output devices, and more ports
+     can be created with the port commands described above.
+
+
+OOUUTTPPUUTT
+     The output is usually collected in the _o_u_t_p_u_t _b_u_f_f_e_r and
+     saved until a _p_u_t command sends the output to an output dev-
+     ice (such as an X display or a terminal).  The output buffer
+     is implicitly cleared after each notice is completely pro-
+     cessed.
+
+
+     Output devices are implemented as output ports.  A message
+     is displayed in a device-dependent manner when a string is
+     output to the port corresponding to the output device.  For-
+     matting commands are embedded in the text as @ commands of
+     the form @command(text).  Command names are case-insensitive
+     and consist of alphanumeric characters and underscores.
+
+
+
+MIT Project Athena      November 30, 1989                       8
+
+
+
+
+
+
+ZWGC                      User Commands                      ZWGC
+
+
+
+     Valid brackets are () [] {} and <>.  If the command name is
+     empty (such as in ``@@((ffoooo))''), then a new environment with
+     no changes is created (This is useful to temporarily change
+     some parameter of the output, such as the font).
+
+     The following output devices are supported:
+
+     stdout
+          Sends the string to standard output exactly as is.
+
+     stderr
+          Sends the string to standard error exactly as is.
+
+     plain
+          Sends the string with all formatting environments
+          removed to standard output.
+
+     tty  Does formatting on the message according to @ commands
+          embedded in the text.  The output, with appropriate
+          mode-changing sequences, is sent to the standard out-
+          put.  The appropriate characteristics of the display
+          are taken from the TERMCAP entry (see _t_e_r_m_c_a_p(5)) for
+          the terminal named by the TERM environment variable.
+          Supported @ commands are:
+               @roman         Roman (plain) letters (turns off
+                              all special modes).
+               @b or @bold    Bold letters.  If not available,
+                              reverse video, else underline.
+               @i or @italic  Italic letters (underlining, if
+                              available).
+               @beep          "bl" termcap entry, else "^G" (beep
+                              the terminal); limited to once per
+                              message.
+               @l or @left    left aligned
+               @c or @center  center aligned
+               @r or @right   right aligned
+
+          Other @-commands are silently ignored.
+
+     X    Displays one window per string output to the port.  The
+          output is formatted according to @ commands embedded in
+          the string.  Supported @ commands are:
+               @roman         turns off @italic and @bold
+               @b or @bold    turns on boldface
+               @i or @italic  turns on italics
+               @l or @left    left aligned
+               @c or @center  center aligned
+               @r or @right   right aligned
+               @large         large type size
+               @medium        medium type size
+               @small         small type size
+               @beep          Ring the X bell (limited to once
+
+
+
+MIT Project Athena      November 30, 1989                       9
+
+
+
+
+
+
+ZWGC                      User Commands                      ZWGC
+
+
+
+                              per message)
+
+               @font          sets the current font to the font
+                              specified in the contents of the
+                              environment (e.g. @font(fixed)).
+                              This will remain in effect for the
+                              rest of the environment (a tem-
+                              porary change can be achieved by
+                              enclosing the font-change in an
+                              @(...) environment).  If the named
+                              font is not available, the font
+                              ``fixed'' is used instead.
+
+               @color         sets the color to the color speci-
+                              fied in the contents of the
+                              environment.  The color name should
+                              appear in the X color name data-
+                              base.  This color will remain in
+                              effect for the rest of the environ-
+                              ment.  If the named color is not
+                              available, the default foreground
+                              color is used.
+
+          Any other environment name not corresponding to the
+          above environment names will set the current ``sub-
+          style.''
+
+          The attributes of a given block of text are determined
+          by any active environments, evaluated in the context of
+          the current style and substyle.
+
+          The style is specific to each window.  Its name has
+          three dot (``.'') separated fields, which are by
+          default the values of the class, instance, and reci-
+          pient variables, with all dots changed to underscores
+          (``_'') and all letters converted to lowercase.  The
+          style can be altered by setting the _s_t_y_l_e variable.
+          Note that it mmuusstt aallwwaayyss have exactly two ``.'' charac-
+          ters in it.
+
+          The substyle is determined by @ commands in the message
+          text.
+
+          Zwgc variables which the X output device reads are:
+               default_X_geometry
+                              default geometry for notices, set
+                              from resources
+               X_geometry     overrides geometry in resource
+                              file, if set
+               default_X_background
+                              default background color for
+                              notices, set from resources
+
+
+
+MIT Project Athena      November 30, 1989                      10
+
+
+
+
+
+
+ZWGC                      User Commands                      ZWGC
+
+
+
+               X_background   overrides bgcolor in resource file,
+                              if set
+               style          style, as described above
+
+          The expected geometry values are described below.
+
+          The fonts and color for a piece of text are determined
+          by the styles defined in the X resources file.  The
+          following resources relating to text style are used by
+          zwgc:
+
+               zwgc.style._s_t_y_l_e_n_a_m_e_s.geometry
+                         geometry for messages of the specified
+                         style
+
+               zwgc.style._s_t_y_l_e_n_a_m_e_s.background
+                         background color for messages of the
+                         specified style
+
+               zwgc.style._s_t_y_l_e_n_a_m_e_s.substyle._s_u_b_s_t_y_l_e_n_a_m_e.fontfamily
+                         fontfamily name for the specified style
+                         and substyle
+
+               zwgc.style._s_t_y_l_e_n_a_m_e_s.substyle._s_u_b_s_t_y_l_e_n_a_m_e.foreground
+                         foreground color for the specified style
+                         and substyle
+
+               zwgc.fontfamily._f_o_n_t_f_a_m_i_l_y_n_a_m_e._s_i_z_e._f_a_c_e
+                         specifies the fonts for a given fontfam-
+                         ily.  _s_i_z_e is one of small, medium, or
+                         large, and _f_a_c_e is one of roman, bold,
+                         italic, or bolditalic.
+
+          The best way to get started in customizing X resources
+          for _z_w_g_c is to examine the default application
+          resources and other users' resources to understand how
+          they specify the default appearance.
+
+
+XX RREESSOOUURRCCEESS
+     Other X resources used by _z_w_g_c are listed below.  Entries
+     like
+
+          zwgc*option: value
+          Zwgc*option: value
+          zwgc.option: value
+          *option: value
+
+     will work.
+
+     An entry labeled with zwgc*option in any of the sources
+     takes precedence over Zwgc*option, which takes precedence
+
+
+
+MIT Project Athena      November 30, 1989                      11
+
+
+
+
+
+
+ZWGC                      User Commands                      ZWGC
+
+
+
+     over *option entries.  The following sources are searched in
+     order:
+          command-line arguments (-xrm)
+          contents of file named by XENVIRONMENT environment variable
+          X server resource database (see _x_r_d_b(1))
+          application resources file
+
+     Logical values can be ( Yes On True T ) or ( No Off False
+     nil ).
+
+     OOPPTTIIOONN::        MMEEAANNIINNGG [[ddeeffaauulltt]]::
+
+     cursorCode     number of a code from the cursorfont (should
+                    be an even integer, see <_X_1_1/_c_u_r_s_o_r_f_o_n_t._h>)
+                    to use for the windows.
+
+     foreground     Primary foreground color
+
+     Foreground     Secondary foreground color (if foreground not
+                    set) [BlackPixel is the default if neither is
+                    set]
+
+     background     Primary background color
+
+     Background     Secondary background color (if background not
+                    set) [WhitePixel is the default if neither is
+                    set]
+
+     borderColor    Primary border color
+
+     BorderColor    Secondary border color (if borderColor not
+                    set) [BlackPixel is the default if neither is
+                    set]
+
+     pointerColor   Primary mouse pointer color [foreground color
+                    is the default if not set]
+
+     reverseVideo   (logical) Toggles foreground and background
+                    (and border, if it matches foreground or
+                    background).
+
+     ReverseVideo   Secondary toggle, if reverseVideo is not set.
+                    [off is the default if neither is set]
+
+     borderWidth    Primary border width selector
+
+     BorderWidth    Secondary border width selector (if bor-
+                    derWidth is not set) [1 is the default value
+                    if neither is set]
+
+     internalBorder Primary border between edge and text
+
+
+
+
+MIT Project Athena      November 30, 1989                      12
+
+
+
+
+
+
+ZWGC                      User Commands                      ZWGC
+
+
+
+     InternalBorder Secondary selector (if internalBorder not
+                    set) [2 is the default value if neither is
+                    set]
+
+     geometry       Primary POSITION (not size) geometry specif-
+                    ier.  The geometry should be of the form
+                    "{+|-}x{+|-}y", specifying an (x,y) coordi-
+                    nate for a corner of the window displaying
+                    the notice.  The interpretation of positive
+                    and negative location specifications follows
+                    the X conventions.  A special location of `c'
+                    for either x or y indicates that the window
+                    should be centered along that axis.  Example:
+                    a geometry of "+0+c" specifies the window
+                    should be at the top of the screen, centered
+                    horizontally.
+
+     Geometry       Secondary position specifer. [+0+0 is the
+                    default if neither is set.]
+
+     resetSaver     (logical) Primary value to force screen to
+                    unsave when a message first appears.
+
+     ResetSaver     (logical) Secondary value to force screen to
+                    unsave. [default True]
+
+     reverseStack   (logical) Primary value to specify that zwgc
+                    should attempt to stack WindowGram windows
+                    such that the oldest messages normally show
+                    on top.  Some X window managers may silently
+                    ignore _z_w_g_c's attempts to restack its win-
+                    dows.  This option can cause some unusual
+                    interactions with other windows if the user
+                    manually restacks either the other windows or
+                    the WindowGram windows.
+
+     ReverseStack   Secondary value to enable reverse stacking.
+                    [default False]
+
+     title          (string) Primary window title
+
+     Title          Secondary window title [defaults to the last
+                    pathname component of the program name, usu-
+                    ally "zwgc"]
+
+     transient      (logical) Primary value which determines if
+                    zephyrgram windows will be created with the
+                    WWMM__TTRRAANNSSIIEENNTT__FFOORR property set.  If this
+                    resource is true, the property will be set,
+                    telling certain windowmanagers to treat
+                    zephyrgram windows specially.  For instance,
+                    _t_w_m will not put decorations on transient
+
+
+
+MIT Project Athena      November 30, 1989                      13
+
+
+
+
+
+
+ZWGC                      User Commands                      ZWGC
+
+
+
+                    windows, _m_w_m will not let you iconify them,
+                    and _u_w_m ignores the resource entirely.
+
+     Transient      Secondary transient determining value
+                    [default False]
+
+     minTimeToLive  Primary value which specifies the minimum
+                    amount of time (``minimum time to live'') a
+                    WindowGram must be on-screen (in mil-
+                    liseconds) until it can be destroyed.  This
+                    feature is useful to avoid accidentally
+                    clicking on new WindowGrams when trying to
+                    delete old ones.
+
+     MinTimeToLive  Secondary value of ``minimum time to live.''
+
+     iconName       (string) Primary icon name
+
+     IconName       Secondary icon name [defaults to the last
+                    pathname component of the program name, usu-
+                    ally "zwgc"]
+
+     name           (string) Primary window class name
+
+     name           Secondary window class name [defaults to the
+                    last pathname component of the program name,
+                    usually "zwgc"]
+
+     synchronous    (logical) Primary X synchronous mode specif-
+                    ier.  On means to put the X library into syn-
+                    chronous mode.
+
+     Synchronous    Secondary X synchronous mode specifier.
+                    [default is `off']
+
+     The window class is always "Zwgc".
+
+XX BBUUTTTTOONNSS
+     Clicking and releasing any button without the shift key
+     depressed while the pointer remains inside a WindowGram win-
+     dow will cause it to disappear. If the pointer leaves the
+     window while the button is depressed, the window does not
+     disappear; this provides a way to avoid accidentally losing
+     messages.
+
+     If the control button is held down while clicking on a Win-
+     dowGram, then that WindowGram and all windowgrams under the
+     point where the button is released will be erased.
+
+     WWAARRNNIINNGG:: If you do this with too many WindowGrams under the
+     mouse, it is possible for your subscriptions to be lost.  If
+     _z_c_t_l _r_e_t_r_i_e_v_e returns nothing, then issue a _z_c_t_l _l_o_a_d
+
+
+
+MIT Project Athena      November 30, 1989                      14
+
+
+
+
+
+
+ZWGC                      User Commands                      ZWGC
+
+
+
+     command to re-subscribe to your default set of subscrip-
+     tions.  If you use znol, then _z_n_o_l -_q & will restore the
+     subscriptions you need for _z_n_o_l.
+
+     Portions of the text of a message may be selected for "past-
+     ing" into other X applications by using the shift key in
+     cooperation with the pointer buttons.  Holding the Shift key
+     while depressing Button1 (usually the left button) will set
+     a marker at the text under the pointer.  Dragging the
+     pointer with Shift-Button1 still depressed extends the
+     selection from the start point, until the button is
+     released.  The end of the selection may also be indicated by
+     releasing Button1, holding down the Shift key, and pressing
+     Button3 (usually the right button) at the desired endpoint
+     of the selection.  The selection will appear with the text
+     and background colors reversed.
+
+
+CCOOMMMMAANNDD LLIINNEE
+     _z_w_g_c is normally invoked from /_u_s_r/_a_t_h_e_n_a/_l_i_b/_i_n_i_t/_l_o_g_i_n,
+     $_H_O_M_E/._x_s_e_s_s_i_o_n, or /_u_s_r/_a_t_h_e_n_a/_l_i_b/_i_n_i_t/_x_s_e_s_s_i_o_n in the
+     foreground and with no arguments. When it has successfully
+     set your location, it will put itself into the background
+     (unless the -nofork option has been specified). At this
+     point it is safe to invoke additional zephyr commands, such
+     as _z_n_o_l(1).  (You can also put these commands in the
+     _i_n_i_t_p_r_o_g_s Zephyr variable; the value of this variable is
+     passed as the argument to the _s_y_s_t_e_m(3) library call during
+     initialization.) _z_w_g_c will exit with an exit status of 0 if
+     it was able to open the X display successfully or 1 if it
+     couldn't open the display and the Zephyr variable _f_a_l_l_b_a_c_k
+     was set to ``false''. If _f_a_l_l_b_a_c_k is set to ``true'', _z_w_g_c
+     will fall back to ``ttymode'' (making the tty driver the
+     default output device) if it can't open the X display.  If
+     _f_a_l_l_b_a_c_k is not set and the display cannot be opened, _z_w_g_c
+     prints an explanatory message and exits with a status of 1.
+
+     If the -_t_t_y_m_o_d_e option is specified, _z_w_g_c will ignore any X
+     display and use the terminal as its primary output device.
+     This flag overrides any setting of the fallback variable.
+
+     The -_r_e_e_n_t_e_r option is provided for compatibility with the
+     previous version of _z_w_g_c.
+
+     _z_w_g_c will exit cleanly (unset location and cancel subscrip-
+     tions) on:
+          SIGTERM
+          SIGHUP
+          XIOError (with a message to stderr)
+     SIGHUP is what it expects to get upon logout.  Also, the
+     signals SIGINT, SIGQUIT, and SIGTSTP are ignored because
+     they can be sent inadvertently, and bizarre side-effects can
+
+
+
+MIT Project Athena      November 30, 1989                      15
+
+
+
+
+
+
+ZWGC                      User Commands                      ZWGC
+
+
+
+     result.  If you want them to be acted on, then run _z_w_g_c
+     -_n_o_f_o_r_k &
+
+
+CCOONNTTRROOLL MMEESSSSAAGGEESS
+     In order to allow some special user controls over the
+     behavior of _z_w_g_c, certain Zephyr control notices can be sent
+     directly to _z_w_g_c using the _z_c_t_l(1) program. Currently imple-
+     mented controls are
+
+     wg_read        tell _z_w_g_c to re-read the current description
+                    file.
+
+     wg_shutdown    tell _z_w_g_c to cancel all subscriptions and
+                    stop acting on incoming notices. _z_w_g_c saves
+                    the subscriptions that were in effect at the
+                    time of the shutdown so that it can restore
+                    them later if needed.
+
+     wg_startup     tell _z_w_g_c to restart from being shutdown and
+                    reinstall the saved subscriptions.
+
+     Other control messages may be implemented in the future.
+
+
+EEXXAAMMPPLLEESS
+     For an example of a description file, see
+     /_u_s_r/_a_t_h_e_n_a/_l_i_b/_z_e_p_h_y_r/_z_w_g_c._d_e_s_c.  For an example of X
+     resources, see /_u_s_r/_a_t_h_e_n_a/_l_i_b/_z_e_p_h_y_r/_z_w_g_c__r_e_s_o_u_r_c_e_s.
+
+
+BBUUGGSS
+     The X selection code can highlight the wrong portions of
+     messages containing formatted text placed with the @center()
+     or @right() directives.
+
+
+FFIILLEESS
+     $HOME/.zwgc.desc
+                    Default location of user's description file
+     /usr/athena/lib/zephyr/zwgc.desc
+                    System-wide description file
+     /usr/athena/lib/zephyr/zwgc_resources
+                    Default X application resources.
+     $HOME/.zephyr.vars
+                    File containing variable definitions
+     $HOME/.zephyr.subs
+                    Supplementary subscription file
+     $HOME/.Xresources
+                    Standard X resources file
+     $WGFILE or /tmp/wg._u_i_d
+                    File used to store WindowGram port number for
+
+
+
+MIT Project Athena      November 30, 1989                      16
+
+
+
+
+
+
+ZWGC                      User Commands                      ZWGC
+
+
+
+                    other clients
+
+SSEEEE AALLSSOO
+     csh(1), kinit(1), xrdb(1), zctl(1), zephyr(1), znol(1),
+     X(1), getenv(3), system(3), termcap(5), zephyrd(8), zhm(8)
+     Project Athena Technical Plan Section E.4.1, `Zephyr Notifi-
+     cation Service'
+
+AAUUTTHHOORRSS
+     John Carr (MIT/Project Athena) <jfc@athena.mit.edu>
+     Marc Horowitz (MIT/Project Athena) <marc@athena.mit.edu>
+     Mark Lillibridge (MIT/Project Athena) <mdl@CS.CMU.EDU>
+
+RREESSTTRRIICCTTIIOONNSS
+     Copyright (c) 1989 by the Massachusetts Institute of Tech-
+     nology.  All Rights Reserved.
+     _z_e_p_h_y_r(_1) specifies the terms and conditions for redistribu-
+     tion.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+MIT Project Athena      November 30, 1989                      17
+
+
+

@@ -1,0 +1,14 @@
+L DIST.;1                           	dist	/X11/R4/src/cmds/zephyr/dist/src/zhm
+D DS3100_M                          	ds3100.md
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+L QUEUE.C;1                         	queue.c	dist/queue.c
+D RCS                               	RCS
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md
+L ZEPHYR.;1                         	zephyr	/X11/R4/src/cmds/zephyr/dist/src/include/zephyr
+F ZHM.C;1                           	zhm.c
+F ZHM.H;1                           	zhm.h
+L ZHM.MAN;1                         	zhm.man	/X11/R4/src/cmds/zephyr/dist/src/man/man8/zhm.8
+L ZHM_CLIE.C;1                      	zhm_client.c	dist/zhm_client.c
+L ZHM_SERV.C;1                      	zhm_server.c	dist/zhm_server.c

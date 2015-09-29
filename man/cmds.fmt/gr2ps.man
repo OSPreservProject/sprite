@@ -1,0 +1,198 @@
+
+
+
+GR2PS                UNKNOWN MANUAL SECTION                 GR2PS
+
+
+
+NNAAMMEE
+     _g_r_2_p_s - convert Gremlin files to PostScript
+
+SSYYNNOOPPSSIISS
+     _g_r_2_p_s [ -n ] [ -p _X _Y ] [ -s _X _Y ] [ -t _X _Y ] [ _i_n_p_u_t ]
+
+DDEESSCCRRIIPPTTIIOONN
+     This program takes a picture description produced by the
+     Gremlin picture editor and converts it a PostScript page
+     that can be printed on any printer that supports this
+     language, such as the Apple LaserWriter.  _G_r_2_p_s handles the
+     different types of elements in this Gremlin output to pro-
+     duces a good looking page on a LaserWriter.
+
+     It takes the name of a Gremlin file (default is standard
+     input) and writes the resulting PostScript file to its stan-
+     dard output, unless the -o option (see below) is given, in
+     which case it writes to the specified file.
+
+     _G_r_2_p_s produces a file that can be included into another page
+     description.  This is meant to be used when a PostScript
+     file is being imbedded into a document of another type (such
+     as TeX, using \special).  If the file is to be printed
+     directly, the user must add a call to sshhoowwppaaggee to the
+     ``%%Trailer'' section at the end.
+
+     The gremlin coordinates are normally coppied out directly to
+     PostScript coordinates (the inherited user space).  This
+     behavior can be modified with the -s and -t options (see
+     below).  Note that if scaling and translation are both
+     specified, the translation is performed _a_f_t_e_r the scaling
+     (i.e., the translation factor is not affected by the scale).
+     This is unlike PostScript, where the order of the operations
+     matters.  Also, the lower-left corner of the picture may be
+     placed at any location on the page with the -p option.
+
+     By default, the four troff fonts, R, I, B and S are mapped
+     to the LaserWriter fonts TTiimmeess--RRoommaann, TTiimmeess--IIttaalliicc, TTiimmeess--
+     BBoolldd and CCoouurriieerr--BBoolldd respectively.  This action can be
+     changed with the -R, -I, -B and -S options.
+
+     _G_r_2_p_s obeys of the Adobe PostScript file structuring conven-
+     tions.  In particular, each file begins with a set of com-
+     ments which introduce the file as PostScript code and
+     specify the bounding box of the figure along with other
+     information.
+
+OOPPTTIIOONNSS
+     -R   set the ``roman'' font to the given LaserWriter font
+          (default TTiimmeess--RRoommaann).
+
+     -I   set the ``italic'' font to the given LaserWriter font
+
+
+
+Sprite v1.0                 10/20/87                            1
+
+
+
+
+
+
+GR2PS                UNKNOWN MANUAL SECTION                 GR2PS
+
+
+
+          (default TTiimmeess--IIttaalliicc).
+
+     -B   set the ``bold'' font to the given LaserWriter font
+          (default TTiimmeess--BBoolldd).
+
+     -S   set the ``special'' font to the given LaserWriter font
+          (default CCoouurriieerr--BBoolldd).
+
+     -n   force interpretation of the gremlin file in newer for-
+          mat (that produced by the Sun version) rather than the
+          older Gremlin format.  If the gremlin file was produced
+          by the Sun gremlin, this newer format is automatically
+          assumed.
+
+     -o   write output to a certain file rather than the standard
+          output.  The -o option must take as an argument the
+          name of a file which it can create.
+
+     -p   place the lower-left point of the figure at the coordi-
+          nate given by the two floating-point option arguments.
+          For example, ``-p 0 0'' can be used to place the figure
+          at the origin no matter where Gremlin put it.  Note
+          that this is a translation, so only one of -t and -p
+          may be specified.
+
+     -s   scale every coordinate by the scale factor given by the
+          two floating-point numbers which are the option argu-
+          ments.  This has the effect of scaling the resulting
+          picture.  Using ``-s 0.75 1.0'' would scale to 75% in
+          the X direction and leave the Y direction scale as it
+          was, producing a narrower picture.
+
+     -t   translate every coordinate by the two floating-point
+          numbers which are the option arguments.  Note: in
+          PostScript the point 0, 0 is at the left bottom corner
+          of the page, even though the laser writer can't actu-
+          ally paint at this point.  Using ``-t 10.0 10.0'' would
+          move the figure ten units up and to the right on the
+          page.  The translation is applied the coordinates have
+          been scaled.
+
+SSEEEE AALLSSOO
+     _g_r_e_m_l_i_n(L), _g_r_n(L), _t_e_x(L)
+
+AAUUTTHHOORR
+     John Coker,
+     University of California, Berkeley
+     john@renoir.Berkeley.EDU
+
+     Peehong Chen,
+     University of California, Berkeley
+     phc@renoir.Berkeley.EDU
+
+
+
+Sprite v1.0                 10/20/87                            2
+
+
+
+
+
+
+GR2PS                UNKNOWN MANUAL SECTION                 GR2PS
+
+
+
+NNOOTTEESS
+     PostScript is a trademark of Adobe Systems, Inc.
+     Apple and LaserWriter are trademarks of Apple Computers.
+
+BBUUGGSS
+     Because the Gremlin coordinate system is different from the
+     PostScript one, the -s and -t options are almost always
+     necessary to get the output sized and placed properly.  Of
+     course, they can be emulated in PostScript with the ssccaallee
+     and ttrraannssllaattee operators.
+
+     The grey scale used does not really correspond in any
+     rational way with the set of gremlin stipples.  It would be
+     possible to use bit rasters in PostScript to emulate the
+     gremlin stipple patterns, but the author thought this of
+     dubious use.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                 10/20/87                            3
+
+
+

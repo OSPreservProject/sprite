@@ -1,0 +1,12 @@
+F ALLOCA.H;1                        	alloca.h
+D CMPLRS                            	cmplrs
+L DS3100.MD;1                       	ds3100.md	/sprite/lib/include/ds3100.md
+L DS5000.MD;1                       	ds5000.md	../../../../lib/include/ds5000.md
+F FLOAT.H;1                         	float.h
+L KERNEL.;1                         	kernel	/sprite/src/kernel/Include/ds3100.md
+F LIMITS.H;1                        	limits.h
+F MACHPARA.H;1                      	machparam.h
+F NLIST.H;1                         	nlist.h
+F SIGMACH.H;1                       	sigMach.h
+D SYS                               	sys
+F VMMACH.H;1                        	vmMach.h

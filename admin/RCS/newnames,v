@@ -1,0 +1,129 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @# @;
+
+
+1.5
+date     91.10.01.17.47.29;  author mottsmth;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.10.01.17.46.04;  author jhh;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.09.28.11.43.44;  author rab;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.07.06.13.42.24;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.11.06.11.55.47;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@hostnames available for use
+@
+
+
+1.5
+log
+@Use 'jealousy' for the sun3/50 in room 444
+@
+text
+@
+
+These names are available for use:
+
+128.32.150.110          cowardice.berkeley.edu cowardice
+128.32.150.114          mutilation.berkeley.edu mutilation
+128.32.150.116          vagrancy.berkeley.edu vagrancy
+128.32.150.91           blasphemy.berkeley.edu blasphemy
+128.32.150.98           poltroonery.berkeley.edu poltroonery
+
+addiction       128.32.150.123
+
+128.32.150.128          insurgency.berkeley.edu insurgency
+
+128.32.150.134          communism.berkeley.edu communism
+128.32.150.135          extortion.berkeley.edu extortion
+128.32.150.136          genocide.berkeley.edu genocide
+128.32.150.137          hatred.berkeley.edu hatred
+128.32.150.141          whining.berkeley.edu whining
+
+
+These names aren't in use yet, but they are already spoken for:
+
+128.32.150.111          debauchery.berkeley.edu debauchery
+@
+
+
+1.4
+log
+@*** empty log message ***
+@
+text
+@a18 1
+128.32.150.138          jealousy.berkeley.edu jealousy
+@
+
+
+1.3
+log
+@*** empty log message ***
+@
+text
+@a6 1
+128.32.150.92           covet.berkeley.edu covet
+a11 1
+blackmail       128.32.150.124
+a12 1
+128.32.150.127          mercenary.berkeley.edu mercenary
+a14 1
+128.32.150.133          anarchy.berkeley.edu anarchy
+a19 2
+128.32.150.139          loiter.berkeley.edu loiter
+128.32.150.140          mayhem.berkeley.edu mayhem
+@
+
+
+1.2
+log
+@Miscellaneous changes.
+@
+text
+@d18 11
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@a5 1
+128.32.150.112          espionage.berkeley.edu espionage
+a9 2
+128.32.150.96           joyride.berkeley.edu joyride
+128.32.150.97           larceny.berkeley.edu larceny
+a10 2
+128.32.150.100          sedition.berkeley.edu sedition
+128.32.150.102          terrorism.berkeley.edu terrorism
+d12 6
+a19 2
+128.32.150.103          tyranny.berkeley.edu tyranny
+128.32.150.99           sabotage.berkeley.edu sabotage
+a20 1
+
+@

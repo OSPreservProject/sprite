@@ -1,0 +1,89 @@
+
+global.c,1011
+CheckFairness(1047,31871
+CltToMigd(3435,98303
+CreateMigdRecord(428,13959
+DumpStats(2922,83540
+EndCallBack(2419,69890
+ForceHostIdle(3516,100093
+Global_ChangeState(2097,60886
+Global_Done(1251,37984
+Global_DoneIoctl(1196,36390
+Global_DumpIdleList(3700,104805
+Global_End(544,17026
+Global_GetIdle(730,22088
+Global_GetLoadInfo(618,18660
+Global_GetStats(3573,101587
+Global_GetUpdate(1867,54981
+Global_HostDown(2452,70778
+Global_HostUp(2204,63577
+Global_Init(235,8826
+Global_IsHostUp(2054,59829
+Global_Quit(589,18049
+Global_RemoveHost(1944,57086
+Global_ResetStats(3620,102875
+Global_SetParms(3661,103864
+Global_UpdateLoad(2528,72723
+HostIsIdle(3473,99159
+InitStats(388,13004
+InsertIdle(1472,44512
+#define NEXT_HOST_IN_USE_TO_INFO(116,4551
+#define NEXT_HOST_REQUEST_TO_INFO(113,4447
+ReadStats(3036,88100
+RecordEvictions(1668,49559
+RemoveHost(1998,58580
+RestoreCheckPoint(2680,77236
+RevokePermission(1817,53725
+SaveCheckPoint(2791,79930
+TellClient(1777,52761
+WakeupWaiters(1598,47874
+
+main.c,134
+Debug1(103,2947
+FatalError(166,4174
+PrintMemStats(219,5282
+TheEnd(130,3488
+main(245,5714
+static int numOptions = sizeof(58,1756
+
+migPdev.c,385
+DaemonSelectPredicate(496,12656
+MigPdev_CloseAllStreams(1111,29231
+MigPdev_End(283,7710
+MigPdev_Init(175,5132
+MigPdev_MakeReady(442,11255
+MigPdev_NotifyDaemons(524,13191
+MigPdev_OpenMaster(205,5760
+MigPdev_SignalClients(410,10503
+MigPdev_Stat(323,8475
+PdevClose(656,16800
+PdevIoctl(925,23887
+PdevOpen(554,13732
+PdevRead(760,19436
+PdevWrite(823,21136
+SendSignal(356,9127
+
+migd.c,495
+AlarmHandler(1446,37717
+CalculateLoads(1012,26724
+CheckMessages(1682,43762
+ContactGlobal(437,11609
+CreateGlobal(686,18306
+GetNewParms(1339,35128
+GetStats(1187,31679
+HandleException(1295,34200
+Migd_End(368,10030
+Migd_Evict(1478,38541
+Migd_EvictIoctl(1626,42378
+Migd_GatherLoad(793,20215
+Migd_GetLocalLoad(1261,33512
+Migd_GetParms(1407,36758
+Migd_HandleRequests(764,19755
+Migd_Init(245,6840
+Migd_SetParms(1367,35735
+ParseMigStatus(398,10555
+Reap(621,16763
+WriteAlarm(654,17419
+
+util.c,16
+Malloc(49,1262

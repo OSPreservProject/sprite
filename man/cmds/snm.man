@@ -1,0 +1,102 @@
+.ds ]W SPUR Release 1.0
+.TH SNM 1 "29 May 1988"
+.\" $Header: /a/newcmds/snm/RCS/snm.man,v 1.2 89/01/18 11:01:23 ouster Exp $
+.SH NAME
+snm \- print name list for SPUR binary
+.SH SYNOPSIS
+.B snm
+[
+.B \-gnoprua
+]
+[ 
+.RI [ " filename " "] .\|.\|."
+.SH DESCRIPTION
+.IX  "snm command"  ""  "\fLsnm\fP \(em display name list"
+.IX  display "name list of object file or library \(em \fLsnm\fP"
+.IX  "programming tools"  snm  ""  "\fLsnm\fP \(em display name list"
+.I Snm
+is similar to \fInm\fR except that it operates on SPUR object files.
+\fISnm\fR prints the name list (symbol table) of each object
+.I filename
+in the argument list.  If an argument is an archive, a listing for each object
+file in the archive will be produced.  If no
+.I filename
+is given, the symbols in
+.I a.out
+are listed.
+.LP
+Each symbol name is preceded by its value (blanks if undefined)
+and one of the letters:
+.TP
+.SM
+.B A
+absolute
+.TP
+.SM
+.B B
+bss segment symbol
+.TP
+.SM
+.B C
+common symbol
+.TP
+.SM
+.B D
+data segment symbol
+.TP
+.\".SM
+.\".B f
+.\"filename
+.\".TP
+.SM
+.B  T
+text segment symbol
+.TP
+.SM
+.B U
+undefined
+.TP
+.B \-
+debug, giving symbol table entries (see
+.B \-a
+below)
+.LP
+The type letter is upper case if the symbol is external, and
+lower case if it is local.  Symbols given values in shared regions are
+followed by `S' or `s'.
+By default, the output is sorted alphabetically by
+symbol name.
+.SH OPTIONS
+.TP
+.B  \-g
+Print only global (external) symbols.
+.TP
+.B \-n
+Sort numerically rather than alphabetically.
+.TP
+.B  \-o
+Prepend file or archive element name to each output line rather than only once.
+.TP
+.B  \-p
+Don't sort; print in symbol-table order.
+.TP
+.B  \-r
+Sort in reverse order.
+.TP
+.B  \-u
+Print only undefined symbols.
+.TP
+.B  \-a
+Print all symbols.
+.SH EXAMPLE
+.IP
+snm
+.LP
+prints the symbol list of
+.I a.out,
+the default output file for the 
+.BR C ,
+.SM FORTRAN
+77 and Pascal compilers.
+.SH SEE ALSO
+ar(1), ar(5), a.out(5)

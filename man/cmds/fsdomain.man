@@ -1,0 +1,52 @@
+' $Header: /sprite/src/cmds/fsdomain/RCS/fsdomain.man,v 1.2 91/10/11 14:29:54 voelker Exp Locker: voelker $
+.so \*(]ltmac.sprite
+.HS PROGNAME cmds
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+fsdomain \- changes the domain prefix of a file system
+.SH SYNOPSIS
+\fBfsdomain\fR
+\fIdevice\fR
+[\fIoptions\fR]
+.SH OPTIONS
+.IP "\fB\-help\fR" 15
+Print a summary of the command-line options and exit.
+.IP "\fB\-name domain_name\fR" 15
+Change the domain name.
+.IP "\fB\-d domain_num\fR" 15
+Change the domain number.
+.IP "\fB\-id serverID\fR" 15
+Change the server ID.
+.IP "\fB\-prev\fR" 15
+Use the previous (older) checkpoint.
+.IP "\fB\-print\fR" 15
+Print out the file system structures.
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBfsdomain\fR displays or changes various parameters of the domain of
+a file system.  If no options are given, then \fBfsdomain\fR displays
+the domain name, domain number, and serverID of the filesystem on the
+given device.  And the options allow you to selectively change any of
+those values. (Note: the disk device should be unmounted if you change
+any of the domain parameters.)
+.PP
+The \fB-print\fR option prints out file system structures.
+For an OFS, \fBthe Ofs_SummaryInfo\fR and \fBOfs_DomainHeader\fR are printed;
+for an LFS, \fBfsdomain\fR prints the \fBLfsCheckPointHdr\fR, the
+\fBLfsCheckPointTrailer\fR, and all the \fBLfsCheckPointRegions\fR between
+the header and the trailer.
+.PP
+The \fB-prev\fR option applies the above actions to the previous checkpoint.
+For some reason, the kernel and the disk can become out of sync with regard
+to which region is the current checkpoint.  This option should be able
+to get around that problem.
+
+
+.SH SEE ALSO
+fsinfo, fsmake, mklfs, labeldisk
+
+.SH KEYWORDS
+disk, partition, filesystem, domain, prefix

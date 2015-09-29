@@ -1,0 +1,68 @@
+
+
+
+IDLETIME                  User Commands                  IDLETIME
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     idletime - Show idle ticks, idle time,  and  context  switch
+     information.
+
+SSYYNNOOPPSSIISS
+     iiddlleettiimmee  [_o_p_t_i_o_n_s]
+
+OOPPTTIIOONNSS
+     --ss
+
+_________________________________________________________________
+
+IINNTTRROODDUUCCTTIIOONN
+     Sleep for some number of seconds (default  is  10)  counting
+     idle  ticks.   Then  print the idle ticks, idle time percen-
+     tage, number of context switches and the number of  involun-
+     tary and full context switches.
+
+KKEEYYWWOORRDDSS
+     idle, cpu, ticks, context switch
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  July 14, 1990                    1
+
+
+

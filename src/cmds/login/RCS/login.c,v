@@ -1,0 +1,1881 @@
+head     1.24;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.24
+date     92.04.22.14.04.00;  author kupfer;  state Exp;
+branches ;
+next     1.23;
+
+1.23
+date     92.03.25.15.53.50;  author shirriff;  state Exp;
+branches ;
+next     1.22;
+
+1.22
+date     92.02.05.18.34.09;  author shirriff;  state Exp;
+branches ;
+next     1.21;
+
+1.21
+date     90.10.07.18.31.19;  author shirriff;  state Exp;
+branches ;
+next     1.20;
+
+1.20
+date     90.08.04.16.55.25;  author shirriff;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     90.05.08.15.37.21;  author douglis;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     90.02.16.11.07.33;  author douglis;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     89.09.25.14.02.01;  author douglis;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     89.08.06.19.08.32;  author douglis;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     89.07.24.11.51.15;  author douglis;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     89.06.30.17.35.51;  author ouster;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     89.06.23.16.28.07;  author ouster;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     89.06.23.14.58.17;  author douglis;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     89.06.19.14.32.13;  author jhh;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     89.05.27.22.21.45;  author douglis;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     89.04.07.18.43.40;  author douglis;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     88.12.22.11.06.05;  author douglis;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.10.24.23.46.39;  author douglis;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.10.24.22.58.04;  author douglis;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.09.15.19.41.47;  author douglis;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.08.24.15.24.57;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.08.24.15.07.16;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.08.24.14.58.23;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.08.24.10.45.17;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Initial port to new C library complete.  However, finger-related
+stuff had to be if-def'ed out, pending Fred's completion of the
+port of it.
+@
+
+
+1.24
+log
+@Always try to record the login, so that a message will go to the
+syslog if there are so many logins that we can't record the new one.
+@
+text
+@/*
+ * login.c --
+ *
+ *	A program to prompt for a user to login and execute a shell
+ *	for the person.  It can either operate in one-shot mode, or
+ *	iterate waiting for the person to log out, then repeat the
+ *	whole process.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ */
+#ifndef lint
+static char rcsid[] =
+"$Header: /sprite/src/cmds/login/RCS/login.c,v 1.23 92/03/25 15:53:50 shirriff Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif /* lint */
+
+#include <errno.h>
+#include <fs.h>
+#include <option.h>
+#include <pwd.h>
+#include <sgtty.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sysStats.h>
+#include <sys/types.h>
+#include <sys/file.h>
+#include <sys/param.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <sys/time.h>
+
+#include <time.h>
+#include <ulog.h>
+#include <host.h>
+#include <syslog.h>
+
+/*
+ * Library imports:
+ */
+
+extern char *getpass(), *crypt(), *ttyname();
+extern struct tm *localtime();
+
+/*
+ * Information about command-line options:
+ */
+
+int	singleLogin =		1;
+int	shouldTimeOut =		1;
+int	useUserLog =		1;
+int     portID =		-1;    
+char	*location =		(char *) "";
+char	*remoteUser = 		(char *) NULL;
+char	*device = 		(char *) NULL;
+int	failures;
+
+#define ERROR_LOG	"/sprite/admin/loginFailures"
+
+Option	options[] = {
+    OPT_FALSE, "l", (char *) &useUserLog,
+	    "Don't log login/logout in user log",
+    OPT_INT, "P", (char *) &portID, "Port number to use for user log",
+    OPT_FALSE, "r", (char *) &singleLogin,
+	    "Prompt for a new login upon exit",
+    OPT_FALSE, "t", (char *) &shouldTimeOut,
+	    "Don't time out, even for single logins",
+    OPT_STRING, "d", (char *) &device,
+	    "Device on which to perform login",
+    OPT_STRING, "h", (char *) &location,
+	    "Location of user to be recorded in user log and to be used for authentication",
+    OPT_STRING, "R", (char *) &remoteUser,
+	    "Name of user on remote machine, for authentication",
+};
+
+/*
+ * Array of possible shells to execute. The first entry is reserved for
+ * the shell listed for the user in the password file.
+ */
+char *shells[] = {
+    (char *) 0,	  	/* For user's shell */
+    "/sprite/cmds.$MACHINE/csh",
+    "/sprite/cmds/csh",
+    "/local/csh",
+    "/boot/cmds/csh",
+    "/sprite/cmds/sh",
+    (char *) 0
+};
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * OpenDevice --
+ *
+ *	Open the device we were given and set it up to be used for
+ *	all standard streams.
+ *
+ * Results:
+ *	Returns 0 if all went well, -1 if an error occurred.
+ *
+ * Side effects:
+ *	Streams 0, 1, and 2 are opened to the device, and the device's
+ *	name is placed in the "TTY" variable.  If an error occurs then
+ *
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+OpenDevice(device)
+    char    *device;		/* Name of device file to open. */
+{
+    int id;
+
+    /*
+     * Make sure that the caller has access rights for the device
+     * (we're running set-user-id, so open will succeed).
+     */
+
+    if (access(device, R_OK|W_OK) != 0) {
+	(void) fprintf(stderr, "Login couldn't open \"%s\": %s\n", device,
+		strerror(errno));
+	return -1;
+    }
+    id = open(device, O_RDWR, 0);
+    if (id < 0) {
+	(void) fprintf(stderr, "Login couldn't open \"%s\" to std files: %s\n",
+		device, strerror(errno));
+	return -1;
+    }
+    if ((dup2(id, 0) == -1) || (dup2(id, 1) == -1)
+	    || (dup2(id, 2) == -1)) {
+	(void) fprintf(stderr, "Login couldn't dup \"%s\" to std files: %s\n",
+		device, strerror(errno));
+	return -1;
+    }
+    (void) close(id);
+    setenv("TTY", device);
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FindShell --
+ *
+ *	Look around the filesystem for a shell program.
+ *
+ * Results:
+ *	If successful, the return value is the name of a shell to use.
+ *	If unsuccessful, NULL is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+FindShell()
+{
+    register int i;
+
+    for (i = 0; shells[i] != (char *)NULL; i++) {
+	if (access(shells[i], X_OK) == 0) {
+	    return shells[i];
+	}
+	(void) fprintf(stderr, "Login couldn't use shell \"%s\": %s\n",
+		shells[i], strerror(errno));
+    }
+    return (char *) NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DumpFile --
+ *	Copy data from a stream to stdout.
+ *
+ * Results:
+ *	Returns 0 if all went well, -1 if an I/O error occurred.
+ *
+ * Side Effects:
+ *	StreamID is closed upon completion.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+DumpFile(streamID)
+    int streamID;		/* ID for an open file. */
+{
+#define BUFFER_SIZE 1000
+    char buffer[BUFFER_SIZE];
+    int bytesRead;
+
+    while (1) {
+	bytesRead = read(streamID, buffer, BUFFER_SIZE);
+	if (bytesRead == 0) {
+	    (void) close(streamID);
+	    return 0;
+	}
+	if (bytesRead < 0) {
+	    return -1;
+	}
+	(void) fwrite(buffer, bytesRead, 1, stdout);
+	if (ferror(stdout)) {
+	    return -1;
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FindDualFile --
+ *
+ *	Look for a file in /etc and /hosts/`hostname`. If it is there,
+ *	dump its contents to stdout.  
+ *
+ * Results:
+ *	0 if neither file is found, 1 if found.
+ *
+ * Side Effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+FindDualFile(file, hostName, msg)
+    char *file;			/* Name of file to look for. */
+    char *hostName;		/* Name of host to use for a host-specific
+				 * message file.  NULL means don't look for
+				 * a host-specific message file. */
+    char *msg;			/* message to print before dumping file */
+{
+    int		id;
+    char	buf[1024];
+    int		foundIt = 0;
+
+    
+    (void) sprintf(buf, "/etc/%.900s", file);
+    id = open(buf, O_RDONLY, 0);
+    if (id >= 0) {
+	if (msg) {
+	    puts(msg);
+	    fflush(stdout);
+	}
+	if (DumpFile(id) < 0) {
+	    (void) fprintf(stderr, "Couldn't print \"%s\": %s\n", buf,
+		    strerror(errno));
+	}
+	foundIt = 1;
+    }
+    if (hostName != NULL) {
+	(void) sprintf(buf, "/hosts/%.50s/%.900s", hostName, file);
+	id = open(buf, O_RDONLY, 0);
+	if (id >= 0) {
+	    if (msg && !foundIt) {
+		puts(msg);
+		fflush(stdout);
+	    }
+	    if (DumpFile(id) < 0) {
+		(void) fprintf(stderr, "Couldn't print \"%s\": %s\n",
+			buf, strerror(errno));
+	    }
+	    foundIt = 1;
+	}
+    }
+    return(foundIt);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintMotd --
+ *
+ *	Print the message-of-the-day to stdout.
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+PrintMotd(hostName)
+    char *hostName;		/* Name of host to use for a host-specific
+				 * message file.  NULL means don't look for
+				 * a host-specific message file. */
+{
+    int		id;
+    char	version[128];
+
+    if (Sys_Stats(SYS_GET_VERSION_STRING, sizeof(version), version) == 0) {
+	(void) printf("Sprite %s\n", version);
+    } else {
+	(void) printf("Sprite\n");
+    }
+    (void) FindDualFile("motd", hostName, (char *) NULL);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AlarmHandler --
+ *
+ *	Routine to service a SIGALRM signal.  An alarm means the login
+ *	has timed out, so login will exit.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The process exits.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+AlarmHandler()
+{
+    fprintf(stderr, "Login timed out after 60 seconds.\n");
+    exit(1);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	Main program for "login".
+ *
+ * Results:
+ *	See the man page.
+ *
+ * Side effects:
+ *	See the man page.
+ *
+ *----------------------------------------------------------------------
+ */
+
+main(argc, argv)
+    int  argc;
+    char *argv[];
+{
+#define HOST_NAME_SIZE 256
+#define NAME_SIZE 80
+    static struct sigvec	siginfo = {SIG_IGN, 0, 0};
+    char			*argArray[2];
+    char			hostName[HOST_NAME_SIZE];
+    int				pid, myPid, child;
+    struct passwd		*pwdPtr;
+    char			name[NAME_SIZE];
+    char			*password, *shell;
+    struct stat			stdinStat, mailStat;
+    union wait			status;
+    int				oldGroup;
+    Ulog_Data   		*dataPtr;
+    int				needPass;
+    char			*userName;
+    struct itimerval		itimer;
+    int				amRoot;
+    int				cnt;
+    char			tbuf[MAXPATHLEN + 2];
+    struct passwd		*oldPwdPtr;
+
+    tbuf[0] = '\0';
+
+
+
+    /*
+     * Parse arguments.
+     */
+
+    argc = Opt_Parse(argc, argv, options, Opt_Number(options),
+		     OPT_ALLOW_CLUSTERING);
+    if (argc > 2) {
+	(void) fprintf(stderr, "Usage: %s [options] [userName]\n", argv[0]);
+	exit(1);
+    }
+    if (getuid() == 0) {
+	amRoot = 1;
+    } else {
+	amRoot = 0;
+	singleLogin = 0;
+	if ((device != (char *) NULL) && (access(device, R_OK|W_OK) != 0)) {
+	    (void) fprintf(stderr, "%s can't access \"%s\": %s\n",
+		    argv[0], device, strerror(errno));
+	    exit(1);
+	}
+	if (portID != -1 || remoteUser != (char *) NULL ||
+	    useUserLog != 1 || *location != 0) {
+	    char *tty;
+	    
+	    (void) fprintf(stderr, "%s: must be root to override defaults.  (uid = %d, portID = %d, remoteUser = %s, useUserLog = %d, location = %s)\n",
+			   argv[0], getuid(), portID, remoteUser, useUserLog,
+			   location);
+	    exit(1);
+	}
+    }
+    if (!singleLogin) {
+	shouldTimeOut = 0;
+    }
+
+    if (argc > 1) {
+	userName = argv[1];
+    } else {
+	userName = NULL;
+    }
+    /*
+     * Ignore signals.
+     */
+
+    (void) sigvec(SIGHUP, &siginfo, (struct sigvec *) NULL);
+    (void) sigvec(SIGINT, &siginfo, (struct sigvec *) NULL);
+    (void) sigvec(SIGQUIT, &siginfo, (struct sigvec *) NULL);
+    (void) sigvec(SIGTERM, &siginfo, (struct sigvec *) NULL);
+    (void) sigvec(SIGTSTP, &siginfo, (struct sigvec *) NULL);
+
+    if (gethostname(hostName, HOST_NAME_SIZE) != 0) {
+	(void) fprintf(stderr, "%s couldn't get hostname: %s\n",
+		argv[0], strerror(errno));
+	exit(1);
+    }
+
+    
+    /*
+     * If a device has been specified, open the device as our
+     * standard descriptors.  If
+     * it's the console, set the portID if it hasn't been set already.
+     */
+
+    if (device != (char *) NULL) {
+	if (OpenDevice(device) != 0) {
+	    exit(1);
+	}
+	if (portID == -1 && strcmp(device, "/dev/console") == 0) {
+	    portID = ULOG_LOC_CONSOLE;
+	}
+    }
+
+    /*
+     * If we're supposed to do multiple logins, then we're being
+     * invoked as part of a boot sequence.  Fork off and let a child
+     * do the work, so whoever called us can keep going.
+     */
+
+    if (!singleLogin) {
+	pid = fork();
+	if (pid == -1) {
+	    (void) fprintf(stderr, "%s couldn't fork: %s\n",
+		    argv[0], strerror(errno));
+	    exit(1);
+	} else if (pid > 0) {
+	    exit(0);
+	}
+    }
+    
+    argArray[0] = "-csh";
+    argArray[1] = 0;
+
+    /*
+     * Start a new process group and make it the controlling one for
+     * the device.  Get the device attributes for later use.
+     */
+
+    myPid = getpid();
+    if (setpgrp(myPid, myPid) == -1) {
+	(void) fprintf(stderr, "%s couldn't set  its process group: %s\n",
+		argv[0], strerror(errno));
+	exit(1);
+    }
+    if (ioctl(0, TIOCGPGRP, (char *) &oldGroup) == -1) {
+	(void) fprintf(stderr, "%s couldn't get process group for terminal: %s\n",
+		argv[0], strerror(errno));
+	oldGroup = -1;
+    }
+    if (fstat(0, &stdinStat) != 0) {
+	(void) fprintf(stderr, "%s couldn't stat stdin: %s\n", argv[0],
+		strerror(errno));
+	exit(1);
+    }
+
+    while (1) {
+	if (ioctl(0, TIOCSPGRP, (char *) &myPid) == -1) {
+	    (void) fprintf(stderr,
+			   "%s couldn't set process group for terminal: %s\n",
+			   argv[0], strerror(errno));
+	}
+	(void) ioctl(0, TIOCFLUSH, (char *) 0);
+	if (userName == (char *) NULL) {
+	    (void) printf("\nWelcome to Sprite (%s)\n\n", hostName);
+	}
+
+	if (shouldTimeOut) {
+	    timerclear(&itimer.it_interval);
+	    itimer.it_value.tv_sec = 60;
+	    itimer.it_value.tv_usec = 0;
+	    (void) signal(SIGALRM, AlarmHandler);
+	    if (setitimer(ITIMER_REAL, &itimer,
+			  (struct itimerval *) NULL) < 0) {
+		syslog(LOG_ERR,
+		       "%s: unable to set interval timer.\n", argv[0]);
+	    }
+	}
+		
+		
+	/*
+	 * If we weren't given a user to login as, prompt for one from
+	 * the device. If the name we get isn't a valid login, print
+	 * a message and continue prompting. The final name is left
+	 * in 'userName'
+	 */
+	cnt = 0;
+	failures = 0;
+	do {
+	    pwdPtr = (struct passwd *) NULL;
+	    if (userName == (char *) NULL) {
+		char *p;
+
+		(void) printf("Login: ");
+		if (fgets(name, NAME_SIZE, stdin) == NULL || name[0] == '\n') {
+		    if (feof(stdin)) {
+			badlogin(tbuf, hostName);
+		    }
+		    if (feof(stdin) && singleLogin) {
+			exit(0);
+		    }
+		    clearerr(stdin);
+		    continue;
+		}
+		userName = name;
+		for (p = name; *p != 0; p++) {
+		    if (*p == '\n') {
+			*p = 0;
+			break;
+		    }
+		}
+	    }
+
+	    pwdPtr = getpwnam(userName);
+
+	    needPass = 1;
+	    if ((*location != '\0') &&
+		amRoot &&
+		(pwdPtr != (struct passwd *)NULL)) {
+		if (ruserok(location, pwdPtr->pw_uid == 0, remoteUser,
+			    userName) == 0) {
+		    needPass = 0;
+		}
+	    }
+		
+	    if (needPass && ((pwdPtr == (struct passwd *)NULL) ||
+			     ((pwdPtr->pw_passwd != (char *)NULL) &&
+			      (*pwdPtr->pw_passwd != '\0')))) {
+		password = getpass("Password: ");
+	    }
+
+	    /*
+	     * Note if trying multiple user names;
+	     * log failures for previous user name,
+	     * but don't bother logging one failure
+	     * for nonexistent name (mistyped username).
+	     */
+	    if (failures && strcmp(tbuf, userName)) {
+		    if (failures > (oldPwdPtr ? 0 : 1)) {
+			    badlogin(tbuf, hostName);
+		    }
+		    failures = 0;
+	    }
+	    (void)strcpy(tbuf, userName);
+	    oldPwdPtr = pwdPtr;
+
+	    if (pwdPtr == (struct passwd *) NULL || (needPass &&
+			pwdPtr->pw_passwd && (*pwdPtr->pw_passwd != '\0'))) {
+		char *encrypted;
+
+		if (pwdPtr != (struct passwd *) NULL) {
+		    encrypted = crypt(password, pwdPtr->pw_passwd);
+		    if (strcmp(pwdPtr->pw_passwd, encrypted) != 0) {
+			userName = (char *) NULL;
+			pwdPtr = (struct passwd *) NULL;
+		    }
+		}
+		if (pwdPtr == (struct passwd *) NULL) {
+		    (void) printf("Login incorrect.\n");
+		    failures++;
+		    notelogin(tbuf, hostName);
+		    userName = (char *) NULL;
+		    /* we allow 10 tries, but after 3 we start backing off */
+		    if (++cnt > 3) {
+			    if (cnt >= 10) {
+				    badlogin(userName, hostName);
+				    (void)ioctl(0, TIOCHPCL, (struct sgttyb *)NULL);
+				    sleepexit(1);
+			    }
+			    sleep((u_int)((cnt - 3) * 5));
+		    }
+			
+		}
+	    }
+	} while (pwdPtr == (struct passwd *) NULL);
+	notelogin(tbuf, hostName);
+
+	if (shouldTimeOut) {
+	    timerclear(&itimer.it_value);
+	    if (setitimer(ITIMER_REAL, &itimer,
+			  (struct itimerval *) NULL) < 0) {
+		syslog(LOG_ERR,
+		       "%s: unable to clear interval timer.\n", argv[0]);
+	    }
+	    (void) signal(SIGALRM, SIG_DFL);
+	}
+
+	/*
+	 * If not root, check for logins being disabled on this
+	 * host or on the system in general.
+	 */
+	if (pwdPtr->pw_uid != 0) {
+	    if (FindDualFile("nologin", hostName,
+			     "Logins are currently disabled:")) {
+		if (singleLogin) {
+		    exit(0);
+		}
+		userName = (char *) NULL;
+		continue;
+	    }
+	}
+	    
+	dataPtr = Ulog_LastLogin(pwdPtr->pw_uid);
+	if (dataPtr != (Ulog_Data *) NULL) {
+	    if (dataPtr->updated != 0) {
+		char *timeStr;
+		char *asctime();
+		char lastHost[HOST_NAME_SIZE];
+		Host_Entry *hostPtr;
+
+		timeStr = asctime(localtime((time_t *) &dataPtr->updated));
+		hostPtr = Host_ByID(dataPtr->hostID);
+		if (hostPtr == (Host_Entry *) NULL) {
+		    syslog(LOG_ERR,
+			   "%s: unable to obtain host information for host %d.\n",
+			  argv[0], dataPtr->hostID);
+		} else {
+		    (void) strncpy(lastHost, hostPtr->name, HOST_NAME_SIZE);
+		    (void) printf("Last login %.19s on %s\n", timeStr, lastHost);
+		    (void) fflush(stdout);
+		}
+	    }
+	}
+	    
+	if (useUserLog) {
+	    if (portID == -1) {
+		(void) fprintf(stderr,
+			"Warning: can't determine which port to record login into.\n");
+	    } else {
+		/*
+		 * Record the login in the user database.  EINVAL means the
+		 * portID exceeds the maximum, and a syslog entry will be
+		 * generated by the ULog routine.
+		 */
+		if (Ulog_RecordLogin(pwdPtr->pw_uid, location, portID) != 0) {
+		    (void) fprintf(stderr, "%s couldn't record login: %s\n",
+			    argv[0], strerror(errno));
+		}
+	    }
+	}
+
+	pid = fork();
+	if (pid == -1) {
+	    (void) fprintf(stderr, "%s couldn't fork shell: %s\n",
+		    argv[0], strerror(errno));
+	    exit(1);
+	}
+	
+	if (pid == 0) {
+	    char mailFile[MAXPATHLEN];
+
+	    /*
+	     * Set up a bit of the shell's environment.  The rest of it
+	     * is set up by the shell (like PATH).
+	     */
+
+	    setenv("USER", userName);
+	    setenv("HOME", pwdPtr->pw_dir);
+
+	    /*
+	     * Set our state the way the user will want it:
+	     *	  change tty ownership to this process (unless this is
+	     * 		a generic device that could potentially be shared
+	     *		by many users)
+	     *	  change to the user's home directory
+	     *	  initialize the list of groups
+	     *	  set both uids to the user's uid.
+	     */
+
+	    if (stdinStat.st_devServerID != FS_LOCALHOST_ID) {
+		if (fchown(0, pwdPtr->pw_uid, pwdPtr->pw_gid) != 0) {
+		    (void) fprintf(stderr, "%s couldn't set stdin owner: %s\n",
+			    argv[0], strerror(errno));
+		}
+		if (fchmod(0, 0644) != 0) {
+		    (void) fprintf(stderr,
+			    "%s couldn't set stdin permissions: %s\n",
+			    argv[0], strerror(errno));
+		}
+	    }
+	    if (chdir(pwdPtr->pw_dir) != 0) {
+		(void) fprintf(stderr, "%s couldn't cd to \"%s\": %s\n",
+			argv[0], pwdPtr->pw_dir, strerror(errno));
+	    }
+	    if (initgroups(userName, pwdPtr->pw_gid) == -1) {
+		(void) fprintf(stderr, "%s couldn't set group ids: %s\n",
+			argv[0], strerror(errno));
+	    }
+	    if (setreuid(pwdPtr->pw_uid, pwdPtr->pw_uid) != 0) {
+		(void) fprintf(stderr, "%s couldn't set user ids: %s\n",
+			argv[0], strerror(errno));
+	    }
+
+	    PrintMotd(hostName);
+	    (void) sprintf(mailFile, "/sprite/spool/mail/%s", pwdPtr->pw_name);
+	    if ((stat(mailFile, &mailStat) == 0) && (mailStat.st_size != 0)) {
+		(void) fprintf(stderr, "You have %smail.\n",
+			(mailStat.st_mtime > mailStat.st_atime) ? "new " : "");
+	    }
+
+	    /*
+	     * Look for a shell to execute. Stuff the user's shell into
+	     * the shells array first so FindShell will check it first,
+	     * then call FindShell to locate a shell to execute.
+	     */
+	    if (pwdPtr->pw_shell != (char *) NULL) {
+		shells[0] = pwdPtr->pw_shell;
+		setenv("SHELL", pwdPtr->pw_shell);
+	    } else {
+		shells[0] = "";
+	    }
+	    shell = FindShell();
+	    if (shell == NULL) {
+		(void) fprintf(stderr, "%s couldn't find shell to execute.\n",
+			argv[0]);
+		exit(1);
+	    }
+	    (void) execv(shell, argArray);
+	    (void) fprintf(stderr, "%s couldn't exec \"%s\": %s\n",
+		    argv[0], shell, strerror(errno));
+	    exit(1);
+	}
+
+	/*
+	 * Wait for the child to exit.
+	 */
+
+	while (1) {
+	    child = wait(&status);
+	    if (child != -1) {
+		if ((status.w_termsig != 0) || (status.w_retcode != 0)) {
+		    (void) fprintf(stderr, "Shell 0x%x died: termsig=%d, status=%d\n",
+			    child, status.w_termsig, status.w_retcode);
+		}
+		break;
+	    }
+	    if (errno != EINTR) {
+		(void) fprintf(stderr, "%s couldn't wait for shell to terminate: %s\n",
+			argv[0], strerror(errno));
+		break;
+	    }
+	}
+
+	/*
+	 * Reset terminal characteristics and remove the user from the
+	 * login database.
+	 */
+
+	if (stdinStat.st_serverID != FS_LOCALHOST_ID) {
+	    if (fchown(0, (int) stdinStat.st_uid,
+		       (int) stdinStat.st_gid) != 0) {
+		(void) fprintf(stderr, "%s couldn't reset stdin owner: %s\n",
+			argv[0], strerror(errno));
+	    }
+	    if (fchmod(0, stdinStat.st_mode) != 0) {
+		(void) fprintf(stderr,
+			"%s couldn't reset stdin permissions: %s\n",
+			argv[0], strerror(errno));
+	    }
+	}
+	if (useUserLog && portID != -1 && portID < ULOG_MAX_PORTS) {
+	    if (Ulog_RecordLogout(pwdPtr->pw_uid, portID) != 0) {
+		(void) fprintf(stderr, "%s couldn't record logout: %s\n",
+			argv[0], strerror(errno));
+	    }
+	}
+	if (singleLogin) {
+	    if ((oldGroup != -1)
+		    && (ioctl(0, TIOCSPGRP, (char *) &oldGroup) == -1)) {
+		(void) fprintf(stderr,
+			"%s couldn't reset process group for terminal: %s\n",
+			argv[0], strerror(errno));
+	    }
+	    exit(0);
+	}
+	userName = (char *) NULL;
+	name[0] = 0;
+    }
+}
+
+badlogin(name, hostName)
+        char *name;
+	char *hostName;
+{
+	int pid, w, status;
+	char *remoteUserPtr;
+	char buffer[100];
+	time_t now;
+	char *t;
+	FILE *logFile;
+	char *tty, *ttyn;
+        if (failures == 0)
+                return;
+	time(&now);
+	t = asctime(localtime(&now));
+	t[24] = '\0';	/* Remove the newline. */
+	ttyn = ttyname(0);
+	if (ttyn == NULL || *ttyn == '\0') {
+	    ttyn = "/dev/tty??";
+	}
+	if (tty = rindex(ttyn,'/')) {
+	    ++tty;
+	} else {
+	    tty = ttyn;
+	}
+	if (hostName == NULL) {
+	    hostName = "";
+	}
+	logFile = fopen(ERROR_LOG, "a");
+	if (logFile) {
+	    if (chmod(ERROR_LOG,0600)) {
+		perror("Chmod failed\n");
+		logFile = (FILE *)NULL;
+	    }
+	}
+
+        if (location && *location) {
+		remoteUserPtr = remoteUser ? remoteUser : "?anonymous?";
+                syslog(LOG_NOTICE, "%d LOGIN FAILURE%s FROM %s@@%s to %s@@%s",
+                    failures, failures > 1 ? "S" : "", remoteUser,location,
+		    name, hostName, t);
+		if (logFile) {
+		    fprintf(logFile,"%d LOGIN FAILURE%s FROM %s@@%s to %s@@%s at %s\n",
+			    failures, failures > 1 ? "S" : "", remoteUser,
+			    location, name, hostName, t);
+		    fflush(logFile);
+		    /*
+		     * Do a finger at the evil host.
+		     */
+		    if (!(pid=vfork())) {
+			close(1);
+			dup(fileno(logFile));
+			sprintf(buffer,"@@%.90s",location);
+			execl("/sprite/cmds/finger","finger",buffer,NULL);
+			exit(-1);
+		    }
+		    while ((w=wait(&status))!=pid && w != -1){}
+		}
+        } else if (strcmp(tty,"console")) {
+		/*
+		 * If logging in from console, why print message?
+		 */
+                syslog(LOG_NOTICE, "%d LOGIN FAILURE%s ON %s to %s@@%s",
+                    failures, failures > 1 ? "S" : "", tty, name, hostName);
+		if (logFile) {
+		    fprintf(logFile, "%d LOGIN FAILURE%s ON %s to %s@@%s at %s\n",
+			failures, failures > 1 ? "S" : "", tty, name, hostName,
+			t);
+		}
+	}
+	failures = 0;
+	if (logFile) {
+	    fclose(logFile);
+	}
+}
+
+notelogin(name, hostName)
+        char *name;
+	char *hostName;
+{
+	int pid, w, status;
+	char *remoteUserPtr;
+	char buffer[100];
+	time_t now;
+	char *t;
+	FILE *logFile;
+	char *tty, *ttyn;
+	time(&now);
+	t = asctime(localtime(&now));
+	t[24] = '\0';	/* Remove the newline. */
+	ttyn = ttyname(0);
+	if (ttyn == NULL || *ttyn == '\0') {
+	    ttyn = "/dev/tty??";
+	}
+	if (tty = rindex(ttyn,'/')) {
+	    ++tty;
+	} else {
+	    tty = ttyn;
+	}
+	if (hostName == NULL) {
+	    hostName = "";
+	}
+	logFile = fopen(ERROR_LOG, "a");
+	if (logFile) {
+	    if (chmod(ERROR_LOG,0600)) {
+		perror("Chmod failed\n");
+		logFile = (FILE *)NULL;
+	    }
+	}
+
+        if (location && *location) {
+		remoteUserPtr = remoteUser ? remoteUser : "?anonymous?";
+		if (logFile) {
+		    fprintf(logFile,"%d LOGIN FROM %s@@%s to %s@@%s at %s\n",
+			    failures, remoteUser,
+			    location, name, hostName, t);
+		    fflush(logFile);
+		}
+        } else {
+		if (logFile) {
+		    fprintf(logFile, "%d LOGIN ON %s to %s@@%s at %s\n",
+			failures, tty, name, hostName,
+			t);
+		}
+	}
+	failures = 0;
+	if (logFile) {
+	    fclose(logFile);
+	}
+}
+
+sleepexit(eval)
+        int eval;
+{
+        sleep((u_int)5);
+	/*
+        exit(eval);
+	*/
+}
+@
+
+
+1.23
+log
+@Modified to record all logins
+@
+text
+@d21 1
+a21 1
+"$Header: /sprite/src/cmds/login/RCS/login.c,v 1.22 92/02/05 18:34:09 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d667 1
+a667 1
+	    } else if (portID < ULOG_MAX_PORTS) {
+d669 3
+a671 3
+		 * Record the login in the user database.  GEN_INVALID_ARG
+		 * means the portID exceeds the maximum, and a syslog
+		 * entry will be generated by the ULog routine.
+@
+
+
+1.22
+log
+@Added time recording for login failures.
+@
+text
+@d21 1
+a21 1
+"$Header: /sprite/src/cmds/login/RCS/login.c,v 1.21 90/10/07 18:31:19 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d599 1
+d614 1
+d884 1
+a884 1
+		    fprintf(LOG_NOTICE, "%d LOGIN FAILURE%s ON %s to %s@@%s at %s\n",
+d886 55
+@
+
+
+1.21
+log
+@Added additional information to track down intruders.
+@
+text
+@d21 1
+a21 1
+"$Header: /sprite/src/cmds/login/RCS/login.c,v 1.20 90/08/04 16:55:25 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d429 1
+d824 2
+d830 3
+d857 1
+a857 1
+		    name, hostName);
+d859 1
+a859 1
+		    fprintf(logFile,"%d LOGIN FAILURE%s FROM %s@@%s to %s@@%s\n",
+d861 1
+a861 1
+			    location, name, hostName);
+d882 3
+a884 2
+		    fprintf(LOG_NOTICE, "%d LOGIN FAILURE%s ON %s to %s@@%s\n",
+			failures, failures > 1 ? "S" : "", tty, name, hostName);
+@
+
+
+1.20
+log
+@Changed handling of failed logins to eventually delay and to print
+warnings.
+@
+text
+@d21 1
+a21 1
+"$Header: /sprite/src/cmds/login/RCS/login.c,v 1.19 90/05/08 15:37:21 douglis Exp $ SPRITE (Berkeley)";
+d66 2
+d534 1
+a534 1
+			badlogin(tbuf);
+d577 1
+a577 1
+			    badlogin(tbuf);
+d602 1
+a602 1
+				    badlogin(userName);
+d816 1
+a816 1
+badlogin(name)
+d818 1
+d820 4
+d836 34
+a869 4
+        if (location && *location)
+                syslog(LOG_NOTICE, "%d LOGIN FAILURE%s FROM %s, %s",
+                    failures, failures > 1 ? "S" : "", location, name);
+        else if (strcmp(tty,"console")) {
+d873 6
+a878 2
+                syslog(LOG_NOTICE, "%d LOGIN FAILURE%s ON %s, %s",
+                    failures, failures > 1 ? "S" : "", tty, name);
+d881 3
+@
+
+
+1.19
+log
+@don't try Ulog_ if past max number of ports.
+@
+text
+@d21 1
+a21 1
+"$Header: /sprite/src/cmds/login/RCS/login.c,v 1.18 90/02/16 11:07:33 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d64 1
+d372 3
+d376 1
+d378 2
+d522 2
+d531 3
+d548 1
+d550 1
+a563 9
+		/*
+		 * Following the UNIX model, we only ask for the password if
+		 * a real one exists. This includes if the user name is bogus.
+		 * If a password is provided, and it's wrong, we sleep for
+		 * a few seconds.  We don't sleep if no password is provided,
+		 * since that means the user probably mistyped and wanted
+		 * to start over.  Again, this appears to be consistent
+		 * with UNIX.
+		 */
+d566 18
+a583 8
+	    if (pwdPtr == (struct passwd *) NULL) {
+		(void) printf("Login incorrect.\n");
+		userName = (char *) NULL;
+		if (*password != '\0') {
+		    sleep(3);
+		}
+	    } else if (needPass && pwdPtr->pw_passwd &&
+		       (*pwdPtr->pw_passwd != '\0')) {
+d586 8
+a593 2
+		encrypted = crypt(password, pwdPtr->pw_passwd);
+		if (strcmp(pwdPtr->pw_passwd, encrypted) != 0) {
+d595 1
+d597 8
+a604 3
+		    pwdPtr = (struct passwd *) NULL;
+		    if (*password != '\0') {
+			sleep(3);
+d606 1
+d812 37
+@
+
+
+1.18
+log
+@debugging info for when non-root tries to override defaults.]
+@
+text
+@d21 1
+a21 1
+"$Header: /sprite/src/cmds/login/RCS/login.c,v 1.17 89/09/25 14:02:01 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d634 1
+a634 1
+	    } else {
+d766 1
+a766 1
+	if (useUserLog && portID != -1) {
+@
+
+
+1.17
+log
+@setenv SHELL when appropriate
+@
+text
+@d21 1
+a21 1
+"$Header: /a/newcmds/login/RCS/login.c,v 1.16 89/08/06 19:08:32 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d397 3
+a399 2
+	    (void) fprintf(stderr, "%s: must be root to override defaults.\n",
+			   argv[0]);
+@
+
+
+1.16
+log
+@don't delay 3 seconds when no password entered.  do delay when 
+password is mistyped.
+@
+text
+@d21 1
+a21 1
+"$Header: /a/newcmds/login/RCS/login.c,v 1.15 89/07/24 11:51:15 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d712 1
+@
+
+
+1.15
+log
+@check for nologin file.
+@
+text
+@d21 1
+a21 1
+"$Header: /a/newcmds/login/RCS/login.c,v 1.14 89/06/30 17:35:51 ouster Exp Locker: douglis $ SPRITE (Berkeley)";
+d552 5
+d563 3
+a565 1
+		sleep(3);
+d575 3
+@
+
+
+1.14
+log
+@Was checking wrong stat field for device's server.
+@
+text
+@d21 1
+a21 1
+"$Header: /a/newcmds/login/RCS/login.c,v 1.13 89/06/23 16:28:07 ouster Exp $ SPRITE (Berkeley)";
+d94 2
+d222 1
+a222 1
+ * PrintMotd --
+d224 2
+a225 1
+ *	Print the message-of-the-day to stdout.
+d228 1
+a228 1
+ *	None.
+d235 3
+a237 2
+void
+PrintMotd(hostName)
+d241 1
+d244 2
+a245 2
+    char	version[128];
+    char	hostmotd[128];
+d247 3
+a249 7
+    if (Sys_Stats(SYS_GET_VERSION_STRING, sizeof(version), version) == 0) {
+	(void) printf("Sprite %s\n", version);
+    } else {
+	(void) printf("Sprite\n");
+    }
+
+    id = open("/etc/motd", O_RDONLY, 0);
+d251 4
+d256 1
+a256 1
+	    (void) fprintf(stderr, "Couldn't print \"/etc/motd\": %s\n",
+d259 1
+d262 2
+a263 2
+	(void) sprintf(hostmotd, "/hosts/%.50s/motd", hostName);
+	id = open(hostmotd, O_RDONLY, 0);
+d265 4
+d271 1
+a271 1
+			hostmotd, strerror(errno));
+d273 1
+d276 33
+d581 16
+@
+
+
+1.13
+log
+@Use "access" to check access permissions:  don't just blindly
+require root.
+@
+text
+@d21 1
+a21 1
+"$Header: /a/newcmds/login/RCS/login.c,v 1.12 89/06/23 14:58:17 douglis Exp Locker: ouster $ SPRITE (Berkeley)";
+d604 1
+a604 1
+	    if (stdinStat.st_serverID != FS_LOCALHOST_ID) {
+@
+
+
+1.12
+log
+@exit rather than changing bad non-root arguments back to defaults.
+@
+text
+@d21 1
+a21 1
+"$Header: /a/newcmds/login/RCS/login.c,v 1.11 89/06/19 14:32:13 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d344 7
+a350 3
+	if (portID != -1 || device != (char *) NULL ||
+	    remoteUser != (char *) NULL || useUserLog != 1 ||
+	    location != (char *) NULL) {
+@
+
+
+1.11
+log
+@now looks for /boot/cmds/csh
+@
+text
+@d21 1
+a21 1
+"$Header: /a/newcmds/login/RCS/login.c,v 1.9 89/04/07 18:43:40 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d351 1
+a351 9
+	    portID = -1;
+	    device = (char *) NULL;
+	    remoteUser = (char *) NULL;
+	    useUserLog = 1;
+	    location = (char *) NULL;
+	    tty = ttyname(0);
+	    if (tty != (char *) NULL && strcmp(tty, "/dev/console") == 0) {
+		portID = 0;
+	    }
+@
+
+
+1.10
+log
+@Checking this in for Fred -- John
+@
+text
+@d90 1
+@
+
+
+1.9
+log
+@added timeout, login arg, -d arg for device.
+.,
+@
+text
+@d21 1
+a21 1
+"$Header: /a/newcmds/login/RCS/login.c,v 1.8 88/12/22 11:06:05 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d50 1
+a50 1
+extern char *getpass(), *crypt();
+d58 1
+d71 2
+d325 1
+d338 26
+d392 1
+a392 1
+    if (device != (char *) NULL) { 
+d454 1
+a454 1
+	if (singleLogin) {
+d497 1
+a497 1
+		(getuid() == 0) &&
+d531 1
+a531 1
+	if (singleLogin) {
+@
+
+
+1.8
+log
+@moved call to setpgrp.
+@
+text
+@d21 1
+a21 1
+"$Header: /a/newcmds/login/RCS/login.c,v 1.7 88/10/24 23:46:39 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d39 1
+a58 1
+char	*userName =		(char *) NULL;
+d62 1
+d70 2
+a71 2
+    OPT_STRING, "u", (char *) &userName,
+	    "Name of user to login as",
+d266 23
+d320 2
+d323 1
+d331 1
+a331 1
+	(void) fprintf(stderr, "Usage: %s [options] [device]\n", argv[0]);
+d335 5
+d355 9
+a363 6
+    if (argc > 1) {
+	/*
+	 * If a device was given, open it to our standard descriptors.  If
+	 * it's the console, set the portID if it hasn't been set already.
+	 */
+	if (OpenDevice(argv[1]) != 0) {
+d366 1
+a366 1
+	if (portID == -1 && strcmp(argv[1], "/dev/console") == 0) {
+d423 14
+a436 1
+	
+d450 3
+d487 1
+d501 9
+@
+
+
+1.7
+log
+@call ruserok if we're running as root and a remote user@@host is
+specified.
+@
+text
+@d21 1
+a21 1
+"$Header: /a/newcmds/login/RCS/login.c,v 1.6 88/10/24 22:58:04 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d287 1
+a287 1
+    int				pid, child;
+d361 2
+a362 2
+    pid = getpid();
+    if (setpgrp(pid, pid) == -1) {
+a371 4
+    if (ioctl(0, TIOCSPGRP, (char *) &pid) == -1) {
+	(void) fprintf(stderr, "%s couldn't set process group for terminal: %s\n",
+		argv[0], strerror(errno));
+    }
+d379 5
+d415 1
+a415 1
+	    if ((location != NULL) &&
+@
+
+
+1.6
+log
+@changed to correspond to mods to Ulog_LastLogin arguments.  Fixed not
+to prompt for password for null password entries, or if no user name
+is specified.
+@
+text
+@d21 1
+a21 1
+"$Header: login.c,v 1.5 88/09/15 19:41:47 douglis Exp $ SPRITE (Berkeley)";
+d61 1
+d72 3
+a74 1
+	    "Location of user to be recorded in user log",
+d295 1
+d413 13
+a425 3
+	    if ((pwdPtr == (struct passwd *)NULL) ||
+		((pwdPtr->pw_passwd != (char *)NULL) &&
+		 (*pwdPtr->pw_passwd != '\0'))) {
+d435 2
+a436 1
+	    } else if (pwdPtr->pw_passwd && (*pwdPtr->pw_passwd != '\0')) {
+@
+
+
+1.5
+log
+@changed to use new Ulog library.  De-linted.
+@
+text
+@d21 1
+a21 1
+"$Header: login.c,v 1.4 88/08/24 15:24:57 ouster Exp $ SPRITE (Berkeley)";
+d291 1
+a291 1
+    Ulog_Data   		data;
+d331 17
+d396 1
+a396 1
+		if (fgets(name, NAME_SIZE, stdin) == NULL) {
+a407 1
+	    password = getpass("Password: ");
+d409 9
+d433 3
+a435 2
+	if (Ulog_LastLogin(pwdPtr->pw_uid, &data) == 0) {
+	    if (data.updated != 0) {
+d441 2
+a442 2
+		timeStr = asctime(localtime((time_t *) &data.updated));
+		hostPtr = Host_ByID(data.hostID);
+d446 1
+a446 1
+			  argv[0], data.hostID);
+@
+
+
+1.4
+log
+@Fixed "-r" bug, added extra error check.
+@
+text
+@d21 2
+a22 2
+"$Header: login.c,v 1.3 88/08/24 15:07:16 ouster Exp $ SPRITE (Berkeley)";
+#endif lint
+d40 5
+d50 1
+d60 1
+d67 1
+a67 1
+	    "Only perform a single login;  don't repeat",
+d70 2
+d80 1
+d118 1
+a118 1
+	fprintf(stderr, "Login couldn't open \"%s\": %s\n", device,
+d124 1
+a124 1
+	fprintf(stderr, "Login couldn't open \"%s\" to std files: %s\n",
+d130 1
+a130 1
+	fprintf(stderr, "Login couldn't dup \"%s\" to std files: %s\n",
+d134 1
+a134 1
+    close(id);
+d165 1
+a165 1
+	fprintf(stderr, "Login couldn't use shell \"%s\": %s\n",
+d190 1
+a190 1
+    char *buffer[BUFFER_SIZE];
+d196 1
+a196 1
+	    close(streamID);
+d202 1
+a202 1
+	fwrite(buffer, bytesRead, 1, stdout);
+d235 1
+a235 1
+	printf("Sprite %s\n", version);
+d237 1
+a237 1
+	printf("Sprite\n");
+d243 1
+a243 1
+	    fprintf(stderr, "Couldn't print \"/etc/motd\": %s\n",
+d248 1
+a248 1
+	sprintf(hostmotd, "/hosts/%.50s/motd", hostName);
+d252 1
+a252 1
+		fprintf(stderr, "Couldn't print \"%s\": %s\n",
+d291 1
+d297 2
+a298 1
+    argc = Opt_Parse(argc, argv, options, Opt_Number(options));
+d300 1
+a300 1
+	fprintf(stderr, "Usage: %s [options] [device]\n", argv[0]);
+d308 4
+a311 4
+    sigvec(SIGHUP, &siginfo, (struct sigvec *) NULL);
+    sigvec(SIGINT, &siginfo, (struct sigvec *) NULL);
+    sigvec(SIGQUIT, &siginfo, (struct sigvec *) NULL);
+    sigvec(SIGTERM, &siginfo, (struct sigvec *) NULL);
+d314 1
+a314 1
+	fprintf(stderr, "%s couldn't get hostname: %s\n",
+d327 1
+a327 2
+#ifdef ULOG
+	if (portID == -1 && String_Compare(argv[1], "/dev/console") == 0) {
+a329 1
+#endif
+d342 1
+a342 1
+	fprintf(stderr, "%s couldn't set  its process group: %s\n",
+d347 1
+a347 1
+	fprintf(stderr, "%s couldn't get process group for terminal: %s\n",
+d352 1
+a352 1
+	fprintf(stderr, "%s couldn't set process group for terminal: %s\n",
+d356 1
+a356 1
+	fprintf(stderr, "%s couldn't stat stdin: %s\n", argv[0],
+d364 1
+a364 1
+	    printf("\nWelcome to Sprite (%s)\n\n", hostName);
+d378 1
+a378 1
+		printf("Login: ");
+d394 1
+a394 1
+		printf("Login incorrect.\n");
+d401 1
+a401 1
+		    printf("Login incorrect.\n");
+d408 6
+a413 10
+/*
+ * Leave out ulog stuff until Fred gets it ported.  The code in here
+ * also needs to be ported to the new C library.
+ */
+#ifdef ULOG
+	status = ULog_LastLogin(pwdPtr->pw_uid, &data);
+	if ((status == SUCCESS) && (data.updated != 0)) {
+	    char *timeStr;
+	    char *asctime();
+	    char lastHost[HOST_NAME_SIZE];
+d415 11
+a425 11
+	    /*
+	     * BOGOSITY ALERT: this has  a call to the unix library.
+	     */
+	    timeStr = asctime(localtime(&data.updated));
+	    status = Sys_GetHostNameByID(data.hostID, HOST_NAME_SIZE,
+					 lastHost);
+	    if (status != SUCCESS) {
+		Stat_PrintMsg(status, "Sys_GetHostnameByID");
+	    } else {
+		printf("Last login %.19s on %s\n", timeStr, lastHost);
+		fflush(stdout);
+d431 2
+a432 1
+		printf("Can't determine which port to record login into.\n");
+d439 3
+a441 3
+		status =  ULog_RecordLogin(pwdPtr->pw_uid, hostName, portID);
+		if (status != SUCCESS && status != GEN_INVALID_ARG) {
+		    Stat_PrintMsg(status, "Error recording login");
+a444 1
+#endif ULOG
+d448 1
+a448 1
+	    fprintf(stderr, "%s couldn't fork shell: %s\n",
+d476 1
+a476 1
+		    fprintf(stderr, "%s couldn't set stdin owner: %s\n",
+d480 1
+a480 1
+		    fprintf(stderr,
+d486 1
+a486 1
+		fprintf(stderr, "%s couldn't cd to \"%s\": %s\n",
+d490 1
+a490 1
+		fprintf(stderr, "%s couldn't set group ids: %s\n",
+d493 2
+a494 2
+	    if (seteuid(pwdPtr->pw_uid, pwdPtr->pw_uid) != 0) {
+		fprintf(stderr, "%s couldn't set user ids: %s\n",
+d499 1
+a499 1
+	    sprintf(mailFile, "/sprite/spool/mail/%s", pwdPtr->pw_name);
+d501 1
+a501 1
+		fprintf(stderr, "You have %smail.\n",
+d517 1
+a517 1
+		fprintf(stderr, "%s couldn't find shell to execute.\n",
+d521 2
+a522 2
+	    execv(shell, argArray);
+	    fprintf(stderr, "%s couldn't exec \"%s\": %s\n",
+d535 1
+a535 1
+		    fprintf(stderr, "Shell 0x%x died: termsig=%d, status=%d\n",
+d541 1
+a541 1
+		fprintf(stderr, "%s couldn't wait for shell to terminate: %s\n",
+d553 3
+a555 2
+	    if (fchown(0, stdinStat.st_uid, stdinStat.st_gid) != 0) {
+		fprintf(stderr, "%s couldn't reset stdin owner: %s\n",
+d559 1
+a559 1
+		fprintf(stderr,
+a563 1
+#ifdef ULOG
+d565 3
+a567 3
+	    status =  ULog_RecordLogout(pwdPtr->pw_uid, portID);
+	    if (status != SUCCESS && status != GEN_INVALID_ARG) {
+		Stat_PrintMsg(status, "Error recording logout");
+a569 1
+#endif
+d573 1
+a573 1
+		fprintf(stderr,
+@
+
+
+1.3
+log
+@Change "-s" to "-r" with opposite sense.
+@
+text
+@d21 1
+a21 1
+"$Header: login.c,v 1.1 88/08/24 10:45:17 ouster Exp $ SPRITE (Berkeley)";
+d50 1
+a50 1
+int	singleLogin =		0;
+d287 4
+@
+
+
+1.2
+log
+@Cleanup switches, flush input buffer.
+@
+text
+@d59 1
+a59 1
+    OPT_TRUE, "s", (char *) &singleLogin,
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d21 1
+a21 1
+"$Header: login.c,v 1.21 88/05/06 14:00:01 nelson Exp $ SPRITE (Berkeley)";
+d47 1
+a47 4
+ * Notes regarding options:
+ *		waitForShell => login will not return until shell exits
+ *		singleLogin  => login will not loop, prompting for another
+ *				login
+a49 1
+int	waitForShell =		1;
+d51 1
+a51 1
+int	useUserLog =		0;
+d56 2
+a57 2
+    OPT_TRUE, "l", (char *) &useUserLog,
+	    "Log login/logout in user log",
+a62 2
+    OPT_FALSE, "w", (char *) &waitForShell,
+	    "Don't wait for login shell to return",
+d82 2
+a83 2
+ *	Open the device we were given and keep trying to open it until
+ *	successful, waiting 5 seconds or so between attempts.
+d90 1
+a90 1
+ *	name is placed in the "TTY" variable.
+d92 1
+d108 1
+a108 1
+	fprintf(stderr, "Login can't open \"%s\": %s\n", device,
+d112 5
+a116 14
+    while (1) {
+	id = open(device, O_RDWR, 0);
+	if (id < 0) {
+	    sleep(5);
+	    continue;
+	}
+	if ((dup2(id, 0) == -1) || (dup2(id, 1) == -1)
+		|| (dup2(id, 2) == -1)) {
+	    fprintf(stderr, "Login couldn't dup \"%s\" to std files: %s\n",
+		    device, strerror(errno));
+	    return -1;
+	}
+	close(id);
+	break;
+d118 7
+a321 9
+     * If the parent doesn't want to wait for the shell to exit, detach
+     * from it now.
+     */
+
+    if (!waitForShell) {
+	Proc_Detach(0);
+    }
+
+    /*
+d348 1
+@

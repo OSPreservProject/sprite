@@ -1,0 +1,200 @@
+
+
+
+MIGCMD                    User Commands                    MIGCMD
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     migcmd - Print or update  information  relating  to  process
+     migration
+
+SSYYNNOOPPSSIISS
+     mmiiggccmmdd [--ssSSZZppttTT] [--[[IIEE]] ((nnoonnee||aallll||rroooott))] [--[[iill]]  ((00||11))]  [--ll
+     ((00||11))] [--PP _n_u_m_R_e_c_s] [--dd _d_e_b_u_g_L_e_v_e_l] [--VV _m_i_g_r_a_t_i_o_n_V_e_r_s_i_o_n]
+
+OOPPTTIIOONNSS
+     --ss                  A message is  printed  to  indicate  the
+                         status   of  process  migration  on  the
+                         current host,  including  the  migration
+                         level  and  the  conditions  under which
+                         migration is permitted.
+
+     --SS                  Migration statistics are printed.  These
+                         include  such values as the average time
+                         to migrate an active process, the  aver-
+                         age  time  to perform a remote exec, and
+                         the total number  of  migrations,  evic-
+                         tions, and remote execs performed.
+
+     --ZZ                  The  kernel  migrations  statistics  are
+                         reset to 0.
+
+     --II                  Change the import restrictions for  pro-
+                         cess  migration.   (The  caller  must be
+                         root.)
+
+     --EE                  Change the export restrictions for  pro-
+                         cess  migration.   (The  caller  must be
+                         root.)
+
+     --ii                  Change whether idle time  is  considered
+                         when  determining  the  availability  of
+                         this host.  (The caller must be root.)
+
+     --ll                  Change  whether  load  average  is  con-
+                         sidered  when determining the availabil-
+                         ity of this host.  (The caller  must  be
+                         root.)
+
+     --pp                  Process  migration  trace  records   are
+                         printed.   The  number of records may be
+                         altered by the --PP option.
+
+     --PP _n_u_m_R_e_c_s          The number of trace records to print  is
+                         modified  to  be  _n_u_m_R_e_c_s.   This option
+                         must be used with the --pp option.
+
+
+
+
+Sprite v.1.0         Printed:  March 8, 1990                    1
+
+
+
+
+
+
+MIGCMD                    User Commands                    MIGCMD
+
+
+
+     --tt                  Process migration tracing is enabled for
+                         the current host.
+
+     --TT                  Process migration  tracing  is  disabled
+                         for the current host.
+
+     --dd _d_e_b_u_g_L_e_v_e_l       The kernel process migration debug level
+                         is set to _d_e_b_u_g_L_e_v_e_l.
+
+     --VV _m_i_g_r_a_t_i_o_n_V_e_r_s_i_o_n The kernel process migration version  is
+                         set  to  _m_i_g_r_a_t_i_o_n_V_e_r_s_i_o_n.   The  caller
+                         must be root.
+
+_________________________________________________________________
+
+IINNTTRROODDUUCCTTIIOONN
+     This command is used to perform functions related to process
+     migration.   MMiiggccmmdd  is normally used to print the status of
+     process  migration  availability  or  migration  statistics.
+     MMiiggccmmdd  may  also be used to restrict which users may export
+     or import processes from or to the local  host  (the  caller
+     must  be  root to do so); change whether load average and/or
+     idle time are considered when deciding whether  the  current
+     host is available for imports; print process migration trace
+     records; enable or  disable  tracing  of  process  migration
+     activity;  or set the kernel's migration ``debugging level''
+     or ``migration version''.
+
+MMIIGGRRAATTIIOONN SSTTAATTEE
+     MMiiggccmmdd prints the status of process  migration  availability
+     if  the  --ss  flag is specified.  As root, one may modify the
+     restrictions on process migration.  For both  exporting  and
+     importing  processes,  root may choose to restrict migration
+     to processes owned by root, or not allow migration  at  all,
+     or  allow all users to migrate.  These options are specified
+     to the --EE and --II flags as rroooott, nnoonnee, and aallll  respectively.
+     In  addition, root is permitted to instruct the llooaaddaavvgg dae-
+     mon whether to consider idle time and/or load  average  when
+     announcing  the  availability  of  the host for importation.
+     These options are --ii  and  --ll,  respectively,  and  take  an
+     integer  argument:  11 specifies that the criterion should be
+     ignored, and 00 specifies that it should be considered.
+
+SSTTAATTIISSTTIICCSS
+     The --SS flag causes MMiiggccmmdd  to print statistics on its  stan-
+     dard  output.   These  statistics change too rapidly to list
+     the  format  here.   The   format   is   (hopefully)   self-
+     explanatory.
+
+TTRRAACCIINNGG
+     The --pp flag may be used  to  dump  process  migration  trace
+     records.   The maximum number of records defaults to 200 but
+     may be modified with the --PP option.  By default, tracing  is
+     disabled  and  no  trace records will be printed.  To enable
+
+
+
+Sprite v.1.0         Printed:  March 8, 1990                    2
+
+
+
+
+
+
+MIGCMD                    User Commands                    MIGCMD
+
+
+
+     tracing, one may specify the --tt flag, and to disable it, one
+     may specify the --TT flag.
+
+MMIIGGRRAATTIIOONN DDEEBBUUGG LLEEVVEELL
+     The kernel's debug  level  may  be  modified  using  the  --dd
+     option.  Subsequently higher values for the debug level will
+     cause more debugging statements to be executed. For example,
+     to have no migration debugging enabled whatsoever, the level
+     may be set to 0.  To enable  error  messages  that  indicate
+     unusual  but  non-fatal  events, the level may be 2 (this is
+     the current default).  To enable  more  messages  about  the
+     internal  operation  of migration within the kernel, such as
+     forwarded system calls, the level may be set to values  from
+     3-10.  ``Less interesting'' events are conditioned on higher
+     values of the debug level.
+
+MMIIGGRRAATTIIOONN VVEERRSSIIOONN
+     The kernel's migration version may be modified by root using
+     the --VV  option.  This should be done only when the kernel is
+     compiled with an incorrect version for some reason, in order
+     to  cause  the  kernel  to be compatible vis-a-vis migration
+     with a different class of kernels.
+
+SSEEEE AALLSSOO
+     mig
+
+KKEEYYWWOORRDDSS
+     debug level, eviction, process migration, remote execution
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  March 8, 1990                    3
+
+
+

@@ -1,0 +1,860 @@
+
+
+
+MKMF                      User Commands                      MKMF
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     mkmf - generate Makefiles automatically
+
+SSYYNNOOPPSSIISS
+     mmkkmmff [--ff _m_a_k_e_f_i_l_e] [--xx] [--mm _m_a_c_h_i_n_e_T_y_p_e] [--mm_m_a_c_h_i_n_e_T_y_p_e]
+
+OOPPTTIIOONNSS
+     --ff _m_a_k_e_f_i_l_e
+          Generate a file named  _m_a_k_e_f_i_l_e  instead  of  MMaakkeeffiillee.
+          Also  use  _m_a_k_e_f_i_l_e.pprroottoo, _m_a_k_e_f_i_l_e.eedd, and _m_a_k_e_f_i_l_e.eexx
+          instead of MMaakkeeffiillee..pprroottoo etc.
+
+     --xx   Turns on echo-ing so that all the commands in the  mmkkmmff
+          scripts  are  printed  on the terminal.  This is useful
+          primarily for debugging mmkkmmff scripts.
+
+     --mm _m_a_c_h_i_n_e_T_y_p_e or --mm_m_a_c_h_i_n_e_T_y_p_e
+          Work only on subdirectory for _m_a_c_h_i_n_e_T_y_p_e. Multiple  --mm
+          flags  can  be  used  to  run  mmkkmmff on multiple machine
+          types.
+
+_________________________________________________________________
+
+
+IINNTTRROODDUUCCTTIIOONN
+     MMkkmmff generates a MMaakkeeffiillee for the current working directory.
+     It  also  creates  additional make-related files in machine-
+     dependent subdirectories of the current directory.  MMkkmmff can
+     generate  MMaakkeeffiillees  for a variety of directories, including
+     those holding programs, libraries, header libraries,  kernel
+     sources,  and  other things.  mmkkmmff manages all of the direc-
+     tories holding Sprite system code.  In normal use,  all  you
+     should  have  to  do  is  type "mkmf";  mmkkmmff will generate a
+     suitable MMaakkeeffiillee based on the directory's  full  path  name
+     and  the files and subdirectories in it.  After that you can
+     invoke ppmmaakkee to recompile in the directory, install, and  so
+     on.   The  files produced by mmkkmmff will only work with ppmmaakkee,
+     not with the original UNIX version of mmaakkee  (but  in  Sprite
+     mmaakkee  is  a  symbolic link to ppmmaakkee).  This man page assumes
+     that you are familiar with ppmmaakkee;  if not, you  should  read
+     the ppmmaakkee tutorial.
+
+     Warning:   there  is  also  a  UNIX  program  called   mmkkmmff;
+     although its general goal is the same as this program's, its
+     mechanisms are very different.
+
+     Normally, you should re-run mmkkmmff in a directory whenever you
+     add or delete source files.  When mmkkmmff runs, it assumes that
+     all of the source files (those with extensions .c,  .h,  .y,
+     etc.)  are to be used to create a single program or library,
+     and it generates MMaakkeeffiillee accordingly.  If there are  source
+     files  that  don't  pertain to the thing being created (e.g.
+
+
+
+Sprite v.1.0         Printed:  May 31, 1991                     1
+
+
+
+
+
+
+MKMF                      User Commands                      MKMF
+
+
+
+     test programs), put them in a subdirectory where mmkkmmff  won't
+     see them.
+
+
+MMAAKKEEFFIILLEE SSTTRRUUCCTTUURREE
+     The makefile structure that mmkkmmff generates is a bit  compli-
+     cated,  but  it's  also  powerful and flexible.  Among other
+     things, it supports compilation for multiple target machines
+     from  a  single set of source files, and it makes it easy to
+     make a global change in the way all directories of a partic-
+     ular  type  are  made  (e.g.  all  command  programs, or all
+     libraries).  For most directories there are  five  kinds  of
+     ppmmaakkee-related files:
+
+     MMaakkeeffiillee
+          This is the main file generated  by  mmkkmmff,  but  it  is
+          short  and  does relatively little.  It sets up several
+          ppmmaakkee variables that give the name of  the  program,  a
+          list  of  target  machines for which the program can be
+          compiled, default flags for C compilation, and  so  on.
+          Then MMaakkeeffiillee includes the other files described below,
+          which contain most of the useful ppmmaakkee-related informa-
+          tion.   MMaakkeeffiillee  contains information that may be dif-
+          ferent for this directory than for other directories of
+          the  same  type  (for  example, each library has a dif-
+          ferent name), but it only contains information that  is
+          independent of the particular target machine being com-
+          piled for.
+
+     **..mmdd//mmdd..mmkk
+          There is one subdirectory for each target machine  that
+          this  program  or  library or module can be compiled to
+          run on.  These are called  _m_a_c_h_i_n_e-_d_e_p_e_n_d_e_n_t  _s_u_b_d_i_r_e_c_-
+          _t_o_r_i_e_s  and  have names _x..mmdd wwhheerree _x is the type of the
+          target machine, e.g., ssuunn22..mmdd or ssuunn33..mmdd.   A  machine-
+          dependent  subdirectory  holds  all information that is
+          different for that particular machine  than  for  other
+          machines.   This includes the object files compiled for
+          that machine, plus any machine-dependent sources.  Most
+          user programs don't have machine-dependent sources, but
+          many of the kernel modules and libraries do.   In  each
+          machine-dependent  subdirectory  there is a file mmdd..mmkk,
+          generated automatically by mmkkmmff.  MMdd..mmkk is included  by
+          MMaakkeeffiillee  and  creates  variables  like SSRRCCSS,, OOBBJJSS, and
+          HHDDRRSS.  These describe the files needed to recompile for
+          that   target  machine,  including  both  the  machine-
+          independent files in the parent directory (the one con-
+          taining  MMaakkeeffiillee)  and  the machine-dependent files in
+          the _x..mmdd subdirectory.
+
+     **..mmdd//ddeeppeennddeenncciieess..mmkk
+          There is one of these files in  each  machine-dependent
+
+
+
+Sprite v.1.0         Printed:  May 31, 1991                     2
+
+
+
+
+
+
+MKMF                      User Commands                      MKMF
+
+
+
+          subdirectory.   DDeeppeennddeenncciieess..mmkk  lists the header files
+          used directly or indirectly by each source file.  It is
+          included   by  MMaakkeeffiillee  so  that  ppmmaakkee  will  do  the
+          appropriate   recompilations   when   headers   change.
+          DDeeppeennddeenncciieess..mmkk  files  are  generated automatically by
+          mmaakkeeddeeppeenndd.  The command ``pmake depend'' will run mmaakk--
+          eeddeeppeenndd   to  regenerate  ddeeppeennddeenncciieess..mmkk.   MMkkmmff  also
+          issues a ``pmake depend'' command whenever it runs.
+
+     _s_y_s_m_a_k_e_f_i_l_e
+          There only a few different kinds of source  directories
+          in  Sprite:  commands,  libraries,  kernel modules, etc
+          (see ``HOW MKMF WORKS''  below).   For  each  of  these
+          types  of  directories, there is one file of ppmmaakkee com-
+          mands that contains all of the ``real stuff'' that con-
+          trols  recompilation,  installing,  etc.  MMaakkeeffiillee sets
+          the variable SSYYSSMMAAKKEEFFIILLEE to hold the name of this file,
+          and  under  normal conditions MMaakkeeffiillee will include the
+          sysmakefile whenever ppmmaakkee is invoked (see ``PERSONALI-
+          ZATION''  below  for  exceptions  to  this  rule).  The
+          sysmakefiles use the variables and dependencies set  up
+          by   MMaakkeeffiillee,   mmdd..mmkk,   and   ddeeppeennddeenncciieess..mmkk.    The
+          sysmakefiles are all stored in //sspprriittee//lliibb//ppmmaakkee.
+
+     _u_t_i_l_i_t_y _m_a_k_e_f_i_l_e_s
+          There is a collection of small makefiles in the  direc-
+          tory    //sspprriittee//lliibb//ppmmaakkee,   which   are   include   by
+          sysmakefiles for operations that  are  shared  by  many
+          sysmakefiles.
+
+
+SSTTAANNDDAARRDD TTAARRGGEETTSS
+     Several standard ppmmaakkee targets are available in  any  direc-
+     tory managed by mmkkmmff:
+
+     _d_e_f_a_u_l_t       If you type ppmmaakkee with no arguments, then  the
+                   default  target just recompiles the program or
+                   library in this directory.  Compiled files are
+                   placed in the .mmdd subdirectory for the current
+                   target machine (see below for more information
+                   on target machines).
+
+     cclleeaann         Remove  any  files  that  can  be  regenerated
+                   automatically  by  ppmmaakkee.  This frees up space
+                   on disk and forces  a  complete  recompilation
+                   the next time ppmmaakkee is invoked.
+
+     ttiiddyy          Remove  any  files  that  can  be  regenerated
+                   automatically  by ppmmaakkee, except the executable
+                   produced for a command.  This frees  up  space
+                   on  disk  and  forces a complete recompilation
+                   the next time ppmmaakkee is invoked, but it  leaves
+
+
+
+Sprite v.1.0         Printed:  May 31, 1991                     3
+
+
+
+
+
+
+MKMF                      User Commands                      MKMF
+
+
+
+                   around the unstripped executable for debugging
+                   purposes.
+
+     ddeebbuugg         Valid for libraries only.  Generate a  version
+                   of  the  library  with debugging symbols.  The
+                   default for libraries is  to  compile  without
+                   debugging information
+
+     ddeeppeenndd        Regenerate the ddeeppeennddeenncciieess..mmkk file in the ..mmdd
+                   subdirectory  for  the current target machine.
+                   This target  should  be  re-made  when  source
+                   files  are  created or deleted, or when header
+                   file usage has changed.
+
+     iinnssttaallll       Recompiles the information in  this  directory
+                   and  installs  it in its official system loca-
+                   tion, so that it can be used by other  people.
+                   For commands, this means copying the binary of
+                   the command to the appropriate system  command
+                   directory and saving the old installed version
+                   of the command in  a  backup  directory.   For
+                   libraries,  it  means copying the library's .aa
+                   file to the relevant  library  directory,  and
+                   also installing the library's header files and
+                   lint library.
+
+     iinnssttaallllddeebbuugg  Valid for libraries only.  Install the version
+                   of the library with debugging symbols.
+
+     iinnssttaallllhhddrrss   This target is only available in  library  and
+                   header  directories.   It  installs the public
+                   header files for the module in the appropriate
+                   system  header  directory.  MMkkmmff decides which
+                   header files are public and which are  private
+                   based  on  the  files'  names.  In order to be
+                   public, the first letters of a ..hh file must be
+                   the same as the name of the directory, and the
+                   string IInntt must not appear in the file's name.
+                   Thus,  in the library ssxx the file ssxx..hh is pub-
+                   lic, whereas the files ssxxIInntt..hh and  ffoooo..hh  are
+                   treated as private.
+
+     iinnssttaalllllliinntt   This  target  is  only  available  in  library
+                   directories.  It generates a lint library file
+                   for the contents of this module  and  installs
+                   it in the system lint library.
+
+     iinnssttaallllpprrooffiillee
+                   This  target  is  only  available  in  library
+                   directories.   It  installs the version of the
+                   library that has been compiled for profiling.
+
+
+
+
+Sprite v.1.0         Printed:  May 31, 1991                     4
+
+
+
+
+
+
+MKMF                      User Commands                      MKMF
+
+
+
+     lliinntt          Run lint on this program/library and the other
+                   programs  and  libraries  it  uses.  Output is
+                   placed in the file lliinntt in the  ..mmdd  subdirec-
+                   tory for the current machine.
+
+     mmkkmmff          Run mmkkmmff to regenerate the Makefile  for  this
+                   directory.    This target is particularly use-
+                   ful in top-level directories with  many  chil-
+                   dren,  since  it  will run mmkkmmff recursively in
+                   each of the subdirectories.
+
+     nneewwttmm         Set things up to compile for  a  new  type  of
+                   target machine (which must be specified expli-
+                   citly using the TTMM variable).   This  includes
+                   creating  a  ..TTMM  subdirectory  and re-running
+                   mmkkmmff.
+
+     pprrooffiillee       Compile a profiled version of the  command  or
+                   library.
+
+     ttaaggss          Generate a ttaaggss file in  this  directory  that
+                   describes  all  the  information in all of the
+                   source files  for  this  program  or  library,
+                   including both the machine-independent sources
+                   and the machine-dependent sources for all tar-
+                   get machines.
+
+
+TTAARRGGEETT MMAACCHHIINNEESS
+     The  above  targets  all  apply  to  the  ``current   target
+     machine'',  which  is  the  value  of  the  TTMM  variable  in
+     MMaakkeeffiillee.  If you wish to compile  for  a  different  target
+     machine,  you  can specify an explicit value of the TTMM vari-
+     able on the ppmmaakkee command line, such as
+
+          ppmmaakkee  TTMM==ssuunn22
+
+     or
+
+          ppmmaakkee  iinnssttaallll  TTMM==ssuunn33
+
+     There are also  four  other  ways  you  can  specify  target
+     machines as part of ppmmaakkee targets:
+
+     _t_m            If you specify a target  machine  as  a  ppmmaakkee
+                   target,  such  as ppmmaakkee ssuunn22, then the default
+                   target  will  be  made  for  that   particular
+                   machine
+
+     aallll           The aallll target causes the default target to be
+                   made  for  all target machines currently known
+                   for this directory.
+
+
+
+Sprite v.1.0         Printed:  May 31, 1991                     5
+
+
+
+
+
+
+MKMF                      User Commands                      MKMF
+
+
+
+     _t_a_r_g_e_t _t_m     If you add a machine name as a suffix  to  one
+                   of   the   standard   targets,   e.g.,   ppmmaakkee
+                   iinnssttaallllssuunn22 or ppmmaakkee lliinnttssuunn33, the  result  is
+                   equivalent to specifying the TTMM variable:  the
+                   target  is  re-made  for  the  given   machine
+                   instead of the default machine.
+
+     _t_a_r_g_e_taallll     If you add the aallll suffix to  a  target,  e.g.
+                   ppmmaakkee  iinnssttaallllaallll, then _t_a_r_g_e_t will be re-made
+                   for all known target machines.
+
+     The list of known target machines is given by  the  MMAACCHHIINNEESS
+     variable  specified  in MMaakkeeffiillee.  This variable is set from
+     the names of ..mmdd subdirectories at the time mmkkmmff is run.  To
+     add  a  new  target  machine, ffoooo for example, create a sub-
+     directory ffoooo..mmdd and then re-run mmkkmmff.
+
+
+AADDDDIITTIIOONNAALL PPMMAAKKEE VVAARRIIAABBLLEESS
+     There  are  a  few  variable  names   that   mmkkmmff   reserves
+     exclusively  for  your  use, as a way of controlling various
+     things.  The makefiles generated  by  mmkkmmff  will  use  these
+     variables, if you set them on a ppmmaakkee command line:
+
+     NNOOBBAACCKKUUPP      Normally, when a command is installed the pre-
+                   vious  version  of  the  command is saved in a
+                   backup directory.  If  you  set  the  NNOOBBAACCKKUUPP
+                   variable  to  any  value,  then no backup copy
+                   will be saved.
+
+     BBAACCKKUUPPAAGGEE     If NOBACKUP is not defined, then  normally,  a
+                   backup  overwrites  a  previous backup only if
+                   the file being backed up is  sufficiently  old
+                   to  be  deemed  stable  (run  uuppddaattee --hheellpp for
+                   information about the  default  age).   BACKU-
+                   PAGE,  if  set, overrides the default age used
+                   for this purpose.
+
+     XXAAFFLLAAGGSS       Extra flags that will be used in all assembler
+                   invocations,  in addition to the standard ones
+                   set up by the makefiles.
+
+     XXCCFFLLAAGGSS       Extra flags that will be used in all C  compi-
+                   lations,  in addition to the standard ones set
+                   up by the makefiles.
+
+     In addition to the variables above, you  can  also  override
+     other  variables  defined  in  the makefiles.  See "LOCAL.MK
+     VARIABLES" below.
+
+
+
+
+
+
+Sprite v.1.0         Printed:  May 31, 1991                     6
+
+
+
+
+
+
+MKMF                      User Commands                      MKMF
+
+
+
+PPEERRSSOONNAALLIIZZAATTIIOONN
+     The makefiles generated by mmkkmmff won't always  do  the  right
+     thing  without additional program-specific information.  For
+     example, a particular program may  need  to  use  additional
+     libraries  besides  the C library, or it may need particular
+     compiler switches, or certain files may  need  special  pro-
+     cessing during compilation.  There are six ways to personal-
+     ize the information in a particular directory, each of which
+     is invoked by creating a file with a particular name:
+
+     kkeerrnneell..mmkk     This file can be used to  create  personalized
+                   Sprite  kernels.   MMaakkeeffiillees  in kernel module
+                   directories will check for the existence of  a
+                   kkeerrnneell..mmkk  file in your home directory. If the
+                   file exists  it  will  be  included  prior  to
+                   including  any  other  files. The kkeerrnneell..mmkk is
+                   intended modify the behavior of a  sysmakefile
+                   for  a  kernel  module,  not to replace it. In
+                   this respect a  kkeerrnneell..mmkk  file  is  different
+                   from a llooccaall..mmkk file.
+
+     llooccaall..mmkk      This is the simplest and most common  form  of
+                   personalization.    MMaakkeeffiillee  checks  for  the
+                   existence of llooccaall..mmkk;   if  it  exists,  then
+                   MMaakkeeffiillee    includes   it   instead   of   the
+                   sysmakefile.  Usually llooccaall..mmkk contains a  few
+                   ppmmaakkee   commands,   then   it   includes   the
+                   sysmakefile (whose name is passed in the vari-
+                   able  SYSMAKEFILE),  then it issues a few more
+                   ppmmaakkee  commands.   See   "LOCAL.MK   EXAMPLES"
+                   below.
+
+     MMaakkeeffiillee..sseedd  If MMaakkeeffiillee..sseedd exists when  mmkkmmff  runs,  then
+                   mmkkmmff  uses  it  as  a  Sed  script  to  modify
+                   MMaakkeeffiillee.  If the --ff switch has been  used  to
+                   specify  a  different  makefile, say ffoooo, then
+                   mmkkmmff looks for ffoooo..sseedd.   In  particular,  you
+                   can  place  a  file  mmdd..mmkk..sseedd  in  a machine-
+                   dependent subdirectory in order to modify  the
+                   mmdd..mmkk  file.  Most things that you can do with
+                   a MMaakkeeffiillee..sseedd script you can  also  do  in  a
+                   llooccaall..mmkk  file; this feature is mostly a left-
+                   over from  ancient  times  when  the  llooccaall..mmkk
+                   facility didn't exist.
+
+     MMaakkeeffiillee..eexx   Similar to MMaakkeeffiillee..sseedd, except mmkkmmff  uses  it
+                   as an Ex script to modify MMaakkeeffiillee.
+
+     MMaakkeeffiillee..pprroottoo
+                   If this file exists when mmkkmmff runs, then  mmkkmmff
+                   uses it as a prototype makefile instead of one
+                   from the mmkkmmff library.  See ``HOW MKMF WORKS''
+
+
+
+Sprite v.1.0         Printed:  May 31, 1991                     7
+
+
+
+
+
+
+MKMF                      User Commands                      MKMF
+
+
+
+                   below for what this means.
+
+     mmkkmmff..llooccaall    If this  file  exists,  it  must  be  a  shell
+                   script.   It will be executed by mmkkmmff in place
+                   of the standard type-specific mmkkmmff script that
+                   would   normally   be   executed  to  generate
+                   MMaakkeeffiillee.  See ``HOW MKMF  WORKS''  below  for
+                   more information on this.
+
+     Finally, there is one other, even more radical, way for  you
+     to  control  what's  in your MMaakkeeffiillee, and that is to create
+     your own MMaakkeeffiillee from scratch and make sure it  contains  a
+     line  ``#  No mkmf''.  MMkkmmff will refuse to do anything if it
+     finds a MMaakkeeffiillee with such a comment in it; you can then put
+     anything you like in the MMaakkeeffiillee.  It's probably a bad idea
+     (and unnecessary) for you ever to  generate  a  Makefile  by
+     hand  in any Sprite system directory, but if you do, be sure
+     it has a ``# No mkmf'' line: it is common  practice  to  run
+     mmkkmmff  indiscriminately  on system directories, and this will
+     make sure your MMaakkeeffiillee doesn't accidentally get overwritten
+     (actually, mmkkmmff won't overwrite a makefile unless it finds a
+     line ``# Allow mkmf'' in it, but if it doesn't find a ``# No
+     mkmf''  line  then  it  will ask for permission to overwrite
+     it).
+
+
+HHOOWW MMKKMMFF WWOORRKKSS
+     The mmkkmmff program runs as  a  two-stage  shell  script.   The
+     top-level script is the mmkkmmff program itself.  It does things
+     that are common to all uses of mmkkmmff, such  as  checking  for
+     the ``# Allow mkmf'' line in your MMaakkeeffiillee and running ppmmaakkee
+     ddeeppeennddaallll.  There are several  second-level  shell  scripts,
+     called  _t_y_p_e-_s_p_e_c_i_f_i_c scripts.  Each one of these scripts is
+     set up to handle a particular kind  of  directory,  such  as
+     those  for  libraries,  programs,  or directories containing
+     only header files.  The type-specific scripts correspond  to
+     the sysmakefiles:  for each type, there is an mmkkmmff script to
+     generate its MMaakkeeffiillee, a prototype makefile that the  script
+     fills  in,  and a sysmakefile in //sspprriittee//lliibb//ppmmaakkee that does
+     most of the real work for making things of that  type.   The
+     type-specific scripts and prototype makefiles are all stored
+     in  //sspprriittee//lliibb//mmkkmmff  with  names  like   mmkkmmff..lliibbrraarryy   and
+     MMaakkeeffiillee..lliibbrraarryy.
+
+     MMkkmmff uses the file //sspprriittee//lliibb//mmkkmmff//mmkkmmff..mmaapp to select which
+     type-specific script to use.  MMkkmmff..mmaapp is an awk script that
+     performs pattern matching on the current directory to select
+     a  type-specific  script.  This file has already been set up
+     to handle most of the system areas, but if you add  a  major
+     new  area  of  programs or libraries you'll probably have to
+     add a new  entry  in  mmkkmmff..mmaapp.   If  mmkkmmff  finds  a  script
+     mmkkmmff..llooccaall  in  the  current  directory,  then  mmkkmmff uses it
+
+
+
+Sprite v.1.0         Printed:  May 31, 1991                     8
+
+
+
+
+
+
+MKMF                      User Commands                      MKMF
+
+
+
+     instead  of  the  one  that  would  have  been  selected  by
+     mmkkmmff..mmaapp.   Similarly,  if there is a file MMaakkeeffiillee..pprroottoo in
+     the current directory, it is used  instead  of  the  default
+     prototype makefile.
+
+     You can reconfigure the way that mmkkmmff  works  by  placing  a
+     file  ..mmkkmmff  in  your  home directory.  If this file exists,
+     mmkkmmff will source it as a shell script just after  doing  its
+     initialization.   You  can  use  this  feature  to  set up a
+     private map for yourself and change other internal  features
+     of  mmkkmmff.  For more details on how this works, read the top-
+     level mmkkmmff script.
+
+
+CCUURRRREENNTT TTYYPPEESS
+     Although the list of available type-dependent  scripts  will
+     probably  grow  and  change faster than this man page can be
+     updated, here are the types that were available  as  of  the
+     last  time the man page was updated.  To force mmkkmmff to use a
+     particular type (e.g., ``library'' instead of  ``command''),
+     use either a mmkkmmff..llooccaall or a MMaakkeeffiillee..pprroottoo, as described in
+     ``HOW MKMF WORKS,'' above.
+
+     ccoommmmaanndd       This type is for command directories where all
+                   of  the  files  related  to  the  command  are
+                   together in a single  directory  and  its  ..mmdd
+                   subdirectories.   It  is the default type used
+                   by mmkkmmff for directories not explicitly  listed
+                   in  mmkkmmff..mmaapp.   MMaakkeeffiillee will compile and link
+                   the command into _t_m..mmdd//_n_a_m_e, where _t_m  is  the
+                   name  of a target machine and _n_a_m_e is the name
+                   of  the  directory  containing  MMaakkeeffiillee  (the
+                   directory name and command name are assumed to
+                   be the same).  MMaakkeeffiillee will install the  com-
+                   mand  into  the  appropriate  system directory
+                   (see the mmkkmmff scripts  for  details  on  where
+                   this  is).  During the conversion of Sprite to
+                   the new C library, this type of  directory  is
+                   actually  ccoommmmaanndd22, but it will revert to ccoomm--
+                   mmaanndd when the conversion is finished.
+
+     bbiiggccmmdd        This type is for commands whose  source  files
+                   have  been partitioned into multiple subdirec-
+                   tories, with one MMaakkeeffiillee for  each  subdirec-
+                   tory.  The MMaakkeeffiillees in the subdirectories are
+                   of type bbiiggccmmdd, and the MMaakkeeffiillee of the parent
+                   is  of  type bbiiggccmmddttoopp.  Each bbiiggccmmdd subdirec-
+                   tory contains _t_m..mmdd subdirectories, which con-
+                   tain object files compiled from that subdirec-
+                   tory plus a file lliinnkkeedd..oo, which  consists  of
+                   all  the  object  files from that subdirectory
+                   linked together.
+
+
+
+Sprite v.1.0         Printed:  May 31, 1991                     9
+
+
+
+
+
+
+MKMF                      User Commands                      MKMF
+
+
+
+     bbiiggccmmddttoopp     This type is used for a command source  direc-
+                   tory  that contains one or more subdirectories
+                   of type bbiiggccmmdd.  The MMaakkeeffiillee in  this  direc-
+                   tory  will  cause all the children directories
+                   to be re-made, plus  it  will  regenerate  the
+                   file  _t_m..mmdd//_n_a_m_e,  where  _t_m  is the name of a
+                   target machine and _n_a_m_e is  the  name  of  the
+                   bbiiggccmmddttoopp  directory.   A special target qquuiicckk
+                   is also available  in  bbiiggccmmddttoopp  directories:
+                   it  will  relink _t_m..mmdd//_n_a_m_e using the existing
+                   lliinnkkeedd..oo  files  from  the  children,  without
+                   passing  through  all  the  subdirectories  to
+                   remake there.
+
+     lliibbrraarryy       This type is for directories containing all of
+                   the  files  related  to  a particular library.
+                   MMaakkeeffiillee will compile all  the  files  in  the
+                   directory  and  assemble  them into an archive
+                   file named _t_m..mmdd//lliibb_n_a_m_e..aa,, wwhheerree  _t_m  is  the
+                   name  of a target machine and _n_a_m_e is the name
+                   of  the  directory  containing  MMaakkeeffiillee  (the
+                   directory name and library name are assumed to
+                   be  the  same).   MMaakkeeffiillee  will  install  the
+                   library and its headers and lint library.
+
+     bbiigglliibb        This type is for libraries  with  many  source
+                   files,  such  as the C library.  The library's
+                   sources are assumed to be split over many sub-
+                   directories,  with  one MMaakkeeffiillee for each sub-
+                   directory.  The  MMaakkeeffiillees  in  the  subdirec-
+                   tories are of type bbiigglliibb, and the MMaakkeeffiillee of
+                   the parent is  of  type  bbiigglliibbttoopp.   Compiled
+                   files  will be archived together into the file
+                   ....//_t_m..mmdd//lliibb_n_a_m_e..aa (relative to the  subdirec-
+                   tories containing the bbiigglliibb MMaakkeeffiillees), where
+                   _t_m is the name of a target machine and _n_a_m_e is
+                   the  name  of  the  top-level  directory  (the
+                   directory containing the bbiigglliibb directories is
+                   assumed  to  have the same name as the overall
+                   library).
+
+     bbiigglliiggttoopp     This is the type of a directory that  contains
+                   one   or   more  bbiigglliibb  subdirectories.   The
+                   MMaakkeeffiillee in this directory will pass  most  of
+                   the  standard  targets  along  to its children
+                   directories.  The installation  targets  (such
+                   as  iinnssttaallll and iinnssttaalllllliinntt) should be invoked
+                   in   this   directory.    A   special   target
+                   iinnssttaallllqquuiicckk  is  also  available in bbiigglliibbttoopp
+                   directories:  it  will  install  the  standard
+                   version of the library without cycling through
+                   all of the subdirectories to give each of them
+
+
+
+Sprite v.1.0         Printed:  May 31, 1991                    10
+
+
+
+
+
+
+MKMF                      User Commands                      MKMF
+
+
+
+                   a chance to recompile.
+
+     kkeerrnneell        This type is used in the directories that hold
+                   the major modules of the Sprite kernel.
+
+     hhddrrss          This type is used for  directories  that  hold
+                   nothing  but  ``.h''  files  for  the standard
+                   library.  The only thing you can do with ppmmaakkee
+                   is  to  install the header files;  the default
+                   target does this, as does ppmmaakkee  iinnssttaallll.   In
+                   addition,  ppmmaakkee rreeccuurrssiivvee will install header
+                   files in this directory and all  of  its  sub-
+                   directories  (this  is  only useful for header
+                   directories that contain  more  header  direc-
+                   tories as subdirectories).
+
+     ttoopp           This is a general-purpose type for directories
+                   that  don't have anything interesting in them-
+                   selves, but have  child  directories  that  do
+                   contain interesting things.  When ppmmaakkee is run
+                   in such a directory, the MMaakkeeffiillee will  simply
+                   pass  all the standard targets down to each of
+                   its child directories in turn.  This  type  of
+                   MMaakkeeffiillee  is  used,  for  example, in the top-
+                   level directory of a  bbiigglliibb  tree,  or  in  a
+                   top-level  commands  directory,  each of whose
+                   children is of type ccoommmmaanndd.
+
+
+LLOOCCAALL..MMKK VVAARRIIAABBLLEESS
+     The following list describes some of the variables that  you
+     may  wish  to  use,  augment  (using ``+=''), or override in
+     llooccaall..mmkk files.  This is just a list of the  most  commonly-
+     used   variables.    For   other   possibilities,  read  the
+     makefiles.
+
+     AAFFLLAAGGSS            Flags passed to the  assembler.   You  may
+                       wish to augment this in llooccaall..mmkk.
+
+     CCFFLLAAGGSS            Flags passed to the C compiler.   You  may
+                       wish  to  augment  this  in  llooccaall..mmkk, for
+                       example   to   define   certain   compiler
+                       switches.   Or, you can override the value
+                       in MMaakkeeffiillee with something completely dif-
+                       ferent.
+
+     CCLLEEAANNOOBBJJSS         A list of object files and other things to
+                       delete  as  part  of  ppmmaakkee cclleeaann or ppmmaakkee
+                       ttiiddyy.
+
+     HHDDRRSS              A list of all the  locally-defined  ``.h''
+                       files    (both    machine-dependent    and
+
+
+
+Sprite v.1.0         Printed:  May 31, 1991                    11
+
+
+
+
+
+
+MKMF                      User Commands                      MKMF
+
+
+
+                       machine-independent) used to compile  this
+                       module.
+
+     IINNSSTTAALLLLDDIIRR        The base directory in which a program gets
+                       installed.    MMkkmmff  will  add  a  machine-
+                       dependent suffix onto this,  depending  on
+                       the  particular machine being compiled for
+                       (see the makefiles  for  more  details  on
+                       this).
+
+     IINNSSTTAALLLLFFLLAAGGSS      Flags passed to uuppddaattee when the module  is
+                       installed.   You  may  wish  to  add extra
+                       flags, like --mm  44775555  to  make  a  program
+                       set-user-id.
+
+     OOBBJJSS              A list of all the  object  files  used  to
+                       link  together  this  module.  These files
+                       should always be  in  a  machine-dependent
+                       directory.
+
+     SSRRCCSS              A list  of  all  the  source  files  (both
+                       machine-dependent and machine-independent)
+                       that comprise the module's version for the
+                       current target machine.
+
+     SSUUBBDDIIRRSS           A list of all the subdirectories  of  this
+                       directory,  except  those  of type _t_m..mmdd).
+                       Is usually  only  available  in  top-level
+                       Makefiles,  like  those  in directories of
+                       type ttoopp, bbiiggccmmddttoopp, or  bbiigglliibbttoopp.   This
+                       variable determines where to invoke recur-
+                       sive sub-makes.
+
+     TTMM                The name of the  current  target  machine.
+                       Normally  this is specified on the command
+                       line or  defaulted  in  MMaakkeeffiillee,  so  you
+                       shouldn't modify it.
+
+
+LLOOCCAALL..MMKK EEXXAAMMPPLLEESS
+     The normal structure for a llooccaall..mmkk file is for it to set up
+     or modify a few variables, include the sysmakefile, and then
+     add  new  targets  or  extend   targets   defined   by   the
+     sysmakefile.   For  example,  here is a simple llooccaall..mmkk that
+     defines some additional compiler  variables  (by  adding  to
+     CCFFLLAAGGSS) and uses an extra library:
+
+          CCFFLLAAGGSS    ++== --DDNNAAMMEE==tteessttPPrroogg
+          LLIIBBSS      ++== --llmm  --XX1111
+          ##iinncclluuddee  <<$$((SSYYSSMMAAKKEEFFIILLEE))>>
+
+     Or, below is a llooccaall..mmkk that generates an additional C  file
+
+
+
+Sprite v.1.0         Printed:  May 31, 1991                    12
+
+
+
+
+
+
+MKMF                      User Commands                      MKMF
+
+
+
+     from  a  template.  Since the file may not have existed when
+     mmkkmmff was run, it must be added to the SSRRCCSS  and  OOBBJJSS  vari-
+     ables  generated by mmkkmmff.  In addition, when this program is
+     installed (using the uuppddaattee command), it is marked  at  set-
+     user-id (mode 4755):
+
+          SSRRCCSS           ++== aauuttoo..cc
+          OOBBJJSS           ++== $$((TTMM))..mmdd//aauuttoo..oo
+          IINNSSTTAALLLLFFLLAAGGSS   ++== --mm 44775555
+
+          ##iinncclluuddee       <<$$((SSYYSSMMAAKKEEFFIILLEE))>>
+
+          aauuttoo..cc:: tteemmppllaattee pprroogg
+               pprroogg tteemmppllaattee >> aauuttoo..cc
+
+     The reason  for  adding  new  targets  after  including  the
+     sysmakefile  is to allow the sysmakefile to define the first
+     target, which is the default that will be made if  ppmmaakkee  is
+     invoked  with no arguments.  If, on the other hand, you want
+     to change the  default  target,  then  you  can  define  the
+     default target before including the sysmakefile.
+
+     As a third  example,  consider  a  program  that  uses  non-
+     standard  header files.  It would have a local.mk that looks
+     something like
+
+          ##iinncclluuddee  <<$$((SSYYSSMMAAKKEEFFIILLEE))>>
+
+          ..PPAATTHH..hh :: //sspprriittee//lliibb//iinncclluuddee..ssppeecciiaall
+
+     Notice that the ..PPAATTHH..hh line comes after the sysmakefile  is
+     included.
+
+
+SSEEEE AALLSSOO
+     pmake, sed, ex
+
+
+KKEEYYWWOORRDDSS
+     make, Makefile, prototype
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  May 31, 1991                    13
+
+
+

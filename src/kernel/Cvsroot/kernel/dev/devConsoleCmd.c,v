@@ -1,0 +1,495 @@
+head     9.8;
+branch   ;
+access   ;
+symbols  ds3100:9.8 sun3:9.8 sun4nw:9.8 symm:9.8 spur:9.8 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.8
+date     91.09.17.15.07.39;  author shirriff;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     91.08.19.13.39.37;  author jhh;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.12.06.22.08.32;  author shirriff;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.10.11.17.17.35;  author rab;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.10.08.15.41.21;  author jhh;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.10.02.17.13.16;  author rab;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.09.11.13.52.37;  author rab;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.09.11.12.17.24;  author rab;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.56.42;  author douglis;  state Stable;
+branches ;
+next     1.3;
+
+1.3
+date     89.07.20.18.00.07;  author rab;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.07.19.15.54.15;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.14.15.19.36;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.8
+log
+@Removed static line debugger L1-b.
+@
+text
+@/* 
+ * devConsoleCmd.c --
+ *
+ *	This file provides the mechanism for invoking certain kernel
+ *	operations by typing certain key sequences on the console (e.g.
+ *	on Sun-3's, L1-D puts the machine into the debugger).
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devConsoleCmd.c,v 9.7 91/08/19 13:39:37 jhh Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <stdio.h>
+#include <dbg.h>
+#include <machMon.h>
+#include <net.h>
+#include <devVid.h>
+
+/*
+ * Information about registered commands:
+ */
+
+static struct {
+    void (*proc) _ARGS_ ((ClientData clientData));   /* Procedure to invoke. */
+    ClientData clientData;                      /* Argument to pass to proc. */
+} commands[256];
+
+/*
+ * Forward declarations for procedures defined later in this file:
+ */
+
+static void Abort _ARGS_((ClientData clientData));
+static void Debug _ARGS_((ClientData clientData));
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_RegisterConsoleCmd --
+ *
+ *	This procedure is called to declare the procedure to be invoked
+ *	when a particular console command is invoked.  Console commands
+ *	are defined by a single ASCII character, e.g. "d" for debug.
+ *	The specific invocation sequence depends on the machine and
+ *	configuration.  On Sun-3's with console displays, L1-x is
+ *	typed to invoke the command associated with "x";  on servers
+ *	with no display, BREAK-x is typed to do the same thing.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Whenever the given command is invoked, proc will be called.
+ *	It should have the following structure:
+ *
+ *	void
+ *	proc(clientData)
+ *	{
+ *	}
+ *
+ *	The clientData argument will be the same as the clientData
+ *	argument passed to this procedure.  Note:  proc will always
+ *	be invoked at background level in a kernel server process.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Dev_RegisterConsoleCmd(commandChar, proc, clientData)
+    int commandChar;		/* ASCII character associated with command. */
+    void (*proc) _ARGS_ ((ClientData clientData));
+                                /* Procedure to call when command is
+				 * invoked. */
+    ClientData clientData;	/* Arbitrary one-word value to pass to
+				 * command. */
+{
+    int index = commandChar & 0x7f;
+
+    if (commands[index].proc != 0) {
+	printf("%s for \"%c\" (0x%x).\n",
+		"Warning: Dev_RegisterConsoleCmd replacing procedure",
+		commandChar, index);
+    }
+    commands[index].proc = proc;
+    commands[index].clientData = clientData;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_InvokeConsoleCmd --
+ *
+ *	Given a command character, this procedure invokes the console
+ *	command associated with the character.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	If there is a procedure registered for commandChar, it is
+ *	invoked.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Dev_InvokeConsoleCmd(commandChar)
+    int commandChar;
+{
+    /*
+     * The initialization code below should be removed;  the debugger
+     * module should register its own commands.
+     */
+
+    if (commands['a'].proc == 0) {
+	commands['a'].proc = Abort;
+    }
+    if (commands['d'].proc == 0) {
+	commands['d'].proc = Debug;
+	commands['d'].clientData = (ClientData) FALSE;
+    }
+
+    /*
+     * Turn on the video.
+     */
+    (void) Dev_VidEnable(TRUE);
+
+    commandChar &= 0x7f;
+    if (commands[commandChar].proc != 0) {
+	(*commands[commandChar].proc)(commands[commandChar].clientData);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Abort, Debug --
+ *
+ *	These are temporary procedures to handle some of the console
+ *	commands;  they should be moved out of this module.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Depends on command.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static void
+Abort(clientData)
+    ClientData clientData;
+{
+    int			i;
+    Net_Interface	*interPtr;
+    Mach_MonAbort();
+    i = 0;
+    interPtr = Net_NextInterface(FALSE, &i);
+    while(interPtr != (Net_Interface *) NIL) {
+	Net_Reset(interPtr);
+	i++;
+	interPtr = Net_NextInterface(FALSE, &i);
+    }
+}
+
+/*ARGSUSED*/
+static void
+Debug(clientData)
+    ClientData clientData;
+{
+
+    DBG_CALL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_KbdQueueAttachProc --
+ *
+ *	This procedure is a temporary hack during the conversion to
+ *	the new tty driver.  All calls to it should be redirected
+ *	to Dev_RegisterConsoleCmd.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	See Dev_RegisterConsoleCmd.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Dev_KbdQueueAttachProc(character, proc, clientData)
+    int character;
+    void (*proc) _ARGS_ ((ClientData clientData));
+    ClientData clientData;
+{
+    Dev_RegisterConsoleCmd(character, proc, clientData);
+    return 0;
+}
+@
+
+
+9.7
+log
+@fixed lint error
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devConsoleCmd.c,v 9.6 90/12/06 22:08:32 shirriff Exp $ SPRITE (Berkeley)";
+a126 4
+    }
+    if (commands['b'].proc == 0) {
+	commands['b'].proc = Debug;
+	commands['b'].clientData = (ClientData) TRUE;
+@
+
+
+9.6
+log
+@Changed L1-? to turn on video.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devConsoleCmd.c,v 9.5 90/10/11 17:17:35 rab Exp $ SPRITE (Berkeley)";
+d164 1
+a164 1
+
+d181 1
+@
+
+
+9.5
+log
+@Added prototypes.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devConsoleCmd.c,v 9.4 90/10/08 15:41:21 jhh Exp Locker: rab $ SPRITE (Berkeley)";
+d27 1
+d136 5
+@
+
+
+9.4
+log
+@New net module
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devConsoleCmd.c,v 9.3 90/10/02 17:13:16 rab Exp Locker: jhh $ SPRITE (Berkeley)";
+d33 2
+a34 2
+    void (*proc) ();		/* Procedure to invoke. */
+    ClientData clientData;	/* Argument to pass to proc. */
+d41 2
+a42 2
+static void Abort _ARGS_((void));
+static void Debug _ARGS_((void));
+d80 2
+a81 1
+    void (*proc)();		/* Procedure to call when command is
+d160 2
+a161 1
+Abort()
+d176 2
+a177 1
+Debug()
+d204 1
+a204 1
+    void (*proc)();
+@
+
+
+9.3
+log
+@checking this in for Bob.  Looks like he changed a few types -- JohnH
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devConsoleCmd.c,v 9.2 90/09/11 13:52:37 rab Exp Locker: rab $ SPRITE (Berkeley)";
+d22 5
+a26 5
+#include "sprite.h"
+#include "stdio.h"
+#include "dbg.h"
+#include "machMon.h"
+#include "net.h"
+d161 2
+d164 7
+a170 1
+    Net_Reset();
+@
+
+
+9.2
+log
+@#include "stdio.h" for forward decl of printf.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devConsoleCmd.c,v 9.1 90/09/11 12:17:24 rab Exp Locker: rab $ SPRITE (Berkeley)";
+d33 1
+a33 1
+    void (*proc)();		/* Procedure to invoke. */
+d79 1
+a79 1
+    char commandChar;		/* ASCII character associated with command. */
+d192 1
+a192 1
+    char character;
+@
+
+
+9.1
+log
+@Added prototypes.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devConsoleCmd.c,v 9.0 89/09/12 14:56:42 douglis Stable Locker: rab $ SPRITE (Berkeley)";
+d23 1
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devConsoleCmd.c,v 1.3 89/07/20 18:00:07 rab Exp Locker: douglis $ SPRITE (Berkeley)";
+d40 3
+a42 2
+static void	Abort();
+static void	Debug();
+d196 1
+@
+
+
+1.3
+log
+@Removed rs232 stuff.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devConsoleCmd.c,v 1.2 89/07/19 15:54:15 ouster Exp Locker: rab $ SPRITE (Berkeley)";
+@
+
+
+1.2
+log
+@Lint cleanup.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev.jo/RCS/devConsoleCmd.c,v 1.1 89/07/14 15:19:36 ouster Exp $ SPRITE (Berkeley)";
+d164 1
+a164 3
+Debug(rs232)
+    Boolean rs232;		/* TRUE means use rs232 line for debugging,
+				 * FALSE means use network. */
+d166 1
+a166 3
+    if (!dbg_BeingDebugged) {
+	dbg_Rs232Debug = rs232;
+    }
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev.jo/RCS/devConsoleCmd.c,v 1.3 89/06/30 17:18:12 ouster Exp $ SPRITE (Berkeley)";
+d34 1
+a34 1
+} commands[128];
+d83 6
+a88 4
+    commandChar &= 0x7f;
+    if (commands[commandChar].proc != 0) {
+	printf("Warning: Dev_RegisterConsoleCmd replacing procedure for \"%c\".\n",
+		commandChar);
+d90 2
+a91 2
+    commands[commandChar].proc = proc;
+    commands[commandChar].clientData = clientData;
+d192 1
+a192 1
+void
+@

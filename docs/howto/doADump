@@ -1,0 +1,153 @@
+
+Procedure for doing a dump (revised $Date: 92/06/05 13:11:17 $).
+
+Right now the dumping procedure is kind of labor intensive.  
+
+Finding a tape:
+
+A level 0 (weekly) dump will take about 2 tapes (4 tapes using the old
+Exabyte 8200's).  A single tape can hold about a week's worth of level
+1 (daily) dumps.  Tapes are stored in 608-2 Evans. Some are in the
+tape holder on the wall, more are in the file cabinet.  Here is the
+method for reusing tapes.  Daily dumps can be reused if there have
+been two weekly dumps done since they were created, although you'll
+want to save them as long as possible. That way we don't lose anything
+should a single weekly dump be unreadable.  Weekly dumps are saved for
+a month, and every sixth weekly dump set is saved forever.  After that
+weekly dump tapes can be reused as well.  A database of what tapes
+were used for and when is kept in /sprite/admin/dump/dumpdates.
+
+The tapes in the tape holder are stored in chronological order
+left-to-right, like a circular buffer.  Weekly dump tapes have
+rubberbands around them.  The most current weekly dump has a paperclip
+in the rubberband.  Older tapes are kept in the filing cabinet.  The
+boxes marked "reuse" are ok for using.  Boxes marked "weekly" are for
+weekly dump tapes.  The box marked "bad" contains defective tapes that
+can be given away. When you clean out a slot in the tape holder put
+the daily dump tapes in a reuse box.  If you are cleaning out the
+upper left slot the weekly tapes go into a weekly box.  For any other
+slot the weekly tapes go into a reuse box.  We should probably put
+tapes into one box and get them to use from another so that tapes
+don't get overwritten right away.
+
+Finding a drive:
+
+There are currently two drives being used for backups.  To avoid
+problems with server crashes, they are generally hooked up to a client
+machine, often the home machine of the person doing the dumps.  If you
+move the drives, you must edit the crontab of the new and old hosts so
+that the right machine does the daily dumps (see "Daily dumps" below).
+The drives are named /dev/rst04.nr and /dev/rst05.nr.
+
+Putting the tape in the drive:
+
+Push the button on the exabyte.  After about 30 seconds the door will
+open.  Make sure the red write-protect slider on the tape is not visible.
+Put in the new tape and close the door.  Wait about 30 seconds
+and the green light will go on.  Now you're ready to go.  While the tape
+is being accessed the red light will flicker.
+
+Initializing a tape:
+
+Once you have found a tape you need to initialize it.
+Notes: you must wait until the green light goes on before initializing.
+You must be root to do the initialization.
+
+a) Initializing a blank tape
+
+If it is a blank tape use the command "dump -i <tape#> -f <device>".
+(See "Finding a drive" above for the list of device names.)  The next
+tape number can be determined from the dumpdates file.  In the long
+run, you can just look for the last "Initializing" line.  For the time
+being, though, you should verify that there aren't any "Initializing"
+lines with a higher tape number than the one you plan to use.
+
+b) Initializing an old tape
+
+If you're reusing a tape use "dump -r -f <device>".  Make sure the
+device you use is a "norewind" tape device.
+
+Daily dumps:
+
+Daily dumps are done via the script /sprite/admin.$MACHINE/dailydump.
+This script is run every night by cron.  It will send mail to "dumper"
+when it completes or if there are errors.  If the machine doing the
+dumps crashes while the dumps are in progress, "dumper" will get mail
+with an error message when it reboots.  If this happens, you will need
+to start a new tape.  This is because the dump program gets confused
+by the partial file at the end of the tape, at least when used with an
+8500 tape drive.
+
+You can also check /sprite/admin/dump/dumplog for error messages.  You
+can use /sprite/admin.$MACHINE/dumpsize to get an idea when the daily
+tape is about to fill up.
+
+If you take over as dumper during the middle of the week, you should
+edit /sprite/admin/dump/dumpalias by hand (so that it names you
+instead of the old dumper).  If your first job as dumper is to run the
+weekly dumps, the weekly dump script will change the dumpalias file
+for you.
+
+Weekly dumps:
+
+1. Log in as yourself to the machine with the drives, su to root, and
+run "/sprite/admin.$MACHINE/weeklydump -i".  This will initialize the
+tape in the drive and start the dumps.  This will disable the daily
+dumps by creating a lockfile "/sprite/admin/dump/doingweekly".  This
+will also change the dumper alias to your userid.  You should either
+run it from the console or run it with stdout and stderr redirected to
+a file or /dev/null.  If you run it from, e.g., an rlogin shell
+without redirecting the output, the dump will abort when you log out.
+If something goes wrong with the weekly dump and you want to start over
+again, you will need to run "weeklydump startFs" where startFs is the first
+file system that you wish to start dumping.  Otherwise, it will start dumping
+from the file system after the last successfully dumped file system.
+
+2. When the tape on one drive fills up, the dumps will automatically
+resume using the next drive in the tape list (see
+/sprite/admin/dump/tapelist).  If the dumps exhaust the list of tapes,
+the weeklydump script will send mail to "dumper", saying that the
+dumps need attention and giving the name of the next filesystem that
+needs to be dumped.  (Alternatively, you can look in the dumplog or
+dumpdates files to see which filesystem couldn't be dumped.)  With the
+old 8200's it took 10-12 hours to write the first two tapes.  With the
+8500's it takes about 15 hours to do the complete dumps (on two
+tapes).  If the drives do run out, replace the tapes with new ones.
+Rerun "weeklydump -i".  It will look in the lock file to determine the
+next directory to dump and resume dumping.
+
+As with the daily dumps, "dumper" will get mail in case of errors,
+crashes, or completion of the dumps.
+
+3. One the dumps are complete, label the tapes (with the date and what
+filesystems they contain).  Put another tape in the first drive (the
+one listed first in /sprite/admin/dump/tapelist) and reenable the
+daily dumps with "dailydump -i".
+
+Cleaning a tape drive:
+
+The tape drives should be cleaned once a quarter, using the drive
+cleaning kits in the filing cabinet in 608-2.  Each kit is good for
+three cleanings.  When you start a new kit, mark both the cartridge
+and the bottle with the drive that you are cleaning them with.  Also
+write down the date of the cleaning on the cartridge.  When reusing a
+kit, use the cartridge and bottle that are labeled for the drive you
+want to clean.  (And of course write down the date on the cartridge.)
+Specific instructions on how to use the kit are in with the cartridge.
+
+Tape errors:
+
+Occasionally the dumps will fail due to some problem with the tape
+drive.  There should be a syslog message from the tape driver which
+contains some magic numbers detailing the failure.  To look up the
+meaning of the numbers, check out Appendices C and D of the Exabyte
+8500 User's Manual.  The "sense code" and "qualifier" in the syslog
+message correspond to the ASC and ASCQ numbers in Appendix C.
+Unfortunately, you have to guess what the Sense Key was.  The "symptom
+code" in the syslog message corresponds to the FSC numbers in Appendix
+D.
+
+Other documentation:
+
+You may also wish to read the man pages for the following programs and
+scripts: dump, dailydump, weeklydump.

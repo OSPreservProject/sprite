@@ -1,0 +1,35 @@
+.\" Copyright (c) 1987 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that this notice is preserved and that due credit is given
+.\" to the University of California at Berkeley. The name of the University
+.\" may not be used to endorse or promote products derived from this
+.\" software without specific written prior permission. This software
+.\" is provided ``as is'' without express or implied warranty.
+.\"
+.\"	@(#)mesg.1	6.2 (Berkeley) 11/24/87
+.\"
+.TH MESG 1 "November 24, 1987"
+.AT 3
+.SH NAME
+mesg \- permit or deny messages
+.SH SYNOPSIS
+.B mesg
+[
+.B n
+] [
+.B y
+]
+.SH DESCRIPTION
+\fIMesg\fP with argument \fBn\fP forbids messages via \fIwrite\fP
+and \fItalk\fP by revoking non-user write permission on the user's
+terminal.  \fIMesg\fP with argument \fBy\fP reinstates permission.
+\fIMesg\fP without arguments reports the current state without
+changing it.
+.SH FILES
+/dev/tty*
+.SH "SEE ALSO"
+write(1), talk(1)
+.SH DIAGNOSTICS
+Exit status is 0 if messages are receivable, 1 if not, -1 on error.

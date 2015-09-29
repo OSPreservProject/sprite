@@ -1,0 +1,66 @@
+512
+llib-lcom_err:./com_err.h
+2
+0 30 144 0 0
+com_err_hook
+512
+llib-lcom_err:com_err.c
+2
+0 93 144 0 0
+com_err_hook
+2
+4 100 32 0 0
+com_err_va
+18 0 0
+5 0 0
+18 0 0
+18 0 0
+2
+1 112 32 0 0
+com_err
+4 0 0
+2
+1 134 608 0 0
+set_com_err_hook
+144 0 0
+16
+0 143 144 0 0
+set_com_err_hook
+2
+0 145 608 0 0
+reset_com_err_hook
+16
+0 149 144 0 0
+reset_com_err_hook
+512
+llib-lcom_err:et_name.c
+2
+1 25 98 0 0
+error_table_name
+4 0 0
+16
+0 43 18 0 0
+error_table_name
+512
+llib-lcom_err:init_et.c
+2
+3 38 36 0 0
+init_error_table
+82 0 0
+4 0 0
+4 0 0
+16
+0 55 4 0 0
+init_error_table
+512
+llib-lcom_err:error_message.c
+2
+0 24 24 64 27125
+_et_list
+2
+1 28 98 0 0
+error_message
+5 0 0
+16
+0 71 18 0 0
+error_message

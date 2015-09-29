@@ -1,0 +1,6 @@
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+F RESTARTI.;1                       	restartIPServer
+F RESTARTI.MAN;1                    	restartIPServer.man
+F STARTCLI.OLD;1                    	startClientServers.old

@@ -1,0 +1,75 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     90.02.06.15.35.59;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.02.06.15.35.18;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Returns version from version.h  Ideally version.h is recreated
+and this file is recompiled just before the main program is loaded.
+@
+
+
+1.2
+log
+@changed copywrite notice
+@
+text
+@/* 
+ * version.c --
+ *
+ *     Returns version from version.h  Ideally version.h is recreated
+ *     and this file is recompiled just before the main program is loaded.
+ *
+ * Copyright 1985, 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/lib/misc/RCS/version.c,v 1.1 90/02/06 15:35:18 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "version.h"	/* automatically generated */
+
+static char versionString[] = VERSION ;
+
+char *
+Version()
+{
+    return(versionString) ;
+}
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d7 8
+a14 2
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+d18 1
+a18 1
+static char rcsid[] = "$Header$ SPRITE (Berkeley)";
+@

@@ -1,0 +1,27 @@
+#include <Server.tmpl>
+
+/**/# 
+/**/# This directory is used for System V machines that need to emulate the
+/**/# various Berkeley utility routines.  It actually just cheats and creates
+/**/# a link to the same file that Xlib uses.
+/**/# 
+
+           SRCS = Berklib.c 
+           OBJS = Berklib.o 
+        DEFINES = ConnectionFlags
+       INCLUDES = -I.  -I../../include -I$(INCLUDESRC)
+       LINTLIBS = ../../dix/llib-ldix.ln
+    XLIBSYSVDIR = $(TOP)/lib/X/sysV
+
+NormalLibraryObjectRule()
+NormalLibraryTarget(bsdemul,$(OBJS))
+LintLibraryTarget(bsdemul,$(SRCS))
+NormalLintTarget($(SRCS))
+
+Berklib.c:  $(XLIBSYSVDIR)/Berklib.c
+	$(RM) Berklib.c
+	$(LN) $(XLIBSYSVDIR)/Berklib.c .
+
+depend::  Berklib.c
+
+DependTarget()

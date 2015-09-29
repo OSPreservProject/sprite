@@ -1,0 +1,29 @@
+'\" Copyright 1991 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/cmds/migcom/sprite/RCS/migcom.man,v 1.1 91/05/28 16:22:34 kupfer Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS MIGCOM cmds
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+migcom \- Back-end for Matchmaker Interface Generator
+.SH SYNOPSIS
+\fBmigcom\fR \fIstuff\fR
+.BE
+
+.SH DESCRIPTION
+.PP
+.B Migcom
+is the back-end for the MIG RPC stub generator.  See the man page for 
+.B mig
+for further details.
+
+.SH KEYWORDS
+RPC, mig

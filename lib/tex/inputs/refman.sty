@@ -1,0 +1,493 @@
+% This is REFMAN.STY by H.Partl, TU Wien, Version 1.0 of 25 Nov 1988.
+% Document Style Option to `article' and `report',
+% for technical reference manuals, users' guides and articles,
+% with a design similar to that of the PostScript Reference Manual:
+%     All pages have a wide left margin and no right margin, and section
+%     headings and other `guiding' material appear in that margin.
+% Supports one-column only. REFMAN should be specified as the LAST
+% optional argument of the \documentstyle command, e.g.
+%     \documentstyle[11pt,twoside,german,refman]{article}
+%
+% It CAN be used with twoside, fleqn and others.
+% It can NOT be used with twocolumn, titlepage, fullpage, a4, a4wide
+% and others.
+%
+% +-----------------------------------------------------------------+
+% ! This style file has been designed for reference manuals, users' !
+% ! guides, short instants, and related papers at the EDP centre of !
+% ! the Technical University of Vienna. It must be re-designed and  !
+% ! changed before application at any other institution or for any  !
+% ! other purpose.                                                  !
+% +-----------------------------------------------------------------+
+% Copyright H.Partl TU Wien 1988.
+     
+% Process this file only once:
+\@ifundefined{leftmarginwidth}{}{\endinput}
+     
+\typeout{ TU Wien Refman Style -  Version 1.0 as of 25 Nov 1988}
+     
+\newdimen\leftmarginwidth % value of odd & evensidemargin, set below.
+\newdimen\fullwidth % = \textwidth + \leftmarginwidth
+\newdimen\emptyheadtopmargin % used by some pagestyles
+\newdimen\emptyfoottopmargin % dto.
+     
+% \longhrule and \longthickhrule are defined for \hrule's of width \fullwidth
+     
+\def\longhrule{\par\hbox to \linewidth{\hss
+               \vrule width \fullwidth height 0.4pt depth 0pt}\par}
+\def\longthickhrule{\par\hbox to \linewidth{\hss
+               \vrule width \fullwidth height 1.0pt depth 0pt}\par}
+     
+% Re-definitions of the \section commands to use \fullwidth and smaller
+% vertical skips and smaller fonts.
+% (Note that the afterskip must be >zero, not =zero)
+     
+\def\secshape{\leftskip=-\leftmarginwidth % use \fullwidth
+              \rightskip=\@flushglue % raggedright
+              \hyphenpenalty=2000} % no hyphenation
+     
+\def\section{\@startsection {section}{1}{\z@}{-2ex plus -1ex minus
+    -.2ex}{0.5ex plus .2ex}{\secshape\large\bf}}
+\def\subsection{\@startsection{subsection}{2}{\z@}{-1.5ex plus -.5ex minus
+   -.2ex}{0.5ex plus .2ex}{\secshape\normalsize\bf}}
+\def\subsubsection{\@startsection{subsubsection}{3}{\z@}{-1.5ex plus
+-.5ex minus -.2ex}{0.5ex plus .2ex}{\secshape\normalsize\rm}}
+\def\paragraph{\@startsection
+     {paragraph}{4}{\z@}{2ex plus 1ex minus .2ex}{-1em}{\normalsize\bf}}
+\def\subparagraph{\@startsection
+     {subparagraph}{4}{\parindent}{2ex plus 1ex minus
+     .2ex}{-1em}{\normalsize\bf}}
+     
+% For ARTICLE:
+% Re-definitions of \maketitle and \part (\clearpage, \fullwidth, \hrules).
+% This \maketitle prints the \title only.
+% A \makeauthor command is defined to print the \author (to be used either
+% just after \maketitle or at the end of the article, without \thanks).
+     
+\def\@redefinemaketitle{
+     
+\def\maketitle{\par
+ \begingroup
+   \if@twocolumn
+     \twocolumn[\@maketitle]
+     \else \newpage
+     \global\@topnum\z@        % Prevents figures from going at top of page.
+     \@maketitle \fi\thispagestyle{plain}
+ \endgroup
+ \setcounter{footnote}{0}}
+     
+\def\@maketitle{\clearpage
+     \longthickhrule\bigskip
+     {\secshape\parskip\z@\parindent\z@ \Large\bf \@title\par}
+     \bigskip\longthickhrule\bigskip}
+     
+\def\makeauthor{\par\nopagebreak\vskip 2ex plus 1ex minus 1ex
+     \begin{flushright}\normalsize\sl \@author \end{flushright}\par
+     \vskip 2ex plus 1ex minus 1ex\relax }
+     
+\def\and{\\*}
+\def\thanks{\footnote}
+     
+% In \part, only \thepart (the Roman part number) is printed, without
+% the word `Part' in front of it, and \markboth is replaced by \@mkboth
+% to preserve the marks with the myheadings and myfootings page styles.
+     
+\def\part{\par \clearpage \thispagestyle{plain}
+          \@afterindentfalse \secdef\@part\@spart}
+     
+\def\@part[##1]##2{\ifnum \c@secnumdepth >\m@ne \refstepcounter{part}
+     \addcontentsline{toc}{part}{\thepart \hspace{1em}##1}\else
+     \addcontentsline{toc}{part}{##1}\fi
+     \longhrule\medskip
+     {\secshape\parskip\z@\parindent\z@ \Large\rm
+     \ifnum \c@secnumdepth >\m@ne \thepart.\quad \fi ##2\par}
+     \medskip\longhrule\bigskip \@mkboth{}{}\@afterheading }
+     
+\def\@spart##1{\longhrule\medskip
+     {\secshape\parskip\z@\parindent\z@ \Large\rm ##1\par}
+     \medskip\longhrule\bigskip \@afterheading }
+     
+} % end of \@redefinemaketitle
+     
+% For REPORT:
+% Re-definition of \chapter (\clearpage, \fullwidth, \hrules).
+% However, \maketitle and \part remain unchanged.
+     
+\def\@redefinechapter{
+     
+\def\@makechapterhead##1{\longthickhrule\bigskip
+     {\secshape\parskip\z@\parindent\z@ \Large\bf
+      \ifnum \c@secnumdepth >\m@ne \@chapapp{} \thechapter.\quad \fi
+      ##1\par}
+      \bigskip\longthickhrule\bigskip}
+     
+\def\@makeschapterhead##1{\longthickhrule\bigskip
+     {\secshape\parskip\z@\parindent\z@ \Large\bf ##1\par}
+     \bigskip\longthickhrule\bigskip}
+     
+% No word `Chapter'/`Kapitel' before the chapter number, but the word
+% `Appendix'/`Anhang' will still be inserted after \appendix !
+\def\@chapapp{}
+     
+% Note that \chapter itself is defined like this:
+% \def\chapter{\clearpage \thispagestyle{plain} \global\@topnum\z@
+% \@afterindentfalse \secdef\@chapter\@schapter}
+% This definition and those of \@chapter and \@schapter remain unchanged.
+     
+} % end of \@redefinechapter
+     
+% Now, do either the first one or the second one, depending on the main
+% document style (article= \chapter undefined, or report= \chapter defined).
+% (Note that \par must not appear inside \@ifundefined, therefore this
+% indirect approach is taken.)
+     
+\@ifundefined{chapter}{\@redefinemaketitle}{\@redefinechapter}
+     
+% Re-defintion of the \marginpar command to use always the left margin
+% (never the right margin). Be careful that Marginpars do not come to
+% near to each other!
+     
+\def\@addmarginpar{\@next\@marbox\@currlist{\@cons\@freelist\@marbox
+    \@cons\@freelist\@currbox}\@latexbug\@tempcnta\@ne
+%-  \if@twocolumn
+%-      \if@firstcolumn \@tempcnta\m@ne \fi
+%-  \else
+%-    \if@mparswitch
+%-       \ifodd\c@page \else\@tempcnta\m@ne \fi
+%-    \fi
+%-    \if@reversemargin \@tempcnta -\@tempcnta \fi
+%-  \fi
+    \@tempcnta\m@ne % always to left margin <---
+    \ifnum\@tempcnta <\z@ \global\setbox\@marbox\box\@currbox \fi
+    \@tempdima\@mparbottom \advance\@tempdima -\@pageht
+       \advance\@tempdima\ht\@marbox \ifdim\@tempdima >\z@
+       \@warning{Marginpar on page \thepage\space moved}\else\@tempdima\z@ \fi
+    \global\@mparbottom\@pageht \global\advance\@mparbottom\@tempdima
+       \global\advance\@mparbottom\dp\@marbox
+       \global\advance\@mparbottom\marginparpush
+    \advance\@tempdima -\ht\@marbox
+    \global\ht\@marbox\z@ \global\dp\@marbox\z@
+    \vskip -\@pagedp \vskip\@tempdima\nointerlineskip
+    \hbox to\columnwidth
+      {\ifnum \@tempcnta >\z@
+          \hskip\columnwidth \hskip\marginparsep
+        \else \hskip -\marginparsep \hskip -\marginparwidth \fi
+       \box\@marbox \hss}
+    \vskip -\@tempdima
+    \nointerlineskip
+    \hbox{\vrule \@height\z@ \@width\z@ \@depth\@pagedp}}
+     
+% Special Marginpars:
+%   \marginlabel{X} puts X into a flushright Marginpar.
+%                   To be used like description-items or short
+%                   \subsubsection* headings.
+%   \attention      puts ! --> to the left of the text.
+%                   To mark an important piece of text.
+%   \seealso{X}     puts a small ---> X to the very left.
+%                   To mark a reference within the text.
+% These three commands start with an empty \mbox, i.e. they can be used
+% before the first word of a paragraph and still have the desired
+% effect, namely that the marginal stuff appears next to the first
+% line of this paragraph, not at the last line of the previous one.
+% They end with \ignorespaces, i.e. blanks (spaces) after the argument's
+% } are allowed and do NOT appear in the printed text.
+% Like all \marginpar's, they cannot be used in math mode or inside boxes.
+     
+\def\marginlabel#1{\mbox{}\marginpar{\raggedleft #1}\ignorespaces}
+\def\attention{\mbox{}\marginpar{\raggedleft \large\bf ! $\rightarrow$}}
+\def\seealso#1{\mbox{}\marginpar{\small $\rightarrow$ #1}\ignorespaces}
+     
+% The description environment is redefined such that the item labels use
+% the whole left margin (and are in roman, right bound, with colon).
+%  \labelwidth = \leftmarginwidth + previous\@totalleftmargin +
+%                + new\leftmargin - \labelsep
+% \descriptioncolontrue and -false can be used to select whether a colon
+% is added to the item label.
+% \descriptionlefttrue and -false can be used to select whether the item labels
+% are set left bound or right bound.
+     
+\newif\ifdescriptioncolon \descriptioncolontrue
+\newif\ifdescriptionleft \descriptionleftfalse
+\def\descriptionlabel#1{\ifdescriptionleft\else \hfil \fi
+     \rm #1\ifdescriptioncolon :\fi
+     \ifdescriptionleft \hfil \fi}
+\def\description{\list{}{\labelsep=\marginparsep
+     \labelwidth=\leftmarginwidth \advance\labelwidth by \@totalleftmargin
+     \advance\labelwidth by \leftmargin \advance\labelwidth by -\labelsep
+     \let\makelabel=\descriptionlabel}}
+\let\enddescription=\endlist
+     
+% The maxipage environment is a minipage that uses the \fullwidth,
+% with \hrules above and below. Marginpars are not allowed.
+% To be used for wide tables, long math equations, and the like.
+% It cannot be split across pages.
+% It can be used in floats, e.g. like
+%    \begin{table}\begin{maxipage}
+%    ... a wide table ... \caption{the caption}
+%    \end{maxipage}\end{table}
+% \maxipageruletrue and -false can be used to select whether \hrule's are
+% added to the minpage.
+     
+\newif\ifmaxipagerule \maxipageruletrue
+\def\maxipage{\par % (here a \vskip\parskip will happen by the final \par)
+              \mbox{}\kern-\leftmarginwidth \kern-\@totalleftmargin
+              \begin{minipage}{\fullwidth}
+              \medskip \ifmaxipagerule \hrule\medskip \fi
+              \parskip = 0.5\baselineskip % <--- same as outside minipage
+              \def\marginpar{\typeout{Marginpar not allowed within Maxipage.}}}
+\def\endmaxipage{\par \vskip\parskip
+                 \medskip \ifmaxipagerule \hrule\medskip \fi
+                 \end{minipage}\par}
+     
+% The fullpage environment changes the page layout such that normal text
+% and all environments use the \fullwidth. Marginpars are not allowed.
+% Both \begin{fullpage} and \end{fullpage} start a new page before switching
+% to the other layout.
+% To be used for one or several special pages where the full line length is
+% needed.
+     
+\def\fullpage{\clearpage \leftmarginwidth\z@ \textwidth=\fullwidth
+              \oddsidemargin=\z@ \evensidemargin\z@
+              \hsize=\fullwidth \linewidth=\fullwidth \columnwidth=\fullwidth
+              \def\marginpar{\typeout{Marginpar not allowed within Fullpage.}}}
+\def\endfullpage{\clearpage}
+     
+% The example environment is a verse enironment with \tt font and with
+% trying to avoid page breaks at the \begin{example}. Lines in the example
+% should be separated by \\*.
+     
+\def\example{\@beginparpenalty=\@highpenalty \verse \tt }
+\let\endexample=\endverse
+     
+% Page Styles:
+% The pagestyles plain, headings and myheadings are redefined and new
+% pagestyles footings and myfootings are defined, which all use the
+% \fullwidth, with \thepage on the outer side of the (odd/even) page
+% and some with a \hrule below the head line or above the foot line.
+% My favourite is
+%    \pagestyle{myfootings}
+%    \markboth{the title of the paper}{the title of the paper}
+% (Note that the \markboth is not destroyed by the new \part command.)
+     
+% The pagestyles headings and myheadings set \topmargin to \emptyfoottopmargin.
+% The pagestyles footings and myfootings set \topmargin to \emptyheadtopmargin.
+% The pagestyles empty and plain do not change \topmargin.
+% Therefore, within one document,
+% - you may switch between headings, myheadings, empty, and plain,
+% - or you may switch between footings, myfootings, empty, and plain,
+% - but you should not mix (my)headings with (my)footings pages.
+     
+% As a compromise between article (section+subsection) and report
+% (chapter+section), \sectionmark (without uppercase) will be put on
+% both side pages in the headings and footings style (neither chapter
+% nor subsection).
+     
+\def\ps@plain{\let\@mkboth\@gobbletwo
+     \def\@oddhead{}\def\@evenhead{}%
+     \def\@oddfoot{\rm\hfil\thepage}%
+     \def\@evenfoot{\hss \hbox to \fullwidth{\normalsize\rm\thepage\hfil}}}
+     
+\if@twoside         % If two-sided printing.
+\def\ps@headings{\let\@mkboth\markboth \topmargin\emptyfoottopmargin
+\def\@oddfoot{}\def\@evenfoot{}%       No feet.
+\def\@evenhead{\hss\vbox{\hsize=\fullwidth
+               \hbox to \fullwidth{\normalsize\rm\thepage \hfil
+                                   \small\sl \leftmark}%
+               \vskip 3pt \hrule}}%
+\def\@oddhead{\hss\vbox{\hsize=\fullwidth
+               \hbox to \fullwidth{\small\sl \rightmark \hfil
+                                   \normalsize\rm\thepage}%
+               \vskip 3pt \hrule}}%
+\def\sectionmark##1{\markboth
+  {{\ifnum \c@secnumdepth >\z@ \thesection\hskip 1em\relax \fi ##1}}%
+  {{\ifnum \c@secnumdepth >\z@ \thesection\hskip 1em\relax \fi ##1}}}%
+\def\subsectionmark##1{}}
+\else               % If one-sided printing.
+\def\ps@headings{\let\@mkboth\markboth \topmargin\emptyfoottopmargin
+\def\@oddfoot{}\def\@evenfoot{}%     No feet.
+\def\@oddhead{\hss\vbox{\hsize=\fullwidth
+               \hbox to \fullwidth{\small\sl \rightmark \hfil
+                                   \normalsize\rm\thepage}%
+               \vskip 3pt \hrule}}%
+\def\sectionmark##1{\markright {{\ifnum \c@secnumdepth >\z@
+    \thesection\hskip 1em\relax \fi ##1}}}}
+\fi
+     
+\if@twoside         % If two-sided printing.
+\def\ps@footings{\let\@mkboth\markboth \topmargin\emptyheadtopmargin
+\def\@oddhead{}\def\@evenhead{}%       No heads.
+\def\@evenfoot{\hss\vbox{\hsize=\fullwidth \hrule \vskip 3pt
+               \hbox to \fullwidth{\normalsize\rm\thepage \hfil
+                                   \small\sl\leftmark}}}%
+\def\@oddfoot{\hss\vbox{\hsize=\fullwidth \hrule \vskip 3pt
+              \hbox to \fullwidth{\small\sl\rightmark \hfil
+                                  \normalsize\rm\thepage}}}%
+\def\sectionmark##1{\markboth
+ {{\ifnum \c@secnumdepth >\z@ \thesection\hskip 1em\relax \fi ##1}}%
+ {{\ifnum \c@secnumdepth >\z@ \thesection\hskip 1em\relax \fi ##1}}}%
+\def\subsectionmark##1{}}
+\else               % If one-sided printing.
+\def\ps@headings{\let\@mkboth\markboth \topmargin\emptyheadtopmargin
+\def\@oddhead{}\def\@evenhead{}%     No heads.
+\def\@oddfoot{\hss\vbox{\hsize=\fullwidth \hrule \vskip 3pt
+              \hbox to \fullwidth{\small\sl\rightmark \hfil
+                                  \normalsize\rm\thepage}}}%
+\def\sectionmark##1{\markright {{\ifnum \c@secnumdepth >\z@
+    \thesection\hskip 1em\relax \fi ##1}}}}
+\fi
+     
+\def\ps@myheadings{\let\@mkboth\@gobbletwo \topmargin\emptyfoottopmargin
+\def\@evenhead{\hss\vbox{\hsize=\fullwidth
+               \hbox to \fullwidth{\normalsize\rm\thepage \hfil
+                                   \small\sl\leftmark}%
+               \vskip 3pt \hrule}}%
+\def\@oddhead{\hss\vbox{\hsize=\fullwidth
+               \hbox to \fullwidth{\small\sl\rightmark \hfil
+                                   \normalsize\rm\thepage}%
+               \vskip 3pt \hrule}}%
+\def\@oddfoot{}\def\@evenfoot{}\def\sectionmark##1{}\def\subsectionmark##1{}}
+     
+\def\ps@myfootings{\let\@mkboth\@gobbletwo \topmargin\emptyheadtopmargin
+\def\@evenfoot{\hss\vbox{\hsize=\fullwidth \hrule \vskip 3pt
+               \hbox to \fullwidth{\normalsize\rm\thepage \hfil
+                                   \small\sl\leftmark}}}%
+\def\@oddfoot{\hss\vbox{\hsize=\fullwidth \hrule \vskip 3pt
+              \hbox to \fullwidth{\small\sl\rightmark \hfil
+                                  \normalsize\rm\thepage}}}%
+\def\@oddhead{}\def\@evenhead{}\def\sectionmark##1{}\def\subsectionmark##1{}}
+     
+% The \condbreak{length} command is defined for conditional pagebreaks:
+% If less then length vertical space remains on the current page, then
+% a new page is started. This means that the following stuff remains
+% together (either on the current or the next page).
+     
+\def\condbreak#1{\vskip 0pt plus #1\pagebreak[3]\vskip 0pt plus -#1\relax}
+     
+% The \noparskip command is defined to take away the vertical Parskip,
+% just like \noindent takes away the horizontal Parindent.
+     
+\def\noparskip{\vskip-\parskip}
+     
+% Correction of a LaTeX bug that occurs when marginpars and footnotes
+% appear on the same page (by Chris Rowley, TUGboat 9/2 Aug.88)
+     
+\def\@specialoutput{\ifnum\outputpenalty > -\@Mii
+    \@doclearpage
+  \else
+    \ifnum \outputpenalty <-\@Miii
+       \ifnum\outputpenalty<-\@MM \deadcycles\z@\fi
+       \global\setbox\@holdpg\vbox{\unvbox\@cclv}
+    \else \setbox\@tempboxa\box\@ccl
+        \@pagedp\dp\@holdpg \@pageht\ht\@holdpg
+        \unvbox\@holdpg
+%-      \ifvoid\footins\else\advance\@pageht\ht\footins
+%-        \advance\@pageht\skip\footins \advance\@pagedp\dp\footins
+%-        \insert\footins{\unvbox\footins}\fi
+        \@next\@currbox\@currlist{\ifnum\count\@currbox >\z@
+% moved --->
+                \ifvoid\footins\else\advance\@pageht\ht\footins
+                  \advance\@pageht\skip\footins \advance\@pagedp\dp\footins
+                  \insert\footins{\unvbox\footins}\fi
+            \@addtocurcol\else
+% moved and changed --->
+                \ifvoid\footins\else
+                  \insert\footins{\unvbox\footins}\fi
+            \@addmarginpar\fi}\@latexbug
+    \ifnum \outputpenalty <\z@ \penalty \z@ \fi
+  \fi\fi}
+     
+     
+% Setting of the Layout Parameters and Dimensions:
+% ------------------------------------------------
+     
+% Switch to \onecolumn and disable \twocolumn.
+\onecolumn
+\let\onecolumn=\relax
+\def\twocolumn{\typeout{Twocolumn not allowed with Refman.}}
+     
+% Horizontal Layout:
+%     \fullwidth = \leftmarginwidth + \textwidth
+%     \odd&evensidemargin = \leftmarginwidth - 3mm
+%                           (DIN-A4 paper is about 6mm narrower than 8.5 Inch.)
+%     \marginparwidth = \leftmarginwidth - \marginparsep
+     
+% \textwidth, \columnwidth, \linewidth remain unchanged from art10...rep12
+\fullwidth=6.5in
+\leftmarginwidth=\fullwidth \advance\leftmarginwidth by -\textwidth
+\oddsidemargin=\leftmarginwidth \advance\oddsidemargin by -3mm
+\evensidemargin=\oddsidemargin
+\marginparwidth=\leftmarginwidth \advance\marginparwidth by -\marginparsep
+     
+% The horizontal layout can be changed in the preamble with the command
+%     \setleftmarginwidth{length}
+% This sets \leftmarginwidth=length and \textwidth=\fullwidth-<length> .
+% Example: \setleftmarginwidth{2.5in} ---> 2.5 : 4 = 4 : 6.5
+     
+\newdimen\templength@
+\def\setleftmarginwidth#1{\templength@=#1\relax
+    \leftmarginwidth=\templength
+    \textwidth=\fullwidth \advance\textwidth by -\templength
+    \oddsidemargin=\leftmarginwidth \advance\oddsidemargin by -3mm
+    \evensidemargin=\oddsidemargin
+    \marginparwidth=\leftmarginwidth \advance\marginparwidth by -\marginparsep
+    \hsize=\textwidth \linewidth=\textwidth \columnwidth=\textwidth }
+     
+% Vertical Layout (for DIN-A4 paper):
+%     The Top Margin is made smaller by 4.5 baselineskips,
+%     the Head and Foot separations are increased by 0.5 baselineskips each,
+%     the Textheight is increased by 10 lines.
+%     On DIN-A4 paper (which is about 2 lines higher than 11 Inch), this
+%     makes the Bootom Margin equal to the Top Margin.
+%     \raggedbottom is switched on (even for twoside).
+%     With some pagestyles, the page contents are shifted up or down a bit,
+%     by using \emptyheadtopmargin or \emptyfoottopmargin, respectively.
+     
+\advance\topmargin by -4.5\baselineskip
+\advance\headsep by 0.5\baselineskip
+\advance\footskip by 0.5\baselineskip
+\advance\textheight by 10\baselineskip
+\@colht=\textheight \@colroom=\textheight
+\emptyheadtopmargin=\topmargin \advance\emptyheadtopmargin by -1\baselineskip
+\emptyfoottopmargin=\topmargin \advance\emptyfoottopmargin by 1\baselineskip
+\raggedbottom
+     
+% Zero minimal vertical separation between Marginpars (because we use a lot
+% of them, and all must find room above each other).
+     
+\marginparpush=\z@
+     
+% Paragraph Layout:
+%     Zero Parindent and non-zero Parskip. The stretchable glue in \parskip
+%     helps LaTeX in finding the best place for page breaks.
+     
+\parskip=0.5\baselineskip \advance\parskip by 0pt plus 2pt
+\parindent=\z@
+     
+% Redefinition of the vertical spacing in the list environments
+% to use the same as \parskip in all relevant places (normalsize only):
+%   \parsep = \parskip
+%   \itemsep = \z@ % add nothing to \parskip between items
+%   \topsep = \z@ % add nothing to \parskip before first item
+     
+\def\@listI{\leftmargin\leftmargini
+   \topsep\z@ \parsep\parskip \itemsep\z@}
+\let\@listi\@listI
+\@listi
+     
+\def\@listii{\leftmargin\leftmarginii
+   \labelwidth\leftmarginii\advance\labelwidth-\labelsep
+   \topsep\z@ \parsep\parskip \itemsep\z@}
+     
+\def\@listiii{\leftmargin\leftmarginiii
+    \labelwidth\leftmarginiii\advance\labelwidth-\labelsep
+    \topsep\z@ \parsep\parskip \itemsep\z@}
+     
+% Note that listiv, listv and listvi don't change vertical parameters.
+     
+     
+% Switch on the new version of the plain pagestyle.
+\pagestyle{plain}
+     
+% This is the end of REFMAN.STY.
+\endinput
+     

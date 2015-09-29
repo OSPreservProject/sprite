@@ -1,0 +1,74 @@
+@c ------------------------------START TEXT FROM ../opncls.c
+@section Opening and Closing BFDs
+
+
+@findex bfd_openr
+@subsubsection @code{bfd_openr}
+Opens the file supplied (using @code{fopen}) with the target supplied, it
+returns a pointer to the created BFD.
+
+If NULL is returned then an error has occured.
+Possible errors are no_memory, invalid_target or system_call error.
+@example
+bfd* bfd_openr(CONST char *filename,CONST char*target);
+@end example
+
+
+@findex bfd_fdopenr
+@subsubsection @code{bfd_fdopenr}
+bfd_fdopenr is to bfd_fopenr much like  fdopen is to fopen. It opens a BFD on
+a file already described by the @var{fd} supplied. 
+
+Possible errors are no_memory, invalid_target and system_call error.
+@example
+bfd * bfd_fdopenr(CONST char *filename, CONST char *target, int fd);
+@end example
+
+
+@findex bfd_openw
+@subsubsection @code{bfd_openw}
+Creates a BFD, associated with file @var{filename}, using the file
+format @var{target}, and returns a pointer to it.
+
+Possible errors are system_call_error, no_memory, invalid_target.
+@example
+bfd * bfd_openw(CONST char *filename, CONST char *target);
+@end example
+
+
+@findex bfd_close
+@subsubsection @code{bfd_close}
+This function closes a BFD. If the BFD was open for writing, then
+pending operations are completed and the file written out and closed.
+If the created file is executable, then @code{chmod} is called to mark
+it as such.
+
+All memory attached to the BFD's obstacks is released. 
+
+@code{true} is returned if all is ok, otherwise @code{false}.
+@example
+boolean bfd_close(bfd *);
+@end example
+
+
+@findex bfd_create
+@subsubsection @code{bfd_create}
+This routine creates a new BFD in the manner of @code{bfd_openw}, but without
+opening a file. The new BFD takes the target from the target used by
+@var{template}. The format is always set to @code{bfd_object}.
+
+@example
+bfd * bfd_create(CONST char *filename, bfd *template);
+@end example
+
+
+@findex bfd_alloc_size
+@subsubsection @code{bfd_alloc_size}
+Return the number of bytes in the obstacks connected to the supplied
+BFD.
+@example
+bfd_size_type bfd_alloc_size(bfd *abfd);
+@end example
+
+
+@c ------------------------------END TEXT FROM ../opncls.c

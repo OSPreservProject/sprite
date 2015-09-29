@@ -1,0 +1,8 @@
+
+
+          edprocs [proc...]
+               Writes the named procedures, or all currently defined
+               procedures, to a temporary file, then calls an editor
+               on it (as specified by the EDITOR environment variable,
+               or vi if none is specified), then sources the file back
+               in if it was changed.

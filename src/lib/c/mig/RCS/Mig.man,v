@@ -1,0 +1,409 @@
+head     2.0;
+branch   ;
+access   ;
+symbols  no-auto-remigrate:2.0 installed:2.0;
+locks    ; strict;
+comment  @@;
+
+
+2.0
+date     90.03.10.13.13.11;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     90.02.28.11.00.30;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.02.16.14.41.56;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@man page for migration library
+@
+
+
+2.0
+log
+@Changing version numbers.
+@
+text
+@\fB'\" $Header: /sprite/src/lib/c/mig/RCS/Mig.man,v 1.2 90/02/28 11:00:30 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS Mig lib
+.BS
+.SH NAME
+Mig \- obtain or update information in the migration information database.
+.SH SYNOPSIS
+.nf
+\fB#include	<mig.h>\fR
+
+Mig_Info *
+\fBMig_GetInfo\fR(\fIspriteID\fP)
+
+int
+\fBMig_GetAllInfo\fR(\fIinfoArray, numHosts\fP)
+
+int
+\fBMig_RequestIdleHosts\fR(\fInumHosts, priority, flags, callBackPtr, hostArray\fP)
+
+int
+\fBMig_ConfirmIdle\fR(\fIspriteID\fP)
+
+int
+\fBMig_ReturnHosts\fR(\fInumHosts, hostArray\fP)
+
+int
+\fBMig_DeleteHost\fR(\fIspriteID\fP)
+
+int
+\fBMig_Evict\fR()
+
+char *
+\fBMig_GetPdevName\fR(\fIglobal\fP)
+
+int
+\fBMig_GetIdleNode\fR()
+
+int
+\fBMig_Done\fR(\fIspriteID\fP)
+
+.SH ARGUMENTS
+.AS void (*callBackPtr)() in
+.AP int spriteID in
+The Sprite ID of the host for which information should be obtained or updated.
+.AP Mig_Info infoArray[] out
+A buffer to hold Mig_Info entries returned by the Mig_GetAllInfo routine.
+The size of the buffer is specified in the \fInumHosts\fP variable.
+.AP int numHosts in
+The number of Mig_Info structures contained in \fIinfoArray\fP.
+Or, the number of hosts requested from \fBMig_RequestIdleHosts\fR and
+the number of hosts returned to \fBMig_ReturnIdle\fR.  
+.AP int priority in
+Priority of processes to be migrated to idle hosts (see below).  
+.AP int flags in
+Flags to be passed to the migration daemon (see below).
+.AP void (*callBackPtr)() in
+Routine to call if not enough hosts are available and
+additional hosts are later available.
+.AP int global in
+Whether to return the name of the pseudo-device for the global daemon
+or host-specific daemon.
+.BE
+.SH DESCRIPTION
+These functions are used to obtain (or update) information about hosts on the 
+Sprite network.  There are routines to get information about specific
+hosts or all the hosts on the network, to select one or more idle hosts for
+process migration, to cause processes to be evicted, or to remove
+hosts that are down from the list of hosts on the network.  
+.PP
+Most of the routines interact with a single network-wide daemon, known
+as the \fIglobal daemon\fP, to obtain information or make requests.
+This \fBmigd\fP daemon maintains state about all hosts on the network,
+including their load averages, idle time, and availability for use
+with migration.   In addition, each host runs a per-host instance of
+\fBmigd\fR that samples load and evicts processes automatically when
+it detects user input.    The \fBMig\fR library opens a pseudo-device
+to communicate with the appropriate \fBmigd\fR daemon (global or
+local) depending on the operation being performed.  Also, if an error
+occurs communicating with a daemon, the \fBMig\fR library
+reestablishes communication.
+.SH GETTING HOST INFORMATION
+The migration daemon, and the migration library, communicate using a
+structure defined in mig.h, known  as a Mig_Info structure.  
+Each host has a Mig_Info structure associated with it.  The structure
+has another structure included within it; the Mig_LoadVector is
+updated periodically by the \fBmigd\fR process on each host.  The rest
+of the data in a Mig_Info structure are established at boot-time or are
+maintained by the global daemon.  
+.PP
+The global daemon maintains the state of each host.  The states are
+defined in mig.h.  The most important ones are MIG_HOST_DOWN, which
+indicates that the rest of the Mig_Info structure is irrelevant with
+the exception of loadVec.timestamp, which indicates when the host was
+last up; MIG_HOST_IDLE, indicating that a host is available for
+migration; MIG_HOST_FULL, which shows that the host is accepting
+migration but already has foreign processes; and MIG_HOST_ACTIVE,
+which indicates that a user is actively using the machine or the
+machine's load is too high to permit foreign processes.
+.PP
+The load vector includes weighted
+average CPU utilizations and ready-queue lengths, as well as the time since
+input was last received from users directly logged into the machine.  (Remote
+logins do not affect idle time.)  Finally, each entry indicates whether the
+host is willing to accept processes for migration.   \fBmigd\fR 
+is responsible for determining whether migration
+is allowed, based on factors such as load and idle time.  
+.PP
+\fBMig_GetInfo()\fR returns a pointer to a Mig_Info structure based on the sprite 
+ID of a host. 
+The structure is statically allocated by Mig_GetInfo, and the contents of
+the structure may change on subsequent calls to Mig_GetInfo.  On
+error, a NULL pointer is returned.
+.PP
+\fBMig_GetAllInfo()\fR returns an array of Mig_Info structures.  The array
+must be allocated by the caller, and a pointer to the array must be
+passed to \fBMig_GetAllInfo()\fR, along with the size of the array.  The
+number of entries filled in \fiinfoArray\fP is returned.  On error, -1
+is returned and the global variable \fIerrno\fP indicates the nature
+of the error.  
+.PP
+.SH GETTING IDLE HOSTS
+The global daemon maintains open connections to both per-host
+\fBmigd\fR daemons and user processes that are using idle hosts.  User
+processes can request idle hosts using any of three priorities,
+MIG_LOW_PRIORITY, MIG_NORMAL_PRIORITY, and MIG_HIGH_PRIORITY.
+MIG_LOW_PRIORITY is for long-running background processes that are to
+be run at low execution priority.  MIG_NORMAL_PRIORITY is for normal,
+relatively short-lived processes such as compiles.  MIG_HIGH_PRIORITY
+is not yet in general use.  Hosts with foreign processes of one
+priority can still accept more processes of higher priority, so
+simulations won't interfere with compiles.
+.PP
+Processes communicate with the global daemon using ioctls, and
+normally, those streams are
+not readable. 
+The global daemon makes the streams readable to indicate that a change
+of state has occurred.  The \fBMig\fR library 
+relies on \fBselect()\fR to determine whether the global daemon has
+information about changes.  In this way, communication with the daemon
+may be minimized, since applications can check for new idle hosts or
+evictions on hosts they were using, without ever communicating with
+the daemon. 
+.PP
+\fBMig_RequestIdleHosts()\fR requests one or more idle hosts from the
+global daemon.   The number of hosts available is returned.  The
+\fIpriority\fR must be specified as one of the priorities listed
+above.  The \fIflags\fR may be 0 or MIG_PROC_AGENT, which indicates
+that the process requesting the host will not indicate when the
+processes being migrated are through, and instead the hosts to which
+the processes are migrated should monitor foreign processes and note
+when they are no longer in use for migration.   The \fIcallBackPtr\fR
+may be NULL or a pointer to a void function that will be invoked when
+additional hosts are available, if an insufficient number of hosts are
+granted by the global daemon at the time of the call.  \fIhostArray\fR
+points to an area that can hold up to \fInumHosts\fR host identifiers.
+.PP
+\fBMig_ConfirmIdle(\fIhostID\fB)\fR verifies that a host is still
+available.  If 
+the host is available, 
+\fBMig_ConfirmIdle()\fR returns 1 (TRUE).  If the host is not
+available, or an error occurs, \fBMig_ConfirmIdle()\fR returns 0 (FALSE).
+In this case, the caller may request a new idle host.  
+.PP
+\fBMig_ReturnHosts()\fR returns one or more idle hosts to the pool.
+Note: all hosts requested by a process are returned to the pool of
+idle hosts when the stream that connects the process to the global
+daemon is closed (i.e., when the process and all its children that may
+have inherited the stream have exited).  
+.SH BACKWARD COMPATIBILITY
+Two functions are implemented to provide a backward compatible
+interface for users of the original \fBMig\fR library.  
+.PP
+\fBMig_GetIdleNode()\fR returns the number of an idle node.  If no host is
+available, then 0 is returned.  On error, -1
+is returned and the global variable \fIerrno\fP indicates the nature
+of the error.  
+.PP
+\fBMig_Done()\fR returns a single host to the pool of idle hosts.
+.SH MISCELLANEOUS
+.PP
+\fBMig_DeleteHost()\fR removes a host from the database maintained by
+the global daemon.  The host must be down at the time.  This may be used
+if a host is removed from the network or renamed.
+.PP
+\fBMig_Evict()\fR performs an \fIioctl\fP to the local \fBmigd\fR
+daemon, requesting that it evict any foreign processes.  Normally,
+eviction is automatic when a host becomes active after being idle.
+This routine provides the \fBloadavg\fP program with the ability to
+request evictions at other times (for example, from a remote login).
+.PP
+\fBMig_GetPdevName()\fR is used by the migration library and by
+\fBmigd\fR to get the name of pseudo-devices to open.  It would not
+normally be used by other programs.
+.SH DIAGNOSTICS
+Most \fBMig\fR routines
+return zero if 
+all went well.  Otherwise 
+they return -1 and the \fIerrno\fR variable contains additional information
+about what error occurred.  \fBMig_GetIdleNode()\fR  and
+\fBMig_RequestIdleHosts()\fR   similarly return -1 on 
+error, but they return 0 if no idle host is available.  \fBMig_GetInfo()\fR
+returns
+NULL on error. 
+.SH FILES
+.IP /sprite/admin/migd.log
+The global migration daemon error log.  
+.IP /hosts/$HOST/migd.log
+The error log used by host $HOST.
+.IP /sprite/admin/migInfo.pdev
+The pseudo-device used to communicate with the global daemon.
+.IP /hosts/$HOST/migInfo.pdev
+The pseudo-device used to communicate with the local daemon.
+.IP /sprite/admin/migd.check
+The file used to store the most recent information about host uptimes.
+.SH KEYWORDS
+migration, load average, idle time, pseudo-device, eviction
+.SH SEE ALSO
+migd, loadavg, pmake, pdev
+@
+
+
+1.2
+log
+@documented new library.
+@
+text
+@d1 1
+a1 1
+\fB'\" $Header: /sprite/src/lib/c/mig/RCS/Mig.man,v 1.1 90/02/16 14:41:56 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+\fB'\" $Header: /sprite/src/lib/c/mig/RCS/Mig.man,v 1.3 89/07/19 15:59:19 douglis Exp $ SPRITE (Berkeley)
+a9 1
+\fB#include	<db.h>\fR
+d15 1
+a15 1
+\fBMig_GetAllInfo\fR(\fIinfoArray, numEntries\fP)
+d18 1
+a18 1
+\fBMig_GetIdleNode\fR()
+d24 10
+a33 1
+\fBMig_Done\fR(\fIspriteID\fP)
+d36 1
+a36 1
+\fBMig_OpenInfo\fR(\fIfileType, writing, handlePtr\fP)
+d38 2
+a39 2
+int 
+\fBMig_UpdateInfo\fR(\fIhostID, infoPtr, handlePtr\fP)
+d42 1
+a42 1
+.AS Mig_FileType fileType 
+d47 2
+a48 2
+The size of the buffer is specified in the \fInumEntries\fP variable.
+.AP int numEntries in
+d50 12
+a61 8
+.AP Mig_FileType fileType in
+A specification for which database file to access, the global one (\fBMIG_SHARED\fR)
+or the host-specific one (\fBMIG_PRIVATE\fR).
+.AP int writing in
+If non-zero, then the database file is opened for writing; otherwise,
+reading.
+.AP Db_Handle *handlePtr out
+A pointer to a "database handle".
+d66 3
+a68 4
+hosts or all the hosts on the network, or to select an idle host for
+process migration.  There is also a routine to update the information
+for a host.  (In order to update the database, a routine to open the
+database file and obtain a handle for the database must be called first.)
+d70 31
+a100 4
+Each host maintains its own entry in a common database, and it also maintains 
+the same information in a separate file, one per host.  The entries are 
+ASCII text and are therefore machine-independent.  The entries are manipulated
+using routines from the \fBMig_\fR library.  Each entry includes weighted
+d104 2
+a105 2
+host is willing to accept processes for migration.  The user-level program
+that updates the database is responsible for determining whether migration
+a107 18
+The \fBMig_\fR library converts between the ASCII representation stored in the
+database and an internal C structure, known as a Mig_Info structure.
+A Mig_Info structure is defined as follows:
+.DS L
+.ta 4n 2.5c 6.5c
+\fBtypedef struct\fR {
+	\fBint\fR    \fIhostID\fR;		/* host for which info valid */
+	\fBint\fR    \fIutils\fR[MIG_NUM_LOAD_VALUES];
+						/* avg utilizations (percent) */
+	\fBdouble\fR \fIlengths\fR[MIG_NUM_LOAD_VALUES];
+						/* avg ready-queue lengths */
+	\fBint\fR    \fIbootTime\fR;		/* when host last rebooted  */
+	\fBint\fR    \fItimestamp\fR;		/* when info last updated */
+	\fBint\fR    \fInoInput\fR;		/* time since last input */
+	\fBint\fR    \fIallowMigration\fR;	/* host allowing migration? */
+} Mig_Info;
+.DE
+.PP
+d121 52
+d176 1
+a176 2
+of the error.  The host is marked in the migration database to indicate
+that it is being used.
+d178 2
+a179 6
+\fBMig_ConfirmIdle()\fR verifies that a host is still available
+without actually locking the database file.  If the host is available,
+\fBMig_ConfirmIdle()\fR returns 1 (TRUE).  If the host is not
+available, or an error occurs, \fBMig_ConfirmIdle()\fR returns 0 (FALSE).
+In this case, the caller may request a new idle host from
+\fBMig_GetIdleNode()\fR. 
+d181 9
+a189 24
+\fBMig_Done()\fR releases a host returned by \fBMig_GetIdleNode()\fR
+and returns it to the pool of idle hosts.  It is the responsibility of
+the process calling \fBMig_GetIdleNode()\fR to release the host when
+it is no longer needed.  (If the host is not made available with the
+\fBMig_Done()\fR call, then the migration daemon on that host will
+eventually make the host available if it detects that no foreign
+processes are executing on it.)
+.PP
+\fBMig_OpenInfo()\fR is used to open a migration database file for long-term
+access.  (By comparison, the preceding  functions open and close the
+database files each time they are called.)  There are two types of
+file, shared and private.  The shared file is typically not cacheable,
+since it is updated simultaneously by multiple hosts.  The private
+file is typically accessed by only the host for which the information
+is being kept, and it is suitable for host-specific tools such as load
+average widgets.  To access the shared file, Mig_OpenInfo is called
+with Mig_FileType \fBMIG_SHARED\fR; to access the local file, it is called
+with \fBMIG_PRIVATE\fR.  If the file is to be opened for writing, then the
+\fIwriting\fP argument must be non-zero.  (Typically, only the system
+program that updates the database should open the database for
+writing.)  Mig_OpenInfo returns a database handle in \fI*handlePtr\fP;
+this handle must be passed to Mig_UpdateInfo to update the migration
+database.  \fIHandlePtr\fP must be allocated by the caller prior to
+calling \fBMig_OpenInfo\fR.
+d191 3
+a193 4
+\fBMig_UpdateInfo()\fR takes a \fIhostID\fP and Mig_Info structure
+\fI*infoPtr\fP, and writes it 
+to the database file referenced by \fI*handlePtr\fP.  The hostID is
+used to specify which record in the database to update.  
+d195 2
+a196 1
+\fBMig_GetAllInfo()\fR, \fBMig_OpenInfo()\fR, and \fBMig_UpdateInfo()\fR return zero if
+d199 3
+a201 2
+about what error occurred.  \fBMig_GetIdleNode()\fR similarly returns -1 on
+error, but it returns 0 if no idle host is available.  \fBMig_GetInfo()\fR
+d205 10
+a214 4
+.IP /sprite/admin/data/migInfo
+The global migration database file.
+.IP /hosts/$HOST/migInfo
+The migration database file used by host $HOST.
+d216 1
+a216 1
+migration, load average, idle time, sprite ID
+d218 1
+a218 1
+xload, loadavg, pmake, db
+@

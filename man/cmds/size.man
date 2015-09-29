@@ -1,0 +1,20 @@
+' $Header: /a/newcmds/size/RCS/size.man,v 1.2 88/12/30 10:15:53 ouster Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS SIZE cmds
+.BS
+.SH NAME
+size \- Print size of segments in program image
+.SH SYNOPSIS
+\fBsize \fR[\fIfile file ...\fR]
+.BE
+
+.SH DESCRIPTION
+.LP
+Each \fIfile\fR argument should be the name of a program image
+file (e.g. \fBa.out\fR).  \fBSize\fR will print out in decimal
+the sizes of the various segments in the file.  It will also print
+the total size in both decimal and hexadecimal.  If no \fIfile\fR
+argument is given, \fBa.out\fR will be used by default.
+
+.SH KEYWORDS
+executable, image, program, size

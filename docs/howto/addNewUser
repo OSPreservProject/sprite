@@ -1,0 +1,43 @@
+
+How to add a new user (revised $Date: 91/01/03 22:06:42 $)
+
+0.  There is now a program called `adduser', located in 
+    /sprite/src/admin/adduser that automates most of this stuff.
+    This list will be kept around just in case someone has to
+    do it by hand.
+
+1.  Create the home directory.  The home directory should be
+    put in /user1 or /user2, and a symbolic link made from /users to that
+    directory.
+
+2.  Add the newuser to /etc/passwd.  The uid should come from the UCB
+    user database.  Get it from /etc/passwd on another machine, or if
+    the newuser doesn't have any other UCB accounts, login as root
+    on allspice and run:
+
+    rsh thalm -l account =bin/mkpwent /users <lastname> <group>
+
+    but use the real lastname and group.  This program will assign
+    a uid and automatically add it to the main database.  A prototype
+    passwd entry will be returned.
+
+3.  Copy /users/newuser to the new user's home directory.  (this is a
+    symlink so use "update /users/newuser/." or "cp -r".)
+
+4.  Add the new user to the sprite-users group in 
+    /sprite/lib/sendmail/aliases
+
+5.  If the new user recieves mail on another machine, create a
+    .forward file in his/her home directory.  Check /usr/lib/aliases
+    to make sure there isn't already a forwarding alias for the person
+    there.  If there is, then remove the alias from /usr/lib/aliases
+    (edit the source file in /sprite/lib/sendmail/aliases), and leave
+    the .forward file instead.
+
+6.  Create a .project file for the user's account to indicate what the
+    purpose of the account is.
+
+7.  Change the ownership on the directory and all files within
+    the directory so the new user owns his/her own files.  (chown -R).
+
+8.  Send mail so he/she knows the account is ready.

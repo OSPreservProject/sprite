@@ -1,0 +1,111 @@
+head     9.0;
+branch   ;
+access   ;
+symbols  ds3100:9.0 sun3:9.0 sun4nw:9.0 symm:9.0 spur:9.0 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.0
+date     89.09.12.15.01.28;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     89.08.15.19.52.58;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.10.19.51.52;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@First code from DECWRL.
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@/*
+ * devInt.h --
+ *
+ *	Internal globals and constants needed for the dev module.
+ *
+ *	Copyright (C) 1989 Digital Equipment Corporation.
+ *	Permission to use, copy, modify, and distribute this software and
+ *	its documentation for any purpose and without fee is hereby granted,
+ *	provided that the above copyright notice appears in all copies.
+ *	Digital Equipment Corporation makes no representations about the
+ *	suitability of this software for any purpose.  It is provided "as is"
+ *	without express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/dev/ds3100.md/RCS/devInt.h,v 1.2 89/08/15 19:52:58 rab Exp Locker: douglis $ SPRITE (DECWRL)
+ */
+
+#ifndef _DEVINT
+#define _DEVINT
+
+/*
+ * A configuration table that describes the controllers in the system.
+ */
+typedef struct DevConfigController {
+    char *name;		/* Identifying string used in print statements */
+    int address;	/* The address of the controller.  Correct
+			 * interpretation of this depends on the space */
+    int controllerID;	/* Controller number: 0, 1, 2... */
+    ClientData (*initProc)();	/* Initialization procedure */
+    int (*intrProc)();	/* Interrupt handler called from autovector */
+} DevConfigController;
+
+/*
+ * Special valued returned from Controller init procedures indicating
+ * the controller doesn't exists.
+ */
+
+#define	DEV_NO_CONTROLLER	((ClientData) 0)
+
+/*
+ * The controller configuration table.
+ */
+extern DevConfigController devCntrlr[];
+extern int devNumConfigCntrlrs;
+
+#endif /* _DEVINT */
+@
+
+
+1.2
+log
+@Commented #endif labels.
+@
+text
+@d14 1
+a14 1
+ * $Header: /sprite/src/kernel/dev/ds3100.md/RCS/devInt.h,v 1.1 89/07/10 19:51:52 nelson Exp Locker: rab $ SPRITE (DECWRL)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d9 1
+a9 1
+ *	provided that the above copyright notice appears in all copies.  
+d14 1
+a14 1
+ * $Header: devInt.h,v 1.3 89/06/29 09:49:19 mnelson Exp $ SPRITE (DECWRL)
+d33 1
+a33 1
+ * Special valued returned from Controller init procedures indicating 
+d45 1
+a45 1
+#endif _DEVINT
+@

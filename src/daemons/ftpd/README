@@ -1,0 +1,86 @@
+This is the Sprite anonymous ftp directory.
+
+* Papers:
+
+sprite.bib:	The Sprite bibliography, in BibTeX form.
+
+recovOSR91.ps:	Paper on crash recovery.
+
+lfsSOSP91.ps:	Paper on log-structured file systems in PostScript.
+
+measureSOSP91.ps:	Paper on Sprite file system measurements in Postscript.
+
+nvram-asplos92.ps:	Paper on using non-volatile memory in operating systems.
+			For the ASPLOS-92 proceedings.
+
+nameUsenix92.ps.Z:	Paper on name caching from Winter 1992 Usenix.
+
+benchUsenix90.ps:	Postscript for paper from Summer 1990 USENIX:  "Why
+			Aren't Operating Systems Getting Faster As Fast As
+			Hardware?"
+
+recovBoxUsenix92.ps:	Paper on recovery box for Summer 92 USENIX.
+
+appendRatio.ps.Z: 	Slides from talk on file append vs. overwrite ratios. 
+			The results are derived from the same traces as the
+			SOSP paper. This talk was given to the LADDIS group
+			on 1/21/92. John Hartman.
+
+zebra.ps.Z:		"Zebra: A Striped Network File System". Appeared
+			in the Proceedings of the USENIX Workshop on
+			File Systems. Also as UCB/CSD Tech Report 92/683
+* Sources: 
+
+bench.tar.Z:	Sources for a collection of small benchmarks used in
+		the paper "Why Aren't Operating Systems Getting Faster
+		as Fast as Hardware".  Maintained by John Ousterhout.
+
+gdb.tar.Z:	gdb for Mach 3.0.  Maintained by Mike Kupfer.
+
+gifFiles.tar:	GIF image files
+
+gld.tar.Z:	Gnu linker with modifications for cross-linking between
+		different machine types.
+
+mab.tar.Z:	Sources for Modified Andrew Benchmark (used in paper
+		"Why Aren't Operating Systems Getting Faster as Fast
+		as Hardware" and for other purposes).  Maintained
+		by John Ousterhout.
+
+mipsim.tar.Z:	A simulator and assembly-language program debugger for
+		the MIPS R2000 architecture, written by John Ousterhout
+		for use in a freshman-level course in C and assembler.
+
+
+sosp-traces	A directory for the traces and post-processors used for the
+		sosp91 measurements paper.
+
+tcl		A subdirectory full of various files containing sources and
+		documentation for Tcl and Tk and related packages.  See the
+		README file in that directory for more information.
+
+xfract101.shar.Z	X version 1.01 of fractint (as compressed shar).
+
+xtsim.tar.Z	library to interface event driven simulator to Xt toolkit.
+
+ncube:		GNU software for nCUBE multiprocessor (gcc,gas,gld,g++)
+
+chaos.c.Z	Draw chaotic attractor.
+
+sprite-X.XXX.tar.Z Sprite kernel sources, version X.XXX.  Won't compile into
+		   a kernel, but useful for browsing or borrowing code.
+
+* Other:
+
+synth_prices:	Prices of used synth equipment.
+
+cs252_ftp:	Ftp directory for CS 252 class.
+
+douglis:
+eklee:
+welch:		Ftp directories for those users
+
+
+This archive is maintained by shirriff@sprite.Berkeley.EDU.
+
+Note to spriters: please update this README if you add ftp files.

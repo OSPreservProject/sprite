@@ -1,0 +1,68 @@
+
+
+
+strtod                    User Commands                    strtod
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     strtod - Convert character string to floating-point number
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddlliibb..hh>>
+
+     ddoouubbllee
+     ssttrrttoodd((_s_t_r_i_n_g, _e_n_d_P_t_r)
+
+AARRGGUUMMEENNTTSS
+     char     *_s_t_r_i_n_g  (in)      String     containing      ASCII
+                                 representation of floating-point
+                                 number.
+
+     char     **_e_n_d_P_t_r (out)     If not NNUULLLL,  gives  address  of
+                                 pointer  to fill in with address
+                                 of first character  not  forming
+                                 part of number.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The ssttrrttoodd procedure parses a floating-point number in ASCII
+     representation  and  returns  a ddoouubbllee result containing the
+     binary form of the number.  The expected form of  _s_t_r_i_n_g  is
+     an  optional  plus or minus sign, then a sequence of decimal
+     digits  optionally  containing  a  decimal  point,  then  an
+     optional exponent part.  If the exponent part is present, it
+     consists of the letter EE (or ee), then an  optional  plus  or
+     minus  sign,  then a sequence of decimal digits.  The entire
+     floating-point number may be preceded by any amount of white
+     space (as defined by the iissssppaaccee procedure).
+
+     _S_t_r_t_o_d examines as many characters as possible  from  _s_t_r_i_n_g
+     while still obeying the syntax rules given above.  If _e_n_d_P_t_r
+     is not NNUULLLL, then the address of the first character follow-
+     ing the floating-point number is stored in *_e_n_d_P_t_r.
+
+     If _s_t_r_i_n_g does not refer to a floating-point number  in  the
+     format given above, then zero is returned and _s_t_r_i_n_g will be
+     stored at *_e_n_d_P_t_r.
+
+
+KKEEYYWWOORRDDSS
+     convert, floating-point, string
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  May 20, 1989                     1
+
+
+

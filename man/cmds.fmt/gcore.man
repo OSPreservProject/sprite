@@ -1,0 +1,134 @@
+
+
+
+<GCORE>                   User Commands                   <GCORE>
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     gcore - Generate a core file from a Sprite process.
+
+SSYYNNOOPPSSIISS
+     ggccoorree [_o_p_t_i_o_n_s] _p_i_d _p_i_d ...
+
+OOPPTTIIOONNSS
+     --oo _p_r_e_f_i_x Generate the output file names by  prepending  the
+               string _p_r_e_f_i_x to each of the pids.
+
+     --kk        Kill the process after the core dump is produced.
+
+     --ss _s_i_g_n_a_l Use signal number _s_i_g_n_a_l to pause running process.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     GGccoorree generates a snapshot of the current execution state of
+     a  Sprite  process.   For historical reasons, these snapshot
+     are referred to as core dumps or core files.  Core dumps can
+     be  used  by the ggddbb debugger to examine the process's state
+     as if the debugger was attached to the process.
+
+     GGccoorree takes as arguments one or more process  ids  and  gen-
+     erates  core  dumps  for  each  process in the file core._p_i_d
+     where _p_i_d is the specified process id.  The --oo option allows
+     a  string  other  than  "core" to be used to generate output
+     file names.  If the --kk option is  specified,  the  processes
+     specified  will be sent a SIGKILL signal after the core dump
+     is finished.
+
+     GGccoorree reads the register state and memory image of a process
+     by  using the Sprite debugger interface (PPrroocc__DDeebbuugg.) If the
+     process is not already in the DEBUG state (see the  ppss  com-
+     mand), ggccoorree will send the process a SIGTRAP signal to force
+     it into the DEBUG state. This operation  will  fail  if  the
+     user does not have permission to send signals to the process
+     or the process  has  blocked,  ignored,  or  has  a  handler
+     installed for the SIGTRAP signal.  The --ss option can be used
+     to inform  ggccoorree  to  use  a  signal  number  other  than  5
+     (SIGTRAP).   Other  signals  that may work are 4 (SIGILL), 8
+     (SIGFPE) and 11 (SIGSEGV).  GGccoorree restarts  running  process
+     by sending them a SIGCONT after the dump is produced.
+
+WWAARRNNIINNGG
+     The signals used by ggccoorree  to  stop  running  processes  can
+     interrupt system calls such as rreeaadd,, sseelleecctt, or sslleeeepp, caus-
+     ing them to return an error status of EINTR.  Some  programs
+     may interpret the EINTR as an error and exit.
+
+
+
+
+
+Sprite v.1.0       Printed:  February 5, 1989                   1
+
+
+
+
+
+
+<GCORE>                   User Commands                   <GCORE>
+
+
+
+KKEEYYWWOORRDDSS
+     gdb, coredump
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  February 5, 1989                   2
+
+
+

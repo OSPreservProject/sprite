@@ -1,0 +1,4907 @@
+head     9.13;
+branch   ;
+access   ;
+symbols  ds3100:9.13 sun3:9.13 sun4nw:9.9 symm:9.9 spur:9.9 sprited:9.8.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.13
+date     92.06.08.22.49.35;  author jhh;  state Exp;
+branches ;
+next     9.12;
+
+9.12
+date     92.06.03.22.47.58;  author voelker;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     92.06.02.15.09.51;  author jhh;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     92.04.14.16.57.06;  author jhh;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     91.09.10.18.40.29;  author rab;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     91.03.15.15.48.23;  author jhh;  state Exp;
+branches 9.8.1.1;
+next     9.7;
+
+9.7
+date     91.02.12.14.13.29;  author jhh;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.12.06.21.51.20;  author jhh;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.10.19.15.45.40;  author jhh;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.09.12.17.10.22;  author jhh;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.09.11.10.58.46;  author mendel;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.11.16.15.15.05;  author rab;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.31.08.55.47;  author mendel;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.12.57;  author douglis;  state Stable;
+branches ;
+next     8.12;
+
+8.12
+date     89.08.10.17.35.39;  author mendel;  state Exp;
+branches ;
+next     8.11;
+
+8.11
+date     89.07.21.12.08.55;  author jhh;  state Exp;
+branches ;
+next     8.10;
+
+8.10
+date     89.06.08.09.11.49;  author jhh;  state Exp;
+branches ;
+next     8.9;
+
+8.9
+date     89.06.02.12.58.46;  author mendel;  state Exp;
+branches ;
+next     8.8;
+
+8.8
+date     89.03.15.15.56.18;  author brent;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.02.24.21.58.04;  author mgbaker;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.02.24.14.23.39;  author mgbaker;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.02.24.13.53.34;  author brent;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.02.14.13.10.30;  author jhh;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.01.06.11.21.22;  author jhh;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.11.30.11.41.50;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.22.19.31.19;  author jhh;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.26.27;  author douglis;  state Stable;
+branches ;
+next     6.6;
+
+6.6
+date     88.10.24.11.06.36;  author mendel;  state Exp;
+branches ;
+next     6.5;
+
+6.5
+date     88.09.06.09.05.44;  author mendel;  state Exp;
+branches ;
+next     6.4;
+
+6.4
+date     88.08.26.18.03.38;  author mendel;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.08.24.17.01.55;  author brent;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.19.17.08.38;  author ouster;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.13.18.19.00;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.19.54;  author brent;  state Stable;
+branches ;
+next     5.11;
+
+5.11
+date     88.08.09.15.59.46;  author mendel;  state Exp;
+branches ;
+next     5.10;
+
+5.10
+date     88.08.01.17.16.39;  author mendel;  state Exp;
+branches ;
+next     5.9;
+
+5.9
+date     88.06.27.10.43.16;  author mendel;  state Exp;
+branches ;
+next     ;
+
+9.8.1.1
+date     91.10.21.22.19.33;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.13
+log
+@Made FDDI buffers uncacheable.
+Got rid of NEW_NET.
+@
+text
+@/* 
+ * netRoute.c --
+ *
+ *	This is the code that maintains a table of routes to
+ *	Sprite hosts.  The routes contain the transport level
+ *	headers that need to be pre-pended to messages so that
+ *	they get to the desired Sprite Host.
+ *      Routes are added via a system call or determined dynamically using
+ *      Sprite's version of ARP (Address Resolution Protocol).  ARP is
+ *      invoked when a call to Net_Output is made with a SpriteID for
+ *      which there is no route.  Its use is hidden within Net_Output
+ *      should not affect the caller of Net_Output.
+ *
+ *	Operations on routes are:
+ *		Net_InstallRoute - Set the Sprite ID for an ethernet address
+ *		Net_AddrToID - Get the Sprite ID for a network address
+ *		Net_IDToRoute - Return the route for a Sprite host.
+ *	Furthermore, the Test_Stats system call will return a route
+ *	to a user program with the NET_GET_ROUTE command.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/net/netRoute.c,v 9.12 92/06/03 22:47:58 voelker Exp $ SPRITE (Berkeley)";
+#endif
+
+#include <sprite.h>
+#include <net.h>
+#include <netRoute.h>
+#include <netInt.h>
+#include <netUltraInt.h>
+#include <sys.h>
+#include <stdlib.h>
+#include <timer.h>
+#include <sync.h>
+#include <proc.h>
+#include <rpc.h>
+#include <string.h>
+#include <vm.h>
+#include <rpcPacket.h>
+
+/*
+ * Wildcard address for the Ultranet.  This address matches any address.
+ */
+
+static Net_UltraTLAddress	wildcardAddress = 
+			    {7, NET_ULTRA_TSAP_SIZE};
+/*
+ * The Route table.
+ * The table is indexed by Sprite Host IDs.  Access to
+ * the table is synchronized with a MASTER_LOCK to prevent
+ * changes from interfering with packet handling.
+ */
+List_Links	netRouteArray[NET_NUM_SPRITE_HOSTS];
+NetHostInfo	netHostInfo[NET_NUM_SPRITE_HOSTS];
+int	 	netNumHosts = NET_NUM_SPRITE_HOSTS;
+Sync_Semaphore	netRouteMutex = Sync_SemInitStatic("netRouteMutex");
+Sync_Semaphore	netFreeRouteMutex = Sync_SemInitStatic("netFreeRouteMutex");
+
+/*
+ * Macro to swap the fragOffset field.
+ */
+#define SWAP_FRAG_OFFSET_HOST_TO_NET(ptr) { \
+    unsigned short	*shortPtr; \
+    shortPtr = ((unsigned short *)&ptr->ident) + 1; \
+    *shortPtr = Net_HostToNetShort(*shortPtr); \
+} 
+
+static	void		FillUserRoute _ARGS_((Net_Route *routePtr,
+					Net_UserRoute *userRoutePtr));
+static	void		FillRouteInfoOld _ARGS_((Net_Route *routePtr,
+					Net_RouteInfoOld *infoPtr));
+
+/*
+ * This variable is only needed for backwards compatibility with netroute.
+ * Once the need for the OLD_NET stuff goes away so can this variable.
+ */
+static Boolean		oldMode;
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_RouteInit --
+ *
+ *      Initialize the broadcast routes.  The rest of the routes are
+ *      installed via the netRoute user program.  
+ *
+ *	This uses malloc, so it should be called after Mem_Init.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Initialize the route table and add the broadcast route.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Net_RouteInit()
+{
+    register int i;
+    int spriteID;
+
+    /*
+     * The route table.  An array of routes is kept for directing
+     * messages to other machines.  It is indexed by Sprite host ids.
+     */
+    for (spriteID=0 ; spriteID<netNumHosts ; spriteID++) {
+	List_Init(&netRouteArray[spriteID]);
+	bzero((char *) &netHostInfo[spriteID], sizeof(NetHostInfo));
+    }
+    /*
+     * Install the broadcast route(s) so we can do our first broadcast rpcs.
+     */
+    for (i = 0; i < netNumInterfaces;i++) {
+	Net_Interface	*interPtr;
+	ReturnStatus	status;
+
+	interPtr = netInterfaces[i];
+	if (interPtr->flags & NET_IFLAGS_BROADCAST) {
+	    status = Net_InstallRoute(NET_BROADCAST_HOSTID, 
+			    interPtr, &interPtr->broadcastAddress, 
+			    NET_PROTO_RAW, "broadcast", "unknown", 
+			    0, RPC_MAX_SIZE,
+			    (ClientData) 0);
+	    if (status != SUCCESS) {
+		printf(
+	"Net_RouteInit: unable to install broadcast route for interface %d\n",
+		    i);
+	    }
+	}
+    }
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_InstallRouteStub --	
+ *
+ *	System call stub for Net_InstallRoute. The Net_RouteInfoOld
+ *	stuff is for backwards compatibility and can be removed
+ *	once netroute is updated to use Net_UserRoute instead of
+ *	Net_RouteInfo.
+ *
+ * Results:
+ *	A return status.
+ *
+ * Side effects:
+ *	See Net_InstallRoute
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Net_InstallRouteStub(size, userRoutePtr)
+    int		  size;
+    Net_UserRoute *userRoutePtr;	/* Route data */
+{
+    ReturnStatus 	status = SUCCESS;
+    Net_Interface 	*interPtr;
+    Net_UserRoute 	userRoute;
+
+    if (userRoutePtr == USER_NIL) {
+	return (SYS_ARG_NOACCESS);
+    }
+    /*
+     * This stuff allows the new version of Net_Address and Net_UserRoute
+     * to work with old applications. 
+     */
+    if (size == sizeof(Net_RouteInfoOld)) {
+	Net_RouteInfoOld	routeInfoOld;
+	status = Vm_CopyIn(sizeof(Net_RouteInfoOld), (Address)userRoutePtr, 
+			  (Address)&routeInfoOld);
+	if (status != SUCCESS) {
+	    return(status);
+	}
+#define _COPY(field) userRoute.field = routeInfoOld.field
+	_COPY(version);
+	_COPY(spriteID);
+	_COPY(protocol);
+	_COPY(flags);
+	_COPY(refCount);
+	_COPY(routeID);
+	_COPY(netType);
+	_COPY(userData);
+
+#undef _COPY
+#define _COPY(field) bcopy(routeInfoOld.field, userRoute.field, sizeof(routeInfoOld.field))
+	_COPY(desc);
+	_COPY(hostname);
+	_COPY(machType);
+
+#undef _COPY
+	userRoute.minPacket = routeInfoOld.minBytes;
+	userRoute.maxPacket = routeInfoOld.maxBytes;
+	userRoute.minRpc = 0;
+	userRoute.maxRpc = RPC_MAX_SIZE;
+	switch(userRoute.netType) {
+	    case NET_NETWORK_ETHER: 
+		status = Net_SetAddress(NET_ADDRESS_ETHER, 
+		    (Address) &routeInfoOld.netAddress[NET_PROTO_RAW].ether,
+		    &userRoute.netAddress[NET_PROTO_RAW]);
+		break;
+	    case NET_NETWORK_ULTRA: 
+		status = Net_SetAddress(NET_ADDRESS_ULTRA, 
+		    (Address) &routeInfoOld.netAddress[NET_PROTO_RAW].ultra,
+		    &userRoute.netAddress[NET_PROTO_RAW]);
+		break;
+	    case NET_NETWORK_FDDI: 
+		status = Net_SetAddress(NET_ADDRESS_FDDI, 
+		    (Address) &routeInfoOld.netAddress[NET_PROTO_RAW].fddi,
+		    &userRoute.netAddress[NET_PROTO_RAW]);
+		break;
+	}
+	if (status != SUCCESS) {
+	    panic("Net_InstallRouteStub: Net_SetAddress failed\n");
+	}
+	if (userRoute.protocol == NET_PROTO_INET) {
+	    status = Net_SetAddress(NET_ADDRESS_INET, 
+		(Address) &routeInfoOld.netAddress[NET_PROTO_INET].inet,
+		&userRoute.netAddress[NET_PROTO_INET]);
+	    if (status != SUCCESS) {
+		panic("Net_InstallRouteStub: Net_SetAddress failed\n");
+	    }
+	}
+	interPtr = Net_GetInterface(routeInfoOld.netType, 
+			routeInfoOld.interface);
+	if (interPtr == (Net_Interface *) NIL) {
+	    printf("Net_InstallRouteStub: can't find interface %d\n",
+		routeInfoOld.interface);
+	    return(GEN_INVALID_ARG);
+	}
+	userRoute.interAddress = interPtr->netAddress[NET_PROTO_RAW];
+	oldMode = TRUE;
+    } else if (size == sizeof(Net_UserRoute)) {
+	status = Vm_CopyIn(sizeof(Net_UserRoute), (Address)userRoutePtr, 
+			  (Address)&userRoute);
+	if (status != SUCCESS) {
+	    return(status);
+	}
+	if (userRoute.version != NET_ROUTE_VERSION) {
+	    return GEN_INVALID_ARG;
+	}
+	oldMode = FALSE;
+    } else {
+	return (GEN_INVALID_ARG);
+    }
+    interPtr = Net_GetInterfaceByAddr(&userRoute.interAddress);
+    if (interPtr == (Net_Interface *) NIL) {
+	char	buf[20];
+	Net_AddrToString(&userRoute.interAddress, buf);
+	printf("Net_InstallRouteStub: can't find interface with address %s\n",
+	    buf);
+	return(GEN_INVALID_ARG);
+    }
+    status = Net_InstallRoute(userRoute.spriteID,
+		    interPtr, userRoute.netAddress, 
+		    userRoute.protocol,
+		    userRoute.hostname, userRoute.machType, 
+		    userRoute.minRpc, userRoute.maxRpc,
+		    userRoute.userData);
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_InstallRoute --
+ *
+ *	Install a route to a Sprite host at the specified address.
+ *	After installing the route the Sprite ID can be used as an
+ *	argument to Rpc_Call to direct an RPC request to that Sprite host.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Initialize the entry in the route table which is indexed
+ *	by the Sprite ID to point to a route for the Sprite Host.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Net_InstallRoute(spriteID, interPtr, netAddressPtr, protocol, 
+	hostname, machType, minRpc, maxRpc, clientData)
+    int 		spriteID;	/* Sprite Host ID */
+    Net_Interface	*interPtr;	/* Interface route is for. */
+    Net_Address 	*netAddressPtr;	/* Network addresses (indexed by
+					 * protocol). */
+    int			protocol;	/* Protocol to use with route. */
+    char 		*hostname;	/* Human recognizable name */
+    char 		*machType;  	/* Machine type to expand $MACHINE */
+    int			minRpc;		/* Minimum RPC size for route. */
+    int			maxRpc;		/* Maximum RPC size for route. */
+    ClientData		clientData; 	/* Data for user-level program. */
+{
+    register Net_Route 	*routePtr;
+    Net_Route		*oldRoutePtr = (Net_Route *) NIL;
+    ReturnStatus status = SUCCESS;
+    char	*headerPtr;
+
+    if (Mach_AtInterruptLevel()) {
+	printf("Can't install route when at interrupt level (%d)\n",
+	    spriteID);
+	return FAILURE;
+    }
+    if (spriteID < 0) {
+	printf("Invalid sprite id %d\n", spriteID);
+	return (GEN_INVALID_ARG);
+    }
+    /*
+     * If we are installing a route and we don't know are own spriteID see
+     * if we can learn it from the route.
+     */
+    if (rpc_SpriteID == 0) {
+	if (Net_AddrCmp(&interPtr->netAddress[protocol],
+		&netAddressPtr[protocol]) == 0) {
+	    rpc_SpriteID = spriteID;
+	}
+    }
+    /*
+     * If we know our spriteID and we are installing a route to ourselves we
+     * can learn (or at least validate our data).
+     */
+    if ((rpc_SpriteID > 0) && (rpc_SpriteID == spriteID)) {
+	char buffer[128];
+
+	if (interPtr->netAddress[protocol].type == 0) {
+	    interPtr->netAddress[protocol] = netAddressPtr[protocol];
+	    Net_AddrToString(&interPtr->netAddress[protocol], buffer);
+	    printf("Setting address to %s\n", buffer);
+	} else if (Net_AddrCmp(&interPtr->netAddress[protocol], 
+			&netAddressPtr[protocol])) {
+	    Net_AddrToString(&interPtr->netAddress[protocol], buffer);
+	    printf(
+		"Warning: address on interface \"%s\" is currently %s\n",
+		interPtr->name,
+		buffer);
+	    Net_AddrToString(&netAddressPtr[protocol], buffer);
+	    printf("Attempt to install route using address %s ignored.\n",
+		buffer);
+	    status = FAILURE;
+	}
+	return status;
+    }
+    routePtr = (Net_Route *) malloc(sizeof(Net_Route));
+    MASTER_LOCK(&netRouteMutex);
+
+    /*
+     * In order to install internet routes our internet address must be set.
+     */
+    if ((protocol == NET_PROTO_INET) && 
+	(!Net_AddrCmp(&interPtr->netAddress[protocol], &netZeroAddress))) {
+
+	Boolean 	found = FALSE;
+	int		addr;
+	Net_Route	*tmpPtr;
+	/*
+	 * Try to do a reverse arp to get the internet address.  
+	 */
+	LIST_FORALL(&netRouteArray[NET_BROADCAST_HOSTID], 
+	    (List_Links *) tmpPtr){
+
+	    if (tmpPtr->interPtr == interPtr) {
+		found = TRUE;
+		break;
+	    }
+	}
+	if (!found) {
+	    printf("Can't find broadcast route for interface %s\n",
+		interPtr->name);
+	    MASTER_UNLOCK(&netRouteMutex);
+	    return FAILURE;
+	}
+	addr = Net_RevArp(tmpPtr, protocol, (Net_Address *) NIL, 
+			&netRouteMutex);
+	if (addr == -1) {
+	    printf("Internet address for interface \"%s\" is not set and\n",
+		interPtr->name);
+	    printf("reverse arp failed.  Can't install route.\n");
+	    MASTER_UNLOCK(&netRouteMutex);
+	    return FAILURE;
+	}
+	interPtr->netAddress[protocol].type = NET_ADDRESS_INET;
+	interPtr->netAddress[protocol].address.inet = addr;
+    }
+    if (spriteID >= NET_NUM_SPRITE_HOSTS) {
+	printf("Net route table too small!\n");
+	MASTER_UNLOCK(&netRouteMutex);
+	return FAILURE;
+    } else {
+	Net_Route 	*tmpPtr;
+	if (oldMode) {
+	    oldRoutePtr = (Net_Route *)NIL;
+	    LIST_FORALL(&netRouteArray[spriteID], (List_Links *) tmpPtr) {
+		if ((tmpPtr->interPtr == interPtr) &&
+		    (tmpPtr->protocol == protocol)) {
+    
+		    tmpPtr->flags &= ~NET_RFLAGS_VALID;
+		    oldRoutePtr = tmpPtr;
+		    break;
+		}
+	    }
+	}
+	List_InitElement((List_Links *) routePtr);
+	List_Insert((List_Links *) routePtr, 
+	    LIST_ATREAR((List_Links *) &netRouteArray[spriteID]));
+	(void) strncpy(netHostInfo[spriteID].name, hostname, 20);
+	(void) strncpy(netHostInfo[spriteID].machType, machType, 12);
+
+	routePtr->flags = NET_RFLAGS_VALID;
+	routePtr->refCount = 0;
+	routePtr->spriteID = spriteID;
+	routePtr->interPtr = interPtr;
+	routePtr->maxPacket = interPtr->maxBytes;
+	routePtr->minPacket = interPtr->minBytes;
+	routePtr->minRpc = minRpc;
+	routePtr->maxRpc = maxRpc;
+	routePtr->protocol = protocol;
+	routePtr->routeID = (spriteID << 16) | netHostInfo[spriteID].routes++;
+	routePtr->userData = clientData;
+	(void) sprintf(routePtr->desc, "Route to %s - ", hostname);
+    }
+    /*
+     * Prepare the Route.  This includes the transport header that
+     * will be used in messages sent to the Sprite Host.
+     */
+    headerPtr = (char *) routePtr->buffer;
+    switch(interPtr->netType) {
+	case NET_NETWORK_ETHER: {
+	    Net_EtherHdr *etherHdrPtr;
+	    Net_EtherAddress	etherAddress;
+
+	    status = Net_GetAddress(&netAddressPtr[NET_PROTO_RAW], 
+		(Address) &etherAddress);
+	    if (status != SUCCESS) {
+		panic("Net_InstallRoute: Net_GetAddress failed\n");
+	    }
+	    (void) strcat(routePtr->desc, "ethernet, ");
+	    if (oldMode) {
+		/*
+		 * Fill in an ethernet header for the route.
+		 * The drivers fill in the source part of the ethernet header 
+		 * each time they send out a packet.
+		 */
+		if (oldRoutePtr != (Net_Route *) NIL) {
+		    etherHdrPtr = (Net_EtherHdr *)
+				    oldRoutePtr->headerPtr[NET_PROTO_RAW];
+		    if (Net_EtherAddrCmp(etherAddress,
+			NET_ETHER_HDR_DESTINATION(*etherHdrPtr))) {
+			char buf[20];
+    
+			Net_EtherAddrToString(
+			    &NET_ETHER_HDR_DESTINATION(*etherHdrPtr), buf);
+			printf(
+		    "Warning: Net_InstallRoute: host <%d> changing ethernet addr\n",
+				spriteID);
+			printf("\tOld: %s, ",buf);
+			Net_EtherAddrToString(&etherAddress, buf);
+			printf("New: %s\n", buf);
+		    }
+		}
+	    }
+	    if (protocol == NET_PROTO_RAW) {
+		etherHdrPtr = (Net_EtherHdr *)routePtr->buffer;
+		NET_ETHER_HDR_TYPE(*etherHdrPtr) = 
+			Net_HostToNetShort(NET_ETHER_SPRITE);
+	    } else {
+		/*
+		 * Make the ethernet header start on an odd 16 bit boundary so
+		 * that the (internet) header that follows starts on a
+		 * 32 bit boundary.
+		 */
+		etherHdrPtr = (Net_EtherHdr *)
+		    ((((int) routePtr->buffer + 5) & ~0x3) - 2);
+		NET_ETHER_HDR_TYPE(*etherHdrPtr) = 
+				    Net_HostToNetShort(NET_ETHER_IP);
+	    }
+	    routePtr->headerPtr[NET_PROTO_RAW] = (Address)etherHdrPtr;
+	    status = Net_GetAddress(&netAddressPtr[NET_PROTO_RAW],
+			(Address) &NET_ETHER_HDR_DESTINATION(*etherHdrPtr));
+	    if (status != SUCCESS) {
+		panic("Net_InstallRoute: Net_GetAddress failed\n");
+	    }
+	    status = Net_GetAddress(&interPtr->netAddress[NET_PROTO_RAW],
+			(Address) &NET_ETHER_HDR_SOURCE(*etherHdrPtr));
+	    if (status != SUCCESS) {
+		panic("Net_InstallRoute: Net_GetAddress failed\n");
+	    }
+	    routePtr->netAddress[NET_PROTO_RAW] = netAddressPtr[NET_PROTO_RAW];
+	    headerPtr = (char *) etherHdrPtr;
+	    break;
+	}
+	case NET_NETWORK_ULTRA: {
+	    Net_UltraHeader	*ultraHdrPtr;
+
+	    ultraHdrPtr = (Net_UltraHeader *) routePtr->buffer;
+	    bzero((char *) ultraHdrPtr, sizeof(Net_UltraHeader));
+	    (void) strcat(routePtr->desc, "ultranet, ");
+	    routePtr->headerPtr[NET_PROTO_RAW] = (Address) ultraHdrPtr;
+	    ultraHdrPtr->remoteAddress = wildcardAddress;
+	    ultraHdrPtr->remoteAddress.tsapSize=2;
+	    ultraHdrPtr->remoteAddress.tsap[0]=0xff;
+	    ultraHdrPtr->remoteAddress.tsap[1]=0xff;
+	    status = Net_GetAddress(&netAddressPtr[NET_PROTO_RAW], 
+		(Address) &ultraHdrPtr->remoteAddress.address);
+	    if (status != SUCCESS) {
+		panic("Net_InstallRoute: Net_GetAddress failed\n");
+	    }
+	    ultraHdrPtr->localAddress = wildcardAddress;
+	    ultraHdrPtr->localAddress.tsapSize=2;
+	    ultraHdrPtr->localAddress.tsap[0]=0xff;
+	    ultraHdrPtr->localAddress.tsap[1]=0xff;
+	    status = Net_GetAddress(&interPtr->netAddress[NET_PROTO_RAW],
+		(Address) &ultraHdrPtr->localAddress.address);
+	    if (status != SUCCESS) {
+		panic("Net_InstallRoute: Net_GetAddress failed\n");
+	    }
+	    ultraHdrPtr->cmd = NET_ULTRA_DGRAM_SEND_REQ;
+	    headerPtr = (char *) ultraHdrPtr;
+	    routePtr->netAddress[NET_PROTO_RAW] = netAddressPtr[NET_PROTO_RAW];
+	    break;
+	}
+	case NET_NETWORK_FDDI: {
+	    Net_FDDIHdr *fddiHdrPtr;
+
+	    (void) strcat(routePtr->desc, "fddi, ");
+	    fddiHdrPtr = (Net_FDDIHdr *) routePtr->buffer;
+	    routePtr->headerPtr[NET_PROTO_RAW] = (Address)fddiHdrPtr;
+	    bzero((char *) fddiHdrPtr, sizeof(Net_FDDIHdr));
+	    fddiHdrPtr->frameControl = NET_FDDI_SPRITE;             /***/
+	    NET_FDDI_ADDR_COPY(netAddressPtr[NET_PROTO_RAW].address.fddi,
+			       fddiHdrPtr->dest);
+	    NET_FDDI_ADDR_COPY(interPtr->netAddress[NET_PROTO_RAW].address.fddi,
+			       fddiHdrPtr->source);
+	    headerPtr = (char *) fddiHdrPtr;
+	    routePtr->netAddress[NET_PROTO_RAW] = netAddressPtr[NET_PROTO_RAW];
+	    break;
+	}
+	default:
+	    printf("Net_InstallRoute: Unknown interface type %d\n", 
+		interPtr->netType);
+	    return FAILURE;
+    }
+    headerPtr += net_NetworkHeaderSize[interPtr->netType];
+    switch (protocol) {
+	case NET_PROTO_RAW:
+	    (void) strcat(routePtr->desc, "raw");
+	    break;
+    case NET_PROTO_INET: {
+	    Net_IPHeader *ipHeader;
+	    (void) strcat(routePtr->desc, "IP");
+	    ipHeader = (Net_IPHeader *) headerPtr;
+	    routePtr->headerPtr[protocol] = (Address)ipHeader;
+	    /*
+	     * Initialize the template ipHeader.
+	     */
+	    bzero((char *)ipHeader, sizeof(Net_IPHeader));
+	    ipHeader->headerLen = sizeof(Net_IPHeader) / 4;
+	    ipHeader->version = NET_IP_VERSION;
+	    ipHeader->typeOfService = 0;
+	    /*
+	     * Kernel IP doesn't handle fragmented IP packets (yet).
+	     */
+	    ipHeader->flags = NET_IP_DONT_FRAG;
+	    SWAP_FRAG_OFFSET_HOST_TO_NET(ipHeader);
+	    ipHeader->timeToLive = NET_IP_MAX_TTL;
+	    ipHeader->protocol = NET_IP_PROTOCOL_SPRITE;
+	    status = Net_GetAddress(&interPtr->netAddress[protocol], 
+		(Address) &ipHeader->source);
+	    if (status != SUCCESS) {
+		panic("Net_InstallRoute: Net_GetAddress failed\n");
+	    }
+	    status = Net_GetAddress(&netAddressPtr[protocol], 
+		(Address) &ipHeader->dest);
+	    if (status != SUCCESS) {
+		panic("Net_InstallRoute: Net_GetAddress failed\n");
+	    }
+	    /*
+	     * Precompute the checksum for the ipHeader. This must be
+	     * corrected when the totalLen field is updated. Note we
+	     * store the checksum as the 16 bit sum of the packet
+	     * header to permit easy updating.
+	     */
+	    ipHeader->checksum = Net_InetChecksum(sizeof(Net_IPHeader),
+					       (Address) ipHeader);
+	    ipHeader->checksum = ~ipHeader->checksum;
+	    routePtr->maxPacket -= sizeof(Net_IPHeader);
+	    routePtr->minPacket -= sizeof(Net_IPHeader);
+	    if (routePtr->minPacket < 0) {
+		routePtr->minPacket = 0;
+	    }
+	    routePtr->netAddress[NET_PROTO_INET] = 
+		netAddressPtr[NET_PROTO_INET];
+	    break;
+	}
+	default: {
+	    if (oldMode) {
+		if (oldRoutePtr != (Net_Route *) NIL) {
+		    oldRoutePtr->flags |= NET_RFLAGS_VALID;
+		}
+	    }
+	    printf("Warning: Unsupported route type in Net_InstallRoute\n");
+	    routePtr->flags &= ~NET_RFLAGS_VALID;
+	    status = FAILURE;
+	    break;
+	}
+    }
+    MASTER_UNLOCK(&netRouteMutex);
+    if (oldMode) {
+	if (oldRoutePtr != (Net_Route *) NIL) {
+	    Net_DeleteRoute(oldRoutePtr);
+	}
+    }
+    if ((status != SUCCESS) && (routePtr != (Net_Route *) NIL)) {
+	Net_DeleteRoute(routePtr);
+    }
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_ReleaseRoute --
+ *
+ *	Releases a route by decrementing its reference count.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The route if freed if it is invalid and the reference count is zero.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Net_ReleaseRoute(routePtr)
+    Net_Route 	*routePtr;
+{
+    Boolean 	freeIt = FALSE;
+    MASTER_LOCK(&netRouteMutex);
+    routePtr->refCount--;
+    if (Mach_AtInterruptLevel()) {
+	goto exit;
+    }
+    if ((!(routePtr->flags & NET_RFLAGS_VALID)) && 
+	(routePtr->refCount <= 0) &&
+	(!(routePtr->flags & NET_RFLAGS_DELETING))) {
+	routePtr->flags |= NET_RFLAGS_DELETING;
+	freeIt = TRUE;
+    }
+exit:
+    MASTER_UNLOCK(&netRouteMutex);
+    if (freeIt) {
+	List_Remove((List_Links *) routePtr);
+	free((char *) routePtr);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_DeleteRouteStub --
+ *
+ *	System call interface for Net_DeleteRoute.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Net_DeleteRouteStub(routeID)
+    int		routeID;	/* ID of the route to be deleted. */
+{
+    int		spriteID;
+    Net_Route	*routePtr;
+    Boolean	found = FALSE;
+
+    spriteID = routeID >> 16;
+    if (spriteID < 0 || spriteID >= netNumHosts) {
+	return GEN_INVALID_ARG;
+    }
+    MASTER_LOCK(&netRouteMutex);
+    LIST_FORALL(&netRouteArray[spriteID],(List_Links *) routePtr) {
+	if (routePtr->routeID == routeID) {
+	    found = TRUE;
+	    break;
+	}
+    }
+    MASTER_UNLOCK(&netRouteMutex);
+    if (!found) {
+	return GEN_INVALID_ARG;
+    }
+    Net_DeleteRoute(routePtr);
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_DeleteRoute --
+ *
+ *	Deletes a route.
+ *
+ * Results:
+ *	A return status.
+ *
+ * Side effects:
+ *	The indicated route is deleted.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Net_DeleteRoute(routePtr)
+    Net_Route	*routePtr;
+{
+    Boolean 	freeIt = FALSE;
+    MASTER_LOCK(&netRouteMutex);
+    routePtr->flags &= ~NET_RFLAGS_VALID;
+    if (Mach_AtInterruptLevel()) {
+	goto exit;
+    }
+    if ((routePtr->refCount <= 0) && 
+	(!(routePtr->flags & NET_RFLAGS_DELETING))) {
+	routePtr->flags |= NET_RFLAGS_DELETING;
+	freeIt = TRUE;
+    }
+exit:
+    MASTER_UNLOCK(&netRouteMutex);
+    if (freeIt) {
+	List_Remove((List_Links *) routePtr);
+	free((char *) routePtr);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_IDToRouteOldStub --
+ *
+ *	Stub for the Test_Stats system call, NET_GET_ROUTE command.
+ *	This gets a route and copies it out to user space.
+ *	This routine is made obsolete by Net_GetRoutes.
+ *
+ * Results:
+ *	A return status.
+ *
+ * Side effects:
+ *	Copies to user space.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Net_IDToRouteOldStub(spriteID, size, argPtr)
+    int spriteID;		/* option parameter to Test_Stats */
+    int	size;			/* Size of user buffer. */
+    Address argPtr;		/* User space buffer to hold route */
+
+{
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
+
+    ReturnStatus status;
+    Net_Route *routePtr;
+    Net_RouteInfoOld routeInfo;
+    int toCopy;
+
+    if (spriteID < 0 || spriteID >= netNumHosts) {
+	return(SYS_INVALID_ARG);
+    }
+    routePtr = Net_IDToRoute(spriteID, 0, FALSE, (Sync_Semaphore *) NIL, 0);
+    if (routePtr == (Net_Route *)NIL) {
+	routeInfo.version = NET_ROUTE_VERSION;
+	routeInfo.flags = 0;
+    } else {
+	FillRouteInfoOld(routePtr, &routeInfo);
+    }
+    toCopy = MIN(size, sizeof(Net_RouteInfoOld) - sizeof(Net_Header));
+    status = Vm_CopyOut(toCopy, (Address)&routeInfo, argPtr);
+    if (routePtr == (Net_Route *) NIL) {
+	return status;
+    }
+    if (status == SUCCESS) {
+	argPtr += toCopy;
+	size -= toCopy;
+	toCopy = MIN(size, net_NetworkHeaderSize[routePtr->interPtr->netType]);
+	status = Vm_CopyOut(toCopy, 
+			(Address)routePtr->headerPtr[NET_PROTO_RAW], 
+			argPtr);
+	argPtr += toCopy;
+	size -= toCopy;
+	switch(routePtr->protocol) {
+	    case NET_PROTO_INET:
+		toCopy = MIN(size, sizeof(Net_IPHeader));
+		status = Vm_CopyOut(sizeof(Net_IPHeader), 
+				 (Address)routePtr->headerPtr[NET_PROTO_INET],
+				 argPtr);
+		argPtr += toCopy;
+		size -= toCopy;
+		break;
+	    default:
+		break;
+	}
+    }
+    Net_ReleaseRoute(routePtr);
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_GetRoutes --
+ *
+ *	System call to return routes to user-level. If the firstID and
+ *	lastID are both -1 then all routes are returned, otherwise
+ *	only those routes for hosts with IDs between firstID and
+ *	lastID, inclusive, are returned. 
+ *
+ * Results:
+ *	A return status.
+ *
+ * Side effects:
+ *	Copies to user space.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Net_GetRoutes(firstID, lastID, infoSize, bufferPtr, buffersUsedPtr)
+    int 	firstID;		/* ID of first host. */
+    int 	lastID;			/* ID of last host. */
+    int 	infoSize;		/* The size of Net_RouteInfo. */
+    Address	bufferPtr;		/* Buffer for route info. */
+    int		*buffersUsedPtr;	/* Number of buffers used. */
+{
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
+
+    ReturnStatus 	status = SUCCESS;
+    Net_Route 		*routePtr;
+    Net_UserRoute	userRoute;
+    int			i, j;
+    int			size;
+    int			count = 0;
+
+    if ((firstID < -1) || (firstID >= netNumHosts)) {
+	return SYS_INVALID_ARG;
+    }
+    if ((lastID < -1) || (lastID >= netNumHosts)) {
+	return SYS_INVALID_ARG;
+    }
+    if (lastID < firstID) {
+	return SYS_INVALID_ARG;
+    }
+    if (bufferPtr == USER_NIL) {
+	return SYS_ARG_NOACCESS;
+    }
+    if (firstID == -1) {
+	if (lastID != -1) {
+	    return SYS_INVALID_ARG;
+	} else {
+	    firstID = 0;
+	    lastID = netNumHosts - 1;
+	}
+    }
+    size = MIN(infoSize, sizeof(Net_UserRoute));
+    for (i = firstID; i <= lastID; i++) {
+	for (j = 0;; j++) {
+	    routePtr = Net_IDToRoute(i, j, FALSE, (Sync_Semaphore *) NIL, 0);
+	    if (routePtr == (Net_Route *) NIL) {
+		break;
+	    }
+	    FillUserRoute(routePtr, &userRoute);
+	    Net_ReleaseRoute(routePtr);
+	    status = Vm_CopyOut(size, (Address)&userRoute, bufferPtr);
+	    if (status != SUCCESS) {
+		goto done;
+	    }
+	    bufferPtr += size;
+	    count++;
+	}
+    }
+done:
+    if (buffersUsedPtr != USER_NIL) {
+	status = Vm_CopyOut(sizeof(int), (Address) &count, 
+	    (Address) buffersUsedPtr);
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_IDToRoute --
+ *
+ *	Return the route to the host specified by the input sprite id.
+ *
+ * Results:
+ *	A pointer to the route for the host.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+Net_Route *
+Net_IDToRoute(spriteID, index, doArp, mutexPtr, size)
+    int 	spriteID;	/* Sprite id to find route for. */
+    int 	index;		/* If >= 0 then the index of the route,
+				 * otherwise use the size. */
+    Boolean	doArp;		/* Do an arp to find a route? */
+    Sync_Semaphore *mutexPtr;	/* Mutex to release when doing arp. */
+    int 	size;		/* Size of RPC to be sent. */
+{
+    Net_Route 	*routePtr = (Net_Route *) NIL;
+    register	Net_Route *tmpPtr;
+    int			i;
+    ReturnStatus	status;
+
+    if (spriteID >= 0 && spriteID < netNumHosts) {
+	while (1) {
+	    i = 0;
+	    MASTER_LOCK(&netRouteMutex);
+	    if (index >= 0) {
+		LIST_FORALL(&netRouteArray[spriteID],(List_Links *) tmpPtr) {
+		    if (tmpPtr->flags & NET_RFLAGS_VALID) {
+			if (i == index) {
+			    routePtr = tmpPtr;
+			    break;
+			}
+			i++;
+		    }
+		}
+	    } else {
+		LIST_FORALL(&netRouteArray[spriteID],(List_Links *) tmpPtr) {
+		    if ((tmpPtr->minRpc <= size) && (tmpPtr->maxRpc >= size) &&
+			(tmpPtr->flags & NET_RFLAGS_VALID)) {
+			routePtr = tmpPtr;
+			break;
+		    }
+		}
+	    }
+	    if (routePtr != (Net_Route *) NIL) {
+		routePtr->refCount++;
+	    }
+	    MASTER_UNLOCK(&netRouteMutex);
+	    if (routePtr == (Net_Route *) NIL && doArp) {
+		status = Net_Arp(spriteID, mutexPtr);
+		if (status != SUCCESS) {
+		    break;
+		}
+		doArp = FALSE;
+	    } else {
+		break;
+	    }
+	}
+    }
+    return(routePtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_AddrToID --
+ *
+ *      Determine the Sprite host ID from a network address.  This is
+ *      used by a server, or Reverse Arp, to determine a client's Sprite
+ *      ID from the client's network address.
+ *
+ *      This routine scans the route table looking for an address
+ *      match with the input address.  
+ *
+ * Results:
+ *      A Sprite hostid for the host at the address.  If the physical
+ *      address isn't in the table we return a hostid of -1.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Net_AddrToID(addressPtr)
+    Net_Address	*addressPtr;		/* Physical address */
+{
+    register Net_Route 	*routePtr;
+    register int 	i;
+    register int 	ID = -1;
+    int			protocol;
+
+    switch(addressPtr->type) {
+	case NET_ADDRESS_INET: 
+	    protocol = NET_PROTO_INET;
+	    break;
+	default:
+	    protocol = NET_PROTO_RAW;
+	    break;
+    }
+
+    MASTER_LOCK(&netRouteMutex);
+
+    for (i=0 ; i<netNumHosts ; i++) {
+	LIST_FORALL(&netRouteArray[i],(List_Links *) routePtr) {
+	    if ((routePtr->protocol == protocol) &&
+		(Net_AddrCmp(&routePtr->netAddress[protocol], 
+			addressPtr) == 0)) {
+		ID = routePtr->spriteID;
+		break;
+	    }
+	}
+    }
+    MASTER_UNLOCK(&netRouteMutex);
+    return(ID);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_HdrToAddr --
+ *
+ *	Determine the Sprite host ID from a transport header. 
+ *
+ * Results:
+ *	SUCCESS if the Sprite ID was found ok, FAILURE otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Net_HdrToAddr(netType, protocol, headerPtr, netAddressPtr) 
+    Net_NetworkType	netType;		/* Type of network. */
+    int			protocol;		/* Network protocol. */
+    Address		headerPtr;		/* The transport header. */
+    Net_Address		*netAddressPtr;		/* The network address. */
+{
+    Address 		offsetPtr;
+    ReturnStatus	status = SUCCESS;
+
+    if (protocol == NET_PROTO_RAW) {
+	switch(netType) {
+	    case NET_NETWORK_ETHER: {
+		status = Net_SetAddress(NET_ADDRESS_ETHER, 
+		    (Address) 
+			&NET_ETHER_HDR_SOURCE(*((Net_EtherHdr *) headerPtr)),
+		    netAddressPtr);
+		break;
+	    }
+	    case NET_NETWORK_ULTRA: {
+		status = Net_SetAddress(NET_ADDRESS_ULTRA, 
+		    (Address) &((Net_UltraHeader *) headerPtr)->remoteAddress,
+		    netAddressPtr);
+		break;
+	    }
+	    case NET_NETWORK_FDDI: {
+	        status = Net_SetAddress(NET_ADDRESS_FDDI,
+	            (Address) &((Net_FDDIHdr *) headerPtr)->source,
+	            netAddressPtr);
+	        break;
+	    }
+	    default:
+		printf("Net_HdrToAddr: unknown netType %d\n", netType);
+		return FAILURE;
+	}
+	if (status != SUCCESS) {
+	    panic("Net_HdrToAddr: Net_SetAddress failed\n");
+	}
+    } else {
+	offsetPtr = headerPtr + net_NetworkHeaderSize[netType];
+	switch(protocol) {
+	    case NET_PROTO_INET : {
+		Net_InetAddress	inetAddress;
+		inetAddress = (Net_InetAddress) 
+		    Net_NetToHostInt(((Net_IPHeader *) offsetPtr)->dest);
+		status = Net_SetAddress(NET_ADDRESS_INET, 
+		    (Address) &inetAddress, netAddressPtr);
+		break;
+	    }
+	    default:
+		printf("Net_HdrToAddr: unknown protocol %d\n", protocol);
+		return FAILURE;
+	}
+	if (status != SUCCESS) {
+	    panic("Net_HdrToAddr: Net_SetAddress failed\n");
+	}
+    }
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_HdrToID --
+ *
+ *      Determine the Sprite host ID from a transport header.  This is
+ *      used by a server to determine a client's Sprite
+ *      ID from the transport header.
+ *
+ *
+ * Results:
+ *      A Sprite hostid for the host at the address.  If the physical
+ *      address isn't in the table we return a hostid of -1.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Net_HdrToID(netType, protocol, headerPtr)
+    Net_NetworkType	netType;
+    int			protocol;
+    Address headerPtr;	/* Transport header. */
+{
+    Net_Address 	netAddress;
+    ReturnStatus	status;
+
+    status = Net_HdrToAddr(netType, protocol, headerPtr, &netAddress);
+    if (status != SUCCESS) {
+	printf("Net_HdrToID: unable to get address from header\n");
+	return -1;
+    }
+    return Net_AddrToID(&netAddress);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_HdrDestString --
+ *
+ *	Build a printable message of the destination address from a 
+ *	transport header.
+ *
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Net_HdrDestString(netType, protocol, headerPtr, bufferLen, buffer)
+    Net_NetworkType	netType;
+    int			protocol;
+    Address headerPtr;	/* Transport header. */
+    int	bufferLen;	/* Length of buffer. */
+    char *buffer;	/* Destination memory for destination string. */
+
+{
+    Net_Address 	netAddress;
+    static char		tmpBuffer[128];
+    ReturnStatus	status;
+
+    *buffer = '\0';
+    status = Net_HdrToAddr(netType, protocol, headerPtr, &netAddress);
+    if (status != SUCCESS) {
+	printf("Net_HdrDestString: unable to get address from header\n");
+	return;
+    }
+    Net_AddrToString(&netAddress, tmpBuffer);
+    (void) strncpy(buffer, tmpBuffer, bufferLen-1);
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * Net_SpriteIDToName --
+ *
+ *	Map from a Sprite ID to a host name.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------------
+ */
+
+void
+Net_SpriteIDToName(spriteID, bufferLen, buffer)
+    int 	spriteID;
+    int		bufferLen;
+    char 	*buffer;
+{
+    *buffer = '\0';
+    MASTER_LOCK(&netRouteMutex);
+    if (spriteID >= 0 && spriteID < netNumHosts) {
+	(void) strncpy(buffer, netHostInfo[spriteID].name, bufferLen-1);
+    }
+    MASTER_UNLOCK(&netRouteMutex);
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * Net_SpriteIDToMachType --
+ *
+ *	Map from a Sprite ID to a machine type string.  This string is
+ *	used by the filesystem when expanding $MACHINE in pathnames.
+ *
+ * Results:
+ *      A pointer to a string identifying the machine type, i.e. "sun3".
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------------
+ */
+
+void
+Net_SpriteIDToMachType(spriteID, bufferLen, buffer)
+    int 	spriteID;
+    int		bufferLen;
+    char	*buffer;
+{
+    *buffer = '\0';
+    MASTER_LOCK(&netRouteMutex);
+    if (spriteID >= 0 && spriteID < netNumHosts) {
+	(void) strncpy(buffer, netHostInfo[spriteID].machType, bufferLen-1);
+    }
+    MASTER_UNLOCK(&netRouteMutex);
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_HostPrint --
+ *
+ *	Print out a statement concerning a host.  This maps to a
+ *	string hostname if possible, and prints out the message.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	printf.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Net_HostPrint(spriteID, string)
+    int spriteID;
+    char *string;
+{
+    Sys_HostPrint(spriteID, string);
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FillUserRoute --
+ *
+ *	Converts from a Net_Route to a Net_UserRoute. Net_UserRoute
+ * 	is the structure that is passed to user-level.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+FillUserRoute(routePtr, userRoutePtr)
+    Net_Route		*routePtr; 	/* The route structure. */
+    Net_UserRoute	*userRoutePtr;	/* The user version of the route. */
+{
+    int		i;
+
+    userRoutePtr->version = NET_ROUTE_VERSION;
+    userRoutePtr->spriteID = routePtr->spriteID;
+    userRoutePtr->protocol = routePtr->protocol;
+    userRoutePtr->interAddress = routePtr->interPtr->netAddress[NET_PROTO_RAW];
+    userRoutePtr->netType = routePtr->interPtr->netType;
+    userRoutePtr->refCount = routePtr->refCount;
+    userRoutePtr->routeID = routePtr->routeID;
+    userRoutePtr->flags = routePtr->flags;
+    userRoutePtr->maxPacket = routePtr->maxPacket;
+    userRoutePtr->minPacket = routePtr->minPacket;
+    userRoutePtr->maxRpc = routePtr->maxRpc;
+    userRoutePtr->minRpc = routePtr->minRpc;
+    userRoutePtr->userData = routePtr->userData;
+    for(i = 0; i < NET_MAX_PROTOCOLS; i++) {
+	userRoutePtr->netAddress[i] = routePtr->netAddress[i];
+    }
+    (void) strncpy(userRoutePtr->hostname, 
+		    netHostInfo[routePtr->spriteID].name, 20);
+    (void) strncpy(userRoutePtr->machType,
+	           netHostInfo[routePtr->spriteID].machType, 12);
+    (void) strncpy(userRoutePtr->desc, routePtr->desc, 64);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FillRouteInfoOld --
+ *
+ *	Converts from a Net_Route to a Net_RouteInfoOld. Net_RouteInfoOld
+ * 	is the structure that is passed to user-level.
+ *	This routine is here for backwards compatibility and can
+ *	be removed as soon as Net_IDToRouteStub is gone.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+FillRouteInfoOld(routePtr, infoPtr)
+    Net_Route		*routePtr; 	/* The route structure. */
+    Net_RouteInfoOld	*infoPtr;	/* The route info structure. */
+{
+    int			i;
+    ReturnStatus	status;
+
+    infoPtr->version = NET_ROUTE_VERSION;
+    infoPtr->spriteID = routePtr->spriteID;
+    infoPtr->protocol = routePtr->protocol;
+    infoPtr->interface = routePtr->interPtr->number;
+    infoPtr->netType = routePtr->interPtr->netType;
+    infoPtr->refCount = routePtr->refCount;
+    infoPtr->routeID = routePtr->routeID;
+    infoPtr->flags = routePtr->flags;
+    infoPtr->maxBytes = routePtr->maxPacket;
+    infoPtr->minBytes = routePtr->minPacket;
+    infoPtr->userData = routePtr->userData;
+    for(i = 0; i < NET_MAX_PROTOCOLS; i++) {
+	status = Net_GetAddress(&routePtr->netAddress[i], 
+	    (Address) &infoPtr->netAddress[i]);
+	if (status != SUCCESS) {
+	    break;
+	}
+    }
+    (void) strncpy(infoPtr->hostname, netHostInfo[routePtr->spriteID].name, 20);
+    (void) strncpy(infoPtr->machType,
+	           netHostInfo[routePtr->spriteID].machType, 12);
+    (void) strncpy(infoPtr->desc, routePtr->desc, 64);
+}
+
+@
+
+
+9.12
+log
+@FDDI implementation
+@
+text
+@d33 1
+a33 1
+static char rcsid[] = "$Header: /sprite/src/kernel/voelker/net/RCS/netRoute.c,v 1.1 92/05/28 17:58:16 voelker Exp Locker: voelker $ SPRITE (Berkeley)";
+d152 2
+a153 1
+ *	once the NEW_NET stuff is gone from /sprite/lib/include/net.h.
+@
+
+
+9.11
+log
+@
+Kernel version of Net_Route is defined only if KERNEL is defined.
+Fixed bug in Net_IDToRoute that caused routes to be lost.
+@
+text
+@d33 1
+a33 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/net/netRoute.c,v 9.10 92/04/14 16:57:06 jhh Exp $ SPRITE (Berkeley)";
+d533 16
+d1071 6
+@
+
+
+9.10
+log
+@Changed definition of Net_Address and added Net_UserRoute.  
+Added Net_DeleteRoute and Net_GetRoute system calls.
+@
+text
+@d33 1
+a33 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/net/netRoute.c,v 9.9 91/09/10 18:40:29 rab Exp $ SPRITE (Berkeley)";
+d925 6
+a930 3
+		    if ((i == index) && (tmpPtr->flags & NET_RFLAGS_VALID)) {
+			routePtr = tmpPtr;
+			break;
+a931 1
+		    i++;
+@
+
+
+9.9
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@d16 1
+a16 1
+ *		Net_AddrToID - Get the Sprite ID for an ethernet address
+d33 1
+a33 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netRoute.c,v 9.8 91/03/15 15:48:23 jhh Exp Locker: rab $ SPRITE (Berkeley)";
+d49 1
+d78 4
+a81 2
+static	void		FillRouteInfo _ARGS_((Net_Route *routePtr,
+					Net_RouteInfo *infoPtr));
+d83 5
+d119 1
+d133 1
+d150 3
+a152 1
+ *	System call stub for Net_InstallRoute
+d163 1
+a163 1
+Net_InstallRouteStub(size, routeInfoPtr)
+d165 1
+a165 1
+    Net_RouteInfo *routeInfoPtr;	/* Route data */
+d167 1
+a167 2
+    ReturnStatus 	status;
+    Net_RouteInfo 	routeInfo;
+d169 1
+d171 1
+a171 1
+    if (routeInfoPtr == USER_NIL) {
+d174 80
+a253 1
+    if (size != sizeof(Net_RouteInfo)) {
+d256 1
+a256 14
+    status = Vm_CopyIn(sizeof(Net_RouteInfo), (Address)routeInfoPtr, 
+		      (Address)&routeInfo);
+    if (status != SUCCESS) {
+	return(status);
+    }
+    if (routeInfo.version != NET_ROUTE_VERSION) {
+	return GEN_INVALID_ARG;
+    }
+    if (routeInfo.interface < 0 || routeInfo.interface >= netNumInterfaces) {
+	printf("Net_InstallRouteStub: interface %d does not exist\n",
+	    routeInfo.interface);
+	return(GEN_INVALID_ARG);
+    }
+    interPtr = Net_GetInterface(routeInfo.netType, routeInfo.interface);
+d258 4
+a261 2
+	printf("Net_InstallRouteStub: can't find interface %d\n",
+	    routeInfo.interface);
+d264 6
+a269 5
+    status = Net_InstallRoute(routeInfo.spriteID,
+		    interPtr, routeInfo.netAddress, 
+		    routeInfo.protocol,
+		    routeInfo.hostname, routeInfo.machType, 
+		    routeInfo.userData);
+d294 1
+a294 1
+	hostname, machType, clientData)
+d302 2
+d307 1
+a307 1
+    Net_Route		*oldRoutePtr;
+d325 2
+a326 2
+	if (!NET_ADDRESS_COMPARE(interPtr->netAddress[protocol],
+		netAddressPtr[protocol])) {
+d337 1
+a337 2
+	if (!(NET_ADDRESS_COMPARE(interPtr->netAddress[protocol],
+		netZeroAddress))) {
+d339 1
+a339 2
+	    Net_AddrToString(&interPtr->netAddress[protocol], protocol, 
+		    interPtr->netType, buffer);
+d341 3
+a343 4
+	} else if (NET_ADDRESS_COMPARE(interPtr->netAddress[protocol], 
+			netAddressPtr[protocol])) {
+	    Net_AddrToString(&interPtr->netAddress[protocol], protocol, 
+		interPtr->netType, buffer);
+d348 1
+a348 2
+	    Net_AddrToString(&netAddressPtr[protocol], protocol, 
+		interPtr->netType, buffer);
+d362 1
+a362 1
+	(interPtr->netAddress[protocol].inet == netZeroAddress.inet)) {
+d393 2
+a394 1
+	interPtr->netAddress[protocol].inet = addr;
+d402 10
+a411 8
+	oldRoutePtr = (Net_Route *)NIL;
+	LIST_FORALL(&netRouteArray[spriteID], (List_Links *) tmpPtr) {
+	    if ((tmpPtr->interPtr == interPtr) &&
+		(tmpPtr->protocol == protocol)) {
+
+		tmpPtr->flags &= ~NET_RFLAGS_VALID;
+		oldRoutePtr = tmpPtr;
+		break;
+d424 4
+a427 2
+	routePtr->maxBytes = interPtr->maxBytes;
+	routePtr->minBytes = interPtr->minBytes;
+d429 1
+a429 1
+	routePtr->routeID |= spriteID << 16;
+d441 7
+d449 22
+a470 13
+	    /*
+	     * Fill in an ethernet header for the route.
+	     * The drivers fill in the source part of the ethernet header 
+	     * each time they send out a packet.
+	     */
+	    if (oldRoutePtr != (Net_Route *) NIL) {
+		etherHdrPtr = (Net_EtherHdr *)oldRoutePtr->headerPtr;
+		if (NET_ETHER_COMPARE(
+		    NET_ETHER_HDR_DESTINATION(*etherHdrPtr),
+		    netAddressPtr[NET_PROTO_RAW].ether)) {
+		    printf(
+		"Warning: Net_InstallRoute, host <%d> changing ethernet addr\n",
+			    spriteID);
+d489 11
+a499 6
+	    NET_ETHER_ADDR_COPY(netAddressPtr[NET_PROTO_RAW].ether,
+				NET_ETHER_HDR_DESTINATION(*etherHdrPtr));
+	    NET_ETHER_ADDR_COPY(interPtr->netAddress[NET_PROTO_RAW].ether,
+				NET_ETHER_HDR_SOURCE(*etherHdrPtr));
+	    routePtr->netAddress[NET_PROTO_RAW].ether = 
+		netAddressPtr[NET_PROTO_RAW].ether;
+d514 5
+a518 2
+	    ultraHdrPtr->remoteAddress.address = 
+		netAddressPtr[NET_PROTO_RAW].ultra;
+d523 5
+a527 2
+	    ultraHdrPtr->localAddress.address = 
+		interPtr->netAddress[NET_PROTO_RAW].ultra;
+d530 1
+a530 2
+	    routePtr->netAddress[NET_PROTO_RAW].ultra = 
+		netAddressPtr[NET_PROTO_RAW].ultra;
+d562 10
+a571 2
+	    ipHeader->source = interPtr->netAddress[protocol].inet;
+	    ipHeader->dest = netAddressPtr[NET_PROTO_INET].inet;
+d581 4
+a584 4
+	    routePtr->maxBytes -= sizeof(Net_IPHeader);
+	    routePtr->minBytes -= sizeof(Net_IPHeader);
+	    if (routePtr->minBytes < 0) {
+		routePtr->minBytes = 0;
+d586 2
+a587 2
+	    routePtr->netAddress[NET_PROTO_INET].inet = 
+		netAddressPtr[NET_PROTO_INET].inet;
+d591 4
+a594 2
+	    if (oldRoutePtr != (Net_Route *) NIL) {
+		oldRoutePtr->flags |= NET_RFLAGS_VALID;
+d596 1
+d598 1
+a598 2
+	    oldRoutePtr = routePtr;
+	    printf("Warning: Unsupported route type in Net_InstallRoute\n");
+d603 7
+a609 2
+    if (oldRoutePtr != (Net_Route *) NIL) {
+	Net_DeleteRoute(oldRoutePtr);
+d657 44
+d706 1
+a706 1
+ *	None.
+d709 1
+a709 2
+ *	The route is marked as invalid if it has a positive reference
+ *	count, otherwise it is deleted.
+d740 1
+a740 1
+ * Net_IDToRouteStub --
+d744 1
+d755 1
+a755 1
+Net_IDToRouteStub(spriteID, size, argPtr)
+d765 1
+a765 1
+    Net_RouteInfo routeInfo;
+d776 1
+a776 1
+	FillRouteInfo(routePtr, &routeInfo);
+d778 1
+a778 1
+    toCopy = MIN(size, sizeof(Net_RouteInfo) - sizeof(Net_Header));
+d812 80
+d908 2
+a909 1
+    int 	index;		/* Which route of many. */
+d912 1
+a912 1
+    int 	size;		/* Size of data to send (not used yet). */
+d923 3
+a925 4
+	    LIST_FORALL(&netRouteArray[spriteID],(List_Links *) tmpPtr) {
+		if (tmpPtr->flags & NET_RFLAGS_VALID) {
+		    if (index >= 0 && i == index) {
+			tmpPtr->refCount++;
+d928 1
+a928 1
+		    } 
+d931 11
+d963 1
+a963 1
+ *      Determine the Sprite host ID from a physical address.  This is
+d980 1
+a980 3
+Net_AddrToID(netType, protocol, addressPtr)
+    Net_NetworkType netType;
+    int		protocol;
+d986 10
+d1002 2
+a1003 3
+		(routePtr->interPtr->netType == netType) &&
+		(!NET_ADDRESS_COMPARE(routePtr->netAddress[protocol], 
+			*addressPtr))) {
+d1016 1
+a1016 5
+ * Net_HdrToID --
+ *
+ *      Determine the Sprite host ID from a transport header.  This is
+ *      used by a server to determine a client's Sprite
+ *      ID from the transport header.
+d1018 1
+a1018 4
+ *      This routine scans the route table looking for an address
+ *      match with the input address.  If the flags field of the route
+ *      specifies that the address is a broadcast address, this will
+ *      return the correct hostid to use for a broadcast.
+d1021 1
+a1021 2
+ *      A Sprite hostid for the host at the address.  If the physical
+ *      address isn't in the table we return a hostid of -1.
+d1028 7
+a1034 5
+int
+Net_HdrToID(netType, protocol, headerPtr)
+    Net_NetworkType	netType;
+    int			protocol;
+    Address headerPtr;	/* Transport header. */
+d1037 1
+a1037 1
+    Net_Address 	netAddress;
+a1038 1
+    bzero((char *) &netAddress, sizeof(Net_Address));
+d1042 4
+a1045 3
+		NET_ETHER_ADDR_COPY(
+		    NET_ETHER_HDR_SOURCE(*((Net_EtherHdr *) headerPtr)), 
+		    netAddress.ether);
+d1049 3
+a1051 2
+		netAddress.ultra = 
+		    ((Net_UltraHeader *) headerPtr)->remoteAddress.address;
+d1055 2
+a1056 2
+		printf("Net_HdrToID: unknown netType %d\n", netType);
+		return -1;
+d1058 3
+d1065 2
+a1066 1
+		netAddress.inet = 
+d1068 2
+d1073 5
+a1077 2
+		printf("Net_HdrToID: unknown protocol %d\n", protocol);
+		return -1;
+d1080 38
+a1117 1
+    return Net_AddrToID(netType, protocol, &netAddress);
+a1146 1
+    Address 		offsetPtr;
+d1149 1
+d1152 4
+a1155 29
+    if (protocol == NET_PROTO_RAW) {
+	switch(netType) {
+	    case NET_NETWORK_ETHER: {
+		NET_ETHER_ADDR_COPY(
+		    NET_ETHER_HDR_SOURCE(*((Net_EtherHdr *) headerPtr)), 
+		    netAddress.ether);
+		break;
+	    }
+	    case NET_NETWORK_ULTRA: {
+		netAddress.ultra = 
+		    ((Net_UltraHeader *) headerPtr)->remoteAddress.address;
+		break;
+	    }
+	    default:
+		printf("Net_HdrDestString: unknown netType %d\n", netType);
+		return;
+	}
+    } else {
+	offsetPtr = headerPtr + net_NetworkHeaderSize[netType];
+	switch(protocol) {
+	    case NET_PROTO_INET : {
+		netAddress.inet = 
+		    Net_NetToHostInt(((Net_IPHeader *) offsetPtr)->dest);
+		break;
+	    }
+	    default:
+		printf("Net_HdrDestString: unknown protocol %d\n", protocol);
+		return;
+	}
+d1157 1
+a1157 1
+    Net_AddrToString(&netAddress, netType, protocol, tmpBuffer);
+d1255 1
+a1255 1
+ * FillRouteInfo --
+d1257 1
+a1257 1
+ *	Converts from a Net_Route to a Net_RouteInfo. Net_RouteInfo
+d1270 1
+a1270 1
+FillRouteInfo(routePtr, infoPtr)
+d1272 1
+a1272 1
+    Net_RouteInfo	*infoPtr;	/* The route info structure. */
+d1276 50
+d1334 2
+a1335 2
+    infoPtr->maxBytes = routePtr->maxBytes;
+    infoPtr->minBytes = routePtr->minBytes;
+d1338 5
+a1342 1
+	infoPtr->netAddress[i] = routePtr->netAddress[i];
+@
+
+
+9.8
+log
+@Cleaned up route allocation
+@
+text
+@d33 1
+a33 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netRoute.c,v 9.7 91/02/12 14:13:29 jhh Exp $ SPRITE (Berkeley)";
+d347 1
+a347 1
+	sprintf(routePtr->desc, "Route to %s - ", hostname);
+d357 1
+a357 1
+	    strcat(routePtr->desc, "ethernet, ");
+d403 1
+a403 1
+	    strcat(routePtr->desc, "ultranet, ");
+d431 1
+a431 1
+	    strcat(routePtr->desc, "raw");
+d435 1
+a435 1
+	    strcat(routePtr->desc, "IP");
+d1007 4
+a1010 3
+    strncpy(infoPtr->hostname, netHostInfo[routePtr->spriteID].name, 20);
+    strncpy(infoPtr->machType, netHostInfo[routePtr->spriteID].machType, 12);
+    strncpy(infoPtr->desc, routePtr->desc, 64);
+@
+
+
+9.8.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d33 1
+a33 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netRoute.c,v 9.8 91/03/15 15:48:23 jhh Exp $ SPRITE (Berkeley)";
+@
+
+
+9.7
+log
+@installing a route to a non-working interface killed the kernel
+@
+text
+@a20 4
+ *	No synchronization is done here yet.  Routes don't generally
+ *	change much, so the only race that exists is between an
+ *	initialization in InstallRoute and a lookup in AddrToID.
+ *
+d33 1
+a33 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netRoute.c,v 9.6 90/12/06 21:51:20 jhh Exp $ SPRITE (Berkeley)";
+a68 7
+ * Minimum and maximum number of free routes on free list.
+ */
+
+int	netMinFreeRoutes = NET_MIN_FREE_ROUTES;
+int	netMaxFreeRoutes = NET_MAX_FREE_ROUTES;
+
+/*
+a76 3
+static List_Links	freeRouteList;
+static int		netNumFreeRoutes;
+
+a111 2
+    List_Init(&freeRouteList);
+    NetAddToFreeRouteList((ClientData) NIL, (Proc_CallInfo *) NIL);
+d228 5
+d276 1
+a276 6
+    routePtr = NetAllocRoute();
+    if (routePtr == (Net_Route *) NIL) {
+	printf("Net_InstallRoute: Out of free routes!!\n");
+	printf("Net_InstallRoute: Route to %d not installed\n", spriteID);
+	return FAILURE;
+    }
+d334 1
+a334 1
+	    LIST_ATFRONT((List_Links *) &netRouteArray[spriteID]));
+d509 1
+d512 12
+a523 1
+    if ((!(routePtr->flags & NET_RFLAGS_VALID)) && (routePtr->refCount <= 0)) {
+d525 1
+a525 3
+	MASTER_UNLOCK(&netRouteMutex);
+	NetFreeRoute(routePtr);
+	return;
+a526 1
+    MASTER_UNLOCK(&netRouteMutex);
+d550 1
+d553 11
+a563 1
+    if (routePtr->refCount <= 0) {
+d565 1
+a565 3
+	MASTER_UNLOCK(&netRouteMutex);
+	NetFreeRoute(routePtr);
+	return;
+a566 1
+    MASTER_UNLOCK(&netRouteMutex);
+a966 115
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetAllocRoute --
+ *
+ *	This routine allocates a route from the list of free routes.
+ *	If the number of free routes falls below netMinFreeRoutes
+ *	then we schedule a callback to add routes to the
+ *	free list. The reason we can't allocate routes using
+ *	malloc() is that this routine is called with a master lock
+ *	held, and malloc() uses a monitor lock.
+ *
+ * Results:
+ *	A pointer to an unused route if we have one, NIL otherwise
+ *
+ * Side effects:
+ *	A callback is scheduled.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Net_Route *
+NetAllocRoute()
+{
+    Net_Route	*routePtr = (Net_Route *) NIL;
+    static	int routeCounter = 1;
+
+    MASTER_LOCK(&netFreeRouteMutex);
+    if (netNumFreeRoutes <= 0) {
+	printf("Net_GetFreeRoute: no more routes.\n");
+    } else {
+	routePtr = (Net_Route *) List_Next(&freeRouteList);
+	List_Remove((List_Links *) routePtr);
+	routePtr->routeID = routeCounter;
+	routeCounter++;
+	netNumFreeRoutes--;
+	if (netNumFreeRoutes < netMinFreeRoutes) {
+	    Proc_CallFunc(NetAddToFreeRouteList, (ClientData) 0, 0);
+	}
+    }
+    MASTER_UNLOCK(&netFreeRouteMutex);
+    return routePtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetAddToFreeRouteList --
+ *
+ *	This routine is used to allocate free routes using malloc()
+ *	and put them on the free route list.  It is called via a
+ *	callback that is scheduled in NetAllocRoute.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The free list is modified. Malloc is called.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*ARGSUSED*/
+void
+NetAddToFreeRouteList(data, infoPtr)
+    ClientData		data;		/* Not used. */
+    Proc_CallInfo	*infoPtr;	/* Not used. */
+{
+    Net_Route	*routePtr;
+
+    MASTER_LOCK(&netFreeRouteMutex);
+    while (netNumFreeRoutes < netMaxFreeRoutes) {
+	/*
+	 * We have to unlock the master lock in order to do a malloc().
+	 * Somebody may slip in and free a route, but then we just
+	 * end up with too many free routes.
+	 */
+	MASTER_UNLOCK(&netFreeRouteMutex);
+	routePtr = (Net_Route *) malloc(sizeof(Net_Route));
+	bzero((char *) routePtr, sizeof(Net_Route));
+	List_InitElement((List_Links *) routePtr);
+	MASTER_LOCK(&netFreeRouteMutex);
+	List_Insert((List_Links *) routePtr, LIST_ATREAR(&freeRouteList));
+	netNumFreeRoutes++;
+    }
+    MASTER_UNLOCK(&netFreeRouteMutex);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetFreeRoute --
+ *
+ *	Put the route on the free list.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The free list is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NetFreeRoute(routePtr)
+    Net_Route		*routePtr;	/* The route being freed. */
+{
+    MASTER_LOCK(&netFreeRouteMutex);
+    List_Insert((List_Links *) routePtr, LIST_ATREAR(&freeRouteList));
+    netNumFreeRoutes++;
+    MASTER_UNLOCK(&netFreeRouteMutex);
+@
+
+
+9.6
+log
+@made sprite ultranet tsap -1, moved setting of full ultranet address
+out of kernel
+@
+text
+@d37 1
+a37 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netRoute.c,v 9.6 90/11/05 18:06:45 jhh Exp $ SPRITE (Berkeley)";
+d190 2
+a191 1
+	printf("Net_InstallRouteStub: interface %d does not exist\n");
+d195 5
+@
+
+
+9.5
+log
+@Rewrite to support multiple interfaces and the Ultranet
+@
+text
+@d37 1
+a37 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netRoute.c,v 9.4 90/09/12 17:10:22 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+a52 1
+#include <string.h>
+a409 1
+	    Net_Address		*addressPtr;
+d416 3
+a418 2
+	    ultraHdrPtr->remoteAddress.tsapSize = 2;
+	    ultraHdrPtr->remoteAddress.tsap[1] = 1;
+a420 3
+	    addressPtr = (Net_Address *) &ultraHdrPtr->remoteAddress.address;
+	    addressPtr->generic.data[1] = 0x49;
+	    addressPtr->generic.data[6] = 0xfe;
+d422 3
+a424 2
+	    ultraHdrPtr->localAddress.tsapSize = 2;
+	    ultraHdrPtr->localAddress.tsap[1] = 1;
+a426 3
+	    addressPtr = (Net_Address *) &ultraHdrPtr->localAddress.address;
+	    addressPtr->generic.data[1] = 0x49;
+	    addressPtr->generic.data[6] = 0xfe;
+d771 1
+@
+
+
+9.4
+log
+@fixed include statements
+@
+text
+@d37 1
+a37 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netRoute.c,v 9.3 90/09/11 10:58:46 mendel Exp Locker: jhh $ SPRITE (Berkeley)";
+d44 1
+a50 1
+#include <netInet.h>
+d52 2
+d56 1
+a56 6
+ * A broadcast address that will be put into a broadcast route.
+ */
+Net_EtherAddress netBroadcastAddr = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+/*
+ * This host's internet address. This needs to be kept per interface.
+ * A value of NET_INET_ANY_ADDR means it hasn't been set yet.
+a57 1
+Net_InetAddress net_InetAddress = NET_INET_ANY_ADDR;
+d59 2
+d62 1
+a62 1
+ * The Route table. Invalid entries are NIL pointers.
+d67 3
+a69 2
+Net_Route	*netRouteArray[NET_NUM_SPRITE_HOSTS];
+int	 	netNumRoutes = NET_NUM_SPRITE_HOSTS;
+d71 1
+d74 1
+a74 1
+ * This flag turns on print statements in the ARP protocol
+a75 1
+Boolean arpDebug = FALSE;
+d77 2
+a78 67
+/*
+ * State for the Address Resolution Protocol.
+ */
+typedef struct ArpState {
+    List_Links		links;		/* Chain for all current ARPs */
+    int			state;		/* See bits defined below */
+    Timer_QueueElement	timeout;	/* Used for the call-back upon timeout*/
+    Sync_Semaphore	*mutexPtr;	/* Used for synchronization */
+    Sync_Condition	condition;	/* Used for synchronization */
+    int			type;		/* Type of request. */
+    ClientData		id;		/* Target ID, used to identify
+					 * this ARP transaction from others */
+    NetSpriteArp	packet;		/* Copy of reply packet */
+} ArpState;
+
+#define ARP_WANT_REPLY		0x1
+#define ARP_HAVE_INPUT		0x2
+#define ARP_IN_TIMEOUT_QUEUE	0x4
+
+typedef struct ArpStatisitics {
+    int	numArpRequests;		/* Number of these transmitted */
+    int numArpReplies;		/* ditto */
+    int numRevArpRequests;	/* ditto */
+    int numRevArpReplies;	/* ditto */
+    int numTimeouts;		/* Number of requests that were not responded
+				 * to after a few broadcast attempts */
+} ArpStatistics;
+ArpStatistics arpStatistics;
+
+/*
+ * Current ARP transactions have their state linked together in
+ * a list so the packet handler can save the return address for
+ * the sender.
+ */
+static List_Links arpList;
+static List_Links revArpList;
+
+/*
+ * A very simple packet list used to keep Arp packet headers and
+ * the scatter/gather structure used to access them.  These must be
+ * global data structures because the packet may be queued before output.
+ * A monitor is used to synchronize access
+ */
+typedef struct ArpOutputQueue {
+    Net_EtherHdr	etherHdr;
+    NetSpriteArp	packet;
+    Net_ScatterGather	gather;
+} ArpOutputQueue;
+
+#define ARP_OUTPUT_QUEUE_LEN		3
+static ArpOutputQueue arpOutputQueue[ARP_OUTPUT_QUEUE_LEN];
+static int nextOutputIndex = 0;
+
+static Sync_Lock arpOutputQueueLock; ;
+#define LOCKPTR (&arpOutputQueueLock)
+
+/*
+ * Another simple list of Arp packets used to pass info
+ * from the interrupt handler that gets an ARP request to the
+ * Proc_ServerProc that generates the reply.
+ */
+typedef NetSpriteArp  ArpInputQueue;
+
+#define ARP_INPUT_QUEUE_LEN		5
+static ArpInputQueue arpInputQueue[ARP_INPUT_QUEUE_LEN];
+static int nextInputIndex = 0;
+static Sync_Semaphore arpInputMutex;
+d89 6
+a94 5
+static void Net_ArpTimeout();
+static void NetArpOutput();
+static void NetRevArpHandler();
+static void NetArpHandler();
+static void NetFillInArpRequest();
+d101 2
+a102 2
+ *      Initialize the broadcast route.  The rest of the routes are
+ *      installed via the netRoute user program.
+a119 2
+    Sync_LockInitDynamic(&arpOutputQueueLock, "Net:arpOutputQueueLock");
+    Sync_SemInitDynamic(&arpInputMutex, "Net:arpInputMutex");
+d124 24
+a147 2
+    for (spriteID=0 ; spriteID<netNumRoutes ; spriteID++) {
+	netRouteArray[spriteID] = (Net_Route *)NIL;
+a148 16
+    /*
+     * Mark the arp output queue as all done (output).
+     */
+    for (i=0; i<ARP_OUTPUT_QUEUE_LEN ; i++) {
+	arpOutputQueue[i].gather.done = TRUE;
+    }
+    List_Init(&arpList);
+    List_Init(&revArpList);
+
+    /*
+     * Install the broadcast route so we can do our first broadcast rpcs.
+     */
+    (void) Net_InstallRoute(NET_BROADCAST_HOSTID, NET_ROUTE_BROAD, 
+			    NET_ROUTE_ETHER,
+			   (ClientData) &netBroadcastAddr, "broadcast",
+			   "unknown");
+d168 3
+a170 10
+Net_InstallRouteStub(spriteID, flags, type, clientData, name, machType)
+    int spriteID;		/* Sprite Host ID */
+    int flags;			/* NET_ROUTE_BROAD */
+    int type;			/* NET_ROUTE_ETHER */
+    ClientData clientData;	/* Route data */
+    char *name;		/* The human understandable name of the host.  This
+			 * only gets used in error messages to the console. */
+    char *machType;	/* Machine type.  This is kept here for convenience,
+			 * and returned to the file system so it can
+			 * expand $MACHINE in pathnames. */
+d172 28
+a199 53
+    ReturnStatus status;
+    ClientData localData = (ClientData)NIL;
+    char hostname[128];
+    char machineType[128];
+    int length;
+
+    if (Vm_StringNCopy(128, name, hostname, &length) != SUCCESS) {
+	printf("Warning: Net_InstallRoute: bad name arg\n");
+	return(SYS_ARG_NOACCESS);
+    }
+    hostname[127] = '\0';
+    switch(type) {
+	case NET_ROUTE_ETHER: {
+	    /*
+	     * An ethernet route consists of a single ethernet address.
+	     */
+	    localData = (ClientData)malloc(sizeof(Net_EtherAddress));
+	    status = Vm_CopyIn(sizeof(Net_EtherAddress), (Address)clientData,
+				      (Address)localData);
+	    if (status != SUCCESS) {
+		free((Address)localData);
+		return(status);
+	    }
+	    break;
+	}
+	case NET_ROUTE_INET: {
+	    /*
+	     * An internet route consists of internet address followed by
+	     * the ethernet address of the gateway machine.
+	     */
+	    localData = (ClientData)malloc(sizeof(NetInetRoute));
+	    status = Vm_CopyIn(sizeof(NetInetRoute), (Address)clientData, 
+			      (Address)localData);
+	    if (status != SUCCESS) {
+		free((Address)localData);
+		return(status);
+	    }
+	    break;
+	}
+	default:
+	    printf("Warning: Net_InstallRoute: bad route type %d\n", type);
+	    return(GEN_INVALID_ARG);
+    }
+    if (Vm_StringNCopy(128, machType, machineType, &length) != SUCCESS) {
+	printf("Warning: Net_InstallRoute: bad machType arg\n");
+	(void) strcpy(machineType,"sun3");
+    }
+    machineType[127] = '\0';
+    status = Net_InstallRoute(spriteID, flags, type, localData,
+		    hostname, machineType);
+    if (localData != (ClientData)NIL) {
+	free((Address)localData);
+    }
+d223 20
+a242 11
+Net_InstallRoute(spriteID, flags, type, clientData, hostname, machType)
+    int spriteID;		/* Sprite Host ID */
+    int flags;			/* NET_ROUTE_BROAD */
+    int type;			/* NET_ROUTE_ETHER */
+    ClientData clientData;	/* Route data */
+    char *hostname;		/* Human recognizable name */
+    char *machType;		/* Machine type used to expand $MACHINE */
+{
+    register Net_Route *routePtr;
+    Address oldData;
+
+d247 4
+a250 6
+    if ((rpc_SpriteID == 0) && (type == NET_ROUTE_ETHER)) {
+	Net_EtherAddress	etherAddress;
+        Mach_GetEtherAddress(&etherAddress);
+
+	if (NET_ETHER_COMPARE(etherAddress,*(Net_EtherAddress *)clientData)) {
+		rpc_SpriteID = spriteID;
+d252 1
+a252 1
+    } 
+d258 1
+a258 1
+	Net_EtherAddress	etherAddress;
+d260 27
+a286 26
+	Mach_GetEtherAddress(&etherAddress);
+	if (type == NET_ROUTE_ETHER) {
+	    if (!NET_ETHER_COMPARE(etherAddress,
+		    *(Net_EtherAddress *)clientData)) {
+		printf("Warning: Route to SpriteID %d is incorrect.\n",
+			spriteID);
+	       return FAILURE;
+	    }
+	} else if (type == NET_ROUTE_INET) {
+	    NetInetRoute 	*inetRoute= (NetInetRoute *)clientData;
+	    char	buffer[128];
+	    if (net_InetAddress == NET_INET_ANY_ADDR)  { 
+		net_InetAddress = inetRoute->inetAddr;
+		Net_InetAddrToString(net_InetAddress, buffer);
+		printf("Setting internet address to %s\n",buffer);
+	    } else {
+		if (net_InetAddress != inetRoute->inetAddr) {
+		    printf(
+		    "Warning: Internet address for SpriteID %d is incorrect.\n",
+		    spriteID);
+		   return FAILURE;
+		}
+
+	    }
+	    return SUCCESS;
+	}
+d288 1
+d291 1
+a291 1
+     * In order to install INET routes our net_InetAddress must be set.
+d293 2
+a294 3
+    if ((type == NET_ROUTE_INET) && (net_InetAddress == NET_INET_ANY_ADDR)) {
+	Net_EtherAddress	etherAddress;
+	Net_InetAddress		addr;
+d296 3
+d300 1
+a300 1
+	 * Try to use RevArp to determine our inet address.
+d302 12
+a313 10
+	Mach_GetEtherAddress(&etherAddress);
+	addr = Net_RevArp(NET_ROUTE_INET,&etherAddress);
+	if (addr != (Net_InetAddress) -1) { 
+	    char	buffer[128];
+	    net_InetAddress = Net_HostToNetInt(addr);
+	    Net_InetAddrToString(net_InetAddress, buffer);
+	    printf("Setting internet address to %s\n",buffer);
+	} else {
+	    printf("Warning: RARP failed, Can't install INET route to %d\n",
+		  spriteID);
+d316 10
+d327 3
+a329 4
+
+   MASTER_LOCK(&netRouteMutex);
+
+    if (spriteID < 0 || spriteID >= NET_NUM_SPRITE_HOSTS) {
+d332 10
+a341 7
+	routePtr = netRouteArray[spriteID];
+	if (routePtr != (Net_Route *)NIL) {
+	    oldData = routePtr->data;
+	} else {
+	    oldData = (Address)NIL;
+	    routePtr = (Net_Route *)malloc(sizeof(Net_Route));
+	    netRouteArray[spriteID] = routePtr;
+d343 5
+a347 9
+	/*
+	 * Silently discard old name and machine types.  We'll holler below
+	 * if the ethernet address changes.  Names and types may be set
+	 * to "noname" and "unknown" during bootstrap routing.
+	 */
+	routePtr->name = (char *)malloc(strlen(hostname) + 1);
+	(void) strcpy(routePtr->name, hostname);
+	routePtr->machType = (char *)malloc(strlen(machType) + 1);
+	(void) strcpy(routePtr->machType, machType);
+d349 2
+a350 1
+	routePtr->flags = flags;
+d352 7
+a358 1
+	routePtr->type = type;
+d364 3
+a366 2
+    switch(type) {
+	case NET_ROUTE_ETHER: {
+d368 1
+d370 9
+a378 10
+	     * The route data for a raw ethernet route is an ethernet
+	     * header that the network driver can use directly.  The
+	     * drivers fill in the source part of the ethernet header each
+	     * time they send out a packet.
+	     */
+	    if (oldData != (Address)NIL) {
+		etherHdrPtr = (Net_EtherHdr *)oldData;
+		if ( ! NET_ETHER_COMPARE_PTR(
+		    &NET_ETHER_HDR_DESTINATION(*etherHdrPtr),
+		    (Net_EtherAddress *)clientData)) {
+a381 1
+		    oldData = (Address)NIL;
+d384 12
+a395 4
+	    if (oldData == (Address)NIL) {
+		etherHdrPtr = (Net_EtherHdr *)malloc(sizeof(Net_EtherHdr));
+		NET_ETHER_ADDR_COPY(*(Net_EtherAddress *)clientData,
+				    NET_ETHER_HDR_DESTINATION(*etherHdrPtr));
+d397 1
+a397 2
+			    Net_HostToNetShort(NET_ETHER_SPRITE);
+		routePtr->data = (Address)etherHdrPtr;
+d399 38
+d439 11
+a449 2
+	case NET_ROUTE_INET: {
+	    Net_EtherHdr *etherHdrPtr;
+d451 3
+a453 2
+	    NetInetRoute *inetRoute;
+	    char *buffer;
+d455 32
+a486 49
+	     * The route data for a INET route is an ethernet
+	     * header that the network driver can use directly and
+	     * an template ipHeader. 
+	     * The drivers fill in the source part of the ethernet header and
+	     * use the template ipHeader each time they send out a packet. 
+	     * Allocate space for a ethernet header and ipheader such that
+	     * the ethernet header starts on an odd 16 bit boundry. This
+	     * causes the ipheader to start on a 32 bit word boundry.
+	     */
+	     buffer = malloc(sizeof(Net_EtherHdr) + sizeof(Net_IPHeader) + 2);
+	     etherHdrPtr = (Net_EtherHdr *) (buffer + 2);
+	     ipHeader = (Net_IPHeader *) 
+				(((char *)etherHdrPtr)+sizeof(Net_EtherHdr));
+	     inetRoute = (NetInetRoute *)clientData;
+	     /*
+	      * Fill in the ethernet header to point at the gateway machine
+	      * and set the protocol type to IP.
+	      */
+	     NET_ETHER_ADDR_COPY(inetRoute->gatewayAddress,
+				 NET_ETHER_HDR_DESTINATION(*etherHdrPtr));
+	     NET_ETHER_HDR_TYPE(*etherHdrPtr) =  
+				Net_HostToNetShort(NET_ETHER_IP);
+	     /*
+	      * Initiailize the template ipHeader.
+	      */
+	     bzero((char *)ipHeader, sizeof(Net_IPHeader));
+	     ipHeader->headerLen = sizeof(Net_IPHeader) / 4;
+	     ipHeader->version = NET_IP_VERSION;
+	     ipHeader->typeOfService = 0;
+	     /*
+	      * Kernel IP doesn't handle fragmented IP packets (yet).
+	      */
+	     ipHeader->flags = NET_IP_DONT_FRAG;
+	     SWAP_FRAG_OFFSET_HOST_TO_NET(ipHeader);
+	     ipHeader->timeToLive = NET_IP_MAX_TTL;
+	     ipHeader->protocol = NET_IP_PROTOCOL_SPRITE;
+	     ipHeader->source = net_InetAddress;
+	     ipHeader->dest = inetRoute->inetAddr;
+	     /*
+	      * Precompute the checksum for the ipHeader. This must be
+	      * corrected when the totalLen field is updated. Note we
+	      * store the checksum as the 16 bit sum of the packet
+	      * header to permit easy updating.
+	      */
+	     ipHeader->checksum = Net_InetChecksum(sizeof(Net_IPHeader),
+						   (Address) ipHeader);
+	     ipHeader->checksum = ~ipHeader->checksum;
+	     routePtr->data = (Address)etherHdrPtr;
+	     break;
+d489 5
+a493 1
+	    routePtr->data = (Address)NIL;
+d499 3
+d508 63
+d585 1
+a585 1
+Net_IDToRouteStub(spriteID, argPtr)
+d587 1
+d589 1
+d591 2
+d595 2
+a596 1
+    Net_Route unusedRoute;
+d598 1
+a598 1
+    if (spriteID < 0 || spriteID >= netNumRoutes) {
+d601 1
+a601 1
+    routePtr = Net_IDToRoute(spriteID);
+d603 9
+a611 4
+	unusedRoute.flags = 0;
+	unusedRoute.spriteID = -1;
+	unusedRoute.type = NET_ROUTE_UNUSED;
+	routePtr = &unusedRoute;
+d613 21
+a633 13
+    status = Vm_CopyOut(3 * sizeof(int), (Address)routePtr, argPtr);
+    switch(routePtr->type) {
+	case NET_ROUTE_ETHER:
+	    status = Vm_CopyOut(sizeof(Net_EtherHdr), (Address)routePtr->data,
+			     (Address)((int)argPtr + 3 * sizeof(int)));
+	    break;
+	case NET_ROUTE_INET:
+	    status = Vm_CopyOut(sizeof(Net_EtherHdr) + sizeof(Net_IPHeader), 
+			     (Address)routePtr->data,
+			     (Address)((int)argPtr + 3 * sizeof(int)));
+	    break;
+	default:
+	    break;
+d635 1
+a644 4
+ *	This synchronizes with installation of new routes, although it
+ *	returns a pointer into the route table making it difficult
+ *	to change routing information without leaking memory - we can't
+ *	free anything referenced by the route table.
+d654 1
+d656 37
+a692 10
+Net_IDToRoute(spriteID)
+    int spriteID;
+{
+    register Net_Route *routePtr;
+
+    MASTER_LOCK(&netRouteMutex);
+    if (spriteID < 0 || spriteID >= netNumRoutes) {
+	routePtr = (Net_Route *)NIL;
+    } else {
+	routePtr = netRouteArray[spriteID];
+a693 1
+    MASTER_UNLOCK(&netRouteMutex);
+d707 1
+a707 3
+ *      match with the input address.  If the flags field of the route
+ *      specifies that the address is a broadcast address, this will
+ *      return the correct hostid to use for a broadcast.
+d719 4
+a722 4
+Net_AddrToID(flags, type, routeData)
+    int flags;				/* 0 or NET_ROUTE_BROAD */
+    int type;				/* NET_ROUTE_ETHER */
+    ClientData routeData;		/* Route type specific address */
+d724 3
+a726 3
+    register Net_Route *routePtr;
+    register int i;
+    register int ID;
+d730 6
+a735 12
+    for (i=0 ; i<netNumRoutes ; i++) {
+	routePtr = netRouteArray[i];
+	if (routePtr == (Net_Route *)NIL) {
+	    continue;
+	}
+	if (type == routePtr->type) {
+	    /*
+	     * Look for the broadcast flag first so our caller
+	     * doesn't have to know the value of the broadcast address.
+	     */
+	    if ((flags & NET_ROUTE_BROAD) &&
+	        (routePtr->flags & NET_ROUTE_BROAD)) {
+d737 1
+a737 1
+		goto found;
+a738 38
+	    /*
+	     * The address types of the table and input match,
+	     * look for an address value match.
+	     */
+	    switch (type) {
+		case NET_ROUTE_ETHER: {
+		    Net_EtherHdr *etherHdrPtr;
+		    Net_EtherAddress *etherAddrPtr;
+
+		    etherHdrPtr = (Net_EtherHdr *)routePtr->data;
+		    etherAddrPtr = (Net_EtherAddress *)routeData;
+		    if (NET_ETHER_COMPARE_PTR(etherAddrPtr,
+				 &(NET_ETHER_HDR_DESTINATION(*etherHdrPtr)))){
+			ID = routePtr->spriteID;
+			goto found;
+		    }
+		    break;
+		}
+		case NET_ROUTE_INET: {
+		    Net_EtherHdr *etherHdrPtr;
+		    Net_IPHeader *ipHeaderPtr;
+
+		    etherHdrPtr = (Net_EtherHdr *)routePtr->data;
+		    ipHeaderPtr = (Net_IPHeader *) 
+				(((char *)etherHdrPtr)+sizeof(Net_EtherHdr));
+		    if (Net_NetToHostInt(ipHeaderPtr->dest) == 
+				(Net_InetAddress)routeData) {
+			ID = routePtr->spriteID;
+			goto found;
+		    }
+		    break;
+		}
+		default:
+		    /*
+		     * Don't find other kinds of routes
+		     */
+		    break;
+	    }
+a740 6
+    /*
+     * We didn't find an address match on a route.
+     */
+    MASTER_UNLOCK(&netRouteMutex);
+    return(-1);
+found:
+d769 3
+a771 2
+Net_HdrToID(headerType, headerPtr)
+    int	headerType;	/* Route type of the header. */
+d774 2
+a775 1
+    Net_EtherHdr *etherHdrPtr = (Net_EtherHdr *) headerPtr;
+d777 17
+a793 11
+   if (headerType == NET_ROUTE_ETHER) {
+	Net_EtherAddress srcAddress;
+	NET_ETHER_ADDR_COPY(NET_ETHER_HDR_SOURCE(*etherHdrPtr), srcAddress);
+	return Net_AddrToID(0, headerType, (ClientData) &srcAddress);
+    } else if (headerType == NET_ROUTE_INET) {
+	Net_IPHeader *ipHeaderPtr;
+	Net_InetAddress dest;
+	ipHeaderPtr = (Net_IPHeader *) 
+			(((char *)etherHdrPtr)+sizeof(Net_EtherHdr));
+	dest = Net_NetToHostInt(ipHeaderPtr->dest);
+	return Net_AddrToID(0, headerType, (ClientData)dest);
+d795 11
+a805 1
+	printf("Unknown header type %d in Net_HdrToID\n", headerType);
+d807 1
+a807 1
+    return -1;
+d829 3
+a831 2
+Net_HdrDestString(headerType, headerPtr, bufferLen, buffer)
+    int	headerType;	/* Route type of the header. */
+d837 3
+a839 2
+   Net_EtherHdr *etherHdrPtr = (Net_EtherHdr *) headerPtr;
+   char	tmpBuffer[128];
+d841 18
+a858 11
+   if (headerType == NET_ROUTE_ETHER) {
+	Net_EtherAddress srcAddress;
+	NET_ETHER_ADDR_COPY(NET_ETHER_HDR_SOURCE(*etherHdrPtr), srcAddress);
+	Net_EtherAddrToString(&srcAddress, tmpBuffer);
+    } else if (headerType == NET_ROUTE_INET) {
+	Net_IPHeader *ipHeaderPtr;
+	Net_InetAddress dest;
+	ipHeaderPtr = (Net_IPHeader *) 
+			(((char *)etherHdrPtr)+sizeof(Net_EtherHdr));
+	dest = Net_NetToHostInt(ipHeaderPtr->dest);
+	Net_InetAddrToString(dest, tmpBuffer);
+d860 5
+a864 48
+	printf("Unknown header type %d in Net_HdrDestString\n", headerType);
+	(void) strcpy(tmpBuffer, "UNKNOWN");
+    }
+    (void) strncpy(buffer, tmpBuffer, bufferLen-1);
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * Net_AddrToName --
+ *
+ *	Map from an ethernet addresses to a host name.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------------
+ */
+
+void
+Net_AddrToName(clientData, namePtrPtr)
+    ClientData clientData;
+    char **namePtrPtr;
+{
+    register Net_Route *routePtr;
+    register int i;
+
+    MASTER_LOCK(&netRouteMutex);
+
+    *namePtrPtr = (char *) NIL;
+    for (i=0 ; i<netNumRoutes ; i++) {
+	routePtr = netRouteArray[i];
+	if (routePtr == (Net_Route *)NIL) {
+	    continue;
+	}
+	if (routePtr->type == NET_ROUTE_ETHER) {
+	    Net_EtherAddress *etherAddressPtr;
+	    Net_EtherHdr *etherHdrPtr = (Net_EtherHdr *)routePtr->data;
+	    etherAddressPtr = (Net_EtherAddress *) clientData;
+	    if (NET_ETHER_COMPARE_PTR(
+			&NET_ETHER_HDR_DESTINATION(*etherHdrPtr),
+			etherAddressPtr)) {
+		*namePtrPtr = routePtr->name;
+d867 3
+a869 12
+	} else if (routePtr->type == NET_ROUTE_INET) {
+	    Net_EtherHdr *etherHdrPtr;
+	    Net_IPHeader *ipHeaderPtr;
+
+	   etherHdrPtr = (Net_EtherHdr *)routePtr->data;
+	   ipHeaderPtr = (Net_IPHeader *) 
+				(((char *)etherHdrPtr)+sizeof(Net_EtherHdr));
+	   if (Net_NetToHostInt(ipHeaderPtr->dest) == 
+				(Net_InetAddress)clientData) {
+		*namePtrPtr = routePtr->name;
+		break;
+	   }
+d872 2
+a873 1
+    MASTER_UNLOCK(&netRouteMutex);
+d876 1
+d895 4
+a898 3
+Net_SpriteIDToName(spriteID, namePtrPtr)
+    int spriteID;
+    char **namePtrPtr;
+d900 1
+a900 2
+    register Net_Route *routePtr;
+
+d902 2
+a903 6
+    *namePtrPtr = (char *) NIL;
+    if (spriteID >= 0 && spriteID < netNumRoutes) {
+	routePtr = netRouteArray[spriteID];
+	if (routePtr != (Net_Route *)NIL) {
+	    *namePtrPtr = routePtr->name;
+	}
+d926 5
+a930 3
+char *
+Net_SpriteIDToMachType(spriteID)
+    int spriteID;
+d932 1
+a932 3
+    register Net_Route *routePtr;
+    register char *machTypeString;
+
+d934 5
+a938 9
+    machTypeString = (char *)NIL;
+    if (spriteID >= 0 && spriteID < netNumRoutes) {
+	routePtr = netRouteArray[spriteID];
+	if (routePtr != (Net_Route *)NIL) {
+	    machTypeString = routePtr->machType;
+	}
+    }
+    MASTER_UNLOCK(&netRouteMutex);
+    return(machTypeString);
+d970 1
+a970 8
+ * Net_Arp --
+ *
+ *      Sprite's Address Resolution Protocol.  Broadcast a Sprite ARP
+ *      packet to find the physical address that is used to get to the
+ *      host identified by the Sprite ID.
+ *
+ * Results:
+ *	A pointer to a route.
+d972 12
+a983 2
+ * Side effects:
+ *	A broadcast, and the route table is updated.
+d989 1
+a989 7
+Net_Arp(spriteID, mutexPtr)
+    int	spriteID;			/* ID to find the route for */
+    Sync_Semaphore *mutexPtr;		/* Address of the mutex that the
+					 * caller of Net_Output used for
+					 * synchronization.  This needs to
+					 * be released during the ARP so that
+					 * we can receive our reply. */
+d991 2
+a992 15
+    ReturnStatus status;
+    NetSpriteArp request;		/* The Sprite ARP request packet data */
+    NetSpriteArp reply;			/* The Sprite ARP reply packet data */
+    Net_ScatterGather gather;		/* Points to packet data */
+    static Net_EtherAddress	zeroAddress = {0,0,0,0,0,0};
+    Net_EtherAddress	myEtherAddress;
+
+    Mach_GetEtherAddress(&myEtherAddress);
+    NetFillInArpRequest(NET_ARP_REQUEST, NET_ROUTE_ETHER,
+			(ClientData) spriteID, (ClientData) rpc_SpriteID,
+			&zeroAddress, &myEtherAddress, &request);
+    gather.bufAddr = (Address)&request;
+    gather.length = sizeof(NetSpriteArp);
+    gather.done = FALSE;
+    gather.mutexPtr = (Sync_Semaphore *) NIL;
+d994 32
+a1025 15
+    status = NetDoArp(mutexPtr, NET_ARP_REQUEST, &gather, &reply);
+    if (status == SUCCESS) {
+	(void) Net_InstallRoute(spriteID, 0, NET_ROUTE_ETHER, 
+			(ClientData) ARP_SRC_ETHER_ADDR(&reply),
+				"noname", "unknown");
+	return(netRouteArray[spriteID]);
+    } else {
+	return((Net_Route *)NIL);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetRevArp --
+a1026 10
+ *      Sprite's Reverse Address Resolution Protocol.  Broadcast a Sprite
+ *      Reverse ARP packet to find the Sprite ID that corresponds to our
+ *      ethernet adddress.
+ *
+ * Results:
+ *	A Sprite host ID
+ *
+ * Side effects:
+ *	None.
+ *
+d1030 5
+a1034 5
+int
+Net_RevArp(type, etherAddrPtr)
+    int		    type;		/* Type of address wanted. */
+    Net_EtherAddress *etherAddrPtr;	/* Physical address to map to Sprite
+					 * ID */
+d1036 1
+a1036 23
+    ReturnStatus status;
+    NetSpriteArp request;		/* Sprite RARP request packet data */
+    NetSpriteArp reply;			/* Sprite RARP reply packet data */
+    Net_ScatterGather gather;		/* Points to packet data */
+    static Sync_Semaphore mutex =
+	Sync_SemInitStatic("Net_RevArp.mutex"); /* Reverse arp is called
+					 * during initialization when there is
+					 * no mutex held (unlike regular arp)
+					 * so we need our own mutex for sync */
+    Net_EtherAddress	myEtherAddress;
+
+    Mach_GetEtherAddress(&myEtherAddress);
+
+    if (!((type == NET_ROUTE_ETHER) || (type == NET_ROUTE_INET))) {
+	panic("Bad route type passed to Net_RevArp.\n");
+	return -1;
+    }
+    NetFillInArpRequest(NET_RARP_REQUEST, type, (ClientData) 0,
+		(ClientData) 0, etherAddrPtr, &myEtherAddress,&request);
+    gather.bufAddr = (Address)&request;
+    gather.length = sizeof(NetSpriteArp);
+    gather.done = FALSE;
+    gather.mutexPtr = (Sync_Semaphore *) NIL;
+d1038 14
+a1051 118
+    MASTER_LOCK(&mutex);
+    Sync_SemRegister(&mutex);
+    status = NetDoArp(&mutex, NET_RARP_REQUEST, &gather, &reply);
+    MASTER_UNLOCK(&mutex);
+    if (status == SUCCESS) {
+	unsigned int spriteID;
+	bcopy(ARP_TARGET_PROTO_ADDR(&reply),(char *) &spriteID,4);
+	return(Net_NetToHostInt(spriteID));
+    } else {
+	return(-1);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetDoArp --
+ *
+ *	The broadcast-retry-wait loop for ARP and Reverse Arp.
+ *
+ * Results:
+ *	Fills in the callers packet buffer with a copy of the reply.
+ *	Returns FAILURE if there is no response after a timeout.
+ *
+ * Side effects:
+ *	The packet broadcast, wait, etc.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+NetDoArp(mutexPtr, command, gatherPtr, packetPtr)
+    Sync_Semaphore *mutexPtr;		/* Address of the mutex that the
+					 * caller of Net_Output used for
+					 * synchronization.  This needs to
+					 * be released during the ARP so that
+					 * we can receive our reply. */
+    int command;			/* NET_ARP_REQUEST or NET_RARP_REQUEST*/
+    Net_ScatterGather *gatherPtr;	/* Specifies the output packet */
+    NetSpriteArp *packetPtr;		/* Filled in with the reply packet */
+{
+    register Net_Route *routePtr;	/* Route for RPC broadcast */
+    register Net_EtherHdr *etherHdrPtr;	/* Regular RPC broadcast header */
+    Net_EtherHdr etherHdr;		/* Header for Sprite ARP packet */
+    int retries = 0;			/* Retry counter */
+    ArpState arp;			/* State for the protocol */
+    NetSpriteArp *requestPtr;		/* Pointer to request data */
+    List_Links *listPtr;		/* Either arpList or revArpList */
+
+    if (mutexPtr == (Sync_Semaphore *)NIL) {
+	return(FAILURE);
+    }
+    /*
+     * Set up the ethernet header for the Arp request packet.  We can't
+     * use the regular broadcast route because the ethernet protocol type
+     * is different, Arp.  The broadcast destination address,
+     * however, is obtained from the regular broadcast route.
+     */
+    routePtr = netRouteArray[NET_BROADCAST_HOSTID];
+    etherHdrPtr = (Net_EtherHdr *)routePtr->data;
+    NET_ETHER_ADDR_COPY(NET_ETHER_HDR_DESTINATION(*etherHdrPtr),
+			NET_ETHER_HDR_DESTINATION(etherHdr));
+    if (command == NET_ARP_REQUEST) {
+	NET_ETHER_HDR_TYPE(etherHdr) = Net_HostToNetShort(NET_ETHER_ARP);
+    } else {
+	NET_ETHER_HDR_TYPE(etherHdr) = Net_HostToNetShort(NET_ETHER_REVARP);
+    }
+
+    requestPtr = (NetSpriteArp *)gatherPtr->bufAddr;
+    /*
+     * Use a simple retry loop to get our reply.  The ARP protocol state
+     * is set up and put on a list so the packet handler can find it.
+     */
+
+    arp.state = ARP_WANT_REPLY;
+    arp.mutexPtr = mutexPtr;
+    arp.type = Net_NetToHostShort((requestPtr->arpHeader.protocolType));
+
+    if (command == NET_ARP_REQUEST) {
+	int spriteID;
+	bcopy(ARP_TARGET_PROTO_ADDR(requestPtr),(char *) &spriteID,4);
+	arp.id =  (ClientData) Net_NetToHostInt((unsigned int)spriteID);
+	listPtr = &arpList;
+    } else {
+	arp.id = (ClientData) ARP_TARGET_ETHER_ADDR(requestPtr);
+	listPtr = &revArpList;
+    }
+    List_InitElement((List_Links *) &arp);
+    List_Insert((List_Links *)&arp, LIST_ATREAR(listPtr));
+
+    while (retries < 4 && ((arp.state & ARP_HAVE_INPUT) == 0)) {
+	retries++;
+	if (command == NET_ARP_REQUEST) {
+	    if (arpDebug) {
+		printf("Sending arp request for %d\n", arp.id);
+	    }
+	    arpStatistics.numArpRequests++;
+	} else {
+	    if (arpDebug) {
+		printf("Sending rev arp request\n");
+	    }
+	    arpStatistics.numRevArpRequests++;
+	}
+	(netEtherFuncs.output)(&etherHdr, gatherPtr, 1);
+
+	arp.state |= ARP_IN_TIMEOUT_QUEUE ;
+	arp.timeout.routine = Net_ArpTimeout;
+	arp.timeout.interval = 500 * timer_IntOneMillisecond;
+	arp.timeout.clientData = (ClientData)&arp;
+	Timer_ScheduleRoutine(&arp.timeout, TRUE);
+	do {
+	    Sync_MasterWait(&arp.condition, arp.mutexPtr, FALSE);
+	} while (((arp.state & ARP_HAVE_INPUT) == 0) &&
+		 (arp.state & ARP_IN_TIMEOUT_QUEUE));
+    }
+    List_Remove((List_Links *)&arp);
+    if (arp.state & ARP_IN_TIMEOUT_QUEUE) {
+	Timer_DescheduleRoutine(&arp.timeout);
+d1053 1
+a1053 7
+    if ((arp.state & ARP_HAVE_INPUT) == 0) {
+	arpStatistics.numTimeouts++;
+	return(FAILURE);
+    } else {
+	*packetPtr = arp.packet;
+	return(SUCCESS);
+    }	
+d1059 1
+a1059 1
+ * NetArpInput --
+d1061 1
+a1061 4
+ *	Handler for the Address Resolution Protocol.  This looks through
+ *	the list of arpState's to find a match between the Sprite IDs.
+ *	Upon a match the physical address from the reply is stored in
+ *	the state and the waiting process is notified.
+d1067 1
+a1067 3
+ *	Copies the data from the arp reply into the arp state that
+ *	was enqueued in arpList by Net_Arp.  The arpState is marked
+ *	as having received input.
+a1071 1
+/*ARGSUSED*/
+d1073 2
+a1074 4
+NetArpInput(packetPtr, packetLength)
+    Address packetPtr;		/* Pointer to the packet in the hardware
+				 * recieve buffers */
+    int packetLength;		/* Length of the packet */
+d1076 4
+a1079 167
+    register NetSpriteArp *arpDataPtr;
+    Boolean	forKernel = TRUE;
+    unsigned short opcode, type;
+
+    arpDataPtr = (NetSpriteArp *)(packetPtr + sizeof(Net_EtherHdr));
+    opcode = Net_NetToHostShort(arpDataPtr->arpHeader.opcode);
+    type = Net_NetToHostShort(arpDataPtr->arpHeader.protocolType);
+    /*
+     * This packet is for the kernel ARP if the following 
+     * condition are true:
+     *	1) The hardwareType of the request is for the ethernet.
+     *  2) The protocolType is ether for IP or Sprite type.
+     *  3) The opcode is one we can handle (1 thru 4).
+     */
+    forKernel = (Net_NetToHostShort(arpDataPtr->arpHeader.hardwareType) == 
+						NET_ARP_TYPE_ETHER)      &&
+		 ((type == NET_ETHER_IP) || (type == NET_ETHER_SPRITE)) &&
+		 ((opcode > 0) && (opcode < 5)) ;
+
+    if (!forKernel) {
+	return;
+    }
+
+    switch (opcode) {
+	case NET_ARP_REQUEST: {
+	    unsigned int id;
+	    /*
+	     * Received a request for the address corresponding to a
+	     * sprite ID. Look to see if it is for us.
+	     * If it is then we reply with that info.
+	     */
+	    bcopy(ARP_TARGET_PROTO_ADDR(arpDataPtr),(char *)&id,4);
+	    id = Net_NetToHostInt(id);
+	    if (arpDebug) {
+		printf("Got ARP request for Sprite ID 0x%x\n", id);
+	    }
+	    if (type == NET_ETHER_SPRITE) { 
+		forKernel = (id == rpc_SpriteID);
+	    } else {
+		forKernel = (id == net_InetAddress);
+	    }
+	    if (forKernel) { 
+		/*
+		 * We might overrun ourselves if we get a whole
+		 * bunch of arp requests.  We synchronize, however,
+		 * so that the call-back procedure sees a 
+		 * consistent view.
+		 */
+		register ArpInputQueue *arpInputPtr;
+		MASTER_LOCK(&arpInputMutex);
+		arpInputPtr = &arpInputQueue[nextInputIndex];
+		*arpInputPtr = *arpDataPtr;
+		nextInputIndex = (nextInputIndex + 1) % ARP_INPUT_QUEUE_LEN;
+		MASTER_UNLOCK(&arpInputMutex);
+		Proc_CallFunc(NetArpHandler, (ClientData)arpInputPtr, 0);
+	    }
+	    break;
+	}
+	case NET_ARP_REPLY: {
+	    ArpState *arpPtr;
+	    unsigned int id;
+	    Net_EtherAddress myEtherAddr, *targetEtherAddrPtr;
+
+	    /*
+	     * Make sure this REPLY is targeted for us.
+	     */
+	    targetEtherAddrPtr = 
+			(Net_EtherAddress *)ARP_TARGET_ETHER_ADDR(arpDataPtr);
+	    Mach_GetEtherAddress(&myEtherAddr);
+	    if (!NET_ETHER_COMPARE_PTR(&myEtherAddr, targetEtherAddrPtr)) {
+		break;
+	    }
+
+	    /*
+	     * Look through the list of active arp requests for the one
+	     * that matches this reply.  Then just copy the arp data to
+	     * that state and notify the waiting process.
+	     * Note: we'll probably get many replies to each arp request
+	     * and only the first one updates the waiting process's arp
+	     * state.  This is probably overly paranoid, but we don't want
+	     * to be messing with things once we've notified the waiter.
+	     */
+	    bcopy(ARP_SRC_PROTO_ADDR(arpDataPtr),(char *)&id,4);
+	    id = Net_NetToHostInt(id);
+	    if (arpDebug) {
+		printf("Got ARP reply for type %d Id 0x%x\n", type, id);
+	    }
+	    LIST_FORALL(&arpList, (List_Links *)arpPtr) {
+		if ((arpPtr->id == (ClientData) id) && (arpPtr->type == type)) {
+		    if ((arpPtr->state & ARP_HAVE_INPUT) == 0) {
+			arpPtr->packet = *arpDataPtr;
+			arpPtr->state |= ARP_HAVE_INPUT;
+			Sync_MasterBroadcast(&arpPtr->condition);
+			if (arpDebug) {
+			    printf("Woke ARP list type %d id %d\n",arpPtr->type,
+				arpPtr->id);
+			}
+		    }
+		}
+	    }
+	    break;
+	}
+	case NET_RARP_REQUEST: {
+	    /*
+	     * Look in our route table for an entry with the ethernet
+	     * address of the sender.  If one is found, return a reply
+	     * containing the corresponding Sprite ID. The kernel only
+	     * handles NET_ETHER_SPRITE requests.
+	     */
+	    int spriteID;
+	    if (type == NET_ETHER_SPRITE) { 
+		spriteID = Net_AddrToID(0, NET_ROUTE_ETHER, 
+			(ClientData) ARP_TARGET_ETHER_ADDR(arpDataPtr));
+		if (arpDebug) {
+		    printf("Got REV_ARP request for Sprite ID 0x%x\n",
+			    spriteID);
+		}
+		if (spriteID > 0) {
+		    register ArpInputQueue *arpInputPtr;
+		    MASTER_LOCK(&arpInputMutex);
+		    arpInputPtr = &arpInputQueue[nextInputIndex];
+		    *arpInputPtr = *arpDataPtr;
+		    nextInputIndex = (nextInputIndex + 1) % 
+						    ARP_INPUT_QUEUE_LEN;
+		    MASTER_UNLOCK(&arpInputMutex);
+		    Proc_CallFunc(NetArpHandler, (ClientData)arpInputPtr,0);
+		}
+	     }
+	}
+	case NET_RARP_REPLY: {
+	    ArpState *arpPtr;
+	    Net_EtherAddress myEtherAddr, *targetEtherAddrPtr;
+
+	    /*
+	     * Make sure this REPLY is targeted for us.
+	     */
+	    targetEtherAddrPtr = 
+			(Net_EtherAddress *) ARP_TARGET_ETHER_ADDR(arpDataPtr);
+	    Mach_GetEtherAddress(&myEtherAddr);
+	    if (!NET_ETHER_COMPARE_PTR(&myEtherAddr, targetEtherAddrPtr)) {
+		break;
+	    }
+	    /*
+	     * Make sure there is still a waiting process for this reply,
+	     * then copy the reply into the waiting arp state.
+	     */
+	    if (arpDebug) {
+		  printf("Got REV_ARP reply for type %d\n",type);
+	    }
+	    LIST_FORALL(&revArpList, (List_Links *)arpPtr) {
+		if ((arpPtr->type == type) && 
+		    NET_ETHER_COMPARE_PTR(targetEtherAddrPtr,
+				     (Net_EtherAddress *) (arpPtr->id))) {
+		    if ((arpPtr->state & ARP_HAVE_INPUT) == 0) {
+			arpPtr->packet = *arpDataPtr;
+			arpPtr->state |= ARP_HAVE_INPUT;
+			Sync_MasterBroadcast(&arpPtr->condition);
+			if (arpDebug) {
+			  printf("Woke REV_ARP reply for type %d\n",type);
+			}
+		    }
+		}
+	    }
+	    break;
+	}
+    }
+    return;
+d1085 1
+a1085 1
+ * NetArpHandler --
+d1087 2
+a1088 4
+ *	Routine to send an arp reply.  Called via Proc_CallFunc.
+ *	This returns an ethernet address given a Sprite ID.  The
+ *	interrupt handler has already checked in the netRouteArray for
+ *	a good route for the spriteID.
+a1093 87
+ *	Generates a  arp reply packet.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static void
+NetArpHandler(data, callInfoPtr)
+    ClientData data;		/* Pointer into arpInputQueue */
+    Proc_CallInfo *callInfoPtr;
+{
+    ArpInputQueue *arpInputPtr = (ArpInputQueue *)data;
+    NetSpriteArp   *arpDataPtr, request;
+    unsigned short opcode, type;
+
+    MASTER_LOCK(&arpInputMutex);
+
+    arpDataPtr = arpInputPtr;
+    opcode = Net_NetToHostShort(arpDataPtr->arpHeader.opcode);
+    type = Net_NetToHostShort(arpDataPtr->arpHeader.protocolType);
+
+
+    if ((type != NET_ETHER_SPRITE) && (type != NET_ETHER_IP)) {
+	MASTER_UNLOCK(&arpInputMutex);
+	panic("Bad type %d in NetArpHandler\n", type);
+	return;
+    } 
+    if (opcode == NET_ARP_REQUEST) {
+	Net_EtherAddress etherAddress;
+	Net_EtherAddress myEtherAddr;
+
+	Mach_GetEtherAddress(&myEtherAddr);
+	NET_ETHER_ADDR_COPY(
+	    *(Net_EtherAddress *) ARP_SRC_ETHER_ADDR(arpDataPtr), 
+	    etherAddress);
+	if (type == NET_ETHER_SPRITE) {
+	    int	spriteID;
+	    bcopy(ARP_SRC_PROTO_ADDR(arpDataPtr),(char*)&spriteID,sizeof(int));
+
+	    NetFillInArpRequest(NET_ARP_REPLY, NET_ROUTE_ETHER, 
+		(ClientData) spriteID, (ClientData) rpc_SpriteID, 
+		&etherAddress, &myEtherAddr, &request);
+	} else {
+	    Net_InetAddress inetAddr;
+	    bcopy(ARP_SRC_PROTO_ADDR(arpDataPtr), (char *)&inetAddr, 
+			sizeof(inetAddr));
+
+	    NetFillInArpRequest(NET_ARP_REPLY, NET_ROUTE_INET, 
+		(ClientData) inetAddr, (ClientData)  net_InetAddress, 
+		&etherAddress, &myEtherAddr, &request);
+	}
+        NetArpOutput(&etherAddress, NET_ETHER_ARP, &request);
+    } else if (opcode == NET_RARP_REQUEST) {
+	Net_EtherAddress etherAddress;
+	int	spriteID;
+	Net_EtherAddress myEtherAddr;
+
+	Mach_GetEtherAddress(&myEtherAddr);
+	NET_ETHER_ADDR_COPY(
+		*(Net_EtherAddress *)ARP_TARGET_ETHER_ADDR(arpDataPtr),
+		etherAddress);
+	spriteID = Net_AddrToID(0, NET_ROUTE_ETHER, (ClientData) &etherAddress);
+	if (spriteID > 0) { 
+	    NetFillInArpRequest(NET_RARP_REPLY, NET_ROUTE_ETHER,
+			(ClientData) spriteID, (ClientData) rpc_SpriteID,
+			&etherAddress, &myEtherAddr, &request);
+	    NetArpOutput((Net_EtherAddress *) ARP_SRC_ETHER_ADDR(arpDataPtr),
+			NET_ETHER_REVARP, &request);
+	}
+    } else {
+	MASTER_UNLOCK(&arpInputMutex);
+	panic ("Bad opcode %d in NetArpHandler\n", opcode);
+	return;
+    }
+    MASTER_UNLOCK(&arpInputMutex);
+
+    callInfoPtr->interval = 0;
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetArpOutput --
+ *
+ *	Routine to send an arp packet.
+ *
+ * Results:
+a1095 3
+ * Side effects:
+ *	Generates a Sprite arp packet.
+ *
+a1097 46
+/*ARGSUSED*/
+static void
+NetArpOutput(destEtherAddrPtr, etherType, requestPtr)
+    Net_EtherAddress *destEtherAddrPtr;	/* Host to send to */
+    int		etherType;		/* Type of ethernet packet to send. */
+    NetSpriteArp *requestPtr;		/* Request to send. */
+{
+    register Net_EtherHdr  *etherHdrPtr;
+    register Net_ScatterGather *gatherPtr;
+    register NetSpriteArp *packetPtr;
+
+    LOCK_MONITOR;
+
+
+    etherHdrPtr = &arpOutputQueue[nextOutputIndex].etherHdr;
+    packetPtr = &arpOutputQueue[nextOutputIndex].packet;
+    gatherPtr = &arpOutputQueue[nextOutputIndex].gather;
+    if (! gatherPtr->done) {
+	printf("Warning: NetArpOutput can't queue packet");
+	UNLOCK_MONITOR;
+	return;
+    }
+    nextOutputIndex = (nextOutputIndex + 1) % ARP_OUTPUT_QUEUE_LEN;
+
+    NET_ETHER_ADDR_COPY(*destEtherAddrPtr, 
+			NET_ETHER_HDR_DESTINATION(*etherHdrPtr));
+    NET_ETHER_HDR_TYPE(*etherHdrPtr) = 
+		Net_HostToNetShort((unsigned short)etherType);
+#ifdef sun4
+    /*
+     * Gcc for the sun4 currently allows these structures to be on unaligned
+     * boudaries and then generates loads and stores as if they were aligned,
+     * so I have to copy them byte by byte.
+     */
+     bcopy((char *)requestPtr, (char *)packetPtr, sizeof (NetSpriteArp));
+#else
+    *packetPtr = *requestPtr;
+#endif sun4
+
+    gatherPtr->bufAddr = (Address)packetPtr;
+    gatherPtr->length = sizeof(NetSpriteArp);
+    gatherPtr->done = FALSE;
+    gatherPtr->mutexPtr = (Sync_Semaphore *) NIL;
+
+    arpStatistics.numRevArpReplies++;
+    (netEtherFuncs.output)(etherHdrPtr, gatherPtr, 1);
+a1098 20
+    UNLOCK_MONITOR;
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_ArpTimeout --
+ *
+ *	Timeout routine for ARP.  This just notifies the waiting process.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Wakes up the process waiting for an ARP reply.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+d1100 3
+a1102 4
+Net_ArpTimeout(time, data)
+    Timer_Ticks time;		/* The time we timed out at. */
+    ClientData data;		/* Out private data is a pointer to the
+				 * arp protocol state. */
+d1104 15
+a1118 62
+    ArpState *arpPtr = (ArpState *)data;    
+
+    MASTER_LOCK(arpPtr->mutexPtr);
+    if (arpDebug) {
+	printf("Arp timeout\n");
+    }
+    arpPtr->state &= ~ARP_IN_TIMEOUT_QUEUE;
+    Sync_MasterBroadcast(&arpPtr->condition);
+    MASTER_UNLOCK(arpPtr->mutexPtr);
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetFillInArpRequest --
+ *
+ * 	Build a ARP or RARP packet in the provided request buffer.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+NetFillInArpRequest(command, type, targetId, senderId, targetEtherAddrPtr, 
+		   senderEtherAddrPtr, requestPtr)
+    short	command;	/* ARP opcode to perform. */
+    int		type;		/* Protocol route type. */
+    ClientData	targetId;	/* Target protocol address. */
+    ClientData  senderId;	/* Sender's protocol ID. */
+    Net_EtherAddress	*targetEtherAddrPtr; /* Target ether address. */
+    Net_EtherAddress	*senderEtherAddrPtr; /* Sender's ether address. */
+    NetSpriteArp *requestPtr;	/* Arp request packet to fill in. */
+{
+   unsigned int tid;
+   unsigned int sid;
+
+    requestPtr->arpHeader.hardwareType = Net_HostToNetShort(NET_ARP_TYPE_ETHER);
+    requestPtr->arpHeader.hardwareAddrLen = sizeof(Net_EtherAddress);
+    requestPtr->arpHeader.opcode = Net_HostToNetShort((unsigned short)command);
+
+    switch(type) {
+	case NET_ROUTE_ETHER: {
+	    requestPtr->arpHeader.protocolType = 
+			Net_HostToNetShort(NET_ETHER_SPRITE);
+	    requestPtr->arpHeader.protocolAddrLen = sizeof(int);
+	    break;
+	}
+	case NET_ROUTE_INET: {
+	    requestPtr->arpHeader.protocolType = 
+					Net_HostToNetShort(NET_ETHER_IP);
+	    requestPtr->arpHeader.protocolAddrLen = sizeof(Net_InetAddress);
+	    break;
+	}
+	default: {
+	    panic("Warning: NetFillInArpRequest: bad route type %d\n", type);
+	}
+d1120 3
+a1122 70
+
+    tid = Net_HostToNetInt((unsigned int) targetId);
+    sid = Net_HostToNetInt((unsigned int) senderId);
+    bcopy((char *) &sid, ARP_SRC_PROTO_ADDR(requestPtr),sizeof(int));
+    bcopy((char *) &tid, ARP_TARGET_PROTO_ADDR(requestPtr),sizeof(int));
+    NET_ETHER_ADDR_COPY(*targetEtherAddrPtr,
+			*(Net_EtherAddress *)ARP_TARGET_ETHER_ADDR(requestPtr));
+    NET_ETHER_ADDR_COPY(*senderEtherAddrPtr,
+			*(Net_EtherAddress *)ARP_SRC_ETHER_ADDR(requestPtr));
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_MaxProtoHdrSize() --
+ *
+ *	Return the size of the maximum number of bytes needed for headers
+ *	for any of the possible routing protocols.
+ *
+ * Results:
+ *	A size in bytes.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Net_MaxProtoHdrSize()
+{
+    /*
+     * The current large protocol header is for the ROUTE_INET.
+     */
+    return sizeof(Net_IPHeader);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_RouteMTU() --
+ *
+ *	Return the Maximum transfer unit (MTU) of the route to the specified
+ *	sprite host.
+ *
+ * Results:
+ *	A size in bytes.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Net_RouteMTU(spriteID)
+    register int spriteID;
+{
+    register Net_Route *routePtr;
+
+    routePtr = netRouteArray[spriteID];
+    /*
+     * If no route exists use etherNet routing otherwise assume 
+     * type is ROUTE_INET.
+     */
+    if ((routePtr == (Net_Route *)NIL) || (routePtr->type == NET_ROUTE_ETHER)) {
+	return (NET_ETHER_MAX_BYTES - sizeof(Net_EtherHdr));
+    } 
+    return (NET_ETHER_MAX_BYTES - sizeof(Net_EtherHdr) - sizeof(Net_IPHeader));
+@
+
+
+9.3
+log
+@Added include of proc.h.
+@
+text
+@d37 1
+a37 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netRoute.c,v 9.2 89/11/16 15:15:05 rab Exp Locker: mendel $ SPRITE (Berkeley)";
+d40 12
+a51 12
+#include "sprite.h"
+#include "net.h"
+#include "netRoute.h"
+#include "netInt.h"
+#include "sys.h"
+#include "stdlib.h"
+#include "timer.h"
+#include "sync.h"
+#include "proc.h"
+#include "rpc.h"
+#include "netInet.h"
+#include "string.h"
+@
+
+
+9.2
+log
+@Checked volatiles.
+@
+text
+@d37 1
+a37 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netRoute.c,v 9.1 89/10/31 08:55:47 mendel Exp Locker: rab $ SPRITE (Berkeley)";
+d48 1
+@
+
+
+9.1
+log
+@Removed lint.
+@
+text
+@d37 2
+a38 2
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netRoute.c,v 8.12 89/08/10 17:35:39 mendel Exp $ SPRITE (Berkeley)";
+#endif not lint
+a39 1
+
+d127 1
+a127 1
+ArpOutputQueue arpOutputQueue[ARP_OUTPUT_QUEUE_LEN];
+d130 1
+a130 1
+Sync_Lock arpOutputQueueLock; ;
+d141 1
+a141 1
+ArpInputQueue arpInputQueue[ARP_INPUT_QUEUE_LEN];
+d143 1
+a143 1
+Sync_Semaphore arpInputMutex;
+d209 1
+d600 1
+d899 1
+d961 1
+d1006 1
+a1006 1
+    
+d1216 1
+a1216 1
+int
+d1388 1
+a1388 1
+
+d1481 1
+d1547 1
+d1581 1
+d1644 1
+a1704 1
+
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d37 1
+a37 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netRoute.c,v 8.12 89/08/10 17:35:39 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d51 1
+d150 2
+a151 2
+    short	*shortPtr; \
+    shortPtr = ((short *)&ptr->ident) + 1; \
+d799 1
+a799 1
+	strcpy(tmpBuffer, "UNKNOWN");
+d801 1
+a801 1
+    strncpy(buffer, tmpBuffer, bufferLen-1);
+d1144 1
+a1144 1
+	arp.id =  (ClientData) Net_NetToHostInt(spriteID);
+d1438 2
+a1439 1
+	    bcopy(ARP_SRC_PROTO_ADDR(arpDataPtr), &spriteID, sizeof(int));
+d1445 2
+a1446 1
+	    bcopy(ARP_SRC_PROTO_ADDR(arpDataPtr), &inetAddr, sizeof(inetAddr));
+d1521 2
+a1522 1
+    NET_ETHER_HDR_TYPE(*etherHdrPtr) = Net_HostToNetShort(etherType);
+d1529 1
+a1529 1
+     bcopy(requestPtr, packetPtr, sizeof (NetSpriteArp));
+d1610 1
+a1610 1
+    requestPtr->arpHeader.opcode = Net_HostToNetShort(command);
+@
+
+
+8.12
+log
+@Increased timeout for ARP and RARP requests. Converted routines to 
+pass ethernet address by references to get around compiler bug.
+@
+text
+@d37 1
+a37 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netRoute.c,v 8.11 89/07/21 12:08:55 jhh Exp $ SPRITE (Berkeley)";
+@
+
+
+8.11
+log
+@rcp using ip protocol now works on little-endian machines
+@
+text
+@d37 1
+a37 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netRoute.c,v 8.10 89/06/08 09:11:49 jhh Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d997 1
+a997 1
+			zeroAddress, myEtherAddress, &request);
+d1056 1
+a1056 1
+		(ClientData) 0, *etherAddrPtr, myEtherAddress,&request);
+d1169 1
+a1169 1
+	arp.timeout.interval = 100 * timer_IntOneMillisecond;
+d1440 1
+a1440 1
+		etherAddress, myEtherAddr, &request);
+d1447 1
+a1447 1
+		etherAddress, myEtherAddr, &request);
+d1449 1
+a1449 1
+        NetArpOutput(etherAddress, NET_ETHER_ARP, &request);
+d1463 2
+a1464 2
+			etherAddress, myEtherAddr, &request);
+	    NetArpOutput(*(Net_EtherAddress *) ARP_SRC_ETHER_ADDR(arpDataPtr),
+d1494 2
+a1495 2
+NetArpOutput(destEtherAddress, etherType, requestPtr)
+    Net_EtherAddress destEtherAddress;	/* Host to send to */
+d1516 1
+a1516 1
+    NET_ETHER_ADDR_COPY(destEtherAddress, 
+d1591 2
+a1592 2
+NetFillInArpRequest(command, type, targetId, senderId, targetEtherAddr, 
+		    senderEtherAddr, requestPtr)
+d1597 2
+a1598 2
+    Net_EtherAddress	targetEtherAddr; /* Target ether address. */
+    Net_EtherAddress	senderEtherAddr; /* Sender's ether address. */
+d1630 1
+a1630 1
+    NET_ETHER_ADDR_COPY(targetEtherAddr,
+d1632 1
+a1632 1
+    NET_ETHER_ADDR_COPY(senderEtherAddr,
+@
+
+
+8.10
+log
+@Fixed etheraddress copy so it will work on the spur.  (jhh)
+Return the complete header we queried about an INET route. (mendel)
+@
+text
+@d37 1
+a37 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netRoute.c,v 8.9 89/06/02 12:58:46 mendel Exp $ SPRITE (Berkeley)";
+d145 9
+d386 1
+a386 1
+	    net_InetAddress = addr;
+d496 1
+d499 2
+a500 2
+	     ipHeader->source = Net_HostToNetInt(net_InetAddress);
+	     ipHeader->dest = Net_HostToNetInt(inetRoute->inetAddr);
+d1519 8
+d1528 1
+@
+
+
+8.9
+log
+@Changed Sprite ARP to used real ARP. Added IP routes.
+@
+text
+@d37 1
+a37 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netRoute.c,v 8.8 89/03/15 15:56:18 brent Exp Locker: mendel $ SPRITE (Berkeley)";
+d555 2
+a556 1
+	    status = Vm_CopyOut(sizeof(NetInetRoute), (Address)routePtr->data,
+d1422 3
+a1424 1
+	etherAddress = *(Net_EtherAddress *) ARP_SRC_ETHER_ADDR(arpDataPtr);
+@
+
+
+8.8
+log
+@Added hooks to support the routing information needed by a kernel-resident
+ipServer
+@
+text
+@d37 1
+a37 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netRoute.c,v 8.7 89/02/24 21:58:04 mgbaker Exp $ SPRITE (Berkeley)";
+d49 2
+d56 5
+d86 2
+a87 1
+    int			spriteID;	/* Target Sprite ID, used to identify
+d134 1
+a134 1
+ * Another simple list of SpriteID pairs is used to pass info
+d138 1
+a138 4
+typedef struct ArpInputQueue {
+    int			spriteID;
+    Net_EtherAddress	destination;
+} ArpInputQueue;
+d145 5
+a149 4
+void Net_ArpTimeout();
+void NetArpOutput();
+void NetRevArpHandler();
+void NetArpHandler();
+d242 3
+a253 1
+#ifdef INET
+d255 7
+a261 3
+	    localData = (ClientData)malloc(sizeof(Net_InetAddress));
+	    status = Vm_CopyIn(sizeof(Net_InetAddress), (Address)clientData,
+				      (Address)localData);
+a267 1
+#endif
+d316 53
+a368 1
+    MASTER_LOCK(&netRouteMutex);
+a369 1
+    if (spriteID < 0 || spriteID >= NET_NUM_SPRITE_HOSTS) {
+d371 1
+a371 2
+	 * This doesn't correspond to a local host, but may be used
+	 * by the Internet Protocols.
+d373 18
+a390 1
+	routePtr = (Net_Route *)NIL;
+d432 2
+a433 1
+		    printf("Net_InstallRoute, host <%d> changing ethernet addr\n",
+a447 1
+#ifdef INET
+d449 4
+a452 4
+	    Net_InetAddress inetAddr;
+	    Net_EtherAddress etherAddr;
+	    Net_EtherAddress *etherAddrPtr = (Net_EtherAddress *)NIL;
+	    int rteFlags;
+d454 48
+a501 23
+	     * Now do the real work and stuff the inet address, and flags,
+	     * into the routing tables kept by the kernel-resident ipServer.
+	     * If the host is a Sprite neighbor we have the ethernet address
+	     * in the regular Net_Route table, and we grab that.  This stuff
+	     * is mainly needed in order to get a gateway address.  This is
+	     * all a bit hokey, but once you have the gateway address you
+	     * can use ICMP redirects to build up Internet routing information.
+	     */
+	    inetAddr = *(Net_InetAddress *)clientData;
+	    rteFlags = 0;
+	    if (flags & NET_ROUTE_GATEWAY) {
+		rteFlags |= NET_GATEWAY;
+	    }
+	    if (routePtr != (Net_Route *)NIL) {
+		Net_EtherHdr *etherHdrPtr = (Net_EtherHdr *)routePtr->data;
+		if (etherHdrPtr != (Net_EtherHdr *)NIL) {
+		    NET_ETHER_ADDR_COPY(NET_ETHER_HDR_DESTINATION(*etherHdrPtr),
+					etherAddr);
+		    etherAddrPtr = &etherAddr;
+		}
+	    }
+	    (void)RteInsertAddress(inetAddr, etherAddrPtr, rteFlags, NIL);
+	    break;
+a502 1
+#endif
+d554 4
+d666 14
+d701 5
+a705 1
+ * Net_EtherCompare --
+d707 4
+a710 1
+ *	Compare two ethernet addresses to see if they are the same.
+d713 2
+a714 1
+ *	TRUE if the two addresses are the same, FALSE otherwise.
+d721 4
+a724 4
+
+Boolean
+Net_EtherCompare(addrPtr1, addrPtr2)
+    Net_EtherAddress *addrPtr1, *addrPtr2;
+d726 65
+a790 1
+    return(NET_ETHER_COMPARE_PTR(addrPtr1, addrPtr2));
+d792 2
+d811 2
+a812 2
+Net_AddrToName(etherAddressPtr, namePtrPtr)
+    Net_EtherAddress *etherAddressPtr;
+d827 1
+d829 1
+d836 12
+d969 2
+a970 2
+    int spriteID;			/* Sprite ID to find the route for */
+    int *mutexPtr;			/* Address of the mutex that the
+d980 2
+d983 4
+a986 2
+    request.flags = NET_SPRITE_ARP_REQUEST;
+    request.spriteHostID = spriteID;
+d992 1
+a992 1
+    status = NetDoArp(mutexPtr, NET_SPRITE_ARP_REQUEST, &gather, &reply);
+d995 1
+a995 1
+				(ClientData) &reply.etherAddr,
+d1022 2
+a1023 1
+Net_RevArp(etherAddrPtr)
+d1025 1
+a1025 1
+   					 * ID */
+d1036 3
+d1040 6
+a1045 3
+    request.flags = NET_SPRITE_REV_ARP_REQUEST;
+    request.spriteHostID = 0;
+    NET_ETHER_ADDR_COPY(*etherAddrPtr,request.etherAddr);
+d1053 1
+a1053 1
+    status = NetDoArp(&mutex, NET_SPRITE_REV_ARP_REQUEST, &gather, &reply);
+d1056 3
+a1058 1
+	return(reply.spriteHostID);
+d1088 1
+a1088 2
+    int command;			/* NET_SPRITE_ARP_REQUEST or
+					 * NET_SPRITE_REV_ARP_REQUEST */
+d1106 1
+a1106 1
+     * is different, Sprite Arp.  The broadcast destination address,
+d1113 5
+a1117 2
+    NET_ETHER_HDR_TYPE(etherHdr) = 
+			Net_HostToNetShort(NET_ETHER_SPRITE_ARP);
+d1119 1
+a1124 1
+    requestPtr = (NetSpriteArp *)gatherPtr->bufAddr;
+d1127 6
+a1132 2
+    arp.spriteID = requestPtr->spriteHostID;
+    if (command == NET_SPRITE_ARP_REQUEST) {
+d1135 1
+a1140 2
+    requestPtr->spriteHostID = Net_HostToNetInt(requestPtr->spriteHostID);
+    requestPtr->flags = Net_HostToNetInt(requestPtr->flags);
+d1143 1
+a1143 1
+	if (command == NET_SPRITE_ARP_REQUEST) {
+d1145 1
+a1145 1
+		printf("Sending arp request\n");
+a1165 2
+    requestPtr->spriteHostID = Net_NetToHostInt(requestPtr->spriteHostID);
+    requestPtr->flags = Net_NetToHostInt(requestPtr->flags);
+a1206 1
+    register Net_EtherHdr *inputEtherHdrPtr = (Net_EtherHdr *)packetPtr;
+d1208 2
+d1212 21
+a1232 4
+    arpDataPtr->flags = Net_NetToHostInt(arpDataPtr->flags);
+    arpDataPtr->spriteHostID = Net_NetToHostInt(arpDataPtr->spriteHostID);
+    switch (arpDataPtr->flags) {
+	case NET_SPRITE_ARP_REQUEST: {
+d1235 2
+a1236 2
+	     * sprite ID.  Look in our own route table to see if we know.
+	     * If we do then we reply with that info.
+d1238 24
+a1261 25
+	    if (arpDebug) {
+		printf("Got ARP request for Sprite ID %d\n",
+				arpDataPtr->spriteHostID);
+	    }
+	    if (arpDataPtr->spriteHostID > 0 &&
+		arpDataPtr->spriteHostID < NET_NUM_SPRITE_HOSTS) {
+		Net_Route *routePtr;
+		routePtr = netRouteArray[arpDataPtr->spriteHostID];
+		if (routePtr != (Net_Route *)NIL) {
+		    /*
+		     * We might overrun ourselves if we get a whole
+		     * bunch of arp requests.  We synchronize, however,
+		     * so that the call-back procedure sees a consistent view.
+		     */
+		    register ArpInputQueue *arpInputPtr;
+		    MASTER_LOCK(&arpInputMutex);
+		    arpInputPtr = &arpInputQueue[nextInputIndex];
+		    arpInputPtr->spriteID = arpDataPtr->spriteHostID;
+		    NET_ETHER_ADDR_COPY(
+			    NET_ETHER_HDR_DESTINATION(*inputEtherHdrPtr),
+			    arpInputPtr->destination);
+		    nextInputIndex = (nextInputIndex + 1) % ARP_INPUT_QUEUE_LEN;
+		    MASTER_UNLOCK(&arpInputMutex);
+		    Proc_CallFunc(NetArpHandler, (ClientData)arpInputPtr, 0);
+		}
+d1265 1
+a1265 1
+	case NET_SPRITE_ARP_REPLY: {
+d1267 13
+d1289 2
+d1292 1
+a1292 2
+		printf("Got ARP reply for Sprite ID %d\n",
+				arpDataPtr->spriteHostID);
+d1295 1
+a1295 1
+		if (arpPtr->spriteID == arpDataPtr->spriteHostID) {
+d1300 4
+d1309 1
+a1309 1
+	case NET_SPRITE_REV_ARP_REQUEST: {
+d1313 2
+a1314 1
+	     * containing the corresponding Sprite ID.
+d1317 22
+d1340 8
+a1347 8
+	    spriteID = Net_AddrToID(0, NET_ROUTE_ETHER, 
+					(ClientData) &arpDataPtr->etherAddr);
+	    if (arpDebug) {
+		printf("Got REV_ARP request for Sprite ID %d\n",
+				arpDataPtr->spriteHostID);
+	    }
+	    if (spriteID > 0) {
+		Proc_CallFunc(NetRevArpHandler, spriteID, 0);
+a1348 3
+	}
+	case NET_SPRITE_REV_ARP_REPLY: {
+	    ArpState *arpPtr;
+d1354 1
+a1354 2
+		printf("Got REV_ARP reply for Sprite ID %d",
+			    arpDataPtr->spriteHostID);
+d1357 11
+a1367 4
+		if ((arpPtr->state & ARP_HAVE_INPUT) == 0) {
+		    arpPtr->packet = *arpDataPtr;
+		    arpPtr->state |= ARP_HAVE_INPUT;
+		    Sync_MasterBroadcast(&arpPtr->condition);
+d1373 1
+d1390 1
+a1390 1
+ *	Generates a Sprite arp reply packet.
+d1395 1
+a1395 1
+void
+d1401 2
+a1402 2
+    Net_EtherAddress destination;
+    int spriteID;
+d1405 54
+a1458 2
+    NET_ETHER_ADDR_COPY(arpInputPtr->destination,destination);
+    spriteID = arpInputPtr->spriteID;
+a1460 30
+    NetArpOutput(spriteID, &destination, NET_SPRITE_ARP_REPLY);
+    callInfoPtr->interval = 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetRevArpHandler --
+ *
+ *	Routine to send a reverse arp reply.  Called via Proc_CallFunc.
+ *	Reverse arp returns a Sprite ID given an ethernet address.  The
+ *	interrupt handler has already checked in the netRouteArray for
+ *	a match between the sender's address and a spriteID.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Generates a Sprite reverse arp packet.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+void
+NetRevArpHandler(data, callInfoPtr)
+    ClientData data;		/* Our private data is sprite ID */
+    Proc_CallInfo *callInfoPtr;
+{
+    int spriteID = (int)data;
+
+a1461 1
+    NetArpOutput(spriteID, (Net_EtherAddress *)NIL, NET_SPRITE_REV_ARP_REPLY);
+d1480 5
+a1484 5
+ENTRY void
+NetArpOutput(spriteID, destPtr, flags)
+    int spriteID;			/* SpriteID in question */
+    Net_EtherAddress *destPtr;		/* Host to send to */
+    int flags;				/* ARP packet type */
+d1486 2
+a1488 4
+    register Net_EtherHdr *etherHdrPtr;
+    register Net_EtherHdr *routeEtherHdrPtr;
+    register Net_ScatterGather *gatherPtr;
+    register Net_Route *routePtr;
+a1491 7
+    routePtr = netRouteArray[spriteID];
+    if (routePtr == (Net_Route *)NIL ||
+	routePtr->data == (Address)NIL) {
+	UNLOCK_MONITOR;
+	return;
+    }
+    routeEtherHdrPtr = (Net_EtherHdr *)routePtr->data;
+d1503 4
+a1506 4
+    packetPtr->flags = flags;
+    packetPtr->spriteHostID = spriteID;
+    NET_ETHER_ADDR_COPY(NET_ETHER_HDR_DESTINATION(*routeEtherHdrPtr), 
+			packetPtr->etherAddr);
+a1512 18
+    /*
+     * The destination comes from the route for reverse arp, destPtr is NIL.
+     * For regular arp the destination is the sender of the request.
+     */
+    if (destPtr == (Net_EtherAddress *)NIL) {
+	NET_ETHER_ADDR_COPY(NET_ETHER_HDR_DESTINATION(*routeEtherHdrPtr),
+			    NET_ETHER_HDR_DESTINATION(*etherHdrPtr));
+    } else {
+	NET_ETHER_ADDR_COPY(NET_ETHER_HDR_DESTINATION(*routeEtherHdrPtr),
+			    *destPtr);
+    }
+    NET_ETHER_HDR_TYPE(*etherHdrPtr) = 
+			Net_HostToNetShort(NET_ETHER_SPRITE_ARP);
+
+    if (arpDebug) {
+	printf("Sending%sARP reply for Sprite ID %d\n",
+	    flags == NET_SPRITE_REV_ARP_REPLY ? " REV_" : " ", spriteID);
+    }
+d1535 1
+a1535 1
+void
+d1551 124
+@
+
+
+8.7
+log
+@Fourteenth Kernel for sun4.  The hack where I called Vm_RawAlloc insted
+of malloc is now gone.
+@
+text
+@d37 1
+a37 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netRoute.c,v 8.6 89/02/24 14:23:39 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d245 12
+d308 5
+a312 6
+	MASTER_UNLOCK(&netRouteMutex);
+	return(SYS_INVALID_ARG);
+    }
+    routePtr = netRouteArray[spriteID];
+    if (routePtr != (Net_Route *)NIL) {
+	oldData = routePtr->data;
+d314 21
+a334 3
+	oldData = (Address)NIL;
+	routePtr = (Net_Route *)malloc(sizeof(Net_Route));
+	netRouteArray[spriteID] = routePtr;
+a336 9
+     * Silently discard old name and machine types.  We'll holler below
+     * if the ethernet address changes.  Names and types may be set
+     * to "noname" and "unknown" during bootstrap routing.
+     */
+    routePtr->name = (char *)malloc(strlen(hostname) + 1);
+    (void) strcpy(routePtr->name, hostname);
+    routePtr->machType = (char *)malloc(strlen(machType) + 1);
+    (void) strcpy(routePtr->machType, machType);
+    /*
+a339 3
+    routePtr->flags = flags;
+    routePtr->spriteID = spriteID;
+    routePtr->type = type;
+d369 32
+@
+
+
+8.6
+log
+@Thirteenth Kernel for sun4.  Temporarily, for sun4, malloc == Vm_RawAlloc.
+@
+text
+@d37 1
+a37 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netRoute.c,v 8.5 89/02/24 13:53:34 brent Exp Locker: mgbaker $ SPRITE (Berkeley)";
+a48 4
+
+#ifdef sun4	/* temporary gross hack */
+#define malloc	Vm_RawAlloc
+#endif /* sun4 */
+@
+
+
+8.5
+log
+@Added monitor around routing updates
+@
+text
+@d37 1
+a37 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netRoute.c,v 8.4 89/02/14 13:10:30 jhh Exp Locker: brent $ SPRITE (Berkeley)";
+d49 4
+@
+
+
+8.4
+log
+@Updated Sync_Lock initialization and registration
+@
+text
+@d37 1
+a37 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netRoute.c,v 8.3 89/01/06 11:21:22 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d57 3
+a59 1
+ * The table is indexed by Sprite Host IDs.
+d63 1
+d291 4
+a294 1
+    
+d296 1
+d301 5
+a305 10
+	if (routePtr->data != (Address)NIL) {
+	    free((Address)routePtr->data);
+	}
+	if (routePtr->name != (char *)NIL) {
+	    free((Address) routePtr->name);
+	}
+	if (routePtr->machType != (char *)NIL) {
+	    free((Address) routePtr->machType);
+	}
+	free((Address)routePtr);
+d307 5
+a311 2
+    routePtr = (Net_Route *)malloc(sizeof(Net_Route));
+    netRouteArray[spriteID] = routePtr;
+d332 18
+a349 6
+	    etherHdrPtr = (Net_EtherHdr *)malloc(sizeof(Net_EtherHdr));
+	    NET_ETHER_ADDR_COPY(*(Net_EtherAddress *)clientData,
+				NET_ETHER_HDR_DESTINATION(*etherHdrPtr));
+	    NET_ETHER_HDR_TYPE(*etherHdrPtr) = 
+			Net_HostToNetShort(NET_ETHER_SPRITE);
+	    routePtr->data = (Address)etherHdrPtr;
+d358 1
+d415 4
+d432 2
+a433 3
+    /*
+     * Synchronization with RouteInstall etc?
+     */
+d435 3
+a437 1
+	return((Net_Route *)NIL);
+d439 2
+a440 1
+    return(netRouteArray[spriteID]);
+d474 1
+d476 2
+a477 4
+    /*
+     * Monitor?
+     */
+    
+d490 2
+a491 1
+		return(routePtr->spriteID);
+d506 2
+a507 1
+			return(routePtr->spriteID);
+d522 1
+d524 3
+d575 3
+a577 4
+    /*
+     * Monitor?
+     */
+    
+d589 1
+a589 1
+		return;
+d593 1
+a593 1
+    *namePtrPtr = (char *) NIL;
+d620 1
+a620 3
+    /*
+     * Monitor?
+     */
+d628 1
+d655 1
+a655 3
+    /*
+     * Monitor?
+     */
+d663 1
+d729 1
+a729 1
+    gather.conditionPtr = (Sync_Condition *) NIL;
+d781 1
+a781 1
+    gather.conditionPtr = (Sync_Condition *) NIL;
+d1164 1
+a1164 1
+    gatherPtr->conditionPtr = (Sync_Condition *) NIL;
+@
+
+
+8.3
+log
+@New Sync_Lock definition
+@
+text
+@d37 1
+a37 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netRoute.c,v 8.2 88/11/30 11:41:50 brent Exp $ SPRITE (Berkeley)";
+d46 1
+a46 1
+#include "mem.h"
+d119 1
+a119 1
+Sync_Lock arpOutputQueueLock = SYNC_LOCK_INIT_STATIC();
+d135 1
+a135 1
+Sync_Semaphore arpInputMutex = SYNC_SEM_INIT_STATIC("arpInputMutex");
+d166 2
+d744 1
+a744 1
+	SYNC_SEM_INIT_STATIC("Net_RevArp.mutex"); /* Reverse arp is called
+d758 1
+@
+
+
+8.2
+log
+@Sys_Panic => panic
+@
+text
+@d37 1
+a37 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netRoute.c,v 8.1 88/11/22 19:31:19 jhh Exp Locker: brent $ SPRITE (Berkeley)";
+d119 1
+a119 1
+Sync_Lock arpOutputQueueLock;
+@
+
+
+8.1
+log
+@net semaphore definition
+@
+text
+@d37 1
+a37 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netRoute.c,v 6.6 88/10/24 11:06:36 mendel Exp $ SPRITE (Berkeley)";
+d1121 1
+a1121 1
+	Sys_Panic(SYS_WARNING, "NetArpOutput can't queue packet");
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d37 1
+a37 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netRoute.c,v 6.6 88/10/24 11:06:36 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d74 1
+a74 1
+    int			*mutexPtr;	/* Used for synchronization */
+d135 1
+a135 1
+int arpInputMutex = 0;
+d741 5
+a745 4
+    int mutex;				/* Reverse arp is called during
+					 * initialization when there is no
+					 * mutex held (unlike regular arp) so
+					 * we need our own mutex for sync */
+d754 2
+a755 3
+    mutex = 0;
+    
+    MASTER_LOCK(mutex);
+d757 1
+a757 1
+    MASTER_UNLOCK(mutex);
+d784 1
+a784 1
+    int *mutexPtr;			/* Address of the mutex that the
+d802 1
+a802 1
+    if (mutexPtr == (int *)NIL) {
+d933 1
+a933 1
+		    MASTER_LOCK(arpInputMutex);
+d940 1
+a940 1
+		    MASTER_UNLOCK(arpInputMutex);
+d1040 1
+a1040 1
+    MASTER_LOCK(arpInputMutex);
+d1043 1
+a1043 1
+    MASTER_UNLOCK(arpInputMutex);
+d1185 1
+a1185 1
+    MASTER_LOCK(*arpPtr->mutexPtr);
+d1191 1
+a1191 1
+    MASTER_UNLOCK(*arpPtr->mutexPtr);
+@
+
+
+6.6
+log
+@Converted to use new c library naming.
+@
+text
+@d37 1
+a37 1
+static char rcsid[] = "$Header: netRoute.c,v 6.5 88/09/06 09:05:44 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+6.5
+log
+@Lint.
+@
+text
+@d37 1
+a37 1
+static char rcsid[] = "$Header: netRoute.c,v 6.4 88/08/26 18:03:38 mendel Exp $ SPRITE (Berkeley)";
+a48 1
+#include "string.h"
+d150 1
+a150 1
+ *	This uses Mem_Alloc, so it should be called after Mem_Init.
+d225 1
+a225 1
+	Sys_Panic(SYS_WARNING, "Net_InstallRoute: bad name arg\n");
+d231 1
+a231 1
+	    localData = (ClientData)Mem_Alloc(sizeof(Net_EtherAddress));
+d235 1
+a235 1
+		Mem_Free((Address)localData);
+d241 1
+a241 2
+	    Sys_Panic(SYS_WARNING, "Net_InstallRoute: bad route type %d\n",
+			type);
+d245 2
+a246 2
+	Sys_Panic(SYS_WARNING, "Net_InstallRoute: bad machType arg\n");
+	(void) String_Copy("sun3", machineType);
+d252 1
+a252 1
+	Mem_Free((Address)localData);
+d293 1
+a293 1
+	    Mem_Free((Address)routePtr->data);
+d296 1
+a296 1
+	    Mem_Free((Address) routePtr->name);
+d299 1
+a299 1
+	    Mem_Free((Address) routePtr->machType);
+d301 1
+a301 1
+	Mem_Free((Address)routePtr);
+d303 1
+a303 1
+    routePtr = (Net_Route *)Mem_Alloc(sizeof(Net_Route));
+d305 4
+a308 4
+    routePtr->name = (char *)Mem_Alloc(String_Length(hostname) + 1);
+    (void) String_Copy(hostname, routePtr->name);
+    routePtr->machType = (char *)Mem_Alloc(String_Length(machType) + 1);
+    (void) String_Copy(machType, routePtr->machType);
+d325 1
+a325 1
+	    etherHdrPtr = (Net_EtherHdr *)Mem_Alloc(sizeof(Net_EtherHdr));
+d335 1
+a335 2
+	    Sys_Panic(SYS_WARNING,
+		      "Unsupported route type in Net_InstallRoute");
+d651 1
+a651 1
+ *	Sys_Printf.
+d841 1
+a841 1
+		Sys_Printf("Sending arp request\n");
+d846 1
+a846 1
+		Sys_Printf("Sending rev arp request\n");
+d919 1
+a919 1
+		Sys_Printf("Got ARP request for Sprite ID %d\n",
+d958 1
+a958 1
+		Sys_Printf("Got ARP reply for Sprite ID %d\n",
+d983 1
+a983 1
+		Sys_Printf("Got REV_ARP request for Sprite ID %d\n",
+d997 1
+a997 1
+		Sys_Printf("Got REV_ARP reply for Sprite ID %d",
+d1152 1
+a1152 1
+	Sys_Printf("Sending%sARP reply for Sprite ID %d\n",
+d1187 1
+a1187 1
+	Sys_Printf("Arp timeout\n");
+@
+
+
+6.4
+log
+@Chnages to make lint happy
+@
+text
+@d37 1
+a37 1
+static char rcsid[] = "$Header: netRoute.c,v 6.3 88/08/24 17:01:55 brent Exp $ SPRITE (Berkeley)";
+d186 2
+a187 1
+    Net_InstallRoute(NET_BROADCAST_HOSTID, NET_ROUTE_BROAD, NET_ROUTE_ETHER,
+d248 1
+a248 1
+	String_Copy("sun3", machineType);
+d308 1
+a308 1
+    String_Copy(hostname, routePtr->name);
+d310 1
+a310 1
+    String_Copy(machType, routePtr->machType);
+d708 1
+a708 1
+	Net_InstallRoute(spriteID, 0, NET_ROUTE_ETHER, 
+@
+
+
+6.3
+log
+@Moved Net_HostPrint over to the sys module
+@
+text
+@d37 1
+a37 1
+static char rcsid[] = "$Header: netRoute.c,v 6.2 88/08/19 17:08:38 ouster Exp $ SPRITE (Berkeley)";
+a165 1
+    Net_EtherAddress etherAddr;
+a188 17
+#ifdef need_root_by_lust
+    /*
+     * Lust's route is installed in case it is acting as the root server.
+     * Lust doesn't implement ARP, so in this case we still need the
+     * hard-wired address, lust has spriteID 1.
+     */
+    etherAddr.byte1 = 0x08;
+    etherAddr.byte2 = 0x00;
+    etherAddr.byte3 = 0x20;
+    etherAddr.byte4 = 0x01;
+    etherAddr.byte5 = 0x02;
+    etherAddr.byte6 = 0xc6;
+    spriteID = 1;
+    Net_InstallRoute(spriteID, 0, NET_ROUTE_ETHER, (ClientData) &etherAddr,
+			"lust", "sun2");
+#endif need_root_by_lust
+
+d194 1
+a194 1
+ * Net_InstallRouteStub --
+@
+
+
+6.2
+log
+@Eliminate trailing spaces in printout.
+@
+text
+@d37 1
+a37 1
+static char rcsid[] = "$Header: netRoute.c,v 6.1 88/08/13 18:19:00 brent Exp $ SPRITE (Berkeley)";
+a675 2
+static int lastDay[13] = {0,31,28,31,30,31,30,31,31,30,31,30,31};
+
+d681 1
+a681 41
+    char *hostName;
+    Time time;
+    int offset;
+    int seconds;
+    Boolean dstFlag;
+    Time_Parts timeParts;
+
+    Timer_GetTimeOfDay(&time, &offset, &dstFlag);
+    seconds = time.seconds + offset * 60;
+    Time_ToParts(seconds, FALSE, &timeParts);
+    /*
+     * Until Time_ToParts makes the month count from 1, not zero.
+     */
+    timeParts.month += 1;
+    /*
+     * Gag, my own (simplified) daylight savings correction.
+     */
+    if (dstFlag) {
+	if ((timeParts.month >= 4) &&	/* All of April */
+	    (timeParts.month <= 11)) {	/* thru November */
+	    timeParts.hours++;
+	    if (timeParts.hours >= 24) {
+		timeParts.hours = 0;
+		timeParts.dayOfMonth++;
+		if (timeParts.dayOfMonth > lastDay[timeParts.month]) {
+		    timeParts.month++;
+		    timeParts.dayOfMonth = 1;
+		}
+	    }
+	}
+    }
+    Sys_Printf("%d/%d/%d %d:%02d:%02d ", timeParts.month, timeParts.dayOfMonth,
+	    timeParts.year, timeParts.hours, timeParts.minutes,
+	    timeParts.seconds);
+
+    Net_SpriteIDToName(spriteID, &hostName);
+    if ((hostName == (char *)NIL) || (hostName == (char *)NULL)) {
+	Sys_Printf("Sprite Host <%d> %s", spriteID, string);
+    } else {
+	Sys_Printf("%s (%d) %s", hostName, spriteID, string);
+    }
+@
+
+
+6.1
+log
+@Fixed ancient bug that allowed a timeout queue element
+to slip by, remain on the stack, get trashed,
+and then crash the timer module.
+@
+text
+@d37 1
+a37 1
+static char rcsid[] = "$Header: netRoute.c,v 6.0 88/08/11 12:19:54 brent Stable $ SPRITE (Berkeley)";
+d720 1
+a720 1
+	Sys_Printf("Sprite Host <%d> %s ", spriteID, string);
+d722 1
+a722 1
+	Sys_Printf("%s (%d) %s ", hostName, spriteID, string);
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d37 1
+a37 1
+static char rcsid[] = "$Header: netRoute.c,v 5.11 88/08/09 15:59:46 mendel Exp $ SPRITE (Berkeley)";
+d886 1
+a886 1
+    arp.state = ARP_WANT_REPLY | ARP_IN_TIMEOUT_QUEUE;
+d914 1
+@
+
+
+5.11
+log
+@Mary checking in for Mendel.
+The changes make the ethernet header go out on the wire in network
+byte ordering.
+@
+text
+@d37 1
+a37 1
+static char rcsid[] = "$Header: netRoute.c,v 5.10 88/08/01 17:16:39 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+5.10
+log
+@Added support for SPUR's wierd ethernet header declarations.
+@
+text
+@d37 1
+a37 1
+static char rcsid[] = "$Header: netRoute.c,v 5.9 88/06/27 10:43:16 mendel Exp $ SPRITE (Berkeley)";
+d347 2
+a348 1
+	    NET_ETHER_HDR_TYPE(*etherHdrPtr) = NET_ETHER_SPRITE;
+d877 2
+a878 1
+    NET_ETHER_HDR_TYPE(etherHdr) = NET_ETHER_SPRITE_ARP;
+d897 2
+d923 2
+d969 3
+a971 1
+    arpDataPtr = (NetSpriteArp *)((int)packetPtr + sizeof(Net_EtherHdr));
+d1209 2
+a1210 1
+    NET_ETHER_HDR_TYPE(*etherHdrPtr) = NET_ETHER_SPRITE_ARP;
+@
+
+
+5.9
+log
+@Updated Copyright notice.
+@
+text
+@d37 1
+a37 1
+static char rcsid[] = "$Header: netRoute.c,v 5.8 88/06/14 15:52:23 brent Exp $ SPRITE (Berkeley)";
+d345 3
+a347 2
+	    etherHdrPtr->destination = *(Net_EtherAddress *)clientData;
+	    etherHdrPtr->type = NET_ETHER_SPRITE;
+d492 2
+a493 2
+		    register Net_EtherHdr *etherHdrPtr;
+		    register Net_EtherAddress *etherAddrPtr;
+d498 1
+a498 1
+				 &etherHdrPtr->destination)){
+d573 4
+a576 3
+	    register Net_EtherHdr *etherHdrPtr = (Net_EtherHdr *)routePtr->data;
+	    if (NET_ETHER_COMPARE_PTR(&etherHdrPtr->destination,
+				    etherAddressPtr)) {
+d809 1
+a809 1
+    request.etherAddr = *etherAddrPtr;
+d874 3
+a876 2
+    etherHdr.destination = etherHdrPtr->destination;
+    etherHdr.type = NET_ETHER_SPRITE_ARP;
+d989 3
+a991 1
+		    arpInputPtr->destination = inputEtherHdrPtr->source;
+d1094 1
+a1094 1
+    destination = arpInputPtr->destination;
+d1182 2
+a1183 1
+    packetPtr->etherAddr = routeEtherHdrPtr->destination;
+d1195 2
+a1196 1
+	etherHdrPtr->destination = routeEtherHdrPtr->destination;
+d1198 2
+a1199 1
+	etherHdrPtr->destination = *destPtr;
+d1201 1
+a1201 1
+    etherHdrPtr->type = NET_ETHER_SPRITE_ARP;

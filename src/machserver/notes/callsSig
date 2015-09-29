@@ -1,0 +1,551 @@
+# A process is either (1) running, (2) waiting from a call to Sprite, or (3)
+# waiting from a direct kernel call (or for other server).  Killing or simply
+# suspending the process should be simple (since we have the thread's control
+# port).  Forcing it to exec a handler is a bit more complicated (e.g., do a
+# thread_suspend then a thread_abort then muck with the thread's registers),
+# and you have to make sure you get the Sprite state right.  
+#
+# The really nasty problem is synchronizing with the thread--e.g., don't force
+# it to execute a signal handler if it's in the middle of a Mach system call
+# (which you probably don't know how to restart).  So, add code similar to
+# that from UX so that the process can get information about pending signals
+# and call the handler synchronously.
+#
+# Ditch the sig monitor lock because it adds complexity and doesn't seem to
+# buy anything compared to just locking the PCB.
+#
+# Use a sigtramp routine to call the signal handler, rather than using
+# a trap to return to the kernel.
+# 
+
+LocalSend			# Get rid of sig monitor lock; may also want to
+				# special-case MIGHOME.  
+SIGMIG				# (SIGBUS in Unix) keep (never generate
+				# SIGBUS when converting exceptions to signals)
+	Include/user/sys/signal.h
+SIGUSR1				# (same as SIGEMSG in Mach/Unix) ignore.
+	Include/user/sys/signal.h
+	mach/ds5000.md/compatSig.h
+	mach/ds5000.md/ultrixSignal.h
+	mach/ds3100.md/compatSig.h
+	mach/ds3100.md/ultrixSignal.h
+	mach/symm.md/machDynixSignal.h
+	libc/sun3.md/compatSig.h
+	libc/sun4.md/compatSig.h
+	libc/sun4c.md/compatSig.h
+	libc/symm.md/compatSig.h
+SIGUSR2				# (same as SIGMSG in Mach/Unix) See SIGUSR1.
+	Include/user/sys/signal.h
+	mach/ds5000.md/compatSig.h
+	mach/ds5000.md/ultrixSignal.h
+	mach/ds3100.md/compatSig.h
+	mach/ds3100.md/ultrixSignal.h
+	mach/symm.md/machDynixSignal.h
+	libc/sun3.md/compatSig.h
+	libc/sun4.md/compatSig.h
+	libc/sun4c.md/compatSig.h
+	libc/symm.md/compatSig.h
+SIG_ACCESS_VIOL			# keep; map from exc. code
+				# KERN_PROTECTION_FAILURE.
+	mach/sun3.md/machCode.c
+	mach/sun4.md/machCode.c
+	mach/sun4.md/machFPUGlue.c
+	mach/ds5000.md/machCode.c
+	mach/ds3100.md/machCode.c
+SIG_ADDR_ERROR			# keep; map from exc. code
+				# KERN_INVALID_ADDRESS.
+	mach/sun3.md/machCode.c
+	mach/sun4.md/machCode.c
+	mach/sun4.md/machFPUGlue.c
+SIG_ADDR_FAULT			# keep; map from EXC_BAD_ACCESS.
+	mach/sun3.md/machCode.c
+	mach/sun4.md/machCode.c
+	mach/sun4.md/machFPUGlue.c
+	mach/ds5000.md/compatSig.h
+	mach/ds5000.md/machCode.c
+	mach/ds3100.md/compatSig.h
+	mach/ds3100.md/machCode.c
+	libc/sun3.md/compatSig.h
+	libc/sun4.md/compatSig.h
+	sig/signals.c
+SIG_ARITH_FAULT			# keep; map from EXC_ARITHMETIC.
+	mach/sun3.md/machCode.c
+	mach/sun4.md/machFPUGlue.c
+	mach/ds5000.md/compatSig.h
+	mach/ds5000.md/machCode.c
+	mach/ds3100.md/compatSig.h
+	mach/ds3100.md/machCode.c
+	libc/sun3.md/compatSig.h
+	libc/sun4.md/compatSig.h
+	sig/signals.c
+SIG_BAD_TRAP			# keep; map from EXC_MIPS_RESOPND.
+	mach/sun3.md/machCode.c
+	mach/ds5000.md/machCode.c
+	mach/ds3100.md/machCode.c
+SIG_BAD_SYS_CALL		# don't use.
+SIG_BLOCK			# (Posix) Ignore for now.
+	mach/ds5000.md/ultrixSignal.h
+	mach/ds3100.md/ultrixSignal.h
+SIG_BREAKPOINT			# keep; map from EXC_BREAKPOINT.
+	mach/sun3.md/machCode.c
+	mach/sun4.md/machCode.c
+	mach/ds5000.md/machCode.c
+	mach/ds3100.md/machCode.c
+	sig/signals.c
+SIG_CATCH			# (UNIX) keep.
+	mach/ds5000.md/ultrixSignal.h
+	mach/ds3100.md/ultrixSignal.h
+SIG_CHILD			# keep.
+	mach/ds5000.md/compatSig.h
+	mach/ds3100.md/compatSig.h
+	libc/sun3.md/compatSig.h
+	libc/sun4.md/compatSig.h
+	proc/procExit.c
+SIG_CHK				# (sun3 exception code) keep
+	Include/user/sigMach.h
+	mach/sun3.md/machCode.c
+SIG_DEBUG			# keep.
+	mach/sun3.md/machCode.c
+	mach/ds5000.md/compatSig.h
+	mach/ds5000.md/machCode.c
+	mach/ds3100.md/compatSig.h
+	mach/ds3100.md/machCode.c
+	libc/sun3.md/compatSig.h
+	libc/sun4.md/compatSig.h
+	proc/procExec.c
+	sig/signals.c
+	vm/vmSubr.c
+SIG_DEFAULT_ACTION		# keep.
+	mach/ds5000.md/signals.c
+	mach/ds3100.md/signals.c
+	sig/sigStubs.c
+	sig/signals.c
+SIG_DFL				# (UNIX) keep.
+	mach/ds5000.md/signals.c
+	mach/ds5000.md/ultrixSignal.h
+	mach/ds3100.md/signals.c
+	mach/ds3100.md/ultrixSignal.h
+	sig/sigStubs.c
+SIG_EMU1010			# (sun3 exception code) keep
+	Include/user/sigMach.h
+	mach/sun3.md/machCode.c
+SIG_EMU1111			# (sun3 exception code) keep
+	Include/user/sigMach.h
+	mach/sun3.md/machCode.c
+SIG_ERR				# (UNIX) keep.
+	mach/ds5000.md/ultrixSignal.h
+	mach/ds3100.md/ultrixSignal.h
+SIG_FP_EXCEPTION		# (mips SIG_ILL_INST subcode: we got an fp
+				# interrupt and would like to emulate the
+				# instruction, but it turns out not to be an
+				# fp instruction) keep; eventually map from
+				# EXC_ARITHMETIC with EXC_MIPS_FLT_UNIMP
+				# subcode (but don't use initially because of
+				# problems with the mipsfree floating point
+				# support).
+	Include/user/sigMach.h
+	mach/ds5000.md/machCode.c
+	mach/ds3100.md/machCode.c
+SIG_FP_INEXACT_RESULT		# (sun3 exception code) keep
+	Include/user/sigMach.h
+	mach/sun3.md/machCode.c
+SIG_FP_NAN			# (sun3 exception code) keep
+	Include/user/sigMach.h
+	mach/sun3.md/machCode.c
+SIG_FP_OPERAND_ERROR		# (sun3 exception code) keep
+	Include/user/sigMach.h
+	mach/sun3.md/machCode.c
+SIG_FP_OVERFLOW			# (sun3 exception code) keep
+	Include/user/sigMach.h
+	mach/sun3.md/machCode.c
+SIG_FP_UNDERFLOW		# (sun3 exception code) keep
+	Include/user/sigMach.h
+	mach/sun3.md/machCode.c
+SIG_FP_UNORDERED_COND		# (sun3 exception code) keep
+	Include/user/sigMach.h
+	mach/sun3.md/machCode.c
+SIG_FP_ZERO_DIV			# (sun3 exception code) keep
+	Include/user/sigMach.h
+	mach/sun3.md/machCode.c
+SIG_HANDLE_ACTION		# keep.  
+	mach/ds5000.md/signals.c
+	mach/ds3100.md/signals.c
+	sig/sigStubs.c
+	sig/signals.c
+SIG_HOLD			# (UNIX) keep.
+	mach/ds5000.md/ultrixSignal.h
+	mach/ds3100.md/ultrixSignal.h
+SIG_IGN				# (UNIX) keep.
+	mach/ds5000.md/signals.c
+	mach/ds5000.md/ultrixSignal.h
+	mach/ds3100.md/signals.c
+	mach/ds3100.md/ultrixSignal.h
+	sig/sigStubs.c
+SIG_IGNORE_ACTION		# keep.
+	mach/ds5000.md/signals.c
+	mach/ds3100.md/signals.c
+	sig/sigStubs.c
+	sig/signals.c
+SIG_ILL_INST			# keep; map from EXC_BAD_INSTRUCTION.
+	mach/sun3.md/machCode.c
+	mach/sun4.md/machCode.c
+	mach/sun4.md/machFPUGlue.c
+	mach/ds5000.md/compatSig.h
+	mach/ds5000.md/machCode.c
+	mach/ds3100.md/compatSig.h
+	mach/ds3100.md/machCode.c
+	libc/sun3.md/compatSig.h
+	libc/sun4.md/compatSig.h
+	sig/signals.c
+SIG_ILL_INST_CODE		# keep; for mips, map from
+				# EXC_BAD_INSTRUCTION, subcode
+				# EXC_MIPS_RESOPND.
+	mach/sun3.md/machCode.c
+	mach/sun4.md/machCode.c
+	mach/sun4.md/machFPUGlue.c
+	mach/ds5000.md/machCode.c
+	mach/ds3100.md/machCode.c
+SIG_INTERRUPT			# keep.
+	mach/ds5000.md/compatSig.h
+	mach/ds3100.md/compatSig.h
+	libc/sun3.md/compatSig.h
+	libc/sun4.md/compatSig.h
+	sig/signals.c
+SIG_INVALID_ACTION		# keep.
+	sig/signals.c
+SIG_INVALID_SIGNAL		# keep.
+	sig/signals.c
+SIG_KILL			# keep.
+	mach/ds5000.md/compatSig.h
+	mach/ds3100.md/compatSig.h
+	libc/sun3.md/compatSig.h
+	libc/sun4.md/compatSig.h
+	proc/procExit.c
+	proc/procExec.c
+	proc/procMisc.c
+	proc/procMigrate.c
+	proc/procRemote.c
+	sig/sigStubs.c
+	sig/sigMigrate.c
+	sig/signals.c
+	vm/vmPage.c
+SIG_KILL_ACTION			# keep
+	sig/signals.c
+SIG_MIGRATE_ACTION		# keep
+	sig/signals.c
+SIG_MIGRATE_HOME		# keep
+	mach/ds5000.md/compatSig.h
+	mach/ds3100.md/compatSig.h
+	libc/sun3.md/compatSig.h
+	libc/sun4.md/compatSig.h
+	proc/procMigrate.c
+	proc/procRemote.c
+	sig/sigMigrate.c
+	sig/signals.c
+SIG_MIGRATE_TRAP		# keep.
+	mach/ds5000.md/compatSig.h
+	mach/ds3100.md/compatSig.h
+	libc/sun3.md/compatSig.h
+	libc/sun4.md/compatSig.h
+	proc/procMigrate.c
+	sig/sigMigrate.c
+	sig/signals.c
+SIG_MIN_SIGNAL			# keep
+	sig/sigStubs.c
+	sig/signals.c
+SIG_NO_CODE			# keep
+	mach/sun3.md/machCode.c
+	mach/sun4.md/machCode.c
+	mach/ds5000.md/machCode.c
+	mach/ds3100.md/machCode.c
+	dev/devTty.c
+	proc/procDebug.c
+	proc/procExit.c
+	proc/procExec.c
+	sig/signals.c
+SIG_NUM_ACTIONS			# keep
+	sig/sigStubs.c
+	sig/signals.c
+SIG_NUM_SIGNALS			# keep
+	mach/ds5000.md/compatSig.c
+	mach/ds3100.md/compatSig.c
+	libc/sun3.md/compatSig.c
+	libc/sun4.md/compatSig.c
+	proc/procDebug.c
+	proc/procMisc.c
+	proc/procTypes.h
+	sig/sigStubs.c
+	sig/sigMigrate.c
+	sig/signals.c
+SIG_OVERFLOW			# (ds exception code) keep; map from
+				# EXC_ARITHMETIC, subcode
+				# EXC_MIPS_FLT_OVERFLOW.
+	Include/user/sigMach.h
+	mach/ds5000.md/machCode.c
+	mach/ds3100.md/machCode.c
+SIG_PAUSE_IN_PROGRESS		# keep
+	sig/sigInt.h
+	sig/signals.c
+SIG_PIPE			# keep
+	mach/ds5000.md/compatSig.h
+	mach/ds3100.md/compatSig.h
+	fs/fsStreamOps.c
+	fsio/fsioPipe.c
+	fspdev/fspdevSrv.c
+	libc/sun3.md/compatSig.h
+	libc/sun4.md/compatSig.h
+	sig/signals.c
+SIG_PRIV_INST			# keep; map from EXC_BAD_INSTRUCTION, subcode
+				# EXC_MIPS_PRIVINST.
+	mach/sun3.md/machCode.c
+	mach/sun4.md/machCode.c
+SIG_RESUME			# keep
+	mach/ds5000.md/compatSig.h
+	mach/ds3100.md/compatSig.h
+	libc/sun3.md/compatSig.h
+	libc/sun4.md/compatSig.h
+	proc/procDebug.c
+	proc/procMigrate.c
+	sig/signals.c
+SIG_SETMASK			# (UNIX) keep
+	mach/ds5000.md/ultrixSignal.h
+	mach/ds3100.md/ultrixSignal.h
+SIG_SUSPEND			# keep
+	mach/ds5000.md/compatSig.h
+	mach/ds3100.md/compatSig.h
+	libc/sun3.md/compatSig.h
+	libc/sun4.md/compatSig.h
+	sig/sigStubs.c
+	sig/signals.c
+SIG_SUSPEND_ACTION		# keep
+	sig/signals.c
+SIG_TERM			# keep
+	mach/ds5000.md/compatSig.h
+	mach/ds3100.md/compatSig.h
+	libc/sun3.md/compatSig.h
+	libc/sun4.md/compatSig.h
+	sig/signals.c
+SIG_TIMER			# keep
+	mach/ds5000.md/compatSig.h
+	mach/ds3100.md/compatSig.h
+	libc/sun3.md/compatSig.h
+	libc/sun4.md/compatSig.h
+	proc/procTimer.c
+	sig/signals.c
+SIG_TRACE_TRAP			# keep; map from EXC_BREAKPOINT
+	mach/sun3.md/machCode.c
+	mach/ds5000.md/machCode.c
+	mach/ds3100.md/machCode.c
+	sig/signals.c
+SIG_TRAPV			# (sun3 exception code) keep
+	Include/user/sigMach.h
+	mach/sun3.md/machCode.c
+SIG_TTY_INPUT			# keep
+	mach/ds5000.md/compatSig.h
+	mach/ds3100.md/compatSig.h
+	fspdev/fspdevSrv.c
+	libc/sun3.md/compatSig.h
+	libc/sun4.md/compatSig.h
+	sig/signals.c
+SIG_TTY_OUTPUT			# keep
+	mach/ds5000.md/compatSig.h
+	mach/ds3100.md/compatSig.h
+	fspdev/fspdevSrv.c
+	libc/sun3.md/compatSig.h
+	libc/sun4.md/compatSig.h
+	sig/signals.c
+SIG_TTY_SUSPEND			# keep
+	mach/ds5000.md/compatSig.h
+	mach/ds3100.md/compatSig.h
+	libc/sun3.md/compatSig.h
+	libc/sun4.md/compatSig.h
+	sig/signals.c
+SIG_UNBLOCK			# (UNIX) keep.
+	mach/ds5000.md/ultrixSignal.h
+	mach/ds3100.md/ultrixSignal.h
+SIG_URGENT			# keep
+	mach/ds5000.md/compatSig.h
+	mach/ds3100.md/compatSig.h
+	libc/sun3.md/compatSig.h
+	libc/sun4.md/compatSig.h
+SIG_ZERO_DIV			# (sun3 exception code) keep.
+	mach/sun3.md/machCode.c
+SigMigSend			# (send a signal to a migrated process) keep.
+	sig/sigInt.h
+	sig/sigMigrate.c
+	sig/signals.c
+Sig_Action			# keep
+	mach/ds5000.md/signals.c
+	mach/ds3100.md/signals.c
+	sig/sig.h
+	sig/sigStubs.c
+	sig/signals.c
+Sig_AllowMigration		# keep (disable initially)
+	mach/sun3.md/machCode.c
+	mach/sun4.md/machCode.c
+	mach/ds5000.md/machCode.c
+	mach/ds3100.md/machCode.c
+	mach/symm.md/machTrap.c
+	proc/procMigrate.c
+	sig/sig.h
+	sig/signals.c
+Sig_ChangeState			# (change the signal state of a debugged
+				# process) keep.
+	proc/procDebug.c
+	sig/sig.h
+	sig/signals.c
+Sig_CheckForKill		# (extra check for pending kill) delete.
+	mach/sun4.md/machTrap.s
+	sig/sig.h
+	sig/signals.c
+Sig_Context			# keep.
+Sig_DeencapState		# migration support (keep, but disable
+				# initially)
+	proc/procMigrate.c
+	sig/sig.h
+	sig/sigMigrate.c
+Sig_EncapState			# migration support (keep, but disable
+				# initially)
+	proc/procMigrate.c
+	sig/sig.h
+	sig/sigMigrate.c
+Sig_Exec			# (initialization for a process that has just
+				# done an exec()) keep.  Nil out sigtramp ptr.
+	proc/procExec.c
+	sig/sig.h
+	sig/signals.c
+Sig_Fork			# (initialization for fork()) keep
+	proc/procFork.c
+	proc/procRpc.c
+	sig/sig.h
+	sig/signals.c
+Sig_GetEncapSize		# migration support (keep, but disable
+				# initially)
+	proc/procMigrate.c
+	sig/sig.h
+	sig/sigMigrate.c
+Sig_Handle			# (Determines if need to handle signal and
+				# does some setup) keep.  Fix to allow for
+				# being called with a process other than the
+				# current one; fix to allow signal to be
+				# postponed until the process wants to deal
+				# with the signal (with option to force signal
+				# to be dealt with now).
+	mach/sun3.md/machCode.c
+	mach/sun4.md/machCode.c
+	mach/ds5000.md/machCode.c
+	mach/ds3100.md/machCode.c
+	mach/symm.md/machTrap.c
+	sig/sig.h
+	sig/signals.c
+Sig_Init			# keep.
+Sig_InitiateMigration		# (doesn't exist?)
+	proc/procMigrate.c
+Sig_Pause			# keep.
+	mach/ds5000.md/signals.c
+	mach/ds3100.md/signals.c
+	sig/sig.h
+	sig/sigStubs.c
+	sig/signals.c
+	sys/sysSysCall.c
+Sig_Pending			# pick up the native version you installed
+	mach/sun3.md/machCode.c
+	mach/ds5000.md/machCode.c
+	mach/ds3100.md/machCode.c
+	proc/procExit.c
+	sig/sig.h
+	sync/syncLock.c
+	sync/syncUser.c
+Sig_ProcInit			# keep.  Nil out the sigtramp pointer.
+	proc/procTable.c
+	sig/sig.h
+	sig/signals.c
+Sig_Return			# (restores some state) keep.  Add code to
+				# force thread back to pre-signal execution
+				# point (longjmp just uses SetHoldMask).
+	mach/sun3.md/machCode.c
+	mach/sun4.md/machCode.c
+	mach/ds5000.md/machCode.c
+	mach/ds3100.md/machCode.c
+	mach/symm.md/machTrap.c
+	sig/sig.h
+	sig/signals.c
+Sig_RpcSend			# keep
+	rpc/rpcCall.h
+	rpc/rpcStubs.c
+	sig/sig.h
+	sig/signals.c
+Sig_Send			# keep.
+	mach/sun3.md/machCode.c
+	mach/sun4.md/machCode.c
+	mach/sun4.md/machFPUGlue.c
+	mach/ds5000.md/machCode.c
+	mach/ds3100.md/machCode.c
+	mach/symm.md/machTrap.c
+	dev/devTty.c
+	fs/fsStreamOps.c
+	fspdev/fspdevSrv.c
+	proc/procExit.c
+	proc/procRemote.c
+	sig/sig.h
+	sig/signals.c
+	vm/vmPage.c
+Sig_SendProc			# (various checks before passing on
+				# signal; called by Sig_Send; also, this is a
+				# public proc. so that if you can send a
+				# signal when you already have the (locked)
+				# procPtr) keep.  Add code so that the signal
+				# is acted on (e.g., user handler is invoked)
+				# if possible; add argument telling whether
+				# the process has a pending exception; note
+				# that suspending the thread and getting its
+				# state is likely to be expensive, so maybe
+				# for signals with a registered handler, it
+				# might be best to always wait for the program
+				# to ask for the signal.
+	mach/sun3.md/machCode.c
+	mach/ds5000.md/machCode.c
+	mach/ds3100.md/machCode.c
+	mach/symm.md/machTrap.c
+	proc/procExit.c
+	proc/procExec.c
+	proc/procTimer.c
+	proc/procMisc.c
+	proc/procRemote.c
+	proc/procMigrate.c
+	sig/sig.h
+	sig/signals.c
+	vm/vmSubr.c
+Sig_SetAction			# keep (with changes for system call stub);
+				# add argument to stub to get address
+				# of sigtramp routine.
+	mach/ds5000.md/signals.c
+	mach/ds3100.md/signals.c
+	sig/sig.h
+	sig/signals.c
+	sys/sysSysCall.c
+Sig_SetHoldMask			# keep (with changes for system call stub)
+	mach/ds5000.md/compatSig.c
+	mach/ds5000.md/signals.c
+	mach/ds3100.md/compatSig.c
+	mach/ds3100.md/signals.c
+	libc/sun3.md/compatSig.c
+	libc/sun4.md/compatSig.c
+	sig/sig.h
+	sig/signals.c
+	sys/sysSysCall.c
+Sig_Stack			# (stuff pushed onto stack before calling
+				# signal handler) keep.
+Sig_UserSend			# rewrite for new system call stub setup.
+	mach/ds5000.md/machUNIXSyscall.c
+	mach/ds3100.md/machUNIXSyscall.c
+	sig/sig.h
+	sig/sigStubs.c
+	sig/signals.c
+	sys/sysSysCall.c
+
+
+Local Variables:
+mode: xref
+fill-column: 78
+End:

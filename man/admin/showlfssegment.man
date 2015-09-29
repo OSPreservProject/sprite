@@ -1,0 +1,33 @@
+'\" Copyright 1992 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/admin/fsattach/RCS/fsattach.man,v 1.5 91/01/12 16:49:27 jhh Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS SHOWLFSSEGMENT cmds
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+showlfssegment \- Show contents of a LFS segment.
+.SH SYNOPSIS
+\fBlfscheck\fR [\fIoptions\fR] \fBdeviceName\fP
+.SH OPTIONS
+.IP "\fB\-blockSize\fR \fsize\fP" 15
+Block size of file system.
+.IP "\fB\-offset\fR \fIoffset\fP" 15
+Offset into device to start file system.
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBShowlfssegment\fR shows the contents of the specified segment of the
+specified file system in symbolic format.
+.SH BUGS
+This program is one of Mendel's private programs and may not be reliable.
+.SH KEYWORDS
+lfs, disk, segment

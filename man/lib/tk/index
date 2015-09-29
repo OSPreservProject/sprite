@@ -1,0 +1,308 @@
+ConfigWidg
+Tk_ConfigureWidget, Tk_Offset, Tk_ConfigureInfo, 
+process configuration options for widgets
+anchor, bitmap, boolean, border, cap style, color, configuration options, cursor, custom, double, font, integer, join style, justify, millimeters, pixels, relief, synonym, uid, 
+ConfigWind
+Tk_ConfigureWindow, Tk_MoveWindow, Tk_ResizeWindow, Tk_MoveResizeWindow, Tk_SetWindowBorderWidth, 
+change window configuration or attributes
+attributes, border, color, configure, height, pixel, pixmap, width, window, x, y, 
+CoordToWin
+Tk_CoordsToWindow, 
+Find window containing a point
+containing, coordinates, root window, 
+CrtErrHdlr
+Tk_CreateErrorHandler, Tk_DeleteErrorHandler, 
+handle X protocol errors
+callback, error, event, handler, 
+CrtGenHdlr
+Tk_CreateGenericHandler, Tk_DeleteGenericHandler, 
+associate procedure callback with all X events
+bind, callback, event, handler, 
+CrtMainWin
+Tk_CreateMainWindow, Tk_CreateWindow, Tk_CreateWindowFromPath, Tk_DestroyWindow, Tk_MakeWindowExist, 
+create or delete window
+create, deferred creation, destroy, display, internal window, main window, register, screen, top-level window, window, 
+DoOneEvent
+Tk_DoOneEvent, Tk_MainLoop, Tk_HandleEvent, 
+wait for events and
+callback, event, handler, idle, timer, 
+DoWhenIdle
+Tk_DoWhenIdle, Tk_CancelIdleCall, 
+invoke a procedure when there are no pending events
+callback, defer, handler, idle, 
+EventHndlr
+Tk_CreateEventHandler, Tk_DeleteEventHandler, 
+associate procedure callback with an X event
+bind, callback, event, handler, 
+FileHndlr
+Tk_CreateFileHandler, Tk_DeleteFileHandler, 
+associate procedure callback with a file or device
+callback, file, handler, 
+FocusHndlr
+Tk_CreateFocusHandler, 
+arrange for callback when focus enters or leaves window
+focus, window, 
+GeomReq
+Tk_GeometryRequest, Tk_SetInternalBorder, 
+specify desired geometry or internal border for a window
+geometry, request, 
+GetAnchor
+Tk_GetAnchor, Tk_NameOfAnchor, 
+translate between strings and anchor positions
+anchor position, 
+GetBitmap
+Tk_GetBitmap, Tk_DefineBitmap, Tk_NameOfBitmap, Tk_SizeOfBitmap, Tk_FreeBitmap, Tk_GetBitmapFromData, 
+maintain database of single-plane pixmaps
+bitmap, pixmap, 
+GetCapStyl
+Tk_GetCapStyle, Tk_NameOfCapStyle, 
+translate between strings and cap styles
+butt, cap style, projecting, round, 
+GetColor
+Tk_GetColor, Tk_GetColorByValue, Tk_NameOfColor, 
+maintain database of colors
+color, intensity, pixel value, 
+GetCursor
+Tk_GetCursor, Tk_GetCursorFromData, Tk_NameOfCursor, Tk_FreeCursor, 
+maintain database of cursors
+cursor, 
+GetFontStr
+Tk_GetFontStruct, Tk_NameOfFontStruct, Tk_FreeFontStruct, 
+maintain database of fonts
+font, 
+GetGC
+Tk_GetGC, Tk_FreeGC, 
+maintain database of read-only graphics contexts
+graphics context, 
+GetJoinStl
+Tk_GetJoinStyle, Tk_NameOfJoinStyle, 
+translate between strings and join styles
+bevel, join style, miter, round, 
+GetJustify
+Tk_GetJustify, Tk_NameOfJustify, 
+translate between strings and justification styles
+center, fill, justification, string, 
+GetOption
+Tk_GetOption, 
+retrieve an option from the option database
+class, name, option, retrieve, 
+GetPixels
+Tk_GetPixels, Tk_GetScreenMM, 
+translate between strings and screen units
+centimeters, convert, inches, millimeters, pixels, points, screen units, 
+GetRelief
+Tk_GetRelief, Tk_NameOfRelief, 
+translate between strings and relief values
+name, relief, string, 
+GetRootCrd
+Tk_GetRootCoords, 
+Compute root-window coordinates of window
+coordinates, root window, 
+GetSelect
+Tk_GetSelection, 
+retrieve the contents of the selection
+format, get, selection retrieval, 
+GetUid
+Tk_GetUid, Tk_Uid, 
+convert from string to unique identifier
+atom, unique identifier, 
+InternAtom
+Tk_InternAtom, Tk_GetAtomName, 
+manage cache of X atoms
+atom, cache, display, 
+ManageGeom
+Tk_ManageGeometry, 
+arrange to handle geometry requests for a window
+callback, geometry, managed, request, unmanaged, 
+MapWindow
+Tk_MapWindow, Tk_UnmapWindow, 
+map or unmap a window
+map, unmap, window, 
+Name
+Tk_Name, Tk_PathName, Tk_NameToWindow, 
+convert between names and window tokens
+name, path name, token, window, 
+OwnSelect
+Tk_OwnSelection, 
+make a window the owner of the primary selection
+own, selection owner, 
+ParseArgv
+Tk_ParseArgv, 
+process command-line options
+arguments, command line, options, 
+Preserve
+Tk_Preserve, Tk_Release, Tk_EventuallyFree, 
+avoid freeing storage while it's being used
+free, reference count, storage, 
+RegInterp
+Tk_RegisterInterp, 
+make an interpreter accessible with ``send'' command
+interpreter, name, register, send command, 
+RestrictEv
+Tk_RestrictEvents, 
+filter and selectively delay X events
+delay, event, filter, restriction, 
+SelHandler
+Tk_CreateSelHandler, 
+arrange to handle requests for the primary selection
+format, handler, selection, target, 
+SetClass
+Tk_SetClass, Tk_Class, 
+set or retrieve a window's class
+class, unique identifier, window, window manager, 
+SetGrid
+Tk_SetGrid, 
+control the grid for interactive resizing
+grid, window, window manager, 
+Sleep
+Tk_Sleep, 
+delay execution for a given number of milliseconds
+sleep, time, wait, 
+TimerHndlr
+Tk_CreateTimerHandler, Tk_DeleteTimerHandler, 
+call a procedure at a
+callback, clock, handler, timer, 
+WindowId
+Tk_WindowId, Tk_Display, Tk_DisplayName, Tk_ScreenNumber, Tk_Screen, Tk_X, Tk_Y, Tk_Width, Tk_Height, Tk_Changes, Tk_Attributes, Tk_IsMapped, Tk_ReqWidth, Tk_ReqHeight, Tk_InternalBorderWidth, 
+retrieve information from Tk's local data structure
+attributes, display, height, geometry manager, identifier, mapped, requested size, screen, width, window, x, y, 
+after
+after, 
+Execute a command after a time delay
+delay, sleep, time, 
+bind
+bind, 
+Arrange for X events to invoke Tcl commands
+form, manual, 
+button
+button, 
+Create and manipulate button widgets
+button, widget, 
+canvas
+canvas, 
+Create and manipulate canvas widgets
+canvas, widget, 
+checkbuttn
+checkbutton, 
+Create and manipulate check-button widgets
+check button, widget, 
+destroy
+destroy, 
+Destroy a window
+application, destroy, window, 
+entry
+entry, 
+Create and manipulate entry widgets
+entry, widget, 
+focus
+focus, 
+Direct keyboard events to a particular window
+focus, keyboard, 
+frame
+frame, 
+Create and manipulate frame widgets
+frame, widget, 
+grab
+grab, 
+Confine pointer and keyboard events to a particular window sub-tree
+grab, variable, wait, window, 
+label
+label, 
+Create and manipulate label widgets
+label, widget, 
+lbSingSel
+tk_listboxSingleSelect, 
+Allow only one selected element in listbox(es)
+listbox, selection, 
+listbox
+listbox, 
+Create and manipulate listbox widgets
+listbox, widget, 
+menu
+menu, 
+Create and manipulate menu widgets
+menu, widget, 
+menubuttn
+menubutton, 
+Create and manipulate menubutton widgets
+menubutton, widget, 
+message
+message, 
+Create and manipulate message widgets
+message, widget, 
+option
+option, 
+Add/retrieve window options to/from the option database
+database, option, priority, retrieve, 
+options
+options, 
+Standard options supported by widgets
+class, name, standard option, switch, 
+pack
+pack, 
+Geometry manager that packs around edges of cavity
+frame, geometry manager, location, packer, size, 
+place
+place, 
+Geometry manager for fixed or rubber-sheet placement
+geometry manager, height, location, master, place, rubber sheet, slave, width, 
+radiobuttn
+radiobutton, 
+Create and manipulate radio-button widgets
+radio button, widget, 
+scale
+scale, 
+Create and manipulate scale widgets
+scale, widget, 
+scrollbar
+scrollbar, 
+Create and manipulate scrollbar widgets
+scrollbar, widget, 
+selection
+selection, 
+Manipulate the X selection
+format, handler, ICCCM, selection, target, type, 
+send
+send, 
+Execute a command in a different interpreter
+interpreter, remote execution, send, 
+text
+text, 
+Create and manipulate text widgets
+text, widget, 
+tkerror
+tkerror, 
+Command invoked to process background errors
+background error, reporting, 
+tkwait
+tkwait, 
+Wait for variable to change or window to be destroyed
+variable, wait, window, 
+toplevel
+toplevel, 
+Create and manipulate toplevel widgets
+toplevel, widget, 
+traversal
+tk_menus, tk_bindForTraversal, 
+Enable keyboard menu traversal
+keyboard traversal, menus, post, 
+update
+update, 
+Process pending events and/or when-idle handlers
+event, flush, handler, idle, update, 
+variables
+variables, 
+Variables used or set by Tk
+variables, version, 
+winfo
+winfo, 
+Return window-related information
+atom, children, class, geometry, height, identifier, information, interpreters, mapped, parent, path name, screen, width, window, 
+wish
+wish, 
+Simple windowing shell
+shell, toolkit, 
+wm
+wm, 
+Communicate with window manager
+aspect ratio, deiconify, focus model, geometry, grid, group, icon, iconify, increments, position, size, title, top-level window, units, window manager, 

@@ -1,0 +1,86 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  srv030:1.1 srv028:1.1 srv027:1.1 srv026:1.1 srv024:1.1 srv022:1.1 srv021:1.1 srv019:1.1 srv018:1.1 srv016:1.1 srv014:1.1 srv010:1.1 srv008:1.1 srv007:1.1 srv006:1.1 srv005:1.1 srv004:1.1 srv003:1.1 srv002:1.1 srv001:1.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     92.01.02.16.46.36;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/* 
+ * List_Insert.c --
+ *
+ *	Source code for the List_Insert library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/list/RCS/List_Insert.c,v 1.5 90/11/27 11:06:20 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <stdio.h>
+#include "list.h"
+
+extern void panic();
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * List_Insert --
+ *
+ *	Insert the list element pointed to by itemPtr into a List after 
+ *	destPtr.  Perform a primitive test for self-looping by returning
+ *	failure if the list element is being inserted next to itself.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The list containing destPtr is modified to contain itemPtr.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+List_Insert(itemPtr, destPtr)
+    register	List_Links *itemPtr;	/* structure to insert */
+    register	List_Links *destPtr;	/* structure after which to insert it */
+{
+    if (itemPtr == (List_Links *) NIL || destPtr == (List_Links *) NIL
+	    || !itemPtr || !destPtr) {
+	panic("List_Insert: itemPtr (%x) or destPtr (%x) is NIL.\n",
+		  (unsigned int) itemPtr, (unsigned int) destPtr);
+	return;
+    }
+    if (itemPtr == destPtr) {
+	panic("List_Insert: trying to insert something after itself.\n");
+	return;
+    }
+    itemPtr->nextPtr = destPtr->nextPtr;
+    itemPtr->prevPtr = destPtr;
+    destPtr->nextPtr->prevPtr = itemPtr;
+    destPtr->nextPtr = itemPtr;
+}
+@

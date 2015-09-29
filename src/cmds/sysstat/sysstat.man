@@ -1,0 +1,68 @@
+' $Header: /sprite/src/cmds/sysstat/RCS/sysstat.man,v 1.4 92/05/22 18:35:55 kupfer Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS SYSSTAT cmds
+.BS
+.SH NAME
+sysstat \- print statistics and information about the state of the system
+.SH SYNOPSIS
+\fBsysstat \fR[\fB\-vcR\fR]
+.SH OPTIONS
+.IP "\fB\-v\fR" 14
+Print out the compilation version timestamp for the kernel.  This is
+the default if no options are specified. 
+.IP "\fB\-c\fR" 14
+Print out the number of times each system call has been invoked.
+.IP "\fB\-p\fR \fIn\fR" 14
+Enable or disable system call timing.
+.IP "\fB\-t\fR" 14
+For each system call, print the number of calls and how much time was
+required. 
+.IP "\fB\-R\fR" 14
+Reset the count and time information for system calls.
+.BE
+
+.SH DESCRIPTION
+.LP
+This command prints out statistics and other information about the
+system.   
+.SH "VERSION TIMESTAMP"
+.IP "\fB\-v\fR"
+By default, \fBsysstat\fR prints the compilation version timestamp for the
+kernel.  This is a unique identifier indicating who compiled the
+kernel and when.  This information is printed if no options are
+specified, or if the \fI-v\fR  option is specified.  
+.SH "SYSTEM CALL STATISTICS"
+.IP "\fB\-c\fR"
+This option indicates that \fBsysstat\fR should display a count of the
+number of times each system call has been invoked.  For each call, the
+number of invocations is printed along with an indication of whether
+the call, if done by a migrated process, would be handled locally or
+would require action by the process's \fIhome node\fR.
+.IP "\fB\-t\fR"
+This option tells 
+.B sysstat
+to display for each system call the number of times the call was
+invoked, the total time spent in that call, and the average time spent
+in that call.  Note that if a process is migrated, its system calls
+are recorded by the host that it is executing on, rather than by the
+home node.  Normally system call timing is turned off; use the
+.B \-p 
+option to turn it on.
+.IP "\fB\-R\fR"
+This option causes \fBsysstat\fR reset the kernel's count of the
+number of times each system call has been invoked, as well as the
+accumulated time for each system call.  Thus, subsequent invocations of
+\fBsysstat\fR with the \fB\-c\fR or \fB\-t\fR option will report only
+activity since the invocation with the \fB-R\fR option.
+.IP "\fB\-p\fR"
+This option controls whether Sprite keeps track of how much time each
+system call takes.  To turn on system call timing, use 
+.BR "\-p 1" ;
+to turn it off, use
+.BR "\-p 0" .
+.SH BUGS
+System call timing is only available on ds5000s.
+.SH "SEE ALSO"
+migcmd, fscmd
+.SH KEYWORDS
+statistics, process migration, system call

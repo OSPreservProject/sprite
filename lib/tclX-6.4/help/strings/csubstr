@@ -1,0 +1,11 @@
+
+
+          csubstr string firstExpr lengthExpr
+               Returns a range of characters from string starting at
+               the character indexed by the expression firstExpr
+               (zero-based) for lengthExpr characters.  The special
+               keyword end may be specified for lengthExpr to indicate
+               that the remainder of the string is to be extracted.
+               This command is a short cut for:
+
+                   string range string [expr firstExpr] [expr length-1]

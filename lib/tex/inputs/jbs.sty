@@ -1,0 +1,200 @@
+% Article sub-style JBS.STY
+% Usage:  \documentstyle[jbs]{article}
+%         REQUIRED COMMANDS LISTED BELOW
+%         optional commands listed below
+%         \setcounter{page}{foo} --`foo' is first page number for article
+%         \begin{document}
+%         \leadpagelayout
+%         blank line
+%         Text as usual
+%
+\typeout { }
+\typeout{Article document style `jbs' for the Journal of Business Strategies}
+\typeout { }
+% Basic layouts for Journal of Business Strategies--released July 3, 1988
+%
+% Copyright (c) 1988 by George D. Greenwade (BED_GDG@SHSU.BITNET)
+%                       Center for Business and Economic Research
+%                       Sam Houston State University
+%                       Huntsville, Texas  77341-2056
+%
+% Must include the following definitions in the preamble of the document:
+%% \vol{foo} -- `foo' is Volume number for the article
+%% \no{foo} -- `foo' is Number in the Volume
+%% \issue{foo} -- `foo' is issue (i.e., Spring or Fall)
+%% \yr{foo} -- `foo' is year of publication
+%% \runhead{foo} -- `foo' is running head for odd-numbered (right-hand) pages
+%% \title{foo} -- `foo' is titlepage title (insert breaks with \cr)
+%% \author{foo} -- `foo' is lead author's name
+%% \affil{foo} -- `foo' is lead author's affiliation (insert breaks with \cr)
+%%         Defaults intentionally not specified as each article is
+%%         unique in these aspects.  Failure to specify any of these
+%%         results in "command not specified" error.
+% Optional entries in preamble:
+%% Present design allows for up to two additional co-authors with unique
+%% affiliations (total of three authors and affiliations).
+%% \authorii{foo} -- `foo' is first co-author (second author)
+%% \affilii{foo} -- `foo' is authorii's affiliation
+%% \authoriii{foo} -- `foo' is second co-author (third author)
+%% \affiliii{foo} -- `foo' is authoriii's affiliation
+     
+% BASIC SETUPS AND LAYOUTS
+\ds@twoside           % First, we use two-sided layout for the JBS.
+\input{art12.sty}     % To generate photo-ready copy for reduction to a
+\textwidth6in         % finished 6X9 book, we print in 12 point using a
+\textheight9in        % 6X9 text definition.  This reduces nicely.  We
+\topmargin-12pt       % have found that virtually all stray toner marks
+\oddsidemargin.75in   % are essentially erased out in the reduction process.
+\evensidemargin.75in
+\headheight11pt
+\headsep7mm
+\pagestyle{empty}
+\thispagestyle{plain}
+     
+% CREATE BOXES
+\newbox\topheadlinebox     % These are the boxes which are utilized in
+\newbox\titlebox           % the various centering processes defined below.
+\newbox\bottomheadlinebox
+\newbox\authorbox
+\newbox\affilbox
+     
+% DEFINE VARIOUS ARTICLE SPECIFIC VARIABLES
+\def\vol#1{\edef\vol{#1}}             % Volume number
+\def\no#1{\edef\no{#1}}               % Number within the Volume
+\def\issue#1{\edef\issue{#1}}         % Issue (Fall or Spring)
+\def\yr#1{\edef\yr{#1}}               % Year of publication
+\def\runhead#1{\edef\runhead{#1}}     % Running header (Author:  Title)
+     
+% DEFINE PAGE HEADERS \evenpageheader and \oddpageheader
+% A variation from HEADERFOOTER.STY, copyright (c) 1987 by Stephen Gildea
+\newcommand\evenpageheader[3]{\def\@evenhead
+        {\rlap{#1}\hss{#2}\hss\llap{#3}}}
+\newcommand\oddpageheader[3]{\def\@oddhead
+        {\rlap{#1}\hss{#2}\hss\llap{#3}}}
+     
+% PAGE HEADERS AND LEAD FOOTNOTE
+\evenpageheader{\bf \thepage}{\large\em Journal of Business Strategies}
+{\bf Vol.~\vol, No.~\no}
+\oddpageheader{\bf \issue\ \yr}{\large\em \runhead}{\bf \thepage}
+\long\def\leadfn{\footnotetext[0]{\hspace*{-6mm}\small {\em Journal of Business
+Strategies},
+Volume \vol, Number \no\ (\issue\ \yr)}}
+     
+% CENTERING COMMAND \CenterBox
+% A variation from VERTEX.TEX, copyright (c) 1987 by Hal R. Varian
+%% #1 - name of box
+%% #2 - font used in box
+%% #3 - baselineskip for box
+%% #4 - text of box, separated by \cr
+\def\CenterBox#1#2#3#4{%
+\global\setbox#1=\vbox{\baselineskip=#3\halign{#2\hfil##\hfil\cr#4\crcr}}}
+     
+% SPECIAL FONT DEFINITIONS USED IN CENTERING OF LEAD PAGE ELEMENTS
+\def\titlefont{\Large\sc}
+\def\authorfont{\large\sl}
+\def\affilfont{\twlrm}
+     
+% MAKE NEEDED CENTERED ELEMENTS FOR LEAD PAGE
+\def\CenteredTitle#1{
+ \CenterBox
+  \titlebox
+  \titlefont
+  {20pt}
+  {#1}}
+     
+\def\CenteredAuthor#1{
+ \CenterBox
+  \authorbox
+  \authorfont
+  \normalbaselineskip
+  {#1}}
+     
+\def\CenteredAffil#1{
+ \CenterBox
+  \affilbox
+  \affilfont
+  {14pt}%\normalbaselineskip
+  {#1}}
+     
+% MAKE CENTERED RULES FOR ABOVE AND BELOW TITLEBOX
+%%   Upper rule
+\global\setbox\topheadlinebox\vbox{\baselineskip\normalbaselineskip
+\halign{\titlefont\hfil#\hfil\cr{\vrule width6in height.7mm}\crcr}}
+%%   Lower rule
+\global\setbox\bottomheadlinebox\vbox{\baselineskip\normalbaselineskip
+\halign{\titlefont\hfil#\hfil\cr{\vrule width6in height.7mm}\crcr}}
+     
+% IF MULTIPLE AUTHORS
+\newif\ifauthorii
+\global\authoriifalse
+\newif\ifauthoriii
+\global\authoriiifalse
+     
+\def\CenteredAuthorII#1{
+\global\authoriitrue
+\newbox\authoriibox
+ \CenterBox
+  \authoriibox
+  \authorfont
+  \normalbaselineskip
+  {#1}}
+     
+\def\CenteredAffilII#1{
+\newbox\affiliibox
+ \CenterBox
+  \affiliibox
+  \affilfont
+  {14pt}%\normalbaselineskip
+  {#1}}
+     
+\def\CenteredAuthorIII#1{
+\global\authoriiitrue
+\newbox\authoriiibox
+ \CenterBox
+  \authoriiibox
+  \authorfont
+  \normalbaselineskip
+  {#1}}
+     
+\def\CenteredAffilIII#1{
+\newbox\affiliiibox
+ \CenterBox
+  \affiliiibox
+  \affilfont
+  {14pt}%\normalbaselineskip
+  {#1}}
+     
+% DEFINE AND PLACE IN BOXES:  TITLE, AUTHOR, AND AFFILIATION
+\long\def\title#1{\CenteredTitle{#1}}
+\def\author#1{\CenteredAuthor{#1}}
+\long\def\affil#1{\CenteredAffil{#1}}
+\def\authorii#1{\CenteredAuthorII{#1}}
+\long\def\affilii#1{\CenteredAffilII{#1}}
+\def\authoriii#1{\CenteredAuthorIII{#1}}
+\long\def\affiliii#1{\CenteredAffilIII{#1}}
+     
+% DEFINE \leadpagelayout TO INVOKE THE LEAD PAGE LAYOUT
+\def\leadpagelayout{{\vbox{
+\@@line{\hfil\box\topheadlinebox\hfil}     % Centered line
+\vskip.3pc
+\@@line{\hfil\box\titlebox\hfil}           % Centered title
+\vskip-.2pc
+\@@line{\hfil\box\bottomheadlinebox\hfil}  % Centered line
+\vskip.8pc
+\@@line{\hfil\box\authorbox\hfil}          % Author's name (centered)
+\vskip.2pc
+\@@line{\hfil\box\affilbox\hfil}           % Author's affiliation (centered)
+\ifauthorii
+{\vskip.6pc
+\@@line{\hfil\box\authoriibox\hfil}       % 2nd Author's name (centered)
+\vskip.2pc
+\@@line{\hfil\box\affiliibox\hfil}}        % 2nd Author's affiliation (centered)
+\fi
+\ifauthoriii
+{\vskip.6pc
+\@@line{\hfil\box\authoriiibox\hfil}    % 3rd Author's name (centered)
+\vskip.2pc
+\@@line{\hfil\box\affiliiibox\hfil}}    % 3rd Author's affiliation (centered)
+\fi
+\vskip1pc}}
+\leadfn}                                % Generate lead-page footnote

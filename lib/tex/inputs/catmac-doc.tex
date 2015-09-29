@@ -1,0 +1,536 @@
+%Please reply to inhb@mcgillb.bitnet.
+%For this semester only, to barr@linc.cis.upenn.edu.
+%Michael Barr
+%Math Dept
+%McGill Univ.
+%805 Sherbrooke St W
+%Montreal, QC
+%Canada H3P 1S4
+\documentstyle[12pt,catmac]{article}
+\textheight=9in \topmargin=0pt\headheight=0pt\headsep=0pt
+\textwidth=6.5in \oddsidemargin=0pt
+\begin{document}
+{\catcode`\ =13\global\let =\ \catcode`\^^M=13
+\gdef^^M{\par\noindent}}
+\def\verbatim{\tt
+\catcode`\^^M=13
+\catcode`\ =13
+\catcode`\\=12
+\catcode`\{=12
+\catcode`\}=12
+\catcode`\_=12
+\catcode`\^=12
+\catcode`\&=12
+\catcode`\~=12
+\catcode`\#=12
+\catcode`\%=12
+\catcode`\$=12
+\catcode`|=0
+}
+
+All commercial rights reserved.  May be freely distributed
+and used with the following exceptions:\\
+1. No commercial use without explicit permission.\\
+2. It may not be used by any employee of a telephone company.\\
+3. It may not be distributed without this notice.
+
+\def\\{{\tt \char 92}}
+
+\section*{The catmac macros}
+The file catmac includes a number of macros for drawing commutative
+diagrams in special shapes as well as more flexible macros to paste
+together more complicated diagrams.
+
+In general, there are two kinds of macros.  The first kind has the
+following form
+{\tt \\shapename[shape\_parameters]} and is intended to be used in the
+following way:
+{\verbatim
+\begin{center}
+\resetparms
+\shapename[shape_parameters]
+\end{center}
+|egroup
+
+This will create a shape with the given parameters.  It operates by
+building its own picture environment.
+
+The second kind of procedure must be used inside a picture environment
+and allows the user to put a diagram of a given size and shape at a
+given place.  The usual way in which this is used is:
+
+{\verbatim
+\begin{center}
+%code to be explained later
+\begin{picture}(xext,yext)
+\putshape1(x1,y1)[shape_parameters1]
+|dots
+\putshape(xn,yn)[shape_parametersn]
+\end{picture}
+\end{center}
+|egroup
+
+Here is an example of the first kind of macro.  I will have to explain a
+few details before giving examples of the second.  The code
+{\verbatim
+\begin{center}
+\resetparms
+\square[A`B`C`D;f`g`h`k]
+\end{center}
+|egroup
+produces the diagram
+\begin{center}
+\resetparms
+\square[A`B`C`D;f`g`h`k]
+\end{center}
+and the code
+{\verbatim
+\begin{center}
+\resetparms
+\Atriangle[A`B`C;f`g`h]
+\end{center}
+|egroup
+produces the diagram
+\begin{center}
+\resetparms
+\Atriangle[A`B`C;f`g`h]
+\end{center}
+The reason for the shape name will be explained later.
+
+If an arrow label extends especially high or low, the space
+automatically expands to match.  For example,
+{\verbatim
+\begin{center}
+\resetparms
+\square[A`B`C`D;\sum_{i=1}^{\infty}`g`h`\Psi^A_k]
+\end{center}
+|egroup
+will get the diagram
+\begin{center}
+\resetparms
+\square[A`B`C`D;\sum_{i=1}^{\infty}`g`h`\Psi^A_k]
+\end{center}
+and so on.
+
+Before going on, I will explain about the parameters.  Any shape will
+have one or two parameters for height and/or length as well as one
+parameter for each arrow in the diagram.  These are in addition to the
+parameters used in the actual procedures.  For example, the procedure
+{\verbatim
+\begin{center}
+\setsqparms[-1`0`2`-3;1000`700]
+\square[A`B`C`D;f`g`h`k]
+\end{center}
+|egroup
+gives the square:
+\begin{center}
+\setsqparms[-1`0`2`-3;1000`700]
+\square[A`B`C`D;f`g`h`k]
+\end{center}
+The meaning is as follows.  The first four parameters refer to four
+arrows in linguistic order (top, left, right, bottom).  A negative
+number gives a backward arrow, while a zero causes it to be omitted.  A
+parameter with an absolute value of 1 is ordinary, while 2 gives an
+arrow with a tail (monomorphism) and 3 a double headed arrow
+(epimorphism).  The last two parameters determine the width and height,
+respectively, in units of 0.01 em (an em is the width of an M, the
+widest letter in a font).
+
+Although {\tt \\resetparms} works with any of the shapes (and simply
+chooses
+the default values of 1 for all arrows and 500 for height and width),
+the remaining shapes use different names.  The various parameter setting
+procedures are
+{\verbatim
+\setsqparms[#1`#2`#3`#4;#5`#6]
+\settriparms[#1`#2`#3;#4]
+\settripairparms[#1`#2`#3`#4`#5;#6]
+\setrecparms[#1`#2]
+|egroup
+With the exception of the last, the parameters before the semicolon set
+the arrow types and the one or two after set lengths.  In the last one,
+both parameters are lengths.
+
+Here are the shapes.  We have already seen the shape {\tt \\square}.
+There are eight different triangles, all isoceles right triangles in
+different orientations.  The names all have the form {\tt
+\\xtriangle}, where x is the letter that most closely resembles the
+actual shape of the triangle.
+
+Here are the names, followed by a sample of each one:
+\begin{list}{}{}
+\item{\tt \\btriangle}\samepage
+\begin{center}
+\resetparms
+\btriangle[A`B`C;f`g`h]
+\end{center}
+\pagebreak[0]
+\item{\tt \\dtriangle}\samepage
+\begin{center}
+\resetparms
+\dtriangle[A`B`C;f`g`h]
+\end{center}
+\pagebreak[0]
+\item{\tt \\ptriangle}\samepage
+\begin{center}
+\resetparms
+\ptriangle[A`B`C;f`g`h]
+\end{center}
+\pagebreak[0]
+\item{\tt \\qtriangle}\samepage
+\begin{center}
+\resetparms
+\qtriangle[A`B`C;f`g`h]
+\end{center}
+\pagebreak[0]
+\item{\tt \\Atriangle}\samepage
+\begin{center}
+\resetparms
+\Atriangle[A`B`C;f`g`h]
+\end{center}
+\pagebreak[0]
+\item{\tt \\Vtriangle}\samepage
+\begin{center}
+\resetparms
+\Vtriangle[A`B`C;f`g`h]
+\end{center}
+\pagebreak[0]
+\item{\tt \\Ctriangle}\samepage
+\begin{center}
+\resetparms
+\Ctriangle[A`B`C;f`g`h]
+\end{center}
+\pagebreak[0]
+\item{\tt \\Dtriangle}\samepage
+\begin{center}
+\resetparms
+\Dtriangle[A`B`C;f`g`h]
+\end{center}
+\end{list}
+
+In addition, there are two special diagrams that come up often enough to
+be worth having a special macros for.
+\begin{list}{}{}
+\item{\tt \\Atrianglepair}\samepage
+\begin{center}
+\resetparms
+\Atrianglepair[A`B`C`D;f`g`h`k`l]
+\end{center}
+\item{\tt \\Vtrianglepair}\samepage
+\begin{center}
+\resetparms
+\Vtrianglepair[A`B`C`D;f`g`h`k`l]
+\end{center}
+\end{list}
+Finally, there is one special shape that is probably not used by very
+many mathematicians.  Still I have it and the user might as well share
+it.
+
+{\verbatim
+\recurse[A`B`R`C;s`f_0`f`t_0`t]
+|egroup
+\begin{center}
+\resetparms
+\recurse[A`B`R`C;s`f_0`f`t_0`t]
+\end{center}
+
+Notice what happens if the first parameter is empty:
+{\verbatim
+\recurse[`B`R`C;s`f_0`f`t_0`t]
+|egroup
+\begin{center}
+\resetparms
+\recurse[`B`R`C;s`f_0`f`t_0`t]
+\end{center}
+
+This takes care of the simple procedures.  The remaining procedures are
+there as building blocks for more complicated diagrams.
+
+These take the form
+\vskip0pt\noindent
+{\tt \\putshape(xpos,ypos)[shape\_parameters]}
+\vskip0pt\noindent
+where
+shape is one of the 11 shapes (excluding {\tt \\recurse}) described
+above
+and the parms are as described there.  The parameters {\tt  xpos} and
+{\tt  ypos} are the offsets from the lower left corner of the picture
+measured in umits of .01 em in the usual \LaTeX\ fashion.
+
+There is one
+more shape which is simply an arrow with an attached label.  This is
+called {\tt \\putmorphism} and it is used with the syntax
+\vskip0pt\noindent
+{\tt
+\\putmorphism(xpos,ypos)(run,rise)[node1`node2`label]\{dist\}\{type\}\{loc\}}
+\vskip0pt\noindent
+Here the parameters {\tt  xpos} and
+{\tt  ypos} are as above.  The slope is {\tt rise/run} where {\tt rise}
+and {\tt run} are two numbers that give the slope in accordance with the
+\LaTeX\ rules.  That is rise and run must have no common divisor and
+must not exceed 4 in absolute value.  In addition, these procedures are
+defined so that rise must not be positive and if it is zero, then run
+must be positive.  In other words, all arrows must go in the linguistic
+direction, downwards or to the right.  Arrows can be made to go in the
+reverse direction as explained below.
+
+The next three parameters are the node that appears first (in linguistic
+order), the one that appears second and the arrow label.  The next
+paramater is the distance in the sense of \LaTeX\ between the centers of
+the nodes.  This means it is the horizontal component of the distance,
+unless that is negative, in which case it is the vertical distance.  The
+second parameter is the code for the arrowtype, an integer between -3
+and 3 with the same meaning as explained above.  Using negative values
+of this parameter allows one to draw an arrow that goes upwards or left.
+Note, however, that node1 is always the node that is above or to the
+left of node2.  The last parameter should have the value a,b,l,r or m.
+The values a and b are used only for horizontal arrows and direct the
+arrow label to be placed above or below the arrow.  The values l and r
+are used for all other arrows and direct the label to be left or right
+of the arrow.  Finally, a vertical arrow only can be given the parameter
+m, in which case the arrow will be gapped and the label placed in the
+middle of the gap.
+
+In general, the simple macros are designed to be used as indicated
+either in the {\tt \\begin\{center\} \ldots \\end\{center\}} environment
+or in one of the others, usually
+{\verbatim
+\begin{equation}\begin{array}{c}
+|dots
+\end{array}\end{equation}|egroup
+
+The \\putshape macros must be used inside a picture environment that is
+normally placed inside a centering or similar environment.  The
+reference point for the positioning parameters is determined as the
+lower left corner of the smallest rectangle with sides parallel to the
+coordinate axes that includes the center points of all nodes on its
+border.  This rectangle will be degenerate in the case of a horizontal
+or vertical morphism.  The reference point may either be on or outside
+the actual figure.  For example, in the case of the btriangle, it is the
+center of the lower left node, while for a qtriangle it is outside the
+triangle itself being the fourth corner of the enclosing square.
+
+The macros are made so that they fit together well.  That is why all
+distances are from node centers to node centers.  If a vertex is part of
+two shapes, it is probably best not to repeat it, since it is
+conceivable that round-off errors will cause its two appearances to be
+slightly offset.  It can either be omitted or, since the width is used
+to determine the amount to shorten horizontal arrows, replaced by {\tt
+\\phantom} versions.  Both methods are illustrated in the example given
+at the end.
+
+One more thing has to be described.  when beginning picture mode, you
+have to allocate both a horizontal and vertical space.  the vertical
+space is crucial and, while the horizontal is not as critical, it still
+determines whether the figure is properly centered.  This partially
+automated as follows.  You begin by giving values to two variables,
+called {\tt \\xext} and {\tt\\yext} (for x-extent and y-extent, resp.).
+This is done by the declarations
+{\tt\\xext=xparm, \\yext=yparm}, where {\tt xparm} and {\tt yparm} are
+the sum of all the horizontal and vertical distances used in the
+procedures.  Of course, if two shapes are put side by side, the
+x-extents will be the sum plus the space between them if any, while the
+y-extent will be that of the larger one.  In figuring out these extents,
+ignore the heights and widths of the vertices and arrow labels.  So what
+these really measure is the distance between the two most distantly
+separated arrows in the diagram, or rather it would if none was omitted.
+
+These must be adjusted for the space occupied by the labels and nodes.
+There are procedures to do this automatically, but they require an
+assist from the user.  First, there are six raw procedures that can
+carry out these adjustments.  They are {\verbatim \topadjust,
+\botadjust, \leftadjust, \rightadjust, \leftsladjust, \rightsladjust
+|egroup that take 3 parameters each and adjust {\tt\\xext} and
+{\tt\\yext} for the heights and widths of the nodes.  They all take as
+parameters two nodes and one arrow and figure out which one stands the
+highest or sticks out the furthest and makes the appropriate adjustment.
+The first four can be given the nodes in either order and the arrow
+label comes third.  In the case of the last two, making adjustment for
+slnat arrows of a triangle, the first parameter is the node that sticks
+out the further, the second is the other node (which is the rarely the
+determining one) and the third is the label.  If it is clear that a node
+or label cannot possibly be the salient one, then it may safely be
+omitted.
+
+In practice, it is hardly ever necessary to use these procedures.  There
+is a single procedure called {\tt\\adjust} that is used as follows:
+{\verbatim
+\adjust[tnode`tlabel;lnode`llabel;rnode`rlabel;bnode`blabel]
+|egroup
+It is usually necessary to specify only four parameters leaving the
+remainder blank.  For example, if the top label is empty, then some node
+(if there is more than one, always use the tallest; if in doubt use them
+both concatenated).  If the label is not blank, it will almost stick up
+further than the node.  If in doubt, give them both, but this should
+rarely happen.  Similar remarks apply to the other pairs of parameters.
+
+These adjustment procedures adjust not only {\tt\\xext} and {\tt\\yext}
+but another pair of variables called {\tt\\xpos} and {\tt\\ypos}.  When
+this has all been done, you can now begin picture mode with
+{\verbatim
+\begin{picture}(\xext,\yext)(\xoff,\yoff)
+|dots
+\end{picture}
+|egroup
+
+A somewhat baroque (but taken from an actual text) example illustrates
+most of these points.
+{\verbatim
+\begin{center}
+\xext=2100 \yext=2100
+\adjust[`\mu;`T\eta'T;`\sigma;`T'T\eta']
+\begin{picture}(\xext,\yext)(\xoff,\yoff)
+\putmorphism(0,2100)(0,-1)[``T\eta'T]{1400}1l
+\putmorphism(0,2100)(1,0)[TT`T`\mu]{700}1a
+\putmorphism(0,2100)(1,-1)[`TTT'`TT\eta']{700}1l
+\putmorphism(700,2100)(1,-1)[`TT'`T\eta]{700}1r
+\put(700,1750){\makebox(0,0){1}}
+\putmorphism(700,1420)(1,0)[\phantom{TTT'}`\phantom{TT'}`\mu
+  T']{700}1a
+\putmorphism(700,1380)(1,0)[\phantom{TTT'}`%
+  \phantom{TT'}`T\sigma]{700}1b
+\setsqparms[0`1`1`1;700`700]
+\putsquare(700,700)[TTT'`TT'`TT'TT'`TT'T';`T\eta'TT'``]
+\putmorphism(700,700)(1,0)[\phantom{TT'TT'}`%
+  \phantom{TT'T'}`TT'\sigma]{700}1a
+\put(300,1400){\makebox(0,0){2}}
+\put(950,1050){\makebox(0,0){3}}
+\settriparms[0`1`0;700]
+\putbtriangle(1400,700)[``TT';T\eta'T'`id`]
+\putmorphism(1400,700)(1,0)[\phantom{TT'T'}`%
+  \phantom{TT'}`T\mu']{700}1a
+\put(1600,1050){\makebox(0,0){6}}
+\setsqparms[1`1`0`1;700`700]
+\putsquare(0,0)[TT'T`\phantom{TT'TT'}`T'T`T'TT';%
+  TT'T\eta'`\sigma T``T'T\eta']
+\putmorphism(700,0)(1,0)[\phantom{T'TT'}`%
+  \phantom{T'T'}`T'\sigma]{700}1b
+\setsqparms[0`0`1`1;700`700]
+\putsquare(1400,0)[``T'T'`T';``\sigma`\mu']
+\putmorphism(700,700)(0,-1)[``\sigma TT']{700}1m
+\putmorphism(1400,700)(0,-1)[``\sigma T']{700}1m
+\put(300,350){\makebox(0,0){4}}
+\put(1050,350){\makebox(0,0){5}}
+\put(1750,350){\makebox(0,0){7}}
+\end{picture}
+\end{center}
+|egroup
+which produces
+\begin{center}
+\xext=2100 \yext=2100
+\adjust[`\mu;`T\eta'T;`\sigma;`T'T\eta']
+\begin{picture}(\xext,\yext)(\xoff,\yoff)
+\putmorphism(0,2100)(0,-1)[``T\eta'T]{1400}1l
+\putmorphism(0,2100)(1,0)[TT`T`\mu]{700}1a
+\putmorphism(0,2100)(1,-1)[`TTT'`TT\eta']{700}1l
+\putmorphism(700,2100)(1,-1)[`TT'`T\eta]{700}1r
+\put(700,1750){\makebox(0,0){1}}
+\putmorphism(700,1420)(1,0)[\phantom{TTT'}`\phantom{TT'}`\mu
+  T']{700}1a
+\putmorphism(700,1380)(1,0)[\phantom{TTT'}`%
+  \phantom{TT'}`T\sigma]{700}1b
+\setsqparms[0`1`1`1;700`700]
+\putsquare(700,700)[TTT'`TT'`TT'TT'`TT'T';`T\eta'TT'``]
+\putmorphism(700,700)(1,0)[\phantom{TT'TT'}`%
+  \phantom{TT'T'}`TT'\sigma]{700}1a
+\put(300,1400){\makebox(0,0){2}}
+\put(950,1050){\makebox(0,0){3}}
+\settriparms[0`1`0;700]
+\putbtriangle(1400,700)[``TT';T\eta'T'`id`]
+\putmorphism(1400,700)(1,0)[\phantom{TT'T'}`%
+  \phantom{TT'}`T\mu']{700}1a
+\put(1600,1050){\makebox(0,0){6}}
+\setsqparms[1`1`0`1;700`700]
+\putsquare(0,0)[TT'T`\phantom{TT'TT'}`T'T`T'TT';%
+  TT'T\eta'`\sigma T``T'T\eta']
+\putmorphism(700,0)(1,0)[\phantom{T'TT'}`%
+  \phantom{T'T'}`T'\sigma]{700}1b
+\setsqparms[0`0`1`1;700`700]
+\putsquare(1400,0)[``T'T'`T';``\sigma`\mu']
+\putmorphism(700,700)(0,-1)[``\sigma TT']{700}1m
+\putmorphism(1400,700)(0,-1)[``\sigma T']{700}1m
+\put(300,350){\makebox(0,0){4}}
+\put(1050,350){\makebox(0,0){5}}
+\put(1750,350){\makebox(0,0){7}}
+\end{picture}
+\end{center}
+
+Here is a page of samples of the results from the various
+{\tt\\putshapes}.  The code
+{\verbatim
+\begin{center}
+\xext=3000 \yext=3500
+\begin{picture}(\xext,\yext)(\xoff,\yoff)
+\resetparms
+\putsquare(0,0)[A`B`C`D;f`g`h`k]
+\putbtriangle(0,1500)[A`B`C;f`g`h]
+\putdtriangle(2200,1500)[A`B`C;f`g`h]
+\putptriangle(0,3000)[A`B`C;f`g`h]
+\putqtriangle(1000,500)[A`B`C;f`g`h]
+\putCtriangle(1500,750)[A`B`C;f`g`h]
+\putDtriangle(700,1000)[A`B`C;f`g`h]
+\putAtriangle(2000,2200)[A`B`C;f`g`h]
+\putAtrianglepair(0,2500)[A`B`C`D;f`g`h`k`l]
+\putVtriangle(2000,3000)[A`B`C;f`g`h]
+\putVtrianglepair(1000,2500)[A`B`C`D;f`g`h`k`l]
+\end{picture}
+\end{center}
+|egroup
+produces the diagram:
+\begin{center}
+\xext=3000 \yext=3500
+\begin{picture}(\xext,\yext)(\xoff,\yoff)
+\resetparms
+\putsquare(0,0)[A`B`C`D;f`g`h`k]
+\putbtriangle(0,1500)[A`B`C;f`g`h]
+\putdtriangle(2200,1500)[A`B`C;f`g`h]
+\putptriangle(0,3000)[A`B`C;f`g`h]
+\putqtriangle(1000,500)[A`B`C;f`g`h]
+\putCtriangle(1500,750)[A`B`C;f`g`h]
+\putDtriangle(700,1000)[A`B`C;f`g`h]
+\putAtriangle(2000,2200)[A`B`C;f`g`h]
+\putAtrianglepair(0,2500)[A`B`C`D;f`g`h`k`l]
+\putVtriangle(2000,3000)[A`B`C;f`g`h]
+\putVtrianglepair(1000,2500)[A`B`C`D;f`g`h`k`l]
+\end{picture}
+\end{center}
+
+
+Added material:
+
+The catdoc file is out-of-date in two ways.  Most important is that all
+the basic shapes (square and triangles) now accept optional arguments.
+For example, the code
+{\verbatim
+\resetparms\square[A`B`C`D;f`g`h`k]
+|egroup
+is equivalent to simply
+{\verbatim
+|egroup
+\square[A`B`C`D;f`g`h`k]
+The code
+{\verbatim
+\settriparms[1`-1`2;750]\ptriangle[A`B`C;f`g`h]
+|egroup
+is equivalent to
+{\verbatim
+\ptriangle<1`-1`2;750>[A`B`C;f`g`h]
+|egroup
+and the code
+{\verbatim
+\settripairparms[1`-1`0`2`-3;1000]
+\putAtrianglepair(500,750)[A`B`C`D;f`g`h`k`l]
+|egroup
+is equivalent to
+{\verbatim
+\putAtrianglepair<1`-1`0`2`-3;1000>(500,750)[A`B`C`D;f`g`h`k`l]
+|egroup
+Note that both the old and new syntax work.
+
+The second new things are various shapes that I have found useful enough
+to add over the last few months.  For example, I have both vertical and
+horizontal coequalizers.  Had I had the need, I would have added
+equalizers, and no doubt will at some future date.  Or maybe you will
+and can send it to me.  These can all be found by reading the source
+file, where they are sort of documented.
+\end{document}

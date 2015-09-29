@@ -1,0 +1,1741 @@
+%!PS-Adobe-2.0 EPSF-1.2
+%%DocumentFonts: Helvetica Helvetica-Bold Courier Times-Roman
+%%Pages: 1
+%%BoundingBox: 25 28 609 770
+%%EndComments
+
+50 dict begin
+
+/arrowHeight 8 def
+/arrowWidth 4 def
+/none null def
+/numGraphicParameters 17 def
+/stringLimit 65535 def
+
+/Begin {
+save
+numGraphicParameters dict begin
+} def
+
+/End {
+end
+restore
+} def
+
+/SetB {
+dup type /nulltype eq {
+pop
+false /brushRightArrow idef
+false /brushLeftArrow idef
+true /brushNone idef
+} {
+/brushDashOffset idef
+/brushDashArray idef
+0 ne /brushRightArrow idef
+0 ne /brushLeftArrow idef
+/brushWidth idef
+false /brushNone idef
+} ifelse
+} def
+
+/SetCFg {
+/fgblue idef
+/fggreen idef
+/fgred idef
+} def
+
+/SetCBg {
+/bgblue idef
+/bggreen idef
+/bgred idef
+} def
+
+/SetF {
+/printSize idef
+/printFont idef
+} def
+
+/SetP {
+dup type /nulltype eq {
+pop true /patternNone idef
+} {
+dup -1 eq {
+/patternGrayLevel idef
+/patternString idef
+} {
+/patternGrayLevel idef
+} ifelse
+false /patternNone idef
+} ifelse
+} def
+
+/BSpl {
+0 begin
+storexyn
+newpath
+n 1 gt {
+0 0 0 0 0 0 1 1 true subspline
+n 2 gt {
+0 0 0 0 1 1 2 2 false subspline
+1 1 n 3 sub {
+/i exch def
+i 1 sub dup i dup i 1 add dup i 2 add dup false subspline
+} for
+n 3 sub dup n 2 sub dup n 1 sub dup 2 copy false subspline
+} if
+n 2 sub dup n 1 sub dup 2 copy 2 copy false subspline
+patternNone not brushLeftArrow not brushRightArrow not and and { ifill } if
+brushNone not { istroke } if
+0 0 1 1 leftarrow
+n 2 sub dup n 1 sub dup rightarrow
+} if
+end
+} dup 0 4 dict put def
+
+/Circ {
+newpath
+0 360 arc
+patternNone not { ifill } if
+brushNone not { istroke } if
+} def
+
+/CBSpl {
+0 begin
+dup 2 gt {
+storexyn
+newpath
+n 1 sub dup 0 0 1 1 2 2 true subspline
+1 1 n 3 sub {
+/i exch def
+i 1 sub dup i dup i 1 add dup i 2 add dup false subspline
+} for
+n 3 sub dup n 2 sub dup n 1 sub dup 0 0 false subspline
+n 2 sub dup n 1 sub dup 0 0 1 1 false subspline
+patternNone not { ifill } if
+brushNone not { istroke } if
+} {
+Poly
+} ifelse
+end
+} dup 0 4 dict put def
+
+/Elli {
+0 begin
+newpath
+4 2 roll
+translate
+scale
+0 0 1 0 360 arc
+patternNone not { ifill } if
+brushNone not { istroke } if
+end
+} dup 0 1 dict put def
+
+/Line {
+0 begin
+2 storexyn
+newpath
+x 0 get y 0 get moveto
+x 1 get y 1 get lineto
+brushNone not { istroke } if
+0 0 1 1 leftarrow
+0 0 1 1 rightarrow
+end
+} dup 0 4 dict put def
+
+/MLine {
+0 begin
+storexyn
+newpath
+n 1 gt {
+x 0 get y 0 get moveto
+1 1 n 1 sub {
+/i exch def
+x i get y i get lineto
+} for
+patternNone not brushLeftArrow not brushRightArrow not and and { ifill } if
+brushNone not { istroke } if
+0 0 1 1 leftarrow
+n 2 sub dup n 1 sub dup rightarrow
+} if
+end
+} dup 0 4 dict put def
+
+/Poly {
+3 1 roll
+newpath
+moveto
+-1 add
+{ lineto } repeat
+closepath
+patternNone not { ifill } if
+brushNone not { istroke } if
+} def
+
+/Rect {
+0 begin
+/t exch def
+/r exch def
+/b exch def
+/l exch def
+newpath
+l b moveto
+l t lineto
+r t lineto
+r b lineto
+closepath
+patternNone not { ifill } if
+brushNone not { istroke } if
+end
+} dup 0 4 dict put def
+
+/Text {
+ishow
+} def
+
+/idef {
+dup where { pop pop pop } { exch def } ifelse
+} def
+
+/ifill {
+0 begin
+gsave
+patternGrayLevel -1 ne {
+fgred bgred fgred sub patternGrayLevel mul add
+fggreen bggreen fggreen sub patternGrayLevel mul add
+fgblue bgblue fgblue sub patternGrayLevel mul add setrgbcolor
+eofill
+} {
+eoclip
+originalCTM setmatrix
+pathbbox /t exch def /r exch def /b exch def /l exch def
+/w r l sub ceiling cvi def
+/h t b sub ceiling cvi def
+/imageByteWidth w 8 div ceiling cvi def
+/imageHeight h def
+bgred bggreen bgblue setrgbcolor
+eofill
+fgred fggreen fgblue setrgbcolor
+w 0 gt h 0 gt and {
+l b translate w h scale
+w h true [w 0 0 h neg 0 h] { patternproc } imagemask
+} if
+} ifelse
+grestore
+end
+} dup 0 8 dict put def
+
+/istroke {
+gsave
+brushDashOffset -1 eq {
+[] 0 setdash
+1 setgray
+} {
+brushDashArray brushDashOffset setdash
+fgred fggreen fgblue setrgbcolor
+} ifelse
+brushWidth setlinewidth
+originalCTM setmatrix
+stroke
+grestore
+} def
+
+/ishow {
+0 begin
+gsave
+fgred fggreen fgblue setrgbcolor
+/fontDict printFont findfont printSize scalefont dup setfont def
+/descender fontDict begin 0 [FontBBox] 1 get FontMatrix end
+transform exch pop def
+/vertoffset 0 descender sub printSize sub printFont /Courier ne
+printFont /Courier-Bold ne and { 1 add } if def {
+0 vertoffset moveto show
+/vertoffset vertoffset printSize sub def
+} forall
+grestore
+end
+} dup 0 3 dict put def
+
+/patternproc {
+0 begin
+/patternByteLength patternString length def
+/patternHeight patternByteLength 8 mul sqrt cvi def
+/patternWidth patternHeight def
+/patternByteWidth patternWidth 8 idiv def
+/imageByteMaxLength imageByteWidth imageHeight mul
+stringLimit patternByteWidth sub min def
+/imageMaxHeight imageByteMaxLength imageByteWidth idiv patternHeight idiv
+patternHeight mul patternHeight max def
+/imageHeight imageHeight imageMaxHeight sub store
+/imageString imageByteWidth imageMaxHeight mul patternByteWidth add string def
+0 1 imageMaxHeight 1 sub {
+/y exch def
+/patternRow y patternByteWidth mul patternByteLength mod def
+/patternRowString patternString patternRow patternByteWidth getinterval def
+/imageRow y imageByteWidth mul def
+0 patternByteWidth imageByteWidth 1 sub {
+/x exch def
+imageString imageRow x add patternRowString putinterval
+} for
+} for
+imageString
+end
+} dup 0 12 dict put def
+
+/min {
+dup 3 2 roll dup 4 3 roll lt { exch } if pop
+} def
+
+/max {
+dup 3 2 roll dup 4 3 roll gt { exch } if pop
+} def
+
+/arrowhead {
+0 begin
+transform originalCTM itransform
+/taily exch def
+/tailx exch def
+transform originalCTM itransform
+/tipy exch def
+/tipx exch def
+/dy tipy taily sub def
+/dx tipx tailx sub def
+/angle dx 0 ne dy 0 ne or { dy dx atan } { 90 } ifelse def
+gsave
+originalCTM setmatrix
+tipx tipy translate
+angle rotate
+newpath
+0 0 moveto
+arrowHeight neg arrowWidth 2 div lineto
+arrowHeight neg arrowWidth 2 div neg lineto
+closepath
+patternNone not {
+originalCTM setmatrix
+/padtip arrowHeight 2 exp 0.25 arrowWidth 2 exp mul add sqrt brushWidth mul
+arrowWidth div def
+/padtail brushWidth 2 div def
+tipx tipy translate
+angle rotate
+padtip 0 translate
+arrowHeight padtip add padtail add arrowHeight div dup scale
+arrowheadpath
+ifill
+} if
+brushNone not {
+originalCTM setmatrix
+tipx tipy translate
+angle rotate
+arrowheadpath
+istroke
+} if
+grestore
+end
+} dup 0 9 dict put def
+
+/arrowheadpath {
+newpath
+0 0 moveto
+arrowHeight neg arrowWidth 2 div lineto
+arrowHeight neg arrowWidth 2 div neg lineto
+closepath
+} def
+
+/leftarrow {
+0 begin
+y exch get /taily exch def
+x exch get /tailx exch def
+y exch get /tipy exch def
+x exch get /tipx exch def
+brushLeftArrow { tipx tipy tailx taily arrowhead } if
+end
+} dup 0 4 dict put def
+
+/rightarrow {
+0 begin
+y exch get /tipy exch def
+x exch get /tipx exch def
+y exch get /taily exch def
+x exch get /tailx exch def
+brushRightArrow { tipx tipy tailx taily arrowhead } if
+end
+} dup 0 4 dict put def
+
+/midpoint {
+0 begin
+/y1 exch def
+/x1 exch def
+/y0 exch def
+/x0 exch def
+x0 x1 add 2 div
+y0 y1 add 2 div
+end
+} dup 0 4 dict put def
+
+/thirdpoint {
+0 begin
+/y1 exch def
+/x1 exch def
+/y0 exch def
+/x0 exch def
+x0 2 mul x1 add 3 div
+y0 2 mul y1 add 3 div
+end
+} dup 0 4 dict put def
+
+/subspline {
+0 begin
+/movetoNeeded exch def
+y exch get /y3 exch def
+x exch get /x3 exch def
+y exch get /y2 exch def
+x exch get /x2 exch def
+y exch get /y1 exch def
+x exch get /x1 exch def
+y exch get /y0 exch def
+x exch get /x0 exch def
+x1 y1 x2 y2 thirdpoint
+/p1y exch def
+/p1x exch def
+x2 y2 x1 y1 thirdpoint
+/p2y exch def
+/p2x exch def
+x1 y1 x0 y0 thirdpoint
+p1x p1y midpoint
+/p0y exch def
+/p0x exch def
+x2 y2 x3 y3 thirdpoint
+p2x p2y midpoint
+/p3y exch def
+/p3x exch def
+movetoNeeded { p0x p0y moveto } if
+p1x p1y p2x p2y p3x p3y curveto
+end
+} dup 0 17 dict put def
+
+/storexyn {
+/n exch def
+/y n array def
+/x n array def
+n 1 sub -1 0 {
+/i exch def
+y i 3 2 roll put
+x i 3 2 roll put
+} for
+} def
+
+%%EndProlog
+
+%I Idraw 7 Grid 8 
+
+%%Page: 1 1
+
+Begin
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t
+[ 0.8 0 0 0.8 0 0 ] concat
+/originalCTM matrix currentmatrix def
+
+Begin %I Elli
+%I b 65535
+2 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.942857 0 0 0.942857 353.571 308.857 ] concat
+%I
+220 400 93 34 Elli
+End
+
+Begin %I Elli
+%I b 65535
+2 0 0 [] 0 SetB
+%I cfg White
+1 1 1 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.909728 0 0 0.857143 360.879 343.143 ] concat
+%I
+220 400 93 34 Elli
+End
+
+Begin %I Elli
+%I b 65535
+2 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.942857 0 0 0.942857 433.571 -29.143 ] concat
+%I
+220 400 93 34 Elli
+End
+
+Begin %I Elli
+%I b 65535
+2 0 0 [] 0 SetB
+%I cfg White
+1 1 1 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.909728 0 0 0.857143 440.879 5.1426 ] concat
+%I
+220 400 93 34 Elli
+End
+
+Begin %I Elli
+%I b 65535
+2 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.942857 0 0 0.942857 -84.429 -19.143 ] concat
+%I
+220 400 93 34 Elli
+End
+
+Begin %I Elli
+%I b 65535
+2 0 0 [] 0 SetB
+%I cfg White
+1 1 1 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.909728 0 0 0.857143 -77.121 15.1426 ] concat
+%I
+220 400 93 34 Elli
+End
+
+Begin %I Elli
+%I b 65535
+2 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.942857 0 0 0.942857 15.571 328.857 ] concat
+%I
+220 400 93 34 Elli
+End
+
+Begin %I Elli
+%I b 65535
+2 0 0 [] 0 SetB
+%I cfg White
+1 1 1 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.909728 0 0 0.857143 22.879 363.143 ] concat
+%I
+220 400 93 34 Elli
+End
+
+Begin %I Elli
+%I b 65535
+2 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.942857 0 0 0.942857 135.571 69.857 ] concat
+%I
+220 400 93 34 Elli
+End
+
+Begin %I Elli
+%I b 65535
+2 0 0 [] 0 SetB
+%I cfg White
+1 1 1 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.909728 0 0 0.857143 142.879 104.143 ] concat
+%I
+220 400 93 34 Elli
+End
+
+Begin %I Elli
+%I b 65535
+2 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.942857 0 0 0.942857 163.571 -179.143 ] concat
+%I
+220 400 93 34 Elli
+End
+
+Begin %I Elli
+%I b 65535
+2 0 0 [] 0 SetB
+%I cfg White
+1 1 1 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.909728 0 0 0.857143 170.879 -144.857 ] concat
+%I
+220 400 93 34 Elli
+End
+
+Begin %I Elli
+%I b 65535
+2 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.942857 0 0 0.942857 443.571 428.857 ] concat
+%I
+220 400 93 34 Elli
+End
+
+Begin %I Elli
+%I b 65535
+2 0 0 [] 0 SetB
+%I cfg White
+1 1 1 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.909728 0 0 0.857143 450.879 463.143 ] concat
+%I
+220 400 93 34 Elli
+End
+
+Begin %I Elli
+%I b 65535
+2 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.942857 0 0 0.942857 25.571 438.857 ] concat
+%I
+220 400 93 34 Elli
+End
+
+Begin %I Elli
+%I b 65535
+2 0 0 [] 0 SetB
+%I cfg White
+1 1 1 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.909728 0 0 0.857143 32.879 473.143 ] concat
+%I
+220 400 93 34 Elli
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-helvetica-medium-r-*-120-*
+/Helvetica 12 SetF
+%I t
+[ 1 0 0 1 208.019 820 ] concat
+%I
+[
+(UNUSED)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-helvetica-medium-r-*-120-*
+/Helvetica 12 SetF
+%I t
+[ 1 0 0 1 209.019 710 ] concat
+%I
+[
+(NEW)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-helvetica-medium-r-*-120-*
+/Helvetica 12 SetF
+%I t
+[ 1 0 0 1 321.519 451 ] concat
+%I
+[
+(READY)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-helvetica-medium-r-*-120-*
+/Helvetica 12 SetF
+%I t
+[ 1 0 0 1 91.0192 362 ] concat
+%I
+[
+(MIGRATED)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-helvetica-medium-r-*-120-*
+/Helvetica 12 SetF
+%I t
+[ 1 0 0 1 537.019 690 ] concat
+%I
+[
+(EXITING)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-helvetica-medium-r-*-120-*
+/Helvetica 12 SetF
+%I t
+[ 1 0 0 1 633.519 810 ] concat
+%I
+[
+(DEAD)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-helvetica-medium-r-*-120-*
+/Helvetica 12 SetF
+%I t
+[ 1 0 0 1 603.519 352 ] concat
+%I
+[
+(SUSPENDED)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-helvetica-medium-r-*-120-*
+/Helvetica 12 SetF
+%I t
+[ 1 0 0 1 345.519 202 ] concat
+%I
+[
+(WAITING)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-helvetica-bold-r-*-140-*
+/Helvetica-Bold 14 SetF
+%I t
+[ 1 0 0 1 309 956 ] concat
+%I
+[
+(Sprite/Mach process state transitions)
+] Text
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 1 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 1 0 0 1 69 115 ] concat
+%I 4
+170 672
+180 652
+180 642
+170 622
+4 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 1 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 1 0 0 1 69 115 ] concat
+%I 4
+110 622
+90 632
+90 662
+100 682
+4 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 1 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 1 0 0 1 157 109 ] concat
+%I 2
+441 608
+481 668
+2 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 1 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 1 0 0 1 157 109 ] concat
+%I 4
+431 718
+391 738
+192 738
+162 718
+4 BSpl
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-courier-medium-r-*-100-*
+/Courier 10 SetF
+%I t
+[ 1 0 0 1 60 179 ] concat
+%I
+[
+(Mach calls)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-helvetica-medium-r-*-120-*
+/Helvetica 12 SetF
+%I t
+[ 1 0 0 1 60 149 ] concat
+%I
+[
+(Context switch action)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-times-medium-r-*-120-*
+/Times-Roman 12 SetF
+%I t
+[ 1 0 0 1 60 120 ] concat
+%I
+[
+(Relevant Sprite procedure)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-times-medium-r-*-120-*
+/Times-Roman 12 SetF
+%I t
+[ 1 0 0 1 259 777 ] concat
+%I
+[
+(ProcGetUnusedPCB)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-times-medium-r-*-120-*
+/Times-Roman 12 SetF
+%I t
+[ 1 0 0 1 80 767 ] concat
+%I
+[
+(ProcFreePCB)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-times-medium-r-*-120-*
+/Times-Roman 12 SetF
+%I t
+[ 1 0 0 1 359 867 ] concat
+%I
+[
+(ProcFreePCB)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-times-medium-r-*-120-*
+/Times-Roman 12 SetF
+%I t
+[ 1 0 0 1 428 867 ] concat
+%I
+[
+( \(Proc_Reaper\))
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-courier-medium-r-*-100-*
+/Courier 10 SetF
+%I t
+[ 1 0 0 1 109 508 ] concat
+%I
+[
+(set machine state,)
+(VM mappings)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-courier-medium-r-*-100-*
+/Courier 10 SetF
+%I t
+[ 1 0 0 1 169 428 ] concat
+%I
+[
+(deallocate VM)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-helvetica-medium-r-*-120-*
+/Helvetica 12 SetF
+%I t
+[ 1 0 0 1 119 408 ] concat
+%I
+[
+(server thread exits)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-times-medium-r-*-120-*
+/Times-Roman 12 SetF
+%I t
+[ 1 0 0 1 109 527 ] concat
+%I
+[
+(ProcMigReceiveProcess)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-helvetica-medium-r-*-120-*
+/Helvetica 12 SetF
+%I t
+[ 1 0 0 1 519 414 ] concat
+%I
+[
+(server thread blocks)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-times-medium-r-*-120-*
+/Times-Roman 12 SetF
+%I t
+[ 1 0 0 1 570 397 ] concat
+%I
+[
+(Proc_SuspendProcess)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-times-medium-r-*-120-*
+/Times-Roman 12 SetF
+%I t
+[ 1 0 0 1 269 278 ] concat
+%I
+[
+(Sync_Wait)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-times-medium-r-*-120-*
+/Times-Roman 12 SetF
+%I t
+[ 1 0 0 1 398 278 ] concat
+%I
+[
+(Sync_Wait)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-helvetica-medium-r-*-120-*
+/Helvetica 12 SetF
+%I t
+[ 1 0 0 1 282 330 ] concat
+%I
+[
+(server)
+(thread)
+(blocks)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-times-medium-r-*-120-*
+/Times-Roman 12 SetF
+%I t
+[ 1 0 0 1 653 534 ] concat
+%I
+[
+(Proc_Exit\(Int\))
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-times-medium-r-*-120-*
+/Times-Roman 12 SetF
+%I t
+[ 1 0 0 1 548 737 ] concat
+%I
+[
+(Proc_Wait)
+] Text
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 1 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 1 0 0 1 172 128 ] concat
+%I 4
+137 579
+177 579
+356 669
+396 669
+4 BSpl
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-times-medium-r-*-120-*
+/Times-Roman 12 SetF
+%I t
+[ 1 0 0 1 330 707 ] concat
+%I
+[
+(Proc_DestroyMigratedProc)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-times-medium-r-*-120-*
+/Times-Roman 12 SetF
+%I t
+[ 1 0 0 1 299 618 ] concat
+%I
+[
+(Proc_NewProc)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-times-medium-r-*-120-*
+/Times-Roman 12 SetF
+%I t
+[ 1 0 0 1 299 598 ] concat
+%I
+[
+(ProcMigContinueProcess)
+] Text
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 1 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 1 0 0 1 20 80 ] concat
+%I 3
+239 597
+309 428
+309 398
+3 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 1 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 1 0 0 1 20 80 ] concat
+%I 4
+119 627
+60 607
+20 338
+30 299
+4 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 1 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 1 0 0 1 20 80 ] concat
+%I 4
+70 309
+60 368
+129 587
+149 597
+4 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 1 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 1 0 0 1 20 80 ] concat
+%I 2
+249 348
+169 299
+2 BSpl
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-times-medium-r-*-120-*
+/Times-Roman 12 SetF
+%I t
+[ 1 0 0 1 40 697 ] concat
+%I
+[
+(RpcProcFork)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-times-medium-r-*-120-*
+/Times-Roman 12 SetF
+%I t
+[ 1 0 0 1 438 339 ] concat
+%I
+[
+(Proc_Debug)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-times-medium-r-*-120-*
+/Times-Roman 12 SetF
+%I t
+[ 1 0 0 1 479 322 ] concat
+%I
+[
+(Proc_ResumeProcess)
+] Text
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 1 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 1 0 0 1 20 80 ] concat
+%I 3
+369 149
+379 209
+339 338
+3 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 1 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 1 0 0 1 20 80 ] concat
+%I 3
+309 338
+299 279
+319 149
+3 BSpl
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-times-medium-r-*-120-*
+/Times-Roman 12 SetF
+%I t
+[ 1 0 0 1 160 458 ] concat
+%I
+[
+(Proc_MigrateTrap)
+] Text
+End
+
+Begin %I BSpl
+%I b 65535
+1 1 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 1 0 0 1 20 80 ] concat
+%I 4
+369 338
+379 309
+488 249
+548 249
+4 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 1 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 1 0 0 1 20 80 ] concat
+%I 4
+548 289
+538 309
+418 348
+398 348
+4 BSpl
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-times-medium-r-*-120-*
+/Times-Roman 12 SetF
+%I t
+[ 1 0 0 1 259 757 ] concat
+%I
+[
+(Proc_InitMainProc)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-courier-medium-r-*-100-*
+/Courier 10 SetF
+%I t
+[ 1 0 0 1 299 648 ] concat
+%I
+[
+(resume thread)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-courier-medium-r-*-100-*
+/Courier 10 SetF
+%I t
+[ 1 0 0 1 646 598 ] concat
+%I
+[
+(terminate)
+(task & thread)
+] Text
+End
+
+Begin %I BSpl
+%I b 65535
+1 1 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 1 0 0 1 -2 78 ] concat
+%I 6
+709 749
+709 759
+719 769
+729 759
+719 749
+719 749
+6 BSpl
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-courier-medium-r-*-100-*
+/Courier 10 SetF
+%I t
+[ 1 0 0 1 508 428 ] concat
+%I
+[
+(suspend thread)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-courier-medium-r-*-100-*
+/Courier 10 SetF
+%I t
+[ 1 0 0 1 458 369 ] concat
+%I
+[
+(resume thread)
+] Text
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 1 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 1 0 0 1 -2 78 ] concat
+%I 5
+660 241
+669 231
+660 221
+650 231
+660 241
+5 BSpl
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-times-medium-r-*-120-*
+/Times-Roman 12 SetF
+%I t
+[ 1 0 0 1 269 259 ] concat
+%I
+[
+(Sync_GetLock)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-times-medium-r-*-120-*
+/Times-Roman 12 SetF
+%I t
+[ 1 0 0 1 399 259 ] concat
+%I
+[
+(Sync_GetLock)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-courier-medium-r-*-100-*
+/Courier 10 SetF
+%I t
+[ 1 0 0 1 159 438 ] concat
+%I
+[
+(suspend thread?)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-times-medium-r-*-120-*
+/Times-Roman 12 SetF
+%I t
+[ 1 0 0 1 309 578 ] concat
+%I
+[
+(Proc_InitMainProc)
+] Text
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 1 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 1 0 0 1 -2 78 ] concat
+%I 7
+142 251
+202 101
+312 52
+641 61
+760 141
+723 615
+700 699
+7 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 1 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 1 0 0 1 -2 78 ] concat
+%I 3
+732 271
+740 281
+740 308
+3 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 1 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 1 0 0 1 -2 78 ] concat
+%I 4
+407 90
+420 80
+451 71
+530 63
+4 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 1 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 1 0 0 1 -2 78 ] concat
+%I 5
+434 370
+690 371
+719 381
+736 388
+736 426
+5 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 1 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.5 0 0 0.5 385 353 ] concat
+%I 5
+688 426
+683 485
+665 561
+557 643
+527 655
+5 BSpl
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-helvetica-medium-r-*-120-*
+/Helvetica 12 SetF
+%I t
+[ 1 0 0 1 631.5 571.25 ] concat
+%I
+[
+(server thread)
+(exits)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-courier-medium-r-*-80-*
+/Courier 8 SetF
+%I t
+[ 1 0 0 1 662.5 557.25 ] concat
+%I
+[
+(\(if voluntary)
+(exit\))
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-courier-medium-r-*-80-*
+/Courier 8 SetF
+%I t
+[ 1 0 0 1 662.5 865.25 ] concat
+%I
+[
+(\(when orphan)
+(process exits\))
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-courier-medium-r-*-80-*
+/Courier 8 SetF
+%I t
+[ 1 0 0 1 649.5 46.25 ] concat
+%I
+[
+(17 March 1992)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-courier-medium-r-*-100-*
+/Courier 10 SetF
+%I t
+[ 1 0 0 1 280.5 377.25 ] concat
+%I
+[
+(verify)
+(suspend)
+(count?)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-courier-medium-r-*-80-*
+/Courier 8 SetF
+%I t
+[ 1 0 0 1 588.5 300.25 ] concat
+%I
+[
+(\(Proc_UnlockAndSwitch\))
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-times-medium-r-*-120-*
+/Times-Roman 12 SetF
+%I t
+[ 1 0 0 1 655.5 518.25 ] concat
+%I
+[
+(Proc_Kill)
+] Text
+End
+
+Begin %I Text
+%I cfg Black
+0 0 0 SetCFg
+%I f *-courier-medium-r-*-80-*
+/Courier 8 SetF
+%I t
+[ 1 0 0 1 639.5 412.25 ] concat
+%I
+[
+(\(if voluntary\))
+] Text
+End
+
+End %I eop
+
+showpage
+
+%%Trailer
+
+end

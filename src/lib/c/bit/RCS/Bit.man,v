@@ -1,0 +1,132 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     88.12.30.13.26.50;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@' $Header: Bit,v 1.2 87/06/11 18:35:32 deboor Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS Bit lib
+.BS
+.SH NAME
+Bit_Set, Bit_Clear, Bit_IsSet, Bit_IsClear, Bit_Copy, 
+Bit_Zero, Bit_FindFirstSet, Bit_FindFirstClear,
+Bit_Intersect, Bit_Union, Bit_AnySet, Bit_Expand,
+Bit_Alloc, Bit_Free \- bit operations
+.SH SYNOPSIS
+.nf
+#include <bit.h>
+.sp
+\fBBit_Set\fR(\fIbitNum, arrayPtr\fP)
+
+\fBBit_Clear\fR(\fIbitNum, arrayPtr\fP)
+
+\fBBit_IsSet\fR(\fIbitNum, arrayPtr\fP)
+
+\fBBit_IsClear\fR(\fIbitNum, arrayPtr\fP)
+
+\fBBit_Copy\fR(\fInumBits, srcArrayPtr, destArrayPtr\fP)
+
+\fBBit_Zero\fR(\fInumBits, arrayPtr\fP)
+
+\fBBit_FindFirstSet\fR(\fInumBits, arrayPtr\fP)
+
+\fBBit_FindFirstClear\fR(\fInumBits, arrayPtr\fP)
+
+Boolean
+\fBBit_Intersect\fR(\fInumBits, array1Ptr, array2Ptr, destArrayPtr\fP)
+
+Boolean
+\fBBit_Union\fR(\fInumBits, array1Ptr, array2Ptr, destArrayPtr\fP)
+
+Boolean
+\fBBit_AnySet\fR(\fInumBits, arrayPtr\fP)
+
+int *
+\fBBit_Expand\fR(\fInewNumBits, oldNumBits, oldArrayPtr\fP)
+
+\fBBit_Alloc\fR(\fInumBits, arrayPtr\fP)
+
+\fBBit_Free\fR(\fIarrayPtr\fP)
+.SH ARGUMENTS
+.AP int bitNum in
+The number in the array of the bit to manipulate.
+.AP int numBits in
+The number of bits in all the \fI*arrayPtr\fP variables passed.
+.AP int *arrayPtr in,out
+The array of bits.
+.AP int *srcArrayPtr in
+The array of bits to be copied.
+.AP int *destArrayPtr out
+The array to which bits are copied.
+.AP int *array1Ptr in
+The first source array in an intersection or union operation.
+.AP int *array2Ptr in
+The second source array in an intersection or union operation.
+.AP int newNumBits in
+The number of bits the expanded array must hold.
+.AP int oldNumBits in
+The number of bits in the old array.
+.AP int *oldArrayPtr in
+The bit array that is now too small.
+.BE
+.SH DESCRIPTION
+These procedures manipulate integer arrays of bits.  All the procedures
+operate on integer arrays and \fInumBits\fP is used to compute the size
+of \fI*arrayPtr\fP. If \fInumBits\fP is not a multiple of the number of
+bits in an integer, it is rounded up to the nearest multiple.
+.PP
+\fBBit_Set\fR sets the \fIbitNum\fP bit in \fI*arrayPtr\fP.
+.br
+\fBBit_Clear\fR clears the \fIbitNum\fP bit in \fI*arrayPtr\fP.
+.PP
+The predicates \fBBit_IsSet\fR and \fBBit_IsClear\fR test to see if 
+the \fIbitNum\fP bit is set or cleared.
+.PP
+\fBBit_Zero\fR clears all bits in \fI*arrayPtr\fR.
+.br
+\fBBit_Copy\fR copies \fI*srcArrayPtr\fR to \fI*destArrayptr\fR.
+.PP
+\fBBit_FindFirstSet\fR and \fBBit_FindFirstClear\fR return the index of the
+rightmost bit in \fI*arrayPtr\fP that is set or cleared. The index
+begins at 0 and -1 is returned if no set or cleared bit is found.
+.PP
+\fBBit_Intersect\fR and \fBBit_Union\fR find the intersection and union, respectively,
+of the two bit arrays and stores the result in the third array. They
+return TRUE if the intersection or union is non-empty. For both functions,
+if \fIdestArrayPtr\fP is NULL, the result is not stored anywhere.
+.PP
+\fBBit_AnySet\fR examines the array to see if any of the bits is on, returning
+TRUE if at least one is set and FALSE otherwise.
+.PP
+\fBBit_Alloc\fR and \fBBit_Free\fR are used to allocate and free bit arrays.
+\fBBit_Alloc\fR creates an array to hold \fInumBits\fP bits and sets \fIarrayPtr\fP
+to point at it. The array initially has no bits set. \fBBit_Free\fR deallocates
+a previously-allocated bit array.
+.PP
+\fBBit_Expand\fR takes an existing, dynamically-allocated array, \fIoldArrayPtr\fP,
+along with its width, \fIoldNumBits\fP, and expands it to contain
+\fInewNumBits\fP bits, returning a pointer to the expanded array. The array may
+or may not have moved. If the array was moved, the old array was deallocated
+at the same time. The new bits are initially all 0.
+.SH KEYWORDS
+bit, set, clear, copy, zero
+@

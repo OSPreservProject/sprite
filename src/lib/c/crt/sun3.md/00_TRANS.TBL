@@ -1,0 +1,13 @@
+F A.OUT;1                           	a.out
+F ALLOCA.S;1                        	alloca.s
+F DEPENDEN.MK;1                     	dependencies.mk
+F DUMMY.S;1                         	dummy.s
+F FP_GLOBA.S;1                      	fp_globals.s
+F GMON.C;1                          	gmon.c
+F GMON.H;1                          	gmon.h
+F GSTART.S;1                        	gstart.s
+F MD.MK;1                           	md.mk
+D RCS                               	RCS
+F SETJMP.S;1                        	setjmp.s
+F START.S;1                         	start.s
+F _SETJMP.S;1                       	_setjmp.s

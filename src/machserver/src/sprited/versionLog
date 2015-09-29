@@ -1,0 +1,136 @@
+
+srv.000
+
+srv.001
+Try to fix the timer thread so that it's more responsive (i.e., late
+less often).  Eliminate locking for simple time-of-day call.  Add sys
+& vm instrumentation.  Get timer resolution from Mach.
+
+srv.002
+Don't clean heap & stack segments before destroying them.  Don't
+write-protect a segment before copying it or syncing it.  Fixed bug in
+instrumentation for segment copying.  Fixed proc family/signals
+deadlock.  Added Vm_Cmd copyin/copyout tests.  Backward compatible
+changes for MK73/UX34/USER16.
+
+srv.003
+More changes for MK73/UX34/USER16.  Make writeback time for VM
+instrumentation cover more of memory_object_data_write.  Misc. bug
+fixes.  Add support for migd (but not migration).  Disable exec
+redirection.  Fix VmCopySegment to not clean the entire source
+segment, just the part that's mapped.
+
+srv.004
+Copy the heap and stack using vm_read & vm_write, rather than using
+the memory_object interface.  Don't open or create swap files unless
+necessary.  Fix yet another race in procExit.c.  Use Vm_MakeAccessible
+instead of Vm_CopyIn to get arg and env strings for exec().  (There
+was a bug in the copyin-based version.)  Don't keep the PCB locked so
+long in Proc_NewProc.  (This is necessary to avoid a deadlock with the
+change to use Vm_MakeAccessible.)
+
+srv.005
+Comments about registering user processes with the MachID server.
+
+srv.006
+Fix processing of the FS_ZERO_STATS FS command.
+
+srv.007 
+Freeze the process's thread when it exits, so that it won't run after
+the reply message is destroyed.  Fix some memory leaks. Investigated
+and discarded the following perf fixes:
+- raising the priority of the network input thread
+- using memory_object_data_unavailable instead of bzeroing the page
+  and returning it (w/ memory_object_data_provided).
+
+srv.008
+Instrumentation for VM read/write requests and for Proc_ServerProcs.
+
+srv.009
+Support for sticky segments.  (Hacky) instrumentation for exec().
+
+srv.010
+Fixes for rpcecho benchmark: (1) fix Test_Rpc to make the destination
+read/write instead of write-only; (2) don't croak if Vm_MakeAccessible
+gets zero byte count.
+
+srv.011
+Fix RpcOutput: had backwards the asynch argument to Net_Output for
+fragmented RPCs.  Raise the priority of the Sprite packet filter.
+Neither of these seems to buy much, unfortunately.
+
+srv.012
+Fix bug in Vm_MakeAccessible that would cause crashes when running
+the "copyin -out" benchmark.
+
+srv.013
+Performance improvements for copyin/copyout.  Make the priority of the
+Sprite packet filter somewhat lower, but still higher than it was
+originally.
+
+srv.014
+Add new Exec stub that passes environment and argument strings in the
+MIG message.
+
+srv.015
+Bug fixes for sticky segments: destroy the segment when it no longer
+contains any pages; don't keep the backing file open when the segment
+is not in used.
+
+srv.016
+Use the inband device interface for small ethernet packets.  Always
+use the asynchronous ("mumble_request") interface for sending packets.
+
+srv.017
+IO_INBAND_MAX is now 300.
+
+srv.018
+Avoid going to the file system to satisfy target page faults when
+copying a heap or stack segment.
+
+srv.019
+More VM instrumentation.
+
+srv.020
+Temporary FS & VM instrumentation.
+
+srv.021
+Count number of times VmAddrRegion has to force segment to be
+initialized.
+
+srv.022
+Don't include Sys_ReplyAndFree in the per-call system call timings.
+Add in/out byte counts to Net_GenStats.
+
+srv.023
+More temporary VM instrumentation.
+
+srv.024
+Break pager stats down according to segment type.  Also try to
+estimate how much you lose by destroying and recreating the heap and
+stack at exec() time.
+
+srv.025
+Hack instrumentation for delays waiting for the data_request buffer.
+
+srv.026
+Estimate the number of pages that had to be faulted back in because
+the heap and stack get destroyed/recreated at exec().
+
+srv.027
+Fix RPC histogram code to correctly bucket times of at least 1
+second.
+
+srv.028
+Record how much time each flavor of Sprite call spends in
+copyin/copyout.
+
+srv.029
+Temp instrumentation to find how much time is spent in VmAddrParse.
+
+srv.030
+Add support for inband copyin/copyout perf tests.  Fix exec code to
+get the arguments right for shell scripts.
+
+srv.031
+Add Test calls to track down Sprite call overhead.

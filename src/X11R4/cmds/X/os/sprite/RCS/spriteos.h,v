@@ -1,0 +1,497 @@
+head     1.12;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.12
+date     89.10.04.19.18.15;  author tve;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     88.09.08.18.15.43;  author ouster;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     88.08.26.16.13.39;  author brent;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     88.08.26.15.51.32;  author deboor;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     87.11.29.19.52.27;  author deboor;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     87.11.01.20.22.51;  author deboor;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     87.08.21.20.31.27;  author deboor;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     87.06.30.19.11.25;  author deboor;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     87.06.23.13.30.04;  author deboor;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     87.06.20.19.58.21;  author deboor;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     87.06.13.11.27.29;  author deboor;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     87.06.11.17.47.24;  author deboor;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@header file for the sprite OS layer
+@
+
+
+1.12
+log
+@changed from lst library to list library
+@
+text
+@/*-
+ * spriteos.h --
+ *	Internal data for Sprite OS layer.
+ *
+ * Copyright (c) 1987 by the Regents of the University of California
+ *
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *	"$Header: spriteos.h,v 1.11 88/09/08 18:15:43 ouster Exp $ SPRITE (Berkeley)"
+ */
+#ifndef _OS_H
+#define _OS_H
+
+/*
+ * Because both Sprite and X define the type 'Time' (and they're incompatible),
+ * we have to kludge things by making the definition of Time in the Sprite
+ * files be SpriteTime. Henceforth, that is what the Sprite Time value should
+ * be referred to as.
+ */
+#include    "buf.h"
+#include    <list.h>
+
+#include    "X.h"
+#include    "Xmd.h"
+#include    "os.h"
+#include    "dixstruct.h"
+
+/*
+ * Scheduling interval. After MAX_PACKETS requests have been processed,
+ * the client is forced to yield the server to the next client.
+ */
+#define MAX_PACKETS	10
+
+/*
+ * Various aspects of a client must be tracked to handle the protocol.
+ * These are stored in the ClntPrivRec hanging from the osPrivate field of
+ * the ClientRec.
+ *
+ * There are two distinct types of connections being used here. One is
+ * over a Pseudo-device where the connection is very synchronous. The
+ * other is over a TCP stream, as managed by the TCP module. There are
+ * various differences between the two, not the least of which that there
+ * is only one stream for the TCP connection. To embody this, each client
+ * has a Read and a Write function, as well as a stream-private pointer
+ * that is manipulated only by the controlling module. To determine when
+ * a client is ready, two select masks are also maintained.
+ */
+typedef struct {
+    char    	  *(*readProc)();   /* Function to read from the client */
+    int	    	  (*writeProc)();   /* Function to write to the client */
+    void    	  (*closeProc)();   /* Function to close down the client */
+
+    int	    	  *mask;	    /* Mask of all streams for this client
+				     * (set by the controlling module) */
+    int	    	  *ready;	    /* Mask of streams that are ready
+				     * (set by the scheduler) */
+    int	    	  maskWidth;  	    /* Width of said masks */
+    pointer 	  devicePrivate;    /* Data private to the controlling module */
+} ClntPrivRec, *ClntPrivPtr;
+
+/*
+ * Global data
+ */
+extern int  	  	*AllClientsMask;    	/* All active clients */
+extern int  	  	*SavedAllClientsMask;   /* When grabbed */
+extern int  	  	*AllStreamsMask;  	/* All streams to check */
+extern int  	  	*SavedAllStreamsMask;   /* When grabbed */
+extern int  	  	*LastSelectMask;	/* Result of Fs_Select */
+extern int  	  	*EnabledDevicesMask;    /* Mask from devices */
+extern int  	  	*ClientsWithInputMask;  /* Mask of clients with input
+					         * still in their buffers */
+extern int  	  	NumActiveStreams;   	/* The number of active streams
+						 * used in the various bit
+						 * masks */
+#ifdef TCPCONN
+extern int  	  	TCP_Conn;   	    	/* TCP listening socket */
+#endif TCPCONN
+
+extern int  	  	Pdev_Conn;	    	/* New Pseudo-device control
+						 * stream ID */
+
+extern char 	  	*display;	    	/* Our display number */
+extern Bool 	  	GrabDone;   	    	/* TRUE if listening to only
+						 * one client */
+extern ClientPtr  	grabbingClient;   	/* Client that performed the
+						 * grab. */
+extern char 	  	whichByteIsFirst;   	/* Our byte order */
+extern List_Links	allStreams; 	    	/* All open streams */
+extern int  	  	spriteCheckInput;
+extern void 	  	spriteInputAvail();
+extern void 	  	ExpandMasks();
+extern Bool 	  	clientsDoomed;
+/*
+ * Debug control:
+ *	There is one bit per module. It is up to the module what debug
+ *	information to print.
+ *	DBG(module) returns TRUE if debugging is on for that module.
+ */
+extern int	    	debug;
+#define DEBUG_SCHED	0x00000001
+#define DEBUG_CONN	0x00000002
+#define DEBUG_PDEV 	0x00000004
+#define DEBUG_TCP 	0x00000010
+
+#define I(a)	  	a
+#ifdef __STDC__
+#define CONCAT(a,b)	a##b
+#else
+#define CONCAT(a,b)	I(a)b
+#endif /* __STDC__ */
+#define DBG(module)	(debug & CONCAT(DEBUG_,module))
+
+#define FamilySprite	3   	/* Pseudo-device access control -- should
+				 * be in X.h */
+
+#endif _OS_H
+@
+
+
+1.11
+log
+@Intermediate check-in while converting to new C library.
+@
+text
+@d15 1
+a15 1
+ *	"$Header: spriteos.h,v 1.10 88/08/26 16:13:39 brent Exp $ SPRITE (Berkeley)"
+d27 1
+a27 1
+#include    "lst.h"
+d94 1
+a94 1
+extern Lst  	  	allStreams; 	    	/* All open streams */
+@
+
+
+1.10
+log
+@Nuked use of NEWPDEV
+@
+text
+@d15 1
+a15 1
+ *	"$Header: spriteos.h,v 1.8 87/11/29 19:52:27 deboor Exp $ SPRITE (Berkeley)"
+a25 8
+#define Time	  SpriteTime
+
+#include    <sprite.h>
+#include    <fs.h>
+#include    <io.h>
+#include    <bit.h>
+#include    <mem.h>
+
+a27 1
+#undef Time
+@
+
+
+1.9
+log
+@Added __STC__ stuff and OLDPDEV defines
+@
+text
+@a89 4
+#ifdef OLDPDEV
+extern int  	  	Pdev_Conn;   	    	/* Pseudo device control
+						 * stream ID */
+#endif OLDPDEV
+d93 2
+a94 2
+#ifdef NEWPDEV
+extern int  	  	NewPdev_Conn;	    	/* New Pseudo-device control
+a95 1
+#endif NEWPDEV
+a117 1
+#define DEBUG_NEWPDEV	0x00000008
+@
+
+
+1.8
+log
+@Added support for conditional debugging
+@
+text
+@d15 1
+a15 1
+ *	"$Header: spriteos.h,v 1.7 87/11/01 20:22:51 deboor Exp $ SPRITE (Berkeley)"
+d90 1
+d93 1
+d127 3
+d131 1
+d133 3
+@
+
+
+1.7
+log
+@Removed pseudo-device dependencies to pdev.c and generalised
+private data, as well as added support for TCP connections
+@
+text
+@d15 1
+a15 1
+ *	"$Header: spriteos.h,v 1.6 87/08/21 20:31:27 deboor Exp $ SPRITE (Berkeley)"
+d95 4
+d111 17
+@
+
+
+1.6
+log
+@Adapted to single-output-buffer changes in clientIO.c
+@
+text
+@d15 1
+a15 1
+ *	"$Header: spriteos.h,v 1.5 87/06/30 19:11:25 deboor Exp $ SPRITE (Berkeley)"
+a30 1
+#include    <dev/pdev.h>
+d50 12
+a61 8
+ * A client can be made up of multiple streams (if the client is multi-
+ * threaded, e.g.), so we have to track each one separately. They are
+ * all kept under the same ClntPrivRec. When an event is to be sent to
+ * the client, it is written to all the streams. When a request comes in,
+ * its sequence number is remembered in the lastSeq field (we have to look
+ * at the DIX Client structure to do this, but it can't be helped). When a
+ * reply or error is generated, it is routed to the correct stream by
+ * examining its sequence number.
+d64 3
+a66 5
+    ClientPtr  	  	client;     /* Client this stream is for
+				     * (backward link for closings) */
+    int	    	  	clientFlags;/* Flags from client's Fs_Open */
+    int	    	  	pdevID;	    /* ID gotten from original pdev open */ 
+    int	    	  	streamID;   /* The stream used */
+d68 6
+a73 34
+    /*
+     * Output things
+     */
+    Boolean 	  	waiting;    /* The client is waiting */
+    Pdev_WaitInfo	wait;	    /* Thing with which to wake the client up*/
+    enum {
+	SELECT, READ
+    }	    	  	whyWait;    /* Why the client is waiting... */
+
+    /*
+     * Input things
+     */
+    Address 	  	buffer;	    /* A buffer for reading from the client */
+    Address 	  	bufPtr;	    /* The current offset into the buffer */
+    int	    	  	numBytes;   /* The number of bytes remaining in the
+				     * buffer */
+    Boolean 	  	needData;   /* TRUE if not enough data in buffer
+				     * to fulfill the request in there */
+} ClntStreamRec, *ClntStreamPtr;
+
+/*
+ * Various aspects of a client must be tracked to handle the pseudo-device
+ * protocol. These are stored in the ClntPrivRec hanging from the osPrivate
+ * field of the ClientRec.
+ */
+typedef struct {
+    int	    	  	*mask;	    /* Mask of all streams for this client */
+    int	    	  	*ready;	    /* Mask of streams which are ready */
+    int	    	  	maskWidth;  /* Width of said masks */
+    Buffer  	  	outBuf;     /* Packets awating a read request from
+				     * the client processes. */
+    Lst	    	  	streams;    /* All open streams for this client */
+    LstNode 	  	lastStream; /* The last stream serviced. Used for
+				     * scheduling */
+d90 1
+a90 1
+extern int  	  	PseudoDevice;   	/* Pseudo device control
+d92 4
+d105 2
+@
+
+
+1.5
+log
+@Adapted to beta-1
+@
+text
+@d15 1
+a15 1
+ *	"$Header: spriteos.h,v 1.4 87/06/23 13:30:04 deboor Exp $ SPRITE (Berkeley)"
+a69 2
+    Buffer  	  	outBuf;     /* Packets awating a read request from
+				     * the client. */
+d96 2
+d99 2
+a100 3
+    LstNode 	  	lastStream; /* The last stream serviced. Used both for
+				     * scheduling and to pass out errors and
+				     * replies */
+@
+
+
+1.4
+log
+@Added use of Buf library
+@
+text
+@d15 1
+a15 1
+ *	"$Header: spriteos.h,v 1.3 87/06/20 19:58:21 deboor Exp $ SPRITE (Berkeley)"
+d42 1
+d61 1
+a61 1
+    int	    	  	clientID;   /* Client number this stream is for
+d64 1
+d73 1
+a73 1
+    Fs_PdevWaitInfo	wait;	    /* Thing with which to wake the client up*/
+d91 2
+a92 3
+ * protocol. These are stored in the ClntPrivRec in the clientPriv array.
+ * It ought to be hanging from the osPrivate field of the ClientRec, but
+ * the ClientRec isn't allocated when the connection is established, so...
+a101 3
+    Bool    	  	clientNew;  /* TRUE if the client is new. i.e. we
+				     * have received no requests from it --
+				     * used mostly in WriteToClient */
+a114 4
+
+extern int  	  	FirstClient;	    	/* First real client */
+extern int  	  	LastClient;	    	/* Last client allocated */
+
+a119 1
+
+a120 1
+
+d123 2
+a124 3
+extern int  	  	grabbingClientID;   	/* ID number of client which
+						 * performed the grab. */
+
+d126 1
+a126 4
+extern ClntPrivRec	clientPriv[];
+extern int  	  	*StreamToClient;    	/* Mapping from streamID to
+						 * clientID */
+
+a128 1
+extern void 	  	sunInputAvail();
+@
+
+
+1.3
+log
+@adapted to Beta-0 and "debugged"
+@
+text
+@d15 1
+a15 1
+ *	"$Header: spriteos.h,v 1.2 87/06/13 11:27:29 deboor Exp $ SPRITE (Berkeley)"
+d35 1
+d68 2
+a69 4
+    Lst	    	  	outPackets; /* Packets awaiting a read request from the
+				     * client */
+    int	    	  	lenPackets; /* The length of all the packets */
+
+@
+
+
+1.2
+log
+@Adapted to new method of accessing the pseudo-device in
+clientIO.c
+@
+text
+@d15 1
+a15 1
+ *	"$Header: spriteos.h,v 1.1 87/06/11 17:47:24 deboor Exp $ SPRITE (Berkeley)"
+d31 1
+a31 1
+#include    <kernel/fsPdev.h>
+d72 4
+a75 1
+    Fs_PdevWaitInfo	wait;	    /* Thing with which to wake the client up */
+d84 2
+d102 3
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+ *	"$Header$ SPRITE (Berkeley)"
+d33 1
+d35 1
+a58 1
+    Bool    	  	active;	    /* TRUE if connection active */
+d63 18
+a80 3
+    Io_Stream  	  	inStream;   /* Input buffer. Only one request is read
+				     * into the buffer at once */
+    Io_Stream  	  	outStream;  /* Buffered output awaiting read call */
+d92 3
+a94 4
+    int	    	  	maskWidth;  /* Width of said mask */
+    int	    	  	numStreams; /* Number of streams for this client */
+    ClntStreamPtr  	streams;    /* All streams for this client */
+    ClntStreamPtr 	lastStream; /* The last stream serviced. Used both for
+@

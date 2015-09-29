@@ -1,0 +1,72 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    jhh:1.1; strict;
+comment  @# @;
+
+
+1.1
+date     90.12.17.18.33.57;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Script to figure out how much space is taken on a dump tape.
+@
+
+
+
+1.1
+log
+@Initial version by JHH.
+@
+text
+@#!/sprite/cmds/perl
+
+&init;
+$tape = $ARGV[0];
+shift;
+while(<>) {
+    if (/^$tape/) {
+	($f1, $f2, $f3, $size, $f4, $f5, $date) = split(' ');
+	if ($date != $yesterday) {
+	    if ($yesterday != -1) {
+		$dates[$days] = $yesterday;
+		$sizes[$days] = $total;
+		$files[$days] = $file;
+	    }
+	    $total = 0;
+	    $file = 0;
+	    $days++;
+	    $yesterday = $date;
+	}
+	$total += $size;
+	$file++;
+    }
+    if (/.*Initializing.*\b$tape$/) {
+	&init;
+    }
+}
+$dates[$days] = $yesterday;
+$sizes[$days] = $total;
+$files[$days] = $file;
+$days++;
+
+$total = 0;
+$file = 0;
+for ($i = 0; $i < $days; $i++) {
+    $mb = $sizes[$i] / (1024 * 1024);
+    printf("Date: %d, %d files, %.2f MB, %.2f Total MB\n", $dates[$i],
+	$files[$i], $mb, $mb + ($files[$i] * 2));
+    $total += $mb + ($files[$i] * 2);
+    $file += $files[$i];
+}
+printf("Totals : %d files, %.2f MB\n", $file, $total);
+
+sub init {
+    $yesterday = -1;
+    $days = -1;
+};
+@

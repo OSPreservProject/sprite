@@ -1,0 +1,122 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.3
+date     91.03.12.14.19.36;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.04.27.08.29.06;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.03.31.16.22.08;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@Add the "timesFrom" option.
+@
+text
+@'\" Copyright 1990 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/admin/rmold/RCS/rmold.man,v 1.2 90/04/27 08:29:06 ouster Exp Locker: kupfer $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS RMOLD cmds
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+rmold \- Delete old files
+.SH SYNOPSIS
+\fBrmold\fR [\fIoptions\fR] \fInumDays file file ...\fR
+.SH OPTIONS
+.IP "\fB\-mod\fR" 15
+Use modify time instead of access time to control deletion.
+.IP "\fB\-print\fR" 15
+Do not actually delete any files;  just print a list of those that
+would be deleted.
+.IP "\fB\-timesFrom \fIdirectory\fR" 15
+For each
+.IR file ,
+get the access (or modify) time from \fIdirectory\fB/\fIfile\fR
+instead of from
+.IR file .
+.IP "\fB\-help\fR" 15
+Print a summary of the command-line options and exit without updating
+any targets.
+.BE
+
+.SH DESCRIPTION
+.PP
+The \fBrmold\fR program deletes all of the named files that haven't
+been accessed in the last \fInumDays\fR days.  It prints the names
+of all the files it deleted.  If the \fB-mod\fR switch is given,
+then \fBrmold\fR deletes all the files that haven't been modified
+in \fInumDays\fR days.  If \fB-print\fR is specified then \fBrmold\fR
+prints the names of files that haven't been accessed (or modified)
+in \fInumDays\fR, but it doesn't delete any of them.
+.PP
+If 
+.B timesFrom
+is specified, 
+.B rmold
+will use the access (or modify) time of the same-named file in the
+given alternate directory.  This option lets you delete old backup files after
+the installed version of the file has been around for awhile.  For
+example, to delete backup copies of commands that were installed over
+90 days ago, you could do something like
+.DS
+	cd /sprite/cmds.$MACHINE.old
+	rmold -mod -timesFrom /sprite/cmds.$MACHINE 90 *
+.DE
+
+.SH KEYWORDS
+access, delete, modified, old
+@
+
+
+1.2
+log
+@Argument missing from synopsis.
+@
+text
+@d9 1
+a9 1
+'\" $Header: /sprite/src/admin/rmold/RCS/rmold.man,v 1.1 90/03/31 16:22:08 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d25 6
+d45 14
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d9 1
+a9 1
+'\" $Header: /sprite/lib/forms/RCS/cmd.man,v 1.2 90/02/20 17:11:01 douglis Exp $ SPRITE (Berkeley)
+d18 1
+a18 1
+\fBrmold\fR [\fIoptions\fR] \fIfile file ...\fR
+@

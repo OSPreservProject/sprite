@@ -1,0 +1,31 @@
+The relevant features are:
+
+1. Uses a \baselinestretch of 1.37; this is about as little as we can
+get away with that looks double-spaced.  The draft option forces
+single-spacing.  In tables, captions, footnotes, etc. text is
+single-spaced.  This is accomplished with the \ssp macros; a
+side-effect of this macro is that it switches to normalsize (except in
+footnotes); this could cause problems.  This double- and
+single-spacing is a pain in the you-know-what.  Some macros had to be
+copied from latex.tex in order to insert \ssp into them.
+
+2. Margins are 1.5 inches on the left, 1.0 inches elsewhere.
+
+3. Uses 11 point by default; you can use the 10pt or 12pt options for
+those sizes.
+
+4. Page numbers are in the top right corner for all pages.
+
+5. The ucthesis document style is just a modified report document
+style.  Therefore context diffs are also provided to make it easy to
+track fixes, improvements, etc. to the report document style; just run
+patch:
+
+	% cp report.doc ucthesis.doc
+	% patch < ucthesis.diffs
+	% rm ucthesis.doc.orig
+	% cp rep10.doc uct10.doc
+	% patch < uct10.diffs
+	% rm uct10.doc.orig
+	...
+

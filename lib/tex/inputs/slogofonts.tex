@@ -1,0 +1,293 @@
+% File:       SliTeX Inputs slogofonts.tex
+% Author:     P. A. MacKay
+% Internet:   mackay@cs.washington.edu
+% Bitnet:     (same)
+% Date:       October 11, 1988
+%
+% Add the METAFONT logo font to \fourteenpt etc.
+%
+%
+% This is a heavyhanded approach.  I tried to find a csname
+% associated with font family changes that was simple enough
+% to be used for an \ifx comparison, but finally gave up.
+% The definitions of \fourteenpt etc. are unchanged except
+% for the addition of \def\@MF{\umpteenlogo} at the
+% end of the visibles.  No provision is made for invisible
+% METAFONT, but it wouldn't be difficult.
+% \MF is hardwired to produce METAFONT in whatever is the
+% \@currsize
+%
+% Input this file when making a new load of splain.tex
+% You will be asked for local modifications; just respond
+% \input slogofonts \dump
+%
+
+%         SIZE: \normalsize \small \footnotesize \scriptsize \tiny
+%               \large \Large \LARGE \huge \Huge
+% ( In SliTeX, huge and Huge are mapped into LARGE for all but lcmss )
+
+\catcode`@=11 % Protect local macros.
+
+\font\fourteenlogo   = logo8  scaled \magstep 3 % METAFONT (\tiny)
+\font\seventeenlogo   = logo8  scaled \magstep 4 % METAFONT (\small)
+\font\twentylogo   = logo8  scaled \magstep 5 % METAFONT (\normalsize)
+\font\twentyfourlogo   = logo8  scaled 2986 % METAFONT (\large)
+\font\twentyninelogo   = logo8  scaled 3583 % METAFONT (\Large)
+\font\thirtyfourlogo   = logo8  scaled 4300 % METAFONT (\LARGE)
+
+\def\fourteenpt{\def\prm{\fam\z@\fourteenrm\def\@currfont{\rm}}%
+\textfont\z@\fourteenrm \scriptfont\z@\fourteenrm 
+  \scriptscriptfont\z@\fourteenrm
+\textfont\@ne\fourteeni \scriptfont\@ne\fourteeni 
+  \scriptscriptfont\@ne\fourteeni
+\textfont\tw@\fourteensy \scriptfont\tw@\fourteensy 
+  \scriptscriptfont\tw@\fourteensy
+\textfont\thr@@\tenex \scriptfont\thr@@\tenex \scriptscriptfont\thr@@\tenex
+\def\pit{\fam\itfam\fourteenit\def\@currfont{\it}}\textfont\itfam\fourteenit 
+    \scriptfont\itfam\fourteenit \scriptscriptfont\itfam\fourteenit
+\def\pbf{\fam\bffam\fourteenbf\def\@currfont{\bf}}\textfont\bffam\fourteenbf 
+   \scriptfont\bffam\fourteenbf \scriptscriptfont\bffam\fourteenbf
+\def\ptt{\fam\ttfam\fourteentt\def\@currfont{\tt}}\textfont\ttfam\fourteentt 
+    \scriptfont\ttfam\fourteentt \scriptscriptfont\ttfam\fourteentt
+\def\lasy{\fam\lyfam\fourteenlasy\def\@currfont{\lasy}}%
+\textfont\lyfam\fourteenlasy \scriptfont\lyfam\fourteenlasy 
+   \scriptscriptfont\lyfam\fourteenlasy
+\def\@MF{\fourteenlogo}}
+
+\def\ifourteenpt{\def\prm{\fam\z@\ifourteenrm\def\@currfont{\rm}}%
+\textfont\z@\ifourteenrm \scriptfont\z@\ifourteenrm 
+   \scriptscriptfont\z@\ifourteenrm
+\textfont\@ne\ifourteeni \scriptfont\@ne\ifourteeni 
+   \scriptscriptfont\@ne\ifourteeni
+\textfont\tw@\ifourteensy \scriptfont\tw@\ifourteensy 
+    \scriptscriptfont\tw@\ifourteensy
+\textfont\thr@@\itenex \scriptfont\thr@@\itenex \scriptscriptfont\thr@@\itenex
+\def\pit{\fam\itfam\ifourteenit\def\@currfont{\it}}\textfont\itfam\ifourteenit 
+    \scriptfont\itfam\ifourteenit \scriptscriptfont\itfam\ifourteenit
+\def\pbf{\fam\bffam\ifourteenbf\def\@currfont{\bf}}\textfont\bffam\ifourteenbf 
+  \scriptfont\bffam\ifourteenbf \scriptscriptfont\bffam\ifourteenbf
+\def\ptt{\fam\ttfam\ifourteentt\def\@currfont{\tt}}\textfont\ttfam\ifourteentt 
+  \scriptfont\ttfam\ifourteentt \scriptscriptfont\ttfam\ifourteentt
+\def\lasy{\fam\lyfam\ifourteenlasy\def\@currfont{\lasy}}%
+\textfont\lyfam\ifourteenlasy \scriptfont\lyfam\ifourteenlasy 
+   \scriptscriptfont\lyfam\ifourteenlasy}
+
+\def\seventeenpt{\def\prm{\fam\z@\seventeenrm\def\@currfont{\rm}}%
+\textfont\z@\seventeenrm \scriptfont\z@\fourteenrm 
+   \scriptscriptfont\z@\fourteenrm
+\textfont\@ne\seventeeni \scriptfont\@ne\fourteeni 
+   \scriptscriptfont\@ne\fourteeni
+\textfont\tw@\seventeensy \scriptfont\tw@\fourteensy 
+   \scriptscriptfont\tw@\fourteensy
+\textfont\thr@@\tenex \scriptfont\thr@@\tenex \scriptscriptfont\thr@@\tenex
+\def\pit{\fam\itfam\seventeenit\def\@currfont{\it}}\textfont\itfam\seventeenit 
+   \scriptfont\itfam\fourteenit \scriptscriptfont\itfam\fourteenit
+\def\pbf{\fam\bffam\seventeenbf\def\@currfont{\bf}}\textfont\bffam\seventeenbf 
+   \scriptfont\bffam\fourteenbf \scriptscriptfont\bffam\fourteenbf
+\def\ptt{\fam\ttfam\seventeentt\def\@currfont{\tt}}\textfont\ttfam\seventeentt
+   \scriptfont\ttfam\fourteentt \scriptscriptfont\ttfam\fourteentt
+\def\lasy{\fam\lyfam\seventeenlasy\def\@currfont{\lasy}}%
+\textfont\lyfam\seventeenlasy \scriptfont\lyfam\fourteenlasy 
+   \scriptscriptfont\lyfam\fourteenlasy
+\def\@MF{\seventeenlogo}}
+
+\def\iseventeenpt{\def\prm{\fam\z@\iseventeenrm\def\@currfont{\rm}}%
+\textfont\z@\iseventeenrm \scriptfont\z@\ifourteenrm 
+   \scriptscriptfont\z@\ifourteenrm
+\textfont\@ne\iseventeeni \scriptfont\@ne\ifourteeni 
+   \scriptscriptfont\@ne\ifourteeni
+\textfont\tw@\iseventeensy \scriptfont\tw@\ifourteensy 
+   \scriptscriptfont\tw@\ifourteensy
+\textfont\thr@@\itenex \scriptfont\thr@@\itenex \scriptscriptfont\thr@@\itenex
+\def\pit{\fam\itfam\iseventeenit\def\@currfont{\it}}%
+\textfont\itfam\iseventeenit 
+   \scriptfont\itfam\ifourteenit \scriptscriptfont\itfam\ifourteenit
+\def\pbf{\fam\bffam\iseventeenbf\def\@currfont{\bf}}%
+\textfont\bffam\iseventeenbf 
+   \scriptfont\bffam\ifourteenbf \scriptscriptfont\bffam\ifourteenbf
+\def\ptt{\fam\ttfam\iseventeentt\def\@currfont{\tt}}%
+\textfont\ttfam\iseventeentt
+   \scriptfont\ttfam\ifourteentt \scriptscriptfont\ttfam\ifourteentt
+\def\lasy{\fam\lyfam\iseventeenlasy\def\@currfont{\lasy}}%
+\textfont\lyfam\iseventeenlasy \scriptfont\lyfam\ifourteenlasy 
+   \scriptscriptfont\lyfam\ifourteenlasy}
+
+\def\twentypt{\def\prm{\fam\z@\twentyrm\def\@currfont{\rm}}%
+\textfont\z@\twentyrm \scriptfont\z@\seventeenrm 
+   \scriptscriptfont\z@\fourteenrm
+\textfont\@ne\twentyi \scriptfont\@ne\seventeeni 
+   \scriptscriptfont\@ne\fourteeni
+\textfont\tw@\twentysy \scriptfont\tw@\seventeensy 
+   \scriptscriptfont\tw@\fourteensy
+\textfont\thr@@\tenex \scriptfont\thr@@\tenex \scriptscriptfont\thr@@\tenex
+\def\pit{\fam\itfam\twentyit\def\@currfont{\it}}\textfont\itfam\twentyit 
+   \scriptfont\itfam\seventeenit \scriptscriptfont\itfam\fourteenit
+\def\pbf{\fam\bffam\twentybf\def\@currfont{\bf}}\textfont\bffam\twentybf 
+   \scriptfont\bffam\seventeenbf \scriptscriptfont\bffam\fourteenbf
+\def\ptt{\fam\ttfam\twentytt\def\@currfont{\tt}}\textfont\ttfam\twentytt
+   \scriptfont\ttfam\seventeentt \scriptscriptfont\ttfam\fourteentt
+\def\lasy{\fam\lyfam\twentylasy\def\@currfont{\lasy}}%
+\textfont\lyfam\twentylasy \scriptfont\lyfam\seventeenlasy 
+   \scriptscriptfont\lyfam\fourteenlasy
+\def\@MF{\twentylogo}}
+
+\def\itwentypt{\def\prm{\fam\z@\itwentyrm\def\@currfont{\rm}}%
+\textfont\z@\itwentyrm \scriptfont\z@\iseventeenrm 
+   \scriptscriptfont\z@\ifourteenrm
+\textfont\@ne\itwentyi \scriptfont\@ne\iseventeeni 
+   \scriptscriptfont\@ne\ifourteeni
+\textfont\tw@\itwentysy \scriptfont\tw@\iseventeensy 
+   \scriptscriptfont\tw@\ifourteensy
+\textfont\thr@@\itenex \scriptfont\thr@@\itenex \scriptscriptfont\thr@@\itenex
+\def\pit{\fam\itfam\itwentyit\def\@currfont{\it}}\textfont\itfam\itwentyit 
+   \scriptfont\itfam\iseventeenit \scriptscriptfont\itfam\ifourteenit
+\def\pbf{\fam\bffam\itwentybf\def\@currfont{\bf}}\textfont\bffam\itwentybf 
+   \scriptfont\bffam\iseventeenbf \scriptscriptfont\bffam\ifourteenbf
+\def\ptt{\fam\ttfam\itwentytt\def\@currfont{\tt}}\textfont\ttfam\itwentytt
+   \scriptfont\ttfam\iseventeentt \scriptscriptfont\ttfam\ifourteentt
+\def\lasy{\fam\lyfam\itwentylasy\def\@currfont{\lasy}}%
+\textfont\lyfam\itwentylasy \scriptfont\lyfam\iseventeenlasy 
+   \scriptscriptfont\lyfam\ifourteenlasy}
+
+\def\twentyfourpt{\def\prm{\fam\z@\twentyfourrm\def\@currfont{\rm}}%
+\textfont\z@\twentyfourrm \scriptfont\z@\twentyrm 
+   \scriptscriptfont\z@\seventeenrm
+\textfont\@ne\twentyfouri \scriptfont\@ne\twentyi 
+   \scriptscriptfont\@ne\seventeeni
+\textfont\tw@\twentyfoursy \scriptfont\tw@\twentysy 
+   \scriptscriptfont\tw@\seventeensy
+\textfont\thr@@\tenex \scriptfont\thr@@\tenex \scriptscriptfont\thr@@\tenex
+\def\pit{\fam\itfam\twentyfourit\def\@currfont{\it}}%
+\textfont\itfam\twentyfourit 
+   \scriptfont\itfam\twentyit \scriptscriptfont\itfam\seventeenit
+\def\pbf{\fam\bffam\twentyfourbf\def\@currfont{\bf}}%
+\textfont\bffam\twentyfourbf 
+   \scriptfont\bffam\twentybf \scriptscriptfont\bffam\seventeenbf
+\def\ptt{\fam\ttfam\twentyfourtt\def\@currfont{\tt}}%
+\textfont\ttfam\twentyfourtt
+   \scriptfont\ttfam\twentytt \scriptscriptfont\ttfam\seventeentt
+\def\lasy{\fam\lyfam\twentyfourlasy\def\@currfont{\lasy}}%
+\textfont\lyfam\twentyfourlasy \scriptfont\lyfam\twentylasy 
+   \scriptscriptfont\lyfam\seventeenlasy
+\def\@MF{\twentyfourlogo}}
+
+\def\itwentyfourpt{\def\prm{\fam\z@\itwentyfourrm\def\@currfont{\rm}}%
+\textfont\z@\itwentyfourrm \scriptfont\z@\itwentyrm 
+   \scriptscriptfont\z@\iseventeenrm
+\textfont\@ne\itwentyfouri \scriptfont\@ne\itwentyi 
+   \scriptscriptfont\@ne\iseventeeni
+\textfont\tw@\itwentyfoursy \scriptfont\tw@\itwentysy 
+   \scriptscriptfont\tw@\iseventeensy
+\textfont\thr@@\itenex \scriptfont\thr@@\itenex \scriptscriptfont\thr@@\itenex
+\def\pit{\fam\itfam\itwentyfourit\def\@currfont{\it}}%
+\textfont\itfam\itwentyfourit
+   \scriptfont\itfam\itwentyit \scriptscriptfont\itfam\iseventeenit
+\def\pbf{\fam\bffam\itwentyfourbf\def\@currfont{\bf}}%
+\textfont\bffam\itwentyfourbf 
+   \scriptfont\bffam\itwentybf \scriptscriptfont\bffam\iseventeenbf
+\def\ptt{\fam\ttfam\itwentyfourtt\def\@currfont{\tt}}%
+\textfont\ttfam\itwentyfourtt
+   \scriptfont\ttfam\itwentytt \scriptscriptfont\ttfam\iseventeentt
+\def\lasy{\fam\lyfam\itwentyfourlasy\def\@currfont{\lasy}}%
+\textfont\lyfam\itwentyfourlasy \scriptfont\lyfam\itwentylasy 
+   \scriptscriptfont\lyfam\iseventeenlasy}
+
+\def\twentyninept{\def\prm{\fam\z@\twentyninerm\def\@currfont{\rm}}%
+\textfont\z@\twentyninerm \scriptfont\z@\twentyfourrm 
+   \scriptscriptfont\z@\twentyrm
+\textfont\@ne\twentyninei \scriptfont\@ne\twentyfouri 
+   \scriptscriptfont\@ne\twentyi
+\textfont\tw@\twentyninesy \scriptfont\tw@\twentyfoursy 
+   \scriptscriptfont\tw@\twentysy
+\textfont\thr@@\tenex \scriptfont\thr@@\tenex \scriptscriptfont\thr@@\tenex
+\def\pit{\fam\itfam\twentynineit\def\@currfont{\it}}%
+\textfont\itfam\twentynineit 
+   \scriptfont\itfam\twentyfourit \scriptscriptfont\itfam\twentyit
+\def\pbf{\fam\bffam\twentyninebf\def\@currfont{\bf}}%
+\textfont\bffam\twentyninebf 
+   \scriptfont\bffam\twentyfourbf \scriptscriptfont\bffam\twentybf
+\def\ptt{\fam\ttfam\twentyninett\def\@currfont{\tt}}%
+\textfont\ttfam\twentyninett
+   \scriptfont\ttfam\twentyfourtt \scriptscriptfont\ttfam\twentytt
+\def\lasy{\fam\lyfam\twentyninelasy\def\@currfont{\lasy}}%
+\textfont\lyfam\twentyninelasy \scriptfont\lyfam\twentyfourlasy 
+   \scriptscriptfont\lyfam\twentylasy
+\def\@MF{\twentyninelogo}}
+
+\def\itwentyninept{\def\prm{\fam\z@\itwentyninerm\def\@currfont{\rm}}%
+\textfont\z@\itwentyninerm \scriptfont\z@\itwentyfourrm 
+   \scriptscriptfont\z@\itwentyrm
+\textfont\@ne\itwentyninei \scriptfont\@ne\itwentyfouri 
+   \scriptscriptfont\@ne\itwentyi
+\textfont\tw@\itwentyninesy \scriptfont\tw@\itwentyfoursy 
+   \scriptscriptfont\tw@\itwentysy
+\textfont\thr@@\itenex \scriptfont\thr@@\itenex 
+   \scriptscriptfont\thr@@\itenex
+\def\pit{\fam\itfam\itwentynineit\def\@currfont{\it}}%
+\textfont\itfam\itwentynineit 
+\scriptfont\itfam\itwentyfourit \scriptscriptfont\itfam\itwentyit
+\def\pbf{\fam\bffam\itwentyninebf\def\@currfont{\bf}}%
+\textfont\bffam\itwentyninebf 
+   \scriptfont\bffam\twentyfourbf \scriptscriptfont\bffam\twentybf
+\def\ptt{\fam\ttfam\itwentyninett\def\@currfont{\tt}}%
+\textfont\ttfam\itwentyninett
+   \scriptfont\ttfam\twentyfourtt \scriptscriptfont\ttfam\twentytt
+\def\lasy{\fam\lyfam\itwentyninelasy\def\@currfont{\lasy}}%
+\textfont\lyfam\itwentyninelasy \scriptfont\lyfam\itwentyfourlasy 
+   \scriptscriptfont\lyfam\itwentylasy}
+
+\def\thirtyfourpt{\def\prm{\fam\z@\thirtyfourrm\def\@currfont{\rm}}%
+\textfont\z@\thirtyfourrm \scriptfont\z@\twentyninerm 
+   \scriptscriptfont\z@\twentyfourrm
+\textfont\@ne\thirtyfouri \scriptfont\@ne\twentyninei 
+   \scriptscriptfont\@ne\twentyfouri
+\textfont\tw@\thirtyfoursy \scriptfont\tw@\twentyninesy 
+   \scriptscriptfont\tw@\twentyfoursy
+\textfont\thr@@\tenex \scriptfont\thr@@\tenex \scriptscriptfont\thr@@\tenex
+\def\pit{\fam\itfam\thirtyfourit\def\@currfont{\it}}%
+\textfont\itfam\thirtyfourit 
+   \scriptfont\itfam\twentynineit \scriptscriptfont\itfam\twentyfourit
+\def\pbf{\fam\bffam\thirtyfourbf\def\@currfont{\bf}}%
+\textfont\bffam\thirtyfourbf 
+   \scriptfont\bffam\twentyninebf \scriptscriptfont\bffam\twentyfourbf
+\def\ptt{\fam\ttfam\thirtyfourtt\def\@currfont{\tt}}%
+\textfont\ttfam\thirtyfourtt
+   \scriptfont\ttfam\twentyninett \scriptscriptfont\ttfam\twentyfourtt
+\def\lasy{\fam\lyfam\thirtyfourlasy\def\@currfont{\lasy}}%
+\textfont\lyfam\thirtyfourlasy \scriptfont\lyfam\twentyninelasy 
+   \scriptscriptfont\lyfam\twentyfourlasy
+\def\@MF{\thirtyfourlogo}}
+
+\def\ithirtyfourpt{\def\prm{\fam\z@\ithirtyfourrm\def\@currfont{\rm}}%
+\textfont\z@\ithirtyfourrm \scriptfont\z@\itwentyninerm 
+   \scriptscriptfont\z@\itwentyfourrm
+\textfont\@ne\ithirtyfouri \scriptfont\@ne\itwentyninei 
+   \scriptscriptfont\@ne\itwentyfouri
+\textfont\tw@\ithirtyfoursy \scriptfont\tw@\itwentyninesy 
+   \scriptscriptfont\tw@\itwentyfoursy
+\textfont\thr@@\itenex \scriptfont\thr@@\itenex \scriptscriptfont\thr@@\itenex
+\def\pit{\fam\itfam\ithirtyfourit\def\@currfont{\it}}%
+\textfont\itfam\ithirtyfourit 
+   \scriptfont\itfam\itwentynineit \scriptscriptfont\itfam\itwentyfourit
+\def\pbf{\fam\bffam\ithirtyfourbf\def\@currfont{\bf}}%
+\textfont\bffam\ithirtyfourbf 
+   \scriptfont\bffam\itwentyninebf \scriptscriptfont\bffam\itwentyfourbf
+\def\ptt{\fam\ttfam\ithirtyfourtt\def\@currfont{\tt}}%
+\textfont\ttfam\ithirtyfourtt
+   \scriptfont\ttfam\itwentyninett \scriptscriptfont\ttfam\itwentyfourtt
+\def\lasy{\fam\lyfam\ithirtyfourlasy\def\@currfont{\lasy}}%
+\textfont\lyfam\ithirtyfourlasy \scriptfont\lyfam\itwentyninelasy 
+   \scriptscriptfont\lyfam\itwentyfourlasy}
+
+\def\fortyonept{\thirtyfourpt\def\prm{\fam\z@\fortyonerm\def\@currfont{\rm}}%
+\textfont\z@\fortyonerm 
+\scriptfont\z@\twentyninerm \scriptscriptfont\z@\twentyfourrm}
+
+\def\ifortyonept{\ithirtyfourpt
+  \def\prm{\fam\z@\ifortyonerm\def\@currfont{\rm}}%
+\textfont\z@\ifortyonerm 
+\scriptfont\z@\itwentyninerm \scriptscriptfont\z@\itwentyfourrm}
+
+\def\MF{\@MF METAFONT}
+
+\catcode`@=12 % at signs are no longer letters

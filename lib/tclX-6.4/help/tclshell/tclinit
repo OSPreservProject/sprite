@@ -1,0 +1,15 @@
+
+
+          The Tcl initialization file, normally TclInit.tcl in the
+          main Tcl script directory, initializes the Tcl shell.  It
+          defines various Tcl procedures that are required to
+          implement loading of Tcl source from libraries via the
+          package library and autoload facilities.
+
+          If the Tcl is invoked interactively, it will source a file
+          named .tclrc in the user's home directory, if it exists.
+          Tcl is viewed primarly as a programming language, not an
+          interactive shell, so the .tclrc is intended for use for
+          loading development utilities, not to support applications,
+          which should not have to rely on the user's environment in
+          such a manner.

@@ -1,0 +1,6 @@
+
+
+          lrmdups list
+               Remove duplicate elements from a list.  Sorts the
+               specified list, removes any duplicate elements, and
+               returns the result.

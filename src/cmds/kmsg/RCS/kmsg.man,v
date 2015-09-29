@@ -1,0 +1,130 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.3
+date     91.03.01.22.41.17;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.12.30.09.35.17;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.12.21.15.19.04;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@Add a warning about how you can't kmsg a sun from a decstation, or
+vice versa.
+@
+text
+@' $Header: /sprite/src/cmds/kmsg/RCS/kmsg.man,v 1.2 88/12/30 09:35:17 ouster Exp Locker: kupfer $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS KMSG cmds
+.BS
+.SH NAME
+kmsg \- Manipulate a remote Sprite kernel
+.SH SYNOPSIS
+\fBkmsg\fR \fIoption machine\fR
+.SH OPTIONS
+.IP "\fB\-c\fR" 15
+Cause \fImachine\fR to leave the debugger and continue normal
+processing.  \fIMachine\fR must currently be in the debugger.
+.IP "\fB\-d\fR" 15
+Cause \fImachine\fR to suspend normal processing and enter the
+debugger.
+.IP "\fB\-r\fR" 15
+Cause \fImachine\fR to reboot, using the default boot source.
+\fIMachine\fR must currently be in the debugger.
+.IP "\fB\-R\fI string\fR" 15
+Cause \fImachine\fR to reboot, using \fIstring\fR as the boot
+source.  \fIMachine\fR must currently be in the debugger.
+.IP "\fB\-s\fI string\fR" 15
+Print out the version string of the kernel being run by \fImachine\fR.
+Exit with a 0 status if the version string matches \fIstring\fR,
+and exit with a non-zero status if it doesn't match.
+\fIMachine\fR must currently be in the debugger.
+.IP "\fB\-v\fR" 15
+Print out the version string of the kernel being run by \fImachine\fR.
+\fIMachine\fR must currently be in the debugger.
+.BE
+
+.SH INTRODUCTION
+.PP
+The \fBkmsg\fR command is used to assist in debugging and rebooting
+remote Sprite kernels.  \fIMachine\fR is the name of a machine
+running Sprite, and \fIoption\fR specifies what sort of operation
+to perform on that machine.  \fBKmsg\fR will open a special network
+port to the specified kernel and send it messages to carry out the
+specified operation.
+
+.SH BUGS
+The type (or at least byte-order?) of the target machine must match
+that of the machine that
+.B kmsg
+is run on.
+
+.SH KEYWORDS
+debug, kernel, reboot, version
+@
+
+
+1.2
+log
+@More format upgrades.
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/kmsg/RCS/kmsg.man,v 1.1 88/12/21 15:19:04 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d40 6
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+' $Header: /sprite/doc/ref/cmds/RCS/kmsg,v 1.2 88/10/26 10:26:12 ouster Exp $ SPRITE (Berkeley)
+d10 1
+a10 1
+.IP "\fB-c\fR" 15
+d13 1
+a13 1
+.IP "\fB-d\fR" 15
+d16 1
+a16 1
+.IP "\fB-r\fR" 15
+d19 1
+a19 1
+.IP "\fB-R\fI string\fR" 15
+d22 1
+a22 1
+.IP "\fB-s\fI string\fR" 15
+d27 1
+a27 1
+.IP "\fB-v\fR" 15
+d34 1
+a34 1
+The Kmsg command is used to assist in debugging and rebooting
+d37 1
+a37 1
+to perform on that machine.  Kmsg will open a special network
+@

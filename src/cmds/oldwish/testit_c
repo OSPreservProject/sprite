@@ -1,0 +1,20 @@
+#include <stdio.h>
+
+char	startUp[1024];
+
+
+main(argc, argv)
+int	argc;
+char	*argv[];
+{
+    int	status;
+
+    status = Whence(startUp, "test");
+    fprintf(stderr, "%s\n", startUp);
+    if (status != NULL) {
+	exit(0);
+    } else {
+	exit(1);
+    }
+}
+

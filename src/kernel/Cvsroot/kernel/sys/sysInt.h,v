@@ -1,0 +1,147 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ds3100:1.5 sun3:1.5 sun4nw:1.4 symm:1.4 spur:1.4;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     92.06.01.14.37.04;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.08.09.14.55.39;  author shirriff;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.07.26.17.00.54;  author shirriff;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.09.12.13.40.52;  author shirriff;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.09.11.10.51.20;  author shirriff;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Include file internal to the sys module.
+@
+
+
+1.5
+log
+@Add support for system call timing.
+@
+text
+@/*
+ * sysInt.h --
+ *
+ *     Routines and types used internally by the sys module.
+ *
+ * Copyright 1990 Regents of the University of California
+ * All rights reserved.
+ *
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/sys/sysInt.h,v 1.4 91/08/09 14:55:39 shirriff Exp $ SPRITE (Berkeley)
+ *
+ */
+
+#ifndef _SYSINT
+#define _SYSINT
+
+#include <sprite.h>
+#include <user/sys/time.h>
+#include <user/sys/resource.h>
+
+extern Boolean sysPanicing;
+
+extern ReturnStatus Sys_DoNothing _ARGS_((void));
+extern ReturnStatus Sys_Shutdown _ARGS_((int flags, char *rebootString));
+extern ReturnStatus Sys_GetMachineInfo _ARGS_((int *archPtr, int *typePtr,
+		int *clientIDPtr));
+extern ReturnStatus Sys_GetMachineInfoNew _ARGS_((int infoSize,
+		Address infoBufPtr));
+extern ReturnStatus Sys_StatsStub _ARGS_((int command, int option,
+		Address argPtr));
+extern void SysInitSysCall _ARGS_((void));
+extern ReturnStatus Sys_OutputNumCalls _ARGS_((int numToCopy,
+		Address buffer, Boolean doTimes));
+extern int Sys_RebootStub _ARGS_((int howto));
+extern int Sys_GethostnameStub _ARGS_((char *name, int namelen));
+extern int Sys_SethostnameStub _ARGS_((char *name, int namelen));
+
+extern int Sys_GethostidStub _ARGS_((void));
+extern int Sys_SethostidStub _ARGS_((int hostid));
+extern int Sys_GetdomainnameStub _ARGS_((char *name, int namelen));
+extern int Sys_SetdomainnameStub _ARGS_((char *name, int namelen));
+extern int Sys_ShutdownStub _ARGS_((void));
+extern int Sys_GetpeernameStub _ARGS_((void));
+extern int Sys_GetrlimitStub _ARGS_((int resource, struct rlimit *rlp));
+extern int Sys_SetrlimitStub _ARGS_((void));
+extern int Sys_GetsysinfoStub _ARGS_((unsigned op, char *buffer,
+	unsigned nbytes, int *start, char *arg));
+extern int Sys_NopStub _ARGS_((void));
+
+#endif /* _SYSINT */
+@
+
+
+1.4
+log
+@Added Sys_NopStub for do-nothing system calls.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/sys/RCS/sysInt.h,v 1.3 91/07/26 17:00:54 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+d32 1
+a32 1
+		Address buffer));
+@
+
+
+1.3
+log
+@Large install for unix compatibility
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/sys/RCS/sysInt.h,v 1.2 90/09/12 13:40:52 shirriff Exp $ SPRITE (Berkeley)
+d47 1
+@
+
+
+1.2
+log
+@Changed includes to angle brackets.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/sys/RCS/sysInt.h,v 1.1 90/09/11 10:51:20 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+d17 2
+d33 14
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/sys.ken/RCS/sys.h,v 9.4 90/09/02 13:47:03 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+d16 1
+a16 1
+#include "sprite.h"
+@

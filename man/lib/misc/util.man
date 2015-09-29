@@ -1,0 +1,54 @@
+'\" Copyright 1991 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/lib/forms/RCS/lib.man,v 1.3 91/01/07 17:55:52 mottsmth Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS util lib
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+Util_CanonicalDir \- Canonicalize a directory name to a full path.
+.SH SYNOPSIS
+.nf
+\fB#include <util.h>\fR
+.sp
+char *
+\fBUtil_CanonicalDir\fR(\fInewDir, currentDir, buffer\fP)
+.SH ARGUMENTS
+.AS biggestType biggestName
+.AP char *newDir in
+The new directory name to canonicalize.
+.AP char *currentDir in
+The current directory (or other name) to which \fInewDir is
+relative - may be NULL.
+.AP char *buffer in/out
+Pre-allocated space in which to put new canonicalized name - may be NULL.
+.BE
+
+.SH DESCRIPTION
+.PP
+The procedure takes a directory name, \fInewDir\fR, and turns it into
+a full path relative to a directory \fIcurrentDir\fR.  The parameter
+\fIcurrentDir\fR can actually be any full pathname to a directory but is
+usually the current directory.  If \fIcurrentDir\fR is NULL, the procedure
+calls \fIgetwd()\fR to find the full path name to the current directory.
+If the parameter \fIbuffer\fR is NULL, then the procedure allocates space
+for the new canonicalized directory name and returns a pointer to that new
+string.  If \fIbuffer\fR is not NULL, then it must be an area of at least
+MAXPATHLEN characters in which the procedure will copy the computed
+canonicalized name.  A pointer to \fIbuffer\fR is then returned.  It is okay
+for \fIbuffer\fR and \fInewDir\fR to be the same physical string, since
+\fInewDir\fR is only overwritten at the end of the computation.
+.PP
+The procedure returns a pointer to a new full pathname if successful.  If
+there is a failure, it returns NULL, with an error string in \fIbuffer\fR if
+that parameter was non-NULL.
+
+.SH KEYWORDS
+directory, path, pathname, full

@@ -1,0 +1,218 @@
+#    Makefile template for Configure for the BFD library.
+#    Copyright (C) 1990-1991 Free Software Foundation, Inc.
+#    Written by Cygnus Support.
+# 
+# This file is part of BFD, the Binary File Descriptor library.
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+# $Id: Makefile.in,v 1.36 1991/08/22 19:59:41 steve Exp $
+
+srcdir = .
+destdir = /usr/local
+libdir = $(destdir)/lib
+docdir = $(srcdir)/doc
+
+RANLIB = ranlib
+AR = ar
+AR_FLAGS = clq
+INCDIR = $(srcdir)/../include
+CSEARCH = -I$(INCDIR)
+DEP = mkdep
+
+
+#### host and target dependent Makefile fragments come in here.
+###
+
+TARGETLIB = libbfd.a
+CFLAGS = -g $(HDEFINES) $(TDEFINES) $(CSEARCH) $(CSWITCHES) # -DINTEL960VERSION
+
+
+BFD_LIBS = libbfd.o opncls.o bfd.o archive.o targets.o cache.o \
+	archures.o core.o section.o format.o syms.o reloc.o
+
+BFD_BACKENDS = oasys.o ieee.o srec.o \
+	aout64.o aout32.o demo64.o sunos.o newsos3.o bout.o \
+	icoff.o m68kcoff.o i386coff.o m88k-bcs.o ecoff.o
+
+OPTIONAL_BACKENDS = trad-core.o
+
+BFD_H=$(INCDIR)/bfd.h
+SYSDEP_H=$(INCDIR)/sysdep.h
+
+# C source files that correspond to .o's.
+CFILES = libbfd.c opncls.c bfd.c archive.c targets.c cache.c archures.c \
+	 i386coff.c aout64.c aout32.c sunos.c demo64.c icoff.c srec.c \
+	 oasys.c ieee.c m68kcoff.c \
+	 format.c section.c core.c syms.c reloc.c \
+	 m88k-bcs.c ecoff.c trad-core.c newsos3.c bout.c
+
+STAGESTUFF = $(TARGETLIB) $(OFILES)
+
+all: $(TARGETLIB) 
+
+# XDEPFILES comes from the host config; TDEPFILES from the target config.
+OFILES = $(BFD_LIBS) $(BFD_BACKENDS) $(XDEPFILES) $(TDEPFILES)
+
+$(TARGETLIB): $(OFILES)
+	 rm -f $(TARGETLIB)
+	 $(AR) $(AR_FLAGS) $(TARGETLIB) $(OFILES)
+	 $(RANLIB) $(TARGETLIB)
+
+stage1: force
+	- mkdir stage1
+	- mv -f $(STAGESTUFF) stage1
+
+stage2: force
+	- mkdir stage2
+	- mv -f $(STAGESTUFF) stage2
+
+stage3: force
+	- mkdir stage3
+	- mv -f $(STAGESTUFF) stage3
+
+against=stage2
+
+comparison: force
+	for i in *.o ; do cmp $$i $(against)/$$i || exit 1 ; done
+
+de-stage1: force
+	- (cd stage1 ; mv -f $(STAGESTUFF) ..)
+	- rmdir stage1
+
+de-stage2: force
+	- (cd stage2 ; mv -f $(STAGESTUFF) ..)
+	- rmdir stage2
+
+de-stage3: force
+	- (cd stage3 ; mv -f $(STAGESTUFF) ..)
+	- rmdir stage3
+
+tags etags: TAGS
+
+TAGS: force
+	etags $(INCDIR)/*.h $(srcdir)/*.h $(srcdir)/*.c
+
+clean:
+	rm -f *.[oa] *~ core *.E *.p *.ip
+
+clobber realclean: clean
+	rm -f libbfd.a TAGS
+
+$(BFD_LIBS) $(BFD_BACKENDS) $(OPTIONAL_BACKENDS):  libbfd.h $(BFD_H)
+
+saber:
+	#suppress 65 on bfd_map_over_sections 
+	#suppress 66 on bfd_map_over_sections 
+	#suppress 67 on bfd_map_over_sections 
+	#suppress 68 on bfd_map_over_sections 
+	#suppress 69 on bfd_map_over_sections 
+	#suppress 70 on bfd_map_over_sections 
+	#suppress 110 in bfd_map_over_sections 
+	#suppress 112 in bfd_map_over_sections 
+	#suppress 530 
+	#suppress 590 in swap_exec_header 
+	#suppress 590 in _bfd_dummy_core_file_matches_executable_p 
+	#suppress 590 in bfd_dont_truncate_arname
+	#suppress 590 on ignore 
+	#suppress 590 on abfd 
+	#setopt load_flags $(CFLAGS)
+	#load $(CFILES)
+
+
+#-----------------------------------------------------------------------------
+#		'STANDARD' GNU/960 TARGETS BELOW THIS POINT
+#
+# 'VERSION' file must be present and contain a string of the form "x.y"
+#-----------------------------------------------------------------------------
+
+ver960.c: FORCE
+	rm -f ver960.c
+	echo "char ${TARG}_ver[]= \"${TARG} `cat VERSION`, `date`\";" > ver960.c
+
+
+# This target should be invoked before building a new release.
+# 'VERSION' file must be present and contain a string of the form "x.y"
+#
+roll:
+	@V=`cat VERSION`		; \
+	MAJ=`sed 's/\..*//' VERSION`	; \
+	MIN=`sed 's/.*\.//' VERSION`	; \
+	V=$$MAJ.`expr $$MIN + 1`	; \
+	rm -f VERSION			; \
+	echo $$V >VERSION		; \
+	echo Version $$V
+
+# Dummy target to force execution of dependent targets.
+#
+force:
+
+install:
+	install -c libbfd.a $(libdir)
+	$(RANLIB) $(libdir)/libbfd.a
+
+# Target to uncomment host-specific lines in this makefile.  Such lines must
+# have the following string beginning in column 1: #__<hostname>__#
+# Original Makefile is backed up as 'Makefile.old'.
+#
+# Invoke with:  make make HOST=xxx
+#
+make:
+	-@if test $(HOST)x = x ; then \
+		echo 'Specify "make make HOST=???"'; \
+		exit 1; \
+	fi ; \
+	grep -s "^#The next line was generated by 'make make'" Makefile; \
+	if test $$? = 0 ; then	\
+		echo "Makefile has already been processed with 'make make'";\
+		exit 1; \
+	fi ; \
+	mv -f Makefile Makefile.old; \
+	echo "#The next line was generated by 'make make'"	 >Makefile ; \
+	echo "HOST=$(HOST)"					>>Makefile ; \
+	echo							>>Makefile ; \
+	sed "s/^#__$(HOST)__#//" < Makefile.old			>>Makefile
+
+Makefile: $(srcdir)/Makefile.in $(srcdir)/configure
+	(cd $(srcdir) ; \
+		./configure +norecurse \
+		+destdir=$(destdir) \
+		`if [ "$(srcdir)" != "." ] ; then echo +subdirs; fi` \
+		$(host) +target=$(target);)
+
+dep: $(CFILES)
+	mkdep $(CFLAGS) $?
+
+
+
+headers:
+	cp $(srcdir)/bfd-in.h $(docdir)
+	cp $(srcdir)/libbfd-in.h $(docdir)
+	cp $(srcdir)/libcoff-in.h $(docdir)
+	(cd $(docdir); make protos)
+	# Rebuild prototypes in bfd.h
+	cp $(docdir)/bfd.h $(BFD_H)
+	cp $(docdir)/libbfd.h $(srcdir)/libbfd.h
+	cp $(docdir)/libcoff.h $(srcdir)/libcoff.h
+
+bfd.info:
+	( cd doc; make bfd.info)
+
+bfd.dvi:
+	(cd doc; make bfd.dvi)
+
+bfd.ps: 
+	(cd doc; make bfd.ps)
+	

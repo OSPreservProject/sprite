@@ -1,0 +1,6 @@
+L AUDIO.H;1                         	audio.h	/sprite/lib/include/dev/audio.h
+L GRAPHICS.H;1                      	graphics.h	/sprite/lib/include/dev/graphics.h
+L NET.H;1                           	net.h	/sprite/lib/include/dev/net.h
+F PDEV.H;1                          	pdev.h
+F PFS.H;1                           	pfs.h
+L TTY.H;1                           	tty.h	/sprite/lib/include/dev/tty.h

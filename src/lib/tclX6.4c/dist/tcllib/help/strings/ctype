@@ -1,0 +1,74 @@
+
+
+          ctype class string
+               ctype determines whether all characters in string are
+               of the specified class.  It returns 1 if they are all
+               of class, and 0 if they are not, or if the string is
+               empty.  This command also provides another method
+               (besides format and scan) of converting between an
+               ASCII character and its numeric value.  The following
+               ctype commands are available:
+
+               ctype alnum string
+                    Tests that all characters are alphabetic or
+                    numeric characters as defined by the character
+                    set.
+
+               ctype alpha string
+                    Tests that all characters are alphabetic
+                    characters as defined by the character set.
+
+               ctype ascii string
+                    Tests that all characters are an ASCII character
+                    (a non-negative number less than 0200).
+
+               ctype char number
+                    Converts the numeric value, string, to an ASCII
+                    character.  Number must be in the range 0 through
+                    255.
+
+               ctype cntrl string
+                    Tests that all characters are ``control
+                    characters'' as defined by the character set.
+
+               ctype digit string
+                    Tests that all characters are valid decimal
+                    digits, i.e. 0 through 9.
+
+               ctype graph string
+                    Tests that all characters within are any character
+                    for which ctype print is true, except for space
+                    characters.
+
+               ctype lower string
+                    Tests that all characters are lowercase letters as
+                    defined by the character set.
+
+               ctype ord character
+                    Convert a character into its decimal numeric
+                    value.  The string must be one character long.
+
+               ctype space string
+                    Tests that all characters are either a space,
+                    horizontal-tab, carriage return, newline,
+                    vertical-tab, or form-feed.
+
+               ctype print string
+                    Tests that all characters are a space or any
+                    character for which ctype alnum or ctype punct is
+                    true or other ``printing character'' as defined by
+                    the character set.
+
+               ctype punct string
+                    Tests that all characters are made up of any of
+                    the characters other than the ones for which
+                    alnum, cntrl, or space is true.
+
+               ctype upper string
+                    Tests that all characters are uppercase letters as
+                    defined by the character set.
+
+               ctype xdigit string
+                    Tests that all characters are valid hexadecimal
+                    digits, that is 0 through 9, a through f or A
+                    through F.

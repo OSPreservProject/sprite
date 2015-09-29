@@ -1,0 +1,662 @@
+
+
+
+Pfs                   C Library Procedures                    Pfs
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Pfs_Open, Pfs_OpenConnection, Pfs_SetHandler,  Pfs_PassFile,
+     Pfs_Close - Package for servicing pseudo-file-systems.
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ppddeevv..hh>>
+
+     Pfs_Token
+     PPffss__OOppeenn(_p_r_e_f_i_x, _r_o_o_t_I_D_P_t_r, _p_f_s_S_e_r_v_i_c_e, _c_l_i_e_n_t_D_a_t_a)
+     Pdev_Stream *
+     PPffss__OOppeennCCoonnnneeccttiioonn(_p_f_s_T_o_k_e_n, _f_i_l_e_I_D_P_t_r, _r_e_q_B_u_f_S_i_z_e, _r_e_a_d_B_u_f_-
+     _S_i_z_e, _r_e_a_d_B_u_f, _s_e_l_e_c_t_B_i_t_s, _p_d_e_v_S_e_r_v_i_c_e)
+     int (*
+     PPffss__SSeettHHaannddlleerr(_p_f_s_T_o_k_e_n, _o_p_e_r_a_t_i_o_n, _h_a_n_d_l_e_r))()
+     int
+     PPffss__PPaassssFFiillee(_p_f_s_T_o_k_e_n, _s_t_r_e_a_m_I_D)
+     void
+     PPffss__CClloossee(_p_f_s_T_o_k_e_n)
+
+AARRGGUUMMEENNTTSS
+     char            *_p_r_e_f_i_x       (in)      File name prefix  of
+                                             the     pseudo-file-
+                                             system.
+
+     Fs_FileID       *_r_o_o_t_I_D_P_t_r    (in)      The   server-defined
+                                             ID of the root.
+
+     Pfs_CallBacks   *_p_f_s_S_e_r_v_i_c_e   (in)      Set of name  service
+                                             call-back       pro-
+                                             cedures.
+
+     ClientData      _c_l_i_e_n_t_D_a_t_a    (in)      User-defined    data
+                                             passed   to  service
+                                             call-backs.
+
+     Pfs_Token       _p_f_s_T_o_k_e_n      (in)      Return   value    of
+                                             PPffss__OOppeenn.
+
+     Fs_FileID       *_f_i_l_e_I_D_P_t_r    (in)      Server's  identifier
+                                             for  file in pseudo-
+                                             file-system.
+
+     int             _r_e_q_B_u_f_S_i_z_e    (in)      Preferred  size  for
+                                             the request buffer.
+
+     int             _r_e_a_d_B_u_f_S_i_z_e   (in)      Size of read buffer.
+                                             Zero  means  no read
+                                             buffering.
+
+     char            *_r_e_a_d_B_u_f      (in)      Optional        read
+
+
+
+Sprite v.1.0       Printed:  November 12, 1990                  1
+
+
+
+
+
+
+Pfs                   C Library Procedures                    Pfs
+
+
+
+                                             buffer, or NULL.
+
+     int             _s_e_l_e_c_t_B_i_t_s    (in)      FFSS__RREEAADDAABBLLEE,
+                                             FFSS__WWRRIITTAABBLLEE,
+                                             FFSS__EEXXCCEEPPTTIIOONN
+
+     Pdev_CallBacks  *_p_d_e_v_S_e_r_v_i_c_e  (in)      Set of pseudo-device
+                                             service    call-back
+                                             procedures.
+
+     int             _s_t_r_e_a_m_I_D      (in)      A regular open  file
+                                             descriptor  returned
+                                             from ooppeenn.
+
+_________________________________________________________________
+
+PPffss__OOppeenn
+     PPffss__OOppeenn declares a server process for a  pseudo-file-system
+     and  installs  a set of service procedures for it.  The ser-
+     vice procedures are called when  client  processes  do  file
+     naming  operations  on  the  pseudo-file-system,  i.e. ooppeenn,
+     ssttaatt, uunnlliinnkk, mmkkddiirr, rrmmddiirr, rreennaammee, and  lliinnkk.   As  a  side
+     effect  of  opening  a  file  in  the pseudo-file-system the
+     server can set up a pseudo-device connection  for  the  open
+     file.   Thus the server can completely implement file system
+     access to the pseudo-file-system.
+
+     The _p_r_e_f_i_x argument indicates what part of the  global  file
+     system  hierarchy  is  controlled  by the pseudo-file-system
+     server.  This  prefix  can  be  arbitrarily  nested  in  the
+     hierarchy  but  there must be a remote link that corresponds
+     to it.  (The command llnn --rr _p_r_e_f_i_x creates a remote link  for
+     the  prefix.)  The existence of the remote link ensures that
+     the kernel's lookup algorithm will  automatically  find  the
+     pseudo-file-system  server.  The pseudo-file-system is visi-
+     ble across the network as well.
+
+     The _r_o_o_t_I_D_P_t_r defines the  file  ID  for  the  root  of  the
+     pseudo-file-system.   This  ID will be presented as the pprree--
+     ffiixxIIDD for pathnames that begin at the root (prefix)  of  the
+     pseudo-file-system.   The  file ID has the following format.
+     The server can define the file ID  to  fit  its  own  needs.
+     However,  the  special type value of -1 is reserved to indi-
+     cate an invalid file ID.
+
+          typedef struct {
+              int type;
+              int serverID;
+              int major;
+              int minor;
+          } Fs_FileID;
+
+     The _p_f_s_S_e_r_v_i_c_e procedures are  described  in  detail  below.
+     The  _c_l_i_e_n_t_D_a_t_a argument is passed to all the naming service
+
+
+
+Sprite v.1.0       Printed:  November 12, 1990                  2
+
+
+
+
+
+
+Pfs                   C Library Procedures                    Pfs
+
+
+
+     procedures.  It is ordinarily used to get to  the  state  of
+     the pseudo-file-system.
+
+     The return value of PPffss__OOppeenn is  a  token  for  the  pseudo-
+     file-system,    which    must    be   used   in   calls   to
+     PPffss__OOppeennCCoonnnneeccttiioonn,   PPffss__PPaassssFFiillee,   PPffss__SSeettHHaannddlleerr,    and
+     PPffss__CClloossee.  If a pseudo-file-system couldn't be opened, then
+     NULL is returned and ppffss__EErrrroorrMMssgg contains a string describ-
+     ing the problem.
+
+     The Pfs package uses the facilities of FFss__DDiissppaattcchh in  order
+     to  keep  track  of  the streams associated with the pseudo-
+     file-system and ensure that Pfs is notified  whenever  those
+     streams become readable.  In order to use Pfs, you must also
+     use FFss__DDiissppaattcchh.
+
+PPffss__OOppeennCCoonnnneeccttiioonn
+     PPffss__OOppeennCCoonnnneeccttiioonn is used to create open  file  connections
+     to  the pseudo-file-system indicated by _p_f_s_T_o_k_e_n.  Open file
+     connections can only be made during an ooppeenn call-back.   The
+     open  file  connection  is  the  same  as  a connection to a
+     pseudo-device with the addition of two new requests to  han-
+     dle  ffssttaatt,  ffcchhmmoodd,  and  ffcchhoowwnn.  The details of using the
+     pseudo-device call-backs are given in the PPddeevv man page.
+
+     The _f_i_l_e_I_D_P_t_r is a server-defined identifier  for  the  open
+     file.   The  server can set the file ID fields to any values
+     that make sense to it.  However, by convention a type of  -1
+     indicates  an  invalid  fileID.  This special case may occur
+     when handling the rreennaammee and hhaarrddLLiinnkk call-backs.  Note that
+     the  file  IDs for directories in the pseudo-file-system may
+     be presented back to the server as a pprreeffiixxIIDD that indicates
+     the  starting point of the lookup operation.  Thus a process
+     can have a current directory inside  the  pseudo-file-system
+     and name files relative to that directory.
+
+     The _p_d_e_v_S_e_r_v_i_c_e parameter is a set  of  pseudo-device  call-
+     backs.   The  use of these call-backs is described in detail
+     in the PPddeevv man page.
+
+     The _r_e_q_B_u_f_S_i_z_e parameter indicates the preferred size of the
+     request buffer associated with the pseudo-device connection.
+     This size determines how  many  requests  can  be  bufferred
+     before the kernel has to wait on the server.  A minimum size
+     is enforced by the library, so zero can be passed to get the
+     default size (about 1 Kbyte).
+
+     The _r_e_a_d_B_u_f_S_i_z_e and _r_e_a_d_B_u_f parameters indicate the size and
+     location  of an optional read buffer.  No buffering is indi-
+     cated by a zero read buffer size.  See the library PPddeevv  and
+     device  ppddeevv  man  pages  for  more  details on using a read
+     buffer.
+
+
+
+Sprite v.1.0       Printed:  November 12, 1990                  3
+
+
+
+
+
+
+Pfs                   C Library Procedures                    Pfs
+
+
+
+PPffss__PPaassssFFiillee
+     PPffss__PPaassssFFiillee is used to pass the open file descriptor  of  a
+     regular  file  back  to  a  client  in  response  to an open
+     request.  If this is done then the pseudo-file-system server
+     sees  no  further  requests  concerning this open file;  the
+     file is handled in the regular way the by kernel.
+
+     PPffss__PPaassssFFiillee exists, but the kernel doesn't support it, yet.
+
+PPffss__CClloossee
+     PPffss__CClloossee is used to end pseudo-file-system  service.   This
+     closes  the  naming  stream  to  the kernel and frees up any
+     dynamically allocated storage.   After  this  call  _p_f_s_T_o_k_e_n
+     should not be used.
+
+     PPffss__PPaassssFFiillee exists, but the kernel doesn't support it, yet.
+
+NNAAMMEE SSEERRVVIICCEE PPRROOCCEEDDUURREESS
+     The callbacks are given to PPffss__OOppeenn  as  a  record  of  pro-
+     cedures:
+
+          typedef struct {
+              int (*open)();  /* PFS_OPEN */
+              int (*getAttr)();/* PFS_GET_ATTR */
+              int (*setAttr)();/* PFS_SET_ATTR */
+              int (*makeDevice)();/* PFS_MAKE_DEVICE */
+              int (*makeDir)();/* PFS_MAKE_DIR */
+              int (*remove)();/* PFS_REMOVE */
+              int (*removeDir)();/* PFS_REMOVE_DIR */
+              int (*rename)();/* PFS_RENAME */
+              int (*hardLink)();/* PFS_HARD_LINK */
+              int (*symLink)();/* PFS_SYM_LINK */
+          } Pfs_CallBacks;
+
+     Any of the elements can be NULL to indicate that the  opera-
+     tion  should be handled by a default handler that is a no-op
+     procedure that returns a file-not-found error.  The  _s_e_r_v_i_c_e
+     parameter  to  PPffss__OOppeenn  itself can also be NULL to indicate
+     default handling for all operations.  This  is  only  useful
+     during  initial  test.  The global variable ppffss__TTrraaccee can be
+     set to a non-zero value to generate printfs to  stderr  when
+     each   service   procedure  (default  or  user-supplied)  is
+     invoked.
+
+     All the name  service  procedures  have  a  similar  calling
+     sequence  that  includes  a relative pathname, a record con-
+     taining input parameters, and a buffer for _p_a_t_h_n_a_m_e _r_e_d_i_r_e_c_-
+     _t_i_o_n.  (The rreennaammee and hhaarrddlliinnkk procedures have slighly dif-
+     ferent calling sequences because they handle two pathnames.)
+     The pathname is relative to a prefix indicated by a _p_r_e_f_i_x_I_D
+     in the input parameters.  This ID is either for the root  as
+     defined  by  the _r_o_o_t_I_D_P_t_r argument to PPffss__OOppeenn, or for some
+
+
+
+Sprite v.1.0       Printed:  November 12, 1990                  4
+
+
+
+
+
+
+Pfs                   C Library Procedures                    Pfs
+
+
+
+     directory who's ID was defined  by  PPffss__OOppeennCCoonnnneeccttiioonn  when
+     the directory was entered by a client process.
+
+     The service procedures should return 0 to mean success, oth-
+     erwise they should return a suitable errno value.  There are
+     no other return results.  Open file connections are  created
+     as a side effect using PPffss__OOppeennCCoonnnneeccttiioonn.
+
+     It is possible that the pathname may leave the  pseudo-file-
+     system  during  any  lookup  operation.   This  happens with
+     remote links, symbolic links  back  to  the  root,  or  with
+     enough ``..'' components to take the pathname out the top of
+     the pseudo-file-system.  In this case the pseudo-file-system
+     server should return the remaining, or new, pathname instead
+     of attempting to follow it itself.  The return code  EERREEMMOOTTEE
+     is  used  to  indicate  this  situation, and the _r_e_d_i_r_e_c_t_P_t_r
+     argument is used to return the new name:
+
+          typedef struct FsRedirectInfo {
+              int             prefixLength;
+              char fileName[FS_MAX_PATH_NAME_LENGTH];
+          } FsRedirectInfo;
+
+     If the lookup hits a symbolic link to the  root  the  server
+     should  expand the link and return the new absolute pathname
+     in this buffer.  A remote link  is  like  a  symbolic  link,
+     except it indicates a nested prefix and its contents are the
+     prefix itself.  Expanding it will result in a  new  absolute
+     pathname.   The length of the prefix that is embedded in the
+     absolute path should be returned in the pprreeffiixxLLeennggtthh  field.
+     With  regular  symbolic links this field should be zero.  If
+     the server hits a ``..'' component that leaves its  root  it
+     should place the remaining pathname, including the offending
+     ``..'' component, into the buffer.   The  prefix  length  is
+     again zero in this case.
+
+ooppeenn
+          int
+          (*service->open)(clientData, name, openArgsPtr, redirectPtr)
+              ClientData clientData;/* Passed into Pfs_Open */
+              char *name;          /* Relative pathname */
+              Fs_OpenArgs *openArgsPtr;/* Identifies prefix and caller */
+              FsRedirectInfo *redirectPtr;/* Return - new pathname and prefix info if
+                                   * name leaves the pseudo-file-system */
+
+     The open service procedure is invoked in response to an ooppeenn
+     system call by a client process.  The _c_l_i_e_n_t_D_a_t_a argument is
+     the value passed into PPffss__OOppeenn and is generally used to  get
+     back to the state kept for the pseudo-file-system.  The _n_a_m_e
+     is a relative pathname that begins at the  prefix  indicated
+     by  *_o_p_e_n_A_r_g_s_P_t_r.   The  FFssOOppeennAArrggss structure identifies the
+     root of  the  pseudo-file-system,  the  prefix  or  starting
+
+
+
+Sprite v.1.0       Printed:  November 12, 1990                  5
+
+
+
+
+
+
+Pfs                   C Library Procedures                    Pfs
+
+
+
+     directory  of  the pathname, and the identity of the calling
+     process:
+
+          typedef struct {
+              Fs_FileID prefixID;  /* File ID from prefix handle */
+              Fs_FileID rootID;    /* File ID of root. */
+              int useFlags;        /* Flags defined in fs.h */
+              int permissions;     /* Permission bits for created files.  Already
+                                    * reflects per-process permission mask */
+              int type;            /* Used to contrain open to a specific type */
+              int clientID;        /* Host ID of client doing the open */
+              Fs_UserIDs id;       /* User and group IDs */
+          } FsOpenArgs;
+
+     The pprreeffiixxIIDD is  either  the  fileID  of  the  root  of  the
+     pseudo-file-system,  or  the fileID of some directory in the
+     pseudo-file-system that has  been  previously  opened.   The
+     uusseeFFllaaggss  is  an or'd combination of flags defined in <fs.h>
+     that include FFSS__RREEAADD, FFSS__WWRRIITTEE, and FFSS__EEXXEECCUUTTEE.  The ppeerrmmiiss--
+     ssiioonnss define the file mode when creating a file.  File crea-
+     tion is indicated by the FFSS__CCRREEAATTEE usage flag.
+
+     The ttyyppee is used to constrain the open to a particular  kind
+     of  file.  Possible values are FFSS__FFIILLEE, which means any type
+     will do, FFSS__DDIIRREECCTTOORRYY when changing the  current  directory,
+     and FFSS__SSYYMMBBOOLLIICC__LLIINNKK when reading links.
+
+     IMPORTANT:  PPffss__OOppeennCCoonnnneeccttiioonn and PPffss__PPaassssFFiillee can only  be
+     called during the servicing of an open request.  If they are
+     called (successfully) by the open call-back it  must  return
+     0, never a non-zero error status.
+
+ggeettAAttttrr
+          int
+          (*service->getAttr)(clientData, name, openArgsPtr, attrPtr, redirectInfoPtr)
+              ClientData clientData;/* Passed into Pfs_Open */
+              char *name;          /* Relative pathname */
+              FsOpenArgs *openArgsPtr;/* Bundled arguments */
+              Fs_Attributes *attrPtr;/* Return - attributes of the file */
+              FsRedirectInfo *redirectInfoPtr;/* Used when name leaves our domain */
+
+     This call-back is made to get the attributes of  a  file  in
+     the  pseudo-file-system  given  its pathname.  The arguments
+     are similar to those of the  ooppeenn  call-back.   The  _a_t_t_r_P_t_r
+     argument is used to return the attributes.
+
+sseettAAttttrr
+          int
+          (*service->setAttr)(clientData, name, openArgsPtr, flags, attrPtr,
+               redirectInfoPtr)
+              ClientData clientData;/* Passed into Pfs_Open */
+              char *name;          /* Relative pathname */
+
+
+
+Sprite v.1.0       Printed:  November 12, 1990                  6
+
+
+
+
+
+
+Pfs                   C Library Procedures                    Pfs
+
+
+
+              FsOpenArgs *openArgsPtr;/* Bundled arguments */
+              int flags;           /* Specifies which attrs to set */
+              Fs_Attributes *attrPtr;/* New attributes of the file */
+              FsRedirectInfo *redirectInfoPtr;/* Used when name leaves our domain */
+
+     This call-back is made to set certain attributes of  a  file
+     in the pseudo-file-system given its pathname.  The arguments
+     are similar to those of the ooppeenn  call-back.   Additionally,
+     the _f_l_a_g_s argument indicates which attributes are to be set,
+     and the _a_t_t_r_P_t_r argument specifies their  new  values.   The
+     _f_l_a_g_s  are an or'd combination of FFSS__SSEETT__TTIIMMEESS, FFSS__SSEETT__MMOODDEE,
+     FFSS__SSEETT__OOWWNNEERR, FFSS__SSEETT__FFIILLEE__TTYYPPEE, FFSS__SSEETT__DDEEVVIICCEE.
+
+mmaakkeeDDeevviiccee
+          int
+          (*service->makeDevice)(clientData, name, makeDevArgsPtr, redirectInfoPtr)
+              ClientData clientData;/* Passed into Pfs_Open */
+              char *name;          /* Relative pathname */
+              FsMakeDeviceArgs *makeDevArgsPtr;/* Bundled arguments */
+              FsRedirectInfo *redirectInfoPtr;/* Used when name leaves our domain */
+
+     This call-back is made to create a special  device  file  in
+     the pseudo-file-system.  The FFssMMaakkeeDDeevviicceeAArrggss are similar to
+     the FFssOOppeennAArrggss with some addition information about the dev-
+     ice:
+
+          typedef struct {
+              Fs_FileID prefixID;  /* FileID of the prefix */
+              Fs_FileID rootID;    /* FileID of the root */
+              Fs_Device device;    /* Device attributes */
+              int permissions;     /* Permissions already reflect per-process mask */
+              Fs_UserIDs id;       /* Identifies calling process */
+              int clientID;        /* Identifies host of calling process */
+          } FsMakeDeviceArgs;
+
+mmaakkeeDDiirr
+          int
+          (*service->makeDir)(clientData, name, openArgsPtr, redirectInfoPtr)
+              ClientData clientData;/* Passed into Pfs_Open */
+              char *name;          /* Relative pathname */
+              FsOpenArgs *openArgsPtr;/* Bundled arguments */
+              FsRedirectInfo *redirectInfoPtr;/* Used when name leaves our domain */
+
+     This call-back is made to create a directory.  The arguments
+     are similar to those of the ooppeenn call-back.
+
+rreemmoovvee
+          int
+          (*service->remove)(clientData, name, lookupArgsPtr, redirectInfoPtr)
+              ClientData clientData;/* Passed into Pfs_Open */
+              char *name;          /* Relative pathname */
+              FsLookupArgs *lookupArgsPtr;/* Bundled arguments */
+
+
+
+Sprite v.1.0       Printed:  November 12, 1990                  7
+
+
+
+
+
+
+Pfs                   C Library Procedures                    Pfs
+
+
+
+              FsRedirectInfo *redirectInfoPtr;/* Used when name leaves our domain */
+
+     This call-back is made to remove a file in the  pseudo-file-
+     system.   FFssLLooookkuuppAArrggss  are  a  simplified  sub-set  of FFssOO--
+     ppeennAArrggss:
+
+          typedef struct {
+              Fs_FileID prefixID;  /* FileID of the prefix */
+              Fs_FileID rootID;    /* FileID of the root */
+              int useFlags;        /* not used */
+              Fs_UserIDs id;       /* User and group IDs of calling process */
+              int clientID;        /* Host ID of calling process */
+          } FsLookupArgs;
+
+rreemmoovveeDDiirr
+          int
+          (*service->removeDir)(clientData, name, lookupArgsPtr, redirectInfoPtr)
+              ClientData clientData;/* Passed into Pfs_Open */
+              char *name;          /* Relative pathname */
+              FsLookupArgs *lookupArgsPtr;/* Bundled arguments */
+              FsRedirectInfo *redirectInfoPtr;/* Used when name leaves our domain */
+
+     This call-back is made to remove a directory in the  pseudo-
+     file-system.   The server should check against removing non-
+     empty directories.   The  arguments  are  the  same  as  for
+     rreemmoovvee.
+
+rreennaammee
+          int
+          (*service->rename)(clientData, srcName, dstName, twoNameArgsPtr,
+               redirect2InfoPtr)
+              ClientData clientData;    /* Passed into Pfs_Open */
+              char *srcName;            /* Original name */
+              char *dstName;            /* New name */
+              Fs2PathParams *twoNameArgsPtr;/* Lookup args plus prefixID2 */
+              Fs2PathRedirectInfo *redirect2InfoPtr;/* Used when name leaves our domain */
+
+     This call-back is made to change the name of a file  in  the
+     pseudo-file-system.   The  arguments  are  bundled  into the
+     FFss22PPaatthhPPaarraammss structure:
+
+          typedef struct Fs2PathParams {
+              FsLookupArgs lookup;      /* Regular lookup parameters */
+              Fs_FileID prefixID2;      /* Prefix of second pathname */
+          } Fs2PathParams;
+
+     It is possible that the second pathname is not a part of the
+     pseudo-file-system.   The  Sprite  kernel still calls out to
+     the pseudo-file-system in this case because the first  path-
+     name  might be redirected out of the pseudo-file-system.  If
+     the second prefixID does  not  belong  to  the  pseudo-file-
+     system  that  is  indicated  by  a ttyyppee value of -1.  If the
+
+
+
+Sprite v.1.0       Printed:  November 12, 1990                  8
+
+
+
+
+
+
+Pfs                   C Library Procedures                    Pfs
+
+
+
+     first pathname remains in  the  pseudo-file-system  but  the
+     second  prefixID  is  not in the pseudo-file-system then the
+     error EEXXDDEEVV should be returned.  If either of the  pathnames
+     gets   redirected,   or  an  error  occurs  during  pathname
+     interpretation, the FFss22PPaatthhRReeddiirreeccttIInnffoo structure is used to
+     return more information:
+
+          typedef struct {
+              int name1ErrorP;/* TRUE if redirection or other error applies
+                               * to the first pathname, FALSE if the error
+                               * applies to second pathname, or no error */
+              int prefixLength;/* The length of the prefix embedded in
+                               * fileName.  This is used when a server hits
+                               * a remote link and has to return a new file
+                               * name plus an indication of a new prefix. */
+              char fileName[FS_MAX_PATH_NAME_LENGTH];
+                              /* The new file name.  Returned
+                               * from the server when its lookup is about
+                               * to leave its domain. */
+          } Fs2PathRedirectInfo;
+
+hhaarrddLLiinnkk
+          int
+          (*service->hardLink)(clientData, srcName, dstName, twoNameArgsPtr,
+               redirect2InfoPtr)
+              ClientData clientData;    /* Passed into Pfs_Open */
+              char *srcName;            /* Original name */
+              char *dstName;            /* New name */
+              Fs2PathParams *twoNameArgsPtr;/* Lookup args plus prefixID2 */
+              Fs2PathRedirectInfo *redirect2InfoPtr;/* Used when name leaves our domain */
+
+     This call-back is used to create a  hard  link  between  two
+     files in the pseudo-file-system.  The arguments are the same
+     as those for rreennaammee, and the same  comments  about  pathname
+     redirection apply.
+
+ssyymmLLiinnkk
+          int
+          (*service->symLink)(clientData, linkName, value, openArgsPtr, redirectInfoPtr)
+              ClientData clientData;    /* returned from Pfs_Open */
+              char *linkName;           /* SymLink file name */
+              char *value;              /* Symlink value */
+              FsOpenArgs *openArgsPtr;  /* Open arguments */
+              FsRedirectInfo *redirectInfoPtr;/* Used when srcName leaves our domain */
+
+     This call-back is used to create  a  symbolic  link  in  the
+     pseudo-file-system.   The arguments are similar to those for
+     ooppeenn, except there are two pathnames.  Pathname  redirection
+     is  only  possible  on  the _l_i_n_k_N_a_m_e.  The _v_a_l_u_e pathname is
+     simply used as the value of the link regardless of its loca-
+     tion  in the system.  (This is not currently used.  Symbolic
+     links  are  created  instead  by  opening  a  file  of  type
+
+
+
+Sprite v.1.0       Printed:  November 12, 1990                  9
+
+
+
+
+
+
+Pfs                   C Library Procedures                    Pfs
+
+
+
+     FS_SYMBOLIC_LINK  and  writing the link value into it.  This
+     will change, although it currently works in NFS.)
+
+     The ttyyppee field  in  the  open  args  is  used  differentiate
+     between a regular symbolic link and a remote link.  A remote
+     link is a circular  symbolic  link  with  a  different  file
+     descriptor type than a symbolic link.  Remote links are used
+     in native Sprite file systems to indicate  a  nested  prefix
+     that is stored elsewhere.  Bumping into a remote link causes
+     a pathname redirection just like  hitting  a  symbolic  link
+     back  to  the  root.  Additionally, however, the redirection
+     information also includes the length of the prefix  that  is
+     embedded into the returned pathname.
+
+SSEEEE AALLSSOO
+     pfs (devices), Pdev, Swap_Buffer
+
+KKEEYYWWOORRDDSS
+     pseudo-file-system
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  November 12, 1990                 10
+
+
+

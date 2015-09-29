@@ -1,0 +1,68 @@
+
+
+
+update                    User Commands                    update
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     update - Process all pending events and when-idle handlers
+
+SSYYNNOOPPSSIISS
+     uuppddaattee
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This command is used to bring the entire  application  world
+     ``up  to  date.''  It  flushes  all  pending  output  to the
+     display,  waits for the server to process  that  output  and
+     return  errors  or events, handles all pending events of any
+     sort (including when-idle handlers), and repeats this set of
+     operations  until  there  are  no pending events, no pending
+     when-idle handlers, no pending output to the server, and  no
+     operations still outstanding at the server.
+
+     This command is useful in scripts or other places  where  it
+     is  desired  that  all  operations  issued  so far have been
+     reflected on the display and in the application's state.
+
+
+KKEEYYWWOORRDDSS
+     event, flush, handler, update
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  September 5, 1991                  1
+
+
+

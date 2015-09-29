@@ -1,0 +1,553 @@
+head     9.15;
+branch   ;
+access   ;
+symbols  ds3100:9.15 sun3:9.15 sprited:9.8.1 sun4nw:9.8 symm:9.8 spur:9.8 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.15
+date     92.10.26.13.41.04;  author mgbaker;  state Exp;
+branches ;
+next     9.14;
+
+9.14
+date     92.08.26.18.22.01;  author alc;  state Exp;
+branches ;
+next     9.13;
+
+9.13
+date     92.08.24.14.42.16;  author alc;  state Exp;
+branches ;
+next     9.12;
+
+9.12
+date     92.08.17.14.18.10;  author elm;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     92.08.13.15.51.31;  author secor;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     92.03.12.22.06.12;  author mottsmth;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     92.03.06.13.27.37;  author mani;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     91.03.30.17.01.50;  author mgbaker;  state Exp;
+branches 9.8.1.1;
+next     9.7;
+
+9.7
+date     91.03.29.19.26.49;  author jhh;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     91.01.14.22.49.38;  author elm;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.11.27.13.29.20;  author mgbaker;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.10.19.15.39.10;  author mgbaker;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.09.11.12.13.13;  author rab;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.08.15.16.35.45;  author rab;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.08.07.23.26.38;  author jhh;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.58.32;  author douglis;  state Stable;
+branches ;
+next     1.3;
+
+1.3
+date     89.07.15.12.28.10;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.07.15.11.09.01;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.15.11.01.23;  author ouster;  state Exp;
+branches ;
+next     ;
+
+9.8.1.1
+date     91.11.17.14.34.49;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.15
+log
+@New device for monitoring network state.
+
+@
+text
+@/*
+ * devTypes.h --
+ *
+ *	This file declares the major device types used in Sprite.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/dev/devTypes.h,v 9.14 92/08/26 18:22:01 alc Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _DEVTYPES
+#define _DEVTYPES
+
+/* constants */
+
+/*
+ * Device types:
+ *
+ *	DEV_TERM		Terminal devices, like the console
+ *	DEV_SYSLOG		The system log device
+ *	DEV_MEMORY		Null device and kernel memory area.
+ *	DEV_NET			Raw ethernet device - unit number is protocol.
+ *	DEV_KEYBOARD		Keyboard
+ *	DEV_SCSI_DISK		Disk on the SCSI bus
+ *	DEV_SCSI_TAPE		Tape drive on the SCSI bus
+ *	DEV_XYLOGICS		Xylogics 450 controller
+ *	DEV_SCSI_HBA		Raw SCSI HBA device driver
+ *	DEV_RAID		Raw interface to disk array
+ *	DEV_DEBUG		For debugging disk arrays?
+ *	DEV_MOUSE		Mouse and keystroke info for window systems
+ *	DEV_AUDIO		Audio device
+ *	DEV_SCSI_ROBOT		Tape robot on the SCSI bus.
+ *      DEV_SMEM                Kernel memory image
+ *	DEV_CLIENT_STATE	Device for tracking clients of server.
+ *	DEV_STDFB		"Standard" frame buffer. The idea is that this
+ *				device behaves the same on machine types,
+ *				unlike the mouse or graphics device.
+ *
+ *
+ * NOTE: These numbers correspond to the major numbers for the devices
+ * in /dev. Do not change them unless you redo makeDevice for all the devices
+ * in /dev.
+ *
+ */
+
+#define	DEV_TERM		0
+#define	DEV_SYSLOG		1
+#define	DEV_SCSI_WORM		2
+#define	DEV_PLACEHOLDER_2	3
+#define	DEV_SCSI_DISK		4
+#define	DEV_SCSI_TAPE		5
+#define	DEV_MEMORY		6
+#define	DEV_XYLOGICS		7
+#define	DEV_NET			8
+#define	DEV_SCSI_HBA		9
+#define	DEV_RAID		10
+#define	DEV_DEBUG		11
+/* Number 12 taken below. */
+#define DEV_PLACEHOLDER_3	13      /* for ds3100 unused graphics device */
+#define DEV_SMEM                14
+/* #define DEV_ZDC_DISK		14	Only on sequent symmetry */
+#define DEV_AUDIO		15
+#define DEV_VMELINK		16
+#define DEV_STDFB 		17
+#define DEV_ATC			18      /* used by sun4 only */
+#define DEV_PLACEHOLDER_4       18      /* used by decstations */
+#define DEV_PLACEHOLDER_5	19
+#define DEV_SCSI_ROBOT		20
+#define	DEV_XBUS		21
+#define	DEV_CLIENT_STATE	22
+
+
+#if (!defined(ds3100)) && (!defined(ds5000))
+#define DEV_MOUSE		12
+#define DEV_GRAPHICS		13
+#else
+#define	DEV_CONSOLE		0
+#define DEV_GRAPHICS		9
+/*
+ * Unit numbers for the graphics device.
+ */
+#define DEV_MOUSE		0
+#define DEV_XCONS		1
+
+/*
+ * SCSI HBA's attached to the system.
+ */
+#define DEV_SII_HBA	0
+#endif 
+
+
+
+
+/*
+ * The following device types are defined for SPUR as of 7/15/89.  They
+ * should be changed so that don't overlap the device types above.
+ * Also, why do two different devices have the same number?
+ */
+
+#define DEV_CC			9
+#define DEV_PCC			9
+
+/*
+ * SCSI HBA's attached to the system.
+ */
+
+#define	DEV_SCSI3_HBA	0
+#define	DEV_SCSI0_HBA	1
+#define	DEV_JAGUAR_HBA  2
+
+/*
+ * The following exists only on the sparc station.
+ */
+#define DEV_SCSIC90_HBA	0
+
+#endif /* _DEVTYPES */
+
+@
+
+
+9.14
+log
+@*** empty log message ***
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/dev/devTypes.h,v 9.13 92/08/24 14:42:16 alc Exp $ SPRITE (Berkeley)
+d41 4
+d65 10
+d76 2
+a77 1
+#define DEV_SMEM                14
+a97 14
+#define DEV_PLACEHOLDER_3	13      /* for ds3100 unused graphics device */
+#define DEV_AUDIO		15
+#define DEV_VMELINK		16
+#define DEV_ATC			18      /* used by sun4 only */
+#define DEV_PLACEHOLDER_4       18      /* used by decstations */
+#define DEV_PLACEHOLDER_5	19
+#define	DEV_XBUS		21
+
+/*
+ * "Standard" frame buffer. The idea is that this device behave the same on
+ * machine types, unlike the mouse or graphics device.
+ */
+
+#define DEV_STDFB 17
+a98 3
+/*
+ * Following device(s) exist only on Sequent Symmetry
+ */
+a99 1
+/*#define DEV_ZDC_DISK		14*/
+@
+
+
+9.13
+log
+@includes ATC device type
+
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/dev/devTypes.h,v 9.12 92/08/17 14:18:10 elm Exp $ SPRITE (Berkeley)
+d86 2
+a87 1
+#define DEV_ATC			18
+@
+
+
+9.12
+log
+@
+Added type 21 -- devXbus (RAID xbus device driver).
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/dev/devTypes.h,v 9.11 92/08/13 15:51:31 secor Exp $ SPRITE (Berkeley)
+d64 1
+d86 1
+a86 1
+#define DEV_PLACEHOLDER_4	18
+@
+
+
+9.11
+log
+@Added smem device as 14
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/dev/devTypes.h,v 9.10 92/03/12 22:06:12 mottsmth Exp $ SPRITE (Berkeley)
+d87 1
+@
+
+
+9.10
+log
+@in DevSCSIExbRobotError.
+
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/dev/devTypes.h,v 9.9 92/03/06 13:27:37 mani Exp $ SPRITE (Berkeley)
+d40 1
+d62 1
+d99 1
+a99 1
+#define DEV_ZDC_DISK		14
+@
+
+
+9.9
+log
+@Added and modified files pertaining to the Exabyte EXB-120 device
+driver.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/dev/devTypes.h,v 9.8 91/03/30 17:01:50 mgbaker Exp $ SPRITE (Berkeley)
+a32 1
+ *	DEV_SCSI_ROBOT		Tape robot on the SCSI bus.
+d39 1
+@
+
+
+9.8
+log
+@Fixed a missing define.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/dev/RCS/devTypes.h,v 9.7 91/03/29 19:26:49 jhh Exp Locker: mgbaker $ SPRITE (Berkeley)
+d33 1
+d60 1
+d83 2
+@
+
+
+9.8.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/dev/devTypes.h,v 9.8 91/03/30 17:01:50 mgbaker Exp $ SPRITE (Berkeley)
+@
+
+
+9.7
+log
+@Mary checking this in for John since it won't compile and I'm trying to
+do an install.  DEV_PLACEHOLDER_3 has been removed for the decstation,
+but is still referenced in the OpTable.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/dev/RCS/devTypes.h,v 9.6 91/01/14 22:49:38 elm Exp $ SPRITE (Berkeley)
+d78 1
+@
+
+
+9.6
+log
+@added VME link as device 16
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/dev/RCS/devTypes.h,v 9.5 90/11/27 13:29:20 mgbaker Exp Locker: elm $ SPRITE (Berkeley)
+d59 2
+a60 1
+#ifndef ds3100
+a61 1
+#endif /* not ds3100 */
+d63 1
+a63 5
+#define DEV_PLACEHOLDER_3	13	/* for ds3100 unused graphics device */
+#define DEV_AUDIO		15
+#define DEV_VMELINK		16
+
+#ifdef ds3100
+d76 11
+a86 1
+#endif /* ds3100 */
+@
+
+
+9.5
+log
+@Trying to reconcile device numbers across different machine types.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/dev.mgb/RCS/devTypes.h,v 1.1 90/11/14 14:47:10 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d65 1
+@
+
+
+9.4
+log
+@Added a place holder definition.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/dev/RCS/devTypes.h,v 9.3 90/09/11 12:13:13 rab Exp Locker: mgbaker $ SPRITE (Berkeley)
+d59 1
+d61 1
+d66 3
+d70 12
+d104 5
+d110 1
+@
+
+
+9.3
+log
+@Added prototypes.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/dev/RCS/devTypes.h,v 9.2 90/08/15 16:35:45 rab Exp Locker: rab $ SPRITE (Berkeley)
+d61 1
+@
+
+
+9.2
+log
+@Changed DEV_ZDC_DISK to 14 so it doesn't confilict with DEV_GRAPHICS.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/dev/RCS/devTypes.h,v 9.1 90/08/07 23:26:38 jhh Exp Locker: rab $ SPRITE (Berkeley)
+d38 1
+d61 1
+@
+
+
+9.1
+log
+@symmetry changes
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/dev/RCS/devTypes.h,v 9.0 89/09/12 14:58:32 douglis Stable Locker: jhh $ SPRITE (Berkeley)
+d59 1
+d65 1
+a65 1
+#define DEV_ZDC_DISK		13
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/dev/RCS/devTypes.h,v 1.3 89/07/15 12:28:10 ouster Exp Locker: douglis $ SPRITE (Berkeley)
+d59 6
+@
+
+
+1.3
+log
+@Added SPUR devices.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/dev.jo/RCS/devTypes.h,v 1.2 89/07/15 11:09:01 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+@
+
+
+1.2
+log
+@New:  make device types machine-independent.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/dev.jo/RCS/devTypes.h,v 1.1 89/07/15 11:01:23 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d59 9
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d2 1
+a2 1
+ * devTypesInt.h --
+d4 1
+a4 1
+ *	Declarations of device type numbers for SPUR machines.
+d15 1
+a15 1
+ * $Header: /sprite/src/kernel/dev.jo/sun3.md/RCS/devTypesInt.h,v 8.6 89/07/14 17:42:35 ouster Exp $ SPRITE (Berkeley)
+d18 2
+a19 2
+#ifndef _DEVTYPESINT
+#define _DEVTYPESINT
+d37 1
+a37 1
+ *	DEV_EVENT		Mouse and keystroke info for window systems
+d68 1
+a68 2
+#endif /* _DEVTYPESINT */
+
+@

@@ -1,0 +1,13 @@
+\chapentry {Using History Interactively}{1}{1}
+\secentry {History Interaction}{1}{1}{1}
+\subsecentry {Event Designators}{1}{1}{1}{1}
+\subsecentry {Word Designators}{1}{1}{2}{1}
+\subsecentry {Modifiers}{1}{1}{3}{2}
+\chapentry {Programming with GNU History}{2}{3}
+\secentry {Introduction to History}{2}{1}{3}
+\secentry {History Storage}{2}{2}{3}
+\secentry {History Functions}{2}{3}{4}
+\secentry {History Variables}{2}{4}{6}
+\secentry {History Programming Example}{2}{5}{7}
+\chapentry {Concept Index}{Appendix \char65}{9}
+\chapentry {Function and Variable Index}{Appendix \char66}{11}

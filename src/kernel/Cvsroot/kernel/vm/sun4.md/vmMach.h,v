@@ -1,0 +1,880 @@
+head     9.13;
+branch   ;
+access   ;
+symbols  ds3100:9.13 sun3:9.13 sun4nw:9.12 symm:9.12 spur:9.12 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.13
+date     92.07.28.14.58.43;  author mgbaker;  state Exp;
+branches ;
+next     9.12;
+
+9.12
+date     91.10.08.13.56.31;  author shirriff;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     91.07.26.17.05.47;  author shirriff;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     90.10.19.15.49.17;  author jhh;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     90.10.09.15.35.34;  author shirriff;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     90.09.12.13.36.05;  author mendel;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.09.11.10.45.54;  author shirriff;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.08.30.23.55.03;  author rab;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.07.30.11.41.37;  author shirriff;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.07.16.11.09.17;  author mendel;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     89.11.13.20.24.24;  author mgbaker;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.30.18.02.22;  author shirriff;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.09.18.17.33.32;  author shirriff;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.23.52;  author douglis;  state Stable;
+branches ;
+next     8.6;
+
+8.6
+date     89.09.08.16.22.56;  author shirriff;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.08.10.00.13.38;  author mgbaker;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.06.15.17.07.59;  author mgbaker;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.04.14.02.42.55;  author rab;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.03.15.20.46.06;  author mgbaker;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.12.12.19.04.39;  author nelson;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.44.03;  author douglis;  state Stable;
+branches ;
+next     6.3;
+
+6.3
+date     88.09.22.21.28.08;  author nelson;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.30.22.13.30;  author nelson;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.27.19.45.20;  author nelson;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.30.48;  author brent;  state Stable;
+branches ;
+next     1.7;
+
+1.7
+date     88.08.05.10.19.30;  author ouster;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.08.01.14.45.54;  author nelson;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.07.12.19.54.59;  author nelson;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.05.04.17.27.28;  author nelson;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.03.18.14.56.21;  author nelson;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     87.12.15.15.27.59;  author nelson;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     87.12.11.14.14.21;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Machine dependent header file.
+@
+
+
+9.13
+log
+@New routine for mapping in devices with more than 1 page of memory.
+@
+text
+@/*
+ * vmMach.h
+ *
+ *     	Machine dependent virtual memory data structures and procedure 
+ *	headers.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/vm/sun3.md/vmMach.h,v 9.12 91/10/08 13:56:31 shirriff Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _VMMACH
+#define _VMMACH
+
+#ifdef KERNEL
+#include "vm.h"
+#include "vmSunConst.h"
+#include "proc.h"
+#include "net.h"
+#else
+#include <kernel/vm.h>
+#include <kernel/vmSunConst.h>
+#include <kernel/proc.h>
+#include <kernel/net.h>
+#endif
+
+/*
+ * Since the index into the segment table is passed to various
+ * machine-dependent routines, its size must depend on the hardware size
+ * or else be the largest size used, which would waste space.  So far, this
+ * has only been generalized for the various types of sun4s.
+ */
+#ifdef sun4
+#ifdef sun4c
+typedef	unsigned short	VMMACH_SEG_NUM;	/* should be unsigned char, but fails */
+#else
+typedef	unsigned short	VMMACH_SEG_NUM;
+#endif	/* sun4c */
+#endif	/* sun4 */
+
+/*
+ * PMEG segment info list entry.
+ */
+#ifdef sun4
+struct VmMach_PMEGseg {
+    struct VmMach_PMEGseg      *nextLink;      /* Linked list ptr. */
+    struct Vm_Segment   *segPtr;        /* Software segment. */
+    int                 hardSegNum;     /* Hardware segment number. */
+    int                 inuse;
+};
+#endif
+
+/*
+ * Machine dependent data for each software segment.  The data for each 
+ * segment is a hardware segment table that contains one entry for each
+ * hardware segment in the software segment's virtual address space.
+ * A hardware context is made up of several software segments.  The offset
+ * field in this struct is the offset into the context where this software
+ * segment begins.  The offset is in terms of hardware segments.
+ */
+typedef struct VmMach_SegData {
+#ifdef sun4
+    VMMACH_SEG_NUM	*segTablePtr;
+#else
+    unsigned char 	*segTablePtr;
+#endif /* sun4 */
+    int			offset;
+    int			numSegs;
+#ifdef sun4
+    struct VmMach_PMEGseg	pmegInfo;
+#endif
+} VmMach_SegData;
+
+/*
+ * Machine dependent shared memory data
+ */
+typedef struct VmMach_SharedData {
+    int        *allocVector;           /* Allocated block vector. */
+    int         allocFirstFree;         /* First free block. */
+} VmMach_SharedData;
+
+/*
+ * Machine dependent data for each process.
+ */
+typedef struct VmMach_ProcData {
+    struct VmMach_Context *contextPtr;	/* The context for the process. */
+    struct Vm_Segment	*mapSegPtr;	/* Pointer to segment which is mapped
+					 * into this processes address
+					 * space. */
+    unsigned int	mapHardSeg;	/* Address in the mapped seg where 
+					 * the mapping begins. */
+    struct Vm_SegProcList *sharedPtr;	/* Shared memory data */
+    VmMach_SharedData   sharedData;     /* Data for shared memory. */
+} VmMach_ProcData;
+
+typedef unsigned int	VmMachPTE;
+
+/*
+ * Exported machine dependent functions.
+ */
+
+/*
+ * Manipulating protection.
+ */
+extern void VmMach_SetProtForDbg _ARGS_((Boolean readWrite, int numBytes,
+	Address addr));
+/*
+ * Routines to copy data to/from user space.
+ */
+extern int  VmMachCopyEnd _ARGS_((void));
+extern ReturnStatus VmMach_IntMapKernelIntoUser _ARGS_((unsigned int
+	kernelVirtAddr, int numBytes, unsigned int userVirtAddr,
+	Address *newAddrPtr));
+
+
+/*
+ * Routines for the INTEL device driver.
+ */
+extern void VmMach_MapIntelPage _ARGS_((Address virtAddr));
+extern void VmMach_UnmapIntelPage _ARGS_((Address virtAddr));
+
+/*
+ * Routines for DMA
+ */
+extern Address VmMach_32BitDMAAlloc _ARGS_((int numBytes, Address srcAddr));
+extern void VmMach_32BitDMAFree _ARGS_((int numBytes, Address mapAddr));
+extern ReturnStatus VmMach_DMAAllocContiguous _ARGS_((
+	Net_ScatterGather *inScatGathPtr, int scatGathLength,
+	Net_ScatterGather *outScatGathPtr));
+
+/*
+ * Device mapping.
+ */
+extern Address VmMach_MapInDevice _ARGS_((Address devPhysAddr, int type));
+extern Address VmMach_MapInBigDevice _ARGS_((Address devPhysAddr, int numBytes,
+	int type));
+/*
+ * Network mapping routines.
+ */
+extern Address VmMach_NetMemAlloc _ARGS_((int numBytes));
+extern void VmMach_NetMapPacket _ARGS_((register Net_ScatterGather
+	*inScatGathPtr, register int scatGathLength,
+	register Net_ScatterGather *outScatGathPtr));
+/*
+ * Context routines.
+ */
+extern int VmMach_GetContext _ARGS_((Proc_ControlBlock *procPtr));
+extern void VmMach_FlushCurrentContext _ARGS_((void));
+
+/*
+ * File Cache routines.
+ */
+extern void VmMach_LockCachePage _ARGS_((Address kernelAddress));
+extern void VmMach_UnlockCachePage _ARGS_((Address kernelAddress));
+
+#endif /* _VMMACH */
+@
+
+
+9.12
+log
+@Changed declaration of pmeg info to have it reside in the segment structure
+instead of being created on the fly.  This was necessary to prevent
+deadlock due to mallocs at bad times.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/sun3.md/RCS/vmMach.h,v 9.11 91/07/26 17:05:47 shirriff Exp $ SPRITE (Berkeley)
+d137 2
+@
+
+
+9.11
+log
+@*** empty log message ***
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/sun3.md/RCS/vmMach.h,v 9.10 90/10/19 15:49:17 jhh Exp $ SPRITE (Berkeley)
+d44 12
+d71 3
+@
+
+
+9.10
+log
+@added a function prototype
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/sun3.md/RCS/vmMach.h,v 9.8 90/09/12 13:36:05 mendel Exp Locker: shirriff $ SPRITE (Berkeley)
+d79 1
+@
+
+
+9.9
+log
+@Moved VmMach_FlushCurrentContext from vmMachInt.h
+@
+text
+@d113 3
+@
+
+
+9.8
+log
+@Added back cache routines.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/sun3.md/RCS/vmMach.h,v 9.7 90/09/11 10:45:54 shirriff Exp Locker: mendel $ SPRITE (Berkeley)
+d129 1
+@
+
+
+9.7
+log
+@Added function prototyping.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm.ken/sun4.md/RCS/vmMach.h,v 1.1 90/08/31 15:59:26 shirriff Exp $ SPRITE (Berkeley)
+d129 6
+@
+
+
+9.6
+log
+@Added forward declaration for VmMach_32BitDMAAlloc.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/sun3.md/RCS/vmMach.h,v 9.5 90/07/30 11:41:37 shirriff Exp Locker: rab $ SPRITE (Berkeley)
+d18 1
+d20 2
+d23 1
+d25 2
+d85 1
+a85 1
+ * Machine dependent functions.
+d87 1
+a87 16
+/*
+ * Initialization
+ */
+extern	void		VmMach_BootInit();
+extern	Address		VmMach_AllocKernSpace();
+extern	void		VmMach_Init();
+/*
+ * Segment creation, expansion, and destruction.
+ */
+extern	void		VmMach_SegInit();
+extern	void		VmMach_SegExpand();
+extern	void		VmMach_SegDelete();
+/*
+ * Process initialization.
+ */
+extern	void		VmMach_ProcInit();
+d91 2
+a92 3
+extern	void		VmMach_SetSegProt();
+extern	void		VmMach_SetPageProt();
+extern	void		VmMach_SetProtForDbg();
+d94 1
+a94 18
+ * Reference and modify bits.
+ */
+extern	void		VmMach_GetRefModBits();
+extern	void		VmMach_ClearRefBit();
+extern	void		VmMach_ClearModBit();		
+extern	void		VmMach_AllocCheck();		
+/*
+ * Page validation and invalidation.
+ */
+extern	void		VmMach_PageValidate();
+extern	void		VmMach_PageInvalidate();
+/*
+ * Routine to parse a virtual address.
+ */
+extern	Boolean		VmMach_VirtAddrParse();
+
+/*
+ * Routines to manage contexts.
+d96 6
+a101 3
+extern	ClientData	VmMach_SetupContext();
+extern	void		VmMach_FreeContext();
+extern	void		VmMach_ReinitContext();
+d103 1
+a103 1
+ * Routines to copy data to/from user space.
+d105 3
+a107 6
+extern	ReturnStatus	VmMach_CopyIn();
+extern	ReturnStatus	VmMach_CopyOut();
+extern	ReturnStatus	VmMach_CopyInProc();
+extern	ReturnStatus	VmMach_CopyOutProc();
+extern	ReturnStatus	VmMach_StringNCopy();
+extern	int		VmMachCopyEnd();
+d109 1
+a109 1
+ * Routines for the INTEL device driver.
+d111 3
+a113 2
+extern	void		VmMach_MapIntelPage();
+extern	void		VmMach_UnmapIntelPage();
+d117 1
+a117 27
+extern	Address		VmMach_MapInDevice();
+extern	void		VmMach_GetDevicePage();
+extern	ReturnStatus	VmMach_MapKernelIntoUser();
+extern	Address		VmMach_DMAAlloc();
+extern	void		VmMach_DMAFree();
+/*
+ * Tracing.
+ */
+extern	void		VmMach_Trace();
+/*
+ * Pinning and unpinning user memory pages.
+ */
+extern	void		VmMach_PinUserPages();
+extern	void		VmMach_UnpinUserPages();
+/*
+ * Cache flushing.
+ */
+extern	void		VmMach_FlushPage();
+extern	void		VmMach_FlushCode();
+/*
+ * Migration.
+ */
+extern	void		VmMach_HandleSegMigration();
+
+extern	ReturnStatus	VmMach_Cmd();
+
+#if defined(sun3) || defined(sun4)
+d119 1
+a119 1
+ * Network mapping routines for the Sun 3.
+d121 4
+a124 4
+extern	Address	VmMach_NetMemAlloc();
+extern	void	VmMach_NetMapPacket();
+#endif
+
+d126 1
+a126 1
+ * Shared memory.
+d128 1
+a128 15
+
+extern  ReturnStatus    VmMach_SharedStartAddr();
+extern  void            VmMach_SharedSegFinish();
+extern  void            VmMach_SharedProcStart();
+extern  void            VmMach_SharedProcFinish();
+
+/*
+ * File cache page lock/unlock routines.
+ */
+
+extern	void		VmMach_LockCachePage();
+extern	void		VmMach_UnlockCachePage();
+
+extern Address          VmMach_32BitDMAAlloc();
+extern void             VmMach_32BitDMAFree();
+@
+
+
+9.5
+log
+@Added declaration so modules don't need vmMachInt.h
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/sun3.md/RCS/vmMach.h,v 9.4 90/07/16 11:09:17 mendel Exp Locker: shirriff $ SPRITE (Berkeley)
+d193 2
+@
+
+
+9.4
+log
+@Added routines for locking down and unlocking cache blocks.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/sun3.md/RCS/vmMach.h,v 9.3 89/11/13 20:24:24 mgbaker Exp Locker: mendel $ SPRITE (Berkeley)
+d76 2
+d134 1
+@
+
+
+9.3
+log
+@Migration stub.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/sun3.md/RCS/vmMach.h,v 9.2 89/10/30 18:02:22 shirriff Exp Locker: mgbaker $ SPRITE (Berkeley)
+d182 7
+@
+
+
+9.2
+log
+@Lint change.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/sun3.md/RCS/vmMach.h,v 9.1 89/09/18 17:33:32 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+d159 4
+@
+
+
+9.1
+log
+@Made changes to allocate shared memory above the stack.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/sun3.md/RCS/vmMach.h,v 9.0 89/09/12 15:23:52 douglis Stable Locker: shirriff $ SPRITE (Berkeley)
+d107 1
+d158 1
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/sun3.md/RCS/vmMach.h,v 8.6 89/09/08 16:22:56 shirriff Exp Locker: douglis $ SPRITE (Berkeley)
+d56 8
+d73 1
+d171 6
+a176 1
+extern  Address         VmMach_SharedStart();
+@
+
+
+8.6
+log
+@Added VmMach_SharedStart declaration.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/sun3.md/RCS/vmMach.h,v 8.5 89/08/10 00:13:38 mgbaker Exp Locker: shirriff $ SPRITE (Berkeley)
+@
+
+
+8.5
+log
+@Stable for both sun4 and sun4c.  The only problem is the typedef of
+VMMACH_SEG_NUM for the sun4c.  I should be able to set it to unsigned char
+for the sun4c, but this doesn't seem to work right now.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/sun2.md/RCS/vmMach.h,v 8.4 89/06/15 17:07:59 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d158 5
+@
+
+
+8.4
+log
+@Moved machine-independent VmMach_DevBuffer out-a-here
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/sun2.md/RCS/vmMach.h,v 8.3 89/04/14 02:42:55 rab Exp Locker: mgbaker $ SPRITE (Berkeley)
+d24 14
+d47 1
+a47 1
+    unsigned short	*segTablePtr;
+@
+
+
+8.3
+log
+@*** empty log message ***
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/sun2.md/RCS/vmMach.h,v 8.2 89/03/15 20:46:06 mgbaker Exp Locker: rab $ SPRITE (Berkeley)
+a53 9
+ * Device buffer structure.
+ */
+typedef struct {
+    Address	baseAddr;	/* Base virtual address to start 
+				   allocating at. */
+    Address	endAddr;	/* Last possible virtual address plus one. */
+} VmMach_DevBuffer;
+
+/*
+a116 3
+extern	void		VmMach_DevBufferInit();
+extern	Address		VmMach_DevBufferAlloc();
+extern	Address		VmMach_DevBufferMap();
+d119 2
+d137 1
+a137 1
+#ifdef sun3
+@
+
+
+8.2
+log
+@Sun4 changes.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/sun2.md/RCS/vmMach.h,v 8.1 88/12/12 19:04:39 nelson Exp Locker: mgbaker $ SPRITE (Berkeley)
+d155 1
+a155 1
+#endif _VMMACH
+@
+
+
+8.1
+log
+@Added headers for network mapping code.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/sun2.md/RCS/vmMach.h,v 8.0 88/11/11 18:44:03 douglis Stable Locker: nelson $ SPRITE (Berkeley)
+d32 3
+d36 1
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/sun2.md/RCS/vmMach.h,v 6.3 88/09/22 21:28:08 nelson Exp Locker: douglis $ SPRITE (Berkeley)
+d142 8
+@
+
+
+6.3
+log
+@Added proc header.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmMach.h,v 6.2 88/08/30 22:13:30 nelson Exp $ SPRITE (Berkeley)
+@
+
+
+6.2
+log
+@Added stuff to make pinning of user pages more reasonable and hopefully
+faster.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmMach.h,v 6.1 88/08/27 19:45:20 nelson Exp $ SPRITE (Berkeley)
+d140 2
+@
+
+
+6.1
+log
+@Fixed lint errors.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmMach.h,v 6.0 88/08/11 12:30:48 brent Stable $ SPRITE (Berkeley)
+d134 2
+a135 2
+extern	void		VmMach_PinUserPage();
+extern	void		VmMach_UnpinUserPage();
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmMach.h,v 1.7 88/08/05 10:19:30 ouster Exp $ SPRITE (Berkeley)
+d82 1
+d136 4
+@
+
+
+1.7
+log
+@Change includes to allow use by new user-level programs.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmMach.h,v 1.6 88/08/01 14:45:54 nelson Exp $ SPRITE (Berkeley)
+@
+
+
+1.6
+log
+@Added headers for machine dependent pinning of user pages.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmMach.h,v 1.5 88/07/12 19:54:59 nelson Exp $ SPRITE (Berkeley)
+d17 1
+d19 3
+@
+
+
+1.5
+log
+@Lint errors and more tracing.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmMach.h,v 1.4 88/05/04 17:27:28 nelson Exp $ SPRITE (Berkeley)
+d126 5
+@
+
+
+1.4
+log
+@Changed VmMach_ContextSwitch VmMach_SetupContext.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmMach.h,v 1.3 88/03/18 14:56:21 nelson Exp $ SPRITE (Berkeley)
+d122 4
+@
+
+
+1.3
+log
+@Changed from context value to pointer to context entry.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmMach.h,v 1.2 87/12/15 15:27:59 nelson Exp $ SPRITE (Berkeley)
+d97 1
+a97 1
+extern	void		VmMach_SetupContext();
+@
+
+
+1.2
+log
+@Fixed procedure header.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmMach.h,v 1.1 87/12/11 14:14:21 nelson Exp $ SPRITE (Berkeley)
+d37 1
+a37 1
+    int			context;	/* The context for the process. */
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+ * $Header: vmSunInt.h,v 5.3 87/11/18 21:50:59 nelson Exp $ SPRITE (Berkeley)
+d112 1
+a112 1
+extern	void		VmMach_MapUnmapItelPage();
+@

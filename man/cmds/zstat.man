@@ -1,0 +1,53 @@
+.\"	$Source: /mit/zephyr/src/man/man8/RCS/zstat.8,v $
+.\"	$Author: jtkohl $
+.\"	$Header: zstat.8,v 1.4 88/08/02 10:44:12 jtkohl Exp $
+.\"
+.\" Copyright 1987,1988 by the Massachusetts Institute of Technology
+.\" All rights reserved.  The file /usr/include/zephyr/mit-copyright.h
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"
+.TH ZSTAT 8 "July 1, 1988" "MIT Project Athena"
+.ds ]W MIT Project Athena
+.SH NAME
+zstat \- display Zephyr statistics
+.SH SYNOPSIS
+.B zstat
+[
+.BI -h
+] [
+.BI -s
+] [
+.BI host \ ...
+]
+.SH DESCRIPTION
+.I Zstat
+is used to display statistics reported by a HostManager,
+.I zhm(8),
+or a Zephyr Server
+.I zephyrd(8),
+or both.
+.TP 12
+.B \-h
+is used to indicate that only HostManager statistics should be displayed.
+.TP
+.B \-s
+is used to indicate that only server statistics should be displayed.
+.TP
+If no hosts are specified, the current host is assumed.
+When both HostManager and server statistics are displayed,
+statistics from the current server for each host are displayed.
+.SH SEE ALSO
+zephyr(1), zhm(8), zephyrd(8)
+.br
+Project Athena Technical Plan Section E.4.1, `Zephyr Notification
+Service'
+.SH AUTHOR
+.PP
+David C. Jedlinsky (MIT-Project Athena)
+.SH RESTRICTIONS
+Copyright (c) 1987,1988 by the Massachusetts Institute of Technology.
+All Rights Reserved.
+.br
+.I zephyr(1)
+specifies the terms and conditions for redistribution.

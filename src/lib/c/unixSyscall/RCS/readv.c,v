@@ -1,0 +1,133 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  sprited:1.2.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     90.08.15.15.25.11;  author kupfer;  state Exp;
+branches 1.2.1.1;
+next     1.1;
+
+1.1
+date     88.06.19.14.31.53;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.2.1.1
+date     91.12.10.16.04.31;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Partial success is okay.  Don't return an error code unless we couldn't
+read any bytes at all.
+@
+text
+@/* 
+ * readv.c --
+ *
+ *	Procedure to map from Unix readv system call to Sprite.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/unixSyscall/RCS/readv.c,v 1.1 88/06/19 14:31:53 ouster Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+#include "fs.h"
+#include "sys.h"
+#include "compatInt.h"
+#include <sys/types.h>
+#include <sys/uio.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * readv --
+ *
+ *	Procedure to map from Unix readv system call to Sprite Fs_Read.
+ *
+ * Results:
+ *	UNIX_ERROR is returned upon error, with the actual error code
+ *	stored in errno.  Upon success, the number of bytes actually
+ *	read is returned.
+ *
+ * Side effects:
+ *	The buffers are filled with the number of bytes indicated by
+ *	the returned value.  (Each buffer has no more bytes than was 
+ *	specified by that buffer's length parameter.)
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+readv(stream, iov, iovcnt)
+    int stream;			/* descriptor for stream to read. */
+    register struct iovec *iov;	/* pointer to array of iovecs. */
+    int iovcnt;			/* number of  iovecs in iov. */
+{
+    ReturnStatus status;	/* result returned by Fs_Read */
+    int amountRead;		/* place to hold number of bytes read */
+    int totalRead = 0;	/* place to hold total # of bytes written */
+    int i;
+
+    for (i=0; i < iovcnt; i++, iov++) {
+	status = Fs_Read(stream, iov->iov_len, iov->iov_base, 
+							&amountRead);
+	if (status != SUCCESS) {
+	    break;
+	} else {
+	    totalRead += amountRead;
+	}
+    }
+
+    if (status != SUCCESS && totalRead == 0) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(totalRead);
+    }
+}
+@
+
+
+1.2.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/unixSyscall/RCS/readv.c,v 1.2 90/08/15 15:25:11 kupfer Exp $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: readv.c,v 1.1 87/06/18 18:41:14 andrew Exp $ SPRITE (Berkeley)";
+d35 3
+a37 2
+ *	The buffer is filled with the number of bytes indicated by
+ *	the length parameter.  
+d63 1
+a63 1
+    if (status != SUCCESS) {
+@

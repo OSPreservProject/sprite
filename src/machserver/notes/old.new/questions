@@ -1,0 +1,20 @@
+How does the BSD server implement sync (how does it find all the dirty
+pages)?
+
+Would LFS have problems in its buffer management if VM owns the pages?
+
+What's the best (most efficient) way to copy the heap and stack
+segments for a fork()?  There isn't any way to do COW on
+externally-managed memory objects, right?
+
+What does DLB (and other OSF folks) run?  OSF/1?  Mach 3.0 (using what
+server)?
+
+Should the Sprite server try to keep detailed records about what
+portions of the client's address space are mapped by what Sprite
+objects?  (My inclination is to say "no", because there's no guarantee
+you'll have the right information.  However, this complicates
+VmAddrParse.)
+
+Any thoughts on how to handle address exceptions in server (e.g.,
+short read from FS)?

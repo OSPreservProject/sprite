@@ -1,0 +1,828 @@
+Bit
+Bit_Set, Bit_Clear, Bit_IsSet, Bit_IsClear, Bit_Copy, Bit_Zero, Bit_FindFirstSet, Bit_FindFirstClear, Bit_Intersect, Bit_Union, Bit_AnySet, Bit_Expand, Bit_Alloc, Bit_Free, 
+bit operations
+bit, set, clear, copy, zero, 
+Fmt
+Fmt_Convert, 
+Package for converting data from one byte-order/alignment
+byte-order, byte-swap, alignment, data conversion, 
+Fs_Dispatch
+Fs_Dispatch, Fs_EventHandlerCreate, Fs_EventHandlerDestroy, Fs_EventHandlerData, Fs_EventHandlerChangeData, Fs_TimeoutHandlerCreate, Fs_TimeoutHandlerDestroy, 
+stream event and timeout dispatcher routines.
+callback, client data, dispatcher, stream ID, time, 
+Gate
+Gate_ByDesc, Gate_ByInetAddr, Gate_ByNetAddr, Gate_End, Gate_Next, Gate_SetFile, Gate_Start, 
+return information about network gateways.
+internet, local net, gateway, 
+Hash
+Hash, 
+overview of routines to manipulate hash tables
+hash table, key, value, 
+Hash_CreateEntry
+Hash_CreateEntry, Hash_FindEntry, 
+keyed search in hash table 
+hash table, key, search, 
+Hash_DeleteEntry
+Hash_DeleteEntry, 
+remove an existing entry from a hash table 
+delete, hash table, 
+Hash_DeleteTable
+Hash_DeleteTable, 
+release storage in hash table
+delete, hash table, 
+Hash_EnumFirst
+Hash_EnumFirst, Hash_EnumNext, 
+step through all the entries in a hash table 
+enumerate, hash table, 
+Hash_GetValue
+Hash_GetValue, Hash_SetValue, 
+read or write value associated with key 
+entry, hash table, value, 
+Hash_InitTable
+Hash_InitTable, 
+set up new hash table
+hash table, initialization, key, 
+Hash_PrintStats
+Hash_PrintStats, 
+print statistics about a hash table 
+hash table, print, statistics, 
+Host
+Host_ByName, Host_ByID, Host_ByNetAddr, Host_ByInetAddr, Host_SetFile, Host_Start, Host_Next, Host_End, 
+return information about Sprite machines
+hostname, internet address, local net, machine type, sprite ID, 
+List
+List, 
+overview of circular linked list routines.
+list, linked, circular, List_Links, data structures, 
+Mig
+Mig, 
+obtain or update information in the migration information database.
+migration, load average, idle time, pseudo-device, eviction, 
+Misc_InvokeEditor
+Misc_InvokeEditor, 
+Invoke an editor for a user
+edit, file, 
+Opt
+Opt_Parse, Opt_PrintUsage, 
+Manage command line options
+arguments, command line, options, 
+Pdev
+Pdev_Open, Pdev_Close, Pdev_SetDefaultHandler, Pdev_SetStreamHandler, Pdev_EnumStreams, 
+Package for servicing pseudo-devices.
+pseudo-device, 
+Pfs
+Pfs_Open, Pfs_OpenConnection, Pfs_SetHandler, Pfs_PassFile, Pfs_Close, 
+Package for servicing pseudo-file-systems.
+pseudo-file-system, 
+Pfs_OpenConnection
+Pfs_OpenConnection, 
+Create a pseudo-device connection to a pseudo-file-system
+pseudo-device, pseudo-file-system, call-back, 
+Quad_Arith
+Quad_AddUns, Quad_AddUnsLong, 
+Arithmetic operations on 64-bit integers
+quad, arithmetic, counter, 
+Quad_Compare
+Quad_CompareUns, Quad_EQ, 
+Comparison routines for 64-bit integers
+quad, counter, 
+Quad_Misc
+Quad_PutUns, Quad_UnsToDouble, 
+Formatting and conversion for 64-bit integers
+quad, I/O, conversion, 
+Rpc_GetName
+Rpc_GetName, 
+Get the name of an RPC.
+rpc, 
+Stat
+Stat_GetMsg, Stat_PrintMsg, 
+Text description of Sprite status codes
+status, 
+Swap
+Swap_Buffer, 
+Do byte-swapping and alignment of data buffers
+byte-order, byte-swap, padding, alignment, 
+Sync
+Sync, 
+Synchronization overview
+synchronization, wait, block, process, event, wakeup, broadcast, 
+Sync_Broadcast
+Sync_Broadcast, 
+awaken all processes waiting on a condition
+synchronization, wait, block, process, monitor, condition variable, wakeup, broadcast, 
+Sync_Wait
+Sync_Wait, 
+wait on a monitor condition variable
+synchronization, wait, block, signal, process, event, 
+Sync_WaitTime
+Sync_WaitTime, 
+sleep for a specified amount of time
+wait, block, process, wakeup, 
+Td
+Td_Create, Td_Delete, Td_PutRaw, Td_GetRaw, Td_ControlRaw, Td_Open, Td_Close, Td_PutCooked, Td_GetCooked, Td_ControlCooked, Td_CreatePdev, Td_DeletePdev, 
+Terminal driver implementing 4.3 BSD operations.
+4.3 BSD, pseudo-device, terminal driver, 
+Time_Add
+Time_Add, Time_Subtract, Time_Multiply, Time_Divide, 
+time arithmetic operations
+time, 
+Time_GetTime
+Time_GetTime, 
+Get the current time of day.
+time, 
+Time_ToAscii
+Time_ToAscii, Time_FromAscii, Time_ToParts, Time_FromParts, 
+time conversion routines
+ascii, time, 
+Ulog
+Ulog, 
+obtain or update information in the database of user logins and logouts.
+user log, user ID, sprite ID, 
+_exit
+_exit, 
+terminate a process
+
+abort
+abort, 
+generate a fault
+
+abs
+abs, labs, 
+integer absolute value
+
+accept
+accept, 
+accept a connection on a socket
+
+access
+access, 
+determine accessibility of file
+
+alarm
+alarm, 
+schedule signal after specified time
+
+atexit
+atexit, 
+Register procedure to be invoked before process exits
+exit, handler, register, 
+atof
+atof, atoi, atol, 
+convert ASCII to numbers
+
+bind
+bind, 
+bind a name to a socket
+
+brk
+brk, sbrk, 
+change data segment size
+
+bsearch
+bsearch, 
+Binary search
+search, 
+bstring
+bcopy, bcmp, bzero, ffs, 
+bit and byte string operations
+
+byteorder
+htonl, htons, ntohl, ntohs, 
+convert values between host and network byte order
+
+chdir
+chdir, 
+change current working directory
+
+chmod
+chmod, fchmod, 
+change mode of file
+
+chown
+chown, fchown, 
+change owner and group of a file
+
+close
+close, 
+delete a descriptor
+
+connect
+connect, 
+initiate a connection on a socket
+
+creat
+creat, 
+create a new file
+
+crypt
+crypt, setkey, encrypt, 
+DES encryption
+
+ctime
+ctime, localtime, mktime, gmtime, asctime, timezone, tzset, 
+convert date and time to ASCII
+
+ctype
+isalpha, isupper, islower, isdigit, isxdigit, isalnum, isspace, ispunct, isprint, isgraph, iscntrl, isascii, toupper, tolower, toascii, 
+character classification macros
+
+curses
+curses, 
+screen functions with ``optimal'' cursor motion
+
+db
+Db, 
+manipulate simple database files
+database, data base, lock, record, handle, 
+dbm
+dbminit, fetch, store, delete, firstkey, nextkey, 
+data base subroutines
+
+directory
+opendir, readdir, telldir, seekdir, rewinddir, closedir, dirfd, 
+directory operations
+
+div
+div, ldiv, 
+Return quotient and remainder from division
+divide, quotient, remainder, 
+dup
+dup, dup2, 
+duplicate a descriptor
+
+ecvt
+ecvt, fcvt, gcvt, 
+output conversion
+
+end
+end, etext, edata, 
+last locations in program
+
+execl
+execl, execv, execle, execlp, execvp, exec, execve, exect, environ, 
+execute a file
+
+execve
+execve, 
+execute a file
+
+exit
+exit, 
+terminate a process after flushing any pending output
+
+fclose
+fclose, fflush, 
+close or flush a stream
+
+fcntl
+fcntl, 
+file control
+
+ferror
+ferror, feof, clearerr, fileno, 
+stream status inquiries
+
+flock
+flock, 
+apply or remove an advisory lock on an open file
+
+fopen
+fopen, freopen, fdopen, 
+open a stream
+
+fork
+fork, 
+create a new process
+
+fread
+fread, fwrite, 
+buffered binary input/output
+
+fseek
+fseek, ftell, rewind, 
+reposition a stream
+
+fsync
+fsync, 
+synchronize a file's in-core state with that on disk
+
+ftime
+time, ftime, 
+get date and time
+
+ftruncate
+truncate, ftruncate, 
+set a file to a specified length
+
+getc
+getc, getchar, fgetc, getw, 
+get character or word from stream
+
+getdtablesize
+getdtablesize, 
+get descriptor table size
+
+getenv
+getenv, setenv, unsetenv, 
+manipulate environmental variables
+
+getgid
+getgid, getegid, 
+get group identity
+
+getgrent
+getgrent, getgrgid, getgrnam, setgrent, endgrent, 
+get group file entry
+
+getgroups
+getgroups, 
+get group access list
+
+gethostbyname
+gethostbyname, gethostbyaddr, gethostent, sethostent, endhostent, herror, 
+get network host entry
+
+gethostid
+gethostid, 
+get sprite identifier of current host
+
+gethostname
+gethostname, sethostname, 
+get/set name of current host
+
+getitimer
+getitimer, setitimer, 
+get/set value of interval timer
+
+getlogin
+getlogin, 
+get login name
+
+getnetent
+getnetent, getnetbyaddr, getnetbyname, setnetent, endnetent, 
+get network entry
+
+getopt
+getopt, 
+get option letter from argv
+
+getpagesize
+getpagesize, 
+get system page size
+
+getpass
+getpass, 
+read a password
+
+getpeername
+getpeername, 
+get name of connected peer
+
+getpgrp
+getpgrp, 
+get process group
+
+getpid
+getpid, getppid, 
+get process identification
+
+getpriority
+getpriority, setpriority, 
+get/set program scheduling priority
+
+getprotoent
+getprotoent, getprotobynumber, getprotobyname, setprotoent, endprotoent, 
+get protocol entry
+
+getpwent
+getpwent, getpwnam, getpwuid, setpassent, setpwfile, setpwent, endpwent, 
+get password file entries
+
+getrlimit
+getrlimit, setrlimit, 
+control maximum system resource consumption
+
+getrusage
+getrusage, 
+get information about resource utilization
+
+gets
+gets, fgets, 
+get a string from a stream
+
+getservent
+getservent, getservbyport, getservbyname, setservent, endservent, 
+get service entry
+
+getsockname
+getsockname, 
+get socket name
+
+getsockopt
+getsockopt, setsockopt, 
+get and set options on sockets
+
+gettimeofday
+gettimeofday, settimeofday, 
+get/set date and time
+
+getuid
+getuid, geteuid, 
+get user identity
+
+getusershell
+getusershell, setusershell, endusershell, 
+get legal user shells
+
+getwd
+getwd, 
+get current working directory pathname
+
+inet
+inet_addr, inet_network, inet_ntoa, inet_makeaddr, inet_lnaof, inet_netof, 
+Internet address manipulation routines
+
+initgroups
+initgroups, 
+initialize group access list
+
+insque
+insque, remque, 
+insert/remove element from a queue
+
+ioctl
+ioctl, 
+control device
+
+isinf
+isnan, isinf, 
+Determine whether double-precision floating point
+not a number, infinity, IEEE, double, 
+iszero
+iszero, isnormal, issubnormal, signbit, 
+Determine properties of IEE
+not a number, infinity, IEEE, double, 
+kill
+kill, 
+send signal to a process
+
+killpg
+killpg, 
+send signal to a process group
+
+link
+link, 
+make a hard link to a file
+
+listen
+listen, 
+listen for connections on a socket
+
+lseek
+lseek, 
+move read/write pointer
+
+malloc
+malloc, free, realloc, calloc, alloca, 
+memory allocator
+
+mem
+memchr, memcmp, memcpy, memset, 
+Operations on byte arrays
+characters, copy, memory, set, test, 
+mincore
+mincore, 
+check if pages are in memory
+
+mkdir
+mkdir, 
+make a directory file
+
+mknod
+mknod, 
+make a special file
+
+mktemp
+mktemp, mkstemp, 
+make a unique file name
+
+mlock
+mlock, munlock, 
+lock and unlock pages in memory.
+
+mmap
+mmap, 
+map an open file into the process's address space
+
+mprotect
+mprotect, 
+set protection of memory mapping
+
+msync
+msync, 
+sync pages to disk.
+
+munmap
+munmap, 
+unmap part of the process's address space
+
+ndbm
+dbm_open, dbm_close, dbm_fetch, dbm_store, dbm_delete, dbm_firstkey, dbm_nextkey, dbm_error, dbm_clearerr, 
+data base subroutines
+
+nlist
+nlist, 
+get entries from name list
+
+open
+open, 
+open a file for reading or writing, or create a new file
+
+panic
+panic, 
+Print error message and kill process
+abort, error, message, panic, 
+pause
+pause, 
+stop until signal
+
+perror
+perror, sys_errlist, sys_nerr, 
+system error messages
+
+pipe
+pipe, 
+create an interprocess communication channel
+
+popen
+popen, pclose, 
+initiate I/O to/from a process
+
+printf
+printf, fprintf, sprintf, vprintf, vfprintf, vsprintf, vsnprintf, 
+formatted output conversion
+
+profil
+profil, 
+execution time profile
+
+putc
+putc, putchar, fputc, putw, 
+put character or word on a stream
+
+puts
+puts, fputs, 
+put a string on a stream
+
+qsort
+qsort, 
+quicker sort
+
+rand
+rand, srand, 
+random number generator
+
+random
+random, srandom, initstate, setstate, 
+better random number generator; routines for changing generators
+
+rcmd
+rcmd, rresvport, ruserok, 
+routines for returning a stream to a remote command
+
+read
+read, readv, 
+read input
+
+readlink
+readlink, 
+read value of a symbolic link
+
+recv
+recv, recvfrom, recvmsg, 
+receive a message from a socket
+
+regex
+re_comp, re_exec, 
+regular expression handler
+
+rename
+rename, 
+change the name of a file
+
+resolver
+res_mkquery, res_send, res_init, dn_comp, dn_expand, 
+resolver routines
+
+rexec
+rexec, 
+return stream to a remote command
+
+rmdir
+rmdir, 
+remove a directory file
+
+scandir
+scandir, alphasort, 
+scan a directory
+
+scanf
+scanf, fscanf, sscanf, vfscanf, 
+formatted input conversion
+
+select
+select, 
+synchronous I/O multiplexing
+
+semctl
+semctl, 
+semaphore control operations
+
+semget
+semget, 
+get set of semaphores
+
+semop
+semop, 
+semaphore operations
+
+send
+send, sendto, sendmsg, 
+send a message from a socket
+
+setbuf
+setbuf, setbuffer, setlinebuf, setvbuf, 
+assign buffering to a stream
+
+setfiletype
+setfiletype, 
+change advisory file type of file
+
+setgroups
+setgroups, 
+set group access list
+
+setjmp
+setjmp, longjmp, 
+non-local goto
+
+setpgrp
+setpgrp, 
+set process group
+
+setregid
+setregid, 
+set real and effective group ID
+
+setreuid
+setreuid, 
+set real and effective user ID's
+
+shmctl
+shmctl, 
+shared memory control operations
+
+shmget
+shmget, 
+get shared memory segment
+
+shmop
+shmop, shmat, shmdt, 
+shared memory operations
+
+shutdown
+shutdown, 
+shut down part of a full-duplex connection
+
+sigblock
+sigblock, 
+block signals
+
+signal
+signal, 
+simplified software signal facilities
+
+sigpause
+sigpause, 
+atomically release blocked signals and wait for interrupt
+
+sigsetmask
+sigsetmask, 
+set current signal mask
+
+sigvec
+sigvec, 
+software signal facilities
+
+sleep
+sleep, 
+suspend execution for interval
+
+socket
+socket, 
+create an endpoint for communication
+
+stat
+stat, lstat, fstat, 
+get file status
+
+string
+strcat, strncat, strcmp, strncmp, strcasecmp, strncasecmp, strcpy, strncpy, strdup, strlen, strchr, index, strrchr, rindex, strstr, strspn, strcspn, strpbrk, 
+string operations
+compare, copy, string, 
+stringArray
+String_SaveArray, String_FreeArray, 
+copy and destroy null-terminated string array
+string, copy, 
+strtod
+strtod, 
+Convert character string to floating-point number
+convert, floating-point, string, 
+strtok
+strtok, strsep, 
+string token operations
+
+strtol
+strtol, strtoul, 
+Convert character string to integer
+base, convert, integer, radix, string, 
+stty
+stty, gtty, 
+set and get terminal state (defunct)
+
+symlink
+symlink, 
+make symbolic link to a file
+
+syslog
+syslog, openlog, closelog, setlogmask, 
+control system log
+
+system
+system, 
+issue a shell command
+
+termlib
+tgetent, tgetnum, tgetflag, tgetstr, tgoto, tputs, 
+terminal independent operation routines
+
+time
+time, ftime, 
+get date and time
+
+times
+times, 
+get process times
+
+tmpfile
+tmpfile, 
+Create a temporary file
+file, open, temporary, 
+tmpnam
+tmpnam, tempnam, 
+Generate unique names for temporary files
+file name, temporary, unique, 
+truncate
+truncate, 
+truncate a file to a specified length
+
+ttyname
+ttyname, isatty, ttyslot, 
+find name of a terminal
+
+umask
+umask, 
+set file creation mode mask
+
+ungetc
+ungetc, 
+push character back into input stream
+
+unlink
+unlink, 
+remove directory entry
+
+utimes
+utimes, 
+set file times
+
+valloc
+valloc, 
+page-aligned memory allocator
+memory, alloc, 
+varargs
+varargs, 
+handle variable argument list
+
+vfork
+vfork, 
+spawn new process in a virtual memory efficient way
+
+wait
+wait, wait3, 
+wait for process to terminate
+
+write
+write, writev, 
+write output
+

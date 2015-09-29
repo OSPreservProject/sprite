@@ -1,0 +1,101 @@
+sun4.md/bench /bin/pmake TM=sun3 
+28.060u 9.920s 53.170
+Idle ticks 115055/535367 =  21.49% Idle, Context Sw. 3713 inv 969 full 2786, Elapsed time 53.170
+Cache blocks max 20000 min 32 number 2614/3404 free 0/0 limit 29830
+Bytes read 6881738+1618944 remote 0 disk 2769213+110592
+Bytes written 2475379+30208 remote 56 disk 187837+630784
+Dev bytes read 1248 written 4960
+Zero Fills read 149 write1 0 write2 41 frag 0
+Appends 0 Overwrites 0 Failed Reads 0
+Cache reads 6492 hits: dirty 958 clean 2703 other 1958
+Cache writes 719 hits 404 misses 0 thru 200
+Write thru 200 data 45 indirect 1 desc 145 dir 9
+File descriptor reads 186 hits 178 writes 364 hits 364
+Indirect block reads 524 hits 505 writes 56
+Directory block reads 1331 hits 1263 writes 59
+Cache blocks created 395, alloc from free 81 part 537 lru 0
+Disk blocks alloc 192 free 247 search 1004/2993 hash 29
+Fragments alloc 28 free 28 upgrade 4 blocks made 0 used 0, bad hints 0
+Name cache entries 512 accesses 6110 hits 4919 replaced 0
+Handles 4790 created 709 installed 1658 hits 949 old 0 version 0 flush 0
+	fetched 2817 hits 2103 released 10215 locks 0/0 wait 2
+Segments fetched 47 hits 41
+Lookup relative 708 absolute 1107 redirect 288 found 0 loops 0 timeouts 0 stale 0
+Disk (SCSI3#0 Target 0 LUN 0, 0) 99% Idle Reads 6 Writes 22
+Disk (SCSI3#1#1 Target 0 LUN 0, 0) 100% Idle Reads 0 Writes 0
+Disk (SCSI3#1#1 Target 4 LUN 0, 0) 82% Idle Reads 534 Writes 124
+Disk (SCSI3#0 Target 1 LUN 0, 0) 99% Idle Reads 3 Writes 16
+Disk (SCSI3#0 Target 2 LUN 0, 0) 99% Idle Reads 7 Writes 31
+Disk (SCSI3#1#1 Target 0 LUN 1, 0) 99% Idle Reads 1 Writes 14
+Disk (SCSI3#3#3 Target 0 LUN 0, 0) 96% Idle Reads 72 Writes 39
+Disk (SCSI3#3#3 Target 1 LUN 0, 0) 92% Idle Reads 183 Writes 95
+Disk (SCSI3#1#1 Target 2 LUN 0, 0) 99% Idle Reads 0 Writes 24
+Kernel VM Pages: 134 (Code+Data=0 Stacks=134)
+User VM Pages:   13376 (Free=12677 Dirty=0 Res=3 Alloc-list=696)
+Modified pages: Total=219 %Tot-dirty=1.64 %Inuse-dirty=31.47
+FS Pages: Current=1702 Max=1702 Min=1307
+Faults:     1470 (Zero=1093 FS=251 Swap=0 Quick=126 Coll=0)
+            1470 (Code=146 Heap=1175 Stack=149)
+Mod page stats:  Pot-mod=0 Not-mod=0 Not-hard-mod=0
+COW: Heap (0/0)=0% Stk (0/0)=0% Tot (0/0)=0%
+     Quick (0/0)=0%
+COR: Heap (0/0)=0% Stk (0/0)=0% Tot (0/0)=0%
+COR-mod: Heap(0/0)=0% Stk (0/0)=0% Tot (0/0)=0%
+Swap pages copied: 0
+Vm allocs: 1752 (Free=1752 From-FS=0 From-alloc-list=0)
+VM-FS stats: Asked=395 Free-pages=395 Allocs=395 Frees=0
+Alloc-list searches: 415 (Free=415 In-use=0)
+Extra-searches: 0 (Lock=0 Ref=0 Dirty=0)
+Pages written 0
+Contexts stolen 0 pmegs stolen 0
+Network stats: Bytes received 129580 bytes sent 748121
+U  0.000 S  0.020 Rpc_Server
+U  0.000 S  0.260 Proc_ServerProc
+U  0.000 S  0.040 Proc_ServerProc
+U  0.000 S  0.040 Proc_ServerProc
+U  0.000 S  0.020 Proc_ServerProc
+U  0.000 S  0.040 Proc_ServerProc
+U  0.000 S  0.040 Rpc_Server
+U  0.000 S  0.020 Rpc_Server
+U  0.000 S  0.020 Rpc_Server
+U  0.000 S  0.040 /sprite/daemons/ipServer 
+U  0.000 S  0.020 Rpc_Server
+U  0.000 S  0.020 Rpc_Server
+U  0.000 S  0.020 Rpc_Server
+U  0.000 S  0.140 Rpc_Server
+U  0.000 S  0.100 Rpc_Server
+U  0.000 S  0.120 Rpc_Server
+U  0.000 S  0.020 Rpc_Server
+U  0.000 S  0.100 Rpc_Server
+U  0.000 S  0.020 Rpc_Server
+U  0.000 S  0.020 Rpc_Server
+U  0.000 S  0.180 Rpc_Server
+U  0.000 S  0.140 Rpc_Server
+U  0.000 S  0.020 Rpc_Server
+U  0.000 S  0.020 Rpc_Server
+U 28.060 S  9.1160 sun4.md/bench -R 5 -c /bin/pmake TM=sun3 
+Total User     28.060000 Total Kernel     11.640000
+Interval measurements of idle ticks:
+0 253163
+1 214694
+2 176585
+3 97512
+4 33957
+5 73789
+6 0
+7 73793
+8 54457
+9 119479
+10 552960
+Interval measurements of network traffic (in, out):
+0 42052 451231
+1 14123 54894
+2 18044 72375
+3 3329 3202
+4 2876 3079
+5 4721 4660
+6 2797 2951
+7 4354 4748
+8 30442 143945
+9 1331 1420
+10 5031 5126

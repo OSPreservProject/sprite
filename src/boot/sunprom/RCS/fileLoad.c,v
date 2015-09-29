@@ -1,0 +1,470 @@
+head     1.10;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.10
+date     90.11.27.11.17.25;  author jhh;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     90.07.17.15.41.58;  author mendel;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     90.07.16.16.20.36;  author mendel;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     89.01.06.08.14.27;  author brent;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     87.05.27.14.32.39;  author brent;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     87.05.11.11.14.56;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     86.07.24.11.46.42;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     86.07.21.09.33.43;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     86.07.18.10.38.01;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.07.17.13.19.16;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Routine to load a program into main memory
+@
+
+
+1.10
+log
+@got it to compile, moved location for sun3 kernel
+@
+text
+@/* 
+ * fileLoad.c --
+ *
+ *	The routine to load a program into main memory.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifdef notdef
+static char rcsid[] = "$Header: /sprite/src/boot/sunprom/RCS/fileLoad.c,v 1.9 90/07/17 15:41:58 mendel Exp Locker: jhh $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+#include "fsBoot.h"
+#include "procMach.h"
+#include "machMon.h"
+#include "boot.h"
+
+#define KERNEL_ENTRY 0x4000
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FileLoad --
+ *
+ *	Read in the kernel object file.  This is loaded into memory at
+ *	a pre-defined location (in spite of what is in the a.out header)
+ *	for compatibility with Sun/UNIX boot programs.  The Sprite kernel
+ *	expects to be loaded into the wrong place and does some re-mapping
+ *	to relocate the kernel into high virtual memory.
+ *
+ * Results:
+ *	The entry point.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+
+int
+FileLoad(handlePtr)
+    register Fsio_FileIOHandle	*handlePtr;
+{
+    ProcExecHeader	aout;
+    int			bytesRead;
+    register int	*addr;
+    register ReturnStatus status;
+    register int	i;
+    register int	numBytes;
+
+    /*
+     * Read a.out header.
+     */
+
+    status = Read(handlePtr, 0, sizeof(aout), &aout, &bytesRead);
+    if (status != SUCCESS || bytesRead != sizeof(aout)) {
+	Mach_MonPrintf("No a.out header");
+	goto readError;
+    } else if (aout.magic != PROC_OMAGIC) {
+	Mach_MonPrintf("A.out? mag %x size %d+%d+%d\n",
+	    aout.magic, aout.code, aout.data, aout.bss);
+	return(-1);
+    }
+
+    /*
+     * Read the code.
+     */
+
+    numBytes = aout.code;
+    Mach_MonPrintf("Size: %d", numBytes);
+#ifdef sun4
+    status = Read(handlePtr, PROC_CODE_FILE_OFFSET(aout), numBytes,
+		      KERNEL_ENTRY + sizeof(aout), &bytesRead);
+#else
+    status = Read(handlePtr, PROC_CODE_FILE_OFFSET(aout), numBytes,
+		      KERNEL_ENTRY, &bytesRead);
+#endif
+    if (status != SUCCESS) {
+	goto readError;
+    } else if (bytesRead != numBytes) {
+	goto shortRead;
+    }
+
+    /*
+     * Read the initialized data.
+     */
+
+    numBytes = aout.data;
+    Mach_MonPrintf("+%d", numBytes);
+#ifdef sun4
+    status = Read(handlePtr, PROC_DATA_FILE_OFFSET(aout), numBytes,
+		      KERNEL_ENTRY + aout.code + sizeof(aout), &bytesRead);
+#else
+    status = Read(handlePtr, PROC_DATA_FILE_OFFSET(aout), numBytes,
+		      KERNEL_ENTRY + aout.code, &bytesRead);
+#endif
+    if (status != SUCCESS) {
+readError:
+	Mach_MonPrintf("\nRead error <%x>\n", status);
+	return(-1);
+    } else if (bytesRead != numBytes) {
+shortRead:
+	Mach_MonPrintf("\nShort read (%d)\n", bytesRead);
+	return(-1);
+    }
+
+    /*
+     * Zero out the bss.
+     */
+
+    numBytes = aout.bss;
+    Mach_MonPrintf("+%d\n", numBytes);
+#ifdef sun4
+    addr = (int *) (KERNEL_ENTRY + aout.code + aout.data + sizeof(aout));
+#else
+    addr = (int *) (KERNEL_ENTRY + aout.code + aout.data);
+#endif
+    bzero(addr, numBytes);
+#ifdef sun4
+    return (KERNEL_ENTRY + sizeof(aout));
+#else
+    return (KERNEL_ENTRY);
+#endif
+}
+@
+
+
+1.9
+log
+@*** empty log message ***
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/boot/scsiDiskBoot/RCS/fileLoad.c,v 1.7 89/01/06 08:14:27 brent Exp $ SPRITE (Berkeley)";
+d59 1
+a59 1
+    status = Fs_Read(handlePtr, 0, sizeof(aout), &aout, &bytesRead);
+d76 1
+a76 1
+    status = Fs_Read(handlePtr, PROC_CODE_FILE_OFFSET(aout), numBytes,
+d79 1
+a79 1
+    status = Fs_Read(handlePtr, PROC_CODE_FILE_OFFSET(aout), numBytes,
+d95 1
+a95 1
+    status = Fs_Read(handlePtr, PROC_DATA_FILE_OFFSET(aout), numBytes,
+d98 1
+a98 1
+    status = Fs_Read(handlePtr, PROC_DATA_FILE_OFFSET(aout), numBytes,
+@
+
+
+1.8
+log
+@*** empty log message ***
+@
+text
+@d75 1
+d77 3
+d81 1
+d94 4
+d100 1
+d117 3
+d121 1
+d123 3
+a125 1
+
+d127 1
+@
+
+
+1.7
+log
+@New include files and constants due to source reorganization
+@
+text
+@d10 2
+a11 2
+#ifndef lint
+static char rcsid[] = "$Header: fileLoad.c,v 1.6 87/05/27 14:32:39 brent Exp $ SPRITE (Berkeley)";
+d15 2
+a16 2
+#include "fs.h"
+#include "procAOUT.h"
+d18 1
+d46 1
+a46 1
+    register FsHandle	*handlePtr;
+d48 1
+a48 1
+    Proc_AOUT		aout;
+d64 1
+a64 1
+	Sys_Printf("A.out? mag %x size %d+%d+%d\n",
+d108 1
+a108 3
+    for (i = 0; i < numBytes; i += 4, addr++) {
+	*addr = 0;
+    }
+@
+
+
+1.6
+log
+@messed with print statements.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fileLoad.c,v 1.5 87/05/11 11:14:56 brent Exp $ SPRITE (Berkeley)";
+d14 2
+d17 1
+a17 3
+#include "fs.h"
+#include "fsInt.h"
+#include "sunMon.h"
+d19 1
+a19 5
+/*
+ * The boot program always loads the kernel starting at this location.
+ * The kernel will remap itself to where it wants.
+ */
+#define KERNEL_ENTRY	0x4000
+d60 1
+a60 1
+	Mon_Printf("No a.out header");
+d73 1
+a73 1
+    Mon_Printf("Size: %d", numBytes);
+d87 1
+a87 1
+    Mon_Printf("+%d", numBytes);
+d92 1
+a92 1
+	Mon_Printf("\nRead error <%x>\n", status);
+d96 1
+a96 1
+	Mon_Printf("\nShort read (%d)\n", bytesRead);
+d105 1
+a105 1
+    Mon_Printf("+%d\n", numBytes);
+@
+
+
+1.5
+log
+@Fixed so it always loads to the same place.  Stupid, but compatible
+with the Sun/UNIX boot programs so the kernel can deal.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fileLoad.c,v 1.4 86/07/24 11:46:42 brent Exp $ SPRITE (Berkeley)";
+d67 3
+a69 1
+	Mon_Printf("need 0%o a.out\n", PROC_OMAGIC);
+d109 1
+a109 1
+    Mon_Printf("+%d", numBytes);
+a114 1
+    Mon_Printf(" bytes\n");
+@
+
+
+1.4
+log
+@more trimming
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fileLoad.c,v 1.3 86/07/21 09:33:43 brent Exp $ SPRITE (Berkeley)";
+d19 6
+d31 5
+a35 1
+ *	Read in the kernel object file.
+a50 1
+    
+d77 1
+a77 1
+		      aout.entry, &bytesRead);
+d91 1
+a91 1
+		      aout.entry + aout.code, &bytesRead);
+d108 1
+a108 1
+    addr = (int *) (aout.entry + aout.code + aout.data);
+d114 1
+a114 1
+    return (aout.entry);
+@
+
+
+1.3
+log
+@Did some scrunching, fixed a bug.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fileLoad.c,v 1.2 86/07/18 10:38:01 brent Exp $ SPRITE (Berkeley)";
+d47 1
+d54 5
+a58 4
+    if (status != SUCCESS || bytesRead != sizeof(aout) ||
+	PROC_BAD_MAGIC_NUMBER(aout)) {
+	Mon_Printf("Bad a.out format\n");
+	return(-1);
+d65 7
+a71 5
+    Mon_Printf("Sprite size: %d", aout.code);
+    status = Fs_Read(handlePtr, PROC_CODE_FILE_OFFSET(aout), aout.code,
+		      PROC_CODE_LOAD_ADDR(aout), &bytesRead);
+    if (status != SUCCESS ||
+	bytesRead != aout.code) {
+d79 9
+a87 5
+    Mon_Printf("+%d", aout.data);
+    status = Fs_Read(handlePtr, PROC_DATA_FILE_OFFSET(aout), aout.data,
+		      PROC_DATA_LOAD_ADDR(aout), &bytesRead);
+    if (status != SUCCESS ||
+	bytesRead != aout.data) {
+d89 1
+a89 1
+	Mon_Printf("\nShort read\n");
+d97 4
+a100 3
+    Mon_Printf("+%d", aout.bss);
+    addr = (int *) PROC_BSS_LOAD_ADDR(aout);
+    for (i = 0; i < aout.bss; i += 4, addr++) {
+d105 1
+a105 1
+    return (PROC_CODE_LOAD_ADDR(aout));
+@
+
+
+1.2
+log
+@name change
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fileLoad.c,v 1.1 86/07/17 13:19:16 brent Exp $ SPRITE (Berkeley)";
+d39 1
+a39 1
+    FsHandle	*handlePtr;
+d44 3
+a46 3
+    int			*addr;
+    ReturnStatus	status;
+    int			i;
+d55 1
+a55 1
+	Mon_Printf("Couldn't read a.out format\n");
+d66 3
+a68 3
+    if (status != SUCCESS) {
+	Mon_Printf("\nCould not read code\n");
+	return(-1);
+a69 4
+    if (bytesRead != aout.code) {
+	Mon_Printf("\nShort read\n");
+	return(-1);
+    }
+d76 1
+a76 1
+    status = Fs_Read(handlePtr, PROC_DATA_FILE_OFFSET(aout), aout.code,
+d78 3
+a80 5
+    if (status != SUCCESS) {
+	Mon_Printf("\nCould not read initialized data\n");
+	return(-1);
+    }
+    if (bytesRead != aout.code) {
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: proto.c,v 1.4 86/03/20 14:00:11 andrew Exp $ SPRITE (Berkeley)";
+d52 1
+a52 1
+    status = BootRead(handlePtr, 0, sizeof(aout), &aout, &bytesRead);
+d64 1
+a64 1
+    status = BootRead(handlePtr, PROC_CODE_FILE_OFFSET(aout), aout.code,
+d80 1
+a80 1
+    status = BootRead(handlePtr, PROC_DATA_FILE_OFFSET(aout), aout.code,
+@

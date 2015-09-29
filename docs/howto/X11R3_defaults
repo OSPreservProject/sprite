@@ -1,0 +1,26 @@
+Traditionally you X defaults live in ~/.Xdefaults, but this need not be, and
+it is actually to in your advantage to place them somewhere else!
+   Ok, when a clients needs a default value, it first asks the server which
+looks into its (megabytes) of memory; if that fails the server looks
+for an environment variable called XENVIRONMENT for a file name (or
+takes ~/.Xdefaults) and looks into that file. If that also fails, some
+system-wide file or a hard-coded value is used (I actually dunno).
+
+~/.Xdefaults vs. xrdb:
+In a nutshell: if you load the defaults into the server (see below), it's
+supposed to be faster, your defaults are piped thru cpp and all applications
+get the same defaults. If you don't load them into the server and rely
+on ~/.Xdefaults, the defaults are easier to change (edit the file) but
+if you rlogin to another machine and start a client there, that client
+will see a (probably) different ~/.Xdefaults file (I mean if you rlogin
+to a non-sprite host). So once you are comfortable with your defaults,
+I suggest you use xrdb to load the defaults into the server.
+
+How to load the defaults into the server:
+Place the following command into your ~/.xinitrc script (or type it
+after you edit your ~/.Xdefaults):
+	xrdb -load ~/.Xdefaults
+If you want to try some new defaults quickly, type "xrdb -merge" which
+reads additional defaults from stdin (you can type them). For more
+info refer to the man page.
+				-Thorsten (tve@sprite.berkeley.edu)

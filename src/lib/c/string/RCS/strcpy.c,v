@@ -1,0 +1,148 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.4
+date     92.03.27.13.30.02;  author rab;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.03.22.16.06.49;  author rab;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.04.25.20.47.59;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.25.13.25.45;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.4
+log
+@A few little optimizations.
+@
+text
+@/* 
+ * strcpy.c --
+ *
+ *	Source code for the "strcpy" library routine.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/string/RCS/strcpy.c,v 1.3 89/03/22 16:06:49 rab Exp Locker: rab $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <string.h>
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * strcpy --
+ *
+ *	Copy a string from one location to another.
+ *
+ * Results:
+ *	The return value is a pointer to the destination string, dst.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+strcpy(dst, src)
+    register char *src;		/* Place from which to copy. */
+    char *dst;			/* Place to store copy. */
+{
+    register char *copy = dst;
+    register char c;
+
+    do {
+	c = copy[0] = src[0];
+	if (c == '\0') {
+	    break;
+	}
+	c = copy[1] = src[1];
+	if (c == '\0') {
+	    break;
+	}
+	c = copy[2] = src[2];
+	if (c == '\0') {
+	    break;
+	}
+	c = copy[3] = src[3];
+	if (c == '\0') {
+	    break;
+	}
+	copy += 4;
+	src += 4;
+    } while (1);
+    return dst;
+}
+@
+
+
+1.3
+log
+@*** empty log message ***
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/string/RCS/strcpy.c,v 1.2 88/04/25 20:47:59 ouster Exp Locker: rab $ SPRITE (Berkeley)";
+d44 1
+d47 14
+a60 2
+	if (!(copy[0] = src[0]) || !(copy[1] = src[1])
+		|| !(copy[2] = src[2]) || !(copy[3] = src[3])) {
+@
+
+
+1.2
+log
+@Modified slightly to be fast with both RISC and non-RISC machines.
+@
+text
+@d17 4
+a20 2
+static char rcsid[] = "$Header: strcpy.c,v 1.1 88/04/25 13:25:45 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: proto.c,v 1.2 88/03/11 08:39:08 ouster Exp $ SPRITE (Berkeley)";
+d44 7
+a50 1
+    } while ((*copy++ = *src++) != 0);
+@

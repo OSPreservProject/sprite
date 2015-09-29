@@ -1,0 +1,93 @@
+' $Header: /sprite/src/cmds/prefix/RCS/prefix.man,v 1.4 92/03/25 15:53:24 shirriff Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS PREFIX cmds
+.BS
+.SH NAME
+prefix \- Manipulate the file system prefix table
+.SH SYNOPSIS
+\fBprefix\fR [\fB\-p\fR [\fB\-x \fIprefix\fR]]\fR
+.br
+\fBprefix\fR \fB\-M \fIdevice\fR \fB[-rL] [-f] -l \fIprefix\fR
+.br
+\fBprefix\fR \fB\-[cdU] \fIprefix\fR
+.br
+\fBprefix\fR \fB\-a \fIprefix\fR [\fB\-s\fR \fIserver\fR]
+.br
+\fBprefix\fR \fB\-x \fIprefix\fR \fB\-[hH] \fIhost\fR
+.br
+\fBprefix\fR \fB\-x \fIprefix\fR \fB\-l \fIlocalName\fR
+.SH "OPTIONS"
+.IP "\fB\-p\fR" 14
+(The default.) Print out the prefix table.
+With \fB\-x\fR, print the export list of a prefix.
+.IP "\fB\-x \fIprefix\fR" 14
+Export a local directory given by \fB\-l\fR under the name \fIprefix\fR,
+or use with \fB\-h\fR (\fB\-H\fR) to export (not export) the prefix 
+to a particular host.
+.IP "\fB\-M \fIdevice\fR" 14
+Mount the device under the local name given by the \fB\-l\fR option.
+The local name is exported.
+.IP "\fB\-L\fR" 14
+Use with \fB\-M\fR to prevent exporting the prefix.
+.IP "\fB\-r\fR" 14
+Mount read-only.  Use with \fB\-M\fR.
+.IP "\fB\-U \fIprefix\fR" 14
+Unmount the file system with the given prefix.
+.IP "\fB\-f\fR" 14
+Force the installation of the prefix, i.e. don't do a stat to make sure
+the link exists.
+.IP "\fB\-l \fIdirName\fR" 14
+Specifies local name.  Used with \fB\-M\fR (mount) or \fB\-x\fR (export).
+.IP "\fB\-h \fIhost\fR" 14
+Add \fIhost\fR to the export list associated with the prefix given
+by the \fB\-x\fR option.
+\fIHost\fR can either be the name of the server or its Sprite ID.
+.IP "\fB\-H \fIhost\fR" 14
+Remove \fIhost\fR from the export list associated with the prefix given
+by the \fB\-x\fR option.
+\fIHost\fR can either be the name of the server or its Sprite ID.
+.IP "\fB\-a \fIprefix\fR" 14
+Add \fIprefix\fR to the prefix table. If the \fB\-s\fR option is not
+given a broadcast will be done to find the server.
+.IP "\fB\-s \fIserver\fR" 14
+Specify the server for the prefix given by the \fB\-a\fR option.
+\fIServer\fR can either be the name of the server or its Sprite ID.
+If \fIserver\fR is 0 a broadcast will be done to find the server.
+.IP "\fB\-c \fIprefix\fR" 14
+Clear the server binding for \fIprefix\fR, but retain the prefix in
+the prefix table.
+.IP "\fB\-d \fIprefix\fR" 14
+Delete \fIprefix\fR from the prefix table altogether.
+.BE
+
+.SH DESCRIPTION
+.PP
+Prefix tables are cached mappings from file name prefixes to the
+servers that keep files under that prefix.   Under normal operation
+the prefix table is updated automatically as a side-effect of
+pathname lookup.  The \fBprefix\fP command is used to display the file system's
+prefix table,
+and to manipulate its individual entries.  If no options are given,
+prefix prints out the contents of the prefix table (just as if the
+\fB\-p\fR switch had been given).  If options are given, then they
+control what happens, as described above.
+.SH PREFIXES AND SPRITE
+.PP
+The presense of a prefix is indicated by remote links in the file system.
+A remote link is a circular symbolic link with a special type.   They
+are created via the "ln -r" command.  When a server encounters a remote
+link during lookup, it returns the prefix indicated by the remote link to
+the client that initiated the lookup.  The client loads the prefix (if it
+isn't already loaded), broadcasts for the server of the prefix (if it doesn't
+already know who that is), and then sends the lookup operation to the
+new server.  Thus the root server is bypassed after prefixes are loaded.
+Prefixes can be nested arbitrarily; remote links can occur in any directory.
+.PP
+Servers mount local disks under a prefix that
+gets exported to other Sprite hosts using the -M option.  Servers
+can control what hosts have access to a prefix by adding entries
+to an export list using the -h option.  If the export list is
+empty the prefix is exported to all hosts, so adding one exportee
+effectivly prevents access to all other hosts.  
+.SH KEYWORDS
+prefix table, mount

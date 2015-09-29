@@ -1,0 +1,2117 @@
+# 1 "ds3100.md/mips-tdep.c"
+# 1 "/sprite/lib/include/stdio.h"
+# 1 "/sprite/lib/include/cfuncproto.h"
+# 44 "/sprite/lib/include/cfuncproto.h"
+# 52 "/sprite/lib/include/cfuncproto.h"
+# 59 "/sprite/lib/include/cfuncproto.h"
+# 65 "/sprite/lib/include/cfuncproto.h"
+# 71 "/sprite/lib/include/cfuncproto.h"
+typedef char *_VoidPtr;
+# 33 "/sprite/lib/include/stdio.h"
+# 36 "/sprite/lib/include/stdio.h"
+typedef int *ClientData;
+typedef char *va_list;
+typedef struct _file {
+    unsigned char *lastAccess;	
+    int readCount;		
+    int writeCount;		
+    unsigned char *buffer;	
+    int bufSize;		
+    void (*readProc)	();
+    void (*writeProc)	();
+    int (*closeProc)	();
+    ClientData clientData;	
+    int status;			
+    int flags;			
+    struct _file *nextPtr;	
+} FILE;
+# 214 "/sprite/lib/include/stdio.h"
+extern FILE stdioInFile, stdioOutFile, stdioErrFile;
+        extern void	clearerr 	();
+        extern int	fclose 	();
+        extern FILE *	fdopen 	();
+        extern int	fflush 	();
+        extern int	fgetc 	();
+        extern char *	fgets 	();
+        extern int	fileno 	();
+        extern FILE *	fopen 	();
+        extern int	fputc 	();
+        extern int	fputs 	();
+        extern int	fread 
+	();
+        extern FILE *	freopen 
+	();
+        extern long	fseek 	();
+        extern long	ftell 	();
+        extern int	fwrite 
+	();
+        extern char *	gets 	();
+        extern int	getw 	();
+        extern void	perror 	();
+        extern FILE *	popen 	();
+        extern int	pclose 	();
+        extern int      remove 	();
+        extern int      rename 	();
+# 338 "/sprite/lib/include/stdio.h"
+        extern int	printf 	();
+        extern int	fprintf 	();
+        extern int	scanf 	();
+        extern char *	sprintf 	();
+        extern int	sscanf 	();
+        extern int	fscanf 	();
+        extern int	vfprintf 
+	();
+        extern int	vfscanf 
+	();
+        extern int	vprintf 	();
+        extern char *	vsprintf 
+	();
+        extern int	puts 	();
+        extern int	putw 	();
+        extern void	rewind 	();
+        extern void	setbuf 	();
+        extern void	setbuffer 	();
+        extern void	setlinebuf 	();
+        extern int	setvbuf 	();
+        extern FILE *	tmpfile 	();
+        extern char *	tmpnam 	();
+        extern char *	tempnam 	();
+        extern int	ungetc 	();
+        extern void	_cleanup 	();
+        extern void	Stdio_Setup 
+	();
+# 28 "ds3100.md/mips-tdep.c"
+# 1 "ds3100.md/mips/inst.h"
+# 53 "ds3100.md/mips/inst.h"
+union mips_instruction {
+	unsigned word;
+	unsigned char byte[4];
+	struct {
+		unsigned target : 26;
+		unsigned opcode : 6;
+	} j_format;
+	struct {
+		signed simmediate : 16;
+		unsigned rt : 5;
+		unsigned rs : 5;
+		unsigned opcode : 6;
+	} i_format;
+	struct {
+		unsigned uimmediate : 16;
+		unsigned rt : 5;
+		unsigned rs : 5;
+		unsigned opcode : 6;
+	} u_format;
+	struct {
+		unsigned func : 6;
+		unsigned re : 5;
+		unsigned rd : 5;
+		unsigned rt : 5;
+		unsigned rs : 5;
+		unsigned opcode : 6;
+	} r_format;
+	struct {
+		unsigned func : 6;
+		unsigned re : 5;
+		unsigned rd : 5;
+		unsigned rt : 5;
+		unsigned fmt : 4;
+		unsigned : 1;
+		unsigned opcode : 6;
+	} f_format;
+};
+# 545 "ds3100.md/mips/inst.h"
+# 29 "ds3100.md/mips-tdep.c"
+# 1 "./defs.h"
+typedef unsigned int CORE_ADDR;
+# 43 "./defs.h"
+# 53 "./defs.h"
+extern char *savestring ();
+extern char *strsave ();
+extern char *concat ();
+# 64 "./defs.h"
+extern char *xmalloc (), *xrealloc ();
+extern void free ();
+extern int parse_escape ();
+extern char *reg_names[];
+extern  void error(), fatal();
+# 77 "./defs.h"
+# 80 "./defs.h"
+   extern char *alloca ();
+extern int errno;			
+extern int quit_flag;
+extern int immediate_quit;
+extern void quit ();
+enum command_class
+{
+  all_classes = -2, all_commands = -1,
+  no_class = -1, class_run = 0, class_vars, class_stack,
+  class_files, class_support, class_info, class_breakpoint,
+  class_alias, class_obscure, class_user
+};
+struct cleanup
+{
+  struct cleanup *next;
+  void (*function) ();
+  int arg;
+};
+extern void do_cleanups ();
+extern void discard_cleanups ();
+extern struct cleanup *make_cleanup ();
+extern struct cleanup *save_cleanups ();
+extern void restore_cleanups ();
+extern void free_current_contents ();
+extern int myread ();
+extern int query ();
+extern int lines_to_list ();
+extern void wrap_here (
+# 136 "./defs.h"
+		       );
+extern void reinitialize_more_filter ();
+extern void fputs_filtered ();
+extern void puts_filtered ();
+extern void fprintf_filtered ();
+extern void printf_filtered ();
+extern void print_spaces ();
+extern void print_spaces_filtered ();
+extern char *n_spaces ();
+extern void printchar ();
+extern void fprint_symbol ();
+extern void fputs_demangled ();
+extern void perror_with_name ();
+extern void print_sys_errmsg ();
+extern void print_address_symbolic ();
+extern void print_address ();
+void mod_path (
+# 160 "./defs.h"
+	       );
+extern char *tilde_expand ();
+struct command_line
+{
+  struct command_line *next;
+  char *line;
+};
+extern struct command_line *read_command_lines ();
+extern void free_command_lines ();
+char *current_directory;
+extern unsigned input_radix;
+extern unsigned output_radix;
+char *baud_rate;
+# 225 "./defs.h"
+# 30 "ds3100.md/mips-tdep.c"
+# 1 "./param.h"
+# 1 "ds3100.md/tm.h"
+# 1 "/sprite/lib/include/ds3100.md/kernel/vmPmaxConst.h"
+# 24 "ds3100.md/tm.h"
+# 80 "ds3100.md/tm.h"
+typedef struct mips_extra_func_info {
+	unsigned long	adr;	
+	long	isym;		
+	long	pad2;		
+	long	regmask;	
+	long	regoffset;	
+	long	numargs;	
+	long	fregmask;	
+	long	fregoffset;	
+	long	framesize;	
+	short	framereg;	
+	short	pcreg;		
+	long	lnLow;		
+	long	lnHigh;		
+	long	pad3;		
+} *mips_extra_func_info_t;
+# 28 "./param.h"
+# 1 "./param-no-tm.h"
+# 1 "ds3100.md/xm.h"
+# 25 "./param-no-tm.h"
+# 29 "./param-no-tm.h"
+# 42 "./param-no-tm.h"
+# 65 "./param-no-tm.h"
+# 31 "./param.h"
+# 31 "ds3100.md/mips-tdep.c"
+# 1 "./frame.h"
+# 1 "./param.h"
+# 28 "./param.h"
+# 1 "./param-no-tm.h"
+# 82 "./param-no-tm.h"
+# 31 "./param.h"
+# 23 "./frame.h"
+typedef struct frame_info *FRAME;
+typedef CORE_ADDR	FRAME_ADDR;
+struct frame_info
+  {
+    FRAME_ADDR frame;
+    CORE_ADDR pc;
+    FRAME_ADDR next_frame;
+      char *proc_desc;   int num_args;  struct frame_saved_regs *saved_regs;
+    FRAME next, prev;
+  };
+struct frame_saved_regs
+  {
+    CORE_ADDR regs[73];
+  };
+extern FRAME selected_frame;
+extern struct frame_info *get_frame_info ();
+extern struct frame_info *get_prev_frame_info ();
+extern FRAME create_new_frame ();
+extern void  flush_cached_frames ();
+extern void reinit_frame_cache ();
+extern void get_frame_saved_regs ();
+extern void  set_current_frame ();
+extern FRAME get_prev_frame ();
+extern FRAME get_current_frame ();
+extern FRAME get_next_frame ();
+extern struct block *get_frame_block ();
+extern struct block *get_current_block ();
+extern struct block *get_selected_block ();
+extern struct symbol *get_frame_function ();
+extern CORE_ADDR get_frame_pc ();
+extern CORE_ADDR get_pc_function_start ();
+struct block *block_for_pc ();
+int frameless_look_for_prologue ();
+void print_frame_args ();
+extern FRAME find_relative_frame ();
+extern void print_selected_frame ();
+extern void print_sel_frame ();
+extern void select_frame ();
+extern void record_selected_frame ();
+# 32 "ds3100.md/mips-tdep.c"
+# 1 "./inferior.h"
+# 1 "./breakpoint.h"
+extern void breakpoint_re_set ();
+extern void clear_momentary_breakpoints ();
+extern void set_momentary_breakpoint ();
+extern void set_ignore_count ();
+extern void set_default_breakpoint ();
+extern void mark_breakpoints_out ();
+extern void breakpoint_auto_delete ();
+extern void breakpoint_clear_ignore_counts ();
+extern void disable_current_display ();
+extern void do_displays ();
+extern void disable_display ();
+extern void clear_displays ();
+typedef struct bpstat__struct *bpstat;
+void bpstat_clear();
+bpstat bpstat_copy();
+bpstat bpstat_stop_status ();
+int bpstat_should_step ();
+int bpstat_print ();
+int bpstat_num ();
+void bpstat_do_actions ();
+void bpstat_clear_actions ();
+# 1 "./value.h"
+enum lval_type {
+  not_lval,
+  lval_memory,
+  lval_register,
+  lval_internalvar,
+  lval_internalvar_component,
+  lval_reg_frame_relative,
+};
+struct value
+  {
+    enum lval_type lval;
+    union
+      {
+	CORE_ADDR address;
+	struct internalvar *internalvar;
+	int regnum;
+      } location;
+    int offset;	
+    int bitsize;
+    int bitpos;
+    CORE_ADDR frame_addr;
+    struct type *type;
+    struct value *next;
+    short repeated;
+    short repetitions;
+    short regno;
+    char lazy;
+    char optimized_out;
+    union {
+      long contents[1];
+      double force_double_align;
+# 104 "./value.h"
+    } aligner;
+  };
+typedef struct value *value;
+extern int value_fetch_lazy ();
+struct internalvar
+{
+  struct internalvar *next;
+  char *name;
+  value value;
+};
+# 1 "./symtab.h"
+# 1 "./gnu_include/obstack.h"
+struct _obstack_chunk		
+{
+  char  *limit;			
+  struct _obstack_chunk *prev;	
+  char	contents[4];		
+};
+struct obstack		
+{
+  long	chunk_size;		
+  struct _obstack_chunk* chunk;	
+  char	*object_base;		
+  char	*next_free;		
+  char	*chunk_limit;		
+  int	temp;			
+  int   alignment_mask;		
+# 139 "./gnu_include/obstack.h"
+  char  *(*chunkfun) (); 	
+  void (*freefun) ();		
+};
+# 183 "./gnu_include/obstack.h"
+# 320 "./gnu_include/obstack.h"
+# 394 "./gnu_include/obstack.h"
+# 412 "./gnu_include/obstack.h"
+  extern int _obstack_newchunk ();
+  extern int _obstack_free ();
+  extern void _obstack_begin ();
+# 23 "./symtab.h"
+extern struct obstack *symbol_obstack;
+extern struct obstack *psymbol_obstack;
+# 37 "./symtab.h"
+extern char *xmalloc ();
+extern void free ();
+enum misc_function_type {mf_unknown = 0, mf_text, mf_data, mf_bss, mf_abs};
+struct misc_function
+{
+  char *name;
+  CORE_ADDR address;
+  char *misc_info;	
+  enum misc_function_type type;
+};
+struct misc_function *misc_function_vector;
+int misc_function_count;
+enum language {language_unknown, language_c};
+struct typevector
+{
+  int length;			
+  struct type *type[1];
+};
+enum type_code
+{
+  TYPE_CODE_UNDEF,		
+  TYPE_CODE_PTR,		
+  TYPE_CODE_ARRAY,		
+  TYPE_CODE_STRUCT,		
+  TYPE_CODE_UNION,		
+  TYPE_CODE_ENUM,		
+  TYPE_CODE_FUNC,		
+  TYPE_CODE_INT,		
+  TYPE_CODE_FLT,		
+  TYPE_CODE_VOID,		
+  TYPE_CODE_SET,		
+  TYPE_CODE_RANGE,		
+  TYPE_CODE_PASCAL_ARRAY,	
+  TYPE_CODE_ERROR,              
+  TYPE_CODE_MEMBER,		
+  TYPE_CODE_METHOD,		
+  TYPE_CODE_REF,		
+};
+struct type
+{
+  enum type_code code;
+  char *name;
+  unsigned length;
+  struct type *target_type;
+  struct type *pointer_type;
+  struct type *reference_type;
+  struct type **arg_types;
+  struct type *function_type;
+  struct type *main_variant, *next_variant;
+  short flags;
+  short nfields;
+  struct field
+    {
+      int bitpos;
+      int bitsize;
+      struct type *type;
+      char *name;
+    } *fields;
+  	unsigned char *virtual_field_bits; 
+  	unsigned char *private_field_bits;
+  	unsigned char *protected_field_bits;
+  short nfn_fields;
+  short n_baseclasses;
+  int nfn_fields_total;
+  struct fn_fieldlist
+    {
+      char *name;
+      int length;
+      struct fn_field
+	{
+# 248 "./symtab.h"
+	  struct type *type;
+	  struct type **args;
+	  char *physname;
+	  struct type *fcontext;
+	  int voffset;
+	} *fn_fields;
+      	unsigned char *private_fn_field_bits;
+      	unsigned char *protected_fn_field_bits;
+    } *fn_fieldlists;
+  unsigned char via_protected;
+  unsigned char via_public;
+  struct type *vptr_basetype;
+  int vptr_fieldno;
+};
+struct blockvector
+{
+  int nblocks;
+  struct block *block[1];
+};
+struct block
+{
+  CORE_ADDR startaddr, endaddr;
+  struct symbol *function;
+  struct block *superblock;
+  unsigned char gcc_compile_flag;
+  int nsyms;
+  struct symbol *sym[1];
+};
+enum namespace
+{
+  UNDEF_NAMESPACE, VAR_NAMESPACE, STRUCT_NAMESPACE, LABEL_NAMESPACE,
+};
+enum address_class
+{
+  LOC_UNDEF,		
+  LOC_CONST,		
+  LOC_STATIC,		
+  LOC_REGISTER,		
+  LOC_ARG,		
+  LOC_REF_ARG,		
+  LOC_REGPARM,		
+  LOC_LOCAL,		
+  LOC_TYPEDEF,		
+  LOC_LABEL,		
+  LOC_BLOCK,		
+  LOC_CONST_BYTES,	
+  LOC_LOCAL_ARG,	
+};
+struct symbol
+{
+  char *name;
+  enum namespace namespace;
+  enum address_class class;
+  struct type *type;
+  unsigned short line;
+  union
+    {
+      long value;		
+      struct block *block;      
+      char *bytes;		
+      CORE_ADDR address;	
+      struct symbol *chain;	
+    }
+  value;
+};
+struct partial_symbol
+{
+  char *name;
+  enum namespace namespace;
+  enum address_class class;
+  union
+    {
+      long value;
+      CORE_ADDR address;
+    }
+  value;
+};
+struct sourcevector
+{
+  int length;			
+  struct source *source[1];	
+};
+struct linetable_entry
+{
+  int line;
+  CORE_ADDR pc;
+};
+struct linetable
+{
+  int nitems;
+  struct linetable_entry item[1];
+};
+struct source
+{
+  char *name;			
+  struct linetable contents;
+};
+struct symtab
+  {
+    struct symtab *next;
+    struct blockvector *blockvector;
+    struct linetable *linetable;
+    struct typevector *typevector;
+    char *filename;
+    char *dirname;
+    enum free_code {free_nothing, free_contents, free_linetable}
+      free_code;
+    char *free_ptr;
+    int nlines;
+    int *line_charpos;
+    enum language language;
+    char *version;
+    char *fullname;
+# 559 "./symtab.h"
+  };
+struct partial_symtab
+{
+  struct partial_symtab *next;
+  char *filename;
+  char *symfile_name;
+  CORE_ADDR addr;
+  int ldsymoff, ldsymlen;
+  CORE_ADDR textlow, texthigh;
+  struct partial_symtab **dependencies;
+  int number_of_dependencies;
+  int globals_offset, n_global_syms;
+  int statics_offset, n_static_syms;
+  struct symtab *symtab;
+  void (*read_symtab) ();
+  unsigned char readin;
+};
+struct symtab *symtab_list;
+struct partial_symtab *partial_symtab_list;
+struct symtab *current_source_symtab;
+int current_source_line;
+extern struct symtab *lookup_symtab ();
+extern struct symbol *lookup_symbol ();
+extern struct symbol *lookup_block_symbol ();
+extern int lookup_misc_func ();
+extern void check_stub_type ();
+extern void check_stub_method ();
+extern struct type *lookup_primitive_typename ();
+extern struct type *lookup_typename ();
+extern struct type *lookup_unsigned_typename ();
+extern struct type *lookup_struct ();
+extern struct type *lookup_union ();
+extern struct type *lookup_enum ();
+extern struct type *lookup_struct_elt_type ();
+extern struct type *lookup_pointer_type ();
+extern struct type *lookup_function_type ();
+extern struct type *lookup_basetype_type ();
+extern struct type *create_array_type ();
+extern struct symbol *block_function ();
+extern struct symbol *find_pc_function ();
+extern int find_pc_partial_function ();
+extern void clear_pc_function_cache ();
+extern struct partial_symtab *lookup_partial_symtab ();
+extern struct partial_symtab *find_pc_psymtab ();
+extern struct symtab *find_pc_symtab ();
+extern struct partial_symbol *find_pc_psymbol ();
+extern int find_pc_misc_function ();
+extern int find_pc_line_pc_range ();
+extern char *type_name_no_tag ();
+extern int contained_in();
+extern struct type *lookup_reference_type ();
+extern struct type *lookup_member_type ();
+extern struct type *lookup_method_type ();
+extern struct type *lookup_class ();
+extern void smash_to_method_type ();
+void smash_to_member_type (
+# 836 "./symtab.h"
+			   );
+extern struct type *allocate_stub_method ();
+extern void free_all_symtabs ();
+extern void free_all_psymtabs ();
+extern void free_inclink_symtabs ();
+extern void reread_symbols ();
+extern struct type *builtin_type_void;
+extern struct type *builtin_type_char;
+extern struct type *builtin_type_short;
+extern struct type *builtin_type_int;
+extern struct type *builtin_type_long;
+extern struct type *builtin_type_unsigned_char;
+extern struct type *builtin_type_unsigned_short;
+extern struct type *builtin_type_unsigned_int;
+extern struct type *builtin_type_unsigned_long;
+extern struct type *builtin_type_float;
+extern struct type *builtin_type_double;
+extern struct type *builtin_type_error;
+extern struct type *builtin_type_long_long;
+extern struct type *builtin_type_unsigned_long_long;
+# 872 "./symtab.h"
+struct symtab_and_line
+{
+  struct symtab *symtab;
+  int line;
+  CORE_ADDR pc;
+  CORE_ADDR end;
+};
+struct symtabs_and_lines
+{
+  struct symtab_and_line *sals;
+  int nelts;
+};
+struct symtab_and_line find_pc_line ();
+extern CORE_ADDR find_line_pc ();
+extern int find_line_pc_range ();
+struct symtabs_and_lines decode_line_spec ();
+struct symtabs_and_lines decode_line_spec_1 ();
+struct symtabs_and_lines decode_line_1 ();
+void free_symtab ();
+struct symtab *psymtab_to_symtab ();
+void clear_solib ();
+void symbol_file_add ();
+int identify_source_line ();
+void print_source_lines ();
+void forget_cached_source_info (
+# 925 "./symtab.h"
+				);
+void select_source_symtab (
+# 930 "./symtab.h"
+			   );
+char **make_symbol_completion_list ();
+extern CORE_ADDR entry_point;
+# 183 "./value.h"
+long value_as_long (
+# 186 "./value.h"
+		       );
+double value_as_double (
+# 191 "./value.h"
+			);
+CORE_ADDR value_as_pointer (
+# 196 "./value.h"
+			    );
+long unpack_long (
+# 201 "./value.h"
+		     );
+double unpack_double (
+# 206 "./value.h"
+		      );
+CORE_ADDR unpack_pointer (
+# 211 "./value.h"
+			  );
+long unpack_field_as_long ();
+value value_from_long ();
+value value_from_double ();
+value value_at ();
+value value_at_lazy ();
+value value_from_register ();
+value value_of_variable ();
+value value_of_register ();
+value read_var_value ();
+value locate_var_value ();
+value allocate_value ();
+value allocate_repeat_value ();
+value value_mark ();
+void value_free_to_mark ();
+value value_string ();
+value value_binop ();
+value value_add ();
+value value_sub ();
+value value_coerce_array ();
+value value_coerce_function ();
+value value_ind ();
+value value_addr ();
+value value_assign ();
+value value_neg ();
+value value_lognot ();
+value value_struct_elt (), value_struct_elt_for_address ();
+value value_field (), value_primitive_field ();
+value value_cast ();
+value value_zero ();
+value value_repeat ();
+value value_subscript ();
+value value_from_vtable_info ();
+value value_being_returned ();
+int using_struct_return ();
+void set_return_value ();
+value evaluate_expression ();
+value evaluate_type ();
+value parse_and_eval ();
+value parse_to_comma_and_eval ();
+extern CORE_ADDR parse_and_eval_address ();
+extern CORE_ADDR parse_and_eval_address_1 ();
+value access_value_history ();
+value value_of_internalvar ();
+void set_internalvar ();
+void set_internalvar_component ();
+struct internalvar *lookup_internalvar ();
+int value_equal ();
+int value_less ();
+int value_zerop ();
+value value_of_this ();
+value value_static_field ();
+value value_x_binop ();
+value value_x_unop ();
+value value_fn_field ();
+value value_virtual_fn_field ();
+int binop_user_defined_p ();
+int unop_user_defined_p ();
+int typecmp ();
+void fill_in_vptr_fieldno ();
+int destructor_name_p ();
+void free_all_values ();
+void release_value ();
+int record_latest_value ();
+void registers_changed ();
+void read_register_bytes ();
+void write_register_bytes ();
+void read_register_gen ();
+CORE_ADDR read_register ();
+void write_register ();
+void supply_register ();
+void get_saved_register ();
+void modify_field ();
+void type_print ();
+void type_print_1 ();
+enum val_prettyprint {
+  Val_no_prettyprint = 0,
+  Val_prettyprint,
+  Val_pretty_default
+  };
+char *baseclass_addr ();
+void print_floating ();
+int value_print ();
+int val_print ();
+void print_variable_value ();
+char *internalvar_name ();
+void clear_value_history ();
+void clear_internalvars ();
+# 108 "./breakpoint.h"
+struct bpstat__struct
+{
+  bpstat next;
+  struct breakpoint *breakpoint_at;
+  struct command_line *commands;
+  value old_val;
+  char print;
+  char stop;
+  char momentary;
+};
+# 23 "./inferior.h"
+# 1 "./frame.h"
+# 129 "./frame.h"
+# 26 "./inferior.h"
+struct inferior_status {
+  int pc_changed;
+  int stop_signal;
+  int stop_pc;
+  FRAME_ADDR stop_frame_address;
+  bpstat stop_bpstat;
+  int stop_step;
+  int stop_stack_dummy;
+  int stopped_by_random_signal;
+  int trap_expected;
+  CORE_ADDR step_range_start;
+  CORE_ADDR step_range_end;
+  FRAME_ADDR step_frame_address;
+  int step_over_calls;
+  CORE_ADDR step_resume_break_address;
+  int stop_after_trap;
+  int stop_soon_quietly;
+  FRAME_ADDR selected_frame_address;
+  int selected_level;
+  char stop_registers[(73*4)];
+  int breakpoint_proceeded;
+  int restore_stack_info;
+  int proceed_to_finish;
+};
+void save_inferior_status (), restore_inferior_status ();
+extern char *inferior_io_terminal;
+extern int inferior_pid;
+extern char registers[];
+extern void clear_proceed_status ();
+extern void start_inferior ();
+extern void proceed ();
+extern void kill_inferior ();
+extern void kill_inferior_fast ();
+extern void generic_mourn_inferior ();
+extern void terminal_ours ();
+extern void detach ();
+extern void run_stack_dummy ();
+extern CORE_ADDR read_pc ();
+extern void write_pc ();
+extern void wait_for_inferior ();
+extern void init_wait_for_inferior ();
+extern void close_exec_file ();
+extern void reopen_exec_file ();
+void attach_command (
+# 94 "./inferior.h"
+		     );
+extern int stop_signal;
+extern CORE_ADDR stop_pc;
+extern FRAME_ADDR stop_frame_address;
+extern bpstat stop_bpstat;
+extern int breakpoint_proceeded;
+extern int stop_step;
+extern int stop_stack_dummy;
+extern int stopped_by_random_signal;
+extern CORE_ADDR step_range_start; 
+extern CORE_ADDR step_range_end; 
+extern FRAME_ADDR step_frame_address;
+extern int step_over_calls;
+extern int step_multi;
+extern int proceed_to_finish;
+extern char stop_registers[(73*4)];
+extern int pc_changed;
+int attach_flag;
+# 185 "./inferior.h"
+# 198 "./inferior.h"
+# 203 "./inferior.h"
+# 33 "ds3100.md/mips-tdep.c"
+# 1 "./symtab.h"
+# 938 "./symtab.h"
+# 34 "ds3100.md/mips-tdep.c"
+# 1 "./value.h"
+# 317 "./value.h"
+# 35 "ds3100.md/mips-tdep.c"
+# 1 "./gdbcmd.h"
+# 1 "./command.h"
+typedef enum cmd_types {
+  not_set_cmd,
+  set_cmd,
+  show_cmd,
+} cmd_types;
+typedef enum var_types {
+  var_boolean,
+  var_uinteger,
+  var_string,
+  var_string_noescape,
+  var_filename,
+  var_zinteger,
+} var_types;
+struct cmd_list_element
+  {
+    struct cmd_list_element *next;
+    char *name;
+    enum command_class class;
+    void (*function) ();
+    char *doc;
+    char *aux;
+    struct cmd_list_element **prefixlist;
+    char *prefixname;
+    char allow_unknown;
+    char abbrev_flag;
+    char **(*completer)();
+    cmd_types type;
+    char *var;
+    var_types var_type;
+    struct command_line *user_commands;
+  };
+extern struct cmd_list_element *add_cmd ();
+extern struct cmd_list_element *add_alias_cmd ();
+extern struct cmd_list_element *add_prefix_cmd ();
+extern struct cmd_list_element *add_abbrev_prefix_cmd ();
+extern struct cmd_list_element *lookup_cmd (), *lookup_cmd_1 ();
+extern void add_com ();
+extern void add_com_alias ();
+extern void add_info ();
+extern void add_info_alias ();
+extern char **complete_on_cmdlist ();
+extern void delete_cmd ();
+extern void help_cmd ();
+void help_list (
+# 139 "./command.h"
+		);
+void help_cmd_list (
+# 145 "./command.h"
+		    );
+extern struct cmd_list_element *add_set_cmd ();
+extern struct cmd_list_element *add_show_from_set ();
+extern void do_setshow_command ();
+extern void cmd_show_list ();
+extern void error_no_arg ();		
+extern void dont_repeat ();		
+# 19 "./gdbcmd.h"
+extern struct cmd_list_element *cmdlist;
+extern struct cmd_list_element *infolist;
+extern struct cmd_list_element *enablelist;
+extern struct cmd_list_element *disablelist;
+extern struct cmd_list_element *deletelist;
+extern struct cmd_list_element *enablebreaklist;
+extern struct cmd_list_element *setlist;
+extern struct cmd_list_element *unsetlist;
+extern struct cmd_list_element *showlist;
+extern struct cmd_list_element *sethistlist;
+extern struct cmd_list_element *showhistlist;
+extern struct cmd_list_element *unsethistlist;
+extern struct cmd_list_element *setprintlist;
+extern struct cmd_list_element *showprintlist;
+void execute_command ();
+char **noop_completer ();
+# 36 "ds3100.md/mips-tdep.c"
+# 39 "ds3100.md/mips-tdep.c"
+# 1 "/sprite/lib/include/sys/param.h"
+# 1 "/sprite/lib/include/sys/types.h"
+typedef	unsigned char	u_char;
+typedef	unsigned short	u_short;
+typedef	unsigned int	u_int;
+typedef	unsigned long	u_long;
+typedef	unsigned short	ushort;		
+# 46 "/sprite/lib/include/sys/types.h"
+# 52 "/sprite/lib/include/sys/types.h"
+typedef struct _quad {long val[2]; } quad;
+typedef	struct	_uquad {unsigned long val[2]; } u_quad;
+typedef	long	daddr_t;
+typedef	char *	caddr_t;
+typedef	long *	qaddr_t;	
+typedef	u_long	ino_t;
+typedef	long	swblk_t;
+typedef	int	size_t;
+typedef	long	time_t;
+typedef	long	clock_t;
+typedef	short	dev_t;
+typedef	long	off_t;
+typedef	short	uid_t;
+typedef	short	gid_t;
+typedef long	key_t;		
+typedef long	fd_mask;
+typedef	struct fd_set {
+	fd_mask	fds_bits[	(((256)+(( (sizeof(fd_mask) * 8		)	)-1))/( (sizeof(fd_mask) * 8		)	))];
+} fd_set;
+# 27 "/sprite/lib/include/sys/param.h"
+# 1 "/sprite/lib/include/signal.h"
+# 1 "/sprite/lib/include/cfuncproto.h"
+# 76 "/sprite/lib/include/cfuncproto.h"
+# 14 "/sprite/lib/include/signal.h"
+extern void (*signal 
+	()) 	();
+extern int sigblock 	();
+extern int sigpause 	();
+extern int sigsetmask 	();
+struct	sigvec {
+	void	(*sv_handler)();	
+	int	sv_mask;		
+	int	sv_flags;		
+};
+struct	sigstack {
+	char	*ss_sp;			
+	int	ss_onstack;		
+};
+# 116 "/sprite/lib/include/signal.h"
+# 125 "/sprite/lib/include/signal.h"
+# 28 "/sprite/lib/include/sys/param.h"
+# 1 "/sprite/lib/include/machparam.h"
+# 1 "/sprite/lib/include/machine/limits.h"
+# 39 "/sprite/lib/include/machparam.h"
+# 29 "/sprite/lib/include/sys/param.h"
+# 91 "/sprite/lib/include/sys/param.h"
+# 43 "ds3100.md/mips-tdep.c"
+# 1 "/sprite/lib/include/sys/dir.h"
+# 1 "/sprite/lib/include/sys/types.h"
+# 106 "/sprite/lib/include/sys/types.h"
+# 13 "/sprite/lib/include/sys/dir.h"
+struct	direct {
+	u_long	d_ino;			
+	u_short	d_reclen;		
+	u_short	d_namlen;		
+	char	d_name[255 + 1];	
+};
+typedef struct _dirdesc {
+	int	dd_fd;
+	long	dd_loc;
+	long	dd_size;
+	char	dd_buf[512];
+} DIR;
+# 78 "/sprite/lib/include/sys/dir.h"
+extern	DIR *opendir();
+extern	struct direct *readdir();
+extern	long telldir();
+extern	void seekdir();
+extern	void closedir();
+# 44 "ds3100.md/mips-tdep.c"
+# 1 "/sprite/lib/include/ds3100.md/kernel/ultrixSignal.h"
+# 217 "/sprite/lib/include/ds3100.md/kernel/ultrixSignal.h"
+# 46 "ds3100.md/mips-tdep.c"
+# 48 "ds3100.md/mips-tdep.c"
+# 1 "/sprite/lib/include/sys/ioctl.h"
+# 1 "/sprite/lib/include/sys/ttychars.h"
+struct ttychars {
+	char	tc_erase;	
+	char	tc_kill;	
+	char	tc_intrc;	
+	char	tc_quitc;	
+	char	tc_startc;	
+	char	tc_stopc;	
+	char	tc_eofc;	
+	char	tc_brkc;	
+	char	tc_suspc;	
+	char	tc_dsuspc;	
+	char	tc_rprntc;	
+	char	tc_flushc;	
+	char	tc_werasc;	
+	char	tc_lnextc;	
+};
+# 15 "/sprite/lib/include/sys/ioctl.h"
+# 1 "/sprite/lib/include/sys/ttydev.h"
+# 18 "/sprite/lib/include/sys/ioctl.h"
+# 1 "/sprite/lib/include/sys/fb.h"
+typedef struct	fbtype {
+	int	fb_type;	
+	int	fb_height;	
+	int	fb_width;	
+	int	fb_depth;	
+	int	fb_cmsize;	
+	int	fb_size;	
+} fbtype;
+typedef struct	fbinfo {
+	int		fb_physaddr;	
+	int		fb_hwwidth;	
+	int		fb_hwheight;	
+	int		fb_addrdelta;	
+	unsigned char	*fb_ropaddr;	
+	int		fb_unit;	
+} fbinfo;
+typedef struct	fbcmap {
+	int		index;		
+	int		count;		
+	unsigned char	*red;		
+	unsigned char	*green;		
+	unsigned char	*blue;		
+} fbcmap;
+typedef struct fbsattr {
+	int	flags;			
+	int	emu_type;		
+	int	dev_specific[8	];	
+} fbsattr;
+typedef struct fbgattr {
+	int	real_type;		
+	int	owner;			
+	struct	fbtype fbtype;		
+	struct	fbsattr sattr;		
+	int	emu_types[4	];	
+} fbgattr;
+struct	fbpixrect {
+    struct pixrect	*fbpr_pixrect;	
+};
+# 22 "/sprite/lib/include/sys/ioctl.h"
+# 1 "/sprite/lib/include/cfuncproto.h"
+# 76 "/sprite/lib/include/cfuncproto.h"
+# 25 "/sprite/lib/include/sys/ioctl.h"
+struct tchars {
+	char	t_intrc;	
+	char	t_quitc;	
+	char	t_startc;	
+	char	t_stopc;	
+	char	t_eofc;		
+	char	t_brkc;		
+};
+struct ltchars {
+	char	t_suspc;	
+	char	t_dsuspc;	
+	char	t_rprntc;	
+	char	t_flushc;	
+	char	t_werasc;	
+	char	t_lnextc;	
+};
+struct sgttyb {
+	char	sg_ispeed;		
+	char	sg_ospeed;		
+	char	sg_erase;		
+	char	sg_kill;		
+	short	sg_flags;		
+};
+struct winsize {
+	unsigned short	ws_row;			
+	unsigned short	ws_col;			
+	unsigned short	ws_xpixel;		
+	unsigned short	ws_ypixel;		
+};
+struct ttysize {
+	unsigned short	ts_lines;
+	unsigned short	ts_cols;
+	unsigned short	ts_xxx;
+	unsigned short	ts_yyy;
+};
+extern int ioctl 	();
+# 50 "ds3100.md/mips-tdep.c"
+# 1 "./gdbcore.h"
+# 1 "./gnu_include/bfd.h"
+# 1 "./gnu_include/ansidecl.h"
+# 89 "./gnu_include/ansidecl.h"
+# 44 "./gnu_include/bfd.h"
+# 1 "./gnu_include/obstack.h"
+# 418 "./gnu_include/obstack.h"
+# 45 "./gnu_include/bfd.h"
+# 50 "./gnu_include/bfd.h"
+typedef struct _bfd bfd;
+typedef enum boolean {false, true} boolean;
+typedef  long int file_ptr;
+# 83 "./gnu_include/bfd.h"
+typedef struct {int a,b;} bfd_64_type;
+typedef unsigned long rawdata_offset;
+typedef unsigned long bfd_vma;
+typedef unsigned long bfd_offset;
+typedef unsigned long bfd_word;
+typedef unsigned long bfd_size;
+typedef unsigned long symvalue;
+typedef unsigned long bfd_size_type;
+typedef unsigned int flagword;	
+typedef enum bfd_format {
+	      bfd_unknown = 0,	
+	      bfd_object,	
+	      bfd_archive,	
+	      bfd_core,		
+	      bfd_type_end}	
+         bfd_format;
+typedef unsigned long symindex;
+typedef enum bfd_symclass {
+	      bfd_symclass_unknown = 0,
+	      bfd_symclass_fcommon, 
+	      bfd_symclass_global, 
+	      bfd_symclass_debugger, 
+	      bfd_symclass_undefined 
+	    } symclass;
+typedef int symtype;		
+typedef struct carsym {
+  char *name;
+  file_ptr file_offset;		
+} carsym;			
+struct orl {			
+  char **name;			 
+  file_ptr pos;			
+  int namidx;			
+};
+typedef struct lineno_cache_entry {
+  unsigned int line_number;	  
+  union {
+ struct symbol_cache_entry *sym;		
+    unsigned long offset;	
+  } u;
+} alent;
+typedef struct sec *sec_ptr;
+typedef struct stat stat_type; 
+typedef enum bfd_error {
+	      no_error = 0, system_call_error, invalid_target,
+	      wrong_format, invalid_operation, no_memory,
+	      no_symbols, no_relocation_info,
+	      no_more_archived_files, malformed_archive,
+	      symbol_not_found, file_not_recognized,
+	      file_ambiguously_recognized, no_contents,
+		bfd_error_nonrepresentable_section,
+	      invalid_error_code} bfd_ec;
+extern bfd_ec bfd_error;
+typedef struct bfd_error_vector {
+ void (* nonrepresentable_section ) ();
+} bfd_error_vector_type;
+ char *  bfd_errmsg ();
+ void  bfd_perror ();
+typedef enum bfd_print_symbol
+{ 
+  bfd_print_symbol_name_enum,
+  bfd_print_symbol_type_enum,
+  bfd_print_symbol_all_enum
+} bfd_print_symbol_enum_type;
+# 237 "./gnu_include/bfd.h"
+extern  short _bfd_host_big_endian;
+  bfd*  bfd_openr ();
+ bfd *  bfd_fdopenr ();
+  bfd *  bfd_openw ();
+  boolean  bfd_close ();
+  bfd *  bfd_create ();
+  bfd_size_type bfd_alloc_size ();
+enum bfd_architecture 
+{
+  bfd_arch_unknown,   
+  bfd_arch_obscure,   
+  bfd_arch_m68k,      
+  bfd_arch_vax,          
+  bfd_arch_i960,      
+  bfd_arch_a29k,      
+  bfd_arch_sparc,     
+  bfd_arch_mips,      
+  bfd_arch_i386,      
+  bfd_arch_ns32k,     
+  bfd_arch_tahoe,     
+  bfd_arch_i860,      
+  bfd_arch_romp,      
+  bfd_arch_alliant,   
+  bfd_arch_convex,    
+  bfd_arch_m88k,      
+  bfd_arch_pyramid,   
+  bfd_arch_h8_300,    
+  bfd_arch_last
+  };
+  char * bfd_printable_arch_mach ();
+ boolean  bfd_scan_arch_mach ();
+ boolean  bfd_arch_compatible ();
+typedef struct sec {
+     char *name;
+    struct sec *next;
+flagword flags;
+   bfd_vma vma;
+   bfd_size_type size;    
+   bfd_vma output_offset;
+   struct sec *output_section;
+   unsigned int alignment_power;
+   struct reloc_cache_entry *relocation;
+   struct reloc_cache_entry **orelocation;
+   unsigned reloc_count;
+   int index;                      
+   file_ptr filepos;      
+   file_ptr rel_filepos;
+   file_ptr line_filepos;
+   	char * userdata;
+   struct lang_output_section *otheruserdata;
+   alent *lineno;
+   unsigned int lineno_count;
+   file_ptr moving_line_filepos;
+   unsigned int target_index;
+   	char * used_by_bfd;
+   struct relent_chain *constructor_chain;
+   bfd *owner;
+} asection ;
+ asection *  bfd_get_section_by_name ();
+  asection *  bfd_make_section ();
+ boolean  bfd_set_section_flags ();
+ void  bfd_map_over_sections ();
+ boolean  bfd_set_section_size ();
+ boolean  bfd_set_section_contents ();
+ boolean  bfd_get_section_contents ();
+typedef struct symbol_cache_entry 
+{
+  struct _bfd *the_bfd;
+    char *name;
+   symvalue value;
+  flagword flags;
+  struct sec *section;
+  	char * udata;	
+} asymbol;
+  boolean  bfd_set_symtab ();
+  void  bfd_print_symbol_vandf ();
+struct _bfd 
+{
+   char *filename;                
+  struct bfd_target *xvec;
+  char *iostream;
+  boolean cacheable;
+  boolean target_defaulted;
+  struct _bfd *lru_prev, *lru_next;
+  file_ptr where;              
+  boolean opened_once;
+  boolean mtime_set;
+  long mtime;          
+int ifd;
+  bfd_format format;
+  enum bfd_direction {no_direction = 0,
+                       read_direction = 1,
+                       write_direction = 2,
+                       both_direction = 3} direction;
+  flagword flags;              
+  file_ptr origin;             
+  boolean output_has_begun;
+  struct sec  *sections;
+  unsigned int section_count;
+  bfd_vma start_address;
+  unsigned int symcount;
+  struct symbol_cache_entry  **outsymbols;             
+  enum bfd_architecture obj_arch;
+  unsigned long obj_machine;
+  	char * arelt_data;              
+  struct _bfd *my_archive;     
+  struct _bfd *next;           
+  struct _bfd *archive_head;   
+  boolean has_armap;           
+  	char * tdata;
+  	char * usrdata;
+  struct obstack memory;
+};
+  boolean  bfd_set_start_address ();
+  long  bfd_get_mtime ();
+  symindex  bfd_get_next_mapent ();
+  boolean  bfd_set_archive_head ();
+  bfd *  bfd_get_elt_at_index ();
+ bfd*  bfd_openr_next_archived_file ();
+   char *  bfd_core_file_failing_command ();
+  int  bfd_core_file_failing_signal ();
+ boolean  core_file_matches_executable_p ();
+typedef enum bfd_reloc_status {
+  bfd_reloc_ok,
+  bfd_reloc_overflow,
+  bfd_reloc_outofrange,
+  bfd_reloc_continue,
+  bfd_reloc_notsupported,
+  bfd_reloc_other,
+  bfd_reloc_undefined,
+  bfd_reloc_dangerous
+   }
+ bfd_reloc_status_enum_type;
+typedef struct reloc_cache_entry 
+{
+  struct symbol_cache_entry **sym_ptr_ptr;
+  rawdata_offset address;
+  bfd_vma addend;    
+  struct sec *section;
+   struct reloc_howto_struct *howto;
+} arelent;
+typedef  struct reloc_howto_struct 
+{ 
+  unsigned int type;
+  unsigned int rightshift;
+  unsigned int size;
+  unsigned int bitsize;
+  boolean pc_relative;
+  unsigned int bitpos;
+  boolean absolute;
+  boolean complain_on_overflow;
+  bfd_reloc_status_enum_type (*special_function)();
+  char *name;
+  boolean partial_inplace;
+  bfd_word src_mask;
+  bfd_word dst_mask;           
+  boolean pcrel_offset;
+} reloc_howto_type;
+typedef unsigned char bfd_byte;
+typedef struct relent_chain {
+  arelent relent;
+  struct   relent_chain *next;
+} arelent_chain;
+ bfd_reloc_status_enum_type 
+                bfd_perform_relocation ();
+typedef struct bfd_target
+{
+  char *name;
+  enum target_flavour_enum {
+    bfd_target_aout_flavour_enum,
+    bfd_target_coff_flavour_enum,
+    bfd_target_ieee_flavour_enum,
+    bfd_target_oasys_flavour_enum,
+    bfd_target_srec_flavour_enum} flavour;
+  boolean byteorder_big_p;
+  boolean header_byteorder_big_p;
+  flagword object_flags;       
+  flagword section_flags;
+  char ar_pad_char;            
+ unsigned short ar_max_namelen;
+  unsigned int align_power_min;
+                    bfd_vma (*      bfd_getx64) ();
+                    void (*         bfd_putx64) ();
+                    bfd_vma (* bfd_getx32) ();
+                    void (*         bfd_putx32) ();
+                    bfd_vma (* bfd_getx16) ();
+                    void (*         bfd_putx16) ();
+                    bfd_vma (*   bfd_h_getx64) ();
+                    void (*          bfd_h_putx64) ();
+                    bfd_vma (*  bfd_h_getx32) ();
+                    void (*          bfd_h_putx32) ();
+                    bfd_vma (*  bfd_h_getx16) ();
+                    void (*          bfd_h_putx16) ();
+                    struct bfd_target * (* _bfd_check_format[bfd_type_end]) ();
+                    boolean (*            _bfd_set_format[bfd_type_end]) ();
+                    boolean (*            _bfd_write_contents[bfd_type_end]) ();
+                    char * (* _core_file_failing_command) ();
+                    int (*    _core_file_failing_signal) ();
+                    boolean (* _core_file_matches_executable_p) ();
+                   boolean (* _bfd_slurp_armap) ();
+                   boolean (* _bfd_slurp_extended_name_table) ();
+                   void (*   _bfd_truncate_arname) ();
+ boolean (* write_armap) ();
+                    boolean (* _close_and_cleanup) ();
+ boolean (* _bfd_set_section_contents) ();
+ boolean (* _bfd_get_section_contents) ();
+                    boolean (* _new_section_hook) ();
+                   unsigned int (* _get_symtab_upper_bound) ();
+ unsigned int (* _bfd_canonicalize_symtab) ();
+                    unsigned int (* _get_reloc_upper_bound) ();
+ unsigned int (* _bfd_canonicalize_reloc) ();
+                    struct symbol_cache_entry  * (* _bfd_make_empty_symbol) ();
+ void (*     _bfd_print_symbol) ();
+                    alent * (*   _get_lineno) ();
+ boolean (*   _bfd_set_arch_mach) ();
+                    bfd * (*  openr_next_archived_file) ();
+ boolean (* _bfd_find_nearest_line) ();
+                    int (*    _bfd_stat_arch_elt) ();
+                    int (*    _bfd_sizeof_headers) ();
+                    void (* _bfd_debug_info_start) ();
+                    void (* _bfd_debug_info_end) ();
+                    void (* _bfd_debug_info_accumulate) ();
+ void (* _bfd_coff_swap_aux_in) ();
+ void (* _bfd_coff_swap_sym_in) ();
+ void (* _bfd_coff_swap_lineno_in) ();
+} bfd_target;
+  bfd_target *  bfd_find_target ();
+   char ** bfd_target_list ();
+  boolean  bfd_check_format ();
+  boolean bfd_set_format ();
+   char *  bfd_format_string ();
+# 23 "./gdbcore.h"
+char *get_exec_file ();
+int have_core_file_p ();
+int read_memory_nobpt ();
+void memory_error ();
+void read_memory ();
+long read_memory_integer ();
+void write_memory ();
+extern void (*exec_file_display_hook) ();
+extern bfd *core_bfd;
+extern bfd *exec_bfd;
+void core_file_command ();
+void exec_file_command ();
+void validate_files ();
+unsigned int register_addr ();
+int xfer_core_file ();
+void fetch_core_registers ();
+void registers_fetched ();
+# 70 "./gdbcore.h"
+# 53 "ds3100.md/mips-tdep.c"
+# 59 "ds3100.md/mips-tdep.c"
+# 1 "/sprite/lib/include/sys/user.h"
+# 1 "/sprite/lib/include/sys/param.h"
+# 93 "/sprite/lib/include/sys/param.h"
+# 24 "/sprite/lib/include/sys/user.h"
+# 1 "/sprite/lib/include/sys/time.h"
+# 1 "/sprite/lib/include/cfuncproto.h"
+# 76 "/sprite/lib/include/cfuncproto.h"
+# 14 "/sprite/lib/include/sys/time.h"
+struct timeval {
+	long	tv_sec;		
+	long	tv_usec;	
+};
+struct timezone {
+	int	tz_minuteswest;	
+	int	tz_dsttime;	
+};
+struct	itimerval {
+	struct	timeval it_interval;	
+	struct	timeval it_value;	
+};
+# 1 "/sprite/lib/include/time.h"
+# 1 "/sprite/lib/include/cfuncproto.h"
+# 76 "/sprite/lib/include/cfuncproto.h"
+# 13 "/sprite/lib/include/time.h"
+# 18 "/sprite/lib/include/time.h"
+struct tm {
+	int	tm_sec;
+	int	tm_min;
+	int	tm_hour;
+	int	tm_mday;
+	int	tm_mon;
+	int	tm_year;
+	int	tm_wday;
+	int	tm_yday;
+	int	tm_isdst;
+	long	tm_gmtoff;
+	char	*tm_zone;
+};
+        extern clock_t clock 	();
+        extern time_t time 	();
+        extern time_t mktime 	();
+        extern double difftime 	();
+        extern struct tm *gmtime 	();
+        extern struct tm *localtime 	();
+        extern char *asctime 	();
+        extern char *ctime 	();
+        extern int strftime 
+	();
+# 62 "/sprite/lib/include/sys/time.h"
+        extern int	getitimer 	();
+        extern int	gettimeofday 
+	();
+        extern int	settimeofday 
+	();
+        extern int	setitimer 
+	();
+        extern int	utimes 
+	();
+# 25 "/sprite/lib/include/sys/user.h"
+# 1 "/sprite/lib/include/sys/resource.h"
+struct	rusage {
+	struct timeval ru_utime;	
+	struct timeval ru_stime;	
+	long	ru_maxrss;
+	long	ru_ixrss;		
+	long	ru_idrss;		
+	long	ru_isrss;		
+	long	ru_minflt;		
+	long	ru_majflt;		
+	long	ru_nswap;		
+	long	ru_inblock;		
+	long	ru_oublock;		
+	long	ru_msgsnd;		
+	long	ru_msgrcv;		
+	long	ru_nsignals;		
+	long	ru_nvcsw;		
+	long	ru_nivcsw;		
+};
+struct rlimit {
+	int	rlim_cur;		
+	int	rlim_max;		
+};
+# 26 "/sprite/lib/include/sys/user.h"
+# 1 "/sprite/lib/include/ds3100.md/sys/exec.h"
+# 53 "/sprite/lib/include/ds3100.md/sys/exec.h"
+# 1 "/sprite/lib/include/ds3100.md/filehdr.h"
+struct filehdr {
+	unsigned short	f_magic;	
+	unsigned short	f_nscns;	
+	long		f_timdat;	
+	long		f_symptr;	
+	long		f_nsyms;	
+	unsigned short	f_opthdr;	
+	unsigned short	f_flags;	
+	};
+# 56 "/sprite/lib/include/ds3100.md/filehdr.h"
+# 106 "/sprite/lib/include/ds3100.md/filehdr.h"
+# 167 "/sprite/lib/include/ds3100.md/filehdr.h"
+# 63 "/sprite/lib/include/ds3100.md/sys/exec.h"
+# 1 "/sprite/lib/include/ds3100.md/aouthdr.h"
+# 42 "/sprite/lib/include/ds3100.md/aouthdr.h"
+typedef	struct aouthdr {
+	short	magic;		
+	short	vstamp;		
+	long	tsize;		
+	long	dsize;		
+	long	bsize;		
+# 54 "/sprite/lib/include/ds3100.md/aouthdr.h"
+	long	entry;		
+	long	text_start;	
+	long	data_start;	
+	long	bss_start;	
+	long	gprmask;	
+	long	cprmask[4];	
+	long	gp_value;	
+} AOUTHDR;
+# 89 "/sprite/lib/include/ds3100.md/aouthdr.h"
+# 64 "/sprite/lib/include/ds3100.md/sys/exec.h"
+# 1 "/sprite/lib/include/ds3100.md/scnhdr.h"
+struct scnhdr {
+	char		s_name[8];	
+	long		s_paddr;	
+	long		s_vaddr;	
+	long		s_size;		
+	long		s_scnptr;	
+	long		s_relptr;	
+	long		s_lnnoptr;	
+	unsigned short	s_nreloc;	
+	unsigned short	s_nlnno;	
+	long		s_flags;	
+	};
+# 64 "/sprite/lib/include/ds3100.md/scnhdr.h"
+# 73 "/sprite/lib/include/ds3100.md/scnhdr.h"
+# 119 "/sprite/lib/include/ds3100.md/scnhdr.h"
+# 150 "/sprite/lib/include/ds3100.md/scnhdr.h"
+# 199 "/sprite/lib/include/ds3100.md/scnhdr.h"
+# 243 "/sprite/lib/include/ds3100.md/scnhdr.h"
+union gp_table {
+  struct {
+    long current_g_value; 
+    long unused;
+  } header;
+  struct {
+    long g_value; 
+    long bytes;	
+  } entry;
+};
+# 295 "/sprite/lib/include/ds3100.md/scnhdr.h"
+struct libscn {
+	long	size;		
+	long	offset;		
+	long	tsize;		
+	long	dsize;		
+	long	bsize;		
+	long	text_start;	
+	long	data_start;	
+	long	bss_start;	
+};
+# 65 "/sprite/lib/include/ds3100.md/sys/exec.h"
+# 105 "/sprite/lib/include/ds3100.md/sys/exec.h"
+struct exec {
+	struct filehdr	ex_f;
+	struct aouthdr	ex_o;
+};
+# 130 "/sprite/lib/include/ds3100.md/sys/exec.h"
+# 157 "/sprite/lib/include/ds3100.md/sys/exec.h"
+# 164 "/sprite/lib/include/ds3100.md/sys/exec.h"
+# 27 "/sprite/lib/include/sys/user.h"
+# 1 "/sprite/lib/include/errno.h"
+extern int	errno;		
+extern int	sys_nerr;	
+extern char	*sys_errlist[];	
+# 28 "/sprite/lib/include/sys/user.h"
+# 65 "ds3100.md/mips-tdep.c"
+# 1 "/sprite/lib/include/sys/file.h"
+# 66 "ds3100.md/mips-tdep.c"
+# 1 "/sprite/lib/include/sys/stat.h"
+# 1 "/sprite/lib/include/cfuncproto.h"
+# 76 "/sprite/lib/include/cfuncproto.h"
+# 14 "/sprite/lib/include/sys/stat.h"
+struct	stat
+{
+	dev_t	st_dev;
+	ino_t	st_ino;
+	unsigned short st_mode;
+	short	st_nlink;
+	uid_t	st_uid;
+	gid_t	st_gid;
+	dev_t	st_rdev;
+	off_t	st_size;
+	time_t	st_atime;
+	int	st_spare1;
+	time_t	st_mtime;
+	int	st_spare2;
+	time_t	st_ctime;
+	int	st_spare3;
+	long	st_blksize;
+	long	st_blocks;
+	long	st_serverID;
+	long	st_version;
+	long	st_userType;
+	long	st_devServerID;
+};
+extern int fstat 	();
+extern int lstat 	();
+extern int stat 	();
+extern int mkdir 	();
+# 67 "ds3100.md/mips-tdep.c"
+struct linked_proc_info
+{
+  struct mips_extra_func_info info;
+  struct linked_proc_info *next;
+} * linked_proc_desc_table = 0;
+int
+read_next_frame_reg(fi, regno)
+     FRAME fi;
+     int regno;
+{
+  for (; fi; fi = fi->next)
+      if (in_sigtramp(fi->pc, 0)) {
+	  int offset;
+	  if (regno == 37		) offset = (-  sizeof(struct sigcontext)+ 2*sizeof(int));
+	  else if (regno == 31		) offset = (-  sizeof(struct sigcontext)+34*sizeof(int));
+	  else if (regno == 29		) offset = (-  sizeof(struct sigcontext)+32*sizeof(int));
+	  else return 0;
+	  return read_memory_integer(fi->frame + offset, 4);
+      }
+      else if (regno == 29		) return fi->frame;
+      else if (fi->saved_regs->regs[regno])
+	return read_memory_integer(fi->saved_regs->regs[regno], 4);
+  return read_register(regno);
+}
+int
+mips_frame_saved_pc(frame)
+     FRAME frame;
+{
+  mips_extra_func_info_t proc_desc = (mips_extra_func_info_t)frame->proc_desc;
+  int pcreg = proc_desc ?  ((proc_desc)->pcreg) : 31		;
+  if (proc_desc &&  ((proc_desc)->isym == 0x0F0F0F0F))
+      return read_memory_integer(frame->frame - 4, 4);
+# 139 "ds3100.md/mips-tdep.c"
+  return read_next_frame_reg(frame, pcreg);
+}
+static struct mips_extra_func_info temp_proc_desc;
+static struct frame_saved_regs temp_saved_regs;
+CORE_ADDR heuristic_proc_start(pc)
+    CORE_ADDR pc;
+{
+    CORE_ADDR start_pc = pc;
+    CORE_ADDR fence = start_pc - 10000;
+    if (fence < (unsigned)0x400000) fence = (unsigned)0x400000;
+    for (start_pc -= 4; ; start_pc -= 4)
+	if (start_pc < fence) return 0; 
+	else if ( (read_memory_integer (start_pc, 4) == 0x3e00008))
+	    break;
+    start_pc += 8; 
+# 164 "ds3100.md/mips-tdep.c"
+    return start_pc;
+}
+mips_extra_func_info_t
+heuristic_proc_desc(start_pc, limit_pc, next_frame)
+    CORE_ADDR start_pc, limit_pc;
+    FRAME next_frame;
+{
+    CORE_ADDR sp = next_frame ? next_frame->frame : read_register (29		);
+    CORE_ADDR cur_pc;
+    int frame_size;
+    int has_frame_reg = 0;
+    int reg30; 
+    unsigned long reg_mask = 0;
+    if (start_pc == 0) return 0;
+    bzero(&temp_proc_desc, sizeof(temp_proc_desc));
+    bzero(&temp_saved_regs, sizeof(struct frame_saved_regs));
+    if (start_pc + 200 < limit_pc) limit_pc = start_pc + 200;
+  restart:
+    frame_size = 0;
+    for (cur_pc = start_pc; cur_pc < limit_pc; cur_pc += 4) {
+	unsigned long word;
+	int status;
+	status = read_memory_nobpt (cur_pc, &word, 4); 
+	if (status) memory_error (status, cur_pc); 
+	if ((word & 0xFFFF0000) == 0x27bd0000) 
+	    frame_size += (-word) & 0xFFFF;
+	else if ((word & 0xFFFF0000) == 0x23bd0000) 
+	    frame_size += (-word) & 0xFFFF;
+	else if ((word & 0xFFE00000) == 0xafa00000) { 
+	    int reg = (word & 0x001F0000) >> 16;
+	    reg_mask |= 1 << reg;
+	    temp_saved_regs.regs[reg] = sp + (short)word;
+	}
+	else if ((word & 0xFFFF0000) == 0x27be0000) { 
+	    if ((unsigned short)word != frame_size)
+		reg30 = sp + (unsigned short)word;
+	    else if (!has_frame_reg) {
+		int alloca_adjust;
+		has_frame_reg = 1;
+		reg30 = read_next_frame_reg(next_frame, 30);
+		alloca_adjust = reg30 - (sp + (unsigned short)word);
+		if (alloca_adjust > 0) {
+		    sp += alloca_adjust;
+		    goto restart;
+		}
+	    }
+	}
+	else if ((word & 0xFFE00000) == 0xafc00000) { 
+	    int reg = (word & 0x001F0000) >> 16;
+	    reg_mask |= 1 << reg;
+	    temp_saved_regs.regs[reg] = reg30 + (short)word;
+	}
+    }
+    if (has_frame_reg) {
+	 ((&temp_proc_desc)->framereg) = 30;
+	 ((&temp_proc_desc)->framesize) = 0;
+    }
+    else {
+	 ((&temp_proc_desc)->framereg) = 29		;
+	 ((&temp_proc_desc)->framesize) = frame_size;
+    }
+     ((&temp_proc_desc)->regmask) = reg_mask;
+     ((&temp_proc_desc)->pcreg) = 31		;
+    return &temp_proc_desc;
+}
+mips_extra_func_info_t
+find_proc_desc(pc, next_frame)
+    CORE_ADDR pc;
+    FRAME next_frame;
+{
+  mips_extra_func_info_t proc_desc;
+  extern struct block *block_for_pc();
+  struct block   *b = block_for_pc(pc);
+  struct symbol *sym =
+      b ? lookup_symbol(".gdbinfo.", b, LABEL_NAMESPACE, 0, 0) : 0;
+  if (sym != 0)
+    {
+	proc_desc = (struct mips_extra_func_info *)sym->value.value;
+	if (next_frame == 0) {
+	    struct symtab_and_line val;
+	    struct symbol *proc_symbol =
+		 ((proc_desc)->isym == 0x0F0F0F0F) ? 0 :  (*(struct symbol**)&(proc_desc)->isym);
+	    if (proc_symbol) {
+		val = find_pc_line (
+ ( (proc_symbol)->value.block)->startaddr,
+				    0);
+		val.pc = val.end ? val.end : pc;
+	    }
+	    if (!proc_symbol || pc < val.pc) {
+		mips_extra_func_info_t found_heuristic =
+		    heuristic_proc_desc( ((proc_desc)->adr) ,
+					pc, next_frame);
+		if (found_heuristic) proc_desc = found_heuristic;
+	    }
+	}
+    }
+  else
+    {
+      register struct linked_proc_info *link;
+      for (link = linked_proc_desc_table; link; link = link->next)
+	  if ( ((&link->info)->adr)  <= pc
+	      &&  ((&link->info)->pad2)  > pc)
+	      return &link->info;
+      proc_desc =
+	  heuristic_proc_desc(heuristic_proc_start(pc), pc, next_frame);
+    }
+  return proc_desc;
+}
+mips_extra_func_info_t cached_proc_desc;
+FRAME_ADDR mips_frame_chain(frame)
+    FRAME frame;
+{
+    extern CORE_ADDR startup_file_start;	
+    mips_extra_func_info_t proc_desc;
+    CORE_ADDR saved_pc = 	(mips_frame_saved_pc(frame));
+    if (startup_file_start)
+      { 
+	if (saved_pc == 0 || !outside_startup_file (saved_pc)) return 0;
+      }
+    else
+      { 
+        if (saved_pc == 0
+	    || read_memory_integer (saved_pc + 8, 4) & 0xFC00003F == 0xD)
+	    return 0;  
+      }
+    proc_desc = find_proc_desc(saved_pc, frame);
+    if (!proc_desc) return 0;
+    cached_proc_desc = proc_desc;
+    return read_next_frame_reg(frame,  ((proc_desc)->framereg))
+	+  ((proc_desc)->framesize);
+}
+void
+init_extra_frame_info(fci)
+     struct frame_info *fci;
+{
+  extern struct obstack frame_cache_obstack;
+  mips_extra_func_info_t proc_desc = fci->next ? cached_proc_desc :
+      find_proc_desc(fci->pc, fci->next);
+  fci->saved_regs = (struct frame_saved_regs*)
+    						 (						( ((&frame_cache_obstack))->temp = ( ( sizeof(struct frame_saved_regs))),							  ((((&frame_cache_obstack))->chunk_limit - ((&frame_cache_obstack))->next_free < ((&frame_cache_obstack))->temp)			   ? _obstack_newchunk (((&frame_cache_obstack)), ((&frame_cache_obstack))->temp) : 0),				  ((&frame_cache_obstack))->next_free += ((&frame_cache_obstack))->temp),   						( ((&frame_cache_obstack))->temp =  ((((&frame_cache_obstack))->object_base) - (char *)0),				  ((&frame_cache_obstack))->next_free							    =  ((( ((((&frame_cache_obstack))->next_free) - (char *)0)+((&frame_cache_obstack))->alignment_mask)			    & ~ (((&frame_cache_obstack))->alignment_mask)) + (char *)0),				  ((((&frame_cache_obstack))->next_free - (char *)((&frame_cache_obstack))->chunk					    > ((&frame_cache_obstack))->chunk_limit - (char *)((&frame_cache_obstack))->chunk)				   ? (((&frame_cache_obstack))->next_free = ((&frame_cache_obstack))->chunk_limit) : 0),				  ((&frame_cache_obstack))->object_base = ((&frame_cache_obstack))->next_free,					   ((((&frame_cache_obstack))->temp) + (char *)0)));
+  bzero(fci->saved_regs, sizeof(struct frame_saved_regs));
+  fci->proc_desc =
+      proc_desc == &temp_proc_desc ? (char*)0 : (char*)proc_desc;
+  if (proc_desc)
+    {
+      int ireg;
+      CORE_ADDR reg_position;
+      unsigned long mask;
+      int kernel_trap =  ((proc_desc)->regmask) & 1;
+      if (fci->pc ==  ((proc_desc)->adr) )
+	  fci->frame = read_register (29		);
+      else
+	  fci->frame =  read_next_frame_reg((fci)->next,   ((proc_desc)->framereg))
+	      +  ((proc_desc)->framesize);
+      if (proc_desc == &temp_proc_desc)
+	  *fci->saved_regs = temp_saved_regs;
+      else
+      {
+	  reg_position = fci->frame +  ((proc_desc)->regoffset);
+	  mask = kernel_trap ? 0xFFFFFFFF :  ((proc_desc)->regmask);
+	  for (ireg= 31; mask; --ireg, mask <<= 1)
+	      if (mask & 0x80000000)
+	      {
+		  fci->saved_regs->regs[ireg] = reg_position;
+		  reg_position -= 4;
+	      }
+	  reg_position = fci->frame +  ((proc_desc)->fregoffset);
+	  reg_position += 4;
+	  mask = kernel_trap ? 0xFFFFFFFF :  ((proc_desc)->fregmask);
+	  for (ireg = 31; mask; --ireg, mask <<= 1)
+	      if (mask & 0x80000000)
+	      {
+		  fci->saved_regs->regs[32+ireg] = reg_position;
+		  reg_position -= 4;
+	      }
+      }
+      if (( ((proc_desc)->regmask) & 0xF0) == 0) fci->num_args = -1;
+      else if (( ((proc_desc)->regmask) & 0x80) == 0) fci->num_args = 4;
+      else if (( ((proc_desc)->regmask) & 0x40) == 0) fci->num_args = 3;
+      else if (( ((proc_desc)->regmask) & 0x20) == 0) fci->num_args = 2;
+      else if (( ((proc_desc)->regmask) & 0x10) == 0) fci->num_args = 1;
+      fci->saved_regs->regs[37		] = fci->saved_regs->regs[31		];
+    }
+  if (fci->next == 0)
+      supply_register(72		, &fci->frame);
+}
+CORE_ADDR mips_push_arguments(nargs, args, sp, struct_return, struct_addr)
+  int nargs;
+  value *args;
+  CORE_ADDR sp;
+  int struct_return;
+  CORE_ADDR struct_addr;
+{
+  CORE_ADDR buf;
+  register i;
+  int accumulate_size = struct_return ? 4 : 0;
+  struct mips_arg { char *contents; int len; int offset; };
+  struct mips_arg *mips_args =
+      (struct mips_arg*)alloca(nargs * sizeof(struct mips_arg));
+  register struct mips_arg *m_arg;
+  for (i = 0, m_arg = mips_args; i < nargs; i++, m_arg++) {
+    extern value value_arg_coerce();
+    value arg = value_arg_coerce (args[i]);
+    m_arg->len =  ( (arg)->type)->length;
+    if (m_arg->len > 4) accumulate_size = (accumulate_size + 7) & -8;
+    m_arg->offset = accumulate_size;
+    accumulate_size = (accumulate_size + m_arg->len + 3) & -4;
+    m_arg->contents =  ((void)( (arg)->lazy && value_fetch_lazy(arg)),			      ((char *) (arg)->aligner.contents));
+  }
+  accumulate_size = (accumulate_size + 7) & (-8);
+  if (accumulate_size < 16) accumulate_size = 16; 
+  sp -= accumulate_size;
+  for (i = nargs; m_arg--, --i >= 0; )
+    write_memory(sp + m_arg->offset, m_arg->contents, m_arg->len);
+  if (struct_return) {
+    buf = struct_addr;
+    write_memory(sp, &buf, sizeof(CORE_ADDR));
+}
+  return sp;
+}
+void
+mips_push_dummy_frame()
+{
+  int ireg;
+  struct linked_proc_info *link = (struct linked_proc_info*)
+      xmalloc(sizeof(struct linked_proc_info));
+  mips_extra_func_info_t proc_desc = &link->info;
+  CORE_ADDR sp = read_register (29		);
+  CORE_ADDR save_address;
+  long buffer;
+  link->next = linked_proc_desc_table;
+  linked_proc_desc_table = link;
+   ((proc_desc)->regmask) =  ((1 << (16)+1)-1 ^ (1 << (1))-1)| ((1 << (28)+1)-1 ^ (1 << (24))-1)|(1<<31);
+   ((proc_desc)->fregmask) =  ((1 << (19)+1)-1 ^ (1 << (0))-1);
+   ((proc_desc)->regoffset) = 
+      -sizeof(long) - 4 * 4;
+   ((proc_desc)->fregoffset) = 
+      -sizeof(double) - 4 * (4 + 22);
+  save_address = sp +  ((proc_desc)->regoffset);
+  for (ireg = 32; --ireg >= 0; )
+    if ( ((proc_desc)->regmask) & (1 << ireg))
+      {
+	buffer = read_register (ireg);
+	write_memory (save_address, &buffer, sizeof(long));
+	save_address -= 4;
+      }
+  save_address = sp +  ((proc_desc)->fregoffset);
+  for (ireg = 32; --ireg >= 0; )
+    if ( ((proc_desc)->fregmask) & (1 << ireg))
+      {
+	buffer = read_register (ireg);
+	write_memory (save_address, &buffer, 4);
+	save_address -= 4;
+      }
+  write_register (16 , sp);
+   ((proc_desc)->framereg) = 16 ;
+   ((proc_desc)->framesize) = 0;
+  buffer = read_register (37		);
+  write_memory (sp - 4, &buffer, sizeof(long));
+  buffer = read_register (34            );
+  write_memory (sp - 8, &buffer, sizeof(long));
+  buffer = read_register (33            );
+  write_memory (sp - 12, &buffer, sizeof(long));
+  buffer = read_register (70         );
+  write_memory (sp - 16, &buffer, sizeof(long));
+  sp -= 4 * (22+20+4);
+  write_register (29		, sp);
+   ((proc_desc)->adr)  = sp - (16*4) + 12;
+   ((proc_desc)->pad2)  = sp;
+   ((proc_desc)->isym = 0x0F0F0F0F);
+   ((proc_desc)->pcreg) = 31		;
+}
+void
+mips_pop_frame()
+{ register int regnum;
+  FRAME frame = get_current_frame ();
+  CORE_ADDR new_sp = frame->frame;
+  mips_extra_func_info_t proc_desc = (mips_extra_func_info_t)frame->proc_desc;
+  if ( ((proc_desc)->isym == 0x0F0F0F0F))
+    {
+      struct linked_proc_info **ptr = &linked_proc_desc_table;;
+      for (; &ptr[0]->info != proc_desc; ptr = &ptr[0]->next )
+	  if (ptr[0] == 0) abort();
+      *ptr = ptr[0]->next;
+      free (ptr[0]);
+      write_register (34            , read_memory_integer(new_sp - 8, 4));
+      write_register (33            , read_memory_integer(new_sp - 12, 4));
+      write_register (70         , read_memory_integer(new_sp - 16, 4));
+    }
+  write_register (37		, 	(mips_frame_saved_pc(frame)));
+  if (frame->proc_desc) {
+    for (regnum = 32; --regnum >= 0; )
+      if ( ((proc_desc)->regmask) & (1 << regnum))
+	write_register (regnum,
+		  read_memory_integer (frame->saved_regs->regs[regnum], 4));
+    for (regnum = 64; --regnum >= 32; )
+      if ( ((proc_desc)->fregmask) & (1 << regnum))
+	write_register (regnum,
+		  read_memory_integer (frame->saved_regs->regs[regnum], 4));
+  }
+  write_register (29		, new_sp);
+  flush_cached_frames ();
+  set_current_frame (create_new_frame (new_sp, read_pc ()));
+}
+static
+mips_print_register(regnum, all)
+     int regnum, all;
+{
+      unsigned char raw_buffer[8];
+      long val;
+      read_relative_register_raw_bytes (regnum, raw_buffer);
+      if (!(regnum & 1) && regnum >= 38            && regnum < 38           +32) {
+	  read_relative_register_raw_bytes (regnum+1, raw_buffer+4);
+	  printf_filtered ("(d%d: ", regnum&31);
+	  val_print (builtin_type_double, raw_buffer, 0,
+		     (&stdioOutFile), 0, 1, 0, Val_pretty_default);
+	  printf_filtered ("); ", regnum&31);
+      }
+      fputs_filtered (reg_names[regnum], (&stdioOutFile));
+      if (regnum < 32)
+	  printf_filtered ("(r%d): ", regnum);
+      else
+	  printf_filtered (": ");
+      if ( ( builtin_type_int)->code == TYPE_CODE_FLT
+	  && ! 	isa_NAN(raw_buffer,  4)) {
+	  val_print ( builtin_type_int, raw_buffer, 0,
+		     (&stdioOutFile), 0, 1, 0, Val_pretty_default);
+      }
+      else
+	{
+	  long val;
+	  bcopy (raw_buffer, &val, sizeof (long));
+	  if (val == 0)
+	    printf_filtered ("0");
+	  else if (all)
+	    printf_filtered ("0x%x", val);
+	  else
+	    printf_filtered ("0x%x=%d", val, val);
+	}
+}
+mips_do_registers_info (regnum, fpregs)
+     int regnum;
+     int fpregs;
+{
+  if (regnum != -1) {
+      mips_print_register (regnum, 0);
+      printf_filtered ("\n");
+  }
+  else {
+      for (regnum = 0; regnum < 73; ) {
+	  if ((!fpregs) && regnum >= 38            && regnum <= 71         ) {
+	    regnum++;
+	    continue;
+	  }
+	  mips_print_register (regnum, 1);
+	  regnum++;
+	  if ((regnum & 3) == 0 || regnum == 73)
+	      printf_filtered (";\n");
+	  else
+	      printf_filtered ("; ");
+      }
+  }
+}
+mips_frame_num_args(fip)
+	FRAME fip;
+{
+# 627 "ds3100.md/mips-tdep.c"
+	return -1;
+}
+int
+isa_NAN(p, len)
+     int *p, len;
+{
+  int exponent;
+  if (len == 4)
+    {
+      exponent = *p;
+      exponent = exponent << 1 >> (32 -  8 - 1);
+      return ((exponent == -1) || (! exponent && *p));
+    }
+  else if (len == 8)
+    {
+      exponent = *(p+1);
+      exponent = exponent << 1 >> (32 - 11 - 1);
+      return ((exponent == -1) || (! exponent && *p * *(p+1)));
+    }
+  else return 1;
+}
+CORE_ADDR mips_skip_prologue(pc)
+     CORE_ADDR pc;
+{
+    struct symbol *f;
+    struct block *b;
+    unsigned long inst;
+    inst = read_memory_integer(pc, 4);
+    if ((inst & 0xffff0000) == 0x27bd0000)
+	return pc + 4;
+    b = block_for_pc(pc);
+    if (!b) return pc;
+    f = lookup_symbol(".gdbinfo.", b, LABEL_NAMESPACE, 0, 0);
+    if (!f) return pc;
+    if (((struct mips_extra_func_info *)f->value.value)->framesize)
+	return pc + 4;
+    return pc;
+}

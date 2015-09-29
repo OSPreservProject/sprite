@@ -1,0 +1,168 @@
+head     9.3;
+branch   ;
+access   ;
+symbols  ds3100:9.3 sun3:9.3 sun4nw:9.3 symm:9.3 spur:9.3 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.3
+date     91.04.16.17.12.54;  author jhh;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.09.11.12.12.47;  author rab;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.05.14.14.20.47;  author mgbaker;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.57.01;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     89.05.24.07.53.09;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.05.18.17.59.18;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Disk statistics header file.
+@
+
+
+9.3
+log
+@fixed include statements
+@
+text
+@/*
+ * devDiskStats.h --
+ *
+ *	Declarations of routines for collecting statistics on Sprite disk 
+ *	usage.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/dev/RCS/devDiskStats.h,v 9.2 90/09/11 12:12:47 rab Exp Locker: jhh $ SPRITE (Berkeley)
+ */
+
+#ifndef _DISKSTATS
+#define _DISKSTATS
+
+#include <user/sysStats.h>
+#include <user/fs.h>
+
+/*
+ * This structure is used for disk stats instead of a straignt Sys_DiskStats
+ * because otherwise for some types of disks (SCSI), there is no place to
+ * keep the busy info.  This field is wasted on the xylogics.
+ */
+typedef struct  DevDiskStats {
+    Sync_Semaphore	mutex;		/* syncrhonize stat updates */
+    int         	busy;		/* For idle check. */
+    Sys_DiskStats 	diskStats;	/* Stat structure of device. */
+} DevDiskStats;
+
+
+/* procedures */
+
+extern DevDiskStats *DevRegisterDisk _ARGS_((Fs_Device *devicePtr,
+    char *deviceName,
+    Boolean (*idleCheck) _ARGS_ ((ClientData clientData,
+                                DevDiskStats *diskStatsPtr)),
+    ClientData clientData));
+extern void DevDiskUnregister _ARGS_((DevDiskStats *diskStatsPtr));
+extern void DevPrintIOStats _ARGS_((Timer_Ticks time, ClientData clientData));
+extern void Dev_StartIOStats _ARGS_((void));
+extern void Dev_StopIOStats _ARGS_((void));
+
+#endif /* _DISKSTATS */
+
+@
+
+
+9.2
+log
+@Added prototypes.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/dev/RCS/devDiskStats.h,v 9.1 90/05/14 14:20:47 mgbaker Exp Locker: rab $ SPRITE (Berkeley)
+d22 2
+a23 2
+#include "user/sysStats.h"
+#include "user/fs.h"
+@
+
+
+9.1
+log
+@Fixed io stats testing to avoid accessing freed space.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/dev/RCS/devDiskStats.h,v 9.0 89/09/12 14:57:01 douglis Stable Locker: mgbaker $ SPRITE (Berkeley)
+d23 1
+d39 9
+a47 2
+extern DevDiskStats *DevRegisterDisk();
+extern	void	DevDiskUnregister();
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/dev/RCS/devDiskStats.h,v 1.2 89/05/24 07:53:09 rab Exp Locker: douglis $ SPRITE (Berkeley)
+d24 12
+d38 2
+a39 1
+extern Sys_DiskStats *DevRegisterDisk();
+@
+
+
+1.2
+log
+@Changes to allow optimization.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/dev/RCS/devDiskStats.h,v 1.1 89/05/18 17:59:18 mendel Exp Locker: rab $ SPRITE (Berkeley)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.2 89/01/07 04:12:44 rab Exp $ SPRITE (Berkeley)
+@

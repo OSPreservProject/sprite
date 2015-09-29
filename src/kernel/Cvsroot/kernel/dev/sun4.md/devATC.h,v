@@ -1,0 +1,55 @@
+head     9.1;
+branch   ;
+access   ;
+symbols  ds3100:9.1 sun3:9.1;
+locks    ; strict;
+comment  @ * @;
+
+
+9.1
+date     92.10.23.16.28.53;  author elm;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Include file for ATC device module.
+@
+
+
+9.1
+log
+@
+First revision.
+@
+text
+@/*
+ * devATC.h --
+ *
+ *	Internal declarations for the ATC disk controller. 
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/dev/sun4.md/atc.h,v 9.1 92/08/24 14:33:51 alc Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _DEVATC
+#define _DEVATC
+
+#include "devBlockDevice.h"
+
+extern DevBlockDeviceHandle	*DevATCDiskAttach();
+
+
+#endif /* _DEVATC */
+
+
+
+@

@@ -1,0 +1,188 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.5
+date     89.11.28.15.50.14;  author douglis;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.06.19.14.33.37;  author jhh;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.05.21.16.49.08;  author jhh;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.12.30.10.15.12;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.12.22.11.47.20;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.5
+log
+@documented -q -S options
+@
+text
+@'\" Copyright 1989 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/cmds/shutdown/RCS/shutdown.man,v 1.4 89/06/19 14:33:37 jhh Exp Locker: douglis $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS SHUTDOWN cmds
+.BS
+.SH NAME
+shutdown \- shutdown and possibly reboot the system
+.SH SYNOPSIS
+\fBshutdown \fR[\fB\-hSrdfq\fR] [\fB\-R \fIrebootStr\fR] [\fB\-S \fIsleepTime\fR]
+.SH OPTIONS
+.IP "\fB\-d\fR" 18
+Enter the debugger after shutting the system down.
+.IP "\fB\-f\fR" 18
+Don't check the disks when rebooting.  Unless the \fB\-d\fR or \fB\-h\fR
+options are specified then \fB\-f\fR implies \fB\-r\fR.
+.IP "\fB\-h\fR" 18
+Force the system to halt.  This is the default unless the \fB\-f\fR or
+\fB\-s\fR options are
+used.
+.IP "\fB\-r\fR" 18
+Reboot instead of halt.  This will use whatever is the default reboot string
+of the hardware.
+.IP "\fB\-R \fIrebootStr\fR" 18
+Reboot the system with \fIrebootStr\fR as the string to reboot with.
+.IP "\fB\-w\fR" 18
+Don't write the file system cache back to disk or to the server.
+The default is to write it back.
+.IP "\fB\-s\fR" 18
+Reboot single user mode. Unless the \fB\-d\fR or \fB\-h\fR
+options are specified then \fB\-s\fR implies \fB\-r\fR.
+.IP "\fB\-c\fR" 18
+Reboot a fileserver as a client.  This causes a fileserver to ignore the
+/boot directory on its local root partition. See the \fBboot\fR man
+page for more details.
+.IP "\fB\-x\fR" 18
+Causes a fileserver to run \fBrootcmds\fR before \fBdiskcmds\fR on reboot.
+.IP "\fB\-q\fR" 18
+Do not use \fIwall\fR to announce the shutdown and do not pause before
+shutting down. 
+.IP "\fB\-S \fIsleepTime\fR" 18
+Sleep \fIsleepTime\fR seconds after running \fIwall\fR.
+.BE
+
+.SH INTRODUCTION
+.LP
+This command shuts down the operating system.  By default the system
+is halted. However the system can be made to reboot or enter the debugger
+by specifying the correct options.  By default, the shutdown is
+announced (on the local host only) using \fIwall\fR and the shutdown
+is delayed by several 
+seconds to give people a chance to complain.  
+.SH KEYWORDS
+halt, reboot, shutdown, fastboot, boot
+@
+
+
+1.4
+log
+@Added -x and -c options
+@
+text
+@d9 1
+a9 1
+'\" $Header: /sprite/lib/forms/RCS/cmd.man,v 1.1 89/02/23 13:08:24 ouster Exp $ SPRITE (Berkeley)
+d17 1
+a17 1
+\fBshutdown \fR[\fB\-hSrdf\fR] [\fB\-R \fIrebootStr\fR]
+d45 5
+d56 4
+a59 1
+by specifying the correct options.
+@
+
+
+1.3
+log
+@added -s and new handling of -f flag
+@
+text
+@d1 10
+a10 1
+' $Header: /a/newcmds/shutdown/RCS/shutdown.man,v 1.2 88/12/30 10:15:12 ouster Exp $ SPRITE (Berkeley)
+d39 6
+d53 1
+a53 1
+halt, reboot, shutdown, fastboot
+@
+
+
+1.2
+log
+@More format upgrades.
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/shutdown/RCS/shutdown.man,v 1.1 88/12/22 11:47:20 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d16 2
+a17 1
+Force the system to halt.  This is the default unless the \fB\-f\fR option is
+d27 3
+a29 1
+.IP 
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+' $Header: shutdown,v 1.1 88/08/16 11:48:17 nelson Exp $ SPRITE (Berkeley)
+d8 1
+a8 1
+\fBshutdown \fR[\fB-hSrdf\fR] [\fB-R \fIrebootStr\fR]
+d10 1
+a10 1
+.IP "\fB-d\fR" 18
+d12 5
+a16 5
+.IP "\fB-f\fR" 18
+Don't check the disks when rebooting.  Unless the \fB-d\fR or \fB-h\fR
+options are specified then \fB-f\fR implies \fB-r\fR.
+.IP "\fB-h\fR" 18
+Force the system to halt.  This is the default unless the \fB-f\fR option is
+d18 1
+a18 1
+.IP "\fB-r\fR" 18
+d21 1
+a21 1
+.IP "\fB-R \fIrebootStr\fR" 18
+d23 1
+a23 1
+.IP "\fB-w\fR" 18
+@

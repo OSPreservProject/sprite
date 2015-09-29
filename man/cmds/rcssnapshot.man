@@ -1,0 +1,45 @@
+' Copyright 1989 Regents of the University of California
+' Permission to use, copy, modify, and distribute this
+' documentation for any purpose and without fee is hereby
+' granted, provided that this notice appears in all copies.
+' The University of California makes no representations about
+' the suitability of this material for any purpose.  It is
+' provided "as is" without express or implied warranty.
+' 
+' $Header: /sprite/lib/forms/RCS/proto.man,v 1.3 89/01/09 11:43:01 ouster Exp $ SPRITE (Berkeley)
+' 
+.so \*(]ltmac.sprite
+.HS <RCSSNAPSHOT> cmds
+.BS
+.SH NAME
+rcssnapshot \- Move all RCS'ed files to a new version number
+.SH SYNOPSIS
+.nf
+\fBrcssnapshot\fR [\fIoptions\fR] \fIcheckpoint-name\fR
+.SH OPTIONS
+.IP "\fB\-r\fIrev\fR" 14
+Check in all files as the revision number specified by \fIrev\fR.
+.BE
+.SH DESCRIPTION
+.PP
+This program assigns a symbolic name to all files controlled by RCS in
+the current directory.  If the "\fB\-r\fIrev\fR" option is given, it
+checks in each file  as revision \fIrev\fR before assigning the
+symbolic name. No files in the directory may be checked out at the
+time \fBrcssnapshot\fR is run.
+
+As an example, consider a directory with three files:
+
+.nf
+	File		Version
+	file1		2.3
+	file2		2.2
+	file3 		2.2
+.fi
+If the command \fBrcssnapshot -r3.0 winter89\fR is issued, then all
+three files will have RCS version number 3.0, and may also be referenced
+in the future by the symbolic name \fIwinter89\fR. 
+.SH KEYWORDS
+RCS, version
+.SH "SEE ALSO"
+rcs

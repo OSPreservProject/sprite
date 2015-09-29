@@ -1,0 +1,3256 @@
+head     9.26;
+branch   ;
+access   ;
+symbols  ds3100:9.25 sun3:9.25 sun4nw:9.23 symm:9.23 spur:9.23 sprited:9.22.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.26
+date     92.12.13.18.21.37;  author mgbaker;  state Exp;
+branches ;
+next     9.25;
+
+9.25
+date     92.08.10.22.59.05;  author mgbaker;  state Exp;
+branches ;
+next     9.24;
+
+9.24
+date     92.06.01.15.33.00;  author kupfer;  state Exp;
+branches ;
+next     9.23;
+
+9.23
+date     91.09.10.18.42.58;  author rab;  state Exp;
+branches ;
+next     9.22;
+
+9.22
+date     91.05.06.14.43.21;  author kupfer;  state Exp;
+branches 9.22.1.1;
+next     9.21;
+
+9.21
+date     90.12.11.18.52.10;  author mgbaker;  state Exp;
+branches ;
+next     9.20;
+
+9.20
+date     90.11.29.21.01.53;  author kupfer;  state Exp;
+branches ;
+next     9.19;
+
+9.19
+date     90.10.09.11.59.40;  author jhh;  state Exp;
+branches ;
+next     9.18;
+
+9.18
+date     90.10.02.16.30.08;  author mgbaker;  state Exp;
+branches ;
+next     9.17;
+
+9.17
+date     90.09.11.16.08.26;  author mendel;  state Exp;
+branches ;
+next     9.16;
+
+9.16
+date     90.09.11.11.35.44;  author mgbaker;  state Exp;
+branches ;
+next     9.15;
+
+9.15
+date     90.06.26.14.52.07;  author mgbaker;  state Exp;
+branches ;
+next     9.14;
+
+9.14
+date     90.06.21.15.53.46;  author mgbaker;  state Exp;
+branches ;
+next     9.13;
+
+9.13
+date     90.04.04.10.12.04;  author mgbaker;  state Exp;
+branches ;
+next     9.12;
+
+9.12
+date     90.04.03.14.41.45;  author mgbaker;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     90.03.29.12.46.34;  author mgbaker;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     90.03.22.12.13.48;  author mgbaker;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     90.03.22.12.07.59;  author mgbaker;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     90.01.29.19.30.56;  author mgbaker;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     89.11.27.09.24.15;  author brent;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     89.11.26.10.56.56;  author brent;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     89.11.07.12.01.22;  author brent;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     89.11.07.10.53.53;  author brent;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     89.10.29.16.10.17;  author brent;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.12.12.10.09;  author brent;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.09.18.13.42.08;  author brent;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.18.32;  author douglis;  state Stable;
+branches ;
+next     8.7;
+
+8.7
+date     89.08.17.17.30.05;  author jhh;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.06.30.11.01.39;  author brent;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.06.24.11.52.13;  author brent;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.06.15.16.43.21;  author brent;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.02.15.08.19.44;  author jhh;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.12.06.11.31.31;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.22.19.35.15;  author jhh;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.36.10;  author douglis;  state Stable;
+branches ;
+next     6.4;
+
+6.4
+date     88.10.28.19.24.28;  author mlgray;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.09.06.08.14.22;  author mlgray;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.29.14.29.57;  author mlgray;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.26.18.26.51;  author mlgray;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.25.46;  author brent;  state Stable;
+branches ;
+next     5.15;
+
+5.15
+date     88.08.01.17.11.38;  author mlgray;  state Exp;
+branches ;
+next     5.14;
+
+5.14
+date     88.06.15.17.53.24;  author brent;  state Exp;
+branches ;
+next     5.13;
+
+5.13
+date     88.05.16.10.03.11;  author brent;  state Exp;
+branches ;
+next     5.12;
+
+5.12
+date     88.05.10.14.07.30;  author brent;  state Exp;
+branches ;
+next     5.11;
+
+5.11
+date     87.12.23.08.57.46;  author brent;  state Exp;
+branches ;
+next     5.10;
+
+5.10
+date     87.12.02.13.12.19;  author brent;  state Exp;
+branches ;
+next     5.9;
+
+5.9
+date     87.10.13.10.58.49;  author brent;  state Exp;
+branches ;
+next     5.8;
+
+5.8
+date     87.10.09.09.30.54;  author brent;  state Exp;
+branches ;
+next     5.7;
+
+5.7
+date     87.10.06.09.51.39;  author brent;  state Exp;
+branches ;
+next     5.6;
+
+5.6
+date     87.10.05.16.03.24;  author brent;  state Exp;
+branches ;
+next     5.5;
+
+5.5
+date     87.10.05.15.37.37;  author brent;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     87.10.04.16.01.56;  author brent;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     87.09.29.14.34.43;  author brent;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.09.11.09.36.14;  author brent;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.09.09.10.48.44;  author brent;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.49.01;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.22.1.1
+date     91.10.22.15.41.33;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.26
+log
+@Code for server-driven recovery.
+@
+text
+@/*
+ * rpcServer.c --
+ *
+ *      This is the top level code for an RPC server process, plus the
+ *      server-side dispatch routine with which the server process must
+ *      synchronize.  sA server process does some initialization and then
+ *      goes into a service loop receiving request messages and invoking
+ *      service stubs.  This file also has utilities for sending replies
+ *      and acks.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/rpc/rpcServer.c,v 9.25 92/08/10 22:59:05 mgbaker Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+
+#include <sprite.h>
+#include <stdio.h>
+#include <bstring.h>
+#include <rpc.h>
+#include <rpcInt.h>
+#include <rpcServer.h>
+#include <rpcTrace.h>
+#include <rpcHistogram.h>
+#include <net.h>
+#include <proc.h>
+#include <dbg.h>
+#include <stdlib.h>
+#include <recov.h>
+
+
+/*
+ * An on/off switch for the service side of the RPC system.  Hosts do not
+ * initially respond to RPC requests so they can configure themselves
+ * as needed at boot time.  This means we are dependent on a user program
+ * to execute and turn on this flag.
+ */
+Boolean rpcServiceEnabled = FALSE;
+
+/*
+ * The server state table.  It has a maximum size which constrains the
+ * number of server processes that can be created.  The number of free
+ * servers is maintained, as well as the total number of created servers.
+ */
+RpcServerState **rpcServerPtrPtr = (RpcServerState **)NIL;
+int		rpcAbsoluteMaxServers = 70;
+int		rpcMaxServers = 50;
+int		rpcNumServers = 0;
+
+/*
+ * rpcMaxServerAge is the number of times the Rpc_Daemon will send
+ * a probe message to a client (without response) before forcibly
+ * reclaiming the server process for use by other clients.  A probe
+ * message gets sent each time the daemon wakes up and finds the
+ * server process still idle awaiting a new request from the client.
+ */
+int rpcMaxServerAge = 10;	/* For testing set to 1. Was 10. */
+
+/*
+ * A histogram is kept of service time.  This is available to user
+ * programs via the Sys_Stats SYS_RPC_SERVER_HIST command.  The on/off
+ * flags is settable via Fs_Command FS_SET_RPC_SERVER_HIST
+ */
+Rpc_Histogram *rpcServiceTime[RPC_LAST_COMMAND+1];
+Boolean rpcServiceTiming = FALSE;
+
+/*
+ * A raw count of the number of service calls.
+ */
+int rpcServiceCount[RPC_LAST_COMMAND+1];
+
+/*
+ * Buffers for sending negative acknowledgements.
+ */
+NackData	rpcNack;
+/*
+ * Whether or not to send negative acknowledgements.
+ */
+Boolean		rpcSendNegAcks = FALSE;
+/*
+ * Number of nack buffers in system.
+ */
+int	rpc_NumNackBuffers = 4;
+/*
+ * To tell if we've already initialized the correct number of nack buffers
+ * when the rpc system is turned on.  This variable equals the number of
+ * nack buffers last initialized.
+ */
+int	oldNumNackBuffers = 0;
+
+
+/*
+ * For tracing the behavior of the rpc servers.
+ */
+typedef struct	RpcServerStateInfo {
+    int		index;
+    int		clientID;
+    int		channel;
+    int		state;
+    int		num;
+    Timer_Ticks	time;
+} RpcServerStateInfo;
+
+typedef	struct	RpcServerTraces {
+    RpcServerStateInfo	*traces;
+    int			traceIndex;
+    Boolean		okay;
+    Boolean		error;
+    Sync_Semaphore	mutex;
+} RpcServerTraces;
+
+RpcServerTraces	rpcServerTraces = {(RpcServerStateInfo *) NIL, 0,  FALSE,
+				FALSE, Sync_SemInitStatic("rpcServerTraces")};
+
+/*
+ * Try 1 Meg of traces.
+ */
+#define RPC_NUM_TRACES (0x100000 / sizeof (RpcServerStateInfo))
+
+static void NegAckFunc _ARGS_((ClientData clientData, Proc_CallInfo *callInfoPtr));
+
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_Server --
+ *
+ *      The top level procedure of an RPC server process.  This
+ *      synchronizes with RpcServerDispatch while it waits for new
+ *      requests to service.  It assumes that its buffers contain a new
+ *      request when its SRV_BUSY state bit is set.  It clears this bit
+ *      and sets the SRV_WAITING bit after it completes the service
+ *      procedure and returns a reply to the client.
+ *
+ * Results:
+ *	This procedure never returns.
+ *
+ * Side effects:
+ *	The server process attaches itself to a slot in the
+ *	table of server states.  Some statistics are taken at this level.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Rpc_Server()
+{
+    register RpcServerState *srvPtr;	/* This server's state */
+    register RpcHdr *rpcHdrPtr;		/* Its request message header */
+    register int command;		/* Identifies the service procedure */
+    register ReturnStatus error;	/* Return error code */
+    Rpc_Storage storage;		/* Specifies storage of request and
+					 * reply buffers passed into the stubs*/
+    Proc_ControlBlock *procPtr;		/* our process information */
+
+    procPtr = Proc_GetCurrentProc();
+
+    srvPtr = RpcServerInstall();
+    if (srvPtr == (RpcServerState *)NIL) {
+	printf("RPC server can't install itself.\n");
+	Proc_Exit((int) RPC_INTERNAL_ERROR);
+    }
+    error = SUCCESS;
+    for ( ; ; ) {
+	int	oldState;
+	/*
+	 * Synchronize with RpcServerDispatch and await a request message.
+	 * Change our state to indicate that we are ready for input.
+	 */
+	MASTER_LOCK(&srvPtr->mutex);
+	oldState = srvPtr->state;
+	srvPtr->state &= ~(SRV_BUSY|SRV_STUCK);
+	srvPtr->state |= SRV_WAITING;
+	if (error == RPC_NO_REPLY) {
+	    srvPtr->state |= SRV_NO_REPLY;
+	}
+	while ((srvPtr->state & SRV_BUSY) == 0) {
+	    Sync_MasterWait(&srvPtr->waitCondition,
+				&srvPtr->mutex, TRUE);
+	    if (sys_ShuttingDown) {
+		srvPtr->state = SRV_NOTREADY;
+		MASTER_UNLOCK(&srvPtr->mutex);
+		Proc_Exit(0);
+	    }
+	}
+	srvPtr->state &= ~SRV_NO_REPLY;
+	MASTER_UNLOCK(&srvPtr->mutex);
+
+	/*
+	 * At this point there is unsynchronized access to
+	 * the server state.  We are marked BUSY, however, and
+	 * RpcServerDispatch knows this and doesn't muck accordingly.
+	 */
+	rpcHdrPtr = &srvPtr->requestRpcHdr;
+#ifdef NOTDEF
+	if (Recov_HoldForRecovery(rpcHdrPtr->clientID, rpcHdrPtr->command)) {
+	    /* This will send a NegAck. */
+printf("Trying to send a neg ack to %d for command %d\n", rpcHdrPtr->clientID,
+rpcHdrPtr->command);
+	    RpcServerDispatch((RpcServerState *) NIL, rpcHdrPtr);
+	    MASTER_LOCK(&srvPtr->mutex);
+	    srvPtr->state = oldState;
+	    MASTER_UNLOCK(&srvPtr->mutex);
+	    continue;
+	}
+#endif /* NOTDEF */
+
+	/*
+	 * Free up our previous reply.  The freeReplyProc is set by the
+	 * call to Rpc_Reply.
+	 */
+#ifndef lint
+	/* Won't lint due to cast of function ptr to address. */
+	if ((Address)srvPtr->freeReplyProc != (Address)NIL) {
+	    (void)(*srvPtr->freeReplyProc)(srvPtr->freeReplyData);
+	    srvPtr->freeReplyProc = (int (*)())NIL;
+	}
+#endif /* lint */
+
+#ifdef TIMESTAMP
+	RPC_TRACE(rpcHdrPtr, RPC_SERVER_A, " input");
+#endif /* TIMESTAMP */
+	/*
+	 * Monitor message traffic to keep track of other hosts.  This call
+	 * has a side effect of blocking the server process while any
+	 * crash recovery call-backs are in progress.
+	 */
+#ifndef NO_RECOVERY
+	Recov_HostAlive(srvPtr->clientID, rpcHdrPtr->bootID,
+			FALSE, (Boolean) (rpcHdrPtr->flags & RPC_NOT_ACTIVE),
+			FALSE);
+#endif
+	/*
+	 * Before branching to the service procedure we check that the
+	 * server side of RPC is on, and that the RPC number is good.
+	 * The "disabled service" return code is understood by other
+	 * hosts to mean that we are still alive, but are not yet
+	 * ready to be a server - ie. we are still checking disks etc.
+	 */
+	command = rpcHdrPtr->command;
+	if (!rpcServiceEnabled) {
+	    /*
+	     * Silently ignore broadcast requests.  If we return an error
+	     * we'll cause the sender to stop pre-maturely.  Otherwise
+	     * return an indication that our service is not yet ready.
+	     */
+	    if (rpcHdrPtr->serverID == RPC_BROADCAST_SERVER_ID) {
+		error = RPC_NO_REPLY;
+	    } else {
+		error = RPC_SERVICE_DISABLED;
+	    }
+	} else if (command <= 0 || command > RPC_LAST_COMMAND) {
+	    error = RPC_INVALID_RPC;
+	} else {
+	    Time histTime;
+
+	    rpcServiceCount[command]++;
+
+	    RPC_SERVICE_TIMING_START(command, &histTime);
+
+	    storage.requestParamPtr	= srvPtr->request.paramBuffer.bufAddr;
+	    storage.requestParamSize	= srvPtr->actualParamSize;
+	    storage.requestDataPtr	= srvPtr->request.dataBuffer.bufAddr;
+	    storage.requestDataSize	= srvPtr->actualDataSize;
+	    storage.replyParamPtr	= (Address)NIL;
+	    storage.replyParamSize	= 0;
+	    storage.replyDataPtr	= (Address)NIL;
+	    storage.replyDataSize	= 0;
+	    error = (rpcService[command].serviceProc)((ClientData)srvPtr,
+				  srvPtr->clientID, command, &storage);
+	    RPC_SERVICE_TIMING_END(command, &histTime);
+	}
+	/*
+	 * Return an error reply for the stubs.  Note: We could send all
+	 * replies if the stubs were all changed...
+	 */
+	if (error != SUCCESS && error != RPC_NO_REPLY) {
+	    Rpc_ErrorReply((ClientData)srvPtr, error);
+	}
+#ifdef TIMESTAMP
+	RPC_TRACE(rpcHdrPtr, RPC_SERVER_OUT, " done");
+#endif /* TIMESTAMP */
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcReclaimServers() --
+ *
+ *	Spin through the pool of server processes looking for ones to
+ *	reclaimed.  A server is eligible for reclaimation if it has been
+ *	idle (no new requests from its client) for a given number of
+ *	passes over the pool of servers.  It is reclaimed by getting
+ *	an explicit acknowledgment from the client and then marking
+ *	the server as SRV_FREE.
+ *
+ *	WARNING: it is possible for this routine to be called very often,
+ *	with the daemon being woken up by DAEMON_POKED rather than the
+ *	DAEMON_TIMEOUT.  Potentially, this might not give clients enough
+ *	time to do an RPC.  This doesn't seem to happen, but we should
+ *	change this routine at some point to make sure it can't happen.
+ *
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Age servers, send probes to idle clients, recycle reclaimied servers.
+ *	If a client crashes, this routine detects it and reclaims the
+ *	server process associated with it and marks the client dead.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+RpcReclaimServers(serversMaxed)
+    Boolean serversMaxed;	/* TRUE if the maximum number of servers
+				 * have been created.  We reclaim more
+				 * quickly if this is set. */
+{
+    int srvIndex;
+    register RpcServerState *srvPtr;
+    int (*procPtr)();
+    ClientData data = (ClientData) NULL;
+
+    for (srvIndex=0 ; srvIndex < rpcNumServers ; srvIndex++) {
+	srvPtr = rpcServerPtrPtr[srvIndex];
+
+	MASTER_LOCK(&srvPtr->mutex);
+
+
+	procPtr = (int (*)())NIL;
+	if ((srvPtr->clientID >= 0) &&
+	    (srvPtr->state & SRV_WAITING)) {
+	     if (srvPtr->state & SRV_NO_REPLY) {
+		/*
+		 * Reclaim right away if the server process is tied
+		 * up not replying to a broadcast request.
+		 */
+		procPtr = srvPtr->freeReplyProc;
+		data = srvPtr->freeReplyData;
+		srvPtr->freeReplyProc = (int (*)())NIL;
+		srvPtr->freeReplyData = (ClientData)NIL;
+		srvPtr->state = SRV_FREE|SRV_NO_REPLY;
+		RpcAddServerTrace(srvPtr, (RpcHdr *) NIL, FALSE, 5);
+	    } else if ((srvPtr->state & SRV_AGING) == 0) {
+		/*
+		 * This is the first pass over the server process that
+		 * has found it idle.  Start it aging.
+		 */
+		srvPtr->state |= SRV_AGING;
+		RpcAddServerTrace(srvPtr, (RpcHdr *) NIL, FALSE, 6);
+		srvPtr->age = 1;
+		if (serversMaxed) {
+		    RpcProbe(srvPtr);
+		}
+	    } else {
+		/*
+		 * This process has aged since the last time we looked, maybe
+		 * sleepTime ago.  We resend to the client with the
+		 * close flag and continue on.  If RpcServerDispatch gets
+		 * a reply from the client closing its connection it will
+		 * mark the server process SRV_FREE.  If we continue to
+		 * send probes with no reply, we give up after N tries
+		 * and free up the server.  It is possible that the client
+		 * has re-allocated its channel, in which case it drops
+		 * our probes on the floor, or that it has crashed.
+		 */
+		srvPtr->age++;
+		if (srvPtr->age >= rpcMaxServerAge) {
+		    procPtr = srvPtr->freeReplyProc;
+		    data = srvPtr->freeReplyData;
+		    srvPtr->freeReplyProc = (int (*)())NIL;
+		    srvPtr->freeReplyData = (ClientData)NIL;
+		    rpcSrvStat.reclaims++;
+		    srvPtr->state = SRV_FREE;
+		    RpcAddServerTrace(srvPtr, (RpcHdr *) NIL, FALSE, 7);
+#ifdef notdef
+		} else if (srvPtr->clientID == rpc_SpriteID) {
+		    printf("Warning: Reclaiming from myself.\n");
+		    srvPtr->state = SRV_FREE;
+		    RpcAddServerTrace(srvPtr, (RpcHdr *) NIL, FALSE, 8);
+#endif
+		} else {
+		    /*
+		     * Poke at the client to get a response.
+		     */
+		    RpcProbe(srvPtr);
+		}
+	    }
+	} else if ((srvPtr->state & SRV_FREE) &&
+		   (srvPtr->freeReplyProc != (int (*)())NIL)) {
+	    /*
+	     * Tidy up after an explicit acknowledgment from a client.
+	     * This can't be done at interrupt time by ServerDispatch.
+	     */
+	    procPtr = srvPtr->freeReplyProc;
+	    data = srvPtr->freeReplyData;
+	    srvPtr->freeReplyProc = (int (*)())NIL;
+	    srvPtr->freeReplyData = (ClientData)NIL;
+	}
+	MASTER_UNLOCK(&srvPtr->mutex);
+	/*
+	 * Do the call-back to free up resources associated with the last RPC.
+	 */
+	if (procPtr != (int (*)())NIL) {
+	    (void)(*procPtr)(data);
+	}
+    }
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NegAckFunc --
+ *
+ *	Call-back to send a negative acknowledgement so that we won't be at
+ *	interrupt level while doing this.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	A negative ack is output.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+NegAckFunc(clientData, callInfoPtr)
+    ClientData		clientData;
+    Proc_CallInfo	*callInfoPtr;
+{
+    int			i;
+
+    MASTER_LOCK(&(rpcNack.mutex));
+    /*
+     * We may handle more than one request here.
+     */
+    for (i = 0; i < rpc_NumNackBuffers; i++) {
+	if (rpcNack.hdrState[i] == RPC_NACK_WAITING) {
+	    rpcNack.hdrState[i] = RPC_NACK_XMITTING;
+	    rpcNack.rpcHdrArray[i].flags = RPC_NACK | RPC_ACK;
+	    /*
+	     * Already did an RpcSrvInitHdr from incoming rpcHdrPtr to our
+	     * outgoing * buffer in RpcServerDispatch.
+	     */
+	    /*
+	     * This should be okay to do under a masterlock since RpcAck
+	     * also calls it and it's under a masterlock.
+	     */
+	    RpcAddServerTrace((RpcServerState *) NIL, &(rpcNack.rpcHdrArray[i]),
+		    TRUE, 19);
+	    rpcSrvStat.nacks++;
+	    /*
+	     * Because we pass it the mutex, it will return only when the xmit
+	     * is done.
+	     */
+	    (void) RpcOutput(rpcNack.rpcHdrArray[i].clientID,
+		    &(rpcNack.rpcHdrArray[i]), &(rpcNack.bufferSet[i]),
+		    (RpcBufferSet *) NIL, 0,
+		    (Sync_Semaphore *) &(rpcNack.mutex));
+	    rpcNack.hdrState[i] = RPC_NACK_FREE;
+	    rpcNack.numFree++;
+	}
+    }
+    MASTER_UNLOCK(&(rpcNack.mutex));
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcServerDispatch --
+ *
+ *      Handle a message sent to a server process.  The client sends (and
+ *      re-sends) request messages to the server host.  This routine
+ *      handles incoming message accoring to the RPC protocol.  Only new
+ *      request messages are passed to the server process.  All other
+ *      messages are handled in this routine.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *      The side effects depend on the type of message received.  New
+ *      requests are passed off to server processes, client acknowledgments
+ *      and retries are processed and discarded.  Unneeded messages are
+ *	discarded by returning without copying the message out of the
+ *	network buffers.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+RpcServerDispatch(srvPtr, rpcHdrPtr)
+    register RpcServerState *srvPtr;	/* The state of the server process */
+    register RpcHdr *rpcHdrPtr;		/* The header of the packet as it sits
+					 * in the hardware buffers */
+{
+    register int size;		/* The amount of the data in the message */
+    int		i;
+    int		foundSpot;	/* Neg ack buf to use. */
+    int		alreadyFunc;	/* What buf neg ack function is dealing with. */
+
+
+    /*
+     * If the server pointer is NIL, this means no server could be allocated
+     * and a negative acknowledgement must be issued.
+     */
+    if (srvPtr == (RpcServerState *) NIL) {
+	if (rpcHdrPtr->clientID == rpc_SpriteID) {
+	    /*
+	     * Can't nack myself since the network module turns around and
+	     * reroutes the message and we get deadlock.  Drop the neg ack.
+	     */
+	    printf("Can't nack to myself!\n");
+	    rpcSrvStat.selfNacks++;
+	    return;
+	}
+	MASTER_LOCK(&(rpcNack.mutex));
+	if (rpc_NumNackBuffers - rpcNack.numFree >
+	    rpcSrvStat.mostNackBuffers) {
+	    rpcSrvStat.mostNackBuffers = rpc_NumNackBuffers - rpcNack.numFree;
+	}
+	if (rpcNack.numFree <= 0) {
+	    /* Drop the negative ack. */
+	    MASTER_UNLOCK(&(rpcNack.mutex));
+	    return;
+	}
+	/*
+	 * Copy rpc header info to safe place that won't be freed when
+	 * we return.
+	 */
+	alreadyFunc = -1;
+	foundSpot = -1;
+	for (i = 0; i < rpc_NumNackBuffers; i++) {
+	    /*
+	     * If we haven't already found a buffer to use and this one is
+	     * free, use it.
+	     */
+	    if (foundSpot == -1 && rpcNack.hdrState[i] == RPC_NACK_FREE) {
+		rpcNack.numFree--;
+		rpcNack.hdrState[i] = RPC_NACK_WAITING;
+		foundSpot = i;
+		RpcSrvInitHdr((RpcServerState *) NIL, 
+				&(rpcNack.rpcHdrArray[i]), rpcHdrPtr);
+	    /*
+	     * If we've found evidence that there's already a CallFunc for
+	     * the NegAckFunc, then record the first buffer it will be dealing
+	     * with next.
+	     */
+	    } else if (alreadyFunc == -1 &&
+		    rpcNack.hdrState[i] == RPC_NACK_WAITING) {
+		alreadyFunc = i;
+	    }
+	}
+	/*
+	 * If we've found a buffer and either there's no CallFunc or else it
+	 * is already past the buffer we've grabbed, then start another
+	 * CallFunc.
+	 */
+	if (foundSpot != -1 &&
+		(alreadyFunc == -1 || alreadyFunc >= foundSpot)) {
+	    MASTER_UNLOCK(&(rpcNack.mutex));
+	    Proc_CallFunc(NegAckFunc, (ClientData) NIL, 0);
+	    return;
+	/*
+	 * Otherwise if we've found a buffer, there's already a CallFunc.
+	 */
+	} else if (foundSpot != -1) {
+	    MASTER_UNLOCK(&(rpcNack.mutex));
+	    return;
+	}
+	MASTER_UNLOCK(&(rpcNack.mutex));
+	/*
+	 * If we haven't found a free buffer, something is wrong.
+	 */
+	panic("RpcServerDispatch: couldn't find free rpcHdr.\n");
+    }
+
+    /*
+     * Acquire the server's mutex for multiprocessor synchronization.  We
+     * synchronize with each server process with a mutex that is part of
+     * the server's state.
+     */
+    MASTER_LOCK(&srvPtr->mutex);
+    
+#ifdef TIMESTAMP
+    RPC_TRACE(rpcHdrPtr, RPC_SERVER_a, " server");
+#endif /* TIMESTAMP */
+    /*
+     * Reset aging servers.  This information is maintained by Rpc_Deamon.
+     * The reception of a message for the server makes it no longer idle.
+     */
+    srvPtr->state &= ~SRV_AGING;
+    srvPtr->age = 0;
+
+    /*
+     * If the RPC sequence number is different than the one saved in the
+     * server's state then this request signals a new RPC.  We use this as
+     * an implicit acknowledgment of the last reply the server sent.  The
+     * last transaction ID is saved in the rpc header of our last reply
+     * message.
+     */
+    if (rpcHdrPtr->ID != srvPtr->ID) {
+
+	rpcSrvStat.requests++;
+	if (srvPtr->state & SRV_WAITING) {
+	    /*
+	     * The server has computed a result already so we treat this
+	     * new request as an implicit acknowledgment of the reply the
+	     * server sent.  The server process will clean up the previous
+	     * reply before it starts computing the new reply.
+	     */
+	    rpcSrvStat.impAcks++;
+	    srvPtr->state &= ~SRV_WAITING;
+	}
+
+	if (srvPtr->state & SRV_FRAGMENT) {
+	    /*
+	     * The last send by the client was fragmented but was aborted
+	     * before we got all the fragments.  Reset the fragment
+	     * reasembly process.
+	     */
+	    rpcSrvStat.fragAborts++;
+	    srvPtr->state &= ~SRV_FRAGMENT;
+	    srvPtr->fragsReceived = 0;
+	}
+
+	if (srvPtr->state & SRV_BUSY) {
+	    /*
+	     * The client has abandoned the RPC and started on a new one.
+	     * This server process may be stuck on some lock, or the
+	     * client may just be in error.  We mark the server process
+	     * as STUCK so subsequent requests will not use this server,
+	     * and the server process will unmark itself when it completes
+	     * what ever its working on.
+	     */
+	    rpcSrvStat.serverBusy++;
+	    srvPtr->state |= SRV_STUCK;
+	    goto unlock;
+	}
+	/*
+	 * (There should be no bits set in the server's state word.)
+	 *
+	 * Update the server's idea of the current transaction.
+	 */
+	srvPtr->ID = rpcHdrPtr->ID;
+	/*
+	 * Reset the true sizes of the two data areas in the arriving message.
+	 */
+	srvPtr->actualDataSize = 0;
+	srvPtr->actualParamSize = 0;
+	/*
+	 * Reset our knowledge of what fragments our client has.
+	 */
+	srvPtr->fragsDelivered = 0;
+	/*
+	 * Copy the message from the network's buffers into those of
+	 * the server process.
+	 */
+	RpcScatter(rpcHdrPtr, &srvPtr->request);
+
+	/*
+	 * Note the actual size of the input information.
+	 */
+	size = rpcHdrPtr->paramSize + rpcHdrPtr->paramOffset;
+	if (srvPtr->actualParamSize < size) {
+	    srvPtr->actualParamSize = size;
+	}
+	size = rpcHdrPtr->dataSize + rpcHdrPtr->dataOffset;
+	if (srvPtr->actualDataSize < size) {
+	    srvPtr->actualDataSize = size;
+	}
+	if (rpcHdrPtr->numFrags == 0) {
+	    /*
+	     * The message is complete, ie. not fragmented.
+	     * Return ack if needed and notify the server process.
+	     */
+	    srvPtr->fragsReceived = 0;
+	    if (rpcHdrPtr->flags & RPC_PLSACK) {
+		rpcSrvStat.handoffAcks++;
+		RpcAck(srvPtr, 0);
+	    }
+	    srvPtr->state = SRV_BUSY;
+#ifdef WOULD_LIKE
+	    RpcAddServerTrace(srvPtr, (RpcHdr *) NIL, FALSE, 2);
+#endif WOULD_LIKE
+	    rpcSrvStat.handoffs++;
+	    Sync_MasterBroadcast(&srvPtr->waitCondition);
+	} else {
+	    /*
+	     * The new arrival is only a fragment.
+	     * Initiate fragment reassembly.  The server process is not
+	     * notified until the request message is complete.
+	     */
+	    rpcSrvStat.fragMsgs++;
+	    srvPtr->state = SRV_FRAGMENT;
+	    srvPtr->fragsReceived = rpcHdrPtr->fragMask;
+	    if (rpcHdrPtr->flags & RPC_PLSACK) {
+		rpcSrvStat.fragAcks++;
+		RpcAck(srvPtr, RPC_LASTFRAG);
+	    }
+	}
+#ifdef TIMESTAMP
+	RPC_TRACE(rpcHdrPtr, RPC_SERVER_b, "handoff");
+#endif /* TIMESTAMP */
+    } else {
+	/*
+	 * This is a message concerning a current RPC.
+	 */
+	if (srvPtr->state & SRV_NO_REPLY) {
+	    /*
+	     * The current RPC was a broadcast which we do not want
+	     * to reply to.  Keep ourselves free - the allocation routine
+	     * has cleared that state bit.
+	     */
+	    srvPtr->state |= SRV_FREE;
+	    RpcAddServerTrace(srvPtr, (RpcHdr *) NIL, FALSE, 9);
+	    rpcSrvStat.discards++;
+	} else if (rpcHdrPtr->flags & RPC_ACK) {
+	    if (rpcHdrPtr->flags & RPC_CLOSE) {
+		/*
+		 * This is an explicit acknowledgment to our reply.
+		 * Free the server regardless of its state.  The call-back
+		 * procedure to free resources will be called the next
+		 * time the server process gets a request, or by Rpc_Daemon.
+		 */
+		rpcSrvStat.closeAcks++;
+		srvPtr->state = SRV_FREE;
+		RpcAddServerTrace(srvPtr, (RpcHdr *) NIL, FALSE, 10);
+	    } else if (rpcHdrPtr->flags & RPC_LASTFRAG) {
+		/*
+		 * This is a partial acknowledgment.  The fragMask field
+		 * has the summary bitmask of the client which indicates
+		 * what fragments the client has received.
+		 */
+		rpcSrvStat.recvPartial++;
+		srvPtr->fragsDelivered = rpcHdrPtr->fragMask;
+		RpcResend(srvPtr);
+	    } else {
+		/*
+		 * Do nothing. Unknown kind of ack.
+		 */
+		rpcSrvStat.unknownAcks++;
+	    }
+	} else {
+	    /*
+	     * Process another fragment or a re-sent request.
+	     */
+	    switch(srvPtr->state) {
+		default:
+		    /*
+		     * oops.  A client is using the same RPC ID that it
+		     * used with use last (as it crashed, probably).
+		     * Reset srvPtr->replyRpcHdr.ID so that we can accept
+		     * new requests from the client.
+		     */
+#ifdef notdef
+	    printf("Unexpected Server state %x, idx %d, Rpc ID <%x> flags <%x> clientID %d\n",
+			    srvPtr->index, srvPtr->state, rpcHdrPtr->ID,
+			    rpcHdrPtr->flags, rpcHdrPtr->clientID);
+#endif
+		    rpcSrvStat.badState++;
+		    srvPtr->replyRpcHdr.ID = 0;
+		    srvPtr->state = SRV_FREE;
+		    break;
+		case SRV_FREE:
+		    /*
+		     * This is an extra packet that has arrived after the
+		     * client has explicitly acknowledged its reply.
+		     */
+		    rpcSrvStat.extra++;
+		    break;
+		case SRV_FRAGMENT:
+		    /*
+		     * Sanity check to make sure we expect fragments
+		     * and then continue fragment reasembly.
+		     */
+		    if (rpcHdrPtr->fragMask == 0 ||
+			rpcHdrPtr->numFrags == 0) {
+			rpcSrvStat.nonFrag++;
+			printf("ServerDispatch - got a non-fragment\n");
+			break;
+		    }
+		    if (srvPtr->fragsReceived & rpcHdrPtr->fragMask) {
+			/*
+			 * Duplicate Fragment.  This ack will return
+			 * the srvPtr->fragsReceived bitmask to the client.
+			 */
+			rpcSrvStat.dupFrag++;
+			RpcAck(srvPtr, RPC_LASTFRAG);
+			break;
+		    } else {
+			/*
+			 * Copy in new fragment and check for completion.
+			 */
+			rpcSrvStat.reassembly++;
+			RpcScatter(rpcHdrPtr, &srvPtr->request);
+			/*
+			 * Update actual size information
+			 */
+			size = rpcHdrPtr->paramSize + rpcHdrPtr->paramOffset;
+			if (srvPtr->actualParamSize < size) {
+			    srvPtr->actualParamSize = size;
+			}
+			size = rpcHdrPtr->dataSize + rpcHdrPtr->dataOffset;
+			if (srvPtr->actualDataSize < size) {
+			    srvPtr->actualDataSize = size;
+			}
+
+			srvPtr->fragsReceived |= rpcHdrPtr->fragMask;
+			if (srvPtr->fragsReceived ==
+			    rpcCompleteMask[rpcHdrPtr->numFrags]) {
+			    srvPtr->state = SRV_BUSY;
+			    RpcAddServerTrace(srvPtr, (RpcHdr *) NIL, FALSE, 3);
+			    rpcSrvStat.handoffs++;
+			    Sync_MasterBroadcast(&srvPtr->waitCondition);
+			} else if (rpcHdrPtr->flags & RPC_LASTFRAG) {
+			    /*
+			     * Incomplete packet after we've gotten
+			     * the last fragment in the series.  Partial Ack.
+			     */
+			    rpcSrvStat.sentPartial++;
+			    RpcAck(srvPtr, RPC_LASTFRAG);
+			} else {
+			    /*
+			     * Ignore any "please ack" requests here.  If
+			     * the client is resending it will already
+			     * trigger a partial ack on every duplicate
+			     * fragment we get.
+			     */
+			}
+		    }
+		    break;
+		case SRV_BUSY:
+		    /*
+		     * We already got this request and the server is busy
+		     * with it.  We send an explicit acknowledgment to the
+		     * client to let it know that we successfully got the
+		     * request.
+		     */
+		    rpcSrvStat.busyAcks++;
+		    RpcAck(srvPtr, 0);
+		    RpcAddServerTrace(srvPtr, (RpcHdr *) NIL, FALSE, 18);
+		    break;
+		case SRV_WAITING:
+		    /*
+		     * The client has dropped our reply, we resend it.
+		     */
+		    rpcSrvStat.resends++;
+		    RpcResend(srvPtr);
+		    break;
+	    }
+	}
+#ifdef TIMESTAMP
+	RPC_TRACE(rpcHdrPtr, RPC_SERVER_c, "return");
+#endif /* TIMESTAMP */
+    }
+unlock:
+    MASTER_UNLOCK(&srvPtr->mutex);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_ErrorReply --
+ *
+ *	Return an error code and an empty reply to a client.
+ *
+ * Results:
+ *	Transmits an error reply to the client host.
+ *
+ * Side effects:
+ *	Send the packet.  Clears the freeReplyProc and Data because
+ *	there is an empty reply.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Rpc_ErrorReply(srvToken, error)
+    ClientData srvToken;		/* Opaque token passed to stub */
+    int error;				/* Error code to return to client */
+{
+    RpcServerState *srvPtr;
+    register RpcHdr	*rpcHdrPtr;
+    register RpcHdr	*requestHdrPtr;
+    char errMsg[1024];
+
+    srvPtr = (RpcServerState *)srvToken;
+    rpcHdrPtr = &srvPtr->replyRpcHdr;
+    requestHdrPtr = &srvPtr->requestRpcHdr;
+
+    srvPtr->freeReplyProc = (int (*)())NIL;
+    srvPtr->freeReplyData = (ClientData)NIL;
+
+    RpcSrvInitHdr(srvPtr, rpcHdrPtr, requestHdrPtr);
+
+    /*
+     * Communicate the error code back in the command field.  Identify the
+     * client if the problem is no disk space, so that someone can put it
+     * in the debugger or kill the offending process.
+     */
+    if (error == FS_NO_DISK_SPACE) {
+	sprintf(errMsg,
+		"%s: <%s> returning \"no disk space\" to client %d.\n",
+		"Rpc_ErrorReply", rpcService[rpcHdrPtr->command].name,
+		srvPtr->clientID);
+	if (Timer_OkToWhine(errMsg)) {
+	    printf(errMsg);
+	}
+    }
+    rpcHdrPtr->command = error;
+    rpcHdrPtr->flags = RPC_REPLY | RPC_ERROR;
+
+    /*
+     * Clear sizes in the reply buffers, but not the addresses.
+     * This forces a null return and our caller can free the data.
+     */
+    srvPtr->reply.paramBuffer.length = 0;
+    srvPtr->reply.dataBuffer.length = 0;
+
+    (void)RpcOutput(rpcHdrPtr->clientID, rpcHdrPtr, &srvPtr->reply,
+			 (RpcBufferSet *)NIL, 0, (Sync_Semaphore *)NIL);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcSrvInitHdr --
+ *
+ *	Initialize the header of a server message from fields
+ *	in the clients request message.  This relies on initialization
+ *	of unchanging fields inside RpcBufferInit.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Addressing and sequencing information from the clients request
+ *	message is copeid into the header of a server's outgoing message.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+RpcSrvInitHdr(srvPtr, rpcHdrPtr, requestHdrPtr)
+    RpcServerState	*srvPtr;
+    RpcHdr		*rpcHdrPtr;	/* header of outgoing message */
+    RpcHdr		*requestHdrPtr;	/* header of client's request */
+{
+    rpcHdrPtr->serverID = rpc_SpriteID;
+    rpcHdrPtr->clientID = requestHdrPtr->clientID;
+    rpcHdrPtr->channel = requestHdrPtr->channel;
+    rpcHdrPtr->bootID = rpcBootID;
+    rpcHdrPtr->ID = requestHdrPtr->ID;
+    rpcHdrPtr->numFrags = 0;
+    rpcHdrPtr->fragMask = 0;
+    rpcHdrPtr->command = requestHdrPtr->command;
+    rpcHdrPtr->paramSize = 0;
+    rpcHdrPtr->dataSize = 0;
+
+    if (srvPtr == (RpcServerState *) NIL) {
+	/*
+	 * If this is a negative ack due to no server proc being available,
+	 * make sure the serverHint value is reasonable so we don't mess up
+	 * the client.
+	 */
+	rpcHdrPtr->serverHint = 0;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_Reply --
+ *
+ *	Return a reply to a client.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Send the reply.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Rpc_Reply(srvToken, error, storagePtr, freeReplyProc, freeReplyData)
+    ClientData		srvToken;		/* The token for the server
+						 * passed to the stub from
+						 * the server process */
+    int			error;			/* Error code, or SUCCESS */
+    register Rpc_Storage *storagePtr;		/* Only the reply fields are
+    						 * significant. */
+    int			(*freeReplyProc) _ARGS_((ClientData freeReplyData));
+						/* Procedure to call to free
+						 * up reply state, or NIL */
+    ClientData		freeReplyData;		/* Passed to freeReplyProc */
+{
+    RpcServerState	*srvPtr;
+    register RpcHdr	*rpcHdrPtr;
+    register RpcHdr	*requestHdrPtr;
+    char errMsg[1024];
+
+    srvPtr = (RpcServerState *)srvToken;
+    rpcHdrPtr = &srvPtr->replyRpcHdr;
+    requestHdrPtr = &srvPtr->requestRpcHdr;
+
+    /*
+     * Set up the call back that will free resources associated
+     * with the reply.
+     */
+    srvPtr->freeReplyProc = freeReplyProc;
+    srvPtr->freeReplyData = freeReplyData;
+    
+    RpcSrvInitHdr(srvPtr, rpcHdrPtr, requestHdrPtr);
+    rpcHdrPtr->flags = RPC_REPLY;
+    if (error) {
+	/*
+	 * Communicate the error code back in the command field.  Identify 
+	 * the client if the problem is no disk space, so that someone can 
+	 * put it in the debugger or kill the offending process.
+	 */
+	if (error == FS_NO_DISK_SPACE) {
+	    sprintf(errMsg,
+		    "%s: <%s> returning \"no disk space\" to client %d.\n",
+		    "Rpc_Reply", rpcService[rpcHdrPtr->command].name,
+		    srvPtr->clientID);
+	    if (Timer_OkToWhine(errMsg)) {
+		printf(errMsg);
+	    }
+	}
+	rpcHdrPtr->command = error;
+	rpcHdrPtr->flags |= RPC_ERROR;
+    }
+
+    /*
+     * Copy buffer pointers into the server's state.
+     */
+    rpcHdrPtr->paramSize = storagePtr->replyParamSize;
+    srvPtr->reply.paramBuffer.length = storagePtr->replyParamSize;
+    srvPtr->reply.paramBuffer.bufAddr = storagePtr->replyParamPtr;
+
+    rpcHdrPtr->dataSize = storagePtr->replyDataSize;
+    srvPtr->reply.dataBuffer.length = storagePtr->replyDataSize;
+    srvPtr->reply.dataBuffer.bufAddr = storagePtr->replyDataPtr;
+
+    (void)RpcOutput(rpcHdrPtr->clientID, rpcHdrPtr, &srvPtr->reply,
+			 srvPtr->fragment, 0, (Sync_Semaphore *)NIL);
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcAck --
+ *
+ *	Return an explicit acknowledgment to a client.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+RpcAck(srvPtr, flags)
+    RpcServerState *srvPtr;
+    int flags;
+{
+    RpcHdr	*ackHdrPtr;
+    RpcHdr	*requestHdrPtr;
+
+    ackHdrPtr = &srvPtr->ackRpcHdr;
+    requestHdrPtr = &srvPtr->requestRpcHdr;
+
+    ackHdrPtr->flags = flags | RPC_ACK;
+    RpcSrvInitHdr(srvPtr, ackHdrPtr, requestHdrPtr);
+    /*
+     * Let the client know what fragments we have received
+     * so it can optimize retransmission.
+     */
+    ackHdrPtr->fragMask = srvPtr->fragsReceived;
+    /*
+     * Note, can't try ARP here because of it's synchronization with
+     * a master lock and because we are called at interrupt time.
+     */
+    (void)RpcOutput(ackHdrPtr->clientID, ackHdrPtr, &srvPtr->ack,
+			 (RpcBufferSet *)NIL, 0, (Sync_Semaphore *)NIL);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcResend --
+ *
+ *	Resend a reply to a client.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Send the reply.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+RpcResend(srvPtr)
+    RpcServerState	*srvPtr;
+{
+    /*
+     * Consistency check against a service stub that forgot to send a reply.
+     * We can't check sequence numbers because RpcServerDispatch updates the
+     * reply sequence number, but we can verify that the command
+     * in the reply matches the command in the reply.
+     */
+    if ((srvPtr->replyRpcHdr.flags & RPC_ERROR) == 0 &&
+	(srvPtr->replyRpcHdr.command != srvPtr->requestRpcHdr.command)) {
+	printf("RpcResend: RPC %d, client %d, RPC seq # %x, forgot reply?\n",
+	    srvPtr->requestRpcHdr.command, srvPtr->requestRpcHdr.clientID,
+	    srvPtr->requestRpcHdr.ID);
+	return;
+    }
+    (void)RpcOutput(srvPtr->replyRpcHdr.clientID, &srvPtr->replyRpcHdr,
+		       &srvPtr->reply, srvPtr->fragment,
+		       srvPtr->fragsDelivered, (Sync_Semaphore *)NIL);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcProbe --
+ *
+ *	Send a probe message to the client to see if it is still interested
+ *	in the connection.  The Ack message header/buffer is used for this.
+ *	Synchronization note.  We are called with the srvPtr mutex locked,
+ *	but the server process is not marked BUSY so the dispatcher might
+ *	try to allocate this server.  The mutex prevents this, but it
+ *	is important to not pass the mutex to RpcOutput, which would use
+ *	it to wait for output of the packet.  In that case the mutex is
+ *	released for a while, leaving a window of vulnerability where the
+ *	server could get allocated and the mutex grabbed by the dispatcher.
+ *	By not passing the mutex the packet is sent asynchronously, so there
+ *	is a very remote chance we could try to issue another probe while
+ *	this is still in the output queue.  However, we would be sending
+ *	the same information in the packet, so there shouldn't be a problem.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Send the probe message.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+RpcProbe(srvPtr)
+    RpcServerState	*srvPtr;
+{
+    RpcHdr	*ackHdrPtr;
+    RpcHdr	*requestHdrPtr;
+
+    ackHdrPtr = &srvPtr->ackRpcHdr;
+    requestHdrPtr = &srvPtr->requestRpcHdr;
+
+    ackHdrPtr->flags = RPC_ACK | RPC_CLOSE;
+    RpcSrvInitHdr(srvPtr, ackHdrPtr, requestHdrPtr);
+
+    (void)RpcOutput(ackHdrPtr->clientID, ackHdrPtr, &srvPtr->ack,
+			 (RpcBufferSet *)NIL, 0, (Sync_Semaphore *)NIL);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcAddServerTrace --
+ *
+ *	Add another trace to the list of state tracing for rpc servers.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The list is lengthened.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+RpcAddServerTrace(srvPtr, rpcHdrPtr, noneThere, num)
+    RpcServerState	*srvPtr;	/* State to record */
+    RpcHdr 		*rpcHdrPtr;	/* The request message header */
+    Boolean		noneThere;	/* No server free */
+    int			num;		/* Which trace */
+{
+    RpcServerStateInfo	*rpcTracePtr;
+
+    if (!rpcServerTraces.okay) {
+	return;
+    }
+    rpcTracePtr = &(rpcServerTraces.traces[rpcServerTraces.traceIndex]);
+    (void) bzero((Address) rpcTracePtr, sizeof (RpcServerStateInfo));
+    if (!noneThere) {
+	rpcTracePtr->index = srvPtr->index;
+	rpcTracePtr->clientID = srvPtr->clientID;
+	rpcTracePtr->channel = srvPtr->channel;
+	rpcTracePtr->state = srvPtr->state;
+    } else {
+	rpcTracePtr->index = -1;
+	rpcTracePtr->clientID = rpcHdrPtr->clientID;
+	rpcTracePtr->channel = rpcHdrPtr->channel;
+	rpcTracePtr->state = rpcHdrPtr->command;
+    }
+    rpcTracePtr->num = num;
+    Timer_GetCurrentTicks(&rpcTracePtr->time);
+    rpcServerTraces.traceIndex++;
+    if (rpcServerTraces.traceIndex >= RPC_NUM_TRACES) {
+	rpcServerTraces.okay = FALSE;
+	rpcServerTraces.error = TRUE;
+    }
+
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_OkayToTrace --
+ *
+ *	Okay to turn on rpc server state tracing.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The tracing is turned on.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+Rpc_OkayToTrace(okay)
+    Boolean	okay;
+{
+    MASTER_LOCK(&(rpcServerTraces.mutex));
+    if (okay) {
+	if (!rpcServerTraces.error) {
+	    rpcServerTraces.okay = okay;
+	}
+    } else {
+	rpcServerTraces.okay = okay;
+    }
+    MASTER_UNLOCK(&(rpcServerTraces.mutex));
+
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_FreeTraces --
+ *
+ *	If memory allocation is involved, free up the space used by the rpc
+ *	server tracing.  Otherwise, just reinitialize it.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Tracing is turned off and some reinitialization is done.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+Rpc_FreeTraces()
+{
+    MASTER_LOCK(&(rpcServerTraces.mutex));
+    rpcServerTraces.okay = FALSE;
+
+    rpcServerTraces.traceIndex = 0;
+    rpcServerTraces.error = FALSE;
+
+    MASTER_UNLOCK(&(rpcServerTraces.mutex));
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_DumpServerTraces --
+ *
+ *	Dump the server traces into a buffer for the user.
+ *
+ * Results:
+ *	Failure if something goes wrong.  Success otherwise.
+ *
+ * Side effects:
+ *	The trace info is copied into a buffer.  Size of needed buffer is
+ *	also copied out.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY ReturnStatus
+Rpc_DumpServerTraces(length, resultPtr, lengthNeededPtr)
+    int                 	length;         /* size of data buffer */
+    RpcServerUserStateInfo	*resultPtr;	/* Array of info structs. */
+    int                 	*lengthNeededPtr;/* to return space needed */
+
+{
+    RpcServerUserStateInfo	*infoPtr;
+    RpcServerStateInfo		*itemPtr;
+    int				numNeeded;
+    int				numAvail;
+    int				i;
+
+    MASTER_LOCK(&(rpcServerTraces.mutex));
+    if (rpcServerTraces.traceIndex <= 0) {
+	MASTER_UNLOCK(&(rpcServerTraces.mutex));
+	return FAILURE;
+    }
+    if (resultPtr != (RpcServerUserStateInfo *) NIL) {
+	bzero((char *) resultPtr, length);
+    }
+    numNeeded = 0;
+    numAvail = length / sizeof (RpcServerUserStateInfo);
+
+    infoPtr = resultPtr;
+    for (i = 0; i < rpcServerTraces.traceIndex; i++) {
+	itemPtr = &(rpcServerTraces.traces[i]);
+	numNeeded++;
+	if (numNeeded > numAvail) {
+	    continue;
+	}
+	infoPtr->index = itemPtr->index;
+	infoPtr->clientID = itemPtr->clientID;
+	infoPtr->channel = itemPtr->channel;
+	infoPtr->state = itemPtr->state;
+	infoPtr->num = itemPtr->num;
+	Timer_GetRealTimeFromTicks(itemPtr->time, &(infoPtr->time), 
+				(int *) NIL, (Boolean *) NIL);
+	infoPtr++;
+    }
+    *lengthNeededPtr = numNeeded * sizeof (RpcServerUserStateInfo);
+
+    MASTER_UNLOCK(&(rpcServerTraces.mutex));
+    return SUCCESS;
+}
+
+void
+RpcInitServerTraces()
+{
+    rpcServerTraces.traces = (RpcServerStateInfo *) malloc(RPC_NUM_TRACES *
+						sizeof (RpcServerStateInfo));
+    return;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcSetNackBufs --
+ *
+ *	Allocate and set up the correct number of nack buffers.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Some freeing and malloc'ing.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+RpcSetNackBufs()
+{
+    int	i;
+
+    if (oldNumNackBuffers == rpc_NumNackBuffers) {
+	/* Nothing to do, initialized already. */
+	return;
+    }
+    if (rpcServiceEnabled) {
+	/* Cannot change nack buffers once service is enabled, for now. */
+	return;
+    }
+    /* Free old nack buffers if there were any. */
+    if (oldNumNackBuffers > 0 && rpcNack.rpcHdrArray != (RpcHdr *) NIL) {
+	free((char *) rpcNack.rpcHdrArray);
+	free((char *) rpcNack.hdrState);
+	free((char *) rpcNack.bufferSet);
+	/*
+	 * Note, this won't free up all the buffer stuff since
+	 * RpcBufferInit calls Vm_RawAlloc instead of malloc.
+	 */
+    }
+    /* Allocate new nack buffers. */
+    rpcNack.rpcHdrArray = (RpcHdr *) malloc(rpc_NumNackBuffers *
+	    sizeof (RpcHdr));
+    rpcNack.hdrState = (int *) malloc(rpc_NumNackBuffers * sizeof (int));
+
+    rpcNack.bufferSet = (RpcBufferSet *) malloc(rpc_NumNackBuffers *
+            sizeof (RpcBufferSet));
+
+    for (i = 0; i < rpc_NumNackBuffers; i++) {
+        rpcNack.hdrState[i] = RPC_NACK_FREE;
+        RpcBufferInit(&(rpcNack.rpcHdrArray[i]),
+                &(rpcNack.bufferSet[i]), -1, -1);
+    }
+    /* set old to new */
+    rpcNack.numFree = rpc_NumNackBuffers;
+    oldNumNackBuffers = rpc_NumNackBuffers;
+
+    return;
+}
+@
+
+
+9.25
+log
+@Changes for transparent server recovery.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/rpc/rpcServer.c,v 9.24 92/06/01 15:33:00 kupfer Exp $ SPRITE (Berkeley)";
+d34 1
+d169 1
+d175 1
+d198 13
+a223 1
+	rpcHdrPtr = &srvPtr->requestRpcHdr;
+@
+
+
+9.24
+log
+@Identify the client when returning FS_NO_DISK_SPACE.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/rpc/rpcServer.c,v 9.23 91/09/10 18:42:58 rab Exp $ SPRITE (Berkeley)";
+d219 2
+a220 1
+			FALSE, (Boolean) (rpcHdrPtr->flags & RPC_NOT_ACTIVE));
+@
+
+
+9.23
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcServer.c,v 9.22 91/05/06 14:43:21 kupfer Exp Locker: rab $ SPRITE (Berkeley)";
+d878 1
+d890 3
+a892 1
+     * Communicate the error code back in the command feild.
+d894 9
+d994 1
+a994 1
+
+d1011 3
+a1013 1
+	 * Communicate the error code back in the command field.
+d1015 9
+@
+
+
+9.22
+log
+@Verify that an Rpc_Server isn't holding any locks before or after
+processing the RPC.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcServer.c,v 9.21 90/12/11 18:52:10 mgbaker Exp Locker: kupfer $ SPRITE (Berkeley)";
+a246 4
+	    if (procPtr->locksHeld != 0) {
+		panic("Starting RPC with locks held.\n");
+	    }
+
+a259 4
+
+	    if (procPtr->locksHeld != 0) {
+		panic("Finished RPC with locks held.\n");
+	    }
+@
+
+
+9.22.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcServer.c,v 9.22 91/05/06 14:43:21 kupfer Exp $ SPRITE (Berkeley)";
+@
+
+
+9.21
+log
+@Added a warning message to a comment and fixed a lie in another comment.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcServer.c,v 9.20 90/11/29 21:01:53 kupfer Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d157 1
+d159 2
+d247 4
+d264 4
+@
+
+
+9.20
+log
+@Fold Mary's nack stats into Rpc_SrvStat.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcServer.c,v 9.19 90/10/09 11:59:40 jhh Exp Locker: kupfer $ SPRITE (Berkeley)";
+d283 7
+d344 2
+a345 2
+		 * This process has aged since the last time we looked, at
+		 * least sleepTime ago.  We resend to the client with the
+@
+
+
+9.19
+log
+@new net module
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcServer.c,v 9.18 90/10/02 16:30:08 mgbaker Exp Locker: jhh $ SPRITE (Berkeley)";
+a91 6
+/*
+ * For tracing nack behavior - the high-water mark of nack buffers used.
+ * These are temporary stats until they can be put into rpcstats.
+ */
+int	mostNackBuffers = 0;
+int	selfNacks = 0;
+d497 1
+a497 1
+	    selfNacks++;
+d501 3
+a503 2
+	if (rpc_NumNackBuffers - rpcNack.numFree > mostNackBuffers) {
+	    mostNackBuffers = rpc_NumNackBuffers - rpcNack.numFree;
+d989 1
+a989 1
+	 * Communicate the error code back in the command feild.
+@
+
+
+9.18
+log
+@More prototyping garbage.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcServer.c,v 9.17 90/09/11 16:08:26 mendel Exp Locker: mgbaker $ SPRITE (Berkeley)";
+a895 12
+    if (Net_IDToRoute(rpcHdrPtr->clientID) == (Net_Route *)NIL) {
+	/*
+	 * Make sure we have a good route back to the client.
+	 */
+	static Sync_Semaphore mutex = 
+	    Sync_SemInitStatic("Rpc_ErrorReply.mutex");
+
+	Sync_SemRegister(&mutex);
+	MASTER_LOCK(&mutex);
+	(void) Net_Arp(rpcHdrPtr->clientID, &mutex);
+	MASTER_UNLOCK(&mutex);
+    }
+a1010 12
+    if (Net_IDToRoute(rpcHdrPtr->clientID) == (Net_Route *)NIL) {
+	/*
+	 * Make sure we have a good route back to the client.
+	 */
+	static Sync_Semaphore mutex = 
+	    Sync_SemInitStatic("Rpc:Rpc_Reply.mutex");
+
+	Sync_SemRegister(&mutex);
+	MASTER_LOCK(&mutex);
+	(void) Net_Arp(rpcHdrPtr->clientID, &mutex);
+	MASTER_UNLOCK(&mutex);
+    }
+a1089 4
+    /*
+     * Note, can't try ARP here because of it's synchronization with
+     * a master lock and because we are called at interrupt time.
+     */
+d1290 1
+a1290 1
+	bzero(resultPtr, length);
+@
+
+
+9.17
+log
+@Cleaned up some lint from prototypes.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcServer.c,v 9.16 90/09/11 11:35:44 mgbaker Exp $ SPRITE (Berkeley)";
+d20 13
+a32 10
+#include "sprite.h"
+#include "rpc.h"
+#include "rpcInt.h"
+#include "rpcServer.h"
+#include "rpcTrace.h"
+#include "rpcHistogram.h"
+#include "net.h"
+#include "proc.h"
+#include "dbg.h"
+#include "stdlib.h"
+d308 1
+a308 1
+    ClientData data;
+a1271 2
+    RpcServerStateInfo	*itemPtr;
+
+@
+
+
+9.16
+log
+@Added function prototypes (Mendel checking for mary)
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcServer.c,v 9.15 90/06/26 14:52:07 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d527 2
+a528 1
+		RpcSrvInitHdr(NIL, &(rpcNack.rpcHdrArray[i]), rpcHdrPtr);
+d1334 2
+a1335 1
+	Timer_GetRealTimeFromTicks(itemPtr->time, &(infoPtr->time), NIL, NIL);
+@
+
+
+9.15
+log
+@Fixed bug with negative acks.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcServer.c,v 9.14 90/06/21 15:53:46 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d125 1
+d127 2
+d326 1
+a326 1
+		RpcAddServerTrace(srvPtr, NIL, FALSE, 5);
+d333 1
+a333 1
+		RpcAddServerTrace(srvPtr, NIL, FALSE, 6);
+d358 1
+a358 1
+		    RpcAddServerTrace(srvPtr, NIL, FALSE, 7);
+d363 1
+a363 1
+		    RpcAddServerTrace(srvPtr, NIL, FALSE, 8);
+d411 1
+a411 1
+void
+d434 2
+a435 1
+	    RpcAddServerTrace(NIL, &(rpcNack.rpcHdrArray[i]), TRUE, 19);
+d668 1
+a668 1
+	    RpcAddServerTrace(srvPtr, NIL, FALSE, 2);
+d700 1
+a700 1
+	    RpcAddServerTrace(srvPtr, NIL, FALSE, 9);
+d712 1
+a712 1
+		RpcAddServerTrace(srvPtr, NIL, FALSE, 10);
+d797 1
+a797 1
+			    RpcAddServerTrace(srvPtr, NIL, FALSE, 3);
+d826 1
+a826 1
+		    RpcAddServerTrace(srvPtr, NIL, FALSE, 18);
+d977 2
+a978 1
+    int			(*freeReplyProc)();	/* Procedure to call to free
+a1278 12
+
+/*
+ * The form in which the user expects the server tracing info.
+ */
+typedef	struct	RpcServerUserStateInfo {
+    int		index;
+    int		clientID;
+    int		channel;
+    int		state;
+    int		num;
+    Time	time;
+} RpcServerUserStateInfo;
+@
+
+
+9.14
+log
+@New stuff for negative acks.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc.mgb/RCS/rpcServer.c,v 1.1 90/06/04 18:24:11 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d481 2
+a482 2
+    Boolean	foundSpot;
+    Boolean	alreadyFunc;
+d512 2
+a513 2
+	alreadyFunc = FALSE;
+	foundSpot = FALSE;
+d515 5
+a519 1
+	    if (!foundSpot && rpcNack.hdrState[i] == RPC_NACK_FREE) {
+d522 1
+a522 1
+		foundSpot = TRUE;
+d524 8
+a531 2
+	    } else if (rpcNack.hdrState[i] == RPC_NACK_WAITING) {
+		alreadyFunc = TRUE;
+d534 7
+a540 1
+	if (foundSpot && !alreadyFunc) {
+d544 4
+a547 1
+	} else if (foundSpot) {
+d552 3
+@
+
+
+9.13
+log
+@More synchronization and static queuing for neg acks from server.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcServer.c,v 9.12 90/04/03 14:41:45 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d56 1
+a56 1
+int rpcMaxServerAge = 10;
+d79 16
+a184 3
+#ifdef NOTDEF
+	RpcAddServerTrace(srvPtr, NIL, FALSE, 4);
+#endif NOTDEF
+d419 1
+a419 1
+    for (i = 0; i < (sizeof (rpcNack.rpcHdrArray) / sizeof (RpcHdr)); i++) {
+d481 2
+d490 9
+d500 3
+d512 4
+a515 2
+	for (i = 0; i < (sizeof (rpcNack.rpcHdrArray) / sizeof (RpcHdr)); i++) {
+	    if (rpcNack.hdrState[i] == RPC_NACK_FREE) {
+d518 1
+d520 2
+a521 3
+		Proc_CallFunc(NegAckFunc, (ClientData) NIL, 0);
+		MASTER_UNLOCK(&(rpcNack.mutex));
+		return;
+d524 8
+a550 3
+#ifdef NOTDEF
+    RpcAddServerTrace(srvPtr, NIL, FALSE, 1);
+#endif NOTDEF
+a721 4
+#ifdef NOTDEF
+		    /* We never seem to get this one. */
+		    RpcAddServerTrace(srvPtr, NIL, FALSE, 11);
+#endif NOTDEF
+d1332 60
+@
+
+
+9.12
+log
+@Fixed synchronization problem on servers with negative acknowledgement
+buffers.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcServer.c,v 9.11 90/03/29 12:46:34 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d376 60
+d467 1
+d476 2
+a477 7
+	if (rpcNack.busy) {
+	    /*
+	     * Just drop the nack for now.  We can't sleep at interrupt
+	     * level for it to be free, and this is no worse than our
+	     * dropping the request entirely if there were no servers
+	     * available which is what we did before...
+	     */
+a480 5
+
+	rpcNack.busy = TRUE;
+	rpcNack.rpcHdr.flags = RPC_NACK | RPC_ACK;
+	/* RpcSrvInitHdr takes srvrPtr as first arg and ignores it. */
+	RpcSrvInitHdr(NIL, &(rpcNack.rpcHdr), rpcHdrPtr);
+d482 13
+a494 10
+	 * This should be okay to do under a masterlock since RpcAck below
+	 * also calls it and it's under a masterlock.
+	 */
+/* This is identical to one printed elsewhere? */
+	RpcAddServerTrace(NIL, rpcHdrPtr, TRUE, 19);
+	rpcSrvStat.nacks++;
+	(void) RpcOutput(rpcHdrPtr->clientID, &(rpcNack.rpcHdr),
+		&(rpcNack.bufferSet),
+		(RpcBufferSet *) NIL, 0, (Sync_Semaphore *) NIL);
+	rpcNack.busy = FALSE;
+d496 1
+a496 1
+	return;
+d498 1
+@
+
+
+9.11
+log
+@New negative ack stuff.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcServer.c,v 9.10 90/03/22 12:13:48 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d415 13
+a427 1
+	rpcNack.rpcHdr.flags = RPC_NACK;
+d440 1
+d832 9
+@
+
+
+9.10
+log
+@After merge with rpc.mgb.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc.mgb/RCS/rpcServer.c,v 1.2 90/01/26 19:37:55 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d72 1
+a72 1
+ * Data structures for nack for servers that can't be allocated.
+a73 6
+typedef struct	NackData {
+    RpcHdr		rpcHdr;
+    RpcBufferSet	bufferSet;
+    Sync_Semaphore	mutex;
+} NackData;
+
+d75 3
+a77 1
+
+d409 4
+a412 1
+#ifdef NEG_ACK
+d422 1
+a422 2
+#ifdef NOTDEF
+	/* This is identical to one printed elsewhere. */
+d424 1
+a424 1
+#endif NOTDEF
+a430 1
+#endif NEG_ACK
+@
+
+
+9.9
+log
+@prepare for merge.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcServer.c,v 9.8 90/01/29 19:30:56 mgbaker Exp $ SPRITE (Berkeley)";
+d45 3
+a47 2
+int              rpcMaxServers = 50;
+int              rpcNumServers = 0;
+d71 43
+d173 3
+d314 1
+d321 1
+d346 1
+d351 1
+d411 23
+d449 3
+d542 3
+d575 1
+d587 1
+d623 4
+d676 1
+d705 1
+d1036 1
+a1036 1
+ * Rpc_DumpServerTraces --
+d1038 1
+a1038 1
+ *	Stub, for now.
+d1044 1
+a1044 1
+ *	None.
+d1048 6
+a1053 2
+ReturnStatus
+Rpc_DumpServerTraces()
+d1055 27
+a1081 1
+    return SUCCESS;
+d1083 1
+d1088 1
+a1088 1
+ * Rpc_FreeTraces --
+d1090 1
+a1090 1
+ *	Stub, for now.
+d1096 1
+a1096 1
+ *	None.
+d1100 3
+a1102 2
+void
+Rpc_FreeTraces()
+d1104 10
+d1116 1
+d1121 1
+a1121 1
+ * Rpc_OkayToTrace --
+d1123 2
+a1124 1
+ *	Stub, for now.
+d1130 1
+a1130 1
+ *	None.
+d1134 89
+d1224 1
+a1224 1
+Rpc_OkayToTrace()
+d1226 2
+@
+
+
+9.8
+log
+@Added some stubs to take care of undefined routines in a separate
+rpc module with tracing.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcServer.c,v 9.7 89/11/27 09:24:15 brent Exp Locker: mgbaker $ SPRITE (Berkeley)";
+@
+
+
+9.7
+log
+@Tidied up packet header initialization
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcServer.c,v 9.6 89/11/26 10:56:56 brent Exp $ SPRITE (Berkeley)";
+d942 64
+@
+
+
+9.6
+log
+@Changed RpcProbe so it does asynchronous packet output.
+This fixes a bug where the server mutex got stolen
+during the wait for the probe packet, and then the
+Rpc_Daemon process got hung up.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcServer.c,v 9.5 89/11/07 12:01:22 brent Exp $ SPRITE (Berkeley)";
+d706 2
+a707 1
+ *	in the clients request message.
+d724 1
+a724 1
+    rpcHdrPtr->version = rpc_NativeVersion;
+a725 1
+    rpcHdrPtr->serverID = rpc_SpriteID;
+a726 1
+    rpcHdrPtr->serverHint = srvPtr->index;
+a728 1
+    rpcHdrPtr->delay = rpcMyDelay;
+@
+
+
+9.5
+log
+@Took out sanity checks against RpcScatter because the
+bug was in RpcServerAlloc
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcServer.c,v 9.4 89/11/07 10:53:53 brent Exp $ SPRITE (Berkeley)";
+d909 11
+d943 1
+a943 2
+					 (RpcBufferSet *)NIL, 0,
+					 &srvPtr->mutex);
+@
+
+
+9.4
+log
+@Added sanity checks to the server dispatcher.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcServer.c,v 9.3 89/10/29 16:10:17 brent Exp $ SPRITE (Berkeley)";
+a441 17
+	/*
+	 * Sanity checks.
+	 */
+	if (rpcHdrPtr->bootID != srvPtr->requestRpcHdr.bootID) {
+	    printf("RpcScatter goof? srvPtr->request.rpcHdrBuffer.bufAddr %x &srvPtr->requestRpcHdr %x index %d\n",
+		    srvPtr->request.rpcHdrBuffer.bufAddr,
+		    &srvPtr->requestRpcHdr, srvPtr->index);
+	    srvPtr->ID = 0;
+	    goto unlock;
+	} else if (srvPtr->request.rpcHdrBuffer.bufAddr !=
+			    &srvPtr->requestRpcHdr) {
+		printf("RpcScatter overrun? srvPtr->request.rpcHdrBuffer.bufAddr %x &srvPtr->requestRpcHdr %x index %d\n",
+		    srvPtr->request.rpcHdrBuffer.bufAddr,
+		    &srvPtr->requestRpcHdr, srvPtr->index);
+	    srvPtr->ID = 0;
+	    goto unlock;
+	}
+@
+
+
+9.3
+log
+@Nuked Unexpected Server state message
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcServer.c,v 9.2 89/10/12 12:10:09 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d442 18
+@
+
+
+9.2
+log
+@Fixed use of the current transaction ID.
+Fixed RpcReclaimServers to reclaim things
+faster if there are no more server process available.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcServer.c,v 9.1 89/09/18 13:42:08 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d532 1
+d536 1
+@
+
+
+9.1
+log
+@Fixed server dispatcher to mark processes SRV_STUCK
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcServer.c,v 8.7 89/08/17 17:30:05 jhh Exp $ SPRITE (Berkeley)";
+a124 1
+		printf("Rpc_Server %d exiting\n", srvPtr->index);
+d238 4
+a241 1
+RpcReclaimServers()
+d274 3
+d287 1
+a287 1
+		 * our probes on the floor.
+d297 1
+d301 1
+d384 1
+a384 1
+    if (rpcHdrPtr->ID != srvPtr->replyRpcHdr.ID) {
+d427 1
+a427 1
+	srvPtr->replyRpcHdr.ID = rpcHdrPtr->ID;
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcServer.c,v 8.7 89/08/17 17:30:05 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d404 6
+a409 2
+	     * This is an error by the client.  This server is working on
+	     * a service request already and hasn't finished.
+d412 1
+@
+
+
+8.7
+log
+@made version number a variable
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcServer.c,v 8.6 89/06/30 11:01:39 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+8.6
+log
+@Fixed a warning statement
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcServer.c,v 8.5 89/06/24 11:52:13 brent Exp $ SPRITE (Berkeley)";
+d708 1
+a708 1
+    rpcHdrPtr->version = RPC_NATIVE_VERSION;
+@
+
+
+8.5
+log
+@Added syscall support to get call/service counters
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcServer.c,v 8.4 89/06/15 16:43:21 brent Exp $ SPRITE (Berkeley)";
+d873 2
+a874 2
+	printf("RpcResend: request (%d) reply (%d) mismatch, RPC seq # %x\n",
+	    srvPtr->requestRpcHdr.command, srvPtr->replyRpcHdr.command,
+@
+
+
+8.4
+log
+@Tidied up lint.  Added support for SRV_STUCK state.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcServer.c,v 8.3 89/02/15 08:19:44 jhh Exp $ SPRITE (Berkeley)";
+d65 5
+d186 3
+@
+
+
+8.3
+log
+@Updated Sync_Lock initialization
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcServer.c,v 8.2 88/12/06 11:31:31 brent Exp Locker: jhh $ SPRITE (Berkeley)";
+d109 1
+a109 1
+	srvPtr->state &= ~SRV_BUSY;
+d120 1
+a120 1
+		printf("Rpc_Server exiting\n");
+d673 1
+a673 1
+					 (RpcBufferSet *)NIL, 0, (int *)NIL);
+d792 1
+a792 1
+					 srvPtr->fragment, 0, (int *)NIL);
+d835 1
+a835 1
+					 (RpcBufferSet *)NIL, 0, (int *)NIL);
+d876 1
+a876 1
+		       srvPtr->fragsDelivered, (int *)NIL);
+@
+
+
+8.2
+log
+@Put mouse-trap in to guard against RPC  stubs that forget to
+return reply messages.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcServer.c,v 8.1 88/11/22 19:35:15 jhh Exp $ SPRITE (Berkeley)";
+d29 1
+a29 1
+#include "mem.h"
+d664 2
+a665 1
+	Sync_Semaphore mutex;
+d667 1
+a667 1
+	SYNC_SEM_INIT_DYNAMIC(&mutex,"Rpc_ErrorReply.mutex");
+d783 4
+a786 3
+	Sync_Semaphore mutex;
+	  
+	SYNC_SEM_INIT_DYNAMIC(&mutex,"Rpc_Reply.mutex");
+@
+
+
+8.1
+log
+@new semaphore definition
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcServer.c,v 6.4 88/10/28 19:24:28 mlgray Exp $ SPRITE (Berkeley)";
+d855 13
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcServer.c,v 6.4 88/10/28 19:24:28 mlgray Exp Locker: douglis $ SPRITE (Berkeley)";
+d108 1
+a108 1
+	MASTER_LOCK(srvPtr->mutex);
+d119 1
+a119 1
+		MASTER_UNLOCK(srvPtr->mutex);
+d125 1
+a125 1
+	MASTER_UNLOCK(srvPtr->mutex);
+d241 1
+a241 1
+	MASTER_LOCK(srvPtr->mutex);
+d305 1
+a305 1
+	MASTER_UNLOCK(srvPtr->mutex);
+d350 1
+a350 1
+    MASTER_LOCK(srvPtr->mutex);
+d610 1
+a610 1
+    MASTER_UNLOCK(srvPtr->mutex);
+d664 4
+a667 2
+	int mutex = 0;
+	MASTER_LOCK(mutex);
+d669 1
+a669 1
+	MASTER_UNLOCK(mutex);
+d745 1
+d782 4
+a785 2
+	int mutex = 0;
+	MASTER_LOCK(mutex);
+d787 1
+a787 1
+	MASTER_UNLOCK(mutex);
+@
+
+
+6.4
+log
+@Conversion to new C library.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcServer.c,v 6.3 88/09/06 08:14:22 mlgray Exp Locker: mlgray $ SPRITE (Berkeley)";
+@
+
+
+6.3
+log
+@Removed lint
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: rpcServer.c,v 6.2 88/08/29 14:29:57 mlgray Exp $ SPRITE (Berkeley)";
+d99 1
+a99 1
+	Sys_Printf("RPC server can't install itself.\n");
+d120 1
+a120 1
+		Sys_Printf("Rpc_Server exiting\n");
+d285 1
+a285 1
+		    Sys_Panic(SYS_WARNING, "Reclaiming from myself.\n");
+d338 1
+a338 1
+void
+d512 1
+a512 1
+	    Sys_Printf("Unexpected Server state %x, idx %d, Rpc ID <%x> flags <%x> clientID %d\n",
+d534 1
+a534 1
+			Sys_Printf("ServerDispatch - got a non-fragment\n");
+a668 4
+#ifdef RPC_TEST_BYTE_SWAP
+    (void)RpcOutput(rpcHdrPtr->clientID, rpcHdrPtr, NIL, &srvPtr->reply,
+					 (RpcBufferSet *)NIL, NIL, 0, (int *)NIL);
+#else /* RPC_TEST_BYTE_SWAP */
+a670 1
+#endif /* RPC_TEST_BYTE_SWAP */
+a783 4
+#ifdef RPC_TEST_BYTE_SWAP
+    (void)RpcOutput(rpcHdrPtr->clientID, rpcHdrPtr, NIL, &srvPtr->reply, NIL,
+					 srvPtr->fragment, 0, (int *)NIL);
+#else /* RPC_TEST_BYTE_SWAP */
+a785 1
+#endif /* RPC_TEST_BYTE_SWAP */
+a826 4
+#ifdef RPC_TEST_BYTE_SWAP
+    (void)RpcOutput(ackHdrPtr->clientID, ackHdrPtr, NIL, &srvPtr->ack, NIL,
+					 (RpcBufferSet *)NIL, 0, (int *)NIL);
+#else /* RPC_TEST_BYTE_SWAP */
+a828 1
+#endif /* RPC_TEST_BYTE_SWAP */
+a853 5
+#ifdef RPC_TEST_BYTE_SWAP
+    (void)RpcOutput(srvPtr->replyRpcHdr.clientID, &srvPtr->replyRpcHdr, NIL,
+		       &srvPtr->reply, NIL, srvPtr->fragment,
+		       srvPtr->fragsDelivered, (int *)NIL);
+#else /* RPC_TEST_BYTE_SWAP */
+a856 1
+#endif /* RPC_TEST_BYTE_SWAP */
+a887 5
+#ifdef RPC_TEST_BYTE_SWAP
+    (void)RpcOutput(ackHdrPtr->clientID, ackHdrPtr, NIL, &srvPtr->ack, NIL,
+					 (RpcBufferSet *)NIL, 0,
+					 &srvPtr->mutex);
+#else /* RPC_TEST_BYTE_SWAP */
+a890 1
+#endif /* RPC_TEST_BYTE_SWAP */
+@
+
+
+6.2
+log
+@lint
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: rpcServer.c,v 6.1 88/08/26 18:26:51 mlgray Exp $ SPRITE (Berkeley)";
+d156 1
+a156 1
+			FALSE, rpcHdrPtr->flags & RPC_NOT_ACTIVE);
+@
+
+
+6.1
+log
+@Fixed some lint errors.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: rpcServer.c,v 6.0 88/08/11 12:25:46 brent Stable $ SPRITE (Berkeley)";
+d100 1
+a100 1
+	Proc_Exit(RPC_INTERNAL_ERROR);
+d137 1
+a137 1
+#ifndef LINT
+d143 1
+a143 1
+#endif /* LINT */
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d1 1
+a1 1
+/* 
+d16 2
+a17 2
+static char rcsid[] = "$Header: rpcServer.c,v 5.15 88/08/01 17:11:38 mlgray Exp $ SPRITE (Berkeley)";
+#endif not lint
+d94 1
+a94 1
+    Rpc_Storage storage;		/* Specifies storage of request and 
+d137 2
+d143 1
+d148 1
+a148 1
+#endif TIMESTAMP
+d204 1
+a204 1
+#endif TIMESTAMP
+d354 1
+a354 1
+#endif TIMESTAMP
+d462 1
+a462 1
+#endif TIMESTAMP
+d473 1
+a473 1
+	    srvPtr->state |= SRV_FREE; 
+d519 1
+a519 1
+		case SRV_FREE: 
+d552 1
+a552 1
+			 * Update actual size information 
+d596 1
+a596 1
+		case SRV_WAITING: 
+d607 1
+a607 1
+#endif TIMESTAMP
+d672 1
+a672 1
+#else RPC_TEST_BYTE_SWAP
+d675 1
+a675 1
+#endif RPC_TEST_BYTE_SWAP
+d792 1
+a792 1
+#else RPC_TEST_BYTE_SWAP
+d795 1
+a795 1
+#endif RPC_TEST_BYTE_SWAP
+d840 1
+a840 1
+#else RPC_TEST_BYTE_SWAP
+d843 1
+a843 1
+#endif RPC_TEST_BYTE_SWAP
+d873 1
+a873 1
+#else RPC_TEST_BYTE_SWAP
+d877 1
+a877 1
+#endif RPC_TEST_BYTE_SWAP
+d913 1
+a913 1
+#else RPC_TEST_BYTE_SWAP
+d917 1
+a917 1
+#endif RPC_TEST_BYTE_SWAP
+@
+
+
+5.15
+log
+@Doing byte-swapping.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: rpcServer.c,v 5.14 88/06/15 17:53:24 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+5.14
+log
+@Added initialization for rpc version number
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: rpcServer.c,v 5.13 88/05/16 10:03:11 brent Exp $ SPRITE (Berkeley)";
+d666 4
+d672 1
+d786 4
+d792 1
+d834 4
+d840 1
+d866 5
+d874 1
+d906 5
+d914 1
+@
+
+
+5.13
+log
+@Took out use of rpcNoServers
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: rpcServer.c,v 5.12 88/05/10 14:07:30 brent Exp $ SPRITE (Berkeley)";
+d694 1
+a694 1
+    rpcHdrPtr->delay = rpcMyDelay;
+a697 1
+    rpcHdrPtr->command = requestHdrPtr->command;
+d699 1
+d701 1
+a701 6
+    rpcHdrPtr->bootID = rpcBootID;
+    /*
+     * This field should go away, but the UNIX file server depends on it now.
+     */
+    rpcHdrPtr->transport = PROTO_ETHER;
+
+d704 1
+@
+
+
+5.12
+log
+@Fixed retransmission so only one fragment is sent as a keep-alive
+after the server process has started work on a request.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: rpcServer.c,v 5.11 87/12/23 08:57:46 brent Exp $ SPRITE (Berkeley)";
+a46 7
+
+/*
+ * The server dispatcher signals its distress at not being able to dispatch
+ * a message because there are no server processes by incrementing this
+ * counter.  Rpc_Deamon notices this and creates more server processes.
+ */
+int		 rpcNoServers = 0;
+@
+
+
+5.11
+log
+@Changed exiting print statement for Rpc_Server
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: rpcServer.c,v 5.10 87/12/02 13:12:19 brent Exp $ SPRITE (Berkeley)";
+d374 1
+a374 1
+	
+d442 1
+d826 5
+a830 8
+
+    if (flags & RPC_LASTFRAG) {
+	/*
+	 * This is a partial ack indicating which fragments the
+	 * server has received.
+	 */
+	ackHdrPtr->fragMask = srvPtr->fragsReceived;
+    }
+@
+
+
+5.10
+log
+@Added ifdef so I can compile without the recovery hooks
+in order to measure the cost.  It looks like it takes
+about 130 microseconds per call to Recov_HostAlive.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: rpcServer.c,v 5.9 87/10/13 10:58:49 brent Exp $ SPRITE (Berkeley)";
+d127 1
+a127 1
+		Sys_Printf("Server exiting\n");
+@
+
+
+5.9
+log
+@Added "notActive" flag to Recov_HostAlive
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: rpcServer.c,v 5.8 87/10/09 09:30:54 brent Exp $ SPRITE (Berkeley)";
+d158 1
+d161 1
+a240 1
+    int deadClientID;
+a248 1
+	deadClientID = -1;
+d276 3
+a278 1
+		 * and consider the client down.
+a286 1
+		    deadClientID = srvPtr->clientID;
+a314 8
+	}
+	/*
+	 * Mark the client as dead if we did a reclaim.
+	 */
+	if (deadClientID == rpc_SpriteID) {
+	    Sys_Panic(SYS_WARNING, "RpcDaemon thought this host was down");
+	} else if (deadClientID > 0) {
+	    Recov_HostDead(deadClientID);
+@
+
+
+5.8
+log
+@Created Recov module and updated our calls into it.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: rpcServer.c,v 5.7 87/10/06 09:51:39 brent Exp $ SPRITE (Berkeley)";
+d154 3
+a156 4
+	 * Allow a bootID of zero for stateless boottime RPCs like
+	 * get time of day.  Otherwise check this generation stamp
+	 * to detect reboots by clients.  Recov_HostAlive will block
+	 * us until the recovery actions triggered by a reboot are done.
+d158 2
+a159 3
+	if (rpcHdrPtr->bootID != 0) {
+	    Recov_HostAlive(srvPtr->clientID, rpcHdrPtr->bootID, FALSE);
+	}
+@
+
+
+5.7
+log
+@RpcServerDispatch has to reset the SRV_FREE bit when SRV_NO_REPLY
+is set, this bit gets cleared by RpcSrvAlloc.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: rpcServer.c,v 5.6 87/10/05 16:03:24 brent Exp $ SPRITE (Berkeley)";
+d156 1
+a156 1
+	 * to detect reboots by clients.  RpcHostAlive will block
+d160 1
+a160 1
+	    RpcHostAlive(srvPtr->clientID, rpcHdrPtr->bootID, FALSE);
+d323 1
+a323 1
+	    RpcHostDead(deadClientID);
+@
+
+
+5.6
+log
+@Fixed handling of broadcasts when the rpcServiceEnabled switch is off,
+set state to SRV_NO_REPLY.
+@
+text
+@d6 1
+a6 1
+ *      synchronize.  A server process does some initialization and then
+d16 1
+a16 1
+static char rcsid[] = "$Header: rpcServer.c,v 5.5 87/10/05 15:37:37 brent Exp $ SPRITE (Berkeley)";
+d109 1
+a109 1
+
+d118 3
+d203 2
+a204 7
+	if (error != SUCCESS) {
+	    if (error == RPC_NO_REPLY) {
+		srvPtr->state |= SRV_NO_REPLY;
+	    } else {
+		Rpc_ErrorReply((ClientData)srvPtr, error);
+	    }
+	    error = SUCCESS;
+d482 2
+a483 1
+	     * to reply to.
+d485 1
+@
+
+
+5.5
+log
+@Fixed server reclaiming in relation to the SRV_NO_REPLY bit.  It's
+important to preserve that bit until a new RPC request comes in,
+even when marking a server SRV_FREE.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: rpcServer.c,v 5.4 87/10/04 16:01:56 brent Exp $ SPRITE (Berkeley)";
+d168 10
+a177 1
+	    error = RPC_SERVICE_DISABLED;
+@
+
+
+5.4
+log
+@Added calls to Arp in the Rpc_Reply routines so we can respond
+to echo request during the boot sequense.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: rpcServer.c,v 5.3 87/09/29 14:34:43 brent Exp $ SPRITE (Berkeley)";
+d246 1
+a246 1
+	    if ((srvPtr->state & SRV_AGING) == 0) {
+d248 10
+d280 1
+a280 3
+		    if ((srvPtr->state & SRV_NO_REPLY) == 0) {
+			deadClientID = srvPtr->clientID;
+		    }
+a284 10
+		} else if (srvPtr->state & SRV_NO_REPLY) {
+		    /*
+		     * Reclaim right away if the server process is tied
+		     * up not replying to a broadcast request.
+		     */
+		    procPtr = srvPtr->freeReplyProc;
+		    data = srvPtr->freeReplyData;
+		    srvPtr->freeReplyProc = (int (*)())NIL;
+		    srvPtr->freeReplyData = (ClientData)NIL;
+		    srvPtr->state = SRV_FREE;
+d515 1
+a515 1
+	    Sys_Printf("Unexpected Server state %x, idx %d, Rpc ID <%x> flags <%x>\n",
+d517 1
+a517 1
+			    rpcHdrPtr->flags);
+@
+
+
+5.3
+log
+@Added rpcServiceEnabled switch
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: rpcServer.c,v 5.2 87/09/11 09:36:14 brent Exp $ SPRITE (Berkeley)";
+d66 2
+a67 1
+ * programs via the Sys_Stats SYS_RPC_SERVER_HIST command.
+d70 1
+a70 1
+Boolean rpcServiceTiming = TRUE;
+d160 5
+a164 2
+	 * Check the procedure ID and branch to the service routine.
+	 * No locks are held during the service routine's exectution.
+d167 3
+a169 1
+	if (command <= 0 || command > RPC_LAST_COMMAND) {
+d665 9
+d784 9
+d835 4
+a838 1
+ 
+d862 4
+d902 1
+a902 1
+					 (int *)NIL);
+@
+
+
+5.2
+log
+@Moved Rpc_RebootNotify and associated data structures to rpcRecovery.c
+Updated interface to RpcHostAlive
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: rpcServer.c,v 5.1 87/09/09 10:48:44 brent Exp $ SPRITE (Berkeley)";
+d32 8
+d65 2
+a66 1
+ * A histogram is kept of service time.
+d511 3
+a513 2
+	    Sys_Printf("Unexpected Server state %x, Rpc ID <%x> flags <%x>\n",
+			    srvPtr->state, rpcHdrPtr->ID, rpcHdrPtr->flags);
+d516 1
+@
+
+
+5.1
+log
+@Cleaned up some lint
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: rpcServer.c,v 5.0 87/08/11 10:49:01 sprite Exp $ SPRITE (Berkeley)";
+a61 17
+/*
+ * A boot time stamp is kept for each client to detect reboots.
+ */
+int		rpcBootIds[NET_NUM_SPRITE_HOSTS];
+
+/*
+ * Struct for list of services to notify that a client has rebooted.
+ */
+
+typedef struct {
+    List_Links	links;
+    void	(*proc)();
+    ClientData	clientData;
+} NotifyElement;
+
+List_Links	rpcNotifyList;
+
+a92 1
+    NotifyElement	*notifyPtr;
+d143 2
+a144 1
+	 * to detect reboots by clients.
+d147 1
+a147 21
+	    if (rpcBootIds[rpcHdrPtr->clientID] != rpcHdrPtr->bootID) {
+		/*
+		 * Flick the client's state from dead to alive to
+		 * trigger action by interested services.
+		 */
+		RpcHostDead(srvPtr->clientID);
+		/*
+		 * Until recovery is in place, still use this old
+		 * method to notify all interested services.
+		 */
+/* Sys_Printf("Client %d just rebooted\n", rpcHdrPtr->clientID); */
+		LIST_FORALL(&rpcNotifyList, (List_Links *) notifyPtr) {
+		    (notifyPtr->proc)(rpcHdrPtr->clientID, 
+				      notifyPtr->clientData);
+		}
+		rpcBootIds[rpcHdrPtr->clientID] = rpcHdrPtr->bootID;
+	    }
+	    /*
+	     * Use regular message traffic to note that a host is up.
+	     */
+	    RpcHostAlive(srvPtr->clientID);
+d151 1
+a151 1
+	 * No MASTER_LOCK is held during the service routine's exectution.
+a153 1
+
+d173 2
+a174 2
+	 * Fix this to always return error so that stubs don't have
+	 * to call Rpc_Reply.
+d683 1
+a684 5
+     * Perhaps we should send the client our boot ID...
+     * now we are just bouncing its boot ID back.
+     */
+    rpcHdrPtr->bootID = requestHdrPtr->bootID;
+    /*
+a860 30
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_RebootNotify --
+ *
+ *	Add the given function and client data to the list of call backs when
+ *	clients reboot.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Entry added to notify list.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Rpc_RebootNotify(proc, clientData)
+    void	(*proc)();
+    ClientData	clientData;
+{
+    register	NotifyElement	*notifyPtr;
+
+    notifyPtr = (NotifyElement *) Mem_Alloc(sizeof(NotifyElement));
+    notifyPtr->proc = proc;
+    notifyPtr->clientData = clientData;
+    List_InitElement((List_Links *) notifyPtr);
+    List_Insert((List_Links *) notifyPtr, LIST_ATREAR(&rpcNotifyList));
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: rpcServer.c,v 4.5 87/08/04 13:49:54 nelson Exp $ SPRITE (Berkeley)";
+a37 1
+static int       numFreeServers = 0;
+@

@@ -1,0 +1,24 @@
+
+
+          lgets fileId [varName]
+               Reads the next Tcl list from the file given by fileId
+               and discards the terminating newline character.  This
+               command differs from the gets command, in that it reads
+               Tcl lists rather than lines.  If the list contains a
+               newline, then that newline will be returned as part of
+               the result.  Only a newline not quoted as part of the
+               list indicates the end of the list.  There is no
+               corresponding command for outputing lists, as puts will
+               do this correctly.  If varName is specified, then the
+               line is placed in the variable by that name and the
+               return value is a count of the number of characters
+               read (not including the newline).  If the end of the
+               file is reached before reading any characters then -1
+               is returned and varName is set to an empty string.  If
+               varName is not specified then the return value will be
+               the line (minus the newline character) or an empty
+               string if the end of the file is reached before reading
+               any characters.  An empty string will also be returned
+               if a line contains no characters except the newline, so
+               eof may have to be used to determine what really
+               happened.

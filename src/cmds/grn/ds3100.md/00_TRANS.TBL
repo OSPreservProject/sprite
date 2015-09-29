@@ -1,0 +1,6 @@
+F DEPENDEN.MK;1                     	dependencies.mk
+F HDB.O;1                           	hdb.o
+F HGRAPH.O;1                        	hgraph.o
+F HPOINT.O;1                        	hpoint.o
+F MAIN.O;1                          	main.o
+F MD.MK;1                           	md.mk

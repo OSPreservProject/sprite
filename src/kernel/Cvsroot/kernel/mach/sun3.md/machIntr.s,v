@@ -1,0 +1,548 @@
+head     9.3;
+branch   ;
+access   ;
+symbols  ds3100:9.3 sun3:9.3 sun4nw:9.3 symm:9.3 spur:9.3 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @# @;
+
+
+9.3
+date     90.10.19.15.46.08;  author rab;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.02.07.19.15.19;  author rab;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.13.15.38.15;  author douglis;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.51.44;  author douglis;  state Stable;
+branches ;
+next     8.3;
+
+8.3
+date     89.05.23.09.43.22;  author mendel;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.03.08.14.19.00;  author rab;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.18.15.26.47;  author jhh;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.04.14;  author douglis;  state Stable;
+branches ;
+next     6.1;
+
+6.1
+date     88.10.07.11.07.31;  author mendel;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.09.40;  author brent;  state Stable;
+branches ;
+next     5.4;
+
+5.4
+date     88.06.04.18.13.39;  author mendel;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     88.05.05.17.54.58;  author nelson;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     88.05.04.16.40.31;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     88.05.04.15.53.38;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.50.04;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.3
+log
+@Changes for profiling.
+@
+text
+@|* machIntr.s -
+|*
+|*     Contains the interrupt handlers.
+|*
+|* Copyright 1989 Regents of the University of California
+|* Permission to use, copy, modify, and distribute this
+|* software and its documentation for any purpose and without
+|* fee is hereby granted, provided that the above copyright
+|* notice appear in all copies.  The University of California
+|* makes no representations about the suitability of this
+|* software for any purpose.  It is provided "as is" without
+|* express or implied warranty.
+|*
+
+
+#include "machConst.h"
+#include "machAsmDefs.h"
+.data
+.asciz "$Header: /sprite/src/kernel/mach/sun3.md/RCS/machIntr.s,v 9.2 90/02/07 19:15:19 rab Exp Locker: rab $ SPRITE (Berkeley)"
+	.even
+	.globl	_machSpuriousCnt
+_machSpuriousCnt:	.long	0
+	.globl	_machLevel1Cnt
+_machLevel1Cnt:	.long	0
+	.globl	_machLevel2Cnt
+_machLevel2Cnt:	.long	0
+	.globl	_machLevel3Cnt
+_machLevel3Cnt:	.long	0
+	.globl	_machLevel4Cnt
+_machLevel4Cnt:	.long	0
+	.globl	_machLevel5Cnt
+_machLevel5Cnt:	.long	0
+	.globl	_machLevel6Cnt
+_machLevel6Cnt:	.long	0
+
+.even
+.text
+
+|*
+|* ----------------------------------------------------------------------------
+|*
+|* Interrupt handling --
+|*
+|*     Handle exceptions.  Enter the debugger for unsuported interrupts.
+|*
+|* Results:
+|*     None.
+|*
+|* Side effects:
+|*     None.
+|*
+|* ----------------------------------------------------------------------------
+|*
+	.globl	_proc_RunningProcesses
+
+	.globl	MachSpurious
+MachSpurious:
+	addl	#1,_machSpuriousCnt
+	CallTrapHandler(MACH_SPURIOUS_INT)
+
+	.globl	MachLevel1Int
+MachLevel1Int:
+	addl	#1,_machLevel1Cnt
+	CallTrapHandler(MACH_LEVEL1_INT)
+
+	.globl	MachLevel2Int
+MachLevel2Int:
+	addl	#1,_machLevel2Cnt
+	CallTrapHandler(MACH_LEVEL2_INT)
+
+	.globl	MachLevel3Int
+MachLevel3Int:
+	addl	#1,_machLevel3Cnt
+	CallTrapHandler(MACH_LEVEL3_INT)
+
+	.globl	MachLevel4Int
+MachLevel4Int:
+	addl	#1,_machLevel4Cnt
+	CallTrapHandler(MACH_LEVEL4_INT)
+
+	.globl	MachLevel5Int
+MachLevel5Int:
+	addl	#1,_machLevel5Cnt
+/*	movl    sp@@(2), _Prof_InterruptPC */
+	CallTrapHandler(MACH_LEVEL5_INT)
+
+	.globl	MachLevel6Int
+MachLevel6Int:
+	addl	#1,_machLevel6Cnt
+	CallTrapHandler(MACH_LEVEL6_INT) 
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Call a Vectored Interrupt Handler --
+ *
+ *      Call an interrupt handler.  The temporary registers d0, d1, a0 and a1
+ *	are saved first, then interrupts are disabled and an "At Interrupt 
+ *	Level" flag is set so the handler can determine that it is running a
+ *	interrupt level.  The registers are restored at the end.
+ *	This code assumes that if the interrupt occured in user mode, and if
+ *	the specialHandling flag is set on the way back to user mode, then
+ *	a context switch is desired. Note that schedFlags is not checked.
+ *
+ *  Algorithm:
+ *	Save temporary registers
+ *	Determine if interrupt occured while in kernel mode or user mode
+ *	Compute the routine it call and its clientdata using the vector
+ *		from the VOR register.
+ *	Call routine
+ *	if interrupt occured while in user mode.
+ *	    if specialHandling is set for the current process 
+ *    	        Set the old status register trace mode bit on.
+ *	        Clear the specialHandling flag.
+ *	    endif
+ *	endif
+ *	restore registers
+ *		
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+#define	INTR_SR_OFFSET	16
+#define	INTR_VOR_OFFSET	22
+.even
+.text
+	.globl _MachVectoredInterrupt
+
+_MachVectoredInterrupt:
+/*	movl    sp@@(2), _Prof_InterruptPC */
+	moveml	#0xC0C0, sp@@-
+	movw	#MACH_SR_HIGHPRIO, sr 
+	movw	sp@@(INTR_SR_OFFSET), d0
+	andl	#MACH_SR_SUPSTATE, d0
+	movl	d0, _mach_KernelMode
+	movl	#1, _mach_AtInterruptLevel 
+        movw    sp@@(INTR_VOR_OFFSET), d0 
+	andl 	#1020, d0 
+        lea  	_machInterruptRoutines, a0 
+        lea 	_machInterruptArgs, a1 
+        movel 	a1@@(d0:l),sp@@-
+	movel 	a0@@(d0:l),a0
+	jbsr 	a0@@ 
+	addql 	#4, sp 
+	clrl	_mach_AtInterruptLevel 
+	tstl	_mach_KernelMode
+	bne	1f
+	movl	_proc_RunningProcesses, a0
+	movl	a0@@, a1
+	movl	_machSpecialHandlingOffset, d1
+	tstl	a1@@(0,d1:l)
+	beq	1f
+	clrl	a1@@(0,d1:l)
+	movw	sp@@(INTR_SR_OFFSET), d0
+	orw	#MACH_SR_TRACEMODE, d0
+	movw	d0, sp@@(INTR_SR_OFFSET)
+1:	moveml	sp@@+, #0x0303
+	rte 
+@
+
+
+9.2
+log
+@Changed local labels to Gnu syntax.
+@
+text
+@d19 1
+a19 1
+.asciz "$Header: /sprite/src/kernel/mach/sun3.md/RCS/machIntr.s,v 9.1 89/10/13 15:38:15 douglis Exp Locker: rab $ SPRITE (Berkeley)"
+d84 1
+a84 1
+	movl    sp@@(2), _Prof_InterruptPC
+d130 1
+a130 1
+	movl    sp@@(2), _Prof_InterruptPC
+@
+
+
+9.1
+log
+@save Prof_InterruptPC in MachVectoredInterrupt.  (why is this
+upper case?? :)
+@
+text
+@d19 1
+a19 1
+.asciz "$Header: /sprite/src/kernel/mach/sun3.md/RCS/machIntr.s,v 9.0 89/09/12 14:51:44 douglis Stable Locker: douglis $ SPRITE (Berkeley)"
+d147 1
+a147 1
+	bne	1$
+d152 1
+a152 1
+	beq	1$
+d157 1
+a157 1
+1$:	moveml	sp@@+, #0x0303
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d19 1
+a19 1
+.asciz "$Header: /sprite/src/kernel/mach/sun3.md/RCS/machIntr.s,v 8.3 89/05/23 09:43:22 mendel Exp Locker: douglis $ SPRITE (Berkeley)"
+d130 1
+@
+
+
+8.3
+log
+@1) Replaced setjmp/longjmp with Mach_Probe. 2) Changed interrupt callback
+interface to allow modules to register callbacks. 
+@
+text
+@d19 1
+a19 1
+.asciz "$Header: /sprite/src/kernel/mach/sun2.md/RCS/machIntr.s,v 8.2 89/03/08 14:19:00 rab Exp $ SPRITE (Berkeley)"
+@
+
+
+8.2
+log
+@*** empty log message ***
+@
+text
+@d5 8
+a12 2
+|* Copyright (C) 1985 Regents of the University of California
+|* All rights reserved.
+d15 1
+a17 1
+
+d19 1
+a19 1
+.asciz "$Header: /sprite/src/kernel/mach/sun3.md/RCS/machIntr.s,v 1.2 89/02/20 00:19:26 rab Exp $ SPRITE (Berkeley)"
+d69 1
+a69 1
+    	CallInterruptHandler(_Dev_SCSIIntr)
+d74 1
+a74 1
+	CallInterruptHandler(_Net_Intr)
+d85 1
+a85 1
+	CallInterruptHandler(_Timer_TimerServiceInterrupt)
+d90 68
+a157 1
+	CallInterruptHandler(_Dev_KbdServiceInterrupt)
+@
+
+
+8.1
+log
+@changed CallTrapHandler macro so it uses specialHandling field of pcb,
+rather than sched_DoContextSwitch
+@
+text
+@d13 1
+a13 1
+.asciz "$Header: machIntr.s,v 6.1 88/10/07 11:07:31 mendel Exp $ SPRITE (Berkeley)"
+d78 1
+d84 1
+a84 1
+    	CallInterruptHandler(_Dev_KbdServiceInterrupt)
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d13 1
+a13 1
+.asciz "$Header: /sprite/src/kernel/mach/sun2.md/RCS/machIntr.s,v 6.1 88/10/07 11:07:31 mendel Exp Locker: douglis $ SPRITE (Berkeley)"
+d48 1
+@
+
+
+6.1
+log
+@Moved DevTimerServiceInterrupts to timer module.
+@
+text
+@d13 1
+a13 1
+.asciz "$Header: machIntr.s,v 6.0 88/08/11 12:09:40 brent Stable $ SPRITE (Berkeley)"
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d13 1
+a13 1
+.asciz "$Header: machIntr.s,v 5.4 88/06/04 18:13:39 mendel Exp $ SPRITE (Berkeley)"
+d77 1
+a77 1
+	CallInterruptHandler(_Dev_TimerServiceInterrupt)
+@
+
+
+5.4
+log
+@Changed the timer interrupt to jump into a DevTimer module routine rather
+than into the Timer module.
+@
+text
+@d13 1
+a13 1
+.asciz "$Header: machIntr.s,v 5.3 88/05/05 17:54:58 nelson Exp $ SPRITE (Berkeley)"
+@
+
+
+5.3
+log
+@Handles move of functionality from sys to mach.
+@
+text
+@d13 1
+a13 1
+.asciz "$Header: machIntr.s,v 5.2 88/05/04 16:40:31 nelson Exp $ SPRITE (Berkeley)"
+d77 1
+a77 1
+	CallInterruptHandler(_Timer_ServiceInterrupt)
+@
+
+
+5.2
+log
+@Comments.
+@
+text
+@d10 1
+a10 1
+#include "asmDefs.h"
+d13 1
+a13 1
+.asciz "$Header: machIntr.s,v 5.1 88/05/04 15:53:38 nelson Exp $ SPRITE (Berkeley)"
+@
+
+
+5.1
+log
+@New trap handling code with machine state struct per proc.
+@
+text
+@d13 1
+a13 1
+.asciz "$Header: machIntr.s,v 5.0 87/08/11 10:50:04 sprite Exp $ SPRITE (Berkeley)"
+d37 1
+d49 2
+a50 2
+	.globl	Mach_Spurious
+Mach_Spurious:
+d54 2
+a55 2
+	.globl	Mach_Level1Int
+Mach_Level1Int:
+d59 2
+a60 2
+	.globl	Mach_Level2Int
+Mach_Level2Int:
+d64 2
+a65 2
+	.globl	Mach_Level3Int
+Mach_Level3Int:
+d69 2
+a70 2
+	.globl	Mach_Level4Int
+Mach_Level4Int:
+d74 2
+a75 2
+	.globl	Mach_Level5Int
+Mach_Level5Int:
+d79 2
+a80 2
+	.globl	Mach_Level6Int
+Mach_Level6Int:
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d1 1
+a1 1
+|* excIntr.s -
+d9 1
+a9 1
+#include "excAsm.h"
+d13 1
+a13 1
+.asciz "$Header: excIntr.s,v 1.10 86/08/08 11:25:35 brent Exp $ SPRITE (Berkeley)"
+d15 14
+a28 14
+	.globl	_excSpuriousCnt
+_excSpuriousCnt:	.long	0
+	.globl	_excLevel1Cnt
+_excLevel1Cnt:	.long	0
+	.globl	_excLevel2Cnt
+_excLevel2Cnt:	.long	0
+	.globl	_excLevel3Cnt
+_excLevel3Cnt:	.long	0
+	.globl	_excLevel4Cnt
+_excLevel4Cnt:	.long	0
+	.globl	_excLevel5Cnt
+_excLevel5Cnt:	.long	0
+	.globl	_excLevel6Cnt
+_excLevel6Cnt:	.long	0
+d48 4
+a51 4
+	.globl	Exc_Spurious
+Exc_Spurious:
+	addl	#1,_excSpuriousCnt
+	CallTrapHandler(EXC_SPURIOUS_INT)
+d53 4
+a56 4
+	.globl	Exc_Level1Int
+Exc_Level1Int:
+	addl	#1,_excLevel1Cnt
+    	CallTrapHandler(EXC_LEVEL1_INT)
+d58 3
+a60 3
+	.globl	Exc_Level2Int
+Exc_Level2Int:
+	addl	#1,_excLevel2Cnt
+d63 3
+a65 3
+	.globl	Exc_Level3Int
+Exc_Level3Int:
+	addl	#1,_excLevel3Cnt
+d68 4
+a71 4
+	.globl	Exc_Level4Int
+Exc_Level4Int:
+	addl	#1,_excLevel4Cnt
+    	CallTrapHandler(EXC_LEVEL4_INT)
+d73 3
+a75 3
+	.globl	Exc_Level5Int
+Exc_Level5Int:
+	addl	#1,_excLevel5Cnt
+d78 3
+a80 3
+	.globl	Exc_Level6Int
+Exc_Level6Int:
+	addl	#1,_excLevel6Cnt
+@

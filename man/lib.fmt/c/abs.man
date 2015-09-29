@@ -1,0 +1,66 @@
+
+
+
+ABS                   C Library Procedures                    ABS
+
+
+
+NNAAMMEE
+     abs, labs - integer absolute value
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddlliibb..hh>>
+
+     iinntt aabbss((ii))
+     iinntt ii;;
+
+     lloonngg iinntt llaabbss((ii))
+     lloonngg iinntt ii;;
+
+DDEESSCCRRIIPPTTIIOONN
+     _A_b_s returns the absolute value of its integer operand.  _L_a_b_s
+     is similar to _a_b_s except that its argument and its resul are
+     both of type lloonngg iinntt.
+
+SSEEEE AALLSSOO
+     floor(3M) for _f_a_b_s
+
+BBUUGGSS
+     Applying the _a_b_s function to the most negative integer gen-
+     erates a result which is the most negative integer.  That
+     is,
+
+     abs(0x80000000)
+
+     returns 0x80000000 as a result.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0               May 15, 1985                          1
+
+
+

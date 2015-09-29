@@ -1,0 +1,95 @@
+.nr pp 12
+.nr sp 12
+.nr tp 12
+.lp
+.(l C
+\fBMaking Your Very Own Sprite Kernel\fP
+.sp
+Last Revised: 2/28/92
+.)l
+.sp
+.sh 1 "Background Information"
+.sh 2 "Kernel Sources"
+.pp
+The kernel sources are maintained by a home-grown source control system
+called \fBscvs\fP. The scvs cheat sheet (available in 
+\fC/sprite/admin/howto/scvs\fP) has lots of information on how to use
+scvs. The kernel sources are divided up into 32 different \fImodules\fP. 
+A list of these modules can be found in \fC/sprite/src/kernel/Modules\fP.
+Read-only copies of the kernel modules can be found in subdirectories of
+\fC/sprite/src/kernel\fP. 
+.sh 2 "Installed Object Files"
+.pp
+The read-only copies of the kernel sources are periodically compiled,
+and the resulting object files are stored in 
+\fC/sprite/src/kernel/\fImachine\fP.md\fR. These object files,
+can
+be linked together to build a kernel. 
+.sh 2 "Installed Kernels"
+.pp
+The "official" Sprite kernels are built in \fC/sprite/src/kernel/sprite\fR.
+The Makefile in that directory links together all of the installed
+object files to produce an official kernel. 
+.sh 1 "Making Your Own Kernel"
+.sh 2 "Your Personal Build Directory"
+.pp
+Sprite kernel developers have their own personal build directories in
+\fC/sprite/src/kernel\fP.  The name of the directory is usually the
+same as their login name.  To make your own kernel build directory
+go to \fC/sprite/src/kernel\fP and type \fBupdate newuser \fIlogin\fR,
+where \fIlogin\fP is your login name. (By the way, the \fBupdate\fP 
+program is really useful so you might want to check it out if you
+don't already know about it.)  Once the update completes go to
+your build directory and follow the instructions in the README file. 
+.sh 2 "Modifying a Module"
+.pp
+The \fBscvs\fP cheat sheet outlines how to make your own copy of
+a kernel modules and make modifications. To summarize, go to 
+the \fCsrc\fR subdirectory of your kernel build directory and
+type \fBscvs co \fImodule\fR. 
+Once you have your copy you need to create a Makefile for it.
+Go to the copy and type \fBmkmf\fP.  This will create a Makefile
+for you. If you add new files, or remove existing ones, then
+you will need to rerun \fBmkmf\fP. Tag files are created by
+typing \fBpmake tags\fP once you have a Makefile.
+.sh 2 "Building a Kernel"
+.pp
+Kernels are built by going to your kernel build directory and typing
+\fBpmake \fImachine\fR, where \fImachine\fP is the type of kernel
+that you want to build, e.g. ds5000. If you do not modify the object
+file list in your Makefile your kernel will be built out of the
+installed object files. If you want to use your own copy of a 
+module then you need to modify the Makefile (it has comments). 
+.pp
+There are few miscellaneous object files that are necessary to build a
+kernel. The first is version.o, which contains the kernel version
+string. The second is mainHook.o. This contains random variable definitions
+and strange routines.  I personally avoid modifying it. There are some
+variables that it may be useful to modify (like one that produces
+verbose information during the boot).  See the mainHook.c files for details.
+.sh 1 "Booting Your Kernel"
+.pp
+Your kernel will have the same name as your login.  To boot it, replace
+the "sprite" or "new" in the normal boot command for the machine with
+your kernel name.  For example, if your login name was \fBfoo\fP and you wanted
+to boot a ds5000 with your kernel you would type \fB boot 2/mop/foo\R.
+.sh 1 "Debugging Your Kernel"
+.pp
+You need to machines to debug a kernel; one runs the debugger and the other
+runs your kernel.
+To debug a machine it must be running the portion of the
+kernel that handles packets from the debugger running on the other machine
+(we refer to a machine in this state as "in the debugger"). 
+There are a number of ways of getting the machine into the debugger.
+One is to have a bug in the kernel. Another is to type \fBl1-d\fP
+at the console,
+and a third is to type \fBkmsg -d \fIhostname\fR from another machine.
+Once the machine is in the debugger you need to determine which kernel
+it is running. Either type \fBtail \fC/hosts/\fIhostname\fP/boottimes\fP,
+or type \fBkmsg -v \fIhostname\fR. 
+Go to your kernel build directory.  Do 
+\fBstrings \fIkernel\fP | grep VERSION\fR on your kernel and make sure it
+corresponds with the kernel that the machine was running. 
+If it does, then type \fBKgdb \fIkernel\fR. Once you get a debugger
+prompt type \fBattach \fIhostname\fR. It should print a message
+about dumping out the syslog, followed by a stack backtrace. 

@@ -1,0 +1,3324 @@
+head     1.25;
+branch   ;
+access   ;
+symbols  srv030:1.25 srv028:1.25 srv027:1.25 srv026:1.25 srv024:1.25 srv023:1.25.1 srv022:1.25 srv021:1.25 srv019:1.25 srv018:1.25 srv016:1.24 srv015:1.24 srv014:1.23 srv012:1.23 srv011:1.23 srv010:1.23 srv008:1.22 srv007:1.22 srv006:1.21 srv005:1.21 srv004:1.21 srv003:1.20 srv002:1.19 srv001:1.18;
+locks    ; strict;
+comment  @ * @;
+
+
+1.25
+date     92.06.25.15.55.36;  author kupfer;  state Exp;
+branches 1.25.1.1;
+next     1.24;
+
+1.24
+date     92.06.12.14.15.41;  author kupfer;  state Exp;
+branches ;
+next     1.23;
+
+1.23
+date     92.06.04.14.10.56;  author kupfer;  state Exp;
+branches ;
+next     1.22;
+
+1.22
+date     92.05.27.21.24.31;  author kupfer;  state Exp;
+branches ;
+next     1.21;
+
+1.21
+date     92.05.08.12.54.48;  author kupfer;  state Exp;
+branches ;
+next     1.20;
+
+1.20
+date     92.04.29.21.45.18;  author kupfer;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     92.04.23.23.45.52;  author kupfer;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     92.04.16.11.21.49;  author kupfer;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     92.04.07.13.32.31;  author kupfer;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     92.04.02.20.57.36;  author kupfer;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     92.02.27.15.53.44;  author kupfer;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     92.01.21.17.08.25;  author kupfer;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     91.12.18.23.33.37;  author kupfer;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     91.12.12.21.03.25;  author kupfer;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     91.12.01.22.00.39;  author kupfer;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     91.11.14.10.03.22;  author kupfer;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     91.10.18.18.28.26;  author kupfer;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     91.10.04.11.37.56;  author kupfer;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     91.09.24.16.35.13;  author kupfer;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     91.09.23.14.20.12;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.09.04.15.25.30;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.09.02.22.56.14;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.09.01.21.03.02;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.08.19.12.17.34;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.08.15.15.53.10;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+1.25.1.1
+date     92.07.07.15.53.22;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Code to manage VM segments.
+@
+
+
+1.25
+log
+@Fix comments for VmSegmentCopy.
+@
+text
+@/* 
+ * vmSegment.c --
+ *
+ *	Code to create, destroy, find, etc. VM segment structures.
+ *
+ * Copyright 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmSegment.c,v 1.24 92/06/12 14:15:41 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <ckalloc.h>
+#include <list.h>
+#include <mach.h>
+#include <mach_error.h>
+#include <status.h>
+#include <string.h>
+
+#include <user/fs.h>
+#include <fs.h>
+#include <fsio.h>
+#include <fsutil.h>
+#include <sync.h>
+#include <sys.h>
+#include <timer.h>
+#include <utils.h>
+#include <vm.h>
+#include <vmInt.h>
+#include <user/vmStat.h>
+#include <vmSwapDir.h>
+
+/* 
+ * This type is used to make a list of segments to clean.
+ */
+typedef struct {
+    List_Links link;
+    Vm_Segment *segPtr;
+} VmCleaningElement;
+
+/* 
+ * List of all segments known to the system.  The list is protected by
+ * a monitor lock, which should be obtained before any of the segments
+ * themselves are locked.  Membership in this list does not count as a
+ * reference to the segment.
+ * 
+ * Notes about segment deletion: because the segment data structures
+ * are dynamically freed, we must avoid a situation where process A
+ * frees the segment while process B is waiting to obtain the
+ * segment's lock.  There are three mechanisms to prevent this
+ * situation.  
+ * 
+ * The first is the use of reference counts.  This handles the case
+ * where process B already has a segment handle.
+ * 
+ * The second mechanism is the monitor lock for the list of segments.
+ * This handles the case where process B has done a lookup on the
+ * segment (given a file ID) and wants to increase the reference count
+ * for the segment.
+ * 
+ * The third mechanism is to ensure that the segment's control port is
+ * null before freeing it.  This handles the case where Sprite has
+ * decided that it's done with the segment, but the kernel is still
+ * using it (i.e., memory_object_terminate hasn't been called for the
+ * segment yet).  (For the window between the vm_map call and the
+ * memory_object_init call, the segment's control port is assigned to
+ * MACH_PORT_DEAD.)
+ */
+    
+static List_Links allSegListHdr;
+#define	allSegList	(&allSegListHdr)
+
+/* 
+ * This monitor lock protects the "all segments" list.  To avoid deadlock, 
+ * if both the monitor lock and a segment lock are needed, the monitor lock 
+ * should be obtained first.  The lock is also used to synchronize VM 
+ * segment deletion with FS notification that the backing file for a code 
+ * segment has changed.
+ */
+static Sync_Lock segmentLock = Sync_LockInitStatic("VM:allSegLock");
+#define LOCKPTR (&segmentLock)
+
+/* 
+ * If a process is looking for a segment and finds it in the middle of 
+ * being destroyed, it can wait on this condition variable to recheck the 
+ * segment list (at which time the segment is hopefully gone).
+ */
+static Sync_Condition segmentRetry;
+
+/* 
+ * This flag controls whether a code segment will be kept around after all 
+ * its references go away.
+ */
+Boolean vm_StickySegments = TRUE;
+
+
+/* Forward references */
+
+static void FixFsSegPtr _ARGS_((Vm_Segment *segPtr));
+static ReturnStatus VmSegFindHelper _ARGS_((Fs_Attributes *attrPtr,
+					    Vm_SegmentType type,
+					    Vm_Segment **segPtrPtr));
+static void VmSegmentCleanup _ARGS_((Vm_Segment *segPtr));
+static void VmSegmentDestroy _ARGS_((Vm_Segment *segPtr));
+static ReturnStatus VmSegmentFind _ARGS_((Fs_Stream *filePtr,
+		Vm_SegmentType type, Vm_Segment **segPtrPtr));
+static ReturnStatus VmSegmentNew _ARGS_((Vm_SegmentType type,
+		Fs_Stream *filePtr, char *fileName,
+		Vm_Segment **segPtrPtr));
+static void VmSegmentReleaseInt _ARGS_((Vm_Segment *segPtr));
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmSegmentInit --
+ *
+ *	Initialization for the code that manages VM segments.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Initializes the global list of segments and "retry" condition 
+ *	variable.
+ *
+ *----------------------------------------------------------------------
+ */
+    
+void
+VmSegmentInit()
+{
+    List_Init(allSegList);
+    Sync_ConditionInit(&segmentRetry, "VM:segmentRetry", TRUE);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_Shutdown --
+ *
+ *	Flush all the segments in the system.
+ *
+ * Results:
+ *	Returns the number of segments that still exist.
+ *
+ * Side effects:
+ *	All segments are write-protected and marked for write-back and 
+ *	destruction.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY int
+Vm_Shutdown()
+{
+    Vm_Segment *segPtr;		/* a segment to kill */
+    List_Links *itemPtr;
+    int numSegments = 0;
+
+    LOCK_MONITOR;
+    LIST_FORALL(allSegList, itemPtr) {
+	numSegments++;
+	segPtr = (Vm_Segment *)itemPtr;
+	VmSegmentLock(segPtr);
+	if (segPtr->state == VM_SEGMENT_OK) {
+	    segPtr->state = VM_SEGMENT_DYING;
+	}
+	if (segPtr->flags & VM_CLEANING_SEGMENT) {
+	    printf("Warning: still cleaning segment %s.\n",
+		   Vm_SegmentName(segPtr));
+	} else {
+	    VmCleanSegPages(segPtr, TRUE, 0, TRUE);
+	}
+	VmSegmentUnlock(segPtr);
+    }
+    UNLOCK_MONITOR;
+
+    return numSegments;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmGetSharedSegment --
+ *
+ *	Get the shared segment corresponding to the given file.
+ *
+ * Results:
+ * 	Fills in the handle to the segment and returns SUCCESS.  The 
+ * 	caller is responsible for eventually freeing the reference to 
+ * 	the segment.  If the segment doesn't already exist and
+ * 	couldn't be created (or already exists but has an incompatible 
+ * 	type), an error code is returned.
+ *
+ * Side effects:
+ *	Adds the segment to the global list, if necessary.  
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY ReturnStatus
+Vm_GetSharedSegment(fileName, segPtrPtr)
+    char *fileName;
+    Vm_Segment **segPtrPtr;	/* OUT: the resulting segment */
+{
+    ReturnStatus status = SUCCESS;
+    Fs_Stream *filePtr;		/* handle for the named file */
+
+    /* 
+     * Try to find the file in the list of segments.  If that fails,
+     * create a new segment for it.
+     */
+    
+    /* 
+     * Assumes that permissions checking is done at a higher 
+     * level.
+     */
+    status = Fs_Open(fileName, FS_READ|FS_WRITE|FS_CREATE, FS_FILE,
+		     0600, &filePtr);
+    if (status != SUCCESS) {
+	return status;
+    }
+
+    LOCK_MONITOR;
+    status = VmSegmentFind(filePtr, VM_SHARED, segPtrPtr);
+    if (status == SUCCESS || status == FS_FILE_BUSY) {
+	(void)Fs_Close(filePtr);
+	goto done;
+    }
+
+    status = VmSegmentNew(VM_SHARED, filePtr, fileName, segPtrPtr);
+    (void)Fs_Close(filePtr);
+
+ done:
+    UNLOCK_MONITOR;
+    return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmSegmentNew --
+ *
+ *	Create a new segment, backed by the given file (which may be 
+ *	NULL).
+ *	XXX Maybe it would be cleaner to not give file information to 
+ *	VmSegmentNew, instead having the caller responsible for 
+ *	filling in the file information.
+ *
+ * Results:
+ *	Returns a Sprite status code, and fills in the pointer to a
+ *	new segment, which has a reference count of 1.  Only the 
+ *	fields of the segment that are common to all segment types are 
+ *	initialized; the caller is responsible for other fields.  The 
+ *	caller may also need to reset the segment size, which is set 
+ *	to the length of the file (0, if no file).
+ *
+ * Side effects:
+ *	Adds the request port for the segment to the system request 
+ *	port set.  Adds the segment to the list of segments.  If a 
+ *	file is provided, its reference count is incremented (so the 
+ *	caller is responsible for freeing its copy).
+ *
+ *----------------------------------------------------------------------
+ */
+
+static INTERNAL ReturnStatus
+VmSegmentNew(type, filePtr, fileName, segPtrPtr)
+    Vm_SegmentType type;	/* The type of segment that this is */
+    Fs_Stream *filePtr;		/* The backing file */
+    char *fileName;		/* and its name */
+    Vm_Segment **segPtrPtr;	/* resulting segment pointer */
+{
+    Vm_Segment *segmentPtr;	/* local copy of the segment handle */
+    kern_return_t kernStatus;	/* Mach return status */
+    ReturnStatus status = SUCCESS; /* Sprite return status */
+    Fs_Attributes fileAttributes;
+
+    segmentPtr = (Vm_Segment *)ckalloc(sizeof(Vm_Segment));
+    if (segmentPtr == NULL) {
+	/* 
+	 * XXX If we have a list of unused, cached segments, now would 
+	 * be a good time to reclaim some of them and try again.
+	 */
+	panic("VmSegmentNew: no memory.\n");
+    }
+
+    /* 
+     * Zero out all the fields.  This will (a) hopefully make it easier to 
+     * detect initialization botches and (b) make routines like 
+     * Sync_ConditionInit always do the right thing.
+     */
+    bzero((_VoidPtr)segmentPtr, (size_t)sizeof(Vm_Segment));
+    List_InitElement((List_Links *)segmentPtr);
+    segmentPtr->magic = VM_SEGMENT_MAGIC_NUMBER;
+    segmentPtr->refCount = 1;
+    segmentPtr->residentPages = 0;
+    Sync_LockInitDynamic(&segmentPtr->lock, "VM:segmentLock");
+    Sync_ConditionInit(&segmentPtr->condition, "VM:segmentCondition",
+		       TRUE);
+    segmentPtr->flags = 0;
+    segmentPtr->requestPort = MACH_PORT_NULL;
+    segmentPtr->controlPort = MACH_PORT_NULL;
+    segmentPtr->namePort = MACH_PORT_NULL;
+    segmentPtr->type = type;
+    segmentPtr->state = VM_SEGMENT_OK;
+    if (filePtr != NULL) {
+	Fsio_StreamCopy(filePtr, &segmentPtr->swapFilePtr);
+	segmentPtr->swapFileHandle = Fs_GetFileHandle(filePtr);
+	status = VmGetAttrStream(segmentPtr->swapFilePtr,
+				  &fileAttributes);
+	if (status != SUCCESS) {
+	    goto bailOut;
+	}
+	segmentPtr->size = round_page(fileAttributes.size);
+	segmentPtr->swapFileServer = fileAttributes.serverID;
+	segmentPtr->swapFileDomain = fileAttributes.domain;
+	segmentPtr->swapFileNumber = fileAttributes.fileNumber;
+#if VM_KNOWS_SWAP_FILE_SIZE
+	segmentPtr->swapFileSize = fileAttributes.size;
+#endif
+    } else {
+	segmentPtr->swapFilePtr = NULL;
+	segmentPtr->size = 0;
+	segmentPtr->swapFileHandle = NULL;
+	/* 
+	 * XXX rather than using -1 to indicate "not initialized", we 
+	 * should probably set a flag in the segment.
+	 */
+	segmentPtr->swapFileServer = -1;
+	segmentPtr->swapFileDomain = -1;
+	segmentPtr->swapFileNumber = -1;
+#if VM_KNOWS_SWAP_FILE_SIZE
+	segmentPtr->swapFileSize = 0;
+#endif
+    }
+    if (fileName != NULL) {
+	segmentPtr->swapFileName = ckstrdup(fileName);
+    } else {
+	segmentPtr->swapFileName = NULL;
+    }
+    segmentPtr->requestList = &segmentPtr->requestHdr;
+    List_Init(segmentPtr->requestList);
+    segmentPtr->queueSize = 0;
+
+    /* 
+     * Allocate the request port now.  The control port will be
+     * assigned to the segment when the kernel calls 
+     * memory_object_init. 
+     */
+    kernStatus = mach_port_allocate_name(mach_task_self(),
+					 MACH_PORT_RIGHT_RECEIVE,
+					 (mach_port_t)segmentPtr);
+    if (kernStatus != KERN_SUCCESS) {
+	printf("VmSegmentNew: can't allocate segment request port: %s\n",
+	       mach_error_string(kernStatus));
+	status = Utils_MapMachStatus(kernStatus);
+	goto bailOut;
+    }
+    segmentPtr->requestPort = (mach_port_t)segmentPtr;
+
+    /* 
+     * Create a send right for the port (e.g., so that it can be used 
+     * in a vm_map call).
+     */
+    kernStatus = mach_port_insert_right(mach_task_self(),
+					segmentPtr->requestPort,
+					segmentPtr->requestPort,
+					MACH_MSG_TYPE_MAKE_SEND);
+    if (kernStatus != KERN_SUCCESS) {
+	printf("VmSegmentNew: can't create send right for port: %s\n",
+	       mach_error_string(kernStatus));
+	status = Utils_MapMachStatus(kernStatus);
+	goto bailOut;
+    }
+
+    /* 
+     * Add the request port for the segment to the port set for the system.
+     */
+    kernStatus = mach_port_move_member(mach_task_self(),
+				       segmentPtr->requestPort,
+				       sys_RequestPort);
+    if (kernStatus != KERN_SUCCESS) {
+	printf("VmSegmentNew: can't move segment %s to port set: %s\n",
+	       Vm_SegmentName(segmentPtr), mach_error_string(kernStatus));
+	status = Utils_MapMachStatus(kernStatus);
+	goto bailOut;
+    }
+
+    if (filePtr != NULL) {
+	status = Fs_FileBeingMapped(segmentPtr->swapFilePtr, 1);
+    }
+    if (status != SUCCESS) {
+	goto bailOut;
+    }
+
+    /* 
+     * Add the segment to the list of segments.
+     */
+    List_Insert((List_Links *)segmentPtr, LIST_ATREAR(allSegList));
+
+ bailOut:
+    if (status == SUCCESS) {
+	vmStat.segmentsCreated++;
+    } else {
+	if (segmentPtr->swapFileName != NULL) {
+	    ckfree(segmentPtr->swapFileName);
+	}
+	if (segmentPtr->swapFilePtr != NULL) {
+	    (void)Fs_Close(segmentPtr->swapFilePtr);
+	}
+	(void)mach_port_destroy(mach_task_self(), (mach_port_t)segmentPtr);
+	ckfree(segmentPtr);
+	segmentPtr = (Vm_Segment *)NIL;
+    }
+    *segPtrPtr = segmentPtr;
+
+    return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmSegmentDestroy --
+ *
+ *	Destroy a segment, or at least mark it for destruction.  The caller
+ *	should assume that the segment was destroyed and not try to use the
+ *	segment handle anymore.  Note that the segment might already be in
+ *	the process of being destroyed.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	If the segment can be destroyed immediately, all the resources
+ *	it holds (ports, memory) are freed and the segment is removed 
+ *	from the list of segments.  If the segment can't be destroyed
+ *	immediately, cleanup is initiated for the segment, and the
+ *	segment is unlocked.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static INTERNAL void
+VmSegmentDestroy(segPtr)
+    Vm_Segment *segPtr;		/* should already be locked */
+{
+    if (segPtr->refCount != 0) {
+	panic("VmSegmentDestroy: segment has references.\n");
+    }
+    
+    if (segPtr->state != VM_SEGMENT_DEAD) {
+	segPtr->state = VM_SEGMENT_DYING;
+    }
+
+    /* 
+     * If the kernel doesn't have a reference to the segment, get rid of it 
+     * now. 
+     */
+    if (segPtr->controlPort == MACH_PORT_NULL) {
+	VmSegmentCleanup(segPtr);
+	segPtr = NULL;
+    } else {
+	/* 
+	 * The kernel still has a reference to the segment, so there might
+	 * still be dirty pages in memory.  For "anonymous" segments (swap
+	 * files), we don't care; tell the kernel to destroy the segment.
+	 * For other segments, flush any dirty pages; when that's done
+	 * we'll tell the kernel to blow the segment away.  In either case,
+	 * our segment data structure isn't free until the kernel says it's
+	 * okay.
+	 */
+	if (!(segPtr->flags & VM_CLEANING_SEGMENT)) {
+	    if (segPtr->type == VM_STACK || segPtr->type == VM_HEAP) {
+		segPtr->state = VM_SEGMENT_DEAD;
+		(void)memory_object_destroy(segPtr->controlPort, 0);
+	    } else {
+		VmCleanSegPages(segPtr, TRUE, 0, TRUE);
+	    }
+	}
+	VmSegmentUnlock(segPtr);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmSegmentCleanup --
+ *
+ *	Clean up a dead locked segment, which is not referred to 
+ *	either by Sprite code or by the kernel.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The segment's request port is deallocated, and all associated 
+ *	storage is freed.  The segment is removed from the "all 
+ *	segments" list.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static INTERNAL void
+VmSegmentCleanup(segPtr)
+    Vm_Segment *segPtr;		/* the segment that's going away */
+{
+    kern_return_t kernStatus;
+
+    /* 
+     * Sanity checks.
+     */
+    if (segPtr->refCount != 0) {
+	panic("VmSegmentCleanup: non-zero reference count.\n");
+    }
+    if (segPtr->controlPort != MACH_PORT_NULL) {
+	panic("VmSegmentCleanup: control port not nil.\n");
+    }
+    if (segPtr->state != VM_SEGMENT_DEAD &&
+		segPtr->state != VM_SEGMENT_DYING) {
+	panic("VmSegmentCleanup: segment not dead.\n");
+    }
+    if (!List_IsEmpty(segPtr->requestList)) {
+	panic("VmSegmentCleanup: there are pending requests.\n");
+    }
+
+    List_Remove((List_Links *)segPtr);
+    segPtr->magic = 0;
+    kernStatus = mach_port_destroy(mach_task_self(), segPtr->requestPort);
+    if (kernStatus != KERN_SUCCESS) {
+	printf("%s: problem destroying port for segment %s: %s\n",
+	       "VmSegmentCleanup", Vm_SegmentName(segPtr),
+	       mach_error_string(kernStatus));
+    }
+
+    /* 
+     * Notify the file system that the backing file is no longer 
+     * being used.  XXX Will it be a performance problem to do the 
+     * notification here?  There aren't that many places where it can 
+     * be done, given that we have little control over the kernel's 
+     * use of the pages.
+     */
+    if (segPtr->swapFilePtr != NULL) {
+	(void)Fs_FileBeingMapped(segPtr->swapFilePtr, 0);
+	(void)Fs_Close(segPtr->swapFilePtr);
+	if ((segPtr->type == VM_STACK || segPtr->type == VM_HEAP)
+	    && segPtr->swapFileName != NULL) {
+	    VmSwapFileRemove(segPtr->swapFileName);
+	}
+	segPtr->swapFilePtr = NULL;
+    }
+    if (segPtr->swapFileHandle != NULL) {
+	FixFsSegPtr(segPtr);
+	segPtr->swapFileHandle = NULL;
+    }
+    if (segPtr->swapFileName != NULL) {
+	ckfree(segPtr->swapFileName);
+	segPtr->swapFileName = NULL;
+    }
+    if (segPtr->type == VM_HEAP) {
+	if (segPtr->typeInfo.heapInfo.initFilePtr != NULL) {
+	    (void)Fs_Close(segPtr->typeInfo.heapInfo.initFilePtr);
+	}
+	if (segPtr->typeInfo.heapInfo.initFileName != NULL) {
+	    ckfree(segPtr->typeInfo.heapInfo.initFileName);
+	}
+	if (segPtr->typeInfo.heapInfo.mapPtr != NULL) {
+	    VmFreeFileMap(segPtr->typeInfo.heapInfo.mapPtr);
+	}
+    } else if (segPtr->type == VM_CODE) {
+	if (segPtr->typeInfo.codeInfo.execInfoPtr != NULL) {
+	    ckfree(segPtr->typeInfo.codeInfo.execInfoPtr);
+	}
+    }
+
+    Sync_ConditionFree(&segPtr->condition);
+
+    /* 
+     * Make the lock debugging code happy.
+     */
+    VmSegmentUnlock(segPtr);
+
+    ckfree(segPtr);
+    segPtr = NULL;
+    vmStat.segmentsDestroyed++;
+
+    /* 
+     * Notify any interested processes that a segment has been removed from 
+     * the global list.
+     */
+    Sync_Broadcast(&segmentRetry);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FixFsSegPtr --
+ *
+ *	Get rid of the pointer that the given code segment's swap file has 
+ *	back to the segment.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	NILs out the FS handle's segment pointer.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static INTERNAL void
+FixFsSegPtr(segPtr)
+    Vm_Segment *segPtr;		/* a locked code segment */
+{
+    Vm_Segment **segPtrPtr;	/* ptr into swap file handle */
+
+    segPtrPtr = Fs_GetSegPtr(segPtr->swapFileHandle);
+    if (*segPtrPtr != (Vm_Segment *)NIL && *segPtrPtr != segPtr) {
+	panic("FixFsSegPtr: wrong segment pointer in file handle.\n");
+    }
+
+    *segPtrPtr = (Vm_Segment *)NIL;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmSegmentFind --
+ *
+ *	Try to find the segment for the given file in the existing 
+ *	pool of segments.
+ *
+ * Results:
+ *	Returns a Sprite status code.  If successful, fills in the 
+ *	handle for the segment.  
+ *	VM_SEG_NOT_FOUND: didn't find a segment for the file. 
+ *	FS_FILE_BUSY: found the segment, but it has a type that
+ *	  conflicts with the requested type.
+ *	VM_SEGMENT_DESTROYED: found the segment, but it's being destroyed.
+ *
+ * Side effects:
+ *	Increments the reference count of the segment (only if successful).
+ *
+ *----------------------------------------------------------------------
+ */
+
+static INTERNAL ReturnStatus
+VmSegmentFind(filePtr, type, segPtrPtr)
+    Fs_Stream *filePtr;		/* the desired swap file */
+    Vm_SegmentType type;	/* desired type for the segment */
+    Vm_Segment **segPtrPtr;	/* OUT: handle to found segment */
+{
+    ReturnStatus status;
+    Fs_Attributes fileAttributes;
+    Boolean sigPending;
+    Boolean retry;
+
+    status = VmGetAttrStream(filePtr, &fileAttributes);
+    if (status != SUCCESS) {
+	printf("VmSegmentFind: couldn't get file attributes for %s: %s\n",
+	       Fsutil_GetFileName(filePtr), Stat_GetMsg(status));
+	return status;
+    }
+
+    do {
+	retry = FALSE;
+	status = VmSegFindHelper(&fileAttributes, type, segPtrPtr);
+	if (status == VM_SEGMENT_DESTROYED) {
+	    printf("VmSegmentFind: waiting for cleanup of segment %s.\n",
+		   Vm_SegmentName(*segPtrPtr));
+	    sigPending = Sync_Wait(&segmentRetry, TRUE);
+	    if (sigPending) {
+		status = VM_SEGMENT_DESTROYED;
+	    } else {
+		retry = TRUE;
+	    }
+	}
+    } while(retry);
+
+    return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmSegFindHelper --
+ *
+ *	Helper routine for VmSegmentFind.
+ *
+ * Results:
+ *	Returns a Sprite status code, the same as VmSegmentFind.  Fills in 
+ *	the matching segment handle (if any), even if the segment isn't 
+ *	usable for the given request.
+ *
+ * Side effects:
+ *	Same as VmSegmentFind (only increments the segment's reference 
+ *	count if successful).
+ *
+ *----------------------------------------------------------------------
+ */
+
+static INTERNAL ReturnStatus
+VmSegFindHelper(attrPtr, type, segPtrPtr)
+    Fs_Attributes *attrPtr;	/* attributes for the file we want */
+    Vm_SegmentType type;	/* desired type for the segment */
+    Vm_Segment **segPtrPtr;	/* OUT: handle to found segment */
+{
+    List_Links *itemPtr;
+    Vm_Segment *segPtr = (Vm_Segment *)NIL; /* lint */
+    ReturnStatus status;
+
+    status = VM_SEG_NOT_FOUND;
+    *segPtrPtr = (Vm_Segment *)NIL;
+    vmStat.segmentLookups++;
+
+    LIST_FORALL(allSegList, itemPtr) {
+	vmStat.segmentsLookedAt++;
+	if (vmStat.segmentsLookedAt < 0) {
+	    printf("VmSegFindHelper: counter overflow.\n");
+	    vmStat.segmentsLookedAt = 0;
+	}
+	segPtr = (Vm_Segment *)itemPtr;
+	VmSegmentLock(segPtr);
+	if (attrPtr->fileNumber == segPtr->swapFileNumber
+		&& attrPtr->domain == segPtr->swapFileDomain
+		&& attrPtr->serverID == segPtr->swapFileServer) {
+	    *segPtrPtr = segPtr;
+	    if (segPtr->state != VM_SEGMENT_OK) {
+		status = VM_SEGMENT_DESTROYED;
+	    } else if (segPtr->type != type) {
+		/* 
+		 * For future reference: if the segment is unused (cached),
+		 * then we could just change the type here.
+		 */
+		status = FS_FILE_BUSY;
+	    } else {
+		status = SUCCESS;
+		segPtr->refCount++;
+	    }
+	    VmSegmentUnlock(segPtr);
+	    break;
+	}
+	VmSegmentUnlock(segPtr);
+    }
+
+    return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_PortToSegment --
+ *
+ *	Given a Mach request port, return the corresponding segment 
+ *	handle. 
+ *
+ * Results:
+ *	Returns a segment handle, NULL if the port doesn't refer to a 
+ *	segment. 
+ *
+ * Side effects:
+ *	Increments the segment's reference count.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Vm_Segment *
+Vm_PortToSegment(port)
+    mach_port_t port;
+{
+    Vm_Segment *segPtr;
+
+    segPtr = (Vm_Segment *)port;
+    if (segPtr->magic != VM_SEGMENT_MAGIC_NUMBER) {
+	segPtr = NULL;
+    }
+    if (segPtr != NULL) {
+	VmSegmentLock(segPtr);
+	if (segPtr->refCount < 0) {
+	    panic("Vm_PortToSegment: negative reference count.\n");
+	}
+	segPtr->refCount++;
+	VmSegmentUnlock(segPtr);
+    }
+
+    return segPtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmSegmentAddRef --
+ *
+ *	Add a reference to a segment.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The segment's reference count is incremented.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Vm_SegmentAddRef(segPtr)
+    Vm_Segment *segPtr;
+{
+    VmSegmentLock(segPtr);
+    if (segPtr->refCount < 0
+	|| (segPtr->refCount == 0 && segPtr->type != VM_CODE)) {
+	panic("Vm_SegmentAddRef: bogus reference count.\n");
+    }
+    segPtr->refCount++;
+    VmSegmentUnlock(segPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_SegmentRelease --
+ *
+ *	Decrement the reference count on a segment, and free it if this is
+ *	the last reference.  (Exception: code segments will be kept around, 
+ *	if sticky segments are enabled and the segment is still registered 
+ *	with the kernel.)
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	See VmSegmentReleaseInt.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+Vm_SegmentRelease(segPtr)
+    Vm_Segment *segPtr;
+{
+    /* 
+     * Obtain the monitor lock now because we might need it when we call 
+     * VmSegmentDestroy. 
+     */
+    LOCK_MONITOR;
+    VmSegmentReleaseInt(segPtr);
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmSegmentReleaseInt --
+ *
+ *	Decrement the reference count on a segment, and free it if it meets 
+ *	some slightly complicated requirements.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Decrements the reference count and destroys the segment if 
+ *	necessary. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+static INTERNAL void
+VmSegmentReleaseInt(segPtr)
+    Vm_Segment *segPtr;
+{
+    Boolean nukeIt = TRUE;	/* deallocate it, or leave it inactive? */
+
+    VmSegmentLock(segPtr);
+    if (segPtr->refCount == 0) {
+	panic("VmSegmentReleaseInt: refCount is already zero.\n");
+    }
+    if (segPtr->magic != VM_SEGMENT_MAGIC_NUMBER) {
+	panic("VmSegmentReleaseInt: bad magic.\n");
+    }
+    segPtr->refCount--;
+    if (segPtr->refCount > 0) {
+	nukeIt = FALSE;
+    } else if (segPtr->type == VM_CODE && vm_StickySegments) {
+	if (segPtr->state == VM_SEGMENT_OK
+	    && segPtr->controlPort != MACH_PORT_NULL
+	    && segPtr->residentPages > 0) {
+	    nukeIt = FALSE;
+	}
+    }
+
+    /* 
+     * If a code segment has become inactive, close the swap file, so that 
+     * the file server doesn't think it's still in use.
+     */
+    if (segPtr->refCount == 0 && !nukeIt && segPtr->swapFilePtr != NULL) {
+	(void)Fs_Close(segPtr->swapFilePtr);
+	segPtr->swapFilePtr = NULL;
+    }
+
+    if (nukeIt) {
+	VmSegmentDestroy(segPtr);
+	segPtr = NULL;
+    } else {
+	VmSegmentUnlock(segPtr);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmSegmentUnlock --
+ *
+ *	Release the lock on a segment.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The segment is unlocked.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+VmSegmentUnlock(segPtr)
+    Vm_Segment *segPtr;
+{
+    Sync_Unlock(&segPtr->lock);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmSegmentLock --
+ *
+ *	Obtain exclusive access to a segment structure.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The segment is locked.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+VmSegmentLock(segPtr)
+    Vm_Segment *segPtr;
+{
+    Sync_GetLock(&segPtr->lock);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmSegStateString --
+ *
+ *	Return a printable name for a segment state.
+ *
+ * Results:
+ *	Returns a pointer to a read-only string.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+VmSegStateString(state)
+    Vm_SegmentState state;
+{
+    char *result;
+
+    switch (state) {
+    case VM_SEGMENT_OK: 
+	result = "okay";
+	break;
+    case VM_SEGMENT_DYING:
+	result = "dying";
+	break;
+    case VM_SEGMENT_DEAD:
+	result = "dead";
+	break;
+    default:
+	result = "<bogus state>";
+	break;
+    }
+
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmGetCodeSegment --
+ *
+ *	Get a reference for the code segment corresponding to the given
+ *	file.
+ *
+ * Results:
+ * 	Fills in the handle to the segment and returns SUCCESS.  The 
+ * 	caller is responsible for eventually freeing the reference to 
+ * 	the segment.  If the segment doesn't already exist and
+ * 	couldn't be created (or already exists but has an incompatible 
+ * 	type), an error code is returned.
+ *
+ * Side effects:
+ *	Adds the segment to the global list, if necessary.  Gives the file 
+ *	a non-reference counted pointer to the segment.  Puts back the 
+ *	segment's swap file handle if the segment was inactive.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY ReturnStatus
+Vm_GetCodeSegment(filePtr, fileName, execInfoPtr, dontCreate, segPtrPtr)
+    Fs_Stream *filePtr;		/* the object file to use */
+    char *fileName;		/* name of the object file */
+    Proc_ObjInfo *execInfoPtr;	/* a.out header information; may be NULL if 
+				 * dontCreate is TRUE */
+    Boolean dontCreate;		/* if the segment can't be found, tells
+				 * whether or not to create it */
+    Vm_Segment **segPtrPtr;	/* OUT: the resulting segment */
+{
+    ReturnStatus status = FAILURE;
+    Vm_Segment *segPtr = NULL;	/* local copy of resulting segment */
+    ClientData fileHandle;	/* handle for filePtr */
+    Vm_Segment **cachedSegPtrPtr; /* from filePtr */
+
+    LOCK_MONITOR;
+
+    /* 
+     * First check if the segment is directly associated with a file
+     * handle.  If that fails, try to find the file in the list of
+     * segments.  If that fails and it's okay to create a new segment, do 
+     * it.
+     */
+    
+    fileHandle = Fs_GetFileHandle(filePtr);
+    cachedSegPtrPtr = Fs_GetSegPtr(fileHandle);
+    segPtr = *cachedSegPtrPtr;
+    if (segPtr != (Vm_Segment *)NIL) {
+	VmSegmentLock(segPtr);
+	if (segPtr->magic != VM_SEGMENT_MAGIC_NUMBER) {
+	    panic("Vm_GetCodeSegment: bad magic (segment %s).\n",
+		  Vm_SegmentName(segPtr));
+	}
+	if (segPtr->state == VM_SEGMENT_OK) {
+	    *segPtrPtr = *cachedSegPtrPtr;
+	    segPtr->refCount++;
+	    status = SUCCESS;
+	}
+	VmSegmentUnlock(segPtr);
+    }
+
+    if (status != SUCCESS) {
+	segPtr = NULL;
+	status = VmSegmentFind(filePtr, VM_CODE, segPtrPtr);
+	if (status == SUCCESS) {
+	    segPtr = *cachedSegPtrPtr = *segPtrPtr;
+	    if (vm_StickySegments) {
+		printf("%s: had to find segment %s in the global list.\n",
+		       "Vm_GetCodeSegment", Vm_SegmentName(segPtr));
+	    }
+	}
+    }
+
+    if (status != SUCCESS && status != FS_FILE_BUSY && !dontCreate) {
+	status = VmSegmentNew(VM_CODE, filePtr, fileName, segPtrPtr);
+	if (status == SUCCESS) {
+	    segPtr = *segPtrPtr;
+	    VmSegmentLock(segPtr);
+	    segPtr->size = round_page(execInfoPtr->codeFileOffset +
+				      execInfoPtr->codeSize);
+	    segPtr->typeInfo.codeInfo.execInfoPtr = 
+		(Proc_ObjInfo *)ckalloc(sizeof(Proc_ObjInfo));
+	    bcopy((_VoidPtr)execInfoPtr,
+		  (_VoidPtr)(segPtr->typeInfo.codeInfo.execInfoPtr),
+		  sizeof(Proc_ObjInfo));
+	    *cachedSegPtrPtr = segPtr;
+	    VmSegmentUnlock(segPtr);
+	}
+    }
+
+    /* 
+     * If the segment was inactive, reactivate it by getting a reference to 
+     * the open stream.
+     */
+    if (status == SUCCESS && segPtr->swapFilePtr == NULL) {
+	VmSegmentLock(segPtr);
+	Fsio_StreamCopy(filePtr, &segPtr->swapFilePtr);
+	if (segPtr->swapFileHandle != Fs_GetFileHandle(segPtr->swapFilePtr)) {
+	    /* 
+	     * I don't think this can happen, but then I don't completely 
+	     * understand how the FS handle stuff works.
+	     */
+	    panic("Vm_GetCodeSegment: handle/stream mismatch.\n");
+	}
+	VmSegmentUnlock(segPtr);
+    }
+    UNLOCK_MONITOR;
+    return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_GetSwapSegment --
+ *
+ *	Create a segment backed by a swap file.
+ *
+ * Results:
+ *	Returns a Sprite status code.  Fills in the handle to a new 
+ *	segment. 
+ *
+ * Side effects:
+ *	Adds the segment to the global list.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+ENTRY ReturnStatus
+Vm_GetSwapSegment(type, size, segPtrPtr)
+    Vm_SegmentType type;	/* VM_STACK or VM_HEAP */
+    vm_size_t size;		/* size to make the segment */ 
+    Vm_Segment **segPtrPtr;	/* OUT: handle for the new segment */
+{
+    ReturnStatus status = SUCCESS;
+    Vm_Segment *segPtr = NULL;
+
+    /* 
+     * We ask for a segment without a backing file, then we use the 
+     * segment handle to generate a unique file name.
+     */
+    LOCK_MONITOR;
+    status = VmSegmentNew(type, (Fs_Stream *)NULL, (char *)NULL,
+			  &segPtr);
+    if (status != SUCCESS) {
+	goto done;
+    }
+    segPtr->swapFileName = VmMakeSwapFileName(segPtr);
+    segPtr->size = size;
+
+ done:
+    UNLOCK_MONITOR;
+    *segPtrPtr = segPtr;
+    return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmNewFileMap --
+ *
+ *	Create a map telling which backing file to get a page from.
+ *
+ * Results:
+ *	Returns a map with all entries set to get the page from the 
+ *	initialization file.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+VmFileMap *
+VmNewFileMap(bytes)
+    vm_size_t bytes;		/* number of bytes the map is 
+				 * responsible for */
+{
+    VmFileMap *mapPtr;		/* the result */
+    char *arrayPtr;		/* the array of flags */
+    char *elementPtr;		/* element in the array */
+    unsigned int pages;		/* number of pages the map is for */
+
+    if (bytes != trunc_page(bytes)) {
+	panic("VmNewFileMap: partial page.\n");
+    }
+    pages = Vm_ByteToPage(bytes);
+    arrayPtr = ckalloc(pages * sizeof(char));
+    mapPtr = (VmFileMap *)ckalloc(sizeof(VmFileMap));
+    if (arrayPtr == NULL || mapPtr == NULL) {
+	panic("VmFileMap: out of memory.\n");
+    }
+    for (elementPtr = arrayPtr; elementPtr < arrayPtr + pages;
+	 elementPtr++) {
+	*elementPtr = TRUE;
+    }
+    mapPtr->arraySize = pages;
+    mapPtr->useInitPtr = arrayPtr;
+
+    return mapPtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmFreeFileMap --
+ *
+ *	Release the object file/swap file mapping for a heap segment.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Frees the memory for the map.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+VmFreeFileMap(mapPtr)
+    VmFileMap *mapPtr;		/* the map to free */
+{
+    ckfree(mapPtr->useInitPtr);
+    ckfree(mapPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmCopyFileMap --
+ *
+ *	Make a new file map equivalent to the given map.
+ *
+ * Results:
+ *	Returns a new file map.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+VmFileMap *
+VmCopyFileMap(mapPtr)
+    VmFileMap *mapPtr;		/* map to copy */
+{
+    VmFileMap *newMapPtr;
+    int index;
+
+    newMapPtr = VmNewFileMap(Vm_PageToByte(mapPtr->arraySize));
+    for (index = 0; index < mapPtr->arraySize; index++) {
+	newMapPtr->useInitPtr[index] = mapPtr->useInitPtr[index];
+    }
+
+    return newMapPtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_AddHeapInfo --
+ *
+ *	Fill in heap-specific information for a segment.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Fills in information about the segment's initialization file.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Vm_AddHeapInfo(segPtr, initFilePtr, initFileName, execInfoPtr)
+    Vm_Segment *segPtr;		/* the segment to fill in */
+    Fs_Stream *initFilePtr;	/* the segment's initialization file */
+    char *initFileName;		/* name of the initialization file */
+    Proc_ObjInfo *execInfoPtr;	/* where to find things in the init. file */
+{
+    VmSegmentLock(segPtr);
+    segPtr->typeInfo.heapInfo.initStart = execInfoPtr->heapFileOffset;
+    segPtr->typeInfo.heapInfo.initLength = execInfoPtr->heapSize;
+    Fsio_StreamCopy(initFilePtr, &segPtr->typeInfo.heapInfo.initFilePtr);
+    segPtr->typeInfo.heapInfo.initFileName = ckstrdup(initFileName);
+    segPtr->typeInfo.heapInfo.mapPtr = 
+		VmNewFileMap((vm_size_t)execInfoPtr->heapSize);
+    VmSegmentUnlock(segPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_SegmentName --
+ *
+ *	Get the printable name for a segment.  The segment should be 
+ *	locked, to ensure that the returned string doesn't disappear 
+ *	suddenly. 
+ *
+ * Results:
+ *	Returns the segment's (unique) swap file name, or a placeholder if 
+ *	the swap file name isn't set.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+Vm_SegmentName(segPtr)
+    Vm_Segment *segPtr;
+{
+    if (segPtr->swapFileName != NULL) {
+	return segPtr->swapFileName;
+    } else {
+	return "<no name>";
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmSegmentCopy --
+ *
+ *	Create a new segment to copy into from the given segment.
+ *
+ * Results:
+ *	Returns a status code.  If successful, fills in the new segment
+ *	handle.
+ *
+ * Side effects:
+ *	The source and destination segments are marked as being involved in 
+ *	a copy operation.  Note: the actual contents of the segment are NOT 
+ *	copied.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+VmSegmentCopy(mappedSegPtr, copySegPtrPtr)
+    VmMappedSegment *mappedSegPtr; /* the segment to copy */
+    Vm_Segment **copySegPtrPtr;	/* OUT: the copy */
+{
+    Vm_Segment *segPtr = mappedSegPtr->segPtr;
+    Boolean fromSegmentLocked = FALSE;
+    ReturnStatus status = SUCCESS;
+    Vm_Segment *copySegPtr = NULL; /* *copySegPtrPtr */
+    Boolean toSegmentLocked = FALSE;
+    int swapSize = 0;		/* size of swap file (instrumentation) */
+#if !VM_KNOWS_SWAP_FILE_SIZE
+    Fs_Attributes fileAttributes;
+#endif
+
+    if (segPtr->type != VM_STACK && segPtr->type != VM_HEAP) {
+	panic("VmSegmentCopy: unexpected segment type.\n");
+    }
+
+    /* 
+     * Get a new segment to copy to.  This involves acquiring the monitor 
+     * lock, so do it before locking the source segment.
+     */
+    status = Vm_GetSwapSegment(segPtr->type, segPtr->size, &copySegPtr);
+    if (status != SUCCESS) {
+	goto bailOut;
+    }
+
+    /* 
+     * Do some sanity checks.  The original segment should be fully
+     * initialized (otherwise how did we get here?).  This is potentially
+     * important, since otherwise we couldn't always lock the segment
+     * against writes.
+     */
+    VmSegmentLock(segPtr);
+    segPtr->flags |= VM_COPY_SOURCE;
+    fromSegmentLocked = TRUE;
+    if (segPtr->state != VM_SEGMENT_OK) {
+	status = VM_SEGMENT_DESTROYED;
+	goto bailOut;
+    }
+    if (segPtr->controlPort == MACH_PORT_NULL ||
+	    segPtr->controlPort == MACH_PORT_DEAD) {
+	panic("VmCopySegment: bogus control port.\n");
+    }
+
+    VmSegmentLock(copySegPtr);
+    toSegmentLocked = TRUE;
+
+    /* 
+     * Fill in the missing fields of the new segment.
+     */
+    if (segPtr->type == VM_HEAP) {
+	copySegPtr->typeInfo.heapInfo.initStart =
+	    segPtr->typeInfo.heapInfo.initStart;
+	copySegPtr->typeInfo.heapInfo.initLength =
+	    segPtr->typeInfo.heapInfo.initLength;
+	Fsio_StreamCopy(segPtr->typeInfo.heapInfo.initFilePtr,
+			&copySegPtr->typeInfo.heapInfo.initFilePtr);
+	copySegPtr->typeInfo.heapInfo.initFileName =
+	    ckstrdup(segPtr->typeInfo.heapInfo.initFileName);
+	copySegPtr->typeInfo.heapInfo.mapPtr =
+	    VmCopyFileMap(segPtr->typeInfo.heapInfo.mapPtr);
+	vmStat.objPagesCopied += segPtr->typeInfo.heapInfo.mapPtr->arraySize;
+    } else {
+	copySegPtr->typeInfo.stackInfo.baseAddr = 
+	    segPtr->typeInfo.stackInfo.baseAddr;
+    }
+    copySegPtr->flags |= VM_COPY_TARGET;
+
+ bailOut:
+    if (status == SUCCESS) {
+#if VM_KNOWS_SWAP_FILE_SIZE
+	swapSize = segPtr->swapFileSize;
+#else
+	if (segPtr->swapFilePtr == NULL) {
+	    swapSize = 0;
+	} else {
+	    status = VmGetAttrStream(segPtr->swapFilePtr, &fileAttributes);
+	    swapSize = fileAttributes.size;
+	}
+#endif
+    }
+    if (status == SUCCESS) {
+	vmStat.segmentCopies++;
+	vmStat.swapPagesCopied += swapSize / vm_page_size;
+    }
+    if (fromSegmentLocked) {
+	if (status != SUCCESS) {
+	    segPtr->flags &= ~VM_COPY_SOURCE;
+	}
+	VmSegmentUnlock(segPtr);
+    }
+    if (toSegmentLocked) {
+	if (status != SUCCESS) {
+	    copySegPtr->flags &= ~VM_COPY_TARGET;
+	}
+	VmSegmentUnlock(copySegPtr);
+    }
+    if (status == SUCCESS) {
+	*copySegPtrPtr = copySegPtr;
+    } else {
+	if (copySegPtr != NULL) {
+	    Vm_SegmentRelease(copySegPtr);
+	}
+    }
+
+    return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_FileChanged --
+ *
+ *	This routine is called by the file system when it detects that a
+ *	file has been opened for writing.  If the file corresponds to
+ *	an unused sticky code segment, the segment will be deleted.
+ *	
+ * Results:
+ *	Nils out the given segment handle.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+Vm_FileChanged(segPtrPtr)
+    Vm_Segment **segPtrPtr;
+{
+    Vm_Segment *segPtr;
+
+    LOCK_MONITOR;
+    segPtr = *segPtrPtr;
+    /* 
+     * There are a couple reasons that the segment handle might be nil.  
+     * First, maybe the file was never associated with a segment.  Second, 
+     * maybe the file was once associated with a segment, but the segment 
+     * got destroyed.
+     */
+    if (segPtr != (Vm_Segment *)NIL) {
+	VmSegmentLock(segPtr);
+	if (segPtr->refCount != 0) {
+	    panic("Vm_FileChanged: segment %s is still in use.\n",
+		  Vm_SegmentName(segPtr));
+	}
+	if (segPtr->type != VM_CODE) {
+	    printf("%s: warning: segment %s is not code (type %d).\n",
+		   "Vm_FileChanged", Vm_SegmentName(segPtr), segPtr->type);
+	}
+	
+	VmSegmentDestroy(segPtr);
+	*segPtrPtr = (Vm_Segment *) NIL;
+    }
+
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_SyncAll --
+ *
+ *	Flush any dirty VM pages.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+Vm_SyncAll()
+{
+    List_Links cleaningListHdr;	/* list of segments to be cleaned */
+    List_Links *itemPtr;	/* element in a list */
+    VmCleaningElement *cleanEltPtr;
+    Vm_Segment *segPtr;
+
+    vmStat.syncCalls++;
+
+    /* 
+     * Make a copy of the current list of alive segments.  This is to keep
+     * segments from going away and to protect us from possible changes to
+     * the master segment list.
+     */
+    
+    List_Init(&cleaningListHdr);
+    LOCK_MONITOR;
+    LIST_FORALL(allSegList, itemPtr) {
+	segPtr = (Vm_Segment *)itemPtr;
+	if (segPtr->state == VM_SEGMENT_DEAD) {
+	    continue;
+	}
+	Vm_SegmentAddRef(segPtr);
+	cleanEltPtr = (VmCleaningElement *)ckalloc(sizeof(VmCleaningElement));
+	List_InitElement((List_Links *)cleanEltPtr);
+	cleanEltPtr->segPtr = segPtr;
+	List_Insert((List_Links *)cleanEltPtr,
+		    LIST_ATREAR(&cleaningListHdr));
+    }
+    UNLOCK_MONITOR;
+
+    /* 
+     * Run through the list, making sure that all dirty pages in each 
+     * segment get flushed back.
+     */
+
+    LIST_FORALL(&cleaningListHdr, itemPtr) {
+	cleanEltPtr = (VmCleaningElement *)itemPtr;
+	segPtr = cleanEltPtr->segPtr;
+	VmSegmentLock(segPtr);
+	if (!(segPtr->flags & VM_CLEANING_SEGMENT)) {
+	    VmCleanSegPages(segPtr, FALSE, 0, TRUE);
+	}
+	while (segPtr->state != VM_SEGMENT_DEAD &&
+	       (segPtr->flags & VM_CLEANING_SEGMENT)) {
+	    (void)Sync_SlowWait(&segPtr->condition, &segPtr->lock, FALSE);
+	}
+	if (segPtr->state == VM_SEGMENT_DEAD) {
+	    segPtr->flags &= ~VM_CLEANING_SEGMENT;
+	}
+	VmSegmentUnlock(segPtr);
+    }
+
+    /* 
+     * Free up the cleaning list.
+     */
+
+    while (!List_IsEmpty(&cleaningListHdr)) {
+	cleanEltPtr = (VmCleaningElement *)List_First(&cleaningListHdr);
+	segPtr = cleanEltPtr->segPtr;
+	List_Remove((List_Links *)cleanEltPtr);
+	Vm_SegmentRelease(segPtr);
+	ckfree(cleanEltPtr);
+    }
+}
+@
+
+
+1.25.1.1
+log
+@Hack instrumentation to track down VM request overhead.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmSegment.c,v 1.25 92/06/25 15:55:36 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a49 10
+ * Temporary instrumentation.
+ */
+Time vmReleaseTime;
+Time relGetLockTime;
+Time vmDestroyTime;
+Time vmSegFreeTime;
+Time vmSegFreeATime;
+Time closeObjFileTime;
+
+/* 
+a522 8
+    Time startTime, endTime;	/* temp */
+    Time startSubTime, endSubTime; /* temp */
+
+    if (sys_CallProfiling) {
+	Timer_GetTimeOfDay(&startTime, (int *)NULL, (Boolean *)NULL);
+    } else {
+	startTime = time_ZeroSeconds;
+    }
+a574 5
+	if (sys_CallProfiling) {
+	    Timer_GetTimeOfDay(&startSubTime, (int *)NULL, (Boolean *)NULL);
+	} else {
+	    startSubTime = time_ZeroSeconds;
+	}
+a577 8
+	if (sys_CallProfiling && !Time_EQ(startTime, time_ZeroSeconds)) {
+	    Timer_GetTimeOfDay(&endTime, (int *)NULL, (Boolean *)NULL);
+	    endSubTime = endTime;
+	    Time_Subtract(endTime, startTime, &endTime);
+	    Time_Subtract(endSubTime, startSubTime, &endSubTime);
+	    Time_Add(endTime, vmSegFreeATime, &vmSegFreeATime);
+	    Time_Add(endSubTime, closeObjFileTime, &closeObjFileTime);
+	}
+a605 6
+
+    if (sys_CallProfiling && !Time_EQ(startTime, time_ZeroSeconds)) {
+	Timer_GetTimeOfDay(&endTime, (int *)NULL, (Boolean *)NULL);
+	Time_Subtract(endTime, startTime, &endTime);
+	Time_Add(endTime, vmSegFreeTime, &vmSegFreeTime);
+    }
+a893 2
+    Time startTime, endTime;	/* temp */
+    Time startSubTime, endSubTime; /* temp */
+a894 5
+    if (sys_CallProfiling) {
+	Timer_GetTimeOfDay(&startTime, (int *)NULL, (Boolean *)NULL);
+    } else {
+	startTime = time_ZeroSeconds;
+    }
+a895 5
+    if (sys_CallProfiling && !Time_EQ(startTime, time_ZeroSeconds)) {
+	Timer_GetTimeOfDay(&endTime, (int *)NULL, (Boolean *)NULL);
+	Time_Subtract(endTime, startTime, &endTime);
+	Time_Add(endTime, relGetLockTime, &relGetLockTime);
+    }
+a922 5
+	if (sys_CallProfiling) {
+	    Timer_GetTimeOfDay(&startSubTime, (int *)NULL, (Boolean *)NULL);
+	} else {
+	    startSubTime = time_ZeroSeconds;
+	}
+a923 5
+	if (sys_CallProfiling && !Time_EQ(startSubTime, time_ZeroSeconds)) {
+	    Timer_GetTimeOfDay(&endSubTime, (int *)NULL, (Boolean *)NULL);
+	    Time_Subtract(endSubTime, startSubTime, &endSubTime);
+	    Time_Add(endSubTime, vmDestroyTime, &vmDestroyTime);
+	}
+a926 6
+    }
+
+    if (sys_CallProfiling && !Time_EQ(startTime, time_ZeroSeconds)) {
+	Timer_GetTimeOfDay(&endTime, (int *)NULL, (Boolean *)NULL);
+	Time_Subtract(endTime, startTime, &endTime);
+	Time_Add(endTime, vmReleaseTime, &vmReleaseTime);
+@
+
+
+1.24
+log
+@Don't keep the swap file open for an inactive (sticky) code segment.
+Keep track of how many pages for a segment are resident.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmSegment.c,v 1.23 92/06/04 14:10:56 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d1362 3
+a1364 1
+ *	None.  The actual contents of the segment are NOT copied.
+@
+
+
+1.23
+log
+@Support for sticky segments.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmSegment.c,v 1.22 92/05/27 21:24:31 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d84 3
+a86 1
+ * should be obtained first.
+d309 1
+d321 1
+d337 1
+d439 4
+a442 5
+ *	Destroy an already-locked segment, or at least mark it for 
+ *	destruction.  The caller should assume that the segment was 
+ *	destroyed and not try to use the segment handle anymore.  Note 
+ *	that the segment might already be in the process of being 
+ *	destroyed. 
+d459 1
+a459 1
+    Vm_Segment *segPtr;
+d559 4
+a562 2
+	if (segPtr->type == VM_CODE) {
+	    FixFsSegPtr(segPtr);
+d564 1
+a564 1
+	(void)Fs_Close(segPtr->swapFilePtr);
+d566 3
+a568 4
+    if ((segPtr->type == VM_STACK || segPtr->type == VM_HEAP)
+	&& segPtr->swapFileName != NULL
+	&& segPtr->swapFilePtr != NULL) {
+	VmSwapFileRemove(segPtr->swapFileName);
+d628 1
+a628 1
+    Vm_Segment *segPtr;		/* a code segment */
+a629 1
+    ClientData fileHandle;	/* handle for the swap file */
+d632 1
+a632 6
+    fileHandle = Fs_GetFileHandle(segPtr->swapFilePtr);
+    segPtrPtr = Fs_GetSegPtr(fileHandle);
+    if (vm_StickySegments && *segPtrPtr == (Vm_Segment *)NIL) {
+	printf("FixFsSegPtr: no pointer in the file handle for segment %s\n",
+	       Vm_SegmentName(segPtr));
+    }
+d876 2
+a877 4
+ *	Decrement the reference count on a segment, and free it if this is
+ *	the last reference.  (Exception: code segments will be kept around,
+ *	if sticky segments are enabled and the segment is still registered
+ *	with the kernel.)
+d893 2
+d903 20
+a922 3
+    if (segPtr->refCount == 0 &&
+	!(segPtr->type == VM_CODE && vm_StickySegments
+	  && segPtr->controlPort != MACH_PORT_NULL)) {
+d1037 2
+a1038 1
+ *	a non-reference counted pointer to the segment.
+d1053 2
+a1054 2
+    ReturnStatus status = SUCCESS;
+    Vm_Segment *segPtr;		/* local copy of resulting segment */
+d1061 1
+a1061 1
+     * First check if the segment is directly associated with a file 
+d1063 2
+a1064 1
+     * segments.  If that fails, create a new segment for it.
+d1069 13
+a1081 4
+    if (*cachedSegPtrPtr != (Vm_Segment *)NIL) {
+	*segPtrPtr = *cachedSegPtrPtr;
+	(*segPtrPtr)->refCount++;
+	goto done;
+d1084 10
+a1093 5
+    status = VmSegmentFind(filePtr, VM_CODE, segPtrPtr);
+    if (status == SUCCESS && vm_StickySegments) {
+	printf("%s: had to find segment %s in the global list.\n",
+	       "Vm_GetCodeSegment", Vm_SegmentName(*segPtrPtr));
+	*cachedSegPtrPtr = *segPtrPtr;
+d1095 16
+a1110 2
+    if (status == SUCCESS || status == FS_FILE_BUSY || dontCreate) {
+	goto done;
+d1113 15
+a1127 11
+    status = VmSegmentNew(VM_CODE, filePtr, fileName, segPtrPtr);
+    if (status == SUCCESS) {
+	segPtr = *segPtrPtr;
+	segPtr->size = round_page(execInfoPtr->codeFileOffset +
+				  execInfoPtr->codeSize);
+	segPtr->typeInfo.codeInfo.execInfoPtr = 
+	    (Proc_ObjInfo *)ckalloc(sizeof(Proc_ObjInfo));
+	bcopy((_VoidPtr)execInfoPtr,
+	      (_VoidPtr)(segPtr->typeInfo.codeInfo.execInfoPtr),
+	      sizeof(Proc_ObjInfo));
+	*cachedSegPtrPtr = segPtr;
+a1128 2
+
+ done:
+d1511 1
+@
+
+
+1.22
+log
+@Use Sync_ConditionFree instead of doing it ourselves.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmSegment.c,v 1.21 92/05/08 12:54:48 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d96 5
+d102 1
+d105 1
+d520 3
+d541 2
+a542 1
+	printf("VmSegmentCleanup: problem destroying port: %s\n",
+d548 1
+a548 1
+     * mapped.  XXX Will it be a performance problem to do the 
+d555 3
+d607 38
+d830 2
+a831 6
+    /* 
+     * For the caller to use this routine, it must already have a 
+     * reference to the segment.  So if there aren't any references to 
+     * the segment, something's hosed.
+     */
+    if (segPtr->refCount <= 0) {
+d844 4
+a847 2
+ *	Decrement the reference count on a segment, and free it if 
+ *	this is the last reference.
+d877 4
+a880 2
+ *	Decrement the reference count on a segment, and free it if 
+ *	this is the last reference.
+d904 3
+a906 1
+    if (segPtr->refCount == 0) {
+d1009 2
+a1010 1
+ *	Get the code segment corresponding to the given file.
+d1020 2
+a1021 1
+ *	Adds the segment to the global list, if necessary.
+d1038 4
+d1044 3
+a1046 2
+     * Try to find the file in the list of segments.  If that fails,
+     * create a new segment for it.
+d1049 8
+a1056 1
+    LOCK_MONITOR;
+d1058 5
+d1077 1
+a1438 3
+ *	Of course, since we don't have sticky code segments right now, this 
+ *	function doesn't do much.
+ *
+d1440 1
+a1440 1
+ *	None.
+d1443 1
+a1443 1
+ *	Nils out the given segment handle.
+d1448 1
+a1448 1
+void
+d1452 25
+a1476 1
+    *segPtrPtr = (Vm_Segment *) NIL;
+@
+
+
+1.21
+log
+@Use vm_read and vm_write to copy heap/stack segments, rather than
+using the memory_object interface.  Don't open the swap file until
+necessary.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmSegment.c,v 1.20 92/04/29 21:45:18 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d571 1
+a571 4
+    if (segPtr->condition.condVar.name != NULL) {
+	ckfree(segPtr->condition.condVar.name);
+	segPtr->condition.condVar.name = NULL;
+    }
+@
+
+
+1.20
+log
+@Don't clean the entire segment when copying it.  More instrumentation
+for segment copying.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmSegment.c,v 1.19 92/04/23 23:45:52 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d334 1
+a334 1
+	segmentPtr->swapFileSize = -1;
+d547 2
+a548 1
+		&& segPtr->swapFileName != NULL) {
+d797 1
+a797 1
+ * VmSegmentRelease --
+a1044 2
+     * XXX It would probably be better for performance if we don't 
+     * open the swap file until it's actually needed.
+d1052 1
+a1052 6
+    status = VmOpenSwapFile(segPtr);
+    if (status != SUCCESS) {
+	VmSegmentReleaseInt(segPtr);
+	segPtr = NULL;
+	goto done;
+    }
+d1236 1
+a1236 2
+ *	Create a new segment whose contents are the same as the given 
+ *	segment's.
+d1243 1
+a1243 1
+ *	None.
+d1256 1
+a1256 1
+    Vm_Segment *copySegPtr = NULL;
+d1258 4
+a1261 12
+    Time startAll, endAll, totalAll;	/* clean + file copy + segment mgmt */
+    Time startClean, endClean, totalClean; /* Mach + writeback; writeback 
+					    * kept by vmPager code */
+    Time startFileCopy, endFileCopy, totalFileCopy;
+    Time startSeg, endSeg, totalSeg; /* set up segments */
+
+    if (sys_CallProfiling) {
+	Timer_GetTimeOfDay(&startAll, NULL, NULL);
+    } else {
+	startAll = time_ZeroSeconds;
+    }
+    startSeg = startAll;
+d1283 1
+a1283 1
+    segPtr->flags |= VM_COPYING_SEGMENT;
+a1293 27
+    /* 
+     * Force any dirty pages from the original segment out to the file 
+     * system.  Do this before locking the copy segment, to avoid a 
+     * potential three-way deadlock between this process, a process writing 
+     * back a dirty page, and a process that is walking the list of 
+     * segments.  For performance reasons, only ensure that the mapped byte
+     * range is clean.
+     */
+    if (sys_CallProfiling) {
+	Timer_GetTimeOfDay(&startClean, NULL, NULL);
+	endSeg = startClean;
+    } 
+    VmCleanSegPages(segPtr, FALSE, mappedSegPtr->length,
+		    segPtr->type == VM_HEAP);
+    while (segPtr->state == VM_SEGMENT_OK &&
+	   (segPtr->flags & VM_CLEANING_SEGMENT)) {
+	(void)Sync_SlowWait(&segPtr->condition, &segPtr->lock, FALSE);
+    }
+    if (segPtr->state != VM_SEGMENT_OK) {
+	status = VM_SEGMENT_DESTROYED;
+	segPtr->flags &= ~VM_CLEANING_SEGMENT;
+	goto bailOut;
+    }
+    if (sys_CallProfiling) {
+	Timer_GetTimeOfDay(&endClean, NULL, NULL);
+    }
+
+d1298 1
+a1298 2
+     * Fill in the missing fields of the new segment and copy the mapped 
+     * portion of the swap file from the original segment to the copy.
+d1311 1
+d1316 1
+a1316 7
+    if (sys_CallProfiling) {
+	Timer_GetTimeOfDay(&startFileCopy, NULL, NULL);
+    }
+    status = VmCopySwapFile(mappedSegPtr, copySegPtr);
+    if (sys_CallProfiling) {
+	Timer_GetTimeOfDay(&endFileCopy, NULL, NULL);
+    }
+d1320 12
+d1333 1
+a1333 15
+	vmStat.pagesCopied += copySegPtr->size / vm_page_size;
+	vmStat.realPagesCopied += copySegPtr->swapFileSize / vm_page_size;
+	if (sys_CallProfiling && !Time_EQ(startAll, time_ZeroSeconds)) {
+	    Timer_GetTimeOfDay(&endAll, NULL, NULL);
+	    Time_Subtract(endAll, startAll, &totalAll);
+	    Time_Add(vmStat.segmentCopyTime, totalAll,
+		     &vmStat.segmentCopyTime);
+	    Time_Subtract(endClean, startClean, &totalClean);
+	    Time_Add(vmStat.cleanTime, totalClean, &vmStat.cleanTime);
+	    Time_Subtract(endFileCopy, startFileCopy, &totalFileCopy);
+	    Time_Add(vmStat.fileCopyTime, totalFileCopy,
+		     &vmStat.fileCopyTime);
+	    Time_Subtract(endSeg, startSeg, &totalSeg);
+	    Time_Add(vmStat.getSegTime, totalSeg, &vmStat.getSegTime);
+	}
+d1336 3
+a1338 1
+	segPtr->flags &= ~VM_COPYING_SEGMENT;
+d1342 3
+@
+
+
+1.19
+log
+@Add writeProtect argument to VmFlushSegPages.  Don't clean heap &
+stack segments before destroying them.  Add more detailed
+instrumentation for segment copying.  Don't write-protect a segment
+when copying it.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmSegment.c,v 1.18 92/04/16 11:21:49 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d173 1
+a173 1
+	    VmFlushSegPages(segPtr, TRUE);
+d480 1
+a480 1
+		VmFlushSegPages(segPtr, TRUE);
+d1314 2
+a1315 1
+     * segments.
+d1321 2
+a1322 1
+    VmFlushSegPages(segPtr, FALSE);
+d1369 2
+d1491 1
+a1491 1
+	    VmFlushSegPages(segPtr, FALSE);
+@
+
+
+1.18
+log
+@Add instrumentation.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmSegment.c,v 1.17 92/04/07 13:32:31 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d148 2
+a149 1
+ *	All segments are marked for write-back and destruction.
+d173 1
+a173 1
+	    VmFlushSegPages(segPtr);
+d459 2
+a460 7
+     * If the control port is non-null, it means the segment is still 
+     * in use (e.g., the segment is mapped into an address space, or 
+     * it has pages in memory).  Flush any dirty pages; when that's 
+     * done we'll tell the kernel to blow the segment away and then
+     * clean up when the kernel says it's okay.  If the segment isn't
+     * in use, just clean up now.
+     * XXX don't bother cleaning "anonymous" segments.
+d462 13
+a474 1
+    if (segPtr->controlPort != MACH_PORT_NULL) {
+d476 6
+a481 1
+	    VmFlushSegPages(segPtr);
+a483 3
+    } else {
+	VmSegmentCleanup(segPtr);
+	segPtr = NULL;
+d1265 5
+a1269 1
+    Time startTime, endTime, totalTime;	/* instrumentation */
+d1272 1
+a1272 1
+	Timer_GetTimeOfDay(&startTime, NULL, NULL);
+d1274 1
+a1274 1
+	startTime = time_ZeroSeconds;
+d1276 1
+d1298 1
+d1316 5
+a1320 1
+    VmFlushSegPages(segPtr);
+d1330 3
+d1356 3
+d1360 2
+a1361 10
+
+    /* 
+     * Make the original segment writable again.
+     */
+    if (segPtr->controlPort != MACH_PORT_NULL &&
+	segPtr->controlPort != MACH_PORT_DEAD) {
+	(void)memory_object_lock_request(segPtr->controlPort, 0,
+					 round_page(segPtr->size),
+					 FALSE, FALSE, VM_PROT_NONE,
+					 MACH_PORT_NULL);
+d1367 12
+a1378 4
+	if (sys_CallProfiling && !Time_EQ(startTime, time_ZeroSeconds)) {
+	    Timer_GetTimeOfDay(&endTime, NULL, NULL);
+	    Time_Subtract(endTime, startTime, &totalTime);
+	    Time_Add(vmStat.copyTime, totalTime, &vmStat.copyTime);
+d1382 1
+d1487 1
+a1487 1
+	    VmFlushSegPages(segPtr);
+@
+
+
+1.17
+log
+@Fix another deadlock with VmSegmentCopy.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmSegment.c,v 1.16 92/04/02 20:57:36 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d34 1
+d38 1
+d402 3
+a404 1
+    if (status != SUCCESS) {
+d572 1
+d672 1
+d675 5
+d1255 7
+d1347 8
+d1425 2
+@
+
+
+1.16
+log
+@Reorder segment locking in VmSegmentCopy, to avoid deadlock.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmSegment.c,v 1.15 92/02/27 15:53:44 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d80 3
+a82 1
+ * This monitor lock protects the "all segments" list.
+d1240 1
+d1243 1
+d1250 9
+d1265 1
+d1277 4
+a1280 4
+     * system.  Do this before acquiring the copy segment, to avoid a 
+     * potential deadlock.  (It would be okay to get the copy segment 
+     * earlier, but we shouldn't lock it until the original has been 
+     * cleaned.)
+a1292 7
+    /* 
+     * Get a new, uninitialized segment to copy to.
+     */
+    status = Vm_GetSwapSegment(segPtr->type, segPtr->size, &copySegPtr);
+    if (status != SUCCESS) {
+	goto bailOut;
+    }
+d1294 1
+d1329 4
+a1332 2
+    VmSegmentUnlock(segPtr);
+    if (copySegPtr != NULL) {
+@
+
+
+1.15
+log
+@Don't try to clean dead segments.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmSegment.c,v 1.14 92/01/21 17:08:25 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d1246 4
+a1249 1
+     * Get a new, uninitialized segment.
+a1250 5
+    status = Vm_GetSwapSegment(segPtr->type, segPtr->size, &copySegPtr);
+    if (status != SUCCESS) {
+	return status;
+    }
+
+a1251 1
+    VmSegmentLock(copySegPtr);
+a1255 5
+    /* 
+     * The original segment should be fully initialized (otherwise how did
+     * we get here?).  This is potentially important, since otherwise we
+     * couldn't always lock the segment against writes.
+     */
+d1263 4
+a1266 1
+     * system. 
+d1280 9
+d1322 3
+a1324 1
+    VmSegmentUnlock(copySegPtr);
+d1328 3
+a1330 1
+	Vm_SegmentRelease(copySegPtr);
+@
+
+
+1.14
+log
+@Change VM code to use Sprite FS instead of UNIX.  Add support for
+forcibly writing back dirty VM pages.  Retry if we find a segment for
+a file but the segment is being destroyed.  Limit the length of a
+segment's request queue (vm_MaxPendingRequests).  
+
+But wait, there's more: Better error messages.  Add "name" argument
+for Sync_ConditionInit calls.  Don't leak the segment port if there is
+an error creating the segment.  Fix markers for INTERNAL/ENTRY
+procedures.  Remove a chatty debug printf.
+
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmSegment.c,v 1.13 91/12/18 23:33:37 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d1383 1
+a1383 1
+     * Make a copy of the current list of segments.  This is to keep
+d1392 3
+@
+
+
+1.13
+log
+@Add printf tracing for general processing of VM requests.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmSegment.c,v 1.12 91/12/12 21:03:25 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d29 3
+a33 2
+#include <tempFs.h>
+#include <tempFsio.h>
+d40 8
+d85 7
+d95 4
+d100 1
+a100 1
+static ReturnStatus VmSegmentFind _ARGS_((TempFs_Stream *filePtr,
+d103 1
+a103 1
+		TempFs_Stream *filePtr, char *fileName,
+d111 25
+d164 4
+a167 1
+	if (!(segPtr->flags & VM_CLEANING_SEGMENT)) {
+a180 23
+ * VmSegmentInit --
+ *
+ *	Initialization for the code that manages VM segments.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Initializes the global list of segments.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+VmSegmentInit()
+{
+    List_Init(allSegList);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+d193 1
+a193 1
+ *	Adds the segment to the global list, if necessary.
+d204 1
+a204 1
+    TempFs_Stream *filePtr;		/* handle for the named file */
+d212 2
+a213 3
+     * XXX Assumes that permissions checking is done at a higher 
+     * level.  Also, the "open" routine must always grant permission 
+     * (e.g., use root as the uid, not the current user).
+d215 2
+a216 2
+    status = TempFs_Open(fileName, FS_READ|FS_WRITE|FS_CREATE, FS_FILE,
+			 0600, &filePtr);
+d224 1
+a224 1
+	TempFs_Close(filePtr);
+d229 1
+a229 1
+    TempFs_Close(filePtr);
+d268 1
+a268 1
+    TempFs_Stream *filePtr;	/* The backing file */
+d275 1
+d296 2
+a297 1
+    Sync_ConditionInit(&segmentPtr->condition, TRUE);
+d305 13
+a317 2
+	TempFsio_StreamCopy(filePtr, &segmentPtr->swapFilePtr);
+	segmentPtr->size = round_page(TempFs_Length(segmentPtr->swapFilePtr));
+d321 10
+d339 1
+d379 2
+a380 2
+	printf("VmSegmentNew: can't move request port to port set: %s\n",
+	       mach_error_string(kernStatus));
+d385 7
+a396 4
+    if (filePtr != NULL) {
+	TempFs_FileBeingMapped(segmentPtr->swapFilePtr, 1);
+    }
+
+d402 2
+a403 2
+	if (filePtr != NULL) {
+	    TempFs_Close(segmentPtr->swapFilePtr);
+d405 1
+d491 1
+a491 1
+void
+d527 2
+a528 2
+	(void)TempFs_FileBeingMapped(segPtr->swapFilePtr, 0);
+	(void)TempFs_Close(segPtr->swapFilePtr);
+d540 1
+a540 1
+	    TempFs_Close(segPtr->typeInfo.heapInfo.initFilePtr);
+d566 6
+d588 2
+a589 1
+ *	conflicts with the requested type.
+d592 1
+a592 1
+ *	Increments the reference count of the segment (if successful).
+d599 57
+a655 1
+    TempFs_Stream *filePtr;	/* the desired swap file */
+d661 1
+a661 1
+    ReturnStatus status = VM_SEG_NOT_FOUND;
+d663 3
+d669 4
+a672 1
+	if (TempFs_SameFile(segPtr->swapFilePtr, filePtr)) {
+d674 2
+a675 8
+		/* 
+		 * XXX when we have multiple threads, we'll want to 
+		 * wait for the segment to go away and then start 
+		 * over. 
+		 */
+		panic("VmSegmentFind: segment found, but not usable.\n");
+	    }
+	    if (segPtr->type != type) {
+d677 2
+a678 2
+		 * If the segment is unused (cached), then we could 
+		 * just change the type.
+a689 4
+    if (status != SUCCESS) {
+	segPtr = (Vm_Segment *)NIL;
+    }
+    *segPtrPtr = segPtr;
+a723 3
+	if (vmRequestDebug) {
+	    printf("request for %s\n", Vm_SegmentName(segPtr));
+	}
+d752 1
+a752 1
+ENTRY void
+d951 1
+a951 1
+    TempFs_Stream *filePtr;	/* the object file to use */
+d1025 1
+a1025 1
+    status = VmSegmentNew(type, (TempFs_Stream *)NULL, (char *)NULL,
+d1168 1
+a1168 1
+    TempFs_Stream *initFilePtr;	/* the segment's initialization file */
+d1175 1
+a1175 1
+    TempFsio_StreamCopy(initFilePtr, &segPtr->typeInfo.heapInfo.initFilePtr);
+d1209 1
+a1209 1
+	return "???";
+d1280 1
+d1293 2
+a1294 2
+	TempFsio_StreamCopy(segPtr->typeInfo.heapInfo.initFilePtr,
+			    &copySegPtr->typeInfo.heapInfo.initFilePtr);
+d1355 79
+@
+
+
+1.12
+log
+@Fix Vm_GetSwapSegment to record the requested segment size.  (This is
+needed so that the heap has the right size.)
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmSegment.c,v 1.11 91/12/01 22:00:39 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d613 3
+@
+
+
+1.11
+log
+@Snapshot.  FS appears to work.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmSegment.c,v 1.10 91/11/14 10:03:22 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d901 1
+a901 2
+    vm_size_t size;		/* size to make the segment; currently 
+				 * unused */ 
+d925 1
+@
+
+
+1.10
+log
+@Snapshot. net, rpc, recov modules added.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmSegment.c,v 1.9 91/10/18 18:28:26 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a21 1
+#include <libc.h>
+d28 1
+d1214 29
+@
+
+
+1.9
+log
+@Use ckalloc package for memory allocation.  Zero out new segment
+structures when they're created.  Use VmSwapFileRemove, rather than
+duplicating the code here.  Don't leak condition variable names.
+Keep a copy of the a.out information in code segments.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmSegment.c,v 1.8 91/10/04 11:37:56 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d252 1
+a252 1
+    segmentPtr = ckalloc(sizeof(Vm_Segment));
+d266 1
+a266 1
+    bzero(segmentPtr, sizeof(Vm_Segment));
+d271 1
+a271 1
+    Sync_ConditionInit(&segmentPtr->condition);
+d869 2
+a870 1
+	bcopy(execInfoPtr, segPtr->typeInfo.codeInfo.execInfoPtr,
+d897 1
+d901 2
+a902 1
+    int size;			/* size to make the segment */
+d915 2
+a916 1
+    status = VmSegmentNew(type, NULL, NULL, &segPtr);
+d953 1
+a953 1
+    int bytes;			/* number of bytes the map is 
+d959 1
+a959 1
+    int pages;			/* number of pages the map is for */
+d966 1
+a966 1
+    mapPtr = ckalloc(sizeof(VmFileMap));
+d1066 2
+a1067 1
+    segPtr->typeInfo.heapInfo.mapPtr = VmNewFileMap(execInfoPtr->heapSize);
+d1165 1
+a1165 1
+	Sync_SlowWait(&segPtr->condition, &segPtr->lock, FALSE);
+@
+
+
+1.8
+log
+@Snapshot.  fork/exec work.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmSegment.c,v 1.7 91/09/24 16:35:13 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d21 1
+d36 1
+d252 1
+a252 1
+    segmentPtr = malloc(sizeof(Vm_Segment));
+d261 6
+d286 1
+a286 1
+	segmentPtr->swapFileName = strdup(fileName);
+a291 1
+    bzero(&segmentPtr->typeInfo, sizeof(segmentPtr->typeInfo));
+d348 2
+a349 2
+	if (fileName != NULL) {
+	    free(segmentPtr->swapFileName);
+d354 1
+a354 1
+	free(segmentPtr);
+d480 5
+a484 2
+	(void)TempFs_Remove(segPtr->swapFileName);
+	free(segPtr->swapFileName);
+d491 1
+a491 1
+	    free(segPtr->typeInfo.heapInfo.initFileName);
+d496 9
+d512 1
+a512 1
+    free(segPtr);
+d842 2
+a843 1
+    Proc_ObjInfo *execInfoPtr;	/* a.out header information */
+d849 1
+d864 7
+a870 2
+	(*segPtrPtr)->size = round_page(execInfoPtr->codeFileOffset +
+					execInfoPtr->codeSize);
+d961 2
+a962 2
+    arrayPtr = malloc(pages * sizeof(char));
+    mapPtr = malloc(sizeof(VmFileMap));
+d997 2
+a998 2
+    free(mapPtr->useInitPtr);
+    free(mapPtr);
+d1061 1
+a1061 1
+    segPtr->typeInfo.heapInfo.initFileName = strdup(initFileName);
+d1179 1
+a1179 1
+	    strdup(segPtr->typeInfo.heapInfo.initFileName);
+@
+
+
+1.7
+log
+@Record the segment's name port.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmSegment.c,v 1.6 91/09/23 14:20:12 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d263 1
+d697 3
+d979 32
+d1069 114
+@
+
+
+1.6
+log
+@Snapshot.  Server is multithreaded internally.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/sprited/vm/RCS/vmSegment.c,v 1.5 91/09/04 15:25:30 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d266 1
+@
+
+
+1.5
+log
+@Better IPC port management.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/sprited/vm/RCS/vmSegment.c,v 1.4 91/09/02 22:56:14 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a27 1
+#include <main.h>
+d29 1
+a73 2
+int vm_numSegments = 0;		/* number of segments that currently 
+				 * exist; XXX temporary? */
+a74 1
+
+d77 1
+d89 42
+d256 1
+a256 1
+	panic("VmSegmentNew: no memory.");
+d280 2
+a302 1
+     * XXX only need to create one?
+d320 1
+a320 1
+				       main_RequestPort);
+a336 2
+    vm_numSegments++;
+
+d383 1
+a383 1
+	panic("VmSegmentDestroy: segment has references.");
+d437 1
+a437 1
+	panic("VmSegmentCleanup: non-zero reference count.");
+d440 1
+a440 1
+	panic("VmSegmentCleanup: control port not nil.");
+d444 4
+a447 1
+	panic("VmSegmentCleanup: segment not dead.");
+d486 5
+d493 1
+a493 14
+
+    /* 
+     * XXX this goes away when we have multiple server threads?
+     */
+    vm_numSegments--;
+    if (main_shuttingDown) {
+	if (vm_numSegments > 0) {
+	    printf("%d segments left.\n", vm_numSegments);
+	} else {
+	    printf("Bye!\n");
+	    exit(0);
+	}
+    }
+}
+d537 1
+a537 1
+		panic("segment found, but not usable.");
+d594 1
+a594 1
+	    panic("Vm_PortToSegment: negative reference count.");
+d631 1
+a631 1
+	panic("Vm_SegmentAddRef: bogus reference count.");
+d692 3
+d815 1
+a815 1
+Vm_GetCodeSegment(filePtr, fileName, execInfoPtr, segPtrPtr)
+d819 2
+d832 1
+a832 1
+    if (status == SUCCESS || status == FS_FILE_BUSY) {
+d927 1
+a927 1
+	panic("VmNewFileMap: partial page.");
+d933 1
+a933 1
+	panic("VmFileMap: out of memory.");
+d1001 31
+@
+
+
+1.4
+log
+@Changes for module-based source organization.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/sprited/vm/RCS/vmSegment.c,v 1.3 91/09/01 21:03:02 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d247 3
+a249 3
+    kernStatus = mach_port_allocate(mach_task_self(),
+				    MACH_PORT_RIGHT_RECEIVE,
+				    &segmentPtr->requestPort);
+a255 13
+
+    /* 
+     * Rename the port to be the address of the segment.  This makes 
+     * it easy to lookup the segment when servicing a request.
+     */
+    kernStatus = mach_port_rename(mach_task_self(), segmentPtr->requestPort,
+				  (mach_port_t)segmentPtr);
+    if (kernStatus != KERN_SUCCESS) {
+	printf("VmSegmentNew: can't rename segment request port: %s\n",
+	       mach_error_string(kernStatus));
+	status = Utils_MapMachStatus(kernStatus);
+	goto bailOut;
+    }
+d410 1
+a410 2
+    kernStatus = mach_port_deallocate(mach_task_self(),
+				      segPtr->requestPort);
+d412 1
+a412 1
+	printf("VmSegmentCleanup: problem deallocating port: %s\n",
+@
+
+
+1.3
+log
+@Snapshot.  Full VM support.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/printfd/RCS/vmSegment.c,v 1.2 91/08/19 12:17:34 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a26 7
+#include "main.h"
+#include "sync.h"
+#include "tempFs.h"
+#include "tempFsio.h"
+#include "util.h"
+#include "vm.h"
+#include "vmInt.h"
+d28 8
+d253 1
+a253 1
+	status = Util_MapMachStatus(kernStatus);
+d266 1
+a266 1
+	status = Util_MapMachStatus(kernStatus);
+d283 1
+a283 1
+	status = Util_MapMachStatus(kernStatus);
+d296 1
+a296 1
+	status = Util_MapMachStatus(kernStatus);
+@
+
+
+1.2
+log
+@Snapshot: Code reorg. and locking for processes & segments.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/printfd/RCS/vmSegment.c,v 1.1 91/08/15 15:53:10 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d30 2
+d79 5
+a83 3
+static Vm_Segment *VmSegmentFind _ARGS_((TempFs_Stream *filePtr));
+static Vm_Segment *VmSegmentNew _ARGS_((Vm_SegmentType type,
+			TempFs_Stream *filePtr, char *fileName));
+d113 1
+a113 1
+ * VmSegmentFromFile --
+d115 1
+a115 1
+ *	Get the segment corresponding to the given file.
+d121 2
+a122 1
+ * 	couldn't be created, an error code is returned.
+d129 1
+a129 1
+    
+d131 1
+a131 1
+VmSegmentFromFile(fileName, segPtrPtr)
+d133 1
+a133 1
+    Vm_Segment **segPtrPtr;	/* out: the resulting segment */
+d155 3
+a157 2
+    *segPtrPtr = VmSegmentFind(filePtr);
+    if (*segPtrPtr != (Vm_Segment *)NIL) {
+d161 2
+a162 5
+    *segPtrPtr = VmSegmentNew(VM_SHARED, filePtr, fileName);
+    if (*segPtrPtr == (Vm_Segment *)NIL) {
+	status = VM_NO_SEGMENTS;
+	goto done;
+    }
+d175 13
+a187 1
+ *	Create a new segment, backed by the given file.
+a188 6
+ * Results:
+ *	Returns a pointer to a new segment, which has a reference 
+ *	count of 1.  Returns NIL if there was a problem creating the
+ *	segment (no memory, can't create the IPC ports, etc.).
+ *	XXX provide more information when there's an error?
+ *
+d191 3
+a193 1
+ *	port set.  Adds the segment to the list of segments.
+d197 3
+a199 3
+    
+static INTERNAL Vm_Segment *
+VmSegmentNew(type, filePtr, fileName)
+d203 1
+d205 3
+a207 2
+    Vm_Segment *segmentPtr = (Vm_Segment *)NIL;
+    kern_return_t kernStatus;
+d211 5
+a215 1
+	return (Vm_Segment *)NIL;
+d227 13
+a239 3
+    segmentPtr->filePtr = filePtr;
+    segmentPtr->fileName = strdup(fileName);
+    segmentPtr->size = round_page(TempFs_Length(filePtr));
+d250 1
+a250 1
+	printf("Can't allocate memory object request port: %s\n",
+d252 2
+a253 1
+	panic("mach_port_allocate failed");
+d263 1
+a263 1
+	printf("can't rename request port: %s\n",
+d265 2
+a266 1
+	panic("VmSegmentNew");
+d280 1
+a280 1
+	printf("can't create send right for port: %s\n",
+d282 2
+a283 1
+	panic("VmSegmentNew");
+d293 1
+a293 1
+	printf("can't move request port to port set: %s\n",
+d295 2
+a296 1
+	panic("VmSegmentNew");
+d304 4
+d310 14
+a323 1
+    return segmentPtr;
+d428 29
+a456 2
+    (void)TempFs_Close(segPtr->filePtr);
+    free(segPtr->fileName);
+d484 17
+a500 11
+ *	Returns a handle for the segment if found, NIL otherwise.
+ *
+ * Side effects:
+ *	Increments the reference count of the segment.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static INTERNAL Vm_Segment *
+VmSegmentFind(filePtr)
+    TempFs_Stream *filePtr;		/* unique ID for the file */
+d503 2
+a504 1
+    Vm_Segment *segPtr;
+d509 1
+a509 1
+	if (segPtr->filePtr == filePtr) {
+d518 10
+a527 1
+	    segPtr->refCount++;
+d529 1
+a529 1
+	    goto done;
+d533 4
+a536 1
+    segPtr = (Vm_Segment *)NIL;
+d538 1
+a538 2
+ done:
+    return segPtr;
+d586 1
+a586 1
+ * VmSegmentListAdd --
+d588 1
+a588 1
+ *	Add the given segment to the given list.
+d594 1
+a594 1
+ *	None.
+d600 2
+a601 3
+VmSegmentListAdd(linkPtr, listPtr)
+    Vm_SegmentLink *linkPtr;
+    List_Links *listPtr;
+d603 12
+a614 4
+    LOCK_MONITOR;
+    List_Insert((List_Links *)linkPtr, listPtr);
+    UNLOCK_MONITOR;
+}
+a683 36
+ * VmSegmentListRelease --
+ *
+ *	Release all the segments in the given list, which is threaded 
+ *	using Vm_SegmentLink's.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Removes all the segments from the list and decrements the 
+ *	reference count for each of them.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+VmSegmentListRelease(listPtr)
+    List_Links *listPtr;
+{
+    List_Links *itemPtr;
+    Vm_SegmentLink *linkPtr;
+
+    LOCK_MONITOR;
+    while (!List_IsEmpty(listPtr)) {
+	itemPtr = List_First(listPtr);
+	linkPtr = (Vm_SegmentLink *)itemPtr;
+	List_Remove(itemPtr);
+	VmSegmentReleaseInt(linkPtr->segPtr);
+    }
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+d767 208
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.5 91/02/09 13:24:44 ouster Exp $ SPRITE (Berkeley)";
+d34 3
+a36 3
+ * List of segments currently in use.  The list is protected by a 
+ * monitor lock, which should be obtained before any of the segments 
+ * themselves are locked.  Membership in this list does not count as a 
+d38 22
+d61 3
+a63 3
+
+static List_Links activeSegListHdr;
+#define	activeSegList	(&activeSegListHdr)
+d66 1
+a66 3
+ * This monitor lock protects all lists that segments might be on.  
+ * This includes the global list of segments and the per-process list 
+ * of segments.
+d68 1
+a68 1
+static Sync_Lock segmentLock = Sync_LockInitStatic("segmentLock");
+d72 1
+a72 2
+				 * exist; dying segments might not be
+				 * on the active list. XXX temporary */
+a76 1
+static void VerifySegmentIsLocked _ARGS_((Vm_Segment *segPtr));
+d102 1
+a102 1
+    List_Init(activeSegList);
+d134 2
+a135 2
+     * Try to find the file in the list of current segments.  If that 
+     * fails, create a new segment for it.
+d137 1
+a137 1
+
+d182 1
+a182 1
+ *	port set.  Adds the segment to the global list.
+d190 1
+a190 1
+    TempFs_Stream *filePtr;		/* The backing file */
+d204 1
+a212 1
+    VmLockSegment(segmentPtr);
+d216 2
+a217 1
+     * assigned to us when the kernel calls memory_object_init.
+d269 1
+a269 1
+     * Add the segment to the system-wide list of segments.
+d271 1
+a271 1
+    List_Insert((List_Links *)segmentPtr, LIST_ATREAR(activeSegList));
+a274 1
+    VmUnlockSegment(segmentPtr);
+d284 15
+a298 10
+ *	Destroy an already-locked segment.  This is an internal 
+ *	procedure because our locking protocol calls for obtaining the 
+ *	monitor lock before locking the segment.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	(Eventually) deallocates the segment's request port, removes the
+ *	segment from the global pool, and frees any allocated memory.
+a306 1
+    VerifySegmentIsLocked(segPtr);
+a310 1
+    List_Remove((List_Links *)segPtr);
+d325 4
+a328 1
+	VmFlushSegPages(segPtr);
+d331 1
+d341 2
+a342 2
+ *	Clean up a dead locked segment, which is no longer on any 
+ *	lists. 
+d349 2
+a350 1
+ *	storage is freed.
+a360 1
+    VerifySegmentIsLocked(segPtr);
+d372 1
+d383 1
+d386 1
+a386 1
+     * XXX this goes away when we have multiple server threads.
+d424 1
+a424 1
+    LIST_FORALL(activeSegList, itemPtr) {
+d426 1
+a426 5
+	VmLockSegment(segPtr);
+	if (segPtr->state != VM_SEGMENT_OK) {
+	    printf("VmSegmentFind: %s segment in the active list.",
+		   VmSegStateString(segPtr->state));
+	}
+d428 8
+d437 1
+a437 1
+	    VmUnlockSegment(segPtr);
+d440 1
+a440 1
+	VmUnlockSegment(segPtr);
+d452 1
+a452 1
+ * VmSegmentFromPort --
+d458 2
+a459 1
+ *	Returns a locked segment handle.
+d462 1
+a462 1
+ *	None.
+d468 1
+a468 1
+VmSegmentFromPort(port)
+d475 9
+a483 1
+	panic("VmSegmentFromPort: bad magic number.");
+d485 1
+a485 1
+    VmLockSegment(segPtr);
+d529 1
+a529 2
+ *	Decrements the reference count and destroys the segment if 
+ *	necessary. 
+d535 1
+a535 1
+VmSegmentRelease(segPtr)
+d553 2
+a554 1
+ *	Like VmSegmentRelease, but with the monitor lock already held.
+d560 2
+a561 1
+ *	See VmSegmentRelease.
+d570 1
+a570 1
+    VmLockSegment(segPtr);
+d574 1
+d576 1
+a576 1
+	VmUnlockSegment(segPtr);
+d620 1
+a620 1
+ * VmUnlockSegment --
+d634 1
+a634 1
+VmUnlockSegment(segPtr)
+d637 1
+a637 1
+    /* XXX */
+d644 1
+a644 1
+ * VmLockSegment --
+d658 1
+a658 25
+VmLockSegment(segPtr)
+    Vm_Segment *segPtr;
+{
+    /* XXX */
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VerifySegmentIsLocked --
+ *
+ *	Make sure that the given segment is locked.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Panics if the segment isn't locked.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+VerifySegmentIsLocked(segPtr)
+d661 1
+a661 1
+    /* XXX */
+@

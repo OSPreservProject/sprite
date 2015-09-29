@@ -1,0 +1,1094 @@
+#! /bin/sh
+# This is a shell archive, meaning:
+# 1. Remove everything above the #! /bin/sh line.
+# 2. Save the resulting text in a file.
+# 3. Execute the file with /bin/sh (not csh) to create:
+#	CAVEAT
+#	Makefile
+#	README
+#	uudecode.bas
+#	uudecode.c
+#	uudecode.pas
+#	uuencode.1c
+#	uuencode.c
+#	uuencode.pas
+# This archive created: Thu Aug  6 19:36:03 1987
+# By:	Ken Yap ()
+export PATH; PATH=/bin:/usr/bin:$PATH
+echo shar: "extracting 'CAVEAT'" '(1071 characters)'
+if test -f 'CAVEAT'
+then
+	echo shar: "will not over-write existing file 'CAVEAT'"
+else
+cat << \SHAR_EOF > 'CAVEAT'
+Well, after posting the message to TeXHax I realized bad translation
+will also affect uuencoded files. Still it will at least fix truncation
+and detabbing problems. So you may need to undo the bad translation.
+Here is the ASCII table so you can see what has been mangled.
+
+| 20 sp | 21  ! | 22  " | 23  # | 24  $ | 25  % | 26  & | 27  ' |
+| 28  ( | 29  ) | 2a  * | 2b  + | 2c  , | 2d  - | 2e  . | 2f  / |
+| 30  0 | 31  1 | 32  2 | 33  3 | 34  4 | 35  5 | 36  6 | 37  7 |
+| 38  8 | 39  9 | 3a  : | 3b  ; | 3c  < | 3d  = | 3e  > | 3f  ? |
+| 40  @ | 41  A | 42  B | 43  C | 44  D | 45  E | 46  F | 47  G |
+| 48  H | 49  I | 4a  J | 4b  K | 4c  L | 4d  M | 4e  N | 4f  O |
+| 50  P | 51  Q | 52  R | 53  S | 54  T | 55  U | 56  V | 57  W |
+| 58  X | 59  Y | 5a  Z | 5b  [ | 5c  \ | 5d  ] | 5e  ^ | 5f  _ |
+| 60  ` | 61  a | 62  b | 63  c | 64  d | 65  e | 66  f | 67  g |
+| 68  h | 69  i | 6a  j | 6b  k | 6c  l | 6d  m | 6e  n | 6f  o |
+| 70  p | 71  q | 72  r | 73  s | 74  t | 75  u | 76  v | 77  w |
+| 78  x | 79  y | 7a  z | 7b  { | 7c  | | 7d  } | 7e  ~ | 7f del|
+
+	Ken
+SHAR_EOF
+if test 1071 -ne "`wc -c < 'CAVEAT'`"
+then
+	echo shar: "error transmitting 'CAVEAT'" '(should have been 1071 characters)'
+fi
+fi
+echo shar: "extracting 'Makefile'" '(261 characters)'
+if test -f 'Makefile'
+then
+	echo shar: "will not over-write existing file 'Makefile'"
+else
+cat << \SHAR_EOF > 'Makefile'
+CFLAGS	= -O
+
+all:	uuencode uudecode
+install:	all
+	cp uuencode uudecode /usr/bin
+	strip /usr/bin/uuencode
+	strip /usr/bin/uudecode
+	cp uuencode.1 /usr/man/man1/uuencode.1
+
+uuencode:	uuencode.c	;	cc -o $@ $(CFLAGS) $?
+uudecode:	uudecode.c	;	cc -o $@ $(CFLAGS) $?
+SHAR_EOF
+if test 261 -ne "`wc -c < 'Makefile'`"
+then
+	echo shar: "error transmitting 'Makefile'" '(should have been 261 characters)'
+fi
+fi
+echo shar: "extracting 'README'" '(775 characters)'
+if test -f 'README'
+then
+	echo shar: "will not over-write existing file 'README'"
+else
+cat << \SHAR_EOF > 'README'
+Here are versions of uuencode and uudecode that will work on an IBM
+PC.  There is a version for Turbo Pascal and one for Microsoft C.
+Porting them into other machines, languages or dialects should not
+pose a large problem.
+
+Sorry about the lack of documentation, but the programs are easy to
+use, so you should not have a problem.  I don't know why a UNIX
+site would not have these in the first place, but at least your
+manual should tell you how to use them.  If you are not using UNIX
+at all, you have my sympathy.
+
+The Pascal programs' author is unknown.  The C programs were
+provided by Don Kneller.
+
+Tom Reingold
+Rockefeller University
+New York City
+UUCP:    {seismo | harvard | ihnp4}!cmcl2!rna!rocky2!reintom
+BITNET:  REINTOM@ROCKVAX
+ARPANET: reintom@rockefeller.arpa
+SHAR_EOF
+if test 775 -ne "`wc -c < 'README'`"
+then
+	echo shar: "error transmitting 'README'" '(should have been 775 characters)'
+fi
+fi
+echo shar: "extracting 'uudecode.bas'" '(3106 characters)'
+if test -f 'uudecode.bas'
+then
+	echo shar: "will not over-write existing file 'uudecode.bas'"
+else
+cat << \SHAR_EOF > 'uudecode.bas'
+# Written  1:32 am  Feb 17, 1986 by rde@ukc.ac.uk in net.sources
+# In Real Life: R.D.Eager at U of Kent at Canterbury, Canterbury, UK
+# Subject: uudecode in MS-BASIC
+
+[food for line eater]
+
+There  has been some discussion about public domain versions of uudecode
+for those souls who didn't get it in a distribution. I  thought  it  was
+time  to post the updated version of uudecode in Microsoft BASIC; I have
+made a minor change to cater for a variation in  coding  encountered  on
+some uuencoded files.
+
+This  program  is  short  enough  that  it  can  be  typed in by hand if
+necessary. I hope it is of some  use  to  micro  owners  without  direct
+access to other uudecodes.
+
+---------CUT HERE--------CUT HERE----------CUT HERE---------CUT HERE------
+1000 DEFINT A-Z
+1010 REM Trap filing errors
+1020 ON ERROR GOTO 1600
+1030 CLS
+1040 LOCATE 5,11
+1050 PRINT STRING$(40," ")
+1060 LOCATE 5,11
+1070 INPUT "Enter name of input file: ", INFILE$
+1080 OPEN INFILE$ FOR INPUT AS #1
+1090 LOCATE 8,10
+1100 PRINT STRING$(40," ")
+1110 LOCATE 8,10
+1120 INPUT "Enter name of output file: ", OUTFILE$
+1130 OPEN "R", #2,OUTFILE$, 1
+1140 FIELD #2, 1 AS N$
+1150 REM Search for header line
+1160 LINE INPUT #1,A$
+1170 IF LEFT$(A$,5) <>"begin" THEN 1160
+1180 LOCATE 11,10
+1190 PRINT "Header = ";A$
+1200 SP = ASC(" ")
+1210 DIM BUF(5000)
+1220 P = 0
+1230 REM Main loop
+1240 LINE INPUT #1, A$
+1250 P = 0
+1260 COUNT = ASC(LEFT$(A$,1)) - SP
+1270 IF COUNT <> 64 THEN 1290
+1280 COUNT = 0
+1290 IF COUNT = 0 THEN 1560
+1300 ADJ = COUNT MOD 4
+1310 FOR I = 2 TO LEN(A$) STEP 4
+1320    X1 = ASC(MID$(A$,I,I)) - SP
+1330    IF X1 <> 64 THEN 1350
+1340    X1 = 0
+1350    X2 = ASC(MID$(A$,I+1,I+1)) - SP
+1360    IF X2 <> 64 THEN 1380
+1370    X2 = 0
+1380    X3 = ASC(MID$(A$,I+2,I+2)) - SP
+1390    IF X3 <> 64 THEN 1410
+1400    X3 = 0
+1410    X4 = ASC(MID$(A$,I+3,I+3)) - SP
+1420    IF X4 <> 64 THEN 1440
+1430    X4 = 0
+1440    P = P + 1
+1450    BUF(P) = (X2\16) + (X1*4)
+1460    P = P + 1
+1470    BUF(P) = (X3\4) + ((X2 MOD 16) * 16)
+1480    P = P + 1
+1490    BUF(P) = X4 + ((X3 MOD 4) * 64)
+1500 NEXT I
+1510 FOR I = 1 TO P
+1520   LSET N$ = CHR$(BUF(I))
+1530   PUT #2
+1540 NEXT I
+1550 GOTO 1240
+1560 END
+1570 REM
+1580 REM Error trapping routine for file handling
+1590 REM
+1600 IF ERL <> 1080 GOTO 1650          ' not input file problem
+1610 LOCATE 22,20
+1620 PRINT "Can't open input file"
+1630 GOSUB 1780
+1640 RESUME 1040
+1650 IF ERL <> 1130 GOTO 1700          ' not output file problem
+1660 LOCATE 22,20
+1670 PRINT "Can't open output file"
+1680 GOSUB 1780
+1690 RESUME 1090
+1700 IF ERL <> 1160 THEN 1770
+1710 LOCATE 22,20
+1720 PRINT "Header line not found"
+1730 GOSUB 1780
+1740 GOSUB 1780
+1750 LOCATE 24,1
+1760 END
+1770 ERROR ERR
+1780 FOR I = 1 TO 5000: NEXT I
+1790 LOCATE 22,20
+1800 PRINT STRING$(30," ")
+1810 RETURN
+TE 24,1
+1760 END
+1770 ERROR ERR
+1780 FOR I = 1 TO 5000: NEXT I
+1
+---------CUT HERE--------CUT HERE----------CUT HERE---------CUT HERE------
+-- 
+           Bob Eager
+
+           rde@ukc.UUCP
+           rde@ukc
+           ...!mcvax!ukc!rde
+
+           Phone: +44 227 66822 ext 7589
+# End of text from net.sources on hplabsc.UUCP
+SHAR_EOF
+if test 3106 -ne "`wc -c < 'uudecode.bas'`"
+then
+	echo shar: "error transmitting 'uudecode.bas'" '(should have been 3106 characters)'
+fi
+fi
+echo shar: "extracting 'uudecode.c'" '(3089 characters)'
+if test -f 'uudecode.c'
+then
+	echo shar: "will not over-write existing file 'uudecode.c'"
+else
+cat << \SHAR_EOF > 'uudecode.c'
+/* uudecode.c */
+
+#ifndef lint
+static char sccsid[] = "@(#)uudecode.c	5.1 (Berkeley) 7/2/83";
+#endif
+
+/*
+ * uudecode [input]
+ *
+ * create the specified file, decoding as you go.
+ * used with uuencode.
+ */
+#include <stdio.h>
+#ifndef MSDOS
+#include <pwd.h>
+#endif
+#include <sys/types.h>
+#include <sys/stat.h>
+
+/* single character decode */
+#define DEC(c)	(((c) - ' ') & 077)
+
+main(argc, argv)
+char **argv;
+{
+	FILE *in, *out;
+	struct stat sbuf;
+	int mode;
+	char dest[128];
+	char buf[80];
+
+	/* optional input arg */
+	if (argc > 1) {
+		if ((in = fopen(argv[1], "r")) == NULL) {
+			perror(argv[1]);
+			exit(1);
+		}
+		argv++; argc--;
+	} else
+		in = stdin;
+
+	if (argc != 1) {
+		printf("Usage: uudecode [infile]\n");
+		exit(2);
+	}
+
+	/* search for header line */
+	for (;;) {
+		if (fgets(buf, sizeof buf, in) == NULL) {
+			fprintf(stderr, "No begin line\n");
+			exit(3);
+		}
+		if (strncmp(buf, "begin ", 6) == 0)
+			break;
+	}
+	sscanf(buf, "begin %o %s", &mode, dest);
+
+	/* handle ~user/file format */
+#ifndef MSDOS
+	if (dest[0] == '~') {
+		char *sl;
+		struct passwd *getpwnam();
+		char *index();
+		struct passwd *user;
+		char dnbuf[100];
+
+		sl = index(dest, '/');
+		if (sl == NULL) {
+			fprintf(stderr, "Illegal ~user\n");
+			exit(3);
+		}
+		*sl++ = 0;
+		user = getpwnam(dest+1);
+		if (user == NULL) {
+			fprintf(stderr, "No such user as %s\n", dest);
+			exit(4);
+		}
+		strcpy(dnbuf, user->pw_dir);
+		strcat(dnbuf, "/");
+		strcat(dnbuf, sl);
+		strcpy(dest, dnbuf);
+	}
+#endif
+
+	/* create output file */
+#ifdef MSDOS
+	/* binary output file */
+	out = fopen(dest, "wb");
+#else
+	out = fopen(dest, "w");
+#endif
+	if (out == NULL) {
+		perror(dest);
+		exit(4);
+	}
+	chmod(dest, mode);
+
+	decode(in, out);
+
+	if (fgets(buf, sizeof buf, in) == NULL || strcmp(buf, "end\n")) {
+		fprintf(stderr, "No end line\n");
+		exit(5);
+	}
+	exit(0);
+}
+
+/*
+ * copy from in to out, decoding as you go along.
+ */
+decode(in, out)
+FILE *in;
+FILE *out;
+{
+	char buf[80];
+	char *bp;
+	int n;
+
+	for (;;) {
+		/* for each input line */
+		if (fgets(buf, sizeof buf, in) == NULL) {
+			printf("Short file\n");
+			exit(10);
+		}
+		n = DEC(buf[0]);
+		if (n <= 0)
+			break;
+
+		bp = &buf[1];
+		while (n > 0) {
+			outdec(bp, out, n);
+			bp += 4;
+			n -= 3;
+		}
+	}
+}
+
+/*
+ * output a group of 3 bytes (4 input characters).
+ * the input chars are pointed to by p, they are to
+ * be output to file f.  n is used to tell us not to
+ * output all of them at the end of the file.
+ */
+outdec(p, f, n)
+char *p;
+FILE *f;
+{
+	int c1, c2, c3;
+
+	c1 = DEC(*p) << 2 | DEC(p[1]) >> 4;
+	c2 = DEC(p[1]) << 4 | DEC(p[2]) >> 2;
+	c3 = DEC(p[2]) << 6 | DEC(p[3]);
+	if (n >= 1)
+		putc(c1, f);
+	if (n >= 2)
+		putc(c2, f);
+	if (n >= 3)
+		putc(c3, f);
+}
+
+
+/* fr: like read but stdio */
+int
+fr(fd, buf, cnt)
+FILE *fd;
+char *buf;
+int cnt;
+{
+	int c, i;
+
+	for (i=0; i<cnt; i++) {
+		c = getc(fd);
+		if (c == EOF)
+			return(i);
+		buf[i] = c;
+	}
+	return (cnt);
+}
+
+/*
+ * Return the ptr in sp at which the character c appears;
+ * NULL if not found
+ */
+
+#define	NULL	0
+
+char *
+index(sp, c)
+register char *sp, c;
+{
+	do {
+		if (*sp == c)
+			return(sp);
+	} while (*sp++);
+	return(NULL);
+}
+
+
+SHAR_EOF
+if test 3089 -ne "`wc -c < 'uudecode.c'`"
+then
+	echo shar: "error transmitting 'uudecode.c'" '(should have been 3089 characters)'
+fi
+fi
+echo shar: "extracting 'uudecode.pas'" '(5343 characters)'
+if test -f 'uudecode.pas'
+then
+	echo shar: "will not over-write existing file 'uudecode.pas'"
+else
+cat << \SHAR_EOF > 'uudecode.pas'
+program uudecode;
+
+  CONST defaultSuffix = '.uue';
+        offset = 32;
+
+  TYPE string80 = string[80];
+
+  VAR infile: text;
+      outfile: file of byte;
+      lineNum: integer;
+      line: string80;
+
+  procedure Abort(message: string80);
+
+    begin {abort}
+      writeln;
+      if lineNum > 0 then write('Line ', lineNum, ': ');
+      writeln(message);
+      halt
+    end; {Abort}
+
+  procedure NextLine(var s: string80);
+
+    begin {NextLine}
+      LineNum := succ(LineNum);
+      write('.');
+      readln(infile, s)
+    end; {NextLine}
+
+  procedure Init;
+
+    procedure GetInFile;
+
+      VAR infilename: string80;
+
+      begin {GetInFile}
+        if ParamCount = 0 then abort ('Usage: uudecode <filename>');
+        infilename := ParamStr(1);
+        if pos('.', infilename) = 0
+          then infilename := concat(infilename, defaultSuffix);
+        assign(infile, infilename);
+        {$i-}
+        reset(infile);
+        {$i+}
+        if IOresult > 0 then abort (concat('Can''t open ', infilename));
+        writeln ('Decoding ', infilename)
+      end; {GetInFile}
+
+    procedure GetOutFile;
+
+      var header, mode, outfilename: string80;
+          ch: char;
+
+      procedure ParseHeader;
+
+        VAR index: integer;
+
+        Procedure NextWord(var word:string80; var index: integer);
+
+          begin {nextword}
+            word := '';
+            while header[index] = ' ' do
+              begin
+                index := succ(index);
+                if index > length(header) then abort ('Incomplete header')
+              end;
+            while header[index] <> ' ' do
+              begin
+                word := concat(word, header[index]);
+                index := succ(index)
+              end
+          end; {NextWord}
+
+        begin {ParseHeader}
+          header := concat(header, ' ');
+          index := 7;
+          NextWord(mode, index);
+          NextWord(outfilename, index)
+        end; {ParseHeader}
+
+      begin {GetOutFile}
+        if eof(infile) then abort('Nothing to decode.');
+        NextLine (header);
+        while not ((copy(header, 1, 6) = 'begin ') or eof(infile)) do
+          NextLine(header);
+        writeln;
+        if eof(infile) then abort('Nothing to decode.');
+        ParseHeader;
+        assign(outfile, outfilename);
+        writeln ('Destination is ', outfilename);
+        {$i-}
+        reset(outfile);
+        {$i+}
+        if IOresult = 0 then
+          begin
+            write ('Overwrite current ', outfilename, '? [Y/N] ');
+            repeat
+              read (kbd, ch);
+              ch := UpCase(ch)
+            until ch in ['Y', 'N'];
+            writeln(ch);
+            if ch = 'N' then abort ('Overwrite cancelled.')
+          end;
+        rewrite (outfile);
+      end; {GetOutFile}
+
+    begin {init}
+      lineNum := 0;
+      GetInFile;
+      GetOutFile;
+    end; { init}
+
+  Function CheckLine: boolean;
+
+    begin {CheckLine}
+      if line = '' then abort ('Blank line in file');
+      CheckLine := not (line[1] in [' ', '`'])
+    end; {CheckLine}
+
+
+  procedure DecodeLine;
+
+    VAR lineIndex, byteNum, count, i: integer;
+        chars: array [0..3] of byte;
+        hunk: array [0..2] of byte;
+
+{    procedure debug;
+
+      var i: integer;
+
+      procedure writebin(x: byte);
+
+        var i: integer;
+
+        begin
+          for i := 1 to 8 do
+            begin
+              write ((x and $80) shr 7);
+              x := x shl 1
+            end;
+          write (' ')
+        end;
+
+      begin
+        writeln;
+        for i := 0 to 3 do writebin(chars[i]);
+        writeln;
+        for i := 0 to 2 do writebin(hunk[i]);
+        writeln
+      end;      }
+
+    function nextch: char;
+
+      begin {nextch}
+        lineIndex := succ(lineIndex);
+        if lineIndex > length(line) then abort('Line too short.');
+        if not (line[lineindex] in [' '..'`'])
+          then abort('Illegal character in line.');
+{        write(line[lineindex]:2);}
+        if line[lineindex] = '`' then nextch := ' '
+                                  else nextch := line[lineIndex]
+      end; {nextch}
+
+    procedure DecodeByte;
+
+      procedure GetNextHunk;
+
+        VAR i: integer;
+
+        begin {GetNextHunk}
+          for i := 0 to 3 do chars[i] := ord(nextch) - offset;
+          hunk[0] := (chars[0] shl 2) + (chars[1] shr 4);
+          hunk[1] := (chars[1] shl 4) + (chars[2] shr 2);
+          hunk[2] := (chars[2] shl 6) + chars[3];
+          byteNum := 0  {;
+          debug          }
+        end; {GetNextHunk}
+
+      begin {DecodeByte}
+        if byteNum = 3 then GetNextHunk;
+        write (outfile, hunk[byteNum]);
+        {writeln(bytenum, ' ', hunk[byteNum]);}
+        byteNum := succ(byteNum)
+      end; {DecodeByte}
+
+    begin {DecodeLine}
+      lineIndex := 0;
+      byteNum := 3;
+      count := (ord(nextch) - offset);
+      for i := 1 to count do DecodeByte
+    end; {DecodeLine}
+
+  procedure terminate;
+
+    var trailer: string80;
+
+    begin {terminate}
+      if eof(infile) then abort ('Abnormal end.');
+      NextLine (trailer);
+      if length (trailer) < 3 then abort ('Abnormal end.');
+      if copy (trailer, 1, 3) <> 'end' then abort ('Abnormal end.');
+      close (infile);
+      close (outfile)
+    end;
+
+  begin {uudecode}
+    init;
+    NextLine(line);
+    while CheckLine do
+      begin
+        DecodeLine;
+        NextLine(line)
+      end;
+    terminate
+  end.
+SHAR_EOF
+if test 5343 -ne "`wc -c < 'uudecode.pas'`"
+then
+	echo shar: "error transmitting 'uudecode.pas'" '(should have been 5343 characters)'
+fi
+fi
+echo shar: "extracting 'uuencode.1c'" '(1840 characters)'
+if test -f 'uuencode.1c'
+then
+	echo shar: "will not over-write existing file 'uuencode.1c'"
+else
+cat << \SHAR_EOF > 'uuencode.1c'
+.TH UUENCODE 1C "1 June 1980"
+.UC 4
+.SH NAME
+uuencode,uudecode \- encode/decode a binary file for transmission via mail
+.SH SYNOPSIS
+.B uuencode
+[ source ] remotedest |
+.B mail
+sys1!sys2!..!decode
+.br
+.B uudecode
+[ file ]
+.SH DESCRIPTION
+.I Uuencode
+and
+.I uudecode
+are used to send a binary file via uucp (or other) mail.
+This combination can be used over indirect mail links
+even when
+.IR uusend (1C)
+is not available.
+.PP
+.I Uuencode
+takes the named source file (default standard input) and
+produces an encoded version on the standard output.
+The encoding uses only printing ASCII characters,
+and includes the mode of the file and the
+.I remotedest
+for recreation on the remote system.
+.PP
+.I Uudecode
+reads an encoded file,
+strips off any leading and trailing lines added by mailers,
+and recreates the original file with the specified mode and name.
+.PP
+The intent is that all mail to the user ``decode'' should be filtered
+through the uudecode program.  This way the file is created automatically
+without human intervention.
+This is possible on the uucp network by either using
+.I sendmail
+or by making
+.I rmail
+be a link to
+.I Mail
+instead of
+.I mail.
+In each case, an alias must be created in a master file to get
+the automatic invocation of uudecode.
+.PP
+If these facilities are not available, the file can be sent to a
+user on the remote machine who can uudecode it manually.
+.PP
+The encode file has an ordinary text form and can be edited
+by any text editor to change the mode or remote name.
+.SH SEE\ ALSO
+uuencode(5), uusend(1C), uucp(1C), uux(1C), mail(1)
+.SH AUTHOR
+Mark Horton
+.SH BUGS
+The file is expanded by 35% (3 bytes become 4 plus control information)
+causing it to take longer to transmit.
+.PP
+The user on the remote system who is invoking
+.I uudecode
+(often
+.I uucp)
+must have write permission on the specified file.
+SHAR_EOF
+if test 1840 -ne "`wc -c < 'uuencode.1c'`"
+then
+	echo shar: "error transmitting 'uuencode.1c'" '(should have been 1840 characters)'
+fi
+fi
+echo shar: "extracting 'uuencode.c'" '(2355 characters)'
+if test -f 'uuencode.c'
+then
+	echo shar: "will not over-write existing file 'uuencode.c'"
+else
+cat << \SHAR_EOF > 'uuencode.c'
+/* uuencode.c */
+     
+/*
+uudecode and uuencode are easily implemented under MSDOS as well.  Here
+are the sources for Microsoft C v3.0, but if you have another kind of C
+compiler, there should be perhaps only 1 change -- the output file of
+uudecode and the input file of uuencode must be in binary format.
+(ie.  binary files, like .EXE files may have byte patterns that are the
+same as ^Z, which signals end-of-file in non-binary (text) mode).
+
+	Don Kneller
+UUCP:	...ucbvax!ucsfcgl!kneller
+ARPA:	kneller@ucsf-cgl.ARPA
+BITNET:	kneller@ucsfcgl.BITNET
+*/
+
+#ifndef lint
+static char sccsid[] = "@(#)uuencode.c	5.1 (Berkeley) 7/2/83";
+#endif
+
+/*
+ * uuencode [input] output
+ *
+ * Encode a file so it can be mailed to a remote system.
+ */
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
+/* ENC is the basic 1 character encoding function to make a char printing */
+#define ENC(c) (((c) & 077) + ' ')
+
+main(argc, argv)
+char **argv;
+{
+	FILE *in;
+	struct stat sbuf;
+	int mode;
+
+	/* optional 1st argument */
+	if (argc > 2) {
+#ifdef MSDOS
+		/* Use binary mode */
+		if ((in = fopen(argv[1], "rb")) == NULL) {
+#else
+		if ((in = fopen(argv[1], "r")) == NULL) {
+#endif
+			perror(argv[1]);
+			exit(1);
+		}
+		argv++; argc--;
+	} else
+		in = stdin;
+
+	if (argc != 2) {
+		printf("Usage: uuencode [infile] remotefile\n");
+		exit(2);
+	}
+
+	/* figure out the input file mode */
+	fstat(fileno(in), &sbuf);
+	mode = sbuf.st_mode & 0777;
+	printf("begin %o %s\n", mode, argv[1]);
+
+	encode(in, stdout);
+
+	printf("end\n");
+	exit(0);
+}
+
+/*
+ * copy from in to out, encoding as you go along.
+ */
+encode(in, out)
+FILE *in;
+FILE *out;
+{
+	char buf[80];
+	int i, n;
+
+	for (;;) {
+		/* 1 (up to) 45 character line */
+		n = fr(in, buf, 45);
+		putc(ENC(n), out);
+
+		for (i=0; i<n; i += 3)
+			outdec(&buf[i], out);
+
+		putc('\n', out);
+		if (n <= 0)
+			break;
+	}
+}
+
+/*
+ * output one group of 3 bytes, pointed at by p, on file f.
+ */
+outdec(p, f)
+char *p;
+FILE *f;
+{
+	int c1, c2, c3, c4;
+
+	c1 = *p >> 2;
+	c2 = (*p << 4) & 060 | (p[1] >> 4) & 017;
+	c3 = (p[1] << 2) & 074 | (p[2] >> 6) & 03;
+	c4 = p[2] & 077;
+	putc(ENC(c1), f);
+	putc(ENC(c2), f);
+	putc(ENC(c3), f);
+	putc(ENC(c4), f);
+}
+
+/* fr: like read but stdio */
+int
+fr(fd, buf, cnt)
+FILE *fd;
+char *buf;
+int cnt;
+{
+	int c, i;
+
+	for (i=0; i<cnt; i++) {
+		c = getc(fd);
+		if (c == EOF)
+			return(i);
+		buf[i] = c;
+	}
+	return (cnt);
+}
+SHAR_EOF
+if test 2355 -ne "`wc -c < 'uuencode.c'`"
+then
+	echo shar: "error transmitting 'uuencode.c'" '(should have been 2355 characters)'
+fi
+fi
+echo shar: "extracting 'uuencode.pas'" '(4676 characters)'
+if test -f 'uuencode.pas'
+then
+	echo shar: "will not over-write existing file 'uuencode.pas'"
+else
+cat << \SHAR_EOF > 'uuencode.pas'
+Program uuencode;
+
+  CONST header = 'begin';
+        trailer = 'end';
+        defaultMode = '644';
+        defaultExtension = '.uue';
+        offset = 32;
+        charsPerLine = 60;
+        bytesPerHunk = 3;
+        sixBitMask = $3F;
+
+  TYPE string80 = string[80];
+
+  VAR infile: file of byte;
+      outfile: text;
+      infilename, outfilename, mode: string80;
+      lineLength, numbytes, bytesInLine: integer;
+      line: array [0..59] of char;
+      hunk: array [0..2] of byte;
+      chars: array [0..3] of byte;
+
+{  procedure debug;
+
+    var i: integer;
+
+    procedure writebin(x: byte);
+
+      var i: integer;
+
+      begin
+        for i := 1 to 8 do
+          begin
+            write ((x and $80) shr 7);
+            x := x shl 1
+          end;
+        write (' ')
+      end;
+
+    begin
+      for i := 0 to 2 do writebin(hunk[i]);
+      writeln;
+      for i := 0 to 3 do writebin(chars[i]);
+      writeln;
+      for i := 0 to 3 do writebin(chars[i] and sixBitMask);
+      writeln
+    end;  }
+
+  procedure Abort (message: string80);
+
+    begin {abort}
+      writeln(message);
+      close(infile);
+      close(outfile);
+      halt
+    end; {abort}
+
+  procedure Init;
+
+    procedure GetFiles;
+
+      VAR i: integer;
+          temp: string80;
+          ch: char;
+
+      begin {GetFiles}
+        if ParamCount < 1 then abort ('No input file specified.');
+        infilename := ParamStr(1);
+        {$I-}
+        assign (infile, infilename);
+        reset (infile);
+        {$i+}
+        if IOResult > 0 then abort (concat ('Can''t open file ', infilename));
+        write('Uuencoding file ', infilename);
+
+        i := pos('.', infilename);
+        if i = 0
+          then outfilename := infilename
+          else outfilename := copy (infilename, 1, pred(i));
+        mode := defaultMode;
+        if ParamCount > 1 then
+          for i := 2 to ParamCount do
+            begin
+              temp := Paramstr(i);
+              if temp[1] in ['0'..'9']
+                then mode := temp
+                else outfilename := temp
+            end;
+        if pos ('.', outfilename) = 0
+          then outfilename := concat(outfilename, defaultExtension);
+        assign (outfile, outfilename);
+        writeln (' to file ', outfilename, '.');
+
+        {$i-}
+        reset(outfile);
+        {$i+}
+        if IOresult = 0 then
+          begin
+            Write ('Overwrite current ', outfilename, '? [Y/N] ');
+            repeat
+              read (kbd, ch);
+              ch := Upcase(ch)
+            until ch in ['Y', 'N'];
+            writeln (ch);
+            if ch = 'N' then abort(concat (outfilename, ' not overwritten.'))
+          end;
+        close(outfile);
+
+        {$i-}
+        rewrite(outfile);
+        {$i+}
+        if ioresult > 0 then abort(concat('Can''t open ', outfilename));
+      end; {getfiles}
+
+    begin {Init}
+      GetFiles;
+      bytesInLine := 0;
+      lineLength := 0;
+      numbytes := 0;
+      writeln (outfile, header, ' ', mode, ' ', infilename);
+    end; {init}
+
+  procedure FlushLine;
+
+    VAR i: integer;
+
+    procedure writeout(ch: char);
+
+      begin {writeout}
+        if ch = ' ' then write(outfile, '`')
+                    else write(outfile, ch)
+      end; {writeout}
+
+    begin {FlushLine}
+      write ('.');
+      writeout(chr(bytesInLine + offset));
+      for i := 0 to pred(lineLength) do
+        writeout(line[i]);
+      writeln (outfile);
+      lineLength := 0;
+      bytesInLine := 0
+    end; {FlushLine}
+
+  procedure FlushHunk;
+
+    VAR i: integer;
+
+    begin {FlushHunk}
+      if lineLength = charsPerLine then FlushLine;
+      chars[0] := hunk[0] shr 2;
+      chars[1] := (hunk[0] shl 4) + (hunk[1] shr 4);
+      chars[2] := (hunk[1] shl 2) + (hunk[2] shr 6);
+      chars[3] := hunk[2] and sixBitMask;
+      {debug;}
+      for i := 0 to 3 do
+        begin
+          line[lineLength] := chr((chars[i] and sixBitMask) + offset);
+          {write(line[linelength]:2);}
+          lineLength := succ(lineLength)
+        end;
+      {writeln;}
+      bytesInLine := bytesInLine + numbytes;
+      numbytes := 0
+    end; {FlushHunk}
+
+  procedure encode1;
+
+    begin {encode1};
+      if numbytes = bytesperhunk then flushhunk;
+      read (infile, hunk[numbytes]);
+      numbytes := succ(numbytes)
+    end; {encode1}
+
+  procedure terminate;
+
+    begin {terminate}
+      if numbytes > 0 then flushhunk;
+      if lineLength > 0
+        then
+          begin
+            flushLine;
+            flushLine;
+          end
+        else flushline;
+      writeln (outfile, trailer);
+      close (outfile);
+      close (infile);
+    end; {terminate}
+
+
+  begin {uuencode}
+    init;
+    while not eof (infile) do encode1;
+    terminate
+  end. {uuencode}
+SHAR_EOF
+if test 4676 -ne "`wc -c < 'uuencode.pas'`"
+then
+	echo shar: "error transmitting 'uuencode.pas'" '(should have been 4676 characters)'
+fi
+fi
+exit 0
+#	End of shell archive

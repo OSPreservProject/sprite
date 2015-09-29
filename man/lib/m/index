@@ -1,0 +1,56 @@
+asinh
+asinh, acosh, atanh, 
+inverse hyperbolic functions
+
+erf
+erf, erfc, 
+error functions
+
+exp
+exp, expm1, log, log10, log1p, pow, 
+exponential, logarithm, power
+
+floor
+fabs, floor, ceil, rint, 
+absolute value, floor, ceiling, and
+
+hypot
+hypot, cabs, 
+Euclidean distance, complex absolute value
+
+ieee
+copysign, drem, finite, logb, scalb, 
+copysign, remainder,
+
+infnan
+infnan, 
+signals invalid floating-point operations on a VAX (temporary)
+
+iszero
+iszero, isnormal, issubnormal, signbit, 
+Determine properties of IEE
+not a number, infinity, IEEE, double, 
+j0
+j0, j1, jn, y0, y1, yn, 
+bessel functions
+
+lgamma
+lgamma, 
+log gamma function
+
+math
+math, 
+introduction to mathematical library functions
+
+sin
+sin, cos, tan, asin, acos, atan, atan2, 
+trigonometric functions
+
+sinh
+sinh, cosh, tanh, 
+hyperbolic functions
+
+sqrt
+cbrt, sqrt, 
+cube root, square root
+

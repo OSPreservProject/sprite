@@ -1,0 +1,28 @@
+This file lists some places in Sprite that have dependencies on the
+machine type.  That is, if you are adding a new $MACHINE type, here
+are some places (other than the sources) that need attention.
+
+I. machine-dependent directories.  You must either (1) create a new
+directory or (2) make a link to an existing directory.  Check for
+subdirectories (e.g., /sprite/cmds/mh, /sprite/lib/lint.$MACHINE).
+
+  /sprite/admin
+  /sprite/boot
+  /sprite/cmds
+  /sprite/daemons
+  /sprite/lib
+  /local/cmds
+  /local/lib
+  /emacs/cmds
+  /X11/R4/cmds
+  /X11/R4/lib
+
+
+II. Shell scripts that check the value of $MACHINE.
+
+  /boot/bootcmds
+
+
+III. System makefiles that have machine-dependent checks.
+
+  /sprite/lib/pmake/*.mk (check both MACHINE and TM)

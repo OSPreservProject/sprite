@@ -1,0 +1,1335 @@
+head     8.9;
+branch   ;
+access   ;
+symbols  symm:8.9 spur:8.9 newlib:8.0;
+locks    ; strict;
+comment  @ * @;
+
+
+8.9
+date     89.11.27.10.33.18;  author jhh;  state Exp;
+branches ;
+next     8.8;
+
+8.8
+date     89.09.08.12.17.07;  author douglis;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.08.17.17.25.24;  author jhh;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.07.23.18.38.25;  author jhh;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.06.19.14.01.26;  author jhh;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.03.15.18.16.24;  author jhh;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.02.01.14.16.57;  author jhh;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.01.11.09.48.46;  author mendel;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.30.10.37.51;  author mendel;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.05.41;  author douglis;  state Stable;
+branches ;
+next     1.23;
+
+1.23
+date     88.11.11.15.35.29;  author mendel;  state Exp;
+branches ;
+next     1.22;
+
+1.22
+date     88.10.20.09.20.23;  author mendel;  state Exp;
+branches ;
+next     1.21;
+
+1.21
+date     88.10.03.10.56.44;  author mendel;  state Exp;
+branches ;
+next     1.20;
+
+1.20
+date     88.09.12.14.31.41;  author brent;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     88.09.12.14.30.27;  author mendel;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     88.09.02.11.52.40;  author nelson;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     88.08.27.18.58.42;  author nelson;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     88.08.27.14.26.34;  author nelson;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     88.08.26.11.54.46;  author nelson;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     88.07.29.11.26.14;  author nelson;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     88.07.20.11.46.14;  author douglis;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     88.07.16.15.40.18;  author nelson;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     88.07.13.15.55.18;  author mendel;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     88.07.12.14.46.21;  author brent;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     88.07.07.16.02.29;  author nelson;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     88.06.30.15.32.11;  author nelson;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.06.16.23.25.30;  author mendel;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.06.15.21.42.56;  author mendel;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.06.15.19.16.18;  author mendel;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.06.11.17.51.25;  author nelson;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.06.09.10.17.50;  author nelson;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.06.03.10.57.33;  author nelson;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.05.23.22.48.45;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+8.9
+log
+@Multiple changes over a couple of months
+@
+text
+@/*
+ * mach.h --
+ *
+ *     Exported structures for the mach module.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ * $Header: /sprite/src/kernel/mach/spur.md/RCS/mach.h,v 8.8 89/09/08 12:17:07 douglis Exp Locker: jhh $ SPRITE (Berkeley)
+ */
+
+#ifndef _MACH
+#define _MACH
+
+#ifdef KERNEL
+#include "machConst.h"
+#include "machCCRegs.h"
+#include "timer.h"
+#include "user/fmt.h"
+#else
+#include <kernel/machConst.h>
+#include <kernel/machCCRegs.h>
+#include <kernel/timer.h>
+#include <fmt.h>
+#endif
+
+/*
+ * The state of each processor: user mode or kernel mode.
+ */
+typedef enum {
+    MACH_USER,
+    MACH_KERNEL
+} Mach_ProcessorStates;
+
+/*
+ * Macros to disable and enable interrupts.
+ */
+#define DISABLE_INTR() {\
+    register int pnum = Mach_GetProcessorNumber();\
+    if (!mach_AtInterruptLevel[pnum]) { \
+	Mach_DisableIntr(); \
+	if (mach_NumDisableIntrsPtr[pnum] < 0) { \
+	    panic("Negative interrupt count.\n"); \
+	} \
+	mach_NumDisableIntrsPtr[pnum]++; \
+    } \
+    }
+#define ENABLE_INTR() {\
+    register int pnum = Mach_GetProcessorNumber();\
+    if (!mach_AtInterruptLevel[pnum]) { \
+	mach_NumDisableIntrsPtr[pnum]--; \
+	if (mach_NumDisableIntrsPtr[pnum] < 0) { \
+	    panic("Negative interrupt count.\n"); \
+	} \
+	if (mach_NumDisableIntrsPtr[pnum] == 0) { \
+	    Mach_EnableIntr(); \
+	} \
+    } \
+    }
+
+/*
+ * Macro for enabling timer interrupts. 
+ * Use this only during bootstrap before turning on all interrupts for the
+ * first time. Also be sure to disable interrupts after enabling timer
+ * interrupts (don't do to enables in a row).
+ */
+
+#define ENABLE_TIMER_INTR() {\
+    register int pnum = Mach_GetProcessorNumber();\
+    if (!mach_AtInterruptLevel[pnum]) { \
+	mach_NumDisableIntrsPtr[pnum]--; \
+	if (mach_NumDisableIntrsPtr[pnum] < 0) { \
+	    panic("Negative interrupt count.\n"); \
+	} \
+	if (mach_NumDisableIntrsPtr[pnum] == 0) { \
+	    Mach_EnableTimerIntr(); \
+	} else { \
+	    printf("Can't enable timer interrupts, too many disables.\n");\
+	} \
+    } \
+}
+
+/*
+ * Macro to get level of nesting of disabled interrupts.
+ */
+#define Mach_IntrNesting(cpu) (mach_NumDisableIntrsPtr[(cpu)])
+
+/*
+ * Delay for N microseconds.
+ */
+#define	MACH_DELAY(n)	{ register int N = (n)>>1; N--; while (N > 0) {N--;} }
+
+/*
+ * Dispatch tables for kernel calls.
+ */
+extern ReturnStatus (*(mach_NormalHandlers[]))();
+extern ReturnStatus (*(mach_MigratedHandlers[]))();
+
+/*
+ * State for each process.
+ *
+ * IMPORTANT NOTE: If the order or size of fields in these structures change
+ *		   then the constants which give the offsets must be
+ *		   changed in "machConst.h".
+ */
+
+/*
+ * The register state for a process.
+ */
+typedef struct {
+    double	aligner;			/* Force the compiler to start
+						 * regs on a double word boundry
+						 * so that st_64's can be used.
+						 */
+    int		regs[MACH_NUM_ACTIVE_REGS][2];	/* Registers at time of trap.*/
+    int		kpsw;				/* Kernel psw. */
+    int		upsw;				/* User psw. */
+    Address	curPC;				/* Current program counter. */
+    Address	nextPC;				/* Next program counter. */
+    int		insert;				/* The insert register. */
+    Address	swp;				/* The saved window pointer. */
+    int		cwp;				/* Current window pointer. */
+} Mach_RegState;
+
+#define MACH_REGSTATE_CNTS "{dw71}"
+
+/*
+ * The user state for a process.
+ */
+typedef struct {
+    Mach_RegState	trapRegState;	/* State of process at trap. */
+    Address		specPageAddr;	/* The base address of the special
+					 * page that contains user trap
+					 * handler and context switch state.
+					 * This is always "swpBase - 
+					 * VMMACH_PAGE_SIZE". */
+    Address		swpBaseAddr;	/* Where the saved window stack
+					 * begins. */
+    Address		swpMaxAddr;	/* Where the saved window stack
+					 * ends. */
+    Address		minSWP;		/* Current min and max values for the*/
+    Address		maxSWP;		/*    saved window pointer.   These  */
+					/*    correspond to the pages that   */
+					/*    are wired down in memory.      */
+    /*
+     * Signal information.
+     */
+    Address		newCurPC;	/* Saved first PC for when calling a
+					 * signal handler. */
+    int			sigNum;		/* Signal number to pass to signal
+					 * handler. */
+    int			sigCode;	/* Signal code to pass to signal
+					 * handler. */
+    int			oldHoldMask;	/* The saved hold mask. */
+    Address		faultAddr;	/* The fault address if a signal
+					 * is to be sent because of a fault. */
+} Mach_UserState;
+
+/*
+ * The kernel and user state for a process.
+ */
+typedef struct Mach_State {
+    Mach_UserState	userState;		/* User state for a process. */
+    Mach_RegState	switchRegState;		/* The state to save on the
+						 * switch. */
+    Address		kernStackStart;		/* Address of the beginning of
+						 * the kernel stack. */
+    Address		kernStackEnd;		/* Address of the end of the
+						 * kernel stack. */
+} Mach_State;
+
+/*
+ * Machine dependent signal context.
+ */
+typedef struct Mach_SigContext {
+    Address		faultAddr;	/* The fault address if the signal
+					 * was sent because of a fault. */
+    Mach_RegState	regState;	/* Register state at the time of the
+					 * trap that caused the signal. */
+} Mach_SigContext;
+
+/*
+ * The trap handler information.
+ */
+typedef struct Mach_TrapHandler {
+    void	(*handler)();		/* The trap handler to call. */
+    int		handlerType;		/* The type of trap handler.  One of
+					 * MACH_PLAIN_INTERFACE, 
+					 * MACH_INT_OPERAND_INTERFACE or
+					 * MACH_FLOAT_OPERAND_INTERFACE. */
+} Mach_TrapHandler;
+
+/*
+ * The state that is saved for users.
+ */
+typedef struct Mach_SavedState {
+    Mach_RegState	regState;
+    Address		specPageAddr;
+    Address		swpMaxAddr;
+} Mach_SavedState;
+
+/*
+ * The format of the special user page.
+ */
+typedef struct Mach_SpecPage {
+    Mach_SavedState	switchState;	/* Where the registers are saved on
+					 * on a user context switch trap. */
+    Mach_SavedState	savedState;	/* Where the state is saved/restored
+					 * to/from on user save and restore
+					 * traps. */
+    Mach_TrapHandler	trapTable[MACH_NUM_USER_CMP_TRAPS + 
+				  MACH_NUM_OTHER_USER_TRAPS];
+} Mach_SpecPage;
+
+/*
+ * A type which sizeof() == cache block size of machine. 
+ */
+
+typedef char	Mach_CacheBlockSizeType[VMMACH_CACHE_LINE_SIZE];
+
+ /*
+ * Per processor status info.
+ */
+typedef	int	Mach_ProcessorStatus;
+
+#define	MACH_UNKNOWN_STATUS		0	/* Status unknown. */
+#define	MACH_UNINITIALIZED_STATUS	1	/* Processor uninitialized. */
+#define	MACH_ACTIVE_STATUS		2	/* Processor running. */
+#define	MACH_IN_DEBUGGER_STATUS		3	/* Processor in debugger. */
+#define	MACH_CONTINUING_STATUS		4	/* Processor continuing from
+						 * debugger. */
+#define	MACH_HUNG_STATUS		5	/* Processor hung. */
+#define	MACH_DEAD_STATUS		6	/* Processor broken. */
+
+/*
+ * Status of each processor.
+ */
+extern Mach_ProcessorStatus mach_ProcessorStatus[];
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_GetSlotId --
+ *
+ * Return the NuBus slot id of the processor. This is coded as a macro for
+ * speed.
+ *
+ * ----------------------------------------------------------------------------
+ */
+#ifdef lint
+#define	Mach_GetSlotId() 0
+
+#else 
+
+#define	Mach_GetSlotId() ({\
+	register unsigned int	__slot_id; \
+	asm volatile ("ld_external %1,r0,$0xf08\n\tNop\n ":" =r" (__slot_id) \
+				: "r" (__slot_id)); \
+	(__slot_id & 0xff); })
+
+#endif /* lint */
+/*
+ * Macro to get processor number. The processor number is stored in the top
+ * eight bits of the kpsw.
+ * For testing uniprocessor, always return zero.
+ */
+
+#ifdef lint
+#define	Mach_GetProcessorNumber()  0 
+
+#else
+
+#define	Mach_GetProcessorNumber() ({ \
+	register unsigned int	__pnum; \
+	asm volatile ("rd_kpsw	 %1\n\textract %1,%1,$3\n ":" =r" (__pnum) \
+				: "r" (__pnum)); \
+	(__pnum); })
+
+#endif /* lint */
+
+/*
+ * A macro to test if the current processor is at interrupt level.
+ */
+
+#define	Mach_AtInterruptLevel()	\
+			(mach_AtInterruptLevel[Mach_GetProcessorNumber()])
+
+/*
+ * A macro to test if the current processor is in kernel mode.
+ */
+
+#define	Mach_KernelMode() (mach_KernelMode[Mach_GetProcessorNumber()])
+
+/*
+ * A macro to return the current PC. 
+ */
+#ifdef lint
+#define Mach_GetPC() 	(Address)0
+#else
+#define Mach_GetPC() \
+    ({\
+	register Address __pc; \
+	asm volatile ("rd_special %1,pc\n":"=r" (__pc):"r"(__pc));\
+	(__pc);\
+    })
+#endif
+
+/*
+ * Mach_Time is a union used to represent time in both the kernel and
+ * in user programs.  User programs should use the time field and
+ * the kernel should use the ticks.  It is converted when passed to
+ * user programs.
+ */
+
+typedef union {
+    Timer_Ticks	ticks;  /* kernel */
+    Time	time;   /* user */
+} Mach_Time;
+
+/*
+ * Structure for storing instruction count information.
+ */
+
+typedef struct {
+    Boolean		on;	 	/* Is counting on? */
+    unsigned int	start; 	  	/* starting count */
+    unsigned int	end;	  	/* ending count */
+    unsigned int	total;    	/* total of all runs */
+    int			runs;  	  	/* number of runs */
+    Address		startPC;   	/* pc where current run began */
+    Address		endPC;     	/* pc at end of current run */
+    int			sofar;     	/* count from start, excluding pauses */
+    Timer_Ticks		startTime; 	/* time when run started */
+    Timer_Ticks		endTime;   	/* time when run started */
+    Mach_Time		totalTime;   	/* total time of all runs */
+    Timer_Ticks		sofarTime;   	/* time from start, without pauses */
+} Mach_InstCountInfo;
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_GetBootArgs --
+ *
+ * Spur doesn't implement parameters to the prom, so just return 0.
+ *
+ * ----------------------------------------------------------------------------
+ */
+#define Mach_GetBootArgs(argc, bufferSize, argv, buffer) (0)
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_InstCountStart --
+ *
+ * Start counting instructions. The index parameter differentiates between
+ * different counts. Interrupts should be off.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+#define Mach_InstCountStart(index) { \
+    int modeReg; \
+    if (mach_DoInstCounts&&((index) >= 0) && ((index) < MACH_MAX_INST_COUNT)){\
+	mach_InstCount[(index)].runs++; \
+	if (mach_InstCount[(index)].on == TRUE) { \
+	    panic("Instruction counting already on.\n"); \
+	} \
+	modeReg = Dev_CCIdleCounters(FALSE, MACH_MODE_PERF_COUNTER_OFF); \
+	mach_InstCount[(index)].start = Mach_Read32bitCCReg(0x15 << 8); \
+	Timer_ReadT0(&mach_InstCount[(index)].startTime);   \
+	(void) Dev_CCIdleCounters(TRUE, modeReg); \
+	mach_InstCount[(index)].on = TRUE; \
+	mach_InstCount[(index)].startPC = Mach_GetPC(); \
+	mach_InstCount[(index)].sofar = 0; \
+	mach_InstCount[(index)].sofarTime = timer_TicksZeroSeconds; \
+    } \
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_InstCountEnd --
+ *
+ * Stop counting instructions. The index parameter differentiates between
+ * different counts. The number of instructions since the start is added
+ * to the total. Interrupts should be off.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+#define Mach_InstCountEnd(index) { \
+    int modeReg; \
+    int diff; \
+    Timer_Ticks	diffTime; \
+    if (mach_DoInstCounts&&((index) >= 0) && ((index) < MACH_MAX_INST_COUNT)&&\
+	(mach_InstCount[(index)].on == TRUE)) { \
+	modeReg = Dev_CCIdleCounters(FALSE, MACH_MODE_PERF_COUNTER_OFF); \
+	mach_InstCount[(index)].end = Mach_Read32bitCCReg(0x15 << 8); \
+	 Timer_ReadT0(&mach_InstCount[(index)].endTime) ; \
+	(void) Dev_CCIdleCounters(TRUE, modeReg); \
+	diff = mach_InstCount[(index)].end - mach_InstCount[(index)].start; \
+ 	Timer_SubtractTicks(mach_InstCount[(index)].endTime, \
+			    mach_InstCount[(index)].startTime, \
+			    &diffTime);  \
+	if (diff > 20000) { \
+	    panic("diff is %d.\n", diff); \
+	} \
+	diff += mach_InstCount[(index)].sofar; \
+ 	Timer_AddTicks(diffTime, mach_InstCount[(index)].sofarTime, \
+	    &diffTime);  \
+	if (diff > 0) { \
+	    mach_InstCount[(index)].total +=  diff;\
+ 	    Timer_AddTicks(diffTime, mach_InstCount[(index)].totalTime.ticks,\
+		    &mach_InstCount[(index)].totalTime.ticks); \
+	} \
+	mach_InstCount[(index)].on = FALSE; \
+	mach_InstCount[(index)].endPC = Mach_GetPC(); \
+	mach_InstCount[(index)].sofar = 0; \
+    } \
+}
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_InstCountOff --
+ *
+ * Stop counting instructions, but don't record results.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+#define Mach_InstCountOff(index) { \
+    if (mach_DoInstCounts&&((index) >= 0) && ((index) < MACH_MAX_INST_COUNT)){\
+	mach_InstCount[(index)].on = FALSE; \
+    } \
+}
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_InstCountResume --
+ *
+ * Resume counting instructions.
+ *
+ * ----------------------------------------------------------------------------
+ */
+#define Mach_InstCountResume(index) { \
+    int modeReg; \
+    if (mach_DoInstCounts&&((index) >= 0) && ((index) < MACH_MAX_INST_COUNT)&&\
+	(mach_InstCount[(index)].on == TRUE)){\
+	modeReg = Dev_CCIdleCounters(FALSE, MACH_MODE_PERF_COUNTER_OFF); \
+	mach_InstCount[(index)].start = Mach_Read32bitCCReg(0x15 << 8); \
+	Timer_ReadT0(&mach_InstCount[(index)].startTime); \
+	(void) Dev_CCIdleCounters(TRUE, modeReg); \
+	mach_InstCount[(index)].startPC = Mach_GetPC(); \
+    } \
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_InstCountPause --
+ *
+ * Stop counting instructions, and store count so far for later continuation.
+ *
+ * ----------------------------------------------------------------------------
+ */
+#define Mach_InstCountPause(index) { \
+    int modeReg; \
+    int diff; \
+    if (mach_DoInstCounts&&((index) >= 0) && ((index) < MACH_MAX_INST_COUNT)&&\
+	(mach_InstCount[(index)].on == TRUE)) { \
+	modeReg = Dev_CCIdleCounters(FALSE, MACH_MODE_PERF_COUNTER_OFF); \
+	mach_InstCount[(index)].end = Mach_Read32bitCCReg(0x15 << 8); \
+	Timer_ReadT0(&mach_InstCount[(index)].endTime); \
+	(void) Dev_CCIdleCounters(TRUE, modeReg); \
+	diff = mach_InstCount[(index)].end - mach_InstCount[(index)].start; \
+	Timer_SubtractTicks(mach_InstCount[(index)].endTime, \
+			    mach_InstCount[(index)].startTime, \
+			    &diffTime); \
+	if (diff > 20000) { \
+	    panic("diff is %d.\n", diff); \
+	} \
+	if (diff > 0) { \
+	    mach_InstCount[(index)].sofar +=  diff;\
+	    Timer_AddTicks(diffTime, mach_InstCount[(index)].sofarTime, \
+		    &mach_InstCount[(index)].sofarTime); \
+	} \
+	mach_InstCount[(index)].endPC = Mach_GetPC(); \
+    } \
+}
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_InstCountIsOn --
+ *
+ *	TRUE if instruction counting is on.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+#define Mach_InstCountIsOn(index) \
+    ((mach_DoInstCounts&&((index) >= 0) && ((index) < MACH_MAX_INST_COUNT)&&\
+	(mach_InstCount[(index)].on == TRUE)) ? TRUE : FALSE)
+
+
+extern	Boolean	mach_KernelMode[];
+extern	int	mach_NumProcessors;
+extern	Boolean	mach_AtInterruptLevel[];
+extern	int	*mach_NumDisableIntrsPtr;
+/*
+ * mach_MachineType is a string used to expand $MACHINE in pathnames.
+ */
+extern	char	*mach_MachineType;
+/*
+ * mach_Format defines a byte ordering/structure alignment type
+ * used when servicing IOControls.  The input and output buffers for
+ * IOControls have to be made right by the server.
+ */
+extern	Fmt_Format	mach_Format;
+
+/*
+ * Routine to initialize mach module.  Must be called first as part of boot 
+ * sequence.
+ */
+extern void	Mach_Init();
+
+/*
+ * Routines to munge machine state struct.
+ */
+extern	void		Mach_InitFirstProc();
+extern	ReturnStatus	Mach_SetupNewState();
+extern	void		Mach_SetReturnVal();
+extern	void		Mach_StartUserProc();
+extern	void		Mach_ExecUserProc();
+extern	void		Mach_FreeState();
+extern	void		Mach_CopyState();
+extern	void		Mach_GetDebugState();
+extern	void		Mach_SetDebugState();
+
+/*
+ * Migration routines.
+ */
+extern ReturnStatus		Mach_EncapState();
+extern ReturnStatus		Mach_DeencapState();
+extern ReturnStatus		Mach_GetEncapSize();
+
+/*
+ * Other routines.
+ */
+extern void			Mach_InitSyscall();
+extern void			Mach_SetHandler();
+extern int			Mach_GetExcStackSize();
+extern Mach_ProcessorStates	Mach_ProcessorState();
+
+/*
+ * Machine dependent routines.
+ */
+extern	void	Mach_GetEtherAddress();
+extern	void	Mach_ContextSwitch();
+extern	int	Mach_TestAndSet();
+extern	int	Mach_GetMachineType();
+extern	int	Mach_GetMachineArch();
+extern	Address	Mach_GetStackPointer();
+extern	void	Mach_DisableIntr();
+extern	void	Mach_EnableIntr();
+extern  void	Mach_EnableTimerIntr();
+extern  ReturnStatus Mach_AllocExtIntrNumber();
+extern	void	Mach_SetNonmaskableIntr();
+extern  ReturnStatus Mach_CallProcessor();
+extern int	Mach_GetNumProcessors();
+extern Mach_RegState *Mach_GetDebugStateInfo();
+extern void	Mach_GetInstCountInfo();
+/*
+ * Routines to read and write physical memory.
+ */
+extern unsigned int    Mach_ReadPhysicalWord();
+extern void	       Mach_WritePhysicalWord();
+
+/*
+ * spriteStart is defined in bootSys.s with an underscore.
+ */
+extern	int		spriteStart;
+extern	int		endBss;
+extern	int		endText;
+
+/*
+ * Machine dependent variables.
+ */
+extern	Address	mach_KernStart;
+extern	Address	mach_CodeStart;
+extern	Address	mach_StackBottom;
+extern	int	mach_KernStackSize;
+extern	int	mach_SpecialStackSize;
+extern	Address	mach_KernEnd;
+extern	Address	mach_FirstUserAddr;
+extern	Address	mach_LastUserAddr;
+extern	Address	mach_MaxUserStackAddr;
+extern	int	mach_LastUserStackPage;
+
+extern 	Mach_InstCountInfo mach_InstCount[MACH_MAX_INST_COUNT];
+extern  Boolean	mach_DoInstCounts;
+
+/*
+ * mach_CycleTime - The cycle time of the machine (and hence the T{0,1,2}
+ * counters in the Cache Controller) in cycles per second.  This number
+ * is intended for use by the devTimer module.
+ */
+
+extern 	unsigned int	mach_CycleTime;
+
+/*
+ * The address of the UART.
+ */
+extern	Address	mach_UARTAddr;
+
+#endif _MACH
+@
+
+
+8.8
+log
+@changed declarations of encap routines to get rid of lint
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/mach/spur.md/RCS/mach.h,v 8.7 89/08/17 17:25:24 jhh Exp Locker: douglis $ SPRITE (Berkeley)
+d62 22
+d565 1
+@
+
+
+8.7
+log
+@now uses Fmt_Convert
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/mach/spur.md/RCS/mach.h,v 8.6 89/07/23 18:38:25 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+d520 1
+a520 1
+extern void			Mach_EncapState();
+d522 1
+a522 1
+extern int			Mach_GetEncapSize();
+@
+
+
+8.6
+log
+@changed to use VMMACH_CACHE_LINE_SIZE
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/mach/spur.md/RCS/mach.h,v 8.5 89/06/19 14:01:26 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+d18 2
+d23 2
+d287 31
+d328 153
+d482 1
+d492 1
+a492 1
+ * mach_ByteOrder defines a byte ordering/structure alignment type
+d496 1
+a496 1
+extern	int	mach_ByteOrder;
+d548 1
+d569 1
+d575 3
+@
+
+
+8.5
+log
+@Cleaning up locked files
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/mach/spur.md/RCS/mach.h,v 8.4 89/03/15 18:16:24 jhh Exp $ SPRITE (Berkeley)
+d193 1
+a193 1
+typedef char	Mach_CacheBlockSizeType[VMMACH_CACHE_BLOCK_SIZE];
+@
+
+
+8.4
+log
+@return nesting level of disable interrupts
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/mach/spur.md/RCS/mach.h,v 8.3 89/02/01 14:16:57 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+d99 2
+d282 12
+d358 1
+@
+
+
+8.3
+log
+@added #ifdef lint versions of Mach_GetSlotId and Mach_GetProcessorNumber
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/mach/spur.md/RCS/mach.h,v 8.2 89/01/11 09:48:46 mendel Exp Locker: jhh $ SPRITE (Berkeley)
+d56 5
+@
+
+
+8.2
+log
+@Added Mach_CacheBlockSizeType typedef and Mach_GetNumProcessors 
+function.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/mach/spur.md/RCS/mach.h,v 8.1 88/11/30 10:37:51 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d217 5
+d228 1
+d234 6
+d245 2
+@
+
+
+8.1
+log
+@Added Mach_GetPC() macro.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/mach/spur.md/RCS/mach.h,v 1.23 88/11/11 15:35:29 mendel Exp $ SPRITE (Berkeley)
+d165 1
+a165 1
+    Address		swpBaseAddr;
+d183 6
+d232 1
+a232 1
+	(__pnum = 0); })
+d324 1
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/mach/spur.md/RCS/mach.h,v 1.23 88/11/11 15:35:29 mendel Exp Locker: douglis $ SPRITE (Berkeley)
+d240 14
+@
+
+
+1.23
+log
+@Changes for multiprocessor, ibuffer, and new libc.a.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/mach/spur.md/RCS/mach.h,v 1.22 88/10/20 09:20:23 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+@
+
+
+1.22
+log
+@Added support for multiple processors.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/mach/spur.md/RCS/mach.h,v 1.21 88/10/03 10:56:44 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d39 1
+a39 1
+	    Sys_Panic(SYS_FATAL, "Negative interrupt count.\n"); \
+d49 1
+a49 1
+	    Sys_Panic(SYS_FATAL, "Negative interrupt count.\n"); \
+d183 19
+a288 1
+extern void			Mach_UnsetJump();
+a301 2
+extern	void	Mach_RefreshStart();
+extern	void	Mach_RefreshInterrupt();
+d303 1
+a303 1
+
+@
+
+
+1.21
+log
+@Changed MACH_DELAY to reflect machine's real speed.
+@
+text
+@d9 1
+a9 1
+ * $Header: mach.h,v 1.20 88/09/12 14:31:41 brent Exp $ SPRITE (Berkeley)
+d34 3
+a36 2
+#define DISABLE_INTR() \
+    if (!mach_AtInterruptLevel) { \
+d38 1
+a38 1
+	if (mach_NumDisableIntrsPtr[0] < 0) { \
+d41 2
+a42 1
+	mach_NumDisableIntrsPtr[0]++; \
+d44 5
+a48 4
+#define ENABLE_INTR() \
+    if (!mach_AtInterruptLevel) { \
+	mach_NumDisableIntrsPtr[0]--; \
+	if (mach_NumDisableIntrsPtr[0] < 0) { \
+d51 1
+a51 1
+	if (mach_NumDisableIntrsPtr[0] == 0) { \
+d54 1
+d183 8
+a190 1
+ * Macro to get processor number
+d192 5
+a196 1
+#define	Mach_GetProcessorNumber() 	0
+d198 25
+a222 1
+extern	Boolean	mach_KernelMode;
+d224 1
+a224 1
+extern	Boolean	mach_AtInterruptLevel;
+a282 1
+extern	unsigned int Mach_GetSlotId();
+@
+
+
+1.20
+log
+@Added mach_ByteOrder
+@
+text
+@d9 1
+a9 1
+ * $Header: mach.h,v 1.19 88/09/12 14:30:27 mendel Exp $ SPRITE (Berkeley)
+d56 1
+a56 1
+#define	MACH_DELAY(n)	{ register int N = (n)<<2; N--; while (N > 0) {N--;} }
+@
+
+
+1.19
+log
+@Align register save area on double word boundry.
+@
+text
+@d9 1
+a9 1
+ * $Header: mach.h,v 1.18 88/09/02 11:52:40 nelson Exp $ SPRITE (Berkeley)
+d187 3
+d191 6
+@
+
+
+1.18
+log
+@In progress addition of LISP support.
+@
+text
+@d9 1
+a9 1
+ * $Header: mach.h,v 1.17 88/08/27 18:58:42 nelson Exp $ SPRITE (Berkeley)
+d76 4
+@
+
+
+1.17
+log
+@Fixed lint errors.
+@
+text
+@d9 1
+a9 1
+ * $Header: mach.h,v 1.16 88/08/27 14:26:34 nelson Exp $ SPRITE (Berkeley)
+d91 13
+a103 2
+    Address		minSWP;		/* Min and max values for the saved */
+    Address		maxSWP;		/* 	window pointer. */
+d134 1
+a134 1
+typedef struct	Mach_SigContext {
+d140 33
+@
+
+
+1.16
+log
+@Changed around the way signals are handled so that the state is aved
+on the user's stack when a signal handler is called.
+@
+text
+@d9 1
+a9 1
+ * $Header: mach.h,v 1.15 88/08/26 11:54:46 nelson Exp $ SPRITE (Berkeley)
+d189 3
+@
+
+
+1.15
+log
+@Added stuff to make compile for user program.s
+@
+text
+@d9 1
+a9 1
+ * $Header: mach.h,v 1.14 88/07/29 11:26:14 nelson Exp $ SPRITE (Berkeley)
+d103 2
+d123 6
+a128 1
+typedef int	Mach_SigContext;
+@
+
+
+1.14
+log
+@SPUR port in progress.
+@
+text
+@d9 1
+a9 1
+ * $Header: mach.h,v 1.13 88/07/20 11:46:14 douglis Exp $ SPRITE (Berkeley)
+d15 1
+d18 4
+d152 7
+@
+
+
+1.13
+log
+@added Mach_{Read,Write}PhysicalWord declarations.
+@
+text
+@d9 1
+a9 1
+ * $Header: mach.h,v 1.12 88/07/16 15:40:18 nelson Exp $ SPRITE (Berkeley)
+a78 1
+    Address	usp;				/* User stack pointer. */
+@
+
+
+1.12
+log
+@Added the UART mapping and the refresh and single step traps and made the
+debugger be entered with all traps enabled but interrupts off.
+@
+text
+@d9 1
+a9 1
+ * $Header: mach.h,v 1.11 88/07/13 15:55:18 mendel Exp $ SPRITE (Berkeley)
+d171 7
+@
+
+
+1.11
+log
+@Changed mach_CycleTime to be an unsigned int to remove floating point from
+kernel.
+@
+text
+@d9 1
+a9 1
+ * $Header: mach.h,v 1.10 88/07/12 14:46:21 brent Exp $ SPRITE (Berkeley)
+d199 4
+@
+
+
+1.10
+log
+@Added mach_MachineType
+@
+text
+@d9 1
+a9 1
+ * $Header: mach.h,v 1.9 88/07/07 16:02:29 nelson Exp $ SPRITE (Berkeley)
+d197 1
+a197 1
+extern 	double	mach_CycleTime;
+@
+
+
+1.9
+log
+@Changed to handle the new signal stuff.
+@
+text
+@d9 1
+a9 1
+ * $Header: mach.h,v 1.8 88/06/30 15:32:11 nelson Exp $ SPRITE (Berkeley)
+a48 10
+ * Macro to get processor number
+ */
+#define	Mach_GetProcessorNumber() 	0
+
+extern	Boolean	mach_KernelMode;
+extern	int	mach_NumProcessors;
+extern	Boolean	mach_AtInterruptLevel;
+extern	int	*mach_NumDisableIntrsPtr;
+
+/*
+d128 2
+@
+
+
+1.8
+log
+@*** empty log message ***
+@
+text
+@d9 1
+a9 1
+ * $Header: mach.h,v 1.7 88/06/16 23:25:30 mendel Exp $ SPRITE (Berkeley)
+a17 2
+typedef int	Mach_ExcStack;
+
+a85 2
+    int		trapType;			/* One of MACH_USE_CUR_PC or
+						 * MACH_USE_NEXT_PC. */
+d123 5
+@
+
+
+1.7
+log
+@Added Mach_GetMachineArch() declaration.
+@
+text
+@d9 1
+a9 1
+ * $Header: mach.h,v 1.6 88/06/15 21:42:56 mendel Exp $ SPRITE (Berkeley)
+d18 2
+d86 2
+a87 2
+    int		curPC;				/* Current program counter. */
+    int		nextPC;				/* Next program counter. */
+d91 1
+a91 1
+    int		swp;				/* The saved window pointer. */
+d93 1
+a93 1
+    int		usp;				/* User stack pointer. */
+@
+
+
+1.6
+log
+@Added mach_CycleTime variable.
+@
+text
+@d9 1
+a9 1
+ * $Header: mach.h,v 1.5 88/06/15 19:16:18 mendel Exp $ SPRITE (Berkeley)
+d170 1
+@
+
+
+1.5
+log
+@Added routine declarations.
+@
+text
+@d9 1
+a9 1
+ * $Header: mach.h,v 1.4 88/06/11 17:51:25 nelson Exp $ SPRITE (Berkeley)
+d194 8
+@
+
+
+1.4
+log
+@*** empty log message ***
+@
+text
+@d9 1
+a9 1
+ * $Header: mach.h,v 1.3 88/06/09 10:17:50 nelson Exp $ SPRITE (Berkeley)
+d16 1
+d173 2
+a174 1
+
+@
+
+
+1.3
+log
+@*** empty log message ***
+@
+text
+@d9 1
+a9 1
+ * $Header: mach.h,v 1.2 88/06/03 10:57:33 nelson Exp $ SPRITE (Berkeley)
+d85 2
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d9 1
+a9 1
+ * $Header: mach.h,v 1.1 88/05/23 22:48:45 nelson Exp $ SPRITE (Berkeley)
+d80 1
+a80 2
+    int		trapRegs[MACH_NUM_ACTIVE_REGS][2];	/* Registers at time
+							 * of trap.*/
+d85 1
+d88 1
+a102 2
+    Address		newUserSP;	/* Saved user stack pointer for when
+					 * calling a signal handler. */
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d9 1
+a9 1
+ * $Header: mach.h,v 1.3 88/05/05 17:55:01 nelson Exp $ SPRITE (Berkeley)
+d77 14
+d94 1
+a94 4
+    Address		userStackPtr;	/* User stack pointer. */
+    int			cwp;		/* Current window pointer. */
+    int			swp;		/* Saved window pointer. */
+    int			upsw;		/* User PSW. */
+d97 12
+d116 2
+a117 4
+						/* Where registers are saved
+						 * and restored to/from during
+						 * context switches. */
+    int			switchRegs[MACH_NUM_REGS_TO_SAVE];
+@

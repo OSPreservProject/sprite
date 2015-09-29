@@ -1,0 +1,12 @@
+F AR.C;1                            	ar.c
+F AR.MAN;1                          	ar.man
+F AR_DIFFS.;1                       	ar.diffs
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+F SHAR.;1                           	shar
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md
+D SYMM_MD                           	symm.md
+F TAGS.;1                           	TAGS
+F TODO.;1                           	Todo

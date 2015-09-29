@@ -1,0 +1,128 @@
+\documentstyle[12pt]{memo}  % type size of 12 points
+
+%\documentstyle[11pt]{memo} % type size of 11 points
+%\documentstyle{memo}       % type size of 10 points
+%
+% This is a sample file to show you typical input for printing a
+% memo at the Los Alamos National Laboratory using LaTeX.
+% 
+% Notice that the '%' is the comment character.  The '%' and the
+% rest of the line are ignored by LaTeX.  All of the LaTeX memo
+% commands will appear in this file.  The ones not used by this
+% file will be commented out.  To look at the body of the memo,
+% skip down to the \begin{document} command.
+
+% When you print out the DVI file that is generated from this
+% source file, you will notice that the header doesn't look like
+% pre-printed memo paper.  That is because \headerfonts{texfonts}
+% is used here.  
+% 
+% If you are printing on a PostScript printer, use
+% \headerfonts{postscript} to get a good looking header.  The
+% \headerfonts{lafonts} command will also produce a nice header,
+% but you will need to have installed the LANL header fonts.  If
+% you use \headerfonts{memopaper}, put pre-printed memo paper
+% in your printer or copying machine.
+%
+  \headerfonts{texfonts}
+%  \headerfonts{postscript}
+%  \headerfonts{lafonts}
+%  \headerfonts{memopaper}
+
+  \bodyfonts{texfonts}
+%  \bodyfonts{postscript}
+  \typeface{tt}
+%  \typeface{rm}
+
+% With no date command, today's date will be printed.
+%
+  \date{March 28, 1990}
+
+  \symbol{C-2}
+%  \serialnumber{5-213}
+  \mailstop{B253}
+  \telephone{5-0859}
+  \to{LaTeX Users}
+  \from{Steve Sydoriak, C-2, MS B253}
+  \subject{typical memo}
+%  \reference{Office Procedures Manual}
+%  \thru{Alicia J. Lujan, ABC-3, MS Q123 \\ 
+%        L. S. Steele, AB-5, MS R456}
+
+  \originator{SS}
+  \typist {SS}
+  \encas
+  \cy{T.J. Benton, BB-5, MS G999 \\ A.L. Salazar, XX-7, MS B888}
+
+%  \signature {Steve Sydoriak}
+%  \signer {SS}
+%  \approval{R. J. O'Conner}
+%  \attachments{Graph, Gravitational Pull vs. Image Time, TP-3, MS B881}
+%  \attachmentas
+%  \attachmentsas
+%  \distribution{K. C. Jordan, C-5, MS B111\\
+%               T. S. Solomon, TP-1, MS B222}
+%  \enc{Memo, Smith to Jones, June 25, 1986\\
+%       Letter, Landau to Gresham, March 1, 1987}
+%  \attachmentspagebreak
+%  \cypagebreak
+%  \distributionpagebreak
+%  \encpagebreak
+
+%  \shortmemostyle % For memos of ten lines or less.
+
+%  \classlabel{u}  %  UNCLASSIFIED
+%  \classlabel{c}  %  CONFIDENTIAL
+%  \classlabel{s}  %  SECRET
+
+%  \memopaperhcorr{4pt}
+%  \memopapervcorr{-6pt}
+
+\begin{document}
+\opening
+
+This example shows what a typical memo might look like.  It uses
+the texfonts option for the header and the body of the memo.
+The texfonts option calls for use of TeX's Computer Modern fonts.
+The body has the typewriter typeface with a point size of 12.
+
+Remember that LaTeX interprets a blank line as the start of a new
+paragraph, and that any of the special characters \#,\$,\%, \&,
+\{, and \} must be preceded by a backslash.  To produce double
+quotes in typewriter typeface, use the " key on your keyboard.  To
+produce double quotes in Roman typeface, use `` and '' instead. 
+
+The file named memotest.tex that was used to print this memo can
+be used as a template to write your own memos.  All of the
+preamble commands that can be used by LaTeX memos are shown in
+memotest.tex.  Many of the commands are commented out.  They can be
+activated by removing the \% at the beginning of the line.
+
+The spacing and indentation of the preamble commands make the file
+easier to read; the outcome of your file is not affected.  The
+preamble begins with the $\backslash$documentstyle command and
+continues to the $\backslash$begin\{document\} command where the
+document section starts.  Your file must have a
+$\backslash$end\{document\} command to indicate the end of the
+memo.
+
+The texfonts option was chosen for the header of this memo
+because the Computer Modern fonts are available on any
+installation of TeX\@.  Use the postscript, lafonts, or
+memopaper options in the $\backslash$headerfonts command to
+obtain a good looking header.
+
+Get a copy of {\em LaTeX Memo Reference}, CIC \#919, from the
+Computing Information Center to learn more about the LaTeX memo
+commands.  The document is also available online as an stexted CFS
+file in two places: /c2doc/unix/slatexmemo and
+/c2doc/vms/slatexmemo.  See {\em LaTeX, A Document Preparation
+System} by Leslie Lamport to learn all about the LaTeX commands
+that you can put in the body of your memo.
+
+See {\em LaTeX, A Document Preparation System} by Leslie
+Lamport to learn all about the LaTeX commands that you can put
+in the body of your memo.
+
+\closing
+\end{document}

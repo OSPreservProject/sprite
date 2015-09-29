@@ -1,0 +1,51 @@
+Results of running the "crtdel" benchmark on different
+configurations:  create a file, write a given # of bytes
+into it, close the file, re-open the file for reading,
+read all the bytes that were written, close the file, and
+then delete the file.  The file name was "foo".
+
+Configuration				0 kB	  10 kB	  100 kB
+-------------				----	  -----   ------
+
+DS5000 Ultrix 4.2 + Presto, 7/23/91	  3.4 ms   9.5 ms  55 ms
+DS3100 Sprite Local 9/13/89		 17 ms    34 ms    69 ms
+Sun-4 Sprite 1.017 Local 9/13/89	 18 ms	  33 ms    67 ms
+DS5000 Ultrix 4.2 NFS 7/23/91	         29 ms    69 ms   233 ms
+(Prestoserver on server)
+DS3100 Sprite Remote 9/13/89		 33 ms	  34 ms    68 ms
+Sun-3 Sprite 1.016 Local 9/13/89	 33 ms	  47 ms   130 ms
+M2000 RISC/os 4.0 Local 10/3/89		 33 ms	  51 ms   116 ms
+Sun-4 Sprite 1.017 Remote 9/13/89	 34 ms	  50 ms    71 ms
+RS/6000-320 AIX 3.1 Local 5/9/90	 39 ms	  40 ms   156 ms
+VAX 8800 Ultrix 3.0 Local 9/19/89	 49 ms   100 ms   294 ms
+DS5000 Ultrix 3.1D Local 3/20/90	 50 ms    86 ms   389 ms
+Sun-4 Mach 2.5 Local 4/4/90		 50 ms    83 ms   317 ms
+DS3100 Mach 2.5 Local 4/3/90		 50 ms   100 ms   317 ms
+HP835 HP-UX Local 4/13/90		 50 ms   115 ms   263 ms
+RT-APC Mach 2.5 Local 11/8/89		 53 ms   121 ms   706 ms
+Sun-3 Sprite 1.010 Remote 9/13/89	 61 ms    73 ms   129 ms
+SS-1 SunOS 4.0.3c Local 3/25/90		 65 ms	 824 ms   503 ms
+Sun-4 SunOS 4.0.3 Local 3/25/90		 67 ms   842 ms   872 ms
+Sun-3 SunOS 3.5 Local 2/4/90		 67 ms   105 ms   413 ms
+DS3100 Ultrix 3.1 Local 10/25/89	 80 ms   146 ms   548 ms
+SS-1 SunOS 4.0.3c NFS 4/8/90		 82 ms   214 ms  1102 ms
+DS5000 Ultrix 3.1D NFS 3/20/90		 83 ms   216 ms   992 ms
+RT-APC Mach 2.5 Remote 11/9/89
+(AFS Sun-3/280 Server)			 87 ms   236 ms  1550 ms
+DS3100 Mach 2.5 NFS 4/3/90		 89 ms   233 ms  1080 ms
+DS3100 Ultrix 3.0 Local 9/13/89		 93 ms   170 ms   650 ms
+Sun-4 SunOS 4.0.3 NFS 3/25/90		 97 ms   336 ms  2260 ms
+MVAX2 Ultrix 3.0 Local 9/27/89		100 ms   197 ms   841 ms
+DS3100 Ultrix 3.1 Remote 11/1/89	116 ms   370 ms  3028 ms
+RT-APC Mach 2.5 Remote 11/26/89 **	120 ms   303 ms  1615 ms
+DS3100 Ultrix 3.0 Remote 9/13/89	152 ms   375 ms  1860 ms
+Sun-3 SunOS 3.5 NFS 2/4/90		152 ms   300 ms  1270 ms
+HP835 HP-UX NFS 4/13/90			180 ms   376 ms  1050 ms
+RS/6000-320 AIX 3.1 NFS 5/1/90		243 ms   502 ms  ?failed?
+(Sun-3/280 server)
+MVAX2 Ultrix 3.0 Remote 10/4/89		295 ms   634 ms  2500 ms
+
+** Mach displayed tremendous variability when running from an RT-APC
+server running Mach: times as high as 460ms/721ms/2400 were as common
+as the times reported above (which were the lowest seen for runs of
+a few seconds).

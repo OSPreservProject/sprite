@@ -1,0 +1,205 @@
+head     9.0;
+branch   ;
+access   ;
+symbols  sun4nw:9.0 symm:9.0 spur:9.0 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.0
+date     89.09.12.14.51.47;  author douglis;  state Stable;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.04.17;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.09.43;  author brent;  state Stable;
+branches ;
+next     5.2;
+
+5.2
+date     88.04.13.11.25.18;  author ouster;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.12.11.14.18.32;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.50.22;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@/*
+ * machine.h --
+ *
+ *     Types, constants, and variables for the Sun hardware.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ * $Header: /sprite/src/kernel/mach/sun3.md/RCS/machine.h,v 8.0 88/11/11 18:04:17 douglis Stable Locker: douglis $ SPRITE (Berkeley)
+ *
+ */
+
+#ifndef _MACHINE
+#define _MACHINE
+
+#include "devAddrs.h"
+
+/*
+ * The number of general purpose registers (d0-d7 and a0-a7)
+ */
+#define	MACH_NUM_GENERAL_REGS	16
+
+/*
+ * The indices of all of the registers in the standard 16 register array of
+ * saved register.
+ */
+#define	D0	0
+#define	D1	1
+#define	D2	2
+#define	D3	3
+#define	D4	4
+#define	D5	5
+#define	D6	6
+#define	D7	7
+#define	A0	8
+#define	A1	9
+#define	A2	10
+#define	A3	11
+#define	A4	12
+#define	A5	13
+#define	A6	14
+#define	FP	14
+#define	A7	15
+#define	SP	15
+
+#ifdef SUN3
+#define	DELAY(n)	{ register int N = (n)<<1; N--; while (N > 0) {N--;} }
+#else
+#define	DELAY(n)	{ register int N = (n)>>1; N--; while (N > 0) {N--;} }
+#endif
+
+#ifdef SUN3
+/*
+ * The interrupt register on a sun3.
+ */
+#define	SunInterruptReg	((unsigned char *) DEV_INTERRUPT_REG_ADDR)
+#endif
+
+/*
+ * Machine dependent routines.
+ */
+extern	void	Mach_InitStack();
+extern	void	Mach_ContextSwitch();
+extern	void	Mach_GetEtherAddress();
+extern	int	Mach_TestAndSet();
+extern	void	Mach_Init();
+extern	int	Mach_GetMachineType();
+extern	Address	Mach_GetStackPointer();
+
+/*
+ * spriteStart is defined in bootSys.s with an underscore.
+ */
+extern	int		spriteStart;
+extern	int		endBss;
+extern	int		endText;
+
+/*
+ * Machine dependent variables.
+ */
+extern	int	mach_SP;
+extern	int	mach_FP;
+extern	Address	mach_KernStart;
+extern	Address	mach_CodeStart;
+extern	Address	mach_StackBottom;
+extern	int	mach_KernStackSize;
+extern	Address	mach_KernEnd;
+extern	int	mach_DummySPOffset;
+extern	int	mach_DummyFPOffset;
+extern	int	mach_ExecStackOffset;
+extern	Address	mach_FirstUserAddr;
+extern	Address	mach_LastUserAddr;
+extern	Address	mach_MaxUserStackAddr;
+extern	int	mach_LastUserStackPage;
+
+#endif _MACHINE
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/mach/sun2.md/RCS/machine.h,v 6.0 88/08/11 12:09:43 brent Stable Locker: douglis $ SPRITE (Berkeley)
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d9 1
+a9 1
+ * $Header: machine.h,v 5.2 88/04/13 11:25:18 ouster Exp $ SPRITE (Berkeley)
+@
+
+
+5.2
+log
+@Changes to make system calls much faster.
+@
+text
+@d9 1
+a9 1
+ * $Header: machine.h,v 5.1 87/12/11 14:18:32 nelson Exp $ SPRITE (Berkeley)
+@
+
+
+5.1
+log
+@Now contains the only exported headers.
+@
+text
+@d9 1
+a9 1
+ * $Header: machine.h,v 5.0 87/08/11 10:50:22 sprite Exp $ SPRITE (Berkeley)
+d68 1
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d9 1
+a9 1
+ * $Header: machine.h,v 3.3 86/11/21 12:39:46 nelson Exp $ SPRITE (Berkeley)
+a15 1
+#include "machineConst.h"
+d18 28
+d66 1
+d75 18
+@

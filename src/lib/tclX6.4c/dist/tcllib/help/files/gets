@@ -1,0 +1,20 @@
+          gets fileId ?varName?
+               Reads the next line from the file given by  fileId  and
+               discards the terminating newline character.  If varName
+               is specified, then the line is placed in  the  variable
+               by  that  name  and  the return value is a count of the
+               number of characters read (not including the  newline).
+               If  the  end  of the file is reached before reading any
+               characters then -1 is returned and varName is set to an
+               empty  string.   If  varName  is not specified then the
+               return value  will  be  the  line  (minus  the  newline
+               character) or an empty string if the end of the file is
+               reached before reading any characters.  An empty string
+               will  also be returned if a line contains no characters
+               except the newline, so eof  may  have  to  be  used  to
+               determine  what really happened.  If the last character
+               in the file is  not  a  newline  character,  then  gets
+               behaves   as   if  there  were  an  additional  newline
+               character at the end of the file.  FileId must be stdin
+               or  the  return  value from a previous call to open; it
+               must refer to a file that was opened for reading.

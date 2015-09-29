@@ -1,0 +1,13 @@
+F CHPASS.C;1                        	chpass.c
+F CHPASS.H;1                        	chpass.h
+F CHPASS.MAN;1                      	chpass.man
+D DS3100_M                          	ds3100.md
+F FIELD.C;1                         	field.c
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+F MAKEFILE.BSD;1                    	Makefile.bsd
+F PATHNAME.H;1                      	pathnames.h
+D RCS                               	RCS
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md
+F UTIL.C;1                          	util.c

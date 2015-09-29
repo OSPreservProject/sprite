@@ -1,0 +1,12 @@
+F 226.;1                            	226
+F 227.;1                            	227
+F 228.;1                            	228
+F 277.OUT;1                         	277.out
+D DS3100_M                          	ds3100.md
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+F OUT.;1                            	out
+D RCS                               	RCS
+F SHOWLFSS.C;1                      	showlfssegment.c
+F SHOWLFSS.MAN;1                    	showlfssegment.man
+D SUN4_MD                           	sun4.md

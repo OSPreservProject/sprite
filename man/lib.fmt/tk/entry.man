@@ -1,0 +1,396 @@
+
+
+
+entry                     User Commands                     entry
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     entry - Create and manipulate entry widgets
+
+SSYYNNOOPPSSIISS
+     eennttrryy _p_a_t_h_N_a_m_e ?_o_p_t_i_o_n_s?
+
+SSTTAANNDDAARRDD OOPPTTIIOONNSS
+     bbaacckkggrroouunndd      ccuurrssoorrOOffffTTiimmee  ffoorreeggrroouunndd      sseelleeccttFFoorreeggrroouunndd|
+     bboorrddeerrWWiiddtthh     ccuurrssoorrOOnnTTiimmee   rreelliieeff          tteexxttVVaarriiaabbllee   |
+     ccuurrssoorr          ccuurrssoorrWWiiddtthh    ssccrroollllCCoommmmaanndd                  |
+     ccuurrssoorrBBaacckkggrroouunndd               eexxppoorrttSSeelleeccttiioonn sseelleeccttBBaacckkggrroouunndd|
+     ccuurrssoorrBBoorrddeerrWWiiddtthh              ffoonntt            sseelleeccttBBoorrddeerrWWiiddtthh|
+
+     See the ``options'' manual entry for details on the standard
+     options.
+
+WWIIDDGGEETT--SSPPEECCIIFFIICC OOPPTTIIOONNSS
+     Name:           ssttaattee                                         |
+     Class:          SSttaattee                                         |
+     Command-Line Switch:--ssttaattee                                    |
+
+                                                                        ||
+          Specifies  one  of two states for the entry:  nnoorrmmaall or  |
+          ddiissaabblleedd.  If the entry is disabled then the value  may  |
+          not  be  changed using widget commands and no insertion  |
+          cursor will be displayed, even if the input focus is in  |
+          the widget.
+
+     Name:           wwiiddtthh
+     Class:          WWiiddtthh
+     Command-Line Switch:--wwiiddtthh
+
+          Specifies an integer value indicating the desired width
+          of  the entry window, in average-size characters of the
+          widget's font.
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The eennttrryy command creates a new window (given by  the  _p_a_t_h_-
+     _N_a_m_e  argument)  and  makes  it into an entry widget.  Addi-
+     tional options, described above, may  be  specified  on  the
+     command  line or in the option database to configure aspects
+     of the entry such as its  colors,  font,  and  relief.   The
+     eennttrryy  command  returns  its _p_a_t_h_N_a_m_e argument.  At the time
+     this command is invoked, there must not exist a window named
+     _p_a_t_h_N_a_m_e, but _p_a_t_h_N_a_m_e's parent must exist.
+
+     An entry is a widget that displays a  one-line  text  string
+     and  allows  that  string to be edited using widget commands
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+entry                     User Commands                     entry
+
+
+
+     described below, which are typically bound to keystrokes and
+     mouse  actions.   When  first  created, an entry's string is
+     empty.  A portion of the entry may be selected as  described
+     below.   If  an  entry  is  exporting its selection (see the  |
+     eexxppoorrttSSeelleeccttiioonn option), then it will observe  the  standard  |
+     X11  protocols for handling the selection;  entry selections
+     are available as type  SSTTRRIINNGG.   Entries  also  observe  the
+     standard Tk rules for dealing with the input focus.  When an
+     entry has the input focus it displays an _i_n_s_e_r_t_i_o_n _c_u_r_s_o_r to
+     indicate where new characters will be inserted.
+
+     Entries are capable of displaying strings that are too  long
+     to  fit  entirely within the widget's window.  In this case,
+     only a portion of the string will  be  displayed;   commands
+     described  below  may be used to change the view in the win-
+     dow.  Entries use the standard ssccrroollllCCoommmmaanndd  mechanism  for
+     interacting  with  scrollbars  (see  the  description of the
+     ssccrroollllCCoommmmaanndd option for details).  They also support  scan-
+     ning, as described below.
+
+
+WWIIDDGGEETT CCOOMMMMAANNDD
+     The eennttrryy command creates a new Tcl command  whose  name  is
+     _p_a_t_h_N_a_m_e.  This command may be used to invoke various opera-
+     tions on the widget.  It has the following general form:
+
+          _p_a_t_h_N_a_m_e _o_p_t_i_o_n ?_a_r_g _a_r_g ...?
+     _O_p_t_i_o_n and the _a_r_gs determine the exact behavior of the com-
+     mand.
+
+     Many of the widget commands for entries  take  one  or  more
+     indices as arguments.  An index specifies a particular char-
+     acter in the entry's string, in any of the following ways:
+
+     _n_u_m_b_e_r      Specifies the character as  a  numerical  index,
+                 where  0  corresponds  to the first character in
+                 the string.
+
+     ccuurrssoorr      Indicates the character adjacent to and  immedi-
+                 ately following the insertion cursor.
+
+     eenndd         Indicates the character just after the last  one
+                 in  the  entry's  string.  This is equivalent to
+                 specifying a numerical index equal to the length
+                 of the entry's string.
+
+     sseell..ffiirrsstt   Indicates the first character in the  selection.
+                 It is an error to use this form if the selection
+                 isn't in the entry window.
+
+     sseell..llaasstt    Indicates the last character in  the  selection.
+                 It is an error to use this form if the selection
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+entry                     User Commands                     entry
+
+
+
+                 isn't in the entry window.
+
+     @@_n_u_m_b_e_r     In  this  form,  _n_u_m_b_e_r  is  treated  as  an  x-
+                 coordinate in the entry's window;  the character
+                 spanning that x-coordinate is used.   For  exam-
+                 ple, ``@@00'' indicates the left-most character in
+                 the window.
+
+     Abbreviations may be used for any of the forms  above,  e.g.
+     ``ee''  or  ``sseell..ff''.   In general, out-of-range indices are
+     automatically rounded to the nearest legal value.
+
+     The following commands are possible for entry widgets:
+
+     _p_a_t_h_N_a_m_e ccoonnffiigguurree ?_o_p_t_i_o_n? ?_v_a_l_u_e _o_p_t_i_o_n _v_a_l_u_e ...?
+          Query  or  modify  the  configuration  options  of  the
+          widget.   If  no  _o_p_t_i_o_n  is  specified, returns a list
+          describing all of the available  options  for  _p_a_t_h_N_a_m_e
+          (see  TTkk__CCoonnffiigguurreeIInnffoo for information on the format of
+          this list).  If _o_p_t_i_o_n is specified with no _v_a_l_u_e, then
+          the  command  returns  a  list describing the one named
+          option (this list will be identical to the  correspond-
+          ing  sublist  of  the  value  returned  if no _o_p_t_i_o_n is
+          specified).  If one  or  more  _o_p_t_i_o_n-_v_a_l_u_e  pairs  are
+          specified,  then  the command modifies the given widget
+          option(s) to have the given value(s);  in this case the
+          command  returns  an empty string.  _O_p_t_i_o_n may have any
+          of the values accepted by the eennttrryy command.
+
+     _p_a_t_h_N_a_m_e ccuurrssoorr _i_n_d_e_x
+          Arrange for the insertion cursor to be  displayed  just
+          before  the character given by _i_n_d_e_x.  Returns an empty
+          string.
+
+     _p_a_t_h_N_a_m_e ddeelleettee _f_i_r_s_t ?_l_a_s_t?
+          Delete one or more elements of the  entry.   _F_i_r_s_t  and
+          _l_a_s_t are indices of of the first and last characters in
+          the range to be deleted.   If _l_a_s_t isn't  specified  it
+          defaults  to _f_i_r_s_t, i.e. a single character is deleted.
+          This command returns an empty string.
+
+     _p_a_t_h_N_a_m_e ggeett
+          Returns the entry's string.
+
+     _p_a_t_h_N_a_m_e iinnddeexx _i_n_d_e_x
+          Returns the numerical index corresponding to _i_n_d_e_x.
+
+     _p_a_t_h_N_a_m_e iinnsseerrtt _i_n_d_e_x _s_t_r_i_n_g
+          Insert the characters of _s_t_r_i_n_g just before the charac-
+          ter indicated by _i_n_d_e_x.  Returns an empty string.
+
+     _p_a_t_h_N_a_m_e ssccaann _o_p_t_i_o_n _a_r_g_s
+
+
+
+Sprite v1.0                                                     3
+
+
+
+
+
+
+entry                     User Commands                     entry
+
+
+
+          This command is used to implement scanning on  entries.
+          It has two forms, depending on _o_p_t_i_o_n:
+
+          _p_a_t_h_N_a_m_e ssccaann mmaarrkk _x
+               Records _x and the current view in the  entry  win-
+               dow;   used  in conjunction with later ssccaann ddrraaggttoo
+               commands.  Typically this  command  is  associated
+               with  a  mouse  button  press  in  the widget.  It
+               returns an empty string.
+
+          _p_a_t_h_N_a_m_e ssccaann ddrraaggttoo _x
+               This command computes the difference between its _x
+               argument  and the _x argument to the last ssccaann mmaarrkk
+               command for the widget.  It then adjusts the  view
+               left  or  right  by  10 times the difference in x-
+               coordinates.  This command is typically associated
+               with mouse motion events in the widget, to produce
+               the effect of dragging the  entry  at  high  speed
+               through  the window.  The return value is an empty
+               string.
+
+     _p_a_t_h_N_a_m_e sseelleecctt _o_p_t_i_o_n _a_r_g
+          This command is used to adjust the selection within  an
+          entry.  It has several forms, depending on _o_p_t_i_o_n:
+
+          _p_a_t_h_N_a_m_e sseelleecctt aaddjjuusstt _i_n_d_e_x
+               Locate the end of the  selection  nearest  to  the
+               character  given  by _i_n_d_e_x, and adjust that end of
+               the selection to be at _i_n_d_e_x  (i.e  including  but
+               not  going  beyond  _i_n_d_e_x).   The other end of the
+               selection is made  the  anchor  point  for  future
+               sseelleecctt   ttoo  commands.   If  the  selection  isn't
+               currently in the entry, then a  new  selection  is
+               created  to  include  the characters between _i_n_d_e_x
+               and  the  most  recent  selection  anchor   point,
+               inclusive.  Returns an empty string.
+
+          _p_a_t_h_N_a_m_e sseelleecctt cclleeaarr
+               Clear the selection if it  is  currently  in  this
+               widget.   If  the  selection  isn't in this widget
+               then the command has no effect.  Returns an  empty
+               string.
+
+          _p_a_t_h_N_a_m_e sseelleecctt ffrroomm _i_n_d_e_x
+               Set the selection anchor point to just before  the
+               character  given  by  _i_n_d_e_x.   Doesn't  change the
+               selection.  Returns an empty string.
+
+          _p_a_t_h_N_a_m_e sseelleecctt ttoo _i_n_d_e_x
+               Set the selection to consist of the elements  from
+               the anchor point to element _i_n_d_e_x, inclusive.  The
+               anchor point is  determined  by  the  most  recent
+
+
+
+Sprite v1.0                                                     4
+
+
+
+
+
+
+entry                     User Commands                     entry
+
+
+
+               sseelleecctt  ffrroomm  or  sseelleecctt  aaddjjuusstt  command  in this
+               widget.  If the selection  isn't  in  this  widget
+               then  a  new  selection  is created using the most
+               recent anchor  point  specified  for  the  widget.
+               Returns an empty string.
+
+     _p_a_t_h_N_a_m_e vviieeww _i_n_d_e_x
+          Adjust the view in the entry so that element  _i_n_d_e_x  is
+          at  the  left  edge  of  the  window.  Returns an empty
+          string.
+
+
+DDEEFFAAUULLTT BBIINNDDIINNGGSS
+     Tk automatically creates class  bindings  for  entries  that  |
+     give them the following default behavior:                     |
+
+     [1]                                                                ||
+          Clicking  mouse  button  1  in  an  entry positions the  |
+          insertion cursor just before the  character  underneath  |
+          the  mouse  cursor  and  sets  the  input focus to this  |
+          widget.                                                  |
+
+     [2]                                                                ||
+          Dragging  with  mouse  button 1 strokes out a selection  |
+          between the insertion cursor and  the  character  under  |
+          the mouse.                                               |
+
+     [3]                                                                ||
+          The  ends  of the selection can be adjusted by dragging  |
+          with mouse button 1 while the shift key is down;   this  |
+          will  adjust  the end of the selection that was nearest  |
+          to the mouse cursor when button 1 was pressed.           |
+
+     [4]                                                                ||
+          The  view in the entry can be adjusted by dragging with  |
+          mouse button 2.                                          |
+
+     [5]                                                                ||
+          If the input focus is in an entry widget and characters  |
+          are typed on the keyboard, the characters are  inserted  |
+          just before the insertion cursor.                        |
+
+     [6]                                                                ||
+          Control-h  and  the Backspace and Delete keys erase the  |
+          character just before the insertion cursor.              |
+
+     [7]                                                                ||
+          Control-w  erases  the  word  just before the insertion  |
+          cursor.                                                  |
+
+     [8]                                                                ||
+          Control-u clears the entry to an empty string.           |
+
+
+
+Sprite v1.0                                                     5
+
+
+
+
+
+
+entry                     User Commands                     entry
+
+
+
+     [9]                                                                ||
+          Control-v inserts the current selection just before the  |
+          insertion cursor.                                        |
+
+     [10]                                                               ||
+          Control-d  deletes  the  selected characters;  an error  |
+          occurs if the selection is not in this widget.           |
+
+     If the entry is disabled using the ssttaattee  option,  then  the  |
+     entry's view can still be adjusted and text in the entry can  |
+     still be selected, but no insertion cursor will be displayed  |
+     and no text modifications will take place.                    |
+
+     The behavior of entries can be changed by defining new bind-  |
+     ings for individual widgets or by redefining the class bind-  |
+     ings.
+
+
+KKEEYYWWOORRDDSS
+     entry, widget
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     6
+
+
+

@@ -1,0 +1,25 @@
+Did you ever wonder what this brownish red-orange color is actually called?
+Well, a look in /X11R3/lib/rgb/rgb.txt will answer that!
+
+When you specify a color, you may either use a name in the rgb database for
+which the human-readable source is in the file mentioned above, or you
+may give the RGB value using #RGB or #RRGGBB or #RRRRGGGGBBBB (where "#" is
+that character, "R", "G" and "B" refer to the red, gree and blue values in
+hexadecimal. #RGB specifies the 4 most significant bits of each color gun,
+#RRGGBB the 8 msb and the last form the 16 msb [useless on our 8-bit
+color machines]).
+
+Color defaults:
+If you load your defaults file into the server using xrdb, it is passed
+thru cpp. One interesting feature is that COLOR is only defined on color
+displays, thus you can conditionally set colors by enclosing the
+definitions in "#ifdef COLOR" and "#endif". For more info, please read
+the xrdb manual page.
+
+Colors on black/white machines:
+You might wonder what happens with colors on b/w displays! Well, the rgb
+values are mapped into grey using:
+	%grey = %red * .39 + %green * .50 + %blue * .11
+which is then converted to black/white using a 50% threshold.
+
+				-Thorsten (tve@sprite.berkeley.edu)

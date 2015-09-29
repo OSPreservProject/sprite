@@ -1,0 +1,5 @@
+I'm not sure what the status of these sources is.  The MIPS compiler
+gags on cplus-class.c, cplus-decl.c and others; maybe they could be
+compiled by gcc.
+
+-mdk

@@ -1,0 +1,72 @@
+total 311
+   2 -rw-rw-r--  1 mendel       1052 Oct  4 09:45 Makefile
+   1 drwxrwxr-x  2 mendel        512 Aug  7 09:31 RCS/
+   1 lrwxrwxrwx  1 mendel         17 Aug  6 17:01 blockframe.c@ -> gdb/blockframe.c
+   1 lrwxrwxrwx  1 mendel         17 Aug  6 17:01 breakpoint.c@ -> gdb/breakpoint.c
+   1 lrwxrwxrwx  1 mendel         14 Aug  6 17:01 command.c@ -> gdb/command.c
+   1 lrwxrwxrwx  1 mendel         14 Aug  6 17:01 command.h@ -> gdb/command.h
+   1 lrwxrwxrwx  1 mendel         14 Aug  7 10:48 copying.c@ -> gdb/copying.c
+  13 -rw-rw-r--  1 mendel      12434 Aug  6 17:36 core.c
+   1 lrwxrwxrwx  1 mendel         14 Aug  6 17:01 dbxread.c@ -> gdb/dbxread.c
+   1 lrwxrwxrwx  1 mendel         11 Aug  6 17:01 defs.h@ -> gdb/defs.h
+   1 lrwxrwxrwx  1 mendel         18 Aug  7 09:30 dep.c@ -> gdb/sun3.md/dep.c
+   1 lrwxrwxrwx  1 mendel         21 Aug  7 10:33 emacs_keymap.c.h@ -> gdb/emacs_keymap.c.h
+   1 lrwxrwxrwx  1 mendel         14 Aug  6 17:01 environ.c@ -> gdb/environ.c
+   1 lrwxrwxrwx  1 mendel         14 Aug  6 17:01 environ.h@ -> gdb/environ.h
+   1 lrwxrwxrwx  1 mendel         11 Aug  6 17:01 eval.c@ -> gdb/eval.c
+   1 lrwxrwxrwx  1 mendel         15 Aug  6 17:01 expprint.c@ -> gdb/expprint.c
+   1 lrwxrwxrwx  1 mendel         18 Aug  7 10:31 expread.tab.c@ -> gdb/expread.tab.c
+  29 -rw-r--r--  1 jhh         29450 Aug 15 12:35 expread.y
+   1 lrwxrwxrwx  1 mendel         17 Aug  6 17:01 expression.h@ -> gdb/expression.h
+   1 lrwxrwxrwx  1 mendel         14 Aug  6 17:01 findvar.c@ -> gdb/findvar.c
+   1 lrwxrwxrwx  1 mendel         20 Aug  7 09:30 foo@ -> gdb/sun3.md/pinsn.c
+   1 lrwxrwxrwx  1 mendel         12 Aug  6 17:01 frame.h@ -> gdb/frame.h
+   1 lrwxrwxrwx  1 mendel         15 Aug  7 10:38 funmap.c.h@ -> gdb/funmap.c.h
+   1 lrwxrwxrwx  1 mendel         11 Aug  6 17:00 gdb@ -> ../gdb.new/
+   1 lrwxrwxrwx  1 mendel         14 Aug  7 10:43 history.c@ -> gdb/history.c
+   1 lrwxrwxrwx  1 mendel         14 Aug  7 10:37 history.h@ -> gdb/history.h
+   1 lrwxrwxrwx  1 mendel         13 Aug  7 09:28 infcmd.c@ -> gdb/infcmd.c
+  30 -rw-rw-r--  1 mendel      30029 Aug  6 17:47 infcmd.c.old
+   1 lrwxrwxrwx  1 mendel         15 Aug  6 17:01 inferior.h@ -> gdb/inferior.h
+   1 lrwxrwxrwx  1 mendel         13 Aug  7 09:28 inflow.c@ -> gdb/inflow.c
+  12 -rw-rw-r--  1 mendel      12238 Aug  6 17:51 inflow.c.old
+   1 lrwxrwxrwx  1 mendel         13 Aug  7 09:28 infrun.c@ -> gdb/infrun.c
+  48 -rw-rw-r--  1 mendel      42105 Aug  6 18:14 infrun.c.old
+   1 -rw-rw-r--  1 mendel        632 Aug 10 16:41 initialized_all_files.c
+   1 lrwxrwxrwx  1 mendel         16 Aug  7 10:33 keymaps.c.h@ -> gdb/keymaps.c.h
+   1 -rw-r--r--  1 mendel        590 Aug  6 17:34 kgdb.sun3.man
+   4 -rw-r--r--  1 mendel       3780 Aug 10 16:39 kgdbcmd.c
+   1 -rw-r--r--  1 mendel        352 Aug  7 12:00 local.mk
+   1 lrwxrwxrwx  1 mendel         21 Aug  7 09:30 m-sun3.h@ -> gdb/sun3.md/m-sun3.h
+   1 lrwxrwxrwx  1 mendel         20 Aug  7 09:56 machine@ -> gdb/sun3.md/machine/
+   1 lrwxrwxrwx  1 mendel         11 Aug  6 17:01 main.c@ -> gdb/main.c
+   1 lrwxrwxrwx  1 mendel         14 Aug  6 17:01 obstack.c@ -> gdb/obstack.c
+   1 lrwxrwxrwx  1 mendel         14 Aug  6 17:01 obstack.h@ -> gdb/obstack.h
+   1 lrwxrwxrwx  1 mendel         13 Aug  6 17:02 oo@ -> gdb/valops.c
+   1 lrwxrwxrwx  1 mendel         21 Aug  7 09:30 opcode.h@ -> gdb/sun3.md/opcode.h
+   1 lrwxrwxrwx  1 mendel         20 Aug  7 09:30 param.h@ -> gdb/sun3.md/param.h
+  19 -rw-rw-r--  1 mendel      18857 Aug 10 18:25 pinsn.c
+   1 lrwxrwxrwx  1 mendel         15 Aug  6 17:01 printcmd.c@ -> gdb/printcmd.c
+   2 -rw-r--r--  1 mendel       1229 Aug 29 11:04 ptrace.c
+   1 lrwxrwxrwx  1 mendel         15 Aug  7 10:32 readline.c@ -> gdb/readline.c
+   1 lrwxrwxrwx  1 mendel         15 Aug  7 10:33 readline.h@ -> gdb/readline.h
+  34 -rw-rw-r--  1 mendel      34123 Aug  7 11:52 remote.c
+   1 lrwxrwxrwx  1 mendel         13 Aug  6 17:02 source.c@ -> gdb/source.c
+   1 lrwxrwxrwx  1 mendel         12 Aug  6 17:02 stack.c@ -> gdb/stack.c
+   1 drwxrwxr-x  2 mendel       1024 Oct  4 09:46 sun3.md/
+   1 drwxrwxr-x  2 mendel       1024 Oct  4 09:46 sun4.md/
+   1 lrwxrwxrwx  1 mendel         14 Aug  6 17:02 symmisc.c@ -> gdb/symmisc.c
+   1 lrwxrwxrwx  1 mendel         13 Aug  6 17:02 symseg.h@ -> gdb/symseg.h
+   1 lrwxrwxrwx  1 mendel         13 Aug  6 17:02 symtab.c@ -> gdb/symtab.c
+   1 lrwxrwxrwx  1 mendel         13 Aug  6 17:02 symtab.h@ -> gdb/symtab.h
+   1 lrwxrwxrwx  1 mendel         16 Aug  7 09:56 sys@ -> gdb/sun3.md/sys/
+   0 -rw-rw-r--  1 eklee           0 Oct  5 18:00 t
+   1 lrwxrwxrwx  1 mendel         12 Aug  6 17:02 utils.c@ -> gdb/utils.c
+   1 lrwxrwxrwx  1 mendel         15 Aug  6 17:02 valarith.c@ -> gdb/valarith.c
+  33 -rw-rw-r--  1 mendel      33378 Aug 10 18:16 valops.c
+   1 lrwxrwxrwx  1 mendel         15 Aug  6 17:02 valprint.c@ -> gdb/valprint.c
+   1 lrwxrwxrwx  1 mendel         12 Aug  6 17:02 value.h@ -> gdb/value.h
+  27 -rw-rw-r--  1 mendel      26829 Aug 10 18:40 values.c
+   1 lrwxrwxrwx  1 mendel         14 Aug  6 17:02 version.c@ -> gdb/version.c
+   1 lrwxrwxrwx  1 mendel         18 Aug  7 10:33 vi_keymap.c.h@ -> gdb/vi_keymap.c.h
+   1 lrwxrwxrwx  1 mendel         11 Aug  6 17:02 wait.h@ -> gdb/wait.h

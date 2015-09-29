@@ -1,0 +1,1026 @@
+
+granularity: each sample hit covers 8 byte(s) for 0.04% of 47.88 seconds
+
+%time cumsecs seconds   calls name    
+ 43.5   20.82   20.82         _IdleLoop
+ 10.9   26.06    5.24         FlushingSegment
+  5.2   28.53    2.47         FlushingPage
+  5.0   30.93    2.40         BDoubleWordCopy
+  4.6   33.11    2.18         _Sched_StartUserProc
+  3.2   34.63    1.52         _strncpy
+  2.4   35.79    1.16         FlushingContext
+  1.8   36.65    0.86         _bzero
+  1.4   37.32    0.67         _Sync_GetLock
+  1.2   37.88    0.56         copyLoop
+  1.1   38.40    0.52         _SetupContext
+  1.0   38.86    0.46         _Sync_SlowMasterWait
+  0.9   39.30    0.44         _Sched_LockAndSwitch
+  0.9   39.71    0.41         SkipStore
+  0.8   40.07    0.36         _MachUserAction
+  0.7   40.39    0.32         _GrabArgArray
+  0.6   40.68    0.29         _malloc
+  0.5   40.93    0.25         _Sync_Unlock
+  0.5   41.15    0.22         _MachFetchArgsEnd
+  0.5   41.37    0.22         _RpcDoCall
+  0.4   41.58    0.21         _Sync_SlowWait
+  0.4   41.77    0.19         GoAheadAndCopy
+  0.4   41.95    0.18         _VmMach_PageValidate
+  0.4   42.12    0.17         SegCopyLabel2
+  0.3   42.28    0.16         _List_Remove
+  0.3   42.42    0.14         __free
+  0.3   42.55    0.13         _Sync_SlowBroadcast
+  0.3   42.67    0.12         _RequestResponse
+  0.3   42.79    0.12         _VmVirtAddrParse
+  0.2   42.90    0.11         _Mach_TestAndSet
+  0.2   43.00    0.10         _Fs_SelectStub
+  0.2   43.10    0.10         _Fsprefix_LookupOperation
+  0.2   43.20    0.10         _PageInvalidate
+  0.2   43.30    0.10         _Proc_MakeStringAccessible
+  0.2   43.40    0.10         _Timer_GetTimeOfDay
+  0.2   43.50    0.10         _Vm_PageIn
+  0.2   43.59    0.09         _Proc_GetEffectiveProc
+  0.2   43.67    0.08         BFinishWord
+  0.2   43.75    0.08         _CallFunc
+  0.2   43.83    0.08         _Fs_Read
+  0.2   43.91    0.08         _Fscache_UnlockBlock
+  0.2   43.99    0.08         _List_Insert
+  0.2   44.07    0.08         _Mach_GetPC
+  0.2   44.15    0.08         _VmListRemove
+  0.2   44.23    0.08         _VmMachSetContextReg
+  0.1   44.30    0.07         _Hash
+  0.1   44.37    0.07         _VmUnmapPage
+  0.1   44.44    0.07         _Vm_MakeAccessible
+  0.1   44.50    0.06         DoubleWordCopy
+  0.1   44.56    0.06         _Fs_InheritState
+  0.1   44.62    0.06         _Fs_Open
+  0.1   44.68    0.06         _Fs_SetIDs
+  0.1   44.74    0.06         _Fscache_FetchBlock
+  0.1   44.80    0.06         _SetupArgs
+  0.1   44.86    0.06         _Sync_ProcWait
+  0.1   44.92    0.06         _VmListInsert
+  0.1   44.98    0.06         _VmMachFlushCurrentContext
+  0.1   45.04    0.06         _VmMachSetSegMap
+  0.1   45.10    0.06         _VmMapPage
+  0.1   45.16    0.06         _Vm_MakeUnaccessible
+  0.1   45.22    0.06         _Vm_SegmentDup
+  0.1   45.27    0.05         _Vm_SegmentDelete
+  0.1   45.31    0.04         FinishWord
+  0.1   45.35    0.04         _DoTrace
+  0.1   45.39    0.04         _Fs_IOControl
+  0.1   45.43    0.04         _Fscache_UpdateFile
+  0.1   45.47    0.04         _Fsprefix_Lookup
+  0.1   45.51    0.04         _Fsprefix_OpenCheck
+  0.1   45.55    0.04         _FsrmtFileIoOpen
+  0.1   45.59    0.04         _FsrmtFileRead
+  0.1   45.63    0.04         _Fsrmt_Close
+  0.1   45.67    0.04         _Fsutil_HandleDup
+  0.1   45.71    0.04         _Fsutil_HandleLockHdr
+  0.1   45.75    0.04         _Fsutil_HandleUnlockHdr
+  0.1   45.79    0.04         _HandleInstallInt
+  0.1   45.83    0.04         _MachPageFault
+  0.1   45.87    0.04         _ProcFamilyInsert
+  0.1   45.91    0.04         _Proc_ServerProc
+  0.1   45.95    0.04         _RpcChanAlloc
+  0.1   45.99    0.04         _Sched_MakeReady
+  0.1   46.03    0.04         _SetupInterpret
+  0.1   46.07    0.04         _SetupVM
+  0.1   46.11    0.04         _Timer_GetRealTimeOfDay
+  0.1   46.15    0.04         _VmValidatePagesInt
+  0.1   46.19    0.04         _Vm_SegmentNew
+  0.1   46.23    0.04         _strlen
+  0.1   46.27    0.04         _strncmp
+  0.1   46.30    0.03         KeepZeroing
+  0.1   46.33    0.03         SegCopyLabel1
+  0.1   46.36    0.03         _ChainSearch
+  0.1   46.39    0.03         _RpcSetup
+  0.1   46.42    0.03         _Rpc_Call
+  0.1   46.45    0.03         _SigClearPendingMask
+  0.1   46.48    0.03         _bcopy
+  0.1   46.51    0.03         _free
+  0.0   46.53    0.02         AddressValueOkay
+  0.0   46.55    0.02         BByteCopyIt
+  0.0   46.57    0.02         ByteCopyIt
+  0.0   46.59    0.02         ReturnZero
+  0.0   46.61    0.02         WordCopy
+  0.0   46.63    0.02         _AllocMoreSpace
+  0.0   46.65    0.02         _CopyPage
+  0.0   46.67    0.02         _DevNet_FsRead
+  0.0   46.69    0.02         _DoExec
+  0.0   46.71    0.02         _EndExpansion
+  0.0   46.73    0.02         _FindExitingChild
+  0.0   46.75    0.02         _FsRmtFileHandleInit
+  0.0   46.77    0.02         _Fs_Close
+  0.0   46.79    0.02         _Fs_CloseOnExec
+  0.0   46.81    0.02         _Fs_GetNewIDStub
+  0.0   46.83    0.02         _Fs_GetStreamID
+  0.0   46.85    0.02         _Fs_ReadStub
+  0.0   46.87    0.02         _Fsio_DeviceSelect
+  0.0   46.89    0.02         _Fsio_StreamAddClient
+  0.0   46.91    0.02         _Fsio_StreamClientClose
+  0.0   46.93    0.02         _Fsio_StreamClientOpen
+  0.0   46.95    0.02         _FspdevServerStreamIOControl
+  0.0   46.97    0.02         _FspdevServerStreamRead
+  0.0   46.99    0.02         _Fsprefix_OpenDone
+  0.0   47.01    0.02         _FsrmtFileClose
+  0.0   47.03    0.02         _FsrmtOpen
+  0.0   47.05    0.02         _Fsutil_FastWaitListInsert
+  0.0   47.07    0.02         _Fsutil_HandleRemoveHdr
+  0.0   47.09    0.02         _Fsutil_HandleRemoveInt
+  0.0   47.11    0.02         _Fsutil_HandleValid
+  0.0   47.13    0.02         _GetNewSegment
+  0.0   47.15    0.02         _Hash_Find
+  0.0   47.17    0.02         _InitUserProc
+  0.0   47.19    0.02         _Mach_StartUserProc
+  0.0   47.21    0.02         _PMEGFree
+  0.0   47.23    0.02         _PdevClientNotify
+  0.0   47.25    0.02         _PreparePage
+  0.0   47.27    0.02         _ProcSetupEnviron
+  0.0   47.29    0.02         _Proc_Exec
+  0.0   47.31    0.02         _Proc_ExitInt
+  0.0   47.33    0.02         _PutOnAllocListRear
+  0.0   47.35    0.02         _PutOnFreeList
+  0.0   47.37    0.02         _Recov_HostAlive
+  0.0   47.39    0.02         _RpcChanFree
+  0.0   47.41    0.02         _Sig_SendProc
+  0.0   47.43    0.02         _StartExpansion
+  0.0   47.45    0.02         _Sync_GetWaitToken
+  0.0   47.47    0.02         _Sync_ProcWakeup
+  0.0   47.49    0.02         _Time_Add
+  0.0   47.51    0.02         _VmFileServerRead
+  0.0   47.53    0.02         _VmMachFlushPage
+  0.0   47.55    0.02         _VmMachFlushSegment
+  0.0   47.57    0.02         _VmMachReadPTE
+  0.0   47.59    0.02         _VmMachSegMapCopy
+  0.0   47.61    0.02         _VmMachSetPageMap
+  0.0   47.63    0.02         _VmMach_SegExpand
+  0.0   47.65    0.02         _VmMach_VirtAddrParse
+  0.0   47.67    0.02         _VmSegmentDeleteInt
+  0.0   47.69    0.02         _Vm_CopyOutProc
+  0.0   47.71    0.02         _Vm_CreateVA
+  0.0   47.73    0.02         _bcmp
+  0.0   47.75    0.02         _strcpy
+  0.0   47.77    0.02         _vprintf
+  0.0   47.78    0.01         GotArgs
+  0.0   47.79    0.01         _DeleteSeg
+  0.0   47.80    0.01         _Fs_CreatePipeStub
+  0.0   47.81    0.01         _Fs_IOControlStub
+  0.0   47.82    0.01         _Fs_OpenStub
+  0.0   47.83    0.01         _Fs_UserClose
+  0.0   47.84    0.01         _Mach_GetMachineType
+  0.0   47.85    0.01         _Proc_NeverMigrate
+  0.0   47.86    0.01         _Sig_Pause
+  0.0   47.87    0.01         _VmMachPMEGZero
+  0.0   47.88    0.01         _VmMachWritePTE
+
+
+granularity: each sample hit covers 8 byte(s) for 0.04% of 47.88 seconds
+
+                                  called/total       parents 
+index  %time    self descendents  called+self    name    	index
+                                  called/total       children
+
+                                                     <spontaneous>
+[1]     43.5   20.82        0.00                 _IdleLoop [1]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[2]     10.9    5.24        0.00                 FlushingSegment [2]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[3]      5.2    2.47        0.00                 FlushingPage [3]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[4]      5.0    2.40        0.00                 BDoubleWordCopy [4]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[5]      4.6    2.18        0.00                 _Sched_StartUserProc [5]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[6]      3.2    1.52        0.00                 _strncpy [6]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[7]      2.4    1.16        0.00                 FlushingContext [7]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[8]      1.8    0.86        0.00                 _bzero [8]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[9]      1.4    0.67        0.00                 _Sync_GetLock [9]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[10]     1.2    0.56        0.00                 copyLoop [10]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[11]     1.1    0.52        0.00                 _SetupContext [11]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[12]     1.0    0.46        0.00                 _Sync_SlowMasterWait [12]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[13]     0.9    0.44        0.00                 _Sched_LockAndSwitch [13]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[14]     0.9    0.41        0.00                 SkipStore [14]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[15]     0.8    0.36        0.00                 _MachUserAction [15]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[16]     0.7    0.32        0.00                 _GrabArgArray [16]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[17]     0.6    0.29        0.00                 _malloc [17]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[18]     0.5    0.25        0.00                 _Sync_Unlock [18]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[19]     0.5    0.22        0.00                 _MachFetchArgsEnd [19]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[20]     0.5    0.22        0.00                 _RpcDoCall [20]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[21]     0.4    0.21        0.00                 _Sync_SlowWait [21]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[22]     0.4    0.19        0.00                 GoAheadAndCopy [22]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[23]     0.4    0.18        0.00                 _VmMach_PageValidate [23]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[24]     0.4    0.17        0.00                 SegCopyLabel2 [24]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[25]     0.3    0.16        0.00                 _List_Remove [25]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[26]     0.3    0.14        0.00                 __free [26]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[27]     0.3    0.13        0.00                 _Sync_SlowBroadcast [27]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[28]     0.3    0.12        0.00                 _RequestResponse [28]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[29]     0.3    0.12        0.00                 _VmVirtAddrParse [29]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[30]     0.2    0.11        0.00                 _Mach_TestAndSet [30]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[31]     0.2    0.10        0.00                 _Fs_SelectStub [31]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[32]     0.2    0.10        0.00                 _Fsprefix_LookupOperation [32]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[33]     0.2    0.10        0.00                 _PageInvalidate [33]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[34]     0.2    0.10        0.00                 _Proc_MakeStringAccessible [34]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[35]     0.2    0.10        0.00                 _Timer_GetTimeOfDay [35]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[36]     0.2    0.10        0.00                 _Vm_PageIn [36]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[37]     0.2    0.09        0.00                 _Proc_GetEffectiveProc [37]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[38]     0.2    0.08        0.00                 BFinishWord [38]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[39]     0.2    0.08        0.00                 _CallFunc [39]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[40]     0.2    0.08        0.00                 _Fs_Read [40]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[41]     0.2    0.08        0.00                 _Fscache_UnlockBlock [41]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[42]     0.2    0.08        0.00                 _List_Insert [42]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[43]     0.2    0.08        0.00                 _Mach_GetPC [43]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[44]     0.2    0.08        0.00                 _VmListRemove [44]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[45]     0.2    0.08        0.00                 _VmMachSetContextReg [45]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[46]     0.1    0.07        0.00                 _Hash [46]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[47]     0.1    0.07        0.00                 _VmUnmapPage [47]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[48]     0.1    0.07        0.00                 _Vm_MakeAccessible [48]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[49]     0.1    0.06        0.00                 DoubleWordCopy [49]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[50]     0.1    0.06        0.00                 _Fs_InheritState [50]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[51]     0.1    0.06        0.00                 _Fs_Open [51]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[52]     0.1    0.06        0.00                 _Fs_SetIDs [52]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[53]     0.1    0.06        0.00                 _Fscache_FetchBlock [53]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[54]     0.1    0.06        0.00                 _SetupArgs [54]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[55]     0.1    0.06        0.00                 _Sync_ProcWait [55]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[56]     0.1    0.06        0.00                 _VmListInsert [56]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[57]     0.1    0.06        0.00                 _VmMachFlushCurrentContext [57]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[58]     0.1    0.06        0.00                 _VmMachSetSegMap [58]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[59]     0.1    0.06        0.00                 _VmMapPage [59]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[60]     0.1    0.06        0.00                 _Vm_MakeUnaccessible [60]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[61]     0.1    0.06        0.00                 _Vm_SegmentDup [61]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[62]     0.1    0.05        0.00                 _Vm_SegmentDelete [62]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[63]     0.1    0.04        0.00                 FinishWord [63]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[64]     0.1    0.04        0.00                 _DoTrace [64]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[65]     0.1    0.04        0.00                 _Fs_IOControl [65]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[66]     0.1    0.04        0.00                 _Fscache_UpdateFile [66]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[67]     0.1    0.04        0.00                 _Fsprefix_Lookup [67]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[68]     0.1    0.04        0.00                 _Fsprefix_OpenCheck [68]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[69]     0.1    0.04        0.00                 _FsrmtFileIoOpen [69]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[70]     0.1    0.04        0.00                 _FsrmtFileRead [70]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[71]     0.1    0.04        0.00                 _Fsrmt_Close [71]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[72]     0.1    0.04        0.00                 _Fsutil_HandleDup [72]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[73]     0.1    0.04        0.00                 _Fsutil_HandleLockHdr [73]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[74]     0.1    0.04        0.00                 _Fsutil_HandleUnlockHdr [74]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[75]     0.1    0.04        0.00                 _HandleInstallInt [75]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[76]     0.1    0.04        0.00                 _MachPageFault [76]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[77]     0.1    0.04        0.00                 _ProcFamilyInsert [77]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[78]     0.1    0.04        0.00                 _Proc_ServerProc [78]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[79]     0.1    0.04        0.00                 _RpcChanAlloc [79]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[80]     0.1    0.04        0.00                 _Sched_MakeReady [80]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[81]     0.1    0.04        0.00                 _SetupInterpret [81]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[82]     0.1    0.04        0.00                 _SetupVM [82]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[83]     0.1    0.04        0.00                 _Timer_GetRealTimeOfDay [83]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[84]     0.1    0.04        0.00                 _VmValidatePagesInt [84]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[85]     0.1    0.04        0.00                 _Vm_SegmentNew [85]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[86]     0.1    0.04        0.00                 _strlen [86]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[87]     0.1    0.04        0.00                 _strncmp [87]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[88]     0.1    0.03        0.00                 KeepZeroing [88]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[89]     0.1    0.03        0.00                 SegCopyLabel1 [89]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[90]     0.1    0.03        0.00                 _ChainSearch [90]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[91]     0.1    0.03        0.00                 _RpcSetup [91]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[92]     0.1    0.03        0.00                 _Rpc_Call [92]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[93]     0.1    0.03        0.00                 _SigClearPendingMask [93]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[94]     0.1    0.03        0.00                 _bcopy [94]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[95]     0.1    0.03        0.00                 _free [95]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[96]     0.0    0.02        0.00                 AddressValueOkay [96]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[97]     0.0    0.02        0.00                 BByteCopyIt [97]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[98]     0.0    0.02        0.00                 ByteCopyIt [98]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[99]     0.0    0.02        0.00                 ReturnZero [99]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[100]    0.0    0.02        0.00                 WordCopy [100]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[101]    0.0    0.02        0.00                 _AllocMoreSpace [101]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[102]    0.0    0.02        0.00                 _CopyPage [102]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[103]    0.0    0.02        0.00                 _DevNet_FsRead [103]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[104]    0.0    0.02        0.00                 _DoExec [104]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[105]    0.0    0.02        0.00                 _EndExpansion [105]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[106]    0.0    0.02        0.00                 _FindExitingChild [106]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[107]    0.0    0.02        0.00                 _FsRmtFileHandleInit [107]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[108]    0.0    0.02        0.00                 _Fs_Close [108]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[109]    0.0    0.02        0.00                 _Fs_CloseOnExec [109]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[110]    0.0    0.02        0.00                 _Fs_GetNewIDStub [110]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[111]    0.0    0.02        0.00                 _Fs_GetStreamID [111]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[112]    0.0    0.02        0.00                 _Fs_ReadStub [112]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[113]    0.0    0.02        0.00                 _Fsio_DeviceSelect [113]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[114]    0.0    0.02        0.00                 _Fsio_StreamAddClient [114]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[115]    0.0    0.02        0.00                 _Fsio_StreamClientClose [115]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[116]    0.0    0.02        0.00                 _Fsio_StreamClientOpen [116]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[117]    0.0    0.02        0.00                 _FspdevServerStreamIOControl [117]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[118]    0.0    0.02        0.00                 _FspdevServerStreamRead [118]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[119]    0.0    0.02        0.00                 _Fsprefix_OpenDone [119]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[120]    0.0    0.02        0.00                 _FsrmtFileClose [120]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[121]    0.0    0.02        0.00                 _FsrmtOpen [121]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[122]    0.0    0.02        0.00                 _Fsutil_FastWaitListInsert [122]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[123]    0.0    0.02        0.00                 _Fsutil_HandleRemoveHdr [123]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[124]    0.0    0.02        0.00                 _Fsutil_HandleRemoveInt [124]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[125]    0.0    0.02        0.00                 _Fsutil_HandleValid [125]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[126]    0.0    0.02        0.00                 _GetNewSegment [126]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[127]    0.0    0.02        0.00                 _Hash_Find [127]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[128]    0.0    0.02        0.00                 _InitUserProc [128]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[129]    0.0    0.02        0.00                 _Mach_StartUserProc [129]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[130]    0.0    0.02        0.00                 _PMEGFree [130]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[131]    0.0    0.02        0.00                 _PdevClientNotify [131]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[132]    0.0    0.02        0.00                 _PreparePage [132]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[133]    0.0    0.02        0.00                 _ProcSetupEnviron [133]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[134]    0.0    0.02        0.00                 _Proc_Exec [134]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[135]    0.0    0.02        0.00                 _Proc_ExitInt [135]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[136]    0.0    0.02        0.00                 _PutOnAllocListRear [136]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[137]    0.0    0.02        0.00                 _PutOnFreeList [137]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[138]    0.0    0.02        0.00                 _Recov_HostAlive [138]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[139]    0.0    0.02        0.00                 _RpcChanFree [139]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[140]    0.0    0.02        0.00                 _Sig_SendProc [140]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[141]    0.0    0.02        0.00                 _StartExpansion [141]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[142]    0.0    0.02        0.00                 _Sync_GetWaitToken [142]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[143]    0.0    0.02        0.00                 _Sync_ProcWakeup [143]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[144]    0.0    0.02        0.00                 _Time_Add [144]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[145]    0.0    0.02        0.00                 _VmFileServerRead [145]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[146]    0.0    0.02        0.00                 _VmMachFlushPage [146]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[147]    0.0    0.02        0.00                 _VmMachFlushSegment [147]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[148]    0.0    0.02        0.00                 _VmMachReadPTE [148]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[149]    0.0    0.02        0.00                 _VmMachSegMapCopy [149]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[150]    0.0    0.02        0.00                 _VmMachSetPageMap [150]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[151]    0.0    0.02        0.00                 _VmMach_SegExpand [151]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[152]    0.0    0.02        0.00                 _VmMach_VirtAddrParse [152]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[153]    0.0    0.02        0.00                 _VmSegmentDeleteInt [153]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[154]    0.0    0.02        0.00                 _Vm_CopyOutProc [154]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[155]    0.0    0.02        0.00                 _Vm_CreateVA [155]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[156]    0.0    0.02        0.00                 _bcmp [156]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[157]    0.0    0.02        0.00                 _strcpy [157]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[158]    0.0    0.02        0.00                 _vprintf [158]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[159]    0.0    0.01        0.00                 GotArgs [159]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[160]    0.0    0.01        0.00                 _DeleteSeg [160]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[161]    0.0    0.01        0.00                 _Fs_CreatePipeStub [161]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[162]    0.0    0.01        0.00                 _Fs_IOControlStub [162]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[163]    0.0    0.01        0.00                 _Fs_OpenStub [163]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[164]    0.0    0.01        0.00                 _Fs_UserClose [164]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[165]    0.0    0.01        0.00                 _Mach_GetMachineType [165]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[166]    0.0    0.01        0.00                 _Proc_NeverMigrate [166]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[167]    0.0    0.01        0.00                 _Sig_Pause [167]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[168]    0.0    0.01        0.00                 _VmMachPMEGZero [168]
+
+-----------------------------------------------
+
+                                                     <spontaneous>
+[169]    0.0    0.01        0.00                 _VmMachWritePTE [169]
+
+-----------------------------------------------
+

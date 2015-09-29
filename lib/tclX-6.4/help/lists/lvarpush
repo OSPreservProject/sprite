@@ -1,0 +1,8 @@
+
+
+          lvarpush var string [index]
+               The lvarpush command pushes (inserts) string as an
+               element in the list contained in the variable var.  The
+               element is inserted before position index in the list.
+               If index is omitted, then 0 is assumed.  If var does
+               not exists, it is created.

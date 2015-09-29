@@ -1,0 +1,147 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     89.06.19.14.34.02;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.01.18.11.46.16;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@New boot sequence
+@
+text
+@'\" Copyright 1989 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/lib/forms/RCS/cmd.man,v 1.1 89/02/23 13:08:24 ouster Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS INITSPRITE cmds
+.BS
+.SH NAME
+initsprite \- First process executed during bootstrap
+.SH SYNOPSIS
+.nf
+\fBinitsprite\fR [\fB\-cfsx\fR] [\fB\-b\fR \fIbootcommand\fR] 
+.SH OPTIONS
+.IP "\fB\-b\fR \fIbootcommand\fR" 18
+\fIBootcommand\fR will be passed to the prom if the machine is rebooted.
+This happens if there is an error checking the root partition.
+The \fIbootcommands\fR parameter allows the reboot to be done using the same
+kernel and arguments as the original boot. 
+.IP "\fB\-c\fR" 18
+Causes a fileserver to run \fBrootcmds\fR before running \fBdiskcmds\fR. 
+\fBRootcmds\fR typically contains commands that allows a non-root fileserver
+to serve as root. 
+.IP "\fB\-f\fR" 18
+Causes a fileserver mount its disks without checking them.
+.IP "\fB\-s\fR" 18
+Causes \fBinitsprite\fR to exec a login instead of running \fBdiskcmds\fR 
+and \fBbootcmds\fR.
+.IP "\fB\-x\fR" 18
+Causes a fileserver to run \fBrootcmds\fR before running \fBdiskcmds\fR.
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBInitsprite\fR is the first user-level program executed when
+Sprite bootstraps itself on a machine.  It is invoked as root,
+with no arguments.  \fBInitsprite\fR opens the console terminal
+on its standard I/O channels, initializes environment variables
+like \fBHOST\fR, \fBMACHINE\fR, and \fBPATH\fR, and then invokes
+\fBcsh\fR command scripts to perform system initialization.
+.PP
+\fBInitsprite\fR looks first for a file \fB/boot/cmds/csh\fR;
+if it exists, then it is invoked to process the 
+command script in \fB/boot/diskcmds\fR.  The purpose of \fBdiskcmds\fR
+is to initialize a local disk, if there is one (if there is a local disk
+the kernel will load the prefix for \fB/bootTmp\fR and \fB/\fR before invoking
+\fBinitsprite\fR).
+.PP
+The main initialization script is in the file \fB/boot/bootcmds\fR.
+However, if it is desirable to perform special initialization
+operations for a particular machine, then there should exist a
+file \fB/hosts/\fImachine\fB/bootcmds\fR where \fImachine\fR
+is the name of the machine to be treated specially;  \fBinitsprite\fR
+checks for this file and executes it in preference to \fB/boot/bootcmds\fR.
+Typically, the machine-dependent script will source \fB/boot/bootcmds\fR
+and then perform machine-specific initialization afterwards.
+.PP
+If \fBinitsprite\fR successfully executes \fB/boot/bootcmds\fR (or a
+machine-specific replacement), then it exits.  Otherwise it
+invokes an interactive shell as root on the console device.
+Normally \fBbootcmds\fR takes care of starting up \fBlogin\fR
+processes.
+.PP
+For more information see the man page for \fBboot\fR.
+
+.SH KEYWORDS
+bootstrap, initialization, startup, boot
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 10
+a10 10
+' Copyright 1989 Regents of the University of California
+' Permission to use, copy, modify, and distribute this
+' documentation for any purpose and without fee is hereby
+' granted, provided that this notice appears in all copies.
+' The University of California makes no representations about
+' the suitability of this material for any purpose.  It is
+' provided "as is" without express or implied warranty.
+' 
+' $Header: /sprite/lib/forms/RCS/proto.man,v 1.3 89/01/09 11:43:01 ouster Exp $ SPRITE (Berkeley)
+' 
+d18 18
+a35 1
+\fBinitsprite\fR
+d47 1
+a47 1
+\fBInitsprite\fR looks first for a file \fB/local/bootBin/csh\fR;
+d49 1
+a49 1
+command script in \fB/local/diskcmds\fR.  The purpose of \fBdiskcmds\fR
+d51 1
+a51 1
+the kernel will load the prefix for \fB/local\fR before invoking
+d54 1
+a54 1
+The main initialization script is in the file \fB/bootcmds\fR.
+d59 2
+a60 2
+checks for this file and executes it in preference to \fB/bootcmds\fR.
+Typically, the machine-dependent script will source \fB/bootcmds\fR
+d63 1
+a63 1
+If \fBinitsprite\fR successfully executes \fB/bootcmds\fR (or a
+d68 2
+d72 1
+a72 1
+bootstrap, initialization, startup
+@

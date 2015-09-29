@@ -1,0 +1,379 @@
+head     9.1;
+branch   ;
+access   ;
+symbols  ds3100:9.1 sun3:9.1 sun4nw:9.1 symm:9.1 spur:9.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.1
+date     90.10.08.15.06.39;  author mendel;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.10.33;  author douglis;  state Stable;
+branches ;
+next     8.2;
+
+8.2
+date     89.08.21.15.29.29;  author mendel;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.08.15.18.42.54;  author rab;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.20.45;  author douglis;  state Stable;
+branches ;
+next     7.0;
+
+7.0
+date     88.11.07.14.47.35;  author brent;  state Exp;
+branches ;
+next     6.5;
+
+6.5
+date     88.10.19.14.59.35;  author brent;  state Exp;
+branches ;
+next     6.4;
+
+6.4
+date     88.10.19.14.57.26;  author brent;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.10.19.13.54.53;  author brent;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.10.14.12.16.32;  author brent;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.10.10.11.26.36;  author douglis;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.16.40;  author brent;  state Stable;
+branches ;
+next     1.3;
+
+1.3
+date     88.08.03.17.20.43;  author mlgray;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.04.11.18.17.10;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.04.10.34.48;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Definitions for the file migration module
+@
+
+
+9.1
+log
+@Changed file name to fsrmtMigrate.h
+Fixed includes to use <> rather than "", added functions prototypes, and
+removed lint.
+@
+text
+@/*
+ * fsrmtMigrate.h --
+ *
+ *	Declarations for RMT file migration routines.
+ *
+ * Copyright 1987, 1988 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/fs.mendel/RCS/fsRmtMigrate.h,v 1.1 90/01/16 17:11:33 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+ */
+
+#ifndef _FSRMTMIGRATE
+#define _FSRMTMIGRATE
+
+#include <fsNameOps.h>
+#include <fsrmtNameOpsInt.h>
+extern Boolean fsio_MigDebug;	/* enable migration debugging statements? */
+
+/*
+ * The following record defines what parameters the I/O server returns
+ * after being told about a migration.
+ */
+typedef struct FsrmtMigrateReply {
+    int flags;		/* New stream flags, the FS_RMT_SHARED bit is modified*/
+    int offset;		/* New stream offset */
+} FsrmtMigrateReply;
+
+/*
+ * This structure is for byte-swapping the rpc parameters correctly.
+ */
+typedef struct  FsrmtMigParam {
+    int			dataSize;
+    FsrmtUnionData		data;
+    FsrmtMigrateReply	migReply;
+} FsrmtMigParam;
+
+#endif _FSRMTMIGRATE
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d2 1
+a2 1
+ * fsRmtMigrate.h --
+d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fsrmt/RCS/fsRmtMigrate.h,v 8.2 89/08/21 15:29:29 mendel Exp Locker: douglis $ SPRITE (Berkeley)
+d22 2
+a23 2
+#include "fsNameOps.h"
+#include "fsNameOpsInt.h"
+@
+
+
+8.2
+log
+@Break up fs into many modules.    
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsMigrate.h,v 7.0 88/11/07 14:47:35 brent Exp $ SPRITE (Berkeley)
+@
+
+
+8.1
+log
+@Commented #endif labels.
+@
+text
+@d2 1
+a2 1
+ * fsMigrate.h --
+d4 1
+a4 1
+ *	Declarations for file migration routines.
+d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsMigrate.h,v 8.0 88/11/11 18:20:45 douglis Stable Locker: rab $ SPRITE (Berkeley)
+d19 2
+a20 2
+#ifndef _FSMIGRATE
+#define _FSMIGRATE
+d22 1
+d24 1
+a24 13
+/*
+ * Structure that is transfered when a process is migrated.
+ */
+
+typedef struct FsMigInfo {
+    Fs_FileID	streamID;	/* Stream identifier. */
+    Fs_FileID    ioFileID;     	/* I/O handle for the stream. */
+    Fs_FileID	nameID;		/* ID of name of the file.  Used for attrs. */
+    Fs_FileID	rootID;		/* ID of the root of the file's domain. */
+    int		srcClientID;	/* Client transfering from. */
+    int         offset;     	/* File access position. */
+    int         flags;      	/* Usage flags from the stream. */
+} FsMigInfo;
+a25 2
+extern Boolean fsMigDebug;	/* enable migration debugging statements? */
+
+d30 1
+a30 1
+typedef struct FsMigrateReply {
+d33 1
+a33 1
+} FsMigrateReply;
+d38 1
+a38 1
+typedef struct  FsMigParam {
+d40 3
+a42 3
+    FsUnionData		data;
+    FsMigrateReply	migReply;
+} FsMigParam;
+d44 1
+a44 7
+/*
+ * File migration utilities.
+ */
+extern ReturnStatus	FsMigrateUseCounts();
+extern void		FsIOClientMigrate();
+extern ReturnStatus	FsNotifyOfMigration();
+#endif /* _FSMIGRATE */
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsMigrate.h,v 7.0 88/11/07 14:47:35 brent Exp Locker: douglis $ SPRITE (Berkeley)
+d63 1
+a63 1
+#endif _FSMIGRATE
+@
+
+
+7.0
+log
+@New version for conversion to new C library
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsMigrate.h,v 6.5 88/10/19 14:59:35 brent Exp Locker: brent $ SPRITE (Berkeley)
+@
+
+
+6.5
+log
+@Added dependent include
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsMigrate.h,v 6.4 88/10/19 14:57:26 brent Exp Locker: brent $ SPRITE (Berkeley)
+@
+
+
+6.4
+log
+@Moved migration RPC parameters/reply definitions here because
+they are used by a stream migration routine in fsStream.c
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsMigrate.h,v 6.3 88/10/19 13:54:53 brent Exp $ SPRITE (Berkeley)
+d22 1
+@
+
+
+6.3
+log
+@Added externs
+@
+text
+@d16 1
+a16 1
+ * $Header: fsMigrate.h,v 6.2 88/10/14 12:16:32 brent Exp $ SPRITE (Berkeley)
+d37 18
+@
+
+
+6.2
+log
+@FsFileID FsUserID change
+@
+text
+@d16 1
+a16 1
+ * $Header: fsMigrate.h,v 6.1 88/10/10 11:26:36 douglis Exp $ SPRITE (Berkeley)
+d39 1
+a39 1
+ * File migration routines.
+d41 3
+@
+
+
+6.1
+log
+@removed data field from MigInfo struct.  Added declaration for fsMigDebug.
+@
+text
+@d16 1
+a16 1
+ * $Header: fsMigrate.h,v 6.0 88/08/11 12:16:40 brent Stable $ SPRITE (Berkeley)
+d27 4
+a30 4
+    FsFileID	streamID;	/* Stream identifier. */
+    FsFileID    ioFileID;     	/* I/O handle for the stream. */
+    FsFileID	nameID;		/* ID of name of the file.  Used for attrs. */
+    FsFileID	rootID;		/* ID of the root of the file's domain. */
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d6 1
+a6 1
+ * Copyright 1987 Regents of the University of California
+d16 1
+a16 1
+ * $Header: fsMigrate.h,v 1.3 88/08/03 17:20:43 mlgray Exp $ SPRITE (Berkeley)
+a33 1
+    char	data[32];	/* Should be a union! Do we even need it! */
+d35 2
+@
+
+
+1.3
+log
+@works on Spur.
+@
+text
+@d16 1
+a16 1
+ * $Header: fsMigrate.h,v 1.2 88/04/11 18:17:10 brent Exp $ SPRITE (Berkeley)
+@
+
+
+1.2
+log
+@Added rootID to migration state.
+@
+text
+@d16 1
+a16 1
+ * $Header: fsMigrate.h,v 1.1 88/04/04 10:34:48 brent Exp $ SPRITE (Berkeley)
+a35 1
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+ * $Header: fsFile.h,v 5.7 87/11/02 10:43:56 brent Exp $ SPRITE (Berkeley)
+d30 1
+@

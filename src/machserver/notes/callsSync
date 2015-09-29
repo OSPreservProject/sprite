@@ -1,0 +1,679 @@
+# Replace master locks and monitor locks with C Threads mutex variables.
+# In the kernel replace event-based waiting with waiting on C Threads
+# condition variables.  
+
+# For user locks and condition variables, we would like to maintain binary
+# compatibility with existing Sprite code.  This could get ugly, though, given
+# that we want to ditch the event-based internals.  So, we'll punt on binary
+# compatibility (which should be okay, since there are very few programs that
+# use Sprite synchronization calls) and change Sprite primitives to C Threads
+# primitives (in some almost source-compatible way).  The "almost" refers to
+# not supporting the "wakeup on signal" flag.  We will assume this flag isn't
+# required by user programs and deal with problems that occur if this
+# assumption is wrong (hopefully by fixing the user code).
+
+# There will also be a general per-process condition variable that can be used
+# for waiting on remote hosts.  This will also be the condition variable that
+# replaces the PCB address in the event-based code.
+
+# For signals, probably don't need extra bits in proc syncFlags.  Instead,
+# just check when the process comes back from the context switch whether
+# there's a signal pending.  This does introduce a race condition, in case a
+# signal happens at about the same time the condition is woken up: you won't
+# know which event actually caused the wakeup to occur.  But do you care?
+# (The alternative is to add a "wakeup on signal" bit and a "was woken by
+# signal" bit to the proc syncFlags.)
+# Add a field pointing to the condition that the process is
+# waiting on.
+
+LOCK_MONITOR			# keep.
+	dev/{devNet.c,devTty.c}
+	dev/symm.md/devScedTape.c
+	dev/sun3.md/devMouse.c
+	fscache/{fscacheOps.c,fscacheBlocks.c,fscacheReadAhead.c}
+	fsconsist/{fsconsistIOClient.c,fsconsistCache.c}
+	fsdm/fsdmDisk.c
+	fsio/{fsioPipe.c,fsioStream.c}
+	fslcl/fslclNameHash.c
+	fspdev/fspdevSrv.c
+	fsprefix/fsprefixOps.c
+	fsrmt/fsrmtFile.c
+	fsutil/{fsutilHandle.c,fsutilNotify.c,fsutilHandleScavenge.c}
+	fsutil/fsutilRecovery.c
+	lfs/{lfsFileLayout.c,lfsLoad.c,lfsSeg.c,lfsMem.c,lfsCacheBackend.c}
+	lfs/lfsDirOpLog.c
+	mem/memory.c
+	net/netArp.c
+	ofs/{ofsAlloc.c,ofsIo.c,ofsFileDesc.c}
+	proc/{procDebug.c,procExit.c,procTable.c,procTimer.c,procRecovery.c}
+	proc/{procEnviron.c,procMigrate.c,procFamily.c}
+	prof/profProfil.c
+	recov/{recovery.c,recovProc.c}
+	rpc/{rpcSrvStat.c,rpcHistogram.c,rpcCltStat.c}
+	sig/signals.c
+	sync/syncSysV.c
+	utils/traceLog.c
+	vm/{vmCOW.c,vmSeg.c,vmStack.c,vmPage.c,vmMap.c}
+	vm/symm.md/vmSymm.c,
+	vm/{vmMigrate.c,vmServer.c,vmSubr.c,vmSwapDir.c,vmPrefetch.c}
+MASTER_LOCK			# call Sync_GetLock.
+	mach/symm.md/machMon.c
+	dev/{devNet.c,devQueue.c}
+	dev/ds5000.md/devDC7085.c
+	dev/ds5000.md/devGraphics.c
+	dev/symm.md/{devDynixBlockDevice.c,devScedTape.c}
+	dev/symm.md/{devConsole.c,symm.md/devScedConsole.c}
+	dev/devSCSIDisk.c
+	dev/sun3.md/{devSCSI3.c,devZ8530.c,devSCSI0.c,devJaguarHBA.c}
+	dev/sun3.md/devXylogics450.c
+	dev/sun4.md/{devJaguarHBA.c,devSCSI0.c,devSCSI3.c,devXylogics450.c}
+	dev/sun4.md/devZ8530.c
+	dev/ds3100.md/{devDC7085.c,devSII.c,devGraphics.c}
+	dev/devSyslog.c
+	dev/{devBlockDevice.c,devScsiDevice.c,devDiskStats.c}
+	lfs/lfsSeg.c
+	net/ds5000.md/netLE.c
+	net/ds5000.md/netLEXmit.c
+	net/netRoute.c
+	net/sun3.md/{netLE.c,netUltra.c,netLEXmit.c}
+	net/sun4.md/netUltra.c
+	net/netArp.c
+	net/netCode.c
+	proc/procTable.c
+	proc/procServer.c
+	prof/sun3.md/_mcount.c
+	prof/sun4.md/_mcount.c
+	prof/ds3100.md/_mcount.c
+	prof/ds5000.md/_mcount.c
+	rpc/{rpcClient.c,rpcInit.c,rpcDaemon.c,rpcServer.c,rpcCall.c}
+	rpc/rpcOutput.c
+	sched/schedQueue.c
+	sched/schedule.c
+	sync/{syncSleep.c,syncLock.c,sync.h,syncUser.c,syncLockStat.c}
+	sys/sysPrintf.c
+	timer/timerClock.c
+	timer/timerQueue.c
+	utils/trace.c
+	vm/sun3.md/vmSun.c
+	vm/sun4.md/vmSun.c
+	vm/vmTrace.c
+	vm/ds3100.md/vmPmax.c
+	vm/ds5000.md/vm3max.c
+MASTER_UNLOCK			# use Sync_Unlock.
+	mach/symm.md/machMon.c
+	dev/devNet.c
+	dev/devQueue.c
+	dev/ds5000.md/devDC7085.c
+	dev/ds5000.md/devGraphics.c
+	dev/symm.md/devDynixBlockDevice.c
+	dev/symm.md/devScedTape.c
+	dev/symm.md/devConsole.c
+	dev/symm.md/devScedConsole.c
+	dev/devSCSIDisk.c
+	dev/sun3.md/devSCSI3.c
+	dev/sun3.md/devZ8530.c
+	dev/sun3.md/devSCSI0.c
+	dev/sun3.md/devJaguarHBA.c
+	dev/sun3.md/devXylogics450.c
+	dev/sun4.md/devJaguarHBA.c
+	dev/sun4.md/devSCSI0.c
+	dev/sun4.md/devSCSI3.c
+	dev/sun4.md/devXylogics450.c
+	dev/sun4.md/devZ8530.c
+	dev/ds3100.md/devDC7085.c
+	dev/ds3100.md/devSII.c
+	dev/ds3100.md/devGraphics.c
+	dev/devSyslog.c
+	dev/devBlockDevice.c
+	dev/devScsiDevice.c
+	dev/devDiskStats.c
+	lfs/lfsSeg.c
+	net/ds5000.md/netLE.c
+	net/ds5000.md/netLEXmit.c
+	net/netRoute.c
+	net/sun3.md/netLE.c
+	net/sun3.md/netUltra.c
+	net/sun3.md/netLEXmit.c
+	net/sun4.md/netUltra.c
+	net/netArp.c
+	net/netCode.c
+	proc/procTable.c
+	proc/procRemote.c
+	proc/procServer.c
+	prof/sun3.md/_mcount.c
+	prof/sun4.md/_mcount.c
+	prof/ds3100.md/_mcount.c
+	prof/ds5000.md/_mcount.c
+	rpc/rpcClient.c
+	rpc/rpcInit.c
+	rpc/rpcDaemon.c
+	rpc/rpcServer.c
+	rpc/rpcCall.c
+	rpc/rpcOutput.c
+	sched/schedQueue.c
+	sched/schedule.c
+	sync/syncSleep.c
+	sync/syncLock.c
+	sync/sync.h
+	sync/syncUser.c
+	sync/syncLockStat.c
+	sys/sysPrintf.c
+	timer/timerClock.c
+	timer/timerQueue.c
+	utils/trace.c
+	vm/sun3.md/vmSun.c
+	vm/sun4.md/vmSun.c
+	vm/vmTrace.c
+	vm/ds3100.md/vmPmax.c
+	vm/ds5000.md/vm3max.c
+SYNC_MAX_PRIOR			# parameter for lock instrumentation.  keep.
+	sync/syncTypes.h
+	sync/syncLock.h
+	sync/syncLockStat.c
+SYNC_WAIT_COMPLETE		# (companion to SYNC_WAIT_REMOTE).  keep.
+	sync/syncLock.c
+	sync/syncTypes.h
+SYNC_WAIT_REMOTE		# (waiting for a remote machine to do
+				# something).  keep.
+	sync/syncLock.c
+	sync/syncTypes.h
+SyncEventWaitInt		# delete.
+	sync/syncSleep.c
+	sync/syncLock.c
+	sync/syncUser.c
+	sync/syncInt.h
+SyncEventWakeupInt		# delete.
+	sync/syncLock.c
+	sync/syncUser.c
+	sync/syncInt.h
+Sync_AddPrior			# lock instrumentation.  keep.
+	proc/procTable.c
+Sync_Broadcast			# Initialize the condition variable if
+				# necessary, and call condition_broadcast.
+	Include/user/sync.h
+	fscache/{fscacheReadAhead,fscacheBlocks}.c
+	fsconsist/fsconsistCache.c
+	fsdm/fsdmDisk.c
+	fspdev/fspdevSrv.c
+	fsprefix/fsprefixOps.c
+	fsutil/{fsutilHandle,fsutilRecovery}.c
+	lfs/{lfsDirOpLog,lfsFileLayout,lfsSeg,lfsMem}.c
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+	proc/{procDebug,procExit,procTable,procRecovery,procMigrate}.c
+	proc/procFamily.c
+	recov/recovery.c
+	vm/{vmCOW,vmSeg,vmPage,vmMap,vmServer,vmPrefetch}.c
+Sync_Condition			# user and kernel-level condition variable.
+				# Replace the "waiting" flag with a "struct
+				# condition."  Also need a flag telling
+				# whether the condition has been initialized
+				# yet.
+	Include/user/sync.h
+	dev/symm.md/{devDynixBuf,devScedTape}.h
+	dev/symm.md/devDynixBlockDevice.c
+	dev/symm.md/devScedConsole.h
+	dev/sun3.md/{devJaguarHBA,devXylogics450}.c
+	dev/sun4.md/{devJaguarHBA,devXylogics450}.c
+	dev/devBlockDevice.c
+	dev/devScsiDevice.c
+	fs/fs.h
+	fscache/fscache.h
+	fscache/fscacheBlocks.c
+	fsconsist/fsconsist.h
+	fsdm/fsdm.h
+	fspdev/fspdevInt.h
+	fsprefix/fsprefix.h
+	fsutil/fsutil.h
+	fsutil/fsutilHandle.c
+	lfs/lfsInt.h
+	lfs/lfsMem.c
+	lfs/lfsDirLogInt.h
+	net/sun3.md/netUltra.c
+	net/netArp.h
+	net/sun4.md/netUltra.c
+	net/netUltraInt.h
+	proc/procDebug.c
+	proc/procTypes.h
+	proc/{procMisc,procRecovery,procMigrate,procFamily}.c
+	proc/procServer.h
+	recov/recovery.c
+	rpc/{rpcClient,rpcServer}.h
+	rpc/{rpcDaemon,rpcCall}.c
+	sig/signals.c
+	vm/vmSeg.c
+	vm/{vmInt,vm}.h
+	vm/{vmPage,vmMap,vmServer}.c
+Sync_EventWait			# (gone)
+	recov/recovProc.c
+	sync/syncLock.c
+	sync/sync.h
+Sync_EventWakeup		# (gone)
+	recov/recovProc.c
+Sync_GetLock			# (obtains monitor locks)  Use mutex_try_lock
+				# so you can keep track of misses.  Will need
+				# to check for initialization of the lock?
+				# Set process state before & after obtaining
+				# lock.
+	dev/symm.md/devDynixBlockDevice.c
+	vm/lock.h
+Sync_GetLockStats		# keep.
+	sys/sysCalls.c
+Sync_GetWaitToken		# keep.
+	fs/fsSelect.c
+	fs/fsStreamOps.c
+	proc/procExit.c
+	sync/syncLock.c
+	sync/sync.h
+Sync_Init			# dike out the event-list initialization.
+	main/sun3.md/mainInit.c
+	main/sun4.md/mainInit.c
+	main/ds3100.md/mainInit.c
+	main/symm.md/mainInit.c
+Sync_Instrument			# (per-processor lock instrumentation).  keep.
+	sys/sysCalls.c
+Sync_IsRegistered		# keep.
+	sync/sync.h
+Sync_KernelLock			# replace "inUse" and "waiting" with a struct
+				# mutex.  Flush "class".  Keep remaining
+				# fields.
+Sync_Lock			# (see Sync_KernelLock and Sync_UserLock).
+	Include/user/sync.h
+	dev/devNet.c
+	dev/tty.h
+	dev/devTty.c
+	dev/symm.md/devDynixBuf.h
+	dev/symm.md/devScedTape.c
+	fs/fsSelect.c
+	fs/sizeof/main.c
+	fs/fsStreamOps.c
+	fscache/fscache.h
+	fscache/fscacheBlocks.c
+	fsconsist/fsconsist.h
+	fsconsist/fsconsistIOClient.c
+	fsdm/fsdmDisk.c
+	fsio/{fsioPipe,fsioStream}.c
+	fslcl/fslclNameHash.c
+	fspdev/fspdevInt.h
+	fsprefix/fsprefixOps.c
+	fsrmt/fsrmtFile.c
+	fsutil/fsutil.h
+	fsutil/{fsutilHandle,fsutilNotify,fsutilHandleScavenge}.c
+	libc/MemData.c
+	libc/memInt.h
+	lfs/lfsInt.h
+	lfs/lfsMem.c
+	mem/memory.c
+	net/netArp.c
+	ofs/ofs.h
+	ofs/ofsIo.c
+	proc/{procDebug,procExit,procTable,procTimer,procMisc,procRecovery}.c
+	proc/{procMigrate,procEnviron,procFamily}.c
+	prof/profProfil.c
+	recov/{recovery,recovProc}.c
+	rpc/rpcHistogram.h
+	rpc/{rpcSrvStat,rpcCltStat}.c
+	sig/signals.c
+	sig/sigInt.h
+	sys/sysSysCall.c
+	vm/vmStack.c
+	vm/lock.h
+	vm/{vmSwapDir,vmSubr}.c
+Sync_LockClear			# (deregisters a lock).  keep.
+	fscache/{fscacheReadAhead,fscacheBlocks}.c
+	fsconsist/fsconsistCache.c
+	fspdev/{fspdevPfs,fspdevSrv}.c
+	fsutil/fsutilRecovery.c
+	lfs/lfsMain.c
+	ofs/ofsDisk.c
+Sync_LockInitDynamic		# (initializes a lock at run time).  keep.
+	dev/symm.md/devDynixBlockDevice.c
+	fscache/{fscacheReadAhead,fscacheBlocks}.c
+	fsconsist/{fsconsistIOClient,fsconsistCache}.c
+	fspdev/fspdevSrv.c
+	fsutil/fsutilRecovery.c
+	lfs/{lfsFileLayout,lfsLoad,lfsMain,lfsCacheBackend}.c
+	net/netArp.c
+	ofs/{ofsAlloc,ofsFileDesc}.c
+	proc/{procDebug,procTable,procRecovery,procFamily}.c
+	recov/{recovery,recovProc}.c
+	rpc/rpcHistogram.c
+	sig/signals.c
+	vm/{vmStack,vmSubr}.c
+Sync_LockInitStatic		# (initializes a lock at compile time).  keep.
+	dev/{devNet,devTty}.c
+	dev/symm.md/devScedTape.c
+	fscache/fscacheBlocks.c
+	fsdm/fsdmDisk.c
+	fsio/{fsioPipe,fsioStream}.c
+	fslcl/fslclNameHash.c
+	fsprefix/fsprefixOps.c
+	fsrmt/fsrmtFile.c
+	fsutil/{fsutilHandle,fsutilNotify,fsutilHandleScavenge}.c
+	lfs/lfsMem.c
+	mem/memory.c
+	ofs/ofsIo.c
+	proc/{procExit,procTimer,procMigrate,procEnviron}.c
+	prof/profProfil.c
+	rpc/{rpcSrvStat,rpcCltStat}.c
+	vm/vmSwapDir.c
+Sync_LockRegister		# (registration is used for stats (and
+				# debugging?)).  keep.
+	proc/procTable.c
+Sync_LockStat			# lock instrumentation; keep
+	Include/user/sync.h
+	sync/syncLockStat.c
+Sync_LockStatInit		# (initializes the lock stats data
+				# structures).  keep.
+	main/sun3.md/mainInit.c
+	main/sun4.md/mainInit.c
+	main/ds3100.md/mainInit.c
+	main/symm.md/mainInit.c
+Sync_MasterBroadcast		# call Sync_Broadcast.
+	dev/symm.md/{devScedTape,devDynixBlockDevice,devScedConsole}.c
+	dev/sun3.md/{devJaguarHBA,devXylogics450}.c
+	dev/sun4.md/{devJaguarHBA,devXylogics450}.c
+	dev/devBlockDevice.c
+	dev/devScsiDevice.c
+	net/netArp.c
+	proc/procServer.c
+	rpc/{rpcClient,rpcDaemon,rpcServer,rpcCall}.c
+Sync_MasterWait			# call Sync_Wait.
+	dev/symm.md/{devScedTape,devDynixBlockDevice,devConsole}.c
+	dev/sun3.md/{devJaguarHBA,devXylogics450}.c
+	dev/sun4.md/{devJaguarHBA,devXylogics450}.c
+	dev/devBlockDevice.c
+	dev/devScsiDevice.c
+	lfs/lfsSeg.c
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+	net/netArp.c
+	proc/procServer.c
+	rpc/{rpcClient,rpcDaemon,rpcServer,rpcCall}.c
+Sync_PrintStat			# (print sync module stats).  keep.
+	sys/sysCalls.c
+Sync_ProcWait			# (wait because a remote host told us to
+				# wait).  change to sleep on per-process
+				# condition variable.  Check for signal.
+	fs/{fsSelect,fsStreamOps}.c
+	proc/procExit.c
+Sync_ProcWakeup			# (wakeup a process that is waiting on a
+				# remote host).  change to broadcast on
+				# per-process condition variable.
+	fs/fsSelect.c
+	fsutil/fsutilNotify.c
+Sync_RecordHit			# (stats).  keep
+	proc/procTable.c
+Sync_RecordMiss			# (stats).  keep.
+	proc/procTable.c
+Sync_RegisterInt		# (does real work of Sync_LockRegister).  Make
+				# sure there's a mutex to avoid race between
+				# concurrent initializations of the same lock.
+Sync_RemoteNotify		# keep.
+	fsutil/fsutilNotify.c
+	proc/procExit.c
+Sync_RemoteNotifyStub		# keep.
+	rpc/rpcCall.h
+	rpc/rpcStubs.c
+Sync_RemoteWaiter		# keep.
+	fs/{fsSelect,fsPageOps,fsStreamOps}.c
+	fscache/fscache.h
+	fscache/{fscacheOps,fscacheReadAhead}.c
+	fsdm/fsdm.h
+	fsdm/fsdmDisk.c
+	fsio/fsio.h
+	fsio/fsioDevice.c
+	fsio/fsioDevice.h
+	fsio/fsioFile.c
+	fsio/fsioFile.h
+	fsio/{fsioLock,fsioPipe}.c
+	fsio/fsioPipe.h
+	fslcl/fslclLookup.c
+	fspdev/fspdevSrv.c
+	fspdev/fspdevInt.h
+	fspdev/fspdevControl.c
+	fsrmt/fsrmt.h
+	fsrmt/{fsrmtFile,fsrmtIO}.c
+	fsrmt/{fsrmtInt,fsrmtDomain}.h
+	fsutil/fsutil.h
+	fsutil/fsutilNotify.c
+	proc/procExit.c
+	rpc/rpcDebug.c
+Sync_RemoveWaiter		# delete (unused and hard to implement).
+	sync/syncLock.c
+	sync/sync.h
+Sync_ResetLockStats		# keep.
+	sys/sysCalls.c
+Sync_SemClear			# call Sync_LockClear.
+	dev/devScsiDevice.c
+Sync_SemInitDynamic		# call Sync_LockInitDynamic.
+	dev/devNet.c
+	dev/symm.md/{devScedTape,devDynixBlockDevice,devScedConsole}.c
+	dev/sun3.md/{devSCSI3,devSCSI0,devJaguarHBA,devXylogics450}.c
+	dev/sun4.md/{devJaguarHBA,devSCSI0,devSCSI3,devXylogics450}.c
+	dev/ds3100.md/{devSII,devGraphics}.c
+	dev/devBlockDevice.c
+	dev/{devScsiDevice,devDiskStats}.c
+	net/{netCode,netArp}.c
+	proc/{procTable,procServer}.c
+	rpc/rpcInit.c
+	sched/schedule.c
+	timer/{timerClock,timerQueue}.c
+	vm/sun3.md/vmSun.c
+	vm/sun4.md/vmSun.c
+	vm/ds3100.md/vmPmax.c
+Sync_SemInitStatic		# use Sync_LockInitStatic.
+	dev/sun3.md/devZ8530.c
+	dev/sun4.md/devZ8530.c
+	dev/ds3100.md/devDC7085.c
+	dev/devSyslog.c
+	dev/devDiskStats.c
+	net/netRoute.c
+	prof/sun3.md/_mcount.c
+	prof/sun4.md/_mcount.c
+	rpc/{rpcInit,rpcDaemon,rpcServer,rpcCall}.c
+	sys/sysPrintf.c
+	utils/trace.c
+	vm/vmTrace.c
+Sync_SemRegister		# use Sync_LockRegister.
+	dev/devSyslog.c
+	proc/procServer.c
+	prof/sun3.md/_mcount.c
+	prof/sun4.md/_mcount.c
+	rpc/{rpcInit,rpcDaemon}.c
+	sched/schedule.c
+	utils/trace.c
+	vm/vmTrace.c
+Sync_Semaphore			# make equivalent to a Sync_KernelLock.
+	mach/symm.md/machMon.c
+	dbg/sun4.md/dbgMain.c
+	dbg/sun3.md/dbgMain.c
+	dbg/ds3100.md/dbgMain.c
+	dev/devNet.c
+	dev/devQueue.h
+	dev/devQueue.c
+	dev/symm.md/{devDynixBuf,devScedTape}.h
+	dev/symm.md/devDynixBlockDevice.c
+	dev/symm.md/devScedConsole.h
+	dev/sun3.md/{devSCSI3,devZ8530,devSCSI0,devJaguarHBA,devXylogics450}.c
+	dev/sun4.md/{devJaguarHBA,devSCSI0,devSCSI3,devXylogics450,devZ8530}.c
+	dev/devDiskStats.h
+	dev/ds3100.md/{devDC7085,devSII,devGraphics}.c
+	dev/devSyslog.c
+	dev/devBlockDevice.c
+	dev/{devScsiDevice,devDiskStats}.c
+	net/{netRoute,netCode}.c
+	net/net.h
+	net/sun3.md/{netLEXmit,netIEXmit,netUltra}.c
+	net/netArp.h
+	net/sun4.md/{netIEXmit,netUltra}.c
+	net/ds3100.md/netLEXmit.c
+	net/netInt.h
+	net/netTypes.h
+	net/netArp.c
+	proc/procTypes.h
+	proc/{procTable,procMisc,procServer}.c
+	prof/sun3.md/_mcount.c
+	prof/sun3.md/timer.h
+	prof/sun4.md/_mcount.c
+	rpc/rpcPacket.h
+	rpc/rpcInit.c
+	rpc/{rpcClient,rpcServer}.h
+	rpc/{rpcDaemon,rpcServer,rpcCall,rpcOutput}.c
+	sched/sched.h
+	sched/schedule.c
+	sys/sysPrintf.c
+	timer/{timerInt,timer}.h
+	timer/{timerClock,timerQueue}.c
+	utils/trace.c
+	vm/sun3.md/vmSun.c
+	vm/sun4.md/vmSun.c
+	vm/vmTrace.c
+	vm/ds3100.md/vmPmax.c
+Sync_SemctlStub			# (System V semaphores) keep.
+	mach/ds3100.md/machUNIXSyscall.c
+	sys/sysSysCall.c
+Sync_SemgetStub			# (System V semaphores) keep.
+	mach/ds3100.md/machUNIXSyscall.c
+	sys/sysSysCall.c
+Sync_SemopStub			# (System V semaphores) keep.
+	mach/ds3100.md/machUNIXSyscall.c
+	sys/sysSysCall.c
+Sync_SetWaitToken		# keep.
+	proc/procExit.c
+	sync/syncLock.c
+	sync/sync.h
+Sync_SlowBroadcast		# Delete.  Convert the caller to use a 
+				# condition variable and call Sync_Broadcast
+				# (hopefully Mary or JHH will do this for you).
+	net/netCode.c
+Sync_SlowBroadcastStub		# user-level sync.  delete (replace with
+				# initialization check & condition_broadcast
+				# call in library).
+	mach/symm.md/machSyscallTrace.c
+	sys/sysSysCall.c
+Sync_SlowLockStub		# user-level sync.  delete (replace with
+				# initialization check & mutex_lock call in
+				# library).
+	mach/symm.md/machSyscallTrace.c
+	sys/sysSysCall.c
+Sync_SlowMasterWait		# Delete.  Convert the caller to use a
+				# condition variable and call Sync_Wait
+				# (hopefully Mary will do this for you).
+				# (Actually may want to define a variant of
+				# Sync_Wait in which the caller explicitly
+				# specifies the lock.)   
+	net/netCode.c
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+Sync_SlowWait			# (mostly invoked via Sync_Wait).  check for
+				# initialization & sleep on the C Threads
+				# condition variable.  Locking takes some
+				# thought.  Check whether got signal.  Set
+				# process state before & after sleeping.
+	Include/user/sync.h
+	fscache/{fscacheReadAhead,fscacheBlocks}.c
+	fsconsist/fsconsistCache.c
+	fsdm/fsdmDisk.c
+	fspdev/fspdevSrv.c
+	fsprefix/fsprefixOps.c
+	fsutil/{fsutilHandle,fsutilRecovery}.c
+	lfs/{lfsDirOpLog,lfsFileLayout,lfsSeg,lfsMem}.c
+	proc/{procDebug,procExit,procTable,procRecovery,procMigrate}.c
+	proc/procFamily.c
+	recov/{recovery.c,recovProc.c}
+	sig/signals.c
+	utils/traceLog.c
+	vm/{vmCOW,vmSeg,vmPage,vmMap,vmServer,vmSubr}.c
+Sync_SlowWaitStub		# user-level sync.  delete (replace with
+				# initialization check & condition_wait call
+				# in library)
+	mach/symm.md/machSyscallTrace.c
+	sys/sysSysCall.c
+Sync_StoreDbgInfo		# keep.
+	proc/procTable.c
+Sync_Unlock			# Call mutex_unlock.  Should verify that the
+				# lock is initialized.
+	dev/symm.md/devDynixBlockDevice.c
+	vm/lock.h
+Sync_UnlockAndSwitch		# Use mutex_unlock to free the given lock
+				# (first verifying that it's initialized?).
+				# Don't use Proc_ContextSwitch, because the
+				# process's new state must be set before the
+				# monitor lock is release. (XXX didn't get
+				# this right originally)
+	sync/syncLock.c
+	sync/sync.h
+Sync_UserLock			# (lock type for user programs.)  Replace with
+				# struct mutex & "initialized flag".
+	Include/user/sync.h
+	sync/sync.h
+	sync/syncUser.c
+Sync_WaitTime			# in WaitTimeSubr wait on the per-process
+				# condition variable.
+	mach/symm.md/machSyscallTrace.c
+	fs/{fsInit,fsSelect,fsPageOps}.c
+	lfs/{lfsSeg,lfsCacheBackend}.c
+	main/sun3.md/mainInit.c
+	main/sun4.md/mainInit.c
+	main/ds3100.md/mainInit.c
+	main/symm.md/mainInit.c
+	proc/procExit.c
+	recov/recovProc.c
+	sched/schedule.c
+	sys/{sysCalls,sysSysCall}.c
+Sync_WaitTimeInTicks		# see Sync_WaitTime.
+	sync/syncSleep.c
+	sync/sync.h
+Sync_WaitTimeInterval		# see Sync_WaitTime.
+	sched/schedule.c
+	sync/syncSleep.c
+	sync/sync.h
+Sync_WakeWaitingProcess		# broadcast on whatever condition the process
+				# is waiting for.  Don't set process state,
+				# either here or in ProcessWakeup.
+	proc/procMisc.c
+	sig/signals.c
+	sync/syncLock.c
+	sync/sync.h
+Sync_WakeupProcess		# broadcast on per-process condition variable.
+	sync/syncSleep.c
+	sync/sync.h
+UNLOCK_MONITOR			# keep.
+	dev/{devNet.c,devTty.c}
+	dev/symm.md/devScedTape.c
+	dev/sun3.md/devMouse.c
+	fscache/{fscacheOps.c,fscacheBlocks.c,fscacheReadAhead.c}
+	fsconsist/{fsconsistIOClient.c,fsconsistCache.c}
+	fsdm/fsdmDisk.c
+	fsio/{fsioPipe.c,fsioStream.c}
+	fslcl/fslclNameHash.c
+	fspdev/fspdevSrv.c
+	fsprefix/fsprefixOps.c
+	fsrmt/fsrmtFile.c
+	fsutil/{fsutilHandle.c,fsutilNotify.c,fsutilHandleScavenge.c}
+	fsutil/fsutilRecovery.c
+	lfs/{lfsFileLayout.c,lfsLoad.c,lfsSeg.c,lfsMem.c,lfsCacheBackend.c}
+	lfs/lfsDirOpLog.c
+	mem/memory.c
+	net/netArp.c
+	ofs/{ofsAlloc.c,ofsIo.c,ofsFileDesc.c}
+	proc/{procDebug.c,procExit.c,procTable.c,procTimer.c,procRecovery.c}
+	proc/{procEnviron.c,procMigrate.c,procFamily.c}
+	prof/profProfil.c
+	recov/{recovery.c,recovProc.c}
+	rpc/{rpcSrvStat.c,rpcHistogram.c,rpcCltStat.c}
+	sig/signals.c
+	sync/syncSysV.c
+	utils/traceLog.c
+	vm/{vmCOW.c,vmSeg.c,vmStack.c,vmPage.c,vmMap.c,vmMigrate.c,vmServer.c}
+	vm/{vmSubr.c,vmSwapDir.c,vmPrefetch.c}
+	vm/symm.md/vmSymm.c,
+UNLOCK_MONITOR_AND_SWITCH	# see Sync_UnlockAndSwitch
+	proc/procExit.c
+	sync/sync.h
+
+Local Variables:
+mode: xref
+fill-column: 78
+End:

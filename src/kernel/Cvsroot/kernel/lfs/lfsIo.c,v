@@ -1,0 +1,435 @@
+head     1.8;
+branch   ;
+access   ;
+symbols  ds3100:1.8 sun3:1.8 sun4nw:1.7 symm:1.7 spur:1.7;
+locks    ; strict;
+comment  @ * @;
+
+
+1.8
+date     92.03.19.17.31.56;  author jhh;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     91.07.26.17.18.48;  author mendel;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     91.05.26.15.33.03;  author mendel;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     90.10.19.17.22.51;  author mendel;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.08.02.16.19.31;  author mendel;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.05.30.10.30.46;  author mendel;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.05.25.15.33.04;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.01.16.17.12.25;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.8
+log
+@Fixed up bug introduced when verification of clean segments was added. 
+A short read is no longer a fatal error at the low level, instead it
+is passed up. Otherwise short reads when looking for the root panic
+the machine.
+@
+text
+@/* 
+ * lfsSegIo.c --
+ *
+ *	Read and write bytes from LFS segments.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/lfs/lfsIo.c,v 1.7 91/07/26 17:18:48 mendel Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <lfs.h>
+#include <lfsInt.h>
+#include <dev.h>
+#include <fs.h>
+#include <devFsOpTable.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LfsReadBytes --
+ *
+ *	Read bytes from an lfs disk.
+ *
+ * Results:
+ *	Error status.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+LfsReadBytes(lfsPtr, diskAddress, numBytes, bufferPtr)
+    Lfs		*lfsPtr;	/* Target file system. */
+    LfsDiskAddr diskAddress;	/* Disk address to read from. */
+    int		numBytes;	/* Number of bytes to read. */
+    char	*bufferPtr;	/* Buffer to read into. */
+{
+    struct args { 
+	Fs_IOParam	readParams;
+	Fs_IOReply	reply;
+    } args;
+    ReturnStatus status;
+    char	smallBuffer[DEV_BYTES_PER_SECTOR];
+    int	offset;
+
+    /*
+     * Check in the seg cache.
+     */
+    if (lfsPtr->segCache.valid) {
+	if (LfsDiskAddrInRange(diskAddress, LfsBytesToBlocks(lfsPtr, numBytes),
+				lfsPtr->segCache.startDiskAddress,
+				lfsPtr->segCache.endDiskAddress)) {
+	    offset = LfsDiskAddrOffset(diskAddress, 
+			lfsPtr->segCache.startDiskAddress);
+	    offset = LfsBlocksToBytes(lfsPtr, offset);
+	    bcopy(lfsPtr->segCache.memPtr + offset, bufferPtr, numBytes);
+	    LFS_STATS_INC(lfsPtr->stats.blockio.segCacheHits);
+	    return SUCCESS;
+	}
+    }
+
+
+    bzero((char *)&args, sizeof(args));
+
+    if (numBytes < DEV_BYTES_PER_SECTOR) { 
+	args.readParams.buffer = smallBuffer;
+	args.readParams.length = DEV_BYTES_PER_SECTOR;
+    } else {
+	args.readParams.buffer = bufferPtr;
+	args.readParams.length = numBytes;
+    }
+    offset = LfsDiskAddrToOffset(diskAddress);
+    args.readParams.offset = offset * DEV_BYTES_PER_SECTOR;
+    args.readParams.flags = 
+    args.readParams.procID = 0;
+    args.readParams.familyID = 0;
+    args.readParams.uid = 0;
+    args.readParams.reserved = 0;
+    status = (*devFsOpTable[DEV_TYPE_INDEX(lfsPtr->devicePtr->type)].read)
+		(lfsPtr->devicePtr, &args.readParams, &args.reply);
+    if (status != SUCCESS) {
+	LfsError(lfsPtr, status, "LfsReadBytes failed");
+    }
+    if (numBytes < DEV_BYTES_PER_SECTOR) {
+	if (args.reply.length != DEV_BYTES_PER_SECTOR) {
+	    /*
+	     * Short read. 
+	     */
+	    return FAILURE;
+	}
+	bcopy(smallBuffer, bufferPtr, numBytes);
+    } else {
+	if (args.reply.length != numBytes) {
+	    /*
+	     * Short read. 
+	     */
+	    return FAILURE;
+	}
+    }
+    LFS_STATS_ADD(lfsPtr->stats.blockio.totalBytesRead, numBytes);
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LfsWriteBytes --
+ *
+ *	Write bytes from an lfs disk.
+ *
+ * Results:
+ *	Error status.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+LfsWriteBytes(lfsPtr, diskAddress, numBytes, bufferPtr)
+    Lfs		*lfsPtr;	/* Target file system. */
+    LfsDiskAddr diskAddress;	/* Disk address to send data. */
+    int		numBytes;	/* Number of bytes to write. */
+    char	*bufferPtr;	/* Buffer to write into. */
+{
+    struct args { 
+	Fs_IOParam	writeParams;
+	Fs_IOReply	reply;
+    } args;
+    char	smallBuffer[DEV_BYTES_PER_SECTOR];
+    ReturnStatus	status;
+    int	offset;
+
+
+    offset = LfsDiskAddrToOffset(diskAddress);
+    bzero((char *)&args, sizeof(args));
+
+    if (numBytes < DEV_BYTES_PER_SECTOR) { 
+	args.writeParams.buffer = smallBuffer;
+	args.writeParams.length = DEV_BYTES_PER_SECTOR;
+	bzero(smallBuffer + numBytes, DEV_BYTES_PER_SECTOR-numBytes);
+	bcopy(bufferPtr, smallBuffer, numBytes);
+    } else {
+	args.writeParams.buffer = bufferPtr;
+	args.writeParams.length = numBytes;
+    }
+    args.writeParams.offset = offset * DEV_BYTES_PER_SECTOR;
+    args.writeParams.flags = 
+    args.writeParams.procID = 0;
+    args.writeParams.familyID = 0;
+    args.writeParams.uid = 0;
+    args.writeParams.reserved = 0;
+    status = (*devFsOpTable[DEV_TYPE_INDEX(lfsPtr->devicePtr->type)].write)
+		(lfsPtr->devicePtr, &args.writeParams, &args.reply);
+    if (status != SUCCESS) {
+	LfsError(lfsPtr, status, "LfsWriteBytes");
+    }
+    if (numBytes < DEV_BYTES_PER_SECTOR) {
+	if (args.reply.length != DEV_BYTES_PER_SECTOR) {
+	    LfsError(lfsPtr, FAILURE, "LfsWriteBytes short write");
+	}
+    } else {
+	if (args.reply.length != numBytes) {
+	    LfsError(lfsPtr, FAILURE, "LfsWriteBytes short write");
+	}
+    }
+    LFS_STATS_ADD(lfsPtr->stats.blockio.totalBytesWritten, numBytes);
+    return status;
+}
+
+@
+
+
+1.7
+log
+@Removed routine Lfs_RereadSummaryInfo from this file and into lfsMain.c
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/lfs/RCS/lfsIo.c,v 1.6 91/05/26 15:33:03 mendel Exp $ SPRITE (Berkeley)";
+d99 4
+a102 1
+	    LfsError(lfsPtr, FAILURE, "LfsReadBytes short read");
+d107 4
+a110 1
+	    LfsError(lfsPtr, FAILURE, "LfsReadBytes short read");
+@
+
+
+1.6
+log
+@Check for short transfer errors.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/lfs/RCS/lfsIo.c,v 1.5 90/10/19 17:22:51 mendel Exp $ SPRITE (Berkeley)";
+a176 25
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Lfs_RereadSummaryInfo --
+ *
+ *	Reread the summary sector associated with the prefix and update
+ *	the domain information. This should be called if the summary
+ *	sector on the disk has been changed since the domain was attached.
+ *
+ * Results:
+ *	SUCCESS 
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+Lfs_RereadSummaryInfo(domainPtr)
+    Fsdm_Domain		*domainPtr;	/* Domain to reread summary for. */
+{
+    return SUCCESS;
+@
+
+
+1.5
+log
+@Many bug fixed. First installed LFS.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/lfs/RCS/lfsIo.c,v 1.4 90/08/02 16:19:31 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d95 1
+a95 1
+	LfsError(lfsPtr, status, "LfsReadBytes");
+d98 3
+d102 4
+d165 9
+@
+
+
+1.4
+log
+@Checkin before adding recovery
+./
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/lfs/RCS/lfsIo.c,v 1.3 90/05/30 10:30:46 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d20 6
+a25 6
+#include "sprite.h"
+#include "lfs.h"
+#include "lfsInt.h"
+#include "dev.h"
+#include "fs.h"
+#include "devFsOpTable.h"
+d47 1
+a47 1
+    int diskAddress;	/* Disk address to read from. */
+d57 1
+d62 11
+a72 10
+    if (lfsPtr->segCache.valid && 
+         (lfsPtr->segCache.startDiskAddress <= diskAddress) &&
+         (lfsPtr->segCache.endDiskAddress > diskAddress + 
+					LfsBytesToBlocks(lfsPtr, numBytes))) {
+	bcopy(lfsPtr->segCache.memPtr + 
+	    LfsBlocksToBytes(lfsPtr, 
+		diskAddress - lfsPtr->segCache.startDiskAddress), bufferPtr,
+		numBytes);
+	LFS_STATS_INC(lfsPtr->stats.blockio.segCacheHits);
+	return SUCCESS;
+d85 2
+a86 1
+    args.readParams.offset = diskAddress * DEV_BYTES_PER_SECTOR;
+d123 1
+a123 1
+    int diskAddress;	/* Disk address to send data. */
+d133 1
+d136 1
+d148 1
+a148 1
+    args.writeParams.offset = diskAddress * DEV_BYTES_PER_SECTOR;
+a187 25
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Lfs_ReallocBlock --
+ *
+ *	Allocate a new block on disk to replace the given block.  This is
+ *	intended to be used by the cache when it can't write out a block
+ *	because of a disk error.
+ *
+ * Results:
+ * 	None
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+void
+Lfs_ReallocBlock(data, callInfoPtr)
+    ClientData		data;			/* Block to move */
+    Proc_CallInfo	*callInfoPtr;	
+{
+    panic("Lfs_ReallocBlock called.\n");
+}
+@
+
+
+1.3
+log
+@Check in with no small writes.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/lfs/RCS/lfsIo.c,v 1.2 90/05/25 15:33:04 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d58 15
+d97 1
+d154 1
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs.mendel/RCS/lfsIo.c,v 1.1 90/01/16 17:12:25 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.2 89/01/07 04:12:18 rab Exp $ SPRITE (Berkeley)";
+a24 1
+#include "dev.h"
+d47 1
+a47 1
+    unsigned int diskAddress;	/* Disk address to read from. */
+d104 1
+a104 1
+    unsigned int diskAddress;	/* Disk address to send data. */
+d141 50
+@

@@ -1,0 +1,10 @@
+D DS3100_M                          	ds3100.md
+L LOCAL.MK;1                        	local.mk	../main/local.mk
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+F SIG.H;1                           	sig.h
+F SIGINT.H;1                        	sigInt.h
+F SIGNALS.C;1                       	signals.c
+F SIGSTUBS.C;1                      	sigStubs.c
+F SIGTYPES.H;1                      	sigTypes.h
+D SUN3_MD                           	sun3.md

@@ -1,0 +1,19 @@
+
+
+          autoload file proc1 [..procN]
+
+          The autoload procedure, defined in TclInit.tcl, allows the
+          Tcl programmer to name one or more procedures and the file
+          they are defined in.  After autoload has been executed to
+          inform Tcl of the presence of them, a subsequent attempt to
+          execute one of the procedures will cause the corresponding
+          file to be loaded transparently prior to executing the
+          function.  If file is a name without directories, then the
+          path is searched to locate the file.  For example,
+          executing:
+
+               autoload showproc.tcl showproc showprocs
+
+          tells Tcl to automatically load the file showproc.tcl the
+          first time in the current session that either showproc or
+          showprocs is executed.

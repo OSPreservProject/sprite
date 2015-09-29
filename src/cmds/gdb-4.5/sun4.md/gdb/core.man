@@ -1,0 +1,130 @@
+CORE(5)                   FILE FORMATS                    CORE(5)
+
+
+
+NAME
+     core - format of memory image file
+
+SYNOPSIS
+     #include <sys/core.h>
+
+DESCRIPTION
+     The operating system writes out a memory  image  of  a  ter-
+     minated  process  when  any  of  various  errors occur.  See
+     sigvec(2) for the list  of  reasons;  the  most  common  are
+     memory  violations,  illegal  instructions,  bus errors, and
+     user-generated quit signals.  The  memory  image  is  called
+     core and is written in the process's working directory (pro-
+     vided it can be; normal access controls apply).  Set-user-ID
+     and  set-group-ID  programs  do  not produce core files when
+     they terminate as this would cause a security loophole.
+
+     The maximum size of a core file is limited by setrlimit (see
+     getrlimit(2)).   Files  which would be larger than the limit
+     are not created.
+
+     The core file consists of a core structure,  as  defined  in
+     the  <sys/core.h>  file, followed by the data pages and then
+     the stack pages of the process image.   The  core  structure
+     includes  the  program's header, the size of the text, data,
+     and stack segments, the name of the program and  the  number
+     of  the  signal  that terminated the process.  The program's
+     header is described by the exec  structure  defined  in  the
+     <sys/exec.h> file, except on Sun386i systems.
+
+          struct core {
+                    int  c_magic;  /* Corefile magic number */
+                    int  c_len;    /* Sizeof (struct core) */
+                    struct         regs c_regs;/* General purpose registers */
+                    struct         exec c_aouthdr;/* A.out header */
+                    int  c_signo;  /* Killing signal, if any */
+                    int  c_tsize;  /* Text size (bytes) */
+                    int  c_dsize;  /* Data size (bytes) */
+                    int  c_ssize;  /* Stack size (bytes) */
+                    char c_cmdname[CORE_NAMELEN + 1]; /* Command name */
+                    struct         fpu c_fpu;/* external FPU state */
+                    int  c_ucode;  /* Exception no. from u_code */
+          };
+
+     The members of the structure are:
+
+     c_magic        The magic number CORE_MAGIC , as  defined  in
+                    <sys/core.h>.
+
+     c_len          The length of the core structure in the  core
+                    file.   This need not be equal to the current
+                    size  of  a  core  structure  as  defined  in
+
+
+
+Sun Release 4.1   Last change: 18 February 1988                 1
+
+
+
+
+
+
+CORE(5)                   FILE FORMATS                    CORE(5)
+
+
+
+                    <sys/core.h>,  as the core file may have been
+                    produced on a different release of the  SunOS
+                    operating system.
+
+     c_regs         The general purpose registers at the time the
+                    core  file  was  produced.  This structure is
+                    machine-dependent.
+
+     c_aouthdr      The executable image header of the program.
+
+     c_signo        The number of the signal that terminated  the
+                    process; see sigvec(2).
+
+     c_tsize        The size of the text segment of  the  process
+                    at the time the core file was produced.
+
+     c_dsize        The size of the data segment of  the  process
+                    at the time the core file was produced.  This
+                    gives the amount of data space image  in  the
+                    core file.
+
+     c_ssize        The size of the stack segment of the  process
+                    at the time the core file was produced.  This
+                    gives the amount of stack space image in  the
+                    core file.
+
+     c_cmdname      The first CORE_NAMELEN characters of the last
+                    component of the path name of the program.
+
+     c_fpu          The status of the floating point hardware  at
+                    the time the core file was produced.
+
+     c_ucode        The signal code of the signal that terminated
+                    the process, if any.  See sigvec(2).
+
+SEE ALSO
+     adb(1), dbx(1), getrlimit(2), sigvec(2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sun Release 4.1   Last change: 18 February 1988                 2
+
+
+
+

@@ -1,0 +1,34 @@
+\chapentry {Command Line Editing}{Appendix \char65}{1}
+\secentry {Introduction to Line Editing}{\char65}{1}{1}
+\secentry {Readline Interaction}{\char65}{2}{1}
+\subsecentry {Readline Bare Essentials}{\char65}{2}{1}{2}
+\subsecentry {Readline Movement Commands}{\char65}{2}{2}{2}
+\subsecentry {Readline Killing Commands}{\char65}{2}{3}{3}
+\subsecentry {Readline Arguments}{\char65}{2}{4}{3}
+\secentry {Readline Init File}{\char65}{3}{4}
+\subsecentry {Readline Init Syntax}{\char65}{3}{1}{4}
+\subsubsecentry{Commands For Moving}{\char65} {3}{1}{1}{6}
+\subsubsecentry{Commands For Manipulating The History}{\char65} {3}{1}{2}{6}
+\subsubsecentry{Commands For Changing Text}{\char65} {3}{1}{3}{7}
+\subsubsecentry{Killing And Yanking}{\char65} {3}{1}{4}{8}
+\subsubsecentry{Specifying Numeric Arguments}{\char65} {3}{1}{5}{8}
+\subsubsecentry{Letting Readline Type For You}{\char65} {3}{1}{6}{9}
+\subsubsecentry{Some Miscellaneous Commands}{\char65} {3}{1}{7}{9}
+\subsecentry {Readline Vi Mode}{\char65}{3}{2}{9}
+\chapentry {Programming with GNU Readline}{1}{11}
+\secentry {Default Behaviour}{1}{1}{11}
+\secentry {Custom Functions}{1}{2}{13}
+\subsecentry {The Function Type}{1}{2}{1}{13}
+\subsecentry {Naming a Function}{1}{2}{2}{13}
+\subsecentry {Selecting a Keymap}{1}{2}{3}{14}
+\subsecentry {Binding Keys}{1}{2}{4}{14}
+\subsecentry {Writing a New Function}{1}{2}{5}{15}
+\subsecentry {Allowing Undoing}{1}{2}{6}{16}
+\subsecentry {An Example}{1}{2}{7}{17}
+\secentry {Custom Completers}{1}{3}{18}
+\subsecentry {How Completing Works}{1}{3}{1}{18}
+\subsecentry {Completion Functions}{1}{3}{2}{19}
+\subsecentry {Completion Variables}{1}{3}{3}{20}
+\subsecentry {A Short Completion Example}{1}{3}{4}{22}
+\unnumbchapentry {Concept Index}{33}
+\unnumbchapentry {Function and Variable Index}{35}

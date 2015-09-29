@@ -1,0 +1,99 @@
+This is Common TeX, Version 2.9 (preloaded format=plain 89.9.18) 15 MAR 1990 23:05
+**&plain gawk.texinfo 
+(./gawk.texinfo (./texinfo.tex Loading texinfo package [Version 2.1]: 
+Basics,
+\bindingoffset=\dimen16
+\normaloffset=\dimen17
+\pagewidth=\dimen18
+\pageheight=\dimen19
+\cornerlong=\dimen20
+\cornerthick=\dimen21
+\topandbottommargin=\dimen22
+\outerhsize=\dimen23
+\outervsize=\dimen24
+\EMsimple=\toks12
+\singlespaceskip=\skip18
+ fonts,
+\fontdepth=\count25
+\tclosesave=\dimen25
+\tcloserm=\dimen26
+ page headings,
+\titlepagetopglue=\skip19
+\titlepagebottomglue=\skip20
+\realeverypar=\toks13
+\evenheadline=\toks14
+\oddheadline=\toks15
+\evenfootline=\toks16
+\oddfootline=\toks17
+ tables,
+\tableindent=\dimen27
+\itemindent=\dimen28
+\itemmargin=\dimen29
+\itemmax=\dimen30
+\itemno=\count26
+ indexing,
+\initialskipamount=\skip21
+\secondaryindent=\skip22
+\partialpage=\box16
+\doublecolumnhsize=\dimen31
+\doublecolumnvsize=\dimen32
+\availdimen@=\dimen33
+ sectioning,
+\chapno=\count27
+\secno=\count28
+\subsecno=\count29
+\subsubsecno=\count30
+\appendixno=\count31
+\contentsfile=\write0
+\chapheadingskip=\skip23
+\subsecheadingskip=\skip24
+\secheadingskip=\skip25
+
+toc printing,
+\tocindent=\dimen34
+ environments,
+\dblarrowbox=\box17
+\longdblarrowbox=\box18
+\pushcharbox=\box19
+\bullbox=\box20
+\equivbox=\box21
+\errorbox=\box22
+\lispnarrowing=\skip26
+\aboveenvskipamount=\skip27
+ defuns,
+\defbodyindent=\skip28
+\defargsindent=\skip29
+\deftypemargin=\skip30
+\deflastargmargin=\skip31
+\parencount=\count32
+ cross reference,
+\auxfile=\write1
+\footnoteno=\count33
+
+and turning on texinfo input format.) (./gawk.aux)
+@cpindfile=@write2
+@fnindfile=@write3
+@vrindfile=@write4
+@tpindfile=@write5
+@kyindfile=@write6
+@pgindfile=@write7
+ [1] [2] (Preface)
+[1] (GNU General Public License) [2] [3] [4] [5] [6] [7] Chapter 1
+[8] [9] Chapter 2 [10] [11] [12] [13] [14] [15] [16] [17] [18] [19]
+Chapter 3 [20] [21] [22] [23] [24] [25] [26] [27] [28] [29] [30]
+[31] [32] [33] [34] Chapter 4 [35] [36] [37] [38] [39] [40] [41]
+[42] [43] [44] [45] [46] [47] Chapter 5 [48] Chapter 6 [49] [50]
+[51] [52] [53] [54] [55] [56] [57] [58] [59] Chapter 7 [60] [61]
+Chapter 8 [62] [63] [64] [65] [66] [67] [68] [69] [70] [71] [72]
+[73] [74] [75] [76] [77] Chapter 9 [78] [79] [80] [81] [82] [83]
+[84] [85] [86] Chapter 10 [87] [88] [89] [90] [91] [92] [93] [94]
+[95] [96] Chapter 11 [97] [98] [99] [100] [101] [102] [103] Chapter 12
+[104] [105] [106] [107] [108] [109] Chapter 13 [110] [111] [112]
+Chapter 14 [113] [114] [115] [116] [117] Chapter 15 [118] [119]
+Appendix @char 65 [120] [121] [122] [123] [124] [125] [126] [127]
+[128] [129] [130] [131] [132] [133] [134] [135] Appendix @char 66
+[136] [137] [138] [139] Appendix @char 67 [140] [141] [142]
+Appendix @char 68 [143] [144] [145] [146] [147] (Index) [148]
+(./gawk.cps [149] [150] [151]) [152] (./gawk.toc) [-1] [-2] (./gawk.toc
+[-3] [-4] [-5]) [-6] [-7] [-8]
+Output written on gawk.dvi (162 pages, 471352 bytes).

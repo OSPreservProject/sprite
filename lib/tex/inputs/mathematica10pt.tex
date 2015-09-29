@@ -1,0 +1,70 @@
+% File mathematica10pt.tex -- LaTeX version is mathematica.sty
+% Macros for TeX/Mathematica documents
+% Written 2/11/1991 by Dan Dill dan@chem.bu.edu
+
+
+% Copyright (C) 1991 Dan Dill
+% This is part of TeX/Mathematica
+%
+% TeX/Mathematica is distributed in the hope that it will be useful, but
+% WITHOUT ANY WARRANTY.  No author or distributor accepts responsibility to
+% anyone for the consequences of using it or for whether it serves any
+% particular purpose or works at all, unless he says so in writing.
+%
+% Everyone is granted permission to copy, modify and redistribute this
+% file, provided:
+%  1.  All copies contain this copyright notice.
+%  2.  All modified copies shall carry a prominant notice stating who
+%      made the last modification and the date of such modification.
+%  3.  No charge is made for this software or works derived from it.  
+%      This clause shall not be construed as constraining other software
+%      distributed on the same medium as this software, nor is a
+%      distribution fee considered a charge.
+%
+% The right to distribute this file for profit or as part of any commercial
+% product is specifically reserved for the author.
+
+
+
+
+%	\begin{mathematica}
+%	...
+%	\end{mathematica}
+%
+%  will indent enclosed text by dimension \@mathindent (e.g. 2\parindent) from
+%  current leftmargin.  Set with
+%
+%	\mmaindent{...}	% Default is \parindent
+%
+%  Verbatim text set in cmtt9.  The macro turns blanks into
+%  spaces, starts a new line for each carrige return (or sequence of 
+%  consecutive carriage returns), and interprets EVERY character literally.
+%  I.e., all special characters \, {, $, etc. are \catcode'd to 'other'.
+%
+%  Tab characters are expanded to eight character stops.
+
+\catcode`\@=11\relax
+
+% Fonts and sizes
+% Don't define \mmasize, since line-spacing might also be adjusted if font changes
+\font\cellf@nt=cmtt8 % Font for cell text
+\def\v@rbsize{\baselineskip 8pt \parskip 0pt plus 1pt \cellf@nt}
+\font\b@xfont=cmtt8 % Font for cell start indicator box
+\newbox\t@bbox \setbox\t@bbox=\hbox{\b@xfont\ }
+\newdimen\w \w=8\wd\t@bbox% tab amount
+
+% \begin{mathematica}
+% This scheme is awfully restrictive, to just mma!
+\def\@mmatok{mathematica}
+\def\begin#1{\def\testtok{#1}
+	\ifx\testtok\@mmatok
+		\let\next = \@mma
+	\else
+		\errmessage{Environment #1 undefined.}
+		\let\next = \relax
+	\fi
+	\next}
+
+\input mathematica
+
+\catcode`\@=12\relax

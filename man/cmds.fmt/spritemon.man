@@ -1,0 +1,200 @@
+
+
+
+SPRITEMON                 User Commands                 SPRITEMON
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     spritemon - X widget to display system events
+
+SSYYNNOOPPSSIISS
+     sspprriitteemmoonn --[uuRRaaffvvppPPiioorrww] [--NN  _n_u_m]  [--ddiisskkss]  [--DD  _n_u_m]  [--TT
+     _i_n_t_e_r_v_a_l] [--AA _a_v_a_i_l_I_n_t_e_r_v_a_l] [--%%MM] [--HH _h_e_i_g_h_t]
+
+OOPPTTIIOONNSS
+     --TT _i_n_t_e_r_v_a_l
+          Sets the interval at  which  the  display  is  updated.
+          Default is 5 seconds.
+
+     --HH _h_e_i_g_h_t
+          Sets the height of each graph displayed.  Default is 40
+          pixels.
+
+     --uu   Display CPU utilization on a scale from 0.0 to 1.0.
+
+     --NN _n_u_m _C_P_U_s
+          Do CPU utilization for more than one CPU.
+
+     --RR   Display the number of  remote  processes  belonging  to
+          this host (in 10's).
+
+     --aa   Display the number of hosts  to  which  this  host  can
+          migrate (in 10's).
+
+     --AA _a_v_a_i_l_I_n_t_e_r_v_a_l
+          Sets the interval at which the count of available hosts
+          is updated. Default is 15 seconds.
+
+     --ff   Display file system cache size.
+
+     --vv   Display amount of physical memory devoted to user  vir-
+          tual memory.
+
+     --%%   Display cache size (--ff) or VM size (--vv) as a percentage
+          of main memory.
+
+     --MM   Display cache size (--ff) or VM size (--vv) in megabytes.
+
+     --pp   Display the number of page-ins (in 100's).  This  is  a
+          sum of text, heap, and stack page-ins.
+
+     --PP   Display the number of pages written out to  swap  files
+          (in 100's).
+
+     --ii   Display the number of  ethernet  packets  received  (in
+          100's).
+
+
+
+
+Sprite v.1.0       Printed:  October 17, 1989                   1
+
+
+
+
+
+
+SPRITEMON                 User Commands                 SPRITEMON
+
+
+
+     --oo   Display the number of ethernet  packets  sent  out  (in
+          100's).
+
+     --ddiisskkss
+          Display disk statistics for all  disks  in  the  system
+          (superceeds -D).
+
+     --DD _n_u_m
+          Display disk #_n_u_m utilization on a scale  from  0.0  to
+          1.0.
+
+     --rr   Display the number of disk read transfers  (in  100's).
+          Use with --DD or --ddiisskkss.
+
+     --ww   Display the number of disk write transfers (in  100's).
+          Use with --DD or --ddiisskkss.
+
+_________________________________________________________________
+
+IINNTTRROODDUUCCTTIIOONN
+     This widget displays operating system parameters as  a  run-
+     ning  graph.   It  is an X toolkit widget and so it needs to
+     run under the X window system.  This is a  ``load  widget'',
+     which  displays  a  value  every _i_n_t_e_r_v_a_l seconds, and has a
+     title but no vertical scale.  Instead, horizontal lines  are
+     drawn to represent increments in the native unit of whatever
+     is being displayed.  For some parameters, like percentage of
+     memory devoted to the file system cache, the displayed value
+     is always between 0 and 1 so there are no  horizontal  scale
+     lines.   For the megabytes of filesystem cache there will be
+     horizontal  lines  that  represent  megabytes,  for   remote
+     processes  there  will be horizontal lines to represent 10's
+     of remote processes, and  for  paging  and  network  traffic
+     there will be horizontal lines to represent 100's of events.
+     The value displayed is truncated to the largest  value  that
+     can  be  displayed  without  causing the horizontal lines to
+     completely occupy the display.  This value is equal to  half
+     the pane height.
+
+     Several system parameters can be viewed at  once;  the  load
+     meters are organized into a vertical pane with each meter of
+     equal height.  It is best to let spritemon determine its own
+     geometry  at  startup  (it  will use the default pane height
+     times the number of parameters being displayed), or you  can
+     specify  a  geometry  argument on the command line and spri-
+     temon will evenly divide the window into panes.   Otherwise,
+     if  you drag out a window size, the VPane widget does a poor
+     job of picking the heights of individual panes.
+
+     The disk related options only work on machines  with  disks.
+     The  --DD  option  specifies which disk to display information
+     about, or --ddiisskkss can be used to  display  information  about
+     all  the disks in the system.  Utilization is displayed, and
+     --rr and --ww are used to display raw  read  and  write  counts.
+
+
+
+Sprite v.1.0       Printed:  October 17, 1989                   2
+
+
+
+
+
+
+SPRITEMON                 User Commands                 SPRITEMON
+
+
+
+     The  number  to  specify to --DD corresponds to a kernel table
+     entry that is indexed starting at zero.
+
+BBUUGGSS
+     The --ii option needs to  be  glommed  together  with  another
+     option,  i.e.  --iioo,  or it gets interpreted by the X toolkit
+     and sspprriitteemmoonn starts out iconic.
+
+     The value of the argument to --DD is un-intuitive.
+
+     The disk information should display the  file  system  name,
+     but kernel support is needed for this.
+
+SSEEEE AALLSSOO
+     vmStat, migcmd
+
+KKEEYYWWOORRDDSS
+     system, page faults, file system cache, virtual memory, net-
+     work interface, migration
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  October 17, 1989                   3
+
+
+

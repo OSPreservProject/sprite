@@ -1,0 +1,124 @@
+#
+# Prototype Makefile for src/cmds/*/* directories.
+#
+# $Header: Makefile.command,v 2.5 87/09/16 13:58:40 douglis Exp $ SPRITE (Berkeley)
+#
+# Allow makemake
+
+LIBDIR = /sprite/lib
+INCLDIR = /sprite/lib/include
+MISCLIB = /sprite/src/lib/misc
+ATTLIB = /sprite/att/lib
+# UNIXLIB, ATTINCL, and ATTLINT are to be set for Makefiles in /sprite/att/...
+# However, ATTLINT is still blank because no lint library exists.
+UNIXLIB = 
+ATTINCL =
+ATTLINT =
+ATTCMDS =
+LIBS = ${UNIXLIB}
+LINTDIR = ${LIBDIR}/lint
+
+#
+# There are (at least) two cmds directories, /sprite/cmds for sprite native,
+# and /sprite/att/cmds for commands ported from unix.
+
+INSTALLDIR = /sprite/${ATTCMDS}cmds
+INSTALL = cpstrip
+
+IFLAGS = -I. ${ATTINCL}
+DBX = 	  -g
+PROFILE =
+DFLAGS =
+CFLAGS =  ${DBX} ${IFLAGS} ${DFLAGS}
+PCFLAGS = ${DBX} ${IFLAGS} ${DFLAGS} ${PROFILE} 
+
+CTFLAGS = -t
+
+# Define a bunch of commands in the installed commands directory because 
+# we might be compiling sprite versions of one of them in this directory, 
+# and we don't want to get the wrong one.
+
+BIN = /sprite/cmds
+LINT = ${BIN}/lint
+CC = ${BIN}/cc -m68010
+AS = ${BIN}/as -m68010
+CP = ${BIN}/cp
+RM = ${BIN}/rm
+MV = ${BIN}/mv
+CP = ${BIN}/cp
+ECHO = ${BIN}/echo
+CTAGS = ${BIN}/ctags
+MKVERSION = ${BIN}/mkversion
+
+
+OBJS = Scandir.o ded.o getname.o subr.o bcopy.o
+RMOBJS = Scandir.o bcopy.o ded.o getname.o subr.o
+
+CSRCS = Scandir.c bcopy.c ded.c getname.c subr.c
+
+SRCS = ${CSRCS}
+
+HDRS = ded.h
+
+PROG = ded
+
+LINTFLAGS = ${IFLAGS} -u 
+LINTLIBS = ${ATTLINT} ${LINTDIR}/libc.ln
+
+ALLSRCS = ${SRCS} ${HDRS} Makefile
+
+.c.o: .EXPORT
+	${RM} -f $*.o
+	${CC} ${CFLAGS} -c $*.c
+
+all: ${PROG} 
+
+${PROG}: ${OBJS} ${LIBS}
+	@${ECHO} "Generating date stamp"
+	@${MKVERSION} > version.h
+	${RM} -f $@ version.o
+	${CC} -c ${CFLAGS} ${MISCLIB}/version.c
+	${CC} ${CFLAGS} ${OBJS} version.o ${LIBS} -o $@
+
+# By default, without any subdirectories, "make makemake" will do nothing.
+# If there are any further subdirectories, it should recursively makemake 
+# them.  By using "ignore-me", I avoid the "makemake is up to date"
+# diagnostic.
+
+makemake: ignore-me
+
+ignore-me:
+
+install! ${INSTALLDIR}/${PROG}
+
+${INSTALLDIR}/${PROG}: ${PROG}
+	${INSTALL} ${PROG} ${INSTALLDIR}/${PROG}
+	
+lint:	${CSRCS} ${HDRS} ${LINTLIBS}
+	${RM} -f lint
+	${LINT} ${LINTFLAGS} ${CSRCS} ${LINTLIBS} > lint
+
+clean:
+	${RM} -f lint ${RMOBJS} version.h version.o
+
+# For rdist, take the standard makefile and pass in the directory to rdist
+# and the name of the binary/binaries not to rdist.
+# Allow the user to specify extra flags (like -v) for the rdist via
+# the DISTFLAGS variable.
+
+DISTFILE = /sprite/lib/misc/distfile.command
+DISTFLAGS = 
+
+rdist! .PRECIOUS
+	rdist ${DISTFLAGS} -f ${DISTFILE} -d DIR=`pwd` -d EXCEPT=\(${PROG}\)
+
+DEPFLAGS = -p
+DEPFILE = Makefile
+#include <makedepend.mk>
+
+tags: ${HDRS} ${CSRCS}
+	${RM} -f tags
+	${CTAGS} ${CTFLAGS} ${HDRS} ${CSRCS}
+
+# below is automatically generated
+# DO NOT DELETE THIS LINE -- make depend depends on it.

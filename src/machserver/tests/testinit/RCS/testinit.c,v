@@ -1,0 +1,991 @@
+head     1.13;
+branch   ;
+access   ;
+symbols  srv030:1.13 srv027:1.13 srv026:1.13 srv024:1.13 srv021:1.13 srv018:1.13 srv014:1.13 srv010:1.13 srv008:1.13 srv007:1.13 srv006:1.13 srv004:1.13 echo:1.8.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.13
+date     92.03.23.15.10.43;  author kupfer;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     92.01.22.13.24.30;  author kupfer;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     91.12.19.13.26.50;  author kupfer;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     91.10.04.12.27.21;  author kupfer;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     91.09.25.23.45.27;  author kupfer;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     91.09.19.19.03.52;  author kupfer;  state Exp;
+branches 1.8.1.1;
+next     1.7;
+
+1.7
+date     91.09.03.12.21.51;  author kupfer;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     91.08.30.16.06.00;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.08.25.22.06.17;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.08.12.16.13.13;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.07.22.11.37.32;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.07.19.15.22.50;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.07.18.14.32.34;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+1.8.1.1
+date     91.09.19.22.28.02;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Simple test client, corresponding to /etc/init.
+@
+
+
+1.13
+log
+@Add console support.
+@
+text
+@/* 
+ * testinit.c --
+ *
+ *	Test initial user program.
+ *
+ * Copyright 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/tests/testinit/RCS/testinit.c,v 1.12 92/01/22 13:24:30 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <cfuncproto.h>
+#include <errno.h>
+#include <pwd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys.h>
+#include <sys/file.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <test.h>
+#include <unistd.h>
+
+#define CONSOLE	"/dev/console"	/* name of console device */
+
+extern void msleep();
+static void SetID _ARGS_((void));
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	For now, just call a shell.  
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+    
+int
+main(argc, argv)
+    int argc;
+    char **argv;
+{
+    pid_t pid;
+    char *shellName = "cmds.sprited/psh";
+    int i;
+    union wait exitStatus;
+
+    Test_PutDecimal(argc);
+    Test_PutMessage(" arguments: \n");
+    for (i = 0; i < argc; i++) {
+	Test_PutMessage(argv[i]);
+	Test_PutMessage("\n");
+    }
+    if (argc >= 2) {
+	shellName = argv[1];
+    }
+
+    /* 
+     * Open the console, which will enable use of stdio.  If that fails, 
+     * bail out.
+     */
+    if ((open(CONSOLE, O_RDONLY, 0) != 0)
+	    || (open(CONSOLE, O_WRONLY, 0) != 1)
+	    || (open(CONSOLE, O_WRONLY, 0) != 2)) {
+	Test_PutMessage("Couldn't open console: ");
+	Test_PutMessage(strerror(errno));
+	Test_PutMessage(".\n");
+	exit(2);
+    }
+
+/* 
+ * Redefine the Test_ calls to use stdio.
+ */
+#include <testRedef.h>
+
+    /* 
+     * cd to a test directory, then start up the shell or whatever program 
+     * we're suppposed to run.
+     */
+    if (chdir("/users/kupfer") < 0) {
+	Test_PutMessage("Can't chdir to /users/kupfer: ");
+	Test_PutMessage(strerror(errno));
+	Test_PutMessage("\n");
+	goto bailOut;
+    }
+
+    pid = fork();
+    if (pid < 0) {
+	Test_PutMessage("Fork failed: ");
+	Test_PutMessage(strerror(errno));
+	Test_PutMessage("\n");
+	goto bailOut;
+    } 
+    if (pid == 0) {
+	char *args[2];
+
+	/* Change the user ID to be non-root. */
+	SetID();
+
+	args[0] = shellName;
+	args[1] = 0;
+#if 0
+	Test_PutMessage("I'm the child (pid ");
+	Test_PutHex(getpid());
+	Test_PutMessage(")\n");
+#endif
+	if (execv(shellName, args) < 0) {
+	    Test_PutMessage("Couldn't exec `");
+	    Test_PutMessage(shellName);
+	    Test_PutMessage("': ");
+	    Test_PutMessage(strerror(errno));
+	    Test_PutMessage("\n");
+	    exit(1);
+	}
+	exit(0);
+    } else {
+#if 0
+	Test_PutMessage("Child is pid ");
+	Test_PutHex(pid);
+	Test_PutMessage("\n");
+#endif
+	pid = wait(&exitStatus);
+	Test_PutMessage("process ");
+	Test_PutHex(pid);
+	Test_PutMessage(" finished, code ");
+	Test_PutDecimal(exitStatus.w_retcode);
+	if (exitStatus.w_termsig != 0) {
+	    Test_PutMessage(", signal ");
+	    Test_PutDecimal(exitStatus.w_termsig);
+	}
+	Test_PutMessage(".\n");
+    }
+
+ bailOut:
+    (void)Sys_Shutdown(SYS_HALT|SYS_KILL_PROCESSES|SYS_WRITE_BACK, NULL);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetID --
+ *
+ *	Set the user ID of the process to something less potentially 
+ *	harmful than root.  
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+SetID()
+{
+    struct passwd *passwdEntPtr; /* password entry for designated user ID */
+    char *user = "kupfer";
+    uid_t expectedUid = 891;
+
+    passwdEntPtr = getpwnam(user);
+    if (passwdEntPtr == NULL) {
+	fprintf(stderr, "Warning: couldn't find passwd entry for %s.\n",
+		user);
+    } else if (passwdEntPtr->pw_uid != expectedUid) {
+	fprintf(stderr, "Warning: expected uid %d for %s, got %d.\n",
+		expectedUid, user, passwdEntPtr->pw_uid);
+    }
+
+    if (setuid(expectedUid) < 0) {
+	fprintf(stderr, "Couldn't change user ID to %d: %s\n",
+		expectedUid, strerror(errno));
+    }
+}
+@
+
+
+1.12
+log
+@Make easier to use on top of Sprite file system.  Track changes to
+Sys_Shutdown.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/tests/testinit/RCS/testinit.c,v 1.11 91/12/19 13:26:50 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d27 1
+d33 2
+d44 1
+a44 2
+ *	For now, just call a test routine.  Eventually will exec the init 
+ *	program. 
+d61 1
+a61 1
+    char *realInitName = "cmds.sprited/psh"; /* name of program to exec */
+d72 14
+a85 1
+	realInitName = argv[1];
+d88 5
+d117 1
+a117 1
+	args[0] = realInitName;
+d124 1
+a124 1
+	if (execv(realInitName, args) < 0) {
+d126 1
+a126 1
+	    Test_PutMessage(realInitName);
+@
+
+
+1.11
+log
+@Make psh the default program to run.  Set uid to kupfer before execing
+the program.  Turn on FS write-back when calling Sys_Shutdown.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/tests/testinit/RCS/testinit.c,v 1.10 91/10/04 12:27:21 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d59 1
+a59 1
+    char *realInitName = "psh"; /* name of program to exec */
+d73 11
+d132 1
+a132 1
+    (void)Sys_Shutdown(SYS_HALT|SYS_KILL_PROCESSES|SYS_WRITE_BACK);
+@
+
+
+1.10
+log
+@Move Mach knowledge & emulation functions into library.  Change from
+"copy file" framework to fork/exec framework.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/emulator/RCS/emuMain.c,v 1.9 91/09/25 23:45:27 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d20 1
+d22 2
+d33 1
+d59 1
+a59 1
+    char *secondName = "second"; /* name of program to exec */
+d70 1
+a70 1
+	secondName = argv[1];
+d82 5
+a86 1
+	args[0] = secondName;
+d88 1
+d92 2
+a93 1
+	if (execv(secondName, args) < 0) {
+d95 1
+a95 1
+	    Test_PutMessage(secondName);
+d103 1
+d107 1
+d121 1
+a121 1
+    (void)Sys_Shutdown(SYS_HALT|SYS_KILL_PROCESSES);
+d124 39
+@
+
+
+1.9
+log
+@Move Mach knowledge into C library.
+@
+text
+@d2 1
+a2 1
+ * emuMain.c --
+d4 1
+a4 1
+ *	Framework for shared emulator library.
+d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/emulator/RCS/emuMain.c,v 1.8 91/09/19 19:03:52 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d20 2
+a21 5
+#include <bstring.h>
+#include <ctype.h>
+#include <spriteEmu.h>
+#include <status.h>
+#include <stdio.h>
+a22 1
+#include <proc.h>
+d24 2
+a25 1
+#include <tempFs.h>
+d27 1
+a27 1
+#include <vm.h>
+d29 1
+a29 1
+/* Forward references */
+a30 4
+static int GetLength _ARGS_((char *fileName));
+static void MapFile _ARGS_((char *fileName, boolean_t readOnly,
+			    int length, Address *startAddrPtr));
+
+d54 4
+a57 7
+    char *fromName = "testInput"; /* name of file to copy from */
+    char *fromBuffer;		/* mapped "from" file */
+    char *toName = "testOutput"; /* name of file to copy to */
+    char *toBuffer;		/* mapped "to" file */
+    int fileLength;
+
+    SpriteEmu_Init();
+d59 5
+a63 5
+    fileLength = GetLength(fromName);
+#if 0
+    if (fileLength < 0) {
+	Test_PutMessage("bailing out.\n");
+	goto bailOut;
+d65 2
+a66 7
+#endif
+
+    MapFile(fromName, TRUE, fileLength, &fromBuffer);
+    MapFile(toName, FALSE, fileLength, &toBuffer);
+
+    if (fromBuffer != 0 && toBuffer != 0) {
+	bcopy(fromBuffer, toBuffer, fileLength);
+d69 4
+a72 34
+    (void)Sys_Shutdown(SYS_HALT|SYS_KILL_PROCESSES);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MapFile --
+ *
+ *	Map the named file into our address space.
+ *
+ * Results:
+ *	Fills in the starting location, which is set to 0 
+ *	if there was a problem.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+MapFile(fileName, readOnly, length, startAddrPtr)
+    char *fileName;		/* name of file to map */
+    Boolean readOnly;		/* map read-only or read-write? */
+    int length;			/* number of bytes to map */
+    Address *startAddrPtr;	/* OUT: where the file was mapped to */
+{
+    ReturnStatus status;
+
+    status = Vm_MapFile(fileName, readOnly, 0, length, startAddrPtr);
+    if (status != SUCCESS) {
+	Test_PutMessage("Couldn't map file: ");
+	Test_PutMessage(Stat_GetMsg(status));
+d74 21
+a94 33
+	*startAddrPtr = 0;
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetLength --
+ *
+ *	Get the length of a file.
+ *
+ * Results:
+ *	Returns the length of the file, in bytes.  Returns -1 if there 
+ *	was an error.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+GetLength(fileName)
+    char *fileName;
+{
+    ReturnStatus status;
+    int length;
+
+    status = TempFs_Length(fileName, &length);
+    if (status != SUCCESS) {
+	Test_PutMessage("Couldn't get file length: ");
+	Test_PutMessage(Stat_GetMsg(status));
+d96 10
+a105 1
+	return -1;
+d108 2
+a109 1
+    return length;
+d111 1
+@
+
+
+1.8
+log
+@Sys_Shutdown now takes flags.  Lint.
+@
+text
+@d2 1
+a2 1
+ * client.c --
+d4 1
+a4 1
+ *	Test program for printf server.
+d17 1
+a17 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/emulator/RCS/emuMain.c,v 1.7 91/09/03 12:21:51 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d22 1
+a22 2
+#include <mach.h>
+#include <mach_error.h>
+d26 5
+a30 3
+#include <user/proc.h>
+#include <user/sys.h>
+#include <spriteSrv.h>
+a31 2
+mach_port_t serverPort;		/* port for making Sprite requests */
+
+d38 18
+d57 3
+a59 1
+main()
+a60 4
+    kern_return_t kernStatus;
+#ifdef SHARED_ERROR_REGION
+    int *errorPtr = (int *)PROC_SHARED_REGION_START;
+#endif
+d67 1
+a67 7
+    kernStatus = task_get_bootstrap_port(mach_task_self(), &serverPort);
+    if (kernStatus != KERN_SUCCESS) {
+#if SHARED_ERROR_REGION
+	*errorPtr = kernStatus;
+#endif
+	thread_suspend(mach_thread_self());	
+    }
+d72 1
+a72 1
+	Test_PutMessage(serverPort, "bailing out.\n");
+d84 1
+a84 1
+    Sys_Shutdown(serverPort, SYS_HALT|SYS_KILL_PROCESSES);
+d108 1
+a108 1
+    boolean_t readOnly;		/* map read-only or read-write? */
+a111 1
+    kern_return_t kernStatus;
+d114 5
+a118 6
+    kernStatus = Vm_MapFileStub(serverPort, fileName, strlen(fileName)+1,
+			    readOnly, 0, length, &status, startAddrPtr);
+    if (kernStatus != KERN_SUCCESS) {
+	Test_PutMessage(serverPort, "Couldn't map file: ");
+	Test_PutMessage(serverPort, mach_error_string(kernStatus));
+	Test_PutMessage(serverPort, "\n");
+a119 5
+    } else if (status != SUCCESS) {
+	Test_PutMessage(serverPort, "Couldn't map file: ");
+	Test_PutMessage(serverPort, Stat_GetMsg(status));
+	Test_PutMessage(serverPort, "\n");
+	*startAddrPtr = 0;
+a146 1
+    kern_return_t kernStatus;
+d148 1
+a148 8
+    kernStatus = TempFs_LengthStub(serverPort, fileName, strlen(fileName)+1,
+				   &status, &length);
+    if (kernStatus != KERN_SUCCESS) {
+	Test_PutMessage(serverPort, "Couldn't get file length: ");
+	Test_PutMessage(serverPort, mach_error_string(kernStatus));
+	Test_PutMessage(serverPort, "\n");
+	return -1;
+    }
+d150 3
+a152 3
+	Test_PutMessage(serverPort, "Couldn't get file length: ");
+	Test_PutMessage(serverPort, Stat_GetMsg(status));
+	Test_PutMessage(serverPort, "\n");
+@
+
+
+1.8.1.1
+log
+@Use as echo program--print a prompt, get a string, and write the string.
+Could use better EOF detection (just looks for leading ".", doesn't
+check if there are any other characters in the line).
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/emulator/RCS/emuMain.c,v 1.8 91/09/19 19:03:52 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d35 3
+a37 1
+static void Failed _ARGS_((char *complaint, kern_return_t errorCode));
+d46 5
+a50 3
+    int firstGuard = 9876;
+    char buffer[9000];
+    int secondGuard = 4242;
+d60 5
+a64 21
+    for (;;) {
+	(void)Test_PutMessage(serverPort, "Type something: ");
+	kernStatus = Test_GetString(serverPort, buffer, sizeof(buffer));
+	if (kernStatus != KERN_SUCCESS) {
+	    Failed("Couldn't get input", kernStatus);
+	    goto bailOut;
+	}
+	if (firstGuard != 9876) {
+	    Test_PutMessage(serverPort, "first guard blown away\n");
+	}
+	if (secondGuard != 4242) {
+	    Test_PutMessage(serverPort, "second guard blown away\n");
+	}
+	if (buffer[0] == '.' || buffer[0] == '\0') {
+	    break;
+	}
+	kernStatus = Test_PutString(serverPort, buffer, sizeof(buffer));
+	if (kernStatus != KERN_SUCCESS) {
+	    Failed("Couldn't echo the string", kernStatus);
+	    goto bailOut;
+	}
+d66 8
+a74 1
+ bailOut:
+d82 1
+a82 1
+ * Failed --
+d84 1
+a84 1
+ *	Print an error message for a MIG call, clumsily.
+d87 4
+d93 40
+d139 3
+a141 4
+static void
+Failed(complaint, errorCode)
+    char *complaint;
+    kern_return_t errorCode;
+d143 20
+a162 4
+    (void)Test_PutMessage(serverPort, complaint);
+    (void)Test_PutMessage(serverPort, ": ");
+    (void)Test_PutMessage(serverPort, mach_error_string(errorCode));
+    (void)Test_PutMessage(serverPort, "\n");
+@
+
+
+1.7
+log
+@Use <> for sprited header files.  Lint.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/emulator/RCS/emuMain.c,v 1.6 91/08/30 16:06:00 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d28 1
+a30 2
+#define SHARED_ERROR_REGION	1
+
+a35 1
+static void MakeFile _ARGS_((char *fileName));
+a37 2
+static void PrintBuffer _ARGS_((char *fileName, char *bufPtr, int length));
+static void WriteToBuffer _ARGS_((char *fileName, char *bufPtr, int length));
+d75 1
+a75 2
+ bailOut:
+    Sys_Shutdown(serverPort);
+@
+
+
+1.6
+log
+@Put back in support for shared area for low-level comm. with server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/client/RCS/client.c,v 1.5 91/08/25 22:06:17 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d20 1
+d26 1
+d28 1
+a28 1
+#include "spriteSrv.h"
+d43 1
+@
+
+
+1.5
+log
+@Copy from "testInput" to "testOutput" by mapping the files and doing a
+bcopy.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/client/RCS/client.c,v 1.4 91/08/12 16:13:13 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d28 2
+d44 1
+d46 1
+d55 1
+d57 1
+@
+
+
+1.4
+log
+@Snapshot.  Program maps a fixed-length file, scribbles over it, and reads it back.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/client/RCS/client.c,v 1.3 91/07/22 11:37:32 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d43 4
+a46 2
+    char *fileName = "/usr0/kupfer/testInput"; /* name of file to map */
+    char *firstTime, *secondTime; /* buffers for mapped files */
+d55 2
+a56 1
+    fileLength = GetLength(fileName);
+d58 1
+d61 1
+d63 2
+a64 2
+    MapFile(fileName, FALSE, fileLength, &firstTime);
+    WriteToBuffer(fileName, firstTime, fileLength);
+d66 2
+a67 16
+    MapFile(fileName, TRUE, fileLength, &secondTime);
+    PrintBuffer(fileName, secondTime, fileLength);
+
+    kernStatus = vm_deallocate(mach_task_self(), (vm_address_t)firstTime,
+			       fileLength);
+    if (kernStatus != KERN_SUCCESS) {
+	Test_PutMessage(serverPort, "Couldn't deallocate first buffer: ");
+	Test_PutMessage(serverPort, mach_error_string(kernStatus));
+	Test_PutMessage(serverPort, "\n");
+    }
+    kernStatus = vm_deallocate(mach_task_self(), (vm_address_t)secondTime,
+			       fileLength);
+    if (kernStatus != KERN_SUCCESS) {
+	Test_PutMessage(serverPort, "Couldn't deallocate second buffer: ");
+	Test_PutMessage(serverPort, mach_error_string(kernStatus));
+	Test_PutMessage(serverPort, "\n");
+a69 3
+    MapFile(fileName, TRUE, fileLength, &secondTime);
+    PrintBuffer(fileName, secondTime, fileLength);
+
+a77 46
+ * PrintBuffer --
+ *
+ *	Copy the given buffer to stdout.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Maps the file into the process address space and leaves it 
+ *	there. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+PrintBuffer(fileName, bufPtr, length)
+    char *fileName;		/* name of file mapped into the buffer */
+    char *bufPtr;		/* start of buffer */
+    int length;			/* number of bytes to print */
+{
+    char *chPtr;		/* pointer into the file */
+    char buf[2];		/* buffer for 1 character & null */
+
+    buf[1] = '\0';
+    Test_PutMessage(serverPort, "-- ");
+    Test_PutMessage(serverPort, fileName);
+    Test_PutMessage(serverPort, " (");
+    Test_PutHex(serverPort, bufPtr);
+    Test_PutMessage(serverPort, " + ");
+    Test_PutDecimal(serverPort, length);
+    Test_PutMessage(serverPort, " bytes) --\n");
+    for (chPtr = bufPtr; chPtr < bufPtr + length; chPtr++) {
+	if (isascii(*chPtr) && (isprint(*chPtr) || isspace(*chPtr))) {
+	    buf[0] = *chPtr;
+	    Test_PutMessage(serverPort, buf);
+	} else {
+	    Test_PutMessage(serverPort, "\\");
+	    Test_PutOctal(serverPort, *chPtr);
+	}
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+a113 38
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WriteToBuffer --
+ *
+ *	Scribble over a buffer.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Fills the first "length" characters of the buffer with a 
+ *	string of characters.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+WriteToBuffer(fileName, bufferPtr, length)
+    char *fileName;		/* name of the file (unused) */
+    char *bufferPtr;		/* start of the buffer */
+    int length;			/* number of characters to overwrite */
+{
+    char *chPtr;
+    int numChars;		/* number of characters written */
+
+    /* Write with a pattern like "0.........1.........2..." */
+    for (chPtr = bufferPtr, numChars = 0; numChars < length;
+	 	chPtr++, numChars++) {
+	if ((numChars % 10) == 0) {
+	    *chPtr = '0' + ((numChars / 10) % 10);
+	} else {
+	    *chPtr = '.';
+	}
+@
+
+
+1.3
+log
+@Use shutdown call instead of going into infinite loop.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/client/RCS/client.c,v 1.2 91/07/19 15:22:50 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d20 1
+d22 2
+a23 1
+#include <userProc.h>
+d25 1
+d28 2
+d32 6
+a37 1
+static void CheckStatus();
+d41 5
+a45 4
+    mach_port_t serverPort;
+    kern_return_t status;
+    int i;
+    int *errorPtr = (int *)SHARED_REGION_START;
+d47 3
+a49 3
+    status = task_get_bootstrap_port(mach_task_self(), &serverPort);
+    if (status != KERN_SUCCESS) {
+	*errorPtr = status;
+d53 24
+a76 7
+    for (i = 0; i <= 20; i++) {
+	Sys_PutDecimal(serverPort, i);
+	Sys_PutMessage(serverPort, " ");
+	Sys_PutOctal(serverPort, i);
+	Sys_PutMessage(serverPort, " ");
+	Sys_PutHex(serverPort, i);
+	Sys_PutMessage(serverPort, "\n");
+d79 2
+a80 1
+    Sys_PutMessage(serverPort, "Hi, mom\n");
+d82 1
+d84 171
+@
+
+
+1.2
+log
+@Changes so can be started by server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/client/RCS/client.c,v 1.1 91/07/18 14:32:34 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d53 1
+a53 2
+ loop:
+    goto loop;
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.5 91/02/09 13:24:44 ouster Exp $ SPRITE (Berkeley)";
+d21 1
+a22 1
+#include <servers/netname.h>
+d34 1
+d36 1
+a36 2
+    status = netname_look_up(name_server_port, "*", "Sprite",
+			     &serverPort);
+d38 2
+a39 3
+	fprintf(stderr, "Can't get Sprite server port: %s\n",
+		mach_error_string(status));
+	exit(1);
+d43 6
+a48 6
+	CheckStatus(Sys_PutDecimal(serverPort, i));
+	CheckStatus(Sys_PutMessage(serverPort, " "));
+	CheckStatus(Sys_PutOctal(serverPort, i));
+	CheckStatus(Sys_PutMessage(serverPort, " "));
+	CheckStatus(Sys_PutHex(serverPort, i));
+	CheckStatus(Sys_PutMessage(serverPort, "\n"));
+d51 1
+a51 1
+    CheckStatus(Sys_PutMessage(serverPort, "Hi, mom\n"));
+d53 2
+a54 1
+    return 0;
+a55 30
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CheckStatus --
+ *
+ *	Verify that an operation succeeded.  Complain and exit if 
+ *	there was an error.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+CheckStatus(status)
+    kern_return_t status;
+{
+    if (status != KERN_SUCCESS) {
+	fprintf(stderr, "Couldn't do RPC: %s\n",
+		mach_error_string(status));
+	exit(1);
+    }
+}
+
+@

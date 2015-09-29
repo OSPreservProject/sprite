@@ -1,0 +1,184 @@
+#
+# list.test
+#
+# Tests for the lvarpop command.
+#---------------------------------------------------------------------------
+# Copyright 1992 Karl Lehenbauer and Mark Diekhans.
+#
+# Permission to use, copy, modify, and distribute this software and its
+# documentation for any purpose and without fee is hereby granted, provided
+# that the above copyright notice appear in all copies.  Karl Lehenbauer and
+# Mark Diekhans make no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without express or
+# implied warranty.
+#------------------------------------------------------------------------------
+# $Id: list.test,v 2.0 1992/10/16 04:49:59 markd Rel $
+#------------------------------------------------------------------------------
+#
+
+if {[info procs test] != "test"} then {source testlib.tcl}
+
+Test list-1.1 {lvarpop tests} {
+    set a {a b c d e f g h i j}
+    list [lvarpop a 0] $a
+} 0 {a {b c d e f g h i j}}
+
+Test list-1.2 {lvarpop tests} {
+    set a {a bbbbbb c d e f g h i j}
+    list [lvarpop a 1] $a
+} 0 {bbbbbb {a c d e f g h i j}}
+
+Test list-1.3 {lvarpop tests} {
+    set a {a bbbbbb c d e f g h i j}
+    list [lvarpop a 4] $a
+} 0 {e {a bbbbbb c d f g h i j}}
+
+Test list-1.4 {lvarpop tests} {
+    set a {a bbbbbb c d e f g h i j}
+    list [lvarpop a 2 frobozz] $a
+} 0 {c {a bbbbbb frobozz d e f g h i j}}
+
+Test list-1.5 {lvarpop tests} {
+    set a {a bbbbbb frozbozz d e f g h i j}
+    list [lvarpop a 2 f] $a
+} 0 {frozbozz {a bbbbbb f d e f g h i j}}
+
+Test list-1.6 {lvarpop tests} {
+    set a {a bbbbbb c d e f g h i j}
+    list [lvarpop a 20 frobozz] $a
+} 0 {{} {a bbbbbb c d e f g h i j}}
+
+Test list-1.7 {lvarpop tests} {
+    set a {}
+    list [lvarpop a] $a
+} 0 {{} {}}
+
+Test list-1.8 {lvarpop tests} {
+    set a "a bbbbbb \{a"
+    lvarpop a 2 frobozz
+} 1 {unmatched open brace in list}
+
+Test list-1.9 {lvarpop tests} {
+    lvarpop
+} 1 {wrong # args: lvarpop var [index [string]]}
+
+Test list-1.10 {lvarpop tests} {
+    unset a
+    lvarpop a
+} 1 {can't read "a": no such variable}
+
+
+Test list-2.1 {lvarpush tests} {
+    set a {a b c d e f g h i j}
+    lvarpush a "xxx"
+    set a
+} 0 {xxx a b c d e f g h i j}
+
+Test list-2.2 {lvarpush tests} {
+    set a {a c d e f g h i j}
+    lvarpush a b 1
+    set a
+} 0 {a b c d e f g h i j}
+
+Test list-2.3 {lvarpush tests} {
+    set a {a bbbbbb c d f g h i j}
+    lvarpush a e 4
+    set a
+} 0 {a bbbbbb c d e f g h i j}
+
+Test list-2.4 {lvarpush tests} {
+    set a {a bbbbbb c d e f g h i j}
+    lvarpush a frobozz 2
+    set a
+} 0 {a bbbbbb frobozz c d e f g h i j}
+
+Test list-2.5 {lvarpush tests} {
+    set a {a b c d}
+    lvarpush a e 4
+    set a
+} 0 {a b c d e}
+
+Test list-2.6 {lvarpush tests} {
+    set a {a b c d}
+    lvarpush a e 4
+    set a
+} 0 {a b c d e}
+
+Test list-2.7 {lvarpush tests} {
+    set a {a b c d}
+    lvarpush a e 14
+    set a
+} 0 {a b c d e}
+
+Test list-2.8 {lvarpush tests} {
+    set a "a bbbbbb \{a"
+    lvarpush a 2 frobozz
+} 1 {unmatched open brace in list}
+
+Test list-2.9 {lvarpush tests} {
+    set a {}
+    lvarpush a a
+    set a
+} 0 {a}
+
+Test list-2.10 {lvarpush tests} {
+    unset a
+    lvarpush a a
+    set a
+} 0 {a}
+
+Test list-2.11 {lvarpush tests} {
+    set a "a bbbbbb \{a"
+    lvarpush a 2 frobozz
+} 1 {unmatched open brace in list}
+
+Test list-2.12 {lvarpush tests} {
+    lvarpush
+} 1 {wrong # args: lvarpush var string [index]}
+
+
+Test list-3.1 {lvarcat} {
+    unset a
+    lvarcat a a b c d e f g
+    set a
+} 0 {a b c d e f g}
+
+Test list-3.2 {lvarcat} {
+    unset a
+    lvarcat a a b c d e f g
+} 0 {a b c d e f g}
+
+Test list-3.3 {lvarcat} {
+    unset a
+    lvarcat a a {b c d} {e f g h}
+    set a
+} 0 {a b c d e f g h}
+
+Test list-3.4 {lvarcat} {
+    unset a
+    lvarcat a a {b c d} {e f g h}
+} 0 {a b c d e f g h}
+
+Test list-3.5 {lvarcat} {
+    unset a
+    lvarcat a a {b {c d}}
+    lvarcat a {{e f}} g h
+    set a
+} 0 {a b {c d} {e f} g h}
+
+Test list-3.6 {lvarcat} {
+    unset a
+    lvarcat a a\{ {b \{c d} \{d
+    set a
+} 0 "a{ b \\{c d {d"
+
+Test list-3.7 {lvarcat} {
+    lvarcat a
+} 1 {wrong # args: lvarcat var string [string...]}
+
+Test list-3.8 {lvarcat} {
+    lvarcat
+} 1 {wrong # args: lvarcat var string [string...]}
+
+
+

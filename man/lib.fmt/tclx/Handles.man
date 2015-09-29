@@ -1,0 +1,198 @@
+
+
+
+Handles               C Library Procedures                Handles
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tcl_HandleAlloc,     Tcl_HandleFree,      Tcl_HandleTblInit,
+     Tcl_HandleTblRelease,  Tcl_HandleTblUseCount Tcl_HandleWalk,
+     Tcl_HandleXlate - Dynamic, handle addressable tables.
+
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttccllEExxtteenndd..hh>>
+
+     void_pt
+     TTccll__HHaannddlleeTTbbllIInniitt (_h_a_n_d_l_e_B_a_s_e, _e_n_t_r_y_S_i_z_e, _i_n_i_t_E_n_t_r_i_e_s)
+
+     int
+     TTccll__HHaannddlleeTTbbllUUsseeCCoouunntt (_h_e_a_d_e_r_P_t_r, _a_m_o_u_n_t)
+
+     void
+     TTccll__HHaannddlleeTTbbllRReelleeaassee (_h_e_a_d_e_r_P_t_r)
+
+     void_pt
+     TTccll__HHaannddlleeAAlllloocc (_h_e_a_d_e_r_P_t_r, _h_a_n_d_l_e_P_t_r)
+
+     void
+     TTccll__HHaannddlleeFFrreeee (_h_e_a_d_e_r_P_t_r, _e_n_t_r_y_P_t_r)
+
+     void_pt
+     TTccll__HHaannddlleeWWaallkk (_h_e_a_d_e_r_P_t_r, _w_a_l_k_K_e_y_P_t_r)
+
+     void
+     TTccll__WWaallkkKKeeyyTTooHHaannddllee (_h_e_a_d_e_r_P_t_r, _w_a_l_k_K_e_y, _h_a_n_d_l_e_P_t_r)
+
+     void_pt
+     TTccll__HHaannddlleeXXllaattee (_i_n_t_e_r_p, _h_e_a_d_e_r_P_t_r, _h_a_n_d_l_e)
+
+AARRGGUUMMEENNTTSS
+     char         *_h_a_n_d_l_e_B_a_s_e   (in)      Base name for the  han-
+                                          dle,    numeric   entry
+                                          number     will      be
+                                          appended.
+
+     int          _e_n_t_r_y_S_i_z_e     (in)      Size   of   the   table
+                                          entries, in bytes.
+
+     int          _i_n_i_t_E_n_t_r_i_e_s   (in)      Initial    number    of
+                                          entries to allocate.
+
+     int          _a_m_o_u_n_t        (in)      Amount to alter the use
+                                          count by.
+
+     void_pt      _h_e_a_d_e_r_P_t_r     (in)      Pointer to the header.
+
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+Handles               C Library Procedures                Handles
+
+
+
+     char         *_h_a_n_d_l_e_P_t_r    (out)     The  handle   name   is
+                                          returned here.  It must
+                                          be large enough to hold
+                                          the  handle  base  name
+                                          with a number appended.
+
+     Tcl_Interp   *_i_n_t_e_r_p       (in)      Interpreter to use  for
+                                          error reporting.
+
+     char         *_h_a_n_d_l_e       (in)      Name   of   handle   to
+                                          operate on.
+
+     void_pt      _e_n_t_r_y_P_t_r      (in)      Pointer  to  a   handle
+                                          table entry.
+
+     int          *_w_a_l_k_K_e_y_P_t_r   (i/o)     Key used  to  walk  the
+                                          table, initialize to -1
+                                          before the first call.
+
+     int          _w_a_l_k_K_e_y       (in)      Key returned from walk-
+                                          ing the table.
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The Tcl handle facility  provides  a  way  to  manage  table
+     entries  that may be referenced by a textual handle from Tcl
+     code.  This is provided for applications that need to create
+     data  structures  in  one  command, return a reference (i.e.
+     pointer) to that particular data structure and  then  access
+     that  data  structure in other commands. An example applica-
+     tion is file handles.
+
+     A handle consists of a base  name,  which  is  some  unique,
+     meaningful name, such as `ffiillee' and a numeric value appended
+     to the base name (e.g. `file3').   The  handle  facility  is
+     designed  to  provide  a standard mechanism for building Tcl
+     commands that allocate and access table entries based on  an
+     entry  index.   The  tables are expanded when needed, conse-
+     quently pointers to entries should not be kept, as they will
+     become  invalid  when  the  table is expanded.  If the table
+     entries are large or pointers must be kept to  the  entries,
+     then  the  the  entries  should  be allocated separately and
+     pointers kept in the handle table.  A use count is  kept  on
+     the  table.   This use count is intended to determine when a
+     table shared by multiple commands is to be release.
+
+     TTccll__HHaannddlleeTTbbllIInniitt creates and initialize a Tcl dynamic  han-
+     dle  table.  The specified initial number of entries will be
+     allocated and added to the free list.  The use count will be
+     set to one.
+
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+Handles               C Library Procedures                Handles
+
+
+
+     TTccll__HHaannddlleeTTbbllUUsseeCCoouunntt alters the use count on  a  table  and
+     returns  the  new  value.  The use count has _a_m_o_u_n_t added to
+     it, where _a_m_o_u_n_t may be positive, zero or negative.  A  zero
+     value  retrieves  the  current  use count.  This is normally
+     used to increment the use count when multiple  commands  are
+     sharing the table.
+
+     TTccll__HHaannddlleeTTbbllRReelleeaassee decrements the use count on a table. If
+     it  becomes  zero  (or  negative),  the  the  table  will be
+     released. Note that no clean up is done on the  table  entry
+     client  supplied  data.   If  clean  up  must  be done, then
+     TTccll__HHaannddlleeTTbbllUUsseeCCoouunntt can  be  used  to  decrement  the  use
+     count.   When  it  goes to zero, the table may be walked and
+     then released.  _H_e_a_d_e_r_P_t_r is declared as CClliieennttDDaattaa so  that
+     the procedure may be passed as a command deletion procedure.
+
+     TTccll__HHaannddlleeAAlllloocc allocates an entry and associates  a  handle
+     with it.  The handle is returned to the buffer pointed to by
+     _h_a_n_d_l_e_P_t_r can then be used to access the entry.  The  buffer
+     must  be  large  enough  to accommodate the base handle name
+     with 2 to 4 digits appended along with  a  terminating  null
+     byte.   A  pointer  is  returned to the allocated entry.  If
+     TTccll__HHaannddlleeFFrreeee has not  been  called  since  initialization,
+     handles  will  be  handed  out sequentially from zero.  This
+     behavior is useful in setting up initial  entries,  such  as
+     ``ssttddiinn'' for a file table.
+
+     TTccll__HHaannddlleeXXllaattee translates a handle  to  a  pointer  to  the
+     corresponding  table  entry.  If the handle is not allocated
+     (open) or is invalid, NULL is returned and an error  message
+     is set in _i_n_t_e_r_p->_r_e_s_u_l_t.
+
+     TTccll__HHaannddlleeWWaallkk walks through and finds every allocated entry
+     in  a  table.  Entries may be deallocated during a walk, but
+     should not  be  allocated.   TTccll__HHaannddlleeWWaallkk  will  return  a
+     pointer  to the entry, or NULL if no more entries are avail-
+     able.  The integer pointed to by wwaallkkKKeeyyPPttrr should be set to
+     `-1'  before  the first call, and then the pointer passed to
+     each subsequent call left unmodified.
+
+     TTccll__WWaallkkKKeeyyTTooHHaannddllee converts a walk key, as returned from  a
+     call to TTccll__HHaannddlleeWWaallkk into a handle.
+
+     TTccll__HHaannddlleeFFrreeee frees a handle table entry.
+
+KKEEYYWWOORRDDSS
+     handle, table, allocate
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     3
+
+
+

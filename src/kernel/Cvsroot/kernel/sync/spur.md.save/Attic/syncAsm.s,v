@@ -1,0 +1,169 @@
+head     8.0;
+branch   ;
+access   ;
+symbols  sun4nw:8.0 symm:8.0 spur:8.0 newlib:8.0;
+locks    ; strict;
+comment  @# @;
+
+
+8.0
+date     88.11.11.18.38.20;  author douglis;  state Stable;
+branches ;
+next     1.3;
+
+1.3
+date     88.11.11.15.28.35;  author mendel;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.10.30.21.13.35;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.08.23.10.16.12;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Hack because SPUR test-and-set won't work with interrupts enabled.
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@/* syncAsm.s --
+ *
+ *	Routine to grab a monitor lock.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ * rcs = $Header: /sprite/src/kernel/sync/spur.md/RCS/syncAsm.s,v 1.3 88/11/11 15:28:35 mendel Exp Locker: douglis $ SPRITE (Berkeley)
+ */
+
+#include "machConst.h"
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Sync_GetLock --
+ *
+ *	Acquire a lock.  Other processes trying to acquire the lock
+ *	will block until this lock is released.
+ *
+ *      A critical section of code is protected by a lock.  To safely
+ *      execute the code, the caller must first call Sync_GetLock to
+ *      acquire the lock on the critical section.  At the end of the
+ *      critical section the caller has to call Sync_Unlock to release
+ *      the lock and allow other processes to execute in the critical
+ *      section.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *      The lock is set.  Other processes will be blocked if they try
+ *      to lock the same lock.  A blocked process will try to get the
+ *      lock after this process unlocks the lock with Sync_Unlock.
+ *
+ * C equivalent:
+ *
+ *	void
+ *	Sync_GetLock(lockPtr)
+ *	   Sync_Lock *lockPtr;
+ *	{
+ *	    if (Mach_TestAndSet(&(lockPtr->inUse)) != 0) {
+ *		Sync_SlowLock(lockPtr); 
+ *	    }
+ *	}
+ *
+ *----------------------------------------------------------------------
+ */
+
+    .text
+    .globl _Sync_GetLock
+_Sync_GetLock:
+    rd_kpsw		r17
+    and			r18, r17, $~(MACH_KPSW_INTR_TRAP_ENA|MACH_KPSW_IBUFFER_ENA)
+    jump		2f
+    wr_kpsw		r18, $0
+
+#ifdef notdef
+    ld_32		r19, r11, $0
+    nop
+    cmp_br_delayed	eq, r19, $0, 1f
+    nop
+    cmp_trap		always, r0, r0, $2
+    nop
+
+1:
+#endif
+    .align		5	/* 32 bute align test_and_set so it starts a
+			         * ib block. */
+2:	
+    test_and_set	r16, r11, $0
+    nop
+    nop
+    nop
+    nop
+    nop
+
+    wr_kpsw		r17, $0
+
+    cmp_br_delayed	eq, r16, $0, 1f
+    add_nt		r27, r11, $0
+    call		_Sync_SlowLock
+    nop
+1:
+    return		r10, $8
+    nop
+
+@
+
+
+1.3
+log
+@Turn off the ibuffer for test and sets.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/sync/spur.md/RCS/syncAsm.s,v 1.2 88/10/30 21:13:35 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+@
+
+
+1.2
+log
+@Modified with patch for ibuffer.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: syncAsm.s,v 1.1 88/08/23 10:16:12 nelson Exp $ SPRITE (Berkeley)
+d55 1
+a55 1
+    and			r18, r17, $~MACH_KPSW_INTR_TRAP_ENA
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: loMem.s,v 1.22 88/08/09 18:38:01 nelson Exp $ SPRITE (Berkeley)
+d56 1
+d69 3
+a71 1
+
+d73 4
+@

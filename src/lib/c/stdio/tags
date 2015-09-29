@@ -1,0 +1,52 @@
+CvtFtoA	vfprintf.c	/^CvtFtoA(value, numDigits, afterPoint, pointPtr, si/
+CvtUtoA	vfprintf.c	/^CvtUtoA(i, base, buf, lengthPtr)$/
+StdioFileCloseProc	StdioFileCloseProc.c	/^StdioFileCloseProc(stream)$/
+StdioFileOpenMode	StdioFileOpenMode.c	/^StdioFileOpenMode(access)$/
+StdioFileReadProc	StdioFileReadProc.c	/^StdioFileReadProc(stream)$/
+StdioFileWriteProc	StdioFileWriteProc.c	/^StdioFileWriteProc(stream, flush)$/
+Stdio_Setup	Stdio_Setup.c	/^Stdio_Setup(stream, readable, writable, buffer, bu/
+StringReadProc	sscanf.c	/^StringReadProc(stream)$/
+StringWriteProc	sprintf.c	/^StringWriteProc(stream)$/
+WriteProc	vsprintf.c	/^WriteProc(stream)$/
+_cleanup	_cleanup.c	/^_cleanup()$/
+clearerr	clearerr.c	/^clearerr(stream)$/
+fclose	fclose.c	/^fclose(stream)$/
+fdopen	fdopen.c	/^fdopen(streamID, access)$/
+fflush	fflush.c	/^fflush(stream)$/
+fgetc	fgetc.c	/^fgetc(stream)$/
+fgets	fgets.c	/^fgets(bufferPtr, maxChars, stream)$/
+fileno	fileno.c	/^fileno(stream)$/
+fopen	fopen.c	/^fopen(fileName, access)$/
+fprintf	fprintf.c	/^fprintf(va_alist)$/
+fputc	fputc.c	/^fputc(c, stream)$/
+fputs	fputs.c	/^fputs(string, stream)$/
+fread	fread.c	/^fread(bufferPtr, size, numItems, stream)$/
+freopen	freopen.c	/^freopen(fileName, access, stream)$/
+fscanf	fscanf.c	/^fscanf(va_alist)$/
+fseek	fseek.c	/^fseek(stream, offset, base)$/
+ftell	ftell.c	/^ftell(stream)$/
+fwrite	fwrite.c	/^fwrite(bufferPtr, size, numItems, stream)$/
+getchar	getchar.c	/^getchar()$/
+gets	gets.c	/^gets(bufferPtr)$/
+getw	getw.c	/^getw(stream)$/
+perror	perror.c	/^perror(msg)$/
+printf	printf.c	/^printf(va_alist)$/
+putchar	putchar.c	/^putchar(c)$/
+puts	puts.c	/^puts(string)$/
+putw	putw.c	/^putw(w, stream)$/
+rewind	rewind.c	/^rewind(stream)$/
+scanf	scanf.c	/^scanf(va_alist)$/
+setbuf	setbuf.c	/^setbuf(stream, buf)$/
+setbuffer	setbuffer.c	/^setbuffer(stream, buf, size)$/
+setlinebuf	setlinebuf.c	/^setlinebuf(stream)$/
+setvbuf	setvbuf.c	/^setvbuf(stream, buf, mode, size)$/
+sprintf	sprintf.c	/^sprintf(va_alist)$/
+sscanf	sscanf.c	/^sscanf(va_alist)$/
+tempnam	tmpnam.c	/^tempnam(dir, pfx)$/
+tmpfile	tmpnam.c	/^tmpfile()$/
+tmpnam	tmpnam.c	/^tmpnam(s)$/
+ungetc	ungetc.c	/^ungetc(c, stream)$/
+vfprintf	vfprintf.c	/^vfprintf(stream, format, args)$/
+vfscanf	vfscanf.c	/^vfscanf(stream, format, args)$/
+vprintf	vprintf.c	/^vprintf(format, args)$/
+vsprintf	vsprintf.c	/^vsprintf(string, format, args)$/

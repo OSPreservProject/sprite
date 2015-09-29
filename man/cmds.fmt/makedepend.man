@@ -1,0 +1,200 @@
+
+
+
+MAKEDEPEND                User Commands                MAKEDEPEND
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     makedepend - Generate dependency list for make
+
+SSYYNNOOPPSSIISS
+     mmaakkeeddeeppeenndd [_o_p_t_i_o_n_s] _f_i_l_e _f_i_l_e ...
+
+OOPPTTIIOONNSS
+     --DD _d_e_f              Define a macro.  This argument  has  the
+                         same  meaning as the corresponding argu-
+                         ment to cccc.
+
+     --ff _m_a_k_e_f_i_l_e         Use _m_a_k_e_f_i_l_e as the makefile to  modify.
+                         If  _m_a_k_e_f_i_l_e  is  ``-'', mmaakkeeddeeppeenndd will
+                         simply print dependency  information  on
+                         standard  output.   _M_a_k_e_f_i_l_e defaults to
+                         mmaakkeeffiillee   if   it   exists,   otherwise
+                         MMaakkeeffiillee.
+
+     --II _i_n_c_l_u_d_e_D_i_r       Search for include files  in  _i_n_c_l_u_d_e_D_i_r
+                         before  looking  in  the  default system
+                         directories.  If there are many --II argu-
+                         ments,  the  directories are searched in
+                         the same order as the arguments.
+
+     --mm _t_m               Use _t_m as the target  machine  for  gen-
+                         erating    dependencies.    The   target
+                         machine  determines   where   mmaakkeeddeeppeenndd
+                         looks for machine-dependent header files
+                         (see below).   If  this  option  is  not
+                         specified,  the  target machine defaults
+                         to the value of the $$MMAACCHHIINNEE environment
+                         variable.
+
+     --oo _s_u_f_f_i_x           Use  _s_u_f_f_i_x  as  the  suffix   for   the
+                         ``object''  files  listed in the output.
+                         If this argument is not  specified,  the
+                         suffix defaults to ..oo.
+
+     --pp                  Output  the  full  path  name  for  each
+                         include  file.   If  this  switch  isn't
+                         specified, then only  the  include  file
+                         name  given in the ##iinncclluuddee statement is
+                         output.
+
+     --ss _s_t_r_i_n_g           If this switch is given,  _s_t_r_i_n_g  speci-
+                         fies  the comment string that identifies
+                         the beginning  of  dependencies  in  the
+                         makefile.   _S_t_r_i_n_g  must  start with the
+                         comment character ``#''.
+
+
+
+
+Sprite v.1.0       Printed:  January 29, 1992                   1
+
+
+
+
+
+
+MAKEDEPEND                User Commands                MAKEDEPEND
+
+
+
+     --vv                  Verbose mode.  For each file included by
+                         one  of  the _f_i_l_es, output a sequence of
+                         comment  lines  that  list   the   other
+                         include  files  included by that include
+                         file.
+
+     --ww _w_i_d_t_h            Try to arrange for output lines  not  to
+                         contain   more   than  _w_i_d_t_h  characters
+                         total.  If a single  _f_i_l_e  has  multiple
+                         dependencies  then  they will be grouped
+                         onto a single line in  the  output  file
+                         unless  this  grouping  would  cause the
+                         output line to exceed  _w_i_d_t_h  characters
+                         in length.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     MMaakkeeddeeppeenndd is a program that generates dependency lines  for
+     makefiles.  It reads a collection of C source files given by
+     the _f_i_l_e arguments and generates a collection of lines  each
+     having the form
+
+          ffiillee..oo::   xx..hh   yy..hh   //aa//bb//cc..hh
+
+     These dependency lines describe all  of  the  include  files
+     used directly or indirectly in compiling each source _f_i_l_e.
+
+     MMaakkeeddeeppeenndd normally inserts the dependency  lines  into  the
+     file  mmaakkeeffiillee  if it exists, or MMaakkeeffiillee otherwise (see the
+     --ff option for other alternatives).  To insert the  dependen-
+     cies  in  a makefile, mmaakkeeddeeppeenndd searches the makefile for a
+     trigger line.  Usually the trigger line is
+
+          ## DDOO NNOOTT DDEELLEETTEE TTHHIISS LLIINNEE ---- mmaakkee ddeeppeenndd ddeeppeennddss oonn iitt..
+
+     but a different trigger string may be selected with  the  --ss
+     switch.  MMaakkeeddeeppeenndd locates the trigger line, deletes all of
+     the information after the trigger line, and replaces it with
+     the  dependency  lines.   A  backup  copy  of  the  original
+     makefile is saved in _m_a_k_e_f_i_l_e..bbaakk~~, where  _m_a_k_e_f_i_l_e  is  the
+     name of the original makefile.
+
+     MMaakkeeddeeppeenndd duplicates the actions of cccc in determining which
+     include  files  are  required  for  each  _f_i_l_e.  It normally
+     checks for include files in the current directory,  then  in
+     //sspprriittee//lliibb//iinncclluuddee,   then   in   //sspprriittee//lliibb//iinncclluuddee//_t_m..mmdd
+     (where _t_m is the target machine being compiled for;  this is
+     either the value of the $$MMAACCHHIINNEE environment variable or the
+     value given in the --mm option).  If  --II  options  are  given,
+     then those directories are searched before the standard sys-
+     tem directories.  MMaakkeeddeeppeenndd processes conditional  compila-
+     tion  statements  such  as  ##ddeeffiinnee  and ##iiffddeeff in a fashion
+
+
+
+Sprite v.1.0       Printed:  January 29, 1992                   2
+
+
+
+
+
+
+MAKEDEPEND                User Commands                MAKEDEPEND
+
+
+
+     similar to the C preprocessor in order to consider only  the
+     include  files  that  would  be processed by the C compiler.
+     You should pass the same --DD options to mmaakkeeddeeppeenndd  that  you
+     would  give  to  cccc.   MMaakkeeddeeppeenndd can also deal with ##iiff and  |
+     ##eelliiff directive, except that the only allowable  expressions  |
+     are  ddeeffiinneedd((_f_o_o))  and  !!ddeeffiinneedd((_f_o_o)).  Any other expression  |
+     will evaluate to false.
+
+     There are several options that control the formatting of the
+     dependency  lines.  Normally, the first field of each output
+     line is _x..oo, where _x is one of the _f_i_l_e arguments  with  the
+     ..cc or any other suffix stripped off.  However, the --oo option
+     may be used to place a suffix other than ..oo  in  the  output
+     lines.   The  --pp  option controls how completely the include
+     file names are specified in the output.   If  --pp  is  given,
+     then  the  complete path name of each header file is output.
+     If --pp is not given, then  only  the  name  from  the  actual
+     ##iinncclluuddee  statement  is  output (e.g., ssyyss//ffiillee..hh instead of
+     //sspprriittee//lliibb//iinncclluuddee//ssyyss//ffiillee..hh).  This default is useful for
+     Pmake,  which  manages  its  own  include  file search path.
+     Finally, the --ww switch may be used to control the length  of
+     the output lines, and the --vv switch causes extra information
+     about nested includes to be output in the  form  of  comment
+     lines.
+
+
+SSEEEE AALLSSOO
+     mkmf, pmake
+
+
+BBUUGGSS
+     Can't handle arbitrary expressions following ##iiff or ##eelliiff.    |
+
+     Makedepend's algorithm can cause problems in some cases.  It  |
+     only  parses  each include file once and generates a list of  |
+     dependencies for that file.  However,  if  defines  are  set  |
+     differently, it could be that an include file will depend on  |
+     two different sets of files in  two  different  invocations.  |
+     In  this case, makedepend will return the wrong dependencies  |
+     for the second case.
+
+
+KKEEYYWWOORRDDSS
+     dependencies, include file, object file
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  January 29, 1992                   3
+
+
+

@@ -1,0 +1,424 @@
+head     9.2;
+branch   ;
+access   ;
+symbols  Summer89:9.0 newlib:8.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.2
+date     90.09.12.13.36.46;  author shirriff;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.09.11.10.45.09;  author shirriff;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.23.42;  author douglis;  state Stable;
+branches ;
+next     8.3;
+
+8.3
+date     89.02.19.22.13.40;  author jhh;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.12.04.15.51.46;  author ouster;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.22.19.38.32;  author jhh;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.43.54;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     88.10.28.18.20.24;  author mlgray;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.10.28.15.02.32;  author mlgray;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Mary checking in for Mike, since this isn't in RCS.
+@
+
+
+9.2
+log
+@Changed includes from quotes to angles.
+@
+text
+@/* vmTrace.c --
+ *
+ *     	Virtual memory tracing routines.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmTrace.c,v 9.1 90/09/11 10:45:09 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <vm.h>
+#include <vmInt.h>
+#include <vmTrace.h>
+#include <mach.h>
+#include <sync.h>
+#include <sys.h>
+#include <stdio.h>
+#include <bstring.h>
+
+Sync_Semaphore	traceMutex = Sync_SemInitStatic("Vm:traceMutex");
+
+Boolean		vm_Tracing = FALSE;
+int		vmTracesPerClock;
+int		vmTracesToGo;
+char		*vmTraceBuffer = (char *)NIL;
+int		vmTraceFirstByte;
+int		vmTraceNextByte;
+int		vmTraceTime = 0;
+Fs_Stream	*vmTraceFilePtr = (Fs_Stream *)NIL;
+Boolean		vmTraceDumpStarted = FALSE;
+Vm_TraceStats	vmTraceStats;
+Boolean		vmTraceNeedsInit = FALSE;
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmStoreTraceRec --
+ *
+ *      Store a trace record into the trace buffer.
+ *  
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Trace buffer modified if the record will fit.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+VmStoreTraceRec(recType, size, traceRecAddr, checkOverflow)
+    int		recType;	/* The type of trace record. */
+    int		size;		/* Size of the trace record to dump. */
+    Address	traceRecAddr;	/* Trace record to dump. */
+    Boolean	checkOverflow;	/* TRUE implies if should check to see if
+				 * should dump the buffer. */
+{
+    short	*shortPtr;
+
+    MASTER_LOCK(&traceMutex);
+    Sync_SemRegister(&traceMutex);
+
+    if (vmTraceNextByte - vmTraceFirstByte > VM_TRACE_BUFFER_SIZE - size) {
+	vmTraceStats.traceDrops++;
+	MASTER_UNLOCK(&traceMutex);
+	return;
+    }
+    if ((vmTraceNextByte & VM_TRACE_BUF_MASK) !=
+        ((vmTraceNextByte + size - 1) & VM_TRACE_BUF_MASK)) {
+	/*
+	 * We are at the end of the buffer so skip to the end of the
+	 * buffer.
+	 */
+	shortPtr = VM_GET_TRACE_BUFFER_PTR(short);
+	*shortPtr = VM_TRACE_SKIP_REC;
+	vmTraceNextByte = (vmTraceNextByte + size) & VM_TRACE_BUF_MASK;
+	if (vmTraceNextByte - vmTraceFirstByte > 
+				VM_TRACE_BUFFER_SIZE - size) {
+	    vmTraceStats.traceDrops++;
+	    MASTER_UNLOCK(&traceMutex);
+	    return;
+	}
+    }
+    if (recType != 0) {
+	short	*shortPtr;
+
+	shortPtr = (short *)traceRecAddr;
+	*shortPtr = recType;
+    }
+    bcopy(traceRecAddr, VM_GET_TRACE_BUFFER_PTR(char), size);
+    vmTraceNextByte += size;
+    if (checkOverflow) {
+	if (vmTraceNextByte - vmTraceFirstByte > VM_TRACE_BUFFER_SIZE / 2 &&
+	    !vmTraceDumpStarted) {
+	    vmTraceDumpStarted = TRUE;
+	    Proc_CallFunc(VmTraceDump, (ClientData)0, 0);
+	}
+    }
+    MASTER_UNLOCK(&traceMutex);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmTraceDump --
+ *
+ *	Daemon to dump virtual memory trace records to a file.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Page freed.
+ *
+ *----------------------------------------------------------------------
+ */
+/* ARGSUSED */
+void
+VmTraceDump(data, callInfoPtr)
+    ClientData	data;
+    Proc_CallInfo	*callInfoPtr;
+{
+    int			curNextByte;
+    int			length;
+    int			savedLength;
+    ReturnStatus	status;
+
+    vmTraceStats.traceDumps++;
+
+    /*
+     * Dump the trace buffer.
+     */
+    curNextByte = vmTraceNextByte;
+    while (vmTraceFirstByte != curNextByte) {
+	length = VM_TRACE_BUFFER_SIZE - VM_GET_BUFFER_INDEX(vmTraceFirstByte);
+	if (curNextByte - vmTraceFirstByte < length) {
+	    length = curNextByte - vmTraceFirstByte;
+	}
+	savedLength = length;
+	status = Fs_Write(vmTraceFilePtr, 
+			  vmTraceBuffer + VM_GET_BUFFER_INDEX(vmTraceFirstByte),
+			  vmTraceFirstByte, &length);
+	if (status != SUCCESS) {
+	    printf("%s VmTraceDaemon: Couldn't write trace file, reason %x\n",
+		    "Warning:", status);
+	    break;
+	} else if (length != savedLength) {
+	    printf("Warning: VmTraceDaemon: Short write, length = %d\n",
+		    length);
+	    break;
+	}
+	vmTraceFirstByte += length;
+    }
+    vmTraceDumpStarted = FALSE;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmCheckTraceOverflow --
+ *
+ *	Dump the trace buffer if it is about to overflow.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+VmCheckTraceOverflow()
+{
+    MASTER_LOCK(&traceMutex);
+    if (vmTraceNextByte - vmTraceFirstByte > VM_TRACE_BUFFER_SIZE / 2 &&
+	!vmTraceDumpStarted) {
+	vmTraceDumpStarted = TRUE;
+	Proc_CallFunc(VmTraceDump, (ClientData)0, 0);
+    }
+    MASTER_UNLOCK(&traceMutex);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_StoreTraceTime --
+ *
+ *	Write a trace time stamp.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Vm_StoreTraceTime(timeStamp)
+    Timer_Ticks	timeStamp;
+{
+    Vm_TraceTimeStamp	timeStampRec;
+
+    bcopy((Address)&timeStamp, (Address)&timeStampRec.time,
+	    sizeof(timeStampRec.time));
+    VmStoreTraceRec(VM_TRACE_TIME_REC, sizeof(timeStampRec),
+		     (Address)&timeStampRec, TRUE);
+}
+@
+
+
+9.1
+log
+@Added function prototyping.
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm.ken/RCS/vmTrace.c,v 9.0 89/09/12 15:23:42 douglis Stable Locker: shirriff $ SPRITE (Berkeley)";
+d13 9
+a21 9
+#include "sprite.h"
+#include "vm.h"
+#include "vmInt.h"
+#include "vmTrace.h"
+#include "mach.h"
+#include "sync.h"
+#include "sys.h"
+#include "stdio.h"
+#include "bstring.h"
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmTrace.c,v 8.3 89/02/19 22:13:40 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d15 1
+d20 2
+@
+
+
+8.3
+log
+@Changes due to lock registration
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmTrace.c,v 8.2 88/12/04 15:51:46 ouster Exp Locker: jhh $ SPRITE (Berkeley)";
+@
+
+
+8.2
+log
+@Stop using obsolete header files.
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmTrace.c,v 8.1 88/11/22 19:38:32 jhh Exp Locker: ouster $ SPRITE (Berkeley)";
+d20 1
+a20 1
+Sync_Semaphore	traceMutex = SYNC_SEM_INIT_STATIC("traceMutex");
+d61 1
+@
+
+
+8.1
+log
+@new semaphore definition
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmTrace.c,v 8.0 88/11/11 18:43:54 douglis Stable Locker: jhh $ SPRITE (Berkeley)";
+a18 1
+#include "byte.h"
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmTrace.c,v 1.2 88/10/28 18:20:24 mlgray Exp Locker: douglis $ SPRITE (Berkeley)";
+d21 1
+a21 1
+unsigned	int	traceMutex = 0;
+d61 1
+a61 1
+    MASTER_LOCK(traceMutex);
+d65 1
+a65 1
+	MASTER_UNLOCK(traceMutex);
+d80 1
+a80 1
+	    MASTER_UNLOCK(traceMutex);
+d99 1
+a99 1
+    MASTER_UNLOCK(traceMutex);
+d177 1
+a177 1
+    MASTER_LOCK(traceMutex);
+d183 1
+a183 1
+    MASTER_UNLOCK(traceMutex);
+@
+
+
+1.2
+log
+@Converted to new C library.
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmTrace.c,v 1.1 88/10/28 15:02:32 mlgray Exp Locker: mlgray $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: vmSun.c,v 1.13 88/06/26 10:45:37 ouster Exp $ SPRITE (Berkeley)";
+d90 1
+a90 1
+    Byte_Copy(size, traceRecAddr, VM_GET_TRACE_BUFFER_PTR(char));
+d145 2
+a146 3
+	    Sys_Panic(SYS_WARNING,
+		"VmTraceDaemon: Couldn't write trace file, reason %x\n",
+		status);
+d149 2
+a150 2
+	    Sys_Panic(SYS_WARNING,
+		"VmTraceDaemon: Short write, length = %d\n", length);
+d208 2
+a209 2
+    Byte_Copy(sizeof(timeStampRec.time), (Address)&timeStamp, 
+	      (Address)&timeStampRec.time);
+@

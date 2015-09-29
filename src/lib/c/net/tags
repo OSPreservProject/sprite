@@ -1,0 +1,89 @@
+FD_CLR	res_send.c	/^#define	FD_CLR(n, p)	((p)->fds_bits[(n)\/NFDBITS] /
+FD_ISSET	res_send.c	/^#define	FD_ISSET(n, p)	((p)->fds_bits[(n)\/NFDBITS/
+FD_SET	res_send.c	/^#define	FD_SET(n, p)	((p)->fds_bits[(n)\/NFDBITS] /
+FD_ZERO	res_send.c	/^#define FD_ZERO(p)	bzero((char *)(p), sizeof(*(p))/
+PLURALIZE	res_debug.c	/^#define	PLURALIZE(x)	x, (x == 1) ? "" : "s"$/
+_checkhost	rcmd.c	/^_checkhost(rhost, lhost, len)$/
+_endhtent	gethostnamadr.c	/^_endhtent()$/
+_gethtbyaddr	gethostnamadr.c	/^_gethtbyaddr(addr, len, type)$/
+_gethtbyname	gethostnamadr.c	/^_gethtbyname(name)$/
+_gethtent	gethostnamadr.c	/^_gethtent()$/
+_getlong	res_comp.c	/^_getlong(msgp)$/
+_getshort	res_comp.c	/^_getshort(msgp)$/
+_res_close	res_send.c	/^_res_close()$/
+_sethtent	gethostnamadr.c	/^_sethtent(f)$/
+_validuser	rcmd.c	/^_validuser(hostf, rhost, luser, ruser, baselen)$/
+any	gethostnamadr.c	/^any(cp, match)$/
+blkencrypt	ruserpass.c	/^blkencrypt(block, edflag)$/
+deblkclr	ruserpass.c	/^char *deblkclr(blk)$/
+deblknot	ruserpass.c	/^deblknot(blk)$/
+dn_comp	res_comp.c	/^dn_comp(exp_dn, comp_dn, length, dnptrs, lastdnptr/
+dn_expand	res_comp.c	/^dn_expand(msg, eomorig, comp_dn, exp_dn, length)$/
+dn_find	res_comp.c	/^dn_find(exp_dn, msg, dnptrs, lastdnptr)$/
+dn_skipname	res_comp.c	/^dn_skipname(comp_dn, eom)$/
+enblkclr	ruserpass.c	/^enblkclr(blk,str)		\/* ignores top bit of chars in/
+enblknot	ruserpass.c	/^enblknot(blk,crp)$/
+endhostent	sethostent.c	/^endhostent()$/
+endnetent	getnetent.c	/^endnetent()$/
+endprotoent	getprotoent.c	/^endprotoent()$/
+endservent	getservent.c	/^endservent()$/
+fp_query	res_debug.c	/^fp_query(msg,file)$/
+getanswer	gethostnamadr.c	/^getanswer(answer, anslen, iquery)$/
+gethostbyaddr	gethostnamadr.c	/^gethostbyaddr(addr, len, type)$/
+gethostbyname	gethostnamadr.c	/^gethostbyname(name)$/
+getnetbyaddr	getnetbyaddr.c	/^getnetbyaddr(net, type)$/
+getnetbyname	getnetbyname.c	/^getnetbyname(name)$/
+getnetent	getnetent.c	/^getnetent()$/
+getprotobyname	getprotoname.c	/^getprotobyname(name)$/
+getprotobynumber	getproto.c	/^getprotobynumber(proto)$/
+getprotoent	getprotoent.c	/^getprotoent()$/
+getservbyname	getservbyname.c	/^getservbyname(name, proto)$/
+getservbyport	getservbyport.c	/^getservbyport(port, proto)$/
+getservent	getservent.c	/^getservent()$/
+getutmp	ruserpass.c	/^getutmp(sttyname)$/
+herror	herror.c	/^herror(s)$/
+hostalias	res_query.c	/^hostalias(name)$/
+htonl	swap.c	/^htonl(longInt)$/
+htons	swap.c	/^htons(shortInt)$/
+mkenvkey	ruserpass.c	/^mkenvkey(mch)$/
+mkpwclear	ruserpass.c	/^mkpwclear(sencpasswd,mch,spasswd)$/
+mkpwunclear	ruserpass.c	/^mkpwunclear(spasswd,mch,sencpasswd)$/
+nbs8decrypt	ruserpass.c	/^nbs8decrypt(crp,key)$/
+nbs8encrypt	ruserpass.c	/^nbs8encrypt(str,key)$/
+nbsdecrypt	ruserpass.c	/^nbsdecrypt(cpt,key,result)$/
+nbsencrypt	ruserpass.c	/^nbsencrypt(str,key,result)$/
+nbssetkey	ruserpass.c	/^nbssetkey(key)$/
+ntohl	swap.c	/^ntohl(longInt)$/
+ntohs	swap.c	/^ntohs(shortInt)$/
+p_cdname	res_debug.c	/^p_cdname(cp, msg, file)$/
+p_class	res_debug.c	/^p_class(class)$/
+p_query	res_debug.c	/^p_query(msg)$/
+p_rr	res_debug.c	/^p_rr(cp, msg, file)$/
+p_time	res_debug.c	/^*p_time(value)$/
+p_type	res_debug.c	/^p_type(type)$/
+putlong	res_comp.c	/^putlong(l, msgp)$/
+putshort	res_comp.c	/^putshort(s, msgp)$/
+querybuf	gethostnamadr.c	/^} querybuf;$/
+rcmd	rcmd.c	/^rcmd(ahost, rport, locuser, remuser, cmd, fd2p)$/
+renv	ruserpass.c	/^renv(host, aname, apass)$/
+renvlook	ruserpass.c	/^renvlook(host)$/
+res_init	res_init.c	/^res_init()$/
+res_mkquery	res_mkquery.c	/^res_mkquery(op, dname, class, type, data, datalen,/
+res_query	res_query.c	/^res_query(name, class, type, answer, anslen)$/
+res_querydomain	res_query.c	/^res_querydomain(name, domain, class, type, answer,/
+res_search	res_query.c	/^res_search(name, class, type, answer, anslen)$/
+res_send	res_send.c	/^res_send(buf, buflen, answer, anslen)$/
+rexec	rexec.c	/^rexec(ahost, rport, name, pass, cmd, fd2p)$/
+rnetrc	ruserpass.c	/^rnetrc(host, aname, apass)$/
+rresvport	rcmd.c	/^rresvport(alport)$/
+ruserok	rcmd.c	/^ruserok(rhost, superuser, ruser, luser)$/
+ruserpass	ruserpass.c	/^ruserpass(host, aname, apass)$/
+sethostent	sethostent.c	/^sethostent(stayopen)$/
+sethostfile	sethostent.c	/^sethostfile(name)$/
+setnetent	getnetent.c	/^setnetent(f)$/
+setprotoent	getprotoent.c	/^setprotoent(f)$/
+setservent	getservent.c	/^setservent(f)$/
+sreverse	ruserpass.c	/^sreverse(sto, sfrom)$/
+swab	swap.c	/^    union swab {$/
+token	ruserpass.c	/^token()$/
+toktab	ruserpass.c	/^static struct toktab {$/

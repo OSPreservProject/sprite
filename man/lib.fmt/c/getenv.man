@@ -1,0 +1,66 @@
+
+
+
+GETENV                C Library Procedures                 GETENV
+
+
+
+NNAAMMEE
+     getenv, setenv, unsetenv - manipulate environmental vari-
+     ables
+
+SSYYNNOOPPSSIISS
+     cchhaarr **ggeetteennvv((nnaammee))
+     cchhaarr **nnaammee;;
+
+     vvooiidd sseetteennvv((nnaammee,, vvaalluuee))
+     cchhaarr **nnaammee,, **vvaalluuee;;
+
+     vvooiidd uunnsseetteennvv((nnaammee))
+     cchhaarr **nnaammee;;
+
+DDEESSCCRRIIPPTTIIOONN
+     _G_e_t_e_n_v searches the environment list (see _e_n_v_i_r_o_n(7)) for a
+     string of the form _n_a_m_e==_v_a_l_u_e and returns a pointer to the
+     string _v_a_l_u_e if such a string is present, and 0 (NULL) if it
+     is not.
+
+     _S_e_t_e_n_v searches the environment list as _g_e_t_e_n_v does; if the
+     string _n_a_m_e is not found, a string of the form _n_a_m_e==_v_a_l_u_e is
+     added to the environment.  If it is found, its value is
+     changed to _v_a_l_u_e.
+
+     _U_n_s_e_t_e_n_v removes all occurrences of the string _n_a_m_e from the
+     environment.  There is no library provision for completely
+     removing the current environment.  It is suggested that the
+     following code be used to do so.
+
+          static char    *envinit[1];
+          extern char    **environ;
+          environ = envinit;
+
+SSEEEE AALLSSOO
+     csh(1), sh(1), execve(2), environ(7)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0              March 20, 1987                         1
+
+
+

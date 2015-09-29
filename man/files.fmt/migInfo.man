@@ -1,0 +1,132 @@
+
+
+
+migInfo                   File Formats                    migInfo
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     /sprite/admin/migInfo - file containing the migration status
+     of all Sprite hosts
+
+DDEESSCCRRIIPPTTIIOONN
+     The migration status of all Sprite hosts is stored in  ASCII
+     format  in  a  shared file, //sspprriittee//aaddmmiinn//mmiiggIInnffoo. Each host
+     runs a daemon that is responsible for updating the  informa-
+     tion  for  its host.  Each record is fixed length, to permit
+     the daemons to update individual records without first pars-
+     ing the entire file.
+
+     Each record contains the following information, separated by
+     white space:
+
+     hostID        numeric identifier of host.
+
+     utilizations  3 weighted CPU utilizations,  as  percentages,
+                   separated by slashes.
+
+     ready queues  3 weighted queue lengths,  as  floating-point,
+                   separated by slashes.
+
+     boottime      time at  which  host  last  rebooted  (seconds
+                   since 1/1/70).
+
+     timestamp     time when record last updated, (seconds  since
+                   1/1/70).
+
+     noInput       number of  seconds  since  keyboard  or  mouse
+                   input.
+
+     allowMigration
+                   whether process  migration  to  this  host  is
+                   allowed .
+
+     foreignProcs  number of migrated processes running  on  this
+                   host.
+
+     migVersion    version number of migration  running  on  this
+                   host.
+
+     pad           Reserved for future expansion.
+
+     Although the information is stored in ASCII format, to  make
+     it  sharable  by  machines  with  different  byte orderings,
+     internally the migration database is accessed  via  routines
+     that  convert  between  ASCII  and  an internal C structure.
+     Refer to the documentation for the mmiigg library for  informa-
+     tion about this structure.
+
+
+
+Sprite v.1.0       Printed:  January 26, 1990                   1
+
+
+
+
+
+
+migInfo                   File Formats                    migInfo
+
+
+
+SSEEEE AALLSSOO
+     mig, db, loadavg
+
+KKEEYYWWOORRDDSS
+     process migration, load average, idle time, database
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  January 26, 1990                   2
+
+
+

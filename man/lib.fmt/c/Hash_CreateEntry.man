@@ -1,0 +1,68 @@
+
+
+
+Hash_CreateEntry      C Library Procedures       Hash_CreateEntry
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Hash_CreateEntry, Hash_FindEntry  -  keyed  search  in  hash
+     table
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<hhaasshh..hh>>
+
+     Hash_Entry *
+     HHaasshh__CCrreeaatteeEEnnttrryy(_t_a_b_l_e_P_t_r, _k_e_y, _n_e_w_P_t_r)
+
+     Hash_Entry *
+     HHaasshh__FFiinnddEEnnttrryy(_t_a_b_l_e_P_t_r, _k_e_y)
+
+AARRGGUUMMEENNTTSS
+     Hash_Table   *_t_a_b_l_e_P_t_r   (in)      Table in which to  search
+                                        for  entry  or create new
+                                        one.
+
+     Address      _k_e_y         (in)      Key value that identifies
+                                        entry.     Exact   nature
+                                        depends on _k_e_y_T_y_p_e param-
+                                        eter       passed      to
+                                        Hash_InitTable.
+
+     Boolean      *_n_e_w_P_t_r     (in)      If non-NULL, then *_n_e_w_P_t_r
+                                        is filled in with TRUE if
+                                        a new entry was  created,
+                                        or  FALSE  if  there  was
+                                        already an entry with the
+                                        given key.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     Both HHaasshh__FFiinnddEEnnttrryy and  HHaasshh__CCrreeaatteeEEnnttrryy  search  the  hash
+     table  for an entry with the same key as _k_e_y.  If a matching
+     entry is found, both return the address of that entry, which
+     can  then  be  used  in  HHaasshh__GGeettVVaalluuee,  HHaasshh__SSeettVVaalluuee,  and
+     HHaasshh__DDeelleetteeEEnnttrryy calls.  If no matching entry is found  then
+     HHaasshh__FFiinnddEEnnttrryy  returns  NULL; in contrast, HHaasshh__CCrreeaatteeEEnnttrryy
+     will create a new entry with the given key  and  an  initial
+     value of NULL.
+
+
+KKEEYYWWOORRDDSS
+     hash table, key, search
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  April 20, 1992                    1
+
+
+

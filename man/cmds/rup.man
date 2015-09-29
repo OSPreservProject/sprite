@@ -1,0 +1,30 @@
+' $Header: /sprite/src/cmds/rup/RCS/rup.man,v 1.2 90/04/09 10:21:11 douglis Exp Locker: shirriff $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS RUP cmds
+.BS
+.SH NAME
+rup \- display the migration load average and idle time database
+.SH SYNOPSIS
+.nf
+\fBrup\fR \fI[w]\fR \fI[host or type ...]\fR
+.fi
+.BE
+.SH INTRODUCTION
+This command is used to display the migration load average, idle
+time, machine location, and kernel in a convenient fashion.
+If no hosts are specified,
+information for all hosts is displayed; otherwise, information is
+displayed only for the specified hosts.
+.PP
+If the \fIw\fP option (note: not \fI-w\fP) is specified, \fBrup\fP lists
+the "owner" of each machine.
+.PP
+The output of \fBrup\fR is similar to that displayed by \fBloadavg -a\fR.
+Refer to the manual page for \fBloadavg\fR for more information on
+the format of the output.
+.SH "FILES"
+/etc/spritehosts, /sprite/admin/hosts
+.SH "SEE ALSO"
+loadavg
+.SH KEYWORDS
+idle time, load average, process migration, uptime

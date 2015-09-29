@@ -1,0 +1,264 @@
+
+
+
+LD                        User Commands                        LD
+
+
+
+NNAAMMEE
+     ld - link editor
+
+SSYYNNOOPPSSIISS
+     lldd [ --aalliiggnn _d_a_t_u_m ] [ --AA _n_a_m_e ] [ --dd ] [ --DD _h_e_x ]
+          [ --ee _e_n_t_r_y ] [ --ll_x ] [ --LL_d_i_r ] [ --MM ] [ --nn ]
+          [ --NN ] [ --oo _n_a_m_e ] [ --rr ] [ --ss ] [ --SS ] [ --tt ]
+          [ --TT[tteexxtt]_h_e_x ] [ --TTddaattaa _h_e_x ] [ --uu _n_a_m_e ]
+          [ --xx ] [ --XX ] [ --yy_s_y_m ] [ --zz ] _f_i_l_e_n_a_m_e...
+
+DDEESSCCRRIIPPTTIIOONN
+     _l_d combines several object programs into one, resolves
+     external references, and searches libraries.  In the sim-
+     plest case several object _f_i_l_e_n_a_m_es are given, and _l_d com-
+     bines them, producing an object module which can either be
+     executed or become the input for a subsequent _l_d run.  In
+     the latter case, the --rr option must be given to preserve the
+     relocation bits. The output of _l_d is left on a file called
+     _a.._o_u_t if not otherwise specified.  The output file is made
+     executable only if no errors occurred during link editing.
+
+     Files specified by the argument _f_i_l_e_n_a_m_e ... are con-
+     catenated in the order specified.  The entry point of the
+     output is the beginning of the first routine, unless the --ee
+     option is specified.
+
+     If a named file is a library, it is searched exactly once at
+     the point it is encountered in the argument list.  Only
+     those routines defining an unresolved external reference are
+     loaded.  If a routine from a library references another rou-
+     tine in the same library, and the library has not been pro-
+     cessed by _r_a_n_l_i_b, the referenced routine must appear after
+     the referencing routine in the library.  Thus the order of
+     programs within libraries may be important.  The first
+     member of a library should be a file named `__.SYMDEF',
+     which is understood to be a dictionary for the library as
+     produced by _r_a_n_l_i_b; the dictionary is searched iteratively
+     to satisfy as many references as possible.
+
+     The symbols __eetteexxtt, __eeddaattaa and __eenndd (eetteexxtt, eeddaattaa and eenndd in
+     C) are reserved, and if referred to, are set to the first
+     location above the program, the first location above ini-
+     tialized data, and the first location above all data,
+     respectively.  It is erroneous to define these symbols.
+
+OOPPTTIIOONNSS
+     Options should appear before the _f_i_l_e_n_a_m_e_s, except abbrevi-
+     ated library names specified by the --ll option, which can
+     appear anywhere.
+
+     --aalliiggnn _d_a_t_u_m
+          _d_a_t_u_m (usually a FORTRAN common block) is increased in
+
+
+
+Sprite v1.0               17 July 1986                          1
+
+
+
+
+
+
+LD                        User Commands                        LD
+
+
+
+          length to be a multiple of the page size; its beginning
+          is set at a page boundary.
+
+     --AA _n_a_m_e
+          Incremental loading: linking is to be done in a manner
+          so that the resulting object may be read into an
+          already executing program. _n_a_m_e is the name of a file
+          whose symbol table is taken as a basis on which to
+          define additional symbols.  Only newly linked material
+          is entered into the text and data portions of _a.._o_u_t,
+          but the new symbol table will reflect all symbols
+          defined before and after the incremental load.  This
+          argument must appear before any other object file in
+          the argument list.  One or both of the --TT options may
+          be used as well, and will be taken to mean that the
+          newly linked segment will commence at the corresponding
+          addresses (which must be a multiple of the page size).
+          The default value is the old value of __eenndd.
+
+     --dd   Force definition of common storage even if the --rr flag
+          is present.
+
+     --DD _h_e_x
+          Pad the data segment with zero-valued bytes to make it
+          _h_e_x bytes long.
+
+     --ee _e_n_t_r_y
+          Define the eentry point: the _e_n_t_r_y argument is made the
+          name of the entry point of the loaded program.
+
+     --ll_x  This option is an abbreviation for the library name
+          lliibb_x..aa, where _x is a string. _l_d searches for libraries
+          first in any directories specified with --LL options,
+          then in the standard directory //sspprriittee//lliibb//_t_m..mmdd, where
+          _t_m is the target machine on which the linked program is
+          intended to execute.  _T_m defaults to the value of the
+          MMAACCHHIINNEE environment variable, but may be overridden
+          with the --mm switch.  A library is searched when its
+          name is encountered, so the placement of a --ll is signi-
+          ficant.
+
+     --LL_d_i_r
+          Add _d_i_r to the list of directories in which libraries
+          are searched for.  Directories specified with --LL are
+          searched before the standard directory.
+
+     --mm_t_m Use _t_m as the target machine for this link, rather than
+          the MMAACCHHIINNEE environment variable.  This switch deter-
+          mines where the linker looks for libraries (see the --ll
+          switch above).
+
+     --MM   Produce a primitive load map, listing the names of the
+
+
+
+Sprite v1.0               17 July 1986                          2
+
+
+
+
+
+
+LD                        User Commands                        LD
+
+
+
+          files which will be loaded.
+
+     --nn   Arrange (by giving the output file a 0410 `magic
+          number') that when the output file is executed, the
+          text portion will be read-only and shared among all
+          processes executing the file.  This involves moving the
+          data areas up to the first possible segment boundary
+          following the end of the text.
+
+     --NN   Do not make the text portion read-only or sharable.
+          (Use `magic number' 0407.)
+
+     --oo _n_a_m_e
+          _N_a_m_e is made the name of the _l_d output file, instead of
+          aa..oouutt.
+
+     --rr   Generate relocation bits in the output file so that it
+          can be the subject of another _l_d run.  This flag also
+          prevents final definitions from being given to common
+          symbols, and suppresses the `undefined symbol' diagnos-
+          tics.
+
+     --ss   Strip the output, that is, remove the symbol table and
+          relocation bits to save space (but impair the useful-
+          ness of the debuggers).  This information can also be
+          removed by _s_t_r_i_p(1).
+
+     --SS   Strip the output by removing all symbols except locals
+          and globals.
+
+     --tt   Trace: display the name of each file as it is pro-
+          cessed.
+
+     --TT[tteexxtt]_h_e_x
+          Start the text segment at location _h_e_x.  Specifying --TT
+          is the same as using the --TTtteexxtt option.
+
+     --TTddaattaa _h_e_x
+          Start the data segment at location _h_e_x.  This option is
+          only of use to programmers wishing to write code for
+          PROMs, since the resulting code cannot be executed by
+          the UNIX system.
+
+     --uu _n_a_m_e
+          Enter _n_a_m_e as an uundefined symbol.  This is useful for
+          loading wholly from a library, since initially the sym-
+          bol table is empty and an unresolved reference is
+          needed to force the loading of the first routine.
+
+     --xx   Preserve only global (non-..gglloobbll) symbols in the output
+          symbol table; only enter external symbols.  This option
+          saves some space in the output file.
+
+
+
+Sprite v1.0               17 July 1986                          3
+
+
+
+
+
+
+LD                        User Commands                        LD
+
+
+
+     --XX   Record local symbols, except for those whose names
+          begin with `L'.  This option is used by _c_c to discard
+          internally generated labels while retaining symbols
+          local to routines.
+
+     --yy_s_y_m
+          Display each file in which _s_y_m appears, its type and
+          whether the file defines or references it.  Many such
+          options may be given to trace many symbols.  It is usu-
+          ally necessary to begin _s_y_m with an `_', as external C,
+          FORTRAN and Pascal variables begin with underscores.
+
+     --zz   Arrange for the process to be loaded on demand from the
+          resulting executable file (0413 `magic number') rather
+          than preloaded.  This is the default.  Results in a
+          (32-byte) header on the output file followed by text
+          and data segments, each of which has a multiple of
+          page-size bytes (being padded out with nulls in the
+          file if necessary).  With this format the first few BSS
+          segment symbols may actually end up in the data seg-
+          ment; this is to avoid wasting the space resulting from
+          rounding the data segment size.  The text is read-only
+          and shared among all processes executing the file.
+
+FFIILLEESS
+     /lib/lib*.a            libraries
+     /usr/lib/lib*.a        more libraries
+     /usr/local/lib/lib*.a  still more libraries
+     a.out                  output file
+
+SSEEEE AALLSSOO
+     as(1), ar(1), cc(1V), ranlib(1), strip(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0               17 July 1986                          4
+
+
+

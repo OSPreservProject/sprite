@@ -1,0 +1,215 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  sprited:1.6.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.6
+date     88.07.28.17.18.40;  author ouster;  state Exp;
+branches 1.6.1.1;
+next     1.5;
+
+1.5
+date     88.07.28.16.41.14;  author ouster;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.07.27.11.48.01;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.07.21.09.37.10;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.07.11.16.02.22;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.10.16.23.54;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.6.1.1
+date     91.12.02.20.01.20;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.6
+log
+@More lint.
+@
+text
+@/* 
+ * printf.c --
+ *
+ *	Source code for the "printf" library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: printf.c,v 1.5 88/07/28 16:41:14 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <stdio.h>
+#include <varargs.h>
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * printf --
+ *
+ *	Format and print one or more values, writing the output onto
+ *	stdout.  See the manual page for details of how the format
+ *	string is interpreted.
+ *
+ * Results:
+ *	The return value is a count of the number of characters
+ *	written to stdout.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifndef lint
+int
+printf(va_alist)
+    va_dcl			/* char *format, then any number of additional
+				 * values to be printed as described by
+				 * format. */
+{
+    char *format;
+    va_list args;
+
+    va_start(args);
+    format = va_arg(args, char *);
+    return vfprintf(stdout, format, args);
+}
+#else
+/* VARARGS1 */
+/* ARGSUSED */
+int
+printf(format)
+    char *format;
+{
+    return 0;
+}
+#endif lint
+@
+
+
+1.6.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdio/RCS/printf.c,v 1.6 88/07/28 17:18:40 ouster Exp $ SPRITE (Berkeley)";
+@
+
+
+1.5
+log
+@Still cleaning stuff related to lint libraries.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: printf.c,v 1.4 88/07/27 11:48:01 ouster Exp $ SPRITE (Berkeley)";
+d58 1
+@
+
+
+1.4
+log
+@Make lint library correctly
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: printf.c,v 1.3 88/07/21 09:37:10 ouster Exp $ SPRITE (Berkeley)";
+d42 1
+a42 1
+#ifndef LINTLIB
+d64 1
+a64 1
+#endif LINTLIB
+@
+
+
+1.3
+log
+@Change to use vfprintf instead of _doprnt.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: printf.c,v 1.2 88/07/11 16:02:22 ouster Exp $ SPRITE (Berkeley)";
+d42 1
+a42 1
+	/* VARARGS0 */
+d56 9
+@
+
+
+1.2
+log
+@If using varargs, don't have any arguments preceding the va_alist.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: printf.c,v 1.1 88/06/10 16:23:54 ouster Exp $ SPRITE (Berkeley)";
+d54 1
+a54 1
+    return _doprnt(format, &args, stdout);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: atoi.c,v 1.1 88/04/28 17:20:23 ouster Exp $ SPRITE (Berkeley)";
+d20 2
+a21 2
+#include "stdio.h"
+#include "varargs.h"
+d42 1
+d44 4
+a47 7
+printf(format, va_alist)
+    char *format;		/* Contains literal text and format control
+				 * sequences indicating how elements of
+				 * va_alist are to be printed.  See the
+				 * manual page for details. */
+    va_dcl			/* Variable number of values to be formatted
+				 * and printed. */
+d49 1
+d53 1
+@

@@ -1,0 +1,23 @@
+*** ../sprite/mipscoff.c	Tue Jul  2 17:27:10 1991
+--- mipscoff.cinc	Thu Jul 11 03:27:58 1991
+***************
+*** 1603,1611 ****
+        /* Number of elements allocated for line_vector currently.  */
+        int line_vector_length;
+  
+-       select_file (ifile);
+        global_symbols_all[ifile] = 0;
+        file_symbols_all[ifile] = 0;
+  
+        /* read line numbers */
+        cur_addr = cur_file_descriptor->adr;
+--- 1603,1611 ----
+        /* Number of elements allocated for line_vector currently.  */
+        int line_vector_length;
+  
+        global_symbols_all[ifile] = 0;
+        file_symbols_all[ifile] = 0;
++       select_file (ifile);
+  
+        /* read line numbers */
+        cur_addr = cur_file_descriptor->adr;

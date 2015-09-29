@@ -1,0 +1,1412 @@
+head     1.42;
+branch   ;
+access   ;
+symbols  ;
+locks    douglis:1.42; strict;
+comment  @@;
+
+
+1.42
+date     89.09.15.00.01.00;  author douglis;  state Exp;
+branches ;
+next     1.41;
+
+1.41
+date     89.01.16.14.54.15;  author ouster;  state Exp;
+branches ;
+next     1.40;
+
+1.40
+date     89.01.16.14.32.20;  author ouster;  state Exp;
+branches ;
+next     1.39;
+
+1.39
+date     88.12.16.09.52.39;  author brent;  state Exp;
+branches ;
+next     1.38;
+
+1.38
+date     88.12.15.10.21.07;  author ouster;  state Exp;
+branches ;
+next     1.37;
+
+1.37
+date     88.11.27.15.44.52;  author douglis;  state Exp;
+branches ;
+next     1.36;
+
+1.36
+date     88.10.30.15.06.10;  author ouster;  state Exp;
+branches ;
+next     1.35;
+
+1.35
+date     88.10.28.15.34.29;  author douglis;  state Exp;
+branches ;
+next     1.34;
+
+1.34
+date     88.10.20.21.39.15;  author douglis;  state Exp;
+branches ;
+next     1.33;
+
+1.33
+date     88.09.26.14.55.44;  author douglis;  state Exp;
+branches ;
+next     1.32;
+
+1.32
+date     88.09.19.13.16.56;  author douglis;  state Exp;
+branches ;
+next     1.31;
+
+1.31
+date     88.09.19.12.46.51;  author douglis;  state Exp;
+branches ;
+next     1.30;
+
+1.30
+date     88.09.16.14.40.09;  author douglis;  state Exp;
+branches ;
+next     1.29;
+
+1.29
+date     88.09.14.10.40.54;  author douglis;  state Exp;
+branches ;
+next     1.28;
+
+1.28
+date     88.08.14.16.18.34;  author douglis;  state Exp;
+branches ;
+next     1.27;
+
+1.27
+date     88.08.14.15.45.55;  author douglis;  state Exp;
+branches ;
+next     1.26;
+
+1.26
+date     88.08.12.14.30.13;  author douglis;  state Exp;
+branches ;
+next     1.25;
+
+1.25
+date     88.08.08.11.05.19;  author douglis;  state Exp;
+branches ;
+next     1.24;
+
+1.24
+date     88.08.08.10.11.17;  author douglis;  state Exp;
+branches ;
+next     1.23;
+
+1.23
+date     88.08.02.10.49.50;  author douglis;  state Exp;
+branches ;
+next     1.22;
+
+1.22
+date     88.08.02.10.45.06;  author douglis;  state Exp;
+branches ;
+next     1.21;
+
+1.21
+date     88.08.01.12.09.27;  author douglis;  state Exp;
+branches ;
+next     1.20;
+
+1.20
+date     88.07.31.16.21.19;  author douglis;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     88.07.27.09.28.59;  author ouster;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     88.07.27.09.24.16;  author ouster;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     88.07.25.10.50.41;  author douglis;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     88.07.24.15.22.41;  author ouster;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     88.07.20.11.57.31;  author ouster;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     88.06.06.15.52.01;  author douglis;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     88.06.06.14.09.55;  author douglis;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     88.06.06.14.08.42;  author douglis;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     88.05.28.19.06.31;  author deboor;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     88.05.28.17.46.29;  author brent;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     88.05.24.12.42.46;  author douglis;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     88.05.17.11.48.01;  author deboor;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.05.17.11.40.31;  author douglis;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.04.21.13.39.42;  author deboor;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.04.21.13.36.34;  author douglis;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.04.12.22.43.49;  author douglis;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.03.20.17.00.28;  author douglis;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.02.28.15.54.36;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.02.16.18.21.20;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Master distfile for Sprite.  Lists a bunch of patterns to exclude
+and a whole lot of files to exclude.
+@
+
+
+1.42
+log
+@RAB changes for /users name
+@
+text
+@# To exclude particular file(s), define EXCEPT on the command line.
+EXCEPT = ()
+
+BINARY_EXCEPT_PAT = (\\\([a-zA-Z0-9\\.]*\\\)/\\1\$)
+MD_EXCEPT_PAT = (\\\([^/]*\\\)/.*\\.md/\\1\$)
+
+EXCEPT_PAT = (${BINARY_EXCEPT_PAT} ${MD_EXCEPT_PAT} \
+		\\~\$ \\^#.*  /#.* \\.o\$ \\.dvi\$ \
+                \\.bak\$ /Mx\\. /LOCK.make\$ /version\\.h \
+                /l\\.out /a\\.out\$ \\.po\$ \\.go\$ /lost+found /xemacs\$ \
+		/temacs\$ \
+		^/b/sprite/src/kernel/[a-z]*/sun[23].* \
+		^/b/sprite/src/kernel/[a-z]*/spur.* \
+		\\.nm\$ \ /hosts/[a-zA-Z\\.]*/X \
+		kernel/[a-z]*/[a-z0-9]*\\.md/lint\$ \
+		kernel/[a-z]*/[a-z0-9]*\\.md/.*\\.ln\$ \
+		/hosts/[a-zA-Z\\.]*/tx /hosts/[a-zA-Z\\.]*/rlogin \
+		/hosts/[a-zA-Z\\.]*/dev /hosts/[a-zA-Z\\.]*/tty \
+		/hosts/[a-zA-Z\\.]*/net /hosts/[a-zA-Z\\.]*/syslog \
+		/Old \\.old/ \\.old\$ /Formatted /out\$ /make\\.list\$ \
+		/make\\.out\$ /src/.*\\.a\$ /rdist[0-9]*\$ \
+		/y\\.tab\\..\$  /1M.* /foo\$ /test.*/pdev.new\$ \
+		.*\\.md/llib-l.*\\.ln\$ /[qzx]\$ /.*\\.q\$ \
+		/lib.*_[gp]\\.a\$ /yacc.{tmp,acts}\$ \
+		)
+RHOST = (sprite@@ginger.berkeley.edu)
+
+# don't rdist most of MH -- too big
+MH = (/b/mh)
+
+
+# where we keep our test directories
+KERNELTEST = (/b/sprite/src/kernel)
+
+# Notes:
+# Adam says not to bother to rdist his home directory.
+# Ben says not to bother to rdist his home directory.
+# Brent says not to bother to rdist his kernel directory.
+# David Gedye's account is just a staging area for tapes.
+
+#
+# Exceptions under /sprite/local
+#
+LOCAL_EXCEPT = (/sprite/local/src/cmds/perl \
+		/sprite/local/lib/emacs \
+		/sprite/local/src/cmds/dbx/mkdate \
+		/sprite/local/src/cmds/dbx/makedefs \
+		/sprite/local/src/cmds/dbx/tdbx \
+		/sprite/local/lib/emacs/lisp \
+		/sprite/local/lib/mh \
+		/sprite/local/src/cmds/nawk \
+)
+
+#
+# Exceptions under /sprite/src
+#
+SPRITE_SRC_EXCEPT = (/sprite/src/cmds/mx/tx{,.new,info,cmd} \
+		/sprite/src/cmds/mx{,.new}/{tx,mxTest} \
+		/sprite/src/lib/sx/sxDemo \
+		/sprite/src/lib/tcl/tclTest \
+		/sprite/src/lib/include.ancient \
+		/sprite/src/cmds/pmake \
+		/sprite/src/kernel/Lint \
+		/sprite/src/kernel/fs.oldfs \
+		/sprite/src/kernel/fs.fake \
+		/sprite/src/kernel/fs.asm \
+		/sprite/src/kernel/kdbx*/{mkdate,makedefs} \
+		/sprite/src/cmds/pmake/oldSrc \
+		/sprite/src/cmds/mx \
+		/sprite/src/cmds/tty \
+)
+
+#
+# Exceptions in the kernel test directories
+#
+KTEST_EXCEPT = (${KERNELTEST}/brent \
+		${KERNELTEST}/douglis/sun3.save \
+		${KERNELTEST}/SunSource \
+		${KERNELTEST}/sprite/sun3.oldfs \
+		${KERNELTEST}/sprite/sun2.oldfs \
+)
+
+#
+# Exceptions in users' directories.  Some could still be applicable if
+# a parent is selected for rdisting.
+#
+USERS_EXCEPT = (/users/brent/{pdev.new,tmp} \
+		/users/andrew/huge \ 
+		/users/gedye/ \ 
+		/users/deboor \
+		/users/zorn \
+		/users/ouster/ttyTest/dum{,2,3,4} \
+		/users/douglis/bin/{rolo,ngrep,xbiff,x10tox11,testMig,bed,zeros,shar} \
+		/users/douglis/src/cmd/{rolo,pmdc,xbiff/xlib-xbiff} \
+		/users/douglis/lib/emacs \
+		/users/douglis/{DU.DATA,mailsplit.shar,.rolodex.dat} \
+		/users/douglis/Mail/sun-inbox \
+		/users/ouster/{bug,zeros,test2,ping,bin/?x,foo.sun3} \
+		/users/brent/tx \
+		/users/brent/X/widget \
+		/users/brent/tmp/pdevtest \
+		/users/brent/src/sundev \
+		/users/nelson/cs.time/{pipe,pipe2,mon} \
+		/users/nelson/{itc,write.out,paper,bin} \
+		/users/nelson/new.bench \
+		/users/hilfingr/bin \
+		/users/ho/C/mbox* \
+		/users/dougj/{h,hello,oldgdb,gdb,newgdb} \
+)
+
+# Add directories here from /sprite/users if you want them rdisted.
+# Remember the trailing "\".  
+USERDIRS = ( /sprite/users/nelson/thesis \
+	     /sprite/users/douglis/sprite/logfs \
+)
+
+#
+# Miscellaneous directories and exceptions. These don't really fit in any
+# of the above categories, so we just group them into the miscellaneous one.
+#
+# Note: douglis  currently gets copies of mail on unix anyway.
+MISCDIRS = (/sprite/guests /sprite/lib)
+MISC_EXCEPT = (\
+		/sprite/lib/ps{,.new} \
+		/sprite/lib/libX* \
+		/sprite/lib/liboldX* \
+		/sprite/lib/X/font \
+		/sprite/lib/lint* \
+		/sprite/lib/*.a \
+		/sprite/lib/{sun2,spur}.md \
+		/sprite/lib/include.ancient \
+		/sprite/guests/darrell \
+		)
+#
+# Test directory stuff commented out 12/16/88 by Brent
+#TEST = /t2/test
+#TESTDIRS = (${TEST})
+#TEST_EXCEPT = (\
+#		/sprite/test/src/cmds/pdevtest.new/1000 \
+#		/sprite/test/itc/{testfs*} \
+#		/sprite/test/src/cmds/{pdevtest.new/{tmp,pdev.new},namePipeTest/#{*pipe,pipeTest},pdevtest/pdevtest.ok,sigtest/sigtest2} \
+#)
+
+
+# separated in an attempt at getting rdist not to bomb every night.
+MISC2DIRS = (  /sprite/boot /sprite/admin)
+MISC2_EXCEPT = (\
+		/sprite/admin/{Rdist.log,lw-*,data{,.new},lpd-errs,fsstats,*.ls.out,lastLog,maillog} \
+		)
+
+#
+# Directories from / that should be rdisted, and their exceptions.
+#
+ROOTDIRS = (/hosts /etc /bootBin)
+ROOT_EXCEPT = (\
+		/hosts/*/{boottime*,ip.out,rsd*,hostInfo} \
+		/hosts/greed.Berkeley.EDU/greedA \
+		/hosts/greed/greedA \
+)
+
+
+# It appears that rdisting everything at once causes problems, so we
+# will try individual rdists.
+#DIRS=( /sprite/src /sprite/users /sprite/local ${MISCDIRS} )
+#all:
+#( ${DIRS} ) -> ${RHOST} install -y -w;
+#	except_pat ${EXCEPT_PAT};
+#	except ${ATT_EXCEPT};
+#	except ${SPRITE_SRC_EXCEPT};
+#	except ${USERS_EXCEPT};
+#	except ${LOCAL_EXCEPT};
+#	except ${MISC_EXCEPT};
+src:
+( /sprite/src ) -> ${RHOST} install -y -w /sprite3;
+	except_pat ${EXCEPT_PAT};
+	except ${SPRITE_SRC_EXCEPT};
+
+kerneltest:
+( ${KERNELTEST} ) -> ${RHOST} install -y -w /sprite3;
+	except_pat ${EXCEPT_PAT};
+	except ${KTEST_EXCEPT};
+
+USERSHOST = (oregano)
+users:
+( /sprite/users ) -> ${USERSHOST} install -y -w /b;
+	except_pat ${EXCEPT_PAT};
+	except ${USERS_EXCEPT};
+
+# JO commented the following things out on 1/16/89:  shouldn't
+# be needed now that we've got backups working OK.
+
+#userstounix:
+#( ${USERDIRS} ) -> ${RHOST} install -y -w /sprite3;
+#	except_pat ${EXCEPT_PAT};
+#	except ${USERS_EXCEPT};
+
+#local:
+#( /sprite/local ) -> ${RHOST} install -y -w;
+#	except_pat ${EXCEPT_PAT};
+#	except ${LOCAL_EXCEPT};
+
+misc:
+( ${MISCDIRS} ) -> ${RHOST} install -y -w /sprite3;
+	except_pat ${EXCEPT_PAT};
+	except ${MISC_EXCEPT};
+
+misc2:
+( ${MISC2DIRS} ) -> ${RHOST} install -y -w /sprite3;
+	except_pat ${EXCEPT_PAT};
+	except ${MISC2_EXCEPT};
+
+rootdirs:
+(${ROOTDIRS}) -> ${RHOST} install -y -w /sprite3/ROOT;
+        except_pat ${EXCEPT_PAT};
+	except ${ROOT_EXCEPT};
+
+mh:
+(${MH}/conf)  -> sprite@@rosemary.berkeley.edu install -y -w /bnf2/sprite/backup;
+        except_pat ${EXCEPT_PAT};
+#
+# test target commented out 12/16/88 by Brent
+#test:
+#(${TESTDIRS})  -> sprite@@rosemary.berkeley.edu install -y -w /bnf2/sprite/backup;
+#        except_pat ${EXCEPT_PAT};
+#	except ${TEST_EXCEPT};
+
+newatt:
+( /a/attcmds ) -> sprite@@rosemary.berkeley.edu install -y -w /bnf2/sprite/backup;
+	except_pat ${EXCEPT_PAT};
+	except (/a/attcmds/kdbx/{mkdate,defs/makedefs});
+	except (/a/attcmds/sendmail/dist);
+
+emacs:
+( /b/emacs/{src,lisp/RCS} ) -> sprite@@rosemary.berkeley.edu install -y -w /bnf2/sprite/backup;
+	except_pat ${EXCEPT_PAT};
+	except_pat (/b/emacs/src/emacs-.*);
+	except (/b/emacs/src/{temacs,xemacs,ChangeLog,TAGS});
+	except (/b/emacs/v18.48);
+
+newcmds:
+( /a/newcmds /a/X/src) -> sprite@@rosemary.berkeley.edu install -y -w /bnf2/sprite/backup;
+	except_pat ${EXCEPT_PAT};
+	except (/a/newcmds/gcc/dist /a/newcmds/gcc/newdist);
+	except (/a/newcmds/tx/sun3.md/{bug,realtx});
+	except (/a/newcmds/fsflat/sun3.md/savefsflat);
+	except_pat (/a/newcmds/gcc/stage1.* /a/newcmds/gcc/stage2.*);
+	except_pat (/a/newcmds/cc1[^/]*/[^/.]*\\.md/[^./]*\$);
+
+#
+# For rdisting an individual directory
+#
+DIR = ()
+dir:
+(${DIR}) -> ${RHOST} install -y -w;
+        except_pat ${EXCEPT_PAT};
+	except ${EXCEPT};
+
+@
+
+
+1.41
+log
+@Use /sprite3 instead of /sprite on UNIX side, eliminate things
+that don't need to be rdisted anymore.
+@
+text
+@d87 22
+a108 22
+USERS_EXCEPT = (/sprite/users/brent/{pdev.new,tmp} \
+		/sprite/users/andrew/huge \ 
+		/sprite/users/gedye/ \ 
+		/sprite/users/deboor \
+		/sprite/users/zorn \
+		/sprite/users/ouster/ttyTest/dum{,2,3,4} \
+		/sprite/users/douglis/bin/{rolo,ngrep,xbiff,x10tox11,testMig,bed,zeros,shar} \
+		/sprite/users/douglis/src/cmd/{rolo,pmdc,xbiff/xlib-xbiff} \
+		/sprite/users/douglis/lib/emacs \
+		/sprite/users/douglis/{DU.DATA,mailsplit.shar,.rolodex.dat} \
+		/sprite/users/douglis/Mail/sun-inbox \
+		/sprite/users/ouster/{bug,zeros,test2,ping,bin/?x,foo.sun3} \
+		/sprite/users/brent/tx \
+		/sprite/users/brent/X/widget \
+		/sprite/users/brent/tmp/pdevtest \
+		/sprite/users/brent/src/sundev \
+		/sprite/users/nelson/cs.time/{pipe,pipe2,mon} \
+		/sprite/users/nelson/{itc,write.out,paper,bin} \
+		/sprite/users/nelson/new.bench \
+		/sprite/users/hilfingr/bin \
+		/sprite/users/ho/C/mbox* \
+		/sprite/users/dougj/{h,hello,oldgdb,gdb,newgdb} \
+@
+
+
+1.40
+log
+@Use rosemary instead of nutmeg for backups.
+@
+text
+@d122 1
+a122 2
+MISCDIRS = ( /sprite/doc /sprite/guests /sprite/lib /sprite/spool \
+		/sprite/preserve)
+a123 6
+		/sprite/doc/{ref/Formatted,unix} \
+		/sprite/spool/loadAvg \
+		/sprite/spool/lpd{.,/}lock \
+		/sprite/spool/lpd/*/{lock,[aqldc]f*,*-{acct,log},.seq} \
+		/sprite/spool/{mqueue,ftp} \
+		/sprite/spool/mail/{douglis} \
+a127 1
+		/sprite/lib/font \
+d174 1
+a174 1
+( /sprite/src ) -> ${RHOST} install -y -w;
+d179 1
+a179 1
+( ${KERNELTEST} ) -> ${RHOST} install -y -w /sprite;
+d189 2
+a190 4
+userstounix:
+( ${USERDIRS} ) -> ${RHOST} install -y -w;
+	except_pat ${EXCEPT_PAT};
+	except ${USERS_EXCEPT};
+d192 4
+a195 4
+local:
+( /sprite/local ) -> ${RHOST} install -y -w;
+	except_pat ${EXCEPT_PAT};
+	except ${LOCAL_EXCEPT};
+d197 5
+d203 1
+a203 1
+( ${MISCDIRS} ) -> ${RHOST} install -y -w;
+d208 1
+a208 1
+( ${MISC2DIRS} ) -> ${RHOST} install -y -w;
+d213 1
+a213 1
+(${ROOTDIRS}) -> ${RHOST} install -y -w /sprite/ROOT;
+@
+
+
+1.39
+log
+@Nuked references to some old stuff that made rdist complain.
+This includes the /t2/test diretory.
+@
+text
+@d223 1
+a223 1
+(${MH}/conf)  -> sprite@@nutmeg.berkeley.edu install -y -w /bnf2/sprite/backup;
+d228 1
+a228 1
+#(${TESTDIRS})  -> sprite@@nutmeg.berkeley.edu install -y -w /bnf2/sprite/backup;
+d233 1
+a233 1
+( /a/attcmds ) -> sprite@@nutmeg.berkeley.edu install -y -w /bnf2/sprite/backup;
+d239 1
+a239 1
+( /b/emacs/{src,lisp/RCS} ) -> sprite@@nutmeg.berkeley.edu install -y -w /bnf2/sprite/backup;
+d246 1
+a246 1
+( /a/newcmds /a/X/src) -> sprite@@nutmeg.berkeley.edu install -y -w /bnf2/sprite/backup;
+@
+
+
+1.38
+log
+@Don't rdist /a/daemons anymore... it's moved back to /sprite/src/daemons.
+@
+text
+@a67 11
+		/sprite/src/cmds/swat/debugd \
+		/sprite/src/cmds/swat/Q \
+		/sprite/src/cmds/swat/q \
+		/sprite/src/cmds/swat/q.c \
+		/sprite/src/cmds/swat/t.c \
+		/sprite/src/cmds/swat/ttytest.c \
+		/sprite/src/cmds/swat/a.out \
+		/sprite/src/cmds/swat/global \
+		/sprite/src/cmds/swat/design/*.psc \
+		/sprite/src/cmds/swat/design/*.t \
+		/sprite/src/cmds/swat/tests \
+d142 9
+a151 7
+TEST = /t2/test
+TESTDIRS = (${TEST})
+TEST_EXCEPT = (\
+		/sprite/test/src/cmds/pdevtest.new/1000 \
+		/sprite/test/itc/{testfs*} \
+		/sprite/test/src/cmds/{pdevtest.new/{tmp,pdev.new},namePipeTest/{*pipe,pipeTest},pdevtest/pdevtest.ok,sigtest/sigtest2} \
+)
+a152 1
+
+d154 1
+a154 1
+MISC2DIRS = (  /t2/test /sprite/boot /sprite/admin)
+d225 6
+a230 4
+test:
+(${TESTDIRS})  -> sprite@@nutmeg.berkeley.edu install -y -w /bnf2/sprite/backup;
+        except_pat ${EXCEPT_PAT};
+	except ${TEST_EXCEPT};
+@
+
+
+1.37
+log
+@various personal exceptions.  removed exceptions for
+kernel/*/*.md (effectively) because this was excluding srcs too under
+the newer setup.
+@
+text
+@d107 1
+a107 1
+		/sprite/users/douglis/DU.DATA \
+d166 1
+a166 1
+		/sprite/admin/{Rdist.log,lw-*,data{,.new},lpd-errs,fsStats} \
+d244 1
+a244 1
+	except (/a/attcmds/sendmail/doc);
+d254 1
+a254 1
+( /a/newcmds /a/daemons /a/X/src) -> sprite@@nutmeg.berkeley.edu install -y -w /bnf2/sprite/backup;
+@
+
+
+1.36
+log
+@Removed att stuff from nightly rdists.
+@
+text
+@d12 5
+a16 3
+		kernel/[a-z]*/sun[23].* kernel/[a-z]*/spur.* \\.nm\$ \
+		/hosts/[a-zA-Z\\.]*/X \
+		kernel/[a-z]*/sun[23]\\.md/lint \
+d61 1
+d104 1
+a104 1
+		/sprite/users/douglis/bin/{rolo,ngrep,xbiff,x10tox11} \
+d150 1
+@
+
+
+1.35
+log
+@added some exclusions, reinstated kernel test directories
+minus spur* and sun* files in them..
+@
+text
+@a52 79
+# Exceptions under /sprite/att
+#
+ATT_EXCEPT =   (/sprite/att/lib/include \
+		/sprite/att/src/cmds/sendmail/doc \
+		/sprite/att/src/cmds/sendmail/cf.hosttable \
+		/sprite/att/src/cmds/sendmail/sendmail \
+		/sprite/att/src/cmds/ccom/ccom \
+		/sprite/att/src/cmds/ccom/f1 \
+		/sprite/att/src/cmds/ccom/cg \
+		/sprite/att/src/etc/tzone \
+		/sprite/att/src/cmds/ar \
+		/sprite/att/src/cmds/awk \
+		/sprite/att/src/cmds/cat \
+		/sprite/att/src/cmds/chgrp \
+		/sprite/att/src/cmds/chmod \
+		/sprite/att/src/cmds/chown \
+		/sprite/att/src/cmds/clear \
+		/sprite/att/src/cmds/cmp \
+		/sprite/att/src/cmds/cp \
+		/sprite/att/src/cmds/csh \
+		/sprite/att/src/cmds/ctags \
+		/sprite/att/src/cmds/date \
+		/sprite/att/src/cmds/diff \
+		/sprite/att/src/cmds/diff3 \
+		/sprite/att/src/cmds/diffh \
+		/sprite/att/src/cmds/du \
+		/sprite/att/src/cmds/echo \
+		/sprite/att/src/cmds/ed \
+		/sprite/att/src/cmds/egrep \
+		/sprite/att/src/cmds/ex \
+		/sprite/att/src/cmds/expr \
+		/sprite/att/src/cmds/file \
+		/sprite/att/src/cmds/find \
+		/sprite/att/src/cmds/from \
+		/sprite/att/src/cmds/grep \
+		/sprite/att/src/cmds/groups \
+		/sprite/att/src/cmds/mv \
+		/sprite/att/src/cmds/rmdir \
+		/sprite/att/src/cmds/ditroff/driver/devconfig \
+		/sprite/att/src/cmds/ditroff/driver/dip \
+		/sprite/att/src/cmds/lpr/transcript/src/enscript \
+		/sprite/att/src/cmds/lpr/transcript/src/pscomm \
+		/sprite/att/src/cmds/lpr/transcript/src/ps4014 \
+		/sprite/att/src/cmds/lpr/transcript/src/psdit \
+		/sprite/att/src/cmds/lpr/transcript/src/pscat \
+		/sprite/att/src/cmds/lpr/transcript/src/ps630 \
+		/sprite/att/src/cmds/lpr/transcript/src/psgrind \
+		/sprite/att/src/cmds/lpr/transcript/src/psplot \
+		/sprite/att/src/cmds/lpr/transcript/src/psrv \
+		/sprite/att/src/cmds/lpr/transcript/src/psrev \
+		/sprite/att/src/cmds/lpr/transcript/src/psbanner \
+		/sprite/att/src/cmds/lpr/transcript/src/pscatmap \
+		/sprite/att/src/cmds/lpr/transcript/src/pstext \
+		/sprite/att/src/cmds/lpr/transcript/cookbook \
+		/sprite/att/src/cmds/lpr/transcript/goodies \
+		/sprite/att/src/cmds/lpr/transcript/test \
+		/sprite/att/src/cmds/lpr/transcript/man \
+		/sprite/att/src/cmds/lpr/transcript/doc \
+		/sprite/att/src/cmds/lpr/transcript/lib \
+		/sprite/att/src/cmds/lpr/transcript/etc \
+		/sprite/att/src/cmds/lpr/transcript/sh \
+		/sprite/att/src/cmds/lpr/lpc  \
+		/sprite/att/src/cmds/lpr/lprm  \
+		/sprite/att/src/cmds/lpr/pac  \
+		/sprite/att/src/cmds/lpr/lpd  \
+		/sprite/att/src/cmds/lpr/lptest  \
+		/sprite/att/src/cmds/lpr/lpq  \
+		/sprite/att/src/cmds/lpr/filters/lpf  \
+		/sprite/att/src/cmds/lpr/filters/necf \
+		/sprite/att/doc \ 
+		/sprite/att/lib/mail \
+		/sprite/att/lib/sendmail.fc \
+		/sprite/att/lib/sendmail.st \
+		/sprite/att/lib/sendmail.hf \
+		/sprite/att/lib/ex3.7preserve \
+		/sprite/att/lib/ex3.7recover \
+)
+
+#
+d178 1
+a178 1
+#DIRS=( /sprite/att /sprite/src /sprite/users /sprite/local ${MISCDIRS} )
+a186 5
+att:
+( /sprite/att ) -> ${RHOST} install -y -w;
+	except_pat ${EXCEPT_PAT};
+	except ${ATT_EXCEPT};
+
+@
+
+
+1.34
+log
+@various exclusions.
+@
+text
+@d12 2
+a13 4
+		kernel/[a-z]*/sun[23]\$ \\.nm\$ /hosts/[a-zA-Z\\.]*/X \
+		src/kernel/ouster src/kernel/nelson src/kernel/douglis \
+		src/kernel/brent src/kernel/mlgray src/kernel/mendel \
+		src/kernel/dougj \
+d324 1
+a324 1
+	except (/a/attcmds/sendmail/spur.md/sendmail.spur);
+@
+
+
+1.33
+log
+@rdist daemons, X.
+@
+text
+@d24 1
+a24 1
+		/yacc.{tmp,acts}\$ \
+d140 1
+a140 1
+		/sprite/src/cmds/pmake/{unix,sprite}/pmake \
+d143 3
+a145 1
+		/sprite/src/kernel/kdbx/{mkdate,makedefs} \
+d210 1
+a210 1
+# Note: douglis & mlgray currently get copies of mail on unix anyway.
+d219 2
+a220 2
+		/sprite/spool/mail/{douglis,mlgray} \
+		/sprite/lib/ps \
+d227 1
+a227 1
+		/sprite/lib/*.md \
+d325 2
+d332 2
+a333 1
+	except (/b/emacs/src/{temacs,xemacs,ChangeLog});
+d340 1
+a340 1
+	except (/a/attcmds/sendmail/spur.md/sendmail.spur);
+@
+
+
+1.32
+log
+@excluded Ben's home directory, per his request.
+@
+text
+@d192 1
+a192 4
+		/sprite/users/nelson/new.bench/vm \
+		/sprite/users/nelson/new.bench/vm-fs \
+		/sprite/users/nelson/new.bench/itc \
+		/sprite/users/nelson/new.bench/sort \
+d226 1
+d331 1
+a331 1
+( /a/newcmds ) -> sprite@@nutmeg.berkeley.edu install -y -w /bnf2/sprite/backup;
+d334 2
+@
+
+
+1.31
+log
+@exclude doug's kernel test directory.  rdist to ginger, not allspice.
+@
+text
+@d37 1
+d178 1
+@
+
+
+1.30
+log
+@added /sprite/users again, to rdist to /b.
+@
+text
+@d15 1
+d26 1
+a26 1
+RHOST = (sprite@@allspice.berkeley.edu)
+@
+
+
+1.29
+log
+@separated test directories
+@
+text
+@a175 1
+		/sprite/users/douglis \
+d177 5
+a203 8
+# The following lines are in case ~douglis is rdisted again at some future
+# date.
+#		/sprite/users/douglis/bin/{rolo,ngrep,xbiff,x10tox11} \
+#		/sprite/users/douglis/src/cmd/{rolo,pmdc,xbiff/xlib-xbiff} \
+#		/sprite/users/douglis/lib/emacs \
+#		/sprite/users/douglis/DU.DATA \
+#		/sprite/users/douglis/sprite/si-cull.c \
+
+d240 1
+a240 1
+		/sprite/admin/{Rdist.log,lw-*,data,lpd-errs,fsStats} \
+d280 1
+d282 5
+a286 1
+#( /sprite/users ) -> ${RHOST} install -y -w;
+@
+
+
+1.28
+log
+@added a personal directory to be rdisted.
+@
+text
+@a217 3
+		/sprite/test/src/cmds/pdevtest.new/1000 \
+		/sprite/test/itc/{testfs*} \
+		/sprite/test/src/cmds/{pdevtest.new/{tmp,pdev.new},namePipeTest/{*pipe,pipeTest},pdevtest/pdevtest.ok,sigtest/sigtest2} \
+d232 9
+d242 1
+a242 1
+MISC2DIRS = (  /sprite/test /sprite/boot /sprite/admin)
+d313 4
+@
+
+
+1.27
+log
+@excluded .go suffix.
+@
+text
+@d195 1
+a195 3
+# Remember the trailing "\".  Note, the first line is just a random
+# small directory  to keep rdist from complaining about
+# "no files to rdist".  
+d197 1
+@
+
+
+1.26
+log
+@don't copy /sprite/users.  don't copy /sprite/src/kernel/fs.oldfs \
+171c168,169
+oops...
+@
+text
+@d10 2
+a11 1
+                /l\\.out /a\\.out\$ \\.po\$ /lost+found /xemacs\$ /temacs\$ \
+@
+
+
+1.25
+log
+@split misc into misc2 and misc
+@
+text
+@a25 3
+# don't rdist emacs until unix version has stabilized....
+#EMACS = /sprite/users/douglis/src/cmd/emacs
+
+d27 1
+a27 1
+MH = (/sprite/local/src/cmds/mh)
+a48 1
+		${MH} \
+d139 1
+d168 2
+a169 1
+# Exceptions in users' directories
+d193 7
+d279 2
+a280 1
+( /sprite/users ) -> ${RHOST} install -y -w;
+d305 1
+a305 1
+(${MH}/conf) ->${RHOST} install -y -w;
+@
+
+
+1.24
+log
+@reinstated rdist of mail directory, minus mine and mary's, since
+new mail is sent to ginger for us as well.
+@
+text
+@d209 1
+a209 2
+		/sprite/preserve /sprite/test /sprite/boot \
+		/sprite/admin )
+a214 2
+		/sprite/mint.{in,out}put \
+		/sprite/admin/{Rdist.log,lw-*,data,lpd-errs,fsStats} \
+d230 6
+d287 5
+@
+
+
+1.23
+log
+@fixed typo w/ exclusions for "KERNELTEST".
+@
+text
+@d207 1
+d222 1
+a222 1
+		/sprite/spool/mail \
+@
+
+
+1.22
+log
+@exclude /sprite/spool/mail since it's not getting rdisted
+properly anyway when rdist gets confused consistently.  Perhaps by
+excluding /sprite/spool/mail we can keep rdist from bombing on 
+everything else.
+@
+text
+@d163 5
+a167 5
+KTEST_EXCEPT = (/${KERNELTEST}/brent \
+		/${KERNELTEST}/douglis/sun3.save \
+		/${KERNELTEST}/SunSource \
+		/${KERNELTEST}/sprite/sun3.oldfs \
+		/${KERNELTEST}/sprite/sun2.oldfs \
+@
+
+
+1.21
+log
+@fixed emacs exclusions.
+@
+text
+@d221 1
+a221 1
+		/sprite/spool/mail/douglis \
+@
+
+
+1.20
+log
+@added emacs srcs
+@
+text
+@d300 2
+a301 1
+	except_pat (/b/emacs/src/{emacs-.*,temacs,xemacs});
+@
+
+
+1.19
+log
+@Don't dist library binaries.
+@
+text
+@d297 5
+@
+
+
+1.18
+log
+@Don't dist lint library stuff.
+@
+text
+@d228 2
+@
+
+
+1.17
+log
+@exclude ~brent/tmp (by definition)
+@
+text
+@d227 1
+@
+
+
+1.16
+log
+@Added more exceptions.
+@
+text
+@d173 1
+a173 1
+USERS_EXCEPT = (/sprite/users/brent/pdev.new \
+@
+
+
+1.15
+log
+@Added new things to copy (newcmds, newatt), and removed many
+old commands that are now in the new areas.
+@
+text
+@d12 2
+@
+
+
+1.14
+log
+@excluded douglis/sun3.save
+@
+text
+@d5 1
+d7 2
+a8 1
+EXCEPT_PAT = (${BINARY_EXCEPT_PAT} \\~\$ \\^#.*  /#.* \\.o\$ \\.dvi\$ \
+d28 1
+a28 1
+MH = /sprite/local/src/cmds/mh
+d30 4
+d50 1
+a62 2
+		/sprite/att/src/cmds/ex/exrecover \
+		/sprite/att/src/cmds/ex/expreserve \
+d64 28
+a91 1
+		/sprite/att/src/cmds/ex/tex \
+a140 3
+		/sprite/src/kernel/brent \
+		/sprite/src/kernel/douglis/sun3.save \
+		/sprite/src/kernel/SunSource \
+a141 6
+		/sprite/src/cmds/gcc/genconfig \
+		/sprite/src/cmds/gcc/gencodes \
+		/sprite/src/cmds/gcc/genemit \
+		/sprite/src/cmds/gcc/genpeep \
+		/sprite/src/cmds/gcc/genflags \
+		/sprite/src/cmds/spurcc \
+d154 2
+d159 10
+d175 1
+d177 1
+a177 1
+		/sprite/users/ouster/{bug,zeros,test2,ping,bin/?x} \
+a190 5
+		/sprite/users/douglis/bin/{rolo,ngrep,xbiff} \
+		/sprite/users/douglis/src/cmd/{rolo,pmdc,xbiff/xlib-xbiff} \
+		/sprite/users/douglis/lib/emacs \
+		/sprite/users/douglis/DU.DATA \
+		/sprite/users/douglis/sprite/si-cull.c \
+d193 8
+d216 2
+a217 1
+		/sprite/spool/lpd/*/{lock,[aqldc]f*,*-{acct,log}} \
+d219 1
+d238 13
+a250 3
+DIRS=( /sprite/att /sprite/src /sprite/users /sprite/local ${MISCDIRS} )
+all:
+( ${DIRS} ) -> ${RHOST} install -y -w;
+d253 4
+d258 9
+d268 4
+d273 4
+d287 11
+@
+
+
+1.13
+log
+@added an exception for my directory
+@
+text
+@d110 1
+@
+
+
+1.12
+log
+@added /sprite/lib/font (done by Adam)
+@
+text
+@d158 1
+@
+
+
+1.11
+log
+@Fractured exceptions into multiple variables b/c rdist
+couldn't handle all the characters we were throwing at it.
+@
+text
+@d181 1
+@
+
+
+1.10
+log
+@checkin by ardeb for brent...
+@
+text
+@d33 25
+a57 7
+ALL_EXCEPT = (${EXCEPT} \
+		/sprite/doc/{ref/Formatted,unix} \
+		/sprite/spool/loadAvg \
+		/sprite/att/lib/include \
+		/sprite/att/src/cmds/sendmail/{doc,cf.hosttable,sendmail} \
+		/sprite/att/src/cmds/ccom/{ccom,f1,cg} \
+		/sprite/att/src/cmds/ex/ex{recover,preserve} \
+d59 45
+a103 7
+		/sprite/swap \
+		/sprite/test/src/cmds/pdevtest.new/1000 \
+		/sprite/test/itc/{testfs*} \
+		/sprite/users/brent/pdev.new \
+		/sprite/mint.{in,out}put \
+		/sprite/admin/{Rdist.log,lw-*,data,lpd-errs,fsStats} \
+		/sprite/src/cmds/mx/tx{,.new,info,cmd} \
+a106 4
+		/sprite/att/src/cmds/ex/tex \
+		/sprite/local/src/cmds/perl \
+		/sprite/test/src/cmds/{pdevtest.new/{tmp,pdev.new},namePipeTest/{*pipe,pipeTest},pdevtest/pdevtest.ok,sigtest/sigtest2} \
+		/sprite/att/src/cmds/ditroff/driver/{devconfig,dip} \
+a107 17
+		/sprite/att/src/cmds/lpr/transcript/src/{enscript,ps{comm,4014,dit,cat,630,grind,plot,rv,rev,banner,catmap,text}} \
+		/sprite/att/src/cmds/lpr/transcript/{cookbook,goodies,test,man,doc,lib,etc,sh} \
+		/sprite/att/src/cmds/lpr/{lpc,lprm,pac,lpd,lptest,lpq,filters/{lpf,necf}} \
+		/sprite/spool/lpd/*/{lock,[aqldc]f*,*-{acct,log}} \
+		/sprite/spool/{mqueue,ftp} \
+		/sprite/lib/ps \
+		/sprite/cmds* \
+		/hosts/*/{boottime*,ip.out,rsd*,hostInfo} \
+		/hosts/greed.Berkeley.EDU/greedA \
+		/sprite/tmp \ 
+		/sprite/daemons \ 
+		/sprite/kernels \ 
+		/sprite/users/andrew/huge \ 
+		/sprite/users/gedye/ \ 
+		/sprite/att/doc \ 
+		/sprite/{CRAP,zerofiles} \ 
+		/sprite/local/lib/emacs \
+d112 26
+a137 2
+		/sprite/local/src/cmds/dbx/{mkdate,makedefs,tdbx} \
+		/sprite/src/cmds/gcc/gen{config,codes,emit,peep,flags}} \
+d141 4
+a144 1
+		/sprite/users/brent/{tx,X/widget,tmp/pdevtest,src/sundev} \
+d158 20
+a177 5
+		/sprite/local/lib/emacs/lisp \
+		/sprite/local/lib/mh \
+		${MH} \
+		/sprite/src/cmds/spurcc \
+		/sprite/local/src/cmds/nawk \
+a180 5
+		/sprite/att/lib/{mail,sendmail.{fc,st,hf},ex3.7*} \
+		/sprite/src/cmds/swat/{debugd,Q,q,q.c,t.c,ttytest.c,a.out,global} \
+		/sprite/src/cmds/swat/design/*.{psc,t} \
+		/sprite/src/cmds/swat/tests \
+		/sprite/src/cmds/pmake/oldSrc \
+d182 4
+a185 1
+DIR = (/sprite)
+d187 5
+a192 5
+#(/sprite/doc /sprite/lib /sprite/spool) -> ${RHOST} install -y -w;
+dir:
+(${DIR}) -> ${RHOST} install -y -w;
+        except_pat ${EXCEPT_PAT};
+	except ${ALL_EXCEPT};
+d194 10
+d207 1
+a207 1
+	except ${ALL_EXCEPT};
+d212 9
+@
+
+
+1.9
+log
+@excluded /sprite/admin/data
+@
+text
+@d43 1
+@
+
+
+1.8
+log
+@Added swat/tests and pmake/oldSrc and fixed att/lib exceptions.
+@
+text
+@d45 1
+a45 1
+		/sprite/admin/{Rdist.log,lw-*,lastLog,userLog,lpd-errs,fsStats} \
+@
+
+
+1.7
+log
+@various changes...
+@
+text
+@d103 2
+a104 2
+		/sprite/att/lib{mail,sendmail.{fc,st,hf},ex3.7*} \
+		/sprite/src/cmds/swat/{debugd,Q,q,q.c,t.c,ttytest.c,a.out} \
+d106 2
+@
+
+
+1.6
+log
+@added exceptions for swat
+@
+text
+@d4 1
+a4 1
+BINARY_EXCEPT_PAT = (\\\([a-zA-Z\\.]*\\\)/\\1\$)
+d9 2
+a10 2
+		kernel/[a-z]*/sun[23] \\.nm\$ /hosts/[a-zA-Z\\.]*/X \
+		kernel/[a-z]*/Object.sun[23]/lint \
+d16 2
+a17 2
+		/y\.tab\..\$  /1M.* /foo\$ /test.*/pdev.new\$ \
+		Object\\..*/llib-l.*\\.ln\$ \
+d20 1
+a20 1
+RHOST = (sprite@@allspice)
+d37 3
+a39 1
+		/sprite/att/src/cmds/sendmail/{doc,cf.hosttable} \
+d42 2
+a43 1
+		/sprite/test/src/cmds/pdevtest./pdevtest.ok \
+d49 1
+d55 1
+a55 1
+		/sprite/att/src/cmds/lpr/transcript/src/{enscript,ps{comm,4014,dit,cat,630,plot,rv,rev,banner,catmap,text}} \
+d62 1
+a62 1
+		/hosts/*/{boottime*,ip.out,rsd*} \
+d77 1
+d81 1
+a81 1
+		/sprite/users/brent/{tx,X/widget,tmp/pdevtest} \
+a96 1
+		/sprite/guests \
+d99 1
+@
+
+
+1.5
+log
+@adapted to changes in kernel object makefiles and changed Doug's non-disted
+temporary files
+@
+text
+@d18 1
+d99 2
+@
+
+
+1.4
+log
+@misc. changes.
+@
+text
+@d17 1
+d84 1
+a84 2
+		/sprite/users/dougj/{h,hello,gdb/{tdb,tgdb,argp,h,int,test,o,i,j,k,z,y,a}} \
+		/sprite/users/dougj/newgdb/{tgdb,tdb,h,int,test,o,i,j,k,z,y,a} \
+@
+
+
+1.3
+log
+@more exceptions.
+@
+text
+@d16 1
+a16 1
+		/y\.tab\..\$  /1M.* /foo\$ /test*/pdev.new\$\
+a48 1
+		/sprite/att/src/cmds/lpr/{lpc,lprm,pac,lpd,lptest,lpq,filters/{lpf,necf}} \
+d51 1
+d53 1
+a53 1
+		/sprite/spool/mqueue \
+d73 1
+d83 2
+a84 1
+		/sprite/users/dougj/{h,hello,gdb/{h,int,test,o,i,j,k}} \
+d86 1
+a86 1
+		/sprite/users/douglis/src/cmd/{rolo,pmdc} \
+d88 1
+d94 4
+a116 3
+#fsStats:
+#(/sprite/admin/fsStats) ->${RHOST} install -y -w -R;
+#        except_pat ${EXCEPT_PAT};
+@
+
+
+1.2
+log
+@various changes.  This file is rcs'ed only to be able to back out
+if necessary, or if it gets lost...
+,
+@
+text
+@d16 1
+a16 1
+		/y\.tab\..\$  /1M.* \
+d42 1
+d72 2
+a73 1
+		/sprite/users/brent/tx \
+d81 2
+d109 4
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d29 1
+d61 1
+@

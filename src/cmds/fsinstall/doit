@@ -1,0 +1,1 @@
+fsmake -dev rz0 -part c -write -type rz23 -sid 1 -dir /udir/mnelson/sproot -devFile /udir/mnelson/sproot/dev_file

@@ -1,0 +1,25 @@
+head     5.0;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+5.0
+date     87.08.11.10.53.42;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@#define VERSION "(Oct  2 08:42:41 1986)"
+@

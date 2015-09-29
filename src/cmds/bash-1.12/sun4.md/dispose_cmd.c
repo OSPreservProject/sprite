@@ -1,0 +1,1 @@
+../dist/dispose_cmd.c

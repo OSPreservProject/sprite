@@ -1,0 +1,5 @@
+
+
+          rmdir [-nocomplain] dirList
+               Remove each of the directories in the list dirList.  If
+               -nocomplain is specified, then errors will be ignored.

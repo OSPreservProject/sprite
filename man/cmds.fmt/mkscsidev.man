@@ -1,0 +1,134 @@
+
+
+
+MKSCSIDEV                 User Commands                 MKSCSIDEV
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     mkscsidev - Create scsi devices.
+
+SSYYNNOOPPSSIISS
+     mmkkssccssiiddeevv [_o_p_t_i_o_n_s] _d_e_v_i_c_e_N_a_m_e
+
+OOPPTTIIOONNSS
+     --sseerrvveerr _s_e_r_v_e_r_I_D
+                    _S_e_r_v_e_r_I_D is the Sprite ID of the  server  for
+                    the  device.   The  default  is to set up the
+                    device to use the local host.
+
+
+     --hhbbaaTTyyppee _h_b_a_T_y_p_e
+                    _H_b_a_T_y_p_e is the  numeric  identifier  for  the
+                    type  of  HBA associated with the device. The
+                    default is 0. The  following  are  valid  hba
+                    types:  SCSI3 = 0; DecStation 3100 = 0; SCSI0
+                    = 1; JAGUAR = 2.
+
+
+     --ddeevvTTyyppee _d_e_v_i_c_e_T_y_p_e
+                    _D_e_v_T_y_p_e is the  numeric  identifier  for  the
+                    type  of  device.   The  default  is  4 (SCSI
+                    disk).
+
+
+     --hhbbaa _h_b_a       _H_b_a is the id of the hba controller that  the
+                    scsi  device is connected to.  The default is
+                    0.
+
+
+     --ttaarrggeett _t_a_r_g_e_t _T_a_r_g_e_t is the scsi target id of the scsi dev-
+                    ice.  The default is 0.
+
+
+     --lluunn _l_u_n       _L_u_n is the scsi logical unit  number  of  the
+                    scsi device.  The default is 0.
+
+
+     --ddiisskk          The --ddiisskk option is used to  create  all  the
+                    partitions for a scsi disk.  In this case the
+                    _d_e_v_i_c_e_N_a_m_e is treated as a prefix, and 8 dev-
+                    ices  are  made  by appending the letters 'a'
+                    through 'h' to the prefix.
+
+
+     --rraawwDDiisskk       The --rraawwDDiisskk option is used to create all the
+                    partitions for a raw scsi disk. A raw disk is
+                    accessed without referencing the disk  label.
+
+
+
+Sprite v.1.0       Printed:  January 27, 1990                   1
+
+
+
+
+
+
+MKSCSIDEV                 User Commands                 MKSCSIDEV
+
+
+
+                    In  this  case the _d_e_v_i_c_e_N_a_m_e is treated as a
+                    prefix, and 8 devices are made  by  appending
+                    the letters 'a' through 'h' to the prefix.
+
+     --ttaappee          The --ttaappee option is used to create  a  device
+                    file for a SCSI tape.
+
+     --rraawwSSccssii       The --rraawwSSccssii option is used to create a  dev-
+                    ice file for a raw SCSI device.
+
+     --ssppeecciiffiicc _v_a_l_u_e
+                    4 bits of the device unit number  are  device
+                    specific. The --ssppeecciiffiicc option can be used to
+                    set those bits.  option.
+
+     --hheellpp          Print a summary of the command-line options.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     MMkkssccssiiddeevv is used to create SCSI devices.   It  is  a  user-
+     friendly  front  end  for  the ffssmmaakkeeddeevv program.  The --ddiisskk
+     option is probably the most useful. It treats the _d_e_v_i_c_e_N_a_m_e
+     as  a  prefix  and creates devices for all partitions of the
+     disk.
+
+EEXXAAMMPPLLEESS
+     mmkkssccssiiddeevv --hhbbaa 22 --ttaarrggeett 11 --ddiisskk //ddeevv//rrssdd2211 creates the dev-
+     ices:
+     /dev/rsd21a,    /dev/rsd21b,    /dev/rsd21c,    /dev/rsd21d,
+     /dev/rsd21e, /dev/rsd21f, /dev/rsd21g, and /dev/rsd21h,
+     using the following calls to ffssmmaakkeeddeevv:
+     fsmakedev -d 4 -u 2064 /dev/rsd21a
+     fsmakedev -d 4 -u 2065 /dev/rsd21b
+     fsmakedev -d 4 -u 2066 /dev/rsd21c
+     fsmakedev -d 4 -u 2067 /dev/rsd21d
+     fsmakedev -d 4 -u 2068 /dev/rsd21e
+     fsmakedev -d 4 -u 2069 /dev/rsd21f
+     fsmakedev -d 4 -u 2070 /dev/rsd21g
+     fsmakedev -d 4 -u 2071 /dev/rsd21h
+
+     mmkkssccssiiddeevv --sseerrvveerr 1100 --ddeevvTTyyppee 55 --lluunn 11 --ssppeecciiffiicc 1100 //ddeevv//ffoooo
+     produces  the  device  /dev/foo  using the following call to
+     ffssmmaakkeeddeevv:
+     fsmakedev -s 10 -d 5 -u 138 /dev/foo
+
+KKEEYYWWOORRDDSS
+     scsi, disk, partitions, fsmakedev, device
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  January 27, 1990                   2
+
+
+

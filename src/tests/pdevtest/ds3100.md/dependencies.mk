@@ -1,0 +1,59 @@
+# DO NOT DELETE THIS LINE -- make depend depends on it.
+
+ds3100.md/client.o: client.c
+ds3100.md/client.o: /sprite/lib/include/sprite.h
+ds3100.md/client.o: /sprite/lib/include/cfuncproto.h
+ds3100.md/client.o: /sprite/lib/include/status.h
+ds3100.md/client.o: /sprite/lib/include/stdio.h
+ds3100.md/client.o: /sprite/lib/include/fs.h
+ds3100.md/client.o: /sprite/lib/include/spriteTime.h
+ds3100.md/client.o: /sprite/lib/include/kernel/procTypes.h
+ds3100.md/client.o: /sprite/lib/include/sys/file.h
+ds3100.md/client.o: /sprite/lib/include/dev/pdev.h
+ds3100.md/client.o: /sprite/lib/include/proc.h
+ds3100.md/client.o: /sprite/lib/include/kernel/fs.h pdevInt.h
+ds3100.md/pdevtest.o: pdevtest.c
+ds3100.md/pdevtest.o: /sprite/lib/include/sprite.h
+ds3100.md/pdevtest.o: /sprite/lib/include/cfuncproto.h
+ds3100.md/pdevtest.o: /sprite/lib/include/status.h
+ds3100.md/pdevtest.o: /sprite/lib/include/stdio.h
+ds3100.md/pdevtest.o: /sprite/lib/include/fs.h
+ds3100.md/pdevtest.o: /sprite/lib/include/spriteTime.h
+ds3100.md/pdevtest.o: /sprite/lib/include/kernel/procTypes.h
+ds3100.md/pdevtest.o: /sprite/lib/include/fsCmd.h
+ds3100.md/pdevtest.o: /sprite/lib/include/sysStats.h
+ds3100.md/pdevtest.o: /sprite/lib/include/rpc.h
+ds3100.md/pdevtest.o: /sprite/lib/include/proc.h
+ds3100.md/pdevtest.o: /sprite/lib/include/vm.h
+ds3100.md/pdevtest.o: /sprite/lib/include/kernel/sched.h
+ds3100.md/pdevtest.o: /sprite/lib/include/kernel/fsStat.h
+ds3100.md/pdevtest.o: /sprite/lib/include/kernel/vm.h
+ds3100.md/pdevtest.o: /sprite/lib/include/option.h pdevInt.h
+ds3100.md/server.o: server.c
+ds3100.md/server.o: /sprite/lib/include/sprite.h
+ds3100.md/server.o: /sprite/lib/include/cfuncproto.h
+ds3100.md/server.o: /sprite/lib/include/status.h
+ds3100.md/server.o: /sprite/lib/include/sys/file.h
+ds3100.md/server.o: /sprite/lib/include/errno.h
+ds3100.md/server.o: /sprite/lib/include/fs.h
+ds3100.md/server.o: /sprite/lib/include/spriteTime.h
+ds3100.md/server.o: /sprite/lib/include/kernel/procTypes.h
+ds3100.md/server.o: /sprite/lib/include/dev/pdev.h
+ds3100.md/server.o: /sprite/lib/include/proc.h
+ds3100.md/server.o: /sprite/lib/include/kernel/fs.h
+ds3100.md/server.o: /sprite/lib/include/stdio.h
+ds3100.md/server.o: /sprite/lib/include/time.h
+ds3100.md/server.o: /sprite/lib/include/sys.h
+ds3100.md/server.o: /sprite/lib/include/bit.h
+ds3100.md/server.o: /sprite/lib/include/bstring.h pdevInt.h
+ds3100.md/printStats.o: printStats.c
+ds3100.md/printStats.o: /sprite/lib/include/sprite.h
+ds3100.md/printStats.o: /sprite/lib/include/cfuncproto.h
+ds3100.md/printStats.o: /sprite/lib/include/status.h
+ds3100.md/printStats.o: /sprite/lib/include/stdio.h
+ds3100.md/printStats.o: /sprite/lib/include/proc.h
+ds3100.md/printStats.o: /sprite/lib/include/vm.h
+ds3100.md/printStats.o: /sprite/lib/include/kernel/fs.h
+ds3100.md/printStats.o: /sprite/lib/include/kernel/fsStat.h
+ds3100.md/printStats.o: /sprite/lib/include/kernel/sched.h
+ds3100.md/printStats.o: /sprite/lib/include/kernel/vm.h

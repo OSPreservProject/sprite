@@ -1,0 +1,226 @@
+#
+#  There should be a ditcap entry for each printer that is used with ditroff.
+#  The first line of each ditcap entry should be the same as the first line
+#   of the printcap entry.
+#
+
+
+#
+# Specific printers
+#
+
+# LaserWriters
+
+lw608-8|c|Apple LaserWriter in 608-8E:\
+	:tc=generic_ps:
+
+lw477|Apple LaserWriter in 477E:\
+	:tc=generic_ps:
+
+lw525|mace|Apple LaserWriter in 525E:\
+	:tc=generic_ps:
+
+lw533|Apple LaserWriter in 533E:\
+	:tc=generic_ps:
+
+lw508-7|Apple LaserWriter in 508-7E:\
+	:tc=generic_ps:
+
+lw508-5|pulla|Apple LaserWriter in 508-5E:\
+	:tc=generic_ps:
+
+lw608-1|hp|Apple LaserWriter in 608-1E:\
+	:tc=generic_ps:
+
+lw608-3|post|Apple LaserWriter in 608-3:\
+	:tc=generic_ps:
+
+lw608-2|cad|Apple LaserWriter in 608-2E (CAD room):\
+	:tc=generic_ps:
+
+lw524|lw-kilby|Apple LaserWriter in 524C:\
+	:tc=generic_ps:
+
+# EECS public printers
+
+ap|arpa|ucbarpa|ucbarpa line printer:\
+	:tc=generic_lp:
+
+lp|vx|vax|ucbvax line printer:\
+	:tc=generic_lp:
+
+varian|va|Benson Varian:\
+	:tc=generic_varian:
+
+versatec|vp|Versatec:\
+	:tc=generic_versatec:
+
+dandy|dp|Xerox Dandelion laser printer:\
+	:tc=generic_xerox:
+
+imagen|ip|Imagen laser printer:\
+	:tc=generic_imagen:
+
+op|ipress2| Xerox office laser printer:\
+	:tc=generic_xerox:
+
+cp|campbell:\
+	:tc=generic_xerox:
+
+imagen-cx|cx|Imagen LBP-CX 8/300 printer:\
+	:tc=generic_imagen-cx:
+
+ps|lps|lps40|leghrn|leghorn|DEC lps40 in 508-6 Evans:\
+	:tc=generic_ps:
+
+ms|ManuScript|Theory printer:\
+	:tc=generic_ps:
+
+# ICSI LaserWriters
+
+zap1|zp1|zap|zp:\
+	:tc=generic_ps:
+zap2|zp2|lw2:\
+	:tc=generic_ps:
+zap3|zp3|lw3:\
+	:tc=generic_ps:
+
+
+#
+# Generic printers
+#
+
+generic_ps_rev:\
+	:f2=/sprite/lib/ps/$MACHINE.md/psrev:\
+	:tc=generic_ps:
+
+generic_ps|generic postscript printer:\
+	:ty=psc:\
+	:ol=-t:\
+	:f1=/sprite/lib/ps/$MACHINE.md/psdit:\
+	:lo=:\
+	:se=/sprite/lib/ditroff/eqnSyms /sprite/lib/ditroff/eqnchar.psc:
+
+generic_lp|lp|ter|generic line printer:\
+	:ty=ter:\
+	:ft=/sprite/cmds.$MACHINE/dterm -m -c:\
+	:f1=/sprite/cmds.$MACHINE/dterm -m -c -L:\
+	:ol=-rv1:\
+	:oa=-rv1:\
+	:ot=-rv1:\
+	:se=/sprite/lib/ditroff/eqnSyms /sprite/lib/ditroff/eqnchar:
+
+generic_varian|va|varian|generic Benson Varian:\
+	:ty=va:\
+	:lo=-n:\
+	:ol=-rv1:\
+	:ot=-rv1:\
+	:se=/sprite/lib/ditroff/eqnSyms /sprite/lib/ditroff/eqnchar:
+
+generic_versatec|vp|versatec|generic Versatec plotter:\
+	:ty=vp:\
+	:lo=-n:\
+	:se=/sprite/lib/ditroff/eqnSyms /sprite/lib/ditroff/eqnchar:
+
+generic_imagen|ip|imagen|generic Imagen laser printer:\
+	:ty=ip:\
+	:lo=-n:\
+	:se=/sprite/lib/ditroff/eqnSyms.i /sprite/lib/ditroff/eqnchar:
+
+generic_imagen-cx|cx|generic Imagen LBP-CX 8/300 printer:\
+	:ty=cx:\
+	:lo=-n:\
+	:se=/sprite/lib/ditroff/eqnSyms.i /sprite/lib/ditroff/eqnchar:
+
+generic_qms|qms|generic QMS Lasergrafix 1200 printer:\
+	:ty=qms:\
+	:lo=-n:\
+	:se=/sprite/lib/ditroff/eqnSyms.q /sprite/lib/ditroff/eqnchar.q:
+
+generic_xerox|dp|xerox|generic Xerox laser printer:\
+	:ty=dp:\
+	:lo=-n:\
+	:se=/sprite/lib/ditroff/eqnSyms /sprite/lib/ditroff/eqnchar:
+
+# the leghorn has more fonts and charecters than the laserwriter, so make it
+# a seperate type [as, 5/22/89]
+generic_lps|lps|lps40|generic DEC LPS-40 printer:\
+	:ty=lps:\
+	:lo=-n:\
+	:se=/sprite/lib/ditroff/eqnSyms /sprite/lib/ditroff/eqnchar.psc:
+
+#the new NeXT printer: for now, assume it's just another PS printer
+generic_next|np|next|generic NeXT printer:\
+	:ty=psc:\
+	:lo=-n:\
+	:se=/sprite/lib/ditroff/eqnSyms /sprite/lib/ditroff/eqnchar:
+
+#using ditdvi to produce a dvi file
+generic_dvi|dvi|TeX dvi files:\
+	:ty=dvi:\
+	:f1=/sprite/cmds.$MACHINE/ditdvi:\
+	:lo=-d:\
+	:se=/sprite/lib/ditroff/eqnSyms /sprite/lib/ditroff/eqnchar:
+
+# previewers
+
+generic_xtroff|X|x|xt|xtroff|X11 previewer:\
+	:ty=psc:\
+	:op=-t:\
+	:pv=/X11/R4/cmds.$MACHINE/xtroff:\
+	:se=/sprite/lib/ditroff/eqnSyms /sprite/lib/ditroff/eqnchar.psc:
+
+generic_xproof|xp|xproof|another X11 previewer:\
+	:ty=psc:\
+	:op=-t:\
+	:pv=/X11/R4/cmds.$MACHINE/xproof:\
+	:se=/sprite/lib/ditroff/eqnSyms /sprite/lib/ditroff/eqnchar.psc:
+
+generic_X11|X11|XTroff previewer with MIT fonts:\
+	:ty=X11:\
+	:op=-t:\
+	:pv=/X11/R4/cmds.$MACHINE/xtroff:\
+	:se=/sprite/lib/ditroff/eqnSyms /sprite/lib/ditroff/eqnchar:
+
+generic_X75|X75|Xditview previewer at 75dpi:\
+	:ty=X75:\
+	:op=-t:\
+	:pv=/X11/R4/cmds.$MACHINE/xditview:\
+	:se=/sprite/lib/ditroff/eqnSyms /sprite/lib/ditroff/eqnchar:
+
+generic_X100|X100|Xditview previewer at 100dpi:\
+	:ty=X100:\
+	:op=-t:\
+	:pv=/X11/R4/cmds.$MACHINE/xditview:\
+	:se=/sprite/lib/ditroff/eqnSyms /sprite/lib/ditroff/eqnchar:
+
+generic_xdvi|xdvi|xdvi previewer:\
+	:ty=dvi:\
+	:op=-t:\
+	:fp=/sprite/cmds.$MACHINE/ditdvi:\
+	:pv=/X11/R4/cmds.$MACHINE/xdvi:\
+	:se=/sprite/lib/ditroff/eqnSyms /sprite/lib/ditroff/eqnchar:
+
+#
+# These lines are here so that ditroff will perform as before.
+#  So if someone runs  
+#    % deqn -Ppsc | ditroff -ms -Plw555 
+#    % deqn -Plw | ditroff -ms -Plw555 
+#  these command lines will still work.
+# When installing this file, it is necessary to fix it up
+#  for all the device types that people may have run before.
+#  (look in  /usr/local/lib/font/devxxx )
+#  It may be necessary to add more entries below,
+#  depending on your system.
+#
+
+psc:\
+	:f1=/sprite/lib/ps/$MACHINE.md/psdit:\
+	:ty=psc:
+
+lw:\
+	:f1=/sprite/lib/ps/$MACHINE.md/psdit:\
+	:ty=psc:
+
+ter:\
+	:ty=ter:

@@ -1,0 +1,812 @@
+/* 
+ * kgcore.c --
+ *
+ *	Program that reads the image of a Sprite kernel from a
+ *	Sprite machine using the debugger interface.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/cmds/kgcore/RCS/kgcore.c,v 1.2 91/05/23 12:28:05 mendel Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <errno.h>
+#include <option.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/file.h>
+#include <kernel/dbg.h>
+#include <stdlib.h>
+
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <sgtty.h>
+#define NOGAP
+
+/*
+ * Library imports:
+ */
+
+extern void panic();
+/*
+ * Message buffers for handling the Sprite debugger interface. This routines
+ * were stolen from the sprite debugger Kgdb and Kdbx. 
+ */
+static Dbg_Msg	msg;
+static int	msgSize;
+#define	MAX_TRANSFER_SIZE	1024
+#define	REPLY_BUFFER_SIZE	4096
+static	char	replyBuffer[REPLY_BUFFER_SIZE];
+static	char	requestBuffer[DBG_MAX_REQUEST_SIZE];
+#ifdef KDBX
+#define FIRST_MSG 0x40000000
+static	int	msgNum = FIRST_MSG;
+#else
+static	int	msgNum = 0;
+#endif
+
+static void	RecvReply();
+
+static	struct sockaddr_in	remote;
+int				kdbxTimeout = 1;
+static	int			netSocket;
+
+char	*outputFileName = "vmcore";
+int	debug = 0;
+int	pageSize;
+int	dontDumpCode = 0;
+int	dumpFileCache = 0;
+char	*device = NULL;
+
+Option optionArray[] = {
+    {OPT_DOC, NULL, NULL, "kgcore [options] hostname"},
+    {OPT_DOC, NULL, NULL, "kgcore [options] -d device"},
+    {OPT_STRING, "o", (char *) &outputFileName,
+	"Output file for core dump"},
+    {OPT_TRUE, "v", (char *) &debug,
+	"Print out progress info."},
+    {OPT_TRUE, "nt", (char *) &dontDumpCode,
+	"Don't include the kernel text segment in dump."},
+    {OPT_TRUE, "c", (char *) &dumpFileCache,
+	"Include the file system block cache in dump."},
+    {OPT_STRING, "d", (char *) &device,
+	"Device to read core from (instead of remote host)."},
+};
+#ifndef sprite
+extern char *sys_errlist[];
+#endif /* sprite */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CreateSocket --
+ *
+ *	Creates a UDP socket connected to the Sprite host's kernel 
+ *	debugger port.
+ *
+ * Results:
+ *	The stream ID of the socket.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+CreateSocket(spriteHostName)
+    char	*spriteHostName;
+{
+    int			socketID;
+    struct hostent 	*hostPtr;
+
+    hostPtr = gethostbyname(spriteHostName);
+    if (hostPtr == (struct hostent *) NULL) {
+	(void) fprintf(stderr, "CreateSocket: unknown host \"%s\"\n",
+		spriteHostName);
+	exit(1);
+    }
+    if (hostPtr->h_addrtype != AF_INET) {
+	(void) fprintf(stderr, "CreateSocket: bad address type for host %s\n", 
+		spriteHostName);
+	exit(2);
+    }
+
+    socketID = socket(AF_INET, SOCK_DGRAM, 0);
+    if (socketID < 0) {
+	perror("CreateSocket: socket");
+	exit(3);
+    }
+
+    bzero((char *) &remote, sizeof(remote));
+    bcopy((char *) hostPtr->h_addr, (char *) &remote.sin_addr,
+	    hostPtr->h_length);
+    remote.sin_port = htons(DBG_UDP_PORT);
+    remote.sin_family = AF_INET;
+
+    if (connect(socketID, (struct sockaddr *) &remote, sizeof(remote)) < 0) {
+	perror("CreateSocket: connect");
+	exit(4);
+    }
+
+    return(socketID);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ *  SendRequest --
+ *
+ *     Send a request message to the kernel.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     None.
+ * ----------------------------------------------------------------------------
+ */
+static void
+SendRequest(numBytes)
+    int	numBytes;
+{
+    Dbg_Opcode	opcode;
+
+    msgSize = numBytes;
+    msgNum++;
+    *(int *)requestBuffer = msgNum;
+#ifdef notdef
+	bcopy((char *) &msg, requestBuffer + 4, 2);
+	bcopy(((char *) &msg)+4, requestBuffer + 6, numBytes-2);
+#endif
+	bcopy((char *)&msg, requestBuffer + 4, numBytes);
+    if (write(netSocket, requestBuffer, numBytes + 4) < numBytes + 4) {
+	panic("SendRequest: Couldn't write to the kernel socket\n");
+	return;
+    }
+    opcode = (Dbg_Opcode) msg.opcode;
+    if (opcode == DBG_DETACH) {
+	int	dummy;
+	/*
+	 * Wait for explicit acknowledgments of these packets.
+	 */
+	RecvReply(opcode, 4, (char *) &dummy, (int *) NULL, 1);
+    }
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ *  RecvReply --
+ *
+ *     Receive a reply from the kernel.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     None.
+ * ----------------------------------------------------------------------------
+ */
+
+	/* ARGSUSED */
+static void
+RecvReply(opcode, numBytes, destAddr, readStatusPtr, timeout)
+    Dbg_Opcode	opcode;
+    int		numBytes;
+    char	*destAddr;
+    int		*readStatusPtr;
+    int		timeout;
+{
+    int		status;
+    int		readMask;
+    struct	timeval	interval;
+    int		bytesRead;
+
+
+    if (numBytes + 8 > REPLY_BUFFER_SIZE) {
+	panic("numBytes <%d> > REPLY_BUFFER_SIZE <%d>\n",
+		    numBytes + 8, REPLY_BUFFER_SIZE);
+    }
+    interval.tv_sec = kdbxTimeout;
+    interval.tv_usec = 0;
+    do {
+	if (timeout) {
+	    int	numTimeouts;
+
+	    numTimeouts = 0;
+	    /*
+	     * Loop timing out and sending packets until a new packet
+	     * has arrived.
+	     */
+	    do {
+		readMask = 1 << netSocket;
+		status = select(32, &readMask, (int *) NULL,
+			(int *) NULL, &interval);
+		if (status == 1) {
+		    break;
+		} else if (status == -1) {
+		    panic("RecvReply: Couldn't select on socket.\n");
+		} else if (status == 0) {
+		    SendRequest(msgSize);
+		    numTimeouts++;
+		    if (numTimeouts % 10 == 0) {
+			(void) fprintf(stderr, "Timing out and resending\n");
+			(void) fflush(stderr);
+		    }
+		}
+	    } while (1);
+	}
+	if (opcode == DBG_DATA_READ || opcode == DBG_INST_READ ||
+	    opcode == DBG_GET_VERSION_STRING || opcode == DBG_GET_DUMP_BOUNDS) {
+	    /*
+	     * Data and instruction reads return variable size packets.
+	     * The first two ints are message number and status.  If
+	     * the status is OK then the data follows.
+	     */
+
+	    bytesRead = read(netSocket, replyBuffer, numBytes+8);
+	    if (bytesRead < 0) {
+		panic("RecvReply: Error reading socket.");
+	    }
+	    /*
+	     * Check message number before the size because this could
+	     * be an old packet.
+	     */
+	    if (*(int *)replyBuffer != msgNum) {
+		printf("RecvReply: Old message number = %d, expecting %d\n",
+			*(int *)replyBuffer, msgNum);
+		fflush(stdout);
+		continue;
+	    }
+	    if (bytesRead == 8) {
+		/*
+		 * Only 8 bytes so the read failed and there is no data.
+		 */
+		*readStatusPtr = 0;
+		return;
+	    }
+	    if (opcode == DBG_GET_VERSION_STRING) {
+		 strncpy(destAddr, (char *)(replyBuffer + 4),numBytes);
+		 return;
+	    }
+	    if (opcode == DBG_GET_DUMP_BOUNDS) {
+		 bcopy((char *)(replyBuffer + 4), destAddr, numBytes);
+		*readStatusPtr = 1;
+		 return;
+	    }
+	    if (bytesRead != numBytes + 8) {
+		printf("RecvReply: Short read (1): op=%d exp=%d read=%d",
+			opcode, numBytes + 4, bytesRead);
+		fflush(stdout);
+		continue;
+	    }
+	    *readStatusPtr = 1;
+	    bcopy(replyBuffer + 8, destAddr, numBytes);
+	    return;
+	} else {
+	    /*
+	     * Normal request so just read in the message which includes
+	     * the message number.
+	     */
+	    bytesRead = read(netSocket, replyBuffer, numBytes + 4);
+	    if (bytesRead < 0) {
+		panic("RecvReply: Error reading socket (2).");
+	    }
+	    /*
+	     * Check message number before size because it could be
+	     * an old packet.
+	     */
+	    if (*(int *)replyBuffer != msgNum) {
+		printf("RecvReply: Old message number = %d, expecting %d\n",
+			    *(int *)replyBuffer, msgNum);
+		fflush(stdout);
+		continue;
+	    }
+	    if (bytesRead != numBytes + 4) {
+		(void) printf("RecvReply: Short read (2): op=%d exp=%d read=%d",
+			opcode, numBytes + 4, bytesRead);
+	    }
+	    if (*(int *)replyBuffer != msgNum) {
+		continue;
+	    }
+	    bcopy(replyBuffer + 4, destAddr, numBytes);
+	    return;
+	}
+    } while (1);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * SendCommand --
+ *
+ *     Write the command over to the kernel.  
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+int
+SendCommand(opcode, srcAddr, destAddr, numBytes)
+    Dbg_Opcode	opcode;		/* Which command */
+    char	*srcAddr;	/* Where to read data from */
+    char	*destAddr;	/* Where to write data to */
+    int		numBytes;	/* The number of bytes to read or write */
+{
+    int	status;
+
+    msg.opcode = (short) opcode;
+
+   switch (opcode) {
+	case DBG_GET_STOP_INFO:
+	    SendRequest(sizeof(msg.opcode));
+	    RecvReply(opcode, numBytes, destAddr, &status, 1);
+	    break;
+	case DBG_DETACH:
+	    msg.data.pc = *(int *) srcAddr;
+	    SendRequest(sizeof(msg.opcode) + sizeof(msg.data.pc));
+	    break;
+	case DBG_GET_VERSION_STRING:
+	case DBG_GET_DUMP_BOUNDS:
+	    SendRequest(sizeof(msg.opcode));
+	    RecvReply(opcode, numBytes, destAddr, &status, 1);
+	    break;
+	case DBG_INST_READ:
+	    msg.data.readMem.address = (int) srcAddr;
+	    msg.data.readMem.numBytes = numBytes;
+	    SendRequest(sizeof(msg.opcode) + sizeof(Dbg_ReadMem));
+	    RecvReply(opcode, numBytes, destAddr, &status, 1);
+	    break;
+	case DBG_REBOOT:
+	    if (numBytes > 0) {
+		(void) strcpy(msg.data.reboot.string, (char *)srcAddr);
+	    }
+	    msg.data.reboot.stringLength = numBytes;
+	    SendRequest(sizeof(msg.opcode) +
+			sizeof(msg.data.reboot.stringLength) +
+			msg.data.reboot.stringLength);
+	    break;
+	default:
+	    (void) printf("Unknown opcode %d\n", opcode);
+    }
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SkipGap --
+ *
+ *	Update the file offset pointer of the output file to skip over
+ *	a gap in the virtual memory image of a kernel.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	File offset pointer updated.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+SkipGap(start, end,coreFile)
+    unsigned int start;	/* Starting address of gap. */
+    unsigned int end;	/* Ending address of gap. */
+    FILE	*coreFile; /* Corefile desciptor. */
+{
+     int size = (end - start);
+
+     if (size > 0) { 
+	 if (fseek(coreFile,size,1) < 0) {
+	     (void) fprintf(stderr,"kgcore: Can't seek output file: %s\n",
+			sys_errlist[errno]);
+		 (void) fclose(coreFile);
+		 exit(1);
+	 }
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CopyMem --
+ *
+ *	Copy memory from the remote machine into a file.
+ *
+ * Results:
+ *	Number of bytes copied.
+ *
+ * Side effects:
+ *	File pointer updated.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+CopyMem(start, size, coreFile)
+    unsigned int start;		/* Starting address of copy. */
+    unsigned int size;		/* Size of copy. */
+    FILE	*coreFile;	/* Output file.. */
+{
+    unsigned int address, endAddress;
+    char buffer[MAX_TRANSFER_SIZE];
+    int	good;
+    int len;
+    int	bytes = 0;
+
+    /*
+     * If the starting address is not a multiple of the desired transfer size
+     * do a small transfer to round it up.  
+     */
+    if (start & (MAX_TRANSFER_SIZE - 1)) {
+	len = MAX_TRANSFER_SIZE - (start & (MAX_TRANSFER_SIZE - 1));
+	if (len > size) {
+	    len = size;
+	}
+	good = SendCommand(DBG_INST_READ,(char *)start,buffer,len);
+	if (good) {
+	     if (fwrite(buffer,len,1,coreFile) != 1) {
+		 (void) fprintf(stderr,"kgcore: Can't write file outfile: %s\n"
+			,sys_errlist[errno]);
+		 (void) fclose(coreFile);
+		 exit(1);
+	     }
+	     bytes += len;
+	} else {
+	     SkipGap(start, start + len,coreFile);
+	}
+	start += len;
+	size -= len;
+    }
+    /*
+     * Now that start is aligned correctly, transfer as many as possible
+     * MAX_TRANSFER_SIZE units.
+     */
+    endAddress = start + size;
+    for (address = start; (address + MAX_TRANSFER_SIZE)  < endAddress; ) {
+	good = SendCommand(DBG_INST_READ,(char *)address,buffer,
+					MAX_TRANSFER_SIZE);
+	if (good) {
+	     if (fwrite(buffer,MAX_TRANSFER_SIZE,1,coreFile) != 1) {
+		 (void) fprintf(stderr,"kgcore: Can't write file outfile: %s\n"
+			,sys_errlist[errno]);
+		 (void) fclose(coreFile);
+		 exit(1);
+	     }
+	     bytes += MAX_TRANSFER_SIZE;
+	     address += MAX_TRANSFER_SIZE;
+	} else {
+	    /*
+	     * If a read fails we can skip over the whole page. We must be
+	     * a little careful because the start address maybe invalid
+	     * but not on a page boundry.
+	     */
+	     len = pageSize - (address & (pageSize - 1));
+	     SkipGap(address,address + len,coreFile);
+	     address += len;
+	}
+    }
+    /*
+     * Do any partial transfer that maybe left over.
+     */
+    if (address < endAddress) {
+	len = endAddress - address;
+	good = SendCommand(DBG_INST_READ,(char *)address,buffer,len);
+	if (good) {
+	     if (fwrite(buffer,len,1,coreFile) != 1) {
+		 (void) fprintf(stderr,"kgcore: Can't write file outfile: %s\n"
+			,sys_errlist[errno]);
+		 (void) fclose(coreFile);
+		 exit(1);
+	     }
+	     bytes += len;
+	} else {
+	     SkipGap(address,endAddress,coreFile);
+	}
+    }
+    return bytes;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CopyDev --
+ *
+ *	Copy data from the device into a file.
+ *
+ * Results:
+ *	Number of bytes copied.
+ *
+ * Side effects:
+ *	File pointer updated.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+CopyDev(fd, size, coreFile)
+    int		fd;		/* Device stream. */
+    unsigned int size;		/* Size of copy. */
+    FILE	*coreFile;	/* Output file.. */
+{
+    int		sectors;
+    int		offset;
+    char	*buffer;
+    int		bytes;
+
+    /*
+     * Round up size to be a whole number of sectors.
+     */
+    if (size & 511) {
+	size += 512 - (size & 511);
+    }
+    buffer = malloc(size);
+    bytes = read(fd, buffer, size);
+    if (bytes != size) {
+	perror("Short read of device\n");
+	exit(1);
+    }
+    bytes = fwrite(buffer, 1, size, coreFile);
+    if (bytes != size) {
+	perror("Short write to core file\n");
+	exit(1);
+    }
+    free(buffer);
+    return bytes;
+}
+
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	Main program for "kgcore".
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+main(argc, argv)
+    int		argc;
+    char	**argv;
+{
+    StopInfo	stopInfo;
+    char	versionString[100];
+    Dbg_DumpBounds bounds;
+    FILE	*coreFile;
+    int		good;
+    int		bytes;
+    int		totalBytes = 0;
+    int		devfd;
+    char	sector[512];
+    int		n;
+
+    pageSize = getpagesize();
+
+    argc = Opt_Parse(argc, argv, optionArray, Opt_Number(optionArray), 0);
+    if (!(((argc == 1) && (device != NULL)) || 
+	  ((argc == 2) && (device == NULL)))) { 
+	Opt_PrintUsage(argv[0], optionArray, Opt_Number(optionArray));
+	exit(1);
+    }
+    if (device == NULL) {
+	/*
+	 * Connect to the remote machine, read, and print the version string.
+	 */
+	netSocket = CreateSocket(argv[1]);
+	(void) SendCommand(DBG_GET_VERSION_STRING, (char *)0, 
+	    versionString, 100);
+	printf("Dumping machine %s kernel:\n%s\n",argv[1],versionString);
+	good = SendCommand(DBG_GET_DUMP_BOUNDS, (char *)0, (char *)&bounds, 
+						    sizeof(bounds));
+	if (!good) {
+	    (void) fprintf(stderr,"%s: Can't get dump bounds from %s\n",
+			argv[0], argv[1]);
+	    exit(1);
+	}
+    } else {
+	devfd = open(device, O_RDONLY);
+	if (devfd < 0) {
+	   perror("Device open failed");
+	   exit(1);
+	}
+	n = read(devfd, sector, 512);
+	if (n != 512) {
+	    perror("Short read of version string");
+	    exit(1);
+	}
+	strcpy(versionString, sector);
+	printf("Dumping from %s kernel: %s\n", device, versionString);
+	n = read(devfd, sector, 512);
+	if (n != 512) {
+	    perror("Short read of stopInfo");
+	    exit(1);
+	}
+	bcopy(sector, &stopInfo, sizeof(stopInfo));
+	n = read(devfd, sector, 512);
+	if (n != 512) {
+	    perror("Short read of bounds");
+	    exit(1);
+	}
+	bcopy(sector, &bounds, sizeof(bounds));
+    }
+
+    printf ("Page: %d\nUserStack: %d\nCodeStart: %d\n    Size: %d\nDataStart: %d\n    Size: %d\nStacksStart: %d\n      Size: %d\nCacheStart: %d\n     Size: %d\n", bounds.pageSize, bounds.stackSize, bounds.kernelCodeStart, bounds.kernelCodeSize, bounds.kernelDataStart, bounds.kernelDataSize, bounds.kernelStacksStart, bounds.kernelStacksSize, bounds.fileCacheStart, bounds.fileCacheSize);
+    fflush(stdout);
+    /*
+     * Check for and correct if data segment grew into stack segments.
+     * This can happen if the system panic`ed because it ran out of
+     * memory.
+     */
+    if (bounds.kernelDataStart + bounds.kernelDataSize > 
+		bounds.kernelStacksStart) {
+	(void) fprintf(stderr,
+		"%s: Warning: Data segment spills into stack segment\n", 
+			argv[1]);
+	(void) fprintf(stderr, 
+		"%s: Data segment truncated to 0x%x from 0x%x\n",
+			argv[1], bounds.kernelStacksStart,
+			bounds.kernelDataStart + bounds.kernelDataSize);
+	bounds.kernelDataSize = bounds.kernelStacksStart - 
+				bounds.kernelDataStart;
+    }
+
+    pageSize = bounds.pageSize;
+    /*
+     * Open the core file and write the stopInfo and bounds.
+     */
+    coreFile = fopen(outputFileName,"w");
+    if (coreFile == (FILE *) NULL) {
+	 (void) fprintf(stderr,
+		 "%s: Can't open %s: %s\n",argv[0],outputFileName,
+		sys_errlist[errno]);
+	  exit(1);
+    }
+    if (device == NULL) {
+	(void) SendCommand(DBG_GET_STOP_INFO, (char *)NULL, (char *)&stopInfo,
+			    sizeof(stopInfo));
+    }
+    if ((fwrite((char *)&stopInfo,sizeof(stopInfo),1,coreFile) != 1) ||
+	(fwrite((char *)&bounds,sizeof(bounds),1,coreFile) != 1)) {
+	 (void) fprintf(stderr,"%s: Can't write file %s: %s\n",argv[0],
+		outputFileName,sys_errlist[errno]);
+	 (void) fclose(coreFile);
+	 exit(1);
+    }
+    totalBytes += sizeof(stopInfo) + sizeof(bounds);
+
+    /*
+     * Dump the kernel code segument.
+     */
+    if (!dontDumpCode) {
+	if (debug) {
+	    printf("Dumping kernel code 0x%x - 0x%x (%d bytes)...",
+		    bounds.kernelCodeStart, 
+		    bounds.kernelCodeStart + bounds.kernelCodeSize,
+		    bounds.kernelCodeSize);
+	    fflush(stdout);
+	}
+	if (device == NULL) {
+	    bytes = CopyMem(bounds.kernelCodeStart, bounds.kernelCodeSize,
+			coreFile);
+	} else {
+	    bytes = CopyDev(devfd, bounds.kernelCodeSize, coreFile);
+	}
+
+	totalBytes += bytes;
+	if (debug) {
+	    printf(" done %d bytes\n",bytes);
+	}
+#ifndef NOGAP
+	SkipGap(bounds.kernelCodeStart + bounds.kernelCodeSize,
+		 bounds.kernelDataStart, coreFile);
+#endif
+    } else {
+	if (debug) {
+	    printf("Skipping text segment to 0x%x\n",bounds.kernelDataStart);
+	}
+#ifndef NOGAP
+	SkipGap(bounds.kernelCodeStart, bounds.kernelDataStart, coreFile);
+#else
+	SkipGap(bounds.kernelCodeStart, bounds.kernelCodeStart + bounds.kernelCodeSize);
+#endif
+    }
+    /*
+     * Follow the code by the kernel data segument.
+     */
+    if (debug) {
+	printf("Dumping kernel data 0x%x - 0x%x (%d bytes) ...",
+		bounds.kernelDataStart, 
+		bounds.kernelDataStart + bounds.kernelDataSize,
+		bounds.kernelDataSize);
+	fflush(stdout);
+    }
+    if (device == NULL) {
+	bytes = CopyMem(bounds.kernelDataStart, bounds.kernelDataSize, 
+	    coreFile);
+    } else {
+	bytes = CopyDev(devfd, bounds.kernelDataSize, coreFile);
+    }
+    totalBytes += bytes;
+    if (debug) {
+	 printf(" done %d bytes\n",bytes);
+    }
+#ifndef NOGAP
+    SkipGap(bounds.kernelDataStart + bounds.kernelDataSize, 
+	    bounds.kernelStacksStart, coreFile);
+#endif
+    /*
+     * Follow the data by the kernel stacks.
+     */
+    if (debug) {
+	printf("Dumping kernel stacks 0x%x - 0x%x (%d bytes) ...",
+		bounds.kernelStacksStart, 
+		bounds.kernelStacksStart + bounds.kernelStacksSize,
+		bounds.kernelStacksSize);
+	fflush(stdout);
+    }
+    if (device == NULL) {
+	bytes = CopyMem(bounds.kernelStacksStart, bounds.kernelStacksSize,
+	    coreFile);
+    } else {
+	bytes = CopyDev(devfd, bounds.kernelStacksSize, coreFile);
+    }
+    totalBytes += bytes;
+    if (debug) {
+	 printf(" done %d bytes\n",bytes);
+    }
+    /*
+     * And optionally the file system block cache.
+     */
+    if (dumpFileCache) {
+#ifndef NOGAP
+	SkipGap(bounds.kernelStacksStart + bounds.kernelStacksSize, 
+	    bounds.fileCacheStart, coreFile);
+#endif
+	if (debug) {
+	    printf("Dumping file cache 0x%x - 0x%x (%d bytes) ...",
+		    bounds.fileCacheStart, 
+		    bounds.fileCacheStart + bounds.fileCacheSize,
+		    bounds.fileCacheSize);
+	    fflush(stdout);
+	}
+	bytes = CopyMem(bounds.fileCacheStart, bounds.fileCacheSize, coreFile);
+	totalBytes += bytes;
+	if (debug) {
+	     printf(" done %d bytes\n",bytes);
+	}
+    }
+    if (fclose(coreFile) == EOF) {
+	 (void) fprintf(stderr,"%s: Error closing file %s: %s\n",argv[0],
+		outputFileName,sys_errlist[errno]);
+    }
+    if (device == NULL) {
+	printf("%s: Dumped %d bytes from %s into %s.\n",argv[0], totalBytes,
+			    argv[1], outputFileName);
+    } else {
+	printf("%s: Dumped %d bytes from %s into %s.\n",argv[0], totalBytes,
+			    device, outputFileName);
+    }
+    exit(0);
+}

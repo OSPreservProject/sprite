@@ -1,0 +1,1229 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  ;
+locks    jhh:1.4; strict;
+comment  @ * @;
+
+
+1.4
+date     92.05.29.11.13.57;  author voelker;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     92.05.29.09.45.05;  author voelker;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     92.03.05.19.16.24;  author voelker;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     92.02.08.15.45.24;  author voelker;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@program to fiddle around with the DEC FDDI adapter.
+@
+
+
+1.4
+log
+@cleaned up the source
+@
+text
+@/* 
+ * fddicmd.c --
+ *
+ *	Program for dealing with the DEC FDDI adapter.
+ *
+ * Copyright 1992 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/cmds/fddicmd/RCS/fddicmd.c,v 1.3 92/05/29 09:45:05 voelker Exp Locker: voelker $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include "sprite.h"
+#include "option.h"
+#include <stdio.h>
+#include <sys/file.h>
+#include <fs.h>
+#include "/sprite/src/kernel/voelker/net/netTypes.h"
+#include "net.h"
+#include "netFDDI.h"
+#include "/sprite/src/lib/include/dev/fddi.h"
+#include <status.h>
+#include <fmt.h>
+#include <time.h>
+
+char    *deviceName = "/dev/fddi";
+char    *infileName = NULL;
+Boolean reset = FALSE;
+Boolean halt = FALSE;
+Boolean debug = FALSE;
+Boolean readDevice = FALSE;
+Boolean printReg = FALSE;
+Boolean printErrLog = FALSE;
+Boolean flush = FALSE;
+Boolean linkAddr = FALSE;
+Boolean syslog = FALSE;
+Boolean source = FALSE;
+Boolean getStats = FALSE;
+Boolean multipleWrite = FALSE;
+
+int     echo = NIL;
+int     packetSize = 1024;
+int     repeat = 100;
+
+Option optionArray[] = {
+    {OPT_DOC, NULL, NULL, "Usage: fddicmd [options]"},
+    {OPT_TRUE, "reset", (Address) &reset,
+	"Reset the adapter."},
+    {OPT_TRUE, "halt", (Address) &halt,
+	"Halt the adapter."},
+    {OPT_TRUE, "flush", (Address) &flush,
+	"Flush the transmit queue."},
+    {OPT_TRUE, "addr", (Address) &linkAddr,
+	"Link address of the adapter."},
+    {OPT_TRUE, "debug", (Address) &debug,
+	"Toggle the adapter debugging information."},
+    {OPT_TRUE, "stats", (Address) &getStats,
+	"Print adapter statistics."},
+    {OPT_INT, "echo", (Address) &echo,
+	"Echo the designated RPC server (by SpriteID)"},
+    {OPT_INT, "size", (Address) &packetSize,
+	"Size of packet to use."},
+    {OPT_INT, "repeat", (Address) &repeat,
+	"Number of times to echo."},
+    {OPT_TRUE, "syslog", (Address) &syslog,
+	 "Print output onto the syslog intead of stdout."},
+    {OPT_TRUE, "reg", (Address) &printReg,
+	"Print the values in the adapter registers."},
+    {OPT_TRUE, "errlog", (Address) &printErrLog,
+	"Print the useful information in the adapter error log."},
+    {OPT_DOC, "\0", (Address)NULL, "These are the internal and external error codes that the adapter writes"},
+    {OPT_DOC, "\0", (Address)NULL, "as it halts.  They should be zero for normal operation."},
+};
+
+int numOptions = sizeof(optionArray) / sizeof(Option);
+
+#define CheckStatus(status) \
+    if (status != SUCCESS) { \
+	printf(stderr, "fddicmd: Fs_IOControl return 0x%x\n", status); \
+    }
+
+char message[] = "oooga oooga oooga oooga";
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	Parse the arguments and execute the command given.  The
+ *      commands are fairly simple...most of the work is done at
+ *      the driver level.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+main(argc, argv)
+    int argc;
+    char *argv[];
+{
+    int                argsLeft;
+    int                fd;
+    ReturnStatus       status;
+    int                size;
+
+    argsLeft = Opt_Parse(argc, argv, optionArray, numOptions, 0);
+    if (argsLeft > 2) {
+	Opt_PrintUsage(argv[0], optionArray, numOptions);
+	exit(1);
+    }
+    fd = open(deviceName, O_RDONLY, 0);
+    if (fd < 0) {
+	printf("Can't open device \"%s\"\n", deviceName);
+	perror("");
+	exit(1);
+    }
+    /*
+     * Turns on debugging output to the syslog.  This really slows
+     * down the adapter because it has to print all of these
+     * messages.
+     */
+    if (debug) {
+	status = Fs_IOControl(fd, IOC_FDDI_DEBUG, 0, NULL, 0, NULL);
+	CheckStatus(status);
+	exit(0);
+    }
+    /*
+     * Print out the contents of the adapter registers.  It doesn't
+     * help much, unless you have the manual there to look at.
+     */
+    if (printReg) {
+	Dev_FDDIRegContents contents;
+	status = Fs_IOControl(fd, IOC_FDDI_REG_CONTENTS, 0, NULL, 
+			      sizeof(Dev_FDDIRegContents), &contents);
+	if (status != SUCCESS) { 
+	    printf(stderr, "fddicmd: Fs_IOControl return 0x%x\n", status); 
+	} else {
+	    printf("Reset: 0x%x\tCtrlA: 0x%x\tCtrlB: 0x%x\n", 
+		   contents.regReset, contents.regCtrlA, contents.regCtrlB);
+	    printf("Status: 0x%x\tEvent: 0x%x\tMask: 0x%x\n", 
+		   contents.regStatus, contents.regEvent, contents.regMask);
+	}
+	exit(0);
+    }
+    /*
+     * Prints out the external and internal error values that
+     * the adapter write's into its error log as it halts.
+     */
+    if (printErrLog) {
+	Dev_FDDIErrLog errLog;
+
+	status = Fs_IOControl(fd, IOC_FDDI_ERR_LOG, 0, NULL, 
+			      sizeof(Dev_FDDIErrLog), &errLog);
+	if (status != SUCCESS) { 
+	    printf(stderr, "fddicmd: Fs_IOControl return 0x%x\n", status); 
+	} else {
+	    printf("External: 0x%x\tInternal: 0x%x\n",
+		   errLog.external, errLog.internal);
+	}
+	exit(0);
+    }
+    /*
+     * Flushes the driver's queue of pending writes.
+     */
+    if (flush) {
+	status = Fs_IOControl(fd, IOC_FDDI_FLUSH_XMT_Q, 0, NULL, 0, NULL);
+	CheckStatus(status);
+	exit(0);
+    }
+    /*
+     * Print out the network address of the adapter.
+     */
+    if (linkAddr) {
+	Dev_FDDILinkAddr fddiInfo;
+	char             buffer[32];
+
+	status = Fs_IOControl(fd, IOC_FDDI_ADDRESS, 0, NULL, 
+			      sizeof(Dev_FDDILinkAddr), &fddiInfo);
+	if (status != SUCCESS) {
+	    printf(stderr, "fddicmd: Fs_IOControl return 0x%x\n", status); 
+	} else {
+	    (void)Net_EtherAddrToString(&fddiInfo.source, buffer);
+	    printf("Adapter FDDI address: %s\n", buffer);
+	}
+	exit(0);
+    }
+    /*
+     * Print out adapter statistics.
+     */
+    if (getStats) {
+	Dev_FDDIStats stats;
+	int           i;
+
+	status = Fs_IOControl(fd, IOC_FDDI_STATS, 0, NULL,
+			      sizeof(Dev_FDDIStats), &stats);
+	if (status != SUCCESS) {
+	    printf(stderr, "fddicmd: Fs_IOControl return 0x%x\n", status); 
+	} else {
+	    printf("Packets sent:\t%9d\n", stats.packetsSent);
+	    printf("Packets queued:\t%9d\n", stats.packetsQueued);
+	    printf("Packets dropped:\t%9d\n", stats.xmtPacketsDropped);
+	    printf("Bytes sent  :\t%9d\n", stats.bytesSent);
+	    printf("Packets received:\t%9d\n", 
+		   stats.packetsReceived);
+	    printf("Bytes received  :\t%9d\n", 
+		   stats.bytesReceived);
+	    for (i = 0; i < NET_FDDI_STATS_RCV_REAPED; i++) {
+		printf("RCV reaped = [%d]:\t%9d\n", i + 1, 
+		       stats.receiveReaped[i]);
+	    }
+	    for (i = 0; i < NET_FDDI_STATS_HISTO_NUM; i++) {
+		printf("RCV packet size [%d-%d]:\t%9d\nXMT packet size [%d-%d]:\t%9d\n",
+		       i * NET_FDDI_STATS_HISTO_SIZE,
+		       ((i + 1) * NET_FDDI_STATS_HISTO_SIZE) - 1,
+		       stats.receiveHistogram[i],
+		       i * NET_FDDI_STATS_HISTO_SIZE,
+		       ((i + 1) * NET_FDDI_STATS_HISTO_SIZE) - 1,
+		       stats.transmitHistogram[i]);
+	    }
+		   
+	}
+	exit(0);
+    }
+    /*
+     * Do an RPC Echo.
+     */
+    if (echo != NIL) {
+	Dev_FDDIRpcEcho       rpcEcho;
+	Dev_FDDIRpcEchoReturn rpcReturn;
+
+	rpcEcho.serverID = echo;
+	rpcEcho.packetSize = packetSize;
+	rpcEcho.numEchoes = repeat;
+	rpcEcho.printSyslog = syslog;
+	status = Fs_IOControl(fd, IOC_FDDI_RPC_ECHO, sizeof(Dev_FDDIRpcEcho),
+			      &rpcEcho, sizeof(Dev_FDDIRpcEchoReturn),
+			      &rpcReturn);
+	if (status != SUCCESS) {
+	    printf(stderr, "fddicmd: Fs_IOControl return 0x%x\n", status); 
+	    exit(1);
+	}
+	printf("Time per RPC (size %d) %d.%06d\n", packetSize,
+	       rpcReturn.rpcTime.seconds, rpcReturn.rpcTime.microseconds);
+	exit(0);
+    }
+    /*
+     * Halt the adapter.
+     */
+    if (halt) {
+	status = Fs_IOControl(fd, IOC_FDDI_HALT, 0, NULL, 0, NULL);
+	CheckStatus(status);
+	exit(0);
+    }
+    /*
+     * Reset the adapter.
+     */
+    if (reset) {
+	status = Fs_IOControl(fd, IOC_FDDI_RESET, 0, NULL, 0, NULL);
+	CheckStatus(status);
+	exit(0);
+    }
+}
+
+@
+
+
+1.3
+log
+@working version...going to cut out non-working features and clean up
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/cmds/fddicmd/RCS/fddicmd.c,v 1.2 92/03/05 19:16:24 voelker Exp Locker: voelker $ SPRITE (Berkeley)";
+a32 1
+char    *dest = "08:00:2b:1c:6f:ef";  /* piracy */
+a53 4
+    {OPT_STRING, "dest", (Address) &dest,
+	"Destination address to send data to."},
+    {OPT_STRING, "file", (Address) &infileName,
+	"File to send."},
+a63 2
+    {OPT_TRUE, "read", (Address) &readDevice,
+	"Read from the device and output to stdout."},
+d67 1
+a67 1
+	"Echo the designated RPC server."},
+d77 3
+a79 1
+	"Print the useful information in the adapter error log."}
+d91 18
+d114 4
+a117 8
+    int             argsLeft;
+    Net_FDDIAddress *address;
+    int             fd;
+    ReturnStatus    status;
+    Dev_FDDISendPacket packet;
+    int size;
+    int infd;
+    int numRead;
+a123 8
+    address = &(packet.dest);
+    Net_StringToEtherAddr(dest, address);
+    if (address->byte1 == NULL && address->byte2 == NULL && 
+	address->byte3 == NULL && address->byte4 == NULL &&
+	address->byte5 == NULL && address->byte6 == NULL) {
+	printf(stderr, "fddicmd: invalid destination address: %s\n",
+	       dest);
+    }
+d130 5
+d138 1
+d140 4
+d156 1
+d158 4
+d173 1
+d175 3
+d181 1
+d183 3
+d198 1
+d200 3
+d235 1
+d237 3
+d257 1
+d259 3
+d267 3
+a273 50
+    }
+#define blah 4100
+    if (readDevice) {
+	char buffer[blah];
+	int offset = 16;
+
+	while (TRUE) {
+	    status = read(fd, buffer, blah);
+	    if (status < 0) {
+		perror("reading to /dev/fddi");
+	    } else if (status == 0) {
+		break;
+	    }
+	    status = write(fileno(stdout), buffer + offset, status - offset);
+	    if (status < 0) {
+		perror("writing to stdout");
+		exit(1);
+	    }
+	    if (status < (blah - offset)) {
+		break;
+	    }
+	}
+    }
+    if (infileName != NULL) {
+
+	infd = open(infileName, O_RDONLY, 0);
+	if (infd < 0) {
+	    printf("Can't open input file \"%s\"\n", infileName);
+	    exit(1);
+	}
+	size = sizeof(Dev_FDDISendPacket) - sizeof(int) - 
+	    sizeof(Net_Address);
+	while (TRUE) {
+	    numRead = read(infd, packet.buffer, size);
+	    if (numRead < 0) {
+		perror("reading %s", infileName);
+		exit(1);
+	    }
+	    if (numRead == 0) {
+		break;
+	    }
+	    packet.length = numRead;
+	    status = Fs_IOControl(fd, IOC_FDDI_SEND_PACKET, 
+				  sizeof(Dev_FDDISendPacket), &packet, 
+				  0, NULL);
+	    CheckStatus(status);
+	    if (numRead < size) {
+		break;
+	    }
+	}
+@
+
+
+1.2
+log
+@works with the multiwrite version of the FDDI driver
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/cmds/fddicmd/RCS/fddicmd.c,v 1.1 92/02/08 15:45:24 voelker Exp Locker: voelker $ SPRITE (Berkeley)";
+d25 1
+a70 2
+    {OPT_TRUE, "source", (Address) &source,
+	"Send random data to dest."},
+a80 2
+    {OPT_TRUE, "multipleWrite", (Address) &multipleWrite,
+	 "Test whether we can string multiple packets onto the adapter."},
+d186 1
+d192 3
+a194 5
+	    printf("Transmits Blocked for buffers:\t%9d\n",
+		   stats.blockForBuffers);
+	    for (i = 0; i < NET_FDDI_REAPED_MAX - 1; i++) {
+		printf("XMT reaped =  [%d]:\t%9d\n", i + 1, 
+		       stats.transmitReaped[i]);
+d196 8
+a203 6
+	    printf("XMT reaped >= [%d]:\t%9d\n", i + 1, 
+		   stats.transmitReaped[i]);
+
+	    for (i = 0; i < NET_FDDI_REAPED_MAX - 1; i++) {
+		printf("RCV reaped =  [%d]:\t%9d\n", i + 1, 
+		       stats.receiveReaped[i]);
+d205 1
+a205 20
+	    printf("RCV reaped >= [%d]:\t%9d\n", i + 1, 
+		   stats.receiveReaped[i]);
+	}
+    }
+    if (source) {
+	Dev_FDDISourcePacket packet;
+	Dev_FDDISourcePacket packetOut;
+
+	packet.length = packetSize;
+	address = &(packet.dest);
+	Net_StringToEtherAddr(dest, address);
+	status = Fs_IOControl(fd, IOC_FDDI_SOURCE, 
+			      sizeof(Dev_FDDISourcePacket), &packet,
+			      sizeof(Dev_FDDISourcePacket), &packetOut);
+	if (status != SUCCESS) {
+	    printf(stderr, "fddicmd: Fs_IOControl return 0x%x\n", status); 
+	    exit(1);
+	} else {
+	    printf("%d\t%d.%06d\n", size, packetOut.time.seconds, 
+		packetOut.time.microseconds);
+a232 8
+	CheckStatus(status);
+	exit(0);
+    }
+    if (multipleWrite) {
+	packet.length = 512;
+	status = Fs_IOControl(fd, IOC_FDDI_SEND_PACKET, 
+			      sizeof(Dev_FDDISendPacket), &packet, 
+			      0, NULL);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/cmds/fddicmd/fddicmd.c,v 1.1 92/02/08 15:44:20 voelker Exp Locker: voelker $ SPRITE (Berkeley)";
+d30 1
+d32 15
+a46 4
+/*
+ * The ucode file is in Intel format, which we don't have a constant for
+ * at the moment so borrow the VAX format.
+ */
+d48 3
+a50 35
+#define UCODE_FORMAT	FMT_VAX_FORMAT
+
+/*
+ * Variables settable via the command line.
+ */
+
+Boolean	download = FALSE;	/* Download ucode to the adapter. */
+char	*dir = "/sprite/lib/ultra/ucode";  /* Directory containing ucode. */
+char	*file = NULL;		/* Ucode file to download. */
+Boolean reset = FALSE;		/* Reset the adapter. */
+Boolean getInfo = FALSE;	/* Get the adapter info. */
+char	*dev = "/dev";		/* Directory containing the device. */
+Boolean diag = FALSE;		/* Run diagnostic tests. */
+Boolean extDiag = FALSE;	/* Run extended diagnostic tests. */
+Boolean	external = FALSE;	/* Use external loopback when running
+				 * extended diagnostic tests. */
+char	*debug = NULL;		/* Set debugging output. */
+Boolean init = FALSE;		/* Send init command to adapter. */
+Boolean start = FALSE;		/* Send start command to the adapter. */
+char	*address = NULL;	/* Set adapter's Ultranet address. */
+char	*dsnd = NULL;		/* Send a datagram to the given host. */
+int	count = 1;		/* Number of times to send the datagram. */
+int	repeat = 1;		/* Number of times to repeat the send test.*/
+int	size = 0;		/* Size of the datagram to send. */
+char    *echo = NULL;		/* Host should echo datagrams back to
+				 * sender.  Use for receiver of dsnd option. */
+char	*trace = FALSE;		/* Set tracing of activity. */
+char	*source = FALSE;	/* Send a steady stream of datagrams to
+				 * the given host. */
+char	*sink = FALSE;		/* Toggle sink of incoming datagrams. */
+char	*stat = FALSE;		/* Manipulate collection of statistics. */
+int	map = -1;		/* Set mapping threshold. */
+int	bcopy = -1;		
+int	sg = -1;		
+Boolean hardReset = FALSE;
+d53 25
+a77 34
+    {OPT_DOC, NULL, NULL, "Usage: ultracmd [options] [device]"},
+    {OPT_DOC, NULL, NULL, "Default device is \"ultra0\""},
+    {OPT_TRUE, "dl", (Address) &download,
+	"Download micro-code into the adapter"},
+    {OPT_STRING, "dir", (Address) &dir,
+	"Directory containing the micro-code files"},
+    {OPT_STRING, "f", (Address) &file,
+	"Micro-code file to download (default is to automatically pick one)"},
+    {OPT_TRUE, "r", (Address) &reset,
+	"Reset the adapter"},
+    {OPT_TRUE, "R", (Address) &hardReset,
+	"Hard reset the adapter"},
+    {OPT_TRUE, "t", (Address) &getInfo,
+	"Get type information from the adapter"},
+    {OPT_TRUE, "d", (Address) &diag,
+	"Run diagnostic tests on adapter"},
+    {OPT_TRUE, "ed", (Address) &extDiag,
+	"Run extended diagnostic tests on adapter"},
+    {OPT_TRUE, "ext", (Address) &external,
+	"Use external loopback when running extended diagnostics"},
+    {OPT_STRING, "dev", (Address) &dev,
+	"Directory containing the device"},
+    {OPT_STRING, "dbg", (Address) &debug,
+	"Ultranet device debugging output (on/off)"},
+    {OPT_TRUE, "i", (Address) &init,
+	"Send initialization command to adapter"},
+    {OPT_TRUE, "s", (Address) &start,
+	"Send start request to the adapter."},
+    {OPT_STRING, "a", (Address) &address,
+	"Set Ultranet address of adapter."},
+    {OPT_STRING, "dsnd", (Address) &dsnd,
+	"Send a datagram to the given address."},
+    {OPT_INT, "cnt", (Address) &count,
+	"Number of times to send a datagram (use with -dsnd)."},
+d79 9
+a87 19
+	"Number of times to repeat the send-datagram test (use with -dsnd)."},
+    {OPT_INT, "size", (Address) &size,
+	"Size of the datagram (use with -dsnd)."},
+    {OPT_STRING, "echo", (Address) &echo,
+	"Echo received datagrams back to sender (on/off)"},
+    {OPT_STRING, "trace", (Address) &trace,
+	"Start and stop tracing of ultra driver activity (on/off)"},
+    {OPT_STRING, "source", (Address) &source,
+	"Send a stream of datagrams to the given address."},
+    {OPT_STRING, "sink", (Address) &sink,
+	"Toggle sink of incoming datagrams (on/off)"},
+    {OPT_STRING, "stat", (Address) &stat,
+	"Manipulate collection of ultranet statistics (on/off/clear/get)"},
+    {OPT_INT, "m", (Address) &map,
+	"Set mapping threshold."},
+    {OPT_INT, "bcopy", (Address) &bcopy,
+	"Bcopy test data size."},
+    {OPT_INT, "sg", (Address) &sg,
+	"SG bcopy test data size."},
+d89 1
+d92 4
+a95 29
+/*
+ * The following are the names of the diagnostic tests as listed in the
+ * uvm man page provided in the Ultranet documentation.
+ */
+static char	*diagNames[] = {
+    "EPROM checksum",
+    "Abbreviated RAM check",
+    "Interrupt controller and interval timer",
+    "Internal loopback",
+    "FIFO RAM check",
+    "Checksum gate arrays",
+    "NMI control logic"
+};
+/*
+ * The following are the names of the extended diagnostic tests as
+ * listed in the uvm man page.
+ */
+static char	*extDiagNames[] = {
+    "EPROM checksum",
+    "Full RAM check",
+    "Interrupt controller and interval timer",
+    "Internal or external loopback",
+    "FIFO RAM check",
+    "Checksum gate arrays",
+    "NMI control logic",
+    "DMA to hosts memory using VME bus",
+    "Extended FIFO RAM check",
+    "FIFO Control logic"
+};
+d97 1
+a97 2
+char	*myname;
+void	Download();
+a98 21
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
+
+char	*device = "ultra0";
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	Parse the arguments and call the correct procedure.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The state of the adapter board may be modified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+d101 2
+a102 2
+    int		argc;
+    char	*argv[];
+d104 8
+a111 4
+    int			argsLeft;
+    char		deviceName[FS_MAX_PATH_NAME_LENGTH];
+    int			fd;
+    ReturnStatus	status;
+a112 1
+    myname = argv[0];
+d118 7
+a124 17
+    if (download + reset + getInfo + diag + extDiag + (debug != NULL) +
+	init + start + (address != NULL) + (dsnd != NULL) +
+	(echo != NULL) + (trace != NULL) + (source != NULL) +
+	(sink != NULL) + (stat != NULL) + (map >= 0) + hardReset > 1) {
+	printf("You can only specify one of the following options:\n");
+	printf("-dl, -r, -t, -d, -ed, -dbg, -i, -s, -a, -dsnd, -echo\n");
+	printf("-trace, -source, -stat, -m, -R\n");
+	Opt_PrintUsage(argv[0], optionArray, numOptions);
+	exit(1);
+    }
+    if ((external == TRUE) && (extDiag == FALSE)) {
+	printf("The -ext option can only be used with the -ed option\n");
+	Opt_PrintUsage(argv[0], optionArray, numOptions);
+	exit(1);
+    }
+    if (argsLeft == 2) {
+	device = argv[1];
+d126 1
+a126 2
+    sprintf(deviceName, "%s/%s", dev, device);
+    fd = open(deviceName, O_RDONLY);
+a129 1
+	Opt_PrintUsage(argv[0], optionArray, numOptions);
+d133 2
+a134 14
+	int flag;
+	if (!strcasecmp(debug, "on")) {
+	    flag = 1;
+	} else if (!strcasecmp(debug, "off")) {
+	    flag = 0;
+	} else {
+	    printf("Invalid parameter to -dbg. Must be \"on\" or \"off\"\n");
+	    Opt_PrintUsage(argv[0], optionArray, numOptions);
+	    exit(1);
+	}
+	status = Fs_IOControl(fd, IOC_ULTRA_DEBUG, sizeof(int), &flag, 0, 0);
+	if (status != SUCCESS) {
+	    printf("Fs_IOControl returned 0x%x\n", status);
+	}
+d136 73
+a208 4
+    if (reset) {
+	status = Fs_IOControl(fd, IOC_ULTRA_RESET, 0, NULL, 0, 0);
+	if (status != SUCCESS) {
+	    printf("Fs_IOControl returned 0x%x\n", status);
+d211 40
+a250 5
+    if (hardReset) {
+	status = Fs_IOControl(fd, IOC_ULTRA_HARD_RESET, 0, NULL, 0, 0);
+	if (status != SUCCESS) {
+	    printf("Fs_IOControl returned 0x%x\n", status);
+	}
+d252 4
+a255 100
+    if (getInfo) {
+	Dev_UltraAdapterInfo	info;
+	status = Fs_IOControl(fd, IOC_ULTRA_GET_ADAP_INFO, 0, NULL, 
+		    sizeof(Dev_UltraAdapterInfo), &info);
+	if (status != SUCCESS) {
+	    printf("Fs_IOControl returned 0x%x\n", status);
+	} else {
+	    printf(
+    "Model 99-%04d-%04d, Revision %d, Options %d, Firmware %d, Serial %d\n",
+		info.hwModel, info.hwVersion, info.hwRevision, 
+		info.hwOption, info.version, info.hwSerial);
+	}
+    }
+    if (diag) {
+	Dev_UltraDiag		cmd;
+	status = Fs_IOControl(fd, IOC_ULTRA_DIAG, 0, NULL, 
+		    sizeof(Dev_UltraDiag), &cmd);
+	if (status != SUCCESS) {
+	    printf("Fs_IOControl returned 0x%x\n", status);
+	} else {
+	    if (cmd.error == 0) {
+		printf("All diagnostic tests passed.\n");
+	    } else {
+		int	tmp = cmd.error;
+		int	i;
+		printf("The following diagnostic tests failed:\n");
+		for (i = 0; i < sizeof(int); i++) {
+		    if (tmp & 1) {
+			printf("%2d: %s\n", i+1, diagNames[i]);
+		    }
+		    tmp >>= 1;
+		}
+	    }
+	}
+    }
+    if (extDiag) {
+	Dev_UltraExtendedDiag	cmd;
+	cmd.externalLoopback = external;
+	status = Fs_IOControl(fd, IOC_ULTRA_EXTENDED_DIAG, sizeof(cmd), 
+		    (Address) &cmd, sizeof(cmd), (Address) &cmd);
+	if (status != SUCCESS) {
+	    printf("Fs_IOControl returned 0x%x\n", status);
+	} else {
+	    if (cmd.error == 0) {
+		printf("All extended diagnostic tests passed.\n");
+	    } else {
+		int	tmp = cmd.error;
+		int	i;
+		printf("The following extended diagnostic tests failed:\n");
+		for (i = 0; i < sizeof(int); i++) {
+		    if (tmp & 1) {
+			printf("%2d: %s\n", i+1, extDiagNames[i]);
+		    }
+		    tmp >>= 1;
+		}
+	    }
+	}
+    }
+    if (download) {
+	Download(fd, dir, file);
+    }
+    if (init) {
+	status = Fs_IOControl(fd, IOC_ULTRA_INIT, 0, NULL, 0, NULL);
+	if (status != SUCCESS) {
+	    printf("Fs_IOControl returned 0x%x\n", status);
+	} 
+    }
+    if (start) {
+	status = Fs_IOControl(fd, IOC_ULTRA_START, 0, NULL, 0, NULL);
+	if (status != SUCCESS) {
+	    printf("Fs_IOControl returned 0x%x\n", status);
+	} 
+    }
+    if (address) {
+	Net_UltraAddress	ultraAddress;
+	int			count;
+	int			group;
+	int			unit;
+	count = sscanf(address,"%d/%d", &group, &unit);
+	if (count != 2) {
+	    printf("%s: argument to -a is of form <group>/<unit>\n", myname);
+	    Opt_PrintUsage(argv[0], optionArray, numOptions);
+	    exit(1);
+	}
+	if (group < 1 || group > 1000) {
+	    printf("%s: group must be 1-1000\n", myname);
+	    Opt_PrintUsage(argv[0], optionArray, numOptions);
+	    exit(1);
+	}
+	if (unit < 32 || unit > 62) {
+	    printf("%s: unit must be 32-62\n", myname);
+	    Opt_PrintUsage(argv[0], optionArray, numOptions);
+	    exit(1);
+	}
+	Net_UltraAddressSet(&ultraAddress, group, unit);
+	status = Fs_IOControl(fd, IOC_ULTRA_ADDRESS, sizeof(Net_UltraAddress),
+		    &ultraAddress, 0, NULL);
+	if (status != SUCCESS) {
+	    printf("Fs_IOControl returned 0x%x\n", status);
+	} 
+d257 18
+a274 32
+    if (dsnd) {
+	Dev_UltraSendDgram	dgram;
+	int			pid;
+	int			n;
+	int			group;
+	int			unit;
+	n = sscanf(dsnd,"%d/%d", &group, &unit);
+	if (n != 2) {
+	    printf("%s: argument to -dsnd is of form <group>/<unit>\n", myname);
+	    Opt_PrintUsage(argv[0], optionArray, numOptions);
+	    exit(1);
+	}
+	if (group < 1 || group > 1000) {
+	    printf("%s: group must be 1-1000\n", myname);
+	    Opt_PrintUsage(argv[0], optionArray, numOptions);
+	    exit(1);
+	}
+	if (unit < 32 || unit > 62) {
+	    printf("%s: unit must be 32-62\n", myname);
+	    Opt_PrintUsage(argv[0], optionArray, numOptions);
+	    exit(1);
+	}
+	Net_UltraAddressSet(&dgram.address.ultra, group, unit);
+	dgram.count = count;
+	dgram.size = size;
+	dgram.useBuffer = FALSE;
+	while (repeat > 0) {
+	    repeat--;
+	    status = Fs_IOControl(fd, IOC_ULTRA_SEND_DGRAM, 
+			sizeof(dgram), &dgram, sizeof(dgram), &dgram);
+	    if (status != SUCCESS) {
+		printf("Fs_IOControl returned 0x%x\n", status);
+d277 6
+a282 70
+	    Time_Divide(dgram.time, count, &dgram.time);
+	    printf("%d\t%d.%06d\n", size, dgram.time.seconds, 
+		dgram.time.microseconds);
+	}
+    }
+    if (echo) {
+	Dev_UltraEcho		echoParam;
+	if (!strcasecmp(echo, "on")) {
+	    echoParam.echo = TRUE;
+	} else if (!strcasecmp(echo, "off")) {
+	    echoParam.echo = FALSE;
+	} else {
+	    printf("Invalid parameter to -echo. Must be \"on\" or \"off\"\n");
+	    Opt_PrintUsage(argv[0], optionArray, numOptions);
+	    exit(1);
+	}
+	status = Fs_IOControl(fd, IOC_ULTRA_ECHO, sizeof(echoParam),
+	    &echoParam, 0, NULL);
+	if (status != SUCCESS) {
+	    printf("Fs_IOControl returned 0x%x\n", status);
+	}
+    }
+    if (trace) {
+	int flag;
+	if (!strcasecmp(trace, "on")) {
+	    flag = 1;
+	} else if (!strcasecmp(trace, "off")) {
+	    flag = 0;
+	} else {
+	    printf("Invalid parameter to -trace. Must be \"on\" or \"off\"\n");
+	    Opt_PrintUsage(argv[0], optionArray, numOptions);
+	    exit(1);
+	}
+	status = Fs_IOControl(fd, IOC_ULTRA_TRACE, sizeof(int), &flag, 0, 0);
+	if (status != SUCCESS) {
+	    printf("Fs_IOControl returned 0x%x\n", status);
+	}
+    }
+    if (source) {
+	Dev_UltraSendDgram	dgram;
+	int			pid;
+	int			n;
+	int			group;
+	int			unit;
+	n = sscanf(source,"%d/%d", &group, &unit);
+	if (n != 2) {
+	    printf("%s: argument to -dsnd is of form <group>/<unit>\n", myname);
+	    Opt_PrintUsage(argv[0], optionArray, numOptions);
+	    exit(1);
+	}
+	if (group < 1 || group > 1000) {
+	    printf("%s: group must be 1-1000\n", myname);
+	    Opt_PrintUsage(argv[0], optionArray, numOptions);
+	    exit(1);
+	}
+	if (unit < 32 || unit > 62) {
+	    printf("%s: unit must be 32-62\n", myname);
+	    Opt_PrintUsage(argv[0], optionArray, numOptions);
+	    exit(1);
+	}
+	Net_UltraAddressSet(&dgram.address.ultra, group, unit);
+	dgram.count = count;
+	dgram.size = size;
+	dgram.useBuffer = FALSE;
+	while (repeat > 0) {
+	    repeat--;
+	    status = Fs_IOControl(fd, IOC_ULTRA_SOURCE, 
+			sizeof(dgram), &dgram, sizeof(dgram), &dgram);
+	    if (status != SUCCESS) {
+		printf("Fs_IOControl returned 0x%x\n", status);
+a284 114
+	    printf("%d\t%d.%06d\n", size, dgram.time.seconds, 
+		dgram.time.microseconds);
+	}
+    }
+    if (sink) {
+	Dev_UltraSink		sinkParam;
+	int flag;
+	int packets;
+	if (!strcasecmp(sink, "on")) {
+	    flag = 1;
+	} else if (!strcasecmp(sink, "off")) {
+	    flag = 0;
+	} else {
+	    printf("Invalid parameter to -sink. Must be \"on\" or \"off\"\n");
+	    Opt_PrintUsage(argv[0], optionArray, numOptions);
+	    exit(1);
+	}
+	status = Fs_IOControl(fd, IOC_ULTRA_SINK, sizeof(int), &flag, 
+			sizeof(sinkParam), &sinkParam);
+	if (status != SUCCESS) {
+	    printf("Fs_IOControl returned 0x%x\n", status);
+	} else {
+	    printf("%d packets sunk\n", sinkParam.packets);
+	}
+    }
+    if (stat) {
+	Dev_UltraStats		statParam;
+	int			ioctl;
+	int			flag;
+	int			i;
+	if (!strcasecmp(stat, "on")) {
+	    flag = 1;
+	    ioctl = IOC_ULTRA_COLLECT_STATS;
+	} else if (!strcasecmp(stat, "off")) {
+	    flag = 0;
+	    ioctl = IOC_ULTRA_COLLECT_STATS;
+	} else if (!strcasecmp(stat, "clear")) {
+	    ioctl = IOC_ULTRA_CLEAR_STATS;
+	} else if (!strcasecmp(stat, "get")) {
+	    ioctl = IOC_ULTRA_GET_STATS;
+	} else {
+	    printf("Invalid parameter to -stat.\n");
+	    printf("Must be \"on\",\"off\",\"clear\", or \"get\"\n");
+	    Opt_PrintUsage(argv[0], optionArray, numOptions);
+	    exit(1);
+	}
+	switch(ioctl) {
+	    case IOC_ULTRA_COLLECT_STATS:
+		status = Fs_IOControl(fd, ioctl, sizeof(int), &flag, 0,0);
+		break;
+	    case IOC_ULTRA_CLEAR_STATS:
+		status = Fs_IOControl(fd, ioctl, 0,0,0,0);
+		break;
+	    case IOC_ULTRA_GET_STATS:
+		status = Fs_IOControl(fd, ioctl, 0, 0, 
+				sizeof(statParam), &statParam);
+		break;
+	}
+	if (status != SUCCESS) {
+	    printf("Fs_IOControl returned 0x%x\n", status);
+	} else {
+	    switch(ioctl) {
+		case IOC_ULTRA_COLLECT_STATS:
+		    break;
+		case IOC_ULTRA_CLEAR_STATS:
+		    break;
+		case IOC_ULTRA_GET_STATS:
+		    printf("Packets sent:\t%9d\n", statParam.packetsSent);
+		    printf("Bytes sent  :\t%9d\n", statParam.bytesSent);
+		    printf("Histogram of packets sent:\n");
+		    for (i = 0; i < 33; i++) {
+			printf("[%2d,%2d):\t%9d\n", i, i+1, 
+			    statParam.sentHistogram[i]);
+		    }
+		    printf("Packets received:\t%9d\n", 
+			    statParam.packetsReceived);
+		    printf("Bytes received  :\t%9d\n", 
+			    statParam.bytesReceived);
+		    printf("Histogram of packets received:\n");
+		    for (i = 0; i < 33; i++) {
+			printf("[%2d,%2d):\t%9d\n", i, i+1, 
+			    statParam.receivedHistogram[i]);
+		    }
+		    break;
+	    }
+	}
+    }
+    if (map >= 0) {
+	status = Fs_IOControl(fd, IOC_ULTRA_MAP_THRESHOLD, sizeof(int), &map, 
+			0, 0);
+	if (status != SUCCESS) {
+	    printf("Fs_IOControl returned 0x%x\n", status);
+	} 
+    }
+    if (bcopy >= 0) {
+	Time	time;
+	status = Fs_IOControl(fd, IOC_ULTRA_BCOPY_TEST, sizeof(int), &bcopy, 
+			sizeof(Time), &time);
+	if (status != SUCCESS) {
+	    printf("Fs_IOControl returned 0x%x\n", status);
+	} else {
+	    printf("%d\t%d.%06d\n", bcopy, time.seconds, 
+		time.microseconds);
+	}
+    }
+    if (sg >= 0) {
+	Time	time;
+	status = Fs_IOControl(fd, IOC_ULTRA_SG_BCOPY_TEST, sizeof(int), &sg, 
+			sizeof(Time), &time);
+	if (status != SUCCESS) {
+	    printf("Fs_IOControl returned 0x%x\n", status);
+	} else {
+	    printf("%d\t%d.%06d\n", sg, time.seconds, 
+		time.microseconds);
+d287 1
+a287 48
+    close(fd);
+    if (status != SUCCESS) {
+	exit(1);
+    }
+    exit(0);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Download --
+ *
+ *	Downloads the Ultranet adapter ucode onto the board..
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The ucode is loaded onto the board.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Download(devFD, dir, file)
+    int		devFD;		/* Handle on the ultranet adapter. */
+    char	*dir;		/* Name of directory containing ucode files.*/
+    char	*file;		/* If non-NULL then name of the file to
+				 * download. */
+{
+    int		fd;
+    char	path[FS_MAX_PATH_NAME_LENGTH];
+    int		bytesRead;
+    struct	{
+	unsigned long	unused;
+	unsigned long	length;
+	unsigned long	address;
+    } header;
+    char buffer[0x8000];	/* Biggest possible size of data. */
+    Dev_UltraLoad	loadCmd;
+    Dev_UltraGo		goCmd;
+    ReturnStatus	status;
+    int			fmtStatus;
+    int			inSize;
+    int			outSize;
+    int			startAddress;
+    int			bytesSent;
+    int			address;
+d289 11
+a299 7
+    if (file == NULL) {
+	Dev_UltraAdapterInfo	info;
+	status = Fs_IOControl(devFD, IOC_ULTRA_GET_ADAP_INFO, 0, NULL, 
+		    sizeof(Dev_UltraAdapterInfo), &info);
+	if (status != SUCCESS) {
+	    if (status == DEV_BUSY) {
+		printf("You must reset the adapter first.\n");
+d302 2
+a303 82
+	    printf("%s: Fs_IOControl to get adapter info failed 0x%x.\n", 
+		myname, status);
+	    exit(1);
+	}
+	sprintf(path,"%s/uvm%d.ult", dir, info.hwModel);
+    } else {
+	sprintf(path,"%s/%s", dir, file);
+    }
+    fd = open(path, O_RDONLY);
+    if (fd < 0) {
+	printf("%s: could not open ucode file \"%s\"\n", myname, path);
+	perror(NULL);
+    }
+    bytesRead = read(fd, buffer, sizeof(header));
+    while(bytesRead > 0) {
+	/*
+	 * The load address is stored in the ucode file in 
+	 * Intel byte order.
+	 */
+	inSize = sizeof(buffer);
+	outSize = sizeof(int);
+	fmtStatus = Fmt_Convert("w", UCODE_FORMAT, &inSize, 
+			(Address) &buffer[8], FMT_MY_FORMAT, &outSize,
+			(Address) &header.address);
+	if (fmtStatus != 0) {
+	    printf("%s: Fmt_Convert of header returned %d\n", myname,
+		fmtStatus);
+	    exit(1);
+	}
+	if (outSize != sizeof(int)) {
+	    printf("%s: header changed size after conversion.\n", myname);
+	    exit(1);
+	}
+	/*
+	 * The length field is stored in sun byte order.
+	 */
+	inSize = sizeof(buffer);
+	outSize = sizeof(int);
+	fmtStatus = Fmt_Convert("w", FMT_68K_FORMAT, &inSize, 
+			(Address) &buffer[4], FMT_MY_FORMAT, &outSize,
+			(Address) &header.length);
+	if (fmtStatus != 0) {
+	    printf("%s: Fmt_Convert of header returned %d\n", myname,
+		fmtStatus);
+	    exit(1);
+	}
+	if (outSize != sizeof(int)) {
+	    printf("%s: header changed size after conversion.\n", myname);
+	    exit(1);
+	}
+	/*
+	 * If the length field is 0 then the address field contains the 
+	 * start address.
+	 */
+	if (header.length == 0) {
+	    startAddress = header.address;
+	    break;
+	}
+#if 0
+	printf("Header address = 0x%x\n", header.address);
+	printf("Header length = %d 0x%x\n", header.length, header.length);
+#endif
+	/* 
+	 * Break the data into pieces that can be sent via an ioctl and
+	 * send it to the device.
+	 */
+	bytesSent = 0;
+	address = header.address;
+	while(bytesSent < bytesRead) {
+	    int 	length;
+
+	    length = MIN(header.length - bytesSent, sizeof(loadCmd.data));
+	    loadCmd.address = address;
+	    loadCmd.length = length;
+	    /*
+	     * Now read in the data.
+	     */
+	    bytesRead = read(fd, loadCmd.data, length);
+	    if (bytesRead != length) {
+		printf("%s: short read on data, %d expecting %d\n", myname,
+		    bytesRead, length);
+		exit(1);
+d305 7
+a311 8
+#if 0
+	    printf("Download 0x%x 0x%x\n", loadCmd.address, loadCmd.length);
+#endif
+	    status = Fs_IOControl(devFD, IOC_ULTRA_LOAD, sizeof(loadCmd), 
+			(Address) &loadCmd, 0, NULL);
+	    if (status != SUCCESS) {
+		printf("Fs_IOControl returned 0x%x\n", status);
+		exit(1);
+d313 1
+a313 18
+	    bytesSent += length;
+	    /*
+	     * Now adjust the load address in case we are sending a
+	     * block of data in multiple ioctls.
+	     */
+	    address += length;
+	}
+	bytesRead = read(fd, buffer, sizeof(header));
+    }
+    /*
+     * Now send the start address.
+     */
+    goCmd.address = startAddress;
+    status = Fs_IOControl(devFD, IOC_ULTRA_GO, sizeof(goCmd), 
+		(Address) &goCmd, 0, NULL);
+    if (status != SUCCESS) {
+	printf("Fs_IOControl returned 0x%x\n", status);
+	exit(1);
+a315 1
+
+@

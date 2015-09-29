@@ -1,0 +1,54 @@
+'\" Copyright 1989 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/admin/fsindex/RCS/fsindex.man,v 1.1 90/03/09 17:32:07 brent Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS FSINDEX cmds
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+fsindex \- Print the block index map for a file.
+.SH SYNOPSIS
+\fBfsindex\fR -\fBdev \fIdevice -\fBpart \fIpartition \fIfile1 file2 ...\fR
+.br
+\fBfsindex\fR -\fBdev \fIdevice -\fBpart \fIpartition -\fBinum \fInum1 num2 ...\fR
+.SH OPTIONS
+.IP "\fB\-dev \fIdevice\fR" 15
+The name of the device file one which the files live.
+Typical names are ``rsd00'' (SCSI hba 0 target 0) and ``rxy0'' (Xylogics
+controller 0).
+For SCSI disks,
+the two digits represent the HBA index and the target ID, respectively.
+.IP "\fB\-part \fIpartition\fR" 15
+Where partition is one of `a', `b', ... up to `h'.
+The device and partition are concatinated to create the complete
+device name, i.e. ``rxy0g''.
+.IP "\fB\-inum\fR" 15
+This option causes the remaining arguments to be interpreted
+as inode numbers instead of file names.
+.BE
+
+.SH DESCRIPTION
+.PP
+This dumps out the block indexes of a file.
+It is meant as a simple tool for examining the layout of a file on disk.
+You can consult a server's mount table (/hosts/\fIhostname\fP/mount)
+to determine the device that corresponds to a particular file system.
+.SH EXAMPLES
+.PP
+.DS
+fsindex -dev rxy0 -part g file1 dir/file2 file3
+fsindex -dev rsd00 -part c -inum 53900 4681
+.DE
+.SH BUGS
+.PP
+The syntax for specifying the device is baroque.
+.SH KEYWORDS
+block layout, disk, file
+

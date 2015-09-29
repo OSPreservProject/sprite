@@ -1,0 +1,10 @@
+#!/bin/csh -f
+
+#Redo the ID database for lid, etc.
+
+find . \( -type f -o -type l \) -print | grep '\.h$' > ID.files
+echo "Generated source file list"
+echo "Updating database"
+mkid -aID.files
+echo "Made database"
+rm ID.files

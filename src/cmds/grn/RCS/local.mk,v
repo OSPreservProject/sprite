@@ -1,0 +1,53 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     88.12.18.15.01.29;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.12.03.16.39.44;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Use /sprite/lib/ditroff instead of /sprite/lib/font.
+@
+text
+@#
+# This file is included by Makefile.  Makefile is generated automatically
+# by mkmf, and this file provides additional local personalization.  The
+# variable SYSMAKEFILE is provided by Makefile;  it's a system Makefile
+# that must be included to set up various compilation stuff.
+#
+
+LIBS		+= -lm
+
+#include	<$(SYSMAKEFILE)>
+
+CFLAGS		+= -DDEVDIR='"/sprite/lib/ditroff"' \
+		-DGREMLIB='"/X/lib/gremlin"'
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d12 1
+a12 1
+CFLAGS		+= -DDEVDIR='"/sprite/lib/font"' \
+@

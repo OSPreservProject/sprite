@@ -1,0 +1,2706 @@
+head     1.33;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.33
+date     92.10.30.14.01.08;  author mottsmth;  state Exp;
+branches ;
+next     1.32;
+
+1.32
+date     92.03.14.16.27.09;  author mottsmth;  state Exp;
+branches ;
+next     1.31;
+
+1.31
+date     92.02.20.21.39.03;  author jhh;  state Exp;
+branches ;
+next     1.30;
+
+1.30
+date     92.01.30.10.52.15;  author jhh;  state Exp;
+branches ;
+next     1.29;
+
+1.29
+date     92.01.27.22.22.40;  author jhh;  state Exp;
+branches ;
+next     1.28;
+
+1.28
+date     91.12.13.11.53.47;  author jhh;  state Exp;
+branches ;
+next     1.27;
+
+1.27
+date     91.11.12.18.57.33;  author rab;  state Exp;
+branches ;
+next     1.26;
+
+1.26
+date     91.11.12.18.54.04;  author rab;  state Exp;
+branches ;
+next     1.25;
+
+1.25
+date     90.08.27.11.32.50;  author shirriff;  state Exp;
+branches ;
+next     1.24;
+
+1.24
+date     90.06.27.13.33.11;  author jhh;  state Exp;
+branches ;
+next     1.23;
+
+1.23
+date     90.02.28.22.12.16;  author jhh;  state Exp;
+branches ;
+next     1.22;
+
+1.22
+date     90.02.28.17.50.09;  author douglis;  state Exp;
+branches ;
+next     1.21;
+
+1.21
+date     90.02.22.18.36.19;  author douglis;  state Exp;
+branches ;
+next     1.20;
+
+1.20
+date     90.02.22.17.39.09;  author jhh;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     90.02.15.14.49.43;  author douglis;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     90.01.22.09.51.47;  author douglis;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     90.01.22.09.45.54;  author douglis;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     89.10.02.19.26.25;  author rab;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     89.06.19.14.30.42;  author jhh;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     89.03.23.15.59.30;  author douglis;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     89.02.02.15.57.59;  author brent;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     88.12.28.11.31.31;  author ouster;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     88.12.28.11.22.04;  author ouster;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     88.12.28.11.17.11;  author ouster;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     88.12.22.13.50.02;  author brent;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     88.08.25.13.24.12;  author ouster;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.08.23.15.03.01;  author douglis;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.08.23.14.34.43;  author douglis;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.08.20.14.26.59;  author ouster;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.08.20.10.45.24;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.08.18.14.53.46;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.08.08.18.39.22;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.08.08.14.58.29;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.33
+log
+@Add support for both "struct direct" and "struct dirent"
+@
+text
+@/* 
+ * update.c --
+ *
+ *	A smart copy program that preserves date stamps and only
+ *	copies if files are out-of-date.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/cmds/update/RCS/update.c,v 1.32 92/03/14 16:27:09 mottsmth Exp Locker: mottsmth $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <a.out.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/dir.h>
+#include <sys/file.h>
+#include <sys/param.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <limits.h>
+#ifdef sprite
+#include <fs.h>
+#endif
+#include <grp.h>
+#include <pwd.h>
+#include "regexp.h"
+#include "option.h"
+
+#ifndef HASSTRERROR
+char *strerror();
+#endif
+
+#if (defined(sunos) || defined(OSF1))
+#define DirObject struct dirent
+#else
+#define DirObject struct direct
+#endif
+
+/*
+ * Library imports:
+ */
+
+extern long lseek();
+
+/*
+ * Variables and tables used to parse and identify switch values:
+ */
+
+static int strip = 0;
+static int move = 0;
+static char *backupDir = (char *)0;
+static int backupAge = 14;
+static char *modeString = (char *)0;
+static int newMode = -1;
+static char *ownerName = (char *)0;
+static int newOwner = -1;
+static int preserveOwnership = 0;
+static char *groupName = (char *)0;
+static int newGroup = -1;
+static int force = 0;
+static int noLinks = 0;
+static int copyLinks = 1;
+static int setTimes = 1;
+static int quietMode = 0;
+static int verifyMode = 0;
+static int niceMode = 0;
+static int PruneOpt();
+static int ignoreLinks = 0;
+
+static Option optionArray[] = {
+    {OPT_STRING, "b", (char *) &backupDir,
+	    "Next argument contains name of backup directory"},
+    {OPT_INT, "B", (char *) &backupAge,
+	    "Next argument contains age (in days) needed to cause backup to overwrite older backup"},
+    {OPT_TRUE, "f", (char *) &force,
+	    "Force: always update, regardless of time stamps"},
+    {OPT_STRING, "g", (char *) &groupName,
+	    "Next argument contains name of group for destination file(s)"},
+    {OPT_FALSE, "l", (char *) &copyLinks,
+	    "Copy files referenced by symbolic links\n\t\tDefault: copy symbolic links as symbolic links"},
+    {OPT_STRING, "m", (char *) &modeString,
+	    "Next argument contains new protection bits for file(s)"},
+    {OPT_TRUE, "M", (char *) &move, "Move instead of copy"},
+    {OPT_TRUE, "n", (char *) &niceMode, "Be nice about potential errors"},
+    {OPT_STRING, "o", (char *) &ownerName,
+	    "Next argument contains name of owner for destination file(s)"},
+    {OPT_TRUE, "O", (char *) &preserveOwnership,
+	    "Preserve ownership of files"},
+    {OPT_TRUE, "q", (char *) &quietMode,
+	    "Quiet mode:  only print error messages"},
+    {OPT_TRUE, "s", (char *) &strip, "Strip destination (not supported on ds3100/hpux"},
+    {OPT_FALSE, "t", (char *) &setTimes, "Use current time for file access times\n\t\tDefault: set target times to match source"},
+    {OPT_TRUE, "v", (char *) &verifyMode,
+	    "Verify mode:  print messages, but don't modify anything"},
+    {OPT_FUNC, "p", (char *) PruneOpt,
+	    "Prune sub-trees defined by given regular expression"}, 
+    {OPT_TRUE, "i", (char *) &ignoreLinks,
+	    "Ignore symbolic links completely"}, 
+};
+
+/*
+ * Miscellaneous global variables:
+ */
+
+static int realUid;		/* The user id of the caller (which is not
+				 * our effective user id, since we're running
+				 * setuid. */
+
+#define MAX_PRUNE	25
+static int prune = 0;		/* Number of regular expressions to prune. */
+static struct {
+    regexp	*exp;		/* compiled expression */
+    char	*expString;	/* expression string */
+} pruneArray[MAX_PRUNE]; /* Regular expressions to prune. */
+
+#ifdef sprite
+#define MAKELINK(x,y,z) Fs_SymLink((x),(y),((z)==S_IFRLNK))
+#define MAKEMSG(x) Stat_GetMsg(x)
+#define GETATTRS(x,y) Fs_GetAttributes((x),FALSE,(y))
+#else
+typedef int ReturnStatus;
+#define SUCCESS 0
+#define MAKELINK(x,y,z) symlink((x),(y))
+#define MAKEMSG(x) strerror(x)
+#define GETATTRS(x,y) stat((x),(y))
+#endif
+/*
+ * Forward references to procedures declared later in this file:
+ */
+
+static int Update();
+static int UpdateDir();
+static int Copy();
+static void CheckGroup();
+static void PrintUsageAndExit();
+static int SetAttributes();
+static int CreateDirectory();
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	Main program for "update".
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Files get copied, etc.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+main(argc, argv)
+    int argc;
+    char *argv[];
+{
+    char *destFile;
+    char *term;
+    struct stat srcAttr, destAttr;
+    register int argIndex;
+    int numErrors = 0;
+    char *userName;
+
+    /*
+     * Suck up command line options and check protection.
+     */
+
+    argc = Opt_Parse(argc, argv, optionArray, Opt_Number(optionArray),
+	    OPT_ALLOW_CLUSTERING);
+#if (defined(ds3100) || defined(__mips) || defined(hpux))
+    if (strip) {
+	strip = 0;
+    }
+#endif
+    realUid = getuid();
+    if (preserveOwnership ||
+	(ownerName != (char *) 0) || (groupName != (char *) 0)) {
+	register struct passwd *pwPtr;
+
+	pwPtr = getpwuid(realUid);
+	if (pwPtr == (struct passwd *) 0) {
+	    fprintf(stderr,
+		    "Couldn't find password entry for user %d.\n",
+		    realUid);
+	    exit(1);
+	}
+	userName = malloc((unsigned) (strlen(pwPtr->pw_name) + 1));
+	strcpy(userName, pwPtr->pw_name);
+	setpwent();
+    }
+    if (preserveOwnership) {
+	if (ownerName != (char *)0) {
+	    fprintf(stderr, "Ignoring -o option in favor of -O\n");
+	    ownerName = (char *)0;
+	}
+	if (groupName != (char *)0) {
+	    fprintf(stderr, "Ignoring -g option in favor of -O\n");
+	    groupName = (char *)0;
+	}
+	/*
+	 * Don't allow ownership preservation unless:
+	 *	1. Caller is root -or-
+	 *	2. Caller is in the wheel group.
+	 */
+	if (realUid != 0) {
+	    CheckGroup("wheel", userName);
+	    realUid = 0;
+	}
+    }
+
+    if (ownerName != (char *)0) {
+	register struct passwd *pwPtr;
+	pwPtr = getpwnam(ownerName);
+	if (pwPtr == (struct passwd *)0) {
+	    fprintf(stderr, "Unknown user \"%s\".\n", ownerName);
+	    exit(1);
+	}
+	newOwner = pwPtr->pw_uid;
+
+	/*
+	 * Don't allow a change of owner unless one of three things is true:
+	 *     1. Caller is root.
+	 *     2. Target uid is root, and the caller is in the "wheel" group.
+	 *     3. There's a group name by the same name as the target uid,
+	 *	  and the caller is in the group.
+	 */
+
+	if ((realUid != 0) && (realUid != newOwner)) {
+	    register struct group *grPtr;
+	    char *groupName;
+	    int i;
+
+	    if (newOwner == 0) {
+		groupName = "wheel";
+	    } else {
+		groupName = ownerName;
+	    }
+	    CheckGroup(groupName, userName);
+	}
+	realUid = newOwner;
+    }
+    if (setuid(realUid) != 0) {
+	fprintf(stderr, "Couldn't change user id: %s\n", strerror(errno));
+	exit(1);
+    }
+
+    if (groupName != (char *) 0) {
+	register struct group *grPtr;
+	grPtr = getgrnam(groupName);
+	if (grPtr == (struct group *)0) {
+	    fprintf(stderr, "Unknown group \"%s\".\n", groupName);
+	    exit(1);
+	}
+	newGroup = grPtr->gr_gid;
+
+	/*
+	 * Don't allow a change of group unless either
+	 *     1. Caller is root.
+	 *     2. Caller is in the group being changed to.
+	 */
+
+	if (realUid != 0) {
+	    int i;
+
+	    for (i = 0; ; i++) {
+		if (grPtr->gr_mem[i] == NULL) {
+		    fprintf(stderr,
+			    "Sorry, but you're not in the \"%s\" group.\n",
+			    groupName);
+		    exit(1);
+		}
+		if (strcmp(grPtr->gr_mem[i], userName) == 0) {
+		    break;
+		}
+	    }
+	}
+	endgrent();
+    }
+    if (modeString != (char *)0) {
+	newMode = strtoul(modeString, &term, 8);
+	if ((term == modeString) || (*term != 0)) {
+	    fprintf(stderr, "Bad mode value \"%s\": should be octal integer\n",
+		    modeString);
+	    exit(1);
+	}
+    }
+
+    /*
+     * Convert backupAge into the date we need in seconds, instead of days
+     * prior to the current time.
+     */
+    if (backupDir && backupAge > 0) {
+	backupAge = time(0) - backupAge * 60 * 60 * 24;
+    }
+    /*
+     * Check for a reasonable number of arguments (normally at least 2
+     * in addition to the command name).
+     */
+
+    if (argc < 3) {
+	if (argc == 2) {
+	    destFile = argv[1];
+	    if ((stat(destFile, &destAttr) == 0)
+		    && ((destAttr.st_mode & S_IFMT) == S_IFDIR)) {
+		/*
+		 * Exit cleanly if there is a target directory but no
+		 * sources.  This situation arises occasionally in makefiles.
+		 */
+		fprintf(stderr, "No sources for \"%s\".\n", destFile);
+		exit(0);
+	    }
+	}
+	PrintUsageAndExit(argv);
+    }
+
+    /*
+     * Determine the initial case.  There are two:
+     * 	% update {src1 ... srcN} destDir
+     *  % update src dest
+     *
+     * The tricky thing is how to decide when to treat the destination
+     * as a directory (and thus put things INSIDE it) and when to treat
+     * it as a file (and thus REPLACE it).  We always work in REPLACE
+     * mode unless the destination is a directory and either a) there's
+     * more than one source or b) the single source isn't a directory.
+     */
+
+    destFile = argv[argc-1];
+    if (stat(destFile, &destAttr) != 0) {
+	if (errno == ENOENT) {
+	    if (argc == 3) {
+		/*
+		 * update src dest - src can be file or directory
+		 */
+		numErrors = Update(argv[1], argv[2]);
+		exit(numErrors);
+	    }
+
+	    /*
+	     * Create the destination directory.
+	     */
+
+	    if (!quietMode) {
+		fprintf(stderr, "Installing: %s\n", destFile);
+	    }
+	    if (!verifyMode) {
+		if (mkdir(destFile, 0777) != 0) {
+		    fprintf(stderr,
+			"Couldn't create destination directory \"%s\": %s.\n",
+			destFile, strerror(errno));
+		    exit(1);
+		}
+		if (stat(destFile, &destAttr) != 0) {
+		    fprintf(stderr,
+			    "Couldn't stat \"%s\" after creating it: %s.\n",
+			    destFile, strerror(errno));
+		    exit(1);
+		}
+		if (SetAttributes(destFile, &destAttr, 0) != 0) {
+		    exit(1);
+		}
+	    }
+
+	    /*
+	     * Fall through to the code to put things inside the
+	     * destination directory.
+	     */
+	    goto putInside;
+	}
+	fprintf(stderr, "Couldn't access \"%s\": %s.\n", destFile,
+		strerror(errno));
+	exit(1);
+    } else {
+	if ((destAttr.st_mode & S_IFMT) == S_IFDIR) {
+	    if (argc == 3) {
+		int result;
+		if (copyLinks) {
+		    result = lstat(argv[1], &srcAttr);
+		} else {
+		    result = stat(argv[1], &srcAttr);
+		}
+		if (result != 0) {
+		    fprintf(stderr, "Couldn't access \"%s\": %s.\n", argv[1],
+			    strerror(errno));
+		    exit(1);
+		}
+		if ((srcAttr.st_mode & S_IFMT) == S_IFDIR) {
+		    /*
+		     * Update dir1 dir2
+		     */
+		    numErrors = Update(argv[1], argv[2]);
+		    exit(numErrors);
+		}
+	    }
+	} else if (argc == 3) {
+	    /*
+	     * Update file1 file2
+	     */
+	    numErrors = Update(argv[1], argv[2]);
+	    exit(numErrors);
+	} else {
+	    PrintUsageAndExit(argv);
+	}
+    }
+
+    /*
+     * The above cases handled all the replacements.  At this point there
+     * are one or more files to be put INSIDE the destination directory:
+     *
+     * % update src1 ... srcN destDir
+     */
+
+    putInside:
+
+    for (argIndex = 1; argIndex < argc - 1 ; argIndex++) {
+	numErrors += UpdateDir("", argv[argIndex], destFile);
+    }
+
+    if (numErrors == 0) {
+	exit(0);
+    }
+    exit(1);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintUsageAndExit --
+ *
+ *	Print a usage message and exit the process.
+ *
+ * Results:
+ *	Never returns.
+ *
+ * Side effects:
+ *	Stuff gets printed on stderr.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+PrintUsageAndExit(argv)
+    char *argv[];
+{
+    fprintf(stderr, "Usage: %s srcFile destFile\n", argv[0]);
+    fprintf(stderr, "       %s file1 file2 ... destDir\n", argv[0]);
+    Opt_PrintUsage(argv[0], optionArray, Opt_Number(optionArray));
+    exit(1);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UpdateDir --
+ *
+ *	Update a file inside a directory.  This creates the name of the
+ *	target file from that of the source file and the destination
+ *	directory.  Then Update is called to do the actual updating.
+ *
+ * Results:
+ *	The return value is the number of errors encountered.
+ *
+ * Side effects:
+ *	Files get created or replaced.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+UpdateDir(srcDir, srcFile, destDir)
+    char *srcDir;		/* Directory containing srcFile. */
+    char *srcFile;		/* Source file name relative to srcDir. */
+    char *destDir;		/* Destination directory name. */
+{
+    register char *charPtr;
+    char newDest[MAXPATHLEN];
+    char newSrc[MAXPATHLEN];
+
+    /*
+     * Set up the source file name.  Append the file to the directory name.
+     */
+    strcpy(newSrc, srcDir);
+    if (*srcDir != '\0') {
+	strcat(newSrc, "/");
+    }
+    strcat(newSrc, srcFile);
+
+    /*
+     * Set up the destination name.  We take the last component of the
+     * filename here.  This handles command lines like
+     * % update a/b/c dest
+     * which will update dest/c from a/b/c.
+     * When we are called recusively srcFile only has one component.
+     */
+    strcpy(newDest, destDir);
+    charPtr = strrchr(srcFile, '/');
+    if (charPtr == (char *)NULL) {
+	strcat(newDest, "/");
+	strcat(newDest, srcFile);
+    } else {
+	strcat(newDest, charPtr);
+    }
+    return (Update(newSrc, newDest));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Update --
+ *
+ *	Update a file.  This checks the date stamps on the destination
+ * 	file and copies the file data if needed, or just updates the
+ *	destination file's attributes, or does nothing if the file
+ *	is up-to-date.
+ *
+ * Results:
+ *	The return value is the number of errors encountered.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+Update(srcFile, destFile)
+    char *srcFile;		/* Name of source file. */
+    char *destFile;		/* Name of file that should be made
+				 * identical to source file. */
+{
+    int result;	
+    struct stat srcAttr, destAttr, backupAttr;
+    char *lastSlash;
+    char tmpFileName[MAXPATHLEN];
+    static char *typeNames[] = {
+	"0",			"010000",		"character special",
+	"030000",		"directory",		"050000",
+	"block special",	"070000",		"regular file",
+	"0110000",		"symbolic link",	"0130000",
+	"socket",		"pseudo-device",	"remote link",
+	"0170000"
+    };
+    int backup;
+    int	i;
+
+    if (prune) {
+	lastSlash = strrchr(srcFile, '/');
+	if (lastSlash == NULL) {
+	    lastSlash = srcFile;
+	} else {
+	    lastSlash += 1;
+	}
+	for (i = 0; i < prune; i++) {
+	    if (regexec(pruneArray[i].exp, lastSlash)) {
+		if (!quietMode) {
+		    fprintf(stderr, "Pruning:    %s { %s }\n", destFile,
+			pruneArray[i].expString);
+		}
+		return 0;
+	    }
+	}
+    }
+    if (copyLinks || ignoreLinks) {
+	result = lstat(srcFile, &srcAttr);
+    } else {
+	result = stat(srcFile, &srcAttr);
+    }
+    if (result != 0) {
+	fprintf(stderr, "Couldn't find \"%s\": %s.\n",
+		srcFile, strerror(errno));
+	return 1;
+    }
+
+    if (((srcAttr.st_mode & S_IFMT) == S_IFLNK) && ignoreLinks) {
+	if (!quietMode) {
+	    fprintf(stderr, "Ignoring link: %s\n", srcFile);
+	}
+	return 0;
+    }
+
+    if ((lstat(destFile, &destAttr) != 0) && (errno = ENOENT)) {
+	/*
+	 * OK to create new file.
+	 */
+	if ((srcAttr.st_mode & S_IFMT) != S_IFDIR) {
+	    if (!quietMode) {
+		fprintf(stderr, "Installing: %s\n", destFile);
+	    }
+	    if (verifyMode) {
+		return 0;
+	    }
+	    return Copy(srcFile, &srcAttr, destFile, 0);
+	} else {
+	    /*
+	     * Make the target directory and then fall through to
+	     * the code below which recursively updates it.
+	     */
+	    if (!quietMode) {
+		fprintf(stderr, "Installing: %s\n", destFile);
+	    }
+	    if (!verifyMode) {
+		if (mkdir(destFile, (int) (srcAttr.st_mode & 0777)) != 0) {
+		    fprintf(stderr, "Couldn't create directory \"%s\": %s.\n",
+			    destFile, strerror(errno));
+		    return 1;
+		}
+		if (SetAttributes(destFile, &srcAttr, 0) != 0) {
+		    return(1);
+		}
+	    }
+	    destAttr = srcAttr;
+	}
+    }
+    if ((destAttr.st_mode & S_IFMT) != (srcAttr.st_mode & S_IFMT)) {
+	fprintf(stderr,  "Type of \"%s\" (%s) differs from \"%s\" (%s).\n",
+		srcFile, typeNames[(srcAttr.st_mode & S_IFMT) >> 12],
+		destFile, typeNames[(destAttr.st_mode & S_IFMT) >> 12]);
+
+	if (niceMode) {
+	    return 0;
+	}
+	/*
+	 * Don't let the user get confused by failing to copy a link to a link
+	 * because of type mismatch.  This may easily happen if something
+	 * is installed as a link and then later the "copyLinks" flag is
+	 * disabled.
+	 */
+	if (!copyLinks && ((destAttr.st_mode & S_IFMT) == S_IFLNK) &&
+	    ((srcAttr.st_mode & S_IFMT) == S_IFREG)) {
+	    if (lstat(srcFile, &srcAttr) == 0 &&
+		((srcAttr.st_mode & S_IFMT) == S_IFLNK)) {
+		fprintf(stderr, "\tNote: following a link to a regular file due to \"-l\" option.\n");
+	    }
+	}
+	return(1);
+    }
+    if ((srcAttr.st_mode & S_IFMT) == S_IFDIR) {
+	DIR *dirStream;
+	DirObject *dirEntryPtr;
+	int numErrors = 0;
+
+	/*
+	 * See if we can just rename the directory.
+	 */
+
+	if (move && !verifyMode && !strip) {
+	    if (rename(srcFile, destFile) == 0) {
+		return 0;
+	    }
+	}
+
+	/*
+	 * Recursively update the target directory, which already exists.
+	 *	Read all names from srcFile directory, and call
+	 *	UpdateDir(eachName, destFile) to update each one.
+	 */
+
+	dirStream = opendir(srcFile);
+	if (dirStream == (DIR *)NULL) {
+	    fprintf(stderr, "Can't read source directory \"%s\".\n",
+			    srcFile);
+	    return(1);
+	}
+	dirEntryPtr = readdir(dirStream);
+	while (dirEntryPtr != (DirObject *)NULL) {
+	    if ((dirEntryPtr->d_namlen == 1 &&
+		 dirEntryPtr->d_name[0] == '.') ||
+		(dirEntryPtr->d_namlen == 2 &&
+		 dirEntryPtr->d_name[0] == '.' &&
+		 dirEntryPtr->d_name[1] == '.')) {
+		/* Don't do "." or ".." */ ;
+	    } else {
+		numErrors += UpdateDir(srcFile, dirEntryPtr->d_name,
+			destFile);
+	    }
+	    dirEntryPtr = readdir(dirStream);
+	}
+	closedir(dirStream);
+
+	/*
+	 * If moving, must delete source directory.
+	 */
+
+	if (move && !verifyMode && (rmdir(srcFile) != 0)) {
+	    fprintf(stderr,
+		    "Couldn't remove directory \"%s\" during move: %s\n",
+		    srcFile, strerror(errno));
+	    numErrors++;
+	}
+	return(numErrors);
+     }
+     if (force || (destAttr.st_mtime < srcAttr.st_mtime)) {
+	/*
+	 * Target file has to be updated.
+	 */
+
+	if (!quietMode) {
+	    fprintf(stderr, "Updating: %s\n", destFile);
+	}
+	if (verifyMode) {
+	    return 0;
+	}
+
+	/*
+	 * If no backup directory, then rename the file, copy a new
+	 * version in, and remove the old renamed target.
+	 */
+
+	if (backupDir == (char *) 0) {
+	    sprintf(tmpFileName, "%sXXX", destFile);
+
+	    if (rename(destFile, tmpFileName) != 0) {
+		fprintf(stderr, "Couldn't rename \"%s\" to \"%s\": %s.\n",
+			destFile, tmpFileName, strerror(errno));
+		return(1);
+	    }
+	    if (Copy(srcFile, &srcAttr, destFile, 0) == 0) {
+		if (unlink(tmpFileName) != 0) {
+		    fprintf(stderr,
+			    "Couldn't remove renamed old version \"%s\": %s.\n",
+			    tmpFileName, strerror(errno));
+		    return 1;
+		}
+	    } else {
+		if (rename(tmpFileName, destFile) != 0) {
+		    fprintf(stderr,
+			"Couldn't restore original \"%s\":  see \"%s\".\n",
+			destFile, tmpFileName);
+		}
+		return 1;
+	    }
+	    return 0;
+	}
+
+	/*
+	 * There's a backup directory.  Copy the file to it, then
+	 * copy in new version.
+	 */
+
+	lastSlash = strrchr(destFile, '/');
+	if (lastSlash == NULL) {
+	    lastSlash = destFile;
+	} else {
+	    lastSlash += 1;
+	}
+	sprintf(tmpFileName, "%s/%s", backupDir, lastSlash);
+
+	backup = 1;
+	if (backupAge > 0 && stat(tmpFileName, &backupAttr) == 0) {
+
+	    if (destAttr.st_mtime > backupAge) {
+		if (!quietMode) {
+		    fprintf(stderr,
+			    "\tWarning: target too recent, so not overwriting backup copy.\n");
+		}
+		backup = 0;
+	    }
+	}
+	if (backup && Copy(destFile, &destAttr, tmpFileName, 1) != 0) {
+	    fprintf(stderr,
+		    "Couldn't copy \"%s\" to backup dir \"%s\".\n",
+		    destFile, backupDir);
+	    return 1;
+	}
+	unlink(destFile);
+	return Copy(srcFile, &srcAttr, destFile, 0);
+    }
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Copy --
+ *
+ *	Copy a file.  For regular files this copies the file data.
+ *	For other special files a new file of the same type as
+ *	the original is created.
+ *
+ * Results:
+ *	0 is returned if all went well, and 1 is returned if an
+ *	error occurred.
+ *
+ * Side effects:
+ *	srcFile gets copied to destFile.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+Copy(srcFile, srcAttrPtr, destFile, backup)
+    char *srcFile;			/* Name of source file. */
+    struct stat *srcAttrPtr;		/* Attributes of source file (used to
+					 * save stat calls). */
+    char *destFile;			/* Name of destination file. */
+    int backup;				/* Non-zero means this is a backup
+					 * copy being made;  as a result,
+					 * attribute changes are handled
+					 * differently. */
+{
+#define BUFSIZE 8192
+    static char buffer[BUFSIZE];
+
+    /*
+     * See if we can just rename the file.
+     */
+    if (move && (realUid == srcAttrPtr->st_uid) && !strip) {
+	if (rename(srcFile, destFile) == 0) {
+	    return 0;
+	}
+    }
+
+    switch (srcAttrPtr->st_mode & S_IFMT) {
+	case S_IFREG: {
+	    int result = 0;
+	    int amountRead, bytesCopied;
+	    int maxSize = INT_MAX;
+	    int srcID, destID;
+	    int stripping = 0;
+
+	    srcID = open(srcFile, O_RDONLY, 0); 
+	    if (srcID < 0) {
+		fprintf(stderr, "Couldn't open \"%s\": %s.\n",
+			srcFile, strerror(errno));
+		return 1;
+	    }
+	    (void) unlink(destFile);
+	    destID = open(destFile, O_WRONLY|O_CREAT|O_TRUNC,
+		    srcAttrPtr->st_mode & 0777);
+	    if (destID < 0) {
+		char pathname[MAXPATHLEN];
+		char *s;
+		int realErrno;
+
+		/*
+		 * Some of the subdirectories in the path may
+		 * not exist.  Try and create them, and if
+		 * successful, try to open the file again.  Make sure
+		 * that if we don't successfully create subdirectories and
+		 * then redo the open, we return the errno corresponding
+		 * to the open, not the failed mkdir.
+		 */
+
+		realErrno = errno;
+		strcpy(pathname, destFile);
+		if ((s = strrchr(pathname, '/')) != NULL) {
+		    *s = '\0';
+		    if (CreateDirectory(pathname) == 0) {
+			destID = open(destFile, O_WRONLY|O_CREAT|O_TRUNC,
+			    srcAttrPtr->st_mode & 0777);
+		    } else {
+			errno = realErrno;
+		    }
+		}
+		if (destID < 0) {
+		    fprintf(stderr, "Couldn't create \"%s\": %s.\n",
+			destFile, strerror(errno));
+		    return 1;
+		}
+	    }
+#if (!defined(ds3100) && !defined(__mips) && !defined(hpux))
+	    if (strip) {
+		struct exec hdr;
+		if ((read(srcID, (char *) &hdr, sizeof(hdr)) != sizeof(hdr))
+			|| N_BADMAG(hdr)) {
+		    fprintf(stderr,
+			    "\"%s\" isn't a binary executable;  can't strip.\n",
+			    srcFile);
+		} else {
+		    maxSize = N_TXTOFF(hdr) + hdr.a_text + hdr.a_data;
+		    stripping = 1;
+		}
+		lseek(srcID, (long) 0, L_SET);
+	    }
+#endif
+
+	    for (bytesCopied = 0; bytesCopied < maxSize;
+		    bytesCopied += amountRead) {
+		int wanted;
+
+		wanted = maxSize - bytesCopied;
+		if (wanted > BUFSIZE) {
+		    wanted = BUFSIZE;
+		}
+		amountRead = read(srcID, buffer, wanted);
+		if (amountRead < 0) {
+		    fprintf(stderr, "Read error on \"%s\": %s.\n",
+			    srcFile, strerror(errno));
+		    result = 1;
+		    break;
+		}
+		if (amountRead == 0) {
+		    break;
+		}
+
+#if (!defined(ds3100) && !defined(__mips) && !defined(hpux))
+		/*
+		 * If we're stripping, clear out the symbol table size
+		 * in the file's header.
+		 */
+
+		if ((bytesCopied == 0) && stripping) {
+		    struct exec *execPtr = (struct exec *) buffer;
+
+		    execPtr->a_syms = 0;
+		    execPtr->a_trsize = 0;
+		    execPtr->a_drsize = 0;
+		}
+#endif
+		if (write(destID, buffer, amountRead) != amountRead) {
+		    fprintf(stderr, "Write error on \"%s\": %s.\n",
+			    destFile, strerror(errno));
+		    result = 1;
+		    break;
+		}
+	    }
+	    close(srcID);
+	    close(destID);
+	    if (result != 0) {
+		return result;
+	    }
+	    break;
+	}
+	case S_IFDIR: {
+	    fprintf(stderr, "Internal error:  Copy called with directory.\n");
+	    return 1;
+	}
+	case S_IFLNK:
+#ifdef sprite
+	case S_IFRLNK:
+#endif
+	    {
+	    char targetName[MAXPATHLEN];
+	    int length;
+	    ReturnStatus	status;
+
+	    length = readlink(srcFile, targetName, MAXPATHLEN);
+	    if (length < 0) {
+		fprintf(stderr, "Couldn't read value of link \"%s\": %s.\n",
+			srcFile, strerror(errno));
+		return 1;
+	    }
+	    targetName[length] = 0;
+	    status = MAKELINK(targetName, destFile, 
+			      (srcAttrPtr->st_mode & S_IFMT));
+	    if (status != SUCCESS) {
+		char pathname[MAXPATHLEN];
+		char *s;
+		int realStatus;
+
+		/*
+		 * Some of the subdirectories in the path may
+		 * not exist.  Try and create them, and if
+		 * successful, try to open the file again.  Make sure
+		 * that if we don't successfully create subdirectories and
+		 * then redo the open, we return the errno corresponding
+		 * to the open, not the failed mkdir.
+		 */
+
+		realStatus = status;
+		strcpy(pathname, destFile);
+		if ((s = strrchr(pathname, '/')) != NULL) {
+		    *s = '\0';
+		    if (CreateDirectory(pathname) == 0) {
+			status = MAKELINK(targetName, destFile, 
+			    (srcAttrPtr->st_mode & S_IFMT));
+		    } else {
+			status = realStatus;
+		    }
+		}
+		if (status != SUCCESS) {
+		    fprintf(stderr,
+			    "Couldn't create link at \"%s\": %s.\n",
+			    destFile, MAKEMSG(status));
+		    return 1;
+		}
+	    }
+	    break;
+	}
+	case S_IFBLK:
+	case S_IFCHR: {
+	    ReturnStatus	status;
+#ifdef sprite
+	    Fs_Attributes 	attrs;
+	    Fs_Device		device;
+#else
+	    struct stat attrs;
+#endif
+
+	    status = GETATTRS(srcFile, &attrs);
+	    if (status != SUCCESS) {
+		fprintf(stderr, "Unable to get attributes of \"%s\": %s\n",
+		    srcFile, MAKEMSG(status));
+		return 1;
+	    }
+#ifdef sprite
+	    device.type = attrs.devType;
+	    device.unit = attrs.devUnit;
+	    device.serverID = attrs.devServerID;
+	    device.data = (ClientData) 0;
+	    status = Fs_MakeDevice(destFile, &device, 
+				   srcAttrPtr->st_mode & 0777);
+#else
+	    status = mknod(destFile, srcAttrPtr->st_mode,
+			   srcAttrPtr->st_dev);
+#endif
+	    if (status != SUCCESS) {
+		fprintf(stderr, "Unable to create device \"%s\": %s\n",
+		    destFile, MAKEMSG(status));
+		return 1;
+	    }
+	    break;
+	}
+	case S_IFIFO: {
+	    fprintf(stderr, "\"%s\" is a fifo; don't know how to update.\n",
+		    srcFile);
+	    return 1;
+	}
+#ifdef sprite
+	case S_IFPDEV: {
+	    fprintf(stderr,
+		    "\"%s\" is a pseudo-device; don't know how to update.\n",
+		    srcFile);
+	    return 1;
+	}
+#endif
+	default: {
+	    fprintf(stderr,
+		    "\"%s\" has type 0x%x; don't know how to update.\n",
+		    srcFile, srcAttrPtr->st_mode & S_IFMT);
+	    return 1;
+	}
+    }
+    if (SetAttributes(destFile, srcAttrPtr, backup) != 0) {
+	return 1;
+    }
+    if (move) {
+	if (unlink(srcFile) != 0) {
+	    fprintf(stderr,
+		    "Couldn't remove source file \"%s\" during move: %s.\n",
+		    srcFile, strerror(errno));
+	    return 1;
+	}
+    }
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CheckGroup --
+ *
+ *	Verify that a user is in a particular group.  This is called to
+ *	check against the wrong users attempting to use update to
+ *	change file ownership.
+ *
+ * Results:
+ *	Returns if the user is ok, otherwise this exits.
+ *
+ * Side effects:
+ *	Suicide if the user isn't in the group.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+CheckGroup(groupName, userName)
+    char *groupName;		/* group name */
+    char *userName;		/* user name */
+{
+    register struct group *grPtr;
+    int i;
+
+    grPtr = getgrnam(groupName);
+    if (grPtr == (struct group *) 0) {
+	fprintf(stderr, "Couldn't find \"%s\" group to check owner change.\n",
+		groupName);
+	exit(1);
+    }
+    for (i = 0; ; i++) {
+	if (grPtr->gr_mem[i] == NULL) {
+	    fprintf(stderr,
+		    "Can't change owners: you're not in the \"%s\" group.\n",
+		    groupName);
+	    exit(1);
+	}
+	if (strcmp(grPtr->gr_mem[i], userName) == 0) {
+	    break;
+	}
+    }
+    endgrent();
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetAttributes --
+ *
+ *	Set attributes of target file, taking into account command line
+ *	options that specify group and new mode.
+ *
+ * Results:
+ *	Returns 0 if all went well, 1 if there was an error.
+ *
+ * Side effects:
+ *	Times, protection, and group may get changed for fileName.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+SetAttributes(fileName, attrPtr, backup)
+    char *fileName;			/* Name of file to change. */
+    struct stat *attrPtr;		/* Attributes of source file, which
+					 * are used (along with command-line
+					 * options) to set fileName. */
+    int backup;				/* Non-zero means that this is a
+					 * backup copy whose attributes are
+					 * being set;  ignore command-line
+					 * options and just copy relevant
+					 * attributes from the source. */
+
+{
+#ifdef SYSV
+    struct utimbuf times;
+#else
+    struct timeval times[2];
+#endif
+
+    /*
+     * Preserve ownership if requested (or if this is a backup copy).
+     */
+
+    if (preserveOwnership && !backup) {
+	if (chown(fileName, attrPtr->st_uid, attrPtr->st_gid) != 0) {
+	    fprintf(stderr, "Couldn't set owner for \"%s\": %s.\n",
+		    fileName, strerror(errno));
+	    return 1;
+	}
+    }
+
+    /*
+     * Set group if a specific one was requested.
+     */
+
+    if ((newGroup >= 0) && !backup) {
+	if (chown(fileName, -1, newGroup) != 0) {
+	    fprintf(stderr, "Couldn't set group id for \"%s\": %s.\n",
+		    fileName, strerror(errno));
+	    return 1;
+	}
+    }
+
+    /*
+     * Don't set permissions or times for symbolic links, since they'll
+     * end up affecting the target of the link.
+     */
+
+    if ((attrPtr->st_mode & S_IFMT) == S_IFLNK) {
+	return 0;
+    }
+
+    /*
+     * Set permissions (but only if the source isn't a symbolic link;  if
+     * it's a link, then we'd be setting the permissions of the link's
+     * target).
+     */
+
+    if ((newMode >= 0) && !backup) {
+	if (chmod(fileName, newMode) != 0) {
+	    fprintf(stderr,
+		    "Couldn't set permissions of \"%s\" to 0%o: %s.\n",
+		    fileName, newMode, strerror(errno));
+	    return 1;
+	}
+    } else {
+	/* 
+	 * Set the file permissions.  When the file was created the
+	 * permissions were modified by umask, so we have to set them
+	 * here.
+	 */
+	if (chmod(fileName, attrPtr->st_mode & 0777) != 0) {
+	    fprintf(stderr,
+		    "Couldn't set permissions for \"%s\": %s.\n",
+		    fileName, strerror(errno));
+	    return 1;
+	}
+	/*
+	 * Preserve the set-user-id bit if a new mode wasn't given, and if
+	 * the set-user-id bit was set in the source file, and if the file's
+	 * new owner is the same as its previous owner.
+	 */
+    
+	if ((attrPtr->st_mode & (S_ISUID)) &&
+		(preserveOwnership || (realUid == attrPtr->st_uid))) {
+	    if (chmod(fileName, attrPtr->st_mode & 04777) != 0) {
+		fprintf(stderr,
+			"Couldn't set set-user-id for \"%s\": %s.\n",
+			fileName, strerror(errno));
+		return 1;
+	    }
+	}
+    }
+
+    /*
+     * Set times.
+     */
+
+    if ((setTimes) || backup) {
+#ifdef SYSV
+	times.actime = attrPtr->st_atime;
+	times.modtime = attrPtr->st_mtime;
+	if (utime(fileName, &times) != 0) {
+#else
+	times[0].tv_usec = times[1].tv_usec = 0;
+	times[0].tv_sec = attrPtr->st_atime;
+	times[1].tv_sec = attrPtr->st_mtime;
+	if (utimes(fileName, times) != 0) {	    
+#endif
+	    fprintf(stderr, "Couldn't set times of \"%s\": %s.\n",
+		    fileName, strerror(errno));
+	    return 1;
+	}
+    }
+
+#ifdef sprite
+    /*
+     * Set the advisory file type if it's set in the source file.
+     */
+    if (attrPtr->st_userType != S_TYPE_UNDEFINED) {
+	if (setfiletype(fileName, attrPtr->st_userType) != 0) {
+	    fprintf(stderr, "Couldn't set type of \"%s\": %s.\n",
+		    fileName, strerror(errno));
+	}
+    }
+#endif
+
+    return 0;
+}
+
+static int
+CreateDirectory(dir)
+    char *dir;
+{
+    char pathname[MAXPATHLEN];
+    char *s;
+
+    /*
+     * Try to create the directory
+     */
+    if (mkdir(dir, 0777) == 0) {
+	return 0;
+    }
+
+    /*
+     * Couldn't create the directory.
+     * Try to create the parent directory, and then try again.
+     */
+    strcpy(pathname, dir);
+    if ((s = strrchr(pathname, '/')) == NULL) {
+	return 1;
+    }
+    *s = '\0';
+    if (CreateDirectory(pathname) == 0) {
+	return mkdir(dir, 0777);
+    }
+    return 1;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PruneOpt --
+ *
+ *	Process a "-p" option.  Take the regular expression that follows
+ *	and put it in the array of trees to prune..
+ *
+ * Results:
+ *	1 (-p option requires an argument).
+ *
+ * Side effects:
+ *	The argument to the option is put in the regular expression array..
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+PruneOpt(optionPtr, exprString)
+    char	*optionPtr; 	/* Current option. */
+    char	*exprString;	/* The regular expression. */
+{
+    regexp	*expPtr;
+
+    if ((exprString == NULL) || (*exprString == '-')) {
+	fprintf(stderr, "Warning: \"-%s\" option needs an argument\n", 
+	    optionPtr);
+	return 1;
+    }
+    expPtr = regcomp(exprString);
+    if (expPtr == NULL) {
+	fprintf(stderr, "Warning: \"%s\" is not a regular expression.\n", 
+	    exprString);
+	return 1;
+    }
+    if (prune >= MAX_PRUNE) {
+	fprintf(stderr, "Warning: too many prune options.\n");
+	return 1;
+    }
+    pruneArray[prune].exp = expPtr;
+    pruneArray[prune].expString = exprString;
+    prune++;
+    return 1;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * regerror --
+ *
+ *	This routine is called by the regular expression library when
+ *	something goes wrong.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Stuff is printed out.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+regerror(msg)
+    char	*msg;	/* The error message. */
+{
+    fprintf(stderr, "Error in regular expression library: %s\n", msg);
+    exit(1);
+}
+
+
+#ifdef NEEDSTRERROR
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * strerror --
+ *
+ *      Simplistic message generator for systems that
+ *	don't have the real thing.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+strerror(error)
+    int error;
+{
+    extern char *sys_errlist[];
+    extern int sys_nerr;
+    static char badMsg[100];
+
+    if (error > sys_nerr) {
+	sprintf(badMsg, "Unknown errno value: %d\n", error);
+	return badMsg;
+    } else {
+	return sys_errlist[error];
+    }
+}
+
+#endif
+@
+
+
+1.32
+log
+@Add ifdefs and macros to make update portable.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/cmds/update/RCS/update.c,v 1.29 92/01/27 22:22:40 jhh Exp $ SPRITE (Berkeley)";
+a22 2
+#include <grp.h>
+#include <pwd.h>
+d36 2
+d45 6
+d654 1
+a654 1
+	struct direct *dirEntryPtr;
+d680 1
+a680 1
+	while (dirEntryPtr != (struct direct *)NULL) {
+d693 1
+@
+
+
+1.31
+log
+@changed a printf
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/cmds/update/RCS/update.c,v 1.30 92/01/30 10:52:15 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+a23 1
+#include <option.h>
+d34 2
+d37 7
+a43 1
+#include <regexp.h>
+d74 1
+d97 1
+a97 1
+    {OPT_TRUE, "s", (char *) &strip, "Strip destination (not supported on ds3100"},
+d103 2
+d122 11
+d151 1
+a151 1
+ *	Main program for "udpate".
+d179 1
+a179 1
+#ifdef ds3100
+d251 1
+a251 1
+    if (setreuid(realUid, realUid) != 0) {
+d572 1
+a572 1
+    if (copyLinks) {
+d583 7
+d611 2
+a612 29
+		result = mkdir(destFile, (int) (srcAttr.st_mode & 0777));
+		if (result != 0) {
+		    char pathname[MAXPATHLEN];
+		    char *s;
+		    int realErrno;
+		    /*
+		     * Some of the subdirectories in the path may
+		     * not exist.  Try and create them, and if
+		     * successful, try to create the directory again.  
+		     * Make sure that if we don't successfully create 
+		     * subdirectories and then recreate the directory, 
+		     * we return the errno corresponding to the failed
+		     * mkdir for the directory, not any of the directories
+		     * in the path.
+		     */
+		    realErrno = errno;
+		    strcpy(pathname, destFile);
+		    if ((s = strrchr(pathname, '/')) != NULL) {
+			*s = '\0';
+			if (CreateDirectory(pathname) == 0) {
+			    result = mkdir(destFile, 
+				    (int) (srcAttr.st_mode & 0777));
+			} else {
+			    errno = realErrno;
+			}
+		    }
+		    if (result != 0) {
+			fprintf(stderr, 
+			    "Couldn't create directory \"%s\": %s.\n",
+d614 1
+a614 2
+			return 1;
+		    }
+d869 1
+a869 1
+#ifndef ds3100
+d904 1
+a904 1
+#ifndef ds3100
+d937 4
+a940 1
+	case S_IFRLNK: {
+d952 2
+a953 2
+	    status = Fs_SymLink(targetName, destFile, 
+		(srcAttrPtr->st_mode & S_IFMT) == S_IFRLNK);
+d955 30
+a984 4
+		fprintf(stderr,
+			"Couldn't create link at \"%s\": %s.\n",
+			destFile, Stat_GetMsg(status));
+		return 1;
+d990 2
+a992 1
+	    ReturnStatus	status;
+d994 3
+d998 1
+a998 1
+	    status = Fs_GetAttributes(srcFile, FALSE, &attrs);
+d1001 1
+a1001 1
+		    srcFile, Stat_GetMsg(status));
+d1004 1
+d1010 5
+a1014 1
+		srcAttrPtr->st_mode & 0777);
+d1017 1
+a1017 1
+		    destFile, Stat_GetMsg(status));
+d1027 1
+d1034 1
+d1133 3
+d1137 1
+d1219 5
+d1227 2
+a1228 1
+	if (utimes(fileName, times) != 0) {
+d1235 1
+d1245 1
+d1349 37
+@
+
+
+1.30
+log
+@creates directories on target path if they don't exist and target is a
+directory
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/cmds/update/RCS/update.c,v 1.29 92/01/27 22:22:40 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d544 1
+a544 1
+		    fprintf(stderr, "Pruning:    %s < %s >\n", destFile,
+@
+
+
+1.29
+log
+@added -p option
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /user6/jhh/src/cmds/update.new/RCS/update.c,v 1.25 90/08/27 11:32:50 shirriff Exp Locker: jhh $ SPRITE (Berkeley)";
+d107 4
+a110 1
+static regexp *pruneArray[MAX_PRUNE]; /* Regular expressions to prune. */
+d542 5
+a546 2
+	    if (regexec(pruneArray[i], lastSlash)) {
+		printf("Pruning:    %s\n", destFile);
+d583 29
+a611 2
+		if (mkdir(destFile, (int) (srcAttr.st_mode & 0777)) != 0) {
+		    fprintf(stderr, "Couldn't create directory \"%s\": %s.\n",
+d613 2
+a614 1
+		    return 1;
+d1266 2
+a1267 1
+    pruneArray[prune] = expPtr;
+@
+
+
+1.28
+log
+@if the destination is a symbolic link and some of the directories
+in the path don't exist then create them.  This is consistent with
+what happens for a regular file.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/cmds/update/RCS/update.c,v 1.27 91/11/12 18:57:33 rab Exp $ SPRITE (Berkeley)";
+d36 1
+d66 1
+a72 1
+    {OPT_FALSE, "c", (char *) &move, "Copy instead of move"},
+d93 2
+d105 4
+d529 1
+d531 14
+d918 4
+a921 30
+		char pathname[MAXPATHLEN];
+		char *s;
+		int realStatus;
+
+		/*
+		 * Some of the subdirectories in the path may
+		 * not exist.  Try and create them, and if
+		 * successful, try to open the file again.  Make sure
+		 * that if we don't successfully create subdirectories and
+		 * then redo the open, we return the errno corresponding
+		 * to the open, not the failed mkdir.
+		 */
+
+		realStatus = status;
+		strcpy(pathname, destFile);
+		if ((s = strrchr(pathname, '/')) != NULL) {
+		    *s = '\0';
+		    if (CreateDirectory(pathname) == 0) {
+			status = Fs_SymLink(targetName, destFile, 
+			    (srcAttrPtr->st_mode & S_IFMT) == S_IFRLNK);
+		    } else {
+			status = realStatus;
+		    }
+		}
+		if (status != SUCCESS) {
+		    fprintf(stderr,
+			    "Couldn't create link at \"%s\": %s.\n",
+			    destFile, Stat_GetMsg(status));
+		    return 1;
+		}
+d1191 69
+@
+
+
+1.27
+log
+@Added a -c flag for copy.  This is added for compatibility with `install'
+so update can be used with imake.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/cmds/update/RCS/update.c,v 1.26 91/11/12 18:54:04 rab Exp Locker: rab $ SPRITE (Berkeley)";
+d896 30
+a925 4
+		fprintf(stderr,
+			"Couldn't create link at \"%s\": %s.\n",
+			destFile, Stat_GetMsg(status));
+		return 1;
+@
+
+
+1.26
+log
+@*** empty log message ***
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/cmds/update/RCS/update.c,v 1.25 90/08/27 11:32:50 shirriff Exp Locker: rab $ SPRITE (Berkeley)";
+d71 1
+a71 1
+    {OPT_FALE, "c", (char *) &move, "Copy instead of move"},
+@
+
+
+1.25
+log
+@Added -n flag to ignore errors.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/cmds/update/RCS/update.c,v 1.24 90/06/27 13:33:11 jhh Exp Locker: shirriff $ SPRITE (Berkeley)";
+d71 1
+@
+
+
+1.24
+log
+@creation of remote links was broken (created symbolic links instead)
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/cmds/update/RCS/update.c,v 1.23 90/02/28 22:12:16 jhh Exp $ SPRITE (Berkeley)";
+d64 1
+d80 1
+d571 3
+@
+
+
+1.23
+log
+@fixed bug in target file permissions
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/cmds/update/RCS/update.c,v 1.21 90/02/22 18:36:19 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d878 1
+d887 3
+a889 1
+	    if (symlink(targetName, destFile) != 0) {
+d891 2
+a892 2
+			"Couldn't create symbolic link at \"%s\": %s.\n",
+			destFile, strerror(errno));
+@
+
+
+1.22
+log
+@update backup file only if target is old enough to be deemed stable.
+@
+text
+@d1077 11
+a1087 1
+
+@
+
+
+1.21
+log
+@run ls -l on backup file if it exists and backup specified.  fork
+and setuid to nobody first to make sure can do normal system() cmd
+without big security hole.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/cmds/update/RCS/update.c,v 1.20 90/02/22 17:39:09 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d50 1
+d68 2
+d264 7
+d518 1
+d694 2
+a695 3
+	if (stat(tmpFileName, &backupAttr) == 0) {
+	    char lsCmd[MAXPATHLEN + 7];
+	    int pid;
+d697 4
+a700 10
+	    fprintf(stderr,
+		    "File \"%s\" already exists.\nRemove this file or do not specify backup directory.\n",
+		    tmpFileName);
+
+	    pid = fork();
+	    if (pid < 0) {
+		perror("fork");
+		exit(1);
+	    } else if (pid > 0) {
+		while(wait(0) > 0) {
+d702 1
+a702 10
+	    } else {
+		if (setreuid(-1,-1) < 0) {
+		    perror("setreuid");
+		    exit(1);
+		}
+		(void)sprintf (lsCmd, "ls -l %s", tmpFileName);
+		(void)system(lsCmd);
+		(void)sprintf (lsCmd, "ls -l %s", destFile);
+		(void)system(lsCmd);
+		exit(0);
+a703 1
+	    return 1;
+d705 1
+a705 2
+
+	if (Copy(destFile, &destAttr, tmpFileName, 1) != 0) {
+@
+
+
+1.20
+log
+@fixed symbolic link bug
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/cmds/update/RCS/update.c,v 1.19 90/02/15 14:49:43 douglis Exp $ SPRITE (Berkeley)";
+d684 3
+d688 1
+a688 1
+		    "File \"%s\" already exists.  Remove this file or do not\nspecify backup directory.\n",
+d690 19
+@
+
+
+1.19
+log
+@check for existing backup file.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/cmds/update/RCS/update.c,v 1.18 90/01/22 09:51:47 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d341 7
+a347 1
+		if (stat(argv[1], &srcAttr) != 0) {
+@
+
+
+1.18
+log
+@ Make sure that if we don't successfully create subdirectories
+ and then redo the open, we return the errno corresponding
+to the open, not the failed mkdir.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/cmds/update/RCS/update.c,v 1.17 90/01/22 09:45:54 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d491 1
+a491 1
+    struct stat srcAttr, destAttr;
+d676 7
+@
+
+
+1.17
+log
+@JHH changes for not stripping on ds3100
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /a/newcmds/update/RCS/update.c,v 1.16 89/10/02 19:26:25 rab Exp Locker: jhh $ SPRITE (Berkeley)";
+d751 1
+d756 4
+a759 1
+		 * successful, try to open the file again.
+d762 1
+d769 2
+@
+
+
+1.16
+log
+@Added code to create intermediate directories in a
+path.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /a/newcmds/update/RCS/update.c,v 1.15 89/06/19 14:30:42 jhh Exp Locker: rab $ SPRITE (Berkeley)";
+d82 1
+a82 1
+    {OPT_TRUE, "s", (char *) &strip, "Strip destination"},
+d142 5
+a146 1
+
+d772 1
+d786 1
+d807 1
+d820 1
+@
+
+
+1.15
+log
+@now does devices
+@
+text
+@d18 2
+a19 2
+static char rcsid[] = "$Header: /a/newcmds/update/RCS/update.c,v 1.14 89/03/23 15:59:30 douglis Exp $ SPRITE (Berkeley)";
+#endif not lint
+d35 1
+d47 16
+a62 16
+int strip = 0;
+int move = 0;
+char *backupDir = (char *)0;
+char *modeString = (char *)0;
+int newMode = -1;
+char *ownerName = (char *)0;
+int newOwner = -1;
+int preserveOwnership = 0;
+char *groupName = (char *)0;
+int newGroup = -1;
+int force = 0;
+int noLinks = 0;
+int copyLinks = 1;
+int setTimes = 1;
+int quietMode = 0;
+int verifyMode = 0;
+d64 1
+a64 1
+Option optionArray[] = {
+d92 1
+a92 1
+int realUid;			/* The user id of the caller (which is not
+d100 7
+a106 4
+extern int Update();
+extern int UpdateDir();
+extern int Copy();
+extern void CheckGroup();
+d124 1
+a124 1
+
+d288 1
+d310 2
+a311 2
+			    "Couldn't create destination directory \"%s\": %s.\n",
+			    destFile, strerror(errno));
+d375 1
+a375 1
+	return 0;
+d377 1
+a377 1
+    return 1;
+d396 1
+d424 1
+a424 1
+int
+d451 1
+a451 1
+    charPtr = rindex(srcFile, '/');
+d480 1
+a480 1
+int
+d665 1
+a665 1
+	lastSlash = rindex(destFile, '/');
+d704 1
+a704 1
+int
+d745 19
+a763 1
+		fprintf(stderr, "Couldn't create \"%s\": %s.\n",
+d765 2
+a766 1
+		return 1;
+d926 1
+a926 1
+void
+d972 1
+a972 1
+int
+d1076 1
+a1076 1
+    
+d1079 30
+@
+
+
+1.14
+log
+@added special case check of "install foo bar" followed by "install
+-l foo bar" causing confusing message claiming that foo is a regular
+file when it's really a symbolic link.  
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /a/newcmds/update/RCS/update.c,v 1.13 89/02/02 15:57:59 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d828 22
+a849 3
+	    fprintf(stderr, "\"%s\" is a device; don't know how to update.\n",
+		    srcFile);
+	    return 1;
+@
+
+
+1.13
+log
+@Fixed BUFSIZE to really be 8K
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /a/newcmds/update/RCS/update.c,v 1.12 88/12/28 11:31:31 ouster Exp $ SPRITE (Berkeley)";
+d541 14
+@
+
+
+1.12
+log
+@Don't preserve set-group-id bits (for now).
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /a/newcmds/update/RCS/update.c,v 1.11 88/12/28 11:22:04 ouster Exp Locker: ouster $ SPRITE (Berkeley)";
+d695 1
+a695 1
+#define BUFSIZE 8196
+@
+
+
+1.11
+log
+@Wasn't retaining set-user-id for backup copies.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /a/newcmds/update/RCS/update.c,v 1.9 88/12/22 13:50:02 brent Exp $ SPRITE (Berkeley)";
+d983 1
+a983 1
+	if ((attrPtr->st_mode & (S_ISUID|S_ISGID)) &&
+d985 1
+a985 1
+	    if (chmod(fileName, attrPtr->st_mode & 06777) != 0) {
+d987 1
+a987 1
+			"Couldn't set set-user/group-id for \"%s\": %s.\n",
+@
+
+
+1.10
+log
+@Preserve set-user-id whenever possible.
+@
+text
+@d975 1
+a975 1
+    }
+d977 14
+a990 13
+    /*
+     * Preserve the set-user-id bit if a new mode wasn't given, and if
+     * the set-user-id bit was set in the source file, and if the file's
+     * new owner is the same as its previous owner.
+     */
+
+    if ((newMode < 0) && (attrPtr->st_mode & (S_ISUID|S_ISGID)) &&
+	    (preserveOwnership || (realUid == attrPtr->st_uid))) {
+	if (chmod(fileName, attrPtr->st_mode & 06777) != 0) {
+	    fprintf(stderr,
+		    "Couldn't set set-user/group-id for \"%s\": %s.\n",
+		    fileName, strerror(errno));
+	    return 1;
+@
+
+
+1.9
+log
+@Added -O option
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: update.c,v 1.8 88/08/25 13:24:12 ouster Exp $ SPRITE (Berkeley)";
+d930 1
+a930 1
+     * Preserve ownership if requested.
+d934 1
+a934 1
+	if (chown(fileName, attrPtr->st_uid, -1) != 0) {
+d973 16
+@
+
+
+1.8
+log
+@Preserve times on backup files.  Also, try unlinking backup
+files to avoid errors on open-for-create (if file is 444).
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: update.c,v 1.7 88/08/23 15:03:01 douglis Exp $ SPRITE (Berkeley)";
+d53 1
+d77 2
+d102 1
+d140 2
+a141 1
+    if ((ownerName != (char *) 0) || (groupName != (char *) 0)) {
+d155 19
+d202 1
+a202 20
+
+	    grPtr = getgrnam(groupName);
+	    if (grPtr == (struct group *) 0) {
+		fprintf(stderr,
+			"Couldn't find \"%s\" group to check owner change.\n",
+			groupName);
+		exit(1);
+	    }
+	    for (i = 0; ; i++) {
+		if (grPtr->gr_mem[i] == NULL) {
+		    fprintf(stderr,
+			    "Can't change owners: you're not in the \"%s\" group.\n",
+			    groupName);
+		    exit(1);
+		}
+		if (strcmp(grPtr->gr_mem[i], userName) == 0) {
+		    break;
+		}
+	    }
+	    endgrent();
+d853 47
+d928 12
+@
+
+
+1.7
+log
+@update the advisory file type of the file being updated.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: update.c,v 1.6 88/08/23 14:34:43 douglis Exp $ SPRITE (Berkeley)";
+d310 1
+a310 1
+		if (SetAttributes(destFile, &destAttr) != 0) {
+d510 1
+a510 1
+	    return Copy(srcFile, &srcAttr, destFile, 1);
+d525 1
+a525 1
+		if (SetAttributes(destFile, &srcAttr) != 0) {
+d617 1
+a617 1
+	    if (Copy(srcFile, &srcAttr, destFile, 1) == 0) {
+d648 1
+a648 1
+	if (Copy(destFile, &destAttr, tmpFileName, 0) != 0) {
+d655 1
+a655 1
+	return Copy(srcFile, &srcAttr, destFile, 1);
+d680 1
+a680 1
+Copy(srcFile, srcAttrPtr, destFile, setAttrs)
+d685 4
+a688 4
+    int setAttrs;			/* Non-zero means set attributes
+					 * of target file from command line;
+					 * this is usually done, except for
+					 * copies to backup directories. */
+d716 1
+d831 1
+a831 1
+    if (setAttrs && (SetAttributes(destFile, srcAttrPtr) != 0)) {
+d863 1
+a863 1
+SetAttributes(fileName, attrPtr)
+d868 5
+d881 1
+a881 1
+    if (newGroup >= 0) {
+d904 1
+a904 1
+    if (newMode >= 0) {
+d917 1
+a917 1
+    if (setTimes) {
+@
+
+
+1.6
+log
+@[This is being checked in for JKO].
+
+changed copy to update attributes from command line only if not
+copying to backup directory.  changed calls to printf to use fprintf.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: update.c,v 1.5 88/08/20 14:26:59 ouster Exp $ SPRITE (Berkeley)";
+d921 11
+@
+
+
+1.5
+log
+@Lint cleanup.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: update.c,v 1.4 88/08/20 10:45:24 ouster Exp $ SPRITE (Berkeley)";
+d295 1
+a295 1
+		printf("Installing: %s\n", destFile);
+d505 1
+a505 1
+		printf("Installing: %s\n", destFile);
+d510 1
+a510 1
+	    return Copy(srcFile, &srcAttr, destFile);
+d517 1
+a517 1
+		printf("Installing: %s\n", destFile);
+d598 1
+a598 1
+	    printf("Updating: %s\n", destFile);
+d617 1
+a617 1
+	    if (Copy(srcFile, &srcAttr, destFile) == 0) {
+d648 1
+a648 1
+	if (Copy(destFile, &destAttr, tmpFileName) != 0) {
+d655 1
+a655 1
+	return Copy(srcFile, &srcAttr, destFile);
+d680 1
+a680 1
+Copy(srcFile, srcAttrPtr, destFile)
+d685 4
+d830 1
+a830 1
+    if (SetAttributes(destFile, srcAttrPtr) != 0) {
+d901 1
+a901 1
+		    "Couldn't set permissions of \"%s\" to 0x%x: %s.\n",
+@
+
+
+1.4
+log
+@When stripping, wasn't clearing struct exec fields.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: update.c,v 1.3 88/08/18 14:53:46 ouster Exp $ SPRITE (Berkeley)";
+d37 6
+a120 1
+    char *srcFile;
+a363 1
+    done:
+a418 1
+    register int length;
+d520 1
+a520 1
+		if (mkdir(destFile, srcAttr.st_mode & 0777) != 0) {
+d730 1
+a730 1
+		lseek(srcID, 0, L_SET);
+a864 1
+    int group, owner, mode;
+d872 1
+a872 1
+	if (chown(fileName, -1, group) != 0) {
+@
+
+
+1.3
+log
+@First complete version installed now.  All known bugs fixed.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: update.c,v 1.2 88/08/08 18:39:22 ouster Exp $ SPRITE (Berkeley)";
+d701 1
+d725 1
+d747 13
+@
+
+
+1.2
+log
+@Working except for setting attributes correctly, and
+for security checks.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: proto.c,v 1.2 88/03/11 08:39:08 ouster Exp $ SPRITE (Berkeley)";
+d27 1
+d37 1
+a37 1
+ * Variable and tables used to parse and identify switch values:
+a49 1
+int softErrors = 0;
+d52 3
+d60 1
+a60 1
+	    "Force: always update, modify time stamps"},
+a62 2
+    {OPT_TRUE, "i", (char *) &softErrors,
+	    "Ignore errors while setting time stamps or owner"},
+d70 2
+d73 3
+d79 8
+d121 1
+d124 1
+a124 1
+     * Suck up command line options.
+d129 17
+d154 41
+d196 6
+a201 1
+    if (groupName != (char *)0) {
+d209 23
+d284 1
+d286 1
+a286 2
+	     * Create the destination directory, and set its owner and group
+	     * from the command line.
+d288 3
+a290 5
+	    if (mkdir(destFile, 0777) != 0) {
+		fprintf(stderr,
+			"Couldn't create destination directory \"%s\": %s.\n",
+			destFile, strerror(errno));
+		exit(1);
+d292 16
+a307 4
+	    if (stat(destFile, &destAttr) != 0) {
+		fprintf(stderr, "Could stat \"%s\" after creating it: %s.\n",
+			destFile, strerror(errno));
+		exit(1);
+a308 3
+	    if (SetAttributes(destFile, &destAttr) != 0) {
+		exit(1);
+	    }
+d354 1
+d501 6
+a506 1
+	    printf("Installing: %s\n", destFile);
+d511 1
+a511 1
+	     * the code below which recusively updates it.
+d513 2
+a514 5
+	    printf("Installing: %s\n", destFile);
+	    if (mkdir(destFile, 0777) != 0) {
+		fprintf(stderr, "Couldn't create directory \"%s\": %s.\n",
+			destFile, strerror(errno));
+		return 1;
+d516 9
+a524 2
+	    if (SetAttributes(destFile, &srcAttr) != 0) {
+		return(1);
+d544 1
+a544 1
+	if (move && !strip) {
+d581 1
+a581 1
+	if (move && (rmdir(srcFile) != 0)) {
+d594 6
+a599 1
+	printf("Updating: %s\n", destFile);
+a653 7
+
+    if (srcAttr.st_mtime < destAttr.st_mtime) {
+	fprintf(stderr,
+		"Target file \"%s\" is newer than \"%s\";  not updating.\n",
+		srcFile, destFile);
+	return 1;
+    }
+d689 1
+a689 1
+    if (move && !strip) {
+d708 2
+a709 1
+	    destID = open(destFile, O_WRONLY|O_CREAT|O_TRUNC, 0);
+d828 3
+a830 1
+ *	options that specify owner, group and new mode * Results:
+d834 1
+a834 1
+ *	Times, owner, and group may get changed for fileName.
+d845 1
+d851 1
+a851 1
+     * Set owner and group.
+a853 5
+    owner = attrPtr->st_uid;
+    if (newOwner >= 0) {
+	owner = newOwner;
+    }
+    group = attrPtr->st_gid;
+d855 3
+a857 6
+	group = newGroup;
+    }
+    if (chown(fileName, owner, group) != 0) {
+	fprintf(stderr, "Couldn't set owner and group of \"%s\": %s.\n",
+		fileName, strerror(errno));
+	if (!softErrors) {
+d863 9
+d877 6
+a882 4
+    if ((attrPtr->st_mode & S_IFMT) != S_IFLNK) {
+	mode = attrPtr->st_mode & 07777;
+	if (newMode >= 0) {
+	    mode = newMode;
+a883 7
+	if (chmod(fileName, mode) != 0) {
+	    fprintf(stderr, "Couldn't set permissions of \"%s\": %s.\n",
+		    fileName, strerror(errno));
+	    if (!softErrors) {
+		return 1;
+	    }
+	}
+d890 7
+a896 7
+    times[0].tv_usec = times[1].tv_usec = 0;
+    times[0].tv_sec = attrPtr->st_atime;
+    times[1].tv_sec = attrPtr->st_mtime;
+    if (utimes(fileName, times) != 0) {
+	fprintf(stderr, "Couldn't set times of \"%s\": %s.\n",
+		fileName, strerror(errno));
+	if (!softErrors) {
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d118 1
+a118 1
+	    fprintf(stderr, "Unknown user \"%s\"\n", ownerName);
+d127 1
+a127 1
+	    fprintf(stderr, "Unknown group \"%s\"\n", ownerName);
+d135 2
+a136 1
+	    fprintf(stderr, "Bad mode value \"%s\"", modeString);
+d155 1
+a155 1
+		fprintf(stderr, "No sources for \"%s\"\n", destFile);
+d189 1
+a189 1
+			"Couldn't create destination directory \"%s\": %s\n",
+d194 1
+a194 1
+		fprintf(stderr, "Could stat \"%s\" after creating it: %s\n",
+d208 1
+a208 1
+	fprintf(stderr, "Couldn't access \"%s\": %s\n", destFile,
+d215 1
+a215 1
+		    fprintf(stderr, "Couldn't access \"%s\": %s\n", argv[1],
+d382 1
+a382 1
+	fprintf(stderr, "Couldn't find \"%s\": %s\n",
+d401 1
+a401 1
+		fprintf(stderr, "Couldn't create directory \"%s\": %s\n",
+d412 3
+a414 3
+	fprintf(stderr,  "Type of %s (%s) differs from type of %s (%s)\n",
+		srcFile, (srcAttr.st_mode & S_IFMT) >> 12,
+		destFile, (destAttr.st_mode & S_IFMT) >> 12);
+d418 4
+d423 10
+a436 3
+	DIR *dirStream;
+	struct direct *dirEntryPtr;
+	int numErrors = 0;
+d440 1
+a440 1
+	    fprintf(stderr, "Can't read source directory \"%s\"\n",
+d458 11
+d487 1
+a487 1
+		fprintf(stderr, "Couldn't rename \"%s\" to \"%s\": %s\n",
+d494 1
+a494 1
+			    "Couldn't remove renamed old version \"%s\": %s\n",
+d501 1
+a501 1
+			"Couldn't restore original \"%s\":  see \"%s\"\n",
+d524 1
+a524 1
+		    "Couldn't copy \"%s\" to backup dir \"%s\"\n",
+d534 1
+a534 1
+		"Target file \"%s\" is newer than \"%s\";  not updating\n",
+d588 1
+a588 1
+		fprintf(stderr, "Couldn't open \"%s\": %s\n",
+d594 1
+a594 1
+		fprintf(stderr, "Couldn't create \"%s\": %s\n",
+d603 1
+a603 1
+			    "\"%s\" isn't a binary executable;  can't strip\n",
+d621 1
+a621 1
+		    fprintf(stderr, "Read error on \"%s\": %s\n",
+d630 1
+a630 1
+		    fprintf(stderr, "Write error on \"%s\": %s\n",
+d644 1
+a644 1
+	    fprintf(stderr, "Internal error:  Copy called with directory\n");
+d654 1
+a654 1
+		fprintf(stderr, "Couldn't read value of link \"%s\": %s\n",
+d661 1
+a661 1
+			"Couldn't create symbolic link at \"%s\": %s\n",
+d669 1
+a669 1
+	    fprintf(stderr, "\"%s\" is a device; don't know how to update\n",
+d674 1
+a674 1
+	    fprintf(stderr, "\"%s\" is a fifo; don't know how to update\n",
+d680 1
+a680 1
+		    "\"%s\" is a pseudo-device; don't know how to update\n",
+d686 1
+a686 1
+		    "\"%s\" has type 0x%x; don't know how to update\n",
+d697 1
+a697 1
+		    "Couldn't remove source file \"%s\" during move: %s\n",
+d743 1
+a743 1
+	fprintf(stderr, "Couldn't set owner and group of \"%s\": %s\n",
+d757 1
+a757 1
+	mode = attrPtr->st_mode & 0x3777;
+d762 1
+a762 1
+	    fprintf(stderr, "Couldn't set permissions of \"%s\": %s\n",
+d778 1
+a778 1
+	fprintf(stderr, "Couldn't set times of \"%s\": %s\n",
+@

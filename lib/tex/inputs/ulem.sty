@@ -1,0 +1,167 @@
+%
+%  U L E M . S T Y
+%
+%  A style file to use underlining, rather than italics, for \em-phasis.
+%  It is most suitable for simple text such as {\em ibid.} or {\em \LaTeX:
+%  A Document Preparation System\/} that may need to be underlined in a 
+%  manuscript submitted for publication.  Only to be used when emphasis
+%  is delimited by braces.
+%
+%  So you want to do some underlining but still want to get italics with 
+%  \em?  Just enter the declaration \normalem before beginning your document
+%  and specify your underlining as \ULine{some text}.
+%
+%  More instructions after \endinput.
+%
+%  Copyright (c) 1989 by Donald Arseneau
+%
+%  These macros may be freely transmitted, reproduced, or modified for
+%  non-commercial purposes provided that this notice is left intact.
+%
+\def\ULem{\let\em\LA@em
+   \expandafter\UL@on\expandafter{\ifnum0=`}\fi}%% -> \UL@on{
+
+\def\ULine{\bgroup\UL@on}
+
+\let\LA@em\em
+\let\em\ULem
+\def\normalem{\let\em\LA@em}
+\newbox\UL@hyphenbox
+\newbox\UL@box
+\newcount\UL@spfactor
+\newcount\UL@penalty
+\newskip\UL@skip
+\newdimen\UL@lht
+\newdimen\UL@ldp
+%
+%  Could do this... 
+%  \UL@lht=-.8pt \UL@ldp=1.2pt  %  ...see note a few lines down.
+
+\let\LA@space\ \let\LA@hskip\hskip
+
+\def\UL@end*{\relax\relax}% something harmless unlikely to be found elsewhere
+
+\def\UL@on#1{\leavevmode\everymath{\UL@hrest}\let\-\UL@dischyp 
+    \let\ \UL@space \let\hskip\UL@hskip
+%
+%   Set the depth of the underline.  For a different depth, the next line 
+%   should be changed; or eliminated so \UL@ldp and \UL@lht can be defined 
+%   just once as style parameters.
+%
+    \setbox\UL@box\hbox{(}\UL@ldp\dp\UL@box \UL@lht-\UL@ldp\advance\UL@lht.4\p@
+%
+    \setbox\UL@hyphenbox\hbox{\setbox\UL@box\hbox{-}\UL@putbox}%
+    \UL@word#1\global\UL@spfactor\spacefactor{} \UL@end* }
+
+\let\UL@unegroup\@empty
+
+\def\UL@start{\setbox\UL@box\hbox\bgroup\everyhbox{\UL@hrest}%
+%   the following are to cope with stops (\ ,\- etc) within extra braces
+    \let\UL@start\@empty \let\UL@putbox\@empty \let\UL@unegroup\bgroup
+    \kern-3sp\kern3sp} % kerns so I can test for beginning of list
+
+\def\UL@stop{\global\UL@penalty\lastpenalty
+   \ifdim\lastkern=3sp \egroup % Nothing in hbox, 
+      \ifdim\wd\UL@box=\z@ % make doubly sure, and don't put on list
+      \else \UL@putbox \fi
+   \else 
+      \egroup \UL@putbox
+   \fi\UL@unegroup}
+
+\def\UL@putbox{{\UL@skip\wd\UL@box \advance\UL@skip\UL@pixel
+   \vrule \@height\UL@lht \@depth\UL@ldp \@width\UL@skip
+   \kern-\UL@skip}\box\UL@box
+   \ifnum\UL@penalty=\z@ \else \penalty\UL@penalty \fi}
+
+\def\UL@word#1 {\UL@start#1 \ifx\UL@end#1\egroup % must expand to nothing ...
+                              % outside the ifs for syntactical spaces to work
+      \unkern \unskip % remove extra leader
+      \spacefactor\UL@spfactor \let\UL@word\egroup 
+   \else % not finished
+      \ifmmode\else \ifdim\lastskip=\z@\else % this should allow syntactical 
+          \global\UL@skip\lastskip \unskip   %    ...spaces
+          \UL@stop \UL@leaders
+      \fi\fi
+   \fi \UL@word}
+
+%  With interword leaders, give some overlap to avoid gaps caused by
+%  round-off errors in the printing program.  Needs \unkern \unskip 
+%  above.  This version assumes 300 dots per inch, but it still looks good 
+%  with higher resolution, and will still work down to ~150 dpi.  Change the
+%  value of \UL@pixel if necessary.
+
+\newdimen\UL@pixel \UL@pixel=0.0033333truein
+
+\def\UL@leaders{{\advance \UL@skip \UL@pixel
+   \leaders\hrule \@height\UL@lht \@depth\UL@ldp\LA@hskip\UL@skip
+   \kern-\UL@pixel}}
+
+\def\UL@hskip{\afterassignment\UL@reskip \global\UL@skip}
+
+\def\UL@reskip{\UL@stop \UL@leaders \UL@start}
+
+\def\UL@hrest{\let\hskip\LA@hskip \let\ \LA@space \let\-\UL@dischyp}
+
+\def\UL@space{\LA@space \global\UL@skip\lastskip \unskip \UL@reskip}
+
+\def\UL@dischyp{\penalty\z@ % zero penalty => no break (see \UL@stop)
+               \UL@stop \discretionary{\copy\UL@hyphenbox}{}{}\UL@start}
+\endinput
+%
+%  ULEM is far from an ideal replacement for \em, but it does allow line 
+%  breaks, and even primitive hyphenation, within the underlined text.  
+%  Every word is set in an underlined box, so normally it cannot be 
+%  hyphenated, but explicit discretionary hyphens (\-) can be used to 
+%  allow hyphenation.  Since spaces are used to delimit words, there may 
+%  be some difficulty with syntactical spaces (e.g. 2.3_pt). Some effort 
+%  is made to handle spaces, but if that fails, you might solve the problem 
+%  by enclosing the offending command in braces...
+%  
+%  One important incompatability is with grouping: EVERYTHING IN BRACES 
+%  IS TREATED LIKE AN MBOX.  Thus, braces will suppress stretching and 
+%  linebreaks in the text they enclose.  Moreover, the specially-taken-
+%  care-of commands \-, \ , and \hspace (\hskip) often fail if they appear 
+%  inside extra braces.  They succeed only if the enclosing braces are
+%  preceded and followed by spaces, but then they have another undesireable 
+%  effect: they end the group and start a new one!  Thus, the only braces 
+%  you should use are those delimiting parameters to commands, or those 
+%  with simple text inside.  Syntactical spaces inside braces never cause 
+%  a problem, nor do spaces in math mode.
+%  
+%  Text produced by expansion of a command word is boxed too, but the 
+%  commands \  and \- still work; just as for braces surrounded by space:  
+%      \newcommand\iff{if and only if} {\em \iff} 
+%  does not allow any stretching or linebreaking between words, but
+%      \newcommand\iff{if\ and\ only\ if} {\em \iff}
+%  allows stretching and linebreaking.
+%
+%  Nested \em commands produce underlined italics, but heed the warnings 
+%  about braces above.  Since nested \em-phasis normally switches back to
+%  roman type, this is another incompatability.  To get italics without 
+%  underlining, use \it.
+%
+%  HERE IS A DIFFICULT EXAMPLE.
+%
+%  \documentstyle[12pt,ulem]{article}  % or [ulem]
+%  \setlength\textwidth{3.3in}
+%  \begin{document}
+%  No, I did {\em not} act in the movie {\em {\em The} % <<<< Nested
+%  {\em Persecu\-\em tion}  {\em and} {\em  Assassination} {\em of} 
+%  {\em Jean-Paul} {\em Marat}, as per\-formed by the Inmates
+%  of the Asylum of Charenton under the Direc\-tion of the 
+%  Marquis de~Sade!} But I {\em did} see it.
+%  \end{document}
+%
+%  In the nested emphasis, \em is given for each word so that the interword
+%  spaces can be outside the braces.  Otherwise, there would be no stretch 
+%  to the line.  Note that the discretionary hyphen (\-) in Persecution
+%  cancelled the inner \em, thus \-\em was needed, but the hyphen in Direction
+%  was just fine because it was not in nested braces.  Whew!
+%  This example illustrates that ULEM is not made for nested emphasis!
+%  Nevertheless, it works great for simple things.
+%
+%  Send problem reports to asnd@triumfcl.bitnet or Arseneau@mtsg.ubc.ca
+%
+%  Test transmission:
+%  brackets: round, square, curly, angle:   () [] {} <>
+%  backslash, slash, vertical, hat, tilde:   \ / | ^ ~

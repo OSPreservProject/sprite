@@ -1,0 +1,64 @@
+'\" Copyright 1989 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/man/files/RCS/maillog.man,v 1.1 89/02/16 10:02:01 ouster Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS <maillog> cmds
+.BS
+.SH NAME
+maillog \- repository for sprite-related mail, indexed by subject
+.SH DESCRIPTION
+This document describes the Sprite log, a repository for
+sprite-related mail.  Mail sent to \fBsprite-log\fP will be stored in
+a directory in the sprite account, ~sprite/Log.  Each message is
+stored in its own 
+file.  
+.PP
+The \fBlog\fP subdirectory of the Sprite log contains the messages
+themselves, which are numbered sequentially.   The \fBindex\fP
+subdirectory contains information to help users find messages in the
+log.  Each time a message is added to the log, its
+log entry number, originator, date sent, size, and  subject line are
+recorded in a number of files.  Each message is 
+entered in \fBchron\fP, which is a chronlogically-ordered listing of
+all messages in the log.  In addition, the message is entered in
+\fBfrom\fP-\fIuser\fP, where \fIuser\fP is the account that sent the
+message.  
+.PP
+Finally, the message is entered in files with names
+corresponding to the keywords associated with the message.
+If the message contains a
+\fBKeywords:\fP line, the words on that line are taken to be keywords;
+otherwise, the non-trivial words in the subject line are used.
+Punctuation and case are ignored.  Typical keywords include ``bug'',
+``fix'', and 
+the names of kernel modules, libraries, and programs.
+.PP
+As an example, consider a message sent from douglis to the Sprite log with the
+subject ``bug: fs recovery''.  If the next message in the log were
+00143, then the message itself would be stored in
+~sprite/Log/log/00143, and a line like
+.sp
+.ce
+00143 douglis Mon Sep 14 12:01:14 1987   13 bug: fs recovery
+.sp
+would be written to the files \fBchron\fP, \fBfrom-douglis\fP,
+\fBbug\fP, \fBfs\fP, and \fBrecovery\fP in ~sprite/Log/index.
+.PP
+Note: the Sprite log is currently stored under Unix.
+.SH FILES
+.DS
+.ta 1c 2c 3c 4c 5c 6c 7c 8c 9c
+~sprite/Log/log		messages in the Sprite log.
+~sprite/Log/index	lists of messages by keyword.
+.DE
+.SH "SEE ALSO"
+Mail, sendmail, MH
+.SH KEYWORDS
+Sprite, log, index, keyword, bug, mail

@@ -1,0 +1,8 @@
+F DBG.H_V;1                         	dbg.h,v
+F DBGINT.H_V;1                      	dbgInt.h,v
+F DBGIP.C_V;1                       	dbgIP.c,v
+F DBGMAIN.C_V;1                     	dbgMain.c,v
+F LED_DISP.C_V;1                    	led-display.c,v
+F SPUR_STU.C_V;1                    	spur-stub.c,v
+F UART.H_V;1                        	uart.h,v
+F UART.S_V;1                        	uart.s,v

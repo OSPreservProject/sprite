@@ -1,0 +1,137 @@
+Fs_Device			# Add port returned by device_open.  Add
+				# memory_object returned by device_map.
+				# In long run, want to hide Mach-specific
+				# fields from user program.  In short run, so
+				# that Mach fields are easily accessible
+				# inside the server, put them directly in the
+				# Fs_Device struct.
+	dev/devNet.[ch]		 
+	dev/tty.h		
+	dev/devNull.[ch]	
+	dev/devBlockDevice.[ch]	
+	dev/devDiskStats.[ch]	
+	dev/devExabyteTape.c
+	dev/devFsOpTable.h
+	dev/devRawBlockDev.c
+	dev/devSCSIDisk.c
+	dev/devSCSIHBA.c
+	dev/devSCSITape.[ch]
+	dev/devScsiDevice.c
+	dev/devSyslog.[ch]
+	dev/diskStats.h
+	dev/exabyteTape.h
+	dev/rawBlockDev.h
+	dev/scsiDevice.h
+	dev/scsiHBADevice.h
+	dev/scsiTape.h
+	dev/ds3100.md/devConfig.c
+	dev/ds3100.md/devGraphics.c
+	dev/ds3100.md/devSII.c
+	dev/ds5000.md/devConfig.c
+	dev/ds5000.md/devStdFB.c
+	dev/ds5000.md/devGraphics.c
+	dev/ds5000.md/devStdFBInt.h
+	dev/ds5000.md/scsiC90.h
+	dev/ds5000.md/devSCSIC90.c
+	dev/sun3.md/devConfig.c
+	dev/sun3.md/devEmulexTape.c
+	dev/sun3.md/devFsOpTable.c
+	dev/sun3.md/devGraphics.c
+	dev/sun3.md/devJaguarHBA.c
+	dev/sun3.md/devMouse.c
+	dev/sun3.md/devSCSI0.c
+	dev/sun3.md/devSCSI3.c
+	dev/sun3.md/devSysgenTape.c
+	dev/sun3.md/devTMR.[ch]
+	dev/sun3.md/devXylogics450.c
+	dev/sun3.md/devfb.h
+	dev/sun3.md/emulexTape.h
+	dev/sun3.md/jaguar.h
+	dev/sun3.md/mouse.h
+	dev/sun3.md/scsi0.h
+	dev/sun3.md/scsi3.h
+	dev/sun3.md/sysgenTape.h
+	dev/sun3.md/xylogics450.h
+	dev/sun4.md/devConfig.c
+	dev/sun4.md/devEmulexTape.c
+	dev/sun4.md/devGraphics.c
+	dev/sun4.md/devJaguarHBA.c
+	dev/sun4.md/devMouse.c
+	dev/sun4.md/devSCSI0.c
+	dev/sun4.md/devSCSI3.c
+	dev/sun4.md/devSysgenTape.c
+	dev/sun4.md/devTMR.[ch]
+	dev/sun4.md/devXylogics450.c
+	dev/sun4.md/devfb.h
+	dev/sun4.md/emulexTape.h
+	dev/sun4.md/jaguar.h
+	dev/sun4.md/mouse.h
+	dev/sun4.md/scsi0.h
+	dev/sun4.md/scsi3.h
+	dev/sun4.md/sysgenTape.h
+	dev/sun4.md/xylogics450.h
+	dev/sun4c.md/devConfig.c
+	dev/sun4c.md/devEmulexTape.c
+	dev/sun4c.md/devFsOpTable.c
+	dev/sun4c.md/devGraphics.c
+	dev/sun4c.md/devMouse.c
+	dev/sun4c.md/devSCSIC90.c
+	dev/sun4c.md/devfb.h
+	dev/sun4c.md/emulexTape.h
+	dev/sun4c.md/mouse.h
+	dev/sun4c.md/scsiC90.h
+	fs/fs.h
+	fs/fsInit.c
+	fs/fsNameOps.[ch]
+	fs/fsSysCall.c
+	fsdm/fsdm.h
+	fsdm/fsdmDisk.c
+	fsio/fsioDevice.[ch]
+	lfs/lfs.h
+	lfs/lfsMain.c
+	lfs/lfsInt.h
+	ofs/ofs.h
+	ofs/ofsDisk.c
+	raid/devDebug.c
+	raid/devPrint.c
+	raid/devRaid.[ch]
+	raid/devRaidProto.h
+	raid/devRaidDisk.h
+	sys/sysPrintf.c
+	sys/sysSysCall.c
+stat				# (struct for system call) keep.
+				# going to be difficult to run both
+				# Sprite and Mach binaries...
+	Include/user/sys/stat.h
+	mach/ds5000.md/cvtStat.c
+	mach/ds5000.md/machInt.h
+	mach/ds5000.md/machUNIXSyscall.c
+	mach/ds5000.md/stat.h
+	mach/ds3100.md/machInt.h
+	mach/ds3100.md/stat.h
+	mach/ds3100.md/cvtStat.c
+	mach/ds3100.md/machUNIXSyscall.c
+	mach/symm.md/machSlic.c
+	dev/symm.md/devScedDisk.c
+	dev/symm.md/devScedTape.c
+	fs/fsStubs.c
+	net/symm.md/netScedEther.c
+	proc/procMigrate.h
+	rpc/rpcStubs.c
+off_t				# ("file offset" type)
+				# conflicts with Mach definition (they
+				# use unsigned, we use signed); does
+				# either Mach or Sprite depend on
+				# whether off_t is signed?  Use the Mach
+				# definition.
+	Include/user/sys/types.h
+	mach/ds5000.md/machUNIXSyscall.c
+	mach/ds5000.md/stat.h
+	mach/ds3100.md/stat.h
+	mach/ds3100.md/machUNIXSyscall.c
+	vm/vmStubs.c
+
+Local Variables:
+mode: xref
+fill-column: 78
+End:

@@ -1,0 +1,368 @@
+AOP	toke.c	/^#define AOP(f) return(yylval.ival=f,expectterm = T/
+CHKLEN	form.c	/^#define CHKLEN(allow) \\$/
+EOP	toke.c	/^#define EOP(f) return(yylval.ival=f,expectterm = T/
+FL	toke.c	/^#define FL(f) return(yylval.ival=f,expectterm = FA/
+FL2	toke.c	/^#define FL2(f) return(yylval.ival=f,expectterm = F/
+FOP	toke.c	/^#define FOP(f) return(yylval.ival=f,expectterm = F/
+FOP2	toke.c	/^#define FOP2(f) return(yylval.ival=f,expectterm = /
+FOP22	toke.c	/^#define FOP22(f) return(yylval.ival=f,expectterm =/
+FOP25	toke.c	/^#define FOP25(f) return(yylval.ival=f,expectterm =/
+FOP3	toke.c	/^#define FOP3(f) return(yylval.ival=f,expectterm = /
+FOP4	toke.c	/^#define FOP4(f) return(yylval.ival=f,expectterm = /
+FTST	toke.c	/^#define FTST(f) return(yylval.ival=f,expectterm = /
+FUN0	toke.c	/^#define FUN0(f) return(yylval.ival = f,expectterm /
+FUN1	toke.c	/^#define FUN1(f) return(yylval.ival = f,expectterm /
+FUN2	toke.c	/^#define FUN2(f) return(yylval.ival = f,expectterm /
+FUN2x	toke.c	/^#define FUN2x(f) return(yylval.ival = f,expectterm/
+FUN3	toke.c	/^#define FUN3(f) return(yylval.ival = f,expectterm /
+FUN4	toke.c	/^#define FUN4(f) return(yylval.ival = f,expectterm /
+FUN5	toke.c	/^#define FUN5(f) return(yylval.ival = f,expectterm /
+HFUN	toke.c	/^#define HFUN(f) return(yylval.ival=f,expectterm = /
+HFUN3	toke.c	/^#define HFUN3(f) return(yylval.ival=f,expectterm =/
+IOCPARM_LEN	doio.c	/^#define IOCPARM_LEN(x)  (((x) >> 16) & IOCPARM_MAS/
+ISMULT1	regcomp.c	/^#define	ISMULT1(c)	((c) == '*' || (c) == '+' || (c/
+ISMULT2	regcomp.c	/^#define	ISMULT2(s)	((*s) == '*' || (*s) == '+' || /
+LFUN	toke.c	/^#define LFUN(f) return(yylval.ival=f,expectterm = /
+LOOPX	toke.c	/^#define LOOPX(f) return(yylval.ival=f,expectterm =/
+LOP	toke.c	/^#define LOP(f) return(CLINE, *s == '(' || (s = ski/
+META	toke.c	/^#define META(c) ((c) | 128)$/
+MOP	toke.c	/^#define MOP(f) return(yylval.ival=f,expectterm = T/
+Mperl	perl.c	/^main(argc,argv,env)$/
+OLDLOP	toke.c	/^#define OLDLOP(f) return(yylval.ival=f,expectterm /
+OPERATOR	toke.c	/^#define OPERATOR(retval) return (expectterm = TRUE/
+RETURN	toke.c	/^#define RETURN(retval) return (bufptr = s,(int)ret/
+ROP	toke.c	/^#define ROP(f) return(yylval.ival=f,expectterm = T/
+TERM	toke.c	/^#define TERM(retval) return (CLINE, expectterm = F/
+UNI	toke.c	/^#define UNI(f) return(yylval.ival = f,expectterm =/
+YYSTYPE	perly.c	/^} YYSTYPE;$/
+aadd	stab.c	/^aadd(stab)$/
+aclear	array.c	/^aclear(ar)$/
+add_label	cons.c	/^add_label(lbl,cmd)$/
+addcond	cons.c	/^addcond(cmd, arg)$/
+addflags	consarg.c	/^addflags(i,flags,arg)$/
+addloop	cons.c	/^addloop(cmd, arg)$/
+afake	array.c	/^afake(stab,size,strp)$/
+afetch	array.c	/^afetch(ar,key,lval)$/
+afill	array.c	/^afill(ar, fill)$/
+afree	array.c	/^afree(ar)$/
+alen	array.c	/^alen(ar)$/
+anew	array.c	/^anew(stab)$/
+apop	array.c	/^apop(ar)$/
+append_line	cons.c	/^append_line(head,tail)$/
+apply	doio.c	/^apply(type,arglast)$/
+apush	array.c	/^apush(ar,val)$/
+arg_common	consarg.c	/^arg_common(arg,exprnum,marking)$/
+arg_free	cons.c	/^arg_free(arg)$/
+arg_tosave	cons.c	/^arg_tosave(arg,willsave)$/
+ashift	array.c	/^ashift(ar)$/
+astore	array.c	/^astore(ar,key,val)$/
+aunshift	array.c	/^aunshift(ar,num)$/
+bcopy	util.c	/^bcopy(from,to,len)$/
+block_head	cons.c	/^block_head(tail)$/
+bzero	util.c	/^bzero(loc,len)$/
+cando	doio.c	/^cando(bit, effective, statbufp)$/
+castulong	util.c	/^castulong(f)$/
+checkcomma	toke.c	/^checkcomma(s,what)$/
+chsize	doio.c	/^int chsize(fd, length)$/
+cmd_exec	cmd.c	/^cmd_exec(cmdparm,gimme,sp)$/
+cmd_free	cons.c	/^cmd_free(cmd)$/
+cmd_to_arg	consarg.c	/^cmd_to_arg(cmd)$/
+cmd_tosave	cons.c	/^cmd_tosave(cmd,willsave)$/
+copyopt	cmd.c	/^copyopt(cmd,which)$/
+countlines	form.c	/^countlines(s,size)$/
+cpytill	util.c	/^cpytill(to,from,fromend,delim,retlen)$/
+cryptclose	usersub.c	/^cryptclose(fil)$/
+cryptfilter	usersub.c	/^cryptfilter( fil )$/
+cryptopen	usersub.c	/^cryptopen(cmd)		\/* open a (possibly encrypted) pr/
+cryptswitch	usersub.c	/^cryptswitch()$/
+cval_to_arg	consarg.c	/^cval_to_arg(cval)$/
+deb	cmd.c	/^deb(pat,a1,a2,a3,a4,a5,a6,a7,a8)$/
+dehoist	consarg.c	/^dehoist(arg,i)$/
+do_accept	doio.c	/^do_accept(str, nstab, gstab)$/
+do_aexec	doio.c	/^do_aexec(really,arglast)$/
+do_aprint	doio.c	/^do_aprint(arg,fp,arglast)$/
+do_assign	doarg.c	/^do_assign(arg,gimme,arglast)$/
+do_bind	doio.c	/^do_bind(stab, arglast)$/
+do_caller	dolist.c	/^do_caller(arg,maxarg,gimme,arglast)$/
+do_chop	doarg.c	/^do_chop(astr,str)$/
+do_close	doio.c	/^do_close(stab,explicit)$/
+do_connect	doio.c	/^do_connect(stab, arglast)$/
+do_ctl	doio.c	/^do_ctl(optype,stab,func,argstr)$/
+do_defined	doarg.c	/^do_defined(str,arg,gimme,arglast)$/
+do_dirop	doio.c	/^do_dirop(optype,stab,gimme,arglast)$/
+do_each	dolist.c	/^do_each(str,hash,gimme,arglast)$/
+do_eof	doio.c	/^do_eof(stab)$/
+do_eval	perl.c	/^do_eval(str,optype,stash,gimme,arglast)$/
+do_exec	doio.c	/^do_exec(cmd)$/
+do_execfree	doio.c	/^do_execfree()$/
+do_fttext	doio.c	/^do_fttext(arg,str)$/
+do_getsockname	doio.c	/^do_getsockname(optype, stab, arglast)$/
+do_ggrent	doio.c	/^do_ggrent(which,gimme,arglast)$/
+do_ghent	doio.c	/^do_ghent(which,gimme,arglast)$/
+do_gnent	doio.c	/^do_gnent(which,gimme,arglast)$/
+do_gpent	doio.c	/^do_gpent(which,gimme,arglast)$/
+do_gpwent	doio.c	/^do_gpwent(which,gimme,arglast)$/
+do_grep	dolist.c	/^do_grep(arg,str,gimme,arglast)$/
+do_gsent	doio.c	/^do_gsent(which,gimme,arglast)$/
+do_ipcctl	doio.c	/^do_ipcctl(optype, arglast)$/
+do_ipcget	doio.c	/^do_ipcget(optype, arglast)$/
+do_join	doarg.c	/^do_join(str,arglast)$/
+do_kv	dolist.c	/^do_kv(str,hash,kv,gimme,arglast)$/
+do_listen	doio.c	/^do_listen(stab, arglast)$/
+do_match	dolist.c	/^do_match(str,arg,gimme,arglast)$/
+do_msgrcv	doio.c	/^do_msgrcv(arglast)$/
+do_msgsnd	doio.c	/^do_msgsnd(arglast)$/
+do_open	doio.c	/^do_open(stab,name,len)$/
+do_pack	doarg.c	/^do_pack(str,arglast)$/
+do_pipe	doio.c	/^do_pipe(str, rstab, wstab)$/
+do_print	doio.c	/^do_print(str,fp)$/
+do_push	doarg.c	/^do_push(ary,arglast)$/
+do_range	dolist.c	/^do_range(gimme,arglast)$/
+do_repeatary	dolist.c	/^do_repeatary(arglast)$/
+do_reverse	dolist.c	/^do_reverse(arglast)$/
+do_seek	doio.c	/^do_seek(stab, pos, whence)$/
+do_select	doio.c	/^do_select(gimme,arglast)$/
+do_semop	doio.c	/^do_semop(arglast)$/
+do_shmio	doio.c	/^do_shmio(optype, arglast)$/
+do_shutdown	doio.c	/^do_shutdown(stab, arglast)$/
+do_slice	dolist.c	/^do_slice(stab,str,numarray,lval,gimme,arglast)$/
+do_socket	doio.c	/^do_socket(stab, arglast)$/
+do_sopt	doio.c	/^do_sopt(optype, stab, arglast)$/
+do_sort	dolist.c	/^do_sort(str,stab,gimme,arglast)$/
+do_spair	doio.c	/^do_spair(stab1, stab2, arglast)$/
+do_splice	dolist.c	/^do_splice(ary,gimme,arglast)$/
+do_split	dolist.c	/^do_split(str,spat,limit,gimme,arglast)$/
+do_sprintf	doarg.c	/^do_sprintf(str,len,sarg)$/
+do_sreverse	dolist.c	/^do_sreverse(str,arglast)$/
+do_stat	doio.c	/^do_stat(str,arg,gimme,arglast)$/
+do_study	doarg.c	/^do_study(str,arg,gimme,arglast)$/
+do_subr	doarg.c	/^do_subr(arg,gimme,arglast)$/
+do_subst	doarg.c	/^do_subst(str,arg,sp)$/
+do_syscall	doarg.c	/^do_syscall(arglast)$/
+do_tell	doio.c	/^do_tell(stab)$/
+do_time	dolist.c	/^do_time(str,tmbuf,gimme,arglast)$/
+do_tms	dolist.c	/^do_tms(str,gimme,arglast)$/
+do_trans	doarg.c	/^do_trans(str,arg)$/
+do_truncate	doio.c	/^do_truncate(str,arg,gimme,arglast)$/
+do_undef	doarg.c	/^do_undef(str,arg,gimme,arglast)$/
+do_unpack	dolist.c	/^do_unpack(str,gimme,arglast)$/
+do_unshift	doarg.c	/^do_unshift(ary,arglast)$/
+do_vec	doarg.c	/^do_vec(lvalue,astr,arglast)$/
+do_vecset	doarg.c	/^do_vecset(mstr,str)$/
+do_vop	doarg.c	/^do_vop(optype,str,left,right)$/
+do_write	form.c	/^do_write(orec,stab,sp)$/
+dodb	cons.c	/^dodb(cur)$/
+doencodes	doarg.c	/^doencodes(str, s, len)$/
+dump	dump.c	/^dump(arg1,arg2,arg3,arg4,arg5)$/
+dump_all	dump.c	/^dump_all()$/
+dump_arg	dump.c	/^dump_arg(arg)$/
+dump_cmd	dump.c	/^dump_cmd(cmd,alt)$/
+dump_flags	dump.c	/^dump_flags(b,flags)$/
+dump_spat	dump.c	/^dump_spat(spat)$/
+dump_stab	dump.c	/^dump_stab(stab)$/
+dumpfds	util.c	/^dumpfds(s)$/
+dup2	util.c	/^dup2(oldfd,newfd)$/
+envix	util.c	/^envix(nam)$/
+eval	eval.c	/^eval(arg,gimme,sp)$/
+evalstatic	consarg.c	/^evalstatic(arg)$/
+expand_charset	toke.c	/^expand_charset(s,len,retlen)$/
+fatal	util.c	/^fatal(pat,a1,a2,a3,a4)$/
+fbmcompile	util.c	/^fbmcompile(str, iflag)$/
+fbminstr	util.c	/^fbminstr(big, bigend, littlestr)$/
+fixl	consarg.c	/^fixl(type,arg)$/
+form_parseargs	form.c	/^form_parseargs(fcmd)$/
+format	form.c	/^format(orec,fcmd,sp)$/
+free_arg	consarg.c	/^free_arg(arg)$/
+fstab	stab.c	/^fstab(name)$/
+genstab	stab.c	/^genstab()$/
+grow_dlevel	cmd.c	/^grow_dlevel()$/
+growstr	util.c	/^growstr(strptr,curlen,newlen)$/
+hadd	stab.c	/^hadd(stab)$/
+hclear	hash.c	/^hclear(tb,dodbm)$/
+hdelete	hash.c	/^hdelete(tb,key,klen)$/
+hentdelayfree	hash.c	/^hentdelayfree(hent)$/
+hentfree	hash.c	/^hentfree(hent)$/
+hfetch	hash.c	/^hfetch(tb,key,klen,lval)$/
+hfreeentries	hash.c	/^hfreeentries(tb,dodbm)$/
+hide_ary	consarg.c	/^hide_ary(arg)$/
+hnew	hash.c	/^hnew(lookat)$/
+hoistmust	toke.c	/^hoistmust(spat)$/
+hsplit	hash.c	/^hsplit(tb)$/
+hstore	hash.c	/^hstore(tb,key,klen,val,hash)$/
+htonl	util.c	/^htonl(l)$/
+ingroup	doio.c	/^ingroup(testgid,effective)$/
+instr	util.c	/^instr(big, little)$/
+interp	str.c	/^interp(str,src,sp)$/
+intrpcompile	str.c	/^intrpcompile(src)$/
+invert	cons.c	/^invert(cmd)$/
+isALNUM	regexec.c	/^#define isALNUM(c) (isascii(c) && (isalpha(c) || i/
+isDIGIT	regexec.c	/^#define isDIGIT(c) (isascii(c) && isdigit(c))$/
+isSPACE	regexec.c	/^#define isSPACE(c) (isascii(c) && isspace(c))$/
+isUPPER	regexec.c	/^#define isUPPER(c) (isascii(c) && isupper(c))$/
+jmaybe	consarg.c	/^jmaybe(arg)$/
+l	consarg.c	/^l(arg)$/
+lcase	str.c	/^lcase(s,send)$/
+listish	consarg.c	/^listish(arg)$/
+load_format	toke.c	/^load_format()$/
+localize	consarg.c	/^localize(arg)$/
+looks_like_number	doio.c	/^looks_like_number(str)$/
+lop	toke.c	/^lop(f,s)$/
+magicalize	perl.c	/^magicalize(list)$/
+magicname	perl.c	/^magicname(sym,name,namlen)$/
+make_acmd	cons.c	/^make_acmd(type,stab,cond,arg)$/
+make_ccmd	cons.c	/^make_ccmd(type,arg,cblock)$/
+make_cswitch	cons.c	/^make_cswitch(head,count)$/
+make_form	cons.c	/^make_form(stab,fcmd)$/
+make_icmd	cons.c	/^make_icmd(type,arg,cblock)$/
+make_list	consarg.c	/^make_list(arg)$/
+make_match	consarg.c	/^make_match(type,expr,spat)$/
+make_nswitch	cons.c	/^make_nswitch(head,count)$/
+make_op	consarg.c	/^make_op(type,newlen,arg1,arg2,arg3)$/
+make_split	consarg.c	/^make_split(stab,arg,limarg)$/
+make_sub	cons.c	/^make_sub(name,cmd)$/
+make_usub	cons.c	/^make_usub(name, ix, subaddr, filename)$/
+maybelistish	consarg.c	/^maybelistish(optype, arg)$/
+memcmp	util.c	/^memcmp(s1,s2,len)$/
+mess	util.c	/^mess(pat,a1,a2,a3,a4)$/
+mod_match	consarg.c	/^mod_match(type,left,pat)$/
+moreswitches	perl.c	/^moreswitches(s)$/
+my_swap	util.c	/^my_swap(s)$/
+my_unexec	perl.c	/^my_unexec()$/
+mylstat	doio.c	/^mylstat(arg,str)$/
+mypclose	util.c	/^mypclose(ptr)$/
+mypfiopen	usersub.c	/^mypfiopen(fil,func)		\/* open a pipe to function c/
+mypopen	util.c	/^mypopen(cmd,mode)$/
+mystat	doio.c	/^mystat(arg,str)$/
+nextargv	doio.c	/^nextargv(stab)$/
+ninstr	util.c	/^ninstr(big, bigend, little, lend)$/
+nothing_in_common	consarg.c	/^nothing_in_common(arg1,arg2)$/
+nsavestr	util.c	/^nsavestr(str, len)$/
+ntohl	util.c	/^ntohl(l)$/
+op_new	consarg.c	/^op_new(numargs)$/
+opt_arg	cons.c	/^opt_arg(cmd,fliporflop,acmd)$/
+over	cons.c	/^over(eachstab,cmd)$/
+parselist	str.c	/^parselist(str)$/
+pidgone	util.c	/^pidgone(pid,status)$/
+rcatmaybe	consarg.c	/^rcatmaybe(arg)$/
+reg	regcomp.c	/^reg(paren, flagp)$/
+reganode	regcomp.c	/^reganode(op, arg)$/
+regatom	regcomp.c	/^regatom(flagp)$/
+regbranch	regcomp.c	/^regbranch(flagp)$/
+regc	regcomp.c	/^regc(b)$/
+regclass	regcomp.c	/^regclass()$/
+regcomp	regcomp.c	/^regcomp(exp,xend,fold)$/
+regcurly	regcomp.c	/^regcurly(s)$/
+regdump	regcomp.c	/^regdump(r)$/
+regexec	regexec.c	/^regexec(prog, stringarg, strend, strbeg, minend, s/
+regfree	regcomp.c	/^regfree(r)$/
+reginsert	regcomp.c	/^reginsert(op, opnd)$/
+regmatch	regexec.c	/^regmatch(prog)$/
+regnext	regexec.c	/^regnext(p)$/
+regnode	regcomp.c	/^regnode(op)$/
+regoptail	regcomp.c	/^regoptail(p, val)$/
+regpiece	regcomp.c	/^regpiece(flagp)$/
+regprop	regcomp.c	/^regprop(op)$/
+regrepeat	regexec.c	/^regrepeat(p, max)$/
+regset	regcomp.c	/^regset(bits,def,c)$/
+regtail	regcomp.c	/^regtail(p, val)$/
+regtry	regexec.c	/^regtry(prog, string)$/
+repeatcpy	util.c	/^repeatcpy(to,from,len,count)$/
+restorelist	cmd.c	/^restorelist(base)$/
+rninstr	util.c	/^rninstr(big, bigend, little, lend)$/
+safefree	util.c	/^safefree(where)$/
+saferealloc	util.c	/^saferealloc(where,size)$/
+safexfree	util.c	/^safexfree(where)$/
+safexmalloc	util.c	/^safexmalloc(x,size)$/
+safexrealloc	util.c	/^safexrealloc(where,size)$/
+same_dirent	util.c	/^same_dirent(a,b)$/
+saveaptr	cmd.c	/^saveaptr(aptr)$/
+saveary	cmd.c	/^saveary(stab)$/
+savehash	cmd.c	/^savehash(stab)$/
+savehptr	cmd.c	/^savehptr(hptr)$/
+saveint	cmd.c	/^saveint(intp)$/
+saveitem	cmd.c	/^saveitem(item)$/
+savelines	perl.c	/^savelines(array, str)$/
+savelist	cmd.c	/^savelist(sarg,maxsarg)$/
+savelong	cmd.c	/^savelong(longp)$/
+savenostab	cmd.c	/^savenostab(stab)$/
+savesptr	cmd.c	/^savesptr(sptr)$/
+savestr	util.c	/^savestr(str)$/
+scanconst	toke.c	/^scanconst(spat,string,len)$/
+scanhex	util.c	/^scanhex(start, len, retlen)$/
+scanident	toke.c	/^scanident(s,send,dest)$/
+scanoct	util.c	/^scanoct(start, len, retlen)$/
+scanpat	toke.c	/^scanpat(s)$/
+scanstr	toke.c	/^scanstr(s)$/
+scansubst	toke.c	/^scansubst(s)$/
+scantrans	toke.c	/^scantrans(s)$/
+screaminstr	util.c	/^screaminstr(bigstr, littlestr)$/
+set_csh	toke.c	/^set_csh()$/
+setenv	util.c	/^setenv(nam,val)$/
+showinput	dump.c	/^showinput()$/
+sighandler	stab.c	/^sighandler(sig)$/
+skipspace	toke.c	/^skipspace(s)$/
+sortcmp	dolist.c	/^sortcmp(strp1,strp2)$/
+sortsub	dolist.c	/^sortsub(str1,str2)$/
+spat_common	consarg.c	/^spat_common(spat,exprnum,marking)$/
+spat_free	cons.c	/^spat_free(spat)$/
+spat_tosave	cons.c	/^spat_tosave(spat)$/
+stab2arg	consarg.c	/^stab2arg(atype,stab)$/
+stab_array	stab.c	/^ARRAY *stab_array(stab)$/
+stab_check	stab.c	/^stab_check(min,max)$/
+stab_clear	stab.c	/^stab_clear(stab)$/
+stab_fullname	stab.c	/^stab_fullname(str,stab)$/
+stab_hash	stab.c	/^HASH *stab_hash(stab)$/
+stab_len	stab.c	/^stab_len(str)$/
+stab_str	stab.c	/^stab_str(str)$/
+stabent	stab.c	/^stabent(name,add)$/
+stabset	stab.c	/^stabset(mstr,str)$/
+stio_new	stab.c	/^stio_new()$/
+str_2mortal	str.c	/^str_2mortal(str)$/
+str_2num	str.c	/^str_2num(str)$/
+str_2ptr	str.c	/^str_2ptr(str)$/
+str_append_till	str.c	/^str_append_till(str,from,fromend,delim,keeplist)$/
+str_cat	str.c	/^str_cat(str,ptr)$/
+str_chop	str.c	/^str_chop(str,ptr)	\/* like set but assuming ptr is/
+str_cmp	str.c	/^str_cmp(str1,str2)$/
+str_dec	str.c	/^str_dec(str)$/
+str_eq	str.c	/^str_eq(str1,str2)$/
+str_free	str.c	/^str_free(str)$/
+str_get	str.c	/^str_get(str)$/
+str_gets	str.c	/^str_gets(str,fp,append)$/
+str_gnum	str.c	/^double str_gnum(Str)$/
+str_grow	str.c	/^str_grow(str,newlen)$/
+str_inc	str.c	/^str_inc(str)$/
+str_insert	str.c	/^str_insert(bigstr,offset,len,little,littlelen)$/
+str_len	str.c	/^str_len(str)$/
+str_magic	str.c	/^str_magic(str, stab, how, name, namlen)$/
+str_make	str.c	/^str_make(s,len)$/
+str_mortal	str.c	/^str_mortal(oldstr)$/
+str_ncat	str.c	/^str_ncat(str,ptr,len)$/
+str_new	str.c	/^str_new(x,len)$/
+str_nmake	str.c	/^str_nmake(n)$/
+str_nset	str.c	/^str_nset(str,ptr,len)$/
+str_numset	str.c	/^str_numset(str,num)$/
+str_replace	str.c	/^str_replace(str,nstr)$/
+str_reset	str.c	/^str_reset(s,stash)$/
+str_scat	str.c	/^str_scat(dstr,sstr)$/
+str_set	str.c	/^str_set(str,ptr)$/
+str_smake	str.c	/^str_smake(old)$/
+str_sset	str.c	/^str_sset(dstr,sstr)$/
+str_true	str.c	/^str_true(Str)$/
+taintenv	str.c	/^taintenv()$/
+taintproper	str.c	/^taintproper(s)$/
+ucase	str.c	/^ucase(s,send)$/
+uni	toke.c	/^uni(f,s)$/
+unlnk	util.c	/^unlnk(f)	\/* unlink all versions of a file *\/$/
+userinit	usersub.c	/^userinit()$/
+vfprintf	util.c	/^vfprintf(fd, pat, args)$/
+vsprintf	util.c	/^vsprintf(dest, pat, args)$/
+wait4pid	util.c	/^wait4pid(pid,statusp,flags)$/
+warn	util.c	/^warn(pat,a1,a2,a3,a4)$/
+whichsig	stab.c	/^whichsig(sig)$/
+while_io	cons.c	/^while_io(cmd)$/
+wopt	cons.c	/^wopt(cmd)$/
+xstat	util.c	/^xstat()$/
+yyerror	cons.c	/^yyerror(s)$/
+yylex	toke.c	/^yylex()$/
+yyparse	perly.c	/^yyparse() {$/

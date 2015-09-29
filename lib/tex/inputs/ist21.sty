@@ -1,0 +1,39 @@
+% IST21 DOCUMENT-STYPE OPTION -  Wed May 20 17:07:56 BST 1987
+%
+% derived from
+%
+% TITLEPAGE DOCUMENT-STYLE OPTION - released 27 January 1985
+%    for LaTeX version 2.09
+% Copyright (C) 1985 by Leslie Lamport
+%
+% This style option produces a title appropriate for BSI IST/21 documents,
+% and general memos.
+%
+% In addition to the normal \title, \author (will give rise to the
+% source of the document) and \date commands, two further values
+% should be set. These are:
+%
+% \project{Project Reference}
+% The project reference for the document. For example,
+% \project{97.21.23} or \project{97.21.9 Q45}
+%
+% \status{Document Status}
+% For example \status{UK Position} or \status{UK Expert Contribution}
+
+\def\project#1{\def\@project{{#1}}} \project{\em 97.21.NN} 
+\def\status#1{\def\@status{{#1}}}   \status{\em status unset}
+
+\def\maketitle{
+ \setcounter{page}{0}
+ \begin{Large}
+   \begin{description}
+     \item[TITLE:] \@title
+     \item[SOURCE:] \@author
+     \item[DATE:] \@date
+     \item[PROJECT:] \@project
+     \item[STATUS:] \@status
+   \end{description}
+ \end{Large}
+\bigskip
+\null
+}

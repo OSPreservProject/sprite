@@ -1,0 +1,35 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     89.01.11.11.59.00;  author mlgray;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Temporary checkin
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#define flatCursor_width 16
+#define flatCursor_height 16
+#define flatCursor_x_hot 7
+#define flatCursor_y_hot 8
+static short flatCursor_bits[] = {
+   0x0000, 0x1f82, 0x1082, 0x0882,
+   0x0082, 0x0082, 0x0182, 0x3f02,
+   0x6002, 0x4602, 0x4102, 0x4102,
+   0x4102, 0x2302, 0x3cfc, 0x0000};
+@

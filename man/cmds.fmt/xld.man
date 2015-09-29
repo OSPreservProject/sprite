@@ -1,0 +1,68 @@
+
+
+
+XLD                       User Commands                       XLD
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     xld - Convert load files into SPUR format
+
+SSYYNNOOPPSSIISS
+     xxlldd [-_s] _i_n-_f_i_l_e-_n_a_m_e [_o_u_t-_f_i_l_e-_n_a_m_e]
+
+OOPPTTIIOONNSS
+     --ss            Strip load file's symbol table  after  conver-
+                   sion.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This program converts SPUR load files produced by  sas,  the
+     SPUR  assembler, and sld, the SPUR linker/loader, running on
+     a machine other than SPUR into SPUR form.  This  program  is
+     needed  because  the  sas  and sld generate binary using the
+     byte order of the current machine which may differ from that
+     of  SPUR.   If the -s option is specified then the binary is
+     striped. If specified, the  modified  binary  is  placed  in
+     out-file-name.  Otherwise  the  conversion  is  place in in-
+     file-name.
+
+
+KKEEYYWWOORRDDSS
+     SPUR, sld, sas
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0          Printed:  May 5, 1989                     1
+
+
+

@@ -1,0 +1,406 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.6
+date     92.06.05.12.33.43;  author voelker;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     92.03.27.16.11.01;  author voelker;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     92.03.04.16.31.05;  author jhh;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     92.02.27.18.10.07;  author voelker;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     92.02.27.18.09.11;  author voelker;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     92.01.09.14.46.20;  author voelker;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@definition of FDDI address and packet...started from netEther.h
+@
+
+
+1.6
+log
+@fddi support
+@
+text
+@/*
+ * netFDDI.h --
+ *
+ *	This defines the format of an FDDI packet.
+ *
+ * Copyright 1992 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ * $Header: /sprite/src/lib/include/RCS/netFDDI.h,v 1.5 92/03/27 16:11:01 voelker Exp Locker: voelker $
+ */
+
+#ifndef _NETFDDI
+#define _NETFDDI
+
+
+#include "machparam.h"
+
+/*
+ * Compare two FDDI addresses.
+ */
+
+#define	Net_FDDIAddrCmp(e1,e2) Net_FDDIAddrCmpPtr(&e1,&e2)
+
+/*
+ * Compare bytes backward because FDDI addresses tend to start with the
+ * same few bytes.
+ */
+
+#define	Net_FDDIAddrCmpPtr(e1,e2) \
+   (!(((e1)->byte6 == (e2)->byte6) && ((e1)->byte5 == (e2)->byte5) && \
+    ((e1)->byte4 == (e2)->byte4) && ((e1)->byte3 == (e2)->byte3) && \
+    ((e1)->byte2 == (e2)->byte2) && ((e1)->byte1 == (e2)->byte1)))
+
+/*
+ * FDDI Address - 6 bytes
+ */
+
+typedef struct {
+    unsigned char byte1;
+    unsigned char byte2;
+    unsigned char byte3;
+    unsigned char byte4;
+    unsigned char byte5;
+    unsigned char byte6;
+} Net_FDDIAddress;
+
+#define	NET_FDDI_ADDR_BYTE1(e)	((e).byte1)
+#define	NET_FDDI_ADDR_BYTE2(e)	((e).byte2)
+#define	NET_FDDI_ADDR_BYTE3(e)	((e).byte3)
+#define	NET_FDDI_ADDR_BYTE4(e)	((e).byte4)
+#define	NET_FDDI_ADDR_BYTE5(e)	((e).byte5)
+#define	NET_FDDI_ADDR_BYTE6(e)	((e).byte6)
+
+#ifdef sun4
+#define	NET_FDDI_ADDR_COPY(src,dst)	\
+	((dst).byte1 = (src).byte1);	\
+	((dst).byte2 = (src).byte2);	\
+	((dst).byte3 = (src).byte3);	\
+	((dst).byte4 = (src).byte4);	\
+	((dst).byte5 = (src).byte5);	\
+	((dst).byte6 = (src).byte6)
+#else
+#define	NET_FDDI_ADDR_COPY(src,dst) ((dst) = (src))
+#endif
+
+/*
+ * FDDI Header - 16 bytes 
+ */
+
+typedef struct Net_FDDIHdr {
+    unsigned char   prh[3];        /* Packet request headers */
+    unsigned char   frameControl;  /* Frame control byte */
+    Net_FDDIAddress dest;          /* Destination Address of packet */
+    Net_FDDIAddress source;        /* Source Address of packet */
+} Net_FDDIHdr;
+
+#define	NET_FDDI_HDR_DESTINATION(e)	((e).destination)
+#define	NET_FDDI_HDR_SOURCE(e)		((e).source)
+#define	NET_FDDI_HDR_TYPE(e)		((e).type)
+
+#define	NET_FDDI_HDR_DESTINATION_PTR(e)	&((e).destination)
+#define	NET_FDDI_HDR_SOURCE_PTR(e)	&((e).source)
+#define	NET_FDDI_HDR_TYPE_PTR(e)	&((e).type)
+
+#define	NET_FDDI_HDR_COPY(src, dst) ((dst) = (src))
+
+/*
+ * The docs say that the minimum for an LLC packet is 20.
+ */
+#define	NET_FDDI_MIN_BYTES	20
+#define	NET_FDDI_MAX_BYTES	4480
+
+/*
+ * This value is used to distinguish Sprite FDDI packets from other
+ * FDDI packets on the same ring.  This right here is a major kludge
+ * until we can get the Data Link Specification.  This actually is an LLC
+ * of priority 3 frame control, but oh well.  We should be using the Data
+ * Link Specs, but we never got ahold of them.
+ *
+ * This value is placed in the header of each packet in 
+ * netRoute.c:Net_InstallRoute().
+ *
+ * FDDI packets are checked for this value in netDFRecv.c:GotAPacket().
+ */
+
+#define NET_FDDI_SPRITE                 0x53
+
+/*
+ * Definitions of known Ethernet packet types (from rfc990, except for SPRITE
+ * and TRAIL).
+ *
+ * These mean nothing to the FDDI driver until encapsulated ethernet
+ * is attempted.
+ */
+#define NET_FDDI_PUP			0x0200
+#define NET_FDDI_PUP_ADDR_TRANS		0x0201
+#define NET_FDDI_XNS_IDP		0x0600
+#define NET_FDDI_IP			0x0800
+#define NET_FDDI_ARP			0x0806
+#define NET_FDDI_XNS_COMPAT		0x0807
+/* #define NET_FDDI_SPRITE		0x0500 */
+#define NET_FDDI_SPRITE_ARP		0x0502 /* deprecated */
+#define NET_FDDI_SPRITE_DEBUG		0x0504
+#define NET_FDDI_TRAIL			0x1000
+#define NET_FDDI_REVARP			0x8035
+#define NET_FDDI_MOP			0x6001
+
+#endif /* _NETFDDI */
+
+
+
+
+@
+
+
+1.5
+log
+@updated to fit in with the new net stuff, and changed the polarity of
+Net_FDDIAddrCmp[Ptr]...
+
+@
+text
+@a5 10
+ *	
+ * 	The symbol NET_ETHER_BAD_ALIGNMENT must defined for machines that
+ *	pad or otherwise mess up the layout of the Net_EtherHdr structure.
+ *	This must be defined for machines such as the SPUR where structures
+ *	are padded to 4 byte boundries.  To test a machine to see if 
+ *	NET_ETHER_BAD_ALIGNMENT is needed, check sizeof(Net_EtherHdr).  If
+ *	this number is anything other than the size of an ethernet header 
+ *	(14 bytes), NET_ETHER_BAD_ALIGNMENT must be defined in the 
+ *	machparam.h file for the machine.
+ *
+d16 1
+a16 1
+ * $Header: /sprite/src/lib/include/RCS/netFDDI.h,v 1.4 92/03/04 16:31:05 jhh Exp Locker: voelker $
+a24 1
+#ifdef NEW_NET
+a28 2
+#ifndef NET_FDDI_BAD_ALIGNMENT
+
+a40 40
+#else 	/* NET_FDDI_BAD_ALIGNMENT */
+
+
+#define	Net_FDDIAddrCmp(e1,e2) (bcmp((e1),(e2), sizeof(Net_FDDIAddress)))
+
+#define	Net_FDDIAddrCmpPtr(e1Ptr,e2Ptr) Net_FDDIAddrCmp(*(e1Ptr),*(e2Ptr))
+
+#endif /* NET_FDDI_BAD_ALIGNMENT */
+
+#else /* NEW_NET */
+
+/*
+ * Compare two FDDI addresses.
+ */
+
+#ifndef NET_FDDI_BAD_ALIGNMENT
+
+#define	NET_FDDI_COMPARE(e1,e2) NET_FDDI_COMPARE_PTR(&e1,&e2)
+
+/*
+ * Compare bytes backward because FDDI addresses tend to start with the
+ * same few bytes.
+ */
+
+#define	NET_FDDI_COMPARE_PTR(e1,e2) \
+   (((e1)->byte6 == (e2)->byte6) && ((e1)->byte5 == (e2)->byte5) && \
+    ((e1)->byte4 == (e2)->byte4) && ((e1)->byte3 == (e2)->byte3) && \
+    ((e1)->byte2 == (e2)->byte2) && ((e1)->byte1 == (e2)->byte1))
+
+#else 	/* NET_FDDI_BAD_ALIGNMENT */
+
+
+#define	NET_FDDI_COMPARE(e1,e2) (bcmp((e1),(e2), sizeof(Net_FDDIAddress))==0)
+
+#define	NET_FDDI_COMPARE_PTR(e1Ptr,e2Ptr) NET_FDDI_COMPARE(*(e1Ptr),*(e2Ptr))
+
+#endif /* NET_FDDI_BAD_ALIGNMENT */
+
+#endif /* NEW_NET */
+
+d42 1
+a42 1
+ * Ethernet Address - 6 bytes
+a43 1
+#ifndef NET_FDDI_BAD_ALIGNMENT
+d73 2
+a74 18
+#else 
+
+typedef unsigned char Net_FDDIAddress[6];
+
+#define	NET_FDDI_ADDR_BYTE1(e)	((e)[0])
+#define	NET_FDDI_ADDR_BYTE2(e)	((e)[1])
+#define	NET_FDDI_ADDR_BYTE3(e)	((e)[2])
+#define	NET_FDDI_ADDR_BYTE4(e)	((e)[3])
+#define	NET_FDDI_ADDR_BYTE5(e)	((e)[4])
+#define	NET_FDDI_ADDR_BYTE6(e)	((e)[5])
+
+#define	NET_FDDI_ADDR_COPY(src,dst) \
+			(bcopy((src),(dst),sizeof(Net_FDDIAddress)))
+
+#endif /* NET_FDDI_BAD_ALIGNMENT */
+
+/*
+ * Ethernet Header.- 14 bytes 
+a76 2
+#ifndef NET_FDDI_BAD_ALIGNMENT
+
+a93 16
+#else 
+
+typedef unsigned char Net_FDDIHdr[14];
+
+#define	NET_FDDI_HDR_DESTINATION(e)	((unsigned char *) (e))
+#define	NET_FDDI_HDR_SOURCE(e)		((unsigned char *) (e+6))
+#define	NET_FDDI_HDR_TYPE(e)		(*((unsigned short *) (e+12)))
+
+#define	NET_FDDI_HDR_DESTINATION_PTR(e)	((unsigned char *) (e))
+#define	NET_FDDI_HDR_SOURCE_PTR(e)	((unsigned char *) (e+6))
+#define	NET_FDDI_HDR_TYPE_PTR(e)	(*((unsigned short *) (e+12)))
+
+#define	NET_FDDI_HDR_COPY(src, dst) (bcopy(src,dst,sizeof(Net_FDDIHdr)))
+
+#endif /* NET_FDDI_BAD_ALIGNMENT */
+
+d101 10
+a110 3
+ * This right here is a major kludge until we can get the Data Link
+ * Specification.  This actually is an LLC of priority 3 frame control,
+ * but oh well.
+d112 1
+d118 3
+d123 1
+a123 1
+#define NET_FDDI_PUP_ADDR_TRANS	0x0201
+d132 1
+a132 1
+#define NET_FDDI_REVARP		0x8035
+@
+
+
+1.4
+log
+@prettied up some of the identifiers
+@
+text
+@d26 1
+a26 1
+ * $Header: /sprite/src/lib/include/RCS/netFDDI.h,v 1.3 92/02/27 18:10:07 voelker Exp Locker: jhh $
+d50 1
+a50 1
+   (((e1)->byte6 == (e2)->byte6) && ((e1)->byte5 == (e2)->byte5) && \
+d52 1
+a52 1
+    ((e1)->byte2 == (e2)->byte2) && ((e1)->byte1 == (e2)->byte1))
+@
+
+
+1.3
+log
+@definition of FDDI addresses and the FDDI header, plus macros
+to manipulate them
+@
+text
+@d26 1
+a26 1
+ * $Header: /sprite/src/lib/include/RCS/netFDDI.h,v 1.2 92/02/27 18:09:11 voelker Exp Locker: voelker $
+d42 1
+a42 1
+#define	Net_FddiAddrCmp(e1,e2) Net_FddiAddrCmpPtr(&e1,&e2)
+d49 1
+a49 1
+#define	Net_FddiAddrCmpPtr(e1,e2) \
+d57 1
+a57 1
+#define	Net_FddiAddrCmp(e1,e2) (bcmp((e1),(e2), sizeof(Net_FDDIAddress)))
+d59 1
+a59 1
+#define	Net_FddiAddrCmpPtr(e1Ptr,e2Ptr) Net_FddiAddrCmp(*(e1Ptr),*(e2Ptr))
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d26 1
+a26 1
+ * $Header: /sprite/src/lib/include/RCS/netFDDI.h,v 1.1 92/01/09 14:46:20 voelker Exp Locker: voelker $
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d26 1
+a26 1
+ * $Header$
+d34 31
+d92 1
+a93 1
+
+d149 5
+a153 4
+typedef struct {
+	Net_FDDIAddress destination;
+	Net_FDDIAddress source;
+	unsigned short   type;		/* valid types defined below */
+d183 1
+a183 3
+ * Minimum and maximum packet sizes. The maximum is actually 1518, but
+ * for some reason it is set here to 1514.  I wouldn't change it unless
+ * you're sure you won't break something in the kernel. JHH
+d185 2
+d188 6
+a193 2
+#define	NET_FDDI_MIN_BYTES	64
+#define	NET_FDDI_MAX_BYTES	1514
+d196 1
+a196 1
+ * Definitions of known FDDI packet types (from rfc990, except for SPRITE
+d205 1
+a205 1
+#define NET_FDDI_SPRITE		0x0500
+@

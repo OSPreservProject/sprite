@@ -1,0 +1,331 @@
+head     1.13;
+branch   ;
+access   ;
+symbols  srv030:1.13 srv028:1.12 srv027:1.12 srv026:1.12 srv024:1.12 srv022:1.12 srv021:1.12 srv019:1.12 srv018:1.12 srv016:1.12 srv015:1.12 srv014:1.12 srv012:1.12 srv011:1.12 srv010:1.12 srv008:1.12 srv007:1.12 srv006:1.12 srv005:1.12 srv004:1.12 srv003:1.11 srv002:1.10 srv001:1.9;
+locks    ; strict;
+comment  @ * @;
+
+
+1.13
+date     92.07.16.18.04.52;  author kupfer;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     92.05.08.12.54.08;  author kupfer;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     92.04.29.21.39.18;  author kupfer;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     92.04.23.23.33.44;  author kupfer;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     92.01.21.17.07.35;  author kupfer;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     91.12.18.23.33.28;  author kupfer;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     91.11.14.10.03.18;  author kupfer;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     91.10.04.11.37.53;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.09.24.16.34.49;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.09.02.22.56.10;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.09.01.21.02.58;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.08.19.12.17.27;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.08.15.15.52.02;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Internal declarations for the Sprite VM module.
+@
+
+
+1.13
+log
+@Add support for VM_DO_COPY_IN_INBAND and VM_DO_COPY_OUT_INBAND VM
+commands.
+@
+text
+@/*
+ * vmInt.h --
+ *
+ *	Internal declarations for the Sprite VM module.
+ *
+ * Copyright 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmInt.h,v 1.12 92/05/08 12:54:08 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+ */
+
+#ifndef _VMINT
+#define _VMINT
+
+#include <sprite.h>
+#include <mach.h>
+#include <fs.h>
+#include <user/fs.h>
+#include <procTypes.h>
+#include <vmTypes.h>
+
+extern Boolean vmRequestDebug;
+
+extern ReturnStatus VmAddrParse _ARGS_((Proc_ControlBlock *procPtr,
+			Address startAddr, int *numBytesPtr,
+			Vm_Segment **segPtrPtr, vm_offset_t *offsetPtr));
+extern void	VmCleanSegPages _ARGS_((Vm_Segment *segPtr,
+			Boolean writeProtect, vm_size_t numBytes,
+			Boolean fromFront));
+extern ReturnStatus VmCmdInband _ARGS_((int command, int option, 
+			int inBufLength, Address inBuf, int *outBufLengthPtr, 
+			Address *outBufPtr, Boolean *outBufDeallocPtr));
+extern void	VmFreeFileMap _ARGS_((VmFileMap *mapPtr));
+extern ReturnStatus VmGetAttrStream _ARGS_((Fs_Stream *streamPtr, 
+			Fs_Attributes *attrPtr));
+extern char	*VmMakeSwapFileName _ARGS_((Vm_Segment *segPtr));
+extern VmFileMap *VmNewFileMap _ARGS_((vm_size_t bytes));
+extern ReturnStatus VmOpenSwapFile _ARGS_((Vm_Segment *segPtr));
+extern void	VmPagerInit _ARGS_((void));
+extern VmMappedSegment *VmSegByName _ARGS_((List_Links *segmentList, 
+			mach_port_t segmentName));
+extern char	*VmSegStateString _ARGS_((Vm_SegmentState state));
+extern ReturnStatus VmSegmentCopy _ARGS_((VmMappedSegment *mappedSegPtr,
+			Vm_Segment **copySegPtrPtr));
+extern void	VmSegmentInit _ARGS_((void));
+extern void	VmSegmentLock _ARGS_((Vm_Segment *segPtr));
+extern void	VmSegmentUnlock _ARGS_((Vm_Segment *segPtr));
+
+#endif /* _VMINT */
+@
+
+
+1.12
+log
+@Use vm_read and vm_write to copy heap/stack segments, rather than
+using the memory_object interface.
+@
+text
+@d15 1
+a15 1
+ * $Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmInt.h,v 1.11 92/04/29 21:39:18 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d36 3
+@
+
+
+1.11
+log
+@Allow for cleaning of only part of a segment.
+@
+text
+@d15 1
+a15 1
+ * $Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmInt.h,v 1.10 92/04/23 23:33:44 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+a32 2
+extern ReturnStatus VmCopySwapFile _ARGS_((VmMappedSegment *fromSegPtr,
+			Vm_Segment *toSegPtr));
+d39 1
+d41 1
+a41 1
+extern ReturnStatus VmOpenSwapFile _ARGS_((register Vm_Segment *segPtr));
+@
+
+
+1.10
+log
+@Add writeProtect argument to VmFlushSegPages.
+@
+text
+@d15 1
+a15 1
+ * $Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmInt.h,v 1.9 92/01/21 17:07:35 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d35 3
+a37 2
+extern void	VmFlushSegPages _ARGS_((Vm_Segment *segPtr,
+			Boolean writeProtect));
+@
+
+
+1.9
+log
+@Change VM code to use Sprite FS instead of UNIX.  
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmInt.h,v 1.8 91/12/18 23:33:28 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d35 2
+a36 1
+extern void	VmFlushSegPages _ARGS_((Vm_Segment *segPtr));
+@
+
+
+1.8
+log
+@Add printf tracing for general processing of VM requests.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmInt.h,v 1.7 91/11/14 10:03:18 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d23 2
+d37 2
+a38 1
+extern void	VmMakeSwapName _ARGS_((Vm_Segment *segPtr, char *fileName));
+a47 1
+extern void	VmSegmentCleanup _ARGS_((Vm_Segment *segPtr));
+@
+
+
+1.7
+log
+@Snapshot. net, rpc, recov modules added.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmInt.h,v 1.6 91/10/04 11:37:53 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d25 2
+@
+
+
+1.6
+log
+@Snapshot.  fork/exec work.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmInt.h,v 1.5 91/09/24 16:34:49 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d34 1
+a34 1
+extern VmFileMap *VmNewFileMap _ARGS_((int bytes));
+@
+
+
+1.5
+log
+@Add VmAddrParse.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmInt.h,v 1.4 91/09/02 22:56:10 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d29 2
+d37 2
+d40 2
+@
+
+
+1.4
+log
+@Changes for module-based source organization.
+@
+text
+@d15 1
+a15 1
+ * $Header: /user6/kupfer/spriteserver/src/sprited/vm/RCS/vmInt.h,v 1.3 91/09/01 21:02:58 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d23 1
+d26 3
+@
+
+
+1.3
+log
+@Snapshot.  Full VM support.
+@
+text
+@d15 1
+a15 1
+ * $Header: /user6/kupfer/spriteserver/src/printfd/RCS/vmInt.h,v 1.2 91/08/19 12:17:27 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d23 1
+a23 1
+#include "vmTypes.h"
+@
+
+
+1.2
+log
+@Snapshot: Code reorg. and locking for processes & segments.
+@
+text
+@d15 1
+a15 1
+ * $Header: /user6/kupfer/spriteserver/src/printfd/RCS/vmInt.h,v 1.1 91/08/15 15:52:02 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d21 1
+d25 11
+a35 12
+extern void VmFlushSegPages _ARGS_((Vm_Segment *segPtr));
+extern void VmPagerInit _ARGS_((void));
+extern char *VmSegStateString _ARGS_((Vm_SegmentState state));
+extern void VmSegmentInit _ARGS_((void));
+extern void VmSegmentCleanup _ARGS_((Vm_Segment *segPtr));
+extern ReturnStatus VmSegmentFromFile _ARGS_((char *fileName,
+					      Vm_Segment **segPtrPtr));
+extern void VmSegmentListAdd _ARGS_((Vm_SegmentLink *linkPtr,
+				     List_Links *listPtr));
+extern void VmSegmentListRelease _ARGS_((List_Links *listPtr));
+extern void VmSegmentLock _ARGS_((Vm_Segment *segPtr));
+extern void VmSegmentUnlock _ARGS_((Vm_Segment *segPtr));
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.7 91/02/09 13:24:52 ouster Exp $ SPRITE (Berkeley)
+d25 1
+a25 1
+extern void VmLockSegment _ARGS_((Vm_Segment *segPtr));
+a30 1
+extern Vm_Segment *VmSegmentFromPort _ARGS_((mach_port_t port));
+d34 2
+a35 2
+extern void VmSegmentRelease _ARGS_((Vm_Segment *segmentPtr));
+extern void VmUnlockSegment _ARGS_((Vm_Segment *segPtr));
+@

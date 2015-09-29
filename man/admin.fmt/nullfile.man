@@ -1,0 +1,68 @@
+
+
+
+<NULLFILE>                User Commands                <NULLFILE>
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     nullfile - Create a file full of null characters.
+
+SSYYNNOOPPSSIISS
+     nnuullllffiillee _f_i_l_e _c_o_u_n_t
+
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This command fills the file _f_i_l_e with _c_o_u_n_t null  characters
+     ('\0').  If the file does not exist it is created.
+
+KKEEYYWWOORRDDSS
+     file
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  February 28, 1989                  1
+
+
+

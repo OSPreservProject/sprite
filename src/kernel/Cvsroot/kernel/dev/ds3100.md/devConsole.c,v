@@ -1,0 +1,166 @@
+head     9.0;
+branch   ;
+access   ;
+symbols  ds3100:9.0 sun3:9.0 sun4nw:9.0 symm:9.0 spur:9.0 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.0
+date     89.09.12.15.02.22;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     89.07.27.10.36.31;  author nelson;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.26.20.02.36;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Converted over to new tty driver.
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@/* 
+ * devConsole.c --
+ *
+ *	This module provides a routine to output characters onto the
+ *	console.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/ds3100.md/RCS/devConsole.c,v 1.2 89/07/27 10:36:31 nelson Exp Locker: douglis $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include "sprite.h"
+#include "dev.h"
+#include "tty.h"
+#include "graphics.h"
+#include "dc7085.h"
+
+Boolean	devDivertXInput = FALSE;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevConsoleRawProc --
+ *
+ *	This procedure is invoked from the Td module to handle control
+ *	requests on the raw side of the console.  This procedure is
+ *	special because output to the console is not transmitted on
+ *	a serial line:  it gets drawn directly on the screen by calling
+ *	a procedure in the boot ROM.
+ *
+ * Results:
+ *	The return value is the number of bytes returned to the caller
+ *	at outBuffer.
+ *
+ * Side effects:
+ *	Depends on the control operation.  Most likely effect is to
+ *	draw data on the screen.
+ *
+ *----------------------------------------------------------------------
+ */
+/* ARGSUSED */
+int
+DevConsoleRawProc(dcPtr, operation, inBufSize, inBuffer, outBufSize, outBuffer)
+    register DevDC7085 *dcPtr;	/* Information about keyboard device. */
+    int operation;		/* What to do:  TD_RAW_OUTPUT_READY etc. */
+    int inBufSize;		/* Size of input buffer for operation. */
+    char *inBuffer;		/* Input buffer. */
+    int outBufSize;		/* Size of output buffer for operation. */
+    char *outBuffer;		/* Output buffer. */
+{
+    int c;
+
+    if (operation != TD_RAW_OUTPUT_READY) {
+	return 0;
+    }
+    while (TRUE) {
+	/*
+	 * Note:  must call DevTtyOutputChar directly, rather than calling
+	 * indirectly through dcPtr->outputProc:  dcPtr->outputProc must point
+	 * to a dummy procedure so the DC7850 interrupt handler won't grab
+	 * characters and output them to the keyboard.
+	 */
+	c = DevTtyOutputChar(dcPtr->ttyPtr);
+	if (c == -1) {
+	    break;
+	}
+	Dev_GraphicsPutc(c);
+    }
+    return 0;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_ConsoleReset --
+ *
+ *	Change where keyboard input goes.  TRUE => it will go to the normal
+ *	console input routines.  FALSE => means that it will go back to X
+ *	if X is using it.
+ *
+ * Results:
+ *	The return value is the number of bytes returned to the caller
+ *	at outBuffer.
+ *
+ * Side effects:
+ *	Depends on the control operation.  Most likely effect is to
+ *	draw data on the screen.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Dev_ConsoleReset(keyboardMode)
+    Boolean	keyboardMode;
+{
+    devDivertXInput = keyboardMode;
+}
+@
+
+
+1.2
+log
+@Changed from F13 to F1, added timeouts, and made X do all of the call backs.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/ds3100.md/RCS/devConsole.c,v 1.1 89/07/26 20:02:36 nelson Exp $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devConsole.c,v 1.3 89/07/21 13:55:45 ouster Exp $ SPRITE (Berkeley)";
+d27 2
+d80 27
+@

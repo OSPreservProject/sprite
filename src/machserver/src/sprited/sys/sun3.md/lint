@@ -1,0 +1,8 @@
+sysCalls.c:
+sysCode.c:
+sysPrintf.c:
+sysTestCall.c:
+spriteSrvServer.c:
+sysSysCall.c:
+printf value declared inconsistently	sysPrintf.c(126)  ::  sysTestCall.c 2(311)
+printf value declared inconsistently	sysPrintf.c(126)  ::  sysSysCall.c 2(797)

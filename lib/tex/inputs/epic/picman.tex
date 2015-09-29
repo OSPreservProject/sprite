@@ -1,0 +1,858 @@
+% Copyright (C) podar@sbcs (Sunil Podar) July 14,1986.
+\documentstyle[11pt,fleqn,epic,misc]{article}
+% Archiver's note: I commented the following out to get a standard
+% page layout. You will get overfull hboxes though. [KY]
+%\setlength{\topmargin}{1cm}
+%\setlength{\headheight}{1cm}
+%\setlength{\footskip}{2cm}
+%\setlength{\oddsidemargin}{1in}
+%\setlength{\textwidth}{6.5in}
+%\setlength{\textheight}{8.5in}
+%\setlength{\parindent}{0pt}
+\setlength{\unitlength}{1mm}
+\parskip=6pt plus 1pt minus 1pt
+\itemsep=0pt
+\renewcommand{\baselinestretch}{1.3}
+\newcommand{\bs}{\char '134 }  % A backslash char for \tt font
+\newcommand{\lb}{\char '173 }  % A left brace char for \tt font
+\newcommand{\rb}{\char '175 }  % A right brace char for \tt font
+\newcommand{\plotchar}{\makebox(0,0){\large $\otimes$}}
+\pagestyle{plain}
+\begin{document}
+\thispagestyle{empty}
+\begin{center}
+{\Large\bf Enhancements to the Picture Environment of \LaTeX}
+\end{center}
+
+\vspace*{0.5in}
+\begin{center}
+\begin{it}
+Sunil Podar\\
+Dept. of Computer Science\\
+S.U.N.Y. at Stony Brook\\
+Technical Report 86-17\\[3mm]
+Version 1.2: July 14, 1986.
+\end{it}
+\end{center}
+
+\vspace*{1.3in}
+\begin{center}
+{\bf Abstract}
+\end{center}
+
+{\renewcommand{\baselinestretch}{1.5} \small\normalsize
+\begin{quote}
+This document describes some new commands for the picture environment of
+\LaTeX. Some of the picture drawing commands of
+\LaTeX\ are very low-level. New higher-level commands are implemented and
+described here. These commands enhance the graphic capabilities of
+\LaTeX\ and provide a friendlier and more powerful user
+interface than currently existent. Their implementation has been done
+with the aim of reducing the amount of
+manual calculations required to specify the layout of {\it objects}.
+With the addition of the commands described in this document, it should be
+possible to draw
+more sophisticated pictures with lesser effort than was previously possible.
+\end{quote}
+}
+
+\newpage
+\setcounter{page}{1}
+\section*{Enhancements to the Picture Environment of \LaTeX}
+
+\bigskip
+\section{Introduction}
+
+
+\LaTeX\ provides a reasonably powerful picture drawing capability.
+There are many useful commands provided although the
+user-interface has room for improvement. The commands described
+in this document aim to achieve a simpler and more powerful interface.
+
+Most picture drawing commands require explicit specification of coordinates
+for every {\it object\/}. Although explicit coordinates is the basis of the
+picture environment, it is possible to provide higher level commands which
+reduce the amount of coordinates that need to be manually calculated. There
+are basically two approaches that can be taken in designing such commands:
+%
+\begin{itemize}
+\item providing ability to specify a set of objects such that
+the entire set can be plotted by specifying one or two coordinate pairs;
+\verb|\shortstack| command falls into this category.
+
+\item providing commands that do most of the computation internally and
+require simple coordinate pairs to be specified; \verb|\multiput| command is
+one example of this approach.
+
+\end{itemize}
+
+The obvious advantage of having commands that fall into the above categories
+is that not only they are easier to specify initially, but any subsequent
+modification to the layout requires minimal recalculations. For instance, to
+modify the coordinates in a \verb|\multiput| statement plotting $n$ objects
+requires recalculation of at most 4 coordinates, whereas the equivalent
+\verb|\put| statements may require upto $2n$ calculations and/or
+recalculations.
+
+Another frequently used command, \verb|\line| has severe limitations and
+drawbacks. The
+arguments that the \verb|\line| command expects are very non-intuitive and
+requires extensive calculations --- often the thought process in writing a
+\verb|\line| command involves:
+\begin{enumerate}
+\item calculating the coordinates of the two end-points.
+\item calculating the horizontal and vertical distance.
+\item figuring out if the desired slope is available and if not then
+repeating steps 1 and 2 till a satisfactory slope is achieved.
+\item translating above into an (x,y) pair for specifying a slope and a
+horizontal distance for specifying the length of the line.
+\end{enumerate}
+
+Above mechanism is a cumbersome way of specifying a line. It also has the
+drawback that the length of the shortest line of different slopes that
+can be drawn is different; for instance, assuming \verb|\unitlength=1pt|,
+\verb|\line(1,6){10}| is the shortest line of the given slope that can be
+drawn; it is considerably longer than the available line segment of this
+slope --- 60.8pt rather than about 11pt. It should be emphasized that this
+is a drawback of only the implementation of the \verb|\line|
+command and is not an inherent limitation. This report describes a few line
+drawing commands all of which overcome such a drawback, while providing a
+simpler syntax. They all take, as arguments, only the coordinates of the
+end-points, thus eliminating all other steps involved in specifying a
+line; it also seems to be a natural way of perceiving a line in an
+environment where all the work is done in terms of coordinates.
+
+A few new commands are developed and described in this report. They provide
+a simpler syntax and a higher-level user-interface. Also some of the commands
+permit one to plot objects that were previously cumbersome or difficult to
+plot. All existing commands still remain accessible. With the new
+commands it should now be possible to make pictures with less effort and
+make more sophisticated pictures than was possible earlier.
+
+\section{Commands}
+
+Following commands are described here:
+\begin{verbatim}
+     \multiputlist     \dottedline     dottedjoin environment     \jput
+     \matrixput        \dashline       dashjoin environment       \picsquare
+     \grid             \drawline       drawjoin environment       \putfile
+\end{verbatim}
+
+All the examples in the following sections have been plotted with
+\verb|\unitlength = 1mm|.
+
+\subsection{{\tt \bs}multiputlist}
+
+{\tt SYNOPSIS:\\
+\hspace*{\leftmargin}%
+\bs multiputlist($x$,$y$)($\Delta x$,$\Delta y$)[tbrl]%
+\lb{\it item1},{\it item2},{\it item3},\ldots,{\it itemN}\rb}
+
+This command is a variation of the regular \LaTeX\ command \verb|\multiput|.
+The \verb|\multiput| command permits one to put the {\it same\/} object
+at regularly spaced coordinates. Often one wishes to put {\it different\/}
+objects at coordinates that have regular increments -- \verb|\multiputlist|
+command can be used in those cases. This command enables one to specify a
+collection of objects with a single command thus simplifying the task of
+calculating coordinates. All those objects may also be plotted separately
+using \verb|\put| commands, but any future revision of those coordinates
+may involve lot of manual work. This command also encourages certain
+regularity and symmetry in laying out various objects in a picture.
+
+In the \verb|\multiputlist|, as the coordinates are incremented, the objects
+to be put are picked up from the {\it list of items\/},
+i.e., first item in first position, second item in second position, and so on.
+For example, numbers along the X-axis in a graph may be plotted by simply
+specifying:\\[2mm]
+\hspace*{\leftmargin}%
+\verb|\multiputlist(0,0)(10,0){1.00,1.25,1.50,1.75,2.00}| \\[2mm]
+This is almost equivalent to the sequence:
+\begin{quote}
+\begin{verbatim}
+\put(0,0){1.00}
+\put(10,0){1.25}
+\put(20,0){1.50}
+\put(30,0){1.75}
+\put(40,0){2.00}
+\end{verbatim}
+\end{quote}
+
+The difference is that each {\it item\/} is put in a
+\verb|\makebox(0,0)[tbrl]{...}| kind of construction which 
+allows the specification of
+the reference point of the box containing the item. The \verb|[tbrl]|
+is optional and its absence makes the item centered at the specified
+coordinate. Note that \verb|\put| command does not have such an option.
+
+The objects in the {\it list\/} can be virtually anything including any
+\verb|\makebox|, \verb|\framebox|, math characters, etc. This command can be
+usefully employed in a situation where a variety of objects are
+to be put at coordinates that have a regular increment along the x-axis and
+the y-axis.
+
+Few comments about \verb|\multiputlist| command:
+
+\begin{itemize}
+\item Individual items have to be grouped in \verb|{}| if they contain ``,''s.
+
+\item In the list of items, blanks are not ignored (of course, consecutive
+blanks are coalesced into one, as always). For a list of items longer than a
+line of input, put a \% at the end in order to nullify the newline if a
+blank is not intended to be a part of the item.
+
+\item Specifying individual items in a list format provides a powerful
+mechanism for specifying a variety of objects in a single command.
+Moreover, often real numbers need to be plotted and
+it is nontrivial to generate real numbers or otherwise
+handle them in \TeX; they need to be explicitly specified as {\it objects} in
+the desired format.
+The \verb|\multiputlist| command somewhat simplifies such a task.
+
+\item The implementation of \verb|\multiputlist| uses two macros derived from
+the ones given in the \TeX book, namely, \verb|\lop| and \verb|\lopoff| for
+list-manipulation.
+\end{itemize}
+
+\subsection{{\tt \bs}matrixput}
+{\tt SYNOPSIS:\\
+\hspace*{\leftmargin}%
+\bs matrixput($x$,$y$)($\Delta x_1$,$\Delta y_1$)\lb $n_1$\rb
+($\Delta x_2$,$\Delta y_2$)\lb $n_2$\rb \lb {\it object}\rb}
+
+Above command is the two-dimensional equivalent of the regular \LaTeX\ command
+\verb|\multiput|. The \verb|\matrixput| command is equivalent to:
+
+\begin{quote}
+{\tt \bs multiput($x$,$y$)%
+($\Delta x_2$,$\Delta y_2$)\lb $n_2$\rb\lb {\it object}\rb}\\
+{\tt \bs multiput($x + \Delta x_1$,$y + \Delta y_1$)%
+($\Delta x_2$,$\Delta y_2$)\lb $n_2$\rb\lb {\it object}\rb}\\
+\ldots\\
+{\tt \bs multiput($x + n_1 \Delta x_1$,$y + n_1\Delta y_1$)%
+($\Delta x_2$,$\Delta y_2$)\lb $n_2$\rb\lb {\it object}\rb}
+\end{quote}
+
+However, it is more efficient to use \verb|\matrixput| than the equivalent
+$n_1$ \verb|\multiput| statements; first the objects along the dimension with
+larger index are saved in a box and subsequently the box is copied along the
+other dimension, resulting in a $O(n_1 + n_2)$ execution time rather than
+$O(n_1*n_2)$ which would be the case with the equivalent \verb|\multiput|
+statements. This command can be useful in making pictures where a pattern is
+repeated at regular intervals in two dimensions, such as certain kinds
+of transition diagrams. An illustration of the \verb|\matrixput| command is
+presented below.
+
+\begin{center}
+\unitlength = 1mm
+\begin{picture}(155,35)(0,-8)
+\thicklines
+\matrixput(0,0)(10,0){6}(0,10){3}{\circle{4}}
+\matrixput(2,0)(10,0){5}(0,10){3}{\line(1,0){6}}
+\matrixput(0,2)(10,0){6}(0,10){2}{\line(0,1){6}}
+\put(60,10){\makebox(0,0)[l]{\tt \shortstack[l]{%
+\bs matrixput(0,0)(10,0)\lb 6\rb (0,10)\lb 3\rb\lb\bs circle\lb
+4\rb\rb\\[3mm]
+\bs matrixput(2,0)(10,0)\lb 5\rb (0,10)\lb 3\rb\lb\bs line(1,0)\lb
+6\rb\rb\\[3mm]
+\bs matrixput(0,2)(10,0)\lb 6\rb (0,10)\lb 2\rb\lb\bs line(0,1)\lb 6\rb\rb
+}}}
+\end{picture}
+\end{center}
+
+Note: The \verb|\matrixput| command does not restrict the $\Delta x$'s and
+the $\Delta y$'s to be zero. The {\it matrix} of {\it objects} can be
+``skewed'', i.e., with nonzero $\Delta x$'s and/or $\Delta y$'s.
+
+\subsection{{\tt \bs}grid}
+
+{\tt SYNOPSIS:\\
+\hspace*{\leftmargin}%
+\bs grid({\it width},{\it height})($\Delta width$,$\Delta height$)%
+[{\it initial-X-integer},{\it initial-Y-integer}]}
+
+For example, the following are all valid commands:
+
+\begin{quote}
+\begin{verbatim}
+\put(0,0){\grid(95,100)(9.5,10)}
+\put(0,0){\grid(100,100)(10,5)[-10,0]}
+\put(0,0){\tiny \grid(100,100)(5,5)[0,0]} % the numbers in \tiny font.
+\put(50,50){\makebox(0,0){\tiny \grid(20,20)(4,4)}}
+\end{verbatim}
+\end{quote}
+
+The \verb|\grid| command makes a grid of size {\it width\/} units by {\it
+height\/} units where vertical lines are drawn at intervals of $\Delta width$
+and horizontal lines at intervals of $\Delta height$. The major motivation
+for this command is that making a grid in the picture initially can be
+very useful when laying out pictures -- it's like having a graph underneath
+the picture which can be eventually deleted or commented out. Moreover, one
+might actually want a grid as an object in its own right! Figure~1 (on page
+14) presents an example of this command.
+
+The {\it width\/} and {\it height\/} should be divisible by their respective
+$\Delta$'s, otherwise the grid will not be of correct dimensions. The numbers
+in \verb|[ ]| at the end are optional. Their absence makes a simple grid with
+lines. Their presence makes a ``numbered'' grid with integers around the
+borders where the numbers put have the starting value as specified in
+\verb|[. , .]| argument and are incremented by $\Delta width$ and $\Delta
+height$ respectively. If specified, then these starting numbers must be
+integers. The dimensions are all in units and do not have to be integers,
+although in most cases one will want integers only. There is an additional
+constraint when plotting a ``numbered'' grid --- the
+\mbox{``$\Delta$''-dimensions} have to be integers, since one cannot easily
+generate real numbers from within \TeX. None of the errors of this kind are
+caught, hence, if the grid comes out funny, one of the above-mentioned
+conditions may have been violated.
+
+The \verb|\grid| command produces a box and thus needs to be \verb|\put| at
+the required coordinates. The reference point of the grid is the bottom-left
+corner and the numbers along the borders, if any, do not affect the reference
+point. If it is desired to have another reference point, then the whole grid
+statement may be put in a \verb|\makebox(0,0)[..]{...\grid...}| kind of
+construction.
+
+\subsection{{\tt \bs}dottedline}
+
+{\tt SYNOPSIS:\\
+\hspace*{\leftmargin}%
+\bs dottedline[{\it optional dotcharacter}]\lb {\it dotgap in units}\rb%
+($x_1$,$y_1$)($x_2$,$y_2$)\ldots($x_n$,$y_n$)}
+
+The above command connects the specified points by drawing a dottedline
+between each pair of coordinates. At least two points must be
+specified. The dotted line is drawn with inter-dot gap as specified in the
+second argument (in unitlengths). Note that since integral number of dots
+have to be plotted, the interdot-gap may not necessarily be exactly as
+specified, but very close. It really doesn't matter in visual appearance
+except when the length of dottedline is very small. By default, a little
+square (\verb|\picsquare|, described later) is used as the dot, and can be
+changed by optionally specifying another character. The thickness of dots is
+governed by currently effective \verb|\thinlines|, \verb|\thicklines| or
+\verb|\linethickness...| declaration when the default character is used. Note
+that some characters such as ``*'' in roman font do not come out centered,
+although most other characters do.
+
+One can obtain a {\it solid line\/} by specifying a very small inter-dot gap.
+Since \LaTeX\ provides for only finite number of slopes for drawing lines,
+this gives a general way of making lines with arbitrary slopes. However, if
+{\it solid lines\/} are made using above technique, there is a good chance
+\TeX\ will run out of memory, hence it is suggested that this command be used
+only for ``dotted'' lines. Another, much more efficient, way of making solid
+lines is described later in the section on \verb|\drawline|.
+
+Each ``dot'' in the dottedline is plotted as a centered object, including
+those at the end points. Thus, a dottedline with a large-sized {\it
+dotcharacter\/} may appear to be longer although, technically speaking,
+correct. To clarify the point, below are three lines of equal length and, in
+the case of dottedlines, with equal spacing:
+
+\begin{center}
+\begin{picture}(150,20)(0,-5)
+\put(0,10){\line(1,0){70}}
+\put(0,-4){\line(0,1){18}}
+\put(70,-4){\line(0,1){18}}
+\thicklines
+\dottedline{3}(0,5)(70,5)
+\dottedline[$\bullet$]{3}(0,0)(70,0)
+\put(80,9){\tt \bs put(0,10)\lb \bs line(1,0)\lb 70\rb \rb }
+\put(80,4){\tt \bs dottedline\lb 3\rb (0,5)(70,5)}
+\put(80,-1){\tt \bs dottedline[\$\bs bullet\$]\lb 3\rb (0,0)(70,0)}
+\end{picture}
+\end{center}
+
+\subsection{{\tt \bs}dashline}
+
+{\tt SYNOPSIS:\\
+\hspace*{\leftmargin}%
+\bs dashline[{\it stretch}]\lb{\it dash-length}\rb
+[{\it inter-dot-gap for dash}]%
+($x_1$,$y_1$)($x_2$,$y_2$)\ldots($x_n$,$y_n$)}\newline
+where {\it stretch} is an integer between -100 and infinity.
+
+The above command connects the specified points by drawing a dashline
+between each pair of coordinates. At least two points must be
+specified. A \verb|\dashline| is a dashed line where each {\it dash\/} is
+constructed using a {\it dottedline\/}%
+\footnote{for efficiency, in the case of horizontal and vertical dashlines,
+the dash is constructed using a rule.}.
+The dash-length is the length of the {\it dash\/} and inter-dot-gap is the gap
+between each dot that is used to construct the dash, both in unitlengths.
+
+By default, a solid looking dash is constructed, but by specifying an
+inter-dot-gap in the third argument, different looking dashes may be
+constructed. With a large inter-dot-gap (about $>$0.4mm), each dash will have
+the appearance of a little dotted line. One can create a variety of {\it
+dashlines} where each {\it dash\/} looks different. Here are a few sample
+dashlines:
+
+\begin{center}
+\begin{picture}(150,30)(0,-5)
+\dashline{4}[0.7](0,18)(60,18)
+\thicklines
+\dashline{4}(0,11)(60,11)
+\dashline[-30]{4}(0,7)(60,7)
+\put(75,20){\makebox(0,0)[tl]{\tt \shortstack[l]{%
+\bs dashline\lb 4\rb [0.7](0,18)(60,18)\\
+\bs thicklines \\
+\bs dashline\lb 4\rb (0,11)(60,11)\\
+\bs dashline[-30]\lb 4\rb(0,7)(60,7)
+}}}
+\end{picture}
+\end{center}
+
+The {\it stretch\/} in \verb|[ ]| is an integer percentage and implies
+a certain ``stretch'' for positive values and ``shrink'' for negative
+values; it is optional and by default is ``0'' unless the default
+itself has been changed (described later). The number ``0'' signifies
+that a minimum number of dashes be put such that they are
+approximately equally spaced with the empty spaces between them. A
+$+$ve number means increase the number of dashes by {\it stretch}
+percent, and a $-$ve number means reduce by that percent. By reducing
+the number of dashes, the empty space between dashes is stretched
+while maintaining the symmetry. The lower limit on {\it stretch\/} is
+obviously -100 since at less than -100\% reduction one essentially
+gets nothing. On the upper side, the number, theoretically, can be as
+large as infinity (barring arithmetic overflows) and the macro does
+not check for any upper bound; one should normally not require more
+than 100 percent increase (100 $\Rightarrow$ double the number of
+dashes) since that would essentially mean a ``solid line'' and it is
+more efficient to use the \verb|\drawline| command for drawing such
+lines, as described later.
+
+The idea behind the {\it stretch\/} percentage option is that if several
+dashed lines of different lengths are being drawn, then all the dashed lines
+with the same $-$ve or $+$ve {\it stretch\/} will have similar visual
+appearance, as might be desired if one were plotting a graph --- one would
+like a particular ``curve'' to look the same between all the points on that
+curve. Also, it can be used to take any corrective actions, if the appearance
+of the default dashline does not meet one's approval.
+
+The default {\it stretch\/} percentage can be changed by a
+\verb|\renewcommand| on the parameter\linebreak
+\verb|\dashlinestretch| any time and it takes effect immediately. The
+argument is the integer percentage increase or reduction that will be
+applied to all \verb|\dashline| commands except the ones in which the
+percentage is explicitly given using \verb|[ ]| optional parameter.
+For example, all {\it dashlines\/} could be reduced by 50 percent by
+putting the following line {\it before\/} using any \verb|\dashline|
+command:\\[2mm]
+\hspace*{\leftmargin}\verb|\renewcommand{\dashlinestretch}{-50} % ONLY
+INTEGERS PERMITTED.|
+
+An explicit argument to the \verb|\dashline| command in \verb|[ ]|
+overrides any default values, so for instance, after the above declaration,
+if a dashline with ``0'' stretch was desired,
+then one would simply say:\\[2mm]
+\hspace*{\leftmargin}\verb|\dashline[0]{...}(x1,y1)(x2,y2)  
+% where "0" implies no stretch or shrink|
+
+A note about dashlines of small length. All dashlines always have a dash
+beginning at the first coordinate and another ending at the second
+coordinate, which implies that a minimum of two dashes are plotted. For small
+lines (or larger lines with accordingly larger sized dashes) the dash-length
+is reduced as much as necessary to meet above conditions; in such cases, if
+necessary, the $-$ve stretch arguments are ignored. Such dashlines
+usually do not have an acceptable appearance, and may either be omitted or be
+plotted separately as a dottedline or a dashline with a small dash-length.
+
+\subsection{{\tt \bs}drawline}
+
+{\tt SYNOPSIS:\\
+\hspace*{\leftmargin}%
+\bs drawline[{\it stretch}]($x_1$,$y_1$)($x_2$,$y_2$)\ldots($x_n$,$y_n$)}\\
+where {\it stretch\/} is an integer between -100 and infinity.
+
+The above command connects the specified points by drawing a line between
+each pair of coordinates using line segments of the closest slope available
+in the fonts. At the minimum two points must be specified. Since there are
+only finite number of slopes available in the line segment fonts, some lines
+appear jagged. A \verb|\drawline| can be thick or thin depending on the
+\verb|\thinlines| or \verb|\thicklines| declaration in effect; these are the
+only two thicknesses available for such lines. This is also the most
+efficient, in terms of memory and cpu usage, way of drawing lines of
+arbitrary slopes.
+
+The {\it stretch\/} parameter has properties similar to those described
+earlier in the context of dashlines. It is again a percentage and implies a
+certain ``stretch'' or ``shrink''; it is optional and by default is ``0''
+unless the default itself has been changed (described later). The same rules
+apply to the range of the {\it stretch\/} value. In this case, the number
+``0'' signifies that a minimum number of dashes be put such that the line
+appears solid and each dash ``connected'' at the ends. By reducing the number
+of dashes by specifying a $-$ve {\it stretch\/}, one effectively gets a
+dashed line. On the other hand, by specifying a $+$ve {\it stretch\/}, more
+dashes will be used in constructing the line, giving a less jagged
+appearance.
+
+A parameter, namely, \verb|\drawlinestretch|, has been provided for
+\verb|\drawline|'s and its usage is identical to \verb|\dashlinestretch|
+described earlier in the context of \verb|\dashline|.
+
+A limitation of drawing lines using line-segment fonts is that the length of
+segments is fixed and is not user-controllable. If explicit control over the
+line-segment length is desired, then \verb|\dashline| may be used.
+If the length of the line to be drawn is smaller than the length of available
+line segment, then a solid line is constructed using \verb|\dottedline| with
+dots being very close; the thickness of the {\it line\/} thus constructed is
+chosen appropriately. Note that in such a case, only a solid line can be
+constructed between the two points, i.e., dashed appearance can not
+be given to such small lines, and any $-$ve stretch is ignored.
+
+\subsection{The join environments}
+\begin{tt}
+SYNOPSIS:
+\begin{quote}
+\bs jput($x$,$y$)\lb{\it object}\rb
+
+\bs begin\lb dottedjoin\rb[{\it optional dotcharacter}]%
+\lb{\it inter-dot-gap}\rb\\
+.....\hspace*{1in} dottedlines drawn here for each \verb|\jput| statement.\\
+\bs end\lb dottedjoin\rb
+
+\bs begin\lb dashjoin\rb[{\it stretch}]%
+\lb{\it dash-length}\rb[{\it inter-dot-gap for dash}]\\
+.....\hspace*{1in} dashlines drawn here for each \verb|\jput| statement.\\
+\bs end\lb dashjoin\rb
+
+\bs begin\lb drawjoin\rb[{\it stretch}]\\
+.....\hspace*{1in} drawlines drawn here for each \verb|\jput| statement.\\
+\bs end\lb drawjoin\rb
+
+\end{quote}
+\end{tt}
+
+Three environments, corresponding to the three kinds of lines described
+earlier, are also provided. They are {\tt dottedjoin}, {\tt dashjoin} and
+{\tt drawjoin}. All the three environments use yet
+another new command \verb|\jput|\footnotemark\ (join and put) which is
+identical to the regular \verb|\put| command of \LaTeX\ except that it
+behaves differently when in any of the three environments.
+
+\footnotetext{could have redefined the {\tt \bs put} statement; {\tt \bs
+jput} behaves identically to {\tt \bs put} when not in any join
+environment.} All {\it objects\/} put using a \verb|\jput| command within the
+scope of any of the three environments are, in addition to being plotted,
+joined by lines of the respective kind; in other words, a line of the
+specified kind is drawn between {\it points\/} plotted using \verb|\jput|
+statement in the order they are encountered; a {\it point\/} refers to the $x$
+and $y$ coordinates specified in the \verb|\jput| statement. Consecutive
+\verb|\jput| statements are assumed to define adjacent points --- hence, the
+input should be accordingly ordered. Moreover, the plotted point should be in
+a \verb|\makebox(0,0){...}| (except, of course, centered {\it objects\/} such
+as \verb|\circle| and \verb|\circle*|) if it is to be centered on the
+specified coordinate; without it the object's bottom-left corner will be at
+the specified coordinate. Each instance of any of the three join
+environments defines a separate ``curve'' hence every set of points belonging
+to different ``curves'' should be enclosed in separate join environments.
+
+All the parameters, optional and mandatory, other than the coordinates that
+go along with the line drawing commands, may be specified after the
+\verb|\begin{...join}| command as its arguments. Currently effective default
+values are used when not specified in {\tt []}, and may be changed anytime
+using the \verb|\renewcommand| as discussed previously.
+
+The primary motivation for designing the join environments is for use in
+plotting graphs and joining different curves by different looking lines.
+It is not necessary that the \verb|\jput| statements put some object; if
+the object is null then one gets only lines --- in such a case it is much
+simpler to use the respective line drawing command directly.
+
+\subsection{{\tt \bs}picsquare}
+
+\verb|\picsquare| is a simple macro that gives a little square dot with its
+center as the reference point. The size of the square is dependent on the
+currently effective \verb|\thinlines|, \verb|\thicklines| or
+\verb|\linethickness...| declaration. Most of the commands described earlier
+that plot little dots, use this macro\footnotemark. It has been provided
+primarily to be used in conjunction with \verb|\putfile| command described
+below.
+\footnotetext{The {\tt \bs dottedline} macro actually uses another similar
+macro {\tt \bs picsquare@bl}, which gives an identical square, but with the
+bottom-left corner as the reference point.}
+Only {\tt \bs picsquare} has been made accessible to the user.
+
+\subsection{{\tt \bs}putfile}
+
+{\tt \bs putfile\lb{\it filename}\rb\lb{\it object}\rb}
+
+The command \verb|\putfile| is similar to the \verb|\put| command except that
+the $x$ and $y$ coordinates required by the \verb|\put| command are read from
+an external file and the same {\it object} is plotted at each of those
+coordinates.
+
+The motivation behind this command is that \TeX\ does not have the capability
+to do floating point calculations which would be required if one wished
+to plot any parametric curve other than straight lines. Coordinates for such
+curves can be easily generated by programs in other languages and
+subsequently a ``dotted'' curve can be plotted via \TeX\ or \LaTeX. Even if
+coordinates for certain curves could be generated from within \TeX, it is
+much more efficient to use other languages --- eventually only the
+coordinates of the points are required.
+For instance, one can use the Unix%
+\footnote{{\it Unix} is a trademark of AT\&T.}\ facility
+{\it spline\/} to generate smooth curves with equidistant ``dots''.
+
+{\bf Format of the External File:} The external file of coordinates must have
+``$x\;y\,$'' pairs, one pair on each line, with a space between them. Also, it
+is suggested that some extension such as ``{\tt .put}'' be used for such
+data files to distinguish them from regular text files in which case it must
+be explicitly specified in the first argument so that \TeX\ doesn't look for
+a ``{\tt .tex}'' extension.
+
+The ``{\tt \%}'' character remains valid as a comment character and such lines
+are ignored. However, there should be at least one space after the second
+entry if a comment is on the same line as data since {\tt \%} eats up the
+newline.
+
+For example, to plot a smooth curve along a set of coordinates, one may
+undertake the following steps:
+\begin{enumerate}
+\item have a file of ``$x\;y$'' coordinates for original data points, say,
+{\tt datafile}.
+\item run the command (for Unix systems): {\tt spline -200 datafile $>$
+data.put}
+\item in a picture environment in a \LaTeX\ file, put the command:\\
+\hspace*{20pt}\verb|\putfile{data.put}{\picsquare}|\\
+(see previous section for explanation of \verb|\picsquare|).
+\end{enumerate}
+
+\section{General Comments}
+
+A few remarks about efficiency and quirks:
+\begin{itemize}
+\item In most of the above commands, simply typing a {\tt []} for optional
+arguments with {\it nothing\/} as the value will either cause an error or will
+be interpreted as a null value; hence a {\tt []} should not be typed if an
+optional argument is not meant to be specified.
+
+\item If too many ``dots'' are to be plotted in one picture, it is suggested
+that a character other than the default be used --- about 40--50\% more dots
+can be plotted in a picture using a period (.) or a \verb|\bullet|
+($\bullet$) in various sizes, rather than the default \verb|\picsquare|,
+although the latter seems to have a better visual appearance. The
+use a \verb|\picsquare| also enables one to have a better control over the
+thickness of dots and lines.
+
+A note on efficiency: when specifying a font or a fontsize for a character
+it is more efficient to say:\\
+\verb|{\tiny \dottedline[$\bullet$]{2}(0,0)(40,30)(80,10)}|,\ \ \ rather than\\
+\verb|\dottedline[\tiny $\bullet$]{2}(0,0)(40,30)(80,10)|.\\
+In the latter case, \verb|\tiny| macro gets invoked for {\it each\/} instance
+of the dotcharacter \verb|$\bullet$| as the dottedline is plotted.
+
+\item If it is not very important as to how accurately spaced a dashed line
+appears, then it is suggested that \verb|\drawline| command with a $-$ve
+stretch be used instead of \verb|\dashline|, since the former is much more
+cpu- and memory-efficient.
+
+\item \verb|\dottedline| and \verb|\dashline| come out much too thin with
+\verb|\thinlines|. Moreover, the thicker the \verb|\dashline|, fewer
+``dots'' are required to construct dashes resulting in lesser memory and cpu
+usage. Thus, it is recommended that they be plotted with \verb|\thicklines|
+in effect, or with a linethickness of about 1--2pt.
+
+\item In the case of \verb|\drawline|, any explicit linethickness declarations
+(i.e. using \verb|\linethickness| command) are ignored. The only applicable
+declarations are \verb|\thinlines| and \verb|\thicklines| since line-segment
+fonts are available in only two thicknesses.
+\end{itemize}
+
+Above commands are available in the picture environment only since they use
+many of the \LaTeX 's predefined picture commands. Extensive use of some of
+the internal macros and variables of \LaTeX\ has been made for efficiency
+sake, even though that makes these macros vulnerable to future revisions of
+\LaTeX.
+
+The dottedline macro gets complicated because \TeX\ does not have any builtin
+facility for floating point calculations or for calculating square-roots or
+trigonometric functions. The inter-dot-gap in a dottedline has to be treated
+as the actual distance between two dots along the ``hypotenuse'' and not its
+projected distance along x-axis or y-axis, since the latter interpretation
+would result in a different {\it real\/} inter-dot-gap for different slopes;
+it would be incorrect if we were joining points on a graph. The dootedline
+macro treats the inter-dot-gap as the actual distance between two dots and
+draws the various segments of the ``curve'' with this distance fixed. The
+macro accomplishes this by estimating the actual length of the line and the
+number of segments of the specified distance that will fit between the two
+end-points; a macro, namely, \verb|\sqrtandstuff| calculates this
+square-root. Some algebraic relations are used in estimating this square-root
+and are described in appendix A.
+
+Beware, if far too many dots are put in one picture, \LaTeX\ will run out of
+memory (box full), so be kind to it. For instance, by reducing the
+inter-dot-gap to about 0.3mm in the case of a \verb|\dottedline|, one can get
+essentially a solid line, but that would mean a LOT of dots and it may run
+out of memory.
+
+If many lines using above-mentioned macros are drawn, then a
+\verb|\clearpage| ought to be put at judicious places in the document so as
+to tell \LaTeX\ not to keep those figures floating -- \LaTeX\ sometimes
+keeps entire figures in memory while trying to figure out how and where to
+lay them and it can frequently run out of memory. A \verb|\clearpage| may
+prevent running out of memory and may reduce execution times.
+In case of such a
+memory-full error message, a \verb|\clearpage| in the region where the error
+occurred should be attempted first and if that does not help then the number
+of ``dots'' in the picture will have to be reduced.
+
+A word about \verb|\drawline| is in order. \LaTeX 's \verb|\line| command
+takes an ordered pair of integers to specify the slope of the line where the
+numbers are between $-$6 and 6 such that the least common divisor is 1. For
+the \verb|\drawline| command, the given arbitrary slope has to be mapped to
+the pair of integers representing the {\it closest\/} available slope.
+Another macro, \verb|\lineslope| is used to accomplish this task. The macro
+\verb|\lineslope| takes two arguments, the base and the height of the
+triangle whose hypotenuse represents the line to be drawn and returns the
+ordered pair of integers representing the closest slope; using a line segment
+of that slope, a jagged line between the two specified end-points is then
+constructed. More details can be found in the macro file {\tt epic.sty}.
+
+As noted earlier, the command \verb|\jput| behaves identically as \verb|\put|
+when not in any of the join environments. The author considered obliterating
+the \verb|\put| command too radical a step. Also, there should have been a
+command \verb|\jputfile| corresponding to the \verb|\jput| command (like the
+\verb|\putfile| command) but that was considered unnecessary since typically
+the number of coordinates plotted in a join environment would be an order
+less than what might be the case with \verb|\putfile| and can be easily
+typed explicitly in the document using \verb|\jput| commands.
+However, if it is desired to have all the \verb|\put| commands treated as
+though they were \verb|\jput|, the following declaration may be used:\\
+\hspace*{\leftmargin}\verb|\let\put\jput| \\
+Above declaration will make all
+the \verb|\put| commands be treated as \verb|\jput|; in particular,
+\verb|\putfile| command would then behave as though it were a
+\verb|\jputfile| when in any of the join environments. However, it is
+suggested that such ``tricks'' be used with care.
+
+Finally, commands to plot vectors of arbitrary slopes have not been
+implemented. One way to plot them is to plot a line, and subsequently plot a
+\verb|\vector| of appropriate slopes and length zero at the required place.
+
+Following pages contain some examples. The test-sample picture for
+\verb|\drawline| command (Figure~2) is also about the maximum amount of
+objects that one can put in one picture. Older versions of \TeX\ and \LaTeX\
+may not be able to print pictures of this size.
+
+\newpage
+%% FIGURES FOLLOW
+\begin{figure}[t]
+\begin{center}
+\input{picman-fig1}
+\end{center}
+\caption[]{\normalsize An Example of Various Line Drawing Commands}
+\end{figure}
+
+\begin{small}
+\verbfile{picman-fig1}
+\end{small}
+
+\newcount\xjunk
+\newcount\yjunk
+
+\clearpage
+\begin{figure}
+\begin{center}
+\begin{tiny}
+\begin{picture}(140,140)(-70,-70)
+\thinlines
+\input{picman-fig2}
+\end{picture}
+\end{tiny}
+\end{center}
+\caption[]{\normalsize Test Sample: Lines of various slopes with
+{\tt thinlines}}
+\end{figure}
+
+\clearpage
+\begin{figure}
+\begin{center}
+\begin{tiny}
+\begin{picture}(140,140)(-70,-70)
+\renewcommand{\drawlinestretch}{-50}
+\thicklines
+\input{picman-fig2}
+\end{picture}
+\end{tiny}
+\end{center}
+\caption[]{\normalsize \parbox[t]{110mm}{Test Sample: Dashed lines of various
+slopes using {\tt \bs drawline} command with {\tt linethickness=1pt} and {\tt 
+drawlinestretch = -50}}}
+
+\end{figure}
+
+\clearpage
+\renewcommand{\baselinestretch}{0.85}
+\begin{footnotesize}
+\verbfile{picman-fig3}
+\end{footnotesize}
+
+\clearpage
+\input{picman-fig3}
+
+\clearpage
+\section{Installation and Usage of the Package}
+This package of new commands for the picture environment has been implemented
+as a documentstyle option ``{\tt epic}''. To include these commands, ``epic''
+should be added as an option in the \verb|\documentstyle| command,
+e.g.:\\[1mm]
+\hspace*{\leftmargin}\verb|\documentstyle[epic]{article}|
+
+For the above option to work, one of the following will have to be done prior
+to its use:
+\begin{enumerate}
+\item A copy of the macro file {\tt epic.sty} be put in the standard place for
+such macros (typically {\tt /usr/lib/tex/macros}), or
+
+\item A copy of {\tt epic.sty} be put in some other directory, and the path
+declared in the environment variable TEXINPUTS; e.g.\ for C-shell on unix
+systems, put a command similar to the following in the ``.cshrc'' file:\\[1mm]
+\hspace*{20pt}{\tt setenv TEXINPUTS .:/usr/lib/tex/macros:/users/podar/texlib}
+\end{enumerate}
+
+Above environment variable is the directory search path for files specified
+in an \verb|\input| or an \verb|\openin| command.
+
+\section{Concluding Remarks}
+The implementation of the new commands for the picture environment has been
+done with the \LaTeX\ version 2.09 and \TeX\ version 2. They have also been
+tested to work with \LaTeX\ version 2.08. These commands may not work with
+earlier versions of \TeX\ and \LaTeX.
+
+Most of the commands have been tested fairly thoroughly.
+No major revisions are anticipated in the near
+future, except, of course, bug fixes. The author welcomes any comments,
+constructive or otherwise, suggestions for improvements, any ideas for
+possible future revisions and, of course, bugs. It is also requested that he
+be informed of any significant changes or modifications made to these
+macros.
+
+All the help and encouragement from colleagues in the Dept. of Computer
+Science at SUNY at Stony Brook is gratefully acknowledged; in particular,
+Soumitra Sengupta's and Divyakant Agrawal's criticisms (often constructive),
+help with proofreading the numerous versions of this report and general moral
+support were critical to the completion of this project and are thankfully
+acknowledged.
+
+\bigskip\noindent%
+\begin{small}%
+Author's address:\\[3mm]
+\begin{tabular}{@{}ll}
+USMAIL:&Dept. of Computer Science, SUNY at Stony Brook, Stony Brook,
+N.Y.\ 11794\\
+CSNET: &podar@sbcs.csnet\\
+ARPA: &podar\%suny-sb.csnet@csnet-relay.arpa\\
+UUCP: &\{allegra, hocsd, philabs, ogcvax\}!sbcs!podar
+\end{tabular}
+\end{small}
+
+\begin{thebibliography}{99}
+\bibitem{Knu} D.\ E.\ Knuth, ``The \TeX book'', Addison-Wesley Publishing Co.,
+1984.
+\bibitem{Lam} L.\ Lamport, ``\LaTeX: A Document Preparation System'',
+Addison-Wesley Publishing Co., 1986.
+\end{thebibliography}
+
+\input{sqrt}
+
+\end{document}

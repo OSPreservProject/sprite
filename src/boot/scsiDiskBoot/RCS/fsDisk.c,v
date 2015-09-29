@@ -1,0 +1,761 @@
+head     1.8;
+branch   ;
+access   ;
+symbols  ;
+locks    mendel:1.8; strict;
+comment  @ * @;
+
+
+1.8
+date     89.01.06.08.14.38;  author brent;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     87.05.27.14.34.45;  author brent;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     87.05.19.12.14.44;  author brent;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     87.05.11.11.18.18;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     87.05.08.17.45.18;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     86.07.24.11.35.31;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     86.07.21.09.36.00;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.07.18.09.32.40;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Fs_AttachDisk et. al.
+@
+
+
+1.8
+log
+@New include files and constants due to source reorganization
+@
+text
+@/* 
+ * fsDisk.c --
+ *
+ *	Routines related to managing local disks.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: fsDisk.c,v 1.7 87/05/27 14:34:45 brent Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include "sprite.h"
+
+#include "fs.h"
+#include "fsDisk.h"
+#include "fsOpTable.h"
+#include "devDiskLabel.h"
+#include "dev.h"
+#include "devInt.h"
+#include "sync.h"
+#include "mem.h"
+#include "byte.h"
+
+#include "boot.h"
+
+/*
+ * Forward declarations.
+ */
+void FsGetFileDesc();
+
+/*
+ * fsDevice is copied into all FsHandles.  It is used by the drivers to
+ * get to the partition and geometry information for the disk.
+ */
+Fs_Device fsDevice;
+
+/*
+ * fsDomainPtr and fsRootHandlePtr are used by Fs_Open.
+ */
+static FsDomain fsDomain;
+FsDomain *fsDomainPtr = &fsDomain;
+static FsHandle fsRootHandle;
+FsHandle *fsRootHandlePtr = &fsRootHandle;
+static char fsLabelBuffer[DEV_BYTES_PER_SECTOR];
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsAttachDisk --
+ *
+ *	Set things up so we can call FsBlockIO to read the disk.
+ *	This makes sure the disk is up and reads the domain header.
+ *	The domain information is saved in a global area.
+ *
+ * Results:
+ *	SUCCESS if the disk was readable and had a good volume header.
+ *
+ * Side effects:
+ *	Sets up the FsDomainInfo for the domain.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fs_AttachDisk(ctlrNum, unitNum, partNum)
+    int ctlrNum;	/* Controller number from boot command */
+    int unitNum;	/* Unit number from boot command */
+    int partNum;	/* Partition number from boot command */
+{
+    register ReturnStatus status;	/* Return code */
+    register int headerSector;		/* Starting sector of volume header */
+    register int numHeaderSectors;	/* Number of sectors in volume header */
+    register FsDomainHeader *headerPtr;	/* Domain information */
+    int sectorsRead;			/* Returned from read call */
+    /*
+     * Set up the global filesystem device, its type number is zero.
+     */
+    fsDevice.unit = unitNum;
+#ifdef SCSI_DISK_BOOT
+    fsDevice.type = FS_DEV_SCSI_DISK;
+#endif
+#ifdef XYLOGICS_BOOT
+    fsDevice.type = FS_DEV_XYLOGICS;
+#endif
+    /*
+     * Read the zero'th sector from the first partition to get the layout
+     * of the disk.  A read failure will fall into the No Disk Label error
+     * message.
+     */
+    sectorsRead = 1;
+    status = (*fsRawDeviceOpsTable[fsDevice.type].readWrite)(FS_READ,
+		 fsDevice.unit / DEV_NUM_DISK_PARTS,	/* first partiton */
+		 fsLabelBuffer, 0, &sectorsRead);
+    if (((Sun_DiskLabel *)fsLabelBuffer)->magic == SUN_DISK_MAGIC) {
+	/*
+	 * For Sun formatted disks we put the volume header well past
+	 * the disk label and the boot program.
+	 */
+	headerSector = SUN_DOMAIN_SECTOR;
+	sectorsRead = FS_NUM_DOMAIN_SECTORS;
+#ifdef notdef
+    } else if (Fs_IsSpriteLabel(buffer)) {
+	headerSector = ((FsDiskHeader *)fsLabelBuffer)->domainSector;
+	sectorsRead = ((FsDiskHeader *)fsLabelBuffer)->numDomainSectors;
+#endif notdef
+    } else {
+	Sys_Printf("No label <%x>\n", status);
+	return(FAILURE);
+    }
+    /*
+     * Read and save the domain header.  Every
+     * partition should have a domain header.
+     */
+    headerPtr = (FsDomainHeader *)Mem_Alloc(DEV_BYTES_PER_SECTOR *
+					    sectorsRead);
+    status = (*fsRawDeviceOpsTable[fsDevice.type].readWrite)(FS_READ,
+		 fsDevice.unit, (Address)headerPtr, headerSector,
+		 &sectorsRead);
+    if (status != SUCCESS) {
+	return(status);
+    }
+
+    fsDomainPtr->headerPtr = headerPtr;
+    if (headerPtr->magic != FS_DOMAIN_MAGIC) {
+	Sys_Printf("Bad magic <%x>\n", headerPtr->magic);
+	return(FAILURE);
+    }
+    /*
+     * Set up the device to reference the geometry information so we
+     * can do block IO.
+     */
+    fsDevice.data = (ClientData)&fsDomainPtr->headerPtr->geometry;
+    headerPtr->device = fsDevice;
+    
+    /*
+     * Set up a file handle for the root directory.  What is important
+     * is the device info (for Block IO) and the file descriptor itself.
+     */
+    FsInitFileHandle(fsDomainPtr, FS_ROOT_FILE_NUMBER, fsRootHandlePtr);
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_BlocksToSectors --
+ *
+ *	Convert from block indexes (actually, fragment indexes) to
+ *	sectors using the geometry information on the disk.  This
+ *	is a utility for block device drivers.
+ *
+ * Results:
+ *	The sector number that corresponds to the fragment index.
+ *	The caller has to make sure that its I/O doesn't cross a
+ *	filesystem block boundary.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+#define SECTORS_PER_FRAG	(FS_FRAGMENT_SIZE / DEV_BYTES_PER_SECTOR)
+#ifdef SCSI_DISK_BOOT
+int
+Fs_BlocksToSectors(fragNumber, geoPtr)
+    register int fragNumber;
+    register FsGeometry *geoPtr;
+{
+    register int sectorNumber;	/* The sector corresponding to the fragment */
+    register int cylinder;	/* The cylinder number of the fragment */
+    register int rotationalSet;	/* The rotational set with cylinder of frag */
+    register int blockNumber;	/* The block number within rotational set */
+
+    blockNumber		= fragNumber / FS_FRAGMENTS_PER_BLOCK;
+    cylinder		= blockNumber / geoPtr->blocksPerCylinder;
+    blockNumber		-= cylinder * geoPtr->blocksPerCylinder;
+    rotationalSet	= blockNumber / geoPtr->blocksPerRotSet;
+    blockNumber		-= rotationalSet * geoPtr->blocksPerRotSet;
+
+    sectorNumber = geoPtr->sectorsPerTrack * geoPtr->numHeads * cylinder +
+		  geoPtr->sectorsPerTrack * geoPtr->tracksPerRotSet *
+		  rotationalSet +
+		  geoPtr->blockOffset[blockNumber];
+    sectorNumber += (fragNumber % FS_FRAGMENTS_PER_BLOCK) * SECTORS_PER_FRAG;
+
+    return(sectorNumber);
+}
+#endif SCSI_DISK_BOOT
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_BlocksToDiskAddr --
+ *
+ *	Convert from block indexes (actually, fragment indexes) to
+ *	disk address (head, cylinder, sector) using the geometry information
+ *	 on the disk.  This is a utility for block device drivers.
+ *
+ * Results:
+ *	The disk address that corresponds to the disk address.
+ *	The caller has to make sure that its I/O doesn't cross a
+ *	filesystem block boundary.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef XYLOGICS_BOOT
+void
+Fs_BlocksToDiskAddr(fragNumber, data, diskAddrPtr)
+    int fragNumber;	/* Fragment index to map into block index */
+    ClientData data;	/* ClientData from the device info */
+    register Dev_DiskAddr *diskAddrPtr;
+{
+    register FsGeometry *geoPtr;
+    register int sectorNumber;	/* The sector corresponding to the fragment */
+    register int cylinder;	/* The cylinder number of the fragment */
+    register int rotationalSet;	/* The rotational set with cylinder of frag */
+    register int blockNumber;	/* The block number within rotational set */
+
+    geoPtr 		= (FsGeometry *)data;
+    /*
+     * Map to block number because the rotational sets are laid out
+     * relative to blocks.  After that the cylinder is easy because we know
+     * blocksPerCylinder.  To get the head and sector we first get the
+     * rotational set (described in fsDisk.h) of the block and the
+     * block's sector offset (relative to the rotational set!).  This complex
+     * algorithm crops up because there isn't necessarily an even number
+     * of blocks per track.  The 'blockOffset' array in the geometry gives
+     * a sector index of each successive block in a rotational set. Finally,
+     * we can use the sectorsPerTrack to get the head and sector.
+     */
+    blockNumber		= fragNumber / FS_FRAGMENTS_PER_BLOCK;
+    cylinder		= blockNumber / geoPtr->blocksPerCylinder;
+    blockNumber		-= cylinder * geoPtr->blocksPerCylinder;
+    diskAddrPtr->cylinder = cylinder;
+
+    rotationalSet	= blockNumber / geoPtr->blocksPerRotSet;
+    blockNumber		-= rotationalSet * geoPtr->blocksPerRotSet;
+    sectorNumber	= geoPtr->sectorsPerTrack * geoPtr->tracksPerRotSet *
+		  	  rotationalSet + geoPtr->blockOffset[blockNumber] +
+		    (fragNumber % FS_FRAGMENTS_PER_BLOCK) * SECTORS_PER_FRAG;
+    diskAddrPtr->head	= sectorNumber / geoPtr->sectorsPerTrack;
+    diskAddrPtr->sector = sectorNumber -
+			  diskAddrPtr->head * geoPtr->sectorsPerTrack;
+}
+#endif XYLOGICS_BOOT
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_SectorsToRawDiskAddr --
+ *
+ *      Convert from a sector offset to a raw disk address (cyl, head,
+ *      sector) using the geometry information on the disk.  This is a
+ *      utility for raw device drivers and does not pay attention to the
+ *      rotational position of filesystem disk blocks.
+ *
+ *	This should be moved to Dev
+ *
+ * Results:
+ *	The disk address that corresponds exactly to the byte offset.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef XYLOGICS_BOOT
+int
+Fs_SectorsToRawDiskAddr(sector, numSectors, numHeads, diskAddrPtr)
+    register int sector;	/* Sector number, counting from zero  */
+    register int numSectors;	/* Number of sectors per track */
+    register int numHeads;	/* Number of heads on the disk */
+    register Dev_DiskAddr *diskAddrPtr;
+{
+    register int sectorsPerCyl;	/* The rotational set with cylinder of frag */
+
+    sectorsPerCyl		= numSectors * numHeads;
+    diskAddrPtr->cylinder	= sector / sectorsPerCyl;
+    sector			-= diskAddrPtr->cylinder * sectorsPerCyl;
+    diskAddrPtr->head		= sector / numSectors;
+    diskAddrPtr->sector		= sector - numSectors * diskAddrPtr->head;
+}
+#endif XYLOGICS_BOOT
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_IsSunLabel --
+ *
+ *	Poke around in the input buffer and see if it looks like
+ *	a Sun format disk label.
+ *
+ * Results:
+ *	TRUE or FALSE
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef notdef
+Boolean
+Fs_IsSunLabel(buffer)
+    Address buffer;	/* Buffer containing zero'th sector */
+{
+    register Sun_DiskLabel *sunLabelPtr;
+
+    sunLabelPtr = (Sun_DiskLabel *)buffer;
+    if (sunLabelPtr->magic == SUN_DISK_MAGIC) {
+	/*
+	 * Should check checkSum...
+	 */
+	return(TRUE);
+    } else {
+	Sys_Printf("Sun magic <%x>\n", sunLabelPtr->magic);
+	return(FALSE);
+    }
+}
+#endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_IsSpriteLabel --
+ *
+ *	Poke around in the input buffer and see if it looks like
+ *	a Sprite format disk header.
+ *
+ * Results:
+ *	TRUE or FALSE
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef notdef
+Boolean
+Fs_IsSpriteLabel(buffer)
+    Address buffer;	/* Buffer containing zero'th sector */
+{
+    register FsDiskHeader *diskHeaderPtr;
+
+    diskHeaderPtr = (FsDiskHeader *)buffer;
+    if (diskHeaderPtr->magic == FS_DISK_MAGIC) {
+	return(TRUE);
+    } else {
+#ifndef NO_PRINTF
+	Sys_Printf("Sprite magic <%x>\n", diskHeaderPtr->magic);
+#endif
+	return(FALSE);
+    }
+}
+#endif
+@
+
+
+1.7
+log
+@Wasn't calling the correct device type read routine.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsDisk.c,v 1.6 87/05/19 12:14:44 brent Exp $ SPRITE (Berkeley)";
+a17 1
+#include "fsInt.h"
+a18 1
+#include "fsLocalDomain.h"
+d20 1
+a20 2
+#include "fsPrefix.h"
+#include "sunDiskLabel.h"
+@
+
+
+1.6
+log
+@Added mapping routines for drivers that need head/sector/cylinder
+addresses.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsDisk.c,v 1.5 87/05/11 11:18:18 brent Exp $ SPRITE (Berkeley)";
+d84 6
+d96 1
+a96 1
+    status = (*fsRawDeviceOpsTable[0].readWrite)(FS_READ,
+d112 1
+a112 1
+	Sys_Printf("No header <%x>\n", status);
+d121 1
+a121 1
+    status = (*fsRawDeviceOpsTable[0].readWrite)(FS_READ,
+@
+
+
+1.5
+log
+@Final trimmed down version
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsDisk.c,v 1.4 87/05/08 17:45:18 brent Exp $ SPRITE (Berkeley)";
+d30 2
+d99 1
+a99 1
+	numHeaderSectors = FS_NUM_DOMAIN_SECTORS;
+d103 1
+a103 1
+	numHeaderSectors = ((FsDiskHeader *)fsLabelBuffer)->numDomainSectors;
+d106 1
+a106 1
+	Sys_Printf("No disk header <%x>\n", status);
+d114 1
+a114 1
+					    numHeaderSectors);
+d124 1
+a124 1
+	Sys_Printf("Bad disk magic <%x>\n", headerPtr->magic);
+d162 1
+d187 99
+@
+
+
+1.4
+log
+@Updated to reflect changes in fs header files
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsDisk.c,v 1.3 86/07/24 11:35:31 brent Exp $ SPRITE (Berkeley)";
+a35 5
+ * Global variables used because there is only one domain during a boot.
+ */
+Address fsLabelBuffer;
+
+/*
+d44 5
+a48 2
+FsDomain *fsDomainPtr;
+FsHandle *fsRootHandlePtr;
+a73 1
+    register  Address buffer;		/* Read buffer */
+a86 1
+    buffer = (Address)Mem_Alloc(DEV_BYTES_PER_SECTOR);
+d90 2
+a91 2
+		 buffer, 0, &sectorsRead);
+    if (Fs_IsSunLabel(buffer)) {
+d98 1
+d100 3
+a102 2
+	headerSector = ((FsDiskHeader *)buffer)->domainSector;
+	numHeaderSectors = ((FsDiskHeader *)buffer)->numDomainSectors;
+a106 1
+    fsLabelBuffer = buffer;
+a119 1
+    fsDomainPtr = (FsDomain *)Mem_Alloc(sizeof(FsDomain));
+a135 1
+    fsRootHandlePtr = (FsHandle *)Mem_Alloc(sizeof(FsHandle));
+d201 1
+d219 1
+d237 1
+d254 1
+@
+
+
+1.3
+log
+@more trimming
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsDisk.c,v 1.2 86/07/21 09:36:00 brent Exp $ SPRITE (Berkeley)";
+d90 1
+a90 1
+    buffer = (Address)Mem_Alloc(BYTES_PER_SECTOR);
+d114 1
+a114 1
+    headerPtr = (FsDomainHeader *)Mem_Alloc(BYTES_PER_SECTOR *
+d164 1
+a164 1
+#define SECTORS_PER_FRAG	(FS_FRAGMENT_SIZE / BYTES_PER_SECTOR)
+d168 1
+a168 1
+    register Fs_Geometry *geoPtr;
+@
+
+
+1.2
+log
+@Scrunched the code down.  Solidified Fs_AttachDisk
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsDisk.c,v 1.1 86/07/18 09:32:40 brent Exp $ SPRITE (Berkeley)";
+d78 1
+a78 1
+    int numHeaderSectors;		/* Number of sectors in volume header */
+d118 1
+a118 1
+		 &numHeaderSectors);
+d126 1
+a126 1
+	Sys_Printf("FsDiskAttach: Bad magic # <%x>\n", headerPtr->magic);
+d250 1
+d252 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsDisk.c,v 1.10 86/07/09 14:08:53 brent Exp $ SPRITE (Berkeley)";
+d25 1
+d33 1
+a33 2
+static Boolean IsSunLabel();
+static Boolean IsSpriteLabel();
+d35 4
+a38 1
+static Fs_Device fsDevice;
+d40 5
+a44 1
+FsDomain *fsDomainPtr;	/* Top level info for the boot domain */
+d46 5
+a50 1
+FsHandle *fsDiskHandlePtr;
+d57 3
+a59 7
+ *	Make a file handle for the raw disk we are booting from.
+ *	This makes sure the disk is up, reads the volume header,
+ *	and calls the initialization routine for the block I/O module
+ *	of the disk's driver.  By the time this is called the device
+ *	initialization routines have already been called from Dev_Config
+ *	so the device driver knows how the disk is partitioned into
+ *	volumes.
+d70 1
+a70 1
+Fs_AttachDisk(ctlrNum, unitNum, partNum, handlePtrPtr)
+a73 1
+    FsHandle **handlePtrPtr;	/* Return, handle for raw disk */
+d75 6
+a80 8
+    ReturnStatus status;	/* Error code */
+    Address buffer;		/* Read buffer */
+    int headerSector;		/* Starting sector of volume header */
+    int numHeaderSectors;	/* Number of sectors in volume header */
+    int sectorsRead;		/* Returned from read call */
+    FsHandle	*handlePtr;	/* Reference to file handle for root */
+    FsFileID	fileID;		/* ID for root directory of domain */
+
+a84 1
+    buffer = (Address)Mem_Alloc(BYTES_PER_SECTOR);
+d86 3
+a88 7
+     * This dives right down to the device specific I/O routines in order
+     * to read the special info kept at the beginning of the volume.
+     * Once the volume header has been read the regular block I/O interface
+     * to the device can be used.
+     * Read the zero'th sector of the partition.  It has a copy of the
+     * disk header, and that describes how the rest of the zero'th
+     * cylinder is layed out.
+d90 1
+d93 3
+a95 8
+		 fsDevice.unit, buffer, 0, &sectorsRead);
+    if (status != SUCCESS) {
+	return(status);
+    }
+    /*
+     * Check for different disk formats.
+     */
+    if (IsSunLabel(buffer)) {
+d102 3
+a104 5
+    } else if (IsSpriteLabel(buffer)) {
+	register FsDiskHeader *diskHeaderPtr;
+	diskHeaderPtr = (FsDiskHeader *)buffer;
+	headerSector = diskHeaderPtr->domainSector;
+	numHeaderSectors = diskHeaderPtr->numDomainSectors;
+d106 1
+a106 1
+	Sys_Printf("No disk header\n");
+d109 1
+d111 2
+a112 1
+     * Read the volume header and save it with the domain.
+d114 2
+a115 1
+    buffer = (Address)Mem_Alloc(BYTES_PER_SECTOR * numHeaderSectors);
+d117 2
+a118 1
+		 fsDevice.unit, buffer, headerSector, &numHeaderSectors);
+d124 3
+a126 4
+    fsDomainPtr->headerPtr = (FsDomainHeader *)buffer;
+    if (fsDomainPtr->headerPtr->magic != FS_DOMAIN_MAGIC) {
+	Sys_Printf("FsDiskAttach: Bad magic # on volume header <%x>\n",
+				  fsDomainPtr->headerPtr->magic);
+d130 2
+a131 5
+     * Call the Block I/O initialization routine which sets up the
+     * ClientData part of *devicePtr to reference the Fs_Geometry
+     * part of the domain header.  Then overwrite the device
+     * specification at was on the disk because the device unit depends on
+     * the system configuration.
+d133 9
+a141 11
+    (*fsBlockOpsTable[0].init)(&fsDevice, &fsDomainPtr->headerPtr->geometry);
+    fsDomainPtr->headerPtr->device = fsDevice;
+
+    fsDiskHandlePtr = (FsHandle *)Mem_Alloc(sizeof(FsHandle));
+    fsDiskHandlePtr->fileID.serverID = -1;
+    fsDiskHandlePtr->fileID.domain = 0;
+    fsDiskHandlePtr->fileID.fileNumber = 0;
+    fsDiskHandlePtr->fileID.version = -1;
+    fsDiskHandlePtr->domainToken = (ClientData)fsDomainPtr;
+
+    *handlePtrPtr = fsDiskHandlePtr;
+d148 10
+a157 1
+ * IsSunLabel --
+d159 36
+d206 2
+a207 2
+static Boolean
+IsSunLabel(buffer)
+d219 1
+d227 1
+a227 1
+ * IsSpriteLabel --
+d240 2
+a241 2
+static Boolean
+IsSpriteLabel(buffer)
+a244 2
+    register int index;
+    register int checkSum;
+d250 1
+a252 45
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_BlocksToSectors --
+ *
+ *	Convert from block indexes (actually, fragment indexes) to
+ *	sectors using the geometry information on the disk.  This
+ *	is a utility for block device drivers.
+ *
+ * Results:
+ *	The sector number that corresponds to the fragment index.
+ *	The caller has to make sure that its I/O doesn't cross a
+ *	filesystem block boundary.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+#define SECTORS_PER_FRAG	(FS_FRAGMENT_SIZE / BYTES_PER_SECTOR)
+int
+Fs_BlocksToSectors(fragNumber, geoPtr)
+    int fragNumber;
+    register Fs_Geometry *geoPtr;
+{
+    register int sectorNumber;	/* The sector corresponding to the fragment */
+    register int cylinder;	/* The cylinder number of the fragment */
+    register int rotationalSet;	/* The rotational set with cylinder of frag */
+    register int blockNumber;	/* The block number within rotational set */
+
+    blockNumber		= fragNumber / FS_FRAGMENTS_PER_BLOCK;
+    cylinder		= blockNumber / geoPtr->blocksPerCylinder;
+    blockNumber		-= cylinder * geoPtr->blocksPerCylinder;
+    rotationalSet	= blockNumber / geoPtr->blocksPerRotSet;
+    blockNumber		-= rotationalSet * geoPtr->blocksPerRotSet;
+
+    sectorNumber = geoPtr->sectorsPerTrack * geoPtr->numHeads * cylinder +
+		  geoPtr->sectorsPerTrack * geoPtr->tracksPerRotSet *
+		  rotationalSet +
+		  geoPtr->blockOffset[blockNumber];
+    sectorNumber += (fragNumber % FS_FRAGMENTS_PER_BLOCK) * SECTORS_PER_FRAG;
+
+    return(sectorNumber);
+@

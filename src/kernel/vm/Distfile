@@ -1,0 +1,11 @@
+FILES = (/sprite/src/kernel/vm)
+
+HOSTS = (allspice)
+
+${FILES} -> ${HOSTS}
+	except ${FILES}/Lint ;
+	except ${FILES}/Profiled ;
+	except ${FILES}/Old ;
+	except_pat ( \\.o\$ \\.po\$ \\,v\$ core  lint make\\.*  Mx\\. );
+	except_pat ( Makefile Distfile ) ;
+	install -w -y ;

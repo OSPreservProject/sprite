@@ -1,0 +1,132 @@
+
+
+
+jctrl                     User Commands                     jctrl
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     jctrl - Perform sysadmin duties on Jaquith system.
+
+SSYYNNOOPPSSIISS
+     jjccttrrll --ccmmdd _c_o_m_m_a_n_d [--vvooll _v_o_l_u_m_e_I_d] [--ddeevv _d_e_v_i_c_e] [--vv] [--sslloott
+     _s_l_o_t_n_u_m_b_e_r] [--rroooott _r_o_o_t_p_a_t_h] [--rroobboott _r_o_b_o_t_N_a_m_e]
+
+OOPPTTIIOONNSS
+     --ccmmdd          One of the following commands must be given as
+                   an argument to --ccmmdd::
+
+                   iinnsseerrtt -- Add a new volume to the jukebox
+                   rreemmoovvee -- Remove a volume from the jukebox
+                   llooaadd -- Load a volume into a reader
+                   uunnllooaadd -- Unload a volume from a reader
+                   rreeaaddllaabbeell -- Read a volume label
+                   lliissttvvoollss -- Read all the volume labels
+                   mmoovvee -- Move the robot arm
+                   mmssgg -- Put message on robot front panel
+                   ooppeennddoooorr -- Unlock the jukebox door
+
+     --vvooll _v_o_l_u_m_e_I_d The source volume Id.
+
+     --ddeevv _d_e_v_i_c_e   The name of the reader device.
+
+     --sslloott _s_l_o_t_n_u_m_b_e_r
+                   The home location of the volume.
+
+     --vv            Turn on verbose mode which prints status  dur-
+                   ing operation.
+
+     --rroooott _r_o_o_t_p_a_t_h
+                   Specify root of index tree.
+
+     --rroobboott _r_o_b_o_t_N_a_m_e
+                   Name of jukebox robot device.
+_________________________________________________________________
+
+DDEESSCCRRIIPPTTIIOONN
+     JJccttrrll is a system manager's utility for the Jaquith  system.
+     It provides offline control over the physical jukebox.
+
+
+     Jctrl attempts to keep track of any volumes that  are  moved
+     so that Jaquith's view of the world matches reality.  There-
+     fore the user is prompted with tedious questions throughout.
+
+
+     Jctrl is not network-aware  since  it  is  not  for  use  by
+     clients.  It  assumes  that  it  has  direct  access  to the
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+jctrl                     User Commands                     jctrl
+
+
+
+     jukebox; Results are indeterminate if jmgr is running.
+
+
+BBUUGGSS
+     None known.
+
+
+SSEEEE AALLSSOO
+     jaquith jmgr jls jstat jput jget jcopy jclean jbuild
+
+
+KKEEYYWWOORRDDSS
+     jaquith archive
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     2
+
+
+

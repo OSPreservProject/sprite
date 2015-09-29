@@ -1,0 +1,1047 @@
+% Version of 23 July 1985
+\documentstyle[titlepage]{article}
+
+%&t&{\tt #}&
+%&h&\hbox#& 
+%&v&\hbox{\verb"#"}&
+%&m&\mbox{#}& 
+%&?&-@s:\subsubsection*: 0l .u1 2l @s:\subsubsection*: 0l q1,.xa q1,.k#&
+
+\nofiles
+\def\LATEX{\LaTeX}
+\let\TEX = \TeX
+\def\BIBTEX{BIB\kern-.1em\TeX}
+\def\SLITEX{SLI\TeX}
+
+\begin{document}
+
+\title{\LaTeX\ Update}
+
+\date{Version 2.09 --- \today
+\\[40pt]
+\begin{minipage}{.8\textwidth}
+\normalsize
+\noindent
+This corrects all known significant inaccuracies
+in the December 13, 1983 Version of the \LaTeX\ manual, including
+both typographic errors and changes to \LaTeX.\\[10pt]
+This document was extensively revised on November~8, 1984.  After this
+revision, all subsequent material will be added only at the end.\\[10pt]
+References to pages in the manual refer to the December~13, 1984
+printing.  Subsequent printings have slightly different pagination.
+Line $-n$ denotes the $n^{th}$ line from the bottom of the page.
+\end{minipage}}
+
+\author{Leslie Lamport}
+
+\maketitle
+
+
+
+
+\section*{Errata}
+
+There are many typos and omissions in the preliminary manual.  Most of them
+are obvious and you can correct them yourself.  The following
+are the only ones that may cause trouble.
+
+
+\subsubsection*{page 10, line -9}
+Typing \hbox{\verb|<|} and \hbox{\verb|>|} do not produce the
+expected results.  These characters should be typed only in
+math mode.
+
+
+\subsubsection*
+{page 22, line 9}
+``right to left'' should read ``left to right''.
+
+\subsubsection*
+{page 41}
+The manual should mention that
+a list environment must contain at least one \verb"\item"
+command.
+
+\subsubsection*
+{page 48, second paragraph}
+Ignore this paragraph.  There are cases in which omitting the braces
+can cause trouble.
+
+
+\subsubsection*
+{page 77, lines 18 and 22}
+Delelete the \hbox{\verb|#|}; the optional argument should just be
+{\tt 1}.
+
+\subsubsection*{page 79, line -6}
+Replace \verb"\textwidth" by \verb"\textheight".
+
+\subsubsection* {page 90}
+If a \hbox{\verb"minipage"} environment contains nothing but one or more
+\hbox{\verb"tabbing"} environments, then the width of the resulting
+box is the minimum of: (i)~the argument of the \hbox{\verb"minipage"}
+environment and (ii)~the width of the widest line in the
+\hbox{\verb"tabbing"} environment(s).  This may be useful for
+making a \hbox{\verb"\parbox"} whose width is determined by
+its contents.
+
+\subsubsection*{page 103ff}
+An \hbox{\verb"array"} and \hbox{\verb"tabular"} environment leaves
+a small space (half the normal intercolumn space) at the left
+and right of the array.  A \hbox{\verb"|"} or {\tt @}-expression
+at the beginning (end) of the argument suppresses the space at
+the left (right).  This space usually does no harm, but can be
+eliminated by putting \hbox{\verb"@{}"} at the beginning and end
+of the argument.
+
+\subsubsection*{page 118, line -12}
+There should be three more spaces before ``{\tt Special characters:}''.
+
+\subsubsection*{Page 128}
+Add a reminder about typing \hbox{\verb|\twocolumn[{ ... }]|} if the
+argument contains a {\tt ]}.
+
+\subsubsection*{Page 138}
+Replace \hbox{\verb|\bibstyle|} by \hbox{\verb|\bibliographystyle|}.
+
+\section*{Changes Through Version 2.05}
+
+\subsubsection*{pages 46ff}
+A new \mbox{\tt eqnarray} environment has been added.
+Writing
+\begin{verbatim}
+       \begin{eqnarray} ... \end{eqnarray}
+\end{verbatim}
+is pretty much the same as writing
+\begin{verbatim}
+       \[ \begin{array}{lcl} ... \end{array} \]
+\end{verbatim}
+except that:
+\begin{itemize}
+   \item An equation number is put on every line, unless there
+         is a \hbox{\verb"\nonumber"} command on that line.
+         
+   \item Page breaking can occur between lines, so the {\tt *}-form
+         of the \verb"\\" command is useful.
+   \item There is an extra bit of space added between the lines.
+         The amount of space is equal to the length \verb"\jot",
+         which is a parameter you can set.
+\end{itemize}
+There's also a \hbox{\tt eqnarray*} environment which is the
+same as \hbox{\tt eqnarray} except it doesn't put in any equation
+numbers.  
+
+The {\tt equation}, {\tt eqnarray} and \hbox{\tt eqnarray*} environments
+are called {\it equation\/} environments.  You can put them inside
+parboxes, but you should not put an equation environment inside a 
+parbox that's inside an equation environment.
+
+\subsubsection* {Section 2.3.2}
+The following math symbols have been added.  (Like all math symbols,
+they can be used only in math mode.)
+\[ \begin{tabular}{ll@{\protect\hspace{20pt}}ll}
+    $\mho$ & \verb|\mho| & $\sqsubset$ & \verb|\sqsubset|\\
+    $\Join$ & \verb|\Join| & $\sqsupset$ & \verb|\sqsupset|
+\end{tabular}
+ \]
+
+\subsubsection*{page 48}
+Upper-case Greek letters come in the same type styles as ordinary
+Roman letters.  In math mode you can type \hbox{\verb"{\bf \Pi}"}
+to produce ${\bf \Pi}$, \hbox{\verb"{\tt \Pi}"} to produce
+${\tt \Pi}$, and so on.  
+
+\subsubsection*{pages 55, 72ff, and 142}
+You can now put ``dangerous'' commands in an {\tt @}-expression, or
+in the argument of a sectioning or \hbox{\verb|\caption|} command, by
+preceding the command with \hbox{\verb|\protect|}.  For example, you
+can write 
+\begin{verbatim}
+       \begin{array}{l@{\protect\makebox[.2in]{=}}l} ...
+\end{verbatim}
+or
+\begin{verbatim}
+       \section{Figure \protect\ref{foo} Re-examined.}
+\end{verbatim}
+The \hbox{\verb|\writecommand|} command has been eliminated, and
+\hbox{\verb|\protect\foo|} does what \hbox{\verb|\writecommand{\foo}|}
+used to.
+
+The \hbox{\verb"\protect"} command can be used in the argument of a
+\hbox{\verb"\typeout"} or \hbox{\verb"\typein"} command, so
+\begin{verbatim}
+       \typeout{Command \protect\foo?}
+\end{verbatim}
+causes \TEX{} to type
+\begin{verbatim}
+       Command \foo?
+\end{verbatim}
+on the terminal.  Up until version~2.07, you can also use
+\hbox{\verb"\protect"} in the argument of an \hbox{\verb"\index"}
+command to write a command onto the {\tt .IDX} file.  
+(See the change to \hbox{\verb"\index"} in version~2.07.)
+
+An extra \hbox{\verb"\protect"} command does no harm, so you can use
+one when you're not sure if it's necessary.
+
+\subsubsection*{page 60}
+The declaration \hbox{\verb"\boldmath"} has been added.  It changes
+the math italic typeface and the math symbols to boldface.  (This
+makes lowercase Greek letters bold, but not uppercase ones.)  The
+declaration \hbox{\verb"\unboldmath"} undoes its effect.  These
+declarations are like size-changing declarations, and they should {\it
+not\/} be used in math mode.  The \hbox{\verb"\boldface"} declaration
+has some anomalies in terms of what it makes bold and what it
+doesn't.  Also, it does not embolden subscripts and superscripts.
+
+\subsubsection*{page 99}
+A \hbox{\tt tabbing} environment should not appear inside
+another \hbox{\tt tabbing} environment.  (This would
+be possible only if the inner environment were inside a
+parbox.)
+
+\subsubsection*{pages 117-118}
+{\it This change has been made obsolete in version~2.07 by the
+\hbox{\verb"\newenvironment"} command.}\\
+The \hbox{\verb"\newlist"} command now has an optional argument that
+may come right before the last argument.  It specifies the number of
+arguments that the new list environment has.  (The default is, as
+before, no arguments.)  These arguments can be mentioned in the last
+mandatory argument just as in the 
+\hbox{\verb"\newcommand"} command.  For example,
+you can write:
+\begin{verbatim}
+       \newlist{labelquote}{}{}[1]{\item {\bf #1:} }
+\end{verbatim}
+to define a \hbox{\tt quote}-like environment which typesets its
+argument in boldface in front of the \hbox{\tt quote}'d material.
+
+\subsubsection* {page 125} 
+In \LATEX{} version 2.01, the \hbox{\verb"\mainbaselineskip"} command
+has been eliminated.  In its place is the command
+\hbox{\verb"\baselinestretch"} that works as follows.  Every command
+that changes the type size sets the value of
+\hbox{\verb"\baselinskip"} to \hbox{\verb"\baselinestretch"} times its
+``ordinary'' value for that type size.  For example, the ordinary
+\hbox{\verb"\baselineskip"} for a ten-point font is 12pt.  If
+\hbox{\verb"\baselinestretch"} equals 1.5 and the
+\hbox{\verb"\normalsize"} type size is ten-point, then the
+\hbox{\verb"\normalsize"} command sets \hbox{\verb"\baselineskip"} to
+$1.5\times 12$pt, or 18pt.
+
+You can change \hbox{\verb"\baselinestretch"} at any time with a
+\hbox{\verb"\renewcommand"} declaration, but remember that this has no
+immediate effect on the value of \hbox{\verb"\baselineskip"}; it 
+affects only later type-size-changing commands.  The 
+\linebreak
+\hbox{\verb"\begin{document}"} command executes a
+\hbox{\verb"\normalsize"} command to initially set the type size, so
+changing \hbox{\verb"\baselinestretch"} before the
+\hbox{\verb"\begin{document}"} command has the effect of
+``magnifying'' \hbox{\verb"\baselineskip"} throughout the document.
+
+
+\subsubsection*{page 138}
+The \hbox{\tt thebibliography} environment has been changed slightly.
+The \verb"\bibitem" command automatically puts brackets or whatever
+around the labels in a bibliography, so the example on line -7 should
+read
+\begin{verbatim}
+       \bibitem[Knuth83]{knuth-tex82} Knuth, Donald ...
+\end{verbatim}
+The document style determines if the label is to be printed as
+``[Knuth 83]'' or ``Knuth 83.'' or whatever.  The argument of
+the environment itself should be the same as
+the optional argument of a \hbox{\verb"\bibitem"} command to generate the
+longest label.
+
+
+\subsubsection*{page 146}
+The error message 
+\begin{verbatim}
+       ! Something's wrong--perhaps a missing \item.
+\end{verbatim}
+has been added.  The most likely cause is forgetting an
+\hbox{\verb|\item|} command in a {\tt list} environment.  It is also
+caused by forgetting the argument of a \hbox{\tt thebibliography}
+environment.
+
+\subsubsection*{page 146}
+A new \TEX{} error is now possible:
+\[ \mbox{\tt ! \ Font ... not loaded: Not enough room left.} \]
+This means that you are using too many different typefaces, where
+using the \hbox{\verb"\it"} type style in \hbox{\verb"\small"},
+\hbox{\verb"\normalsize"} and \hbox{\verb"\large"} counts as three
+different typefaces.  You should probably eliminate some of those
+typefaces, since they're just going to confuse the reader anyway.
+However, you might solve your problem by \LATEX{}ing your
+document in parts.
+
+
+\subsubsection*{page 148}
+The error message
+\begin{verbatim}
+     !  This is a LaTeX bug.
+\end{verbatim}
+has been changed to
+\begin{verbatim}
+     !  This may be a LaTeX bug.
+\end{verbatim}
+It is possible, though difficult, to get it with bad input.
+
+\subsubsection*
+{pages 148,152}
+The ``{\tt Typeface not available}'' error has been eliminated.  If a
+typeface isn't available, \LATEX{} uses a different font and types out
+the warning:
+\[  \mbox{\tt No ... typeface in this size, using ...}\] 
+
+\subsubsection*{Page 160 (addendum)}
+Text in which there is no color declaration in effect appears on all
+color layers.  For example, if you make no color declarations anywhere
+in your slide file, then all color layers will be identical to the
+black and white versions.  Note that color declarations are undefined
+in the root file.
+
+\subsubsection*{Page 161 (addendum)}
+The warning about horizontal lines appearing in color layers where
+they should not can be eliminated.  Colors should now always be
+handled properly.
+
+\section*{Changes Made in Version 2.06}
+
+\subsubsection*
+{pages 8, 119, 120, etc.:}
+The \hbox{\verb|\pagelayout|} command has been eliminated; the parameters
+that used to be specified by the page layout are now specified by
+the documentstyle.  The \hbox{\verb|\documentstyle|} command has been
+changed.  It now has the following form:
+\begin{quote}
+\tt \verb|\documentstyle|[{\it 
+   options\/}]\hbox{\verb"{"}{\it style\/}\hbox{\verb"}"}
+\end{quote}
+where {\it style\/} is the main style and {\it options\/} is an
+optional list of options, separated by commas.  The main styles 
+and available options are:
+\[ \begin{tabular}{ll}
+    \multicolumn{1}{c}{\underline{{\it Main Style\/}}} & 
+      \multicolumn{1}{c}{\underline{{\it Options\/}}}\\
+    \tt report & \tt 11pt, 12pt, twoside, twocolumn, draft, fleqn\\
+    \tt article & \tt 11pt, 12pt, twoside, twocolumn, draft, fleqn\\
+    \tt letter &  \tt 11pt, 12pt, fleqn\\
+    \tt slides\footnotemark &   \multicolumn{1}{c}{---}
+   \end{tabular}\]
+\footnotetext{\SLITEX\ only.}%
+The \hbox{\verb"fleqn"} option makes all displayed equations
+flushleft, a distance of \linebreak%%%%%
+\hbox{\verb"\mathindent"} from the prevailing
+left margin.
+
+\subsubsection*{page 10}
+You can forget about the \hbox{\verb"\mbox"} nonsense for producing
+a sentence-ending period.  You simply type \hbox{\verb|"|} (that's
+a double-quote) {\it before\/} the period, so the example should
+be typed as follows:
+\begin{verbatim}
+     Euclid et al.\ proved I + I = II". Meanwhile ...
+\end{verbatim}
+You can use the \hbox{\verb|"|} in this way with other punctuation
+marks that ordinarily have extra space added after them, including
+\hbox{\verb"?"} and \hbox{\verb":"}.  You should also do the same
+thing before a closing parenthesis, as in:
+\begin{verbatim}
+     ... I + I = II"?)  Meanwhile ...
+\end{verbatim}
+Note that you should not have any other \hbox{\verb|"|}s in your
+text (except inside a \hbox{\verb"verbatim"} environment or
+a \hbox{\verb"\verb"} command).\\
+{\it In version 2.07, you type \verb|\@| instead of \verb|"|.}
+
+\subsubsection*{pages 11, 72ff}
+Two new levels of sectioning below \hbox{\verb"\subsubsection"} have
+been added: they are \hbox{\verb"\paragraph"} and \hbox{\verb"\subparagraph"},
+together with their $*$-forms.  Two new counters have also been added
+to control which levels of sectioning are to be numbered and which are
+to be listed in the table of contents.  Setting the
+counter \hbox{\verb"secnumdepth"} to $k$ ($k\ge 1$) means that section
+levels down through level $k$ (inclusive) are numbered, and setting
+the counter \hbox{\verb"tocdepth"} to $k$ means that sections at
+levels down through $k$ are to appear in the table of contents.  In
+both the \hbox{\verb"report"} and \hbox{\verb"article"} document
+style, \hbox{\verb"\section"} is the level-1 command,
+\hbox{\verb"\subsection"} the level-2 command, and so on.  (The
+restrictions on what may appear in the argument of a sectioning
+command given on page~72, as modified by the introduction of the
+\hbox{\verb"\protect"} command, apply even if \hbox{\verb"tocdepth"}
+specifies that no table-of-contents entry is to be produced.)
+
+\subsubsection*{pages 19, 32}
+The declaration \hbox{\verb"\em"} 
+chooses a font style for \mbox{\tt em\it phasis}---either
+italic or roman, depending upon where it is used.  Thus, typing
+\begin{verbatim}
+     Remember: {\em this is {\em very} important.}  
+\end{verbatim}
+produces
+\begin{quote}
+Remember: {\em this is {\em very} important.}
+\end{quote}
+It is best to use \hbox{\verb"\em"} intead of \hbox{\verb"\it"}
+for two reasons: (i)~you might later decide to italicize
+a paragraph and forget that to convert \hbox{\verb"\it"} commands
+to \hbox{\verb"\rm"} commands, and (ii)~there are environments
+like the \hbox{\tt theorem} environment which some document styles
+might set in roman type and others in italic.
+
+\subsubsection* {pages 41,42} 
+The \hbox{\tt description} environment no longer takes an argument.
+It also formats things differently---the label is now italicized and
+flushed right.  You aren't supposed to worry about the
+formatting---\LATEX\ is supposed to take care of that for you.
+However, if you must fiddle with it, look up the definition
+of the \hbox{\verb"description"} environment in the {\tt .DOC}
+versions of the style files.
+
+\subsubsection*{pages 54, 55, 72, 84}
+The \hbox{\verb"\s"} command has been eliminated.  You can now use
+an \hbox{\verb"\hspace"} command wherever you had to use the \hbox{\verb"\s"}
+command.
+
+\subsubsection* {page 75}
+A new feature for making a title has been added.  The command
+\hbox{\verb"\maketitle"}, which makes a title for your document which
+goes on a separate page for the \hbox{\verb"report"} style and goes at
+the top of a page for the \hbox{\verb"article"} style.  (The
+\hbox{\verb"titlepage"} option for the \hbox{\verb"article"} style
+causes the title to be on a separate page.)  The components of the
+title are declared with the following commands:
+\begin{itemize}
+  \item \verb"\title" declares the title.  You may use
+    \hbox{\verb"\\"} to generate a new line.
+  \item \verb"\author" declares the author.  Use \hbox{\verb"\\"}
+    to start new lines---for example, between the author's name and his
+    address.
+  \item \verb"\date" declares the date.  If omitted, today's date
+        is used.
+\end{itemize}
+A \hbox{\verb"\thanks"} command may be used in the title, author, or
+date.  It acts pretty much like a \hbox{\verb"\footnote"} command,
+and is usually used to attach an acknowledgement to an author's name.
+These declarations may come anywhere before the \hbox{\verb"\maketitle"}
+command, as in the following example.
+\begin{verbatim}
+     \title{This is Your Life}
+     \author{John Jones\thanks{Work supported by ...} and Fred
+             Smith\thanks{Work supported by ...} \\ 
+             Institute for Inhuman Development}
+     ...
+     \begin{document}
+     \maketitle
+\end{verbatim}
+You can use at most one \hbox{\verb"\maketitle"} command in your
+document.\\
+{\it See also the \hbox{\verb"\and"} command for\/ multiple
+authors and the \hbox{\verb"abstract"} environment, defined in Version~2.07.}
+
+\subsubsection*{page 82}
+The \hbox{\verb"\newnumbering"} command has been eliminated.  I will
+illustrate how counter numbering works using the \hbox{\verb"section"}
+counter as an example.  The section number, as it appears in the
+table of contents or in the section heading, is produced by the
+command \hbox{\verb"\thesection"}.  You can change how sections
+are numbered by redefining this command.  For example, assuming
+that chapters are numbered I, II, $\ldots$, to get sections
+numbered II.A, II.B, II.C, $\ldots$ you can type the following
+\begin{verbatim}
+    \renewcommand{\thesection}{\thechapter.\Alph{section}}
+\end{verbatim}
+
+\subsubsection*{page 88}
+The naming of ``bins'' for saving boxes with the
+\hbox{\verb"\savebox"} command has been changed to conform to the same
+convention as the naming of lengths.  There is a
+\hbox{\verb"\newsavebox"} declaration that defines a bin.  Instead of
+writing a bin number, the \hbox{\verb"\savebox"} and
+\hbox{\verb"\usebox"} commands take a bin name.  For example, you
+write
+\begin{verbatim}
+     \newsavebox{\foo} ...
+     \savebox{\foo}[1in]{gnus} ...
+     \usebox{\foo}
+\end{verbatim}
+When you leave the scope of a \hbox{\verb"\newsavebox"} declaration,
+the contents of the box vanishes.  This is a handy way to reclaim the
+space taken up by the contents of a bin.  However, if you don't put
+the \hbox{\verb"\newsavebox"} command  ``downstairs'', but define
+it at ``ground level'', then remember to 
+``empty'' the bin when you don't need its contents any more
+by a command like
+\begin{verbatim}
+     \savebox{\foo}{}
+\end{verbatim}
+The old style \hbox{\verb"\savebox"} and \hbox{\verb"\usebox"}, with
+bin numbers, will still work as before, so you don't need to change
+your current files.  But you should use the new conventions in the
+future.
+
+\subsubsection*{page 90}
+Eliminate the second warning---the one about beginning or ending a
+\mbox{\tt minipage} environment with a paragraph-making environment.
+You can now put other environments inside a \mbox{\tt minipage} with
+no problems.
+
+\subsubsection*{page 115ff}
+The \hbox{\verb"list"} environment has been changed in the
+following ways.
+\begin{enumerate}
+\item The \hbox{\verb"\topsepcorrection"} parameter has been eliminated
+and a new (rubber) length \hbox{\verb"\partopsep"} added.
+The space inserted above and below the environment
+is determined as follows:
+\begin{itemize}
+ \item If it begins a new paragraph, then 
+       $\hbox{\verb"\topsep"}+\hbox{\verb"\partopsep"}$.
+  \item If not, then \hbox{\verb"\topsep"}.
+\end{itemize}
+
+\item The default settings of all the list parameters are now
+   determined by the document style, and may vary with the nesting level
+   of the list---e.g., being different for a list inside a list than for
+   a top-level list.  By convention, \hbox{\verb"\leftmargini"},
+   $\ldots$~, \hbox{\verb"\leftmarginvi"} still determine the default
+   value for \hbox{\verb"\leftmargin"}.
+\end{enumerate}
+
+
+\subsubsection*{page 120}
+There are now two versions of every document-style file.  The \TeX\
+``code'' for the \hbox{\verb"report"} document style still resides on
+the file \hbox{\verb"report.sty"}, but there is also a file
+\hbox{\verb"report.doc"} that has essentially the same code completely
+documented.  (The file \hbox{\verb"report.sty"} is obtained from
+\hbox{\verb"report.doc"} by eliminating comments and extra spaces, and
+by adding some optimizations that make the \TeX\ code less readable.)
+The \hbox{\verb".doc"} files will make it easier for you to figure out
+how to customize your own document style.
+
+\subsubsection*{page 120}
+A new command \hbox{\verb"\raggedbottom"} has been added.  It causes
+pages to assume their natural height instead of stretching them to all
+be the same height.  It can be used anywhere, but it makes little
+sense to put it anywhere except before the
+\hbox{\verb"\begin{document}"} command.\\
+{\it See the further amplification of this feature in Version~2.07.}
+
+\subsubsection*{page 151}
+Add the following error messages:
+\begin{verbatim}
+   ! \textfont ... is undefined (character ...).
+   ! \scriptfont ... is undefined (character ...).
+   ! \scriptscriptfont ... is undefined (character ...).
+\end{verbatim}
+This is actually a \LaTeX\ bug which has not been corrected because it
+happens very infrequently, and eliminating it would require adding some
+unpleasant restrictions to \LaTeX.  It occurs when using certain
+uncommon type-style declarations, like \hbox{\verb"\sc"}, in math
+mode.\\
+{[}{\it The following has been made obsolete by the
+\hbox{\verb|\load|} command introduced in Version~2.08.}]\\
+To get around the problem, you need simply add a ground-level
+(not inside any environment) declaration of the offending type style
+before the formula---preferably at ground level.  Thus, you can
+put the commands \hbox{\verb"\sc \rm"} somewhere before a math environment
+that uses the \hbox{\verb"\sc"} command.   The ``dummy'' \hbox{\verb"\sc"}
+declaration should occur at the same type size as the one in the
+math environment, so a problem caused by
+\begin{verbatim}
+       {\large $ ... {\sc foo} ... $ }
+\end{verbatim}
+can be corrected by adding \hbox{\verb"\large \sc \normalsize"}.
+
+\section*{Changes in Version 2.06a}
+
+\subsubsection* {nowhere in particular}
+The command \hbox{\verb"\TeX"} produces the \TeX\  logo, and
+\hbox{\verb"\LaTeX"} produces the \LaTeX\ logo.
+
+
+\section*{Changes in Version 2.07}
+
+\subsubsection*{page 10}
+As noted above, the command \verb|"| introduced in version 2.06 has
+been renamed \verb|\@|.  Thus, you type
+\begin{verbatim}
+       Euclid et al.\ proved I + I = II\@. Meanwhile ...
+\end{verbatim}
+to get the proper end-of-sentence space after the period.
+
+\subsubsection*{page 36}
+The command \hbox{\verb"\pounds"} produces a \pounds\ (pounds sterling)
+symbol.
+
+
+\subsubsection*{page 52, Section 2.3.3 and pages 9-10}
+The \hbox{\verb|\,|} command will work outside math mode, where it also
+produces a ``thin'' space.  It is useful for quotes inside quotes,
+typing \hbox{\verb|``\,`foo'\,''|} to get ``\thinspace`foo'\thinspace''.
+
+\subsubsection*{page 59}
+The \hbox{\verb"\ldots"} command now works in any mode, not just in
+math mode.
+
+\subsubsection* {page 62ff}
+You can now cross-reference footnotes by putting a \hbox{\verb"\label"}
+command in with the text of the footnote, as in
+\begin{verbatim}
+this is it.\footnote{\label{its-it}It really is.}
+\end{verbatim}
+
+\subsubsection* {page 75}
+A new feature has been added to the title-making macros.  Multiple
+authors in an \hbox{\verb"\author"} command should be separated by
+an \hbox{\verb"\and"} command, as in
+\begin{verbatim}
+\author{T. Jones \\ SRI International \and J. Smith \\ Stanford}
+\end{verbatim}
+Note that multiple-line ``authors'' are made with the \hbox{\verb"\\"}
+command, as expected.
+
+There is also an \hbox{\verb"abstract"} environment for producing the
+abstract of the paper.  It should normally follow the
+\hbox{\verb"\maketitle"} command.  You can still roll your own
+abstract if you want, but the \hbox{\verb"abstract"} environment makes
+life easier when changing document styles.
+
+\subsubsection*{pages 81ff, 115ff}
+The method of implementing label numbers in lists has changed, making
+it easier to define your own list environments.  The {\tt list}
+and \hbox{\verb"enumerate"} counters have been eliminated, and two new
+commands have been added.  First, there's a \hbox{\verb"\newcounter"}
+command, where \hbox{\verb"\newcounter{foo}"} defines a new counter
+named {\tt foo}.  There's an optional second argument, where writing
+\begin{verbatim}
+       \newcounter{foo}[subsection]
+\end{verbatim}
+causes the counter {\tt foo} to be reset to zero whenever the
+{\tt subsection} counter is incremented.
+
+The second relevant command has the form \hbox{\verb"\usecounter{foo}"},
+where {\tt foo} is any previously defined counter.  This command is used
+in the second argument of the {\tt list} environment to allow counter
+{\tt foo} to be used to number the list items.  More precisely, it
+causes {\tt foo} to be initialized to zero and incremented by every
+\hbox{\verb"\item"} command that has no optional argument.  A 
+\hbox{\verb"\label"} command within an item will refer to the value
+of counter {\tt foo} for that item.
+
+The {\tt enumerate} environment is implemented with the counters {\tt
+enumi} for an outermost environment, {\tt enumii} for the first nested
+inner {\tt enumerate}, $\ldots$ and {\tt enumiv} for a fourth-level
+enumeration.
+
+If you've played around with the document styles to modify any of
+the list environments, you'll have to look at the new {\tt .doc} files
+to see how the inner workings have been changed.  (It's now easier to
+modify the way enumerations are numbered and referenced.)
+
+\subsubsection* {page 82}
+In addition to \hbox{\verb"\arabic"} \ldots\ \hbox{\verb"\Alph"},
+there's a new \hbox{\verb"\fnsymbol"} command for printing counter
+values.  It produces the the following sequence of nine symbols:
+\[ 
+* \ \ \dagger \ \ \ddagger \ \
+   \mathchar "278 \ \ \mathchar "27B \ \ \| \ \ ** \ \ \dagger\dagger
+   \ \ \ddagger\ddagger
+ \]
+that can be used for numbering footnotes.  (The double symbols look
+better on footnotes than they do here.)  Warning: the symbols it
+produces can be used only in math mode, so if you want to
+cross-reference something that's numbered in this way, you have to put
+the \hbox{\verb"\ref"} command in math mode.
+
+
+\subsubsection*{page 102, line -5}
+You will be able to type \hbox{\verb|\a`|}, \hbox{\verb|\a'|},
+and \hbox{\verb|\a=|} to produce these accents inside a tabbing
+environment.
+
+\subsubsection*{page 104} 
+A new command has been added for drawing horizontal lines across
+only some of the columns of an {\tt array} or {\tt tabular}
+environment.  The command \hbox{\verb"\cline{"{\tt $i$-$j$}\verb|}|}
+draws a line across columns $i$ through $j$ inclusive.  It is used
+just like \hbox{\verb"\hline"}, except multiple \hbox{\verb"\cline"}
+commands can be used to draw lines across distinct columns.
+For example
+\begin{verbatim}
+  ... \\ \cline{1-3} \cline{5-5}
+\end{verbatim}
+Draws horizontal lines across columns 1-3 and column 5.
+
+
+\subsubsection* {pages 117-8}
+The \hbox{\verb"\newlist"} command has been eliminated.  In its
+place are two commands \hbox{\verb"\newenvironment"} and
+\hbox{\verb"\renewenvironment"} for defining arbitrary environments.
+To understand how to use these commands, you must first realize that
+\begin{verbatim}
+       \begin{foo}  ...  \end{foo}
+\end{verbatim}
+is essentially translated to
+\begin{verbatim}
+       {\foo  ...  \endfoo}
+\end{verbatim}
+The command
+\begin{verbatim}
+      \newenvironment{foo}[3]{def1}{def2}
+\end{verbatim}
+acts the way you'd expect
+\begin{verbatim}
+     \newcommand{\foo}[3]{def1}\newcommand{\endfoo}{def2}
+\end{verbatim}
+to, except that \hbox{\verb"\newcommand"} won't allow you to define a
+command name that begins with \hbox{\verb"\end"}.  (Of course, the
+``{\tt [3]}'' represents an optional argument.)  The effect of
+\hbox{\verb"\renewenvironment"} is similar.
+
+\noindent
+{\it The following paragraph is superceded by a change made in
+version~2.08.}\\*
+You will often want the \hbox{\verb"\begin{foo}"} to
+execute the \hbox{\verb"\begin"} of some other envirnment and the
+\hbox{\verb"\end{foo}"} to execute its \hbox{\verb"\end"}.  This
+doesn't work.  The other environment must be called without using the
+\hbox{\verb"\begin{...}"} and \hbox{\verb"\end{...}"} commands, as
+shown below:
+\begin{verbatim}
+  WRONG:  \newenvironment{foo}{\begin{list}...}{\end{list}}
+  RIGHT:  \newenvironment{foo}{\list...}{\endlist}
+\end{verbatim}
+
+\subsubsection*{pages 119 ff} 
+A new document substyle {\tt leqno} now exists.  It causes equation
+numbers to appear on the left instead of the right.  It works with
+all styles and substyles, including {\tt fleqn}.
+
+\subsubsection* {page 119}
+There is now a document style for producing camera-ready output for
+the ACM proceedings format---the large, two-column pages.  The {\tt
+acm} substyle of the \hbox{\verb"article"} style produces output
+formatted for large ($10\times14$) paper; the size known to the Imagen
+printer as B4.  You should use the {\tt 12pt} substyle, so your
+file should begin with
+\begin{verbatim}
+       \documentstyle[12pt,acm]{article}
+\end{verbatim}
+Use the \hbox{\verb"\maketitle"} command and the \hbox{\verb"abstract"}
+environment to get the title and abstract in the right places.
+You can leave a space at the bottom of the first column for the
+copyright notice with the \hbox{\verb"\copyrightspace"} command.  It
+normally follows right after the \hbox{\verb"\maketitle"}.  It works
+by producing a blank footnote, so it must follow any commands that
+produce footnotes in the first column.  The \hbox{\verb"\head"}
+command will cause its argument to be printed as an identification at
+the bottom of the page.
+
+\subsubsection*{page 120}
+A new command \hbox{\verb"\flushbottom"} has been added. It is
+the inverse of the\linebreak %%
+\hbox{\verb"\raggedbottom"} command introduced
+in version~2.06.  It has been added because \hbox{\verb"\raggedbottom"}
+is now the default in the \hbox{\verb"article"} and \hbox{\verb"report"}
+styles unless the \hbox{\verb"twoside"} or \hbox{\verb"twocolumn"}
+option is specified.
+
+
+\subsubsection*{page 126} 
+A new parameter \hbox{\verb"\arraystretch"} has been added to control
+the interline spacing in the {\tt tabular} and {\tt array}
+environments.  The spacing between rows will be \hbox{\verb"\arraystretch"} 
+times the current value of \hbox{\verb"\baselineskip"}.
+
+Note: The inter-row spacing in these environments is produced by a
+putting a strut on each line rather than by \TeX's normal baseline
+spacing mechanism.  The \hbox{\verb"\\[...]"} command (with a positive
+argument) works by increasing the depth of this strut.  This can fail
+to add the expected amount of extra space if there is something on the
+line that extends further down than the strut.
+
+
+\subsubsection*{page 134}
+The argument of the \hbox{\verb"\index"} command may now contain
+any character except a curly brace (\hbox{\verb"{"} or \hbox{\verb"}"}).
+That argument will be written onto the {\tt .idx} file verbatim.
+The same applies to the \hbox{\verb|\glossary|} command.
+
+\subsubsection*{page 143 ff}
+You may get an obscure error after \LaTeX\ has finished processing
+your input file, when the message file indicates that it is reading
+the {\tt .AUX} file.  Such an error is probably caused by a command in
+the argument of a sectioning or \hbox{\verb"\caption"} command that
+needs to be \hbox{\verb"\protect"}'ed.
+
+\subsubsection*{page 146}
+The error message 
+\begin{verbatim}
+       ! Can be used only in preamble.
+\end{verbatim}
+has been added.  It is caused by putting in the body of the text a
+command that belongs in the preamble (before the
+\hbox{\verb"\begin{document}"} command).
+
+\subsubsection*{page 146}
+The word \hbox{\tt preamble} has been replaced by 
+``\hbox{\tt array arg}'' in the following three error messages:
+\begin{verbatim}
+       ! Illegal character in preamble.
+       ! Missing p-arg in preamble.
+       ! Missing @-exp in preamble.
+\end{verbatim}
+This was done only in later releases of Version~2.07. 
+
+\section*{Changes in Version 2.08}
+
+
+\subsubsection*{page 11, 71ff}
+
+The \verb|\part| sectioning command has been added.  It is the highest
+level of sectional unit and is optional.  A \verb|\part| command
+does not change the numbering of chapters or sections, so the first
+chapter of Part~II could be Chapter~12.  There is a \verb|\part*|
+command that works like the {\tt *}-form of the other sectioning
+commands.
+
+\subsubsection*{page 28ff}
+
+A font representing an unusual type-size/style combination may not
+work right when used in math mode, either printing the wrong size
+characters or not printing any characters and generating one of the
+following error messages:%
+\begin{verbatim}
+       !  \textfont         ... is undefined (character ...).
+       !  \scriptfont       ... is undefined (character ...).
+       !  \scriptscriptfont ... is undefined (character ...).
+\end{verbatim}
+To solve this problem, 
+use a command of the form
+\begin{quote}
+\verb|\load{|{\it size\/}\verb|}{|{\it style\/}\verb|}|
+\end{quote}
+where {\it size\/} is the size-changing command and {\it style\/} is
+the type-style command that together specify the desired font.
+The \hbox{\verb|\load|} command should come before the first use of
+the font in math mode, and should not be inside braces or an environment.
+
+
+\subsubsection*{page 32ff}
+
+The command \hbox{\verb|\newfont{\foo}{|\it fontnm\verb|}|} defines
+\hbox{\verb|\foo|} to be a declaration that chooses the font named
+{\it fontnm}.  You can't use \hbox{\verb|\foo|} in math mode.
+
+The command \hbox{\verb|\symbol{|\it char\verb|}|} produces the
+symbol with character code {\it char\/} in the currently selected
+font.  Octal character codes are prefaced by \hbox{\verb|'|} and
+hexadecimal codes by \hbox{\verb|"|}, so you can type either
+\hbox{\verb|\symbol{26}|}, or \hbox{\verb|\symbol{'32}|}, or
+\hbox{\verb|\symbol{"1A}|}, since $26 = 32_{8} = 1A_{16}$.
+
+\subsubsection*{pages 69,148}
+
+The \hbox{\verb|figure*|} and \hbox{\verb|table*|} environments are
+allowed in single-column format, being equivalent there to ordinary
+\hbox{\verb|figure|} and \hbox{\verb|table|} environments, so they
+produce no error message.  When writing a paper, even if you're using
+a single-column format, it's a good idea to decide whether a figure or
+table should be single- or double-column if it were in two-column
+format.  That way, the right thing happens if you ever decide to
+switch to double columms.
+
+\subsubsection* {page 78ff}
+
+The length \hbox{\verb|\fill|} has been added.  It is the ``rubber''
+length added by an \hbox{\verb|\hfill|} command, so
+\hbox{\verb|\hspace{\fill}|} is equivalent to \hbox{\verb|\hfill|}.
+The command \hbox{\verb|\stretch{1.3}|} produces a rubber space of
+length 1.3 times that produced by \hbox{\verb|\fill|}.  It can be used
+only as the argument of \hbox{\verb|\hspace|} or \hbox{\verb|\vspace|}
+(or their {\tt *}-forms), which now can produce rubber spaces.
+
+\subsubsection*{page 81ff}
+
+The command \hbox{\verb|\value{foo}|} produces the value of the
+counter \hbox{\tt foo}.
+It can be used where \LaTeX\ expects an integer or number,
+such as the second argument of
+a \hbox{\verb|\setcounter|} or \hbox{\verb|\addtocounter|}
+command, or in
+\begin{verbatim}
+       \hspace{\value{foo}\parindent}
+\end{verbatim}
+It is useful for doing arithmetic with counters.
+
+\subsubsection*{page 103ff}
+Putting the command \hbox{\verb|\extracolsep{|{\it width\/}\verb|}|}
+in an {\tt @}-expression causes an extra \hbox{\it width\/} of
+space between all subsequent columns.  This is in addition to the
+space normally put between the columns.  Unlike the normal intercolumn
+space, this extra space between columns is not suppressed by
+an {\tt @}-expression.
+
+There is a new {\tt *}-form of the {\tt tabular} environment, which
+has an extra initial argument that specifies the width of the
+box that it produces.  When using the \hbox{\verb|tabular*|} environment,
+you should use the \hbox{\verb|\extracolsep|} command in the argument
+to add some rubber space (such as that provided by \hbox{\verb|\fill|})
+to guarantee that the environment fills up the specified width.
+For example,
+\begin{verbatim}
+  \begin{tabular*}{4in}[t]{ll@{\extracolsep{\fill}}lr@{\extracolsep
+       {0in}\hspace{\tabcolsep}}r} ...
+\end{verbatim}
+produces a five-column environment that is four inches wide.
+Extra space is added after the second and third columns to
+fill out the four inch width, while there is a standard intercolumn
+(\hbox{\verb"\tabcolsep"}) space after the first and fourth columns.
+
+\subsubsection*{page 104}
+
+Two \hbox{\verb|\hline|} commands in a row produce two lines with
+a space between them.  The rules produced by \hbox{\tt |} characters
+in the \hbox{\tt array} or \hbox{\tt tabular} environment's argument
+are interrupted by this space.
+
+\subsubsection* {pages 117-8}
+
+{\it The following change is made obsolete in version 2.09.}
+
+Two new commands \hbox{\verb"\envbegin"} and \hbox{\verb"\envend"}
+have been added for use with the environment-defining commands
+introduced in version~2.07.  A \hbox{\verb"\begin"} or \hbox{\verb"\end"}
+command cannot invoke an unmatched \hbox{\verb"\begin"} or \hbox{\verb"\end"}
+command.  Instead, it must invoke \hbox{\verb"\envbegin"} or
+\hbox{\verb"\envend"}, as indicated in the following example.
+\begin{verbatim}
+  WRONG:  \newenvironment{foo}{\begin{list}...}{\end{list}}
+  RIGHT:  \newenvironment{foo}{\envbegin{list}...}{\envend{list}}
+\end{verbatim}
+
+\subsubsection* {page 121}
+
+The \hbox{\verb|\head|} command has been eliminated.
+In its place are the commands \hbox{\verb|\markboth|} 
+and \hbox{\verb|\markright|}
+having the format
+\begin{quote}
+\verb|\markboth{|{\it left head\/}\verb|}{|{\it right head\/}\verb|}|\\
+\verb|\markright{|{\it right head\/}\verb|}|
+\end{quote}
+for setting either both or just the right heading.  In addition to
+their use with the \hbox{\tt myheadings} page style, you can use them
+to override the normal headings in the \hbox{\tt headings} style,
+since \LaTeX\ uses these same commands to generate those heads.  You
+should note that a left-hand heading is generated by the last
+\hbox{\verb|\markboth|} command before the end of the page, while a
+right-hand heading is generated by the first \hbox{\verb|\markboth|}
+or \hbox{\verb|\markright|} that comes on the page if there is one,
+otherwise by the last one before the page.
+
+\subsubsection* {page 137}
+
+The \hbox{\verb|\cite|} command now has an optional argument that
+adds a note to the citation.  For example, 
+\begin{verbatim}
+       \cite[pages 112-134]{jones:foo}
+\end{verbatim}
+might produce ``[34, pages 112-134]''.  This obviously shouldn't be
+used with a \hbox{\verb|\cite|} command that produces multiple
+citations like ``[12,34,45]''.
+
+\section*{Changes in Version 2.09}
+
+\subsubsection*{no relevant page}
+The \hbox{\verb|\envbegin|} and \hbox{\verb|\envend|} commands
+introduced in Version~2.07 have been eliminated. The arguments of
+\hbox{\verb|\newenvironment|} can contain \hbox{\verb|\begin|} and
+\hbox{\verb|\end|} commands.
+
+\subsubsection*{no relevant page}
+
+A new \hbox{\verb"\lefteqn"} command has been added, mainly for use in
+an \hbox{\tt eqnarray} or \hbox{\tt eqnarray*} environment (introduced
+in version~2.05), to help format wide equations that need to be broken
+across lines.  It typesets its argument in display math style, but
+treats it as if it had zero width when aligning columns.  For example,
+you can produce
+\begin{eqnarray*}
+\lefteqn{\sum_{1}^{N} u_{i}+v_{i}+w_{i}=}\\
+ & & a + b + c + d + e + f + g + h + i\\
+ & & \mbox{}+ j + k + l + m + n + o + p
+\end{eqnarray*}
+by typing
+\begin{verbatim}
+\begin{eqnarray*}
+\lefteqn{\sum_{1}^{N} u_{i}+v_{i}+w_{i}=}\\
+ & & a + b + c + d + e + f + g + h + i\\
+ & & \mbox{}+ j + k + l + m + n + o + p
+\end{eqnarray*}
+\end{verbatim}
+(The \hbox{\verb"\mbox{}"} tells \TeX\ that the following $+$ is a binary
+rather than a unary operator.)
+
+
+\subsubsection* {page 28, top}
+
+Eliminate the six lines beginning with \hbox{\verb"\hbox(6.94444"}.
+All such printout has been eliminated from overfull and underfull box
+messages.  (It will, however, appear in the log file.) This and all
+other box descriptions can be made to appear on the terminal with the
+\hbox{\verb"\showoverfull"} declaration.  (It obeys the normal scoping
+rules.)
+
+\subsubsection*{page 39}
+Theorem-like environments now have an optional argument.  
+If a \hbox{\verb"lemma"} environment has been defined with
+a \hbox{\verb"\newtheorem"} command, then typing
+\begin{verbatim}
+      \begin{lemma}[Zorn]  For every ...
+\end{verbatim}
+will produce something like
+\begin{quote}
+  {\bf Lemma 4 (Zorn)} \ For every \ldots
+\end{quote}
+
+\subsubsection* {page 95, middle}
+
+The \hbox{\verb"\sloppy"} command has been modified so it never
+produces an overfull box.  (Well, hardly ever.)  There is also
+a \hbox{\tt sloppypar} environment that typesets one or more
+paragraphs with \hbox{\verb"\sloppy"} in effect.  (The environment
+starts and ends a paragraph, so you don't have to worry about
+leaving a blank line at the end as you do when using the
+\hbox{\verb"\sloppy"} declaration.)
+
+
+\subsubsection*{page 97}
+
+There are many places, such as before and after displayed equations or
+list environments, where the \hbox{\verb|\nopagebreak|} command has no
+effect.  To overcome this problem, a new \hbox{\verb|\samepage|}
+declaration has been added.  It inhibits page breaking almost anywhere
+within its scope except between paragraphs, where
+\hbox{\verb|\nopagebreak|} works nicely, or where a
+\hbox{\verb|\pagebreak|} or \hbox{\verb|\nopagebreak|} command
+explicitly allows breaking.  The rules determining where it applies
+are a bit complicated; to a first approximation, it applies to an
+entire paragraph if its scope includes the blank line ending
+the paragraph.
+
+\subsubsection*{page 137}
+
+A \hbox{\verb|\nocite|} command has been added.  Like
+\hbox{\verb|\cite|}, it tells Bib\TeX\ to add one or more
+references to the reference list, but it puts nothing in the
+text.  It must come after the \hbox{\verb|\begin{document}|}
+command.
+
+\end{document}

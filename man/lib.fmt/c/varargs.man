@@ -1,0 +1,132 @@
+
+
+
+VARARGS               C Library Procedures                VARARGS
+
+
+
+NNAAMMEE
+     varargs - handle variable argument list
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<vvaarraarrggss..hh>>
+
+     _f_u_n_c_t_i_o_n(vvaa__aalliisstt)
+     vvaa__ddccll
+
+     vvaa__lliisstt _p_v_a_r;
+
+     vvaa__ssttaarrtt(_p_v_a_r);
+
+     f = vvaa__aarrgg(_p_v_a_r, _t_y_p_e);
+
+     vvaa__eenndd(_p_v_a_r);
+
+DDEESSCCRRIIPPTTIIOONN
+     This set of macros provides a means of writing portable pro-
+     cedures that accept variable argument lists.  Routines hav-
+     ing variable argument lists (such as _p_r_i_n_t_f(3S)) but do not
+     use _v_a_r_a_r_g_s are inherently nonportable, since different
+     machines use different argument passing conventions.
+
+     vvaa__aalliisstt is used in a function header to declare a variable
+     argument list.
+
+     vvaa__ddccll is a declaration for vvaa__aalliisstt.  No semicolon should
+     follow vvaa__ddccll.
+
+     vvaa__lliisstt is a type defined for the variable used to traverse
+     the list.  One such variable must always be declared.
+
+     vvaa__ssttaarrtt(_p_v_a_r) is called to initialize _p_v_a_r to the beginning
+     of the list.
+
+     vvaa__aarrgg(_p_v_a_r, _t_y_p_e) will return the next argument in the list
+     pointed to by _p_v_a_r.  _t_y_p_e is the type to which the expected
+     argument will be converted when passed as an argument.  In
+     standard C, arguments that are cchhaarr or sshhoorrtt are converted
+     to iinntt and should be accessed as iinntt, arguments that are
+     uunnssiiggnneedd cchhaarr or uunnssiiggnneedd sshhoorrtt are converted to uunnssiiggnneedd
+     iinntt and should be accessed as uunnssiiggnneedd iinntt, and arguments
+     that are ffllooaatt are converted to ddoouubbllee and should be
+     accessed as ddoouubbllee.  Different types can be mixed, but it is
+     up to the routine to know what type of argument is expected,
+     since it cannot be determined at runtime.
+
+     vvaa__eenndd(_p_v_a_r) is used to finish up.
+
+     Multiple traversals, each bracketed by vvaa__ssttaarrtt ...  vvaa__eenndd,,
+     are possible.
+
+
+
+Sprite v1.0               17 July 1986                          1
+
+
+
+
+
+
+VARARGS               C Library Procedures                VARARGS
+
+
+
+     vvaa__aalliisstt must encompass the entire arguments list.  This
+     insures that a ##ddeeffiinnee statement can be used to redefine or
+     expand its value.
+
+     The argument list (or its remainder) can be passed to
+     another function using a pointer to a variable of type
+     vvaa__lliisstt- in which case a call to vvaa__aarrgg in the subroutine
+     advances the argument-list pointer with respect to the
+     caller as well.
+
+EEXXAAMMPPLLEE
+     This example is a possible implementation of _e_x_e_c_l(3).
+          ##iinncclluuddee <varargs.h>
+          ##ddeeffiinnee MAXARGS     100
+
+          /*   execl is called by
+                    execl(file, arg1, arg2, ..., (char *)0);
+          */
+          execl(vvaa__aalliisstt)
+          vvaa__ddccll
+          {
+               vvaa__lliisstt ap;
+               cchhaarr *file;
+               cchhaarr *args[MAXARGS];
+               iinntt argno = 0;
+
+               vvaa__ssttaarrtt(ap);
+               file = vvaa__aarrgg(ap, cchhaarr *);
+               wwhhiillee ((args[argno++] = vvaa__aarrgg(ap, cchhaarr *)) != (cchhaarr *)0)
+                    ;;
+               vvaa__eenndd(ap);
+               rreettuurrnn execv(file, args);
+          }
+
+BBUUGGSS
+     It is up to the calling routine to specify how many argu-
+     ments there are, since it is not possible to determine this
+     from the stack frame.  For example, _e_x_e_c_l is passed a zero
+     pointer to signal the end of the list.  _P_r_i_n_t_f can tell how
+     many arguments are supposed to be there by the format.
+
+     The macros _v_a__s_t_a_r_t and _v_a__e_n_d may be arbitrarily complex;
+     for example, _v_a__s_t_a_r_t might contain an opening brace, which
+     is closed by a matching brace in _v_a__e_n_d.  Thus, they should
+     only be used where they could be placed within a single com-
+     plex statement.
+
+
+
+
+
+
+
+
+
+Sprite v1.0               17 July 1986                          2
+
+
+

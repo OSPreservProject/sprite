@@ -1,0 +1,379 @@
+# mxedit.tk --
+# This script constructs and editor based on the mxedit widget.
+# This script is sourced by the "mxopen" TCL command that creates
+# a new window (and new interpreter context) in which to edit a file.
+# As such, it is re-read each time you create a new window.
+#
+# A raw mxedit is just a window that you can edit a file in.
+# To be useful, it needs associated scrollbars, menus, command entry
+# fields, and a feedback mechanism.  This scripts adds those features.
+#
+# Copyright (c) 1992 Xerox Corporation.
+# Use and copying of this software and preparation of derivative works based
+# upon this software are permitted. Any distribution of this software or
+# derivative works must comply with all applicable United States export
+# control laws. This software is made available AS IS, and Xerox Corporation
+# makes no warranty about the software, its performance or its conformity to
+# any specification.
+
+#
+# Exported Globals
+# file - the name of the file being edited
+# mxedit - the name of the mxedit widget (defined in mxScroll)
+# logFeedback - 1 to cause feedback to go to stderr, 0 to stop it
+
+# Imported Globals
+# mxversion - the version number of the mxedit implementation
+# lines - the number of lines in the file
+
+# File Globals
+# mxFeedbackEntry - the identity of the feedback entry
+
+#
+# tkerror --
+#	This is the handler for background errors that arise
+#	from commands bound to keystrokes and menus.  A
+#	toplevel message widget is used to display $errorInfo
+
+proc tkerror { msg } {
+    global errorInfo
+    global paleBackground
+    global mxedit
+
+    if { ! [info exists mxedit] } {
+	puts stderr $msg
+	return
+    }
+    if [info exists paleBackground] {
+	set background $paleBackground
+    } else {
+	set background white
+    }
+    set base ".errorInfo"
+    set title "Error Info"
+    set savedErrorInfo $errorInfo
+    # Create a toplevel to contain the error trace back
+    if [catch {
+	# Choose a unique name by testing for the associated error variable
+	# Use the string ".errorInfo-N" as the name of the toplevel
+	# and as the name of a variable holding the current errorInfo
+	for {set x 1} {$x<10} {set x [expr $x+1]} {
+	    global $base-$x
+	    if {! [info exists $base-$x]} {
+		break
+	    }
+	}
+	global $base-$x ; set $base-$x $errorInfo
+	set title $title-$x
+	set name $base-$x
+	toplevel $name -background $background
+
+	wm title $name $title
+    
+	buttonFrame $name
+    
+	packedButton $name.buttons .quit "Dismiss" "destroy $name" left
+	message $name.msg -aspect 300 -font fixed 	\
+	    -text $errorInfo -background $paleBackground
+	pack append $name $name.msg {top expand}
+    } oops] {
+	set msg [concat $msg "($name: " $oops ")" ]
+   }
+
+    if [catch "mxFeedback \{tkerror: $msg\}"] {
+	puts stderr "tkrror: $msg"
+	puts stderr "*** TCL Trace ***"
+	puts stderr $savedErrorInfo
+    }
+}
+
+# mxLibrary --
+#	Try to find the TCL library directory that has all the scripts.
+
+proc mxLibrary { } {
+    global env
+    if [file isdirectory [info library]] {
+	return [info library]
+    } 
+    if [info exists env(TCL_LIB)] {
+	return $env(TCL_LIB)
+    }
+    global _lib_warn
+    if {! [info exists _lib_warn]} {
+	puts stderr "mxLibrary: falling back to \".\""
+	set _lib_warn {}
+    }
+    return "."
+}
+
+# Suck in a bunch of utility procs
+# init.tcl - base stuff for auto_load
+# tk.tcl - base stuff for tk
+# utils.tk define embellished standard TK widgets
+# colors.tk defines sets of complementary colors
+# mxedit.utils defines basic editing commands
+# mxedit.command defines the command entry
+# mxedit.search defines the search/replace entries
+# mxedit.bindings defines keystroke bindings and menu acccelerators
+# mxedit.menus defines menus
+# mxedit.local is for site-specific customizations
+
+foreach filename { init.tcl tk.tcl
+		   utils.tk colors.tk
+		   mxedit.utils mxedit.command mxedit.search
+		   mxedit.bindings mxedit.menus } {
+    if [catch "source [mxLibrary]/$filename" msg] {
+	tkerror "source [mxLibrary]/$filename: $msg"
+    }
+}
+# Turn off auto_exec
+global auto_noexec ; set auto_noexec {}
+
+# mxinit --
+#	This is called from the "mxopen" implementation to initialize the editor
+#	This assumes there is a top-level main window called "."
+#	This fills out "." for the first file on the command line
+#	and then calls mxopen to open a new window on the other files.
+#	mxopen creates a new window and calls back to mxinit.
+#
+proc mxinit { font geometry args } {
+    global argv
+
+    set self "."
+
+    set haveOneWindow 0
+    foreach file [lrange $args 0 end] {
+	if { ! $haveOneWindow} {
+	    if [catch {mxsetup $self $file $geometry $font} msg] {
+		tkerror "mxsetup \"$file\" failed: $msg"
+	    } else {
+		set haveOneWindow 1
+	    }
+	} else {
+	    # mxopen is a call back into the application that
+	    # will ultimately come back here via recursion
+	    if [catch {mxopen $file -geometry $geometry -font $font} msg] {
+		tkerror "mxopen \"$file\" failed: $msg"
+	    }
+	}
+    }
+    if { ! $haveOneWindow } {
+	if [catch {mxsetup $self [mxLibrary]/mxedit.tutorial \
+				$geometry $font} msg] {
+	    tkerror "mxsetup \"tutorial\" failed: $msg"
+	}
+    }
+}
+
+# mxsetup --
+#	Populate a frame (or toplevel) with an editor widget, scrollbar, etc
+#	parent is the parent widget (a frame or toplevel)
+#	filename is what you're editting
+#	geometry is something like 80x20
+#	font is an X font name
+#
+proc mxsetup { parent filename {geometry 80x20} {font fixed} } {
+    global mxversion
+    global lines
+    global file
+    global mxedit
+
+#puts stderr [list mxsetup $filename $geometry $font]
+
+    # Command entry
+    if [catch {mxCommandEntry $parent 20 {bottom fillx}} msg] {
+	tkerror "mxCommandEntry failed: $msg"
+    }
+
+    # Feedback entry
+    if [catch {pack append $parent [mxFeedbackSetup $parent .feedback 20 2] \
+				   {bottom fillx}} msg] {
+	tkerror "mxFeedbackSetup failed: $msg"
+    }
+    # Menus
+    if [catch {
+	    pack append $parent [mxMenuSetup $parent] {top fillx}
+	    mxCreateMenus
+	} msg] {	
+	tkerror "Menu setup failed: $msg"
+    }
+
+    # The main editting window coupled with a scrollbar and feedback line
+    # It's name will be saved in the mxedit global variable
+    pack append $parent \
+	[mxScroll $parent $filename mxFeedback $geometry $font] \
+	{bottom fillx filly expand}
+
+    # Save file name in global variable.  The mxedit implementation
+    # does this for us, except it doesn't do scratch files right.
+    # The mxopen implementation keeps a count of scratch windows
+    # in order to generate unique interpreter names, so we leverage off that.
+    if {[llength $filename] == 0} {
+	global interpName
+	set file [lindex [set interpName] 1]
+	mxFeedback "Mxedit $mxversion, $file"
+    } else {
+	set file $filename
+	mxFeedback "Mxedit $mxversion, editing \"$file\": $lines lines"
+    }
+
+    # Name the window, computing a shortened name for the icon
+    mxNameWindow . $file
+
+    # Now that all the decorations have been built up,
+    # tell the window manager about a gridded window
+    # The widthChars (baseWidth) and heightLines (baseHeight)
+    # must agree with what was passed to mxedit.  In turn, the mxedit
+    # widget tells us about the gridsize based on font metrics
+
+    scan $geometry "%dx%d" widthChars heightLines
+    if [catch "wm grid . $widthChars $heightLines [$mxedit gridsize]" msg] {
+	tkerror "wm grid failed: $msg"
+    } else {
+	wm geometry . $geometry
+    }
+
+    # Finally, do per-user and per-site customization
+    foreach filename " [mxLibrary]/mxedit.local ~/.mxedit " {
+	if [file exists $filename] {
+	    if [catch "source $filename" msg] {
+		puts stderr "source ${filename}: $msg"
+	    }
+	}
+    }
+}
+#
+# mxNameWindow --
+#	Compute a window name and icon name based on the file name
+#	The title is the filename.  The iconname is the last component
+#	of the filename.  If the file is dirty, a "!" is appended to both.
+#
+proc mxNameWindow { window filename } {
+    global mxedit
+
+    set title $filename
+
+    set sindex [string last "/" $filename]
+    if {$sindex > 0} {
+	set iconname [concat "..." [string range "$filename" $sindex end]]
+    } else {
+	set iconname "$filename"
+    }
+    if { ! [catch {set mxedit}] } {
+	# mxedit is defined so we can ask it if the file is modified
+	if [catch "$mxedit written allWindows"] {
+	    set title [concat $title " !"]
+	    set iconname  [concat $iconname " !"]
+	}
+    }
+    wm title $window $title
+    wm iconname $window $iconname
+}
+
+# mxWindowNameFix --
+#	Update the window and icon name based on global file variable
+
+proc mxWindowNameFix { } {
+    global file
+    mxNameWindow . $file
+}
+
+# mxFeedbackSetup --
+# Create an entry widget that is used for feedback
+# Create a frame to hold messages, and define a procedure to display them.
+
+proc mxFeedbackSetup { parent name {width 58} {border 6} } {
+    global backgroundColor paleBackground foregroundColor
+    global entryFont
+    global mxFeedbackEntry mxFeedback
+
+    set self [selfName $parent $name]
+
+    frame $self -borderwidth 2 -background $backgroundColor -relief raised
+
+    # Reverse video the feedback window so it stands apart
+    entry $self.entry -width $width -relief flat \
+	-font $entryFont \
+	-background $backgroundColor -foreground white \
+	-selectforeground black -selectbackground $paleBackground
+
+    pack append $self $self.entry {left fillx expand}
+    pack append $parent $self {left fillx expand}
+    bindEntry $self.entry
+
+    # Remember the name of the entry widget for later feedback
+    set mxFeedbackEntry $self.entry
+    # Remember the name of the frame so the command window
+    # can be packed and unpacked
+    set mxFeedback $self
+
+    return $self
+}
+
+# mxFeedback --
+#	Display a message for the user
+global logFeedback
+if [catch "set logFeedback"] {
+    set logFeedback 0
+}
+global FN ; set FN 0
+
+proc mxFeedback { text } {
+    global mxFeedbackEntry
+    global FN logFeedback
+    $mxFeedbackEntry delete 0 end
+    $mxFeedbackEntry insert 0 "$text"
+    if { $logFeedback } {
+	set FN [expr {$FN+1}]
+	puts stderr "$FN: $text"
+    }
+    return "$text"
+}
+
+# mxScroll --
+#	Compose an mxedit and a scrollbar
+
+proc mxScroll { parent file feedback geometry font } {
+    global mxedit
+    global paleBackground
+
+    # Frame to hold mxedit and scrollbar
+    set self [selfName $parent .mx]
+    frame $self -background $paleBackground
+
+    # Define a scrollbar and pack it to the left of the mxedit widget
+    # (Packing to the right leads to clipping problems when things are resized)
+    if [catch { basicScrollbar $self [list $self.edit view]  \
+				{right filly frame e}} msg] {
+	tkerror "basicScrollbar failed: $msg"
+    }
+
+    # Define the main editting window
+    mxedit $self.edit -file $file -scroll $self.scroll 	\
+	    -bg white -fg black -selector black \
+	    -feedback $feedback -geometry $geometry -font $font
+    # Remember the name of the mxedit widget so that routines
+    # in mxedit.utils can easily access it
+    set mxedit $self.edit
+    pack append $self $mxedit {right expand fill frame w}
+
+    # Set up keystroke bindings.
+    if [catch "mxBindings $mxedit" msg] {
+	tkerror "mxBindings failed: $msg"
+    }
+
+    # Turn on history for redo
+    if [catch "$mxedit history on" msg] {
+	tkerror "$mxedit history on failed: $msg"
+    }
+
+    return $self
+}
+
+# mxeditFocus --
+#	Move focus to the editing window
+
+proc mxeditFocus {} {
+    global mxedit
+    focus $mxedit
+}

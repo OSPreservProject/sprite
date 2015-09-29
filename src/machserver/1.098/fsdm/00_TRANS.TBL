@@ -1,0 +1,5 @@
+F FSDM.H;1                          	fsdm.h
+F FSDMDISK.C;1                      	fsdmDisk.c
+F FSDMFILE.C;1                      	fsdmFileDesc.c
+F FSDMINT.H;1                       	fsdmInt.h
+F MAKEFILE.;1                       	Makefile

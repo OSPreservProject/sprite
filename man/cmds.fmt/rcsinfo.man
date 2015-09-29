@@ -1,0 +1,68 @@
+
+
+
+RCSINFO                   User Commands                   RCSINFO
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     rcsinfo, rcstell  -  Generate  listing  of  files  that  are
+     checked out via RCS
+
+SSYYNNOOPPSSIISS
+     rrccssiinnffoo [_o_p_t_i_o_n_s] [_R_C_S-_d_i_r_e_c_t_o_r_y]
+     rrccsstteellll [_o_p_t_i_o_n_s] [_R_C_S-_d_i_r_e_c_t_o_r_y]
+
+OOPPTTIIOONNSS
+     --uu            Only list files checked out by the user invok-
+                   ing the program.
+
+     --ss            For rrccssiinnffoo, produce no output if no files are
+                   locked.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This program lists files checked out via RCS.  If invoked as
+     rrccssiinnffoo,  it  prints  a  verbose  description  of each file,
+     including the name of each file, who locked it, its RCS ver-
+     sion  number,  and the date and time when it was locked.  If
+     invoked as rrccsstteellll, this program prints  just  the  name  of
+     each file that is checked out.  (This may be useful for con-
+     structs such as ``rrccssddiiffff `rrccsstteellll`''.)  In each  case,  the
+     --uu  option may be used to restrict output to files locked by
+     the caller.
+
+     If no files are locked, rrccssiinnffoo prints  a  message  to  that
+     effect  unless the --ss (silent) option is specified.  rrccsstteellll
+     prints nothing in either case.
+
+     By default, the program lists files controlled by  the  sub-
+     directory RRCCSS.  It may be directed to a different RCS direc-
+     tory by specifying the name of the directory on the  command
+     line.
+
+KKEEYYWWOORRDDSS
+     RCS, list, checked out
+
+SSEEEE AALLSSOO
+     rcsdiff
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  May 30, 1989                     1
+
+
+

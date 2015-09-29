@@ -1,0 +1,23 @@
+CC = cc
+CFLAGS = -O -Dhpux -DSYSV
+LDFLAGS = 
+
+# Regexp and strtoul and NEEDSTRERROR can be removed
+# if your system supplies them.
+
+update: update.o option.o strtoul.o regexp.o
+	$(CC) $(LDFLAGS) -o update update.o option.o strtoul.o regexp.o
+
+update.o: update.c
+	$(CC) $(CFLAGS) -DNEEDSTRERROR -c update.c
+
+option.o: option.c option.h cfuncproto.h
+	$(CC) $(CFLAGS) -c option.c
+
+regexp.o: regexp.c regexp.h
+	$(CC) $(CFLAGS) -c regexp.c
+
+strtoul.o: strtoul.c
+	$(CC) $(CFLAGS) -c strtoul.c
+
+

@@ -1,0 +1,58 @@
+(25 July 1991)
+
+July
+  simple printf server that starts own client (done)
+  design changes to dev and net modules (dev: need to understand how
+    to do tty's; net: need to understand???) (done)
+
+August
+  client can map file read/write into its address space
+  VM error handling (permissions, non-existent pages)
+  server has no-op locking calls in place
+  client is backed entirely by single-threaded Sprite pager
+
+September
+  ds5000 running Mach 3.0 installed, but not used for Sprite work
+  server can read time-of-day chip
+  server is multi-threaded, with coarse-grained locking 
+  client can fork and exec children
+
+October
+  doing all work on ds5000
+  server can ping a native Sprite system (i.e., RPC's work)
+  client makes system calls through emulation library, which then
+    invokes MIG stub
+  (SOSP)
+
+November
+  Proc_ServerProc's work (change timer queue to use message w/ timeout)
+  file system works (client can read & write file from Sprite file
+    server; cache memory is static & pinned)
+
+December
+  client can page across network
+  start on signals
+  (short Christmas vacation)
+
+January 1992
+  client can send, catch signals
+  (XPRS retreat)
+
+February
+  work on C library
+  access to console device.
+  be able to run gcc, maybe vi.
+
+March
+  run benchmarks, find bottlenecks
+  start fixing bottlenecks
+
+April
+  more benchmarks, performance work
+
+
+Dropped:
+  access to local disk
+  binary compatibility
+  support for X
+  TCP/IP support

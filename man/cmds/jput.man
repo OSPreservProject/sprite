@@ -1,0 +1,313 @@
+'\"
+'\" Copyright 1992 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /user5/mottsmth/j/l/jput.man,v 1.8 92/05/07 09:02:14 mottsmth Exp $ SPRITE (Berkeley)
+'\" 
+.\" The definitions below are for supplemental macros used in Sprite
+.\" manual entries.
+.\"
+.\" .HS name section [date [version]]
+.\"	Replacement for .TH in other man pages.  See below for valid
+.\"	section names.
+.\"
+.\" .AP type name in/out [indent]
+.\"	Start paragraph describing an argument to a library procedure.
+.\"	type is type of argument (int, etc.), in/out is either "in", "out",
+.\"	or "in/out" to describe whether procedure reads or modifies arg,
+.\"	and indent is equivalent to second arg of .IP (shouldn't ever be
+.\"	needed;  use .AS below instead)
+.\"
+.\" .AS [type [name]]
+.\"	Give maximum sizes of arguments for setting tab stops.  Type and
+.\"	name are examples of largest possible arguments that will be passed
+.\"	to .AP later.  If args are omitted, default tab stops are used.
+.\"
+.\" .BS
+.\"	Start box enclosure.  From here until next .BE, everything will be
+.\"	enclosed in one large box.
+.\"
+.\" .BE
+.\"	End of box enclosure.
+.\"
+.\" .VS
+.\"	Begin vertical sidebar, for use in marking newly-changed parts
+.\"	of man pages.
+.\"
+.\" .VE
+.\"	End of vertical sidebar.
+.\"
+.\" .DS
+.\"	Begin an indented unfilled display.
+.\"
+.\" .DE
+.\"	End of indented unfilled display.
+.\"
+'\"	# Heading for Sprite man pages
+.de HS
+.if '\\$2'cmds'       .TH \\$1 1 \\$3 \\$4
+.if '\\$2'lib'        .TH \\$1 3 \\$3 \\$4
+.if '\\$2'tcl'        .TH \\$1 3 \\$3 \\$4
+.if '\\$2'tk'         .TH \\$1 3 \\$3 \\$4
+.if t .wh -1.3i ^B
+.nr ^l \\n(.l
+.ad b
+..
+'\"	# Start an argument description
+.de AP
+.ie !"\\$4"" .TP \\$4
+.el \{\
+.   ie !"\\$2"" .TP \\n()Cu
+.   el          .TP 15
+.\}
+.ie !"\\$3"" \{\
+.ta \\n()Au \\n()Bu
+\&\\$1	\\fI\\$2\\fP	(\\$3)
+.\".b
+.\}
+.el \{\
+.br
+.ie !"\\$2"" \{\
+\&\\$1	\\fI\\$2\\fP
+.\}
+.el \{\
+\&\\fI\\$1\\fP
+.\}
+.\}
+..
+'\"	# define tabbing values for .AP
+.de AS
+.nr )A 10n
+.if !"\\$1"" .nr )A \\w'\\$1'u+3n
+.nr )B \\n()Au+15n
+.\"
+.if !"\\$2"" .nr )B \\w'\\$2'u+\\n()Au+3n
+.nr )C \\n()Bu+\\w'(in/out)'u+2n
+..
+'\"	# BS - start boxed text
+'\"	# ^y = starting y location
+'\"	# ^b = 1
+.de BS
+.br
+.mk ^y
+.nr ^b 1u
+.if n .nf
+.if n .ti 0
+.if n \l'\\n(.lu\(ul'
+.if n .fi
+..
+'\"	# BE - end boxed text (draw box now)
+.de BE
+.nf
+.ti 0
+.mk ^t
+.ie n \l'\\n(^lu\(ul'
+.el \{\
+.\"	Draw four-sided box normally, but don't draw top of
+.\"	box if the box started on an earlier page.
+.ie !\\n(^b-1 \{\
+\h'-1.5n'\L'|\\n(^yu-1v'\l'\\n(^lu+3n\(ul'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.el \}\
+\h'-1.5n'\L'|\\n(^yu-1v'\h'\\n(^lu+3n'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.\}
+.fi
+.br
+.nr ^b 0
+..
+'\"	# VS - start vertical sidebar
+'\"	# ^Y = starting y location
+'\"	# ^v = 1 (for troff;  for nroff this doesn't matter)
+.de VS
+.mk ^Y
+.ie n 'mc \s12\(br\s0
+.el .nr ^v 1u
+..
+'\"	# VE - end of vertical sidebar
+.de VE
+.ie n 'mc
+.el \{\
+.ev 2
+.nf
+.ti 0
+.mk ^t
+\h'|\\n(^lu+3n'\L'|\\n(^Yu-1v\(bv'\v'\\n(^tu+1v-\\n(^Yu'\h'-|\\n(^lu+3n'
+.sp -1
+.fi
+.ev
+.\}
+.nr ^v 0
+..
+'\"	# Special macro to handle page bottom:  finish off current
+'\"	# box/sidebar if in box/sidebar mode, then invoked standard
+'\"	# page bottom macro.
+.de ^B
+.ev 2
+'ti 0
+'nf
+.mk ^t
+.if \\n(^b \{\
+.\"	Draw three-sided box if this is the box's first page,
+.\"	draw two sides but no top otherwise.
+.ie !\\n(^b-1 \h'-1.5n'\L'|\\n(^yu-1v'\l'\\n(^lu+3n\(ul'\L'\\n(^tu+1v-\\n(^yu'\h'|0u'\c
+.el \h'-1.5n'\L'|\\n(^yu-1v'\h'\\n(^lu+3n'\L'\\n(^tu+1v-\\n(^yu'\h'|0u'\c
+.\}
+.if \\n(^v \{\
+.nr ^x \\n(^tu+1v-\\n(^Yu
+\kx\h'-\\nxu'\h'|\\n(^lu+3n'\ky\L'-\\n(^xu'\v'\\n(^xu'\h'|0u'\c
+.\}
+.bp
+'fi
+.ev
+.if \\n(^b \{\
+.mk ^y
+.nr ^b 2
+.\}
+.if \\n(^v \{\
+.mk ^Y
+.\}
+..
+'\"	# DS - begin display
+.de DS
+.RS
+.nf
+.sp
+..
+'\"	# DE - end display
+.de DE
+.fi
+.RE
+.sp .5
+..
+.HS jput cmds
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+jput \- Store files in a Jaquith archive.
+.SH SYNOPSIS
+\fBjput\fR 
+[\fB\-arch \fIarchive\fR]
+[\fB-server \fIhostname\fR] [\fB-port \fIport\fR]
+.br
+[\fB\-abs \fItext\fR] [\fB\-absfilter \fIprogram\fR]
+[\fB\-absfilteropt \fIoptions\fR] 
+[\fB-mod \fImod-date\fR] [\fB-dir\fR] 
+[\fB-link\fR] [\fB-sync\fR] [\fB-force\fR]  [\fB-v\fR]
+[\fB-prune \fIexpression\fR] [\fB-prunefull \fIexpression\fR]
+[\fB-ignore \fIexpression\fR]
+.br
+[\fB-mail \fImailaddr\fR] [\fB-newvol\fR] [\fB-crossremote\fR]
+[\fB-ackfreq \fIcount\fR] [\fB-local\fR]
+\fIfilenames\fR
+.SH OPTIONS
+.IP "\fB\-arch \fIarchive\fR" 14
+Name of logical archive.  If none is specified, the environment variable
+JARCHIVE is used, if defined, else the default archive is used. 
+.IP "\fB\-server \fIhostname\fR" 14 
+Specifies host where Jaquith server is running. Defaults
+to the environment variable JSERVER.
+.IP "\fB\-port \fIport\fR" 14 
+Specifies port number where Jaquith server is running. Defaults
+to the environment variable JPORT.
+.IP "\fB\-mod \fIdate\fR" 14
+Dump files modified since specified date.
+.IP "\fB\-abs \fItext\fR" 14
+Put \fItext\fR in the abstract line for each file.
+.IP "\fB\-absfilter \fIprogram\fR" 14
+Invoke \fIprogram\fR to generate abstract for each file. The
+utility \fIfile\fR is a good choice.
+.IP "\fB\-absfilteropt \fIoptions\fR" 14
+Option string to be passed to \fIabsfilter\fR program. Must be enclosed
+in quotes if it contains spaces. ie. "-a -l".
+.IP "\fB\-link\fR"  14
+Follow symbolic links. By default, the link is saved, not the
+file it points to.
+.IP "\fB\-sync\fR"  14
+Write data synchronously to tape. Normally data is buffered
+on disk. There is a severe performance penalty with this option.
+.IP "\fB\-force\fR"  14
+Force files to be archived, even if an up-to-date copy
+already exists on the archive.
+.IP "\fB\-v\fR"  14
+Verbose mode. Show filenames as they are processed.
+.IP "\fB\-dir\fR"  14
+Put the directory and top level contents only. By default jput is recursive.
+.IP "\fB\-mail \fImailaddr\fR"  14
+Send response by mail to \fImailaddr\fR when operation is complete.
+.IP "\fB\-newvol\fR"  14
+Force data onto a new volume.  The -sync option is also required.
+.IP "\fB\-prune \fIexpression\fR"  14
+Subtrees with simple names matching globbing expression \fIexpression\fR
+will not be archived, but their names will still appear in the parent
+directory list. Default is NULL expression.
+.IP "\fB\-prunefull \fIexpression\fR"  14
+Subtrees with absolute path names matching globbing expression \fIexpression\fR
+will not be archived, but their names will still appear in the parent
+directory list. Default is NULL expression.
+.IP "\fB\-ignore \fIexpression\fR"  14
+Files with simple names matching globbing expression \fIexpression\fR will
+not be archived and their names will not be listed in the parent directory.
+Default is '{#*#,*~}'.
+.IP "\fB\-cross\fR"  14
+Sprite only: Enable crossing of remote links. By default jput
+stays within the filesystem containing the files on the command line.
+.IP "\fB\-ackfreq \fIcount\fR"  14
+Server should acknowledge every \fIcount\fR file.
+.IP "\fB\-local\fR"  14
+Sprite only: The files are local to the server so don't send the
+data over the net. This is strictly a Sprite performance hack for
+large backups. Invoker must be login id 'root'.
+.BE
+.SH DESCRIPTION
+.PP
+\fBJput\fP stores a directory subtree onto an archive
+system controlled by the Jaquith server.  The filenames which
+match \fIfilenames\fR are stored on the archive if they
+have been modified since the last time they were archived, or
+if the \fB-force\fR option is used.
+.PP
+The argument \fIfilepath\fR is interpreted as it would be for
+a standard ls command, i.e., it is interpreted relative to
+the current working directory, unless it begins with '/'.
+.PP
+A plain file is considered to be modified if the last modification
+time/date as reported by \fBstat\fR is more recent than the date/time
+the file was archived, or if the permissions have changed.
+A directory is considered modified if the
+list of files in it has changed since it was last archived, or if
+the permissions have changed.
+.PP
+The list of filenames is filtered (using Unix globbing
+rules, but see BUGS below) by the \fB-prune\fR, \fB-prunefull\fR,
+and \fB-ignore\fR expressions. Any filename which matches any of
+these expressions is silently skipped. The options are similar
+except that pruned filenames will appear in their parent
+directory's list whereas ignored files will not.
+.PP
+\fIdate\fR is of the form \fIDateSpec[:TimeSpec]\fR. \fITimeSpec\fR
+is of the form [hh[:mm[:ss]]], and \fIDateSpec\fR is of the form
+dd\(hymonth[\(hyyyyy]. Month is the first 3 letters of the month;
+all others are numbers. The '/' character is a substitute
+for '-' and '.' may be used instead of ':'.
+.SH BUGS
+Files are stored and indexed by their current pathname so there
+is no way to store file \fIfoo\fR as \fIbar\fR.
+.PP
+There is currently no support for hard links.
+.PP
+Unlike the shell, the Jaquith globbing characters '*' and '?' match
+a '.' in the first position.
+.PP
+An abstract must be less than 16 kilobytes long.
+
+.SH "SEE ALSO"
+jaquith jmgr jls jstat jget jctrl jcopy jclean jbuild
+
+.SH KEYWORDS
+jaquith archive

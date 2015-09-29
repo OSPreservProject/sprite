@@ -1,0 +1,366 @@
+/* 
+ * newtee.c --
+ *
+ *	Program to take standard input or input from a named file and
+ * 	transcribe it to both the standard output and the given files.
+ *	It is unbuffered.  The writer process is the child of the reader
+ *	process.  If the child blocks writing to the files due to a file
+ *	server being down, we still want the output on stdout, so the
+ *	parent reader process is set up not to block and has the
+ *	responsibility to send the data to stdout.
+ *
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/cmds/newtee/RCS/newtee.c,v 1.4 90/10/31 14:57:55 mgbaker Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <stdio.h>
+#include <option.h>
+#include <signal.h>
+#include <sys/file.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <errno.h>
+
+
+char	in[BUFSIZ];	/* Input data from read process put here. */
+char 	out[BUFSIZ];	/* Output data for write process put here. */
+int	pipedesc[2];	/* Pipe to pass data from read process to write proc. */
+int	inFd;		/* File descr. for input to program. */
+int	outFiles[20];	/* Files to put output data in. */
+int	maxFileIndex = -1;	/* The index of the last output file. */
+int	childPID;	/* Pid of write process. */
+
+/*
+ * Options to program.
+ */
+Boolean	append = FALSE;	/* Append to output files rather than overwrite them. */
+Boolean	keepGoing = FALSE;	/* Always wait for more input (tail -f). */
+char	*inputFile = NULL;	/* Get input from file instead of stdin. */
+
+Option optionArray[] = {
+    {OPT_TRUE, "append", (char *)&append,
+	"Append to files rather than overwrite them."},
+    {OPT_STRING, "inputFile", (char *)&inputFile,
+	"Use this file as input rather than standard input."},
+    {OPT_TRUE, "keepGoing", (char *)&keepGoing,
+	"Keep trying to read data from input even if the end is reached."},
+
+};
+int numOptions = sizeof(optionArray) / sizeof(Option);
+
+/*
+ * Forward declarations.
+ */
+extern	void	KillChild();
+extern	int	CleanupFunc();
+extern	void	InputReader();
+extern	void	OutputWriter();
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	Gather arguments and setup reading and writing processes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+main(argc, argv)
+    int argc;
+    char *argv[];
+{
+    int		modeFlags;
+
+    argc = Opt_Parse(argc, argv, optionArray, numOptions, 0);
+    if (append) {
+	modeFlags = O_RDWR | O_APPEND | O_CREAT;
+    } else {
+	modeFlags = O_RDWR | O_CREAT | O_TRUNC;
+    }
+    if (argc <= 1) {
+	fprintf(stderr, "You must give at least one filename for output.\n");
+	exit(1);
+    }
+
+    /*
+     * Gather output files and try to open them all.  Keep their descriptors.
+     */
+    for ( ; argc > 1; argc--) {
+	if (maxFileIndex + 1 == sizeof (outFiles) / sizeof (outFiles[0])) {
+	    fprintf(stderr, "Can only handle %d output files.\n",
+		maxFileIndex + 1);
+	    exit(1);
+	}
+	outFiles[maxFileIndex + 1] = open(argv[argc - 1], modeFlags, 0666);
+	if (outFiles[maxFileIndex + 1] < 0) {
+	    fprintf(stderr, "Couldn't open output file %s\n",
+		    argv[argc - 1]);
+	} else {
+	    maxFileIndex++;
+	}
+    }
+    if (maxFileIndex < 0) {
+	perror("Couldn't open any output files");
+	exit(1);
+    }
+	
+    /*
+     * Now check whether we must open an input file.
+     */
+    if (inputFile != NULL) {
+	inFd = open(inputFile, O_RDONLY, 0);
+	if (inFd < 0) {
+	    perror("Couldn't open input file");
+	    exit(1);
+	}
+    } else {
+	inFd = 0;		/* Use standard input by default. */
+    }
+
+    /*
+     * Set up the pipe between reader and writer.
+     */
+    if (pipe(pipedesc) != 0) {
+	perror("Couldn't create pipe.");
+	exit(1);
+    }
+
+    /*
+     * Don't allow reader process to block since we want it to keep on
+     * sending its output to stdout even if a file server is down which
+     * could block the writer process.
+     */  
+    if (fcntl(pipedesc[1], F_SETFL, FNDELAY) == -1) {
+	perror("Coulnd't set pipe to non-blocking");
+	exit(1);
+    }
+
+    /*
+     * Fork writer process.
+     */
+    switch (childPID = fork()) {
+    case 0: /* child */
+	OutputWriter();
+	break;
+    case -1: /* error */
+	perror("Couldn't fork child process");
+	exit(1);
+    default: /* parent */
+	(void) signal(SIGCHLD, CleanupFunc);
+	InputReader();
+	break;
+    }
+
+    KillChild();
+    exit(0);
+}
+
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * InputReader --
+ *
+ *	Parent process that reads from input to program and copies the
+ *	data through a pipe to the child reader process.  This parent is
+ *	set up not to block on the child and has the responsibility to
+ *	copy its input to stdout so that we see it even if the child
+ *	writer process blocks due to server failure.
+ *
+ * Results:
+ *	It never returns.
+ *
+ * Side effects:
+ *	Data read and copied.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+InputReader()
+{
+    int		readCount;	/* Count of data read into program. */
+    int		writeCount;	/* Count of data written to pipe, etc. */
+
+
+    (void) close(pipedesc[0]);
+
+    for ( ; ; ) {
+	/*
+	 * Read data into program.
+	 */
+	readCount = read(inFd, &in, sizeof (in));
+	if (readCount < 0) {
+	    perror("Couldn't read input");
+	    KillChild();
+	    exit(1);
+	}
+	/*
+	 * Don't accept end-of-file if we're in "tail -f" mode.
+	 */
+	if (readCount == 0 && keepGoing) {
+	    continue;
+	} else if (readCount == 0) {	/* end of file */
+	    KillChild();
+	    exit(0);
+	}
+
+	/*
+	 * Copy input to stdout.
+	 */
+	writeCount = write(2, &in, readCount);
+	if (writeCount < 0) {
+	    perror("Couln't write to stdout");
+	    KillChild();
+	    exit(1);
+	}
+	if (writeCount < readCount) {
+	    perror("Couldn't complete write to stdout");
+	    KillChild();
+	    exit(1);
+	}
+
+	/*
+	 * Now copy the input to the non-blocking pipe.
+	 */
+	writeCount = write(pipedesc[1], &in, readCount);
+	if (writeCount < 0 && errno != EWOULDBLOCK) {
+	    perror("Couln't write to pipe");
+	    KillChild();
+	    exit(1);
+	}
+	if (writeCount < readCount) {
+	    perror("Couldn't complete write to pipe");
+	    KillChild();
+	    exit(1);
+	}
+    }
+    KillChild();
+    exit(0);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * OutputWriter --
+ *
+ *	Child process that reads from pipe and copies the
+ *	data to the output files.
+ *
+ * Results:
+ *	It never returns.
+ *
+ * Side effects:
+ *	Data read and copied.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+OutputWriter()
+{
+    int		readCount;	/* Count of bytes read from pipe. */
+    int		writeCount;	/* Count of bytes written to files. */
+    int		theFile;	/* The current output file descriptor. */
+
+    (void) close(pipedesc[1]);
+
+    for ( ; ; ) {
+	/*
+	 * Read data from parent process.
+	 */
+	readCount = read(pipedesc[0], &out, sizeof (out));
+	if (readCount < 0) {
+	    perror("Couldn't read from pipe");
+	    _exit(1);
+	}
+	if (readCount == 0) {
+	    exit(0);
+	}
+
+	/*
+	 * Write the data to each output file.
+	 */
+	for (theFile = 0; theFile <= maxFileIndex; theFile++) {
+	    writeCount = write(outFiles[theFile], &out, readCount);
+	    if (writeCount < 0) {
+		perror("Couldn't write output to file");
+		_exit(1);
+	    }
+	    if (writeCount < readCount) {
+		perror("Couldn't write all of output");
+		_exit(1);
+	    }
+	}
+    }
+    _exit(0);
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CleanupFunc --
+ *
+ *	Called from signal handler by parent if it's child dies.
+ *	If the child dies, the parent should too.  At least, that's the
+ *	current idea.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Death.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+CleanupFunc()
+{
+    exit(1);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * KillChild --
+ *
+ *	Called by the parent process if it's going to die.  We want the
+ *	child to die too in that case.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Death.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+KillChild()
+{
+    (void) kill(childPID, SIGKILL);
+    return;
+}

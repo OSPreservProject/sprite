@@ -1,0 +1,958 @@
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:addbytes.c 2
+2
+3 27 36 0 0
+waddbytes
+24 320 2890
+18 0 0
+4 0 0
+16
+0 114 4 0 0
+waddbytes
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:addch.c 2
+2
+2 26 36 0 0
+waddch
+24 320 2890
+4 0 0
+16
+0 28 4 0 0
+waddch
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:addstr.c 2
+2
+2 26 36 0 0
+waddstr
+24 320 2890
+18 0 0
+16
+0 31 4 0 0
+waddstr
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:box.c 2
+2
+3 26 36 0 0
+box
+24 320 2890
+4 0 0
+4 0 0
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:clear.c 2
+2
+1 24 36 0 0
+wclear
+24 320 2890
+16
+0 29 4 0 0
+wclear
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:clrtobot.c 2
+2
+1 24 36 0 0
+wclrtobot
+24 320 2890
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:clrtoeol.c 2
+2
+1 24 36 0 0
+wclrtoeol
+24 320 2890
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:cr_put.c 2
+2
+0 40 24 320 2890
+_win
+2
+4 43 36 0 0
+mvcur
+4 0 0
+4 0 0
+4 0 0
+4 0 0
+2
+0 56 36 0 0
+fgoto
+2
+1 151 36 0 0
+plodput
+4 0 0
+2
+1 159 36 0 0
+plod
+4 0 0
+16
+0 377 4 0 0
+plod
+2
+2 386 36 0 0
+tabcol
+4 0 0
+4 0 0
+16
+0 396 4 0 0
+tabcol
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:cr_tty.c 2
+2
+0 48 50 0 0
+_tspace
+2
+0 59 3 0 0
+ospeed
+2
+0 61 36 0 0
+gettmode
+2
+1 84 36 0 0
+setterm
+18 0 0
+16
+0 153 4 0 0
+setterm
+2
+0 160 36 0 0
+zap
+2
+1 212 98 0 0
+getcap
+18 0 0
+16
+0 216 18 0 0
+getcap
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:curses.c 2
+2
+0 23 2 0 0
+_echoit
+2
+0 24 2 0 0
+_rawmode
+2
+0 25 2 0 0
+My_term
+2
+0 26 2 0 0
+_endwin
+2
+0 28 50 0 0
+ttytype
+2
+0 29 18 0 0
+Def_term
+2
+0 31 4 0 0
+_tty_ch
+2
+0 32 4 0 0
+LINES
+2
+0 33 4 0 0
+COLS
+2
+0 34 4 0 0
+_res_flg
+2
+0 36 24 320 2890
+stdscr
+2
+0 37 24 320 2890
+curscr
+2
+0 43 8 64 31147
+_tty
+2
+0 45 2 0 0
+AM
+2
+0 45 2 0 0
+BS
+2
+0 45 2 0 0
+CA
+2
+0 45 2 0 0
+DA
+2
+0 45 2 0 0
+DB
+2
+0 45 2 0 0
+EO
+2
+0 45 2 0 0
+HC
+2
+0 45 2 0 0
+HZ
+2
+0 45 2 0 0
+IN
+2
+0 45 2 0 0
+MI
+2
+0 45 2 0 0
+MS
+2
+0 45 2 0 0
+NC
+2
+0 45 2 0 0
+NS
+2
+0 45 2 0 0
+OS
+2
+0 45 2 0 0
+UL
+2
+0 45 2 0 0
+XB
+2
+0 45 2 0 0
+XN
+2
+0 46 2 0 0
+XT
+2
+0 46 2 0 0
+XS
+2
+0 46 2 0 0
+XX
+2
+0 47 18 0 0
+AL
+2
+0 47 18 0 0
+BC
+2
+0 47 18 0 0
+BT
+2
+0 47 18 0 0
+CD
+2
+0 47 18 0 0
+CE
+2
+0 47 18 0 0
+CL
+2
+0 47 18 0 0
+CM
+2
+0 47 18 0 0
+CR
+2
+0 47 18 0 0
+CS
+2
+0 47 18 0 0
+DC
+2
+0 47 18 0 0
+DL
+2
+0 47 18 0 0
+DM
+2
+0 48 18 0 0
+DO
+2
+0 48 18 0 0
+ED
+2
+0 48 18 0 0
+EI
+2
+0 48 18 0 0
+K0
+2
+0 48 18 0 0
+K1
+2
+0 48 18 0 0
+K2
+2
+0 48 18 0 0
+K3
+2
+0 48 18 0 0
+K4
+2
+0 48 18 0 0
+K5
+2
+0 48 18 0 0
+K6
+2
+0 48 18 0 0
+K7
+2
+0 48 18 0 0
+K8
+2
+0 49 18 0 0
+K9
+2
+0 49 18 0 0
+HO
+2
+0 49 18 0 0
+IC
+2
+0 49 18 0 0
+IM
+2
+0 49 18 0 0
+IP
+2
+0 49 18 0 0
+KD
+2
+0 49 18 0 0
+KE
+2
+0 49 18 0 0
+KH
+2
+0 49 18 0 0
+KL
+2
+0 49 18 0 0
+KR
+2
+0 49 18 0 0
+KS
+2
+0 49 18 0 0
+KU
+2
+0 50 18 0 0
+LL
+2
+0 50 18 0 0
+MA
+2
+0 50 18 0 0
+ND
+2
+0 50 18 0 0
+NL
+2
+0 50 18 0 0
+RC
+2
+0 50 18 0 0
+SC
+2
+0 50 18 0 0
+SE
+2
+0 50 18 0 0
+SF
+2
+0 50 18 0 0
+SO
+2
+0 50 18 0 0
+SR
+2
+0 50 18 0 0
+TA
+2
+0 50 18 0 0
+TE
+2
+0 51 18 0 0
+TI
+2
+0 51 18 0 0
+UC
+2
+0 51 18 0 0
+UE
+2
+0 51 18 0 0
+UP
+2
+0 51 18 0 0
+US
+2
+0 51 18 0 0
+VB
+2
+0 51 18 0 0
+VS
+2
+0 51 18 0 0
+VE
+2
+0 51 18 0 0
+AL_PARM
+2
+0 51 18 0 0
+DL_PARM
+2
+0 52 18 0 0
+UP_PARM
+2
+0 52 18 0 0
+DOWN_PARM
+2
+0 52 18 0 0
+LEFT_PARM
+2
+0 52 18 0 0
+RIGHT_PARM
+2
+0 53 2 0 0
+PC
+2
+0 59 2 0 0
+GT
+2
+0 59 2 0 0
+NONL
+2
+0 59 2 0 0
+UPPERCASE
+2
+0 59 2 0 0
+normtty
+2
+0 59 2 0 0
+_pfast
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:delch.c 2
+2
+1 25 36 0 0
+wdelch
+24 320 2890
+16
+0 39 4 0 0
+wdelch
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:deleteln.c 2
+2
+1 26 36 0 0
+wdeleteln
+24 320 2890
+16
+0 53 4 0 0
+wdeleteln
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:delwin.c 2
+2
+1 24 36 0 0
+delwin
+24 320 2890
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:endwin.c 2
+2
+0 25 36 0 0
+endwin
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:erase.c 2
+2
+1 24 36 0 0
+werase
+24 320 2890
+512
+llib-lcurses:fullname.c
+2
+2 27 98 0 0
+fullname
+18 0 0
+18 0 0
+16
+0 44 18 0 0
+fullname
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:getch.c 2
+2
+1 24 36 0 0
+wgetch
+24 320 2890
+16
+0 51 4 0 0
+wgetch
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:getstr.c 2
+2
+2 25 36 0 0
+wgetstr
+24 320 2890
+18 0 0
+16
+0 35 4 0 0
+wgetstr
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:id_subwins.c 2
+2
+1 26 36 0 0
+_id_subwins
+24 320 2890
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:idlok.c 2
+2
+2 28 36 0 0
+idlok
+24 320 2890
+4 0 0
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:initscr.c 2
+2
+0 27 104 320 2890
+initscr
+16
+0 76 24 320 2890
+initscr
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:insch.c 2
+2
+2 26 36 0 0
+winsch
+24 320 2890
+4 0 0
+16
+0 47 4 0 0
+winsch
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:insertln.c 2
+2
+1 25 36 0 0
+winsertln
+24 320 2890
+512
+llib-lcurses:longname.c
+2
+2 25 98 0 0
+longname
+18 0 0
+18 0 0
+16
+0 39 18 0 0
+longname
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:move.c 2
+2
+3 25 36 0 0
+wmove
+24 320 2890
+4 0 0
+4 0 0
+16
+0 37 4 0 0
+wmove
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:mvprintw.c 2
+2
+4 28 36 0 0
+mvprintw
+4 0 0
+4 0 0
+18 0 0
+4 0 0
+16
+0 36 4 0 0
+mvprintw
+2
+5 42 36 0 0
+mvwprintw
+24 320 2890
+4 0 0
+4 0 0
+18 0 0
+4 0 0
+16
+0 50 4 0 0
+mvwprintw
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:mvscanw.c 2
+2
+4 28 36 0 0
+mvscanw
+4 0 0
+4 0 0
+18 0 0
+4 0 0
+16
+0 31 4 0 0
+mvscanw
+2
+5 37 36 0 0
+mvwscanw
+24 320 2890
+4 0 0
+4 0 0
+18 0 0
+4 0 0
+16
+0 40 4 0 0
+mvwscanw
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:mvwin.c 2
+2
+3 26 36 0 0
+mvwin
+24 320 2890
+4 0 0
+4 0 0
+16
+0 57 4 0 0
+mvwin
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:newwin.c 2
+2
+4 35 104 320 2890
+newwin
+4 0 0
+4 0 0
+4 0 0
+4 0 0
+16
+0 86 24 320 2890
+newwin
+2
+5 92 104 320 2890
+subwin
+24 320 2890
+4 0 0
+4 0 0
+4 0 0
+4 0 0
+16
+0 123 24 320 2890
+subwin
+2
+2 130 36 0 0
+_set_subwin_
+24 320 2890
+24 320 2890
+512
+llib-lcurses:newwin.c
+2
+1 201 36 0 0
+_swflags_
+24 320 2890
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:overlay.c 2
+2
+2 28 36 0 0
+overlay
+24 320 2890
+24 320 2890
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:overwrite.c 2
+2
+2 28 36 0 0
+overwrite
+24 320 2890
+24 320 2890
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:printw.c
+2
+-1 51 36 0 0
+printw
+18 0 0
+16
+0 53 4 0 0
+printw
+2
+-1 85 36 0 0
+wprintw
+24 320 2890
+16
+0 87 4 0 0
+wprintw
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:putchar.c 2
+2
+1 21 34 0 0
+_putchar
+4 0 0
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:refresh.c 2
+2
+0 34 24 320 2890
+_win
+2
+1 38 36 0 0
+wrefresh
+24 320 2890
+16
+0 139 4 0 0
+wrefresh
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:scanw.c
+2
+-1 50 36 0 0
+scanw
+18 0 0
+16
+0 52 4 0 0
+scanw
+2
+-1 81 36 0 0
+wscanw
+24 320 2890
+16
+0 83 4 0 0
+wscanw
+2
+3 97 36 0 0
+_sscans
+24 320 2890
+18 0 0
+18 0 0
+16
+0 108 4 0 0
+_sscans
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:scroll.c 2
+2
+1 25 36 0 0
+scroll
+24 320 2890
+16
+0 48 4 0 0
+scroll
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:standout.c 2
+2
+1 30 98 0 0
+wstandout
+24 320 2890
+16
+0 36 18 0 0
+wstandout
+2
+1 44 98 0 0
+wstandend
+24 320 2890
+16
+0 50 18 0 0
+wstandend
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:toucholap.c 2
+2
+2 27 36 0 0
+touchoverlap
+24 320 2890
+24 320 2890
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:touchwin.c 2
+2
+1 25 36 0 0
+touchwin
+24 320 2890
+2
+4 42 36 0 0
+touchline
+24 320 2890
+4 0 0
+4 0 0
+4 0 0
+512
+llib-lcurses:curses.h 2
+2
+0 95 4 0 0
+__void__
+512
+llib-lcurses:tstp.c 2
+2
+0 26 36 0 0
+tstp
+512
+llib-lcurses:unctrl.c
+2
+0 23 114 0 0
+_unctrl

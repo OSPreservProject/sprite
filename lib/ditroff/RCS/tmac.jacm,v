@@ -1,0 +1,580 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     88.12.21.08.35.07;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.12.18.13.54.59;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Switch to Sprite library location.
+@
+text
+@.rn ne NE
+.rn bp BP
+.rn di DI
+.ds n \v'.6m'\h'.05m'\(rn\h'.05m'\v'-.6m'
+.de ne
+.nr QE \\$1v
+.if \\n(.t<\\n(QE .dt \\n(.du+4u \\*(DT
+..
+.de IZ
+.if \\n(PS=0 .nr PS 10
+.if \\n(VS=0 .nr VS 12
+.if \\n(LP=0 .nr LP 53P
+.if \\n(LS=0 .nr LS 0.5v
+.if \\n(PL=0 .nr PL \\n(LPu+2i
+.if \\n(LL=0 .nr LL 32P
+.if \\n(HM=0 .nr HM .75i-1v
+.if \\n(IQ=0 .nr IQ 24p
+.ps \\n(PS
+.vs \\n(VS
+.pl \\n(PLu
+.ll \\n(LLu
+.lt \\n(LLu
+.nr L4 \\n(LPu-\\n(LSu
+.rm GA
+.rm GB
+.dt \\n(L4u EP
+.ds DT EP
+.af % 001
+.em EM
+.DI XX
+..
+.de TL
+.IZ
+.rm IZ
+.ds T^ \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
+.br
+.nr L4 -15p
+.dt \\n(L4u EP
+.FS
+Permission to copy without fee all or part of this material is
+granted provided that the copies are not made or distributed for 
+direct commercial advantage, the ACM copyright notice and the title
+of the publication and its date appear, and notice is given that
+copying is by permission of the Association for Computing Machinery.
+To copy otherwise, or to republish, requires a fee and/or specific
+permission.
+.FE
+.br
+.na
+.ll -1i
+.nh
+.ft 3
+.ps 12
+.vs 20p
+.rs 
+.sp 30p
+..
+.\"		MH - BTL...
+.de MH
+Bell Laboratories, Murray Hill, New Jersey 07974
+..
+.\"		AU - author(s)
+.de AU
+.br
+.if \\n(.$ .as AH \0\\$1
+.if \\n(.$-1 .as AH \0\\$2
+.if \\n(.$-2 .as AH \0\\$3
+.if \\n(.$-3 .as AH \0\\$4
+.if \\n(.$-4 .as AH \0\\$5
+.if \\n(.$-5 .as AH \0\\$6
+.if \\n(.$-6 .as AH \0\\$7
+.if \\n(.$-7 .as AH \0\\$8
+.if \\n(.$-8 .as AH \0\\$9
+.if \\n(AV=0 .sp 22p
+.if \\n(AV>0 .sp 4p
+.nr AV +1
+.ps 8
+.vs 12p
+.ft 1
+.br
+..
+.\"	AI - authors institution
+.de AI
+.br
+.ft 2
+.ps 8
+.vs 8p
+.sp 9p
+..
+.\"	AB - begin an abstract
+.de AB
+.br
+.ul 0
+.ce 0
+.ll \\n(LLu
+.nr IK 1
+.sp 16p
+.ad
+.hy
+.ps 6
+.ft 1
+ABSTRACT\s8.\s0
+.ps 8
+.vs 10p
+.nr PS 8
+.nr VS 10
+..
+.\"	AE - end of an abstract
+.de AE
+.br
+.nr PS 10
+.nr VS 12
+.nr 1T 0
+.nr IK 0
+.ce 0
+.sp 6p
+..
+.\"	OK - "other keywords" for cover sheet.
+.de OK
+.br
+.ps 6
+KEY WORDS AND PHRASES:
+.ps 8
+..
+.de CR
+.sp 6p
+.ps 6
+CR CATEGORIES:
+.ps 8
+..
+.de PP
+.RT
+.if \\n(IP .in -\\n(IQu
+.if \\n(IP .nr IP -1
+.ce 0
+.ne 2
+.ti +12p
+.sp \\n(PDu
+..
+.de LP
+.RT
+.if \\n(IP .in -\\n(IQu
+.if \\n(IP .nr IP -1
+.ce 0
+.ne 2
+.sp \\n(PDu
+.ti 0
+..
+.de IP
+.RT
+.sp \\n(PDu
+.if \\n(.$>1 .nr IQ \\$2n
+.if \\n(IP=0 .in +\\n(IQu
+.nr IP 1
+.ta \\n(IQu
+.if \\n(.$ .ti -\\n(IQu
+.if \\n(.$ \\$1\t\c
+..
+.de SH
+.RT
+.SP 12p
+.ft 3
+.ne 7
+..
+.\"	NH - numbered heaDIng
+.de NH
+.RT
+.nr a \\$1
+.if !\\n(.$ .nr a 1
+.if !\\na .nr a 1
+.nr H\\na +1
+.if !\\na-1 .nr H2 0
+.if \\n(.$ .if !\\$1 .nr H1 1
+.ds SN \\n(H1.
+.if \\na-1 .as SN \\n(H2.
+.if !\\na-1 .ft 2
+.if !\\na-1 .ne 5
+.if \\na=1 .if \\n(H1>1 .sp .6
+.if \\n(H1>1 .SP .3
+\\fR\\*(SN\\fP
+.nr IH 1
+..
+.de EP
+.DI
+.nr L1 \\n(dn
+.ev 1
+.ll \\n(LLu
+.lt \\n(LLu
+.br
+.rs
+.vs \\n(VS
+.sp |\\n(HMu
+.ie \\n%>1 .PT
+.el .sp 1
+.nr TO 0
+.sp 1
+.nr P1 \\n(LP-\\n(L1
+.nf
+.if \\nD .tm Top page \\n% at \\n(nl
+.if \\n(G1>0 .GT
+.rm GT
+.nr P1 -\\n(G1
+.nr G1 0
+.nr P1 -\\n(G2
+.if \\n%=1 .nr P1 -16p
+.if \\n(P1<0 .nr Q1 0
+.if \\n(EX=1 .nr P1 0  \" don't pad on last page of article
+.if \\n(G2>0 .nr Q1 0 \" pad above footnote, not in text
+.if \\nD .tm Page \\n% Pad \\n(P1 Text \\n(Q1 places Foot? \\n(G2
+.XX
+.nf
+.if \\n(P1>0 .sp \\n(P1u
+.if \\n(P1>0 .nr P1 0
+.if \\n(G2>0 .GB
+.if \\nD .tm Bottom of page \\n% at \\n(nl
+.if \\n%=1 .IL
+.nr G2 0
+.rm GB
+.if \\n(EX=0 .BP
+.nr G1 \\n(G3
+.rn GN GT
+.nr G3 0
+.if \\n(GR>0 .rn GQ GB
+.if \\n(GR>0 .nr G2 \\n(GR
+.nr GR 0
+.ev 
+.if \\n(EX=0 .DI XX
+.nr Q1 0
+.nr L4 \\n(LPu-\\n(LSu
+.nr L4 -\\n(G1
+.dt \\n(L4u EP
+.ds DT EP
+..
+.de SP
+.if \\n(.t<\\$1 .\\*(DT
+.if \\n(.d>0 .ST \\$1
+..
+.de ST
+.sp \\$1v
+.nr Q1 +1
+\!.F@@
+..
+.de F@@
+.nr P4 0
+.if \\n(Q1>0 .nr P4 3*((\\n(P1/3)/\\n(Q1)
+.sp \\n(P4u
+.nr P1 -\\n(P4
+.nr Q1 -1
+..
+.de GS
+.\"	argument positions: 1 top here, 2 bottom here, 3 next page, 4 right here
+.if \\n(.$>0 .if \\$1=4 .br
+.ev 1
+.DI GD
+.ll \\n(LLu
+.lt \\n(LLu
+.nr G5 0
+.if \\n(.$>0 .nr G5 \\$1
+..
+.de GE
+.br
+.DI
+.nf
+.nr G0 \\n(dn
+.nr G0 +1v
+.nr G8 0  \" not placed
+.if \\n(G8=0 .if \\n(G0>\\n(.t .if \\n(IF .HQ
+.if \\n(G8=0 .if \\n(G0>\\n(.t .HN
+.if \\n(G8=0 .if \\n(G5=0 .if \\n(G0>(2*\\n(.d) .HT
+.if \\n(G8=0 .if \\n(G5=0 .if (3*\\n(G0)>(2*\\n(.t) .HB
+.if \\n(G8=0 .if \\n(G5=0 .HH
+.if \\n(G8=0 .if \\n(G5=1 .HT
+.if \\n(G8=0 .if \\n(G5=2 .HB
+.if \\n(G8=0 .if \\n(G5=3 .HN
+.if \\n(G8=0 .if \\n(G5=4 .HH
+.rm GD
+.fi
+.ev
+..
+.de HN
+.da GN
+.GD
+.sp 1
+.DI
+.nr G3 \\n(dn
+.nr G8 1
+..
+.de HQ
+.da GQ
+.sp 4p
+.GD
+.DI
+.nr GR \\n(dn
+.nr G8 1
+..
+.de HT
+.nr L4 -\\n(G0
+.dt \\n(L4u \\*(DT
+.da GT
+.GD
+.sp
+.DI
+.nr G1 +\\n(dn
+.nr G8 1
+..
+.de HB
+.if \\n(IF>0 .if \\n(G2>0 .nr G0 -1v
+.nr L4 -\\n(G0
+.dt \\n(L4u \\*(DT
+.da GB
+.if \\n(IF=0 .sp 1 \" don't space if this is a footnote
+.if \\n(IF>0 .if \\n(G2=0 .sp 1 \" unless only footnote
+.if \\n(IF>0 .if \\n(G2>0 .sp 2p \" 2points between footnotes
+.GD
+.DI
+.nr G2 +\\n(dn
+.nr G8 1
+..
+.de HH
+.sp .5v
+.GD
+.sp .5v
+.nr G8 1
+..
+.de KS
+.br
+.ev 2
+.ll \\n(LLu
+.DI KK
+..
+.de KE
+.br
+.DI
+.ev
+.if \\n(dn>\\n(.t .\\*(DT
+.nf
+.KK
+.fi
+..
+.de FS
+.if \\n(IF>0 .tm Footnote within footnote - illegal.
+.nr IF +1
+.ev 1
+.ps 8
+.vs 10p
+.ev
+.GS 2
+.fi
+..
+.de FE
+.GE
+.nr IF -1
+.ev 1
+.ps \\n(PS
+.vs \\n(VS
+.ev
+..
+.de FN
+.FS
+..
+.de PT
+.if \\n%>1 .if o .OT
+.if \\n%>1 .if e .ET
+..
+.de OT
+'ft 1
+.ps \\n(PS
+'tl /\\s10%\\s0//\\s8\\*(AH\\s0/
+'ft P
+..
+.de ET
+.nr fP \\n(.f
+.ft 2
+.ps \\n(PS
+'tl /\\*(T^//\\f1\\s10%\\s0/
+.ft \\n(fP
+..
+.de PF
+.sp 1.5v
+.lt \\n(.lu
+.tl ''\\n%''
+..
+.de EQ  \"equation, breakout and display
+.nr EF \\n(.u
+.rm EE
+.nr LE 1	\" 1 is center
+.ds EL \\$1
+.if "\\$1"L" .ds EL \\$2
+.if "\\$1"L" .nr LE 0
+.if "\\$1"C" .ds EL \\$2
+.if "\\$1"I" .nr LE 0
+.if "\\$1"I" .ds EE \\h'10n'
+.if "\\$1"I" .if !"\\$3"" .ds EE \\h'\\$3n'
+.if "\\$1"I" .ds EL \\$2
+.nf
+.DI EZ
+..
+.de EN  \" end of a displayed equation
+.DI
+.rm EZ
+.nr ZN \\n(dn
+.lt \\n(.lu
+.if \\n(ZN>0 .if !\\n(.d=\\n(PE .SP .5
+.pc
+.if \\n(ZN>0 .if \\n(LE>0 .tl \(ts\(ts\\*(10\(ts\\*(EL\(ts
+.if \\n(ZN>0 .if \\n(LE=0 .tl '\\*(EE\\*(10''\\*(EL'
+.pc %
+.lt \\n(LLu
+.if \\n(EF>0 .fi
+.rm EL
+.rm 10
+.if \\n(ZN>0 .SP .5
+.nr PE \\n(.d
+..
+.de B
+.ft 3
+.if \\n(.$>0 \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
+.if \\n(.$>0 .ft 1
+..
+.de I
+.ft 2
+.if \\n(.$>0 \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
+.if \\n(.$>0 .ft 1
+..
+.de R
+.ft 1
+..
+.de EM
+.br
+.nr EX 1
+.wh -82p IM
+.wh -1p .CM
+.\\*(DT
+\&\c
+'BP
+.nr q \\n%
+.nr % 0
+.sp
+.rm IM
+.XT \\nq
+.sp 2
+End.
+.rm IM
+.rm XT
+.ex
+..
+.de TS
+.nf
+.sp .5v
+..
+.de TE
+.fi
+.sp .5v
+..
+.de CM
+.po 0
+.lt 7.7i
+.tl '--''--'
+.lt
+.po
+..
+.wh 0 CM
+.de RT
+.IZ
+.rm IZ
+.if \\n(1T=0 .BG
+.br
+.ps \\n(PS
+.vs \\n(VS
+.ft 1
+.if \\n(IH>0 .sp 4p
+.nr IH 0
+..
+.de ND
+.if \\n(.$>0 .ds YR \\$\\n(.$
+..
+.de BG
+.sp 22p
+.ns
+.nr 1T 1
+.if "\\*(YR"" .ds YR 19\\n(yr
+.nr zy \\*(YR%100
+.af in 0001
+.FS
+\d\s+6\(co\s-6\u \\*(YR ACM 0004-5411/\\n(zy/\\n(in-0000 $00.75
+.FE
+..
+.\"   ACCENTS  say \*'e or \*`e to get e acute or e grave
+.ds ' \h'\w'e'u*4/10'\z\(aa\h'-\w'e'u*4/10'
+.ds ` \h'\w'e'u*4/10'\z\(ga\h'-\w'e'u*4/10'
+.\"   UMLAUT  \*:u, etc.
+.ds : \v'-0.6m'\h'(1u-(\\n(.fu%2u))*0.13m+0.06m'\z.\h'0.2m'\z.\h'-((1u-(\\n(.fu%2u))*0.13m+0.26m)'\v'0.6m'
+.\"  TILDE and CIRCUMFLEX
+.ds ^ \\k:\h'-\\n(.fu+1u/2u*2u+\\n(.fu-1u*0.13m+0.06m'\z^\h'|\\n:u'
+.ds ~ \\k:\h'-\\n(.fu+1u/2u*2u+\\n(.fu-1u*0.13m+0.06m'\z~\h'|\\n:u'
+.\"	\"dotted arrow
+.ds > \v'-.1m'\s-4---\z-\v'.1m'\h'-.3m'\z>\s+4
+.\"		czech symbol as in kucera & francis
+.ds C \h'.1m'\v'-0.6m'\s6\zv\s0\v'0.6m'\h'-.1m'
+..
+.de IL
+.ps 6
+.vs 10p
+.sp 6p
+'tl /Journal of the Association for Computing Machinery, Vol. \\n(vo, No. \\n(nu, \\*(mo \\*(YR, pp. 000\\*n000.///
+.ps
+.vs
+..
+.de IM
+.ps 6
+.vs 10p
+.br
+.if e 'tl ///Journal of the Association for Computing Machinery, Vol. \\n(vo, No. \\n(nu, \\*(mo \\*(YR./
+.if o 'tl ///Journal of the Association for Computing Machinery, Vol. \\n(vo, No. \\n(nu, \\*(mo \\*(YR./
+.br
+.ps
+.vs
+\&\c
+.rm IL
+..
+.de XT
+.sp 2
+.OT
+.sp 2
+.ET
+.if \\n(.$ .if \\$1 .XT \\$1-1
+..
+.so /sprite/lib/ditroff/tmac.srefs
+.de KF
+.tm KF not appropriate for -mjacm, changing to GS
+.GS
+..
+.de bp
+.tm bp?? Why are you using macros if you write troff yourself?
+.ne 10i
+..
+.de di
+.tm di?????? You think you can write your own diversions? I give up.
+.ex
+..
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d528 1
+a528 1
+.so /usr/local/lib/ditmac/tmac.srefs
+@

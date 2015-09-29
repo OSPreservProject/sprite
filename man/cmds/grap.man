@@ -1,0 +1,37 @@
+.TH GRAP 1 
+.SH NAME
+grap \- pic preprocessor for drawing graphs
+.SH SYNOPSIS
+.B grap
+[ files ]
+.SH DESCRIPTION
+.I Grap
+is a
+.IR pic (1)
+preprocessor for drawing graphs on a typesetter.
+Graphs are surrounded by the
+.I troff
+`commands'
+.B \&.G1
+and
+.BR  \&.G2 .
+Data that is enclosed is scaled and plotted,
+with tick marks supplied automatically.
+Commands exist to modify the frame,
+add labels, override the default ticks,
+change the plotting style,
+define coordinate ranges and transformations,
+and include data from files.
+In addition, 
+.I grap
+provides the same loops, conditionals and macro processing that
+.I pic
+does.
+.SH FILES
+.IR /usr/lib/grap.defines :
+definitions of standard plotting characters, e.g., bullet.
+.SH "SEE ALSO"
+graph(1), plot(3)
+.br
+J. L. Bentley, B. W. Kernighan,
+.I "GRAP \(em A Language for Typesetting Graphs "

@@ -1,0 +1,44 @@
+head     1.2;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     88.06.29.14.57.52;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.21.16.42.08;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Add ifdefs so that file can't be processed twice.
+@
+text
+@/*	sgtty.h	4.2	85/01/03	*/
+
+#ifndef	_IOCTL
+#include <sys/ioctl.h>
+#endif
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d3 1
+a3 1
+#ifndef	_IOCTL_
+@

@@ -1,0 +1,220 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  srv030:1.3 srv028:1.3 srv027:1.3 srv026:1.3 srv024:1.3 srv022:1.3 srv021:1.3 srv019:1.3 srv018:1.3 srv016:1.3 srv014:1.3 srv010:1.3 srv008:1.3 srv007:1.3 srv006:1.3 srv005:1.3 srv004:1.3 srv003:1.3 srv002:1.3 srv001:1.3;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     92.03.23.15.05.16;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.12.12.22.11.32;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.12.02.20.16.18;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@Back out the pre-console hacks.
+@
+text
+@/* 
+ * StdioFileCloseProc.c --
+ *
+ *	Source code for the "StdioFileCloseProc" library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/lib/c/stdio/RCS/StdioFileCloseProc.c,v 1.2 91/12/12 22:11:32 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <stdio.h>
+#include "fileInt.h"
+#include <stdlib.h>
+#include <errno.h>
+#include <unistd.h>
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StdioFileCloseProc --
+ *
+ *	This procedure is used as the closeProc for all streams
+ *	that are associated with files.  It just closes the file
+ *	associated with the stream.
+ *
+ * Results:
+ *	Returns 0 if all went well, or EOF if there was an error during
+ *	the close operation.
+ *
+ * Side effects:
+ *	A file is closed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+StdioFileCloseProc(stream)
+    register FILE *stream;	/* Stream to be closed.  The clientData
+				 * field of the stream contains the id to
+				 * use when talking to the operating system
+				 * about the stream. */
+{
+    register FILE *prev;
+
+    /*
+     * Careful!  Don't free the buffer unless we allocated it.
+     */
+
+    if ((stream->buffer != stdioTempBuffer)
+	    && (stream->buffer != stdioStderrBuffer)
+	    && (stream->buffer != NULL)
+	    && !(stream->flags & STDIO_NOT_OUR_BUF)) {
+	free((char *) stream->buffer);
+	stream->buffer = NULL;
+	stream->bufSize = 0;
+    }
+    stream->flags = 0;
+    stream->readCount = stream->writeCount = 0;
+    if (close((int) stream->clientData) != 0) {
+	stream->status = errno;
+	return EOF;
+    }
+
+    /*
+     * Free the stream's struct unless it's one of the ones statically
+     * allocated for a standard channel.
+     */
+
+    if ((stream != stdin) && (stream != stdout) && (stream != stderr)) {
+	if (stdioFileStreams == stream) {
+	    stdioFileStreams = stream->nextPtr;
+	} else {
+	    for (prev = stdioFileStreams; prev != NULL;
+		    prev = prev->nextPtr) {
+		if (prev->nextPtr == stream) {
+		    prev->nextPtr = stream->nextPtr;
+		    break;
+		}
+	    }
+	}
+	free((char *) stream);
+    }
+    return 0;
+}
+@
+
+
+1.2
+log
+@Temporary hack so that stdin, stdout, stderr will work w/o
+/dev/console.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/lib/c/stdio/RCS/StdioFileCloseProc.c,v 1.1 91/12/02 20:16:18 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a71 65
+
+    /*
+     * Free the stream's struct unless it's one of the ones statically
+     * allocated for a standard channel.
+     */
+
+    if ((stream != stdin) && (stream != stdout) && (stream != stderr)) {
+	if (stdioFileStreams == stream) {
+	    stdioFileStreams = stream->nextPtr;
+	} else {
+	    for (prev = stdioFileStreams; prev != NULL;
+		    prev = prev->nextPtr) {
+		if (prev->nextPtr == stream) {
+		    prev->nextPtr = stream->nextPtr;
+		    break;
+		}
+	    }
+	}
+	free((char *) stream);
+    }
+    return 0;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StdioTestCloseProc --
+ *
+ *	This procedure is used as the closeProc for all streams
+ *	that use Test_{Put,Get}String.  It just does buffer management.
+ *
+ * Results:
+ *	Returns 0 if all went well, or EOF if there was an error during
+ *	the close operation.
+ *
+ * Side effects:
+ *	A file is closed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+StdioTestCloseProc(stream)
+    register FILE *stream;	/* Stream to be closed.  The clientData
+				 * field of the stream contains the id to
+				 * use when talking to the operating system
+				 * about the stream. */
+{
+    register FILE *prev;
+
+    /*
+     * Careful!  Don't free the buffer unless we allocated it.
+     */
+
+    if ((stream->buffer != stdioTempBuffer)
+	    && (stream->buffer != stdioStderrBuffer)
+	    && (stream->buffer != NULL)
+	    && !(stream->flags & STDIO_NOT_OUR_BUF)) {
+	free((char *) stream->buffer);
+	stream->buffer = NULL;
+	stream->bufSize = 0;
+    }
+    stream->flags = 0;
+    stream->readCount = stream->writeCount = 0;
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdio/RCS/StdioFileCloseProc.c,v 1.5 90/09/11 14:27:18 kupfer Exp $ SPRITE (Berkeley)";
+d20 1
+a20 1
+#include "stdio.h"
+d72 65
+@

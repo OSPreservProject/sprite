@@ -1,0 +1,504 @@
+head     9.6;
+branch   ;
+access   ;
+symbols  ds3100:9.6 sun3:9.6 sprited:9.5.1 sun4nw:9.5 symm:9.5 spur:9.5 Summer89:9.0 newlib:8.0 Summer88:6.0 argString:5.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.6
+date     91.11.15.21.02.40;  author kupfer;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.09.06.17.56.45;  author jhh;  state Exp;
+branches 9.5.1.1;
+next     9.4;
+
+9.4
+date     90.07.30.15.45.25;  author douglis;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.06.22.11.29.20;  author douglis;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.03.16.14.15.16;  author douglis;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.17.11.12.04;  author douglis;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.14.24;  author douglis;  state Stable;
+branches ;
+next     8.3;
+
+8.3
+date     89.08.29.16.12.55;  author douglis;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.08.22.14.56.30;  author douglis;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.04.06.11.46.12;  author douglis;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.28.59;  author douglis;  state Stable;
+branches ;
+next     6.4;
+
+6.4
+date     88.11.11.12.26.01;  author douglis;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.11.08.15.59.10;  author douglis;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.10.07.12.54.31;  author douglis;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.31.17.54.46;  author douglis;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.21.29;  author brent;  state Stable;
+branches ;
+next     5.3;
+
+5.3
+date     88.06.30.17.31.13;  author douglis;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     88.04.18.09.12.18;  author ouster;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     88.04.18.09.10.59;  author douglis;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.46.37;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.5.1.1
+date     91.11.21.20.15.23;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.6
+log
+@Fix the RCS Header line.
+@
+text
+@/*
+ * migrate.h --
+ *
+ *	Declarations of types for process migration used only by the proc
+ * 	module.
+ *
+ * Copyright 1986, 1988, 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ * $Header$ SPRITE (Berkeley)
+ */
+
+#ifndef _MIGRATE
+#define _MIGRATE
+
+/*
+ * Parameters for a remote Proc_Wait.
+ */
+
+typedef struct {
+    Proc_PID 	pid;	    /* ID of process doing the wait */
+    int 	numPids;    /* number of pids in array */
+    Boolean 	flags;      /* Flags to Proc_Wait. */
+    int 	token;      /* token to use for remote notify call */
+} ProcRemoteWaitCmd;
+
+/*
+ * Types of commands passed related to migration:
+ *
+ * PROC_MIGRATE_CMD_INIT	- Initiate a migration.
+ * PROC_MIGRATE_CMD_ENTIRE	- Process control block.
+ * PROC_MIGRATE_CMD_UPDATE	- Update user information that may change, 
+ *		  		  such as priorities or IDs.
+ * PROC_MIGRATE_CMD_CALLBACK 	- Callback by another module to transfer
+ *				  additional encapsulated state.
+ * PROC_MIGRATE_CMD_DESTROY	- Destroy a migrated process due to an error
+ *				  during migration.
+ * PROC_MIGRATE_CMD_RESUME	- Resume a migrated process after transfer.
+ * PROC_MIGRATE_CMD_SUSPEND	- Remote process has suspended or continued.
+ */
+
+#define PROC_MIGRATE_CMD_INIT		0
+#define PROC_MIGRATE_CMD_ENTIRE		1
+#define PROC_MIGRATE_CMD_UPDATE		2
+#define PROC_MIGRATE_CMD_CALLBACK	3
+#define PROC_MIGRATE_CMD_DESTROY	4
+#define PROC_MIGRATE_CMD_RESUME		5
+#define PROC_MIGRATE_CMD_SUSPEND	6
+
+#define PROC_MIGRATE_CMD_NUM_TYPES	7
+    
+/* 
+ * Data sent to the other host related to migration.  This is done
+ * either to perform the entire state transfer or parts (see above).
+ * It always specifies a processID, which may be NIL to indicate a new
+ * process is to be created (only during PROC_MIGRATE_INIT).
+ */
+
+typedef struct {
+    Proc_PID		remotePid; /* Process ID on other host. */
+    int			command;   /* What to do. */
+    int			totalSize; /* Total size of command buffer. */
+    int			offset;	   /* Offset into total buffer. */
+} ProcMigCmd;
+    
+
+/*
+ * Parameters when initiating migration to another machine.  This is done
+ * to check permission as well as incompatible versions.
+ */
+
+typedef struct {
+    int 	version;    /* Migration version number of machine starting
+			     * migration (should come first) */
+    Proc_PID 	processID;    /* ID of process being migrated */
+    int		userID;	    /* userID of process being migrated */
+    int		clientID;   /* ID of host issuing command */
+} ProcMigInitiateCmd;
+
+/*
+ * Number of times to try an RPC before giving up due to RPC_TIMEOUT, while
+ * waiting for the host to come up.
+ */
+
+#define PROC_MAX_RPC_RETRIES 2
+
+/*
+ * Parameter to ProcRecordUsage:
+ * 	PROC_MIG_USAGE_REMOTE_CPU 	- time used by remote processes
+ * 	PROC_MIG_USAGE_TOTAL_CPU	- time used by all processes
+ * 	PROC_MIG_USAGE_POST_EVICTION	- time used subsequent to 1st
+ * 					  eviction.
+ *
+ */
+typedef enum {
+    PROC_MIG_USAGE_REMOTE_CPU, 	
+    PROC_MIG_USAGE_TOTAL_CPU,
+    PROC_MIG_USAGE_POST_EVICTION,
+} ProcRecordUsageType;
+
+
+#endif /* _MIGRATE */
+@
+
+
+9.5
+log
+@First pass at function prototypes
+@
+text
+@d17 1
+a17 1
+ * $Migrate: proto.h,v 1.4 86/03/20 14:00:21 andrew Exp $ SPRITE (Berkeley)
+@
+
+
+9.5.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@@
+
+
+9.4
+log
+@added parms to ProcRecordUsage.
+@
+text
+@a108 17
+/*
+ * Various proc-internal procedures.
+ */
+extern ReturnStatus ProcMigAcceptMigration();
+extern ReturnStatus ProcMigReceiveProcess();
+extern ReturnStatus ProcMigGetUpdate();
+extern ReturnStatus ProcMigEncapCallback();
+extern ReturnStatus ProcMigDestroyCmd();
+extern ReturnStatus ProcMigCommand();
+extern ReturnStatus ProcMigContinueProcess();
+extern ReturnStatus ProcMigGetSuspend();
+extern void         ProcMigRemoveDependency();
+extern void 	    ProcMigAddDependency();
+extern void	    ProcMigKillRemoteCopy();
+extern ENTRY void   ProcMigWakeupWaiters();
+extern ENTRY void   ProcMigEvictionComplete();
+
+@
+
+
+9.3
+log
+@added new fields to migration command in order to deal with oversized RPC's.
+@
+text
+@d95 15
+@
+
+
+9.2
+log
+@added some function declarations.
+@
+text
+@d67 4
+a70 2
+    Proc_PID			remotePid;
+    int			  	command;
+@
+
+
+9.1
+log
+@added a function decl.
+@
+text
+@d103 3
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d104 1
+@
+
+
+8.3
+log
+@externalized WakeupCallers to ProcMigWakeupWaiters
+@
+text
+@@
+
+
+8.2
+log
+@fixes for suspending migrated processes.
+@
+text
+@d103 1
+@
+
+
+8.1
+log
+@reorganization for table-driven encapsulation.
+@
+text
+@d46 1
+d55 1
+d57 1
+a57 1
+#define PROC_MIGRATE_CMD_NUM_TYPES	5
+d102 1
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d7 1
+a7 1
+ * Copyright 1986, 1988 Regents of the University of California
+a22 20
+/* 
+ * Define the number of 4-byte fields transferred in a shot when
+ * updating user information.  Note: Timer_Ticks count as multiple
+ * fields.  Proc_PIDs are 4-byte fields just like ints. See the
+ * comments in SendProcessState for a list of fields that are
+ * transferred.
+ */
+
+#define PROC_NUM_FLAGS 4
+#define PROC_NUM_ID_FIELDS 4
+#define PROC_NUM_SCHED_FIELDS (7 + 4 * (sizeof(Timer_Ticks) / sizeof(int)))
+
+/*
+ * A process is allowed to update its userID, effectiveUserID, billingRate,
+ * or familyID.
+ * If any of these fields is modified, all of them are transferred to
+ * the remote node.
+ */
+#define PROC_NUM_USER_INFO_FIELDS 4
+
+a23 6
+ * Size of various fields of the PCB structure copied upon migration.
+ */
+
+#define SIG_INFO_SIZE (((3 * SIG_NUM_SIGNALS) + 4) * sizeof(int))
+
+/*
+d35 38
+a72 1
+ * Parameters when initiating migration to another machine.
+a75 1
+    Proc_PID 	pid;	    /* ID of process being migrated */
+d77 4
+a80 1
+			     * migration */
+d89 11
+@
+
+
+6.4
+log
+@added ProcMigInitiateCmd structure.
+@
+text
+@@
+
+
+6.3
+log
+@defined PROC_MAX_RPC_RETRIES.
+@
+text
+@d61 10
+@
+
+
+6.2
+log
+@added familyID to fields that can be updated during execution.
+@
+text
+@d60 7
+@
+
+
+6.1
+log
+@de-linted and endif-fix'ed.
+@
+text
+@d36 2
+a37 1
+ * A process is allowed to update its userID, effectiveUserID, or billingRate.
+d41 1
+a41 1
+#define PROC_NUM_USER_INFO_FIELDS 3
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d59 1
+a59 1
+#endif _MIGRATE
+@
+
+
+5.3
+log
+@Changed around some constants to match the new PCB format.
+@
+text
+@@
+
+
+5.2
+log
+@Change copyright notices.
+@
+text
+@d23 6
+a28 4
+/*
+ * Define the number of 4-byte fields transferred in a shot when updating user
+ * information.  Note: Timer_Ticks count as multiple fields.  See the
+ * comments in SendProcessState for a list of fields that are transferred.
+d32 8
+a39 2
+#define PROC_NUM_ID_FIELDS 5
+#define PROC_NUM_BILLING_FIELDS (7 + 4 * (sizeof(Timer_Ticks) / sizeof(int)))
+d46 1
+a46 1
+#define SIG_INFO_SIZE (((3 * SIG_NUM_SIGNALS) + 3) * sizeof(int))
+@
+
+
+5.1
+log
+@Don't know... this is ouster checking in for douglis.
+@
+text
+@d7 8
+a14 2
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d18 3
+a20 2
+ * Define the number of fields transferred in a shot when updating user
+ * information.
+d24 2
+a25 2
+#define PROC_NUM_ID_FIELDS 4
+#define PROC_NUM_BILLING_FIELDS 4
+@

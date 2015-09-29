@@ -1,0 +1,118 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.5
+date     90.11.10.01.00.01;  author tve;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.03.01.23.23.52;  author shirriff;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.02.27.14.11.10;  author douglis;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.02.27.13.50.31;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.02.26.23.54.42;  author shirriff;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.5
+log
+@Added reasonable handling of -Pprinter option and of $PRINTER
+environment variable.
+@
+text
+@*
+*   We have half a megabyte of VM; let's be conservative and claim a bit less.
+*   Not really... seems like maybe we only have 150K.  seen in another config
+*   file -- 140K.  let's go for it.
+* m 400000
+m 140000
+* (for testing I claim a LOT less! Uncomment this if you want to see sections.)
+* m 100000
+*
+*   And send output by default to lpr.
+*
+* o !lpr
+*   Oh, just added hack to get printer name into output string: $ get replaced
+o !lpr -P$
+*
+*   Default resolution.
+*
+D 300
+*
+*   Stack pages correctly, assuming that they come out face-up.
+*
+* r
+*
+*
+*   Always compress the fonts, since we've got fast computers and slow ports.
+*
+* But on the other hand, things don't seem to work if we compress fonts.
+*Z
+@
+
+
+1.4
+log
+@Made pages print out in right order.
+@
+text
+@d12 3
+a14 1
+o !lpr
+@
+
+
+1.3
+log
+@trim max vm usage
+@
+text
+@d20 1
+a20 1
+r
+@
+
+
+1.2
+log
+@KS changes for not compressing fonts
+@
+text
+@d3 4
+a6 2
+*
+*m 400000
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d23 2
+a24 1
+Z
+@

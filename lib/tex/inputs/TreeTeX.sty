@@ -1,0 +1,1072 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Everything which is needed from the LaTeX macros                     %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\def\lplain{lplain}                     % Set \LaTeXtrue if TreeTeX is
+\newif\ifLaTeX                          % used together with LaTeX,
+\ifx\fmtname\lplain\LaTeXtrue           % otherwise set \LaTeXfalse
+    \else\LaTeXfalse\fi                 % (LaTeX defines \fmtname=={lplain}).
+
+\ifLaTeX \let\lineseg\line              % latex_picture is part of latex.tex,
+   \else \input latex_picture           % so you don't need it if you use 
+         \let\lineseg\line              % TreeTeX together with LaTeX. LaTeX
+         \def\line{\hbox to\hsize}      % has the command \line for geometric
+   \fi                                  % lines, and plain TeX has the same  
+                                        % command for lines of text. Because
+                                        % both versions of \line play an      
+                                        % important role in the respective
+                                        % macro packages, we introduce a new
+                                        % command \lineseg in TreeTeX for the
+                                        % geometric lines, and \line will have
+                                        % the LaTeX-meaning if TreeTeX is used
+                                        % with LaTeX, and the plain \TeX 
+                                        % meaning otherwise.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Banner                                                               %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\immediate\write16{This is TreeTeX, Version 1, for use with \ifLaTeX LaTeX%
+                   \else plain TeX\fi.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% General programming environment                                      %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\catcode`\@=11
+\let\g\global
+\def\gxdef{\global\xdef}
+
+% The command \newcount is been redefined such that it can be used in
+% the inside of a definition (i.e. it is no longer an \outer-command).
+
+\def\newcount{\alloc@0\count\countdef\insc@unt}
+
+% Implementing a for-loop (first argument must be a counter).
+% Usage: \for<counter>:=<start value>\to<stop value>\do<operations>\od
+% Semantics: the same as a PASCAL for-loop
+% Precautions: Don't change the counter-value inside the loop!
+%              for-loops cannot be nested (nor can the \loop-commands!).
+
+\newif\ifins@de
+
+\def\for#1:=#2\to#3\do#4\od{%
+     \g#1=#2\relax 
+     \loop\ifnum#3<#1\relax\g\ins@defalse
+           \else \g\ins@detrue
+             \fi
+          \ifins@de#4\g\advance#1by\@ne\repeat}
+
+% \ex repeats a sequence of commands a predetermined number of times.
+% Usage: \ex<counter>\times<operations>\xe
+% Semantics: <operations> is executed as often as <counter> says
+% Precautions: \ex commands cannot be nested.
+
+\newcount\@x
+
+\def\ex#1\times#2\xe{%
+     \for\@x:=1\to#1\do#2\od}
+
+% \squ@re produces a square with edge length #1 and linethickness #2.
+% The reference point is in the center of the square, and the width and
+% height are 0pt.
+
+\newskip\thickn@ss
+\newskip\@nner
+\newskip\@uter
+
+\def\squ@re#1#2{%
+     \hbox to 0pt{%
+           \g\thickn@ss#2%
+           \g\@nner#1\g\advance\@nner by-\thickn@ss
+           \g\@uter#1\g\advance\@uter by\thickn@ss
+           \kern-.5\@uter
+           \vrule width\thickn@ss height.5\@uter depth.5\@uter
+           \raise.5\@nner\hbox{\vrule width\@nner height\thickn@ss depth0pt}%
+           \kern-\@nner
+           \lower.5\@uter\hbox{\vrule width\@nner height\thickn@ss depth0pt}%
+           \vrule width\thickn@ss height.5\@uter depth.5\@uter
+           \hss
+           }%
+     }
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Allocation of internal registers                                     %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newdimen\leftdist
+\newdimen\rightdist
+\newbox\TeXTree
+
+\newcount\sl@pe
+\newcount\l@vels
+\newcount\s@ze
+
+\newbox\circleb@x
+\newbox\squareb@x
+\newbox\dotb@x
+\newbox\triangleb@x
+
+\newdimen\circlew@dth
+\newdimen\squarew@dth
+\newdimen\dotw@dth
+\newdimen\trianglew@dth
+
+\newdimen\vd@st
+\newdimen\hd@st
+\newdimen\based@st
+\newdimen\dummyhalfcenterdim@n
+
+\newcount\t@mpcnta
+\newcount\t@mpcntb
+\newcount\t@mpcntc
+\newcount\t@mpcntd
+\newdimen\t@mpdima
+\newdimen\t@mpdimb
+\newdimen\t@mpdimc
+\newbox\t@mpboxa
+\newbox\t@mpboxb
+
+\newbox\leftb@x
+\newbox\rightb@x
+\newbox\centerb@x
+\newbox\beneathb@x
+\newtoks\typ@
+\newbox\centerb@@x
+\newdimen\centerdim@n
+\newdimen\halfcenterdim@n
+
+\newdimen\mins@p
+\newdimen\halfmins@p
+\newdimen\tots@p
+\newdimen\halftots@p
+\newdimen\currs@p
+\newdimen\adds@p
+\newcount\l@ftht
+\newcount\r@ghtht
+\newcount\l@ftinfo
+\newcount\r@ghtinfo
+\newbox\l@ftbox
+\newbox\r@ghtbox
+
+\newif\ifr@ghthigher  % true iff the right subtree is higher than the left one
+\newif\ifadds@p
+
+% \newbox\emptyb@x
+% \setbox\emptyb@x\hbox{}
+
+\newcount\@larg
+\newcount\@rarg
+
+\newif\ifl@fttop
+\newif\ifl@ftonly
+\newif\ifr@ghtonly
+\newif\if@xt
+\newif\ifl@ftedge
+\newif\ifr@ghtedge
+\newif\ifext@nded
+
+\newdimen\lm@ff
+\newdimen\rm@ff
+\newdimen\lb@ff
+\newdimen\rb@ff
+\newdimen\lt@p
+\newdimen\rt@p
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Slope handling for the edges                                         %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% The picture environment of LaTeX gives us a choice of 24 positive
+% slopes for lines (i.e. edges of trees in this context),
+% including vertical ones. The slope of a line is
+% given by an x- and an y-value, see L. Lamport, LaTeX, pp. 105f for
+% further details. x/y can have the following values (decreasing amount 
+% of slope): 0/1 1/6 1/5 1/4 1/3 2/5 1/2 3/5 2/3 3/4 4/5 5/6 1/1 6/5 5/4
+% 4/3 3/2 5/3 2/1 5/2 3/1 4/1 5/1 6/1.
+% The x-values are allocated to \xv@li, \xv@lii,..., \xv@lxxiv, and
+% they can conveniently be accessed by the command \xv@l{<number>}. 
+% The same holds for the y-values.
+
+% \s@ries takes two arguments. The first one is a name, say XXX, and
+% the second is a series of arguments, devided by two slashs (//).
+% \s@ries assigns this last series of arguments one after another to the
+% control sequences \XXXi, \XXXii, and so on. Furthermore, as control
+% sequence \XXX is defined, which takes a number k as its argument and
+% expands to \XXXk', where k' is the roman numeral equivalent to k.
+
+\def\s@ries#1#2{%
+     \g\t@mpcnta1
+     \gdef\t@mp{#1}%
+     \@ssign#2///\l@st
+     \expandafter\gdef\csname#1\endcsname##1{%
+                      \csname#1\romannumeral##1\endcsname}%
+     }
+
+\def\@ssign#1/#2{%
+      \ifx#2\l@st
+          \g\let\n@xt\relax
+     \else\expandafter\gdef\csname\t@mp\romannumeral\t@mpcnta\endcsname{#1}%
+          \g\advance\t@mpcnta by\@ne
+          \g\let\n@xt\@ssign
+       \fi
+     \n@xt}
+ 
+\s@ries{xv@l}{0//1//1//1//1//2//1//3//2//3//4//5//1//6//%
+              5//4//3//5//2//5//3//4//5//6}
+\s@ries{yv@l}{1//6//5//4//3//5//2//5//3//4//5//6//1//5//%
+              4//3//2//3//1//2//1//1//1//1}
+
+% \hv@ldef calculates \hv@li, \hv@lii,..., \hv@lxxiv for a given dimen
+% \vd@st according to the following picture:
+%
+%          /-|
+%         /  |                  
+%        /   |                  
+%       /    |              
+%      /     |\vd@st                  
+%     /      |             
+%    /       |             
+%   / -|     |     
+%  /   |\yv@l|  
+% /   _|    _|
+%
+% |___|
+% \xv@l
+% |_________|
+%  .5\hv@l
+%
+% \hv@li,..., \hv@lxxiv are initialized in \beginTree, when the
+% actual value for \vd@st is known (\vd@st will depend on the point size of
+% the picture). As before, these values can conveniently be accessed by the
+% command \hv@l{<number>}.
+
+\def\hv@ldef{%
+     \for\t@mpcnta:=1\to24%
+      \do\g\t@mpdima\vd@st\g\multiply\t@mpdima by\xv@l{\t@mpcnta}%
+         \g\divide\t@mpdima by\yv@l{\t@mpcnta}\g\multiply\t@mpdima by 2
+         \expandafter\gxdef\csname hv@l\romannumeral\t@mpcnta\endcsname{%
+                          \the\t@mpdima}%
+      \od}
+
+\def\hv@l#1{\csname hv@l\romannumeral#1\endcsname}
+
+% \c@lcslope will calculate the required slope of the edges
+% when the nodes are to be \vd@st apart vertically
+% and at least \tots@p apart horizontally. This slope is returned by
+% the value of the counter \sl@pe (a number between 1 and 23).
+% Furthermore, \tots@p is updated in order to fit to this slope.
+
+\def\c@lcslope{%
+     \g\sl@pe1
+       \loop
+      \ifdim\hv@l\sl@pe < \tots@p
+            \g\advance\sl@pe by1
+     \repeat
+     \g\tots@p\hv@l\sl@pe
+     \g\halftots@p.5\tots@p}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Giving names to positions and dimension infos in trees               %%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% A TeXtree is stored in TeX's internal registers in the following way:
+% A TeXtree of height h has associated to itself the following internal
+% TeX registers: a box, holding the graphical appearance of the tree,
+% a consecutive number of 6+2(h+1) internal dimen registers, holding the
+% additional information about the contour of the tree, a counter
+% holding the height h of the tree, a counter holding the first
+% position of the additional information registers, and a toks register
+% holding the type of the node (circle, square, dot, or triangle).
+% The height and position
+% of additional information are stored in consecutive order for
+% consecutive trees. The same is true for the boxes and toks.
+
+% Four key numbers, the register numbers for the height, diminfo, box, and type 
+% of a tree, enable you to access all information which is stored about the
+% tree. For the last tree on the stack, the four key numbers are stored in the
+% counters \l@sttreeheight, \l@stdiminfo, \l@sttreebox, and \l@sttreetype, 
+% the key numbers for the next tree are \l@sttreeheight-2, \l@stdiminfo-2,
+% \l@sttreebox-1, and \l@sttreetype, and so on.
+
+% The macro \n@metree gives names to some registers associated with the tree.
+% The tree to be named is specified by its four key numbers. \n@metree takes
+% five arguments, namely the keynumbers for height, info, box and type of the
+% tree, and the name to be given to the tree. If the tree gets the name XXX and
+% the key numbers are h, i, b, and t, the commands on the left side of the
+% following list get the meaning on the right side.
+
+% \XXXht	<---	\count h
+% \XXXinfo	<---	\count i
+% \XXXbox	<---	b
+% \XXXtype	<---	\toks t
+% \XXXlmoff	<---	\dimen f          where f is the address stored
+%                                         in \count i
+% \XXXrmoff	<---	\dimen (f+1)
+% \XXXlboff	<---	\dimen (f+2)
+% \XXXrboff	<---	\dimen (f+3)
+% \XXXltop	<---	\dimen (f+4)
+% \XXXrtop	<---	\dimen (f+5)
+% \XXXloff	<---	\dimen (f+6+2g)   where g is the height stored in 
+% 					  \count h, i.e. \dimen (f+6+2g)
+%  					  holds loff(0) off the tree
+% \XXXroff	<---	\dimen (f+7+2g)
+
+% The macro \pr@vioustree sets \l@sttreeheight, \l@stdiminfo,
+% \l@sttreebox and \l@sttreetype to the key numbers of the previous tree 
+% and gives the name `l@st' to this tree.
+
+% The macro \@ddname which has two names n1 and n2 as arguments, gives
+% the tree with name n1 the additional name n2.
+
+% The macro \n@mel@st gives the name `l@st' to the tree with the
+% key numbers \l@sttreeheight, \l@stdiminfo, \l@sttreebox and \l@sttreetype.
+
+% The macro \n@xttree sets \l@sttreebox, \l@sttreeheight, \l@stdiminfo,
+% \count\l@stdiminfo, and \l@sttreetype to the next free position.
+
+% The macro \@ppenddummy pushs a dummy onto the stack and names it `l@st'.
+% The dummy has height 0, its box is the empty box, its type is circle,
+% and all dimensions are 0pt.
+
+% \p@s#1#2#3 sets counter #1 to position #2 of tree #3. #1 must be a counter,
+% #3 must be a name for the tree. If the tree has the name XXX, \XXXinfo
+% must be a number holding the first position of the dimen-parameters of
+% the tree and \XXXht must hold the height of the tree.
+% #2 must be one of the following control sequences indicating the
+% desired position: \lmoff, \rmoff, \lboff, \rboff, \ltop, \rtop, \loff, or
+% \roff. \loff and \roff give the left resp. right offset of the *top* 
+% level of the tree.
+
+\def\p@s#1#2#3{%
+     \g#1\csname#3info\endcsname
+     \gxdef\t@mp{\csname#3ht\endcsname}%
+     \ifnum\t@mp<0 \gxdef\t@mp{0}\fi
+     #2{#1}%
+     }
+
+\chardef\@lmoff0 \chardef\@rmoff1 \chardef\@ltop4 \chardef\@rtop5
+\chardef\@lboff2 \chardef\@rboff3 \chardef\@loff6 \chardef\@roff7
+            
+\def\lmoff#1{\g\advance#1 by\@lmoff}
+\def\rmoff#1{\g\advance#1 by\@rmoff}
+\def\lboff#1{\g\advance#1 by\@lboff}
+\def\rboff#1{\g\advance#1 by\@rboff}
+\def\ltop#1{\g\advance#1 by\@ltop}
+\def\rtop#1{\g\advance#1 by\@rtop}
+\def\loff#1{\g\advance#1 by\@loff\g\advance#1 by\t@mp
+     \g\advance#1 by\t@mp\relax}
+\def\roff#1{\g\advance#1 by\@roff\g\advance#1 by\t@mp
+     \g\advance#1 by\t@mp\relax}
+
+% \n@meinfo#1 defines for an argument XXX (name of a tree) \XXXlmoff,
+% \XXXrmoff, ... as lmoff(XXX), rmoff(XXX),... .
+% The following arguments will be used: l@ft, r@ght, l@st,
+% m@n, and m@x.
+
+\def\n@meinfo#1{%
+     \n@me@nfo{#1}{lmoff}\n@me@nfo{#1}{rmoff}%
+     \n@me@nfo{#1}{lboff}\n@me@nfo{#1}{rboff}% 
+     \n@me@nfo{#1}{ltop}\n@me@nfo{#1}{rtop}%
+     \n@me@nfo{#1}{loff}\n@me@nfo{#1}{roff}%
+     }
+
+\def\n@me@nfo#1#2{%
+     \p@s\t@mpcnta{\csname#2\endcsname}{#1}%
+     \expandafter\gxdef\csname#1#2\endcsname{\dimen\the\t@mpcnta}}
+
+\def\n@metree#1#2#3#4#5{%
+     \expandafter\gxdef\csname#5ht\endcsname{\count\the#1}%
+     \expandafter\gxdef\csname#5info\endcsname{\count\the#2}%
+     \expandafter\gxdef\csname#5box\endcsname{\the#3}%
+     \expandafter\gxdef\csname#5type\endcsname{\toks\the#4}%
+     \n@meinfo{#5}%
+     }
+
+\chardef\@cntoff3 \chardef\@boxoff1 \chardef\@dimoff2 \chardef\@typeoff1
+
+\def\pr@vioustree{%
+     \g\advance\l@sttreeheight by-\@cntoff
+     \g\advance\l@stdiminfo by-\@cntoff
+     \g\advance\l@sttreetype by-\@cntoff
+     \g\advance\l@sttreebox by-\@boxoff
+     \n@mel@st
+     }
+
+\def\@ddname#1#2{%
+     \expandafter\gxdef\csname#2ht\endcsname{\csname#1ht\endcsname}%
+     \expandafter\gxdef\csname#2info\endcsname{\csname#1info\endcsname}%
+     \expandafter\gxdef\csname#2type\endcsname{\csname#1type\endcsname}%
+     \expandafter\gxdef\csname#2box\endcsname{\csname#1box\endcsname}%
+     \n@meinfo{#2}%
+     }
+
+\def\n@xttree{%
+     \p@s\t@mpcnta\loff{l@st}\g\advance\t@mpcnta by\@dimoff
+     \g\advance\l@sttreeheight by\@cntoff
+     \g\advance\l@stdiminfo by\@cntoff
+     \g\advance\l@sttreetype by\@cntoff
+     \g\advance\l@sttreebox by\@boxoff
+     \g\count\l@stdiminfo\t@mpcnta
+     }
+
+\def\@ppenddummy{% pushs a dummy onto the stack and names it `l@st'
+                 % The dummy has height 0, its box is the empty box, the type
+                 % is circle, and all dimensions are 0pt.
+     \n@xttree \g\count\l@sttreeheight0 \n@mel@st
+     \l@sttype{circle}%
+     \g\setbox\l@stbox\copy\voidb@x
+     \g\l@stlmoff=0pt\g\l@strmoff=0pt\g\l@stlboff=0pt\g\l@strboff=0pt%
+     \g\l@stltop=0pt\g\l@strtop=0pt\g\l@stloff=0pt\g\l@stroff=0pt%
+     }
+
+\def\g@tchildren{%
+     \ifl@fttop\@ddname{l@st}{l@ft}%
+               \pr@vioustree
+               \@ddname{l@st}{r@ght}%
+          \else\@ddname{l@st}{r@ght}%
+               \pr@vioustree
+               \@ddname{l@st}{l@ft}%
+            \fi
+     \ifnum\r@ghtht>\l@ftht\relax
+               \r@ghthighertrue
+               \@ddname{r@ght}{m@x}%
+               \@ddname{l@ft}{m@n}%
+          \else\r@ghthigherfalse
+               \@ddname{l@ft}{m@x}%
+               \@ddname{r@ght}{m@n}%
+            \fi
+               }
+
+\def\n@mel@st{%
+     \n@metree\l@sttreeheight\l@stdiminfo\l@sttreebox\l@sttreetype{l@st}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Initialization of the tree environment                               %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\def\beginTree{%
+     \begingroup
+     \unitlength 1pt%
+     \divide\unitlength by 65536
+     \newcount\l@sttreebox                    
+     \l@sttreebox\count14                    
+     \newcount\l@sttreeheight               
+     \newcount\l@stdiminfo                 
+     \newcount\l@sttreetype                
+     \l@sttreeheight\count10                  
+     \advance\l@sttreeheight by \@ne          
+     \count\l@sttreeheight=-1               
+     \l@stdiminfo\l@sttreeheight
+     \advance\l@stdiminfo by \@ne             
+     \count\l@stdiminfo\count11               
+     \advance\count\l@stdiminfo by -5
+     \l@sttreetype\l@stdiminfo
+     \advance\l@sttreetype by\@ne
+     \count\l@sttreetype\count15
+     \n@mel@st\ignorespaces
+     }
+
+\let\Tree\beginTree
+         
+\def\endTree{%
+     \g\leftdist-\l@stlmoff\g\advance\leftdist by \l@stltop
+     \g\rightdist\l@strmoff\g\advance\rightdist by\l@strtop
+     \g\setbox\TeXTree\box\l@stbox\endgroup\ignorespaces}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Specification of nodes                                               %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% A node is defined by the command \node{<specifications>}.
+% <specifications> defines the labels, graphical appearence and the order
+% of the node. labels are defined by the commands \left, \right, \center,
+% and \beneath. The specification of empty labels may be omitted.
+% The graphical appearence is defined by the command \type{<type>}.
+% <type> can have the values `circle', `square', `dot',
+% and `triangle'. Furthermore,
+% the order of the node is given by the following commands:
+% \external (if the node is an external node), \leftonly (if the node has a
+% left successor only), \rightonly (analogous), \unary (if the node is an
+% unary one), and \lefttop (the
+% node which has been defined before this one, is supposed to be the left
+% successor instead of the right one).
+% Default: two children, no labels, type circle, left child has been entered
+% first.
+
+\def\lft#1{\g\setbox\leftb@x\hbox{#1\ }}
+\def\rght#1{\g\setbox\rightb@x\hbox{\ #1}}
+\def\cntr#1{\g\setbox\centerb@x\hbox to0pt{\hss#1\strut\hss}}
+\def\bnth#1{\g\setbox\beneathb@x\hbox to0pt{\hss#1\hss}}
+\def\type#1{%
+     \g\setbox\centerb@@x\copy\csname#1b@x\endcsname
+     \g\centerdim@n\csname#1w@dth\endcsname
+     \typ@{#1}%
+     \g\halfcenterdim@n=.5\centerdim@n}
+
+\def\ext@nded{\g\ext@ndedfalse} % This definition must precede
+                                % \input TreeTeX.sty
+
+\def\node#1{%
+     %%% Initialization (node type and labels), defaults and actual values
+     \g\setbox\leftb@x\copy\voidb@x
+     \g\setbox\rightb@x\copy\voidb@x
+     \g\setbox\centerb@x\copy\voidb@x
+     \g\setbox\beneathb@x\copy\voidb@x
+     \type{circle}%
+     \g\l@fttopfalse\g\l@ftonlyfalse\g\l@ftedgetrue
+     \g\r@ghtonlyfalse\g\r@ghtedgetrue\g\@xtfalse\ext@nded\n@dummy
+     #1%
+     \d@mmy
+     \n@de
+     \ignorespaces
+     }
+
+\def\leftonly{\g\l@ftonlytrue\g\r@ghtedgefalse\g\let\d@mmy\l@ftdummy}
+\def\rightonly{\g\r@ghtonlytrue\g\l@ftedgefalse\g\let\d@mmy\r@ghtdummy}
+\def\unary{\g\r@ghtedgefalse\g\let\d@mmy\@ndummy}
+\def\external{\g\@xttrue\g\l@ftedgefalse\g\r@ghtedgefalse\g\let\d@mmy\@xtdummy}
+
+\def\lefttop{\g\l@fttoptrue}
+     
+\def\@xtdummy{%
+     \@ppenddummy\n@mel@st
+     \g\l@strtop-\halfmins@p\g\l@stht=0
+     \@ppenddummy\n@mel@st
+     \g\l@stltop-\halfmins@p\g\l@stht=0
+     }
+
+\def\n@dummy{\g\let\d@mmy\relax}
+
+\def\l@ftdummy{%
+     \@ppenddummy\n@mel@st
+     \g\l@stltop=\dummyhalfcenterdim@n
+     \g\l@strtop=\dummyhalfcenterdim@n
+     }
+
+\def\r@ghtdummy{%
+     \lefttop
+     \@ppenddummy\n@mel@st
+     \g\l@stltop=\dummyhalfcenterdim@n
+     \g\l@strtop=\dummyhalfcenterdim@n
+     }
+
+\def\@ndummy{%
+     \g\t@mpdima\l@strtop\relax
+     \@ppenddummy\n@mel@st
+     \g\l@stltop-\mins@p\g\advance\l@stltop by-\t@mpdima
+     \g\l@strtop=\t@mpdima
+     }
+
+\def\n@de{%
+     \g@tposition       % naming children and calculating \sl@pe and \tots@p
+     \g@tlt@p\g@trt@p   % calculating \lt@p and \rt@p
+     \g@tlm@ff\g@trm@ff % calculating \lm@ff and \rm@ff
+     \g@tlb@ff\g@trb@ff % calculating \lb@ff and \rb@ff
+     \@pdlroff          % updating loff and roff for all levels but the top one
+     \@pdloffO\@pdroffO % updating loff and roff of the parent tree
+     \@pddim            % updating ltop, rtop, lmoff, rmoff, lboff, and rboff
+     \@pdinfo\@pdht     % updating diminfo and treeheight
+     \@pdbox            % updating treebox
+     \@pdtype           % updating type
+     \n@mel@st          % giving the name `l@st' to the new tree
+     \ignorespaces
+     }
+    
+\def\g@tposition{% naming children and calculating \sl@pe and \tots@p
+     \g@tchildren\c@lcsep\c@lcslope 
+     \ifext@nded\relax
+           \else\ifl@ftonly\g\r@ghtrtop=-\tots@p
+                           \g\advance\r@ghtrtop by\l@ftrtop
+                        \fi
+                \ifr@ghtonly\g\l@ftltop=-\tots@p
+                            \g\advance\l@ftltop by\r@ghtltop
+                         \fi
+             \fi
+     }
+
+\def\@pdinfo{% updating diminfo
+     \g\l@stinfo=\m@xinfo\relax
+     }
+
+\def\@pdht{% updating treeheight
+     \g\l@stht=\m@xht
+     \g\advance\l@stht by\@ne
+     }
+
+\def\@pdtype{% updating type
+     \g\l@sttype\typ@
+     }
+     
+\def\g@tlt@p{% calculating \lt@p
+     \g\lt@p\wd\leftb@x\g\advance\lt@p by\halfcenterdim@n
+     }
+
+\def\g@trt@p{% calculating \rt@p
+     \g\rt@p\wd\rightb@x\g\advance\rt@p by\halfcenterdim@n
+     }
+
+\def\g@tlm@ff{% calculating \lm@ff
+     % \lm@ff:=lmoff(left tree)-ltop(left tree)
+     %          -.5\tots@p+\lt@p
+     \g\lm@ff\l@ftlmoff
+     \g\advance\lm@ff by-\l@ftltop
+     \g\advance\lm@ff by-\halftots@p
+     \g\advance\lm@ff by\lt@p\relax
+     % if ht(left tree) < ht(right tree)
+     %    \t@mpdima:=lmoff(right tree)-ltop(right tree)+.5\tots@p+\lt@p
+     %    \lm@ff:=min(\lm@ff,\t@mpdima) fi
+     \ifnum\l@ftht<\r@ghtht\relax
+           \g\t@mpdima\r@ghtlmoff
+           \g\advance\t@mpdima by-\r@ghtltop
+           \g\advance\t@mpdima by\halftots@p
+           \g\advance\t@mpdima by\lt@p\relax
+           \ifdim\t@mpdima<\lm@ff\relax
+                 \g\lm@ff\t@mpdima
+              \fi
+        \fi
+     % \lm@ff:=min(\lm@ff,0pt)
+     \ifdim0pt<\lm@ff\relax
+           \g\lm@ff=0pt%
+        \fi
+     }
+
+\def\g@trm@ff{% calculating \rm@ff
+     % analog to lm@ff
+     % \rm@ff:=rmoff(right tree)+rtop(right tree)
+     %         +.5\tots@p-\rt@p
+     \g\rm@ff\r@ghtrmoff
+     \g\advance\rm@ff by\r@ghtrtop
+     \g\advance\rm@ff by\halftots@p
+     \g\advance\rm@ff by-\rt@p\relax
+     % \t@mpdima:=rmoff(left tree)+rtop(left tree)-.5\tots@p-\rt@p
+     \ifnum\r@ghtht<\l@ftht\relax
+           \g\t@mpdima\l@ftrmoff
+           \g\advance\t@mpdima by\l@ftrtop
+           \g\advance\t@mpdima by-\halftots@p
+           \g\advance\t@mpdima by-\rt@p\relax
+           \ifdim\t@mpdima>\rm@ff\relax
+                 \g\rm@ff\t@mpdima
+              \fi
+        \fi
+     % \rm@ff:=max(\rm@ff,0pt)
+     \ifdim0pt>\rm@ff\relax
+           \g\rm@ff=0pt
+        \fi
+     }
+
+\def\g@tlb@ff{% calculating \lb@ff
+     % \lb@ff:=lboff(right tree)-ltop(right tree)+.5\tots@p+\lt@p
+     %  resp.:=lboff(left tree)-ltop(left tree)
+     %         -.5\tots@p+\lt@p
+     \ifnum\l@ftht<\r@ghtht\relax
+           \g\lb@ff\r@ghtlboff
+           \g\advance\lb@ff by-\r@ghtltop
+           \g\advance\lb@ff by\halftots@p
+           \g\advance\lb@ff by\lt@p\relax
+      \else\g\lb@ff\l@ftlboff
+           \g\advance\lb@ff by-\l@ftltop
+           \g\advance\lb@ff by-\halftots@p
+           \g\advance\lb@ff by\lt@p\relax
+        \fi
+     }
+
+\def\g@trb@ff{% calculating \rb@ff
+     % \rb@ff:=rboff(left tree)+rtop(left tree)-.5\tots@p-\rt@p
+     %  resp.:=rboff(right tree)+rtop(right tree)
+     %         +.5\tots@p-\rt@p
+     \ifnum\r@ghtht<\l@ftht\relax
+           \g\rb@ff\l@ftrboff
+           \g\advance\rb@ff by\l@ftrtop
+           \advance\rb@ff by-\halftots@p
+           \g\advance\rb@ff by-\rt@p\relax
+      \else\g\rb@ff\r@ghtrboff
+           \g\advance\rb@ff by\r@ghtrtop
+           \g\advance\rb@ff by\halftots@p
+           \g\advance\rb@ff by-\rt@p\relax
+        \fi
+     }
+
+\def\@pdlroff{% updating loff and roff for all levels but the top one
+     % if right tree higher \t@mpdima:=-ltop(right tree)
+     %                      \t@mpdimb:=lboff(left tree)-ltop(left tree)
+     %                      % \t@mpdimb holds the offset between the node 
+     %                      % and the left edge of the bottom of the left tree
+     %                 else \t@mpdima:=rtop(left tree)
+     %                      \t@mpdimb:=lboff(right tree)+rtop(right tree)
+     %                      % substitute left by right
+     %                   fi
+     \ifr@ghthigher\g\t@mpdima-\r@ghtltop\relax
+                   \g\t@mpdimb\l@ftlboff
+                   \g\advance\t@mpdimb by-\l@ftltop\relax
+              \else\g\t@mpdima\l@ftrtop\relax
+                   \g\t@mpdimb\r@ghtlboff
+                   \g\advance\t@mpdimb by\r@ghtrtop\relax
+                \fi
+     \ifr@ghthigher\p@s\t@mpcnta\loff{m@n}% pointer to loff(0) of smaller tree
+                   \p@s\t@mpcntb\loff{m@x}% pointer to loff(0) of smaller tree
+              \else\p@s\t@mpcnta\roff{m@n}% pointer to roff(0) of smaller tree
+                   \p@s\t@mpcntb\roff{m@x}% pointer to roff(0) of smaller tree
+                \fi  % if the right tree is the higher one you have to shift 
+                     % the left profile of the smaller tree, otherwise the
+                     % right one
+     % For every level, \t@mpdima contains the offset between the node of the
+     % higher tree and the inner edge of the next level. Furthermore, if the
+     % right tree is the higher one, the left profile of the left tree becomes
+     % the upper part of the left profile of the parent tree, otherwise
+     % substitute `left' by `right.'
+     \ex\m@nht\times
+        \g\advance\t@mpdima by\dimen\t@mpcntb
+        \g\dimen\t@mpcntb\dimen\t@mpcnta
+        \g\advance\t@mpcnta by-\@dimoff
+        \g\advance\t@mpcntb by-\@dimoff\relax
+     \xe
+     % The link between the last outer level of the smaller tree and the next
+     % level of the higher one:
+     % \dimen\t@mpcntb:=\dimen\t@mpcntb+\t@mpdima+\tots@p-\t@mpdimb
+     %                   if left tree is smaller than right tree
+     %              resp.\dimen\t@mpcntb+\t@mpdima-\tots@p-\t@mpdimb
+     %                   if right tree is smaller than left tree
+     \ifnum\m@xht=\m@nht\relax
+      \else\g\advance\dimen\t@mpcntb by\t@mpdima
+           \ifnum\l@ftht<\r@ghtht\relax
+                 \g\advance\dimen\t@mpcntb by\tots@p
+            \else\g\advance\dimen\t@mpcntb by-\tots@p
+              \fi
+           \g\advance\dimen\t@mpcntb by-\t@mpdimb
+        \fi
+     }
+
+\def\@pdloffO{% updating loff(0) of parent tree
+     % loff(0) of parent tree:=+\lt@p-.5\tots@p-ltop(left tree)
+     \p@s\t@mpcnta\loff{m@x}%
+     \g\advance\t@mpcnta by \@dimoff\relax % pointer to loff(0) of parent tree
+     \g\dimen\t@mpcnta\lt@p
+     \g\advance\dimen\t@mpcnta by-\halftots@p
+     \g\advance\dimen\t@mpcnta by-\l@ftltop\relax
+     }
+
+\def\@pdroffO{% updating roff(0) of parent tree
+     % roff(0) of parent tree:=-\rt@p+.5\tots@p+rtop(right tree)
+     \p@s\t@mpcnta\roff{m@x}%
+     \g\advance\t@mpcnta by \@dimoff\relax % pointer to roff(0) of parent tree
+     \g\dimen\t@mpcnta-\rt@p
+     \g\advance\dimen\t@mpcnta by\halftots@p
+     \g\advance\dimen\t@mpcnta by\r@ghtrtop\relax
+     }
+
+\def\@pddim{% updating ltop, rtop, lmoff, rmoff, lboff, and rboff
+     \g\m@xlmoff=\lm@ff\g\m@xrmoff=\rm@ff
+     \g\m@xlboff=\lb@ff\g\m@xrboff=\rb@ff
+     \g\m@xltop=\lt@p\g\m@xrtop=\rt@p
+     }
+
+\def\@pdbox{% pushing the nodebox on the stack: updating treebox
+     \g\@xarg\xv@l\sl@pe\g\@yarg\yv@l\sl@pe
+     \ifnum\sl@pe=1 % vertical edge
+           \g\t@mpdima\vd@st
+           \g\advance\t@mpdima by-\y@ff\typ@
+           \g\advance\t@mpdima by-\y@ff\l@fttype
+           \g\@larg\t@mpdima % \@larg is a number register!
+           \g\t@mpdima\vd@st
+           \g\advance\t@mpdima by-\y@ff\typ@
+           \g\advance\t@mpdima by-\y@ff\r@ghttype
+           \g\@rarg\t@mpdima % \@rarg is a number register!
+      \else\g\t@mpdima\halftots@p
+           \g\advance\t@mpdima by-\x@ff\typ@
+           \g\advance\t@mpdima by-\x@ff\l@fttype
+           \g\@larg\t@mpdima % \@larg is a number register!
+           \g\t@mpdima\halftots@p
+           \g\advance\t@mpdima by-\x@ff\typ@
+           \g\advance\t@mpdima by-\x@ff\r@ghttype
+           \g\@rarg\t@mpdima % \@rarg is a number register!
+        \fi
+     \g\setbox\l@sttreebox\vtop{%
+                        \g\setbox\t@mpboxa
+                        \hbox{\hskip-\halfcenterdim@n
+                              \ifvoid\leftb@x\relax
+                                \else\hskip-\wd\leftb@x\unhbox\leftb@x
+                                  \fi
+                              \hskip\halfcenterdim@n
+                              \ifvoid\centerb@x\relax
+                                 \else\box\centerb@x
+                                   \fi
+                              \ifvoid\centerb@@x\relax
+                                 \else\box\centerb@@x
+                                   \fi
+                              \ifvoid\rightb@x\relax
+                                \else\hskip\halfcenterdim@n
+                                     \g\t@mpdima\wd\rightb@x\unhbox\rightb@x
+                                     \hskip-\t@mpdima\hskip-\halfcenterdim@n
+                                  \fi}%
+                        \g\dp\t@mpboxa0pt\g\ht\t@mpboxa0pt\box\t@mpboxa
+                        \nointerlineskip
+                        \hbox to 0pt{%
+                              \hss % this \hss works together with the other
+                                   % one at the end of the box, and they
+                                   % center the box around the peak of the
+                                   % (partly invisible) edges
+                              \if@xt\relax
+                               \else\vrule height \vd@st depth 0pt width 0pt%
+                                 \fi
+                              \copy\l@ftbox
+                              \ifl@ftedge\drawl@ftedge
+                                    \else\hskip\halftots@p
+                                      \fi
+                              \ifr@ghtedge\drawr@ghtedge
+                                     \else\hskip\halftots@p
+                                       \fi
+                              \copy\r@ghtbox
+                              \hss}% end of hbox
+                              \box\beneathb@x
+                             }% end of vtop
+     }      
+
+\def\drawl@ftedge{%
+           \hskip\x@ff\l@fttype
+           \t@mpdimc\y@ff\l@fttype\advance\t@mpdimc by\based@st
+           \raise\t@mpdimc
+           \hbox{\lineseg(\@xarg,\@yarg){\@larg}}%
+           \hskip\x@ff\typ@
+     }
+
+\def\drawr@ghtedge{%
+           \hskip\x@ff\typ@
+           \t@mpdimc\vd@st
+           \advance\t@mpdimc by \based@st
+           \advance\t@mpdimc by -\y@ff\typ@\relax% aaaaaaaaaaa
+           \raise\t@mpdimc
+           \hbox{\lineseg(\@xarg,-\@yarg){\@rarg}}%
+           \hskip\x@ff\r@ghttype
+     }
+
+\def\x@ff#1{%
+     \csname\the#1x@ff\endcsname\sl@pe
+     }
+
+\def\y@ff#1{%
+     \csname\the#1y@ff\endcsname\sl@pe
+     }
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Calculating the separation of leaves                                 %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\def\c@lcsep{%
+     %%% \tots@p:=\minsep + rtop(left tree) + ltop(right tree)
+     %%% \currs@p:=\minsep
+     \g\tots@p\mins@p
+     \g\advance\tots@p by\l@ftrtop
+     \g\advance\tots@p by\r@ghtltop\relax
+     \g\currs@p\mins@p
+     %%% \t@mpcnta:= pointer to roff(0) of left tree
+     %%% \t@mpcntb:= pointer to loff(0) of right tree
+     \p@s\t@mpcnta\roff{l@ft}%
+     \p@s\t@mpcntb\loff{r@ght}%
+     %%% Calculate \currs@pt and update \tots@p for each level of the
+     %%% smaller tree
+     %%% If at any level the subtrees are as close or closer than at
+     %%% the level of their roots, they will be moved apart by the additional
+     %%% amount of \adds@p
+     \g\adds@pfalse
+     \g\t@mpcntc\m@nht\g\advance\t@mpcntc by-\@ne
+     \ex\t@mpcntc\times
+        \g\advance\currs@p by-\dimen\t@mpcnta
+        \g\advance\currs@p by \dimen\t@mpcntb
+        \ifdim\mins@p<\currs@p
+         \else\g\adds@ptrue
+           \fi
+        \ifdim\currs@p<\mins@p
+              \g\advance\tots@p by\mins@p
+              \g\advance\tots@p by -\currs@p
+              \g\currs@p\mins@p
+           \fi
+        \g\advance\t@mpcnta by -\@dimoff
+        \g\advance\t@mpcntb by -\@dimoff
+     \xe 
+     \ifadds@p\g\advance\tots@p by\adds@p\fi}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Predefined trees                                                     %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% \tri@ngle produces a triangle which covers \l@vels many level of a tree.
+% The slope of the edges is given by \sl@pe, the reference point of the
+% triangle is in the top, the width is 0pt.
+
+\def\tri@ngle{%
+     \vtop{\g\@xarg\xv@l\sl@pe \g\@yarg\yv@l\sl@pe
+           \g\t@mpdimc\hv@l\sl@pe
+           \g\multiply\t@mpdimc by\l@vels\g\divide\t@mpdimc by\tw@
+           \g\@larg\t@mpdimc
+           \offinterlineskip
+           \vskip0pt%
+           \hbox to0pt{\hss\lineseg(\@xarg,\@yarg){\@larg}%
+                       \hskip\t@mpdimc\rlap{\lineseg(-\@xarg,\@yarg){\@larg}}%
+                       \hss}%
+           \vskip-.4pt%
+           \hbox to0pt{\hss\vrule height.4pt depth0pt width2\t@mpdimc\hss}%
+          }%
+     }
+
+\def\lvls#1{\g\l@vels#1}
+\def\slnt#1{\g\sl@pe#1}
+
+\def\treesymbol#1{%
+     \g\setbox\leftb@x\copy\voidb@x
+     \g\setbox\rightb@x\copy\voidb@x
+     \g\setbox\centerb@x\copy\voidb@x
+     \g\setbox\beneathb@x\copy\voidb@x
+     \lvls{1}\slnt{3}%
+     #1%
+     \g\centerdim@n\trianglew@dth
+     \g\halfcenterdim@n.5\trianglew@dth
+     \n@xttree
+     \g\count\l@sttreeheight\l@vels\g\advance\count\l@sttreeheight by\@ne
+     \g\toks\l@sttreetype{triangle}%
+     \n@mel@st
+     \g\hd@st\hv@l\sl@pe \g\divide\hd@st by\tw@
+     \g\l@stltop=\halfcenterdim@n\g\advance\l@stltop by\wd\leftb@x
+     \g\l@strtop=\halfcenterdim@n\g\advance\l@strtop by\wd\rightb@x
+     \g\l@stlmoff=-\hd@st \g\multiply\l@stlmoff by\l@vels
+     \g\advance\l@stlmoff by\wd\leftb@x
+     \ifdim\l@stlmoff>0pt\relax\g\l@stlmoff=0pt\fi
+     \g\l@strmoff=\hd@st \g\multiply\l@strmoff by\l@vels
+     \g\advance\l@strmoff by-\wd\rightb@x
+     \ifdim\l@strmoff<0pt\relax\g\l@strmoff=0pt\fi
+     \g\l@stlboff=\l@stltop\relax
+     \g\l@strboff-\l@strtop\relax
+     \g\t@mpcnta\l@stinfo\g\advance\t@mpcnta by6% preliminary
+     \g\dimen\t@mpcnta=0pt\g\advance\t@mpcnta by\@ne
+     \g\dimen\t@mpcnta=0pt\g\advance\t@mpcnta by\@ne
+     \g\dimen\t@mpcnta\hd@st\g\multiply\dimen\t@mpcnta by\l@vels
+     \g\advance\dimen\t@mpcnta by\halfcenterdim@n\g\advance\t@mpcnta by\@ne
+     \g\dimen\t@mpcnta-\hd@st\g\multiply\dimen\t@mpcnta by\l@vels
+     \g\advance\dimen\t@mpcnta by-\halfcenterdim@n\g\advance\t@mpcnta by\@ne
+     \ex\l@vels\times
+        \g\dimen\t@mpcnta-\hd@st\g\advance\t@mpcnta by\@ne
+        \g\dimen\t@mpcnta\hd@st\g\advance\t@mpcnta by\@ne
+     \xe
+     \g\advance\t@mpcnta by-\tw@
+     \g\advance\dimen\t@mpcnta by\wd\leftb@x
+     \g\advance\t@mpcnta by\@ne
+     \g\advance\dimen\t@mpcnta by-\wd\rightb@x
+     \g\setbox\l@stbox\vtop to\l@vels\vd@st{\offinterlineskip
+             \g\setbox\t@mpboxa
+             \hbox{\llap{\unhbox\leftb@x\hskip\halfcenterdim@n}%
+                   \raise\based@st\tri@ngle
+                   \rlap{\hskip\halfcenterdim@n\unhbox\rightb@x}}%
+             \g\ht\t@mpboxa=0pt\box\t@mpboxa
+             \vss\box\centerb@x\vskip2\based@st
+             \copy\beneathb@x
+             \vskip-\dp\beneathb@x\vskip-\ht\beneathb@x}%
+     \ignorespaces
+     }
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Node sizes                                                           %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\def\norm@ff{%
+\s@ries{circlex@ff}{0.00000pt//0.08220pt//0.09806pt//0.12127pt//%
+                    0.15811pt//0.18570pt//0.22361pt//0.25725pt//%
+                    0.27735pt//0.30000pt//0.31235pt//0.32009pt//%
+                    0.35355pt//0.38411pt//0.39043pt//0.40000pt//%
+                    0.41603pt//0.42875pt//0.44721pt//0.46424pt//%
+                    0.47434pt//0.48507pt//0.49029pt//0.49320pt}%
+\s@ries{circley@ff}{0.50000pt//0.49320pt//0.49029pt//0.48507pt//%
+                    0.47434pt//0.46424pt//0.44721pt//0.42875pt//%
+                    0.41603pt//0.40000pt//0.39043pt//0.38411pt//%
+                    0.35355pt//0.32009pt//0.31235pt//0.30000pt//%
+                    0.27735pt//0.25725pt//0.22361pt//0.18570pt//%
+                    0.15811pt//0.12127pt//0.09806pt//0.08220pt}%
+\s@ries{squarex@ff}{0.00000pt//0.07500pt//0.09000pt//0.11250pt//%
+                    0.15000pt//0.18000pt//0.22500pt//0.27000pt//%
+                    0.30000pt//0.33750pt//0.36000pt//0.37500pt//%
+                    0.45000pt//0.45000pt//0.45000pt//0.45000pt//%
+                    0.45000pt//0.45000pt//0.45000pt//0.45000pt//%
+                    0.45000pt//0.45000pt//0.45000pt//0.45000pt}%
+\s@ries{squarey@ff}{0.45000pt//0.49320pt//0.49029pt//0.48507pt//%
+                    0.47434pt//0.46424pt//0.44721pt//0.42875pt//%
+                    0.41603pt//0.40000pt//0.39043pt//0.38411pt//%
+                    0.35355pt//0.32009pt//0.31235pt//0.30000pt//%
+                    0.27735pt//0.25725pt//0.22361pt//0.18570pt//%
+                    0.15811pt//0.12127pt//0.09806pt//0.08220pt}%
+     }
+
+\s@ries{dotx@ff}{0pt//0pt//0pt//0pt//0pt//0pt//0pt//0pt//%
+                 0pt//0pt//0pt//0pt//0pt//0pt//0pt//0pt//%
+                 0pt//0pt//0pt//0pt//0pt//0pt//0pt//0pt}%
+\s@ries{doty@ff}{0pt//0pt//0pt//0pt//0pt//0pt//0pt//0pt//%
+                 0pt//0pt//0pt//0pt//0pt//0pt//0pt//0pt//%
+                 0pt//0pt//0pt//0pt//0pt//0pt//0pt//0pt}%
+
+\s@ries{trianglex@ff}{0pt//0pt//0pt//0pt//0pt//0pt//0pt//0pt//%
+                      0pt//0pt//0pt//0pt//0pt//0pt//0pt//0pt//%
+                      0pt//0pt//0pt//0pt//0pt//0pt//0pt//0pt}%
+\s@ries{triangley@ff}{0pt//0pt//0pt//0pt//0pt//0pt//0pt//0pt//%
+                      0pt//0pt//0pt//0pt//0pt//0pt//0pt//0pt//%
+                      0pt//0pt//0pt//0pt//0pt//0pt//0pt//0pt}%
+
+\def\upds@ze#1{%
+     \for\t@mpcntc:=1\to24
+      \do\g\t@mpdimc=\csname#1\romannumeral\t@mpcntc\endcsname\relax
+         \g\multiply\t@mpdimc by\s@ze
+         \expandafter\gxdef\csname#1\romannumeral\t@mpcntc\endcsname
+                            {\the\t@mpdimc}%
+      \od}
+
+\def\nodes@ze{%
+     \begingroup
+     \unitlength 1pt%
+     \divide\unitlength by 65536
+     \g\based@st\s@ze pt\g\divide\based@st by 10 % \based@st is 10 % of
+                                                 % circle diameter
+     \g\dummyhalfcenterdim@n=\s@ze pt\g\divide\dummyhalfcenterdim@n by\tw@
+     \g\circlew@dth=\s@ze pt%
+     \g\t@mpcntc\s@ze\g\multiply\t@mpcntc by 65536
+     \g\setbox\circleb@x\hbox{%
+       \raise\based@st\hbox to0pt{\circle{\t@mpcntc}\hss}}%
+     \upds@ze{circlex@ff}\upds@ze{circley@ff}%
+     \g\squarew@dth.9pt\g\multiply\squarew@dth by\s@ze
+     \g\setbox\squareb@x\hbox{\raise\based@st\squ@re{\squarew@dth}{.4pt}}%
+     \upds@ze{squarex@ff}\upds@ze{squarey@ff}%
+     \g\dotw@dth=\s@ze pt\g\divide\dotw@dth by 5
+     \ifdim\dotw@dth < 1pt\relax
+           \g\dotw@dth1pt\relax
+        \fi
+     \g\t@mpcntc\dotw@dth
+     \g\setbox\dotb@x\hbox{\raise\based@st\hbox to 0pt{\circle*{\t@mpcntc}\hss
+                           }}%
+     \g\trianglew@dth=\s@ze pt\g\multiply\trianglew@dth by \tw@
+     \g\divide\trianglew@dth by 3 
+     \hv@ldef
+     \endgroup
+     }
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Macros for changing the style                                        %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\def\treefonts#1{#1}
+\def\vdist#1{\g\vd@st=#1\relax}
+\def\minsep#1{\g\mins@p=#1\relax\g\halfmins@p=.5\mins@p}
+\def\addsep#1{\g\adds@p=#1\relax}
+\def\extended{\def\ext@nded{\g\ext@ndedtrue}}
+\def\noextended{\def\ext@nded{\g\ext@ndedfalse}}
+\def\nodesize#1{\g\t@mpdima=#1\relax\g\s@ze=\t@mpdima
+     \g\divide\s@ze by 65536\relax} % conversion from dimension to number
+\def\Treestyle#1{\norm@ff#1\nodes@ze}
+
+\input TreeClasses
+
+\Treestyle{%
+     \ifLaTeX\treefonts{\normalsize\rm}%
+        \else\treefonts{\tenrm}%
+          \fi
+     \vdist{60pt}%
+     \minsep{20pt}%
+     \addsep{0pt}%
+     \nodesize{20pt}%
+     \ignorespaces
+     }

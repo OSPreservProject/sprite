@@ -1,0 +1,596 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     91.07.10.09.02.44;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.01.27.11.55.11;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Slight adjustments in vertical-bar stuff to fix problems with Tcl.man.
+@
+text
+@.\" This file contains a combination of the BSD -man macros and the Sprite
+.\" man macro additions which are stored in tmac.sprite.  This file is
+.\" useful for sending to UNIX systems with Sprite man pages, so that the
+.\" man pages may be formatted correctly.
+.\"
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@@(#)tmac.an.new	6.3 (Berkeley) 2/2/86
+.\"
+'	DT, PD, SM, and B macros invoked internally.
+'	# month name
+.if "\nd"0" .nr m \n(mo-1
+.if "\nm"0" .ds ]m January
+.if "\nm"1" .ds ]m February
+.if "\nm"2" .ds ]m March
+.if "\nm"3" .ds ]m April
+.if "\nm"4" .ds ]m May
+.if "\nm"5" .ds ]m June
+.if "\nm"6" .ds ]m July
+.if "\nm"7" .ds ]m August
+.if "\nm"8" .ds ]m September
+.if "\nm"9" .ds ]m October
+.if "\nm"10" .ds ]m November
+.if "\nm"11" .ds ]m December
+'	# set the date
+.if n \{.nr m \nm+1
+.	 ie \nd .ds ]W Modified \nm/\nd/\ny
+.	 el .ds ]W Printed \n(mo/\n(dy/\n(yr\}
+.if t \{.ie \nd .ds ]W \*(]m \nd, 19\ny
+.	 el .ds ]W \*(]m \n(dy, 19\n(yr\}
+.if t .ds ]W Sprite version 1.0
+.if n .ds ]W Sprite v1.0
+.if t .tr *\(**
+.ie n \{\
+.	ds lq \&"\"
+.	ds rq \&"\"
+.\}
+.el \{\
+.	ds rq ''
+.	ds lq ``
+.\}
+'	# reset the basic page layout
+.de }E
+.}f
+.in \\n()Ru+\\n(INu
+.ll \\n(LLu
+..
+'	# default tabs
+.de DT
+'ta .5i 1i 1.5i 2i 2.5i 3i 3.5i 4i 4.5i 5i 5.5i 6i 6.5i
+..
+'	# set type font and size
+.de }f
+.ps 10
+.ft 1
+..
+'	# handle the head of the page
+.de }H
+.ev 1
+.}C
+.ie "\*(.T"va" 'sp .1i
+.el 'sp .5i
+.ft 1
+.ps 10
+.tl @@\\*(]H@@\\*(]D@@\\*(]H@@
+'sp .5i
+.ev
+.ns
+..
+'	# handle the foot of the page
+.de }F
+.ev 1
+.ft 1
+.ps 10
+'sp .5i
+.tl @@\\*(]W@@\\*(]L@@%@@
+'bp
+.ev
+..
+'	# the cut mark
+.if !"\*(.T"vp" .ig
+.de }C
+.po 0i
+.lt 7.45i
+.tl '__''__'
+.po
+.lt
+..
+'	# the final cut mark
+.de }M
+.}N
+.wh -1p }C
+.ll \\n(LLu
+..
+'	# no runout unless there was a .TH
+.de }K
+.}N
+.pl 1
+.ll \\n(LLu
+..
+.em }K
+'	# set title and heading
+.de TH
+.PD
+.if n .nr IN .5i
+.if t .nr IN .5i
+.nr LL \\n(.l
+.ds ]H \\$1
+.ds ]D UNKNOWN MANUAL SECTION
+.if '\\$2'1' .ds ]D User Commands
+.if '\\$2'1C' .ds ]D User Commands
+.if '\\$2'1L' .ds ]D User Commands
+.if '\\$2'6' .ds ]D Games and Demos
+.if '\\$2'7' .ds ]D Tables
+.if '\\$2'2' .ds ]D C Library Procedures
+.if '\\$2'3' .ds ]D C Library Procedures
+.if '\\$2'3C' .ds ]D C Library Procedures
+.if '\\$2'3F' .ds ]D Fortran Library Procedures
+.if '\\$2'3S' .ds ]D C Library Procedures
+.if '\\$2'3M' .ds ]D Mathematical Library Procedures
+.if '\\$2'3N' .ds ]D C Library Procedures
+.if '\\$2'3R' .ds ]D RPC Services
+.if '\\$2'3X' .ds ]D C Library Procedures
+.if '\\$2'5' .ds ]D File Formats
+.if '\\$2'4' .ds ]D Devices
+.if '\\$2'8' .ds ]D User Commands
+.ds ]L\"
+.if !"\\$3"" .ds ]L \\$3
+.if !"\\$4"" .ds ]W \\$4
+.wh 0 }H
+.if t .if !"\*(.T"va" .wh -1i }F
+.if t .if "\*(.T"va" .wh -1.4i }F
+.if n .wh -1.167i }F
+.em }M
+.if \\n(nl .bp 1
+.}E
+.DT
+.nr )I .5i
+.nr )R 0
+.if n .na
+..
+'	# section heading
+.de SH
+.ss 12
+.if "\\$1"SYNOPSIS" .ss 18
+.}X 0
+.nr )E 2
+.SM
+\&\\$1 \|\\$2 \|\\$3 \|\\$4 \|\\$5 \|\\$6
+..
+'	# sub section heading
+.de SS
+.ne 4
+.}X \\n()Ru+\\n(INu ""
+\&\\$1 \|\\$2 \|\\$3 \|\\$4 \|\\$5 \|\\$6
+.br
+..
+'	# subroutine for section heading
+.de }X
+.}E
+.ti \\$1
+.sp \\n()Pu
+.ne 2
+.nr )R 0
+.fi
+.it 1 }N
+.B
+..
+'	# end of SH (cf }X above and }N below)
+.de }2
+.nr )E 0
+.}E
+.nr )I .5i
+.ns
+..
+'	# italic
+.de I
+.ft 2
+.it 1 }N
+.if !"\\$1"" \&\\$1 \\$2 \\$3 \\$4 \\$5 \\$6
+..
+'	# bold
+.de B
+.ft 3
+.it 1 }N
+.if !"\\$1"" \&\\$1 \\$2 \\$3 \\$4 \\$5 \\$6
+..
+'	# small
+.de SM
+.ps 9
+.it 1 }N
+.if !"\\$1"" \&\\$1 \\$2 \\$3 \\$4 \\$5 \\$6
+..
+'	# combinations of Roman, italic, bold
+.de RI
+.}S 1 2 \& "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
+.de RB
+.}S 1 3 \& "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
+.de IR
+.}S 2 1 \& "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
+.de IB
+.}S 2 3 \& "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
+.de BR
+.}S 3 1 \& "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
+.de BI
+.}S 3 2 \& "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
+'	# make special case of shift out of italic
+.de }S
+.ds ]F
+.if "\\$1"2" .if !"\\$5"" .ds ]F\^
+.ie !"\\$4"" .}S \\$2 \\$1 "\\$3\f\\$1\\$4\\*(]F" "\\$5" "\\$6" "\\$7" "\\$8" "\\$9"
+.el \\$3
+.}f
+..
+'	# paragraph
+.de LP
+.PP
+..
+.de PP
+.sp \\n()Pu
+.ne 1.1v
+.}E
+.nr )I .5i
+.ns
+..
+'	# synonym for .PP
+.de P
+.PP
+..
+'	# paragraph distance
+.de PD
+.if t .nr )P .4v
+.if n .nr )P 1v
+.if !"\\$1"" .nr )P \\$1v
+..
+'	# paragraph with hanging indent
+.de HP
+.sp \\n()Pu
+.ne 1.1v
+.if !"\\$1"" .nr )I \\$1n
+.ll \\n(LLu
+.in \\n()Ru+\\n(INu+\\n()Iu
+.ti \\n()Ru+\\n(INu
+.}f
+..
+'	# indented paragraph
+.de IP
+.TP \\$2
+\&\\$1
+..
+'	# tagged paragraph (paragraph with hanging label)
+.de TP
+.if !"\\$1"" .nr )I \\$1n
+.sp \\n()Pu
+.ne 1.1v
+.in \\n()Ru
+.nr )E 1
+.ns
+.it 1 }N
+.di ]B
+..
+'	# end of TP (cf }N below)
+.de }1
+.ds ]X \&\\*(]B\\
+.nr )E 0
+.if !"\\$1"" .nr )I \\$1n
+.}f
+.ll \\n(LLu
+.in \\n()Ru+\\n(INu+\\n()Iu
+.ti \\n(INu
+.ie !\\n()Iu+\\n()Ru-\w@@\\*(]X@@u-3p \{\\*(]X
+.br\}
+.el \\*(]X\h@@|\\n()Iu+\\n()Ru@@\c
+.}f
+..
+'	# handle end of 1-line features
+.de }N
+.if \\n()E .br
+.di
+.if "\\n()E"0" .}f
+.if "\\n()E"1" .}1
+.if "\\n()E"2" .}2
+.nr )E 0
+..
+'	# increase relative indent
+.de RS
+.nr ]\\n+()p \\n()I
+.nr )\\n()p \\n()R
+.ie !"\\$1"" .nr )R +\\$1n
+.el .nr )R +\\n()I
+.nr )I .5i
+.}E
+..
+.de DS
+.RS
+.nf
+.sp
+..
+'	# decrease relative indent
+.de RE
+.if !"\\$1"" \{.ie "\\$1"0" .nr )p 1 1
+.		el .nr )p \\$1 1\}
+.ds ]i \\*(]I\\n()p
+.ds ]r \\*(]R\\n()p
+.nr )I \\*(]i
+.nr )R \\*(]r
+.if \\n()p .nr )p -1
+.}E
+..
+.de DE
+.fi
+.RE
+.sp.5
+..
+.nr )p 0 1
+.ds ]I \\\\n(]
+.ds ]R \\\\n()
+.bd S B 3
+.if t .ds R \(rg
+.if n .ds R (Reg.)
+.ds S \s10
+.hy 14
+.if "\*(.T"va" .po -0.4i
+.\" This file contains extra Ditroff macros used in Sprite man pages:
+.\"
+.\" .HS name section [date [version]]
+.\"	Replacement for .TH in other man pages.  See below for valid
+.\"	section names.
+.\"
+.\" .LG
+.\"	Increase font size;  opposite of .SM
+.\"
+.\" .AP type name in/out [indent]
+.\"	Start paragraph describing an argument to a library procedure.
+.\"	type is type of argument (int, etc.), in/out is either "in", "out",
+.\"	or "in/out" to describe whether procedure reads or modifies arg,
+.\"	and indent is equivalent to second arg of .IP (shouldn't ever be
+.\"	needed;  use .AS below instead)
+.\"
+.\" .AS [type [name]]
+.\"	Give maximum sizes of arguments for setting tab stops.  Type and
+.\"	name are examples of largest possible arguments that will be passed
+.\"	to .AP later.  If args are omitted, default tab stops are used.
+.\"
+.\" .BS
+.\"	Start box enclosure.  From here until next .BE, everything will be
+.\"	enclosed in one large box.
+.\"
+.\" .BE
+.\"	End of box enclosure.
+.\"
+.\" .VS
+.\"	Begin vertical sidebar, for use in marking newly-changed parts
+.\"	of man pages.
+.\"
+.\" .VE
+.\"	End of vertical sidebar.
+.\"
+'	# Heading for Sprite man pages
+.de HS
+.PD
+.DT
+.AS
+.if n .nr IN .5i
+.if t .nr IN .5i
+.nr LL \\n(.l
+.ds ]S UNKNOWN SECTION (\\$2)
+.if '\\$2'cmds'       .ds ]S User Commands
+.if '\\$2'lib'        .ds ]S C Library Procedures
+.if '\\$2'dev'        .ds ]S Devices
+.if '\\$2'tcl'        .ds ]S Tcl Command Language Library
+.if '\\$2'admin'      .ds ]S Administrative Commands
+.if '\\$2'daemons'    .ds ]S Daemons
+.if '\\$2'files'      .ds ]S File Formats
+.ds ]H \\$1
+.ds ]D \\*(]S
+.ie '\\$3'' .ds ]L  Printed:\\ \\ \\*(DY
+.el         .ds ]L  Modified:\\ \\ \\$3
+.if t .ie '\\$4'' .ds ]W Sprite version 1.0
+.if t .el         .ds ]W Sprite version \\$4
+.if n .ie '\\$4'' .ds ]W Sprite v.1.0
+.if n .el         .ds ]W Sprite v.\\$4
+.if !"\\$3"" .ds ]L \\$3
+.wh 0 }H
+.if t .wh -1i }B
+.if n .wh -1.167i }F
+.if \\n(nl .bp 1
+.em }M
+.}E
+.DT
+.nr )I .5i
+.nr )R 0
+..
+'	# Increase point size 1 tick
+.de LG
+.ps +1
+.it 1 }N
+.if !"\\$1"" \&\\$1 \\$2 \\$3 \\$4 \\$5 \\$6
+..
+'	# Start an argument description
+.de AP
+.ie !"\\$4"" .TP \\$4
+.el \{\
+.   ie !"\\$2"" .TP \\n()Cu
+.   el          .TP 15
+.\}
+.ie !"\\$3"" \{\
+.ta \\n()Au \\n()Bu
+\&\\$1	\\fI\\$2\\fP	(\\$3)
+.\".b
+.\}
+.el \{\
+.br
+.ie !"\\$2"" \{\
+\&\\$1	\\fI\\$2\\fP
+.\}
+.el \{\
+\&\\fI\\$1\\fP
+.\}
+.\}
+.DT
+..
+'	# define tabbing values for .AP
+.de AS
+.nr )A 10n
+.if !"\\$1"" .nr )A \\w'\\$1'u+3n
+.nr )B \\n()Au+15n
+.\"
+.if !"\\$2"" .nr )B \\w'\\$2'u+\\n()Au+3n
+.nr )C \\n()Bu+\\w'(in/out)'u+2n
+..
+'	# BS - start boxed text
+.de BS
+.br
+.mk )a
+.ds )b 1
+.if n .nf
+.if n .ti 0
+.if n \l'\\n(.lu\(ul'
+.if n .fi
+..
+'	# Special macro to handle page bottom:  finish off current
+'	# box/sidebar if in box/sidebar mode, then invoked standard
+'	# page bottom macro.
+.de }B
+.if '\\*()b'1' \{\
+.ev 1
+'ti 0
+'nf
+.if t \h'-1.5n'\L'|\\n()au-1.5v'\l'\\n(.lu+3n\(ul'\L'-|\\n()au+1.5v'\l'|0u-1.5n\(ul'
+'sp -1
+.ev
+'fi
+.\}
+.if '\\*()v'2' \{\
+.if t \{\
+.ev 1
+'ti 0
+'nf
+.br
+\h'\\n(.lu+3n'\v'-1v'\L'|\\n()bu-1v\(br'\v'-|\\n()bu+2v'\h'|0u'
+'sp -1
+'fi
+.ev
+.\}
+.\}
+.}F
+..
+'	# What to do when the head of the page occurs during boxed text
+'	# or vertical sidebar: update starting position for box/sidebar.
+.am }H
+.mk )a
+.mk )b
+..
+'	# BE - end boxed text (draw box now)
+.de BE
+.sp -1
+.nf
+.ti 0
+.ie n \l'\\n(.lu\(ul'
+.el \{
+\h'-1.5n'\L'|\\n()au-1.5v'\l'\\n(.lu+3n\(ul'\L'-|\\n()au+1.5v'\l'|0u-1.5n\(ul'
+.\"   \h = move left 1.5n
+.\"   \L = draw up,   len=  )a units + 1.5v 
+.\"	\L draws a line, arg = distance. if negative, draws up.
+.\"	The position in reg. )a is used to draw the vertical lines.
+.\"	  |\\n)au = distance from current loc. to )a (negative distance)
+.\"	  -1.5v   = distance above )a since there is text at )a's location
+.\"   \l = draw right, len= cur. line length + 3n using underrule
+.\"   \L = draw down, len=  )a units + 1.5v 
+.\"   \l = draw left, back to original spot
+.\}
+.fi
+.br
+.ds )b 0
+..
+'	# VS - start vertical sidebar
+.de VS
+.mk )b
+.if n 'mc \s12\(br\s0
+.if t \{\
+.ds )v 2
+.\}
+..
+'	# VE - end of vertical sidebar
+.de VE
+.if n 'mc
+.if t \{\
+.ev 1
+.nf
+.ti 0
+\h'|\\n(.lu+3n'\L'|\\n()bu-1v\(bv'\v'-|\\n()bu+1v'\h'-|\\n(.lu+3n'
+.sp -1
+.fi
+.ev
+.\}
+.ds )v 0
+..
+.\"
+.\"  Define the string DY to be the current date
+.\"  format:  month day, year
+.\"
+.if \n(mo-0 .ds MO January
+.if \n(mo-1 .ds MO February
+.if \n(mo-2 .ds MO March
+.if \n(mo-3 .ds MO April
+.if \n(mo-4 .ds MO May
+.if \n(mo-5 .ds MO June
+.if \n(mo-6 .ds MO July
+.if \n(mo-7 .ds MO August
+.if \n(mo-8 .ds MO September
+.if \n(mo-9 .ds MO October
+.if \n(mo-10 .ds MO November
+.if \n(mo-11 .ds MO December
+.ds DY \*(MO \n(dy, 19\n(yr
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d468 2
+a469 1
+\h'|\\n(.lu+2n'\v'-1v'\L'|\\n()au-1v\(br'\v'-|\\n()au+2v'\h'-|\\n(.lu+2n'
+d481 1
+d507 1
+a509 1
+.mk )a
+a514 1
+.ev 1
+d517 1
+d520 1
+a520 1
+\h'|\\n(.lu+2n'\L'|\\n()au-1v\(br'\v'-|\\n()au+1v'\h'-|\\n(.lu+2n'
+d523 1
+a525 1
+.ev
+@

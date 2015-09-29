@@ -1,0 +1,116 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.3
+date     90.11.27.16.04.18;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.10.03.22.04.51;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.12.30.16.20.43;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@time.h -> spriteTime.h
+@
+text
+@' $Header: /sprite/src/lib/c/time/RCS/Time_ToAscii.man,v 1.2 89/10/03 22:04:51 jhh Exp Locker: kupfer $ SPRITE (Berkeley)
+'
+'  ROUGH DRAFT!!!
+'
+.so \*(]ltmac.sprite
+.HS Time_ToAscii lib
+.BS
+.SH NAME
+Time_ToAscii, Time_FromAscii, Time_ToParts, Time_FromParts \- time conversion routines
+.SH SYNOPSIS
+.nf
+\fB#include <spriteTime.h>\fR
+
+\fBTime_ToAscii\fR(\fIseconds, isInterval, bufferPtr\fR)
+
+\fBTime_FromAscii\fR(\fIbufferPtr, timePtr\fR)
+
+\fBTime_ToParts\fR(\fIseconds, isInterval, partsPtr\fR)
+
+\fBTime_FromParts\fR(\fIpartsPtr, isInterval, secondsPtr\fR)
+.SH ARGUMENTS
+.AP int seconds in
+A time value in seconds to be converted to Ascii.
+.AP Boolean isInterval in
+If TRUE, interpret the time as a time interval.
+.AP char *bufferPtr out,in
+A buffer to hold the converted time.
+.AP Time *timePtr out
+Buffer to hold a time value  converted from Ascii.
+.AP Time_Parts partsPtr in/out
+Buffer to contain  the decomposed time values.
+.AP int *secondsPtr out
+Place to store time value converted from parts.
+
+.BE
+.SH DESCRIPTION
+The \fBTime_ToAscii\fR and \fBTime_FromAscii\fR procedures convert a time value in
+seconds to and from Ascii. \fBTime_ToParts\fR converts a time value in seconds into
+the year, month, day of year, day of month,m day of week, hours, minutes, 
+and seconds. 
+\fBTime_FromParts\fR converts a time value from its parts to seconds.
+Don't give it a date before January 1, 1970 and make sure that the day
+of year corresponds to the month and day of month values.
+An interval is the difference between two times.
+.SH KEYWORDS
+ascii, time
+@
+
+
+1.2
+log
+@Added Time_FromParts
+@
+text
+@d1 1
+a1 1
+' $Header: /sprite/src/lib/c/time/RCS/Time_ToAscii.man,v 1.1 88/12/30 16:20:43 ouster Exp Locker: jhh $ SPRITE (Berkeley)
+d12 1
+a12 1
+\fB#include <time.h>\fR
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+' $Header: Time_ToAscii,v 1.1 86/12/13 12:09:47 andrew Exp $ SPRITE (Berkeley)
+d9 1
+a9 1
+Time_ToAscii, Time_FromAscii, Time_ToParts \- time conversion routines
+d19 2
+d30 1
+a30 1
+.AP Time_Parts partsPtr out
+d32 3
+d40 5
+a44 1
+and seconds. An interval is the difference between two times.
+@

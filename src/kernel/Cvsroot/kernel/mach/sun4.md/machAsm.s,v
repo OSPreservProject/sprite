@@ -1,0 +1,3308 @@
+head     9.15;
+branch   ;
+access   ;
+symbols  ds3100:9.15 sun3:9.15 sun4nw:9.15 symm:9.15 spur:9.15 Summer89:9.0;
+locks    ; strict;
+comment  @| @;
+
+
+9.15
+date     91.10.18.01.22.56;  author dlong;  state Exp;
+branches ;
+next     9.14;
+
+9.14
+date     91.03.29.17.58.03;  author shirriff;  state Exp;
+branches ;
+next     9.13;
+
+9.13
+date     90.10.12.14.56.12;  author mgbaker;  state Exp;
+branches ;
+next     9.12;
+
+9.12
+date     90.09.10.12.23.01;  author mendel;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     90.08.29.12.16.48;  author mendel;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     90.08.14.18.43.04;  author mgbaker;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     90.07.31.21.32.45;  author shirriff;  state Exp;
+branches 9.9.1.1;
+next     9.8;
+
+9.8
+date     90.07.31.17.00.55;  author shirriff;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.06.28.14.14.42;  author mgbaker;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.02.28.22.18.41;  author douglis;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.02.22.23.00.08;  author douglis;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     89.12.12.18.01.44;  author mgbaker;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     89.11.30.12.06.13;  author mendel;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.11.27.14.52.45;  author mgbaker;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.09.18.21.01.27;  author mgbaker;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.53.00;  author douglis;  state Stable;
+branches ;
+next     1.30;
+
+1.30
+date     89.09.08.16.21.59;  author mgbaker;  state Exp;
+branches ;
+next     1.29;
+
+1.29
+date     89.08.09.12.34.29;  author mgbaker;  state Exp;
+branches ;
+next     1.28;
+
+1.28
+date     89.07.22.15.54.09;  author mgbaker;  state Exp;
+branches ;
+next     1.27;
+
+1.27
+date     89.05.21.18.24.09;  author mgbaker;  state Exp;
+branches ;
+next     1.26;
+
+1.26
+date     89.05.20.22.02.17;  author mgbaker;  state Exp;
+branches ;
+next     1.25;
+
+1.25
+date     89.05.02.23.25.43;  author mgbaker;  state Exp;
+branches ;
+next     1.24;
+
+1.24
+date     89.04.23.16.30.25;  author mgbaker;  state Exp;
+branches ;
+next     1.23;
+
+1.23
+date     89.04.19.23.19.39;  author mgbaker;  state Exp;
+branches ;
+next     1.22;
+
+1.22
+date     89.04.09.13.22.23;  author mgbaker;  state Exp;
+branches ;
+next     1.21;
+
+1.21
+date     89.04.05.10.46.23;  author mgbaker;  state Exp;
+branches ;
+next     1.20;
+
+1.20
+date     89.04.01.13.01.06;  author mgbaker;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     89.03.31.11.54.15;  author mgbaker;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     89.03.30.23.23.43;  author mgbaker;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     89.03.26.20.16.00;  author mgbaker;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     89.03.24.15.38.45;  author mgbaker;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     89.03.22.14.06.33;  author mgbaker;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     89.03.21.21.13.42;  author mgbaker;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     89.03.19.01.21.31;  author mgbaker;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     89.03.18.15.40.28;  author mgbaker;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     89.03.09.17.07.31;  author mgbaker;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     89.03.06.12.00.40;  author mgbaker;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     89.03.03.15.40.33;  author mgbaker;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     89.03.02.00.21.01;  author mgbaker;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     89.02.28.12.47.00;  author mgbaker;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.02.24.21.57.01;  author mgbaker;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.02.24.16.38.14;  author mgbaker;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.02.05.17.32.52;  author mgbaker;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.01.29.13.09.36;  author mgbaker;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.01.25.22.50.58;  author mgbaker;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.01.22.20.33.10;  author mgbaker;  state Exp;
+branches ;
+next     ;
+
+9.9.1.1
+date     90.08.07.18.08.07;  author mgbaker;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Checkpoint.  Traps work and interrupts remain enabled correctly.
+>> I've #ifdef'd out the code where I start the timer and try to take
+>> timer interrupts.  When I do that, interrupts get permanently disabled,
+>> somehow.
+@
+
+
+9.15
+log
+@sun4c/sun4c2 merge
+@
+text
+@/* machAsm.s --
+ *
+ *     Contains misc. assembler routines for the sun4.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 9.14 91/03/29 17:58:03 shirriff Exp $ SPRITE (Berkeley)
+ */
+
+#include "user/proc.h"
+#include "machConst.h"
+#include "machAsmDefs.h"
+.seg	"text"
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * Mach_GetPC --
+ *
+ *	Jump back to caller, moving the return address that was put into
+ *	%RETURN_ADDR_REG as a side effect of the call into the %RETURN_VAL_REG.
+ *
+ * Results:
+ *	Old pc is returned in %RETURN_VAL_REG.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------
+ */
+.globl	_Mach_GetPC
+_Mach_GetPC:
+	retl
+	mov	%RETURN_ADDR_REG, %RETURN_VAL_REG
+
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * Mach_GetCallerPC --
+ *
+ *	Return the PC of the caller of the routine who called us.
+ *
+ * Results:
+ *	Our caller's caller's pc.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------
+ */
+.globl	_Mach_GetCallerPC
+_Mach_GetCallerPC:
+	retl
+	mov	%RETURN_ADDR_REG_CHILD, %RETURN_VAL_REG
+
+
+/*
+ *---------------------------------------------------------------------
+ *
+ * Mach_TestAndSet --
+ *
+ *     int Mach_TestAndSet(intPtr)
+ *          int *intPtr;
+ *
+ *     Test and set an operand.
+ *
+ * Results:
+ *     Returns 0 if *intPtr was zero and 1 if *intPtr was non-zero.  Also
+ *     in all cases *intPtr is set to a non-zero value.
+ *
+ * Side effects:
+ *     None.
+ *
+ *---------------------------------------------------------------------
+ */
+.globl	_Mach_TestAndSet
+_Mach_TestAndSet:
+	/*
+	 * We're a leaf routine, so our return value goes in the save register
+	 * that our operand does.  Move the operand before overwriting.
+	 * The ISP description of the swap instruction indicates that it is
+	 * okay to use the same address and destination registers.  This will
+	 * put the address into the addressed location to set it.  That means
+	 * we can't use address 0, but we shouldn't be doing that anyway.
+	 */
+#ifdef SWAP_INSTR_WORKS
+	swap	[%RETURN_VAL_REG], %RETURN_VAL_REG	/* set addr with addr */
+#else
+	ldstub	[%RETURN_VAL_REG], %RETURN_VAL_REG	/* value into reg */
+#endif /* SWAP_INSTR_WORKS */
+	tst	%RETURN_VAL_REG				/* was it set? */
+	be,a	ReturnZero				/* if not, return 0 */
+	clr	%RETURN_VAL_REG				/* silly, delay slot */
+	mov	0x1, %RETURN_VAL_REG			/* yes set, return 1 */
+ReturnZero:
+	retl
+	nop
+
+
+/*
+ *---------------------------------------------------------------------
+ *
+ * Mach_GetMachineType -
+ *
+ *	Returns the type of machine that is stored in the id prom.
+ *
+ *	int	Mach_GetMachineType()
+ *
+ * Results:
+ *	The type of machine.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------
+ */
+#ifndef sun4c
+.globl	_Mach_GetMachineType
+_Mach_GetMachineType:
+	set	VMMACH_MACH_TYPE_ADDR, %o0
+	lduba	[%o0] VMMACH_CONTROL_SPACE, %o0
+	retl
+	nop
+#endif /* sun4c */
+
+
+/*
+ *---------------------------------------------------------------------
+ *
+ * Mach_GetEtherAddress -
+ *
+ *	Returns the type of machine that is stored in the id prom.
+ *
+ *	Net_EtherAddress *Mach_GetEtherAddress(&etherAddress)
+ *
+ * Results:
+ *	The argument struct gets the prom's ethernet address and is
+ *	returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------
+ */
+#ifndef sun4c
+.globl	_Mach_GetEtherAddress
+_Mach_GetEtherAddress:
+	set	VMMACH_ETHER_ADDR, %OUT_TEMP1
+	/* first byte */
+	lduba	[%OUT_TEMP1] VMMACH_CONTROL_SPACE, %OUT_TEMP2
+	stb	%OUT_TEMP2, [%o0]
+	add	%OUT_TEMP1, VMMACH_IDPROM_INC, %OUT_TEMP1
+	add	%o0, 1, %o0
+
+	/* second byte */
+	lduba	[%OUT_TEMP1] VMMACH_CONTROL_SPACE, %OUT_TEMP2
+	stb	%OUT_TEMP2, [%o0]
+	add	%OUT_TEMP1, VMMACH_IDPROM_INC, %OUT_TEMP1
+	add	%o0, 1, %o0
+
+	/* third byte */
+	lduba	[%OUT_TEMP1] VMMACH_CONTROL_SPACE, %OUT_TEMP2
+	stb	%OUT_TEMP2, [%o0]
+	add	%OUT_TEMP1, VMMACH_IDPROM_INC, %OUT_TEMP1
+	add	%o0, 1, %o0
+
+	/* fourth byte */
+	lduba	[%OUT_TEMP1] VMMACH_CONTROL_SPACE, %OUT_TEMP2
+	stb	%OUT_TEMP2, [%o0]
+	add	%OUT_TEMP1, VMMACH_IDPROM_INC, %OUT_TEMP1
+	add	%o0, 1, %o0
+
+	/* fifth byte */
+	lduba	[%OUT_TEMP1] VMMACH_CONTROL_SPACE, %OUT_TEMP2
+	stb	%OUT_TEMP2, [%o0]
+	add	%OUT_TEMP1, VMMACH_IDPROM_INC, %OUT_TEMP1
+	add	%o0, 1, %o0
+
+	/* sixth byte */
+	lduba	[%OUT_TEMP1] VMMACH_CONTROL_SPACE, %OUT_TEMP2
+	stb	%OUT_TEMP2, [%o0]
+	sub	%o0, 5, %o0		/* restore pointer parameter */
+
+	retl
+	nop
+#endif /* sun4c */
+
+/*
+ *---------------------------------------------------------------------
+ *
+ * Mach_MonTrap -
+ *
+ *      Trap to the monitor.  This involves dummying up a trap stack for the
+ *      monitor, allowing non-maskable interrupts and then jumping to the
+ *      monitor trap routine.  When it returns, non-maskable interrupts are
+ *      disabled and we return.
+ *
+ *	void	Mach_MonTrap(address_to_trap_to)
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ * --------------------------------------------------------------------
+ */
+.global	_Mach_MonTrap
+_Mach_MonTrap:
+	save	%sp, -MACH_SAVED_STATE_FRAME, %sp
+	/* enable non-maskable interrupts? */
+	/* get address */
+	call	%i0
+	nop
+	/* disable non-maskable interrupts? */
+	ret
+	restore
+
+
+/*
+ *---------------------------------------------------------------------
+ *
+ * Mach_ContextSwitch -
+ *
+ *	Mach_ContextSwitch(fromProcPtr, toProcPtr)
+ *
+ *	Switch the thread of execution to a new process.  This routine
+ *	is passed a pointer to the process to switch from and a pointer to
+ *	the process to switch to.  It goes through the following steps:
+ *
+ *	1) Change to the new context.
+ *	2) save stuff
+ *	3) restore stuff
+ *	4) Return in the new process
+ *
+ *	The kernel stack is changed implicitly when the registers are restored.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The kernel stack, all general registers, and some special-purpose
+ *	registers are changed.
+ *
+ *---------------------------------------------------------------------
+ */
+.globl	_Mach_ContextSwitch
+_Mach_ContextSwitch:
+	/*
+	 * We call stuff here, so we need a new window.  An overflow trap
+	 * is okay here.  Save enough space for the context switch state on
+	 * the stack.
+	 */
+	save 	%sp, -MACH_SAVED_STATE_FRAME, %sp
+	mov	%psr, %CUR_PSR_REG
+
+	/*
+	 * Enable the floating point processor so we can save and
+	 * restore FPU state if necessary.
+	 */
+	set	MACH_ENABLE_FPP, %VOL_TEMP1
+	or	%CUR_PSR_REG,%VOL_TEMP1,%VOL_TEMP1
+	mov	%VOL_TEMP1, %psr
+	/*
+	 * No delay instructions needed here as long as the following
+	 * three instructions don't touch the FPU.
+	 *
+	 * Save stack pointer into state struct.  This is also the pointer
+	 * in the mach state struct of the saved context switch state.  It
+	 * just so happens it's stored on the stack...
+	 */
+	sethi	%hi(_machStatePtrOffset), %VOL_TEMP1
+							/* get offset */
+	ld	[%VOL_TEMP1 + %lo(_machStatePtrOffset)], %VOL_TEMP1
+		/* FPU is now active. */
+	add	%i0, %VOL_TEMP1 , %VOL_TEMP1		/* add to base */
+	ld	[%VOL_TEMP1], %SAFE_TEMP		/* get machStatePtr */
+	add	%SAFE_TEMP, MACH_SWITCH_REGS_OFFSET, %VOL_TEMP1
+	st	%sp, [%VOL_TEMP1]
+
+	/*
+	 * If FPU is active for this process, save FPU state.
+	 */
+	ld	[%SAFE_TEMP+MACH_FPU_STATUS_OFFSET], %VOL_TEMP1
+	tst	%VOL_TEMP1
+	bz	noFPUactive
+	/*
+	 *  Note: Part of following set instruction executed in "bz" delay
+	 *  slot.  This trashes %VOL_TEMP1 when the branch is taken.
+	 *
+	 *  We are saving the user's FPU state into the trap regs during
+	 *  the context switch because we don't want the latency of saving
+	 *  all the floating point state on every trap.  This works because
+	 *  the kernel doesn't user floating point instructions.
+	 *
+	 *  Tricky code - We save the fromProcPtr in _machFPUSaveProcPtr and
+	 *  execute a "st %fsr". The "st fsr" will pause until all FPU ops
+	 *  are compete.  If any FPU execptions are pending we will get a
+	 *  FP_EXCEPTION trap on the instruction marked by the label
+	 *  _machFPUSyncInst. The routine MachHandleTrap in
+	 *  machCode.c will catch this fault and note it in the processes
+	 *  PCB.
+	 */
+	sethi	%hi(_machFPUSaveProcPtr), %VOL_TEMP1
+	st	%i0, [%VOL_TEMP1 + %lo(_machFPUSaveProcPtr)];
+	/*
+	 * Set %SAFE_TEMP to be trapRegsPtr.
+	 */
+	ld	[%SAFE_TEMP + MACH_TRAP_REGS_OFFSET], %SAFE_TEMP
+.global _machFPUSyncInst
+_machFPUSyncInst: st	%fsr, [%SAFE_TEMP + MACH_FPU_FSR_OFFSET]
+        /*
+	 * The following symbol is include to make the following code
+	 * be attributed to the routine Mach_ContextSwitch2 and not
+	 * _machFPUSyncInst.
+	 */
+.globl	Mach_ContextSwitch2
+Mach_ContextSwitch2:
+	std %f0, [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*0]
+	std %f2, [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*2]
+	std %f4, [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*4]
+	std %f6, [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*6]
+	std %f8, [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*8]
+	std %f10, [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*10]
+	std %f12, [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*12]
+	std %f14, [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*14]
+	std %f16, [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*16]
+	std %f18, [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*18]
+	std %f20, [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*20]
+	std %f22, [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*22]
+	std %f24, [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*24]
+	std %f26, [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*26]
+	std %f28, [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*28]
+	std %f30, [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*30]
+noFPUactive:
+	/*
+	 * Save context switch state, globals only for the time being...
+	 * This gets saved in our stack frame.
+	 */
+	MACH_SAVE_GLOBAL_STATE()
+
+	/*
+	 * Now make sure all windows are flushed to the stack.  We do this
+	 * with MACH_NUM_WINDOWS - 1 saves and restores.  The window overflow
+	 * and underflow traps will then handle this for us.  We put the counter
+	 * in a global, since they have all been saved already and are free
+	 * for our use and we need the value across windows.
+	 */
+
+	sethi	%hi(_machNumWindows), %g2
+	ld	[%g2 + %lo(_machNumWindows)], %g2
+	sub	%g2, 1, %g1
+ContextSaveSomeMore:
+	save
+	subcc	%g1, 1, %g1
+	bne	ContextSaveSomeMore
+	nop
+	sub	%g2, 1, %g1
+ContextRestoreSomeMore:
+	restore
+	subcc	%g1, 1, %g1
+	bne	ContextRestoreSomeMore
+	nop
+
+	/*
+	 * Switch contexts to that of toProcPtr.  It's the second arg, so
+	 * move it to be first arg of routine we call.
+	 */
+	mov	%i1, %o0
+	call	_VmMach_SetupContext, 1
+	nop
+	/*
+	 * Context to use was returned in %RETURN_VAL_REG.  Set the context
+	 * to that value.  VmMachSetContextReg is a leaf routine, so we
+	 * leave the value for its argument in %RETURN_VAL_REG.
+	 */
+	call	_VmMachSetContextReg, 1
+	nop
+
+	/*
+	 * Restore stack pointer of new process - WE SWITCH STACKS HERE!!!
+	 * the pointer to the new processes' state structure goes into
+	 * %SAFE_TEMP.
+	 */
+	sethi	%hi(_machStatePtrOffset), %VOL_TEMP1
+						/* get offset */
+	ld	[%VOL_TEMP1 + %lo(_machStatePtrOffset)], %VOL_TEMP1
+	add	%i1, %VOL_TEMP1, %VOL_TEMP1	/* &(procPtr->machStatePtr) */
+	ld	[%VOL_TEMP1], %SAFE_TEMP	/* procPtr->machStatePtr */
+	add	%SAFE_TEMP, MACH_SWITCH_REGS_OFFSET, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %sp
+
+	/* Update machCurStatePtr */
+	sethi	%hi(_machCurStatePtr), %VOL_TEMP1
+	st	%SAFE_TEMP, [%VOL_TEMP1 + %lo(_machCurStatePtr)]
+	/*
+	 * If FPU is active for this process, restore the FPU state.
+	 */
+	ld	[%SAFE_TEMP+MACH_FPU_STATUS_OFFSET], %VOL_TEMP1
+	tst	%VOL_TEMP1
+	bz	dontRestoreFPU
+	nop
+	/*
+	 * Set %SAFE_TEMP to be machStatePtr.
+	 */
+	ld  [%SAFE_TEMP + MACH_TRAP_REGS_OFFSET], %SAFE_TEMP
+	ld  [%SAFE_TEMP + MACH_FPU_FSR_OFFSET], %fsr
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*0],%f0
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*2],%f2
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*4],%f4
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*6],%f6
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*8],%f8
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*10],%f10
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*12],%f12
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*14],%f14
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*16],%f16
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*18],%f18
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*20],%f20
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*22],%f22
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*24],%f24
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*26],%f26
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*28],%f28
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*30],%f30
+dontRestoreFPU:
+
+	/* restore global registers of new process */
+	MACH_RESTORE_GLOBAL_STATE()
+
+	/*
+	 * Restore the local and in registers for this process.  (We need
+	 * at least the psr in %CUR_PSR_REG and the fp and return pc.)
+	 * To do this we set the wim to this window and do a save and restore.
+	 * That way the registers are automatically saved from the stack.
+	 * We could instead save all these explicitly in the state structure
+	 * and not do a save and restore, but that wouldn't save that many
+	 * loads and it also would be different than how we save and restore
+	 * with the debugger.  It's nice to have them the same.
+	 */
+	MACH_SET_WIM_TO_CWP()
+	save
+	restore
+	/* restore user stack pointer if a user process? */
+
+	/*
+	 * Restore status register in such a way that it doesn't make
+	 * us change windows.
+	 */
+	MACH_RESTORE_PSR()
+	ret
+	restore
+
+/*
+ *---------------------------------------------------------------------
+ *
+ * MachRunUserProc -
+ *
+ *	void	MachRunUserProc()
+ *
+ *	Make the first user process start off by returning it from a kernel
+ *	trap.
+ *	Interrupts must be disabled coming into this.
+ *
+ *	MachRunUserProc();
+ *
+ * Results:
+ *	Restore registers and return to user space.
+ *
+ * Side effects:
+ *	Registers restored.
+ *
+ *---------------------------------------------------------------------
+ */
+.globl	_MachRunUserProc
+_MachRunUserProc:
+	/*
+	 * Get values to restore registers to from the state structure.
+	 * We set up %VOL_TEMP2 to point to trapRegs structure and restore
+	 * from there.
+	 */
+	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
+	sethi	%hi(_machCurStatePtr), %VOL_TEMP2
+	st	%VOL_TEMP1, [%VOL_TEMP2 + %lo(_machCurStatePtr)]
+	add	%VOL_TEMP1, MACH_TRAP_REGS_OFFSET, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2	/* machStatePtr->trapRegs */
+	mov	%VOL_TEMP2, %sp			/* set sp to trapRegs */
+	/*
+	 * Restore %fp.  This will be the user's %sp when we return from
+	 * the trap window.
+	 */
+	add	%VOL_TEMP2, MACH_FP_OFFSET, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %fp		/* set %fp - user sp */
+	andcc	%fp, 0x7, %g0
+	be	UserStackOkay
+	nop
+	/*
+	 * User stack wasn't aligned.  It should have been when it got here!
+	 */
+	set	_MachRunUserDeathString, %o0
+	call	_printf, 1
+	nop
+	set	PROC_TERM_DESTROYED, %o0
+	set	PROC_BAD_STACK, %o1
+	clr	%o2
+	set	_Proc_ExitInt, %VOL_TEMP1
+	call	%VOL_TEMP1, 3
+	nop
+UserStackOkay:
+	/*
+	 * Set return from trap pc and next pc.
+	 */
+	add	%VOL_TEMP2, MACH_TRAP_PC_OFFSET, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %CUR_PC_REG
+	add	%VOL_TEMP1, 4, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %NEXT_PC_REG
+	add	%VOL_TEMP1, 4, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %CUR_TBR_REG
+
+	/*
+	 * Put a return value into the return value register.
+	 */
+	add	%VOL_TEMP2, MACH_ARG0_OFFSET, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %i0
+	/*
+	 * Restore the other in registers, which were trapper's out regs.
+	 * We've already restored fp = i6, so skip it.
+	 */
+	add	%VOL_TEMP1, 4, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %i1
+	add	%VOL_TEMP1, 4, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %i2
+	add	%VOL_TEMP1, 4, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %i3
+	add	%VOL_TEMP1, 4, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %i4
+	add	%VOL_TEMP1, 4, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %i5
+
+	add	%VOL_TEMP1, 8, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %i7
+	/*
+	 * Get new psr value.
+	 */
+	add	%VOL_TEMP2, MACH_PSR_OFFSET, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %CUR_PSR_REG
+
+	/*
+	 * Now go through regular return from trap code.
+	 * We must make sure that the window we will return to from the trap
+	 * is invalid when we get into MachReturnFromTrap so that it will
+	 * be restored from the user stack.  Otherwise the in registers (such
+	 * as frame pointer) in that window we return to will be bad and
+	 * won't be restored correctly.
+	 */
+	MACH_SET_WIM_TO_CWP();
+	MACH_RETREAT_WIM(%VOL_TEMP1, %VOL_TEMP2);
+
+	set	_MachReturnFromTrap, %VOL_TEMP1
+	jmp	%VOL_TEMP1
+	nop
+
+/*
+ *---------------------------------------------------------------------
+ *
+ * MachGetCurrentSp -
+ *
+ *	Address	MachGetCurrentSp()
+ *
+ *	Return the value of the current stack pointer.
+ *
+ * Results:
+ *	The current stack pointer.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------
+ */
+.globl	_MachGetCurrentSp
+_MachGetCurrentSp:
+	mov	%sp, %o0
+	retl
+	nop
+
+
+/*
+ *---------------------------------------------------------------------
+ *
+ * MachHandleSignal -
+ *
+ *	void MachHandleSignal()
+ *
+ *	Setup the necessary stack to handle a signal.  Interrupts are off when
+ *	we enter.  They must be off so we don't overwrite the signal stuff
+ *	in the process state with more signal stuff.
+ *
+ * Results:
+ *	We return via a rett to user mode to the pc of the signal handler.
+ *
+ * Side effects:
+ *	Depends on signal handler, etc.
+ *
+ *---------------------------------------------------------------------
+ */
+.globl	_MachHandleSignal
+_MachHandleSignal:
+	/*
+	 * Save window to stack so that user trap values will be saved
+	 * to kernel stack so that when we copy them to the user stack, we'll
+	 * get the correct values.
+	 */
+	MACH_SAVE_WINDOW_TO_STACK()
+
+	/* Get new user stack pointer value into %SAFE_TEMP */
+	sethi	%hi(_machSignalStackSizeOnStack), %VOL_TEMP1
+						    /* size MachSignalStack */
+	ld	[%VOL_TEMP1 + %lo(_machSignalStackSizeOnStack)], %VOL_TEMP1
+	sub	%fp, %VOL_TEMP1, %SAFE_TEMP		/* new sp in safetemp */
+
+	/* Copy out sig stack from state structure to user stack */
+	sethi	%hi(_machSigStackOffsetOnStack), %VOL_TEMP1
+							/* offset Sig_Stack */
+	ld	[%VOL_TEMP1 + %lo(_machSigStackOffsetOnStack)], %VOL_TEMP1
+	add	%SAFE_TEMP, %VOL_TEMP1, %o2	/* dest addr of Sig_Stack */
+	sethi	%hi(_machSigStackSize), %o0
+	ld	[%o0 + %lo(_machSigStackSize)], %o0	/* size of Sig_Stack */
+	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
+	sethi	%hi(_machSigStackOffsetInMach), %VOL_TEMP2
+	ld	[%VOL_TEMP2 + %lo(_machSigStackOffsetInMach)], %VOL_TEMP2
+	add	%VOL_TEMP1, %VOL_TEMP2, %o1	/* src addr of sig stack */
+	QUICK_ENABLE_INTR(%VOL_TEMP1)
+	call	_Vm_CopyOut, 3				/* copy Sig_Stack */
+	nop
+	QUICK_DISABLE_INTR(%VOL_TEMP1)
+	be	CopiedOutSigStack
+	nop
+CopyOutForSigFailed:
+	/*
+	 * Copying to user stack failed.  We have no choice but to kill the
+	 * thing.  This causes us to exit this routine and process.
+	 */
+	set	_MachHandleSignalDeathString, %o0
+	call	_printf, 1
+	nop
+	set	PROC_TERM_DESTROYED, %o0
+	set	PROC_BAD_STACK, %o1
+	clr	%o2
+	call	_Proc_ExitInt, 3
+	nop
+
+CopiedOutSigStack:
+	/* Copy out sig context from state structure to user stack */
+	/* put addr of mach state structure in %VOL_TEMP1 again */
+	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
+	sethi	%hi(_machSigContextOffsetOnStack), %VOL_TEMP2
+							/* offset Sig_Context */
+	ld	[%VOL_TEMP2 + %lo(_machSigContextOffsetOnStack)], %VOL_TEMP2
+	add	%SAFE_TEMP, %VOL_TEMP2, %o2	/* dest addr of Sig_Context */
+	sethi	%hi(_machSigContextSize), %o0
+						/* size of Sig_Context */
+	ld	[%o0 + %lo(_machSigContextSize)], %o0
+	sethi	%hi(_machSigContextOffsetInMach), %VOL_TEMP2
+						/* offset Sig_Context */
+	ld	[%VOL_TEMP2 + %lo(_machSigContextOffsetInMach)], %VOL_TEMP2
+	add	%VOL_TEMP1, %VOL_TEMP2, %o1	/* src addr of sig context */
+	QUICK_ENABLE_INTR(%VOL_TEMP1)
+	call	_Vm_CopyOut, 3				/* copy Sig_Context */
+	nop
+	QUICK_DISABLE_INTR(%VOL_TEMP1)
+	bne	CopyOutForSigFailed
+	nop
+
+	/* Copy out user trap state from state structure to user stack */
+	/* put addr of mach state structure in %VOL_TEMP1 again */
+	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
+	sethi	%hi(_machSigUserStateOffsetOnStack), %VOL_TEMP2
+	ld	[%VOL_TEMP2 + %lo(_machSigUserStateOffsetOnStack)], %VOL_TEMP2
+	add	%SAFE_TEMP, %VOL_TEMP2, %o2	/* dest addr of user state */
+	set	MACH_SAVED_STATE_FRAME, %o0	/* size of copy */
+	add	%VOL_TEMP1, MACH_TRAP_REGS_OFFSET, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %o1		/* address of trap regs */
+	QUICK_ENABLE_INTR(%VOL_TEMP1)
+	call	_Vm_CopyOut, 3
+	nop
+	QUICK_DISABLE_INTR(%VOL_TEMP1)
+	bne	CopyOutForSigFailed
+	nop
+
+	/*
+	 * Get address of trapInst field in machContext field of sig context
+	 * and put it in ret addr of next window so when we return from handler
+	 * in next window, we'll return to the trap instruction.
+	 */
+	sethi	%hi(_machSigTrapInstOffsetOnStack), %VOL_TEMP2
+						/* offset to trap instr */
+	ld	[%VOL_TEMP2 + %lo(_machSigTrapInstOffsetOnStack)], %VOL_TEMP2
+	add	%SAFE_TEMP, %VOL_TEMP2, %RETURN_ADDR_REG	/* addr */
+	/* ret from proc instr jumps to (ret addr + 8), so subtract 8 here */
+	sub	%RETURN_ADDR_REG, 0x8, %RETURN_ADDR_REG
+
+	/*
+	 * Set return from trap pc and next pc in the next window to the
+	 * address of the handler so that when we do a rett back to this
+	 * window from the next window, we'll start executing at the signal
+	 * handler.  This requires a global register to get
+	 * it across the window boundary, so we must do this before restoring
+	 * our global registers.  This should be done after the Vm_CopyOut's
+	 * so that there's no overwriting our confusion with the registers
+	 * in the next window.
+	 */
+	sethi	%hi(_machSigPCOffsetOnStack), %VOL_TEMP1
+							/* offset to pc field */
+	ld	[%VOL_TEMP1 + %lo(_machSigPCOffsetOnStack)], %VOL_TEMP1
+	add	%SAFE_TEMP, %VOL_TEMP1, %VOL_TEMP1	/* addr of sig pc */
+	ld	[%VOL_TEMP1], %g3
+
+	save
+	mov	%g3, %CUR_PC_REG		/* trap pc addr into rett pc */
+	add	%g3, 0x4, %NEXT_PC_REG
+	restore
+
+	/*
+	 * restore global regs for user after calling Vm_CopyOut and after
+	 * using %g3 (above) and before messing up our kernel stack pointer.
+	 */
+	MACH_RESTORE_GLOBAL_STATE()
+
+	/*
+	 * Set up our out registers to be correct arguments to sig handler,
+	 * since this is the window it will start off in, but the C code will
+	 * do a save into the next window so our out's will be the handler's
+	 * in regs.
+	 *
+	 *	Handler(sigNum, sigCode, contextPtr, sigAddr)
+	 */
+	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
+	sethi	%hi(_machSigStackOffsetInMach), %VOL_TEMP2
+						/* offset to sig stack */
+	ld	[%VOL_TEMP2 + %lo(_machSigStackOffsetInMach)], %VOL_TEMP2
+	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP2	/* addr of sig stack */
+	sethi	%hi(_machSigNumOffsetInSig), %o0
+						/* offset to sigNum */
+	ld	[%o0 + %lo(_machSigNumOffsetInSig)], %o0
+	add	%o0, %VOL_TEMP2, %o0		/* addr of sig num */
+	ld	[%o0], %o0			/* sig num == arg 1 */
+	sethi	%hi(_machSigCodeOffsetInSig), %o1
+						/* offset to sigCode */
+	ld	[%o1 + %lo(_machSigCodeOffsetInSig)], %o1
+	add	%o1, %VOL_TEMP2, %o1		/* addr of sig code */
+	ld	[%o1], %o1			/* sig code == arg2 */
+	/* Stack address of Sig_Context is third arg */
+	sethi	%hi(_machSigContextOffsetOnStack), %VOL_TEMP2
+							/* offset Sig_Context */
+	ld	[%VOL_TEMP2 + %lo(_machSigContextOffsetOnStack)], %VOL_TEMP2
+	add	%SAFE_TEMP, %VOL_TEMP2, %o2	/* stack addr context = arg3  */
+	sethi	%hi(_machSigStackOffsetInMach), %VOL_TEMP2
+						/* offset to sig stack */
+	ld	[%VOL_TEMP2 + %lo(_machSigStackOffsetInMach)], %VOL_TEMP2
+	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP2	/* addr of sig stack */
+	sethi	%hi(_machSigAddrOffsetInSig), %o3
+						/* offset to sigAddr */
+	ld	[%o3 + %lo(_machSigAddrOffsetInSig)], %o3
+	add	%o3, %VOL_TEMP2, %o3		/* addr of sig addr */
+	ld	[%o3], %o3			/* sig addr == arg 4 */
+
+	/*
+	 * NOTE: the sigStack.sigContextPtr field has not been filled in.
+	 * Will that matter?
+	 */
+
+	/* set stack pointer in this window to new user stack pointer */
+	mov	%SAFE_TEMP, %sp
+
+	/*
+	 * Move the user psr to restore to next window, since we'll have
+	 * to restore it from there since it disables traps and we must still
+	 * have traps enabled when executing the save instruction, in case
+	 * of window overflow.
+	 */
+	mov	%CUR_PSR_REG, %o4
+
+	/*
+	 * Move to window to do rett from.  We must do this while traps are
+	 * still enabled, in case we get overflow.
+	 */
+	save
+
+	/*
+	 * Set up psr for return to user mode.  It must be the user mode
+	 * psr with traps disabled.
+	 */
+	mov	%i4, %CUR_PSR_REG		/* so restore psr will work */
+	MACH_RESTORE_PSR()
+
+	jmp	%CUR_PC_REG
+	rett	%NEXT_PC_REG
+
+/*
+ *---------------------------------------------------------------------
+ *
+ * MachReturnFromSignal -
+ *
+ *	void MachReturnFromSignal()
+ *
+ *	The routine executed after a return from signal trap.  This must
+ *	restore state from the user stack so we can return to user mode
+ *	via the regular return from trap method.
+ *
+ *	Interrupts must be off when we're called.
+ *
+ * Results:
+ *	We execute the return-from-trap code, so it depends what happens there.
+ *
+ * Side effects:
+ *	Depends.
+ *
+ *---------------------------------------------------------------------
+ */
+.globl	_MachReturnFromSignal
+_MachReturnFromSignal:
+	/*
+	 * We've trapped into this window so our %fp is the user's sp that
+	 * we set up before handling the signal.  We must copy stuff back off
+	 * the user's stack to the trap regs to restore state.  But we're one
+	 * window away from where we want to be, so we have to back up also.
+	 */
+	/* get our kernel stack pointer into global regs (which get restored
+	 * in MachReturnFromTrap) so we can keep it across windows.
+	 */
+	mov	%sp, %g3
+	restore		/* no underflow since we just came from here */
+	/*
+	 * I could at this point just move %sp to %SAFE_TEMP if I really
+	 * trusted that %fp - sizeof (MachSignalStack) really equals %sp which
+	 * was user sp we set up before calling signal handler, but I
+	 * check this for now.
+	 */
+	sethi	%hi(_machSignalStackSizeOnStack), %VOL_TEMP1
+						/* size MachSignalStack */
+	ld	[%VOL_TEMP1 + %lo(_machSignalStackSizeOnStack)], %VOL_TEMP1
+	sub	%fp, %VOL_TEMP1, %SAFE_TEMP	/* sig user sp in safetemp */
+	cmp	%SAFE_TEMP, %sp
+	bne	CopyInForSigFailed
+	nop
+
+	mov	%g3, %sp			/* kernel sp now here too */
+
+	/* Copy in sig stack from user stack to mach state structure */
+	sethi	%hi(_machSigStackOffsetOnStack), %VOL_TEMP1
+						/* offset of Sig_Stack */
+	ld	[%VOL_TEMP1 + %lo(_machSigStackOffsetOnStack)], %VOL_TEMP1
+	add	%SAFE_TEMP, %VOL_TEMP1, %o1	/* src addr of Sig_Stack */
+	sethi	%hi(_machSigStackSize), %o0
+						/* size of Sig_Stack */
+	ld	[%o0 + %lo(_machSigStackSize)], %o0
+	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
+	sethi	%hi(_machSigStackOffsetInMach), %VOL_TEMP2
+	ld	[%VOL_TEMP2 + %lo(_machSigStackOffsetInMach)], %VOL_TEMP2
+	add	%VOL_TEMP1, %VOL_TEMP2, %o2	/* dest addr of sig stack */
+	QUICK_ENABLE_INTR(%VOL_TEMP1)
+	call	_Vm_CopyIn, 3			/* copy Sig_Stack */
+	nop
+	QUICK_DISABLE_INTR(%VOL_TEMP1)
+	be	CopiedInSigStack
+	nop
+CopyInForSigFailed:
+ 	/* Copy failed from user space - kill the process */
+	set	_MachReturnFromSignalDeathString, %o0
+	call	_printf, 1
+	nop
+	set	PROC_TERM_DESTROYED, %o0
+	set	PROC_BAD_STACK, %o1
+	clr	%o2
+	call	_Proc_ExitInt, 3
+	nop
+
+CopiedInSigStack:
+	/* Copy in sig context from user stack to state structure */
+	/* put addr of mach state structure in %VOL_TEMP1 again */
+	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
+	sethi	%hi(_machSigContextOffsetOnStack), %VOL_TEMP2
+						/* offset Sig_Context */
+	ld	[%VOL_TEMP2 + %lo(_machSigContextOffsetOnStack)], %VOL_TEMP2
+	add	%SAFE_TEMP, %VOL_TEMP2, %o1	/* src addr of Sig_Context */
+	sethi	%hi(_machSigContextSize), %o0
+						/* size of Sig_Context */
+	ld	[%o0 + %lo(_machSigContextSize)], %o0
+	sethi	%hi(_machSigContextOffsetInMach), %VOL_TEMP2
+						/* offset of Sig_Context */
+	ld	[%VOL_TEMP2 + %lo(_machSigContextOffsetInMach)], %VOL_TEMP2
+	add	%VOL_TEMP1, %VOL_TEMP2, %o2	/* dest addr of sig context */
+	QUICK_ENABLE_INTR(%VOL_TEMP1)
+	call	_Vm_CopyIn, 3			/* copy Sig_Context */
+	nop
+	QUICK_DISABLE_INTR(%VOL_TEMP1)
+	bne	CopyInForSigFailed
+	nop
+
+	/*
+	 * Call a routine that calls Sig_Return with appropriate stuff.
+	 * This occurs after copying in the Sig stuff, above, because Sig_Return
+	 * needs the Sig stuff.
+	 */
+	call	_MachCallSigReturn
+	nop
+
+	/* Copy in user trap state from user stack to kernel trap regs */
+	sethi	%hi(_machSigUserStateOffsetOnStack), %VOL_TEMP2
+	ld	[%VOL_TEMP2 + %lo(_machSigUserStateOffsetOnStack)], %VOL_TEMP2
+	add	%SAFE_TEMP, %VOL_TEMP2, %o1		/* src addr of copy */
+	set	MACH_SAVED_STATE_FRAME, %o0		/* size of copy */
+	/* destination of copy is trapRegs, but our sp points to that already */
+	/* SHOULD I VERIFY THIS? */
+	mov	%sp, %o2				/* dest addr of copy */
+	QUICK_ENABLE_INTR(%VOL_TEMP1)
+	call	_Vm_CopyIn, 3
+	nop
+	QUICK_DISABLE_INTR(%VOL_TEMP1)
+	bne	CopyInForSigFailed
+	nop
+
+	/* Restore user trap state */
+	mov	%sp, %g3			/* save stack pointer */
+	MACH_RESTORE_WINDOW_FROM_STACK()
+	/* test if stack pointer is the same */
+	cmp	%g3, %sp
+	mov	%g3, %sp		/* restore, in case it was bad */
+	bne	CopyInForSigFailed
+	nop
+
+	/* Make sure the psr is okay since we got it from the user */
+	set	~(MACH_PS_BIT), %VOL_TEMP1
+	and	%CUR_PSR_REG, %VOL_TEMP1, %CUR_PSR_REG	/* clear ps bit */
+	set	MACH_DISABLE_TRAP_BIT, %VOL_TEMP1
+	and	%CUR_PSR_REG, %VOL_TEMP1, %CUR_PSR_REG	/* clear trap en. bit */
+
+	/*
+	 * Now go through the regular return from trap code.
+	 */
+	call	_MachReturnFromTrap
+	nop
+
+
+/*
+ *---------------------------------------------------------------------
+ *
+ * Mach_ReadPsr -
+ *
+ *	Capture %psr for C routines.
+ *
+ * Results:
+ *	%psr.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------
+ */
+.globl	_Mach_ReadPsr
+_Mach_ReadPsr:
+	mov	%psr, %o0
+	retl
+	nop
+
+#ifdef sun4c
+.globl	_MachGetSyncErrorReg
+_MachGetSyncErrorReg:
+	set	VMMACH_SYNC_ERROR_REG, %o0
+	lda	[%o0] VMMACH_CONTROL_SPACE, %o0
+	retl
+	nop
+
+.globl	_MachGetASyncErrorReg
+_MachGetASyncErrorReg:
+	set	VMMACH_ASYNC_ERROR_REG, %o0
+	lda	[%o0] VMMACH_CONTROL_SPACE, %o0
+	retl
+	nop
+
+.globl	_MachGetSyncErrorAddrReg
+_MachGetSyncErrorAddrReg:
+	set	VMMACH_SYNC_ERROR_ADDR_REG, %o0
+	lda	[%o0] VMMACH_CONTROL_SPACE, %o0
+	retl
+	nop
+
+.globl	_MachGetASyncErrorAddrReg
+_MachGetASyncErrorAddrReg:
+	set	VMMACH_ASYNC_ERROR_ADDR_REG, %o0
+	lda	[%o0] VMMACH_CONTROL_SPACE, %o0
+	retl
+	nop
+
+.globl	_MachGetSystemEnableReg
+_MachGetSystemEnableReg:
+	set	VMMACH_SYSTEM_ENABLE_REG, %o0
+	lduba	[%o0] VMMACH_CONTROL_SPACE, %o0
+	retl
+	nop
+#endif
+
+/*
+ *---------------------------------------------------------------------
+ *
+ * MachHandleBadArgs -
+ *
+ *	A page fault occured in a copy-in or copy-out from a user-mode process,
+ *	and the page couldn't be paged in.  So we want to return
+ *	SYS_ARG_NOACCESS to the process from its system call.
+ *	This means we must return this value from the routine doing the copying.
+ *
+ * Results:
+ *	SYS_ARG_NOACCESS returned to process as if returned from its system
+ *	call.
+ *
+ * Side effects:
+ *	We cause the routine that was copying args to return SYS_ARG_NO_ACCESS.
+ *
+ *---------------------------------------------------------------------
+ */
+.globl	_MachHandleBadArgs
+_MachHandleBadArgs:
+	restore			/* back to page fault trap window */
+	mov	%CUR_PSR_REG, %i1
+	restore			/* back to copy routine that got trap */
+	/* Copy routine was leaf routine and so return failure in %o0 */
+	set	SYS_ARG_NOACCESS, %o0
+	/* Set interrupts to what they were when trap occured. */
+	SET_INTRS_TO(%o1, %OUT_TEMP1, %OUT_TEMP2)
+	retl			/* return from leaf routine */
+	nop
+
+/*
+ * Beginning of area where the kernel should be able to handle a bus error
+ * (which includes size errors) while in kernel mode.
+ */
+.globl	_MachProbeStart
+_MachProbeStart:
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * Mach_Probe --
+ *
+ *	Read or write a virtual address handling bus errors that may occur.
+ *	This routine is intended to be used to probe for memory-mapped devices.
+ *
+ *	Mach_Probe(byteCount, readAddress, writeAddress)
+ *
+ * Results:
+ *	SUCCESS if the read or write worked and FAILURE otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------
+ */
+.globl	_Mach_Probe
+_Mach_Probe:
+				/* %o0 = size in bytes of the read/write to do.
+				 * Must be 1, 2, 4, or 8 bytes. */
+				/* %o1 = address to read. */
+				/* %o2 = Location to store the read value. */
+	cmp	%o0, 1
+	bne	Read2Bytes
+	nop
+	ldub	[%o1], %OUT_TEMP1
+	stb	%OUT_TEMP1, [%o2]
+	set	SUCCESS, %RETURN_VAL_REG
+	retl
+	nop
+Read2Bytes:
+	cmp	%o0, 2
+	bne	Read4Bytes
+	nop
+	andcc	%o1, 0x1, %g0
+	bne	BadRead
+	nop
+	andcc	%o2, 0x1, %g0
+	bne	BadRead
+	nop
+	lduh	[%o1], %OUT_TEMP1
+	sth	%OUT_TEMP1, [%o2]
+	set	SUCCESS, %RETURN_VAL_REG
+	retl
+	nop
+Read4Bytes:
+	cmp	%o0, 4
+	bne	Read8Bytes
+	nop
+	andcc	%o1, 0x3, %g0
+	bne	BadRead
+	nop
+	andcc	%o2, 0x3, %g0
+	bne	BadRead
+	nop
+	ld	[%o1], %OUT_TEMP1
+	st	%OUT_TEMP1, [%o2]
+	set	SUCCESS, %RETURN_VAL_REG
+	retl
+	nop
+Read8Bytes:
+	cmp	%o0, 8
+	bne	BadRead
+	nop
+	andcc	%o1, 0x7, %g0
+	bne	BadRead
+	nop
+	andcc	%o2, 0x7, %g0
+	bne	BadRead
+	nop
+	ldd	[%o1], %OUT_TEMP1
+	std	%OUT_TEMP1, [%o2]
+	set	SUCCESS, %RETURN_VAL_REG
+	retl
+	nop
+BadRead:
+	set	FAILURE, %RETURN_VAL_REG
+	retl
+	nop
+
+/*
+ * End of the area where the kernel should be able to handle a bus error
+ * while in kernel mode.
+ */
+.globl	_MachProbeEnd
+_MachProbeEnd:
+
+/*
+ *---------------------------------------------------------------------
+ *
+ * MachHandleBadProbe -
+ *
+ *	A page fault occured during a probe operation, which means
+ *	the page couldn't be paged in or there was a size error.  So we want to
+ *	return FAILURE to the caller of the probe operation.  This means we must
+ *	return this value from the routine doing the probe.
+ *
+ * Results:
+ *	FAILURE returned to caller of probe operation.
+ *
+ * Side effects:
+ *	We cause the routine that was doing the probe to return FAILURE.
+ *
+ *---------------------------------------------------------------------
+ */
+.globl	_MachHandleBadProbe
+_MachHandleBadProbe:
+	restore		/* back to page fault trap window */
+	mov	%CUR_PSR_REG, %i1	/* get trap psr */
+	restore		/* back to probe routine window */
+	/* Mach_Probe is a leaf routine - return stuff in %o0 */
+	set	FAILURE, %o0	/* return FAILURE */
+	/* Set interrupts to what they were when trap occured. */
+	SET_INTRS_TO(%o1, %OUT_TEMP1, %OUT_TEMP2)
+	retl		/* return from leaf routine */
+	nop
+
+/*
+ *---------------------------------------------------------------------
+ *
+ * MachHandleBadQuickCopy -
+ *
+ *	A page fault occured during a quick copy operation, which isn't
+ *	allowed.  So we want to return FAILURE to the caller of the copy
+ *	operation.  This means we must return this value from the routine
+ *	doing the copy.
+ *
+ * Results:
+ *	FAILURE returned to caller of copy operation.
+ *
+ * Side effects:
+ *	We cause the routine that was doing the copy to return FAILURE.
+ *
+ *---------------------------------------------------------------------
+ */
+.globl	_MachHandleBadQuickCopy
+_MachHandleBadQuickCopy:
+	restore		/* back to page fault trap window */
+	mov	%CUR_PSR_REG, %i1	/* get trap psr */
+	restore		/* back to copy routine window */
+	/* VmMachQuickNDirtyCopy is NOT a leaf routine - return stuff in %i0 */
+	set	FAILURE, %i0	/* return FAILURE */
+	/* Set interrupts to what they were when trap occured. */
+	SET_INTRS_TO(%o1, %OUT_TEMP1, %OUT_TEMP2)
+	ret		/* return from non-leaf routine */
+	restore
+/*
+ *---------------------------------------------------------------------
+ *
+ * _MachFPULoadState -
+ *
+ *	Load the current state into the FPU.
+ *
+ *	void MachFPULoadState(regStatePtr)
+ * 	     Mach_RegState *regStatePtr;
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	FPU registers changed.
+ *
+ *---------------------------------------------------------------------
+ */
+.globl	_MachFPULoadState
+_MachFPULoadState:
+	/*
+	 * Insure that the FPU is enabled.
+	 */
+	mov	%psr, %o1
+	set	MACH_ENABLE_FPP, %o2
+	or	%o2,%o1,%o2
+	mov	%o2,%psr
+	nop
+	nop
+	nop
+	ld	[%o0 + MACH_FPU_FSR_OFFSET], %fsr
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*0],%f0
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*2],%f2
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*4],%f4
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*6],%f6
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*8],%f8
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*10],%f10
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*12],%f12
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*14],%f14
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*16],%f16
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*18],%f18
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*20],%f20
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*22],%f22
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*24],%f24
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*26],%f26
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*28],%f28
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*30],%f30
+	retl
+	mov	%o1,%psr
+/*
+ *---------------------------------------------------------------------
+ *
+ * MachFPUDumpState -
+ *
+ *	Save the FPU state of a process into the Mach_RegState structure.
+ *
+ *	void MachFPUDumpState(regStatePtr)
+ *		Mach_RegState *regStatePtr;
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	Pending exception state cleared from FPU.
+ *
+ *---------------------------------------------------------------------
+ */
+.globl	_MachFPUDumpState
+_MachFPUDumpState:
+	/*
+	 * Insure that the FPU is enabled.
+	 */
+	mov	%psr, %o1
+	set	MACH_ENABLE_FPP, %o2
+	or	%o2,%o1,%o2
+	mov	%o2,%psr
+	/*
+	 * Next three instructions should not be FPU instructions.
+	 */
+	set     MACH_FSR_QUEUE_NOT_EMPTY, %o3
+	add	%o0, MACH_FPU_QUEUE_OFFSET, %o4
+	mov	0, %o5
+
+	/*
+	 * We have to do the same trick here as in Mach_ContextSwitch,
+	 * flagging the instruction that waits for the FPU to finish
+	 * and checking for exceptions.  We have a different label this
+	 * time, of course.  The trap handler knows that if the trap
+	 * occurred at this label then we were already dumping the state
+	 * and it shouldn't call us recursively.
+	 * Note that the fsr is read again in the loop, and the purpose
+	 * of this extra read is to have a separate label for the first
+	 * read -- traps on subsequent reads of fsr would be an error.
+	 */
+.global _machFPUDumpSyncInst
+_machFPUDumpSyncInst:
+	st	%fsr, [%o0 + MACH_FPU_FSR_OFFSET]
+        /*
+	 * The following symbol is include to make the following code
+	 * be attributed to the routine MachFPUDumpState2 and not
+	 * _machFPUDumpSyncInst.
+	 */
+.globl	MachFPUDumpState2
+MachFPUDumpState2:
+	/*
+	 * While MACH_FSR_QUEUE_NOT_EMPTY set in the FSR, save
+	 * the entry in the %fq register.
+	 */
+clearQueueLoop:
+	st	%fsr, [%o0 + MACH_FPU_FSR_OFFSET]
+	ld      [%o0 + MACH_FPU_FSR_OFFSET], %o2
+	andcc	%o2,%o3,%g0
+	be	queueEmpty
+	nop
+	std	%fq, [%o4+%o5]
+	ba	clearQueueLoop
+	add	%o5,8,%o5
+queueEmpty:
+	/*
+	 * Compute numQueueEntries.
+	 */
+	srl	%o5,3,%o5
+	st	%o5, [%o0 + MACH_FPU_QUEUE_COUNT]
+	/*
+	 * Save registers two at a time.
+	 */
+	std	%f0, [%o0 + MACH_FPU_REGS_OFFSET+4*0]
+	std	%f2, [%o0 + MACH_FPU_REGS_OFFSET+4*2]
+	std	%f4, [%o0 + MACH_FPU_REGS_OFFSET+4*4]
+	std	%f6, [%o0 + MACH_FPU_REGS_OFFSET+4*6]
+	std	%f8, [%o0 + MACH_FPU_REGS_OFFSET+4*8]
+	std	%f10, [%o0 + MACH_FPU_REGS_OFFSET+4*10]
+	std	%f12, [%o0 + MACH_FPU_REGS_OFFSET+4*12]
+	std	%f14, [%o0 + MACH_FPU_REGS_OFFSET+4*14]
+	std	%f16, [%o0 + MACH_FPU_REGS_OFFSET+4*16]
+	std	%f18, [%o0 + MACH_FPU_REGS_OFFSET+4*18]
+	std	%f20, [%o0 + MACH_FPU_REGS_OFFSET+4*20]
+	std	%f22, [%o0 + MACH_FPU_REGS_OFFSET+4*22]
+	std	%f24, [%o0 + MACH_FPU_REGS_OFFSET+4*24]
+	std	%f26, [%o0 + MACH_FPU_REGS_OFFSET+4*26]
+	std	%f28, [%o0 + MACH_FPU_REGS_OFFSET+4*28]
+	std	%f30, [%o0 + MACH_FPU_REGS_OFFSET+4*30]
+	/*
+	 * Restore the FPU to previous state and return.
+	 */
+	retl
+	mov	%o1,%psr
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * Mach_Return2(val)  --
+ *
+ *	Set the second return value.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	i1 <- val.
+ *
+ * ----------------------------------------------------------------------
+ */
+.globl	_Mach_Return2
+_Mach_Return2:
+	retl
+	mov	%o0, %i1
+@
+
+
+9.14
+log
+@Added Mach_Return2
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 9.13 90/10/12 14:56:12 mgbaker Exp Locker: shirriff $ SPRITE (Berkeley)
+d119 1
+a122 3
+#ifdef sun4c
+	ldub	[%o0], %o0
+#else
+a123 1
+#endif
+d126 1
+d147 1
+a151 3
+#ifdef sun4c
+	ldub	[%OUT_TEMP1], %OUT_TEMP2
+#else
+a152 1
+#endif
+a157 3
+#ifdef sun4c
+	ldub	[%OUT_TEMP1], %OUT_TEMP2
+#else
+a158 1
+#endif
+a163 3
+#ifdef sun4c
+	ldub	[%OUT_TEMP1], %OUT_TEMP2
+#else
+a164 1
+#endif
+a169 3
+#ifdef sun4c
+	ldub	[%OUT_TEMP1], %OUT_TEMP2
+#else
+a170 1
+#endif
+a175 3
+#ifdef sun4c
+	ldub	[%OUT_TEMP1], %OUT_TEMP2
+#else
+a176 1
+#endif
+a181 3
+#ifdef sun4c
+	ldub	[%OUT_TEMP1], %OUT_TEMP2
+#else
+a182 1
+#endif
+d188 1
+d274 3
+a276 2
+	set	_machStatePtrOffset, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* get offset */
+d292 1
+a292 1
+	 *  
+d296 1
+a296 1
+	 *  the kernel doesn't user floating point instructions.  
+d301 1
+a301 1
+	 *  FP_EXCEPTION trap on the instruction marked by the label 
+d304 1
+a304 1
+	 *  PCB.  
+d306 2
+a307 2
+	set	_machFPUSaveProcPtr, %VOL_TEMP1
+	st	%i0, [%VOL_TEMP1];
+d315 1
+a315 1
+	 * The following symbol is include to make the following code 
+d351 4
+a354 1
+	set	(MACH_NUM_WINDOWS - 1), %g1
+d360 1
+a360 1
+	set	(MACH_NUM_WINDOWS - 1), %g1
+d387 3
+a389 2
+	set	_machStatePtrOffset, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1	/* get offset */
+d396 2
+a397 2
+	set	_machCurStatePtr, %VOL_TEMP1
+	st	%SAFE_TEMP, [%VOL_TEMP1]
+d411 4
+a414 4
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*2],%f2 
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*4],%f4 
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*6],%f6 
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*8],%f8 
+d417 4
+a420 4
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*14],%f14 
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*16],%f16 
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*18],%f18 
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*20],%f20 
+d422 1
+a422 1
+	ldd [%SAFE_TEMP + MACH_FPU_REGS_OFFSET + 4*24],%f24 
+d483 2
+a484 2
+	set	_machCurStatePtr, %VOL_TEMP2
+	st	%VOL_TEMP1, [%VOL_TEMP2]
+d557 1
+a557 1
+	MACH_RETREAT_WIM(%VOL_TEMP1, %VOL_TEMP2, SetWimForChild);
+d616 3
+a618 2
+	set	_machSignalStackSizeOnStack, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1	/* size MachSignalStack */
+d622 3
+a624 2
+	set	_machSigStackOffsetOnStack, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* offset Sig_Stack */
+d626 2
+a627 2
+	set	_machSigStackSize, %o0
+	ld	[%o0], %o0				/* size of Sig_Stack */
+d629 2
+a630 2
+	set	_machSigStackOffsetInMach, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2
+d656 3
+a658 2
+	set	_machSigContextOffsetOnStack, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2		/* offset Sig_Context */
+d660 6
+a665 4
+	set	_machSigContextSize, %o0
+	ld	[%o0], %o0			/* size of Sig_Context */
+	set	_machSigContextOffsetInMach, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2		/* offset Sig_Context */
+d677 2
+a678 2
+	set	_machSigUserStateOffsetOnStack, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2
+d695 3
+a697 2
+	set	_machSigTrapInstOffsetOnStack, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2	/* offset to trap instr */
+d712 3
+a714 2
+	set	_machSigPCOffsetOnStack, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* offset to pc field */
+d717 1
+a717 1
+	
+d738 3
+a740 2
+	set	_machSigStackOffsetInMach, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2	/* offset to sig stack */
+d742 3
+a744 2
+	set	_machSigNumOffsetInSig, %o0
+	ld	[%o0], %o0			/* offset to sigNum */
+d747 3
+a749 2
+	set	_machSigCodeOffsetInSig, %o1
+	ld	[%o1], %o1			/* offset to sigCode */
+d753 3
+a755 2
+	set	_machSigContextOffsetOnStack, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2		/* offset Sig_Context */
+d757 3
+a759 2
+	set	_machSigStackOffsetInMach, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2	/* offset to sig stack */
+d761 3
+a763 2
+	set	_machSigAddrOffsetInSig, %o3
+	ld	[%o3], %o3			/* offset to sigAddr */
+d839 3
+a841 2
+	set	_machSignalStackSizeOnStack, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1	/* size MachSignalStack */
+d850 3
+a852 2
+	set	_machSigStackOffsetOnStack, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1	/* offset of Sig_Stack */
+d854 3
+a856 2
+	set	_machSigStackSize, %o0
+	ld	[%o0], %o0			/* size of Sig_Stack */
+d858 2
+a859 2
+	set	_machSigStackOffsetInMach, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2
+d868 1
+a868 1
+ 	/* Copy failed from user space - kill the process */ 
+d882 3
+a884 2
+	set	_machSigContextOffsetOnStack, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2		/* offset Sig_Context */
+d886 6
+a891 4
+	set	_machSigContextSize, %o0
+	ld	[%o0], %o0			/* size of Sig_Context */
+	set	_machSigContextOffsetInMach, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2	/* offset of Sig_Context */
+d909 2
+a910 2
+	set	_machSigUserStateOffsetOnStack, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2
+a944 42
+#ifdef NOTDEF
+/*
+ *---------------------------------------------------------------------
+ *
+ * MachFlushWindowsToStack -
+ *
+ *	void MachFlushWindowsToStack()
+ *
+ *	Flush all the register windows to the stack.
+ * 	Interrupts must be off when we're called.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *---------------------------------------------------------------------
+ */
+.globl	_MachFlushWindowsToStack
+_MachFlushWindowsToStack:
+	mov	%g3, %o0
+	set	(MACH_NUM_WINDOWS - 1), %g3
+SaveTheWindow:
+	save
+	subcc	%g3, 1, %g3
+	bne	SaveTheWindow
+	nop
+	set	(MACH_NUM_WINDOWS - 1), %g3
+RestoreTheWindow:
+	restore
+	subcc	%g3, 1, %g3
+	bne	RestoreTheWindow
+	nop
+
+	mov	%o0, %g3
+
+	retl
+	nop
+#endif NOTDEF
+
+
+d1220 4
+a1223 4
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*2],%f2 
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*4],%f4 
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*6],%f6 
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*8],%f8 
+d1226 4
+a1229 4
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*14],%f14 
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*16],%f16 
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*18],%f18 
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*20],%f20 
+d1231 1
+a1231 1
+	ldd	[%o0 + MACH_FPU_REGS_OFFSET+4*24],%f24 
+d1265 1
+a1265 1
+	 * Next three instructions should not be FPU instructions. 
+d1283 1
+a1283 1
+_machFPUDumpSyncInst: 
+d1286 1
+a1286 1
+	 * The following symbol is include to make the following code 
+@
+
+
+9.13
+log
+@prototyping.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 9.12 90/09/10 12:23:01 mendel Exp $ SPRITE (Berkeley)
+d1378 19
+a1396 1
+
+@
+
+
+9.12
+log
+@Changed routine MachHandleWeirdoInstruction to be named MachHandleTrap.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 9.11 90/08/29 12:16:48 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d138 1
+a138 1
+ *	int *	Mach_GetEtherAddress(ether)
+d1080 2
+a1081 2
+.globl	_Mach_ProbeStart
+_Mach_ProbeStart:
+d1091 2
+d1103 1
+a1103 1
+				/* %o0 = size in bytes of the read to do.
+a1106 7
+
+				/* %o0 = address to peek in. */
+				/* %o1 = size in bytes of the read to do.
+				 * Must be 1, 2, 4, or 8 bytes. */
+				/* %o2 = Location to store the correctly read
+				 * value. It should be a pointer to an
+				 * object of size size. */
+d1169 2
+a1170 2
+.globl	_Mach_ProbeEnd
+_Mach_ProbeEnd:
+@
+
+
+9.11
+log
+@Added Mach_GetCallerPC().
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 9.10 90/08/14 18:43:04 mgbaker Exp Locker: mendel $ SPRITE (Berkeley)
+d325 1
+a325 1
+	 *  _machFPUSyncInst. The routine MachHandleWeirdoInstruction in
+@
+
+
+9.10
+log
+@Fixed a bug that caused global registers to be trashed during migration.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 9.9 90/07/31 21:32:45 shirriff Exp Locker: mgbaker $ SPRITE (Berkeley)
+d36 21
+@
+
+
+9.9
+log
+@Added a couple lines I left out.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 9.8 90/07/31 17:00:55 shirriff Exp $ SPRITE (Berkeley)
+d485 1
+@
+
+
+9.9.1.1
+log
+@Contains asplos statistics-gathering code.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach.mgb/sun4.md/RCS/machAsm.s,v 1.1 90/06/29 17:39:55 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+a260 7
+	/*
+	 * Set temporary variable for asplos statistics that tells us we're
+	 * in a context switch.
+	 */
+	set	_mach_inContextSwitch, %VOL_TEMP1
+	set	1, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+a380 1
+
+a448 8
+
+	/*
+	 * Set temporary variable for asplos statistics that tells us we're
+	 * not in a context switch.
+	 */
+	set	_mach_inContextSwitch, %VOL_TEMP1
+	st	%g0, [%VOL_TEMP1]
+
+d725 1
+a725 1
+	 *	Handler(sigNum, sigCode, contextPtr)
+d743 7
+@
+
+
+9.8
+log
+@Return sigAddr as arg #4 for a signal.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 9.7 90/06/28 14:14:42 mgbaker Exp $ SPRITE (Berkeley)
+d743 2
+@
+
+
+9.7
+log
+@Fixed bug in Mach_ContextSwitch that save to stack in wrong address space.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 9.6 90/02/28 22:18:41 douglis Exp Locker: mgbaker $ SPRITE (Berkeley)
+d725 1
+a725 1
+	 *	Handler(sigNum, sigCode, contextPtr)
+d743 5
+@
+
+
+9.6
+log
+@deal with exception in MachFPUDumpState.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach.fd/sun4.md/RCS/machAsm.s,v 9.4 89/12/12 18:01:44 mgbaker Exp Locker: douglis $ SPRITE (Berkeley)
+a260 14
+	/*
+	 * Switch contexts to that of toProcPtr.  It's the second arg, so
+	 * move it to be first arg of routine we call.
+	 */
+	mov	%i1, %o0
+	call	_VmMach_SetupContext, 1
+	nop
+	/*
+	 * Context to use was returned in %RETURN_VAL_REG.  Set the context
+	 * to that value.  VmMachSetContextReg is a leaf routine, so we
+	 * leave the value for its argument in %RETURN_VAL_REG.
+	 */
+	call	_VmMachSetContextReg, 1
+	nop
+d364 15
+@
+
+
+9.5
+log
+@just fixed a typo, when i thought i was going to be making more major
+changes in the process....
+@
+text
+@d1287 22
+@
+
+
+9.4
+log
+@Took out lots of debugging.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 9.3 89/11/30 12:06:13 mendel Exp Locker: mgbaker $ SPRITE (Berkeley)
+d317 1
+a317 1
+	 *  FP_EXECPTION trap on the instruction marked by the label 
+@
+
+
+9.3
+log
+@Mary checking this in for Mendel in preparation for stripping out debug
+code.  This version works finally, since the floating point state saving
+bug is gone, but I want to save this for reference.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 9.2 89/11/27 14:52:45 mgbaker Exp $ SPRITE (Berkeley)
+d325 1
+a325 1
+	 * Set %SAFE_TEMP to be machStatePtr.
+@
+
+
+9.2
+log
+@Notdef'ing debug stuff.
+floating point additions to state structure.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 9.1 89/09/18 21:01:27 mgbaker Exp $ SPRITE (Berkeley)
+d324 4
+d329 1
+a329 1
+_machFPUSyncInst: st	%fsr, [%SAFE_TEMP + MACH_FPU_FSR_OFFSET + MACH_TRAP_REGS_OFFSET]
+d337 16
+a352 16
+	std %f0, [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*0]
+	std %f2, [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*2]
+	std %f4, [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*4]
+	std %f6, [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*6]
+	std %f8, [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*8]
+	std %f10, [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*10]
+	std %f12, [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*12]
+	std %f14, [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*14]
+	std %f16, [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*16]
+	std %f18, [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*18]
+	std %f20, [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*20]
+	std %f22, [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*22]
+	std %f24, [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*24]
+	std %f26, [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*26]
+	std %f28, [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*28]
+	std %f30, [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*30]
+d402 21
+a422 17
+	ld  [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_FSR_OFFSET], %fsr
+	ldd [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*0],%f0
+	ldd [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*2],%f2 
+	ldd [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*4],%f4 
+	ldd [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*6],%f6 
+	ldd [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*8],%f8 
+	ldd [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*10],%f10
+	ldd [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*12],%f12
+	ldd [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*14],%f14 
+	ldd [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*16],%f16 
+	ldd [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*18],%f18 
+	ldd [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*20],%f20 
+	ldd [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*22],%f22
+	ldd [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*24],%f24 
+	ldd [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*26],%f26
+	ldd [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*28],%f28
+	ldd [%SAFE_TEMP+MACH_TRAP_REGS_OFFSET+MACH_FPU_REGS_OFFSET+4*30],%f30
+@
+
+
+9.1
+log
+@Checked in by shirriff for mgbaker.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 9.0 89/09/12 14:53:00 douglis Stable Locker: mgbaker $ SPRITE (Berkeley)
+a259 1
+	andn	%sp, 0x7, %sp		/* should already be okay */
+a260 4
+	MACH_SR_HIGHPRIO()		/*
+					 * MAY BE EXTRANEOUS - interrupts should
+					 * already be off!
+					 */
+d275 8
+d284 3
+d293 1
+d295 2
+a296 2
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* get machStatePtr */
+	add	%VOL_TEMP1, MACH_SWITCH_REGS_OFFSET, %VOL_TEMP1
+d298 1
+a298 1
+	
+d300 1
+a300 2
+	 * Where was trapRegs pointer saved into mach state?
+	 * if this were user process, save user stack pointer?
+d302 48
+a349 1
+
+d391 25
+d1198 126
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 1.30 89/09/08 16:21:59 mgbaker Exp Locker: douglis $ SPRITE (Berkeley)
+d1090 30
+@
+
+
+1.30
+log
+@Preparing for next install.  (More _ASM inclusions.)
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 1.29 89/08/09 12:34:29 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+@
+
+
+1.29
+log
+@Stable kernel.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 1.28 89/07/22 15:54:09 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d11 1
+a959 2
+#define	SUCCESS	0
+#define	FAILURE	1
+@
+
+
+1.28
+log
+@Interrupt enabling and disabling has now been in-lined using gcc.
+Mach_GetPC is now fixed.
+Mach_TestAndSet now works using atomic ldstub instruction rather than
+by enabling and disabling interrupts.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 1.27 89/05/21 18:24:09 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d100 3
+d104 1
+d131 3
+d135 1
+d141 3
+d145 1
+d151 3
+d155 1
+d161 3
+d165 1
+d171 3
+d175 1
+d181 3
+d185 1
+a264 1
+
+a360 1
+
+d539 1
+a539 1
+	QUICK_ENABLE_INTR()
+d542 1
+a542 1
+	QUICK_DISABLE_INTR()
+d571 1
+a571 1
+	QUICK_ENABLE_INTR()
+d574 1
+a574 1
+	QUICK_DISABLE_INTR()
+d587 1
+a587 1
+	QUICK_ENABLE_INTR()
+d590 1
+a590 1
+	QUICK_DISABLE_INTR()
+a710 1
+
+d747 1
+a747 1
+	QUICK_ENABLE_INTR()
+d750 1
+a750 1
+	QUICK_DISABLE_INTR()
+d776 1
+a776 1
+	QUICK_ENABLE_INTR()
+d779 1
+a779 1
+	QUICK_DISABLE_INTR()
+d799 1
+a799 1
+	QUICK_ENABLE_INTR()
+d802 1
+a802 1
+	QUICK_DISABLE_INTR()
+d891 36
+a1090 2
+
+
+@
+
+
+1.27
+log
+@checkin before spring cleaning
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 1.26 89/05/20 22:02:17 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d18 1
+a18 1
+ * __MachGetPc --
+d20 2
+a21 2
+ *	Jump back to caller without over-writing pc that was put into
+ *	%RETURN_VAL_REG as a side effect of the jmp to this routine.
+a30 107
+.globl	__MachGetPc
+__MachGetPc:
+	jmpl	%RETURN_VAL_REG, %g0
+	nop
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * Mach_DisableIntr --
+ *
+ *	Disable interrupts.  This leaves nonmaskable interrupts enabled.
+ *	Note that this uses out registers.  Since it's a leaf
+ *	routine, callable from C, it cannot use %VOL_TEMP1 and %VOL_TEMP2.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Maskable interrupts are disabled.
+ *
+ * ----------------------------------------------------------------------
+ */
+.globl	_Mach_DisableIntr
+_Mach_DisableIntr:
+	/* first disable traps */
+	mov	%psr, %OUT_TEMP1
+	set	MACH_DISABLE_TRAP_BIT, %OUT_TEMP2
+	and	%OUT_TEMP1, %OUT_TEMP2, %OUT_TEMP1
+	mov	%OUT_TEMP1, %psr
+	MACH_WAIT_FOR_STATE_REGISTER()
+
+	/* now disable interrupts */
+	set	MACH_DISABLE_INTR, %OUT_TEMP2
+	or	%OUT_TEMP1, %OUT_TEMP2, %OUT_TEMP1
+	mov	%OUT_TEMP1, %psr
+	MACH_WAIT_FOR_STATE_REGISTER()
+
+	/* now enable traps */
+	set	MACH_ENABLE_TRAP_BIT, %OUT_TEMP2
+	or	%OUT_TEMP1, %OUT_TEMP2, %OUT_TEMP1
+	mov	%OUT_TEMP1, %psr
+	MACH_WAIT_FOR_STATE_REGISTER()
+	retl
+	nop
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * Mach_EnableIntr --
+ *
+ *      Enable interrupts.
+ *	Note that this uses out registers.  Since it's a leaf
+ *	routine, callable from C, it cannot use %VOL_TEMP1 and %VOL_TEMP2.
+ *	This enables all interrupts, so if before disabling them
+ *	we had only certain priority interrupts enabled, this will lose
+ *	that information.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *      Interrupts are enabled.
+ *
+ * ----------------------------------------------------------------------
+ */
+.globl	_Mach_EnableIntr
+_Mach_EnableIntr:
+	/* first disable traps */
+	mov	%psr, %OUT_TEMP1
+	set	MACH_DISABLE_TRAP_BIT, %OUT_TEMP2
+	and	%OUT_TEMP1, %OUT_TEMP2, %OUT_TEMP1
+	mov	%OUT_TEMP1, %psr
+	MACH_WAIT_FOR_STATE_REGISTER()
+
+	/* Now turn on interrupts */
+	set	MACH_ENABLE_INTR, %OUT_TEMP2
+	and	%OUT_TEMP1, %OUT_TEMP2, %OUT_TEMP1
+	mov	%OUT_TEMP1, %psr
+	MACH_WAIT_FOR_STATE_REGISTER()
+
+	/* Now turn traps back on */
+	set	MACH_ENABLE_TRAP_BIT, %OUT_TEMP2
+	or	%OUT_TEMP1, %OUT_TEMP2, %OUT_TEMP1
+	mov	%OUT_TEMP1, %psr
+	MACH_WAIT_FOR_STATE_REGISTER()
+	retl
+	nop
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * Mach_GetPC --
+ *
+ *	Jmpl writes current pc into RETURN_VAL_REG_CHILD here,
+ *	which is where values are returned from calls.  The return
+ *	from __MachGetPc must not overwrite this.  Since this uses a
+ *	non-pc-relative jump, we CANNOT use this routine while executing before
+ *	we've copied the kernel to where it was linked for. 
+ *
+ * Results:
+ *	PC whence we came.
+ *
+ * Side effects:
+ *      None.
+ *
+ * ----------------------------------------------------------------------
+ */
+a32 3
+	set	__MachGetPc, %RETURN_VAL_REG
+	jmpl	%RETURN_VAL_REG, %RETURN_VAL_REG
+	nop
+d34 2
+a35 1
+	nop
+d69 1
+a69 6
+	DISABLE_INTR_ASM(%OUT_TEMP1, %OUT_TEMP2, TestAndSetDisableIntrs)
+	set	0x1, %OUT_TEMP1
+	ld	[%RETURN_VAL_REG], %OUT_TEMP2
+	st	%OUT_TEMP1, [%RETURN_VAL_REG]
+	mov	%OUT_TEMP2, %RETURN_VAL_REG
+	ENABLE_INTR_ASM(%OUT_TEMP1, %OUT_TEMP2, TestAndSetEnableIntrs)
+@
+
+
+1.26
+log
+@Ethernet address now grabbed from prom.  It was hard-wired before.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 1.25 89/05/02 23:25:43 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d120 17
+a136 4
+ * Jmpl writes current pc into RETURN_VAL_REG_CHILD here, which is where values
+ * are returned from calls.  The return from __MachGetPc must not overwrite 
+ * this.  Since this uses a non-pc-relative jump, we CANNOT use this routine 
+ * while executing before we've copied the kernel to where it was linked for. 
+d175 3
+a177 1
+#ifdef	NO_SUN4_CACHING
+d184 1
+a184 3
+#else
+	swap	[%RETURN_VAL_REG], %RETURN_VAL_REG	/* set addr with addr */
+#endif /* NO_SUN4_CACHING */
+d960 8
+a967 1
+ * _Mach_ReadPsr:
+d969 4
+a972 1
+ * Capture psr for c routines.
+d982 17
+a998 4
+ * A page fault occured in a copy-in or copy-out from a user-mode process, and
+ * the page couldn't be paged in.  So we want to return SYS_ARG_NOACCESS to
+ * the process from its system call.  This means we must return this value
+ * from the routine doing the copying.
+d1116 16
+a1131 4
+ * A page fault occured during a probe operation, which means
+ * the page couldn't be paged in or there was a size error.  So we want to
+ * return FAILURE to the caller of the probe operation.  This means we must
+ * return this value from the routine doing the probe.
+d1144 2
+@
+
+
+1.25
+log
+@New interrupts, device interface, etc.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 1.24 89/04/23 16:30:25 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d202 60
+@
+
+
+1.24
+log
+@Fixed bug that caused some exec'd processes to have a bad tbr register.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 1.23 89/04/19 23:19:39 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+a401 12
+/* FOR DEBUGGING */
+	set	0xaaaaaaaa, %o0
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RunUser0, %o0)
+	mov	%psr, %o0
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RunUser1, %o0)
+	MACH_GET_CUR_PROC_PTR(%VOL_TEMP1)
+	set	_MachPIDOffset, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2
+	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %o0
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RunUserPid, %o0)
+/* END FOR DEBUGGING */
+a473 10
+	 */
+/* FOR DEBUGGING */
+	set	0xbbbbbbbb, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RunUser2, %OUT_TEMP1)
+	mov	%psr, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RunUser3, %OUT_TEMP1)
+	mov	%wim, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RunUser4, %OUT_TEMP1)
+/* END FOR DEBUGGING */
+	/*
+a481 4
+/* FOR DEBUGGING */
+	mov	%wim, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RunUser5, %OUT_TEMP1)
+/* END FOR DEBUGGING */
+d906 4
+a909 2
+	restore
+	restore
+d911 124
+a1034 2
+	QUICK_ENABLE_INTR()
+	retl
+@
+
+
+1.23
+log
+@Consistent buggy state.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 1.22 89/04/09 13:22:23 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d453 2
+@
+
+
+1.22
+log
+@Seems to have fixed some interrupt problems, but now there's seg fault
+problems that don't print anything, so I'm removing some printf's to
+see what happens and I'm removing and changing some stuff that gets
+put into the debug buffer.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 1.21 89/04/05 10:46:23 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d407 6
+d436 3
+d490 15
+d506 1
+d589 3
+d795 3
+d868 1
+d907 1
+d918 16
+@
+
+
+1.21
+log
+@Can fork and exec user processes and run csh.
+There's still an intermittent problem that causes a watchdog reset.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 1.20 89/04/01 13:01:06 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d55 19
+a73 6
+	mov %psr, %OUT_TEMP1
+	set MACH_DISABLE_INTR, %OUT_TEMP2
+	or %OUT_TEMP1, %OUT_TEMP2, %OUT_TEMP1
+	mov %OUT_TEMP1, %psr
+	nop					/* time for valid state reg */
+	retl
+d98 18
+a115 5
+	mov %psr, %OUT_TEMP1
+	set MACH_ENABLE_INTR, %OUT_TEMP2
+	and %OUT_TEMP1, %OUT_TEMP2, %OUT_TEMP1
+	mov %OUT_TEMP1, %psr
+	nop					/* time for valid state reg */
+d402 6
+d476 6
+d553 1
+d556 1
+d572 2
+a580 1
+	/* addr of mach state structure is still in %VOL_TEMP1 */
+d582 1
+d585 1
+d590 2
+a595 1
+	/* addr of mach state structure is still in %VOL_TEMP1 */
+d598 1
+d601 1
+d759 1
+d762 1
+d775 2
+a783 1
+	/* addr of mach state structure is still in %VOL_TEMP1 */
+d785 1
+d788 1
+d808 1
+d811 1
+d873 12
+@
+
+
+1.20
+log
+@Contains some changes for forking user processes.  Strangely enough, though,
+forking kernel processes and exec'ing first user process still work,
+even though the code changes affect them!
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 1.19 89/03/31 11:54:15 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d364 1
+a364 2
+ *	For now I pass in some things as parameters, instead of in trap
+ *	structure.
+a365 3
+ *	MachRunUserProc(entryPoint, userStackPtr);
+ *	The parameters are in out registers, since this is a leaf routine.
+ *
+d401 2
+a402 1
+	call	_Proc_ExitInt, 3
+d418 14
+d433 2
+a440 32
+#ifdef NOTDEF
+	/*
+	 * Make sure traps are disabled before setting up next psr value.
+	 * Next psr value will have all interrupts enabled, so we make sure
+	 * traps are disabled here so we don't get one of those interrupts
+	 * before returning to user space.
+	 */
+	set	MACH_DISABLE_TRAP_BIT, %VOL_TEMP1
+	mov	%psr, %VOL_TEMP2
+	and	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2
+	mov	%VOL_TEMP2, %psr
+	MACH_WAIT_FOR_STATE_REGISTER()
+
+	/*
+	 * Make sure invalid window is 1 in front of the window we'll return to.
+	 * This makes sure we don't get a watchdog reset returning from the
+	 * trap window, because we'll be sure the window we return to is valid.
+	 * Making the window before that be the invalid window means that we'll
+	 * be able to start out life for a while without a window overflow
+	 * trap.
+	 */
+	MACH_SET_WIM_TO_CWP()
+	MACH_RETREAT_WIM(%VOL_TEMP1, %VOL_TEMP2, FirstRetreat)
+	MACH_RETREAT_WIM(%VOL_TEMP1, %VOL_TEMP2, SecondRetreat)
+	/*
+	 * Restore psr
+	 */
+	MACH_RESTORE_PSR()
+	jmp	%CUR_PC_REG
+	rett	%NEXT_PC_REG
+	nop
+#else
+a446 1
+#endif NOTDEF
+a503 5
+/* FOR DEBUGGING */
+	set	0x11111111, %o0
+	MACH_DEBUG_BUF(%o1, %o2, DoSignalThing0, %o0)
+	MACH_DEBUG_BUF(%o1, %o2, DoSignalThing1, %SAFE_TEMP)
+/* END FOR DEBUGGING */
+a568 5
+/* FOR DEBUGGING */
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, SigStuff2, %RETURN_ADDR_REG)
+	set	0x22222222, %g3
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, SigStuff3, %g3)
+/* END FOR DEBUGGING */
+a685 5
+/* FOR DEBUGGING */
+	set	0x66666666, %g3
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, ReturnedFromASig0, %g3)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, ReturnedFromASig1, %sp)
+/* END FOR DEBUGGING */
+d792 1
+a792 1
+ 	Interrupts must be off when we're called.
+@
+
+
+1.19
+log
+@Eighteenth Kernel:  it executes a signal.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 1.18 89/03/30 23:23:43 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d364 6
+d382 2
+a387 1
+#ifdef NOTDEF
+a395 5
+#else
+	mov	%o0, %CUR_PC_REG
+	add	%o0, 4, %NEXT_PC_REG
+	mov	%o1, %fp
+#endif NOTDEF
+a408 7
+	 * So that user stack has space for saved window area and storage
+	 * of callee's input registers.
+	 */
+	add	%fp, -MACH_FULL_STACK_FRAME, %fp
+
+#ifdef NOTDEF
+	/*
+d411 1
+a411 1
+	add	%VOL_TEMP2, MACH_RETPC_OFFSET, %VOL_TEMP1
+d415 14
+a428 1
+#endif NOTDEF
+a439 7
+	set	MACH_FIRST_USER_PSR, %CUR_PSR_REG
+
+	/*
+	 * Put a happy return value into the return value register.  This
+	 * probably doesn't matter at all.
+	 */
+	clr	%i0
+d459 8
+d816 40
+@
+
+
+1.18
+log
+@Paranoia checkin.  Lots of new signal code.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 1.17 89/03/26 20:16:00 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d515 5
+d583 7
+d707 5
+@
+
+
+1.17
+log
+@Seventeenth Kernel.  It executes its first system call: Sys_Shutdown().
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 1.16 89/03/24 15:38:45 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d480 310
+@
+
+
+1.16
+log
+@Trying to get user procs to work.  I've just changed some stack-checking
+code.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 1.15 89/03/22 14:06:33 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d322 4
+a344 7
+	 * Save the pointer to the current mach state structure that's in
+	 * a local register into a global variable.
+	 */
+	set	_machCurStatePtr, %VOL_TEMP1
+	st	%SAFE_TEMP, [%VOL_TEMP1]
+
+	/*
+d377 1
+a377 7
+	set	_proc_RunningProcesses, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* ptr to table */
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* procPtr */
+	set	_machStatePtrOffset, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2		/* get offset */
+	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* machStatePtr */
+@
+
+
+1.15
+log
+@User process starts and gets successful page fault on its stack.
+I don't think it's returning to the user process correctly, though.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 1.13 89/03/19 01:21:31 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+a379 1
+#ifdef NOTDEF
+d381 1
+d387 3
+d403 1
+a403 1
+	andcc	%fp, 0x7, %fp
+a459 1
+
+@
+
+
+1.14
+log
+@These are bad versions.  It gets an inexplicable fault in MachRunUserProc.
+I'm saving them so I can debug this later.  I have a work-around in the
+meantime.
+@
+text
+@d380 1
+a382 3
+	set	0x44444444, %o3
+	MACH_DEBUG_BUF(%o0, %o1, PrintHereLabel, %o3)
+	MACH_DEBUG_BUF(%o0, %o1, PrintProcLabel, %VOL_TEMP1)
+a386 1
+	MACH_DEBUG_BUF(%o0, %o1, PrintMachPtrLabel, %VOL_TEMP1)
+a387 1
+	MACH_DEBUG_BUF(%o0, %o1, PrintAddrTrapRegsLabel, %VOL_TEMP1)
+a388 2
+	MACH_DEBUG_BUF(%o0, %o1, PrintTrapRegsLabel, %VOL_TEMP2)
+
+d395 5
+d418 1
+a418 2
+	MACH_DEBUG_BUF(%o0, %o1, PrintFpLabel, %fp)
+
+d426 1
+@
+
+
+1.13
+log
+@More stuff.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 1.12 89/03/18 15:40:28 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+a251 19
+#ifdef NOTDEF
+	/* save old addresses for debugging */
+	set	_theAddrOfVmPtr, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	set	_oldAddrOfVmPtr, %VOL_TEMP2
+	st	%VOL_TEMP1, [%VOL_TEMP2]
+	tst	%VOL_TEMP1
+	be	FirstTimeDontPrint
+	nop
+	ld	[%VOL_TEMP1], %VOL_TEMP1	/* value of vmPtr */
+	MACH_DEBUG_BUF(%OUT_TEMP1, %OUT_TEMP2, DebugContextSwitch5, %VOL_TEMP1)
+	set	_theAddrOfMachPtr, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	set	_oldAddrOfMachPtr, %VOL_TEMP2
+	st	%VOL_TEMP1, [%VOL_TEMP2]
+	ld	[%VOL_TEMP1], %VOL_TEMP1	/* value of vmPtr */
+	MACH_DEBUG_BUF(%OUT_TEMP1, %OUT_TEMP2, DebugContextSwitch6, %VOL_TEMP1)
+FirstTimeDontPrint:
+#endif NOTDEF
+a252 1
+
+a339 28
+#ifdef NOTDEF
+	set	_theAddrOfVmPtr, %OUT_TEMP1	/* get addr of vmPtr */
+	ld	[%OUT_TEMP1], %OUT_TEMP1
+	ld	[%OUT_TEMP1], %OUT_TEMP1	/* get value of vmPtr */
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch11, %OUT_TEMP1)
+
+	set	_theAddrOfMachPtr, %OUT_TEMP1
+	ld	[%OUT_TEMP1], %OUT_TEMP1
+	ld	[%OUT_TEMP1], %OUT_TEMP1	/* value of machPtr */
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch12, %OUT_TEMP1)
+
+	set	_oldAddrOfVmPtr, %OUT_TEMP1	/* get addr of old vmPtr */
+	ld	[%OUT_TEMP1], %OUT_TEMP1
+	tst	%OUT_TEMP1
+	be	AgainFirstTimeDontPrint
+	nop
+	ld	[%OUT_TEMP1], %OUT_TEMP1	/* get value of old vmPtr */
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch13, %OUT_TEMP1)
+
+	set	_oldAddrOfMachPtr, %OUT_TEMP1
+	ld	[%OUT_TEMP1], %OUT_TEMP1
+	ld	[%OUT_TEMP1], %OUT_TEMP1	/* value of old machPtr */
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch14, %OUT_TEMP1)
+AgainFirstTimeDontPrint:
+
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch15, %CUR_PSR_REG)
+#endif NOTDEF
+
+a355 1
+
+d361 1
+a361 1
+ *	void	MachRunUserProc(procPtr)
+d380 8
+a387 1
+	set	_machCurStatePtr, %VOL_TEMP1
+d389 1
+d391 1
+d393 1
+d401 19
+d465 23
+@
+
+
+1.12
+log
+@Kernel processes work again, with a lot of user support.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 1.11 89/03/09 17:07:31 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d403 83
+@
+
+
+1.11
+log
+@Keyboard interrupts work.  Checking in before I've made too many
+further changes.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 1.10 89/03/06 12:00:40 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d278 1
+a278 1
+	call	_VmMach_SetupContext, 1	/* does the work, no? */
+d292 3
+a294 4
+	set	_machMachProcOffset, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	add	%i0, %VOL_TEMP1 , %VOL_TEMP1
+	/* AAAACCCK! */
+d330 7
+a336 3
+	/* restore stack pointer of new process - WE SWITCH STACKS HERE!!! */
+	set	_machMachProcOffset, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+d338 2
+a339 2
+	ld	[%VOL_TEMP1], %VOL_TEMP1	/* procPtr->machStatePtr */
+	add	%VOL_TEMP1, MACH_SWITCH_REGS_OFFSET, %VOL_TEMP1
+d387 7
+@
+
+
+1.10
+log
+@Sixteenth Kernel.  Kernel processes work and play tag over a monitor
+lock.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 1.9 89/03/03 15:40:33 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d155 17
+d179 30
+d210 1
+d245 1
+a245 3
+	set	MACH_SAVED_STATE_FRAME, %VOL_TEMP1
+	sub	%g0, %VOL_TEMP1, %VOL_TEMP1
+	save 	%sp, %VOL_TEMP1, %sp
+@
+
+
+1.9
+log
+@Fifteenth Kernel.  Initializes all kernel procs and gets to idle loop.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 1.8 89/03/02 00:21:01 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d137 1
+d142 1
+a196 2
+	MACH_DEBUG_BUF(%OUT_TEMP1, %OUT_TEMP2, DebugContextSwitch1, %g0)
+	MACH_DEBUG_BUF(%OUT_TEMP1, %OUT_TEMP2, DebugContextSwitch2, %o0)
+a200 1
+#ifndef THE_WAY_IT_WAS
+d202 5
+a206 5
+	MACH_SR_HIGHPRIO()
+#endif
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch3, %i1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch4, %sp)
+
+d224 1
+a240 1
+#ifdef THE_WAY_IT_WAS
+a241 7
+	 * Save psr by saving it into local register that will be saved
+	 * on window save and restore operations.  After this we can turn
+	 * off interrupts and stuff without worrying about saving the psr.
+	 */
+	mov	%psr, %CUR_PSR_REG
+#endif
+	/*
+a253 1
+#ifdef NOTDEF
+d258 1
+a258 2
+#endif /* NOTDEF */
+#ifdef THE_WAY_IT_WAS
+a259 8
+	 * Disable interrupts here, since we don't want to be caught between
+	 * states. I may be able to do this later, but this is easy and simple.
+	 * We must keep traps enabled, so that we can use the window overflow
+	 * and underflow routines to save and restore our windows.
+	 */
+	MACH_SR_HIGHPRIO()
+#endif
+	/*
+a284 2
+	set	0x777, %g1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch7, %g1)
+a292 5
+	mov	%VOL_TEMP1, %g1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch8, %g1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch9, %i1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch10, %sp)
+
+d310 2
+a311 4
+	/*
+	 * Restore status register in such a way that it doesn't make
+	 * us change windows.
+	 */
+d337 6
+@
+
+
+1.8
+log
+@Kernel procs exist now, but it deadlocks.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 1.7 89/02/28 12:47:00 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d195 2
+d201 4
+a204 2
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch1, %g0)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch2, %i0)
+d207 20
+d241 1
+d248 1
+d257 2
+d268 1
+d276 1
+d304 1
+a304 1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch5, %g1)
+d314 3
+a316 3
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch6, %g1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch7, %i1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch8, %sp)
+d339 25
+a363 1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugContextSwitch9, %CUR_PSR_REG)
+@
+
+
+1.7
+log
+@Not much differnce here.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 1.6 89/02/24 21:57:01 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d12 1
+d160 74
+d235 30
+a264 6
+.globl	_panic
+_panic:
+	mov	%o7, %VOL_TEMP1
+	sethi   %hi(-0x17ef7c),%VOL_TEMP2
+	ld      [%VOL_TEMP2+%lo(-0x17ef7c)],%VOL_TEMP2
+	call    %VOL_TEMP2
+d266 5
+a270 3
+	mov	%VOL_TEMP1, %o7
+loopForever:
+	ba	loopForever
+d272 42
+a313 1
+#endif NOTDEF
+@
+
+
+1.6
+log
+@Fourteenth Kernel.  Debugger works, uses mem module and stdlib.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 1.5 89/02/24 16:38:14 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d159 1
+d171 1
+@
+
+
+1.5
+log
+@Thirteenth Kernel.  sun4 finishes vm init now.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 1.4 89/02/05 17:32:52 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+a126 1
+#ifdef NOTDEF
+d135 6
+d142 1
+d145 1
+a145 1
+	clr	%RETURN_VAL_REG				/* 0 it in delay slot */
+a149 5
+#else
+	clr	%RETURN_VAL_REG
+	retl
+	nop
+#endif NOTDEF
+a151 2
+
+
+a157 12
+
+#ifdef NOTDEF
+/*
+ * VmMach_MapIntelPage((Address) (NET_IE_SYS_CONF_PTR_ADDR)) is call.
+ */
+.globl	_VmMach_MapIntelPage
+_VmMach_MapIntelPage:
+	set	((0x800000 / VMMACH_SEG_SIZE) - 1), %VOL_TEMP1	/* pmeg */
+	stha	%VOL_TEMP1, [%o0] VMMACH_SEG_MAP_SPACE		/* segment */
+	retl
+	nop
+#endif NOTDEF
+@
+
+
+1.4
+log
+@Twelfth Kernel.  It uses only my trap table now.  The net module
+and the debugger work, plus it's taking timer and ethernet interrupts.
+Although it seems interrupts are disabled, I don't think they are.  It's
+just that I don't do keyboard interrupts yet.
+Because it uses my trap table, I've rearranged things so there's one
+less indirection.  Window overflow and underflow traps are direct now.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 1.3 89/01/29 13:09:36 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d19 2
+a20 2
+ *	Jump back to caller without writing pc that was put into %o0 as
+ *	a side effect of the jmp to this routine.
+d23 1
+a23 1
+ *	Old pc is returned in %o0.
+d32 1
+a32 1
+	jmpl	%o0, %g0
+d41 1
+a41 1
+ *	Note that this uses out registers o3 and o4.  Since it's a leaf
+a42 4
+ *	It should be okay for it to use the out registers, however.
+ *	That just means that if it's called from assembly code, I shouldn't
+ *	use those out registers in the calling routine, but I never do that
+ *	anyway.
+d54 4
+a57 4
+	mov %psr, %o3
+	set MACH_DISABLE_INTR, %o4
+	or %o3, %o4, %o3
+	mov %o3, %psr
+d68 1
+a68 1
+ *	Note that this uses out registers o3 and o4.  Since it's a leaf
+d70 1
+a70 4
+ *	It should be okay for it to use the out registers, however.
+ *	That just means that if it's called from assembly code, I shouldn't
+ *	use those out registers in the calling routine, but I never do that
+ *	anyway.  This enables all interrupts, so if before disabling them
+d84 4
+a87 4
+	mov %psr, %o3
+	set MACH_ENABLE_INTR, %o4
+	and %o3, %o4, %o3
+	mov %o3, %psr
+d127 1
+d144 5
+d153 8
+d169 13
+@
+
+
+1.3
+log
+@Putting in net module and debugger.  There are still problems,
+but this is progress.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 1.2 89/01/25 22:50:58 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d77 3
+a79 1
+ *	anyway.
+@
+
+
+1.2
+log
+@Ninth Kernel.  Timer interrupts and overflow and underflow traps still
+are all it does functionally, but now I save and restore state in a fancy
+way that will allow nested interrupts, avoids duplicating saved state,
+and works the same way for the debugger.  See README and the code for
+details.
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsm.s,v 1.1 89/01/22 20:33:10 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d41 6
+d58 5
+a62 4
+	mov %psr, %VOL_TEMP1
+	set MACH_DISABLE_INTR, %VOL_TEMP2
+	or %VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
+	mov %VOL_TEMP1, %psr
+d72 6
+d89 5
+a93 4
+	mov %psr, %VOL_TEMP1
+	set MACH_ENABLE_INTR, %VOL_TEMP2
+	and %VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
+	mov %VOL_TEMP1, %psr
+d111 50
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d8 1
+a8 1
+ * rcs = $Header: /sprite/src/kernel/mach/sun2.md/RCS/machAsm.s,v 8.1 88/11/18 11:22:33 rab Exp $ SPRITE (Berkeley)
+d82 15
+@

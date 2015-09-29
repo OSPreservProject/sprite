@@ -1,0 +1,13 @@
+          source fileName
+               Read file fileName and pass the  contents  to  the  Tcl
+               interpreter as a sequence of commands to execute in the
+               normal fashion.  The return  value  of  source  is  the
+               return  value  of  the  last  command executed from the
+               file.  If an error occurs in executing the contents  of
+               the  file,  then  the  source  command will return that
+               error.  If a return command is invoked from within  the
+               file, the remainder of the file will be skipped and the
+               source command will return  normally  with  the  result
+               from  the  return  command.   If fileName starts with a
+               tilde, then it is tilde-substituted as described in the
+               Tcl_TildeSubst manual entry.

@@ -1,0 +1,95 @@
+head     1.2;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     88.07.29.17.04.26;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.05.20.15.49.32;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Lint.
+@
+text
+@/* 
+ * calloc.c --
+ *
+ *	Source code for the "calloc" library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: calloc.c,v 1.1 88/05/20 15:49:32 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <bstring.h>
+#include "stdlib.h"
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * calloc --
+ *
+ *	Allocate a zero-filled block of storage.
+ *
+ * Results:
+ *	The return value is a pointer to numElems*elemSize bytes of
+ *	dynamically-allocated memory, all of which have been
+ *	initialized to zero.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+calloc(numElems, elemSize)
+    unsigned int numElems;	/* Number of elements to allocate. */
+    unsigned int elemSize;	/* Size of each element. */
+{
+    unsigned int totalSize;
+    char *result;
+
+    totalSize = numElems*elemSize;
+    result = malloc(totalSize);
+    bzero(result, (int) totalSize);
+    return (char *) result;
+}
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: proto.c,v 1.2 88/03/11 08:39:08 ouster Exp $ SPRITE (Berkeley)";
+d51 1
+a51 1
+    bzero(result, totalSize);
+@

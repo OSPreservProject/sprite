@@ -1,0 +1,46 @@
+'\" Copyright 1992 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/admin/fsattach/RCS/fsattach.man,v 1.5 91/01/12 16:49:27 jhh Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS LFSRECOV cmds
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+lfsrecov \- Roll lfs disk forward after a crash.
+.SH SYNOPSIS
+\fBlfsrecov\fR [\fIoptions\fR] \fBdeviceName\fP
+.SH OPTIONS
+.IP "\fB\-write \fIfile\fR" 15
+Write changes to disk.
+.IP "\fB\-memAvail\fR \fIkbytes\fP" 15
+Kilobytes of memory available to the recovery program.
+.IP "\fB\-stats\fR" 15
+Write stats to disk.
+.IP "\fB\-statDir \fIdirectory\fR" 15
+Directory to put stats from recovery.
+.IP "Debugging and testing options:"
+.IP "\fB\-showLog\fR" 15
+Show contents of log being processed.
+.IP "\fB\-verbose\fR" 15
+Output progress messages during execution.
+.IP "\fB\-recreateDirEntries\fR" 15
+For testing, recreate any directory from checkpoint.
+.IP "\fB\-testCheck\fR" 15
+For testing, check against checkpoint.
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBLfsrecov\fR is used during system boot to recover the changes made
+between the last checkpoint operation and the system crash.  It assumes that
+the only problem with the file system is that the checkpoint was not the
+last operation written to the log.
+.SH KEYWORDS
+lfs, disk, recovery

@@ -1,0 +1,49 @@
+#!/sprite/cmds/perl
+
+do 'getopts.pl';
+do Getopts('vm');
+
+$currentSize = -1;
+
+while(<>) {
+    if (/^[0-9]+/) {
+	($size, $time, $timeouts) = split(" ");
+	if ($timeouts eq "timeouts") {
+	    next;
+	}
+	if ($size != $currentSize) {
+	    if ($currentSize != -1) {
+		printf("%6.2f %6.2f", $currentSize / 1024, $total / $count);
+		if ($opt_v) {
+		    printf(" %f %f", $min, $max);
+		} 
+		printf("\n");
+	    }
+	    $count = 0;
+	    $total = 0;
+	}
+	$currentSize = $size;
+	if ($opt_m) {
+	    $value = (($size * 2) / $time) / (1024 * 1024);
+	} else {
+	    $value = $time * 1000 / 2;
+	}
+	$total += $value;
+	if ($value < $min || $count == 0) {
+	    $min = $value;
+	}
+	if ($value > $max || $count == 0) {
+	    $max = $value;
+	}
+	$count++;
+    }
+}
+if ($currentSize != -1) {
+    printf("%6.2f %6.2f",$currentSize / 1024, $total / $count);
+    if ($opt_v) {
+	printf(" %f %f", $min, $max);
+    } 
+    printf("\n");
+}
+
+

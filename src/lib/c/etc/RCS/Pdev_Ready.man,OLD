@@ -1,0 +1,59 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     88.12.30.14.34.47;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@' $Header: /sprite/doc/ref/lib/c/RCS/Pdev_Ready,v 1.1 88/11/14 10:25:37 brent Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS Pdev_Ready lib
+.BS
+.SH NAME
+Pdev_Ready \- Indicate a pseudo-device is ready for I/O
+.SH SYNOPSIS
+\fB#include <pdev.h>\fR
+.sp
+\fBPdev_Ready\fR(\fItoken, selectBits\fR)
+.SH ARGUMENTS
+.AS ClientData selectBits
+.AP ClientData token in
+Token for a particular stream to the pseudo-device, as passed
+into the openProc.
+.AP int selectBits in
+Bitwise or of FS_READABLE, FS_WRITABLE, FS_EXCEPTION.
+.BE
+
+.SH DESCRIPTION
+.LP
+\fBPdev_Ready\fR indicates that a stream to the pseudo-device is
+ready for I/O.  The \fIselectBits\fR indicate what I/O operations
+are ready.  The \fItoken\fP is the value given to the
+pseudo-device server via the openProc call-back
+(see \fBPdev_Open\fR).  This token is used to distinguish between
+streams to the pseudo-device;  a different stream is created
+each time a client process opens the pseudo-device.
+
+.SH "SEE ALSO"
+Pdev_Open, Pdev_Close
+
+.SH KEYWORDS
+pseudo-device
+@

@@ -1,0 +1,396 @@
+
+
+
+XGRAPH                    User Commands                    XGRAPH
+
+
+
+NNAAMMEE
+     xgraph - Draw a graph on an X11 Display
+
+SSYYNNOOPPSSIISS
+     xxggrraapphh [ options ] [ =WxH+X+Y ] [ -display
+     host:display.screen ] [ file ... ]
+
+DDEESSCCRRIIPPTTIIOONN
+     The _x_g_r_a_p_h program draws a graph on an X display given data
+     read from either data files or from standard input if no
+     files are specified.  It can display up to 64 independent
+     data sets using different colors and/or line styles for each
+     set.  It annotates the graph with a title,  axis labels,
+     grid lines or tick marks, grid labels, and a legend.  There
+     are options to control the appearance of most components of
+     the graph.
+
+     The input format is similar to _g_r_a_p_h(_1_G) but differs
+     slightly.  The data consists of a number of _d_a_t_a _s_e_t_s. Data
+     sets are separated by a blank line.  A new data set is also
+     assumed at the start of each input file.  A data set con-
+     sists of an ordered list of points of the form "X Y".  Each
+     point must appear on a separate line. The name of a data set
+     can be specified by a line which begins with a double quote
+     followed by the set name.  An example input file with three
+     data sets is shown below (note set three is not named):
+
+     0.5 7.8
+     1.0 6.2
+     "set one
+     1.5 8.9
+
+     "set two
+     -3.4 1.4e-3
+     -2.0 1.9e-2
+     -0.65 2.2e-4
+
+     2.2 12.8
+     2.4 -3.3
+     2.6 -32.2
+     2.8 -10.3
+
+     After _x_g_r_a_p_h has read the data,  it will create a new window
+     to graphically display the data.  The interface used to
+     specify the size and location of this window depends on the
+     window manager currently in use.  Refer to the reference
+     manual of the window manager for details.
+
+     Once the window has been opened,  all of the data sets will
+     be displayed graphically (subject to the options explained
+     below) with a legend in the upper right corner of the
+     screen.  To zoom in on a portion of the graph,  depress a
+
+
+
+Sprite v1.0             February 1, 1989                        1
+
+
+
+
+
+
+XGRAPH                    User Commands                    XGRAPH
+
+
+
+     mouse button in the window and sweep out a region.  _x_g_r_a_p_h
+     will then open a new window looking at just that portion of
+     the graph.  _x_g_r_a_p_h also presents two control buttons in the
+     upper left corner of each window: _C_l_o_s_e and _H_a_r_d_c_o_p_y. Win-
+     dows are closed by depressing a mouse button while the mouse
+     cursor is inside the _C_l_o_s_e button.  Typing EOF (control-D)
+     in a window also closes that window.  Depressing a mouse
+     button while the mouse cursor is in the _H_a_r_c_o_p_y button
+     causes a dialog to appear asking about hardcopy (printout)
+     options.  These options are described below:
+
+     Output Device
+          Specifies the type of the output device (e.g. "HPGL",
+          "Postscript", etc).  An output device is chosen by
+          depressing the mouse inside its name.  The default
+          values of other fields will change when you select a
+          different output device.
+
+     Disposition
+          Specifies whether the output should go directly to a
+          device or to a file.  Again,  the default values of
+          other fields will change when you select a different
+          disposition.
+
+     File or Device Name
+          If the disposition is "To Device",  this field speci-
+          fies the device name.  A device name is the same as the
+          name given for the -P command of lpr(1).  If the dispo-
+          sition is "To File",  this field specifies the name of
+          the output file.
+
+     Maximum Dimension
+          This specifies the maximum size of the plot on the
+          hardcopy device in centimeters.  _x_g_r_a_p_h takes in
+          account the aspect ratio of the plot on the screen and
+          will scale the plot so that the longer side of the plot
+          is no more than the value of this parameter.  If the
+          device supports it,  the plot may also be rotated on
+          the page based on the value of the maximum dimension.
+
+     Title Font Family
+          This field specifies the name of a font to use when
+          drawing the graph title.  Suitable defaults are ini-
+          tially chosen for any given hardcopy device.  The value
+          of this field is hardware specific -- refer to the dev-
+          ice reference manual for details.
+
+     Title Font Size
+          This field specifies the desired size of the title
+          fonts in points (1/72 of an inch). If the device sup-
+          ports scalable fonts,  the font will be scaled to this
+          size.
+
+
+
+Sprite v1.0             February 1, 1989                        2
+
+
+
+
+
+
+XGRAPH                    User Commands                    XGRAPH
+
+
+
+     Axis Font Family and Axis Font Size
+          These fields are like _T_i_t_l_e _F_o_n_t _F_a_m_i_l_y and _T_i_t_l_e _F_o_n_t
+          _S_i_z_e except they specify values for the font _x_g_r_a_p_h
+          uses to draw axis labels, and legend descriptions.
+
+     Control Buttons
+          After specifing the parameters for the plot,  the "Ok"
+          button causes _x_g_r_a_p_h to produce a hardcopy.  Pressing
+          the "Cancel" button will abort the hardcopy operation.
+
+     _x_g_r_a_p_h accepts a large number of options most of which can
+     be specified either on the command line or in the user's
+     ~/.Xdefaults file.  A list of these options is given below.
+     The command line option is specified first with its X
+     default name (if any) in parenthesis afterward.  The format
+     of the option in the X defaults file is "program.option:
+     value" where program is the program name (xgraph) and the
+     option name is the one specified below.  Note that the value
+     of a flag in the X defaults file must be "1".
+
+     --<<ddiiggiitt>> <<nnaammee>>
+          These options specify the data set name for the
+          corresponding data set.  The digit should be in the
+          range '0' to '63'.  This name will be used in the
+          legend.
+
+     --bb   Force _x_g_r_a_p_h to output the graph in black and white
+          (even if the display is color).  This is useful for
+          those using _x_w_d(_1) to produce hardcopies of the graph.
+
+     --bbaarr Specifies that vertical bars should be drawn from the
+          data points to a base point which can be specified with
+          -brb.  Usually,  the -nl flag is used with this option.
+          The point itself is located at the center of the bar.
+
+     --bbbb ((BBoouunnddBBooxx))
+          Draw a bounding box around the data region.  This is
+          very useful if you prefer to see tick marks rather than
+          grid lines (see -tk).
+
+     --bbdd <<ccoolloorr>> ((BBoorrddeerr))
+          This specifies the border color of the _x_g_r_a_p_h window.
+
+     --bbgg <<ccoolloorr>> ((BBaacckkggrroouunndd))
+          Background color of the _x_g_r_a_p_h window.
+
+     --bbrrbb <<bbaassee>>
+          This specifies the base for a bar graph.  By default,
+          the base is zero.
+
+     --bbrrww <<wwiiddtthh>>
+          This specifies the width of bars in a bar graph.  The
+
+
+
+Sprite v1.0             February 1, 1989                        3
+
+
+
+
+
+
+XGRAPH                    User Commands                    XGRAPH
+
+
+
+          amount is specified in the user's units.  By default,
+          a bar one pixel wide is drawn.
+
+     --bbww <<ssiizzee>> ((BBoorrddeerrSSiizzee))
+          Border width (in pixels) of the _x_g_r_a_p_h window.
+
+     --ffgg <<ccoolloorr>> ((FFoorreeggrroouunndd))
+          Foreground color.  This color is used to draw all text
+          and the normal grid lines in the window.
+
+     --llff <<ffoonnttnnaammee>> ((LLaabbeellFFoonntt))
+          Label font.  All axis labels and grid labels are drawn
+          using this font.  It must be a fixed-width font.
+
+     --llnnxx Specifies a logarithmic X axis.  Grid labels represent
+          powers of ten.
+
+     --llnnyy Specifies a logarithmic Y axis.  Grid labels represent
+          powers of ten.
+
+     --llww wwiiddtthh
+          Specifies the width of the data lines in pixels.  The
+          default is one.
+
+     --llxx <<xxll,,xxhh>>
+          This option limits the range of the X axis to the
+          specified interval.  This (along with -ly) can be used
+          to "zoom in" on a particularly interesting portion of a
+          larger graph.
+
+     --llyy <<yyll,,yyhh>>
+          This option limits the range of the Y axis to the
+          specified interval.
+
+     --mm ((MMaarrkkeerrss))
+          Mark each data point with a distinctive marker.  There
+          are eight distinctive markers used by xgraph.  These
+          markers are assigned uniquely to each different line
+          style on black and white machines and varies with each
+          color on color machines.
+
+     --MM ((SSttyylleeMMaarrkkeerrss))
+          Similar to -m but markers are assigned uniquely to each
+          eight consecutive data sets (this corresponds to each
+          different line style on color machines).
+
+     --nnll ((NNooLLiinneess))
+          Turn off drawing lines.  When used with -m,  this can
+          be used to produce scatter plots.  When used with -bar,
+          it can be used to produce standard bar graphs.
+
+     --pp ((PPiixxeellMMaarrkkeerrss,, SSmmaallllPPiixxeellss))
+
+
+
+Sprite v1.0             February 1, 1989                        4
+
+
+
+
+
+
+XGRAPH                    User Commands                    XGRAPH
+
+
+
+          Marks each data point with a small marker (pixel
+          sized).  This is usually used with the -nl option for
+          scatter plots.
+
+     --PP ((LLaarrggeePPiixxeellss))
+          Similar to -p but marks each pixel with a large dot.
+
+     --rrvv ((RReevveerrsseeVViiddeeoo))
+          Reverse video.  On black and white displays,  this will
+          invert the foreground and background colors.  It does
+          nothing on color displays.
+
+     --ss ((SSpplliinnee))
+          This option specifies the lines should be drawn as
+          spline curves.  Currently,  this is implemented using
+          the X spline option which fits only three points at a
+          time.  Thus,  the effect is not what you might expect.
+
+     --tt <<ssttrriinngg>>
+          Title of the plot.  This string is centered at the top
+          of the graph.
+
+     --ttff <<ffoonnttnnaammee>> ((TTiittlleeFFoonntt))
+          Title font.  This is the name of the font to use for
+          the graph title.  It defaults to 9x15.
+
+     --ttkk ((TTiicckkss))
+          This option causes _x_g_r_a_p_h to draw tick marks rather
+          than full grid lines.  The -bb option is also useful
+          when viewing graphs with tick marks only.
+
+     --xx <<uunniittnnaammee>>
+          This is the unit name for the X axis.  Its default is
+          "X".
+
+     --yy <<uunniittnnaammee>>
+          This is the unit name for the Y axis.  Its default is
+          "Y".
+
+     --zzgg <<ccoolloorr>> ((ZZeerrooCCoolloorr))
+          This is the color used to draw the zero grid line.
+
+     Some options can only be specified in the X defaults file.
+     These options are described below:
+
+     <<ddiiggiitt>>..CCoolloorr
+          Specifies the color for a data set.  Eight independent
+          colors can be specified.  Thus,  the digit should be
+          between '0' and '7'.  If there are more than eight data
+          sets,  the colors will repeat but with a new line style
+          (see below).
+
+
+
+
+Sprite v1.0             February 1, 1989                        5
+
+
+
+
+
+
+XGRAPH                    User Commands                    XGRAPH
+
+
+
+     <<ddiiggiitt>>..SSttyyllee
+          Specifies the line style for a data set.  A sixteen-bit
+          integer specifies the sixteen-bit pattern used for the
+          line style.  Eight independent line styles can be
+          specified.  Thus,  the digit should be between '0' and
+          '7'.  If there are more than eight data sets,  these
+          styles will be reused.  On color workstations,  one
+          line style is used for each of eight colors.  Thus,  64
+          unique data sets can be displayed.
+
+     GGrriiddSSiizzee
+          Width,  in pixels,  of normal grid lines.
+
+     GGrriiddSSttyyllee
+          Line style pattern of normal grid lines.
+
+     ZZeerrooSSiizzee
+          Width,  in pixels,  of the zero grid line.
+
+     ZZeerrooSSttyyllee
+          Line style pattern of the zero grid line.
+
+AAUUTTHHOORR
+     David Harrison University of California
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0             February 1, 1989                        6
+
+
+

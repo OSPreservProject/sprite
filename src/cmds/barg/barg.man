@@ -1,0 +1,120 @@
+'\" $Header: barg.1,v 1.2 88/05/17 18:17:21 nelson Exp $ SPRITE (Berkeley)
+.TH BARG 1
+.SH NAME
+barg \- draw a bar graph in gremlin format
+.SH SYNOPSIS
+.HP
+barg [input_file_name [output_file_name]] 
+.SH DESCRIPTION
+.PP
+.I Barg
+is used to generate bar graphs in gremlin format.
+It takes up to two arguments.  The first argument is the name of the \fIbarg\fP
+input file.  The second argument is the name of the gremlin file to store
+the output of \fIbarg\fP into.  If the output file is not specified then output
+goes to standard output.  If the input file is also missing then input is
+read from standard input.
+.PP
+A \fIbarg\fP input file is an ASCII file containing \fIbarg\fP commands and 
+data.  Each command is on a separate line.  White space can be used to
+separate the different arguments to each command. 
+Lines beginning with a "#" and blank lines are ignored.
+All command arguments that affect the dimensions of the graph are specified
+in pixels.  
+.PP
+Graphs are divided up into sets of bars.  Each set can contain from 1 to
+8 bars and there can be any number of sets.  The program is fully parameterized
+such that the bar width, inner bar spacing, inner set spacing, graph height
+and graph width can all be specified.
+All parameters that are not specified, except
+for the number of sets and the number of bars in each set which must
+be specified, will either default to preset values or be calculated.  If the
+inner set spacing is not specified or it is specified as -1,
+it will be calculated from the bar width,
+inner bar spacing and graph width.  Likewise if the inner set spacing
+is set but the bar width is not then it will be calculated from the other
+parameters.
+.PP
+The following is a summary of the \fIbarg\fP commands:
+.nf
+.sp
+.ul 1
+Command		Arguments
+.sp
+b		<left border width> <right border width>
+d		<data set label>
+h		<graph height>
+k		<left key border> <right key border> <key width> <key height>
+lx		<x-axis label>
+ly		<y-axis label>
+n		<num bar sets> <num bars per set>
+p
+s		<inner bar space> <inner set space>
+t		<graph title>
+w		<graph width>
+y		<# of ticks> <delta> <starting value>
+W		<bar width>
+1		<bar type> <bar label>
+2		<bar type> <bar label>
+3		<bar type> <bar label>
+4		<bar type> <bar label>
+5		<bar type> <bar label>
+6		<bar type> <bar label>
+7		<bar type> <bar label>
+8		<bar type> <bar label>
+.sp
+.fi
+The following explains each command in more detail:
+.IP b
+Define the left and right border in pixels.
+The left border width is the number of pixels between the y-axis
+and the first bar graph.  The right border width is the number of
+pixels that the x-axis extends past the last bar graph.
+.IP d
+Define a bar graph set.  These commands should be the last commands
+in the input file.  The label is the string to draw at the bottom of
+the bar graph set.  The following lines up until a line beginning with an
+"e" is found are taken as floating point y values for bars in the bar graph
+set. The line with the "e" marks the end of the bar graph set.  There cannot
+be more than the number of bars per set lines of data between the "d" and
+"e" commands.
+.IP h
+The graph height in pixels.
+.IP k
+Bar graph key information.  At the bottom of each graph each of the
+different bar types is drawn along with the associated label (see the
+1-8 commands below).  The left key border specifies the number of pixels
+between the y-axis and the first key.  The right key border is the
+number of pixels between the end of the x-axis and the rightmost key.
+The key width and height define the size of the bar that is drawn that
+represents the key.
+.IP lx
+Label to print on the x-axis.
+.IP ly
+Label to print on the y-axis.
+.IP n
+Define the number of bar sets and the number of bars in each set.
+This command must come after the dimensions of the graph are defined and
+before the data sets are defined with the "d" command.
+.IP p
+Print a percent sign after each value on the y-axis.
+.IP s
+Define the number of pixels between each bar and between each set of bars. 
+.IP t
+Title the graph.
+.IP w
+The width of the graph in pixels.
+.IP y
+Define the range of the y-axis.  The # of ticks is the number of pieces
+to divide the y-axis into, the delta is the size of each piece and the
+starting value is the base value for y.
+.IP W
+The width of each bar.
+.IP [1-8]
+Define the type of the ith bar in a set.  The type must be between 0
+and 7 and corresponds to the 8 gremlin filled polygon types.
+The label is used to print out the bar type key.
+.SH SEE ALSO
+.IR gremlin(1)
+.SH AUTHOR
+Michael N. Nelson

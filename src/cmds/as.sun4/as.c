@@ -1,0 +1,1 @@
+../as/sprite/as.c

@@ -1,0 +1,153 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.4
+date     91.02.01.16.24.28;  author rab;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.07.14.09.29.20;  author rab;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.02.24.22.01.03;  author mgbaker;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.01.23.12.49.03;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Varargs for the sun4.
+@
+
+
+1.4
+log
+@Mary checking this in for Bob.
+@
+text
+@/*
+ * varargs.h --
+ *
+ *	Macros for handling variable-length argument lists.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/lib/include/sun4.md/RCS/varargs.h,v 1.3 89/07/14 09:29:20 rab Exp Locker: rab $ SPRITE (Berkeley)
+ */
+
+#ifndef _VARARGS
+#define _VARARGS
+
+#ifndef _VA_LIST
+#define _VA_LIST
+typedef char *va_list;
+#endif
+
+/*
+ * An argument of list of __builtin_va_alist causes the sun4 compiler
+ * to store all the input registers, %i0 to %i5, in the stack frame
+ * so the var_arg() macro will be able to reference them in memory.
+ */
+#define va_alist __builtin_va_alist
+
+#define va_dcl int __builtin_va_alist;
+
+#define va_start(AP) (__builtin_saveregs(), (AP) = (char *)&__builtin_va_alist)
+
+#define __va_rounded_size(TYPE)  \
+  (((sizeof (TYPE) + sizeof (int) - 1) / sizeof (int)) * sizeof (int))
+
+#define va_arg(AP, TYPE)						\
+ ((AP) += __va_rounded_size (TYPE),					\
+  *((TYPE *) ((AP) - __va_rounded_size (TYPE))))
+
+
+/*  #define va_arg(list, type)  ((type *)(list += sizeof(type)))[-1]  */
+
+#define va_end(list)
+
+#endif /* _VARARGS */
+@
+
+
+1.3
+log
+@*** empty log message ***
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/sun4.md/RCS/varargs.h,v 1.2 89/02/24 22:01:03 mgbaker Exp Locker: rab $ SPRITE (Berkeley)
+d21 2
+d24 1
+@
+
+
+1.2
+log
+@Fourteenth Kernel for sun4.  The mem module was added, and its print
+routine requires varargs.  But this header file wouldn't compile, so I
+fixed it.  I hope I did the right thing.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/sun4.md/RCS/varargs.h,v 1.1 89/01/23 12:49:03 mendel Exp Locker: mgbaker $ SPRITE (Berkeley)
+d21 1
+a21 5
+typedef struct {
+    char *vl_current;			/* Pointer to last arg returned from
+					 * list. */
+    char *vl_next;			/* Pointer to next arg to return. */
+} va_list;
+d32 1
+a32 2
+#define va_start(list) \
+    (list).vl_current = (list).vl_next = (char *) &__builtin_va_alist;
+d34 2
+a35 4
+#define va_arg(list, type)			\
+    ((list).vl_current = (list).vl_next,	\
+    (list).vl_next += sizeof(type),		\
+     *((type *) (list).vl_current))
+d37 7
+d46 1
+a46 1
+#endif _VARARGS
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+ * $Header: varargs.h,v 1.1 88/06/21 09:37:01 ouster Exp $ SPRITE (Berkeley)
+d34 1
+a34 1
+#define va_dcl int _va_args;
+d37 1
+a37 1
+    (list).vl_current = (list).vl_next = (char *) &_va_args;
+@

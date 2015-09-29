@@ -1,0 +1,288 @@
+/* 
+ * netroute.c --
+ *
+ *	User program to install routes to Sprite Hosts.  'route' is a misnomer
+ *	because the information also includes the hosts name and its
+ *	machine type.  Plus, the route is just a local address. 
+ *
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /a/newcmds/netroute/RCS/netroute.c,v 1.6 88/12/22 13:12:04 brent Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include "sprite.h"
+#include "fs.h"
+#include "net.h"
+#include "host.h"
+#include "kernel/netRoute.h"
+#include "stdio.h"
+#include "option.h"
+#include "rpc.h"
+#include "sysStats.h"
+
+/*
+ * Parameters set by the command line
+ */
+Boolean table = FALSE;
+Boolean keepDomain = FALSE;
+Boolean gateway = FALSE;
+int hostID = -1;
+char *hostName;
+char *etherString;
+char *inetString;
+char *inputFile;
+char *machType;
+
+Option optionArray[] = {
+    {OPT_TRUE, "t", (Address)&table, "Print out the route table"},
+    {OPT_TRUE, "D", (Address)&keepDomain, "Keep domain suffix on host name"},
+    {OPT_INT, "h", (Address)&hostID, "Install route for Sprite host with given ID"},
+    {OPT_STRING, "m", (Address)&machType, "Machine type (sun2, spur, etc.) needed with -h"},
+    {OPT_STRING, "n", (Address)&hostName, "Install route for Sprite host with given name"},
+    {OPT_STRING, "i", (Address)&inetString, "Install route for host at the given Internet Address (aa.bb.cc.dd)"},
+    {OPT_STRING, "e", (Address)&etherString, "Ethernet Address for host specified with -h, -n or -i (aa:bb:cc:dd:ee:ff)"},
+    {OPT_TRUE, "G", (Address)&gateway, "Use these routes as gateways"},
+    {OPT_STRING, "f", (Address)&inputFile, "Specifies the host file to read info from."},
+    {OPT_DOC, "\0", (Address)NULL, "If none of -h, -n or -i is specified, routes are installed for all hosts in"},
+    {OPT_DOC, "\0", (Address)NULL, "the host database (or the input file if -f is given)"},
+};
+int numOptions = Opt_Number(optionArray);
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	Grab command line arguments and install routes.
+ *
+ *----------------------------------------------------------------------
+ */
+
+main(argc, argv)
+    int	argc;
+    char *argv[];
+{
+    ReturnStatus	status = SUCCESS;
+    Host_Entry		*host;
+
+
+    argc = Opt_Parse(argc, argv, optionArray, numOptions, OPT_ALLOW_CLUSTERING);
+
+    if (inputFile != (char *)0) {
+	Host_SetFile(inputFile);
+    } else {
+	Host_Start();
+    }
+    if (table) {
+	/*
+	 * Print out the route table.
+	 */
+	Net_SpriteRoute route;
+	int spriteID;
+
+	printf("Sprite Route Table:\n");
+	for (spriteID = 0; ; spriteID++) {
+	    status = Sys_Stats(SYS_NET_GET_ROUTE, spriteID, &route);
+	    if (status != SUCCESS) {
+		break;
+	    }
+	    host = Host_ByID(spriteID);
+	    if (!keepDomain) {
+		FixHostName(host);
+	    }
+	    switch(route.type) {
+		case NET_ROUTE_ETHER:
+		    printf("%5d %-20s", spriteID, (host != NULL ? host->name :
+						     (spriteID == 0 ?
+						      "BROADCAST" : "???")));
+		    printf("%-8s", (host != NULL ? host->machType :
+					    (spriteID == 0 ? "" : "???")));
+		    printf("ether %02x:%02x:%02x:%02x:%02x:%02x\n",
+			    route.route.etherHdr.destination.byte1 & 0xff,
+			    route.route.etherHdr.destination.byte2 & 0xff,
+			    route.route.etherHdr.destination.byte3 & 0xff,
+			    route.route.etherHdr.destination.byte4 & 0xff,
+			    route.route.etherHdr.destination.byte5 & 0xff,
+			    route.route.etherHdr.destination.byte6 & 0xff);
+		    break;
+	    }
+	}
+    } else {
+	if ((hostID < 0) &&
+	    (hostName == (char *)0) &&
+	    (inetString == (char *)0)) {
+	    /*
+	     *  Initialize the table from a file.
+	     */
+		while ((host = Host_Next()) != (Host_Entry *)NULL) {
+		    if (!keepDomain) {
+			FixHostName(host);
+		    }
+		    if (host->netType == HOST_ETHER) {
+			Net_InstallRoute(host->id, 0, NET_ROUTE_ETHER,
+					&host->netAddr.etherAddr,
+					host->name, host->machType);
+		    } else {
+			fprintf(stderr, "Unknown net type for %s\n",
+					host->name);
+		    }
+		}
+	} else if (etherString != (char *)0) {
+	    /*
+	     * Install a route for a particular ethernet address.
+	     */
+	     
+	    if (hostID > 0) {
+		char name[50];
+		sprintf(name, "host%d", hostID);
+		if (machType == (char *)0) {
+		    fprintf(stderr, "Need -m <machType> with -h <ID>\n");
+		    status = FAILURE;
+		} else {
+		    status = DoEtherAddress(hostID, etherString, name,machType);
+		}
+	    } else if (hostName != (char *)0) {
+		host = Host_ByName(hostName);
+		if (host != (Host_Entry *)NULL) {
+		    status = DoEtherAddress(host->id, etherString, host->name,
+					host->machType);
+		} else {
+		    fprintf(stderr, "Unknown host %s\n", hostName);
+		    status = FAILURE;
+		}
+	    } else if (inetString != (char *)0) {
+		Net_InetAddress	inetAddr;
+
+		inetAddr = Net_StringToInetAddr(inetString);
+		host = Host_ByInetAddr(inetAddr);
+		if (host != (Host_Entry *)NULL) {
+		    status = DoEtherAddress(host->id, etherString, host->name,
+					host->machType);
+		} else {
+		    fprintf(stderr, "No Sprite host at %s\n",
+				    inetString);
+		    status = FAILURE;
+		}
+	    }
+	} else {
+	    Opt_PrintUsage(argv[0], numOptions, optionArray);
+	}
+    }
+		
+    exit(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DoEtherAddress --
+ *
+ *	Convert a string-format ethernet address to a structure
+ *	and then call Net_InstallRoute to install the address
+ *	into the kernel's routing table.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+DoEtherAddress(hostID, etherString, name, machType)
+    int hostID;
+    char *etherString;
+    char *name;
+    char *machType;
+{
+    int byte1, byte2, byte3, byte4, byte5, byte6;
+    int numBytes;
+    Net_EtherAddress etherAddr;
+
+    numBytes = sscanf(etherString, "%x:%x:%x:%x:%x:%x",
+			&byte1, &byte2, &byte3, &byte4, &byte5, &byte6);
+    if (numBytes != 6) {
+	fprintf(stderr, "Garbled ethernet address \"%s\"\n",
+				  etherString);
+	return(FAILURE);
+    }
+    etherAddr.byte1 = byte1 & 0xff;
+    etherAddr.byte2 = byte2 & 0xff;
+    etherAddr.byte3 = byte3 & 0xff;
+    etherAddr.byte4 = byte4 & 0xff;
+    etherAddr.byte5 = byte5 & 0xff;
+    etherAddr.byte6 = byte6 & 0xff;
+    return(Net_InstallRoute(hostID, 0, NET_ROUTE_ETHER, &etherAddr,
+			    name, machType));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DoInetAddress --
+ *
+ *	Convert a string-format inet address to a structure
+ *	and then call Net_InstallRoute to install the address
+ *	into the kernel's routing table.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+DoInetAddress(hostID, inetString, name, machType)
+    int hostID;
+    char *inetString;
+    char *name;
+    char *machType;
+{
+    int byte1, byte2, byte3, byte4;
+    int numBytes;
+    Net_InetAddress etherAddr;
+
+    numBytes = sscanf(etherString, "%x.%x.%x.%x",
+			&byte1, &byte2, &byte3, &byte4);
+    if (numBytes != 4) {
+	fprintf(stderr, "Garbled inet address \"%s\"\n",
+				  etherString);
+	return(FAILURE);
+    }
+#ifdef notdef
+    etherAddr.byte1 = byte1 & 0xff;
+    etherAddr.byte2 = byte2 & 0xff;
+    etherAddr.byte3 = byte3 & 0xff;
+    etherAddr.byte4 = byte4 & 0xff;
+    etherAddr.byte5 = byte5 & 0xff;
+    etherAddr.byte6 = byte6 & 0xff;
+#endif 
+    return(Net_InstallRoute(hostID, 0, NET_ROUTE_ETHER, &etherAddr,
+			    name, machType));
+}
+
+FixHostName(host)
+    Host_Entry *host;
+{
+    register char *charPtr;
+
+    if (host != (Host_Entry *)0) {
+	for (charPtr = host->name; *charPtr != '\0' ; charPtr++) {
+	    if (*charPtr == '.') {
+		*charPtr = '\0';
+		break;
+	    }
+	}
+    }
+}
+

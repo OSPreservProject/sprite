@@ -1,0 +1,32 @@
+% File:       TeX Inputs declare.tex
+% Author:     J E Pittman
+% Bitnet:     JEPTeX@TAMVenus
+% Internet:   JEPTeX@Venus.TAMU.EDU
+% Date:       September 29, 1988
+%
+% These macros provide a method of locally allocating registers 
+% without interference with previously allocated registers.  The 
+% method is the same as on pages 346--347 of the \TeX book, however, 
+% the declare macros are intended for local use only.  It is a logical 
+% error to use a "new" macro between a declare macro and the end of the 
+% appropriate enclosing group. 
+%
+% Extended by Jerry Leichter, 29-Nov-88, to include \declareif.
+%
+\def\declarecount {\allocate0\countdef}%
+\def\declaredimen {\allocate1\dimendef}%
+\def\declareskip  {\allocate2\skipdef}%
+\def\declaremuskip{\allocate3\muskipdef}%
+\def\declarebox   {\allocate4\chardef}%
+\def\declaretoks  {\allocate5\toksdef}%
+%
+\def\allocate#1#2#3{\relax
+  \advance\count1#1 by 1
+  \ifnum\count1#1<\count19
+  \else
+     \errmessage{No room for \string#3!}%
+  \fi
+  #2#3=\count1#1
+}
+%
+{\let\newif\relax \gdef\declareif{\newif}}

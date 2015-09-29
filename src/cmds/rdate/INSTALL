@@ -1,0 +1,37 @@
+Software Requirements
+---------------------
+
+- C compiler
+
+- support for sockets
+
+- at least one machine providing timed service
+
+Installation
+------------
+
+1) Unpack the package in an appropriate directory
+
+2) Edit the Makefile to specify the desired configuration items
+
+3) Issue the command 'make' to build the binary
+
+4) Test the program with the following commands (not run as root):
+
+   ./rdate -d server
+   ./rdate server
+
+   where server is a machine providing timed service.  The first command
+   should display the server's time.  The second should fail with an
+   error message: "couldn't set time of day: Not owner".
+
+5) Login as root
+
+6) Repeat the second command from step 4 if you wish to actually set
+   the local machine's date
+
+7) Type 'make install' to copy the binary and the man page to the
+   directories specified in the Makefile.
+
+8) Modify your system files (e.g., /etc/rc.local or root's crontab)
+   as appropriate for your use of rdate

@@ -1,0 +1,7 @@
+
+
+          copyfile handle1 handle2
+               Copies the rest of the file specified by handle1,
+               starting from its current position, to the file
+               specified by handle2, starting from its current
+               position.

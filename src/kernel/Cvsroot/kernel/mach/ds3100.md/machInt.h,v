@@ -1,0 +1,252 @@
+head     9.5;
+branch   ;
+access   ;
+symbols  ds3100:9.5 sun3:9.5 sun4nw:9.5 symm:9.5 spur:9.5 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.5
+date     90.10.09.11.46.39;  author jhh;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.09.21.15.51.35;  author mgbaker;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.09.21.15.22.29;  author mgbaker;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.02.22.21.30.29;  author douglis;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.01.29.17.59.40;  author shirriff;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.54.26;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     89.08.15.18.28.31;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.11.17.55.46;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Original source from DECWRL.
+@
+
+
+9.5
+log
+@added Mach_Probe
+@
+text
+@/*
+ * machInt.h --
+ *
+ *	This file defines things that are shared between the "mach" modules
+ *	but aren't used by the rest of Sprite.
+ *
+ *	Copyright (C) 1989 Digital Equipment Corporation.
+ *	Permission to use, copy, modify, and distribute this software and
+ *	its documentation for any purpose and without fee is hereby granted,
+ *	provided that the above copyright notice appears in all copies.
+ *	Digital Equipment Corporation makes no representations about the
+ *	suitability of this software for any purpose.  It is provided "as is"
+ *	without express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/mach/ds3100.md/RCS/machInt.h,v 9.4 90/09/21 15:51:35 mgbaker Exp Locker: jhh $ SPRITE (DECWRL)
+ */
+
+#ifndef _MACHINT
+#define _MACHINT
+
+#include "machMon.h"
+#include "mach.h"
+
+/*
+ * The bounds of the code that copies arguments from the user stack to
+ * the kernel stack.
+ */
+extern void MachFetchArgs _ARGS_((void));
+extern void MachFetchArgsEnd _ARGS_((void));
+
+#ifdef notdef
+/*
+ * Copy of the boot parameter structure.
+ */
+extern 	MachStringTable	machMonBootParam;
+#endif
+
+/*
+ * Internal variables.
+ */
+extern Mach_State *machCurStatePtr;
+extern Mach_State *machFPCurStatePtr;
+
+/*
+ * Internal functions.
+ */
+extern Boolean MachUserReturn _ARGS_((register Proc_ControlBlock *procPtr));
+/*
+ * These sorta take an argument and sorta don't.  The user's stack pointer is
+ * in register t2.
+ */
+extern void 			MachException _ARGS_((void));
+extern void			MachEndException _ARGS_((void));
+extern ReturnStatus 		MachFetch0Args _ARGS_((void));
+extern ReturnStatus 		MachFetch1Arg _ARGS_((void));
+extern ReturnStatus 		MachFetch2Args _ARGS_((void));
+extern ReturnStatus 		MachFetch3Args _ARGS_((void));
+extern ReturnStatus 		MachFetch4Args _ARGS_((void));
+extern ReturnStatus 		MachFetch5Args _ARGS_((void));
+extern ReturnStatus 		MachFetch6Args _ARGS_((void));
+
+extern void		MachSysCall _ARGS_((void));
+extern unsigned *MachEmulateBranch _ARGS_((unsigned *regsPtr, Address instPC, unsigned fpcCSR, Boolean allowNonBranch));
+
+
+extern void Mach_SendSignal _ARGS_((int sigType));
+
+extern ReturnStatus CvtSpriteToUnixAtts _ARGS_((register Fs_Attributes *spriteAttsPtr, register struct stat *unixAttsPtr));
+extern Boolean MachUserExceptionHandler _ARGS_((unsigned statusReg, unsigned causeReg, Address badVaddr, Address pc));
+extern int MachKernelExceptionHandler _ARGS_((unsigned statusReg, unsigned causeReg, Address badVaddr, Address pc));
+extern void		MachProbeEnd _ARGS_((void));
+
+#endif /* _MACHINT */
+@
+
+
+9.4
+log
+@prototyping.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/mach/ds3100.md/RCS/machInt.h,v 9.2 90/02/22 21:30:29 douglis Exp Locker: mgbaker $ SPRITE (DECWRL)
+a62 1
+extern void		MachProbeAddrEnd _ARGS_((void));
+d71 1
+a71 1
+
+@
+
+
+9.3
+log
+@Part-way through prototyping
+@
+text
+@d28 2
+a29 2
+extern Address MachFetchArgs;
+extern Address MachFetchArgsEnd;
+d48 16
+a63 13
+extern void		MachUTLBMiss();
+extern void		MachEndUTLBMiss();
+extern void 		MachException();
+extern void		MachEndException();
+extern ReturnStatus 	MachFetch0Args();
+extern ReturnStatus 	MachFetch1Arg();
+extern ReturnStatus 	MachFetch2Args();
+extern ReturnStatus 	MachFetch3Args();
+extern ReturnStatus 	MachFetch4Args();
+extern ReturnStatus 	MachFetch5Args();
+extern ReturnStatus 	MachFetch6Args();
+extern void		MachSysCall();
+extern void		MachProbeAddrEnd();
+@
+
+
+9.2
+log
+@declare state vars now used outside machCode.c 
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/mach.fd/ds3100.md/RCS/machInt.h,v 9.1 90/01/29 17:59:40 shirriff Exp Locker: douglis $ SPRITE (DECWRL)
+d28 2
+a29 2
+extern int MachFetchArgs();
+extern int MachFetchArgsEnd();
+d47 1
+a47 1
+extern Boolean		MachUserReturn();
+d61 9
+a69 1
+extern unsigned		*MachEmulateBranch();
+@
+
+
+9.1
+log
+@Changed type of machMonBootParam.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/mach/ds3100.md/RCS/machInt.h,v 1.2 89/08/15 18:28:31 rab Exp $ SPRITE (DECWRL)
+d22 1
+d37 6
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/mach/ds3100.md/RCS/machInt.h,v 1.2 89/08/15 18:28:31 rab Exp Locker: douglis $ SPRITE (DECWRL)
+d34 1
+a34 1
+extern 	MachMonBootParam	machMonBootParam;
+@
+
+
+1.2
+log
+@Commented #endif labels.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/mach/ds3100.md/RCS/machInt.h,v 1.1 89/07/11 17:55:46 nelson Exp Locker: rab $ SPRITE (DECWRL)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d10 1
+a10 1
+ *	provided that the above copyright notice appears in all copies.  
+d15 1
+a15 1
+ * $Header: machInt.h,v 1.7 89/06/29 10:04:29 mnelson Exp $ SPRITE (DECWRL)
+d56 1
+a56 1
+#endif _MACHINT
+@

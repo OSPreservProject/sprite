@@ -1,0 +1,100 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     89.02.28.12.25.11;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@testing description
+@
+
+
+
+1.1
+log
+@Converted to new C library, added lots of new functionality
+@
+text
+@The following is a list of the test cases that fscheck was run on. After each
+error in the file system is the correction that fscheck made.
+
+    1 allocated file descriptor marked free in descriptor bitmap
+	bitmap corrected
+    2 free file descriptor marked allocated in descriptor bitmap
+	bitmap corrected
+    3 allocated data block marked free in data block bitmap
+	bitmap corrected
+    4 free data block marked allocated in data block bitmap
+	bitmap corrected
+    5 file descriptor with invalid magic number
+	descriptor marked free in bitmap
+    6 file with incorrect link count
+	link count set to value determined by traversing directory tree
+    7 file with size < data blocks pointed to by descriptor
+	size adjusted
+    8 file with incorrect block count
+	block count corrected
+    9 directory with hole
+	hole filled in with empty entries
+    10 invalid index in indirect block
+	hole created
+    11 invalid direct block number
+	hole created
+    12 invalid indirect block number
+	hole created
+    13 fragment that is not last block in file
+	block of data starting at fragment copied to another block
+    14 part of a block shared with another file
+	block copied
+    15 direct block shared with another file
+	block copied
+    16 block 0 in something other than the root directory
+	block copied
+    17 doubly indirect block shared with another file
+	block and all sub-blocks copied
+    18 doubly indirect block shared, but block contains invalid index
+	hole created
+    19 unreferenced file
+	added to lost+found
+    20 unreferenced directory
+	added to lost+found
+    21 empty directory 
+	changed to a file
+    22 root directory marked free
+	root reconstructed
+    23 root directory is a file
+	root reconstructed
+    24 root fd zeroed and block 0 zeroed
+	root reconstructed
+    25 directory with invalid record length
+	record length corrected
+
+Notes:
+    sharing was tested for both deleting and copying blocks
+
+There are some configurations of files that are somewhat uncommon and may
+pose a problem for fscheck. The following were tested to make sure fscheck
+does not modify them.
+    1 file with hole
+    2 empty file
+    3 file with size > data blocks
+
+
+Fscheck has a number of command line options. The following were tested.
+The following functionality of fscheck was tested
+    1 initialize bad block file descriptor
+    2 update host id
+    3 output copied to file
+    4 output copied to file on same partition (file empty)
+    5 output copied to file on same partition (file not empty)
+    6 change output buffer size
+    7  heap size limited
+@

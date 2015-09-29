@@ -1,0 +1,66 @@
+
+
+
+NEWSGROUPS                User Commands                NEWSGROUPS
+
+
+
+NNAAMMEE
+     newsgroups - a program to list unsubscribed newsgroups.
+
+SSYYNNOOPPSSIISS
+     nneewwssggrroouuppss ppaatttteerrnn ffllaagg
+
+DDEESSCCRRIIPPTTIIOONN
+     The _n_e_w_s_g_r_o_u_p_s program compares your .newsrc file with the
+     file of active newsgroups, and prints a list of unsubscribed
+     newsgroups matching pattern.  If the second argument "flag"
+     is present, only newsgroups not found in your .newsrc are
+     listed, and the display is not paged.  If the second argu-
+     ment is missing, the display is paged, and an additional
+     list of unsubscribed newsgroups occurring in your .newsrc is
+     printed.
+
+EENNVVIIRROONNMMEENNTT
+     DOTDIR  Where to find your .newsrc, if not in your home
+             directory.
+
+             Default: $HOME
+
+     HOME    Your home directory.
+
+             Default: $LOGDIR
+
+     LOGDIR  Your home directory if HOME is undefined.
+
+FFIILLEESS
+     /usr/lib/news/active or a reasonable facsimile
+     ${DOTDIR-{$HOME-$LOGDIR}}/.newsrc
+
+SSEEEE AALLSSOO
+     rn(1), newsrc(5)
+
+DDIIAAGGNNOOSSTTIICCSS
+BBUUGGSS
+     The flag argument is a kludge.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                   LOCAL                             1
+
+
+

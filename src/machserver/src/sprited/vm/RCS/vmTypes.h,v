@@ -1,0 +1,893 @@
+head     1.19;
+branch   ;
+access   ;
+symbols  srv030:1.19 srv028:1.19 srv027:1.19 srv026:1.19 srv024:1.18 srv022:1.17 srv021:1.17 srv019:1.17 srv018:1.17 srv016:1.16 srv015:1.16 srv014:1.15 srv012:1.15 srv011:1.15 srv010:1.15 srv008:1.15 srv007:1.15 srv006:1.15 srv005:1.15 srv004:1.15 srv003:1.14 srv002:1.14 srv001:1.13;
+locks    ; strict;
+comment  @ * @;
+
+
+1.19
+date     92.07.09.15.46.09;  author kupfer;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     92.07.08.12.48.11;  author kupfer;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     92.06.25.15.56.16;  author kupfer;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     92.06.12.14.16.23;  author kupfer;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     92.05.08.12.55.22;  author kupfer;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     92.04.23.23.46.28;  author kupfer;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     92.01.21.17.08.37;  author kupfer;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     91.12.18.23.34.02;  author kupfer;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     91.12.12.21.04.12;  author kupfer;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     91.12.01.22.00.41;  author kupfer;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     91.11.14.10.03.25;  author kupfer;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     91.10.18.18.29.52;  author kupfer;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     91.10.04.11.37.58;  author kupfer;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     91.09.24.16.35.17;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.09.23.14.20.14;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.09.02.22.56.18;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.09.01.21.03.01;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.08.19.12.17.31;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.08.15.15.53.25;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Type declarations for the VM module.
+@
+
+
+1.19
+log
+@Add execHeapPages and execStackPages to Vm_TaskInfo (instrumentation).
+@
+text
+@/*
+ * vmTypes.h --
+ *
+ *	Type declarations for the VM module.
+ *
+ * Copyright 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmTypes.h,v 1.18 92/07/08 12:48:11 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+ */
+
+#ifndef _VMTYPES
+#define _VMTYPES
+
+#include <sprite.h>
+#include <mach.h>
+#include <list.h>
+#include <sys/types.h>
+
+#ifdef SPRITED
+#include <syncTypes.h>
+#include <sys.h>
+#else
+#include <sprited/syncTypes.h>
+#include <sprited/sys.h>
+#endif
+
+/* 
+ * To avoid an include loop, we don't include fs.h here.  This means that 
+ * we have to say "struct Fs_Stream *" down below.
+ */
+
+/* 
+ * Flag to have the VM code keep track of the size of a segment's backing 
+ * file.  See the notes for Vm_Segment.  Warning: not all of the code that
+ * is used when this flag is disabled has been tested.
+ */
+#define VM_KNOWS_SWAP_FILE_SIZE	1
+
+/* 
+ * The heap segment is backed by two files.  The initialization file 
+ * (the object file of the program being run) is used once for each 
+ * page.  After that the page is backed by the swap file.  This map 
+ * tells where to get each page.  It is an array of booleans, one per 
+ * page, up to the number of pages available from the initialization 
+ * file.
+ */
+    
+typedef struct {
+    int		arraySize;	/* number of elements in useInitFile array 
+				 * (indexed 0..arraySize-1) */
+    char	*useInitPtr;	/* array of "boolean"; TRUE means use 
+				 * the initialization file */
+} VmFileMap;
+
+
+/* XXX - these should go back into the user vmTypes.h */
+/* 
+ * The segment type determines how the backing files are used.
+ * 
+ * VM_SYSTEM - unused.
+ * VM_CODE - This segment holds program text; the swap file is the 
+ * 	     object file being run, which is made read-only.  The 
+ * 	     segment size only large enough to map the code portion of 
+ * 	     the file, starting from the beginning of the file.
+ * 	     There is no initialization file.  The segment may be
+ * 	     shared among multiple processes.  The swap file pointer can be 
+ * 	     nil, if the segment is being cached in the hopes it will be 
+ * 	     reused before it gets paged out.
+ * VM_HEAP - This segment holds the program heap (data and bss 
+ * 	     sections).  The swap file is read-write.  The segment may
+ * 	     be larger than the swap file.  The initialization file is
+ * 	     typically the data section of a binary file.  The segment 
+ * 	     should not be shared.  For performance, the swap file is not 
+ * 	     actually created or opened until necessary.
+ * VM_STACK - This segment holds the program stack.  The swap file is 
+ * 	     read-write, and the segment may be larger than the swap
+ * 	     file.  The mapping from segment offset to swap file
+ * 	     offset is machine-dependent, though typically the segment
+ * 	     grows backwards.  There is no initialization file.  The 
+ * 	     segment should not be shared.  For performance, the swap file
+ * 	     is not actually created or opened until necessary.
+ * VM_SHARED - This segment is used for user mapped files.  It is 
+ * 	     treated like VM_HEAP, but there is no initialization 
+ * 	     file, and the segment may be shared among multiple 
+ * 	     processes.
+ */
+
+typedef int Vm_SegmentType;	/* defines the type of segment */
+
+#define VM_SYSTEM	0
+#define VM_CODE		1
+#define VM_HEAP		2
+#define VM_STACK	3
+#define VM_SHARED	4
+#define VM_NUM_SEGMENT_TYPES	(VM_SHARED + 1)
+
+
+/* 
+ * For heap segments, the Sprite external pager gets bits from an
+ * object file.  It needs to know where in the object file to start,
+ * and how much of the object file is valid.  It also needs a map
+ * showing which pages in the swap file are valid.
+ */
+
+typedef struct {
+    off_t	initStart;	/* where in the initialization file to begin */
+    int		initLength;	/* how many bytes are valid */
+    struct Fs_Stream *initFilePtr; /* the initialization file */
+    char	*initFileName;	/* and its name */
+    VmFileMap	*mapPtr;	/* pointer to per-page map, telling 
+				 * which file to use */
+} VmHeapSegInfo;
+
+/* 
+ * The stack segment remembers what its base address in the user 
+ * process is.  This part of the segment will probably never be 
+ * mapped, but it's useful for converting from an address in the 
+ * process to an offset in the segment.  (A similar base address isn't 
+ * needed for heap segments because that value is already in the 
+ * VmMappedSegment structure for the heap.)
+ */
+
+typedef struct {
+    Address	baseAddr;	/* corresponds to offset 0 of the segment */
+} VmStackSegInfo;
+
+/* 
+ * Code segments keep a copy of the a.out header information, to simplify 
+ * reuse of existing an existing segment.  We use "struct Proc_ObjInfo" to 
+ * avoid a circular dependency between vmTypes.h and procTypes.h.
+ */
+
+typedef struct {
+    struct Proc_ObjInfo *execInfoPtr;
+} VmCodeSegInfo;
+
+/* 
+ * This union contains type-specific information for a segment. 
+ */
+
+typedef union {
+    VmHeapSegInfo	heapInfo;
+    VmStackSegInfo	stackInfo;
+    VmCodeSegInfo	codeInfo;
+} VmPerTypeInfo;
+
+
+/* 
+ * State of the segment.
+ * VM_SEGMENT_OK - the segment is okay; all operations are allowed.
+ * VM_SEGMENT_DYING - the segment is being shutdown.  Only writebacks 
+ * 		      (to flush dirty pages) are allowed.
+ * VM_SEGMENT_DEAD - the segment is history; no further I/O or mapping 
+ * 		     operations are allowed.  It will go away when its
+ * 		     reference count goes to zero and it's no longer 
+ * 		     registered with the kernel.
+ */
+
+typedef int Vm_SegmentState;
+
+#define VM_SEGMENT_OK		1
+#define VM_SEGMENT_DYING	2
+#define VM_SEGMENT_DEAD		3
+
+
+/* 
+ * Flags telling what the segment is doing.
+ * VM_CLEANING_SEGMENT - we have asked the kernel to write back any 
+ *      	   	 dirty pages and are waiting for the operation 
+ *      	   	 to complete.
+ * VM_SEGMENT_ACTIVE   - A process is currently running, handling messages 
+ *			 from a segment's queue.
+ * VM_SEGMENT_NOT_IN_SET - The segment has been removed from the system 
+ *                       request port set to keep a bound on the number of 
+ *                       unprocessed requests.
+ * VM_COPY_SOURCE      - The segment is being copied to another segment 
+ * 			 (instrumentation).
+ * VM_COPY_TARGET      - The segment is being created by copying another 
+ * 			 segment (used for instrumentation and to avoid 
+ * 			 unnecessary FS requests).
+ * 
+ * XXX if we want to support a mapped-file stdio, then we have to be 
+ * able to, e.g., map a text file read-only.  In that case we probably 
+ * need a flag telling whether the segment is read-only or not, so 
+ * that a read-only mapped file can later be used a text file.  Also, 
+ * for code segments the segment length would have to be the length of 
+ * the entire file, not just long enough to map the code.
+ */
+
+typedef int Vm_SegmentFlags;
+
+#define VM_CLEANING_SEGMENT		0x001
+#define VM_SEGMENT_ACTIVE		0x004
+#define VM_SEGMENT_NOT_IN_SET		0x008
+#define VM_COPY_SOURCE			0x010
+#define VM_COPY_TARGET			0x020
+
+
+/* 
+ * The segment is the basic VM abstraction.  It corresponds to a 
+ * native Sprite segment and under Mach is known as a memory object.
+ * It backs some region of memory with a file, called a swap file.
+ * There is a one-to-one correspondence between swap files and
+ * segments: that is, there is at most one segment for a swap file in
+ * the system.  Normally the swapFilePtr is used to refer to the swap file. 
+ * The swapFileHandle is used if the swap file has been closed (e.g., for 
+ * sticky segments).  It is a ClientData for historical reasons.
+ * 
+ * There is also an "initialization file", which is used to supply pages if
+ * the swap file doesn't have them.  See the notes for Vm_SegmentType for
+ * the relation ship between the files and the segment type.
+ * 
+ * The control port is used for making lock requests.  It is also used 
+ * as a unique ID to handle races between memory object creation and 
+ * destruction.  If it is non-null, it means that the kernel is aware 
+ * of the segment and the segment should not be destroyed.
+ * 
+ * For some segment types, the size of the segment may be larger than
+ * the size of the backing file.  This can happen if someone has
+ * mapped the segment read-write and specified a longer length.  The
+ * file will be lengthened, using zero-fill pages, as necessary.  The
+ * segment size recorded here is in bytes and is always equal to some
+ * integer number of pages.  
+ * 
+ * The swap file size is obtained from the file service when the segment is 
+ * created and is thereafter maintained by the VM code.  There are two 
+ * reasons for doing this: (1) performance (avoid an RPC to the server for 
+ * every page read), and (2) correctness (I have seen a bug where 
+ * Fs_GetAttrStream would return a size of 0 for a 32MB file).  The 
+ * drawback of this scheme is that it destroys any chance of maintaining 
+ * consistency for mapped files, but then Sprite never supported that 
+ * anyway.
+ * 
+ * Note: once the files for a segment are set, they shouldn't be 
+ * changed.  This lets us use the files while the segment is 
+ * unlocked.
+ *
+ * Requests for a segment are put on a per-segment queue, so as not to have 
+ * a permanent thread for each segment, and to avoid tying up other
+ * segments if one segment gets stuck.  When a request is dequeued, the
+ * request buffer comes first, followed by the reply buffer.
+ */
+
+typedef struct Vm_Segment {
+    List_Links	links;		/* list of in-use segments */
+    int		magic;		/* magic number to verify is really a 
+				 * segment */
+    Sync_Lock	lock;		/* lock for exclusive access */
+    Sync_Condition condition;	/* condition variable for completion of 
+				 * long operations */
+    int		refCount;	/* reference count */
+    int		residentPages;	/* pages given to the kernel and not
+				 * returned */
+    Vm_SegmentFlags flags;
+    mach_port_t	requestPort;	/* this is the port that requests come 
+				 * in on */
+    mach_port_t	controlPort;	/* see notes above */
+    mach_port_t namePort;	/* "name" for vm_region calls */
+    Vm_SegmentType type;	/* code, heap, mapped file, etc. */
+    Vm_SegmentState state;	/* ok, dead, etc. */
+    struct Fs_Stream *swapFilePtr; /* I/O stream for the backing file (may be 
+				    * nil) */
+    char	*swapFileName;	/* name of the backing file (allocated 
+				 * storage) */
+    ClientData	swapFileHandle; /* the backing file; normally use 
+				 * swapFilePtr */ 
+			/* the next 3 fields uniquely identify the swap file */
+    int		swapFileServer;	/* attributes.serverID */
+    int		swapFileDomain;	/* attributes.domain */
+    int		swapFileNumber;	/* attributes.fileNumber */
+#if VM_KNOWS_SWAP_FILE_SIZE
+    off_t	swapFileSize;	/* cached size of swap file */
+#endif
+    vm_size_t	size;		/* segment size; see notes above */
+    List_Links	requestHdr;	/* header for the request queue */
+    List_Links	*requestList;
+    int queueSize;		/* num of requests (buffer pairs) in queue */
+    VmPerTypeInfo typeInfo;	/* type-dependent information */
+} Vm_Segment;
+
+#define VM_SEGMENT_MAGIC_NUMBER	0xa7210891
+
+
+/* 
+ * The Vm_TaskInfo defines VM-related information for each task.  
+ * Currently we just keep a list of each segment that is mapped into
+ * the task, along with the range of addresses that the segment might
+ * back.  The segment list has two purposes.  First, when we clear out
+ * a process's address space, we're more likely to manage the segments'
+ * reference counts correctly.  Second, it lets us determine when to 
+ * grow the process's stack.  Because we expect to need the code, 
+ * heap, and stack segments fairly frequently, we keep a distinguised 
+ * set of pointers for those segments.  XXX The stack segment should 
+ * be per-process, not per-task.
+ * 
+ * Note that we don't keep track of the exact mappings for a segment.  
+ * For example, if a process maps a segment then later unmaps a 
+ * portion of it, we'll still think it has the entire segment mapped.  
+ * This has three potential problems:
+ * 
+ * (1) when clearing a process's address space (at exec), we might try 
+ * to deallocate memory that's not allocated.  Since we're already 
+ * planning to just deallocate the entire range in one shot, this 
+ * shouldn't be a problem.  
+ * 
+ * (2) we might hold onto resources longer than necessary.  For
+ * example, if a user program deallocates a mapped file without
+ * notifying us, the reference for the segment won't go away until the
+ * process dies or does an exec.  Hopefully this won't be much of a
+ * problem in practice.  If it is, one solution might be to mark the 
+ * segment in memory_object_terminate, and have a background process 
+ * run through the process table looking for such marked segments.
+ * 
+ * (3) we might fail to extend the stack correctly.  This could happen 
+ * if a segment is mapped at a high address, near the stack, and then 
+ * later freed without notifying us.  If the stack then tries to
+ * extend into memory formerly occupied by this mapped segment, we 
+ * will refuse to extend the stack and generate an incorrect 
+ * exception.  This should not be a problem in practice.  If it is, 
+ * one solution would be to query the kernel for the current 
+ * allocations in the faulting task and use that information, rather 
+ * than the list of mapped segments, to decide whether to extend the 
+ * stack. 
+ */
+
+typedef struct {
+    List_Links	links;		/* links to rest of list */
+    Vm_Segment	*segPtr;	/* reference to the segment */
+    Address	mappedAddr;	/* first address mapped by the segment */
+    vm_size_t	length;		/* how many bytes are mapped by the segment */
+} VmMappedSegment;
+
+typedef struct {
+    List_Links	mappedListHdr;	/* header for VmMappedSegment list */
+    int execHeapPages;		/* pages in heap at previous exec */
+    int execStackPages;		/* pages in stack at previous exec */
+    VmMappedSegment *codeInfoPtr; /* pointer to info for code segment */
+    VmMappedSegment *heapInfoPtr; /* pointer to info for heap segment */
+    VmMappedSegment *stackInfoPtr; /* pointer to info for stack segment */
+} Vm_TaskInfo;
+
+
+/*
+ * The type of accessibility desired when making a piece of data user
+ * accessible.  VM_READONLY_ACCESS means that the data will only be read and
+ * will not be written.  VM_OVERWRITE_ACCESS means that the entire block of
+ * data will be overwritten.  VM_READWRITE_ACCESS means that the data 
+ * will both be read and written.
+ */
+
+typedef int Vm_Accessibility;
+
+#define	VM_READONLY_ACCESS		1
+#define	VM_OVERWRITE_ACCESS		2
+#define	VM_READWRITE_ACCESS		3
+
+#endif /* _VMTYPES */
+@
+
+
+1.18
+log
+@Add VM_NUM_SEGMENT_TYPES.
+@
+text
+@d15 1
+a15 1
+ * $Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmTypes.h,v 1.17 92/06/25 15:56:16 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d342 2
+@
+
+
+1.17
+log
+@The VM_COPY_SOURCE and VM_COPY_TARGET flags aren't just for
+instrumentation anymore.
+@
+text
+@d15 1
+a15 1
+ * $Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmTypes.h,v 1.16 92/06/12 14:16:23 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d102 1
+@
+
+
+1.16
+log
+@Fixes for sticky segments: keep track of how many pages are resident,
+and don't keep the swap file open when the segment is inactive.  Fix
+up comments about use of swap files.  Flush VM_SWAP_FILE_OPENED.
+@
+text
+@d15 1
+a15 1
+ * $Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmTypes.h,v 1.15 92/05/08 12:55:22 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d183 1
+a183 1
+ *			 (instrumentation).
+d185 2
+a186 1
+ * 			 segment (instrumentation). 
+@
+
+
+1.15
+log
+@VM_COPYING_SEGMENT -> VM_COPY_SOURCE and VM_COPY_TARGET.  Fix
+comments: swap file for heap and stack isn't opened until necessary.
+@
+text
+@d15 1
+a15 1
+ * $Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmTypes.h,v 1.14 92/04/23 23:46:28 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d73 3
+a75 1
+ * 	     shared among multiple processes.
+d80 2
+a81 1
+ * 	     should not be shared.
+d87 2
+a88 1
+ * 	     segment should not be shared.
+a176 1
+ * VM_SWAP_FILE_OPENED - A swap file has been opened for this segment.
+a197 1
+#define	VM_SWAP_FILE_OPENED		0x002
+d210 3
+a212 3
+ * the system.  As an optimization, the swap file for heap and stack 
+ * segments isn't actually created (and opened) until it is needed, though
+ * the name of the swap file is established when the segment is created.
+d257 2
+d266 2
+a267 2
+    struct Fs_Stream *swapFilePtr; /* the backing file (may be nil for heap
+				    * and stack) */
+d270 2
+@
+
+
+1.14
+log
+@Add VM_COPYING_SEGMENT flag.
+@
+text
+@d15 1
+a15 1
+ * $Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmTypes.h,v 1.13 92/01/21 17:08:37 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d41 2
+a42 1
+ * file.  See the notes for Vm_Segment.
+d179 4
+a182 1
+ * VM_COPYING_SEGMENT  - The segment is being copied (instrumentation).
+d198 2
+a199 1
+#define VM_COPYING_SEGMENT		0x010
+d208 3
+a210 4
+ * the system.  There is also an "initialization file", which is used 
+ * to supply pages if the swap file doesn't have them.  See the notes 
+ * for Vm_SegmentType for the relation ship between the files and the 
+ * segment type.
+d212 4
+d237 1
+a237 1
+ * Note: once the files for a segment is set, they shouldn't be 
+d262 2
+a263 1
+    struct Fs_Stream *swapFilePtr; /* the backing file */
+@
+
+
+1.13
+log
+@Change VM code to use Sprite FS instead of UNIX.  Limit the length of
+a segment's request queue.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmTypes.h,v 1.12 91/12/18 23:34:02 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d178 1
+d194 1
+@
+
+
+1.12
+log
+@Segment type definitions should really be in the user vmTypes.h.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmTypes.h,v 1.11 91/12/12 21:04:12 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d24 1
+a28 1
+#include <tempFs.h>
+a31 1
+#include <sprited/tempFs.h>
+d35 11
+d109 1
+a109 1
+    TempFs_Stream *initFilePtr;	/* the initialization file */
+d175 3
+d192 1
+d216 1
+a216 1
+ * integer number of pages.
+d218 9
+d252 1
+a252 1
+    TempFs_Stream *swapFilePtr;	/* the backing file */
+d255 7
+d265 1
+@
+
+
+1.11
+log
+@Add reminder comment about indexing in VmFileMap.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmTypes.h,v 1.10 91/12/01 22:00:41 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d52 1
+@
+
+
+1.10
+log
+@Snapshot.  FS appears to work.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmTypes.h,v 1.9 91/11/14 10:03:25 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d45 2
+a46 1
+    int		arraySize;	/* number of elements in useInitFile array */
+@
+
+
+1.9
+log
+@Snapshot. net, rpc, recov modules added.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmTypes.h,v 1.8 91/10/18 18:29:52 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d25 1
+d29 5
+@
+
+
+1.8
+log
+@Keep a copy of the a.out information in code segments.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmTypes.h,v 1.7 91/10/04 11:37:58 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d201 2
+a202 2
+ * a permanent thread for each segment, and to avoid tying up other 
+ * segments if one segment gets stuck.  When a request is dequeued, the 
+d224 1
+a224 1
+    int		size;		/* segment size; see notes above */
+d279 1
+a279 1
+    int		length;		/* how many bytes are mapped by the segment */
+@
+
+
+1.7
+log
+@Snapshot.  fork/exec work.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmTypes.h,v 1.6 91/09/24 16:35:17 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d111 10
+d127 1
+@
+
+
+1.6
+log
+@Record the segment's name port.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmTypes.h,v 1.5 91/09/23 14:20:14 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+a85 1
+ * 
+d101 3
+a103 1
+ * process to an offset in the segment.
+d200 2
+@
+
+
+1.5
+log
+@Snapshot.  Server is multithreaded internally.
+@
+text
+@d15 1
+a15 1
+ * $Header: /user6/kupfer/spriteserver/src/sprited/vm/RCS/vmTypes.h,v 1.4 91/09/02 22:56:18 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d204 1
+@
+
+
+1.4
+log
+@Changes for module-based source organization.
+@
+text
+@d15 1
+a15 1
+ * $Header: /user6/kupfer/spriteserver/src/sprited/vm/RCS/vmTypes.h,v 1.3 91/09/01 21:03:01 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d26 1
+d37 1
+a37 1
+
+d143 2
+d149 3
+a151 1
+ * that a read-only mapped file can later be used a text file.
+d158 1
+d187 5
+d210 2
+d273 15
+@
+
+
+1.3
+log
+@Snapshot.  Full VM support.
+@
+text
+@d15 1
+a15 1
+ * $Header: /user6/kupfer/spriteserver/src/printfd/RCS/vmTypes.h,v 1.2 91/08/19 12:17:31 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d24 3
+a26 2
+#include "syncTypes.h"
+#include "tempFs.h"
+@
+
+
+1.2
+log
+@Snapshot: Code reorg. and locking for processes & segments.
+@
+text
+@d15 1
+a15 1
+ * $Header: /user6/kupfer/spriteserver/src/printfd/RCS/vmTypes.h,v 1.1 91/08/15 15:53:25 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d21 1
+d27 43
+d80 38
+d140 6
+d150 2
+a151 12
+#define VM_CLEANING_SEGMENT	0x1
+
+
+/* 
+ * Vm_SegmentLink's are used to put VM segments on multiple linked 
+ * lists.  See the documentation for the List package.
+ */
+
+typedef struct {
+    List_Links		links;	/* links for List package */
+    struct Vm_Segment	*segPtr; /* pointer to actual segment info */
+} Vm_SegmentLink;
+d156 8
+a163 5
+ * native Sprite segment and under Mach is known as a memory object.  
+ * It backs some region of memory with a file.  There is a one-to-one
+ * correspondence between files and segments: there is at most one 
+ * segment for any file in the system, and the offset in a segment is 
+ * the same as the offset in the backing file.
+d170 6
+a175 6
+ * The size of the segment may be larger than the size of the 
+ * backing file.  This can happen if someone has mapped the segment 
+ * read-write and specified a longer length.  The file will be 
+ * lengthened, using zero-fill pages, as necessary.  The size recorded 
+ * here is in bytes and is always equal to some integer number of 
+ * pages. 
+d177 2
+a178 2
+ * Note: once the backing file(s) for a segment is set, it shouldn't be 
+ * changed.  This lets us use the backing file(s) while the segment is 
+d194 2
+a195 2
+    TempFs_Stream *filePtr;	/* the backing file */
+    char	*fileName;	/* name of the backing file (allocated 
+d197 2
+a198 1
+    int		size;		/* see notes above */
+d205 39
+a243 23
+ * The Vm_TaskInfo defines VM-related information for each task.  We 
+ * keep a list of each segment that is mapped into the task, with its 
+ * starting address and how long it is.  This is so that when we clear 
+ * out a process's address space, we're more likely to manage the 
+ * segment reference count correctly.
+ * 
+ * XXX If the client maps a file, deallocates the mapping, the maps
+ * something else, the list of mapped files could contain multiple
+ * files that are shown as mapped to the same start address.  This can
+ * cause two problems: (1) the Sprite server might try to deallocate a
+ * segment after it's already been deallocated; (2) the list might
+ * hold resources (i.e., memory for the VmMappedSegment struct) that 
+ * are no longer needed.
+ * 
+ * Problem (1) can be dealt with in one of two ways: (a) when adding 
+ * an element to the per-process list of segments, invalidate (and 
+ * remove) elements that have conflicting mappings; (b) when 
+ * deallocating memory, ignore KERN_INVALID_ADDRESS errors.
+ * 
+ * Problem (2) can be partially fixed by requesting a no-senders
+ * notification when a segment is no longer in use.  It can not be
+ * totally avoided because the server won't get notified if additional 
+ * processes keep their mapping of the file.
+d249 2
+a250 2
+    Address	startAddress;	/* where in VM the segment is mapped */
+    int		length;		/* how much of the segment is mapped */
+d255 3
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.7 91/02/09 13:24:52 ouster Exp $ SPRITE (Berkeley)
+d23 1
+d39 5
+a43 5
+ * 		      to flush dirty pages are allowed.
+ * VM_SEGMENT_DEAD - the segment is history; no further operations are 
+ *                   allowed.  It will go away when its reference 
+ *                   count goes to zero and it's no longer registered 
+ *                   with the kernel.
+d79 4
+a82 2
+ * It backs some region of memory with a file.  The start of the file 
+ * always corresponds to the start of the segment.
+d96 3
+a98 3
+ * XXX locking
+ * XXX should the size be the file size, or should it be rounded to an 
+ * integral number of pages?
+d104 2
+a105 1
+				 * segment  */
+@

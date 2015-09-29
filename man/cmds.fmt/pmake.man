@@ -1,0 +1,1652 @@
+
+
+
+PMAKE                     User Commands                     PMAKE
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     pmake - create programs in parallel
+
+SSYYNNOOPPSSIISS
+     ppmmaakkee [--bb] [--dd _w_h_a_t] [--ff _m_a_k_e_f_i_l_e] [--hh] [--ii] [--kk] [--ll]  [--nn]
+          [--pp  #]  [--qq]  [--rr]  [--ss]  [--tt] [--vv] [--xx] [--BB] [--CC] [--DD
+          _v_a_r_i_a_b_l_e] [--II _d_i_r_e_c_t_o_r_y] [--JJ #] [--LL #] [--MM]  [--PP]  [--RR]
+          [--VV]  [--WW]  [--XX] [_V_A_R_1==_v_a_l_u_e_1] [_V_A_R_2==_v_a_l_u_e_2......] [_t_a_r_g_1]
+          [_t_a_r_g_2 ...]
+
+_________________________________________________________________
+
+     -b                         ``Background'' -- run all  remote
+                                processes  at  low priority.  See
+                                also the .BACKGROUND attribute.
+
+     -d   _w_h_a_t                  Specify what modules should print
+                                debugging information.  _w_h_a_t is a
+                                string of letters from  the  fol-
+                                lowing set: aa (archives), cc (con-
+                                ditionals), dd (directory  search-
+                                ing),   jj  (jobs),  mm  (make),  pp
+                                (parsing), rr  (remote),  ss  (suf-
+                                fixes),  tt  (targets),  vv  (vari-
+                                ables).  Use --dd jjrr  to  find  out
+                                what host each job is run on.
+
+     -f   _m_a_k_e_f_i_l_e              Specify a different  makefile  to
+                                read     than     the    standard
+                                ``Makefile'' or ``makefile''.  If
+                                _m_a_k_e_f_i_l_e is "-", reads from stan-
+                                dard input.
+
+     -h                         Prints out help information.
+
+     -i                         ``Ignore errors'' -- ignore  non-
+                                zero exit statuses of commands.
+
+     -k                         ``Keepgoing'' -- if an  error  is
+                                encountered,   keep   working  on
+                                those parts of  the  input  graph
+                                that  are  not  affected  by  the
+                                error.
+
+     -l                         PMake has the ability to  lock  a
+                                directory  against  other  people
+                                executing it in the  same  direc-
+                                tory  (by  means of a file called
+                                ``LOCK.make'' that it creates and
+                                checks  for  in  the  directory).
+                                This is a Good Thing because  two
+                                people  doing  the  same thing in
+
+
+
+Sprite v.1.0             4 February 1991                        1
+
+
+
+
+
+
+PMAKE                     User Commands                     PMAKE
+
+
+
+                                the same place can be  disastrous
+                                for  the  final product (too many
+                                cooks  and  all  that).   Whether
+                                this locking is the default is up
+                                to your system administrator.  If
+                                locking  is  on,  --ll will turn it
+                                off, and vice  versa.  Note  that
+                                this locking will not prevent _y_o_u
+                                from invoking PMake twice in  the
+                                same place -- if you own the lock
+                                file, PMake will warn  you  about
+                                it but continue to execute.
+
+     -n                         ``No execute'' -- do not  execute
+                                commands.   Just  print  the ones
+                                that would be executed.
+
+     -p   #                     Tell _P_M_a_k_e if and when  to  print
+                                the  input  graph.  The number is
+                                the bitwise OR of the  numbers  1
+                                and 2 with 1 meaning to print the
+                                graph before making anything  and
+                                2  meaning  to  print  the  graph
+                                after making everything.   If  no
+                                number  is  given, it defaults to
+                                3.
+
+     -q                         ``Query'' -- do not  execute  any
+                                commands.   Just  exit  0  if the
+                                given target(s) is  (are)  up  to
+                                date and exit non-zero otherwise.
+
+     -r                         ``Remove built-in rules''  --  do
+                                not   parse  the  built-in  rules
+                                given in the system makefile.
+
+     -s                         ``Silence'' -- do not  echo  com-
+                                mands as they are executed.
+
+     -t                         ``Touch targets'' -- rather  than
+                                executing  the commands to create
+                                a target, just change its modifi-
+                                cation  time so it appears up-to-
+                                date.  This is dangerous.
+
+     -v                         ``System V'' -- invokes  compati-
+                                bility   functions  suitable  for
+                                acting like the System V  version
+                                of Make. This implies
+
+     -x                         ``Export judiciously -- run  com-
+                                mands  locally  in  preference to
+
+
+
+Sprite v.1.0             4 February 1991                        2
+
+
+
+
+
+
+PMAKE                     User Commands                     PMAKE
+
+
+
+                                running   them   remotely.     By
+                                default,   PMake  will  only  run
+                                locally if there  are  more  com-
+                                mands  to execute than idle hosts
+                                available;  with   this   option,
+                                PMake   will   run   one  command
+                                locally  and  export   additional
+                                commands  to available hosts.  --BB
+                                ,, and --VV and turns off  directory
+                                locking.  Locking  may  be turned
+                                back on again by  giving  the  --ll
+                                flag after --vv ..
+
+     -B                         ``Backwards-compatible'' --  per-
+                                forms as much like Make as possi-
+                                ble (including executing a single
+                                shell  per  command and expanding
+                                variables  as  Make  did)   while
+                                still performing in parallel.
+
+     -C                         ``Non-compatible'' --  turns  off
+                                all compatibility specified up to
+                                the point at which --CC is  encoun-
+                                tered.
+
+     -D   _v_a_r_i_a_b_l_e              Defines the given variable to  be
+                                11 in the global context.
+
+     -I   _d_i_r_e_c_t_o_r_y             Specify  another   directory   in
+                                which   to  look  for  #include'd
+                                makefiles.   This  flag  may   be
+                                repeated  as many times as neces-
+                                sary.
+
+     -J   #                     Specify  the  maximum  number  of
+                                jobs   to  run  at  once  on  all
+                                machines.
+
+     -L   #                     Specify  the  maximum  number  of
+                                jobs to run locally.
+
+     -M                         Be as much like Make as possible.
+                                No  parallel execution. Old-style
+                                variable expansion. One shell per
+                                command. Etc.
+
+     -P                         ``Don't use Pipes''  --  see  the
+                                section on
+
+     -R                         ``Remigrate    verbosely''     --
+                                announce when processes are remi-
+                                grated  subsequent  to  eviction.
+
+
+
+Sprite v.1.0             4 February 1991                        3
+
+
+
+
+
+
+PMAKE                     User Commands                     PMAKE
+
+
+
+                                OOUUTTPPUUTT.
+
+     -V                         ``Do  old-style  variable  expan-
+                                sion''   --  expands  an  unknown
+                                variable to the empty string.
+
+     -W                         Don't print warning messages.
+
+     -X                         ``No Export'' -- prohibits expor-
+                                tation.
+
+     VAR=value                  Set the value of the variable VVAARR
+                                to  the given value.  This super-
+                                cedes any value assigned  to  the
+                                variable  in  the  makefile.  See
+                                VVAARRIIAABBLLEESS.
+
+DDEESSCCRRIIPPTTIIOONN
+     _P_M_a_k_e is a program designed to make the maintenance of other
+     programs  much  easier.   Its  input  is a ``makefile'' that
+     specifies which files depend on which other files  and  what
+     to  do  about  files  that are ``out-of-date.'' If you don't
+     specify a makefile to read, MMaakkeeffiillee and mmaakkeeffiillee,  in  that
+     order, are looked for and read if they exist.
+
+     This manual page is meant to be a reference page only. For a
+     more thorough description of _P_M_a_k_e, please refer to _P_M_a_k_e --
+     _A _T_u_t_o_r_i_a_l(available in this distribution).
+
+     There are four basic types of lines in a makefile:
+
+          1)   File dependency specifications
+
+          2)   Creation commands
+
+          3)   Variable assignments
+
+          4)   Comments,  include  statements   and   conditional
+               directives
+
+     Any line may be continued over multiple lines by  ending  it
+     with  a backslash.  The backslash, following newline and any
+     initial whitespace on the following line are compressed into
+     a single space.
+
+DDEEPPEENNDDEENNCCYY LLIINNEESS
+     On a dependency line, there  are  targets,  sources  and  an
+     operator.   The  targets  ``depend''  on the sources and are
+     usually created  from  them.   Any  number  of  targets  and
+     sources  may be specified on a dependency line. All the tar-
+     gets in the line are made to depend on all the sources.   If
+     you  run out of room, use a backslash at the end of the line
+
+
+
+Sprite v.1.0             4 February 1991                        4
+
+
+
+
+
+
+PMAKE                     User Commands                     PMAKE
+
+
+
+     to continue onto the next one.
+
+     Any file may be a target and any file may be a  source,  but
+     the  relationship between them is determined by the ``opera-
+     tor'' that separates them. Three operators are defined:
+
+          :    A target on the line is considered ``out-of-date''
+               if  any  of  its  sources  has  been modified more
+               recently than the target.  Sources  for  a  target
+               accumulate over lines when this operator is used.
+
+          !    Targets will always be re-created, but  this  will
+               not  happen  until  all  of  its sources have been
+               examined and re-created,  if  necessary.   Sources
+               accumulate over lines as for the colon.
+
+          ::   Much like the colon, but acts like the !  operator
+               if  no  sources are specified. In addition sources
+               do not accumulate over lines. Rather, the commands
+               associated  with the line (see below) are executed
+               only if the target is out-of-date with respect  to
+               the  sources  on that line only.  In addition, the
+               target will not be  removed  if  _P_M_a_k_e  is  inter-
+               rupted, unlike for the other two operators.
+
+     For example:
+        a    : a.o b.o c.o
+        b    ! d.o e.o
+        c    :: f.o
+             command1
+        a    : g.o
+        b    ! h.o
+        c    ::
+             command2
+     specifies that a depends on a.o, b.o, c.o and g.o  and  will
+     be  remade  only  if  out-of-date with respect to these four
+     files. b depends on d.o, e.o and  h.o  and  will  always  be
+     remade, but only after these three files have been remade. c
+     will be remade with  command1  if  it  is  out-of-date  with
+     respect  to  f.o,  as for the colon operator, while command2
+     will always be executed.
+
+     Targets and sources may also contain standard shell wildcard
+     characters  (?,  *, [ and {}), but the ?, *, [ and ] charac-
+     ters may only be used in the final component of  the  target
+     or  source. If a target or source contains only curly braces
+     and no other wildcard characters, it need  not  describe  an
+     existing  file. Otherwise, only existing files will be used.
+     E.g. the pattern
+        {a,b,c}.o
+     will expand to
+        a.o b.o c.o
+
+
+
+Sprite v.1.0             4 February 1991                        5
+
+
+
+
+
+
+PMAKE                     User Commands                     PMAKE
+
+
+
+     regardless of whether these three files exist, while
+        [abc].o
+     will only expand to this  if  all  three  files  exist.  The
+     resulting  expansion  is  in directory order, not alphabeti-
+     cally sorted as in the shell.
+
+CCOOMMMMAANNDDSS
+     Each target has associated with it a sort  of  shell  script
+     made  up  of a series of shell commands. The creation script
+     for a target should immediately follow the  dependency  line
+     for  that  target.  Each of the commands in this script _m_u_s_t
+     be preceded by a tab character.
+
+     While any given target may appear on more  than  one  depen-
+     dency  line,  only one of these dependency lines may be fol-
+     lowed by a creation script,  unless  the  "::"  operator  is
+     used.
+
+     One helpful feature of _P_M_a_k_e is the ability to squirrel away
+     commands  for  a  target to be executed when everything else
+     has been done. To do this, make one of the commands for  the
+     target  be  just  ``...'' (an ellipsis) on a line by itself.
+     The ellipsis itself won't be executed, of  course,  but  any
+     commands  in  the  target's  script that follow the ellipsis
+     will be saved until _P_M_a_k_e is done processing  everything  it
+     needs to process.  If you were to say,
+        a.o             : a.c
+                cc -c a.c
+                ...
+                @echo "All done"
+     Then the command ``echo  "All  done"''  would  execute  once
+     everything  else had finished. Note that this will only hap-
+     pen if ``a.o'' is found to be out-of-date.
+
+     There is another way in which makefile shell commands differ
+     from  regular  shell  commands,  as illustrated in the above
+     makefile scrap.  The first two characters after the  initial
+     tab  (and  any  other  whitespace) are treated specially. If
+     they are any combination of `@'  and  `-',  (``@'',  ``@-'',
+     ``-@'' or ``-''), they cause _P_M_a_k_e to do different things.
+
+     In most cases, shell commands  are  printed  to  the  screen
+     before  they're  actually  executed.  This  is  to  keep you
+     informed of what's going on. If  an  `@'  appears,  however,
+     this echoing is suppressed. In the case of the echo command,
+     above, this makes sense. It would look silly to see
+        echo "All done"
+        All done
+     so _P_M_a_k_e allows you to avoid that (this sort of echo control
+     is  only available if you use the Bourne or C shells to exe-
+     cute your commands, since the commands  are  echoed  by  the
+     shell, not by _P_M_a_k_e).
+
+
+
+Sprite v.1.0             4 February 1991                        6
+
+
+
+
+
+
+PMAKE                     User Commands                     PMAKE
+
+
+
+     The other special character is the `-'.  Shell commands exit
+     with  a  certain ``exit status.''  Normally this status will
+     be 0 if everything went ok and non-zero  if  something  went
+     wrong. For this reason, _P_M_a_k_e will consider an error to have
+     occurred if one of the commands it invokes  returns  a  non-
+     zero  status.  When it detects an error, its usual action is
+     to stop working, wait for everything in process  to  finish,
+     and  exit  with a non-zero status itself.  This behavior can
+     be altered, however, by means of --ii or --kk arguments,  or  by
+     placing  a  `-' at the front of the command.  (Another quick
+     note: the decision of whether to abort a target when one  of
+     its  shell  commands  returns  non-zero is left to the shell
+     that is executing  the  commands.  Some  shells  allow  this
+     ``error-checking''  to  be switched on and off at will while
+     others do not.)
+
+VVAARRIIAABBLLEESS
+     _P_M_a_k_e has the ability  to  save  text  in  variables  to  be
+     recalled  later at your convenience.  Variables in _P_M_a_k_e are
+     used much like variables in _s_h(1) and, by tradition, consist
+     of   all   upper-case   letters.   They  are  assigned-  and
+     appended-to using lines of the form
+        _V_A_R_I_A_B_L_E == _v_a_l_u_e
+        _V_A_R_I_A_B_L_E ++== _v_a_l_u_e
+     respectively, while being conditionally assigned-to (if  not
+     already  defined) and assigned-to with expansion by lines of
+     the form
+        _V_A_R_I_A_B_L_E ??== _v_a_l_u_e
+        _V_A_R_I_A_B_L_E ::== _v_a_l_u_e
+     Finally,
+        _V_A_R_I_A_B_L_E !!== _c_o_m_m_a_n_d
+     will execute _c_o_m_m_a_n_d using the Bourne shell  and  place  the
+     result  in  the  given  variable.  Newlines are converted to
+     spaces before the assignment is made. This is  not  intended
+     to be used with commands that produce a large amount of out-
+     put. If you use it this way, it will probably deadlock.
+
+     Variables are expanded by enclosing  the  variable  name  in
+     either  parentheses  or curly braces and preceding the whole
+     thing with a dollar sign.  E.g. to set the  variable  CCFFLLAAGGSS
+     to  the string ``-I/sprite/src/lib/libc -O'' you would place
+     a line
+        CFLAGS = -I/sprite/src/lib/libc -O
+     in the makefile and use  the  word  $$((CCFFLLAAGGSS))  wherever  you
+     would  like  the  string  ``-I/sprite/src/lib/libc  -O''  to
+     appear.  To  pass  a  string  of  the  form  ``$(_n_a_m_e)''  or
+     ``${_n_a_m_e}'' through to the shell (e.g. to tell it to substi-
+     tute one of its variables), you  can  use  ``$$(_n_a_m_e)''  and
+     ``$${_n_a_m_e}'', respectively, or, as long as the _n_a_m_e is not a
+     _P_M_a_k_e variable, you can just place the string  in  directly,
+     as  _P_M_a_k_e will not expand a variable it doesn't know, unless
+     it is given one of the three compatibility flags --VV, --BB,  or
+
+
+
+Sprite v.1.0             4 February 1991                        7
+
+
+
+
+
+
+PMAKE                     User Commands                     PMAKE
+
+
+
+     --MM.
+
+     There are two distinct times at which variable  substitution
+     occurs:  When  parsing  a dependency line, such substitution
+     occurs immediately upon reading the line.   Thus  all  vari-
+     ables  used  in dependency lines must be defined before they
+     appear on any dependency line.  For variables that appear in
+     shell  commands,  variable substitution occurs when the com-
+     mand is processed, i.e. when it is prepared to be passed  to
+     the  shell  or before being squirreled away for later execu-
+     tion (qv. CCOOMMMMAANNDDSS, above).
+
+     There are four different types of variables at  which  _P_M_a_k_e
+     will  look  when  trying to expand any given variable.  They
+     are (in order of decreasing precedence): (1) variables  that
+     are  defined specific to a certain target. These are the so-
+     called ``local'' variables and will only be used  when  per-
+     forming  variable  substitution on the target's shell script
+     and in dynamic sources (see below  for  more  details),  (2)
+     variables  that  were defined on the command line, (3) vari-
+     ables defined in the  makefile  and  (4)  those  defined  in
+     _P_M_a_k_e's  environment,  as  passed  by  your login shell.  An
+     important side effect of this searching order is  that  once
+     you  define  a  variable on the command line, nothing in the
+     makefile can change it. _N_o_t_h_i_n_g.
+
+     As mentioned above, each target has associated  with  it  as
+     many  as  seven ``local'' variables. Four of these variables
+     are always set for every target  that  must  be  re-created.
+     Each local variable has a long, meaningful name and a short,
+     one-character name that exists for  backwards-compatibility.
+     They are:
+
+     @u-3p      .TARGET (@)
+               The name of the target.
+
+          .OODATE (?)
+               The list of sources  for  this  target  that  were
+               deemed out-of-date.
+
+          .ALLSRC (>)
+               The list of all sources for this target.
+
+          .PREFIX (*)
+               The file prefix of the file.  This  contains  only
+               the file portion -- no suffix or leading directory
+               components.
+
+     Three other ``local'' variables are  set  only  for  certain
+     targets   under   special   circumstances.   These  are  the
+     ``.IMPSRC'', ``.ARCHIVE'' and  ``.MEMBER''  variables.  When
+     they  are set, how they are used, and what their short forms
+
+
+
+Sprite v.1.0             4 February 1991                        8
+
+
+
+
+
+
+PMAKE                     User Commands                     PMAKE
+
+
+
+     are are detailed in later sections.
+
+     In addition, for  you  System  V  fans,  the  six  variables
+     ``@F'',  ``@D'',  ``<F'',  ``<D'',  ``*F'',  and  ``*D'' are
+     defined to be the same as for the System V version of  Make.
+     If you don't know about these things, be glad.
+
+     Four of these local variables may  be  used  in  sources  on
+     dependency  lines.  The variables expand to the proper value
+     for each target on the line. The variables are  ``.TARGET'',
+     ``.PREFIX'', ``.ARCHIVE'', and ``.MEMBER''.
+
+     In addition, certain variables are set by  or  have  special
+     meaning  to _P_M_a_k_e.  The ..PPMMAAKKEE (and MMAAKKEE) variable is set to
+     the name by which _P_M_a_k_e  was  invoked,  to  allow  recursive
+     makes  to  use  the  same  version, whatever it may be.  All
+     command-line  flags  given  to  _P_M_a_k_e  are  stored  in   the
+     ..MMAAKKEEFFLLAAGGSS  (and  MMFFLLAAGGSS)  variable just as they were given.
+     This variable is also exported to  subshells  as  the  PPMMAAKKEE
+     environment variable.
+
+     Variable expansion may be modified as for  the  C  shell.  A
+     general expansion specification looks like:
+        $$((_v_a_r_i_a_b_l_e[::_m_o_d_i_f_i_e_r[::...]]))
+     Each modifier begins with a single character, thus:
+
+          M_p_a_t_t_e_r_n
+               This is used to select only those words (a word is
+               a series of characters that are neither spaces nor
+               tabs) that match the given _p_a_t_t_e_r_n .  The  pattern
+               is a wildcard pattern like that used by the shell,
+               where "*" means 0 or more characters of any  sort;
+               "?"  is any single character; "[abcd]" matches any
+               single character that is either `a', `b',  `c'  or
+               `d' (there may be any number of characters between
+               the brackets); [[00--99]] matches any single  character
+               that  is between `0' and `9' (i.e. any digit. This
+               form may be freely mixed with  the  other  bracket
+               form),  and \ is used to escape any of the charac-
+               ters "*", "?", "[" or ":", leaving them as regular
+               characters to match themselves in a word.
+
+          N_p_a_t_t_e_r_n
+               This is identical to ":M"  except  it  substitutes
+               all words that don't match the given pattern.
+
+          S/_s_e_a_r_c_h-_s_t_r_i_n_g/_r_e_p_l_a_c_e_m_e_n_t-_s_t_r_i_n_g/[g]
+               Causes the first occurrence  of  _s_e_a_r_c_h-_s_t_r_i_n_g  in
+               the  variable to be replaced by _r_e_p_l_a_c_e_m_e_n_t-_s_t_r_i_n_g
+               , unless the "g" flag is  given  at  the  end,  in
+               which  case  all  occurrences  of  the  string are
+               replaced. The substitution is  performed  on  each
+
+
+
+Sprite v.1.0             4 February 1991                        9
+
+
+
+
+
+
+PMAKE                     User Commands                     PMAKE
+
+
+
+               word  in  the  variable  in turn. If _s_e_a_r_c_h-_s_t_r_i_n_g
+               begins with a "^", the string must match  starting
+               at  the  beginning  of  the word. If _s_e_a_r_c_h-_s_t_r_i_n_g
+               ends with a "$", the string must match to the  end
+               of the word (these two may be combined to force an
+               exact match). If a backslash  precedes  these  two
+               characters, however, they lose their special mean-
+               ing. Variable expansion also occurs in the  normal
+               fashion  inside  both  the  _s_e_a_r_c_h-_s_t_r_i_n_g  and the
+               _r_e_p_l_a_c_e_m_e_n_t-_s_t_r_i_n_g , eexxcceepptt that  a  backslash  is
+               used  to  prevent  the  expansion  of  a  "$", not
+               another dollar  sign,  as  is  usual.   Note  that
+               _s_e_a_r_c_h-_s_t_r_i_n_g  is just a string, not a pattern, so
+               none  of  the  usual   regular-expression/wildcard
+               characters  has  any  special meaning save "^" and
+               "$".  In the replacement string, the "&" character
+               is replaced by the _s_e_a_r_c_h-_s_t_r_i_n_g unless it is pre-
+               ceded by a backslash.  You are allowed to use  any
+               character  except  colon  or  exclamation point to
+               separate the two strings. This so-called delimiter
+               character  may  be  placed  in  either  string  by
+               preceding it with a backslash.
+
+          T    Replaces each word in the  variable  expansion  by
+               its last component (its ``tail'').
+
+          H    This is similar to ":T", except that every word is
+               replaced   by   everything   but   the  tail  (the
+               ``head'').
+
+          E    ":E" replaces each word by  its  suffix  (``exten-
+               sion'').
+
+          R    This replaces each word by everything but the suf-
+               fix (the ``root'' of the word).
+
+     In addition, PMake supports the System V form  of  substitu-
+     tion (_s_t_r_i_n_g_1=_s_t_r_i_n_g_2).
+
+CCOOMMMMEENNTTSS,, IINNCCLLUUSSIIOONN AANNDD CCOONNDDIITTIIOONNAALLSS
+     Makefile inclusion and conditional structures reminiscent of
+     the C compiler have also been included in _P_M_a_k_e.
+
+     Comments begin with a `#' anywhere but in  a  shell  command
+     and  continue  to  the end of the line.  If the `#' comes at
+     the beginning of the line, however, the  following  keywords
+     are recognized and acted on:
+
+     iinncclluuddee ''''_m_a_k_e_f_i_l_e''''
+
+
+
+
+
+
+Sprite v.1.0             4 February 1991                       10
+
+
+
+
+
+
+PMAKE                     User Commands                     PMAKE
+
+
+
+     iinncclluuddee <<_s_y_s_t_e_m _m_a_k_e_f_i_l_e>>
+
+     This is very similar  to  the  C  compiler's  file-inclusion
+     facility,  right  down  to  the  syntax.   What  follows the
+     ##iinncclluuddee must be a filename enclosed either in double-quotes
+     or  angle  brackets.  Variables will be expanded between the
+     double-quotes  or  angle-brackets.   If  angle-brackets  are
+     used,  the  system  makefile  directory is searched.  If the
+     name is enclosed in double-quotes, the including  makefile's
+     directory,  followed  by  all directories given via --II argu-
+     ments, followed by the system directory, is searched  for  a
+     file of the given name.
+
+     If the file is found, _P_M_a_k_e starts taking  input  from  that
+     file as if it were part of the original makefile.
+
+     When the end of the file is reached, _P_M_a_k_e goes back to  the
+     previous  file  and  continues from where it left off.  This
+     facility is recursive up to a  depth  limited  only  by  the
+     number of open files allowed to any process at one time.
+
+     iiff [[!!]] _e_x_p_r [[ _o_p _e_x_p_r ...... ]]
+
+     iiffddeeff [[!!]] _v_a_r_i_a_b_l_e [[_o_p _v_a_r_i_a_b_l_e......]]
+
+     iiffnnddeeff [[!!]] _v_a_r_i_a_b_l_e [[_o_p _v_a_r_i_a_b_l_e......]]
+
+     iiffmmaakkee [[!!]] _t_a_r_g_e_t [[_o_p _t_a_r_g_e_t......]]
+
+     iiffnnmmaakkee [[!!]] _t_a_r_g_e_t [[_o_p _t_a_r_g_e_t......]]
+
+     These are all the beginnings of  conditional  constructs  in
+     the spirit of the C compiler.  Conditionals may be nested to
+     a depth of thirty.
+
+     In the expressions given above, _o_p may be either |||| (logical
+     OR)  or  &&&&  (logical AND).  &&&& has a higher precedence than
+     ||||.  As in C, _P_M_a_k_e will evaluate an expression only as  far
+     as  necessary  to determine its value. I.e. if the left side
+     of an &&&& is false, the expression is false  and  vice  versa
+     for  ||||.   Parentheses  may  be  used as usual to change the
+     order of evaluation.
+
+     One other boolean operator is  provided:  !!  (logical  nega-
+     tion).  It  is of a higher precedence than either the AND or
+     OR operators, and may be applied in any of the  ``if''  con-
+     structs,  negating  the  given  function  for ``#if'' or the
+     implicit function for the other four.
+
+     _E_x_p_r can be one of several things. Four functions  are  pro-
+     vided, each of which takes a different sort of argument.
+
+
+
+
+Sprite v.1.0             4 February 1991                       11
+
+
+
+
+
+
+PMAKE                     User Commands                     PMAKE
+
+
+
+     The function ddeeffiinneedd is used to test for the existence of  a
+     variable.   Its  argument  is,  therefore,  a variable name.
+     Certain lower-case variable names  (e.g.  ``sun'',  ``unix''
+     and  ``sprite'')  are  defined  in  the system makefile (qv.
+     FFIILLEESS) to specify the sort of system on which _P_M_a_k_e is being
+     run.  These  are  intended  to make makefiles more portable.
+     Any variable may be used as  the  argument  of  the  ddeeffiinneedd
+     function.
+
+     The mmaakkee function is given the  name  of  a  target  in  the
+     makefile  and  evaluates  to true if the target was given on
+     _P_M_a_k_e's command-line or as a source  for  the  ..MMAAIINN  target
+     before the line containing the conditional.
+
+     The eexxiissttss  function  takes  a  file  name,  which  file  is
+     searched  for on the system search path (as defined by ..PPAATTHH
+     targets (see below)). It  evaluates  true  if  the  file  is
+     found.
+
+     eemmppttyy takes a variable expansion  specification  (minus  the
+     dollar  sign) as its argument. If the resulting expansion is
+     empty, this evaluates true.
+
+     _E_x_p_r can also be an arithmetic or  string  comparison,  with
+     the lefthand side being a variable expansion. The standard C
+     relational operators are allowed, and the usual  number/base
+     conversion  is  performed,  with  the  exception  that octal
+     numbers are not supported. If the righthand side of  a  "=="
+     or "!=" operator begins with a quotation mark, a string com-
+     parison is done between the expanded variable and  the  text
+     between  the  quotation marks.  If no relational operator is
+     given, it is assumed that the expanded  variable  is  to  be
+     compared  against  0,  i.e.  it is interpreted as a boolean,
+     with a 0 value being false and a non-zero value being true.
+
+     When, in the course of evaluating one of  these  conditional
+     expressions,  _P_M_a_k_e  encounters some word it does not recog-
+     nize, it applies one  of  either  _m_a_k_e  or  _d_e_f_i_n_e_d  to  it,
+     depending  on  the form of ``if'' used. E.g. ``#ifdef'' will
+     apply the _d_e_f_i_n_e_d function, while  ``#ifnmake''  will  apply
+     the negation of the _m_a_k_e function.
+
+     If the expression following one  of  these  forms  evaluates
+     true, the reading of the makefile continues as before. If it
+     evaluates false, the following lines are  skipped.  In  both
+     cases,  this  continues  until  either an ##eellssee or an ##eennddiiff
+     line is encountered.
+
+     eellssee
+
+     The #else, as in the C compiler, causes  the  sense  of  the
+     last  conditional  to  be  inverted  and  the reading of the
+
+
+
+Sprite v.1.0             4 February 1991                       12
+
+
+
+
+
+
+PMAKE                     User Commands                     PMAKE
+
+
+
+     makefile to be based on this new value.  I.e. if the  previ-
+     ous  expression  evaluated true, the parsing of the makefile
+     is suspended until an #endif line is read.  If the  previous
+     expression  evaluated  false, the parsing of the makefile is
+     resumed.
+
+     eelliiff [[!!]] _e_x_p_r [[ _o_p _e_x_p_r ...... ]]
+
+     eelliiffddeeff [[!!]] _v_a_r_i_a_b_l_e [[_o_p _v_a_r_i_a_b_l_e......]]
+
+     eelliiffnnddeeff [[!!]] _v_a_r_i_a_b_l_e [[_o_p _v_a_r_i_a_b_l_e......]]
+
+     eelliiffmmaakkee [[!!]] _t_a_r_g_e_t [[_o_p _t_a_r_g_e_t......]]
+
+     eelliiffnnmmaakkee [[!!]] _t_a_r_g_e_t [[_o_p _t_a_r_g_e_t......]]
+
+     The ``elif'' constructs are a combination  of  ``else''  and
+     ``if,''  as  the  name  implies.  If  the  preceding  ``if''
+     evaluated false, the expression following  the  ``elif''  is
+     evaluated and the lines following it are read or ignored the
+     same as for  a  regular  ``if.''  If  the  preceding  ``if''
+     evaluated  true,  however,  the  ``elif'' is ignored and all
+     following lines until the ``endif'' (see below) are ignored.
+
+     eennddiiff
+
+     ##eennddiiff is used to end a conditional section. If  lines  were
+     being  skipped,  the reading of the makefile resumes. Other-
+     wise, it has no effect (the makefile continues to be  parsed
+     as it was just before the ##eennddiiff was encountered).
+
+     uunnddeeff
+
+     Takes the next word on the line as a global variable  to  be
+     undefined (only undefines global variables, not command-line
+     variables). If the variable is already undefined, no message
+     is generated.
+
+TTAARRGGEETT AATTTTRRIIBBUUTTEESS
+     In _P_M_a_k_e,  files  can  have  certain  ``attributes.''  These
+     attributes cause _P_M_a_k_e to treat the targets in special ways.
+     An attribute is a special word given as a source to a target
+     on  a  dependency  line.  The  words and their functions are
+     given below:
+
+     .BACKGROUND  Forces the target to be run at low priority, to
+                  keep  it  from preventing other higher-priority
+                  processes from using idle hosts.
+
+     .DONTCARE    If a target is marked with this  attribute  and
+                  PMake  can't  figure  out  how to create it, it
+                  will ignore this fact and assume the file isn't
+
+
+
+Sprite v.1.0             4 February 1991                       13
+
+
+
+
+
+
+PMAKE                     User Commands                     PMAKE
+
+
+
+                  really needed or actually exists and PMake just
+                  can't find it.
+
+     .EXEC        This causes the marked target's shell script to
+                  always be executed (unless the --nn or --tt flag is
+                  given), but appear  invisible  to  any  targets
+                  that depend on it.
+
+     .EXPORT      This is used to mark those targets whose  crea-
+                  tion  should  be  sent to another machine if at
+                  all possible. This may be used by some exporta-
+                  tion  schemes  if the exportation is expensive.
+                  You should ask  your  administrator  if  it  is
+                  necessary.
+
+     .EXPORTSAME  Tells the export system that the job should  be
+                  exported  to a machine of the same architecture
+                  as the current one.  Certain  operations  (e.g.
+                  running  text through "nroff") can be performed
+                  the same on any architecture (CPU and operating
+                  system  type),  while  others (e.g. compiling a
+                  program with  "cc")  must  be  performed  on  a
+                  machine  with  the  same  architecture. Not all
+                  export systems will support this attribute.
+
+     .IGNORE      Giving a target the  ..IIGGNNOORREE  attribute  causes
+                  PMake to ignore errors from any of the target's
+                  commands, as if they all had `-' before them.
+
+     .INVISIBLE   This allows you to  specify  one  target  as  a
+                  source  for  another  without the one affecting
+                  the other's local variables.
+
+     .JOIN        This forces the target's  shell  script  to  be
+                  executed only if one or more of the sources was
+                  out-of-date. In addition, the target's name, in
+                  both  its  ..TTAARRGGEETT  variable  and all the local
+                  variables of any target that depends on it,  is
+                  replaced  by the value of its ..AALLLLSSRRCC variable.
+                  Another aspect of the  .JOIN  attribute  is  it
+                  keeps  the  target from being created if the --tt
+                  flag was given.
+
+     .MAKE        The ..MMAAKKEE attribute marks its target as being a
+                  recursive  invocation  of  PMake.   This forces
+                  PMake to execute the script associated with the
+                  target  (if  it's out-of-date) even if you gave
+                  the --nn or --tt flag.
+
+     .NOEXPORT    Forces the target to be created  locally,  even
+                  if you've given _P_M_a_k_e the --LL 00 flag.
+
+
+
+
+Sprite v.1.0             4 February 1991                       14
+
+
+
+
+
+
+PMAKE                     User Commands                     PMAKE
+
+
+
+     .NOTMAIN     Normally, if you do not  specify  a  target  to
+                  make  in  any  other  way,  _P_M_a_k_e will take the
+                  first target on the first dependency line of  a
+                  makefile  as  the  target  to create.  Giving a
+                  target this attribute keeps it from this fate.
+
+     .PRECIOUS    When PMake is interrupted, it will  attempt  to
+                  clean up after itself by removing any half-made
+                  targets. If a target has this  attribute,  how-
+                  ever, _P_M_a_k_e will leave it alone
+
+     .SILENT      Marking a target with this attribute keeps  its
+                  commands  from  being printed when they're exe-
+                  cuted.
+
+     .USE         By giving a target this attribute, you turn the
+                  target into _P_M_a_k_e's equivalent of a macro. When
+                  the target is used as a source for another tar-
+                  get,  the  other  target acquires the commands,
+                  sources and attributes  (except  ..UUSSEE)  of  the
+                  source.   If  the  target already has commands,
+                  the ..UUSSEE target's commands  are  added  to  the
+                  end.  If  more  than  one .USE-marked source is
+                  given  to  a  target,  the  rules  are  applied
+                  sequentially.
+
+SSPPEECCIIAALL TTAARRGGEETTSS
+     As there were in Make, so there  are  certain  targets  that
+     have  special meaning to PMake. When you use one on a depen-
+     dency line, it is the only target that  may  appear  on  the
+     left-hand-side of the operator.  The targets are as follows:
+
+     .BACKGROUND applies the .BACKGROUND attribute to each of its
+                 sources.  If  there are no sources on the depen-
+                 dency line, then it is as if you gave PMake  the
+                 --bb flag.
+
+     .BEGIN      Any commands attached to this  target  are  exe-
+                 cuted  before anything else is done. You can use
+                 it for any initialization that needs doing.
+
+     .DEFAULT    This is sort of a .USE rule for any target (that
+                 was used only as a source) that _P_M_a_k_e can't fig-
+                 ure out any other way to create. Only the  shell
+                 script is used. The ..IIMMPPSSRRCC variable of a target
+                 that inherits ..DDEEFFAAUULLTT ''ss commands is set to the
+                 target's own name.
+
+     .END        This serves a function similar to  ..BBEEGGIINN:  com-
+                 mands  attached  to  it are executed once every-
+                 thing has been re-created (so long as no  errors
+                 occurred).  It also serves the extra function of
+
+
+
+Sprite v.1.0             4 February 1991                       15
+
+
+
+
+
+
+PMAKE                     User Commands                     PMAKE
+
+
+
+                 being a place on which PMake can  hang  commands
+                 you put off to the end. Thus the script for this
+                 target will be executed before any of  the  com-
+                 mands you save with the ``...''.
+
+     .EXPORT     The sources for this target are  passed  to  the
+                 exportation  system  compiled  into _P_M_a_k_e.  Some
+                 systems will  use  these  sources  to  configure
+                 themselves.  You should ask your system adminis-
+                 trator about this.
+
+     .IGNORE     This target marks each of its sources  with  the
+                 ..IIGGNNOORREE  attribute.  If  you  don't  give it any
+                 sources, then it is like giving the --ii flag.
+
+     .INCLUDES   The sources for this target are taken to be suf-
+                 fixes  that indicate a file that can be included
+                 in a program source file.  The suffix must  have
+                 already   been   declared  with  ..SSUUFFFFIIXXEESS  (see
+                 below).  Any suffix  so  marked  will  have  the
+                 directories  on  its  search  path  (see ..PPAATTHH ,,
+                 below) placed in the  ..IINNCCLLUUDDEESS  variable,  each
+                 preceded  by a --II flag. The ..hh suffix is already
+                 marked in this way in the system makefile.
+
+     .INTERRUPT  When PMake is interrupted, it will  execute  the
+                 commands  in  the  script for this target, if it
+                 exists.
+
+     .LIBS       This does for libraries what ..IINNCCLLUUDDEESS does  for
+                 include  files,  except  the flag used is --LL, as
+                 required by those linkers that allow you to tell
+                 them  where to find libraries. The variable used
+                 is ..LLIIBBSS.
+
+     .MAIN       If you didn't give  a  target  (or  targets)  to
+                 create  when you invoked PMake, it will take the
+                 sources of this target as the targets to create.
+
+     .MAKEFLAGS  This target provides a way  for  you  to  always
+                 specify  flags  for  PMake  when the makefile is
+                 used. The flags are just as they would be  typed
+                 to the shell, though the --ff and --rr flags have no
+                 effect.
+
+     .NULL       This allows you to  specify  what  suffix  _P_M_a_k_e
+                 should pretend a file has if, in fact, it has no
+                 known suffix. Only one suffix may be  so  desig-
+                 nated. The last source on the dependency line is
+                 the suffix that is used  (you  should,  however,
+                 only give one suffix...).
+
+
+
+
+Sprite v.1.0             4 February 1991                       16
+
+
+
+
+
+
+PMAKE                     User Commands                     PMAKE
+
+
+
+     .PATH       If you give sources for this target, PMake  will
+                 take  them as directories to search for files it
+                 cannot find in the  current  directory.  If  you
+                 give  no  sources,  it will clear out any direc-
+                 tories added to the search path before.
+
+     .PATH_s_u_f_f_i_x This does a similar thing to ..PPAATTHH, but it  does
+                 it  only  for  files  with the given suffix. The
+                 suffix must have been defined already.
+
+     .PRECIOUS   Gives the ..PPRREECCIIOOUUSS attribute to each source  on
+                 the   dependency   line,  unless  there  are  no
+                 sources, in which case the  ..PPRREECCIIOOUUSS  attribute
+                 is given to every target in the file.
+
+     .RECURSIVE  Applies the ..MMAAKKEE attribute to all its  sources.
+                 It  does  nothing  if  you  don't  give  it  any
+                 sources.
+
+     .SHELL      Tells _P_M_a_k_e to use some  other  shell  than  the
+                 Bourne  Shell.   The  sources for the target are
+                 organized as _k_e_y_w_o_r_d==_v_a_l_u_e strings. If  a  _v_a_l_u_e
+                 contains  whitespace,  it  may  be surrounded by
+                 double-quotes to make it a single word. The pos-
+                 sible sources are:
+
+                 ppaatthh==_p_a_t_h
+                      Tells where the shell actually resides.  If
+                      you  specify  this  and nothing else, PMake
+                      will use the last component of the path  to
+                      find  the  specification.  Use  this if you
+                      just want to use a different version of the
+                      Bourne  or  C Shell (PMake knows how to use
+                      the C Shell too).
+
+                 nnaammee==_n_a_m_e
+                      This is the name by which the shell  is  to
+                      be  known.  It  is a single word and, if no
+                      other keywords are  specified  (other  than
+                      ppaatthh),  it  is  the  name  by  which  PMake
+                      attempts to find a  specification  for  the
+                      it.  You  can  use  this  if you would just
+                      rather use the  C  Shell  than  the  Bourne
+                      Shell (``..SSHHEELLLL:: nnaammee==ccsshh'' will do it).
+
+                 qquuiieett==_e_c_h_o-_o_f_f _c_o_m_m_a_n_d
+                      The command _P_M_a_k_e should send to  stop  the
+                      shell  from  printing  its  commands.  Once
+                      echoing is off, it is  expected  to  remain
+                      off until explicitly turned on.
+
+                 eecchhoo==_e_c_h_o-_o_n _c_o_m_m_a_n_d
+
+
+
+Sprite v.1.0             4 February 1991                       17
+
+
+
+
+
+
+PMAKE                     User Commands                     PMAKE
+
+
+
+                      The command PMake should give to turn echo-
+                      ing back on again.
+
+                 ffiilltteerr==_p_r_i_n_t_e_d _e_c_h_o-_o_f_f _c_o_m_m_a_n_d
+                      Many shells will echo the echo-off  command
+                      when  it is given. This keyword tells PMake
+                      in what format the  shell  actually  prints
+                      the  echo-off  command. Wherever PMake sees
+                      this string in the shell's output, it  will
+                      delete  it and any following whitespace, up
+                      to and including the next newline.
+
+                 eecchhooFFllaagg==_f_l_a_g _t_o _t_u_r_n _e_c_h_o_i_n_g _o_n
+                      The flag to pass to the shell to turn echo-
+                      ing on at the start.  If either this or the
+                      next flag begins with a `-', the flags will
+                      be  passed  to  the shell as separate argu-
+                      ments. Otherwise,  the  two  will  be  con-
+                      catenated.
+
+                 eerrrrFFllaagg==_f_l_a_g _t_o _t_u_r_n _e_r_r_o_r _c_h_e_c_k_i_n_g _o_n
+                      Flag to give the shell to turn error check-
+                      ing on at the start.
+
+                 cchheecckk==_c_o_m_m_a_n_d _t_o _t_u_r_n _e_r_r_o_r _c_h_e_c_k_i_n_g _o_n
+                      The command to make  the  shell  check  for
+                      errors or to print the command that's about
+                      to be executed (%s indicates where the com-
+                      mand  to  print should go), if hasErrCtl is
+                      "no".
+
+                 iiggnnoorree==_c_o_m_m_a_n_d _t_o _t_u_r_n _e_r_r_o_r _c_h_e_c_k_i_n_g _o_f_f
+                      The command to turn error checking  off  or
+                      the  command  to execute a command ignoring
+                      any errors. "%s" takes  the  place  of  the
+                      command.
+
+                 hhaassEErrrrCCttll==_y_e_s _o_r _n_o
+                      This takes a value that is  either  yyeess  or
+                      nnoo,  telling  how  the "check" and "ignore"
+                      commands should be used.  NOTE: If this  is
+                      "no",  both  the  check and ignore commands
+                      should contain a \n at  their  end  if  the
+                      shell requires a newline before executing a
+                      command.
+
+                 The strings that follow these  keywords  may  be
+                 enclosed  in single or double quotes (the quotes
+                 will be stripped off) and may contain the  usual
+                 C backslash-characters.
+
+     .SILENT     Applies the ..SSIILLEENNTT attribute  to  each  of  its
+
+
+
+Sprite v.1.0             4 February 1991                       18
+
+
+
+
+
+
+PMAKE                     User Commands                     PMAKE
+
+
+
+                 sources.  If  there are no sources on the depen-
+                 dency line, then it is as if you gave PMake  the
+                 --ss flag.
+
+     .SUFFIXES   This is used to give new file suffixes for PMake
+                 to  handle. Each source is a suffix PMake should
+                 recognize. If you give  a  ..SSUUFFFFIIXXEESS  dependency
+                 line  with  no  sources, PMake will forget about
+                 all the suffixes it knew (this  also  nukes  the
+                 null  suffix).   For  those targets that need to
+                 have suffixes defined, this is how you do it.
+
+     In addition to these targets, a line of the form
+        _a_t_t_r_i_b_u_t_e : _s_o_u_r_c_e_s
+     applies the _a_t_t_r_i_b_u_t_e to all the targets listed  as  _s_o_u_r_c_e_s
+     except as noted above.
+
+TTHHEE PPOOWWEERR OOFF SSUUFFFFIIXXEESS
+     One of the best aspects of both _M_a_k_e and  _P_M_a_k_e  comes  from
+     their  understanding of how the suffix of a file pertains to
+     its contents and their ability to  do  things  with  a  file
+     based  solely  on its suffix.  _P_M_a_k_e also has the ability to
+     find a file based on its suffix, supporting different  types
+     of files being in different directories.  The former ability
+     derives from the existence of so-called transformation rules
+     while  the  latter  comes  from  the specification of search
+     paths using the ..PPAATTHH target.
+
+     TTRRAANNSSFFOORRMMAATTIIOONN RRUULLEESS
+
+     A special type of dependency, called a transformation  rule,
+     consists  of  a  target  made  of  two  known suffixes stuck
+     together followed by a shell script to transform a  file  of
+     one  suffix  into  a file of the other.  The first suffix is
+     the suffix of the source file and the second is that of  the
+     target  file.   E.g.  the  target ``.c.o,'' followed by com-
+     mands, would define a transformation  from  files  with  the
+     ``.c''  suffix to those with the ``.o'' suffix.  A transfor-
+     mation rule has no source files associated with  it,  though
+     attributes  may  be  given  to  one  in the usual way. These
+     attributes are then applied to any target  that  is  on  the
+     ``target  end'' of a transformation rule.  The suffixes that
+     are concatenated must be already known to _P_M_a_k_e in order for
+     their  concatenation  to  be recognized as a transformation,
+     i.e. the suffixes must have been the source for a  .SUFFIXES
+     target  at  some  time before the transformation is defined.
+     Many transformations are defined in the system makefile (qv.
+     FFIILLEESS) and I refer you there for more examples as well as to
+     find what is already available (you should  especially  note
+     the  various  variables  used  to contain flags for the com-
+     pilers, assemblers, etc., used to transform the files. These
+     variables allow you to customize the transformations to your
+
+
+
+Sprite v.1.0             4 February 1991                       19
+
+
+
+
+
+
+PMAKE                     User Commands                     PMAKE
+
+
+
+     own needs without having to redefine them).   A  transforma-
+     tion  rule  may be defined more than once, but only the last
+     such definition is remembered by _P_M_a_k_e.  This allows you  to
+     redefine  the  transformations in the system makefile if you
+     wish.
+
+     Transformation rules are used only when a target has no com-
+     mands  associated with it, both to find any additional files
+     on which it depends and to attempt to figure out just how to
+     make  the target should it end up being out-of-date.  When a
+     transformation is found for a target, another of  the  seven
+     ``local'' variables mentioned earlier is defined:
+
+          .IMPSRC (<)
+               The name/path of the source from which the  target
+               is to be transformed (the ``implied'' source).
+
+     For example, given the following makefile:
+        a.out : a.o b.o
+             $(CC) $(.ALLSRC)
+     and a directory containing the files a.o, a.c and b.c, _P_M_a_k_e
+     will  look at the list of suffixes and transformations given
+     in the built-in rules and find that the suffixes ``.c''  and
+     ``.o''  are  both  known  and there is a transformation rule
+     defined from one to  the  other  with  the  command  ``$(CC)
+     $(CFLAGS)  -c  $(.IMPSRC).''  Having found this, it can then
+     check the modification times of both a.c and b.c and execute
+     the  command  from  the  transformation rule as necessary in
+     order to update the files a.o and b.o.
+
+     _P_M_a_k_e, unlike _M_a_k_e before  it,  has  the  ability  to  apply
+     several  transformations  to a file even if the intermediate
+     files do not exist.  Given a directory containing a .o  file
+     and  a  .q file, and transformations from .q to .l, .l to .c
+     and .c to .o, _P_M_a_k_e will define a transformation from .q  ->
+     .o using the three transformation rules you defined.  In the
+     event of two paths between the same suffixes,  the  shortest
+     path  will be chosen between the target and the first exist-
+     ing file on the path.  So if there were also  a  transforma-
+     tion  from .l files to .o files, _P_M_a_k_e would use the path .q
+     -> .l -> .o instead of .q -> .l -> .c -> .o.
+
+     Once an existing file is found, _P_M_a_k_e will continue to  look
+     at  and  record  transformations until it comes to a file to
+     which nothing it knows of can be transformed, at which point
+     it will stop looking and use the path it has already found.
+
+     What happens if you have a .o file, a .q file and a .r file,
+     all  with the same prefix, and transformations from .q -> .o
+     and .r -> .o?  Which transformation  will  be  used?   _P_M_a_k_e
+     uses the order in which the suffixes were given on the ..SSUUFF--
+     FFIIXXEESS line  to  decide  between  transformations:  whichever
+
+
+
+Sprite v.1.0             4 February 1991                       20
+
+
+
+
+
+
+PMAKE                     User Commands                     PMAKE
+
+
+
+     suffix  came  first,  wins.   So  if the three suffixes were
+     declared
+        .SUFFIXES : .o .q .r
+     the .q -> .o transformation would be applied. Similarly,  if
+     they were declared as
+        .SUFFIXES : .o .r .q
+     the .r -> .o transformation would be used.  You should  keep
+     this  in  mind  when  writing  such  rules.   Note also that
+     because the placing of a suffix on a ..SSUUFFFFIIXXEESS line  doesn't
+     alter  the precedence of previously-defined transformations,
+     it is sometimes necessary to clear the whole lot of them out
+     and  start  from  scratch.  This  is what the ..SSUUFFFFIIXXEESS-only
+     line, mentioned earlier, will do.
+
+SSEEAARRCCHH PPAATTHHSS
+     _P_M_a_k_e also supports the notion of multiple directories in  a
+     more flexible, easily-used manner than has been available in
+     the past.  You can define a list of directories in which  to
+     search  for  any  and  all  files that aren't in the current
+     directory by giving the directories as sources to the  ..PPAATTHH
+     target.  The  search  will only be conducted for those files
+     used only as sources, on the assumption that files  used  as
+     targets will be created in the current directory.
+
+     The line
+        .PATH : RCS
+     would tell _P_M_a_k_e  to  look  for  any  files  it  is  seeking
+     (including ones made up by means of transformation rules) in
+     the RCS directory as well as the current one. Note, however,
+     that this searching is only done if the file is used only as
+     a source in the makefile. I.e. if the file cannot be created
+     by commands in the makefile.
+
+     A search path specific to files with a given suffix can also
+     be specified in much the same way.
+        .PATH.h : h /sprite/lib/include
+     causes the search for header files to be conducted in the  h
+     and  /sprite/lib/include  directory  as  well as the current
+     one.
+
+     When expanding wildcards, these paths are also used. If  the
+     pattern  has a recognizable suffix, the search path for that
+     suffix is used.  Otherwise, the path defined with the  regu-
+     lar ..PPAATTHH target is used.
+
+     When a file is found somewhere other than the current direc-
+     tory,  its  name  is  replaced  by  its full pathname in any
+     ``local'' variables.
+
+     Two types of suffixes are given  special  attention  when  a
+     search path is defined for them. On most systems, the C com-
+     piler lets you specify where to find header files (.h files)
+
+
+
+Sprite v.1.0             4 February 1991                       21
+
+
+
+
+
+
+PMAKE                     User Commands                     PMAKE
+
+
+
+     by  means  of --II flags similar to those used by _P_M_a_k_e.  If a
+     search path is given for any suffix used as a source for the
+     ..IINNCCLLUUDDEESS  target,  the variable $$((..IINNCCLLUUDDEESS)) will be set to
+     contain all the directories on the path, in the order given,
+     in  a format which can be passed directly to the C compiler.
+     Similarly, on some systems,  one  may  give  directories  to
+     search  for  libraries to the compiler by means of --LL flags.
+     Directories on the search path for a suffix  which  was  the
+     source  of  the  ..LLIIBBSS target will be placed in the $$((..LLIIBBSS))
+     variable ready to be passed to the compiler.
+
+LLIIBBRRAARRIIEESS AANNDD AARRCCHHIIVVEESS
+     Two other special forms of sources are recognized by  _P_M_a_k_e.
+     Any source that begins with the characters ``-l'' or ends in
+     a suffix that is a source for the ..LLIIBBSS target is assumed to
+     be   a   library,  and  any  source  that  contains  a  left
+     parenthesis in it is considered to be a member (or  members)
+     of an archive.
+
+     Libraries are treated specially mostly in how they appear in
+     the local variables of those targets that depend on them. If
+     the system supports the --LL flag when linking,  the  name  of
+     the  library  (i.e.  its  ``-l''  form) is used in all local
+     variables.  _P_M_a_k_e assumes that you  will  use  the  $(.LIBS)
+     variable  in the appropriate place.  If, however, the system
+     does not have this feature, the name is expanded to its full
+     pathname before it is placed in any local variable.
+
+     One problem with libraries is they have a table of  contents
+     in  them and when the file is touched (so the file's modifi-
+     cation time and the time listed in  the  table  of  contents
+     don't  match), the library is declared to be ``out-of-date''
+     by the linker and the final linking stage of  creating  your
+     program fails miserably. To avoid this problem, when you use
+     the --tt flag, _P_M_a_k_e updates the time of the table of contents
+     for the library, as well as the library itself.
+
+     The process of creating a library or archive can be a  pain-
+     ful one, what with all the members having to be kept outside
+     the archive as well as inside it in order to keep them  from
+     being  recreated.   _P_M_a_k_e has been set up, however, to allow
+     you to reference files that are in an  archive  in  a  rela-
+     tively  painless  manner.   The  specification of an archive
+     member is written as:
+        _a_r_c_h_i_v_e(_m_e_m_b_e_r [_m_e_m_b_e_r...])
+     Both the open and close parenthesis are required  and  there
+     may  be  any  number of members between them (except 0, that
+     is). Members may also include  wildcards  characters.   When
+     such  a  source  is examined, it is the modification time of
+     the member, as recorded in the  archive,  that  is  used  to
+     determine its datedness.
+
+
+
+
+Sprite v.1.0             4 February 1991                       22
+
+
+
+
+
+
+PMAKE                     User Commands                     PMAKE
+
+
+
+     If an archive member has no  commands  associated  with  it,
+     _P_M_a_k_e  goes  through  a special process to find commands for
+     it.  First, implicit sources are sought using the ``member''
+     portion  of the specification. So if you have something like
+     ``libcompat.a(procFork.o)'' for a target, _P_M_a_k_e attempts  to
+     find sources for the file ``procFork.o,'' even if it doesn't
+     exist. If  such  sources  exist,  _P_M_a_k_e  then  looks  for  a
+     transformation   rule   from  the  member's  suffix  to  the
+     archive's (in this case from .o -> .a) and tacks those  com-
+     mands on as well.
+
+     To make these transformations easier to write,  three  local
+     variables are defined for the target:
+
+     .ARCHIVE (%)
+          The path to the archive file.
+
+     .MEMBER (!)
+          The  actual  member  name  (literally   the   part   in
+          parentheses).
+
+     @u-3p .TARGET (@)
+          The path to the file which will be archived, if  it  is
+          only  a  source, or the same as the ..MMEEMMBBEERR variable if
+          it is also a target.
+
+     Using the transformations already in the system makefile,  a
+     makefile for a library might look something like this:
+        OBJS = procFork.o procExec.o procEnviron.o fsRead.o
+        .o.a :
+             ...
+             rm -f $(.MEMBER)
+
+        lib.a : lib.a($(OBJS))
+             ar cru $(.TARGET) $(.OODATE)
+             ranlib $(.TARGET)
+
+     You might be wondering, at this point, why I did not  define
+     the .o -> .a transformation like this:
+        .o.a :
+             ar r $(.ARCHIVE) $(.TARGET)
+             ...
+             rm -f $(.TARGET)
+     The reason is simple: you cannot execute ``ar'' on the  same
+     file  several  times  at once. If you try, you end up with a
+     corrupted archive.  So rather than reduce _P_M_a_k_e to executing
+     only  one  job at a time, I chose to archive all the out-of-
+     date files at once (this turns out to be faster anyway).
+
+OOUUTTPPUUTT
+     When creating targets in parallel, several shells  are  exe-
+     cuting  at  once,  each  wanting to write its own two cent's
+
+
+
+Sprite v.1.0             4 February 1991                       23
+
+
+
+
+
+
+PMAKE                     User Commands                     PMAKE
+
+
+
+     worth onto the screen.  This  output  must  be  captured  by
+     _P_M_a_k_e  in some way in order to prevent the screen from being
+     filled with garbage even more indecipherable  than  one  can
+     already  get  from  these  programs.   _P_M_a_k_e has two ways of
+     doing this, one of which provides for  much  cleaner  output
+     and  a  clear  delineation  between  the output of different
+     jobs, the other of which provides a more immediate  response
+     so  one  can  tell  what is really happening.  The former is
+     done by notifying the user when the creation of a given tar-
+     get starts, capturing the output, and transferring it to the
+     screen when the job finishes, preceded by an  indication  as
+     to  which  job  produced  the output.  The latter is done by
+     catching the output of the  shell  (and  its  children)  and
+     buffering it until an entire line is received, then printing
+     that line preceded by the name of the  job  from  which  the
+     line  came.  The name of the job is just the target which is
+     being created by it.  Since I prefer this second method,  it
+     is  the  one used by default.  The first method will be used
+     if the --PP flag is given to _P_M_a_k_e.
+
+PPAARRAALLLLEELLIISSMM
+     As mentioned before, _P_M_a_k_e attempts to create  several  tar-
+     gets  at once.  On some systems where load balancing or pro-
+     cess migration is in effect, the amount of concurrency which
+     can  be used will be much greater than on others. During the
+     development of _P_M_a_k_e, I found that while one could create up
+     to  five  targets  at  once  on  a  Sun 3 without making the
+     machine unusable, attempting the same feat on a Sun 2  would
+     grind  the  machine  into  the  dirt, most likely making the
+     whole process run slower than it would have under _M_a_k_e.   In
+     addition,  the use of _P_M_a_k_e on a multi-user machine (in con-
+     trast to a workstation) calls  for  judicious  use  of  con-
+     currency  to  avoid annoying the other users. The ability to
+     execute tasks in parallel, in combination with the execution
+     of  only  one  shell  per  target, brings about decreases in
+     creation time on the order of 25%-60%.
+
+     The --JJ and --LL flags are used to control the number of shells
+     executing  at once and should be used to find the best level
+     for your machine. Once this is found, the default level  can
+     be set at that point and _P_M_a_k_e recompiled.
+
+BBAACCKKWWAARRDD--CCOOMMPPAATTIIBBIILLIITTYY
+     _P_M_a_k_e was designed to be as backwards-compatible  with  _M_a_k_e
+     as  possible.   In  spite  of this, however, there are a few
+     major differences which may cause problems  when  using  old
+     makefiles:
+
+     1)   The variable substitution,  as  mentioned  earlier,  is
+          very  different  and  will  cause  problems  unless the
+          makefile is converted or the --VV flag is given.
+
+
+
+
+Sprite v.1.0             4 February 1991                       24
+
+
+
+
+
+
+PMAKE                     User Commands                     PMAKE
+
+
+
+     2)   Because  targets  are  created  in  parallel,   certain
+          sequences which depend on the sources of a target being
+          created sequentially will fail miserably. E.g.:
+             prod : $(PROGRAM) clean
+          This is liable to cause some of the object files to  be
+          removed  after  having  been created during the current
+          invocation (or, at the very  least,  the  object  files
+          will  not  be  removed when the program has been made),
+          leading to errors in  the  final  linking  stage.  This
+          problem  cannot  even  be gotten around by limiting the
+          maximum concurrency to one, since the traversal of  the
+          dependency  graph  is  done  in a breadth-first, rather
+          than a depth-first way. This can only be gotten  around
+          by  rewriting  the  makefile, or by invoking _P_M_a_k_e with
+          the --MM flag.
+
+     One other possible conflict arises because _P_M_a_k_e forks  only
+     one  shell  to  execute  the commands to re-create a target.
+     This means that changes  of  directory,  environment,  etc.,
+     remain  in  effect  throughout the creation process. It also
+     allows for a more natural entry of shell constructs, such as
+     the ``for'' and ``while'' loops in the Bourne shell, without
+     the need for backslashes and  semi-colons  required  by  the
+     one-shell-per-command paradigm used by _M_a_k_e.  This shouldn't
+     pose any serious difficulties (or even any trivial  ones  so
+     far  as  I can see), but should, in fact, make life a little
+     easier. It is, however, possible to have _P_M_a_k_e execute  each
+     command in a single shell by giving it the --BB flag.
+
+FFIILLEESS
+     Makefile or makefile      default input file
+     /sprite/lib/pmake/sys.mk  System  makefile   (the   built-in
+     rules)
+
+EENNVVIIRROONNMMEENNTT
+     PPMMAAKKEE    Flags PMake should always use when invoked.
+
+SSEEEE AALLSSOO
+     _m_a_k_e(1) for a more complete explanation  of  the  lower-case
+     flags to _P_M_a_k_e.
+
+KKEEYYWWOORRDDSS
+     make, transformation
+
+AAUUTTHHOORR
+     Adam de Boor
+
+
+
+
+
+
+
+
+
+Sprite v.1.0             4 February 1991                       25
+
+
+

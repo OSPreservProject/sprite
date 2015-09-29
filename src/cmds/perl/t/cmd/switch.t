@@ -1,0 +1,1 @@
+../../dist/t/cmd/switch.t

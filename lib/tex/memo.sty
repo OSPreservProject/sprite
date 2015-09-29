@@ -1,0 +1,286 @@
+% memo.sty 16 Apr 87
+\typeout{Document Style 'memo'. Released 16 April 1987}
+%this is the standard AF memo 
+%it uses the following info
+%   \from{..}  printed in the FROM block
+%   \to{..}    printed in the TO block
+%   \subject{..}  printed in the SUBJECT block
+%   \date{..}  if specified used in the date area, else the current date is used
+%   \signature{..} printed after memo as your signature block
+%   \begin{memo} follow this with your text
+%   \end{memo}   follow your text with this
+% You also need to use \begin{document} and \end{document}
+% You can have multiple line from, to, subject and signature blocks, just
+% separate the lines with \\
+% A separate style option is available called mfr which will only print the
+% subject block and print MEMO FOR RECORD at top of page.
+% send questions/suggestions to Capt Mark Roth, ENG, 53576, mroth@afit.arpa
+
+\def\@ptsize{0} \@namedef{ds@11pt}{\def\@ptsize{1}}
+\@namedef{ds@12pt}{\def\@ptsize{2}} 
+\@twosidefalse
+\def\ds@draft{\overfullrule 5pt} 
+\@options
+
+\lineskip 1pt \normallineskip 1pt
+\def\baselinestretch{1}
+
+\ifcase \@ptsize\relax 
+\def\@normalsize{\@setsize\normalsize{12pt}\xpt\@xpt 
+\abovedisplayskip 10pt plus2pt minus5pt\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip \z@ plus3pt\belowdisplayshortskip 6pt plus3pt minus3pt}
+\def\small{\@setsize\small{11pt}\ixpt\@ixpt
+\abovedisplayskip 8.5pt plus 3pt minus 4pt\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip \z@ plus2pt\belowdisplayshortskip 4pt plus2pt minus 2pt}
+\def\footnotesize{\@setsize\footnotesize{9.5pt}\viiipt\@viiipt
+\abovedisplayskip 6pt plus 2pt minus 4pt\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip \z@ plus 1pt\belowdisplayshortskip 3pt plus 1pt minus
+2pt}
+\def\scriptsize{\@setsize\scriptsize{8pt}\viipt\@viipt}
+\def\tiny{\@setsize\tiny{6pt}\vpt\@vpt}
+\def\large{\@setsize\large{14pt}\xiipt\@xiipt}
+\def\Large{\@setsize\Large{18pt}\xivpt\@xivpt}
+\def\LARGE{\@setsize\LARGE{22pt}\xviipt\@xviipt}
+\def\huge{\@setsize\huge{25pt}\xxpt\@xxpt}
+\def\Huge{\@setsize\Huge{30pt}\xxvpt\@xxvpt}
+\or 
+\def\@normalsize{\@setsize\normalsize{13.6pt}\xipt\@xipt
+\abovedisplayskip 11pt plus3pt minus6pt\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip \z@ plus3pt\belowdisplayshortskip 6.5pt plus3.5pt
+minus3pt}
+\def\small{\@setsize\small{12pt}\xpt\@xpt
+\abovedisplayskip 10pt plus2pt minus5pt\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip \z@ plus3pt\belowdisplayshortskip 6pt plus3pt minus3pt}
+\def\footnotesize{\@setsize\footnotesize{11pt}\ixpt\@ixpt
+\abovedisplayskip 8pt plus 2pt minus 4pt\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip \z@ plus 1pt\belowdisplayshortskip 4pt plus 2pt minus
+2pt}
+\def\scriptsize{\@setsize\scriptsize{9.5pt}\viiipt\@viiipt}
+\def\tiny{\@setsize\tiny{7pt}\vipt\@vipt}
+\def\large{\@setsize\large{14pt}\xiipt\@xiipt}
+\def\Large{\@setsize\Large{18pt}\xivpt\@xivpt}
+\def\LARGE{\@setsize\LARGE{22pt}\xviipt\@xviipt}
+\def\huge{\@setsize\huge{25pt}\xxpt\@xxpt}
+\def\Huge{\@setsize\Huge{30pt}\xxvpt\@xxvpt}
+\or 
+\def\@normalsize{\@setsize\normalsize{15pt}\xiipt\@xiipt
+\abovedisplayskip 12pt plus3pt minus7pt\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip \z@ plus3pt\belowdisplayshortskip 6.5pt plus3.5pt
+minus3pt}
+\def\small{\@setsize\small{13.6pt}\xipt\@xipt
+\abovedisplayskip 11pt plus3pt minus6pt\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip \z@ plus3pt\belowdisplayshortskip 6.5pt plus3.5pt
+minus3pt}
+\def\footnotesize{\@setsize\footnotesize{12pt}\xpt\@xpt
+\abovedisplayskip 10pt plus2pt minus5pt\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip \z@ plus3pt\belowdisplayshortskip 6pt plus3pt minus3pt}
+\def\scriptsize{\@setsize\scriptsize{9.5pt}\viiipt\@viiipt}
+\def\tiny{\@setsize\tiny{7pt}\vipt\@vipt}
+\def\large{\@setsize\large{18pt}\xivpt\@xivpt}
+\def\Large{\@setsize\Large{22pt}\xviipt\@xviipt}
+\def\LARGE{\@setsize\LARGE{25pt}\xxpt\@xxpt}
+\def\huge{\@setsize\huge{30pt}\xxvpt\@xxvpt}
+\let\Huge=\huge
+\fi
+\normalsize 
+%
+\marginparpush 5pt 
+\headheight 12pt \headsep 45pt \footheight 12pt \footskip 25pt 
+\columnsep 10pt \columnseprule 0pt 
+
+\marginparwidth 0pt \oddsidemargin  0pt \evensidemargin  0pt
+\marginparsep 0pt \topmargin   0pt \textwidth   6.5in \textheight  8.5 in
+
+\raggedbottom 
+\footnotesep 12pt \skip\footins 10pt plus 2pt minus 4pt 
+\floatsep 12pt plus 2pt minus 2pt
+\textfloatsep 20pt plus 2pt minus 4pt
+\intextsep 12pt plus 2pt minus 2pt
+\dblfloatsep 12pt plus 2pt minus 2pt
+\dbltextfloatsep 20pt plus 2pt minus 4pt
+\@maxsep 20pt
+\@dblmaxsep 20pt
+\@fptop 0pt plus 1fil
+\@fpsep 8pt plus 2fil
+\@fpbot 0pt plus 1fil
+\@dblfptop 0pt plus 1fil
+\@dblfpsep 8pt plus 2fil
+\@dblfpbot 0pt plus 1fil
+
+%
+
+\def\opening{\thispagestyle{empty}
+ \hbox to \hsize{FROM: 
+\begin{tabular}[t]{l}\ignorespaces\fromaddress 
+ \end{tabular} \hfill \today}\par
+ \medskip
+ SUBJECT: 
+\begin{tabular}[t]{l}\ignorespaces\subj
+ \end{tabular} \par
+ \medskip
+ TO: 
+\begin{tabular}[t]{l}\ignorespaces\toaddress
+ \end{tabular} \par
+ \vspace{2\parskip}
+ \par\nobreak}
+
+\long\def\closing{\par\nobreak\vspace{6\parskip}
+ \stopbreaks
+ \noindent
+ \ifx\@empty\fromsig 
+ \fromaddress
+ \else \fromsig
+ \fi\strut
+ \par}
+
+\def\ps{\par\startbreaks}
+\def\cc#1{\par\noindent
+\parbox[t]{\textwidth}{\@hangfrom{\rm cc: }\ignorespaces #1\strut}\par}
+\def\encl#1{\par\noindent
+\parbox[t]{\textwidth}{\@hangfrom{\rm encl: }\ignorespaces #1\strut}\par}
+\def\stopmemo{}
+
+%
+
+\long\def\memo{\newpage
+ \c@page\@ne
+ \interlinepenalty=200 \opening}
+\def\endmemo{\closing\stopmemo\@@par\pagebreak\@@par
+ \if@filesw 
+ \begingroup 
+ \def\protect{\string}
+ \let\\=\relax
+ \def\protect##1{\string##1\space}
+ \endgroup 
+ \fi}
+\def\stopbreaks{\interlinepenalty \@M
+ \def\par{\@@par\nobreak}\let\\=\@nobreakcr
+ \let\vspace\@nobreakvspace}
+\def\@nobreakvspace{\@ifstar{\@nobreakvspacex}{\@nobreakvspacex}}
+\def\@nobreakvspacex#1{\ifvmode\nobreak\vskip #1\relax\else
+ \@bsphack\vadjust{\nobreak\vskip #1}\@esphack\fi}
+\def\@nobreakcr{\vadjust{\penalty\@M}\@ifstar{\@xnewline}{\@xnewline}}
+\def\startbreaks{\let\\=\@normalcr
+ \interlinepenalty 200\def\par{\@@par\penalty 200}}
+\def\signature#1{\def\fromsig{#1}}
+\def\fromsig{}
+\def\subject#1{\def\subj{#1}}
+\def\subj{}
+\long\def\from#1{\def\fromaddress{#1}}
+\def\fromaddress{}
+\long\def\date#1{\def\printdate{#1}}
+\def\printdate{}
+\def\to#1{\def\toaddress{#1}}
+\def\toaddress{}
+%
+
+\def\ps@headings{\def\@oddhead{\sl \ignorespaces
+\begin{tabular}[t]{l}\ignorespaces\subj
+ \end{tabular} 
+ \hfil \today
+ \hfil Page \thepage}\def\@oddfoot{}}
+\def\ps@empty{\def\@oddhead{}\def\@oddfoot{}\def\@evenhead{}\def\@evenfoot{}}
+
+\def\ps@plain{\def\@oddhead{}\def\@oddfoot{\rm\hfil\thepage
+ \hfil}\def\@evenhead{}\let\@evenfoot\@oddfoot}
+%
+\parskip .7em \parindent 0pt \topsep .4em \partopsep 0pt \itemsep .4em 
+\@lowpenalty 51 \@medpenalty 151 \@highpenalty 301 
+\@beginparpenalty -\@lowpenalty \@endparpenalty -\@lowpenalty \@itempenalty
+-\@lowpenalty 
+
+%
+
+\leftmargini 2.5em
+\leftmarginii 2.2em \leftmarginiii 1.87em \leftmarginiv 1.7em \leftmarginv 1em
+\leftmarginvi 1em
+\leftmargin\leftmargini
+\labelwidth\leftmargini\advance\labelwidth-\labelsep
+\labelsep 5pt
+\parsep 0pt
+\let\@listi\relax
+\def\@listii{\leftmargin\leftmarginii
+ \labelwidth\leftmarginii\advance\labelwidth-\labelsep}
+\def\@listiii{\leftmargin\leftmarginiii
+ \labelwidth\leftmarginiii\advance\labelwidth-\labelsep
+ \topsep .2em 
+ \itemsep \topsep}
+\def\@listiv{\leftmargin\leftmarginiv
+ \labelwidth\leftmarginiv\advance\labelwidth-\labelsep}
+\def\@listv{\leftmargin\leftmarginv
+ \labelwidth\leftmarginv\advance\labelwidth-\labelsep}
+\def\@listvi{\leftmargin\leftmarginvi
+ \labelwidth\leftmarginvi\advance\labelwidth-\labelsep}
+
+\def\labelenumi{\arabic{enumi}.} 
+\def\theenumi{\arabic{enumi}} 
+\def\labelenumii{(\alph{enumii})}
+\def\theenumii{\alph{enumii}}
+\def\p@enumii{\theenumi}
+\def\labelenumiii{\roman{enumiii}.}
+\def\theenumiii{\roman{enumiii}}
+\def\p@enumiii{\theenumi(\theenumii)}
+\def\labelenumiv{\Alph{enumiv}.}
+\def\theenumiv{\Alph{enumiv}} 
+\def\p@enumiv{\p@enumiii\theenumiii}
+
+\def\labelitemi{$\bullet$}
+\def\labelitemii{\bf --}
+\def\labelitemiii{$\ast$}
+\def\labelitemiv{$\cdot$}
+\def\verse{\let\\=\@centercr 
+ \list{}{\itemsep\z@ \itemindent -15pt\listparindent \itemindent 
+ \rightmargin\leftmargin\advance\leftmargin 15pt}\item[]}
+\let\endverse\endlist
+\def\quotation{\list{}{\listparindent 1.5em
+ \itemindent\listparindent
+ \rightmargin\leftmargin}\item[]}
+\let\endquotation=\endlist
+\def\quote{\list{}{\rightmargin\leftmargin}\item[]}
+\let\endquote=\endlist
+
+\def\descriptionlabel#1{\hfil \it #1}
+\def\description{\list{}{\leftmargin\descriptionmargin
+ \labelwidth\leftmargin \advance\labelwidth -\labelsep 
+ \let\makelabel\descriptionlabel}}
+\let\enddescription\endlist
+\newdimen\descriptionmargin
+\descriptionmargin=3em
+%
+
+\def\theequation{\arabic{equation}}
+
+\arraycolsep 5pt \tabcolsep 6pt \arrayrulewidth .4pt \doublerulesep 2pt 
+\tabbingsep \labelsep 
+\skip\@mpfootins = \skip\footins
+\fboxsep = 3pt \fboxrule = .4pt 
+%
+\def\footnoterule{\kern-1\p@ 
+ \hrule width .4\columnwidth 
+ \kern .6\p@} 
+
+\long\def\@makefntext#1{\noindent \hangindent 5pt\hbox 
+ to 5pt{\hss $^{\@thefnmark}$}#1}
+
+%
+\c@topnumber=2
+\def\topfraction{.7}
+\c@bottomnumber=1
+\def\bottomfraction{.3}
+\c@totalnumber=3
+\def\textfraction{.2}
+\def\floatpagefraction{.5}
+\c@dbltopnumber= 2
+\def\dbltopfraction{.7}
+\def\dblfloatpagefraction{.5}
+%
+\def\today{\ifx\@empty\printdate\number\day\space\ifcase\month\or
+ January\or February\or March\or April\or May\or June\or
+ July\or August\or September\or October\or November\or December\fi
+ \space\number\year
+\else \printdate\fi}
+
+%
+\smallskipamount=.5\parskip \medskipamount=\parskip
+\bigskipamount=2\parskip
+\ps@headings \pagenumbering{arabic} \onecolumn \@fileswfalse 

@@ -1,0 +1,486 @@
+			    Sprite on Mach
+
+			     Mike Kupfer
+		  University of California, Berkeley
+
+Abstract
+
+Sprite is a distributed operating system that supports a fast
+single-image network file system and transparent process migration.
+Over a period of 19 months I ported Sprite to run as a server on top
+of the Mach 3.0 microkernel.  Although the resulting server does not
+implement some Sprite features, it can run in an existing Sprite
+cluster, and it supports standard UNIX programs like vi, gcc, and
+make.
+
+Porting Sprite to Mach was generally straightforward, though there
+were some difficulties.  Many of the problems were related to
+asynchronous interactions between the Sprite server, Mach, and Sprite
+user processes.  Others resulted from trying to maintain native
+Sprite's internal interfaces in the Sprite server.
+
+Although machine-dependent code accounts for 14% of the source lines
+in the Sprite kernel, it accounts for only 1% of the source lines in
+the Sprite server.  I believe that this will significantly simplify
+porting Sprite to new hardware platforms.  Unfortunately, the Sprite
+server runs the Andrew benchmark at only 38% of the speed of native
+Sprite.  None of the performance problems appear insurmountable, but
+they could require a long time to track down and fix.
+
+
+1. Introduction
+
+Sprite is a distributed operating system that was developed at the
+University of California, Berkeley [1].  It features a fast
+single-image network file system [2], transparent process migration
+[3], and a high-performance log-structured local filesystem [4].
+Sprite was originally written to support the SPUR multiprocessor
+project at Berkeley [5], so the kernel is multi-threaded and uses
+fine-grain locking.
+
+I have ported the Sprite kernel to run as a server on top of Mach
+3.0.  The server does not have complete Sprite functionality, but it
+can run most UNIX commands as a client of native Sprite file servers.
+I used the modified Andrew benchmark [8] to partially tune the server
+and to analyze the remaining performance problems.
+
+In the following sections I will explain why I ported Sprite to Mach;
+I will sketch the design of the Sprite server, with particular
+attention to some of the problem areas; I will discuss the relative
+sizes and portability of native Sprite and the Sprite server; I will
+analyze the performance of the Sprite server; I will evaluate the
+success of the Sprite server; and I will present some conclusions that
+I have drawn.
+
+
+2. Why mix Sprite and Mach?
+
+The Sprite project became interested in Mach for three reasons: to
+make Sprite more portable, to make Sprite easier to distribute to
+external sites, and to verify whether Mach is a suitable platform for
+building distributed systems.
+% Sprite currently
+% runs on the DECStation 5000 and on Sun SPARC systems.  In the past it
+% has also run on the DECStation 3100, the Sun 2, the Sun 3, prototype
+% SPUR systems, and the Sequent Symmetry.  Most of these ports were
+% performed by students in the Sprite group.  These ports were
+% time-consuming and delayed progress on the students' research work.
+% It was hoped that by putting Sprite on top of Mach, the Sprite group
+% could leave the hardware ports to the Mach community, freeing the
+% Sprite group to concentrate on more interesting research projects.
+
+(The full paper will elaborate on these reasons.  The portability and
+software distribution issues are a result of the small size of the
+Sprite group.  The discussion about Mach being a suitable platform
+will mention the UX server and the shared memory server as being the
+only relevant prior art for a highly-networked system like Sprite.  I
+will claim that Sprite stresses Mach more than either of these
+servers, and we in the Sprite group were concerned about possible
+performance problems in the network code.)
+
+These project goals led to the following design goals.  First, the
+revised Sprite system should be highly portable.  This led to
+implementing Sprite as a server, under the assumption that
+machine-dependent code such as device drivers and memory management
+would be written by the Mach community, not the Sprite group.  A
+second goal was simplicity, so as not to complicate future Sprite
+research work.  A third goal was to minimize changes to existing
+Sprite code.  The point of this goal was to minimize development time
+and to simplify synchronizing native Sprite code changes with the
+Sprite server.  It led to a single-server, rather than a multi-server,
+approach.  The fourth goal was to get performance comparable to native
+Sprite.  Slight performance degradation was considered acceptable
+in return for improved portability.
+
+
+3. Design of the Sprite server
+
+As a first approximation, Mach can be thought of as a high-level
+abstract machine.  It provides processes, scheduling, a simple
+interface for accessing a process's memory, and a machine-independent
+interface for accessing local devices such as disks or networks.  The
+C Threads library provides threads, locks, and condition variables.
+Thus the first step in porting Sprite was to rip out all the low-level
+native code whose functionality was already provided by Mach,
+replacing it with a facade that maintains Sprite's internal
+interfaces.  This process is similar to the transformation that was
+used to implement the ``UX'' UNIX server [6, 7].
+
+On the user side, emulation code was added to the C runtime library.
+This code translates Sprite system calls into Matchmaker RPC requests
+to the Sprite server.  Again, this setup is similar to the one used in
+the UNIX server.
+
+One important difference between the UNIX and Sprite servers is how
+they use external pagers.  The UNIX server provides an external pager
+for mapped files, including program text, but it uses the Mach default
+pager for swap storage (i.e., a process's heap and stack).  The Sprite
+server provides an external pager that backs the entire address space
+of a user process, including its heap and stack.  This design lets a
+process page from a network file server, as is done in native Sprite.
+Sprite uses this feature to support diskless operation - almost all
+Sprite workstations are diskless - and to support process migration.
+
+Most of the changes to port Sprite to Mach were straightforward.
+Nonetheless, some changes presented unexpected difficulties.  Many of
+the problems were related in some way to asynchronous interactions
+between the Sprite server, Sprite user processes, and Mach.  For
+example, some data structures, such as memory objects and process
+table entries, are logically shared between the Sprite server and
+Mach, and special care is needed to ensure that the data structures
+are not freed prematurely or leaked.  (The full paper will elaborate
+on one or both of these examples, depending on space availability,
+with pictures.  If there is space, it will also discuss a race in the
+implementation of sbrk() and complications to handling copyin errors.)
+No single problem was insurmountable, but each required extra time to
+get the details of the design and implementation correct.
+
+% For example, consider what happens when a process maps a file and then
+% exits.  The Sprite server cannot free its internal representation of
+% the mapped file until it receives a memory_object_terminate
+% notification from the Mach kernel.  Now consider what happens if a new
+% user process tries to map the same file before the previous mapping
+% has been cleaned up.  Should the server create a new object to
+% represent the mapping?  Should it wait for the old one to be
+% destroyed?
+
+A similar problem was how to invoke a user signal handler for signals
+that are generated asynchronously.  (The full paper will explain this
+in more detail.  The current implementation does not support
+asynchronous signal delivery when there is a user handler for the
+signal.  Instead the server passes back a ``pending signal'' flag for
+almost all requests.  If this flag is set, the emulation library gets
+the signal information and invokes the handler.)
+
+% In native Sprite the kernel can
+% simply wait until the user process returns from a time slice interrupt
+% or system call.  Strictly speaking, this is not an option for the
+% Sprite server because the process could be in an infinite loop waiting
+% for a signal.  Instead the server can freeze the process, change its
+% registers and stack to invoke the signal handler, and resume the
+% process.  Unfortunately, if the user process is making a Mach system
+% call, signal delivery should be delayed until the system call is
+% complete.  Because of the potential complexity and performance
+% problems associated with a general solution (e.g., looking at the
+% process's program counter), we decided not to attempt asynchronous
+% signal delivery when there is a signal handler.  Instead Sprite calls
+% return a flag to the emulation library saying that there is a pending
+% signal, and the emulation library makes a special call to invoke the
+% signal handler.  We expect this design to be acceptable in practice.
+
+Maintaining Sprite's internal process interface was also complicated
+in places.  Native Sprite is like UNIX in that user processes run in
+``kernel mode'' after an interrupt or after executing a trap.  As a
+consequence, native Sprite was designed so that a process can kill or
+suspend only itself.  An attempt to kill or suspend a different
+process is simply a request, which the target process eventually acts
+on.  In contrast, the Sprite server is a separate Mach task that user
+processes invoke via RPCs.  The server can simulate the effects of
+traps and interrupts through an internal pool of threads, but there
+are some problems with this approach.  First, special care is needed,
+e.g., in exit() and exec(), to ensure that the threads correctly
+manage internal resources like buffers.  Second, because the Sprite
+server does not handle time slice interrupts, it cannot guarantee that
+user processes will notice attempts to kill or suspend them.  Thus,
+unlike in native Sprite, user processes must be able to kill or
+suspend other user processes.  This requirement led to many changes in
+the locking strategy employed by the process management and signals
+code in Sprite, and these changes were the source of many bugs.
+% Deadlocks in the exit() code were common during development and
+% testing.
+% Special code to handle suspension is needed in the system request
+% code, in case a process is suspended after it has submitted a
+% request but before the request has been acted on.  Also, native
+% Sprite integrates suspension with the sched/sync code; the server
+% requires that ugly wait loop.
+
+
+4. Status and code measurements
+
+This section explains the current status of the Sprite server and
+presents some code size measurements.
+
+I developed the Sprite server over a period of 19 months.  The first 7
+months of the project were a half-time effort; the remaining 12 months
+were full-time, including 2.5 months of performance tuning.  I began
+development on a Sun 3 but later moved to a DECStation 5000.
+
+% Moved to ds5000 for performance reasons and to avoid having to deal
+% with signals support for 2 architectures.
+
+The Sprite server supports standard UNIX programs like vi, gcc, and
+make.  Nonetheless, the implementation is still a prototype, and it
+lacks some important features.  The server design includes support for
+these features; I simply lacked the time to implement them.  The
+missing features include
+
+- binary compatibility (with both the vendor operating system and
+  native Sprite) 
+- local disk access
+- support for debugging user processes
+- process migration
+
+A Sprite DECStation kernel with the same functionality as the Sprite
+server contains roughly 143,000 lines of code, of which 27,000 lines
+are machine-dependent, including 3600 lines of assembly code.  The
+Sprite server contains 111,000 lines of code, of which 1300 lines are
+machine-dependent.  The server contains 4 lines of assembly code to
+help debug locking errors.
+
+In going from native Sprite to the Sprite server, I preserved about
+90,000 lines of code (63%).  I threw away another 39,000 lines of
+code (27%), and I rewrote the remaining code, about 14,000 lines
+(10%), for use with Mach.  The thrown away code consisted of low-level
+(and often machine-dependent) code for device, process, and memory
+management, plus code that duplicated Mach functionality (e.g., the
+process scheduler and a kernel debugger).  Most of the rewritten code
+was for process and memory management, ``system call'' support, and
+Sprite's internal lock package.
+
+To support the missing functionality mentioned earlier in this
+section, I would have to port an additional 58,000 lines of code, of
+which 2400 lines are machine-dependent.  I expect that about 52,000
+lines of this code would not require change, another 2000 lines would
+get thrown away, and the remaining 4000 lines would get rewritten.
+
+(The full paper will use bar charts to present some or all of these
+numbers.)
+
+
+5. Performance
+
+Due to time constraints, I used only one benchmark to tune the Sprite
+server: the modified Andrew benchmark [8].  This benchmark copies a
+file tree, scans the tree several times, and then compiles some window
+system code.  Unless otherwise noted, all the performance numbers in
+this section were obtained on a DECStation 5000 with at least 32
+megabytes of memory, using files stored on a native Sprite file
+server.
+
+As (will be) shown in the table, native Sprite runs the benchmark in
+91 seconds.  The UNIX server (UX34) and Ultrix 4.2, using only
+local files, need around 118 seconds.  The time for Ultrix 4.2 goes up
+to 141 seconds when the files are on a Prestoserve-equipped NFS
+server.  The Sprite server's fastest time for the benchmark is 237
+seconds.
+
+Early versions of the Sprite server required around 440 seconds to run
+the benchmark.  Most of the performance fixes to reach the current
+time were in three areas: caching of text segments, reduced Sprite RPC
+latency, and more efficient string management in exec().  (The full
+paper will explain these in more detail and tell how much they
+contributed to the overall improvement.)
+
+I have analyzed the 146 second gap between native Sprite and the
+Sprite server, and I can explain about 98 seconds of it.  I know
+more or less where the remaining 48 seconds are being spent, but not
+why.  Tuning stopped when I changed employers in July 1992.
+
+The paper will explain the current top 5 understood or partially
+understood bottlenecks.  They are
+
+(1) overhead in fork() from copying the heap and stack, which accounts
+for 45 seconds.  This problem is present because Mach does not
+currently support copy-on-write for externally managed memory objects.
+
+(2) copyin/copyout delays for read() and write(), which account for 18
+seconds.  The UNIX server uses mapped files to avoid this problem.  A
+similar approach for Sprite is not straightforward, because Sprite
+doesn't support consistent access to mapped files that are shared by
+multiple clients.
+
+(3) higher Sprite RPC latency (despite the improvements made during
+tuning), which accounts for 11 seconds.  I suspect that most of the
+time is spent in the Mach networking code, though I was unable to
+verify this for the network input path.
+
+(4) overhead after exec() from faulting in heap and stack pages, which
+accounts for 8 seconds.  The Sprite server currently creates new heap
+and stack segments in exec(); I expect that a better approach is to
+zero out and reuse the old segments.
+
+(5) unexplained Sprite ``system call'' time, which accounts for 8
+seconds.  I suspect that this problem results from unnecessary
+context switching, and that it can be fixed by changing how the Sprite
+server garbage collects process table entries.
+
+% Put a summary (a short, coherent summary) of the 5 items here?
+
+% Of the understood bottlenecks, the largest is in fork().  Although the
+% Mach external pager interface supports copy-on-write copying of memory
+% objects, the implementation is broken, so the benchmark spends 45
+% seconds just copying heap and stack pages.  The UNIX server avoids
+% this problem by using the default pager for user heaps and stacks, but
+% as explained earlier, this is not an option for Sprite.  Fortunately,
+% there are plans to fix copy-on-write for externally managed memory
+% objects [JSB private comm.].
+% 
+% The next largest bottleneck (18 seconds) is spent copying bytes to and
+% from user space, mostly for read() and write().  Our measurements
+% indicate that the real culprit is the cost of the cross-address-space
+% memory operations, rather than the bcopy cost just to move the bytes.
+% The UNIX server uses mapped files to avoid this bottleneck [ref UX
+% paper and Dean/Armand paper].
+% Unfortunately, mapped files in Sprite do not enjoy the same network
+% consistency guarantees that files accessed through a read/write
+% interface enjoy.  This is not an inherent flaw in Sprite's design, but
+% fixing it would require changes to native Sprite as well as to the
+% Sprite server.  It may be worth exploring other alternatives (e.g.,
+% having the server cache mappings into user processes) before resorting
+% to mapped files.
+% 
+% Another large slowdown in the system is caused by an increase in RPC
+% latency.  Native Sprite can do a null RPC between two DECstation 5000s
+% in 0.85 milliseconds.  The null RPC time between the Sprite server and
+% a native Sprite system is 2.2 milliseconds.  For the Andrew benchmark,
+% which causes about 8200 Sprite RPCs, this translates to a
+% slowdown of about 11 seconds.  It's not clear what the right solution
+% is for this problem.  (Adopt NORMA RPC?  (See 1992 Mach Usenix paper;
+% is it applicable?)  Replace the packet filter architecture with the
+% OSF proposal?  Use the X-kernel?)
+% 
+% Another slowdown is caused by unnecessary faults during exec().  The
+% Sprite server currently destroys and recreates the heap and stack
+% segments during exec().  The Andrew benchmark causes about
+% 8300 heap and stack faults; at 1 millisecond per fault (where does
+% this number come from??), this causes a delay of about 8 seconds.  To
+% fix this problem, the Sprite server can reuse heap and stack segments.
+% Unfortunately, it will return once the Sprite server starts using
+% copy-on-write for fork().
+% 
+% Another large bottleneck is in the code that processes Sprite "system
+% calls" (really MIG calls) from Sprite user processes.  After comparing
+% the UNIX server "system call" times with the Sprite server times, we
+% estimate that this bottleneck is adding 8 seconds to the Andrew
+% benchmark time.  We think that this is due to excessive context
+% switches in that part of the Sprite server, but this hypothesis has
+% not yet been verified.
+
+
+6. Evaluation
+
+This section will evaluate the Sprite server according to the design
+goals presented earlier in the paper: portability, simplicity,
+minimizing changes to native Sprite, and performance.
+
+The Sprite server appears to be highly portable.  It contains less
+code than an equivalent Sprite kernel, plus there is very little
+machine-dependent code and essentially no assembly code.  The
+unimplemented code from native Sprite is mostly machine-independent,
+so a fully functional Sprite server should still be very portable.
+
+Although the Sprite server is not as simple as I'd like (because of
+the design complications described in section 3), most of the Sprite
+server design and implementation were straightforward, and debugging
+the server with gdb was generally easy.  In fact, I was able to
+track down some bugs from native Sprite that had long been puzzling
+the Sprite group.
+
+Porting Sprite to Mach involved an acceptably small number of changes
+to native Sprite.  Most of the server code is identical to the kernel
+code from which it is derived, and I made few changes to Sprite's
+internal interfaces.  Furthermore, the Sprite server runs in an
+existing Sprite cluster.  No changes - other than adding a new machine
+type - were made to the native Sprite systems to accommodate the
+Sprite server.
+
+Unfortunately, I was not able to meet my performance goal.  Assuming
+that I can apply the fixes that I know of or expect to see soon, I am
+still left with a performance of about 165 seconds for the Andrew
+benchmark, which is still worse than Ultrix using NFS.  I believe that
+additional tuning could reduce the benchmark time even further, though
+this would probably be a time-consuming task.
+
+
+7. Future work
+
+As mentioned earlier in the paper, I am no longer employed by the
+University of California, and it is unlikely that anyone will do
+additional work on the Sprite server.  If development were to
+continue, the obvious first task would be to continue performance
+tuning.  More work is needed to make the Sprite server perform
+adequately on the Andrew benchmark, and there are other benchmarks
+that the server should be tested on.  Furthermore, a
+production-quality Sprite server would require the remaining
+functionality mentioned in section 4.  
+% mention the WPI synthetic benchmarks [ref]?  It would be nice 
+% if you could find a different reference?  (Reread the Mach workshop 
+% paper; maybe it's better than you remember.)
+
+In addition to mundane development work, it would be useful to conduct
+additional research using the Sprite server.  For example, it would be
+interesting to compare the performance of the Sprite server with the
+performance of a similar server that uses Mach IPC for access to
+remote devices or process migration.
+% Look at the FS/VM cache boundary stuff?
+
+
+8. Conclusions
+
+Porting Sprite to Mach was a mixed success.  On the one hand, it
+greatly reduced the amount of machine-dependent code in Sprite, which
+should make Sprite much easier to port to new hardware.  The
+asynchronous interfaces provided by Mach require some unpleasant
+complexity in the Sprite server, but this complexity is manageable.
+On the other hand, the server is almost unusably slow, and it appears
+that much work is still needed to bring performance within striking
+distance of the native system.
+
+At least one third of the performance gap results from the distributed
+nature of Sprite.  However, the slowdown is not primarily due to RPC
+latency or throughput problems.  Rather, it is due to the Sprite
+server's heavy use of an external pager, plus problems such as its
+inability to use mapped files to avoid copy overhead.  The lesson here
+seems to be that there is more to high-performance distributed systems
+than fast communication, and Mach 3.0 currently does not support some
+designs as well as others.  For some problems (e.g., copy-on-write for
+external pagers) it should be possible to fix Mach, but in other cases
+(e.g., use of mapped files for performance), it may be necessary to
+redesign the server instead.
+
+Thus, if I ask whether it is worth porting an existing operating
+system to run on top of Mach, the answer is ``maybe.''  For a research
+system like Sprite, with its small development community, increased
+portability seems attractive enough to warrant a large one-time
+porting and tuning effort.  For commercial systems, though, a more
+portable server seems less alluring, particularly if the vendor has to
+port Mach as well.  I think that commercial vendors will have to
+consider the potential benefits of Mach other than portability before
+deciding to base their systems on it.
+
+
+References
+
+[1]	John Ousterhout et al, ``The Sprite Network Operating
+	System'', IEEE Computer, February 1988.
+
+[2]	Brent Welch, ``Naming, State Management, and User-Level
+	Extensions in the Sprite Distributed File System'', University
+	of California, Berkeley, Technical Report UCB/CSD 90/567,
+	February 1990.
+
+[3]	Fred Douglis and John Ousterhout, ``Transparent Process
+	Migration: Design Alternatives and the Sprite
+	Implementation'', Software--Practice & Experience, July 1991.
+
+[4]	Mendel Rosenblum and John Ousterhout, ``The Design and
+	Implementation of a Log-Structured File System'', Proc.
+	Symposium on Operating Systems Principles, October 1991.
+
+[5]	M. D. Hill et al, ``Design Decisions in SPUR'', IEEE Computer,
+	November 1986.
+
+[6]	David Golub et al, ``UNIX as an Application Program'', Proc.
+	Summer 1990 USENIX Conference, June 1990.
+
+[7]	David L. Black et al, ``Microkernel Operating System
+	Architecture and Mach'', Proc. USENIX Microkernel Workshop,
+	April 1992.
+
+[8]	John Ousterhout, ``Why Aren't Operating Systems Getting Faster
+	As Fast as Hardware?'', Proc. Summer 1990 USENIX Conference,
+	June 1990.
+
+% [9]	Ken Shirriff and John Ousterhout, ``A Trace-driven Analysis of
+% 	Name and Attribute Caching in a Distributed File System'',
+% 	Proc. Winter 1992 USENIX Conference, January 1992.

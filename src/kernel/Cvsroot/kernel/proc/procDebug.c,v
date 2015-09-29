@@ -1,0 +1,1830 @@
+head     9.8;
+branch   ;
+access   ;
+symbols  ds3100:9.8 sun3:9.8 sun4nw:9.6 symm:9.6 spur:9.6 sprited:9.6.1 Summer89:9.0 newlib:8.0 Summer88:6.0 argString:5.3;
+locks    ; strict;
+comment  @ * @;
+
+
+9.8
+date     92.08.18.11.11.22;  author jhh;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     92.01.06.15.05.24;  author kupfer;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.09.12.13.57.49;  author jhh;  state Exp;
+branches 9.6.1.1;
+next     9.5;
+
+9.5
+date     90.09.06.17.56.42;  author jhh;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.07.29.15.47.36;  author shirriff;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.05.27.13.47.46;  author shirriff;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.26.15.21.41;  author douglis;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.12.12.20.30;  author jhh;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.14.17;  author douglis;  state Stable;
+branches ;
+next     8.10;
+
+8.10
+date     89.08.22.14.56.16;  author douglis;  state Exp;
+branches ;
+next     8.9;
+
+8.9
+date     89.07.10.19.11.02;  author nelson;  state Exp;
+branches ;
+next     8.8;
+
+8.8
+date     89.05.30.16.12.50;  author jhh;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.05.30.12.25.30;  author douglis;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.04.06.12.07.20;  author jhh;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.03.21.20.04.19;  author mgbaker;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.02.19.22.06.38;  author jhh;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.01.06.11.22.23;  author jhh;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.12.22.09.14.40;  author douglis;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.12.04.15.16.25;  author ouster;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.28.51;  author douglis;  state Stable;
+branches ;
+next     6.2;
+
+6.2
+date     88.10.27.20.00.14;  author mlgray;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.31.17.54.35;  author douglis;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.21.20;  author brent;  state Stable;
+branches ;
+next     5.13;
+
+5.13
+date     88.07.25.17.01.39;  author douglis;  state Exp;
+branches ;
+next     5.12;
+
+5.12
+date     88.07.08.16.03.31;  author douglis;  state Exp;
+branches ;
+next     5.11;
+
+5.11
+date     88.05.04.16.47.16;  author nelson;  state Exp;
+branches ;
+next     5.10;
+
+5.10
+date     88.04.27.18.55.32;  author nelson;  state Exp;
+branches ;
+next     5.9;
+
+5.9
+date     88.04.21.11.02.44;  author nelson;  state Exp;
+branches ;
+next     5.8;
+
+5.8
+date     88.04.18.09.10.31;  author ouster;  state Exp;
+branches ;
+next     5.7;
+
+5.7
+date     88.04.13.11.27.15;  author ouster;  state Exp;
+branches ;
+next     5.6;
+
+5.6
+date     88.03.28.16.07.47;  author nelson;  state Exp;
+branches ;
+next     5.5;
+
+5.5
+date     88.03.24.16.29.53;  author brent;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     88.03.24.11.46.19;  author douglis;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     87.12.12.16.40.04;  author nelson;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.10.27.16.20.03;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.09.25.13.12.15;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.31.18.51.43;  author root;  state Exp;
+branches ;
+next     ;
+
+9.6.1.1
+date     91.08.15.20.51.45;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.8
+log
+@ProcGetThisDebug was locking the pcb inside the debug monitor, which was
+the opposite order that other routines did it, causing deadlocks.
+@
+text
+@/*
+ *  procDebug.c --
+ *
+ *	Routines to debug a process.  This file maintains a monitor that 
+ *	synchronizes access to the debug list.  Routines in this monitor
+ *	are responsible for the following fields in the proc table:
+ *
+ *	    PROC_DEBUGGED, PROC_ON_DEBUG_LIST, PROC_SINGLE_STEP_FLAG,
+ *	       and PROC_DEBUG_WAIT can be set in the genFlags field.
+ *
+ *	The PROC_DEBUGGED flag is set when a process is being actively debugged
+ *	by a debugger.  It is not cleared until a debugger issues the
+ *	PROC_DETACH_DEBUGGER debug command.  The PROC_ON_DEBUG_LIST flag is
+ *	set when a process is put onto the debug queue and cleared when
+ *	it is taken off.
+ *
+ * Copyright 1986, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/proc/procDebug.c,v 9.7 92/01/06 15:05:24 kupfer Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <proc.h>
+#include <procInt.h>
+#include <procMigrate.h>
+#include <status.h>
+#include <sync.h>
+#include <sched.h>
+#include <sys.h>
+#include <list.h>
+#include <stdlib.h>
+#include <vm.h>
+
+Sync_Condition	debugListCondition;	/* Condition to sleep on when
+						 * waiting for a process to go
+						 * onto the debug list. */
+static Sync_Lock debugLock; 			/* Monitor lock. */
+#define LOCKPTR &debugLock
+
+List_Links	debugListHdr;
+List_Links	*debugList = &debugListHdr;
+
+static	ENTRY	void		AddToDebugList _ARGS_((
+				    Proc_ControlBlock *procPtr));
+static	ENTRY	void		RemoveFromDebugList _ARGS_((
+				    Proc_ControlBlock *procPtr));
+static	ENTRY	ReturnStatus	ProcGetThisDebug _ARGS_((Proc_PID pid,
+				    Proc_ControlBlock **procPtrPtr));
+static	ENTRY	ReturnStatus	ProcGetNextDebug _ARGS_((Address destAddr,
+				    Proc_ControlBlock **procPtrPtr));
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_DebugInit --
+ *
+ *	Initialize the debug list.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The debug list is initialized.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+ProcDebugInit()
+{
+    List_Init(debugList);
+    Sync_LockInitDynamic(&debugLock, "Proc:debugLock");
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_Debug --
+ *
+ *	This routine is used to debug a process. This routine is not
+ *	inside the monitor. 
+ *
+ * Results:
+ *	SYS_INVALID_ARG - 	buffer address was invalid.
+ *	PROC_INVALID_PID - 	The pid was out-of-range or specified a
+ *				non-existent process.
+ *	SYS_ARG_NOACCESS - 	The buffers were not accessible.
+ *
+ * Side effects:
+ *	The process state and address space may be updated.
+ *	A process may be removed from the debug list.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Proc_Debug(pid, request, numBytes, srcAddr, destAddr)
+    Proc_PID 		pid;		/* Process id of the process to be 
+					 * debugged. */
+    Proc_DebugReq 	request; 	/* Type of action on the debugged 
+					 * process. */
+    int 		numBytes;	/* # of bytes of info to be read or 
+					 * written. */
+    Address 		srcAddr;	/* Location (either in caller or pid) 
+					 * where info is to be read. */
+    Address 		destAddr;	/* Location (either in caller or pid) 
+					 * where info info is to be written. */
+{
+    register Proc_ControlBlock 	*procPtr = (Proc_ControlBlock *) NIL;
+    Proc_DebugState		debugState;
+    int				i;
+    ReturnStatus		status = SUCCESS;
+    Proc_ControlBlock		*tProcPtr;
+
+    /*
+     * If the caller is trying to manipulate a debugged process make sure that
+     * the process is actually in the debug state.
+     */
+    if (request != PROC_GET_NEXT_DEBUG && request != PROC_GET_THIS_DEBUG) {
+	procPtr = Proc_LockPID(pid);
+	if (procPtr == (Proc_ControlBlock *) NIL || 
+	    !(procPtr->genFlags & PROC_DEBUGGED) ||
+	    (procPtr->genFlags & PROC_ON_DEBUG_LIST) ||
+	    procPtr->state != PROC_SUSPENDED ||
+	    ((procPtr->genFlags & PROC_KILLING) && request==PROC_CONTINUE)) {
+	    if (procPtr != (Proc_ControlBlock *) NIL) {
+		Proc_Unlock(procPtr);
+	    }
+	    return (PROC_INVALID_PID);
+	}
+    }
+
+    switch (request) {
+	case PROC_GET_THIS_DEBUG:
+	    status = ProcGetThisDebug(pid, &tProcPtr);
+	    procPtr = tProcPtr;
+	    break;
+	    
+	case PROC_GET_NEXT_DEBUG: {
+	    status = ProcGetNextDebug(destAddr, &tProcPtr);
+	    procPtr = tProcPtr;
+	    break;
+	}
+
+	case PROC_SINGLE_STEP:
+            procPtr->genFlags |= PROC_SINGLE_STEP_FLAG;
+	    procPtr->specialHandling = 1;
+	    /* Fall through to ... */
+	    
+	case PROC_CONTINUE:
+	    Sched_MakeReady(procPtr);
+	    break;
+
+	case PROC_GET_DBG_STATE:
+
+	    debugState.processID	= procPtr->processID;
+	    debugState.termReason	= procPtr->termReason;
+	    debugState.termStatus	= procPtr->termStatus;
+	    debugState.termCode		= procPtr->termCode;
+	    Mach_GetDebugState(procPtr, &debugState);
+	    debugState.sigHoldMask	= procPtr->sigHoldMask;
+	    debugState.sigPendingMask	= procPtr->sigPendingMask;
+	    for (i = 0; i < SIG_NUM_SIGNALS; i++) {
+		debugState.sigActions[i]	= procPtr->sigActions[i];
+		debugState.sigMasks[i]		= procPtr->sigMasks[i];
+		debugState.sigCodes[i]		= procPtr->sigCodes[i];
+	    }
+
+	    if (Vm_CopyOut(sizeof(Proc_DebugState), (Address) &debugState, 
+			   destAddr)) {
+		status = SYS_ARG_NOACCESS;
+	    }
+	    break;
+
+	case PROC_SET_DBG_STATE:
+
+	    if (Vm_CopyIn(sizeof(Proc_DebugState), srcAddr, 
+				(Address) &debugState)) {
+		status = SYS_ARG_NOACCESS;
+	    } else {
+		Mach_SetDebugState(procPtr, &debugState);
+		Sig_ChangeState(procPtr, debugState.sigActions,
+				debugState.sigMasks, debugState.sigPendingMask,
+				debugState.sigCodes, debugState.sigHoldMask);
+	    }
+	    break;
+
+#define MAX_REQUEST_SIZE 16384
+
+	case PROC_READ:
+	    if (numBytes > MAX_REQUEST_SIZE) {
+		status = SYS_INVALID_ARG;
+	    } else {
+		/*
+		 * Read from the debuggee to the debugger.
+		 */
+		status = Vm_CopyInProc(numBytes, procPtr, srcAddr, 
+				       destAddr, FALSE);
+	    }
+
+	    break;
+
+	case PROC_WRITE:
+	    if (numBytes > MAX_REQUEST_SIZE) {
+		status = SYS_INVALID_ARG;
+		break;
+	    }
+
+	    /*
+	     * Make sure that the range of bytes is writable.
+	     */
+	    Vm_ChangeCodeProt(procPtr, destAddr, numBytes, TRUE);
+	    /*
+	     * Write from the debugger to the debuggee.
+	     */
+	    status = Vm_CopyOutProc(numBytes, srcAddr, FALSE,
+				    procPtr, destAddr);
+	    /*
+	     * Change the protection back.
+	     */
+	    Vm_ChangeCodeProt(procPtr, destAddr, numBytes, FALSE);
+	    Vm_FlushCode(procPtr, destAddr, numBytes);
+
+	    break;
+
+	case PROC_DETACH_DEBUGGER:
+	    /*
+	     * Detach from this process.  This has the side effect of 
+	     * continuing the process as if a resume signal had been sent.
+	     */
+	    procPtr->genFlags &= ~(PROC_DEBUGGED | PROC_DEBUG_WAIT);
+	    Sched_MakeReady(procPtr);
+	    procPtr->termReason = PROC_TERM_RESUMED;
+	    procPtr->termStatus = SIG_RESUME;
+	    procPtr->termCode = SIG_NO_CODE;
+	    Proc_InformParent(procPtr, PROC_RESUME_STATUS);
+	    break;
+
+	default:
+	    status = SYS_INVALID_ARG;
+	    break;
+    }
+
+    if (status != GEN_ABORTED_BY_SIGNAL && status != PROC_INVALID_PID) {
+	Proc_Unlock(procPtr);
+    }
+
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_SuspendProcess --
+ *
+ *	Put the (current) process into the suspended state.  If the process
+ *	is entering the suspended state because of a bug and no process is
+ *	debugging it then put it onto the debug list.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The process state is changed and the process may be put onto
+ *	the debug list. A context switch is performed to the suspend state.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Proc_SuspendProcess(procPtr, debug, termReason, termStatus, termCode)
+    register	Proc_ControlBlock	*procPtr;	/* Process to put on the
+							 * debug list. */
+    Boolean				debug;		/* TRUE => this process
+							 * is being suspended
+							 * because of an 
+							 * error. */
+    int					termReason;	/* Reason why process
+							 * went to this state.*/
+    int					termStatus;	/* Termination status.*/
+    int					termCode;	/* Termination code. */
+{
+    Boolean foreign = (procPtr->genFlags & PROC_FOREIGN);
+
+    Proc_Lock(procPtr);
+    procPtr->genFlags &= ~PROC_PENDING_SUSPEND;
+
+    /* 
+     * Check whether we lost a race with Proc_ResumeProcess.  If that 
+     * happened, just bail out now.
+     */
+    if (procPtr->genFlags & PROC_RESUME_PROCESS) {
+	procPtr->genFlags &= ~PROC_RESUME_PROCESS;
+	Proc_Unlock(procPtr);
+	return;
+    }
+
+    procPtr->termReason	= termReason;
+    procPtr->termStatus	= termStatus;
+    procPtr->termCode	= termCode;
+
+    if (debug &&  foreign &&
+	proc_KillMigratedDebugs) {
+	if (proc_MigDebugLevel > 0) {
+	    panic("Migrated process being placed on debug list.\n");
+	}
+    }
+
+    if (debug) {
+	if (!(procPtr->genFlags & PROC_DEBUGGED)) {
+	    /*
+	     * If the process isn't currently being debugged then it goes on 
+	     * the debug list and its parent is notified of a state change.
+	     */
+	    AddToDebugList(procPtr);
+	    Proc_InformParent(procPtr, PROC_SUSPEND_STATUS);
+	    ProcDebugWakeup();
+	} else if (procPtr->genFlags & PROC_DEBUG_WAIT) {
+	    /*
+	     * A process is waiting for this process so wake it up.
+	     */
+	    ProcDebugWakeup();
+	}
+    } else {
+	/*
+	 * The process is being suspended.  Notify the parent and then wakeup
+	 * anyone waiting for this process to enter the debug state.
+	 */
+	Proc_InformParent(procPtr, PROC_SUSPEND_STATUS);
+	if (procPtr->genFlags & PROC_DEBUG_WAIT) {
+	    ProcDebugWakeup();
+	}
+    }
+    if (foreign) {
+	ProcRemoteSuspend(procPtr, PROC_SUSPEND_STATUS);
+    }
+    Proc_UnlockAndSwitch(procPtr, PROC_SUSPENDED);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_ResumeProcess --
+ *
+ *	Resume execution of the given process.  It is assumed that this 
+ *	procedure is called with the process table entry locked.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The process may be made runnable and may be removed from the debug list.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Proc_ResumeProcess(procPtr, killingProc)
+    register	Proc_ControlBlock	*procPtr;	/* Process to remove
+							 * from list. */
+    Boolean				killingProc;	/* This process is
+							 * being resumed for
+							 * the purpose of 
+							 * killing it. */
+{
+    /*
+     * Only processes that are currently suspended and either are being
+     * killed or aren't being actively debugged can be resumed.  If the
+     * process has a pending suspend, set a flag in the PCB, which will
+     * short-circuit Proc_SuspendProcess.
+     * Note: we handle pending suspends this way, rather than simply
+     * clearing the pending signal, because the current structure of the
+     * sig module doesn't provide strong enough locking using the signals
+     * monitor lock.
+     */
+    
+    if (procPtr->state != PROC_SUSPENDED &&
+		(procPtr->genFlags & PROC_PENDING_SUSPEND) != 0) {
+	procPtr->genFlags |= PROC_RESUME_PROCESS;
+    } else if (procPtr->state == PROC_SUSPENDED &&
+        (killingProc || !(procPtr->genFlags & PROC_DEBUGGED))) {
+	RemoveFromDebugList(procPtr);
+	if (procPtr->genFlags & PROC_DEBUGGED) {
+	    procPtr->genFlags |= PROC_KILLING;
+	}
+	if (procPtr->genFlags & PROC_DEBUG_WAIT) {
+	    ProcDebugWakeup();
+	}
+	procPtr->genFlags &= ~PROC_DEBUG_WAIT;
+	Sched_MakeReady(procPtr);
+	if (!killingProc) {
+	    procPtr->termReason = PROC_TERM_RESUMED;
+	    procPtr->termStatus = SIG_RESUME;
+	    procPtr->termCode = SIG_NO_CODE;
+	    /*
+	     * The parent is notified in background because we are called
+	     * by the signal code as part of the act of sending a signal
+	     * and if a SIG_CHILD happens now we will have deadlock.
+	     * If the process is remote, send the term flags over and
+	     * let the home node handle signalling the parent.
+	     */
+	    if (procPtr->genFlags & PROC_FOREIGN) {
+		ProcRemoteSuspend(procPtr, PROC_RESUME_STATUS);
+	    } else {
+		Proc_InformParent(procPtr, PROC_RESUME_STATUS);
+	    }
+	}
+    }
+
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcDebugWakeup --
+ *
+ *	Wakeup any processes waiting on the debug list.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+ProcDebugWakeup()
+{
+    LOCK_MONITOR;
+    Sync_Broadcast(&debugListCondition);
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcGetThisDebug --
+ *
+ *	Get the specified process on the debug list. If it isn't there
+ *	then wait for it to show up.
+ *
+ *	NOTE: The monitor is not locked until after the PCB is locked
+ *	in order to maintain the locking order of other routines
+ *	(notably AddToDebugList and RemoveFromDebugList) which grab the
+ *	monitor lock after the PCB is locked. This routine used to lock
+ *	them in the reverse order causing deadlocks.
+ *
+ * Results:
+ *	PROC_INVALID_PID if process doesn't exist or is dieing.
+ *	GEN_ABORTED_BY_SIGNAL if wait for process was interrupted by a 
+ *	    signal
+ *
+ *
+ * Side effects:
+ *	Process may be locked.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ENTRY ReturnStatus
+ProcGetThisDebug(pid, procPtrPtr)
+    Proc_PID		pid;
+    Proc_ControlBlock	**procPtrPtr;
+{
+    register Proc_ControlBlock 	*procPtr;
+    ReturnStatus		status;
+    Boolean			gotSignal;
+
+
+    status = SUCCESS;
+    while (TRUE) {
+	procPtr = Proc_LockPID(pid);
+	if (procPtr == (Proc_ControlBlock *) NIL ||
+	    (procPtr->genFlags & PROC_DYING)) {
+	    /*
+	     * The pid they gave us either doesn't exist or the
+	     * corresponding process is exiting.
+	     */
+	    if (procPtr != (Proc_ControlBlock *) NIL) {
+		Proc_Unlock(procPtr);
+	    }
+	    status = PROC_INVALID_PID;
+	    goto exit;
+	}
+	LOCK_MONITOR;
+	procPtr->genFlags |= PROC_DEBUG_WAIT;
+
+	if (procPtr->state == PROC_SUSPENDED) {
+	    procPtr->genFlags &= ~PROC_DEBUG_WAIT;
+	    procPtr->genFlags |= PROC_DEBUGGED;
+	    if (procPtr->genFlags & PROC_ON_DEBUG_LIST) {
+		List_Remove((List_Links *) procPtr);
+		procPtr->genFlags &= ~PROC_ON_DEBUG_LIST;
+	    }
+	    UNLOCK_MONITOR;
+	    goto exit;
+	}
+
+	Proc_Unlock(procPtr);
+	gotSignal = Sync_Wait(&debugListCondition, TRUE);
+	UNLOCK_MONITOR;
+	if (gotSignal) {
+	    Proc_Lock(procPtr);
+	    procPtr->genFlags &= ~PROC_DEBUG_WAIT;
+	    Proc_Unlock(procPtr);
+	    status = GEN_ABORTED_BY_SIGNAL;
+	    goto exit;
+	}
+    }
+exit:
+    *procPtrPtr = procPtr;
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcGetNextDebug --
+ *
+ *	Look through the list of debuggable processes and get the
+ *	first one that hasn't been debugged yet. Wait for one if
+ *	there aren't any.
+ *
+ * Results:
+ *	SYS_ARG_NOACCESS if data couldn't be copied to user address space.
+ *	GEN_ABORTED_BY_SIGNAL if wait for process was interrupted by a 
+ *	    signal
+ *
+ * Side effects:
+ *	Process is removed from list, process id is copied to user 
+ *	variable.  Process is locked unless GEN_ABORTED_BY_SIGNAL is 
+ *	returned.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ENTRY ReturnStatus
+ProcGetNextDebug(destAddr, procPtrPtr)
+    Address		destAddr;
+    Proc_ControlBlock	**procPtrPtr;
+{
+    Boolean			sigPending = FALSE;
+    register Proc_ControlBlock 	*procPtr = (Proc_ControlBlock *) NIL;
+    ReturnStatus		status;
+
+
+    LOCK_MONITOR;
+
+    status = SUCCESS;
+    while (!sigPending) {
+	if (!List_IsEmpty(debugList)) {
+	    procPtr = (Proc_ControlBlock *) List_First(debugList);
+	    Proc_Lock(procPtr);
+	    procPtr->genFlags |= PROC_DEBUGGED;
+	    List_Remove((List_Links *) procPtr);
+	    procPtr->genFlags &= ~PROC_ON_DEBUG_LIST;
+	    break;
+	}
+	sigPending = Sync_Wait(&debugListCondition, TRUE);
+    }
+    if (!sigPending) {
+	if ((Vm_CopyOut(sizeof(Proc_PID), 
+		  (Address) &procPtr->processID, destAddr)) != SUCCESS){
+	    status = SYS_ARG_NOACCESS;
+	}
+    } else {
+	status = GEN_ABORTED_BY_SIGNAL;
+    }
+    *procPtrPtr = procPtr;
+    UNLOCK_MONITOR;
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AddToDebugList --
+ *
+ *	Adds the given process to the debug list.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Process is added to list, process genFlags is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ENTRY void
+AddToDebugList(procPtr)
+    register Proc_ControlBlock 	*procPtr;
+{
+    LOCK_MONITOR;
+
+    List_Insert((List_Links *) procPtr, LIST_ATREAR(debugList));
+    procPtr->genFlags |= PROC_ON_DEBUG_LIST;
+
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RemoveFromDebugList --
+ *
+ *	Removes the given process from the debug list.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The process is removed from the list, process's genFlags field
+ *	is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ENTRY void
+RemoveFromDebugList(procPtr)
+    register Proc_ControlBlock 	*procPtr;
+{
+    LOCK_MONITOR;
+
+    if (procPtr->genFlags & PROC_ON_DEBUG_LIST) {
+	List_Remove((List_Links *) procPtr);
+	procPtr->genFlags &= ~PROC_ON_DEBUG_LIST;
+    }
+
+    UNLOCK_MONITOR;
+}
+
+@
+
+
+9.7
+log
+@Fix the race between suspending and resuming a process.  Clarify side
+effects of ProcGetNextDebug.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/proc/procDebug.c,v 9.6 90/09/12 13:57:49 jhh Exp $ SPRITE (Berkeley)";
+d455 6
+d480 1
+a482 1
+    LOCK_MONITOR;
+d498 1
+d508 1
+d513 3
+a515 1
+	if (Sync_Wait(&debugListCondition, TRUE)) {
+a524 1
+    UNLOCK_MONITOR;
+@
+
+
+9.6
+log
+@changed format of #includes to use <>
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procDebug.c,v 9.5 90/09/06 17:56:42 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d268 2
+a269 2
+ *	Put the process into the suspended state.  If the process is
+ *	entering the suspended state because of a bug and no process is 
+d297 12
+d348 1
+a348 2
+    Proc_Unlock(procPtr);
+    Sched_ContextSwitch(PROC_SUSPENDED);
+d377 15
+a391 1
+    if (procPtr->state == PROC_SUSPENDED &&
+a392 4
+	/*
+	 * Only processes that are currently suspended and are either being
+	 * killed or aren't being actively debugged can be resumed.
+	 */
+d534 3
+a536 1
+ *	Process is removed from list, process id is copied to user variable
+@
+
+
+9.6.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procDebug.c,v 9.6 90/09/12 13:57:49 jhh Exp $ SPRITE (Berkeley)";
+@
+
+
+9.5
+log
+@First pass at function prototypes
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procDebug.c,v 9.4 90/07/29 15:47:36 shirriff Exp Locker: jhh $ SPRITE (Berkeley)";
+d31 11
+a41 11
+#include "sprite.h"
+#include "proc.h"
+#include "procInt.h"
+#include "procMigrate.h"
+#include "status.h"
+#include "sync.h"
+#include "sched.h"
+#include "sys.h"
+#include "list.h"
+#include "stdlib.h"
+#include "vm.h"
+@
+
+
+9.4
+log
+@Removed static declaration on debugListCondition.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procDebug.c,v 9.3 90/05/27 13:47:46 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d52 8
+a59 5
+ENTRY 	void		ProcDebugWakeup();
+static	ENTRY	void		AddToDebugList();
+static	ENTRY	void		RemoveFromDebugList();
+static	ENTRY	ReturnStatus	ProcGetThisDebug();
+static	ENTRY	ReturnStatus	ProcGetNextDebug();
+d120 1
+a120 1
+    register Proc_ControlBlock 	*procPtr;
+d406 1
+a406 1
+ * Proc_DebugWakeup --
+d524 1
+a524 1
+    register Proc_ControlBlock 	*procPtr;
+@
+
+
+9.3
+log
+@Added PROC_KILLING to handle killing processes in the debugger, so
+that dbx doesn't get confused.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procDebug.c,v 9.2 89/10/26 15:21:41 douglis Exp Locker: shirriff $ SPRITE (Berkeley)";
+d43 1
+a43 1
+static Sync_Condition	debugListCondition;	/* Condition to sleep on when
+@
+
+
+9.2
+log
+@removed extra unused arg from Proc_InformParent.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procDebug.c,v 9.1 89/10/12 12:20:30 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d132 2
+a133 1
+	    procPtr->state != PROC_SUSPENDED) {
+d370 3
+@
+
+
+9.1
+log
+@spelled dying correctly
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procDebug.c,v 9.0 89/09/12 15:14:17 douglis Stable Locker: jhh $ SPRITE (Berkeley)";
+d243 1
+a243 1
+	    Proc_InformParent(procPtr, PROC_RESUME_STATUS, FALSE);
+d311 1
+a311 1
+	    Proc_InformParent(procPtr, PROC_SUSPEND_STATUS, FALSE);
+d324 1
+a324 1
+	Proc_InformParent(procPtr, PROC_SUSPEND_STATUS, FALSE);
+d388 1
+a388 1
+		Proc_InformParent(procPtr, PROC_RESUME_STATUS, TRUE);
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procDebug.c,v 8.10 89/08/22 14:56:16 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d453 1
+a453 1
+	    (procPtr->genFlags & PROC_DIEING)) {
+@
+
+
+8.10
+log
+@fixes for suspending migrated processes.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procDebug.c,v 8.9 89/07/10 19:11:02 nelson Exp Locker: douglis $ SPRITE (Berkeley)";
+@
+
+
+8.9
+log
+@Incorporated changes from DECWRL.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procDebug.c,v 8.8 89/05/30 16:12:50 jhh Exp Locker: nelson $ SPRITE (Berkeley)";
+d33 1
+d290 1
+d297 1
+a297 1
+    if (debug && (procPtr->genFlags & PROC_FOREIGN) &&
+d329 3
+d382 2
+d385 5
+a389 1
+	    Proc_InformParent(procPtr, PROC_RESUME_STATUS, TRUE);
+@
+
+
+8.8
+log
+@Removed call to Sync_LockRegister
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procDebug.c,v 8.7 89/05/30 12:25:30 douglis Exp Locker: jhh $ SPRITE (Berkeley)";
+d228 1
+@
+
+
+8.7
+log
+@Checking this in for Fred -- John
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procDebug.c,v 8.6 89/04/06 12:07:20 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+a436 1
+    Sync_LockRegister(LOCKPTR);
+@
+
+
+8.6
+log
+@cleaned up some routine declarations.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procDebug.c,v 8.5 89/03/21 20:04:19 mgbaker Exp Locker: jhh $ SPRITE (Berkeley)";
+d51 5
+a55 5
+extern	ENTRY 	void		ProcDebugWakeup();
+extern	ENTRY	void		AddToDebugList();
+extern	ENTRY	void		RemoveFromDebugList();
+extern	ENTRY	ReturnStatus	ProcGetThisDebug();
+extern	ENTRY	ReturnStatus	ProcGetNextDebug();
+d427 1
+a427 1
+ENTRY static ReturnStatus
+d500 1
+a500 1
+ENTRY static ReturnStatus
+d553 1
+a553 1
+ENTRY static void
+d582 1
+a582 1
+ENTRY void
+d595 1
+@
+
+
+8.5
+log
+@Put in extern declarations for 3 routines whose redeclarations wouldn't
+go through the sun4 C compiler.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procDebug.c,v 8.4 89/02/19 22:06:38 jhh Exp $ SPRITE (Berkeley)";
+d51 5
+a55 9
+#ifdef sun4
+/*
+ * The sun4 compiler won't handle the kind of redeclaration of these routines
+ * that's done in this file.
+ */
+extern	void	ProcDebugWakeup();
+extern	void	AddToDebugList();
+extern	void	RemoveFromDebugList();
+#endif sun4
+d103 1
+a103 1
+ENTRY ReturnStatus
+d347 1
+a347 1
+ENTRY void
+d427 1
+a427 1
+static ReturnStatus
+d500 1
+a500 1
+static ReturnStatus
+d553 1
+a553 1
+static void
+d582 1
+a582 1
+void
+a594 3
+
+
+
+@
+
+
+8.4
+log
+@Changes due to lock registration
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procDebug.c,v 8.3 89/01/06 11:22:23 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d51 10
+d91 2
+a92 1
+ *	This routine is used to debug a process.
+d124 1
+a124 3
+
+    LOCK_MONITOR;
+    Sync_LockRegister(LOCKPTR);
+a138 1
+	    UNLOCK_MONITOR;
+d145 2
+a146 40
+	    /*
+	     * Look for a specific process on the debug list. If it isn't
+	     * there, wait for it to get on the list.
+	     */
+	    while (TRUE) {
+		procPtr = Proc_LockPID(pid);
+		if (procPtr == (Proc_ControlBlock *) NIL ||
+		    (procPtr->genFlags & PROC_DIEING)) {
+		    /*
+		     * The pid they gave us either doesn't exist or the
+		     * corresponding process is exiting.
+		     */
+		    if (procPtr != (Proc_ControlBlock *) NIL) {
+			Proc_Unlock(procPtr);
+		    }
+		    UNLOCK_MONITOR;
+		    return(PROC_INVALID_PID);
+		}
+
+		procPtr->genFlags |= PROC_DEBUG_WAIT;
+
+		if (procPtr->state == PROC_SUSPENDED) {
+		    procPtr->genFlags &= ~PROC_DEBUG_WAIT;
+		    procPtr->genFlags |= PROC_DEBUGGED;
+		    if (procPtr->genFlags & PROC_ON_DEBUG_LIST) {
+			List_Remove((List_Links *) procPtr);
+			procPtr->genFlags &= ~PROC_ON_DEBUG_LIST;
+		    }
+		    break;
+		}
+
+		Proc_Unlock(procPtr);
+		if (Sync_Wait(&debugListCondition, TRUE)) {
+		    Proc_Lock(procPtr);
+		    procPtr->genFlags &= ~PROC_DEBUG_WAIT;
+		    Proc_Unlock(procPtr);
+		    status = GEN_ABORTED_BY_SIGNAL;
+		    break;
+		}
+	    }
+d150 2
+a151 25
+	    Boolean	sigPending = FALSE;
+
+	    /*
+	     * Loop through the list of debuggable processes, looking for the 
+	     * first one that hasn't been debugged yet. Wait until one is found.
+	     */
+	    while (!sigPending) {
+		if (!List_IsEmpty(debugList)) {
+		    procPtr = (Proc_ControlBlock *) List_First(debugList);
+		    Proc_Lock(procPtr);
+		    procPtr->genFlags |= PROC_DEBUGGED;
+		    List_Remove((List_Links *) procPtr);
+		    procPtr->genFlags &= ~PROC_ON_DEBUG_LIST;
+		    break;
+		}
+		sigPending = Sync_Wait(&debugListCondition, TRUE);
+	    }
+	    if (!sigPending) {
+		if ((Vm_CopyOut(sizeof(Proc_PID), 
+			  (Address) &procPtr->processID, destAddr)) != SUCCESS){
+		    status = SYS_ARG_NOACCESS;
+		}
+	    } else {
+		status = GEN_ABORTED_BY_SIGNAL;
+	    }
+d253 1
+a253 1
+    if (status != GEN_ABORTED_BY_SIGNAL) {
+a256 1
+    UNLOCK_MONITOR;
+a291 1
+    LOCK_MONITOR;
+d293 1
+d311 1
+a311 4
+	    List_Insert((List_Links *) procPtr, LIST_ATREAR(debugList));
+	    Proc_Lock(procPtr);
+	    procPtr->genFlags |= PROC_ON_DEBUG_LIST;
+	    Proc_Unlock(procPtr);
+d313 1
+a313 1
+	    Sync_Broadcast(&debugListCondition);
+d318 1
+a318 1
+	    Sync_Broadcast(&debugListCondition);
+d327 1
+a327 1
+	    Sync_Broadcast(&debugListCondition);
+d330 2
+a331 2
+
+    UNLOCK_MONITOR_AND_SWITCH(PROC_SUSPENDED);
+a359 2
+    LOCK_MONITOR;
+
+d366 1
+a366 3
+	if (procPtr->genFlags & PROC_ON_DEBUG_LIST) {
+	    List_Remove((List_Links *) procPtr);
+	}
+d368 1
+a368 1
+	    Sync_Broadcast(&debugListCondition);
+d370 1
+a370 1
+	procPtr->genFlags &= ~(PROC_ON_DEBUG_LIST | PROC_DEBUG_WAIT);
+a384 1
+    UNLOCK_MONITOR;
+d410 192
+@
+
+
+8.3
+log
+@New Sync_Lock definition
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procDebug.c,v 8.2 88/12/22 09:14:40 douglis Exp $ SPRITE (Berkeley)";
+d39 1
+a39 1
+#include "mem.h"
+d45 1
+a45 1
+static Sync_Lock debugLock = SYNC_LOCK_INIT_STATIC(); /* Monitor lock. */
+d72 1
+d115 1
+@
+
+
+8.2
+log
+@panic when placing migrated process on debug list only if 
+proc_KillMigratedDebugs is set.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procDebug.c,v 8.1 88/12/04 15:16:25 ouster Exp Locker: douglis $ SPRITE (Berkeley)";
+d45 1
+a45 1
+static Sync_Lock	debugLock = {0, 0};	/* Monitor lock. */
+@
+
+
+8.1
+log
+@
+Stop using obsolete header files.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procDebug.c,v 6.2 88/10/27 20:00:14 mlgray Exp $ SPRITE (Berkeley)";
+d350 5
+a354 3
+    if (debug &&
+	(procPtr->genFlags & PROC_FOREIGN) && (proc_MigDebugLevel > 4)) {
+	panic("Migrated process being placed on debug list.\n");
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procDebug.c,v 6.2 88/10/27 20:00:14 mlgray Exp Locker: douglis $ SPRITE (Berkeley)";
+a40 1
+#include "byte.h"
+@
+
+
+6.2
+log
+@1st pass at multi-processor, conversion to new C library.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: procDebug.c,v 6.1 88/08/31 17:54:35 douglis Exp $ SPRITE (Berkeley)";
+@
+
+
+6.1
+log
+@de-linted and endif-fix'ed.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: procDebug.c,v 6.0 88/08/11 12:21:20 brent Stable $ SPRITE (Berkeley)";
+d353 1
+a353 2
+	Sys_Panic(SYS_FATAL,
+		"Migrated process being placed on debug list.\n");
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d28 2
+a29 2
+static char rcsid[] = "$Header: procDebug.c,v 5.13 88/07/25 17:01:39 douglis Exp $ SPRITE (Berkeley)";
+#endif not lint
+@
+
+
+5.13
+log
+@(temporarily) migrated process on debug list is fatal error if
+MigDebugLevel > 4.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: procDebug.c,v 5.12 88/07/08 16:03:31 douglis Exp $ SPRITE (Berkeley)";
+@
+
+
+5.12
+log
+@only print warning message about putting a migrated process on the
+debug list if it's debuggable (not suspended) and MigDebugLevel is
+>4.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: procDebug.c,v 5.11 88/05/04 16:47:16 nelson Exp $ SPRITE (Berkeley)";
+d353 1
+a353 1
+	Sys_Panic(SYS_WARNING,
+@
+
+
+5.11
+log
+@Uses new mach module stuff.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: procDebug.c,v 5.10 88/04/27 18:55:32 nelson Exp $ SPRITE (Berkeley)";
+d33 1
+d351 2
+a352 1
+    if (procPtr->genFlags & PROC_FOREIGN) {
+@
+
+
+5.10
+log
+@Combimed debugable and suspended states and made this monitor 
+responsible for moving processes between these states.
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: procDebug.c,v 5.9 88/04/21 11:02:44 nelson Exp $ SPRITE (Berkeley)";
+d221 1
+a221 5
+	    for (i = 0; i < PROC_NUM_GENERAL_REGS; i++) {
+		debugState.genRegs[i]	= procPtr->genRegs[i];
+	    }
+	    debugState.progCounter	= procPtr->progCounter;
+	    debugState.statusReg	= procPtr->statusReg;
+d242 1
+a242 4
+		procPtr->progCounter = debugState.progCounter;
+		for (i = 0; i < PROC_NUM_GENERAL_REGS; i++) {
+		    procPtr->genRegs[i]	= debugState.genRegs[i];
+		}
+d332 1
+a332 2
+Proc_SuspendProcess(procPtr, debug, termReason, termStatus,
+		    termCode, statusReg)
+a342 2
+    short				statusReg;	/* Status register of
+							 * the process. */
+a345 1
+    procPtr->statusReg	= statusReg;
+@
+
+
+5.9
+log
+@Added the detach command to allow a process to go onto the debug queue
+when it exits.
+@
+text
+@d8 1
+a8 2
+ *	    1) Process state can go to PROC_DEBUGABLE.
+ *	    2) PROC_DEBUGGED, PROC_ON_DEBUG_LIST, PROC_SINGLE_STEP_FLAG,
+d28 1
+a28 1
+static char rcsid[] = "$Header: procDebug.c,v 5.8 88/04/18 09:10:31 ouster Exp $ SPRITE (Berkeley)";
+d124 1
+a124 2
+	    (procPtr->state != PROC_SUSPENDED && 
+	     procPtr->state != PROC_DEBUGABLE)) {
+a156 10
+		    /*
+		     * The process that we want to debug is suspended.
+		     * Send it another stop signal so that we can debug it.
+		     * The act of signaling it will wake it up so that it
+		     * can be suspended again.  This time when it gets 
+		     * suspended it will realize that we are waiting and
+		     * enter the debug state instead of the suspended state.j
+		     */
+		    Sig_SendProc(procPtr, procPtr->termStatus, SIG_NO_CODE);
+		} else if (procPtr->state == PROC_DEBUGABLE) {
+d294 5
+a298 1
+	    procPtr->genFlags &= ~PROC_DEBUGGED;
+d300 4
+d323 1
+a323 1
+ * Proc_PutOnDebugList --
+d325 3
+a327 1
+ *	This routine puts a process to the debug list.
+d333 2
+a334 2
+ *	The process state is changed and the process is put on
+ *	the debug list. A context switch is performed to the debugable state.
+a337 1
+ 
+d339 2
+a340 1
+Proc_PutOnDebugList(procPtr, termReason, termStatus, termCode, statusReg)
+d343 4
+d348 1
+a348 1
+							 * went on list. */
+d364 20
+d386 2
+a387 1
+	 * Detach the debugable process from its parent.
+d389 4
+a392 1
+	Proc_DetachInt(procPtr);
+d395 1
+a395 7
+    List_Insert((List_Links *) procPtr, LIST_ATREAR(debugList));
+    Proc_Lock(procPtr);
+    procPtr->genFlags |= PROC_ON_DEBUG_LIST;
+    Proc_Unlock(procPtr);
+    Sync_Broadcast(&debugListCondition);
+
+    UNLOCK_MONITOR_AND_SWITCH(PROC_DEBUGABLE);
+d402 1
+a402 1
+ * Proc_TakeOffDebugList --
+d404 2
+a405 4
+ *	This routine removes the given process from the debug list and makes
+ *	the process runnable.  It is assumed that the process table entry
+ *	for the process that we are removing from the debug list is locked
+ *	down.
+d411 1
+a411 1
+ *	The process is removed from the debug list and made runnable.
+a414 1
+ 
+d416 1
+a416 1
+Proc_TakeOffDebugList(procPtr)
+d419 4
+d426 6
+a431 1
+    if (procPtr->state == PROC_DEBUGABLE) {
+a433 1
+	    procPtr->genFlags &= ~PROC_ON_DEBUG_LIST;
+d435 4
+a438 1
+	procPtr->genFlags &= ~PROC_DEBUGGED;
+d440 11
+a450 1
+	Sync_Broadcast(&debugListCondition);
+a471 1
+ 
+@
+
+
+5.8
+log
+@Lint cleanup, change copyright notices.
+@
+text
+@d9 2
+a10 2
+ *	    2) PROC_DEBUGGED, PROC_SINGLE_STEP_FLAG, and PROC_DEBUG_WAIT
+ *	       can be set in the genFlags field.
+d13 4
+a16 4
+ *	by a debugger.  When this flag is set, the process is removed from
+ *	the debug queue.  Thus when a process is in the state PROC_DEBUGABLE
+ *	it is on the debug list iff the PROC_DEBUGGED flag isn't set in the
+ *	genFlags field.
+d29 1
+a29 1
+static char rcsid[] = "$Header: procDebug.c,v 5.7 88/04/13 11:27:15 ouster Exp $ SPRITE (Berkeley)";
+d124 1
+d144 1
+a144 1
+		    (procPtr->genFlags & (PROC_DIEING | PROC_DEBUGGED))) {
+d146 2
+a147 2
+		     * The pid they gave us either doesn't exist, is exiting,
+		     * or is already being debugged.
+d171 4
+a174 1
+		    List_Remove((List_Links *) procPtr);
+d202 1
+a223 1
+	    procPtr->genFlags 	&= ~PROC_DEBUGGED;
+d305 5
+d342 1
+a342 1
+Proc_PutOnDebugList(procPtr, sigNum, statusReg)
+d345 4
+a348 3
+    int					sigNum;		/* Signal that caused 
+							 * process to go on 
+							 * list. */
+d355 3
+a357 3
+    procPtr->termReason	= PROC_TERM_SIGNALED;
+    procPtr->termStatus	= sigNum;
+    procPtr->termCode	= procPtr->sigCodes[sigNum];
+d370 3
+d406 1
+a406 11
+	if (procPtr->genFlags & PROC_DEBUGGED) {
+	    /*
+	     * If the process is being actively debugged, then it is not
+	     * on the debug list so don't remove it.
+	     */
+	    procPtr->genFlags &= ~PROC_DEBUGGED;
+	} else {
+	    /*
+	     * The process is not being debugged so remove it from the
+	     * debug list.
+	     */
+d408 1
+d410 1
+@
+
+
+5.7
+log
+@Changes to make kernel calls much faster.
+@
+text
+@d18 8
+a25 2
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+d29 1
+a29 1
+static char rcsid[] = "$Header: procDebug.c,v 5.6 88/03/28 16:07:47 nelson Exp $ SPRITE (Berkeley)";
+@
+
+
+5.6
+log
+@Tried to fix another list bug.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: procDebug.c,v 5.5 88/03/24 16:29:53 brent Exp $ SPRITE (Berkeley)";
+d209 1
+d344 2
+a345 1
+	Sys_Panic(SYS_FATAL, "Migrated process being placed on debug list.\n");
+@
+
+
+5.5
+log
+@Fixed bug that could cause non-ready-process-on-ready-queue bug.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: procDebug.c,v 5.4 88/03/24 11:46:19 douglis Exp $ SPRITE (Berkeley)";
+d137 1
+a137 1
+		    (procPtr->genFlags & PROC_DIEING)) {
+d139 2
+a140 2
+		     * The pid they gave us either doesn't exist or is 
+		     * exiting.
+@
+
+
+5.4
+log
+@Changed PROC_SINGLE_STEP to PROC_SINGLE_STEP_FLAG.  Changed
+Proc_Debug to remove process from debug list before adding it to
+ready queue.
+@
+text
+@d12 6
+d23 1
+a23 1
+static char rcsid[] = "$Header: procDebug.c,v 5.3 87/12/12 16:40:04 nelson Exp $ SPRITE (Berkeley)";
+a212 1
+	    List_Remove((List_Links *) procPtr);
+d364 3
+a366 1
+ *	the process runnable.
+d385 13
+a397 1
+	List_Remove((List_Links *) procPtr);
+@
+
+
+5.3
+log
+@Handles moving of hardware dependencies from vm to sun.
+@
+text
+@d9 2
+a10 2
+ *	    2) PROC_DEBUGGED, PROC_SINGLE_STEP and PROC_DEBUG_WAIT can be set 
+ *	       in the genFlags field.
+d17 1
+a17 1
+static char rcsid[] = "$Header: procDebug.c,v 5.2 87/10/27 16:20:03 nelson Exp $ SPRITE (Berkeley)";
+d202 1
+a202 1
+            procPtr->genFlags |= PROC_SINGLE_STEP;
+d207 1
+@
+
+
+5.2
+log
+@Changed to use the new VM cross-address-space copy routine.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: procDebug.c,v 5.1 87/09/25 13:12:15 nelson Exp $ SPRITE (Berkeley)";
+a98 1
+    Address			bufferPtr;
+d275 1
+a275 1
+	    Vm_ChangeCodeProt(procPtr, destAddr, numBytes, VM_URW_PROT);
+d284 1
+a284 1
+	    Vm_ChangeCodeProt(procPtr, destAddr, numBytes, VM_UR_PROT);
+@
+
+
+5.1
+log
+@Makes sure that a process is in the debug or susp state before it allows
+a debugger to continue it.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: procDebug.c,v 5.0 87/08/31 18:51:43 root Exp $ SPRITE (Berkeley)";
+a257 1
+		bufferPtr = (Address) Mem_Alloc(numBytes);
+d259 1
+a259 1
+		 * Read from the debuggee to a kernel buffer.
+d261 2
+a262 11
+		if (Vm_CopyInProc(procPtr, numBytes, srcAddr, 
+				  (Address) bufferPtr) != SUCCESS) {
+		    status = SYS_ARG_NOACCESS;
+		/*
+		 * Write the buffer to the requestor.
+		 */
+		} else if (Vm_CopyOut(numBytes, (Address) bufferPtr, 
+				      destAddr) != SUCCESS) {
+		    status = SYS_ARG_NOACCESS;
+		}
+		Mem_Free(bufferPtr);
+a272 1
+	    bufferPtr = (Address) Mem_Alloc(numBytes);
+d274 1
+a274 1
+	     * Read from the requestor to a kernel buffer.
+d276 10
+a285 20
+	    if (Vm_CopyIn(numBytes, srcAddr, (Address) bufferPtr) != SUCCESS) {
+		status = SYS_ARG_NOACCESS;
+	    } else {
+		/*
+		 * Make sure that the range of bytes is writable.
+		 */
+		Vm_ChangeCodeProt(procPtr, destAddr, numBytes, VM_URW_PROT);
+		/*
+		 * Write the buffer to the debuggee.
+		 */
+		if (Vm_CopyOutProc(procPtr, numBytes, 
+				    (Address) bufferPtr, destAddr) != SUCCESS) {
+		    status = SYS_ARG_NOACCESS;
+		}
+		/*
+		 * Change the protection back.
+		 */
+		Vm_ChangeCodeProt(procPtr, destAddr, numBytes, VM_UR_PROT);
+	    }
+	    Mem_Free(bufferPtr);
+@
+
+
+5.0
+log
+@*** empty log message ***
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: procDebug.c,v 5.0 87/08/11 10:46:48 sprite Exp $ SPRITE (Berkeley)";
+d112 3
+a114 1
+		!(procPtr->genFlags & PROC_DEBUGGED)) {
+@

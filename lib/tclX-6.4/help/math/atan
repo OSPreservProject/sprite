@@ -1,0 +1,4 @@
+
+
+          atan expr
+               Returns the arctangent of expr.  expr is in radians.

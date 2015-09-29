@@ -1,0 +1,364 @@
+head     1.8;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.8
+date     92.07.10.14.59.54;  author kupfer;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     92.07.09.18.26.46;  author jhh;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     90.08.29.17.18.38;  author ouster;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     90.08.29.17.02.36;  author mgbaker;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.12.30.10.11.07;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.12.22.11.36.45;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.11.11.10.25.14;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.11.08.16.03.25;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Man page for the rpccmd program
+@
+
+
+1.8
+log
+@Documented -Creset and -Sreset.  "rpchist" is no more; use rpcstat
+instead.
+@
+text
+@' $Header: /sprite/src/cmds/rpccmd/RCS/rpccmd.man,v 1.7 92/07/09 18:26:46 jhh Exp Locker: kupfer $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS RPCCMD cmds
+.BS
+.SH NAME
+rpccmd \- Control the RPC system
+.SH SYNOPSIS
+\fBrpccmd\fR  [\fIoptions\fR]
+.SH OPTIONS
+.IP "\fB\-on\fR" 14
+Turn on the server half of the RPC system.
+.IP "\fB\-off\fR"
+Turn off the server half of the RPC system.
+.IP "\fB\-ping \fIhost\fR"
+Do an RPC test against the specified host.
+.IP "\fB\-b \fIsize\fR"
+The amount of data to send in each RPC test.
+.IP "\fB\-t \fR[\fB0|1\fR]"
+Set the value of the rpc_Tracing variable.  RPC tracing facilitates
+debugging, but adds overhead to each RPC. 
+.IP "\fB\-D \fR[\fB0|1\fR]"
+Set the value of the rpc_Debug variable.  A non-zero value causes
+each RPC to be logged to \fR/dev/syslog\fR.  This really slows things down!
+.IP "\fB\-T \fR[\fB0|1\fR]"
+Set the value of the rpc_NoTimeouts variable.  A non-zero value
+makes all RPCs try forever.  This is dangerous because a server call-back
+to a dead client will hang the server.
+.IP "\fB\-C \fR[\fB0|1\fR]"
+Turn off/on timings of RPC on the client side.  Use 
+.B rpcstat
+to dump out the histograms of times that are taken by the kernel.
+.IP "\fB\-S \fR[\fB0|1\fR]"
+Turn off/on timing of the RPC service times as measured by the server.
+.IP "\fB\-Creset\fR"
+Reset the client-side timing histograms.
+.IP "\fB\-Sreset\fR"
+Reset the server-side timing histograms.
+.IP "\fB\-maxServers \fInumber\fR"
+Set the maximum number of allowed rpc server processes.
+.IP "\fB\-numServers \fInumber\fR"
+Create more rpc servers until this number exists.
+.IP "\fB\-negAcksOn\fR"
+Allow the machine to generate negative acknowledgements.
+.IP "\fB\-negAcksOff\fR"
+Prevent the machine from generating negative acknowledgements.
+.IP "\fB\-channelNegAcksOn\fR"
+Turn on the client policy of ramping down the number of channels it uses
+with a server that has returned a negative acknowledgement recently.
+.IP "\fB\-channelNegAcksOff\fR"
+Turn off the client policy of ramping down the number of channels it uses
+with a server that has returned a negative acknowledgement recently.
+Use back-off instead.
+.IP "\fB\-numPings\fR"
+Number of pings to send to the specified host (defaults to 100).
+.IP "\fB\-sanity \fR[\fB0|1\fR]"
+Turn off/on sanity checking of RPC packets.  The types of sanity checks done
+are intended for debugging
+purposes and probably shouldn't be used during normal operation.
+.BE
+.SH INTRODUCTION
+.PP
+This command is used to set various control parameters of the RPC system.
+The most important is the \fB\-on\fR option, which is used during the boot
+sequence to enable RPC service after local initialization (i.e. disk checks)
+is done.  The \fB\-ping\fR option is used to ping another sprite host.  This
+is useful to find out if the host is up, and the make sure that the
+host knows you are alive.  This does an RPC_SEND, and the amount of
+data sent can be specified with the \fB\-b\fR option.
+.PP
+Each of the \fB\-t\fR, \fB\-D\fR, \fB\-T\fR, \fB\-C\fR, and \fB\-S\fR
+options set the value
+of a kernel variable.  \fB\-t\fR is used to turn on or off the trace of the last
+100 RPC packets.  \fB\-D\fR is used to turn on or off debugging print statements.
+\fB\-T\fR is used to turn on or off "no timeout mode".  This mode is useful
+when debugging a client and you don't want the server to timeout
+and think the client has crashed.  It is dangerous, however, because
+if the server ever makes a call-back to a truely dead client it
+will hang until the no timeout mode is turned off.  
+.PP
+The \fB\-C\fR and \fB\-S\fR
+options turn on or off timings of individual RPCs.  \fB\-C\fR controls timing
+on the client side, and \fB\-S\fR controls timing on the server side.
+The timings are
+kept in histogram form.  Use the 
+.B \-Creset
+and
+.B \-Sreset
+options to zero out the histograms.  Use 
+.B rpcstat 
+to display them.  
+.SH "SEE ALSO"
+rpcstat
+.SH KEYWORDS
+rpc, trace, debug
+@
+
+
+1.7
+log
+@Add -sanity option.  (Mike checking in for John.)
+@
+text
+@d1 1
+a1 1
+' $Header: /sprite/src/cmds/rpccmd/RCS/rpccmd.man,v 1.6 90/08/29 17:18:38 ouster Exp Locker: jhh $ SPRITE (Berkeley)
+d29 2
+a30 1
+Turn off/on timings of RPC on the client side.  Use the rpchist program
+d34 4
+d78 3
+a80 1
+will hang until the no timeout mode is turned off.  The \fB\-C\fR and \fB\-S\fR
+d84 7
+a90 2
+kept in histogram form.  Use the \fBrpchist\fR program to dump out
+the histograms.
+d92 1
+a92 1
+rpchist, rpcstat
+@
+
+
+1.6
+log
+@Added "numPings" option.
+@
+text
+@d1 1
+a1 1
+' $Header: /sprite/src/cmds/rpccmd/RCS/rpccmd.man,v 1.5 90/08/29 17:02:36 mgbaker Exp Locker: ouster $ SPRITE (Berkeley)
+d50 4
+@
+
+
+1.5
+log
+@Added many more options.
+@
+text
+@d1 1
+a1 1
+' $Header: /sprite/src/cmds/rpccmd/RCS/rpccmd.man,v 1.4 88/12/30 10:11:07 ouster Exp Locker: mgbaker $ SPRITE (Berkeley)
+d48 2
+@
+
+
+1.4
+log
+@More format upgrades.
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/rpccmd/RCS/rpccmd.man,v 1.3 88/12/22 11:36:45 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d33 15
+@
+
+
+1.3
+log
+@*** empty log message ***
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/rpccmd/RCS/rpccmd.man,v 1.2 88/11/11 10:25:14 brent Exp $ SPRITE (Berkeley)
+d10 1
+a10 1
+.IP "\fB-on\fR" 14
+d12 1
+a12 1
+.IP "\fB-off\fR"
+d14 1
+a14 1
+.IP "\fB-ping \fIhost\fR"
+d16 1
+a16 1
+.IP "\fB-b \fIsize\fR"
+d18 1
+a18 1
+.IP "\fB-t \fR[\fB0|1\fR]"
+d21 1
+a21 1
+.IP "\fB-D \fR[\fB0|1\fR]"
+d24 1
+a24 1
+.IP "\fB-T \fR[\fB0|1\fR]"
+d28 1
+a28 1
+.IP "\fB-C \fR[\fB0|1\fR]"
+d31 1
+a31 1
+.IP "\fB-S \fR[\fB0|1\fR]"
+d37 1
+a37 1
+The most important is the \fB-on\fR option, which is used during the boot
+d39 1
+a39 1
+is done.  The \fB-ping\fR option is used to ping another sprite host.  This
+d42 1
+a42 1
+data sent can be specified with the \fB-b\fR option.
+d44 1
+a44 1
+Each of the \fB-t\fR, \fB-D\fR, \fB-T\fR, \fB-C\fR, and \fB-S\fR
+d46 3
+a48 3
+of a kernel variable.  \fB-t\fR is used to turn on or off the trace of the last
+100 RPC packets.  \fB-D\fR is used to turn on or off debugging print statements.
+\fB-T\fR is used to turn on or off "no timeout mode".  This mode is useful
+d52 3
+a54 3
+will hang until the no timeout mode is turned off.  The \fB-C\fR and \fB-S\fR
+options turn on or off timings of individual RPCs.  \fB-C\fR controls timing
+on the client side, and \fB-S\fR controls timing on the server side.
+@
+
+
+1.2
+log
+@updated -ping options
+@
+text
+@d1 3
+a3 2
+' $Header: /a/newcmds/rpccmd/RCS/rpccmd.man,v 1.1 88/11/08 16:03:25 brent Exp $ SPRITE (Berkeley)
+.TH rpccmd prog
+d5 1
+a5 1
+.NA
+d7 2
+a8 2
+.SY
+\fBrpccmd\fR  [-on] [-off] [-ping host [-b size]] [-tCScs [values]]
+d14 1
+a14 1
+.IP "\fB-ping host\fR"
+d16 1
+a16 1
+.IP "\fB-b size\fR"
+d18 1
+a18 1
+.IP "\fB-t [0|1]\fP"
+d21 1
+a21 1
+.IP "\fB-D [0|1]\fP"
+d23 2
+a24 2
+each RPC to be logged to /dev/syslog.  This really slows things down!
+.IP "\fB-T [0|1]\fP"
+d28 1
+a28 1
+.IP "\fB-C [0|1]\fP"
+d31 1
+a31 1
+.IP "\fB-S [0|1]\fP"
+d37 1
+a37 1
+The most important is the -on option, which is used during the boot
+d39 1
+a39 1
+is done.  The -ping option is used to ping another sprite host.  This
+d42 1
+a42 1
+data sent can be specified with the -b option.
+d44 5
+a48 4
+Each of the -t, -D, -T, -C, and -S options set the value
+of a kernel variable.  -t is used to turn on or off the trace of the last
+100 RPC packets.  -D is used to turn on or off debugging print statements.
+-T is used to turn on or off "no timeout mode".  This mode is useful
+d52 3
+a54 3
+will hang until the no timeout mode is turned off.  The -C and -S
+options turn on or off timings of individual RPCs.  -C controls timing
+on the client side, and -S controls timing on the server side.
+d56 1
+a56 1
+kept in histogram form.  Use the rpchist program to dump out
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/rpcstat/RCS/rpcstat.man,v 1.1 88/11/08 15:37:07 brent Exp $ SPRITE (Berkeley)
+d7 1
+a7 1
+\fBrpccmd\fR  [-on] [-off] [-echo host] [-tCScs [values]]
+d13 4
+a16 2
+.IP "\fB-echo host\fR"
+Do an Echo RPC off the specified host.
+d38 1
+a38 1
+is done.  The -echo option is used to ping another sprite host.  This
+d40 2
+a41 1
+host knows you are alive.
+@

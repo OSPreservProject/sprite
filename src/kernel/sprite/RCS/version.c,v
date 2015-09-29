@@ -1,0 +1,59 @@
+head     5.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+5.1
+date     91.10.25.11.24.59;  author shirriff;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.53.45;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+5.1
+log
+@Added main.h declaration
+@
+text
+@/* version.c --
+ *
+ *     Returns version from version.h
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char sccsid[] = "%W% VESTA (Berkeley) %G%";
+#endif not lint
+
+#include "version.h"	/* automatically generated */
+#include "main.h"
+
+char versionString[] = VERSION ;
+char *
+SpriteVersion()
+{
+    return(versionString) ;
+}
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d14 1
+@

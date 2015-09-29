@@ -1,0 +1,49 @@
+     VARIABLES - SCALARS AND ARRAYS
+          Tcl allows the definition of variables and the use of  their
+          values either through $-style variable substitution, the set
+          command, or a few other mechanisms.  Variables need  not  be
+          declared:  a new variable will automatically be created each
+          time a new variable name is used.
+
+          Tcl supports two types of variables:  scalars and arrays.  A
+          scalar  variable  has  a  single  value,  whereas  an  array
+          variable can have any number of elements, each with  a  name
+          (called  its  ``index'')  and a value.  Array indexes may be
+          arbitrary strings; they need not  be  numeric.   Parentheses
+          are  used  refer  to  array  elements  in Tcl commands.  For
+          example, the command
+
+               set x(first) 44
+
+          will modify the element of x whose index is  first  so  that
+          its   new  value  is  44.   Two-dimensional  arrays  can  be
+          simulated in Tcl by  using  indexes  that  contain  multiple
+          concatenated values.  For example, the commands
+
+               set a(2,3) 1
+               set a(3,6) 2
+          set the elements of a whose indexes are 2,3 and 3,6.
+
+          In general, array elements may be used anywhere in Tcl  that
+          scalar variables may be used.  If an array is defined with a
+          particular name, then there may not  be  a  scalar  variable
+          with  the  same  name.   Similarly,  if  there  is  a scalar
+          variable with a particular name then it is not  possible  to
+          make  array references to the variable.  To convert a scalar
+          variable to an array or  vice  versa,  remove  the  existing
+          variable with the unset command.
+
+          The array command provides several features for dealing with
+          arrays,  such  as  querying the names of all the elements of
+          the array and searching through the array one element  at  a
+          time.
+
+          Variables may be either global or local.  If a variable name
+          is  used  when  a  procedure  isn't  being executed, then it
+          automatically refers to a global variable.   Variable  names
+          used  within  a  procedure normally refer to local variables
+          associated with that invocation  of  the  procedure.   Local
+          variables  are  deleted  whenever  a  procedure  exits.  The
+          global command may be used to request that a name refer to a
+          global  variable  for  the duration of the current procedure
+          (this is somewhat analogous to extern in C).

@@ -1,0 +1,24 @@
+
+diskFragIO.c,36
+FragRead(39,901
+FragWrite(89,2589
+
+diskHeader.c,75
+ReadBasicDiskInfo(43,1150
+ReadDiskHeader(151,4410
+ReadSunLabel(114,3584
+
+diskIO.c,82
+BlockRead(138,4151
+BlockWrite(193,5887
+SectorRead(44,1190
+SectorWrite(90,2630
+
+diskPrint.c,139
+PrintDataBlockBitmap(164,4493
+PrintDirEntry(205,5330
+PrintDomainHeader(44,1091
+PrintFileDescBitmap(124,3664
+PrintSummaryInfo(100,3101
+
+diskUtils.h,0

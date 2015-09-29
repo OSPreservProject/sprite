@@ -1,0 +1,8659 @@
+%!PS-Adobe-1.0
+%%Creator: loiter.Berkeley.EDU:jhh (John H. Hartman,477E,6429669,6588451)
+%%Title: stdin (ditroff)
+%%CreationDate: Wed Jan  6 16:17:34 1993
+%%EndComments
+%	@(#)psdit.pro	1.3 4/15/88
+% lib/psdit.pro -- prolog for psdit (ditroff) files
+% Copyright (c) 1984, 1985 Adobe Systems Incorporated. All Rights Reserved.
+% last edit: shore Sat Nov 23 20:28:03 1985
+% RCSID: $Header: /sprite/lib/ps/RCS/psdit.pro,v 1.1 91/06/07 18:21:34 shirriff Exp Locker: shirriff $
+
+% Changed by Edward Wang (edward@ucbarpa.berkeley.edu) to handle graphics,
+% 17 Feb, 87.
+
+/$DITroff 180 dict def $DITroff begin
+
+%% Psfig additions
+/DocumentInitState [ matrix currentmatrix currentlinewidth currentlinecap
+currentlinejoin currentdash currentgray currentmiterlimit ] cvx def
+
+/startFig {
+	/SavedState save def
+	userdict maxlength dict begin
+	currentpoint transform
+
+	DocumentInitState setmiterlimit setgray setdash setlinejoin setlinecap
+		setlinewidth setmatrix
+
+	itransform moveto
+
+	/ury exch def
+	/urx exch def
+	/lly exch def
+	/llx exch def
+	/y exch 72 mul resolution div def
+	/x exch 72 mul resolution div def
+	
+	currentpoint /cy exch def /cx exch def
+
+	/sx x urx llx sub div def 	% scaling for x
+	/sy y ury lly sub div def	% scaling for y
+
+	sx sy scale			% scale by (sx,sy)
+
+	cx sx div llx sub
+	cy sy div ury sub translate
+	
+	/DefFigCTM matrix currentmatrix def
+
+	/initmatrix {
+		DefFigCTM setmatrix
+	} def
+	/defaultmatrix {
+		DefFigCTM exch copy
+	} def
+
+	/initgraphics {
+		DocumentInitState setmiterlimit setgray setdash 
+			setlinejoin setlinecap setlinewidth setmatrix
+		DefFigCTM setmatrix
+	} def
+
+	/showpage {
+		initgraphics
+	} def
+
+} def
+% Args are llx lly urx ury (in figure coordinates)
+/clipFig {
+	currentpoint 6 2 roll
+	newpath 4 copy
+	4 2 roll moveto
+	6 -1 roll exch lineto
+	exch lineto
+	exch lineto
+	closepath clip
+	newpath
+	moveto
+} def
+% doclip, if called, will always be just after a `startfig'
+/doclip { llx lly urx ury clipFig } def
+/endFig {
+	end SavedState restore
+} def
+/globalstart {
+	% Push details about the enviornment on the stack.
+	fontnum fontsize fontslant fontheight firstpage 
+	mh my resolution slotno currentpoint 
+	pagesave restore gsave 
+} def
+/globalend {
+	grestore moveto
+	/slotno exch def /resolution exch def /my exch def
+	/mh exch def /firstpage exch def /fontheight exch def
+	/fontslant exch def /fontsize exch def /fontnum exch def
+	F
+	/pagesave save def
+} def
+
+%% end XMOD additions
+
+/fontnum 1 def /fontsize 10 def /fontheight 10 def /fontslant 0 def
+/xi{0 72 11 mul translate 72 resolution div dup neg scale 0 0 moveto
+ /fontnum 1 def /fontsize 10 def /fontheight 10 def /fontslant 0 def F
+ /pagesave save def}def
+/PB{save /psv exch def currentpoint translate 
+ resolution 72 div dup neg scale 0 0 moveto}def
+/PE{psv restore}def
+/arctoobig 90 def /arctoosmall .05 def
+/m1 matrix def /m2 matrix def /m3 matrix def /oldmat matrix def
+/tan{dup sin exch cos div}def
+/point{resolution 72 div mul}def
+/dround	{transform round exch round exch itransform}def
+/xT{/devname exch def}def
+/xr{/mh exch def /my exch def /resolution exch def}def
+/xp{}def
+/xs{docsave restore end}def
+/xt{}def
+/xf{/fontname exch def /slotno exch def fontnames slotno get fontname eq not
+ {fonts slotno fontname findfont put fontnames slotno fontname put}if}def
+/xH{/fontheight exch def F}def
+/xS{/fontslant exch def F}def
+/s{/fontsize exch def /fontheight fontsize def F}def
+/f{/fontnum exch def F}def
+/F{fontheight 0 le{/fontheight fontsize def}if
+ fonts fontnum get fontsize point 0 0 fontheight point neg 0 0 m1 astore
+ fontslant 0 ne{1 0 fontslant tan 1 0 0 m2 astore m3 concatmatrix}if
+ makefont setfont .04 fontsize point mul 0 dround pop setlinewidth}def
+/X{exch currentpoint exch pop moveto show}def
+/N{3 1 roll moveto show}def
+/Y{exch currentpoint pop exch moveto show}def
+/S{show}def
+/ditpush{}def/ditpop{}def
+/AX{3 -1 roll currentpoint exch pop moveto 0 exch ashow}def
+/AN{4 2 roll moveto 0 exch ashow}def
+/AY{3 -1 roll currentpoint pop exch moveto 0 exch ashow}def
+/AS{0 exch ashow}def
+/MX{currentpoint exch pop moveto}def
+/MY{currentpoint pop exch moveto}def
+/MXY{moveto}def
+/cb{pop}def	% action on unknown char -- nothing for now
+/n{}def/w{}def
+/p{pop showpage pagesave restore /pagesave save def}def
+/Dt{/Dlinewidth exch def}def 1 Dt
+/Ds{/Ddash exch def}def -1 Ds
+/Di{/Dstipple exch def}def 1 Di
+/Dsetlinewidth{2 Dlinewidth mul setlinewidth}def
+/Dsetdash{Ddash 4 eq{[8 12]}{Ddash 16 eq{[32 36]}
+ {Ddash 20 eq{[32 12 8 12]}{[]}ifelse}ifelse}ifelse 0 setdash}def
+/Dstroke{gsave Dsetlinewidth Dsetdash 1 setlinecap stroke grestore
+ currentpoint newpath moveto}def
+/Dl{rlineto Dstroke}def
+/arcellipse{/diamv exch def /diamh exch def oldmat currentmatrix pop
+ currentpoint translate 1 diamv diamh div scale /rad diamh 2 div def
+ currentpoint exch rad add exch rad -180 180 arc oldmat setmatrix}def
+/Dc{dup arcellipse Dstroke}def
+/De{arcellipse Dstroke}def
+/Da{/endv exch def /endh exch def /centerv exch def /centerh exch def
+ /cradius centerv centerv mul centerh centerh mul add sqrt def
+ /eradius endv endv mul endh endh mul add sqrt def
+ /endang endv endh atan def
+ /startang centerv neg centerh neg atan def
+ /sweep startang endang sub dup 0 lt{360 add}if def
+ sweep arctoobig gt
+ {/midang startang sweep 2 div sub def /midrad cradius eradius add 2 div def
+  /midh midang cos midrad mul def /midv midang sin midrad mul def
+  midh neg midv neg endh endv centerh centerv midh midv Da
+  Da}
+ {sweep arctoosmall ge
+  {/controldelt 1 sweep 2 div cos sub 3 sweep 2 div sin mul div 4 mul def
+   centerv neg controldelt mul centerh controldelt mul
+   endv neg controldelt mul centerh add endh add
+   endh controldelt mul centerv add endv add
+   centerh endh add centerv endv add rcurveto Dstroke}
+  {centerh endh add centerv endv add rlineto Dstroke}
+  ifelse}
+ ifelse}def
+/Dpatterns[
+[%cf[widthbits]
+[8<0000000000000010>]
+[8<0411040040114000>]
+[8<0204081020408001>]
+[8<0000103810000000>]
+[8<6699996666999966>]
+[8<0000800100001008>]
+[8<81c36666c3810000>]
+[8<0f0e0c0800000000>]
+[8<0000000000000010>]
+[8<0411040040114000>]
+[8<0204081020408001>]
+[8<0000001038100000>]
+[8<6699996666999966>]
+[8<0000800100001008>]
+[8<81c36666c3810000>]
+[8<0f0e0c0800000000>]
+[8<0042660000246600>]
+[8<0000990000990000>]
+[8<0804020180402010>]
+[8<2418814242811824>]
+[8<6699996666999966>]
+[8<8000000008000000>]
+[8<00001c3e363e1c00>]
+[8<0000000000000000>]
+[32<00000040000000c00000004000000040000000e0000000000000000000000000>]
+[32<00000000000060000000900000002000000040000000f0000000000000000000>]
+[32<000000000000000000e0000000100000006000000010000000e0000000000000>]
+[32<00000000000000002000000060000000a0000000f00000002000000000000000>]
+[32<0000000e0000000000000000000000000000000f000000080000000e00000001>]
+[32<0000090000000600000000000000000000000000000007000000080000000e00>]
+[32<00010000000200000004000000040000000000000000000000000000000f0000>]
+[32<0900000006000000090000000600000000000000000000000000000006000000>]]
+[%ug
+[8<0000020000000000>]
+[8<0000020000002000>]
+[8<0004020000002000>]
+[8<0004020000402000>]
+[8<0004060000402000>]
+[8<0004060000406000>]
+[8<0006060000406000>]
+[8<0006060000606000>]
+[8<00060e0000606000>]
+[8<00060e000060e000>]
+[8<00070e000060e000>]
+[8<00070e000070e000>]
+[8<00070e020070e000>]
+[8<00070e020070e020>]
+[8<04070e020070e020>]
+[8<04070e024070e020>]
+[8<04070e064070e020>]
+[8<04070e064070e060>]
+[8<06070e064070e060>]
+[8<06070e066070e060>]
+[8<06070f066070e060>]
+[8<06070f066070f060>]
+[8<060f0f066070f060>]
+[8<060f0f0660f0f060>]
+[8<060f0f0760f0f060>]
+[8<060f0f0760f0f070>]
+[8<0e0f0f0760f0f070>]
+[8<0e0f0f07e0f0f070>]
+[8<0e0f0f0fe0f0f070>]
+[8<0e0f0f0fe0f0f0f0>]
+[8<0f0f0f0fe0f0f0f0>]
+[8<0f0f0f0ff0f0f0f0>]
+[8<1f0f0f0ff0f0f0f0>]
+[8<1f0f0f0ff1f0f0f0>]
+[8<1f0f0f8ff1f0f0f0>]
+[8<1f0f0f8ff1f0f0f8>]
+[8<9f0f0f8ff1f0f0f8>]
+[8<9f0f0f8ff9f0f0f8>]
+[8<9f0f0f9ff9f0f0f8>]
+[8<9f0f0f9ff9f0f0f9>]
+[8<9f8f0f9ff9f0f0f9>]
+[8<9f8f0f9ff9f8f0f9>]
+[8<9f8f1f9ff9f8f0f9>]
+[8<9f8f1f9ff9f8f1f9>]
+[8<bf8f1f9ff9f8f1f9>]
+[8<bf8f1f9ffbf8f1f9>]
+[8<bf8f1fdffbf8f1f9>]
+[8<bf8f1fdffbf8f1fd>]
+[8<ff8f1fdffbf8f1fd>]
+[8<ff8f1fdffff8f1fd>]
+[8<ff8f1ffffff8f1fd>]
+[8<ff8f1ffffff8f1ff>]
+[8<ff9f1ffffff8f1ff>]
+[8<ff9f1ffffff9f1ff>]
+[8<ff9f9ffffff9f1ff>]
+[8<ff9f9ffffff9f9ff>]
+[8<ffbf9ffffff9f9ff>]
+[8<ffbf9ffffffbf9ff>]
+[8<ffbfdffffffbf9ff>]
+[8<ffbfdffffffbfdff>]
+[8<ffffdffffffbfdff>]
+[8<ffffdffffffffdff>]
+[8<fffffffffffffdff>]
+[8<ffffffffffffffff>]]
+[%mg
+[8<8000000000000000>]
+[8<0822080080228000>]
+[8<0204081020408001>]
+[8<40e0400000000000>]
+[8<66999966>]
+[8<8001000010080000>]
+[8<81c36666c3810000>]
+[8<f0e0c08000000000>]
+[16<07c00f801f003e007c00f800f001e003c007800f001f003e007c00f801f003e0>]
+[16<1f000f8007c003e001f000f8007c003e001f800fc007e003f001f8007c003e00>]
+[8<c3c300000000c3c3>]
+[16<0040008001000200040008001000200040008000000100020004000800100020>]
+[16<0040002000100008000400020001800040002000100008000400020001000080>]
+[16<1fc03fe07df0f8f8f07de03fc01f800fc01fe03ff07df8f87df03fe01fc00f80>]
+[8<80>]
+[8<8040201000000000>]
+[8<84cc000048cc0000>]
+[8<9900009900000000>]
+[8<08040201804020100800020180002010>]
+[8<2418814242811824>]
+[8<66999966>]
+[8<8000000008000000>]
+[8<70f8d8f870000000>]
+[8<0814224180402010>]
+[8<aa00440a11a04400>]
+[8<018245aa45820100>]
+[8<221c224180808041>]
+[8<88000000>]
+[8<0855800080550800>]
+[8<2844004482440044>]
+[8<0810204080412214>]
+[8<00>]]]def
+/Dfill{
+ transform /maxy exch def /maxx exch def
+ transform /miny exch def /minx exch def
+ minx maxx gt{/minx maxx /maxx minx def def}if
+ miny maxy gt{/miny maxy /maxy miny def def}if
+ Dpatterns Dstipple 1 sub get exch 1 sub get
+ aload pop /stip exch def /stipw exch def /stiph 128 def
+ /imatrix[stipw 0 0 stiph 0 0]def
+ /tmatrix[stipw 0 0 stiph 0 0]def
+ /minx minx cvi stiph idiv stiph mul def
+ /miny miny cvi stipw idiv stipw mul def
+ gsave eoclip 0 setgray
+ miny stiph maxy{
+  tmatrix exch 5 exch put
+  minx stipw maxx{
+   tmatrix exch 4 exch put tmatrix setmatrix
+   stipw stiph true imatrix {stip} imagemask
+  }for
+ }for
+ grestore
+}def
+/Dp{Dfill Dstroke}def
+/DP{Dfill currentpoint newpath moveto}def
+end
+
+/ditstart{$DITroff begin
+ /nfonts 60 def			% NFONTS makedev/ditroff dependent!
+ /fonts[nfonts{0}repeat]def
+ /fontnames[nfonts{()}repeat]def
+/docsave save def
+}def
+
+% character outcalls
+/oc{
+ /pswid exch def /cc exch def /name exch def
+ /ditwid pswid fontsize mul resolution mul 72000 div def
+ /ditsiz fontsize resolution mul 72 div def
+ ocprocs name known{ocprocs name get exec}{name cb}ifelse
+}def
+/fractm [.65 0 0 .6 0 0] def
+/fraction{
+ /fden exch def /fnum exch def gsave /cf currentfont def
+ cf fractm makefont setfont 0 .3 dm 2 copy neg rmoveto
+ fnum show rmoveto currentfont cf setfont(\244)show setfont fden show 
+ grestore ditwid 0 rmoveto
+}def
+/oce{grestore ditwid 0 rmoveto}def
+/dm{ditsiz mul}def
+/ocprocs 50 dict def ocprocs begin
+(14){(1)(4)fraction}def
+(12){(1)(2)fraction}def
+(34){(3)(4)fraction}def
+(13){(1)(3)fraction}def
+(23){(2)(3)fraction}def
+(18){(1)(8)fraction}def
+(38){(3)(8)fraction}def
+(58){(5)(8)fraction}def
+(78){(7)(8)fraction}def
+(sr){gsave 0 .06 dm rmoveto(\326)show oce}def
+(is){gsave 0 .15 dm rmoveto(\362)show oce}def
+(->){gsave 0 .02 dm rmoveto(\256)show oce}def
+(<-){gsave 0 .02 dm rmoveto(\254)show oce}def
+(==){gsave 0 .05 dm rmoveto(\272)show oce}def
+(uc){gsave currentpoint 400 .009 dm mul add translate
+     8 -8 scale ucseal oce}def
+end
+
+% an attempt at a PostScript FONT to implement ditroff special chars
+% this will enable us to 
+%	cache the little buggers
+%	generate faster, more compact PS out of psdit
+%	confuse everyone (including myself)!
+50 dict dup begin
+/FontType 3 def
+/FontName /DIThacks def
+/FontMatrix [.001 0 0 .001 0 0] def
+/FontBBox [-260 -260 900 900] def% a lie but ...
+/Encoding 256 array def
+0 1 255{Encoding exch /.notdef put}for
+Encoding
+ dup 8#040/space put %space
+ dup 8#110/rc put %right ceil
+ dup 8#111/lt put %left  top curl
+ dup 8#112/bv put %bold vert
+ dup 8#113/lk put %left  mid curl
+ dup 8#114/lb put %left  bot curl
+ dup 8#115/rt put %right top curl
+ dup 8#116/rk put %right mid curl
+ dup 8#117/rb put %right bot curl
+ dup 8#120/rf put %right floor
+ dup 8#121/lf put %left  floor
+ dup 8#122/lc put %left  ceil
+ dup 8#140/sq put %square
+ dup 8#141/bx put %box
+ dup 8#142/ci put %circle
+ dup 8#143/br put %box rule
+ dup 8#144/rn put %root extender
+ dup 8#145/vr put %vertical rule
+ dup 8#146/ob put %outline bullet
+ dup 8#147/bu put %bullet
+ dup 8#150/ru put %rule
+ dup 8#151/ul put %underline
+ pop
+/DITfd 100 dict def
+/BuildChar{0 begin
+ /cc exch def /fd exch def
+ /charname fd /Encoding get cc get def
+ /charwid fd /Metrics get charname get def
+ /charproc fd /CharProcs get charname get def
+ charwid 0 fd /FontBBox get aload pop setcachedevice
+ 2 setlinejoin 40 setlinewidth
+ newpath 0 0 moveto gsave charproc grestore
+ end}def
+/BuildChar load 0 DITfd put
+/CharProcs 50 dict def
+CharProcs begin
+/space{}def
+/.notdef{}def
+/ru{500 0 rls}def
+/rn{0 840 moveto 500 0 rls}def
+/vr{0 800 moveto 0 -770 rls}def
+/bv{0 800 moveto 0 -1000 rls}def
+/br{0 840 moveto 0 -1000 rls}def
+/ul{0 -140 moveto 500 0 rls}def
+/ob{200 250 rmoveto currentpoint newpath 200 0 360 arc closepath stroke}def
+/bu{200 250 rmoveto currentpoint newpath 200 0 360 arc closepath fill}def
+/sq{80 0 rmoveto currentpoint dround newpath moveto
+    640 0 rlineto 0 640 rlineto -640 0 rlineto closepath stroke}def
+/bx{80 0 rmoveto currentpoint dround newpath moveto
+    640 0 rlineto 0 640 rlineto -640 0 rlineto closepath fill}def
+/ci{500 360 rmoveto currentpoint newpath 333 0 360 arc
+    50 setlinewidth stroke}def
+
+/lt{0 -200 moveto 0 550 rlineto currx 800 2cx s4 add exch s4 a4p stroke}def
+/lb{0 800 moveto 0 -550 rlineto currx -200 2cx s4 add exch s4 a4p stroke}def
+/rt{0 -200 moveto 0 550 rlineto currx 800 2cx s4 sub exch s4 a4p stroke}def
+/rb{0 800 moveto 0 -500 rlineto currx -200 2cx s4 sub exch s4 a4p stroke}def
+/lk{0 800 moveto 0 300 -300 300 s4 arcto pop pop 1000 sub
+    0 300 4 2 roll s4 a4p 0 -200 lineto stroke}def
+/rk{0 800 moveto 0 300 s2 300 s4 arcto pop pop 1000 sub
+    0 300 4 2 roll s4 a4p 0 -200 lineto stroke}def
+/lf{0 800 moveto 0 -1000 rlineto s4 0 rls}def
+/rf{0 800 moveto 0 -1000 rlineto s4 neg 0 rls}def
+/lc{0 -200 moveto 0 1000 rlineto s4 0 rls}def
+/rc{0 -200 moveto 0 1000 rlineto s4 neg 0 rls}def
+end
+
+/Metrics 50 dict def Metrics begin
+/.notdef 0 def
+/space 500 def
+/ru 500 def
+/br 0 def
+/lt 416 def
+/lb 416 def
+/rt 416 def
+/rb 416 def
+/lk 416 def
+/rk 416 def
+/rc 416 def
+/lc 416 def
+/rf 416 def
+/lf 416 def
+/bv 416 def
+/ob 350 def
+/bu 350 def
+/ci 750 def
+/bx 750 def
+/sq 750 def
+/rn 500 def
+/ul 500 def
+/vr 0 def
+end
+
+DITfd begin
+/s2 500 def /s4 250 def /s3 333 def
+/a4p{arcto pop pop pop pop}def
+/2cx{2 copy exch}def
+/rls{rlineto stroke}def
+/currx{currentpoint pop}def
+/dround{transform round exch round exch itransform} def
+end
+end
+/DIThacks exch definefont pop
+ditstart
+(psc)xT
+576 1 1 xr
+1(Times-Roman)xf 1 f
+2(Times-Italic)xf 2 f
+3(Times-Bold)xf 3 f
+4(Times-BoldItalic)xf 4 f
+5(Helvetica)xf 5 f
+6(Helvetica-Bold)xf 6 f
+7(Courier)xf 7 f
+8(Courier-Bold)xf 8 f
+9(Symbol)xf 9 f
+10(DIThacks)xf 10 f
+10 s
+1 f
+xi
+%%EndProlog
+
+%%Page: 1 1
+10 s 10 xH 0 xS 1 f
+8 s
+3 f
+12 s
+1019 984(Performance)N
+1578(Measurements)X
+2205(of)X
+2309(a)X
+2381(Multiprocessor)X
+3030(Sprite)X
+3305(Kernel)X
+2 f
+10 s
+2022 1176(John)N
+2198(H.)X
+2296(Hartman)X
+1989 1272(John)N
+2165(K.)X
+2258(Ousterhout)X
+1 f
+1725 1416(University)N
+2083(of)X
+2170(California)X
+2515(at)X
+2593(Berkeley)X
+1861 1512(Computer)N
+2201(Science)X
+2471(Division)X
+1555 1608(Electrical)N
+1883(Engineering)X
+2295(and)X
+2431(Computer)X
+2771(Sciences)X
+1919 1704(University)N
+2277(of)X
+2364(California)X
+1973 1800(Berkeley,)N
+2303(CA)X
+2434(94720)X
+1723 1896({jhh,ouster}@sprite.Berkeley.EDU)N
+2 f
+2115 2184(ABSTRACT)N
+1 f
+1064 2376(This)N
+1231(report)X
+1448(presents)X
+1736(performance)X
+2168(measurements)X
+2652(made)X
+2852(of)X
+2945(the)X
+3069(Sprite)X
+3286(operating)X
+3615(sys-)X
+864 2472(tem)N
+1011(running)X
+1287(on)X
+1394(a)X
+1457(multiprocessor.)X
+2000(A)X
+2085(variety)X
+2335(of)X
+2429(micro-)X
+2670(and)X
+2812(macro-benchmarks)X
+3454(were)X
+3637(run)X
+864 2568(while)N
+1065(varying)X
+1333(the)X
+1454(number)X
+1722(of)X
+1812(processors)X
+2174(in)X
+2259(the)X
+2381(system,)X
+2647(and)X
+2787(both)X
+2953(the)X
+3075(elapsed)X
+3340(time)X
+3506(and)X
+3646(the)X
+864 2664(contention)N
+1240(for)X
+1372(kernel)X
+1611(locks)X
+1818(were)X
+2013(recorded.)X
+2373(A)X
+2469(number)X
+2751(of)X
+2855(interesting)X
+3230(conclusions)X
+3645(are)X
+864 2760(drawn)N
+1095(from)X
+1281(the)X
+1409(results.)X
+1688(First,)X
+1884(the)X
+2012(macro-benchmarks)X
+2658(show)X
+2857(acceptable)X
+3227(performance)X
+3664(on)X
+864 2856(systems)N
+1141(of)X
+1232(up)X
+1336(to)X
+1422(\256ve)X
+1566(processors.)X
+1969(Total)X
+2161(system)X
+2406(throughput)X
+2780(increases)X
+3098(almost)X
+3334(linearly)X
+3602(with)X
+864 2952(the)N
+993(system)X
+1247(size.)X
+1444(Projections)X
+1836(of)X
+1935(the)X
+2065(lock)X
+2235(contention)X
+2605(measurements)X
+3096(show)X
+3297(that)X
+3449(the)X
+3579(max-)X
+864 3048(imum)N
+1071(performance)X
+1499(will)X
+1644(be)X
+1741(reached)X
+2013(with)X
+2176(about)X
+2375(seven)X
+2579(processors)X
+2939(in)X
+3022(the)X
+3141(system.)X
+3424(Second,)X
+3700(it)X
+864 3144(is)N
+944(often)X
+1136(dif\256cult)X
+1416(to)X
+1505(predict)X
+1755(the)X
+1880(effect)X
+2091(of)X
+2185(a)X
+2248(benchmark)X
+2632(on)X
+2740(particular)X
+3076(kernel)X
+3305(locks.)X
+3542(It)X
+3619(was)X
+864 3240(anticipated)N
+1258(that)X
+1420(different)X
+1739(benchmarks)X
+2169(would)X
+2410(saturate)X
+2701(different)X
+3019(kernel)X
+3261(monitor)X
+3555(locks.)X
+864 3336(After)N
+1056(running)X
+1327(the)X
+1447(benchmarks)X
+1857(it)X
+1923(was)X
+2070(found)X
+2279(that)X
+2421(a)X
+2479(single)X
+2693(master)X
+2930(lock)X
+3091(was)X
+3239(the)X
+3360(biggest)X
+3614(ker-)X
+864 3432(nel)N
+987(bottleneck,)X
+1366(and)X
+1506(that)X
+1650(one)X
+1790(of)X
+1881(the)X
+2003(micro-benchmarks)X
+2629(had)X
+2769(saturated)X
+3083(a)X
+3143(different)X
+3444(lock)X
+3606(than)X
+864 3528(the)N
+983(one)X
+1120(at)X
+1199(which)X
+1416(it)X
+1482(was)X
+1629(targeted.)X
+1950(The)X
+2097(kernel)X
+2320(locking)X
+2582(structure)X
+2885(has)X
+3014(become)X
+3286(so)X
+3379(complex)X
+3677(as)X
+864 3624(the)N
+986(system)X
+1232(has)X
+1363(evolved)X
+1641(that)X
+1785(it)X
+1853(is)X
+1930(hard)X
+2097(to)X
+2182(determine)X
+2526(cause)X
+2728(and)X
+2867(effect)X
+3074(relationships.)X
+3546(Third,)X
+864 3720(although)N
+1196(the)X
+1347(kernel)X
+1601(contains)X
+1921(many)X
+2152(locks,)X
+2394(only)X
+2589(a)X
+2678(few)X
+2852(of)X
+2972(them)X
+3185(are)X
+3337(performance)X
+864 3816(bottlenecks.)N
+1293(Performance)X
+1728(measurements)X
+2211(such)X
+2382(as)X
+2473(those)X
+2666(presented)X
+2998(here)X
+3161(allow)X
+3363(the)X
+3485(relevant)X
+864 3912(parts)N
+1054(of)X
+1155(the)X
+1288(kernel)X
+1524(to)X
+1621(be)X
+1732(redesigned)X
+2115(to)X
+2212(eliminate)X
+2545(the)X
+2678(bottlenecks.)X
+3118(Such)X
+3313(a)X
+3384(redesign)X
+3691(is)X
+864 4008(needed)N
+1112(to)X
+1194(allow)X
+1392(the)X
+1510(system)X
+1752(to)X
+1834(scale)X
+2015(gracefully)X
+2361(beyond)X
+2617(about)X
+2815(seven)X
+3018(processors.)X
+3 f
+576 4296(1.)N
+676(Introduction)X
+1 f
+776 4420(Sprite)N
+990(is)X
+1066(a)X
+1125(network)X
+1411(operating)X
+1737(system)X
+1982(being)X
+2184(developed)X
+2538(at)X
+2620(Berkeley)X
+2934([7].)X
+3092(From)X
+3289(its)X
+3388(inception)X
+3710(Sprite)X
+3925(has)X
+576 4516(been)N
+751(designed)X
+1059(to)X
+1144(run)X
+1274(on)X
+1377(a)X
+1436(multiprocessor.)X
+1975(To)X
+2087(avoid)X
+2288(performance)X
+2718(bottlenecks)X
+3106(due)X
+3245(to)X
+3330(kernel)X
+3554(contention,)X
+3934(the)X
+576 4612(kernel)N
+815(is)X
+906(multi-threaded)X
+1416(to)X
+1516(allow)X
+1732(more)X
+1936(than)X
+2113(one)X
+2268(processor)X
+2615(to)X
+2716(execute)X
+3001(kernel)X
+3241(code)X
+3432(at)X
+3529(the)X
+3666(same)X
+3870(time.)X
+576 4708(Exclusive)N
+915(access)X
+1144(to)X
+1229(kernel)X
+1453(resources)X
+1780(is)X
+1856(ensured)X
+2129(through)X
+2401(the)X
+2522(use)X
+2652(of)X
+2742(locks.)X
+2974(There)X
+3185(is)X
+3261(a)X
+3320(limit)X
+3493(to)X
+3578(the)X
+3698(number)X
+3965(of)X
+576 4804(processors)N
+935(that)X
+1075(can)X
+1207(be)X
+1303(in)X
+1386(the)X
+1505(kernel)X
+1727(and)X
+1864(doing)X
+2067(useful)X
+2284(work,)X
+2490(however.)X
+2828(Once)X
+3019(a)X
+3076(lock)X
+3235(saturates,)X
+3557(additional)X
+3898(pro-)X
+576 4900(cessors)N
+829(will)X
+974(not)X
+1097(signi\256cantly)X
+1513(increase)X
+1798(system)X
+2041(throughput.)X
+2453(The)X
+2599(goal)X
+2758(of)X
+2846(our)X
+2974(study)X
+3168(was)X
+3313(to)X
+3395(determine)X
+3736(how)X
+3894(well)X
+576 4996(Sprite)N
+796(scales)X
+1017(with)X
+1188(the)X
+1315(size)X
+1469(of)X
+1565(a)X
+1631(multiprocessor,)X
+2157(by)X
+2267(running)X
+2546(a)X
+2612(variety)X
+2865(of)X
+2962(benchmarks)X
+3380(and)X
+3526(measuring)X
+3890(both)X
+576 5092(contention)N
+934(for)X
+1048(kernel)X
+1269(locks)X
+1458(and)X
+1594(overall)X
+1837(system)X
+2079(performance.)X
+776 5216(The)N
+926(benchmarks)X
+1339(were)X
+1521(chosen)X
+1769(either)X
+1977(to)X
+2064(stress)X
+2267(particular)X
+2600(kernel)X
+2826(locks)X
+3021(or)X
+3114(to)X
+3202(resemble)X
+3538(user)X
+3698(workloads)X
+576 5312(seen)N
+755(in)X
+853(the)X
+987(Sprite)X
+1214(development)X
+1663(environment.)X
+2143(The)X
+2303(former)X
+2557(were)X
+2749(used)X
+2931(to)X
+3028(measure)X
+3331(how)X
+3504(well)X
+3677(the)X
+3810(system)X
+576 5408(behaves)N
+861(when)X
+1061(locks)X
+1256(became)X
+1529(saturated,)X
+1866(and)X
+2009(to)X
+2098(identify)X
+2374(locks)X
+2570(that)X
+2717(are)X
+2843(potential)X
+3150(bottlenecks.)X
+3582(This)X
+3751(informa-)X
+576 5504(tion)N
+722(can)X
+856(then)X
+1016(be)X
+1114(used)X
+1283(to)X
+1367(restructure)X
+1733(the)X
+1853(kernel)X
+2075(to)X
+2158(improve)X
+2446(its)X
+2542(behavior.)X
+2884(The)X
+3030(latter)X
+3216(were)X
+3394(used)X
+3562(to)X
+3645(measure)X
+3934(the)X
+8 s
+10 f
+576 5584(hhhhhhhhhhhhhhhhhh)N
+1 f
+576 5664(The)N
+705(work)X
+866(described)X
+1140(here)X
+1279(was)X
+1408(supported)X
+1690(in)X
+1771(part)X
+1901(by)X
+1996(the)X
+2105(Defense)X
+2344(Advanced)X
+2633(Research)X
+2897(Projects)X
+3134(Agency)X
+3363(under)X
+3539(contract)X
+576 5744(N00039-85-R-0269)N
+1096(and)X
+1204(in)X
+1270(part)X
+1385(by)X
+1465(the)X
+1559(National)X
+1795(Science)X
+2009(Foundation)X
+2317(under)X
+2478(grant)X
+2625(ECS-8351961.)X
+
+2 p
+%%Page: 2 2
+8 s 8 xH 0 xS 1 f
+10 s
+2237 384(-)N
+2284(2)X
+2344(-)X
+576 672(system's)N
+882(ability)X
+1112(to)X
+1200(scale)X
+1387(while)X
+1591(running)X
+1866(realistic)X
+2146(workloads,)X
+2526(determining)X
+2939(both)X
+3107(the)X
+3231(limit)X
+3408(on)X
+3515(system)X
+3764(size)X
+3916(and)X
+576 768(the)N
+694(effect)X
+898(of)X
+985(adding)X
+1223(another)X
+1484(processor)X
+1812(to)X
+1894(the)X
+2012(system.)X
+776 892(The)N
+922(results)X
+1152(indicate)X
+1427(that)X
+1568(contention)X
+1927(for)X
+2042(the)X
+2161(kernel)X
+2383(context)X
+2640(switch)X
+2870(code)X
+3043(is)X
+3117(the)X
+3236(biggest)X
+3488(limiting)X
+3761(factor)X
+3970(to)X
+576 988(scaling)N
+828(the)X
+951(system.)X
+1238(The)X
+1388(lock)X
+1551(protecting)X
+1901(this)X
+2041(code)X
+2218(becomes)X
+2524(very)X
+2692(heavily)X
+2953(utilized)X
+3217(with)X
+3383(only)X
+3549(\256ve)X
+3693(processors)X
+576 1084(in)N
+664(the)X
+788(system.)X
+1076(Measurements)X
+1570(of)X
+1663(the)X
+1787(realistic)X
+2067(workloads)X
+2427(indicate)X
+2708(that)X
+2855(the)X
+2980(lock)X
+3145(will)X
+3296(become)X
+3573(saturated)X
+3890(with)X
+576 1180(about)N
+774(seven)X
+977(processors)X
+1336(in)X
+1418(the)X
+1536(system.)X
+776 1304(The)N
+932(rest)X
+1079(of)X
+1177(the)X
+1306(paper)X
+1516(is)X
+1600(structured)X
+1952(as)X
+2050(follows.)X
+2361(Section)X
+2632(2)X
+2703(describes)X
+3033(the)X
+3162(types)X
+3362(of)X
+3460(locks)X
+3661(used)X
+3840(in)X
+3934(the)X
+576 1400(Sprite)N
+792(kernel,)X
+1038(and)X
+1179(Section)X
+1444(3)X
+1509(describes)X
+1833(the)X
+1956(multiprocessor)X
+2457(hardware)X
+2781(used)X
+2952(to)X
+3038(obtain)X
+3262(the)X
+3384(measurements.)X
+3907(The)X
+576 1496(instrumentation)N
+1102(added)X
+1318(to)X
+1404(the)X
+1526(Sprite)X
+1741(kernel)X
+1966(is)X
+2044(outlined)X
+2331(in)X
+2418(Section)X
+2683(4,)X
+2768(and)X
+2909(a)X
+2970(description)X
+3351(of)X
+3443(the)X
+3566(benchmarks)X
+3979(is)X
+576 1592(in)N
+663(Section)X
+928(5.)X
+1033(The)X
+1183(results)X
+1417(are)X
+1541(in)X
+1628(Section)X
+1893(6,)X
+1978(followed)X
+2288(by)X
+2393(comments)X
+2747(in)X
+2834(Section)X
+3099(7)X
+3164(and)X
+3305(concluding)X
+3686(remarks)X
+3970(in)X
+576 1688(Section)N
+836(8.)X
+3 f
+576 1880(2.)N
+676(Kernel)X
+932(locks)X
+1 f
+776 2004(In)N
+869(order)X
+1065(for)X
+1185(a)X
+1247(multi-threaded)X
+1745(kernel)X
+1972(to)X
+2060(function)X
+2353(correctly)X
+2665(it)X
+2735(must)X
+2916(contain)X
+3178(mechanisms)X
+3600(for)X
+3721(providing)X
+576 2100(both)N
+739(mutual)X
+982(exclusion)X
+1310(and)X
+1447(synchronization)X
+1980(between)X
+2269(threads.)X
+2562(Other)X
+2766(efforts)X
+2997(to)X
+3079(design)X
+3308(multiprocessor)X
+3804(operat-)X
+576 2196(ing)N
+712(systems)X
+999(have)X
+1185(used)X
+1366(semaphores)X
+1779([1,)X
+1879(3,)X
+1952(8].)X
+2093(Semaphores)X
+2519(are)X
+2653(appealing)X
+3000(because)X
+3290(they)X
+3463(can)X
+3610(provide)X
+3890(both)X
+576 2292(mutual)N
+831(exclusion)X
+1171(and)X
+1320(synchronization,)X
+1885(eliminating)X
+2282(the)X
+2413(need)X
+2598(for)X
+2725(separate)X
+3022(mechanisms.)X
+3491(Sprite,)X
+3735(however,)X
+576 2388(uses)N
+734(monitor-style)X
+1185(locking)X
+1445(and)X
+1581(condition)X
+1903(variables)X
+2213(to)X
+2295(provide)X
+2560(these)X
+2745(services.)X
+776 2512(There)N
+993(are)X
+1121(two)X
+1271(basic)X
+1466(types)X
+1665(of)X
+1762(locks)X
+1961(in)X
+2053(the)X
+2181(Sprite)X
+2402(kernel:)X
+2 f
+2655(monitor)X
+1 f
+2938(locks)X
+3137(and)X
+2 f
+3283(master)X
+1 f
+3531(locks.)X
+3770(Monitor)X
+576 2608(locks)N
+771(are)X
+896(used)X
+1069(to)X
+1156(implement)X
+1523(monitors)X
+1832([5],)X
+1971(with)X
+2138(semantics)X
+2479(similar)X
+2726(to)X
+2813(those)X
+3007(in)X
+3094(Mesa)X
+3293([6].)X
+3452(Monitor)X
+3739(locks)X
+3933(are)X
+576 2704(acquired)N
+879(at)X
+963(the)X
+1087(start)X
+1251(of)X
+1344(a)X
+1406(procedure)X
+1754(and)X
+1896(released)X
+2186(at)X
+2270(the)X
+2394(end.)X
+2577(If)X
+2658(a)X
+2721(process)X
+2989(tries)X
+3154(to)X
+3243(lock)X
+3408(a)X
+3471(monitor)X
+3751(lock)X
+3916(and)X
+576 2800(another)N
+839(process)X
+1101(has)X
+1229(it)X
+1294(locked)X
+1529(already,)X
+1807(then)X
+1966(the)X
+2085(process)X
+2347(is)X
+2421(put)X
+2544(to)X
+2627(sleep.)X
+2853(The)X
+2999(release)X
+3244(of)X
+3332(a)X
+3389(monitor)X
+3663(lock)X
+3822(causes)X
+576 2896(all)N
+676(processes)X
+1004(that)X
+1144(are)X
+1263(waiting)X
+1523(on)X
+1623(the)X
+1741(lock)X
+1899(to)X
+1981(be)X
+2077(awakened)X
+2419(and)X
+2555(simultaneously)X
+3059(try)X
+3168(to)X
+3250(reacquire)X
+3570(the)X
+3688(lock.)X
+776 3020(The)N
+929(other)X
+1122(type)X
+1288(of)X
+1384(lock)X
+1551(in)X
+1642(the)X
+1769(Sprite)X
+1989(kernel)X
+2219(is)X
+2301(the)X
+2 f
+2428(master)X
+1 f
+2675(lock.)X
+2882(Master)X
+3134(locks)X
+3332(are)X
+3460(used)X
+3636(in)X
+3727(much)X
+3934(the)X
+576 3116(same)N
+764(manner)X
+1027(as)X
+1116(monitor)X
+1391(locks,)X
+1602(except)X
+1834(that)X
+1976(they)X
+2136(are)X
+2257(used)X
+2426(to)X
+2510(to)X
+2594(provide)X
+2861(mutual)X
+3105(exclusion)X
+3434(between)X
+3724(processes)X
+576 3212(and)N
+718(interrupt)X
+1020(handlers.)X
+1358(A)X
+1442(master)X
+1682(lock)X
+1846(is)X
+1925(simply)X
+2168(a)X
+2230(spin)X
+2389(lock)X
+2553(that)X
+2699(is)X
+2778(acquired)X
+3081(with)X
+3249(interrupts)X
+3582(disabled.)X
+3915(If)X
+3996(a)X
+576 3308(master)N
+821(lock)X
+990(is)X
+1074(already)X
+1342(in)X
+1435(use)X
+1573(when)X
+1777(an)X
+1883(attempt)X
+2153(is)X
+2236(made)X
+2440(to)X
+2532(grab)X
+2705(it,)X
+2799(then)X
+2967(the)X
+3095(processor)X
+3433(retries)X
+3664(the)X
+3792(locking)X
+576 3404(operation)N
+901(until)X
+1069(it)X
+1135(succeeds.)X
+1483(Interrupts)X
+1817(are)X
+1938(disabled)X
+2228(to)X
+2313(prevent)X
+2577(a)X
+2636(situation)X
+2934(where)X
+3154(an)X
+3253(interrupt)X
+3552(is)X
+3628(taken)X
+3825(after)X
+3996(a)X
+576 3500(master)N
+810(lock)X
+968(has)X
+1095(been)X
+1267(acquired)X
+1564(and)X
+1700(the)X
+1818(interrupt)X
+2114(routine)X
+2361(spins)X
+2545(forever)X
+2798(waiting)X
+3058(for)X
+3172(the)X
+3290(lock)X
+3448(to)X
+3530(be)X
+3626(released.)X
+776 3624(Locks)N
+995(have)X
+1170(three)X
+1354(different)X
+1654(styles)X
+1859(of)X
+1949(usage)X
+2155(in)X
+2240(the)X
+2362(Sprite)X
+2577(kernel.)X
+2842(These)X
+3058(three)X
+3243(styles)X
+3449(correspond)X
+3830(to)X
+3916(dif-)X
+576 3720(ferent)N
+789(locking)X
+1054(granularities.)X
+1520(Fine-grained)X
+1955(locks)X
+2149(allow)X
+2352(a)X
+2413(high)X
+2580(degree)X
+2820(of)X
+2912(concurrency,)X
+3355(but)X
+3482(they)X
+3645(increase)X
+3934(the)X
+576 3816(number)N
+844(of)X
+934(locks)X
+1126(that)X
+1269(a)X
+1328(particular)X
+1659(thread)X
+1883(must)X
+2061(acquire,)X
+2341(thereby)X
+2605(decreasing)X
+2972(its)X
+3070(performance.)X
+3541(Coarse-grained)X
+576 3912(locks)N
+777(reduce)X
+1024(the)X
+1154(amount)X
+1426(of)X
+1525(concurrency,)X
+1975(but)X
+2109(improve)X
+2408(the)X
+2538(performance)X
+2977(of)X
+3075(a)X
+3142(single)X
+3364(thread.)X
+3636(The)X
+3792(trick)X
+3970(in)X
+576 4008(designing)N
+907(the)X
+1025(kernel)X
+1246(is)X
+1319(deciding)X
+1615(the)X
+1733(placement)X
+2083(and)X
+2219(granularity)X
+2591(of)X
+2678(locks.)X
+776 4132(The)N
+923(coarsest)X
+1204(granularity)X
+1578(locks)X
+1769(in)X
+1853(the)X
+1973(kernel)X
+2196(are)X
+2317(single)X
+2531(locks)X
+2723(that)X
+2866(are)X
+2988(used)X
+3158(to)X
+3243(protect)X
+3489(sections)X
+3770(of)X
+3860(code.)X
+576 4228(Locks)N
+793(used)X
+961(in)X
+1044(this)X
+1180(manner)X
+1442(are)X
+1561(referred)X
+1837(to)X
+1919(as)X
+2 f
+2006(code)X
+2178(locks)X
+1 f
+2343(.)X
+2403(If)X
+2477(the)X
+2595(lock)X
+2753(is)X
+2826(a)X
+2882(monitor)X
+3155(lock)X
+3313(then)X
+3471(the)X
+3589(resulting)X
+3889(con-)X
+576 4324(struction)N
+878(is)X
+953(similar)X
+1197(to)X
+1281(the)X
+2 f
+1401(monitored)X
+1752(modules)X
+1 f
+2041(described)X
+2371(in)X
+2455([6].)X
+2611(An)X
+2731(example)X
+3025(of)X
+3114(this)X
+3251(style)X
+3424(of)X
+3514(use)X
+3644(is)X
+3720(the)X
+3841(moni-)X
+576 4420(tor)N
+695(lock)X
+863(around)X
+1116(the)X
+1244(Sprite)X
+1465(virtual)X
+1704(memory)X
+2001(system.)X
+2293(There)X
+2511(is)X
+2594(a)X
+2660(single)X
+2881(monitor)X
+3164(lock)X
+3332(that)X
+3482(must)X
+3667(be)X
+3773(grabbed)X
+576 4516(whenever)N
+909(a)X
+965(routine)X
+1212(in)X
+1294(the)X
+1412(virtual)X
+1641(memory)X
+1928(system)X
+2170(is)X
+2244(called,)X
+2477(thus)X
+2631(synchronizing)X
+3106(access)X
+3333(to)X
+3416(the)X
+3535(virtual)X
+3765(memory)X
+576 4612(system)N
+818(as)X
+905(a)X
+961(whole.)X
+776 4736(The)N
+928(remaining)X
+1280(two)X
+1427(styles)X
+1637(of)X
+1732(usage)X
+1943(are)X
+2070(variations)X
+2414(on)X
+2522(a)X
+2586(theme.)X
+2850(They)X
+3043(both)X
+3213(associate)X
+3531(locks)X
+3728(with)X
+3898(data)X
+576 4832(rather)N
+789(than)X
+952(with)X
+1118(sections)X
+1400(of)X
+1491(code.)X
+1707(For)X
+1842(this)X
+1981(reason)X
+2215(they)X
+2377(are)X
+2500(referred)X
+2780(to)X
+2866(as)X
+2 f
+2957(data)X
+3123(locks)X
+1 f
+3288(.)X
+3352(Data)X
+3528(locks)X
+3721(that)X
+3865(use)X
+3996(a)X
+576 4928(monitor)N
+853(lock)X
+1015(are)X
+1138(referred)X
+1418(to)X
+1504(as)X
+2 f
+1595(monitored)X
+1948(objects)X
+1 f
+2199(in)X
+2286(the)X
+2409(Mesa)X
+2608(paper.)X
+2852(One)X
+3011(style)X
+3187(of)X
+3279(usage)X
+3487(associates)X
+3833(a)X
+3894(lock)X
+576 5024(with)N
+739(a)X
+796(data)X
+951(structure.)X
+1293(In)X
+1380(order)X
+1570(to)X
+1652(manipulate)X
+2028(the)X
+2146(data)X
+2300(structure)X
+2601(the)X
+2719(lock)X
+2877(must)X
+3052(be)X
+3148(held.)X
+3346(A)X
+3424(lock)X
+3582(that)X
+3722(protects)X
+3996(a)X
+576 5120(queue)N
+790(is)X
+865(an)X
+963(example.)X
+1297(The)X
+1445(Sprite)X
+1659(\256le)X
+1784(cache)X
+1991(has)X
+2121(a)X
+2180(single)X
+2394(lock)X
+2555(that)X
+2698(protects)X
+2975(the)X
+3096(various)X
+3355(lists)X
+3506(of)X
+3596(cache)X
+3803(blocks,)X
+576 5216(such)N
+743(as)X
+830(the)X
+948(free)X
+1094(list,)X
+1231(dirty)X
+1402(list,)X
+1539(etc.)X
+1693(In)X
+1780(order)X
+1970(to)X
+2052(modify)X
+2303(any)X
+2439(of)X
+2526(these)X
+2711(lists)X
+2859(the)X
+2977(\256le)X
+3099(cache)X
+3303(lock)X
+3461(must)X
+3636(be)X
+3732(held.)X
+776 5340(The)N
+926(\256nest)X
+1125(granularity)X
+1503(locks)X
+1698(are)X
+1823(associated)X
+2179(with)X
+2347(individual)X
+2697(data)X
+2857(objects.)X
+3150(A)X
+3234(processor)X
+3568(must)X
+3749(hold)X
+3917(this)X
+576 5436(lock)N
+742(before)X
+976(modifying)X
+1337(the)X
+1463(contents)X
+1758(of)X
+1853(the)X
+1979(object.)X
+2243(For)X
+2382(example,)X
+2702(each)X
+2878(block)X
+3084(in)X
+3174(the)X
+3300(Sprite)X
+3519(\256le)X
+3649(cache)X
+3861(has)X
+3996(a)X
+576 5532(lock,)N
+754(and)X
+890(that)X
+1030(lock)X
+1188(must)X
+1363(be)X
+1459(held)X
+1617(when)X
+1811(accessing)X
+2139(the)X
+2257(contents)X
+2544(of)X
+2631(the)X
+2749(block.)X
+776 5656(In)N
+877(addition)X
+1173(to)X
+1269(ensuring)X
+1579(mutual)X
+1835(exclusion)X
+2177(between)X
+2480(threads,)X
+2767(Sprite)X
+2993(must)X
+3183(also)X
+3347(provide)X
+3627(a)X
+3698(means)X
+3938(for)X
+576 5752(threads)N
+831(to)X
+916(wait)X
+1077(for)X
+1194(interesting)X
+1555(conditions)X
+1911(to)X
+1996(occur.)X
+2 f
+2238(Condition)X
+2580(variables)X
+1 f
+2901(are)X
+3023(used)X
+3193(for)X
+3310(this)X
+3448(purpose.)X
+3764(If)X
+3840(a)X
+3898(pro-)X
+576 5848(cess)N
+737(waits)X
+933(on)X
+1040(a)X
+1103(condition)X
+1432(variable)X
+1718(while)X
+1923(holding)X
+2194(a)X
+2257(lock)X
+2422(it)X
+2493(will)X
+2644(release)X
+2895(the)X
+3021(lock)X
+3187(and)X
+3331(be)X
+3435(put)X
+3565(to)X
+3655(sleep.)X
+3888(At)X
+3996(a)X
+
+3 p
+%%Page: 3 3
+10 s 10 xH 0 xS 1 f
+2237 384(-)N
+2284(3)X
+2344(-)X
+576 672(later)N
+740(time)X
+903(another)X
+1165(process)X
+1426(will)X
+1570(signal)X
+1781(the)X
+1899(condition)X
+2221(variable,)X
+2520(causing)X
+2785(all)X
+2885(processes)X
+3213(waiting)X
+3473(on)X
+3573(the)X
+3691(variable)X
+3970(to)X
+576 768(awake)N
+807(and)X
+948(try)X
+1062(to)X
+1149(reacquire)X
+1474(the)X
+1597(lock.)X
+1800(This)X
+1967(signaling)X
+2285(mechanism)X
+2675(has)X
+2807(the)X
+2930(same)X
+3121(semantics)X
+3463(as)X
+3556(Mesa's)X
+2 f
+3814(broad-)X
+576 864(cast)N
+1 f
+725(facility.)X
+10 f
+1281 928(i)N
+1287(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)X
+1 f
+1773 1024(Major)N
+1989(Locks)X
+2205(in)X
+2287(the)X
+2405(Sprite)X
+2616(Kernel)X
+10 f
+1281 1032(i)N
+1287(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)X
+1281 1048(i)N
+1287(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)X
+1 f
+1525 1136(Name)N
+2118(Type)X
+2697(Description)X
+10 f
+1281 1152(i)N
+1287(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)X
+1 f
+1321 1248(sched_Mutex)N
+2041(Master)X
+2481(controls)X
+2784(access)X
+3036(to)X
+3144(con-)X
+2481 1344(text)N
+2627(switch)X
+2862(code)X
+3039(and)X
+3180(run)X
+2481 1440(queue)N
+10 f
+1281 1456(i)N
+1287(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)X
+1 f
+1321 1552(handleTableLock)N
+2041(Monitor)X
+2041 1648(\(code\))N
+2481 1552(controls)N
+2780(access)X
+3027(to)X
+3131(table)X
+2481 1648(of)N
+2568(all)X
+2668(known)X
+2906(\256le)X
+3028(handles)X
+10 f
+1281 1664(i)N
+1287(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)X
+1 f
+1321 1760(vmMonitorLock)N
+2041(Monitor)X
+2041 1856(\(code\))N
+2481 1760(lock)N
+2671(around)X
+2946(all)X
+3078(virtual)X
+2481 1856(memory)N
+2768(functions)X
+10 f
+1281 1872(i)N
+1287(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)X
+1 f
+1321 1968(perPCBLock)N
+2041(Monitor)X
+2041 2064(\(data\))N
+2481 1968(must)N
+2677(be)X
+2794(held)X
+2973(when)X
+3188(ac-)X
+2481 2064(cessing)N
+2784(contents)X
+3118(of)X
+3251(a)X
+2481 2160(process)N
+2742(control)X
+2989(block)X
+10 f
+1281 2176(i)N
+1287(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)X
+1 f
+1321 2272(pdevLock)N
+2041(Monitor)X
+2041 2368(\(data\))N
+2481 2272(controls)N
+2761(access)X
+2989(to)X
+3074(indivi-)X
+2481 2368(dual)N
+2650(pseudo-device)X
+3144(han-)X
+2481 2464(dles)N
+10 f
+1281 2480(i)N
+1287(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)X
+1 f
+1321 2576(exitLock)N
+2041(Monitor)X
+2041 2672(\(code\))N
+2481 2576(provides)N
+2821(exclusive)X
+3188(ac-)X
+2481 2672(cess)N
+2641(to)X
+2728(code)X
+2905(for)X
+3024(destroy-)X
+2481 2768(ing)N
+2603(a)X
+2659(process)X
+10 f
+1281 2784(i)N
+1287(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)X
+1281(c)X
+2768(c)Y
+2688(c)Y
+2608(c)Y
+2528(c)Y
+2448(c)Y
+2368(c)Y
+2288(c)Y
+2208(c)Y
+2128(c)Y
+2048(c)Y
+1968(c)Y
+1888(c)Y
+1808(c)Y
+1728(c)Y
+1648(c)Y
+1568(c)Y
+1488(c)Y
+1408(c)Y
+1328(c)Y
+1248(c)Y
+1168(c)Y
+1088(c)Y
+1008(c)Y
+1981 2784(c)N
+2728(c)Y
+2648(c)Y
+2568(c)Y
+2488(c)Y
+2408(c)Y
+2328(c)Y
+2248(c)Y
+2168(c)Y
+2088(c)Y
+2008(c)Y
+1928(c)Y
+1848(c)Y
+1768(c)Y
+1688(c)Y
+1608(c)Y
+1528(c)Y
+1448(c)Y
+1368(c)Y
+1288(c)Y
+1208(c)Y
+1128(c)Y
+2421 2784(c)N
+2728(c)Y
+2648(c)Y
+2568(c)Y
+2488(c)Y
+2408(c)Y
+2328(c)Y
+2248(c)Y
+2168(c)Y
+2088(c)Y
+2008(c)Y
+1928(c)Y
+1848(c)Y
+1768(c)Y
+1688(c)Y
+1608(c)Y
+1528(c)Y
+1448(c)Y
+1368(c)Y
+1288(c)Y
+1208(c)Y
+1128(c)Y
+3327 2784(c)N
+2768(c)Y
+2688(c)Y
+2608(c)Y
+2528(c)Y
+2448(c)Y
+2368(c)Y
+2288(c)Y
+2208(c)Y
+2128(c)Y
+2048(c)Y
+1968(c)Y
+1888(c)Y
+1808(c)Y
+1728(c)Y
+1648(c)Y
+1568(c)Y
+1488(c)Y
+1408(c)Y
+1328(c)Y
+1248(c)Y
+1168(c)Y
+1088(c)Y
+1008(c)Y
+3 f
+9 s
+776 3036(Figure)N
+1005(1)X
+1 f
+(.)S
+1084(Some)X
+1273(of)X
+1358(the)X
+1472(major)X
+1666(locks)X
+1844(in)X
+1926(the)X
+2040(Sprite)X
+2238(kernel.)X
+2480(Monitor)X
+2742(lock)X
+2892(types)X
+3070(are)X
+3184(quali\256ed)X
+3462(by)X
+3560(a)X
+3618(designation)X
+3976(in)X
+776 3116(parentheses.)N
+2 f
+1176(Code)X
+1 f
+1356(indicates)X
+1640(that)X
+1776(there)X
+1948(is)X
+2024(a)X
+2084(single)X
+2284(lock)X
+2436(protecting)X
+2756(a)X
+2816(critical)X
+3044(section)X
+3275(of)X
+3362(code.)X
+2 f
+3561(Data)X
+1 f
+3732(designates)X
+776 3196(those)N
+952(locks)X
+1128(for)X
+1236(which)X
+1436(there)X
+1604(is)X
+1676(one)X
+1804(lock)X
+1952(per)X
+2068(object.)X
+2304(Handles)X
+2564(are)X
+2676(Sprite's)X
+2924(equivalent)X
+3249(to)X
+3330(Unix's)X
+3551(inodes.)X
+3800(Pseudo-)X
+776 3276(devices)N
+1010(are)X
+1116(explained)X
+1414(later)X
+1560(in)X
+1634(this)X
+1756(paper.)X
+10 s
+776 3400(Figure)N
+1011(1)X
+1077(is)X
+1156(a)X
+1218(list)X
+1341(of)X
+1434(the)X
+1558(major)X
+1771(locks)X
+1966(in)X
+2054(the)X
+2178(Sprite)X
+2395(kernel.)X
+2663(There)X
+2878(are)X
+3004(many)X
+3209(other)X
+3401(locks)X
+3597(in)X
+3686(the)X
+3811(kernel,)X
+576 3496(such)N
+748(as)X
+840(locks)X
+1034(associated)X
+1389(with)X
+1556(the)X
+1678(\256le)X
+1804(system)X
+2050(cache,)X
+2278(system)X
+2524(timers,)X
+2768(and)X
+2908(the)X
+3030(RPC)X
+3204(system,)X
+3470(but)X
+3596(none)X
+3776(of)X
+3867(these)X
+576 3592(have)N
+748(a)X
+804(signi\256cant)X
+1157(impact)X
+1395(on)X
+1495(system)X
+1737(performance.)X
+3 f
+576 3784(3.)N
+676(The)X
+829(SPUR)X
+1058(Hardware)X
+1 f
+776 3908(This)N
+941(section)X
+1191(outlines)X
+1467(some)X
+1659(of)X
+1749(the)X
+1870(features)X
+2148(of)X
+2238(the)X
+2359(hardware)X
+2682(used)X
+2852(in)X
+2937(the)X
+3058(study.)X
+3294(Sprite)X
+3508(does)X
+3678(not)X
+3804(require)X
+576 4004(any)N
+720(special)X
+971(hardware)X
+1299(support)X
+1567(for)X
+1689(running)X
+1965(on)X
+2072(a)X
+2135(shared-memory)X
+2666(multiprocessor,)X
+3189(other)X
+3381(than)X
+3546(an)X
+3649(atomic)X
+3894(test-)X
+576 4100(and-set)N
+830(operation)X
+1155(and)X
+1293(coherent)X
+1593(processor)X
+1924(caches.)X
+2202(Details)X
+2452(of)X
+2542(the)X
+2663(hardware)X
+2986(are)X
+3108(only)X
+3273(provided)X
+3581(to)X
+3666(allow)X
+3867(com-)X
+576 4196(parisons)N
+863(to)X
+945(be)X
+1041(made)X
+1235(to)X
+1317(more)X
+1502(familiar)X
+1776(machines.)X
+776 4320(At)N
+878(the)X
+998(time)X
+1162(of)X
+1251(this)X
+1388(study)X
+1584(the)X
+1705(only)X
+1870(multiprocessor)X
+2369(that)X
+2512(Sprite)X
+2726(supported)X
+3065(was)X
+3213(the)X
+3334(SPUR)X
+3556(multiprocessor)X
+576 4416([4].)N
+741(SPUR)X
+971(is)X
+1055(a)X
+1122(RISC)X
+1330(microprocessor)X
+1856(developed)X
+2217(at)X
+2306(Berkeley)X
+2626(as)X
+2723(part)X
+2878(of)X
+2975(a)X
+3041(project)X
+3294(to)X
+3386(study)X
+3589(the)X
+3717(impact)X
+3965(of)X
+576 4512(adding)N
+819(symbolic)X
+1137(processing)X
+1505(support)X
+1770(and)X
+1911(multiprocessing)X
+2447(to)X
+2535(RISC)X
+2738(architectures.)X
+3215(Individual)X
+3570(SPUR)X
+3795(proces-)X
+576 4608(sor)N
+697(boards)X
+934(can)X
+1069(be)X
+1168(combined)X
+1507(to)X
+1592(form)X
+1771(a)X
+1830(shared-memory)X
+2357(multiprocessor.)X
+2896(The)X
+3044(machine)X
+3339(used)X
+3509(in)X
+3593(this)X
+3730(study)X
+3925(has)X
+576 4704(32)N
+686(Mb)X
+827(of)X
+924(shared)X
+1164(memory)X
+1461(and)X
+1607(up)X
+1717(to)X
+1809(\256ve)X
+1959(processors.)X
+2368(Each)X
+2559(SPUR)X
+2788(processor)X
+3126(board)X
+3339(has)X
+3476(a)X
+3542(128-kbyte)X
+3898(data)X
+576 4800(cache)N
+780(that)X
+920(is)X
+993(kept)X
+1151(consistent)X
+1491(by)X
+1591(hardware.)X
+776 4924(The)N
+921(SPUR)X
+1140(prototype)X
+1467(used)X
+1634(in)X
+1716(this)X
+1851(study)X
+2044(is)X
+2117(not)X
+2239(a)X
+2295(particularly)X
+2685(fast)X
+2821(machine.)X
+3153(The)X
+3298(processor)X
+3626(cycle)X
+3816(time)X
+3979(is)X
+576 5020(140)N
+719(ns.)X
+833(Due)X
+990(to)X
+1075(a)X
+1134(design)X
+1366(error)X
+1546(the)X
+1667(on-chip)X
+1935(instruction)X
+2300(buffer)X
+2520(is)X
+2596(not)X
+2721(functional,)X
+3089(causing)X
+3356(instruction)X
+3720(fetches)X
+3970(to)X
+576 5116(require)N
+827(several)X
+1078(cycles.)X
+1342(As)X
+1454(a)X
+1513(result,)X
+1734(a)X
+1794(SPUR)X
+2017(processor)X
+2349(can)X
+2485(execute)X
+2755(about)X
+2957(1.5)X
+3081(native)X
+3301(MIPS.)X
+3551(Furthermore,)X
+3996(a)X
+576 5212(lack)N
+745(of)X
+847(compiler)X
+1167(optimization)X
+1606(leads)X
+1806(to)X
+1903(inef\256cient)X
+2263(code.)X
+2490(We)X
+2637(estimate)X
+2938(that)X
+3092(the)X
+3224(resulting)X
+3538(performance)X
+3979(is)X
+576 5308(equivalent)N
+930(to)X
+1012(about)X
+1210(0.5)X
+1330(VAX)X
+1524(MIPS.)X
+3 f
+576 5500(4.)N
+676(Instrumentation)X
+1 f
+776 5624(Contention)N
+1168(for)X
+1299(kernel)X
+1537(resources)X
+1878(was)X
+2040(measured)X
+2385(by)X
+2502(collecting)X
+2855(information)X
+3270(on)X
+3387(lock)X
+3562(behavior.)X
+3920(We)X
+576 5720(added)N
+792(\256elds)X
+989(to)X
+1075(each)X
+1247(lock)X
+1409(to)X
+1495(record)X
+1725(the)X
+1847(number)X
+2116(of)X
+2207(successful)X
+2561(lock)X
+2723(acquisitions)X
+3129 0.4219(\(referred)AX
+3435(to)X
+3520(as)X
+2 f
+3610(hits)X
+1 f
+3725(\),)X
+3795(and)X
+3934(the)X
+576 5816(number)N
+846(of)X
+938(unsuccessful)X
+1373(attempts)X
+1670(to)X
+1758(acquire)X
+2021(the)X
+2145(lock)X
+2309(\()X
+2 f
+2336(misses)X
+1 f
+2545(\).)X
+2638(For)X
+2775(some)X
+2970(types)X
+3165(of)X
+3258(locks,)X
+3473(such)X
+3646(as)X
+3739(the)X
+3863(locks)X
+
+4 p
+%%Page: 4 4
+10 s 10 xH 0 xS 1 f
+2237 384(-)N
+2284(4)X
+2344(-)X
+576 672(associated)N
+930(with)X
+1096(process)X
+1361(control)X
+1612(blocks,)X
+1865(the)X
+1987(statistics)X
+2286(for)X
+2404(an)X
+2504(individual)X
+2852(lock)X
+3014(aren't)X
+3226(as)X
+3316(useful)X
+3535(as)X
+3625(those)X
+3817(for)X
+3934(the)X
+576 768(type)N
+739(as)X
+831(a)X
+892(whole.)X
+1153(For)X
+1289(this)X
+1429(reason)X
+1664(the)X
+1787(individual)X
+2136(lock)X
+2299(counts)X
+2533(were)X
+2715(consolidated)X
+3146(and)X
+3288(recorded)X
+3596(on)X
+3702(a)X
+3764(per-type)X
+576 864(basis.)N
+797(Recording)X
+1152(the)X
+1271(information)X
+1670(on)X
+1771(a)X
+1828(per-type)X
+2117(basis)X
+2298(also)X
+2447(makes)X
+2672(it)X
+2736(easy)X
+2899(to)X
+2981(handle)X
+3215(locks)X
+3404(that)X
+3544(are)X
+3663(created)X
+3916(and)X
+576 960(destroyed)N
+913(dynamically.)X
+1374(The)X
+1524(lock)X
+1687(counts)X
+1921(for)X
+2040(these)X
+2230(transient)X
+2532(locks)X
+2727(are)X
+2852(added)X
+3070(to)X
+3158(the)X
+3282(total)X
+3450(for)X
+3570(the)X
+3694(type)X
+3858(when)X
+576 1056(the)N
+694(lock)X
+852(is)X
+925(destroyed.)X
+776 1180(The)N
+928(de\256nition)X
+1261(of)X
+1355(what)X
+1538(constitutes)X
+1908(a)X
+1972(lock)X
+2138(miss)X
+2312(is)X
+2393(different)X
+2698(for)X
+2820(monitor)X
+3101(locks)X
+3298(and)X
+3442(master)X
+3684(locks.)X
+3921(For)X
+576 1276(master)N
+815(locks)X
+1009(there)X
+1195(is)X
+1273(at)X
+1356(most)X
+1536(one)X
+1677(miss)X
+1848(per)X
+1976(hit.)X
+2125(If)X
+2204(a)X
+2265(process)X
+2531(misses)X
+2769(on)X
+2874(a)X
+2935(lock)X
+3098(it)X
+3167(spins)X
+3355(until)X
+3525(the)X
+3647(lock)X
+3809(is)X
+3886(free,)X
+576 1372(then)N
+735(locks)X
+925(it.)X
+1030(This)X
+1193(sequence)X
+1509(is)X
+1584(counted)X
+1860(as)X
+1949(one)X
+2087(miss,)X
+2275(followed)X
+2582(by)X
+2684(a)X
+2742(hit.)X
+2888(On)X
+3008(the)X
+3128(other)X
+3315(hand,)X
+3513(it)X
+3579(is)X
+3654(possible)X
+3938(for)X
+576 1468(monitor)N
+851(locks)X
+1041(to)X
+1124(have)X
+1297(more)X
+1483(misses)X
+1717(than)X
+1876(hits.)X
+2052(If)X
+2127(multiple)X
+2414(processes)X
+2743(are)X
+2863(waiting)X
+3124(when)X
+3319(a)X
+3376(lock)X
+3535(is)X
+3609(released)X
+3894(then)X
+576 1564(they)N
+742(will)X
+894(all)X
+1002(be)X
+1106(awakened)X
+1456(and)X
+1600(will)X
+1752(attempt)X
+2020(to)X
+2110(grab)X
+2281(the)X
+2407(lock.)X
+2613(Only)X
+2801(one)X
+2945(will)X
+3098(succeed)X
+3382(and)X
+3527(the)X
+3654(rest)X
+3799(will)X
+3952(go)X
+576 1660(back)N
+753(to)X
+840(sleep.)X
+1070(If)X
+1149(a)X
+1210(process)X
+1476(is)X
+1554(awakened)X
+1901(in)X
+1988(this)X
+2128(fashion)X
+2389(and)X
+2530(does)X
+2702(not)X
+2829(get)X
+2952(the)X
+3075(lock)X
+3237(a)X
+3297(miss)X
+3467(is)X
+3544(recorded.)X
+3890(This)X
+576 1756(makes)N
+801(it)X
+865(possible)X
+1147(for)X
+1261(the)X
+1379(number)X
+1644(of)X
+1731(misses)X
+1964(on)X
+2064(a)X
+2120(monitor)X
+2393(lock)X
+2551(to)X
+2633(be)X
+2729(greater)X
+2973(than)X
+3131(the)X
+3249(number)X
+3514(of)X
+3601(hits.)X
+776 1880(In)N
+865(addition)X
+1149(to)X
+1233(instrumenting)X
+1699(the)X
+1819(locks)X
+2010(we)X
+2127(also)X
+2279(created)X
+2535(new)X
+2692(system)X
+2937(calls)X
+3107(to)X
+3192(clear)X
+3372(the)X
+3493(lock)X
+3654(information)X
+576 1976(and)N
+719(to)X
+808(copy)X
+991(the)X
+1116(information)X
+1521(to)X
+1610(user-level.)X
+1994(These)X
+2213(two)X
+2360(calls)X
+2534(were)X
+2718(used)X
+2892(to)X
+2980(reset)X
+3158(the)X
+3282(lock)X
+3446(information)X
+3850(at)X
+3934(the)X
+576 2072(beginning)N
+916(of)X
+1003(a)X
+1059(test)X
+1190(and)X
+1326(gather)X
+1547(the)X
+1665(information)X
+2063(when)X
+2257(it)X
+2321(completed.)X
+3 f
+576 2264(5.)N
+676(Benchmarks)X
+1 f
+776 2388(All)N
+912(of)X
+1013(the)X
+1145(benchmarks)X
+1567(are)X
+1701(intended)X
+2012(to)X
+2109(stress)X
+2322(the)X
+2455(operating)X
+2793(system.)X
+3090(Compute-bound)X
+3645(applications)X
+576 2484(were)N
+761(avoided)X
+1043(for)X
+1165(that)X
+1313(reason.)X
+1591(The)X
+1744(benchmarks)X
+2160(can)X
+2300(be)X
+2404(divided)X
+2672(into)X
+2824(two)X
+2972(classes.)X
+3263(Realistic)X
+3571(workloads)X
+3933(are)X
+576 2580(represented)N
+974(by)X
+1081(the)X
+2 f
+1206(macro-benchmarks)X
+1 f
+1826(.)X
+1893(These)X
+2112(benchmarks)X
+2527(are)X
+2653(comprised)X
+3014(of)X
+3109(real)X
+3258(programs)X
+3589(that)X
+3737(represent)X
+576 2676(the)N
+701(Sprite)X
+919(development)X
+1360(environment.)X
+1832(The)X
+1983(behavior)X
+2290(of)X
+2383(the)X
+2507(kernel)X
+2734(while)X
+2938(running)X
+3213(the)X
+3337(macro-benchmarks)X
+3979(is)X
+576 2772(indicative)N
+922(of)X
+1019(its)X
+1124(behavior)X
+1435(under)X
+1648(real)X
+1799(workloads,)X
+2183(and)X
+2329(allows)X
+2568(projections)X
+2954(to)X
+3046(be)X
+3152(made)X
+3357(of)X
+3455(maximum)X
+3810(system)X
+576 2868(size.)N
+776 2992(Individual)N
+1128(parts)X
+1307(of)X
+1398(the)X
+1520(kernel)X
+1745(were)X
+1926(stressed)X
+2204(by)X
+2308(running)X
+2581(a)X
+2641(series)X
+2848(of)X
+2 f
+2939(micro-benchmarks)X
+1 f
+3541(.)X
+3605(For)X
+3740(example,)X
+576 3088(a)N
+647(micro-benchmark)X
+1252(may)X
+1424(consist)X
+1680(of)X
+1781(repeated)X
+2088(forking)X
+2358(of)X
+2459(children,)X
+2776(or)X
+2877(repeated)X
+3184(message)X
+3490(passing)X
+3764(between)X
+576 3184(processes.)N
+949(Such)X
+1135(repetitive)X
+1464(behavior)X
+1771(is)X
+1850(rarely)X
+2064(seen)X
+2233(in)X
+2321(real)X
+2468(programs,)X
+2817(but)X
+2945(it)X
+3015(does)X
+3188(allow)X
+3392(the)X
+3516(behavior)X
+3823(of)X
+3916(dif-)X
+576 3280(ferent)N
+784(parts)X
+960(of)X
+1047(the)X
+1165(kernel)X
+1386(to)X
+1468(be)X
+1564(isolated)X
+1833(and)X
+1969(measured.)X
+3 f
+576 3472(5.1.)N
+736(Macro-benchmarks)X
+576 3664(5.1.1.)N
+796(PmakeInd)X
+1 f
+776 3788(The)N
+2 f
+923(pmakeInd)X
+1 f
+1262(benchmark)X
+1641(is)X
+1716(intended)X
+2014(to)X
+2099(be)X
+2198(representative)X
+2672(of)X
+2762(a)X
+2821(multi-user)X
+3173(environment)X
+3601(with)X
+3766(multiple)X
+576 3884(independent)N
+995(compilations)X
+1435(taking)X
+1662(place.)X
+2 f
+1899(PmakeInd)X
+1 f
+2252(recompiles)X
+2630(Csh)X
+2780(from)X
+2962(its)X
+3063(sources)X
+3330(using)X
+3529(the)X
+2 f
+3653(Pmake)X
+1 f
+3898(pro-)X
+576 3980(gram.)N
+804(Pmake)X
+1045(is)X
+1121(similar)X
+1366(to)X
+1451(the)X
+9 s
+1571(UNIX)X
+10 s
+(\262)S
+1815("make")X
+2079(utility,)X
+2313(except)X
+2547(that)X
+2691(it)X
+2759(runs)X
+2921(the)X
+3043(compilations)X
+3480(in)X
+3566(parallel)X
+3831(when-)X
+576 4076(ever)N
+736(possible)X
+1019([2].)X
+1174(The)X
+2 f
+1320(pmakeInd)X
+1 f
+1658(benchmark)X
+2036(runs)X
+2195(a)X
+2252(separate)X
+2537(instance)X
+2821(of)X
+2909(Pmake)X
+3148(on)X
+3249(each)X
+3418(processor)X
+3747(and)X
+3884(each)X
+576 4172(instance)N
+868(uses)X
+1035(separate)X
+1328(copies)X
+1562(of)X
+1658(the)X
+1785(sources.)X
+2095(This)X
+2266(eliminates)X
+2624(the)X
+2751(Pmake)X
+2998(program)X
+3299(and)X
+3444(contention)X
+3811(for)X
+3934(the)X
+576 4268(source)N
+816(\256les)X
+979(as)X
+1076(causes)X
+1316(of)X
+1413(performance)X
+1850(degradation.)X
+2299(Each)X
+2490(instance)X
+2783(of)X
+2880(Pmake)X
+3128(runs)X
+3296(two)X
+3446(compilations)X
+3889(con-)X
+576 4364(currently,)N
+906(ensuring)X
+1202(that)X
+1342(each)X
+1510(processor)X
+1838(remains)X
+2112(highly)X
+2336(utilized.)X
+3 f
+576 4556(5.1.2.)N
+796(Pmake)X
+1 f
+776 4680(The)N
+2 f
+932(pmake)X
+1 f
+1173(benchmark)X
+1561(is)X
+1645(also)X
+1805(a)X
+1872(compilation)X
+2285(of)X
+2383(the)X
+2512(Csh)X
+2667(sources,)X
+2959(except)X
+3200(that)X
+3351(only)X
+3524(one)X
+3671(instance)X
+3965(of)X
+576 4776(Pmake)N
+819(is)X
+897(run,)X
+1049(rather)X
+1262(than)X
+1425(one)X
+1565(per)X
+1692(processor.)X
+2064(Pmake)X
+2306(attempts)X
+2601(to)X
+2687(use)X
+2818(all)X
+2922(of)X
+3013(the)X
+3135(processors)X
+3498(in)X
+3584(the)X
+3706(system)X
+3952(by)X
+576 4872(running)N
+845(two)X
+985(compilations)X
+1418(per)X
+1541(processor.)X
+1909(The)X
+2054(purpose)X
+2328(in)X
+2410(running)X
+2679(this)X
+2814(benchmark)X
+3191(is)X
+3264(to)X
+3346(see)X
+3469(how)X
+3627(well)X
+3785(a)X
+3841(single)X
+576 4968(parallel)N
+839(application)X
+1217(can)X
+1351(harness)X
+1614(the)X
+1734(processing)X
+2099(power)X
+2322(available)X
+2634(in)X
+2718(a)X
+2776(multiprocessor.)X
+3313(Ideally)X
+3557(the)X
+3676(application)X
+576 5064(will)N
+726(realize)X
+967(linear)X
+1176(speedup)X
+1465(as)X
+1558(the)X
+1682(number)X
+1953(of)X
+2046(processors)X
+2411(is)X
+2490(increased.)X
+2860(A)X
+2944(speedup)X
+3233(that)X
+3379(is)X
+3458(less)X
+3604(than)X
+3769(linear)X
+3979(is)X
+576 5160(due)N
+722(to)X
+814(either)X
+1027(contention)X
+1395(in)X
+1487(the)X
+1615(kernel)X
+1846(or)X
+1943(lack)X
+2107(of)X
+2204(concurrency)X
+2632(in)X
+2724(the)X
+2851(application.)X
+3276(Since)X
+3483(we)X
+3606(are)X
+3734(primarily)X
+576 5256(interested)N
+908(in)X
+990(the)X
+1109(former)X
+1349(effect)X
+1554(rather)X
+1763(than)X
+1922(the)X
+2041(latter,)X
+2247(the)X
+2366(\256nal)X
+2529(link)X
+2674(of)X
+2762(the)X
+2881(Csh)X
+3026(binary)X
+3252(was)X
+3398(eliminated)X
+3757(from)X
+3934(the)X
+576 5352(benchmark.)N
+997(This)X
+1163(increased)X
+1491(the)X
+1613(concurrency)X
+2035(inherent)X
+2322(in)X
+2408(the)X
+2530(computation)X
+2954(and)X
+3094(increased)X
+3422(contention)X
+3784(for)X
+3902(ker-)X
+576 5448(nel)N
+694(resources.)X
+8 s
+10 f
+576 5584(hhhhhhhhhhhhhhhhhh)N
+1 f
+576 5664(\262)N
+7 s
+622(UNIX)X
+8 s
+777(is)X
+836(a)X
+880(trademark)X
+1154(of)X
+1223(Bell)X
+1346(Laboratories.)X
+
+5 p
+%%Page: 5 5
+8 s 8 xH 0 xS 1 f
+10 s
+2237 384(-)N
+2284(5)X
+2344(-)X
+3 f
+576 672(5.1.3.)N
+796(Troff)X
+1 f
+776 796(The)N
+2 f
+922(Troff)X
+1 f
+1102(benchmark)X
+1480(consists)X
+1754(of)X
+1842(running)X
+2112(the)X
+2231(text)X
+2372(formatting)X
+2731(program)X
+3024(Troff)X
+3216(on)X
+3318(the)X
+3438(man)X
+3598(page)X
+3772(for)X
+3888(Csh.)X
+576 892(The)N
+721(resulting)X
+1021(output)X
+1245(is)X
+1318(sent)X
+1467(to)X
+1549(/dev/null.)X
+1893(Each)X
+2074(processor)X
+2402(runs)X
+2560(a)X
+2616(different)X
+2913(instance)X
+3196(of)X
+3283(Troff.)X
+3 f
+576 1112(5.2.)N
+736(Micro-benchmarks)X
+1 f
+776 1236(Twelve)N
+1046(micro-benchmarks)X
+1677(were)X
+1863(run,)X
+2019(of)X
+2116(which)X
+2342(only)X
+2514(six)X
+2637(are)X
+2766(discussed)X
+3103(in)X
+3195(this)X
+3340(paper.)X
+3589(The)X
+3744(other)X
+3939(six)X
+576 1332(pertained)N
+906(to)X
+999(stressing)X
+1310(the)X
+1439(\256le)X
+1572(system,)X
+1844(by)X
+1954(reading)X
+2225(\256les,)X
+2408(opening)X
+2696(\256les,)X
+2879(etc.)X
+3043(The)X
+3198(results)X
+3437(obtained)X
+3743(were)X
+3930(not)X
+576 1428(signi\256cantly)N
+991(different)X
+1288(from)X
+1464(the)X
+1582(\256rst)X
+1726(six)X
+1839(and)X
+1975(are)X
+2094(therefore)X
+2405(omitted)X
+2669(in)X
+2751(the)X
+2869(interest)X
+3125(of)X
+3212(brevity.)X
+3 f
+576 1620(5.2.1.)N
+796(Fork)X
+1 f
+776 1744(The)N
+2 f
+928(fork)X
+1 f
+1084(benchmark)X
+1468(consists)X
+1748(of)X
+1842(a)X
+1906(process)X
+2175(that)X
+2323(repeatedly)X
+2686(forks)X
+2879(off)X
+3001(a)X
+3065(child)X
+3253(process)X
+3522(using)X
+3723(the)X
+2 f
+3849(fork\(\))X
+1 f
+576 1840(system)N
+829(call.)X
+1015(The)X
+1170(parent)X
+1401(waits)X
+1600(for)X
+1724(the)X
+1852(child)X
+2042(to)X
+2134(die)X
+2262(before)X
+2498(forking)X
+2764(another)X
+3035(child.)X
+3265(The)X
+3420(child)X
+3610(process)X
+3881(exits)X
+576 1936(immediately.)N
+1039(This)X
+1204(benchmark)X
+1584(should)X
+1820(stress)X
+2021(the)X
+2142(process)X
+2406(creation)X
+2689(and)X
+2829(destruction)X
+3209(components,)X
+3640(and)X
+3780(the)X
+3902(ker-)X
+576 2032(nel)N
+694(virtual)X
+923(memory)X
+1210(system.)X
+1492(The)X
+1637(context-switch)X
+2129(code)X
+2301(will)X
+2445(also)X
+2594(be)X
+2690(heavily)X
+2946(utilized.)X
+3 f
+576 2224(5.2.2.)N
+796(Fexec)X
+1 f
+776 2348(The)N
+2 f
+928(fexec)X
+1 f
+1121(benchmark)X
+1505(is)X
+1585(similar)X
+1834(to)X
+1923(the)X
+2 f
+2048(fork)X
+1 f
+2204(benchmark.)X
+2628(A)X
+2713(parent)X
+2941(process)X
+3209(repeatedly)X
+3571(forks)X
+3763(off)X
+3885(chil-)X
+576 2444(dren,)N
+771(waiting)X
+1043(for)X
+1169(each)X
+1349(one)X
+1497(to)X
+1591(die)X
+1721(before)X
+1959(forking)X
+2227(the)X
+2357(next.)X
+2566(The)X
+2722(child)X
+2913(process)X
+3185(uses)X
+3354(the)X
+2 f
+3483(exec\(\))X
+1 f
+3712(routine)X
+3970(to)X
+576 2540(create)N
+789(another)X
+1050(instance)X
+1333(of)X
+1420(itself)X
+1600(instead)X
+1847(of)X
+1934(exiting.)X
+2216(This)X
+2378(new)X
+2532(instance)X
+2815(then)X
+2973(exits,)X
+3164(allowing)X
+3465(the)X
+3584(parent)X
+3806(to)X
+3889(con-)X
+576 2636(tinue.)N
+801(The)X
+2 f
+951(fexec)X
+1 f
+1142(benchmark)X
+1524(should)X
+1762(stress)X
+1965(the)X
+2088(same)X
+2278(components)X
+2690(as)X
+2782(the)X
+2 f
+2905(fork)X
+1 f
+3059(benchmarks.)X
+3512(Any)X
+3674(differences)X
+576 2732(in)N
+658(behavior)X
+959(are)X
+1078(due)X
+1214(to)X
+1296(the)X
+1414(call)X
+1550(to)X
+2 f
+1632(exec\(\))X
+1 f
+1830(.)X
+3 f
+576 2924(5.2.3.)N
+796(Mem)X
+2 f
+776 3048(Mem)N
+1 f
+962(is)X
+1040(a)X
+1101(benchmark)X
+1483(that)X
+1628(stresses)X
+1898(the)X
+2021(virtual)X
+2255(memory)X
+2547(system.)X
+2834(The)X
+2985(process)X
+3252(repeatedly)X
+3613(increases)X
+3934(the)X
+576 3144(size)N
+736(of)X
+838(its)X
+948(heap)X
+1135(using)X
+1343(the)X
+2 f
+1476(sbrk\(\))X
+1 f
+1702(system)X
+1958(call.)X
+2128(The)X
+2287(new)X
+2455(heap)X
+2641(pages)X
+2858(are)X
+2991(not)X
+3127(touched.)X
+3455(Once)X
+3659(the)X
+3791(process)X
+576 3240(reaches)N
+840(a)X
+898(maximum)X
+1244(size)X
+1391(it)X
+1457(execs)X
+1658(itself)X
+1840(and)X
+1978(starts)X
+2169(over.)X
+2 f
+2374(Mem)X
+1 f
+2557(is)X
+2632(targeted)X
+2913(at)X
+2994(the)X
+3115(virtual)X
+3347(memory)X
+3637(system,)X
+3902(par-)X
+576 3336(ticularly)N
+863(the)X
+981(component)X
+1357(that)X
+1497(is)X
+1570(responsible)X
+1955(for)X
+2069(maintaining)X
+2471(process)X
+2732(page)X
+2904(tables.)X
+3 f
+576 3528(5.2.4.)N
+796(Cswitch)X
+1 f
+776 3652(The)N
+2 f
+932(cswitch)X
+1 f
+1203(benchmark)X
+1591(consists)X
+1875(of)X
+1973(two)X
+2124(processes)X
+2463(that)X
+2614(pass)X
+2783(a)X
+2850(byte)X
+3019(back)X
+3202(and)X
+3349(forth)X
+3536(using)X
+3740(a)X
+3808(pair)X
+3965(of)X
+576 3748(pipes.)N
+816(If)X
+901(this)X
+1047(pair)X
+1202(of)X
+1299(processes)X
+1637(is)X
+1720(run)X
+1857(on)X
+1967(a)X
+2033(single)X
+2254(processor,)X
+2612(then)X
+2780(two)X
+2930(context)X
+3196(switches)X
+3502(are)X
+3631(required)X
+3929(per)X
+576 3844(round)N
+797(trip)X
+942(and)X
+1092(the)X
+1224(context)X
+1494(switch)X
+1738(code)X
+1925(should)X
+2173(receive)X
+2441(heavy)X
+2668(utilization.)X
+3067(The)X
+3227(context)X
+3498(switches)X
+3809(can)X
+3956(be)X
+576 3940(avoided)N
+859(on)X
+968(a)X
+1033(multiprocessor)X
+1538(if)X
+1616(the)X
+1743(processes)X
+2080(are)X
+2208(run)X
+2344(on)X
+2453(different)X
+2758(processors.)X
+3165(In)X
+3260(order)X
+3458(to)X
+3548(ensure)X
+3786(that)X
+3934(the)X
+576 4036(context)N
+832(switches)X
+1128(occur)X
+1327(one)X
+1463(pair)X
+1608(of)X
+1695(processes)X
+2023(is)X
+2096(run)X
+2223(per)X
+2346(processor)X
+2674(in)X
+2756(the)X
+2874(system.)X
+3 f
+576 4228(5.2.5.)N
+796(Pdevtest)X
+2 f
+776 4352(Pdevtest)N
+1 f
+1082(stresses)X
+1361(the)X
+1493(pseudo-device)X
+1991(implementation.)X
+2568(Pseudo-devices)X
+3102(are)X
+3236(like)X
+3391(devices)X
+3667(except)X
+3912(that)X
+576 4448(they)N
+740(are)X
+865(implemented)X
+1309(by)X
+1415(user-level)X
+1758(server)X
+1981(processes)X
+2315([9].)X
+2475(They)X
+2666(provide)X
+2937(a)X
+2999(mechanism)X
+3390(for)X
+3509(allowing)X
+3814(trusted)X
+576 4544(services,)N
+884(such)X
+1060(as)X
+1156(display)X
+1416(servers)X
+1673(and)X
+1818(network)X
+2110(communication)X
+2637(protocols,)X
+2984(to)X
+3075(be)X
+3180(implemented)X
+3627(at)X
+3715(user-level)X
+576 4640(rather)N
+790(than)X
+954(in)X
+1042(the)X
+1166(kernel.)X
+1433(A)X
+1517(client)X
+1721(process)X
+1988(accesses)X
+2287(a)X
+2348(pseudo-device)X
+2837(in)X
+2924(the)X
+3047(same)X
+3237(manner)X
+3503(as)X
+3595(a)X
+3656(real)X
+3802(device.)X
+576 4736(The)N
+723(kernel)X
+946(then)X
+1107(forwards)X
+1416(the)X
+1537(request)X
+1792(to)X
+1877(the)X
+1998(user-level)X
+2338(server,)X
+2578(instead)X
+2828(of)X
+2918(to)X
+3003(a)X
+3062(kernel)X
+3286(device)X
+3519(driver.)X
+3774(Pseudo-)X
+576 4832(devices)N
+854(are)X
+990(similar)X
+1249(to)X
+1348(the)X
+1483(UNIX)X
+1721("pty")X
+1926(mechanism,)X
+2348(the)X
+2483(only)X
+2661(difference)X
+3024(being)X
+3238(that)X
+3394(all)X
+3510(operations)X
+3880(on)X
+3996(a)X
+576 4928(pseudo-device,)N
+1080(such)X
+1247(as)X
+1334(open,)X
+1530(close,)X
+1735(and)X
+1871(ioctls,)X
+2084(are)X
+2203(passed)X
+2437(through)X
+2706(to)X
+2788(the)X
+2906(server)X
+3123(process.)X
+776 5052(The)N
+2 f
+923(pdevtest)X
+1 f
+1208(benchmark)X
+1587(creates)X
+1833(one)X
+1971(pseudo-device)X
+2457(that)X
+2599(is)X
+2674(written)X
+2923(to)X
+3007(by)X
+3109(multiple)X
+3398(clients.)X
+3670(Each)X
+3854(client)X
+576 5148(repeatedly)N
+931(writes)X
+1147(one)X
+1283(byte)X
+1441(to)X
+1523(the)X
+1641(server.)X
+3 f
+576 5340(5.2.6.)N
+796(PdevtestInd)X
+1 f
+776 5464(This)N
+938(variation)X
+1243(on)X
+1343(the)X
+2 f
+1461(pdevtest)X
+1 f
+1744(benchmark)X
+2121(creates)X
+2365(multiple)X
+2651(pseudo-devices.)X
+3207(One)X
+3362(server)X
+3580(and)X
+3717(one)X
+3854(client)X
+576 5560(is)N
+653(created)X
+910(for)X
+1028(each)X
+1200(instance)X
+1487(of)X
+1578(the)X
+1700(benchmark)X
+2081(that)X
+2225(is)X
+2302(run)X
+2433(\(i.e)X
+2562(for)X
+2680(each)X
+2852(processor)X
+3184(in)X
+3269(the)X
+3390(system\).)X
+3702(The)X
+3850(intent)X
+576 5656(is)N
+658(to)X
+749(see)X
+881(if)X
+959(there)X
+1149(are)X
+1277(any)X
+1422(performance)X
+1858(bottlenecks)X
+2253(in)X
+2345(the)X
+2473(pseudo-device)X
+2967(implementation)X
+3499(that)X
+3649(occur)X
+3858(when)X
+576 5752(there)N
+757(is)X
+830(a)X
+886(single)X
+1097(server)X
+1314(vs.)X
+1425(multiple)X
+1711(servers.)X
+
+6 p
+%%Page: 6 6
+10 s 10 xH 0 xS 1 f
+2237 384(-)N
+2284(6)X
+2344(-)X
+3 f
+576 672(6.)N
+676(Results)X
+1 f
+776 796(The)N
+924(results)X
+1157(are)X
+1280(divided)X
+1544(up)X
+1648(into)X
+1796(sections)X
+2078(on)X
+2182(elapsed)X
+2447(time)X
+2613(for)X
+2731(running)X
+3004(the)X
+3126(benchmarks,)X
+3558(calculations)X
+3965(of)X
+576 892(the)N
+696(incremental)X
+1097(throughput)X
+1470(for)X
+1586(each)X
+1755(additional)X
+2096(processor,)X
+2445(monitor)X
+2719(lock)X
+2878(behavior,)X
+3200(and)X
+3337(master)X
+3572(lock)X
+3731(behavior.)X
+576 988(These)N
+817(measurements)X
+1325(indicate)X
+1628(that)X
+1797(the)X
+1944(micro-benchmarks)X
+2596(suffer)X
+2834(heavily)X
+3120(from)X
+3326(saturation)X
+3692(of)X
+3809(critical)X
+576 1084(resources.)N
+940(The)X
+1085(macro-benchmarks)X
+1721(also)X
+1870(experience)X
+2239(performance)X
+2666(degradation,)X
+3085(but)X
+3207(to)X
+3289(a)X
+3345(lesser)X
+3548(degree.)X
+1406 1902(Ratio)N
+-1 Ds
+5 Dt
+2358 1816 MXY
+196 -60 Dl
+2162 1876 MXY
+196 -60 Dl
+1966 1876 MXY
+196 0 Dl
+1770 1718 MXY
+196 158 Dl
+3 Dt
+2358 1801 MXY
+196 -23 Dl
+2162 1838 MXY
+196 -37 Dl
+1966 1846 MXY
+196 -8 Dl
+1770 1718 MXY
+196 128 Dl
+1 Dt
+2358 2288 MXY
+196 8 Dl
+2162 2251 MXY
+196 37 Dl
+1966 2048 MXY
+196 203 Dl
+1770 1718 MXY
+196 330 Dl
+2912 1976(pmakeInd)N
+5 Dt
+2745 1942 MXY
+143 0 Dl
+2912 1904(troff)N
+3 Dt
+2745 1870 MXY
+143 0 Dl
+2912 1833(pmake)N
+1 Dt
+2745 1799 MXY
+143 0 Dl
+1991 2666(Processors)N
+3 f
+1849 1214(Elapsed)N
+2139(time)X
+2311(ratio)X
+1 f
+2534 2553(5)N
+3 Dt
+2554 2468 MXY
+0 17 Dl
+2338 2553(4)N
+2358 2468 MXY
+0 17 Dl
+2142 2553(3)N
+2162 2468 MXY
+0 17 Dl
+1946 2553(2)N
+1966 2468 MXY
+0 17 Dl
+1750 2553(1)N
+1770 2468 MXY
+0 17 Dl
+1653 1453(1.4)N
+1770 1419 MXY
+-17 0 Dl
+1653 1603(1.2)N
+1770 1569 MXY
+-17 0 Dl
+1653 1752(1.0)N
+1770 1718 MXY
+-17 0 Dl
+1653 1902(0.8)N
+1770 1868 MXY
+-17 0 Dl
+1653 2052(0.6)N
+1770 2018 MXY
+-17 0 Dl
+1653 2202(0.4)N
+1770 2168 MXY
+-17 0 Dl
+1653 2352(0.2)N
+1770 2318 MXY
+-17 0 Dl
+1653 2502(0.0)N
+1770 2468 MXY
+-17 0 Dl
+1770 MX
+0 -1124 Dl
+784 0 Dl
+0 1124 Dl
+-784 0 Dl
+3 Dt
+-1 Ds
+3 f
+9 s
+776 2917(Figure)N
+998(2)X
+1 f
+(.)S
+1088(A)X
+1158(graph)X
+1340(of)X
+1418(the)X
+1524(ratio)X
+1674(of)X
+1752(the)X
+1858(multiprocessor)X
+2304(elapsed)X
+2538(time)X
+2684(to)X
+2758(run)X
+2872(the)X
+2978(macro-benchmarks)X
+3548(to)X
+3622(the)X
+3728(uniproces-)X
+776 2997(sor)N
+885(elapsed)X
+1122(time.)X
+1306(The)X
+1438(workload)X
+1730(was)X
+1862(scaled)X
+2062(with)X
+2210(the)X
+2318(system)X
+2538(size)X
+2670(\(except)X
+2902(for)X
+3006(the)X
+2 f
+3114(pmake)X
+1 f
+3322(benchmark\),)X
+3704(causing)X
+3944(the)X
+776 3077(ratio)N
+928(for)X
+1032(an)X
+1120(ideal)X
+1280(system)X
+1500(to)X
+1576(be)X
+1665(a)X
+1718(horizontal)X
+2031(line)X
+2160(at)X
+2233(1.0.)X
+2380(A)X
+2453(ratio)X
+2606(that)X
+2735(is)X
+2804(greater)X
+3025(than)X
+3170(1.0)X
+3281(indicates)X
+3558(that)X
+3687(the)X
+3796(increase)X
+776 3157(in)N
+861(system)X
+1090(throughput)X
+1435(is)X
+1512(less)X
+1649(than)X
+1802(linear.)X
+2031(The)X
+2 f
+2172(pmake)X
+1 f
+2389(benchmark)X
+2738(has)X
+2862(a)X
+2922(\256xed)X
+3094(workload,)X
+3412(hence)X
+3608(its)X
+3704(ideal)X
+3872(curve)X
+776 3237(should)N
+986(be)X
+1072(1/)X
+2 f
+(n)S
+1 f
+(,)S
+1200(where)X
+2 f
+1394(n)X
+1 f
+1448(is)X
+1514(the)X
+1620(number)X
+1858(of)X
+1936(processors.)X
+3 f
+10 s
+576 3429(6.1.)N
+736(Elapsed)X
+1026(time)X
+1 f
+776 3553(The)N
+929(elapsed)X
+1198(time)X
+1368(ratio)X
+1543(for)X
+1665(the)X
+1791(macro-benchmarks)X
+2435(is)X
+2516(shown)X
+2753(in)X
+2843(Figure)X
+3080(2.)X
+3188(The)X
+3341(ratio)X
+3516(is)X
+3597(calculated)X
+3952(by)X
+576 3649(dividing)N
+867(the)X
+990(time)X
+1157(it)X
+1226(takes)X
+1416(a)X
+1477(system)X
+1724(with)X
+2 f
+1891(n)X
+1 f
+1956(processors)X
+2320(to)X
+2407(\256nish)X
+2 f
+2609(n)X
+1 f
+2674(benchmarks)X
+3087(by)X
+3191(the)X
+3313(time)X
+3479(it)X
+3547(takes)X
+3736(a)X
+3796(unipro-)X
+576 3745(cessor)N
+800(to)X
+885(\256nish)X
+1085(one)X
+1225(benchmark.)X
+1646(For)X
+1781(all)X
+1885(but)X
+2011(the)X
+2 f
+2133(pmake)X
+1 f
+2367(benchmark)X
+2748(the)X
+2870(workload)X
+3197(is)X
+3274(scaled)X
+3499(with)X
+3665(the)X
+3787(number)X
+576 3841(of)N
+668(processors,)X
+1051(so)X
+1146(an)X
+1246(ideal)X
+1426(system)X
+1672(would)X
+1896(have)X
+2072(a)X
+2132(constant)X
+2423(ratio)X
+2594(of)X
+2685(1.0.)X
+2849(The)X
+2998(curve)X
+3201(for)X
+3319(the)X
+2 f
+3441(pmake)X
+1 f
+3675(benchmark)X
+576 3937(looks)N
+773(different)X
+1074(because)X
+1353(the)X
+1475(workload)X
+1802(is)X
+1879(not)X
+2005(scaled)X
+2230(with)X
+2396(the)X
+2519(number)X
+2789(of)X
+2881(processors.)X
+3285(The)X
+3435(compilation)X
+3842(of)X
+3934(the)X
+576 4033(Csh)N
+728(sources)X
+996(always)X
+1246(runs)X
+1411(faster)X
+1617(with)X
+1786(more)X
+1978(processors.)X
+2384(The)X
+2536(ideal)X
+2719(elapsed)X
+2987(time)X
+3156(ratio)X
+3330(for)X
+3451(the)X
+2 f
+3576(pmake)X
+1 f
+3813(bench-)X
+576 4129(mark)N
+764(is)X
+840(1/)X
+2 f
+902(n)X
+1 f
+(,)S
+986(where)X
+2 f
+1207(n)X
+1 f
+1271(is)X
+1348(the)X
+1470(number)X
+1739(of)X
+1830(processors)X
+2193(in)X
+2279(the)X
+2401(system.)X
+2687(The)X
+2836(measured)X
+3168(ratio)X
+3339(for)X
+3457(the)X
+2 f
+3579(pmake)X
+1 f
+3813(bench-)X
+576 4225(mark)N
+761(is)X
+834(very)X
+997(close)X
+1182(to)X
+1264(the)X
+1382(ideal,)X
+1578(falling)X
+1807(behind)X
+2045(only)X
+2207(when)X
+2401(there)X
+2582(are)X
+2701(\256ve)X
+2841(processors)X
+3200(in)X
+3282(the)X
+3400(system.)X
+776 4349(The)N
+2 f
+927(troff)X
+1 f
+1090(and)X
+2 f
+1232(pmakeInd)X
+1 f
+1575(benchmarks)X
+1989(have)X
+2167(elapsed)X
+2434(time)X
+2602(ratios)X
+2806(that)X
+2952(are)X
+3077(actually)X
+3358(better)X
+3568(\(i.e.)X
+3720(less\))X
+3894(than)X
+576 4445(the)N
+703(ideal)X
+888(value)X
+1091(of)X
+1187(1.0.)X
+1356(This)X
+1527(is)X
+1609(because)X
+1893(there)X
+2083(is)X
+2165(a)X
+2230(certain)X
+2478(amount)X
+2747(of)X
+2843(background)X
+3251(processing)X
+3623(that)X
+3772(must)X
+3956(be)X
+576 4541(done)N
+757(that)X
+902(is)X
+980(independent)X
+1397(of)X
+1489(system)X
+1736(size.)X
+1926(This)X
+2093(extra)X
+2280(work)X
+2471(is)X
+2550(due)X
+2692(to)X
+2780(other)X
+2971(processes)X
+3305(running)X
+3580(on)X
+3686(the)X
+3810(system)X
+576 4637(and)N
+717(interrupts.)X
+1089(As)X
+1203(the)X
+1326(number)X
+1595(of)X
+1686(processors)X
+2049(in)X
+2135(the)X
+2257(system)X
+2503(is)X
+2580(increased,)X
+2928(the)X
+3050(per-processor)X
+3512(load)X
+3674(induced)X
+3952(by)X
+576 4733(background)N
+985(processing)X
+1358(is)X
+1441(decreased,)X
+1809(allowing)X
+2119(each)X
+2297(processor)X
+2635(to)X
+2727(allocate)X
+3007(more)X
+3202(cycles)X
+3433(to)X
+3526(the)X
+3655(benchmark.)X
+576 4829(While)N
+801(running)X
+1079(the)X
+2 f
+1206(troff)X
+1 f
+1372(and)X
+2 f
+1517(pmakeInd)X
+1 f
+1863(benchmarks)X
+2280(the)X
+2407(slowdown)X
+2765(from)X
+2950(kernel)X
+3180(contention)X
+3547(was)X
+3701(more)X
+3894(than)X
+576 4925(offset)N
+779(by)X
+879(the)X
+997(amortization)X
+1422(of)X
+1509(the)X
+1627(background)X
+2026(processing.)X
+776 5049(Figure)N
+1006(3)X
+1067(shows)X
+1288(the)X
+1407(elapsed)X
+1669(time)X
+1832(ratio)X
+2000(for)X
+2115(the)X
+2234(micro-benchmarks.)X
+2898(Contention)X
+3275(causes)X
+3507(the)X
+3627(elapsed)X
+3890(time)X
+576 5145(of)N
+673(all)X
+782(the)X
+909(benchmarks)X
+1326(to)X
+1417(increase)X
+1710(over)X
+1882(the)X
+2009(range)X
+2217(of)X
+2313(system)X
+2564(sizes)X
+2749(tested.)X
+3005(For)X
+3145(two)X
+3294(of)X
+3390(the)X
+3517(benchmarks)X
+3934(the)X
+576 5241(elapsed)N
+851(time)X
+1027(initially)X
+1309(decreases)X
+1652(due)X
+1802(to)X
+1898(amortization)X
+2337(of)X
+2438(background)X
+2851(processing)X
+3228(costs,)X
+3442(but)X
+3578(this)X
+3727(bene\256t)X
+3979(is)X
+576 5337(eventually)N
+930(outweighed)X
+1324(by)X
+1424(contention)X
+1782(for)X
+1896(kernel)X
+2117(resources.)X
+776 5461(The)N
+2 f
+930(cswitch)X
+1 f
+1199(benchmark)X
+1585(has)X
+1721(a)X
+1786(worse)X
+2007(than)X
+2175(linear)X
+2388(slowdown:)X
+2769(a)X
+2835(system)X
+3087(with)X
+3259(\256ve)X
+3409(processors)X
+3778(actually)X
+576 5557(takes)N
+762(longer)X
+988(to)X
+1071(complete)X
+1386(the)X
+1505(work)X
+1690(than)X
+1848(a)X
+1904(uniprocessor)X
+2334(should.)X
+2607(None)X
+2801(of)X
+2888(the)X
+3006(other)X
+3191(benchmarks)X
+3599(do)X
+3699(this)X
+3834(badly,)X
+576 5653(but)N
+708(neither)X
+961(do)X
+1071(they)X
+1239(come)X
+1443(close)X
+1638(to)X
+1730(the)X
+1859(ideal)X
+2046(ratio.)X
+2264(All)X
+2397(of)X
+2495(the)X
+2624(benchmarks)X
+3043(show)X
+3243(a)X
+3310(steady)X
+3546(increase)X
+3841(in)X
+3934(the)X
+576 5749(elapsed)N
+841(time)X
+1007(ratio)X
+1178(once)X
+1354(there)X
+1539(are)X
+1662(three)X
+1847(processors)X
+2210(in)X
+2296(the)X
+2418(system.)X
+2704(This)X
+2870(suggests)X
+3165(that)X
+3309(the)X
+3430(micro-benchmarks)X
+576 5845(are)N
+711(severely)X
+1015(affected)X
+1311(by)X
+1427(contention)X
+1801(for)X
+1931(kernel)X
+2169(resources)X
+2510(and)X
+2663(the)X
+2798(system)X
+3057(throughput)X
+3445(does)X
+3629(not)X
+3768(increase)X
+
+7 p
+%%Page: 7 7
+10 s 10 xH 0 xS 1 f
+2237 384(-)N
+2284(7)X
+2344(-)X
+-1 Ds
+3 Dt
+1764 1940 MXY
+0 -1101 Dl
+767 0 Dl
+0 1101 Dl
+-767 0 Dl
+-17 0 Dl
+1647 1974(0.0)N
+1764 1848 MXY
+-17 0 Dl
+1647 1882(0.5)N
+1764 1756 MXY
+-17 0 Dl
+1647 1790(1.0)N
+1764 1664 MXY
+-17 0 Dl
+1647 1698(1.5)N
+1764 1573 MXY
+-17 0 Dl
+1647 1607(2.0)N
+1764 1481 MXY
+-17 0 Dl
+1647 1515(2.5)N
+1764 1389 MXY
+-17 0 Dl
+1647 1423(3.0)N
+1764 1297 MXY
+-17 0 Dl
+1647 1331(3.5)N
+1764 1206 MXY
+-17 0 Dl
+1647 1240(4.0)N
+1764 1114 MXY
+-17 0 Dl
+1647 1148(4.5)N
+1764 1022 MXY
+-17 0 Dl
+1647 1056(5.0)N
+1764 930 MXY
+-17 0 Dl
+1647 964(5.5)N
+1764 839 MXY
+-17 0 Dl
+1647 873(6.0)N
+1764 1940 MXY
+0 16 Dl
+1744 2024(1)N
+1955 1940 MXY
+0 16 Dl
+1935 2024(2)N
+2147 1940 MXY
+0 16 Dl
+2127 2024(3)N
+2339 1940 MXY
+0 16 Dl
+2319 2024(4)N
+2531 1940 MXY
+0 16 Dl
+2511 2024(5)N
+3 f
+1834 706(Elapsed)N
+2124(time)X
+2296(ratio)X
+1 f
+1976 2134(Processors)N
+1 Dt
+2718 1179 MXY
+140 0 Dl
+2881 1213(cswitch)N
+3 Dt
+2718 1249 MXY
+140 0 Dl
+2881 1283(fexec)N
+5 Dt
+2718 1319 MXY
+140 0 Dl
+2881 1353(fork)N
+16 Ds
+1 Dt
+2718 1389 MXY
+140 0 Dl
+2881 1423(mem)N
+20 Ds
+2718 1459 MXY
+140 0 Dl
+2881 1493(pdevtest)N
+4 Ds
+2718 1529 MXY
+140 0 Dl
+2881 1563(pdevtestInd)N
+-1 Ds
+1764 1756 MXY
+191 -60 Dl
+192 -173 Dl
+192 -262 Dl
+192 -400 Dl
+3 Dt
+1764 1756 MXY
+191 -90 Dl
+192 -117 Dl
+192 -184 Dl
+192 -159 Dl
+5 Dt
+1764 1756 MXY
+191 -127 Dl
+192 -172 Dl
+192 -251 Dl
+192 -140 Dl
+16 Ds
+1 Dt
+1764 1756 MXY
+191 29 Dl
+192 -128 Dl
+192 -154 Dl
+192 -138 Dl
+20 Ds
+1764 1756 MXY
+191 64 Dl
+192 -47 Dl
+192 -116 Dl
+192 -165 Dl
+4 Ds
+1764 1756 MXY
+191 -60 Dl
+192 -90 Dl
+192 -103 Dl
+192 -103 Dl
+1404 1360(Ratio)N
+3 Dt
+-1 Ds
+3 f
+9 s
+776 2384(Figure)N
+1008(3)X
+1 f
+(.)S
+1108(This)X
+1264(is)X
+1340(a)X
+1400(plot)X
+1540(of)X
+1628(the)X
+1744(ratio)X
+1904(of)X
+1992(the)X
+2108(multiprocessor)X
+2564(elapsed)X
+2808(time)X
+2964(to)X
+3048(run)X
+3173(the)X
+3290(micro-benchmarks)X
+3859(to)X
+3944(the)X
+776 2464(uniprocessor)N
+1164(elapsed)X
+1400(time.)X
+1584(As)X
+1684(in)X
+1760(Figure)X
+1968(2)X
+2024(an)X
+2112(ideal)X
+2272(system)X
+2492(would)X
+2692(have)X
+2848(a)X
+2900(ratio)X
+3052(of)X
+3131(1.0.)X
+3276(All)X
+3387(of)X
+3466(the)X
+3573(benchmarks)X
+3940(ex-)X
+776 2544(hibit)N
+926(an)X
+1012(increase)X
+1266(in)X
+1340(the)X
+1446(elapsed)X
+1680(time)X
+1826(as)X
+1904(the)X
+2010(system)X
+2228(size)X
+2358(increases.)X
+10 s
+576 2640(signi\256cantly)N
+991(if)X
+1060(the)X
+1178(system)X
+1420(is)X
+1493(scaled)X
+1714(beyond)X
+1970(three)X
+2151(processors.)X
+3 f
+576 2832(6.2.)N
+736(Incremental)X
+1175(throughput)X
+1585(per)X
+1721(additional)X
+2086(processor)X
+1 f
+776 2956(The)N
+927(incremental)X
+1332(throughput)X
+1709(of)X
+1802(an)X
+1904(additional)X
+2250(processor)X
+2584(is)X
+2663(the)X
+2787(net)X
+2911(amount)X
+3177(of)X
+3270(work)X
+3462(per)X
+3592(unit)X
+3743(time)X
+3912(that)X
+576 3052(the)N
+696(processor)X
+1026(adds)X
+1195(to)X
+1279(the)X
+1399(system.)X
+1683(Throughput)X
+2083(is)X
+2158(measured)X
+2488(in)X
+2 f
+2572(processor)X
+2910(units)X
+1 f
+3065(,)X
+3107(which)X
+3325(is)X
+3399(the)X
+3518(amount)X
+3779(of)X
+3867(work)X
+576 3148(per)N
+705(unit)X
+855(time)X
+1023(done)X
+1205(by)X
+1311(a)X
+1373(uniprocessor.)X
+1849(Incremental)X
+2260(throughput)X
+2638(is)X
+2718(derived)X
+2986(by)X
+3093(taking)X
+3320(the)X
+3445(throughput)X
+3823(with)X
+2 f
+3992(n)X
+1 f
+576 3244(processors)N
+940(in)X
+1027(the)X
+1150(system,)X
+1417(and)X
+1558(subtracting)X
+1939(the)X
+2062(throughput)X
+2438(with)X
+2 f
+2605(n)X
+1 f
+2670(-)X
+2721(1)X
+2785(processors.)X
+3188(The)X
+3337(result)X
+3539(is)X
+3616(then)X
+3778(normal-)X
+576 3340(ized)N
+730(to)X
+812(the)X
+930(throughput)X
+1301(of)X
+1388(a)X
+1444(uniprocessor)X
+1874(to)X
+1956(obtain)X
+2176(the)X
+2294(incremental)X
+2693(throughput)X
+3064(in)X
+3146(processor)X
+3474(units.)X
+-1 Ds
+5 Dt
+2425 4131 MXY
+180 -5 Dl
+2245 4064 MXY
+180 67 Dl
+2065 3993 MXY
+180 71 Dl
+1885 4111 MXY
+180 -118 Dl
+3 Dt
+2425 4173 MXY
+180 41 Dl
+2245 4028 MXY
+180 145 Dl
+2065 3954 MXY
+180 74 Dl
+1885 4111 MXY
+180 -157 Dl
+1 Dt
+2425 4214 MXY
+180 149 Dl
+2245 3913 MXY
+180 301 Dl
+2065 4169 MXY
+180 -256 Dl
+1885 4111 MXY
+180 58 Dl
+9 s
+2933 4247(troff)N
+5 Dt
+2780 4217 MXY
+131 0 Dl
+2933 4182(pmakeInd)N
+3 Dt
+2780 4152 MXY
+131 0 Dl
+2933 4116(pmake)N
+1 Dt
+2780 4086 MXY
+131 0 Dl
+2091 4881(Processors)N
+3 f
+1863 3466(Incremental)N
+2257(throughput)X
+1 f
+2587 4778(5)N
+3 Dt
+2605 4701 MXY
+0 16 Dl
+2407 4778(4)N
+2425 4701 MXY
+0 16 Dl
+2227 4778(3)N
+2245 4701 MXY
+0 16 Dl
+2047 4778(2)N
+2065 4701 MXY
+0 16 Dl
+1867 4778(1)N
+1885 4701 MXY
+0 16 Dl
+1743 3698(2.50)N
+1885 3668 MXY
+-16 0 Dl
+1743 3772(2.25)N
+1885 3742 MXY
+-16 0 Dl
+1743 3846(2.00)N
+1885 3816 MXY
+-16 0 Dl
+1743 3919(1.75)N
+1885 3889 MXY
+-16 0 Dl
+1743 3993(1.50)N
+1885 3963 MXY
+-16 0 Dl
+1743 4067(1.25)N
+1885 4037 MXY
+-16 0 Dl
+1743 4141(1.00)N
+1885 4111 MXY
+-16 0 Dl
+1743 4215(0.75)N
+1885 4185 MXY
+-16 0 Dl
+1743 4288(0.50)N
+1885 4258 MXY
+-16 0 Dl
+1743 4362(0.25)N
+1885 4332 MXY
+-16 0 Dl
+1743 4436(0.00)N
+1885 4406 MXY
+-16 0 Dl
+1719 4510(-0.25)N
+1885 4480 MXY
+-16 0 Dl
+1719 4584(-0.50)N
+1885 4554 MXY
+-16 0 Dl
+1719 4657(-0.75)N
+1885 4627 MXY
+-16 0 Dl
+1719 4731(-1.00)N
+1885 4701 MXY
+-16 0 Dl
+1885 MX
+0 -1033 Dl
+720 0 Dl
+0 1033 Dl
+-720 0 Dl
+3 f
+1864 3570(per)N
+1986(additional)X
+2316(processor)X
+1 f
+1379 4113(Processor)N
+1519 4188(units)N
+3 Dt
+-1 Ds
+3 f
+776 5134(Figure)N
+1004(4)X
+1 f
+(.)S
+1101(Incremental)X
+1470(throughput)X
+1811(per)X
+1928(additional)X
+2241(processor)X
+2542(while)X
+2727(running)X
+2976(the)X
+3089(macro-benchmarks.)X
+3702(Two)X
+3859(of)X
+3944(the)X
+776 5214(benchmarks)N
+1144(have)X
+1300(almost)X
+1512(constant)X
+1772(incremental)X
+2132(throughput,)X
+2486(indicating)X
+2794(that)X
+2922(the)X
+3030(total)X
+3177(system)X
+3396(throughput)X
+3731(is)X
+3816(propor-)X
+776 5294(tional)N
+958(to)X
+1032(the)X
+1138(size)X
+1268(of)X
+1346(the)X
+1452(system.)X
+10 s
+776 5418(Figure)N
+1011(4)X
+1077(shows)X
+1303(the)X
+1427(incremental)X
+1832(throughput)X
+2209(per)X
+2338(processor)X
+2672(for)X
+2792(the)X
+2916(macro-benchmarks.)X
+3599(The)X
+3751(indepen-)X
+576 5514(dent)N
+737(compilation)X
+1142(of)X
+1232(Csh)X
+1379(\()X
+2 f
+1406(pmakeInd)X
+1 f
+1723(\))X
+1773(and)X
+1911(the)X
+2031(troff)X
+2196(of)X
+2285(the)X
+2405(Csh)X
+2551(man)X
+2711(page)X
+2885(\()X
+2 f
+2912(troff)X
+1 f
+3049(\))X
+3098(curves)X
+3330(both)X
+3494(display)X
+3747(a)X
+3805(gain)X
+3965(of)X
+576 5610(more)N
+763(than)X
+923(one)X
+1061(processor)X
+1391(unit)X
+1537(when)X
+1734(the)X
+1855(second)X
+2101(processor)X
+2432(is)X
+2508(added.)X
+2763(As)X
+2875(mentioned)X
+3236(previously,)X
+3617(this)X
+3755(is)X
+3831(due)X
+3970(to)X
+576 5706(amortization)N
+1011(of)X
+1108(background)X
+1517(processing.)X
+1930(The)X
+2 f
+2085(troff)X
+1 f
+2252(benchmark)X
+2639(does)X
+2816(the)X
+2944(best)X
+3103(of)X
+3199(all,)X
+3328(maintaining)X
+3739(an)X
+3844(incre-)X
+576 5802(mental)N
+814(gain)X
+972(of)X
+1059(almost)X
+1292(one)X
+1428(processor)X
+1756(unit)X
+1900(even)X
+2072(for)X
+2186(the)X
+2304(\256fth)X
+2457(processor.)X
+
+8 p
+%%Page: 8 8
+10 s 10 xH 0 xS 1 f
+2237 384(-)N
+2284(8)X
+2344(-)X
+776 672(The)N
+2 f
+923(pmake)X
+1 f
+1155(benchmark)X
+1534(shows)X
+1756(a)X
+1814(gain)X
+1974(of)X
+2063(more)X
+2250(than)X
+2410(one)X
+2548(processor)X
+2878(unit)X
+3024(of)X
+3113(throughput)X
+3486(for)X
+3603(the)X
+3724(third)X
+3898(pro-)X
+576 768(cessor,)N
+818(followed)X
+1124(by)X
+1225(decreasing)X
+1590(gains)X
+1780(for)X
+1895(subsequent)X
+2272(processors.)X
+2672(Some)X
+2875(of)X
+2963(this)X
+3099(effect)X
+3304(is)X
+3378(probably)X
+3684(due)X
+3820(to)X
+3902(ker-)X
+576 864(nel)N
+699(contention,)X
+1082(although)X
+1387(the)X
+1510(lock)X
+1673(miss)X
+1845(ratios)X
+2049(aren't)X
+2263(high)X
+2431(enough)X
+2693(to)X
+2781(account)X
+3057(for)X
+3177(all)X
+3283(of)X
+3376(it.)X
+3486(The)X
+3637(rest)X
+3779(is)X
+3858(prob-)X
+576 960(ably)N
+749(due)X
+900(to)X
+997(a)X
+1068(lack)X
+1237(of)X
+1339(concurrency)X
+1772(in)X
+1869(the)X
+2 f
+2002(Pmake)X
+1 f
+2256(program.)X
+2603(This)X
+2780(is)X
+2868(interesting)X
+3240(because)X
+3529(it)X
+3607(suggests)X
+3912(that)X
+576 1056(although)N
+876(there)X
+1057(are)X
+1176(\256ve)X
+1316(processors)X
+1675(in)X
+1757(the)X
+1875(system,)X
+2 f
+2137(Pmake)X
+1 f
+2376(cannot)X
+2610(make)X
+2804(effective)X
+3106(use)X
+3233(of)X
+3320(them.)X
+9 s
+1514 1883(units)N
+1374 1809(Processor)N
+3 f
+1851 1280(per)N
+1973(additional)X
+2303(processor)X
+4 Ds
+1 Dt
+2405 2088 MXY
+176 0 Dl
+2228 2056 MXY
+177 32 Dl
+2052 1952 MXY
+176 104 Dl
+1875 1807 MXY
+177 145 Dl
+-1 Ds
+5 Dt
+2405 2293 MXY
+176 -37 Dl
+2228 2030 MXY
+177 263 Dl
+2052 1498 MXY
+176 532 Dl
+1875 1807 MXY
+177 -309 Dl
+16 Ds
+1 Dt
+2405 2181 MXY
+176 -58 Dl
+2228 MX
+177 58 Dl
+2052 1790 MXY
+176 333 Dl
+1875 1807 MXY
+177 -17 Dl
+20 Ds
+2405 2134 MXY
+176 -49 Dl
+2228 2360 MXY
+177 -226 Dl
+2052 1793 MXY
+176 567 Dl
+1875 1807 MXY
+177 -14 Dl
+-1 Ds
+3 Dt
+2405 2137 MXY
+176 -40 Dl
+2228 2076 MXY
+177 61 Dl
+2052 2001 MXY
+176 75 Dl
+1875 1807 MXY
+177 194 Dl
+1 Dt
+2405 2166 MXY
+176 -3 Dl
+2228 2152 MXY
+177 14 Dl
+2052 1949 MXY
+176 203 Dl
+1875 1807 MXY
+177 142 Dl
+1 f
+2904 2038(pdevtestInd)N
+4 Ds
+2753 2008 MXY
+129 0 Dl
+2904 1974(pdevtest)N
+-1 Ds
+5 Dt
+2753 1944 MXY
+129 0 Dl
+2904 1910(mem)N
+16 Ds
+1 Dt
+2753 1880 MXY
+129 0 Dl
+2904 1845(fork)N
+20 Ds
+2753 1815 MXY
+129 0 Dl
+2904 1781(fexec)N
+-1 Ds
+3 Dt
+2753 1751 MXY
+129 0 Dl
+2904 1716(cswitch)N
+1 Dt
+2753 1686 MXY
+129 0 Dl
+2074 2563(Processors)N
+3 f
+1846 1182(Incremental)N
+2240(throughput)X
+1 f
+2563 2462(5)N
+3 Dt
+2581 2386 MXY
+0 15 Dl
+2387 2462(4)N
+2405 2386 MXY
+0 15 Dl
+2210 2462(3)N
+2228 2386 MXY
+0 15 Dl
+2034 2462(2)N
+2052 2386 MXY
+0 15 Dl
+1857 2462(1)N
+1875 2386 MXY
+0 15 Dl
+1734 1403(2.50)N
+1875 1373 MXY
+-15 0 Dl
+1734 1475(2.25)N
+1875 1445 MXY
+-15 0 Dl
+1734 1548(2.00)N
+1875 1518 MXY
+-15 0 Dl
+1734 1620(1.75)N
+1875 1590 MXY
+-15 0 Dl
+1734 1693(1.50)N
+1875 1663 MXY
+-15 0 Dl
+1734 1765(1.25)N
+1875 1735 MXY
+-15 0 Dl
+1734 1837(1.00)N
+1875 1807 MXY
+-15 0 Dl
+1734 1910(0.75)N
+1875 1880 MXY
+-15 0 Dl
+1734 1982(0.50)N
+1875 1952 MXY
+-15 0 Dl
+1734 2054(0.25)N
+1875 2024 MXY
+-15 0 Dl
+1734 2127(0.00)N
+1875 2097 MXY
+-15 0 Dl
+1710 2199(-0.25)N
+1875 2169 MXY
+-15 0 Dl
+1710 2271(-0.50)N
+1875 2241 MXY
+-15 0 Dl
+1710 2344(-0.75)N
+1875 2314 MXY
+-15 0 Dl
+1710 2416(-1.00)N
+1875 2386 MXY
+-15 0 Dl
+1875 MX
+0 -1013 Dl
+706 0 Dl
+0 1013 Dl
+-706 0 Dl
+3 Dt
+-1 Ds
+3 f
+776 2816(Figure)N
+1001(5)X
+1 f
+(.)S
+1094(The)X
+1227(incremental)X
+1588(throughput)X
+1925(added)X
+2118(to)X
+2196(the)X
+2306(system)X
+2528(by)X
+2622(each)X
+2776(processor,)X
+3092(in)X
+3170(processor)X
+3468(units.)X
+3666(These)X
+3860(meas-)X
+776 2896(urements)N
+1063(were)X
+1226(taken)X
+1404(while)X
+1586(running)X
+1832(the)X
+1942(micro-benchmarks.)X
+2540(All)X
+2654(benchmarks)X
+3024(show)X
+3198(very)X
+3348(little)X
+3502(throughput)X
+3840(gained)X
+776 2976(by)N
+866(adding)X
+1080(additional)X
+1386(processors)X
+1708(once)X
+1862(there)X
+2024(are)X
+2130(three)X
+2292(processors)X
+2614(in)X
+2688(the)X
+2794(system.)X
+10 s
+776 3100(The)N
+926(micro-benchmarks)X
+1553(all)X
+1658(suffer)X
+1872(from)X
+2054(severe)X
+2286(degradation)X
+2691(in)X
+2779(elapsed)X
+3046(time)X
+3214(as)X
+3307(the)X
+3431(number)X
+3702(of)X
+3795(proces-)X
+576 3196(sors)N
+729(is)X
+806(increased,)X
+1154(therefore)X
+1469(we)X
+1587(would)X
+1810(expect)X
+2043(the)X
+2164(incremental)X
+2566(throughput)X
+2940(per)X
+3066(processor)X
+3397(to)X
+3482(diminish)X
+3784(as)X
+3874(well.)X
+576 3292(This)N
+738(result)X
+936(is)X
+1009(seen)X
+1172(in)X
+1254(Figure)X
+1484(5.)X
+1585(The)X
+1731(throughput)X
+2103(gained)X
+2338(by)X
+2439(adding)X
+2678(additional)X
+3019(processors)X
+3399(drops)X
+3598(off)X
+3713(rapidly)X
+3961(so)X
+576 3388(that)N
+717(the)X
+836(third)X
+1008(processor)X
+1337(does)X
+1505(not)X
+1628(add)X
+1765(much,)X
+1984(if)X
+2054(any,)X
+2211(processing)X
+2575(power)X
+2797(to)X
+2880(the)X
+2998(system.)X
+3280(For)X
+3411(a)X
+3467(few)X
+3608(of)X
+3695(the)X
+3813(bench-)X
+576 3484(marks)N
+799(the)X
+924(third)X
+1102(processor)X
+1438(actually)X
+1720(produces)X
+2038(negative)X
+2338(processor)X
+2674(units)X
+2857(of)X
+2952(throughput,)X
+3351(in)X
+3441(effect)X
+3653(slowing)X
+3934(the)X
+576 3580(system)N
+819(down.)X
+1058(At)X
+1159(this)X
+1295(point)X
+1480(the)X
+1599(scheduler)X
+1928(lock)X
+2087(has)X
+2214(become)X
+2484(saturated,)X
+2814(preventing)X
+3177(additional)X
+3517(processors)X
+3876(from)X
+576 3676(doing)N
+778(anything)X
+1078(useful.)X
+3 f
+576 3868(6.3.)N
+736(Monitor)X
+1041(lock)X
+1203(measurements)X
+1 f
+776 3992(The)N
+924(graphs)X
+1161(of)X
+1251(the)X
+1372 0.2232(macro-benchmark)AX
+1980(monitor)X
+2256(lock)X
+2417(miss)X
+2586(ratios)X
+2787(are)X
+2910(shown)X
+3143(in)X
+3229(Figure)X
+3462(6.)X
+3566(The)X
+3715(miss)X
+3885(ratio)X
+576 4088(of)N
+666(a)X
+725(lock)X
+886(is)X
+962(the)X
+1083(number)X
+1350(of)X
+1439(misses)X
+1674(on)X
+1776(that)X
+1918(lock)X
+2078(divided)X
+2340(by)X
+2442(the)X
+2562(number)X
+2829(of)X
+2918(hits.)X
+3095(Contention)X
+3472(for)X
+3588(monitor)X
+3863(locks)X
+576 4184(does)N
+753(not)X
+885(appear)X
+1130(to)X
+1222(be)X
+1328(a)X
+1394(major)X
+1612(performance)X
+2050(bottleneck)X
+2415(for)X
+2540(a)X
+2607(system)X
+2860(with)X
+3033(\256ve)X
+3184(or)X
+3282(fewer)X
+3497(processors.)X
+3907(The)X
+576 4280(maximum)N
+923(miss)X
+1092(ratio)X
+1262(for)X
+1379(any)X
+1518(benchmark)X
+1898(is)X
+1974(less)X
+2117(than)X
+2278(18%.)X
+2488(Extrapolation)X
+2947(of)X
+3037(the)X
+3158(curves)X
+3391(indicates)X
+3699(that)X
+3841(moni-)X
+576 4376(tor)N
+685(lock)X
+843(contention)X
+1201(should)X
+1434(not)X
+1556(reach)X
+1751(saturation)X
+2087(levels)X
+2294(until)X
+2460(the)X
+2578(system)X
+2820(is)X
+2893(scaled)X
+3114(by)X
+3214(a)X
+3270(factor)X
+3478(of)X
+3565(three)X
+3746(or)X
+3833(four.)X
+776 4500(The)N
+924(highest)X
+1178(monitor)X
+1454(lock)X
+1615(miss)X
+1784(ratio)X
+1954(occurs)X
+2187(on)X
+2290(the)X
+2411(same)X
+2599(lock)X
+2760(for)X
+2877(all)X
+2980(the)X
+3101(benchmarks.)X
+3552(The)X
+3700(kernel)X
+3925(has)X
+576 4596(a)N
+634(single)X
+847(monitor)X
+1122(lock,)X
+1302(vmMonitorLock,)X
+1872(that)X
+2013(surrounds)X
+2350(the)X
+2469(entire)X
+2673(virtual)X
+2903(memory)X
+3191(system.)X
+3474(Any)X
+3633(routines)X
+3912(that)X
+576 4692(modify)N
+827(the)X
+945(virtual)X
+1174(memory)X
+1461(state)X
+1628(must)X
+1803(hold)X
+1965(this)X
+2100(monitor)X
+2373(lock.)X
+2571(When)X
+2783(the)X
+2901(virtual)X
+3130(memory)X
+3417(system)X
+3659(was)X
+3805(written)X
+576 4788(the)N
+710(emphasis)X
+1044(was)X
+1204(on)X
+1319(correctness,)X
+1736(rather)X
+1959(than)X
+2132(concurrency,)X
+2585(hence)X
+2808(vmMonitorLock's)X
+3430(monolithic)X
+3811(nature.)X
+576 4884(However,)N
+912(the)X
+1031(benchmarks)X
+1440(suggest)X
+1701(that)X
+1842(system)X
+2085(performance)X
+2513(on)X
+2614(large)X
+2796(multiprocessors)X
+3325(could)X
+3525(be)X
+3623(improved)X
+3952(by)X
+576 4980(replacing)N
+895(the)X
+1013(single)X
+1224(vmMonitorLock)X
+1773(with)X
+1935(several)X
+2183(locks)X
+2372(on)X
+2472(individual)X
+2816(data)X
+2970(structures.)X
+776 5104(The)N
+927(monitor)X
+1206(lock)X
+1370(miss)X
+1542(ratios)X
+1746(while)X
+1950(running)X
+2226(the)X
+2351(micro-benchmarks)X
+2980(are)X
+3106(shown)X
+3342(in)X
+3431(Figure)X
+3667(7.)X
+3774(Most)X
+3965(of)X
+576 5200(the)N
+699(curves)X
+934(have)X
+1111(small)X
+1309(slopes)X
+1534(and)X
+1675(small)X
+1873(maximum)X
+2222(values.)X
+2492(Exceptions)X
+2873(are)X
+2997(the)X
+2 f
+3120(pdevtest)X
+1 f
+3408(and)X
+2 f
+3549(cswitch)X
+1 f
+3813(bench-)X
+576 5296(marks.)N
+834(The)X
+981(causes)X
+1213(of)X
+1302(the)X
+1422(contention)X
+1782(can)X
+1916(be)X
+2014(found)X
+2223(by)X
+2325(examining)X
+2685(the)X
+2805(kernel)X
+3028(code.)X
+3242(The)X
+2 f
+3389(pdevtest)X
+1 f
+3675(benchmark)X
+576 5392(spends)N
+822(a)X
+886(lot)X
+998(of)X
+1093(its)X
+1196(time)X
+1366(copying)X
+1652(the)X
+1778(data)X
+1940(from)X
+2124(the)X
+2250(client's)X
+2514(address)X
+2783(space)X
+2990(to)X
+3080(the)X
+3206(server's.)X
+3529(A)X
+3614(monitor)X
+3894(lock)X
+576 5488(associated)N
+928(with)X
+1092(the)X
+1212(server)X
+1431(process)X
+1694(\(perPCBLock\))X
+2188(is)X
+2263(held)X
+2423(during)X
+2654(the)X
+2774(copy.)X
+2992(If)X
+3068(there)X
+3251(are)X
+3373(multiple)X
+3662(clients)X
+3894(then)X
+576 5584(this)N
+713(lock)X
+872(is)X
+946(a)X
+1003(critical)X
+1247(resource.)X
+1561(With)X
+1742(more)X
+1928(than)X
+2087(three)X
+2269(clients)X
+2499(the)X
+2618(lock)X
+2777(is)X
+2851(held)X
+3010(all)X
+3111(of)X
+3199(the)X
+3318(time,)X
+3501(causing)X
+3767(the)X
+3886(miss)X
+576 5680(ratio)N
+746(to)X
+831(reach)X
+1029(almost)X
+1265(two)X
+1408(hundred)X
+1694(percent.)X
+1994(Each)X
+2178(time)X
+2343(a)X
+2402(process)X
+2666(releases)X
+2944(the)X
+3065(lock)X
+3226(more)X
+3414(than)X
+3575(one)X
+3714(process)X
+3979(is)X
+576 5776(awakened)N
+918(causing)X
+1183(more)X
+1368(total)X
+1530(misses)X
+1763(than)X
+1921(hits.)X
+
+9 p
+%%Page: 9 9
+10 s 10 xH 0 xS 1 f
+2237 384(-)N
+2284(9)X
+2344(-)X
+-1 Ds
+5 Dt
+2984 1428 MXY
+163 -11 Dl
+3 Dt
+1550 1813 MXY
+0 -962 Dl
+671 0 Dl
+0 962 Dl
+-671 0 Dl
+-14 0 Dl
+9 s
+1440 1843(0%)N
+1550 1693 MXY
+-14 0 Dl
+1440 1723(5%)N
+1550 1572 MXY
+-14 0 Dl
+1404 1602(10%)N
+1550 1452 MXY
+-14 0 Dl
+1404 1482(15%)N
+1550 1332 MXY
+-14 0 Dl
+1404 1362(20%)N
+1550 1212 MXY
+-14 0 Dl
+1404 1242(25%)N
+1550 1092 MXY
+-14 0 Dl
+1404 1122(30%)N
+1550 971 MXY
+-14 0 Dl
+1404 1001(35%)N
+1550 851 MXY
+-14 0 Dl
+1404 881(40%)N
+1550 1813 MXY
+0 14 Dl
+1532 1888(1)N
+1718 1813 MXY
+0 14 Dl
+1700 1888(2)N
+1886 1813 MXY
+0 14 Dl
+1868 1888(3)N
+2053 1813 MXY
+0 14 Dl
+2035 1888(4)N
+2221 1813 MXY
+0 14 Dl
+2203 1888(5)N
+3 f
+1740 791(Average)N
+1 f
+1723 1983(Processors)N
+1550 1813 MXY
+168 -25 Dl
+168 -31 Dl
+167 -43 Dl
+168 -58 Dl
+5 Dt
+1550 1810 MXY
+168 -76 Dl
+168 -96 Dl
+167 -28 Dl
+168 -12 Dl
+16 Ds
+1 Dt
+1550 1813 MXY
+168 -55 Dl
+168 -64 Dl
+167 -101 Dl
+168 -31 Dl
+2986 1487 MXY
+167 -52 Dl
+2818 1631 MXY
+168 -144 Dl
+2651 1726 MXY
+167 -95 Dl
+2483 1812 MXY
+168 -86 Dl
+-1 Ds
+5 Dt
+2818 1460 MXY
+168 -32 Dl
+2651 1577 MXY
+167 -117 Dl
+2483 1783 MXY
+168 -206 Dl
+3 Dt
+2986 1670 MXY
+167 -86 Dl
+2818 1733 MXY
+168 -63 Dl
+2651 1775 MXY
+167 -42 Dl
+2483 1813 MXY
+168 -38 Dl
+2203 2426(pmakeInd)N
+16 Ds
+1 Dt
+2060 2396 MXY
+123 0 Dl
+2203 2236(troff)N
+-1 Ds
+5 Dt
+2060 2206 MXY
+123 0 Dl
+2203 2059(pmake)N
+3 Dt
+2060 2029 MXY
+123 0 Dl
+2652 1976(Processors)N
+3 f
+2670 791(Highest)N
+1 f
+3135 1888(5)N
+3153 1813 MXY
+0 14 Dl
+2968 1888(4)N
+2986 1813 MXY
+0 14 Dl
+2800 1888(3)N
+2818 1813 MXY
+0 14 Dl
+2633 1888(2)N
+2651 1813 MXY
+0 14 Dl
+2465 1888(1)N
+2483 1813 MXY
+0 14 Dl
+2336 881(40%)N
+2483 851 MXY
+-15 0 Dl
+2336 1001(35%)N
+2483 971 MXY
+-15 0 Dl
+2336 1122(30%)N
+2483 1092 MXY
+-15 0 Dl
+2336 1242(25%)N
+2483 1212 MXY
+-15 0 Dl
+2336 1362(20%)N
+2483 1332 MXY
+-15 0 Dl
+2336 1482(15%)N
+2483 1452 MXY
+-15 0 Dl
+2336 1602(10%)N
+2483 1572 MXY
+-15 0 Dl
+2372 1723(5%)N
+2483 1693 MXY
+-15 0 Dl
+2372 1843(0%)N
+2483 1813 MXY
+-15 0 Dl
+2483 MX
+0 -962 Dl
+670 0 Dl
+0 962 Dl
+-670 0 Dl
+2206 2142(\(vmMonitorLock\))N
+2206 2331(\(vmMonitorLock\))N
+2206 2512(\(vmMonitorLock\))N
+3 f
+1968 702(Monitor)N
+2242(lock)X
+2388(miss)X
+2542(ratios)X
+3 Dt
+-1 Ds
+776 2753(Figure)N
+998(6)X
+1 f
+(.)S
+1088(Graphs)X
+1315(of)X
+1394(the)X
+1501(monitor)X
+1748(lock)X
+1891(miss)X
+2042(ratios)X
+2221(while)X
+2400(running)X
+2643(the)X
+2750(macro-benchmarks.)X
+3357(The)X
+3488(graph)X
+3671(on)X
+3762(the)X
+3869(left)X
+3984(is)X
+776 2833(the)N
+889(miss)X
+1046(ratio)X
+1203(averaged)X
+1488(across)X
+1693(all)X
+1790(monitor)X
+2043(locks.)X
+2256(The)X
+2393(graph)X
+2582(on)X
+2679(the)X
+2792(right)X
+2952(is)X
+3024(the)X
+3136(miss)X
+3292(ratio)X
+3448(of)X
+3532(the)X
+3644(lock)X
+3792(with)X
+3944(the)X
+776 2913(highest)N
+1004(miss)X
+1156(ratio.)X
+1344(The)X
+1477(name)X
+1654(of)X
+1735(the)X
+1844(lock)X
+1989(with)X
+2138(the)X
+2247(highest)X
+2476(miss)X
+2629(ratio)X
+2782(is)X
+2851(displayed)X
+3148(in)X
+3225(parentheses)X
+3582(under)X
+3767(the)X
+3876(name)X
+776 2993(of)N
+854(the)X
+960(benchmark.)X
+3 f
+1968 3119(Monitor)N
+2242(lock)X
+2388(miss)X
+2542(ratios)X
+1749 3211(Average)N
+-1 Ds
+3 Dt
+1550 4230 MXY
+0 -962 Dl
+671 0 Dl
+0 962 Dl
+-671 0 Dl
+-14 0 Dl
+1 f
+1440 4260(0%)N
+1550 4070 MXY
+-14 0 Dl
+1440 4100(5%)N
+1550 3909 MXY
+-14 0 Dl
+1404 3939(10%)N
+1550 3749 MXY
+-14 0 Dl
+1404 3779(15%)N
+1550 3589 MXY
+-14 0 Dl
+1404 3619(20%)N
+1550 3429 MXY
+-14 0 Dl
+1404 3459(25%)N
+1550 3268 MXY
+-14 0 Dl
+1404 3298(30%)N
+1550 4230 MXY
+0 14 Dl
+1532 4305(1)N
+1718 4230 MXY
+0 14 Dl
+1700 4305(2)N
+1886 4230 MXY
+0 14 Dl
+1868 4305(3)N
+2053 4230 MXY
+0 14 Dl
+2035 4305(4)N
+2221 4230 MXY
+0 14 Dl
+2203 4305(5)N
+1723 4400(Processors)N
+1 Dt
+1550 4229 MXY
+168 -17 Dl
+168 -95 Dl
+167 -233 Dl
+168 -283 Dl
+3 Dt
+1550 4211 MXY
+168 -180 Dl
+168 -163 Dl
+167 -102 Dl
+168 -51 Dl
+5 Dt
+1550 4226 MXY
+168 -250 Dl
+168 -181 Dl
+167 -73 Dl
+168 -44 Dl
+16 Ds
+1 Dt
+1550 4227 MXY
+168 -51 Dl
+168 -210 Dl
+167 -141 Dl
+168 -71 Dl
+20 Ds
+1550 4229 MXY
+168 -255 Dl
+168 -148 Dl
+167 -247 Dl
+168 -243 Dl
+4 Ds
+1550 4227 MXY
+168 -73 Dl
+168 -143 Dl
+167 59 Dl
+168 -18 Dl
+2986 4122 MXY
+167 -10 Dl
+2818 4055 MXY
+168 67 Dl
+2651 4130 MXY
+167 -75 Dl
+2483 4227 MXY
+168 -97 Dl
+20 Ds
+2986 3499 MXY
+167 -146 Dl
+2818 3759 MXY
+168 -260 Dl
+2651 4047 MXY
+167 -288 Dl
+2483 4225 MXY
+168 -178 Dl
+16 Ds
+2986 4161 MXY
+167 -15 Dl
+2818 4184 MXY
+168 -23 Dl
+2651 4194 MXY
+167 -10 Dl
+2483 4110 MXY
+168 84 Dl
+-1 Ds
+5 Dt
+2986 4116 MXY
+167 -26 Dl
+2818 4141 MXY
+168 -25 Dl
+2651 4179 MXY
+167 -38 Dl
+2483 4228 MXY
+168 -49 Dl
+3 Dt
+2986 4117 MXY
+167 -13 Dl
+2818 4145 MXY
+168 -28 Dl
+2651 4184 MXY
+167 -39 Dl
+2483 4219 MXY
+168 -35 Dl
+1 Dt
+2986 4156 MXY
+167 -58 Dl
+2818 4194 MXY
+168 -38 Dl
+2651 4222 MXY
+167 -28 Dl
+2483 4190 MXY
+168 32 Dl
+2527 4892(pdevtestInd)N
+4 Ds
+2384 4862 MXY
+122 0 Dl
+2527 4703(pdevtest)N
+20 Ds
+2384 4673 MXY
+122 0 Dl
+2527 4513(mem)N
+16 Ds
+2384 4483 MXY
+122 0 Dl
+1781 4914(fork)N
+-1 Ds
+5 Dt
+1638 4853 MXY
+122 0 Dl
+1781 4706(fexec)N
+3 Dt
+1638 4676 MXY
+122 0 Dl
+1781 4516(cswitch)N
+1 Dt
+1638 4486 MXY
+122 0 Dl
+2664 4400(Processors)N
+3 f
+2691 3208(Highest)N
+1 f
+3135 4305(5)N
+3 Dt
+3153 4230 MXY
+0 14 Dl
+2968 4305(4)N
+2986 4230 MXY
+0 14 Dl
+2800 4305(3)N
+2818 4230 MXY
+0 14 Dl
+2633 4305(2)N
+2651 4230 MXY
+0 14 Dl
+2465 4305(1)N
+2483 4230 MXY
+0 14 Dl
+2300 3298(200%)N
+2483 3268 MXY
+-15 0 Dl
+2300 3394(180%)N
+2483 3364 MXY
+-15 0 Dl
+2300 3491(160%)N
+2483 3461 MXY
+-15 0 Dl
+2300 3587(140%)N
+2483 3557 MXY
+-15 0 Dl
+2300 3683(120%)N
+2483 3653 MXY
+-15 0 Dl
+2300 3779(100%)N
+2483 3749 MXY
+-15 0 Dl
+2336 3875(80%)N
+2483 3845 MXY
+-15 0 Dl
+2336 3971(60%)N
+2483 3941 MXY
+-15 0 Dl
+2336 4068(40%)N
+2483 4038 MXY
+-15 0 Dl
+2336 4164(20%)N
+2483 4134 MXY
+-15 0 Dl
+2372 4260(0%)N
+2483 4230 MXY
+-15 0 Dl
+2483 MX
+0 -962 Dl
+670 0 Dl
+0 962 Dl
+-670 0 Dl
+1784 4600(\(handleTableLock\))N
+1784 4780(\(vmMonitorLock\))N
+1784 4967(\(exitLock\))N
+2530 4594(\(vmMonitorLock\))N
+2530 4780(\(perPCBLock\))N
+2530 4967(\(pdevLock\))N
+3 Dt
+-1 Ds
+3 f
+776 5304(Figure)N
+999(7)X
+1 f
+(.)S
+1090(The)X
+1221(average)X
+1464(and)X
+1587(highest)X
+1814(monitor)X
+2061(lock)X
+2204(miss)X
+2355(ratios)X
+2534(while)X
+2713(running)X
+2956(the)X
+3063(micro-benchmarks.)X
+3658(Note)X
+3817(that)X
+3944(the)X
+776 5384(vertical)N
+1014(scales)X
+1208(on)X
+1302(the)X
+1412(two)X
+1542(graphs)X
+1756(are)X
+1866(not)X
+1980(the)X
+2090(same.)X
+2295(Benchmarks)X
+2676(whose)X
+2881(curves)X
+3090(have)X
+3247(a)X
+3300(steep)X
+3469(slope)X
+3642(will)X
+3775(not)X
+3888(scale)X
+776 5464(well)N
+922(to)X
+1000(larger)X
+1190(systems)X
+1440(due)X
+1566(to)X
+1644(saturation)X
+1950(of)X
+2032(a)X
+2086(monitor)X
+2336(lock.)X
+2518(The)X
+2652(initially)X
+2898(high)X
+3048(values)X
+3254(for)X
+3360(some)X
+3534(benchmarks)X
+3905(on)X
+4000(a)X
+776 5544(one)N
+912(processor)X
+1220(system)X
+1452(are)X
+1572(due)X
+1707(to)X
+1794(all)X
+1897(of)X
+1988(the)X
+2107(benchmark)X
+2458(processes)X
+2765(exiting)X
+2996(at)X
+3079(once,)X
+3264(causing)X
+3515(a)X
+3578(high)X
+3737(miss)X
+3900(ratio)X
+776 5624(although)N
+1046(the)X
+1152(absolute)X
+1410(number)X
+1648(of)X
+1726(hits)X
+1848(and)X
+1970(misses)X
+2180(is)X
+2246(very)X
+2392(low.)X
+
+10 p
+%%Page: 10 10
+9 s 9 xH 0 xS 1 f
+10 s
+2217 384(-)N
+2264(10)X
+2364(-)X
+776 672(The)N
+2 f
+923(cswitch)X
+1 f
+1185(benchmark)X
+1565(uses)X
+1726(pipes)X
+1918(to)X
+2003(pass)X
+2164(a)X
+2223(byte)X
+2384(between)X
+2675(processes.)X
+3046(Each)X
+3230(time)X
+3395(a)X
+3454(pipe)X
+3615(is)X
+3691(accessed)X
+3996(a)X
+576 768(monitor)N
+855(lock)X
+1019(around)X
+1268(the)X
+1392(\256le)X
+1520(handle)X
+1760(table)X
+1942(\(handleTableLock\))X
+2584(in)X
+2672(the)X
+2796(kernel)X
+3023(is)X
+3102(grabbed.)X
+3427(Although)X
+3755(different)X
+576 864(pairs)N
+768(of)X
+871(processes)X
+1215(use)X
+1358(different)X
+1671(pipes,)X
+1896(they)X
+2070(all)X
+2186(need)X
+2374(to)X
+2472(grab)X
+2651(the)X
+2785(handle)X
+3036(table)X
+3229(monitor)X
+3519(lock,)X
+3714(causing)X
+3996(a)X
+576 960(bottleneck.)N
+984(This)X
+1160(is)X
+1247(a)X
+1316(surprising)X
+1669(result,)X
+1900(since)X
+2098(the)X
+2 f
+2229(cswitch)X
+1 f
+2502(benchmark)X
+2892(was)X
+3050(intended)X
+3359(to)X
+3454(stress)X
+3665(the)X
+3796(context)X
+576 1056(switch)N
+828(code.)X
+1063(It)X
+1155(is)X
+1251(not)X
+1396(always)X
+1662(easy)X
+1848(to)X
+1954(predict)X
+2221(what)X
+2421(effect)X
+2649(a)X
+2729(particular)X
+3081(kernel)X
+3326(lock)X
+3508(will)X
+3676(have)X
+3872(on)X
+3996(a)X
+576 1152(benchmark's)N
+1011(performance.)X
+776 1276(Two)N
+963(other)X
+1168(locks)X
+1377(show)X
+1586(up)X
+1706(in)X
+1808(the)X
+1946(graph)X
+2170(of)X
+2278(the)X
+2417(highest)X
+2689(monitor)X
+2983(lock)X
+3162(miss)X
+3349(ratio.)X
+3577(ExitLock)X
+3916(and)X
+576 1372(pdevLock)N
+924(have)X
+1103(the)X
+1228(highest)X
+1486(miss)X
+1659(ratio)X
+1833(of)X
+1927(any)X
+2070(monitor)X
+2350(lock)X
+2515(while)X
+2720(running)X
+2996(the)X
+2 f
+3120(fork)X
+1 f
+3275(and)X
+2 f
+3417(pdevtestInd)X
+1 f
+3813(bench-)X
+576 1468(marks,)N
+824(respectively.)X
+1284(The)X
+1441(miss)X
+1619(ratios)X
+1829(are)X
+1960(not)X
+2094(high)X
+2268(enough,)X
+2556(however,)X
+2885(to)X
+2979(warrant)X
+3257(replacing)X
+3588(each)X
+3768(of)X
+3867(these)X
+576 1564(locks)N
+765(with)X
+927(multiple)X
+1213(locks)X
+1402(unless)X
+1622(there)X
+1803(are)X
+1922(many)X
+2120(more)X
+2305(processors)X
+2664(in)X
+2746(the)X
+2864(system.)X
+-1 Ds
+3 Dt
+1575 2781 MXY
+0 -947 Dl
+660 0 Dl
+0 947 Dl
+-660 0 Dl
+-15 0 Dl
+9 s
+1464 2811(0%)N
+1575 2686 MXY
+-15 0 Dl
+1428 2716(10%)N
+1575 2592 MXY
+-15 0 Dl
+1428 2622(20%)N
+1575 2497 MXY
+-15 0 Dl
+1428 2527(30%)N
+1575 2402 MXY
+-15 0 Dl
+1428 2432(40%)N
+1575 2307 MXY
+-15 0 Dl
+1428 2337(50%)N
+1575 2213 MXY
+-15 0 Dl
+1428 2243(60%)N
+1575 2118 MXY
+-15 0 Dl
+1428 2148(70%)N
+1575 2023 MXY
+-15 0 Dl
+1428 2053(80%)N
+1575 1928 MXY
+-15 0 Dl
+1428 1958(90%)N
+1575 1834 MXY
+-15 0 Dl
+1392 1864(100%)N
+1575 2781 MXY
+0 14 Dl
+1557 2856(1)N
+1740 2781 MXY
+0 14 Dl
+1722 2856(2)N
+1905 2781 MXY
+0 14 Dl
+1887 2856(3)N
+2070 2781 MXY
+0 14 Dl
+2052 2856(4)N
+2235 2781 MXY
+0 14 Dl
+2217 2856(5)N
+3 f
+1756 1783(Average)N
+1 f
+1751 2949(Processors)N
+1575 2781 MXY
+165 -40 Dl
+165 -75 Dl
+165 -71 Dl
+165 -145 Dl
+5 Dt
+1575 2775 MXY
+165 -44 Dl
+165 -161 Dl
+165 -139 Dl
+165 -77 Dl
+16 Ds
+1 Dt
+1575 2780 MXY
+165 -72 Dl
+165 -139 Dl
+165 -176 Dl
+165 -63 Dl
+2988 2150 MXY
+165 -53 Dl
+2823 2371 MXY
+165 -221 Dl
+2658 2607 MXY
+165 -236 Dl
+2493 2781 MXY
+165 -174 Dl
+-1 Ds
+5 Dt
+2988 2198 MXY
+165 -98 Dl
+2823 2394 MXY
+165 -196 Dl
+2658 2667 MXY
+165 -273 Dl
+2493 2763 MXY
+165 -96 Dl
+3 Dt
+2988 2432 MXY
+165 -208 Dl
+2823 2520 MXY
+165 -88 Dl
+2658 2676 MXY
+165 -156 Dl
+2493 2784 MXY
+165 -108 Dl
+2209 3388(pmakeInd)N
+16 Ds
+1 Dt
+2068 3358 MXY
+121 0 Dl
+2209 3201(troff)N
+-1 Ds
+5 Dt
+2068 3171 MXY
+121 0 Dl
+2209 3021(pmake)N
+3 Dt
+2068 2991 MXY
+121 0 Dl
+2669 2952(Processors)N
+3 f
+2691 1780(Highest)N
+1 f
+3135 2859(5)N
+3153 2784 MXY
+0 14 Dl
+2970 2859(4)N
+2988 2784 MXY
+0 14 Dl
+2805 2859(3)N
+2823 2784 MXY
+0 14 Dl
+2640 2859(2)N
+2658 2784 MXY
+0 14 Dl
+2475 2859(1)N
+2493 2784 MXY
+0 14 Dl
+2311 1867(100%)N
+2493 1837 MXY
+-14 0 Dl
+2347 1961(90%)N
+2493 1931 MXY
+-14 0 Dl
+2347 2056(80%)N
+2493 2026 MXY
+-14 0 Dl
+2347 2151(70%)N
+2493 2121 MXY
+-14 0 Dl
+2347 2245(60%)N
+2493 2215 MXY
+-14 0 Dl
+2347 2340(50%)N
+2493 2310 MXY
+-14 0 Dl
+2347 2435(40%)N
+2493 2405 MXY
+-14 0 Dl
+2347 2530(30%)N
+2493 2500 MXY
+-14 0 Dl
+2347 2624(20%)N
+2493 2594 MXY
+-14 0 Dl
+2347 2719(10%)N
+2493 2689 MXY
+-14 0 Dl
+2383 2814(0%)N
+2493 2784 MXY
+-14 0 Dl
+2493 MX
+0 -947 Dl
+660 0 Dl
+0 947 Dl
+-660 0 Dl
+2212 3097(\(sched_Mutex\))N
+2212 3281(\(sched_Mutex\))N
+2212 3465(\(sched_Mutex\))N
+3 f
+1999 1690(Master)N
+2237(lock)X
+2383(miss)X
+2537(ratios)X
+3 Dt
+-1 Ds
+776 3801(Figure)N
+1000(8)X
+1 f
+(.)S
+1092(Graphs)X
+1320(of)X
+1400(the)X
+1508(master)X
+1720(lock)X
+1864(miss)X
+2016(ratios)X
+2196(while)X
+2376(running)X
+2620(the)X
+2728(macro-benchmarks.)X
+3336(All)X
+3448(of)X
+3528(the)X
+3636(curves)X
+3844(have)X
+4000(a)X
+776 3881(steep)N
+942(slope)X
+1112(due)X
+1234(to)X
+1308(contention)X
+1630(for)X
+1732(the)X
+1838(scheduler)X
+2132(lock.)X
+3 f
+10 s
+576 4073(6.4.)N
+736(Master)X
+1002(lock)X
+1164(measurements)X
+1 f
+776 4197(The)N
+923(graphs)X
+1159(in)X
+1243(Figure)X
+1474(8)X
+1536(are)X
+1657(plots)X
+1834(of)X
+1923(the)X
+2043(master)X
+2279(lock)X
+2439(miss)X
+2607(ratios)X
+2807(for)X
+2923(the)X
+3043(macro-benchmarks.)X
+3721(All)X
+3845(of)X
+3934(the)X
+576 4293(curves)N
+809(show)X
+1000(increasing)X
+1352(amounts)X
+1645(of)X
+1734(contention)X
+2094(as)X
+2183(the)X
+2303(size)X
+2450(of)X
+2539(the)X
+2659(system)X
+2903(is)X
+2978(increased.)X
+3344(All)X
+3468(of)X
+3557(this)X
+3694(contention)X
+576 4389(is)N
+655(due)X
+797(to)X
+886(sched_Mutex,)X
+1365(the)X
+1490(master)X
+1731(lock)X
+1896(around)X
+2146(the)X
+2271(scheduler.)X
+2646(Sched_Mutex)X
+3118(has)X
+3252(a)X
+3315(higher)X
+3547(miss)X
+3720(ratio)X
+3894(than)X
+576 4485(any)N
+720(other)X
+913(lock)X
+1079(in)X
+1169(the)X
+1295(kernel)X
+1524(for)X
+1646(almost)X
+1887(all)X
+1995(of)X
+2089(the)X
+2214(benchmarks.)X
+2669(This)X
+2838(is)X
+2918(surprising,)X
+3285(since)X
+3477(our)X
+3611(\256rst)X
+3762(intuition)X
+576 4581(was)N
+722(that)X
+863(various)X
+1120(monitor)X
+1394(locks)X
+1584(would)X
+1805(saturate)X
+2076(\256rst.)X
+2261(It)X
+2331(turns)X
+2512(out)X
+2635(that)X
+2776(sched_Mutex)X
+3229(is)X
+3303(used)X
+3471(in)X
+3555(many)X
+3755(different)X
+576 4677(places)N
+805(in)X
+895(the)X
+1021(kernel.)X
+1289(Its)X
+1396(main)X
+1583(function)X
+1877(is)X
+1957(to)X
+2046(provide)X
+2318(mutually)X
+2629(exclusive)X
+2959(access)X
+3192(to)X
+3281(the)X
+3406(run)X
+3540(queue,)X
+3779(but)X
+3908(it)X
+3979(is)X
+576 4773(also)N
+729(used)X
+900(for)X
+1018(other)X
+1207(purposes,)X
+1536(including)X
+1862(synchronization)X
+2398(when)X
+2596(a)X
+2656(miss)X
+2826(occurs)X
+3061(on)X
+3166(a)X
+3227(monitor)X
+3505(lock)X
+3668(\(see)X
+3823(Figure)X
+576 4869(9\).)N
+703(As)X
+812(a)X
+868(result,)X
+1086(an)X
+1182(increase)X
+1466(in)X
+1548(the)X
+1666(miss)X
+1832(rate)X
+1973(for)X
+2087(monitor)X
+2360(locks)X
+2549(will)X
+2693(increase)X
+2977(the)X
+3095(contention)X
+3453(for)X
+3567(sched_Mutex.)X
+776 4993(The)N
+921(graphs)X
+1155(in)X
+1237(Figure)X
+1466(10)X
+1566(are)X
+1685(plots)X
+1860(of)X
+1947(the)X
+2065(master)X
+2299(lock)X
+2457(miss)X
+2623(ratio)X
+2790(for)X
+2904(the)X
+3023(micro-benchmarks.)X
+3686(The)X
+3832(slopes)X
+576 5089(of)N
+664(the)X
+783(curves)X
+1034(are)X
+1154(quite)X
+1334(steep)X
+1519(--)X
+1593(all)X
+1693(benchmarks)X
+2101(have)X
+2273(an)X
+2369(average)X
+2640(miss)X
+2806(ratio)X
+2973(on)X
+3073(a)X
+3129(\256ve)X
+3269(processor)X
+3597(system)X
+3839(that)X
+3979(is)X
+576 5185(between)N
+868(\256fty)X
+1025(and)X
+1165(eighty-\256ve)X
+1536(percent.)X
+1837(The)X
+1986(highest)X
+2242(miss)X
+2413(ratio)X
+2585(for)X
+2704(any)X
+2845(lock)X
+3008(was)X
+3158(greater)X
+3407(than)X
+3570(eighty)X
+3795(percent)X
+576 5281(for)N
+698(all)X
+806(benchmarks,)X
+1242(and)X
+1386(in)X
+1476(some)X
+1673(cases)X
+1871(was)X
+2024(higher)X
+2257(than)X
+2422(ninety)X
+2649(percent.)X
+2953(Once)X
+3150(again)X
+3351(this)X
+3493(contention)X
+3858(is)X
+3938(for)X
+576 5377(sched_Mutex.)N
+1079(Although)X
+1413(the)X
+1543(micro-benchmarks)X
+2177(were)X
+2366(targeted)X
+2657(at)X
+2747(an)X
+2855(array)X
+3053(of)X
+3152(kernel)X
+3385(monitor)X
+3670(and)X
+3818(master)X
+576 5473(locks,)N
+785(they)X
+943(all)X
+1043(piled)X
+1223(up)X
+1323(on)X
+1423(the)X
+1541(scheduler)X
+1869(lock.)X
+2067(Clearly)X
+2323(the)X
+2441(importance)X
+2822(of)X
+2909(this)X
+3044(single)X
+3255(lock)X
+3413(must)X
+3588(be)X
+3684(reduced.)X
+
+11 p
+%%Page: 11 11
+10 s 10 xH 0 xS 1 f
+2217 384(-)N
+2264(11)X
+2364(-)X
+0(Courier)xf 0 f
+864 720(Miss)N
+1104(on)X
+1248(monitor)X
+1632(lock.)X
+864 816(Lock)N
+1104(sched_Mutex.)X
+864 912(Put)N
+1056(process)X
+1440(on)X
+1584(wait)X
+1824(queue)X
+2112(for)X
+2304(monitor)X
+2688(lock.)X
+864 1008(Remove)N
+1200(first)X
+1488(process)X
+1872(from)X
+2112(ready)X
+2400(queue.)X
+864 1104(Context)N
+1248(switch)X
+1584(to)X
+1728(the)X
+1920(ready)X
+2208(process.)X
+864 1200(Release)N
+1248(sched_Mutex.)X
+3 f
+9 s
+776 1548(Figure)N
+1001(9)X
+1 f
+(.)S
+1094(This)X
+1243(sequence)X
+1528(of)X
+1609(events)X
+1814(occurs)X
+2023(when)X
+2200(a)X
+2253(process)X
+2490(misses)X
+2703(on)X
+2796(a)X
+2850(monitor)X
+3100(lock.)X
+3282(Note)X
+3444(that)X
+3574(sched_Mutex)X
+3984(is)X
+776 1628(used)N
+932(to)X
+1012(synchronize)X
+1384(access)X
+1592(to)X
+1672(the)X
+1784(queue)X
+1980(of)X
+2063(processes)X
+2362(waiting)X
+2601(for)X
+2708(the)X
+2819(monitor)X
+3070(lock,)X
+3235(as)X
+3318(well)X
+3465(as)X
+3548(the)X
+3659(ready)X
+3842(queue.)X
+776 1708(This)N
+922(unnecessarily)X
+1332(increases)X
+1614(the)X
+1720(total)X
+1866(length)X
+2064(of)X
+2142(time)X
+2288(that)X
+2414(sched_Mutex)X
+2820(is)X
+2886(held.)X
+3064(The)X
+3195(addition)X
+3450(of)X
+3529(individual)X
+3840(master)X
+776 1788(locks)N
+950(to)X
+1028(synchronize)X
+1398(access)X
+1604(to)X
+1682(the)X
+1791(wait)X
+1936(queue)X
+2129(for)X
+2234(each)X
+2387(monitor)X
+2636(lock)X
+2781(would)X
+2982(reduce)X
+3195(the)X
+3304(length)X
+3505(of)X
+3586(the)X
+3695(critical)X
+3916(sec-)X
+776 1868(tion)N
+906(protected)X
+1192(by)X
+1282(sched_Mutex)X
+1688(and)X
+1810(reduce)X
+2020(its)X
+2106(utilization.)X
+3 f
+1998 1994(Master)N
+2236(lock)X
+2382(miss)X
+2536(ratios)X
+1 f
+2539 3821(\(pdevLock\))N
+2539 3631(\(perPCBLock\))N
+2539 3447(\(vmMonitorLock\))N
+1804 3821(\(exitLock\))N
+1804 3631(\(vmMonitorLock\))N
+1804 3453(\(handleTableLock\))N
+-1 Ds
+1 Dt
+1661 3340 MXY
+120 0 Dl
+1801 3370(cswitch)N
+3 Dt
+1661 3527 MXY
+120 0 Dl
+1801 3557(fexec)N
+5 Dt
+1661 3708 MXY
+120 0 Dl
+1801 3769(fork)N
+16 Ds
+1 Dt
+2396 3338 MXY
+120 0 Dl
+2536 3368(mem)N
+20 Ds
+2396 3524 MXY
+120 0 Dl
+2536 3554(pdevtest)N
+4 Ds
+2396 3716 MXY
+120 0 Dl
+2536 3746(pdevtestInd)N
+-1 Ds
+3 Dt
+1575 3099 MXY
+0 -947 Dl
+660 0 Dl
+0 947 Dl
+-660 0 Dl
+-15 0 Dl
+1464 3129(0%)N
+1575 3005 MXY
+-15 0 Dl
+1428 3035(10%)N
+1575 2910 MXY
+-15 0 Dl
+1428 2940(20%)N
+1575 2815 MXY
+-15 0 Dl
+1428 2845(30%)N
+1575 2720 MXY
+-15 0 Dl
+1428 2750(40%)N
+1575 2626 MXY
+-15 0 Dl
+1428 2656(50%)N
+1575 2531 MXY
+-15 0 Dl
+1428 2561(60%)N
+1575 2436 MXY
+-15 0 Dl
+1428 2466(70%)N
+1575 2342 MXY
+-15 0 Dl
+1428 2372(80%)N
+1575 2247 MXY
+-15 0 Dl
+1428 2277(90%)N
+1575 2152 MXY
+-15 0 Dl
+1392 2182(100%)N
+1575 3099 MXY
+0 15 Dl
+1557 3175(1)N
+1740 3099 MXY
+0 15 Dl
+1722 3175(2)N
+1905 3099 MXY
+0 15 Dl
+1887 3175(3)N
+2070 3099 MXY
+0 15 Dl
+2052 3175(4)N
+2235 3099 MXY
+0 15 Dl
+2217 3175(5)N
+3 f
+1753 2079(Average)N
+1 f
+1751 3267(Processors)N
+1 Dt
+1575 3095 MXY
+165 -223 Dl
+165 -258 Dl
+165 -218 Dl
+165 -79 Dl
+3 Dt
+1575 3075 MXY
+165 -133 Dl
+165 -260 Dl
+165 -197 Dl
+165 -89 Dl
+5 Dt
+1575 3092 MXY
+165 -190 Dl
+165 -340 Dl
+165 -179 Dl
+165 -41 Dl
+16 Ds
+1 Dt
+1575 3091 MXY
+165 -65 Dl
+165 -314 Dl
+165 -236 Dl
+165 -150 Dl
+20 Ds
+1575 3096 MXY
+165 -199 Dl
+165 -237 Dl
+165 -188 Dl
+165 -84 Dl
+4 Ds
+1575 3094 MXY
+165 -137 Dl
+165 -196 Dl
+165 -133 Dl
+165 -116 Dl
+2988 2457 MXY
+165 -139 Dl
+2823 2623 MXY
+165 -166 Dl
+2658 2882 MXY
+165 -259 Dl
+2493 3089 MXY
+165 -207 Dl
+20 Ds
+2988 2303 MXY
+165 -76 Dl
+2823 2505 MXY
+165 -202 Dl
+2658 2794 MXY
+165 -289 Dl
+2493 3093 MXY
+165 -299 Dl
+16 Ds
+2988 2387 MXY
+165 -170 Dl
+2823 2633 MXY
+165 -246 Dl
+2658 2994 MXY
+165 -361 Dl
+2493 3063 MXY
+165 -69 Dl
+-1 Ds
+5 Dt
+2988 2244 MXY
+165 -51 Dl
+2823 2443 MXY
+165 -199 Dl
+2658 2836 MXY
+165 -393 Dl
+2493 3075 MXY
+165 -239 Dl
+3 Dt
+2988 2319 MXY
+165 -95 Dl
+2823 2540 MXY
+165 -221 Dl
+2658 2854 MXY
+165 -314 Dl
+2493 3018 MXY
+165 -164 Dl
+1 Dt
+2988 2307 MXY
+165 -102 Dl
+2823 2558 MXY
+165 -251 Dl
+2658 2831 MXY
+165 -273 Dl
+2493 3094 MXY
+165 -263 Dl
+2669 3267(Processors)N
+3 f
+2685 2090(Highest)N
+1 f
+3135 3175(5)N
+3 Dt
+3153 3099 MXY
+0 15 Dl
+2970 3175(4)N
+2988 3099 MXY
+0 15 Dl
+2805 3175(3)N
+2823 3099 MXY
+0 15 Dl
+2640 3175(2)N
+2658 3099 MXY
+0 15 Dl
+2475 3175(1)N
+2493 3099 MXY
+0 15 Dl
+2311 2182(100%)N
+2493 2152 MXY
+-14 0 Dl
+2347 2277(90%)N
+2493 2247 MXY
+-14 0 Dl
+2347 2372(80%)N
+2493 2342 MXY
+-14 0 Dl
+2347 2466(70%)N
+2493 2436 MXY
+-14 0 Dl
+2347 2561(60%)N
+2493 2531 MXY
+-14 0 Dl
+2347 2656(50%)N
+2493 2626 MXY
+-14 0 Dl
+2347 2750(40%)N
+2493 2720 MXY
+-14 0 Dl
+2347 2845(30%)N
+2493 2815 MXY
+-14 0 Dl
+2347 2940(20%)N
+2493 2910 MXY
+-14 0 Dl
+2347 3035(10%)N
+2493 3005 MXY
+-14 0 Dl
+2383 3129(0%)N
+2493 3099 MXY
+-14 0 Dl
+2493 MX
+0 -947 Dl
+660 0 Dl
+0 947 Dl
+-660 0 Dl
+3 Dt
+-1 Ds
+3 f
+776 4061(Figure)N
+1001(10)X
+1 f
+(.)S
+1130(Graphs)X
+1360(of)X
+1442(the)X
+1552(master)X
+1766(lock)X
+1912(miss)X
+2066(ratio)X
+2220(while)X
+2402(running)X
+2648(the)X
+2758(micro-benchmarks.)X
+3356(The)X
+3490(steep)X
+3660(slopes)X
+3862(of)X
+3944(the)X
+776 4141(curves)N
+982(are)X
+1088(due)X
+1210(to)X
+1284(a)X
+1334(heavy)X
+1524(contention)X
+1846(for)X
+1948(the)X
+2054(master)X
+2264(lock)X
+2406(around)X
+2624(the)X
+2730(scheduler.)X
+3 f
+10 s
+576 4237(7.)N
+676(Comments)X
+1 f
+776 4361(A)N
+860(running)X
+1135(Sprite)X
+1353(kernel)X
+1581(contains)X
+1875(anywhere)X
+2215(from)X
+2398(\256ve)X
+2545(hundred)X
+2835(to)X
+2924(a)X
+2987(thousand)X
+3303(locks.)X
+3539(Of)X
+3651(these)X
+3843(locks,)X
+576 4457(two)N
+721(repeatedly)X
+1081(suffered)X
+1370(more)X
+1560(contention)X
+1923(than)X
+2086(the)X
+2209(others.)X
+2470(These)X
+2687(two)X
+2832(locks,)X
+3045(sched_Mutex)X
+3501(and)X
+3641(vmMonitor-)X
+576 4553(Lock,)N
+786(account)X
+1061(for)X
+1180(most)X
+1360(of)X
+1452(the)X
+1575(contention)X
+1938(for)X
+2057(kernel)X
+2283(locks)X
+2477(and)X
+2619(represent)X
+2940(serious)X
+3193(obstacles)X
+3513(to)X
+3601(better)X
+3810(system)X
+576 4649(performance.)N
+1048(Both)X
+1228(of)X
+1320(these)X
+1510(locks)X
+1703(are)X
+1826(code)X
+2002(locks)X
+2195(that)X
+2339(protect)X
+2586(large)X
+2771(regions)X
+3031(of)X
+3122(the)X
+3244(kernel)X
+3469(code.)X
+3685(In)X
+3776(order)X
+3970(to)X
+576 4745(reduce)N
+812(their)X
+980(impact)X
+1219(they)X
+1378(must)X
+1554(be)X
+1651(replaced)X
+1945(by)X
+2047(several)X
+2297(data)X
+2453(locks)X
+2644(with)X
+2808(a)X
+2866(\256ner)X
+3035(granularity.)X
+3449(It)X
+3520(is)X
+3595(not)X
+3719(necessary)X
+576 4841(to)N
+659(have)X
+832(single)X
+1044(locks)X
+1234(around)X
+1478(the)X
+1597(virtual)X
+1827(memory)X
+2115(system)X
+2358(and)X
+2494(the)X
+2612(context)X
+2868(switch)X
+3097(mechanism.)X
+3522(Replacing)X
+3867(these)X
+576 4937(locks)N
+776(with)X
+949(data)X
+1114(locks)X
+1314(on)X
+1425(the)X
+1554(various)X
+1821(kernel)X
+2053(structures)X
+2396(will)X
+2551(increase)X
+2846(the)X
+2976(concurrency)X
+3406(and)X
+3554(system)X
+3808(perfor-)X
+576 5033(mance.)N
+776 5157(There)N
+988(are)X
+1111(a)X
+1171(number)X
+1440(of)X
+1532(factors)X
+1776(that)X
+1921(cause)X
+2125(system)X
+2372(performance)X
+2804(to)X
+2891(depend)X
+3148(heavily)X
+3409(on)X
+3514(contention)X
+3877(for)X
+3996(a)X
+576 5253(few)N
+722(locks.)X
+956(The)X
+1106(\256rst)X
+1254(is)X
+1331(ease)X
+1494(of)X
+1585(design.)X
+1858(It)X
+1931(is)X
+2008(much)X
+2210(simpler)X
+2474(to)X
+2560(design)X
+2793(a)X
+2853(system)X
+3099(with)X
+3265(a)X
+3325(few)X
+3470(locks)X
+3663(than)X
+3825(it)X
+3893(is)X
+3970(to)X
+576 5349(design)N
+818(one)X
+968(with)X
+1144(many)X
+1356(locks.)X
+1599(Multiple)X
+1908(locks)X
+2111(may)X
+2283(increase)X
+2581(the)X
+2713(concurrency,)X
+3165(but)X
+3301(they)X
+3473(also)X
+3636(increase)X
+3934(the)X
+576 5445(chance)N
+826(of)X
+919(introducing)X
+1314(race)X
+1475(conditions)X
+1834(and)X
+1976(deadlocks.)X
+2363(A)X
+2447(single)X
+2664(lock)X
+2828(should)X
+3067(be)X
+3169(replaced)X
+3467(by)X
+3572(multiple)X
+3863(locks)X
+576 5541(only)N
+738(if)X
+807(performance)X
+1234(measurements)X
+1713(indicate)X
+1987(that)X
+2127(the)X
+2245(single)X
+2456(lock)X
+2614(is)X
+2687(a)X
+2743(bottleneck.)X
+776 5665(The)N
+924(second)X
+1170(factor)X
+1381(that)X
+1524(causes)X
+1757 0.2171(performance-critical)AX
+2437(locks)X
+2629(is)X
+2705(that)X
+2848(they)X
+3009(develop)X
+3286(during)X
+3518(the)X
+3639(evolution)X
+3965(of)X
+576 5761(the)N
+698(kernel.)X
+963(Race)X
+1148(conditions)X
+1505(and)X
+1645(deadlocks)X
+1990(tend)X
+2152(to)X
+2238(occur)X
+2441(as)X
+2532(new)X
+2690(features)X
+2969(are)X
+3092(added)X
+3308(to)X
+3394(the)X
+3516(kernel.)X
+3781(When)X
+3996(a)X
+
+12 p
+%%Page: 12 12
+0(Courier)xf 0 f
+10 s 10 xH 0 xS 0 f
+1 f
+2217 384(-)N
+2264(12)X
+2364(-)X
+576 672(kernel)N
+798(developer)X
+1136(is)X
+1210(faced)X
+1406(with)X
+1569(such)X
+1737(an)X
+1834(unwanted)X
+2167(side-effect)X
+2528(they)X
+2687(typically)X
+2988(rewrite)X
+3237(their)X
+3405(new)X
+3560(feature)X
+3806(to)X
+3890(hold)X
+576 768(the)N
+703(most)X
+887(prominent)X
+1245(lock)X
+1412(they)X
+1579(can)X
+1720(\256nd.)X
+1913(In)X
+2008(this)X
+2151(manner)X
+2420(prominent)X
+2777(locks)X
+2974(tend)X
+3140(to)X
+3230(become)X
+3508(more)X
+3701(important,)X
+576 864(until)N
+745(they)X
+906(are)X
+1028(held)X
+1189(in)X
+1274(many)X
+1475(places)X
+1699(throughout)X
+2073(the)X
+2194(kernel)X
+2418(for)X
+2536(many)X
+2738(different)X
+3039(reasons.)X
+3344(Such)X
+3528(is)X
+3605(the)X
+3727(case)X
+3890(with)X
+576 960(sched_Mutex.)N
+1068(Its)X
+1168(in\257uence)X
+1482(grew)X
+1663(as)X
+1750(the)X
+1868(kernel)X
+2089(was)X
+2234(modi\256ed)X
+2538(and)X
+2674(synchronization)X
+3206(problems)X
+3524(arose.)X
+776 1084(The)N
+926(underlying)X
+1298(cause)X
+1502(of)X
+1594(both)X
+1761(the)X
+1884(design)X
+2118(and)X
+2259(development)X
+2698(problems)X
+3021(is)X
+3100(the)X
+3224(lack)X
+3384(of)X
+3477(tools.)X
+3698(The)X
+3849(graph)X
+576 1180(of)N
+669(lock)X
+832(dependencies)X
+1290(in)X
+1377(the)X
+1500(Sprite)X
+1716(kernel)X
+1942(is)X
+2020(fairly)X
+2219(complex.)X
+2560(Tools)X
+2767(are)X
+2891(needed)X
+3144(to)X
+3231(help)X
+3394(understand)X
+3771(the)X
+3894(syn-)X
+576 1276(chronization)N
+998(requirements)X
+1438(of)X
+1526(the)X
+1645(various)X
+1902(kernel)X
+2124(resources)X
+2449(and)X
+2586(where)X
+2804(to)X
+2888(place)X
+3080(locks)X
+3271(to)X
+3355(satisfy)X
+3586(those)X
+3777(require-)X
+576 1372(ments.)N
+833(Once)X
+1029(the)X
+1153(locks)X
+1348(are)X
+1473(in)X
+1561(place,)X
+1777(tools)X
+1958(are)X
+2083(needed)X
+2337(to)X
+2425(measure)X
+2719(the)X
+2843(performance)X
+3276(of)X
+3369(the)X
+3493(locks)X
+3688(in)X
+3775(order)X
+3970(to)X
+576 1468(\256nd)N
+726(the)X
+850(performance)X
+1283(bottlenecks.)X
+1714(Our)X
+1865(measurements)X
+2350(of)X
+2443(kernel)X
+2670(locks)X
+2865(in)X
+2953(Sprite)X
+3170(found)X
+3383(that)X
+3529(it)X
+3600(is)X
+3680(not)X
+3809(always)X
+576 1564(obvious)N
+849(which)X
+1065(locks)X
+1254(will)X
+1398(be)X
+1494(bottlenecks)X
+1879(and)X
+2015(why.)X
+3 f
+576 1756(8.)N
+676(Conclusion)X
+1 f
+776 1880(The)N
+924(elapsed)X
+1188(time)X
+1353(and)X
+1493(incremental)X
+1896(throughput)X
+2271(measurements)X
+2754(for)X
+2872(the)X
+2994(macro-benchmarks)X
+3634(indicate)X
+3912(that)X
+576 1976(the)N
+709(Sprite)X
+934(kernel)X
+1169(gives)X
+1372(acceptable)X
+1746(performance)X
+2187(on)X
+2301(a)X
+2371(machine)X
+2677(with)X
+2853(up)X
+2967(to)X
+3063(\256ve)X
+3217(processors.)X
+3630(All)X
+3766(of)X
+3867(these)X
+576 2072(benchmarks)N
+991(showed)X
+1263(an)X
+1366(almost)X
+1606(linear)X
+1816(speedup)X
+2106(as)X
+2200(the)X
+2325(system)X
+2574(was)X
+2726(scaled,)X
+2974(and)X
+3117(two)X
+3264(of)X
+3358(them)X
+3546(showed)X
+3819(almost)X
+576 2168(constant)N
+863(incremental)X
+1262(throughput)X
+1633(per)X
+1756(processor.)X
+2124(The)X
+2269(performance)X
+2696(degradation)X
+3095(of)X
+3182(the)X
+2 f
+3300(pmake)X
+1 f
+3530(benchmark)X
+3907(was)X
+576 2264(primarily)N
+900(due)X
+1042(to)X
+1130(sequential)X
+1481(processing)X
+1850(in)X
+1938(the)X
+2063(application,)X
+2466(rather)X
+2681(than)X
+2846(kernel)X
+3074(contention.)X
+3479(This)X
+3648(underscores)X
+576 2360(the)N
+694(dif\256culty)X
+1007(of)X
+1094(writing)X
+1345(a)X
+1401(single)X
+1612(application)X
+1988(that)X
+2128(can)X
+2260(make)X
+2454(full)X
+2585(use)X
+2712(of)X
+2799(a)X
+2855(multiprocessor's)X
+3409(processing)X
+3772(power.)X
+776 2484(Although)N
+1105(the)X
+1230(macro-benchmarks)X
+1873(exhibited)X
+2198(suitable)X
+2474(performance)X
+2908(increases)X
+3230(for)X
+3352(the)X
+3478(system)X
+3728(sizes)X
+3912(that)X
+576 2580(were)N
+754(measured,)X
+1103(the)X
+1222(sched_Mutex)X
+1675(master)X
+1910(lock)X
+2069(approached)X
+2460(saturation.)X
+2836(With)X
+3016(\256ve)X
+3156(processors)X
+3515(in)X
+3597(the)X
+3715(system)X
+3957(its)X
+576 2676(miss)N
+745(ratio)X
+915(was)X
+1063(close)X
+1251(to)X
+1336(seventy)X
+1604(percent,)X
+1884(indicating)X
+2227(that)X
+2370(the)X
+2491(lock)X
+2652(suffered)X
+2939(very)X
+3105(heavy)X
+3320(contention.)X
+3721(From)X
+3917(this)X
+576 2772(it)N
+642(would)X
+864(appear)X
+1101(that)X
+1243(without)X
+1509(elimination)X
+1895(of)X
+1984(some)X
+2174(of)X
+2262(the)X
+2381(more)X
+2567(important)X
+2899(bottlenecks)X
+3285(the)X
+3404(kernel)X
+3626(will)X
+3771(not)X
+3894(sup-)X
+576 2868(port)N
+725(more)X
+910(than)X
+1068(seven)X
+1271(processors)X
+1630(in)X
+1712(the)X
+1830(system)X
+2072(ef\256ciently,)X
+2437(except)X
+2667(for)X
+2781(compute-bound)X
+3304(applications.)X
+776 2992(Prior)N
+956(to)X
+1038(undertaking)X
+1441(this)X
+1576(study)X
+1769(we)X
+1883(had)X
+2019(assumed)X
+2315(that)X
+2455(the)X
+2573(kernel)X
+2795(monitor)X
+3069(locks)X
+3259(were)X
+3437(the)X
+3556(biggest)X
+3808(perfor-)X
+576 3088(mance)N
+808(bottlenecks.)X
+1235(In)X
+1324(particular,)X
+1674(it)X
+1740(was)X
+1887(feared)X
+2111(that)X
+2253(the)X
+2373(single)X
+2586(monitor)X
+2861(lock)X
+3021(around)X
+3266(the)X
+3385(virtual)X
+3615(memory)X
+3903(sys-)X
+576 3184(tem)N
+718(posed)X
+927(the)X
+1047(biggest)X
+1300(obstacle)X
+1585(to)X
+1670(scaling)X
+1920(the)X
+2041(number)X
+2309(of)X
+2399(processors)X
+2761(in)X
+2846(the)X
+2967(system.)X
+3252(It)X
+3324(came)X
+3517(a)X
+3576(surprise)X
+3853(that)X
+3996(a)X
+576 3280(master)N
+814(lock,)X
+996(sched_Mutex,)X
+1472(was)X
+1621(more)X
+1810(heavily)X
+2070(utilized)X
+2334(than)X
+2496(the)X
+2618(virtual)X
+2851(memory)X
+3142(system)X
+3387(lock.)X
+3588(We)X
+3723(were)X
+3903(also)X
+576 3376(surprised)N
+897(when)X
+1098(micro-benchmarks)X
+1727(stressed)X
+2008(unintended)X
+2391(locks.)X
+2627(The)X
+2779(behavior)X
+3087(of)X
+3182(kernel)X
+3411(locks)X
+3608(is)X
+3689(dif\256cult)X
+3970(to)X
+576 3472(predict,)N
+853(even)X
+1038(to)X
+1133(the)X
+1264(people)X
+1511(who)X
+1682(designed)X
+2000(the)X
+2131(system.)X
+2426(Clearly)X
+2695(there)X
+2889(is)X
+2975(a)X
+3044(need)X
+3229(for)X
+3356(tools)X
+3544(to)X
+3639(help)X
+3810(system)X
+576 3568(developers)N
+944(to)X
+1026(better)X
+1229(understand)X
+1601(and)X
+1737(modify)X
+1988(the)X
+2106(locking)X
+2366(structures)X
+2698(of)X
+2785(multiprocessor)X
+3281(operating)X
+3604(systems.)X
+3 f
+576 3760(9.)N
+676(Acknowledgements)X
+1 f
+776 3884(We)N
+920(would)X
+1152(like)X
+1304(to)X
+1398(thank)X
+1608(Ken)X
+1774(Lutz)X
+1953(for)X
+2079(putting)X
+2337(together)X
+2632(and)X
+2780(maintaining)X
+3194(the)X
+3324(SPUR)X
+3556(prototype,)X
+3916(and)X
+576 3980(Mendel)N
+841(Rosenblum)X
+1225(for)X
+1339(his)X
+1452(efforts)X
+1682(in)X
+1764(getting)X
+2006(both)X
+2168(Sprite)X
+2379(and)X
+2515(SPUR)X
+2734(to)X
+2816(run)X
+2943(reliably.)X
+3 f
+576 4172(10.)N
+716(References)X
+1 f
+576 4324(1.)N
+776(M.)X
+901(J.)X
+986(Bach)X
+1185(and)X
+1335(S.)X
+1433(J.)X
+1518(Buroff,)X
+1786(Multiprocessor)X
+2305(UNIX)X
+2540(Operating)X
+2896(Systems,)X
+2 f
+3217(AT&T)X
+3451(Bell)X
+3615(Laboratories)X
+776 4420(Technical)N
+1112(Journal)X
+1381(63)X
+1 f
+(,)S
+1501(8)X
+1561(\(October)X
+1867(1984\),)X
+2094(1733-1749.)X
+576 4544(2.)N
+776(A.)X
+874(Boor,)X
+1074(PMake)X
+1321(--)X
+1395(A)X
+1473(Tutorial,)X
+1771(Unpublished,)X
+2220(June)X
+2387(1,)X
+2467(1988.)X
+576 4668(3.)N
+776(E.)X
+873(W.)X
+998(Dijkstra,,)X
+1325(Hierarchical)X
+1752(Ordering)X
+2071(of)X
+2167(Sequential)X
+2534(Processes.,)X
+2915(in)X
+2 f
+3006(Operating)X
+3364(Systems)X
+3647(Techniques)X
+1 f
+4012(,)X
+776 4764(1972,)N
+976(72-93.)X
+576 4888(4.)N
+776(M.)X
+898(D.)X
+1007(Hill,)X
+1182(S.)X
+1277(J.)X
+1359(Eggers,)X
+1633(J.)X
+1715(R.)X
+1819(Larus,)X
+2054(G.)X
+2164(S.)X
+2260(Taylor,)X
+2526(G.)X
+2636(Adams,)X
+2915(B.)X
+3020(K.)X
+3130(Bose,)X
+3342(G.)X
+3452(A.)X
+3562(Gibson,)X
+3845(P.)X
+3941(M.)X
+776 4984(Hansen,)N
+1062(J.)X
+1137(Keller,)X
+1382(S.)X
+1470(I.)X
+1541(Kong,)X
+1763(C.)X
+1860(G.)X
+1962(Lee,)X
+2127(D.)X
+2229(Lee,)X
+2394(J.)X
+2469(M.)X
+2584(Pendleton,)X
+2948(S.)X
+3036(A.)X
+3138(Ritchie,)X
+3413(D.)X
+3515(A.)X
+3617(Wood,)X
+3857(B.)X
+3954(G.)X
+776 5080(Zorn,)N
+981(P.)X
+1075(N.)X
+1183(Hil\256nger,)X
+1522(D.)X
+1630(Hodges,)X
+1925(R.)X
+2028(H.)X
+2136(Katz,)X
+2338(J.)X
+2419(Ousterhout)X
+2805(and)X
+2951(D.)X
+3059(A.)X
+3167(Patterson,)X
+3515(SPUR:)X
+3766(A)X
+3854(VLSI)X
+776 5176(Multiprocessor)N
+1289(Workstation,)X
+1733(Computer)X
+2081(Science)X
+2358(Division)X
+2660(Technical)X
+3004(Report)X
+3249(UCB/Computer)X
+3782(Science)X
+776 5272(Dpt.)N
+936(86/273,)X
+1198(December)X
+1549(1985.)X
+576 5396(5.)N
+776(C.)X
+869(A.)X
+967(R.)X
+1060(Hoare,)X
+1297(Monitors:)X
+1632(An)X
+1750(Operating)X
+2091(System)X
+2346(Structuring)X
+2726(Concept,)X
+3033(Vol.)X
+3193(17,)X
+3313(October)X
+3592(1974.)X
+576 5520(6.)N
+776(B.)X
+907(W.)X
+1061(Lampson)X
+1417(and)X
+1591(D.)X
+1727(D.)X
+1863(Redell,)X
+2150(Experiences)X
+2601(with)X
+2801(Processes)X
+3171(and)X
+3345(Monitors)X
+3697(in)X
+3818(Mesa.,)X
+2 f
+776 5616(Communications)N
+1338(of)X
+1420(the)X
+1538(ACM)X
+1727(23)X
+1 f
+(,)S
+1847(2)X
+1907(\(February,)X
+2264(1980\),)X
+2491(105-117.)X
+576 5740(7.)N
+776(J.)X
+855(Ousterhout,)X
+1259(A.)X
+1365(Cherenson,)X
+1756(F.)X
+1848(Douglis,)X
+2149(M.)X
+2268(Nelson)X
+2523(and)X
+2667(B.)X
+2768(Welch,)X
+3027(The)X
+3181(Sprite)X
+3401(Network)X
+3711(Operating)X
+776 5836(System,)N
+2 f
+1051(IEEE)X
+1245(Computer)X
+1585(21)X
+1 f
+(,)S
+1705(2)X
+1765(\(Feb.)X
+1952(1988\),)X
+2179(23-36.)X
+
+13 p
+%%Page: 13 13
+0(Courier)xf 0 f
+10 s 10 xH 0 xS 0 f
+1 f
+2217 384(-)N
+2264(13)X
+2364(-)X
+576 672(8.)N
+776(U.)X
+874(Sinkewicz,)X
+1248(A)X
+1326(Strategy)X
+1613(for)X
+1727(SMP)X
+1906(Ultrix,)X
+2 f
+2137(Usenix)X
+2380(Conference)X
+2770(Proceedings)X
+1 f
+3171(,)X
+3211(June)X
+3378(1988,)X
+3578(203-212.)X
+576 796(9.)N
+776(B.)X
+870(B.)X
+964(Welch)X
+1195(and)X
+1332(J.)X
+1404(K.)X
+1503(Ousterhout,)X
+1900(Pseudo-Devices:)X
+2460(User-Level)X
+2843(Extensions)X
+3215(to)X
+3298(the)X
+3418(Sprite)X
+3631(File)X
+3777(System,)X
+2 f
+776 892(Proc.)N
+972(of)X
+1054(the)X
+1172(1988)X
+1352(Summer)X
+1635(USENIX)X
+1931(Conf.)X
+1 f
+2106(,)X
+2146(June)X
+2313(1988,)X
+2513(184-189.)X
+3 f
+776 1016(John)N
+971(H.)X
+1080(Hartman)X
+1 f
+1423(is)X
+1504(a)X
+1568(Ph.D)X
+1758(candidate)X
+2094(in)X
+2184(the)X
+2310(Department)X
+2717(of)X
+2812(Electrical)X
+3148(Engineering)X
+3568(and)X
+3712(Computer)X
+576 1112(Sciences)N
+898(at)X
+997(the)X
+1136(University)X
+1515(of)X
+1622(California,)X
+2007(Berkeley.)X
+2357(He)X
+2491(is)X
+2584(currently)X
+2914(a)X
+2990(member)X
+3293(of)X
+3400(the)X
+3538(Sprite)X
+3769(network)X
+576 1208(operating)N
+926(system)X
+1195(project.)X
+1505(His)X
+1663(interests)X
+1977(include)X
+2260(operating)X
+2610(systems,)X
+2930(high-performance)X
+3554(networks,)X
+3916(and)X
+576 1304(computer)N
+899(architecture.)X
+1339(He)X
+1453(received)X
+1746(an)X
+1842(Sc.B.)X
+2035(in)X
+2117(computer)X
+2440(science)X
+2697(from)X
+2873(Brown)X
+3111(University)X
+3469(in)X
+3551(1987.)X
+3 f
+776 1428(John)N
+981(K.)X
+1100(Ousterhout)X
+1 f
+1528(is)X
+1618(a)X
+1691(Professor)X
+2031(in)X
+2130(the)X
+2265(Department)X
+2681(of)X
+2785(Electrical)X
+3130(Engineering)X
+3559(and)X
+3712(Computer)X
+576 1524(Sciences)N
+891(at)X
+983(the)X
+1115(University)X
+1487(of)X
+1588(California,)X
+1967(Berkeley.)X
+2331(His)X
+2476(interests)X
+2777(include)X
+3047(operating)X
+3384(systems,)X
+3690(distributed)X
+576 1620(systems,)N
+873(user)X
+1031(interfaces,)X
+1389(and)X
+1530(computer-aided)X
+2059(design.)X
+2333(He)X
+2452(is)X
+2530(currently)X
+2845(leading)X
+3106(the)X
+3229(development)X
+3668(of)X
+3760(Sprite,)X
+3996(a)X
+576 1716(network)N
+867(operating)X
+1198(system)X
+1448(for)X
+1570(high-performance)X
+2174(workstations.)X
+2651(In)X
+2746(the)X
+2871(past,)X
+3047(he)X
+3150(and)X
+3293(his)X
+3413(students)X
+3702(developed)X
+576 1812(several)N
+861(widely-used)X
+1310(programs)X
+1670(for)X
+1821(computer-aided)X
+2382(design,)X
+2668(including)X
+3027(Magic,)X
+3310(Caesar,)X
+3607(and)X
+3781(Crystal.)X
+576 1908(Ousterhout)N
+967(is)X
+1055(a)X
+1126(recipient)X
+1442(of)X
+1544(the)X
+1676(ACM)X
+1892(Grace)X
+2119(Murray)X
+2394(Hopper)X
+2669(Award,)X
+2942(the)X
+3074(National)X
+3384(Science)X
+3668(Foundation)X
+576 2004(Presidential)N
+996(Young)X
+1256(Investigator)X
+1681(Award,)X
+1963(the)X
+2104(National)X
+2423(Academy)X
+2774(of)X
+2884(Sciences)X
+3208(Award)X
+3470(for)X
+3607(Initiatives)X
+3970(in)X
+576 2100(Research,)N
+929(the)X
+1064(IEEE)X
+1275(Browder)X
+1593(J.)X
+1681(Thompson)X
+2060(Award,)X
+2336(and)X
+2489(the)X
+2624(UCB)X
+2825(Distinguished)X
+3306(Teaching)X
+3642(Award.)X
+3938(He)X
+576 2196(received)N
+878(a)X
+943(B.S.)X
+1109(degree)X
+1353(in)X
+1444(Physics)X
+1717(from)X
+1902(Yale)X
+2083(University)X
+2450(in)X
+2541(1975)X
+2730(and)X
+2876(a)X
+2942(Ph.D.)X
+3154(in)X
+3246(Computer)X
+3596(Science)X
+3876(from)X
+576 2292(Carnegie)N
+886(Mellon)X
+1137(University)X
+1495(in)X
+1577(1980.)X
+
+13 p
+%%Trailer
+xt
+
+xs

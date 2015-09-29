@@ -1,0 +1,66 @@
+
+
+
+MINCORE               C Library Procedures                MINCORE
+
+
+
+NNAAMMEE
+     mincore - check if pages are in memory
+
+SSYYNNOOPPSSIISS
+     vvooiidd mmiinnccoorree((aaddddrr,, lleenn,, vveecc))
+     ccaaddddrr__tt aaddddrr;;
+     iinntt lleenn;;
+     cchhaarr vveecc[[]];;
+
+DDEESSCCRRIIPPTTIIOONN
+     _M_i_n_c_o_r_e checks pages to see if they are in physical memory
+     and returns their state.
+
+     For each page in the address range starting at address _a_d_d_r
+     and extending for _l_e_n bytes, a residency value is returned
+     in the return vector _v_e_c.
+
+     The user must have allocated enough space in *_v_e_c to hold
+     the result vector.
+
+RREETTUURRNN VVAALLUUEE
+     The values are returned in the vector vec.  0 indicates the
+     page is not virtually present (i.e. is an invalid address).
+     1 indicates the page is paged out.  2 indicates the page is
+     clean and unreferenced.  3 indicates the page is clean and
+     referenced.  4 indicates the page is dirty.
+
+BBUUGGSS
+     This command is machine-dependent.  In particular, some
+     machines may not be able to determine if a page has been
+     referenced.
+
+SSEEEE AALLSSOO
+     mmap(2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0             November 19, 1989                       1
+
+
+

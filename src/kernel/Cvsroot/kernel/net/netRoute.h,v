@@ -1,0 +1,725 @@
+head     9.9;
+branch   ;
+access   ;
+symbols  ds3100:9.9 sun3:9.9 sun4nw:9.6 symm:9.6 spur:9.6 sprited:9.6.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.9
+date     92.06.03.22.48.01;  author voelker;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     92.06.02.15.09.53;  author jhh;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     92.04.14.16.57.09;  author jhh;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     91.03.15.15.48.19;  author jhh;  state Exp;
+branches 9.6.1.1;
+next     9.5;
+
+9.5
+date     90.10.19.15.45.39;  author jhh;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.10.02.11.24.21;  author jhh;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.09.12.17.10.28;  author jhh;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.11.16.15.15.02;  author rab;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.31.08.55.43;  author mendel;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.12.52;  author douglis;  state Stable;
+branches ;
+next     8.4;
+
+8.4
+date     89.07.05.11.34.09;  author rab;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.06.02.12.58.41;  author mendel;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.03.15.15.56.39;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.02.28.13.26.02;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.26.22;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.19.49;  author brent;  state Stable;
+branches ;
+next     5.5;
+
+5.5
+date     88.08.09.15.58.54;  author mendel;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     88.06.27.10.43.24;  author mendel;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     88.05.05.17.57.05;  author brent;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.10.09.09.35.57;  author brent;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.10.04.14.46.01;  author brent;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.45.54;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.6.1.1
+date     91.10.21.22.17.49;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.9
+log
+@FDDI implementation
+@
+text
+@/*
+ * netRoute.h --
+ *
+ *	Definitions for the routing part of the network module.
+ *	Other modules specify a Sprite host ID when sending messages
+ *	via the net module.  The net module maintains routing
+ *	information that maps from these Sprite host IDs to physical addresses.
+ *
+ * Copyright 1986, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ * $Header: /sprite/src/kernel/voelker/net/RCS/netRoute.h,v 1.1 92/05/28 17:58:18 voelker Exp Locker: voelker $ SPRITE (Berkeley)
+ */
+
+#ifndef _NETROUTE
+#define _NETROUTE
+
+#ifdef KERNEL
+#include <sprite.h>
+#include <list.h>
+#include <netInet.h>
+#include <user/net.h>
+#include <netTypes.h>
+#else
+#include <sprite.h>
+#include <list.h>
+#include <netInet.h>
+#include <net.h>
+#include <kernel/netTypes.h>
+#endif
+
+/*
+ * Maximum size for all headers of a packet.  We allow 8 extra bytes for
+ * alignment purposes.
+ */
+#define NET_MAX_HEADER_SIZE (sizeof(Net_UltraHeader) + sizeof(Net_IPHeader) + 8)
+
+#ifdef KERNEL
+/*
+ * A Route: A mapping between a physical address and a Sprite Host ID.
+ * The supported address type is just ethernet. Net_Routes are manipulated
+ * by Net_InstallRoute and Net_AddrToID.  The main point of a Net_Route
+ * is that it holds a pre-packaged transport header that is pre-pended
+ * onto messages being sent to the Sprite Host.
+ *
+ */
+typedef struct Net_Route {
+    List_Links		links;		/* Used to add routes to a list. */
+    int			routeID;	/* ID unique to this route. */
+    int			protocol;	/* see values defined below */
+    Net_Address		netAddress[NET_MAX_PROTOCOLS];/* host addresses */
+    int			spriteID;	/* Universal Sprite ID */
+    int			flags;		/* See below. */
+    int			refCount;	/* Reference count. */
+    char		desc[64];	/* Route description.  Useful
+					 * for debugging. */
+    Address		headerPtr[NET_MAX_PROTOCOLS]; /* Start of transport 
+						       * headers*/
+    Net_Interface	*interPtr;	/* Which network interface to use. */
+    int			minPacket;	/* Minimum packet size of route. */
+    int			maxPacket;	/* Maximum packet size of route. */
+    int			minRpc;		/* Minimum RPC size for route. */
+    int			maxRpc;		/* Maximum RPC size for route. */
+    ClientData		userData;	/* Space available for user program
+					 * that manipulates routes. */
+    char		buffer[NET_MAX_HEADER_SIZE];  /* Network packet 
+						       * header(s). */
+} Net_Route;
+
+#endif
+/*
+ * Flag values for Net_Route.
+ */
+
+#define NET_RFLAGS_VALID	0x1	/* The route is valid. */
+#define NET_RFLAGS_DELETING	0x2	/* Route is being deleted. */
+
+/*
+ * The following two constants define the minimum and maximum
+ * number of free routes on the free list.  Once the number drops
+ * below the minimum we add routes to the list until there are the
+ * maximum.  Make sure that the difference between the minimum and
+ * maximum is enough to allocate all of the broadcast routes during
+ * initialization since the callback stuff is initialized later.
+ */
+
+#define NET_MIN_FREE_ROUTES 8
+#define NET_MAX_FREE_ROUTES (NET_MIN_FREE_ROUTES + NET_MAX_INTERFACES + 2)
+
+/*
+ *  Variables corresponding to the above two constants.
+ */
+
+extern	int	netMinFreeRoutes;
+extern	int	netMaxFreeRoutes;
+
+/*
+ * This structure contains host information that is common to all routes
+ * to the host. The name is used for error reporting.
+ * The machine type is queried by the file system when it has to expand
+ * $MACHINE during pathname lookup.
+ */
+
+typedef struct NetHostInfo {
+    char	name[20];		/* The host name. */
+    char	machType[12];		/* Host machine type. */
+    int		routes;			/* Number of routes that have ever
+					 * been installed to this host. */
+} NetHostInfo;
+
+/*
+ * The routing table
+ */
+extern List_Links netRouteArray[];
+extern NetHostInfo netHostInfo[];
+
+
+/*
+ * Forward declarations.
+ */
+
+extern void NetArpInput _ARGS_((Net_Interface *interPtr, Address packetPtr, 
+				int packetLength));
+extern void NetAddToFreeRouteList _ARGS_((ClientData data, 
+				Proc_CallInfo *infoPtr));
+extern void NetFreeRoute _ARGS_((Net_Route *routePtr));
+
+#endif /* _NETROUTE */
+@
+
+
+9.8
+log
+@
+Kernel version of Net_Route is defined only if KERNEL is defined.
+Fixed bug in Net_IDToRoute that caused routes to be lost.
+@
+text
+@d19 1
+a19 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/net/netRoute.h,v 9.7 92/04/14 16:57:09 jhh Exp $ SPRITE (Berkeley)
+@
+
+
+9.7
+log
+@Changed definition of Net_Address and added Net_UserRoute.  
+Added Net_DeleteRoute and Net_GetRoute system calls.
+@
+text
+@d19 1
+a19 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/net/netRoute.h,v 9.6 91/03/15 15:48:19 jhh Exp $ SPRITE (Berkeley)
+d45 1
+d77 1
+@
+
+
+9.6
+log
+@Cleaned up route allocation
+@
+text
+@d19 1
+a19 1
+ * $Header: /sprite/src/kernel/net/RCS/netRoute.h,v 9.5 90/10/19 15:45:39 jhh Exp $ SPRITE (Berkeley)
+d66 4
+a69 2
+    int			maxBytes;	/* Maximum transfer unit of route. */
+    int			minBytes;	/* Minimum transfer unit of route. */
+d112 2
+@
+
+
+9.6.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d19 1
+a19 1
+ * $Header: /sprite/src/kernel/net/RCS/netRoute.h,v 9.6 91/03/15 15:48:19 jhh Exp $ SPRITE (Berkeley)
+@
+
+
+9.5
+log
+@Rewrite to support multiple interfaces and the Ultranet
+@
+text
+@d19 1
+a19 1
+ * $Header: /sprite/src/kernel/net/RCS/netRoute.h,v 9.4 90/10/02 11:24:21 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+d79 1
+@
+
+
+9.4
+log
+@fixed problem with #include
+@
+text
+@d19 1
+a19 1
+ * $Header: /sprite/src/kernel/net/RCS/netRoute.h,v 9.3 90/09/12 17:10:28 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+d26 2
+d29 2
+d32 2
+d35 2
+d40 6
+a51 4
+ * The second main point of this is to hold host-specific information
+ * like its name and machine type.  The name is used for error reporting.
+ * The machine type is queried by the file system when it has to expand
+ * $MACHINE during pathname lookup.
+d54 18
+a71 7
+    int		flags;		/* values defined below */
+    int		spriteID;	/* Universal Sprite ID */
+    int		type;		/* values defined below */
+    Address	data;		/* pointer to transport header */
+    char 	*name;		/* Human recognizable name for the host */
+    char	*machType;	/* Machine type used when expanding $MACHINE
+				 * during pathname lookup */
+d75 1
+a75 24
+ * Types for the address union in the above struct.
+ * NET_ROUTE_UNUSED	The route is empty or unitialized.
+ * NET_ROUTE_GENERIC	The route contents are uninterpreted, (not implemented)
+ * NET_ROUTE_ETHER	The route contains an ethernet address.  In this
+ *			case the data of the Net_Route is a pointer to
+ *			a Net_EtherHdr.
+ * NET_ROUTE_INET	The route contains an Internet address.  In this
+ *			case the data of the Net_Route is a pointer to 
+ *			a Net_EtherHdr + Net_IPHeader.
+ */
+#define		NET_ROUTE_UNUSED	0x00
+#define		NET_ROUTE_GENERIC	0x01
+#define		NET_ROUTE_ETHER		0x02
+#define		NET_ROUTE_INET		0x04
+
+/*
+ * Flags for the Route structure.
+ * NET_ROUTE_BROAD	Using the route will result in a broadcast.
+ */
+#define		NET_ROUTE_BROAD		0x01
+#define		NET_ROUTE_GATEWAY	0x02
+
+/*
+ * Define the special Sprite ID used for broadcasting.
+d77 2
+a78 1
+#define		NET_BROADCAST_HOSTID	0
+d81 23
+a103 1
+ * The routing table
+a104 1
+extern Net_Route *netRouteArray[];
+d106 5
+d112 1
+a112 20
+ * The routing information for an Internet route is the Internet
+ * address and the ethernet address of the gateway machine.
+ */
+typedef struct NetInetRoute {
+    Net_InetAddress inetAddr;
+    Net_EtherAddress gatewayAddress;
+} NetInetRoute;
+
+/*
+ * Sprite Address Resolution Protocol packet format.  These are used to
+ * find out Sprite IDs for physical addresses and vice versa.  The ARP
+ * protocol is simple:  a host broadcasts an Arp Request containing a
+ * Sprite ID and waits for a reply that specifies the physical (ethernet)
+ * address used to reach that Sprite host.  The Reverse Arp protocol is
+ * similar.  A host broadcasts a request that contains a a physical
+ * (ethernet) address and waits for a reply that specifies the matching
+ * Sprite ID. 
+ *
+ * NOTE: This packet appears on the wire in network byte ordering.
+ *
+d114 2
+a115 26
+
+#define	NUM_ARP_DATA_BYTES (2 * (sizeof(Net_EtherAddress) + sizeof(int)))
+
+typedef struct NetSpriteArp {
+    Net_ArpHeader arpHeader;	/* RFC826 standard header. The hardware addr
+				 * space should be NET_ARP_TYPE_ETHER.  */
+    unsigned char arpData[NUM_ARP_DATA_BYTES];
+} NetSpriteArp;
+
+/*
+ * Macros for indexing into the arpData field.
+ * ARP_SRC_ETHER_ADDR() - The address of the sender's ethernet address.
+ * ARP_SRC_PROTO_ADDR() - The address of the sender's protocol address.
+ * ARP_TARGET_ETHER_ADDR() - The address of the target's ethernet address.
+ * ARP_TARGET_PROTO_ADDR() - The address of the target's protocol address.
+ */
+
+#define ARP_SRC_ETHER_ADDR(ap) ((char *) &((ap)->arpData[0]))
+#define ARP_SRC_PROTO_ADDR(ap) \
+		((char *) &((ap)->arpData[(ap)->arpHeader.hardwareAddrLen]))
+#define	ARP_TARGET_ETHER_ADDR(ap) \
+		((char *) &((ap)->arpData[(ap)->arpHeader.hardwareAddrLen + \
+					 (ap)->arpHeader.protocolAddrLen]))
+#define	ARP_TARGET_PROTO_ADDR(ap) \
+		((char *) &((ap)->arpData[2*(ap)->arpHeader.hardwareAddrLen + \
+					 (ap)->arpHeader.protocolAddrLen]))
+d122 5
+a126 1
+extern void	 NetArpInput();
+@
+
+
+9.3
+log
+@fixed include statements
+@
+text
+@d19 1
+a19 1
+ * $Header: /sprite/src/kernel/net/RCS/netRoute.h,v 9.2 89/11/16 15:15:02 rab Exp Locker: jhh $ SPRITE (Berkeley)
+d25 1
+d27 4
+@
+
+
+9.2
+log
+@Checked volatiles.
+@
+text
+@d19 1
+a19 1
+ * $Header: /sprite/src/kernel/net/RCS/netRoute.h,v 9.1 89/10/31 08:55:43 mendel Exp Locker: rab $ SPRITE (Berkeley)
+d25 1
+a25 1
+#include "netInet.h"
+@
+
+
+9.1
+log
+@Removed lint.
+@
+text
+@d19 1
+a19 1
+ * $Header: /sprite/src/kernel/net/RCS/netRoute.h,v 8.4 89/07/05 11:34:09 rab Exp Locker: mendel $ SPRITE (Berkeley)
+d135 1
+a135 1
+int		 NetArpInput();
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d19 1
+a19 1
+ * $Header: /sprite/src/kernel/net/RCS/netRoute.h,v 8.4 89/07/05 11:34:09 rab Exp Locker: douglis $ SPRITE (Berkeley)
+d120 1
+a120 1
+#define ARP_SRC_ETHER_ADDR(ap) (&((ap)->arpData[0]))
+d122 1
+a122 1
+			(&((ap)->arpData[(ap)->arpHeader.hardwareAddrLen]))
+d124 1
+a124 1
+			(&((ap)->arpData[(ap)->arpHeader.hardwareAddrLen + \
+d127 1
+a127 1
+			(&((ap)->arpData[2*(ap)->arpHeader.hardwareAddrLen + \
+@
+
+
+8.4
+log
+@Fixed #endif
+@
+text
+@d19 1
+a19 1
+ * $Header: /sprite/src/kernel/net/RCS/netRoute.h,v 8.3 89/06/02 12:58:41 mendel Exp Locker: rab $ SPRITE (Berkeley)
+@
+
+
+8.3
+log
+@Changed Sprite ARP to used real ARP. Added IP routes.
+@
+text
+@d19 1
+a19 1
+ * $Header: /sprite/src/kernel/net/RCS/netRoute.h,v 8.2 89/03/15 15:56:39 brent Exp Locker: mendel $ SPRITE (Berkeley)
+d137 1
+a137 1
+#endif _NETROUTE
+@
+
+
+8.2
+log
+@Added hooks to support the routing information needed by a kernel-resident
+ipServer
+@
+text
+@d19 1
+a19 1
+ * $Header: /sprite/src/kernel/net/RCS/netRoute.h,v 8.1 89/02/28 13:26:02 brent Exp Locker: brent $ SPRITE (Berkeley)
+d25 1
+a25 3
+#ifdef INET
+#include "user/netInet.h"
+#endif
+d55 3
+a57 2
+ * NET_ROUTE_INET	The route contains an Internet address.  The data of
+ *			the route table entry references Net_InetRoute.
+a80 1
+#ifdef INET
+d83 1
+a83 1
+ * address and a pre-formatted ethernet header.
+d87 1
+a87 1
+    Net_EtherHdr etherHdr;
+d89 1
+a89 7
+/*
+ * NET_GATEWAY - route.c in the ipServer code defines NET_GATEWAY.
+ */
+#ifndef NET_GATEWAY
+#define NET_GATEWAY	0x2
+#endif
+#endif /* INET */
+d101 1
+d103 3
+d107 3
+a109 3
+    int			flags;
+    int			spriteHostID;
+    Net_EtherAddress	etherAddr;
+d112 18
+a129 4
+#define NET_SPRITE_ARP_REQUEST		0x1
+#define NET_SPRITE_ARP_REPLY		0x2
+#define NET_SPRITE_REV_ARP_REQUEST	0x4
+#define NET_SPRITE_REV_ARP_REPLY	0x8
+a134 1
+ReturnStatus	 NetRouteMessage();
+@
+
+
+8.1
+log
+@Added support for kernel-level Internet protocols
+@
+text
+@d19 1
+a19 1
+ * $Header: netRoute.h,v 5.5 88/08/09 15:58:54 mendel Exp $ SPRITE (Berkeley)
+d25 3
+d82 1
+d91 7
+a97 1
+
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d19 1
+a19 1
+ * $Header: /sprite/src/kernel/net/RCS/netRoute.h,v 6.0 88/08/11 12:19:49 brent Stable Locker: douglis $ SPRITE (Berkeley)
+d51 1
+a51 1
+ * NET_ROUTE_ETHER	The route contains and ethernet address.  In this
+d54 2
+d60 2
+d67 1
+d78 9
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d19 1
+a19 1
+ * $Header: netRoute.h,v 5.5 88/08/09 15:58:54 mendel Exp $ SPRITE (Berkeley)
+@
+
+
+5.5
+log
+@Mary checking in for Mendel.
+The changes make the ethernet header go out on the wire in network
+byte ordering.
+@
+text
+@d19 1
+a19 1
+ * $Header: netRoute.h,v 5.4 88/06/27 10:43:24 mendel Exp $ SPRITE (Berkeley)
+@
+
+
+5.4
+log
+@Updated Copyright notice.
+@
+text
+@d19 1
+a19 1
+ * $Header: netRoute.h,v 5.3 88/05/05 17:57:05 brent Exp $ SPRITE (Berkeley)
+d82 3
+a84 1
+ * Sprite ID.
+@
+
+
+5.3
+log
+@Added machType field to record machine type.
+@
+text
+@d9 8
+a16 2
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+d19 1
+a19 1
+ * $Header: netRoute.h,v 5.2 87/10/09 09:35:57 brent Exp $ SPRITE (Berkeley)
+@
+
+
+5.2
+log
+@Added name to routes.
+@
+text
+@d13 1
+a13 1
+ * $Header: netRoute.h,v 5.1 87/10/04 14:46:01 brent Exp $ SPRITE (Berkeley)
+d25 5
+d37 2
+@
+
+
+5.1
+log
+@Fixed externs
+@
+text
+@d13 1
+a13 1
+ * $Header: netRoute.h,v 5.0 87/08/11 10:45:54 sprite Exp $ SPRITE (Berkeley)
+d31 1
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d13 1
+a13 1
+ * $Header: netRoute.h,v 4.2 87/02/25 19:14:44 brent Exp $ SPRITE (Berkeley)
+a84 2
+Net_Route	*Net_IDToRoute();
+int		 Net_AddrToID();
+d86 1
+a86 2
+Net_Route	*NetArp();
+int		 Net_ArpInput();
+@

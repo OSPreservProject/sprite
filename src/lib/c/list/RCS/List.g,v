@@ -1,0 +1,220 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     89.06.12.16.59.17;  author shirriff;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.12.30.15.20.35;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@added List_ListInsert
+@
+text
+@' $Header: /sprite/src/lib/c/list/RCS/List.g,v 1.1 88/12/30 15:20:35 ouster Exp Locker: shirriff $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS List lib
+.BS
+.SH NAME
+List \- overview of circular linked list routines.
+.SH SYNOPSIS
+.nf
+\fB#include <list.h>\fR
+.sp
+\fBList_Init\fR(\fIheaderPtr\fP)
+\fBList_InitElement\fR(\fIitemPtr\fP)
+\fBList_Insert\fR(\fIitemPtr\fP, \fIdestPtr\fP)
+\fBList_ListInsert\fR(\fIheaderPtr\fP, \fIdestPtr\fP)
+\fBList_Remove\fR(\fIitemPtr\fP)
+\fBList_Move\fR(\fIitemPtr\fP, \fIdestPtr\fP)
+.sp
+\fBLIST_AFTER\fR(\fIitemPtr\fP)
+\fBLIST_BEFORE\fR(\fIitemPtr\fP)
+\fBLIST_ATFRONT\fR(\fIheaderPtr\fP)
+\fBLIST_ATREAR\fR(\fIheaderPtr\fP)
+.sp
+\fBLIST_FORALL\fR(\fIheaderPtr\fP, \fIitemPtr\fP)
+.sp
+\fBList_IsEmpty\fR\fR\fB(\fIheaderPtr\fP)
+\fBList_IsAtEnd\fR(\fIheaderPtr\fP, \fIitemPtr\fP)
+\fBList_First\fR\fR\fB(\fIheaderPtr\fP)
+\fBList_Last\fR\fR\fB(\fIheaderPtr\fP)
+\fBList_Prev\fR\fR\fB(\fIitemPtr\fP)
+\fBList_Next\fR\fR\fB(\fIitemPtr\fP)
+.SH ARGUMENTS
+.AS List_Links *headerPtr in
+.AP List_Links *headerPtr in
+Pointer to the header of a list.
+.AP List_Links *itemPtr in 
+Pointer to a member of a list (possibly the header).
+.AP List_Links *destPtr in 
+Pointer to the member after which to insert or move another member.
+.BE
+
+.SH INTRODUCTION
+.PP
+The \fBList_\fR\ routines define the ``list'' abstraction, 
+which enables one to link
+together arbitrary data structures.  Lists are doubly-linked and
+circular.  A list contains a header followed by its real members, if
+any.  (An empty list therefore consists of a single element, the
+header,  whose \fInextPtr\fR and \fIprevPtr\fR fields point to itself).
+To refer
+to a list as a whole, the user keeps a pointer to the header; that
+header is initialized by a call to \fBList_Init()\fR, which
+creates an empty
+list given a pointer to a List_Links structure (described below).
+.PP
+The links are contained in a two-element structure called List_Links.
+A list joins List_Links records (that is, each List_Links structure
+points to other List_Links structures), but if the List_Links is the
+first field within a larger structure, then the larger structures are
+effectively linked together as shown in Figure 1.
+.if t \{
+.bp
+.sp 2
+.GS C
+file fig.g
+width 5i
+.GE
+.\}
+.PP
+A typical structure might be something like:
+
+.nf
+     typedef struct {
+                 List_Links links;
+                 char ch;
+                 int flags;
+     } EditChar;
+.fi
+.LP
+It is possible to link structures through List_Links fields that are
+not at the beginning of the larger structure, but it is then necessary
+to perform an additional pointer indirection to find the beginning of
+the larger 
+structure, given a pointer to some point within it.  The easiest way to do 
+this is to define a structure that contains a List_Links field and a pointer
+to the larger structure, such as:
+.nf
+     typedef struct {
+                 List_Links links;
+                 LargeStruct *structPtr;
+     } LargeStructLink;
+.fi
+.LP
+By including a ``LargeStructLink'' within a ``LargeStruct'' and setting the
+structPtr field of the LargeStructLink to point to the LargeStruct
+itself, LargeStruct structures may be linked together in a list
+that is contained in the middle of the structure rather than the beginning.
+
+.SH USAGE
+.PP
+After a list has been initialized by calling \fBList_Init\fR, elements may
+be inserted, deleted, or moved within the list.  
+Before an element is inserted in a list for the first time it must
+be initialized by calling the routine \fBList_InitElement\fR.  To insert a
+List_Links element into a list, \fBList_Insert\fR is called with two
+arguments.  The first argument is a pointer to the structure to be
+inserted into a list, and the second argument is a pointer to the list
+member after which it is to be inserted.  Typically, the following
+macros are used to select the insertion point or the destination of a
+\fBList_Move\fR:
+.IP
+.RS
+.IP "\(bu \fBLIST_BEFORE\fR(\fIitemPtr\fR)" 30
+Insert the element before \fI*itemPtr\fR.
+.IP "\(bu \fBLIST_AFTER\fR(\fIitemPtr\fR)" 30
+Insert the element after \fI*itemPtr\fR.
+.IP "\(bu \fBLIST_ATFRONT\fR(\fIheaderPtr\fR)" 30
+Insert the element at the front of the list.
+.IP "\(bu \fBLIST_ATREAR\fR(\fIheaderPtr\fR)" 30
+Insert the element at the end of the list.
+.RE
+.PP
+.VS
+To insert a list into another list, call \fBList_ListInsert\fR with the
+header of the list to be inserted and a pointer to the member of the second
+list after which the first list is to be inserted.  After calling
+\fBList_ListInsert\fP, the header of the first list is no longer valid
+and may be destroyed.
+.VE
+.PP
+To remove a structure from a list, call \fBList_Remove\fR with a
+pointer to the structure to be removed.  
+To move a structure, call \fBList_Move\fR with two arguments: a pointer to
+the structure to be moved, and a pointer to the structure after which
+it is to be placed.  \fBList_Move\fR(\fIitemPtr\fR, \fIdestPtr\fR) is therefore
+equivalent to \fBList_Remove\fR(\fIitemPtr\fR) followed by \fBList_Insert\fR(\fIitemPtr\fR,
+\fIdestPtr\fR).
+
+.SH ADDITIONAL UTILITIES
+.PP
+Several other macros are available for the manipulation of List_Links.
+\fBLIST_FORALL\fR(\fIheaderPtr\fR, \fIitemPtr\fR) is used to step through each element
+in the list pointed to by headerPtr, setting itemPtr to point to each
+element in turn.  \fBLIST_FORALL\fR is used typically by casting \fIitemPtr\fR as
+a pointer to the entire structure, as in:
+.nf
+	List_Links *headerPtr;	/* pointer to head of existing list */
+	List_Links *itemPtr;	/* place-holder during loop */
+	EditChar   *charPtr;	/* pointer to entire EditChar structure */
+
+	LIST_FORALL(headerPtr, itemPtr) {
+		charPtr = (EditChar *) itemPtr;
+		/* operations using charPtr */
+	}
+.fi
+.PP
+The following macros may be useful to those who use List_Links at a
+``lower'' level than looping through an entire list:
+.RS
+.IP "\(bu \fBList_IsEmpty\fR(\fIheaderPtr\fR) " 30
+returns TRUE if \fIheaderPtr\fR points to an empty
+list.
+.IP "\(bu \fBList_IsAtEnd\fR(\fIheaderPtr\fR, \fIitemPtr\fR)" 30
+returns TRUE if \fIitemPtr\fR is
+past the end of the list; i.e., it points to the header.
+.IP "\(bu \fBList_First\fR(\fIheaderPtr\fR) " 30
+.IP "\(bu \fBList_Last\fR(\fIheaderPtr\fR) " 30
+\fBList_First\fR returns the first member in a list, and
+\fBList_Last\fR returns the last member.  If the list is empty,
+the header is considered to be the first and last member.
+.IP "\(bu \fBList_Prev\fR(\fIitemPtr\fR) " 30
+returns a pointer to the member preceding the given
+member in its list.  
+.IP "\(bu \fBList_Next\fR(\fIitemPtr\fR)" 30
+returns the next
+member of the list.
+.RE
+.SH KEYWORDS
+list, linked, circular, List_Links, data structures
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+' $Header: List,v 1.3 87/06/08 18:42:31 nelson Exp $ SPRITE (Berkeley)
+d14 1
+d121 8
+@

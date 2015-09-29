@@ -1,0 +1,1 @@
+../cc/g++-dist/stor-layout.c

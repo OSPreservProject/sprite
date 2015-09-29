@@ -1,0 +1,26 @@
+Aug. 21, 1989
+
+loops in
+system test 100 forks time   49.220
+
+loops shortened
+system test 100 forks time   34.50 
+system test 100 forks time   34.140
+
+
+Aug. 22, 1989
+
+With flushing changes up to and including taking out seg flushes where context
+already flushed	(and profiled)
+
+system test 100 forks time   29.900
+
+
+With straight-line context flushing with random offsets and delay slot fix
+(profiled)
+
+system test 100 forks time   29.120
+
+Same test but from console with no rlogins (profiled)
+
+system test 100 forks time   20.820

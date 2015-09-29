@@ -1,0 +1,75 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    voelker:1.2; strict;
+comment  @@;
+
+
+1.2
+date     91.10.11.14.29.54;  author voelker;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.10.11.14.24.49;  author voelker;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@man page for fsdomain
+@
+
+
+1.2
+log
+@added note about disk being unmounted
+@
+text
+@' $Header: /user6/voelker/fsdomain/RCS/fsdomain.man,v 1.1 91/10/11 14:24:49 voelker Exp Locker: voelker $
+.so \*(]ltmac.sprite
+.HS PROGNAME cmds
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+fsdomain \- changes the domain prefix of a file system
+.SH SYNOPSIS
+\fBfsdomain\fR
+\fIdevice\fR
+[\fInew_domain_prefix\fR]
+.SH OPTIONS
+.IP "\fB\-help\fR" 15
+Print a summary of the command-line options and exits.
+.BE
+
+.SH DESCRIPTION
+.PP
+fsdomain changes the domain prefix of a file system.  The file
+system is found on the specified disk device, and the domain is
+changed to the optional domain prefix.  (Note: the disk device
+should be unmounted.)  If no new domain
+prefix is specified, then the current domain prefix is reported
+and left unchanged.
+
+.SH SEE ALSO
+fsinfo, fsmake, mklfs, labeldisk
+
+.SH KEYWORDS
+disk, partition, filesystem, domain, prefix
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+' $Header$
+d20 3
+a22 2
+system is found on the specified device, and the domain is
+changed to the optional domain prefix.  If no new domain
+@

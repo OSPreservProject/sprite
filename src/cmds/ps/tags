@@ -1,0 +1,16 @@
+AgeSort	ps.c	/^AgeSort(first, second)$/
+ArgString	ps.c	/^ArgString(argPtr, colsTaken)$/
+ControlBlock	ps.c	/^} ControlBlock;$/
+HostString	ps.c	/^HostString(hostID)$/
+Mps	ps.c	/^main(argc, argv)$/
+PctCpuString	ps.c	/^PctCpuString(pcbPtr)$/
+PrintIDs	ps.c	/^PrintIDs(pcbPtr, argPtr)$/
+PrintLong	ps.c	/^PrintLong(pcbPtr, argPtr)$/
+PrintMigration	ps.c	/^PrintMigration(pcbPtr, argPtr)$/
+PrintShort	ps.c	/^PrintShort(pcbPtr, argPtr)$/
+PrintSignals	ps.c	/^PrintSignals(pcbPtr, argPtr)$/
+PrintVM	ps.c	/^PrintVM(pcbPtr, argPtr)$/
+StateString	ps.c	/^StateString(pcbPtr)$/
+TimeString	ps.c	/^TimeString(pcbPtr)$/
+UsageSort	ps.c	/^UsageSort(first, second)$/
+UserString	ps.c	/^UserString(uid)$/

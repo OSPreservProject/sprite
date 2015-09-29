@@ -1,0 +1,9 @@
+utilsMisc.c:
+hash.c:
+trace.c:
+mapStatus.c:
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(452)  ::  hash.c 2(100)
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(452)  ::  hash.c 2(316)
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(452)  ::  hash.c 2(337)
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(452)  ::  trace.c 2(83)
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(452)  ::  trace.c 2(87)

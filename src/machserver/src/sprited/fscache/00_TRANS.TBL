@@ -1,0 +1,10 @@
+D DS3100_M                          	ds3100.md
+F FSCACHE.H;1                       	fscache.h
+F FSCACHEB.C;1                      	fscacheBlocks.c
+F FSCACHEB.H;1                      	fscacheBlocks.h
+F FSCACHEO.C;1                      	fscacheOps.c
+F FSCACHER.C;1                      	fscacheReadAhead.c
+L LOCAL.MK;1                        	local.mk	../main/local.mk
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+D SUN3_MD                           	sun3.md

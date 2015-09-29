@@ -1,0 +1,185 @@
+%
+%From: chase@orc.olivetti.com (David Chase)
+%Subject: re: Flow charts in LaTeX
+%Date: Mon, 24 Oct 88 15:34:42 -0700
+%
+%Here is a tool that might be useful; you can use it to get lines
+%which bend (90 degrees) ending in arrows, and you can study it (ha ha)
+%to figure out how it might be extended to do a flow chart.
+%It is included within a program to test demonstrate it.  It uses only
+%the LaTeX picture macros for graphics.
+%
+%Note the use of dirty tricks to turn points into dimensionless
+%numbers.  There may be a better way, but I couldn't find it.  My
+%difficulties with this lead me to believe that either
+%(1) TeX should really provide dimensionless real numbers
+%or
+%(2) Maybe LaTeX should use real lengths instead of dimensionless
+%numbers in the picture environment.  I might get tired of always
+%attaching a dimension to things, but it would be LOTS easier to write
+%interesting macros.
+%
+%If anyone can point out to me an easier way to do this, I'd be happy
+%to hear it.  People on TeXhax tried to help me a couple of years ago
+%with this, but nothing seemed to work.
+%
+%---------------- BEGINNING OF MACROS  ----------------
+% First, a dirty trick
+
+{\catcode`p=12 \catcode`t=12 \gdef\bogusmacro#1pt{#1}}
+\let\getfactor=\bogusmacro
+\def\unpt#1{\expandafter\getfactor\the#1}
+
+% A macro to get us out of the iteration.
+
+\def\gobbleemup#1,#2,#3,{}
+
+% TWAI does all the work, and could probably be rewritten
+% to be much prettier.
+
+\def\twai#1,#2,#3,#4,#5,{
+%	\typeout{Twisty arrow increment of |#1| |#2| |#3| |#4| |#5|}
+
+% Turn parameters into PT quantities so we can do simple arithmetic.
+	\xco#1pt\relax
+	\yco#2pt\relax
+	\len#4pt\relax
+	\advance\len -\firstshrink\relax
+% We get \taoval dynamically from our caller
+	\def\firstshrink{\taoval pt}\relax
+% Set things up for selection and iteration
+	\let\drawcommand=\line
+	\def\this{#3}
+	\def\xvec{0}
+	\def\yvec{0}
+	\let\next=\twai
+% Figure out which way we're going now
+	\if\this\uu
+		\addtolength{\yloc}{\len}
+		\def\yvec{1}
+		\corner=0
+		\else
+	\if\this\dd
+		\addtolength{\yloc}{-\len}
+		\def\yvec{-1}
+		\corner=1
+		\else
+	\if\this\ll
+		\addtolength{\xloc}{-\len}
+		\def\xvec{-1}
+		\corner=0
+		\else
+	\if\this\rr
+		\addtolength{\xloc}{\len}
+		\def\xvec{1}
+		\corner=2
+		\else
+	\if\this\ee
+		\relax
+		\else
+		\typeout{Twisty Arrow Increment--arg 2 (\this) not one of {udlre}}
+	\fi\fi\fi\fi\fi
+        \if#5\ee
+%		\typeout{Ending vector}
+		\let\drawcommand=\twaiend
+		\advance\len\tarad
+	\fi
+%        \typeout{New XL \unpt\xloc\space YL \unpt\yloc}
+% Here we emit the line or ending command
+	\put(\unpt\xco,\unpt\yco){\drawcommand(\xvec,\yvec){\unpt\len}}
+	% Figure out the next line
+	\if#5\uu
+		\advance\yloc \tarad
+		\advance\corner 1
+		\else
+	\if#5\dd
+		\advance\yloc -\tarad
+		\advance\corner 0
+		\else
+	\if#5\ll
+		\advance\xloc -\tarad
+		\advance\corner 2
+		\else
+	\if#5\rr
+		\advance\xloc \tarad
+		\advance\corner 0
+		\else
+	\if#5\ee
+		\let\next=\gobbleemup
+                \corner=4
+		\else
+	typeout{Twisty Arrow Increment--arg 5 (#5) not one of {udlre}}
+	\fi\fi\fi\fi\fi
+%       \typeout{Corner center XL \unpt\xloc\space YL \unpt\yloc}
+	\ifcase\corner
+		% case 0 TL
+		\put(\unpt\xloc,\unpt\yloc){\oval(\taoval,\taoval)[tl]}
+		\or
+		% case 1 BL
+		\put(\unpt\xloc,\unpt\yloc){\oval(\taoval,\taoval)[bl]}
+		\or
+		% case 2 TR
+		\put(\unpt\xloc,\unpt\yloc){\oval(\taoval,\taoval)[tr]}
+		\or
+		% case 3 BR
+		\put(\unpt\xloc,\unpt\yloc){\oval(\taoval,\taoval)[br]}
+		\or
+		% case 4 END
+		\relax
+		\fi
+	\advance\xloc \xvec\tarad
+	\advance\yloc \yvec\tarad
+%        \typeout{Final XL \unpt\xloc\space YL \unpt\yloc}
+% iterate or finish, depending upon value of 'next'
+	\next\unpt\xloc,\unpt\yloc,#5,
+	}
+\def\twistyarrowgen(#1,#2,#3,#4)#5{{
+	\def\uu{u}
+	\def\dd{d}
+	\def\ll{l}
+	\def\rr{r}
+	\def\ee{e}
+	\countdef\corner=255
+	\newskip{\xco}\newskip{\yco}\newskip{\len}
+	\newskip{\xloc}\newskip{\yloc}
+	\newskip{\tarad}\setlength{\tarad}{#3pt}
+	\newskip{\dummylen}
+	\let\twaiend=#4
+	\setlength{\dummylen}{\tarad}
+	\advance\dummylen \dummylen
+	\def\taoval{\unpt\dummylen}
+	\setlength{\xloc}{#1pt}\setlength{\yloc}{#2pt}
+	\def\firstshrink{\tarad}\relax
+	\twai #1,#2,#5,e,}}
+%
+\def\twistyarrow(#1,#2){\twistyarrowgen(#1,#2,2,\vector)}
+\def\twistyarrowrad(#1,#2,#3){\twistyarrowgen(#1,#2,#3,\vector)}
+%----------------  END OF MACROS ----------------
+%\documentstyle[flowchart]{article}
+%\begin{document}
+%\unitlength=.1in
+%\begin{center}
+%\begin{picture}(30,30)
+%\twistyarrowrad(0,0,1){%
+%u,11,r,11,d,10,l,10,%
+%u,11,r,11,d,10,l,10,%
+%u,11,r,11,d,10,l,10,%
+%u,11,r,11,d,10,l,10,%
+%u,11,r,11,d,10,l,10,%
+%u,11,r,11,d,10,l,10,%
+%u,11,r,11,d,10,l,10,%
+%u,11,r,11,d,10,l,10,%
+%u,11,r,11,d,10,l,10,%
+%u,11,r,11,d,10,l,10,%
+%u,11,r,11,d,10,l,10,%
+%u,11,r,11,d,10,l,10,%
+%u,11,r,11,d,10,l,10,%
+%u,11,r,11,d,10,l,10,%
+%u,11,r,11,d,10,l,10,%
+%u,11,r,11,d,10,l,10,%
+%u,11,r,11,d,10,l,10,%
+%u,11,r,11,d,10,l,10,%
+%u,11}
+%\end{picture}
+%\end{center}
+%\end{document}

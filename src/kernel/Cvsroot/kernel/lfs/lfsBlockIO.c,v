@@ -1,0 +1,664 @@
+head     1.11;
+branch   ;
+access   ;
+symbols  ds3100:1.11 sun3:1.11 sun4nw:1.8 symm:1.8 spur:1.8;
+locks    ; strict;
+comment  @ * @;
+
+
+1.11
+date     92.03.19.17.31.53;  author jhh;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     92.03.06.11.56.47;  author mgbaker;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     91.12.12.12.18.55;  author mgbaker;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     91.09.24.11.54.38;  author mendel;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     91.06.29.17.01.02;  author mendel;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     91.03.30.17.17.41;  author mgbaker;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     90.10.19.17.23.13;  author mendel;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.08.02.16.18.36;  author mendel;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.05.30.10.29.51;  author mendel;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.05.25.15.32.45;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.01.16.17.12.16;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.11
+log
+@Fixed up bug introduced when verification of clean segments was added. 
+A short read is no longer a fatal error at the low level, instead it
+is passed up. Otherwise short reads when looking for the root panic
+the machine.
+@
+text
+@/* 
+ * lfsBlockIO.c --
+ *
+ *	Routines for handling block allocate and access of files in a 
+ *	LFS file system. This routines are used by the cache code or
+ *	read and allocate files.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/lfs/lfsBlockIO.c,v 1.10 92/03/06 11:56:47 mgbaker Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <lfs.h>
+#include <lfsInt.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsio.h>
+#include <fsioFile.h>
+#include <fslcl.h>
+#include <fscache.h>
+#include <fsdm.h>
+#include <fsStat.h>
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Lfs_FileBlockRead --
+ *
+ *	Read in a cache block.  This routine uses the files'
+ *	indexing structure to locate the file block on disk.
+ *	This always attempts to read in a full block, but will read
+ *	less if at the last block and it isn't full.  In this case,
+ *	the remainder of the cache block is zero-filled.
+ *
+ * Results:
+ *	The results of the disk read.
+ *
+ * Side effects:
+ *	The blockPtr->blockSize is modified to
+ *	reflect how much data was actually read in.  The unused part
+ *	of the block is filled with zeroes so that higher levels can
+ *	always assume the block has good stuff in all parts of it.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Lfs_FileBlockRead(domainPtr, handlePtr, blockPtr)
+    Fsdm_Domain		*domainPtr;	/* Domain of file. */
+    register Fsio_FileIOHandle *handlePtr;	/* Handle on a local file. */
+    Fscache_Block       *blockPtr;      /* Cache block to read in.  This assumes
+                                         * the blockNum, blockAddr (buffer area)
+                                         * and blockSize are set.  This modifies
+                                         * blockSize if less bytes were read
+                                         * because of EOF. */
+{
+    Lfs	*lfsPtr = LfsFromDomainPtr(domainPtr);
+    register	Fsdm_FileDescriptor *descPtr;
+    register			 offset;
+    register int		 numBytes;
+    LfsDiskAddr			diskAddress;
+    ReturnStatus		 status;
+
+    LFS_STATS_INC(lfsPtr->stats.blockio.reads);
+    status = SUCCESS;
+    blockPtr->blockSize = 0;
+    numBytes = FS_BLOCK_SIZE;
+    offset = blockPtr->blockNum * FS_BLOCK_SIZE;
+
+    /*
+     * Is a logical file read. Round the size down to the actual
+     * last byte in the file.
+     */
+    descPtr = handlePtr->descPtr;
+    if (offset > descPtr->lastByte) {
+	numBytes = 0;
+	goto exit;
+    } else if (offset + numBytes - 1 > descPtr->lastByte) {
+	numBytes = descPtr->lastByte - offset + 1;
+    }
+
+    status = LfsFile_GetIndex(handlePtr, offset / FS_BLOCK_SIZE, 0,
+			     &diskAddress);
+    if (status != SUCCESS) {
+	printf("Lfs_FileBlockRead: Could not setup indexing\n");
+	goto exit;
+    }
+
+    if (!LfsIsNilDiskAddr(diskAddress)) {
+	/*
+	 * Read in the block.  Specify the device, the fragment index,
+	 * the number of fragments, and the memory buffer.
+	 */
+	int	ioSize = 
+		LfsBlocksToBytes(lfsPtr, LfsBytesToBlocks(lfsPtr, numBytes));
+	LfsCheckRead(lfsPtr, diskAddress, numBytes);
+
+	status = LfsReadBytes(lfsPtr, diskAddress, ioSize, blockPtr->blockAddr);
+	if (status != SUCCESS) {
+	    LfsError(lfsPtr, FAILURE, "Lfs_FileBlockRead: LfsReadBytes failed");
+	    return status;
+	}
+	LFS_STATS_ADD(lfsPtr->stats.blockio.bytesReads, ioSize);
+    } else {
+	/*
+	 * Zero fill the block.  We're in a 'hole' in the file.
+	 */
+	fs_Stats.blockCache.readZeroFills++;
+	bzero(blockPtr->blockAddr, numBytes);
+    }
+    Fs_StatAdd(numBytes, fs_Stats.gen.fileBytesRead, 
+		fs_Stats.gen.fileReadOverflow);
+exit:
+    /*
+     * Define the block size and error fill leftover space.
+     */
+    if (status == SUCCESS) {
+	blockPtr->blockSize = numBytes;
+    }
+    if (blockPtr->blockSize < FS_BLOCK_SIZE) {
+	fs_Stats.blockCache.readZeroFills++;
+	bzero(blockPtr->blockAddr + blockPtr->blockSize,
+		FS_BLOCK_SIZE - blockPtr->blockSize);
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Lfs_FileBlockWrite --
+ *
+ *      Write out a cache block.  Since lfs maintains its own cache
+ *	write back mechanism, this routines should never be called.
+ *
+ * Results:
+ *      FAILURE
+ *
+ * Side effects:
+ *      It panic's.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+Lfs_FileBlockWrite(domainPtr, handlePtr, blockPtr)
+    Fsdm_Domain	 *domainPtr;
+    Fsio_FileIOHandle *handlePtr;	/* I/O handle for the file. */
+    Fscache_Block *blockPtr;	/* Cache block to write out. */
+{
+    panic("Lfs_FileBlockWrite called\n");
+    return FAILURE;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Lfs_BlockAllocate --
+ *
+ *      Allocate disk space for the given file.  This routine only allocates
+ *      one block beginning at offset and going for numBytes. 
+ *
+ * Results:
+ *	SUCCESS or FS_NO_DISK_SPACE
+ *      
+ *
+ * Side effects:
+ *      The file descriptor is modified to contain pointers to the allocated
+ *      blocks.  Also *blockAddrPtr is set to the block that was allocated.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Lfs_BlockAllocate(domainPtr, handlePtr, offset, numBytes, flags, blockAddrPtr,
+		newBlockPtr)
+    Fsdm_Domain		*domainPtr;	/* Domain of file. */
+    register Fsio_FileIOHandle *handlePtr;	/* Local file handle. */
+    int 		offset;		/* Offset to allocate at. */
+    int 		numBytes;	/* Number of bytes to allocate. */
+    int			flags;		/* FSCACHE_DONT_BLOCK */
+    int			*blockAddrPtr; 	/* Disk address of block allocated. */
+    Boolean		*newBlockPtr;	/* TRUE if there was no block allocated
+					 * before. */
+{
+    Lfs	*lfsPtr = LfsFromDomainPtr(domainPtr);
+    int	newLastByte;
+    ReturnStatus status;
+    Boolean	dirty = FALSE;
+    register	Fsdm_FileDescriptor *descPtr;
+
+    LFS_STATS_INC(lfsPtr->stats.blockio.allocs);
+    /*
+     * Block allocates while checkpoints are active. This ensure that
+     * the LFS cache backend will be able to clean all LFS files from the
+     * cache. We only need worry about files, directory updates get stopped by
+     * the dirlog mechanism. In fact, waiting for a checkpoint for a 
+     * directory block allocate causes a possible deadlock because the
+     * checkpoint waits for directory operations to finish. We also
+     * use this mechanism to keep from filling up the cache with blocks
+     * that we can't write out.
+     */
+    descPtr = handlePtr->descPtr;
+    if (descPtr->fileType != FS_DIRECTORY) {
+	LfsWaitForCleanSegments(lfsPtr);
+    } 
+    /*
+     * First check to see if we can just allocate the bytes.
+     */
+    newLastByte = offset + numBytes - 1; 
+    *blockAddrPtr = FSDM_NIL_INDEX;
+    status = LfsFile_GrowBlock(lfsPtr, handlePtr, offset, numBytes);
+    if (status == SUCCESS) {
+	*newBlockPtr = FALSE;
+	*blockAddrPtr = offset / FS_BLOCK_SIZE;
+	 if (newLastByte > descPtr->lastByte) {
+	    descPtr->lastByte = newLastByte;
+	    dirty = TRUE;
+	 }
+    } 
+    if ((status == SUCCESS) && descPtr->firstByte == -1 && 
+	((descPtr->fileType == FS_NAMED_PIPE) ||
+	 (descPtr->fileType == FS_PSEUDO_DEV) ||
+	 (descPtr->fileType == FS_XTRA_FILE))) {
+	descPtr->firstByte = 0;
+	dirty = TRUE;
+    }
+    if (dirty) { 
+	descPtr->descModifyTime = Fsutil_TimeInSeconds();
+	descPtr->flags |= FSDM_FD_SIZE_DIRTY;
+    } 
+    return(status);
+}
+@
+
+
+1.10
+log
+@Added temporary measurements for ASPLOS paper.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/lfs/lfsBlockIO.c,v 1.9 91/12/12 12:18:55 mgbaker Exp $ SPRITE (Berkeley)";
+d110 4
+@
+
+
+1.9
+log
+@Removed left-over code from SOSP trace kernel.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/lfs/lfsBlockIO.c,v 1.8 91/09/24 11:54:38 mendel Exp $ SPRITE (Berkeley)";
+a114 1
+#ifdef STATS
+a115 1
+#endif
+a117 1
+#ifdef STATS
+a119 1
+#endif
+a127 1
+#ifdef STATS
+a128 1
+#endif
+@
+
+
+1.8
+log
+@Patch for returning the correct thing we a read past the lastByte of
+a file occurs.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/lfs/RCS/lfsBlockIO.c,v 1.7 91/06/29 17:01:02 mendel Exp $ SPRITE (Berkeley)";
+a122 10
+#ifdef SOSP91
+    if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
+	if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
+		(proc_RunningProcesses[0]->genFlags &
+		(PROC_FOREIGN | PROC_MIGRATING))) {
+	    Fs_StatAdd(numBytes, fs_SospMigStats.gen.fileBytesRead, 
+			fs_SospMigStats.gen.fileReadOverflow);
+	}
+    }
+#endif SOSP91
+@
+
+
+1.7
+log
+@Added code to stall allocates until enough clean segments are available.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/lfs/RCS/lfsBlockIO.c,v 1.6 91/03/30 17:17:41 mgbaker Exp $ SPRITE (Berkeley)";
+d87 1
+@
+
+
+1.6
+log
+@New sosp stats.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/lfs/RCS/lfsBlockIO.c,v 1.5 90/10/19 17:23:13 mendel Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d221 3
+a223 1
+     * checkpoint waits for directory operations to finish.
+d227 2
+a228 2
+	LfsWaitForCheckPoint(lfsPtr);
+    }
+@
+
+
+1.5
+log
+@Many bug fixed. First installed LFS.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/lfs/RCS/lfsBlockIO.c,v 1.4 90/08/02 16:18:36 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d122 10
+@
+
+
+1.4
+log
+@Checkin before adding recovery
+./
+@
+text
+@d2 1
+a2 1
+ * lfsBlockRead.c --
+d4 3
+d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/lfs/RCS/lfsBlockRead.c,v 1.3 90/05/30 10:29:51 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d22 11
+a32 11
+#include "sprite.h"
+#include "lfs.h"
+#include "lfsInt.h"
+#include "fs.h"
+#include "fsutil.h"
+#include "fsio.h"
+#include "fsioFile.h"
+#include "fslcl.h"
+#include "fscache.h"
+#include "fsdm.h"
+#include "fsStat.h"
+d41 2
+a42 4
+ *	Read in a cache block.  This does a direct disk read if the
+ *	file is the 'physical file' used for file descriptors and
+ *	indirect blocks.  If it is a regular file data block, then
+ *	the indexing structure is used to locate the file on disk.
+d51 1
+a51 2
+ *	The buffer is filled with the number of bytes indicated by
+ *	the bufSize parameter.  The blockPtr->blockSize is modified to
+a57 1
+/*ARGSUSED*/
+d72 1
+a72 1
+    int				diskAddress;
+d75 1
+a84 1
+    LFS_STATS_INC(lfsPtr->stats.blockio.reads);
+d92 1
+a92 1
+    status = LfsFile_GetIndex(handlePtr, offset / FS_BLOCK_SIZE, FALSE,
+d99 1
+a99 1
+    if (diskAddress != FSDM_NIL_INDEX) {
+d104 2
+a105 1
+	int	numFrag = (numBytes - 1) / FS_FRAGMENT_SIZE + 1;
+d107 3
+a109 4
+	status = LfsReadBytes(lfsPtr, diskAddress, 
+			numFrag * FS_FRAGMENT_SIZE,  blockPtr->blockAddr);
+	LFS_STATS_ADD(lfsPtr->stats.blockio.bytesReads, 
+				numFrag * FS_FRAGMENT_SIZE);
+d120 2
+a121 2
+    Fs_StatAdd(numBytes, fs_Stats.gen.fileBytesRead,
+	       fs_Stats.gen.fileReadOverflow);
+d145 2
+a146 7
+ *      Write out a cache block.  This understands about physical
+ *      block writes as opposed to file block writes, and it understands
+ *      that negative block numbers are used for indirect blocks (gag).
+ *      Physical blocks are numbered from the beginning of the disk,
+ *      and they are used for file descriptors and indirect blocks.
+ *      File blocks are numbered from the beginning of the data block
+ *      area, so an offset must be used to calculate their true address.
+d149 1
+a149 2
+ *      The return code from the driver, or FS_DOMAIN_UNAVAILABLE if
+ *      the domain has been un-attached.
+d152 1
+a152 1
+ *      The device write.
+d164 1
+d174 1
+a174 2
+ *      one block beginning at offset and going for numBytes.   If
+ *      offset + numBytes crosses a block boundary then a panic will occur.
+d177 2
+a178 1
+ *      None.
+d186 1
+a201 1
+    int		diskAddress;
+d204 13
+a219 2
+    LFS_STATS_INC(lfsPtr->stats.blockio.allocs);
+    descPtr = handlePtr->descPtr;
+d222 1
+a222 1
+    status = LfsSegUsageAllocateBytes(lfsPtr, numBytes);
+a223 1
+	LFS_STATS_INC(lfsPtr->stats.blockio.fastAllocs);
+a228 18
+	}
+    } else { 
+	/* 
+	 * Can't just allocated the bytes. Check to see if we are
+	 * really allocating bytes or just overwriting
+	 * some bytes.
+	 */
+	 if (newLastByte <= descPtr->lastByte) {
+	    LFS_STATS_INC(lfsPtr->stats.blockio.slowAllocs);
+	    status = LfsFile_GetIndex(handlePtr, offset / FS_BLOCK_SIZE, FALSE,
+			     &diskAddress);
+	    if ((status == SUCCESS) && (diskAddress != FSDM_NIL_INDEX)) {
+		*newBlockPtr = FALSE;
+		*blockAddrPtr = offset / FS_BLOCK_SIZE;
+	    } else {
+		LFS_STATS_INC(lfsPtr->stats.blockio.slowAllocFails);
+		status = FS_NO_DISK_SPACE;
+	    }
+d230 1
+a230 1
+    }
+d239 1
+a239 1
+	descPtr->descModifyTime = fsutil_TimeInSeconds;
+@
+
+
+1.3
+log
+@Check in with no small writes.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/lfs/RCS/lfsBlockRead.c,v 1.2 90/05/25 15:32:45 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d85 1
+a85 1
+
+d109 2
+d207 1
+d210 4
+a213 6
+    status = LfsSegUsageAllocateBytes(lfsPtr, numBytes);
+    if (status != SUCCESS) {
+	*blockAddrPtr = FSDM_NIL_INDEX;
+	return status;
+    }
+    status = SUCCESS;
+d216 28
+a243 5
+    *newBlockPtr = FALSE;
+    *blockAddrPtr = offset / FS_BLOCK_SIZE;
+    if (newLastByte > descPtr->lastByte) {
+	descPtr->lastByte = newLastByte;
+	dirty = TRUE;
+d245 1
+a245 1
+    if (descPtr->firstByte == -1 && 
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs.mendel/RCS/lfsBlockRead.c,v 1.1 90/01/16 17:12:16 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d106 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.2 89/01/07 04:12:18 rab Exp $ SPRITE (Berkeley)";
+d60 3
+a62 2
+Lfs_FileBlockRead(hdrPtr, blockPtr, remoteWaitPtr)
+    Fs_HandleHeader     *hdrPtr;        /* Handle on a local file. */
+a67 2
+    Sync_RemoteWaiter *remoteWaitPtr;   /* NOTUSED */
+
+d69 1
+a69 3
+    register Fsio_FileIOHandle *handlePtr =
+	    (Fsio_FileIOHandle *)hdrPtr;
+    register	Fsdm_Domain	 *domainPtr;
+d73 1
+a73 1
+    unsigned int		diskAddress;
+a80 4
+    domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, TRUE);
+    if (domainPtr == (Fsdm_Domain *) NIL) {
+	return(FS_DOMAIN_UNAVAILABLE);
+    }
+d93 1
+a93 1
+    status = LfsFile_GetIndex(handlePtr, offset / FS_BLOCK_SIZE, 
+d106 1
+a106 1
+	status = LfsReadBytes(LfsFromDomainPtr(domainPtr), diskAddress, 
+a134 1
+    Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
+d162 4
+a165 4
+Lfs_FileBlockWrite(hdrPtr, blockPtr, flags)
+    Fs_HandleHeader *hdrPtr;    /* I/O handle for the file. */
+    Fscache_Block *blockPtr;    /* Cache block to write out. */
+    int         flags;          /* IGNORED */
+d174 1
+a174 1
+ * Fsdm_BlockAllocate --
+d189 10
+a198 9
+ReturnStatus
+Lfs_FileBlockAllocate(hdrPtr, offset, numBytes, flags, blockAddrPtr, newBlockPtr)
+    Fs_HandleHeader     *hdrPtr;        /* Local file handle. */
+    int                 offset;         /* Offset to allocate at. */
+    int                 numBytes;       /* Number of bytes to allocate. */
+    int                 flags;          /* FSCACHE_DONT_BLOCK */
+    int                 *blockAddrPtr;  /* Disk address of block allocated. */
+    Boolean             *newBlockPtr;   /* TRUE if there was no block allocated
+                                         * before. */
+d200 1
+a203 2
+    register Fsio_FileIOHandle *handlePtr =
+	    (Fsio_FileIOHandle *)hdrPtr;
+d206 6
+d230 1
+a230 4
+	status = Fscache_FileDescStore(hdrPtr);
+    } else {
+	status = SUCCESS;
+    }
+@

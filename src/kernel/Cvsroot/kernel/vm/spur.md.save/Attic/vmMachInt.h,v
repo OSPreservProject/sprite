@@ -1,0 +1,83 @@
+head     8.0;
+branch   ;
+access   ;
+symbols  sun4nw:8.0 symm:8.0 spur:8.0 newlib:8.0;
+locks    ; strict;
+comment  @ * @;
+
+
+8.0
+date     88.11.11.18.45.33;  author douglis;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     88.07.29.11.29.49;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@/*
+ * vmMachInt.h
+ *
+ *     	Internal machine dependent virtual memory data structures and procedure 
+ *	headers.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/vm/spur.md/RCS/vmMachInt.h,v 1.1 88/07/29 11:29:49 nelson Exp Locker: douglis $ SPRITE (Berkeley)
+ */
+
+#ifndef _VMMACHINT
+#define _VMMACHINT
+
+#include "vmMach.h"
+
+extern	Address		vmMachPTESegAddr;
+extern	Address		vmMachPMEGSegAddr;
+
+/*
+ * Assembly language routines in vmSunAsm.s.
+ */
+extern	VmMachPTE	VmMachGetPageMap();
+extern	void		VmMachSetPageMap();
+extern	int		VmMachGetSegMap();
+extern	void		VmMachSetSegMap();
+extern	VmMachPTE	VmMachReadPTE();
+extern	void		VmMachWritePTE();
+extern	int		VmMachGetUserContext();
+extern	int		VmMachGetKernelContext();
+extern	int		VmMachGetContextReg();
+extern	void		VmMachSetUserContext();
+extern	void		VmMachSetKernelContext();
+extern	void		VmMachSetContextReg();
+extern	ReturnStatus	VmMachDoCopy();
+extern	void		VmMachCopyEnd();
+extern	void		VmMachFlushPage();
+extern	void		VmMachFlushBytes();
+extern	void		VmMachFlushSegment();
+
+#endif _VMMACHINT
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+ * $Header: vmMachInt.h,v 1.1 87/12/11 14:14:33 nelson Exp $ SPRITE (Berkeley)
+@

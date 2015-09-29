@@ -1,0 +1,57 @@
+
+
+          The following variables are set and/or used by the Tcl
+          shell.
+
+          argv A list containing the arguments passed in from the
+               command line, excluding arguments used by the Tcl
+               shell.  The first element is the first passed argument,
+               not the program name.
+
+          interactiveSession
+               Set to 1 if Tcl shell is invoked interactively, or 0 if
+               the Tcl shell is directly executing a script.  Normally
+               checked by scripts so that they can function as a
+               standalone application if specified on the command
+               line, but merely load in and not execute if loaded
+               during an interactive invocation of Tcl.
+
+          noAutoExec
+               If this variable exists and has a value of 1, then the
+               Tcl shell will not attempt to exec an non-existent
+               command as a shell command.
+
+          programName
+               The name that the Tcl shell is executing as.  All
+               directory components are removed from the program name.
+
+          TCLDEFAULT
+               Name of the default file that was used to locate all
+               other files used by the Tcl shell.
+
+          TCLENV
+               Array that contains information used internally by
+               various Tcl procedures that are part of the Tcl shell.
+               Entries that you might want to modify are defined here.
+               Don't change any other entries.
+
+          TCLENV(topLevelPromptHook)
+               Contains code to run to generate the prompt used when
+               interactively prompting for commands.  The code in this
+               hook will be evaluated and the result will be used for
+               the prompt.
+
+          TCLENV(downLevelPromptHook)
+               Contains code to run to generate the prompt used when
+               interactively prompting for continuation of an
+               incomplete command.  The code in this hook will be
+               evaluated and the result will be used for the prompt
+
+          TCLINIT
+               The name of the file that initializes, and does startup
+               processing of, Tcl.
+
+          TCLPATH
+               Path to search to locate Tcl scripts.  Used by the load
+               and demand_load commands.  The path is a Tcl list (i.e.
+               zero or more space-separated directory names).

@@ -1,0 +1,83 @@
+L BF.H;1                            	bf.h	../src/sprited/utils/bf.h
+L BYTE.H;1                          	byte.h	../src/sprited/utils/byte.h
+L COMPATIN.H;1                      	compatInt.h	../src/lib/c/unixSyscall/compatInt.h
+F DBG.H;1                           	dbg.h
+L DEV.H;1                           	dev.h	../src/sprited/dev/dev.h
+L DEVBLOCK.H;1                      	devBlockDevice.h	../src/sprited/dev/devBlockDevice.h
+L DEVDISKL.H;1                      	devDiskLabel.h	../src/sprited/dev/devDiskLabel.h
+L DEVFSOPT.H;1                      	devFsOpTable.h	../src/sprited/dev/devFsOpTable.h
+L DEVSYSLO.H;1                      	devSyslog.h	../src/sprited/dev/devSyslog.h
+L DEVTYPES.H;1                      	devTypes.h	../src/sprited/dev/devTypes.h
+D DS3100_M                          	ds3100.md
+L DUMP.H;1                          	dump.h	../src/sprited/utils/dump.h
+L FS.H;1                            	fs.h	../src/sprited/fs/fs.h
+L FSCACHE.H;1                       	fscache.h	../src/sprited/fscache/fscache.h
+L FSCACHEB.H;1                      	fscacheBlocks.h	../src/sprited/fscache/fscacheBlocks.h
+L FSCONSIS.H;1                      	fsconsist.h	../src/sprited/fsconsist/fsconsist.h
+F FSDM.H;1                          	fsdm.h
+L FSIO.H;1                          	fsio.h	../src/sprited/fsio/fsio.h
+L FSIODEVI.H;1                      	fsioDevice.h	../src/sprited/fsio/fsioDevice.h
+L FSIOFILE.H;1                      	fsioFile.h	../src/sprited/fsio/fsioFile.h
+L FSIOLOCK.H;1                      	fsioLock.h	../src/sprited/fsio/fsioLock.h
+L FSIOPIPE.H;1                      	fsioPipe.h	../src/sprited/fsio/fsioPipe.h
+L FSIORPC.H;1                       	fsioRpc.h	../src/sprited/fsio/fsioRpc.h
+F FSLCL.H;1                         	fslcl.h
+L FSNAMEOP.H;1                      	fsNameOps.h	../src/sprited/fs/fsNameOps.h
+L FSPDEV.H;1                        	fspdev.h	../src/sprited/fspdev/fspdev.h
+L FSPREFIX.H;1                      	fsprefix.h	../src/sprited/fsprefix/fsprefix.h
+L FSRMT.H;1                         	fsrmt.h	../src/sprited/fsrmt/fsrmt.h
+L FSRMTDOM.H;1                      	fsrmtDomain.h	../src/sprited/fsrmt/fsrmtDomain.h
+L FSRMTRPC.H;1                      	fsrmtRpcStubs.h	../src/sprited/fsrmt/fsrmtRpcStubs.h
+L FSSTAT.H;1                        	fsStat.h	../src/sprited/fs/fsStat.h
+L FSUNIXST.H;1                      	fsUnixStubs.h	../src/sprited/fs/fsUnixStubs.h
+L FSUTIL.H;1                        	fsutil.h	../src/sprited/fsutil/fsutil.h
+L FSUTILTR.H;1                      	fsutilTrace.h	../src/sprited/fsutil/fsutilTrace.h
+L HASH.H;1                          	hash.h	../src/sprited/utils/hash.h
+L ID.;1                             	ID	ID.$MACHINE
+F ID_DS310.;1                       	ID.ds3100
+L ID_DS500.;1                       	ID.ds5000	ID.ds3100
+L ID_SUN3.;1                        	ID.sun3	ID.sun4
+F ID_SUN4.;1                        	ID.sun4
+L KERNEL.;1                         	kernel	kernel
+F LFS.H;1                           	lfs.h
+F MACHCALL.H;1                      	machCalls.h
+L MACHSYS.;1                        	machsys	../../mach/include/usr.release/sys
+L MAIN.H;1                          	main.h	../src/sprited/main/main.h
+L NET.H;1                           	net.h	../src/sprited/net/net.h
+L NETARP.H;1                        	netArp.h	../src/sprited/net/netArp.h
+L NETROUTE.H;1                      	netRoute.h	../src/sprited/net/netRoute.h
+L NETTYPES.H;1                      	netTypes.h	../src/sprited/net/netTypes.h
+L PROC.H;1                          	proc.h	../src/sprited/proc/proc.h
+L PROCMIGR.H;1                      	procMigrate.h	../src/sprited/proc/procMigrate.h
+L PROCSERV.H;1                      	procServer.h	../src/sprited/proc/procServer.h
+L PROCTYPE.H;1                      	procTypes.h	../src/sprited/proc/procTypes.h
+L PROCUNIX.H;1                      	procUnixStubs.h	../src/sprited/proc/procUnixStubs.h
+D RCS                               	RCS
+L RECOV.H;1                         	recov.h	../src/sprited/recov/recov.h
+L RPC.H;1                           	rpc.h	../src/sprited/rpc/rpc.h
+L RPCCALL.H;1                       	rpcCall.h	../src/sprited/rpc/rpcCall.h
+L RPCCLIEN.H;1                      	rpcClient.h	../src/sprited/rpc/rpcClient.h
+L RPCCLTST.H;1                      	rpcCltStat.h	../src/sprited/rpc/rpcCltStat.h
+L RPCHISTO.H;1                      	rpcHistogram.h	../src/sprited/rpc/rpcHistogram.h
+L RPCPACKE.H;1                      	rpcPacket.h	../src/sprited/rpc/rpcPacket.h
+L RPCSERVE.H;1                      	rpcServer.h	../src/sprited/rpc/rpcServer.h
+L RPCSRVST.H;1                      	rpcSrvStat.h	../src/sprited/rpc/rpcSrvStat.h
+L RPCTRACE.H;1                      	rpcTrace.h	../src/sprited/rpc/rpcTrace.h
+L RPCTYPES.H;1                      	rpcTypes.h	../src/sprited/rpc/rpcTypes.h
+L SIG.H;1                           	sig.h	../src/sprited/sig/sig.h
+L SIGTYPES.H;1                      	sigTypes.h	../src/sprited/sig/sigTypes.h
+L SPRITESR.H;1                      	spriteSrvServer.h	../src/sprited/sys/spriteSrvServer.h
+D SUN3_MD                           	sun3.md
+L SYNC.H;1                          	sync.h	../src/sprited/sync/sync.h
+L SYNCTYPE.H;1                      	syncTypes.h	../src/sprited/sync/syncTypes.h
+L SYS.H;1                           	sys.h	../src/sprited/sys/sys.h
+L SYSCALLN.H;1                      	sysCallNums.h	../src/sprited/sys/sysCallNums.h
+L TIMER.H;1                         	timer.h	../src/sprited/timer/timer.h
+L TIMERSTA.H;1                      	timerStat.h	../src/sprited/timer/timerStat.h
+L TIMERTIC.H;1                      	timerTick.h	../src/sprited/timer/timerTick.h
+L TRACE.H;1                         	trace.h	../src/sprited/utils/trace.h
+D USER                              	user
+L UTILS.H;1                         	utils.h	../src/sprited/utils/utils.h
+L VM.H;1                            	vm.h	../src/sprited/vm/vm.h
+L VMSWAPDI.H;1                      	vmSwapDir.h	../src/sprited/vm/vmSwapDir.h
+L VMTYPES.H;1                       	vmTypes.h	../src/sprited/vm/vmTypes.h

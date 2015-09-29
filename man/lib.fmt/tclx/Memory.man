@@ -1,0 +1,330 @@
+
+
+
+Memory                C Library Procedures                 Memory
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     ckalloc, memory, ckfree, Tcl_DisplayMemory,  Tcl_InitMemory,
+     Tcl_ValidateAllMemory  -  Validated memory allocation inter-
+     face.
+
+SSYYNNOOPPSSIISS
+     mmeemmoorryy iinnffoo
+     mmeemmoorryy ttrraaccee [oonn||ooffff]
+     mmeemmoorryy vvaalliiddaattee [oonn||ooffff]
+     mmeemmoorryy ttrraaccee__oonn__aatt__mmaalllloocc _n_n_n
+     mmeemmoorryy bbrreeaakk__oonn__mmaalllloocc _n_n_n
+     mmeemmoorryy ddiissppllaayy _f_i_l_e
+
+
+     ##iinncclluuddee <<ttccll..hh>> or <<cckkaalllloocc..hh>>
+
+     char *
+     cckkaalllloocc (_s_i_z_e)
+
+     void
+     cckkffrreeee (_p_t_r)
+
+     void
+     TTccll__DDiissppllaayyMMeemmoorryy (fileName)
+
+     void
+     TTccll__IInniittMMeemmoorryy (_i_n_t_e_r_p)
+
+     void
+     TTccll__VVaalliiddaatteeAAllllMMeemmoorryy (_f_i_l_e, _l_i_n_e)
+
+AARRGGUUMMEENNTTSS
+     uint         _s_i_z_e        (in)      The size  of  the  memory
+                                        block to be allocated.
+
+     char         *_p_t_r        (in)      The address of a block to
+                                        free,   as   returned  by
+                                        ckalloc.
+
+     Tcl_Interp   *_i_n_t_e_r_p     (in)      A  pointer  to  the   Tcl
+                                        interpreter.
+
+     char         *_f_i_l_e       (in)      The   filename   of   the
+                                        caller                 of
+                                        Tcl_ValidateAllMemory.
+
+     int          _l_i_n_e        (in)      The line  number  of  the
+                                        caller                 of
+                                        Tcl_ValidateAllMemory.
+
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+Memory                C Library Procedures                 Memory
+
+
+
+     char         *_f_i_l_e_N_a_m_e   (in)      File to display  list  of
+                                        active memory.
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The macro cckkaalllloocc allocates memory, in the  same  manner  as
+     mmaalllloocc,  with the following differences: One, cckkaalllloocc checks
+     the value returned from mmaalllloocc (it calls mmaalllloocc for you) and
+     panics  if the allocation request fails.  Two, if enabled at
+     compile time, a  version  of  cckkaalllloocc  with  special  memory
+     debugging  capabilities replaces the normal version of cckkaall--
+     lloocc, which aids in detecting  memory  overwrites  and  leaks
+     (repeated allocations not matched by corresponding frees).
+
+     cckkffrreeee frees memory allocated  by  cckkaalllloocc.   Like  cckkaalllloocc,
+     when  memory debugging is enabled, cckkffrreeee has enhanced capa-
+     bilities for detecting memory overwrites and leaks.
+
+     It is very important that you use cckkaalllloocc when you  need  to
+     allocate memory, and that you use cckkffrreeee to free it.  Should
+     you use mmaalllloocc to allocate  and  cckkffrreeee  to  free,  spurious
+     memory validation errors will occur when memory debugging is
+     enabled.  Should you use ffrreeee to free  memory  allocated  by
+     cckkaalllloocc,  memory corruption will occur when memory debugging
+     is enabled.  Any memory that is to be become the property of
+     the Tcl interpreter, such as result space, must be allocated
+     with cckkaalllloocc.  If it is absolutely necessary for an applica-
+     tion  to pass back mmaalllloocced memory to Tcl, it will work only
+     if Tcl is complied with the TTCCLL__MMEEMM__DDEEBBUUGG flag  turned  off.
+     If  you  convert  your  application to use this facility, it
+     will help you find memory over runs and lost  memory.   Note
+     that memory allocated by a C library routine requiring free-
+     ing should still be freed with ffrreeee, since it  calls  mmaalllloocc
+     rather than cckkaalllloocc to do the allocation.
+
+FFIINNDDIINNGG MMEEMMOORRYY LLEEAAKKSS
+     The function TTccll__DDiissppllaayyMMeemmoorryy will display a  list  of  all
+     currently  allocated memory to the specified file.  The fol-
+     lowing information is displayed for each allocated block  of
+     memory:  starting  and  ending  addresses  (excluding  guard
+     zone), size, source file where cckkaalllloocc was called  to  allo-
+     cate  the  block  and line number in that file.  It is espe-
+     cially useful to call TTccll__DDiissppllaayyMMeemmoorryy after the Tcl inter-
+     preter has been deleted.
+
+EENNAABBLLIINNGG MMEEMMOORRYY DDEEBBUUGGGGIINNGG
+     To enable memory debugging, Tcl should  be  recompiled  from
+     scratch  with TTCCLL__MMEEMM__DDEEBBUUGG defined.  This will also compile
+     in a non-stub version of TTccll__IInniittMMeemmoorryy to  add  the  mmeemmoorryy
+     command to Tcl.
+
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+Memory                C Library Procedures                 Memory
+
+
+
+     TTCCLL__MMEEMM__DDEEBBUUGG must be either left defined for all modules or
+     undefined  for  all  modules  that  are  going  to be linked
+     together.  If they are not, link  errors  will  occur,  with
+     either  TTccllDDbbCCkkffrreeee  and  TTccll__DDbbCCkkaalllloocc  or  TTccll__CCkkaalllloocc and
+     TTccll__CCkkffrreeee being undefined.
+
+GGUUAARRDD ZZOONNEESS
+     When memory debugging is enabled, whenever a call to cckkaalllloocc
+     is made, slightly more memory than requested is allocated so
+     the memory debugging code can keep track  of  the  allocated
+     memory,  and  also  eight-byte ``guard zones'' are placed in
+     front of and behind the space that will be returned  to  the
+     caller.   (The  size  of  the guard zone is defined by the C
+     #define GGUUAARRDD__SSIIZZEE in _b_a_s_e_l_i_n_e/_s_r_c/_c_k_a_l_l_o_c._c --  it  can  be
+     extended  if  you  suspect large overwrite problems, at some
+     cost in performance.)  A known pattern is written  into  the
+     guard zones and, on a call to cckkffrreeee, the guard zones of the
+     space being freed are checked to see if either zone has been
+     modified  in  any way.  If one has been, the guard bytes and
+     their  new  contents  are  identified,  and  a  ``low  guard
+     failed''  or  ``high  guard failed'' message is issued.  The
+     ``guard failed'' message includes the address of the  memory
+     packet  and  the  file name and line number of the code that
+     called cckkffrreeee.  This allows you to detect the  common  sorts
+     of one-off problems, where not enough space was allocated to
+     contain the data written, for example.
+
+TTHHEE MMEEMMOORRYY CCOOMMMMAANNDD
+     mmeemmoorryy _o_p_t_i_o_n_s
+          The Tcl mmeemmoorryy command gives the Tcl developer  control
+          of  Tcl's  memory  debugging  capabilities.  The memory
+          command has several  suboptions,  which  are  described
+          below.  It is only available when Tcl has been compiled
+          with memory debugging enabled.
+
+     mmeemmoorryy iinnffoo
+          Produces a report containing the total allocations  and
+          frees  since  Tcl  began, the current packets allocated
+          (the current number of calls to cckkaalllloocc not  met  by  a
+          corresponding  call to cckkffrreeee), the current bytes allo-
+          cated, and the maximum  number  of  packets  and  bytes
+          allocated.
+
+     mmeemmoorryy ttrraaccee [oonn||ooffff]
+          Turns memory tracing on or off.  When memory tracing is
+          on, every call to cckkaalllloocc causes a line of trace infor-
+          mation to be written to _s_t_d_e_r_r, consisting of the  word
+          _c_k_a_l_l_o_c,  followed  by the address returned, the amount
+          of memory allocated, and the C filename and line number
+          of the code performing the allocation, for example...
+
+             cckkaalllloocc 4400ee447788 9988 ttccllPPrroocc..cc 11440066
+
+
+
+Sprite v1.0                                                     3
+
+
+
+
+
+
+Memory                C Library Procedures                 Memory
+
+
+
+          Calls to cckkffrreeee are traced in the same  manner,  except
+          that the word _c_k_a_l_l_o_c is replaced by the word _c_k_f_r_e_e.
+
+     mmeemmoorryy vvaalliiddaattee [oonn||ooffff]
+          Turns memory vaidation on or off.  When memory  valida-
+          tion  is  enabled,  on every call to cckkaalllloocc or cckkffrreeee,
+          the guard zones are checked for every piece  of  memory
+          currently  in  existence that was allocated by cckkaalllloocc.
+          This has a large performance impact and should only  be
+          used  when  overwrite  problems are strongly suspected.
+          The advantage of enabling memory validation is  that  a
+          guard  zone overwrite can be detected on the first call
+          to cckkaalllloocc or  cckkffrreeee  after  the  overwrite  occurred,
+          rather than when the specific memory with the overwrit-
+          ten guard zone(s) is freed, which may occur long  after
+          the overwrite occurred.
+
+     mmeemmoorryy ttrraaccee__oonn__aatt__mmaalllloocc _n_n_n
+          Enable memory tracing after _n_n_n cckkaallllooccss have been per-
+          formed.     For    example,   if   you   enter   mmeemmoorryy
+          ttrraaccee__oonn__aatt__mmaalllloocc 110000, after the 100th call  to  cckkaall--
+          lloocc,   memory   trace   information  will  begin  being
+          displayed for all allocations and frees.   Since  there
+          can  be  a  lot  of  memory  activity  before a problem
+          occurs, judicious use of this  option  can  reduce  the
+          slowdown  caused  by  tracing  (and the amount of trace
+          information produced), if you can identify a number  of
+          allocations that occur before the problem sets in.  The
+          current number of memory allocations that have  occured
+          since Tcl started is printed on a guard zone failure.
+
+     mmeemmoorryy bbrreeaakk__oonn__mmaalllloocc _n_n_n
+          After the nnnnnn allocations have been performed, cckkaallllooccss
+          output  a  message  to  this  effect and that it is now
+          attempting to enter the  C  debugger.   Tcl  will  then
+          issue  a _S_I_G_I_N_T signal against itself.  If you are run-
+          ning Tcl under a C debugger, it should then  enter  the
+          debugger command mode.
+
+     mmeemmoorryy ddiissppllaayy _f_i_l_e
+          Write a list of all currently allocated memory  to  the
+          specified file.
+
+DDEEBBUUGGGGIINNGG DDIIFFFFIICCUULLTT MMEEMMOORRYY CCOORRRRUUPPTTIIOONN PPRROOBBLLEEMMSS
+     Normally, Tcl compiled with memory  debugging  enabled  will
+     make  it  easy  to isolate a corruption problem.  Turning on
+     memory validation with the memory command can  help  isolate
+     difficult  problems.   If you suspect (or know) that corrup-
+     tion is occurring before the Tcl interpreter  comes  up  far
+     enough  for  you to issue commands, you can set MMEEMM__VVAALLIIDDAATTEE
+     define, recompile tclCkalloc.c and rebuild Tcl.   This  will
+     enable  memory  validation  from  the first call to cckkaalllloocc,
+
+
+
+Sprite v1.0                                                     4
+
+
+
+
+
+
+Memory                C Library Procedures                 Memory
+
+
+
+     again, at a large performance impact.
+
+     If you are desperate and validating memory on every call  to
+     cckkaalllloocc  and  cckkffrreeee  isn't  enough, you can explicitly call
+     TTccll__VVaalliiddaatteeAAllllMMeemmoorryy directly at any  point.   It  takes  a
+     _c_h_a_r  *  and an _i_n_t which are normally the filename and line
+     number of the caller, but they can actually be anything  you
+     want.  Remember to remove the calls after you find the prob-
+     lem.
+
+KKEEYYWWOORRDDSS
+     ckalloc, ckfree, free, memory, malloc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     5
+
+
+

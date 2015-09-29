@@ -1,0 +1,489 @@
+head     1.8;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.8
+date     90.06.26.18.41.03;  author douglis;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     89.09.12.11.43.34;  author nelson;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.04.12.18.21.57;  author douglis;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.10.21.17.57.05;  author ouster;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.08.16.19.08.58;  author mendel;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.07.29.17.39.14;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.06.21.17.24.49;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.19.14.31.12;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.8
+log
+@accept signal number 32 with a NULL mapping, rather than returning errors.
+@
+text
+@/*
+ * compatSig.c --
+ *
+ * 	Returns the Sprite signal number corresponding to a Unix signal.
+ *
+ * Copyright (C) 1986 Regents of the University of California
+ * All rights reserved.
+ *
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/unixSyscall/RCS/compatSig.c,v 1.7 89/09/12 11:43:34 nelson Exp Locker: douglis $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+
+#ifndef NULL
+#define NULL 0
+#endif
+
+#include "compatInt.h"
+#include <sig.h>
+#include <signal.h>
+
+#include "compatSig.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Compat_UnixSignalToSprite --
+ *
+ *	Given a Unix signal, return the closest corresponding Sprite signal
+ *	number. Signal 0 is special-cased to map to sprite signal 0 (NULL).
+ *	Some programs use kill(pid, 0) to see if pid exists....
+ *
+ * Results:
+ *	A Sprite signal number is returned, assuming the Unix signal is
+ *	in a valid range.  Note that the Sprite "signal number" may be
+ *	NULL (0) if there's no matching signal.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Compat_UnixSignalToSprite(signal, spriteSigPtr)
+    int signal;
+    int *spriteSigPtr;
+{
+    if (signal >= 0 && signal <= NSIG) {
+	*spriteSigPtr = compat_UnixSigToSprite[signal];
+	return(SUCCESS);
+    } else {
+	return(FAILURE);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Compat_SpriteSignalToUnix --
+ *
+ *	Given a Sprite signal, return the closest corresponding Unix signal
+ *	number.
+ *
+ * Results:
+ *	A Unix signal number is returned, assuming the Sprite signal is
+ *	in a valid range. 
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Compat_SpriteSignalToUnix(signal, unixSigPtr)
+    int signal;
+    int *unixSigPtr;
+{
+    if (signal >= 0 && signal <= SIG_NUM_SIGNALS) {
+	*unixSigPtr = spriteToUnix[signal];
+	return(SUCCESS);
+    } else {
+	return(FAILURE);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  Compat_UnixSigMaskToSprite --
+ *
+ *	Given a Unix signal mask, return the corresponding Sprite signal
+ *	mask.
+ *
+ * Results:
+ *	A Sprite signal mask is returned, assuming the Unix signal mask is
+ *	valid.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Compat_UnixSigMaskToSprite(unixMask, spriteMaskPtr)
+    int unixMask;
+    int *spriteMaskPtr;
+{
+    int i;
+    int signal;
+    ReturnStatus status;
+
+    *spriteMaskPtr = 0;
+    for (i = 1; i < NSIG; i++) {
+	if (unixMask & (1 << (i - 1))) {
+	    status = Compat_UnixSignalToSprite(i, &signal);
+	    if (status == FAILURE) {
+		return(FAILURE);
+	    }
+	    if (signal != NULL) {
+		*spriteMaskPtr |= 1 << (signal - 1);
+	    }
+	}
+    }
+#ifdef COMPAT_DEBUG
+    Io_Print("Unix mask = <%x> Sprite mask = <%x>\n", 
+		unixMask, *spriteMaskPtr);
+#endif
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Compat_SpriteSigMaskToUnix --
+ *
+ *	Given a Sprite signal mask, return the corresponding Unix signal
+ *	mask.
+ *
+ * Results:
+ *	A Unix signal mask is returned, assuming the Sprite signal mask is
+ *	valid.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Compat_SpriteSigMaskToUnix(SpriteMask, UnixMaskPtr)
+    int SpriteMask;
+    int *UnixMaskPtr;
+{
+    int i;
+    int signal;
+    ReturnStatus status;
+
+    *UnixMaskPtr = 0;
+    for (i = 1; i <= SIG_NUM_SIGNALS; i++) {
+	if (SpriteMask & (1 << (i - 1))) {
+	    status = Compat_SpriteSignalToUnix(i, &signal);
+	    if (status == FAILURE) {
+		return(FAILURE);
+	    }
+	    if (signal != NULL) {
+		*UnixMaskPtr |= 1 << (signal - 1);
+	    }
+	}
+    }
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Compat_GetSigHoldMask --
+ *
+ *	Return the current signal mask.
+ *
+ * Results:
+ *	The current signal mask (in Sprite terms) is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#define MASK_ALL_SIGNALS 0xFFFFFFFF
+
+ReturnStatus
+Compat_GetSigHoldMask(maskPtr)
+    int *maskPtr;
+{
+    ReturnStatus status;
+
+    /*
+     * To modify the hold mask we need to get the old one by
+     * calling Sig_SetHoldMask to get the current mask.  Since we
+     * don't know what to set the mask to, set the mask to mask ALL 
+     * signals and then reset it again to the proper value.
+     */
+
+    status = Sig_SetHoldMask((int) MASK_ALL_SIGNALS, maskPtr);
+    if (status != SUCCESS) {
+	return(status);
+    }
+    status = Sig_SetHoldMask(*maskPtr, (int *) NULL);
+    return(status);
+}
+@
+
+
+1.7
+log
+@changes for the ultrix compatibility port (ci by FD)
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/unixSyscall/RCS/compatSig.c,v 1.6 89/04/12 18:21:57 douglis Exp Locker: nelson $ SPRITE (Berkeley)";
+d53 1
+a53 1
+    if (signal >= 0 && signal <= numSignals) {
+d84 1
+a84 1
+    if (signal >= 0 && signal <= numSignals) {
+d121 1
+a121 1
+    for (i = 1; i <= NSIG; i++) {
+@
+
+
+1.6
+log
+@map SIGTTOU to SIG_TTY_OUTPUT.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/unixSyscall/RCS/compatSig.c,v 1.5 88/10/21 17:57:05 ouster Exp Locker: douglis $ SPRITE (Berkeley)";
+d25 1
+a25 88
+/*
+ * Define the mapping between Unix and Sprite signals. There are two arrays,
+ * one to go from Unix to Sprite and one to go from Sprite to Unix.
+ *
+ * Note that the signals SIGIOT and SIGEMT that people don't usually
+ * send from the keyboard and that tend not to be delivered by the
+ * kernel but, rather, are used for IPC have been mapped to user-defined
+ * signal numbers, rather than a standard Sprite signal. This allows more
+ * of a one-to-one mapping.
+ */
+
+/*
+ * Map Unix signals to Sprite signals.
+ */
+int compat_UnixSigToSprite[] = {
+			NULL,
+     /* SIGHUP */	SIG_INTERRUPT,
+     /* SIGINT */	SIG_INTERRUPT,
+     /* SIGDEBUG */	SIG_DEBUG,	
+     /* SIGILL */	SIG_ILL_INST,
+     /* SIGTRAP */	SIG_DEBUG,
+     /* SIGIOT */	28,
+     /* SIGEMT */	29,
+     /* SIGFPE */	SIG_ARITH_FAULT,
+     /* SIGKILL */	SIG_KILL,
+     /* SIGMIG */	SIG_MIGRATE_TRAP,
+     /* SIGSEGV */	SIG_ADDR_FAULT,
+     /* SIGSYS */	NULL,
+     /* SIGPIPE */	SIG_PIPE,
+     /* SIGALRM */	SIG_TIMER,
+     /* SIGTERM */	SIG_TERM,
+     /* SIGURG */	SIG_URGENT,
+     /* SIGSTOP */	SIG_SUSPEND,
+     /* SIGTSTP */	SIG_TTY_SUSPEND,
+     /* SIGCONT */	SIG_RESUME,
+     /* SIGCHLD */	SIG_CHILD,
+     /* SIGTTIN */	SIG_TTY_INPUT,
+     /* SIGTTOU */	SIG_TTY_OUTPUT,
+     /* SIGIO */	NULL,
+     /* SIGXCPU */	NULL,
+     /* SIGXFSZ */	NULL,
+     /* SIGVTALRM */	NULL,
+     /* SIGPROF */	NULL,
+     /* SIGWINCH */	NULL,
+     /* SIGMIGHOME */	SIG_MIGRATE_HOME,
+     /* SIGUSR1 */	30,	/* user-defined signal 1 */
+     /* SIGUSR2 */	31,	/* user-defined signal 1 */
+};
+
+/*
+ * Map Sprite signals to Unix signals.
+ */
+static int spriteToUnix[] = {
+				NULL,
+    /* SIG_DEBUG */		SIGDEBUG,
+    /* SIG_ARITH_FAULT */	SIGFPE,
+    /* SIG_ILL_INST */		SIGILL,
+    /* SIG_ADDR_FAULT */	SIGSEGV,
+    /* SIG_KILL */		SIGKILL,
+    /* SIG_INTERRUPT */		SIGINT,
+    /* SIG_BREAKPOINT */	SIGILL,
+    /* SIG_TRACE_TRAP */	SIGILL,
+    /* SIG_MIGRATE_TRAP */	SIGMIG,
+    /* SIG_MIGRATE_HOME */	SIGMIGHOME,
+    /* SIG_SUSPEND */		SIGSTOP,
+    /* SIG_RESUME */		SIGCONT,
+    /* SIG_TTY_INPUT */		SIGTTIN,
+    /* SIG_PIPE */		SIGPIPE,
+    /* SIG_TIMER */		SIGALRM,
+    /* SIG_URGENT */		SIGURG,
+    /* SIG_CHILD */		SIGCHLD,
+    /* SIG_TERM */		SIGTERM,
+    /* SIG_TTY_SUSPEND */	SIGTSTP,
+    /* SIG_TTY_OUTPUT */	SIGTTOU,
+    /* 21 */			NULL,
+    /* 22 */			NULL,
+    /* 23 */			NULL,
+    /* 24 */			NULL,
+    /* 25 */ 			NULL,
+    /* 26 */			NULL,
+    /* 27 */			NULL,
+    /* 28 */			SIGIOT,
+    /* 29 */			SIGEMT,
+    /* 30 */			SIGUSR1,
+    /* 31 */			SIGUSR2,
+};
+
+static int numSignals = 31;
+@
+
+
+1.5
+log
+@Added SIGMIG and SIGMIGHOME UNIX signals.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: compatSig.c,v 1.4 88/08/16 19:08:58 mendel Exp $ SPRITE (Berkeley)";
+d62 1
+a62 1
+     /* SIGTTOU */	NULL,
+d98 1
+a98 1
+    /* 20 */			NULL,
+@
+
+
+1.4
+log
+@Fixed bug in signal hold mask mapping code.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: compatSig.c,v 1.3 88/07/29 17:39:14 ouster Exp $ SPRITE (Berkeley)";
+d43 1
+a43 1
+     /* SIGQUIT */	SIG_DEBUG,	
+d50 1
+a50 1
+     /* SIGBUS */	SIG_ADDR_FAULT,
+d69 1
+a69 1
+     /* SIGLOST */	NULL,
+d79 1
+a79 1
+    /* SIG_DEBUG */		SIGQUIT,
+d87 2
+a88 2
+    /* SIG_MIGRATE_TRAP */	NULL,
+    /* SIG_MIGRATE_HOME */	NULL,
+@
+
+
+1.3
+log
+@Lint.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: compatSig.c,v 1.2 88/06/21 17:24:49 ouster Exp $ SPRITE (Berkeley)";
+d207 1
+d254 1
+@
+
+
+1.2
+log
+@Various changes to make code compile under new library.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: compatSig.c,v 1.1 88/06/19 14:31:12 ouster Exp $ SPRITE (Berkeley)";
+d299 1
+a299 1
+    status = Sig_SetHoldMask(MASK_ALL_SIGNALS, maskPtr);
+d303 1
+a303 1
+    status = Sig_SetHoldMask(*maskPtr, NULL);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: compatSig.c,v 1.7 88/03/22 16:01:34 deboor Exp $ SPRITE (Berkeley)";
+d22 2
+a23 2
+#include "sig.h"
+#include "/sprite/att/lib/include/signal.h"
+@

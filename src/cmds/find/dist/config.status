@@ -1,0 +1,54 @@
+#!/bin/sh
+# Generated automatically by configure.
+# Run this file to recreate the current configuration.
+# This directory was configured as follows:
+# configure 
+
+case "$1" in
+  -recheck | --recheck | --rechec | --reche | --rech | --rec | --re | --r)
+  exec /bin/sh configure  ;;
+esac
+
+trap 'rm -f Makefile lib/Makefile find/Makefile xargs/Makefile locate/Makefile man/Makefile; exit 1' 1 3 15
+CC='gcc'
+CPP='/lib/cpp'
+INSTALL='cp'
+INSTALL_PROGRAM='$(INSTALL)'
+INSTALL_DATA='$(INSTALL)'
+RANLIB='ranlib'
+LIBOBJS=' fnmatch.o memset.o stpcpy.o strdup.o strftime.o strspn.o strstr.o strtol.o fileblocks.o'
+ALLOCA='alloca.o'
+LIBS=''
+srcdir='.'
+DEFS=' -DHAVE_LIMITS_H=1 -DDIRENT=1 -DVOID_CLOSEDIR=1 -DHAVE_UNISTD_H=1 -DUSG=1 -DHAVE_ALLOCA_H=1 -DTM_IN_SYS_TIME=1'
+prefix=''
+exec_prefix=''
+prsub=''
+
+top_srcdir=$srcdir
+for file in Makefile lib/Makefile find/Makefile xargs/Makefile locate/Makefile man/Makefile; do
+  srcdir=$top_srcdir
+  # Remove last slash and all that follows it.  Not all systems have dirname.
+  dir=`echo $file|sed 's,/[^/][^/]*$,,'`
+  if test "$dir" != "$file"; then
+    test "$top_srcdir" != . && srcdir=$top_srcdir/$dir
+    test ! -d $dir && mkdir $dir
+  fi
+  echo creating $file
+  rm -f $file
+  echo "# Generated automatically from `basename $file`.in by configure." > $file
+  sed -e "
+$prsub
+s,@CC@,$CC,
+s,@CPP@,$CPP,
+s,@INSTALL@,$INSTALL,
+s,@INSTALL_PROGRAM@,$INSTALL_PROGRAM,
+s,@INSTALL_DATA@,$INSTALL_DATA,
+s,@RANLIB@,$RANLIB,
+s,@LIBOBJS@,$LIBOBJS,
+s,@ALLOCA@,$ALLOCA,
+s,@LIBS@,$LIBS,
+s,@srcdir@,$srcdir,
+s,@DEFS@,$DEFS," $top_srcdir/${file}.in >> $file
+done
+

@@ -1,0 +1,378 @@
+
+1.  (zorn)
+    Sometimes tonkawa goes into `slow mode' and takes a very long time
+    to respond over rlogin connections.  Paul has noticed this and said
+    that it had something to do with tonkawa completely losing its host
+    tables.  Paul's solution is to reboot tonkawa.  Perhaps Mendel is
+    already aware of the problem.
+
+2.  (zorn)
+    When I rlogin to sage, I get the following message:
+
+    Sprite SPRITE VERSION 1.0 (Brent sun3) (16 Dec 88 15:29:48)
+
+        Welcome to Sprite
+
+    *** compat: Cannot decode user status value ffffffff
+    sage 1; 
+
+3.  (zorn)
+    stty on Sprite doesn't have the rows and columns attributes, which
+    can be used to change how big vi thinks your window is.
+
+5.  (zorn)
+    If a program creates a big file and uses up all the disk space on
+    sioux (Sun2 fileserver for SPUR and tonkawa), sioux hangs and even if
+    the process creating the file is deleted, you can't remove the file
+    using up all the space, and the only solution I know is to reboot
+    sioux, tonkawa, and spur.
+
+10. (zorn)
+    I often forget that I've got processes in the DEBUG state and
+    since their executables are still in use, even when I delete the
+    executable (like scl, 3 megabytes worth), the file space isn't
+    reclaimed because a DEBUG process still has a pointer to it.  Could
+    you give me a command that will guarantee to kill all my processes in
+    the DEBUG state that I'm not currently debugging?
+
+11. (fred)
+    Missing fonts for TeX.
+
+16. (rab)
+    Excessive mallocs at user level will crash sprite.
+
+17. (jhh)
+    ProcessLine called Fs_NotifyReader passing it nil as a data pointer, causing
+    a bus error. eventNotifyToken is nil for some reason. This happened after
+    the following sequence of events : try to print something on sloth, lpd is
+    started, THEN we plug in the printer. Sloth crashed right after this, which
+    leads me to believe there is a connection here.
+
+18. (mendel)
+    Kernel uses malloc'ed memory after free'ing it.
+
+20. (mendel)
+    Readdir doesn't fix byte order problems properly for spur.
+    Need to add system calls for readdir and statdir.
+
+21. (mgbaker)
+    When I link a kernel in /sprite/src/kernel/mgbaker, the linker (/usr/bin/ld)
+    on the sun4 says "write output error:  l.aXXXXXX not found."
+
+22. (ouster)
+    It appears to me that there's a repeatable bug whereby pseudo-devices
+    don't close down correctly.  If I start X running, then use L1-K to
+    kill X, I'm left with a bunch of csh processes in RWAIT state (one for
+    every Tx window that was open).  I tried to "kill -DEBUG" them to see
+    where they are, but the processes won't enter the debugger.  I suspect
+    that this is because they are waiting on their stdin pseudo-device.
+
+23. (douglis)
+    If I rlogin to sprite, start vi, use ^Z to suspend it, and then try
+    to resume, I get thrown back into the shell with my terminal in raw
+    mode and my vi nowhere to be seen.
+
+24. (ouster)
+    The reason vi doesn't know about the window size is because our terminal
+    driver doesn't (yet) support the TIOCSWINSZ and TIOCGWINSZ ioctls.
+
+25.
+    File servers run out of memory.
+
+
+26. (fwo)
+    I'm getting another NFS problem while moving data to rosemary:
+        NFSPROC_WRITE: RPC: Unable to send; errno = socket is not connected
+
+    The result is that tar cannot restore the file:
+	tar: Tried to write 4096 bytes to file, could only write -1:
+	my.filename: invalid argument
+
+27. (douglis)
+    stat of /dev/console
+    This doesn't seem to work.  I thought it did at first, and I modified
+    loadavg to use this rather than relying on the internal kernel
+    variable.  However, it didn't show the time getting updated, and
+    statting /dev/console just showed it not getting a new time.  It's
+    said 19:32:05 (read: "18:32:05") for the past couple of minutes.
+
+28. (douglis)
+    bug: suspending a migrated process locks out system
+    That is, if one suspends a pmake running remotely, that remote
+    host is marked forever as unavailable for other migrations.
+    This is just Yet Another Reason for a more sophisticated system
+    with handlers for various events, including signals to migrated
+    processes. In the meantime, I will change the daemon that
+    watches migrated processes and make sure it only believes the
+    "in use" bit on its own machine if there is a foreign *runnable*
+    process.  Of course, this means if someone suspends and
+    immediately resumes a remote job, then the host could get
+    flagged as available ang get loaded down by a second job, but
+    thems the breaks.
+
+29. (douglis)
+    behavior on failed page write:
+    We discussed recently how the behavior had been changed to kill
+    processes rather than wait for space to free up. Is this correct?
+    In general, I'd prefer to wait than to have my entire window
+    system die because we run out of swap space!
+
+30. (douglis)
+    The kiss of death: migrate a process onto a machine when the disk
+    space fills and the page-out fails.  Paprika lost its window system
+    because a pageout failed when I was starting a make, and at the same
+    time, fenugreek died with a watchdog reset.  I now just noticed that
+    several other hosts died at the same time and are not reachable via
+    kmsg, implying they may have hit watchdog resets too.
+    Looks like I have to make that migration code more robust.  In the
+    meantime, this is another case for keeping /a less than full! :)
+
+31. (douglis)
+    bug: pmake debug children, define syntax
+
+    There seems to be a problem with pmake, compared to make, that kept
+    the following construct in local.mk from working:
+
+	CFLAGS += -DUSERMEM=`cat USERMEM`
+
+    When I tried to run mkmf on compress, which uses this construct, I hit some 
+    error messages followed by an endless loop with the same process being
+    continued and going into the debugger repeatedly:
+
+
+32. (ouster)
+    Bug: finger/rup database corrupted
+    The finger/rup database seems to have mangled itself over the weekend.
+    For example, "rup" says that oregano is down, but I can rlogin to it
+    and its running Sprite.  Also, "finger" says that almost no-one is
+    logged in... although I can't confirm that this is wrong, it looks
+    suspicious.
+
+33. (mgbaker)
+     another funny nfs thing
+     When I'm working in the sprite hierarchy, but on rosemary,
+     and I do a "ci -l" of some files to rcs, weird things happen.
+     I can continue to edit the files on sprite, and everything is
+     happy, but from that point on, none of the changes will be
+     reflected in the same files when I view them from rosemary.
+     The dates don't change and the data doesn't change.  Also,
+     the number of links for them, listed by "ls", is 0.  It should
+     be 1.  (This is all easily curable by removing the files from
+     rosemary and rewriting them again on sprite.)
+
+34. (ouster)
+    Bug: ipServer crash
+    My ipServer died shortly after the Mint crash today (but I suspect that
+    the two are only marginally-related).
+
+35. (douglis)
+    things would be much easier if we had a unix-ish syslog
+    approach, in which syslog messages are stored in a regular file and
+    cycled through on a daily or weekly basis to keep from storing old
+    messages too long.  With syslog going only to the console, or some
+    other process reading it, there's no way for someone else to see the
+    messages.
+
+36. (jhh)
+     ditroff problem?
+     I get the following message when I try to print a man page.
+     ditroff -Pcad -man fstrash.man
+     troff: Can't open /sprite/lib/ditroff/devpsc/c.out
+     There is a file /sprite/lib/ditroff/devpsc/C.out
+     did something change recently?
+
+37. (brent)
+    pseudo-device access/modify times
+    Garth pointed out an interesting behavior of the modify time
+    of a tx window.  Go to an idle tx window and do an ls -l of
+    its corresponding tx pseudo-device.  The modify time won't
+    reflect your typing of the ls command.  If you repeat the ls
+    then the modify time will be current, reflecting the generation
+    of the prompt for the second ls.  If you do ls -lu to get the
+    access time, it will be current.  Now, as a final twist, if
+    you use the stat program you always get the correct dates.
+    That is (apparently) because ls uses stat(filename), while
+    stat uses fstat(openFile).  Frankly, that these are different
+    is still a suprise to me.  I'll mull this one over, but may
+    not change anything.
+
+38. (mendel)
+    fstat() doesn't get correct modify time
+    If a process has a file open and another process  modifies the file the 
+    modify time as return by the fstat() library routine is not updated.
+    The stat() routine does return the correct modify time.
+    This is why the unfsd has been working so poorly on sprite.
+
+39. (gibson)
+    looks to me that whenever I invoke enscript with more than one
+    file on the command line, it says it can't open the second file
+    and dies.
+
+40. (ouster)
+    RPC/sendmail messages
+    I just noticed the following messages in my syslog window:
+    RpcScatter: rpc 7 param size + off (4 + 0) > (0)
+    <19>Jan 26 11:22:30 sendmail[91b3d]: tung@ibm.com... reply: read error
+    <19>Jan 26 11:29:03 sendmail[41b3b]: mogul@decwrl.dec.com reply: read error
+    Does anyone know if any of these messages is cause for concern?  Do
+    the sendmail messages mean that mail was lost?
+
+
+41.  (brent)
+    bug: var val
+
+    When Mike implemented the system call for vmcmd he used a macro
+    trick that doesn't work with gcc, so he generates printfs when
+    you change VM constants that say "var val is 1200", etc.  There
+    are two bugs.  The first is that the kernel shouldn't generate
+    these print statements.  The user program that changes the
+    value should.  The second bug is the "var val" macro bug, which
+    won't need to be fixed if the system call is changed to return
+    the old variable value.  The Fs_Command system call is set up
+    to return the old value of a variable being changed, but the
+    Vm_Command system call is not.  Perhaps a third bug is that
+    these two system calls are distinct, and there is even another
+    cesspool-call, er, system call, called Sys_Stat.
+
+42. (mgbaker)
+     mkmf becoming a pain
+
+     Is there a way to ask mkmf only to redo things for a particular
+     machine? It does not scale well as we increase the number of
+     machines we have ported to.  It can take several minutes to
+     add one file to one machine's subdirectory.
+
+42. (hilfingr)
+    File rot on tonkawa still
+
+    FYI:  The file rot problem on tonkawa is still with us.  It struck
+    within the last few days (I believe).
+
+43. (jhh)
+    Xsprite bug
+
+    Xsprite went into the debugger on me. I poked around a bit and
+    found it had segmentation violation in the function PdevReadClient,
+    file os/pdev.c line 825. I don't know what a real client
+    structure is supposed to look like, but a streamID > 327000
+    looks bad to me. I think Dispatch somehow tried to do a read
+    on a nonexistent client.
+
+44. (Gibson)
+    cp -p problem
+
+    I tried cp -p /nfs_file_1 /nfs_file_2 but /nfs_file_1 was
+    read_only to me so the result was a /nfs_file_2 file of zero
+    length and a permission denied error message
+
+    it seems that the read only protection is done first
+    but then the copy writes fail
+
+    i checked on UNIX and this does not happen (different cp command?)
+
+45. (gibson)
+     nfs and symbolic links
+
+     running under sprite, i make a symbolic link through nfs to a unix
+     filesystem - but i can't read it or follow it
+
+     the problem is different symbolic link formats under unix and sprite
+     sprite adds a null to the end of the link file (according to brent)
+     so unix is unhappy when nfs tells it to access the link
+
+     brent knows about this and may do something about it
+
+There are actually two problems.  The first is the one about
+different link formats.  I'll be changing Sprite servers to
+be UNIX-like sometime soon. The other problem was that you
+couldn't readlink() a symbolic link via nfsmount, regarless
+of who created the link.  I've fixed this bug.
+	brent
+
+46.  (mgbaker)
+     Vm tracing bug?
+
+     In going over the assembly routines for the virtual memory module,
+     it appears to me that the VmMachTracePMEG routine is buggy on the
+     sun2's and 3's.  It should trace a page if the page is resident
+     and also is either referenced or modified.  But it traces it in
+     some cases even if it isn't resident.  So unless the modified and
+     referenced bits are cleared when the page isn't resident, this
+     routine will give wrong numbers.  Is there anyone out there who
+     depended on this routine?  If so, I'll check how the referenced
+     and modified bits are cleared to see if things were okay or not...
+
+47.  (douglis)
+    bug: recovery consistency crashed network
+
+    We had to reboot the world because mint got itself a bit confused.  I
+    think Brent was aware of this when he tried to continue it earlier
+    after "client N not last writer M" messages kept coming out (each one
+    hitting a breakpoint).  The problem is, after mint rebooted it hit the
+    same error, each time with a different client.  My brute-force
+    solution was to reboot the clients so they wouldn't try to force
+    anything on mint that it couldn't handle.
+
+    Brent, the lineprinter output in the machine room contains some other
+    interesting messages about stale files & such that I hadn't seen
+    before.  Maybe they're relevant.
+
+48.  (douglis)
+    bug: scsi tape error
+
+    The thing we hit last time, and which we still hit, is as follows:
+
+    SCSITape, 10 sense bytes => Unknown sense size
+    DevSCSITapeError: Unknown tape drive typeSCSI-0: Sense error (7-0) at <600>
+
+    this is kernel (JohnH sun2) 1/15/89
+
+49.  (douglis)
+    bug: lpd doesn't compile
+
+    I did a mkmf so I could install a sun2 version and not use a year-old
+    version on the sun2s at boottime, with named pipes.
+
+    I hit a compiler error in lpd.c, both for sun2s and then again for
+    sun3s.
+
+50. (jhh)
+    migration bug
+
+    I tried to kill a migrated process (a ps on the process gave
+    me one of those "couldn't read segment info..." messages) and
+    it put thyme into the debugger.  The process control block was
+    garbage.
+
+51.  (mendel)
+    sendmail bug
+
+    I can't send mail from my Sprite account.  Sendmail goes into a loop
+    forking itself and exiting.  
+
+52.  (jhh)
+     bug
+
+
+    When I try to rcp my kernel to ginger I get the following error:
+
+    Pdev_Write, no return amtWritten (/hosts/sage.Berkeley.EDU/netTCP)
+    RequestResponse request too large
+
+    If I do the rcp from ginger everything works.
+
+53.  (douglis)
+     fs/migration bug
+
+    I was running a compile, which hung.  I noticed in my syslog:
+
+    Fs_RpcWrite, stale handle <0,192> client 5
+    2/16/89 10:56:32 basil (5) starting recovery
+
+    This recovery never finished.  Turns out in addition, I had
+    only one process in the migrated state but at least one process
+    that was running on basil but on paprika was in the NEW state.
+    Signalling the NEW process had no effect, and signalling the
+    process using its id on basil caused the rpc to hang.
+
+

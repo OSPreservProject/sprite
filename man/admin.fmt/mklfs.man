@@ -1,0 +1,200 @@
+
+
+
+MKLFS                     User Commands                     MKLFS
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     mklfs - Create an empty LFS file system on a disk partition.
+
+SSYYNNOOPPSSIISS
+     mmkkllffss [[_o_p_t_i_o_n_s] _d_e_v_i_c_e_N_a_m_e [_p_r_e_f_i_x]
+
+OOPPTTIIOONNSS
+     _d_e_v_i_c_e_N_a_m_e    The device on which the file system should  be
+                   created.  This  device should be a disk parti-
+                   tion complete with a disk label that specifies
+                   its  size.  WARNING: THE CONTENTS OF THIS DEV-
+                   ICE ARE OVERWRITTEN BY MKLFS.
+
+     _p_r_e_f_i_x        Name of the file  system  (its  prefix).   You
+                   only  need  to specify this prefix if you wish
+                   to have the file system automatically  mounted
+                   by  ffssmmoouunntt during the boot sequence.  You can
+                   manually mount the file system under any  name
+                   you want via the pprreeffiixx command.
+
+     --mmaaxxNNuummCCaacchheeBBlloocckkss _N_u_m_C_a_c_h_e_B_l_o_c_k_s
+                   _N_u_m_C_a_c_h_e_B_l_o_c_k_s is the maximum number  of  file
+                   cache  blocks  available  on the machine. This
+                   number defaults to the maximum number  on  the
+                   machine running the program.
+
+     --mmaaxxCCaacchheeBBlloocckkssCClleeaanneedd _N_u_m_C_a_c_h_e_B_l_o_c_k_s
+                   _N_u_m_C_a_c_h_e_B_l_o_c_k_s is the maximum number  of  file
+                   cache  files  that will be reserved for clean-
+                   ing. A negative value causes mklfs to  compute
+                   this  number  based  on  the  segment and file
+                   cache size.
+
+     --sspprriitteeIIDD _i_d  _i_d is the Sprite hostname id specified in  the
+                   superblock.   This  id  is  used  to  inform a
+                   machine of its name at boot time.  It defaults
+                   to the Sprite ID of the machine running mklfs.
+
+     --mmaaxxUUttiilliizzaattiioonn _U_t_i_l_i_z_a_t_i_o_n
+                   _U_t_i_l_i_z_a_t_i_o_n is the  maximum  fraction  of  the
+                   disk space usable by the file system.
+
+     --mmaaxxDDeesscc _N_u_m_D_e_s_c
+                   _N_u_m_D_e_s_c is the maximum number  of  descriptors
+                   available in the file system. A negative value
+                   causes mklfs to compute this number  based  on
+                   the disk size.
+
+     --sseeggAAlliiggnnmmeenntt _A_l_i_g_n_m_e_n_t
+                   _A_l_i_g_n_m_e_n_t is the alignment in bytes where  the
+
+
+
+Sprite v.1.0        Printed:  October 4, 1992                   1
+
+
+
+
+
+
+MKLFS                     User Commands                     MKLFS
+
+
+
+                   first segment should start.
+
+     --bblloocckkSSiizzee _s_i_z_e
+                   _s_i_z_e is block  size  of  the  file  system  in
+                   bytes.  The  block size is the minimum unit of
+                   allocation and should be  a  multiple  of  the
+                   device's sector size.
+
+     --sseeggmmeennttSSiizzee _s_i_z_e
+                   _s_i_z_e is the segment size of the file system in
+                   bytes.  The  segment size should be a multiple
+                   of the block size.
+
+     --nnuummSSeeggmmeennttss _N_u_m_S_e_g_m_e_n_t_s
+                   _N_u_m_S_e_g_m_e_n_t_s is the number of segments  to  use
+                   on  the  file  system. A negative value causes
+                   mklfs to compute the number of segments  based
+                   on the size of the disk.
+
+     --ddeessccBBlloocckkSSiizzee _s_i_z_e
+                   _s_i_z_e is the size in bytes of the  blocks  used
+                   to  store  file  descriptors  in the log. This
+                   number should be a multiple of the block size.
+
+     --ddeessccMMaappBBlloocckkSSiizzee _s_i_z_e
+                   _s_i_z_e is the block size in byte  used  for  the
+                   descriptor  map  data  structure.  This number
+                   should be a multiple of the block size.
+
+     --uussaaggeeAArrrraayyBBlloocckkSSiizzee _s_i_z_e
+                   _s_i_z_e is the block size in byte  used  for  the
+                   segment   usage  array  data  structure.  This
+                   number should be a multiple of the block size.
+
+     --vveerrbboossee      Print the values used for the parameters.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     MMkkllffss will create an empty Sprite LFS filesystem on  a  disk
+     partition.  The filesystem is created to use the entire disk
+     partition and initialized to look like an  Sprite  LFS  file
+     system  containing a root directory with a lost+found direc-
+     tory.  Care should be taken because anything already present
+     on the partition will be overwritten.
+
+     MMkkllffss has a large number of options that control the maximum
+     limits  of  various file system data structures, the charac-
+     teristic of the machine that will the device  for  the  file
+     system,  and  the  disk  layout format the file system.  All
+     options except the deviceName  specifier  are  optional  and
+     default  to reasonable values if not specified.  If the pro-
+     gram is being run on a machine other than the one  that  the
+
+
+
+Sprite v.1.0        Printed:  October 4, 1992                   2
+
+
+
+
+
+
+MKLFS                     User Commands                     MKLFS
+
+
+
+     machine to which the disk will be attached from, the options
+     that describe the machine characteristic  will  need  to  be
+     specified.
+
+KKEEYYWWOORRDDSS
+     filesystem, LFS, sprite
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  October 4, 1992                   3
+
+
+

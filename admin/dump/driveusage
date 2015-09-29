@@ -1,0 +1,15 @@
+#!/sprite/cmds/perl
+
+$file = "statuslog.new";
+
+open(FD, $file) || die("Open of $file failed: $!\n");
+while(<FD>) {
+    ($type, $serial, $tape, $amount, $errors) = split(' ');
+    $name = "$type $serial";
+    $drives{$name} += $amount;
+}
+close(FD);
+while(($name, $amount) = each(%drives)) {
+    $amount /= 1024;
+    printf("%-20s %6.2f GB\n", $name, $amount);
+}

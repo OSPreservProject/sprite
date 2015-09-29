@@ -1,0 +1,52 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  symm:1.1 spur:1.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     89.01.11.09.56.45;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/*
+ * machMon.h --
+ *
+ *     Structures, constants and defines for access to the SPUR monitor.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: machMon.h,v 5.1 88/05/05 17:54:41 nelson Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _MACHMON
+#define _MACHMON
+
+/*
+ * Functions and defines to access the monitor.
+ */
+
+extern  void	Mach_MonPrintf();
+extern	void 	Mach_MonPutChar ();
+extern	int  	Mach_MonMayPut();
+extern	void	Mach_MonAbort();
+extern	void	Mach_MonReboot();
+
+
+#endif _MACHMON
+@

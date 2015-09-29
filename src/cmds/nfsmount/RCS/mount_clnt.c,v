@@ -1,0 +1,181 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     89.10.10.13.17.15;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.11.02.12.43.22;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@This file derived from mount.x
+@
+
+
+1.2
+log
+@Changed void * to VoidPtr to remove lint
+@
+text
+@#include <rpc/rpc.h>
+#include <sys/time.h>
+#include "mount.h"
+
+static struct timeval TIMEOUT = { 25, 0 };
+
+VoidPtr 
+mountproc_null_1(argp, clnt)
+	VoidPtr argp;
+	CLIENT *clnt;
+{
+	static char res;
+
+	bzero(&res, sizeof(res));
+	if (clnt_call(clnt, MOUNTPROC_NULL, xdr_void, argp, xdr_void, &res, TIMEOUT) != RPC_SUCCESS) {
+		return (NULL);
+	}
+	return ((VoidPtr)&res);
+}
+
+
+fhstatus *
+mountproc_mnt_1(argp, clnt)
+	dirpath *argp;
+	CLIENT *clnt;
+{
+	static fhstatus res;
+
+	bzero(&res, sizeof(res));
+	if (clnt_call(clnt, MOUNTPROC_MNT, xdr_dirpath, argp, xdr_fhstatus, &res, TIMEOUT) != RPC_SUCCESS) {
+		return (NULL);
+	}
+	return (&res);
+}
+
+
+mountlist *
+mountproc_dump_1(argp, clnt)
+	VoidPtr argp;
+	CLIENT *clnt;
+{
+	static mountlist res;
+
+	bzero(&res, sizeof(res));
+	if (clnt_call(clnt, MOUNTPROC_DUMP, xdr_void, argp, xdr_mountlist, &res, TIMEOUT) != RPC_SUCCESS) {
+		return (NULL);
+	}
+	return (&res);
+}
+
+
+VoidPtr 
+mountproc_umnt_1(argp, clnt)
+	dirpath *argp;
+	CLIENT *clnt;
+{
+	static char res;
+
+	bzero(&res, sizeof(res));
+	if (clnt_call(clnt, MOUNTPROC_UMNT, xdr_dirpath, argp, xdr_void, &res, TIMEOUT) != RPC_SUCCESS) {
+		return (NULL);
+	}
+	return ((VoidPtr)&res);
+}
+
+
+VoidPtr 
+mountproc_umntall_1(argp, clnt)
+	VoidPtr argp;
+	CLIENT *clnt;
+{
+	static char res;
+
+	bzero(&res, sizeof(res));
+	if (clnt_call(clnt, MOUNTPROC_UMNTALL, xdr_void, argp, xdr_void, &res, TIMEOUT) != RPC_SUCCESS) {
+		return (NULL);
+	}
+	return ((VoidPtr)&res);
+}
+
+
+exports *
+mountproc_export_1(argp, clnt)
+	VoidPtr argp;
+	CLIENT *clnt;
+{
+	static exports res;
+
+	bzero(&res, sizeof(res));
+	if (clnt_call(clnt, MOUNTPROC_EXPORT, xdr_void, argp, xdr_exports, &res, TIMEOUT) != RPC_SUCCESS) {
+		return (NULL);
+	}
+	return (&res);
+}
+
+
+exports *
+mountproc_exportall_1(argp, clnt)
+	VoidPtr argp;
+	CLIENT *clnt;
+{
+	static exports res;
+
+	bzero(&res, sizeof(res));
+	if (clnt_call(clnt, MOUNTPROC_EXPORTALL, xdr_void, argp, xdr_exports, &res, TIMEOUT) != RPC_SUCCESS) {
+		return (NULL);
+	}
+	return (&res);
+}
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d7 1
+a7 1
+void *
+d9 1
+a9 1
+	void *argp;
+d18 1
+a18 1
+	return ((void *)&res);
+d39 1
+a39 1
+	void *argp;
+d52 1
+a52 1
+void *
+d63 1
+a63 1
+	return ((void *)&res);
+d67 1
+a67 1
+void *
+d69 1
+a69 1
+	void *argp;
+d78 1
+a78 1
+	return ((void *)&res);
+d84 1
+a84 1
+	void *argp;
+d99 1
+a99 1
+	void *argp;
+@

@@ -1,0 +1,1699 @@
+head     9.15;
+branch   ;
+access   ;
+symbols  ds3100:9.15 sun3:9.15 sun4nw:9.14 symm:9.14 spur:9.14 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.15
+date     92.07.22.16.55.11;  author jhh;  state Exp;
+branches ;
+next     9.14;
+
+9.14
+date     91.09.10.18.29.13;  author rab;  state Exp;
+branches ;
+next     9.13;
+
+9.13
+date     91.08.09.15.00.10;  author shirriff;  state Exp;
+branches ;
+next     9.12;
+
+9.12
+date     91.07.26.17.04.55;  author shirriff;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     90.12.07.12.53.42;  author mgbaker;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     90.09.15.15.24.58;  author mendel;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     90.09.12.13.36.48;  author shirriff;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     90.09.11.10.45.11;  author shirriff;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.07.30.11.42.24;  author shirriff;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.02.15.09.37.05;  author brent;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     89.11.07.14.45.41;  author shirriff;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     89.10.30.18.00.12;  author shirriff;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     89.10.23.13.43.51;  author douglis;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.22.23.25.47;  author shirriff;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.09.18.17.29.42;  author shirriff;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.22.35;  author douglis;  state Stable;
+branches ;
+next     8.6;
+
+8.6
+date     89.09.08.16.41.27;  author shirriff;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.09.07.14.24.49;  author shirriff;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.07.10.19.46.13;  author nelson;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.04.14.04.35.08;  author rab;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.04.06.11.46.47;  author douglis;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.02.28.12.09.37;  author jhh;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.41.54;  author douglis;  state Stable;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.30.22.15.05;  author nelson;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.27.19.42.50;  author nelson;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.29.15;  author brent;  state Stable;
+branches ;
+next     5.15;
+
+5.15
+date     88.08.05.10.21.55;  author ouster;  state Exp;
+branches ;
+next     5.14;
+
+5.14
+date     88.07.18.22.38.37;  author nelson;  state Exp;
+branches ;
+next     5.13;
+
+5.13
+date     88.07.12.19.52.45;  author nelson;  state Exp;
+branches ;
+next     5.12;
+
+5.12
+date     88.06.20.17.54.13;  author nelson;  state Exp;
+branches ;
+next     5.11;
+
+5.11
+date     88.06.17.15.26.52;  author nelson;  state Exp;
+branches ;
+next     5.10;
+
+5.10
+date     88.05.04.17.24.45;  author nelson;  state Exp;
+branches ;
+next     5.9;
+
+5.9
+date     88.01.08.15.51.52;  author nelson;  state Exp;
+branches ;
+next     5.8;
+
+5.8
+date     88.01.04.13.59.38;  author nelson;  state Exp;
+branches ;
+next     5.7;
+
+5.7
+date     87.12.15.15.19.30;  author nelson;  state Exp;
+branches ;
+next     5.6;
+
+5.6
+date     87.12.12.12.36.27;  author nelson;  state Exp;
+branches ;
+next     5.5;
+
+5.5
+date     87.12.11.13.30.08;  author nelson;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     87.11.18.21.50.47;  author nelson;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     87.10.22.14.48.47;  author nelson;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.10.16.15.39.34;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.10.14.15.33.38;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.52.09;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.15
+log
+@Added vmBootEnd which demarks end of kernel data allocated via
+Vm_BootAlloc. 
+@
+text
+@/*
+ * vm.h --
+ *
+ *     Virtual memory data structures and procedure headers exported by
+ *     the virtual memory module.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/vm/vm.h,v 9.14 91/09/10 18:29:13 rab Exp $ SPRITE (Berkeley)
+ */
+
+
+#ifndef _VM
+#define _VM
+
+#include <list.h>
+
+#ifdef KERNEL
+#include <user/vm.h>
+#if 0
+#include <vmMach.h>
+#endif
+#include <vmStat.h>
+#include <fs.h>
+#include <sync.h>
+#include <proc.h>
+#include <procMigrate.h>
+#include <sprite.h>
+#else
+#if 0
+#include <kernel/vmMach.h>
+#endif
+#include <vmStat.h>
+#include <kernel/fs.h>
+#include <kernel/sync.h>
+#include <kernel/proc.h>
+#include <kernel/procMigrate.h>
+#include <sprite.h>
+#endif
+
+/*
+ * Structure to represent a translated virtual address
+ */
+typedef struct Vm_VirtAddr {
+    struct Vm_Segment	*segPtr;	/* Segment that address falls into.*/
+    int 		page;		/* Virtual page. */
+    int 		offset;		/* Offset in the page. */
+    int			flags;		/* Flags defined below */
+    struct Vm_SegProcList	*sharedPtr;	/* Pointer to shared seg. */
+} Vm_VirtAddr;
+
+/*
+ * Values for flags field.  Lower 8 bits are for our use, next 8 bits are 
+ * machine dependent.
+ *
+ *	VM_HEAP_PT_IN_USE	The heap segment for the current process had
+ *				its page table marked as being in use.
+ *	VM_READONLY_SEG		The segment is read only for this process.
+ */
+#define	VM_HEAP_PT_IN_USE	0x1
+#define VM_READONLY_SEG		0x2
+/*
+ * A page table entry.
+ */
+typedef unsigned int	Vm_PTE;
+
+/*
+ * Flags to set and extract the fields of the PTE.
+ *
+ *	VM_VIRT_RES_BIT		The page is resident in the segment's virtual
+ *				address space.
+ *	VM_PHYS_RES_BIT		The page is physically resident in memory.
+ *      VM_ZERO_FILL_BIT	The page should be filled on demand with zeros.
+ *	VM_ON_SWAP_BIT		The page is on swap space.
+ *	VM_IN_PROGRESS_BIT	A page fault is occuring on this page.
+ *	VM_COR_BIT		The page is copy-on-reference.
+ *	VM_COW_BIT		The page is copy-on-write.
+ *	VM_REFERENCED_BIT	The page has been referenced.
+ *	VM_MODIFIED_BIT		The page has been modified.
+ *      VM_READ_ONLY_PROT	The page is read-only.
+ *	VM_COR_CHECK_BIT	The page is marked read-only after a cor fault
+ *				to determine if the page will in fact get
+ *				modified.
+ *	VM_PAGE_FRAME_FIELD	The virtual page frame that this page is 
+ *				resident in.
+ */
+#define	VM_VIRT_RES_BIT		0x80000000
+#define VM_PHYS_RES_BIT		0x40000000
+#define VM_ZERO_FILL_BIT	0x20000000
+#define VM_ON_SWAP_BIT		0x10000000
+#define VM_IN_PROGRESS_BIT	0x08000000
+#define VM_COR_BIT		0x04000000
+#define VM_COW_BIT		0x02000000
+#define VM_REFERENCED_BIT	0x01000000
+#define VM_MODIFIED_BIT		0x00800000
+#define VM_READ_ONLY_PROT	0x00400000
+#define VM_COR_CHECK_BIT	0x00200000
+#define VM_PREFETCH_BIT		0x00100000
+#define VM_PAGE_FRAME_FIELD	0x000fffff
+
+/*
+ * Macro to get a page frame out of a PTE.
+ */
+#define Vm_GetPageFrame(pte) ((unsigned int) ((pte) & VM_PAGE_FRAME_FIELD))
+
+/*
+ * The page size.
+ */
+extern	int	vm_PageSize;
+
+/*
+ * The end of allocated kernel+data memory.
+ */
+extern	Address	vmMemEnd;
+
+/*
+ * The end of allocated kernel+data after the boot. On the DecStations
+ * vmMemEnd gets boosted to the start of virtual memory, leaving a hole.
+ */
+extern	Address vmBootEnd;
+
+/*
+ * The type of accessibility desired when making a piece of data user
+ * accessible.  VM_READONLY_ACCESS means that the data will only be read and
+ * will not be written.  VM_OVERWRITE_ACCESS means that the entire block of
+ * data will be overwritten.  VM_READWRITE_ACCESS means that the data 
+ * will both be read and written.
+ */
+#define	VM_READONLY_ACCESS		1
+#define	VM_OVERWRITE_ACCESS		2
+#define	VM_READWRITE_ACCESS		3
+
+/*
+ * Structure that contains relevant info from the aout header to allow
+ * reuse of sticky segments.
+ */
+typedef struct {
+    int	heapPages;
+    int	heapPageOffset;
+    int	heapFileOffset;
+    int	bssFirstPage;
+    int	bssLastPage;
+    int	entry;
+    int flags;
+    int heapExcess;
+} Vm_ExecInfo;
+
+/*
+ * The segment table structure.  Details about the segment table and
+ * some of the fields in here are defined in vmInt.h.
+ *
+ * NOTE: Process migration requires that the five fields offset, fileAddr,
+ *       type, numPages and ptSize be contiguous.
+ */
+typedef struct Vm_Segment {
+    List_Links		links;		/* Links used to put the segment
+					 * table entry in list of free segments,
+					 * list of inactive segments or list
+					 * of copy-on-write segments. */
+    int			segNum;		/* The number of this segment. */
+    int 		refCount;	/* Number of processes using this 
+					 * segment */
+    Sync_Condition	condition;	/* Condition to wait on for this
+					 * segment. */
+    Fs_Stream		*filePtr;	/* Pointer to the file that pages are
+					 * being demanded loaded from. */
+				        /* Name of object file for code 
+					 * segments. */
+    char		objFileName[VM_OBJ_FILE_NAME_LENGTH];
+    Fs_Stream		*swapFilePtr;	/* Structure for an opened swap file.*/
+    char		*swapFileName;  /* The filename associated with the
+					 * swap file. */
+    int			offset;		/* Explained in vmInt.h. */
+    int			fileAddr;	/* The address in the object file where
+					 * data or code for this segment 
+					 * begins. */
+    int           	type;		/* CODE, STACK, HEAP, or SYSTEM */
+    int			numPages;	/* Explained in vmInt.h. */
+    int			ptSize;		/* Number of pages in the page table */
+    int			resPages;	/* Number of pages in physical memory
+					 * for this segment. */
+    Vm_PTE		*ptPtr;		/* Pointer to the page table for this 
+					 * segment */
+    struct VmMach_SegData *machPtr;	/* Pointer to machine dependent data */
+    int			flags;		/* Flags to give information about the
+					 * segment table entry. */
+    List_Links		procListHdr;	/* Header node for list of processes
+					 * sharing this segment. */
+    List_Links		*procList;	/* Pointer to list of processes 
+					 * sharing this segment. */
+    int			ptUserCount;	/* The number of current users of this
+					 * page table. */
+    ClientData		fileHandle;	/* Handle for object file. */
+    Vm_ExecInfo		execInfo;	/* Information to allow reuse of 
+					 * sticky segments. */
+    struct VmCOWInfo	*cowInfoPtr;	/* Pointer to copy-on-write list 
+					 * header. */
+    int			numCOWPages;	/* Number of copy-on-write pages that
+					 * this segment references. */
+    int			numCORPages;	/* Number of copy-on-ref pages that
+					 * this segment references. */
+    Address		minAddr;	/* Minimum address that the segment
+					 * can ever have. */
+    Address		maxAddr;	/* Maximium address that the segment
+					 * can ever have. */
+    int			dummy;
+} Vm_Segment;
+
+/*
+ * Pointer to the system segment.
+ */
+extern 	Vm_Segment	*vm_SysSegPtr;
+
+/*
+ * Information stored by each process.
+ */
+typedef struct Vm_ProcInfo {
+    Vm_Segment			*segPtrArray[VM_NUM_SEGMENTS];
+    int				numMakeAcc;	/* Nesting level of make
+						 * make accessibles for this
+						 * process. */
+    struct VmMach_ProcData	*machPtr;	/* Pointer to machine dependent
+						 * data. */
+    int				vmFlags;	/* Flags defined below. */
+    List_Links			*sharedSegs;	/* Process's shared segs. */
+    Address			sharedStart;	/* Start of shared region.  */
+    Address			sharedEnd;	/* End of shared region.  */
+} Vm_ProcInfo;
+
+/*
+ * List of the shared segments.
+ * There is one of these entries for each shared segment.
+ */
+typedef struct Vm_SharedSegTable {
+    List_Links          segList;        /* Links of shared segments. */
+    int                 serverID;       /* Server of associated file. */
+    int                 domain;         /* Domain of associated file. */
+    int                 fileNumber;     /* File number of associated file. */
+    struct Vm_Segment   *segPtr;        /* Shared segment. */
+    int                 refCount;       /* Number of references to segment.
+*/
+} Vm_SharedSegTable;
+
+/*
+ * Shared segments associated with a process.
+ * There is one of these entries for each processor-segment mapping.
+ */
+typedef struct Vm_SegProcList {
+    List_Links          segList;        /* Links of shared segments. */
+    int                 fd;             /* File descriptor of the mapping. */
+    Vm_SharedSegTable   *segTabPtr;     /* Pointer to shared segment table. */
+    Address             addr;           /* Start address of segment. */
+    int			offset;		/* Page table offset (see vmInt.h). */
+    int			fileAddr;	/* Offset into the file. */
+    Address             mappedStart;    /* Start of mapped part. */
+    Address             mappedEnd;      /* End of mapped part. */
+    Fs_Stream           *stream;        /* Stream of mapping. */
+    int                 prot;           /* Protections of segment. */
+} Vm_SegProcList;
+
+/*
+ * Values for the vmFlags field.
+ *
+ * VM_COPY_IN_PROGRESS          Data is being copied from/to this process
+ *                              to/from the kernel's VAS.
+ */
+#define VM_COPY_IN_PROGRESS             0x01
+
+/*
+ * Maximum number of pages that a user process can wire down with the
+ * Vm_PinUserMem call.
+ */
+#define	VM_MAX_USER_MAP_PAGES	4
+
+/*
+ * Copy-on-write level.
+ */
+extern	Boolean	vm_CanCOW;
+
+/*
+ * Maximum number of pageout processes.  This information is needed in
+ * order to configure the correct number of Proc_ServerProcs
+ */
+#define VM_MAX_PAGE_OUT_PROCS	3
+
+/*
+ * The initialization procedures.
+ */
+extern void Vm_BootInit _ARGS_((void));
+extern void Vm_Init _ARGS_((void));
+
+/*
+ * Procedure for segments
+ */
+extern void Vm_SegmentIncRef _ARGS_((Vm_Segment *segPtr, Proc_ControlBlock *procPtr));
+extern Vm_Segment *Vm_FindCode _ARGS_((Fs_Stream *filePtr, Proc_ControlBlock *procPtr, Vm_ExecInfo **execInfoPtrPtr, Boolean *usedFilePtr));
+extern void Vm_InitCode _ARGS_((Fs_Stream *filePtr, register Vm_Segment *segPtr, Vm_ExecInfo *execInfoPtr));
+extern void Vm_FlushCode _ARGS_((Proc_ControlBlock *procPtr, Address addr, int numBytes));
+extern Vm_Segment *Vm_SegmentNew _ARGS_((int type, Fs_Stream *filePtr, int fileAddr, int numPages, int offset, Proc_ControlBlock *procPtr));
+extern ReturnStatus Vm_SegmentDup _ARGS_((register Vm_Segment *srcSegPtr, Proc_ControlBlock *procPtr, Vm_Segment **destSegPtrPtr));
+extern void Vm_SegmentDelete _ARGS_((register Vm_Segment *segPtr, Proc_ControlBlock *procPtr));
+extern void Vm_ChangeCodeProt _ARGS_((Proc_ControlBlock *procPtr, Address startAddr, int numBytes, Boolean makeWriteable));
+extern ReturnStatus Vm_DeleteFromSeg _ARGS_((Vm_Segment *segPtr, int firstPage, int lastPage));
+
+/*
+ * Procedures for pages.
+ */
+extern ReturnStatus Vm_PageIn _ARGS_((Address virtAddr, Boolean protFault));
+extern void Vm_Clock _ARGS_((ClientData data, Proc_CallInfo *callInfoPtr));
+extern int Vm_GetPageSize _ARGS_((void));
+extern ReturnStatus Vm_TouchPages _ARGS_ ((int firstPage, int numPages));
+ENTRY int Vm_GetRefTime _ARGS_ ((void));
+
+/*
+ * Procedures for page tables.
+ */
+extern void Vm_ValidatePages _ARGS_((Vm_Segment *segPtr, int firstPage, int lastPage, Boolean zeroFill, Boolean clobber));
+
+/*
+ * Procedure to allocate bytes of memory
+ */
+extern Address Vm_BootAlloc _ARGS_((int numBytes));
+extern Address Vm_RawAlloc _ARGS_((int numBytes));
+
+/*
+ * Procedures for process migration.
+ */
+extern ReturnStatus Vm_InitiateMigration _ARGS_((Proc_ControlBlock *procPtr, int hostID, Proc_EncapInfo *infoPtr));
+extern ReturnStatus Vm_EncapState _ARGS_((register Proc_ControlBlock *procPtr, int hostID, Proc_EncapInfo *infoPtr, Address bufferPtr));
+extern ReturnStatus Vm_DeencapState _ARGS_((register Proc_ControlBlock *procPtr, Proc_EncapInfo *infoPtr, Address buffer));
+extern ReturnStatus Vm_FinishMigration _ARGS_((register Proc_ControlBlock *procPtr, int hostID, Proc_EncapInfo *infoPtr, Address bufferPtr, int failure));
+extern ReturnStatus Vm_EncapSegInfo _ARGS_((int segNum,
+	Vm_SegmentInfo *infoPtr));
+
+/*
+ * Procedure for the file system.
+ */
+extern int Vm_MapBlock _ARGS_((Address addr));
+extern int Vm_UnmapBlock _ARGS_((Address addr, Boolean retOnePage, unsigned int *pageNumPtr));
+extern void Vm_FileChanged _ARGS_((Vm_Segment **segPtrPtr));
+extern void Vm_FsCacheSize _ARGS_((Address *startAddrPtr, Address *endAddrPtr));
+
+/*
+ * System calls.
+ */
+extern ReturnStatus Vm_PageSize _ARGS_((int *pageSizePtr));
+extern ReturnStatus Vm_CreateVA _ARGS_((Address address, int size));
+extern ReturnStatus Vm_DestroyVA _ARGS_((Address address, int size));
+extern ReturnStatus Vm_Cmd _ARGS_((int command, int arg));
+extern ReturnStatus Vm_GetSegInfo _ARGS_((Proc_PCBInfo *infoPtr,
+	Vm_SegmentID segID, int infoSize, Address segBufPtr));
+
+/*
+ * Procedures to get to user addresses.
+ */
+extern ReturnStatus Vm_CopyIn _ARGS_((register int numBytes,
+	Address sourcePtr, Address destPtr));
+extern ReturnStatus Vm_CopyOut _ARGS_((register int numBytes,
+	Address sourcePtr, Address destPtr));
+extern ReturnStatus Vm_CopyInProc _ARGS_((int numBytes,
+	register Proc_ControlBlock *fromProcPtr, Address fromAddr,
+	Address toAddr, Boolean toKernel));
+extern ReturnStatus Vm_CopyOutProc _ARGS_((int numBytes, Address fromAddr,
+	Boolean fromKernel, register Proc_ControlBlock *toProcPtr,
+	Address toAddr));
+extern ReturnStatus Vm_StringNCopy _ARGS_((int numBytes,
+	Address sourcePtr, Address destPtr, int *bytesCopiedPtr));
+extern void Vm_MakeAccessible _ARGS_((int accessType, int numBytes,
+	Address startAddr, register int *retBytesPtr,
+	register Address *retAddrPtr));
+extern void Vm_MakeUnaccessible _ARGS_((Address addr, int numBytes));
+
+/* 
+ * Procedures for recovery.
+ */
+extern void Vm_OpenSwapDirectory _ARGS_((ClientData data,
+	Proc_CallInfo *callInfoPtr));
+extern void Vm_Recovery _ARGS_((void));
+
+/*
+ * Miscellaneous procedures.
+ */
+extern Address Vm_GetKernelStack _ARGS_((int invalidPage));
+extern void Vm_FreeKernelStack _ARGS_((Address stackBase));
+extern void Vm_ProcInit _ARGS_((Proc_ControlBlock *procPtr));
+extern ReturnStatus Vm_PinUserMem _ARGS_((int mapType, int numBytes,
+	register Address addr));
+extern void Vm_UnpinUserMem _ARGS_((int numBytes, Address addr));
+extern void Vm_ReservePage _ARGS_((unsigned int pfNum));
+extern Boolean VmMach_VirtAddrParse _ARGS_((Proc_ControlBlock *procPtr,
+	Address virtAddr, register Vm_VirtAddr *transVirtAddrPtr));
+
+/*
+ * Routines to provide access to internal virtual memory stuff for the machine
+ * dependent code.
+ */
+extern unsigned int Vm_KernPageAllocate _ARGS_((void));
+extern void Vm_KernPageFree _ARGS_((unsigned int pfNum));
+extern unsigned int Vm_GetKernPageFrame _ARGS_((int pageFrame));
+
+/*
+ * Shared memory routines.
+ */
+extern ReturnStatus Vm_Mmap _ARGS_((Address startAddr, int length, int prot,
+	int share, int streamID, int fileAddr, Address *mappedAddr));
+extern ReturnStatus Vm_Munmap _ARGS_((Address startAddr, int length,
+	int noError));
+extern ReturnStatus Vm_Msync _ARGS_((Address startAddr, int length));
+extern ReturnStatus Vm_Mlock _ARGS_((Address startAddr, int length));
+extern ReturnStatus Vm_Munlock _ARGS_((Address startAddr, int length));
+extern ReturnStatus Vm_Mincore _ARGS_((Address startAddr, int length,
+	char *retVec));
+extern ReturnStatus Vm_Mprotect _ARGS_((Address startAddr, int length,
+	int prot));
+extern void Vm_CleanupSharedFile _ARGS_((Proc_ControlBlock *procPtr,
+	Fs_Stream *streamPtr));
+extern void Vm_CleanupSharedProc _ARGS_((Proc_ControlBlock *procPtr));
+extern void Vm_DeleteSharedSegment _ARGS_((Proc_ControlBlock *procPtr,
+	Vm_SegProcList *segProcPtr));
+extern void Vm_CopySharedMem _ARGS_((Proc_ControlBlock *parentProcPtr,
+	Proc_ControlBlock *childProcPtr));
+
+/*
+ * Machine-dependent routines exported to other modules.
+ */
+/*
+ * Device mapping.
+ */
+extern Address VmMach_DMAAlloc _ARGS_((int numBytes, Address srcAddr));
+extern void VmMach_DMAFree _ARGS_((int numBytes, Address mapAddr));
+extern ReturnStatus VmMach_MapKernelIntoUser _ARGS_((unsigned int
+        kernelVirtAddr, int numBytes, unsigned int userVirtAddr,
+        unsigned int *realVirtAddrPtr));
+
+/*
+ * Routines to manage contexts.
+ */
+extern void VmMach_FreeContext _ARGS_((register Proc_ControlBlock *procPtr));
+extern void VmMach_ReinitContext _ARGS_((register Proc_ControlBlock *procPtr));
+extern ClientData VmMach_SetupContext _ARGS_((register Proc_ControlBlock
+        *procPtr));
+
+/*
+ * Initialization
+ */
+extern void VmMach_BootInit _ARGS_((int *pageSizePtr, int *pageShiftPtr,
+        int *pageTableIncPtr, int *kernMemSizePtr, int *numKernPagesPtr,
+        int *maxSegsPtr, int *maxProcessesPtr));
+extern Address VmMach_AllocKernSpace _ARGS_((Address baseAddr));
+extern void VmMach_Init _ARGS_((int firstFreePage));
+
+/*
+ * Segment creation, expansion, and destruction.
+ */
+extern void VmMach_SegInit _ARGS_((struct Vm_Segment *segPtr));
+extern void VmMach_SegExpand _ARGS_((register struct Vm_Segment *segPtr,
+        int firstPage, int lastPage));
+extern void VmMach_SegDelete _ARGS_((register struct Vm_Segment *segPtr));
+
+/*
+ * Process initialization.
+ */
+extern void VmMach_ProcInit _ARGS_((register struct Vm_ProcInfo *vmPtr));
+
+/*
+ * Manipulating protection.
+ */
+extern void VmMach_SetSegProt _ARGS_((register struct Vm_Segment *segPtr,
+        register int firstPage, int lastPage, Boolean makeWriteable));
+extern void VmMach_SetPageProt _ARGS_((register struct Vm_VirtAddr
+        *virtAddrPtr, Vm_PTE softPTE));
+
+/*
+ * Reference and modify bits.
+ */
+extern void VmMach_GetRefModBits _ARGS_((register struct Vm_VirtAddr
+        *virtAddrPtr, unsigned int virtFrameNum, register Boolean *refPtr,
+        register Boolean *modPtr));
+extern void VmMach_ClearRefBit _ARGS_((register struct Vm_VirtAddr
+	*virtAddrPtr, unsigned int virtFrameNum));
+extern void VmMach_ClearModBit _ARGS_((register struct Vm_VirtAddr
+	*virtAddrPtr, unsigned int virtFrameNum));
+extern void VmMach_AllocCheck _ARGS_((register struct Vm_VirtAddr
+	*virtAddrPtr, unsigned int virtFrameNum, register Boolean *refPtr,
+        register Boolean *modPtr));
+
+/*
+ * Page validation and invalidation.
+ */
+extern void VmMach_PageValidate _ARGS_((register struct Vm_VirtAddr
+	*virtAddrPtr, Vm_PTE pte));
+extern void VmMach_PageInvalidate _ARGS_((register struct Vm_VirtAddr
+	*virtAddrPtr, unsigned int virtPage, Boolean segDeletion));
+
+/*
+ * Routine to parse a virtual address.
+ */
+extern Boolean VmMach_VirtAddrParse _ARGS_((Proc_ControlBlock *procPtr,
+        Address virtAddr, register struct Vm_VirtAddr *transVirtAddrPtr));
+
+/*
+ * Routines to copy data to/from user space.
+ */
+extern ReturnStatus VmMach_CopyInProc _ARGS_((int numBytes,
+        Proc_ControlBlock *fromProcPtr, Address fromAddr,
+        struct Vm_VirtAddr *virtAddrPtr, Address toAddr, Boolean toKernel));
+extern ReturnStatus VmMach_CopyOutProc _ARGS_((int numBytes,
+        Address fromAddr, Boolean fromKernel, Proc_ControlBlock *toProcPtr,
+        Address toAddr, struct Vm_VirtAddr *virtAddrPtr));
+
+/*
+ * Pinning and unpinning user memory pages.
+ */
+extern void VmMach_PinUserPages _ARGS_((int mapType, struct Vm_VirtAddr
+        *virtAddrPtr, int lastPage));
+extern void VmMach_UnpinUserPages _ARGS_((struct Vm_VirtAddr *virtAddrPtr,
+        int lastPage));
+/*
+ * Cache flushing.
+ */
+extern void VmMach_FlushPage _ARGS_((struct Vm_VirtAddr *virtAddrPtr,
+        Boolean invalidate));
+extern void VmMach_FlushCode _ARGS_((Proc_ControlBlock *procPtr,
+        struct Vm_VirtAddr *virtAddrPtr, unsigned virtPage, int numBytes));
+extern void VmMach_FlushByteRange _ARGS_((Address virtAddr, int numBytes));
+/*
+ * Migration.
+ */
+extern void VmMach_HandleSegMigration _ARGS_((struct Vm_Segment *segPtr));
+
+extern ReturnStatus VmMach_Cmd _ARGS_((int command, int arg));
+
+/*
+ * Shared memory.
+ */
+extern void VmMach_SharedSegFinish _ARGS_((Proc_ControlBlock *procPtr,
+        Address addr));
+extern void VmMach_SharedProcStart _ARGS_((Proc_ControlBlock *procPtr));
+extern void VmMach_SharedProcFinish _ARGS_((Proc_ControlBlock *procPtr));
+extern void VmMach_CopySharedMem _ARGS_((Proc_ControlBlock *parentProcPtr,
+        Proc_ControlBlock *childProcPtr));
+extern ReturnStatus VmMach_SharedStartAddr _ARGS_((Proc_ControlBlock *procPtr,
+        int size, Address *reqAddr, int fixed));
+
+
+#endif /* _VM */
+@
+
+
+9.14
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vm.h,v 9.13 91/08/09 15:00:10 shirriff Exp Locker: rab $ SPRITE (Berkeley)
+d117 6
+@
+
+
+9.13
+log
+@Changed the routine to allocate shared memory.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vm.h,v 9.12 91/07/26 17:04:55 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+d202 1
+a202 3
+    int			traceTime;	/* The last trace interval that this
+					 * segment was active. */
+
+a397 6
+ * Virtual memory tracing routines and variables.
+ */
+extern	Boolean		vm_Tracing;
+extern void Vm_StoreTraceTime _ARGS_((Timer_Ticks timeStamp));
+
+/*
+a505 5
+
+/*
+ * Tracing.
+ */
+extern void VmMach_Trace _ARGS_((void));
+@
+
+
+9.12
+log
+@Large install for unix compatibility
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vm.h,v 9.11 90/12/07 12:53:42 mgbaker Exp $ SPRITE (Berkeley)
+d552 1
+a552 1
+        int size, Address *reqAddr));
+@
+
+
+9.11
+log
+@prototyping?
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vm.h,v 9.10 90/09/15 15:24:58 mendel Exp Locker: mgbaker $ SPRITE (Berkeley)
+d140 2
+@
+
+
+9.10
+log
+@Changed routine VmMach_StringNCopy prototype to routine Vm_StringNCopy.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vm.h,v 9.9 90/09/12 13:36:48 shirriff Exp Locker: mendel $ SPRITE (Berkeley)
+d444 108
+@
+
+
+9.9
+log
+@Changed includes from quotes to angles.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vm.h,v 9.8 90/09/11 10:45:11 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+d362 1
+a362 1
+extern ReturnStatus VmMach_StringNCopy _ARGS_((register int numBytes,
+@
+
+
+9.8
+log
+@Added function prototyping.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm.ken/RCS/vm.h,v 9.8 90/08/31 15:59:50 shirriff Exp $ SPRITE (Berkeley)
+d18 1
+a18 1
+#include "list.h"
+d21 1
+a21 1
+#include "user/vm.h"
+d23 1
+a23 1
+#include "vmMach.h"
+d25 6
+a30 6
+#include "vmStat.h"
+#include "fs.h"
+#include "sync.h"
+#include "proc.h"
+#include "procMigrate.h"
+#include "sprite.h"
+@
+
+
+9.7
+log
+@Added Vm_Mprotect.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vm.h,v 9.6 90/02/15 09:37:05 brent Exp Locker: shirriff $ SPRITE (Berkeley)
+d14 1
+d22 1
+d24 1
+d28 3
+d32 1
+d34 1
+d38 3
+d46 1
+a46 1
+typedef struct {
+d114 5
+d285 2
+a286 2
+extern	void	Vm_BootInit();
+extern	void	Vm_Init();
+d291 9
+a299 9
+extern	void 	 	Vm_SegmentIncRef();
+extern	Vm_Segment	*Vm_FindCode();
+extern	void		Vm_InitCode();
+extern	void		Vm_FlushCode();
+extern	Vm_Segment  	*Vm_SegmentNew();
+extern	ReturnStatus 	Vm_SegmentDup();
+extern	void		Vm_SegmentDelete();
+extern	void		Vm_ChangeCodeProt();
+extern	ReturnStatus	Vm_DeleteFromSeg();
+d304 5
+a308 4
+extern	ReturnStatus	Vm_PageIn();
+extern	void		Vm_PageOut();
+extern	void		Vm_Clock();
+extern	int		Vm_GetPageSize();
+d313 1
+a313 1
+extern	void		Vm_ValidatePages();
+d318 2
+a319 2
+extern	Address		Vm_BootAlloc();
+extern	Address		Vm_RawAlloc();
+d324 14
+a337 4
+extern	ReturnStatus	Vm_InitiateMigration();
+extern	ReturnStatus	Vm_EncapState();
+extern	ReturnStatus	Vm_DeencapState();
+extern	ReturnStatus	Vm_FinishMigration();
+a339 8
+ * Procedure for the file sytem.
+ */
+extern	int		Vm_MapBlock();
+extern	int		Vm_UnmapBlock();
+extern	void		Vm_FileChanged();
+extern	void		Vm_FsCacheSize();
+
+/*
+d342 6
+a347 5
+extern	ReturnStatus	Vm_PageSize();
+extern	ReturnStatus	Vm_CreateVA();
+extern	ReturnStatus	Vm_DestroyVA();
+extern	ReturnStatus	Vm_Cmd();
+extern	ReturnStatus	Vm_GetSegInfo();
+d352 16
+a367 7
+extern	ReturnStatus	Vm_CopyIn();
+extern	ReturnStatus	Vm_CopyOut();
+extern	ReturnStatus	Vm_CopyInProc();
+extern	ReturnStatus	Vm_CopyOutProc();
+extern	ReturnStatus	Vm_StringNCopy();
+extern	void		Vm_MakeAccessible();
+extern	void		Vm_MakeUnaccessible();
+d372 3
+a374 2
+extern	void		Vm_OpenSwapDirectory();
+extern	void		Vm_Recovery();
+d379 9
+a387 6
+extern	Address		Vm_GetKernelStack();
+extern	void		Vm_FreeKernelStack();
+extern	void		Vm_ProcInit();
+extern	ReturnStatus	Vm_PinUserMem();
+extern	void		Vm_UnpinUserMem();
+extern	void		Vm_ReservePage();
+d393 3
+a395 3
+extern	unsigned int	Vm_KernPageAllocate();
+extern	void		Vm_KernPageFree();
+extern	unsigned int	Vm_GetKernPageFrame();
+d398 1
+a398 1
+ * Virtual memory tracing routines are variables.
+d401 1
+a401 1
+extern	void		Vm_StoreTraceTime();
+d406 38
+a443 10
+extern	ReturnStatus	Vm_Mmap();
+extern	ReturnStatus	Vm_Munmap();
+extern	ReturnStatus	Vm_Msync();
+extern	ReturnStatus	Vm_Mlock();
+extern	ReturnStatus	Vm_Munlock();
+extern	ReturnStatus	Vm_Mincore();
+extern	ReturnStatus	Vm_Mprotect();
+extern	void		Vm_CleanupSharedFile();
+extern	void		Vm_CleanupSharedProc();
+extern	void		Vm_DeleteSharedSegment();
+@
+
+
+9.6
+log
+@Moved VM_MAX_PAGE_OUT_PROCS from vmInt.h to vm.h
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vm.h,v 9.5 89/11/07 14:45:41 shirriff Exp Locker: brent $ SPRITE (Berkeley)
+d379 1
+@
+
+
+9.5
+log
+@Added declarations for Vm_Mmap, unmap, sync, lock. unlock, incore.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vm.h,v 9.4 89/10/30 18:00:12 shirriff Exp $ SPRITE (Berkeley)
+d259 6
+@
+
+
+9.4
+log
+@Changed VmDeleteSharedSegment to Vm_DeleteSharedSegment
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vm.h,v 9.3 89/10/23 13:43:51 douglis Exp Locker: shirriff $ SPRITE (Berkeley)
+d367 6
+@
+
+
+9.3
+log
+@added Vm_FlushCode decl.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vm.h,v 9.2 89/10/22 23:25:47 shirriff Exp Locker: douglis $ SPRITE (Berkeley)
+d369 1
+a369 1
+extern	void		VmDeleteSharedSegment();
+@
+
+
+9.2
+log
+@Added sharedStart, sharedEnd definitions.
+Added procedure declarations.
+@
+text
+@d11 1
+a11 1
+ * $Header: /c/src/kernel/vm.ken/RCS/vm.h,v 1.6 89/10/05 17:36:04 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+d272 1
+@
+
+
+9.1
+log
+@Added fileAddr offset field.
+@
+text
+@d11 1
+a11 1
+ * $Header: /c/src/kernel/vm.ken/RCS/vm.h,v 1.5 89/09/12 17:01:56 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+d206 2
+d362 7
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vm.h,v 8.6 89/09/08 16:41:27 shirriff Exp Locker: douglis $ SPRITE (Berkeley)
+d232 1
+@
+
+
+8.6
+log
+@Moved VM_SHARED definition to /usr/include/vm.h
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vm.h,v 8.5 89/09/07 14:24:49 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+@
+
+
+8.5
+log
+@Changes for shared memory.
+@
+text
+@d11 1
+a11 1
+ * $Header: /c/src/kernel/vm.ken/RCS/vm.h,v 1.4 89/08/15 12:01:25 shirriff Exp $ SPRITE (Berkeley)
+a30 3
+
+/* This should be in /usr/include/vm.h */
+#define VM_SHARED	4
+@
+
+
+8.4
+log
+@Incorporated changes from DECWRL.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vm.h,v 8.3 89/04/14 04:35:08 rab Exp Locker: nelson $ SPRITE (Berkeley)
+d32 3
+d43 1
+d52 1
+d55 1
+d64 1
+a64 1
+ *	VM_VIRT_RES_BIT		The page is resident in the segments virtual
+d189 1
+d208 1
+d210 30
+@
+
+
+8.3
+log
+@*** empty log message ***
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vm.h,v 8.2 89/04/06 11:46:47 douglis Exp Locker: rab $ SPRITE (Berkeley)
+a23 1
+#include "procAOUT.h"
+a28 1
+#include <kernel/procAOUT.h>
+@
+
+
+8.2
+log
+@definitions for new process migration routines.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vm.h,v 8.1 89/02/28 12:09:37 jhh Exp Locker: douglis $ SPRITE (Berkeley)
+d327 1
+a327 1
+#endif _VM
+@
+
+
+8.1
+log
+@New interface for Proc_GetPCBInfo and Vm_GetSegInfo
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vm.h,v 8.0 88/11/11 18:41:54 douglis Stable Locker: jhh $ SPRITE (Berkeley)
+d264 4
+a267 3
+extern	ReturnStatus	Vm_MigrateSegment();
+extern	ReturnStatus	Vm_FreezeSegments();
+extern	void		Vm_MigSegmentDelete();
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/vm.h,v 6.2 88/08/30 22:15:05 nelson Exp Locker: douglis $ SPRITE (Berkeley)
+d20 1
+d28 1
+a28 1
+#include <kernel/vmStat.h>
+a51 1
+
+a52 13
+ * The type of segment.
+ */
+#define VM_SYSTEM	0
+#define VM_CODE		1
+#define VM_HEAP		2
+#define VM_STACK	3
+
+/*
+ * Number of segments
+ */
+#define	VM_NUM_SEGMENTS		4
+
+/*
+a123 6
+
+/*
+ * Length of the object file name that is embedded in each segment table
+ * entry.
+ */
+#define	VM_OBJ_FILE_NAME_LENGTH	50
+@
+
+
+6.2
+log
+@Added headers for page pinning.
+@
+text
+@d11 1
+a11 1
+ * $Header: vm.h,v 6.1 88/08/27 19:42:50 nelson Exp $ SPRITE (Berkeley)
+@
+
+
+6.1
+log
+@Fixed lint errors.
+@
+text
+@d11 1
+a11 1
+ * $Header: vm.h,v 6.0 88/08/11 12:29:15 brent Stable $ SPRITE (Berkeley)
+d259 1
+a259 1
+extern	void		Vm_DeleteFromSeg();
+d328 1
+a328 1
+extern	ReturnStatus	Vm_UnpinUserMem();
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+ * $Header: vm.h,v 5.15 88/08/05 10:21:55 ouster Exp $ SPRITE (Berkeley)
+d329 1
+@
+
+
+5.15
+log
+@Change includes to permit use by new user-level programs.
+@
+text
+@d11 1
+a11 1
+ * $Header: vm.h,v 5.14 88/07/18 22:38:37 nelson Exp $ SPRITE (Berkeley)
+@
+
+
+5.14
+log
+@Name change.
+@
+text
+@d11 1
+a11 1
+ * $Header: vm.h,v 5.13 88/07/12 19:52:45 nelson Exp $ SPRITE (Berkeley)
+d17 3
+a21 1
+#include "list.h"
+d25 7
+@
+
+
+5.13
+log
+@Lint error fixes and more tracing.
+@
+text
+@d11 1
+a11 1
+ * $Header: vm.h,v 5.12 88/06/20 17:54:13 nelson Exp $ SPRITE (Berkeley)
+d225 1
+a225 1
+ * Vm_UserMap call.
+d318 2
+a319 2
+extern	ReturnStatus	Vm_UserMap();
+extern	ReturnStatus	Vm_UserUnmap();
+@
+
+
+5.12
+log
+@Added tracing stuff.
+@
+text
+@d11 1
+a11 1
+ * $Header: vm.h,v 5.11 88/06/17 15:26:52 nelson Exp $ SPRITE (Berkeley)
+d328 6
+@
+
+
+5.11
+log
+@Changed interface to match the new mach module interface.
+@
+text
+@d11 1
+a11 1
+ * $Header: vm.h,v 5.10 88/05/04 17:24:45 nelson Exp $ SPRITE (Berkeley)
+d193 2
+@
+
+
+5.10
+log
+@Changed type that Vm_GetKernelStack returns.
+@
+text
+@d11 1
+a11 1
+ * $Header: vm.h,v 5.9 88/01/08 15:51:52 nelson Exp $ SPRITE (Berkeley)
+d189 4
+d222 6
+d316 2
+@
+
+
+5.9
+log
+@Added prefetch.
+@
+text
+@d11 1
+a11 1
+ * $Header: vm.h,v 5.8 88/01/04 13:59:38 nelson Exp $ SPRITE (Berkeley)
+d303 1
+a303 1
+extern	int		Vm_GetKernelStack();
+@
+
+
+5.8
+log
+@Added ability to measure the number of copy-on-ref pages that eventually
+got modified.
+@
+text
+@d11 1
+a11 1
+ * $Header: vm.h,v 5.7 87/12/15 15:19:30 nelson Exp $ SPRITE (Berkeley)
+d92 1
+@
+
+
+5.7
+log
+@Fixed lint errors.
+@
+text
+@d11 1
+a11 1
+ * $Header: vm.h,v 5.6 87/12/12 12:36:27 nelson Exp $ SPRITE (Berkeley)
+d75 3
+d91 1
+@
+
+
+5.6
+log
+@Final (hopefully) version after redo of VM.
+@
+text
+@d11 1
+a11 1
+ * $Header: vm.h,v 5.5 87/12/11 13:30:08 nelson Exp $ SPRITE (Berkeley)
+d38 2
+a39 2
+ *	VM_HEAP_NOT_EXPANDABLE	The heap segment for the current process has
+ *				been made not expandable.
+d41 1
+a41 1
+#define	VM_HEAP_NOT_EXPANDABLE	0x1
+a111 7
+ * Values for the vm flags in the proc table.
+ *
+ * No flags currently but if there are these must be in the low order two
+ * bytes because machine dependent ones are the high order two bytes.
+ */
+
+/*
+d124 4
+d173 2
+a174 3
+    int			notExpandCount;	/* The number of times that this 
+					 * segment has been prevented from
+					 * expanding. */
+d218 1
+a218 1
+ * The initialization procedure.
+d220 1
+@
+
+
+5.5
+log
+@New VM system where put machine dependent VM stuff into the SUN module.
+@
+text
+@d11 1
+a11 1
+ * $Header: vm.h,v 5.4 87/11/18 21:50:47 nelson Exp $ SPRITE (Berkeley)
+a23 9
+#ifdef SUN3
+#define	VM_DMA_START_ADDR		0xFF00000
+#define	VM_DMA_SIZE			0x0100000
+#else
+#define	VM_DMA_START_ADDR		0xF00000
+#define VM_DMA_SIZE			0x040000
+#endif
+
+/* BEGIN CRAP */
+d25 1
+a25 1
+ * Temporary crap to let dev work for now.
+d28 5
+a32 4
+    Address	baseAddr;	/* Base virtual address to start 
+				   allocating at. */
+    Address	endAddr;	/* Last possible virtual address plus one. */
+} Vm_DevBuffer;
+a33 8
+extern	Address		Vm_MapInDevice();
+extern	void		Vm_DevBufferInit();
+extern	Address		Vm_DevBufferAlloc();
+extern	Address		Vm_DevBufferMap();
+extern	void		Vm_GetDevicePage();
+extern	ReturnStatus	Vm_MapKernelIntoUser();
+/* END CRAP */
+
+d35 5
+a39 1
+ * Structure to represent a translated virtual address
+d41 1
+a41 7
+typedef struct {
+    struct	Vm_Segment	*segPtr;
+    int 			page;
+    int 			offset;
+    int				flags;	/* Flags used after parsing a virtual
+					 * address. */
+} Vm_VirtAddr;
+d91 1
+a91 2
+ * Function to get a page frame out of a PTE and change its type to be
+ * an unsigned int.
+d93 1
+a93 1
+#define VmGetPageFrame(pte) ((unsigned int) ((pte) & VM_PAGE_FRAME_FIELD))
+a100 8
+ * Values for the vm flags in the proc table.
+ *
+ * VM_COPY_IN_PROGRESS          Data is being copied from/to this process
+ *                              to/from the kernel's VAS.
+ */
+#define VM_COPY_IN_PROGRESS             0x01
+
+/*
+d134 2
+a135 2
+ * The segment table structure.  This shouldn't be external but lint
+ * complains like crazy if we try to hide it.  So to make lint happy ...
+d142 3
+a144 3
+					   table entry in list of free segments,
+					   list of inactive segments or list
+					   of copy-on-write segments. */
+d147 1
+a147 1
+					   segment */
+d151 1
+a151 1
+					   being demanded loaded from. */
+d158 1
+a158 1
+    int			offset;		/* Explained above. */
+d160 2
+a161 2
+					   data or code for this segment 
+					   begins. */
+d163 1
+a163 1
+    int			numPages;	/* Explained above. */
+d168 1
+a168 1
+					   segment */
+d171 1
+a171 1
+					   segment table entry. */
+d173 1
+a173 1
+					   sharing this segment. */
+d175 1
+a175 1
+					   sharing this segment. */
+d177 2
+a178 2
+					   segment has been prevented from
+					   expanding. */
+d200 6
+a205 2
+    int				vmFlags;
+    struct VmMach_ProcData	*machPtr;
+d207 8
+@
+
+
+5.4
+log
+@Copy-on-write
+@
+text
+@d11 1
+a11 1
+ * $Header: vm.h,v 5.3 87/10/22 14:48:47 nelson Exp $ SPRITE (Berkeley)
+d24 9
+d34 1
+a34 1
+ * A pte with a zero value.
+d36 5
+a40 1
+Vm_PTE	vm_ZeroPTE;
+d42 8
+d51 11
+d75 53
+d196 1
+a196 1
+    struct VmMachData	*machData;	/* Pointer to machine dependent data */
+d218 1
+a218 1
+ * Virtual memory bit map structure.
+d220 1
+a220 5
+typedef struct {
+    Address	baseAddr;	/* Base virtual address to start 
+				   allocating at. */
+    Address	endAddr;	/* Last possible virtual address plus one. */
+} Vm_DevBuffer;
+d228 1
+a228 1
+    struct VmMachProcInfo	*machPtr;
+d251 1
+d264 1
+a264 1
+extern	void	Vm_InitPageTable();
+d267 1
+a267 1
+ * Procedure to allocate bytes of memory after boot time.
+d269 2
+a270 1
+extern	Address	Vm_RawAlloc();
+d296 11
+d312 15
+@
+
+
+5.3
+log
+@Changed proc table so that it points to VM stuff that is defined here.
+@
+text
+@d11 1
+a11 1
+ * $Header: vm.h,v 5.2 87/10/16 15:39:34 nelson Exp $ SPRITE (Berkeley)
+d22 1
+d78 3
+d84 3
+a86 2
+    					   table entry in list of free segments
+					   or list of inactive segments. */
+d90 2
+d106 1
+a108 1
+    int			ptSize;		/* Number of pages in the page table */
+d124 6
+d144 1
+a144 1
+typedef struct {
+d151 5
+a162 1
+
+d169 1
+a173 1
+
+@
+
+
+5.2
+log
+@More and better stats.
+@
+text
+@d11 1
+a11 1
+ * $Header: vm.h,v 5.1 87/10/14 15:33:38 nelson Exp $ SPRITE (Berkeley)
+a25 1
+
+a30 1
+
+d37 1
+a37 2
+ * All kernel code and data is stored in the system segment which is
+ * the first segment in the segment table.  Hence it has segment id 0.
+d39 1
+a40 2
+#define VM_SYSTEM_SEGMENT       0
+
+a47 1
+
+a77 1
+
+a121 1
+
+d129 9
+a139 1
+
+@
+
+
+5.1
+log
+@Added header for new swap file initialization procedure. 
+@
+text
+@d11 1
+a11 1
+ * $Header: vm.h,v 5.0 87/08/11 10:52:09 sprite Exp $ SPRITE (Berkeley)
+d77 2
+d93 3
+a95 2
+    Time		fileModTime;	/* Time that the load file was last
+					 * modified. */
+d97 2
+d105 2
+a119 2
+    char		*swapFileName;  /* The filename associated with the
+					 * swap file. */
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d11 1
+a11 1
+ * $Header: vm.h,v 4.1 87/05/09 21:55:05 douglis Exp $ SPRITE (Berkeley)
+a158 1
+
+a163 1
+
+a168 1
+
+a175 1
+
+a183 1
+
+d189 6
+@

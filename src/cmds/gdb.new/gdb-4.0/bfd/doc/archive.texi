@@ -1,0 +1,59 @@
+@c ------------------------------START TEXT FROM ../archive.c
+@setfilename archive-info
+@section Archives
+
+Gumby, you promised to write this bit...
+
+Archives are supported in BFD in @code{archive.c}.
+
+An archive is represented internally just like another BFD, with a
+pointer to a chain of contained BFDs. Archives can be created by
+opening BFDs, linking them together and attaching them as children to
+another BFD and then closing the parent BFD. 
+
+
+@findex bfd_get_next_mapent
+@subsubsection @code{bfd_get_next_mapent}
+What this does
+@example
+symindex bfd_get_next_mapent(bfd *, symindex, carsym **);
+@end example
+
+
+@findex bfd_set_archive_head
+@subsubsection @code{bfd_set_archive_head}
+
+Used whilst processing archives. Sets the head of the chain of BFDs
+contained in an archive to @var{new_head}. (see chapter on archives)
+
+@example
+boolean bfd_set_archive_head(bfd *output, bfd *new_head);
+@end example
+
+
+
+@findex bfd_get_elt_at_index
+@subsubsection @code{bfd_get_elt_at_index}
+Return the sub bfd contained within the archive at archive index n.
+
+@example
+bfd * bfd_get_elt_at_index(bfd *, int);
+@end example
+
+
+
+@findex bfd_openr_next_archived_file
+@subsubsection @code{bfd_openr_next_archived_file}
+Initially provided a BFD containing an archive and NULL, opens a BFD
+on the first contained element and returns that. Subsequent calls to
+bfd_openr_next_archived_file should pass the archive and the previous
+return value to return a created BFD to the next contained element.
+NULL is returned when there are no more.
+
+@example
+bfd* bfd_openr_next_archived_file(bfd *archive, bfd *previous);
+@end example
+
+
+
+@c ------------------------------END TEXT FROM ../archive.c

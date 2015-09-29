@@ -1,0 +1,5 @@
+F LIBC.A;1                          	libc.a
+F LIBC_G.A;1                        	libc_g.a
+F LIBC_G.BAD;1                      	libc_g.bad
+F LIBC_P.A;1                        	libc_p.a
+F LLIB_LC.LN;1                      	llib-lc.ln

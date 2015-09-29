@@ -1,0 +1,538 @@
+\documentstyle[epic,eepic,ecltree]{article}
+
+\title{A tree macro}
+
+\author{Hideki ISOZAKI\\NTT Basic Research Labs \& Stanford Univ.}
+
+\date{Nov. 30, 1990/Apr. 3, 1991}
+
+
+\addtolength{\textwidth}{4cm}
+\addtolength{\oddsidemargin}{-2cm}
+\addtolength{\textheight}{4cm}
+\addtolength{\topmargin}{-2cm}
+
+\begin{document}
+
+\maketitle
+
+
+\section{Setup}
+
+Include epic.sty and ecltree.sty\footnote{Electrical Communications Labs}
+in your \verb|\documentstyle|
+option as below.
+\begin{verbatim}
+\documentstyle[epic,ecltree]{article}
+\end{verbatim}
+If your printer driver accepts tpic commands,
+you should specify eepic.sty after epic.sty.
+\begin{verbatim}
+\documentstyle[epic,eepic,ecltree]{article}
+\end{verbatim}
+As eepic.sty redefines some macros defined in epic.sty,
+Do not reverse this order.
+
+\section{bundle environment}
+
+A tree is drawn by {\it bundle} environment.
+The {\it bundle} environment has one argument,
+which specifies the top node label.
+This environment is a picture environment with \verb|\unitlength=1pt|.
+Leaves should be specified by \verb|\chunk| in this environment.
+
+If you write
+\begin{verbatim}
+\begin{bundle}{xxx}
+\chunk{aaa}
+\chunk{bbb}
+\chunk{ccc}
+\end{bundle}
+\end{verbatim}
+you get
+\begin{bundle}{xxx}
+\chunk{aaa}
+\chunk{bbb}
+\chunk{ccc}
+\end{bundle}.
+
+You can nest the {\it bundle} environment.
+
+\noindent\begin{minipage}{0.6\textwidth}
+\begin{verbatim}
+\begin{bundle}{xxx}
+\chunk{aaa}
+\chunk{
+        \begin{bundle}{yyy}
+        \chunk{bbb}
+        \chunk{ddd}
+        \end{bundle}}
+\chunk{ccc}
+\end{bundle}
+\end{verbatim}
+\end{minipage}\begin{minipage}{0.4\textwidth}
+\begin{bundle}{xxx}
+\chunk{aaa}
+\chunk{
+        \begin{bundle}{yyy}
+        \chunk{bbb}
+        \chunk{ddd}
+        \end{bundle}}
+\chunk{ccc}
+\end{bundle}
+\end{minipage}
+
+
+\section{Line attribute}
+
+You can draw not only solid lines but also
+dotted lines and dash lines.
+epic.sty and eepic.sty define several commands for them.
+
+If you want to use
+\begin{verbatim}
+\dashline[65]{3}(x1,y1)(x2,y2)
+\end{verbatim}
+to draw lines, use \verb|\drawwith| command
+before (or in) the bundle environment.
+\begin{verbatim}
+\drawwith{\dashline[65]{3}}
+\end{verbatim}
+
+\drawwith{\dashline[65]{3}}
+Then you get
+\begin{bundle}{xxx}
+\chunk{aaa}
+\chunk{
+        \begin{bundle}{yyy}
+        \chunk{bbb}
+        \chunk{ddd}
+        \end{bundle}}
+\chunk{ccc}
+\end{bundle}.
+
+The argument of \verb|\drawwith| is evaluated
+at \verb|\end{bundle}|. 
+
+\noindent\begin{minipage}{0.6\textwidth}
+\begin{verbatim}
+\begin{bundle}{xxx}
+\chunk{aaa}
+\chunk{
+        \begin{bundle}{yyy}
+        \drawwith{\drawline}
+        \chunk{bbb}
+        \drawwith{\dashline[65]{3}}
+        \chunk{ddd}
+        \end{bundle}}
+\drawwith{\dottedline{3}}
+\chunk{ccc}
+\end{bundle}
+\end{verbatim}
+\end{minipage}\begin{minipage}{0.4\textwidth}
+\begin{bundle}{xxx}
+\chunk{aaa}
+\chunk{
+        \begin{bundle}{yyy}
+        \drawwith{\drawline}
+        \chunk{bbb}
+        \drawwith{\dashline[65]{3}}
+        \chunk{ddd}
+        \end{bundle}}
+\drawwith{\dottedline{3}}
+\chunk{ccc}
+\end{bundle}
+\end{minipage}
+
+You can nest the \verb|\drawwith|. 
+
+\begin{verbatim}
+\drawwith{\drawwith{\drawwith{\dottedline{3}}\drawline}\dashline{3}}
+\end{verbatim}
+\noindent\begin{minipage}{0.6\textwidth}
+\begin{verbatim}
+\begin{bundle}{xxx}
+\chunk{aaa}
+\chunk{
+        \begin{bundle}{yyy}
+        \chunk{bbb}
+        \chunk{ddd}
+        \chunk{eee}
+        \end{bundle}}
+\chunk{ccc}
+\chunk{fff}
+\end{bundle}
+\end{verbatim}
+\end{minipage}\begin{minipage}{0.4\textwidth}
+\drawwith{\drawwith{\drawwith{\dottedline{3}}\drawline}\dashline{3}}
+\begin{bundle}{xxx}
+\chunk{aaa}
+\chunk{
+        \begin{bundle}{yyy}
+        \chunk{bbb}
+        \chunk{ddd}
+        \chunk{eee}
+        \end{bundle}}
+\chunk{ccc}
+\chunk{fff}
+\end{bundle}
+\end{minipage}
+
+Thus the nested \verb|\drawwith| is used in the reverse order.
+
+\section{Edge labels}
+
+You can write edge labels. They should be specified as the optional
+argument of \verb|\chunk|. Note that the width of an edge label
+is neglected. 
+
+\drawwith{\drawline}
+\noindent\begin{minipage}{0.6\textwidth}
+\begin{verbatim}
+\begin{bundle}{xxx}
+\chunk[left]{aaa}
+\chunk{
+        \begin{bundle}{yyy}
+        \chunk{bbb}
+        \chunk{ddd}
+        \end{bundle}}
+\chunk[right]{ccc}
+\end{bundle}
+\end{verbatim}
+\end{minipage}\begin{minipage}{0.4\textwidth}
+\begin{bundle}{xxx}
+\chunk[left]{aaa}
+\chunk{
+        \begin{bundle}{yyy}
+        \chunk{bbb}
+        \chunk{ddd}
+        \end{bundle}}
+\chunk[right]{ccc}
+\end{bundle}
+\end{minipage}
+
+
+
+\section{Spacing}
+
+The {\it bundle} environment
+has three parameters for spacing.
+
+\begin{itemize}
+
+\item \verb|\GapDepth| means minimum height of gaps between
+adjacent nodes.
+
+\item \verb|\GapWidth| means minimum width of gaps between
+adjacent nodes.
+
+\item \verb|\EdgeLabelSep| means height of an edge label
+from the lower node of the edge.
+
+\end{itemize}
+
+You should set these parameters before the {\tt bundle} environment
+if you dislike default values.
+
+
+\noindent\begin{minipage}{0.6\textwidth}
+\begin{verbatim}
+\begin{bundle}{xxx}
+\chunk{aaa}
+\chunk{
+        \setlength{\GapDepth}{5pt}
+        \setlength{\GapWidth}{5pt}
+        \begin{bundle}{yyy}
+        \chunk{bbb}
+        \chunk{ddd}
+        \end{bundle}}
+\chunk{ccc}
+\end{bundle}
+\end{verbatim}
+\end{minipage}\begin{minipage}{0.4\textwidth}
+\begin{bundle}{xxx}
+\chunk{aaa}
+\chunk{
+        \setlength{\GapDepth}{5pt}
+        \setlength{\GapWidth}{5pt}
+        \begin{bundle}{yyy}
+        \chunk{bbb}
+        \chunk{ddd}
+        \end{bundle}}
+\chunk{ccc}
+\end{bundle}
+\end{minipage}
+
+
+\section{Boxes}
+
+If you write
+\begin{verbatim}
+\newcommand{\mchunk}[1]{\chunk{\makebox(30,15){#1}}}
+\newenvironment{mbundle}[1]{\begin{bundle}{\makebox(30,15){#1}}}{\end{bundle}}
+\begin{mbundle}{xxx}
+\mchunk{aaa}
+\chunk{
+        \begin{mbundle}{yyy}
+        \mchunk{bbb}
+        \mchunk{ddd}
+        \end{fbundle}}
+\mchunk{ccc}
+\end{mbundle}
+\end{verbatim}
+you get
+\newcommand{\mchunk}[1]{\chunk{\makebox(30,15){#1}}}
+\newenvironment{mbundle}[1]{\begin{bundle}{\makebox(30,15){#1}}}{\end{bundle}}
+\begin{mbundle}{xxx}
+\mchunk{aaa}
+\chunk{
+        \begin{mbundle}{yyy}
+        \mchunk{bbb}
+        \mchunk{ddd}
+        \end{mbundle}}
+\mchunk{ccc}
+\end{mbundle}
+instead of
+\begin{bundle}{xxx}
+\chunk{aaa}
+\chunk{
+        \begin{bundle}{yyy}
+        \chunk{bbb}
+        \chunk{ddd}
+        \end{bundle}}
+\chunk{ccc}
+\end{bundle}.
+
+\begin{verbatim}
+\newcommand{\fchunk}[1]{\chunk{\framebox(30,15){#1}}}
+\newenvironment{fbundle}[1]{\begin{bundle}{\framebox(30,15){#1}}}{\end{bundle}}
+\end{verbatim}
+\newcommand{\fchunk}[1]{\chunk{\framebox(30,15){#1}}}
+\newenvironment{fbundle}[1]{\begin{bundle}{\framebox(30,15){#1}}}{\end{bundle}}
+\noindent\begin{minipage}{0.6\textwidth}
+\begin{verbatim}
+\begin{fbundle}{xxx}
+\fchunk{aaa}
+\chunk{
+        \begin{fbundle}{yyy}
+        \fchunk{bbb}
+        \fchunk{ddd}
+        \end{fbundle}}
+\fchunk{ccc}
+\end{fbundle}
+\end{verbatim}
+\end{minipage}\begin{minipage}{0.4\textwidth}
+\begin{fbundle}{xxx}
+\fchunk{aaa}
+\chunk{
+        \begin{fbundle}{yyy}
+        \fchunk{bbb}
+        \fchunk{ddd}
+        \end{fbundle}}
+\fchunk{ccc}
+\end{fbundle}
+\end{minipage}
+
+\vspace{1cm}
+
+\noindent\begin{minipage}{0.5\textwidth}
+\begin{verbatim}
+\begin{fbundle}{xxx}
+\fchunk{aaa}
+\chunk{\fbox{
+        \begin{fbundle}{yyy}
+        \fchunk{bbb}
+        \fchunk{ddd}
+        \end{fbundle}}}
+\fchunk{ccc}
+\end{fbundle}
+\end{verbatim}
+\end{minipage}\begin{minipage}{0.5\textwidth}
+\begin{fbundle}{xxx}
+\fchunk{aaa}
+\chunk{\fbox{
+        \begin{fbundle}{yyy}
+        \fchunk{bbb}
+        \fchunk{ddd}
+        \end{fbundle}}}
+\fchunk{ccc}
+\end{fbundle}
+\end{minipage}
+
+
+\section{Crank}
+
+\begin{minipage}{0.6\textwidth}
+\begin{verbatim}
+\drawwith{\crank{\dottedline[$\circ$]{4}}}
+\begin{mbundle}{xxx}
+\mchunk{aaa}
+\chunk{
+        \begin{mbundle}{yyy}
+        \mchunk{bbb}
+        \mchunk{ddd}
+        \end{mbundle}}
+\mchunk{ccc}
+\end{mbundle}
+\end{verbatim}
+\end{minipage}\begin{minipage}{0.4\textwidth}
+\drawwith{\crank{\dottedline[$\circ$]{4}}}
+\begin{mbundle}{xxx}
+\mchunk{aaa}
+\chunk{
+        \begin{mbundle}{yyy}
+        \mchunk{bbb}
+        \mchunk{ddd}
+        \end{mbundle}}
+\mchunk{ccc}
+\end{mbundle}
+\end{minipage}
+
+\vspace{1cm}
+
+\noindent\begin{minipage}{0.6\textwidth}
+\begin{verbatim}
+\drawwith{\crankarrow{\drawline}}
+\begin{fbundle}{xxx}
+\fchunk{\shortstack{aaa\\zzz}}
+\chunk{
+        \begin{fbundle}{yyy}
+        \fchunk{\shortstack{bbb\\mmm}}
+        \fchunk{ddd}
+        \fchunk{eee}
+        \end{fbundle}}
+\fchunk{ccc}
+\end{fbundle}
+\end{verbatim}
+\end{minipage}\begin{minipage}{0.4\textwidth}
+\drawwith{\crankarrow{\drawline}}
+\begin{fbundle}{xxx}
+\fchunk{\shortstack{aaa\\zzz}}
+\chunk{
+        \begin{fbundle}{yyy}
+        \fchunk{\shortstack{bbb\\mmm}}
+        \fchunk{ddd}
+        \fchunk{eee}
+        \end{fbundle}}
+\fchunk{ccc}
+\end{fbundle}
+\end{minipage}
+
+\vspace{1cm}
+\noindent\begin{minipage}{0.6\textwidth}
+\begin{verbatim}
+\drawwith{\crankrevarrow{\dashline[60]{2}}}
+\begin{fbundle}{xxx}
+\fchunk{aaa}
+\chunk{
+        \begin{fbundle}{yyy}
+        \fchunk{bbb}
+        \fchunk{ddd}
+        \fchunk{eee}
+        \end{fbundle}}
+\fchunk{ccc}
+\end{fbundle}
+\end{verbatim}
+\end{minipage}\begin{minipage}{0.4\textwidth}
+\drawwith{\crankrevarrow{\dashline[60]{2}}}
+\begin{fbundle}{xxx}
+\fchunk{aaa}
+\chunk{
+        \begin{fbundle}{yyy}
+        \fchunk{bbb}
+        \fchunk{ddd}
+        \fchunk{eee}
+        \end{fbundle}}
+\fchunk{ccc}
+\end{fbundle}
+\end{minipage}
+
+\section{Compactness}
+
+\begin{minipage}{0.6\textwidth}
+\begin{verbatim}
+\begin{fbundle}{xxx}
+\fchunk{aaa}
+\chunk{\makebox[30pt]{
+        \begin{fbundle}{yyy}
+        \fchunk{bbb}
+        \fchunk{ddd}
+        \fchunk{eee}
+        \end{fbundle}}}
+\fchunk{ccc}
+\end{fbundle}
+\end{verbatim}
+\end{minipage}\begin{minipage}{0.4\textwidth}
+\drawwith{\drawline}
+\begin{fbundle}{xxx}
+\fchunk{aaa}
+\chunk{\makebox[30pt]{
+        \begin{fbundle}{yyy}
+        \fchunk{bbb}
+        \fchunk{ddd}
+        \fchunk{eee}
+        \end{fbundle}}}
+\fchunk{ccc}
+\end{fbundle}
+\end{minipage}
+
+
+
+\section{Extension}
+
+\begin{minipage}{0.6\textwidth}
+\begin{verbatim}
+\drawwith{\dashline[70]{2}}
+\setlength{\GapDepth}{30pt}
+\setlength{\EdgeLabelSep}{7pt}
+\setlength{\GapWidth}{30pt}
+\newcommand{\bul}{\makebox(0,0){$\bullet$}}
+\begin{bundle}{\bul}
+\chunk[1]{\bul}
+\chunk[\ \ \ 2]{
+        \begin{bundle}{\bul}
+        \dottedline{2}(0,0)(-30,30)
+        \chunk[3]{\bul}
+        \rlap{\vector(3,1){90}}
+        \rlap{\vector(-1,0){30}}
+        \rlap{\vector(1,-1){30}}
+        \chunk[4]{\bul}
+        \chunk[5]{
+                \begin{bundle}{\bul}
+                \chunk[6]{\bul}
+                \chunk[7]{\bul}
+                \end{bundle}}
+        \end{bundle}}
+\chunk[8]{\bul}
+\end{bundle}
+\end{verbatim}
+\end{minipage}\begin{minipage}{0.4\textwidth}
+\drawwith{\dashline[70]{2}}
+\setlength{\GapDepth}{30pt}
+\setlength{\EdgeLabelSep}{7pt}
+\setlength{\GapWidth}{30pt}
+\newcommand{\bul}{\makebox(0,0){$\bullet$}}
+\begin{bundle}{\bul}
+\chunk[1]{\bul}
+\chunk[\ \ \ 2]{
+        \begin{bundle}{\bul}
+        \dottedline{2}(0,0)(-30,30)
+        \chunk[3]{\bul}
+        \rlap{\vector(3,1){90}}
+        \rlap{\vector(-1,0){30}}
+        \rlap{\vector(1,-1){30}}
+        \chunk[4]{\bul}
+        \chunk[5]{
+                \begin{bundle}{\bul}
+                \chunk[6]{\bul}
+                \chunk[7]{\bul}
+                \end{bundle}}
+        \end{bundle}}
+\chunk[8]{\bul}
+\end{bundle}
+\end{minipage}
+
+
+
+\end{document}
+

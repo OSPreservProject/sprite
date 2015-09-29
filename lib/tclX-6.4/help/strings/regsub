@@ -1,0 +1,33 @@
+          regsub ?-all? ?-nocase? exp string subSpec varName
+               This command matches the regular expression exp against
+               string using the rules described in REGULAR EXPRESSIONS
+               above.   If there is no match, then the command returns
+               0 and does nothing else.  If there is a match, then the
+               command  returns  1  and  also  copies  string  to  the
+               variable whose name is given by varName.  When  copying
+               string,  the  portion  of  string  that  matched exp is
+               replaced with subSpec.  If subSpec contains a ``&''  or
+               ``\0'',  then  it  is replaced in the substitution with
+               the portion of string that  matched  exp.   If  subSpec
+               contains  a ``\n'', where n is a digit between 1 and 9,
+               then it  is  replaced  in  the  substitution  with  the
+               portion  of  string that matched the n-th parenthesized
+               subexpression of exp.  Additional  backslashes  may  be
+               used  in  subSpec  to prevent special interpretation of
+               ``&'' or ``\0'' or ``\n'' or  backslash.   The  use  of
+               backslashes in subSpec tends to interact badly with the
+               Tcl parser's use  of  backslashes,  so  it's  generally
+               safest  to  enclose  subSpec  in  braces if it includes
+               backslashes.  If the -all argument is  specified,  then
+               all  ranges  in  string  that  match  exp are found and
+               substitution is performed for  each  of  these  ranges;
+               otherwise  only  the  first matching range is found and
+               substituted.  If -all  is  specified,  then  ``&''  and
+               ``\n''  sequences  are  handled  for  each substitution
+               using the information from the corresponding match.  If
+               the  -nocase  argument  is  specified,  then upper-case
+               characters in string are converted to lower-case before
+               matching against exp;  however, substitutions specified
+               by subSpec use the original unconverted form of string.
+               The  -all  and  -nocase  arguments  must  be  specified
+               exactly:  no abbreviations are permitted.

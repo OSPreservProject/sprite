@@ -1,0 +1,1450 @@
+head     1.25;
+branch   ;
+access   ;
+symbols  ds3100:1.25 sun3:1.25 sun4nw:1.25 symm:1.25 spur:1.25;
+locks    ; strict;
+comment  @ * @;
+
+
+1.25
+date     91.05.06.14.54.27;  author kupfer;  state Exp;
+branches ;
+next     1.24;
+
+1.24
+date     91.02.01.16.34.12;  author shirriff;  state Exp;
+branches ;
+next     1.23;
+
+1.23
+date     91.01.08.23.08.47;  author mgbaker;  state Exp;
+branches ;
+next     1.22;
+
+1.22
+date     91.01.08.16.33.58;  author shirriff;  state Exp;
+branches ;
+next     1.21;
+
+1.21
+date     91.01.08.00.19.38;  author mgbaker;  state Exp;
+branches ;
+next     1.20;
+
+1.20
+date     91.01.07.23.34.15;  author mgbaker;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     90.12.18.11.44.15;  author jhh;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     90.12.12.14.17.07;  author jhh;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     90.12.10.11.11.36;  author jhh;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     90.12.09.17.29.06;  author jhh;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     90.12.06.21.45.55;  author jhh;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     90.12.03.17.03.34;  author shirriff;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     90.11.30.17.43.43;  author shirriff;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     90.11.27.23.39.58;  author jhh;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     90.11.26.16.08.14;  author shirriff;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     90.11.26.13.20.19;  author mgbaker;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     90.11.26.13.12.00;  author shirriff;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     90.11.26.12.54.36;  author mgbaker;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     90.11.26.12.33.45;  author mgbaker;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     90.11.25.16.09.18;  author mgbaker;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     90.11.25.15.26.20;  author mgbaker;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.11.24.18.29.35;  author mgbaker;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.11.24.17.17.50;  author mgbaker;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.11.24.16.55.35;  author shirriff;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.11.21.12.04.26;  author shirriff;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.25
+log
+@Track Proc_ControlBlock cleanup.
+@
+text
+@#ifdef SOSP91
+/*
+ * sospRecord.h --
+ *
+ *	Declarations of macros to insert log records for the sosp paper
+ *	measurements.
+ *
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/utils/RCS/sospRecord.h,v 1.24 91/02/01 16:34:12 shirriff Exp Locker: kupfer $ SPRITE (Berkeley)
+ */
+
+#ifndef _SOSP_RECORD
+#define _SOSP_RECORD
+
+
+#ifdef KERNEL
+#include <traceLog.h>
+#include <fs.h>
+
+extern TraceLog_Header *SOSP91TracePtr;
+#endif
+
+/*
+ * Letters to keep track of trace versions.
+ * Version 2: January 9
+ */
+#define VERSION1	'A'
+#define VERSION2	'B'
+#define VERSION3	'C'
+
+#define VERSIONLETTER	VERSION2
+
+/*
+ * Definitions for the types of log records.  These are the events being
+ * traced.
+ */
+#define SOSP_INVALID		0
+#define	SOSP_OPEN		1
+#define	SOSP_DELETE		2
+#define	SOSP_CREATE		3
+#define	SOSP_MKLINK		4
+#define	SOSP_SET_ATTR		5
+#define	SOSP_GET_ATTR		6
+#define	SOSP_LSEEK		7
+#define	SOSP_CLOSE		8
+#define	SOSP_MIGRATE		9
+#define	SOSP_TRUNCATE		10
+#define	SOSP_CONSIST_CHANGE	11
+#define	SOSP_READ		12
+#define	SOSP_LOOKUP		13
+#define	SOSP_CONSIST_ACTION	14
+#define SOSP_PREFIX		15
+#define SOSP_LOOKUP_OP		16
+#define SOSP_DELETE_DESC	17
+
+#define SOSP_NUM_EVENTS		18
+
+#ifdef KERNEL
+/*
+ * The following are macros to call for each type of event to trace.  All
+ * parameters are int's, unless otherwise marked (such as Fs_FileID's).
+ */
+
+/*
+ * Trace an open command.  The parameters are
+ *
+ * currentHostID:	Current client requesting open command
+ * homeHostID:		HostID of process requesting open before migration
+ * fileID		The file ID for the file being opened
+ * streamID		Fs_FileID in the header of stream returned for this open
+ * effID:		Effective user id doing the open
+ * realID:		Real user id doing the open
+ * mode			Mode flags of the open command
+ * numNowReading	Number of clients with file open for reading after open
+ * numNowWriting	Number of clients with file open for writing
+ * create		The create time for the file
+ * fileSize		Size in bytes of the file
+ * modify		The modify time for the file.
+ * type			Whether it's an FS_FILE, FS_DIRECTORY, etc.
+ * consist		Whether a consistency update was performed due to open
+ */
+#define	SOSP_ADD_OPEN_TRACE(currentHostID, homeHostID, fileID, streamID, effID, realID, mode, numNowReading, numNowWriting, create, fileSize, modify, type, consist) \
+{\
+	unsigned int	sospBuffer[21];\
+\
+	sospBuffer[0] = SOSP_OPEN;\
+	sospBuffer[1] = currentHostID;\
+	sospBuffer[2] = homeHostID;\
+	*((Fs_FileID *) &(sospBuffer[3])) = fileID;\
+	*((Fs_FileID *) &(sospBuffer[7])) = streamID;\
+	sospBuffer[11] = effID;\
+	sospBuffer[12] = realID;\
+	sospBuffer[13] = mode;\
+	sospBuffer[14] = numNowReading;\
+	sospBuffer[15] = numNowWriting;\
+	sospBuffer[16] = create;\
+	sospBuffer[17] = fileSize;\
+	sospBuffer[18] = modify;\
+	sospBuffer[19] = type;\
+	sospBuffer[20] = consist;\
+	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
+		(20 * sizeof (int)), SOSP_OPEN);\
+}
+
+/*
+ * Trace a delete operation.  The fields are
+ * 
+ * currentHostID:	Current client requesting delete
+ * homeHostID:		HostID of process requesting delete before migration
+ * fileID		The file ID for the file being deleted
+ * modify		The modify time for the file
+ * create		The create time for the file.
+ * fileSize		Size in bytes of the file
+ */ 
+#define	SOSP_ADD_DELETE_TRACE(currentHostID, homeHostID, fileID, modify, create, fileSize) \
+{\
+	unsigned int	sospBuffer[10];\
+\
+	sospBuffer[0] = SOSP_DELETE;\
+	sospBuffer[1] = currentHostID;\
+	sospBuffer[2] = homeHostID;\
+	*((Fs_FileID *) &(sospBuffer[3])) = fileID;\
+	sospBuffer[7] = modify;\
+	sospBuffer[8] = create;\
+	sospBuffer[9] = fileSize;\
+	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
+		(9 * sizeof (int)), SOSP_DELETE);\
+}
+	
+/*
+ * Trace a create operation.  The fields are
+ * 
+ * currentHostID:	Current client requesting create command
+ * homeHostID:		HostID of process requesting create before migration
+ * fileID		The file ID for the file being created
+ */ 
+#define	SOSP_ADD_CREATE_TRACE(currentHostID, homeHostID, fileID)\
+{\
+	unsigned int	sospBuffer[7];\
+\
+	sospBuffer[0] = SOSP_DELETE;\
+	sospBuffer[1] = currentHostID;\
+	sospBuffer[2] = homeHostID;\
+	*((Fs_FileID *) &(sospBuffer[3])) = fileID;\
+	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
+		(6 * sizeof (int)), SOSP_DELETE);\
+}
+
+/*
+ * Trace a mklink operation.  The fields are
+ * 
+ * currentHostID:	Current client requesting mklink command
+ * homeHostID:		HostID of process requesting mklink before migration
+ * fileID		The file ID for the file being mklink'ed
+ */ 
+#define	SOSP_ADD_MKLINK_TRACE(currentHostID, homeHostID, fileID)\
+{\
+	unsigned int	sospBuffer[28];\
+\
+	sospBuffer[0] = SOSP_MKLINK;\
+	sospBuffer[1] = currentHostID;\
+	sospBuffer[2] = homeHostID;\
+	*((Fs_FileID *) &(sospBuffer[3])) = fileID;\
+	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
+		(6 * sizeof (int)), SOSP_MKLINK);\
+}
+
+
+/*
+ * Trace a set attr operation.  The fields are
+ * 
+ * currentHostID:	Current client requesting set attr command
+ * homeHostID:		HostID of process requesting set attr before migration
+ * fileID		The file ID for the file being set attr'ed
+ * userID		The user ID of the person making the request
+ */ 
+#define	SOSP_ADD_SET_ATTR_TRACE(currentHostID, homeHostID, fileID, userID)\
+{\
+	unsigned int	sospBuffer[32];\
+\
+	sospBuffer[0] = SOSP_SET_ATTR;\
+	sospBuffer[1] = currentHostID;\
+	sospBuffer[2] = homeHostID;\
+	*((Fs_FileID *) &(sospBuffer[3])) = fileID;\
+	sospBuffer[7] = userID;\
+	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
+		(7 * sizeof (int)), SOSP_SET_ATTR);\
+}
+
+
+/*
+ * Trace a get attr operation.  The fields are
+ * 
+ * currentHostID:	Current client requesting get attr command
+ * homeHostID:		HostID of process requesting get attr before migration
+ * fileID		The file ID for the file being get attr'ed
+ * userID		The user ID of the person making the request
+ */ 
+#define	SOSP_ADD_GET_ATTR_TRACE(currentHostID, homeHostID, fileID, userID)\
+{\
+	unsigned int	sospBuffer[32];\
+\
+	sospBuffer[0] = SOSP_GET_ATTR;\
+	sospBuffer[1] = currentHostID;\
+	sospBuffer[2] = homeHostID;\
+	*((Fs_FileID *) &(sospBuffer[3])) = fileID;\
+	sospBuffer[7] = userID;\
+	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
+		(7 * sizeof (int)), SOSP_GET_ATTR);\
+}
+
+/*
+ * Trace an lseek operation.  The fields are
+ * 
+ * streamID		Fs_FileID in the header of stream for this operation
+ * oldOffset		Offset of stream before lseek
+ * newOffset		Offset of stream after lseek
+ * flags		The RW flags from the streamPtr->hdr.flags.
+ */ 
+#define	SOSP_ADD_LSEEK_TRACE(streamID, oldOffset, newOffset, flags)\
+{\
+	unsigned int	sospBuffer[8];\
+\
+	sospBuffer[0] = SOSP_LSEEK;\
+	*((Fs_FileID *) &(sospBuffer[1])) = streamID;\
+	sospBuffer[5] = oldOffset;\
+	sospBuffer[6] = newOffset;\
+	sospBuffer[7] = flags;\
+	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
+		(7 * sizeof (int)),SOSP_LSEEK);\
+}
+
+/*
+ * Trace a close operation.  The fields are
+ * 
+ * streamID		Fs_FileID in the header of stream for this operation
+ * currentOffset	Offset of stream
+ * fileSize		Size of file being closed
+ * flags		Stream flags.
+ * rwflags		The RW flags from the streamPtr->hdr.flags.
+ * refCount		Number of references to stream.  Only valid if
+ *			FS_RMT_SHARED is set in the flags.
+ * consist		Whether a consistency update was done due to close
+ */ 
+#define	SOSP_ADD_CLOSE_TRACE(streamID, currentOffset, fileSize, flags, rwflags, refCount, consist) \
+{\
+	unsigned int	sospBuffer[11];\
+\
+	sospBuffer[0] = SOSP_CLOSE;\
+	*((Fs_FileID *) &(sospBuffer[1])) = streamID;\
+	sospBuffer[5] = currentOffset;\
+	sospBuffer[6] = fileSize;\
+	sospBuffer[7] = flags;\
+	sospBuffer[8] = rwflags;\
+	sospBuffer[9] = refCount;\
+	sospBuffer[10] = consist;\
+	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
+		(10 * sizeof (int)),SOSP_CLOSE);\
+}
+
+/*
+ * Trace a migrate operation.  The fields are
+ * 
+ * fromHostID:		Current client requesting migrate command
+ * toHostID:		HostID of machine to which to migrate
+ * streamID		Fs_FileID in the header of stream for this operation
+ * currentOffset	Offset of stream
+ */ 
+#define	SOSP_ADD_MIGRATE_TRACE(fromHostID, toHostID, streamID, currentOffset)\
+{\
+	unsigned int	sospBuffer[8];\
+\
+	sospBuffer[0] = SOSP_MIGRATE;\
+	sospBuffer[1] = fromHostID;\
+	sospBuffer[2] = toHostID;\
+	*((Fs_FileID *) &(sospBuffer[3])) = streamID;\
+	sospBuffer[7] = currentOffset;\
+	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
+	(7 * sizeof (int)),SOSP_MIGRATE);\
+}
+
+/*
+ * Trace a truncate operation.  The fields are
+ * 
+ * streamID		Fs_FileID in the header of stream for this operation
+ * oldLength		Old length of the file
+ * newLength		New length of the file
+ * modify		Modify time of the file before truncation.
+ * create		Create time of the file before truncation.
+ */ 
+#define	SOSP_ADD_TRUNCATE_TRACE(streamID, oldLength, newLength, modify, create) \
+{\
+	unsigned int	sospBuffer[9];\
+\
+	sospBuffer[0] = SOSP_TRUNCATE;\
+	*((Fs_FileID *) &(sospBuffer[1])) = streamID;\
+	sospBuffer[5] = oldLength;\
+	sospBuffer[6] = newLength;\
+	sospBuffer[7] = modify;\
+	sospBuffer[8] = create;\
+	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
+		(8 * sizeof (int)),SOSP_TRUNCATE);\
+}
+
+/*
+ * Trace a consistency change operation.  This trace is only a result
+ * of consistency updates due to a migrate call. The fields are
+ * 
+ * hostID:		ID of host causing the consistency change
+ * fileID		file ID of file causing the fuss
+ * operation		Is change due to opening or closing the reference?
+ *			This uses SOSP_OPEN, etc, defines.
+ * writeOp		Whether the open/etc operation is for writing (TRUE)
+ *			or reading (FALSE).
+ */ 
+#define	SOSP_ADD_CONSIST_CHANGE_TRACE(hostID, fileID, operation, writeOp) \
+{\
+	unsigned int	sospBuffer[8];\
+\
+	sospBuffer[0] = SOSP_CONSIST_CHANGE;\
+	sospBuffer[1] = hostID;\
+	*((Fs_FileID *) &(sospBuffer[2])) = fileID;\
+	sospBuffer[6] = operation;\
+	sospBuffer[7] = writeOp;\
+	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
+		(7 * sizeof (int)),SOSP_CONSIST_CHANGE);\
+}
+
+
+/*
+ * Trace a consistency action operation.  The fields are
+ * 
+ * causingHostID:	ID of host causing the consistency change
+ * affectedHostID:	ID of host affected by consistency change
+ * fileID		fileID of file causing the fuss
+ * action		Whether the action to take on the client is
+ *			FSCONSIST_WRITE_BACK_BLOCKS and/or
+ * 			FSCONSIST_INVALIDATE_BLOCKS and/or
+ *			FSCONSIST_DELETE_FILE, etc.
+ *			These flags must be &'ed out since other flags may
+ *			also be set.
+ */ 
+#define	SOSP_ADD_CONSIST_ACTION_TRACE(causingHostID, affectedHostID, fileID, action) \
+{\
+	unsigned int	sospBuffer[8];\
+\
+	sospBuffer[0] = SOSP_CONSIST_ACTION;\
+	sospBuffer[1] = causingHostID;\
+	sospBuffer[2] = affectedHostID;\
+	*((Fs_FileID *) &(sospBuffer[3])) = fileID;\
+	sospBuffer[7] = action;\
+	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
+		(7 * sizeof (int)),SOSP_CONSIST_ACTION);\
+}
+
+/*
+ * Trace a read operation on a write-shared file.  The fields are
+ * 
+ * hostID:		ID of host causing the consistency change
+ * fileID		ID of file causing the fuss
+ * streamID		Stream ID of file causing the fuss
+ * readIt		Whether the request is to read the file (TRUE) or
+ *			to write the file (FALSE)
+ * offset		Offset in the file at which to start operation
+ * numBytes		Number of bytes to read or write
+ * numNowReading	Number of clients with file open for reading
+ * numNowWriting	Number of clients with file open for writing
+ */ 
+#define	SOSP_ADD_READ_TRACE(hostID, fileID, streamID, readIt, offset, numBytes, numNowReading, numNowWriting)\
+{\
+	unsigned int	sospBuffer[15];\
+\
+	sospBuffer[0] = SOSP_READ;\
+	sospBuffer[1] = hostID;\
+	*((Fs_FileID *) &(sospBuffer[2])) = fileID;\
+	*((Fs_FileID *) &(sospBuffer[6])) = streamID;\
+	sospBuffer[10] = readIt;\
+	sospBuffer[11] = offset;\
+	sospBuffer[12] = numBytes;\
+	sospBuffer[13] = numNowReading;\
+	sospBuffer[14] = numNowWriting;\
+	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
+		(14 * sizeof (int)),SOSP_READ);\
+}
+
+/*
+ * Trace a lookup operation.  The fields are
+ * 
+ * sospBuffer		Our buffer.
+ * hostID:		ID of host.
+ * streamID		Resulting stream ID of file.
+ * status		Status of the lookup.
+ * numIDs		Number of id's we got.
+ * op			The operation we're doing.
+ * clientID2		Another copy of client ID, for consistency checking.
+ * homeHostID		Migration client ID.
+ * op2			Another copy of the op we're doing.
+ * IDs			The ids we looked up (The caller stores these.)
+ */ 
+#define SOSP_LOOKUP_OFFSET 10*sizeof(int)
+#define	SOSP_ADD_LOOKUP(sospBuffer, hostID, streamID, status, numIDs, homeHostID, op)\
+{\
+\
+	sospBuffer[0] = SOSP_LOOKUP;\
+	sospBuffer[1] = hostID;\
+	sospBuffer[2] = homeHostID;\
+	*((Fs_FileID *) &(sospBuffer[3])) = streamID;\
+	sospBuffer[7] = status;\
+	sospBuffer[8] = numIDs;\
+	sospBuffer[9] = op;\
+	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
+		(SOSP_LOOKUP_OFFSET + numIDs*sizeof(Fs_FileID)),SOSP_LOOKUP);\
+}
+
+/*
+ * Trace a prefix operation.  The fields are
+ * 
+ * sospBuffer		Our buffer.
+ * clientID		ID of host.
+ * rpcID		Rpc sequence number.
+ */ 
+#define	SOSP_ADD_PREFIX_TRACE(clientID, rpcID)\
+{\
+	unsigned int	sospBuffer[3];\
+\
+	sospBuffer[0] = SOSP_PREFIX;\
+	sospBuffer[1] = clientID;\
+	sospBuffer[2] = rpcID;\
+	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
+		(2 * sizeof(int)), SOSP_PREFIX);\
+}
+
+#define SOSP_REMEMBERED_CLIENT  (Proc_GetCurrentProc()->rememberedClient)
+#define SOSP_REMEMBERED_MIG  (Proc_GetCurrentProc()->rememberedMig)
+#define SOSP_REMEMBERED_OP  (Proc_GetCurrentProc()->rememberedOp)
+#define SOSP_IN_NAME_LOOKUP  inNameLookup
+#define SOSP_IN_NAME_LOOKUP_FIELD  (Proc_GetCurrentProc()->SOSP_IN_NAME_LOOKUP)
+
+/*
+ * Trace a lookup operation.  Note: this traces the name in
+ * Fsprefix_LookupOperation, while SOSP_LOOKUP traces the fileID's in
+ * FslclLookup.  This trace is used to cross-check the other.
+ *
+ * The fields are:
+ * sospBuffer		Our buffer.
+ * hostID:		ID of host.
+ * op			The operation we're doing.
+ * len			Length of the name.
+ * IDs			The ids we looked up (The caller stores these.)
+ */ 
+#define SOSP_LOOKUP_OP_OFFSET 4*sizeof(int)
+#define	SOSP_ADD_LOOKUP_OP(sospBuffer, hostID, op, len)\
+{\
+\
+	sospBuffer[0] = SOSP_LOOKUP_OP;\
+	sospBuffer[1] = hostID;\
+	sospBuffer[2] = op;\
+	sospBuffer[3] = len;\
+	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
+		SOSP_LOOKUP_OP_OFFSET -sizeof(int) + len, SOSP_LOOKUP_OP);\
+}
+
+/*
+ * Trace a the deletion of a file descriptor. 
+ * 
+ * fileID		file ID of file being deleted.
+ * modify		Modify time for the file.
+ * create		Create time for the file.
+ * size			Size of the file.
+ */ 
+#define	SOSP_ADD_DELETE_DESC_TRACE(fileID, modify, create, size) \
+{\
+	unsigned int	sospBuffer[8];\
+\
+	sospBuffer[0] = SOSP_DELETE_DESC;\
+	*((Fs_FileID *) &(sospBuffer[1])) = fileID;\
+	sospBuffer[5] = modify;\
+	sospBuffer[6] = create;\
+	sospBuffer[7] = size;\
+	TraceLog_Insert(SOSP91TracePtr, (Address) (sospBuffer+1),\
+		(7 * sizeof (int)),SOSP_DELETE_DESC);\
+}
+
+
+#endif /* KERNEL */
+#endif /* _SOSP_RECORD */
+#endif /* SOSP91 */
+@
+
+
+1.24
+log
+@Added client tracing to attributes.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/utils/RCS/sospRecord.h,v 1.23 91/01/08 23:08:47 mgbaker Exp Locker: shirriff $ SPRITE (Berkeley)
+d441 4
+a444 4
+#define SOSP_REMEMBERED_CLIENT  (Proc_GetCurrentProc()->extraField[2])
+#define SOSP_REMEMBERED_MIG  (Proc_GetCurrentProc()->extraField[3])
+#define SOSP_REMEMBERED_OP  (Proc_GetCurrentProc()->extraField[4])
+#define SOSP_IN_NAME_LOOKUP  extraField[6]
+@
+
+
+1.23
+log
+@The decstation can't handle multiple-line macro parameters.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/utils/RCS/sospRecord.h,v 1.22 91/01/08 16:33:58 shirriff Exp Locker: mgbaker $ SPRITE (Berkeley)
+d183 1
+d185 1
+a185 1
+#define	SOSP_ADD_SET_ATTR_TRACE(currentHostID, homeHostID, fileID)\
+d187 1
+a187 1
+	unsigned int	sospBuffer[28];\
+d193 1
+d195 1
+a195 1
+		(6 * sizeof (int)), SOSP_SET_ATTR);\
+d205 1
+d207 1
+a207 1
+#define	SOSP_ADD_GET_ATTR_TRACE(currentHostID, homeHostID, fileID)\
+d209 1
+a209 1
+	unsigned int	sospBuffer[28];\
+d215 1
+d217 1
+a217 1
+		(6 * sizeof (int)), SOSP_GET_ATTR);\
+@
+
+
+1.22
+log
+@Changed trace version to 'B'.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/utils/RCS/sospRecord.h,v 1.21 91/01/08 00:19:38 mgbaker Exp Locker: shirriff $ SPRITE (Berkeley)
+d90 1
+a90 3
+#define	SOSP_ADD_OPEN_TRACE(currentHostID, homeHostID, fileID, streamID, effID,\
+realID, mode, numNowReading, numNowWriting, create, fileSize, modify, type,\
+consist) \
+d249 1
+a249 2
+#define	SOSP_ADD_CLOSE_TRACE(streamID, currentOffset, fileSize, flags, rwflags,\
+refCount, consist) \
+d373 1
+a373 2
+#define	SOSP_ADD_READ_TRACE(hostID, fileID, streamID, readIt, offset, numBytes,\
+numNowReading, numNowWriting)\
+@
+
+
+1.21
+log
+@More sosp changes.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/utils/RCS/sospRecord.h,v 1.20 91/01/07 23:34:15 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d33 1
+d36 2
+d39 1
+a39 1
+#define VERSIONLETTER	VERSION1
+@
+
+
+1.20
+log
+@Mary checking in Ken's changes.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/utils/RCS/sospRecord.h,v 1.19 90/12/18 11:44:15 jhh Exp Locker: shirriff $ SPRITE (Berkeley)
+d84 2
+d87 3
+a89 1
+#define	SOSP_ADD_OPEN_TRACE(currentHostID, homeHostID, fileID, streamID, effID, realID, mode, numNowReading, numNowWriting, create, fileSize, modify, type) \
+d91 1
+a91 1
+	unsigned int	sospBuffer[20];\
+d107 1
+d109 1
+a109 1
+		(19 * sizeof (int)), SOSP_OPEN);\
+d246 1
+d248 2
+a249 1
+#define	SOSP_ADD_CLOSE_TRACE(streamID, currentOffset, fileSize, flags, rwflags, refCount) \
+d251 1
+a251 1
+	unsigned int	sospBuffer[10];\
+d260 1
+d262 1
+a262 1
+		(9 * sizeof (int)),SOSP_CLOSE);\
+d310 2
+a311 1
+ * Trace a consistency change operation.  The fields are
+d315 1
+a315 1
+ * operation		Is change due to an open or a close or what?
+d364 1
+d370 2
+d373 2
+a374 1
+#define	SOSP_ADD_READ_TRACE(hostID, streamID, readIt, offset, numBytes)\
+d376 1
+a376 1
+	unsigned int	sospBuffer[9];\
+d380 7
+a386 4
+	*((Fs_FileID *) &(sospBuffer[2])) = streamID;\
+	sospBuffer[6] = readIt;\
+	sospBuffer[7] = offset;\
+	sospBuffer[8] = numBytes;\
+d388 1
+a388 1
+		(8 * sizeof (int)),SOSP_READ);\
+@
+
+
+1.19
+log
+@added file type to open record
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/utils/RCS/sospRecord.h,v 1.18 90/12/12 14:17:07 jhh Exp $ SPRITE (Berkeley)
+d32 7
+d103 2
+a104 2
+	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
+		(20 * sizeof (int)), SOSP_OPEN);\
+d128 2
+a129 2
+	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
+		(10 * sizeof (int)), SOSP_DELETE);\
+d147 2
+a148 2
+	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
+		(7 * sizeof (int)), SOSP_DELETE);\
+d166 2
+a167 2
+	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
+		(7 * sizeof (int)), SOSP_MKLINK);\
+d186 2
+a187 2
+	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
+		(7 * sizeof (int)), SOSP_SET_ATTR);\
+d206 2
+a207 2
+	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
+		(7 * sizeof (int)), SOSP_GET_ATTR);\
+d227 2
+a228 2
+	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
+		(8 * sizeof (int)),SOSP_LSEEK);\
+d253 2
+a254 2
+	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
+		(10 * sizeof (int)),SOSP_CLOSE);\
+d274 2
+a275 2
+	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
+	(8 * sizeof (int)),SOSP_MIGRATE);\
+d297 2
+a298 2
+	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
+		(9 * sizeof (int)),SOSP_TRUNCATE);\
+d320 2
+a321 2
+	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
+		(8 * sizeof (int)),SOSP_CONSIST_CHANGE);\
+d347 2
+a348 2
+	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
+		(8 * sizeof (int)),SOSP_CONSIST_ACTION);\
+d371 2
+a372 2
+	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
+		(9 * sizeof (int)),SOSP_READ);\
+d418 2
+a419 2
+	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
+		(3 * sizeof(int)), SOSP_PREFIX);\
+d448 2
+a449 2
+	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
+		SOSP_LOOKUP_OP_OFFSET + len, SOSP_LOOKUP_OP);\
+d469 2
+a470 2
+	TraceLog_Insert(SOSP91TracePtr, (Address) sospBuffer,\
+		(8 * sizeof (int)),SOSP_DELETE_DESC);\
+@
+
+
+1.18
+log
+@added new event for tracing deletion of a file
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/utils/RCS/sospRecord.h,v 1.17 90/12/10 11:11:36 jhh Exp $ SPRITE (Berkeley)
+d78 1
+a78 1
+#define	SOSP_ADD_OPEN_TRACE(currentHostID, homeHostID, fileID, streamID, effID, realID, mode, numNowReading, numNowWriting, create, fileSize, modify) \
+d80 1
+a80 1
+	unsigned int	sospBuffer[19];\
+d95 1
+d97 1
+a97 1
+		(19 * sizeof (int)), SOSP_OPEN);\
+@
+
+
+1.17
+log
+@added modify and create times to some records.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/utils/RCS/sospRecord.h,v 1.16 90/12/09 17:29:06 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+d35 1
+d52 1
+d54 2
+d443 22
+@
+
+
+1.16
+log
+@added refcount to close record
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/utils/RCS/sospRecord.h,v 1.15 90/12/06 21:45:55 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+d70 1
+a70 1
+ * fileAge		The create time for the file
+d72 1
+d74 1
+a74 1
+#define	SOSP_ADD_OPEN_TRACE(currentHostID, homeHostID, fileID, streamID, effID, realID, mode, numNowReading, numNowWriting, fileAge, fileSize) \
+d76 1
+a76 1
+	unsigned int	sospBuffer[72];\
+d88 1
+a88 1
+	sospBuffer[16] = fileAge;\
+d90 1
+d92 1
+a92 1
+		(18 * sizeof (int)), SOSP_OPEN);\
+d101 2
+a102 1
+ * fileAge		The create time for the file
+d105 1
+a105 1
+#define	SOSP_ADD_DELETE_TRACE(currentHostID, homeHostID, fileID, fileAge, fileSize) \
+d107 1
+a107 1
+	unsigned int	sospBuffer[36];\
+d113 3
+a115 2
+	sospBuffer[7] = fileAge;\
+	sospBuffer[8] = fileSize;\
+d117 1
+a117 1
+		(9 * sizeof (int)), SOSP_DELETE);\
+d129 1
+a129 1
+	unsigned int	sospBuffer[28];\
+d272 2
+d275 1
+a275 1
+#define	SOSP_ADD_TRUNCATE_TRACE(streamID, oldLength, newLength) \
+d277 1
+a277 1
+	unsigned int	sospBuffer[7];\
+d283 2
+d286 1
+a286 1
+		(7 * sizeof (int)),SOSP_TRUNCATE);\
+@
+
+
+1.15
+log
+@added rw flags to lseek and close records
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/utils/RCS/sospRecord.h,v 1.14 90/12/03 17:03:34 shirriff Exp Locker: jhh $ SPRITE (Berkeley)
+d223 2
+d226 1
+a226 1
+#define	SOSP_ADD_CLOSE_TRACE(streamID, currentOffset, fileSize, flags, rwflags)\
+d228 1
+a228 1
+	unsigned int	sospBuffer[9];\
+d236 1
+d238 1
+a238 1
+		(9 * sizeof (int)),SOSP_CLOSE);\
+@
+
+
+1.14
+log
+@Added IN_NAME_LOOKUP macro to keep track of when we're doing lookup.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/utils/RCS/sospRecord.h,v 1.13 90/11/30 17:43:43 shirriff Exp $ SPRITE (Berkeley)
+d200 1
+d202 1
+a202 1
+#define	SOSP_ADD_LSEEK_TRACE(streamID, oldOffset, newOffset)\
+d204 1
+a204 1
+	unsigned int	sospBuffer[7];\
+d210 1
+d212 1
+a212 1
+		(7 * sizeof (int)),SOSP_LSEEK);\
+d221 2
+d224 1
+a224 1
+#define	SOSP_ADD_CLOSE_TRACE(streamID, currentOffset, fileSize, flags)\
+d226 1
+a226 1
+	unsigned int	sospBuffer[8];\
+d233 1
+d235 1
+a235 1
+		(8 * sizeof (int)),SOSP_CLOSE);\
+@
+
+
+1.13
+log
+@Changed around all the data formats.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/utils/RCS/sospRecord.h,v 1.12 90/11/27 23:39:58 jhh Exp Locker: shirriff $ SPRITE (Berkeley)
+d397 2
+a398 1
+#define SOSP_REMEMBERED_OP2  (Proc_GetCurrentProc()->extraField[5])
+@
+
+
+1.12
+log
+@*** empty log message ***
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/utils/RCS/sospRecord.h,v 1.11 90/11/26 16:08:14 shirriff Exp Locker: jhh $ SPRITE (Berkeley)
+d50 1
+d356 3
+d361 2
+a362 2
+#define SOSP_LOOKUP_OFFSET 9*sizeof(int)
+#define	SOSP_ADD_LOOKUP(sospBuffer, hostID, streamID, status, numIDs, op)\
+d367 5
+a371 4
+	*((Fs_FileID *) &(sospBuffer[2])) = streamID;\
+	sospBuffer[6] = status;\
+	sospBuffer[7] = numIDs;\
+	sospBuffer[8] = op;\
+d392 29
+@
+
+
+1.11
+log
+@Added operation field to LOOKUP record.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/utils/RCS/sospRecord.h,v 1.10 90/11/26 13:20:19 mgbaker Exp Locker: shirriff $ SPRITE (Berkeley)
+d49 1
+d64 2
+a65 1
+ * userID:		User id associated with process doing the open
+d72 1
+a72 1
+#define	SOSP_ADD_OPEN_TRACE(currentHostID, homeHostID, fileID, streamID, userID, mode, numNowReading, numNowWriting, fileAge, fileSize) \
+d74 1
+a74 1
+	unsigned int	sospBuffer[68];\
+d81 7
+a87 6
+	sospBuffer[11] = userID;\
+	sospBuffer[12] = mode;\
+	sospBuffer[13] = numNowReading;\
+	sospBuffer[14] = numNowWriting;\
+	sospBuffer[15] = fileAge;\
+	sospBuffer[16] = fileSize;\
+d89 1
+a89 1
+		(17 * sizeof (int)), SOSP_OPEN);\
+d219 1
+a219 1
+#define	SOSP_ADD_CLOSE_TRACE(streamID, currentOffset, fileSize)\
+d221 1
+a221 1
+	unsigned int	sospBuffer[7];\
+d227 1
+d229 1
+a229 1
+		(7 * sizeof (int)),SOSP_CLOSE);\
+d369 18
+@
+
+
+1.10
+log
+@Fixed names.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/utils/RCS/sospRecord.h,v 1.9 90/11/26 13:12:00 shirriff Exp Locker: mgbaker $ SPRITE (Berkeley)
+d345 1
+d348 1
+d350 1
+a350 1
+ * status		Status of the lookup.
+d353 2
+a354 2
+#define SOSP_LOOKUP_OFFSET 8*sizeof(int)
+#define	SOSP_ADD_LOOKUP(sospBuffer, hostID, streamID, status, numIDs)\
+d362 1
+@
+
+
+1.9
+log
+@Fixed up lookup tracing.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/utils/RCS/sospRecord.h,v 1.8 90/11/26 12:54:36 mgbaker Exp $ SPRITE (Berkeley)
+d65 2
+a66 2
+ * numAlreadyReading	Number of clients with file already open for reading
+ * numAlreadyWriting	Number of clients with file already open for writing
+d70 1
+a70 1
+#define	SOSP_ADD_OPEN_TRACE(currentHostID, homeHostID, fileID, streamID, userID, mode, numAlreadyReading, numAlreadyWriting, fileAge, fileSize) \
+d81 2
+a82 2
+	sospBuffer[13] = numAlreadyReading;\
+	sospBuffer[14] = numAlreadyWriting;\
+@
+
+
+1.8
+log
+@Fixed lookup bug
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/utils/RCS/sospRecord.h,v 1.7 90/11/26 12:33:45 mgbaker Exp $ SPRITE (Berkeley)
+d345 1
+a345 1
+ * hostID:		ID of host causing the consistency change
+d351 2
+a352 2
+#define SOSP_LOOKUP_OFFSET 7*sizeof(int)
+#define	SOSP_ADD_LOOKUP(hostID, streamID, status, numIDs)\
+d361 1
+a361 1
+		(7 * sizeof (int)+ numIDs*sizeof(Fs_FileID)),SOSP_LOOKUP);\
+@
+
+
+1.7
+log
+@Fixed bug.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/utils/RCS/sospRecord.h,v 1.6 90/11/25 16:09:18 mgbaker Exp $ SPRITE (Berkeley)
+d352 1
+a352 1
+#define	SOSP_ADD_LOOKUP(sospBuffer, hostID, streamID, status, numIDs)\
+@
+
+
+1.6
+log
+@More updates
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/utils/RCS/sospRecord.h,v 1.5 90/11/25 15:26:20 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d77 3
+a79 3
+	sospBuffer[3] = userID;\
+	*((Fs_FileID *) &(sospBuffer[4])) = fileID;\
+	*((Fs_FileID *) &(sospBuffer[8])) = streamID;\
+@
+
+
+1.5
+log
+@updates
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/utils/RCS/sospRecord.h,v 1.4 90/11/24 18:29:35 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d253 1
+d256 1
+a256 1
+#define	SOSP_ADD_TRUNCATE_TRACE(streamID, newLength) \
+d258 1
+a258 1
+	unsigned int	sospBuffer[8];\
+d262 2
+a263 1
+	sospBuffer[5] = newLength;\
+d265 1
+a265 1
+		(8 * sizeof (int)),SOSP_TRUNCATE);\
+d322 1
+a322 1
+ * fileID		File ID of file causing the fuss
+d328 1
+a328 1
+#define	SOSP_ADD_READ_TRACE(hostID, fileID, readIt, offset, numBytes)\
+d334 1
+a334 1
+	*((Fs_FileID *) &(sospBuffer[2])) = fileID;\
+@
+
+
+1.4
+log
+@More changes.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/utils/RCS/sospRecord.h,v 1.3 90/11/24 17:17:50 mgbaker Exp $ SPRITE (Berkeley)
+d320 1
+a320 1
+ * streamID		Stream ID of file causing the fuss
+d326 1
+a326 1
+#define	SOSP_ADD_READ_TRACE(hostID, streamID, readIt, offset, numBytes)\
+d332 1
+a332 1
+	*((Fs_FileID *) &(sospBuffer[2])) = streamID;\
+@
+
+
+1.3
+log
+@consistency updates.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/utils/RCS/sospRecord.h,v 1.2 90/11/24 16:55:35 shirriff Exp Locker: mgbaker $ SPRITE (Berkeley)
+d296 4
+a299 3
+ * action		Whether the action to take on the client is flushing
+ *			the cache (FSCONSIST_WRITE_BACK_BLOCKS) and/or
+ * 			invalidating the cache (FSCONSIST_INVALIDATE_BLOCKS)
+@
+
+
+1.2
+log
+@Mary checking this in for Ken.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/utils/RCS/sospRecord.h,v 1.1 90/11/21 12:04:26 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+d35 14
+a48 13
+#define	SOSP_OPEN	1
+#define	SOSP_DELETE	2
+#define	SOSP_CREATE	3
+#define	SOSP_MKLINK	4
+#define	SOSP_SET_ATTR	5
+#define	SOSP_GET_ATTR	6
+#define	SOSP_LSEEK	7
+#define	SOSP_CLOSE	8
+#define	SOSP_MIGRATE	9
+#define	SOSP_TRUNCATE	10
+#define	SOSP_CONSIST	11
+#define	SOSP_READ	12
+#define	SOSP_LOOKUP	13
+d267 1
+a267 1
+ * Trace a consistency operation.  The fields are
+d269 24
+d295 6
+a300 3
+ * streamID		Stream ID of file causing the fuss
+ * flushCache		Whether the action to take on the client is flushing
+			the cache (TRUE) or invalidating the cache (FALSE)
+d302 1
+a302 1
+#define	SOSP_ADD_CONSISTENCY_TRACE(causingHostID, affectedHostID, streamID, flushCache) \
+d306 1
+a306 1
+	sospBuffer[0] = SOSP_CONSISTENCY;\
+d309 2
+a310 2
+	*((Fs_FileID *) &(sospBuffer[3])) = streamID;\
+	sospBuffer[7] = flushCache;\
+d312 1
+a312 1
+		(8 * sizeof (int)),SOSP_CONSISTENCY);\
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.5 90/01/12 12:03:25 douglis Exp $ SPRITE (Berkeley)
+d27 2
+d47 1
+a67 3
+ * fileIDSetPtr		A pointer to Fs_FileIDs for path components of the file,
+ *			arranged one right right after another in memory.
+ * numFileIDs		The number of file IDs in the previous parameter
+d69 1
+a69 3
+#define	SOSP_ADD_OPEN_TRACE(currentHostID, homeHostID, fileID, streamID,\
+	userID, mode, numAlreadyReading, numAlreadyWriting, fileAge,\
+	fileSize, fileIDSetPtr, numFileIDs)\
+d71 1
+a71 1
+	unsigned int	sospBuffer[512];\
+d84 2
+a85 5
+	bcopy((char *) fileIDSetPtr, (char *) &(sospBuffer[17]),\
+		numFileIDs * sizeof (Fs_FileID));\
+	TraceLog_Insert(SOSP91Trace, (ClientData *) sospBuffer,\
+		(17 * sizeof (int)) + (numFileIDs * sizeof (Fs_FileID)),\
+		SOSP_OPEN);\
+a95 3
+ * fileIDSetPtr		A pointer to Fs_FileIDs for path components of the file,
+ *			arranged one right right after another in memory.
+ * numFileIDs		The number of file IDs in the previous parameter
+d97 1
+a97 2
+#define	SOSP_ADD_DELETE_TRACE(currentHostID, homeHostID, fileID,\
+	fileAge, fileSize, fileIDSetPtr, numFileIDs)\
+d99 1
+a99 1
+	unsigned int	sospBuffer[512];\
+d107 2
+a108 5
+	bcopy((char *) fileIDSetPtr, (char *) &(sospBuffer[9]),\
+		numFileIDs * sizeof (Fs_FileID));\
+	TraceLog_Insert(SOSP91Trace, (ClientData *) sospBuffer,\
+		(9 * sizeof (int)) + (numFileIDs * sizeof (Fs_FileID)),\
+		SOSP_DELETE);\
+a116 3
+ * fileIDSetPtr		A pointer to Fs_FileIDs for path components of the file,
+ *			arranged one right right after another in memory.
+ * numFileIDs		The number of file IDs in the previous parameter
+d118 1
+a118 2
+#define	SOSP_ADD_CREATE_TRACE(currentHostID, homeHostID, fileID,\
+	fileIDSetPtr, numFileIDs)\
+d120 1
+a120 1
+	unsigned int	sospBuffer[512];\
+d126 2
+a127 5
+	bcopy((char *) fileIDSetPtr, (char *) &(sospBuffer[7]),\
+		numFileIDs * sizeof (Fs_FileID));\
+	TraceLog_Insert(SOSP91Trace, (ClientData *) sospBuffer,\
+		(7 * sizeof (int)) + (numFileIDs * sizeof (Fs_FileID)),\
+		SOSP_DELETE);\
+a135 3
+ * fileIDSetPtr		A pointer to Fs_FileIDs for path components of the file,
+ *			arranged one right right after another in memory.
+ * numFileIDs		The number of file IDs in the previous parameter
+d137 1
+a137 2
+#define	SOSP_ADD_MKLINK_TRACE(currentHostID, homeHostID, fileID,\
+	fileIDSetPtr, numFileIDs)\
+d139 1
+a139 1
+	unsigned int	sospBuffer[512];\
+d145 2
+a146 5
+	bcopy((char *) fileIDSetPtr, (char *) &(sospBuffer[7]),\
+		numFileIDs * sizeof (Fs_FileID));\
+	TraceLog_Insert(SOSP91Trace, (ClientData *) sospBuffer,\
+		(7 * sizeof (int)) + (numFileIDs * sizeof (Fs_FileID)),\
+		SOSP_MKLINK);\
+a155 3
+ * fileIDSetPtr		A pointer to Fs_FileIDs for path components of the file,
+ *			arranged one right right after another in memory.
+ * numFileIDs		The number of file IDs in the previous parameter
+d157 1
+a157 2
+#define	SOSP_ADD_SET_ATTR_TRACE(currentHostID, homeHostID, fileID,\
+	fileIDSetPtr, numFileIDs)\
+d159 1
+a159 1
+	unsigned int	sospBuffer[512];\
+d165 2
+a166 5
+	bcopy((char *) fileIDSetPtr, (char *) &(sospBuffer[7]),\
+		numFileIDs * sizeof (Fs_FileID));\
+	TraceLog_Insert(SOSP91Trace, (ClientData *) sospBuffer,\
+		(7 * sizeof (int)) + (numFileIDs * sizeof (Fs_FileID)),\
+		SOSP_SET_ATTR);\
+a175 3
+ * fileIDSetPtr		A pointer to Fs_FileIDs for path components of the file,
+ *			arranged one right right after another in memory.
+ * numFileIDs		The number of file IDs in the previous parameter
+d177 1
+a177 2
+#define	SOSP_ADD_GET_ATTR_TRACE(currentHostID, homeHostID, fileID,\
+	fileIDSetPtr, numFileIDs)\
+d179 1
+a179 1
+	unsigned int	sospBuffer[512];\
+d185 2
+a186 5
+	bcopy((char *) fileIDSetPtr, (char *) &(sospBuffer[7]),\
+		numFileIDs * sizeof (Fs_FileID));\
+	TraceLog_Insert(SOSP91Trace, (ClientData *) sospBuffer,\
+		(7 * sizeof (int)) + (numFileIDs * sizeof (Fs_FileID)),\
+		SOSP_GET_ATTR);\
+d204 1
+a204 1
+	TraceLog_Insert(SOSP91Trace, (ClientData *) sospBuffer,\
+d223 1
+a223 1
+	TraceLog_Insert(SOSP91Trace, (ClientData *) sospBuffer,\
+d244 1
+a244 1
+	TraceLog_Insert(SOSP91Trace, (ClientData *) sospBuffer,\
+d254 1
+a254 1
+#define	SOSP_ADD_TRUNCATE_TRACE(streamID, newLength)\
+d261 1
+a261 1
+	TraceLog_Insert(SOSP91Trace, (ClientData *) sospBuffer,\
+d274 1
+a274 2
+#define	SOSP_ADD_CONSISTENCY_TRACE(causingHostID, affectedHostID, streamID,\
+	flushCache)\
+d283 1
+a283 1
+	TraceLog_Insert(SOSP91Trace, (ClientData *) sospBuffer,\
+d307 1
+a307 1
+	TraceLog_Insert(SOSP91Trace, (ClientData *) sospBuffer,\
+d309 22
+@

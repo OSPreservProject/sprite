@@ -1,0 +1,12 @@
+F ASSERT.H;1                        	assert.h
+F COLORBUF.H;1                      	colorbuf.h
+F CTYPE.H;1                         	ctype.h
+F ERRNO.H;1                         	errno.h
+F FCNTL.H;1                         	fcntl.h
+F NETDB.H;1                         	netdb.h
+D NETINET                           	netinet
+F SGTTY.H;1                         	sgtty.h
+F SIGNAL.H;1                        	signal.h
+F STDIO.H;1                         	stdio.h
+D SYS                               	sys
+F TIME.H;1                          	time.h

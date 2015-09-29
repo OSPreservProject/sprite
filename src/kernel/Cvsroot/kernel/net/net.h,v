@@ -1,0 +1,810 @@
+head     9.15;
+branch   ;
+access   ;
+symbols  ds3100:9.15 sun3:9.15 sun4nw:9.10 symm:9.10 spur:9.10 sprited:9.8.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.15
+date     92.06.08.22.49.34;  author jhh;  state Exp;
+branches ;
+next     9.14;
+
+9.14
+date     92.06.03.22.47.46;  author voelker;  state Exp;
+branches ;
+next     9.13;
+
+9.13
+date     92.06.01.14.35.15;  author kupfer;  state Exp;
+branches ;
+next     9.12;
+
+9.12
+date     92.04.24.17.04.16;  author jhh;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     92.04.14.16.56.56;  author jhh;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     91.09.27.17.49.31;  author kupfer;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     91.09.18.22.19.34;  author jhh;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     90.11.14.15.17.11;  author shirriff;  state Exp;
+branches 9.8.1.1;
+next     9.7;
+
+9.7
+date     90.11.05.18.05.42;  author jhh;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.10.19.15.45.38;  author jhh;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.10.02.11.24.04;  author jhh;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.09.12.17.10.14;  author jhh;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.09.11.12.18.08;  author jhh;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.11.16.15.14.41;  author rab;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.30.18.06.51;  author shirriff;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.12.44;  author douglis;  state Stable;
+branches ;
+next     8.4;
+
+8.4
+date     89.08.10.16.29.06;  author mendel;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.06.01.08.47.06;  author mendel;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.05.31.14.06.10;  author rab;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.02.24.13.51.53;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.26.13;  author douglis;  state Stable;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.29.17.50.41;  author brent;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.11.14.56.16;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.19.43;  author brent;  state Stable;
+branches ;
+next     5.5;
+
+5.5
+date     88.07.15.17.32.24;  author mendel;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     88.06.27.10.43.21;  author mendel;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     87.12.15.15.23.33;  author nelson;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.10.04.14.45.51;  author brent;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.09.17.12.02.01;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.45.32;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.8.1.1
+date     91.10.21.21.44.52;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.15
+log
+@Made FDDI buffers uncacheable.
+Got rid of NEW_NET.
+@
+text
+@/*
+ * net.h --
+ *
+ *	This defines the external definitions for the networking software.
+ *
+ * Copyright 1985, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/net/net.h,v 9.14 92/06/03 22:47:46 voelker Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _NET
+#define _NET
+
+#ifdef KERNEL
+#include <sprite.h>
+#include <user/net.h>
+#include <syncTypes.h>
+#include <netTypes.h>
+#include <user/netEther.h>
+#include <user/netInet.h>
+#include <user/netUltra.h>
+
+#ifdef ds5000
+#include <user/netFDDI.h>
+#endif
+
+#include <netRoute.h>
+#else
+#include <sprite.h>
+#include <net.h>
+#include <kernel/syncTypes.h>
+#include <kernel/netTypes.h>
+#include <netEther.h>
+#include <netInet.h>
+#include <netUltra.h>
+#include <kernel/netRoute.h>
+#endif
+
+extern int		net_NetworkHeaderSize[];
+
+extern void Net_Init _ARGS_((void));
+extern void Net_Bin _ARGS_((void));
+extern void Net_Reset _ARGS_((Net_Interface *interPtr));
+extern void Net_Input _ARGS_((Net_Interface *interPtr, Address packetPtr, 
+			int packetLength));
+extern ReturnStatus Net_Output _ARGS_((int spriteID, 
+			Net_ScatterGather *gatherPtr, int gatherLength, 
+			Sync_Semaphore *mutexPtr, Net_Route *routePtr));
+extern ReturnStatus Net_RawOutput _ARGS_((Net_Interface *interPtr, 
+			Address headerPtr, 
+			Net_ScatterGather *gatherPtr, int gatherLength));
+extern void Net_RecvPoll _ARGS_((Net_Interface *interPtr));
+extern ReturnStatus Net_RawOutputSync _ARGS_((Net_Interface *interPtr, 
+			Address headerPtr, Net_ScatterGather *gatherPtr, 
+			int gatherLength));
+extern int Net_Intr _ARGS_((Net_Interface *interPtr));
+extern void Net_GatherCopy _ARGS_((register Net_ScatterGather *scatterGatherPtr,
+			int scatterGatherLength, register Address destAddr));
+extern void Net_SetPacketHandler _ARGS_((Net_Interface *interPtr, 
+			void (*handler)()));
+extern void Net_RemovePacketHandler _ARGS_((Net_Interface *interPtr));
+extern ReturnStatus Net_InstallRouteStub _ARGS_((int size, 
+			Net_UserRoute *userRoutePtr));
+extern ReturnStatus Net_GetRoutes _ARGS_((int firstID, int lastID, 
+			int infoSize, Address bufferPtr, int *buffersUsedPtr));
+
+#ifdef KERNEL
+extern ReturnStatus Net_InstallRoute _ARGS_((int spriteID, 
+			Net_Interface *interPtr, Net_Address *netAddressPtr, 
+			int protocol, char *hostname, char *machType, 
+			int minRpc, int maxRpc,
+			ClientData userData));
+#endif
+extern void Net_DeleteRoute _ARGS_((Net_Route *routePtr));
+extern void Net_SpriteIDToName _ARGS_((int spriteID, int bufferLen, 
+			char *buffer));
+extern void Net_SpriteIDToMachType _ARGS_((int spriteID, int bufferLen, 
+			char *buffer));
+extern void Net_RouteInit _ARGS_((void));
+extern void Net_ReleaseRoute _ARGS_((Net_Route *routePtr));
+extern Net_Route *Net_IDToRoute _ARGS_((int spriteID, int index, Boolean doArp,
+			Sync_Semaphore *mutexPtr, int size));
+extern int Net_AddrToID _ARGS_((Net_Address *addressPtr));
+extern Net_Interface *Net_GetInterface _ARGS_((Net_NetworkType netType, 
+			int number));
+extern Net_Interface *Net_NextInterface _ARGS_((Boolean running, 
+			int *indexPtr));
+extern void Net_HostPrint _ARGS_((int spriteID, char *string));
+extern void Net_ArpInit _ARGS_((void));
+extern ReturnStatus Net_Arp _ARGS_((int spriteID, Sync_Semaphore *mutexPtr));
+extern int  Net_RevArp _ARGS_((Net_Route *routePtr, int protocol, 
+		    Net_Address *netAddressPtr, Sync_Semaphore *mutexPtr));
+extern void Net_HdrDestString _ARGS_((Net_NetworkType netType, int protocol, 
+			Address headerPtr, int bufferLen, char *buffer));
+extern int  Net_HdrToID _ARGS_((Net_NetworkType netType, int protocol,
+			Address headerPtr));
+extern ReturnStatus	Net_IDToRouteOldStub _ARGS_((int spriteID, int size,
+			    Address argPtr));
+extern ReturnStatus	Net_GetStats _ARGS_((Net_NetworkType netType,
+			    Net_Stats *statPtr));
+extern Net_Interface	*Net_GetInterfaceByAddr _ARGS_((
+			    Net_Address *netAddressPtr));
+extern ReturnStatus	Net_DeleteRouteStub _ARGS_((int routeID));
+
+#endif /* _NET */
+@
+
+
+9.14
+log
+@FDDI implementation
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/voelker/net/RCS/net.h,v 1.1 92/05/28 17:58:08 voelker Exp Locker: voelker $ SPRITE (Berkeley)
+a69 1
+#ifdef NEW_NET
+a71 4
+#else
+extern ReturnStatus Net_InstallRouteStub _ARGS_((int size, 
+			Net_RouteInfo *userRoutePtr));
+#endif
+@
+
+
+9.13
+log
+@Net_IDToRouteStub -> Net_IDToRouteOldStub.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/net/net.h,v 9.12 92/04/24 17:04:16 jhh Exp $ SPRITE (Berkeley)
+d30 5
+@
+
+
+9.12
+log
+@*** empty log message ***
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/net/net.h,v 9.11 92/04/14 16:56:56 jhh Exp $ SPRITE (Berkeley)
+d105 1
+a105 1
+extern ReturnStatus	Net_IDToRouteStub _ARGS_((int spriteID, int size,
+@
+
+
+9.11
+log
+@Changed definition of Net_Address and added Net_UserRoute.  
+Added Net_DeleteRoute and Net_GetRoute system calls.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/net/net.h,v 9.10 91/09/27 17:49:31 kupfer Exp $ SPRITE (Berkeley)
+d65 1
+d68 4
+@
+
+
+9.10
+log
+@Remove reference to non-existent <netHppi.h>.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/net/RCS/net.h,v 9.9 91/09/18 22:19:34 jhh Exp Locker: kupfer $ SPRITE (Berkeley)
+d66 4
+a69 1
+			Net_RouteInfo *routeInfoPtr));
+d74 1
+d86 1
+a86 2
+extern int Net_AddrToID _ARGS_((Net_NetworkType netType, int protocol, 
+			Net_Address *addressPtr));
+d104 3
+@
+
+
+9.9
+log
+@added hppi code
+@
+text
+@d16 1
+a16 1
+ * $Header: /scratch1/elm/src/kernel/net.elm/RCS/net.h,v 1.2 91/01/15 19:26:17 elm Exp Locker: elm $ SPRITE (Berkeley)
+a38 1
+#include <netHppi.h>
+@
+
+
+9.8
+log
+@Prototyped a couple missing routines.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/net/RCS/net.h,v 9.7 90/11/05 18:05:42 jhh Exp Locker: shirriff $ SPRITE (Berkeley)
+d39 1
+@
+
+
+9.8.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/net/RCS/net.h,v 9.8 90/11/14 15:17:11 shirriff Exp $ SPRITE (Berkeley)
+@
+
+
+9.7
+log
+@output routines return a status
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/net/RCS/net.h,v 9.6 90/10/19 15:45:38 jhh Exp $ SPRITE (Berkeley)
+d97 4
+@
+
+
+9.6
+log
+@Rewrite to support multiple interfaces and the Ultranet
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/net/RCS/net.h,v 9.5 90/10/02 11:24:04 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+d52 2
+a53 1
+extern void Net_RawOutput _ARGS_((Net_Interface *interPtr, Address headerPtr, 
+d56 1
+a56 1
+extern void Net_RawOutputSync _ARGS_((Net_Interface *interPtr, 
+@
+
+
+9.5
+log
+@fixed problems with #include
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/net/RCS/net.h,v 9.4 90/09/12 17:10:14 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+d27 4
+d36 4
+d42 1
+a42 4
+/*
+ * Forward Declarations.
+ */
+extern	Net_EtherStats	net_EtherStats;
+d44 52
+a95 31
+extern	void	Net_Init();
+extern  void    Net_Bin();
+extern	void	Net_Reset();
+extern	void	Net_Input();
+extern	ReturnStatus	Net_Output();
+extern	void	Net_OutputRawEther();
+extern	void	Net_RecvPoll();
+extern	void	Net_EtherOutputSync();
+extern	int	Net_Intr();
+extern	void	Net_GatherCopy();
+
+extern	ReturnStatus Net_InstallRouteStub();
+extern	ReturnStatus Net_InstallRoute();
+extern	void	Net_SpriteIDToName();
+extern	char *	Net_SpriteIDToMachType();
+extern	void	Net_RouteInit();
+extern	void	Net_NameToAddr();
+extern	void	Net_AddrToName();
+
+extern Net_Route *Net_IDToRoute();
+extern int	 Net_AddrToID();
+
+extern int Net_RouteMTU();
+extern int Net_MaxProtoHdrSize();
+
+extern Net_Route *Net_Arp();
+extern int	Net_RevArp();
+
+extern void	Net_HostPrint();	/* Moved to Sys_HostPrint */
+
+extern void	Net_HdrDestString();
+@
+
+
+9.4
+log
+@fixed include statements
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/net/RCS/net.h,v 9.3 90/09/11 12:18:08 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+d22 1
+d27 6
+@
+
+
+9.3
+log
+@more prototyping stuff
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/net/RCS/net.h,v 9.2 89/11/16 15:14:41 rab Exp $ SPRITE (Berkeley)
+d22 4
+a25 4
+#include "sprite.h"
+#include "user/net.h"
+#include "syncTypes.h"
+#include "netTypes.h"
+@
+
+
+9.2
+log
+@Checked volatiles.
+@
+text
+@d4 1
+a4 1
+ *	This defines the types and constants for the networking software.
+d16 1
+a16 1
+ * $Header: /sprite/src/kernel/net/RCS/net.h,v 9.1 89/10/30 18:06:51 shirriff Exp Locker: rab $ SPRITE (Berkeley)
+a22 2
+#include "netEther.h"
+#include "netRoute.h"
+d24 2
+a25 58
+#include "sync.h"
+
+/*
+ * This define is used by the net module in maintaining routing
+ * information.  It is needed by other modules that maintain state
+ * about the various Sprite hosts.
+ */
+
+#define NET_NUM_SPRITE_HOSTS	200
+
+/*
+ * Scatter/gather vector element.  The network output routines take
+ * an array of these elements as a specifier for the packet.  This
+ * format lets clients of the network module save extra copies because
+ * they can leave data objects where they lie.  The done and mutexPtr
+ * parts are used to wait for the packet to be truely output.  The
+ * mutex is released while the packet is output.
+ */
+
+typedef struct {
+    Address		bufAddr;	/* In - Buffer address */
+    int			length;		/* In - Size of the buffer */
+    Sync_Semaphore	*mutexPtr;	/* Private to net module.
+					 * Used to wait for output. */
+    Boolean		done;		/* Out - set when I/O completes */
+} Net_ScatterGather;
+
+/*
+ * Statistics - the ethernet drivers record the number of occurences
+ *	of various events.
+ */
+typedef struct {
+    int	packetsRecvd;		/* # packets received of any type */
+    int	packetsSent;		/* # packets sent of any type */
+    int	packetsOutput;		/* # packets output of any type */
+    int broadRecvd;		/* # broadcast packets received */
+    int broadSent;		/* # broadcast packets sent */
+    int others;			/* # packets between two other machines */
+    int overrunErrors;		/* # packets received with overrun errors. */
+    int crcErrors;		/* # packets received with CRC errors. */
+    int fcsErrors;		/* # packets received with FCS errors */
+    int frameErrors;		/* # packets received with framing errors */
+    int rangeErrors;		/* # packets received with range errors */
+    int collisions;		/* # of collisions on transmissions */
+    int xmitCollisionDrop;	/* # of packets dropped because of too many
+				   collisions. */
+    int	xmitPacketsDropped;	/* # transmitted packets that are dropped */
+    int	recvPacketsDropped;	/* # transmitted packets that are dropped */
+    int matches;		/* # of address match packets */
+    int recvAvgPacketSize;	/* average size of packets received */
+    int recvAvgLargeSize;	/*  ...  of more than 100 bytes */
+    int recvAvgSmallSize;	/*  ...  of less than 100 bytes */
+    int sentAvgPacketSize;	/* average size of packets sent */
+    int sentAvgLargeSize;	/*  ...  of more than 100 bytes */
+    int sentAvgSmallSize;	/*  ...  of less than 100 bytes */
+    int	bytesSent;		/* Total number of bytes transmitted. */
+    int	bytesReceived;		/* Total number of bytes received. */
+} Net_EtherStats;
+@
+
+
+9.1
+log
+@Lint fixes.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/net/RCS/net.h,v 9.0 89/09/12 15:12:44 douglis Stable Locker: shirriff $ SPRITE (Berkeley)
+d109 2
+a110 2
+Net_Route	*Net_IDToRoute();
+int		 Net_AddrToID();
+a113 1
+
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/net/RCS/net.h,v 8.4 89/08/10 16:29:06 mendel Exp Locker: douglis $ SPRITE (Berkeley)
+d98 1
+a98 1
+extern	void	Net_Intr();
+d120 2
+@
+
+
+8.4
+log
+@Increased the number of sprite hosts to 200.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/net/RCS/net.h,v 8.3 89/06/01 08:47:06 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+@
+
+
+8.3
+log
+@Added export of new net functions Net_RouteMTU() Net_MaxProtoHdrSize().
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/net/RCS/net.h,v 8.1 89/02/24 13:51:53 brent Exp Locker: rab $ SPRITE (Berkeley)
+d34 1
+a34 1
+#define NET_NUM_SPRITE_HOSTS	50
+@
+
+
+8.2
+log
+@*** empty log message ***
+@
+text
+@d111 4
+@
+
+
+8.1
+log
+@Changed the Net_ScatterGather to contain a Sync_Semaphore
+instead of a Sync_Condition
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/net/RCS/net.h,v 8.0 88/11/11 18:26:13 douglis Stable Locker: brent $ SPRITE (Berkeley)
+d91 1
+d117 1
+a117 1
+#endif _NET
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/net/RCS/net.h,v 6.2 88/08/29 17:50:41 brent Exp Locker: douglis $ SPRITE (Berkeley)
+d40 3
+a42 5
+ * they can leave data objects where they lie.  The done and conditionPtr
+ * parts are used by clients that don't otherwise know when it is safe
+ * to release the buffers referenced by the scatter/gather element.  If
+ * conditionPtr is non-NIL then it is notified and done is set to TRUE
+ * after the packet has been transmitted (it may be queued for a bit).
+d48 2
+a49 1
+    Sync_Condition	*conditionPtr;	/* In - Condition to wait on. */
+@
+
+
+6.2
+log
+@Added externs
+@
+text
+@d16 1
+a16 1
+ * $Header: net.h,v 6.1 88/08/11 14:56:16 brent Exp $ SPRITE (Berkeley)
+@
+
+
+6.1
+log
+@Added include of user/net.h to get definitions of Net_HostToNetInt, etc.
+@
+text
+@d16 1
+a16 1
+ * $Header: net.h,v 6.0 88/08/11 12:19:43 brent Stable $ SPRITE (Berkeley)
+d104 1
+d115 1
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+ * $Header: net.h,v 5.5 88/07/15 17:32:24 mendel Exp $ SPRITE (Berkeley)
+d25 1
+@
+
+
+5.5
+log
+@Moved net device code to dev module.
+@
+text
+@d16 1
+a16 1
+ * $Header: net.h,v 5.4 88/06/27 10:43:21 mendel Exp $ SPRITE (Berkeley)
+@
+
+
+5.4
+log
+@Updated Copyright notice.
+@
+text
+@d16 1
+a16 1
+ * $Header: net.h,v 5.3 87/12/15 15:23:33 nelson Exp $ SPRITE (Berkeley)
+a112 6
+extern	ReturnStatus	Net_FsOpen();
+extern	ReturnStatus	Net_FsRead();
+extern	ReturnStatus	Net_FsWrite();
+extern	ReturnStatus	Net_FsIOControl();
+extern	ReturnStatus	Net_FsClose();
+extern	ReturnStatus	Net_FsSelect();
+@
+
+
+5.3
+log
+@Added procedure headers.
+@
+text
+@d6 8
+a13 2
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+d16 1
+a16 1
+ * $Header: net.h,v 5.2 87/10/04 14:45:51 brent Exp $ SPRITE (Berkeley)
+@
+
+
+5.2
+log
+@Fixed externs
+@
+text
+@d10 1
+a10 1
+ * $Header: net.h,v 5.1 87/09/17 12:02:01 nelson Exp $ SPRITE (Berkeley)
+d88 2
+@
+
+
+5.1
+log
+@Added ability to reset 3Com and Intel chips.
+@
+text
+@d10 1
+a10 1
+ * $Header: net.h,v 5.0 87/08/11 10:45:32 sprite Exp $ SPRITE (Berkeley)
+d91 1
+d98 6
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d10 1
+a10 1
+ * $Header: net.h,v 4.8 87/07/30 12:55:23 nelson Exp $ SPRITE (Berkeley)
+d85 1
+@

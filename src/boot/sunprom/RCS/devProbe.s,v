@@ -1,0 +1,142 @@
+head     1.2;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @# @;
+
+
+1.2
+date     86.07.17.09.03.45;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.07.17.08.41.23;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Peek and Poke devices
+@
+
+
+1.2
+log
+@Dev_ names
+@
+text
+@|* devProbe.s -
+|*
+|*      Subroutines to probe for a device.
+|*
+|* Copyright (C) 1985 Regents of the University of California
+|* All rights reserved.
+|*
+
+|*
+|* Temporary BusError handler to protect Dev_Peek and Dev_Poke
+|*
+
+BusErr:
+	moveq	#-1,d0		| Need to return -1.
+	movl	a1,sp		| Restore the stack.
+	movl	d1,8:w		| Restore bus error handler
+	rts
+
+|*
+|* ----------------------------------------------------------------------------
+|*
+|* Dev_Peek --
+|*
+|*      Read a short from the device.  Return -1 if didn't work (ie, the
+|*	address caused a bus error) otherwise return the short that was read.
+|*
+|*      int Dev_Peek(addr)
+|*          Address	addr;
+|*
+|* Results:
+|*     The contents of *addr.
+|*
+|* Side effects:
+|*     None.
+|*
+|* ----------------------------------------------------------------------------
+|*
+
+	.text
+	.globl	_Dev_Peek
+_Dev_Peek:
+	movl	sp@@(4),a0	| Get address to read into a register.
+	movl	sp,a1		| Save the stack pointer
+	movl	8:w,d1		|    and the bus error handler.
+	movl	#BusErr,8:w	| Set up a bus error handler.
+	clrl	d0		| Clear d0.
+	movw	a0@@,d0		| Read a short.
+	movl	d1,8:w		| Restore the bus handler and return the short.
+	rts
+ 
+|*
+|* ----------------------------------------------------------------------------
+|*
+|* Dev_Poke --
+|*
+|*      Write a short to the device.  Return -1 if it didn't work.
+|*
+|*      int Dev_Poke(addr, value)
+|*          Address	addr;
+|*	    short	value;
+|*
+|* Results:
+|*     -1 if an error.
+|*
+|* Side effects:
+|*     None.
+|*
+|* ----------------------------------------------------------------------------
+|*
+
+	.text
+	.globl	_Dev_Poke
+_Dev_Poke:
+	movl	sp@@(4),a0	| Get address to write into a register.
+	movl	sp,a1		| Save the stack pointer
+	movl	8:w,d1		|    and the bus error handler.
+	movl	#BusErr,8:w	| Set up a bus error handler.
+	movw	sp@@(10), d0	| Get value to write.
+	movw	d0, a0@@		| Write the short.
+	movl	d1,8:w		| Restore the bus handler and return 0.
+	clrl	d0
+	rts
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d10 1
+a10 1
+|* Temporary BusError handler to protect DevPeek and DevPoke
+d22 1
+a22 1
+|* DevPeek --
+d27 1
+a27 1
+|*      int DevPeek(addr)
+d40 2
+a41 2
+	.globl	_DevPeek
+_DevPeek:
+d54 1
+a54 1
+|* DevPoke --
+d58 1
+a58 1
+|*      int WriteDev(addr, value)
+d72 2
+a73 2
+	.globl	_DevPoke
+_DevPoke:
+@

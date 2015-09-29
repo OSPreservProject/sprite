@@ -1,0 +1,671 @@
+/* 
+ * dev.c--
+ *
+ *	Device-dependent manipulations
+ *
+ * Copyright 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * Quote:
+ *      "What a depressingly stupid machine"
+ *      -- Marvin in _A Hitchiker's Guide to the Galaxy_
+ *
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/dev.c,v 1.0 91/01/07 18:02:37 mottsmth Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/mtio.h>
+#include <sys/changer.h>
+#include <sys/ioctl.h>
+#include <sys/devio.h>
+#include "jaquith.h"
+
+typedef struct mtop Dev_TapeCommand;
+
+static char printBuf[T_MAXSTRINGLEN];
+extern int syserr;
+
+#define EXB120_MAXBIN 115
+#define EXB120_MAXMSG 60
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_MoveVolume --
+ *
+ *	Move a volume from source slot to destination slot in jukebox
+ *
+ * Results:
+ *	Ptr to block of specified size or NULL;
+ *
+ * Side effects:
+ *	Moves robot arm. May also affect volume reader.
+ *
+ * Note:
+ *      The tape reader devices in the EXB-120 jukebox are given slot
+ *      numbers 116-119. If one of these is the destination address
+ *      a tape load is effectively done.  
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Dev_MoveVolume(robotStream, src, dest)
+    int robotStream;          /* robot file descriptor */
+    int src;                  /* source location */
+    int dest;                 /* destination location */
+{
+    robot_params robotCmd;
+
+    robotCmd.sourceAddr = src;
+    robotCmd.destAddr = dest;
+
+    if (ioctl(robotStream, SCSI_MOVE_MEDIUM, (char *) &robotCmd) < 0) {
+	syserr = errno;
+	return T_ROBOTFAILED;
+    } else {
+        return T_SUCCESS;
+    }
+
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_OpenVolume --
+ *
+ *	Open the device
+ *
+ * Results:
+ *	return code
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Dev_OpenVolume(devName, flags)
+    char *devName;            /* name of device */
+    int flags;                /* read, write etc. flags */
+{
+    int fd;
+
+    if ((fd=open(devName, flags, 0)) == -1) {
+	syserr = errno;
+    }
+    return fd;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_CloseVolume --
+ *
+ *	Close the device
+ *
+ * Results:
+ *	return code
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Dev_CloseVolume(stream)
+    int stream;               /* file descriptor */
+{
+    if (close(stream) == -1) {
+	syserr = errno;
+	return T_FAILURE;
+    } else {
+	return T_SUCCESS;
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_ReadVolume --
+ *
+ *	Perform read operation on volume.
+ *
+ * Results:
+ *	return code
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Dev_ReadVolume(volStream, buf, bufSize)
+    int volStream;
+    char *buf;
+    int bufSize;
+{
+    int cnt;
+
+    if ((cnt=read(volStream, buf, bufSize)) < 0) {
+	syserr = errno;
+    }
+    return cnt;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_WriteVolume --
+ *
+ *	Perform write operation on volume.
+ *
+ * Results:
+ *	return code
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Dev_WriteVolume(volStream, buf, bufSize)
+    int volStream;
+    char *buf;
+    int bufSize;
+{
+    int cnt;
+
+    if ((cnt=write(volStream, buf, bufSize)) < 0) {
+	syserr = errno;
+    }
+    return cnt;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_UnloadVolume --
+ *
+ *	Open the pod bay door. I'm sorry I can't do that Dave.
+ *
+ * Results:
+ *	return code
+ *
+ * Side effects:
+ *	Rewinds and unloads tape. Moves robot arm.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Dev_UnloadVolume(devName)
+    char *devName;            /* device name */
+{
+    int volStream;
+    Dev_TapeCommand tapeCmd;
+
+    if ((volStream=open(devName, O_RDONLY, 0)) < 0) {
+	syserr = errno;
+	return T_FAILURE;
+    }
+    
+    tapeCmd.mt_op = MTOFFL;
+    tapeCmd.mt_count = 1;
+
+    if (ioctl(volStream, MTIOCTOP, (char *)&tapeCmd) != 0) {
+	syserr = errno;
+        close(volStream);
+	return T_FAILURE;
+    }
+    close(volStream);
+
+    return T_SUCCESS;
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_InitRobot --
+ *
+ *	Initialize robot.
+ *
+ * Results:
+ *	return code
+ *
+ * Side effects:
+ *	Instructs robot to build database of volume id's
+ *      using barcode reader.
+ *
+ * Note:
+ *      At the moment 'initialization' this means taking 
+ *      tape inventory.
+ *      
+ *----------------------------------------------------------------------
+ */
+
+int
+Dev_InitRobot(robotName, robotStreamPtr)
+    char *robotName;          /* robot device name */
+    int *robotStreamPtr;      /* robot descriptor */
+{
+
+    if ((*robotStreamPtr=open(robotName, O_RDWR)) < 0) {
+	syserr = errno;
+	return T_FAILURE;
+    } else {
+	return T_SUCCESS;
+    }
+
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_ReadVolLabel --
+ *
+ *	Read volume label with barcode reader
+ *
+ * Results:
+ *	return code
+ *
+ * Side effects:
+ *	Instructs robot to return element status from its database.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Dev_ReadVolLabel(robotStream, location, volLabel)
+    int robotStream;          /* robot descriptor */
+    int location;             /* home slot in jukebox */
+    char *volLabel;           /* receiving space for volume label */
+{
+
+    syserr = EINVAL;
+    return T_FAILURE;
+
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_CvtVolLabel --
+ *
+ *	Convert character volume label to unique integer.
+ *
+ * Results:
+ *	return code
+ *
+ * Side effects:
+ *	None.
+ *
+ * Note:
+ *      For present purposes, labels are of the form "<text><number>"
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Dev_CvtVolLabel(volLabel)
+    char *volLabel;
+{
+    int volId;
+    char *workPtr = volLabel+strlen(volLabel)-1;
+
+    while ((workPtr >= volLabel) && (isdigit(*workPtr))) {
+	workPtr--;
+    }
+    if ((workPtr >= volLabel) && (sscanf(workPtr+1, "%d", &volId) == 1)) {
+	return volId;
+    } else {
+	return -1;
+    }
+}
+
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_SeekVolume --
+ *
+ *	Seek to file marker
+ *
+ * Results:
+ *	return code
+ *
+ * Side effects:
+ *	Instructs tape to seek
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Dev_SeekVolume(volStream, blkId, absolute)
+    int volStream;            /* volume descriptor */
+    int blkId;                /* logical file num */
+    int absolute;             /* absolute positioning flag */
+{
+    int status;
+    Dev_TapeCommand tapeCmd;
+    int oldOffset = 0;
+    int retryCnt;   
+
+    if ((blkId < 0) || (blkId > 10000)) {
+	fprintf(stderr,"Dev_SeekVolume: Bad blkId: %d\n", blkId);
+    }
+
+    if ((volStream < 0) || (volStream > 20)) {
+	fprintf(stderr,"Dev_SeekVolume: Bad volStream: %d\n", volStream);
+    }
+
+    if (absolute) {
+	tapeCmd.mt_op = MTREW;
+	tapeCmd.mt_count = 1;
+	status = ioctl(volStream, MTIOCTOP, (char *)&tapeCmd);
+	while ((retryCnt++ < 5) && (status != 0)) {
+	    fprintf(stderr, "Rewind failed: errno %d. Retrying...\n",
+		    errno);
+	    sleep(2);
+	    status = ioctl(volStream, MTIOCTOP, (char *)&tapeCmd);
+	}
+	if (status != 0) {
+	    syserr = errno;
+	    fprintf(stderr, "Couldn't rewind tape. errno %d\n",syserr);
+	    return T_IOFAILED;
+	}
+    }
+
+    if (blkId > 0) {
+	tapeCmd.mt_op = MTFSF;
+	tapeCmd.mt_count = blkId;
+	status = ioctl(volStream, MTIOCTOP, (char *)&tapeCmd);
+	if (status != 0) {
+	    syserr = errno;
+	    fprintf(stderr, "Couldn't skip %d files: %d\n",
+		    blkId, syserr);
+	    return T_IOFAILED;
+	}
+    }
+
+    return T_SUCCESS;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_WriteEOF --
+ *
+ *	write out EOF
+ *
+ * Results:
+ *	return code
+ *
+ * Side effects:
+ *	Puts file marker on tape
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Dev_WriteEOF(volStream, count)
+    int volStream;            /* active stream */
+    int count;                /* number of marks to write */
+{
+    int status;
+    Dev_TapeCommand tapeCmd;
+
+    tapeCmd.mt_op = MTWEOF;
+    tapeCmd.mt_count = count;
+
+    status = ioctl(volStream, MTIOCTOP, (char *)&tapeCmd);
+
+    if (status == 0) {
+	return T_SUCCESS;
+    } else {
+	syserr = errno;
+	return T_IOFAILED;
+    }
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_GetVolStatus --
+ *
+ *	Inquire into state of volume device
+ *
+ * Results:
+ *	return code
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Dev_GetVolStatus(volStream, volStatusPtr)
+    int volStream;            /* volume descriptor */
+    VolStatus *volStatusPtr;  /* receiving structure */
+{
+
+    volStatusPtr->position = -1;
+    return T_SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_DisplayMsg --
+ *
+ *	Display message on jukebox screen
+ *
+ * Results:
+ *	return code
+ *
+ * Side effects:
+ *	Changes display on robot front panel.
+ *
+ * Note:
+ *      Message is silently truncated to EXB120_MAXMSG chars
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Dev_DisplayMsg(robotStream, msg, msgStyle)
+    int robotStream;          /* volume descriptor */
+    char *msg;                /* Message text */
+    int msgStyle;             /* 0==Steady, 1==flash, 2==scroll */
+{
+    robot_params robotCmd;
+
+    strncpy(robotCmd.message, msg, EXB120_MAXMSG);
+    robotCmd.displayType = msgStyle;
+
+    if (ioctl(robotStream, EXBJBOX_DISPLAY, (char *) &robotCmd) < 0) {
+        syserr = errno;
+	return T_FAILURE;
+    }
+    return T_SUCCESS;
+
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_OpenDoor --
+ *
+ *	Open (or at least unlock) the jukebox door.
+ *
+ * Results:
+ *	return code
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Dev_OpenDoor(robotStream)
+    int robotStream;          /* robot descriptor */
+{ 
+    return T_SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_RemoveVolume --
+ *
+ *	Open (or at least unlock) the jukebox door.
+ *
+ * Results:
+ *	return code
+ *
+ * Side effects:
+ *	Kicks a volume out of archive.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Dev_RemoveVolume(robotStream, src)
+    int robotStream;          /* robot descriptor */
+    int src;                  /* src slot location */
+{ 
+    robot_params robotCmd;
+    
+    robotCmd.sourceAddr = src;
+    robotCmd.destAddr = 120; /* slot id of entry/exit port */
+
+    if (ioctl(robotStream, SCSI_MOVE_MEDIUM, (char *) &robotCmd) < 0) {
+	fprintf(stderr, "Couldn't remove volume: errno %d", errno);
+	return T_FAILURE;
+    } else {
+	return T_SUCCESS;
+    }
+
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_InsertVolume --
+ *
+ *	Open (or at least unlock) the jukebox door.
+ *
+ * Results:
+ *	return code
+ *
+ * Side effects:
+ *	Pull in a new volume.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Dev_InsertVolume(robotStream, dest)
+    int robotStream;          /* robot descriptor */
+    int dest;                 /* destination slot location */
+{ 
+    robot_params robotCmd;
+    
+    robotCmd.sourceAddr = 120; /* slot id of entry/exit port */
+    robotCmd.destAddr = dest;
+
+    if (ioctl(robotStream, SCSI_MOVE_MEDIUM, (char *) &robotCmd) < 0) {
+	fprintf(stderr, "Couldn't insert volume: errno %d", errno);
+	return T_FAILURE;
+    } else {
+	return T_SUCCESS;
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_BuildVolList --
+ *
+ *	Build a list of jukebox's contents
+ *
+ * Results:
+ *	return code
+ *
+ * Side effects:
+ *	none.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Dev_BuildVolList(robotStream, listPtr, cntPtr)
+    int robotStream;          /* robot descriptor */
+    VolConfig *listPtr;       /* space for volume info */
+    int *cntPtr;              /* size of list */
+{ 
+    int i;
+    int cnt = 0;
+    int maxBin = EXB120_MAXBIN+1;
+    int retCode = T_SUCCESS;
+    char label[T_MAXLABELLEN];
+    
+    if (*cntPtr < maxBin) {
+	syserr = ENOSPC;
+	*cntPtr = EXB120_MAXBIN+1;
+	return T_FAILURE;
+    }
+
+    for (i=0; i<maxBin; i++) {
+	if ((retCode=Dev_ReadVolLabel(robotStream, i, label)) != T_SUCCESS) {
+	    *cntPtr = 0;
+	    return retCode;
+	}
+	listPtr->volId = i;
+	listPtr->location = i;
+	strcpy(listPtr->volLabel, label);
+	listPtr++;
+	cnt++;
+    }
+
+    *cntPtr = cnt;
+    return T_SUCCESS;
+
+}
+

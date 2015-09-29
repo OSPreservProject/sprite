@@ -1,0 +1,68 @@
+
+
+
+lockdir                   User Commands                   lockdir
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     lockdir - Lock a directory atomically
+
+SSYYNNOOPPSSIISS
+     lloocckkddiirr [_f_i_l_e_n_a_m_e]
+
+OOPPTTIIOONNSS
+     _f_i_l_e_n_a_m_e       Name of file to use for the lock (defaults to
+                    ..//LLOOCCKK).
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This is a simple program to acquire a lock on  a  directory.
+     It  waits for up to 10 minutes before giving up.  It exits 0
+     if the lock was acquired  and  non-zero  otherwise.   If  no
+     argument  is given, it assumes it is in the proper directory
+     and just uses the file LLOOCCKK iinn tthhee ccuurrrreenntt ddiirreeccttoorryy..
+
+KKEEYYWWOORRDDSS
+     lock, atomic,
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  July 19, 1990                    1
+
+
+

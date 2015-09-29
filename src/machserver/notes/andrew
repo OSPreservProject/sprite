@@ -1,0 +1,98 @@
+where the time goes, Andrew benchmark
+
+-- native Sprite (subversion6) --
+
+total (1.114)		89 (instrumented)
+
+user time		52
+Proc_ExecEnv		 9.2
+Fs_Read			 6.5
+Proc_Exit		 4.0
+Fs_Open			 3.9
+Fs_Close		 3.6
+Fs_Remove		 2.5
+Fs_GetAttributes	 2.3
+Fs_ChangeDir		 1.6
+Fs_IOControl		 1.4
+Fs_Write		 1.0
+Fs_GetAttributesID	 0.6
+Fs_MakeDir		 0.4
+Proc_Fork		 0.4
+Vm_CreateVA		 0.2
+Fs_CheckAccess		 0.1
+Fs_SetAttributesID	 0.1
+			----
+subtotal		 89.8
+
+
+
+-- sprited (sprited.44) --
+
+total (srv022)		249 (instrumented)
+
+user time		52
+Proc_Fork		51.4
+Proc_ExecEnv		21.0
+Fs_Read			20.3
+Fs_Write		10.2
+Fs_Close		 8.5
+Fs_Open			 8.3
+Vm_CreateVA		 4.6
+Fs_Remove		 3.9
+Fs_GetAttributes	 3.3
+Fs_ChangeDir		 3.2
+Fs_IOControl		 2.4
+Fs_GetAttributesID	 1.8
+Sig_SetAction		 0.7
+Fs_Access		 0.4
+Sys_Stats		 0.4
+Fs_SetAttrID		 0.2
+Sig_SetHoldMask		 0.2
+Fs_MakeDir		 0.2
+Proc_RawExit		 0.1
+			----
+subtotal		193.3
+VM req. exc. fork	 29.0
+Sprite call overhead	 12.0	(17,110 calls @ 700 us/call)
+			----
+subtotal		234.3 (94% of total)
+
+
+-- understood problems --
+
+excessive faults during fork			44.8 (CopyRegion)
+read/write copyin/copyout			18 (not incl. bcopy time)
+  (expect 4.5 sec retrievable by using
+   inband MIG RPCs for read/write)
+RPC latency lossage				11.1 (8205 * (2.2ms - 0.85ms))
+unnecessary heap/stack faults			 8.3 (est.) 
+  (from destroying the heap & stack
+   during exec)
+  (8.3K faults @ 1ms/fault)
+unnecessary "get attr" RPCs			 5.3 ((1359 - 421)*5.661ms)
+  (should use Fs_FileID for comparison)
+minimum Sprite call overhead			 4.0? (17110 * 236us)
+VmAddrParse					 2.5
+other copyin/copyout				 2 (ioctl, Sys_Stats) (est.)
+RPC throughput lossage				 1.8 (1.4MB * 1.3ms/KB)
+total:						97.8
+
+-- not understood problems --
+
+(should subtract out estimate based on RPC lossage?)
+
+unaccounted-for time				14.7
+unexplained Sprite call overhead		 8.0
+Proc_Fork					 8.0
+Proc_ExecEnv					 7.8
+  (11.8 sec less 496 exec calls
+   -> 496 "open" RPCs -> 4 sec
+   delay at 8 ms/RPC)
+unexplained RPC slowdown			 7.5 
+  (20.4 (16jul) less latency & throughput
+   problems; are there hints (e.g., for
+   "open") that native Sprite provides &
+   sprited doesn't?)
+segment lock contention				 4  (est.)
+						    VmDoRequests
+						    + VmSegmentReleaseInt 

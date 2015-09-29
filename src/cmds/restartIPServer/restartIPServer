@@ -1,0 +1,99 @@
+#!/bin/csh -f
+#
+# Script to kill off and restart the IP server and any dependent
+# daemons.
+#
+# Usage: restartIPServer [ -r ]
+#
+# where "-r" means to start up processes that run only on the root
+# 	     server.
+#
+# $Header: /sprite/src/admin/restartIPServer/RCS/restartIPServer,v 1.6 92/07/17 11:55:58 kupfer Exp $
+
+# This script is a bit ugly, because it could conceivably kill processes
+# that happen to have server names in the command line.
+
+set rootFlag="no"
+
+set args = `getopt "r" $*`
+while ("X$args[1]" != "X--")
+	switch ($args[1])
+	case '-r':
+		set rootFlag="yes"
+		breaksw
+	endsw
+	shift args
+end
+
+# If the user didn't ask for root server daemons, try to deduce
+# whether we're running on the root server anyway.
+# Remove domain stuff from host names when comparing them.
+
+set rootServer=`prefix -p | grep "/ " | awk '{ print $2 }' | sed -e s/\\..\*//`
+set ourName=`hostname | sed -e s/\\..\*//`
+if ($rootServer == $ourName) then
+	set rootFlag="yes"
+endif
+
+# Use /sprite/cmds/kill instead of the builtin "kill".  If we use the
+# builtin and then clients go away before we can kill them (easy to do
+# if any clients depend on other clients), the script exits right
+# there.
+
+set pid=`ps -a | egrep ipServer | awk '{print $1}'`
+set clients=`ps -a | egrep 'portmap|unfsd|sendmail|inetd|tftpd|bootp|lpd' | awk '{print $1}'`
+if ("X$pid" != "X" || "X$clients" != "X") then
+	echo "Killing ipServer ($pid) and clients ($clients)" > /dev/syslog
+	/sprite/cmds/kill -KILL $clients $pid
+endif
+
+# Restart the servers that were killed off above.  
+#
+# This code is cloned from /boot/bootcmds.  It would be better if both
+# scripts shared a common "start servers" script.
+
+set host = `hostname`
+echo -n "Restarting server daemons: "
+
+echo -n "IP server "
+rm -f /hosts/$host/{X0,netIP,netUDP,netTCP,debug}
+if (-e /hosts/$host/ipStart) then
+    /hosts/$host/ipStart
+else
+    if ($rootFlag == "yes") then
+        /sprite/daemons/ipServer.dbg >>& /hosts/$host/ip.out
+    else
+        /sprite/daemons/ipServer >>& /hosts/$host/ip.out
+    endif
+endif
+rm -f /hosts/$host/rlogin* >& /dev/null
+sleep 2
+
+echo -n "inetd "
+/sprite/daemons/inetd /sprite/daemons/inetd.conf
+
+echo -n "sendmail "
+if ($rootFlag == "yes") then
+	sendmail -bd -q15m
+else
+	sendmail -bd
+endif
+
+echo -n "lpd "
+/sprite/daemons/lpd
+
+if ($rootFlag == "yes") then
+	# There shouldn't be any need to restart arpd.
+	# bootp is now running on lust.
+
+	echo -n "tftp "
+	/sprite/daemons/tftpd
+    
+endif
+
+echo "."
+
+if (-e /hosts/$host/nfs) then
+	echo "NFS/Sprite gateway: "
+	/hosts/$host/nfs
+endif

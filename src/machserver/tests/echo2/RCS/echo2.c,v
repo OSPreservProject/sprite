@@ -1,0 +1,101 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  srv030:1.2 srv027:1.2 srv026:1.2 srv024:1.2 srv021:1.2 srv018:1.2 srv014:1.2 srv010:1.2 srv008:1.2 srv007:1.2 srv006:1.2 srv004:1.2;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     92.03.23.15.11.41;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.12.12.22.34.23;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Test program to echo lines typed at the keyboard, using stdio.
+@
+
+
+1.2
+log
+@Add options for using the console and for shutting down instead of
+just exiting.
+@
+text
+@/* Test program to echo lines typed at the keyboard. */
+
+#include <stdio.h>
+#include <string.h>
+#include <sys.h>
+
+#define BUF_SIZE	1024
+#define USE_CONSOLE	1	/* 0 to use the inherited stdin and stdout */
+#define DO_SHUTDOWN	1	/* 0 to just exit */
+
+main()
+{
+    char buf[BUF_SIZE];
+    FILE *inFile;
+    FILE *outFile;
+    int status = 0;
+
+#if !USE_CONSOLE
+    inFile = stdin;
+    outFile = stdout;
+#else
+    inFile = fopen("/dev/console", "r+");
+    outFile = inFile;
+    if (inFile == NULL) {
+	printf("couldn't open console\n");
+	status = 1;
+	goto done;
+    }
+#endif
+    for (;;) {
+	printf("Type something: ");
+	fflush(stdout);
+	if (fgets(buf, BUF_SIZE, inFile) == NULL) {
+	    goto done;
+	}
+	if (strcmp(buf, ".\n") == 0) {
+	    goto done;
+	}
+	fputs(buf, outFile);
+    }
+
+ done:
+#if DO_SHUTDOWN
+    (void)Sys_Shutdown(SYS_HALT|SYS_KILL_PROCESSES|SYS_WRITE_BACK, NULL);
+#endif
+    exit(status);
+}
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d5 1
+d8 2
+d14 3
+d18 12
+d32 3
+a34 2
+	if (fgets(buf, BUF_SIZE, stdin) == NULL) {
+	    exit(0);
+d37 1
+a37 1
+	    exit(0);
+d39 1
+a39 1
+	puts(buf);
+d41 6
+@

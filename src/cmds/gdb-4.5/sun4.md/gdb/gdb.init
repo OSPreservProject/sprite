@@ -1,0 +1,6 @@
+echo Setting up the environment for debugging gdb.\n
+
+dir ../mmalloc
+dir ../libiberty
+dir ../bfd
+set prompt (top-gdb)

@@ -1,0 +1,223 @@
+head     2.2;
+branch   ;
+access   ;
+symbols  before_fairness_changes:2.0;
+locks    ; strict;
+comment  @@;
+
+
+2.2
+date     90.09.24.14.45.44;  author douglis;  state Exp;
+branches ;
+next     2.1;
+
+2.1
+date     90.07.05.13.21.05;  author douglis;  state Exp;
+branches ;
+next     2.0;
+
+2.0
+date     90.06.30.17.11.24;  author douglis;  state Stable;
+branches ;
+next     1.6;
+
+1.6
+date     90.05.28.17.08.54;  author douglis;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     90.05.14.12.16.15;  author douglis;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.05.02.12.32.24;  author douglis;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.04.27.00.59.24;  author douglis;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.04.24.18.00.48;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.04.19.15.56.24;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@modifications for makefile
+@
+
+
+2.2
+log
+@DEBUG_LIST_REMOVE enabled.
+@
+text
+@#
+# This file is included by Makefile.  Makefile is generated automatically
+# by mkmf, and this file provides additional local personalization.  The
+# variable SYSMAKEFILE is provided by Makefile;  it's a system Makefile
+# that must be included to set up various compilation stuff.
+#
+
+#
+# Have mkmf/pmake set up a version.c & version.h to define Version().
+#
+use_version = yes
+
+#
+# SEEK_REOPEN controls whether to do a seek after an freopen due to
+# a bug in the sprite C library.
+#
+# CFLAGS +=  -DSEEK_REOPEN
+
+#
+# For debugging a problem with List_Remove
+#
+CFLAGS += -DDEBUG_LIST_REMOVE
+
+#
+# Use a different migd directory, etc.
+#
+# TESTING=yes, please
+#ifdef TESTING
+CFLAGS += -DGLOBAL_PDEV=\"/tmp/migd/global.pdev\" \
+          -DLOCAL_PDEV=\"/tmp/migd/%s.pdev\" \
+          -DMIGD_CHECKPOINT_FILE=\"/tmp/migd/check\" \
+          -DMIGD_LOCK_FILE=\"/tmp/migd/lock\" \
+	  -DSHARED_ERROR_NAME=\"/tmp/migd/global-log\" \
+	  -DLOCAL_ERROR_NAME=\"/tmp/migd/%s.log\"
+CFLAGS += -DDEBUG
+#endif
+
+
+# Memory tracing
+#CFLAGS +=  -DMEMTRACE
+#LIBS += -lmemtrace
+
+#
+# Must run set-user-id to root because it signals processes of random users.
+#
+INSTALLFLAGS	+= -o root -m 4775
+
+# 
+# Always use the debuggable C library
+#
+LIBS += -lc_g
+
+#include	<$(SYSMAKEFILE)>
+
+@
+
+
+2.1
+log
+@no real change.
+@
+text
+@d22 1
+a22 1
+# CFLAGS += -DDEBUG_LIST_REMOVE
+@
+
+
+2.0
+log
+@Changing version numbers.
+@
+text
+@d27 11
+a37 6
+#CFLAGS += -DGLOBAL_PDEV=\"/tmp/migd/global.pdev\" \
+#          -DLOCAL_PDEV=\"/tmp/migd/%s.pdev\" \
+#          -DMIGD_CHECKPOINT_FILE=\"/tmp/migd/check\" \
+#          -DMIGD_LOCK_FILE=\"/tmp/migd/lock\" \
+#	  -DSHARED_ERROR_NAME=\"/tmp/migd/global-log\" \
+#	  -DLOCAL_ERROR_NAME=\"/tmp/migd/%s.log\"
+@
+
+
+1.6
+log
+@just added a commented CFLAGS change.
+@
+text
+@@
+
+
+1.5
+log
+@memory tracing stuff (commented out)
+@
+text
+@d20 5
+a32 1
+#
+@
+
+
+1.4
+log
+@commented out testing definitions.
+@
+text
+@d28 1
+d30 3
+@
+
+
+1.3
+log
+@changes for statistics gathering.
+@
+text
+@d22 6
+a27 6
+CFLAGS += -DGLOBAL_PDEV=\"/tmp/migd/global.pdev\" \
+          -DLOCAL_PDEV=\"/tmp/migd/%s.pdev\" \
+          -DMIGD_CHECKPOINT_FILE=\"/tmp/migd/check\" \
+          -DMIGD_LOCK_FILE=\"/tmp/migd/lock\" \
+	  -DSHARED_ERROR_NAME=\"/tmp/migd/global-log\" \
+	  -DLOCAL_ERROR_NAME=\"/tmp/migd/%s.log\"
+@
+
+
+1.2
+log
+@intermediate checkpoint
+@
+text
+@d20 1
+a20 1
+# Use the uninstalled headers for a while.  Use a different migd file.
+d22 1
+a22 1
+CFLAGS += -I/sprite/src/lib/include -DGLOBAL_PDEV=\"/tmp/migd/global.pdev\" \
+d25 3
+a27 1
+          -DMIGD_LOCK_FILE=\"/tmp/migd/lock\"
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d8 3
+d20 1
+a20 1
+# Use the uninstalled headers for a while.
+d22 5
+a26 1
+CFLAGS += -I/sprite/src/lib/include
+@

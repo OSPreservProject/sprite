@@ -1,0 +1,52 @@
+Here are a few guidelines on how to make kernel changes without stepping
+on other people.
+
+    Quick, compatible changes:
+If you have a quick change to make (1 day's work or less), and this change
+is not visible outside of its own module, then go ahead and make the change
+in the uninstalled copy of that module.
+
+    Longer or incompatible changes:
+If your changes are visible outside of a particular module or would require
+keeping files checked out for more than a day, then make a snap-shot of the
+modules you need to change and do your work in those copies.  You will also
+need to make snap-shots of the modules your changes affect.
+
+    Incompatible changes to header files:
+To make changes to a header file that would affect other people, create a
+directory in /sprite/src/kernel called something like "hdrs.name" where name
+is your login name or initials.  Put a link to, or copy of, your changed header
+file in this directory.  Then, in your home directory, create a file named
+kernel.mk.  Put the line
+
+CFLAGS += -I/sprite/src/kernel/hdrs.name
+
+in this file.  Then, when you compile your modules, the first place a
+header file will be looked for is in hdrs.name.  If it's not found there,
+it will be picked up from the standard places.
+
+    Merging your changes back into the public modules:
+After you have tested your changes, merge them into the uninstalled modules.
+Merging changes usually doesn't take much longer than a day, and the installed
+modules are still available while you're hacking in the uninstalled modules.
+It might be nice to send mail to spriters telling them that you are doing
+this to the uninstalled modules.
+
+    Installing your changes:
+After you have merged and tested your changes, it's okay to install them.
+Install all the modules you need to install in order to make the set
+of installed modules compatible with each other.  You do not need to install
+a whole new kernel.
+
+    Changes to kernel structures visible to user programs:
+This is a mess.  Let's say you have made a change to the Fs_Stat structure.
+This means the user program fsstat may no longer work.  You can write a
+script called fsstat that grabs the kernel version and picks either fsstat.old
+or fsstat.new to exec.  For spring cleaning, let's hope we do something
+more pleasant to solve this problem.
+
+    Sending email:
+It's an admirable thing to send mail to spriters advising them of any
+changes that may affect them.  If you install a module, for instance, it's
+pleasant to let people know about this, so they can come and harass you
+later if the module has broken something.

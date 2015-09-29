@@ -1,0 +1,45 @@
+_0x	acosh.c	/^#define _0x(A,B)	0x\/**\/A\/**\/B$/
+acos	asincos.c	/^double acos(x)$/
+acosh	acosh.c	/^double acosh(x)$/
+asin	asincos.c	/^double asin(x)$/
+asinh	asinh.c	/^double asinh(x)$/
+asym	lgamma.c	/^asym(arg)$/
+asympt	j0.c	/^asympt(arg) double arg;{$/
+atan	atan.c	/^double atan(x)$/
+atan2	sun3.md/atan2.c	/^double atan2(y,x)$/
+atanh	atanh.c	/^double atanh(x)$/
+cabs	sun3.md/cabs.c	/^cabs(z)$/
+cbrt	sun3.md/cbrt.c	/^double cbrt(x) $/
+ceil	floor.c	/^ceil(x)$/
+cos	sun3.md/sincos.c	/^cos(x) $/
+cosh	cosh.c	/^double cosh(x)$/
+erf	erf.c	/^erf(arg) double arg;{$/
+erfc	erf.c	/^erfc(arg) double arg;{$/
+exp	exp.c	/^double exp(x)$/
+exp__E	exp__E.c	/^double exp__E(x,c)$/
+expm1	expm1.c	/^double expm1(x)$/
+fabs	fabs.c	/^fabs(x)$/
+floor	floor.c	/^floor(x)$/
+hypot	sun3.md/cabs.c	/^hypot(x,y)$/
+j0	j0.c	/^j0(arg) double arg;{$/
+j1	j1.c	/^j1(arg) double arg;{$/
+jn	jn.c	/^jn(n,x) int n; double x;{$/
+lgamma	lgamma.c	/^lgamma(arg)$/
+log	log.c	/^double log(x)$/
+log10	log10.c	/^double log10(x)$/
+log1p	log1p.c	/^double log1p(x)$/
+log__L	log__L.c	/^double log__L(z)$/
+neg	lgamma.c	/^neg(arg)$/
+pos	lgamma.c	/^pos(arg)$/
+pow	pow.c	/^double pow(x,y)  	$/
+pow_p	pow.c	/^static double pow_p(x,y)       $/
+rint	floor.c	/^rint(x)$/
+scalb	sun3.md/support.c	/^double scalb(x,N)$/
+sin	sun3.md/sincos.c	/^sin(x)$/
+sinh	sinh.c	/^double sinh(x)$/
+tan	sun3.md/tan.c	/^tan(x) $/
+tanh	tanh.c	/^double tanh(x)$/
+y0	j0.c	/^y0(arg) double arg;{$/
+y1	j1.c	/^y1(arg) double arg;{$/
+yn	jn.c	/^yn(n,x) int n; double x;{$/
+z_abs	sun3.md/cabs.c	/^z_abs(z)$/

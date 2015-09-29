@@ -1,0 +1,10 @@
+CalculateLoads	daemon.c	/^CalculateLoads(stats, nextStat, infoPtr)$/
+GetLoad	loadAvg.c	/^GetLoad()$/
+GetStats	daemon.c	/^GetStats(statsPtr, timePtr, noInputPtr)$/
+MloadAvg	loadAvg.c	/^main(argc, argv)$/
+OpenCreate	loadAvg.c	/^OpenCreate(pathName, usageFlags, permissions, stre/
+OutputLoads	daemon.c	/^OutputLoads(streamID, infoPtr)$/
+PrintAllInfo	server.c	/^PrintAllInfo(nodeInfo)$/
+RunDaemon	daemon.c	/^RunDaemon()$/
+RunServer	server.c	/^RunServer()$/
+UpdateData	server.c	/^UpdateData(bufPtr, nodeInfo)$/

@@ -1,0 +1,133 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    jhh:1.5; strict;
+comment  @@;
+
+
+1.5
+date     89.01.26.17.02.39;  author douglis;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.12.31.16.10.15;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.12.29.14.47.36;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.12.29.11.03.43;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.09.27.10.40.28;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.5
+log
+@added files
+@
+text
+@ Sprite
+/sprite/man/
+nroff -man -Tcrt %s > %s
+#
+Commands (1)
+cmds
+cmds.fmt
+#
+C Library (2 & 3)
+lib/c
+lib.fmt/c
+#
+Math Library (2M)
+lib/m
+lib.fmt/m
+#
+Sun RPC Library
+lib/sunrpc
+lib.fmt/sunrpc
+#
+Tcl Library
+lib/tcl
+lib.fmt/tcl
+#
+Devices (4)
+dev
+dev.fmt
+#
+Files (5)
+files
+files.fmt
+@
+
+
+1.4
+log
+@Added sunrpc library.
+@
+text
+@d28 4
+@
+
+
+1.3
+log
+@Switch to new location of man pages.
+@
+text
+@d17 4
+@
+
+
+1.2
+log
+@Changes for new C library organization.
+@
+text
+@d1 3
+a3 3
+ Spri/*
+ *
+ */
+
+#include <stdio.h>
+#include "combin.h"
+
+ColCheck(elemMask)
+    int elemMask;
+{
+    char charArray[BITSPERINT];
+    return 1;
+    ExpandBits(charArray, elemMask);
+    if ( charArray[0] / 3 == charArray[1] / 3 ||
+         charArray[1] / 3 == charArray[2] / 3 ||
+         charArray[2] / 3 == charArray[0] / 3 ) {
+	return 0;
+    }
+    return 1;
+}
+
+ArrayCheck(m1, m2, m3)
+    int m1, m2, m3;
+{
+    return (m3 > m2 && m2 > m1);
+}
+
+main()
+{
+    Cstream    *cstr1, *cstr2, *cstr3;
+    int		elemMask1, elemMask2

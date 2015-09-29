@@ -1,0 +1,21 @@
+sun3.md/rpcDelays.c:
+rpcDebug.c:
+rpcTest.c:
+rpcCall.c:
+rpcInit.c:
+rpcOutput.c:
+rpcDispatch.c:
+rpcHistogram.c:
+rpcServer.c:
+rpcTrace.c:
+rpcByteSwap.c:
+rpcClient.c:
+rpcCltStat.c:
+rpcDaemon.c:
+rpcSrvStat.c:
+rpcStubs.c:
+printf value declared inconsistently	llib-lsys:sysPrintf.c(126)  ::  rpcClient.c(465)
+printf value declared inconsistently	llib-lsys:sysPrintf.c(126)  ::  rpcCltStat.c(263)
+printf value declared inconsistently	llib-lsys:sysPrintf.c(126)  ::  rpcDaemon.c 2(447)
+printf value declared inconsistently	llib-lsys:sysPrintf.c(126)  ::  rpcSrvStat.c(244)
+Sync_SlowWait returns value which is always ignored

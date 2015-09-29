@@ -1,0 +1,11 @@
+F ARCH.C_V;1                        	arch.c,v
+F COMPAT.C_V;1                      	compat.c,v
+F COND.C_V;1                        	cond.c,v
+F DIR.C_V;1                         	dir.c,v
+F JOB.C_V;1                         	job.c,v
+F MAIN.C_V;1                        	main.c,v
+F MAKE.C_V;1                        	make.c,v
+F RMT.C_V;1                         	rmt.c,v
+F SUFF.C_V;1                        	suff.c,v
+F TARG.C_V;1                        	targ.c,v
+F VAR.C_V;1                         	var.c,v

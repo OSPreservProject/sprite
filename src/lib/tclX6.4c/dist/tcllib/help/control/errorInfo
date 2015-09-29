@@ -1,0 +1,7 @@
+          errorInfo
+               After an error has occurred, this string  will  contain
+               one  or  more  lines  identifying  the Tcl commands and
+               procedures that  were  being  executed  when  the  most
+               recent error occurred.  Its contents take the form of a
+               stack trace showing the  various  nested  Tcl  commands
+               that had been invoked at the time of the error.

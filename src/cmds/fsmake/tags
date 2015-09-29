@@ -1,0 +1,79 @@
+AddToDirectory	fsmake.c	/^AddToDirectory(fid, headerPtr, writeDisk, dirIndex/
+BlockToCylinder	fsmake.h	/^#define BlockToCylinder(headerPtr, blockNum) \\$/
+CheckSunCheckSum	diskHeader.c	/^CheckSunCheckSum(sunLabelPtr)$/
+CloseDir	fsmake.c	/^CloseDir(fid, headerPtr, writeDisk, indexInfoPtr)$/
+ConfirmDiskSize	disklabel.c	/^ConfirmDiskSize(fid, labelPtr, sizes)$/
+ConvertFromDecLabel	diskHeader.c	/^ConvertFromDecLabel(fileID, decLabelPtr)$/
+ConvertFromSunLabel	diskHeader.c	/^ConvertFromSunLabel(fileID, sunLabelPtr)$/
+ConvertToDecLabel	diskHeader.c	/^ConvertToDecLabel(labelPtr)$/
+ConvertToSunLabel	diskHeader.c	/^ConvertToSunLabel(labelPtr)$/
+CopyTree	fsmake.c	/^CopyTree(partFID, dirName, dirFDNum, dirFDPtr, par/
+CreateDir	fsmake.c	/^CreateDir(blocks, numBlocks, dot, dotDot)$/
+Disk_BadBlockRead	diskIO.c	/^Disk_BadBlockRead(openFileID, headerPtr, blockNumb/
+Disk_BlockRead	diskIO.c	/^Disk_BlockRead(openFileID, headerPtr, firstBlock, /
+Disk_BlockWrite	diskIO.c	/^Disk_BlockWrite(openFileID, headerPtr, firstBlock,/
+Disk_EraseLabel	diskHeader.c	/^Disk_EraseLabel(fileID, labelType)$/
+Disk_GetLabelTypeName	diskPrint.c	/^Disk_GetLabelTypeName(labelType)$/
+Disk_NewLabel	diskHeader.c	/^Disk_NewLabel(labelType) $/
+Disk_PrintDataBlockBitmap	diskPrint.c	/^Disk_PrintDataBlockBitmap(headerPtr, bitmap)$/
+Disk_PrintDirEntry	diskPrint.c	/^Disk_PrintDirEntry(dirEntryPtr)$/
+Disk_PrintDomainHeader	diskPrint.c	/^Disk_PrintDomainHeader(headerPtr)$/
+Disk_PrintFileDescBitmap	diskPrint.c	/^Disk_PrintFileDescBitmap(headerPtr, bitmap)$/
+Disk_PrintLabel	diskPrint.c	/^Disk_PrintLabel(labelPtr)$/
+Disk_PrintSummaryInfo	diskPrint.c	/^Disk_PrintSummaryInfo(summaryPtr)$/
+Disk_ReadDecLabel	diskHeader.c	/^Disk_ReadDecLabel(fileID)$/
+Disk_ReadDiskHeader	diskHeader.c	/^Disk_ReadDiskHeader(openFileID)$/
+Disk_ReadDomainHeader	diskHeader.c	/^Disk_ReadDomainHeader(fileID, diskLabelPtr)$/
+Disk_ReadLabel	diskHeader.c	/^Disk_ReadLabel(fileID)$/
+Disk_ReadSummaryInfo	diskHeader.c	/^Disk_ReadSummaryInfo(fileID, diskLabelPtr)$/
+Disk_ReadSunLabel	diskHeader.c	/^Disk_ReadSunLabel(fileID)$/
+Disk_SectorRead	diskIO.c	/^Disk_SectorRead(openFileID, firstSector, numSector/
+Disk_SectorWrite	diskIO.c	/^Disk_SectorWrite(openFileID, firstSector, numSecto/
+Disk_WriteDecLabel	diskHeader.c	/^Disk_WriteDecLabel(fileID, labelPtr)$/
+Disk_WriteDomainHeader	diskHeader.c	/^Disk_WriteDomainHeader(fileID, diskLabelPtr, heade/
+Disk_WriteLabel	diskHeader.c	/^Disk_WriteLabel(fileID, labelPtr)$/
+Disk_WriteSummaryInfo	diskHeader.c	/^Disk_WriteSummaryInfo(fileID, diskLabelPtr, summar/
+Disk_WriteSunLabel	diskHeader.c	/^Disk_WriteSunLabel(fileID, labelPtr)$/
+GetBitmapPtr	fsmake.h	/^#define GetBitmapPtr(headerPtr, bitmapPtr, blockNu/
+Host_ByID	Host_ByID.c	/^Host_ByID(id)$/
+Host_ByName	Host_ByName.c	/^Host_ByName(name)$/
+Host_End	Host_End.c	/^Host_End()$/
+Host_Next	Host_Next.c	/^Host_Next()$/
+Host_Start	Host_Start.c	/^Host_Start()$/
+InitDesc	fsmake.c	/^InitDesc(fileDescPtr, fileType, numBytes, devServe/
+InventConfig	disklabel.c	/^InventConfig(fid, labelPtr)$/
+MakeFileDescBitmap	fsmake.c	/^MakeFileDescBitmap(headerPtr)$/
+MakeFilesystem	fsmake.c	/^MakeFilesystem(firstPartFID, partFID, partition, s/
+MakeSunCheckSum	diskHeader.c	/^MakeSunCheckSum(sunLabelPtr)$/
+MarkDataBitmap	fsmake.c	/^MarkDataBitmap(headerPtr, cylBitmapPtr, blockNum, /
+MarkFDBitmap	fsmake.h	/^#define MarkFDBitmap(num,bitmapPtr) \\$/
+Max	fsmake.h	/^#define Max(a,b) ((a) > (b)) ? (a) : (b)$/
+Mfsmake	fsmake.c	/^main(argc, argv)$/
+NextDirEntry	fsmake.c	/^NextDirEntry(fid, headerPtr, writeDisk, indexInfoP/
+OpenDir	fsmake.c	/^OpenDir(fid, headerPtr, fdPtr, indexInfoPtr, dirEn/
+OptNoArg	option.c	/^#define OptNoArg(progName, opt) fprintf(stderr, \\/
+Opt_Parse	option.c	/^Opt_Parse(argc, argv, optionArray, numOptions, fla/
+Opt_PrintUsage	option.c	/^Opt_PrintUsage(commandName, optionArray, numOption/
+ParseTime	option.c	/^ParseTime(progName, str, resultPtr)$/
+PhysToVirt	fsmake.h	/^#define PhysToVirt(headerPtr,blockNum) \\$/
+ReadBitmap	fsmake.c	/^ReadBitmap(fid, headerPtr)$/
+ReadFileDesc	fsmake.c	/^ReadFileDesc(fid, headerPtr, fdNum, fdPtr)$/
+ReadFileDescBitmap	fsmake.c	/^ReadFileDescBitmap(fid, headerPtr)$/
+Reconfig	disklabel.c	/^Reconfig(fid, disktab, disktabName, diskType, labe/
+Repartition	disklabel.c	/^Repartition(fid, disktab, disktabName, diskType, l/
+ScanDisktab	disklabel.c	/^ScanDisktab(fileName, reconfig, diskType, labelPtr/
+SeeSunCheckSum	diskHeader.c	/^SeeSunCheckSum(sunLabelPtr)$/
+SetDiskGeometry	fsmake.c	/^SetDiskGeometry(labelPtr, geoPtr)$/
+SetDomainHeader	fsmake.c	/^SetDomainHeader(labelPtr, headerPtr, spriteID, par/
+SetDomainParts	fsmake.c	/^SetDomainParts(labelPtr, partition, headerPtr)$/
+SetSCSIDiskGeometry	fsmake.c	/^SetSCSIDiskGeometry(labelPtr, geoPtr)$/
+SetSummaryInfo	fsmake.c	/^SetSummaryInfo(headerPtr, summaryPtr)$/
+Usage	fsmake.c	/^Usage()$/
+VirtToPhys	fsmake.h	/^#define VirtToPhys(blockNum) \\$/
+WriteAllFileDescs	fsmake.c	/^WriteAllFileDescs(partFID, headerPtr)$/
+WriteBitmap	fsmake.c	/^WriteBitmap(partFID, headerPtr)$/
+WriteFileDesc	fsmake.c	/^WriteFileDesc(fid, headerPtr, fdNum, fdPtr)$/
+WriteFileDescBitmap	fsmake.c	/^WriteFileDescBitmap(fid, headerPtr, bitmap)$/
+WriteLostFoundDirectory	fsmake.c	/^WriteLostFoundDirectory(partFID, headerPtr)$/
+WriteRootDirectory	fsmake.c	/^WriteRootDirectory(partFID, headerPtr, fdPtr)$/
+_ARGS_	fsmake.h	/^#define	_ARGS_(x)	x$/

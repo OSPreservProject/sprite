@@ -1,0 +1,36 @@
+D CVS_ADM                           	CVS.adm
+D DS3100_M                          	ds3100.md
+D DS5000_M                          	ds5000.md
+L FILE.H;1                          	file.h	/sprite/src/attcmds/file/file.h
+F LOCAL.MK;1                        	local.mk
+L MACHTYP0.C;1                      	machType68k.c	/sprite/src/attcmds/file//machType68k.c
+L MACHTYP1.C;1                      	machTypeMips.c	/sprite/src/attcmds/file//machTypeMips.c
+L MACHTYP2.C;1                      	machTypeSparc.c	/sprite/src/attcmds/file//machTypeSparc.c
+F MIGRATE.H;1                       	migrate.h
+F PROC.H;1                          	proc.h
+F PROCAOUT.H;1                      	procAOUT.h
+F PROCDEBU.C;1                      	procDebug.c
+F PROCENVI.C;1                      	procEnviron.c
+F PROCEXEC.C;1                      	procExec.c
+F PROCEXIT.C;1                      	procExit.c
+F PROCFAMI.C;1                      	procFamily.c
+F PROCFORK.C;1                      	procFork.c
+F PROCID.C;1                        	procID.c
+F PROCINT.H;1                       	procInt.h
+F PROCMIGR.C;1                      	procMigrate.c
+F PROCMIGR.H;1                      	procMigrate.h
+F PROCMISC.C;1                      	procMisc.c
+F PROCRECO.C;1                      	procRecovery.c
+F PROCREMO.C;1                      	procRemote.c
+F PROCRPC.C;1                       	procRpc.c
+F PROCSERV.C;1                      	procServer.c
+F PROCSERV.H;1                      	procServer.h
+F PROCSTUB.C;1                      	procStubs.c
+F PROCTABL.C;1                      	procTable.c
+F PROCTIME.C;1                      	procTimer.c
+F PROCTYPE.H;1                      	procTypes.h
+F PROCUNIX.H;1                      	procUnixStubs.h
+D SCVS                              	SCVS
+D SUN3_MD                           	sun3.md
+D SUN4C_MD                          	sun4c.md
+D SUN4_MD                           	sun4.md

@@ -1,0 +1,35 @@
+\def\makeindex{\if@filesw \newwrite\@indexfile
+  \immediate\openout\@indexfile=\jobname.idx
+  \def\index{\@bsphack\begingroup\@sanitize\@wrindex\@indexfile}\typeout
+  {Writing index file \jobname.idx }\fi}
+
+\def\@wrindex#1#2{\let\thepage\relax
+   \xdef\@gtempa{\write#1{\string
+      <\thepage;N;P;#2>}}\endgroup\@gtempa
+   \if@nobreak \ifvmode\nobreak\fi\fi\@esphack}
+
+\def\index{\@bsphack\begingroup\@sanitize\@index}
+
+\def\@index{\@ifnextchar[{\@@index}{\@@index[]}}
+\def\@index[#1]#2{\endgroup\@esphack}
+
+% This is the post processor for the indexing package
+
+\def\insertindex{\@input{\jobname.ind}}
+
+\def\indexStart{\begin{theindex}\def\,{}}
+\def\indexEnd{\end{theindex}}
+
+% Leave space between letters of alphabet (except for the first time)
+\def\indexChar#1{\def\indexChar##1{\indexspace}}
+
+% This hack puts out the crossrefs, discards the <flag>
+% and leaves the subterms to be read next
+\def\indexTail#1#2#3{#1#3}
+
+% The main routine
+\def\indexEntry#1#2#3{\ifcase#1\item\or\subitem\or\subsubitem\else
+\@latexerr{Too deep index nesting}{Index levels are too nested too deep.^^J
+I can only handle sub-sub-entries.^^J
+Proceed and that's what you'll get.}\fi
+#2\indexTail#3}

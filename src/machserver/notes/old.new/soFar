@@ -1,0 +1,47 @@
+-- January --
+
+SOSP paper: 41%
+Sprite citizenship: 20%
+XPRS retreat (incl. lots of hassles 
+  preparing talk): 25%
+seminars (CPR training, VDT seminar): 8%
+Mach port (design work, planning): 4%
+
+-- February --
+
+SOSP paper: 29%
+Sprite citizenship: 22%
+OSF kernel review: 19%
+Mach port (planning, VM design, installing 3.0): 29%
+
+-- March --
+
+Mach port (installing 3.0, sync design,
+  Sprite mousetraps & sync changes): 59%
+Sprite citizenship: 41%
+
+-- April --
+
+Sprite citizenship: 47%
+Mach port (cleaning up environment on Oregano;
+  sig, sched, proc design): 51%
+seminars: 2%
+
+-- May --
+
+Sprite citizenship: 44%
+Mach port (cleaning up environment on Oregano,
+  proc design, VM design, development env.
+  on Sprite, Sprite mousetraps): 56%
+
+-- June --
+
+Sprite citizenship: 35%
+Mach port (VM & dev design): 16%
+SOSP paper: 23%
+XPRS retreat: 26%
+
+-- July (7/16-7/19) --
+
+Sprite citizenship: 17%
+Mach port (printf server): 83%

@@ -1,0 +1,293 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.4
+date     89.07.31.17.50.52;  author douglis;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.06.12.15.51.59;  author douglis;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.12.30.10.09.48;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.12.22.11.32.09;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.4
+log
+@handle billing rates
+@
+text
+@' $Header: /a/newcmds/ps/RCS/ps.man,v 1.3 89/06/12 15:51:59 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS PS cmds
+.BS
+.SH NAME
+ps \- print process status information
+.SH SYNOPSIS
+\fBps \fR[\fIoption(s)\fR] [\fIpid pid\fR ...]
+.SH OPTIONS
+.IP "\fB\-a\fR" 14
+Print out information for processes belonging to all users (normally
+only the invoking user's processes are printed).
+.IP "\fB\-A\fR" 14
+Print out information for absolutely all processes, even dead ones.
+.IP "\fB\-d\fR" 14
+Print information only for processes in DEBUG state.
+.IP "\fB\-help\fR" 14
+Print out a help message and exit without doing anything else.
+.IP "\fB\-i\fR" 14
+Instead of the default status information, print information about
+various process ids (includes the PID, PPID, GROUP, USER, RUSER, TIME,
+and COMMAND fields).
+.IP "\fB\-k\fR" 14
+Print out information for kernel server processes in addition to
+any other processes requested with other switches.
+.IP "\fB\-l\fR" 14
+Use local information for migrated processes rather than following
+them to their current hosts.
+.IP "\fB\-m\fR" 14
+Print information only for processes that are
+migrated to or from another machine.
+.IP "\fB\-M\fR" 14
+Instead of the default status information, print information about
+process migration (includes the PID, STATE, FLAGS, EVENT, RNODE, RPID,
+and COMMAND fields).  
+.IP "\fB\-s\fR" 14
+Instead of the default status information, print information about
+signals (includes the PID, PENDING, HELD, IGNORE, HANDLE,
+and COMMAND fields).
+.IP "\fB\-u\fR" 14
+Instead of the default status information, print additional
+``user-oriented'' information, including PID, %CPU, %MEM, SIZE, RSS,
+STATE, TIME, PRI, and COMMAND.
+.IP "\fB\-v\fR" 14
+Instead of the default status information, print virtual memory
+information (includes the PID, CODSZ, CODRS, HPSZ, HPRS, STKSZ, STKRS,
+SIZE, RSS, and COMMAND fields).
+.IP "\fB\-w \fIlineWidth\fR" 14
+Use \fIlineWidth\fR as the output line length, and format output so that
+it fits neatly on lines of this length.  The COMMAND field gets truncated
+as necessary to accomplish this. 
+.BE
+
+.SH DESCRIPTION
+.LP
+This command prints out process status information.
+If one or more \fIpid\fR's is given, then information is printed
+for those processes.  If no \fIpid\fR is given, then information is
+printed for all processes belonging to the invoking user (additional
+processes may be requested with switches like \fB\-a\fR).
+.LP
+By default, \fBps\fR prints a short status report for each process, containing
+the PID, STATE, TIME, and COMMAND fields.  Other forms of printout are
+available using switches like \fB\-u\fR and \fB\-m\fR.
+
+.SH FIELDS
+.LP
+The names of fields printed by \fBps\fR (which appear at the tops of the
+columns of \fBps\fR printout), and the meaning of the information printed
+in the fields, are:
+.IP \fBCODRS\fR 13
+The amount of physical memory occupied by this process's code
+segment, in units of 1024 bytes.
+.IP \fBCODSZ\fR 13
+The total size of this process's code segment, in units of 1024 bytes.
+Not all of this is necessarily resident in memory.
+.IP \fBCOMMAND\fR 13
+The command that the process is executing.  This field gets truncated
+if necessary to avoid running off the end of the line.  Use the \fB\-w\fR
+switch to request a longer line size when needed.
+.IP \fBEVENT\fR 13
+The \fIevent\fR field from the process control block (printed in
+hexadecimal).  See the include file <kernel/proc.h> for further
+information.
+.IP \fBFLAGS\fR 13
+The \fIgenFlags\fR field from the process control block (printed in
+hexadecimal).  See the include file <kernel/proc.h> for further
+information.
+.IP \fBGROUP\fR 13
+The process group to which this process belongs.
+.IP \fBHANDLE\fR 13
+A hexadecimal value giving a bit-mask of the signals for which the process
+has specified handler procedures.
+.IP \fBHELD\fR 13
+A hexadecimal value giving a bit-mask of the signals currently ``held''
+(prevented from being delivered to the process at its request).
+.IP \fBHPRS\fR 13
+The amount of physical memory occupied by this process's heap segment,
+in units of 1024 bytes.
+.IP \fBHPSZ\fR 13
+The total size of this process's heap segment, in units of 1024 bytes.
+.IP \fBIGNORE\fR 13
+A hexadecimal value giving a bit-mask of the signals currently being
+ignored by the process
+.IP \fBPID\fR 13
+The process ID for the process.
+.IP \fBPPID\fR 13
+The process id of the parent of this process.
+.IP \fBPRI\fR 13
+The priority of the process.  Processes with normal priority have no
+specific priority listed.  Server processes, with infinite priority,
+are listed as "S". 
+Processes with above-normal priority are
+listed
+as ">", and processes with below-normal priority are listed as "<".
+Processes with VERY_LOW_PRIORITY are listed as "<<".
+.IP \fBPENDING\fR 13
+A hexadecimal value giving a bit-mask of the signals that are awaiting
+delivery to the process.
+.IP \fBRNODE\fR 13
+For a migrated process, this identifies the ``other'' node that the
+process belongs to (its home node if this is the remote node, or
+vice versa).
+.IP \fBRPID\fR 13
+For a migrated process, this contains the id of the process on its
+``other'' node (its home node if this is the remote node, or
+vice versa).
+.IP \fBRSS\fR 13
+Resident set size:  the total physical memory occupied by this
+process, in units of 1024 bytes.  This is the sum of CODRS, HPRS, and
+STKRS.
+.IP \fBRUSER\fR 13
+The name of the user corresponding to the real user ID of this process.
+.IP \fBSIZE\fR 13
+The total amount of virtual memory allocated to this process,
+in units of 1024 bytes.  Not all
+of this memory is necessary resident in physical memory, and some of it
+may not even have been accessed.  SIZE is equal to the sum of
+CODSZ, HPSZ, and STKSZ.
+.IP \fBSTATE\fR 13
+The current execution state of the process.
+.IP \fBSTKRS\fR 13
+The amount of physical memory occupied by this process's stack segment,
+in units of 1024 bytes.
+.IP \fBSTKSZ\fR 13
+The total size of this process's heap segment, in units of 1024 bytes.
+.IP \fBTIME\fR 13
+The total CPU time consumed by the process, in minutes and seconds.
+This time includes both kernel and user time.
+.IP \fBUSER\fR 13
+The user name corresponding to the effective user ID of this process.
+.IP \fB%CPU\fR 13
+A smoothed average of the fraction of a CPU that this process has
+consumed over the last several seconds.
+.IP \fB%MEM\fR 13
+The fraction of total physical memory occupied by this process's
+segments.  Does not include memory that belongs to the process
+but is swapped out.
+
+.SH KEYWORDS
+process, status
+@
+
+
+1.3
+log
+@follow migrated processes.
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/ps/RCS/ps.man,v 1.2 88/12/30 10:09:48 ouster Exp Locker: douglis $ SPRITE (Berkeley)
+d43 1
+a43 1
+STATE, TIME, and COMMAND.
+d109 8
+@
+
+
+1.2
+log
+@More format upgrades.
+More format upgrades.
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/ps/RCS/ps.man,v 1.1 88/12/22 11:32:09 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d26 3
+d30 3
+d35 1
+a35 2
+and COMMAND fields).  Print information only for processes that are
+migrated to or from another machine.
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+' $Header: /sprite/doc/ref/cmds/RCS/ps,v 1.3 88/10/17 17:41:48 douglis Exp $ SPRITE (Berkeley)
+d10 1
+a10 1
+.IP "\fB-a\fR" 14
+d13 1
+a13 1
+.IP "\fB-A\fR" 14
+d15 1
+a15 1
+.IP "\fB-d\fR" 14
+d17 1
+a17 1
+.IP "\fB-help\fR" 14
+d19 1
+a19 1
+.IP "\fB-i\fR" 14
+d23 1
+a23 1
+.IP "\fB-k\fR" 14
+d26 1
+a26 1
+.IP "\fB-m\fR" 14
+d31 1
+a31 1
+.IP "\fB-s\fR" 14
+d35 1
+a35 1
+.IP "\fB-u\fR" 14
+d39 1
+a39 1
+.IP "\fB-v\fR" 14
+d43 1
+a43 1
+.IP "\fB-w \fIlineWidth\fR" 14
+d55 1
+a55 1
+processes may be requested with switches like \fB-a\fR).
+d57 1
+a57 1
+By default, Ps prints a short status report for each process, containing
+d59 1
+a59 1
+available using switches like \fB-u\fR and \fB-m\fR.
+d63 2
+a64 2
+The names of fields printed by Ps (which appear at the tops of the
+columns of Ps printout), and the meaning of the information printed
+d74 1
+a74 1
+if necessary to avoid running off the end of the line.  Use the \fB-w\fR
+@

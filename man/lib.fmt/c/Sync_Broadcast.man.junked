@@ -1,0 +1,66 @@
+
+
+
+Sync_Broadcast        C Library Procedures         Sync_Broadcast
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Sync_Broadcast - awaken all processes waiting on a condition
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyynncc..hh>>
+     SSyynncc__BBrrooaaddccaasstt(_c_o_n_d_i_t_i_o_n_P_t_r)
+
+AARRGGUUMMEENNTTSS
+     Sync_Condition   *_c_o_n_d_i_t_i_o_n_P_t_r   (in)      Condition   vari-
+                                                able   for  which
+                                                processes may  be
+                                                awaiting  notifi-
+                                                cation.
+
+_________________________________________________________________
+
+DDEESSCCRRIIPPTTIIOONN
+     SSyynncc__BBrrooaaddccaasstt notifies other processes that a condition has
+     been  met.   If  no process is awaiting this condition, then
+    875 0
+0.875 0
+0.876953125 0
+0.876953125 0
+0.87890625 0
+0.87890625 0
+0.880859375 0
+0.880859375 0
+0.8828125 0
+0.8828125 0
+0.884765625 0
+0.884765625 0
+0.88671875 0
+0.88671875 0
+0.888671875 0
+0.888671875 0
+0.890625 0
+0.890625 0
+0.892578125 0
+0.892578125 0
+0.89453125 0
+0.89453125 0
+0.896484375 0
+0.896484375 0
+0.8984375 0
+0.8984375 0
+0.900390625 0
+0.900390625 0
+0.90234375 0
+0.90234375 0
+0.904296875 0
+0.904296875 0
+0.90625 0
+0.90625 0
+0.908203125 0
+0.908203125 0
+0.91015625 0
+0.91015625 0

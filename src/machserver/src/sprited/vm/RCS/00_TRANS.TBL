@@ -1,0 +1,12 @@
+F VM.H_V;1                          	vm.h,v
+F VMFSCACH.C_V;1                    	vmFsCache.c,v
+F VMINT.H_V;1                       	vmInt.h,v
+F VMMSGQUE.C_V;1                    	vmMsgQueue.c,v
+F VMOPS.C_V;1                       	vmOps.c,v
+F VMPAGER.C_V;1                     	vmPager.c,v
+F VMSEGMEN.C_V;1                    	vmSegment.c,v
+F VMSUBR.C_V;1                      	vmSubr.c,v
+F VMSWAPDI.C_V;1                    	vmSwapDir.c,v
+F VMSWAPDI.H_V;1                    	vmSwapDir.h,v
+F VMSYSCAL.C_V;1                    	vmSysCall.c,v
+F VMTYPES.H_V;1                     	vmTypes.h,v

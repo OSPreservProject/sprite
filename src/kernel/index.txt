@@ -1,0 +1,45 @@
+# Miscellaneous files and directories
+
+Cvsroot:	kernel revision history; managed by SCVS/CVS/RCS
+Include:	installed kernel header files
+Modules:	list of modules used to build a kernel
+README.txt:	information about the kernel sources
+SCVS.config:	configuration file for SCVS
+sprite:		kernel build directory
+
+# Kernel source modules
+
+dbg:		network-based kernel debugger
+dev:		device drivers
+fs:		top-level file system
+fscache:	file system cache
+fsconsist:	distributed cache consistency
+fsdm:		disk management
+fsio:		stream management
+fslcl:		local (disk) file system
+fspdev:		pseudo-device implementation
+fsprefix:	file system prefix management
+fsrecov:	file system crash recovery
+fsrmt:		remote (network) file system
+fsutil:		various file system utilities
+lfs:		Log Structured File System
+libc:		various routines from the C library
+mach:		low-level machine-dependent routines
+main:		initial processing during boot
+mem:		memory management
+net:		network support
+ofs:		original disk layout (pre-LFS)
+proc:		process management
+prof:		profiling
+raid:		RAID driver
+raid.null:	RAID driver null stubs 
+recov:		crash recovery
+rpc:		remote procedure call
+sched:		scheduler
+sig:		signals
+sync:		synchronization and locking
+sys:		system call stubs
+timer:		system clock
+utils:		miscellaneous routines
+vm:		virtual memory routines
+

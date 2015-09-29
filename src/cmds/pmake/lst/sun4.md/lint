@@ -1,0 +1,37 @@
+lstAppend.c:
+lstAtEnd.c:
+lstAtFront.c:
+lstClose.c:
+lstConcat.c:
+lstCur.c:
+lstDatum.c:
+lstDeQueue.c:
+lstDestroy.c:
+lstDupl.c:
+lstEnQueue.c:
+lstFake.c:
+lstFind.c:
+lstFindFrom.c:
+lstFirst.c:
+lstForEach.c:
+lstForEachFrom.c:
+lstIndex.c:
+lstInit.c:
+lstInsert.c:
+lstIsAtEnd.c:
+lstIsEmpty.c:
+lstLast.c:
+lstLength.c:
+lstMember.c:
+lstMove.c:
+lstNext.c:
+lstOpen.c:
+lstPred.c:
+lstPrev.c:
+lstRemove.c:
+lstReplace.c:
+lstSetCirc.c:
+lstSucc.c:
+malloc, arg. 1 used inconsistently	llib-lc:malloc.c 2(49)  ::  lstInit.c 2(57)
+malloc value used inconsistently	llib-lc:malloc.c 2(49)  ::  lstInit.c 2(57)
+malloc value declared inconsistently	llib-lc:malloc.c 2(49)  ::  lstInit.c 2(57)

@@ -1,0 +1,111 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  sprited:1.2.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     88.07.29.17.40.58;  author ouster;  state Exp;
+branches 1.2.1.1;
+next     1.1;
+
+1.1
+date     88.07.29.17.20.23;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.2.1.1
+date     91.12.10.15.50.58;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Lint.
+@
+text
+@/* 
+ * getuid.c --
+ *
+ *	Source code for the getuid library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: proto.c,v 1.2 88/03/11 08:39:08 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <proc.h>
+#include "compatInt.h"
+/*
+ *----------------------------------------------------------------------
+ *
+ * getuid --
+ *
+ *	Procedure to map from Unix getuid system call to Sprite Proc_GetIDs.
+ *
+ * Results:
+ *	UNIX_ERROR is returned upon error, with the actual error code
+ *	stored in errno.  Upon success, the real user ID of the current
+ *	process is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+getuid()
+{
+    ReturnStatus status;	/* result returned by Proc_GetIDs */
+    int userId;			/* real user ID of current process */
+
+    status = Proc_GetIDs((int *) NULL, (int *) NULL, &userId, (int *) NULL);
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(userId);
+    }
+}
+@
+
+
+1.2.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/unixSyscall/RCS/getuid.c,v 1.2 88/07/29 17:40:58 ouster Exp $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d47 1
+a47 2
+    status = Proc_GetIDs((Proc_PID *) NULL, (Proc_PID *) NULL,
+		         &userId, (Proc_PID *) NULL);
+@

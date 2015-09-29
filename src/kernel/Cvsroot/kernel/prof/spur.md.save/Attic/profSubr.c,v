@@ -1,0 +1,591 @@
+head     8.3;
+branch   ;
+access   ;
+symbols  sun4nw:8.3 symm:8.3 spur:8.3 newlib:8.0;
+locks    ; strict;
+comment  @ * @;
+
+
+8.3
+date     89.03.15.17.44.36;  author mendel;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.12.04.15.21.45;  author ouster;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.30.12.08.02;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.33.43;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     88.11.11.15.33.52;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.15.18.47.11;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@ *	Routines for initializing and collecting profile information.
+Dummy routine version.
+@
+
+
+8.3
+log
+@*** empty log message ***
+@
+text
+@/* 
+ * prof.c --
+ *
+ *	Routines for initializing and collecting profile information.
+ *
+ * Copyright 1985 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/prof/spur.md/RCS/profSubr.c,v 8.2 88/12/04 15:21:45 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include "sprite.h"
+#include "prof.h"
+#include "profInt.h"
+#include "dbg.h"
+#include "sys.h"
+#include "timer.h"
+#include "mach.h"
+#include "fs.h"
+#include "vm.h"
+
+extern	int	etext;
+
+/*
+ * An on/off profiling switch.
+ */
+
+Boolean profEnabled = FALSE;
+
+
+/*
+ * A histogram of PC samples is kept for use by gprof. Each sample is a
+ * counter that gets incremented when the PC is in the range for the counter.
+ */
+
+typedef struct {
+    Address lowpc;
+    Address highpc;
+    int	    size;
+} SampleHdr;
+
+static int	pcSampleSize;
+static short	*pcSamples;
+
+/*
+ * PC sampling data structures (shared with _mcount.c).
+ */
+
+int		profArcListSize;
+ProfRawArc	*profArcList;
+ProfRawArc	*profArcListFreePtr;
+ProfRawArc	*profArcListEndPtr;
+
+int		profArcIndexSize;
+ProfRawArc	**profArcIndex;
+
+/*
+ * Flag to indicate if Prof_Init has been called.
+ */
+static Boolean	init = FALSE;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Prof_Init --
+ *
+ *	Allocate the profile data structures and initialize the profile timer.
+ *	The timer is initialized to automatically start ticking again
+ *	once its interrupt line is reset.  The array of counters
+ *	for sampling the PC is allocated, as is the table of call
+ *	graph arc counts.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Uses Vm_RawAlloc.  Each structure is order(textSize).
+ *	Sets a flag indicating it has been called.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Prof_Init()
+{
+    int numInstructions;
+
+    /*
+     * We estimate the number of instructions in the text
+     * by dividing the address range by four....  This determines
+     * to PC to index calculations done in mcount and Prof_CollectInfo.
+     */
+
+    numInstructions = ((unsigned)&etext) >> PROF_INSTR_SIZE_SHIFT;
+    printf("Prof_Init: # instructions in kernel = %d\n", numInstructions);
+
+    /*
+     * The size of the sample array reflects a compression down
+     * by the group size.
+     */
+
+    pcSampleSize = numInstructions / PROF_PC_GROUP_SIZE;
+    pcSamples = (short *) Vm_RawAlloc(pcSampleSize * sizeof(short));
+
+    /*
+     * Allocate an array indexed by PC and containing a pointer
+     * to the call graph arc that starts at that PC.  This array is
+     * compressed by the arc group size.
+     */
+    profArcIndexSize = numInstructions >> PROF_ARC_GROUP_SHIFT;
+#ifdef MCOUNT
+    profArcIndex = 
+	(ProfRawArc **) Vm_RawAlloc(profArcIndexSize * sizeof(ProfRawArc *));
+#endif
+
+    /*
+     * The arcList needs an element for every distinct call instruction
+     * that gets executed in the kernel.  The size is just a guess.
+     */
+
+    profArcListSize = numInstructions / PROF_CALL_RATIO;
+#ifdef MCOUNT
+    profArcList = 
+	    (ProfRawArc *) Vm_RawAlloc(profArcListSize * sizeof(ProfRawArc));
+#endif
+
+    init = TRUE;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Prof_Start --
+ *
+ *	Initialize the profile data structures and the profile timer.
+ *	This clears the PC sample counters, the call graph arc counters,
+ *	and the index into the list of call graph arc counters.
+ *
+ *	The interval between profile timer interrupts is defined in 
+ *	machRefresh. 
+ *
+ * Results:
+ *	Return status.
+ *
+ * Side effects:
+ *	Profiling is enabled and the data structures are zeroed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Prof_Start()
+{
+    if (!init) {
+	Prof_Init();
+    }
+
+    printf("Starting Profiling.\n");
+
+    /*
+     * Reset the PC sample counters.
+     */
+
+    bzero( (Address) pcSamples, pcSampleSize * sizeof(short));
+
+#ifdef MCOUNT
+    /*
+     * Reset the arc pointer list indexed by caller PC.
+     */
+
+    bzero((Address) profArcIndex, profArcIndexSize * sizeof(ProfRawArc *));
+
+    /*
+     * Set the free pointers into the arc storage.  Don't have to
+     * initialize the arc storage itself because that is done
+     * as arc storage is allocated by mcount.
+     */
+
+    profArcListFreePtr = &profArcList[0];
+    profArcListEndPtr = &profArcList[profArcListSize-1];
+#endif
+    profEnabled = TRUE;
+
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Prof_CollectInfo --
+ *
+ *	Collect profiling information from the stack.
+ *
+ *
+ *	Note: This is an interrupt-level routine.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Increment the counter associated with the PC value.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Prof_CollectInfo(pc)
+    register unsigned int	pc;	/* Address of PC at sample time. */
+{
+    register int index;	/* Index into the array of counters */
+
+    if (!profEnabled) {
+	return;
+    }
+
+    if (pc <= (int) &etext) {
+	index = pc >> PROF_PC_SHIFT;
+	if (index < pcSampleSize) {
+	    pcSamples[index]++;
+	}
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Prof_End --
+ *
+ *	Stop the profiling.
+ *
+ * Results:
+ *	Return status.
+ *
+ * Side effects:
+ *	Profiling is disabled.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Prof_End()
+{
+    profEnabled = FALSE;
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Prof_Dump --
+ *
+ *	Dump out the profiling data to the specified file.
+ *
+ * Results:
+ *	SUCCESS		- the information was dumped to the file.
+ *	?		- return codes from Fs module.
+ *
+ * Side effects:
+ *	Write the profiling data to a file.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Prof_Dump(dumpName)
+    char *dumpName;		/* Name of the file to dump to. */
+{
+    ReturnStatus	status;
+    Fs_Stream		*streamPtr;
+    int			fileOffset;
+    int			writeLen;
+    int			index;
+    ProfArc		arc;
+    ProfRawArc		*rawArcPtr;
+    SampleHdr		sampleHdr;
+
+    status = Fs_Open(dumpName, FS_WRITE|FS_CREATE, FS_FILE, 0666, &streamPtr);
+    if (streamPtr == (Fs_Stream *) NIL || status != SUCCESS) {
+	return(status);
+    }
+
+    /*
+     * Write out the PC sampling counters.  Note they are preceeded
+     * by a header that indicates the PC range and the size of the
+     * sampling buffer.  (The size includes the header size...)
+     */
+
+    sampleHdr.lowpc	= (Address) 0;
+    sampleHdr.highpc	= (Address) &etext;
+    sampleHdr.size	= (pcSampleSize * sizeof(short)) + sizeof(sampleHdr);
+
+    fileOffset = 0;
+    writeLen = sizeof(sampleHdr);
+    status = Fs_Write(streamPtr, (Address) &sampleHdr, fileOffset, &writeLen);
+    if (status != SUCCESS) {
+	printf(
+		    "Prof_Dump: Fs_Write(1) failed, status = %x\n",status);
+	goto dumpError;
+    }
+    printf("Prof_Dump: pc sample size = %d\n", pcSampleSize);
+
+    fileOffset += writeLen;
+    writeLen = pcSampleSize * sizeof(short);
+    status = Fs_Write(streamPtr, (Address) pcSamples, fileOffset, &writeLen);
+    if (status != SUCCESS) {
+	printf(
+		    "Prof_Dump: Fs_Write(2) failed, status = %x\n",status);
+	goto dumpError;
+    }
+
+    fileOffset += writeLen;
+
+    /*
+     * Write out instantiated arcs.  Loop through the arcIndex index
+     * and for each one that has arc storage figure out the PC that
+     * corresponds to the arcIndex.  Then dump out an entry for
+     * each routine called from that PC.
+     */
+#ifdef MCOUNT
+    for (index = 0 ; index < profArcIndexSize ; index++) {
+	rawArcPtr = profArcIndex[index];
+
+	/* 
+	 * Check if rawArcPtr equals an unused value (which is 0 because 
+	 * profArcIndex is initialized with bzero in Prof_Start).
+	 */
+	if (rawArcPtr == (ProfRawArc *) 0) {
+	    continue;
+	}
+
+	/*
+	 * Reverse the PC to index calculation done in mcount.
+	 */
+	arc.callerPC = 0 + (index << PROF_ARC_SHIFT);
+
+	do {
+	    arc.calleePC = rawArcPtr->calleePC;
+	    arc.count = rawArcPtr->count;
+
+	    writeLen = sizeof(ProfArc);
+	    status = Fs_Write(streamPtr, (Address)&arc, fileOffset, &writeLen);
+	    if (status != SUCCESS) {
+		printf(
+		    "Prof_Dump: Fs_Write(3) failed, status = %x, index = %d\n",
+		    status, index);
+		goto dumpError;
+	    }
+	    fileOffset += writeLen;
+
+	    rawArcPtr = rawArcPtr->link;
+	    /*
+	     * Check against NIL pointer here because of initialization
+	     * in mcount.
+	     */
+	} while (rawArcPtr != (ProfRawArc *)NIL);
+    }
+#endif
+    status = Fs_Close(streamPtr);
+    if (status != SUCCESS) {
+	printf(
+		"Prof_Dump: Fs_Close failed, status = %x\n", status);
+    }
+    return(status);
+
+dumpError:
+    (void) Fs_Close(streamPtr);
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Prof_DumpStub --
+ *
+ *	This system call dumps profiling information into the specified file.
+ *	This is done by making the name of the file accessible, then calling 
+ *	Prof_Dump.
+ *
+ * Results:
+ *	SUCCESS		- the file was dumped.
+ *	?		- error returned by Fs module.
+ *
+ * Side effects:
+ *	A file is written.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Prof_DumpStub(pathName)
+    char *pathName;		/* The name of the file to write. */
+{
+    char	newName[FS_MAX_PATH_NAME_LENGTH];
+    int		pathNameLength;
+
+    /*
+     * Copy the name in from user space to the kernel stack.
+     */
+    if ((Proc_IsMigratedProcess() ?
+	    Proc_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
+		       &pathNameLength) :
+	    Vm_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
+		       &pathNameLength)) != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    }
+    if (pathNameLength == FS_MAX_PATH_NAME_LENGTH) {
+	return(FS_INVALID_ARG);
+    }
+    return(Prof_Dump(newName));
+}
+@
+
+
+8.2
+log
+@Stop using obsolete header files.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/prof/spur.md/RCS/profSubr.c,v 8.1 88/11/30 12:08:02 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+8.1
+log
+@Sys_Panic => panic
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/prof/spur.md/RCS/profSubr.c,v 8.0 88/11/11 18:33:43 douglis Stable Locker: brent $ SPRITE (Berkeley)";
+a22 1
+#include "byte.h"
+d331 1
+a331 1
+	 * profArcIndex is initialized with Byte_Zero in Prof_Start).
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/prof/spur.md/RCS/profSubr.c,v 1.2 88/11/11 15:33:52 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d100 1
+a100 1
+    Sys_Printf("Prof_Init: # instructions in kernel = %d\n", numInstructions);
+d163 1
+a163 1
+    Sys_Printf("Starting Profiling.\n");
+d303 1
+a303 1
+	Sys_Panic(SYS_WARNING,
+d307 1
+a307 1
+    Sys_Printf("Prof_Dump: pc sample size = %d\n", pcSampleSize);
+d313 1
+a313 1
+	Sys_Panic(SYS_WARNING,
+d350 1
+a350 1
+		Sys_Panic(SYS_WARNING,
+d367 1
+a367 1
+	Sys_Panic(SYS_WARNING,
+@
+
+
+1.2
+log
+@Added profiling code.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: profSubr.c,v 6.1 88/08/24 20:25:01 nelson Exp $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: profSubr.c,v 5.4 88/05/05 17:59:09 nelson Exp $ SPRITE (Berkeley)";
+d17 8
+d26 1
+d33 33
+d82 3
+a84 1
+ *	None.
+d91 1
+d93 40
+d144 2
+a145 1
+ *	The interval between profile timer interrupts is defined in devTimer.c.
+d151 1
+a152 1
+ *
+d159 3
+d163 1
+a163 1
+    Sys_Printf("Profiling Not Implmented.\n");
+d165 25
+a189 1
+    return(FAILURE);
+a199 3
+ *	The interval between calls to this routine is defined
+ *	by the profile timer's interrupt interval, which is
+ *	defined in devTimer.c.
+d213 2
+a214 1
+Prof_CollectInfo()
+d216 12
+d250 1
+d262 2
+a263 1
+ *	FAILURE		- return codes from Fs module.
+d275 100
+a374 1
+    return(FAILURE);
+d388 2
+a389 1
+ *	FAILURE		- error returned by Fs module.
+d401 17
+a417 1
+	return (FAILURE);
+@

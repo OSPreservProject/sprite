@@ -1,0 +1,198 @@
+
+
+
+Tcl_Fork              C Library Procedures               Tcl_Fork
+
+
+
+_________________________________________________________________
+
+NNAAMMEE                                                               |
+     Tcl_Fork,  Tcl_WaitPids,  Tcl_DetachPids  -   manage   child  |
+     processes                                                     |
+
+SSYYNNOOPPSSIISS                                                           |
+     ##iinncclluuddee <<ttccll..hh>>                                              |
+
+     int                                                           |
+     TTccll__FFoorrkk( )                                                   |
+
+     int                                                           |
+     TTccll__WWaaiittPPiiddss(_n_u_m_P_i_d_s, _p_i_d_P_t_r, _s_t_a_t_u_s_P_t_r)                      |
+
+     int                                                           |
+     TTccll__DDeettaacchhPPiiddss(_n_u_m_P_i_d_s, _p_i_d_P_t_r)                               |
+
+AARRGGUUMMEENNTTSS                                                          |
+     int   _n_u_m_P_i_d_s      (in)                                            ||
+                                  Number of process ids contained  |
+                                  in  the  array  pointed  to  by  |
+                                  _p_i_d_P_t_r.                          |
+
+     int   *_p_i_d_P_t_r      (in)                                            ||
+                                  Address   of  array  containing  |
+                                  _n_u_m_P_i_d_s process ids.             |
+
+     int   *_s_t_a_t_u_s_P_t_r   (out)                                           ||
+                                  Address   of   place  to  store  |
+                                  status       returned        by  |
+                                  exited/suspended process.        |
+_________________________________________________________________  |
+
+
+DDEESSCCRRIIPPTTIIOONN                                                        |
+     These procedures keep track of child processes in  order  to  |
+     make  it  easier for one application to manage several chil-  |
+     dren.  If an application uses the UNIX _f_o_r_k and _w_a_i_t  kernel  |
+     calls  directly,  problems occur in situations like the fol-  |
+     lowing:                                                       |
+
+     [1]                                                                ||
+          One  part of an application creates child C1.  It plans  |
+          to let the child run in background, then later wait for  |
+          it to complete.                                          |
+
+     [2]                                                                ||
+          Some  other  part  of  the  application creates another  |
+          child C2, not knowing anything about C1.                 |
+
+     [3]                                                                ||
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+Tcl_Fork              C Library Procedures               Tcl_Fork
+
+
+
+          The  second  part  of the application uses _w_a_i_t to wait  |
+          for C2 to complete.                                      |
+
+     [4]                                                                ||
+          C1  completes  before C2, so C1 is returned by the _w_a_i_t  |
+          kernel call.                                             |
+
+     [5]                                                                ||
+          The  second  part  of the application doesn't recognize  |
+          C1, so it ignores it and calls _w_a_i_t again.   This  time  |
+          C2 completes.                                            |
+
+     [6]                                                                ||
+          The first part of the application eventually decides to  |
+          wait for its child to complete.   When  it  calls  _w_a_i_t  |
+          there  are  no  children left, so _w_a_i_t returns an error  |
+          and the application never  gets  to  examine  the  exit  |
+          status for C1.                                           |
+
+     The procedures TTccll__FFoorrkk,  TTccll__WWaaiittPPiiddss,  and  TTccll__DDeettaacchhPPiiddss  |
+     get  around  this  problem  by  keeping  a  table  of  child  |
+     processes and their exit statuses.  They also provide a more  |
+     flexible  waiting mechanism than the _w_a_i_t kernel call.  Tcl-  |
+     based applications should never call _f_o_r_k and _w_a_i_t directly;  |
+     they should use TTccll__FFoorrkk, TTccll__WWaaiittPPiiddss, and TTccll__DDeettaacchhPPiiddss.   |
+
+     TTccll__FFoorrkk calls _f_o_r_k and returns the result of the _f_o_r_k  ker-  |
+     nel  call.   If  the  _f_o_r_k call was successful then TTccll__FFoorrkk  |
+     also enters the new process into its internal table of child  |
+     proceses.   If  _f_o_r_k  returns an error then TTccll__FFoorrkk returns  |
+     that same error.                                              |
+
+     TTccll__WWaaiittPPiiddss  calls  _w_a_i_t  repeatedly  until  one   of   the  |
+     processes  in  the _p_i_d_P_t_r array has exited or been killed or  |
+     suspended by  a  signal.   When  this  occurs,  TTccll__WWaaiittPPiiddss  |
+     returns  the  process  identifier for the process and stores  |
+     its wait status at *_s_t_a_t_u_s_P_t_r.  If  the  process  no  longer  |
+     exists   (it  exited  or  was  killed  by  a  signal),  then  |
+     TTccll__WWaaiittPPiiddss removes its entry  from  the  internal  process  |
+     table.   If  _w_a_i_t returns a process that isn't in the _p_i_d_P_t_r  |
+     array, TTccll__WWaaiittPPiiddss saves its wait status  in  the  internal  |
+     process table and calls _w_a_i_t again.  If one of the processes  |
+     in the _p_i_d_P_t_r array has already exited (or suspended or been  |
+     killed)  when  TTccll__WWaaiittPPiiddss  is called, that process and its  |
+     wait status are returned immediately without calling _w_a_i_t.    |
+
+     TTccll__WWaaiittPPiiddss provides  two  advantages.   First,  it  allows  |
+     processes  to  exit  in any order, and saves their wait sta-  |
+     tuses.  Second, it allows waiting on a number  of  processes  |
+     simultaneously,  returning  when  any  of  the  processes is  |
+     returned by _w_a_i_t.                                             |
+
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+Tcl_Fork              C Library Procedures               Tcl_Fork
+
+
+
+     TTccll__DDeettaacchhPPiiddss is used to indicate that the  application  no  |
+     longer  cares  about the processes given by the _p_i_d_P_t_r array  |
+     and will never use TTccll__WWaaiittPPiiddss  to  wait  for  them.   This  |
+     occurs,  for example, if one or more children are to be exe-  |
+     cuted in background and the parent doesn't care whether they  |
+     complete  successfully.   When TTccll__DDeettaacchhPPiiddss is called, the  |
+     internal process table entries for the processes are  marked  |
+     so that the entries will be removed as soon as the processes  |
+     exit or are killed.                                           |
+
+     If none of the pids passed to  TTccll__WWaaiittPPiiddss  exists  in  the  |
+     internal process table, then -1 is returned and _e_r_r_n_o is set  |
+     to ECHILD.  If a _w_a_i_t kernel call  returns  an  error,  then  |
+     TTccll__WWaaiittPPiiddss returns that same error.  If a _w_a_i_t kernel call  |
+     returns a process that isn't in the internal process  table,  |
+     TTccll__WWaaiittPPiiddss  panics  and  aborts  the application.  If this  |
+     situation occurs, it means that a process has  been  created  |
+     without  calling  TTccll__FFoorrkk and that its exit status is about  |
+     to be lost.                                                   |
+
+     TTccll__WWaaiittPPiiddss defines wait statuses to have type  _i_n_t,  which  |
+     is  correct  for  POSIX and many variants of UNIX. Some BSD-  |
+     based UNIX systems still use type _u_n_i_o_n _w_a_i_t for  wait  sta-  |
+     tuses;   it should be safe to cast a pointer to a _u_n_i_o_n _w_a_i_t  |
+     structure to (_i_n_t *) before passing it to TTccll__WWaaiittPPiiddss as in  |
+     the following code:                                           |
+
+          uunniioonn wwaaiitt ssttaattuuss;;                                       |
+          iinntt ppiidd11,, ppiidd22;;                                          |
+          ......                                                      |
+          ppiidd22 == TTccll__WWaaiittPPiiddss((11,, &&ppiidd11,, ((iinntt **)) &&ssttaattuuss));;          |
+
+
+KKEEYYWWOORRDDSS                                                           |
+     background, child, detach, fork, process, status, wait
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     3
+
+
+

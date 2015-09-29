@@ -1,0 +1,104 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.3
+date     92.06.10.13.05.28;  author jhh;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.04.14.22.36.48;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.04.11.12.57.44;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@System makefile fragment to set the default target machine type.
+@
+
+
+1.3
+log
+@leave TM as ds5000 if you're in a kernel module
+@
+text
+@#
+# This Makefile is included by the user's Makefile.  It sets the
+# target machine type (TM), though the user can override it in the
+# "make" command.  This operation is done here so that we can add
+# backward-compatible machine types (e.g., ds5000) and have users
+# easily treat the new machine type the same as the old one.
+#
+# $Header: /sprite/lib/pmake/RCS/settm.mk,v 1.2 91/04/14 22:36:48 kupfer Exp $
+# 
+
+# If there is only one allowable machine type, that's the default
+# target type.  Otherwise the default is the type we're running on
+# now.
+
+NUM_MACHINES   != echo $(MACHINES) | wc -w
+
+#if $(NUM_MACHINES) == 1
+TM	       ?= $(MACHINES)
+#else
+TM	       ?= $(MACHINE)
+#endif
+
+# Map ds5000 to ds3100 (only if we are not in a kernel module as determined
+# by having a type of kernel). Also, if the type isn't defined then assume
+# we are not in a kernel module. This is to be backwards compatible with
+# older Makefiles..
+
+#if !empty(TM:Mds5000) 
+#if !defined(TYPE) || empty(TYPE:Mkernel)
+TM		= ds3100
+#endif
+#endif
+@
+
+
+1.2
+log
+@If there is only one legal target type, make that the default (rather
+than always using the machine type that pmake is running on).  This
+restores the semantics we had with the DEFTARGET stuff, and it allows
+us to say "pmake sun3" on a sun4 even if sun4 isn't a legal target type.
+@
+text
+@d8 1
+a8 1
+# $Header: /sprite/lib/pmake/RCS/settm.mk,v 1.1 91/04/11 12:57:44 kupfer Exp $
+d23 4
+a26 1
+# Map ds5000 to ds3100.
+d28 2
+a29 1
+#if !empty(TM:Mds5000)
+d31 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d8 1
+a8 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.45 91/03/24 20:58:16 jhh Exp $
+d11 3
+a13 1
+# The default target type is the type we're running on now.
+d15 5
+d21 1
+@

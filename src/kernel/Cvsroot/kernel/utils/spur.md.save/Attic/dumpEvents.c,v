@@ -1,0 +1,201 @@
+head     8.0;
+branch   ;
+access   ;
+symbols  sun4nw:8.0 symm:8.0 spur:8.0 newlib:8.0;
+locks    ; strict;
+comment  @ * @;
+
+
+8.0
+date     88.11.11.18.41.38;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     88.10.30.21.09.35;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.16.22.04.40;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Debug dump routines for SPUR.
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@/* 
+ * dumpEvents.c --
+ *
+ * Routines to register events (characters) for debugging dump program.
+ *
+ * Since SPUR currently has no keyboard to bind command to the only way these
+ * commands can be called is from the debugger. 
+ *
+ * Copyright 1985 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/spur.md/RCS/dumpEvents.c,v 1.2 88/10/30 21:09:35 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include "sprite.h"
+#include "dumpInt.h"
+
+/*
+ * Table of routines and their arguments to be called on dump events.
+ */
+static EventTableType spurEventTable[] = {
+	/* This MUST be the last entry */
+    {'\000', LAST_EVENT, NULL_ARG, (char *) 0 }
+};
+
+/*
+ * Set to point at the machine independent events.
+ */ 
+static EventTableType	*eventTable;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dump_Register_Events --
+ *
+ *	Establish default procedural attachments for keyboard invocation
+ *	of Dump routines.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Dump_Register_Events(eventTbl)
+    EventTableType	*eventTbl;
+{
+    /*
+     * Since there are no keys to bind to, just save a pointer to the
+     * table.
+     */
+
+    eventTable = eventTbl;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dump_Show_Local_Menu --
+ *
+ *	Dump out a list of the local to the SPUR L1-key magic commands.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Dump_Show_Local_Menu()
+{
+
+    EventTableType	*entry;
+    for (entry = spurEventTable; entry->routine != LAST_EVENT; entry++) {
+	printf("%c - %s\n",entry->key, entry->description);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DumpL1() --
+ *
+ *	Simulate the Sun L1 key on the SPUR. 
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+DumpL1(secondKey)
+	char	secondKey;	/* Character typed with the L1. */
+{
+    EventTableType	*entry;
+    /*
+     * Check the machine dependent table first.
+     */
+
+    for (entry = spurEventTable; entry->routine != LAST_EVENT; entry++) {
+	if (entry->key == secondKey) { 
+		/*
+		 * We have a match. Call if it is not a reserved_event.
+		 */
+		if (entry->routine != RESERVED_EVENT) {
+			(entry->routine) (entry->argument);
+		}
+		return;
+	}
+    }
+    /*
+     * Try checking the machine independent table.
+     */
+    for (entry = eventTable; entry->routine != LAST_EVENT; entry++) {
+	if (entry->key == secondKey) { 
+		/*
+		 * We have a match. Call if it is not a reserved_event.
+		 */
+		if (entry->routine != RESERVED_EVENT) {
+			(entry->routine) (entry->argument);
+		}
+		return;
+	}
+    }
+
+}
+
+@
+
+
+1.2
+log
+@multiprocessor port, change to new C lib
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/spur.md/RCS/dumpEvents.c,v 1.1 88/06/16 22:04:40 mendel Exp Locker: jhh $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: dumpEvents.c,v 1.1 88/06/16 21:11:51 mendel Exp $ SPRITE (Berkeley)";
+d86 1
+a86 1
+	Sys_Printf("%c - %s\n",entry->key, entry->description);
+@

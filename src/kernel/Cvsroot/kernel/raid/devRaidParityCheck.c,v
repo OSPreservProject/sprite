@@ -1,0 +1,415 @@
+head     1.7;
+branch   ;
+access   ;
+symbols  ds3100:1.7 sun3:1.7 sun4nw:1.7 symm:1.7 spur:1.7;
+locks    ; strict;
+comment  @ * @;
+
+
+1.7
+date     90.11.09.13.16.00;  author eklee;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     90.10.12.14.01.10;  author eklee;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     90.10.12.11.55.09;  author eklee;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.10.10.11.06.39;  author eklee;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.09.28.18.51.25;  author eklee;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.09.19.14.54.10;  author eklee;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.08.27.13.47.16;  author eklee;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Check parity.
+@
+
+
+1.7
+log
+@Moved semaphore routies to semaphore.c.
+@
+text
+@/* 
+ * devRaidParityCheck.c --
+ *
+ *	This file implements routines for checking the parity.
+ *
+ * Copyright 1989 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#include "sync.h"
+#include <string.h>
+#include "stdio.h"
+#include "sprite.h"
+#include "fs.h"
+#include "dev.h"
+#include "devBlockDevice.h"
+#include "devRaid.h"
+#include "semaphore.h"
+#include "stdlib.h"
+#include "devRaidUtil.h"
+#include "schedule.h"
+#include "devRaidProto.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_InitiateParityCheck --
+ *	
+ *	Check the parity beginning at startStripe for numStripe.
+ *	If numStripe is negative, all stripes will be checked.
+ *	(ctrlData is used by the debug device when debugging in user mode.)
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Parity is updated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void InitiateStripeParityCheck();
+static void parityCheckReadDoneProc();
+
+void
+Raid_InitiateParityCheck(raidPtr, startStripe, numStripe, doneProc,clientData,ctrlData)
+    Raid	*raidPtr;
+    int		 startStripe;
+    int		 numStripe;
+    void       (*doneProc)();
+    ClientData   clientData;
+    int		 ctrlData;
+{
+    RaidReconstructionControl	*reconstructionControlPtr;
+    reconstructionControlPtr =
+	    Raid_MakeReconstructionControl(raidPtr, (int) NIL, (int) NIL,
+		    (RaidDisk *) NIL, doneProc, clientData, ctrlData);
+    reconstructionControlPtr->stripeID = startStripe;
+    reconstructionControlPtr->numStripe = numStripe;
+    printf("RAID:MSG:Initiating parity check.\n");
+    InitiateStripeParityCheck(reconstructionControlPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * parityCheckDoneProc --
+ *
+ *	Callback procedure for Raid_InitiateParityCheck.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+parityCheckDoneProc(reconstructionControlPtr)
+    RaidReconstructionControl	*reconstructionControlPtr;
+{
+    reconstructionControlPtr->doneProc(reconstructionControlPtr->clientData,
+	    reconstructionControlPtr->status);
+    Raid_FreeReconstructionControl(reconstructionControlPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_InitiateParityCheckFailure --
+ *
+ *	Causes the initialization of the current stripe to fail.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints an error message.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+Raid_InitiateParityCheckFailure(reconstructionControlPtr)
+    RaidReconstructionControl	*reconstructionControlPtr;
+{
+    parityCheckReadDoneProc(reconstructionControlPtr, 1);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * InitiateStripeParityCheck --
+ *
+ *	Reconstructs the parity on a single stripe.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Locks stripe.
+ *	Parity is updated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+InitiateStripeParityCheck(reconstructionControlPtr)
+    RaidReconstructionControl	*reconstructionControlPtr;
+{
+    Raid	       *raidPtr       = reconstructionControlPtr->raidPtr;
+
+
+    int	       		ctrlData      = reconstructionControlPtr->ctrlData;
+    RaidRequestControl *reqControlPtr = reconstructionControlPtr->reqControlPtr;
+    char	       *readBuf       = reconstructionControlPtr->readBuf;
+    char	       *parityBuf     = reconstructionControlPtr->parityBuf;
+
+    int		        stripeID      = reconstructionControlPtr->stripeID;
+    int		        numStripe     = reconstructionControlPtr->numStripe;
+    unsigned	        firstSector;
+    unsigned	        nthSector;
+
+    firstSector = StripeIDToSector(raidPtr, stripeID);
+    nthSector   = NthSectorOfStripe(raidPtr, firstSector);
+    if (stripeID >= raidPtr->numStripe || stripeID < 0 || numStripe == 0) {
+	parityCheckDoneProc(reconstructionControlPtr);
+	return;
+    }
+    Raid_SLockStripe(raidPtr, stripeID);
+    reqControlPtr->numReq = reqControlPtr->numFailed = 0;
+    AddRaidDataRequests(reqControlPtr, raidPtr, FS_READ,
+	    firstSector, nthSector, readBuf, ctrlData);
+    AddRaidParityRequest(reqControlPtr, raidPtr, FS_READ,
+	    (unsigned) StripeIDToSector(raidPtr, stripeID),
+	    parityBuf, ctrlData);
+    if (reqControlPtr->numFailed == 0) {
+	Raid_InitiateIORequests(reqControlPtr,
+		parityCheckReadDoneProc,
+		(ClientData) reconstructionControlPtr);
+    } else {
+	Raid_InitiateParityCheckFailure(reconstructionControlPtr);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * parityCheckReadDoneProc --
+ *
+ *	Callback procedure for InitiateStripeParityCheck.
+ *	Called after the data and parity on a stripe is read.
+ *	Checks the parity.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+parityCheckReadDoneProc(reconstructionControlPtr, numFailed)
+    RaidReconstructionControl	*reconstructionControlPtr;
+    int			 	 numFailed;
+{
+    Raid	       *raidPtr       = reconstructionControlPtr->raidPtr;
+    char	       *parityBuf     = reconstructionControlPtr->parityBuf;
+    RaidRequestControl *reqControlPtr = reconstructionControlPtr->reqControlPtr;
+    int		        stripeID      = reconstructionControlPtr->stripeID;
+
+    if (numFailed > 0) {
+	Raid_ReportParityCheckFailure(reconstructionControlPtr->stripeID);
+	reconstructionControlPtr->status = FAILURE;
+    } else {
+	char	       *xorBuf = malloc((unsigned)raidPtr->bytesPerStripeUnit);
+	bzero(xorBuf, raidPtr->bytesPerStripeUnit);
+	XorRaidRequests(reqControlPtr, raidPtr, xorBuf);
+#ifndef NODATA
+	bzero(parityBuf, raidPtr->bytesPerStripeUnit);
+	if (bcmp(parityBuf, xorBuf, raidPtr->bytesPerStripeUnit) != 0) {
+	    Raid_ReportParityCheckFailure(stripeID);
+	    reconstructionControlPtr->status = FAILURE;
+	}
+	free(xorBuf);
+#endif
+    }
+    if (reconstructionControlPtr->stripeID % 100 == 0) {
+	printf("RAID:MSG:%d", reconstructionControlPtr->stripeID);
+    }
+    Raid_SUnlockStripe(raidPtr, reconstructionControlPtr->stripeID);
+    reconstructionControlPtr->stripeID++;
+    reconstructionControlPtr->numStripe--;
+    InitiateStripeParityCheck(reconstructionControlPtr);
+}
+@
+
+
+1.6
+log
+@Added Raid_ prefix to external names and cleaned up warning messages.
+@
+text
+@d25 1
+a25 1
+#include "devRaidLock.h"
+@
+
+
+1.5
+log
+@Fixed memory leak.
+@
+text
+@d35 1
+a35 1
+ * InitiateParityCheck --
+d54 1
+a54 1
+InitiateParityCheck(raidPtr, startStripe, numStripe, doneProc,clientData,ctrlData)
+d64 1
+a64 1
+	    MakeReconstructionControl(raidPtr, (int) NIL, (int) NIL,
+d78 1
+a78 1
+ *	Callback procedure for InitiateParityCheck.
+d94 1
+a94 1
+    FreeReconstructionControl(reconstructionControlPtr);
+d101 1
+a101 1
+ * InitiateParityCheckFailure --
+d115 1
+a115 1
+InitiateParityCheckFailure(reconstructionControlPtr)
+d162 1
+a162 1
+    SLockStripe(raidPtr, stripeID);
+d170 1
+a170 1
+	InitiateIORequests(reqControlPtr,
+d174 1
+a174 1
+	InitiateParityCheckFailure(reconstructionControlPtr);
+d208 1
+a208 1
+	ReportParityCheckFailure(reconstructionControlPtr->stripeID);
+d217 1
+a217 1
+	    ReportParityCheckFailure(stripeID);
+d226 1
+a226 1
+    SUnlockStripe(raidPtr, reconstructionControlPtr->stripeID);
+@
+
+
+1.4
+log
+@Fixed bug with parity checking.
+@
+text
+@a205 1
+    char	       *xorBuf = malloc((unsigned)raidPtr->bytesPerStripeUnit);
+d211 1
+d220 1
+@
+
+
+1.3
+log
+@Callback procedure now called with status.
+@
+text
+@d17 1
+d19 1
+a19 1
+#include "sync.h"
+a165 3
+#ifndef NODATA
+    bzero(parityBuf, raidPtr->bytesPerStripeUnit);
+#endif
+a202 1
+    char	       *readBuf       = reconstructionControlPtr->readBuf;
+a203 1
+    int	       		ctrlData      = reconstructionControlPtr->ctrlData;
+d206 1
+d212 2
+a213 1
+	XorRaidRequests(reqControlPtr, raidPtr, parityBuf);
+d215 3
+a217 3
+	bzero(readBuf, raidPtr->bytesPerStripeUnit);
+	if (bcmp(parityBuf, readBuf, raidPtr->bytesPerStripeUnit) != 0) {
+	    ReportParityCheckFailure(reconstructionControlPtr->stripeID);
+@
+
+
+1.2
+log
+@Added prototypes.
+@
+text
+@d91 2
+a92 1
+    reconstructionControlPtr->doneProc(reconstructionControlPtr->clientData);
+d213 1
+d220 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@a16 1
+#include <stdio.h>
+a26 3
+#include "devRaidMap.h"
+#include "devRaidIOC.h"
+#include "debugMem.h"
+d28 1
+d87 1
+a87 1
+
+@

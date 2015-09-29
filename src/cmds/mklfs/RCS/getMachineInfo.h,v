@@ -1,0 +1,54 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     91.05.31.11.09.55;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Interface to Subroutine to return machine attributes needed to make a lfs 
+file system
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/*
+ * getMachineInfo.h --
+ *
+ *	Declarations of the interface to the GetMachineInfo routine.
+ *
+ * Copyright 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.7 91/02/09 13:24:52 ouster Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _GETMACHINEINFO
+#define _GETMACHINEINFO
+
+#include <cfuncproto.h>
+
+
+extern void GetMachineInfo _ARGS_((int *serverIDPtr, int *maxNumCacheBlocksPtr));
+
+#endif /* _GETMACHINEINFO */
+
+@

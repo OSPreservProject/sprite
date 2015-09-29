@@ -1,0 +1,541 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    tve:1.2; strict;
+comment  @ * @;
+
+
+1.2
+date     89.11.18.20.57.36;  author tve;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.11.05.23.34.26;  author tve;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@CG4 support with own colormap code
+@
+
+
+1.2
+log
+@first working version with CG4 and CG6 for SPARC. CG4 for sun3 not yet ok.
+@
+text
+@/*-
+ * spriteCG4C.c --
+ *	Functions to support the sun CG4 board as a memory frame buffer.
+ */
+
+/************************************************************
+ * Copyright (c) 1989 by the Regents of the University of California
+ *
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ ********************************************************/
+
+#ifndef	lint
+static char rcsid[] =
+	"";
+#endif
+
+#include    "spriteddx.h"
+#include    "os.h"
+#include    "resource.h"
+
+#include    <sys.h>
+#include    <kernel/vmSunConst.h>
+
+#include    "colormap.h"
+#include    "colormapst.h"
+
+#define	CG4_HEIGHT	900
+#define	CG4_WIDTH	1152
+
+/*
+ * Colormap stuff
+ */
+static ColormapPtr spriteCG4InstalledMap;
+
+/* Brooktree DAC */
+typedef volatile struct {
+	unsigned int	addr;		/* colormap address register */
+	unsigned int	cmap;		/* colormap data register */
+	unsigned int	ctrl;		/* control register */
+	unsigned int	omap;		/* overlay map data register */
+} CG4Cmap;
+
+/* copy of colormap */
+static union {
+	unsigned char	map[256][3];	/* reasonable way to access */
+	unsigned int	raw[256*3/4];	/* unreasonable way used to load h/w */
+} mCmap;
+	
+extern int TellLostMap(), TellGainedMap();
+
+static void
+spriteCG4UpdateColormap(pScreen, index, count, rmap, gmap, bmap)
+    ScreenPtr		pScreen;
+    int			index, count;
+    unsigned char	*rmap, *gmap, *bmap;
+{
+    unsigned char	*uPtr;
+    unsigned int	*iPtr, c;
+    volatile CG4Cmap	*cMap = (CG4Cmap *)spriteFbs[pScreen->myNum].cmap;
+
+    /* update the memory copy */
+    uPtr = &mCmap.map[index][0];
+    c = count;
+    rmap+=index; gmap+=index; bmap+=index;
+    while(c--) {
+	*uPtr++ = *rmap++;
+	*uPtr++ = *gmap++;
+	*uPtr++ = *bmap++;
+    }
+
+    /* update DAC with the weird 4/3 entries per word mapping */
+#define D4M3(x)	((((x)>>2)<<1) + ((x)>>2))	/* (x/4)*3 */
+#define	D4M4(x)	((x)&~0x3)			/* (x/4)*4 */
+    iPtr = &mCmap.raw[D4M3(index)];
+    c = D4M3(index+count-1) - D4M3(index) + 3;
+    cMap->addr = D4M4(index);
+    while(c--) {
+	cMap->cmap = *iPtr++;
+    }
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * spriteCG4SaveScreen --
+ *	Preserve the color screen by turning on or off the video
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	Video state is switched
+ *
+ *-----------------------------------------------------------------------
+ */
+static Bool
+spriteCG4SaveScreen (pScreen, on)
+    ScreenPtr	  pScreen;
+    Bool    	  on;
+{
+#ifdef	NONONONNEVER
+    if (on != SCREEN_SAVER_ON) {
+	SetTimeSinceLastInputEvent();
+	screenSaved = FALSE;
+	Sys_EnableDisplay(TRUE);
+    } else {
+	screenSaved = TRUE;
+	Sys_EnableDisplay (FALSE);
+    }
+#endif
+
+    return TRUE;
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * spriteCG4CloseScreen --
+ *	called to ensure video is enabled when server exits.
+ *
+ * Results:
+ *	Screen is unsaved.
+ *
+ * Side Effects:
+ *	None
+ *
+ *-----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static Bool
+spriteCG4CloseScreen(i, pScreen)
+    int		i;
+    ScreenPtr	pScreen;
+{
+    return ((* pScreen->SaveScreen)(pScreen, SCREEN_SAVER_OFF));
+#ifdef	FOOSUN
+    sunCG4InstalledMap = NULL;
+    return (pScreen->SaveScreen(pScreen, SCREEN_SAVER_OFF));
+#endif	FOOSUN
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * spriteCG4InstallColormap --
+ *	Install given colormap.
+ *
+ * Results:
+ *	None
+ *
+ * Side Effects:
+ *	Existing map is uninstalled.
+ *	All clients requesting ColormapNotify are notified
+ *
+ *-----------------------------------------------------------------------
+ */
+static void
+spriteCG4InstallColormap(cmap)
+    ColormapPtr	cmap;
+{
+    register int	i;
+    register Entry	*pent = cmap->red;
+    unsigned char	rmap[256], gmap[256], bmap[256];
+
+    if(cmap == spriteCG4InstalledMap)
+	return;
+    if(spriteCG4InstalledMap)
+	WalkTree(spriteCG4InstalledMap->pScreen, TellLostMap,
+		 (char *) &(spriteCG4InstalledMap->mid));
+    for(i=0; i<cmap->pVisual->ColormapEntries; i++) {
+	if (pent->fShared) {
+	    rmap[i] = pent->co.shco.red->color >> 8;
+	    gmap[i] = pent->co.shco.green->color >> 8;
+	    bmap[i] = pent->co.shco.blue->color >> 8;
+	}
+	else {
+	    rmap[i] = pent->co.local.red >> 8;
+	    gmap[i] = pent->co.local.green >> 8;
+	    bmap[i] = pent->co.local.blue >> 8;
+	}
+	pent++;
+    }
+    spriteCG4InstalledMap = cmap;
+    spriteCG4UpdateColormap(cmap->pScreen, 0, 256, rmap, gmap, bmap);
+    WalkTree(cmap->pScreen, TellGainedMap, (char *) &(cmap->mid));
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * spriteCG4UninstallColormap --
+ *	Uninstall given colormap.
+ *
+ * Results:
+ *	None
+ *
+ * Side Effects:
+ *	default map is installed
+ *	All clients requesting ColormapNotify are notified
+ *
+ *-----------------------------------------------------------------------
+ */
+static void
+spriteCG4UninstallColormap(cmap)
+    ColormapPtr	cmap;
+{
+    if(cmap == spriteCG4InstalledMap) {
+	Colormap defMapID = cmap->pScreen->defColormap;
+
+	if (cmap->mid != defMapID) {
+	    ColormapPtr defMap =
+		(ColormapPtr)LookupID(defMapID, RT_COLORMAP, RC_CORE);
+
+	    if (defMap)
+		spriteCG4InstallColormap(defMap);
+	    else
+	        ErrorF("spriteCG4: Can't find default colormap\n");
+	}
+    }
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * spriteCG4ListInstalledColormaps --
+ *	Fills in the list with the IDs of the installed maps
+ *
+ * Results:
+ *	Returns the number of IDs in the list
+ *
+ * Side Effects:
+ *	None
+ *
+ *-----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static int
+spriteCG4ListInstalledColormaps(pScreen, pCmapList)
+    ScreenPtr	pScreen;
+    Colormap	*pCmapList;
+{
+    *pCmapList = spriteCG4InstalledMap->mid;
+    return (1);
+}
+
+
+/*-
+ *-----------------------------------------------------------------------
+ * spriteCG4StoreColors --
+ *	Sets the pixels in pdefs into the specified map.
+ *
+ * Results:
+ *	None
+ *
+ * Side Effects:
+ *	None
+ *
+ *-----------------------------------------------------------------------
+ */
+static void
+spriteCG4StoreColors(pmap, ndef, pdefs)
+    ColormapPtr	pmap;
+    int		ndef;
+    xColorItem	*pdefs;
+{
+    switch(pmap->class) {
+    case PseudoColor:
+	if(pmap == spriteCG4InstalledMap) {
+	    /* We only have a single colormap */
+	    unsigned char	rmap[256], gmap[256], bmap[256];
+	    int			index;
+
+	    while (ndef--) {
+		index = pdefs->pixel&0xff;
+		rmap[index] = (pdefs->red) >> 8;
+		gmap[index] = (pdefs->green) >> 8;
+		bmap[index] = (pdefs->blue) >> 8;
+	 	spriteCG4UpdateColormap(pmap->pScreen,
+				      index, 1, rmap, gmap, bmap);
+		pdefs++;
+	    }
+	}
+	break;
+    case DirectColor:
+    default:
+	ErrorF("spriteCG4StoreColors: bad class %d\n", pmap->class);
+	break;
+    }
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * spriteCG4ResolvePseudoColor --
+ *	Adjust specified RGB values to closest values hardware can do.
+ *
+ * Results:
+ *	Args are modified.
+ *
+ * Side Effects:
+ *	None
+ *
+ *-----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static void
+spriteCG4ResolvePseudoColor(pRed, pGreen, pBlue, pVisual)
+    CARD16	*pRed, *pGreen, *pBlue;
+    VisualPtr	pVisual;
+{
+    *pRed &= 0xff00;
+    *pGreen &= 0xff00;
+    *pBlue &= 0xff00;
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * spriteCG4Init --
+ *	Attempt to find and initialize a cg4 framebuffer
+ *
+ * Results:
+ *	TRUE if everything went ok. FALSE if not.
+ *
+ * Side Effects:
+ *	Most of the elements of the ScreenRec are filled in. Memory is
+ *	allocated for the frame buffer and the buffer is mapped. The
+ *	video is enabled for the frame buffer...
+ *
+ *-----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static Bool
+spriteCG4Init (index, pScreen, argc, argv)
+    int	    	  index;    	/* The index of pScreen in the ScreenInfo */
+    ScreenPtr	  pScreen;  	/* The Screen to initialize */
+    int	    	  argc;	    	/* The number of the Server's arguments. */
+    char    	  **argv;   	/* The arguments themselves. Don't change! */
+{
+    CARD16	zero = 0, ones = ~0;
+
+    if (!cfbScreenInit (index, pScreen, spriteFbs[index].fb,
+			    CG4_WIDTH, CG4_HEIGHT, 100))
+	return (FALSE);
+
+    pScreen->SaveScreen    =            spriteCG4SaveScreen;
+    pScreen->RecolorCursor = 	    	spriteRecolorCursor;
+
+#ifndef STATIC_COLOR
+    pScreen->InstallColormap = spriteCG4InstallColormap;
+    pScreen->UninstallColormap = spriteCG4UninstallColormap;
+    pScreen->ListInstalledColormaps = spriteCG4ListInstalledColormaps;
+    pScreen->StoreColors = spriteCG4StoreColors;
+    pScreen->ResolveColor = spriteCG4ResolvePseudoColor;
+#endif
+
+    {
+	ColormapPtr cmap = (ColormapPtr)LookupID(pScreen->defColormap,
+		RT_COLORMAP, RC_CORE);
+
+	if (!cmap)
+	    FatalError("Can't find default colormap\n");
+	if (AllocColor(cmap, &ones, &ones, &ones, &(pScreen->whitePixel), 0)
+	    || AllocColor(cmap, &zero, &zero, &zero, &(pScreen->blackPixel), 0))
+		FatalError("Can't alloc black & white in spriteCG4Init\n");
+	spriteCG4InstallColormap(cmap);
+    }
+
+    spriteCG4SaveScreen( pScreen, SCREEN_SAVER_OFF );
+    spriteScreenInit (pScreen);
+
+    return (TRUE);
+}
+
+/*-
+ *--------------------------------------------------------------
+ * spriteCG4Switch --
+ *      Enable or disable color plane 
+ *
+ * Results:
+ *      Color plane enabled for select =0, disabled otherwise.
+ *
+ *--------------------------------------------------------------
+ */
+static void
+spriteCG4Switch ()
+{
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * spriteCG4Probe --
+ *	Attempt to find and initialize a cg4 framebuffer
+ *
+ * Results:
+ *	TRUE if everything went ok. FALSE if not.
+ *
+ * Side Effects:
+ *	Memory is allocated for the frame buffer and the buffer is mapped.
+ *	Same for colormap.
+ *
+ *-----------------------------------------------------------------------
+ */
+Bool
+spriteCG4Probe(screenInfo, index, fbNum, argc, argv)
+    ScreenInfo	  *screenInfo;	/* The screenInfo struct */
+    int	    	  index;    	/* The index of pScreen in the ScreenInfo */
+    int	    	  fbNum;    	/* Index into the spriteFbData array */
+    int	    	  argc;	    	/* The number of the Server's arguments. */
+    char    	  **argv;   	/* The arguments themselves. Don't change! */
+{
+    Sys_MachineInfo	machType;
+    pointer	  	pFb, pCm;	/* preallocated VM */
+    Address	  	vFb, vCm;	/* kernel virtual addresses to poke */
+    unsigned int	bCm, oCm;	/* base&offset for segment for cmap */
+    unsigned int	sFb;		/* how much mem to alloc */
+
+    if(strlen(argv[0]) < 4 || strcmp("Xcg4", argv[0]+strlen(argv[0])-4) != 0)
+	return FALSE;
+
+    if(!spriteFbs[index].mapped) {
+	if(Sys_GetMachineInfo(sizeof(machType), &machType) != SUCCESS) {
+	    return FALSE;
+	}
+	if(machType.architecture == SYS_SUN4) {
+	    if(machType.type == SYS_SUN_4_C) {
+		vFb = (Address)0xffd80000;	/* sparc station */
+		vCm = (Address)0xffd1c000;
+	    } else {
+		vFb = (Address)0xffd40000;	/* regular sun4 */
+		vCm = (Address)0xffd1c000; /* ??? */
+	    }
+	} else if(machType.architecture == SYS_SUN3) {
+		vFb = (Address)0xff800000;	/* sun3 with Brooktree DAC */
+		vCm = (Address)0xff200000; /* ??? */
+	} else {
+	    return FALSE;
+	}
+
+	sFb = (CG4_HEIGHT*CG4_WIDTH + VMMACH_SEG_SIZE - 1) / VMMACH_SEG_SIZE;
+	sFb *= VMMACH_SEG_SIZE;
+	pFb = (pointer)malloc(sFb + VMMACH_SEG_SIZE);
+	pCm = (pointer)malloc(2*VMMACH_SEG_SIZE);
+	oCm = (unsigned int)vCm -
+		((unsigned int)vCm)/VMMACH_SEG_SIZE*VMMACH_SEG_SIZE;
+	vCm = (Address)(((unsigned int)vCm)/VMMACH_SEG_SIZE*VMMACH_SEG_SIZE);
+
+	if(Vm_MapKernelIntoUser(vFb, sFb, pFb, &spriteFbs[index].fb) != SUCCESS)
+	      { perror("VmMap"); return (FALSE); }
+	if(Vm_MapKernelIntoUser(vCm, VMMACH_SEG_SIZE, pCm, &bCm) != SUCCESS)
+	      return (FALSE);
+	spriteFbs[index].cmap = (pointer)(bCm+oCm);
+	spriteFbs[index].mapped = TRUE;
+    }
+    if(AddScreen(spriteCG4Init, argc, argv) > index) {
+	screenInfo->screen[index].CloseScreen = spriteCG4CloseScreen;
+	return TRUE;
+    } else {
+	return FALSE;
+    }
+}
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d42 5
+a46 9
+typedef struct {
+	unsigned char	addr;		/* colormap address register */
+	unsigned char	padd0[3];
+	unsigned char	cmap;		/* colormap data register */
+	unsigned char	padd1[3];
+	unsigned char	ctrl;		/* control register */
+	unsigned char	padd2[3];
+	unsigned char	omap;		/* overlay map data register */
+	unsigned char	padd3[3];
+d48 6
+d63 3
+a65 2
+    int		c;
+    CG4Cmap	*cMap = pScreen->cmap;
+d67 18
+a84 5
+    for(c=0; c<count; c++) {
+	cMap->addr = index+c;
+	cMap->cmap = *rmap++;
+	cMap->cmap = *gmap++;
+	cMap->cmap = *bmap++;
+d271 2
+a272 2
+	    u_char	rmap[256], gmap[256], bmap[256];
+	    int		index;
+d413 2
+a414 1
+    Address	  	kFb, kCm;	/* kernel virtual addresses to poke */
+d432 1
+a432 1
+	if(machType.architecture == SYS_SUN3) {
+d443 3
+d447 3
+a449 4
+	if(Vm_MapKernelIntoUser(vFb, sFb, pFb,
+		&spriteFbs[index].fb) != SUCCESS ||
+	   Vm_MapKernelIntoUser(vCm, VMMACH_SEG_SIZE, pCm,
+		&spriteFbs[index].cmap)!=SUCCESS) {
+d451 1
+a451 1
+	}
+@

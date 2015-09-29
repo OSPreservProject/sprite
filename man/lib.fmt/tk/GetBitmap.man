@@ -1,0 +1,264 @@
+
+
+
+Tk_GetBitmap          C Library Procedures           Tk_GetBitmap
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tk_GetBitmap,       Tk_DefineBitmap,        Tk_NameOfBitmap,
+     Tk_SizeOfBitmap, Tk_FreeBitmap, Tk_GetBitmapFromData - main-
+     tain database of single-plane pixmaps
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttkk..hh>>
+
+     Pixmap
+     TTkk__GGeettBBiittmmaapp((_i_n_t_e_r_p, _t_k_w_i_n, _i_d))
+
+     int                                                           |
+     TTkk__DDeeffiinneeBBiittmmaapp((_i_n_t_e_r_p, _n_a_m_e_I_d, _s_o_u_r_c_e, _w_i_d_t_h, _h_e_i_g_h_t)        |
+
+     Tk_Uid
+     TTkk__NNaammeeOOffBBiittmmaapp((_b_i_t_m_a_p))
+
+     TTkk__SSiizzeeOOffBBiittmmaapp((_b_i_t_m_a_p, _w_i_d_t_h_P_t_r, _h_e_i_g_h_t_P_t_r))                  |
+
+     TTkk__FFrreeeeBBiittmmaapp((_b_i_t_m_a_p))
+
+     Pixmap
+     TTkk__GGeettBBiittmmaappFFrroommDDaattaa((_i_n_t_e_r_p, _t_k_w_i_n, _s_o_u_r_c_e, _w_i_d_t_h, _h_e_i_g_h_t))
+
+AARRGGUUMMEENNTTSS
+     Tcl_Interp      *_i_n_t_e_r_p     (in)      Interpreter to use for
+                                           error reporting.
+
+     Tk_Window       _t_k_w_i_n       (in)      Token  for  window  in
+                                           which  the bitmap will
+                                           be used.
+
+     Tk_Uid          _i_d          (in)      Description of bitmap;
+                                           see below for possible
+                                           values.
+
+     Tk_Uid          *_n_a_m_e_I_d     (in)      Name for new bitmap to
+                                           be defined.
+
+     char            *_s_o_u_r_c_e     (in)      Data  for  bitmap,  in
+                                           standard  bitmap  for-
+                                           mat.  Must  be  stored
+                                           in static memory whose
+                                           value    will    never
+                                           change.
+
+     unsigned int    _w_i_d_t_h       (in)      Width of bitmap.
+
+     unsigned int    _h_e_i_g_h_t      (in)      Height of bitmap.
+
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+Tk_GetBitmap          C Library Procedures           Tk_GetBitmap
+
+
+
+     unsigned int    *_w_i_d_t_h_P_t_r   (out)     Pointer  to  word   to
+                                           fill  in with _b_i_t_m_a_p's
+                                           width.                  |
+
+     unsigned int    *_h_e_i_g_h_t_P_t_r  (out)                                  ||
+                                           Pointer   to  word  to  |
+                                           fill in with  _b_i_t_m_a_p's  |
+                                           height.                 |
+
+     Pixmap          _b_i_t_m_a_p      (in)                                   ||
+                                           Identifier  for a bit-  |
+                                           map    allocated    by  |
+                                           TTkk__GGeettBBiittmmaapp.
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     These procedures manage a collection of  bitmaps  (one-plane
+     pixmaps) being used by an application.  The procedures allow
+     bitmaps to be re-used efficiently, thereby  avoiding  server
+     overhead,  and also allow bitmaps to be named with character
+     strings.
+
+     TTkk__GGeettBBiittmmaapp takes as argument a Tk_Uid describing a bitmap.
+     It returns a Pixmap identifier for a bitmap corresponding to
+     the description.  It re-uses an existing bitmap,  if  possi-
+     ble,  and  creates a new one otherwise.  At present, _i_d must
+     have one of the following forms:                              |
+
+     @@_f_i_l_e_N_a_m_e                                                          |_F_i_l_e_N_a_m_e must be the name of a file con-  |
+                         taining  a  bitmap  description  in  the  |
+                         standard X11 or X10 format.               |
+
+     _n_a_m_e                                                               ||
+                         _N_a_m_e  must  be  the  name  of  a  bitmap  |
+                         defined  previously  with  a   call   to  |
+                         TTkk__DDeeffiinneeBBiittmmaapp.
+
+     Under normal conditions, TTkk__GGeettBBiittmmaapp returns an  identifier
+     for  the  requested  bitmap.  If an error occurs in creating
+     the bitmap, such as when _i_d refers to a  non-existent  file,
+     then  NNoonnee  is  returned  and  an  error  message is left in
+     _i_n_t_e_r_p->_r_e_s_u_l_t.
+
+     TTkk__DDeeffiinneeBBiittmmaapp associates a name with in-memory bitmap data  |
+     so that the name can be used in later calls to TTkk__GGeettBBiittmmaapp.  |
+     The _n_a_m_e_I_d argument gives a name for the  bitmap;   it  must  |
+     not  previously have been used in a call to TTkk__DDeeffiinneeBBiittmmaapp.  |
+     The arguments _s_o_u_r_c_e, _w_i_d_t_h, and _h_e_i_g_h_t describe the bitmap.  |
+     TTkk__DDeeffiinneeBBiittmmaapp normally returns TCL_OK;  if an error occurs  |
+     (e.g. a bitmap named _n_a_m_e_I_d has already been  defined)  then  |
+     TCL_ERROR  is  returned  and  an  error  message  is left in  |
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+Tk_GetBitmap          C Library Procedures           Tk_GetBitmap
+
+
+
+     _i_n_t_e_r_p->_r_e_s_u_l_t.  Note:  TTkk__DDeeffiinneeBBiittmmaapp expects  the  memory  |
+     pointed  to by _s_o_u_r_c_e to be static:  TTkk__DDeeffiinneeBBiittmmaapp doesn't  |
+     make a private copy of  this  memory,  but  uses  the  bytes  |
+     pointed to by _s_o_u_r_c_e later in calls to TTkk__GGeettBBiittmmaapp.
+
+     Typically TTkk__DDeeffiinneeBBiittmmaapp is used by ##iinncclluuddee-ing  a  bitmap
+     file  directly  into  a  C  program and then referencing the
+     variables defined by the file.  For example,  suppose  there
+     exists  a  file ssttiipp..bbiittmmaapp, which was created by the bbiittmmaapp
+     program and contains a stipple pattern.  The following  code
+     uses TTkk__DDeeffiinneeBBiittmmaapp to define a new bitmap named ffoooo:
+          Pixmap bitmap;
+          #include "stip.bitmap"
+          Tk_DefineBitmap(interp, Tk_GetUid("foo"), stip_bits,
+                          stip_width, stip_height);
+          ...
+          bitmap = Tk_GetBitmap(interp, tkwin, Tk_GetUid("foo"));
+     This code causes the bitmap file to be read at  compile-time
+     and  incorporates  the bitmap information into the program's
+     executable image.  The same bitmap file  could  be  read  at
+     run-time using TTkk__GGeettBBiittmmaapp:
+          Pixmap bitmap;
+          bitmap = Tk_GetBitmap(interp, tkwin, Tk_GetUid("@stip.bitmap"));
+     The second form is a bit more flexible (the  file  could  be
+     modified after the program has been compiled, or a different
+     string could be provided to read a different file),  but  it
+     is  a  little  slower  and requires the bitmap file to exist
+     separately from the program.
+
+     TTkk__GGeettBBiittmmaapp maintains a database of all  the  bitmaps  that
+     have  been  created.   Whenever  possible, it will return an
+     existing bitmap  rather  than  creating  a  new  one.   This
+     approach   can  substantially  reduce  server  overhead,  so
+     TTkk__GGeettBBiittmmaapp should generally be used in preference to  Xlib
+     procedures like XXRReeaaddBBiittmmaappFFiillee or XXGGeettBBiittmmaappFFrroommDDaattaa, which
+     create a new bitmap on each call.
+
+     The bitmaps returned by TTkk__GGeettBBiittmmaapp are shared, so  callers
+     should  never  modify  them.   If  a bitmap must be modified
+     dynamically, then it should be created by calling Xlib  pro-
+     cedures such as XXRReeaaddBBiittmmaappFFiillee or XXCCrreeaatteePPiixxmmaapp directly.
+
+     The procedure TTkk__NNaammeeOOffBBiittmmaapp  is  roughly  the  inverse  of
+     TTkk__GGeettBBiittmmaapp.  Given an X Pixmap argument, it returns the _i_d
+     that was passed to TTkk__GGeettBBiittmmaapp when the bitmap was created.  |
+     _B_i_t_m_a_p  must have been the return value from a previous call  |
+     to TTkk__GGeettBBiittmmaapp.
+
+     TTkk__SSiizzeeOOffBBiittmmaapp returns the dimensions of its  _b_i_t_m_a_p  argu-  |
+     ment  in  the words pointed to by the _w_i_d_t_h_P_t_r and _h_e_i_g_h_t_P_t_r  |
+     arguments.  As with TTkk__NNaammeeOOffBBiittmmaapp, _b_i_t_m_a_p must  have  been  |
+     created by TTkk__GGeettBBiittmmaapp.
+
+
+
+Sprite v1.0                                                     3
+
+
+
+
+
+
+Tk_GetBitmap          C Library Procedures           Tk_GetBitmap
+
+
+
+     When a bitmap returned by TTkk__GGeettBBiittmmaapp is no longer  needed,
+     TTkk__FFrreeeeBBiittmmaapp  should be called to release it.  There should
+     be exactly one  call  to  TTkk__FFrreeeeBBiittmmaapp  for  each  call  to
+     TTkk__GGeettBBiittmmaapp.   When  a  bitmap is no longer in use anywhere
+     (i.e. it has been freed as many times as it has been gotten)
+     TTkk__FFrreeeeBBiittmmaapp  will release it to the X server and delete it
+     from the database.
+
+     The procedure TTkk__GGeettBBiittmmaappFFrroommDDaattaa  is  a  historical  relic  |
+     from  a  time  before  TTkk__DDeeffiinneeBBiittmmaapp  existed;  its use is  |
+     discouraged  nowadays  and   it   may   be   deleted   soon.  |
+     TTkk__GGeettBBiittmmaappFFrroommDDaattaa    serves    as    a   combination   of  |
+     TTkk__DDeeffiinneeBBiittmmaapp  and  TTkk__GGeettBBiittmmaapp:   given   an   in-memory  |
+     description  for a bitmap similar to what would be passed to  |
+     TTkk__DDeeffiinneeBBiittmmaapp (_s_o_u_r_c_e, _w_i_d_t_h, and _h_e_i_g_h_t),  it  returns  a  |
+     bitmap  corresponding  to  that description that is suitable  |
+     for use in window _t_k_w_i_n.  At present it does this by calling  |
+     TTkk__DDeeffiinneeBBiittmmaapp  to  define  a  name  of the form ``__ttkk_n_u_m''  |
+     where _n_u_m is an integer that starts at 1 and increments  for  |
+     each  new combination of _s_o_u_r_c_e, _w_i_d_t_h, and _h_e_i_g_h_t.  Then it  |
+     calls TTkk__GGeettBBiittmmaapp.  TTkk__GGeettBBiittmmaappFFrroommDDaattaa keeps  a  database  |
+     of  names  and  data, so that if the same _s_o_u_r_c_e, _w_i_d_t_h, and  |
+     _h_e_i_g_h_t are used again later, TTkk__GGeettBBiittmmaappFFrroommDDaattaa  will  re-  |
+     use the original name.
+
+
+BBUUGGSS
+     In determining whether an existing bitmap  can  be  used  to
+     satisfy  a  new  request,  TTkk__GGeettBBiittmmaapp  considers  only the
+     immediate value of its _i_d argument.   For  example,  when  a
+     file  name  is  passed  to  TTkk__GGeettBBiittmmaapp,  TTkk__GGeettBBiittmmaapp will
+     assume it is safe to re-use an existing bitmap created  from
+     the  same  file  name:  it will not check to see whether the
+     file itself has changed, or whether  the  current  directory
+     has  changed,  thereby  causing  the name to refer to a dif-
+     ferent file.
+
+
+KKEEYYWWOORRDDSS
+     bitmap, pixmap
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     4
+
+
+

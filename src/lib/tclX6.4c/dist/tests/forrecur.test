@@ -1,0 +1,64 @@
+#
+# forrecur.test
+#
+# tests for tcl.tlib for_recursive_glob routine
+#---------------------------------------------------------------------------
+# Copyright 1992 Karl Lehenbauer and Mark Diekhans.
+#
+# Permission to use, copy, modify, and distribute this software and its
+# documentation for any purpose and without fee is hereby granted, provided
+# that the above copyright notice appear in all copies.  Karl Lehenbauer and
+# Mark Diekhans make no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without express or
+# implied warranty.
+#------------------------------------------------------------------------------
+# $Id: forrecur.test,v 2.0 1992/10/16 04:49:53 markd Rel $
+#------------------------------------------------------------------------------
+#
+
+if {[info procs test] == ""} then {source testlib.tcl}
+
+rename SAVED_UNKNOWN unknown
+
+proc tcltouch {file} {
+    set fp [open $file w]
+    close $fp
+}
+
+
+exec rm -rf GLOBTESTDIR
+mkdir GLOBTESTDIR
+mkdir GLOBTESTDIR/dir1
+mkdir GLOBTESTDIR/dir2
+
+tcltouch GLOBTESTDIR/file1
+tcltouch GLOBTESTDIR/dir1/file1
+tcltouch GLOBTESTDIR/dir1/file2
+tcltouch GLOBTESTDIR/dir2/file1
+tcltouch GLOBTESTDIR/dir2/file2
+tcltouch GLOBTESTDIR/file2
+
+set expectedResult "GLOBTESTDIR GLOBTESTDIR/dir1 GLOBTESTDIR/dir1/file1 \
+GLOBTESTDIR/dir1/file2 GLOBTESTDIR/dir2 GLOBTESTDIR/dir2/file1 \
+GLOBTESTDIR/dir2/file2 GLOBTESTDIR/file1 GLOBTESTDIR/file2"
+
+test for_recursive_glob-1.1 {for_recursive_glob command} {
+    for_recursive_glob file GLOBTESTDIR {lappend result $file}
+    lsort $result
+} $expectedResult
+
+unset result
+set expectedResult [lrange $expectedResult 1 end]
+
+test for_recursive-1.2 {for_recursive_glob command with list of patterns} {
+    for_recursive_glob file "GLOBTEST*/dir* GLOBTEST*/file*" \
+	{lappend result $file}
+    lsort $result
+} $expectedResult
+
+exec rm -rf GLOBTESTDIR
+
+unset expectedResult result
+
+rename tcltouch ""
+rename unknown SAVED_UNKNOWN

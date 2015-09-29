@@ -1,0 +1,32 @@
+This is Common TeX, Version 2.9 (preloaded format=plain 89.9.18) 21 AUG 1991 14:38
+**&plain gdbrc.tex 
+(./gdbrc.tex (./threecol.tex
+\fullhsize=\dimen16
+\leftcolumn=\box16
+\centercolumn=\box17
+)
+Underfull \hbox (badness 1655) in paragraph at lines 206--206
+[]\tt break 
+
+\hbox(4.88889+0.0)x72.26999, glue set 2.55098
+.\hbox(0.0+0.0)x0.0
+.\tt b
+.\tt r
+.\tt e
+.\tt a
+.etc.
+
+[1]
+Underfull \hbox (badness 1107) in paragraph at lines 407--407
+[]\rm octal, dec-i-mal, or hex num-ber 
+
+\hbox(4.8611+1.3611)x151.76744, glue set 2.22974
+.\hbox(0.0+0.0)x0.0
+.\rm o
+.\kern0.21527
+.\rm c
+.\rm t
+.etc.
+
+[2]
+Output written on gdbrc.dvi (2 pages, 20396 bytes).

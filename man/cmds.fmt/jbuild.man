@@ -1,0 +1,132 @@
+
+
+
+jbuild                    User Commands                    jbuild
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     jbuild  -  Reconstruct  Jaquith  disk  index  from  tertiary
+     storage
+
+SSYYNNOOPPSSIISS
+     jjbbuuiilldd [[--rroooott _r_o_o_t_P_a_t_h] [--ddeevv _d_e_v_i_c_e]  [--vv]  [--cclloobbbbeerr]   [--
+     nnooiinnddeexx]  [--ssaavvee]  [--ffiirrsstt _f_i_r_s_t-_f_i_l_e]  [--llaasstt _l_a_s_t-_f_i_l_e] [--
+     bbeeffoorree _d_a_t_e]  [--aafftteerr _d_a_t_e] [--mmaattcchhppaatthh _p_a_t_h-_e_x_p_r_e_s_s_i_o_n]  [--
+     mmaattcchhttbbuuff _t_b_u_f-_e_x_p_r_e_s_s_i_o_n]
+
+OOPPTTIIOONNSS
+     --rroooott _r_o_o_t_p_a_t_h
+                   Specify root of index tree.
+
+     --ddeevv _d_e_v_i_c_e   The name of the reader device.
+
+     --vv            Turn on verbose mode which prints status  dur-
+                   ing operation.
+
+     --cclloobbbbeerr      Overwrite the disk index with the tape index.
+
+     --nnooiinnddeexx      Restore the thdr  file  from  tape  but  don't
+                   rebuild the index.  This implies --ssaavvee.
+
+     --ssaavvee         Save the thdr file after index is restored.
+
+     --ffiirrsstt _f_i_r_s_t-_f_i_l_e
+                   Number of first thdr file to  restore.  (0  ==
+                   first file on tape).
+
+     --llaasstt _l_a_s_t-_f_i_l_e
+                   Number of last thdr file to  restore.  (-1  ==
+                   last file on tape).
+
+     --mmaattcchhPPaatthh _p_a_t_h_n_a_m_e
+                   Restore only files that match the  path  _p_a_t_h_-
+                   _n_a_m_e according to Unix globbing rules.
+
+     --mmaattcchhttbbuuff _t_b_u_f-_n_u_m
+                   Restore only files that match the tbuf  number
+                   _t_b_u_f-_n_u_m according to Unix globbing rules.
+
+     --bbeeffoorree _d_a_t_e  Restore only entries archived before _d_a_t_e.
+
+     --aafftteerr _d_a_t_e   Restore only entries archived after _d_a_t_e.
+
+     --bbuuffssiizzee _b_y_t_e_s_i_z_e
+                   Read from tape in _b_y_t_e_s_i_z_e units.
+_________________________________________________________________
+
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+jbuild                    User Commands                    jbuild
+
+
+
+DDEESSCCRRIIPPTTIIOONN
+     JJbbuuiilldd is a system manager's utility for the Jaquith system.
+     It's purpose is to rebuild Jaquith's disk index from tape in
+     the event of disk crash.
+
+
+     Jbuild processes  a  single  Jaquith  tape  by  restoring  a
+     sequence  of index (thdr) file, parsing them, and rebuilding
+     the tree structure on disk.  Several arguments  control  the
+     details  of  the restoration: The --ffiirrsstt and -last arguments
+     limit the range of thdr files which are read from tape.  The
+     --mmaattcchhppaatthh argument restricts restoration to user file path-
+     names which match _p_a_t_h_n_a_m_e.  The  --nnooiinnddeexx  option  inhibits
+     the rebuilding of the disk index entirely; only the raw thdr
+     files are restored.
+
+
+     Jbuild is not network-aware since  it  is  not  for  use  by
+     clients.  It  assumes  that  it  has  direct  access  to the
+     readers.
+
+
+     _d_a_t_e is of the form _D_a_t_e_S_p_e_c[:_T_i_m_e_S_p_e_c]. _T_i_m_e_S_p_e_c is of  the
+     form   [hh[:mm[:ss]]],   and   _D_a_t_e_S_p_e_c   is   of  the  form
+     dd-month[-yyyy]. Month is the first 3 letters of the  month;
+     all  others  are  numbers. The '/' character is a substitute
+     for '-' and '.' may be used instead of ':'.
+
+
+FFIILLEESS
+     Jbuild creates a temporary work file  in  the  Jaquith  root
+     called   rebuild._p_i_d.   The   work   file  will  be  renamed
+     _a_r_c_h/thdr._n_u_m_b_e_r after the thdr file has  been  restored  to
+     its  archive,  or  thdr._p_i_d._c_o_u_n_t, if the file appears to be
+     bogus.
+
+
+BBUUGGSS
+     Jbuild can restore only one volume at a time; several  invo-
+     cations  may  be  necessary  to  restore  an  entire logical
+     archive.
+
+
+SSEEEE AALLSSOO
+     jaquith jmgr jls jstat jput jget jctrl jcopy jclean
+
+
+KKEEYYWWOORRDDSS
+     jaquith archive
+
+
+
+
+
+
+Sprite v1.0                                                     2
+
+
+

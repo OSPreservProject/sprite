@@ -1,0 +1,396 @@
+
+
+
+XDVI                 UNKNOWN MANUAL SECTION                  XDVI
+
+
+
+NNAAMMEE
+     xdvi - DVI Previewer for the X Window System
+
+SSYYNNOOPPSSIISS
+     xxddvvii [+[_p_a_g_e]] [-s _s_h_r_i_n_k] [-S _d_e_n_s_i_t_y] [-p _p_i_x_e_l_s] [-l]
+     [-rv] [-fg _c_o_l_o_r] [-bg _c_o_l_o_r] [-hl _c_o_l_o_r] [-bd _c_o_l_o_r] [-cr
+     _c_o_l_o_r] [-margins _i_n_c_h_e_s] [-sidemargin _i_n_c_h_e_s] [-topmargin
+     _i_n_c_h_e_s] [-paper _p_a_p_e_r_t_y_p_e] [-mgs[_n] _s_i_z_e] [-altfont _f_o_n_t]
+     [#_g_e_o_m_e_t_r_y] [-geometry _g_e_o_m_e_t_r_y] [-display _d_i_s_p_l_a_y] [-copy]
+     [-thorough] dvi_file
+
+DDEESSCCRRIIPPTTIIOONN
+     _X_d_v_i is a program which runs under the X window system. It
+     is used to preview DVI files, such as are produced by TeX.
+
+     This program has the capability of showing the file shrunken
+     by various (integer) factors, and also has a ``magnifying
+     glass'' which allows one to see a small part of the unshrunk
+     image momentarily.
+
+     Before displaying any page or part thereof, it checks to see
+     if the dvi file has changed since the last time it was
+     displayed.  If this is the case, then _x_d_v_i will reinitialize
+     itself for the new dvi file.  For this reason, exposing
+     parts of the _x_d_v_i window while _T_e_X is running should be
+     avoided.  This feature allows you to preview many versions
+     of the same file while running _x_d_v_i only once.
+
+OOPPTTIIOONNSS
+     In addition to specifying the .ddvvii file (with or without the
+     .ddvvii), _X_d_v_i supports the following command line options.  If
+     the option begins with a `++' instead of a `--', the option is
+     restored to its default value.  By default, these options
+     can be set via the resource names given in parentheses in
+     the description of each option.
+
+     +ppaaggee
+          Specifies the first page to show.  If + is given
+          without a number, the last page is assumed; the first
+          page is the default.
+
+     --ss _s_h_r_i_n_k
+          (.shrinkFactor) Defines the initial shrink factor.  The
+          default value is 3.
+
+     --SS _d_e_n_s_i_t_y
+          (.densityPercent) Determines the density used when
+          shrinking bitmaps for fonts.  A higher value produces a
+          lighter font.  The default value is 40.
+
+     --pp _p_i_x_e_l_s
+          (.pixelsPerInch) Defines the size of the fonts to use,
+
+
+
+X Version 11               8 May 1989                           1
+
+
+
+
+
+
+XDVI                 UNKNOWN MANUAL SECTION                  XDVI
+
+
+
+          in pixels per inch.  The default value is 300.
+
+     --aallttffoonntt _f_o_n_t
+          (.altFont) Declares a default font to use when the font
+          in the dvi file cannot be found.  This is useful, for
+          example, with PostScript <tm> fonts.
+
+     --ll   (.listFonts) Causes the names of the fonts used to be
+          listed.
+
+     --rrvv  (.reverseVideo) Causes the page to be displayed with
+          white characters on a black background, instead of vice
+          versa.
+
+     --bbww _w_i_d_t_h
+          (.borderWidth) Specifies the width of the border of the
+          window.
+
+     --bboorrddeerrwwiiddtthh _w_i_d_t_h
+          Same as --bbww, above.
+
+     --ffgg _c_o_l_o_r
+          (.foreground) Determines the color of the text (fore-
+          ground).
+
+     --ffoorreeggrroouunndd _c_o_l_o_r
+          Same as --ffgg, above.
+
+     --bbgg _c_o_l_o_r
+          (.background) Determines the color of the background.
+
+     --bbaacckkggrroouunndd _c_o_l_o_r
+          Same as --bbgg, above.
+
+     --hhll _c_o_l_o_r
+          (.highlight) Determines the color of the page border.
+
+     --bbdd _c_o_l_o_r
+          (.borderColor) Determines the color of the window bord-
+          er.
+
+     --ccrr _c_o_l_o_r
+          (.cursorColor) Determines the color of the cursor.  The
+          default is the foreground color.
+
+     --tthhoorroouugghh
+          (.thorough) _X_d_v_i will usually try to ensure that over-
+          strike characters (_e._g.  \notin) are printed correctly.
+          On monochrome displays, this is always possible with
+          one logical operation, either _a_n_d or _o_r.  On color
+          displays, however, this may take two operations, one to
+          set the appropriate bits and one to clear other bits.
+
+
+
+X Version 11               8 May 1989                           2
+
+
+
+
+
+
+XDVI                 UNKNOWN MANUAL SECTION                  XDVI
+
+
+
+          If this is the case, then by default _x_d_v_i will instead
+          use the _c_o_p_y operation, which does not handle over-
+          striking correctly.  The ``thorough'' option chooses
+          the slower but more correct choice.  See also -_c_o_p_y,
+          below.
+
+     --ccooppyy
+          (.copy) Always use the _c_o_p_y operation when writing
+          characters to the display.  This option may be neces-
+          sary for correct operation on a color display, but
+          overstrike characters will be incorrect.
+
+     --mmaarrggiinnss _i_n_c_h_e_s
+          (.margins) Specifies the size of both the top margin
+          and side margin.  This can be a decimal number, _e._g.,
+          1.5.  It determines the ``home'' position of the page
+          within the window as follows.  If the entire page fits
+          in the window, then the margin settings are ignored.
+          If, even after removing the margins from the left,
+          right, top, and bottom, the page still cannot fit in
+          the window, then the page is put in the window such
+          that the top and left margins are hidden, and presum-
+          ably the upper left-hand corner of the text on the page
+          will be in the upper left-hand corner of the window.
+          Otherwise, the text is centered in the window.  See
+          also `MM' under the KEYSTROKES section.
+
+     --ssiiddeemmaarrggiinn _i_n_c_h_e_s
+          (.sideMargin) Specifies the side margin (see above).
+
+     --ttooppmmaarrggiinn _i_n_c_h_e_s
+          (.topMargin) Specifies the top and bottom margins (see
+          above).
+
+     --ppaappeerr _p_a_p_e_r_t_y_p_e
+          (.paper) Specifies the size of the printed page.  This
+          may be of the form _wx_h (or _wx_hcm), where _w is the width
+          in inches (or cm) and _h is the height in inches (or
+          cm), respectively.  There are also synonyms which may
+          be used:  us (8.5x11), usr (11x8.5), legal (8.5x14),
+          foolscap (13.5x17), as well as the ISO sizes a1-a7,
+          b1-b7, c1-c7, a1r-a7r (a1-a7 rotated), etc.  The de-
+          fault size is 8.5 x 11 inches.
+
+     --mmggss[[nn]] _s_i_z_e
+          (.magnifierSize[n]) Specifies the size of the window to
+          be used for the ``magnifying glass'' for Button _n.  See
+          the MOUSE ACTIONS section.  Defaults are 200, 350, 600,
+          900, and 1200.
+
+     --mmggss _s_i_z_e
+          Same as --mmggss11, above.
+
+
+
+X Version 11               8 May 1989                           3
+
+
+
+
+
+
+XDVI                 UNKNOWN MANUAL SECTION                  XDVI
+
+
+
+     --ggeeoommeettrryy _g_e_o_m_e_t_r_y
+          (*geometry) Specifies the initial geometry of the win-
+          dow.
+
+     ##_g_e_o_m_e_t_r_y
+          (.iconGeometry) Specifies the initial position for the
+          icon.
+
+     --ddiissppllaayy _h_o_s_t:_d_i_s_p_l_a_y
+          Specifies the host and screen to be used for displaying
+          the dvi file.  This is normally obtained from the en-
+          vironment variable ``DISPLAY.''
+
+KKEEYYSSTTRROOKKEESS
+     XXddvvii recognizes the following keystrokes when typed in its
+     window.  Each may optionally be preceded by a (positive or
+     negative) number, whose interpretation will depend on the
+     particular keystroke.
+
+     qq    Quits the program.  Control-C and control-D will do
+          this, too.
+
+     nn    Moves to the next page (or to the nnth next page if a
+          number is given).  Synonyms are `ff', Space, Return, and
+          Line Feed.
+
+     pp    Moves to the previous page (or back nn pages).  Synonyms
+          are `bb', control-H, and Delete.
+
+     gg    Moves to the page with the given number.  Initially,
+          the first page is assumed to be page number 1, but this
+          can be changed with the `PP' keystroke, below.  If no
+          page number is given, then it goes to the last page.
+
+     PP    ``This is page number nn.''  This can be used to make
+          the `gg' keystroke refer to actual page numbers instead
+          of absolute page numbers.
+
+     CCoonnttrrooll--LL
+          Redisplays the current page.
+
+     ^^    Move to the ``home'' position of the page.  This is
+          normally the upper left-hand corner of the page,
+          depending on the margins as described in the -margins
+          option, above.
+
+     uu    Moves up a window-full.
+
+     dd    Moves down a window-full.
+
+     ll    Moves left a window-full.
+
+
+
+
+X Version 11               8 May 1989                           4
+
+
+
+
+
+
+XDVI                 UNKNOWN MANUAL SECTION                  XDVI
+
+
+
+     rr    Moves right a window-full.
+
+     cc    Moves the page so that the point currently beneath the
+          cursor is moved to the middle of the window.  It also
+          (gasp!) warps the cursor to the same place.
+
+     MM    Sets the margins so that the point currently under the
+          cursor is the upper left-hand corner of the text in the
+          page.
+
+     ss    Changes the shrink factor to the given number.  If no
+          number is given, the smallest factor that makes the en-
+          tire page fit in the window will be used.  (Margins are
+          ignored in this computation.)
+
+     SS    Sets the density factor to be used when shrinking bit-
+          maps.  This should be a number between 0 and 100;
+          higher numbers produce lighter characters.
+
+     RR    Forces the dvi file to be reread.  This allows you to
+          preview many versions of the same file while running
+          _x_d_v_i only once.
+
+     kk    Normally when _x_d_v_i switches pages it moves to the home
+          position as well.  The `k' keystroke toggles a `keep-
+          position' flag which, when set, will keep the same po-
+          sition when moving between pages.  Also `0k' and `1k'
+          clear and set this flag, respectively.
+
+MMOOUUSSEE AACCTTIIOONNSS
+     If the shrink factor is set to any number other than one,
+     then clicking any mouse button will pop up a ``magnifying
+     glass'' which shows the unshrunk image in the vicinity of
+     the mouse click.  This subwindow disappears when the mouse
+     button is released.  Different mouse buttons produce dif-
+     ferent sized windows, as indicated by the --mmggss option,
+     above.  Moving the cursor while holding the button down will
+     move the magnifying glass.
+
+     Also, the scrollbars (if present) behave in the standard
+     way:  pushing Button 2 in a scrollbar moves the top or left
+     edge of the scrollbar to that point and optionally drags it;
+     pushing Button 1 moves the image up or right by an amount
+     equal to the distance from the button press to the upper
+     left-hand corner of the window; pushing Button 3 moves the
+     image down or left by the same amount.
+
+EENNVVIIRROONNMMEENNTT
+     Uses the environment variable ``DISPLAY'' to specify which
+     bit map display terminal to use.
+
+     The environment variable ``XDVIFONTS'' determines the
+
+
+
+X Version 11               8 May 1989                           5
+
+
+
+
+
+
+XDVI                 UNKNOWN MANUAL SECTION                  XDVI
+
+
+
+     path(s) searched for fonts in the following manner.  The
+     string consists of one or more strings separated by colons.
+     In each such string, the substring ``%f'' is changed to the
+     font name; ``%d'' is changed to the magnification; and
+     ``%p'' is changed to the font family (``gf'', ``pk'', or
+     ``pxl'').  If no ``%f'' appears in the string, then the
+     string ``/%f.%d%p'' is added on the end.  For example, if
+     the string is ``/usr/local/tex/fonts'' and the font is cmr10
+     at 300dpi, then it searches for
+     /usr/local/tex/fonts/cmr10.300gf,
+     /usr/local/tex/fonts/cmr10.300pk, and
+     /usr/local/tex/fonts/cmr10.1500pxl, in that order.  If the
+     first character of the ``XDVIFONTS'' variable is a colon,
+     then the system default paths are tried first.  If the font
+     is not found in the desired size, then _x_d_v_i will try to find
+     the nearest size.  If the font cannot be found at all, then
+     _x_d_v_i will try to vary the point size of the font (within a
+     certain range), and if this fails, then it will use the font
+     specified as the alternate font (cf. --aallttffoonntt).
+
+     The ``XDVISIZES'' variable must be set to indicate which
+     sizes of fonts are available.  It should consists of a list
+     of numbers separated by colons.  If the list begins with a
+     colon, the system default sizes are used, as well.  Sizes
+     are expressed in dots per inch; decimals may be used for
+     ``pxl'' files: for example, a 300 dots per inch file magni-
+     fied by half a step comes out to 1643 dots per five inches,
+     which should be encoded as 328.6.  The current default set
+     of sizes is 300:328.6:360:432:518.4:622:746.4.
+
+FFIILLEESS
+     /sprite/lib/fonts/pk   Font pixel files.
+
+SSEEEE AALLSSOO
+     X(1).
+
+AAUUTTHHOORRSS
+     Eric Cooper, CMU, did a version for direct output to a QVSS.
+     Modified for X by Bob Scheifler, MIT Laboratory for Computer
+     Science.  Modified for X11 by Mark Eichin, MIT SIPB.  Addi-
+     tional enhancements by many others.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+X Version 11               8 May 1989                           6
+
+
+

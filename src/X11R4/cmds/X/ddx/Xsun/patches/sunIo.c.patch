@@ -1,0 +1,370 @@
+*** /tmp/,RCSt1659773	Mon Nov  4 17:41:22 1991
+--- sunIo.c	Tue Jul 24 18:01:22 1990
+***************
+*** 49,68 ****
+  
+  #include    "sun.h"
+  #include    "opaque.h"
+  
+  int	    	lastEventTime = 0;
+! extern int	sunSigIO;
+  extern int      screenIsSaved;
+  extern void	SaveScreens();
+  
+! #ifdef SUN_WINDOWS
+! int	windowFd = 0;
+! int	sunIgnoreEvent = TRUE;
+! #define	INPBUFSIZE	128
+! #endif SUN_WINDOWS
+  
+  /*-
+   *-----------------------------------------------------------------------
+   * TimeSinceLastInputEvent --
+   *	Function used for screensaver purposes by the os module.
+   *
+--- 49,85 ----
+  
+  #include    "sun.h"
+  #include    "opaque.h"
++ #include    <sys/time.h>
+  
+  int	    	lastEventTime = 0;
+! extern int	spriteCheckInput;
+  extern int      screenIsSaved;
+  extern void	SaveScreens();
+  
+! extern unsigned int	repeatLong, repeatShort;
+  
+  /*-
+   *-----------------------------------------------------------------------
++  * sunInputAvail --
++  *	This function is called from the scheduler whenever one of
++  *	the devices we told it to look for has input waiting.
++  *
++  * Results:
++  *	None.
++  *
++  * Side Effects:
++  *	spriteCheckInput has its READ_INPUT flag set.
++  *
++  *-----------------------------------------------------------------------
++  */
++ void
++ sunInputAvail()
++ {
++     spriteCheckInput = 1;
++ }
++ 
++ /*-
++  *-----------------------------------------------------------------------
+   * TimeSinceLastInputEvent --
+   *	Function used for screensaver purposes by the os module.
+   *
+***************
+*** 106,285 ****
+  void
+  ProcessInputEvents ()
+  {
+!     register Firm_event    *ptrEvents,    	/* Current pointer event */
+! 			   *kbdEvents;	    	/* Current keyboard event */
+!     register int	    numPtrEvents, 	/* Number of remaining pointer
+! 						 * events */
+! 			    numKbdEvents;   	/* Number of remaining
+! 						 * keyboard events */
+!     int	    	  	    nPE,    	    	/* Original number of pointer
+! 						 * events */
+! 			    nKE;    	    	/* Original number of
+! 						 * keyboard events */
+!     Bool		    PtrAgain,		/* need to (re)read */
+! 			    KbdAgain;		/* need to (re)read */
+!     DevicePtr		    pPointer;
+!     DevicePtr		    pKeyboard;
+!     register PtrPrivPtr     ptrPriv;
+!     register KbPrivPtr	    kbdPriv;
+!     Firm_event	  	    *lastEvent;	    	/* Last event processed */
+      enum {
+  	NoneYet, Ptr, Kbd
+      }			    lastType = NoneYet;	/* Type of last event */
+  
+- #ifdef SUN_WINDOWS
+-     struct inputevent sunevents[INPBUFSIZE];
+-     register struct inputevent *se = sunevents, *seL;
+-     int         n;
+- #endif SUN_WINDOWS
+- 
+-     sunSigIO = 0;
+      pPointer = LookupPointerDevice();
+      pKeyboard = LookupKeyboardDevice();
+  
+-     if ( sunUseSunWindows() ) {
+- #ifdef SUN_WINDOWS
+- 	if ((n=read(windowFd,sunevents,INPBUFSIZE*sizeof sunevents[0])) < 0 
+- 			    && errno != EWOULDBLOCK) {
+- 	    /*
+- 	     * Error reading events; should do something. XXX
+- 	     */
+- /*debug*/
+- 	ErrorF("ProcessInputEvents: read(windowFd)  n=%d\n",n);
+- 	    return;
+- 	}
+- 
+- 	if (autoRepeatKeyDown && autoRepeatReady && n <= 0) {
+- 		/* fake a sunwindows kbd event */
+- 		n = sizeof(struct inputevent);
+- 		se->ie_code = AUTOREPEAT_EVENTID;
+- 		tvplus(event_time(se), autoRepeatLastKeyDownTv,
+- 							autoRepeatDeltaTv);
+- 		if (autoRepeatDebug)
+- 		    ErrorF("ProcessInputEvents: sw auto event\n");
+- 	}
+- 
+- 	for (seL = sunevents + (n/(sizeof sunevents[0]));  se < seL; se++) {
+- 	    if (screenIsSaved == SCREEN_SAVER_ON)
+- 		SaveScreens(SCREEN_SAVER_OFF, ScreenSaverReset);
+- 	    lastEventTime = TVTOMILLI(event_time(se));
+- 
+- 	    /*
+- 	     * Decide whether or not to pay attention to events.
+- 	     * Ignore the events if the locator has exited X Display.
+- 	     */
+- 	    switch (event_id(se)) {
+- 		case KBD_DONE:
+- 		    sunChangeKbdTranslation( pKeyboard, FALSE );
+- 		    break;
+- 		case KBD_USE:
+- 		    sunChangeKbdTranslation( pKeyboard, TRUE );
+- 		    break;
+- 		case LOC_WINENTER:
+- 		    sunIgnoreEvent = FALSE;
+- 		    break;
+- 		case LOC_WINEXIT:
+- 		    sunIgnoreEvent = TRUE;
+- 		    break;
+- 	    }
+- 
+- 	    if (sunIgnoreEvent) {
+- 		continue;
+- 	    }
+- 
+- 	    /*
+- 	     * Figure out the X device this event should be reported on.
+- 	     */
+- 	    switch (event_id(se)) {
+- 		case LOC_MOVE:
+- 		case MS_LEFT:
+- 		case MS_MIDDLE:
+- 		case MS_RIGHT:
+- 		    sunMouseProcessEventSunWin(pPointer,se);
+- 		    break;
+- 		case LOC_WINEXIT:
+- 		case LOC_WINENTER:
+- 		case KBD_DONE:
+- 		case KBD_USE:
+- 		    break;
+- 		default:
+- 		    sunKbdProcessEventSunWin(pKeyboard,se);
+- 		    break;
+- 	    }
+- 	}
+- #endif SUN_WINDOWS
+-     } 
+-     else {
+  	ptrPriv = (PtrPrivPtr)pPointer->devicePrivate;
+  	kbdPriv = (KbPrivPtr)pKeyboard->devicePrivate;
+  	
+- 	numPtrEvents = 0;
+- 	PtrAgain = TRUE;
+- 	numKbdEvents = 0;
+- 	KbdAgain = TRUE;
+- 	lastEvent = (Firm_event *)0;
+- 
+  	/*
+! 	 * So long as one event from either device remains unprocess, we loop:
+! 	 * Take the oldest remaining event and pass it to the proper module
+! 	 * for processing. The DDXEvent will be sent to ProcessInput by the
+! 	 * function called.
+  	 */
+! 	while (1) {
+! 	    /*
+! 	     * Get events from both the pointer and the keyboard, storing the number
+! 	     * of events gotten in nPE and nKE and keeping the start of both arrays
+! 	     * in pE and kE
+! 	     */
+! 	    if ((numPtrEvents == 0) && PtrAgain) {
+! 		ptrEvents = (* ptrPriv->GetEvents) (pPointer, &nPE, &PtrAgain);
+! 		numPtrEvents = nPE;
+! 	    }
+! 	    if ((numKbdEvents == 0) && KbdAgain) {
+! 		kbdEvents = (* kbdPriv->GetEvents) (pKeyboard, &nKE, &KbdAgain);
+! 		numKbdEvents = nKE;
+! 	    }
+! 	    if ((numPtrEvents == 0) && (numKbdEvents == 0))
+! 		break;
+! 	    if (numPtrEvents && numKbdEvents) {
+! 		if (timercmp (&kbdEvents->time, &ptrEvents->time, <)) {
+  		    if (lastType == Ptr) {
+  			(* ptrPriv->DoneEvents) (pPointer, FALSE);
+- 		    }
+- 		    (* kbdPriv->ProcessEvent) (pKeyboard, kbdEvents);
+- 		    numKbdEvents--;
+- 		    lastEvent = kbdEvents++;
+  		    lastType = Kbd;
+! 		} else {
+  		    if (lastType == Kbd) {
+  			(* kbdPriv->DoneEvents) (pKeyboard, FALSE);
+- 		    }
+- 		    (* ptrPriv->ProcessEvent) (pPointer, ptrEvents);
+- 		    numPtrEvents--;
+- 		    lastEvent = ptrEvents++;
+  		    lastType = Ptr;
+  		}
+! 	    } else if (numKbdEvents) {
+! 		if (lastType == Ptr) {
+! 		    (* ptrPriv->DoneEvents) (pPointer, FALSE);
+! 		}
+! 		(* kbdPriv->ProcessEvent) (pKeyboard, kbdEvents);
+! 		numKbdEvents--;
+! 		lastEvent = kbdEvents++;
+! 		lastType = Kbd;
+  	    } else {
+! 		if (lastType == Kbd) {
+! 		    (* kbdPriv->DoneEvents) (pKeyboard, FALSE);
+! 		}
+! 		(* ptrPriv->ProcessEvent) (pPointer, ptrEvents);
+! 		numPtrEvents--;
+! 		lastEvent = ptrEvents++;
+! 		lastType = Ptr;
+  	    }
+  	}
+  
+  	if (lastEvent) {
+- 	    lastEventTime = TVTOMILLI(lastEvent->time);
+  	    if (screenIsSaved == SCREEN_SAVER_ON) {
+  		SaveScreens(SCREEN_SAVER_OFF, ScreenSaverReset);
+  	    }
+--- 123,177 ----
+  void
+  ProcessInputEvents ()
+  {
+!     register Mouse_Event    *events; 	    /* Array of events */
+!     register int  	    numEvents;	    /* Number of events left */
+!     int	    	  	    nE;	    	    /* Total number of events */
+!     DevicePtr		    pPointer;	    /* System pointer */
+!     DevicePtr		    pKeyboard;	    /* System keyboard */
+!     register PtrPrivPtr     ptrPriv;	    /* Private data for pointer */
+!     register KbPrivPtr	    kbdPriv;	    /* Private data for keyboard */
+!     Mouse_Event  	    *lastEvent;	    /* Last event processed */
+      enum {
+  	NoneYet, Ptr, Kbd
+      }			    lastType = NoneYet;	/* Type of last event */
+  
+      pPointer = LookupPointerDevice();
+      pKeyboard = LookupKeyboardDevice();
+      
+      ptrPriv = (PtrPrivPtr)pPointer->devicePrivate;
+      kbdPriv = (KbPrivPtr)pKeyboard->devicePrivate;
+      
+      /*
+!      * Get events from both the pointer and the keyboard via the keyboard's
+!      * GetEvents vector. The number of events read is stored in numEvents.
+       */
+!     events = (* kbdPriv->GetEvents) (pKeyboard, &nE);
+!     numEvents = nE;
+!     
+!     while (numEvents) {
+! 	if (events->flags & KEYBOARD_EVENT) {
+  	    if (lastType == Ptr) {
+  	        (* ptrPriv->DoneEvents) (pPointer, FALSE);
+  	        lastType = Kbd;
+! 	    }
+! 	    (* kbdPriv->ProcessEvent) (pKeyboard, events);
+! 	} else if (events->flags & MOUSE_EVENT) {
+  	    if (lastType == Kbd) {
+  	        (* kbdPriv->DoneEvents) (pKeyboard, FALSE);
+  	        lastType = Ptr;
+  	    }
+! 	    (* ptrPriv->ProcessEvent) (pPointer, events);
+  	} else {
+! 	    /* ??? */
+  	}
++ 	lastEvent = events;
++ 	lastEventTime = events->time;
++ 	numEvents -= 1;
++ 	events += 1;
+      }
+      
++     SetTimeSinceLastInputEvent();
+      if (lastEvent) {
+  	if (screenIsSaved == SCREEN_SAVER_ON) {
+  	    SaveScreens(SCREEN_SAVER_OFF, ScreenSaverReset);
+  	}
+***************
+*** 288,295 ****
+  	(* kbdPriv->DoneEvents) (pKeyboard, TRUE);
+  	(* ptrPriv->DoneEvents) (pPointer, TRUE);
+  
+!     }
+! 
+  }
+  
+  
+--- 180,186 ----
+      (* kbdPriv->DoneEvents) (pKeyboard, TRUE);
+      (* ptrPriv->DoneEvents) (pPointer, TRUE);
+  
+!     spriteCheckInput = 0;
+  }
+  
+  
+***************
+*** 341,357 ****
+  
+      if (strcmp (argv[i], "-ar1") == 0) {	/* -ar1 int */
+  	if (++i >= argc) UseMsg ();
+! 	autoRepeatInitiate = 1000 * (long)atoi(argv[i]);
+  	return 2;
+      }
+      if (strcmp (argv[i], "-ar2") == 0) {	/* -ar2 int */
+  	if (++i >= argc) UseMsg ();
+! 	autoRepeatDelay = 1000 * (long)atoi(argv[i]);
+  	return 2;
+      }
+      if (strcmp (argv[i], "-debug") == 0) {	/* -debug */
+  	return 1;
+      }
+      if (strcmp (argv[i], "-dev") == 0) {	/* -dev /dev/mumble */
+  	if (++i >= argc) UseMsg ();
+  	return 2;
+--- 232,250 ----
+  
+      if (strcmp (argv[i], "-ar1") == 0) {	/* -ar1 int */
+  	if (++i >= argc) UseMsg ();
+! 	repeatLong = 1000 * (long)atoi(argv[i]);
+  	return 2;
+      }
+      if (strcmp (argv[i], "-ar2") == 0) {	/* -ar2 int */
+  	if (++i >= argc) UseMsg ();
+! 	repeatShort = 1000 * (long)atoi(argv[i]);
+  	return 2;
+      }
++ #ifndef	sprite
+      if (strcmp (argv[i], "-debug") == 0) {	/* -debug */
+  	return 1;
+      }
++ #endif	sprite
+      if (strcmp (argv[i], "-dev") == 0) {	/* -dev /dev/mumble */
+  	if (++i >= argc) UseMsg ();
+  	return 2;
+***************
+*** 371,378 ****
+--- 264,273 ----
+  {
+      ErrorF("-ar1 int               set autorepeat initiate time\n");
+      ErrorF("-ar2 int               set autorepeat interval time\n");
++ #ifndef	sprite
+      ErrorF("-debug                 disable non-blocking console mode\n");
+      ErrorF("-dev filename          name of device to open\n");
++ #endif	sprite
+      ErrorF("-mono                  force monochrome-only screen\n");
+      ErrorF("-zaphod                disable active Zaphod mode\n");
+  }

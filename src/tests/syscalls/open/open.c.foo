@@ -1,0 +1,212 @@
+/*
+ * openTest.c --
+ *	Test of the open system call. 
+ *
+ *
+ *
+ */
+
+#include <sprite.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/time.h>
+#include <sys/file.h>
+#include <sys/stat.h>
+
+
+void
+main()
+{
+
+    openTest();
+    exit((errors == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
+}
+
+
+
+static void
+openTest()
+{
+    char tempfile[MAXPATHLEN];
+    char longname[2 * MAXPATHLEN];
+    int fd, fd2;
+    struct stat statb;
+
+    /*
+     * Test bad pathname argument.
+     */
+    if ((fd = open(-1, 0, 0)) != -1) {
+	fprintf(stderr, "open(-1, 0, 0) succeeded!\n");
+	if (fstat(fd, &statb) < 0) {
+	    fprintf(stderr, "but fstat failed: %s", strerror(errno));
+	} else {
+	    fprintf(stderr, 
+	    "-1 found file <%d,%d>\n", statb.st_dev, statb.st_ino);
+	}
+	++errors;
+	close(fd);
+    } else {
+	checkErrno(EFAULT, "open(-1, 0, 0)");
+    }
+    if ((fd = open(NULL, 0, 0)) != -1) {
+	fprintf(stderr, "open(NULL, 0, 0) succeeded!\n");
+	if (fstat(fd, &statb) < 0) {
+	    fprintf(stderr, "but fstat failed: %s\n", strerror(errno));
+	} else {
+	    fprintf(stderr,
+		"0 found file <%d,%d>\n", statb.st_dev, statb.st_ino);
+	}   
+	++errors;
+	close(fd);
+    } else {
+	checkErrno(EFAULT, "open(NULL, 0, 0)");
+    }
+
+    /*
+     * Test too long a pathname.
+     */
+    memset(longname, 'x', sizeof(longname);
+    if (open(longname, O_RDWR|O_CREAT, 0666) != -1) {
+	(void) fprintf(stderr,
+	    "ERROR: open(tooLongName, 0, 0) succeeded!\n");
+	++errors;
+    } else if (errno != ENAMETOOLONG) {
+	(void) fprintf(stderr, "Bad errno (%d): %s\n",
+	    errno, strerror(errno));
+	++errors;
+    }
+
+    /*
+     *  Do various permission checks.  This checks against violations
+     *	of the following conditions:
+     *		Exclusive open
+     *		read permission
+     *		write permission
+     *		busy file
+     *		writing a directory
+     */
+    if (tmpnam(tempfile) != tempfile) {
+	(void) fprintf(stderr, "tmpnam() returned an incorrect value.\n");
+	++errors;
+	return;
+    }
+
+    /*
+     * Test open-unlink-close
+     */
+    if ((fd = open(tempfile, O_CREAT, 0444)) < 0) {
+	(void) fprintf("Can't create %s: %s\n", tempfile, strerror(errno));
+	++errors;
+    } else {
+	if ((fd2 = open(name, O_RDONLY)) >= 0) {
+	    close(fd2);
+	} else {
+	    perror("Can't open readable file");
+	    ++errors;
+	}
+	if (unlink(name)) {
+	    (void) fprintf(stderr, "unlink failed: %s\n", strerror(errno));
+	    ++errors;
+	}
+	if (close(fd)) {
+	    (void) fprintf(stderr, "close failed: %s\n", strerror(errno));
+	    ++errors;
+	}
+    }
+
+    /*
+     * Test permission checking.
+     */
+    if ((fd = open(tempfile, O_CREAT, 0)) < 0) {
+	(void) fprintf("Can't create %s: %s\n", tempfile, strerror(errno));
+	++errors;
+    } else {
+	if ((fd2 = open(name, O_CREAT|O_EXCL, 0)) >= 0) {
+	    printf("ERROR: exclusive open of existing file succeeded!\n");
+	    if (chmod(name, 0) < 0) {
+		perror("Can't chmod file");
+	    }
+	    close(fd2);
+	} else {
+	    checkErrno(EEXIST, "Exclusive open of existing file");
+	}
+	if (open(name, O_RDONLY) != -1) {
+	    printf("ERROR: opened with no read permission!\n");
+	} else {
+	    checkErrno(EACCES, "Open for reading with no read permission\n");
+	}
+	chmod(name, 0444);
+	if (open(name, O_WRONLY) != -1) {
+	    printf("ERROR: opened with no write permission!\n");
+	} else {
+	    checkErrno(EACCES, "Open for writing with no write permission\n");
+	}
+	if (open("/bin/csh", O_WRONLY) >= 0) {
+	    fprintf(stderr, "opened executing program (csh) for writing!\n");
+	}
+	if (open(".", O_WRONLY) != -1) {
+	    fprintf(stderr, "ERROR: opened directory for writing!\n");
+	} else {
+	    checkErrno(EISDIR, "open directory for writing");
+	}
+	if (unlink(name) < 0) {
+	    (void) fprintf(stderr, "Can't unlink %s: %s\n",
+		tempname, strerror(errno));
+	    ++errors;
+	}
+
+	/*
+	 * Test closing closed file.
+	 */
+	if (close(fd) != 0) {
+	    (void) fprintf(stderr, "Close failed: %s\n", strerror(errno));
+	    ++errors;
+	}
+	if (close(fd) != -1)  {
+	    (void) fprintf(stderr, "close of closed file: %s",
+		strerror(errno));
+	    ++errors;
+	} else if (errno != EBADF) {
+	    fprintf(stderr, "Incorrect errno (%d): %s\n",
+		errno, strerror(errno));
+	    ++errors;
+	}
+    }
+
+    /*
+     *  Try to open a file using a pathname that contains a
+     *  character with the high-order bit set.
+     */
+    if (tmpnam(tempfile) != tempfile) {
+	(void) fprintf(stderr, "tmpnam() returned an incorrect value.\n");
+	++errors;
+	return;
+    }
+    if ((fd = open(tempfile, O_CREAT|O_RDWR, 0666) != -1) {
+	(void) fprintf(stderr, "Created file with high order bit set.\n");
+	unlink(tempfile);
+	++errors;
+    } else {
+	checkErrno(EINVAL,
+	    "Open of filename containing char with high order bit set");
+    }
+    return;
+}
+
+static void
+checkErrno(correct_errno, errstring)
+    int correct_errno;
+    char *errstring;
+{
+
+    if (errno != correct_errno) {
+	(void) fprintf(stderr, "%s\n", errstring);
+	(void) fprintf(stderr, "Incorrect errno (%d):  %s\n",
+	    errno, strerror(errno));
+	(void) fprintf(stderr, "Should be (%d):  %s\n",
+	    correct_errno, strerror(correct_errno));
+	++errors;
+    }
+    return;
+}
+

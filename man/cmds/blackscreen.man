@@ -1,0 +1,28 @@
+' $Header: /a/newcmds/blackscreen/RCS/blackscreen.man,v 1.3 88/12/30 08:43:54 ouster Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS BLACKSCREEN cmds
+.BS
+.SH NAME
+blackscreen \- Turn the display off or on
+.SH SYNOPSIS
+\fBblackscreen\fR [\fIoption\fR]
+.SH OPTIONS
+.IP "\fB\-n\fR" 15
+Turn the display back on again.
+.IP "\fB\-y\fR" 15
+Turn the display off.
+.BE
+
+.SH INTRODUCTION
+.PP
+This command may be used to turn the display off when a
+workstation is about to be
+idle for a long period of time.  When invoked with no arguments,
+it turns the display off, waits for a carriage-return to be typed,
+then turns the display back on again.  If invoked with any argument
+except \fB\-n\fR, \fBblackscreen\fR turns the display off and exits with
+the display left off.  If the \fB\-n\fR argument is given, \fBblackscreen\fR
+re-enables the display immediately and exits.
+
+.SH KEYWORDS
+black, display, off, screen

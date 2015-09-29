@@ -1,0 +1,192 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.6
+date     89.03.22.00.47.35;  author rab;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.10.06.15.11.53;  author ouster;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.07.29.17.04.34;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.07.25.14.18.38;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.06.05.13.14.30;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.05.21.17.31.01;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.6
+log
+@*** empty log message ***
+@
+text
+@/* 
+ * system.c --
+ *
+ *	Source code for the "system" library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdlib/RCS/system.c,v 1.5 88/10/06 15:11:53 ouster Exp Locker: rab $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <stdlib.h>
+#include <signal.h>
+#include <sys/wait.h>
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * system --
+ *
+ *	Pass a string off to "sh", and return the result of executing
+ *	it.
+ *
+ * Results:
+ *	The return value is the status returned by "sh".
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+system(command)
+    char *command;		/* Shell command to execute. */
+{
+    int pid, pid2, result;
+    struct sigvec quitHandler, intHandler;
+    static struct sigvec newHandler = {SIG_IGN, 0, 0};
+    union wait status;
+
+    sigvec(SIGINT, &newHandler, &intHandler);
+    sigvec(SIGQUIT, &newHandler, &quitHandler);
+
+    pid = fork();
+    if (pid == 0) {
+	execlp("sh", "sh", "-c", command, 0);
+	_exit(127);
+    }
+    while (1) {
+	pid2 = wait(&status);
+	if (pid2 == -1) {
+	    result = -1;
+	    break;
+	}
+	if (pid2 == pid) {
+	    result = status.w_status;
+	    break;
+	}
+    }
+    sigvec(SIGINT, &intHandler, (struct sigvec *) 0);
+    sigvec(SIGQUIT, &quitHandler, (struct sigvec *) 0);
+    return result;
+}
+@
+
+
+1.5
+log
+@Wasn't returning correct status:  should be all 16 bits, not just
+return code.
+@
+text
+@d17 2
+a18 2
+static char rcsid[] = "$Header: system.c,v 1.4 88/07/29 17:04:34 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+d20 1
+@
+
+
+1.4
+log
+@Lint.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: system.c,v 1.3 88/07/25 14:18:38 ouster Exp $ SPRITE (Berkeley)";
+d64 1
+a64 1
+	    result = status.w_T.w_Retcode;
+@
+
+
+1.3
+log
+@Bug:  typed "==" instead of "=".
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: system.c,v 1.2 88/06/05 13:14:30 ouster Exp $ SPRITE (Berkeley)";
+d68 2
+a69 2
+    sigvec(SIGINT, &intHandler, 0);
+    sigvec(SIGQUIT, &quitHandler, 0);
+@
+
+
+1.2
+log
+@Bad declaration;  wasn't caught until I switched to Gcc.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: system.c,v 1.1 88/05/21 17:31:01 ouster Exp $ SPRITE (Berkeley)";
+d60 1
+a60 1
+	    result == -1;
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: proto.c,v 1.2 88/03/11 08:39:08 ouster Exp $ SPRITE (Berkeley)";
+d47 1
+a47 1
+    struct wait status;
+@

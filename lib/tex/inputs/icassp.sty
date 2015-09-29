@@ -1,0 +1,231 @@
+% ICASSP DOCUMENT STYLE -- released 15 December 1988
+%    for LaTeX version 2.09
+% Copyright (C) 1988 bt John Vlontzos, except portions
+% Copyright (C) 1988 by Max Hailperin, except portions 
+% Copyright (C) 1985 by Leslie Lamport, or otherwise indicated.
+% Modified by John Vlontzos
+% Permission to copy all or part of this work is granted, provided
+% that the copies are not made or distributed for resale, and that
+% the copyright notice and this notice are retained.
+%
+% 
+% THIS WORK IS PROVIDED ON AN "AS IS" BASIS.  THE AUTHOR PROVIDES NO
+% WARRANTY WHATSOEVER, EITHER EXPRESS OR IMPLIED, REGARDING THE WORK,
+% INCLUDING WARRANTIES WITH RESPECT TO ITS MERCHANTABILITY OR FITNESS
+% FOR ANY PARTICULAR PURPOSE.
+%
+% This is a document style option, for cammera-ready copy for the
+% ICASSP '89 conference (and other IEEE conferences???), to be
+% used with the article document style and the proc document style option.
+%
+% WARNING: The visual design of this style is rather poor.  The conference
+%          specifications forced some of this, and as a result it didn't seem
+%          worth worrying about the rest.  Be forewarned however.
+
+\typeout{Document Style Option 'icassp' -- released 13 December 1988}
+% ************************************************************************
+%              BRIEF DESCRIPTION
+% ************************************************************************
+% * This is a documentstyle that will print your paper
+%   in a form suitable for ICASSP or other IEEE conferences (hopefully)
+% * Just take your {article} file and make a few changes detailed
+%   below
+% * All columns set to 11truecm
+% * The first two pages are 10in long and cover the first mat
+% * The title is centered on a wide page so it should be printed in
+%   landscape mode
+% * If there is only one author use the standard \author macro from {article}
+%   if there are 2 authors, use the new macro \authors described below
+% * A macro for thanks is provided (\thanksu{thanks text})
+% * The second page MUST be identified by placing the macro \thisissecondpage
+%   anywhere in the second page
+% * The second and subsequent mats are broken into 4 pages each 6.44in long
+% * Section titles are centered, Capitalized and numbered 
+%   (if you don't want numbering just set \secnumdepth{0})
+% * Sub(sub)sections are lowercase and boldface, flush left
+% * Some notes are included in the macro definitions to make use more clear
+%  ****************************************
+%  *             KEYWORDS                 *
+%  ****************************************
+
+% \keywords{foo, bar, baz} should go at the end of the abstract
+
+\def\keywords#1{\begin{list}{}{\setlength{\leftmargin}{0pt}\setlength
+{\rightmargin}{0pt}\setlength{\topsep}{\baselineskip}\setlength
+{\partopsep}{0pt}}\item[]Keywords: #1\end{list}}
+
+
+%  ****************************************
+%  *            SECTIONING                *
+%  ****************************************
+% Slight modification of the geophysics.sty file,
+% Copyright (c) 1987 by Stephen Gildea
+% Slight modification of above by John Vlontzos
+% Permission to copy all or part of this work is granted, provided
+% that the copies are not made or distributed for resale, and that
+% the copyright notice and this notice are retained.
+% 
+% THIS WORK IS PROVIDED ON AN "AS IS" BASIS.  THE AUTHOR PROVIDES NO
+% WARRANTY WHATSOEVER, EITHER EXPRESS OR IMPLIED, REGARDING THE WORK,
+% INCLUDING WARRANTIES WITH RESPECT TO ITS MERCHANTABILITY OR FITNESS
+% FOR ANY PARTICULAR PURPOSE.
+
+% Headings:
+%   for principal heading use \section
+%   for lower rank heading use \subsection
+%   for still lower rank heading use \subsubsection
+\setcounter{secnumdepth}{3}
+%If you don't want section numbers, set secnumdepth to 0
+% \section is tricky because we want to both support \section* and have
+% the section title uppercased.
+\def\section #1{\begin{center} \sectionc{#1} \end{center}}
+\def\sectionc{\secdef\@sectionb\@sections}
+\def\@sectionb[#1]#2{\@sections{#2}}
+\def\@sections#1{\@startsection
+  {section}{1}{\z@}{-3.5ex plus -1ex minus -.2ex}{2.3ex plus .2ex}{\large
+  \bf}{\uppercase{#1}}}
+
+% the below is modeled on the above, plus the paragraph def from art10.doc
+\def\subsubsection{\secdef\@subsubsectionb\@subsubsections}
+\def\@subsubsectionb[#1]#2{\@subsubsections{#2}}
+\def\@subsubsections#1{\@startsection
+    {subsubsection}{3}{\z@}{3.25ex plus 1ex minus .2ex}{-1sp}{\normalsize
+    \bf}{#1---}}
+    
+% the below is less closely modeled on the geophysical stuff, plus art10.doc
+\def\subsection{\secdef\@subsectionb\@subsections}
+\def\@subsectionb[#1]#2{\@subsections{#2}}
+\def\@subsections#1{\@startsection{subsection}{2}{\z@}{-3.25ex plus -1ex minus 
+   -.2ex}{1.5ex plus .2ex}{\large\bf}{#1}}
+
+% in case people nest more deeply than allowed --- perhaps should be error
+\def\paragraph{\subsubsection}
+\def\subparagraph{\subsubsection}
+
+% *************************************************
+% Abstract definition (centered and capitalized)
+% dont forget to \begin{abstract}...\end{abstract}
+% *************************************************
+
+\def\abstract{\if@twocolumn
+\section*{ABSTRACT}
+\else \small 
+\begin{center}
+{\bf ABSTRACT\vspace{-.5em}\vspace{0pt}} 
+\end{center}
+\quotation 
+\fi}
+\def\endabstract{\if@twocolumn\else\endquotation\fi\vspace{.1truein}}
+%  ****************************************
+%  *            PAGE LAYOUT               *
+%  ****************************************
+%
+% All margin dimensions measured from a point one inch from top and side
+% of page.  Lamport claims that for some unspecified device(s) dimensions
+% shrink by about 2 percent.
+
+% SIDE MARGINS:
+   \oddsidemargin  0pt      %   Note that \oddsidemargin = \evensidemargin
+   \evensidemargin 0pt
+
+% VERTICAL SPACING:        
+                         % Top of page:
+\topmargin -48truept         %    Nominal distance from top of page to top of
+                         %    box containing running head.
+\headheight 0truept         %    Height of box containing running head.
+\headsep 10truept            %    Space between running head and text.
+% \topskip = 10pt        %    '\baselineskip' for first line of page.
+                         % Bottom of page:
+\footheight 0pt         %    Height of box containing running foot.
+\footskip 300pt           %    Distance from baseline of box containing foot 
+                         %    to baseline of last line of text.
+
+
+% DIMENSION OF TEXT:
+\textheight 10truein   % Height of text (including footnotes and figures,
+                          % excluding running head and foot).
+\textwidth 10.5truecm        % Width of text line.
+                         % For two-column mode: 
+\columnsep .92truecm       %    Space between columns 
+\columnseprule 0truept       %    Width of rule between columns.
+
+
+%    ****************************************
+%    *            PAGE STYLES               *
+%    ****************************************
+%
+%  The page number is printed in the top center, in "n of m" form.
+
+
+\def\@oddhead{\rm\hfil \thepage\ of \pageref{@last-page} \hfil}
+\def\@evenhead{\@oddhead}
+\def\@oddfoot{}\def\@evenfoot{\@oddfoot}
+
+% This is from latex.tex, except for-vvvvvvvvvvvvvvvvvv
+\def\enddocument{\@checkend{document}\label{@last-page}\clearpage\begingroup  
+\if@filesw \immediate\closeout\@mainaux 
+\def\global\@namedef##1##2{}\def\newlabel{\@testdef r}%
+\def\bibcite{\@testdef b}\@tempswafalse \makeatletter\input \jobname.aux
+\if@tempswa \@warning{Label(s) may have changed.  Rerun to get
+cross-references right}\fi\fi\endgroup\deadcycles\z@\@@end}
+%    ****************************************
+%    *               TITLE                  *
+%    ****************************************
+%
+% This @maketitle is from proc.doc, except for the uppercasing
+%    ****************************************
+%AUTHORS is a macro for more than one authors
+% used as \authors {name 1\\ dept1 \\ univ1}{name 2 \\ dept2 \\ univ2}
+%    ***************************************
+\def\authors#1#2{\hbox to \hsize{\@tablebox{#1}\hfil\@tablebox{#2}}}
+
+\def\@tablebox#1{\begin{tabular}[t]{@{}l@{}}#1\end{tabular}}
+%    **************************************
+%THANKSU is a macro that replacing \thanks.
+%It permits placing of the \thanks in ANY page
+%useful when the first printed page is smaller than the mat provided.
+% just define your footnote using \thanksu and then place it
+% in the appropriate page by using \putthanks anywhere in the page.
+%    ****************************************
+\def\thanksu #1{\textwidth 11truecm \newsavebox{\thankw}\savebox
+               {\thankw}[11cm]{\parbox{10.5truecm}{#1}}}
+\def\putthanks{\footnotetext{\leftskip=-25truept \rightskip=25truept 
+     \usebox{\thankw}\par}}
+\def\@maketitle{\textwidth 32.8truecm \vbox to 5.9cm{\hsize\textwidth 
+  \linewidth\hsize \vfil \centering  {\Large \bf \uppercase
+       \expandafter{\@title} \par}  % TITLE set in \Large size.
+  \vskip .4cm                % Vertical space after title.
+  {\large \begin{tabular}[t]{c}\@author \end{tabular}\par}    
+  \vfil}\newpage\textwidth 11truecm}
+%    ****************************************
+%     Since the first two pages can be printed in a way that
+%     covers the whole mat, mark the second page by 
+%     placing \thisissecondpage ANYWHERE in the second page
+%     ***************************************
+\def\thisissecondpage{\textheight 6.44truein}
+%    ****************************************
+%    *              CAPTIONS                *
+%    ****************************************
+
+% This makes captions use a period rather than a colon.  It is a minor
+% change to code from article.doc.
+\long\def\@makecaption#1#2{
+   \vskip 10pt 
+   \setbox\@tempboxa\hbox{#1. #2}
+   \ifdim \wd\@tempboxa >\textwidth   % IF longer than one line:
+       #1. #2\par                 %   THEN set as ordinary paragraph.
+     \else                        %   ELSE  center.
+       \hbox to\textwidth{\hfil\box\@tempboxa\hfil}  
+   \fi}
+% *****************************************
+% the following macro produces the references heading in capitals
+% and without a section number
+% *****************************************
+\def\thebibliography#1{\setcounter{secnumdepth}{0}\sectionc*{References\@mkboth
+ {REFERENCES}{REFERENCES}}\list
+ {[\arabic{enumi}]}{\settowidth\labelwidth{[#1]}\leftmargin\labelwidth
+ \advance\leftmargin\labelsep
+ \usecounter{enumi}}
+ \def\newblock{\hskip .11em plus .33em minus -.07em}
+ \sloppy
+ \sfcode`\.=1000\relax}

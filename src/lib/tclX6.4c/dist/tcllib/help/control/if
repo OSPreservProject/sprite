@@ -1,0 +1,14 @@
+          if test ?then? trueBody ?else? ?falseBody?
+               The if command evaluates test as an expression (in  the
+               same  way that expr evaluates its argument).  The value
+               of the expression must be numeric; if  it  is  non-zero
+               then  trueBody  is  called  by  passing  it  to the Tcl
+               interpreter.   Otherwise  falseBody  is   executed   by
+               passing  it  to the Tcl interpreter.  The then and else
+               arguments are optional  ``noise  words''  to  make  the
+               command easier to read.  FalseBody is also optional; if
+               it isn't specified then the  command  does  nothing  if
+               test  evaluates  to  zero.  The return value from if is
+               the value of the last command executed in  trueBody  or
+               falseBody,  or  the  empty  string if test evaluates to
+               zero and falseBody isn't specified.

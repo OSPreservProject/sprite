@@ -1,0 +1,191 @@
+head     9.0;
+branch   ;
+access   ;
+symbols  Summer89:9.0 newlib:8.0 Summer88:6.0 argString:5.0;
+locks    ; strict;
+comment  @# @;
+
+
+9.0
+date     89.09.12.15.14.22;  author douglis;  state Stable;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.28.55;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.21.26;  author brent;  state Stable;
+branches ;
+next     5.1;
+
+5.1
+date     88.04.13.11.26.52;  author ouster;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.46.35;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@|* procAsm.s --
+|*
+|*     Contains assembly language routines required by the proc module.
+|*
+|* Copyright (C) 1985 Regents of the University of California
+|* All rights reserved.
+|*
+|* rcs = $Header: /sprite/src/kernel/proc/RCS/procAsm.s,v 8.0 88/11/11 18:28:55 douglis Stable Locker: douglis $ SPRITE (Berkeley)
+|*
+
+#include "asmDefs.h"
+
+|*----------------------------------------------------------------------------
+|*
+|* Proc_RunUserProc -
+|*
+|*	void	Proc_RunUserProc(regPtr, progCounter, exitFunc, stackPointer)
+|*	    int		*regPtr;
+|*	    int		progCounter;
+|*	    int		(*exitFunc)();
+|*	    int		stackPointer;
+|*
+|* Results:
+|*     	Restore registers and set up the stack to allow start a user process
+|*	running.  Then do an rte to actually start off the process. 
+|*
+|* Side effects:
+|*	None.
+|*
+|*----------------------------------------------------------------------------
+
+    .text
+    .globl	_Proc_RunUserProc
+_Proc_RunUserProc:
+    movl	sp@@(4), a0		| Move the address of the saved 
+					|     registers into a register.
+    movl	a0@@(60), a1		| Restore the user stack pointer
+    movl	a1, usp			|     (registers are stored d0-d7, 	
+					|      a0-a6, a7 == usp).
+    movl	sp@@(8), d1		| Get the program counter into
+					|     a register.
+    movl	sp@@(12), a1		| Get the address of the procedure to
+					|     call upon exit into a register.
+    movl	sp@@(16), sp		| Reset the stack pointer.
+    movl	a1, sp@@-		| The address of the exiting procedure
+					|     is put on top of the stack.
+    clrw	sp@@-			| Set up the vector offset register to
+					|     indicate a short stack.
+    movl	d1, sp@@-		| Push the pc onto the stack.
+    movl	#SUN_SR_USERPRIO, d0
+    movw	d0, sp@@-		| Push the proper status register value
+					|     onto the stack.
+    moveml	a0@@, #0x7FFF		| Restore all registers except sp (a7).
+    rte
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d8 1
+a8 1
+|* rcs = $Header: /sprite/src/kernel/proc/RCS/procAsm.s,v 6.0 88/08/11 12:21:26 brent Stable Locker: douglis $ SPRITE (Berkeley)
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d8 1
+a8 1
+|* rcs = $Header: procAsm.s,v 5.1 88/04/13 11:26:52 ouster Exp $ SPRITE (Berkeley)
+@
+
+
+5.1
+log
+@Changes to make kernel calls much faster.
+@
+text
+@d8 1
+a8 1
+|* rcs = $Header: procAsm.s,v 5.0 87/08/11 10:46:35 sprite Exp $ SPRITE (Berkeley)
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d8 1
+a8 1
+|* rcs = $Header: procAsm.s,v 3.5 86/12/01 12:11:32 nelson Exp $ SPRITE (Berkeley)
+a54 48
+
+|*----------------------------------------------------------------------------
+|*
+|* ProcRunMigProcSysCall -
+|*
+|*	void	ProcRunMigProcSysCall(trapStack)
+|*	    Exc_TrapStack	trapStack
+|*
+|* Results:
+|*	Restart a system call and then restore registers and set up the stack 
+|*	to allow start a user process running.  Then do an rte to actually 
+|*	start off the process. 
+|*
+|* Side effects:
+|*	None.
+|*
+|*----------------------------------------------------------------------------
+
+    .text
+    .globl	_ProcRunMigProcSysCall
+_ProcRunMigProcSysCall:
+    addql	#4, sp			| Get rid of the callers PC.
+    jsr		_Exc_Trap		| Restart the system call.
+    RestoreMigTrapRegs()		| Restore the registers.
+    rte					| Run it.
+
+|*----------------------------------------------------------------------------
+|*
+|* ProcRunMigProc -
+|*
+|*	void	ProcRunMigProc(trapStack)
+|*	    Exc_TrapStack	trapStack
+|*
+|* Results:
+|*     	Restore registers and set up the stack to allow start a user process
+|*	running.  Then do an rte to actually start off the process. 
+|*
+|* Side effects:
+|*	None.
+|*
+|*----------------------------------------------------------------------------
+
+    .text
+    .globl	_ProcRunMigProc
+_ProcRunMigProc:
+    addql	#4, sp			| Get rid of the callers PC.
+    RestoreMigTrapRegs()		| Restore the registers.
+    rte					| Run it.
+@

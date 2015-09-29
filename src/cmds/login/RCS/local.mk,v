@@ -1,0 +1,85 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.4
+date     89.01.11.12.20.22;  author mendel;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.10.30.22.13.40;  author douglis;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.09.15.19.42.02;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.08.24.15.37.38;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.4
+log
+@Modified not to use -lc_g
+@
+text
+@#
+# This file is included by Makefile.  Makefile is generated automatically
+# by mkmf, and this file provides additional local personalization.  The
+# variable SYSMAKEFILE is provided by Makefile;  it's a system Makefile
+# that must be included to set up various compilation stuff.
+#
+
+#
+# Must run set-user-id to root.
+INSTALLFLAGS	+= -o root -m 4775
+
+
+#include	<$(SYSMAKEFILE)>
+@
+
+
+1.3
+log
+@reinstated (?) -lc_g flag.
+@
+text
+@a11 2
+# Use the debuggable C library during testing.
+LIBS = -lc_g
+@
+
+
+1.2
+log
+@fixed a typo....
+@
+text
+@a9 1
+#
+d11 3
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d4 1
+a4 1
+# variable SYSMAKEFILE is provdied by Makefile;  it's a system Makefile
+@

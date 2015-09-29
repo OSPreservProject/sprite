@@ -1,0 +1,240 @@
+#! /sprite/cmds/csh -f
+#
+# User friendly front end for fsmakedev.
+#
+# $Header: /sprite/src/cmds/mkscsidev/RCS/mkscsidev,v 1.4 90/06/28 15:14:28 jhh Exp $ SPRITE (Berkeley)
+#
+# Copyright 1989 Regents of the University of California
+# Permission to use, copy, modify, and distribute this
+# software and its documentation for any purpose and without
+# fee is hereby granted, provided that the above copyright
+# notice appear in all copies.  The University of California
+# makes no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without
+# express or implied warranty.
+#
+
+set devType=4
+set hba=0
+set hbaType=0
+set target=0
+set lun=0
+set server=-1
+set specific=0
+set raw=0
+set devTypeCount=0
+set serverOption
+set type
+set unit
+
+while ($#argv)
+    switch ($1)
+	case "-devType":
+	    shift
+	    if ($#argv == 0) then
+		echo "-devType option requires an argument"
+	    else
+		set devType = $1
+		shift
+	    endif
+	    breaksw
+	case "-hbaType":
+	    shift
+	    if ($#argv == 0) then
+		echo "-hbaType option requires an argument"
+	    else
+		set hbaType = $1
+		shift
+	    endif
+	    breaksw
+	case "-server":
+	    shift
+	    if ($#argv == 0) then
+		echo "-server option requires an argument"
+	    else
+		set server = $1
+		shift
+	    endif
+	    breaksw
+	case "-hba"
+	    shift
+	    if ($#argv == 0) then
+		echo "-hba option requires an argument"
+	    else
+		set hba = $1
+		shift
+	    endif
+	    breaksw
+	case "-target"
+	    shift
+	    if ($#argv == 0) then
+		echo "-target option requires an argument"
+	    else
+		set target = $1
+		shift
+	    endif
+	    breaksw
+	case "-lun"
+	    shift
+	    if ($#argv == 0) then
+		echo "-lun option requires an argument"
+	    else
+		set lun = $1
+		shift
+	    endif
+	    breaksw
+	case "-disk"
+	    shift
+	    set diskFlag
+	    set devType=4
+	    @ devTypeCount++
+	    breaksw
+	case "-rawDisk"
+	    shift
+	    set rawDiskFlag
+	    set devType=4
+	    @ devTypeCount++
+	    breaksw
+	case "-tape"
+	    shift
+	    set tapeFlag
+	    set devType=5
+	    @ devTypeCount++
+	    breaksw
+	case "-rawScsi"
+	    shift
+	    set rawScsiFlag
+	    set devType=9
+	    @ devTypeCount++
+	    breaksw
+	case "-specific"
+	    shift
+	    if ($#argv == 0) then
+		echo "-specific option requires an argument"
+	    else
+		set specific = $1
+		shift
+	    endif
+	    set specificFlag
+	    breaksw
+	case "-h"
+	case "-help"
+	    shift
+	    goto usage
+	    breaksw
+	default:
+	    if ($1 !~ "-*") then
+		set name = $1
+		shift
+		breaksw
+	    endif
+	    echo "Invalid option" $1 "to $0"
+	    shift
+	    goto usage
+	    breaksw
+    endsw
+end
+
+if (! $?name) then
+    goto usage
+endif
+
+if ($devTypeCount > 1) then
+    echo "You can only use one of -disk, -rawDisk, -tape or -rawScsi"
+    goto usage
+endif
+
+if ($specific < 0 || $specific > 15) then
+    echo "Argument to -specific must be 0-15"
+    goto usage
+endif
+
+if ($server != -1) then
+    set serverOption="-s $server"
+endif
+
+@ type = ($hbaType << 8 | $devType)
+
+if ($?diskFlag) then
+
+    set partitions = (a b c d e f g h)
+    
+    set i=0
+    foreach part ($partitions) 
+	@ unit = ($hba << 10 | $lun << 7 | $target << 4 | $i)
+	fsmakedev $serverOption -d $type -u $unit $name$part
+	set returnstatus = $status
+	if ($returnstatus != 0) then
+	    echo "Fsmakedev returned with <$returnstatus>"
+	    echo -n "Full command was: "
+	    echo "fsmakedev $serverOption -d $type -u $unit $name$part"
+	    exit
+	endif
+	@ i++
+    end
+else if ($?rawDiskFlag) then
+    @ unit = ($hba << 10 | $lun << 7 | $target << 4 | 8)
+    fsmakedev $serverOption -d $type -u $unit $name
+    set returnstatus = $status
+    if ($returnstatus != 0) then
+	echo "Fsmakedev returned with <$returnstatus>"
+	echo -n "Full command was: "
+	echo "fsmakedev $serverOption -d $type -u $unit $name"
+	exit
+    endif
+else if ($?tapeFlag) then
+    set suffixes = (".tmp" ".nr" ".v" ".nrv")
+    set i=0
+    foreach suffix ($suffixes)
+	@ unit = ($hba << 10 | $lun << 7 | $target << 4 | $i)
+	fsmakedev $serverOption -d $type -u $unit $name$suffix
+	set returnstatus = $status
+	if ($returnstatus != 0) then
+	    echo "Fsmakedev returned with <$returnstatus>"
+	    echo -n "Full command was: "
+	    echo "fsmakedev $serverOption -d $type -u $unit $name$suffix"
+	    exit
+	endif
+	if ($i == 0) then
+	    mv $name$suffix $name
+	endif
+	@ i++
+    end
+else
+    @ unit = ($hba << 10 | $lun << 7 | $target << 4 | $specific)
+    fsmakedev $serverOption -d $type -u $unit $name
+    set returnstatus = $status
+    if ($returnstatus != 0) then
+	echo "Fsmakedev returned with <$returnstatus>"
+	echo -n "Full command was: "
+	echo "fsmakedev $serverOption -d $type -u $unit $name"
+	exit
+    endif
+endif
+
+
+exit
+
+usage:
+    echo "Usage: $0 "
+    echo "       [-server serverID (local host)] "
+    echo "       [-devType deviceType (4)] "
+    echo "       [-hbaType hbaType (0)] "
+    echo "       [-hba hba (0)] "
+    echo "       [-target target (0)] "
+    echo "       [-lun lun (0)] "
+    echo "       [[-disk] OR "
+    echo "       [[-rawDisk] OR "
+    echo "       [[-tape] OR "
+    echo "       [[-rawScsi]] "
+    echo "       [-specific specific] "
+    echo "       deviceName"
+    echo "Examples: $0 -hba 2 -target 1 -disk /dev/rsd21"
+    echo "          $0 -target 5 -tape /dev/exabyte"
+    echo "SCSI hba types: "
+    echo "	SCSI3		0 "
+    echo "	DecStation 3100 0 "
+    echo "	SCSI0		1 "
+    echo "	JAGUAR		2 "
+    exit
+

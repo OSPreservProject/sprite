@@ -1,0 +1,190 @@
+512
+llib-lmemtrace:MemChunkAlloc.c 2
+2
+0 43 148 0 0
+memPrintProc
+2
+0 44 20 0 0
+memPrintData
+2
+1 71 98 0 0
+MemChunkAlloc
+4 0 0
+16
+0 80 18 0 0
+MemChunkAlloc
+512
+llib-lmemtrace:MemData.c 2
+2
+0 33 114 0 0
+memFreeLists
+2
+0 34 52 0 0
+mem_NumBlocks
+2
+0 36 52 0 0
+mem_NumBinnedAllocs
+2
+0 43 18 0 0
+memFirst
+2
+0 43 18 0 0
+memLast
+2
+0 44 18 0 0
+memCurrentPtr
+2
+0 45 4 0 0
+memLargestFree
+2
+0 46 4 0 0
+memBytesFreed
+2
+0 47 4 0 0
+mem_NumLargeBytes
+2
+0 48 4 0 0
+mem_NumLargeAllocs
+2
+0 49 4 0 0
+mem_NumLargeLoops
+2
+0 51 4 0 0
+mem_NumAllocs
+2
+0 52 4 0 0
+mem_NumFrees
+2
+0 54 4 0 0
+memInitialized
+2
+0 56 8 64 30611
+memMonitorLock
+512
+llib-lmemtrace:MemDoTrace.c 2
+2
+0 30 56 1088 -32768
+memTraceArray
+2
+0 31 4 0 0
+memNumSizesToTrace
+2
+4 93 32 0 0
+MemDoTrace
+4 0 0
+18 0 0
+18 0 0
+4 0 0
+512
+llib-lmemtrace:MemInit.c 2
+2
+0 43 32 0 0
+MemInit
+512
+llib-lmemtrace:Mem_Bin.c 2
+2
+1 41 32 0 0
+Mem_Bin
+4 0 0
+512
+llib-lmemtrace:Mem_DumpTrace.c 2
+2
+1 45 32 0 0
+Mem_DumpTrace
+4 0 0
+512
+llib-lmemtrace:Mem_PrintConfig.c 2
+2
+0 42 32 0 0
+Mem_PrintConfig
+512
+llib-lmemtrace:Mem_PrintInUse.c 2
+2
+0 46 32 0 0
+Mem_PrintInUse
+512
+llib-lmemtrace:Mem_PrintStats.c 2
+2
+0 43 4 0 0
+mem_SmallMinNum
+2
+0 46 4 0 0
+mem_LargeMinNum
+2
+0 49 4 0 0
+mem_LargeMaxSize
+2
+0 79 32 0 0
+Mem_PrintStats
+2
+0 110 32 0 0
+Mem_PrintStatsInt
+512
+llib-lmemtrace:Mem_SetPrintProc.c 2
+2
+2 56 32 0 0
+Mem_SetPrintProc
+148 0 0
+20 0 0
+512
+llib-lmemtrace:Mem_SetTraceSizes.c 2
+2
+2 44 32 0 0
+Mem_SetTraceSizes
+4 0 0
+24 64 -32768
+512
+llib-lmemtrace:Mem_Size.c 2
+2
+1 48 36 0 0
+Mem_Size
+18 0 0
+16
+0 78 4 0 0
+Mem_Size
+512
+llib-lmemtrace:calloc.c 2
+2
+2 45 98 0 0
+calloc
+14 0 0
+14 0 0
+16
+0 53 18 0 0
+calloc
+512
+llib-lmemtrace:cfree.c 2
+2
+3 46 36 0 0
+cfree
+18 0 0
+14 0 0
+14 0 0
+512
+llib-lmemtrace:free.c 2
+2
+0 31 4 0 0
+memAllowFreeingFree
+2
+1 62 36 0 0
+free
+18 0 0
+512
+llib-lmemtrace:malloc.c 2
+2
+1 49 98 0 0
+malloc
+14 0 0
+16
+0 257 18 0 0
+malloc
+512
+llib-lmemtrace:realloc.c 2
+2
+2 48 98 0 0
+realloc
+18 0 0
+14 0 0
+16
+0 63 18 0 0
+realloc

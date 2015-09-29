@@ -1,0 +1,381 @@
+# Note: not all modules are in this list.
+fs...
+# changes for Proc_LockedPCB; malloc->ckalloc; changes for sync
+# module.
+     591    3405   24720 fs.h		# if'd out:   7      29     378 (mig)
+     217     823    7230 fsAttributes.c
+     498    1419   12502 fsCommand.c	# fix FS_ZERO_STATS
+     627    2085   16869 fsInit.c	# if'd out: 129     410    3701 (disk)
+     830    2976   25054 fsNameOps.c
+     322    1532   11790 fsNameOps.h
+     152     569    4920 fsOpTable.c
+     288    1161    9158 fsPageOps.c
+     808    3043   24788 fsSelect.c	# changes for MIG
+    1514    4822   40912 fsSocketStubs.c # unused
+     598    3387   23794 fsStat.h
+    1016    3701   30856 fsStreamOps.c
+    4204   11661  107479 fsStubs.c	# unused
+    1937    6269   52928 fsSysCall.c	# changes for MIG
+					# if'd out:  47     150    1165 (disk)
+     456    1665   13655 fsTopMigrate.c # if'd out: 381    1376   11637 (mig)
+     370    1507   11117 fsTopStream.c
+     127     730    6361 fsUnixStubs.h
+   14555   50755  424133 total		# really: 8273    32307    258861
+fscache...
+# changes for sync; 
+     604    2700   23396 fscache.h
+    3690   11819  106850 fscacheBlocks.c
+      56     227    1648 fscacheBlocks.h
+    1362    4927   41201 fscacheOps.c	# if'd out:  24      55     837 (disk)
+     356     899    8864 fscacheReadAhead.c
+    6068   20572  181959 total		# really: 6044    20517    181122
+fsconsist...
+# changes for sync
+     221    1012    8472 fsconsist.h
+    2343    9469   77851 fsconsistCache.c
+     488    1842   14133 fsconsistIOClient.c
+    3052   12323  100456 total
+fsdm...
+     481    2389   18683 fsdm.h		# unused
+    1371    4490   39238 fsdmDisk.c	# unused
+     318    1059    9641 fsdmFileDesc.c	# unused
+      46     199    1269 fsdmInt.h	# unused
+    2216    8137   68831 total		# really: 0    0    0
+fsio...
+# more precise maintenance of Fsio_FileIOHandle.segPtr; prob. changes
+# to track sync; disable lots of code that knows about local disks or
+# about migration; malloc -> ckalloc
+     494    2534   20775 fsio.h
+     159     599    4533 fsioClientList.c
+    1369    4871   42846 fsioDevice.c	# if'd out:  44     152    1563 (mig)
+     130     593    5029 fsioDevice.h
+    1756    6199   54177 fsioFile.c	# if'd out: 694    2303   22588 (disk)
+					# if'd out:  61     219    2134 (mig)
+     210    1030    8154 fsioFile.h
+     439    1520   13207 fsioLock.c
+      59     299    2137 fsioLock.h
+     418    1913   14455 fsioMigrate.c	# if'd out: 122     636    4109 (mig)
+     186     695    5861 fsioOps.c
+    1160    3914   34054 fsioPipe.c	# if'd out:  44     144    1481 (mig)
+      95     446    3765 fsioPipe.h
+      31     136     993 fsioRpc.h
+    1127    4602   37681 fsioStream.c	# if'd out: 476    2090   16799 (mig)
+     313    1124    9632 fsioStreamOpTable.c
+    7946   30475  257299 total		# really:  6505   24931  208625
+fslcl...
+      71     330    2350 fslcl.h		# unused
+     378    1634   13033 fslclAttributes.c	# unused
+     692    2421   22951 fslclDomain.c		# unused
+      96     401    4000 fslclInt.h		# unused
+    2440    9748   80590 fslclLookup.c		# unused
+     486    1536   12916 fslclNameHash.c	# unused
+     112     520    3824 fslclNameHash.h	# unused
+      65     202    1678 fslclNameOps.c		# unused
+     495    2010   15366 sospRecord.h		# unused
+    4835   18802  156708 total			# really: 0    0    0
+fspdev...
+# changes for sync; more precise mgmt. of Fspdev_ClientIOHandle.segPtr
+     211    1401    9258 fspdev.h
+     680    2221   20772 fspdevControl.c
+     421    1668   16714 fspdevInt.h
+     326    1295   11520 fspdevOps.c
+    1210    4820   43372 fspdevPfs.c
+     866    3710   31328 fspdevSetup.c	# if'd out: 129    448    4571 (mig)
+    2533    9447   84499 fspdevSrv.c
+     252     692    6243 fspdevTrace.c
+    6499   25254  223706 total		# really:  6370  24806  219135
+fsprefix...
+# changes for sync
+     159     930    6652 fsprefix.h
+      44     171    1220 fsprefixInt.h
+    2232    8222   67652 fsprefixOps.c
+    2435    9323   75524 total
+fsrmt...
+# malloc -> ckalloc; more precise mgmt. of Fsrmt_FileIOHandle.segPtr;
+# disabled some code for process migration.
+     144     632    5509 fsrmt.h
+    1072    4066   36406 fsrmtAttributes.c
+     725    2905   23773 fsrmtDevice.c	# if'd out:  21      67     653 (mig)
+    1564    5835   53718 fsrmtDomain.c
+     119     453    3340 fsrmtDomain.h
+    1745    5730   51731 fsrmtFile.c	# if'd out:  23      73     791 (mig)
+    1398    4791   44267 fsrmtIO.c
+     231     940    9060 fsrmtInt.h
+     204     774    6912 fsrmtMigrate.c		# unused
+      44     191    1363 fsrmtMigrate.h		# unused
+      41     141    1101 fsrmtNameOpsInt.h
+     216     572    5574 fsrmtOps.c
+     244     911    7929 fsrmtPipe.c	# if'd out:  21      67     644 (mig)
+      64     291    3085 fsrmtRpcStubs.h
+    7811   28232  253768 total		# really:  7498   27060  243405
+fsutil...
+# changes for sync; added Fsutil_RecoverableError and Fsutil_Sync for VM
+     256    1064    9640 fsutil.h
+    1305    4740   38127 fsutilHandle.c	# if'd out:  15      42     467 (disk)
+     207     655    5320 fsutilHandleScavenge.c
+     297     947    7749 fsutilNotify.c
+    1171    3781   33231 fsutilRecovery.c
+     312     715    6852 fsutilSubr.c
+     199     587    4896 fsutilSync.c
+     255     886    8074 fsutilTrace.c
+     174     564    5298 fsutilTrace.h
+    4176   13939  119187 total		# really: 4161    13897  118720
+lfs...
+      91     368    3491 lfs.h			# unused
+     255    1003    8130 lfsBlockIO.c		# unused
+     210     582    5088 lfsCacheBackend.c	# unused
+     503    1570   15113 lfsDesc.c		# unused
+      77     317    2953 lfsDesc.h		# unused
+      49     214    1567 lfsDescInt.h		# unused
+     710    2102   19973 lfsDescMap.c		# unused
+     102     481    3343 lfsDescMap.h		# unused
+      54     235    1937 lfsDescMapInt.h	# unused
+      50     271    1879 lfsDirLogInt.h		# unused
+     174     622    5556 lfsDirOpLog.c		# unused
+      55     254    1838 lfsDirOpLog.h		# unused
+     870    3120   27926 lfsFileIndex.c		# unused
+    1608    5137   49541 lfsFileLayout.c	# unused
+      86     408    2984 lfsFileLayout.h	# unused
+      33     142    1076 lfsFileLayoutInt.h	# unused
+     302    1429   11574 lfsInt.h		# unused
+     178     530    5121 lfsIo.c		# unused
+     336     987    9959 lfsLoad.c		# unused
+     505    1436   13197 lfsMain.c		# unused
+     224     765    6080 lfsMem.c		# unused
+      43     182    1268 lfsMemInt.h		# unused
+    1853    5475   53437 lfsSeg.c		# unused
+     314    1595   11821 lfsSeg.h		# unused
+      61     347    2300 lfsSegLayout.h		# unused
+    1158    3551   32819 lfsSegUsage.c		# unused
+      77     328    2727 lfsSegUsageInt.h	# unused
+     604    1844   17908 lfsStableMem.c		# unused
+      63     299    2010 lfsStableMem.h		# unused
+      95     424    3564 lfsStableMemInt.h	# unused
+     223    1262    9238 lfsStats.h		# unused
+     113     615    4449 lfsSuperBlock.h	# unused
+     104     615    4167 lfsUsageArray.h	# unused
+   11180   38510  344034 total		# really: 0    0    0
+ofs...
+     507    2627   19626 ofs.h			# unused
+    2216    7721   64720 ofsAlloc.c		# unused
+     842    3013   26887 ofsDisk.c		# unused
+     586    1873   16750 ofsFileDesc.c		# unused
+     630    1998   19090 ofsIndex.c		# unused
+     583    1976   17347 ofsIo.c		# unused
+    5364   19208  164420 total		# really: 0    0    0
+dev...
+# lots of stuff commented out; new console support; use function
+# prototypes everywhere.
+# unused/unneeded: count towards 1.098 dev size
+# unused/needed: don't count (equivalent functionality not in sprited)
+# unused/need veneer: don't count
+      63     240    1886 dev.h
+     277    1033    8818 devBlockDevice.c	# unused (needed by local FS?)
+     218    1216    9099 devBlockDevice.h
+     215     706    5565 devConsoleCmd.c	# unused (unneeded)
+     203    1064    7095 devDiskLabel.h
+     371    1120    9895 devDiskStats.c		# unused (unneeded)
+      50     224    1713 devDiskStats.h		# unused (unneeded)
+     327    1695   11770 devExabyteTape.c	# unused (also unused in 1.098)
+     169     857    6928 devFsOpTable.h
+     806    2687   22988 devNet.c		# unused (needed for IP server)
+     101     490    3650 devNet.h		# unused (ditto)
+     134     395    3246 devNull.c
+      38     162    1283 devNull.h
+     452    2201   15591 devQueue.c		# unused (unneeded)
+      70     280    2254 devQueue.h		# unused (unneeded)
+     322    1147    9516 devRawBlockDev.c	# unused (need veneer for 
+						# fscheck?)
+     358    1173    9969 devSCSI.c		# unused (unneeded)
+    1006    3240   29048 devSCSIDisk.c		# unused (need veneer)
+      29     129     874 devSCSIDisk.h		# unused (needed)
+     135     437    3524 devSCSIHBA.c		# unused (needed)
+     826    2716   22773 devSCSITape.c		# unused (need veneer)
+      33     159    1322 devSCSITape.h		# unused (needed)
+     531    1755   15870 devScsiDevice.c	# unused (unneeded, or
+						# maybe need veneer)
+     595    1670   13776 devSyslog.c
+      43     161    1559 devSyslog.h
+     810    2830   22447 devTty.c
+     118     454    2898 devTypes.h
+      20      56     401 devVid.h		# unused
+      30     137    1018 diskStats.h		# unused (unneeded)
+      27     123     866 exabyteTape.h		# unused (needed)
+      40     190    1589 rawBlockDev.h		# unused (needed)
+     162    1009    6981 scsiDevice.h		# unused (need veneer?)
+     190     962    6768 scsiHBA.h		# unused (unneeded)
+      29     143    1118 scsiHBADevice.h	# unused (needed)
+      92     452    3273 scsiTape.h		# unused (needed)
+     172     874    6349 tty.h
+      34     144     973 ds3100.md/console.h	# rewritten (/dev/tty)
+     205     760    5449 ds3100.md/dc7085.h	# unused (unneeded)
+      68     307    2316 ds3100.md/devConfig.c	# unused (need veneer)
+     107     455    3130 ds3100.md/devConsole.c	# rewritten (/dev/tty)
+     927    3039   23342 ds3100.md/devDC7085.c	# unused (unneeded)
+      20     104     724 ds3100.md/devDependent.h	# unused (unneeded)
+     173     476    4920 ds3100.md/devFsOpTable.c	# unused (needed)
+    1749    4539   38837 ds3100.md/devGraphics.c	# unused (need veneer)
+      95     331    2594 ds3100.md/devInit.c	# unused (need veneer)
+      45     210    1480 ds3100.md/devInt.h	# unused (unneeded)
+    1374    4678   37321 ds3100.md/devSII.c	# unused (unneeded)
+      32     147    1088 ds3100.md/devScsiTapeConfig.c	# unused (need veneer)
+     246     823    5995 ds3100.md/devTtyAttach.c	# unused (unneeded)
+    7309   25579  166352 ds3100.md/font.c	# unused (unneeded)
+      35     141    1169 ds3100.md/graphics.h	# unused (needed)
+     201    1137    7515 ds3100.md/sii.h	# unused (unneeded)
+      27     124     842 ds3100.md/ttyAttach.h	# unused (unneeded)
+   21709   77181  577767 total	# really: 15345   55590  398733
+rpc...
+# track changes to sync; changes for use with MIG; changes because
+# time intervals are now structs and not ints; malloc -> ckalloc
+     105     493    4016 rpc.h
+     196     715    5479 rpcByteSwap.c
+     832    3237   24502 rpcCall.c
+     219    1237    9072 rpcCall.h
+     645    2702   20638 rpcClient.c
+     228    1060    7471 rpcClient.h
+     265     942    7803 rpcCltStat.c
+      31      93     725 rpcCltStat.h
+     479    1911   14252 rpcDaemon.c
+     634    1954   17767 rpcDebug.c
+     558    2220   17108 rpcDispatch.c
+     267     768    7093 rpcHistogram.c
+      80     379    2862 rpcHistogram.h
+     510    2084   16592 rpcInit.c
+      69     264    2098 rpcInt.h
+     368    1592   12131 rpcOutput.c
+     271    1677   10572 rpcPacket.h
+    1396    5142   41116 rpcServer.c
+     254    1134    8329 rpcServer.h
+     246     853    7128 rpcSrvStat.c
+      31      98     762 rpcSrvStat.h
+     262    1175    8935 rpcStubs.c
+     391    1106    9855 rpcTest.c
+     390    1279   10774 rpcTrace.c
+     139     461    3288 rpcTrace.h
+      93     479    3114 rpcTypes.h
+      57     210    1553 ds3100.md/rpcDelays.c
+    9016   35265  275035 total
+libc...
+      51     202    1470 List_Init.c
+      61     264    1926 List_Insert.c
+      67     266    1893 List_Move.c
+      54     212    1606 List_Remove.c
+      56     256    1708 MemData.c
+      76     240    1974 Net_AddrToString.c
+      58     186    1611 Net_EtherAddrToString.c
+      63     209    1463 Net_HostToNetInt.c
+      61     209    1473 Net_HostToNetShort.c
+      58     188    1462 Net_InetAddrToString.c
+     157     676    4154 Net_InetChecksum.c
+     149     541    3486 Net_InetHdrChecksum.c
+      61     210    1470 Net_NetToHostInt.c
+      59     210    1472 Net_NetToHostShort.c
+      56     211    1649 Quad_AddUns.c
+      53     188    1468 Quad_AddUnsLong.c
+      55     212    1554 Quad_CompareUns.c
+      85     403    2911 Stdio_Setup.c
+      56     192    1478 Time_Add.c
+      93     368    2573 Time_Divide.c
+     110     438    3064 Time_Multiply.c
+      53     180    1405 Time_Subtract.c
+     178     535    4032 Time_ToAscii.c
+     252     781    5509 Time_ToParts.c
+     245     993    5748 atof.c
+      86     290    1849 atoi.c
+      96     398    2685 bcmp.c
+     111     422    2735 bzero.c
+     159     770    6779 ctypeBits.c
+      20     106     648 errno.c
+      63     271    1803 fclose.c
+      55     214    1459 fflush.c
+      71     297    2013 fgetc.c
+      68     303    1929 fgets.c
+      47     209    1444 fileInt.h
+    1186    4797   34320 fmt.c
+      68     244    1655 fprintf.c
+      84     420    2766 fputc.c
+      74     203    1524 frexp.c
+      70     253    1709 fscanf.c
+      45     178    1167 isascii.c
+      53     152    1129 isatty.c
+     109     373    2391 isinf.c
+     111     377    2404 isnan.c
+      45     175    1175 isspace.c
+     220     684    4771 iszero.c
+     347    1912   12766 memInt.h
+      52     146    1099 rename.c
+     107     357    2610 sprintf.c
+     108     357    2598 sscanf.c
+     244    1425    9111 status.c
+      87     481    3484 strcasecmp.c
+      52     208    1369 strcat.c
+      53     211    1365 strchr.c
+      60     244    1514 strcmp.c
+      54     212    1381 strcpy.c
+     140     758    5311 strerror.c
+      60     229    1417 strlen.c
+      63     284    1739 strncmp.c
+      60     260    1675 strncpy.c
+     190     776    4375 strtoul.c
+      48     256    1667 timeConstants.c
+    1989    7063   53537 ttyDriver.c
+      81     387    2559 ungetc.c
+      50     152    1112 unlink.c
+     959    3494   22282 vfprintf.c
+     463    1603   10525 vfscanf.c
+     187     724    4756 ds3100.md/bcopy.c
+   10562   41045  285166 total
+utils...
+# malloc -> ckalloc
+     574    2258   14221 bf.h
+      45     204    1272 byte.h
+     299     868    7624 dump.c		# unused
+      26     110     677 dump.h
+      46     184    1279 dumpInt.h	# unused
+     645    1946   15569 hash.c
+     142     615    4124 hash.h
+     495    2010   15366 sospRecord.h	# unused
+     382    1286   10395 trace.c
+      81     352    2522 trace.h
+     512    1491   14646 traceLog.c	# unused
+      85     393    2877 traceLog.h	# unused
+      93     250    2164 ds3100.md/dumpEvents.c	# unused
+    3425   11967   92736 total	# really: 1895    6771   48780
+prof...
+      49     169    1562 prof.h			# unused
+     152     498    4176 profMigrate.c		# unused
+     313     887    7473 profProfil.c		# unused
+     216     842    5723 ds3100.md/_mcount.c	# unused
+      84     388    2486 ds3100.md/profInt.h	# unused
+      44     198    1219 ds3100.md/profStack.s	# unused
+     437    1378   10719 ds3100.md/profSubr.c	# unused
+    1295    4360   33358 total	# really: 0       0       0
+recov...
+     229    1135    8613 recov.h
+     364     947    8504 recovProc.c
+    2011    6711   57177 recovery.c
+    2604    8793   74294 total
+dbg...
+     232     830    6086 ds3100.md/dbg.h		# unused, unneeded
+      40     139    1037 ds3100.md/dbgAsm.s		# unused, unneeded
+     148     592    4190 ds3100.md/dbgDbxInt.h		# unused, unneeded
+     223     621    5079 ds3100.md/dbgDis.c		# unused, unneeded
+     352    1209   10443 ds3100.md/dbgIP.c		# unused, unneeded
+      26     123     843 ds3100.md/dbgInt.h		# unused, unneeded
+    1245    3539   32043 ds3100.md/dbgMain.c		# unused, unneeded
+     607    1626   14718 ds3100.md/dbgMainDbx.c		# unused, unneeded
+    2873    8679   74439 total
+mem...
+# Used whatever malloc one gets linking with UX and threads.  Maybe
+# this was a mistake?
+      41     137    1266 mem.h			# unused
+      28      87     718 memInt.h		# unused
+     189     550    4216 memSubr.c		# unused
+    1606    6091   45809 memory.c		# unused
+      35     217    1349 ds3100.md/memAsm.s	# unused
+    1899    7082   53358 total
+main...
+      43     177    1243 main.h
+     512    1491   12509 ds3100.md/mainInit.c	# don't count as machdep
+     555    1668   13752 total

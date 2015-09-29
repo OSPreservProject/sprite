@@ -1,0 +1,400 @@
+head     9.3;
+branch   ;
+access   ;
+symbols  ds3100:9.3 sun3:9.3 sun4nw:9.3 symm:9.3 spur:9.3 Summer89:9.0 newlib:8.0 Summer88:6.0 sbc:5.2;
+locks    ; strict;
+comment  @ * @;
+
+
+9.3
+date     91.10.18.01.21.36;  author dlong;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.11.27.12.55.40;  author mgbaker;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.10.05.18.11.05;  author mendel;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.58.39;  author douglis;  state Stable;
+branches ;
+next     8.3;
+
+8.3
+date     89.05.24.07.49.35;  author rab;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.05.23.10.28.51;  author mendel;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.21.09.10.10;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.12.36;  author douglis;  state Stable;
+branches ;
+next     6.1;
+
+6.1
+date     88.09.06.14.15.28;  author nelson;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.28.33;  author douglis;  state Stable;
+branches ;
+next     5.2;
+
+5.2
+date     87.12.12.16.33.35;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.12.09.11.38.19;  author douglis;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.39.02;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.3
+log
+@sun4c/sun4c2 merge
+@
+text
+@/*
+ * devInt.h --
+ *
+ *	Internal globals and constants needed for the dev module.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/dev/sun3.md/RCS/devInt.h,v 9.2 90/11/27 12:55:40 mgbaker Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _DEVINT
+#define _DEVINT
+
+#include "vm.h"
+
+
+/*
+ * A configuration table that describes the controllers in the system.
+ */
+typedef struct DevConfigController {
+    char *name;		/* Identifying string used in print statements */
+#ifdef sun4c
+    char *dev_name;	/* String to match in PROM dev tree */
+#endif
+    int address;	/* The address of the controller.  Correct
+			 * interpretation of this depends on the space */
+#ifndef sun4c
+    int space;		/* DEV_MULTIBUS, DEV_VME_16D16, ...
+			 * This is used to convert what the hardware thinks
+			 * is its address to what the MMU of the system
+			 * uses for those kinds of addresses.  For example,
+			 * Sun2's have Multibus memory mapped into a
+			 * particular range of kernel virtual addresses. */
+#endif
+    int controllerID;	/* Controller number: 0, 1, 2... */
+    ClientData (*initProc) _ARGS_((struct DevConfigController *ctrlLocPtr));
+			/* Initialization procedure */
+    int vectorNumber;	/* Vector number for autovectored architectures */
+    Boolean (*intrProc) _ARGS_((ClientData  clientData));
+			/* Interrupt handler called from autovector */
+} DevConfigController;
+
+/*
+ * Definitions of address space types.
+ * DEV_OBMEM	- on board memory
+ * DEV_OBIO	- on board I/O devices.
+ * DEV_MULTIBUS - the Multibus memory on the Sun2
+ * DEV_MULTIBUS_IO - Multibus I/O space on the Sun2
+ * DEV_VME_DxAx - The 6 sets of VME address spaces available on
+ *	Sun3's.  Only D16A24 and D16A16 are available on VME based Sun2's.
+ */
+#define DEV_OBMEM	0
+#define DEV_OBIO	1
+#define DEV_MULTIBUS	22
+#define DEV_MULTIBUS_IO	23
+#define DEV_VME_D16A32	31
+#define DEV_VME_D16A24	32
+#define DEV_VME_D16A16	33
+#define DEV_VME_D32A32	34
+#define DEV_VME_D32A24	35
+#define DEV_VME_D32A16	36
+
+/*
+ * Special valued returned from Controller init procedures indicating 
+ * the controller doesn't exists.
+ */
+
+#define	DEV_NO_CONTROLLER	((ClientData) 0)
+
+/*
+ * The controller configuration table.
+ */
+extern DevConfigController devCntrlr[];
+extern int devNumConfigCntrlrs;
+
+#endif /* _DEVINT */
+@
+
+
+9.2
+log
+@new sparcstation scsi driver additions.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/dev.mgb/sun3.md/RCS/devInt.h,v 1.1 90/11/14 14:49:39 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d29 3
+d34 1
+d41 1
+a57 2
+ * DEV_SBUS_OB - Sbus device in logical slot 0 (on-board device).
+ * DEV_SBUS - Sbus device in some physical slot (not an on-board device).
+a68 2
+#define DEV_SBUS_OB	37
+#define DEV_SBUS	38
+@
+
+
+9.1
+log
+@Fixed lint.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/dev/sun3.md/RCS/devInt.h,v 9.0 89/09/12 14:58:39 douglis Stable Locker: mendel $ SPRITE (Berkeley)
+d53 2
+d66 2
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/dev/sun3.md/RCS/devInt.h,v 8.3 89/05/24 07:49:35 rab Exp Locker: douglis $ SPRITE (Berkeley)
+d38 2
+a39 1
+    ClientData (*initProc)();	/* Initialization procedure */
+d41 2
+a42 1
+    int (*intrProc)();	/* Interrupt handler called from autovector */
+@
+
+
+8.3
+log
+@Changes to allow optimization.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/dev/sun3.md/RCS/devInt.h,v 8.2 89/05/23 10:28:51 mendel Exp Locker: rab $ SPRITE (Berkeley)
+@
+
+
+8.2
+log
+@Removed everything execpt controller related declarations.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/dev/sun3.md/RCS/devInt.h,v 8.1 88/11/21 09:10:10 brent Exp $ SPRITE (Berkeley)
+d76 1
+a76 1
+#endif _DEVINT
+@
+
+
+8.1
+log
+@Fixed conflicting #define name
+@
+text
+@d6 8
+a13 2
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+d15 1
+a15 2
+ *
+ * $Header: /sprite/src/kernel/dev/sun3.md/RCS/devInt.h,v 8.0 88/11/11 18:12:36 douglis Stable Locker: brent $ SPRITE (Berkeley)
+a21 32
+/*
+ * This keeps the state of the memory allocator for the kernel
+ * virtual address range reserved for DMA.
+ */
+extern VmMach_DevBuffer devIOBuffer;
+
+/*
+ * Disks contain a map that defines the way the disk is partitioned.
+ * Each partition corresponds to a different device unit.  Partitions
+ * are made up of complete cylinders because the disk layout and
+ * allocation strategies are cylinder oriented.
+ */
+typedef struct DevDiskMap {
+    int firstCylinder;		/* The first cylinder in the partition */
+    int numCylinders;		/* The number of cylinders in the partition */
+} DevDiskMap;
+
+/*
+ * There are generally 8 disk partitions defined for a disk.
+ */
+#define DEV_NUM_DISK_PARTS	8
+
+/*
+ * As with disks, 8 unit numbers are assigned to each tape drive.
+ * the differences between the 8 are not yet defined, however.
+ */
+#define DEV_TAPES_PER_CNTRLR	8
+
+/*
+ * There is just one worm per controller.
+ */
+#define DEV_WORMS_PER_CNTRLR	1
+d38 1
+a38 1
+    Boolean (*initProc)();	/* Initialization procedure */
+a40 9
+    Boolean exists;	/* TRUE if the controller exists. */
+    void (*idleProc)();	/* Routine to call to see if the controller is
+			 * idle or not. */
+    int	numSamples;	/* Number of times checked to see if the controller
+			 * was idle. */
+    int	idleCount;	/* Number of times that the controller was idle
+			 * when checked. */
+    int diskReads;	/* Number of reads from the disk. */
+    int diskWrites;	/* Number of writes to the disk. */
+d64 2
+a65 1
+ * A configuration table that describes the devices in the system.
+d67 2
+a68 7
+typedef struct DevConfigDevice {
+    int controllerID;	/* Controller number: 0, 1, 2... */
+    int slaveID;	/* Controller relative ID of device */
+    int flags;		/* Device specific flags.  Used, for example,
+			 * to distinquish tapes from disks on the SCSI bus. */
+    Boolean (*initProc)();	/* Initialization procedure */
+} DevConfigDevice;
+a75 5
+/*
+ * The device configuration table.
+ */
+extern DevConfigDevice devDevice[];
+extern int devNumConfigDevices;
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/dev/sun3.md/RCS/devInt.h,v 6.1 88/09/06 14:15:28 nelson Exp Locker: douglis $ SPRITE (Berkeley)
+d81 1
+a81 1
+ * DEV_MEMORY	- on board memory
+d88 1
+a88 1
+#define DEV_MEMORY	0
+@
+
+
+6.1
+log
+@Added disk idle stats and read/write counts.
+@
+text
+@d10 1
+a10 1
+ * $Header: devInt.h,v 6.0 88/08/11 12:28:33 douglis Stable $ SPRITE (Berkeley)
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: devInt.h,v 5.2 87/12/12 16:33:35 nelson Exp $ SPRITE (Berkeley)
+d68 9
+@
+
+
+5.2
+log
+@Handles moving of hardware dependencies from vm to sun.
+@
+text
+@d10 1
+a10 1
+ * $Header: devInt.h,v 5.1 87/12/09 11:38:19 douglis Exp $ SPRITE (Berkeley)
+@
+
+
+5.1
+log
+@Added define for DEV_WORMS_PER_CNTRLR.
+,
+@
+text
+@d10 1
+a10 1
+ * $Header: devInt.h,v 5.0 87/08/11 10:39:02 sprite Exp $ SPRITE (Berkeley)
+d21 1
+a21 1
+extern Vm_DevBuffer devIOBuffer;
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d10 1
+a10 1
+ * $Header: devInt.h,v 4.2 87/03/19 11:40:54 brent Exp $ SPRITE (Berkeley)
+d44 5
+@

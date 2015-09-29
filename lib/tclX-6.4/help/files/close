@@ -1,0 +1,10 @@
+          close fileId
+               Closes  the  file  given by fileId.  FileId must be the
+               return value from a previous  invocation  of  the  open
+               command;  after  this  command,  it  should not be used
+               anymore.   If  fileId  refers  to  a  command  pipeline
+               instead of a file, then close waits for the children to
+               complete.  The normal result  of  this  command  is  an
+               empty  string,  but  errors  are  returned if there are
+               problems in closing the file or waiting for children to
+               complete.

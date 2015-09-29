@@ -1,0 +1,433 @@
+head     1.7;
+branch   ;
+access   ;
+symbols  ;
+locks    mendel:1.7; strict;
+comment  @ * @;
+
+
+1.7
+date     88.09.26.11.22.40;  author nelson;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     87.05.27.14.36.27;  author brent;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     87.05.11.11.33.22;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     87.05.08.17.45.57;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     86.07.24.11.36.24;  author nelson;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     86.07.18.11.46.04;  author nelson;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.07.18.11.43.59;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.7
+log
+@Brought up to date.
+@
+text
+@/* vm.c -
+ *
+ *	This file contains general VM support.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: vm.c,v 1.6 87/05/27 14:36:27 brent Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+#include "vmMach.h"
+#include "vmMachInt.h"
+
+
+/*
+ ----------------------------------------------------------------------
+ *
+ *  Vm_DevBufferMap --
+ *
+ *	Map the given range of kernel virtual addresses that are already 
+ *	known to be properly mapped at startAddr to mapAddr.
+ *	
+ * Results:
+ *	Pointer into kernel virtual address space of where to access the
+ *	memory.
+ *
+ * Side effects:
+ *	The hardware page table is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Address
+Vm_DevBufferMap(numBytes, startAddr, mapAddr)
+    int		     numBytes;	/* Number of bytes to map in. */
+    register Address startAddr;	/* Kernel virtual address to start mapping in.*/
+    register Address mapAddr;	/* Where to map bytes in. */
+{
+    register Address virtAddr;
+    register int     numPages;
+    register int     fromPage;
+
+    numPages = (((int) startAddr & (VMMACH_PAGE_SIZE_INT - 1)) + numBytes - 1)/
+			VMMACH_PAGE_SIZE_INT + 1;
+    fromPage = (int) (startAddr) >> VMMACH_PAGE_SHIFT_INT;
+    for (virtAddr = mapAddr;
+	 numPages > 0;
+	 virtAddr += VMMACH_PAGE_SIZE_INT, numPages--, fromPage++) {
+	VmSetPageMap((unsigned int) virtAddr, 
+		      VmGetPageMap(fromPage << VMMACH_PAGE_SHIFT_INT));
+    }
+    return(mapAddr + ((int) (startAddr) & VMMACH_OFFSET_MASK_INT));
+}
+
+/*
+ ----------------------------------------------------------------------
+ *
+ * Vm_MapInDevice --
+ *
+ *	Map a device at some physical address into kernel virtual address.
+ *	This is for use by the controller initialization routines.
+ *	This routine looks for a free page in the special range of
+ *	kernel virtual that is reserved for this kind of thing and
+ *	sets up the page table so that it references the device.
+ *
+ * Results:
+ *	The kernel virtual address needed to reference the device is returned.
+ *
+ * Side effects:
+ *	The hardware page table is modified.  This may steal another
+ *	page from kernel virtual space, unless a page can be cleverly re-used.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Address
+Vm_MapInDevice(devPhysAddr, type)
+    Address	devPhysAddr;	/* Physical address of the device to map in */
+    int		type;		/* Value for the page table entry type field.
+				 * This depends on the address space that
+				 * the devices live in, ie. VME D16 or D32 */
+{
+    register Address 		virtAddr;
+    register Address		freeVirtAddr = (Address)0;
+    register int		page;
+    register int		pageFrame;
+    VmMachPTE			pte;
+    register int		segMap;
+
+    /*
+     * Get the page frame for the physical device so we can
+     * compare it against existing pte's.
+     */
+    pageFrame = (unsigned)devPhysAddr >> VMMACH_PAGE_SHIFT_INT;
+
+    /*
+     * Spin through the segments and their pages looking for a free
+     * page or a virtual page that is already mapped to the physical page.
+     */
+    for (virtAddr = (Address)VMMACH_DEV_START_ADDR;
+	 virtAddr < (Address)VMMACH_DEV_END_ADDR; ) {
+	segMap = VmGetSegMap(virtAddr);
+	if (segMap == VMMACH_INV_PMEG) {
+	    /*
+	     * Make sure there is a valid pmeg for this address.
+	     */
+	    virtAddr += VMMACH_SEG_SIZE;
+	    continue;
+	}
+	/*
+	 * Careful, use the corrct page size when incrementing virtAddr.
+	 * Use the real hardward size (ignore software klustering) because
+	 * we are at a low level munging page table entries ourselves here.
+	 */
+	for (page = 0 ; page < VMMACH_NUM_PAGES_PER_SEG_INT ;
+		  page++, virtAddr += VMMACH_PAGE_SIZE_INT) {
+	    pte = VmGetPageMap(virtAddr);
+	    if (!(pte & VMMACH_RESIDENT_BIT)) {
+	        if (freeVirtAddr == 0) {
+		    /*
+		     * Note the unused page in this special area of
+		     * kernel virtual.
+		     */
+		    freeVirtAddr = virtAddr;
+		}
+	    } else if ((pte & (VMMACH_TYPE_FIELD | VMMACH_PAGE_FRAME_FIELD)) 								== 0) {
+		/*
+		 * THIS IS BOGUS as we should just unmap everything
+		 * in the kernel address range reseved for devices
+		 * and then map everything in by hand.  Right now
+		 * we are leaving things as the PROM monitor sets them
+		 * up.  On Sun 2/50's the resident bit is set in this
+		 * range with the page frame equal to zero.
+		 */
+	        if (freeVirtAddr == 0) {
+		    /*
+		     * Note the unused page in this special area of
+		     * kernel virtual.
+		     */
+		    freeVirtAddr = virtAddr;
+		}
+	    }
+#ifdef notdef
+		else if ((pte & VMMACH_PAGE_FRAME_FIELD) == pageFrame &&
+		       VmMachGetPageType(pte) == type) {
+		/*
+		 * A page is already mapped for this physical address.
+		 */
+		return(virtAddr + ((int)devPhysAddr & VMMACH_OFFSET_MASK));
+	    }
+#endif notdef
+	}
+    }
+#ifdef notdef
+    Sys_Printf("Map pf %x => %x\n", pageFrame, freeVirtAddr);
+#endif notdef
+    if (freeVirtAddr != 0) {
+	pte = VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT | pageFrame;
+#ifdef SUN3
+	pte |= VMMACH_DONT_CACHE_BIT;
+#endif SUN3
+	VmMachSetPageType(pte, type);
+	VmSetPageMap(freeVirtAddr, pte);
+	/*
+	 * Return the kernel virtual address used to access it.
+	 */
+	return(freeVirtAddr + ((int)devPhysAddr & VMMACH_OFFSET_MASK));
+    } else {
+	return((Address)NIL);
+    }
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Vm_GetDevicePage --
+ *
+ *      Allocate and validate a page at the given virtual address.  It is
+ *	assumed that this page does not fall into the range of virtual 
+ *	addresses used to allocate kernel code and data and that there is
+ *	already a PMEG allocate for it.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      The hardware segment table for the kernel is modified to validate the
+ *	the page.
+ *
+ * ----------------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+#ifdef notdef
+void
+Vm_GetDevicePage(virtAddr) 
+    int	virtAddr;	/* Virtual address where a page has to be validated
+			   at. */
+{
+    return;
+}
+#endif
+
+@
+
+
+1.6
+log
+@cosmetic junk.
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: vm.c,v 1.5 87/05/11 11:33:22 brent Exp $ SPRITE (Berkeley)";
+a15 1
+#include "vmSunConst.h"
+d23 2
+a24 3
+ *	Map the given range of kernel virtual addresses into the kernel's
+ *	VAS starting at the given kernel virtual address.  It is assume
+ *	that there are already PMEGS allocated for these pages.
+d46 3
+a48 3
+    numPages = (((int) startAddr & (VM_PAGE_SIZE_INT - 1)) + numBytes - 1) / 
+			VM_PAGE_SIZE_INT + 1;
+    fromPage = (int) (startAddr) >> VM_PAGE_SHIFT_INT;
+d51 1
+a51 1
+	 virtAddr += VM_PAGE_SIZE_INT, numPages--, fromPage++) {
+d53 1
+a53 1
+		      VmGetPageMap(fromPage << VM_PAGE_SHIFT_INT));
+d55 1
+a55 1
+    return(mapAddr + ((int) (startAddr) & VM_OFFSET_MASK_INT));
+d89 2
+a90 1
+    Vm_PTE			pte;
+a91 1
+    register int		pageFrame;
+d97 1
+a97 1
+    pageFrame = (unsigned)devPhysAddr >> VM_PAGE_SHIFT_INT;
+d103 2
+a104 2
+    for ((int)virtAddr = VM_DEV_START_ADDR;
+	 (int)virtAddr < VM_DEV_END_ADDR; ) {
+d106 1
+a106 1
+	if (segMap == VM_INV_PMEG) {
+d110 1
+a110 1
+	    virtAddr += VM_SEG_SIZE;
+d118 4
+a121 4
+	for (page = 0 ; page < VM_NUM_PAGES_PER_SEG ;
+		  page++, virtAddr += VM_PAGE_SIZE_INT) {
+	    VM_PTE_TO_INT(pte) = VmGetPageMap(virtAddr);
+	    if (pte.resident == 0) {
+d129 1
+a129 1
+	    } else if (pte.type == 0 && pte.pfNum == 0) {
+d147 2
+a148 2
+		else if (pte.pfNum == pageFrame &&
+		       pte.type == type) {
+d152 1
+a152 1
+		return(virtAddr + ((int)devPhysAddr & VM_OFFSET_MASK));
+d161 1
+a161 3
+	pte = vm_ZeroPTE;
+	pte.resident = 1;
+	pte.protection = VM_KRW_PROT;
+d163 1
+a163 1
+	pte.dontCache = 1;
+d165 1
+a165 2
+	pte.pfNum = pageFrame;
+	pte.type = type;
+d170 1
+a170 1
+	return(freeVirtAddr + ((int)devPhysAddr & VM_OFFSET_MASK));
+@
+
+
+1.5
+log
+@Added Vm_MapInDevice and trimmed it down
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: vm.c,v 1.4 87/05/08 17:45:57 brent Exp $ SPRITE (Berkeley)";
+d159 3
+d180 30
+@
+
+
+1.4
+log
+@Added Vm_MapInDevice (but its so big!)
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: vm.c,v 1.3 86/07/24 11:36:24 nelson Exp $ SPRITE (Berkeley)";
+d48 3
+a50 3
+    numPages = (((int) startAddr & (VM_PAGE_SIZE - 1)) + numBytes - 1) / 
+			VM_PAGE_SIZE + 1;
+    fromPage = (int) (startAddr) >> VM_PAGE_SHIFT;
+d53 1
+a53 1
+	 virtAddr += VM_PAGE_SIZE, numPages--, fromPage++) {
+d55 1
+a55 1
+		      VmGetPageMap(fromPage << VM_PAGE_SHIFT));
+d57 1
+a57 1
+    return(mapAddr + ((int) (startAddr) & VM_OFFSET_MASK));
+a90 1
+    register int		pageFrame;
+d93 1
+d147 3
+a149 1
+	    } else if (pte.pfNum == pageFrame &&
+d156 1
+@
+
+
+1.3
+log
+@Fixed call to VmGetPageMap
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: vm.c,v 1.2 86/07/18 11:46:04 nelson Exp $ SPRITE (Berkeley)";
+d14 2
+d59 116
+@
+
+
+1.2
+log
+@Put things in registers.
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: vm.c,v 1.1 86/07/18 11:43:59 nelson Exp $ SPRITE (Berkeley)";
+d52 2
+a53 1
+	VmSetPageMap((unsigned int) virtAddr, VmGetPageMap(fromPage));
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: bootVm.c,v 1.1 86/07/16 17:12:02 brent Exp $ SPRITE (Berkeley)";
+d38 3
+a40 3
+    int		numBytes;	/* Number of bytes to map in. */
+    Address	startAddr;	/* Kernel virtual address to start mapping in.*/
+    Address	mapAddr;	/* Where to map bytes in. */
+d42 3
+a44 3
+    Address 		virtAddr;
+    int			numPages;
+    int			fromPage;
+@

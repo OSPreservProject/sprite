@@ -1,0 +1,10 @@
+Recovery info for server anise.Berkeley.EDU Mon Jan 15 16:19:11 PST 1990
+
+Host		NumTries	Starting		Finished	Handles
+treason		2	Mon Jan 15 16:17:06 1990  Mon Jan 15 16:18:51 1990  202
+			Mon Jan 15 16:17:06 1990  Mon Jan 15 16:17:07 1990  202
+			Mon Jan 15 16:18:51 1990  Mon Jan 15 16:18:51 1990  202
+
+Num Clients: 1, Avg Num Tries: 2
+Total Reopen Requests: 404, Total Handles Really Reopened: 202
+Total Time:   0+00:01:45 hr:min:sec

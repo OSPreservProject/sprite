@@ -1,0 +1,15 @@
+#!/bin/csh -f
+
+#Redo the ID database for lid, etc.
+
+set a = (`cat Modules`)
+echo "Generating source file list"
+rm FILES
+cp /dev/null FILES
+foreach i ($a)
+    find $i \( -type f -o -type l \) -print | grep '\.[chs]$' | grep -v '\.save' >> FILES
+end
+echo "Generated source file list"
+mkid -aFILES
+echo "Made database"
+# Leave the list of files around for use by the installation script.

@@ -1,0 +1,53 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  srv030:1.2 srv028:1.2 srv027:1.2 srv026:1.2 srv024:1.2 srv022:1.2 srv021:1.2 srv019:1.2 srv018:1.2 srv016:1.2 srv014:1.2 srv010:1.2 srv008:1.2 srv007:1.2 srv006:1.2 srv005:1.2 srv004:1.2 srv003:1.2;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     92.04.02.21.55.28;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     92.03.30.15.01.27;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Changes for sprited.
+@
+text
+@#
+# This file is included by Makefile.  Makefile is generated automatically
+# by mkmf, and this file provides additional local personalization.  The
+# variable SYSMAKEFILE is provided by Makefile;  it's a system Makefile
+# that must be included to set up various compilation stuff.
+#
+
+#CFLAGS		+= -DHAS_UTILS
+
+MAKE_USER_PROGRAM	= sed
+
+#include	"/users/kupfer/lib/pmake/spriteClient.mk"
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d10 1
+a10 1
+#include	<$(SYSMAKEFILE)>
+d12 1
+@

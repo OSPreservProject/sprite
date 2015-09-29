@@ -1,0 +1,1080 @@
+*** /tmp/,RCSt1921911	Sun Nov 17 16:15:34 1991
+--- sunKbd.c	Wed Jul 11 13:47:12 1990
+***************
+*** 47,82 ****
+  #endif
+  
+  
+  #define NEED_EVENTS
+  #include "sun.h"
+! #include <stdio.h>
+! #include "Xproto.h"
+  #include "keysym.h"
+! #include "inputstr.h"
+  
+  typedef struct {
+      int	    	  trans;          	/* Original translation form */
+  } SunKbPrivRec, *SunKbPrivPtr;
+  
+- extern CARD8 *sunModMap[];
+- extern KeySymsRec sunKeySyms[];
+- 
+  extern void	ProcessInputEvents();
+  extern void	miPointerPosition();
+  
+  static void 	  sunBell();
+  static void 	  sunKbdCtrl();
+! static Firm_event *sunKbdGetEvents();
+  static void 	  sunKbdProcessEvent();
+  static void 	  sunKbdDoneEvents();
+- int	  	  autoRepeatKeyDown = 0;
+- int	  	  autoRepeatDebug = 0;
+- int	  	  autoRepeatReady;
+- long	  	  autoRepeatInitiate = 1000 * AUTOREPEAT_INITIATE;
+- long	  	  autoRepeatDelay = 1000 * AUTOREPEAT_DELAY;
+- static int	  autoRepeatFirst;
+- struct timeval    autoRepeatLastKeyDownTv;
+- struct timeval    autoRepeatDeltaTv;
+  static KeybdCtrl  sysKbCtrl;
+  
+  static SunKbPrivRec	sunKbPriv;  
+--- 47,98 ----
+  #endif
+  
+  
++ #define Time SpriteTime
++ #include <fs.h>
++ #undef Time
+  #define NEED_EVENTS
+  #include "sun.h"
+! #include <bit.h>
+! #include <errno.h>
+! #include <fcntl.h>
+! #include <sys/file.h>
+! #include <sys/time.h>
+  #include "keysym.h"
+! #include "keymap.h"
+  
++ #define AUTO_GENERATED	0x10000
++ #define MIN_KEYCODE	8   	/* Keycode below which we may not transmit */
++ #define ALL_KEYS_UP	127	/* all keys are up now */
++ 
++ /*
++  * Auto-repeat stuff.
++  */
++ static enum {
++     REPEAT_LONG,	    /* Start repeat with long timeout */
++     REPEAT_SHORT,	    /* Start repeat with short timeout */
++     REPEAT_TIMEOUT,	    /* In the middle of a timeout */
++     REPEAT_PENDING,	    /* Repeat should be taken next */
++     REPEAT_NONE	  	    /* No repeat should happen */
++ } repeatPhase = REPEAT_NONE;
++ static Mouse_Event	repeatEvent;	/* Event that will be repeated */
++ static struct timeval 	repeatTimeout;	/* Timeout to use for repeating */
++ static unsigned int	repeatDelta;	/* Timeout length (ms) */
++ /* The following two are set in sunIo.c */
++ unsigned int		repeatLong=300;	/* Ms delay to begin repeat */
++ unsigned int		repeatShort=10;	/* Ms delay to begin repeat */
++ 
+  typedef struct {
+      int	    	  trans;          	/* Original translation form */
+  } SunKbPrivRec, *SunKbPrivPtr;
+  
+  extern void	ProcessInputEvents();
+  extern void	miPointerPosition();
+  
+  static void 	  sunBell();
+  static void 	  sunKbdCtrl();
+! static Mouse_Event *sunKbdGetEvents();
+  static void 	  sunKbdProcessEvent();
+  static void 	  sunKbdDoneEvents();
+  static KeybdCtrl  sysKbCtrl;
+  
+  static SunKbPrivRec	sunKbPriv;  
+***************
+*** 88,94 ****
+      sunKbdDoneEvents,		/* Function called when all events */
+  				/* have been handled. */
+      (pointer)&sunKbPriv,	/* Private to keyboard device */
+-     (Bool)0,			/* Mapped queue */
+      0,				/* offset for device keycodes */
+      &sysKbCtrl,			/* Initial full duration = .25 sec. */
+  };
+--- 104,109 ----
+***************
+*** 119,128 ****
+  {
+      KbPrivPtr	  pPriv;
+      register int  kbdFd;
+- #ifdef	SUN_WINDOWS
+- #define	TR_UNDEFINED (TR_NONE-1)
+-     static int	  deviceOffKbdState = TR_UNDEFINED;
+- #endif	SUN_WINDOWS
+  
+      switch (what) {
+  	case DEVICE_INIT:
+--- 134,139 ----
+***************
+*** 134,191 ****
+  	    /*
+  	     * First open and find the current state of the keyboard.
+  	     */
+! /*
+!  * The Sun 386i has system include files that preclude this pre SunOS 4.1
+!  * test for the presence of a type 4 keyboard however it really doesn't
+!  * matter since no 386i has ever been shipped with a type 3 keyboard.
+!  */
+! #ifndef i386
+! #define TYPE4KEYBOARDOVERRIDE
+! #endif
+! 	    if (sysKbPriv.fd >= 0) {
+! 		kbdFd = sysKbPriv.fd;
+! 	    } else {
+! 		kbdFd = open ("/dev/kbd", O_RDWR, 0);
+! 		if (kbdFd < 0) {
+! 		    Error ("Opening /dev/kbd");
+  		    return (!Success);
+  		}
+- 		sysKbPriv.fd = kbdFd;
+- 		(void) ioctl (kbdFd, KIOCTYPE, &sysKbPriv.type);
+- 		(void) ioctl (kbdFd, KIOCGTRANS, &sunKbPriv.trans);
+- #ifdef TYPE4KEYBOARDOVERRIDE
+-                 /*
+-                  * Magic. Look for a key which is non-existent on a real type
+-                  * 3 keyboard but does exist on a type 4 keyboard.
+-                  */
+-                 if (sysKbPriv.type == KB_SUN3) {
+-                     struct kiockey key;
+- 
+-                     key.kio_tablemask = 0;
+-                     key.kio_station = 118;
+-                     if (ioctl(kbdFd, KIOCGETKEY, &key)) {
+-                         perror( "ioctl KIOCGETKEY" );
+- 			FatalError("Can't KIOCGETKEY on fd %d\n", kbdFd);
+-                     }
+-                     if (key.kio_entry != HOLE)
+-                         sysKbPriv.type = KB_SUN4;
+-                 }
+- #endif
+- 
+- 		if (sysKbPriv.type < 0 || sysKbPriv.type > KB_SUN4
+- 		    || sunKeySyms[sysKbPriv.type].map == NULL)
+- 		    FatalError("Unsupported keyboard type %d\n", 
+- 			sysKbPriv.type);
+- 		if (sunUseSunWindows()) {
+- 		    (void) close( kbdFd );
+- 		    sysKbPriv.fd = -1;
+- 		} else {
+- 		    if (fcntl (kbdFd, F_SETFL, (FNDELAY|FASYNC)) < 0
+- 			|| fcntl(kbdFd, F_SETOWN, getpid()) < 0) {
+- 			perror("sunKbdProc");
+- 			FatalError("Can't set up kbd on fd %d\n", kbdFd);
+- 		    }
+- 		}
+  	    }
+  
+  	    /*
+--- 145,160 ----
+  	    /*
+  	     * First open and find the current state of the keyboard.
+  	     */
+! 	    if (sysKbPriv.fd < 0) {
+! 	        ReturnStatus status;
+! 
+! 		status = Fs_Open("/dev/mouse",
+! 			FS_NON_BLOCKING|FS_READ|FS_WRITE, 0, &sysKbPriv.fd);
+! 	        if (status != 0) {
+! 		    errno = Compat_MapCode(status);
+! 		    Error ("Opening /dev/mouse");
+  		    return (!Success);
+  		}
+  	    }
+  
+  	    /*
+***************
+*** 201,307 ****
+  	    /*
+  	     * ensure that the keycodes on the wire are >= MIN_KEYCODE
+  	     */
+! 	    if (sunKeySyms[sysKbPriv.type].minKeyCode < MIN_KEYCODE) {
+! 		int offset = MIN_KEYCODE -sunKeySyms[sysKbPriv.type].minKeyCode;
+  
+! 		sunKeySyms[sysKbPriv.type].minKeyCode += offset;
+! 		sunKeySyms[sysKbPriv.type].maxKeyCode += offset;
+! 		sysKbPriv.offset = offset;
+! 	    }
+! 	    InitKeyboardDeviceStruct(
+! 		    pKeyboard,
+! 		    &(sunKeySyms[sysKbPriv.type]),
+! 		    (sunModMap[sysKbPriv.type]),
+! 		    sunBell,
+! 		    sunKbdCtrl);
+  	    break;
+  
+  	case DEVICE_ON:
+! 	    if (sunUseSunWindows()) {
+! #ifdef SUN_WINDOWS
+! 		if (! sunSetUpKbdSunWin(windowFd, TRUE)) {
+! 		    FatalError("Can't set up keyboard\n");
+! 		}
+! 		/*
+! 		 * Don't tamper with keyboard translation here
+! 		 * unless this is a server reset.  If server
+! 		 * is reset then set translation to that saved
+! 		 * when DEVICE_CLOSE was executed.
+! 		 * Translation is set/reset upon receipt of
+! 		 * KBD_USE/KBD_DONE input events (sunIo.c)
+! 		 */
+! 		if (deviceOffKbdState != TR_UNDEFINED) {
+! 		    if (sunChangeKbdTranslation(pKeyboard,
+! 				deviceOffKbdState == TR_UNTRANS_EVENT) < 0) {
+! 			FatalError("Can't set (SW) keyboard translation\n");
+! 		    }
+! 		}
+! 		AddEnabledDevice(windowFd);
+! #endif SUN_WINDOWS
+! 	    }
+! 	    else {
+! 		pPriv = (KbPrivPtr)pKeyboard->devicePrivate;
+! 		kbdFd = pPriv->fd;
+! 
+! 	        /*
+! 	         * Set the keyboard into "direct" mode and turn on
+! 	         * event translation.
+! 	         */
+! 		if (sunChangeKbdTranslation(pKeyboard,TRUE) < 0) {
+! 		    FatalError("Can't set keyboard translation\n");
+! 		}
+! 
+! 		AddEnabledDevice(kbdFd);
+! 	    }
+  	    pKeyboard->on = TRUE;
+  	    break;
+  
+  	case DEVICE_CLOSE:
+  	case DEVICE_OFF:
+! 	    if (sunUseSunWindows()) {
+! #ifdef SUN_WINDOWS
+! 		/*
+! 		 * Save current translation state in case of server
+! 		 * reset.  Used above when DEVICE_ON is executed.
+! 		 */
+! 		if ((kbdFd = open("/dev/kbd", O_RDONLY, 0)) < 0) {
+! 		    Error("DEVICE_OFF: Can't open kbd\n");
+! 		    goto badkbd;
+! 		}
+! 		if (ioctl(kbdFd, KIOCGTRANS, &deviceOffKbdState) < 0) {
+! 		    Error("Can't save keyboard state\n");
+! 		}
+! 		(void) close(kbdFd);
+! 
+! badkbd:
+! 		if (! sunSetUpKbdSunWin(windowFd, FALSE)) {
+! 		    FatalError("Can't close keyboard\n");
+! 		}
+! 
+! 		/*
+! 		 * Restore SunWindows translation.
+! 		 */
+! 		if (sunChangeKbdTranslation(pKeyboard,FALSE) < 0) {
+! 		    FatalError("Can't reset keyboard translation\n");
+! 		}
+! 
+! 		RemoveEnabledDevice(windowFd);
+! #endif SUN_WINDOWS
+! 	    }
+! 	    else {
+! 		pPriv = (KbPrivPtr)pKeyboard->devicePrivate;
+! 		kbdFd = pPriv->fd;
+! 
+! 	        /*
+! 	         * Restore original keyboard directness and translation.
+! 	         */
+! 		if (sunChangeKbdTranslation(pKeyboard,FALSE) < 0) {
+! 		    FatalError("Can't reset keyboard translation\n");
+! 		}
+! 
+! 		RemoveEnabledDevice(kbdFd);
+! 	    }
+  	    pKeyboard->on = FALSE;
+  	    break;
+      }
+      return (Success);
+--- 170,202 ----
+  	    /*
+  	     * ensure that the keycodes on the wire are >= MIN_KEYCODE
+  	     */
+! 	     if (sunMapDesc.minKeyCode < MIN_KEYCODE) {
+! 		 int	offset;
+  
+! 		 offset = MIN_KEYCODE - sunMapDesc.minKeyCode;
+! 		 sunMapDesc.minKeyCode += offset;
+! 		 sunMapDesc.maxKeyCode += offset;
+! 		 sysKbPriv.offset = offset;
+! 	     }
+! 	    InitKeyboardDeviceStruct(pKeyboard, &sunMapDesc, sunModMap,
+! 				     sunBell, sunKbdCtrl);
+  	    break;
+  
+  	case DEVICE_ON:
+! 	    pPriv = (KbPrivPtr)pKeyboard->devicePrivate;
+! 	    kbdFd = pPriv->fd;
+! 	    AddEnabledDevice(kbdFd);
+  	    pKeyboard->on = TRUE;
++ 	    repeatPhase = REPEAT_NONE;
+  	    break;
+  
+  	case DEVICE_CLOSE:
+  	case DEVICE_OFF:
+! 	    pPriv = (KbPrivPtr)pKeyboard->devicePrivate;
+! 	    kbdFd = pPriv->fd;
+! 	    RemoveEnabledDevice(kbdFd);
+  	    pKeyboard->on = FALSE;
++ 	    repeatPhase = REPEAT_NONE;
+  	    break;
+      }
+      return (Success);
+***************
+*** 326,371 ****
+      int	    	  loudness;	    /* Percentage of full volume */
+      DevicePtr	  pKeyboard;	    /* Keyboard to ring */
+  {
+!     KbPrivPtr	  pPriv = (KbPrivPtr) pKeyboard->devicePrivate;
+!     int	  	  kbdCmd;   	    /* Command to give keyboard */
+!     int	 	  kbdOpenedHere; 
+!  
+      if (loudness == 0) {
+!  	return;
+      }
+  
+!     kbdOpenedHere = ( pPriv->fd < 0 );
+!     if ( kbdOpenedHere ) {
+! 	pPriv->fd = open("/dev/kbd", O_RDWR, 0);
+! 	if (pPriv->fd < 0) {
+! 	    ErrorF("sunBell: can't open keyboard");
+! 	    return;
+! 	}
+!     }	
+!  
+!     kbdCmd = KBD_CMD_BELL;
+!     if (ioctl (pPriv->fd, KIOCCMD, &kbdCmd) < 0) {
+!  	ErrorF ("Failed to activate bell");
+! 	goto bad;
+!     }
+!  
+!     /*
+!      * Leave the bell on for a while == duration (ms) proportional to
+!      * loudness desired with a 10 thrown in to convert from ms to usecs.
+!      */
+!     usleep (pPriv->ctrl->bell_duration * 1000);
+!  
+!     kbdCmd = KBD_CMD_NOBELL;
+!     if (ioctl (pPriv->fd, KIOCCMD, &kbdCmd) < 0) {
+! 	ErrorF ("Failed to deactivate bell");
+! 	goto bad;
+!     }
+! 
+! bad:
+!     if ( kbdOpenedHere ) {
+! 	(void) close(pPriv->fd);
+! 	pPriv->fd = -1;
+!     }
+  }
+  
+  /*-
+--- 221,247 ----
+      int	    	  loudness;	    /* Percentage of full volume */
+      DevicePtr	  pKeyboard;	    /* Keyboard to ring */
+  {
+!     KbPrivPtr		pPriv = (KbPrivPtr)pKeyboard->devicePrivate;
+!     char		kbdCmd;
+!     struct timeval	sleepTime;
+! 
+      if (loudness == 0) {
+! 	return;
+      }
+  
+!     kbdCmd = KBD_BELL_ON;
+!     (void) write(pPriv->fd, &kbdCmd, 1);
+! 
+!     sleepTime.tv_usec = pPriv->ctrl->bell_duration * 1000;
+!     sleepTime.tv_sec = 0;
+!     while (sleepTime.tv_usec >= 1000000) {
+! 	sleepTime.tv_sec += 1;
+! 	sleepTime.tv_usec -= 1000000;
+!     }
+!     (void) select(0, (int *) 0, (int *) 0, (int *) 0, &sleepTime);
+! 
+!     kbdCmd = KBD_BELL_OFF;
+!     (void) write(pPriv->fd, &kbdCmd, 1);
+  }
+  
+  /*-
+***************
+*** 386,415 ****
+      DevicePtr	  pKeyboard;	    /* Keyboard to alter */
+      KeybdCtrl     *ctrl;
+  {
+!     KbPrivPtr	  pPriv = (KbPrivPtr) pKeyboard->devicePrivate;
+!     int     	  kbdClickCmd = ctrl->click ? KBD_CMD_CLICK : KBD_CMD_NOCLICK;
+!     int	 	  kbdOpenedHere; 
+  
+!     kbdOpenedHere = ( pPriv->fd < 0 );
+!     if ( kbdOpenedHere ) {
+! 	pPriv->fd = open("/dev/kbd", O_WRONLY, 0);
+! 	if (pPriv->fd < 0) {
+! 	    ErrorF("sunKbdCtrl: can't open keyboard");
+! 	    return;
+! 	}
+!     }
+  
+!     if (ioctl (pPriv->fd, KIOCCMD, &kbdClickCmd) < 0) {
+!  	ErrorF("Failed to set keyclick");
+! 	goto bad;
+      }
+!  
+!     *pPriv->ctrl = *ctrl;
+! 
+! bad:
+!     if ( kbdOpenedHere ) {
+! 	(void) close(pPriv->fd);
+! 	pPriv->fd = -1;
+      }
+  }
+  
+--- 262,283 ----
+      DevicePtr	  pKeyboard;	    /* Keyboard to alter */
+      KeybdCtrl     *ctrl;
+  {
+!     KbPrivPtr	  pPriv;
+!     char	  kbCmd;
+  
+!     pPriv = (KbPrivPtr)pKeyboard->devicePrivate;
+  
+!     pPriv->ctrl = ctrl;
+!     if (ctrl->click) {
+! 	kbCmd = KBD_CLICK_ON;
+!     } else {
+! 	kbCmd = KBD_CLICK_OFF;
+      }
+! 
+!     (void) write(pPriv->fd, &kbCmd, 1);
+! 
+!     if (!ctrl->autoRepeat) {
+! 	repeatPhase = REPEAT_NONE;
+      }
+  }
+  
+***************
+*** 432,470 ****
+   *	None.
+   *-----------------------------------------------------------------------
+   */
+! static Firm_event *
+! sunKbdGetEvents (pKeyboard, pNumEvents, pAgain)
+      DevicePtr	  pKeyboard;	    /* Keyboard to read */
+      int	    	  *pNumEvents;	    /* Place to return number of events */
+-     Bool	  *pAgain;	    /* whether more might be available */
+  {
+      int	    	  nBytes;	    /* number of bytes of events available. */
+      KbPrivPtr	  pPriv;
+!     static Firm_event	evBuf[MAXEVENTS];   /* Buffer for Firm_events */
+  
+!     pPriv = (KbPrivPtr) pKeyboard->devicePrivate;
+!     nBytes = read (pPriv->fd, evBuf, sizeof(evBuf));
+  
+!     if (nBytes < 0) {
+! 	if (errno == EWOULDBLOCK) {
+! 	    *pNumEvents = 0;
+! 	    *pAgain = FALSE;
+! 	} else {
+! 	    Error ("Reading keyboard");
+! 	    FatalError ("Could not read the keyboard");
+! 	}
+!     } else {
+! 	*pNumEvents = nBytes / sizeof (Firm_event);
+! 	*pAgain = (nBytes == sizeof (evBuf));
+!     }
+  
+!     if (autoRepeatKeyDown && autoRepeatReady &&
+! 	     pPriv->ctrl->autoRepeat == AutoRepeatModeOn && *pNumEvents == 0) {
+! 	*pNumEvents = 1;			/* Fake the event */
+! 	evBuf[0].id = AUTOREPEAT_EVENTID;	/* Flags autoRepeat event */
+! 	if (autoRepeatDebug)
+! 	    ErrorF("sunKbdGetEvents: autoRepeatKeyDown = %d event\n",
+! 				autoRepeatKeyDown);
+      }
+  
+      return (evBuf);
+--- 300,344 ----
+   *	None.
+   *-----------------------------------------------------------------------
+   */
+! static Mouse_Event *
+! sunKbdGetEvents (pKeyboard, pNumEvents)
+      DevicePtr	  pKeyboard;	    /* Keyboard to read */
+      int	    	  *pNumEvents;	    /* Place to return number of events */
+  {
+      int	    	  nBytes;	    /* number of bytes of events available. */
+      KbPrivPtr	  pPriv;
+!     static Mouse_Event	evBuf[MAXEVENTS];   /* Buffer for Firm_events */
+  
+!     if (repeatPhase == REPEAT_PENDING) {
+! 	/*
+! 	 * This will only have been set if no streams were really ready, thus
+! 	 * there are no events to read from /dev/mouse.
+! 	 */
+! 	repeatEvent.flags |= KEY_UP;
+! 	repeatEvent.time += repeatDelta / 2;
+! 	evBuf[0] = repeatEvent;
+  
+! 	repeatEvent.flags &= ~KEY_UP;
+! 	repeatEvent.time += repeatDelta / 2;
+! 	evBuf[1] = repeatEvent;
+! 
+! 	*pNumEvents = 2;
+  
+! 	repeatPhase = REPEAT_SHORT;
+!     } else {
+!         pPriv = (KbPrivPtr) pKeyboard->devicePrivate;
+!         nBytes = read (pPriv->fd, evBuf, sizeof(evBuf));
+!     
+!         if (nBytes < 0) {
+! 	    if (errno == EWOULDBLOCK) {
+!     		*pNumEvents = 0;
+! 	    } else {
+!     		Error ("Reading keyboard");
+!     		FatalError ("Could not read the keyboard");
+!     	    }
+!         } else {
+! 	    *pNumEvents = nBytes / sizeof (Mouse_Event);
+!         }
+      }
+  
+      return (evBuf);
+***************
+*** 490,579 ****
+   *-----------------------------------------------------------------------
+   */
+  static void
+! sunKbdProcessEvent (pKeyboard, fe)
+      DevicePtr	  pKeyboard;
+!     Firm_event	  *fe;
+  {
+      xEvent		xE;
+!     KbPrivPtr		pPriv;
+!     int			delta;
+!     static xEvent	autoRepeatEvent;
+!     BYTE		key;
+!     CARD8		keyModifiers;
+! 
+!     if (autoRepeatKeyDown && fe->id == AUTOREPEAT_EVENTID) {
+! 	pPriv = (KbPrivPtr) pKeyboard->devicePrivate;
+! 	if (pPriv->ctrl->autoRepeat != AutoRepeatModeOn) {
+! 		autoRepeatKeyDown = 0;
+! 		return;
+! 	}
+! 	/*
+! 	 * Generate auto repeat event.	XXX one for now.
+! 	 * Update time & pointer location of saved KeyPress event.
+! 	 */
+! 	if (autoRepeatDebug)
+! 	    ErrorF("sunKbdProcessEvent: autoRepeatKeyDown = %d\n",
+! 			autoRepeatKeyDown);
+  
+! 	delta = TVTOMILLI(autoRepeatDeltaTv);
+! 	autoRepeatFirst = FALSE;
+! 
+! 	/*
+! 	 * Fake a key up event and a key down event
+! 	 * for the last key pressed.
+! 	 */
+! 	autoRepeatEvent.u.keyButtonPointer.time += delta;
+! 	miPointerPosition (screenInfo.screens[0],
+! 			   &autoRepeatEvent.u.keyButtonPointer.rootX,
+! 			   &autoRepeatEvent.u.keyButtonPointer.rootY);
+! 	autoRepeatEvent.u.u.type = KeyRelease;
+! 	(* pKeyboard->processInputProc) (&autoRepeatEvent, pKeyboard, 1);
+! 
+! 	autoRepeatEvent.u.u.type = KeyPress;
+! 	(* pKeyboard->processInputProc) (&autoRepeatEvent, pKeyboard, 1);
+! 
+! 	/* Update time of last key down */
+! 	tvplus(autoRepeatLastKeyDownTv, autoRepeatLastKeyDownTv, 
+! 			autoRepeatDeltaTv);
+! 
+! 	return;
+!     }
+  
+!     key = (fe->id & 0x7F) + sysKbPriv.offset;
+!     keyModifiers = ((DeviceIntPtr)pKeyboard)->key->modifierMap[key];
+!     if (autoRepeatKeyDown && (keyModifiers == 0) &&
+! 	((fe->value == VKEY_DOWN) || (key == autoRepeatEvent.u.u.detail))) {
+! 	/*
+! 	 * Kill AutoRepeater on any real non-modifier key down, or auto key up
+! 	 */
+! 	autoRepeatKeyDown = 0;
+! 	if (autoRepeatDebug)
+! 	    ErrorF("sunKbdProcessEvent: autoRepeat off\n");
+      }
+- 
+-     xE.u.keyButtonPointer.time = TVTOMILLI(fe->time);
+      miPointerPosition (screenInfo.screens[0],
+  		       &xE.u.keyButtonPointer.rootX,
+  		       &xE.u.keyButtonPointer.rootY);
+-     xE.u.u.type = ((fe->value == VKEY_UP) ? KeyRelease : KeyPress);
+-     xE.u.u.detail = key;
+- 
+-     if (keyModifiers & LockMask) {
+- 	if (xE.u.u.type == KeyRelease)
+- 	    return; /* this assumes autorepeat is not desired */
+- 	if (BitIsOn(((DeviceIntPtr)pKeyboard)->key->down, key))
+- 	    xE.u.u.type = KeyRelease;
+-     }
+- 
+-     if ((xE.u.u.type == KeyPress) && (keyModifiers == 0)) {
+- 	/* initialize new AutoRepeater event & mark AutoRepeater on */
+- 	if (autoRepeatDebug)
+-             ErrorF("sunKbdProcessEvent: VKEY_DOWN\n");
+- 	autoRepeatEvent = xE;
+- 	autoRepeatFirst = TRUE;
+- 	autoRepeatKeyDown++;
+- 	autoRepeatLastKeyDownTv = fe->time;
+-     }
+  
+      (* pKeyboard->processInputProc) (&xE, pKeyboard, 1);
+  }
+--- 364,410 ----
+   *-----------------------------------------------------------------------
+   */
+  static void
+! sunKbdProcessEvent (pKeyboard, ev)
+      DevicePtr	  pKeyboard;
+!     Mouse_Event	  *ev;
+  {
+      xEvent		xE;
+!     register KbPrivPtr	pPriv;
+!     register int  	smask;
+!     PtrPrivPtr	  	ptrPriv;
+  
+!     pPriv = (KbPrivPtr)pKeyboard->devicePrivate;
+!     ptrPriv = (PtrPrivPtr) LookupPointerDevice()->devicePrivate;
+  
+!     xE.u.keyButtonPointer.time = ev->time;
+!     xE.u.u.detail = ev->key + pPriv->offset;
+!     if (ev->key == ALL_KEYS_UP) {
+! 	xE.u.u.type = KeyRelease;
+! 	repeatPhase = REPEAT_NONE;
+!     } else if (ev->flags & KEY_UP) {
+! 	xE.u.u.type = KeyRelease;
+! 	if (!(ev->flags & AUTO_GENERATED) &&
+! 	     (repeatPhase != REPEAT_NONE) &&
+! 	     (repeatEvent.key == ev->key)) {
+! 		/*
+! 		 * Turn off repeat if we got a real up event for the key
+! 		 * being repeated
+! 		 */
+! 		repeatPhase = REPEAT_NONE;
+! 	}
+!     } else {
+! 	xE.u.u.type = KeyPress;
+! 	if ((repeatPhase != REPEAT_SHORT) &&
+! 	    (pPriv->ctrl->autoRepeat ||
+! 	     Bit_IsSet (xE.u.u.detail, pPriv->ctrl->autoRepeats))) {
+! 		 repeatEvent = *ev;
+! 		 repeatEvent.flags |= AUTO_GENERATED;
+! 		 repeatPhase = REPEAT_LONG;
+! 	}
+      }
+      miPointerPosition (screenInfo.screens[0],
+  		       &xE.u.keyButtonPointer.rootX,
+  		       &xE.u.keyButtonPointer.rootY);
+  
+      (* pKeyboard->processInputProc) (&xE, pKeyboard, 1);
+  }
+***************
+*** 598,875 ****
+  
+  /*-
+   *-----------------------------------------------------------------------
+!  * sunChangeKbdTranslation
+!  *	Makes operating system calls to set keyboard translation 
+!  *	and direction on or off.
+   *
+   * Results:
+!  *	-1 if failure, else 0.
+!  *
+!  * Side Effects:
+!  * 	Changes kernel management of keyboard.
+   *
+-  *-----------------------------------------------------------------------
+-  */
+- int
+- sunChangeKbdTranslation(pKeyboard,makeTranslated)
+-     DevicePtr pKeyboard;
+-     Bool makeTranslated;
+- {   
+-     KbPrivPtr	pPriv;
+-     int 	kbdFd;
+-     int 	tmp;
+-     int		kbdOpenedHere;
+- 
+-     static struct timeval lastChngKbdTransTv;
+-     struct timeval tv;
+-     struct timeval lastChngKbdDeltaTv;
+-     int lastChngKbdDelta;
+- 
+-     /*
+-      * Workaround for SS1 serial driver kernel bug when KIOCTRANS ioctl()s
+-      * occur too closely together in time.
+-      */
+-     gettimeofday(&tv, (struct timezone *) NULL);
+-     tvminus(lastChngKbdDeltaTv, tv, lastChngKbdTransTv);
+-     lastChngKbdDelta = TVTOMILLI(lastChngKbdDeltaTv);
+-     if (lastChngKbdDelta < 750) {
+- 	struct timeval wait;
+- 
+- 	/*
+-          * We need to guarantee at least 750 milliseconds between
+- 	 * calls to KIOCTRANS. YUCK!
+- 	 */
+- 	wait.tv_sec = 0;
+- 	wait.tv_usec = (750L - lastChngKbdDelta) * 1000L;
+-         (void) select(0, (int *)0, (int *)0, (int *)0, &wait);
+-         gettimeofday(&tv, (struct timezone *) NULL);
+-     }
+-     lastChngKbdTransTv = tv;
+-     
+- 
+-     pPriv = (KbPrivPtr)pKeyboard->devicePrivate;
+-     kbdFd = pPriv->fd;
+- 
+-     kbdOpenedHere = ( kbdFd < 0 );
+-     if ( kbdOpenedHere ) {
+- 	kbdFd = open("/dev/kbd", O_RDONLY, 0);
+- 	if ( kbdFd < 0 ) {
+- 	    Error( "sunChangeKbdTranslation: Can't open keyboard" );
+- 	    goto bad;
+- 	}
+-     }
+- 	
+-     if (makeTranslated) {
+-         /*
+-          * Next set the keyboard into "direct" mode and turn on
+-          * event translation. If either of these fails, we can't go
+-          * on.
+-          */
+- 	if ( ! sunUseSunWindows() ) {
+- 	    tmp = 1;
+- 	    if (ioctl (kbdFd, KIOCSDIRECT, &tmp) < 0) {
+- 		Error ("Setting keyboard direct mode");
+- 		goto bad;
+- 	    }
+- 	}
+- 	tmp = TR_UNTRANS_EVENT;
+- 	if (ioctl (kbdFd, KIOCTRANS, &tmp) < 0) {
+- 	    ErrorF("sunChangeKbdTranslation: kbdFd=%d\n",kbdFd);
+- 	    Error ("Setting keyboard translation");
+- 	    goto bad;
+- 	}
+-     }
+-     else {
+-         /*
+-          * Next set the keyboard into "indirect" mode and turn off
+-          * event translation.
+-          */
+- 	if ( ! sunUseSunWindows() ) {
+- 	    tmp = 0;
+- 	    (void)ioctl (kbdFd, KIOCSDIRECT, &tmp);
+- 	}
+- 	tmp = ((SunKbPrivPtr)pPriv->devPrivate)->trans;
+- 	(void)ioctl (kbdFd, KIOCTRANS, &tmp);
+-     }
+- 
+-     if ( kbdOpenedHere )
+- 	(void) close( kbdFd );
+-     return(0);
+- 
+- bad:
+-     if ( kbdOpenedHere && kbdFd >= 0 )
+- 	(void) close( kbdFd );
+-     return(-1);
+- }
+- 
+- #ifdef SUN_WINDOWS
+- 
+- /*-
+-  *-----------------------------------------------------------------------
+-  * sunSetUpKbdSunWin
+-  *	Change which events the kernel will pass through as keyboard
+-  * 	events.
+-  *
+-  *	Does NOT affect keyboard translation.
+-  *
+-  * Results:
+-  *	Inputevent mask modified.
+-  *
+   * Side Effects:
+   *
+   *-----------------------------------------------------------------------
+   */
+- 
+  Bool
+! sunSetUpKbdSunWin(windowFd, onoff)
+!     int windowFd;
+!     Bool onoff;
+  {
+-     struct inputmask inputMask;
+-     static struct inputmask oldInputMask;
+- 
+-     if (onoff) {
+-         register int i;
+- 
+- 	win_get_kbd_mask(windowFd, &oldInputMask);
+- 	input_imnull(&inputMask);
+- 	inputMask.im_flags |= 
+- 		IM_ASCII | IM_NEGASCII | 
+- 		IM_META | IM_NEGMETA | 
+- 		IM_NEGEVENT | IM_INTRANSIT;
+- 	win_setinputcodebit(&inputMask, KBD_USE);
+- 	win_setinputcodebit(&inputMask, KBD_DONE);
+- 	win_setinputcodebit(&inputMask, SHIFT_CAPSLOCK);
+- 	win_setinputcodebit(&inputMask, SHIFT_LOCK);
+- 	win_setinputcodebit(&inputMask, SHIFT_LEFT);
+- 	win_setinputcodebit(&inputMask, SHIFT_RIGHT);
+- 	win_setinputcodebit(&inputMask, SHIFT_LEFTCTRL);
+- 	win_setinputcodebit(&inputMask, SHIFT_RIGHTCTRL);
+- 	win_setinputcodebit(&inputMask, SHIFT_META);
+- 	win_setinputcodebit(&inputMask, WIN_STOP);
+- 
+-         for (i=KEY_LEFTFIRST; i<=KEY_LEFTLAST; i++) {
+-             win_setinputcodebit(&inputMask, i);
+-         }
+-         for (i=KEY_TOPFIRST; i<=KEY_TOPLAST; i++) {
+-             win_setinputcodebit(&inputMask, i);
+-         }
+-         for (i=KEY_RIGHTFIRST; i<=KEY_RIGHTLAST; i++) {
+-             win_setinputcodebit(&inputMask, i);
+-         }
+- 
+- 	win_set_kbd_mask(windowFd, &inputMask);
+-     }
+-     else {
+- 	win_set_kbd_mask(windowFd, &oldInputMask);
+-     }
+      return (TRUE);
+  }
+  
+! #endif SUN_WINDOWS
+! 
+! 
+! #ifdef SUN_WINDOWS
+  
+  /*-
+   *-----------------------------------------------------------------------
+!  * sunKbdProcessEventSunWin
+!  *	Process sunwindows event destined for the keyboard.
+!  *      Rather than replicate the logic (and therefore replicate
+!  * 	bug fixes, etc), this code counterfeits a vuid 
+!  *	Firm_event and then uses the non-sunwindows code.
+!  * 	
+   * Results:
+   *
+   * Side Effects:
+   *
+   *-----------------------------------------------------------------------
+   */
+- 
+- void
+- sunKbdProcessEventSunWin(pKeyboard,se)
+-     DeviceRec *pKeyboard;
+-     register struct inputevent *se;
+- {   
+-     Firm_event	fe;
+- 
+-     fe.time = event_time(se);
+-     fe.id = event_id(se);
+-     fe.value = (event_is_up(se) ? VKEY_UP : VKEY_DOWN);
+- 
+-     sunKbdProcessEvent (pKeyboard, &fe);
+- }
+- #endif SUN_WINDOWS
+- 
+- /*ARGSUSED*/
+- Bool
+- LegalModifier(key)
+- {
+-     return (TRUE);
+- }
+- 
+- static KeybdCtrl *pKbdCtrl = (KeybdCtrl *) 0;
+- 
+- /*ARGSUSED*/
+  void
+! sunBlockHandler(nscreen, pbdata, pptv, pReadmask)
+!     int nscreen;
+!     pointer pbdata;
+!     struct timeval **pptv;
+!     pointer pReadmask;
+  {
+!     static struct timeval artv = { 0, 0 };	/* autorepeat timeval */
+! 
+!     if (!autoRepeatKeyDown)
+  	return;
+! 
+!     if (pKbdCtrl == (KeybdCtrl *) 0)
+! 	pKbdCtrl = ((KbPrivPtr) LookupKeyboardDevice()->devicePrivate)->ctrl;
+! 
+!     if (pKbdCtrl->autoRepeat != AutoRepeatModeOn)
+  	return;
+! 
+!     if (autoRepeatFirst == TRUE)
+! 	artv.tv_usec = autoRepeatInitiate;
+!     else
+! 	artv.tv_usec = autoRepeatDelay;
+!     *pptv = &artv;
+! 
+!     if (autoRepeatDebug)
+! 	ErrorF("sunBlockHandler(%d,%d): \n", artv.tv_sec, artv.tv_usec);
+  }
+! 
+! /*ARGSUSED*/
+  void
+! sunWakeupHandler(nscreen, pbdata, err, pReadmask)
+!     int nscreen;
+!     pointer pbdata;
+!     unsigned long err;
+!     pointer pReadmask;
+! {
+!     struct timeval tv;
+! 
+!     if (autoRepeatDebug)
+! 	ErrorF("sunWakeupHandler(ar=%d, err=%d):\n", autoRepeatKeyDown, err);
+! 
+!     if (pKbdCtrl == (KeybdCtrl *) 0)
+! 	pKbdCtrl = ((KbPrivPtr) LookupKeyboardDevice()->devicePrivate)->ctrl;
+! 
+!     if (pKbdCtrl->autoRepeat != AutoRepeatModeOn)
+! 	return;
+  
+!     if (autoRepeatKeyDown) {
+! 	gettimeofday(&tv, (struct timezone *) NULL);
+! 	tvminus(autoRepeatDeltaTv, tv, autoRepeatLastKeyDownTv);
+! 	if (autoRepeatDeltaTv.tv_sec > 0 ||
+! 			(!autoRepeatFirst && autoRepeatDeltaTv.tv_usec >
+! 				autoRepeatDelay) ||
+! 			(autoRepeatDeltaTv.tv_usec >
+! 				autoRepeatInitiate))
+! 		autoRepeatReady++;
+!     }
+      
+!     if (autoRepeatReady)
+  	ProcessInputEvents();
+!     autoRepeatReady = 0;
+  }
+--- 429,533 ----
+  
+  /*-
+   *-----------------------------------------------------------------------
+!  * LegalModifier --
+!  *	See if a key is legal as a modifier. We're very lenient around,
+!  *	here, so we always return true.
+   *
+   * Results:
+!  *	TRUE.
+   *
+   * Side Effects:
++  *	None.
+   *
+   *-----------------------------------------------------------------------
+   */
+  Bool
+! LegalModifier(key)
+  {
+      return (TRUE);
+  }
+  
+! static KeybdCtrl *pKbdCtrl = (KeybdCtrl *) 0;
+  
+  /*-
+   *-----------------------------------------------------------------------
+!  * sunBlockHandler --
+!  *	Tell the OS layer when to timeout to implement auto-repeat.
+!  *
+   * Results:
++  *	None.
+   *
+   * Side Effects:
++  *	The timeout value may be overwritten.
+   *
+   *-----------------------------------------------------------------------
+   */
+  void
+! sunBlockHandler (index, pKeyboard, ppTime, pReadMask)
+!     int	    	    index;    	/* Screen index */
+!     DevicePtr	    pKeyboard;	/* Keyboard for which to do auto-repeat */
+!     struct timeval  **ppTime; 	/* Pointer to timeout to use */
+!     int	    	    *pReadMask;	/* Mask the OS Layer will use for select. */
+  {
+!     if (repeatPhase == REPEAT_LONG) {
+! 	/*
+! 	 * Beginning long timeout
+! 	 */
+! 	repeatDelta = repeatLong;
+!     } else if (repeatPhase == REPEAT_SHORT) {
+! 	/*
+! 	 * Beginning short timeout
+! 	 */
+! 	repeatDelta = repeatShort;
+!     } else if (repeatPhase == REPEAT_NONE) {
+! 	/*
+! 	 * No repeat necessary -- it can block as long as it wants to
+! 	 */
+  	return;
+!     } else if (repeatPhase == REPEAT_TIMEOUT) {
+! 	/*
+! 	 * Interrupted timeout -- use old timeout (that was modified by
+! 	 * select in the OS layer)
+! 	 */
+! 	*ppTime = &repeatTimeout;
+  	return;
+!     }
+!     repeatTimeout.tv_sec = repeatDelta / 1000;
+!     repeatTimeout.tv_usec = repeatDelta * 1000;
+!     repeatPhase = REPEAT_TIMEOUT;
+!     *ppTime = &repeatTimeout;
+  }
+! 
+! /*-
+!  *-----------------------------------------------------------------------
+!  * sunWakeupHandler --
+!  *	Figure out if should do a repeat when the server wakes up. Because
+!  *	select will modify repeatTimeout to contain the time left, we
+!  *	can tell if the thing timed out.
+!  *
+!  * Results:
+!  *	None.
+!  *
+!  * Side Effects:
+!  *	repeatPhase may be changed to REPEAT_PENDING. If it is, *pNumReady
+!  *	will be set to 1 and the keyboard's stream marked ready in the
+!  *	result mask.
+!  *
+!  *-----------------------------------------------------------------------
+!  */
+  void
+! sunWakeupHandler (index, pKeyboard, pNumReady, pReadMask)
+!     int	    	  index;    	/* Screen index */
+!     DevicePtr	  pKeyboard;	/* Keyboard to repeat */
+!     int	    	  *pNumReady; 	/* Pointer to number of ready streams */
+!     int	    	  *pReadMask;	/* Ready streams */
+! {
+!     KbPrivPtr	  pPriv;
+  
+!     pPriv = (KbPrivPtr)pKeyboard->devicePrivate;
+      
+!     if ((repeatPhase == REPEAT_TIMEOUT) && (pNumReady == 0)) {
+! 	repeatPhase = REPEAT_PENDING;
+  	ProcessInputEvents();
+!     }
+  }

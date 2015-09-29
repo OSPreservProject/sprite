@@ -1,0 +1,644 @@
+head     1.8;
+branch   ;
+access   ;
+symbols  srv030:1.8 srv028:1.8 srv027:1.7 srv026:1.7 srv024:1.7 srv022:1.7 srv021:1.7 srv019:1.7 srv018:1.7 srv016:1.7 srv014:1.7 srv010:1.7 srv008:1.6 srv007:1.5 srv006:1.4 srv005:1.4 srv004:1.4 srv003:1.4;
+locks    ; strict;
+comment  @ * @;
+
+
+1.8
+date     92.07.13.21.16.17;  author kupfer;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     92.06.04.14.22.55;  author kupfer;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     92.06.02.15.04.56;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     92.05.27.21.34.39;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     92.04.29.22.16.34;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     92.04.16.15.09.27;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     92.04.02.21.58.40;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     92.03.31.18.30.37;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.8
+log
+@Instrument Vm_Copy{In,Out}, with times broken down according to Sprite
+call.  (This required some formatting changes, too.)
+@
+text
+@/*
+ * sysStat.c --
+ *
+ *	Statistics generation for system calls, and a hook for other
+ *	system-related commands.
+ *
+ * Copyright 1986, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/cmds/sysstat/RCS/sysstat.c,v 1.7 92/06/04 14:22:55 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <fs.h>
+#include <sysStats.h>
+#include <status.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <option.h>
+#include <host.h>
+#include <kernel/sync.h>
+#include <sys.h>
+#include <sprited/sys.h>
+#include <sprited/sysCallNums.h>
+#include <test.h>
+
+/*
+ * Variables for options.
+ */
+
+int countCalls = 0;
+int serverProcInfo = 0;
+int resetCount = 0;
+int printVersion = 0;
+int enableProfiling = -1;
+int doMallocDebug = 0;
+#ifdef DO_SYNC_STATS
+int doSyncStat = 0;
+#endif
+
+Option optionArray[] = {
+    {OPT_TRUE, "c", (Address)&countCalls,
+     "Print the number of system calls invoked."},
+#ifdef DO_SYNC_STATS
+    {OPT_TRUE, "l", (Address)&doSyncStat, "Print lock (Sync) statistics"},
+#endif
+    {OPT_TRUE, "m", (Address)&doMallocDebug,
+	 "Print on the console malloc debug information."},
+    {OPT_INT, "p", (Address)&enableProfiling,
+     "Set or clear the flag that controls system call profiling"},
+    {OPT_TRUE, "R", (Address)&resetCount,
+     "Reset the system call and Proc_ServerProc instrumentation."},
+    {OPT_TRUE, "s", (Address)&serverProcInfo,
+     "Print on the console instrumentation for Proc_ServerProcs."},
+    {OPT_TRUE, "t", (Address)&countCalls,
+     "Print the number of system calls invoked and the time they took."},
+    {OPT_TRUE, "v", (Address)&printVersion,
+     "Print compilation timestamp for the kernel (DEFAULT)."},
+#ifdef DO_SCHED_STATS
+    {OPT_TRUE, "x", (Address)&doSchedStat, "Print scheduling statistics"},
+#endif
+};
+
+/*
+ * Constants used by tracing routines:
+ * 	PROC_NUM_EVENTS - the number of valid trace events for proc.\
+ */
+
+#define PROC_NUM_EVENTS 5
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	Driver.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Variable.
+ *
+ *----------------------------------------------------------------------
+ */
+
+
+main(argc, argv)
+    int argc;
+    char *argv[];
+{
+    ReturnStatus status = SUCCESS;
+    char    	  version[128];
+    Sys_MachineInfo	machineInfo;
+#ifdef DO_SYNC_STATS
+    int			numProcessors;
+#endif
+    int exitStatus = 0;
+
+    (void) Opt_Parse(argc, argv, optionArray, Opt_Number(optionArray),
+		     OPT_ALLOW_CLUSTERING);
+    if (! (printVersion || countCalls || resetCount
+	   || enableProfiling || serverProcInfo)) {
+	printVersion = 1;
+    }
+    if (printVersion) {
+	if (Sys_Stats(SYS_GET_VERSION_STRING, sizeof(version), version) ==
+	    SUCCESS) {
+	    int virtualHost, physicalHost;
+	    Host_Entry *hostPtr;
+
+	    if ((Proc_GetHostIDs(&virtualHost, &physicalHost) != SUCCESS) ||
+		((hostPtr = Host_ByID(physicalHost)) == (Host_Entry *)NULL)) {
+		(void) printf("%s\n", version);
+	    } else {
+		char *cPtr;
+		/*
+		 * Nuke domain suffix and print hostname with kernel version.
+		 */
+		for (cPtr = hostPtr->name ; *cPtr ; cPtr++) {
+		    if (*cPtr == '.') {
+			*cPtr = '\0';
+			break;
+		    }
+		}
+		(void) printf("%-20s %s\n", hostPtr->name, version);
+	    }
+	    (void) fflush(stdout);
+	}
+    }
+
+    if (countCalls) {
+	status = PrintNumCalls();
+    }
+    if (status != SUCCESS) {
+	fprintf(stderr, "Couldn't get stats about Sprite calls: %s\n",
+		Stat_GetMsg(status));
+	exitStatus = 1;
+    }
+
+    if (resetCount) {
+	status = Sys_Stats(SYS_SYS_CALL_STATS, 0, (Address) NULL);
+    }
+    if (status != SUCCESS) {
+	fprintf(stderr, "Couldn't reset stats about Sprite calls: %s\n",
+		Stat_GetMsg(status));
+	exitStatus = 1;
+    }
+
+    if (serverProcInfo) {
+	status = Sys_Stats(SYS_PROC_SERVERPROC_TIMES, 0, (Address) NULL);
+    }
+    if (status != SUCCESS) {
+	fprintf(stderr, "Couldn't display Proc_ServerProc stats: %s.\n",
+		Stat_GetMsg(status));
+	exitStatus = 1;
+    }
+
+    if (enableProfiling != -1) {
+	status = Sys_Stats(SYS_SYS_CALL_STATS_ENABLE, enableProfiling,
+			   (Address)NULL);
+    }
+    if (status != SUCCESS) {
+	fprintf(stderr, "Couldn't %s profiling for Sprite calls: %s\n",
+		(enableProfiling ? "enable" : "disable"),
+		Stat_GetMsg(status));
+	exitStatus = 1;
+    }
+
+    if (doMallocDebug) {
+	Test_MemCheck("dummyFile");
+    }
+
+    status = Sys_GetMachineInfo(sizeof(Sys_MachineInfo), &machineInfo);
+    if (status != SUCCESS) {
+	printf("Sys_GetMachineInfo failed: %s.\n", Stat_GetMsg(status));
+	exit(1);
+    }
+#ifdef DO_SYNC_STATS
+    numProcessors = machineInfo.processors;
+    if (doSyncStat) {
+	PrintSyncStats(numProcessors);
+    }
+#endif
+#ifdef DO_SCHED_STATS
+    if (doSchedStat) {
+	PrintSchedStats(numProcessors);
+    }
+#endif
+
+    exit(exitStatus);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintNumCalls --
+ *
+ *	Print the number of system calls invoked by processes since the last
+ *	time the counter was reset.
+ *
+ * Results:
+ *	The return status from Sys_Stats is returned.
+ *
+ * Side effects:
+ *	The number of calls is output.
+ *
+ *----------------------------------------------------------------------
+ */
+
+
+int
+PrintNumCalls()
+{
+    Sys_CallCount *countsPtr;	/* Buffer to hold counters */
+    ReturnStatus status;
+    int i;
+    register Sys_CallCount *callPtr; /* pointer into countsPtr */
+    char *callName;
+    int msec;			/* average milliseconds per call */
+
+    /*
+     * Get a copy of the array of counters.
+     */
+
+    countsPtr = (Sys_CallCount *)malloc((unsigned)(SYS_NUM_CALLS *
+						   sizeof(Sys_CallCount)));
+    status = Sys_Stats(SYS_SYS_CALL_STATS, SYS_NUM_CALLS, (Address)countsPtr);
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "Error from PrintNumCalls");
+	return(status);
+    }
+
+    /* 
+     * For each call, print the count, the total and average times to
+     * execute the call, average times spent in copyin and copyout, and the 
+     * call name.
+     */
+    printf("%6s %8s %10s\t %12s %12s %s\n", "calls", "time", "avg (ms)",
+	   "copyin (ms)", "copyout (ms)", "name");
+    for (i = 0, callPtr = countsPtr; i < SYS_NUM_CALLS; i++, callPtr++) {
+	callName = Sys_CallName(i);
+	if (callName == NULL && callPtr->numCalls == 0) {
+	    continue;
+	}
+	(void)printf("%6d %4d.%03d ", callPtr->numCalls, 
+		     callPtr->timeSpent.seconds,
+		     (callPtr->timeSpent.microseconds + 500) / 1000);
+	if (callPtr->numCalls != 0) {
+	    Time_Divide(callPtr->timeSpent, callPtr->numCalls,
+			&callPtr->timeSpent);
+	    Time_Divide(callPtr->copyInTime, callPtr->numCalls,
+			&callPtr->copyInTime);
+	    Time_Divide(callPtr->copyOutTime, callPtr->numCalls,
+			&callPtr->copyOutTime);
+	}
+	msec = (callPtr->timeSpent.seconds * 1000 +
+		callPtr->timeSpent.microseconds / 1000);
+	(void)printf("%6d.%03d\t",
+		     msec, callPtr->timeSpent.microseconds % 1000);
+	(void)printf("%5d.%06d ", callPtr->copyInTime.seconds,
+		     callPtr->copyInTime.microseconds);
+	(void)printf("%5d.%06d ", callPtr->copyOutTime.seconds,
+		     callPtr->copyOutTime.microseconds);
+	/* 
+	 * Limit the call name so that the output line fits in 80 columns. 
+	 */
+	if (callName == NULL || strlen(callName) < 21) {
+	    (void)printf("%s\n", callName == NULL ? "<no name>" :
+			 callName);
+	} else {
+	    (void)printf("%-21s\n", callName);
+	}
+    }
+    return(0);
+}
+
+
+#ifdef DO_SYNC_STATS
+PrintSyncStats(numProcessors)
+    int	numProcessors;	
+{
+    Sync_Instrument	syncStat[MACH_MAX_NUM_PROCESSORS];
+    ReturnStatus	status;
+    int			i;
+
+    status = Sys_Stats(SYS_SYNC_STATS, sizeof(syncStat), syncStat);
+    if (status != SUCCESS) {
+	return;
+    }
+    printf("Sync Statistics\n");
+    for (i = 0; i < numProcessors; i++) {
+	printf("Processor %d\n", i);
+	printf("numWakeups = %d\n", syncStat[i].numWakeups);
+	printf("numWakeupCalls = %d\n", syncStat[i].numWakeupCalls);
+	printf("numSpuriousWakeups = %d\n", syncStat[i].numSpuriousWakeups);
+	printf("numLocks = %d\n", syncStat[i].numLocks);
+	printf("numUnlocks = %d\n", syncStat[i].numUnlocks);
+	printf("Misses on sched_Mutex in idle loop = %d\n",
+		    syncStat[i].sched_MutexMiss);
+    }
+}
+#endif /* DO_SYNC_STATS */
+
+
+#ifdef DO_SCHED_STATS
+PrintSchedStats(numProcessors)
+    int numProcessors;
+{
+    Sched_Instrument schedStat;
+    Time idleTime;
+    ReturnStatus	status;
+    int			i;
+
+    status = Sys_Stats(SYS_SCHED_STATS, 0, &schedStat);
+    if (status != SUCCESS) {
+	return;
+    }
+    printf("Sched Statistics\n");
+    for (i = 0; i < numProcessors; i++) {
+	printf("Processor %d\n", i);
+	printf("numContextSwitches = %d\n", 
+		    schedStat.processor[i].numContextSwitches);
+	printf("numFullSwitches    = %d\n", schedStat.processor[i].numFullCS);
+	printf("numInvoluntary     = %d\n", 
+		    schedStat.processor[i].numInvoluntarySwitches);
+#ifdef notdef
+	printf("onDeckSelf	   = %d\n",
+		    schedStat.processor[i].onDeckSelf);
+	printf("onDeckOther	   = %d\n",
+		    schedStat.processor[i].onDeckOther);
+#endif notdef
+	printf("Idle Time          = %d.%06d seconds\n",
+		   schedStat.processor[i].idleTime.seconds,
+		   schedStat.processor[i].idleTime.microseconds);
+        printf("Idle ticks = %d * 2^32 + %d.\n", 
+		    schedStat.processor[i].idleTicksOverflow,
+		    schedStat.processor[i].idleTicksLow);
+	printf("Idle ticks/sec = %d.\n", 
+		    schedStat.processor[i].idleTicksPerSecond);
+    }
+}
+#endif /* DO_SCHED_STATS */
+@
+
+
+1.7
+log
+@Tweak help messages for -s and -m.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/cmds/sysstat/RCS/sysstat.c,v 1.6 92/06/02 15:04:56 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d246 2
+a247 1
+     * execute the call, and its name.
+d249 2
+d256 1
+a256 1
+	(void)printf("%d\t%d.%03d\t", callPtr->numCalls, 
+d262 4
+d269 12
+a280 3
+	if (msec < 10 && !Time_EQ(callPtr->timeSpent, time_ZeroSeconds)) {
+	    (void)printf("(%d.%03d ms avg)\t",
+			 msec, callPtr->timeSpent.microseconds % 1000);
+d282 1
+a282 3
+	    (void)printf("(%d ms avg)\t",
+			 (callPtr->timeSpent.seconds * 1000 +
+			  (callPtr->timeSpent.microseconds + 500) / 1000));
+a283 1
+	(void)printf("%-30s\n", callName == NULL ? "<no name>" : callName);
+@
+
+
+1.6
+log
+@Add the -s option.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/cmds/sysstat/RCS/sysstat.c,v 1.5 92/05/27 21:34:39 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d55 2
+a56 1
+    {OPT_TRUE, "m", (Address)&doMallocDebug, "Print malloc debug information"},
+d62 1
+a62 1
+     "Print instrumentation for Proc_ServerProcs."},
+@
+
+
+1.5
+log
+@Add -m option.  Misc. cleanups.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/cmds/sysstat/RCS/sysstat.c,v 1.4 92/04/29 22:16:34 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d40 1
+d59 3
+a61 1
+     "Reset the count of system calls to 0."},
+d110 2
+a111 1
+    if (! (printVersion || countCalls || resetCount || enableProfiling)) {
+d154 9
+@
+
+
+1.4
+log
+@Add -p option.  Clean up error checking some.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/cmds/sysstat/RCS/sysstat.c,v 1.3 92/04/16 15:09:27 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d33 1
+d43 1
+a48 2
+    {OPT_TRUE, "v", (Address)&printVersion,
+     "Print compilation timestamp for the kernel (DEFAULT)."},
+a50 4
+    {OPT_TRUE, "R", (Address)&resetCount,
+     "Reset the count of system calls to 0."},
+    {OPT_INT, "p", (Address)&enableProfiling,
+     "Set or clear the flag that controls system call profiling"},
+d54 9
+d107 1
+a107 1
+    if (! (printVersion || countCalls || resetCount)) {
+d165 4
+d224 1
+a224 1
+    status = Sys_Stats(SYS_SYS_CALL_STATS, SYS_NUM_CALLS, countsPtr);
+@
+
+
+1.3
+log
+@Changes for sprited.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/cmds/sysstat/RCS/sysstat.c,v 1.2 92/04/02 21:58:40 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d41 1
+d53 2
+d98 1
+d134 5
+d143 17
+d162 2
+a163 2
+	printf("Sys_GetMachineInfo returned 0x%x.\n", status);
+	exit(status);
+d177 1
+a177 1
+    exit(status);
+@
+
+
+1.2
+log
+@Changes for sprited.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/cmds/sysstat/RCS/sysstat.c,v 1.1 92/03/31 18:30:37 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d24 1
+d31 2
+d41 1
+d43 1
+a43 1
+int doSchedStat = 0;
+a47 1
+#ifdef COUNT_CALLS
+a49 1
+#endif
+a90 1
+    int migStatus;
+d92 1
+d94 1
+a126 1
+#ifdef COUNT_CALLS
+a129 1
+#endif
+d139 1
+a140 1
+#ifdef DO_SYNC_STATS
+a154 1
+#ifdef COUNT_CALLS
+d176 1
+a176 1
+    Address buffer;	/* Buffer to hold counters */
+d179 3
+a181 4
+    int numForeign = 0;
+    int numLocal = 0;
+    register int *numCalls;
+    int numAlloc;
+d187 3
+a189 3
+    numAlloc = sysCallArraySize / sizeof(SysCallInfo);
+    buffer = malloc((unsigned) (numAlloc * sizeof(int)));
+    status = Sys_Stats(SYS_SYS_CALL_STATS, numAlloc, buffer);
+d191 1
+a191 1
+	Stat_PrintMsg(status, "Error from Test_Stats");
+a193 1
+    numCalls = (int *) buffer;
+d195 21
+a215 5
+    for (i = 0; i < numAlloc; i++) {
+	(void) printf("%d\t%-30s", numCalls[i], sysCallArray[i].name);
+	if (sysCallArray[i].local) {
+	    numLocal += numCalls[i];
+	    (void) printf("local\n");
+d217 3
+a219 2
+	    numForeign += numCalls[i];
+	    (void) printf("remote\n");
+d221 1
+a222 5
+    (void) printf("\n\nTotal number of calls: %d local, %d remote.\n",
+	   numLocal, numForeign);
+    (void) printf("%d/%d = %6.2f%% remote.\n",
+	   numForeign, numForeign + numLocal, 
+	   ((double) numForeign) / (numForeign + numLocal) * 100.);
+a224 1
+#endif /* COUNT_CALLS */
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/cmds/sysstat/RCS/sysstat.c,v 1.7 90/02/16 11:44:58 jhh Exp Locker: mendel $ SPRITE (Berkeley)";
+a27 2
+#include <kernel/sysSysCall.h>
+#include <kernel/trace.h>
+d29 1
+a29 2
+#include <kernel/sched.h>
+#include <kernel/mach.h>
+a30 2
+#include "syscalls.h"
+
+d44 1
+d47 1
+d50 1
+d52 2
+d55 1
+d124 1
+d128 1
+d139 1
+d143 2
+d148 1
+d154 1
+d214 2
+d217 1
+d241 2
+d244 1
+d281 1
+a281 1
+
+@

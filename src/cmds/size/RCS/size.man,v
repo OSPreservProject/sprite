@@ -1,0 +1,63 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     88.12.30.10.15.53;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.12.22.11.49.56;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@More format upgrades.
+@
+text
+@' $Header: /a/newcmds/size/RCS/size.man,v 1.1 88/12/22 11:49:56 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS SIZE cmds
+.BS
+.SH NAME
+size \- Print size of segments in program image
+.SH SYNOPSIS
+\fBsize \fR[\fIfile file ...\fR]
+.BE
+
+.SH DESCRIPTION
+.LP
+Each \fIfile\fR argument should be the name of a program image
+file (e.g. \fBa.out\fR).  \fBSize\fR will print out in decimal
+the sizes of the various segments in the file.  It will also print
+the total size in both decimal and hexadecimal.  If no \fIfile\fR
+argument is given, \fBa.out\fR will be used by default.
+
+.SH KEYWORDS
+executable, image, program, size
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+' $Header: size,v 1.1 88/08/07 12:39:01 ouster Exp $ SPRITE (Berkeley)
+d14 1
+a14 1
+file (e.g. \fBa.out\fR).  Size will print out in decimal
+@

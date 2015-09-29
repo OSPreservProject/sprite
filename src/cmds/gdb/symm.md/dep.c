@@ -1,0 +1,1 @@
+../sprite/symmetry-dep.c

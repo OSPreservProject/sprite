@@ -1,0 +1,363 @@
+head     1.12;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.12
+date     92.04.21.14.00.06;  author kupfer;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     92.03.18.18.33.32;  author kupfer;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     91.11.24.12.21.21;  author kupfer;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     91.10.02.18.48.15;  author kupfer;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     91.10.02.18.41.06;  author kupfer;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     91.06.04.17.01.46;  author kupfer;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     91.06.03.22.14.08;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.06.03.17.23.44;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.09.11.14.40.17;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.06.11.10.08.48;  author rab;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.01.06.13.44.20;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.08.08.13.13.23;  author rab;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.12
+log
+@Add valloc().
+@
+text
+@/*
+ * unistd.h --
+ *
+ *      Macros, constants and prototypes for Posix conformance.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/lib/include/RCS/unistd.h,v 1.11 92/03/18 18:33:32 kupfer Exp Locker: kupfer $
+ */
+
+#ifndef _UNISTD
+#define _UNISTD
+
+#include <cfuncproto.h>
+#include <sys/types.h>
+
+#ifdef __STDC__
+#define VOLATILE volatile
+#else
+#define VOLATILE
+#endif
+
+#ifndef NULL
+#define NULL    0
+#endif
+
+#ifndef _SIZE_T
+#define _SIZE_T
+typedef int size_t;
+#endif
+
+/* 
+ * Strict POSIX stuff goes here.  Extensions go down below, in the 
+ * ifndef _POSIX_SOURCE section.
+ */
+
+extern void VOLATILE _exit _ARGS_((int status));
+extern int access _ARGS_((const char *path, int mode));
+extern int chdir _ARGS_((const char *path));
+extern int chown _ARGS_((const char *path, uid_t owner, gid_t group));
+extern int close _ARGS_((int fd));
+extern int dup _ARGS_((int oldfd));
+extern int dup2 _ARGS_((int oldfd, int newfd));
+extern int execl _ARGS_((const char *path, ...));
+extern int execle _ARGS_((const char *path, ...));
+extern int execlp _ARGS_((const char *file, ...));
+extern int execv _ARGS_((const char *path, char **argv));
+extern int execve _ARGS_((const char *path, char **argv, char **envp));
+extern int execvp _ARGS_((const char *file, char **argv));
+extern int fork _ARGS_((void));
+extern char *getcwd _ARGS_((char *buf, int size));
+extern gid_t getegid _ARGS_((void));
+extern uid_t geteuid _ARGS_((void));
+extern gid_t getgid _ARGS_((void));
+extern int getgroups _ARGS_((int bufSize, int *buffer));
+extern int getpid _ARGS_((void));
+extern uid_t getuid _ARGS_((void));
+extern int isatty _ARGS_((int fd));
+extern long lseek _ARGS_((int fd, long offset, int whence));
+extern int pipe _ARGS_((int *fildes));
+extern int read _ARGS_((int fd, char *buf, size_t size));
+extern int setgid _ARGS_((gid_t group));
+extern int setuid _ARGS_((uid_t user));
+extern unsigned sleep _ARGS_ ((unsigned seconds));
+extern char *ttyname _ARGS_((int fd));
+extern int unlink _ARGS_((const char *path));
+extern int write _ARGS_((int fd, const char *buf, size_t size));
+
+#ifndef	_POSIX_SOURCE
+extern char *crypt _ARGS_((const char *, const char *));
+extern int fchown _ARGS_((int fd, uid_t owner, gid_t group));
+extern int flock _ARGS_((int fd, int operation));
+extern int ftruncate _ARGS_((int fd, unsigned long length));
+extern int readlink _ARGS_((const char *path, char *buf, int bufsize));
+extern int setegid _ARGS_((gid_t group));
+extern int seteuid _ARGS_((uid_t user));
+extern int setreuid _ARGS_((int ruid, int euid));
+extern int symlink _ARGS_((const char *, const char *));
+extern int ttyslot _ARGS_((void));
+extern int truncate _ARGS_((const char *path, unsigned long length));
+extern int umask _ARGS_((int cmask));
+extern _VoidPtr	valloc _ARGS_((size_t bytes));
+extern int vfork _ARGS_((void));
+#endif /* _POSIX_SOURCE */
+
+#endif /* _UNISTD */
+
+@
+
+
+1.11
+log
+@Add ttyname, ttyslot.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/unistd.h,v 1.10 91/11/24 12:21:21 kupfer Exp Locker: kupfer $
+d89 1
+@
+
+
+1.10
+log
+@Add prototype for access().
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/unistd.h,v 1.9 91/10/02 18:48:15 kupfer Exp Locker: kupfer $
+d72 1
+d86 1
+@
+
+
+1.9
+log
+@Add sleep().
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/unistd.h,v 1.8 91/10/02 18:41:06 kupfer Exp Locker: kupfer $
+d45 1
+@
+
+
+1.8
+log
+@Add getpid.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/unistd.h,v 1.7 91/06/04 17:01:46 kupfer Exp Locker: kupfer $
+d70 1
+@
+
+
+1.7
+log
+@Add getgroups.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/unistd.h,v 1.6 91/06/03 22:14:08 kupfer Exp Locker: kupfer $
+d62 1
+@
+
+
+1.6
+log
+@Add setuid and friends.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/unistd.h,v 1.5 91/06/03 17:23:44 kupfer Exp Locker: kupfer $
+d61 1
+@
+
+
+1.5
+log
+@Use _ARGS_ instead of having two separate lists based on __STDC__.
+Break the list into two parts: strict Posix declarations and
+extensions.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/unistd.h,v 1.4 90/09/11 14:40:17 kupfer Exp Locker: kupfer $
+d58 3
+d66 2
+d77 2
+@
+
+
+1.4
+log
+@Use function prototypes.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/unistd.h,v 1.3 90/06/11 10:08:48 rab Exp Locker: kupfer $
+d21 9
+d39 40
+a78 45
+#ifdef __STDC__
+extern int read(int fd, char *buf, size_t size);
+extern int write(int fd, const char *buf, size_t size);
+extern int close(int fd);
+extern long lseek(int fd, long offset, int whence);
+extern int flock(int fd, int operation);
+extern int truncate(const char *path, unsigned long length);
+extern int ftrucate(int fd, unsigned long length);
+extern int umask(int cmask);
+extern int unlink(const char *path);
+extern int pipe(int *fildes);
+extern int dup(int oldfd);
+extern int dup2(int oldfd, int newfd);
+extern char *getcwd(char *buf, int size);
+extern int fork(void);
+extern int chdir(const char *path);
+extern int execl(const char *path, ...);
+extern int execle(const char *path, ...);
+extern int execlp(const char *file, ...);
+extern int execv(const char *path, char **argv);
+extern int execve(const char *path, char **argv, char **envp);
+extern int execvp(const char *file, char **argv);
+extern int isatty(int fd);
+#else
+extern int read();
+extern int write();
+extern int close();
+extern long lseek();
+extern int flock();
+extern int truncate();
+extern int ftrucate();
+extern int umask();
+extern int unlink();
+extern int pipe();
+extern int dup();
+extern int dup2();
+extern char *getcwd();
+extern int execl();
+extern int execle();
+extern int execlp();
+extern int execv();
+extern int execve();
+extern int execvp();
+extern int isatty();
+#endif
+@
+
+
+1.3
+log
+@Fixed declaration of exec*().
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/unistd.h,v 1.2 90/01/06 13:44:20 rab Exp Locker: rab $
+d52 1
+d73 1
+@
+
+
+1.2
+log
+@Put ifdefs around define of NULL.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/unistd.h,v 1.1 89/08/08 13:13:23 rab Exp Locker: rab $
+d49 3
+a51 3
+extern int execv(const char *path, const char **argv);
+extern int execve(const char *path, const char **argv, const char **envp);
+extern int execvp(const char *file, const char **argv);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+ * $Header$
+d21 1
+d23 1
+@

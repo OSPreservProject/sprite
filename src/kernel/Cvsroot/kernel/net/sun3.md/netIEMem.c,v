@@ -1,0 +1,392 @@
+head     9.2;
+branch   ;
+access   ;
+symbols  ds3100:9.2 sun3:9.2 sun4nw:9.2 symm:9.2 spur:9.2 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.2
+date     90.10.19.15.47.23;  author jhh;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.11.16.15.16.58;  author rab;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.13.16;  author douglis;  state Stable;
+branches ;
+next     8.6;
+
+8.6
+date     89.06.08.09.10.21;  author mendel;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.05.24.07.58.16;  author rab;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.02.24.16.37.18;  author mgbaker;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.01.31.14.01.56;  author mendel;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.12.12.14.51.50;  author nelson;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.30.11.50.40;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.27.21;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.20.31;  author brent;  state Stable;
+branches ;
+next     5.2;
+
+5.2
+date     88.06.27.10.46.02;  author mendel;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     88.05.05.17.58.35;  author brent;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.46.18;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.2
+log
+@Rewrite to support multiple interfaces and the Ultranet
+@
+text
+@/* netIEMem.c -
+ *
+ * Routines to manage the control block memory for the ethernet board.  All
+ * of the memory lies in one big block.  This block is divided up into equal
+ * sized chunks and each chunk is allocated sequentially.
+ *
+ * Copyright 1985, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/net.jhh/sun3.md/RCS/netIEMem.c,v 9.3 90/09/20 21:13:41 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+#endif
+
+#include <sprite.h>
+#include <sys.h>
+#include <list.h>
+#include <netIEInt.h>
+#include <vm.h>
+#include <vmMach.h>
+#include <stdio.h>
+
+static	Address	memAddr;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetIEMemInit --
+ *
+ *	Initialize the control block memory structures.  This involves
+ *      allocating the memory and initializing the pointer to the
+ *	beginning of free memory.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Pointer to beginning of free memory list is initialized.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NetIEMemInit(statePtr)
+    NetIEState		*statePtr;
+{
+    if (!statePtr->running) {
+	statePtr->memBase = (int) VmMach_NetMemAlloc(NET_IE_MEM_SIZE);
+	printf("Initializing Intel memory at 0x%x.\n",statePtr->memBase);
+    }
+    memAddr = (Address) statePtr->memBase;
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetIEMemAlloc --
+ *
+ *	Return a pointer to the next free chunk of memory.  Return NIL if none
+ *      left.
+ *
+ *
+ * Results:
+ *	Pointer to next free chunk of memory, NIL if none left.
+ *
+ * Side effects:
+ *	Pointer to beginning of free memory is incremented.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Address
+NetIEMemAlloc(statePtr)
+    NetIEState		*statePtr;
+{
+    Address	addr;
+
+    addr = memAddr;
+    memAddr += NET_IE_CHUNK_SIZE;
+    if (memAddr > (Address) (statePtr->memBase) + NET_IE_MEM_SIZE) {
+	return((Address) NIL);
+    }
+
+    return(addr);
+}
+@
+
+
+9.1
+log
+@Checked volatiles.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIEMem.c,v 9.0 89/09/12 15:13:16 douglis Stable Locker: rab $ SPRITE (Berkeley)";
+d22 7
+a28 8
+#include "sprite.h"
+#include "netIEInt.h"
+#include "net.h"
+#include "netInt.h"
+#include "sys.h"
+#include "list.h"
+#include "vm.h"
+#include "vmMach.h"
+d52 2
+a53 1
+NetIEMemInit()
+d55 3
+a57 3
+    if (!netIEState.running) {
+	netIEState.memBase = (int) VmMach_NetMemAlloc(NET_IE_MEM_SIZE);
+	printf("Initializing Intel memory at 0x%x.\n",netIEState.memBase);
+d59 1
+a59 1
+    memAddr = (Address) netIEState.memBase;
+d83 2
+a84 1
+NetIEMemAlloc()
+d90 1
+a90 1
+    if (memAddr > (Address) (netIEState.memBase) + NET_IE_MEM_SIZE) {
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d19 2
+a20 2
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIEMem.c,v 8.6 89/06/08 09:10:21 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+#endif not lint
+a55 7
+#ifdef sun2
+	netIEState.memBase = (int) Vm_RawAlloc(NET_IE_MEM_SIZE);
+#endif
+#ifdef sun4
+	netIEState.memBase = (int) VmMach_NetMemAlloc(NET_IE_MEM_SIZE);
+#endif
+#ifdef sun3
+a56 1
+#endif
+d60 1
+@
+
+
+8.6
+log
+@Modification to allow the sun4 to use the same VM mapping calls as the
+sun3.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIEMem.c,v 8.5 89/05/24 07:58:16 rab Exp Locker: mendel $ SPRITE (Berkeley)";
+@
+
+
+8.5
+log
+@Changes to allow optimization.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIEMem.c,v 8.4 89/02/24 16:37:18 mgbaker Exp Locker: rab $ SPRITE (Berkeley)";
+d60 1
+a60 1
+	netIEState.memBase = (int) Vm_RawAlloc(NET_IE_MEM_SIZE);
+d65 1
+a65 1
+	printf("Initializing Intel memory.\n");
+@
+
+
+8.4
+log
+@Thirteenth Kernel.  sun4 finishes vm init.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIEMem.c,v 8.3 89/01/31 14:01:56 mendel Exp Locker: mgbaker $ SPRITE (Berkeley)";
+@
+
+
+8.3
+log
+@Modifications for the sun4.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIEMem.c,v 8.2 88/12/12 14:51:50 nelson Exp $ SPRITE (Berkeley)";
+d96 1
+a96 1
+    if ((int) memAddr > netIEState.memBase + NET_IE_MEM_SIZE) {
+@
+
+
+8.2
+log
+@Changed to allocate memory and remap packets into high memory on a sun3.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIEMem.c,v 8.1 88/11/30 11:50:40 brent Exp $ SPRITE (Berkeley)";
+d57 3
+@
+
+
+8.1
+log
+@Sys_Printf => printf   Sys_Panic => panic
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIEMem.c,v 8.0 88/11/11 18:27:21 douglis Stable Locker: brent $ SPRITE (Berkeley)";
+d29 1
+d56 1
+d58 4
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIEMem.c,v 6.0 88/08/11 12:20:31 brent Stable Locker: douglis $ SPRITE (Berkeley)";
+d56 1
+a56 1
+	Sys_Printf("Initializing Intel memory.\n");
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: netIEMem.c,v 5.2 88/06/27 10:46:02 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+5.2
+log
+@Updated copyright notice and cleaned up comment typos.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: netIEMem.c,v 5.1 88/05/05 17:58:35 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+5.1
+log
+@Conversion to use Mach module
+@
+text
+@d7 9
+a15 2
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+d19 1
+a19 1
+static char rcsid[] = "$Header: netIEMem.c,v 5.0 87/08/11 10:46:18 sprite Exp $ SPRITE (Berkeley)";
+d23 1
+a23 1
+#include "netIE.h"
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: netIEMem.c,v 1.4 86/02/26 17:28:20 nelson Exp $ SPRITE (Berkeley)";
+a15 1
+#include "machine.h"
+@

@@ -1,0 +1,134 @@
+
+
+
+LFSCHKPT                  User Commands                  LFSCHKPT
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     lfschkpt - Display or modify the checkpoint fields of an LFS
+     file system.
+
+SSYYNNOOPPSSIISS
+     llffsscchhkkpptt [[_o_p_t_i_o_n_s] _d_e_v_i_c_e_N_a_m_e
+
+OOPPTTIIOONNSS
+     _d_e_v_i_c_e_N_a_m_e    The device on which the file system should  be
+                   created.   The  partition  should  contain  an
+                   unmounted LFS file system. WARNING: This  pro-
+                   gram should not be run on a running (attached)
+                   file system.
+
+     --mmaaxxNNuummCCaacchheeBBlloocckkss _N_u_m_C_a_c_h_e_B_l_o_c_k_s
+                   _N_u_m_C_a_c_h_e_B_l_o_c_k_s is the maximum number  of  file
+                   cache blocks to used during cleaning.
+
+     --cchheecckkppooiinnttIInntteerrvvaall _C_h_e_c_k_p_o_i_n_t_I_n_t_e_r_v_a_l
+                   _C_h_e_c_k_p_o_i_n_t_I_n_t_e_r_v_a_l is the frequency in seconds
+                   to perform checkpoints.
+
+     --ddoommaaiinnNNuummbbeerr _D_o_m_a_i_n_N_u_m_b_e_r
+                   _D_o_m_a_i_n_N_u_m_b_e_r  is  the  Sprite  domain   number
+                   assigned  to  this file system.  A value of -1
+                   will caused to system to assign  it  a  number
+                   upon the next attach.
+
+     --sseerrvveerrIIDD _i_d  _i_d is the Sprite hostname id specified in  the
+                   superblock.   This  id  is  used  to  inform a
+                   machine of its name at boot time.
+
+     --mmaaxxUUttiilliizzaattiioonn _U_t_i_l_i_z_a_t_i_o_n
+                   _U_t_i_l_i_z_a_t_i_o_n is the  maximum  fraction  of  the
+                   disk space usable by the file system.
+
+     --mmaaxxDDeesscc _N_u_m_D_e_s_c
+                   _N_u_m_D_e_s_c is the maximum number  of  descriptors
+                   available in the file system. A negative value
+                   causes mklfs to compute this number  based  on
+                   the disk size.
+
+     --sseeggAAlliiggnnmmeenntt _A_l_i_g_n_m_e_n_t
+                   _A_l_i_g_n_m_e_n_t is the alignment in bytes where  the
+                   first segment should start.
+
+     --mmiinnNNuummCClleeaann _n_u_m_S_e_g_m_e_n_t_s
+                   _n_u_m_S_e_g_m_e_n_t_s is minimum number  of  clean  seg-
+                   ments  to  maintain  in  the file system. This
+                   number acts as an lower bound as when to start
+
+
+
+Sprite v.1.0         Printed:  July 17, 1991                    1
+
+
+
+
+
+
+LFSCHKPT                  User Commands                  LFSCHKPT
+
+
+
+                   segment cleaning.
+
+     --mmiinnFFrreeeeBBlloocckkss _n_u_m_B_l_o_c_k_s
+                   _n_u_m_B_l_o_c_k_s is minimum  number  of  free  blocks
+                   before  the  system  will  stop allowing block
+                   allocate requests.  This  number  decides  the
+                   maximum disk space utilization.
+
+     --wwaasstteeBBlloocckkss _n_u_m_B_l_o_c_k_s
+                   _n_u_m_B_l_o_c_k_s is the number of blocks  the  system
+                   will waste while filling in a segment.
+
+     --nnuummSSeeggssTTooCClleeaann _n_u_m_S_e_g_m_e_n_t_s
+                   _n_u_m_S_e_g_m_e_n_t_s is number of segments the  segment
+                   cleaner  will generate This number acts as the
+                   threshold under which cleaning is stopped.
+
+     --bbootthh         Display both checkpoint regions.
+
+     --wwrriittee        Apply requested changes to the disk.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     LLffsscchhkkpptt displays the LFS superblock and  checkpoint  region
+     headers  and allows for the user to specify changes to these
+     data structures.  With  no  arguments  specified,  Blfschkpt
+     displays  the  data  structures.   The  --wwrriittee option allows
+     changes to be made to the disk and should only be  run  when
+     the  file  system  is not attached.  The rest of the options
+     specify field  names  in  the  LfsSuperBlock  and  LfsCheck-
+     PointHdr  data  structures  that  may  be changed.   A field
+     value of -2 (the default) means no change.
+
+WWAARRNNIINNGG
+     LLffsscchhkkpptt does no error checks on changes being made.  It  is
+     possible  to  render  the file system unattachable with this
+     command.
+
+KKEEYYWWOORRDDSS
+     filesystem, LFS, sprite
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  July 17, 1991                    2
+
+
+

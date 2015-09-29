@@ -1,0 +1,22 @@
+\entry {void using{\_}history}{4}{\code {void using{\_}history}}
+\entry {void add{\_}history}{4}{\code {void add{\_}history}}
+\entry {int where{\_}history}{4}{\code {int where{\_}history}}
+\entry {int history{\_}set{\_}pos}{4}{\code {int history{\_}set{\_}pos}}
+\entry {int history{\_}search{\_}pos}{4}{\code {int history{\_}search{\_}pos}}
+\entry {HIST{\_}ENTRY *remove{\_}history}{4}{\code {HIST{\_}ENTRY *remove{\_}history}}
+\entry {void stifle{\_}history}{4}{\code {void stifle{\_}history}}
+\entry {int unstifle{\_}history}{4}{\code {int unstifle{\_}history}}
+\entry {int read{\_}history}{4}{\code {int read{\_}history}}
+\entry {int read{\_}history{\_}range}{5}{\code {int read{\_}history{\_}range}}
+\entry {int write{\_}history}{5}{\code {int write{\_}history}}
+\entry {int append{\_}history}{5}{\code {int append{\_}history}}
+\entry {HIST{\_}ENTRY *replace{\_}history{\_}entry}{5}{\code {HIST{\_}ENTRY *replace{\_}history{\_}entry}}
+\entry {HIST{\_}ENTRY *current{\_}history}{5}{\code {HIST{\_}ENTRY *current{\_}history}}
+\entry {HIST{\_}ENTRY *previous{\_}history}{5}{\code {HIST{\_}ENTRY *previous{\_}history}}
+\entry {HIST{\_}ENTRY *next{\_}history}{5}{\code {HIST{\_}ENTRY *next{\_}history}}
+\entry {HIST{\_}ENTRY **history{\_}list}{5}{\code {HIST{\_}ENTRY **history{\_}list}}
+\entry {int history{\_}search}{6}{\code {int history{\_}search}}
+\entry {int history{\_}expand}{6}{\code {int history{\_}expand}}
+\entry {char *history{\_}arg{\_}extract}{6}{\code {char *history{\_}arg{\_}extract}}
+\entry {int history{\_}total{\_}bytes}{6}{\code {int history{\_}total{\_}bytes}}
+\entry {int}{6}{\code {int}}

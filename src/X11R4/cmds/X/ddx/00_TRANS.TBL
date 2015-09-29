@@ -1,0 +1,12 @@
+D CFB                               	cfb
+F CHANGES.;1                        	CHANGES
+D DEC                               	dec
+D MFB                               	mfb
+D MI                                	mi
+D PCF                               	pcf
+D SNF                               	snf
+D SPRITE_X                          	sprite.X11R3
+D SUN_OLD                           	sun.old
+D XCFBPMAX                          	Xcfbpmax
+D XMFBPMAX                          	Xmfbpmax
+D XSUN                              	Xsun

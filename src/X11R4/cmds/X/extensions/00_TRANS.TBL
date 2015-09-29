@@ -1,0 +1,10 @@
+D DS3100_M                          	ds3100.md
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+F SHAPE.C;1                         	shape.c
+F SHAPE.H;1                         	shape.h
+F SHAPESTR.H;1                      	shapestr.h
+F SHAPE_C.ORI;1                     	shape.c.orig
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md

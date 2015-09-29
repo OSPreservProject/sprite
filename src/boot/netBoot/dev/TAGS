@@ -1,0 +1,193 @@
+
+am8068.h,0
+
+am9513.h,50
+#define CLKS_BIT(48,1503
+#define	CLK_BIT(33,946
+
+amd_ether.h,0
+
+cg2reg.h,637
+#define	CGOP_NEEDS_MASK(140,4335
+#define	cg2_height(198,6589
+#define	cg2_linebytes(200,6683
+#define	cg2_pixaddr(180,5803
+#define	cg2_prskew(204,6852
+#define	cg2_roppixaddr(188,6138
+#define	cg2_ropwordaddr(192,6304
+#define	cg2_setfunction(149,4672
+#define	cg2_setlsource(147,4566
+#define	cg2_setpanoffset(165,5327
+#define	cg2_setpanorigin(168,5455
+#define	cg2_setpattern(151,4774
+#define	cg2_setrsource(145,4460
+#define	cg2_setshift(153,4880
+#define	cg2_setwidth(156,5006
+#define	cg2_setzoom(163,5247
+#define	cg2_setzoomstop(173,5665
+#define	cg2_touch(207,6898
+#define	cg2_width(196,6497
+#define	cg2_wordaddr(184,5957
+
+dkbad.h,0
+
+dkio.h,0
+
+dklabel.h,0
+
+if_ie.c,245
+ieca(321,9255
+ieclose(530,14271
+iedefaultconf(507,13590
+ieinit(143,4232
+ieopen(125,3925
+iepoll(411,11435
+ieprobe(116,3782
+iereset(164,4648
+ierustart(266,7748
+iesimple(329,9358
+iexmit(367,10252
+to_ieaddr(462,12788
+to_ieoff(488,13283
+
+if_iereg.h,0
+
+if_le.c,173
+install_buf_in_rmd(262,6520
+lanceclose(453,11795
+lanceinit(149,3501
+lanceopen(122,2968
+lancepoll(365,9328
+lanceprobe(106,2704
+lancereset(179,4169
+lancexmit(277,6853
+
+if_lereg.h,0
+
+if_mie.h,0
+
+if_obie.h,0
+
+promether.h,22
+#define BCLEAR(9,158
+
+sasun.h,0
+
+sc.c,141
+#define	SCSI_DMA_ADDR(34,781
+sc_error(51,1105
+sc_getbyte(256,5604
+sc_putbyte(232,4995
+sc_wait(203,4549
+scdoit(114,2586
+scopen(69,1546
+
+screg.h,26
+#define ISEMULEX(70,1801
+
+scsi.h,96
+#define LUN(206,6323
+#define TARGET(205,6281
+#define	TYPE(204,6253
+#define	cdbaddr(122,3607
+
+scutils.c,21
+init_scolor(44,1313
+
+sd.c,155
+#define	sc_error(51,957
+sd_pr_sense(424,8428
+sd_probe(125,2387
+sdclose(484,9778
+sdcmd(244,4674
+sdopen(139,2537
+sdspin(103,1913
+sdstrategy(227,4327
+
+si.c,272
+#define	SI_OB_DMA_ADDR(42,970
+#define	SI_VME_DMA_ADDR(39,859
+si_dma_cleanup(474,10664
+si_getbyte(593,13059
+si_ob_dma_setup(423,9423
+si_putbyte(542,11825
+si_reset(650,14351
+si_sbc_wait(518,11448
+si_wait(494,11045
+sidoit(210,4298
+siopen(129,2656
+siprobe(69,1477
+
+sireg.h,0
+
+st.c,162
+#define ISAEMULEX(65,1233
+#define	ROUNDUP(90,1797
+#define min(26,500
+st_probe(97,1990
+stclose(281,6012
+stcmd(329,6902
+stopen(112,2144
+ststrategy(311,6605
+
+streg.h,53
+#define IS_EMULEX(55,1233
+#define IS_SYSGEN(46,994
+
+tm.c,182
+#define ATTN(135,2556
+#define RESET(136,2618
+static c68t86(291,6405
+#define clrtpb(137,2682
+tmclose(88,1689
+tmcmd(139,2738
+tminit(213,4415
+tmopen(71,1412
+tmstrategy(96,1804
+
+tmreg.h,0
+
+xd.c,106
+#define CYL(38,882
+xdcmd(217,4763
+xdfwd(330,7866
+xdopen(86,1707
+xdspin(205,4451
+xdstrategy(158,3401
+
+xdcreg.h,22
+#define XDOFF(36,693
+
+xdreg.h,0
+
+xt.c,68
+xtclose(63,1265
+xtcmd(109,1997
+xtopen(43,848
+xtstrategy(71,1383
+
+xtreg.h,0
+
+xy.c,106
+#define CYL(38,888
+xycmd(218,4827
+xyfwd(305,7135
+xyopen(85,1712
+xyspin(207,4581
+xystrategy(160,3531
+
+xycreg.h,69
+#define XYNEWREL(36,864
+#define	XYOFF(32,707
+#define	XYREL(33,744
+
+xyreg.h,170
+#define	XY_CYL_HI(162,5014
+#define	XY_CYL_LO(161,4977
+#define	XY_GET_CYL(166,5199
+#define	XY_GET_SEC(165,5136
+#define	XY_SEC_HI(164,5094
+#define	XY_SEC_LO(163,5057
+
+zsreg.h,29
+#define	ZSTIMECONST(76,3088

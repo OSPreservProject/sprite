@@ -1,0 +1,10 @@
+
+
+          chown owner|{owner group} filelist
+               Set owner of each file in the list filelist to owner,
+               which can be a user name or numeric user id.  If the
+               first parameter is a list, then the owner is set to the
+               first element of the list and the group is set to the
+               second element.  Group can be a group name or numeric
+               group id.  If group is {}, then the file group will be
+               set to the login group of the specified user.

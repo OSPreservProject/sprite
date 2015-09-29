@@ -1,0 +1,1 @@
+../dist/bfd/trad-core.h

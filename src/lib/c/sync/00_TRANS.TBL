@@ -1,0 +1,12 @@
+D DS3100_M                          	ds3100.md
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md
+D SYMM_MD                           	symm.md
+F SYNC.MAN;1                        	Sync.man
+F SYNC_BRO.MAN;1                    	Sync_Broadcast.man
+F SYNC_SL0.C;1                      	Sync_SlowLock.c
+F SYNC_SL1.C;1                      	Sync_SlowWait.c
+F SYNC_WA0.MAN;1                    	Sync_Wait.man
+F SYNC_WA1.MAN;1                    	Sync_WaitTime.man

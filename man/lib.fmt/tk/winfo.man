@@ -1,0 +1,264 @@
+
+
+
+winfo                     User Commands                     winfo
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     winfo - Return window-related information
+
+SSYYNNOOPPSSIISS
+     wwiinnffoo _o_p_t_i_o_n ?_a_r_g _a_r_g ...?
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The wwiinnffoo command is used to retrieve information about win-
+     dows  managed  by  Tk.   It can take any of a number of dif-
+     ferent forms, depending on the _o_p_t_i_o_n argument.   The  legal
+     forms are:
+
+     wwiinnffoo aattoomm _n_a_m_e
+          Returns a decimal string giving the integer  identifier  |
+          for  the  atom  whose  name is _n_a_m_e.  If no atom exists  |
+          with the name _n_a_m_e then a new one is created.            |
+
+     wwiinnffoo aattoommnnaammee _i_d                                                  ||
+          Returns  the  textual  name  for the atom whose integer  |
+          identifier is _i_d.  This command is the inverse  of  the  |
+          wwiinnffoo aattoomm command.  Generates an error if no such atom  |
+          exists.
+
+     wwiinnffoo cchhiillddrreenn _w_i_n_d_o_w
+          Returns a list containing the path  names  of  all  the
+          children  of _w_i_n_d_o_w.  Top-level windows are returned as
+          children of their logical parents.
+
+     wwiinnffoo ccllaassss _w_i_n_d_o_w
+          Returns the class name for _w_i_n_d_o_w.
+
+     wwiinnffoo ccoonnttaaiinniinngg _r_o_o_t_X _r_o_o_t_Y
+          Returns the path name for  the  window  containing  the  |
+          point  given  by  _r_o_o_t_X and _r_o_o_t_Y.  _R_o_o_t_X and _r_o_o_t_Y are  |
+          specified in screen units (i.e.  any form acceptable to  |
+          TTkk__GGeettPPiixxeellss) in the coordinate system of the root win-  |
+          dow.  If no window in  this  application  contains  the  |
+          point  then  an empty string is returned.  In selecting  |
+          the containing window, children are given higher prior-  |
+          ity  than parents and among siblings the highest one in  |
+          the stacking order is chosen.                            |
+
+     wwiinnffoo ffppiixxeellss _w_i_n_d_o_w _n_u_m_b_e_r                                        ||
+          Returns  a  floating-point  value  giving the number of  |
+          pixels in _w_i_n_d_o_w corresponding to the distance given by  |
+          _n_u_m_b_e_r.   _N_u_m_b_e_r  may  be specified in any of the forms  |
+          acceptable  to  TTkk__GGeettSSccrreeeennMMMM,  such  as  ``2.0c''  or  |
+          ``1i''.   The  return  value may be fractional;  for an  |
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+winfo                     User Commands                     winfo
+
+
+
+          integer value, use wwiinnffoo ppiixxeellss.
+
+     wwiinnffoo ggeeoommeettrryy _w_i_n_d_o_w
+          Returns  the  geometry  for   _w_i_n_d_o_w,   in   the   form
+          _w_i_d_t_hxx_h_e_i_g_h_t++_x++_y.  All dimensions are in pixels.
+
+     wwiinnffoo hheeiigghhtt _w_i_n_d_o_w
+          Returns a decimal string giving _w_i_n_d_o_w's height in pix-
+          els.
+
+     wwiinnffoo iidd _w_i_n_d_o_w
+          Returns a hexadecimal string indicating the X  identif-
+          ier for _w_i_n_d_o_w.
+
+     wwiinnffoo iinntteerrppss
+          Returns a list whose members are the names of  all  Tcl
+          interpreters (e.g. all Tk-based applications) currently
+          registered for the display of the invoking application.
+
+     wwiinnffoo iissmmaappppeedd _w_i_n_d_o_w
+          Returns 11 if _w_i_n_d_o_w is currently mapped, 00 otherwise.
+
+     wwiinnffoo nnaammee _w_i_n_d_o_w
+          Returns _w_i_n_d_o_w's name (i.e. its name within its parent,
+          as  opposed  to its full path name).  The command wwiinnffoo  |
+          nnaammee .. will return the name of the application.
+
+     wwiinnffoo ppaarreenntt _w_i_n_d_o_w
+          Returns the path name of _w_i_n_d_o_w's parent, or  an  empty
+          string if _w_i_n_d_o_w is the main window of the application.
+
+     wwiinnffoo ppaatthhnnaammee _i_d
+          Returns the path name of the window whose X  identifier
+          is  _i_d.   _I_d  must  be a decimal, hexadecimal, or octal
+          integer and must correspond to a window in the invoking
+          application.
+
+     wwiinnffoo ppiixxeellss _w_i_n_d_o_w _n_u_m_b_e_r
+          Returns the number of pixels in _w_i_n_d_o_w corresponding to  |
+          the  distance given by _n_u_m_b_e_r.  _N_u_m_b_e_r may be specified  |
+          in any of the forms acceptable to TTkk__GGeettPPiixxeellss, such as  |
+          ``2.0c''  or  ``1i''.   The  result  is  rounded to the  |
+          nearest integer value;  for a  fractional  result,  use  |
+          wwiinnffoo ffppiixxeellss.
+
+     wwiinnffoo rreeqqhheeiigghhtt _w_i_n_d_o_w
+          Returns a  decimal  string  giving  _w_i_n_d_o_w's  requested
+          height,  in pixels.  This is the value used by _w_i_n_d_o_w's
+          geometry manager to compute its geometry.
+
+     wwiinnffoo rreeqqwwiiddtthh _w_i_n_d_o_w
+          Returns a  decimal  string  giving  _w_i_n_d_o_w's  requested
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+winfo                     User Commands                     winfo
+
+
+
+          width,  in  pixels.  This is the value used by _w_i_n_d_o_w's
+          geometry manager to compute its geometry.
+
+     wwiinnffoo rroooottxx _w_i_n_d_o_w
+          Returns a decimal string giving  the  x-coordinate,  in
+          the root window of the screen, of the upper-left corner
+          of _w_i_n_d_o_w's border (or _w_i_n_d_o_w if it has no border).
+
+     wwiinnffoo rroooottyy _w_i_n_d_o_w
+          Returns a decimal string giving  the  y-coordinate,  in
+          the root window of the screen, of the upper-left corner
+          of _w_i_n_d_o_w's border (or _w_i_n_d_o_w if it has no border).
+
+     wwiinnffoo ssccrreeeenn _w_i_n_d_o_w
+          Returns the name of the screen associated with  _w_i_n_d_o_w,
+          in the form _d_i_s_p_l_a_y_N_a_m_e._s_c_r_e_e_n_I_n_d_e_x.
+
+     wwiinnffoo ssccrreeeenncceellllss _w_i_n_d_o_w
+          Returns a decimal string giving the number of cells  in  |
+          the default color map for _w_i_n_d_o_w's screen.               |
+
+     wwiinnffoo ssccrreeeennddeepptthh _w_i_n_d_o_w                                           ||
+          Returns  a  decimal string giving the depth of the root  |
+          window of _w_i_n_d_o_w's screen.                               |
+
+     wwiinnffoo ssccrreeeennhheeiigghhtt _w_i_n_d_o_w                                          ||
+          Returns  a decimal string giving the height of _w_i_n_d_o_w's  |
+          screen, in pixels.                                       |
+
+     wwiinnffoo ssccrreeeennmmmmhheeiigghhtt _w_i_n_d_o_w                                        ||
+          Returns  a decimal string giving the height of _w_i_n_d_o_w's  |
+          screen, in millimeters.                                  |
+
+     wwiinnffoo ssccrreeeennmmmmwwiiddtthh _w_i_n_d_o_w                                         ||
+          Returns  a  decimal string giving the width of _w_i_n_d_o_w's  |
+          screen, in millimeters.                                  |
+
+     wwiinnffoo ssccrreeeennvviissuuaall _w_i_n_d_o_w                                          ||
+          Returns  one  of  the following strings to indicate the  |
+          default visual type for _w_i_n_d_o_w's  screen:  ddiirreeccttccoolloorr,  |
+          ggrraayyssccaallee,  ppsseeuuddooccoolloorr,  ssttaattiiccccoolloorr,  ssttaattiiccggrraayy,  or  |
+          ttrruueeccoolloorr.                                               |
+
+     wwiinnffoo ssccrreeeennwwiiddtthh _w_i_n_d_o_w                                           ||
+          Returns  a  decimal string giving the width of _w_i_n_d_o_w's  |
+          screen, in pixels.                                       |
+
+     wwiinnffoo ttoopplleevveell _w_i_n_d_o_w                                              ||
+          Returns  the path name of the top-level window contain-  |
+          ing _w_i_n_d_o_w.
+
+     wwiinnffoo wwiiddtthh _w_i_n_d_o_w
+
+
+
+Sprite v1.0                                                     3
+
+
+
+
+
+
+winfo                     User Commands                     winfo
+
+
+
+          Returns a decimal string giving _w_i_n_d_o_w's width in  pix-
+          els.
+
+     wwiinnffoo xx _w_i_n_d_o_w
+          Returns a decimal string giving  the  x-coordinate,  in
+          _w_i_n_d_o_w's  parent,  of the upper-left corner of _w_i_n_d_o_w's
+          border (or _w_i_n_d_o_w if it has no border).
+
+     wwiinnffoo yy _w_i_n_d_o_w
+          Returns a decimal string giving  the  y-coordinate,  in
+          _w_i_n_d_o_w's  parent,  of the upper-left corner of _w_i_n_d_o_w's
+          border (or _w_i_n_d_o_w if it has no border).
+
+
+KKEEYYWWOORRDDSS
+     atom, children, class, geometry, height, identifier,  infor-
+     mation,  interpreters,  mapped,  parent,  path name, screen,
+     width, window
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     4
+
+
+

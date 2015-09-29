@@ -1,0 +1,245 @@
+head     9.5;
+branch   ;
+access   ;
+symbols  ds3100:9.5 sun3:9.5 sun4nw:9.5 symm:9.5 spur:9.5 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.5
+date     91.07.26.17.11.55;  author shirriff;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.02.20.15.35.42;  author shirriff;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.02.14.22.31.38;  author shirriff;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.02.11.21.19.34;  author shirriff;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.02.07.14.26.09;  author shirriff;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.16.22;  author douglis;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.14.13.10.54;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Initial code from DECWRL.
+@
+
+
+9.5
+log
+@Large install for unix compatibility
+@
+text
+@/* procMach.c --
+ *
+ *	Routine to interpret file header.
+ *
+ * Copyright (C) 1989 Digital Equipment Corporation.
+ * Permission to use, copy, modify, and distribute this software and
+ * its documentation for any purpose and without fee is hereby granted,
+ * provided that the above copyright notice appears in all copies.  
+ * Digital Equipment Corporation makes no representations about the
+ * suitability of this software for any purpose.  It is provided "as is"
+ * without express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/ds3100.md/RCS/procMach.c,v 9.4 90/02/20 15:35:42 shirriff Exp $ SPRITE (DECWRL)";
+#endif /* not lint */
+
+#include "sprite.h"
+#include "procMach.h"
+#include "proc.h"
+#include "procInt.h"
+#include "status.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcGetObjInfo --
+ *
+ *	Translate the object file information into the machine independent
+ *	form.
+ *
+ * Results:
+ *	SUCCESS if could translate.
+ *	PROC_BAD_AOUT_FORMAT if could not.
+ *
+ * Side effects:
+ *	*objInfoPtr is filled in.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+ProcGetObjInfo(filePtr, execPtr, objInfoPtr)
+    Fs_Stream		*filePtr;
+    ProcExecHeader	*execPtr;
+    ProcObjInfo		*objInfoPtr;
+{
+    if (execPtr->fileHeader.magic != PROC_OBJ_MAGIC) {
+	return(PROC_BAD_AOUT_FORMAT);
+    }
+    switch (execPtr->aoutHeader.magic) {
+	case PROC_ZMAGIC:
+	    objInfoPtr->codeLoadAddr = execPtr->aoutHeader.codeStart;
+	    objInfoPtr->codeFileOffset = 0;
+	    objInfoPtr->codeSize = execPtr->aoutHeader.codeSize;
+	    objInfoPtr->heapLoadAddr = execPtr->aoutHeader.heapStart;
+	    objInfoPtr->heapFileOffset = execPtr->aoutHeader.codeSize;
+	    objInfoPtr->heapSize = execPtr->aoutHeader.heapSize;
+	    objInfoPtr->bssLoadAddr = execPtr->aoutHeader.bssStart;
+	    objInfoPtr->bssSize = execPtr->aoutHeader.bssSize;
+	    objInfoPtr->entry = execPtr->aoutHeader.entry;
+	    objInfoPtr->unixCompat = 0;
+	    break;
+	case PROC_OMAGIC:
+	    if (execPtr->aoutHeader.codeStart+execPtr->aoutHeader.codeSize !=
+		    execPtr->aoutHeader.heapStart) {
+		printf("OMAGIC output file must have data segment %s\n",
+			"immediately following text segment.");
+		return(PROC_BAD_AOUT_FORMAT);
+	    }
+	    if (execPtr->aoutHeader.codeStart <= (Address)DEFAULT_TEXT) {
+		printf("OMAGIC text segment is going to collide with %s\n",
+			"header segment.");
+		return(PROC_BAD_AOUT_FORMAT);
+	    }
+	    objInfoPtr->codeLoadAddr = (Address)DEFAULT_TEXT;
+	    objInfoPtr->codeFileOffset = 0;
+	    objInfoPtr->codeSize = 0;
+	    objInfoPtr->heapLoadAddr = execPtr->aoutHeader.codeStart;
+	    objInfoPtr->heapFileOffset = PROC_CODE_FILE_OFFSET(*execPtr);
+	    objInfoPtr->heapSize = execPtr->aoutHeader.codeSize +
+		execPtr->aoutHeader.heapSize;
+	    objInfoPtr->bssLoadAddr = execPtr->aoutHeader.bssStart;
+	    objInfoPtr->bssSize = execPtr->aoutHeader.bssSize;
+	    objInfoPtr->entry = execPtr->aoutHeader.entry;
+	    objInfoPtr->unixCompat = 0;
+	    break;
+	default:
+	    return(PROC_BAD_AOUT_FORMAT);
+    }
+    return(SUCCESS);
+}
+@
+
+
+9.4
+log
+@Added PROC_CODE_FILE_OFFSET function.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/ds3100.md/RCS/procMach.c,v 9.3 90/02/14 22:31:38 shirriff Exp Locker: shirriff $ SPRITE (DECWRL)";
+d43 2
+a44 1
+ProcGetObjInfo(execPtr, objInfoPtr)
+d62 1
+d86 1
+@
+
+
+9.3
+log
+@Changed file offset to use TextOffset function.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/ds3100.md/RCS/procMach.c,v 9.2 90/02/11 21:19:34 shirriff Exp Locker: shirriff $ SPRITE (DECWRL)";
+d78 1
+a78 1
+	    objInfoPtr->heapFileOffset = TextOffset(execPtr);
+@
+
+
+9.2
+log
+@Made change to default OMAGIC code size.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/ds3100.md/RCS/procMach.c,v 9.1 90/02/07 14:26:09 shirriff Exp $ SPRITE (DECWRL)";
+d78 1
+a78 3
+	    objInfoPtr->heapFileOffset = (sizeof(ProcExecHeader) +
+		execPtr->fileHeader.numSections * sizeof(ProcSectionHeader) +
+		15) & ~15;
+@
+
+
+9.1
+log
+@Changes to allow OMAGIC files.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/ds3100.md/RCS/procMach.c,v 9.0 89/09/12 15:16:22 douglis Stable Locker: shirriff $ SPRITE (DECWRL)";
+d76 1
+a76 1
+	    objInfoPtr->codeSize = 8192;
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/ds3100.md/RCS/procMach.c,v 1.1 89/07/14 13:10:54 nelson Exp Locker: douglis $ SPRITE (DECWRL)";
+d47 1
+a47 2
+    if (execPtr->fileHeader.magic != PROC_OBJ_MAGIC ||
+        execPtr->aoutHeader.magic != PROC_ZMAGIC) {
+d50 40
+a89 10
+    objInfoPtr->codeLoadAddr = execPtr->aoutHeader.codeStart;
+    objInfoPtr->codeFileOffset = 0;
+    objInfoPtr->codeSize = execPtr->aoutHeader.codeSize;
+    objInfoPtr->heapLoadAddr = execPtr->aoutHeader.heapStart;
+    objInfoPtr->heapFileOffset = execPtr->aoutHeader.codeSize;
+    objInfoPtr->heapSize = execPtr->aoutHeader.heapSize;
+    objInfoPtr->bssLoadAddr = execPtr->aoutHeader.bssStart;
+    objInfoPtr->bssSize = execPtr->aoutHeader.bssSize;
+    objInfoPtr->entry = execPtr->aoutHeader.entry;
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: procMach.c,v 1.2 89/06/29 10:11:29 mnelson Exp $ SPRITE (DECWRL)";
+@

@@ -1,0 +1,436 @@
+head     9.6;
+branch   ;
+access   ;
+symbols  ds3100:9.6 sun3:9.6 sprited:9.3.1 sun4nw:9.4 symm:9.4 spur:9.4 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.6
+date     92.10.28.18.09.20;  author mgbaker;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     92.10.26.14.02.07;  author mgbaker;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     91.09.24.12.42.40;  author mgbaker;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     91.03.30.17.11.45;  author mgbaker;  state Exp;
+branches 9.3.1.1;
+next     9.2;
+
+9.2
+date     90.10.08.15.55.09;  author mendel;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.11.29.14.48.09;  author brent;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.06.40;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     89.08.21.15.26.34;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.08.21.11.04.42;  author mendel;  state Exp;
+branches ;
+next     ;
+
+9.3.1.1
+date     91.11.15.15.59.48;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Fsio stream operation table.
+@
+
+
+9.6
+log
+@Fixed error in return type of function.
+@
+text
+@/* 
+ * fsIoOps.c --
+ *
+ *	Routine for initializing the operation switch table entries for 
+ *	local files, devices, and pipes.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fsio/fsioOps.c,v 9.5 92/10/26 14:02:07 mgbaker Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <fs.h>
+#include <fspdev.h>
+#include <fsconsist.h>
+#include <fsio.h>
+#include <fsNameOps.h>
+#include <fsioDevice.h>
+#include <fsioFile.h>
+#include <fsioPipe.h>
+#include <fsrmt.h>
+#include <fsdm.h>
+#include <fsioStreamInt.h>
+
+/*
+ * The OpenOps are called to do preliminary open-time processing.  They
+ * are called after pathname resolution has obtained a local file I/O handle
+ * that represents a name of some object.  The NameOpen routine maps
+ * the attributes kept with the local file into an objectID (Fs_FileID)
+ * and any other information needed to create an I/O stream to the object.
+ */
+static Fsio_OpenOps ioOpenOps[] = { 
+    /*
+     * FILE through SYMBOLIC_LINK are all the same.
+     */
+    { FS_FILE, Fsio_FileNameOpen },
+    { FS_DIRECTORY, Fsio_FileNameOpen },
+    { FS_SYMBOLIC_LINK, Fsio_FileNameOpen },
+    /*
+     * Remote devices are opened like ordinary devices, so the old
+     * remote-device type is unused.
+     */
+    { FS_DEVICE, Fsio_DeviceNameOpen },
+    /*
+     * Local pipes.
+     */
+    { FS_LOCAL_PIPE, Fsio_NoProc},
+    /*
+     * Named pipes.  Unimplemented, treat like a regular file.
+     */
+    { FS_NAMED_PIPE, Fsio_FileNameOpen },
+    /*
+     * Special file type for testing new kinds of files.
+     */
+    { FS_XTRA_FILE, Fsio_FileNameOpen},
+};
+static int numIoOpenOps = sizeof(ioOpenOps)/
+				 sizeof(ioOpenOps[0]);
+/*
+ * Streams for Local files, device, and pipes
+ */
+
+static Fsio_StreamTypeOps ioStreamOps[] = {
+    /*
+     * Top level stream.  This is created by Fs_Open and returned to clients.
+     * This in turn references a I/O handle of a different stream type.  The
+     * main reason this exists as a handle is so that it can be found
+     * during various cases of migration, although the reopen and scavenge
+     * entry points in this table are used.
+     */
+    { FSIO_STREAM, Fsio_NoProc, Fsio_NoProc, Fsio_NoProc,/* open, read, write */
+		Fsio_NoProc, Fsio_NoProc, Fsio_NoProc, /* pageRead, pageWrite */
+		Fsio_NoProc, Fsio_NoProc,	/* iocontrol, select */
+		Fsio_NoProc, Fsio_NoProc,	/* getIOAttr, setIOAttr */
+		Fsio_NoHandle,			/* clientVerify */
+		Fsio_NoProc, Fsio_NoProc,	/* release, migEnd */
+		Fsio_NoProc,			/* migrate */
+		Fsio_StreamReopen,
+		(Boolean (*)())NIL,		/* scavenge */
+		Fsio_StreamClientKill,
+		Fsio_NoProc},			/* close */
+    /*
+     * Local file stream.  The file is on a local disk and blocks are
+     * cached in the block cache.  The GetIOAttr(SetIOAttr) routine
+     * is Fsio_NullProc because all the work of getting(setting) cached attributes
+     * is already done by FslclGetAttr(FslclSetAttr).
+     */
+    { FSIO_LCL_FILE_STREAM, Fsio_FileIoOpen, Fsio_FileRead, Fsio_FileWrite,
+		Fsio_FileRead, Fsio_FileWrite, Fsio_FileBlockCopy,
+				/* Paging routines */
+		Fsio_FileIOControl, Fsio_FileSelect,
+		Fsio_NullProc, Fsio_NullProc,		/* Get/Set IO Attr */
+		Fsio_NoHandle, Fsio_FileMigClose, Fsio_FileMigOpen, Fsio_FileMigrate,
+		Fsio_FileReopen,
+		Fsio_FileScavenge, Fsio_FileClientKill, Fsio_FileClose},
+    /*
+     * Local device stream.  These routines branch to the device driver
+     * for the particular device type.
+     */
+    { FSIO_LCL_DEVICE_STREAM, Fsio_DeviceIoOpen, Fsio_DeviceRead, Fsio_DeviceWrite,
+		Fsio_NoProc, Fsio_NoProc, Fsio_NoProc,	/* Paging routines */
+		Fsio_DeviceIOControl, Fsio_DeviceSelect,
+		Fsio_DeviceGetIOAttr, Fsio_DeviceSetIOAttr,
+		Fsio_NoHandle,				/* clientVerify */
+		Fsio_DeviceMigClose, Fsio_DeviceMigOpen, Fsio_DeviceMigrate,
+		Fsio_DeviceReopen,
+		Fsio_DeviceScavenge, Fsio_DeviceClientKill, Fsio_DeviceClose},
+    /*
+     * Local anonymous pipe stream.  
+     */
+    { FSIO_LCL_PIPE_STREAM, Fsio_NoProc, Fsio_PipeRead, Fsio_PipeWrite,
+		Fsio_NoProc, Fsio_NoProc, Fsio_NoProc,	/* Paging routines */
+		Fsio_PipeIOControl, Fsio_PipeSelect,
+		Fsio_PipeGetIOAttr, Fsio_PipeSetIOAttr,
+		Fsio_NoHandle,				/* clientVerify */
+		Fsio_PipeMigClose, Fsio_PipeMigOpen, Fsio_PipeMigrate,
+		Fsio_PipeReopen,
+		Fsio_PipeScavenge, Fsio_PipeClientKill, Fsio_PipeClose},
+
+};
+
+static int numIoStreamOps = sizeof(ioStreamOps)/
+				 sizeof(ioStreamOps[0]);
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsio_InitializeOps --
+ *
+ *	Initialize the operation switch tables for the NameOpen
+ *	routines and the StreamOps for local objects.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Adds entries to the fsio_OpenOpTable and fsio_StreamOpTable.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Fsio_InitializeOps()
+{
+    int	i;
+    Fsutil_BulkReopenOps	reopenOps;
+
+    for (i = 0; i < numIoStreamOps; i++)  { 
+	Fsio_InstallStreamOps(ioStreamOps[i].type, &(ioStreamOps[i]));
+    }
+    for (i = 0; i < numIoOpenOps; i++)  { 
+	Fsio_InstallSrvOpenOp(ioOpenOps[i].type, &(ioOpenOps[i]));
+    }
+    reopenOps.setup = FsioSetupStreamReopen;
+    reopenOps.finish = FsioFinishStreamReopen;
+    Fsutil_InitBulkReopenOps(FSIO_STREAM, &reopenOps);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsio_Bin() --
+ *
+ *	Setup objects to be binned.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Fsio_Bin()
+{
+    Mem_Bin(sizeof(Fsio_FileIOHandle));
+    Mem_Bin(sizeof(Fsdm_FileDescriptor));
+}
+
+@
+
+
+9.5
+log
+@Support for bulk reopen rpcs.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fsio/fsioOps.c,v 9.4 91/09/24 12:42:40 mgbaker Exp $ SPRITE (Berkeley)";
+d32 1
+a133 9
+
+/*
+ * These next two externs should be in a stream header file, but there isn't
+ * one, except for fsio.h, but that would export these.
+ */
+extern ReturnStatus FsioSetupStreamReopen _ARGS_((Fs_HandleHeader *hdrPtr,
+	Address paramsPtr));
+extern void FsioFinishStreamReopen _ARGS_((Fs_HandleHeader *hdrPtr,
+	ReturnStatus status));
+@
+
+
+9.4
+log
+@Fixed the name of Fsio_DeviceReopen (which was called Fsrmt_DeviceReopen).
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsio/RCS/fsioOps.c,v 9.3 91/03/30 17:11:45 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d132 10
+d164 1
+d172 3
+a174 1
+
+@
+
+
+9.3
+log
+@New client stream kill routine.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsio/RCS/fsioOps.c,v 9.2 90/10/08 15:55:09 mendel Exp $ SPRITE (Berkeley)";
+d114 1
+a114 1
+		Fsrmt_DeviceReopen,
+@
+
+
+9.3.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fsio/fsioOps.c,v 9.3 91/03/30 17:11:45 mgbaker Exp $ SPRITE (Berkeley)";
+@
+
+
+9.2
+log
+@Changed name to fsioOps.c
+Fixed include files to use <> rather than "".
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs.mendel/RCS/fsIoOps.c,v 1.1 90/01/16 17:10:49 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d88 1
+a88 1
+		Fsio_NullClientKill,
+@
+
+
+9.1
+log
+@Added PageRead and PageWrite entries
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsio/RCS/fsIoOps.c,v 1.2 89/08/21 15:26:34 mendel Exp $ SPRITE (Berkeley)";
+d21 11
+a31 10
+#include "sprite.h"
+#include "fs.h"
+#include "fspdev.h"
+#include "fsio.h"
+#include "fsNameOps.h"
+#include "fsioDevice.h"
+#include "fsioFile.h"
+#include "fsioPipe.h"
+#include "fsrmt.h"
+#include "fsdm.h"
+d80 1
+a80 1
+		Fsio_NoProc, Fsio_NoProc,	/* pageRead, pageWrite */
+d97 2
+a98 1
+		Fsio_FileRead, Fsio_FileWrite,		/* Paging routines */
+d109 1
+a109 1
+		Fsio_NoProc, Fsio_NoProc,		/* Paging routines */
+d120 1
+a120 1
+		Fsio_NoProc, Fsio_NoProc,		/* Paging routines */
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d4 2
+a5 2
+ *	Routine for initializing the fsOpTable switch entries for 
+ *	local files, devices, and pipe.
+d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsio/RCS/fsIoOps.c,v 1.2 89/08/21 15:26:34 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d32 7
+d78 4
+a81 3
+    { FSIO_STREAM, Fsio_NoProc, Fsio_NoProc, Fsio_NoProc,	/* cltOpen, read, write */
+		Fsio_NoProc, Fsio_NoProc,			/* iocontrol, select */
+		Fsio_NoProc, Fsio_NoProc,			/* getIOAttr, setIOAttr */
+d83 5
+a87 4
+		Fsio_NoProc, Fsio_NoProc,			/* release, migEnd */
+		Fsio_NoProc,				/* migrate */
+		Fsio_StreamReopen,			/* reopen, blockAlloc */
+		(Boolean (*)())NIL, Fsio_NullClientKill,/* scavenge, kill */
+d96 1
+d107 1
+d112 1
+a112 1
+		Fsrmt_DeviceReopen,				/* reopen */
+d118 1
+d136 2
+a137 2
+ *	Initialize the fsOpTable switch for the remote domain naming 
+ *	and remote domain streams.
+d143 1
+a143 1
+ *	None.
+@
+
+
+1.2
+log
+@Break up fs into many modules.    
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsio/RCS/fsIoOps.c,v 1.1 89/08/21 11:04:42 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.2 89/01/07 04:12:18 rab Exp $ SPRITE (Berkeley)";
+@

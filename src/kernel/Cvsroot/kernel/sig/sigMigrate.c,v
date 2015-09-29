@@ -1,0 +1,1199 @@
+head     9.10;
+branch   ;
+access   ;
+symbols  ds3100:9.10 sun3:9.10 sun4nw:9.9 symm:9.9 spur:9.9 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.10
+date     92.01.06.15.17.15;  author kupfer;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     90.10.05.16.16.02;  author mendel;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     90.10.05.16.14.22;  author mendel;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.09.24.14.52.15;  author douglis;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.08.29.10.59.58;  author mendel;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.07.30.11.44.44;  author shirriff;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.07.09.18.33.27;  author douglis;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.06.27.12.44.58;  author douglis;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.03.16.14.21.04;  author douglis;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.26.15.08.26;  author douglis;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.19.37;  author douglis;  state Stable;
+branches ;
+next     8.10;
+
+8.10
+date     89.09.11.12.27.08;  author douglis;  state Exp;
+branches ;
+next     8.9;
+
+8.9
+date     89.09.08.11.30.00;  author douglis;  state Exp;
+branches ;
+next     8.8;
+
+8.8
+date     89.08.29.17.22.13;  author douglis;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.04.11.21.30.38;  author douglis;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.04.11.21.29.36;  author douglis;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.04.06.11.47.46;  author douglis;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.03.23.18.31.31;  author douglis;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.02.10.16.45.41;  author douglis;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.12.04.15.33.37;  author ouster;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.16.09.50.11;  author douglis;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.37.40;  author douglis;  state Stable;
+branches ;
+next     6.3;
+
+6.3
+date     88.11.11.14.41.41;  author douglis;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.10.21.21.47.08;  author jhh;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.10.07.14.54.47;  author mlgray;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.26.48;  author brent;  state Stable;
+branches ;
+next     5.5;
+
+5.5
+date     88.08.05.14.21.04;  author mlgray;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     88.08.05.14.14.04;  author douglis;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     88.08.02.15.28.35;  author douglis;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     88.08.02.11.11.38;  author douglis;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     88.05.04.17.22.33;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.49.56;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.10
+log
+@Use Sig_NumberToMask.
+@
+text
+@/* 
+ * sigMigrate.c --
+ *
+ *	Routines to handle signals for migrated procedures.
+ *
+ * Copyright (C) 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/sig/sigMigrate.c,v 9.9 90/10/05 16:16:02 mendel Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <sprite.h>
+#include <stdlib.h>
+#include <sig.h>
+#include <sync.h>
+#include <list.h>
+#include <proc.h>
+#include <procMigrate.h>
+#include <status.h>
+#include <sched.h>
+#include <sigInt.h>
+#include <rpc.h>
+#include <bstring.h>
+#include <stdio.h>
+
+/* 
+ * Information sent when sending a signal.  Needed when doing a callback.
+ */
+
+typedef struct {
+    Proc_PID 			processID;
+    int				sigNum;
+    int				code;
+} DeferInfo;
+
+static void DeferSignal _ARGS_((ClientData data, Proc_CallInfo *callInfoPtr));
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SigMigSend --
+ *
+ *	Send a signal to a migrated process.  The current host is found
+ *	in the process control block for the process.  
+ *
+ * Results:
+ *	SUCCESS or an error condition from the RPC or remote node.
+ *
+ * Side effects:
+ *	A remote procedure call is performed and the process is signalled
+ *	on its currently executing host.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+SigMigSend(procPtr, sigNum, code, addr)
+    register Proc_ControlBlock 	*procPtr; /* The migrated process */
+    int				  sigNum;
+    int				  code;
+    Address			  addr;
+{
+    ReturnStatus status;
+    Proc_PID processID;
+    Proc_PID remoteProcessID;
+    int remoteHostID;
+    Proc_ControlBlock 	*callerProcPtr; /* The calling process */
+    Boolean locked;
+
+    if (proc_MigDebugLevel > 4) {
+	printf("SigMigSend(%x, %d, %d) entered.\n", procPtr->processID,
+		   sigNum, code);
+    }
+
+again:
+    processID = procPtr->processID;
+    if (procPtr->genFlags & (PROC_MIG_PENDING | PROC_MIGRATING)) {
+	/*
+	 * If the current process is a user process, wait for the
+	 * process to finish migrating before signalling it. If
+	 * it's a kernel process, start a background process to
+	 * wait for migration and deliver the signal asynchronously.
+	 * When calling Proc_WaitForMigration, make sure the process isn't
+	 * locked.
+	 */
+	callerProcPtr = Proc_GetActualProc();
+	if (callerProcPtr->genFlags & PROC_KERNEL) {
+	    DeferInfo *infoPtr;
+
+	    infoPtr = (DeferInfo *) malloc(sizeof(*infoPtr));
+	    infoPtr->processID = procPtr->processID;
+	    infoPtr->sigNum = sigNum;
+	    infoPtr->code = code;
+	    Proc_CallFunc(DeferSignal, (ClientData) infoPtr, 0);
+	    return(SUCCESS);
+	}
+        Proc_Unlock(procPtr);
+	status = Proc_WaitForMigration(processID);
+	Proc_Lock(procPtr);
+	if ((procPtr->state != PROC_MIGRATED) ||
+	    (procPtr->processID != processID)) {
+	    /*
+	     * Process is not now migrated.  Return PROC_INVALID_PID,
+	     * which will make Sig_SendProc do a local send.
+	     */
+	    return(PROC_INVALID_PID);
+	}
+	if (status != SUCCESS) {
+	    return(status);
+	}
+    }
+    remoteProcessID = procPtr->peerProcessID;
+    remoteHostID = procPtr->peerHostID;
+    if (remoteHostID == (int) NIL) {
+	printf("Warning: SigMigSend: process %x has no peer.\n", processID);
+	return(PROC_INVALID_PID);
+    }
+	
+
+    /*
+     * It is necessary to unlock the process while sending the remote
+     * signal, since the signal could cause the remote node to come back
+     * and lock the process again.
+     */
+    Proc_Unlock(procPtr);
+    locked = FALSE;
+    status = SigSendRemoteSignal(remoteHostID, sigNum, code,
+			      remoteProcessID, FALSE, addr);
+
+    if (proc_MigDebugLevel > 4) {
+	printf("SigMigSend returning %x.\n", status);
+    }
+
+    if (status != SUCCESS) {
+	if (status == PROC_INVALID_PID) {
+	    Proc_ControlBlock *newProcPtr;
+	    newProcPtr = Proc_LockPID(processID);
+	    if (newProcPtr == (Proc_ControlBlock *) NIL) {
+		/*
+		 * This is what we're hoping for: the process doesn't
+		 * exist on either the remote host or the local host.
+		 */
+		goto done;
+	    }
+	    locked = TRUE;
+	    if (procPtr != newProcPtr) {
+		panic("SigMigSend: locked wrong process (continuable).\n");
+		goto done;
+	    }
+	    /*
+	     * Same process.
+	     */
+	    if (procPtr->state == PROC_MIGRATED &&
+		procPtr->peerHostID != remoteHostID) {
+		if (proc_MigDebugLevel > 1) {
+		    printf("SigMigSend: process %x changed hosts during signal; retrying.\n",
+			       processID);
+		}
+	    
+		goto again;
+	    }
+	    if (procPtr->state != PROC_MIGRATED) {
+		if (proc_MigDebugLevel > 1) {
+		    printf("SigMigSend: process %x no longer migrated.\n",
+			       processID);
+		}
+		goto done;
+	    }
+	}	    
+	    
+	    
+	if (proc_MigDebugLevel > 0) {
+	    printf("Warning: SigMigSend:Error trying to signal %d to process %x (%x on host %d):\n\t%s\n",
+		   sigNum, processID, remoteProcessID, remoteHostID,
+		   Stat_GetMsg(status));
+	}
+	if (sigNum == SIG_KILL || status == PROC_INVALID_PID) {
+	    if (proc_MigDebugLevel > 0) {
+		printf("SigMigSend: killing local copy of process %x.\n",
+			   processID);
+	    }
+	    Proc_CallFunc(Proc_DestroyMigratedProc,
+			  (ClientData) processID, 0);
+	}
+    }
+
+    /*
+     * Give back the procPtr in the same state we found it (locked).
+     * Note that it may no longer refer to the same process (if the process
+     * has been recycled while we had it unlocked) but the caller should
+     * just unlock it and return.
+     */
+    done:
+    if (!locked) {
+	Proc_Lock(procPtr);
+    }
+	
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DeferSignal --
+ *
+ *	Wait for a process to migrate, then send it a signal. This
+ *	is done using the callback queue so the sender of the signal,
+ *	if a kernel process, doesn't block.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The process doing the callback goes to sleep until the process
+ *	being signalled has migrated or been killed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void 
+DeferSignal(data, callInfoPtr)
+    ClientData data;
+    Proc_CallInfo *callInfoPtr;         /* Not used. */
+{
+    DeferInfo *infoPtr = (DeferInfo *) data;
+    ReturnStatus status;
+    Proc_ControlBlock *procPtr;
+
+    status = Proc_WaitForMigration(infoPtr->processID);
+    if (status != SUCCESS) {
+	goto failure;
+    }
+    procPtr = Proc_LockPID(infoPtr->processID);
+    if (procPtr == (Proc_ControlBlock *) NIL) {
+	goto failure;
+    }
+    (void) SigMigSend(procPtr, infoPtr->sigNum, infoPtr->code, (Address) 0);
+    Proc_Unlock(procPtr);
+    return;
+
+    failure:
+    if (proc_MigDebugLevel > 2) {
+	printf("DeferSignal: unable to send delayed signal to migrated process %x\n",
+	       infoPtr->processID);
+    }
+}
+    
+
+typedef struct {
+    int		sigHoldMask;
+    int		sigPendingMask;
+    int		sigActions[SIG_NUM_SIGNALS];
+    int		sigMasks[SIG_NUM_SIGNALS];
+    int		sigCodes[SIG_NUM_SIGNALS];
+    int		sigFlags;
+} EncapState;
+
+#define COPY_STATE(from, to, field) to->field = from->field
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_GetEncapSize --
+ *
+ *	Determine the size of the encapsulated signal state.
+ *
+ * Results:
+ *	SUCCESS is returned directly; the size of the encapsulated state
+ *	is returned in infoPtr->size.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+ReturnStatus
+Sig_GetEncapSize(procPtr, hostID, infoPtr)
+    Proc_ControlBlock *procPtr;			/* process being migrated */
+    int hostID;					/* host to which it migrates */
+    Proc_EncapInfo *infoPtr;			/* area w/ information about
+						 * encapsulated state */
+{
+    infoPtr->size = sizeof(EncapState);
+    return(SUCCESS);	
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_EncapState --
+ *
+ *	Encapsulate the signal state of a process from the Proc_ControlBlock
+ *	and return it in the buffer provided.
+ *
+ * Results:
+ *	SUCCESS.  The buffer is filled.
+ *
+ * Side effects:
+ *	None.
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+ReturnStatus
+Sig_EncapState(procPtr, hostID, infoPtr, bufPtr)
+    register Proc_ControlBlock 	*procPtr;  /* The process being migrated */
+    int hostID;				   /* host to which it migrates */
+    Proc_EncapInfo *infoPtr;		   /* area w/ information about
+					    * encapsulated state */
+    Address bufPtr;			   /* Pointer to allocated buffer */
+{
+    EncapState *encapPtr = (EncapState *) bufPtr;
+
+    COPY_STATE(procPtr, encapPtr, sigHoldMask);
+    COPY_STATE(procPtr, encapPtr, sigPendingMask);
+    COPY_STATE(procPtr, encapPtr, sigFlags);
+    bcopy((Address) procPtr->sigActions, (Address) encapPtr->sigActions,
+	  SIG_NUM_SIGNALS * sizeof(int));
+    bcopy((Address) procPtr->sigMasks, (Address) encapPtr->sigMasks,
+	  SIG_NUM_SIGNALS * sizeof(int));
+    bcopy((Address) procPtr->sigCodes, (Address) encapPtr->sigCodes,
+	  SIG_NUM_SIGNALS * sizeof(int));
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_DeencapState --
+ *
+ *	Get signal information from a Proc_ControlBlock from another host.
+ *	The information is contained in the parameter ``buffer''.
+ *
+ * Results:
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	None.
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+ReturnStatus
+Sig_DeencapState(procPtr, infoPtr, bufPtr)
+    register Proc_ControlBlock 	*procPtr; /* The process being migrated */
+    Proc_EncapInfo *infoPtr;		  /* information about the buffer */
+    Address bufPtr;			  /* buffer containing data */
+{
+    EncapState *encapPtr = (EncapState *) bufPtr;
+
+    if (infoPtr->size != sizeof(EncapState)) {
+	if (proc_MigDebugLevel > 0) {
+	    printf("Sig_DeencapState: warning: host %d tried to migrate onto this host with wrong structure size.  Ours is %d, theirs is %d.\n",
+		   procPtr->peerHostID, sizeof(EncapState),
+		   infoPtr->size);
+	}
+	return(PROC_MIGRATION_REFUSED);
+    }
+    COPY_STATE(encapPtr, procPtr, sigHoldMask);
+    COPY_STATE(encapPtr, procPtr, sigPendingMask);
+    procPtr->sigPendingMask &=
+	~(Sig_NumberToMask(SIG_MIGRATE_TRAP) |
+	  Sig_NumberToMask(SIG_MIGRATE_HOME));
+    COPY_STATE(encapPtr, procPtr, sigFlags);
+    bcopy((Address) encapPtr->sigActions, (Address) procPtr->sigActions,
+	  SIG_NUM_SIGNALS * sizeof(int));
+    bcopy((Address) encapPtr->sigMasks, (Address) procPtr->sigMasks,
+	  SIG_NUM_SIGNALS * sizeof(int));
+    bcopy((Address) encapPtr->sigCodes, (Address) procPtr->sigCodes,
+	  SIG_NUM_SIGNALS * sizeof(int));
+    return(SUCCESS);
+}
+@
+
+
+9.9
+log
+@Fixed include files to use <> rather than "".
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/sigMigrate.c,v 9.8 90/10/05 16:14:22 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d371 2
+a372 1
+	    ~((1 << SIG_MIGRATE_TRAP) | (1 << SIG_MIGRATE_HOME));
+@
+
+
+9.8
+log
+@Removed lint.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/sigMigrate.c,v 9.7 90/09/24 14:52:15 douglis Exp Locker: mendel $ SPRITE (Berkeley)";
+d15 11
+a25 11
+#include "sprite.h"
+#include "stdlib.h"
+#include "sig.h"
+#include "sync.h"
+#include "list.h"
+#include "proc.h"
+#include "procMigrate.h"
+#include "status.h"
+#include "sched.h"
+#include "sigInt.h"
+#include "rpc.h"
+@
+
+
+9.7
+log
+@try to avoid race condition
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/sigMigrate.c,v 9.6 90/08/29 10:59:58 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d27 1
+d39 1
+a39 1
+static void DeferSignal _ARGS_((ClientData data));
+d226 1
+a226 1
+DeferSignal(data)
+d228 1
+@
+
+
+9.6
+log
+@Added function prototypes.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/sigMigrate.c,v 9.5 90/07/30 11:44:44 shirriff Exp Locker: mendel $ SPRITE (Berkeley)";
+d103 2
+a104 4
+	if (status != SUCCESS) {
+	    return(status);
+	}
+	if (status == SUCCESS && procPtr->state != PROC_MIGRATED) {
+d106 1
+a106 1
+	     * Process was migrating back home.  Return PROC_INVALID_PID,
+d111 3
+d117 5
+@
+
+
+9.5
+log
+@Added address field to SigMigSend.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/sigMigrate.c,v 9.4 90/07/09 18:33:27 douglis Exp Locker: shirriff $ SPRITE (Berkeley)";
+d26 1
+d38 1
+a38 1
+static void DeferSignal();
+d234 1
+a234 1
+    (void) SigMigSend(procPtr, infoPtr->sigNum, infoPtr->code);
+@
+
+
+9.4
+log
+@handle the case where a process changes hosts while a signal is pending.
+e.g., don't kill the local copy just because the remote host denies knowing
+about the process -- only if we think the process still exists on that 
+host.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/sigMigrate.c,v 9.3 90/06/27 12:44:58 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d59 1
+a59 1
+SigMigSend(procPtr, sigNum, code)
+d63 1
+d124 1
+a124 1
+			      remoteProcessID, FALSE);
+@
+
+
+9.3
+log
+@don't complain about signalling a process that's exited on the remote
+host if it no longer exists locally either.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/sigMigrate.c,v 9.2 90/03/16 14:21:04 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d76 1
+d140 5
+d148 15
+a162 2
+	    if (procPtr != newProcPtr) {
+		panic("SigMigSend: locked wrong process.\n");
+a163 1
+	    locked = TRUE;
+@
+
+
+9.2
+log
+@kill the local copy if forwarding a signal returns PROC_INVALID_PID. 
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig.fd/RCS/sigMigrate.c,v 9.1 89/10/26 15:08:26 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d69 1
+d76 1
+a96 1
+	processID = procPtr->processID;
+d120 1
+d129 20
+d151 1
+a151 1
+		   sigNum, procPtr->processID, remoteProcessID, remoteHostID,
+d157 1
+a157 1
+			   procPtr->processID);
+d160 1
+a160 1
+			  (ClientData) procPtr->processID, 0);
+d166 3
+d170 4
+a173 1
+    Proc_Lock(procPtr);
+@
+
+
+9.1
+log
+@removed some lint.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/sigMigrate.c,v 9.0 89/09/12 15:19:37 douglis Stable Locker: douglis $ SPRITE (Berkeley)";
+d132 1
+a132 1
+	if (sigNum == SIG_KILL) {
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/sigMigrate.c,v 8.10 89/09/11 12:27:08 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d16 1
+@
+
+
+8.10
+log
+@fixed typos
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/sigMigrate.c,v 8.9 89/09/08 11:30:00 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+@
+
+
+8.9
+log
+@added check for bogus encap structure size
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/sigMigrate.c,v 8.8 89/08/29 17:22:13 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+a301 3
+
+    MigratedState *migPtr = (MigratedState *) buffer;
+    ReturnStatus status;
+@
+
+
+8.8
+log
+@if process isn't migrated after trying to send a signal, do it locally.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/sigMigrate.c,v 8.7 89/04/11 21:30:38 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d303 11
+@
+
+
+8.7
+log
+@changed check for warning message for debug level > 2,
+which means the default kernel won't bother printing anything.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/sigMigrate.c,v 8.6 89/04/11 21:29:36 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d100 7
+@
+
+
+8.6
+log
+@fixed bug checking for NULL instead of NIL.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/sigMigrate.c,v 8.5 89/04/06 11:47:46 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d183 1
+a183 1
+    if (proc_MigDebugLevel > 0) {
+@
+
+
+8.5
+log
+@changes for table-driven process migration encapsulation.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/sigMigrate.c,v 8.4 89/03/23 18:31:31 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d175 1
+a175 1
+    if (procPtr == NULL) {
+@
+
+
+8.4
+log
+@use processIDs rather than procPtrs when waiting for process to migrate,
+since it could somehow get blown away in the meantime and the procPtr
+might no longer be valid.  make sure the process is locked and unlocked
+at the right times when deferring the signal.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/sigMigrate.c,v 8.3 89/02/10 16:45:41 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d189 106
+d296 13
+@
+
+
+8.3
+log
+@if a user process signals something that's currently migrating, wait
+for it to finish migrating.  if a kernel process signals it, fork
+off a background process to wait so we don't block it (e.g., the page
+cleaner when it hits an I/O error).
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/sigMigrate.c,v 8.2 88/12/04 15:33:37 ouster Exp Locker: douglis $ SPRITE (Berkeley)";
+d31 1
+a31 1
+    Proc_ControlBlock 		*procPtr;
+d64 1
+d80 2
+d88 1
+a88 1
+	    infoPtr->procPtr = procPtr;
+d94 4
+a97 1
+	status = Proc_WaitForMigration(procPtr);
+d168 1
+d170 1
+a170 1
+    status = Proc_WaitForMigration(infoPtr->procPtr);
+d172 1
+a172 1
+	return;
+d174 13
+a186 1
+    (void) SigMigSend(infoPtr->procPtr, infoPtr->sigNum, infoPtr->code);
+d189 1
+@
+
+
+8.2
+log
+@Stop using obsolete header files.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/sigMigrate.c,v 8.1 88/11/16 09:50:11 douglis Exp Locker: ouster $ SPRITE (Berkeley)";
+d27 1
+a27 1
+ * Information sent when sending a signal
+a29 1
+#ifdef notdef
+d31 1
+a31 1
+    Proc_PID			remotePID;
+d34 1
+a34 3
+} SigMigInfo;
+    
+#endif 
+d36 2
+d66 1
+d73 23
+d135 35
+@
+
+
+8.1
+log
+@renamed SigSendRemoteSignal.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/sigMigrate.c,v 8.0 88/11/11 18:37:40 douglis Stable Locker: douglis $ SPRITE (Berkeley)";
+a21 1
+#include "byte.h"
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/sigMigrate.c,v 6.3 88/11/11 14:41:41 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d83 1
+a83 1
+    status = SendRemoteSignal(remoteHostID, sigNum, code,
+d92 1
+a92 1
+	    printf("Warning: SigMigSend:Error trying to signal %x to process %x (%x on host %x):\n\t%s\n",
+d96 1
+a96 1
+	if (status == RPC_TIMEOUT && sigNum == SIG_KILL) {
+@
+
+
+6.3
+log
+@print out the string associated with a failed remote signal, from Stat_GetMsg.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/sigMigrate.c,v 6.2 88/10/21 21:47:08 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+@
+
+
+6.2
+log
+@changed to use new C library
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sig/RCS/sigMigrate.c,v 6.1 88/10/07 14:54:47 mlgray Exp Locker: jhh $ SPRITE (Berkeley)";
+d92 3
+a94 1
+	    printf("Warning: SigMigSend:Error %x returned by Rpc_Call.\n", status);
+@
+
+
+6.1
+log
+@Fixed include file references, etc.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sigMigrate.c,v 6.0 88/08/11 12:26:48 brent Stable $ SPRITE (Berkeley)";
+d70 1
+a70 1
+	Sys_Printf("SigMigSend(%x, %d, %d) entered.\n", procPtr->processID,
+d87 1
+a87 1
+	Sys_Printf("SigMigSend returning %x.\n", status);
+d92 1
+a92 2
+	    Sys_Panic(SYS_WARNING,
+		      "SigMigSend:Error %x returned by Rpc_Call.\n", status);
+d96 1
+a96 1
+		Sys_Printf("SigMigSend: killing local copy of process %x.\n",
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sigMigrate.c,v 5.5 88/08/05 14:21:04 mlgray Exp $ SPRITE (Berkeley)";
+a22 1
+#include "sync.h"
+@
+
+
+5.5
+log
+@Lint fix.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sigMigrate.c,v 5.4 88/08/05 14:14:04 douglis Exp $ SPRITE (Berkeley)";
+@
+
+
+5.4
+log
+@Changed back to a callFunc to destroy a migrated proc. 
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sigMigrate.c,v 5.3 88/08/02 15:28:35 douglis Exp $ SPRITE (Berkeley)";
+a113 55
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_RpcMigSend --
+ *
+ *	Send a signal to a migrated process executing on this host.
+ *
+ * Results:
+ *	PROC_INVALID_PID  - the process is not a valid, migrated process from
+ *			    the specified host.
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	Signal pending mask and code modified.  The sched_Mutex master lock
+ *	is grabbed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+ReturnStatus
+Sig_RpcMigSend(dataPtr, remoteHostID)
+    ClientData dataPtr;
+    int remoteHostID;
+{
+#ifdef notdef
+    SigMigInfo *infoPtr;
+    Proc_ControlBlock *procPtr;
+    ReturnStatus status = SUCCESS;
+
+    infoPtr = (SigMigInfo *) dataPtr;
+
+    if (proc_MigDebugLevel > 4) {
+	Sys_Printf("Sig_RpcMigSend(%x, %d) entered.\n", infoPtr->remotePID,
+		   infoPtr->sigNum);
+    }
+
+    PROC_GET_MIG_PCB(infoPtr->remotePID, procPtr, remoteHostID);
+    if (procPtr == (Proc_ControlBlock *) NIL) {
+	if (proc_MigDebugLevel > 1) {
+	    Sys_Panic(SYS_WARNING, "Sig_RpcMigSend: Invalid pid: %x.\n",
+		      infoPtr->remotePID);
+	}
+	status = PROC_INVALID_PID;
+    } else {
+	Proc_Unlock(procPtr);
+	status = Sig_SendProc(procPtr, infoPtr->sigNum, infoPtr->code);
+    }
+    if (proc_MigDebugLevel > 4) {
+	Sys_Printf("Sig_RpcMigSend returning %x.\n", status);
+    }
+    return(status);
+#endif
+}
+@
+
+
+5.3
+log
+@use standard inter-host signalling mechanism for a migrated process,
+being sure to unlock it during the RPC and to kill the local copy
+if the remote signal fails.
+ifdef'ed out code for the rpc stub, but left the definition there
+since i can't yet modify the RPC module not to reference it.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sigMigrate.c,v 5.1 88/05/04 17:22:33 nelson Exp $ SPRITE (Berkeley)";
+d101 2
+a102 2
+	    Proc_DestroyMigratedProc(procPtr, PROC_TERM_SIGNALED, sigNum,
+				     code);
+@
+
+
+5.2
+log
+@changed call to destroy local copy to be a callback, to avoid
+deadlock. However, next change will be completely different anyway, with
+the callback at a different point.
+@
+text
+@d32 1
+d39 1
+a49 7
+ * RPC: Input parameters:
+ *		process ID
+ *		signal number
+ *		code
+ *	Return parameters:
+ *		ReturnStatus
+ *
+d67 2
+a68 2
+    Rpc_Storage storage;
+    SigMigInfo info;
+d74 4
+d79 3
+a81 1
+     * Set up for the RPC.
+d83 3
+a85 5
+    info.remotePID = procPtr->peerProcessID;
+    info.sigNum = sigNum;
+    info.code = code;
+    storage.requestParamPtr = (Address) &info;
+    storage.requestParamSize = sizeof(SigMigInfo);
+a86 10
+    storage.requestDataPtr = (Address) NIL;
+    storage.requestDataSize = 0;
+
+    storage.replyParamPtr = (Address) NIL;
+    storage.replyParamSize = 0;
+    storage.replyDataPtr = (Address) NIL;
+    storage.replyDataSize = 0;
+
+    status = Rpc_Call(procPtr->peerHostID, RPC_SIG_MIG_SEND, &storage);
+
+d92 4
+a95 2
+	Sys_Panic(SYS_WARNING,
+		  "SigMigSend:Error %x returned by Rpc_Call.\n", status);
+d101 2
+a102 2
+	    Proc_CallFunc(Proc_DestroyMigratedProc,
+			  (ClientData) procPtr->processID, 0);
+d104 1
+d106 5
+a110 1
+    }
+d134 1
+d140 1
+d167 1
+@
+
+
+5.1
+log
+@Rearranged signal stack so that it matches the new mach module stuff.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sigMigrate.c,v 5.0 87/08/11 10:49:56 sprite Exp $ SPRITE (Berkeley)";
+d105 7
+a111 5
+	if (status == RPC_TIMEOUT) {
+	    Sys_Printf("Killing local copy of process %x.\n",
+		       procPtr->processID);
+	    Proc_DestroyMigratedProc(PROC_TERM_DESTROYED, 
+				     status, 0);
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sigMigrate.c,v 3.4 86/11/19 11:03:49 douglis Exp $ SPRITE (Berkeley)";
+a17 1
+#include "exc.h"
+a22 1
+#include "machine.h"
+@

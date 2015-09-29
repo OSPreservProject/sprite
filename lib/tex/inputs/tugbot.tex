@@ -1,0 +1,145 @@
+%		*****	  TUGBOT.TeX	*****			18 Aug 85
+%
+%	TUGboat is put together from individual files comprising individual
+%	articles, by a "top-level" file which \input's the article files
+%	in the appropriate order.  This is a model "top-level" file.
+
+\input tugbot.sty
+% \input amstex
+% \documentstyle{tugbot}
+%	TUGboat does not require AMS-TeX, but may call for it as an alternate
+%	to reading in tugbot.sty directly; the results should be equivalent.
+
+%\input plain.more	% This file contains updates, if any, to PLAIN
+%			% since it was last preloaded.
+
+\Lasertrue		% assume output will be on laser printer
+
+%	Publication information
+\vol 0, 0.		% volume, issue.
+\issueseqno=0		% sequential issue number
+\issdate Thermidor, 2001.
+
+%	The TUGboat editor names article files thus:	tbNxxx
+%	where tb indicates TUGboat; N = sequential issue number;
+%	xxx is the specific file identifier.  Then
+%		\input tb99editor  or  \Input editor
+%	(\Input xxx  expands to \input tbNxxx as defined in TUGBOT.STY.)
+%	Articles are arranged in sections; within sections, separate
+%	articles by \secsep in preference to, e.g., \eject or \vskip<dimen>.
+%
+%	If a page must be ended explicitly, use of \newpage will ensure
+%	adherence to 2-column format.
+%
+%	To reset page number:	\pageno=<integer>
+
+
+%	Here insert macros specific to this issue.
+
+% \def \_{\hbox{\hskip .1pt
+% 		\vrule height .2pt depth .2pt width .3333em \hskip .1pt}}
+%		\_ used in Pascal data names
+
+%	This replaces the ad hoc definition of \logo in TUGBOT.STY.
+%\font\logo=manfnt % font used for the METAFONT logo
+%	Note:  This font is not in general distribution, as protection
+%	against unauthorized generation of the TeXbook, to maintain copyright.
+
+\def \TB{{\sl The \TeX book}}
+
+%		end issue-specific macros
+
+
+%	In production, write out page numbers for xrefs and contents.
+%	Use two files to prevent loss of authoritative copy for final run.
+%\Input pages			% page number file from prior run
+%\xdef \ppoutfile{tb\number\issueseqno pp.tex}
+%\openout1=\ppoutfile		% file to write out page numbers
+
+%	In 2-column format, additional stretch is needed (or ragged right)
+%	to avoid overfull boxes.
+\StretchyTenPointSpacing
+\StretchyNinePointSpacing
+\StretchyEightPointSpacing
+
+\pageno=1001			% starting page number
+
+%\onenarrow
+%\Input announce 		% boxed announcements
+%\newpage
+
+% \tracingonline=1
+% \showthe\pagelgt
+% \showthe\vsize
+
+%\tracingall
+%\tracingonline=0
+
+\collgt=\normalcollgt			% 36pc
+\resetpagelgt
+\twocol
+
+% \sectitle General Delivery<
+
+%	The hyphenation list is too long for a normal page; change the
+%	length of the page, before putting anything on it.  The page
+%	length will be reset automatically at the end of the page.
+%	A negative value will cause the page to be made longer.
+\ShortenThisPage by -1\baselineskip.
+
+\sectitle Software<
+
+\Input hyf				% hyphenation exception log
+\newpage
+
+% \sectitle \TeX tensions<
+
+
+% \sectitle Low \TeX<
+
+
+% \sectitle Fonts<		% included in data file
+
+\Input cyr			% Barbara Beeton, cyrillic and math symbols
+\newpage
+
+% \sectitle Output Devices<
+
+
+%\sectitle Site Reports<
+
+
+\newpage
+\onecol
+% \sectitle small \TeX<		% 1 page, camera copy
+% \pagexref{smalltex}
+
+\newpage
+\twocol
+
+% \sectitle Macros<
+
+
+% \sectitle Letters<
+
+
+% \sectitle News \& Announcements<
+
+
+% \sectitle TUG Business<
+
+
+% \sectitle Advertisements<
+%\def \midrtitle{Advertisement}
+
+
+\PageXref{TUGorderForm}
+% \input TUGorder		% done separately; one or two depending
+%				% on space available
+
+% \advance\pageno by 2
+% \PageXref{TeXorderForm}
+% \input TeX82order.form
+
+\newpage
+\end		%%%%%%%%%%%%%%%%%%%%

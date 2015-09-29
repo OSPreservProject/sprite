@@ -1,0 +1,30 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @# @;
+
+
+1.1
+date     88.12.06.09.57.59;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@script to generate summary information for all of mint & oregano's boots.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#!/bin/csh -f
+date
+echo " "
+cat Sys/{mint,oregano}/88* | awk -f fsstats.awk 
+@

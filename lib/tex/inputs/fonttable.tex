@@ -1,0 +1,75 @@
+\baselineskip 0pt \lineskip 0pt
+\vsize 7.3 in
+\let\sl=\tensl
+\newbox\zero
+\newbox\row
+\newbox\pile
+\newdimen\vu
+
+\output{\shipout\vbox{\hrule width1em\vskip0.4in\box255\vskip0.4in
+\hrule width1em}\global\advance\count0 by 1}
+
+\setbox\zero\hbox{\sl 0}
+
+\def\spike{\hbox to 0pt{\vbox to 1\ht\zero{}}}
+\def\cell#1{\hbox to 1\vu{\hfill\char'#1\hfill}\vrule}
+\def\label#1{\vbox to 1\ht\row{\vfill
+  \hbox to 35pt{\hfill\sl '#10\hskip1em}\vfill}\vrule}
+
+\def\seprow{\def\m{\hskip 1\vu{}\vrule height 2pt}\hbox{\m\m\m\m\m\m\m\m}}
+\def\cellrow#1{\setbox\row\vbox{\seprow\hbox{\spike\ignorespaces
+               \cell{#10}\cell{#11}\cell{#12}\cell{#13}\ignorespaces
+               \cell{#14}\cell{#15}\cell{#16}\cell{#17}\ignorespaces
+               \hfill}\seprow\hrule}\hbox{\label{#1}\box\row}}
+
+\def\lcol#1{\hbox to 1\vu{\hfill{\sl #1}\hfill}\hskip .4pt}
+\def\chw#1{\hbox{\char'#1}}
+
+\def\colw#1{\vbox{\chw{#10}
+                  \chw{#11}
+                  \chw{#12}
+                  \chw{#13}
+                  \chw{#14}
+                  \chw{#15}
+                  \chw{#16}                                              
+                  \chw{#17}}}
+
+\def\setw#1{\vbox{\colw{#10}             
+                  \colw{#11}
+                  \colw{#12}
+                  \colw{#13}
+                  \colw{#14}
+                  \colw{#15}
+                  \colw{#16}
+                  \colw{#17}}}
+\def\getw{\setbox\pile\vbox{\setw0\setw1\hbox to 1\wd\zero{}
+          \hbox to 1em{}}\vu=1.625\wd\pile}
+ 
+\def\table#1{\font\tablefont=#1 \tablefont\getw\null\vfill
+\hbox to 6in{\hfil\ignorespaces
+\vbox{\hbox{\hskip35pt{\sl #1}\hfill}
+      \vskip20pt
+      \hbox{\hskip35pt\lcol0\lcol1\lcol2\lcol3\lcol4\lcol5\lcol6\lcol7}
+      \vskip 4 pt
+      \hbox{\hskip35pt\vbox{\hrule width 8\vu}\vbox{\hrule width 3.6pt}}
+      \cellrow{00}\cellrow{01}\cellrow{02}\cellrow{03}
+      \cellrow{04}\cellrow{05}\cellrow{06}\cellrow{07}
+      \cellrow{10}\cellrow{11}\cellrow{12}\cellrow{13}
+      \cellrow{14}\cellrow{15}\cellrow{16}\cellrow{17}}\ignorespaces
+\hss}\vfill\penalty-10000}
+
+\global\def\test{}
+\global\def\fin{END }
+\def\doit{
+\message{Type a valid font name, or END :}
+\read 0 to\command
+\global\let\test=\command
+\ifx \fin\test \relax 
+\else \message{Graphing font \command}
+       \table{\command}
+\doit
+\fi
+}
+
+\doit
+\end

@@ -1,0 +1,8 @@
+D DS3100_M                          	ds3100.md
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+F RPCSTAT.C;1                       	rpcstat.c
+F RPCSTAT.MAN;1                     	rpcstat.man
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md
+F TAGS.;1                           	TAGS

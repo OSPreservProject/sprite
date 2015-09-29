@@ -1,0 +1,6 @@
+F INET_ADD.C_V;1                    	inet_addr.c,v
+F INET_LNA.C_V;1                    	inet_lnaof.c,v
+F INET_MAK.C_V;1                    	inet_makeaddr.c,v
+F INET_NE0.C_V;1                    	inet_netof.c,v
+F INET_NE1.C_V;1                    	inet_network.c,v
+F INET_NTO.C_V;1                    	inet_ntoa.c,v

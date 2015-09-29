@@ -1,0 +1,194 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ds3100:1.5 sun3:1.5 sun4nw:1.4 symm:1.4 spur:1.4;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     92.06.25.17.21.08;  author eklee;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.10.12.14.01.23;  author eklee;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.09.19.14.54.18;  author eklee;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.09.05.12.40.11;  author eklee;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.06.22.13.39.18;  author eklee;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Implements routines for logging RAID state changes.
+@
+
+
+1.5
+log
+@Fixed bug where data was sometimes trashed during writes with a failed disk.
+Fixed up consistency problems while a disk is failed.
+Redid logging.
+@
+text
+@/* 
+ * devRaidLog.h --
+ *
+ *	Implements logging and recovery for raid devices.
+ *
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef _DEVRAIDLOG
+#define _DEVRAIDLOG
+
+#include "sync.h"
+#include <sprite.h>
+#include "devRaid.h"
+#include "miscutil.h"
+
+#define RAID_LOG_BUF_SIZE	1000
+
+/*
+ * Location and size of log offsets on the log disk for configuration info,
+ * disk state and parity-stripe state.
+ */
+
+/*
+ * Minimum unit of log update.
+ * The minumum unit of log update must be at least 8 words (32 bytes).
+ */
+#define MinUpdateSize(raidPtr)	\
+	(MAX(32, (raidPtr)->log.logHandlePtr->minTransferUnit))
+#define RoundToUpdateSize(raidPtr, bytes)	\
+	(RoundUp(bytes, (raidPtr)->log.logHandlePtr->minTransferUnit))
+
+#define ParamSize(raidPtr)	(MinUpdateSize(raidPtr))
+#define ParamLoc(raidPtr)	((raidPtr)->log.logDevOffset)
+
+#define DiskID(raidPtr, col, row)	((col)*(raidPtr)->numRow+(row))
+#define DiskSize(raidPtr)	\
+	(MinUpdateSize(raidPtr)*((raidPtr)->numCol)*((raidPtr)->numRow))
+#define DiskLoc(raidPtr, col, row)	\
+	((raidPtr)->log.logDevOffset + ParamSize(raidPtr) +	\
+		MinUpdateSize(raidPtr)*DiskID(raidPtr, col, row))
+
+#define VecSize(raidPtr)	\
+	(RoundToUpdateSize(raidPtr, Bit_NumBytes((raidPtr)->numStripe)))
+#define VecLoc(raidPtr)		\
+	((raidPtr)->log.logDevOffset + ParamSize(raidPtr) + DiskSize(raidPtr))
+
+#define LogSize(raidPtr)	\
+	(ParamSize(raidPtr) + DiskSize(raidPtr) + VecSize(raidPtr))
+
+typedef struct {
+    Sync_Semaphore	 mutex;
+    int			 enabled;
+    int			 busy;
+    Fs_Device		 logDev;
+    int			 logDevOffset;
+    int			 logDevEndOffset;
+    DevBlockDeviceHandle *logHandlePtr;
+    int			*diskLockVec;	/* disk image of locked stripes */
+    int			*lockVec;	/* actually locked stripes */
+					/* the disk image is unlocked lazily */
+    int			 numStripeLocked;
+    Sync_Condition       flushed;
+} RaidLog;
+
+#endif /* _DEVRAIDLOG */
+@
+
+
+1.4
+log
+@Added Raid_ prefix to external names and cleaned up warning messages.
+@
+text
+@a20 1
+#include "bitvec.h"
+d22 1
+d26 32
+d62 3
+d66 5
+a70 10
+    int			 logDevOffset;
+    int			 diskLockVecNum;
+    int			 diskLockVecSize;
+    BitVec		 diskLockVec;
+    int			 minLogElem;
+    int			 maxLogElem;
+    Sync_Condition	*waitCurBufPtr;
+    Sync_Condition	*waitNextBufPtr;
+    Sync_Condition       flushed1;
+    Sync_Condition       flushed2;
+@
+
+
+1.3
+log
+@Added prototypes.
+@
+text
+@d16 2
+a17 2
+#ifndef _DEV_RAID_LOG
+#define _DEV_RAID_LOG
+d20 1
+d43 1
+a43 1
+#endif _DEV_RAID_LOG
+@
+
+
+1.2
+log
+@Logs to raw disk instead of file.
+@
+text
+@@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@a18 1
+#include "fs.h"
+d20 2
+d29 9
+a37 7
+    Sync_Condition       notBusy;
+    Fs_Stream		*streamPtr;
+    char		*curBufPtr;
+    char		*curBuf;
+    char		 buf1[RAID_LOG_BUF_SIZE];
+    char		 buf2[RAID_LOG_BUF_SIZE];
+    Sync_Condition	*curBufFlushedPtr;
+a40 4
+
+extern void EnableLog();
+extern void DisableLog();
+extern void LogEntry();
+@

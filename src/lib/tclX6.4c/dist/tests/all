@@ -1,0 +1,15 @@
+# This file contains a top-level script to run all of the Extended Tcl
+# tests.  Execute it by invoking "source all" when running tclTest
+# in this directory.
+
+global errorInfo
+
+foreach i [lsort [glob *.test]] {
+    puts stdout $i
+    if {[catch {source $i} msg] != 0} {
+        puts stdout [replicate "=" 75]
+        puts stdout "Uncaught error in $i: $msg"
+        puts stdout $errorInfo
+        puts stdout [replicate "=" 75]
+    }
+}

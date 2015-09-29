@@ -1,0 +1,1180 @@
+head     9.10;
+branch   ;
+access   ;
+symbols  ds3100:9.10 sun3:9.10 sun4nw:9.8 symm:9.8 spur:9.8 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.10
+date     92.10.26.12.02.19;  author elm;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     92.07.30.17.23.16;  author mgbaker;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     91.10.18.01.12.12;  author dlong;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     91.08.22.12.46.13;  author mgbaker;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     91.07.26.17.12.46;  author shirriff;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.01.29.19.37.33;  author mgbaker;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     89.11.27.14.54.39;  author mgbaker;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     89.10.22.23.39.14;  author shirriff;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.18.10.44.31;  author mgbaker;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.11.11.22.14;  author mendel;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.24.27;  author douglis;  state Stable;
+branches ;
+next     1.12;
+
+1.12
+date     89.08.30.12.26.11;  author mgbaker;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     89.08.25.13.40.14;  author mgbaker;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     89.08.09.12.38.29;  author mgbaker;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     89.07.23.18.36.56;  author jhh;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     89.07.12.06.06.33;  author rab;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     89.06.16.08.56.10;  author mendel;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.04.29.19.52.33;  author mgbaker;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.04.25.20.45.28;  author mgbaker;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.04.25.15.24.17;  author mgbaker;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.04.23.22.09.05;  author mgbaker;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.04.21.23.35.28;  author mgbaker;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.02.23.12.59.01;  author mgbaker;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@It gets through vm initialization now.
+@
+
+
+9.10
+log
+@Added VmMachIsXbusMem.
+@
+text
+@/*
+ * vmSunConst.h --
+ *
+ *     	Virtual memory constants for the Sun4.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/vm/sun4.md/vmSunConst.h,v 9.9 92/07/30 17:23:16 mgbaker Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _VMSUNCONST
+#define _VMSUNCONST
+
+/*
+ * Sun3 page table entry masks.  The same for the sun4.
+ *
+ *    VMMACH_RESIDENT_BIT	The page is physical resident.		31
+ *    VMMACH_PROTECTION_FIELD	Access to the protection bits.		30:29
+ *    VMMACH_KR_PROT		Kernel read only, user no access.
+ *    VMMACH_KRW_PROT		Kernel read/write, user no access.
+ *    VMMACH_UR_PROT		Kernel read only, user read only
+ *    VMMACH_URW_PROT		Kernel read/write, user read/write.
+ *    VMMACH_DONT_CACHE_BIT	Don't cache bit.			28
+ *    VMMACH_TYPE_FIELD		The memory type field.			27:26
+ *    VMMACH_REFERENCED_BIT	Referenced bit.				25
+ *    VMMACH_MODIFIED_BIT	Modified bit.				24
+ *    VMMACH_PAGE_FRAME_FIELD	The hardware page frame.		18:0
+ */
+#define	VMMACH_RESIDENT_BIT	0x80000000
+#define	VMMACH_PROTECTION_FIELD	0x60000000
+#define	VMMACH_UR_PROT		0x00000000
+#define	VMMACH_KR_PROT		0x20000000
+#define VMMACH_URW_PROT		0x40000000
+#define	VMMACH_KRW_PROT		0x60000000
+#define	VMMACH_DONT_CACHE_BIT	0x10000000
+#define	VMMACH_TYPE_FIELD	0x0c000000
+#define VMMACH_REFERENCED_BIT	0x02000000
+#define	VMMACH_MODIFIED_BIT	0x01000000
+#ifdef sun4c
+#define VMMACH_PAGE_FRAME_FIELD	0x0000ffff
+#else
+#define VMMACH_PAGE_FRAME_FIELD	0x0007ffff
+#endif
+/*
+ * Shift to allow the type field to get set.
+ */
+#define	VmMachGetPageType(pte) (((pte) >> 26) & 3)
+#define	VmMachSetPageType(pte, type) (pte |= (type << 26))
+
+/* Value of VMMACH_TYPE_FIELD */
+#define	VMMACH_TYPE_MEM		0		/* Main memory. */
+#define	VMMACH_TYPE_DEV		1		/* Serial ports, net regs... */
+#define VMMACH_TYPE_VME16DATA	2		/* 16-bit vme data. */
+#define	VMMACH_TYPE_VME32DATA	3		/* 32-bit vme data. */
+
+/*
+ * Shift pte right by this much to isolate page protection and residence bits.
+ */
+#define	VMMACH_PAGE_PROT_SHIFT	29
+/*
+ * Compare shifted pte (above) with this to see if user residence and protection
+ * are okay for the user to write to this address.
+ */
+#define	VMMACH_PTE_OKAY_VALUE	6
+
+/*
+ * In the sun4 200 series machines, the 2 high bits may be 00 or 11.  However,
+ * 00 and 11 actually go to the same entry in the segment table.  So for
+ * address comparisons, one may have to strip the high two bits.  The hole in
+ * the sun4c space is the same.
+ *	VMMACH_BOTTOM_OF_HOLE	first unusable addr in hole
+ *	VMMACH_TOP_OF_HOLE	last unusable addr in hole
+ *	VMMACH_ADDR_MASK	mask off usable bits of address
+ */
+#define	VMMACH_BOTTOM_OF_HOLE	0x20000000
+#define	VMMACH_TOP_OF_HOLE	(0xe0000000 - 1)
+#define	VMMACH_ADDR_MASK	0x3FFFFFFF
+
+/*
+ * Check to see if a virtual address falls inside the hole in the middle
+ * of the sun4 address space.
+ */
+#if 1
+#define	VMMACH_ADDR_CHECK(virtAddr)	\
+    (((unsigned int)(virtAddr) + 0x20000000) < 0x40000000)
+#else
+#define	VMMACH_ADDR_CHECK(virtAddr)	\
+    (	((unsigned int) (virtAddr)) >=	\
+		    ((unsigned int) VMMACH_BOTTOM_OF_HOLE) &&	\
+	((unsigned int) (virtAddr)) <=	\
+		    ((unsigned int) VMMACH_TOP_OF_HOLE) ? FALSE : TRUE)
+#endif
+
+/*
+ * Check, in assembly, whether a virtual address falls inside the hole in
+ * the middle of the sun4 address space.
+ */
+#define	VMMACH_ADDR_OK_ASM(virtAddr, CheckMore, DoneCheck, answerReg, useReg) \
+	clr	answerReg;				\
+	set	VMMACH_BOTTOM_OF_HOLE, useReg;		\
+	cmp     useReg, virtAddr;			\
+	bleu	CheckMore;				\
+	nop;						\
+	ba	DoneCheck;				\
+	nop;						\
+CheckMore:						\
+	set	VMMACH_TOP_OF_HOLE, useReg;		\
+	cmp	virtAddr, useReg;			\
+	bgu	DoneCheck;				\
+	nop;						\
+	set	0x1, answerReg;				\
+DoneCheck:
+
+
+/*
+ * Sun memory management unit constants:
+ *
+ * VMMACH_KERN_CONTEXT		The Kernel's context.
+ * VMMACH_NUM_CONTEXTS		The number of contexts. Impl. dependent.
+ * VMMACH_NUM_SEGS_PER_CONTEXT	The number of hardware segments per context.
+ * VMMACH_NUM_PAGES_PER_SEG_INT	The number of pages per hardware segment.
+ * VMMACH_NUM_PAGE_MAP_ENTRIES	The number of hardware page map entries.
+ * VMMACH_NUM_PMEGS		The number of page clusters that there are 
+ *				in the system.
+ * VMMACH_DEV_START_ADDR        The first virtual address that is used for
+ *                              mapping devices.
+ * VMMACH_DEV_END_ADDR		The last virtual address that could be used for 
+ *				mapping devices.
+ * VMMACH_DMA_START_ADDR	The first virtual address that is used for 
+ *				DMA buffers by devices.
+ * VMMACH_DMA_SIZE		The amount of space devoted to DMA buffers
+ *
+ * VMMACH_32BIT_DMA_START_ADDR	The first address of the 32-bit "user" DVMA
+ *				area in context 0.
+ * VMMACH_32BIT_DMA_SIZE	The size of the 32-bit "user" DVMA area.  This
+ *				should be a multiple of the cache size, for
+ *				alignment purposes, and it should be a multile
+ *				of the segment size, so as not to waste aPpMEG.
+ * VMMACH_VME_ADDR_BIT		The bit that indicates an address is a VME
+ *				bus address.
+ * VMMACH_NET_MAP_START		The beginning of space for mapping the Intel
+ *				and AMD drivers.
+ * VMMACH_NET_MEM_START		The beginning of space for memory for the Intel
+ *				and AMD drivers.
+ * VMMACH_FIRST_SPECIAL_SEG	The first hardware segment that is used for 
+ *				mapping devices.
+ * VMMACH_INV_PMEG   		The page cluster number that is used to 
+ *				represent an invalid Pmeg.
+ * VMMACH_INV_SEG   		The hardware segment number that is used to
+ *				represent an invalid hardware segment.
+ * VMMACH_INV_CONTEXT   	The context number that is used to represent
+ *				an invalid context.
+ */
+
+#define VMMACH_KERN_CONTEXT		0
+#ifdef sun4c
+#define VMMACH_NUM_CONTEXTS_60		8
+#define VMMACH_NUM_CONTEXTS_110		8
+#define VMMACH_NUM_CONTEXTS_260		16
+#define VMMACH_NUM_CONTEXTS_330		16
+#define VMMACH_NUM_CONTEXTS_470		64
+#ifdef _ASM				/* force error */
+#define VMMACH_NUM_CONTEXTS		%%
+#else
+#define VMMACH_NUM_CONTEXTS		vmNumContexts
+#endif
+#else
+#define VMMACH_NUM_CONTEXTS		16
+#endif
+
+/*
+ *	VMMACH_NUM_SEGS_PER_CONTEXT	Number of segments per context:
+ * There is a hole in the middle of the address space, so really there's only
+ * 2**12 segs per context, but having discontinuous maps is a pain, so we
+ * pretend it's all mappable, which means there's 2**14 segs per context, on
+ * the sun4.  This is calculated from 256K bytes per segment == 0x40000 bytes
+ * per segment == 2**18 bytes per segment into 2**32 bytes per context gives
+ * (32-18) == 14 segments per context.  The sparc station has the same number
+ * of segments per context since segments are the same size.
+ *	VMMACH_NUM_PAGES_PER_SEG_INT	Number of pages per segment
+ *					(Implementation dependent)
+ *	VMMACH_NUM_PAGE_MAP_ENTRIES	Number of total page map entries
+ *	VMMACH_NUM_PMEGS		Number of pmegs
+ *	VMMACH_NUM_NET_SEGS		The number of segments used for mapping
+ *					net scatter gather arrays aligned to
+ *					avoid cache flushing.  This number is
+ *					picked by rule of thumb.  Usually there
+ *					are no more than 5 elements in a
+ *					scatter gather array, so 5 segments
+ *					avoids cache flushing.  The 6th segment
+ *					is for mapping any elements beyond this
+ *					consecutively (cache flushing used).
+ *	
+ */
+#define VMMACH_NUM_SEGS_PER_CONTEXT	0x4000	/* 2**14 */
+#define VMMACH_NUM_PAGES_PER_SEG_INT	(VMMACH_SEG_SIZE / VMMACH_PAGE_SIZE_INT)
+#define	VMMACH_NUM_PMEGS_60		128
+#define	VMMACH_NUM_PMEGS_110		256
+#define	VMMACH_NUM_PMEGS_260		512
+#define	VMMACH_NUM_PMEGS_330		256
+#define	VMMACH_NUM_PMEGS_470		1024
+#ifdef _ASM				/* force error */
+#define VMMACH_NUM_PMEGS		%%
+#else /* _ASM */
+#define VMMACH_NUM_PMEGS		vmNumPmegs
+#endif /* _ASM */
+#define VMMACH_NUM_PAGE_MAP_ENTRIES	(VMMACH_NUM_PMEGS * VMMACH_NUM_PAGES_PER_SEG_INT)
+
+/* The values of MONSTART and MONEND */
+#define VMMACH_DEV_START_ADDR       	0xFFD00000
+#define	VMMACH_DEV_END_ADDR		0xFFEFFFFF
+#define	VMMACH_DMA_START_ADDR		0xFFF00000
+#define	VMMACH_DMA_SIZE			0xC0000
+#define VMMACH_32BIT_DMA_START_ADDR	0x40000
+#define	VMMACH_32BIT_DMA_SIZE		0x800000
+#ifdef NOTDEF
+/* For raid only */
+#define	VMMACH_32BIT_DMA_SIZE		(VMMACH_NUM_PMEGS / 2 * VMMACH_SEG_SIZE)
+#endif
+
+#define	VMMACH_VME_ADDR_BIT		0x80000000
+
+#define	VMMACH_NUM_NET_SEGS		6
+#define	VMMACH_NET_MAP_SIZE		(VMMACH_NUM_NET_SEGS * VMMACH_SEG_SIZE)
+#define VMMACH_NET_MAP_START		(VMMACH_DEV_START_ADDR - \
+						VMMACH_NET_MAP_SIZE)
+#define VMMACH_NET_MEM_START		(VMMACH_DMA_START_ADDR +	\
+						VMMACH_DMA_SIZE)
+#define	VMMACH_NET_MEM_SIZE		(0x20000-VMMACH_PAGE_SIZE)
+#define	VMMACH_FIRST_SPECIAL_SEG	(((unsigned int) VMMACH_DEV_START_ADDR) >> VMMACH_SEG_SHIFT)
+						/* why is this one - 1??? */
+#define	VMMACH_INV_PMEG			(VMMACH_NUM_PMEGS - 1)
+#define	VMMACH_INV_SEG			VMMACH_NUM_SEGS_PER_CONTEXT
+#define	VMMACH_INV_CONTEXT		VMMACH_NUM_CONTEXTS
+
+/*
+ * Function code constants for access to the different address spaces as
+ * defined by the Sun 4 hardware.  These constants determine which
+ * address space is accessed when using a load alternate or store alternate
+ * or swap alternate instruction.
+ *
+ * VMMACH_USER_DATA_SPACE		User data space.
+ * VMMACH_USER_PROGRAM_SPACE		User program space
+ * VMMACH_KERN_DATA_SPACE		Kernel data space.
+ * VMMACH_KERN_PROGRAM_SPACE		Kernel program space.
+ * VMMACH_FLUSH_SEG_SPACE		Flush segment (in control space).
+ * VMMACH_FLUSH_PAGE_SPACE		Flush page (in control space).
+ * VMMACH_FLUSH_CONTEXT_SPACE		Flush context (in control space).
+ * VMMACH_CACHE_DATA_SPACE		Cache data instruction (in cntrl space).
+ * VMMACH_CONTROL_SPACE			Other parts of control space, including
+ *						the context register, etc.
+ * VMMACH_SEG_MAP_SPACE			Segment map (in control space).
+ * VMMACH_PAGE_MAP_SPACE		Page map (in control space).
+ * VMMACH_HWFLUSH_SEG_SPACE	 	HW assisted flush cache segment.
+ * VMMACH_HWFLUSH_PAGE_SPACE	 	HW assisted flush cache page.
+ * VMMACH_HWFLUSH_CONTEXT_SPACE	 	HW assisted flush cache context.
+ * VMMACH_HWFLUSH_CACHE_SPACE		HW assisted flush cache.
+ */
+
+#define	VMMACH_CONTROL_SPACE		0x2	/* also called system space */
+#define	VMMACH_SEG_MAP_SPACE		0x3
+#define	VMMACH_PAGE_MAP_SPACE		0x4
+#define	VMMACH_HWFLUSH_SEG_SPACE	0x5
+#define	VMMACH_HWFLUSH_PAGE_SPACE	0x6
+#define	VMMACH_HWFLUSH_CONTEXT_SPACE	0x7
+#define	VMMACH_USER_PROGRAM_SPACE	0x8
+#define	VMMACH_KERN_PROGRAM_SPACE	0x9
+#define	VMMACH_USER_DATA_SPACE		0xA
+#define	VMMACH_KERN_DATA_SPACE		0xB
+#define	VMMACH_FLUSH_SEG_SPACE		0xC
+#define	VMMACH_FLUSH_PAGE_SPACE		0xD
+#define	VMMACH_FLUSH_CONTEXT_SPACE	0xE
+#ifdef sun4c
+#define	VMMACH_HWFLUSH_CACHE_SPACE	0xF
+#else /* sun4c */
+#define	VMMACH_CACHE_DATA_SPACE		0xF
+#endif /* sun4c */
+
+/*
+ * Masks for access to different parts of control and device space.
+ *
+ * VMMACH_CONTEXT_OFF	 	Offset to context register in control space.
+ * VMMACH_DIAGNOSTIC_REG	The address of the diagnostic register.
+ * VMMACH_USER_DVMA_ENABLE_REG  Bits to enable user DVMA for different VME 
+ *				context.
+ * VMMACH_USER_DVMA_MAP		Map of VME context to sun user contexts.
+ * VMMACH_BUS_ERROR_REG		The address of the bus error register.
+ * VMMACH_ADDR_ERROR_REG	Addr of register storing addr of mem error.
+ * VMMACH_ADDR_CONTROL_REG	Addr of control register for memory errors.
+ * VMMACH_SYSTEM_ENABLE_REG	The address of the system enable register.
+ * VMMACH_ETHER_ADDR		Address of ethernet address in the id prom.
+ *				On the sun4c, this is in NVRAM in device space
+ *				instead.
+ * VMMACH_MACH_TYPE_ADDR	Address of machine type in the id prom.
+ *				On sun4c, this is in NVRAM.
+ * VMMACH_IDPROM_INC		Amount to increment an address when stepping
+ *				through the id prom.
+ * VMMACH_CACHE_TAGS_ADDR	Address of cache tags in control space.
+ * VMMACH_SYNC_ERROR_REG	Address of sync error reg on sun4c.
+ * VMMACH_SYNC_ERROR_ADDR_REG	Address of sync error addr reg on sun4c.
+ * VMMACH_ASYNC_ERROR_REG	Address of async error reg on sun4c.
+ * VMMACH_ASYNC_ERROR_ADDR_REG	Address of async error addr reg on sun4c.
+ */
+
+#define	VMMACH_CONTEXT_OFF		0x30000000	/* control space */
+#define VMMACH_SYSTEM_ENABLE_REG	0x40000000	/* control space */
+#define	VMMACH_CACHE_TAGS_ADDR		0x80000000	/* control space */
+#define	VMMACH_SERIAL_PORT_ADDR		0xF0000000	/* control space */
+
+#ifdef sun4c
+/* 4 bus error registers */
+#define	VMMACH_CACHE_DATA_ADDR		0x90000000	/* control space */
+#define VMMACH_SYNC_ERROR_REG		0x60000000	/* control space */
+#define VMMACH_SYNC_ERROR_ADDR_REG	0x60000004	/* control space */
+#define VMMACH_ASYNC_ERROR_REG		0x60000008	/* control space */
+#define VMMACH_ASYNC_ERROR_ADDR_REG	0x6000000C	/* control space */
+#else /* sun4c */
+#define VMMACH_IDPROM_INC		0x01
+#define VMMACH_MACH_TYPE_ADDR		0x01
+#define VMMACH_ETHER_ADDR		0x02
+#define	VMMACH_USER_DVMA_ENABLE_REG	0x50000000      /* control space */
+#define VMMACH_BUS_ERROR_REG		0x60000000	/* control space */
+#define VMMACH_ADDR_ERROR_REG		0xffd08004	/* device space */
+#define VMMACH_ADDR_CONTROL_REG		0xffd08000	/* device space */
+#define VMMACH_DIAGNOSTIC_REG		0x70000000	/* control space */
+#define	VMMACH_USER_DVMA_MAP		0xD0000000	/* control space */
+/*
+ * Bit in address error control register to enable reporting of asynchronous
+ * memory errors.
+ */
+#define	VMMACH_ENABLE_MEM_ERROR_BIT	0x40
+#endif /* sun4c */
+
+/*
+ * Other cache constants:
+ */
+/*
+ * Mask to set enable cache bit in the system enable register.
+ * Or it with register to enable the cache.
+ *	VMMACH_ENABLE_CACHE_BIT		Bit in system enable register
+ *					to turn on the cache.
+ *	VMMACH_NUM_CACHE_TAGS		Number of tags in the cache
+ *	VMMACH_CACHE_TAG_INCR		Byte size for incrementing thru tags
+ *	VMMACH_CACHE_LINE_SIZE		Line size in bytes
+ *	VMMACH_CACHE_SHIFT		Number to shift by to = line size
+ *	VMMACH_NUM_CACHE_LINES		Number of lines in cache
+ *	VMMACH_CACHE_SIZE		Total size of cache in bytes of data
+ */
+#ifdef sun4c
+#define	VMMACH_NUM_CACHE_LINES		0x1000	/* 4K * 16 = 64K cache size */
+#else /* sun4c */
+#define	VMMACH_NUM_CACHE_LINES_110	0
+#define	VMMACH_NUM_CACHE_LINES_260	0x2000
+#define	VMMACH_NUM_CACHE_LINES_330	0x2000
+#define	VMMACH_NUM_CACHE_LINES_470	0x1000
+#define	VMMACH_NUM_CACHE_LINES		0x2000	/* 8K * 16 = 128K cache size */
+#endif /* sun4c */
+#define	VMMACH_ENABLE_CACHE_BIT		0x10
+#define	VMMACH_CACHE_TAG_INCR		0x10
+#ifdef sun4c
+#define	VMMACH_CACHE_LINE_SIZE_60	0x10
+#define	VMMACH_CACHE_LINE_SIZE_110	0
+#define	VMMACH_CACHE_LINE_SIZE_260	0x10
+#define	VMMACH_CACHE_LINE_SIZE_330	0x10
+#define	VMMACH_CACHE_LINE_SIZE_470	0x20
+#ifdef _ASM				/* force error */
+#define VMMACH_CACHE_LINE_SIZE		%%
+#else /* _ASM */
+#define VMMACH_CACHE_LINE_SIZE		vmCacheLineSize
+#endif /* _ASM */
+#else /* sun4c */
+#define	VMMACH_CACHE_LINE_SIZE		0x10
+#define	VMMACH_CACHE_SHIFT		0x4
+#endif /* sun4c */
+#define	VMMACH_NUM_CACHE_TAGS		VMMACH_NUM_CACHE_LINES
+#define VMMACH_CACHE_SIZE  (VMMACH_CACHE_LINE_SIZE * VMMACH_NUM_CACHE_LINES)
+
+/*
+ * Other bits in the system enable register.
+ */
+#define	VMMACH_ENABLE_DVMA_BIT		0x20
+
+/*
+ * The highest virtual address useable by the kernel for both machine type
+ * 1 and machine type 2 and 3 and 4...  This seems to be the largest
+ * virtual address plus 1...
+ */
+#define	VMMACH_MACH_TYPE1_MEM_END	0xF40000
+#define	VMMACH_MACH_TYPE2_MEM_END	0x1000000
+#define	VMMACH_MACH_TYPE3_MEM_END	0x10000000
+#define	VMMACH_MACH_TYPE4_MEM_END	0x100000000
+
+/*
+ * Masks to extract good bits from the virtual addresses when accessing
+ * the page and segment maps.
+ */
+#ifdef sun4c
+#define	VMMACH_PAGE_MAP_MASK	0xFFFFF000
+#else
+#define	VMMACH_PAGE_MAP_MASK	0xFFFFe000
+#endif
+#define	VMMACH_SEG_MAP_MASK	0xFFFc0000
+
+/*
+ * Mask to get only the low order four bits of a context register.
+ */
+#define	VMMACH_CONTEXT_MASK		0xF
+
+/*
+ * Hardware dependent constants for pages and segments:
+ *
+ * VMMACH_CLUSTER_SIZE      The number of hardware pages per virtual page.
+ * VMMACH_CLUSTER_SHIFT     The log base 2 of VMMACH_CLUSTER_SIZE.
+ * VMMACH_PAGE_SIZE		The size of each virtual page.
+ * VMMACH_PAGE_SIZE_INT		The size of each hardware page.
+ * VMMACH_PAGE_SHIFT		The log base 2 of VMMACH_PAGE_SIZE.
+ * VMMACH_PAGE_SHIFT_INT	The log base 2 of VMMACH_PAGE_SIZE_INT
+ * VMMACH_OFFSET_MASK		Mask to get to the offset of a virtual address.
+ * VMMACH_OFFSET_MASK_INT	Mask to get to the offset of a virtual address.
+ * VMMACH_PAGE_MASK		Mask to get to the Hardware page number within a
+ *				hardware segment.
+ * VMMACH_SEG_SIZE		The size of each hardware segment.
+ * VMMACH_SEG_SHIFT		The log base 2 of VMMACH_SEG_SIZE.
+ * VMMACH_NUM_PAGES_PER_SEG	The number of virtual pages per segment.
+ */
+
+#ifdef sun4c
+#if 0
+#define VMMACH_CLUSTER_SHIFT    1		/* 1:2 virt page to phys page */
+#define VMMACH_PAGE_SHIFT_INT	12		/* 4k */
+#else
+#define VMMACH_CLUSTER_SHIFT    0		/* 1:1 virt page to phys page */
+#define VMMACH_PAGE_SHIFT_INT	12		/* 4k */
+#endif
+#else /* sun4c */
+#define VMMACH_CLUSTER_SHIFT    0		/* 1:1 virt page to phys page */
+#define VMMACH_PAGE_SHIFT_INT	13		/* 8k */
+#endif /* sun4c */
+
+#define	VMMACH_CLUSTER_SIZE	(1 << VMMACH_CLUSTER_SHIFT)
+#define	VMMACH_PAGE_SIZE_INT	(1 << VMMACH_PAGE_SHIFT_INT)
+#define VMMACH_PAGE_SIZE        (VMMACH_CLUSTER_SIZE * VMMACH_PAGE_SIZE_INT)
+#define VMMACH_OFFSET_MASK	(VMMACH_PAGE_SIZE - 1)
+#define VMMACH_OFFSET_MASK_INT	(VMMACH_PAGE_SIZE_INT - 1)
+#define VMMACH_PAGE_SHIFT	(VMMACH_CLUSTER_SHIFT + VMMACH_PAGE_SHIFT_INT)
+#define VMMACH_SEG_SHIFT	18		/* twice as large as sun3? */
+#define	VMMACH_SEG_SIZE		(1 << VMMACH_SEG_SHIFT)	/* 0x40000 */
+#define VMMACH_PAGE_MASK	(VMMACH_SEG_SIZE - VMMACH_PAGE_SIZE_INT)
+#define	VMMACH_NUM_PAGES_PER_SEG (VMMACH_NUM_PAGES_PER_SEG_INT / VMMACH_CLUSTER_SIZE)
+
+/*
+ * The size that page tables are to be allocated in.  This grows software
+ * segments in 256K chunks.  The page tables must grow in chunks that are 
+ * multiples of the hardware segment size.  This is because the heap and 
+ * stack segments grow towards each other in VMMACH_PAGE_TABLE_INCREMENT 
+ * sized chunks.  Thus if the increment wasn't a multiple of the hardware 
+ * segment size then the heap and stack segments could overlap on a 
+ * hardware segment.
+ */
+#define	VMMACH_PAGE_TABLE_INCREMENT	(((256 * 1024 - 1) / VMMACH_SEG_SIZE + 1) * VMMACH_NUM_PAGES_PER_SEG)
+
+/*
+ * The maximum number of kernel stacks.  There is a limit because these
+ * use part of the kernel's virtual address space.
+ */
+#define VMMACH_MAX_KERN_STACKS	128
+
+/*
+ * The following sets of constants define the kernel's virtual address space. 
+ * Some of the constants are defined in machineConst.h.  The address space 
+ * looks like the following:
+ *
+ *	|-------------------------------|	MACH_KERN_START
+ *	| Trap vectors.			|
+ *	|-------------------------------|	MACH_STACK_BOTTOM
+ *	| Invalid page.			|
+ *	|-------------------------------|	MACH_STACK_BOTTOM + VMMACH_PAGE_SIZE
+ *     	|				|
+ *     	| Stack for the initial kernel 	|
+ *     	| process.			|
+ *     	|				|
+ *	---------------------------------	MACH_CODE_START
+ *     	|				|
+ *     	| Kernel code and data		|
+ *     	| 				|
+ *	---------------------------------	VMMACH_PMEG_SEG
+ *	| 				|
+ *	| Stacks, mapped pages, etc.	|
+ *	| 				|
+ *      ---------------------------------	VMMACH_DEV_START_ADDR
+ *	|				|
+ *	| Mapped in devices		|
+ *	|				|	VMMACH_DEV_END_ADDR
+ *	|-------------------------------|	VMMACH_DMA_START_ADDR
+ *	|				|
+ *	| Space for mapping in DMA bufs |
+ *	|				|
+ *	|-------------------------------|
+ */
+
+/*
+ * Definitions for supporting the XBUS memory.
+ */
+#define VmMachIsXbusMem(addr) (((unsigned)(addr) & 0xf0000000) == 0xd0000000)
+
+/*
+ * There is a special area of a users VAS to allow copies between two user
+ * address spaces.  This area sits between the beginning of the kernel and
+ * the top of the user stack.  It is one hardware segment wide.
+ */
+#define	VMMACH_MAP_SEG_ADDR		(MACH_KERN_START - VMMACH_SEG_SIZE)
+
+/*
+ * Definitions for shared memory.
+ * VMMACH_USER_SHARED_PAGES is the number of pages allocated for shared
+ *	memory.
+ * VMMACH_SHARED_BLOCK_SIZE is the block size in which shared memory is
+ *	allocated.  This is a multiple of 128K to avoid cache aliasing.
+ * VMMACH_SHARED_START ADDR is the address at which shared memory starts.
+ */
+#define VMMACH_USER_SHARED_PAGES	8192
+#define VMMACH_SHARED_BLOCK_SIZE	VMMACH_SEG_SIZE
+#define VMMACH_SHARED_START_ADDR	(VMMACH_BOTTOM_OF_HOLE - VMMACH_USER_SHARED_PAGES*VMMACH_PAGE_SIZE)
+#define	VMMACH_SHARED_NUM_BLOCKS	(VMMACH_USER_SHARED_PAGES*VMMACH_PAGE_SIZE/VMMACH_SHARED_BLOCK_SIZE)
+
+#endif /* _VMSUNCONST */
+@
+
+
+9.9
+log
+@Fixed VME device mapping bug.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/vm/sun4.md/vmSunConst.h,v 9.8 91/10/18 01:12:12 dlong Exp $ SPRITE (Berkeley)
+d502 5
+@
+
+
+9.8
+log
+@sun4c sun4c2 merge
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/vm/sun4.md/RCS/vmSunConst.h,v 9.6 91/07/26 17:12:46 shirriff Exp Locker: mgbaker $ SPRITE (Berkeley)
+d51 6
+@
+
+
+9.7
+log
+@Fixed a comment.
+@
+text
+@d58 1
+a58 1
+ * are okay for the kernel to read and write this address.
+d79 1
+d81 3
+d88 1
+d153 10
+a162 1
+#define VMMACH_NUM_CONTEXTS		8
+d192 11
+a202 4
+
+#ifdef sun4c
+#define VMMACH_NUM_PAGES_PER_SEG_INT	64
+#define	VMMACH_NUM_PMEGS		128
+a203 5
+#else
+#define VMMACH_NUM_PAGES_PER_SEG_INT	32
+#define VMMACH_NUM_PAGE_MAP_ENTRIES	16384
+#define	VMMACH_NUM_PMEGS		(VMMACH_NUM_PAGE_MAP_ENTRIES / VMMACH_NUM_PAGES_PER_SEG_INT)
+#endif
+a219 2
+#define VMMACH_NET_MAP_START		(VMMACH_DEV_START_ADDR -	\
+				(VMMACH_NUM_NET_SEGS * VMMACH_SEG_SIZE))
+d221 2
+d250 4
+d259 3
+d269 5
+a273 3
+#ifndef sun4c
+#define	VMMACH_CACHE_DATA_SPACE		0xF	/* not on sun4c */
+#endif
+a306 3
+#define VMMACH_IDPROM_INC		0x01
+#define VMMACH_MACH_TYPE_ADDR		0xffd047d9	/* device space */
+#define VMMACH_ETHER_ADDR		0xffd047da	/* device space */
+d313 1
+a313 1
+#else
+d328 1
+a328 1
+#endif
+d347 5
+a351 1
+#else
+d353 1
+a353 1
+#endif
+d356 12
+d370 1
+a422 3
+#define VMMACH_CLUSTER_SIZE     1
+#define VMMACH_CLUSTER_SHIFT    0
+#define VMMACH_PAGE_SIZE        (VMMACH_CLUSTER_SIZE * VMMACH_PAGE_SIZE_INT)
+d424 3
+a426 5
+#define	VMMACH_PAGE_SIZE_INT	4096
+#define VMMACH_PAGE_SHIFT_INT	12
+#define VMMACH_OFFSET_MASK	0x0fff
+#define VMMACH_OFFSET_MASK_INT	0x0fff
+#define VMMACH_PAGE_MASK	0x3F000	
+d428 7
+a434 6
+#define	VMMACH_PAGE_SIZE_INT	8192
+#define VMMACH_PAGE_SHIFT_INT	13
+#define VMMACH_OFFSET_MASK	0x1fff
+#define VMMACH_OFFSET_MASK_INT	0x1fff
+#define VMMACH_PAGE_MASK	0x3E000	
+#endif
+d436 5
+a441 1
+#define	VMMACH_SEG_SIZE		0x40000		/* twice as large as sun3? */
+d443 2
+d514 1
+a514 1
+#define VMMACH_SHARED_START_ADDR	(0x20000000 - VMMACH_USER_SHARED_PAGES*VMMACH_PAGE_SIZE)
+@
+
+
+9.6
+log
+@Large install for unix compatibility.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/vm/sun4.md/RCS/vmSunConst.h,v 9.5 90/01/29 19:37:33 mgbaker Exp $ SPRITE (Berkeley)
+d58 1
+a58 1
+ * are okay for the user to write to this address.
+@
+
+
+9.5
+log
+@Added new cache constant.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/vm/sun4.md/RCS/vmSunConst.h,v 9.4 89/11/27 14:54:39 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d428 1
+a428 1
+ *	|-------------------------------|	MACH_KERNEL_START
+d472 1
+a472 1
+#define VMMACH_SHARED_BLOCK_SIZE	0x20000
+@
+
+
+9.4
+log
+@Migration, debugging, etc.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/vm/sun4.md/RCS/vmSunConst.h,v 9.3 89/10/22 23:39:14 shirriff Exp Locker: mgbaker $ SPRITE (Berkeley)
+d319 1
+d331 1
+@
+
+
+9.3
+log
+@Added shared memory declarations.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/vm/sun4.md/RCS/vmSunConst.h,v 9.0 89/09/12 15:24:27 douglis Stable Locker: mendel $ SPRITE (Berkeley)
+d196 5
+@
+
+
+9.2
+log
+@Working 32-bit dvma in place.  PMEG stealing bug fixed.
+@
+text
+@d455 13
+@
+
+
+9.1
+log
+@Added USER dma stuff.
+@
+text
+@d123 9
+d193 4
+a196 1
+#define	VMMACH_DMA_SIZE			0xC0000		/* still correct? */
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/vm/sun4.md/RCS/vmSunConst.h,v 1.12 89/08/30 12:26:11 mgbaker Exp Locker: douglis $ SPRITE (Berkeley)
+d238 3
+d278 1
+d283 1
+@
+
+
+1.12
+log
+@Changes for latest installed kernel.  More performance opts.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/vm/sun4.md/RCS/vmSunConst.h,v 1.11 89/08/25 13:40:14 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+@
+
+
+1.11
+log
+@Checkin before more flushing changes.  This is the lastest installed version.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/vm/sun4.md/RCS/vmSunConst.h,v 1.10 89/08/09 12:38:29 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d157 9
+d186 6
+a191 4
+#define VMMACH_NET_MAP_START		0xFFFC0000
+#define	VMMACH_NET_MAP_SIZE		0x20000
+#define VMMACH_NET_MEM_START		(VMMACH_NET_MAP_START + \
+					 VMMACH_NET_MAP_SIZE)
+@
+
+
+1.10
+log
+@Stable kernel.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/vm/sun4.md/RCS/vmSunConst.h,v 1.9 89/07/23 18:36:56 jhh Exp Locker: mgbaker $ SPRITE (Berkeley)
+d80 4
+a83 2
+    (	((unsigned int) (virtAddr)) >= VMMACH_BOTTOM_OF_HOLE &&	\
+	((unsigned int) (virtAddr)) <= VMMACH_TOP_OF_HOLE ? FALSE : TRUE)
+@
+
+
+1.9
+log
+@made cache constants conform
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/vm/sun4.md/RCS/vmSunConst.h,v 1.8 89/07/12 06:06:33 rab Exp Locker: jhh $ SPRITE (Berkeley)
+d13 2
+a14 2
+#ifndef _VMSUN4CONST
+#define _VMSUN4CONST
+d41 5
+a45 1
+#define VMMACH_PAGE_FRAME_FIELD	0x0007ffff	
+d65 5
+a69 1
+ * address comparisons, one may have to strip the high two bits.
+a71 1
+
+a72 1
+
+d108 1
+a108 1
+ * VMMACH_NUM_CONTEXTS		The number of contexts.
+d136 5
+a140 1
+#define VMMACH_NUM_CONTEXTS		16	/* impl. dependent */
+d143 1
+d146 10
+a155 1
+ * pretend it's all mappable, which means there's 2**14 segs per context.
+d159 7
+a165 2
+#define VMMACH_NUM_PAGES_PER_SEG_INT	32	/* impl. dependent */
+#define VMMACH_NUM_PAGE_MAP_ENTRIES	16384	/* impl. dependent 2**14 */
+d167 1
+d169 1
+a169 1
+/* The values of monstart and monend? */
+d206 5
+a211 1
+#define	VMMACH_USER_PROGRAM_SPACE	0x8
+a212 1
+#define	VMMACH_KERN_PROGRAM_SPACE	0x9
+d216 3
+a218 4
+#define	VMMACH_CACHE_DATA_SPACE		0xF
+#define	VMMACH_CONTROL_SPACE		0x2
+#define	VMMACH_SEG_MAP_SPACE		0x3
+#define	VMMACH_PAGE_MAP_SPACE		0x4
+d230 2
+d233 1
+d237 4
+d244 19
+a262 2
+#define VMMACH_SYSTEM_ENABLE_REG	0x40000000
+#define VMMACH_BUS_ERROR_REG		0x60000000
+a265 5
+#define VMMACH_ETHER_ADDR		0x02
+#define VMMACH_MACH_TYPE_ADDR		0x01
+#define VMMACH_IDPROM_INC		0x01
+#define	VMMACH_CACHE_TAGS_ADDR		0x80000000	/* control space */
+
+d271 1
+d279 13
+a291 1
+ */
+a292 7
+/*
+ * Number of cache tag words.
+ */
+#define	VMMACH_NUM_CACHE_TAGS		(2 * 4096)
+/*
+ * Cache tag address increment.
+ */
+a293 3
+/*
+ * Cache line size in bytes.
+ */
+d295 2
+a296 4
+/*
+ * Number of lines in cache.  8K * 16 = 128K cache size in bytes.
+ */
+#define	VMMACH_NUM_CACHE_LINES		0x2000
+d299 1
+a299 1
+ * Size of cache
+d301 1
+a301 1
+#define VMMACH_CACHE_SIZE   (VMMACH_CACHE_LINE_SIZE * VMMACH_NUM_CACHE_LINES)
+a307 1
+
+d317 3
+a319 1
+
+d321 1
+a326 1
+
+d350 7
+a357 1
+#define VMMACH_PAGE_SHIFT	(VMMACH_CLUSTER_SHIFT + VMMACH_PAGE_SHIFT_INT)
+d362 1
+d364 1
+a365 2
+
+
+a377 1
+
+d426 1
+a426 1
+#endif /* _VMSUN4CONST */
+@
+
+
+1.8
+log
+@*** empty log message ***
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/vm/sun4.md/RCS/vmSunConst.h,v 1.7 89/06/16 08:56:10 mendel Exp Locker: rab $ SPRITE (Berkeley)
+d249 5
+@
+
+
+1.7
+log
+@Added network mapping, moved kernel down 128+ megabytes, grew kernel 
+memory. 
+,
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/vm/sun4.md/RCS/vmSunConst.h,v 1.6 89/04/29 19:52:33 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d367 1
+a367 1
+#endif _VMSUN4CONST
+@
+
+
+1.6
+log
+@Caching of kernel stacks now works.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/vm/sun4.md/RCS/vmSunConst.h,v 1.5 89/04/25 20:45:28 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d149 5
+a153 4
+#ifdef NOTDEF
+#define VMMACH_NET_MAP_START		0xFFC0000
+#define VMMACH_NET_MEM_START		0xFFE0000
+#endif /* NOTDEF */
+@
+
+
+1.5
+log
+@More caching stuff.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/vm/sun4.md/RCS/vmSunConst.h,v 1.4 89/04/25 15:24:17 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d217 6
+@
+
+
+1.4
+log
+@Caching kernel text and heap segments works!
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/vm/sun4.md/RCS/vmSunConst.h,v 1.3 89/04/23 22:09:05 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d234 8
+@
+
+
+1.3
+log
+@Taking out ifdef garbage and cleaning things up.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/vm/sun4.md/RCS/vmSunConst.h,v 1.2 89/04/21 23:35:28 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d192 1
+a192 1
+ * Masks for access to different parts of control space.
+d204 1
+d216 18
+@
+
+
+1.2
+log
+@Twentieth Kernel:  I think we've finally squished the vm bugs that
+were causing various user processes to die shortly after forking.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/vm/sun4.md/RCS/vmSunConst.h,v 1.1 89/02/23 12:59:01 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d69 4
+d77 4
+d85 1
+a85 1
+	bleu	KeepCheckingLabel;			\
+d87 1
+a87 1
+	ba	DoneCheckingLabel;			\
+d89 1
+a89 1
+KeepCheckingLabel:					\
+d92 1
+a92 1
+	bgu	DoneCheckingLabel;			\
+d95 1
+a95 1
+DoneCheckingLabel:
+a97 7
+
+#ifdef NOTDEF
+    if (((unsigned int) virtAddr) > ((unsigned int) mach_LastUserAddr) && ((unsigned int) virtAddr) < ((unsigned int) VMMACH_MAP_SEG_ADDR)) { \
+	panic("Virtual address falls into illegal range!\n");	\
+    }
+#endif /* NOTDEF */
+
+d131 1
+a131 1
+#ifdef NOTDEF
+a136 2
+#define VMMACH_NUM_SEGS_PER_CONTEXT	4096	/* impl. dependent 2**12 */
+#else
+a137 1
+#endif NOTDEF
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/vm/sun4.md/RCS/vmSun4Const.h,v 1.1 89/01/14 15:43:55 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d49 10
+d63 4
+d68 1
+d70 22
+d95 1
+d130 6
+d137 4
+d199 2
+d208 1
+a208 1
+#define	VMMACH_CONTEXT_OFF		0x30000000
+d211 3
+a213 1
+#define VMMACH_DIAGNOSTIC_REG		0x70000000
+d269 1
+a269 1
+#define VMMACH_PAGE_MASK	0x1E000	
+@

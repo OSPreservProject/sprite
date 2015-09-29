@@ -1,0 +1,15 @@
+          set varname ?value?
+               Returns the value of variable  varname.   If  value  is
+               specified,  then  set  the  value  of varname to value,
+               creating a new variable if one doesn't  already  exist,
+               and  return  its  value.   If  varName contains an open
+               parenthesis and ends with a close parenthesis, then  it
+               refers  to an array element:  the characters before the
+               open parenthesis are the name of  the  array,  and  the
+               characters between the parentheses are the index within
+               the  array.   Otherwise  varName  refers  to  a  scalar
+               variable.   If  no  procedure  is  active, then varname
+               refers to a global variable.  If a procedure is active,
+               then varname refers to a parameter or local variable of
+               the procedure,  unless  the  global  command  has  been
+               invoked to declare varname to be global.

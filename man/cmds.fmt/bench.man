@@ -1,0 +1,134 @@
+
+
+
+BENCH                     User Commands                     BENCH
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     bench  -  Benchmark  harness   that   coordinates   multiple
+     processes
+
+SSYYNNOOPPSSIISS
+     bbeenncchh [_o_p_t_i_o_n_s] --cc _c_o_m_m_a_n_d
+     bbeenncchh --MM [_o_p_t_i_o_n_s]
+
+OOPPTTIIOONNSS
+     --MM _n_u_m_C_l_i_e_n_t_s Run as master of the number of  clients  indi-
+                   cated.   The  master  bench  process should be
+                   started before any slaves.
+
+     --SS            Run as a slave.  Use --cc to specify a  command.
+                   The  slave  process  will wait until all other
+                   slaves have registered with the master  before
+                   executing their benchmark.
+
+     --cc _c_o_m_m_a_n_d _a_r_g_s ...
+                   Follow this with  the  command  to  benchmark.
+                   Execution  search  paths  are  not used (yet).
+                   The command can be followed with any  required
+                   arguments.
+
+     --pp            Name of the pseudo-device used  for  coordina-
+                   tion.
+
+     --oo _o_u_t_f_i_l_e    Output file in which execution statistics  are
+                   placed.
+
+     --ff            Flush the file system cache  before  executing
+                   the benchmark.
+
+     --xx            Disable all system  tracing  before  executing
+                   the benchmark.
+
+     --hh            Enable taking of RPC timing histograms.   This
+                   is ok with -x.
+
+     --dd            Don't sync the file system cache at the end of
+                   the  benchmark.   Normally  this is done after
+                   the benchmark completes and  before  the  file
+                   system I/O statistics are taken.
+
+     --ss            Use  signals  instead  of  pseudo-devices  for
+                   rendez-vous.
+
+     --PP _s_e_c_o_n_d_s    Pause for  some  seconds  before  getting  the
+                   final  statistics.  Only applies to the master
+                   bench process.
+
+
+
+Sprite v.1.0        Printed:  March 21, 1990                    1
+
+
+
+
+
+
+BENCH                     User Commands                     BENCH
+
+
+
+     --ww            Causes the master process to wait for  a  USR1
+                   signal  before  it  allows the slaves to begin
+                   running.  This option must be used with the -_M
+                   option, and cannot be used with the -_s option.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     Bench is a harness for other programs that executes them and
+     takes  system  statistics.  The command to benchmark follows
+     the --cc option.  Currently bench does not used the  execution
+     search  path,  so  the  command  has to be a valid pathname.
+     (This should be fixed!) In its simplest form (no --SS  or  --MM)
+     bench  executes  a  single  process  and generates output to
+     ``bench.out'' or to the file specified  by  the  -o  option.
+     The  default  behavior  is  that  the execution time and CPU
+     utilization are recorded after the benchmarked process  com-
+     pletes,  then the file system cache is written back and file
+     system statistics are recorded.  The file system  cache  can
+     be  flushed  before  the benchmark using the --ff option.  The
+     cache write-back at the end of the run can be disabled  with
+     the --dd option.  The --xx option turns off various kernel trac-
+     ing that can slow down execution.
+
+     Multiple processes can be coordinated using the  --MM  and  --SS
+     options.   First  a master bench process is started with the
+     --MM option.  This option is followed by an integer that indi-
+     cates  the  number  of slaves to expect.  The master process
+     creates a pseudo-device that will be used to coordinate  the
+     slaves.   Each  slave  benchmark  is  started  using  the --SS
+     option.  The slaves contact the master, and after  they  all
+     make contact the master lets them proceed.  The master bench
+     process also takes system statistics during the execution of
+     all  the  slaves.  It is generally run on the file server in
+     order to measure the load presented  by  the  slaves.   Note
+     that the master doesn't run a command itself, so no --cc argu-
+     ment is needed with --MM.
+
+KKEEYYWWOORRDDSS
+     benchmark, statistics, timing
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  March 21, 1990                    2
+
+
+

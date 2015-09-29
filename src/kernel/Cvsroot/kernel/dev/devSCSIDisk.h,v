@@ -1,0 +1,271 @@
+head     9.1;
+branch   ;
+access   ;
+symbols  ds3100:9.1 sun3:9.1 sun4nw:9.1 symm:9.1 spur:9.1 Summer89:9.0 newlib:8.0 Summer88:6.0 sbc:5.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.1
+date     91.04.16.17.12.57;  author jhh;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.57.38;  author douglis;  state Stable;
+branches ;
+next     8.5;
+
+8.5
+date     89.05.24.07.53.30;  author rab;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.05.01.16.07.04;  author mendel;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     88.11.28.08.23.32;  author brent;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.11.21.09.04.21;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.16.14.39.11;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.14.07;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.30.21;  author douglis;  state Stable;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.39.16;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.1
+log
+@fixed include statements
+@
+text
+@/*
+ * devSCSIDisk.h --
+ *
+ *	External definitions for disks on the SCSI I/O bus. The
+ *	only request to the block device attach procedure.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ * $Header: /sprite/src/kernel/dev/RCS/devSCSIDisk.h,v 9.0 89/09/12 14:57:38 douglis Stable Locker: jhh $ SPRITE (Berkeley)
+ */
+
+#ifndef _DEVSCSIDISK
+#define _DEVSCSIDISK
+
+#include <devBlockDevice.h>
+
+DevBlockDeviceHandle	*DevScsiDiskAttach();
+
+
+#endif /* _DEVSCSIDISK */
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d18 1
+a18 1
+ * $Header: /sprite/src/kernel/dev/RCS/devSCSIDisk.h,v 8.5 89/05/24 07:53:30 rab Exp Locker: douglis $ SPRITE (Berkeley)
+d24 1
+a24 1
+#include "devBlockDevice.h"
+@
+
+
+8.5
+log
+@Changes to allow optimization.
+@
+text
+@d18 1
+a18 1
+ * $Header: /sprite/src/kernel/dev/RCS/devSCSIDisk.h,v 8.4 89/05/01 16:07:04 mendel Exp Locker: rab $ SPRITE (Berkeley)
+@
+
+
+8.4
+log
+@Converted to support new block IO interface.
+@
+text
+@d18 1
+a18 1
+ * $Header: /sprite/src/kernel/dev/sun3.md/RCS/devSCSIDisk.h,v 8.3 88/11/28 08:23:32 brent Exp $ SPRITE (Berkeley)
+d29 1
+a29 1
+#endif _DEVSCSIDISK
+@
+
+
+8.3
+log
+@Changed disk types to be better and more general names. (GENERIC and CLASS7)
+@
+text
+@d4 2
+a5 1
+ *	External definitions for disks on the SCSI I/O bus.
+d18 1
+a18 1
+ * $Header: /sprite/src/kernel/dev/sun3.md/RCS/devSCSIDisk.h,v 8.2 88/11/21 09:04:21 brent Exp $ SPRITE (Berkeley)
+d24 1
+a24 42
+/*
+ * State info for an SCSI Disk.  This gets copied from the disk label.
+ */
+typedef struct DevSCSIDisk {
+    int numCylinders;	/* The number of cylinders on the disk */
+    int numHeads;	/* The number of heads */
+    int numSectors;	/* The number of sectors per track */
+    DevDiskMap map[DEV_NUM_DISK_PARTS];	/* The partition map */
+    int type;		/* Type of the drive, needed for error checking */
+} DevSCSIDisk;
+
+/*
+ * A table of SCSI disk info is kept.  It is used to map
+ * from unitNumber to the correct SCSI disk and partition.
+ */
+extern DevSCSIDevice *scsiDisk[];
+extern int scsiDiskIndex;
+
+/*
+ * SCSI_MAX_DISKS the maximum number of disk devices that can be hung
+ *	off ALL the SCSI controllers together.
+ */
+#define SCSI_MAX_DISKS	4
+
+/*
+ * Disk drive types:
+ *	SCSI_GENERIC_DISK	Old style (non-extended sense) disks.  This
+ *				is found in 2/120's.
+ *	SCSI_CLASS7_DISK	A new style disk returning Class 7 extended
+ *				sense data.
+ */
+#define SCSI_GENERIC_DISK	0
+#define SCSI_CLASS7_DISK	1
+
+/*
+ * Forward Declarations.
+ */
+ReturnStatus Dev_SCSIDiskOpen();
+ReturnStatus Dev_SCSIDiskRead();
+ReturnStatus Dev_SCSIDiskWrite();
+ReturnStatus Dev_SCSIDiskIOControl();
+ReturnStatus Dev_SCSIDiskClose();
+d26 1
+a26 2
+ReturnStatus Dev_SCSIDiskBlockIOInit();
+ReturnStatus Dev_SCSIDiskBlockIO();
+a27 1
+ReturnStatus DevSCSIDiskError();
+@
+
+
+8.2
+log
+@Stable version after code reorganization
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/dev/sun3.md/RCS/devSCSIDisk.h,v 8.1 88/11/16 14:39:11 brent Exp $ SPRITE (Berkeley)
+d49 4
+a52 2
+ *	SCSI_SHOEBOX_DISK	??? 
+ *	SCSI_EMULEX_DISK	The Emulex drives are found in the SCSIBOX.
+d54 2
+a55 2
+#define SCSI_SHOEBOX_DISK	0
+#define SCSI_EMULEX_DISK	1
+@
+
+
+8.1
+log
+@Moved all disk specfic definitions to here from devSCSI.h
+@
+text
+@d17 1
+a17 1
+ * $Header: devSCSIDisk.h,v 5.0 87/08/11 10:39:16 sprite Exp $ SPRITE (Berkeley)
+d39 1
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d4 1
+a4 1
+ *	External definitions for the SCSI Disk.
+d8 7
+d17 1
+a17 1
+ * $Header: /sprite/src/kernel/dev/sun3.md/RCS/devSCSIDisk.h,v 6.0 88/08/11 12:30:21 douglis Stable Locker: douglis $ SPRITE (Berkeley)
+d24 31
+d65 2
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: devSCSIDisk.h,v 5.0 87/08/11 10:39:16 sprite Exp $ SPRITE (Berkeley)
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d10 1
+a10 1
+ * $Header: devSCSIDisk.h,v 1.2 86/06/19 17:57:58 brent Exp $ SPRITE (Berkeley)
+@

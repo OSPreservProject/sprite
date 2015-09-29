@@ -1,0 +1,951 @@
+head     1.7;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.7
+date     90.09.24.14.40.29;  author douglis;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     90.02.01.17.37.01;  author brent;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.11.07.18.19.39;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.10.24.10.15.13;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.09.11.10.39.03;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.06.23.16.47.43;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.06.23.15.50.36;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Raw printing of FS statistics
+@
+
+
+1.7
+log
+@changes for migration stats
+@
+text
+@/* 
+ * rawfs.c --
+ *
+ *	Print raw format FS statistics.
+ *
+ * Copyright (C) 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/cmds/rawstat/RCS/rawfs.c,v 1.6 90/02/01 17:37:01 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+#include "stdio.h"
+#include "sysStats.h"
+#include "kernel/fsStat.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintRawFsCltName --
+ *
+ *	Prints fsStats.cltName.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+PrintRawFsCltName(X)
+    Fs_NameOpStats *X;
+{
+    printf("fsStats.cltName\n");
+    ZeroPrint("numReadOpens   %8u\n", X->numReadOpens);
+    ZeroPrint("numWriteOpens  %8u\n", X->numWriteOpens);
+    ZeroPrint("numReadWriteOpens %8u\n", X->numReadWriteOpens);
+    ZeroPrint("chdirs         %8u\n", X->chdirs);
+    ZeroPrint("makeDevices    %8u\n", X->makeDevices);
+    ZeroPrint("makeDirs       %8u\n", X->makeDirs);
+    ZeroPrint("removes        %8u\n", X->removes);
+    ZeroPrint("removeDirs     %8u\n", X->removeDirs);
+    ZeroPrint("renames        %8u\n", X->renames);
+    ZeroPrint("hardLinks      %8u\n", X->hardLinks);
+    ZeroPrint("symLinks       %8u\n", X->symLinks);
+    ZeroPrint("getAttrs       %8u\n", X->getAttrs);
+    ZeroPrint("setAttrs       %8u\n", X->setAttrs);
+    ZeroPrint("getAttrIDs     %8u\n", X->getAttrIDs);
+    ZeroPrint("setAttrIDs     %8u\n", X->setAttrIDs);
+    ZeroPrint("getIOAttrs     %8u\n", X->getIOAttrs);
+    ZeroPrint("setIOAttrs     %8u\n", X->setIOAttrs);
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintRawFsSrvName --
+ *
+ *	Prints fsStats.srvName.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+PrintRawFsSrvName(X)
+    Fs_NameOpStats *X;
+{
+    printf("fsStats.srvName\n");
+    ZeroPrint("numReadOpens   %8u\n", X->numReadOpens);
+    ZeroPrint("numWriteOpens  %8u\n", X->numWriteOpens);
+    ZeroPrint("numReadWriteOpens %8u\n", X->numReadWriteOpens);
+    ZeroPrint("chdirs         %8u\n", X->chdirs);
+    ZeroPrint("makeDevices    %8u\n", X->makeDevices);
+    ZeroPrint("makeDirs       %8u\n", X->makeDirs);
+    ZeroPrint("removes        %8u\n", X->removes);
+    ZeroPrint("removeDirs     %8u\n", X->removeDirs);
+    ZeroPrint("renames        %8u\n", X->renames);
+    ZeroPrint("hardLinks      %8u\n", X->hardLinks);
+    ZeroPrint("symLinks       %8u\n", X->symLinks);
+    ZeroPrint("getAttrs       %8u\n", X->getAttrs);
+    ZeroPrint("setAttrs       %8u\n", X->setAttrs);
+    ZeroPrint("getAttrIDs     %8u\n", X->getAttrIDs);
+    ZeroPrint("setAttrIDs     %8u\n", X->setAttrIDs);
+    ZeroPrint("getIOAttrs     %8u\n", X->getIOAttrs);
+    ZeroPrint("setIOAttrs     %8u\n", X->setIOAttrs);
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintRawFsGen --
+ *
+ *	Prints fsStats.gen.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+PrintRawFsGen(X)
+    Fs_GeneralStats *X;
+{
+    printf("fsStats.gen\n");
+    ZeroPrint("physBytesRead  %8u\n", X->physBytesRead);
+    ZeroPrint("fileBytesRead  %8u\n", X->fileBytesRead);
+    ZeroPrint("fileReadOverflow %8u\n", X->fileReadOverflow);
+    ZeroPrint("remoteBytesRead %8u\n", X->remoteBytesRead);
+    ZeroPrint("remoteReadOverflow %8u\n", X->remoteReadOverflow);
+    ZeroPrint("deviceBytesRead %8u\n", X->deviceBytesRead);
+    ZeroPrint("physBytesWritten %8u\n", X->physBytesWritten);
+    ZeroPrint("fileBytesWritten %8u\n", X->fileBytesWritten);
+    ZeroPrint("fileWriteOverflow %8u\n", X->fileWriteOverflow);
+    ZeroPrint("remoteBytesWritten %8u\n", X->remoteBytesWritten);
+    ZeroPrint("remoteWriteOverflow %8u\n", X->remoteWriteOverflow);
+    ZeroPrint("deviceBytesWritten %8u\n", X->deviceBytesWritten);
+    ZeroPrint("fileBytesDeleted %8u\n", X->fileBytesDeleted);
+    ZeroPrint("fileDeleteOverflow %8u\n", X->fileDeleteOverflow);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintRawFsBlockCache --
+ *
+ *	Prints fsStats.blockCache.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+PrintRawFsBlockCache(X)
+    Fs_BlockCacheStats *X;
+{
+    printf("fsStats.blockCache\n");
+    ZeroPrint("readAccesses   %8u\n", X->readAccesses);
+    ZeroPrint("bytesRead      %8u\n", X->bytesRead);
+    ZeroPrint("bytesReadOverflow %8u\n", X->bytesReadOverflow);
+    ZeroPrint("readHitsOnDirtyBlock %8u\n", X->readHitsOnDirtyBlock);
+    ZeroPrint("readHitsOnCleanBlock %8u\n", X->readHitsOnCleanBlock);
+    ZeroPrint("readZeroFills  %8u\n", X->readZeroFills);
+    ZeroPrint("domainReadFails %8u\n", X->domainReadFails);
+    ZeroPrint("readAheads     %8u\n", X->readAheads);
+    ZeroPrint("readAheadHits  %8u\n", X->readAheadHits);
+    ZeroPrint("allInCacheCalls %8u\n", X->allInCacheCalls);
+    ZeroPrint("allInCacheTrue %8u\n", X->allInCacheTrue);
+    ZeroPrint("writeAccesses  %8u\n", X->writeAccesses);
+    ZeroPrint("bytesWritten   %8u\n", X->bytesWritten);
+    ZeroPrint("bytesWrittenOverflow %8u\n", X->bytesWrittenOverflow);
+    ZeroPrint("appendWrites   %8u\n", X->appendWrites);
+    ZeroPrint("overWrites     %8u\n", X->overWrites);
+    ZeroPrint("writeZeroFills1 %8u\n", X->writeZeroFills1);
+    ZeroPrint("writeZeroFills2 %8u\n", X->writeZeroFills2);
+    ZeroPrint("partialWriteHits %8u\n", X->partialWriteHits);
+    ZeroPrint("partialWriteMisses %8u\n", X->partialWriteMisses);
+    ZeroPrint("blocksWrittenThru %8u\n", X->blocksWrittenThru);
+    ZeroPrint("dataBlocksWrittenThru %8u\n", X->dataBlocksWrittenThru);
+    ZeroPrint("indBlocksWrittenThru %8u\n", X->indBlocksWrittenThru);
+    ZeroPrint("descBlocksWrittenThru %8u\n", X->descBlocksWrittenThru);
+    ZeroPrint("dirBlocksWrittenThru %8u\n", X->dirBlocksWrittenThru);
+    ZeroPrint("fragAccesses   %8u\n", X->fragAccesses);
+    ZeroPrint("fragHits       %8u\n", X->fragHits);
+    ZeroPrint("fragZeroFills  %8u\n", X->fragZeroFills);
+    ZeroPrint("fileDescReads  %8u\n", X->fileDescReads);
+    ZeroPrint("fileDescReadHits %8u\n", X->fileDescReadHits);
+    ZeroPrint("fileDescWrites %8u\n", X->fileDescWrites);
+    ZeroPrint("fileDescWriteHits %8u\n", X->fileDescWriteHits);
+    ZeroPrint("indBlockAccesses %8u\n", X->indBlockAccesses);
+    ZeroPrint("indBlockHits   %8u\n", X->indBlockHits);
+    ZeroPrint("indBlockWrites %8u\n", X->indBlockWrites);
+    ZeroPrint("dirBlockAccesses %8u\n", X->dirBlockAccesses);
+    ZeroPrint("dirBlockHits   %8u\n", X->dirBlockHits);
+    ZeroPrint("dirBlockWrites %8u\n", X->dirBlockWrites);
+    ZeroPrint("dirBytesRead   %8u\n", X->dirBytesRead);
+    ZeroPrint("dirBytesWritten %8u\n", X->dirBytesWritten);
+    ZeroPrint("vmRequests     %8u\n", X->vmRequests);
+    ZeroPrint("triedToGiveToVM %8u\n", X->triedToGiveToVM);
+    ZeroPrint("vmGotPage      %8u\n", X->vmGotPage);
+    ZeroPrint("partFree       %8u\n", X->partFree);
+    ZeroPrint("totFree        %8u\n", X->totFree);
+    ZeroPrint("unmapped       %8u\n", X->unmapped);
+    ZeroPrint("lru            %8u\n", X->lru);
+    ZeroPrint("minCacheBlocks %8u\n", X->minCacheBlocks);
+    ZeroPrint("maxCacheBlocks %8u\n", X->maxCacheBlocks);
+    ZeroPrint("maxNumBlocks   %8u\n", X->maxNumBlocks);
+    ZeroPrint("numCacheBlocks %8u\n", X->numCacheBlocks);
+    ZeroPrint("numFreeBlocks  %8u\n", X->numFreeBlocks);
+    ZeroPrint("blocksPitched  %8u\n", X->blocksPitched);
+    ZeroPrint("blocksFlushed  %8u\n", X->blocksFlushed);
+    ZeroPrint("migBlocksFlushed  %8u\n", X->migBlocksFlushed);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintRawFsAlloc --
+ *
+ *	Prints fsStats.alloc.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+PrintRawFsAlloc(X)
+    Fs_AllocStats *X;
+{
+    printf("fsStats.alloc\n");
+    ZeroPrint("blocksAllocated %8u\n", X->blocksAllocated);
+    ZeroPrint("blocksFreed    %8u\n", X->blocksFreed);
+    ZeroPrint("cylsSearched   %8u\n", X->cylsSearched);
+    ZeroPrint("cylHashes      %8u\n", X->cylHashes);
+    ZeroPrint("cylBitmapSearches %8u\n", X->cylBitmapSearches);
+    ZeroPrint("fragsAllocated %8u\n", X->fragsAllocated);
+    ZeroPrint("fragsFreed     %8u\n", X->fragsFreed);
+    ZeroPrint("fragToBlock    %8u\n", X->fragToBlock);
+    ZeroPrint("fragUpgrades   %8u\n", X->fragUpgrades);
+    ZeroPrint("fragsUpgraded  %8u\n", X->fragsUpgraded);
+    ZeroPrint("badFragList    %8u\n", X->badFragList);
+    ZeroPrint("fullBlockFrags %8u\n", X->fullBlockFrags);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintRawFsHandle --
+ *
+ *	Prints fsStats.alloc.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+PrintRawFsHandle(X)
+    Fs_HandleStats *X;
+{
+    printf("fsStats.handle\n");
+    ZeroPrint("maxNumber      %8u\n", X->maxNumber);
+    ZeroPrint("exists         %8u\n", X->exists);
+    ZeroPrint("installCalls   %8u\n", X->installCalls);
+    ZeroPrint("installHits    %8u\n", X->installHits);
+    ZeroPrint("fetchCalls     %8u\n", X->fetchCalls);
+    ZeroPrint("fetchHits      %8u\n", X->fetchHits);
+    ZeroPrint("release        %8u\n", X->release);
+    ZeroPrint("locks          %8u\n", X->locks);
+    ZeroPrint("lockWaits      %8u\n", X->lockWaits);
+    ZeroPrint("unlocks        %8u\n", X->unlocks);
+    ZeroPrint("created        %8u\n", X->created);
+    ZeroPrint("lruScans       %8u\n", X->lruScans);
+    ZeroPrint("lruChecks      %8u\n", X->lruChecks);
+    ZeroPrint("lruHits        %8u\n", X->lruHits);
+    ZeroPrint("lruEntries     %8u\n", X->lruEntries);
+    ZeroPrint("limbo          %8u\n", X->limbo);
+    ZeroPrint("versionMismatch %8u\n", X->versionMismatch);
+    ZeroPrint("cacheFlushes   %8u\n", X->cacheFlushes);
+    ZeroPrint("segmentFetches %8u\n", X->segmentFetches);
+    ZeroPrint("segmentHits    %8u\n", X->segmentHits);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintRawFsNameCache --
+ *
+ *	Prints fsStats.nameCache.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+PrintRawFsNameCache(X)
+    Fs_NameCacheStats *X;
+{
+    printf("fsStats.nameCache\n");
+    ZeroPrint("accesses       %8u\n", X->accesses);
+    ZeroPrint("hits           %8u\n", X->hits);
+    ZeroPrint("replacements   %8u\n", X->replacements);
+    ZeroPrint("size           %8u\n", X->size);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintRawFsPrefix --
+ *
+ *	Prints fsStats.prefix.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+PrintRawFsPrefix(X)
+	Fs_PrefixStats *X;
+{
+    printf("fsStats.prefix\n");
+    ZeroPrint("relative       %8u\n", X->relative);
+    ZeroPrint("absolute       %8u\n", X->absolute);
+    ZeroPrint("redirects      %8u\n", X->redirects);
+    ZeroPrint("loops          %8u\n", X->loops);
+    ZeroPrint("timeouts       %8u\n", X->timeouts);
+    ZeroPrint("stale          %8u\n", X->stale);
+    ZeroPrint("found          %8u\n", X->found);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintRawFsLookup --
+ *
+ *	Prints fsStats.lookup.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+PrintRawFsLookup(X)
+    Fs_LookupStats *X;
+{
+    printf("fsStats.lookup\n");
+    ZeroPrint("number         %8u\n", X->number);
+    ZeroPrint("numComponents  %8u\n", X->numComponents);
+    ZeroPrint("numSpecial     %8u\n", X->numSpecial);
+    ZeroPrint("forDelete      %8u\n", X->forDelete);
+    ZeroPrint("forLink        %8u\n", X->forLink);
+    ZeroPrint("forRename      %8u\n", X->forRename);
+    ZeroPrint("forCreate      %8u\n", X->forCreate);
+    ZeroPrint("symlinks       %8u\n", X->symlinks);
+    ZeroPrint("redirect       %8u\n", X->redirect);
+    ZeroPrint("remote         %8u\n", X->remote);
+    ZeroPrint("parent         %8u\n", X->parent);
+    ZeroPrint("notFound       %8u\n", X->notFound);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintRawFsObject --
+ *
+ *	Prints fsStats.object.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+PrintRawFsObject(X)
+	Fs_ObjectStats *X;
+{
+    printf("fsStats.object\n");
+    ZeroPrint("streams        %8u\n", X->streams);
+    ZeroPrint("streamClients  %8u\n", X->streamClients);
+    ZeroPrint("files          %8u\n", X->files);
+    ZeroPrint("rmtFiles       %8u\n", X->rmtFiles);
+    ZeroPrint("pipes          %8u\n", X->pipes);
+    ZeroPrint("devices        %8u\n", X->devices);
+    ZeroPrint("controls       %8u\n", X->controls);
+    ZeroPrint("pseudoStreams  %8u\n", X->pseudoStreams);
+    ZeroPrint("remote         %8u\n", X->remote);
+    ZeroPrint("directory      %8u\n", X->directory);
+    ZeroPrint("dirFlushed     %8u\n", X->dirFlushed);
+    ZeroPrint("fileClients    %8u\n", X->fileClients);
+    ZeroPrint("other          %8u\n", X->other);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintRawFsRecovery --
+ *
+ *	Prints fsStats.recovery.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+PrintRawFsRecovery(X)
+	Fs_RecoveryStats *X;
+{
+    printf("fsStats.recovery\n");
+    ZeroPrint("number         %8u\n", X->number);
+    ZeroPrint("wants          %8u\n", X->wants);
+    ZeroPrint("waitOK         %8u\n", X->waitOK);
+    ZeroPrint("waitFailed     %8u\n", X->waitFailed);
+    ZeroPrint("waitAbort      %8u\n", X->waitAbort);
+    ZeroPrint("timeout        %8u\n", X->timeout);
+    ZeroPrint("failed         %8u\n", X->failed);
+    ZeroPrint("deleted        %8u\n", X->deleted);
+    ZeroPrint("offline        %8u\n", X->offline);
+    ZeroPrint("succeeded      %8u\n", X->succeeded);
+    ZeroPrint("clientCrashed  %8u\n", X->clientCrashed);
+    ZeroPrint("clientRecovered %8u\n", X->clientRecovered);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintRawFsConsist --
+ *
+ *	Prints fsStats.consist.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+PrintRawFsConsist(X)
+	Fs_ConsistStats *X;
+{
+    printf("fsStats.consist\n");
+    ZeroPrint("files          %8d\n", X->files);
+    ZeroPrint("clients        %8d\n", X->clients);
+    ZeroPrint("notCaching     %8d\n", X->notCaching);
+    ZeroPrint("readCachingMyself    %8d\n", X->readCachingMyself);
+    ZeroPrint("readCachingOther    %8d\n", X->readCachingOther);
+    ZeroPrint("writeCaching   %8d\n", X->writeCaching);
+    ZeroPrint("writeBack      %8d\n", X->writeBack);
+    ZeroPrint("readInvalidate %8d\n", X->readInvalidate);
+    ZeroPrint("writeInvalidate %8d\n", X->writeInvalidate);
+    ZeroPrint("nonFiles       %8d\n", X->nonFiles);
+    ZeroPrint("swap           %8d\n", X->swap);
+    ZeroPrint("cacheable      %8d\n", X->cacheable);
+    ZeroPrint("uncacheable    %8d\n", X->uncacheable);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintRawFsWriteBack --
+ *
+ *	Prints fsStats.writeBack.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+PrintRawFsWriteBack(X)
+	Fs_WriteBackStats *X;
+{
+    printf("fsStats.writeBack\n");
+    ZeroPrint("passes         %8d\n", X->passes);
+    ZeroPrint("files          %8d\n", X->files);
+    ZeroPrint("blocks         %8d\n", X->blocks);
+    ZeroPrint("maxBlocks         %8d\n", X->maxBlocks);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintRawRemoteIO --
+ *
+ *	Prints fsStats.rmtIO.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+PrintRawRemoteIO(X)
+	Fs_RemoteIOStats *X;
+{
+    printf("fsStats.rmtIO\n");
+    ZeroPrint("bytesReadForCache %8d\n", X->bytesReadForCache);
+    ZeroPrint("bytesWrittenFromCache %8d\n", X->bytesWrittenFromCache);
+    ZeroPrint("uncacheableBytesRead %8d\n", X->uncacheableBytesRead);
+    ZeroPrint("uncacheableBytesWritten %8d\n", X->uncacheableBytesWritten);
+    ZeroPrint("sharedStreamBytesRead %8d\n", X->sharedStreamBytesRead);
+    ZeroPrint("sharedStreamBytesWritten %8d\n", X->sharedStreamBytesWritten);
+    ZeroPrint("hitsOnVMBlock %8d\n", X->hitsOnVMBlock);
+    ZeroPrint("missesOnVMBlock %8d\n", X->missesOnVMBlock);
+    ZeroPrint("bytesReadForVM %8d\n", X->bytesReadForVM);
+    ZeroPrint("bytesWrittenForVM %8d\n", X->bytesWrittenForVM);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintRawFsMig --
+ *
+ *	Prints fsStats.mig.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+PrintRawFsMig(X)
+	Fs_MigStats *X;
+{
+    printf("fsStats.mig\n");
+    ZeroPrint("filesEncapsulated %8d\n", X->filesEncapsulated);
+    ZeroPrint("encapSquared %8d\n", X->encapSquared);
+    ZeroPrint("filesDeencapsulated %8d\n", X->filesDeencapsulated);
+    ZeroPrint("deencapSquared %8d\n", X->deencapSquared);
+    ZeroPrint("consistActions %8d\n", X->consistActions);
+    ZeroPrint("readOnlyFiles %8d\n", X->readOnlyFiles);
+    ZeroPrint("alreadyThere %8d\n", X->alreadyThere);
+    ZeroPrint("uncacheableFiles %8d\n", X->uncacheableFiles);
+    ZeroPrint("cacheWritableFiles %8d\n", X->cacheWritableFiles);
+    ZeroPrint("uncacheToCacheFiles %8d\n", X->uncacheToCacheFiles);
+    ZeroPrint("cacheToUncacheFiles %8d\n", X->cacheToUncacheFiles);
+    ZeroPrint("errorsOnDeencap %8d\n", X->errorsOnDeencap);
+}
+
+@
+
+
+1.6
+log
+@Updated with new RemoteIO stats regarding VM traffic
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/cmds/rawstat/RCS/rawfs.c,v 1.5 89/11/07 18:19:39 brent Exp $ SPRITE (Berkeley)";
+d209 2
+d543 34
+@
+
+
+1.5
+log
+@Added fs_Stats.rmtIO
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/cmds/rawstat/RCS/rawfs.c,v 1.4 89/10/24 10:15:13 brent Exp $ SPRITE (Berkeley)";
+a530 1
+    ZeroPrint("blocksReadForVM %8d\n", X->blocksReadForVM);
+d537 4
+@
+
+
+1.4
+log
+@Added more FS stats
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /a/newcmds/rawstat/RCS/rawfs.c,v 1.3 89/09/11 10:39:03 brent Exp $ SPRITE (Berkeley)";
+d473 2
+a474 1
+    ZeroPrint("readCaching    %8d\n", X->readCaching);
+d508 30
+@
+
+
+1.3
+log
+@Updated to new typedefs
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /a/newcmds/rawstat/RCS/rawfs.c,v 1.2 89/06/23 16:47:43 brent Exp $ SPRITE (Berkeley)";
+d448 59
+@
+
+
+1.2
+log
+@Chagned to unsigned print format to handle large numbers
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /a/newcmds/rawstat/RCS/rawfs.c,v 1.1 89/06/23 15:50:36 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d37 1
+a37 1
+    FsNameOpStats *X;
+d77 1
+a77 1
+    FsNameOpStats *X;
+d117 1
+a117 1
+    FsGeneralStats *X;
+d153 1
+a153 1
+    FsBlockCacheStats *X;
+d228 1
+a228 1
+    FsAllocStats *X;
+d263 1
+a263 1
+    FsHandleStats *X;
+d306 1
+a306 1
+    FsNameCacheStats *X;
+d333 1
+a333 1
+	FsPrefixStats *X;
+d362 1
+a362 1
+    FsLookupStats *X;
+d397 1
+a397 1
+	FsObjectStats *X;
+d433 1
+a433 1
+	FsRecoveryStats *X;
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /a/newcmds/rpcstat/RCS/rpcstat.c,v 1.16 89/06/23 13:41:16 brent Exp $ SPRITE (Berkeley)";
+d40 18
+a57 18
+    ZeroPrint("numReadOpens   %8d\n", X->numReadOpens);
+    ZeroPrint("numWriteOpens  %8d\n", X->numWriteOpens);
+    ZeroPrint("numReadWriteOpens %8d\n", X->numReadWriteOpens);
+    ZeroPrint("chdirs         %8d\n", X->chdirs);
+    ZeroPrint("makeDevices    %8d\n", X->makeDevices);
+    ZeroPrint("makeDirs       %8d\n", X->makeDirs);
+    ZeroPrint("removes        %8d\n", X->removes);
+    ZeroPrint("removeDirs     %8d\n", X->removeDirs);
+    ZeroPrint("renames        %8d\n", X->renames);
+    ZeroPrint("hardLinks      %8d\n", X->hardLinks);
+    ZeroPrint("symLinks       %8d\n", X->symLinks);
+    ZeroPrint("getAttrs       %8d\n", X->getAttrs);
+    ZeroPrint("setAttrs       %8d\n", X->setAttrs);
+    ZeroPrint("getAttrIDs     %8d\n", X->getAttrIDs);
+    ZeroPrint("setAttrIDs     %8d\n", X->setAttrIDs);
+    ZeroPrint("getIOAttrs     %8d\n", X->getIOAttrs);
+    ZeroPrint("setIOAttrs     %8d\n", X->setIOAttrs);
+
+d80 18
+a97 18
+    ZeroPrint("numReadOpens   %8d\n", X->numReadOpens);
+    ZeroPrint("numWriteOpens  %8d\n", X->numWriteOpens);
+    ZeroPrint("numReadWriteOpens %8d\n", X->numReadWriteOpens);
+    ZeroPrint("chdirs         %8d\n", X->chdirs);
+    ZeroPrint("makeDevices    %8d\n", X->makeDevices);
+    ZeroPrint("makeDirs       %8d\n", X->makeDirs);
+    ZeroPrint("removes        %8d\n", X->removes);
+    ZeroPrint("removeDirs     %8d\n", X->removeDirs);
+    ZeroPrint("renames        %8d\n", X->renames);
+    ZeroPrint("hardLinks      %8d\n", X->hardLinks);
+    ZeroPrint("symLinks       %8d\n", X->symLinks);
+    ZeroPrint("getAttrs       %8d\n", X->getAttrs);
+    ZeroPrint("setAttrs       %8d\n", X->setAttrs);
+    ZeroPrint("getAttrIDs     %8d\n", X->getAttrIDs);
+    ZeroPrint("setAttrIDs     %8d\n", X->setAttrIDs);
+    ZeroPrint("getIOAttrs     %8d\n", X->getIOAttrs);
+    ZeroPrint("setIOAttrs     %8d\n", X->setIOAttrs);
+
+d120 14
+a133 14
+    ZeroPrint("physBytesRead  %8d\n", X->physBytesRead);
+    ZeroPrint("fileBytesRead  %8d\n", X->fileBytesRead);
+    ZeroPrint("fileReadOverflow %8d\n", X->fileReadOverflow);
+    ZeroPrint("remoteBytesRead %8d\n", X->remoteBytesRead);
+    ZeroPrint("remoteReadOverflow %8d\n", X->remoteReadOverflow);
+    ZeroPrint("deviceBytesRead %8d\n", X->deviceBytesRead);
+    ZeroPrint("physBytesWritten %8d\n", X->physBytesWritten);
+    ZeroPrint("fileBytesWritten %8d\n", X->fileBytesWritten);
+    ZeroPrint("fileWriteOverflow %8d\n", X->fileWriteOverflow);
+    ZeroPrint("remoteBytesWritten %8d\n", X->remoteBytesWritten);
+    ZeroPrint("remoteWriteOverflow %8d\n", X->remoteWriteOverflow);
+    ZeroPrint("deviceBytesWritten %8d\n", X->deviceBytesWritten);
+    ZeroPrint("fileBytesDeleted %8d\n", X->fileBytesDeleted);
+    ZeroPrint("fileDeleteOverflow %8d\n", X->fileDeleteOverflow);
+d156 53
+a208 53
+    ZeroPrint("readAccesses   %8d\n", X->readAccesses);
+    ZeroPrint("bytesRead      %8d\n", X->bytesRead);
+    ZeroPrint("bytesReadOverflow %8d\n", X->bytesReadOverflow);
+    ZeroPrint("readHitsOnDirtyBlock %8d\n", X->readHitsOnDirtyBlock);
+    ZeroPrint("readHitsOnCleanBlock %8d\n", X->readHitsOnCleanBlock);
+    ZeroPrint("readZeroFills  %8d\n", X->readZeroFills);
+    ZeroPrint("domainReadFails %8d\n", X->domainReadFails);
+    ZeroPrint("readAheads     %8d\n", X->readAheads);
+    ZeroPrint("readAheadHits  %8d\n", X->readAheadHits);
+    ZeroPrint("allInCacheCalls %8d\n", X->allInCacheCalls);
+    ZeroPrint("allInCacheTrue %8d\n", X->allInCacheTrue);
+    ZeroPrint("writeAccesses  %8d\n", X->writeAccesses);
+    ZeroPrint("bytesWritten   %8d\n", X->bytesWritten);
+    ZeroPrint("bytesWrittenOverflow %8d\n", X->bytesWrittenOverflow);
+    ZeroPrint("appendWrites   %8d\n", X->appendWrites);
+    ZeroPrint("overWrites     %8d\n", X->overWrites);
+    ZeroPrint("writeZeroFills1 %8d\n", X->writeZeroFills1);
+    ZeroPrint("writeZeroFills2 %8d\n", X->writeZeroFills2);
+    ZeroPrint("partialWriteHits %8d\n", X->partialWriteHits);
+    ZeroPrint("partialWriteMisses %8d\n", X->partialWriteMisses);
+    ZeroPrint("blocksWrittenThru %8d\n", X->blocksWrittenThru);
+    ZeroPrint("dataBlocksWrittenThru %8d\n", X->dataBlocksWrittenThru);
+    ZeroPrint("indBlocksWrittenThru %8d\n", X->indBlocksWrittenThru);
+    ZeroPrint("descBlocksWrittenThru %8d\n", X->descBlocksWrittenThru);
+    ZeroPrint("dirBlocksWrittenThru %8d\n", X->dirBlocksWrittenThru);
+    ZeroPrint("fragAccesses   %8d\n", X->fragAccesses);
+    ZeroPrint("fragHits       %8d\n", X->fragHits);
+    ZeroPrint("fragZeroFills  %8d\n", X->fragZeroFills);
+    ZeroPrint("fileDescReads  %8d\n", X->fileDescReads);
+    ZeroPrint("fileDescReadHits %8d\n", X->fileDescReadHits);
+    ZeroPrint("fileDescWrites %8d\n", X->fileDescWrites);
+    ZeroPrint("fileDescWriteHits %8d\n", X->fileDescWriteHits);
+    ZeroPrint("indBlockAccesses %8d\n", X->indBlockAccesses);
+    ZeroPrint("indBlockHits   %8d\n", X->indBlockHits);
+    ZeroPrint("indBlockWrites %8d\n", X->indBlockWrites);
+    ZeroPrint("dirBlockAccesses %8d\n", X->dirBlockAccesses);
+    ZeroPrint("dirBlockHits   %8d\n", X->dirBlockHits);
+    ZeroPrint("dirBlockWrites %8d\n", X->dirBlockWrites);
+    ZeroPrint("dirBytesRead   %8d\n", X->dirBytesRead);
+    ZeroPrint("dirBytesWritten %8d\n", X->dirBytesWritten);
+    ZeroPrint("vmRequests     %8d\n", X->vmRequests);
+    ZeroPrint("triedToGiveToVM %8d\n", X->triedToGiveToVM);
+    ZeroPrint("vmGotPage      %8d\n", X->vmGotPage);
+    ZeroPrint("partFree       %8d\n", X->partFree);
+    ZeroPrint("totFree        %8d\n", X->totFree);
+    ZeroPrint("unmapped       %8d\n", X->unmapped);
+    ZeroPrint("lru            %8d\n", X->lru);
+    ZeroPrint("minCacheBlocks %8d\n", X->minCacheBlocks);
+    ZeroPrint("maxCacheBlocks %8d\n", X->maxCacheBlocks);
+    ZeroPrint("maxNumBlocks   %8d\n", X->maxNumBlocks);
+    ZeroPrint("numCacheBlocks %8d\n", X->numCacheBlocks);
+    ZeroPrint("numFreeBlocks  %8d\n", X->numFreeBlocks);
+    ZeroPrint("blocksPitched  %8d\n", X->blocksPitched);
+d231 13
+a243 13
+    ZeroPrint("blocksAllocated %8d\n", X->blocksAllocated);
+    ZeroPrint("blocksFreed    %8d\n", X->blocksFreed);
+    ZeroPrint("cylsSearched   %8d\n", X->cylsSearched);
+    ZeroPrint("cylHashes      %8d\n", X->cylHashes);
+    ZeroPrint("cylBitmapSearches %8d\n", X->cylBitmapSearches);
+    ZeroPrint("fragsAllocated %8d\n", X->fragsAllocated);
+    ZeroPrint("fragsFreed     %8d\n", X->fragsFreed);
+    ZeroPrint("fragToBlock    %8d\n", X->fragToBlock);
+    ZeroPrint("fragUpgrades   %8d\n", X->fragUpgrades);
+    ZeroPrint("fragsUpgraded  %8d\n", X->fragsUpgraded);
+    ZeroPrint("badFragList    %8d\n", X->badFragList);
+    ZeroPrint("fullBlockFrags %8d\n", X->fullBlockFrags);
+}
+d266 21
+a286 21
+    ZeroPrint("maxNumber      %8d\n", X->maxNumber);
+    ZeroPrint("exists         %8d\n", X->exists);
+    ZeroPrint("installCalls   %8d\n", X->installCalls);
+    ZeroPrint("installHits    %8d\n", X->installHits);
+    ZeroPrint("fetchCalls     %8d\n", X->fetchCalls);
+    ZeroPrint("fetchHits      %8d\n", X->fetchHits);
+    ZeroPrint("release        %8d\n", X->release);
+    ZeroPrint("locks          %8d\n", X->locks);
+    ZeroPrint("lockWaits      %8d\n", X->lockWaits);
+    ZeroPrint("unlocks        %8d\n", X->unlocks);
+    ZeroPrint("created        %8d\n", X->created);
+    ZeroPrint("lruScans       %8d\n", X->lruScans);
+    ZeroPrint("lruChecks      %8d\n", X->lruChecks);
+    ZeroPrint("lruHits        %8d\n", X->lruHits);
+    ZeroPrint("lruEntries     %8d\n", X->lruEntries);
+    ZeroPrint("limbo          %8d\n", X->limbo);
+    ZeroPrint("versionMismatch %8d\n", X->versionMismatch);
+    ZeroPrint("cacheFlushes   %8d\n", X->cacheFlushes);
+    ZeroPrint("segmentFetches %8d\n", X->segmentFetches);
+    ZeroPrint("segmentHits    %8d\n", X->segmentHits);
+}
+d309 4
+a312 4
+    ZeroPrint("accesses       %8d\n", X->accesses);
+    ZeroPrint("hits           %8d\n", X->hits);
+    ZeroPrint("replacements   %8d\n", X->replacements);
+    ZeroPrint("size           %8d\n", X->size);
+d336 7
+a342 7
+    ZeroPrint("relative       %8d\n", X->relative);
+    ZeroPrint("absolute       %8d\n", X->absolute);
+    ZeroPrint("redirects      %8d\n", X->redirects);
+    ZeroPrint("loops          %8d\n", X->loops);
+    ZeroPrint("timeouts       %8d\n", X->timeouts);
+    ZeroPrint("stale          %8d\n", X->stale);
+    ZeroPrint("found          %8d\n", X->found);
+d365 13
+a377 13
+    ZeroPrint("number         %8d\n", X->number);
+    ZeroPrint("numComponents  %8d\n", X->numComponents);
+    ZeroPrint("numSpecial     %8d\n", X->numSpecial);
+    ZeroPrint("forDelete      %8d\n", X->forDelete);
+    ZeroPrint("forLink        %8d\n", X->forLink);
+    ZeroPrint("forRename      %8d\n", X->forRename);
+    ZeroPrint("forCreate      %8d\n", X->forCreate);
+    ZeroPrint("symlinks       %8d\n", X->symlinks);
+    ZeroPrint("redirect       %8d\n", X->redirect);
+    ZeroPrint("remote         %8d\n", X->remote);
+    ZeroPrint("parent         %8d\n", X->parent);
+    ZeroPrint("notFound       %8d\n", X->notFound);
+}
+d400 14
+a413 14
+    ZeroPrint("streams        %8d\n", X->streams);
+    ZeroPrint("streamClients  %8d\n", X->streamClients);
+    ZeroPrint("files          %8d\n", X->files);
+    ZeroPrint("rmtFiles       %8d\n", X->rmtFiles);
+    ZeroPrint("pipes          %8d\n", X->pipes);
+    ZeroPrint("devices        %8d\n", X->devices);
+    ZeroPrint("controls       %8d\n", X->controls);
+    ZeroPrint("pseudoStreams  %8d\n", X->pseudoStreams);
+    ZeroPrint("remote         %8d\n", X->remote);
+    ZeroPrint("directory      %8d\n", X->directory);
+    ZeroPrint("dirFlushed     %8d\n", X->dirFlushed);
+    ZeroPrint("fileClients    %8d\n", X->fileClients);
+    ZeroPrint("other          %8d\n", X->other);
+}
+d436 12
+a447 12
+    ZeroPrint("number         %8d\n", X->number);
+    ZeroPrint("wants          %8d\n", X->wants);
+    ZeroPrint("waitOK         %8d\n", X->waitOK);
+    ZeroPrint("waitFailed     %8d\n", X->waitFailed);
+    ZeroPrint("waitAbort      %8d\n", X->waitAbort);
+    ZeroPrint("timeout        %8d\n", X->timeout);
+    ZeroPrint("failed         %8d\n", X->failed);
+    ZeroPrint("deleted        %8d\n", X->deleted);
+    ZeroPrint("offline        %8d\n", X->offline);
+    ZeroPrint("succeeded      %8d\n", X->succeeded);
+    ZeroPrint("clientCrashed  %8d\n", X->clientCrashed);
+    ZeroPrint("clientRecovered %8d\n", X->clientRecovered);
+@

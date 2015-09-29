@@ -1,0 +1,8 @@
+
+
+          chmod mode filelist
+               Set permissions of each of the files in the list
+               filelist to mode, where mode is an absolute numeric
+               mode or symbolic permissions as in the UNIX chmod(1)
+               command.  To specify a mode as octal, it should be
+               prefixed with a "0" (e.g. 0622).

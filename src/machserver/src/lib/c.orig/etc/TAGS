@@ -1,0 +1,341 @@
+
+a.out.c,0
+
+alarm.c,14
+alarm(16,387
+
+crypt.c,51
+crypt(333,7007
+encrypt(244,5279
+setkey(116,2133
+
+ecvt.c,38
+cvt(32,621
+ecvt(16,360
+fcvt(24,487
+
+fmt.c,381
+#define AlignPointer(134,4782
+CalcComplexAlign(1054,31136
+ConvertByte(702,21314
+ConvertDoubleWord(955,28385
+ConvertHalfWord(777,23382
+ConvertSequence(343,11350
+ConvertStruct(520,16141
+ConvertUnion(607,18667
+ConvertWord(865,25833
+Fmt_Convert(175,5939
+Fmt_Size(251,8169
+} FormatInfo;62,2190
+#define MAX(144,5022
+} State;94,3340
+static int formatCount = sizeof(79,2654
+
+frexp.c,14
+frexp(46,969
+
+fsDispatch.c,359
+CallTimeoutHandler(783,21511
+ComputeTimeoutValue(893,24566
+DispatcherInit(150,4432
+Fs_Dispatch(194,5744
+Fs_EventHandlerChangeData(517,14520
+Fs_EventHandlerCreate(411,11747
+Fs_EventHandlerData(480,13681
+Fs_EventHandlerDestroy(559,15480
+Fs_TimeoutHandlerCreate(648,18138
+Fs_TimeoutHandlerDestroy(742,20695
+} StreamInfo;49,1683
+} TimeoutInfo;89,2986
+
+ftime.c,14
+ftime(26,518
+
+gcvt.c,13
+gcvt(13,227
+
+getgrent.c,85
+endgrent(30,571
+getgrent(49,772
+grskip(39,647
+setgrent(22,491
+setgrfile(73,1216
+
+getgrgid.c,17
+getgrgid(14,321
+
+getgrnam.c,17
+getgrnam(14,321
+
+getlogin.c,17
+getlogin(14,302
+
+getopt.c,37
+getopt(39,1137
+#define	tell(29,968
+
+getpass.c,16
+getpass(12,305
+
+getpwent.c,204
+endpwent(164,3421
+fetch_pw(232,4842
+getpw(275,5880
+getpwent(41,1426
+getpwnam(61,1797
+getpwuid(88,2236
+scanpw(183,3635
+setpassent(154,3306
+setpwent(149,3266
+setpwfile(176,3576
+start_pw(115,2665
+
+getusershell.c,84
+endusershell(48,962
+getusershell(36,814
+initshells(67,1181
+setusershell(60,1119
+
+getwd.c,76
+#define GETWDERR(26,648
+getwd(36,812
+oldGetwd(147,3922
+prepend(132,3610
+
+gtty.c,14
+gtty(42,1114
+
+initgroups.c,19
+initgroups(20,440
+
+insque.c,16
+insque(43,1066
+
+isatty.c,15
+isatty(35,726
+
+isinf.c,15
+isinf(51,1223
+
+isnan.c,15
+isnan(51,1233
+
+iszero.c,106
+int isnormal(86,2043
+int issubnormal(63,1594
+int iszero(109,2470
+parts(161,3523
+int signbit(132,2924
+
+ldexp.c,21
+double ldexp(28,821
+
+mktemp.c,49
+_gettemp(46,1009
+mkstemp(30,831
+mktemp(39,915
+
+ndbm.c,349
+additem(495,10156
+chkblk(520,10620
+dbm_access(274,5602
+dbm_close(73,1608
+dbm_delete(121,2371
+dbm_fetch(100,2031
+dbm_firstkey(226,4660
+dbm_forder(83,1720
+dbm_nextkey(236,4769
+dbm_open(37,779
+dbm_store(148,2899
+dcalchash(438,9268
+delitem(463,9648
+finddatum(369,7604
+getbit(298,6179
+hashinc(419,9017
+makdatum(347,7292
+setbit(321,6645
+
+option.c,69
+#define OptNoArg(25,764
+Opt_Parse(52,1677
+Opt_PrintUsage(280,7284
+
+panic.c,30
+panic(42,1084
+panic(62,1524
+
+pause.c,15
+pause(38,1048
+
+pdev.c,656
+#define LIST_TO_SRVPTR(95,3475
+} Pdev;65,2323
+PdevCleanup(361,11541
+PdevControlRequest(416,12993
+PdevDefaultClose(1196,36148
+PdevDefaultGetAttr(1309,39031
+PdevDefaultIoctl(1280,38246
+PdevDefaultOpen(1163,35115
+PdevDefaultRead(1220,36586
+PdevDefaultSetAttr(1340,39794
+PdevDefaultWrite(1251,37420
+PdevServiceRequest(570,18188
+PdevSetup(461,14348
+Pdev_Close(298,9996
+Pdev_EnumStreams(958,29832
+Pdev_GetStreamID(333,10861
+Pdev_Open(172,6097
+Pdev_SetDefaultHandler(1002,30963
+Pdev_SetStreamHandler(1038,32031
+ReplyNoData(851,26658
+ReplyWithData(896,27834
+} ServiceStream;93,3457
+static int    (*SetHandler(133,4454
+SetHandler(1073,32979
+
+pfs.c,188
+PfsNamingRequest(350,10693
+PfsNullProc(766,22517
+Pfs_Close(735,21871
+Pfs_Open(112,3641
+Pfs_OpenConnection(650,19284
+Pfs_PassFile(703,21146
+Pfs_SetHandler(221,7442
+} Server;56,2139
+
+popen.c,50
+pclose(66,1364
+popen(25,535
+#define	tst(15,389
+
+regex.c,89
+advance(266,6352
+backref(373,7838
+cclass(387,8014
+re_comp(102,3623
+re_exec(226,5785
+
+remque.c,16
+remque(43,1063
+
+setegid.c,16
+setegid(11,328
+
+seteuid.c,16
+seteuid(11,328
+
+setgid.c,15
+setgid(14,366
+
+setrgid.c,16
+setrgid(11,328
+
+setruid.c,16
+setruid(11,328
+
+setuid.c,15
+setuid(14,366
+
+shm.c,99
+} SHMIDS;71,2127
+shmat(214,5296
+shmctl(170,4188
+shmdt(259,6402
+shmget(94,2548
+shmop(165,4160
+
+siglist.c,0
+
+signal.c,15
+signal(17,402
+
+sleep.c,69
+#define setvec(23,718
+sleep(46,1142
+sleep(97,2776
+sleepx(89,2722
+
+status.c,43
+Stat_GetMsg(210,7874
+} StatusMsgs;29,841
+
+statusPrint.c,23
+Stat_PrintMsg(45,1243
+
+stty.c,14
+stty(41,1091
+
+swapBuffer.c,497
+CalcPutByteSize(701,21077
+CalcPutDoubleSize(750,22202
+CalcPutHalfWordSize(710,21204
+CalcPutWordSize(727,21617
+CalcSize(344,11712
+CopyData(440,13965
+#define	FakePanicValue(41,1295
+#define FakePanicValue(47,1462
+#define FakePanicVoid(38,1207
+#define FakePanicVoid(45,1405
+GetByte(549,16992
+GetDoubleWord(667,20124
+GetHalfWord(564,17245
+GetWord(610,18387
+PutByte(789,23521
+PutDoubleWord(918,26861
+PutHalfWord(804,23770
+PutWord(850,24844
+Swap_BufSize(261,9081
+Swap_Buffer(103,3265
+
+syslog.c,115
+#define PRIFAC(53,1289
+closelog(230,4660
+openlog(206,4283
+setlogmask(242,4776
+syslog(78,1989
+syslog(193,4159
+
+ttyDriver.c,484
+FormatInput(1079,30659
+FormatOutput(1200,33117
+#define NEXT(188,6645
+#define PREV(194,6756
+TdBackspace(1839,49654
+TdEcho(1756,47645
+TdFlushInput(1950,52377
+TdFlushOutput(1980,53154
+TdPutChar(1676,45654
+TdRetypeInput(1804,48686
+Td_Close(402,12729
+Td_ControlCooked(647,20118
+Td_ControlRaw(1625,44246
+Td_Create(242,8169
+Td_Delete(326,10709
+Td_GetCooked(439,13857
+Td_GetRaw(1306,35578
+Td_Open(362,11737
+Td_PutCooked(568,17535
+Td_PutRaw(1356,37131
+} Terminal;142,5444
+
+ttyPdev.c,232
+ChangeReady(436,12501
+CookedProc(379,10866
+PdevClose(229,6535
+PdevIoctl(339,9623
+PdevOpen(182,5015
+PdevRead(256,7103
+} PdevTerm;46,1347
+PdevWrite(295,8261
+SendSignal(472,13534
+Td_CreatePdev(86,2490
+Td_DeletePdev(146,4282
+
+ttyname.c,17
+ttyname(48,1368
+
+ttyslot.c,17
+ttyslot(41,1260
+
+utime.c,15
+utime(57,1939

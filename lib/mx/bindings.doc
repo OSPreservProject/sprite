@@ -1,0 +1,96 @@
+This file describes the default key bindings used in Mx.
+In the descriptions below, the following conventions are used:
+
+	C-x means "control X"
+	M-x means "meta X" (on Suns, this means hold down the "Left" or
+		"Right" key while typing "x")
+	ESC x means first type the escape key, then type "x".
+
+Selection:
+----------
+
+C-v	Copy selection to caret.
+M-v	Move the selection to the caret.
+C-d	Delete the selection.
+ESC d	Delete the selection, but save it in the variable "saved".
+ESC v	Copy the contents of "saved" to the caret.
+
+Line Editing:
+-------------
+
+C-h	Erase the character before the caret.
+DEL	Erase the character before the caret.
+C-w	Erase the word before the caret.
+C-n	Erase the next word after the caret.
+C-l	Erase the character after the caret.
+C-e	Erase everything in the line after the caret.
+
+Searching and Replacement:
+--------------------------
+
+C-f	Search for the next instance of the pattern in the search entry.
+M-f	Search for the next instance of the selection.
+ESC C-f	Same as C-f, but don't change the selection;  just move the caret.
+C-b	Search for the previous instance of the pattern in the search entry.
+M-b	Search for the previous instance of the selection.
+ESC C-b	Same as C-b, but don't change the selection;  just move the caret.
+C-r	Replace the selection with the contents of the replace pattern.
+C-g	Go to the selected line number.
+ESC m a	Save the current caret location in $marka.
+...
+ESC m z	Save the current caret location in $markz.
+M-m a	Go to the position given by $marka.
+...
+M-m z	Go to the position given by $markz.
+
+Files, Windows, and Tags:
+-------------------------
+
+C-o	Open a new window on the same file.
+M-o	Open a window on the file whose name is selected.
+M-s	Switch the window to view the file whose name is selected.
+C-s	Save the file to disk.
+C-q	Close the window.
+C-t	Switch the window to display the selected tag.
+M-t	Open a new window on the selected tag.
+ESC t	Open a new window displaying the tag that immediately
+	precedes the caret.
+
+Caret Motion:
+-------------
+
+M-h	Move the caret one character to the left.
+M-j	Move the caret down one line (multiple invocations cause the caret
+	to stay in the same vertical column, if possible).
+M-k	Move the caret up one line (multiple invocations cause the caret
+	to stay in the same vertical column, if possible).
+M-l	Move the caret one character to the right.
+M-w	Move the caret one word to the left.
+M-n	Move the caret one word to the right (to the *n*ext word).
+M-e	Move the caret to the end of the line.  If the character is already
+	at the end of the line, move it to the end of the next line.
+M-RET	Move the caret to the beginning of the next line.
+
+Focus:
+------
+
+ESC f	Clear the search pattern entry and move the focus there.
+ESC r	Clear the replace pattern entry and move the focus there.
+
+Indentation:
+------------
+
+C-p	Increase the indentation of the caret's line by 4.
+C-y	Decrease the indentation of the caret's line by 4.
+M-p	Increase the indentation of all selected lines by 4.
+M-y	Decrease the indentation of all selected lines by 4.
+
+Miscellaneous:
+--------------
+
+C-u	Undo.
+C-j	Open a new line after the caret's line.
+C-k	Open a new line above the caret's line.
+C-a	Repeat all of the commands execute between the last two
+	searching or mouse or undo operations.
+C-?	Show information about file size and caret location.

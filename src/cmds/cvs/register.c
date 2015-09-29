@@ -1,0 +1,1 @@
+dist/src/register.c

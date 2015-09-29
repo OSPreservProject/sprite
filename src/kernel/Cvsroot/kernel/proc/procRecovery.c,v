@@ -1,0 +1,944 @@
+head     9.5;
+branch   ;
+access   ;
+symbols  ds3100:9.5 sun3:9.5 sun4nw:9.4 symm:9.4 spur:9.4 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.5
+date     92.05.14.12.22.21;  author mottsmth;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.09.12.13.58.25;  author jhh;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.09.06.17.58.14;  author jhh;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.07.29.15.48.26;  author shirriff;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.03.16.14.17.24;  author douglis;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.16.06;  author douglis;  state Stable;
+branches ;
+next     8.7;
+
+8.7
+date     89.08.30.10.56.40;  author douglis;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.06.22.17.21.38;  author douglis;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.06.09.17.50.56;  author douglis;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.05.30.16.13.23;  author jhh;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.02.19.22.09.00;  author jhh;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.01.06.11.23.00;  author jhh;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.01.05.15.38.58;  author douglis;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.32.30;  author douglis;  state Stable;
+branches ;
+next     6.4;
+
+6.4
+date     88.10.27.20.05.24;  author mlgray;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.10.27.13.37.10;  author douglis;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.10.19.11.22.15;  author douglis;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.31.17.56.16;  author douglis;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.23.22;  author brent;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     88.08.04.15.32.59;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Routines for process migration recovery.
+@
+
+
+9.5
+log
+@Remove reference to RECOV_HOST_DYING in procRecovery.c
+per mgbaker's instructions.
+
+@
+text
+@/* 
+ * procRecovery.c
+ *
+ *	Routines for process migration recovery.
+ *
+ * Copyright 1988, 1989, 1990 Regents of the University of California.
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/proc/procRecovery.c,v 9.4 90/09/12 13:58:25 jhh Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <proc.h>
+#include <procInt.h>
+#include <procMigrate.h>
+#include <migrate.h>
+#include <recov.h>
+#include <sync.h>
+#include <rpc.h>
+#include <hash.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+static void HostChanged _ARGS_((int hostID, ClientData clientData));
+
+static Sync_Lock recovLock;
+Sync_Condition recovCondition = {0};
+#define LOCKPTR &recovLock
+
+typedef struct DependInfo {
+    Proc_PID	processID;	/* the process ID on our host, and the
+				 * key into the hash table */
+    Proc_PID	peerProcessID;	/* the process ID on the other host. */
+    int		hostID;		/* the other host for the process
+				 * (home or remote) */
+    int		flags;		/* Flags (see below) */
+} DependInfo;
+
+/*
+ * Define constants for use with migration-recovery interaction.
+ *
+ *	DEPEND_UNREACHABLE	- host was unable to receive death notice.
+ */
+#define DEPEND_UNREACHABLE 1
+
+/*
+ * Flags for HostChanged.
+ *	HOST_CRASHED 	- a host is down, or rebooted.
+ *	HOST_UP		- host is reachable.
+ */
+#define HOST_CRASHED 0
+#define HOST_UP 1
+
+/*
+ * Hash tables for dependency information.
+ */
+
+Hash_Table	dependHashTableStruct;
+Hash_Table	*dependHashTable = &dependHashTableStruct;
+
+/*
+ * Define a structure for keeping track of dependencies while doing
+ * a hash search -- we store the key in a list and do individual hash
+ * lookups once the search is over.
+ */
+typedef struct {
+    List_Links links;		/* Pointers within list. */
+    Proc_PID processID;		/* Key. */
+} DependChain;
+
+#define KERNEL_HASH
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcRecovInit --
+ *
+ *	Initialize the data structures for process migration recovery.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Hash table is initialized and the recovery system is told to
+ *	alert us when it determines that a host has crashed.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+ProcRecovInit()
+{
+    Hash_Init(dependHashTable, 0, HASH_ONE_WORD_KEYS);
+    Recov_CrashRegister(HostChanged, (ClientData) HOST_CRASHED);
+    Sync_LockInitDynamic(&recovLock, "Proc:recovLock");
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HostChanged --
+ *
+ *	Kill off any migrated processes associated with a host that has
+ *	crashed.  Notify anyone waiting for a change in host.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static ENTRY void
+HostChanged(hostID, clientData)
+    int hostID;		/* Host that has rebooted */
+    ClientData clientData;	/* Whether the host crashed. */
+{
+    Hash_Search			hashSearch;
+    register Hash_Entry		*hashEntryPtr;
+    DependInfo			*dependPtr;
+    List_Links			dependList;
+    DependChain			*chainPtr;
+    Boolean			crashed;
+
+    LOCK_MONITOR;
+
+    crashed = ((int) clientData) == HOST_CRASHED;
+    
+    Sync_Broadcast(&recovCondition);
+    Hash_StartSearch(&hashSearch);
+    List_Init(&dependList);
+    for (hashEntryPtr = Hash_Next(dependHashTable, &hashSearch);
+         hashEntryPtr != (Hash_Entry *) NIL;  
+	 hashEntryPtr = Hash_Next(dependHashTable, &hashSearch)) {
+	dependPtr = (DependInfo *) Hash_GetValue(hashEntryPtr);
+	if (dependPtr->hostID == hostID) {
+	    if (crashed && !(dependPtr->flags & DEPEND_UNREACHABLE)) {
+		/*
+		 * This process still exists on our host.
+		 */
+		Proc_CallFunc(Proc_DestroyMigratedProc,
+			      (ClientData) dependPtr->processID, 0);
+	    } else if (crashed || (dependPtr->flags & DEPEND_UNREACHABLE)){
+		/*
+		 * Either the host crashed but we already killed the
+		 * process and just want to get rid of the hash entry,
+		 * or it has come back and we want to notify it about
+		 * a dead process.
+		 */
+		chainPtr = (DependChain *) malloc(sizeof(DependChain));
+		chainPtr->processID = dependPtr->processID;
+		List_InitElement(&chainPtr->links);
+		List_Insert(&chainPtr->links, LIST_ATREAR(&dependList));
+		if (!crashed) {
+		    Proc_CallFunc(ProcMigKillRemoteCopy,
+				  (ClientData) dependPtr->peerProcessID, 0);
+		}
+		    
+	    }  
+	}
+    }
+    /*
+     * Now clean up the list of dependencies to do Hash_Deletes.
+     */
+    while (!List_IsEmpty(&dependList)) {
+	chainPtr = (DependChain *) List_First(&dependList);
+	List_Remove((List_Links *) chainPtr);
+#ifdef KERNEL_HASH
+	hashEntryPtr = Hash_LookOnly(dependHashTable,
+				     (Address) chainPtr->processID);
+	if (hashEntryPtr != (Hash_Entry *) NIL) {
+#else KERNEL_HASH
+        hashEntryPtr = Hash_FindEntry(dependHashTable,
+				      (Address) chainPtr->processID);
+	if (hashEntryPtr != (Hash_Entry *) NULL) {
+#endif				/* KERNEL_HASH */
+	    dependPtr = (DependInfo *) Hash_GetValue(hashEntryPtr);
+#ifdef KERNEL_HASH
+	    Hash_Delete(dependHashTable, hashEntryPtr);
+#else KERNEL_HASH
+	    Hash_DeleteEntry(dependHashTable, hashEntryPtr);
+#endif				/* KERNEL_HASH */
+	    Recov_RebootUnRegister(dependPtr->hostID, HostChanged,
+				   clientData);
+	    free ((Address) dependPtr);
+	}
+	free((char *) chainPtr);
+    }
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcMigAddDependency --
+ *
+ *	Note a dependency of a process on a remote machine.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Memory is allocated for a structure to be put in the hash table.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+ProcMigAddDependency(processID, peerProcessID)
+    Proc_PID processID;		/* process that depends on the host */
+    Proc_PID peerProcessID;	/* process on the other host */
+{
+    DependInfo *dependPtr;
+    Hash_Entry *hashEntryPtr;
+    Boolean new;
+    
+    LOCK_MONITOR;
+
+
+    dependPtr = (DependInfo *) malloc(sizeof (DependInfo));
+
+    dependPtr->processID = processID;
+    dependPtr->peerProcessID = peerProcessID;
+    dependPtr->hostID = Proc_GetHostID(peerProcessID);
+    dependPtr->flags = 0;
+#ifdef KERNEL_HASH
+    hashEntryPtr = Hash_Find(dependHashTable, (Address) processID);
+    new = (hashEntryPtr->value == (Address) NIL);
+#else KERNEL_HASH
+    hashEntryPtr = Hash_CreateEntry(dependHashTable, (Address) processID, &new);
+#endif /* KERNEL_HASH */
+    if (!new) {
+	if (proc_MigDebugLevel > 0) {
+	    if (proc_MigDebugLevel > 4) {
+		panic("ProcMigAddDependency: process %x already registered.\n",
+		      processID);
+	    } else {
+		printf(
+		"%s ProcMigAddDependency: process %x already registered.\n",
+		      "Warning:", processID);
+	    }
+	}
+	UNLOCK_MONITOR;
+	return;
+    }
+    Hash_SetValue(hashEntryPtr, (ClientData) dependPtr);
+    Recov_RebootRegister(dependPtr->hostID, HostChanged, (ClientData) HOST_UP);
+    UNLOCK_MONITOR;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcMigRemoveDependency --
+ *
+ *	Remove a process from the table of dependencies on remote machines.
+ *	If the other host wasn't notified, defer the removal until the other
+ * 	host is known to be down or rebooted, and notify the other host
+ *	of the death of the process if it should come back.  After this
+ *	routine is called, the routines in this file are responsible for
+ *	eventually getting rid of the dependency (e.g., the caller
+ * 	won't call again).
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The corresponding entry for the process is removed from the
+ *	hash table and freed, or flagged for future removal.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+ProcMigRemoveDependency(processID, notified)
+    Proc_PID processID;		/* process to remove */
+    Boolean notified;		/* Whether other host was notified of death. */
+{
+    DependInfo *dependPtr;
+    Hash_Entry *hashEntryPtr;
+    
+    LOCK_MONITOR;
+
+#ifdef KERNEL_HASH
+    hashEntryPtr = Hash_LookOnly(dependHashTable, (Address) processID);
+    if (hashEntryPtr == (Hash_Entry *) NIL) {
+#else KERNEL_HASH
+    hashEntryPtr = Hash_FindEntry(dependHashTable, (Address) processID);
+    if (hashEntryPtr == (Hash_Entry *) NULL) {
+#endif /* KERNEL_HASH */
+#ifdef notdef
+	/*
+	 * (We're not going to care if it's already been removed because we
+	 * are called to get rid of processIDs that may already have been
+	 * removed, and we're just making doubly sure.)
+	 */
+	if (proc_MigDebugLevel > 0) {
+	    if (proc_MigDebugLevel > 4) {
+		panic("ProcMigRemoveDependency: process %x not registered.\n",
+		      processID);
+	    } else {
+		printf(
+		    "%s ProcMigRemoveDependency: process %x not registered.\n",
+		    "Warning:", processID);
+	    }
+	}
+#endif /* notdef */
+	UNLOCK_MONITOR;
+	return;
+    }
+    dependPtr = (DependInfo *) Hash_GetValue(hashEntryPtr);
+    if (!notified) {
+	dependPtr->flags |= DEPEND_UNREACHABLE;
+	UNLOCK_MONITOR;
+	return;
+    }
+#ifdef KERNEL_HASH
+    Hash_Delete(dependHashTable, hashEntryPtr);
+#else KERNEL_HASH
+    Hash_DeleteEntry(dependHashTable, hashEntryPtr);
+#endif /* KERNEL_HASH */
+    Recov_RebootUnRegister(dependPtr->hostID, HostChanged,
+			   (ClientData) HOST_UP);
+    free ((Address) dependPtr);
+    UNLOCK_MONITOR;
+}
+
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_WaitForHost --
+ *
+ *	Wait until a host has fully crashed, come back, or rebooted.
+ *	This will return a failure code if the host crashed.
+ *
+ * Results:
+ *	SUCCESS - the host is useable again.
+ *	NET_UNREACHABLE_HOST - the host crashed.
+ *	GEN_ABORTED_BY_SIGNAL - a signal was received while waiting.
+ *
+ * Side effects:
+ *	Block the process if waiting for the host to return or crash.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY ReturnStatus
+Proc_WaitForHost(hostID)
+    int hostID;
+{
+    register ReturnStatus status = SUCCESS;
+    int hostState;
+
+    LOCK_MONITOR;
+    hostState = Recov_GetClientState(hostID);
+    if (status == SUCCESS) {
+	if (hostState & (RECOV_HOST_DEAD | RECOV_HOST_BOOTING)) {
+	    /*
+	     * Host has crashed and is either out of touch or rebooting now.
+	     * Cause migrated clients to get killed.
+	     */
+	    status = NET_UNREACHABLE_HOST;
+	} else if (hostState & RECOV_HOST_ALIVE) {
+	    /*
+	     * Host is back, so continue business as usual.
+	     */
+	    status = SUCCESS;
+	}
+    }
+    UNLOCK_MONITOR;
+    return(status);
+}
+@
+
+
+9.4
+log
+@changed format of #includes to use <>
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRecovery.c,v 9.3 90/09/06 17:58:14 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+a369 7
+    while (hostState & RECOV_HOST_DYING) {
+	if (Sync_Wait(&recovCondition, TRUE)) {
+	    status = GEN_ABORTED_BY_SIGNAL;
+	    break;
+	}
+	hostState = Recov_GetClientState(hostID);
+    }
+@
+
+
+9.3
+log
+@First pass at function prototypes
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRecovery.c,v 9.2 90/07/29 15:48:26 shirriff Exp Locker: jhh $ SPRITE (Berkeley)";
+d21 11
+a31 11
+#include "sprite.h"
+#include "proc.h"
+#include "procInt.h"
+#include "procMigrate.h"
+#include "migrate.h"
+#include "recov.h"
+#include "sync.h"
+#include "rpc.h"
+#include "hash.h"
+#include "stdlib.h"
+#include "stdio.h"
+@
+
+
+9.2
+log
+@Removed static declaration so L1-i can see condition flag.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRecovery.c,v 9.1 90/03/16 14:17:24 douglis Exp Locker: shirriff $ SPRITE (Berkeley)";
+d23 1
+d31 1
+d33 1
+a33 1
+static void HostChanged();
+@
+
+
+9.1
+log
+@try to tell the other host about a killed process if it's down and then
+comes back.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc.fd/RCS/procRecovery.c,v 9.0 89/09/12 15:16:06 douglis Stable Locker: douglis $ SPRITE (Berkeley)";
+d34 1
+a34 1
+static Sync_Condition recovCondition = {0};
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d6 1
+a6 1
+ * Copyright 1988 Regents of the University of California.
+d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRecovery.c,v 8.7 89/08/30 10:56:40 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d31 1
+a31 2
+static void MigrateCrash();
+static void MigHostIsUp();
+d40 1
+d43 1
+d47 15
+d68 10
+d101 1
+a101 1
+    Recov_CrashRegister(MigrateCrash, (ClientData) NIL);
+a106 28
+ *----------------------------------------------------------------------------
+ *
+ * MigHostIsUp --
+ *
+ *	Wakeup processes waiting for a host to come back or reboot.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Processes waiting for process migration dependencies on any host
+ *	are awakened. 
+ *
+ *----------------------------------------------------------------------------
+ *
+ */
+/* ARGSUSED */
+static ENTRY void
+MigHostIsUp(hostID, data)
+    int hostID;
+    ClientData data;
+{
+    LOCK_MONITOR;
+    Sync_Broadcast(&recovCondition);
+    UNLOCK_MONITOR;
+}
+
+/*
+d109 1
+a109 1
+ * MigrateCrash --
+d112 1
+a112 1
+ *	crashed.
+a121 1
+/*ARGSUSED*/
+d123 1
+a123 1
+MigrateCrash(hostID, clientData)
+d125 1
+a125 1
+    ClientData clientData;	/* IGNORED */
+d130 3
+d135 3
+d140 1
+d146 23
+a168 2
+	    Proc_CallFunc(Proc_DestroyMigratedProc,
+			  (ClientData) dependPtr->processID, 0);
+d171 27
+d205 1
+a205 1
+ * Proc_AddMigDependency --
+d218 1
+a218 1
+Proc_AddMigDependency(processID, hostID)
+d220 1
+a220 1
+    int hostID;			/* host to watch */
+d232 3
+a234 1
+    dependPtr->hostID = hostID;
+d244 1
+a244 1
+		panic("Proc_AddMigDependency: process %x already registered.\n",
+d248 1
+a248 1
+		"%s Proc_AddMigDependency: process %x already registered.\n",
+d256 1
+a256 1
+    Recov_RebootRegister(hostID, MigHostIsUp, (ClientData) NIL);
+d265 1
+a265 1
+ * Proc_RemoveMigDependency --
+d268 6
+d280 1
+a280 1
+ *	hash table and freed.
+d285 1
+a285 1
+Proc_RemoveMigDependency(processID)
+d287 1
+d309 1
+a309 1
+		panic("Proc_RemoveMigDependency: process %x not registered.\n",
+d313 1
+a313 1
+		    "%s Proc_RemoveMigDependency: process %x not registered.\n",
+d322 5
+d332 2
+a333 1
+    Recov_RebootUnRegister(dependPtr->hostID, MigHostIsUp, (ClientData) NIL);
+@
+
+
+8.7
+log
+@remove interest in hosts after migration.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRecovery.c,v 8.6 89/06/22 17:21:38 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+@
+
+
+8.6
+log
+@check to see if a hash entry already exists when setting up a callback.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRecovery.c,v 8.5 89/06/09 17:50:56 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d266 1
+@
+
+
+8.5
+log
+@changed Proc_RecovInit to be internal to Proc, called from Proc_MigInit.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRecovery.c,v 8.4 89/05/30 16:13:23 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d183 1
+a183 1
+    new = TRUE;
+@
+
+
+8.4
+log
+@Removed call to Sync_LockRegister
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRecovery.c,v 8.3 89/02/19 22:09:00 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d58 1
+a58 1
+ * Proc_RecovInit --
+d72 1
+a72 1
+Proc_RecovInit()
+@
+
+
+8.3
+log
+@Changes due to lock registration
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRecovery.c,v 8.2 89/01/06 11:23:00 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+a175 1
+    Sync_LockRegister(LOCKPTR);
+@
+
+
+8.2
+log
+@New Sync_Lock definition
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRecovery.c,v 8.1 89/01/05 15:38:58 douglis Exp Locker: jhh $ SPRITE (Berkeley)";
+d29 1
+a29 1
+#include "mem.h"
+d34 1
+a34 1
+static Sync_Lock recovLock = SYNC_LOCK_INIT_STATIC();
+d76 1
+d175 2
+@
+
+
+8.1
+log
+@don't complain about trying to destroy a process that doesn't exist.
+the call may have just been to make doubly sure.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRecovery.c,v 8.0 88/11/11 18:32:30 douglis Stable Locker: douglis $ SPRITE (Berkeley)";
+d34 1
+a34 1
+static Sync_Lock recovLock = {0,0};
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRecovery.c,v 6.4 88/10/27 20:05:24 mlgray Exp Locker: douglis $ SPRITE (Berkeley)";
+d238 6
+d254 1
+@
+
+
+6.4
+log
+@1st pass at multi-processor, conversion to new C library.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRecovery.c,v 6.3 88/10/27 13:37:10 douglis Exp $ SPRITE (Berkeley)";
+@
+
+
+6.3
+log
+@Mary checking in for Fred.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRecovery.c,v 6.2 88/10/19 11:22:15 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d175 1
+a175 1
+    dependPtr = Mem_New(DependInfo);
+d187 2
+a188 2
+	    Sys_Panic((proc_MigDebugLevel > 4) ? SYS_FATAL : SYS_WARNING,
+		      "Proc_AddMigDependency: process %x already registered.\n",
+d190 5
+d239 2
+a240 2
+	    Sys_Panic((proc_MigDebugLevel > 4) ? SYS_FATAL : SYS_WARNING,
+		      "Proc_RemoveMigDependency: process %x not registered.\n",
+d242 5
+d257 1
+a257 1
+    Mem_Free ((Address) dependPtr);
+@
+
+
+6.2
+log
+@unlock the monitor when returning early after an error!
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: procRecovery.c,v 6.1 88/08/31 17:56:16 douglis Exp $ SPRITE (Berkeley)";
+d31 2
+a32 4
+void Proc_MigrateCrash();
+#ifdef notdef
+void Proc_HostIsUp();
+#endif /* */
+d35 1
+a44 1
+
+d67 1
+a67 2
+ *	alert us about reboots (to kill associated processes) and
+ *	when a host is "back" after being unreachable.  [not implemented]
+d75 1
+a75 4
+    Recov_CrashRegister(Proc_MigrateCrash, (ClientData) NIL);
+#ifdef notdef
+    Recov_BackRegister(Proc_MigrateHostIsUp, (ClientData) NIL);
+#endif /* */
+d80 28
+d110 1
+a110 1
+ * Proc_MigrateCrash --
+d124 2
+a125 2
+ENTRY void
+Proc_MigrateCrash(hostID, clientData)
+d134 1
+d195 1
+d253 52
+@
+
+
+6.1
+log
+@de-linted and endif-fix'ed.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: procRecovery.c,v 6.0 88/08/11 12:23:22 brent Stable $ SPRITE (Berkeley)";
+d168 1
+d214 1
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d18 2
+a19 2
+static char rcsid[] = "$Header: procRecovery.c,v 1.1 88/08/04 15:32:59 douglis Exp $ SPRITE (Berkeley)";
+#endif not lint
+d34 1
+a34 1
+#endif
+d81 1
+a81 1
+#endif
+d161 1
+a161 1
+#endif KERNEL_HASH
+d207 1
+a207 1
+#endif KERNEL_HASH
+d220 1
+a220 1
+#endif KERNEL_HASH
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: fsRecovery.c,v 1.5 88/07/12 22:34:28 douglis Exp $ SPRITE (Berkeley)";
+@

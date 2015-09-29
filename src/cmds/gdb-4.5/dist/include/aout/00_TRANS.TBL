@@ -1,0 +1,11 @@
+F AOUT64.H;1                        	aout64.h
+F AR.H;1                            	ar.h
+F CHANGELO.;1                       	ChangeLog
+F ENCAP.H;1                         	encap.h
+F HOST.H;1                          	host.h
+F HP.H;1                            	hp.h
+F RANLIB.H;1                        	ranlib.h
+F RELOC.H;1                         	reloc.h
+F STAB.DEF;1                        	stab.def
+F STAB_GNU.H;1                      	stab_gnu.h
+F SUN4.H;1                          	sun4.h

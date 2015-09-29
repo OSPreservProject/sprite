@@ -1,0 +1,543 @@
+head     1.20;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @# @;
+
+
+1.20
+date     92.09.29.12.22.46;  author jhh;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     92.09.29.12.19.23;  author shirriff;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     92.04.07.17.30.26;  author mgbaker;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     91.12.20.17.50.31;  author jhh;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     91.10.09.16.30.52;  author jhh;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     91.09.28.15.57.21;  author kupfer;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     91.09.28.15.01.22;  author shirriff;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     91.09.10.13.52.01;  author jhh;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     91.08.26.12.04.53;  author kupfer;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     91.08.12.10.15.42;  author mendel;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     91.08.12.10.13.56;  author mendel;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     91.08.09.16.31.25;  author jhh;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     91.06.25.11.03.16;  author shirriff;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     91.05.05.14.02.59;  author tve;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     91.05.02.21.47.20;  author root;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.05.02.18.33.39;  author mottsmth;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.03.09.02.40.08;  author tve;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.02.06.10.59.38;  author jhh;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.12.16.22.22.02;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.12.12.16.32.48;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Script for daily dumps.
+@
+
+
+1.20
+log
+@if the dumps fail it tells you the return status from dump
+@
+text
+@#!/sprite/cmds/csh -f
+#
+# Perform a daily, level 1, dump.
+# Must be run as root.
+#
+# $Header: /sprite/src/admin/dailydump/RCS/dailydump,v 1.19 92/09/29 12:19:23 shirriff Exp Locker: jhh $
+#
+
+set tapeDrives = `grep -v '^#' /sprite/admin/dump/tapelist`
+if ($#tapeDrives < 1) then
+    echo "No tape drives in /sprite/admin/dump/tapelist?"
+    exit -1
+endif
+set tape = $tapeDrives[1]
+set filesystems=(`cat /sprite/admin/dump/dumplist`)
+set dump = dump
+
+if ($#argv >  0) then
+    if ("$argv[1]" == "-i") then
+	echo "Initializing tape and rescheduling daily dumps"
+	$dump -s -l 1 -f $tape
+	if ($status != 0) then
+	    echo "Initialization failed"
+	    echo "Daily dump initialization failed" | \
+		mail -s "Dump error" dumper
+	    exit
+	endif
+	if (-e /sprite/admin/dump/doingweekly) then
+	    rm /sprite/admin/dump/doingweekly
+	endif
+	echo "Daily dumps rescheduled"
+	exit
+    endif
+endif
+
+if (-e /sprite/admin/dump/doingweekly) then
+    echo "Skipping daily dump" `date` >> /sprite/admin/dump/dumplog
+    exit
+endif
+
+# If the user specified a starting filesystem, skip over the ones in
+# front of it.
+
+set start = ""
+
+if ($#argv > 0) then
+    set start = "$argv[1]"
+endif
+
+if ("$start" != "") then
+	while (_$filesystems[1] != _$start)
+		if ($#filesystems == 1) then
+			echo $start "isn't in the list of filesystems."
+			echo $start "isn't in the list of filesystems. |\
+			    mail -s "Dump error" dumper
+			exit 1
+		endif
+		shift filesystems
+	end
+	echo "Starting with filesystem $start"
+endif
+
+echo "Doing daily dump" >> /sprite/admin/dump/dumplog
+
+/sprite/cmds/hostname >! /sprite/admin/dump/doingdaily.active
+
+while ($#filesystems > 0)
+    set fs=$filesystems[1]
+    $dump -l 1 -f $tape $fs
+    if ($status != 0) goto err
+    shift filesystems
+end
+
+# Figure out how much tape has been used
+set info = `tail -1 /sprite/admin/dump/dumpdates`
+set tapenum = `echo $info | awk '{print $1}'`
+set remaining = `echo $info | awk '{print $5}'`
+
+rm -f /sprite/admin/dump/doingdaily.active
+
+(echo "Daily dumps completed" ; \
+    echo "Tape $tapenum : $remaining MB remaining on tape.")| \
+	mail -s "Daily dump done" dumper
+exit
+
+
+err:
+    echo "Daily dumps encountered error ($status)" | \
+	mail -s "Dump failed" dumper
+@
+
+
+1.19
+log
+@checking this in for ken -- jhh
+@
+text
+@d6 1
+a6 1
+# $Header: /sprite/src/admin/dailydump/RCS/dailydump,v 1.18 92/04/07 17:30:26 mgbaker Exp $
+d88 2
+a89 1
+    echo "Daily dumps encountered error" | mail -s "Dump failed" dumper
+@
+
+
+1.18
+log
+@Fixed problem where it might not be able to remove doingweekly file,
+but it wouldn't tell you about that.  So the dumps wouldn't happen
+and you'd never know initialization failed.
+@
+text
+@d6 1
+a6 1
+# $Header: /sprite/src/admin/dailydump/RCS/dailydump,v 1.17 91/12/20 17:50:31 jhh Exp $
+d24 2
+a29 4
+	    if ($status != 0) {
+		echo "Couldn't remove doingweekly file.  Failed."
+		exit
+	    endif
+@
+
+
+1.17
+log
+@dumpdates.new renamed dumpdates
+@
+text
+@d6 1
+a6 1
+# $Header: /sprite/src/admin/dailydump/RCS/dailydump,v 1.16 91/10/09 16:30:52 jhh Exp Locker: jhh $
+d26 7
+a32 1
+	rm -f /sprite/admin/dump/doingweekly
+@
+
+
+1.16
+log
+@back to using dump
+@
+text
+@d6 1
+a6 1
+# $Header: /sprite/src/admin/dailydump/RCS/dailydump,v 1.15 91/09/28 15:57:21 kupfer Exp Locker: jhh $
+d71 1
+a71 1
+set info = `tail -1 /sprite/admin/dump/dumpdates.new`
+@
+
+
+1.15
+log
+@Store the name of the host running the dumps in the .active file.
+@
+text
+@d6 1
+a6 1
+# $Header: /sprite/src/admin/dailydump/RCS/dailydump,v 1.14 91/09/28 15:01:22 shirriff Exp Locker: kupfer $
+d16 1
+a16 1
+set dump = dump.new
+@
+
+
+1.14
+log
+@Tape list comes from file, rather than being hard-wired into the
+script.  Also, specify level 1 to dump.  (Mike checking in for Ken.)
+@
+text
+@d6 1
+a6 1
+# $Header: /sprite/src/admin/dailydump/RCS/dailydump,v 1.12 91/08/26 12:04:53 kupfer Exp Locker: jhh $
+d61 1
+a61 1
+touch /sprite/admin/dump/doingdaily.active
+@
+
+
+1.13
+log
+@uses dump.new
+@
+text
+@d9 6
+a14 1
+set tape = /dev/exb3.nr
+d21 1
+a21 1
+	$dump -s -f $tape
+@
+
+
+1.12
+log
+@The script no longer specifies the order that filesystems are dumped,
+so take out the comments about dump order.  Put the argv[1] test in
+quotes, so that "dailydump /" will work.
+@
+text
+@d6 1
+a6 1
+# $Header: /sprite/src/admin/dailydump/RCS/dailydump,v 1.11 91/08/12 10:15:42 mendel Exp Locker: kupfer $
+d9 1
+a9 1
+set tape = /dev/exb1.nr
+d11 1
+d16 1
+a16 1
+	dump -s -f $tape
+d60 1
+a60 1
+    dump -l 1 -f $tape $fs
+d66 3
+a68 1
+set tapenum = `tail -1 /sprite/admin/dump/dumpdates | sed 's/ .*//'`
+a69 6
+set total = `/sprite/admin.sun4/dumpsize $tapenum /sprite/admin/dump/dumpdates\
+    | grep Totals`
+
+set bytes = `echo $total | sed 's/.*, //' | sed 's/ MB//'`
+set pc = `/local/cmds/calc $bytes x 100/2000`
+
+d73 1
+a73 1
+    echo "Tape $tapenum : About $bytes megabytes ($pc %) used.")| \
+@
+
+
+1.11
+log
+@Removed exabyteStat call. It didn't work correctly because the dump
+rewinds the tape before exiting.
+@
+text
+@d6 1
+a6 1
+# $Header: /sprite/src/admin/dailydump/RCS/dailydump,v 1.9 91/08/09 16:31:25 jhh Exp Locker: mendel $
+a7 4
+# The user directories are dumped first so that restores will
+# go faster.
+#
+#
+d13 1
+a13 1
+    if ($argv[1] == "-i") then
+@
+
+
+1.10
+log
+@Changed message sent to dumper to make sense.
+@
+text
+@d79 1
+a79 1
+(echo "Daily dumps completed" ; /sprite/admin.sun4/exabyteStat $tape;\
+@
+
+
+1.9
+log
+@now uses multiple drives, and you can pick a starting file system
+@
+text
+@d6 1
+a6 1
+# $Header: /sprite/src/admin/dailydump/RCS/dailydump,v 1.8 91/06/25 11:03:16 shirriff Exp Locker: jhh $
+d80 1
+a80 1
+    echo "About $bytes bytes ($pc %)")| \
+@
+
+
+1.8
+log
+@checking this in for Ken -- JHH
+@
+text
+@d6 1
+a6 1
+# $Header: /sprite/src/admin/dailydump/RCS/dailydump,v 1.7 91/05/05 14:02:59 tve Exp $
+d13 4
+a16 1
+if ($#argv == 1) then
+d19 1
+a19 1
+	dump -s -f /dev/exb2.nr
+d35 22
+d61 3
+a63 2
+foreach i (`cat /sprite/admin/dump/dumplist`)
+    dump -l 1 -f /dev/exb2.nr $i
+d65 1
+d79 1
+a79 1
+(echo "Daily dumps completed" ; /sprite/admin.sun4/exabyteStat /dev/exb2.nr;\
+@
+
+
+1.7
+log
+@removed /pcs/vlsi.old
+@
+text
+@d1 1
+a1 1
+#! /sprite/cmds/sh
+d6 1
+a6 1
+# $Header: /sprite/src/admin/dailydump/RCS/dailydump,v 1.6 91/05/02 21:47:20 root Exp Locker: tve $
+d13 13
+d27 33
+a59 18
+dump -l 1 -f /dev/exb1.nr /user1
+dump -l 1 -f /dev/exb1.nr /user2
+dump -l 1 -f /dev/exb1.nr /user4
+#dump -l 1 -f /dev/exb1.nr /user5
+dump -l 1 -f /dev/exb1.nr /user6
+dump -l 1 -f /dev/exb1.nr /scratch5
+dump -l 1 -f /dev/exb1.nr /scratch6
+dump -l 1 -f /dev/exb1.nr /pcs
+dump -l 1 -f /dev/exb1.nr /pcs/vlsi
+dump -l 1 -f /dev/exb1.nr /postdev
+dump -l 1 -f /dev/exb1.nr /sprite/src/kernel
+dump -l 1 -f /dev/exb1.nr /sprite/src
+dump -l 1 -f /dev/exb1.nr /
+dump -l 1 -f /dev/exb1.nr /X11
+dump -l 1 -f /dev/exb1.nr /scratch1
+dump -l 1 -f /dev/exb1.nr /graphics
+dump -l 1 -f /dev/exb1.nr /local
+dump -l 1 -f /dev/exb1.nr /scratch4
+@
+
+
+1.6
+log
+@changed /pcs/scratch to /pcs/vlsi.old - TvE
+@
+text
+@d6 1
+a6 1
+# $Header: /sprite/src/admin/dailydump/RCS/dailydump,v 1.5 91/05/02 18:33:39 mottsmth Exp Locker: root $
+d22 1
+a26 2
+dump -l 1 -f /dev/exb1.nr /pcs/vlsi
+dump -l 1 -f /dev/exb1.nr /pcs/vlsi.old
+@
+
+
+1.5
+log
+@/user5 is dead and replaced with /user6
+@
+text
+@d6 1
+a6 1
+# $Header: /sprite/src/admin/dailydump/RCS/dailydump,v 1.4 91/03/09 02:40:08 tve Exp $
+a25 1
+dump -l 1 -f /dev/exb1.nr /pcs/scratch
+d27 1
+@
+
+
+1.4
+log
+@removed /pcs/tic and added /pcs/scratch
+@
+text
+@d6 1
+a6 1
+# $Header: /sprite/src/admin/dailydump/RCS/dailydump,v 1.3 91/02/06 10:59:38 jhh Exp Locker: tve $
+d17 4
+a20 1
+dump -l 1 -f /dev/exb1.nr /user5
+@
+
+
+1.3
+log
+@Removed /scratch3 added /scratch4.
+@
+text
+@d6 1
+a6 1
+# $Header: /sprite/src/admin/dailydump/RCS/dailydump,v 1.2 90/12/16 22:22:02 kupfer Exp Locker: jhh $
+d23 1
+a23 1
+dump -l 1 -f /dev/exb1.nr /pcs/tic
+@
+
+
+1.2
+log
+@Remove /swap2/tmp, due to the death of /swap2.  (Why were we dumping a
+tmp directory, anyway?)  Move /user5 up with the other user
+directories.
+@
+text
+@d6 1
+a6 1
+# $Header: /sprite/src/admin/dailydump/RCS/dailydump,v 1.1 90/12/12 16:32:48 kupfer Exp Locker: kupfer $
+a25 1
+dump -l 1 -f /dev/exb1.nr /scratch3
+d29 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d6 1
+a6 1
+# $Header$
+d17 1
+a28 2
+dump -l 1 -f /dev/exb1.nr /user5
+dump -l 1 -f /dev/exb1.nr /swap2/tmp
+@

@@ -1,0 +1,24 @@
+
+common.c,149
+checkNumber(264,5258
+getNumber(248,5024
+getPasswd(114,2269
+getShell(176,3796
+getString(84,1668
+mail(208,4249
+raw_getchar(39,1055
+yes(54,1365
+
+common.h,0
+
+deleteuser.c,164
+deletePasswdEntry(128,3323
+main(69,1782
+makedb(441,11112
+prompt(382,10038
+raw_getchar(426,10831
+removeFromMailingLists(244,6659
+removeHomeDirectory(325,8699
+
+memmove.c,16
+memmove(25,702

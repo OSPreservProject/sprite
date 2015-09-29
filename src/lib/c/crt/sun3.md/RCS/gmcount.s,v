@@ -1,0 +1,292 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @| @;
+
+
+1.3
+date     90.02.16.14.09.05;  author rab;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.03.02.17.16.55;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.02.22.18.10.37;  author rab;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@Changed local labels to gnu format.
+@
+text
+@	.data
+	.asciz	"	@@(#)gmcount.s	1.1	86/02/03	Copyr 1983 Sun Micro"
+|	Copyright (c) 1983 by Sun Microsystems, Inc.
+        .globl _profiling
+_profiling:
+	.byte	3
+	.text
+	.globl	mcount
+mcount:
+	tstb	_profiling	|are we recursivly called?
+	jne	2f
+	movb	#1,_profiling
+	movl    sp@@, d1		| snag our return address
+	movl    a6@@(4), d0	| snag HIS return address
+	subl	_s_lowpc,d0	| subtract out profiling origin
+	cmpl	_s_textsize,d0	| is it cool?
+	jhi	3f
+	andb	#0xfe,d0	| make sure halfword subscript even
+	movl	_froms,a1
+	addl	d0,a1		| frompc = &froms[(frompc-s_lowpc)/
+	                        |       (HASHFRACTION*sizeof(*froms))]
+	tstw	a1@@
+	jne	4f
+	movl	_tos,a0		| bucket chain is empty.
+	addqw	#1,a0@@(8)
+	moveq	#0,d0
+	movw	a0@@(8),d0
+	movw	d0,a1@@
+	cmpl	_tolimit,d0	| are there too many now?
+	jcc	overflow
+	mulu	#10,d0
+	addl	d0,a0		| form address of bucket.
+	movl	d1,a0@@		| callee address here
+	movl	#1,a0@@(4)	| called once.
+	clrw	a0@@(8)		| no links.
+	jra	3f		| all done.
+4:
+	movw	a1@@,d0		| we've seen this caller before
+	mulu	#10,d0
+	addl	_tos,d0
+	movl	d0,a0		| top = &tos[ *frompc ]
+5:
+	| 			  we now have a list of who our caller has
+	|			  called. If we're on it, just bump our count.
+	|			  Else add us to the list.
+	movl	a0@@,d0
+	cmpl	d1,d0
+	jne	6f
+	addql	#1,a0@@(4)	| found !
+	jra	3f
+6:
+	tstw	a0@@(8)
+	jne	7f
+	movl	_tos,a1		| fell off the end of the list -- add us.
+	movw	a1@@(8),d0
+	addqw	#1,d0
+	movw	d0,a1@@(8)
+	movw	a1@@(8),a0@@(8)
+	moveq	#0,d0
+	movw	a0@@(8),d0
+	cmpl	_tolimit,d0	| too many buckets?
+	jcc	overflow
+	mulu	#10,d0
+	addl	_tos,d0
+	movl	d0,a0
+	movl	d1,a0@@		| callee pc
+	movl	#1,a0@@(4)	| count of times called.
+	clrw	a0@@(8)		| link to next.
+	jra	3f		| finished.
+7:
+	movw	a0@@(8),d0	| loop-the-loop
+	mulu	#10,d0
+	addl	_tos,d0
+	movl	d0,a0
+	jra	5b
+3:
+	clrb	_profiling
+2:
+	rts			| go home
+overflow:
+	.data1
+8:
+	.asciz	"mcount: tos overflow\12"
+	.text
+	pea	22:w	| sizeof message
+	pea	8b	| message
+	pea	2:w	| stderr
+	jsr	_write
+	addw	#12,sp
+	rts
+
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d11 1
+a11 1
+	jne	2$
+d17 1
+a17 1
+	jhi	3$
+d23 1
+a23 1
+	jne	4$
+d36 2
+a37 2
+	jra	3$		| all done.
+4$:
+d42 1
+a42 1
+5$:
+d48 1
+a48 1
+	jne	6$
+d50 2
+a51 2
+	jra	3$
+6$:
+d53 1
+a53 1
+	jne	7$
+d69 2
+a70 2
+	jra	3$		| finished.
+7$:
+d75 2
+a76 2
+	jra	5$
+3$:
+d78 1
+a78 1
+2$:
+d82 1
+a82 1
+8$:
+d86 1
+a86 1
+	pea	8$	| message
+a90 67
+
+
+#if 0
+	.data
+	.even
+	.globl	_end
+curbrk:
+	.long	_end
+pageSize:
+	.long   0
+initialized:
+	.long   0
+
+	.text
+	.globl	_brk,_sbrk
+_brk:
+	tstl    initialized
+	jne     2$
+	movl    #1, initialized
+	pea     pageSize
+	jbsr     _Vm_PageSize
+	subql   #1, pageSize
+2$:
+	movl	sp@@(4),d0
+	cmpl	_minsbrk,d0
+	jgt     3$
+	clrl    d0
+	rts
+3$:
+        movl    _minsbrk, d1
+	subql   #1, _minsbrk
+	movl    _pageSize, d2
+	notl    d2
+	andl    d2, d1
+	andl    d0, d2
+	cmpl    d1, d2
+	jeq     $5
+	movl    d0, d2
+	subl    _minsbrk, d0
+	movel   d0, sp@@-
+	movel   _minsbrk, sp@@-
+	jbsr    _Vm_CreateVA
+	tstl    d0
+	jne     4$
+	movl    d2, _minsbrk
+	clrl    d0
+	movl    sp@@+, d2
+	rts
+$4:
+	movl    #-1, d0
+	movl    sp@@+, d2
+	rts
+
+_sbrk:
+	movl	sp@@(4),d0
+	movl	curbrk,d1
+	addl	d1,d0
+	movl	d1,sp@@(4)
+	movl	d0,sp@@-
+	jbsr	_brk
+	addql	#4,sp
+	tstl	d0
+	bnes	1$
+	movl	sp@@(4),d0
+1$:
+	rts
+#endif
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d92 66
+a157 38
+|	.data
+|	.even
+|	.globl	_end
+|curbrk:
+|	.long	_end
+|
+|	.text
+|	SYS_brk  =  17
+|	.globl	_brk,_sbrk
+|_brk:
+|	movl	sp@@(4),d0
+|	cmpl	_minsbrk,d0
+|	jge	1$
+|	movl	_minsbrk,sp@@(4)
+|1$:
+|	pea	SYS_brk:w
+|	trap	#0
+|	jcs	cerror
+|	movl	sp@@(4),curbrk
+|	clrl	d0
+|	rts
+|
+|_sbrk:
+|	tstb	sp@@(-12)
+|	movl	sp@@(4),d0
+|	movl	curbrk,d1
+|	addl	d1,d0
+|	movl	d1,sp@@(4)
+|	movl	d0,sp@@-
+|	bsrs	_brk
+|	addql	#4,sp
+|	tstl	d0
+|	bnes	1$
+|	movl	sp@@(4),d0
+|1$:
+|	rts
+|
+|
+@

@@ -1,0 +1,74 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     89.07.17.15.12.53;  author mgbaker;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.07.02.17.05.48;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Removed references to nonexistent procAOUT.h header file.
+@
+text
+@/* 
+ * a.out.c --
+ *
+ *	This file contains constants associated with a.out files,
+ *	for example a table of page sizes for different machines.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/etc/RCS/a.out.c,v 1.1 88/07/02 17:05:48 ouster Exp Locker: mgbaker $ SPRITE (Berkeley)";
+#endif not lint
+
+/*
+ * Page size for different machines.  These correspond to the machine
+ * types defined in exec.h
+ */
+
+int Aout_PageSize[] = {
+    0x0,			/* Undefined machine type. */
+    0x1000,			/* M_68010 (Sun-2) */
+    0x2000,			/* M_68020 (Sun-3) */
+    0x2000			/* SPARC (Sun-4) */
+};
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: proto.c,v 1.2 88/03/11 08:39:08 ouster Exp $ SPRITE (Berkeley)";
+d29 2
+a30 1
+    0x2000			/* M_68020 (Sun-3) */
+@

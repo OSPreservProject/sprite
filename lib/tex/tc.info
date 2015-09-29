@@ -1,0 +1,83 @@
+
+For all you who have thought that TeX should be able to generate Table
+of Contents by itself, instead of making you type it in and format
+it by hand, your wishes have been granted.  A new set of commands has
+been added to TBase that allows a Table of Contents to be automatically
+generated from the chapter and section names while the rest of the paper
+is being processed.  These commands have been written so as to be
+easilly added to any existing TeX file.
+
+
+These new commands are:
+
+\input TexToc          % loads table of contents macro.
+\make_toc{<level>}     % Places Table of Contents at this place in Paper
+                       %  <level> should  be a number between 0 and 5 denoting 
+                       %   how many levels of nesting in T.O.X are to occur
+                       %       0 -   none                    
+                       %       1 -   chapters only
+                       %       2 -   chapters and sections only
+                       %  and so on ...
+
+\def\toc_pages{<#>}    % Specifies the number of pages the Table of Contents
+                       % is going to be.  Unfortunatly, this must be set by
+                       % you, because I haven't figured out how to do it
+                       % automatically.  Currently defaulted to 1.
+
+
+In order to generate the Table of Contents, the general format of the
+TeX file must be:
+
+   \input TBase        % loads Tbase Package
+   \input Paper        % loads several formating routines
+   \input TexToc       % loads table of contents macros
+
+   \< ... font ...>    % defines font
+
+   <\title_page ,,,>
+   <\abstract   ,,,>
+
+   \make_toc{2}        % places T.O.C. right after abstract.  
+   \def\toc_pages{1}   % Expect one page in Table of Contents 
+
+   <... body of paper ...> 
+
+   <\appendix{. Title .} ,,,>  % One or more optional appendices.
+                               %   Do not use sections, subsection ect, here yet.
+                               %   The numbering is not correct.
+       
+   <\references ,,,}
+
+   \end_input          % This command must be called inorder to print out T.O.C.
+
+More documentation for the routines table of contents routines is available
+in the file OZ:<TEX.MACROS>textoc.texlib.
+
+This package was written with the M.I.T. thesis specifications in mind.  
+The big change is that
+     The entire Thesis (including the title page, prefatory 
+     material, illustrations, and all text) must be numbered continuously 
+     from begining to end.  
+               (Pg. 6, Specifications for hesis Preparation - 1982)
+New macros for the title page, abstract, appendicies, and references have
+been made so this occurs.
+
+As one final note, the table of contents package sort of expects that
+the whole paper is run through at the same time.  When working with long
+papers, care must be taken to avoid having large groups so that memsize
+is not exceeded.  If proper care is taken, however, long papers (100
+pages or longer) can be run off without this problem occuring.  I
+strongly suggest, however, that you break the paper up into short
+sections until the last possible moment.
+
+The routines in this package were written first by Peter Szolovits 
+(PSZ@MIT-ML).  Minor problems, Thesis Format, and documentation was
+supplied by John Bradstreet. (Bradst@MIT-OZ).
+
+--------
+
+Please send all comments, suggestions, bugs, and flames about the
+routines in this package to me (Bradst@MIT-OZ) or to (Bug-TeX).
+I'll try to get back to you as soon a possible.
+
+  John Bradstreet

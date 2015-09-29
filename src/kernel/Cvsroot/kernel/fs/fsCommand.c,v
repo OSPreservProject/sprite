@@ -1,0 +1,1366 @@
+head     9.8;
+branch   ;
+access   ;
+symbols  ds3100:9.8 sun3:9.8 sprited:9.6.1 sun4nw:9.7 symm:9.7 spur:9.7 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.8
+date     92.06.01.14.44.05;  author kupfer;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     91.09.10.18.22.28;  author rab;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     91.05.30.13.20.19;  author shirriff;  state Exp;
+branches 9.6.1.1;
+next     9.5;
+
+9.5
+date     91.05.10.12.43.38;  author mgbaker;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     91.01.26.15.33.43;  author mgbaker;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.10.19.15.41.44;  author mendel;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.10.08.10.55.17;  author mendel;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.12.11.17.40.15;  author brent;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.02.49;  author douglis;  state Stable;
+branches ;
+next     8.8;
+
+8.8
+date     89.08.21.15.22.26;  author mendel;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.06.30.15.27.58;  author brent;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.06.14.22.31.36;  author jhh;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.06.02.12.58.46;  author jhh;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.02.06.18.30.04;  author brent;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.02.04.12.16.47;  author brent;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.01.30.13.59.21;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.14.14.15.09;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.24.55;  author douglis;  state Stable;
+branches ;
+next     7.0;
+
+7.0
+date     88.11.11.15.35.43;  author brent;  state Exp;
+branches ;
+next     6.5;
+
+6.5
+date     88.10.16.10.15.27;  author brent;  state Exp;
+branches ;
+next     6.4;
+
+6.4
+date     88.10.10.11.32.05;  author douglis;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.09.09.11.21.24;  author brent;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.09.07.21.21.00;  author nelson;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.31.12.07.22;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.18.33;  author brent;  state Stable;
+branches ;
+next     1.3;
+
+1.3
+date     88.08.08.14.46.08;  author douglis;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.08.05.14.16.21;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.04.10.43.55;  author brent;  state Exp;
+branches ;
+next     ;
+
+9.6.1.1
+date     91.11.15.13.25.27;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Testing procedures
+@
+
+
+9.8
+log
+@Fix the FS_ZERO_STATS command.
+@
+text
+@/* 
+ * fsCommand.c --
+ *
+ *	The guts of the Fs_Command system call.  This is used to
+ *	set/get various filesystem parameters.
+ *
+ *
+ * Copyright 1985 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fs/fsCommand.c,v 9.7 91/09/10 18:22:28 rab Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <sprite.h>
+#include <bstring.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsNameOps.h>
+#include <fsprefix.h>
+#include <fslcl.h>
+#include <fscache.h>
+#include <fspdev.h>
+#include <fsStat.h>
+#include <fsdm.h>
+#include <timer.h>
+#include <user/fsCmd.h>
+#include <rpc.h>
+#include <sched.h>
+#include <fsrmt.h>
+#include <vm.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <lfs.h>
+
+#define SWAP_TO_BUFFER(int1, buffer) \
+    if ((int *)buffer != (int *)NIL && (int *)buffer != (int *)0) {	\
+	register int tmp;						\
+	tmp = int1 ; int1 = *(int *)buffer ; *(int *)buffer = tmp;	\
+    }
+
+/* Forward references: */
+
+static void ZeroFsStats _ARGS_((void));
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_Command --
+ *
+ *	Hook into the fs module.  System parameters can be adjusted,
+ *	the prefix table modified, and filesystem stats can be returned.
+ *
+ * Results:
+ *	0 or an error code from any of the operations.
+ *
+ * Side effects:
+ *	See description by each command.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fs_Command(command, bufSize, buffer)
+    int command;
+    int bufSize;
+    Address buffer;
+{
+    ReturnStatus 	status = SUCCESS;
+    extern	int	fscache_MaxBlockCleaners;
+    extern	int	fscache_NumReadAheadBlocks;
+    extern	Boolean	fsconsist_ClientCachingEnabled;
+
+    switch(command) {
+	case FS_PREFIX_LOAD: {
+	    /*
+	     * Load the prefix and serverID into the prefix table.
+	     * serverID is usually FS_NO_SERVER, although a known serverID
+	     * can be loaded into the table.
+	     */
+	    Fs_PrefixLoadInfo *argPtr = (Fs_PrefixLoadInfo *) buffer;
+	    if (argPtr->prefix[0] != '/' ||(argPtr->serverID < 0 || 
+		argPtr->serverID >= NET_NUM_SPRITE_HOSTS)) {
+		status = FS_INVALID_ARG;
+	    } else {
+		int prefixFlags = FSPREFIX_IMPORTED;
+
+		if (argPtr->serverID != RPC_BROADCAST_SERVER_ID) {
+		    prefixFlags |= FSPREFIX_REMOTE | FSPREFIX_FORCED;
+		}
+		Fsprefix_Load(argPtr->prefix, argPtr->serverID, prefixFlags);
+		status = SUCCESS;
+	    }
+	    break;
+	}
+	case FS_PREFIX_EXPORT: {
+	    /*
+	     * Export a local directory under a prefix.
+	     */
+	    Fs_TwoPaths *argPtr = (Fs_TwoPaths *)buffer;
+	    char *localPath, *prefix;
+	    Fs_Stream *streamPtr;
+
+	    localPath = (char *)malloc(argPtr->pathLen1);
+	    prefix = (char *)malloc(argPtr->pathLen2);
+	    status = Vm_CopyIn(argPtr->pathLen1, argPtr->path1, localPath);
+	    if (status == SUCCESS) {
+		status = Vm_CopyIn(argPtr->pathLen2, argPtr->path2, prefix);
+		if (status == SUCCESS) {
+		    status = Fs_Open(localPath, FS_READ|FS_FOLLOW,
+						FS_DIRECTORY, 0, &streamPtr);
+		    if (status == SUCCESS) {
+			if (streamPtr->ioHandlePtr->fileID.type !=
+				FSIO_LCL_FILE_STREAM) {
+			    printf(
+		    "Tried to export non-local file \"%s\" as prefix \"%s\"\n",
+				localPath, prefix);
+			    (void)Fs_Close(streamPtr);
+			    status = FS_NO_ACCESS;
+			} else {
+			    (void)Fsprefix_Install(prefix,streamPtr->ioHandlePtr,
+						    FS_LOCAL_DOMAIN,
+		    FSPREFIX_EXPORTED|FSPREFIX_IMPORTED|FSPREFIX_OVERRIDE);
+			}
+		    }
+		}
+	    }
+	    free(prefix);
+	    free(localPath);
+	    break;
+	}
+	case FS_PREFIX_CLEAR: {
+	    /*
+	     * Clear the handle information about a prefix.
+	     */
+	    status = Fsprefix_Clear(buffer, FALSE, TRUE);
+	    break;
+	}
+	case FS_PREFIX_DELETE: {
+	    /*
+	     * Remote a prefix table entry all-together.
+	     */
+	    status = Fsprefix_Clear(buffer, TRUE, TRUE);
+	    break;
+	}
+	case FS_PREFIX_CONTROL: {
+	    /*
+	     * Modify the export list associated with a prefix.
+	     */
+	    register Fs_PrefixControl *controlPtr;
+	    controlPtr = (Fs_PrefixControl *)buffer;
+	    if (bufSize < sizeof(Fs_PrefixControl)) {
+		status = GEN_INVALID_ARG;
+	    } else {
+		Fsprefix_Export(controlPtr->prefix, controlPtr->clientID,
+				controlPtr->delete);
+		status = SUCCESS;
+	    }
+	    break;
+	}
+	case FS_RAISE_MIN_CACHE_SIZE: {
+	    /*
+	     * Make the minimum size of the file system block cache larger.
+	     */
+	    if (buffer != (Address)NIL && buffer != (Address)0) {
+		Fscache_SetMinSize(*(int *) buffer);
+	    }
+	    break;
+	}
+	case FS_LOWER_MAX_CACHE_SIZE: {
+	    /*
+	     * Make the minimum size of the file system block cache larger.
+	     */
+	    if (buffer != (Address)NIL && buffer != (Address)0) {
+		Fscache_SetMaxSize(*(int *) buffer);
+	    }
+	    break;
+	}
+	case FS_DISABLE_FLUSH: {
+	    /*
+	     * Turn on or off automatic flushing of the cache.
+	     */
+	    SWAP_TO_BUFFER(fsutil_ShouldSyncDisks, buffer);
+	    break;
+	}
+	/*
+	 * The following cases are used to set flags and to
+	 * return their old values.
+	 */
+	case FS_SET_CACHE_DEBUG: {
+	    /*
+	     * Set the cache debug flag.
+	     */
+	    extern int fsconsist_Debug;
+	    SWAP_TO_BUFFER(fsconsist_Debug, buffer);
+	    break;
+	}
+	case FS_SET_MIG_DEBUG: {
+	    /*
+	     * Set the migration debug flag.
+	     */
+	    extern int fsio_MigDebug;
+	    SWAP_TO_BUFFER(fsio_MigDebug, buffer);
+	    break;
+	}
+	case FS_SET_RPC_DEBUG: {
+	    /*
+	     * Set the rpc debug flag.
+	     */
+	    SWAP_TO_BUFFER(fsrmt_RpcDebug, buffer);
+	    break;
+	}
+	case FS_SET_RPC_TRACING: {
+	    /*
+	     * Set the rpc tracing flag.
+	     */
+	    SWAP_TO_BUFFER(rpc_Tracing, buffer);
+	    break;
+	}
+	case FS_SET_RPC_NO_TIMEOUTS: {
+	    /*
+	     * Set the rpc "no timeouts" flag, useful when debugging.
+	     */
+	    SWAP_TO_BUFFER(rpc_NoTimeouts, buffer);
+	    break;
+	}
+	case FS_SET_NAME_CACHING: {
+	    /*
+	     * Set the rpc tracing flag.
+	     */
+	    extern int fslclNameCaching;
+	    SWAP_TO_BUFFER(fslclNameCaching, buffer);
+	    break;
+	}
+	case FS_SET_CLIENT_CACHING: {
+	    /*
+	     * Set the rpc tracing flag.
+	     */
+	    SWAP_TO_BUFFER(fsconsist_ClientCachingEnabled, buffer);
+	    break;
+	}
+	case FS_SET_RPC_CLIENT_HIST: {
+	    extern int rpcCallTiming;
+	    SWAP_TO_BUFFER(rpcCallTiming, buffer);
+	    break;
+	}
+	case FS_SET_RPC_SERVER_HIST: {
+	    extern int rpcServiceTiming;
+	    SWAP_TO_BUFFER(rpcServiceTiming, buffer);
+	    break;
+	}
+	case FS_SET_NO_STICKY_SEGS: {
+	    extern Boolean vm_NoStickySegments;
+	    SWAP_TO_BUFFER(vm_NoStickySegments, buffer);
+	    break;
+	}
+	case FS_TEST_CS: {
+	    register	int	i;
+	    Timer_Ticks	startTicks, endTicks, diffTicks;
+	    Time	time;
+	    int		us;
+
+	    Timer_GetCurrentTicks(&startTicks);
+	    for (i = *(int *) buffer; i > 0; i--) {
+		Sched_ContextSwitch(PROC_READY);
+	    }
+	    Timer_GetCurrentTicks(&endTicks);
+	    Timer_SubtractTicks(endTicks, startTicks, &diffTicks);
+	    Timer_TicksToTime(diffTicks, &time);
+	    us = (time.seconds * 1000000) + time.microseconds;
+	    printf("microseconds = %d per CS = %d\n", us,
+		       us / *(int *)buffer);
+	    break;
+	}
+	case FS_EMPTY_CACHE: {
+	    int *numLockedBlocksPtr = (int *)buffer;
+
+	    Fscache_Empty(numLockedBlocksPtr);
+	    break;
+	}
+	case FS_ZERO_STATS: {
+	    ZeroFsStats();
+	    status = SUCCESS;
+	    break;
+	}
+	case FS_RETURN_STATS: {
+	    if (bufSize > 0) {
+		if (bufSize > sizeof(Fs_Stats)) {
+		    bufSize = sizeof(Fs_Stats);
+		}
+		bcopy((Address) &fs_Stats, buffer, bufSize);
+		status = SUCCESS;
+	    } else {
+		status = FS_INVALID_ARG;
+	    }
+	    break;
+	}
+	case FS_RETURN_LIFE_TIMES: {
+	    if (bufSize >= sizeof(Fs_TypeStats)) {
+		bcopy((Address)&fs_TypeStats, buffer, sizeof(Fs_TypeStats));
+		status = SUCCESS;
+	    } else {
+		status = FS_INVALID_ARG;
+	    }
+	    break;
+	}
+	case FS_GET_FRAG_INFO: {
+	    int	*arrPtr = (int *)buffer;
+
+	    Fscache_CheckFragmentation(arrPtr, arrPtr + 1, arrPtr + 2);
+	    break;
+	}
+	case FS_SET_CLEANER_PROCS:
+	    SWAP_TO_BUFFER(fscache_MaxBlockCleaners, buffer);
+	    break;
+	case FS_SET_READ_AHEAD:
+	    SWAP_TO_BUFFER(fscache_NumReadAheadBlocks, buffer);
+	    break;
+	case FS_REREAD_SUMMARY_INFO:
+	    status = Fsdm_RereadSummaryInfo(buffer);
+	    break;
+	case FS_SET_BLOCK_SKEW: {
+	    /*
+	     * Set the block allocation gap.
+	     */
+	    extern int ofs_AllocGap;
+	    SWAP_TO_BUFFER(ofs_AllocGap, buffer);
+	    break;
+	}
+	case FS_DO_L1_COMMAND:
+	    Dev_InvokeConsoleCmd(*(int *)buffer);
+	    break;
+	default:
+	    if ((command >= FS_FIRST_LFS_COMMAND) &&
+	        (command <= FS_LAST_LFS_COMMAND)) {
+		status = Lfs_Command(command, bufSize, buffer);
+	    } else {
+		status = FS_INVALID_ARG;
+	    }
+    }
+    return(status);
+}
+
+#ifdef notdef
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_Cat --
+ *
+ *	Cat a file to the screen.  The named file is opened, then
+ *	a series of reads are done and the returned data is printed
+ *	on the screen.  (Used when testing simple kernels.)
+ *
+ * Results:
+ *	0 or an error code from any of the file operations.
+ *
+ * Side effects:
+ *	Does an open, reads and write, and a close.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Fs_Cat(fileName)
+    char *fileName;
+{
+    int error;
+    Fs_Stream *streamPtr;
+    int offset;
+    Address buffer;
+
+    streamPtr = (Fs_Stream *)NIL;
+    error = Fs_Open(fileName, FS_READ|FS_FOLLOW, FS_FILE, 0, &streamPtr);
+    if (error) {
+	return(error);
+    }
+
+#define CAT_BUFSIZE	80
+
+    buffer = malloc(CAT_BUFSIZE);
+    offset = 0;
+    while (1) {
+	int savedLen, len;
+
+	bzero(buffer, CAT_BUFSIZE);
+
+	savedLen = len = CAT_BUFSIZE;
+	error = Fs_Read(streamPtr, buffer, offset, &len);
+	if (error || len < savedLen) {
+	    break;
+	} else {
+	    offset += len;
+	}
+	printf("%s", buffer);
+    }
+    (void)Fs_Close(streamPtr);
+    free(buffer);
+    return(error);
+}
+#endif /* notdef */
+
+#ifdef notdef
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_Copy --
+ *
+ *	Copy a file. (Used when testing simple kernels.)
+ *
+ * Results:
+ *	0 or an error code from any of the file operations.
+ *
+ * Side effects:
+ *	Creates a copy of the first file in the second.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Fs_Copy(srcFileName, dstFileName)
+    char *srcFileName;
+    char *dstFileName;
+{
+    int error;
+    Fs_Stream *srcStreamPtr;
+    Fs_Stream *dstStreamPtr;
+    int offset;
+    Address buffer;
+
+    srcStreamPtr = (Fs_Stream *)NIL;
+    error = Fs_Open(srcFileName, FS_READ|FS_FOLLOW, FS_FILE, 0, &srcStreamPtr);
+    if (error) {
+	Sys_SafePrintf("Fs_Copy: can't open source file (%s)\n", srcFileName);
+	return(error);
+    }
+    dstStreamPtr = (Fs_Stream *)NIL;
+    error = Fs_Open(dstFileName, FS_CREATE|FS_WRITE|FS_FOLLOW, FS_FILE, 0666, &dstStreamPtr);
+    if (error) {
+	Sys_SafePrintf("Fs_Copy: can't open destination file (%s)\n",
+				 dstFileName);
+	(void)Fs_Close(srcStreamPtr);
+	return(error);
+    }
+
+#define CP_BUFSIZE	2048
+
+    buffer = malloc(CP_BUFSIZE);
+    offset = 0;
+    while (1) {
+	int len;
+
+	len = CP_BUFSIZE;
+	error = Fs_Read(srcStreamPtr, buffer, offset, &len);
+	if (error) {
+	    Sys_SafePrintf("Fs_Copy: read failed\n");
+	    break;
+	} else if (len == 0) {
+	    break ;
+	}
+	error = Fs_Write(dstStreamPtr, buffer, offset, &len);
+	if (error) {
+	    Sys_SafePrintf("Fs_Copy: write failed\n");
+	    break;
+	}
+	offset += len;
+    }
+    Sys_SafePrintf("Fs_Copy: copied %d bytes\n", offset);
+
+    (void)Fs_Close(srcStreamPtr);
+    (void)Fs_Close(dstStreamPtr);
+    free(buffer);
+    return(error);
+}
+#endif /* notdef */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ZeroFsStats --
+ *
+ *	Reset counters in the Fs_Stats structure, leaving state information 
+ *	alone.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ZeroFsStats()
+{
+    bzero(&fs_Stats.cltName, sizeof(fs_Stats.cltName));
+    bzero(&fs_Stats.srvName, sizeof(fs_Stats.srvName));
+    bzero(&fs_Stats.gen, sizeof(fs_Stats.gen));
+    Fscache_ZeroStats();
+    bzero(&fs_Stats.alloc, sizeof(fs_Stats.alloc));
+    Fsutil_ZeroHandleStats();
+    bzero(&fs_Stats.prefix, sizeof(fs_Stats.prefix));
+    bzero(&fs_Stats.lookup, sizeof(fs_Stats.lookup));
+    fs_Stats.nameCache.accesses = 0;
+    fs_Stats.nameCache.hits = 0;
+    fs_Stats.nameCache.replacements = 0;
+    fs_Stats.object.dirFlushed = 0;
+    bzero(&fs_Stats.recovery, sizeof(fs_Stats.recovery));
+    bzero(&fs_Stats.consist, sizeof(fs_Stats.consist));
+    bzero(&fs_Stats.writeBack, sizeof(fs_Stats.writeBack));
+    bzero(&fs_Stats.rmtIO, sizeof(fs_Stats.rmtIO));
+    bzero(&fs_Stats.mig, sizeof(fs_Stats.mig));
+}
+@
+
+
+9.7
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsCommand.c,v 9.6 91/05/30 13:20:19 shirriff Exp Locker: rab $ SPRITE (Berkeley)";
+d24 1
+d49 5
+d290 1
+a290 6
+	    /*
+	     * Zero out the counters in the fs_Stats struct.  Unfortunately,
+	     * some values in the structure can't be zeroed out, so this
+	     * must be changed to zero out only some portions.
+	     */
+	    bzero((Address) &fs_Stats, sizeof(Fs_Stats));
+d481 40
+@
+
+
+9.6
+log
+@Added DO_L1_COMMAND support
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsCommand.c,v 9.5 91/05/10 12:43:38 mgbaker Exp $ SPRITE (Berkeley)";
+a27 1
+#include <fsutilTrace.h>
+a191 7
+	case FS_SET_TRACING: {
+	    /*
+	     * Set the file system tracing flag.
+	     */
+	    SWAP_TO_BUFFER(fsutil_Tracing, buffer);
+	    break;
+	}
+a207 8
+	case FS_SET_PDEV_DEBUG: {
+	    /*
+	     * Set the pseudo-device debug flag.
+	     */
+	    extern Boolean  fspdev_Debug;
+	    SWAP_TO_BUFFER(fspdev_Debug, buffer);
+	    break;
+	}
+a324 3
+	    break;
+	case FS_SET_RA_TRACING:
+	    SWAP_TO_BUFFER(fscache_RATracing, buffer);
+@
+
+
+9.6.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fs/fsCommand.c,v 9.6 91/05/30 13:20:19 shirriff Exp $ SPRITE (Berkeley)";
+@
+
+
+9.5
+log
+@Fixed infinite recovery loop due to stale prefixes.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsCommand.c,v 9.4 91/01/26 15:33:43 mgbaker Exp $ SPRITE (Berkeley)";
+d356 3
+a358 1
+
+@
+
+
+9.4
+log
+@Sosp stuff.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsCommand.c,v 9.3 90/10/19 15:41:44 mendel Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d92 1
+a92 1
+		    prefixFlags |= FSPREFIX_REMOTE;
+d139 1
+a139 1
+	    status = Fsprefix_Clear(buffer, FALSE);
+d146 1
+a146 1
+	    status = Fsprefix_Clear(buffer, TRUE);
+@
+
+
+9.3
+log
+@Added LFS commands.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsCommand.c,v 9.2 90/10/08 10:55:17 mendel Exp $ SPRITE (Berkeley)";
+a296 42
+	    break;
+	}
+	case FS_SET_WRITE_THROUGH: {
+	    /*
+	     * Set the file system write-through flag.
+	     */
+	    SWAP_TO_BUFFER(fsutil_WriteThrough, buffer);
+	    break;
+	}
+	case FS_SET_WRITE_BACK_ON_CLOSE: {
+	    /*
+	     * Set the file system write-back-on-close flag.
+	     */
+	    SWAP_TO_BUFFER(fsutil_WriteBackOnClose, buffer);
+	    break;
+	}
+	case FS_SET_DELAY_TMP_FILES: {
+	    /*
+	     * Set the flag that delays writes on temporary files.
+	     */
+	    SWAP_TO_BUFFER(fsutil_DelayTmpFiles, buffer);
+	    break;
+	}
+	case FS_SET_TMP_DIR_NUM: {
+	    /*
+	     * Set the directory that contains /tmp.
+	     */
+	    SWAP_TO_BUFFER(fsutil_TmpDirNum, buffer);
+	    break;
+	}
+	case FS_SET_WRITE_BACK_ASAP: {
+	    /*
+	     * Set the file system write-back as soon as possible flag.
+	     */
+	    SWAP_TO_BUFFER(fsutil_WriteBackASAP, buffer);
+	    break;
+	}
+	case FS_SET_WB_ON_LAST_DIRTY_BLOCK: {
+	    /*
+	     * Set the file system write-back as soon as possible flag.
+	     */
+	    SWAP_TO_BUFFER(fsutil_WBOnLastDirtyBlock, buffer);
+@
+
+
+9.2
+log
+@Fixed include files. Changed variable fsdm_AllocGap to ofs_AllocGap.
+@
+text
+@d7 9
+a15 2
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs.mendel/RCS/fsCommand.c,v 1.1 90/01/16 17:10:31 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d42 1
+d400 6
+a405 1
+	    status = FS_INVALID_ARG;
+@
+
+
+9.1
+log
+@Added FS_SET_BLOCK_SKEW that sets the fsdm_AllocGap variable
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsCommand.c,v 9.0 89/09/12 15:02:49 douglis Stable Locker: brent $ SPRITE (Berkeley)";
+d16 17
+a32 15
+#include "sprite.h"
+#include "fs.h"
+#include "fsutil.h"
+#include "fsNameOps.h"
+#include "fsprefix.h"
+#include "fsutilTrace.h"
+#include "fslcl.h"
+#include "fscache.h"
+#include "fspdev.h"
+#include "fsStat.h"
+#include "timer.h"
+#include "user/fsCmd.h"
+#include "rpc.h"
+#include "sched.h"
+#include "fsrmt.h"
+d34 1
+a35 1
+
+d386 2
+a387 2
+	    extern int fsdm_AllocGap;
+	    SWAP_TO_BUFFER(fsdm_AllocGap, buffer);
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsCommand.c,v 8.8 89/08/21 15:22:26 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d380 9
+@
+
+
+8.8
+log
+@Break up fs to sperate modules.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsCommand.c,v 8.7 89/06/30 15:27:58 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+8.7
+log
+@Added use of FS_REMOTE_PREFIX so remote domains that are hand-loaded
+into the prefix table are special cased.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsCommand.c,v 8.6 89/06/14 22:31:36 jhh Exp $ SPRITE (Berkeley)";
+d18 7
+a24 9
+#include "fsInt.h"
+#include "fsOpTable.h"
+#include "fsPrefix.h"
+#include "fsTrace.h"
+#include "fsMigrate.h"
+#include "fsNameHash.h"
+#include "fsBlockCache.h"
+#include "fsPdev.h"
+#include "fsDebug.h"
+d30 2
+d63 3
+a65 3
+    extern	int	fsMaxBlockCleaners;
+    extern	int	fsReadAheadBlocks;
+    extern	Boolean	fsClientCaching;
+d79 1
+a79 1
+		int prefixFlags = FS_IMPORTED_PREFIX;
+d82 1
+a82 1
+		    prefixFlags |= FS_REMOTE_PREFIX;
+d84 1
+a84 1
+		Fs_PrefixLoad(argPtr->prefix, argPtr->serverID, prefixFlags);
+d107 1
+a107 1
+				FS_LCL_FILE_STREAM) {
+d114 1
+a114 1
+			    (void)FsPrefixInstall(prefix,streamPtr->ioHandlePtr,
+d116 1
+a116 1
+		    FS_EXPORTED_PREFIX|FS_IMPORTED_PREFIX|FS_OVERRIDE_PREFIX);
+d129 1
+a129 1
+	    status = Fs_PrefixClear(buffer, FALSE);
+d136 1
+a136 1
+	    status = Fs_PrefixClear(buffer, TRUE);
+d148 1
+a148 1
+		Fs_PrefixExport(controlPtr->prefix, controlPtr->clientID,
+d159 1
+a159 1
+		FsSetMinSize(*(int *) buffer);
+d168 1
+a168 1
+		FsSetMaxSize(*(int *) buffer);
+d176 1
+a176 1
+	    SWAP_TO_BUFFER(fsShouldSyncDisks, buffer);
+d187 1
+a187 1
+	    SWAP_TO_BUFFER(fsTracing, buffer);
+d194 2
+a195 1
+	    SWAP_TO_BUFFER(fsCacheDebug, buffer);
+d202 2
+a203 1
+	    SWAP_TO_BUFFER(fsMigDebug, buffer);
+d210 2
+a211 1
+	    SWAP_TO_BUFFER(fsPdevDebug, buffer);
+d218 1
+a218 1
+	    SWAP_TO_BUFFER(fsRpcDebug, buffer);
+d239 2
+a240 1
+	    SWAP_TO_BUFFER(fsNameCaching, buffer);
+d247 1
+a247 1
+	    SWAP_TO_BUFFER(fsClientCaching, buffer);
+d286 1
+a286 1
+	    Fs_CacheEmpty(numLockedBlocksPtr);
+d293 1
+a293 1
+	    SWAP_TO_BUFFER(fsWriteThrough, buffer);
+d300 1
+a300 1
+	    SWAP_TO_BUFFER(fsWriteBackOnClose, buffer);
+d307 1
+a307 1
+	    SWAP_TO_BUFFER(fsDelayTmpFiles, buffer);
+d314 1
+a314 1
+	    SWAP_TO_BUFFER(fsTmpDirNum, buffer);
+d321 1
+a321 1
+	    SWAP_TO_BUFFER(fsWriteBackASAP, buffer);
+d328 1
+a328 1
+	    SWAP_TO_BUFFER(fsWBOnLastDirtyBlock, buffer);
+d333 1
+a333 1
+	     * Zero out the counters in the fsStats struct.  Unfortunately,
+d337 1
+a337 1
+	    bzero((Address) &fsStats, sizeof(FsStats));
+d343 2
+a344 2
+		if (bufSize > sizeof(FsStats)) {
+		    bufSize = sizeof(FsStats);
+d346 1
+a346 1
+		bcopy((Address) &fsStats, buffer, bufSize);
+d354 2
+a355 2
+	    if (bufSize >= sizeof(FsTypeStats)) {
+		bcopy((Address)&fsTypeStats, buffer, sizeof(FsTypeStats));
+d365 1
+a365 1
+	    Fs_CheckFragmentation(arrPtr, arrPtr + 1, arrPtr + 2);
+d369 1
+a369 1
+	    SWAP_TO_BUFFER(fsMaxBlockCleaners, buffer);
+d372 1
+a372 1
+	    SWAP_TO_BUFFER(fsReadAheadBlocks, buffer);
+d375 1
+a375 1
+	    SWAP_TO_BUFFER(fsRATracing, buffer);
+d378 1
+a378 1
+	    status = FsRereadSummaryInfo(buffer);
+@
+
+
+8.6
+log
+@Updated FS_PREFIX_LOAD to take a serverID as well as a prefix
+so we can do remote mounts.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsCommand.c,v 8.5 89/06/02 12:58:46 jhh Exp $ SPRITE (Berkeley)";
+d79 6
+a84 2
+		Fs_PrefixLoad(argPtr->prefix, argPtr->serverID,
+		    FS_IMPORTED_PREFIX);
+@
+
+
+8.5
+log
+@added ability to reread summary sector
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsCommand.c,v 8.4 89/02/06 18:30:04 brent Exp Locker: jhh $ SPRITE (Berkeley)";
+d70 3
+a72 3
+	     * Load the prefix (contained in buffer) into the prefix table.
+	     * This will cause a broadcast to find the
+	     * server the first time the prefix is matched.
+d74 3
+a76 1
+	    if (buffer[0] != '/') {
+d79 2
+a80 1
+		Fs_PrefixLoad(buffer, FS_IMPORTED_PREFIX);
+@
+
+
+8.4
+log
+@Fixed use of wrong variable name
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsCommand.c,v 8.3 89/02/04 12:16:47 brent Exp $ SPRITE (Berkeley)";
+d365 3
+@
+
+
+8.3
+log
+@Made FS_RETURN_STATS be able to work with old versions of the
+fsstat program that have a different sized FsStats struct.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsCommand.c,v 8.2 89/01/30 13:59:21 brent Exp $ SPRITE (Berkeley)";
+d332 2
+a333 2
+		if (size > sizeof(FsStats) {
+		    size = sizeof(FsStats);
+d335 1
+a335 1
+		bcopy((Address) &fsStats, buffer, size);
+@
+
+
+8.2
+log
+@Added FS_RETURN_LIFE_TIMES
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsCommand.c,v 8.1 88/11/14 14:15:09 brent Exp $ SPRITE (Berkeley)";
+d331 5
+a335 2
+	    if (bufSize >= sizeof(FsStats)) {
+		bcopy((Address) &fsStats, buffer, sizeof(FsStats));
+@
+
+
+8.1
+log
+@Fixed call to Fs_Open in Fs_PREFIX_EXPORT handler
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsCommand.c,v 8.0 88/11/11 18:24:55 douglis Stable Locker: brent $ SPRITE (Berkeley)";
+d333 9
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsCommand.c,v 7.0 88/11/11 15:35:43 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d96 2
+a97 2
+		    status = Fs_Open(localPath, FS_READ, FS_DIRECTORY, 0,
+						&streamPtr);
+d388 1
+a388 1
+    error = Fs_Open(fileName, FS_READ, FS_FILE, 0, &streamPtr);
+d445 1
+a445 1
+    error = Fs_Open(srcFileName, FS_READ, FS_FILE, 0, &srcStreamPtr);
+d451 1
+a451 1
+    error = Fs_Open(dstFileName, FS_CREATE|FS_WRITE, FS_FILE, 0666, &dstStreamPtr);
+@
+
+
+7.0
+log
+@New version for conversion to new C library
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsCommand.c,v 6.5 88/10/16 10:15:27 brent Exp Locker: brent $ SPRITE (Berkeley)";
+@
+
+
+6.5
+log
+@Updated calls to FsPrefixInstall
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: fsCommand.c,v 6.4 88/10/10 11:32:05 douglis Exp $ SPRITE (Berkeley)";
+a27 2
+#include "mem.h"
+#include "byte.h"
+d90 2
+a91 2
+	    localPath = (char *)Mem_Alloc(argPtr->pathLen1);
+	    prefix = (char *)Mem_Alloc(argPtr->pathLen2);
+d101 1
+a101 1
+			    Sys_Panic(SYS_WARNING,
+d114 2
+a115 2
+	    Mem_Free(prefix);
+	    Mem_Free(localPath);
+d268 1
+a268 1
+	    Sys_Printf("microseconds = %d per CS = %d\n", us,
+d326 1
+a326 1
+	    Byte_Zero(sizeof(FsStats), (Address) &fsStats);
+d332 1
+a332 1
+		Byte_Copy(sizeof(FsStats), (Address) &fsStats, buffer);
+d395 1
+a395 1
+    buffer = Mem_Alloc(CAT_BUFSIZE);
+d400 1
+a400 1
+	Byte_Zero(CAT_BUFSIZE, buffer);
+d409 1
+a409 1
+	Sys_Printf("%s", buffer);
+d412 1
+a412 1
+    Mem_Free(buffer);
+d461 1
+a461 1
+    buffer = Mem_Alloc(CP_BUFSIZE);
+d485 1
+a485 1
+    Mem_Free(buffer);
+@
+
+
+6.4
+log
+@allow Fs_Command to set pdev or migration debug flags.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: fsCommand.c,v 6.3 88/09/09 11:21:24 brent Exp $ SPRITE (Berkeley)";
+d109 1
+a109 1
+			    FsPrefixInstall(prefix, streamPtr->ioHandlePtr,
+@
+
+
+6.3
+log
+@Changed name from fsTest.c, and commented out ancient testing routines.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: fsTest.c,v 6.2 88/09/07 21:21:00 nelson Exp $ SPRITE (Berkeley)";
+d22 1
+d25 1
+d190 14
+@
+
+
+6.2
+log
+@Put alternative writing policies into the file system.
+@
+text
+@d2 1
+a2 1
+ * fsTest.c --
+d4 2
+a5 1
+ *	Procedures that test the filesystem.
+d12 1
+a12 1
+static char rcsid[] = "$Header: fsTest.c,v 6.1 88/08/31 12:07:22 brent Exp $ SPRITE (Berkeley)";
+d84 1
+a84 4
+	     * Export a local directory under a prefix.  The local directory
+	     * should be the root of a domain so that dot-dot will get
+	     * trapped correctly.  This isn't a fundamental limitation, and
+	     * could be fixed in the lookup routine.
+d105 1
+d346 1
+d354 1
+a354 1
+ *	on the screen.
+d401 1
+d403 1
+d409 1
+a409 1
+ *	Copy a file.
+d474 1
+@
+
+
+6.1
+log
+@Removed lint.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsTest.c,v 6.0 88/08/11 12:18:33 brent Stable $ SPRITE (Berkeley)";
+d265 21
+d291 14
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsTest.c,v 1.3 88/08/08 14:46:08 douglis Exp $ SPRITE (Berkeley)";
+d30 1
+d106 1
+a106 1
+			    Fs_Close(streamPtr);
+@
+
+
+1.3
+log
+@added FS_SET_TMP_DIR_NUM option to Fs_Cmd.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsTest.c,v 1.2 88/08/05 14:16:21 douglis Exp $ SPRITE (Berkeley)";
+@
+
+
+1.2
+log
+@Changes to support keeping track of file deletions, certain FS system
+calls, and large fsStat counters, ported from the old filesystem.
+This ci message is generic.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsTest.c,v 1.1 88/04/04 10:43:55 brent Exp $ SPRITE (Berkeley)";
+d262 7
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsTest.c,v 5.2 87/10/21 11:33:24 nelson Exp $ SPRITE (Berkeley)";
+d262 10
+@

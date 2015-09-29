@@ -1,0 +1,12 @@
+
+          demand_load procname
+          Attempt to load the specified procedure, either as an
+          autoload function or by loading the package containing the
+          procedure.  If the package indexes have not been loaded for
+          all package libraries in TCLPATH, they will be loaded.
+          Out-of-date library indexes will be rebuilt if they are
+          writable.  The procedure returns 1 if the procedure was
+          sucessfully loaded, or 0 if it was not.
+
+          Duplicated package names are skipped, the first package of a
+          given name found in the path is loaded.

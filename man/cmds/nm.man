@@ -1,0 +1,141 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)nm.1	6.1 (Berkeley) 4/29/85
+.\"
+.TH NM 1 "April 29, 1985"
+.UC 4
+.SH NAME
+nm \- print name list
+.SH SYNOPSIS
+.B nm
+[
+.B \-agnopru
+]
+[ file ... ]
+.SH DESCRIPTION
+.I Nm
+prints the name list (symbol table) of each object
+.I file
+in the argument list.  If an argument is an archive, a listing for each object
+file in the archive will be produced.  If no
+.I file
+is given, the symbols in "a.out" are listed.
+.PP
+Each symbol name is preceded by its value (blanks if undefined)
+and one of the letters
+.SM
+.B U
+(undefined),
+.SM
+.B A
+(absolute),
+.SM
+.B  T
+(text segment symbol),
+.SM
+.B D
+(data segment symbol),
+.SM
+.B B
+(bss segment symbol),
+.SM
+.B C
+(common symbol),
+.SM
+.B f
+file name,
+or
+.B \-
+for debugger symbol table entries (see
+.B \-a
+below).
+If the symbol is local (non-external) the type letter is in lower case.
+The output is sorted alphabetically.
+.PP
+Options are:
+.TP
+.B  \-a
+Print symbol table entries inserted for use by debuggers.
+.TP
+.B  \-g
+Print only global (external) symbols.
+.TP
+.B \-n
+Sort numerically rather than alphabetically.
+.TP
+.B  \-o
+Prepend file or archive element name to each output line rather than only once.
+.TP
+.B  \-p
+Don't sort; print in symbol-table order.
+.TP
+.B  \-r
+Sort in reverse order.
+.TP
+.B  \-u
+Print only undefined symbols.
+.SH ULTRIX NM
+.PP
+The Ultrix version of nm, running on the DECstations, uses different type
+letters.  The letters are:
+.TP
+N
+nil storage class, compiler internal usage
+.TP
+T
+external text
+.TP
+t
+local text
+.TP
+D
+external initialized data
+.TP
+d
+local initialized data
+.TP
+B
+external zeroed data
+.TP
+b
+local zeroed data
+.TP
+A
+external absolute
+.TP
+a
+local absolute
+.TP
+U
+external undefined
+.TP
+G
+external small initialized data
+.TP
+g
+local small initialized data
+.TP
+S
+external small zeroed data
+.TP
+s
+local small zeroed data
+.TP
+R
+external read only
+.TP
+r
+local read only
+.TP
+C
+common
+.TP
+E
+small common
+.TP
+V
+external small undefined
+.SH SEE ALSO
+ar(1), ar(5), a.out(5), stab(5)

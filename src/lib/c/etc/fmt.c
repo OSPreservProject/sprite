@@ -1,0 +1,1188 @@
+/* 
+ * fmt.c --
+ *
+ *	Routines for converting between different formats of data.
+ *	A data format includes such things as byte-order and 
+ *	alignment. 
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/etc/RCS/fmt.c,v 1.9 92/09/18 09:56:55 mgbaker Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+/*LINTLIBRARY*/
+
+
+#include <sprite.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <string.h>
+#include <sys.h>
+#include "fmt.h"
+
+/*
+ * Two supported byte-orders.
+ */
+#define BIG_ENDIAN 0
+#define LITTLE_ENDIAN 1
+
+/*
+ * Structure for each format. Right now formats only include alignment
+ * and byte-order. The alignment fields for bytes, halfwords, words,
+ * and doublewords are used to align these data types such that their
+ * addresses are a multiple of the alignment.  For example, an alignment
+ * of 4 indicates that the address of the data must be a multiple of
+ * 4. The alignments for structures and unions are used in the same
+ * way, except that they represent the minimum alignment. If the
+ * structure or union contains a more restrictive data type the more
+ * restrictive alignment is used.
+ * 
+ * There are two supported byte-orders: little-endian and big-endian.
+ * If we view a word as an array of 4 bytes, then byte 0 is the most
+ * significant byte of the word if a machine is big-endian and the
+ * least significant if the machine is little endian.
+ */
+
+typedef struct {
+    int		bAlign;			/* Byte alignment */
+    int		hAlign;			/* Halfword alignment */
+    int		wAlign;			/* Word alignment */
+    int		dAlign;			/* Doubleword alignment */
+    int		structMinAlign;		/* Minimum alignment of structures */
+    int		unionMinAlign;		/* Minimum alignment of unions */
+    int		byteOrder;		/* Byte order. */
+} FormatInfo;
+
+/*
+ * Byte-order and alignment information for each type.
+ */
+static FormatInfo formatInfo[] = {
+    {1,	2, 2, 2, 2, 2, BIG_ENDIAN},   		/* 68K */
+    {1, 2, 4, 4, 1, 1, LITTLE_ENDIAN},		/* VAX */
+    {1, 2, 4, 8, 4, 4, LITTLE_ENDIAN},   	/* SPUR */
+    {1, 2, 4, 8, 1, 1, LITTLE_ENDIAN},   	/* MIPS */
+    {1, 2, 4, 8, 1, 1, BIG_ENDIAN},		/* SPARC */
+    {1, 2, 2, 2, 1, 1, LITTLE_ENDIAN}		/* Symmetry */
+};
+
+/*
+ * Number of different formats.
+ */
+static int formatCount = sizeof(formatInfo) / sizeof(FormatInfo);
+
+/*
+ * Structure to maintain state of current conversion.
+ */
+typedef struct {
+    char		*contPtr;	/* Ptr to position in content string */
+    char		*inEndPtr;	/* Ptr to last byte in input buffer */
+    char		*inPtr;		/* Ptr to position in input buffer */
+    char		*inStartPtr;	/* Starting input pointer. */
+    char		*outEndPtr;	/* Ptr to last byte in output buffer */
+    char		*outPtr;	/* Ptr to position in output buffer */
+    char		*outStartPtr;	/* Starting output pointer. */
+    FormatInfo		*inInfoPtr;	/* Ptr to format info for in format */
+    FormatInfo		*outInfoPtr;	/* Ptr to format info for out format */
+} State;
+
+/*
+ * Used to convert Swap_Buffer constants to Fmt constants.
+ */
+
+static int compat[3] = { 1, 4, 3};
+
+/*
+ * Forward declaration of procedures.
+ */
+static int	ConvertSequence _ARGS_((Boolean doCopy, int unionIndex,
+					int openChar, State *statePtr));
+static int	ConvertStruct _ARGS_((Boolean doCopy, Boolean doingUnion,
+				      State *statePtr, int *repCountPtr));
+static int	ConvertUnion _ARGS_((Boolean doCopy, Boolean doingUnion,
+				     State *statePtr, int *repCountPtr));
+static int	ConvertByte _ARGS_((Boolean doCopy, int repCount,
+				    State *statePtr));
+static int	ConvertHalfWord _ARGS_((Boolean doCopy, int repCount,
+					State *statePtr));
+static int	ConvertWord _ARGS_((Boolean doCopy, int repCount,
+				    State *statePtr));
+static int	ConvertDoubleWord _ARGS_((Boolean doCopy, int repCount,
+					  State *statePtr));
+static int	CalcComplexAlign _ARGS_((State *statePtr, char **contPtrPtr,
+					 int *repCountPtr, int *inAlignPtr,
+					 int *outAlignPtr));
+
+/*
+ * AlignPointer --
+ *
+ * Macro to increment a pointer to the given alignment. 
+ * The offset is the address of the start of the buffer, since it may
+ * not be aligned.  To align a pointer we add in the alignment minus one,
+ * then subtract the original alignment (low bits of the offset). 
+ * The address is then rounded to the alignment by anding with the inverse
+ * of the alignment minus one.  The original alignment is then added back in.
+ */
+
+#define AlignPointer(align, offset, ptr) { \
+    (ptr) = (char *) (( \
+	(((int)(ptr)) + (align) - 1 - (((int) offset) & ((align)-1))) \
+	& ~((align)-1)) \
+	+ (((int)offset) & ((align)-1))); \
+}
+
+/*
+ * Return the maximum of two numbers.
+ */
+#define MAX(a,b) ((a) > (b)) ? (a) : (b)
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fmt_Convert --
+ *
+ *	Convert data from one format to another.
+ *	See the man page for more details.
+ *
+ * Results:
+ *	Data is read from the input buffer using the input format
+ *	and written to the output buffer using the output format.
+ *	*inSizePtr contains the actual number of input bytes used
+ *	and *outSizePtr contains the actual number of output bytes used.
+ *
+ *	Returns:
+ *	FMT_OK			-- conversion successful.
+ *	FMT_CONTENT_ERROR 	-- error in content string
+ *	FMT_INPUT_TOO_SMALL	-- size of input buffer is smaller than that
+ *				   indicated by content string
+ *	FMT_OUTPUT_TOO_SMALL	-- output buffer is too small
+ *	FMT_ILLEGAL_FORMAT	-- one of the formats is bad
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Fmt_Convert(contents, inFormat, inSizePtr, inBuf, outFormat, outSizePtr, outBuf)
+    char		*contents;	/* String describing contents of 
+					 * buffers. */
+    Fmt_Format		inFormat;	/* Data format of input buffer */
+    int			*inSizePtr;	/* Ptr to size of input buffer */
+    char		*inBuf;		/* Input buffer */
+    Fmt_Format		outFormat;	/* Data format of output buffer */
+    int			*outSizePtr;	/* Ptr to size of output buffer */
+    char		*outBuf;	/* Output buffer */
+{
+
+    State	state;
+    int		status;
+
+    if ((inFormat & 0x1000) != 0) {
+	inFormat &= ~0x1000;
+    } else {
+	inFormat = compat[inFormat];
+    }
+    if ((outFormat & 0x1000) != 0) {
+	outFormat &= ~0x1000;
+    } else {
+	outFormat = compat[outFormat];
+    }
+
+    if (inFormat < 1 || inFormat > formatCount) {
+	return FMT_ILLEGAL_FORMAT;
+    } 
+    if (outFormat < 1 || outFormat > formatCount) {
+	return FMT_ILLEGAL_FORMAT;
+    } 
+    state.contPtr = contents;
+    state.inEndPtr = inBuf + *inSizePtr;
+    state.inPtr = inBuf;
+    state.inStartPtr = inBuf;
+    state.outEndPtr = outBuf + *outSizePtr;
+    state.outPtr = outBuf;
+    state.outStartPtr = outBuf;
+    state.inInfoPtr = &(formatInfo[inFormat-1]);
+    state.outInfoPtr = &(formatInfo[outFormat-1]);
+
+    status = ConvertSequence(TRUE, -1, '\0', &state);
+
+    *inSizePtr = (int) (state.inPtr - inBuf);
+    *outSizePtr = (int) (state.outPtr - outBuf);
+
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fmt_Size --
+ *	Compute the size of the data after conversion.
+ *	See the man page for more details.
+ *
+ * Results:
+ *	Data is read from the input buffer using the input format
+ *	and written to the output buffer using the output format.
+ *	*inSizePtr contains the actual number of input bytes used.
+ *	*outSizePtr contains the size of the input data after conversion.
+ *
+ *	Returns:
+ *	FMT_OK			-- size calculation successful.
+ *	FMT_CONTENT_ERROR 	-- error in content string
+ *	FMT_INPUT_TOO_SMALL	-- size of input buffer is smaller than that
+ *				   indicated by content string
+ *	FMT_ILLEGAL_FORMAT	-- one of the formats is bad
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Fmt_Size(contents, inFormat, inSizePtr, outFormat, outSizePtr)
+    char		*contents;	/* String describing contents of 
+					 * buffers. */
+    Fmt_Format		inFormat;	/* Data format of input buffer */
+    int			*inSizePtr;	/* Ptr to size of input buffer */
+    Fmt_Format		outFormat;	/* Data format of output buffer */
+    int			*outSizePtr;	/* Ptr to size of output buffer */
+{
+
+    State	state;
+    int		status;
+
+    if ((inFormat & 0x1000) != 0) {
+	inFormat &= ~0x1000;
+    } else {
+	inFormat = compat[inFormat];
+    }
+    if ((outFormat & 0x1000) != 0) {
+	outFormat &= ~0x1000;
+    } else {
+	outFormat = compat[outFormat];
+    }
+
+    if (inFormat < 1 || inFormat > formatCount) {
+	return FMT_ILLEGAL_FORMAT;
+    } 
+    if (outFormat < 1 || outFormat > formatCount) {
+	return FMT_ILLEGAL_FORMAT;
+    } 
+    state.contPtr = contents;
+    state.inEndPtr = (char *) *inSizePtr;
+    state.inPtr = NULL;
+    state.inStartPtr = NULL;
+    state.outEndPtr = NULL;
+    state.outPtr = NULL;
+    state.outStartPtr = NULL;
+    state.inInfoPtr = &(formatInfo[inFormat-1]);
+    state.outInfoPtr = &(formatInfo[outFormat-1]);
+
+    status = ConvertSequence(FALSE, -1, '\0', &state);
+
+    *inSizePtr = (int) (state.inPtr);
+    *outSizePtr = (int) (state.outPtr);
+
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConvertSequence --
+ *
+ *	The conversion process is broken up in a hierarchical manner.
+ *	At the leaves are the conversions of bytes, halfwords, words and 
+ *	doublewords. Structures and unions are converted by converting
+ *	their components. These may be leaves, or they may be nested
+ *	structures and unions. Sequences are collections of conversions
+ *	at the same nesting level. The initial content string represents
+ *	a sequence of conversions, as do the fields of a structure.
+ *	The conversion of sequences requires no special alignment like
+ *	the other types of conversion.
+ *
+ *	The doCopy and unionIndex parameters can be used to control the
+ *	conversion. If doCopy is FALSE then the output buffer is not
+ *	modified. If unionIndex is >= 0, then only one element of the
+ *	sequence will be copied into the output buffer (if doCopy is TRUE).
+ *	If unionIndex < 0 then the sequence is not the components of a
+ *	union so they are all copied (if doCopy is TRUE).  If we are
+ *	processing a union the pointers to the input and output buffers
+ *	will be adjusted as if the largest element in the sequence had been
+ *	copied. For example, the union "(0bw)" should have the byte copied,
+ *	but the size of the union is 4 bytes. Keeping track of the largest
+ *	component allows the pointers to be advanced to the end of the
+ *	union.
+ *
+ * Results:
+ *	The state structure is modified to reflect the current state of
+ *	the conversion. Data may be copied from the input buffer to
+ *	the output buffer.
+ *
+ *	Returns:
+ *	FMT_OK			-- conversion successful.
+ *	FMT_CONTENT_ERROR 	-- error in content string
+ *	FMT_INPUT_TOO_SMALL	-- size of input buffer is smaller than that
+ *				   indicated by content string
+ *	FMT_OUTPUT_TOO_SMALL	-- output buffer is too small
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ConvertSequence(doCopy, unionIndex, openChar, statePtr)
+    Boolean		doCopy;		/* FALSE => don't modify the
+					 * output buffer. */
+    int			unionIndex;	/* If >= 0 then we are doing a union
+					 * so only copy this element and set
+					 * pointers to max of elements. */
+    char		openChar;	/* The character that started the 
+					 * sequence. */
+    register State	*statePtr;	/* Current state of conversion */
+{
+    register char 	*contPtr;
+    int			status;
+    int			repCount;
+    char		*afterPtr;
+    int			curIndex;
+    char		*maxInPtr = (char *)NIL;
+    char		*maxOutPtr = (char *)NIL;
+    Boolean		doSubCopy;
+    char		*startInPtr = (char *)NIL;
+    char 		*startOutPtr = (char *)NIL;
+
+    status = FMT_OK;
+    curIndex = 0;
+    /*
+     * If we are doing a union keep track of where we started and the
+     * maximum  pointer values.
+     */
+    if (unionIndex >= 0) {
+	maxInPtr = statePtr->inPtr;
+	startInPtr = statePtr->inPtr;
+	maxOutPtr = statePtr->outPtr;
+	startOutPtr = statePtr->outPtr;
+    }
+    contPtr = statePtr->contPtr;
+    while (*contPtr != '\0') {
+	doSubCopy = doCopy && ((unionIndex < 0) || (unionIndex == curIndex));
+	switch (*contPtr) {
+	    case '{' :
+		status = ConvertStruct(doSubCopy, unionIndex >= 0,  
+				statePtr, &repCount);
+		break;
+	    case '(' :
+		status = ConvertUnion(doSubCopy, unionIndex >= 0,  
+				statePtr, &repCount);
+		break;
+	    case '}' :
+		if (openChar != '{') {
+		    return FMT_CONTENT_ERROR;
+		} else {
+		    statePtr->contPtr = contPtr+1;
+		    goto exit;
+		}
+		break;
+	    case ')' :
+		if (openChar != '(') {
+		    return FMT_CONTENT_ERROR;
+		} else {
+		    statePtr->contPtr = contPtr+1;
+		    goto exit;
+		}
+		break;
+	    default : 
+		repCount = 1;
+		contPtr++;
+		/*
+		 * Suck up strings of the same character. If we are doing
+		 * a union we can't do this because they represent different
+		 * components, not repeated data types within the same
+		 * component. 
+		 */
+		if (unionIndex < 0) {
+		    while (*contPtr == *(contPtr-1)) {
+			contPtr++;
+			repCount++;
+		    }
+		}
+		/*
+		 * Get the repeat count if there is one.
+		 */
+		if ((*contPtr >= '0') && (*contPtr <= '9')) {
+		    repCount += strtoul(contPtr, &afterPtr, 10) - 1;
+		    if (contPtr == afterPtr) {
+			return FMT_CONTENT_ERROR;
+		    }
+		} else if (*contPtr == '*') {
+		    repCount = -1;
+		    afterPtr = contPtr + 1;
+		} else {
+		    afterPtr = contPtr;
+		}
+		contPtr--;
+		if (repCount != 0) {
+		    switch(*contPtr) {
+			case 'b' :
+			    status = ConvertByte(doSubCopy, 
+					    repCount, statePtr);
+			    break;
+			case 'h' :
+			    status = ConvertHalfWord(doSubCopy,  
+					    repCount, statePtr);
+			    break;
+			case 'w' :
+			    status = ConvertWord(doSubCopy, 
+					    repCount, statePtr);
+			    break;
+			case 'd' :
+			    status = ConvertDoubleWord(doSubCopy, 
+					    repCount, statePtr);
+			    break;
+			default :
+			    return FMT_CONTENT_ERROR;
+			    break;
+		    }
+		}
+		contPtr = statePtr->contPtr = afterPtr;
+	}
+	if (status) {
+	    return status;
+	}
+	curIndex += 1;
+	contPtr = statePtr->contPtr;
+	/*
+	 * Save the max and reset the buffer pointers.
+	 */
+	if (unionIndex >= 0) {
+	    maxInPtr = MAX(maxInPtr, statePtr->inPtr);
+	    maxOutPtr = MAX(maxOutPtr, statePtr->outPtr);
+	    statePtr->inPtr = startInPtr;
+	    statePtr->outPtr = startOutPtr;
+	}
+    }
+exit:
+    if (unionIndex >= 0) {
+	statePtr->inPtr = maxInPtr;
+	statePtr->outPtr = maxOutPtr;
+    }
+    return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConvertStruct --
+ *
+ *	Process a structure conversion. Unlike simple data types, we don't
+ *	recognize strings of repeated structures. If the same structure is
+ *	repeated twice then we parse it twice. If a structure definition
+ *	is followed by a repeat count, then we parse the definition multiple
+ *	times also. It's too hard to do it differently. Also, since structure
+ *	definitions are variable length the repeat count is not passed in
+ *	by the calling procedure.  We pass it out instead.
+ *	
+ *	The doingUnion flag indicates that the structure is a member of a
+ *	union. If it is followed by a repeat count then only convert one
+ *	of them.
+ *
+ * Results:
+ *	Contents of the state record are modified to represent the
+ *	current state of the conversion. The content pointer is advanced
+ *	over the description of the structure and its rep count. 
+ *	inPtr and outPtr are advanced.
+ *	
+ *	Returns:
+ *	FMT_OK			-- conversion successful.
+ *	FMT_CONTENT_ERROR 	-- error in content string
+ *	FMT_INPUT_TOO_SMALL	-- size of input buffer is smaller than that
+ *				   indicated by content string
+ *	FMT_OUTPUT_TOO_SMALL	-- output buffer is too small
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ConvertStruct(doCopy, doingUnion, statePtr, repCountPtr)
+    Boolean		doCopy; 	/* FALSE => don't modify output
+					 * buffer. */
+    Boolean		doingUnion;	/* TRUE => ignore rep count and only
+					 * convert one. */
+    register State	*statePtr;	/* Current state of conversion */
+    int			*repCountPtr;	/* Number of repetitions. */
+{
+
+    char		*contPtr;
+    char		*afterPtr;
+    int			status;
+    int			repCount;
+    register int	count;
+    int			inAlign;
+    int			outAlign;
+
+    afterPtr = statePtr->contPtr;
+    status = CalcComplexAlign(statePtr, &afterPtr, &repCount, &inAlign, 
+		    &outAlign);
+    if (status) {
+	return status;
+    }
+    if (doingUnion) {
+	count = 1;
+    } else {
+	count = repCount;
+    }
+    contPtr = statePtr->contPtr + 1;
+    for (; count != 0; count--) {
+	AlignPointer(inAlign, statePtr->inStartPtr, statePtr->inPtr);
+	AlignPointer(outAlign, statePtr->outStartPtr, statePtr->outPtr);
+	/*
+	 * If the structure is followed by a '*' and we are at the end of
+	 * the input buffer then bail out.
+	 */
+	if ((count < 0) && (statePtr->inPtr == statePtr->inEndPtr)) {
+	    break;
+	}
+	statePtr->contPtr = contPtr;
+	status = ConvertSequence(doCopy, -1, '{', statePtr);
+	if (status) {
+	    return status;
+	}
+    }
+    /*
+     * Structure size is always a multiple of the alignment.
+     */
+    AlignPointer(inAlign, statePtr->inStartPtr, statePtr->inPtr);
+    AlignPointer(outAlign, statePtr->outStartPtr, statePtr->outPtr);
+    statePtr->contPtr = afterPtr;
+    *repCountPtr = repCount;
+    return status;
+
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConvertUnion --
+ *
+ *	Process a union conversion. The comments for ConvertStruct apply.
+ *	The opening parenthesis of a union definition is followed by the
+ *	discriminator (index of the element to be copied). This discriminator
+ *	is passed to ConvertSequence so only that element is copied.
+ *
+ * Results:
+ *	Contents of the state record are modified to represent the
+ *	current state of the conversion. The content pointer is advanced
+ *	over the description of the union and its rep count. 
+ *	inPtr and outPtr are advanced.
+ *
+ *	Returns:
+ *	FMT_OK			-- conversion successful.
+ *	FMT_CONTENT_ERROR 	-- error in content string
+ *	FMT_INPUT_TOO_SMALL	-- size of input buffer is smaller than that
+ *				   indicated by content string
+ *	FMT_OUTPUT_TOO_SMALL	-- output buffer is too small
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ConvertUnion(doCopy, doingUnion, statePtr, repCountPtr)
+    Boolean		doCopy; 	/* FALSE => don't modify output
+					 * buffer. */
+    Boolean		doingUnion;	/* TRUE => ignore rep count and only
+					 * convert one. */
+    register State	*statePtr;	/* Current state of conversion */
+    int			*repCountPtr;	/* Number of repetitions. */
+{
+
+    char		*contPtr;
+    char		*afterPtr;
+    int			status;
+    int			repCount;
+    register int	count;
+    char		*tempPtr;
+    int			index;
+    int			inAlign;
+    int			outAlign;
+
+    afterPtr = statePtr->contPtr;
+    status = CalcComplexAlign(statePtr, &afterPtr, &repCount, &inAlign, 
+		    &outAlign);
+    if (status) {
+	return status;
+    }
+    if (doingUnion) {
+	count = 1;
+    } else {
+	count = repCount;
+    }
+    contPtr = statePtr->contPtr + 1;
+    /*
+     * Get the discriminator.
+     */
+    if ((*contPtr >= '0') && (*contPtr <= '9')) {
+	index = strtoul(contPtr, &tempPtr, 10);
+	if (contPtr == tempPtr) {
+	    return FMT_CONTENT_ERROR;
+	}
+    } else {
+	return FMT_CONTENT_ERROR;
+    }
+    contPtr = tempPtr;
+    for (; count != 0; count--) {
+	AlignPointer(inAlign, statePtr->inStartPtr, statePtr->inPtr);
+	AlignPointer(outAlign, statePtr->outStartPtr, statePtr->outPtr);
+	/*
+	 * If the union is followed by a '*' and we are at the end of
+	 * the input buffer then bail out.
+	 */
+	if ((count < 0) && (statePtr->inPtr == statePtr->inEndPtr)) {
+	    break;
+	}
+	statePtr->contPtr = contPtr;
+	status = ConvertSequence(doCopy, index, '(', statePtr);
+	if (status) {
+	    return status;
+	}
+    }
+    AlignPointer(inAlign, statePtr->inStartPtr, statePtr->inPtr);
+    AlignPointer(outAlign, statePtr->outStartPtr, statePtr->outPtr);
+    statePtr->contPtr = afterPtr;
+    *repCountPtr = repCount;
+    return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConvertByte --
+ *
+ *	If doCopy is TRUE, then copy bytes from the input buffer to the
+ *	output buffer. Otherwise just advance the buffer pointers.
+ *	If either buffer is too small then return an error. An exception
+ * 	is made if the pointer to the end of the output buffer is NULL.
+ *	This indicates that there isn't an output buffer.
+ *
+ * Results:
+ *	The contents of the state structure are modified to reflect the
+ *	current state of the conversion. The input and output pointers
+ *	are aligned and advanced repCount bytes.
+ *
+ *	Returns:
+ *	FMT_OK			-- conversion successful.
+ *	FMT_INPUT_TOO_SMALL	-- input buffer is too small
+ *	FMT_OUTPUT_TOO_SMALL	-- output buffer is too small
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ConvertByte(doCopy, repCount, statePtr)
+    Boolean		doCopy;		/* TRUE => modify output buffer. */
+    int			repCount;	/* Number of bytes to copy. */
+    State		*statePtr;	/* Current state of conversion. */
+{
+    register int	i;
+    register char	*inPtr;
+    register char	*outPtr;
+    int			status;
+
+    inPtr = statePtr->inPtr;
+    outPtr = statePtr->outPtr;
+    status = FMT_OK;
+
+    AlignPointer(statePtr->inInfoPtr->bAlign, statePtr->inStartPtr, inPtr);
+    AlignPointer(statePtr->outInfoPtr->bAlign, statePtr->outStartPtr, outPtr);
+
+    if (repCount > 0) {
+	if (inPtr + repCount  > statePtr->inEndPtr) {
+	    status = FMT_INPUT_TOO_SMALL;
+	    repCount = statePtr->inEndPtr - inPtr;
+	}
+    } else {
+	repCount = statePtr->inEndPtr - inPtr;
+    }
+    if (statePtr->outEndPtr != NULL && 
+	outPtr + repCount > statePtr->outEndPtr) {
+	status = FMT_OUTPUT_TOO_SMALL;
+	repCount = statePtr->outEndPtr - outPtr;
+    }
+    if (doCopy) {
+	for (i = 0; i < repCount; i++) {
+	    *outPtr = *inPtr;
+	    outPtr++;
+	    inPtr++;
+	}
+    } else {
+	inPtr += repCount;
+	outPtr += repCount;
+    }
+
+    statePtr->inPtr = inPtr;
+    statePtr->outPtr = outPtr;
+    return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConvertHalfWord --
+ *
+ *	If doCopy is TRUE, then copy halfwords from the input buffer to the
+ *	output buffer. Otherwise just advance the buffer pointers.
+ *	If either buffer is too small then return an error. An exception
+ * 	is made if the pointer to the end of the output buffer is NULL.
+ *	This indicates that there isn't an output buffer.
+ *
+ * Results:
+ *	The contents of the state structure are modified to reflect the
+ *	current state of the conversion. The input and output pointers
+ *	are aligned and advanced repCount halfwords.
+ *
+ *	Returns:
+ *	FMT_OK			-- conversion successful.
+ *	FMT_INPUT_TOO_SMALL	-- input buffer is too small
+ *	FMT_OUTPUT_TOO_SMALL	-- output buffer is too small
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ConvertHalfWord(doCopy, repCount, statePtr)
+    Boolean		doCopy;		/* TRUE => modify output buffer. */
+    int			repCount;	/* Number of halfwords to copy. */
+    State		*statePtr;	/* Current state of conversion. */
+{
+    register int	i;
+    register char	*inPtr;
+    register char	*outPtr;
+    int			status;
+
+    inPtr = statePtr->inPtr;
+    outPtr = statePtr->outPtr;
+    status = FMT_OK;
+
+
+    AlignPointer(statePtr->inInfoPtr->hAlign, statePtr->inStartPtr, inPtr);
+    AlignPointer(statePtr->outInfoPtr->hAlign, statePtr->outStartPtr, outPtr);
+
+    if (repCount > 0) {
+	if (inPtr + repCount * 2  > statePtr->inEndPtr) {
+	    status = FMT_INPUT_TOO_SMALL;
+	    repCount = (((int) statePtr->inEndPtr) - ((int) inPtr)) / 2;
+	}
+    } else if (repCount < 0) {
+	repCount = (((int) statePtr->inEndPtr) - ((int) inPtr)) / 2;
+    } else {
+	return status;
+    }
+    if (statePtr->outEndPtr != NULL && 
+        outPtr + repCount * 2 > statePtr->outEndPtr) {
+	status = FMT_OUTPUT_TOO_SMALL;
+	repCount = (((int) statePtr->outEndPtr) - ((int) repCount)) / 2;
+    }
+    if (doCopy) {
+	if (statePtr->inInfoPtr->byteOrder == 
+	    statePtr->outInfoPtr->byteOrder) { 
+
+	    for (i = 0; i < repCount; i++) {
+		outPtr[0] = inPtr[0];
+		outPtr[1] = inPtr[1];
+		inPtr += 2;
+		outPtr += 2;
+	    }
+	} else {
+	    for (i = 0; i < repCount; i++) {
+		outPtr[0] = inPtr[1];
+		outPtr[1] = inPtr[0];
+		inPtr += 2;
+		outPtr += 2;
+	    }
+	}
+    } else {
+	inPtr += repCount * 2;
+	outPtr += repCount * 2;
+    }
+    statePtr->inPtr = inPtr;
+    statePtr->outPtr = outPtr;
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConvertWord --
+ *
+ *	If doCopy is TRUE, then copy words from the input buffer to the
+ *	output buffer. Otherwise just advance the buffer pointers.
+ *	If either buffer is too small then return an error. An exception
+ * 	is made if the pointer to the end of the output buffer is NULL.
+ *	This indicates that there isn't an output buffer.
+ *
+ * Results:
+ *	The contents of the state structure are modified to reflect the
+ *	current state of the conversion. The input and output pointers
+ *	are aligned and advanced repCount words.
+ *
+ *	Returns:
+ *	FMT_OK			-- conversion successful.
+ *	FMT_INPUT_TOO_SMALL	-- input buffer is too small
+ *	FMT_OUTPUT_TOO_SMALL	-- output buffer is too small
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ConvertWord(doCopy, repCount, statePtr)
+    Boolean		doCopy;		/* TRUE => modify output buffer. */
+    int			repCount;	/* Number of words to copy. */
+    State		*statePtr;	/* Current state of conversion. */
+{
+    register int	i;
+    register char	*inPtr;
+    register char	*outPtr;
+    int			status;
+
+    inPtr = statePtr->inPtr;
+    outPtr = statePtr->outPtr;
+    status = FMT_OK;
+
+    AlignPointer(statePtr->inInfoPtr->wAlign, statePtr->inStartPtr, inPtr);
+    AlignPointer(statePtr->outInfoPtr->wAlign, statePtr->outStartPtr, outPtr);
+
+    if (repCount > 0) {
+	if (inPtr + repCount * 4 > statePtr->inEndPtr) {
+	    status = FMT_INPUT_TOO_SMALL;
+	    repCount = (((int) statePtr->inEndPtr) - ((int) inPtr)) / 4;
+	}
+    } else if (repCount < 0) {
+	repCount = (((int) statePtr->inEndPtr) - ((int) inPtr)) / 4;
+    } else {
+	return status;
+    }
+    if (statePtr->outEndPtr != NULL && 
+        outPtr + repCount * 4 > statePtr->outEndPtr) {
+	status = FMT_OUTPUT_TOO_SMALL;
+	repCount = ((int) statePtr->outEndPtr - ((int) outPtr)) / 4;
+    }
+    if (doCopy) {
+	if (statePtr->inInfoPtr->byteOrder == 
+	    statePtr->outInfoPtr->byteOrder) { 
+	    for (i = 0; i < repCount; i++) {
+		outPtr[0] = inPtr[0];
+		outPtr[1] = inPtr[1];
+		outPtr[2] = inPtr[2];
+		outPtr[3] = inPtr[3];
+		inPtr += 4;
+		outPtr += 4;
+	    }
+	} else {
+	    for (i = 0; i < repCount; i++) {
+		outPtr[0] = inPtr[3];
+		outPtr[1] = inPtr[2];
+		outPtr[2] = inPtr[1];
+		outPtr[3] = inPtr[0];
+		inPtr += 4;
+		outPtr += 4;
+	    }
+	}
+    } else {
+	inPtr += repCount * 4;
+	outPtr += repCount * 4;
+    }
+    statePtr->inPtr = inPtr;
+    statePtr->outPtr = outPtr;
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConvertDoubleWord --
+ *
+ *	If doCopy is TRUE, then copy doublewords from the input buffer to
+ *	the output buffer. Otherwise just advance the buffer pointers.  If
+ *	either buffer is too small then return an error. An exception is
+ *	made if the pointer to the end of the output buffer is NULL.  This
+ *	indicates that there isn't an output buffer.
+ *
+ * Results:
+ *	The contents of the state structure are modified to reflect the
+ *	current state of the conversion. The input and output pointers
+ *	are aligned and advanced repCount doublewords.
+ *	
+ *	Returns:
+ *	FMT_OK			-- conversion successful.
+ *	FMT_INPUT_TOO_SMALL	-- input buffer is too small
+ *	FMT_OUTPUT_TOO_SMALL	-- output buffer is too small
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ConvertDoubleWord(doCopy, repCount, statePtr)
+    Boolean		doCopy;		/* TRUE => modify output buffer. */
+    int			repCount;	/* Number of doublewords to copy. */
+    State		*statePtr;	/* Current state of conversion. */
+{
+    register int	i;
+    register char	*inPtr;
+    register char	*outPtr;
+    int			status;
+
+    inPtr = statePtr->inPtr;
+    outPtr = statePtr->outPtr;
+    status = FMT_OK;
+
+    AlignPointer(statePtr->inInfoPtr->dAlign, statePtr->inStartPtr, inPtr);
+    AlignPointer(statePtr->outInfoPtr->dAlign, statePtr->outStartPtr, outPtr);
+
+    if (repCount > 0) {
+	if (inPtr + repCount * 8 > statePtr->inEndPtr) {
+	    status = FMT_INPUT_TOO_SMALL;
+	    repCount = (((int) statePtr->inEndPtr) - ((int) inPtr)) / 8;
+	}
+    } else if (repCount < 0) {
+	repCount = (((int) statePtr->inEndPtr) - ((int) inPtr)) / 8;
+    } else {
+	return status;
+    }
+    if (statePtr->outEndPtr != NULL && 
+        outPtr + repCount * 8 > statePtr->outEndPtr) {
+	status = FMT_OUTPUT_TOO_SMALL;
+	repCount = (((int) statePtr->outEndPtr) - ((int) outPtr)) / 8;
+    }
+    if (doCopy) {
+	if (statePtr->inInfoPtr->byteOrder == 
+	    statePtr->outInfoPtr->byteOrder) { 
+
+	    for (i = 0; i < repCount; i++) {
+		outPtr[0] = inPtr[0];
+		outPtr[1] = inPtr[1];
+		outPtr[2] = inPtr[2];
+		outPtr[3] = inPtr[3];
+		outPtr[4] = inPtr[4];
+		outPtr[5] = inPtr[5];
+		outPtr[6] = inPtr[6];
+		outPtr[7] = inPtr[7];
+		inPtr += 8;
+		outPtr += 8;
+	    }
+	} else {
+	    for (i = 0; i < repCount; i++) {
+		outPtr[0] = inPtr[7];
+		outPtr[1] = inPtr[6];
+		outPtr[2] = inPtr[5];
+		outPtr[3] = inPtr[4];
+		outPtr[4] = inPtr[3];
+		outPtr[5] = inPtr[2];
+		outPtr[6] = inPtr[1];
+		outPtr[7] = inPtr[0];
+		inPtr += 8;
+		outPtr += 8;
+	    }
+	}
+    } else {
+	inPtr += repCount * 8;
+	outPtr += repCount * 8;
+    }
+    statePtr->inPtr = inPtr;
+    statePtr->outPtr = outPtr;
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CalcComplexAlign --
+ *
+ *	Calculate the alignment of a structure or a union. The alignment
+ *	is the maximum of the alignment specified by the format and the
+ *	alignments of the fields. The repeat count is read and returned
+ *	in *repCountPtr. If the data type is followed by '*' then -1 is
+ *	returned as the repeat count.
+ *
+ * Results:
+ *	*contPtrPtr points to the first character after the data type
+ *	definition and repeat count. *inAlignPtr contains the alignment
+ *	for the in format, and *outAlignPtr contains the alignment for the
+ *	out format. *repCountPtr contains the repeat count.
+ *
+ *	Returns:
+ *	FMT_OK			-- conversion successful.
+ *	FMT_CONTENT_ERROR 	-- error in content string
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+CalcComplexAlign(statePtr, contPtrPtr, repCountPtr, inAlignPtr, outAlignPtr)
+    State 		*statePtr;	/* Current state of conversion. */
+    char		**contPtrPtr;	/* Ptr to ptr to content string */
+    int			*repCountPtr;	/* Ptr to repeat count. */
+    int			*inAlignPtr;	/* Ptr to in alignment. */
+    int			*outAlignPtr;	/* Ptr to out alignment. */
+{
+    int				inAlign = 0; /* dummy initial value */
+    int				outAlign = 0; /* dummy initial value */
+    register char		*contPtr;
+    Boolean			doingUnion = FALSE; /* dummy initial value */
+    char			lastChar;
+    int				status;
+    int				repCount;
+    char			*tempPtr;
+    register FormatInfo		*inInfoPtr;
+    register FormatInfo		*outInfoPtr;
+
+    status = FMT_OK;
+    contPtr = *contPtrPtr;
+    inInfoPtr = statePtr->inInfoPtr;
+    outInfoPtr = statePtr->outInfoPtr;
+    switch (*contPtr) {
+	case '{' :
+	    inAlign = inInfoPtr->structMinAlign;
+	    outAlign = outInfoPtr->structMinAlign;
+	    doingUnion = FALSE;
+	    break;
+	case '(' :
+	    inAlign = inInfoPtr->unionMinAlign;
+	    outAlign = outInfoPtr->unionMinAlign;
+	    doingUnion = TRUE;
+	    break;
+	default :
+	    panic("Fmt: Internal error: CalcComplexAlign called improperly.\n");
+    }
+    contPtr++;
+    lastChar = '\0';
+    while (*contPtr != '\0') {
+	if (*contPtr == lastChar) {
+	    contPtr++;
+	    continue;
+	}
+	lastChar = *contPtr;
+	if ((*contPtr >= '0') && (*contPtr <= '9')) {
+	    contPtr++;
+	    continue;
+	}
+	switch (*contPtr) {
+	    case 'b':
+		inAlign = MAX(inAlign, inInfoPtr->bAlign);
+		outAlign = MAX(outAlign, outInfoPtr->bAlign);
+		contPtr++;
+		break;
+	    case 'h':
+		inAlign = MAX(inAlign, inInfoPtr->hAlign);
+		outAlign = MAX(outAlign, outInfoPtr->hAlign);
+		contPtr++;
+		break;
+	    case 'w':
+		inAlign = MAX(inAlign, inInfoPtr->wAlign);
+		outAlign = MAX(outAlign, outInfoPtr->wAlign);
+		contPtr++;
+		break;
+	    case 'd':
+		inAlign = MAX(inAlign, inInfoPtr->dAlign);
+		outAlign = MAX(outAlign, outInfoPtr->dAlign);
+		contPtr++;
+		break;
+	    case '(':
+	    case '{': {
+		int dummy;
+		int tempInAlign;
+		int tempOutAlign;
+		char *tempContPtr;
+		tempContPtr = contPtr;
+		status = CalcComplexAlign(statePtr, &tempContPtr, &dummy, 
+				&tempInAlign, &tempOutAlign);
+		if (status) {
+		    return status;
+		}
+		inAlign = MAX(inAlign, tempInAlign);
+		outAlign = MAX(outAlign, tempOutAlign);
+		contPtr = tempContPtr;
+		lastChar = '\0';
+		break;
+	    }
+	    case ')':
+		if (!doingUnion) {
+		    return FMT_CONTENT_ERROR;
+		}
+		contPtr++;
+		goto exit;
+		break;
+	    case '}':
+		if (doingUnion) {
+		    return FMT_CONTENT_ERROR;
+		}
+		contPtr++;
+		goto exit;
+		break;
+	    case '*' :
+		contPtr++;
+		break;
+	    default :
+		return FMT_CONTENT_ERROR;
+		break;
+	}
+    }
+    return FMT_CONTENT_ERROR;
+exit :
+    /*
+     * Parse the repeat count.
+     */
+    if ((*contPtr >= '0') && (*contPtr <= '9')) {
+	repCount = strtoul(contPtr, &tempPtr, 10);
+	if (contPtr == tempPtr) {
+	    return FMT_CONTENT_ERROR;
+	}
+	contPtr = tempPtr;
+    } else if (*contPtr == '*') {
+	repCount = -1;
+	contPtr++;
+    } else {
+	repCount = 1;
+    }
+    *repCountPtr = repCount;
+    *contPtrPtr = contPtr;
+    *inAlignPtr = inAlign;
+    *outAlignPtr = outAlign;
+    return status;
+}
+

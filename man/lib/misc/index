@@ -1,0 +1,20 @@
+Disk
+Disk_ReadLabel, Disk_WriteLabel, Disk_EraseLabel, Disk_NewLabel, Disk_ReadDecLabel, Disk_WriteDecLabel, Disk_ReadSunLabel, Disk_WriteSunLabel, Disk_HasFilesystem, Disk_ReadLfsSuperBlock, Disk_WriteLfsSuperBlock, Disk_ReadLfsCheckpointHdr, Disk_WriteLfsCheckPointHdr, Disk_WriteLfsCheckPointArea, Disk_LfsCheckpointTrailer, Disk_ForEachCheckpointRegion, Disk_ReadDomainHeader, Disk_WriteDomainHeader, Disk_ReadSummaryInfo, Disk_WriteSummaryInfo, Disk_SectorRead, Disk_SectorWrite, Disk_BlockRead, Disk_BlockWrite, Disk_BadBlockRead, Disk_FragRead, Disk_FragWrite, Disk_PrintDomainHeader, Disk_PrintSummaryInfo, Disk_PrintFileDescBitmap, Disk_PrintDataBlockBitmap, Disk_PrintDirEntry, Disk_PrintLabel, Disk_PrintLfsSuperBlock, Disk_PrintLfsSuperBlockHdr, Disk_PrintLfsDescMapParams, Disk_PrintLfsSegUsageParams, Disk_PrintLfsFileLayoutParams, Disk_PrintLfsStableMemParams, Disk_PrintLfsCheckpointHdr, Disk_PrintLfsCheckpointRegion, Disk_PrintLfsCheckpointTrailer, 
+Package for accessing OFS and LFS file systems via raw disks
+disk, block, sector, fragment, 
+dmalloc
+dmalloc, 
+debugging malloc library
+
+pattern
+Pattern_Match, 
+Do csh-style pattern matching and more.
+pattern, matching, string, compare, 
+sosp
+initRead, getHeader, getNextRecord, getNextRecordMerge, migrateChildren, 
+Routines to extract trace events from the sosp file system traces.
+traces, sosp, postprocessor, 
+util
+Util_CanonicalDir, 
+Canonicalize a directory name to a full path.
+directory, path, pathname, full, 

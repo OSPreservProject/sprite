@@ -1,0 +1,41 @@
+#
+# arrayproc.test
+#
+# Tests for tcl.tlib array routines.
+#---------------------------------------------------------------------------
+# Copyright 1992 Karl Lehenbauer and Mark Diekhans.
+#
+# Permission to use, copy, modify, and distribute this software and its
+# documentation for any purpose and without fee is hereby granted, provided
+# that the above copyright notice appear in all copies.  Karl Lehenbauer and
+# Mark Diekhans make no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without express or
+# implied warranty.
+#------------------------------------------------------------------------------
+# $Id: arrayproc.test,v 2.0 1992/10/16 04:49:27 markd Rel $
+#------------------------------------------------------------------------------
+#
+
+if {[info procs test] == ""} then {source testlib.tcl}
+rename SAVED_UNKNOWN unknown
+
+set testArray(foo) bar
+set testArray(snap) frammistan
+set testArray(0) zero
+set testArray(william) dafoe
+
+Test for_array_keys-1.1 {for_array_keys command} {
+    for_array_keys key testArray {lappend result $key}
+    lsort $result
+} 0 "0 foo snap william"
+
+unset result
+
+Test for_array_keys-1.2 {errors in for_array_keys command} {
+    for_array_keys key _non_existent_ {lappend result $key}
+} 1 {"_non_existent_" isn't an array}
+
+unset testArray
+rename unknown SAVED_UNKNOWN
+
+

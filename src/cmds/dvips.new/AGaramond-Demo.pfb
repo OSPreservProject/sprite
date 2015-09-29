@@ -1,0 +1,256 @@
+%?PSeudo-AdobeFont-1.0: based on AGaramond-Regular 001.000
+%%This demo file shows one way to get at the "hidden" characters by changing
+%% the definition of /Encoding (only). Corresponding changes to character
+%% codes should be made in the afm file before running afm2tfm. --Don Knuth
+%% (I didn't make ALL the characters visible; e.g., copyright, logicalnot
+%% are still missing, but could be treated in a similar way.)
+%%CreationDate: Wed Jul 12 19:21:22 1989
+%%VMusage: 35973 42422
+% Adobe Garamond is a trademark of Adobe Systems Incorporated.
+11 dict begin
+/FontInfo 10 dict dup begin
+/version (001.000) readonly def
+/Notice (Copyright (c) 1989 Adobe Systems Incorporated.  All Rights Reserved.Adobe Garamond is a trademark of Adobe Systems Incorporated.) readonly def
+/FullName (Adobe Garamond Regular) readonly def
+/FamilyName (AdobeGaramond) readonly def
+/Weight (Regular) readonly def
+/ItalicAngle 0 def
+/isFixedPitch false def
+/UnderlinePosition -100 def
+/UnderlineThickness 50 def
+end readonly def
+/FontName /AGaramond-Regular def
+/Encoding 256 array
+0 1 255 {1 index exch /.notdef put } for
+dup 0 /Aacute put
+dup 1 /Acircumflex put
+dup 2 /Adieresis put
+dup 3 /Agrave put
+dup 4 /Aring put
+dup 5 /Atilde put
+dup 6 /Ccedilla put
+dup 7 /Eacute put
+dup 8 /Ecircumflex put
+dup 9 /Edieresis put
+dup 10 /Egrave put
+dup 11 /Iacute put
+dup 12 /Icircumflex put
+dup 13 /Idieresis put
+dup 14 /Igrave put
+dup 15 /Ntilde put
+dup 16 /Oacute put
+dup 17 /Ocircumflex put
+dup 18 /Odieresis put
+dup 19 /Ograve put
+dup 20 /Otilde put
+dup 21 /Scaron put
+dup 22 /Uacute put
+dup 23 /Ucircumflex put
+dup 24 /Udieresis put
+dup 25 /Ugrave put
+dup 26 /Yacute put
+dup 27 /Ydieresis put
+dup 28 /Zcaron put
+dup 32 /space put
+dup 33 /exclam put
+dup 34 /quotedbl put
+dup 35 /numbersign put
+dup 36 /dollar put
+dup 37 /percent put
+dup 38 /ampersand put
+dup 39 /quoteright put
+dup 40 /parenleft put
+dup 41 /parenright put
+dup 42 /asterisk put
+dup 43 /plus put
+dup 44 /comma put
+dup 45 /hyphen put
+dup 46 /period put
+dup 47 /slash put
+dup 48 /zero put
+dup 49 /one put
+dup 50 /two put
+dup 51 /three put
+dup 52 /four put
+dup 53 /five put
+dup 54 /six put
+dup 55 /seven put
+dup 56 /eight put
+dup 57 /nine put
+dup 58 /colon put
+dup 59 /semicolon put
+dup 60 /less put
+dup 61 /equal put
+dup 62 /greater put
+dup 63 /question put
+dup 64 /at put
+dup 65 /A put
+dup 66 /B put
+dup 67 /C put
+dup 68 /D put
+dup 69 /E put
+dup 70 /F put
+dup 71 /G put
+dup 72 /H put
+dup 73 /I put
+dup 74 /J put
+dup 75 /K put
+dup 76 /L put
+dup 77 /M put
+dup 78 /N put
+dup 79 /O put
+dup 80 /P put
+dup 81 /Q put
+dup 82 /R put
+dup 83 /S put
+dup 84 /T put
+dup 85 /U put
+dup 86 /V put
+dup 87 /W put
+dup 88 /X put
+dup 89 /Y put
+dup 90 /Z put
+dup 91 /bracketleft put
+dup 92 /backslash put
+dup 93 /bracketright put
+dup 94 /asciicircum put
+dup 95 /underscore put
+dup 96 /quoteleft put
+dup 97 /a put
+dup 98 /b put
+dup 99 /c put
+dup 100 /d put
+dup 101 /e put
+dup 102 /f put
+dup 103 /g put
+dup 104 /h put
+dup 105 /i put
+dup 106 /j put
+dup 107 /k put
+dup 108 /l put
+dup 109 /m put
+dup 110 /n put
+dup 111 /o put
+dup 112 /p put
+dup 113 /q put
+dup 114 /r put
+dup 115 /s put
+dup 116 /t put
+dup 117 /u put
+dup 118 /v put
+dup 119 /w put
+dup 120 /x put
+dup 121 /y put
+dup 122 /z put
+dup 123 /braceleft put
+dup 124 /bar put
+dup 125 /braceright put
+dup 126 /asciitilde put
+dup 128 /aacute put
+dup 129 /acircumflex put
+dup 130 /adieresis put
+dup 131 /agrave put
+dup 132 /aring put
+dup 133 /atilde put
+dup 134 /ccedilla put
+dup 135 /eacute put
+dup 136 /ecircumflex put
+dup 137 /edieresis put
+dup 138 /egrave put
+dup 139 /iacute put
+dup 140 /icircumflex put
+dup 141 /idieresis put
+dup 142 /igrave put
+dup 143 /ntilde put
+dup 144 /oacute put
+dup 145 /ocircumflex put
+dup 146 /odieresis put
+dup 147 /ograve put
+dup 148 /otilde put
+dup 149 /scaron put
+dup 150 /uacute put
+dup 151 /ucircumflex put
+dup 152 /udieresis put
+dup 153 /ugrave put
+dup 154 /yacute put
+dup 155 /ydieresis put
+dup 156 /zcaron put
+dup 161 /exclamdown put
+dup 162 /cent put
+dup 163 /sterling put
+dup 164 /fraction put
+dup 165 /yen put
+dup 166 /florin put
+dup 167 /section put
+dup 168 /currency put
+dup 169 /quotesingle put
+dup 170 /quotedblleft put
+dup 171 /guillemotleft put
+dup 172 /guilsinglleft put
+dup 173 /guilsinglright put
+dup 174 /fi put
+dup 175 /fl put
+dup 177 /endash put
+dup 178 /dagger put
+dup 179 /daggerdbl put
+dup 180 /periodcentered put
+dup 182 /paragraph put
+dup 183 /bullet put
+dup 184 /quotesinglbase put
+dup 185 /quotedblbase put
+dup 186 /quotedblright put
+dup 187 /guillemotright put
+dup 188 /ellipsis put
+dup 189 /perthousand put
+dup 191 /questiondown put
+dup 193 /grave put
+dup 194 /acute put
+dup 195 /circumflex put
+dup 196 /tilde put
+dup 197 /macron put
+dup 198 /breve put
+dup 199 /dotaccent put
+dup 200 /dieresis put
+dup 202 /ring put
+dup 203 /cedilla put
+dup 205 /hungarumlaut put
+dup 206 /ogonek put
+dup 207 /caron put
+dup 208 /emdash put
+dup 225 /AE put
+dup 226 /Eth put
+dup 227 /ordfeminine put
+dup 232 /Lslash put
+dup 233 /Oslash put
+dup 234 /OE put
+dup 235 /ordmasculine put
+dup 236 /Thorn put
+dup 241 /ae put
+dup 243 /eth put
+dup 245 /dotlessi put
+dup 248 /lslash put
+dup 249 /oslash put
+dup 250 /oe put
+dup 251 /germandbls put
+dup 252 /thorn put
+dup 255 /onehalf put
+readonly def
+/PaintType 0 def
+/FontType 1 def
+/FontMatrix [0.001 0 0 0.001 0 0] readonly def
+/UniqueID 23947 def
+/FontBBox{-183 -269 1099 851}readonly def
+currentdict end
+currentfile eexec
+CD4193A948A4E923BD9C432BB03E
+% etc (omitted)... in here are all the bytes you have to pay for ...
+7132A8CA2DF62E0BB38EF9379ABF5EDDFF3C3A51CD4B1944671AA8EE11BE14E7
+0000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+cleartomark

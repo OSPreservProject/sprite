@@ -1,0 +1,36 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     90.02.16.17.46.10;  author tve;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#
+# special local.mk for ddx/sprite
+#
+# $Source: /mic/X11R4/src/cmds/X/ddx/cfb/RCS/local.mk,v $
+# $Date: 90/02/14 20:28:30 $
+# $Revision: 1.1 $ $Author: tve $
+
+#include <../../common.mk>
+
+# Additional include file paths
+.PATH.h: ../mfb ../mi
+@

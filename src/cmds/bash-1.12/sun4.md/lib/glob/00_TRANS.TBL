@@ -1,0 +1,7 @@
+L CHANGELO.;1                       	ChangeLog	../../../dist/lib/glob/ChangeLog
+L FNMATCH.C;1                       	fnmatch.c	../../../dist/lib/glob/fnmatch.c
+L FNMATCH.H;1                       	fnmatch.h	../../../dist/lib/glob/fnmatch.h
+L GLOB.C;1                          	glob.c	../../../dist/lib/glob/glob.c
+L GLOB.TEX;1                        	glob.texinfo	../../../dist/lib/glob/glob.texinfo
+L MAKEFILE.;1                       	Makefile	../../../dist/lib/glob/Makefile
+L TILDE.C;1                         	tilde.c	../../../dist/lib/glob/tilde.c

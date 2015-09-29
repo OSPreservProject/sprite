@@ -1,0 +1,1424 @@
+head     9.4;
+branch   ;
+access   ;
+symbols  ds3100:9.4 sun3:9.4 sun4nw:9.1 symm:9.1 spur:9.1 Summer89:9.0;
+locks    ; strict;
+comment  @| @;
+
+
+9.4
+date     92.08.10.17.58.47;  author mgbaker;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     91.11.05.12.20.37;  author mgbaker;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     91.11.05.12.02.27;  author mgbaker;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     91.10.18.01.22.37;  author dlong;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.52.30;  author douglis;  state Stable;
+branches ;
+next     1.26;
+
+1.26
+date     89.08.09.12.34.14;  author mgbaker;  state Exp;
+branches ;
+next     1.25;
+
+1.25
+date     89.07.20.16.58.39;  author mendel;  state Exp;
+branches ;
+next     1.24;
+
+1.24
+date     89.05.21.18.23.50;  author mgbaker;  state Exp;
+branches ;
+next     1.23;
+
+1.23
+date     89.04.29.19.50.49;  author mgbaker;  state Exp;
+branches ;
+next     1.22;
+
+1.22
+date     89.04.23.16.29.48;  author mgbaker;  state Exp;
+branches ;
+next     1.21;
+
+1.21
+date     89.03.18.15.40.10;  author mgbaker;  state Exp;
+branches ;
+next     1.20;
+
+1.20
+date     89.03.06.11.59.22;  author mgbaker;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     89.02.24.16.37.53;  author mgbaker;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     89.02.05.17.29.59;  author mgbaker;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     89.01.23.17.55.19;  author mgbaker;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     89.01.22.23.44.34;  author mgbaker;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     89.01.22.20.33.01;  author mgbaker;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     89.01.17.18.21.55;  author mgbaker;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     89.01.17.14.53.35;  author mgbaker;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     89.01.16.20.42.51;  author mgbaker;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     89.01.16.19.22.51;  author mgbaker;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     89.01.16.17.23.42;  author mgbaker;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     89.01.16.14.47.11;  author mgbaker;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     89.01.14.18.59.29;  author mgbaker;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     89.01.14.16.04.24;  author mgbaker;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.01.14.15.40.22;  author mgbaker;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.01.13.18.35.39;  author mgbaker;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.01.12.20.06.00;  author mgbaker;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.01.12.19.31.53;  author mgbaker;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.01.12.18.02.11;  author mgbaker;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.01.11.19.08.28;  author mgbaker;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@First Kernel!
+@
+
+
+9.4
+log
+@Changes for transparent server recovery.
+@
+text
+@/*
+ * bootSysAsm.s -
+ *
+ *     Contains code that is the first executed at boot time.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ */
+
+.seg	"data"
+.asciz "$Header: /sprite/src/kernel/mgbaker/mach/sun4.md/bootSysAsm.s,v 1.1 92/04/30 12:38:15 mgbaker Exp $ SPRITE (Berkeley)"
+.align 8
+.seg	"text"
+
+#include "machConst.h"
+#include "machAsmDefs.h"
+
+/*
+ * "Start" is used for the -e option to the loader.  "SpriteStart" is
+ * used for the prof module, which prepends an underscore to the name of
+ * global variables and therefore can't find "_start".
+ *
+ * I use a lot global registers here for start up.  Elsewhere I'm careful.
+ */
+
+.align 8
+.seg	"text"
+.globl	start
+.globl	_spriteStart
+start:
+_spriteStart:
+       /* 
+        * Believe it or not, we're running in the middle of our stack. 
+	* We are placed here by the bootstrap loading which starts us
+	* running at 0x4000. We quickly jump out of the stack.
+	*/
+	ba	realStart
+	nop
+.skip	(MACH_KERN_STACK_SIZE-0x4000)
+realStart:
+#ifdef sun4c
+	mov	%o0, %g7			/* save romvec pointer */
+#endif
+	mov	%psr, %g1
+	or	%g1, MACH_DISABLE_INTR, %g1	/* lock out interrupts */
+	andn	%g1, MACH_CWP_BITS, %g1		/* set cwp to 0 */
+	set	MACH_ENABLE_FPP, %g2
+	andn	%g1, %g2, %g1			/* disable fp unit */
+	mov	%g1, %psr
+	mov	0x2, %wim	/* set wim to window right behind us */
+
+	/*
+	 * The kernel has been loaded into the wrong location.
+	 * We copy it to the right location by copying up 8 Meg worth of pmegs.
+	 * NOT done in all contexts!  8 Meg should be enough for the whole
+	 * kernel.  We copy to the correct address, MACH_KERN_START which is
+	 * before MACH_CODE_START, which is where we told the linker that the
+	 * kernel would be loaded.  In this code, %g1 is the destination
+	 * segment, %g2 is the last source segment, %g3 is the source segment,
+	 * and %g5 contains seg size.  %g6 is used to hold the pmeg pointer.
+	 */
+	set	VMMACH_SEG_SIZE, %g5		/* for additions */
+#ifdef sun4c
+	set	0x400000, %g2			/* last source addr */
+#else
+	set	0x800000, %g2			/* last source addr */
+#endif
+	clr	%g3				/* start with 0th segment */
+	set	MACH_KERN_START, %g1		/* pick starting segment */
+loopStart:
+#ifdef sun4c
+	lduba	[%g3] VMMACH_SEG_MAP_SPACE, %g6
+#else
+	lduha	[%g3] VMMACH_SEG_MAP_SPACE, %g6
+#endif
+					/* set segment to point to new pmeg */
+#ifdef sun4c
+	stba	%g6, [%g1] VMMACH_SEG_MAP_SPACE
+#else
+	stha	%g6, [%g1] VMMACH_SEG_MAP_SPACE
+#endif
+	add	%g3, %g5, %g3			/* increment source segment */
+	add	%g1, %g5, %g1			/* increment dest segment */
+	cmp	%g3, %g2			/* last segment? */
+	bne	loopStart			/* if not, continue */
+	nop
+
+/*
+ * Force a non-PC-relative jump to the real start of the kernel.
+ */
+	set	begin, %g1
+	jmp	%g1				/* jump to "begin" */
+	nop
+begin:
+	/*
+	 * Zero out the bss segment.
+	 */
+	set	_edata, %g2
+	set	_end, %g3
+	cmp	%g2, %g3	/* if _edata == _end, don't zero stuff. */
+	be	doneZeroing
+	nop
+	clr	%g1
+zeroing:
+	/*
+	 * Use store doubles for speed.  Both %g0 and %g1 are zeroes.
+	 */
+	std	%g0, [%g2]
+	add	%g2, 0x8, %g2
+	cmp	%g2, %g3
+	bne	zeroing
+	nop
+doneZeroing:
+	/*
+	 * Find out how many register windows we have.
+	 */
+	mov	%g0, %wim
+	save
+	mov	%psr, %g1
+	restore
+	mov	0x2, %wim	/* set wim to window right behind us */
+	and	%g1, MACH_CWP_BITS, %g1
+	sethi	%hi(_machWimShift), %g2
+	st	%g1, [%g2 + %lo(_machWimShift)]
+	add	%g1, 1, %g1
+	sethi	%hi(_machNumWindows), %g2
+	st	%g1, [%g2 + %lo(_machNumWindows)]
+	/*
+	 * Now set the stack pointer to my own stack for the first kernel
+	 * process.  The stack grows towards low memory.  I start it at
+	 * the beginning of the text segment (CAREFUL: if loading demand-paged,
+	 * then the beginning of the text segment is 32 bytes before the
+	 * first code.  Set it really at the beginning of the text segment and
+	 * not at the beginning of the code.), and it can grow up to
+	 * MACH_KERN_START.
+	 *
+	 * The %fp points to top word on stack of one's caller, so it points
+	 * to the base of our stack.  %sp points to the top word on the
+	 * stack for our current stack frame.   This must be set at least
+	 * to enough room to save our in registers and local registers upon
+	 * window overflow (and for main to store it's arguments, although it
+	 * doesn't have any...).
+	 */
+	set	MACH_STACK_START, %fp
+	set	(MACH_STACK_START - MACH_FULL_STACK_FRAME), %sp
+	andn	%sp, 0x7, %sp			/* double-word aligned */
+
+	/*
+	 * Now set up initial trap table by copying machProtoVectorTable
+	 * into reserved space at the correct alignment.  The table must
+	 * be aligned on a MACH_TRAP_ADDR_MASK boundary, and it contains
+	 * ~MACH_TRAP_ADDR_MASK + 1 bytes.  We copy doubles (8 bytes at
+	 * a time) for speed.  %g1 is source for copy, %g2 is destination,
+	 * %g3 is the counter copy, %g4 and %g5 are the registers used for
+	 * the double-word copy, %l1 is for holding the size of the table,
+	 * and %l2 contains the number of bytes to copy.  %g6 stores the
+	 * original destination, so that we can do some further copies, and
+	 * so that we can put it into the tbr..
+	 */
+	set	machProtoVectorTable, %g1		/* g1 contains src */
+	set	reserveSpace, %g2			/* g2 to contain dest */
+	set	(1 + ~MACH_TRAP_ADDR_MASK), %l1
+	set	((1 + ~MACH_TRAP_ADDR_MASK) / 8), %l2	/* # bytes to copy */
+	add	%g2, %l1, %g2				/* add size of table */
+	and	%g2, MACH_TRAP_ADDR_MASK, %g2		/* align to 4k bound. */
+	mov	%g2, %g6				/* keep value of dest */
+	clr	%g3					/* clear counter */
+copyingTable:
+	ldd	[%g1], %g4				/* copy first 2 words */
+	std	%g4, [%g2]
+	ldd	[%g1 + 8], %g4				/* next 2 words */
+	std	%g4, [%g2 + 8]
+	add	%g2, 16, %g2				/* incr. destination */
+	add	%g3, 2, %g3				/* incr. counter */
+	cmp	%g3, %l2				/* how many copies */
+	bne	copyingTable
+	nop
+
+	/*
+	 * Now copy in the overflow and underflow trap code.  These traps
+	 * bypass the regular preamble and postamble for speed, and because
+	 * they are coded so that the only state they need save is the psr.
+	 * %g6 was the trap table address saved from above.
+	 */
+	set	machProtoWindowOverflow, %g1		/* new src */
+	set	MACH_WINDOW_OVERFLOW, %g2		/* get trap offset */
+	add	%g6, %g2, %g2				/* offset in table */
+	ldd	[%g1], %g4				/* copy first 2 words */
+	std	%g4, [%g2]
+	ldd	[%g1 + 8], %g4				/* copy next 2 words */
+	std	%g4, [%g2 + 8]
+
+	set	machProtoWindowUnderflow, %g1		/* new src */
+	set	MACH_WINDOW_UNDERFLOW, %g2		/* get trap type */
+	add	%g6, %g2, %g2				/* offset in table */
+	ldd	[%g1], %g4				/* copy first 2 words */
+	std	%g4, [%g2]
+	ldd	[%g1 + 8], %g4				/* copy next 2 words */
+	std	%g4, [%g2 + 8]
+	/*
+	 * Now copy the handler for non-maskable asynchronous memory error
+	 * interrupts.  We're going to die anyway on these errors, so all
+	 * we want to do is grab information and put it into registers.
+	 */
+	set	machProtoLevel15Intr, %g1		/* new src */
+	set	MACH_LEVEL15_INT, %g2			/* get trap offset */
+	add	%g6, %g2, %g2				/* offset in table */
+	ldd	[%g1], %g4				/* copy first 2 words */
+	std	%g4, [%g2]
+	ldd	[%g1 + 8], %g4				/* copy next 2 words */
+	std	%g4, [%g2 + 8]
+
+	mov	%g6, %tbr			/* switch in my trap address */
+	sethi	%hi(_machTBRAddr), %g2
+	st	%g6, [%g2 + %lo(_machTBRAddr)]	/* save tbr addr in C var */
+	MACH_WAIT_FOR_STATE_REGISTER()			/* let it settle for
+							 * the necessary
+							 * amount of time.  Note
+							 * that during this
+							 * wait period, we
+							 * may get an interrupt
+							 * to the old tbr if
+							 * interrupts are
+							 * disabled.  */
+#ifdef sun4c
+	sethi	%hi(_machRomVectorPtr), %g6
+	st	%g7, [%g6 + %lo(_machRomVectorPtr)] /* save romvec pointer */
+#endif
+        /*
+         * Initialize first word of restart table to show it hasn't yet
+         * been set up (this is a hard reboot).
+         */
+        set     reservedSpace2, %g1
+        add     %g1, VMMACH_PAGE_SIZE, %g1
+        and     %g1, ~(VMMACH_PAGE_SIZE - 1), %g1
+        set     _mach_RestartTablePtr, %g2
+        st      %g1, [%g2]
+        st      %g0, [%g1]
+#ifndef RECOV_NOCOPY
+        /*
+         * Now copy initialized data segment to storedData and set
+         * storedDataSize in both places to correct value.  Is etext the right
+         * place to start copying?  I really want the beginning of the data area
+         * instead.  %g1 is the src, %g2 is the destination, and %g3 is the
+         * amount to copy.
+         */
+CopyInitData:
+        set     _etext, %g1
+        set     _edata, %g2
+        sub     %g2, %g1, %g3
+        set     _storedDataSize, %g4
+        st      %g3, [%g4]
+        set     _storedData, %g2
+MoreCopying:
+        ldd     [%g1], %g4
+        std     %g4, [%g2]
+        add     %g1, 8, %g1
+        add     %g2, 8, %g2
+        subcc   %g3, 8, %g3
+        bg      MoreCopying
+        nop
+#endif /* RECOV_NOCOPY */
+
+	call	_main
+	nop
+
+	
+.globl	_MachTrap
+/*
+ * Reserve twice the amount of space we need for the trap table.
+ * Then copy machProtoVectorTable into it repeatedly, starting at
+ * a 4k-byte alignment.  This is dumb, but the assembler doesn't allow
+ * me to do much else.
+ *
+ * Note that this filler cannot use l1 or l2 since that's where pc and npc
+ * are written in a trap.
+ */
+.align	8
+machProtoVectorTable:
+	sethi	%hi(_MachTrap), %VOL_TEMP1	/* set _MachTrap, %VOL_TEMP1 */
+	or	%VOL_TEMP1, %lo(_MachTrap), %VOL_TEMP1
+	jmp	%VOL_TEMP1		/* must use non-pc-relative jump here */
+	rd	%psr, %CUR_PSR_REG
+
+machProtoWindowOverflow:
+	sethi	%hi(MachHandleWindowOverflowTrap), %VOL_TEMP1
+	or	%VOL_TEMP1, %lo(MachHandleWindowOverflowTrap), %VOL_TEMP1
+	jmp	%VOL_TEMP1
+	rd	%psr, %CUR_PSR_REG
+
+machProtoWindowUnderflow:
+	sethi	%hi(MachHandleWindowUnderflowTrap), %VOL_TEMP1
+	or	%VOL_TEMP1, %lo(MachHandleWindowUnderflowTrap), %VOL_TEMP1
+	jmp	%VOL_TEMP1
+	rd	%psr, %CUR_PSR_REG
+
+machProtoLevel15Intr:
+	sethi	%hi(MachHandleLevel15Intr), %VOL_TEMP1
+	or	%VOL_TEMP1, %lo(MachHandleLevel15Intr), %VOL_TEMP1
+	jmp	%VOL_TEMP1
+	rd	%psr, %CUR_PSR_REG
+
+.align	8
+reserveSpace:	.skip	0x2000
+
+/*
+ * The actual space for the fast restart copy of the kernel's initialized data.
+ */
+.align 8
+.globl  _storedData
+_storedData:    .skip   MACH_RESTART_DATA_SIZE
+reservedSpace2: .skip   MACH_RESTART_TABLE_SIZE + VMMACH_PAGE_SIZE
+@
+
+
+9.3
+log
+@Fixing an erroneously checked in previous copy.
+@
+text
+@d11 1
+a11 1
+.asciz "$Header: /sprite/src/kernel/Cvsroot/kernel/mach/sun4.md/bootSysAsm.s,v 9.1 91/10/18 01:22:37 dlong Exp $ SPRITE (Berkeley)"
+d229 35
+d305 8
+@
+
+
+9.2
+log
+@*** empty log message ***
+@
+text
+@d11 1
+a11 1
+.asciz "$Header: /sprite/src/kernel/mach/sun4.md/RCS/bootSysAsm.s,v 9.1 91/10/18 01:22:37 dlong Exp $ SPRITE (Berkeley)"
+a228 33
+        /*
+         * Initialize first word of restart table to show it hasn't yet
+         * been set up (this is a hard reboot).
+         */
+        set     reservedSpace2, %g1
+        add     %g1, VMMACH_PAGE_SIZE, %g1
+        and     %g1, ~(VMMACH_PAGE_SIZE - 1), %g1
+        set     _mach_RestartTablePtr, %g2
+        st      %g1, [%g2]
+        st      %g0, [%g1]
+        /*
+         * Now copy initialized data segment to storedData and set
+         * storedDataSize in both places to correct value.  Is etext the right
+         * place to start copying?  I really want the beginning of the data area
+         * instead.  %g1 is the src, %g2 is the destination, and %g3 is the
+         * amount to copy.
+         */
+CopyInitData:
+        set     _etext, %g1
+        set     _edata, %g2
+        sub     %g2, %g1, %g3
+        set     _storedDataSize, %g4
+        st      %g3, [%g4]
+        set     _storedData, %g2
+MoreCopying:
+        ldd     [%g1], %g4
+        std     %g4, [%g2]
+        add     %g1, 8, %g1
+        add     %g2, 8, %g2
+        subcc   %g3, 8, %g3
+        bg      MoreCopying
+        nop
+
+a269 8
+
+/*
+ * The actual space for the fast restart copy of the kernel's initialized data.
+ */
+.align 8
+.globl  _storedData
+_storedData:    .skip   MACH_RESTART_DATA_SIZE
+reservedSpace2: .skip   MACH_RESTART_TABLE_SIZE + VMMACH_PAGE_SIZE
+@
+
+
+9.1
+log
+@sun4c/sun4c2 merge
+@
+text
+@d11 1
+a11 1
+.asciz "$Header: /sprite/src/kernel/mach/sun4.md/RCS/bootSysAsm.s,v 1.26 89/08/09 12:34:14 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d229 33
+d303 8
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+.asciz "$Header: /sprite/src/kernel/mach/sun4.md/RCS/bootSysAsm.s,v 1.26 89/08/09 12:34:14 mgbaker Exp Locker: douglis $ SPRITE (Berkeley)"
+d41 3
+a46 1
+#ifdef FP_ENABLED
+d48 1
+a48 2
+	or	%g1, %g2, %g1			/* enable fp unit */
+#endif FP_ENABLED
+d55 1
+a55 1
+	 * This is done in all contexts.  8 Meg should be enough for the whole
+d58 3
+a60 3
+	 * kernel would be loaded.  In this code, %g1 is segment, %g2 is
+	 * context, %g3 is pmeg, and %g4 is offset in control space to context
+	 * register.  %g5 contains seg size.
+a61 2
+	set	VMMACH_CONTEXT_OFF, %g4		/* set %g4 to context offset */
+	clr	%g2				/* start with context 0 */
+d63 4
+a66 3
+contextLoop:
+#ifndef sun4c
+	stba	%g2, [%g4] VMMACH_CONTROL_SPACE
+d68 1
+a68 1
+	clr	%g3				/* start with 0th pmeg */
+d71 5
+d77 8
+a84 4
+	stha	%g3, [%g1] VMMACH_SEG_MAP_SPACE
+	add	%g3, 1, %g3			/* increment which pmeg */
+	add	%g1, %g5, %g1			/* increment which segment */
+	cmp	%g3, (0x800000 / VMMACH_SEG_SIZE)	/* last pmeg? */
+a87 7
+	add	%g2, 1, %g2			/* increment context */
+	cmp	%g2, VMMACH_NUM_CONTEXTS	/* last context? */
+	bne	contextLoop			/* if not, continue */
+	nop
+						/* reset context register */
+	stba	%g0, [%g4] VMMACH_CONTROL_SPACE
+
+d115 14
+d214 2
+a215 2
+	set	_machTBRAddr, %g2
+	st	%g6, [%g2]			/* save tbr addr in C var */
+d225 4
+a232 31
+.align 8
+.global	_PrintArg
+/*
+ * PrintArg:
+ *
+ * Move integer argument to print into %o0.  This will print
+ * desired integer in hex.  This routine uses o0, o1, VOL_TEMP1, and VOL_TEMP2.
+ * For the sun4c, it also uses o3.
+ */
+_PrintArg:
+	.seg	"data1"
+argString:
+	.ascii	"PrintArg: %x\012\0"
+	.seg	"text"
+
+	mov	%o0, %o1
+	set	argString, %o0
+	mov	%o7, %VOL_TEMP1
+#ifdef sun4c
+	sethi   %hi(0xffe80078),%VOL_TEMP2
+	ld      [%VOL_TEMP2+%lo(0xffe80078)],%VOL_TEMP2
+#else
+	sethi   %hi(-0x17ef7c),%VOL_TEMP2
+	ld      [%VOL_TEMP2+%lo(-0x17ef7c)],%VOL_TEMP2
+#endif
+	call    %VOL_TEMP2, 2
+	nop
+	mov	%VOL_TEMP1, %o7
+	retl
+	nop
+
+@
+
+
+1.26
+log
+@Stable kernel.
+@
+text
+@d11 1
+a11 1
+.asciz "$Header: /sprite/src/kernel/mach/sun4.md/RCS/bootSysAsm.s,v 1.25 89/07/20 16:58:39 mendel Exp Locker: mgbaker $ SPRITE (Berkeley)"
+@
+
+
+1.25
+log
+@Code for the downloader.
+@
+text
+@d11 1
+a11 1
+.asciz "$Header: /sprite/src/kernel/mach/sun4.md/RCS/bootSysAsm.s,v 1.24 89/05/21 18:23:50 mgbaker Exp $ SPRITE (Berkeley)"
+d50 1
+d65 1
+a65 1
+						/* set context register */
+d67 1
+a91 1
+
+d211 2
+d220 1
+d231 4
+d237 1
+@
+
+
+1.24
+log
+@checkin before spring cleaning
+@
+text
+@d11 1
+a11 1
+.asciz "$Header: /sprite/src/kernel/mach/sun4.md/RCS/bootSysAsm.s,v 1.23 89/04/29 19:50:49 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d32 9
+@
+
+
+1.23
+log
+@Caching of kernel stacks now works.
+@
+text
+@d11 1
+a11 1
+.asciz "$Header: /sprite/src/kernel/mach/sun4.md/RCS/bootSysAsm.s,v 1.22 89/04/23 16:29:48 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d35 4
+@
+
+
+1.22
+log
+@Fixed bug that caused some exec'd processes to have a bad tbr register.
+@
+text
+@d11 1
+a11 1
+.asciz "$Header: /sprite/src/kernel/mach/sun4.md/RCS/bootSysAsm.s,v 1.21 89/03/18 15:40:10 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d170 12
+d248 6
+@
+
+
+1.21
+log
+@Kernel processes work again, with a lot of user support.
+@
+text
+@d11 1
+a11 1
+.asciz "$Header: /sprite/src/kernel/mach/sun4.md/RCS/bootSysAsm.s,v 1.20 89/03/06 11:59:22 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d172 2
+@
+
+
+1.20
+log
+@Sixteenth Kernel.  Kernel processes work and play tag over a monitor
+lock.
+@
+text
+@d11 1
+a11 1
+.asciz "$Header: /sprite/src/kernel/mach/sun4.md/RCS/bootSysAsm.s,v 1.19 89/02/24 16:37:53 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+a180 6
+#ifdef NOTDEF
+	mov	%psr, %g1			/* turn interrupts back on */
+	and	%g1, MACH_ENABLE_INTR, %g1
+	mov	%g1, %psr
+	MACH_WAIT_FOR_STATE_REGISTER()
+#endif NOTDEF
+d223 1
+a223 1
+	nop
+@
+
+
+1.19
+log
+@Thirteenth Kernel.  sun4 finishes vm init now.
+@
+text
+@d11 1
+a11 1
+.asciz "$Header: /sprite/src/kernel/mach/sun4.md/RCS/bootSysAsm.s,v 1.18 89/02/05 17:29:59 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d111 2
+a112 1
+	 * window overflow.
+d115 1
+a115 1
+	set	(MACH_STACK_START - MACH_SAVED_WINDOW_SIZE), %sp
+@
+
+
+1.18
+log
+@Twelfth Kernel.  It uses only my trap table now.  The net module
+and the debugger work, plus it's taking timer and ethernet interrupts.
+Although it seems interrupts are disabled, I don't think they are.  It's
+just that I don't do keyboard interrupts yet.
+Because it uses my trap table, I've rearranged things so there's one
+less indirection.  Window overflow and underflow traps are direct now.
+@
+text
+@d11 1
+a11 1
+.asciz "$Header: /sprite/src/kernel/mach/sun4.md/RCS/bootSysAsm.s,v 1.17 89/01/23 17:55:19 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+a115 7
+/* for debugging */
+	set	_debugSpace, %VOL_TEMP1
+	st	%g0, [%VOL_TEMP1]
+	st	%sp, [%VOL_TEMP1 + 4]
+	set	_debugCounter, %VOL_TEMP1
+	set	0x2, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+@
+
+
+1.17
+log
+@Eigth Kernel.  It now takes interrupts and traps correctly.
+@
+text
+@d11 1
+a11 1
+.asciz "$Header: /sprite/src/kernel/mach/sun4.md/RCS/bootSysAsm.s,v 1.16 89/01/22 23:44:34 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+a78 3
+	mov	%psr, %g1			/* turn interrupts back on */
+	and	%g1, MACH_ENABLE_INTR, %g1
+	mov	%g1, %psr
+d115 8
+d132 3
+a134 1
+	 * and %l2 contains the number of bytes to copy.
+d142 1
+d154 24
+a177 6
+	mov	%tbr, %TBR_REG				/* save real tbr */
+	and	%TBR_REG, MACH_TRAP_ADDR_MASK, %TBR_REG	/* mask off trap type */
+	set	reserveSpace, %g2			/* g2 to be trap base */
+	add	%g2, %l1, %g2				/* add size of table */
+	and	%g2, MACH_TRAP_ADDR_MASK, %g2		/* align to 4k bound. */
+	mov	%g2, %tbr				/* switch in mine */
+d187 6
+d236 12
+@
+
+
+1.16
+log
+@Interrupts seem to work again, but I've got lots of debugging
+code in here.
+@
+text
+@d11 1
+a11 1
+.asciz "$Header: /sprite/src/kernel/mach/sun4.md/RCS/bootSysAsm.s,v 1.15 89/01/22 20:33:01 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d16 1
+d152 9
+@
+
+
+1.15
+log
+@Checkpoint.  Traps work and interrupts remain enabled correctly.
+>> I've #ifdef'd out the code where I start the timer and try to take
+>> timer interrupts.  When I do that, interrupts get permanently disabled,
+>> somehow.
+@
+text
+@d11 1
+a11 1
+.asciz "$Header: /sprite/src/kernel/mach/sun4.md/RCS/bootSysAsm.s,v 1.13 89/01/17 14:53:35 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d116 1
+a116 1
+	set	(MACH_STACK_START + MACH_SAVED_WINDOW_SIZE), %sp
+@
+
+
+1.14
+log
+@Checking in before making some register changes.
+@
+text
+@d21 2
+d32 1
+a32 1
+	or	%g1, MACH_SR_HIGHPRIO, %g1	/* lock out interrupts */
+d36 10
+a45 9
+/*
+ * The kernel has been loaded into the wrong location.  We copy it to the right
+ * location by copying up 8 Meg worth of pmegs.  This is done in all contexts.
+ * 8 Meg should be enough for the whole kernel.  We copy to the correct address,
+ * MACH_KERN_START which is before MACH_CODE_START, which is where we told the
+ * loader that the kernel would be loaded.
+ * In this code, %g1 is segment, %g2 is context, %g3 is pmeg, and %g4 is
+ * offset in control space to context register.  %g5 contains seg size.
+ */
+d79 1
+a79 1
+	andn	%g1, MACH_ENABLE_LEVEL15_INTR, %g1
+d115 2
+a116 2
+	set	MACH_KERN_STACK_START, %fp
+	set	(MACH_KERN_STACK_START + MACH_MIN_STACK_FRAME), %sp
+d145 2
+a146 2
+	mov	%tbr, %g6				/* save real tbr */
+	and	%g6, MACH_TRAP_ADDR_MASK, %g6		/* mask off trap type */
+d159 1
+a159 1
+ * desired integer in hex.  This routine uses o0, o1, l3, and l4.
+d169 4
+a172 4
+	mov	%o7, %l3
+	sethi   %hi(-0x17ef7c),%l4
+	ld      [%l4+%lo(-0x17ef7c)],%l4
+	call    %l4,2
+d174 1
+a174 1
+	mov	%l3, %o7
+d190 3
+a192 3
+	sethi	%hi(_MachTrap), %l3		/* "set _MachTrap, %l3" */
+	or	%l3, %lo(_MachTrap), %l3
+	jmp	%l3			/* must use non-pc-relative jump here */
+@
+
+
+1.13
+log
+@Sixth Kernel!  It now uses my simple versions of the overflow and
+underflow trap handlers and my trap preamble and return-from-trap
+routines.
+@
+text
+@d11 1
+a11 1
+.asciz "$Header: /sprite/src/kernel/mach/sun4.md/RCS/bootSysAsm.s,v 1.11 89/01/16 19:22:51 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+a140 7
+	nop
+	mov	%g3, %o0
+	mov	%g2, %l5
+	call	_PrintArg				/* print counter */
+	nop
+	mov	%l5, %o0
+	call	_PrintArg				/* print after dest */
+@
+
+
+1.12
+log
+@I didn't need to reset the tbr each time, so this is cleaner.
+@
+text
+@d105 6
+d112 2
+a113 1
+	set	MACH_KERN_STACK_START, %sp
+d144 1
+a144 1
+	call	_printArg				/* print counter */
+d147 1
+a147 1
+	call	_printArg				/* print after dest */
+d158 1
+a158 1
+.global	_printArg
+d160 1
+a160 1
+ * printArg:
+d165 1
+a165 1
+_printArg:
+d168 1
+a168 1
+	.ascii	"printArg: %x\012\0"
+d182 1
+a183 16
+ *	MachTrap:  jump to system trap table.
+ *	%l3 is trap type and then place to jump to.
+ *	%l4 is address of my trap table to reset %tbr with.
+ *	Remember to add trap type back into %tbr after resetting.
+ *	Note that this code cannot use l1 or l2 since that's where pc and
+ *	npc are written in a trap.
+ */
+MachTrap:
+	/* %g6 is their real tbr */
+	rd	%tbr, %l3
+	and	%l3, MACH_TRAP_TYPE_MASK, %l3		/* get trap type */
+	add	%l3, %g6, %l3			/* add t.t. to real tbr */
+	jmp	%l3			/* jmp (non-pc-rel) to real tbr */
+	nop
+
+/*
+d194 2
+a195 2
+	sethi	%hi(MachTrap), %l3		/* "set MachTrap, %l3" */
+	or	%l3, %lo(MachTrap), %l3
+@
+
+
+1.11
+log
+@Fifth Kernel!  Now it indirects through my trap table into theirs.
+Next I'll try substituting in some of my trap code.
+@
+text
+@d11 1
+a11 1
+.asciz "$Header: /sprite/src/kernel/mach/sun4.md/RCS/bootSysAsm.s,v 1.9 89/01/16 14:47:11 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d176 1
+a176 1
+ *	callTrap:  jump to system trap table.
+d183 1
+a183 1
+callTrap:
+a186 9
+
+	set	reserveSpace, %l4			/* l4 to be trap base */
+	set	(1 + ~MACH_TRAP_ADDR_MASK), %l5		/* size of table */
+	add	%l4, %l5, %l4				/* add size of table */
+	and	%l4, MACH_TRAP_ADDR_MASK, %l4		/* align to 4k bound. */
+
+	add	%l3, %l4, %l4				/* add trap type */
+	mov	%l4, %tbr				/* switch in mine */
+
+d202 2
+a203 2
+	sethi	%hi(callTrap), %l3		/* "set callTrap, %l3" */
+	or	%l3, %lo(callTrap), %l3
+@
+
+
+1.10
+log
+@It now copies the trap table correctly.  Next, I'll try using it.
+@
+text
+@a117 1
+	mov	0x1, %g6
+a118 11
+#ifdef NOTDEF
+	mov	%g1, %o0
+	call	_printArg
+	nop
+#endif NOTDEF
+	mov	0x2, %g6
+#ifdef NOTDEF
+	set	reserveSpace, %o0
+	call	_printArg
+	nop
+#endif NOTDEF
+a123 5
+#ifdef NOTDEF
+	mov	%g2, %o0
+	call	_printArg
+	nop
+#endif NOTDEF
+a124 1
+	mov	0x3, %g6
+d126 3
+a128 9
+#ifdef NOTDEF
+	ldda	[%g1] VMMACH_KERN_PROGRAM_SPACE, %g4	/* %g4 and %g5 in */
+	mov	0x4, %g6
+	stda	%g4, [%g2] VMMACH_KERN_PROGRAM_SPACE	/* %g4 and %g5 out */
+#else /* NOTDEF */
+	mov	0x4, %g6
+	ldd	[%g1], %g4				/* %g4 and %g5 in */
+	std	%g4, [%g2] 				/* %g4 and %g5 out */
+	ldd	[%g1 + 8], %g4
+a129 2
+#endif /* NOTDEF */
+	mov	0x5, %g6
+a134 1
+	mov	0x6, %g6
+d142 2
+a143 1
+	mov	0x7, %g6
+d147 1
+d174 1
+d176 25
+d205 3
+d211 5
+a215 5
+	rd	%tbr, %g1
+	and	%g1, 0xff0, %g1
+	add	%g1, %g4, %g1
+	jmp	%g1
+	nop				/* nop isn't copied, but quiets AS */
+@
+
+
+1.9
+log
+@Fourth kernel!  It copies itself to high memory, the 32 byte offset
+is explained, and I can now set the stack pointer to my own stack
+successfully.
+@
+text
+@d11 1
+a11 1
+.asciz "$Header: /sprite/src/kernel/mach/sun4.md/RCS/bootSysAsm.s,v 1.8 89/01/14 18:59:29 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+a96 1
+#ifdef NOTDEF
+d98 11
+d115 2
+a116 1
+	 * the double-word copy, 
+d120 1
+d124 1
+d126 1
+d130 1
+d132 3
+a134 1
+	add	%g2, (1 + ~MACH_TRAP_ADDR_MASK), %g2	/* add size of table */
+d136 1
+d140 1
+d144 1
+d147 8
+a154 1
+	stda	%g4, [%g2] VMMACH_KERN_PROGRAM_SPACE	/* $g4 and %g5 out */
+d156 3
+a158 4
+	add	%g1, 8, %g1				/* incr. addresses */
+	add	%g2, 8, %g2
+	add	%g3, 1, %g3				/* incr. counter */
+	cmp	%g3, ((1 + ~MACH_TRAP_ADDR_MASK) / 8)	/* how many copies */
+d163 2
+a164 1
+	call	_printArg
+d166 2
+a167 2
+	mov	%g1, %o0
+	call	_printArg
+a169 4
+	mov	%g2, %o0
+	call	_printArg
+	nop
+	mov	0x8, %g6
+d171 1
+a171 1
+	add	%g2, (1 + ~MACH_TRAP_ADDR_MASK), %g2	/* add size of table */
+a172 10
+	call	_main
+	nop
+#endif NOTDEF
+	mov	0x9, %g6
+	set	MACH_KERN_STACK_START, %sp
+	mov	0xa, %g6
+	mov	%sp, %o0
+	call	_printArg
+	nop
+	mov	0xb, %g6
+@
+
+
+1.8
+log
+@Now contains printArg routine to print out a single hex argument.
+Now I know why stack pointer isn't working... Only the low-order bits
+are getting set.  At least I think that's what it is.  Now to test it.
+@
+text
+@d11 1
+a11 1
+.asciz "$Header: /sprite/src/kernel/mach/sun4.md/RCS/bootSysAsm.s,v 1.6 89/01/14 15:40:22 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+a28 1
+
+d41 1
+a41 1
+ * offset in control space to context register.  %g5 is a temporary register.
+d43 1
+a43 2
+	sethi	%hi(VMMACH_CONTEXT_OFF), %g4	/* set %g4 to context offset */
+	or	%g4, %lo(VMMACH_CONTEXT_OFF), %g4
+d45 1
+d50 1
+a50 2
+	sethi	%hi(MACH_KERN_START), %g1	/* pick starting segment */
+	or	%g1, %lo(MACH_KERN_START), %g1
+d55 1
+a55 3
+	sethi	%hi(VMMACH_SEG_SIZE), %g5	/* increment which segment */
+	add	%g1, %g5, %g1
+	add	%g1, %lo(VMMACH_SEG_SIZE), %g1
+d70 1
+a70 2
+	sethi	%hi(begin), %g1
+	or	%g1, %lo(begin), %g1
+d81 2
+a82 4
+	sethi	%hi(_edata), %g2
+	or	%g2, %lo(_edata), %g2
+	sethi	%hi(_end), %g3
+	or	%g3, %lo(_end), %g3
+a93 1
+	mov	0x7, %g6
+d97 1
+a97 1
+
+d99 7
+a105 3
+	 * Set the stack pointer for the initial process.
+	 * start == MACH_CODE_START == where we asked loader to start loading
+	 * kernel text.
+d107 4
+a110 2
+	mov	start, %o0
+	call	printArg
+d112 40
+a151 4
+
+#ifdef NOTDEF
+	mov	start, %sp
+	mov	%tbr, %g4	/* save prom tbr */
+d153 7
+a161 1
+
+d163 1
+d168 1
+a168 1
+ * desired integer in hex.
+d170 1
+a170 1
+printArg:
+d178 4
+a181 4
+	mov	%o7, %g6
+	sethi   %hi(-0x17ef7c),%g1
+	ld      [%g1+%lo(-0x17ef7c)],%g1
+	call    %g1,2
+d183 1
+a183 1
+	mov	%g6, %o7
+d186 8
+a193 2
+.align 8
+_machProtoVectorTable:
+d198 3
+a200 1
+	nop
+@
+
+
+1.7
+log
+@Now it turns on and off interrupts correctly.
+@
+text
+@d83 32
+d116 1
+d118 1
+a119 3
+#endif NOTDEF
+	mov	_machProtoVectorTable, %o1
+	call	printArg
+d126 2
+a127 2
+ * Move integer argument to print into %o1.  This will infinite loop printing
+ * desired integer.
+d131 3
+a133 3
+printArg2:
+	.ascii  "Hello World! arg is %x\012\0"
+	.seg    "text"
+d135 3
+a139 1
+	set     printArg2,%o0
+d142 2
+a143 2
+endloop:
+	b	printArg
+a144 2
+	ret
+	nop
+d146 1
+a146 1
+_machProtoVectorTable:			/* 0x48 */
+@
+
+
+1.6
+log
+@Third kernel.  It now copies itself to high memory (32 bytes father than
+I thought it would, however).  It doesn't turn off interrupts correctly.
+See README in kernel/mgbaker for more details.
+@
+text
+@d11 1
+a11 1
+.asciz "$Header: /sprite/src/kernel/mach/sun4.md/RCS/bootSysAsm.s,v 1.5 89/01/13 18:35:39 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d31 1
+a31 1
+	and	%g1, MACH_SR_HIGHPRIO, %g1	/* lock out interrupts */
+a34 1
+	mov	0x1, %g6
+a46 1
+	mov	0x2, %g6
+a52 1
+	mov	0x3, %g6
+a59 1
+	mov	0x4, %g6
+a64 1
+	mov	0x5, %g6
+a68 1
+	mov	0x6, %g6
+d76 1
+a76 1
+	jmp	%g1
+a79 1
+	mov	0x7, %g6
+d81 1
+a81 1
+	or	%g1, MACH_ENABLE_LEVEL15_INTR, %g1
+a82 1
+	mov	0x8, %g6
+a105 1
+	mov	0x9, %g6
+@
+
+
+1.5
+log
+@Prints out location of my tiny trap table thing.
+Useless, except that it shows how to get the alignment right.
+@
+text
+@d11 1
+a11 1
+.asciz "$Header: /sprite/src/kernel/mach/sun4.md/RCS/bootSysAsm.s,v 1.4 89/01/12 20:06:00 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d13 1
+d15 2
+d23 1
+d31 2
+a32 1
+	andn	%g1, 0x1f, %g1			/* set cwp to 0 */
+d35 56
+d114 1
+@
+
+
+1.4
+log
+@Uses assembler routine (avoiding stack ptr accesses of a C routine) to
+print out the prom tbr.
+@
+text
+@d11 1
+a11 1
+.asciz "$Header: /sprite/src/kernel/mach/sun4.md/RCS/bootSysAsm.s,v 1.3 89/01/12 19:31:53 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+a20 1
+
+d30 5
+a34 1
+	mov	%tbr, %o1
+d38 7
+d48 1
+a48 1
+	.ascii  "Hello World! tbr is %x\012\0"
+d60 7
+@
+
+
+1.3
+log
+@Works with setting wim and psr.  Second kernel.
+@
+text
+@d11 1
+a11 1
+.asciz "$Header: /sprite/src/kernel/mach/sun4.md/RCS/bootSysAsm.s,v 1.1 89/01/11 19:08:28 mlgray Exp Locker: mlgray $ SPRITE (Berkeley)"
+d31 3
+d35 5
+d41 9
+a49 1
+	call	_main
+@
+
+
+1.2
+log
+@This sets cwp to 0 and sets interrupts to the highest level.
+However, then you can't L1A the thing, since that's an interrupt...
+@
+text
+@a21 5
+/*
+ *	The temporary trap table.  I don't fill it in all the way.
+ *	NOTE: set instruction is a 2-word pseudo op.
+ */
+
+a25 5
+	/*
+	 * set cwp = 0, traps enabled, intr priority to f
+	 * Maybe set cwp to 1 with 0xfa1?
+	 mov	0xf80, %psr
+	 */
+d28 3
+a30 10
+	/* set cwp to 0 and disable traps */
+	andn	%g1, 0x3f, %g1
+	/* set interrupt level */
+	or	%g1, 0xf00, %g1
+	wr	%g0, %g1, %psr
+	/* turn traps back on */
+	mov	%psr, %g1
+	or	%g1, 0x20, %g1
+	wr	%g0, %g1, %psr
+	mov	0x2, %wim
+a31 1
+	/* set wim to window right behind us */
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+.asciz "$Header: /sprite/src/kernel/mach/sun2.md/RCS/bootSysAsm.s,v 8.1 88/11/18 11:23:01 rab Exp $ SPRITE (Berkeley)"
+d21 6
+d32 19
+a50 9
+	 * set cwp = 0, traps off, intr priority to f
+	 * Maybe set intr. prior to 0 with 0x80, or cwp to 1 with 0xf81?
+	 * (Sun code just turns off interrupts.)
+	
+	mov	0xf80, %psr
+/*
+ * Do I need to set any context stuff?
+ * For now, don't even copy the kernel up.
+ */
+@

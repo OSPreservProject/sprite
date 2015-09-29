@@ -1,0 +1,1 @@
+../../sprite/include/sys/h-dec3100.h

@@ -1,0 +1,178 @@
+# default.tx -
+#
+# This file is an initialization script read by Tx whenever it starts
+# up.  It defines a bunch of procedures, configures bindings, and
+# initializes variables.
+#
+# Copyright 1990 Regents of the University of California
+# Permission to use, copy, modify, and distribute this
+# software and its documentation for any purpose and without
+# fee is hereby granted, provided that the above copyright
+# notice appear in all copies.  The University of California
+# makes no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without
+# express or implied warranty.
+
+# Command procedures to extend the built-in command set:
+
+proc showBindings {args} {
+    global newWindow
+    mxopen {}
+    mxsend $newWindow {insert Keystroke\ Bindings:\n}
+    mxsend $newWindow {insert ---------\ --------\n}
+    if {[length $args] == 0} {set args [bind]}
+    foreach binding $args {
+	mxsend $newWindow [list insert [format {\n%-10s => "%s"}
+		[control binding $binding] [bind $binding]]]
+    }
+    mxsend $newWindow clean
+    mxsend $newWindow {see 0.0}
+}
+
+proc showMenus {args} {
+    global newWindow
+    mxopen {}
+    mxsend $newWindow {insert Menu\ information:\n}
+    mxsend $newWindow {insert ----\ -----------\n}
+    mxsend $newWindow {insert \n(Format:\ displayed\ information\ |\ command)}
+    if {[length $args] == 0} {set args [menu info]}
+    foreach i $args {
+	set leftSize 5
+	set midSize 5
+	set rightSize 5
+	mxsend $newWindow clean
+	foreach j [menu info $i] {
+	    set t [length [index $j 0] chars]
+	    if {$t > $leftSize} {set leftSize $t}
+	    set t [length [index $j 1] chars]
+	    if {$t > $midSize} {set midSize $t}
+	    set t [length [index $j 2] chars]
+	    if {$t > $rightSize} {set rightSize $t}
+	}
+	mxsend $newWindow [list insert [format \n\n%s: $i]]
+	foreach j [menu info $i] {
+	    mxsend $newWindow [list insert [format {\n  %-*s %-*s %-*s | %s} \
+		    $leftSize [index $j 0] $midSize [index $j 1] \
+		    $rightSize [index $j 2] [index $j 3]]]
+	}
+    }
+    mxsend $newWindow clean
+    mxsend $newWindow {see 0.0}
+}
+
+proc showProcs {args} {
+    global newWindow
+    mxopen {}
+    mxsend $newWindow {insert Procedure\ information:\n}
+    mxsend $newWindow {insert ---------\ -----------}
+    if {[length $args] == 0} {set args [info procs]}
+    foreach proc $args {
+	set space {}
+	mxsend $newWindow [list insert [format \n\n%s( $proc]]
+	mxsend $newWindow clean
+	foreach param [info args $proc] {
+	    mxsend $newWindow [list insert [format %s%s $space $param]]
+	    set space {, }
+	    if [info default $proc $param default] {
+		mxsend $newWindow [list insert [format { [%s]} $default]]
+	    }
+	}
+	mxsend $newWindow {insert ):\n}
+	mxsend $newWindow [list insert [info body $proc]]
+    }
+    mxsend $newWindow clean
+    mxsend $newWindow {see 0.0}
+}
+
+proc showVars {args} {
+    global newWindow
+    mxopen {}
+    mxsend $newWindow {insert Variable\ values:\n}
+    mxsend $newWindow {insert --------\ -------\n}
+    set _maxLength 10
+    if {[length $args] == 0} {set args [uplevel {info vars}]}
+    foreach _i $args {
+	if {[length $_i chars] > $_maxLength} {
+	    set _maxLength [length $_i chars]
+	}
+    }
+    set _maxLength [expr $_maxLength+6]
+    foreach _i $args {
+	mxsend $newWindow [list insert [format {\n%-*s = "%s"}
+		$_maxLength $_i [uplevel set $_i]]]
+    }
+    mxsend $newWindow clean
+    mxsend $newWindow {see 0.0}
+}
+
+proc where {} {
+    global newWindow errorInfo
+
+    if {![info exists errorInfo]} {
+	return "no error has occurred yet"
+    }
+    mxopen {}
+    mxsend $newWindow {insert "Stack trace for last error:\n"}
+    mxsend $newWindow {insert "----- ----- --- ---- ------\n\n"}
+    mxsend $newWindow [list insert $errorInfo]
+    mxsend $newWindow "clean; see 0.0"
+}
+
+# Default bindings:
+
+bind \Cv {insert [selection]}
+bind \Ca {insert !!\n}
+bind \Mf {search forw [selection]}
+bind \Mb {search back [selection]}
+bind \Mo {open;  send $newWindow {see eof bottom}}
+bind \Mc {focus command clear}
+
+# Menus:
+
+menu create Control \
+    {Set termcap} - - - {
+	insert set noglob\; setenv TERM tx\n
+	insert [format {setenv T1 "%s"} [range $termcap 0 100 chars]] \n
+	insert [format {setenv T2 "%s"} [range $termcap 101 200 chars]] \n
+	insert [format {setenv T3 "%s"} [range $termcap 201 end chars]] \n
+	insert setenv TERMCAP {"$T1$T2$T3"} \n
+	insert unset noglob\n
+	insert unsetenv T1 T2 T3\n
+    } \
+    {Clear and reset window} - - - {
+	vi leave
+	delete 1.0 [mark eof back 1 char]
+	selection clear
+    } \
+    {New window on typescript} - M-o - {
+	open
+	send $newWindow {see eof bottom}
+    } \
+    {Open command subwindow} - M-c - {focus command clear} \
+    {Disable escape sequences} - - - {escape off} \
+    {Enable escape sequences} - - - {escape on} \
+    {Enter vt100 mode} - - - {set oldgeom =[set width]x[set height] ; \
+	    geometry =80x24 ; vi clear ; vi vt100 1} \
+    {Exit vt100 mode} - - - {geometry $oldgeom ; vi vt100 0} \
+    {Quit} - - - quit
+menu create Help \
+    {Info on last error} - - - {where} \
+    {Current key bindings} - - - {showBindings} \
+    {Current variable values} - - - {showVars} \
+    {Current menus} - - - {showMenus} \
+    {Current command procedures} - - - {showProcs}
+menu create Search \
+    {Search forward} - - - {search forw} \
+    {Search backward} - - - {search back} \
+    {Search forward for $sel} - {M-f} - {search forw [selection]} \
+    {Search backward for $sel} - {M-b} - {search back [selection]}
+menu create Selection \
+    {Copy $sel to caret} - {C-v} - {insert [selection]} \
+    {Delete $sel} - - - {delete sel.left sel.right}
+
+# Variables:
+#
+# _ti --	used by termcap entry.
+
+set searchCmd search
+set _ti 0

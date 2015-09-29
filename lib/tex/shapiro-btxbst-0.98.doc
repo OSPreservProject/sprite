@@ -1,0 +1,2300 @@
+# if 0
+% BibTeX `plain' family
+% modified to ouput fields in French; shapiro@corto.inria.fr 30-oct-87
+% Further modified for 'alpha3' and 'long' styles 3-nov-87
+% and for 'key' and 'skey' 1-jan-88
+# endif 0
+	% version 0.98c for BibTeX versions 0.98i or later, LaTeX version 2.08
+	% Copyright (C) 1985, all rights reserved
+	% Copying of this file is authorized only if either
+	% (1) you make absolutely no changes to your copy, including name, or
+	% (2) if you do make changes, you name it something other than
+	% btxbst.doc, plain.bst, unsrt.bst, alpha.bst, and abbrv.bst
+	% This restriction helps ensure that all standard styles are identical
+# if 0
+% This is file btxbxt.doc; it helps document bibliography styles,
+% and is also a template file that you can use to make
+% several different style files, if you have access to a C preprocessor.
+% For example, the standard styles were made by something like
+%	cpp -P -DPLAIN btxbst.doc | sed -e '/^$/d' > plain.bst
+%	cpp -P -DUNSRT btxbst.doc | sed -e '/^$/d' > unsrt.bst
+%	cpp -P -DALPHA btxbst.doc | sed -e '/^$/d' > alpha.bst
+%	cpp -P -DABBRV btxbst.doc | sed -e '/^$/d' > abbrv.bst
+% A French version of (say) abbrv is created by
+%	cpp -P -DABBRV -DFRENCH btxbst.doc | sed -e '/^$/d' > fabbrv.bst
+% There are also new styles created by defining ALPHA3, KEY, SKEY or LONG.
+%       ALPHA3 label is first 3 letters of 1st author's name + year
+%       LONG   label is 1st author's full name + year
+%       KEY    label is the bibtex key, the bibliogrpahy is unsorted
+%       SKEY   label is the bibtex key, sorted by 1st author's name&year
+% The last two styles are intended for printing the database itself.
+%
+% If you don't have access,
+% you can edit this file by hand to imitate the preprocessor,
+% with the following explanation of the C preprocessor constructs used here.
+%
+% The output of the preprocessor is the same as the input, except that certain
+% lines will be excluded (and some blank lines will be added).  The sequence
+%	#if VAR
+%	    lines to be included when VAR is not zero
+%	#else
+%	    lines to be included when VAR is zero
+%	#endif
+% (with the #-signs appearing in column 1) means that one set or the other of
+% the lines are to be included depending on the value of VAR.
+% The #else part is optional.  Comments can be added after #else and #endif.
+% The '# if 0' ... '#endif' sequence is used to eliminate unnecessary
+% comments from the output.
+% Variables can be set by
+%	#define VAR value
+% and one can also use #ifdef VAR to see if VAR has any value, and #ifndef
+% to see if it has none.
+% Another #if form used in this file is #if !VAR, which includes the lines
+% after the #if only if VAR is zero.
+%
+% Convention: Use all uppercase identifiers for these preprocessor variables
+% so you can spot them easily
+%
+% The command line to the preprocessor should define one of PLAIN, UNSRT, ALPHA
+% or ABBRV (though PLAIN will be used by default if none is given),
+% and the following lines will set various boolean variables to control the
+% various lines that are chosen from the rest of the file.
+% Each boolean variable should be set true (1) or false (0) in each style.
+% Here are the current variables, and their meanings:
+%	LAB_ALPH:	an alphabetic label is used (if false then a numeric
+%			    label is used)
+%	SORTED:		the entries should be sorted by label (if nonnumeric)
+%			    and other info, like authors (if false, then
+%			    entries remain in order of occurrence)
+%	NAME_FULL:	the authors, editors, etc., get the full names as
+%			    given in the bibliograph (if false, the first
+%			    names become initials)
+%	ATIT_LOWER:	titles of non-"books" (e.g., articles) should be
+%			    converted to lower-case, except the first letter
+%			    (if false then they appear as in the database)
+%	MONTH_FULL:	months are spelled out in full (if false, then
+%			    they're abbreviated)
+%	JOUR_FULL:	macro journal names are spelled out in full
+%			    (if false then they are abbreviated, currently
+%			    as they appear in ACM publications)
+%       LBKEYS:         use the database key as the citation label
+% Furthermore the variable ALPHA_LONG may have one of the following
+% values, when LAB_ALPH is 1, giving the following citation alphabetic
+% label format:
+% 0 [Lam85] for single author (or editor or key): first 3 letters of last name
+%   [SW79]  (first letters of last names) for multiple authors
+% 1 [Lam85] for single author (or editor or key)
+%   [Str79]  (first 3 letters of 1st author's last name) for multiple authors
+% 2 [Lamport 85] for single author (or editor or key): full last name
+%   [Strunk 79]  (full last name of 1st author) for multiple authors
+# endif 0
+
+#ifndef UNSRT
+#   ifndef ALPHA
+#	ifndef ABBRV
+#           ifndef ALPHA3
+#               ifndef LONG
+#                   ifndef KEY
+#                       ifndef SKEY
+#                      	    define PLAIN 1
+#                       endif
+#                   endif
+#               endif
+#           endif
+#	endif
+#   endif
+#endif
+#ifdef PLAIN
+% plain style (sorted numbers)
+#   define LAB_ALPH 0
+#   define SORTED 1
+#   define NAME_FULL 1
+#   define ATIT_LOWER 1
+#   define MONTH_FULL 1
+#   define JOUR_FULL 1
+#   define LBKEYS 0
+#endif
+#ifdef UNSRT
+% unsrt style (unsorted numbers)
+#   define LAB_ALPH 0
+#   define SORTED 0
+#   define NAME_FULL 1
+#   define ATIT_LOWER 1
+#   define MONTH_FULL 1
+#   define JOUR_FULL 1
+#   define LBKEYS 0
+#endif
+#ifdef ALPHA
+% alpha style (sorted short alphabetics)
+#   define LAB_ALPH 1
+#   define ALPHA_LONG 0
+#   define SORTED 1
+#   define NAME_FULL 1
+#   define ATIT_LOWER 1
+#   define MONTH_FULL 1
+#   define JOUR_FULL 1
+#   define LBKEYS 0
+#endif
+#ifdef ALPHA3
+% alpha3 style (sorted short alphabetics, 3 letters of 1st author only)
+#   define LAB_ALPH 1
+#   define ALPHA_LONG 1
+#   define SORTED 1
+#   define NAME_FULL 1
+#   define ATIT_LOWER 1
+#   define MONTH_FULL 1
+#   define JOUR_FULL 1
+#   define LBKEYS 0
+#endif
+#ifdef LONG
+% long style (sorted long alphabetics, full name of 1st author only)
+#   define LAB_ALPH 1
+#   define ALPHA_LONG 2
+#   define SORTED 1
+#   define NAME_FULL 1
+#   define ATIT_LOWER 1
+#   define MONTH_FULL 1
+#   define JOUR_FULL 1
+#   define LBKEYS 0
+#endif
+#ifdef ABBRV
+% abbrv style (sorted numbers, with abbreviations)
+#   define LAB_ALPH 0
+#   define SORTED 1
+#   define JOUR_FULL 0
+#   define MONTH_FULL 0
+#   define ATIT_LOWER 1
+#   define NAME_FULL 0
+#   define LBKEYS 0
+#endif
+#ifdef KEY
+% keys style (unsorted keys)
+#   define LAB_ALPH 1
+#   define ALPHA_LONG 2
+#   define SORTED 0
+#   define NAME_FULL 0
+#   define ATIT_LOWER 1
+#   define MONTH_FULL 0
+#   define JOUR_FULL 1
+#   define LBKEYS 1
+#endif
+#ifdef SKEY
+% skeys style (keys, sorted by name of 1st author and year)
+#   define LAB_ALPH 1
+#   define ALPHA_LONG 2
+#   define SORTED 1
+#   define NAME_FULL 1
+#   define ATIT_LOWER 1
+#   define MONTH_FULL 0
+#   define JOUR_FULL 1
+#   define LBKEYS 1
+#endif
+#ifdef FRENCH
+% French version
+#endif FRENCH
+%
+# if 0
+%   Entry formatting: Similar to that recommended by Mary-Claire van Leunen
+%	in "A Handbook for Scholars".  Book-like titles are italicized and
+%	non-book titles are converted to sentence capitilization
+%	(and not enclosed in quotes).
+%	This file outputs a \newblock between major blocks of an entry
+%	(the name \newblock is analogous to the names \newline and \newpage)
+%	so that the user can obtain an "open" format, which has a line break
+%	before each block and lines after the first are indented within blocks,
+%	by giving an optional \documentstyle argument; currently there is a
+%	required `optional' \documentstyle argument, one of
+%		opbiba, opbibr, clbiba, or clbibr,
+%	giving an open or closed format for an article or report.
+%	For the next version of LaTeX there will be just one, truly optional
+%	style, for the open format
+%	(among other things, it will have improved page breaking).
+%	The default will be the "closed" format---blocks runs together.
+%
+%   Citation alphabetic label format:
+%		[Knu73] for single author (or editor or key)
+%		[AHU83] (first letters of last names) for multiple authors
+%
+%   Citation label numberic format:
+%		[number]
+%
+%   Reference list ordering for sorted, alphabetic lables:
+%		alphabetical by citation label, then by author(s) or whatever
+%		passes for author in the absence of one, and then by title.
+%
+%   Reference list ordering for sorted, numeric lables:
+%		alphabetical by author(s) or whatever passes
+%		passes for author in the absence of one, and then by title.
+%
+%   Reference list ordering for unsorted:
+%		by the order cited in the text
+%
+%   History
+%   12/16/84	(HWT)	Original `plain' version, by Howard Trickey.
+%   12/23/84	(LL)	Some comments made by Leslie Lamport.
+%    2/16/85	(OP)	Changes based on LL's comments, Oren Patashnik
+%    2/17/85	(HWT)	template file and other standard styles made
+%    3/28/85		First release, version 0.98b for BibTeX 0.98f
+%    5/ 9/85		version 0.98c for BibTeX 0.98i
+%			 : fixed Theoretical Computer Science macro name
+%			 : fixed the format.vol.num.pages function
+%
+% The ENTRY declaration
+%   Like Scribe's (according to pages 231-2 of the April '84 edition),
+%   but no fullauthor or editors fields because BibTeX does name handling.
+%   The annote field is commented out here because this family doesn't
+%   include an annotated bibliography style
+# endif 0
+
+ENTRY
+% Fields:
+  { address
+%	    Publisher's address
+%    annote
+%	    Long annotation used for annotated bibliographies (begins sentence)
+    author
+%	    Name(s) of author(s), in BibTeX name format
+    booktitle
+%	    Book title when the thing being referenced isn't the whole book.
+%	    For book entries, the title field should be used instead.
+    chapter
+%	    Chapter number
+    edition
+%	    Edition of a book (e.g., "second")
+    editor
+%	    Name(s) of editor(s), in BibTeX name format.
+%	    If there is also an author field, then the editor field should be
+%	    for the book or collection that the work appears in
+    howpublished
+%	     How something strange has been published (begins sentence)
+    institution
+%	    Sponsoring institution
+    journal
+%	    Journal name (macros are provided for many)
+    key
+%	    Alphabetizing and labeling key (needed when no author or editor)
+    month
+%	    Month (macros are provided)
+    note
+%	    To help the reader find a reference (begins sentence)
+    number
+%	    Number of a journal or technical report
+    organization
+%	    Organization (sponsoring a conference)
+    pages
+%	    Page number or numbers (use `--' to separate a range)
+    publisher
+%	    Publisher name
+    school
+%	    School name (for theses)
+    series
+%	    The name of a series or set of books.
+%	    An individual book will will also have it's own title
+    title
+%	    The title of the thing being referenced
+    type
+%	    Type of a Techreport (e.g., "Research Note") to be used instead of
+%	    the default "Technical Report"
+    volume
+%	    Volume of a journal or multivolume work
+    year
+%	    Year---should contain only numerals
+  }
+# if 0
+% There are no integer entry variables
+# endif 0
+  {}
+# if 0
+% These string entry variables are used to form the citation label.
+% In a storage pinch, sort.label can be easily computed on the fly.
+# endif 0
+
+#if LAB_ALPH
+#if SORTED
+  { label extra.label sort.label }
+#else !SORTED
+# if 0
+% It still doesn't seem like a good idea to use an order-of-citation
+% reference list when using alphabetic labels, but when this happens we
+% do things a little differently
+# endif 0
+  {label}
+#endif SORTED
+#else !LAB_ALPH
+  {label}
+#endif LAB_ALPH
+
+# if 0
+% Each entry function starts by calling output.bibitem, to write the
+% \bibitem and its arguments to the .BBL file.  Then the various fields
+% are formatted and printed by output or output.check.  Those functions
+% handle the writing of separators (commas, periods, \newblock's),
+% taking care not to do so when they are passed a null string.
+% Finally, fin.entry is called to add the final period and finish the
+% entry.
+%
+% A bibliographic reference is formatted into a number of `blocks':
+% in the open format, a block begins on a new line and subsequent
+% lines of the block are indented.  A block may contain more than
+% one sentence (well, not a grammatical sentence, but something to
+% be ended with a sentence ending period).  The entry functions should
+% call new.block whenever a block other than the first is about to be
+% started.  They should call new.sentence whenever a new sentence is
+% to be started.  The output functions will ensure that if two
+% new.sentence's occur without any non-null string being output between
+% them then there won't be two periods output.  Similarly for two
+% successive new.block's.
+%
+% The output routines don't write their argument immediately.
+% Instead, by convention, that argument is saved on the stack to be
+% output next time (when we'll know what separator needs to come
+% after it).  Meanwhile, the output routine has to pop the pending
+% output off the stack, append any needed separator, and write it.
+%
+% To tell which separator is needed, we maintain an output.state.
+% It will be one of these values:
+%	before.all		just after the \bibitem
+%	mid.sentence		in the middle of a sentence: comma needed
+%					if more sentence is output
+%	after.sentence		just after a sentence: period needed
+%	after.block		just after a block (and sentence):
+%					period and \newblock needed.
+% Note: These styles don't use after.sentence
+%
+% VAR: output.state : INTEGER		-- state variable for output
+%
+% The output.nonnull function saves its argument (assumed to be nonnull)
+% on the stack, and writes the old saved value followed by any needed
+% separator.  The ordering of the tests is decreasing frequency of
+% occurrence.
+%
+% output.nonnull(s) ==
+%  BEGIN
+%	s := argument on stack
+%	if output.state = mid.sentence then
+%	    write$(pop() * ", ")
+%		  -- "pop" isn't a function: just use stack top
+%	else
+%	    if output.state = after.block then
+%		write$(add.period$(pop()))
+%		newline$
+%		write$("\newblock ")
+%	    else
+%		if output.state = before.all then
+%		    write$(pop())
+%		else	    -- output.state should be after.sentence
+%		    write$(add.period$(pop()) * " ")
+%		fi
+%	    fi
+%	fi
+%	push s on stack
+%	output.state := mid.sentence
+%  END
+%
+% The output function calls output.nonnull if its argument is non-null
+%
+% output(s) ==
+%  BEGIN
+%	if s <> "" then output.nonnull(s)
+%	fi
+%  END
+%
+% The output.check function calls output.nonnull if s is non-null
+% and warns the user that the t field shouldn't be empty (this is
+% because it won't be a good reference without the field;  the entry
+% functions try to make the formatting look reasonable even when such
+% fields are empty).
+%
+% output.check(t,s) ==
+%  BEGIN
+%	if s = "" then
+%	    top$("Warning: the " * t * " shouldn't be empty in " * cite$)
+%	else output.nonnull(s)
+%	fi
+%  END
+%
+% The output.bibitem function writes the \bibitem for the current entry
+% (the label should already have been set up), and sets up the separator
+% state for the output functions.  And, it leaves a string on the stack
+% as per the output convention.
+%
+% output.bibitem ==
+%  BEGIN
+%	newline$
+%	write$("\bibitem[")	% for alphabetic labels,
+%	write$(label)		% these three lines
+%	write$("]{")		% are used
+%	write$("\bibitem{")		% this line for numeric labels
+%	write$(cite$)
+%	write$("}")
+%	push "" on stack
+%	output.state := before.all
+%  END
+%
+% The fin.entry function finishes off an entry by adding a period to the
+% string remaining on the stack.  If the state is still before.all
+% then nothing was produced for this entry, so the result will look bad,
+% but the user deserves it. (We don't omit the whole entry because the
+% entry was cited, and a bibitem is needed to define the citation label.)
+%
+% fin.entry ==
+%  BEGIN
+%	write$(add.period$(pop()))
+%	newline$
+%  END
+%
+% The new.block function prepares for a new block to be output, and
+% new.sentence prepares for a new sentence.
+%
+% new.block ==
+%  BEGIN
+%	if output.state <> before.all then
+%	    output.state := after.block
+%	fi
+%  END
+%
+% new.sentence ==
+%  BEGIN
+%	if output.state <> after.block then
+%	    if output.state <> before.all then
+%		output.state :=  after.sentence
+%	    fi
+%	fi
+%  END
+%
+# endif 0
+
+INTEGERS { output.state before.all mid.sentence after.sentence after.block }
+
+FUNCTION {init.state.consts}
+{ 'before.all #0 :=
+  'mid.sentence #1 :=
+  'after.sentence #2 :=
+  'after.block #3 :=
+}
+
+# if 0
+% the variables s and t are temporary string holders
+# endif 0
+
+STRINGS { s t }
+
+FUNCTION {output.nonnull}
+{ 's swap$ :=
+  output.state mid.sentence =
+    { ", " * write$ }
+    { output.state after.block =
+	{ add.period$ write$
+	  newline$
+	  "\newblock " write$
+	}
+	{ output.state before.all =
+	    'write$
+	    { add.period$ " " * write$ }
+	  if$
+	}
+      if$
+    }
+  if$
+  'output.state mid.sentence :=
+  s
+}
+
+FUNCTION {output}
+{ 's swap$ :=
+  s "" =
+    'skip$
+    { s output.nonnull }
+  if$
+}
+
+FUNCTION {output.check}
+{ 's swap$ :=
+  't swap$ :=
+  s "" =
+    { "Warning: the " t * " shouldn't be empty in " * cite$ * top$ }
+    { s output.nonnull }
+  if$
+}
+
+FUNCTION {output.bibitem}
+{ newline$
+#if LAB_ALPH
+  "\bibitem[" write$
+  label write$
+  "]{" write$
+#else
+  "\bibitem{" write$
+#endif
+  cite$ write$
+  "}" write$
+  newline$
+  ""
+  'output.state before.all :=
+}
+
+# if 0
+% This function finishes all entries.  Note: For an otherwise empty entry
+% (which is probably due to a user error) this function prints a
+period
+# endif 0
+
+FUNCTION {fin.entry}
+{ add.period$
+  write$
+  newline$
+}
+
+FUNCTION {new.block}
+{ output.state before.all =
+    'skip$
+    { 'output.state after.block := }
+  if$
+}
+
+# if 0
+% This function isn't used in these styles
+# endif 0
+
+FUNCTION {new.sentence}
+{ output.state after.block =
+    'skip$
+    { output.state before.all =
+	'skip$
+	{ 'output.state after.sentence := }
+      if$
+    }
+  if$
+}
+
+# if 0
+% These three functions pop one or two (integer) arguments from the stack
+% and push a single one, either 0 or 1.
+% The 'skip$ in the `and' and `or' functions are used because
+% the corresponding if$ would be idempotent
+# endif 0
+
+FUNCTION {not}
+{   { #0 }
+    { #1 }
+  if$
+}
+
+FUNCTION {and}
+{   'skip$
+    { pop$ #0 }
+  if$
+}
+
+FUNCTION {or}
+{   { pop$ #1 }
+    'skip$
+  if$
+}
+
+# if 0
+% Here are some functions for formatting chunks of an entry.
+% By convention they either produce a string that can be followed by
+% a comma or period (using add.period$, so it is OK to end in a period),
+% or they produce the null string.
+%
+% A useful utility is the field.or.null function, which checks if the
+% argument is the result of pushing a `missing' field (one for which no
+% assignment was made when the current entry was read in from the database),
+% and returns the null string if so, otherwise it returns the field string.
+%
+% field.or.null(s) ==
+%  BEGIN
+%	if missing$(s) then return ""
+%	else return s
+%  END
+%
+% Another helper function is italicize, which returns the string that
+% italicizes the argument string, if that is non-null, otherwise it
+% returns the null string.  Italic corrections aren't used, so this
+% function should be used when punctation will follow the result.
+% Also, it needn't be \em (instead of \it) because the user shouldn't be
+% emphasizing the whole bibliography.
+%
+% italicize(s) ==
+%  BEGIN
+%	if s = "" then return ""
+%	else return "{\it " * s * "}"
+%
+% The format.names function formats the argument (which should be in
+% BibTeX name format) into "First Von~Last, Junior", separated by commas
+% and with an "and" before the last (but ending with "et al." if the last
+% of multiple authors is "others")
+%
+% VAR: nameptr, namesleft, numnames: INTEGER
+%      nameresult: STRING
+%
+% format.names(s) ==
+%  BEGIN
+%	nameptr := 1
+%	nameresult := ""
+%	numnames := num.names$(s)
+%	namesleft := numnames
+%	while namesleft > 0
+%	  do
+%				% for full names:
+%	    t := format.name$(s, nameptr, "{ff }{vv~}{ll}{, jj}")
+%				% for abbreviated first names:
+%	    t := format.name$(s, nameptr, "{f.~}{vv~}{ll}{, jj}")
+%	    if nameptr > 1 then
+%		if namesleft > 1 then nameresult := nameresult * ", " * t
+%		else if numnames > 2
+%		       then nameresult := nameresult * ","
+%		     fi
+%		     if t = "others"
+%		       then nameresult := nameresult * " et al."
+%		       else nameresult := nameresult * " and " * t
+%		     fi
+%		fi
+%	    else nameresult := nameresult * t
+%	    fi
+%	    nameptr := nameptr + 1
+%	    namesleft := namesleft - 1
+%	  od
+%	return nameresult
+%  END
+%
+% The format.authors function returns the result of format.names(author)
+% if the author is present, or else it returns the null string
+%
+% format.authors ==
+%  BEGIN
+%	if missing$(author) then return ""
+%	else return format.names(author)
+%	fi
+%  END
+%
+% Format.editors is like format.authors, but it uses the editor field,
+% and appends ", editor" or ", editors"
+%
+% format.editors ==
+%  BEGIN
+%	if missing$(editor) then return ""
+%	else
+%	    if num.names$(editor) > 1 then
+%		return format.names(editor) * ", editors"
+%	    else
+%		return format.names(editor) * ", editor"
+%	    fi
+%	fi
+%  END
+%
+% Other formatting functions are similar, so no "comment version" will be
+% given for them.
+%
+% The `pop$' in this function gets rid of the duplicate `missing' value and
+% the `skip$' returns the duplicate field value
+# endif 0
+
+FUNCTION {field.or.null}
+{ duplicate$
+  missing$
+    { pop$ "" }
+    'skip$
+  if$
+}
+
+FUNCTION {italicize}
+{ 's swap$ :=
+  s "" =
+    { "" }
+    { "{\it " s * "}" * }
+  if$
+}
+
+INTEGERS { nameptr namesleft numnames }
+
+STRINGS {nameresult}
+
+FUNCTION {format.names}
+{ 's swap$ :=
+  'nameptr #1 :=
+  'nameresult "" :=
+  'numnames s num.names$ :=
+  'namesleft numnames :=
+    { namesleft #0 > }
+    {
+#if NAME_FULL
+      't s nameptr "{ff }{vv~}{ll}{, jj}" format.name$ :=
+#else
+      't s nameptr "{f.~}{vv~}{ll}{, jj}" format.name$ :=
+#endif
+      nameptr #1 >
+	{ namesleft #1 >
+	    { 'nameresult nameresult ", " * t * := }
+	    { numnames #2 >
+		{ 'nameresult nameresult "," * := }
+		'skip$
+	      if$
+	      t "others" =
+		{ 'nameresult nameresult " et al." * := }
+#ifndef FRENCH
+		{ 'nameresult nameresult " and " * t * := }
+#else FRENCH
+		{ 'nameresult nameresult " et " * t * := }
+#endif FRENCH
+	      if$
+	    }
+	  if$
+	}
+	{ 'nameresult nameresult t * := }
+      if$
+      'nameptr nameptr #1 + :=
+      'namesleft namesleft #1 - :=
+    }
+  while$
+  nameresult
+}
+
+FUNCTION {format.authors}
+{ author missing$
+    { "" }
+    { author format.names }
+  if$
+}
+
+FUNCTION {format.editors}
+{ editor missing$
+    { "" }
+    { editor num.names$ #1 >
+#ifndef FRENCH
+	{ editor format.names ", editors" * }
+	{ editor format.names ", editor" * }
+#else FRENCH
+	{ editor format.names ", \'{e}diteurs" * }
+	{ editor format.names ", \'{e}diteur" * }
+#endif FRENCH
+      if$
+    }
+  if$
+}
+
+# if 0
+% The format.title function is used for non-book-like titles.
+% For most styles we convert to lowercase (except for the very first letter),
+% and hope the user has brace-surrounded words that need to stay capitilized;
+% for some, however, we leave it as it is in the database.
+# endif 0
+
+FUNCTION {format.title}
+#if ATIT_LOWER
+{ title missing$
+    { "" }
+    { title "ul" change.case$ }
+  if$
+#else
+{ title field.or.null
+#endif ATIT_LOWER
+}
+
+# if 0
+% The entry.string.max function is set to BibTeX's ent_str_size constant,
+% the maximum length of an entry string variable.
+%
+% The global.string.max function is set to BibTeX's glob_str_size constant,
+% the maximum length of a global string variable.
+# endif 0
+
+FUNCTION {entry.string.max} { #100 }
+
+FUNCTION {global.string.max} { #300 }
+
+# if 0
+% The n.dashify function makes each single `-' in a string a double `--'
+% if it's not already
+%
+% VAR: pageresult: STRING
+%
+% n.dashify(s) ==
+%  BEGIN
+%	t := s
+%	pageresult := ""
+%	while (not (t = ""))
+%	  do
+%	    if (first character of t = "-")
+%	      then
+%		if (next character isn't)
+%		  then
+%		    pageresult := pageresult * "--"
+%		    t := t with the "-" removed
+%		  else
+%		    while (first character of t = "-")
+%		      do
+%			pageresult := pageresult * "-"
+%			t := t with the "-" removed
+%		      od
+%		fi
+%	      else
+%		pageresult := pageresult * the first character
+%		t := t with the first character removed
+%	    fi
+%	  od
+%	return pageresult
+%  END
+# endif 0
+
+STRINGS {pageresult}
+
+FUNCTION {n.dashify}
+{ 't swap$ :=
+  'pageresult "" :=
+    { t "" = not }
+    { t #1 #1 substring$ "-" =
+	{ t #1 #2 substring$ "--" = not
+	    { 'pageresult pageresult "--" * :=
+	      't t #2 global.string.max substring$ :=
+	    }
+	    {   { t #1 #1 substring$ "-" = }
+		{ 'pageresult pageresult "-" * :=
+		  't t #2 global.string.max substring$ :=
+		}
+	      while$
+	    }
+	  if$
+	}
+	{ 'pageresult pageresult t #1 #1 substring$ * :=
+	  't t #2 global.string.max substring$ :=
+	}
+      if$
+    }
+  while$
+  pageresult
+}
+
+# if 0
+% The format.date function is for the month and year, but we give a warning if
+% there's a missing year but the month is there, and we return the empty string
+% if they're both missing
+# endif 0
+
+FUNCTION {format.date}
+{ year missing$
+    { month missing$
+	{ "" }
+	{ "Warning: there's a month but no year in " cite$ * top$
+	  month
+	}
+      if$
+    }
+    { month missing$
+	{ year }
+	{ month " " * year * }
+      if$
+    }
+  if$
+}
+
+# if 0
+% The format.btitle is for formatting the title field when it is a book-like
+% entry---the style used here keeps it in uppers-and-lowers and italicizes it.
+# endif 0
+
+FUNCTION {format.btitle}
+{ title field.or.null
+  italicize
+}
+
+# if 0
+% The format.bvolume function is for formatting the volume number and/or
+% series name of a multivolume book.  If the volume field is missing, we
+% output either the series field italicized if it exists or the null string
+% otherwise.  If both the volume and series fields are there, we assume the
+% series field is the title of the whole multivolume work (the title field
+% should be the title of the one referred to), and add an "of <series>".
+% A tie (~) is put between the "Volume" and the volume number.
+% We capitilize Volume because this function is used at the beginning of a
+% block.
+# endif 0
+
+FUNCTION {format.bvolume}
+{ volume missing$
+    { series missing$
+	{ "" }
+	{ series italicize }
+      if$
+    }
+    { "Volume~" volume *
+      series missing$
+	'skip$
+#ifndef FRENCH
+	{ " of " * series italicize * }
+#else FRENCH
+	{ ", s\'{e}rie " * series italicize * }
+#endif FRENCH
+      if$
+    }
+  if$
+}
+
+# if 0
+% The format.edition function appends " edition" to the edition, if present.
+% We lowercase the edition (it should be something like "Third"), because
+% this doesn't start a sentence.
+# endif 0
+
+FUNCTION {format.edition}
+{ edition missing$
+    { "" }
+#ifndef FRENCH
+    { edition "ll" change.case$ " edition" * }
+#else FRENCH
+    { edition "ll" change.case$ " \'{e}dition" * }
+#endif FRENCH
+  if$
+}
+
+# if 0
+% The format.pages function is used for formatting a page range in a book
+% (and in rare circumstances, an article).
+% The multi.page.check function examines the page field for a "-" or a ","
+% so that format.pages can use "page" instead of "pages" if neither exists.
+% Note: global.string.max, set above, here means "take the rest of the string"
+%
+% VAR: multiresult: INTEGER	(actually, a boolean)
+%
+% multi.page.check(s) ==
+%  BEGIN
+%	t := s
+%	multiresult := false
+%	while ((not multiresult) and (not (t = "")))
+%	  do
+%	    if (first character of t = "-" or ",")
+%	      then multiresult := true
+%	      else t := t with the first character removed
+%	    fi
+%	  od
+%	return multiresult
+%  END
+# endif 0
+
+INTEGERS {multiresult}
+
+FUNCTION {multi.page.check}
+{ 't swap$ :=
+  'multiresult #0 :=
+    { multiresult not
+      t "" = not
+      and
+    }
+    { t #1 #1 substring$ "-" =
+      t #1 #1 substring$ "," =
+      or
+	{ 'multiresult #1 := }
+	{ 't t #2 global.string.max substring$ := }
+      if$
+    }
+  while$
+  multiresult
+}
+
+# if 0
+% This function doesn't begin a sentence so "pages" isn't capitalized
+% other functions that use this should keep that in mind
+# endif 0
+
+FUNCTION {format.pages}
+{ pages missing$
+    { "" }
+    { pages multi.page.check
+	{ "pages~" pages n.dashify * }
+	{ "page~" pages n.dashify * }
+      if$
+    }
+  if$
+}
+
+# if 0
+% The format.vol.num.pages function is for the volume, number, and page range
+% of a journal article.  We use the format:  vol(number):pages, with minor
+% variations for missing fields.  This doesn't begin a sentence.
+# endif 0
+
+FUNCTION {format.vol.num.pages}
+{ volume field.or.null
+  number missing$
+    'skip$
+    { "(" number * ")" * *
+      volume missing$
+	{ "Warning: there's a number but no volume in " cite$ * top$ }
+	'skip$
+      if$
+    }
+  if$
+  pages missing$
+    'skip$
+    { duplicate$ "" =
+	'skip$
+	{ ":" * }
+      if$
+      pages n.dashify *
+    }
+  if$
+}
+
+# if 0
+% The format.chapter.pages puts "chapter~" in front of a chapter number,
+% if present, and then appends the pages, if present.
+% This doesn't begin a sentence.
+# endif 0
+
+FUNCTION {format.chapter.pages}
+{ chapter missing$
+    'format.pages
+#ifndef FRENCH
+    { "chapter~" chapter *
+#else FRENCH
+    { "chapitre~" chapter *
+#endif FRENCH
+      pages missing$
+	'skip$
+	{ ", " * format.pages * }
+      if$
+    }
+  if$
+}
+
+# if 0
+% The format.in.ed.booktitle function is used for starting out a sentence
+% that begins "In <booktitle>", putting an editor before the title if one
+% exists.
+# endif 0
+
+FUNCTION {format.in.ed.booktitle}
+{ booktitle missing$
+    { "" }
+    { 's format.editors :=
+      s "" =
+#ifndef FRENCH
+	{ "In " booktitle italicize * }
+	{ "In " s * ", " * booktitle italicize * }
+#else FRENCH
+	{ "Dans " booktitle italicize * }
+	{ "Dans " s * ", " * booktitle italicize * }
+#endif FRENCH
+      if$
+    }
+  if$
+}
+
+# if 0
+% The format.tr.number makes a string starting with "Technical Report"
+% (or type, if that field is defined), followed by the number if there
+% is one (but return the first part even if there is no number)
+# endif 0
+
+FUNCTION {format.tr.number}
+{ type missing$
+#ifndef FRENCH
+    { "Technical Report" }
+#else FRENCH
+    { "Rapport" }
+#endif FRENCH
+    { type }
+  if$
+  number missing$
+    'skip$
+#ifndef FRENCH
+    { "~" * number * }
+#else FRENCH
+    { " no.~" * number * }
+#endif FRENCH
+  if$
+}
+
+# if 0
+% Now we define the type functions for all entry types that may appear
+% in the .BIB file---e.g., functions like `book' and `article'.  These
+% are the routines that actually generate the .BBL-file output for
+% the entry.  These must all precede the READ command.  In addition, the
+% style designer should have a function `default.type' for unknown types.
+% Note: The fields (within each list) are listed in order of appearance,
+% except as described for a `proceedings'.
+%
+% The article function is for an article in a journal.
+%	Required fields: author, title, journal, year
+%	Optional fields: volume, number, pages, month, note
+%
+% article ==
+%  BEGIN
+%	output.bibitem
+%	output.check("author",format.authors)
+%	new.block
+%	output.check("title",format.title)
+%	new.block
+%	output.check("journal",italicize(field.or.null(journal)))
+%	output(format.vol.num.pages)
+%	output.check("year",format.date)
+%	new.block
+%	output(field.or.null(note))
+%	fin.entry
+%  END
+%
+% The book function is for a whole book.
+%	Required fields: author or editor, title, publisher, year
+%	Optional fields: volume, series, address, edition, month, note
+%
+% book ==
+%  BEGIN
+%	if missing$(author) then output.check("author and editor",
+%								format.editors)
+%	else output.check("author",format.authors)
+%	fi
+%	new.block
+%	output.check("title",format.btitle)
+%	new.block
+%	output(format.bvolume)
+%	output.check("publisher",field.or.null(publisher))
+%	output(field.or.null(address))
+%	output(format.edition)
+%	output.check("year",format.date))
+%	new.block
+%	output(field.or.null(note))
+%	fin.entry
+%  END
+%
+% The other entry functions are all quite similar, so no "comment version"
+% will be given for them.
+# endif 0
+
+FUNCTION {article}
+{ output.bibitem
+  "author" format.authors output.check
+  new.block
+  "title" format.title output.check
+  new.block
+  "journal" journal field.or.null italicize output.check
+  format.vol.num.pages output
+  "year" format.date output.check
+  new.block
+  note field.or.null output
+  fin.entry
+}
+
+FUNCTION {book}
+{ output.bibitem
+  author missing$
+    { "author and editor" format.editors output.check }
+    { "author" format.authors output.check }
+  if$
+  new.block
+  "title" format.btitle output.check
+  new.block
+  format.bvolume output
+  "publisher" publisher field.or.null output.check
+  address field.or.null output
+  format.edition output
+  "year" format.date output.check
+  new.block
+  note field.or.null output
+  fin.entry
+}
+
+# if 0
+% A booklet is a bound thing without a publisher or sponsoring institution
+%	Required: title
+%	Optional: author, howpublished, address, month, year, note
+# endif 0
+
+FUNCTION {booklet}
+{ output.bibitem
+  format.authors output
+  new.block
+  "title" format.btitle output.check
+  new.block
+  howpublished field.or.null output
+  address field.or.null output
+  format.date output
+  new.block
+  note field.or.null output
+  fin.entry
+}
+
+# if 0
+% For the conference entry type, see inproceedings
+# endif 0
+
+# if 0
+% An inbook is a piece of a book: either a chapter and/or a page range.
+%	Required: author or editor, title, chapter and/or pages, publisher,year
+%	Optional: volume, series, address, edition, month, note
+# endif 0
+
+FUNCTION {inbook}
+{ output.bibitem
+  author missing$
+    { "author and editor" format.editors output.check }
+    { "author" format.authors output.check }
+  if$
+  new.block
+  "title" format.btitle output.check
+  "chapter and pages" format.chapter.pages output.check
+  new.block
+  format.bvolume output
+  "publisher" publisher field.or.null output.check
+  address field.or.null output
+  format.edition output
+  "year" format.date output.check
+  new.block
+  note field.or.null output
+  fin.entry
+}
+
+# if 0
+% An incollection is like inbook, but where there is a separate title
+% for the referenced thing (and perhaps an editor for the whole)
+%	Required: author, title, booktitle, publisher, year
+%	Optional: editor, chapter, pages, address, month, note
+# endif 0
+
+FUNCTION {incollection}
+{ output.bibitem
+  "authors" format.authors output.check
+  new.block
+  "title" format.title output.check
+  new.block
+  "booktitle" format.in.ed.booktitle output.check
+  format.chapter.pages output
+  "publisher" publisher field.or.null output.check
+  address field.or.null output
+  "year" format.date output.check
+  new.block
+  note field.or.null output
+  fin.entry
+}
+
+# if 0
+% An inproceedings is an article in a conference proceedings
+%	Required: author, title, booktitle, year
+%	Optional: editor, pages, organization, publisher, address, month, note
+# endif 0
+
+FUNCTION {inproceedings}
+{ output.bibitem
+  "author" format.authors output.check
+  new.block
+  "title" format.title output.check
+  new.block
+  "booktitle" format.in.ed.booktitle output.check
+  format.pages output
+  organization field.or.null output
+  publisher field.or.null output
+  address field.or.null output
+  "year" format.date output.check
+  new.block
+  note field.or.null output
+  fin.entry
+}
+
+# if 0
+% The conference function is included for Scribe compatibility
+# endif 0
+
+FUNCTION {conference} { inproceedings }
+
+# if 0
+% A manual is technical documentation
+%	Required: title
+%	Optional: author, organization, address, edition, month, year, note
+# endif 0
+
+FUNCTION {manual}
+{ output.bibitem
+  format.authors output
+  new.block
+  "title" format.btitle output.check
+  new.block
+  organization field.or.null output
+  address field.or.null output
+  format.edition output
+  format.date output
+  new.block
+  note field.or.null output
+  fin.entry
+}
+
+# if 0
+% A mastersthesis is a Master's thesis
+%	Required: author, title, school, year
+%	Optional: address, month, note
+# endif 0
+
+FUNCTION {mastersthesis}
+{ output.bibitem
+  "author" format.authors output.check
+  new.block
+  "title" format.btitle output.check
+  new.block
+#ifndef FRENCH
+  "Master's thesis" output
+#else FRENCH
+  "Rapport de ma\^{\i}trise" output
+#endif FRENCH
+  "school" school field.or.null output.check
+  address field.or.null output
+  "year" format.date output.check
+  new.block
+  note field.or.null output
+  fin.entry
+}
+
+# if 0
+% added for France: rapport de DEA, like master's thesis
+# endif 0
+
+FUNCTION {deathesis}
+{ output.bibitem
+  "author" format.authors output.check
+  new.block
+  "title" format.btitle output.check
+  new.block
+#ifdef FRENCH
+  "Rapport de DEA" output
+#else
+  "Dipl\^{o}me d'Etudes Approfondies Thesis" output
+#endif FRENCH
+  "school" school field.or.null output.check
+  address field.or.null output
+  "year" format.date output.check
+  new.block
+  note field.or.null output
+  fin.entry
+}
+
+# if 0
+% a misc is something that doesn't fit elsewhere
+%	Required: none
+%	Optional: author, title, howpublished, month, year, note
+# endif 0
+
+FUNCTION {misc}
+{ output.bibitem
+  format.authors output
+  new.block
+  format.title output
+  new.block
+  howpublished field.or.null output
+  format.date output
+  new.block
+  note field.or.null output
+  fin.entry
+}
+
+# if 0
+% A phdthesis is like a mastersthesis
+%	Required: author, title, school, year
+%	Optional: address, month, note
+# endif 0
+
+FUNCTION {phdthesis}
+{ output.bibitem
+  "author" format.authors output.check
+  new.block
+  "title" format.btitle output.check
+  new.block
+#ifndef FRENCH
+  "PhD thesis" output
+#else FRENCH
+  "Th\`{e}se de Doctorat" output
+#endif FRENCH
+  "school" school field.or.null output.check
+  address field.or.null output
+  "year" format.date output.check
+  new.block
+  note field.or.null output
+  fin.entry
+}
+
+# if 0
+% a proceedings is a conference proceedings
+% if there is an organization but no editor field, the organization will
+% appear as the first optional field (we try to make the first block nonempty)
+%	Required: title, year
+%	Optional: editor, publisher, organization, address, month, note
+# endif 0
+
+FUNCTION {proceedings}
+{ output.bibitem
+  editor missing$
+    { organization missing$
+	'skip$
+	{ organization field.or.null output }
+      if$
+    }
+    { format.editors output }
+  if$
+  new.block
+  "title" format.btitle output.check
+  editor missing$
+    'skip$
+    { organization field.or.null output }
+  if$
+  publisher field.or.null output
+  address field.or.null output
+  "year" format.date output.check
+  new.block
+  note field.or.null output
+  fin.entry
+}
+
+# if 0
+% a techreport is a technical report.
+%	Required: author, title, institution, year
+%	Optional: type, number, address, month, note
+# endif 0
+
+FUNCTION {techreport}
+{ output.bibitem
+  "author" format.authors output.check
+  new.block
+  "title" format.btitle output.check
+  new.block
+  format.tr.number output
+  "institution" institution field.or.null output.check
+  address field.or.null output
+  "year" format.date output.check
+  new.block
+  note field.or.null output
+  fin.entry
+}
+
+# if 0
+% an unpublished is something that hasn't been published
+%	Required: author, title, note
+%	Optional: month, year
+# endif 0
+
+FUNCTION {unpublished}
+{ output.bibitem
+  "author" format.authors output.check
+  new.block
+  "title" format.title output.check
+  new.block
+  format.date output
+  new.block
+  "note" note field.or.null output.check
+  fin.entry
+}
+
+# if 0
+% We use entry type book for an unknown type and give a warning
+# endif 0
+
+FUNCTION {default.type} { book }
+
+# if 0
+% Here are macros for common things that may vary from style to style.
+% Users are encouraged to use these macros.
+%
+% Months are either written out in full or abbreviated
+# endif 0
+
+#if MONTH_FULL
+
+#ifndef FRENCH
+MACRO {jan} {"January"}
+#else FRENCH
+MACRO {jan} {"janvier"}
+#endif FRENCH
+
+#ifndef FRENCH
+MACRO {feb} {"February"}
+#else FRENCH
+MACRO {feb} {"f\'{e}vrier"}
+#endif FRENCH
+
+#ifndef FRENCH
+MACRO {mar} {"March"}
+#else FRENCH
+MACRO {mar} {"mars"}
+#endif FRENCH
+
+#ifndef FRENCH
+MACRO {apr} {"April"}
+#else FRENCH
+MACRO {apr} {"avril"}
+#endif FRENCH
+
+#ifndef FRENCH
+MACRO {may} {"May"}
+#else FRENCH
+MACRO {may} {"mai"}
+#endif FRENCH
+
+#ifndef FRENCH
+MACRO {jun} {"June"}
+#else FRENCH
+MACRO {jun} {"juin"}
+#endif FRENCH
+
+#ifndef FRENCH
+MACRO {jul} {"July"}
+#else FRENCH
+MACRO {jul} {"juillet"}
+#endif FRENCH
+
+#ifndef FRENCH
+MACRO {aug} {"August"}
+#else FRENCH
+MACRO {aug} {"ao\^{u}t"}
+#endif FRENCH
+
+#ifndef FRENCH
+MACRO {sep} {"September"}
+#else FRENCH
+MACRO {sep} {"septembre"}
+#endif FRENCH
+
+#ifndef FRENCH
+MACRO {oct} {"October"}
+#else FRENCH
+MACRO {oct} {"octobre"}
+#endif FRENCH
+
+#ifndef FRENCH
+MACRO {nov} {"November"}
+#else FRENCH
+MACRO {nov} {"novembre"}
+#endif FRENCH
+
+#ifndef FRENCH
+MACRO {dec} {"December"}
+#else FRENCH
+MACRO {dec} {"d\'{e}cembre"}
+#endif FRENCH
+
+#else !MONTH_FULL
+
+#ifndef FRENCH
+MACRO {jan} {"Jan."}
+#else FRENCH
+MACRO {jan} {"jan."}
+#endif FRENCH
+
+#ifndef FRENCH
+MACRO {feb} {"Feb."}
+#else FRENCH
+MACRO {feb} {"f\'{e}v."}
+#endif FRENCH
+
+#ifndef FRENCH
+MACRO {mar} {"March"}
+#else FRENCH
+MACRO {mar} {"mars"}
+#endif FRENCH
+
+#ifndef FRENCH
+MACRO {apr} {"Apr."}
+#else FRENCH
+MACRO {apr} {"avr."}
+#endif FRENCH
+
+#ifndef FRENCH
+MACRO {may} {"May"}
+#else FRENCH
+MACRO {may} {"mai"}
+#endif FRENCH
+
+#ifndef FRENCH
+MACRO {jun} {"June"}
+#else FRENCH
+MACRO {jun} {"juin"}
+#endif FRENCH
+
+#ifndef FRENCH
+MACRO {jul} {"July"}
+#else FRENCH
+MACRO {jul} {"juil."}
+#endif FRENCH
+
+#ifndef FRENCH
+MACRO {aug} {"Aug."}
+#else FRENCH
+MACRO {aug} {"ao\^{u}t"}
+#endif FRENCH
+
+#ifndef FRENCH
+MACRO {sep} {"Sep."}
+#else FRENCH
+MACRO {sep} {"sep."}
+#endif FRENCH
+
+#ifndef FRENCH
+MACRO {oct} {"Oct."}
+#else FRENCH
+MACRO {oct} {"oct."}
+#endif FRENCH
+
+#ifndef FRENCH
+MACRO {nov} {"Nov."}
+#else FRENCH
+MACRO {nov} {"nov."}
+#endif FRENCH
+
+#ifndef FRENCH
+MACRO {dec} {"Dec."}
+#else FRENCH
+MACRO {dec} {"d\'{e}c."}
+#endif FRENCH
+
+#endif MONTH_FULL
+
+# if 0
+% Journals are either written out in full or abbreviated;
+% the abbreviations are like those found in ACM publications.
+%
+% To get a completely different set of abbreviations, it may be best to make
+% a separate .bib file with nothing but those abbreviations; users could then
+% include that file name as the first argument to the \bibliography command
+# endif 0
+
+#if JOUR_FULL
+
+MACRO {acmcs} {"ACM Computing Surveys"}
+
+MACRO {acta} {"Acta Informatica"}
+
+MACRO {cacm} {"Communications of the ACM"}
+
+MACRO {ibmjrd} {"IBM Journal of Research and Development"}
+
+MACRO {ibmsj} {"IBM Systems Journal"}
+
+MACRO {ieeese} {"IEEE Transactions on Software Engineering"}
+
+MACRO {ieeetc} {"IEEE Transactions on Computers"}
+
+MACRO {ieeetcad}
+ {"IEEE Transactions on Computer-Aided Design of Integrated Circuits"}
+
+MACRO {ipl} {"Information Processing Letters"}
+
+MACRO {jacm} {"Journal of the ACM"}
+
+MACRO {jcss} {"Journal of Computer and System Sciences"}
+
+MACRO {scp} {"Science of Computer Programming"}
+
+MACRO {sicomp} {"SIAM Journal on Computing"}
+
+MACRO {tocs} {"ACM Transactions on Computer Systems"}
+
+MACRO {tods} {"ACM Transactions on Database Systems"}
+
+MACRO {tog} {"ACM Transactions on Graphics"}
+
+MACRO {toms} {"ACM Transactions on Mathematical Software"}
+
+MACRO {toois} {"ACM Transactions on Office Information Systems"}
+
+MACRO {toplas} {"ACM Transactions on Programming Languages and Systems"}
+
+MACRO {tcs} {"Theoretical Computer Science"}
+
+#ifdef FRENCH
+MACRO {tsi} {"Technique et Science Informatiques"}
+
+#endif FRENCH
+#else !JOUR_FULL
+
+MACRO {acmcs} {"ACM Comput. Surv."}
+
+MACRO {acta} {"Acta Inf."}
+
+MACRO {cacm} {"Commun. ACM"}
+
+MACRO {ibmjrd} {"IBM J. Res. Dev."}
+
+MACRO {ibmsj} {"IBM Syst. J."}
+
+MACRO {ieeese} {"IEEE Trans. Softw. Eng."}
+
+MACRO {ieeetc} {"IEEE Trans. Comput."}
+
+MACRO {ieeetcad}
+ {"IEEE Trans. Comput.-Aided Design Integrated Circuits"}
+
+MACRO {ipl} {"Inf. Process. Lett."}
+
+MACRO {jacm} {"J. ACM"}
+
+MACRO {jcss} {"J. Comput. Syst. Sci."}
+
+MACRO {scp} {"Sci. Comput. Programming"}
+
+MACRO {sicomp} {"SIAM J. Comput."}
+
+MACRO {tocs} {"ACM Trans. Comput. Syst."}
+
+MACRO {tods} {"ACM Trans. Database Syst."}
+
+MACRO {tog} {"ACM Trans. Gr."}
+
+MACRO {toms} {"ACM Trans. Math. Softw."}
+
+MACRO {toois} {"ACM Trans. Office Inf. Syst."}
+
+MACRO {toplas} {"ACM Trans. Prog. Lang. Syst."}
+
+MACRO {tcs} {"Theoretical Comput. Sci."}
+
+MACRO {tsi} {"Technique et Science Informatiques"}
+
+#endif JOUR_FULL
+
+# if 0
+% Now we read in the .BIB entries.
+# endif 0
+
+READ
+
+# if 0
+% The sortify function converts to lower case after purify$ing; it's
+% used in sorting and in computing alphabetic labels after sorting
+# endif 0
+
+#if SORTED
+
+FUNCTION {sortify}
+{ purify$
+  "ll" change.case$
+}
+
+#endif SORTED
+
+# if 0
+% This long comment applies only to alphabetic labels
+%
+% The format.lab.names function makes a short label by using the initials of
+% the von and Last parts of the names (but if there are more than four names,
+% (i.e., people) it truncates after three and adds a "*";
+% it also adds a "*" if the last of multiple authors is "others").
+% If there is only one name, and its von and Last parts combined have just
+% a single name-token ("Knuth" has a single token, "Brinch Hansen" has two),
+% we take the first three letters of the last name.
+% In the LONG and ALPHA3 styles, only the name of the first author is
+% considered.
+% In the KEY and SKEY styles, the label is equal to the citation key.
+%
+% format.lab.names(s) ==
+%  BEGIN
+%	numnames := num.names$(s)
+%	if numnames > 1 then
+%	    if numnames > 4 then
+%		namesleft := 3
+%	    else
+%		namesleft := numnames
+%	    nameptr := 1
+%	    nameresult := ""
+%	    while namesleft > 0
+%	      do
+%		if (name_ptr = numnames) and
+%			format.name$(s, nameptr, "{ff}{vv}{ll}{jj}") = "others"
+%		    then nameresult := nameresult * "*"
+%		    else nameresult := nameresult *
+%				format.name$(s, nameptr, "{v{}}{l{}}")
+%		nameptr := nameptr + 1
+%		namesleft := namesleft - 1
+%	      od
+%	    if numnames > 4 then
+%		nameresult := nameresult * "*"
+%	else
+%	    t := format.name$(s, 1, "{v{}}{l{}}")
+%	    if substring$(t, 2, 1) = "" then	% there's just one name-token
+%		nameresult := substring$(purify$(format.name$(s, 1, "{ll}")),
+%									1, 3)
+%	    else
+%		nameresult := t
+%	    fi
+%	fi
+%	nameresult
+%  END
+%
+% Here is a function for calculating the preliminary label of an entry.
+% It is formed by calculating format.lab.names on the author field
+% (or on the editor field if there is no author, or using the first three
+% letters of the key field if there is no editor either), and appending the
+% last two characters (digits) of the year.  It is an error if there is no
+% author, editor or key field, and we use the first three letters of the title
+% in desperation when this happens.  The resulting label is purify$ed, except
+% for possibly a "*" if there are too many authors.
+%
+% This function also calculates the version of this label to be used in sorting
+%
+% The final label may need a trailing 'a', 'b', etc., to distinguish it from
+% otherwise identical labels, but we can't calculated those "extra.label"s
+% until after sorting.
+%
+% calc.label ==
+%  BEGIN
+%	if missing$(author) then
+%	    if missing$(editor) then
+%		if missing$(key) then
+%		    top$("Warning: need a key to make a label in " * cite$)
+%		    label := substring$(purify$(field.or.null(title)), 1, 3)
+%		else
+%		    label := substring$(purify$(key), 1, 3)
+%		fi
+%	    else
+%		label := format.lab.names(editor)
+%	    fi
+%	else
+%	    label := format.lab.names(author)
+%	fi
+%	label := label * substring$(purify$(field.or.null(year)), -1, 2)
+%		% assuming we will also sort, we calculate a sort.label
+%	sort.label := sortify(label)
+%  END
+%
+% In the case of the SKEY style, compute the sort.label as above, but do
+%       label := cite$
+% In the case of the KEY style, the above computation is done but not used.
+% It really should be taken out, but what the heck.
+# endif 0
+
+#if LAB_ALPH
+
+FUNCTION {format.lab.names}
+{ 's swap$ :=
+#if !ALPHA_LONG
+  'numnames s num.names$ :=
+  numnames #1 >
+    { numnames #4 >
+	{ 'namesleft #3 := }
+	{ 'namesleft numnames := }
+      if$
+      'nameptr #1 :=
+      'nameresult "" :=
+	{ namesleft #0 > }
+	{ nameptr numnames =
+	    { s nameptr "{ff}{vv}{ll}{jj}" format.name$ "others" =
+		{ 'nameresult nameresult "*" * := }
+		{ 'nameresult nameresult s nameptr "{v{}}{l{}}" format.name$
+		  * :=
+		}
+	      if$
+	    }
+	    { 'nameresult nameresult s nameptr "{v{}}{l{}}" format.name$
+	      * :=
+	    }
+	  if$
+	  'nameptr nameptr #1 + :=
+	  'namesleft namesleft #1 - :=
+	}
+      while$
+      numnames #4 >
+	{ 'nameresult nameresult "*" * := }
+	'skip$
+      if$
+    }
+    { 
+#endif ALPHA_LONG
+
+      't s #1 "{v{}}{l{}}" format.name$ :=
+
+      'nameresult
+      t #2 #1 substring$ "" =
+
+#if ALPHA_LONG<2
+	{ s #1 "{ll}" format.name$ purify$ #1 #3 substring$ }
+#else ALPHA_LONG
+        { s #1 "{ll}" format.name$ purify$ }
+#endif ALPHA_LONG
+
+	{ t }
+      if$
+      :=
+
+#if !ALPHA_LONG
+    }
+  if$
+#endif ALPHA_LONG
+
+  nameresult
+}
+
+FUNCTION {calc.label}
+{ 'label
+  author missing$
+    { editor missing$
+	{ key missing$
+	    { "Warning: need a key to make a label in " cite$ * top$
+	      title field.or.null purify$ #1 #3 substring$
+	    }
+	    { key purify$ #1 #3 substring$ }
+	  if$
+	}
+	{ editor format.lab.names }
+      if$
+    }
+    { author format.lab.names }
+  if$
+#if ALPHA_LONG>1
+  " " year field.or.null purify$ #-1 #2 substring$ *
+#else ALPHA_LONG<=1
+  year field.or.null purify$ #-1 #2 substring$
+#endif ALPHA_LONG
+  *
+  :=
+#if SORTED
+  'sort.label label sortify :=
+#endif SORTED
+#if LBKEYS
+  'label cite$ :=
+#endif LBKEYS
+}
+
+# if 0
+% It doesn't seem like a particularly good idea to use an order-of-citation
+% reference list when using alphabetic labels, but we need to have a
+% special pass to calculate labels when this happens.
+# endif 0
+
+#if !SORTED
+
+ITERATE {calc.label}
+
+#endif !SORTED
+
+#endif LAB_ALPH
+
+# if 0
+% When sorting, we compute the sortkey by executing "presort" on each entry.
+% The presort key contains a number of "sortify"ed strings, concatenated
+% with multiple blanks between them.  This makes things like "brinch  per"
+% come before "brinch hansen  per"
+%
+% The fields used here are:
+% the sort.label for alphabetic labels (as set by calc.label),
+% followed by the author names (or editor names, if those are missing,
+% or the key field if both are), followed by the first bit
+% of the title (chopping off a leading "The ", "A ", or "An ").
+% Names are formatted: Von Last First Junior.
+% The names within a part will be separated by a single blank
+% (such as "brinch hansen"), two will separate the name parts themselves
+% (except the von and last), three will separate the names,
+% and four will separate the names from the title (and label, if alphabetic).
+%
+% The sort.format.names function takes an argument that should be in
+% BibTeX name format, and returns a string containing "   "-separated
+% names in the format described above.  The function is almost the same
+% as format.names.
+# endif 0
+
+#if SORTED
+
+FUNCTION {sort.format.names}
+{ 's swap$ :=
+  'nameptr #1 :=
+  'nameresult "" :=
+  'numnames s num.names$ :=
+  'namesleft numnames :=
+    { namesleft #0 > }
+    { nameptr #1 >
+	{ 'nameresult nameresult "   " * := }
+	'skip$
+      if$
+#if NAME_FULL
+      't s nameptr "{vv{ } }{ll{ }}{  ff{ }}{  jj{ }}" format.name$ :=
+#else
+      't s nameptr "{vv{ } }{ll{ }}{  f{ }}{  jj{ }}" format.name$ :=
+#endif NAME_FULL
+      nameptr numnames = t "others" = and
+	{ 'nameresult nameresult "et al" * := }
+	{ 'nameresult nameresult t sortify * := }
+      if$
+      'nameptr nameptr #1 + :=
+      'namesleft namesleft #1 - :=
+    }
+  while$
+  nameresult
+}
+
+# if 0
+% The chop.word(w,len,s) function returns either s or, if the first len
+% letters of s equals w (this comparison is done in the third line of the
+% function's definition), it returns that part of s after w.
+# endif 0
+
+INTEGERS {len}
+
+FUNCTION {chop.word}
+{ 's swap$ :=
+  'len swap$ :=
+  s #1 len substring$ =
+    { s len #1 + global.string.max substring$ }
+    { s }
+  if$
+}
+
+# if 0
+% The sort.format.title function returns the argument,
+% but first any leading "A "'s, "An "'s, or "The "'s are removed.
+% The chop.word function uses s, so we need another string variable, t
+# endif 0
+
+FUNCTION {sort.format.title}
+{ 't swap$ :=
+  "A " #2
+    "An " #3
+      "The " #4 t chop.word
+    chop.word
+  chop.word
+  #1 global.string.max substring$
+  sortify
+}
+
+# if 0
+% There is a limit on the length of an entry string variable, which
+% is what its sort.key$ is.  The limit is currently entry.string.max, so we
+% take at most that many characters of the constructed key, and hope
+% there aren't many references that match to that many characters!
+# endif 0
+
+FUNCTION {presort}
+{
+#if LAB_ALPH
+  calc.label
+  sort.label
+  "    "
+  *
+#endif LAB_ALPH
+  author missing$
+    { editor missing$
+	{ key field.or.null sortify }
+	{ editor sort.format.names }
+      if$
+    }
+    { author sort.format.names }
+  if$
+#if LAB_ALPH
+  *
+#endif LAB_ALPH
+  "    "
+  *
+  title field.or.null
+  sort.format.title
+  *
+  #1 entry.string.max substring$
+  'sort.key$ swap$ :=
+}
+
+ITERATE {presort}
+
+# if 0
+% And now we can sort
+# endif 0
+
+SORT
+
+#endif SORTED
+
+# if 0
+% This long comment applies only to alphabetic labels, when sorted
+%
+% Now comes the final computation for alphabetic labels, putting in the 'a's
+% and 'b's and so forth if required.  This involves two passes: a forward
+% pass to put in the 'b's, 'c's and so on, and a backwards pass
+% to put in the 'a's (we don't want to put in 'a's unless we know there
+% are 'b's).  However this is not necessary in the 'skeys' style.
+% We have to keep track of the longest (in width$ terms) label, for use
+% by the "thebibliography" environment.
+%
+% VAR: longest.label, last.sort.label, next.extra: string
+%      longest.label.width, last.extra.num: integer
+%
+% initialize.longest.label ==
+%  BEGIN
+%	longest.label := ""
+%	last.sort.label := ""
+%	next.extra := ""
+%	longest.label.width := 0
+%	last.extra.num := 0
+%  END
+%
+% forward.pass ==
+%  BEGIN
+%	if last.sort.label = sort.label then
+%	    last.extra.num := last.extra.num + 1
+%	    extra.label := int.to.chr$(last.extra.num)
+%	else
+%	    last.extra.num := chr.to.int$("a")
+%	    extra.label := ""
+%	    last.sort.label := sort.label
+%	fi
+%  END
+%
+% reverse.pass ==
+%  BEGIN
+%	if next.extra = "b" then
+%	    extra.label := "a"
+%	fi
+%	label := label * extra.label
+%	if width$(label) > longest.label.width then
+%	    longest.label := label
+%	    longest.label.width := width$(label)
+%	fi
+%	next.extra := extra.label
+%  END
+# endif 0
+
+#if LAB_ALPH
+
+#if SORTED
+
+STRINGS { longest.label last.sort.label next.extra }
+
+INTEGERS { longest.label.width last.extra.num }
+
+FUNCTION {initialize.longest.label}
+{ 'longest.label "" :=
+  'last.sort.label "" :=
+  'next.extra "" :=
+  'longest.label.width #0 :=
+  'last.extra.num #0 :=
+}
+
+#   ifndef SKEY
+FUNCTION {forward.pass}
+{ last.sort.label sort.label =
+    { 'last.extra.num last.extra.num #1 + :=
+      'extra.label last.extra.num int.to.chr$ :=
+    }
+    { 'last.extra.num "a" chr.to.int$ :=
+      'extra.label "" :=
+      'last.sort.label sort.label :=
+    }
+  if$
+}
+#   endif SKEY
+
+FUNCTION {reverse.pass}
+{ 
+#  ifndef SKEY
+  next.extra "b" =
+    { 'extra.label "a" := }
+    'skip$
+  if$
+  'label label extra.label * :=
+#  endif SKEY
+  label width$ longest.label.width >
+    { 'longest.label label :=
+      'longest.label.width label width$ :=
+    }
+    'skip$
+  if$
+  'next.extra extra.label :=
+}
+
+EXECUTE {initialize.longest.label}
+
+#   ifndef SKEY
+ITERATE {forward.pass}
+#   endif SKEY
+
+REVERSE {reverse.pass}
+
+
+#else !SORTED
+
+# if 0
+% It still doesn't seem like a good idea to use an order-of-citation
+% reference list when using alphabetic labels, but when this happens we
+% must compute the longest label
+# endif 0
+
+STRINGS {longest.label}
+
+INTEGERS {longest.label.width}
+
+FUNCTION {initialize.longest.label}
+{ 'longest.label "" :=
+  'longest.label.width #0 :=
+}
+
+FUNCTION {longest.label.pass}
+{ label width$ longest.label.width >
+    { 'longest.label label :=
+      'longest.label.width label width$ :=
+    }
+    'skip$
+  if$
+}
+
+EXECUTE {initialize.longest.label}
+
+ITERATE {longest.label.pass}
+
+#endif SORTED
+
+#else !LAB_ALPH
+
+# if 0
+% Now comes the computation for numeric labels.
+% We use either the sorted order or original order.
+% We still have to keep track of the longest (in width$ terms) label, for use
+% by the "thebibliography" environment.
+# endif 0
+
+STRINGS {longest.label}
+
+INTEGERS { number.label longest.label.width }
+
+FUNCTION {initialize.longest.label}
+{ 'longest.label "" :=
+  'number.label #1  :=
+  'longest.label.width #0 :=
+}
+
+FUNCTION {longest.label.pass}
+{ 'label number.label int.to.str$ :=
+  'number.label number.label #1 + :=
+  label width$ longest.label.width >
+    { 'longest.label label :=
+      'longest.label.width label width$ :=
+    }
+    'skip$
+  if$
+}
+
+EXECUTE {initialize.longest.label}
+
+ITERATE {longest.label.pass}
+
+#endif LAB_ALPH
+
+# if 0
+% Now we're ready to start writing the .BBL file.
+% First we write the `preamble' containing the command
+%     \begin{thebibliography}{...}
+% where the `...' is the longest label.
+%
+% Then we call init.state.consts, for use by the output routines.
+# endif 0
+
+FUNCTION {preamble}
+{ "\begin{thebibliography}{"  longest.label  * "}" * write$
+  newline$
+}
+
+EXECUTE {preamble}
+
+EXECUTE {init.state.consts}
+
+# if 0
+% Now we produce the output for all the entries
+# endif 0
+
+ITERATE {call.type$}
+
+# if 0
+% Finally, we finish up by writing the `\end{thebibliography}' command.
+# endif 0
+
+FUNCTION {finish.up} { newline$ "\end{thebibliography}" write$ newline$ }
+
+EXECUTE {finish.up}

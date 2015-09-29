@@ -1,0 +1,8 @@
+# This file is used by scvs and contains symbolic link
+# information.  Each line is of the form "link target"
+# $Header
+timerIntersil.c          ../sun4.md/timerIntersil.c
+timerIntersilInt.h       ../sun4.md/timerIntersilInt.h
+timerMach.h              ../sun4.md/timerMach.h
+timerTick.c              ../sun4.md/timerTick.c
+timerTick.h              ../sun4.md/timerTick.h

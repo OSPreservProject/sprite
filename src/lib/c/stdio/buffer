@@ -1,0 +1,173 @@
+StdioFileCloseProc.c:    if ((stream->buffer != stdioTempBuffer)
+StdioFileCloseProc.c:	    && (stream->buffer != stdioStderrBuffer)
+StdioFileCloseProc.c:	    && (stream->buffer != NULL)
+StdioFileCloseProc.c:	    && !(stream->flags & STDIO_NOT_OUR_BUF)) {
+StdioFileCloseProc.c:	free((char *) stream->buffer);
+StdioFileCloseProc.c:	stream->buffer = NULL;
+StdioFileCloseProc.c:	stream->bufSize = 0;
+StdioFileCloseProc.c:    stream->flags = 0;
+StdioFileCloseProc.c:    stream->readCount = stream->writeCount = 0;
+StdioFileCloseProc.c:    if (close((int) stream->clientData) != 0) {
+StdioFileCloseProc.c:	stream->status = errno;
+StdioFileCloseProc.c:	    stdioFileStreams = stream->nextPtr;
+StdioFileCloseProc.c:		    prev->nextPtr = stream->nextPtr;
+StdioFileReadProc.c:    if (stream->bufSize == 0) {
+StdioFileReadProc.c:	stream->bufSize = BUFSIZ;
+StdioFileReadProc.c:	stream->buffer = (unsigned char *) malloc((unsigned) stream->bufSize);
+StdioFileReadProc.c:    stream->readCount = read((int) stream->clientData, (char *) stream->buffer,
+StdioFileReadProc.c:	    stream->bufSize);
+StdioFileReadProc.c:    stream->lastAccess = stream->buffer - 1;
+StdioFileReadProc.c:    if (stream->readCount <= 0) {
+StdioFileReadProc.c:	if (stream->readCount == 0) {
+StdioFileReadProc.c:	    stream->flags |= STDIO_EOF;
+StdioFileReadProc.c:	    stream->readCount = 0;
+StdioFileReadProc.c:	    stream->status = errno;
+StdioFileWriteProc.c:    if (stream->bufSize == 0) {
+StdioFileWriteProc.c:	stream->bufSize = BUFSIZ;
+StdioFileWriteProc.c:	    if (isatty((int) stream->clientData)) {
+StdioFileWriteProc.c:		stream->flags |= STDIO_LINEBUF;
+StdioFileWriteProc.c:	    stream->buffer = (unsigned char *) 
+StdioFileWriteProc.c:		    malloc((unsigned) stream->bufSize);
+StdioFileWriteProc.c:	    stream->buffer = stdioStderrBuffer;
+StdioFileWriteProc.c:	    stream->bufSize = 128;
+StdioFileWriteProc.c:	stream->lastAccess = stream->buffer;
+StdioFileWriteProc.c:	*stream->buffer = stdioTempBuffer[0];
+StdioFileWriteProc.c:    count = stream->lastAccess + 1 - stream->buffer;
+StdioFileWriteProc.c:    if ((count  == stream->bufSize) || flush) {
+StdioFileWriteProc.c:	stream->lastAccess = stream->buffer - 1;
+StdioFileWriteProc.c:	    written = write((int) stream->clientData, (char *) stream->buffer, 
+StdioFileWriteProc.c:		stream->writeCount = 0;
+StdioFileWriteProc.c:		stream->status = errno;
+StdioFileWriteProc.c:	stream->lastAccess = stream->buffer - 1;
+StdioFileWriteProc.c:	stream->writeCount = stream->bufSize;
+StdioFileWriteProc.c:	stream->writeCount = stream->bufSize - count;
+Stdio_Setup.c:				 * there aren't any stream-dependent actions
+Stdio_Setup.c:    stream->lastAccess		= buffer-1;
+Stdio_Setup.c:    stream->readCount		= 0;
+Stdio_Setup.c:    stream->writeCount		= 0;
+Stdio_Setup.c:    stream->buffer		= buffer;
+Stdio_Setup.c:    stream->bufSize		= bufferSize;
+Stdio_Setup.c:    stream->readProc		= readProc;
+Stdio_Setup.c:    stream->writeProc		= writeProc;
+Stdio_Setup.c:    stream->closeProc		= closeProc;
+Stdio_Setup.c:    stream->clientData		= clientData;
+Stdio_Setup.c:    stream->status		= 0;
+Stdio_Setup.c:    stream->flags		= 0;
+Stdio_Setup.c:	stream->flags |= STDIO_READ;
+Stdio_Setup.c:	stream->flags |= STDIO_WRITE;
+Stdio_Setup.c:	stream->writeCount = bufferSize;
+_cleanup.c:    for (stream = stdioFileStreams; stream != NULL; stream = stream->nextPtr) {
+_cleanup.c:	if (!(stream->flags & STDIO_WRITE)) {
+clearerr.c:    stream->status = 0;
+clearerr.c:    stream->flags &= ~STDIO_EOF;
+fclose.c: *	Flush any remaining I/O and perform stream-dependent operations
+fclose.c:    if (stream->closeProc == NULL) {
+fclose.c:    if ((*stream->closeProc)(stream) == EOF) {
+fdopen.c:	if (stream->flags == 0) {
+fdopen.c:    stream->nextPtr = stdioFileStreams;
+fflush.c:    if (!(stream->flags & STDIO_WRITE) || (stream->writeCount == 0)
+fflush.c:	    || (stream->lastAccess == (stream->buffer-1))) {
+fflush.c:    if (stream->status != 0) {
+fflush.c:    (*stream->writeProc)(stream, 1);
+fflush.c:    if (stream->status != 0) {
+fgetc.c:    if (!(stream->flags & STDIO_READ)) {
+fgetc.c:    while (stream->readCount <= 0) {
+fgetc.c:	if ((stream->status != 0) || (stream->flags & STDIO_EOF)) {
+fgetc.c:	if ((stream->writeCount > 0)
+fgetc.c:		&& (stream->lastAccess >= stream->buffer)) {
+fgetc.c:	    (*stream->writeProc)(stream, 1);
+fgetc.c:	    stream->writeCount = 0;
+fgetc.c:	(*stream->readProc)(stream);
+fgetc.c:    stream->readCount--;
+fgetc.c:    stream->lastAccess++;
+fgetc.c:    return *stream->lastAccess;
+fileno.c:    if ((stream->readProc != (void (*)()) StdioFileReadProc) ||
+fileno.c:	((stream->flags & (STDIO_READ|STDIO_WRITE)) == 0)) {
+fileno.c:    return((int) stream->clientData);
+fputc.c:    if ((stream->status != 0) || !(stream->flags & STDIO_WRITE)) {
+fputc.c:    if (stream->writeCount == 0) {
+fputc.c:	stream->readCount = 0;
+fputc.c:	stream->lastAccess = stream->buffer - 1;
+fputc.c:    stream->writeCount--;
+fputc.c:    stream->lastAccess++;
+fputc.c:    *(stream->lastAccess) = c;
+fputc.c:    if ((c == '\n') && (stream->flags & STDIO_LINEBUF)) {
+fputc.c:	(*stream->writeProc)(stream, 1);
+fputc.c:    } else if (stream->writeCount <= 0) {
+fputc.c:	(*stream->writeProc)(stream, 0);
+fputc.c:    if (stream->status != 0) {
+fread.c:            if (stream->readCount>1) {
+fread.c:                num = stream->readCount < byteCount ? stream->readCount
+fread.c:                bcopy(stream->lastAccess+1, bufferPtr, num);
+fread.c:                stream->lastAccess += num;
+fread.c:                stream->readCount -= num;
+freopen.c:    if (stream->readProc != (void (*)()) StdioFileReadProc) {
+freopen.c:    if (stream->flags != 0) {
+freopen.c:	id = (int) stream->clientData;
+freopen.c:    oldFlags = stream->flags & (STDIO_NOT_OUR_BUF | STDIO_LINEBUF);
+freopen.c:    if (stream->flags & STDIO_NOT_OUR_BUF) {
+freopen.c:	Stdio_Setup(stream, read, write, stream->buffer, stream->bufSize,
+freopen.c:    stream->flags |= oldFlags;
+fseek.c:    if ((stream->readProc != (void (*)()) StdioFileReadProc)
+fseek.c:	    || ((stream->flags & (STDIO_READ|STDIO_WRITE)) == 0)) {
+fseek.c:    if (((stream->flags & (STDIO_READ|STDIO_WRITE)) == STDIO_READ) &&
+fseek.c:	(base != 2) && stream->readCount > 0) {
+fseek.c:	endAddr = lseek((int) stream->clientData, (long) 0, 1);
+fseek.c:	curAddr = endAddr - stream->readCount;
+fseek.c:	startAddr = curAddr - (stream->lastAccess + 1 - stream->buffer);
+fseek.c:	    stream->readCount += curAddr - newAddr;
+fseek.c:	    stream->lastAccess -= curAddr - newAddr;
+fseek.c:	    stream->flags &= ~STDIO_EOF;
+fseek.c:	offset -= stream->readCount;
+fseek.c:    stream->readCount = 0;
+fseek.c:    stream->writeCount = 0;
+fseek.c:    stream->lastAccess = stream->buffer - 1;
+fseek.c:    stream->flags &= ~STDIO_EOF;
+fseek.c:    if (lseek((int) stream->clientData, (long) offset, base) == -1) {
+ftell.c:    if ((stream->readProc != (void (*)()) StdioFileReadProc) ||
+ftell.c:	((stream->flags & (STDIO_READ|STDIO_WRITE)) == 0)) {
+ftell.c:    count = lseek((int) stream->clientData, 0L, L_INCR);
+ftell.c:    if (stream->writeCount > 0) {
+ftell.c:	count += stream->lastAccess + 1 - stream->buffer;
+ftell.c:    } else if (stream->readCount > 0) {
+ftell.c:	count -= stream->readCount;
+fwrite.c:            if (stream->writeCount <=1 || stream->flags & STDIO_LINEBUF) {
+fwrite.c:                num = stream->writeCount-1 < byteCount ? stream->writeCount-1
+fwrite.c:                bcopy(bufferPtr, stream->lastAccess+1, num);
+fwrite.c:                stream->writeCount -= num;
+fwrite.c:                stream->lastAccess += num;
+setlinebuf.c:    stream->flags |= STDIO_LINEBUF;
+setvbuf.c:    if (stream->readProc != (void (*)()) StdioFileReadProc) {
+setvbuf.c:    if ((stream->buffer != stdioTempBuffer)
+setvbuf.c:	    && (stream->buffer != stdioStderrBuffer)
+setvbuf.c:	    && (stream->buffer != NULL)
+setvbuf.c:	    && !(stream->flags & STDIO_NOT_OUR_BUF)) {
+setvbuf.c:	free((char *) stream->buffer);
+setvbuf.c:    stream->flags &= ~(STDIO_LINEBUF|STDIO_NOT_OUR_BUF);
+setvbuf.c:	stream->flags |= STDIO_LINEBUF;
+setvbuf.c:	stream->buffer = (unsigned char *) buf;
+setvbuf.c:	stream->flags |= STDIO_NOT_OUR_BUF;
+setvbuf.c:	stream->buffer = (unsigned char *) malloc((unsigned) size);
+setvbuf.c:    stream->bufSize = size;
+setvbuf.c:    stream->lastAccess = stream->buffer - 1;
+setvbuf.c:    stream->readCount = 0;
+setvbuf.c:    stream->writeCount = 0;
+sprintf.c:    stream->writeCount = 5000;
+sscanf.c:    stream->readCount = 0;
+sscanf.c:    stream->flags |= STDIO_EOF;
+ungetc.c:    if ((stream->writeCount > 0) ||
+ungetc.c:	    !(stream->flags & STDIO_READ) || (c == EOF) ||
+ungetc.c:	    (stream->status != 0)) {
+ungetc.c:    if (stream->lastAccess < stream->buffer) {
+ungetc.c:	if (stream->readCount != 0) {
+ungetc.c:	stream->lastAccess = stream->buffer + stream->bufSize - 1;
+ungetc.c:    if (stream->lastAccess < stream->buffer) {
+ungetc.c:	stream->lastAccess = stream->buffer + stream->bufSize - 1;
+ungetc.c:	stream->readCount = 0;
+ungetc.c:    if (*(stream->lastAccess) != c) {
+ungetc.c:	*(stream->lastAccess) = c;
+ungetc.c:    stream->lastAccess--;
+ungetc.c:    stream->readCount++;
+ungetc.c:    stream->flags &= ~STDIO_EOF;
+vsnprintf.c:    stream->status = ENOMEM;
+vsprintf.c:    stream->writeCount = 5000;

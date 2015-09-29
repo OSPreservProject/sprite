@@ -1,0 +1,6 @@
+F NETCONFI.C_V;1                    	netConfig.c,v
+F NETLE.C_V;1                       	netLE.c,v
+F NETLEINT.H_V;1                    	netLEInt.h,v
+F NETLEREC.C_V;1                    	netLERecv.c,v
+F NETLEXMI.C_V;1                    	netLEXmit.c,v
+D SCVS                              	SCVS

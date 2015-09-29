@@ -1,0 +1,13 @@
+RpcGetMachineDelay		# keep.
+	rpc/rpcPacket.h
+	rpc/rpcInit.c
+	rpc/sun3.md/rpcDelays.c
+	rpc/ds3100.md/rpcDelays.c
+	rpc/sun4.md/rpcDelays.c
+	rpc/symm.md/rpcDelays.c
+
+
+Local Variables:
+mode: xref
+fill-column: 78
+End:

@@ -1,0 +1,66 @@
+
+
+
+Tk_MapWindow          C Library Procedures           Tk_MapWindow
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tk_MapWindow, Tk_UnmapWindow - map or unmap a window
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttkk..hh>>
+
+     Tk_Window
+     TTkk__MMaappWWiinnddooww(_t_k_w_i_n)
+
+     TTkk__UUnnmmaappWWiinnddooww(_t_k_w_i_n)
+
+AARRGGUUMMEENNTTSS
+     Tk_Window   _t_k_w_i_n    (in)      Token for window.
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     These procedures may  be  used  to  map  and  unmap  windows
+     managed by Tk.  TTkk__MMaappWWiinnddooww maps the window given by _t_k_w_i_n,
+     and also creates an X window corresponding to  _t_k_w_i_n  if  it
+     doesn't  already  exist.  See the TTkk__CCrreeaatteeMMaaiinnWWiinnddooww manual
+     entry  for  information   on   deferred   window   creation.
+     TTkk__UUnnmmaappWWiinnddooww unmaps _t_k_w_i_n's window from the screen.
+
+     If _t_k_w_i_n is a child window  (i.e.  TTkk__CCrreeaatteeCChhiillddWWiinnddooww  was
+     used  to  create  it), then event handlers interested in map
+     and unmap events are invoked immediately.  If _t_k_w_i_n isn't an
+     internal  window,  then  the  event handlers will be invoked
+     later, after X has seen the request and  returned  an  event
+     for it.
+
+     These procedures should be used in place of the X procedures
+     XXMMaappWWiinnddooww  and  XXUUnnmmaappWWiinnddooww,  since they update Tk's local
+     data structure for _t_k_w_i_n.  Applications using Tk should  not
+     invoke XXMMaappWWiinnddooww and XXUUnnmmaappWWiinnddooww directly.
+
+
+KKEEYYWWOORRDDSS
+     map, unmap, window
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     1
+
+
+

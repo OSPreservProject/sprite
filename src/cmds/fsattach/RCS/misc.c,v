@@ -1,0 +1,1379 @@
+head     1.10;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.10
+date     91.01.12.16.55.15;  author jhh;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     90.10.22.09.28.52;  author mendel;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     90.08.02.00.21.38;  author jhh;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     90.02.14.13.59.55;  author jhh;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.12.14.16.27.36;  author jhh;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.10.25.18.06.21;  author jhh;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.06.19.14.21.18;  author jhh;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.06.07.22.14.28;  author jhh;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.04.10.11.12.18;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.03.06.12.58.50;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.10
+log
+@bug fix for copying output into .fsc files
+@
+text
+@/* 
+ * misc.c --
+ *
+ *	Miscellaneous utility procedures for fsattach.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/admin/fsattach/RCS/misc.c,v 1.9 90/10/22 09:28:52 mendel Exp Locker: jhh $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include "fsattach.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ParseMount --
+ *
+ *	Parses the mount information in the file and fills in the mount
+ *	table. 
+ *
+ * Results:
+ *	SUCCESS if the information was parsed ok, FAILURE otherwise.
+ *
+ * Side effects:
+ *	*countPtr contains the size of the mount table.
+ *
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+ParseMount(mountFile, countPtr)
+    char	*mountFile;		/* file containing mount info */
+    int		*countPtr;		/* Ptr to size of mount table */
+{
+    static char 	source[MAX_FIELD_LENGTH];
+    static char 	string[MAX_LINE_LENGTH];
+    static char 	dest[MAX_FIELD_LENGTH];
+    static char 	command[MAX_FIELD_LENGTH];
+    static char 	readFlag[MAX_FIELD_LENGTH];
+    static char 	arg[MAX_FIELD_LENGTH];
+    static char 	group[MAX_FIELD_LENGTH];
+    char 		exportString[MAX_FIELD_LENGTH];
+    int 		n;
+    Boolean		export;
+    char 		*eof;
+    int 		line;
+    int			index;
+    Boolean		readonly;
+    FILE		*stream;
+    ArgInfo		*argTable = NULL;
+    int			argTableSize;
+    int			argTableSizeIncrement = 5;
+    int			argCount;
+    ArgInfo		*argInfoPtr = NULL;
+    int			argIndex;
+    int			i;
+    int			j;
+    ReturnStatus	status;
+    ArgHeader		*argHeader;
+
+    status = SUCCESS;
+    stream = fopen(mountFile, "r");
+    if (stream == (FILE *)NULL) {
+	(void) fprintf(stderr, "%s: can't open \"%s\", ", progName, mountFile);
+	perror("");
+	return FAILURE;
+    }
+    line = 0;
+    index = 0;
+    argCount = 0;
+    argTableSize = 0;
+    if (verbose) {
+	fprintf(stderr,"Parsing mount file %s.\n", mountFile);
+    }
+    for (eof = fgets(string, MAX_LINE_LENGTH, stream);
+	 eof != NULL;
+	 eof = fgets(string, MAX_LINE_LENGTH, stream)) {
+
+	line++;
+	n = sscanf(string, " %256s", command);
+	if (n < 1 || *command == '#') {
+	    continue;
+	}
+	if (index >= mountTableSize) {
+	    mountTableSize += mountTableSizeIncrement;
+	    mountTable = (MountInfo *) realloc(mountTable, mountTableSize);
+	    if (mountTable == NULL) {
+		(void) fprintf(stderr,"%s: Out of memory.\n");
+		(void) exit(HARDERROR);
+	    }
+	}
+	if (!strcasecmp("Attach", command)) {
+	    n = sscanf(string, " %*s %256s %256s %256s %256s %256s", dest, 
+		       source, group, exportString, readFlag);
+	    if (n != 5) {
+		(void) fprintf(stderr, 
+			       "Garbled input at line %d of %s: \"%s\"\n", 
+			       line, mountFile, string);
+		continue;
+	    }
+	    export = TRUE;
+	    if (!strcasecmp("export", exportString)) {
+		export = TRUE;
+	    } else if (!strcasecmp("local", exportString)) {
+		export = FALSE;
+	    } else {
+		(void) fprintf(stderr, "Bad export value at line %d: \"%s\"\n", 
+			       line, exportString);
+		continue;
+	    }
+	    for (i = 0; i < numGroups; i++) {
+		if (!strcmp(groupInfo[i].name, group)) {
+		    break;
+		}
+	    }
+	    if (i == numGroups) {
+		if (i >= groupInfoSize) {
+		    groupInfoSize += groupInfoSizeIncrement;
+		    groupInfo = (GroupInfo *) realloc(groupInfo, groupInfoSize);
+		    if (groupInfoSize == NULL) {
+			(void) fprintf(stderr,"%s: Out of memory.\n");
+			(void) exit(HARDERROR);
+		    }
+		}
+		numGroups++;
+		strcpy(groupInfo[i].name, group);
+	    }
+	    mountTable[index].group = i;
+	    if (!strcasecmp("r", readFlag)) {
+		readonly = TRUE;
+	    } else  if (!strcasecmp("rw", readFlag)) {
+		readonly = FALSE;
+	    } else {
+		(void) fprintf(stderr, 
+			       "Bad read/write value at line %d: \"%s\"\n",
+			       line, readFlag);
+		continue;
+	    }
+	    if (verbose) {
+		(void) printf("%-20s %-10s %-10s %-10s %-2s\n", dest, source, 
+		              group, exportString, readFlag);
+	    }
+	    mountTable[index].export = export;
+	    mountTable[index].readonly = readonly;
+	    mountTable[index].device = TRUE;
+	    mountTable[index].doCheck = TRUE;
+	    mountTable[index].checked = FALSE;
+	    (void) strcpy(mountTable[index].source, source);
+	    (void) strcpy(mountTable[index].dest, dest);
+	    List_Init(&mountTable[index].argInfo.argList);
+	    index++;
+	} else if (!strcasecmp("Export", command)) {
+	    n = sscanf(string, " %*s %256s %256s", dest, source);
+	    if (n != 2) {
+		(void) fprintf(stderr, 
+			       "Garbled input at line %d of %s: \"%s\"\n", 
+			       line, mountFile, string);
+		continue;
+	    }
+	    if (verbose) {
+		printf("%-20s %-10s\n", dest, source);
+	    }
+	    mountTable[index].export = TRUE;
+	    mountTable[index].readonly = FALSE;
+	    mountTable[index].device = FALSE;
+	    mountTable[index].doCheck = FALSE;
+	    mountTable[index].checked = FALSE;
+	    (void) strcpy(mountTable[index].source, source);
+	    (void) strcpy(mountTable[index].dest, dest);
+	    List_Init(&mountTable[index].argInfo.argList);
+	    index++;
+	} else {
+	    n = sscanf(string, " %256s", source);
+	    if (n != 1) {
+		(void) fprintf(stderr, 
+			       "Garbled input at line %d of %s: \"%s\"\n", 
+			       line, mountFile, string);
+		continue;
+	    }
+	    if (argCount >= argTableSize) {
+		argTableSize += argTableSizeIncrement;
+		if (argCount == 0) {
+		    Alloc(argTable, ArgInfo, argTableSize, "argTable");
+		} else {
+		    argTable = (ArgInfo *) realloc(argTable, argTableSize);
+		}
+		if (argTable == NULL) {
+		    (void) fprintf(stderr,"%s: Out of memory.\n");
+		    (void) exit(HARDERROR);
+		}
+	    }
+	    i = 0;
+	    Alloc(argInfoPtr, ArgInfo, 1, "argInfoPtr");
+	    List_Init(&argInfoPtr->argList);
+	    argInfoPtr->line = line;
+	    strcpy(argInfoPtr->source, source);
+	    for (argIndex = strspn(string, " \t"); 
+		 string[argIndex] != '\0';
+		 argIndex += strcspn(&string[argIndex], " \t\n"),
+		 argIndex += strspn(&string[argIndex], " \t\n"), 
+		 i++) {
+
+		 if (i < 1) {
+		     continue;
+		 }
+		 if (sscanf(&string[argIndex], " %s", arg) == 0) {
+		     break;
+		 }
+		 Alloc(argHeader, ArgHeader, 1, "argHeader");
+		 List_InitElement((List_Links *) argHeader);
+		 Alloc(argHeader->arg, char, strlen(arg) + 1, "arg");
+		 strcpy(argHeader->arg, arg);
+		 List_Insert((List_Links *) argHeader, 
+		     LIST_BEFORE((List_Links *) &argInfoPtr->argList));
+	     }
+	    if (strcasecmp(source, "all")) {
+		for (i = 0; i < index; i++) {
+		     if (!strcmp(mountTable[i].source, source)) {
+			 MergeList(&argInfoPtr->argList, 
+			     &mountTable[i].argInfo.argList);
+			 break;
+		     }
+		 }
+		 if (i == index) {
+		     argTable[argCount] = *argInfoPtr;
+		     List_Init(&argTable[argCount].argList);
+		     AddList(&argInfoPtr->argList, 
+			 &argTable[argCount].argList);
+		     free(argInfoPtr);
+		     argCount++;
+		 }
+	     } else {
+		 argTable[argCount] = *argInfoPtr;
+		 List_Init(&argTable[argCount].argList);
+		 AddList(&argInfoPtr->argList, 
+		     &argTable[argCount].argList);
+		 free(argInfoPtr);
+		 argCount++;
+	     }
+	}   
+    }
+    for (i = 0; i < argCount; i++) {
+	if (!strcasecmp(argTable[i].source, "all")) {
+	    for (j = 0; j < index; j++) {
+		if (mountTable[j].device == TRUE) {
+		    MergeList(&argTable[i].argList, 
+			&mountTable[j].argInfo.argList);
+		    strcpy(mountTable[j].argInfo.source, argTable[i].source);
+		    mountTable[j].argInfo.line = argTable[i].line;
+		}
+	    }
+	    DeleteList(&argTable[i].argList);
+	} else {
+	    for (j = 0; j < index; j++) {
+		 if (!strcmp(argTable[i].source, mountTable[j].source)) {
+		     MergeList(&argTable[i].argList, 
+			 &mountTable[j].argInfo.argList);
+			strcpy(mountTable[i].argInfo.source, 
+			    argTable[i].source);
+			mountTable[i].argInfo.line = argTable[i].line;
+		     break;
+		 }
+	     }
+	     if (j == index) {
+		 fprintf(stderr, "Device %s not found at line %d\n", 
+		     argTable[i].source, argTable[i].line);
+		 status = FAILURE;
+	     }
+	 }
+     }
+    if (argTable != NULL) {
+	free(argTable);
+    }
+    fclose(stream);
+    *countPtr = index;
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MergeList --
+ *
+ *	Merge the src list into the dest list without modifying the source
+ *	list.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Memory is allocated and the dest list is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+MergeList(srcListPtr, destListPtr)
+    ArgHeader *srcListPtr;		/* source list */
+    ArgHeader *destListPtr;		/* destination list */
+
+{
+    List_Links	*itemPtr;
+    List_Links	*newPtr;
+
+    LIST_FORALL((List_Links *) srcListPtr, itemPtr) {
+	Alloc((ArgHeader *) newPtr, ArgHeader, 1, "newPtr");
+	*((ArgHeader *) newPtr) = *((ArgHeader *) itemPtr);
+	List_Insert(newPtr, LIST_ATREAR((List_Links *) destListPtr));
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AddList --
+ *
+ *	Adds the src list to the dest list. 
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The dest list is modified. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+AddList(srcListPtr, destListPtr)
+    ArgHeader *srcListPtr;		/* source list */
+    ArgHeader *destListPtr;		/* destination list */
+
+{
+    List_Links	*itemPtr;
+    List_Links	*tempPtr;
+
+    itemPtr = List_First((List_Links *) srcListPtr);
+    while (!List_IsAtEnd((List_Links *) srcListPtr, itemPtr)) {
+	tempPtr = itemPtr;
+	itemPtr = List_Next(itemPtr);
+	List_Remove(tempPtr);
+	List_Insert(tempPtr, LIST_ATREAR((List_Links *) destListPtr));
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DeleteList --
+ *
+ *	Frees a list.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The list is freed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+DeleteList(listPtr)
+    ArgHeader	*listPtr;	/* list to be freed */
+{
+    List_Links	*itemPtr;
+    List_Links	*tempPtr;
+
+    itemPtr = List_First((List_Links *) listPtr);
+    while (!List_IsAtEnd((List_Links *) listPtr, itemPtr)) {
+	tempPtr = itemPtr;
+	itemPtr = List_Next(itemPtr);
+	List_Remove(tempPtr);
+	free(tempPtr);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MoveOutput --
+ *
+ *	Fscheck stores its output in a special
+ *	preallocated file. We want to copy the information out of that
+ *	file into the standard fscheck output file, and then zero out
+ *	the special file.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The root output is appended to the output file and the special
+ *	output file is filled with null characters.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+MoveOutput(mountCount)
+    int		mountCount;
+{
+    FILE 	*outputStream;
+    FILE	*tempStream;
+    char	outputFile[MAX_LINE_LENGTH];
+    char	inputFile[MAX_LINE_LENGTH];
+    int		bytesRead;
+    int		bytesWritten;
+    int		bytesToWrite;
+    char	buffer[1024];
+    int		i, mountIndex;
+    Boolean	done;
+    char	*hostName;
+
+    if (verbose) {
+	printf("Moving output from fscheck.\n");
+    }
+    hostName = getenv("HOST");
+    for(mountIndex = 0; mountIndex < mountCount; mountIndex++) {
+	if (debug) {
+	    printf("%d (%s): device = %s, status = %s\n", mountIndex, 
+		mountTable[mountIndex].source,
+		(mountTable[mountIndex].device == TRUE ? "true" : "false"),
+		(mountTable[mountIndex].status == CHILD_OK) ? "ok" : "not ok");
+	}
+	if (mountTable[mountIndex].checked == FALSE ||
+	    mountTable[mountIndex].status != CHILD_OK ||
+	    mountTable[mountIndex].device == FALSE) {
+	    continue;
+	}
+	(void) sprintf(outputFile, "/hosts/%s/%s.fsc", hostName,
+	    mountTable[mountIndex].source);
+	if (verbose) {
+	    printf("Copying output from checking %s to %s.\n", 
+		mountTable[mountIndex].source, outputFile);
+	}
+	outputStream = fopen(outputFile, "a+");
+	if (outputStream == (FILE *)NULL) {
+	    (void) fprintf(stderr, "%s: can't open \"%s\", ", progName, 
+			outputFile);
+	    perror("");
+	    return;
+	}
+	(void) sprintf(inputFile, "%s/%s", mountTable[mountIndex].dest,
+	    tempOutputFile);
+	tempStream = fopen(inputFile,"r+");
+	if (tempStream == (FILE *)NULL) {
+	    (void) fprintf(stderr, "%s: can't open \"%s\", ", progName,
+			   inputFile);
+	    perror("");
+	    fclose(outputStream);
+	    return;
+	}
+	bytesRead = fread(buffer, sizeof(char), 1024, tempStream);
+	done = FALSE;
+	while(bytesRead > 0 && !done) {
+	    for (i = 0; i < bytesRead; i++) {
+		if ( buffer[i] == '\0') {
+		    done = TRUE;
+		    break;
+		}
+	    }
+	    bytesToWrite = i;
+	    bytesWritten = fwrite(buffer, sizeof(char), bytesToWrite, 
+	    outputStream);
+	    if (bytesWritten < bytesToWrite) {
+		(void) fprintf(stderr, "%s: Unable to copy output to %s.\n",
+			progName, outputFile);
+		goto cleanup;
+	    }
+	    bytesRead = fread(buffer, sizeof(char), 1024, tempStream);
+	}
+	rewind(tempStream);
+	(void) bzero(buffer, 1024);
+	for (i = 0; i < tempOutputFileSize; i += bytesToWrite) {
+	    bytesToWrite = min(1024, tempOutputFileSize - i);
+	    bytesWritten = fwrite(buffer, sizeof(char), bytesToWrite, 
+				    tempStream);
+	    if (bytesWritten != bytesToWrite) {
+		fprintf(stderr, "Only wrote %d bytes: ", bytesWritten);
+		perror("");
+		break;
+	    }
+	}
+cleanup:
+	(void) fclose(outputStream);
+	(void) fclose(tempStream);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintFscheckError --
+ *
+ *	Prints a meaningful description of fscheck's error codes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+PrintFscheckError(code, mountPtr)
+    char	code;		/* error code from fscheck */
+    MountInfo	*mountPtr;	/* mount info for partition checked */
+{
+    static char *softerrors[] = {
+	"No errors",
+	"Correctable error",
+	"Exceeded heap limit",
+	"No reboot",
+	"Reboot",
+    };
+    static char *harderrors[] = {
+	"",
+	"Read of device failed",
+	"Write to device failed",
+	"Bad argument",
+	"Heap limit too small",
+	"Disk is full",
+    };
+    char *error;
+    int	 index;
+
+    index = (int) code;
+    if (index < 0) {
+	error = harderrors[-index];
+    } else { 
+	error = softerrors[index];
+    }
+    (void) fprintf(stderr, "Fscheck of %s returned (%d) : %s.\n", 
+		   mountPtr->source, index, error);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PreloadPrefixTable --
+ *
+ *	Load the prefix table with ourself as the server of all the
+ * 	prefixes we export. That way we don't broadcast for them
+ *	while we check our disks.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Exported prefixes are loaded into the prefix table.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+PreloadPrefixTable(spriteID, mountCount)
+    int	spriteID;		/* Our Sprite ID. */
+    int	mountCount;		/* Size of mount table. */
+{
+    int			i;
+    Fs_PrefixLoadInfo	loadInfo;
+    ReturnStatus	status;
+
+    for (i = 0; i < mountCount; i++) {
+	if ((mountTable[i].export == TRUE) && 
+	    (strcmp("/", mountTable[i].dest) != 0)) {
+	    (void) strncpy(loadInfo.prefix, mountTable[i].dest,
+			FS_MAX_PATH_NAME_LENGTH);
+	    loadInfo.serverID = spriteID;
+	    if (printOnly || verbose) {
+		printf("Preloading prefix \"%s\"\n", loadInfo.prefix);
+	    }
+	    if (!printOnly) {
+		status = Fs_Command(FS_PREFIX_LOAD, sizeof(Fs_PrefixLoadInfo), 
+			 &loadInfo);
+		if (status != SUCCESS) {
+		    fprintf(stderr, "Couldn't load prefix \"%s\": %s.\n",
+			    mountTable[i].dest, Stat_GetMsg(status));
+		}
+	    }
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetAttachName --
+ *
+ *	Get the name of the prefix under which the filesystem was
+ *	attached.
+ *
+ * Results:
+ *	Name of the prefix.
+ *
+ * Side effects:
+ *	The disk is read.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+GetAttachName(device)
+    char	*device;
+{
+    int			fd;
+    Disk_Label		*labelPtr;
+    Ofs_SummaryInfo	*summaryPtr;
+    char		*prefix;
+    ReturnStatus	status;
+
+    fd = open(device, O_RDWR);
+    if (fd < 0) {
+	fprintf(stderr, "Could not open %s\n", device);
+	return NULL;
+    }
+    labelPtr = Disk_ReadLabel(fd);
+    if (labelPtr == NULL) {
+	fprintf(stderr, "Could not read label from %s\n", device);
+	return NULL;
+    }
+    summaryPtr = Disk_ReadSummaryInfo(fd, labelPtr);
+    if ( summaryPtr == NULL) {
+	fprintf(stderr, "Could not read summary info from %s\n", device);
+	return NULL;
+    }
+    prefix = summaryPtr->domainPrefix;
+    /*
+     * FIX THIS:  The following code to clear a bit in the summary sector
+     * is only needed for kernels prior to 1.070.  It can be removed
+     * once those kernels are gone.  JHH.
+     */
+    summaryPtr->flags &= ~OFS_DOMAIN_JUST_CHECKED;
+    status = Disk_WriteSummaryInfo(fd, labelPtr, summaryPtr);
+    if (status != SUCCESS) {
+	fprintf(stderr, "Could not write summary info to %s\n", device);
+	return NULL;
+    }
+    close(fd);
+    return prefix;
+}
+
+@
+
+
+1.9
+log
+@Changes for new OFS file systems names.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/admin/fsattach/RCS/misc.c,v 1.8 90/08/02 00:21:38 jhh Exp Locker: mendel $ SPRITE (Berkeley)";
+d422 1
+a422 1
+    int		i;
+d430 1
+a430 1
+    for(i = 0; i < mountCount; i++) {
+d432 4
+a435 4
+	    printf("%d (%s): device = %s, status = %s\n", i, 
+		mountTable[i].source,
+		(mountTable[i].device == TRUE ? "true" : "false"),
+		(mountTable[i].status == CHILD_OK) ? "ok" : "not ok");
+d437 3
+a439 3
+	if (mountTable[i].checked == FALSE ||
+	    mountTable[i].status != CHILD_OK ||
+	    mountTable[i].device == FALSE) {
+d443 1
+a443 1
+	    mountTable[i].source);
+d446 1
+a446 1
+		mountTable[i].source, outputFile);
+d455 2
+a456 1
+	(void) sprintf(inputFile, "%s/%s", mountTable[i].dest, tempOutputFile);
+@
+
+
+1.8
+log
+@made it compatible with pre 1.070 kernels
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/admin/fsattach/RCS/misc.c,v 1.7 90/02/14 13:59:55 jhh Exp $ SPRITE (Berkeley)";
+d621 1
+a621 1
+    Fsdm_SummaryInfo	*summaryPtr;
+d646 1
+a646 1
+    summaryPtr->flags &= ~FSDM_DOMAIN_JUST_CHECKED;
+@
+
+
+1.7
+log
+@Uses groups instead of passes
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/admin/fsattach/RCS/misc.c,v 1.6 89/12/14 16:27:36 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+a60 1
+    static Boolean	foundRoot = FALSE;
+a121 12
+	    if (!strcasecmp(group, "root")) {
+		if (foundRoot) {
+		    (void) fprintf(stderr, 
+	       "Illegal group value at line %d: %s.\n", group);
+		    fprintf(stderr, 
+	    "Only root partition can be checked in the \"root\" group.\n");
+		    continue;
+		}
+		strcpy(group,"root");
+	    } else {
+		foundRoot = TRUE;
+	    }
+d158 1
+d178 1
+d393 1
+a393 1
+ * MoveRootOutput --
+d395 1
+a395 1
+ *	Fscheck stores the output for the root partition in a special
+d411 2
+a412 2
+MoveRootOutput(device)
+    char		*device;	/* name of the root partition */
+d424 1
+a425 1
+    (void) sprintf(outputFile, "/hosts/%s/%s.fsc", getenv("HOST"), device);
+d427 1
+a427 1
+	printf("Copying root output to %s.\n", outputFile);
+d429 25
+a453 23
+    outputStream = fopen(outputFile, "a+");
+    if (outputStream == (FILE *)NULL) {
+	(void) fprintf(stderr, "%s: can't open \"%s\", ", progName, outputFile);
+	perror("");
+	return;
+    }
+    (void) sprintf(inputFile, "%s/%s", bootPrefix, rootTempOutputFile);
+    tempStream = fopen(inputFile,"r+");
+    if (tempStream == (FILE *)NULL) {
+	(void) fprintf(stderr, "%s: can't open \"%s\", ", progName,
+		       inputFile);
+	perror("");
+	fclose(outputStream);
+	return;
+    }
+    bytesRead = fread(buffer, sizeof(char), 1024, tempStream);
+    done = FALSE;
+    while(bytesRead > 0 && !done) {
+	for (i = 0; i < bytesRead; i++) {
+	    if ( buffer[i] == '\0') {
+		done = TRUE;
+		break;
+	    }
+d455 8
+a462 6
+	bytesToWrite = i;
+	bytesWritten = fwrite(buffer, sizeof(char), bytesToWrite, outputStream);
+	if (bytesWritten < bytesToWrite) {
+	    (void) fprintf(stderr, "%s: Unable to copy root output to %s.\n",
+		    progName, outputFile);
+	    goto cleanup;
+d465 29
+a493 10
+    }
+    rewind(tempStream);
+    (void) bzero(buffer, 1024);
+    for (i = 0; i < rootTempOutputFileSize; i += bytesToWrite) {
+	bytesToWrite = min(1024, rootTempOutputFileSize - i);
+	bytesWritten = fwrite(buffer, sizeof(char), bytesToWrite, tempStream);
+	if (bytesWritten != bytesToWrite) {
+	    fprintf(stderr, "Only wrote %d bytes: ", bytesWritten);
+	    perror("");
+	    break;
+d495 3
+a498 3
+cleanup:
+    (void) fclose(outputStream);
+    (void) fclose(tempStream);
+d523 2
+a524 2
+	"",
+	"Generic soft error",
+d526 2
+a527 1
+	"Soft error and fix limit exceeded"
+d578 1
+a578 1
+	if ((mountTable[i].export == TRUE) && (mountTable[i].group != 0) && 
+d596 58
+@
+
+
+1.6
+log
+@was opening /.fscheck.out, which is the wrong file on fileservers
+that do not boot standalone.  Now opens /bootTmp/.fscheck.out
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/admin/fsattach/RCS/misc.c,v 1.5 89/10/25 18:06:21 jhh Exp $ SPRITE (Berkeley)";
+d52 1
+a52 1
+    int	 		pass;
+d62 1
+a62 1
+    ArgInfo		*argTable;
+d66 1
+a66 1
+    ArgInfo		*argInfoPtr;
+a79 1
+    maxPass = 0;
+d105 2
+a106 2
+	    n = sscanf(string, " %*s %256s %256s %d %256s %256s", dest, 
+		       source, &pass, exportString, readFlag);
+d123 1
+a123 13
+	    if (pass < 0) {
+		(void) fprintf(stderr, "Bad pass value at line %d: \"%d\"\n", 
+			       line, pass);
+		continue;
+	    }
+	    if (pass > MAX_PASS) {
+		(void) fprintf(stderr, 
+			       "Pass value %d too large at line %d: \"%d\"\n",
+			       line, pass);
+		(void) fprintf(stderr, "Reset to %d.\n", MAX_PASS);
+		pass = MAX_PASS;
+	    }
+	    if (pass == 0) {
+d126 3
+a128 2
+			           "Illegal pass value at line %d: %s.\n",
+				   line, "Only root can be checked on pass 0");
+d131 1
+d135 16
+a150 2
+	    if (pass > maxPass) {
+		maxPass = pass;
+d152 1
+d164 2
+a165 2
+		(void) printf("%-20s %-10s %2d %-10s %-2s\n", dest, source, 
+		              pass, exportString, readFlag);
+a166 1
+	    mountTable[index].pass = pass;
+a185 1
+	    mountTable[index].pass = -1;
+d293 3
+a295 1
+    free(argTable);
+d328 1
+a328 1
+	Alloc(newPtr, ArgHeader, 1, "newPtr");
+d565 1
+a565 1
+	if ((mountTable[i].export == TRUE) && (mountTable[i].pass != 0) && 
+@
+
+
+1.5
+log
+@cleaned a few things up
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/admin/fsattach/RCS/misc.c,v 1.4 89/06/19 14:21:18 jhh Exp $ SPRITE (Berkeley)";
+d424 1
+d442 2
+a443 1
+    tempStream = fopen(rootTempOutputFile,"r+");
+d446 1
+a446 1
+		       rootTempOutputFile);
+@
+
+
+1.4
+log
+@Added stuff to preload prefix table
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/admin/fsattach/RCS/misc.c,v 1.3 89/06/07 22:14:28 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d431 1
+a431 1
+    (void) sprintf(outputFile, "%s.fsc", device);
+d559 2
+a560 1
+	if ((mountTable[i].export == TRUE) && (mountTable[i].pass != 0)) {
+d566 2
+a567 1
+	    } else {
+@
+
+
+1.3
+log
+@Spring cleaning - new mount table format, bug fixes
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/admin/fsattach/RCS/misc.c,v 1.2 89/04/10 11:12:18 jhh Exp $ SPRITE (Berkeley)";
+d184 2
+d529 46
+@
+
+
+1.2
+log
+@First working version
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/users/jhh/fsattach/RCS/misc.c,v 1.1 89/03/06 12:58:50 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+a25 142
+ * ParseConfig --
+ *
+ *	Parse the configuration file.
+ *
+ * Results:
+ *	FAILURE if an error occured opening or parsing the file.
+ *
+ * Side effects:
+ *	Global variables are set.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+ParseConfig(configFile)
+    char	*configFile;		/* name of the configuration file */
+{
+    FILE 		*stream;
+    char		string[MAX_LINE_LENGTH];
+    char		buffer[MAX_LINE_LENGTH];
+    char		command[MAX_LINE_LENGTH];
+    char		*eof;
+    int			n;
+    int			integer;
+    int			line;
+    ReturnStatus 	returnStatus;
+
+    returnStatus = SUCCESS;
+    stream = fopen(configFile, "r");
+    if (stream == (FILE *)NULL) {
+	(void) fprintf(stderr, "%s: can't open \"%s\", ", progName, configFile);
+	perror("");
+	return FAILURE;
+    }
+    if (verbose) {
+	fprintf(stderr,"Parsing configuration file %s.\n", configFile);
+    }
+    line = 0;
+    for (eof = fgets(string, MAX_LINE_LENGTH, stream);
+	 eof != NULL;
+	 eof = fgets(string, MAX_LINE_LENGTH, stream)) {
+
+	line++;
+	n = sscanf(string, " %256s", command);
+	if (n < 1 || *command == '#') {
+	    continue;
+	}
+	if (!strcmp("mountTableSize", command)) {
+	    n = sscanf(string, " %*s %d", &integer);
+	    if (n != 1) {
+		(void) fprintf(stderr, "Garbled input at line %d: \"%d\"\n", 
+			line, integer);
+		returnStatus = FAILURE;
+		goto exit;
+	    }
+	    if (integer < 0) {
+		(void) fprintf(stderr, 
+			       "Illegal mount table size at line %d: \"%d\"\n",
+			       line, integer);
+		returnStatus = FAILURE;
+		goto exit;
+	    }
+	    mountTableSize = integer;
+	} else if (!strcmp("rootTempOutputFile", command)) {
+	    n = sscanf(string, " %*s %256s", buffer);
+	    if (n != 1) {
+		(void) fprintf(stderr, "Garbled input at line %d: \"%s\"\n", 
+			line, buffer);
+		returnStatus = FAILURE;
+		goto exit;
+	    }
+	    Alloc(rootTempOutputFile, char, strlen(buffer) + 1, 
+		  "rootTempOutputFile");
+	    (void) strcpy(rootTempOutputFile, buffer);
+	} else if (!strcmp("heapLimit", command)) {
+	    n = sscanf(string, " %*s %d", &integer);
+	    if (n != 1) {
+		(void) fprintf(stderr, "Garbled input at line %d: \"%d\"\n", 
+			line, integer);
+		returnStatus = FAILURE;
+		goto exit;
+	    }
+	    if (integer < 1) {
+		(void) fprintf(stderr, "Illegal heapLimit at line %d: \"%d\"\n",
+			line, integer);
+		returnStatus = FAILURE;
+		goto exit;
+	    }
+	    (void) sprintf(command, "%d", integer);
+	    Alloc(heapLimitString, char , strlen(command) + 1,
+		  "heapLimitString");
+	    (void) strcpy(heapLimitString, command);
+	} else if (!strcmp("rootTempOutputFileSize", command)) {
+	    n = sscanf(string, " %*s %d", &integer);
+	    if (n != 1) {
+		(void) fprintf(stderr, "Garbled input at line %d: \"%d\"\n", 
+			line, integer);
+		returnStatus = FAILURE;
+		goto exit;
+	    }
+	    if (integer < 1) {
+		(void) fprintf(stderr, 
+			       "Illegal output file size at line %d: \"%d\"\n",
+			       line, integer);
+		returnStatus = FAILURE;
+		goto exit;
+	    }
+	    rootTempOutputFileSize = integer;
+	} else if (!strcmp("outputDir", command)) {
+	    n = sscanf(string, " %*s %256s", buffer);
+	    if (n != 1) {
+		(void) fprintf(stderr, "Garbled input at line %d: \"%s\"\n", 
+			line, buffer);
+		returnStatus = FAILURE;
+		goto exit;
+	    }
+	    Alloc(outputDir, char, strlen(buffer) +1,"outputDir");
+	    (void) strcpy(outputDir, buffer);
+	} else if (!strcmp("fscheck", command)) {
+	    n = sscanf(string, " %*s %256s", buffer);
+	    if (n != 1) {
+		(void) fprintf(stderr, "Garbled input at line %d: \"%s\"\n", 
+			line, buffer);
+		returnStatus = FAILURE;
+		goto exit;
+	    }
+	    Alloc(fscheckPath, char, strlen(buffer) +1,"fscheckPath");
+	    (void) strcpy(fscheckPath, buffer);
+	} else {
+	    (void) fprintf(stderr, "Garbled input at line %d: \"%s\"\n", 
+		    line, string);
+	}
+    }
+exit:
+    fclose(stream);
+    return returnStatus;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+d28 2
+a29 2
+ *	Parses the mount information in the given string and fills in the
+ *	next structure in the mount table.
+d35 2
+a36 1
+ *	The next available entry in the mount table is filled in.
+d43 2
+a44 2
+    char	*mountFile;
+    int		*countPtr;
+d51 1
+d62 10
+d73 1
+d83 2
+d98 6
+a103 4
+	    (void) fprintf(stderr,
+			   "%s: Too many entries in mount file. Max is %d.\n",
+			   progName, mountTableSize);
+	    continue;
+d105 1
+a105 1
+	if (!strcmp("Attach", command)) {
+d115 1
+a115 1
+	    if (!strcmp("export", exportString)) {
+d117 1
+a117 1
+	    } else if (!strcmp("local", exportString)) {
+d149 1
+a149 1
+	    if (!strcmp("r", readFlag)) {
+d151 1
+a151 1
+	    } else  if (!strcmp("rw", readFlag)) {
+d168 5
+a172 1
+	} else if (!strcmp("Export", command)) {
+d183 1
+d186 85
+d272 18
+a289 7
+	    (void) fprintf(stderr, "Garbled input at line %d: \"%s\"\n", 
+	    line, string);
+	}
+	(void) strcpy(mountTable[index].source, source);
+	(void) strcpy(mountTable[index].dest, dest);
+	index++;
+    }
+d292 100
+a391 1
+    return SUCCESS;
+d393 1
+a421 1
+    char	deviceName[MAX_FIELD_LENGTH];
+d429 3
+a431 9
+    /*
+     * Strip off all but the tail of the path.
+     */
+    (void) strcpy(deviceName, device);
+    for(i = strlen(deviceName) - 1; i >= 0; i--) {
+	if (deviceName[i] == '/') {
+	    i++;
+	    break;
+	}
+a432 5
+    (void) sprintf(outputFile, "%s/%s.fsc", outputDir, deviceName);
+    if (printOnly) {
+	printf("Copying root output.\n");
+	return;
+    }
+d439 1
+a439 1
+    tempStream = fopen(rootTempOutputFile,"rw");
+d463 1
+d469 6
+a474 1
+	(void) fwrite(buffer, sizeof(char), bytesToWrite, tempStream);
+d503 1
+a503 1
+	"No Error",
+d509 1
+a509 1
+	"No Error",
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d4 1
+a4 1
+ *	Description.
+d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.2 89/01/07 04:12:18 rab Exp $ SPRITE (Berkeley)";
+d31 1
+a31 1
+ *	None.
+d41 1
+a41 1
+    char	*configFile;
+d58 1
+a58 1
+	(void) exit(HARDERROR);
+d144 10
+d190 1
+a190 1
+    static char 	tempbuf[MAX_FIELD_LENGTH];
+a194 1
+    Boolean 		root;
+d201 1
+d207 1
+a207 1
+	(void) exit(HARDERROR);
+d220 2
+a221 2
+	n = sscanf(string, " %256s", tempbuf);
+	if (n < 1 || *tempbuf == '#') {
+d230 9
+a238 10
+	n = sscanf(string, " %256s %256s %d %256s %256s", source, dest, &pass, 
+		   exportString, readFlag);
+	if (n != 5) {
+	    (void) fprintf(stderr, "Garbled input at line %d: \"%s\"\n", 
+			   line, string);
+	    continue;
+	}
+	export = TRUE;
+	root = FALSE;
+	if (!strcmp("export", exportString)) {
+d240 66
+a305 4
+	} else if (!strcmp("local", exportString)) {
+	    export = FALSE;
+	} else if (!strcmp("root", exportString)) {
+	    root = TRUE;
+d307 2
+a308 15
+	    (void) fprintf(stderr, "Bad export value at line %d: \"%s\"\n", 
+			   line, exportString);
+	    continue;
+	}
+	if (pass < 0) {
+	    (void) fprintf(stderr, "Bad pass value at line %d: \"%d\"\n", 
+			   line, pass);
+	    continue;
+	}
+	if (pass > MAX_PASS) {
+	    (void) fprintf(stderr, 
+			   "Pass value %d too large at line %d: \"%d\"\n",
+			   line, pass);
+	    (void) fprintf(stderr, "Reset to %d.\n", MAX_PASS);
+	    pass = MAX_PASS;
+a309 21
+	if (pass == 0 && root != TRUE) {
+	    (void) fprintf(stderr, "Illegal pass value at line %d: %s.\n",
+		    line, "Only root can be checked on pass 0");
+	    continue;
+	}
+	if (pass > maxPass) {
+	    maxPass = pass;
+	}
+	if (!strcmp("r", readFlag)) {
+	    readonly = TRUE;
+	} else  if (!strcmp("rw", readFlag)) {
+	    readonly = FALSE;
+	} else {
+	    (void) fprintf(stderr, "Bad read/write value at line %d: \"%s\"\n",
+			   line, readFlag);
+	    continue;
+	}
+	if (verbose) {
+	    (void) printf("%-20s %-10s %2d %-10s %-2s\n", dest, source, pass, 
+		   exportString, readFlag);
+	}
+a311 4
+	mountTable[index].pass = pass;
+	mountTable[index].export = export;
+	mountTable[index].root = root;
+	mountTable[index].readonly = readonly;
+d324 4
+a327 2
+ *	Does all the special stuff that need to be done to deal with
+ *	the root output.
+d333 1
+a333 1
+ *	The root output is appended to the output file and the temporary
+d341 1
+a341 1
+    char		*device;
+d346 1
+d354 11
+a364 1
+    (void) sprintf(outputFile, "%s/%s.fsc", outputDir, device);
+d429 2
+a430 2
+    int		code;
+    MountInfo	*mountPtr;
+d432 1
+a432 1
+    static char *softerrors[3] = {
+d436 1
+d438 1
+a438 1
+    static char *harderrors[7] = {
+d447 1
+d449 3
+a451 2
+    if (code < 0) {
+	error = harderrors[-code];
+d453 1
+a453 1
+	error = softerrors[code];
+d456 1
+a456 1
+		   mountPtr->device, code, error);
+@

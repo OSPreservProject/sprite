@@ -1,0 +1,29 @@
+L CHANGELO.;1                       	ChangeLog	../../dist/readline/ChangeLog
+L CHARDEFS.H;1                      	chardefs.h	../../dist/readline/chardefs.h
+L CONFIG.;1                         	config	../../dist/readline/config
+F CONFIG.STA;1                      	config.status
+L CONFIGUR.BAT;1                    	configure.bat	../../dist/readline/configure.bat
+L CONFIGUR.IN;1                     	configure.in	../../dist/readline/configure.in
+L COPYING.;1                        	COPYING	../../dist/readline/COPYING
+D DOC                               	doc
+L EMACS_KE.C;1                      	emacs_keymap.c	../../dist/readline/emacs_keymap.c
+L EXAMPLES.;1                       	examples	../../dist/readline/examples
+L FUNMAP.C;1                        	funmap.c	../../dist/readline/funmap.c
+L HISTORY.C;1                       	history.c	../../dist/readline/history.c
+L HISTORY.H;1                       	history.h	../../dist/readline/history.h
+L KEYMAPS.C;1                       	keymaps.c	../../dist/readline/keymaps.c
+L KEYMAPS.H;1                       	keymaps.h	../../dist/readline/keymaps.h
+F MAKEFILE.;1                       	Makefile
+L MAKEFILE.DOS;1                    	Makefile.dos	../../dist/readline/Makefile.dos
+L MAKEFILE.IN;1                     	Makefile.in	../../dist/readline/Makefile.in
+D RCS                               	RCS
+F READLINE.C;1                      	readline.c
+L READLINE.H;1                      	readline.h	../../dist/readline/readline.h
+F SYSDEP.H;1                        	sysdep.h
+L SYSDEP_A.H;1                      	sysdep-aix.h	../../dist/readline/sysdep-aix.h
+L SYSDEP_I.H;1                      	sysdep-irix.h	../../dist/readline/sysdep-irix.h
+L SYSDEP_N.H;1                      	sysdep-norm.h	../../dist/readline/sysdep-norm.h
+L SYSDEP_O.H;1                      	sysdep-obsd.h	../../dist/readline/sysdep-obsd.h
+L SYSDEP_S.H;1                      	sysdep-sco.h	../../dist/readline/sysdep-sco.h
+L VI_KEYMA.C;1                      	vi_keymap.c	../../dist/readline/vi_keymap.c
+L VI_MODE.C;1                       	vi_mode.c	../../dist/readline/vi_mode.c

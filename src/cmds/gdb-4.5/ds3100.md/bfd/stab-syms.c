@@ -1,0 +1,1 @@
+../../dist/bfd/stab-syms.c

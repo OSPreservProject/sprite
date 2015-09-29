@@ -1,0 +1,41 @@
+To: pyramid!ctnews!unix386!mark@uunet.uu.net
+cc: 
+Fcc: 
+Subject: less bug
+X-Face: %2'i#(dROd-(2'`-!U)}q'%u@:^gnvj42}w_%pfh'2:An:m%i6{-2[':9~|7xX|:L`SHO'p
+	 ]-UMALX=kqKk8|HKk4\Pmw5DcsyJ?[ZAAjN=?>!.1K%}GUW"d8!@E&|NA[EyQ~TEtIW]2QYs:NJN{L
+	 yVwN(xW]~k|%U9apQK7M'ffVwjtmj&Ep_mO#}?k?yxDp!p:nEO\mS*KK0S}~a]H>n"WGvr;eO%uw[`
+	 |Dt'A/8}mWhfT
+--------
+
+I just found and fixed a bug in the termcap string initialization of 
+less-177.  The bug allows the sc_bl_out string to sometimes get the value
+of the "se" capability instead of the "me" cap, even though "mb" is used
+for sc_bl_in ("me" is the invers of both "mb" and "md").
+
+The annoying result is that the entire screen starts blinking once you
+hit the first control character in a file viewed with less.
+
+--Andreas
+
+*** screen.c.dist	Wed Apr  3 16:26:10 1991
+--- screen.c	Thu Apr  9 22:06:58 1992
+***************
+*** 385,391 ****
+  		sc_bl_out = sc_s_out;
+  	} else
+  	{
+! 		sc_bl_out = sc_b_out;
+  	}
+  
+  	sc_visual_bell = tgetstr("vb", &sp);
+--- 385,393 ----
+  		sc_bl_out = sc_s_out;
+  	} else
+  	{
+! 		sc_bl_out = tgetstr("me", &sp);
+! 		if (hard || sc_bl_out == NULL)
+! 			sc_bl_out = "";
+  	}
+  
+  	sc_visual_bell = tgetstr("vb", &sp);

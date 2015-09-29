@@ -1,0 +1,8 @@
+     SEPARATING COMMANDS WITH SEMI-COLONS
+          Normally, each command occupies one  line  (the  command  is
+          terminated  by  a  newline  character).  However, semi-colon
+          (``;'')  is  treated  as  a  command  separator   character;
+          multiple  commands  may  be placed on one line by separating
+          them with a semi-colon.   Semi-colons  are  not  treated  as
+          command  separators  if  they  appear within curly braces or
+          double-quotes.

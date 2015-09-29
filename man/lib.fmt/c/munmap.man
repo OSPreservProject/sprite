@@ -1,0 +1,66 @@
+
+
+
+MUNMAP                C Library Procedures                 MUNMAP
+
+
+
+NNAAMMEE
+     munmap - unmap part of the process's address space
+
+SSYYNNOOPPSSIISS
+     NNOOTTEE:: tthhiiss mmaann ppaaggee iiss iinnaaccccuurraattee..
+     mmuunnmmaapp((aaddddrr,, lleenn))
+     ccaaddddrr__tt aaddddrr;;   //** ssttaarrttiinngg vviirrtt--aaddddrr **//
+     iinntt     lleenn;;    //** lleennggtthh ((bbyytteess)) ttoo uunnmmaapp **//
+
+DDEESSCCRRIIPPTTIIOONN
+     _M_u_n_m_a_p removes a mapping created by _m_m_a_p(2).  The _a_d_d_r and
+     _l_e_n arguments must be integral multiples of the system page
+     size, as defined by _g_e_t_p_a_g_e_s_i_z_e(2).
+
+     After successful completion of _m_u_n_m_a_p, the address space
+     from _a_d_d_r through _a_d_d_r+_l_e_n-_1 does not exist and will result
+     in a segmentation fault (SIGSEGV) if referenced.
+
+RREETTUURRNN VVAALLUUEE
+     Munmap returns zero when successful.  Otherwise it returns
+     -1 and places the error number in the global variable _e_r_r_n_o.
+
+EERRRROORRSS
+     [EINVAL]       _A_d_d_r or _l_e_n is not a multiple of the system
+                    page size.
+
+     [EINVAL]       The area defined by _a_d_d_r and _l_e_n overlaps the
+                    text or stack segment or a non-existent part
+                    of the address space.
+
+SSEEEE AALLSSOO
+     mmap(2), vm_ctl(2), getpagesize(2)
+
+NNOOTTEESS
+     The current implementation can unmap only data space.
+
+     Any address space holes created by _m_u_n_m_a_p read as zeroes in
+     a core file.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+DYNIX                                                           1
+
+
+

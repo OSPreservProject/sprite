@@ -1,0 +1,44 @@
+Machine-dependent code sizes.  Numbers are in lines of (commented)
+source code.
+
+			     -- native --
+
+module			total		implemented
+-----			-----		-----
+mach (C)		  3772		  3539
+mach (asm)		  2456		  2456
+net			  1943		  1943
+proc			   226		   226
+timer			   878		   878
+vm (C)			  2603		  2603
+vm (asm)		   980		   980
+dev			 12647		 10495
+rpc			    57		    57
+utils			    93		    93
+prof (C)		   737		   737
+prof (asm)		    44		    44
+dbg (C)			  2833		  2833
+dbg (asm)		    40		    40
+mem (asm)		    35		    35
+
+total (C):		 25789		 23404
+total (asm):		  3555		  3555
+
+grand total:		 29344		 26959
+
+
+			     -- server --
+
+module					implemented
+-----					-----
+net					    31
+proc					   420
+sig					   403
+vm					    29
+dev					   232
+rpc					    56
+utils (C)				    74
+utils (asm)				    37
+fs					    56
+
+total:					  1338

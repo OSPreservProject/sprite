@@ -1,0 +1,233 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  sprited:1.3.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     92.05.14.18.58.01;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     92.03.27.13.32.42;  author rab;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.03.24.19.02.17;  author kupfer;  state Exp;
+branches 1.3.1.1;
+next     1.2;
+
+1.2
+date     88.07.19.13.26.07;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.25.21.39.21;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.3.1.1
+date     91.12.02.21.27.52;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.5
+log
+@Remove the debug check for bogus accesses to user addresses.  Use the
+ANSI signature (void pointers, etc).
+@
+text
+@/* 
+ * bcmp.c --
+ *
+ *	Source code for the "bcmp" library routine.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/bstring/RCS/bcmp.c,v 1.4 92/03/27 13:32:42 rab Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <bstring.h>
+#include <machparam.h>
+
+/*
+ * The following mask is used to detect proper alignment of addresses
+ * for doing word operations instead of byte operations.  It is
+ * machine-dependent.  If none of the following bits are set in an
+ * address, then word-based operations may be used. This value is imported
+ * from machparam.h
+ */
+
+#define WORDMASK WORD_ALIGN_MASK
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * bcmp --
+ *
+ *	Compare two blocks of memory for equality.  This routine is
+ *	optimized to do integer compares.  However, if either sourcePtr
+ *	or destPtr points to non-word-aligned addresses then it is
+ *	forced to do single-byte compares.
+ *
+ * Results:
+ *	The return value is zero if the blocks at sourcePtr and destPtr
+ *	are identical, non-zero if they differ.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+bcmp(sourceVoidPtr, destVoidPtr, numBytes)
+    _CONST _VoidPtr sourceVoidPtr; 	/* Where to compare from */
+    _CONST _VoidPtr destVoidPtr;	/* Where to compare to */
+    register int numBytes;		/* The number of bytes to compare */
+{
+    register _CONST char *sourcePtr = sourceVoidPtr;
+    register _CONST char *destPtr = destVoidPtr;
+
+    /*
+     * If both the sourcePtr and the destPtr point to aligned addesses then
+     * compare as much as we can in integer units.  Once we have less than
+     * a whole int to compare then it must be done by byte compares.
+     */
+
+    if ((((int) sourcePtr & WORDMASK) == 0)
+	    && (((int) destPtr & WORDMASK) == 0)) {
+	while (numBytes >= sizeof(int)) {
+	    if (*(int *) destPtr != *(int *) sourcePtr) {
+		return 1;
+	    }
+	    sourcePtr += sizeof(int);
+	    destPtr += sizeof(int);
+	    numBytes -= sizeof(int);
+	}
+    }
+
+    /*
+     * Compare the remaining bytes
+     */
+
+    while (numBytes > 0) {
+	if (*destPtr != *sourcePtr) {
+	    return 1;
+	}
+	++destPtr;
+	++sourcePtr;
+	numBytes--;
+    }
+
+    return 0;
+}
+@
+
+
+1.4
+log
+@Fixed a couple lint errors.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/bstring/RCS/bcmp.c,v 1.3 91/03/24 19:02:17 kupfer Exp Locker: rab $ SPRITE (Berkeley)";
+d20 3
+a30 2
+#include "machparam.h"
+
+a32 4
+#ifdef KERNEL
+#include <vmHack.h>
+#endif
+
+d54 3
+a56 3
+bcmp(sourcePtr, destPtr, numBytes)
+    register char *sourcePtr;		/* Where to compare from */
+    register char *destPtr;		/* Where to compare to */
+d59 3
+a61 4
+#ifdef VM_CHECK_BSTRING_ACCESS
+    Vm_CheckAccessible(sourcePtr, numBytes);
+    Vm_CheckAccessible(destPtr, numBytes);
+#endif
+@
+
+
+1.3
+log
+@Small hack so that the kernel can check for incorrect references to
+user addresses.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/bstring/RCS/bcmp.c,v 1.2 88/07/19 13:26:07 mendel Exp Locker: kupfer $ SPRITE (Berkeley)";
+d89 1
+a89 1
+	if (*destPtr++ != *sourcePtr++) {
+d92 2
+@
+
+
+1.3.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/bstring/RCS/bcmp.c,v 1.3 91/03/24 19:02:17 kupfer Exp Locker: rab $ SPRITE (Berkeley)";
+@
+
+
+1.2
+log
+@Import WORD_ALIGN_MASK from machparam.h.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: bcmp.c,v 1.1 88/04/25 21:39:21 ouster Exp $ SPRITE (Berkeley)";
+d31 5
+d62 4
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: bcmp.c,v 1.1 88/04/25 13:25:41 ouster Exp $ SPRITE (Berkeley)";
+d24 2
+a25 2
+ * address, then word-based operations may be used.  Eventually this
+ * mask needs to be handled in a more machine-independent fashion.
+d28 3
+a30 1
+#define WORDMASK 0x1
+@

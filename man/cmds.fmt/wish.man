@@ -1,0 +1,132 @@
+
+
+
+WISH                      User Commands                      WISH
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     wish - Simple windowing shell
+
+SSYYNNOOPPSSIISS
+     wwiisshh ?_o_p_t_i_o_n_s?
+
+OOPPTTIIOONNSS
+     --ddiissppllaayy _d_i_s_p_l_a_y
+                    Display (and screen) on which to display win-
+                    dow.
+
+     --ffiillee _f_i_l_e_N_a_m_e Read commands from _f_i_l_e_N_a_m_e rather than stan-
+                    dard  input.   The  last  element in _f_i_l_e_N_a_m_e
+                    will be used as the title for the application
+                    and name of its interpreter for sseenndd commands
+                    (unless overridden by the --nnaammee option).
+
+     --ggeeoommeettrryy _g_e_o_m_e_t_r_y
+                    Initial geometry to use for window.
+
+     --nnaammee _n_a_m_e     Use _n_a_m_e as the title to be displayed in  the
+                    window,  and  as  the name of the interpreter
+                    for sseenndd commands.
+
+     --ssyynncc          Execute all X server commands  synchronously,
+                    so  that  errors  are  reported  immediately.
+                    This will result in  much  slower  execution,
+                    but it is useful for debugging.
+
+     --hheellpp          Print a summary of the  command-line  options
+                    and exit.
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     WWiisshh is a simple  program  consisting  of  the  Tcl  command
+     language, the Tk toolkit, and a main program that reads com-
+     mands from standard input  or  from  a  file.   If  wwiisshh  is
+     invoked  with  no  arguments,  it creates a small window and
+     reads Tcl commands interactively from  standard  input.   It
+     will  continue  processing  commands  until all windows have
+     been deleted or until end-of-file  is  reached  on  standard
+     input.
+
+     If the --ffiillee option is provided to Tk,  then  it  reads  Tcl
+     commands  from  the  file  named in the --ffiillee option.  These
+     commands will normally create an interactive interface  con-
+     sisting of one or more widgets.  When the end of the command
+     file is reached, wwiisshh will continue to respond to  X  events
+     until all windows have been deleted.
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+WISH                      User Commands                      WISH
+
+
+
+     The wwiisshh program provides a few Tcl commands in addition  to
+     those  already  provided  by the Tcl and Tk libraries.  How-
+     ever, these commands are  intended  for  debugging  purposes
+     only  and  should  not  be widely used.  In particular, they
+     will probably be eliminated in some future release.  If  you
+     wish  to  use these commands you'll have to read the code to
+     see what they do.
+
+
+KKEEYYWWOORRDDSS
+     shell, toolkit
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     2
+
+
+

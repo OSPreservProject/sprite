@@ -1,0 +1,330 @@
+
+
+
+
+
+
+
+How to Boot Allspice
+
+     I am ``Allspice'', Sprite's root file server.  To  boot
+after a power-up try
+
+    >b sd()new
+
+to boot from disk.  If this hangs or doesn't work  for  some
+reason, you may have to do a network boot from ginger:
+
+    >b ie(0,961c,43)sun4.md/new
+
+If you get a ``phase error'' when booting off the disk,  you
+need  to reset the bus and try again.  To reset the bus, try
+booting from a non-existent disk, e.g.,
+
+    >b sd(0,6)new
+
+If you don't want allspice to be the root  server,  use  the
+-backup flag:
+
+    >b ie(0,961c,43)sun4.md/new -backup
+
+To reboot when running Sprite, use the shutdown command.
+
+    % sync
+    % shutdown -R 'ie(0,961c,43)sun4.md/new
+
+The ``sync'' command writes out the cache; it isn't required
+unless  you  are  paranoid.  Shutdown will sync the disks as
+the last thing before rebooting.
+
+     If Allspice is too wedged to get things done with  user
+commands, then sync the disks with:
+
+    break-W
+
+This should print a message about queuing a call to sync the
+disks,  and  when  it  is done it should print a ``.'' and a
+newline.  If you don't get  the  newline  then  Allspice  is
+deadlocked inside the file system cache, sigh.
+
+     (Note: on a regular Sun keyboard, this would  be  L1-W,
+and  you'd  use  the  L1 key like a shift key.  On a regular
+ASCII terminal, like Allspice's console, you use  the  break
+key like escape: break then N.)
+
+     You can abort Allspice with:
+
+    break-A
+
+And then use the boot command described above.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Debugging Tips
+
+     The current procedure for an Allspice crash is to  take
+a core dump and then reboot.
+
+     If Allspice acts up then you might  try  the  following
+things.   If  you  aren't logged in, log in as root.  Useful
+commands are:
+
+    allspice # rpcstat -srvr
+
+Which dumps out the status of all the RPC server  processes.
+If  a bunch are ``busy'', and they remain busy with the same
+RPC ID and client, then there may be a  deadlock.   If  they
+are  all  in the ``wait'' state it means that the Rpc_Daemon
+process is not doing rebinding for some reason.
+
+    allspice # ps -a
+
+This will tell you if any important daemons have  died.   In
+particular,  verify  that  arpd,  ipServer,  portmap, unfsd,
+inetd, tftpd, bootp, lpd, and sendmail are still around.  If
+the  ipServer  is in the DEBUG state you can kill it and the
+daemons       that       depend       on       it       with
+/hosts/allspice/restartIPServer.
+
+    % rpcecho -h hostname -n 1000
+
+This      program,       which       is       found       in
+/sprite/src/benchmarks/rpcecho,   and  may  or  may  not  be
+installed in /sprite/cmds, will tell you if  there  timeouts
+when using the RPC protocol to talk to another host.  If you
+suspect that a host with  an  Intel  ethernet  interface  is
+flaking  out,  you  can try this command.  Lot's of timeouts
+indicate trouble.  You can reset a host's network  interface
+from its console with
+
+    break-N
+
+
+     If RPCs to Allspice are hanging but there's no  obvious
+sign  of  trouble, the problem might be that the timer queue
+is wedged.  To verify that this is the problem, type
+
+    break-T
+
+This will give the current time (as a number) and  the  time
+that  elements  of  the  timer queue are supposed to be pro-
+cessed, sorted by increasing time.   You  may  need  to  use
+ctrl-S  to  freeze  the display (use ctrl-Q to unfreeze it).
+If the current time is greater than the earliest element  in
+the timer queue, the timer is wedged and needs prodding.  To
+prod the timer, type
+
+
+
+
+
+
+
+
+
+
+
+
+
+    break-A
+
+to go to the PROM monitor, and then type ``c''  to  continue
+back  to  Sprite.   If  this fails to unwedge the timer, you
+should reboot.
+
+Kernel Debugging
+
+     If Allspice is so hung you can't explore with user com-
+mands, then the best you can do is sync the disks with:
+
+    break-W
+
+Then throw Allspice into the debugger with:
+
+    break-D
+
+If this drops you into the monitor (the '>' prompt), you can
+still  get  into  the debugger by typing 'c' to the monitor.
+You may have to do this twice.  You should eventually get  a
+message about ``Entering the debugger...''.
+
+     You have to run the debugger from  shallot  or  another
+sun4  unix  machine,  unless  there  is a stand-alone Sprite
+machine  available.   To  login  to  shallot,  you  can  use
+ginger's console, next to you, on top of ginger.  You should
+verify that Allspice is accessible by running
+
+    ginger% kmsg -v allspice
+
+This should return the kernel version that Allspice is  run-
+ning.   If  this times-out then either Allspice isn't in the
+debugger, or more  likely,  no  one  is  responding  to  ARP
+requests  for  Allspice's  IP  address.   Run  the setup-arp
+script that is in ~sprite bin:
+
+    ginger% setup-arp
+
+Now rlogin to shallot and run the  Sprite  kernel  debugger.
+The     kernel     images     should     be     copied    to
+ginger:/home/ginger/sprite/kernels        (visible        as
+/home/ginger/sprite/kernels  on  shallot), and their version
+number should be evident in their name, e.g. sun4.1.065.  If
+not,  you  can run strings on the kernel images and grep for
+``VERSION''.
+
+    shallot% strings /tmp/sprite/sun4.sprite | egrep VERSION
+
+To   run   the   kernel   debugger.    (kgdb.sun4   is    in
+~sprite/cmds.sun4.)
+
+    shallot% cd /home/ginger/sprite/kernels
+    shallot% Gdb sun4.version
+
+
+
+
+
+
+
+
+
+
+
+
+
+If the RPC system seems to be the problem, you can dump  the
+trace of recent RPCs by calling Rpc_PrintTrace(numRecs)
+
+    (kgdb) print Rpc_PrintTrace(50)
+
+If there is a deadlock you can dump the process table:
+
+    (kgdb) print Proc_Dump()
+
+or, if you want to look at only waiting processes:
+
+    (kgdb) print Proc_KDump()
+
+You can switch from process to process and  to  stack  back-
+traces by using the 'pid' command.  You only need to specify
+the last two hex digits of the process ID.  If you only have
+a  decimal  ID, then you have to type the whole thing.  File
+system deadlocks  center  around  locked  handles,  usually.
+When  you  find  a  process  stuck  in Fsutil_HandleFetch of
+Fsutil_HandleLock you can try to find the culprit by looking
+at the *hdrPtr these guys are waiting on.  There is a 'lock-
+ProcessID' in the hdrPtr that is really  the  address  of  a
+Proc_ControlBlock.   You  can  print this out with something
+like:
+
+    (kgdb) print *(Proc_ControlBlock *)(hdrPtr->lockProcessID)
+
+You can reboot Allspice from within  kgdb  with  the  reboot
+command.
+
+    (kgdb) reboot ie(0,9634)sun4.md/new
+
+
+Taking a core dump
+
+     Step 1) Make sure Allspice is in the debugger. If  not,
+put it in the debugger.
+
+     Step 2) Login to ginger.  Go to a file system with > 40
+megabytes   free   space,   e.g.,   /home/ginger/cores  (now
+/export1/cores).
+
+     Step     2.5)     You     might     need     to     run
+~sprite/cmds.sun3/setup-arp  for  ginger  to be able to talk
+with allspice.
+
+     Step      3)      Run      kgcore      as      follows:
+"~sprite/cmds.sun3/kgcore  -v  allspice"  The -v is optional
+but I like it because it  prints  progress  messages.   Note
+that this step can take several (~ 5) minutes.
+
+     Step 4) Rename the  file  "vmcore"  so  something  more
+meaningful such as "mv vmcore vmcore.allspice.crash.11-21".
+
+
+
+
+
+
+
+
+
+
+
+
+
+     Step 5) Reboot  allspice.   (~sprite/cmds.sun3/kmsg  -R
+"sd()new" allspice)
+
+Modify date
+
+     These notes were last updated by Mike Kupfer on January
+28, 1992.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

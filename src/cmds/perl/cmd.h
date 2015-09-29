@@ -1,0 +1,1 @@
+dist/cmd.h

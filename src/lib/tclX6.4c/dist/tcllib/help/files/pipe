@@ -1,0 +1,13 @@
+
+
+          pipe [handle_var_r handle_var_w]
+               Create a pipe.  If handle_var_r and handle_var_r are
+               specified, then pipe will set the a variable named
+               handle_var_r to contain the handle of the side of the
+               pipe that was opened for reading, and handle_var_w will
+               contain the handle of the side of the pipe that was
+               opened for writing.
+
+               If the handle variables are not specified, then a list
+               containing the read and write handlew is returned as
+               the result of the command.

@@ -1,0 +1,58 @@
+Byte_Compare	byte.c	/^Byte_Compare(numBytes, sourcePtr, destPtr)$/
+Byte_Copy	byte.c	/^Byte_Copy(numBytes, sourcePtr, destPtr)$/
+Byte_Fill	byte.c	/^Byte_Fill(fillByte, numBytes, destPtr)$/
+Byte_Zero	byte.c	/^Byte_Zero(numBytes, destPtr)$/
+DevSCSICommand	devSCSI.c	/^DevSCSICommand(targetID, scsiPtr, size, addr)$/
+DevSCSIDiskError	devSCSIDisk.c	/^DevSCSIDiskError(devPtr, sensePtr)$/
+DevSCSIDoLabel	devSCSI.c	/^DevSCSIDoLabel(devPtr)$/
+DevSCSIRequestSense	devSCSI.c	/^DevSCSIRequestSense(scsiPtr, devPtr)$/
+DevSCSIReset	devSCSI.c	/^DevSCSIReset(regsPtr)$/
+DevSCSISectorIO	devSCSI.c	/^DevSCSISectorIO(command, devPtr, firstSector, numS/
+DevSCSISetupCommand	devSCSI.c	/^DevSCSISetupCommand(command, devPtr, blockNumber, /
+DevSCSISetupTapeCommand	devSCSI.c	/^DevSCSISetupTapeCommand(command, devPtr, countPtr)/
+DevSCSIStatus	devSCSI.c	/^DevSCSIStatus(scsiPtr)$/
+DevSCSITest	devSCSI.c	/^DevSCSITest(devPtr)$/
+DevSCSIWait	devSCSI.c	/^DevSCSIWait(regsPtr, condition)$/
+Dev_Config	dev.c	/^Dev_Config()$/
+Dev_IOAlloc	dev.c	/^Dev_IOAlloc(numBytes)$/
+Dev_SCSIDiskBlockIO	devSCSIDisk.c	/^Dev_SCSIDiskBlockIO(readWrite, devicePtr, fragNumb/
+Dev_SCSIDiskBlockIOInit	devSCSIDisk.c	/^Dev_SCSIDiskBlockIOInit(devicePtr, geometryPtr)$/
+Dev_SCSIDiskIO	devSCSI.c	/^Dev_SCSIDiskIO(command, deviceUnit, buffer, firstS/
+Dev_SCSIInitController	devSCSI.c	/^Dev_SCSIInitController(cntrlrPtr)$/
+Dev_SCSIInitDevice	devSCSI.c	/^Dev_SCSIInitDevice(devConfPtr)$/
+Dev_SCSITapeIO	devSCSI.c	/^Dev_SCSITapeIO(command, devPtr, buffer, countPtr)$/
+Exit	main.c	/^Exit()$/
+FileLoad	fileLoad.c	/^FileLoad(handlePtr)$/
+FsBlockIO	fsOpTable.h	/^#define FsBlockIO(readWriteFlag, devicePtr, blockN/
+FsFindComponent	fs.c	/^FsFindComponent(domainPtr, curHandlePtr, component/
+FsGetFileDesc	fs.c	/^FsGetFileDesc(domainPtr, fileNumber, descPtr)$/
+FsGetFirstIndex	fsIndex.c	/^FsGetFirstIndex(handlePtr, blockNum, indexInfoPtr)/
+FsGetNextIndex	fsIndex.c	/^FsGetNextIndex(handlePtr, indexInfoPtr)$/
+FsInitFileHandle	fs.c	/^FsInitFileHandle(domainPtr, fileNumber, handlePtr)/
+FsNoProc	fsOpTable.c	/^FsNoProc()$/
+FsRawDeviceRead	fsOpTable.h	/^#define FsRawDeviceRead(devicePtr, offset, numByte/
+FsRawDeviceWrite	fsOpTable.h	/^#define FsRawDeviceWrite(devicePtr, offset, numByt/
+Fs_AttachDisk	fsDisk.c	/^Fs_AttachDisk(ctlrNum, unitNum, partNum)$/
+Fs_BlocksToSectors	fsDisk.c	/^Fs_BlocksToSectors(fragNumber, geoPtr)$/
+Fs_IsSpriteLabel	fsDisk.c	/^Fs_IsSpriteLabel(buffer)$/
+Fs_IsSunLabel	fsDisk.c	/^Fs_IsSunLabel(buffer)$/
+Fs_Open	fs.c	/^Fs_Open(fileName, useFlags, permissions, handlePtr/
+Fs_Read	fs.c	/^Fs_Read(handlePtr, offset, numBytes, buffer, readC/
+MakePtrAccessible	fsIndex.c	/^MakePtrAccessible(handlePtr, indexInfoPtr, descPtr/
+Mem_Alloc	mem.c	/^Mem_Alloc(numBytes)$/
+Mem_Free	mem.c	/^Mem_Free(address)$/
+Mmain	main.c	/^main()$/
+NullProc	fsOpTable.c	/^NullProc()$/
+String_Cat	string.c	/^String_Cat(src, dst)$/
+String_Compare	string.c	/^String_Compare(s1, s2)$/
+String_Copy	string.c	/^String_Copy(src, dst)$/
+String_Length	string.c	/^String_Length(string)$/
+String_NCat	string.c	/^String_NCat(n, src, dst)$/
+String_NCompare	string.c	/^String_NCompare(numChars, s1, s2)$/
+String_NCopy	string.c	/^String_NCopy(n, src, dst)$/
+String_NLength	string.c	/^String_NLength(numChars, string)$/
+Sys_Panic	stubs.c	/^Sys_Panic(type, string)$/
+Sys_Printf	stubs.c	/^Sys_Printf(format, arg1, arg2, arg3, arg4, arg5, a/
+Vm_DevBufferMap	vm.c	/^Vm_DevBufferMap(numBytes, startAddr, mapAddr)$/
+Vm_MapInDevice	vm.c	/^Vm_MapInDevice(devPhysAddr, type)$/
+sizeof	devConfig.c	/^int devNumConfigCntrlrs = sizeof(devCntrlr) \/ size/

@@ -1,0 +1,66 @@
+rm -f dev.o
+/bin/cc -m68010 -O -I. -I/sprite/src/kernel/Include -I/sprite/lib/include -Dlint -DNO_PRINTF -c dev.c
+size dev.o
+text	data	bss	dec	hex
+156	4	0	160	a0
+rm -f devSCSI.o
+/bin/cc -m68010 -O -I. -I/sprite/src/kernel/Include -I/sprite/lib/include -Dlint -DNO_PRINTF -c devSCSI.c
+size devSCSI.o
+text	data	bss	dec	hex
+2140	76	8	2224	8b0
+rm -f devSCSIDisk.o
+/bin/cc -m68010 -O -I. -I/sprite/src/kernel/Include -I/sprite/lib/include -Dlint -DNO_PRINTF -c devSCSIDisk.c
+size devSCSIDisk.o
+text	data	bss	dec	hex
+296	0	0	296	128
+rm -f fs.o
+/bin/cc -m68010 -O -I. -I/sprite/src/kernel/Include -I/sprite/lib/include -Dlint -DNO_PRINTF -c fs.c
+./fsIndex.h: 20: FS_INDIRECT redefined
+./fsIndex.h: 21: FS_DBL_INDIRECT redefined
+./fsIndex.h: 22: FS_DIRECT redefined
+size fs.o
+text	data	bss	dec	hex
+1012	20	256	1288	508
+rm -f fsDisk.o
+/bin/cc -m68010 -O -I. -I/sprite/src/kernel/Include -I/sprite/lib/include -Dlint -DNO_PRINTF -c fsDisk.c
+size fsDisk.o
+text	data	bss	dec	hex
+608	60	0	668	29c
+rm -f fsIndex.o
+/bin/cc -m68010 -O -I. -I/sprite/src/kernel/Include -I/sprite/lib/include -Dlint -DNO_PRINTF -c fsIndex.c
+size fsIndex.o
+text	data	bss	dec	hex
+472	0	0	472	1d8
+rm -f fsOpTable.o
+/bin/cc -m68010 -O -I. -I/sprite/src/kernel/Include -I/sprite/lib/include -Dlint -DNO_PRINTF -c fsOpTable.c
+size fsOpTable.o
+text	data	bss	dec	hex
+20	20	0	40	28
+rm -f main.o
+/bin/cc -m68010 -O -I. -I/sprite/src/kernel/Include -I/sprite/lib/include -Dlint -DNO_PRINTF -c main.c
+size main.o
+text	data	bss	dec	hex
+216	64	0	280	118
+rm -f mem.o
+/bin/cc -m68010 -O -I. -I/sprite/src/kernel/Include -I/sprite/lib/include -Dlint -DNO_PRINTF -c mem.c
+size mem.o
+text	data	bss	dec	hex
+76	4	4	84	54
+rm -f stubs.o
+/bin/cc -m68010 -O -I. -I/sprite/src/kernel/Include -I/sprite/lib/include -Dlint -DNO_PRINTF -c stubs.c
+size stubs.o
+text	data	bss	dec	hex
+108	12	0	120	78
+rm -f vm.o
+/bin/cc -m68010 -O -I. -I/sprite/src/kernel/Include -I/sprite/lib/include -Dlint -DNO_PRINTF -c vm.c
+size vm.o
+text	data	bss	dec	hex
+124	0	0	124	7c
+/bin/ld -N -e start -T 80000 -o scsiDiskBoot  start.o byte.o dev.o devConfig.o devSCSI.o devSCSIDisk.o fileLoad.o fs.o fsDisk.o fsIndex.o fsOpTable.o main.o mem.o string.o stubs.o vm.o devProbe.o   sunSubr.o vmPage.o /sprite/lib/crt.a end.o
+cp scsiDiskBoot scsiDiskBoot.adb
+strip scsiDiskBoot
+size scsiDiskBoot
+text	data	bss	dec	hex
+6908	552	12608	20068	4e64
+ls -l scsiDiskBoot
+-rwxrwxr-x  1 brent        7492 Aug 11 12:13 scsiDiskBoot

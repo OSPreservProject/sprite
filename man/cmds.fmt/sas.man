@@ -1,0 +1,132 @@
+
+
+
+SAS                       User Commands                       SAS
+
+
+
+NNAAMMEE
+     sas - SPUR assembler
+
+SSYYNNOOPPSSIISS
+     ssaass [ --aa ] [ --LL ]] [[ --pp ]] [[--II_p_a_t_h_n_a_m_e ] [ --oo objfile ] [
+     --DD_n_a_m_e[==_d_e_f ] [ --UU_n_a_m_e ] file
+
+DDEESSCCRRIIPPTTIIOONN
+     _S_a_s translates assembly code in the named _f_i_l_e into execut-
+     able object code in the specified _o_b_j_f_i_l_e.
+
+     All undefined symbols in the assembly are treated as global.
+
+     The output of the assembly is left in the file _o_b_j_f_i_l_e.  If
+     the --oo flag is omitted, file _a.._o_u_t is used.
+
+OOPPTTIIOONNSS
+     --aa   Assemble only.  Normally, sas invokes the linker (sld)
+          to perform various normalizing tasks (backpatching for-
+          ward references, etc.).  This switch suppresses that
+          pass, leaving the "raw" assembly output in the output
+          file.  This option is seldom useful except for debug-
+          ging the assembler and linker.
+
+     --pp   Invoke the preprocessor.  This runs the preprocessor,
+          cpp, over the input file.  It is necessary to do so in
+          the presence of preprocessor (#) directives.
+
+     --ff   Allow ``fake'' operation codes that have significance
+          to the simulator.  By default, these are not allowed.
+          Additionally, when the -f switch is on, certain opera-
+          tions are given distinguished opcodes so that the simu-
+          lator can distinguish them.  Without the -f switch they
+          are synonyms for other instructions.  This option may
+          be expected to vanish in the future.
+
+     --FF   Use the floating-point format of the machine running
+          sas.  This is useful only if you are going to run a
+          simulator on the host upon the result of the assembly.
+          This option may be expected to vanish in the future.
+
+     --II_p_a_t_h_n_a_m_e
+          Include file directory.  Add _p_a_t_h_n_a_m_e to the list of
+          directories in which to search for ##iinncclluuddee files with
+          relative pathnames (not beginning with slash).  The
+          preprocessor first searches for ##iinncclluuddee files in the
+          directory containing _s_o_u_r_c_e_f_i_l_e, then in directories
+          named with --II options (if any), and finally, in
+          /_u_s_r/_i_n_c_l_u_d_e . The --II switch implies the --pp switch.
+
+     --LL   Leave local labels starting with `L', the assembler
+          usually directs the linker to remove these.
+
+
+
+SPUR Release 1.0           29 May 1988                          1
+
+
+
+
+
+
+SAS                       User Commands                       SAS
+
+
+
+     --DD_n_a_m_e[==_d_e_f
+          Define _n_a_m_e for the preprocessor, giving it value _d_e_f,
+          if the latter is supplied, and otherwise the null
+          string.  This switch implies --pp.
+
+     --UU_n_a_m_e
+          Undefine any initial definition of symbol name for
+          cpp(1).
+
+AASSSSEEMMBBLLEERR FFOORRMMAATT
+     SPUR assembly language conventions resemble those of `as'
+     for the VAX in the Berkeley release.  Immediate constants
+     begin with `$'.  Integer (floating-point, special) register
+     operands have the form r_n (f_n, s_n), or may be manifest
+     integer expressions.
+
+     Numeric local labels are allowed, (re)defined by an integer
+     followed by a colon, and referenced as an integer followed
+     by `f' (next label defined with this number) or `b' (last
+     label defined with this number).
+
+     The pseudo-operations `.text1,' `.text2,' `.text3,'
+     `.data1,' `.data2,' and `.data3' provide alternate text and
+     data assembly regions, which the assembler concatenates
+     after the default text and data regions.
+
+     The pseudo-operations `.sdata,' `.sdata1,' `.sdata2,'
+     `.scomm,' and `.slcomm' are analogous to the operations
+     without the initial `s', but place or allocate from the
+     shared segment of memory.
+
+     The assembler is much more liberal about load-time expres-
+     sions.  The values of these expressions may involve any
+     operands, symbolic or literal, whether or not defined in the
+     current assembly.  The defining expressions for `.set' sym-
+     bols are equally liberal, and all such symbols may be
+     exported.   The only restriction is that there may not be
+     circular dependences in the definition of any symbol.  Also,
+     certain expressions, such as those associated with `.org' or
+     `.space' or those designating registers, must still be mani-
+     fest.
+
+SSEEEE AALLSSOO
+     sld(1), a.out(5)
+
+
+
+
+
+
+
+
+
+
+
+SPUR Release 1.0           29 May 1988                          2
+
+
+

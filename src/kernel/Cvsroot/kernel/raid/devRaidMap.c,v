@@ -1,0 +1,310 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ds3100:1.3 sun3:1.3 sun4nw:1.3 symm:1.3 spur:1.3;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     90.10.12.14.01.09;  author eklee;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.09.19.14.54.09;  author eklee;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.05.15.19.00.05;  author eklee;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Raid logical to physical mapping functions.
+@
+
+
+1.3
+log
+@Added Raid_ prefix to external names and cleaned up warning messages.
+@
+text
+@/* 
+ * devRaidUtil.c --
+ *
+ *	Routines for allocating, initializing and deallocating various
+ *	RAID data structures.
+ *	Routines for mapping logical RAID sectors to physical devices.
+ *
+ * Copyright 1989 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaidMap.c,v 1.2 90/09/19 14:54:09 eklee Exp Locker: eklee $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include "sync.h"
+#include <stdio.h>
+#include "sprite.h"
+#include "fs.h"
+#include "dev.h"
+#include "devBlockDevice.h"
+#include "devRaid.h"
+#include "stdlib.h"
+#include "devRaidUtil.h"
+#include "machparam.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_MapPhysicalToStripeID --
+ *
+ *	Maps physical address (raid, col, row, sector) to stripeID.
+ *
+ * Results:
+ *	stripeID
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Raid_MapPhysicalToStripeID(raidPtr, col, row, sector, outStripeIDPtr)
+    Raid	*raidPtr;
+    int		 col;
+    int		 row;
+    unsigned	 sector;
+    int		*outStripeIDPtr;
+{
+    int group, groupRow, stripeUnit;
+    int stripeID;
+
+    group    = row / raidPtr->rowsPerGroup;
+    groupRow = row % raidPtr->rowsPerGroup;
+    stripeUnit = sector / raidPtr->sectorsPerStripeUnit;
+
+    stripeID = group * raidPtr->stripeUnitsPerDisk + stripeUnit;
+    stripeID = stripeID * raidPtr->rowsPerGroup + groupRow;
+    *outStripeIDPtr = stripeID;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_MapParity --
+ *
+ *	Maps logical sector address to (col, row, sector) of corresponding
+ *	parity sector.
+ *
+ * Results:
+ *      (col, row, sector).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Raid_MapParity(raidPtr, sectorNum, outColPtr, outRowPtr, sectorNumPtr)
+    Raid	*raidPtr;
+    unsigned	 sectorNum;
+    int		*outColPtr, *outRowPtr;
+    unsigned	*sectorNumPtr;
+{
+    int sector, col, groupRow, stripeUnit, group;
+    int row, stripeID;
+
+    sector     = sectorNum%raidPtr->sectorsPerStripeUnit;
+    sectorNum /= raidPtr->sectorsPerStripeUnit;
+    col        = sectorNum%raidPtr->numDataCol;
+    sectorNum /= raidPtr->numDataCol;
+    groupRow   = sectorNum%raidPtr->rowsPerGroup;
+    sectorNum /= raidPtr->rowsPerGroup;
+    stripeUnit = sectorNum%raidPtr->stripeUnitsPerDisk;
+    sectorNum /= raidPtr->stripeUnitsPerDisk;
+    group      = sectorNum%raidPtr->groupsPerArray;
+    sectorNum /= raidPtr->groupsPerArray;
+
+    if (sectorNum != 0) {
+	(void)printf("Error: Raid_MapSector: sectorNum=%d\n", (int) sectorNum);
+    }
+
+    row = group * raidPtr->rowsPerGroup + groupRow;
+    stripeID = group * raidPtr->stripeUnitsPerDisk + stripeUnit;
+    stripeID = stripeID * raidPtr->rowsPerGroup + groupRow;
+
+    /*
+     * Rotate sectors/parity.
+     */
+    switch (raidPtr->parityConfig) {
+    case 'R': /* Right Symetric */
+	col = (raidPtr->numCol-1 + stripeID) % raidPtr->numCol;
+	break;
+    case 'L': /* Left Symetric */
+	col = (raidPtr->numCol-1 - stripeID) % raidPtr->numCol;
+	if (col < 0) {
+	    col += raidPtr->numCol;
+	}
+	break;
+    default:  /* No Rotation */
+	col = raidPtr->numCol-1;
+	break;
+    }
+
+    /*
+     * Return values.
+     */
+    *outColPtr = col;
+    *outRowPtr = row;
+    *sectorNumPtr = stripeUnit*raidPtr->sectorsPerStripeUnit + sector;
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_MapSector --
+ *
+ *	Maps logical sector address to (col, row, sector).
+ *
+ * Results:
+ *      (col, row, sector).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Raid_MapSector(raidPtr, sectorNum, outColPtr, outRowPtr, sectorNumPtr)
+    Raid	*raidPtr;
+    unsigned	 sectorNum;
+    int		*outColPtr, *outRowPtr;
+    unsigned	*sectorNumPtr;
+{
+    int sector, col, groupRow, stripeUnit, group;
+    int row, stripeID;
+
+    sector     = sectorNum%raidPtr->sectorsPerStripeUnit;
+    sectorNum /= raidPtr->sectorsPerStripeUnit;
+    col        = sectorNum%raidPtr->numDataCol;
+    sectorNum /= raidPtr->numDataCol;
+    groupRow   = sectorNum%raidPtr->rowsPerGroup;
+    sectorNum /= raidPtr->rowsPerGroup;
+    stripeUnit = sectorNum%raidPtr->stripeUnitsPerDisk;
+    sectorNum /= raidPtr->stripeUnitsPerDisk;
+    group      = sectorNum%raidPtr->groupsPerArray;
+    sectorNum /= raidPtr->groupsPerArray;
+
+    if (sectorNum != 0) {
+	(void)printf("Error: Raid_MapSector: sectorNum=%d\n", (int) sectorNum);
+    }
+
+    row = group * raidPtr->rowsPerGroup + groupRow;
+    stripeID = group * raidPtr->stripeUnitsPerDisk + stripeUnit;
+    stripeID = stripeID * raidPtr->rowsPerGroup + groupRow;
+
+    /*
+     * Rotate sectors/parity.
+     */
+    switch (raidPtr->parityConfig) {
+    case 'R': /* Right Symetric */
+	col = (col + stripeID) % raidPtr->numCol;
+	break;
+    case 'L': /* Left Symetric */
+	col = (col - stripeID) % raidPtr->numCol;
+	if (col < 0) {
+	    col += raidPtr->numCol;
+	}
+	break;
+    default:  /* No Rotation */
+	break;
+    }
+
+    /*
+     * Return values.
+     */
+    *outColPtr = col;
+    *outRowPtr = row;
+    *sectorNumPtr = stripeUnit*raidPtr->sectorsPerStripeUnit + sector;
+}
+@
+
+
+1.2
+log
+@Added prototypes.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaidMap.c,v 1.1 90/05/15 19:00:05 eklee Exp Locker: eklee $ SPRITE (Berkeley)";
+d24 1
+d38 1
+a38 1
+ * MapPhysicalToStripeID --
+d52 1
+a52 1
+MapPhysicalToStripeID(raidPtr, col, row, sector, outStripeIDPtr)
+d75 1
+a75 1
+ * MapParity --
+d90 1
+a90 1
+MapParity(raidPtr, sectorNum, outColPtr, outRowPtr, sectorNumPtr)
+d111 1
+a111 1
+	(void)printf("Error: MapSector: sectorNum=%d\n", (int) sectorNum);
+d149 1
+a149 1
+ * MapSector --
+d163 1
+a163 1
+MapSector(raidPtr, sectorNum, outColPtr, outRowPtr, sectorNumPtr)
+d184 1
+a184 1
+	(void)printf("Error: MapSector: sectorNum=%d\n", (int) sectorNum);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaidUtil.c,v 1.7 90/01/04 17:39:31 eklee Exp $ SPRITE (Berkeley)";
+a22 1
+#include <stdio.h>
+a26 4
+/*
+#include "devDiskLabel.h"
+#include "devDiskStats.h"
+*/
+a28 2
+#include "devRaidIOC.h"
+#include "devRaidLock.h"
+a29 1
+#include "dbg.h"
+a30 1
+#include "debugMem.h"
+@

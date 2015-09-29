@@ -1,0 +1,68 @@
+' $Header: /sprite/src/lib/c/sync/RCS/Sync.man,v 1.1 88/12/30 16:07:18 ouster Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS Sync lib 
+.BS
+.SH NAME
+Sync \- Synchronization overview
+.SH SYNOPSIS
+This section provides an overview of the Sprite \fBSync_\fR system routines.
+.BE
+.SH DESCRIPTION
+.PP
+Sprite provides system calls to allow processes to synchronize execution using
+Mesa-style monitors.
+.PP
+The following set of macros are used to emulate monitored
+procedures of Mesa.  The \fBLOCK_MONITOR\fR and \fBUNLOCK_MONITOR\fR macros 
+depend on a constant \fBLOCKPTR\fR.  \fBLOCKPTR\fR should be defined 
+as the address of the lock variable used to lock the monitor.  
+Something like the following two lines of code should appear 
+at the beginning of a file of monitored procedures.
+.nf
+
+    #include <sync.h>
+
+    Sync_Lock modMonitorLock;
+    #define LOCKPTR (&modMonitorLock)
+
+.fi
+The pseudo-keywords \fBINTERNAL\fR and \fBENTRY\fR denote internal and entry
+procedures of a monitor.  \fBINTERNAL\fR procedures can only be called
+when the monitor lock is held.  \fBENTRY\fR procedures are procedures
+that acquire the lock.  There may also be External procedures.
+They are the default and there is no special keyword.  An External
+procedure doesn't explicitly acquire the monitor lock, but may
+call an \fBENTRY\fR procedure.
+
+.PP
+Condition variables represent events that are associated with locks.
+The operations on a condition variable are \fBSync_Wait\fR and \fBSync_Broadcast\fR. 
+\fBSync_Wait\fR allows a process to wait for a particular monitor condition to occur.
+\fBSync_Broadcast\fR wakes up all processes waiting on a particular condition.  
+The lock must be acquired before a call to these routines is made.
+The lock is released while a process waits on a
+condition, and is then re-acquired when the condition is notified
+via \fBSync_Broadcast\fR.
+.\"An event is an integer value that is used to distinguish waiting processes:
+.\"a process that invokes Sync_SlowWait with a particular value will be 
+.\"awakened when another process calls Sync_Broadcast with the same value.
+.\"Addresses of data structures are commonly used as event values.
+.\"For example, to wait for data to arrive in a queue a process
+.\"could wait on the address of the queue structure;  when data
+.\"arrives, the process placing data in the queue could call
+.\"Sync_Broadcast with the same address.
+.PP
+\fBSync_Broadcast\fR is the only mechanism for awakening waiting
+processes.  For example, there is no means to notify only a single process
+awaiting a particular condition.  If several processes are awaiting the
+availability of a single shared resource, all processes awaiting the condition
+must be notified; they must each recheck for the availability
+of the resource, and all but one will find the resource unavailable
+and wait again.
+.PP
+\fBSync_WaitTime\fR is used to cause the process to sleep for a specific
+amount of time. The process will be woken up if a signal arrives.
+.SH "SEE ALSO"
+Sync_Broadcast, Sync_Wait, Sync_WaitTime
+.SH KEYWORDS
+synchronization, wait, block, process, event, wakeup, broadcast

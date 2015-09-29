@@ -1,0 +1,10 @@
+F COFFREAD.C;1                      	coffread.c
+F DBXREAD.C;1                       	dbxread.c
+F INFRUN.C;1                        	infrun.c
+F MIPS_TDE.C;1                      	mips-tdep.c
+F PROCDEBU.H;1                      	procDebugRegs.h
+F PTRACEMI.C;1                      	ptraceMips.c
+F PTRACESU.C;1                      	ptraceSun.c
+D RCS                               	RCS
+F SPARC_PR.C;1                      	sparc_procDebugRegs.c
+F TM_MIPS.H;1                       	tm-mips.h

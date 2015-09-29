@@ -1,0 +1,66 @@
+
+
+
+after                     User Commands                     after
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     after - Execute a command after a time delay
+
+SSYYNNOOPPSSIISS
+     aafftteerr _m_s ?_a_r_g_1 _a_r_g_2 _a_r_g_3 ...?
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This command is used to delay execution of the program or to
+     execute a command in background after a delay.  The _m_s argu-
+     ment gives a time in milliseconds.  If _m_s is the only  argu-
+     ment  to  aafftteerr  then the command sleeps for _m_s milliseconds
+     and returns.  While the command is sleeping the  application  |
+     still responds to X events and other events.
+
+     If additional arguments are present after  _m_s,  then  a  Tcl
+     command  is formed by concatenating all the additional argu-
+     ments in the same fashion  as  the  ccoonnccaatt  command.   AAfftteerr
+     returns  immediately but arranges for the command to be exe-
+     cuted _m_s milliseconds later in background.  The command will  |
+     be  executed at global level (outside the context of any Tcl  |
+     procedure).  If an error occurs while executing the  delayed
+     command  then  the  ttkkeerrrroorr  mechanism is used to report the
+     error.
+
+     The aafftteerr command always returns an empty string.
+
+
+SSEEEE AALLSSOO
+     tkerror
+
+
+KKEEYYWWOORRDDSS
+     delay, sleep, time
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     1
+
+
+

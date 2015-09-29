@@ -1,0 +1,60 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ds3100:1.1 sun3:1.1 sun4nw:1.1 symm:1.1 spur:1.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     91.03.19.11.02.37;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/*
+ * devStdFBInt.h --
+ *
+ *	Declarations of the standard frame buffer device.
+ *
+ * Copyright 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.7 91/02/09 13:24:52 ouster Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _DEVSTDFBINT
+#define _DEVSTDFBINT
+
+#include <fs.h>
+
+extern	ReturnStatus	DevStdFBOpen _ARGS_ ((Fs_Device *devicePtr, 
+				int useFlags, Fs_NotifyToken token,
+				int *flagsPtr));
+extern	ReturnStatus	DevStdFBMMap _ARGS_ ((Fs_Device *devicePtr, 
+				Address startAddr, int length, int offset,
+				Address *newAddrPtr));
+extern	ReturnStatus	DevStdFBIOControl _ARGS_ ((Fs_Device *devicePtr, 
+				Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
+extern	ReturnStatus	DevStdFBClose _ARGS_ ((Fs_Device *devicePtr, 
+				int useFlags, int openCount, int writerCount));
+
+#endif /* _DEVSTDFBINT */
+
+@

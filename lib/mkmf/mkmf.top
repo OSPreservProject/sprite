@@ -1,0 +1,68 @@
+#!/sprite/cmds/csh -f
+#
+# A script to generate (or regenerate) a Makefile for a top-level
+# directory for commands, libraries, etc.  The assumption is that this
+# direcctory is nothing more than a container for lots of subdirectories
+# that have the interesting stuff in them.
+#
+# If a file named ./Makefile.proto exists, use it as the prototype for
+# the Makefile, else use a common prototype.
+#
+# We assume we were invoked from mkmf.
+#
+# Parameters passed in from mkmf as environment variables:
+#	MKMFDIR		directory containing prototype makefiles
+#	MAKEFILE	name of makefile to create
+#	MACHINES	list of machine names (e.g. "sun2 sun3"), for
+#			which there are machine-dependent subdirectories
+#			(sun3.md, spur.md, etc.) of this directory.
+#	SUBTYPE		information about the type makefile
+#
+# $Header: /sprite/lib/mkmf/RCS/mkmf.top,v 1.14 92/06/10 13:04:41 jhh Exp $ (SPRITE) Berkeley
+#
+
+#
+# Argument processing.  (Generalized form, even though just one flag so far.)
+#
+while ($#argv >= 1)
+    if ("$1" == '-x') then
+	set echo
+    endif
+    shift
+end
+
+set subtype=$SUBTYPE
+set name=$cwd:t
+set machines=($MACHINES)
+set makefile=$MAKEFILE
+set distdir=($DISTDIR)
+
+if (-e $makefile.proto) then
+	set proto=$makefile.proto
+else
+	set proto="${MKMFDIR}/Makefile.top"
+endif
+
+echo "Generating $makefile for $cwd using $proto"
+
+rm -f mkmf.subdirs~
+find * -type d ! -name \*.md ! -name RCS -prune -print |tr '\012' ' ' |sed -e 's/ $//' > mkmf.subdirs~
+
+if (-z mkmf.subdirs~) then
+	echo "No subdirectories found."
+endif
+rm -f mkmf.sed~ mkmf.sed2~
+echo "s,@(SUBDIRS)," > mkmf.sed~
+echo ",g" >> mkmf.subdirs~
+cat mkmf.sed~ mkmf.subdirs~ | tr -d '\012' > mkmf.sed2~
+
+cat $proto | sed -f mkmf.sed2~\
+	-e "s,@(DATE),`date`,g" \
+	-e "s,@(MACHINES),$machines,g" \
+	-e "s,@(MAKEFILE),$makefile,g" \
+	-e "s,@(NAME),$name,g" \
+	-e "s,@(TEMPLATE),$proto,g" \
+	-e "s,@(DISTDIR),$distdir,g" \
+	-e "s,@(TYPE),$subtype,g" \
+	> $makefile
+rm -f mkmf.sed~ mkmf.sed2~ mkmf.subdirs~

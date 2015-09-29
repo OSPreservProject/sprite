@@ -1,0 +1,44 @@
+
+
+          The help facility allows one to look up help files which
+          where extracted from the standard Tcl manual pages and Tcl
+          scripts during Tcl installation.  Help files are structured
+          as a multilevel directory tree of subjects and help files.
+          The following commands and options are provided with the
+          help package:
+
+          help
+               Help, without arguments, lists of all the top-level
+               help subject directories and files.
+
+          help subjectdir
+               Displays all of help files and lower level subject
+               files (if any exist) under the directory subjectdir.
+
+          help subjectdir/helpfile
+               Display the specified help file.  The help output is
+               passed through a simple pager if output exceeds 23
+               lines, pausing waiting for a return to be entered.  If
+               any other character is entered, the output is
+               terminated.
+
+          helpcd [subjectdir]
+               Change the current subject directory, which is much
+               like the Unix current directory.  If subjectdir is not
+               specified, return to the top-level of the help tree.
+               Help path names may also include ``..'' elements.
+
+          helppwd
+               Displays the current help subject directory.
+
+          help help | ?
+               Displays help on the help facility at any directory
+               level.
+
+          apropos pattern
+               This command locates subjects by searching their one-
+               line descriptions for a pattern.  Apropos is useful
+               when you can remember part of the name or description
+               of a command, and want to search through the one-line
+               summaries for matching lines.  Full regular expressions
+               may be specified (see the regexp command).

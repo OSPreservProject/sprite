@@ -1,0 +1,28 @@
+          seek fileId offset ?origin?
+               Change  the  current  access  position for fileId.  The
+               offset and origin arguments  specify  the  position  at
+               which  the  next  read  or write will occur for fileId.
+               Offset must be a number (which  may  be  negative)  and
+               origin must be one of the following:
+
+               start
+                    The  new access position will be origin bytes from
+                    the start of the file.
+
+               current
+                    The  new access position will be origin bytes from
+                    the current access  position;  a  negative  origin
+                    moves the access position backwards in the file.
+
+               end
+                    The  new access position will be origin bytes from
+                    the end of the file.  A negative origin places the
+                    access  position  before  the  end-of-file,  and a
+                    positive origin places the access  position  after
+                    the end-of-file.
+
+               The origin argument defaults  to  start.   FileId  must
+               have  been  the  return  value  from a previous call to
+               open, or it may be stdin, stdout, or stderr to refer to
+               one of the standard I/O channels.  This command returns
+               an empty string.

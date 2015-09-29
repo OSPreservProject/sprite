@@ -1,0 +1,6 @@
+# List of filesystems to be dumped to Jaquith
+/user1
+/user4
+/user5
+/user6
+/sprite/src/kernel

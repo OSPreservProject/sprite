@@ -1,0 +1,4 @@
+#!/bin/csh -f
+set echo
+
+sun3.md/fstrash -dev rsd0 -dir /hosts/cayenne/dev/ -part a -write 

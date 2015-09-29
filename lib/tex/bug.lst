@@ -1,0 +1,1126 @@
+This is TeX, Tops-20 Version 1.5 (preloaded format=lplain 85.10.4)  13 OCT 1985 15:05
+**bug
+(PS:<TEX.LATEX>BUG.TEX.8
+LaTeX Version 2.09 - Release 27 September 1985
+(PS:<TEX.LATEX>REPORT.STY.1
+Document Style 'report'. Released 23 September 1985
+(PS:<TEX.LATEX>REP10.STY.1)
+\descriptionmargin=\dimen99
+\c@part=\count78
+\c@chapter=\count79
+\c@section=\count80
+\c@subsection=\count81
+\c@subsubsection=\count82
+\c@paragraph=\count83
+\c@subparagraph=\count84
+\c@figure=\count85
+\c@table=\count86
+ (PS:<TEX.LATEX>TITLEPAGE.STY.1))
+(PS:<TEX.LATEX>BUG.AUX.6)
+{vertical mode: \tracingstats}
+{\tracingpages}
+{\tracingoutput}
+{\tracinglostchars}
+{\tracingmacros}
+{\tracingparagraphs}
+{\tracingrestores}
+{\showboxbreadth}
+{\showboxdepth}
+{\errorstopmode}
+
+{\noindent}
+{horizontal mode: the letter S}
+{blank space  }
+{the letter w}
+{blank space  }
+{the letter e}
+{blank space  }
+{the letter t}
+{blank space  }
+{the letter m}
+{blank space  }
+{math shift character $}
+{math mode: the character (}
+{the character 6}
+{blank space  }
+{\mathchar"2201}
+{the character 1}
+{the character 7}
+{the character 2}
+{blank space  }
+{the character -}
+{blank space  }
+{the character 1}
+{the character 0}
+{the character 0}
+{the character 0}
+{the character )}
+{the character /}
+{the character 1}
+{the character 0}
+{the character 0}
+{the character 0}
+{math shift character $}
+{restoring \fam=0}
+{horizontal mode: blank space  }
+{the letter d}
+{blank space  }
+{the letter w}
+{blank space  }
+{the letter i}
+{blank space  }
+{the character 3}
+{blank space  }
+{the letter c}
+{blank space  }
+{the letter p}
+{blank space  }
+{the letter p}
+{blank space  }
+{begin-group character {}
+
+\em ->\protect \pem {}
+{\relax}
+
+\pem ->\ifdim \fontdimen \@ne \font >\z@ \rm \else \it \fi 
+{\ifdim}
+{false}
+
+\it ->\protect \pit 
+{\relax}
+
+\pit ->\fam \itfam \tenit 
+{\fam}
+{select font amti10}
+{\fi}
+{begin-group character {}
+{end-group character }}
+{the letter W}
+{end-group character }}
+{restoring current font=\tenrm}
+{restoring \fam=0}
+{blank space  }
+{the letter n}
+{blank space  }
+{the letter t}
+{blank space  }
+{the letter h}
+{blank space  }
+{the letter h}
+{blank space  }
+{the letter t}
+{blank space  }
+{the letter a}
+{blank space  }
+{the character (}
+{blank space  }
+{the letter c}
+{blank space  }
+{the letter f}
+{blank space  }
+{the letter a}
+{blank space  }
+{the letter w}
+{blank space  }
+{the letter k}
+{blank space  }
+{the letter t}
+{blank space  }
+{the letter h}
+{blank space  }
+{the letter m}
+{blank space  }
+{the letter h}
+{blank space  }
+{the letter m}
+{blank space  }
+{the letter s}
+{blank space  }
+{the letter n}
+{blank space  }
+{the letter a}
+{blank space  }
+{the letter m}
+{blank space  }
+{the letter e}
+{blank space  }
+{the letter t}
+{blank space  }
+{the letter o}
+{blank space  }
+{\showlists}
+
+### horizontal mode entered at line 4
+\tenrm S
+\tenrm o
+\glue 3.33333 plus 1.66666 minus 1.1111
+\tenrm w
+\kern-0.27779
+\tenrm e
+\glue 3.33333 plus 1.66666 minus 1.1111
+\tenrm e
+\tenrm x
+\tenrm p
+\kern0.27777
+\tenrm e
+\tenrm c
+\tenrm t
+\glue 3.33333 plus 1.66666 minus 1.1111
+\tenrm t
+\tenrm o
+\glue 3.33333 plus 1.66666 minus 1.1111
+\tenrm m
+\tenrm a
+\tenrm k
+\kern-0.27779
+\tenrm e
+\glue 3.33333 plus 1.66666 minus 1.1111
+\mathon
+\tenrm (
+\tenrm 6
+\glue(\medmuskip) 2.22217 plus 1.11108 minus 2.22217
+\tensy ^^A
+\penalty 700
+\glue(\medmuskip) 2.22217 plus 1.11108 minus 2.22217
+\tenrm 1
+\tenrm 7
+\tenrm 2
+\glue(\medmuskip) 2.22217 plus 1.11108 minus 2.22217
+\tensy ^^@
+\penalty 700
+\glue(\medmuskip) 2.22217 plus 1.11108 minus 2.22217
+\tenrm 1
+\tenrm 0
+\tenrm 0
+\tenrm 0
+\tenrm )
+\tenmi =
+\tenrm 1
+\tenrm 0
+\tenrm 0
+\tenrm 0
+\mathoff
+\glue 3.33333 plus 1.66666 minus 1.1111
+\tenrm d
+\tenrm o
+\tenrm l
+\tenrm l
+\tenrm a
+\tenrm r
+\tenrm s
+\tenrm ,
+\glue 3.33333 plus 2.08331 minus 0.88887
+\tenrm w
+\tenrm h
+\tenrm i
+\tenrm c
+\kern-0.27779
+\tenrm h
+\glue 3.33333 plus 1.66666 minus 1.1111
+\tenrm i
+\tenrm s
+\glue 3.33333 plus 1.66666 minus 1.1111
+\tenrm 3
+\tenrm .
+\tenrm 2
+\glue 3.33333 plus 1.66666 minus 1.1111
+\tenrm c
+\tenrm e
+\tenrm n
+\kern-0.27779
+\tenrm t
+\tenrm s
+\tenrm ,
+\glue 3.33333 plus 2.08331 minus 0.88887
+\tenrm p
+\kern0.27777
+\tenrm e
+\tenrm r
+\glue 3.33333 plus 1.66666 minus 1.1111
+\tenrm p
+\tenrm l
+\tenrm a
+\kern-0.27779
+\tenrm y
+\kern-0.83334
+\tenrm .
+\glue 4.44443 plus 4.99997 minus 0.37036
+\tenit W
+\tenit e
+\tenit ,
+\glue 3.33333 plus 2.08331 minus 0.88887
+\tenrm n
+\tenrm o
+\tenrm t
+\glue 3.33333 plus 1.66666 minus 1.1111
+\tenrm t
+\tenrm h
+\tenrm e
+\glue 3.33333 plus 1.66666 minus 1.1111
+\tenrm h
+\tenrm o
+\tenrm u
+\tenrm s
+\tenrm e
+\tenrm ,
+\glue 3.33333 plus 2.08331 minus 0.88887
+\tenrm h
+\tenrm a
+\kern-0.27779
+\tenrm v
+\kern-0.27779
+\tenrm e
+\glue 3.33333 plus 1.66666 minus 1.1111
+\tenrm t
+\tenrm h
+\tenrm e
+\glue 3.33333 plus 1.66666 minus 1.1111
+\tenrm a
+\tenrm d
+\tenrm v
+\kern-0.55556
+\tenrm a
+\tenrm n
+\kern-0.27779
+\tenrm t
+\tenrm a
+\tenrm g
+\tenrm e
+\glue 3.33333 plus 1.66666 minus 1.1111
+\tenrm (
+\tenrm o
+\tenrm f
+\glue 3.33333 plus 1.66666 minus 1.1111
+\tenrm c
+\tenrm o
+\tenrm u
+\tenrm r
+\tenrm s
+\tenrm e
+\glue 3.33333 plus 1.66666 minus 1.1111
+\tenrm f
+\tenrm o
+\tenrm r
+\glue 3.33333 plus 1.66666 minus 1.1111
+\tenrm a
+\tenrm l
+\tenrm l
+\glue 3.33333 plus 1.66666 minus 1.1111
+\tenrm w
+\kern-0.27779
+\tenrm e
+\glue 3.33333 plus 1.66666 minus 1.1111
+\tenrm k
+\tenrm n
+\tenrm o
+\kern-0.27779
+\tenrm w
+\glue 3.33333 plus 1.66666 minus 1.1111
+\tenrm t
+\tenrm h
+\tenrm e
+\glue 3.33333 plus 1.66666 minus 1.1111
+\tenrm h
+\tenrm o
+\tenrm u
+\tenrm s
+\tenrm e
+\glue 3.33333 plus 1.66666 minus 1.1111
+\tenrm m
+\tenrm a
+\kern-0.27779
+\tenrm y
+\glue 3.33333 plus 1.66666 minus 1.1111
+\tenrm h
+\tenrm a
+\kern-0.27779
+\tenrm v
+\kern-0.27779
+\tenrm e
+\glue 3.33333 plus 1.66666 minus 1.1111
+\tenrm m
+\tenrm a
+\tenrm d
+\tenrm e
+\glue 3.33333 plus 1.66666 minus 1.1111
+\tenrm s
+\tenrm o
+\tenrm m
+\tenrm e
+\glue 3.33333 plus 1.66666 minus 1.1111
+\tenrm n
+\kern-0.27779
+\tenrm u
+\tenrm m
+\kern-0.27779
+\tenrm b
+\kern0.27777
+\tenrm e
+\tenrm r
+\tenrm s
+\glue 3.33333 plus 1.66666 minus 1.1111
+\tenrm a
+\tenrm r
+\tenrm e
+\glue 3.33333 plus 1.66666 minus 1.1111
+\tenrm m
+\tenrm o
+\tenrm r
+\tenrm e
+\glue 3.33333 plus 1.66666 minus 1.1111
+\tenrm e
+\tenrm q
+\tenrm u
+\tenrm a
+\tenrm l
+\glue 3.33333 plus 1.66666 minus 1.1111
+\tenrm t
+\tenrm h
+\tenrm a
+\tenrm n
+\glue 3.33333 plus 1.66666 minus 1.1111
+\tenrm o
+\tenrm t
+\tenrm h
+\tenrm e
+\tenrm r
+\tenrm s
+\tenrm )
+\tenrm .
+\glue 4.44443 plus 4.99997 minus 0.37036
+spacefactor 3000
+### vertical mode entered at line 0
+### current page:
+\mark{{}{}}
+\write-{}
+
+prevdepth 0.0
+
+! OK.
+l.10 \showlists
+               
+? 
+{\tracingonline}
+
+\end #1->\csname end#1\endcsname \endgroup \@checkend {#1}\if@ignore \global \@
+ignorefalse \ignorespaces \fi 
+#1<-document
+{\csname}
+
+\enddocument ->\@checkend {document}\clearpage \begingroup \if@filesw \immediat
+e \closeout \@mainaux \def \global \@namedef ##1##2{}\def \newlabel {\@testdef 
+r}\def \bibcite {\@testdef b}\@tempswafalse \makeatletter \input \jobname .aux 
+\if@tempswa \@warning {Label(s) may have changed. Rerun to get cross-references
+ right}\fi \fi \endgroup \deadcycles \z@ \@@end 
+
+\@checkend #1->\def \@tempa {#1}\ifx \@tempa \@currenvir \else \@badend {#1}\fi
+ \def \@currenvir {document}
+#1<-document
+{\def}
+{\ifx}
+{true}
+{\else}
+{\def}
+
+\clearpage ->\newpage \write \m@ne {}\vbox {}\penalty -\@Mi 
+
+\newpage ->\par \vfil \penalty -\@M 
+{\par}
+@firstpass
+\tenrm So we expect to make $(6 \tensy ^^A \tenrm 172 \tensy ^^@ \tenrm 1000)\t
+enmi =\tenrm 1000$ dollars, which is 3.2 cents, per 
+@ via @@0 b=48 p=0 d=3364
+@@1: line 1.1 t=3364 -> @@0
+play. 
+@ via @@0 b=1 p=0 d=121
+@@2: line 1.2 t=121 -> @@0
+\tenit We, \tenrm not the house, have the advantage (of course for all we know 
+the 
+@ via @@1 b=21 p=0 d=961
+@@3: line 2.1 t=4325 -> @@1
+house 
+@ via @@1 b=41 p=0 d=12601
+@ via @@2 b=16 p=0 d=676
+@@4: line 2.1 t=797 -> @@2
+may 
+@ via @@2 b=14 p=0 d=576
+@@5: line 2.3 t=697 -> @@2
+have made some numbers are more equal than others). 
+@\par via @@3 b=0 p=-10000 d=100
+@\par via @@4 b=0 p=-10000 d=100
+@\par via @@5 b=0 p=-10000 d=100
+@@6: line 3.2- t=797 -> @@5
+
+%% goal height=528.0, max depth=4.0
+% t=0.0 g=528.0 b=10000 p=0 c=100000#
+% t=10.0 g=528.0 b=10000 p=150 c=100000#
+% t=22.0 g=528.0 b=10000 p=150 c=100000#
+{vertical mode: \vfil}
+{\penalty}
+% t=34.0 g=528.0 b=10000 p=0 c=100000#
+% t=36.5 plus 1.0fil g=528.0 b=0 p=-10000 c=-10000#
+{internal vertical mode: \ifnum}
+{false}
+
+\@makecol ->\ifvoid \footins \setbox \@outputbox \box \@cclv \else \setbox \@ou
+tputbox \vbox {\unvbox \@cclv \vskip \skip \footins \footnoterule \unvbox \foot
+ins }\fi \xdef \@freelist {\@freelist \@midlist }\gdef \@midlist {}\@combineflo
+ats \setbox \@outputbox \vbox to\@colht {\boxmaxdepth \maxdepth \@texttop \unvb
+ox \@outputbox \@textbottom }\global \maxdepth \@maxdepth 
+{\ifvoid}
+{true}
+{\setbox}
+{\else}
+{\xdef}
+
+\@freelist ->\@elt \bx@A \@elt \bx@B \@elt \bx@C \@elt \bx@D \@elt \bx@E \@elt 
+\bx@F \@elt \bx@G \@elt \bx@H \@elt \bx@I \@elt \bx@J \@elt \bx@K \@elt \bx@L \
+@elt \bx@M \@elt \bx@N \@elt \bx@O \@elt \bx@P \@elt \bx@Q \@elt \bx@R 
+
+\@midlist ->
+{\gdef}
+
+\@combinefloats ->\ifx \@toplist \@empty \else \@cfla \fi \ifx \@botlist \@empt
+y \else \@cflb \fi 
+{\ifx}
+{true}
+{\else}
+{\ifx}
+{true}
+{\else}
+{\setbox}
+{\boxmaxdepth}
+{\relax}
+{\unvbox}
+
+\@textbottom ->\vskip \z@ plus.0001fil
+{\vskip}
+{end-group character }}
+{restoring \boxmaxdepth=16383.99998pt}
+{\global}
+
+\@opcol ->\global \@mparbottom \z@ \if@twocolumn \@outputdblcol \else \@outputp
+age \global \@colht \textheight \fi 
+{\global}
+{\iffalse}
+{false}
+
+\@outputpage ->\begingroup \catcode `\ =10 \if@specialpage \global \@specialpag
+efalse \@nameuse {ps@\@specialstyle }\fi \if@twoside \ifodd \count \z@ \let \@t
+hehead \@oddhead \let \@thefoot \@oddfoot \let \@themargin \oddsidemargin \else
+ \let \@thehead \@evenhead \let \@thefoot \@evenfoot \let \@themargin \evenside
+margin \fi \fi \shipout \vbox {\normalsize \baselineskip \z@ \lineskip \z@ \vsk
+ip \topmargin \moveright \@themargin \vbox {\setbox \@tempboxa \vbox to\headhei
+ght {\vfil \hbox to\textwidth {\@thehead }} \dp \@tempboxa \z@ \box \@tempboxa 
+\vskip \headsep \box \@outputbox \baselineskip \footskip \hbox to\textwidth {\@
+thefoot }}}\global \@colht \textheight \endgroup \stepcounter {page}\let \first
+mark \botmark 
+{\begingroup}
+{\catcode}
+{\iffalse}
+{false}
+{\iffalse}
+{false}
+{\shipout}
+
+\normalsize ->\ifx \@currsize \normalsize \rm \else \@normalsize \fi 
+{\ifx}
+{true}
+
+\rm ->\protect \prm 
+{\relax}
+
+\prm ->\fam \z@ \tenrm 
+{\fam}
+{select font amr10}
+{\else}
+{\baselineskip}
+{\lineskip}
+{\vskip}
+{\moveright}
+{\setbox}
+{\vfil}
+{\hbox}
+
+\@thehead ->\@oddhead 
+
+\@oddhead ->
+{restricted horizontal mode: end-group character }}
+{internal vertical mode: end-group character }}
+{blank space  }
+{\dp}
+{\box}
+{\vskip}
+{\box}
+{\baselineskip}
+{\hbox}
+
+\@thefoot ->\@oddfoot 
+
+\@oddfoot ->\rm \hfil \thepage \hfil 
+
+\rm ->\protect \prm 
+{restricted horizontal mode: \relax}
+
+\prm ->\fam \z@ \tenrm 
+{\fam}
+{select font amr10}
+{\hfil}
+
+\thepage ->\csname @arabic\endcsname \c@page 
+{\csname}
+
+\@arabic #1->\ifnum #1>0 \number #1\fi 
+#1<-\c@page 
+{\ifnum}
+{true}
+{\number}
+{the character 1}
+{\fi}
+{\hfil}
+{end-group character }}
+{restoring current font=\tenrm}
+{restoring \fam=0}
+{internal vertical mode: end-group character }}
+{restoring \baselineskip=0.0pt}
+{restoring \box13=void}
+{end-group character }}
+{restoring \lineskip=1.0pt}
+{restoring \baselineskip=12.0pt}
+{restoring current font=\tenrm}
+{restoring \fam=0}
+
+Completed box being shipped out [1]
+\vbox(622.0+0.0)x408.0
+.\glue 27.0
+.\vbox(595.0+0.0)x345.0, shifted 63.0
+..\vbox(12.0+0.0)x345.0, glue set 12.0fil
+...\glue 0.0 plus 1.0fil
+...\hbox(0.0+0.0)x345.0
+..\glue 25.0
+..\glue(\lineskip) 0.0
+..\vbox(528.0+0.0)x345.0, glue set 491.44751fil
+...\mark{{}{}}
+...\write-{}
+...\glue(\topskip) 2.5
+...\hbox(7.5+2.5)x345.0, glue set - 0.23021
+....\tenrm S
+....\tenrm o
+....\glue 3.33333 plus 1.66666 minus 1.1111
+....\tenrm w
+....\kern-0.27779
+....\tenrm e
+....\glue 3.33333 plus 1.66666 minus 1.1111
+....\tenrm e
+....\tenrm x
+....\tenrm p
+....\kern0.27777
+....\tenrm e
+....\tenrm c
+....\tenrm t
+....\glue 3.33333 plus 1.66666 minus 1.1111
+....\tenrm t
+....\tenrm o
+....\glue 3.33333 plus 1.66666 minus 1.1111
+....\tenrm m
+....\tenrm a
+....\tenrm k
+....\kern-0.27779
+....\tenrm e
+....\glue 3.33333 plus 1.66666 minus 1.1111
+....\mathon
+....\tenrm (
+....\tenrm 6
+....\glue(\medmuskip) 2.22217 plus 1.11108 minus 2.22217
+....\tensy ^^A
+....\penalty 700
+....\glue(\medmuskip) 2.22217 plus 1.11108 minus 2.22217
+....\tenrm 1
+....\tenrm 7
+....\tenrm 2
+....\glue(\medmuskip) 2.22217 plus 1.11108 minus 2.22217
+....\tensy ^^@
+....\penalty 700
+....\glue(\medmuskip) 2.22217 plus 1.11108 minus 2.22217
+....\tenrm 1
+....\tenrm 0
+....\tenrm 0
+....\tenrm 0
+....\tenrm )
+....\tenmi =
+....\tenrm 1
+....\tenrm 0
+....\tenrm 0
+....\tenrm 0
+....\mathoff
+....\glue 3.33333 plus 1.66666 minus 1.1111
+....\tenrm d
+....\tenrm o
+....\tenrm l
+....\tenrm l
+....\tenrm a
+....\tenrm r
+....\tenrm s
+....\tenrm ,
+....\glue 3.33333 plus 2.08331 minus 0.88887
+....\tenrm w
+....\tenrm h
+....\tenrm i
+....\tenrm c
+....\kern-0.27779
+....\tenrm h
+....\glue 3.33333 plus 1.66666 minus 1.1111
+....\tenrm i
+....\tenrm s
+....\glue 3.33333 plus 1.66666 minus 1.1111
+....\tenrm 3
+....\tenrm .
+....\tenrm 2
+....\glue 3.33333 plus 1.66666 minus 1.1111
+....\tenrm c
+....\tenrm e
+....\tenrm n
+....\kern-0.27779
+....\tenrm t
+....\tenrm s
+....\tenrm ,
+....\glue 3.33333 plus 2.08331 minus 0.88887
+....\tenrm p
+....\kern0.27777
+....\tenrm e
+....\tenrm r
+....\glue 3.33333 plus 1.66666 minus 1.1111
+....\tenrm p
+....\tenrm l
+....\tenrm a
+....\kern-0.27779
+....\tenrm y
+....\kern-0.83334
+....\tenrm .
+....\glue(\rightskip) 0.0
+...\penalty 150
+...\glue(\baselineskip) 2.0
+...\hbox(7.5+2.5)x345.0, glue set - 0.52275
+....\tenit W
+....\tenit e
+....\tenit ,
+....\glue 3.33333 plus 2.08331 minus 0.88887
+....\tenrm n
+....\tenrm o
+....\tenrm t
+....\glue 3.33333 plus 1.66666 minus 1.1111
+....\tenrm t
+....\tenrm h
+....\tenrm e
+....\glue 3.33333 plus 1.66666 minus 1.1111
+....\tenrm h
+....\tenrm o
+....\tenrm u
+....\tenrm s
+....\tenrm e
+....\tenrm ,
+....\glue 3.33333 plus 2.08331 minus 0.88887
+....\tenrm h
+....\tenrm a
+....\kern-0.27779
+....\tenrm v
+....\kern-0.27779
+....\tenrm e
+....\glue 3.33333 plus 1.66666 minus 1.1111
+....\tenrm t
+....\tenrm h
+....\tenrm e
+....\glue 3.33333 plus 1.66666 minus 1.1111
+....\tenrm a
+....\tenrm d
+....\tenrm v
+....\kern-0.55556
+....\tenrm a
+....\tenrm n
+....\kern-0.27779
+....\tenrm t
+....\tenrm a
+....\tenrm g
+....\tenrm e
+....\glue 3.33333 plus 1.66666 minus 1.1111
+....\tenrm (
+....\tenrm o
+....\tenrm f
+....\glue 3.33333 plus 1.66666 minus 1.1111
+....\tenrm c
+....\tenrm o
+....\tenrm u
+....\tenrm r
+....\tenrm s
+....\tenrm e
+....\glue 3.33333 plus 1.66666 minus 1.1111
+....\tenrm f
+....\tenrm o
+....\tenrm r
+....\glue 3.33333 plus 1.66666 minus 1.1111
+....\tenrm a
+....\tenrm l
+....\tenrm l
+....\glue 3.33333 plus 1.66666 minus 1.1111
+....\tenrm w
+....\kern-0.27779
+....\tenrm e
+....\glue 3.33333 plus 1.66666 minus 1.1111
+....\tenrm k
+....\tenrm n
+....\tenrm o
+....\kern-0.27779
+....\tenrm w
+....\glue 3.33333 plus 1.66666 minus 1.1111
+....\tenrm t
+....\tenrm h
+....\tenrm e
+....\glue 3.33333 plus 1.66666 minus 1.1111
+....\tenrm h
+....\tenrm o
+....\tenrm u
+....\tenrm s
+....\tenrm e
+....\glue 3.33333 plus 1.66666 minus 1.1111
+....\tenrm m
+....\tenrm a
+....\kern-0.27779
+....\tenrm y
+....\glue(\rightskip) 0.0
+...\penalty 150
+...\glue(\baselineskip) 2.0
+...\hbox(7.5+2.5)x345.0, glue set 104.8614fil
+....\tenrm h
+....\tenrm a
+....\kern-0.27779
+....\tenrm v
+....\kern-0.27779
+....\tenrm e
+....\glue 3.33333 plus 1.66666 minus 1.1111
+....\tenrm m
+....\tenrm a
+....\tenrm d
+....\tenrm e
+....\glue 3.33333 plus 1.66666 minus 1.1111
+....\tenrm s
+....\tenrm o
+....\tenrm m
+....\tenrm e
+....\glue 3.33333 plus 1.66666 minus 1.1111
+....\tenrm n
+....\kern-0.27779
+....\tenrm u
+....\tenrm m
+....\kern-0.27779
+....\tenrm b
+....\kern0.27777
+....\tenrm e
+....\tenrm r
+....\tenrm s
+....\glue 3.33333 plus 1.66666 minus 1.1111
+....\tenrm a
+....\tenrm r
+....\tenrm e
+....\glue 3.33333 plus 1.66666 minus 1.1111
+....\tenrm m
+....\tenrm o
+....\tenrm r
+....\tenrm e
+....\glue 3.33333 plus 1.66666 minus 1.1111
+....\tenrm e
+....\tenrm q
+....\tenrm u
+....\tenrm a
+....\tenrm l
+....\glue 3.33333 plus 1.66666 minus 1.1111
+....\tenrm t
+....\tenrm h
+....\tenrm a
+....\tenrm n
+....\glue 3.33333 plus 1.66666 minus 1.1111
+....\tenrm o
+....\tenrm t
+....\tenrm h
+....\tenrm e
+....\tenrm r
+....\tenrm s
+....\tenrm )
+....\tenrm .
+....\penalty 10000
+....\glue(\parfillskip) 0.0 plus 1.0fil
+....\glue(\rightskip) 0.0
+...\glue 0.0 plus 1.0fil
+...\glue 0.0 plus 0.0001fil
+..\glue(\baselineskip) 23.55556
+..\hbox(6.44444+0.0)x345.0, glue set 170.0fil
+...\glue 0.0 plus 1.0fil
+...\tenrm 1
+...\glue 0.0 plus 1.0fil
+
+
+
+Memory usage before: 483&24549; after: 192&24376; still untouched: 32177
+{\global}
+{\endgroup}
+{restoring \catcode32=10}
+
+\stepcounter #1->\global \expandafter \advance \csname c@#1\endcsname \@ne {\le
+t \@elt \@stpelt \csname cl@#1\endcsname }
+#1<-page
+{\global}
+{\expandafter}
+{\csname}
+{begin-group character {}
+{\let}
+{\csname}
+
+\cl@page ->
+{end-group character }}
+{restoring \@elt=\relax}
+{\let}
+{\global}
+{\fi}
+
+\@floatplacement ->\global \@topnum \c@topnumber \global \@toproom \topfraction
+ \@colht \global \@botnum \c@bottomnumber \global \@botroom \bottomfraction \@c
+olht \global \@colnum \c@totalnumber \@fpmin \floatpagefraction \@colht 
+{\global}
+{\global}
+
+\topfraction ->.7
+{\global}
+{\global}
+
+\bottomfraction ->.3
+{\global}
+{\dimen93}
+
+\floatpagefraction ->.5
+
+\@startcolumn ->\global \@colroom \@colht \ifx \@deferlist \@empty \global \@fc
+olmadefalse \else \@xstartcol \fi 
+{\global}
+{\ifx}
+{true}
+{\global}
+
+\@fcolmadefalse ->\let \if@fcolmade =\iffalse 
+{\else}
+
+\@whilesw #1\fi #2->#1#2\@iwhilesw {#1#2}\fi \fi 
+#1<-\if@fcolmade 
+#2<-\@opcol \@startcolumn 
+{\iffalse}
+{false}
+{\fi}
+{\global}
+{\ifnum}
+{true}
+{\else}
+{end-group character }}
+{restoring \dimen93=500.0pt}
+{restoring \firstmark=\firstmark}
+{restoring \box22=void}
+{vertical mode: \write}
+{\vbox}
+{internal vertical mode: end-group character }}
+%% goal height=528.0, max depth=4.0
+% t=0.0 g=528.0 b=10000 p=0 c=100000#
+{vertical mode: \penalty}
+% t=10.0 g=528.0 b=10000 p=-10001 c=-10001#
+{internal vertical mode: \ifnum}
+{true}
+
+\@specialoutput ->\ifnum \outputpenalty > -\@Mii \@doclearpage \else \ifnum \ou
+tputpenalty <-\@Miii \ifnum \outputpenalty <-\@MM \deadcycles \z@ \fi \global \
+setbox \@holdpg \vbox {\unvbox \@cclv } \else \setbox \@tempboxa \box \@cclv \@
+pagedp \dp \@holdpg \@pageht \ht \@holdpg \unvbox \@holdpg \ifvoid \footins \el
+se \advance \@pageht \ht \footins \advance \@pageht \skip \footins \advance \@p
+agedp \dp \footins \insert \footins {\unvbox \footins }\fi \@next \@currbox \@c
+urrlist {\ifnum \count \@currbox >\z@ \@addtocurcol \else \@addmarginpar \fi }\
+@latexbug \ifnum \outputpenalty <\z@ \penalty \z@ \fi \fi \fi 
+{\ifnum}
+{true}
+
+\@doclearpage ->\ifvoid \footins \setbox \@tempboxa \vsplit \@cclv to\z@ \unvbo
+x \@tempboxa \setbox \@tempboxa \box \@cclv \xdef \@deferlist {\@toplist \@botl
+ist \@deferlist }\gdef \@toplist {}\gdef \@botlist {}\global \@colroom \@colht 
+\ifx \@currlist \@empty \else \@latexerr {Float(s) lost}\@ehb \gdef \@currlist 
+{}\fi \@makefcolumn \@deferlist \@whilesw \if@fcolmade \fi {\@opcol \@makefcolu
+mn \@deferlist }\if@twocolumn \if@firstcolumn \xdef \@dbldeferlist {\@dbltoplis
+t \@dbldeferlist }\gdef \@dbltoplist {}\global \@colht \textheight \begingroup 
+\@dblfloatplacement \@makefcolumn \@dbldeferlist \@whilesw \if@fcolmade \fi {\@
+outputpage \@makefcolumn \@dbldeferlist }\endgroup \else \vbox {}\clearpage \fi
+ \fi \else \setbox \@cclv \vbox {\box \@cclv \vfil }\@makecol \@opcol \clearpag
+e \fi 
+{\ifvoid}
+{true}
+{\setbox}
+{\unvbox}
+{\setbox}
+{\xdef}
+
+\@toplist ->
+
+\@botlist ->
+
+\@deferlist ->
+{\gdef}
+{\gdef}
+{\global}
+{\ifx}
+{true}
+{\else}
+
+\@makefcolumn #1->\begingroup \@fpmin \z@ \let \@testfp \@gobble \@tryfcolumn #
+1\endgroup 
+#1<-\@deferlist 
+{\begingroup}
+{\dimen93}
+{\let}
+
+\@tryfcolumn #1->\global \@fcolmadefalse \xdef \@trylist {#1}\xdef \@failedlist
+ {}\begingroup \let \@elt \@xtryfc \@trylist \endgroup \if@fcolmade \@vtryfc #1
+\fi 
+#1<-\@deferlist 
+{\global}
+
+\@fcolmadefalse ->\let \if@fcolmade =\iffalse 
+{\xdef}
+
+\@deferlist ->
+{\xdef}
+{\begingroup}
+{\let}
+
+\@trylist ->
+{\endgroup}
+{restoring \@elt=\relax}
+{\iffalse}
+{false}
+{\endgroup}
+{restoring \@testfp=macro:#1->\@tempcnta \count #1\divide \ETC.}
+{restoring \dimen93=500.0pt}
+
+\@whilesw #1\fi #2->#1#2\@iwhilesw {#1#2}\fi \fi 
+#1<-\if@fcolmade 
+#2<-\@opcol \@makefcolumn \@deferlist 
+{\iffalse}
+{false}
+{\iffalse}
+{false}
+{\else}
+{\else}
+{\else}
+{\global}
+{\ifnum}
+{true}
+{\else}
+{end-group character }}
+{restoring \box13=void}
+{vertical mode: \begingroup}
+{\iftrue}
+{true}
+{\immediate}
+{\def}
+{\def}
+{\def}
+
+\@tempswafalse ->\let \if@tempswa =\iffalse 
+{\let}
+
+\makeatletter ->\catcode `\@=11\relax 
+{\catcode}
+{\relax}
+
+\input ->\@ifnextchar \bgroup {\@iinput }{\@@input }
+
+\@ifnextchar #1#2#3->\let \@tempe #1\def \@tempa {#2}\def \@tempb {#3}\futurele
+t \@tempc \@ifnch 
+#1<-\bgroup 
+#2<-\@iinput 
+#3<-\@@input 
+{\let}
+{\def}
+{\def}
+{\futurelet}
+
+\@ifnch ->\ifx \@tempc \@sptoken \let \@tempd \@xifnch \else \ifx \@tempc \@tem
+pe \let \@tempd \@tempa \else \let \@tempd \@tempb \fi \fi \@tempd 
+{\ifx}
+{false}
+{\ifx}
+{false}
+{\let}
+{\fi}
+{\fi}
+
+\@tempd ->\@@input 
+{\input}
+{\jobname}
+(PS:<TEX.LATEX>BUG.AUX.7
+{\relax}
+)
+{\iffalse}
+{false}
+{\fi}
+{\endgroup}
+{restoring \@tempd=macro:->\@@input }
+{restoring \@tempc=the letter t}
+{restoring \@tempb=macro:->\@@input }
+{restoring \@tempa=macro:->document}
+{restoring \@tempe=begin-group character {}
+{restoring \catcode64=12}
+{restoring \if@tempswa=\iftrue}
+{restoring \bibcite=macro:#1#2->\global \@namedef {b@#1}{#2\ETC.}
+{restoring \newlabel=macro:#1#2->\@ifundefined {r@#1}{}{\@warning \ETC.}
+{restoring \global=\global}
+{\deadcycles}
+{\end}
+%% goal height=528.0, max depth=4.0
+% t=0.0 g=528.0 b=10000 p=0 c=100000#
+% t=10.0 g=528.0 b=10000 p=0 c=100000#
+% t=10.0 plus 1.0fill g=528.0 b=0 p=-1073741824 c=-1073741824#
+{internal vertical mode: \ifnum}
+{true}
+
+\@specialoutput ->\ifnum \outputpenalty > -\@Mii \@doclearpage \else \ifnum \ou
+tputpenalty <-\@Miii \ifnum \outputpenalty <-\@MM \deadcycles \z@ \fi \global \
+setbox \@holdpg \vbox {\unvbox \@cclv } \else \setbox \@tempboxa \box \@cclv \@
+pagedp \dp \@holdpg \@pageht \ht \@holdpg \unvbox \@holdpg \ifvoid \footins \el
+se \advance \@pageht \ht \footins \advance \@pageht \skip \footins \advance \@p
+agedp \dp \footins \insert \footins {\unvbox \footins }\fi \@next \@currbox \@c
+urrlist {\ifnum \count \@currbox >\z@ \@addtocurcol \else \@addmarginpar \fi }\
+@latexbug \ifnum \outputpenalty <\z@ \penalty \z@ \fi \fi \fi 
+{\ifnum}
+{false}
+{\ifnum}
+{true}
+{\ifnum}
+{true}
+{\deadcycles}
+{\fi}
+{\global}
+{\unvbox}
+{end-group character }}
+{blank space  }
+{\else}
+{\fi}
+{\else}
+{\global}
+{\ifnum}
+{false}
+{\fi}
+{end-group character }}
+{vertical mode: \end}
+ 
+Here is how much of TeX's memory you used:
+ 152 strings out of 1507
+ 1423 string characters out of 3908
+ 25824 words of memory out of 58001
+ 2081 multiletter control sequences out of 2500
+ 18391 words of font info for 72 fonts, out of 25000 for 100
+ 14 hyphenation exceptions out of 307
+ 12i,4n,15p,137b,38s stack positions out of 200i,40n,60p,500b,600s
+
+Output written on PS:<TEX.LATEX>BUG.DVI.7 (1 page, 652 bytes).

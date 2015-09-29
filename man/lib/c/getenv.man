@@ -1,0 +1,41 @@
+.\"	@(#)getenv.3	6.4 (Berkeley) 3/20/87
+.\"
+.TH GETENV 3 "March 20, 1987"
+.AT 3
+.SH NAME
+getenv, setenv, unsetenv \- manipulate environmental variables
+.SH SYNOPSIS
+.nf
+.B char *getenv(name)
+.B char *name;
+.PP
+.B void setenv(name, value)
+.B char *name, *value;
+.PP
+.B void unsetenv(name)
+.B char *name;
+.fi
+.SH DESCRIPTION
+\fIGetenv\fP searches the environment list (see \fIenviron\fP(7))
+for a string of the form \fIname\fP\fB=\fP\fIvalue\fP and returns
+a pointer to the string \fIvalue\fP if such a string is present,
+and 0 (NULL) if it is not.
+.PP
+\fISetenv\fP searches the environment list as \fIgetenv\fP does; if
+the string \fIname\fP is not found, a string of the form
+\fIname\fP\fB=\fP\fIvalue\fP is added to the environment.  If it is
+found, its value is changed to
+\fIvalue\fP.
+.PP
+\fIUnsetenv\fP removes all occurrences of the string \fIname\fP from
+the environment.  There is no library provision for completely removing
+the current environment.  It is suggested that the following code be
+used to do so.
+.PP
+.nf
+	static char	*envinit[1];
+	extern char	**environ;
+	environ = envinit;
+.fi
+.SH SEE ALSO
+csh(1), sh(1), execve(2), environ(7)

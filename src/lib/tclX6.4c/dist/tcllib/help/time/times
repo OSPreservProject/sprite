@@ -1,0 +1,8 @@
+
+
+          times
+               Return a list containing the process and child
+               execution times in the form:
+                   utime stime cutime cstime
+               Also see the times(2) system call manual page.  The
+               values are in milliseconds.

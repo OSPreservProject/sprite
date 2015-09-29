@@ -1,0 +1,200 @@
+
+
+
+Host                  C Library Procedures                   Host
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Host_ByName,  Host_ByID,  Host_ByNetAddr,   Host_ByInetAddr,
+     Host_SetFile,   Host_Start,  Host_Next,  Host_End  -  return
+     information about Sprite machines
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<hhoosstt..hh>>
+
+     Host_Entry *
+     HHoosstt__BByyNNaammee(_n_a_m_e)
+
+     Host_Entry *
+     HHoosstt__BByyIIDD(_s_p_r_i_t_e_I_D)
+
+     Host_Entry *
+     HHoosstt__BByyNNeettAAddddrr(_a_d_d_r_P_t_r)
+
+     Host_Entry *
+     HHoosstt__BByyIInneettAAddddrr(_i_n_e_t_A_d_d_r)
+
+     int
+     HHoosstt__SSeettFFiillee(_f_i_l_e_N_a_m_e)
+
+     int
+     HHoosstt__SSttaarrtt()
+
+     Host_Entry *
+     HHoosstt__NNeexxtt()
+
+     void
+     HHoosstt__EEnndd()
+
+     int
+     HHoosstt__SSttaatt(_s_t_a_t_P_t_r)
+
+AARRGGUUMMEENNTTSS
+     char              *_n_a_m_e      (in)      The name of a  Sprite
+                                            host for which infor-
+                                            mation is desired.
+
+     int               _s_p_r_i_t_e_I_D   (in)      The Sprite ID of  the
+                                            host for which infor-
+                                            mation is desired.
+
+     Net_Address       *_a_d_d_r_P_t_r   (in)      The   local   network
+                                            address  of  the host
+                                            for which information
+                                            is desired.
+
+     Net_InetAddress   _i_n_e_t_A_d_d_r   (in)      The internet  address
+
+
+
+Sprite v.1.0         Printed:  June 9, 1992                     1
+
+
+
+
+
+
+Host                  C Library Procedures                   Host
+
+
+
+                                            of the host for which
+                                            information        is
+                                            desired.
+
+     char              *_f_i_l_e_N_a_m_e  (in)      The name of  a  host-
+                                            description file.
+
+     struct            _s_t_a_t       (*statPtr)
+                                            Pointer    to    stat
+                                            structure   for  host
+                                            database file.
+
+_________________________________________________________________
+
+DDEESSCCRRIIPPTTIIOONN
+     These functions are used to learn about hosts on  the  local
+     Sprite  network.  These functions cause the host description
+     file to be opened.  HHoosstt__EEnndd(()) must be called to  close  the
+     file.
+
+     A Host_Entry structure is defined as follows:
+
+          typedef struct {
+              char        *name;         /* Primary name */
+              char        **aliases;     /* Other names */
+              int         id;            /* Sprite ID */
+              char        *machType;     /* Machine type, i.e "sun3" */
+              int         numNets;       /* Number of network interfaces the
+                                          * host has. */
+              Host_Interface  nets[HOST_MAX_INTERFACES];
+                                  /* Internet and physical address for
+                                   * each network interface. */
+          } Host_Entry;
+
+          typedef struct Host_Interface {
+              Net_InetAddress     inetAddr;      /* Internet address */
+              Net_Address         netAddr;       /* Physical address */
+          } Host_Interface;
+
+     The _n_u_m_N_e_t_s field indicates how many network interfaces  the
+     host has.  One entry in the _n_e_t_s array will be filled in per
+     interface.  Unused entries will have  the  network  type  in
+     _n_e_t_A_d_d_r _s_e_t _t_o NNEETT__AADDDDRREESSSS__NNOONNEE.
+
+     The Host_Entry structures returned by the routines are stat-
+     ically  allocated  and  may  change  on the next call to any
+     HHoosstt__ procedure.  Be sure to copy out  any  information  you
+     need before calling a HHoosstt__ procedure again.
+
+     HHoosstt__BByyNNaammee(()) returns a Host_Entry  based  on  the  name  or
+     alias of a host.
+
+     HHoosstt__BByyIIDD(()) returns a Host_Entry for the host with the given
+     sprite ID.
+
+
+
+Sprite v.1.0         Printed:  June 9, 1992                     2
+
+
+
+
+
+
+Host                  C Library Procedures                   Host
+
+
+
+     HHoosstt__BByyNNeettAAddddrr(()) returns the Host_Entry for  the  host  with
+     the given local-area-network address.
+
+     HHoosstt__BByyIInneettAAddddrr(()) returns the Host_Entry for the  host  with
+     the given internet address.
+
+     HHoosstt__SSeettFFiillee(()) specifies a different host  information  file
+     to use (the file normally used is //eettcc//sspprriitteehhoossttss).
+
+     HHoosstt__SSttaarrtt(()) opens the current host-description file (if  it
+     isn't  already  open),  while  HHoosstt__EEnndd(())  closes  it.   The
+     HHoosstt__BByy... procedures automatically call HHoosstt__SSttaarrtt.
+
+     HHoosstt__NNeexxtt(()) may be used to step through  the  current  host-
+     description  file.  The host-description file must have been
+     opened using HHoosstt__SSttaarrtt(()) or one of the HHoosstt__BByy functions.
+
+     HHoosstt__SSttaatt(()) is used to get  the  statistics  for  the  host-
+     description  file.   See  the ssttaatt(()) man page for details on
+     the stat structure.  HHoosstt__SSttaatt(()) is useful if you are  writ-
+     ing  a  daemon  that  wants  to  do something when the host-
+     description file is updated. The daemon can loop waiting for
+     the  modify time of the file to change.  Make sure the host-
+     description file is closed (use HHoosstt__EEnndd(())) before the  dae-
+     mon  waits,  otherwise every machine running the daemon will
+     have the host-description file open, causing  lots  of  con-
+     sistency traffic.
+
+DDIIAAGGNNOOSSTTIICCSS
+     HHoosstt__SSeettFFiillee(()),HHoosstt__SSttaarrtt(()) and HHoosstt__SSttaatt(()) return  zero  if
+     all went well.  Otherwise they return -1 and the eerrrrnnoo vari-
+     able  contains  additional  information  about  what   error
+     occurred.    HHoosstt__NNeexxtt(())   returns   NULL   on  end-of-file.
+     HHoosstt__BByyNNaammee(()),     HHoosstt__BByyIIDD(()),     HHoosstt__BByyNNeettAAddddrr(())     and
+     HHoosstt__BByyIInneettAAddddrr(()) return NULL if the given host could not be
+     found.
+
+FFIILLEESS
+     /etc/spritehosts    The default host-description file.
+
+KKEEYYWWOORRDDSS
+     hostname, internet address, local net, machine type,  sprite
+     ID
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  June 9, 1992                     3
+
+
+

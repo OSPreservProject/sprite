@@ -1,0 +1,55 @@
+'\" Copyright 1991 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/lib/c/etc/RCS/Stat.man,v 1.1 91/01/25 17:15:51 kupfer Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS Stat lib
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+Stat_GetMsg, Stat_PrintMsg \- Text description of Sprite status codes
+.SH SYNOPSIS
+.nf
+\fB#include <status.h>\fR
+.sp
+char *
+\fBStat_GetMsg\fR(\fIstatus\fP)
+.sp
+void
+\fBStat_PrintMsg\fR(\fIstatus\fR, \fIstring\fR)
+.SH ARGUMENTS
+.AS ReturnStatus *string
+.AP ReturnStatus status in
+Status code to return text for.
+.AP char *string in
+Supplemental string to be printed.
+.BE
+
+.SH DESCRIPTION
+.PP
+These functions provide a human-readable text string for a given
+Sprite status value.
+.B Stat_GetMsg
+returns a read-only string to the caller.
+.B Stat_PrintMsg 
+prints a message on the standard error stream.  The message looks like
+``\fIstring\fR: \fImessage\fR'', where
+.I string
+is passed in by the caller, and
+.I message
+is obtained by calling 
+.BR Stat_GetMsg .
+The
+.I string
+may be null, in which case only the
+.I message
+is printed.
+
+.SH KEYWORDS
+status

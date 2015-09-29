@@ -1,0 +1,19 @@
+' $Header: /a/newcmds/select/RCS/select.man,v 1.1 88/12/22 11:45:50 ouster Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS SELECT cmds
+.BS
+.SH NAME
+select \- Print the selection
+.SH SYNOPSIS
+\fBselect\fR
+.BE
+.SH DESCRIPTION
+.LP
+This command will retrieve the Sx selection in ``text'' format
+and output it onto the standard output.  If there is no selection,
+no output is generated.  The main purpose of this command is to
+allow you to write shell commands that use the selection, e.g. to
+print it or to delete a file whose name is selected.
+
+.SH KEYWORDS
+selection, window

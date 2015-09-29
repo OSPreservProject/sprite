@@ -1,0 +1,536 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     89.06.15.10.50.36;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.04.06.15.11.32;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Use non-blocking I/O for raw terminal.
+@
+text
+@/* 
+ * mktty.c --
+ *
+ *	Main program for the "mktty" program.  Provides a linkup between
+ *	a pseudo-device with an attached tty driver and a raw terminal
+ *	device.  Also allows a network TCP connection to be used in
+ *	place of the raw terminal device.
+ *
+ * Copyright 1987, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /a/newcmds/mktty/RCS/mktty.c,v 1.1 89/04/06 15:11:32 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <bstring.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <fs.h>
+#include <netdb.h>
+#include <pdev.h>
+#include <sgtty.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/file.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <td.h>
+
+/*
+ * Library imports:
+ */
+
+extern char *getenv();
+
+/*
+ * Tokens for the terminal driver, and for the pseudo-device attached
+ * to it.
+ */
+
+static Td_Pdev		pdev;
+static Td_Terminal	term;
+
+/*
+ * Information about the device (the end that connects to the raw
+ * RS232 line).
+ */
+
+int rawInputID;			/* Sprite stream ID used for reading
+				 * raw tty. */
+int rawOutputID;		/* Sprite stream ID used for writing
+				 * raw tty. */
+struct sgttyb params;		/* Saved mode bits for device. */
+int ttyGroup;			/* Saved controlling group for tty. */
+
+/*
+ * Buffer used to hold characters waiting to be output.  This is needed
+ * because when we retrieve characters from the terminal driver we don't
+ * know how many can actually be output to the terminal itself.
+ */
+
+#define OUT_BUF_SIZE 100
+char outputBuffer[OUT_BUF_SIZE];
+char *nextOutput;		/* Location of next char. to be output. */
+int outputCount = 0;		/* Number of chars. left to output. */
+int outputHandler = 0;		/* Non-zero means Fs_Dispatch handler exists
+				 * for rawOutputID. */
+
+/*
+ * Miscellaneous.
+ */
+
+int exitValue = 0;			/* Exit status for program. */
+
+/*
+ * Forward references to procedures defined in this file:
+ */
+
+extern int	Cleanup();
+extern int	RawControlProc();
+extern void	RawInputProc();
+extern void	RawOutputProc();
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	Main program for mktty.  Initializes tty setup, waits for things
+ *	to happen, calls appropriate handlers.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Lots.  See the man page.
+ *
+ *----------------------------------------------------------------------
+ */
+
+main(argc, argv)
+    int argc;			/* Number of arguments. */
+    char **argv;		/* Arguments.  See man page for details. */
+{
+    char *pdevName, *devName;
+    char **args = NULL;
+    char *colonPtr;
+    int i;
+    int applPid;
+
+    /*
+     *------------------------------
+     * Parse command line arguments.
+     *------------------------------
+     */
+
+    if (argc < 2) {
+	fprintf(stderr, "Usage: %s device pdev [command]\n", argv[0]);
+	Cleanup();
+    }
+    devName = argv[1];
+    pdevName = argv[2];
+    if (argc > 3) {
+	args = &argv[3];
+    }
+
+    /*
+     *------------------------------------------------------
+     * Open the connection to the raw terminal or network.
+     *------------------------------------------------------
+     */
+
+    colonPtr = index(devName, ':');
+    if (colonPtr == NULL) {
+	if (strcmp(devName, "-") == 0) {
+	    /*
+	     * Use standard input and output for the terminal device.
+	     */
+	    rawInputID = 0;
+	    rawOutputID = 1;
+	} else {
+	    /*
+	     * This is a terminal device.
+	     */
+
+	    rawInputID = open(devName, O_RDWR, 0);
+	    if (rawInputID < 0) {
+		fprintf(stderr, "Mktty couldn't open \"%s\": %s.\n",
+			devName, strerror(errno));
+		exit(1);
+	    }
+	    rawOutputID = dup(rawInputID);
+	}
+	if (ioctl(rawInputID, TIOCGETP, (char *) &params) != 0) {
+	    fprintf(stderr, "Mktty: \"%s\" isn't a tty.\n", devName);
+	    exit(1);
+	}
+	if (ioctl(rawInputID, TIOCGPGRP, (char *) &ttyGroup) != 0) {
+	    fprintf(stderr, "Mktty couldn't read controlling group: %s\n",
+		    strerror(errno));
+	    exit(1);
+	}
+	i = params.sg_flags;
+	params.sg_flags = RAW;
+	if (ioctl(rawInputID, TIOCSETP, (char *) &params) != 0) {
+	    terminalSetupError:
+	    fprintf(stderr, "Mktty couldn't reset terminal state: %s\n",
+		    strerror(errno));
+	    exit(1);
+	}
+	params.sg_flags = i;
+	i = getpgrp(0);
+	if (ioctl(rawInputID, TIOCSPGRP, (char *) &i) != 0) {
+	    goto terminalSetupError;
+	}
+	if ((fcntl(rawInputID, F_SETFL, FNDELAY) == -1)
+		|| (fcntl(rawOutputID, F_SETFL, FNDELAY) == -1)) {
+	    fprintf(stderr, "%s non-blocking mode: %s\n",
+		    "Mktty couldn't put raw device into",
+		    strerror(errno));
+	    exit(1);
+	}
+    } else {
+	/*
+	 * Network TCP connection:  "host:portNum"
+	 */
+
+	struct hostent *hostPtr;
+	struct sockaddr_in serverAddress;
+
+	*colonPtr = 0;
+	rawInputID = socket(AF_INET, SOCK_STREAM, 0);
+	if (rawInputID < 0) {
+	    perror("Mktty couldn't open socket: %s", strerror(errno));
+	    exitValue = 1;
+	    Cleanup();
+	}
+	rawOutputID = dup(rawInputID);
+	bzero((char *) &serverAddress, sizeof(serverAddress));
+	serverAddress.sin_family = AF_INET;
+	serverAddress.sin_port = htons(atoi(colonPtr+1));
+	hostPtr = gethostbyname(devName);
+	if (hostPtr == NULL) {
+	    fprintf(stderr, "Mktty couldn't find a host named \"%s\"\n",
+		    devName);
+	    exitValue = 1;
+	    Cleanup();
+	}
+	bcopy((char *) hostPtr->h_addr, (char *) &serverAddress.sin_addr,
+		sizeof(serverAddress.sin_addr));
+	if (connect(rawInputID, (struct sockaddr *) &serverAddress,
+		sizeof(serverAddress)) != 0) {
+	    perror("Mktty couldn't connect to server");
+	    fprintf(stderr, "This probably means you didn't start a server");
+	    fprintf(stderr, " process\nor typed the wrong port number\n"); 
+	    exitValue = 1;
+	    Cleanup();
+	}
+    }
+
+    /*
+     *------------------------------------------------------
+     * Set up the pseudo-terminal device.
+     *------------------------------------------------------
+     */
+
+    pdev = Td_CreatePdev(pdevName, (char **) NULL, &term, RawControlProc,
+	    (ClientData) 0);
+    if (pdev == NULL) {
+	fprintf(stderr, "Mktty couldn't open pseudo-device \"%s\": %s.\n",
+		pdevName, pdev_ErrorMsg);
+	exitValue = 1;
+	Cleanup();
+    }
+
+    /*
+     *--------------------------------------------------
+     * Spawn the application process, if one is desired.
+     *--------------------------------------------------
+     */
+
+    if (args != NULL) {
+	Sig_Action old, new;
+
+	new.action = SIG_HANDLE_ACTION;
+	new.handler = Cleanup;
+	new.sigHoldMask = 0;
+	Sig_SetAction(SIG_CHILD, &new, &old);
+	applPid = fork();
+	if (applPid == -1) {
+	    fprintf(stderr, "Mktty couldn't fork application: %s\n.",
+		strerror(errno));
+	    exitValue = 1;
+	    Cleanup();
+	}
+	if (applPid == 0) {
+	    int ttyID, pid;
+	    FILE *f;
+	    char *tty;
+
+	    tty = getenv("TTY");		/* May be needed below. */
+	    setenv("TTY", pdevName);
+
+	    ttyID = open(pdevName, O_RDWR, 0);
+	    if (ttyID < 0) {
+		fprintf(stderr,
+			"Mktty couldn't open application end of terminal (%s).\n",
+			strerror(errno));
+		_exit(1);
+	    }
+	    pid = getpid();
+	    if (setpgrp(0, pid) == -1) {
+		fprintf(stderr,
+			"Mktty couldn't set process family ID (%s).\n",
+			strerror(errno));
+		_exit(1);
+	    }
+	    if (ioctl(ttyID, TIOCSPGRP, (char *) &pid) != 0) {
+		fprintf(stderr,
+			"Mktty couldn't set process family for terminal (%s).\n",
+			strerror(errno));
+		_exit(1);
+	    }
+	    dup2(ttyID, 0);
+	    dup2(ttyID, 1);
+	    dup2(ttyID, 2);
+	    for (i = 3; i <= ttyID; i++) {
+		close(i);
+	    }
+	    execvp(args[0], args);
+	    if (tty == NULL) {
+		_exit(1);
+	    }
+	    f = fopen(tty, "w");
+	    if (f != NULL) {
+		fprintf(f, "Couldn't execute \"%s\":\n", args[0],
+			strerror(errno));
+	    }
+	    _exit(1);
+	}
+    }
+
+    /*
+     *--------------------------------------------
+     * Enter a loop reading and processing events.
+     *--------------------------------------------
+     */
+
+    Fs_EventHandlerCreate(rawInputID, FS_READABLE, RawInputProc,
+	    (ClientData) 0);
+    while (TRUE) {
+	if (outputCount > 0) {
+	    if (!outputHandler) {
+		Fs_EventHandlerCreate(rawOutputID, FS_WRITABLE,
+			RawOutputProc, (ClientData) 0);
+		outputHandler = 1;
+	    }
+	} else {
+	    if (outputHandler) {
+		Fs_EventHandlerDestroy(rawOutputID);
+		outputHandler = 0;
+	    }
+	}
+	Fs_Dispatch();
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RawInputProc --
+ *
+ *	This procedure is called by Fs_Dispatch whenever data becomes
+ *	readable from the raw tty.  This procedure reads the data
+ *	and passes it to the terminal driver.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Whatever happens in the terminal driver.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+RawInputProc()
+{
+#define INPUT_SIZE 100
+    char input[INPUT_SIZE];
+    int numBytes;
+
+    numBytes = read(rawInputID, input, INPUT_SIZE);
+    if (numBytes < 0) {
+	if (errno == EWOULDBLOCK) {
+	    return;
+	}
+	fprintf(stderr, "Mktty couldn't read from device: %s\n",
+		strerror(errno));
+	exit(1);
+    }
+    if (numBytes == 0) {
+	fprintf(stderr, "Mktty received end-of-file from device.\n");
+	fprintf(stderr, "Perhaps network connection was closed or refused?\n");
+	exit(1);
+    }
+    Td_PutRaw(term, numBytes, input);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RawOutputProc --
+ *
+ *	This procedure is invoked by Fs_Dispatch when the raw tty
+ *	becomes writable and there is data in the terminal's output
+ *	buffer waiting to be written.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Data gets written to the terminal.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+RawOutputProc()
+{
+    int count;
+
+    if (outputCount == 0) {
+	return;
+    }
+    count = write(rawOutputID, nextOutput, outputCount);
+    if (count < 0) {
+	if (errno != EWOULDBLOCK) {
+	    fprintf(stderr, "Error writing raw tty: %s.\n", strerror(errno));
+	    Cleanup();
+	}
+	return;
+    }
+    nextOutput += count;
+    outputCount -= count;
+    if (outputCount == 0) {
+	outputCount = Td_GetRaw(term, OUT_BUF_SIZE, outputBuffer);
+	nextOutput = outputBuffer;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RawControlProc --
+ *
+ *	Invoked by the terminal driver to perform control operations
+ *	on the raw tty device.
+ *
+ * Results:
+ *	Always returns 0.
+ *
+ * Side effects:
+ *	Varies, depending on the operation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+	/* ARGSUSED */
+int
+RawControlProc(clientData, command, inSize, inBuffer, outSize, outBuffer)
+    ClientData clientData;	/* Not used. */
+    int command;		/* Identifies control operation being
+				 * invoked, e.g. TD_COOKED_SIGNAL. */
+    int inSize;			/* Number of bytes of input data available
+				 * to us. */
+    char *inBuffer;		/* Pointer to input data. */
+    int outSize;		/* Maximum number of bytes of output data
+				 * we can return to caller. */
+    char *outBuffer;		/* Area in which to store output data for
+				 * caller. */
+{
+    switch (command) {
+	case TD_RAW_OUTPUT_READY:
+	    if (outputCount == 0) {
+		outputCount = Td_GetRaw(term, OUT_BUF_SIZE, outputBuffer);
+		nextOutput = outputBuffer;
+	    }
+	    break;
+	case TD_RAW_FLUSH_OUTPUT:
+	    outputCount = 0;
+	    break;
+    }
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Cleanup --
+ *
+ *	This procedure is invoked to restore the terminal state and
+ *	exit.  It is called as a signal handler when the child dies,
+ *	or at other times when errors occur.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	This process dies.  The terminal's state gets restored.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Cleanup()
+{
+    if (pdev != NULL) {
+	Td_DeletePdev(pdev);
+    }
+    ioctl(rawInputID, TIOCSETP, (char *) &params);
+    ioctl(rawInputID, TIOCSPGRP, (char *) &ttyGroup);
+    exit(exitValue);
+}
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /a/newcmds/tty/RCS/tty.c,v 1.4 88/09/28 17:14:36 ouster Exp Locker: ouster $ SPRITE (Berkeley)";
+d26 1
+d186 7
+d365 3
+@

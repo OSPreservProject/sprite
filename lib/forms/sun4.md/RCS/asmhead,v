@@ -1,0 +1,55 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @# @;
+
+
+1.2
+date     89.01.27.13.01.28;  author mgbaker;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.01.16.20.38.01;  author mgbaker;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Assembly header for sun4 assembly.
+@
+
+
+1.2
+log
+@Control-L character isn't handled in the sun4 preprocessor or assembler.
+@
+text
+@/*
+ * ----------------------------------------------------------------------
+ *
+ * <procName> --
+ *
+ *	<description>
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------
+ */
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@a0 1
+
+@

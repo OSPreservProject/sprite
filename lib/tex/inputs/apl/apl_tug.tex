@@ -1,0 +1,1221 @@
+\documentstyle[ltugboat,verbatimfiles,apl]{article}
+\def\TUBedit#1{}
+ 
+\TUBedit{1}
+\font\tenbxsl=cmbxsl10
+\def\bfAPL{{\tenbxsl APL\/}}
+ 
+\TUBedit{6}
+\def\ASCII{{\small ASCII}}
+ 
+\TUBedit{2}
+\title{A \protect\LaTeX\ Document Style Option for Typesetting \bfAPL}
+ 
+\author{Andreas Geyer-Schulz}
+\address{Department of Applied Computer Science\\
+	Vienna University of Economics and Business Administration\\
+	Augasse 2--6\\
+	A-1090 Vienna, AUSTRIA}
+\netaddress{ANDREAS@AWIWUW11.BITNET}
+ 
+\author{Josef Matulka}
+\address{Department of Applied Computer Science\\
+	Vienna University of Economics and Business Administration\\
+	Augasse 2--6\\
+	A-1090 Vienna, AUSTRIA}
+\netaddress{MATULKA@AWIWUW11.BITNET}
+ 
+\author{Gustaf Neumann}
+\address{Department of Management Information Systems\\
+	Vienna University of Economics and Business Administration\\
+	Augasse 2--6\\
+	A-1090 Vienna, AUSTRIA}
+\netaddress{NEUMANN@AWIWUW11.BITNET}
+ 
+\parskip=4pt plus 1pt
+\def\dense{\parsep=0pt\itemsep=0pt\parskip=0pt\topsep=0pt\partopsep=0pt}
+\def\APL{{\it APL\/}}
+\def\apl{{\tt apl.sty}}
+% redefinition of \APLmiss
+\def\APLmiss#1{{\tiny #1}}
+\renewcommand{\arraystretch}{1.1}
+ 
+\begin{document}
+ 
+\maketitle
+ 
+\begin{abstract}
+In this article we describe the \LaTeX\ document style option \apl\
+for typesetting documents containing passages in \APL\ code. All
+symbols needed within a multi-vendor \APL\ environment are provided.
+Currently the full symbol sets of the \APL\ dialects \APL 2, Dyalog
+\APL, I--\APL, Sharp \APL, and \APL.68000 are supported.  All \APL\
+symbols are constructed with the symbols of the standard \LaTeX\ font
+family. No additional fonts are needed.  Standard \LaTeX\ commands
+can be used to change the size and type style of \APL\ symbols.
+Automatic conversion of \APL\ objects is achieved by a preprocessor
+written in \APL.  \LaTeX, \apl\ and the preprocessor bundled together
+provide an integrated high-quality \APL\ publishing system.
+\end{abstract}
+ 
+\section{Motivation}
+ 
+\begin{quotation}
+Why do you insist on using a notation which is a nightmare for typist
+and compositor and impossible to implement with punching and printing
+\TUBedit{3}equipment currently available?  \hfill\break
+\hbox{}\hskip0pt plus 1filll
+-- R.~A.~Brooker, 1963 \cite{Iverson}
+\end{quotation}
+ 
+Since its introduction in the early sixties, \APL\ has been known and
+even become famous not so much for the power and elegance of its
+concepts \TUBedit{4}but\Dash to a much greater extent\Dash for the
+``strange'' symbols it uses.  \TUBedit{5}A discussion about the
+usefulness and difficulties of \APL\ has remained academic for large
+parts of the computer science community.  Many programmers never
+managed to get their dumb \TUBedit{6}\ASCII{}--terminals to produce
+the non-\TUBedit{6}\ASCII{} symbols required by the language.
+ 
+With the advent of bit-mapped displays, down-loadable fonts and the
+spread of graphical interfaces such as the X Window System the
+situation has changed. Specialized hardware \TUBedit{7}is no longer a
+prerequisite for \APL\ programming. Although it often requires some
+effort of customization and configuration, it is possible nowadays to
+turn existing hardware into an \APL\ environment.
+ 
+Troubles show up as soon as you start publishing results produced in
+your \APL\ environment.  (Just have a look at some books on \APL,
+where the \APL\ passages had to be pasted in!) Since many
+text-processing and desktop-publishing systems still lack \APL\
+support, it remains difficult to achieve high printing quality in
+publications composed of text and \APL\ code.  Several extensions to
+existing text processors have been implemented (cf.\ \cite{Hohti}).
+However, most of them support either only the symbols of one \APL\
+dialect or only one machine or operating system platform.
+\cite{Hohti} already demonstrated the usefulness of \TeX\ for \APL\
+typesetting. \TUBedit{8}The authors produced a \MF\ description for
+\APL\ primitive symbols and a set of \TeX{} macros to support
+Digital's \APL\ interpreter for the VAX-11 series.
+ 
+In this paper we present our solution to the problem:  An \APL\
+publishing system consisting of an \APL\ \TUBedit{9}front end and a
+\LaTeX\ document style option.  The  \APL\ \TUBedit{9}front end
+automatically converts \APL\ material into \LaTeX\ code  which you
+can \verb+\input+ into any standard \LaTeX\ document. The \LaTeX\
+\TUBedit{10}document style option \apl\ provides macros defining all
+\APL\ characters as combinations of standard \LaTeX\ symbols, thus
+relieving us from the burden of designing new fonts and the user from
+the task of incorporating them into the \LaTeX\ system.
+\TUBedit{11}As additional benefit, size and type style of the \APL\
+symbols can be changed by the familiar \LaTeX\ commands
+(\TUBedit{12}e.g.\ \verb+\Large+, \verb+\sf+).
+ 
+% Remark: the next line is typeset ugly (three words on the line)
+\TUBedit{13}Compared with the approach of Hohti and Kanerva mentioned
+above, our solution offers the following advantages:
+
+{\dense
+\begin{itemize}\dense
+\item Several \APL\ dialects are supported
+      (currently \APL2, Dyalog \APL, I--\APL, Sharp \APL, and \APL.68000).
+\item No additional fonts are required.
+\item \APL\ symbols for all \LaTeX\  sizes and type styles are available.
+\item We provide support for automatic typesetting of \APL\ objects.
+% number of fonts loadable are restricted for some printers
+% disk space for fonts
+\end{itemize}}
+
+\TUBedit{14}There are some disadvantages, however; they are higher
+\TeX\ interpretation overhead and higher \TeX\ memory usage.
+ 
+\section{The \bfAPL\ Publishing System \label{typesetmodel}}
+ 
+The \APL\ publishing system consists of two parts, the \APL\
+\TUBedit{9}front end and the \LaTeX\ \TUBedit{10}document style
+option \apl\ which communicate via a carefully designed interface of
+\TeX\ macros (see Figure~\ref{modules}). This ensures that both parts
+of the system can be modified independently.
+ 
+\begin{figure}[htbp] \centering
+{
+\setlength{\unitlength}{1mm}
+\begin{picture}(78, 50)
+\put(41,4){DVI code}
+\put(39,10){\vector(0,-1){10}}
+\put(24,10){\framebox(30,10){\protect\LaTeX}}
+\put(39,30){\vector(0,-1){10}}
+\put(41,24){\protect\TeX\ macros}
+\put(24,30){\framebox(30,10){\protect\APL\ Front end}}
+\put(39,50){\vector(0,-1){10}}
+\put(41,44){\protect\APL\ code}
+\end{picture}
+}
+\caption{Modules of the Publishing System\label{modules}}
+\end{figure}
+ 
+Each of these modules is composed of two layers (see Table~\ref{layers}).
+The main task of the {\em low level formatting} layer
+is the printing of single \APL\ symbols.  The \APL\ \TUBedit{9}front
+end maps each symbol into a \TeX\ macro name and produces \TUBedit{15}files to
+ be
+\verb+\input+ into \LaTeX\ documents. The \LaTeX\ style option
+\apl\ contains one macro definition for each \APL\ character.
+ 
+\APL\ code is more than just a stream of \APL\ symbols.
+The {\em high level formatting} layer knows about functions, operators,
+arrays, and expressions. Our \APL\ \TUBedit{9}front end provides special
+functions for typesetting these objects. The
+\LaTeX\ style option defines the corresponding environments.
+ 
+\begin{table}[htbp]\centering\small
+{\footnotesize\TUBedit{16}\advance\baselineskip-2pt
+\begin{tabular}{r||l|l}
+			& \mbox{\APL} & \mbox{\LaTeX\ } document \\
+			& \TUBedit{9}front end    &     style option \\
+\hline\hline
+Low 				   	& symbol 		 	& symbol  \\
+level 					& translation		& construction \\
+formatting				& \ 				& \ 	\\
+\hline
+High					& \mbox{\APL}		& logical \\
+level					& language 			& document \\
+formatting				& elements 			& elements \\
+\end{tabular}
+\caption{Layers of the Publishing System\label{layers}}
+}
+\end{table}
+ 
+\section{Typesetting \bfAPL\ Symbols}
+ 
+If using a few \APL\ symbols in
+an ordinary document is all you need, you can forget about the
+\APL\ \TUBedit{9}front end. Simply adding the option \verb+apl+ to
+your preferred \LaTeX\ document style (\TUBedit{12}e.g.\
+\verb+\documentstyle[12pt,apl]{article}+)
+enables you to state in your paper, \TUBedit{12}e.g.:
+\begin{quotation}
+By combining the simple \APL\ symbols
+\APLcircle\ and \APLstar\ we obtain the
+compound symbol \APLcirclestar.
+\end{quotation}
+The code to produce this statement is:
+\begin{verbatim}
+\begin{quotation}
+By combining the simple \APL\ symbols
+\APLcircle\ and \APLstar\ we obtain the
+compound symbol \APLcirclestar.
+\end{quotation}
+\end{verbatim}
+ 
+In fact, you can typeset all simple and
+compound symbols of \APL2, as we have
+defined macros for all of them.
+Tables \ref{ta:simpleapltwo} and \ref{ta:compoundapltwo},
+respectively, show them together with their macro names.
+ 
+\TUBedit{17}
+\begin{table}[htbf] \centering\small
+\begin{tabular}{|lc|lc|}\hline
+\verb+\APLalpha+ & \APLalpha	&   \verb+\APLnotgreater+ & \APLnotgreater \\
+\verb+\APLbar+ & \APLbar	&   \verb+\APLnotless+ & \APLnotless \\
+\verb+\APLcircle+ & \APLcircle	&   \verb+\APLomega+	& \APLomega\\
+\verb+\APLcolon+ & \APLcolon	&   \verb+\APLoverbar+	& \APLoverbar\\
+\verb+\APLcomma+ & \APLcomma	&   \verb+\APLplus+ & \APLplus\\
+\verb+\APLdel+ & \APLdel	&   \verb+\APLquad+ & \APLquad\\
+\verb+\APLdelta+ & \APLdelta	&   \verb+\APLquery+ &   \APLquery\\
+\verb+\APLdieresis+ & \APLdieresis	&   \verb+\APLquote+ & \APLquote\\
+\verb+\APLdivide+ & \APLdivide	&   \verb+\APLrho+ &   \APLrho\\
+\verb+\APLdot+ & \APLdot	&   \verb+\APLrightarrow+ & \APLrightarrow\\
+\verb+\APLdownarrow+ & \APLdownarrow	&   \verb+\APLrightbracket+ & \APLrightbracket\\
+\verb+\APLdowncaret+ & \APLdowncaret	&   \verb+\APLrightparen+ & \APLrightparen\\
+\verb+\APLdownshoe+ & \APLdownshoe	&   \verb+\APLrightshoe+	& \APLrightshoe\\
+\verb+\APLdownstile+ & \APLdownstile	&   \verb+\APLsemicolon+ & \APLsemicolon\\
+\verb+\APLdowntack+ & \APLdowntack	&   \verb+\APLslash+ & \APLslash\\
+\verb+\APLepsilon+ & \APLepsilon	&   \verb+\APLslope+ & \APLslope\\
+\verb+\APLequal+ & \APLequal		&   \verb+\APLstar+ & \APLstar\\
+\verb+\APLgreater+ & \APLgreater	&   \verb+\APLstile+ & \APLstile\\
+\verb+\APLiota+	& \APLiota		&   \verb+\APLtilde+ & \APLtilde\\
+\verb+\APLjot+ & \APLjot		&   \verb+\APLtimes+ & \APLtimes\\
+\verb+\APLleftarrow+ & \APLleftarrow	&   \verb+\APLunderbar+ & \APLunderbar\\
+\verb+\APLleftbracket+ & \APLleftbracket	&   \verb+\APLuparrow+ & \APLuparrow\\
+\verb+\APLleftparen+ & \APLleftparen	&   \verb+\APLupcaret+	& \APLupcaret\\
+\verb+\APLleftshoe+ & \APLleftshoe	&   \verb+\APLupshoe+ & \APLupshoe\\
+\verb+\APLless+	& \APLless		&   \verb+\APLupstile+ &   \APLupstile\\
+\verb+\APLmathbar+ & \APLmathbar	&   \verb+\APLuptack+ & \APLuptack\\
+\verb+\APLnotequal+ & \APLnotequal      &\\
+\hline\end{tabular}\par
+\caption{Simple \APL2 Symbols \label{ta:simpleapltwo}}
+\end{table}
+ 
+\begin{table}[htbf] \centering\small
+\begin{tabular}{|lc|}\hline
+\verb+\APLcirclebar+ & \APLcirclebar \\
+\verb+\APLcircleslope+ & \APLcircleslope \\
+\verb+\APLcirclestar+ & \APLcirclestar \\
+\verb+\APLcirclestile+ & \APLcirclestile \\
+\verb+\APLdelstile+ & \APLdelstile \\
+\verb+\APLdeltastile+ & \APLdeltastile \\
+\verb+\APLdeltaunderbar+ & \APLdeltaunderbar \\
+\verb+\APLdeltilde+ & \APLdeltilde \\
+\verb+\APLdieresisdot+ & \APLdieresisdot \\
+\verb+\APLdowncarettilde+ & \APLdowncarettilde \\
+\verb+\APLdowntackjot+ & \APLdowntackjot \\
+\verb+\APLdowntackuptack+ & \APLdowntackuptack \\
+\verb+\APLepsilonunderbar+ & \APLepsilonunderbar \\
+\verb+\APLequalunderbar+ & \APLequalunderbar \\
+\verb+\APLiotaunderbar+ & \APLiotaunderbar \\
+\verb+\APLleftbracketrightbracket+ & \APLleftbracketrightbracket \\
+\verb+\APLquaddivide+ & \APLquaddivide \\
+\verb+\APLquadjot+ & \APLquadjot \\
+\verb+\APLquadquote+ & \APLquadquote \\
+\verb+\APLquadslope+ & \APLquadslope \\
+\verb+\APLquotedot+ & \APLquotedot \\
+\verb+\APLslashbar+ & \APLslashbar \\
+\verb+\APLslopebar+ & \APLslopebar \\
+\verb+\APLupcarettilde+ & \APLupcarettilde \\
+\verb+\APLupshoejot+ & \APLupshoejot \\
+\verb+\APLuptackjot+ & \APLuptackjot \\
+\hline\end{tabular}\par
+\caption{Compound \APL2 Symbols \label{ta:compoundapltwo}}
+\end{table}
+ 
+IBM was the first company to implement \APL\, but it did not remain
+the only one. Companies such as I.~P.~Sharp and Dyadic Systems have
+produced their own versions of the language. These and other companies,
+however, introduced only a few symbols not found in \APL2.
+We have added twenty additional symbols to the \APL2 character set
+to support typesetting Dyalog \APL, I--\APL, Sharp \APL, and \APL.68000
+(see Table \ref{ta:dialects}).
+ 
+\begin{table}[htbf] \centering\small
+\begin{tabular}{|lc|}\hline
+\verb+\APLOUT+ & \APLOUT \\
+\verb+\APLasciipound+ & \APLasciipound \\
+\verb+\APLbarcomma+ & \APLbarcomma \\
+\verb+\APLcaret+ & \APLcaret \\
+\verb+\APLdiamond+ & \APLdiamond \\
+\verb+\APLdieresiscircle+ & \APLdieresiscircle \\
+\verb+\APLdieresisdel+ & \APLdieresisdel \\
+\verb+\APLdieresisjot+ & \APLdieresisjot \\
+\verb+\APLdieresisstar+ & \APLdieresisstar \\
+\verb+\APLdieresistilde+ & \APLdieresistilde \\
+\verb+\APLdieresisuptack+ & \APLdieresisuptack \\
+\verb+\APLlefttack+ & \APLlefttack \\
+\verb+\APLnotequalunderbar+ & \APLnotequalunderbar \\
+\verb+\APLquaddownarrow+ & \APLquaddownarrow \\
+\verb+\APLquadleftarrow+ & \APLquadleftarrow \\
+\verb+\APLquadrightarrow+ & \APLquadrightarrow \\
+\verb+\APLquaduparrow+ & \APLquaduparrow \\
+\verb+\APLrighttack+ & \APLrighttack \\
+\verb+\APLstilebar+ & \APLstilebar \\
+\verb+\APLtheta+ & \APLtheta \\
+\hline\end{tabular}\par
+\caption{Symbols Used in APL Dialects \label{ta:dialects}}
+\end{table}
+ 
+As you have probably guessed from the names in Tables
+\ref{ta:simpleapltwo}, \ref{ta:compoundapltwo}, and \ref{ta:dialects}
+we stick to a naming convention in order to
+minimize name clashes with other macro packages and
+also help users remembering the macro names. All macro
+names start with the \verb+\APL+ prefix, followed by the name of
+the symbol used in the \APL\ literature.
+The symbol names for \APL2 characters are taken from \cite{IBM}.
+For those characters (cf.\ Table \ref{ta:dialects})
+which are not included in the IBM list
+we have invented consistent names. We always
+use symbol names, not the name of \APL\ functions
+these symbols might represent.
+The name of a compound \APL\ symbol is
+the concatenation of the names
+of the simple \APL\ symbols it is created from.
+ 
+\begin{figure}[hbpt]\centering
+\begin{minipage}{70mm}
+% ATOMIC
+\TUBedit{18}\def\APLmb#1{\leavevmode\hbox to 1.2em{\hss#1\hss}}
+\advance\baselineskip2pt
+\begin{APLarray}
+\APLmb{\APLmiss{0}}\APLmb{\APLmiss{1}}\APLmb{\APLmiss{2}}
+\APLmb{\APLmiss{3}}\APLmb{\APLmiss{4}}\APLmb{\APLmiss{5}}\APLmb{
+\APLmiss{6}}\APLmb{\APLmiss{7}}\APLmb{\APLmiss{8}}\APLmb{
+\APLmiss{9}}\APLmb{\APLmiss{10}}\APLmb{\APLmiss{11}}\APLmb{
+\APLmiss{12}}\APLmb{\APLmiss{13}}\APLmb{\APLmiss{14}}\APLmb{
+\APLmiss{15}}
+\APLspace\par
+\APLmb{\APLmiss{16}}\APLmb{\APLmiss{17}}\APLmb{\APLmiss{18}}
+\APLmb{\APLmiss{19}}\APLmb{\APLmiss{20}}\APLmb{\APLmiss{21}}
+\APLmb{\APLmiss{22}}\APLmb{\APLmiss{23}}\APLmb{\APLmiss{24}}
+\APLmb{\APLmiss{25}}\APLmb{\APLmiss{26}}\APLmb{\APLmiss{27}}
+\APLmb{\APLmiss{28}}\APLmb{\APLmiss{29}}\APLmb{\APLmiss{30}}\APLmb{
+\APLmiss{31}}
+\APLspace\par
+\APLmb{\APLmiss{32}}\APLmb{\APLmiss{33}}\APLmb{\APLmiss{34}}
+\APLmb{\APLmiss{35}}\APLmb{\APLmiss{36}}\APLmb{\APLmiss{37}}
+\APLmb{\APLmiss{38}}\APLmb{\APLmiss{39}}\APLmb{\APLmiss{40}}
+\APLmb{\APLmiss{41}}\APLmb{\APLmiss{42}}\APLmb{\APLmiss{43}}
+\APLmb{\APLmiss{44}}\APLmb{\APLmiss{45}}\APLmb{\APLmiss{46}}\APLmb{
+\APLmiss{47}}
+\APLspace\par
+\APLmb{\APLmiss{48}}\APLmb{\APLmiss{49}}\APLmb{\APLmiss{50}}
+\APLmb{\APLmiss{51}}\APLmb{\APLmiss{52}}\APLmb{\APLmiss{53}}
+\APLmb{\APLmiss{54}}\APLmb{\APLmiss{55}}\APLmb{\APLmiss{56}}
+\APLmb{\APLmiss{57}}\APLmb{\APLmiss{58}}\APLmb{\APLmiss{59}}
+\APLmb{\APLmiss{60}}\APLmb{\APLmiss{61}}\APLmb{\APLmiss{62}}\APLmb{
+\APLmiss{63}}
+\APLspace\par
+\APLmb{\APLspace}\APLmb{\APLuA}\APLmb{\APLuB}\APLmb{\APLuC}
+\APLmb{\APLuD}\APLmb{\APLuE}\APLmb{\APLuF}\APLmb{\APLuG}\APLmb{
+\APLuH}\APLmb{\APLuI}\APLmb{\APLcent}\APLmb{\APLdot}\APLmb{
+\APLless}\APLmb{\APLleftparen}\APLmb{\APLplus}\APLmb{
+\APLverticalbar}
+\APLspace\par
+\APLmb{\APLampersand}\APLmb{\APLuJ}\APLmb{\APLuK}\APLmb{
+\APLuL}\APLmb{\APLuM}\APLmb{\APLuN}\APLmb{\APLuO}\APLmb{\APLuP}
+\APLmb{\APLuQ}\APLmb{\APLuR}\APLmb{\APLexclamation}\APLmb{
+\APLdollar}\APLmb{\APLstar}\APLmb{\APLrightparen}\APLmb{
+\APLsemicolon}\APLmb{\APLnot}
+\APLspace\par
+\APLmb{\APLbar}\APLmb{\APLslash}\APLmb{\APLuS}\APLmb{\APLuT}
+\APLmb{\APLuU}\APLmb{\APLuV}\APLmb{\APLuW}\APLmb{\APLuX}
+\APLmb{\APLuY}\APLmb{\APLuZ}\APLmb{\APLsplitbar}\APLmb{\APLcomma}
+\APLmb{\APLpercent}\APLmb{\protect\APLunderbar}\APLmb{
+\APLgreater}\APLmb{\APLquery}
+\APLspace\par
+\APLmb{\APLmiss{112}}\APLmb{\APLupcaret}\APLmb{\APLdieresis}
+\APLmb{\APLquadjot}\APLmb{\APLiotaunderbar}\APLmb{
+\APLepsilonunderbar}\APLmb{\APLmiss{118}}\APLmb{\APLmiss{119}}\APLmb{
+\APLdowncaret}\APLmb{\APLaccent}\APLmb{\APLcolon}\APLmb{\APLpound}
+\APLmb{\APLat}\APLmb{\APLquote}\APLmb{\APLequal}\APLmb{
+\APLdoublequote}
+\APLspace\par
+\APLmb{\APLtilde}\APLmb{\APLa}\APLmb{\APLb}\APLmb{\APLc}
+\APLmb{\APLd}\APLmb{\APLe}\APLmb{\APLf}\APLmb{\APLg}\APLmb{\APLh}
+\APLmb{\APLi}\APLmb{\APLuparrow}\APLmb{\APLdownarrow}\APLmb{
+\APLnotgreater}\APLmb{\APLupstile}\APLmb{\APLdownstile}\APLmb{
+\APLrightarrow}
+\APLspace\par
+\APLmb{\APLquad}\APLmb{\APLj}\APLmb{\APLk}\APLmb{\APLl}
+\APLmb{\APLm}\APLmb{\APLn}\APLmb{\APLo}\APLmb{\APLp}\APLmb{\APLq}
+\APLmb{\APLr}\APLmb{\APLrightshoe}\APLmb{\APLleftshoe}\APLmb{
+\APLmiss{156}}\APLmb{\APLcircle}\APLmb{\APLmiss{158}}\APLmb{
+\APLleftarrow}
+\APLspace\par
+\APLmb{\protect\APLoverbar}\APLmb{\APLnattilde}\APLmb{\APLs}
+\APLmb{\APLt}\APLmb{\APLu}\APLmb{\APLv}\APLmb{\APLw}\APLmb{
+\APLx}\APLmb{\APLy}\APLmb{\APLz}\APLmb{\APLupshoe}\APLmb{
+\APLdownshoe}\APLmb{\APLdowntack}\APLmb{\APLleftbracket}\APLmb{
+\APLnotless}\APLmb{\APLjot}
+\APLspace\par
+\APLmb{\APLalpha}\APLmb{\APLepsilon}\APLmb{\APLiota}\APLmb{
+\APLrho}\APLmb{\APLomega}\APLmb{\APLmiss{181}}\APLmb{\APLtimes}
+\APLmb{\APLslope}\APLmb{\APLdivide}\APLmb{\APLmiss{185}}
+\APLmb{\APLdel}\APLmb{\protect\APLdelta}\APLmb{\APLuptack}\APLmb{
+\APLrightbracket}\APLmb{\APLnotequal}\APLmb{\APLstile}
+\APLspace\par
+\APLmb{\APLleftbrace}\APLmb{\APLA}\APLmb{\APLB}\APLmb{\APLC}
+\APLmb{\APLD}\APLmb{\APLE}\APLmb{\APLF}\APLmb{\APLG}\APLmb{
+\APLH}\APLmb{\APLI}\APLmb{\APLupcarettilde}\APLmb{
+\APLdowncarettilde}\APLmb{\APLleftbracketrightbracket}
+\APLmb{\APLcirclestile}
+\APLmb{\APLquadslope}\APLmb{\APLcircleslope}
+\APLspace\par
+\APLmb{\APLrightbrace}\APLmb{\APLJ}\APLmb{\APLK}\APLmb{
+\APLL}\APLmb{\APLM}\APLmb{\APLN}\APLmb{\APLO}\APLmb{\APLP}\APLmb{
+\APLQ}\APLmb{\APLR}\APLmb{\APLdowntackuptack}\APLmb{
+\APLquotedot}\APLmb{\APLdelstile}\APLmb{\APLdeltastile}\APLmb{
+\APLquadquote}\APLmb{\APLupshoejot}
+\APLspace\par
+\APLmb{\APLslope}\APLmb{\APLequalunderbar}\APLmb{\APLS}
+\APLmb{\APLT}\APLmb{\APLU}\APLmb{\APLV}\APLmb{\APLW}\APLmb{\APLX}
+\APLmb{\APLY}\APLmb{\APLZ}\APLmb{\APLslashbar}\APLmb{
+\APLslopebar}\APLmb{\APLdieresisdot}\APLmb{\APLcirclebar}\APLmb{
+\APLquaddivide}\APLmb{\APLuptackjot}
+\APLspace\par
+\APLmb{\APLzero}\APLmb{\APLone}\APLmb{\APLtwo}\APLmb{
+\APLthree}\APLmb{\APLfour}\APLmb{\APLfive}\APLmb{\APLsix}\APLmb{
+\APLseven}\APLmb{\APLeight}\APLmb{\APLnine}\APLmb{\APLmiss{250}}
+\APLmb{\APLdeltilde}\APLmb{\protect\APLdeltaunderbar}\APLmb{
+\APLcirclestar}\APLmb{\APLdowntackjot}\APLmb{\APLmiss{255}}
+\APLspace\par
+\end{APLarray}
+\end{minipage}
+\caption{The Atomic Vector of \APL 2\label{atomic}}
+\end{figure}
+ 
+As can be seen in Figure~\ref{atomic} which shows the
+character set (the atomic vector \APLquad\APLA\APLV)
+of \APL2, not all \APL\ characters are fancy
+symbols, and the language uses ordinary
+alphanumeric characters as well.
+To allow for a clean interface between the
+\APL\ front end and the \LaTeX\ part of our
+system, we decided to define macros for
+these characters as well. \TUBedit{18.1}Their names are
+constructed as follows:
+ 
+\TUBedit{19}\begin{itemize}\dense\raggedright
+\item Each macro name starts with \verb+\APL+.
+\item For each letter we append the upper or lowercase
+      letter, if the letter is underlined we prefix
+      the letter with ``u''. \\
+      Capital letters: \verb+\APLA+, \dots, \verb+\APLZ+.\\
+      Lowercase letters: \verb+\APLa+, \dots, \verb+\APLz+.\\
+      Underlined capital letters: \verb+\APLuA+, \dots, \verb+\APLuZ+.\\
+      Underlined lowercase letters: \verb+\APLua+, \dots, \verb+\APLuz+.
+\item For numbers we simply append their names: \verb+\APLzero+,
+      \dots, \verb+\APLnine+.
+\end{itemize}
+ 
+The tiny numbers in the atomic vector of Figure~\ref{atomic}
+correspond to positions for which no printable characters
+are defined by \APL2. In case the \APL\ \TUBedit{9}front end
+encounters a nonprintable character, \TUBedit{12}e.g.\ the one
+at position 20 in \APLquad\APLA\APLV, it generates
+\verb+\APLmiss{20}+. The definition of the \LaTeX\ macro
+\verb+\APLmiss+ determines the printed representation of
+this character (the default macro in our style
+just prints the corresponding number in style \verb+\tiny+).
+ 
+Let us close this section with one more example of typesetting
+\APL\ symbols:
+ 
+\begin{verbatim}
+\APLquaddivide\APLA\ corresponds to
+$A^{-1}$ in mathematical notation
+and \APLcircleslope\APLA\ corresponds
+to $A^{T}$.
+\end{verbatim}
+ 
+{\parindent=0pt
+displays as:}
+ 
+\APLquaddivide\APLA\ corresponds to
+$A^{-1}$ in mathematical notation
+and \APLcircleslope\APLA\ corresponds
+to $A^{T}$.
+ 
+ 
+\TUBedit{19.0}
+\section{Typesetting \bfAPL\ Objects}
+ 
+Typing the name of an occasional \APL\ symbol within a normal
+text is not a real nuisance to the author of \APL\ texts.
+But typesetting a larger piece of \APL\ code certainly is.
+Imagine a function named {\APLdelta\APLT\APLR\APLE\APLE}, which
+implements a recursive tree traversal algorithm:
+ 
+\TUBedit{19.1}
+\begin{APLfns}
+\begin{APLfnsline}{}{\APLdel}
+\APLZ\APLleftarrow\APLC\APLL\APLA\APLS\APLS\protect\APLunderbar\APLL
+\APLI\APLS\APLT\APLspace\protect\APLdelta\APLT\APLR\APLE\APLE
+\APLbr\APLspace\APLR\APLO\APLO\APLT\APLsemicolon\APLD\APLE
+\APLP\APLT\APLH\APLsemicolon\APLL\APLI\APLS\APLT
+\APLsemicolon\APLI\APLsemicolon\APLR\APLE\APLC\APLL\APLI
+\APLS\APLT\APLsemicolon\APLS\APLU\APLP\APLE\APLR\APLC
+\APLL\APLA\APLS\APLS
+\end{APLfnsline}
+\begin{APLfnsline}{\APLleftbracket\APLone\APLrightbracket}{}
+\APLZ\APLleftarrow\APLcomma\APLleftshoe\APLR\APLO\APLO\APLT
+\end{APLfnsline}
+\begin{APLfnsline}{\APLleftbracket\APLtwo\APLrightbracket}{}
+\APLrightarrow\APLleftparen\APLdowncaret\APLslash
+\APLleftparen\APLcomma\APLleftshoe\APLR\APLO\APLO\APLT\APLrightparen
+\APLequalunderbar\APLdieresis\APLC\APLL\APLA\APLS\APLS
+\protect\APLunderbar\APLL\APLI\APLS\APLT\APLrightparen
+\APLslash\APLC\APLY\APLC\APLL\APLI\APLC
+\end{APLfnsline}
+\begin{APLfnsline}{\APLleftbracket\APLthree\APLrightbracket}{}
+\APLI\APLleftarrow\APLtwo\APLspace\APLquad\APLT\APLF
+\APLspace\APLtwo\APLrightshoe\APLG\APLE\APLT\protect\APLunderbar
+\APLM\APLE\APLM\APLspace\APLquote\protect\APLdelta\APLC
+\APLL\APLA\APLS\APLS\APLquote\APLleftparen\APLR\APLO
+\APLO\APLT\APLcomma\APLquote\APLdot\APLS\APLU\APLP\APLE
+\APLR\APLC\APLL\APLA\APLS\APLS\APLquote
+\APLrightparen
+\end{APLfnsline}
+\begin{APLfnsline}{\APLleftbracket\APLfour\APLrightbracket}{}
+\APLrightarrow\APLleftparen\APLleftparen\APLzero\APLrho
+\APLleftshoe\APLone\APLrho\APLquote\APLspace\APLquote
+\APLrightparen\APLequalunderbar\APLS\APLU\APLP\APLE\APLR\APLC\APLL
+\APLA\APLS\APLS\APLrightparen\APLslash\APLzero
+\end{APLfnsline}
+\begin{APLfnsline}{\APLleftbracket\APLfive\APLrightbracket}{}
+\APLI\APLleftarrow\APLleftparen\APLleftshoe\APLC\APLL
+\APLA\APLS\APLS\protect\APLunderbar\APLL\APLI\APLS\APLT\APLcomma
+\APLleftshoe\APLR\APLO\APLO\APLT\APLrightparen\protect
+\APLdelta\APLT\APLR\APLE\APLE\APLdieresis\APLS\APLU
+\APLP\APLE\APLR\APLC\APLL\APLA\APLS\APLS
+\end{APLfnsline}
+\begin{APLfnsline}{\APLleftbracket\APLsix\APLrightbracket}{}
+\APLZ\APLleftarrow\APLleftparen\APLleftparen\APLZ\APLiota
+\APLZ\APLrightparen\APLequal\APLiota\APLrho\APLZ\APLrightparen
+\APLslash\APLZ\APLleftarrow\APLZ\APLcomma\APLuparrow
+\APLcomma\APLslash\APLcomma\APLdieresis\APLcomma\APLI
+\end{APLfnsline}
+\begin{APLfnsline}{\APLleftbracket\APLseven\APLrightbracket}{}
+\APLrightarrow\APLzero
+\end{APLfnsline}
+\begin{APLfnsline}{\APLleftbracket\APLeight\APLrightbracket}{}
+\APLC\APLY\APLC\APLL\APLI\APLC\APLcolon\APLZ
+\APLleftarrow\APLzero\APLrho\APLzero
+\end{APLfnsline}
+\begin{APLfnsline}{}{\APLdel}
+\end{APLfnsline}
+\end{APLfns}
+
+ 
+In order to print just the beginning of the header of the
+function, you would have to type:
+ 
+\begin{verbatim}
+\APLspace\APLspace\APLspace\APLspace%
+\APLspace\APLdel\APLZ%
+\APLleftarrow\APLC\APLL\APLA\APLS\APLS%
+\protect\APLunderbar\APLL%
+\APLI\APLS\APLT\APLspace\protect\APLdelta%
+\APLT\APLR\APLE\APLE%
+\APLbr\APLspace\APLR\APLO\APLO\APLT\APLbr%
+\end{verbatim}
+
+%\APLT\APLR\APLE\APLE%
+%\APLbr\APLspace\APLR\APLO\APLO\APLT\APLbr%
+%\APLsemicolon\APLD\APLE%
+%\APLP\APLT\APLbr\APLH\APLsemicolon\APLL%
+%\APLI\APLS\APLbr\APLT%
+%\APLsemicolon\APLI\APLsemicolon\APLR%
+%\APLbr\APLE\APLC\APLL\APLI%
+%\APLS\APLbr\APLT\APLsemicolon\APLS\APLU%
+%\APLP\APLbr\APLE\APLR\APLC%
+%\APLL\APLA\APLbr\APLS\APLS%
+%\end{verbatim}
+ 
+Obtaining the familiar function layout used in \APL\ textbooks
+would require additional code. What is more, besides being
+awkward the whole process is error-prone: Almost certainly
+it will result in a printout different from the \APL\ code.
+ 
+Therefore we strongly recommend automatic translation of \APL\ code.
+We provide an \APL\ front end which
+transforms \APL\ objects into logical document elements which can be
+\verb+\input+ into \LaTeX\ documents. This
+guarantees consonance between the original \APL\ code and
+its listing and is also more convenient.
+ 
+For all \APL\ language elements we have defined \APL\ functions
+and corresponding \LaTeX\ environments. 
+Our system supports
+the typesetting of:
+\begin{itemize}\dense
+\item an array displayed by the interpreter,
+\item an array in boxed representation,
+\item a function or operator displayed by the built in
+      \APL\ del-editor (\APLdel--editor),
+\item a function or operator displayed by \APL's canonical
+      representation function {\APLquad\APLC\APLR},
+\item a direct definition of a function or operator,
+\item an \APL\ expression input by the user.
+\end{itemize}
+Apart from minor modifications we have used traditional layout
+conventions for all language elements.
+For example, the convention that user input is six
+spaces indented can be traced back to the very first implementation of
+\APL. An other traditional convention states that if a line of \APL\
+code does not fit on a single line of the display, the rest of the code
+is wrapped around and continues on the next line.  In some functions
+this rule may lead to line breaks in the
+middle of names. Since \APL\ identifiers can be up to 255 characters
+long line breaking within names cannot be avoided in general. 
+
+As you can see, arrays and functions can be typeset in various ways.
+For example, the above listing of the \APL\ function
+\APLdelta\APLT\APLR\APLE\APLE\
+was printed by the following \APL\ expression:
+ 
+\TUBedit{19.2}
+% TEST
+{\parsep=0pt % begin of dialogue step
+\begin{APLbold}\begin{APLexpr}
+\APLquote\APLT\APLR\APLE\APLE\APLquote\APLspace\APLP\APLR
+\APLT\APLE\APLX\protect\APLunderbar\APLF\APLN\APLspace
+\APLquote\protect\APLdelta\APLT\APLR\APLE
+\APLE\APLquote
+\end{APLexpr}\end{APLbold}
+% TEST
+}           % end of dialogue step
+ 
+The \APL\ function \APLP\APLR\APLT\APLE\APLX\APLunderbar\APLF\APLN\
+produces the file {\tt tree.tex} as output.
+The \APL\ front end not only maps each
+character into the corresponding \TeX\ macro but it also produces
+the line numbers in brackets and the surrounding \LaTeX\ environments
+in order to guarantee uniform display of functions throughout the document.
+ 
+In the following we present examples for each of the
+cases mentioned above. At the same time, the examples
+give us the opportunity to demonstrate variations of
+type style and size.
+ 
+\subsection{Typesetting \protect\bfAPL\ Arrays}
+ 
+The interpreter usually displays arrays as  text
+matrices on the screen. For example, the matrix $\APLX$ is
+displayed as:
+ 
+% Remark: do not split the array
+%\input{ar1}
+ 
+% AR1 X
+\begin{APLarray}
+\APLmb{\APLspace}\APLmb{\APLone}\APLmb{\APLspace}\APLmb{
+\APLtwo}\APLmb{\APLspace}\APLmb{\APLspace}\APLmb{\APLspace}\APLmb{
+\APLA}
+\APLspace\par
+\APLmb{\APLspace}\APLmb{\APLthree}\APLmb{\APLspace}\APLmb{
+\APLfour}
+\APLspace\par
+
+\APLspace\par
+\APLmb{\APLspace}\APLmb{\APLB}\APLmb{\APLspace}\APLmb{
+\APLspace}\APLmb{\APLspace}\APLmb{\APLspace}\APLmb{\APLspace}\APLmb{
+\APLC}
+\APLspace\par
+\end{APLarray}
+ 
+The above printout is typeset by the following code
+which is automatically produced by the \APL\ \TUBedit{9}front end:
+ 
+% manually adapted for two column tugboat style
+\begin{verbatim}
+% AR1 X
+\begin{APLarray}
+\APLmb{\APLspace}\APLmb{\APLone}
+\APLmb{\APLspace}\APLmb{\APLtwo}
+\APLmb{\APLspace}\APLmb{\APLspace}
+\APLmb{\APLspace}\APLmb{\APLA}
+\APLspace\par
+  ...
+\end{APLarray}
+\end{verbatim}
+%\APLmb{\APLspace}\APLmb{\APLthree}
+%\APLmb{\APLspace}\APLmb{\APLfour}
+%\APLspace\par
+%
+%\APLspace\par
+%\APLmb{\APLspace}\APLmb{\APLB}
+%\APLmb{\APLspace}\APLmb{
+%\APLspace}\APLmb{\APLspace}
+%\APLmb{\APLspace}\APLmb{\APLspace}\APLmb{
+%\APLC}
+%\APLspace\par
+%\end{APLarray}
+%\end{verbatim}
+ 
+Note that the structure of $\APLX$ has been preserved by
+automatically enforcing fixed
+spacing. A closer examination of the code reveals that we have simulated
+fixed spacing by boxing each character of the array
+(\verb+\APLmb+ does this).
+ 
+Experienced \APL\ programmers recognize the structure of $\APLX$
+at the first glance: $\APLX$ is a two by two matrix whose upper
+left element is a two by two matrix. However,
+since the use of nested arrays is typical for second generation
+\APL s like \APL2 and Dyalog \APL, another representation
+of arrays exists which shows the structure in a more explicit manner:
+ 
+% Remark: do not split the array
+%\input{ar2}
+ 
+% AR2 X
+{\it
+\begin{APLarray}
+\APLmb{\APLdot}\APLmb{\APLrightarrow}\APLmb{\APLbar}\APLmb{
+\APLbar}\APLmb{\APLbar}\APLmb{\APLbar}\APLmb{\APLbar}\APLmb{
+\APLbar}\APLmb{\APLbar}\APLmb{\APLbar}\APLmb{\APLdot}
+\APLspace\par
+\APLmb{\APLdownarrow}\APLmb{\APLspace}\APLmb{\APLdot}\APLmb{
+\APLrightarrow}\APLmb{\APLbar}\APLmb{\APLbar}\APLmb{\APLdot}
+\APLmb{\APLspace}\APLmb{\APLspace}\APLmb{\APLspace}\APLmb{
+\APLstile}
+\APLspace\par
+\APLmb{\APLstile}\APLmb{\APLspace}\APLmb{\APLdownarrow}
+\APLmb{\APLone}\APLmb{\APLspace}\APLmb{\APLtwo}\APLmb{\APLstile}
+\APLmb{\APLspace}\APLmb{\APLA}\APLmb{\APLspace}\APLmb{\APLstile}
+\APLspace\par
+\APLmb{\APLstile}\APLmb{\APLspace}\APLmb{\APLstile}\APLmb{
+\APLthree}\APLmb{\APLspace}\APLmb{\APLfour}\APLmb{\APLstile}
+\APLmb{\APLspace}\APLmb{\APLbar}\APLmb{\APLspace}\APLmb{\APLstile}
+\APLspace\par
+\APLmb{\APLstile}\APLmb{\APLspace}\APLmb{\APLquote}\APLmb{
+\APLtilde}\APLmb{\APLbar}\APLmb{\APLbar}\APLmb{\APLquote}\APLmb{
+\APLspace}\APLmb{\APLspace}\APLmb{\APLspace}\APLmb{\APLstile}
+\APLspace\par
+\APLmb{\APLstile}\APLmb{\APLspace}\APLmb{\APLspace}\APLmb{
+\APLspace}\APLmb{\APLspace}\APLmb{\APLspace}\APLmb{\APLspace}
+\APLmb{\APLspace}\APLmb{\APLspace}\APLmb{\APLspace}\APLmb{
+\APLstile}
+\APLspace\par
+\APLmb{\APLstile}\APLmb{\APLspace}\APLmb{\APLspace}\APLmb{
+\APLB}\APLmb{\APLspace}\APLmb{\APLspace}\APLmb{\APLspace}\APLmb{
+\APLspace}\APLmb{\APLC}\APLmb{\APLspace}\APLmb{\APLstile}
+\APLspace\par
+\APLmb{\APLstile}\APLmb{\APLspace}\APLmb{\APLspace}\APLmb{
+\APLbar}\APLmb{\APLspace}\APLmb{\APLspace}\APLmb{\APLspace}
+\APLmb{\APLspace}\APLmb{\APLbar}\APLmb{\APLspace}\APLmb{\APLstile}
+\APLspace\par
+\APLmb{\APLquote}\APLmb{\APLepsilon}\APLmb{\APLbar}\APLmb{
+\APLbar}\APLmb{\APLbar}\APLmb{\APLbar}\APLmb{\APLbar}\APLmb{
+\APLbar}\APLmb{\APLbar}\APLmb{\APLbar}\APLmb{\APLquote}
+\APLspace\par
+\end{APLarray}
+}
+ 
+Most of the work for typesetting the boxed representation of $\APLX$
+shown above is done by the \APL\ function
+\APLD\APLI\APLS\APLP\APLL\APLA\APLY\
+which usually comes with the \APL\ system (\TUBedit{12}e.g.\ \cite{IBM}).
+Our \APL\ \TUBedit{9}front end just translates the
+characters generated by this function;
+the same \LaTeX\ environment is used for both array representations.
+We only sketch the code for the boxed representation:
+ 
+% manually adapted for two column tugboat style
+\begin{verbatim}
+{\it
+\begin{APLarray}
+\APLmb{\APLdot}\APLmb{\APLrightarrow}
+\APLmb{\APLbar}\APLmb{\APLbar}
+  ...
+\end{APLarray}
+}
+\end{verbatim}
+ 
+In order to demonstrate the ease of changing type styles
+we have decided to put the generated code unit into an
+{\it italics} environment.
+This is the reason for all letters and numbers in the
+boxed representation being in {\it italics}.
+Otherwise, they would have been roman.
+ 
+\subsection{Typesetting \protect\bfAPL\ Functions}
+ 
+The following \APL\ function is printed in
+del-editor style:
+
+ 
+%\TUBedit{19.3}
+% Remark: do not split the function
+% \input{fns}
+% 
+\begin{Large}
+% FNS MEAN
+\begin{APLfns}
+\begin{APLfnsline}{}{\APLdel}
+\APLZ\APLleftarrow\APLM\APLE\APLA\APLN\APLspace\APLX
+\end{APLfnsline}
+\begin{APLfnsline}{\APLleftbracket\APLone
+\APLrightbracket}{}
+\APLZ\APLleftarrow\APLleftparen\APLplus\APLslash\APLX
+\APLrightparen\APLdivide\APLrho\APLX
+\end{APLfnsline}
+\begin{APLfnsline}{}{\APLdel}
+\end{APLfnsline}
+\end{APLfns}
+\end{Large}
+
+A larger font has been selected by inserting the generated code
+into a \verb+\Large+ environment:
+ 
+% manually adapted for two column tugboat style
+\begin{verbatim}
+\begin{Large}
+% FNS MEAN
+\begin{APLfns}
+\begin{APLfnsline}{}{\APLdel}
+\APLZ\APLleftarrow\APLM\APLE\APLA\APLN
+\APLspace\APLX
+\end{APLfnsline}
+\begin{APLfnsline}{\APLleftbracket\APLone
+\APLrightbracket}{}
+  ...
+\end{APLfns}
+\end{Large}
+\end{verbatim}
+
+%\APLspace\APLspace
+%\APLspace\APLZ\APLleftarrow\APLleftparen
+%\APLplus\APLslash\APLX
+%\APLrightparen\APLdivide\APLrho\APLX
+%\end{APLline}
+%\begin{APLline}
+%\APLspace\APLspace\APLspace\APLspace
+%\APLspace\APLdel
+%\end{APLline}
+%\end{APLfns}
+%}
+%\end{verbatim}
+ 
+%Changing both type style and size is very easy.  
+
+The canonical representation of an \APL\ function is simply a text
+matrix. Since older \APL\ systems only provide arrays of uniform
+datatype and rectangular shape, padding of short lines with spaces is
+performed. In contrast to the del-editor style, the canonical
+representation is typeset like an \APL\ array with fixed spacing and
+without line numbering. For the 
+\TUBedit{20}
+canonical representation of \APLM\APLE\APLA\APLN\ a small typewriter
+type style was chosen:
+ 
+% Remark: do not split the function
+%\input{cr}
+ 
+\TUBedit{21}
+{\small\tt
+% CR MEAN
+\begin{APLcr}
+\APLmb{\APLZ}\APLmb{\APLleftarrow}\APLmb{\APLM}\APLmb{\APLE}
+\APLmb{\APLA}\APLmb{\APLN}\APLmb{\APLspace}\APLmb{\APLX}
+\APLspace\par
+\APLmb{\APLZ}\APLmb{\APLleftarrow}\APLmb{\APLleftparen}
+\APLmb{\APLplus}\APLmb{\APLslash}\APLmb{\APLX}\APLmb{
+\APLrightparen}\APLmb{\APLdivide}\APLmb{\APLrho}\APLmb{\APLX}
+\APLspace\par
+\end{APLcr}
+}
+
+ 
+You notice immediately that we have used the \LaTeX\ commands
+\verb+\small+ and \verb+\tt+ to produce this effect:
+ 
+% manually adapted for two column tugboat style
+\begin{verbatim}
+{\small\tt
+% CR MEAN
+\begin{APLcr}
+\APLmb{\APLZ}\APLmb{\APLleftarrow}
+\APLmb{\APLM}\APLmb{\APLE}
+\APLmb{\APLA}\APLmb{\APLN}
+\APLmb{\APLspace}\APLmb{\APLX}
+\APLspace\par
+  ...
+\end{APLcr}
+}
+\end{verbatim}
+%
+%\APLmb{\APLZ}\APLmb{\APLleftarrow}
+%\APLmb{\APLleftparen}
+%\APLmb{\APLplus}\APLmb{\APLslash}
+%\APLmb{\APLX}\APLmb{
+%\APLrightparen}\APLmb{\APLdivide}
+%\APLmb{\APLrho}\APLmb{\APLX}
+%\APLspace\par
+%\end{APLcr}
+%}
+%\end{verbatim}
+ 
+In addition to the del-editor representation and the canonical
+representation of an \APL\ function we provide means for
+formatting direct definitions of functions, which are supported
+by only a few \APL\ dialects, e.g. I--\APL:
+ 
+\begin{APLline}
+\APLf\APLi\APLb\APLcolon\APLspace\APLz\APLcomma\APLplus\APLslash
+\APLoverbar\APLtwo\APLuparrow\APLz\APLleftarrow\APLf\APLi\APLb
+\APLspace\APLomega\APLbar\APLone\APLspace\APLcolon\APLspace
+\APLomega\APLequal\APLone\APLspace\APLcolon\APLspace\APLone
+\end{APLline}
+ 
+This direct definition of a function computing Fibonacci numbers
+is due to \cite{Iverson87} and has been formatted as follows:
+ 
+\begin{verbatim}
+\begin{APLline}
+\APLf\APLi\APLb\APLcolon\APLspace\APLz
+\APLcomma\APLplus\APLslash
+\APLoverbar\APLtwo\APLuparrow\APLz
+  ...
+\end{APLline}
+\end{verbatim}
+%
+%\APLleftarrow\APLf\APLi\APLb
+%\APLspace\APLomega\APLbar\APLone
+%\APLspace\APLcolon\APLspace
+%\APLomega\APLequal\APLone\APLspace
+%\APLcolon\APLspace\APLone
+%\end{APLline}
+%\end{verbatim}
+ 
+Note, that the {\tt APLline} environment allows ligatures within names.
+ 
+\subsection{Typesetting \bfAPL\ Expressions}
+ 
+Finally, our system enables the user to typeset
+\APL\ expressions. The expression
+ 
+%\input{expr}
+ 
+{\parsep=0pt % 
+% EXPR
+\begin{APLbold}\begin{APLexpr}
+\APLX\APLleftarrow\APLtwo\APLspace\APLtwo\APLrho
+\APLleftparen\APLtwo\APLspace\APLtwo\APLrho\APLiota\APLfour\APLrightparen
+\APLspace\APLquote\APLA\APLquote\APLspace\APLquote\APLB
+\APLquote\APLspace\APLquote\APLbr\APLC\APLquote
+\end{APLexpr}\end{APLbold}
+}
+
+{\parindent=0pt
+which happens to be the one used to generate the matrix $\APLX$
+(our example for formatting arrays) is printed by:
+}
+ 
+% manually adapted for two column tugboat style
+\begin{verbatim}
+% EXPR
+\begin{APLbold}\begin{APLexpr}
+\APLX\APLleftarrow\APLtwo\APLspace
+\APLtwo\APLrho
+\APLleftparen\APLtwo\APLspace\APLtwo
+  ...
+\end{APLexpr}\end{APLbold}
+\end{verbatim}
+%
+%\APLrho\APLiota\APLfour\APLrightparen
+%\APLspace\APLquote\APLA\APLquote
+%\APLspace\APLquote\APLB
+%\APLquote\APLspace\APLquote\APLbr
+%\APLC\APLquote
+%\end{APLexpr}\end{APLbold}
+%\end{verbatim}
+ 
+The environment {\tt APLexpr} provides
+the traditional six space indentation for user input.
+ 
+\subsection{Typesetting User Dialogues and Workspaces}
+ 
+The above examples demonstrate the usefulness of the six basic
+document elements we provide. Besides being useful on their own, we
+can combine them to form higher level units. In the current version
+of the \APL\ \TUBedit{9}front end, support for typesetting a dialogue
+and an \APL\ workspace listing is included.
+ 
+A dialogue is a pair of user input and interpreter
+response. We typeset the user input as an \APL\ expression and the
+interpreter response as an \APL\ array. The dialogue
+ 
+% Remark: do not split the dialogue
+% ERROR
+{\parsep=0pt % begin of dialogue step
+\begin{APLbold}\begin{APLexpr}
+\APLleftparen\APLone\APLleftparen\APLtwo\APLspace
+\APLthree\APLrightparen\APLfour
+\end{APLexpr}\end{APLbold}
+% ERROR
+\begin{APLarray}
+\APLmb{\APLS}\APLmb{\APLY}\APLmb{\APLN}\APLmb{\APLT}\APLmb{
+\APLA}\APLmb{\APLX}\APLmb{\APLspace}\APLmb{\APLE}\APLmb{\APLR}
+\APLmb{\APLR}\APLmb{\APLO}\APLmb{\APLR}
+\APLspace\par
+\APLmb{\APLspace}\APLmb{\APLspace}\APLmb{\APLspace}\APLmb{
+\APLspace}\APLmb{\APLspace}\APLmb{\APLspace}\APLmb{
+\APLleftparen}\APLmb{\APLone}\APLmb{\APLleftparen}\APLmb{\APLtwo}\APLmb{
+\APLspace}\APLmb{\APLthree}\APLmb{\APLrightparen}\APLmb{\APLfour}
+\APLspace\par
+\APLmb{\APLspace}\APLmb{\APLspace}\APLmb{\APLspace}\APLmb{
+\APLspace}\APLmb{\APLspace}\APLmb{\APLspace}\APLmb{\APLupcaret}
+\APLspace\par
+\end{APLarray}
+}           % end of dialogue step
+ 
+{\parindent=0pt
+was generated by entering the following \APL\ expression
+}
+ 
+\TUBedit{21.1}
+%\input{e}
+ 
+% E
+{\parsep=0pt % begin of dialogue step
+\begin{APLbold}\begin{APLexpr}
+\APLquote\APLE\APLquote\APLspace\APLP
+\APLR\APLT\APLE\APLX\protect\APLunderbar\APLD\APLI\APLA\APLL
+\APLO\APLG\APLspace\APLquote
+\APLleftparen\APLone\APLleftparen\APLtwo\APLbr\APLspace
+\APLthree\APLrightparen\APLfour\APLbr\APLquote
+\end{APLexpr}\end{APLbold}
+% ERR1
+}           % end of dialogue step
+ 
+Hopefully, most of the dialogues will not result in a
+syntax error as the above one. But automatically typesetting
+examples with errors is very convenient for describing
+\APL's error trapping mechanisms in a text book.
+ 
+An example for the printout of an \APL\ workspace would
+be too space-consuming to be included here. It basically
+is implemented by combining the printout of arrays, functions
+and operators intertwined with \LaTeX\ sectioning commands.
+\LaTeX's table of contents considerably increases the
+utility of a workspace listing.
+ 
+\section{Implementation Details}
+ 
+For symbol construction three internal macros had to be defined.
+The first, \verb+\@APLmath+, puts a math symbol into a boxed
+math environment and adjusts spacing. The second, \verb+\@APLmraise+,
+puts a math symbol into a raised and boxed math environment and
+adjusts spacing. The third, \verb+\@APLovly+, simulates backspacing
+and overstriking on a typewriter by overlaying two boxes. The
+quad symbol \APLquad\ required special construction in order to
+generate readable compound symbols such as \APLquadslope, \APLquaddivide,
+\APLquadrightarrow.
+Full reconstruction was needed only for the \APL\ symbol \APLquadquote\
+which is a quad symbol with a short vertical rule. The
+first version of this symbol used a single quote instead
+of the vertical rule and looked rather awkward.
+ 
+One disadvantage of our solution is high \TeX\ memory consumption.
+We have used \verb+\let+ commands wherever possible in order to
+cut down memory usage.
+Typesetting \APL\ symbols for this text has cost us approximately
+6,800 words of \TeX\ memory. Typesetting the workspace of
+the \APL\ \TUBedit{9}front end (32 functions, 11 variables, 23 pages)
+has cost a total of 72,800 words
+of \TeX\ memory with 29,000 words used for the \APL\ symbols.
+We recommend \TeX\ with 262,141 words of memory.
+ 
+\APL\ lines are sometimes too long to be
+printed in a single line. When displaying
+them on the screen, this problem is usually resolved
+by wrapping them to the next lines without
+adding any hyphen. Thus, line breaks can occur
+anywhere in an \APL\ line, in the middle of
+\APL\ expressions or even in names.
+As we use one macro for typesetting each \APL\
+character, the normal \TeX\ hyphenation algorithm
+no longer works. 
+
+In the definition of each \APL\ symbol which cannot be used in an
+identifier the macro \verb+\APLgb+ is used, which allows breaks with a
+penalty of --10.  To achieve line breaks in the emergency case the
+preprocessor inserts the macro \verb+\APLbr+ into names longer than 15
+characters at regular intervals.
+
+When typesetting \APL\ arrays (cf.\ Figure~\ref{atomic}),
+a fixed spaced font is necessary to preserve its
+shape. We imitate fixed spaced fonts by simply putting
+a box of fixed width around all characters.
+ 
+For typesetting bold \APL\ code the special environment {\tt APLbold}
+is defined. It sets \verb+\bf+ and \verb+\boldmath+ and adjusts
+the thickness of rules used in symbol construction.
+ 
+\section{Conclusion}
+ 
+In this paper we have presented our solution to the \APL\
+typesetting problem: An \APL\ publishing system
+consisting of a \LaTeX\ \TUBedit{10}document style option and an
+\APL\ \TUBedit{9}front end. No additional fonts are needed.
+We have given short examples which
+demonstrate the usefulness of this approach. The system
+has already been used by the authors to prepare several
+articles published in \APL\ Quote Quad, the journal of
+the \APL\ user community.
+ 
+% Remark: the next lines are typeset ugly
+\TUBedit{22}\MF\ could be used to improve the printing quality
+of some symbols (cf.~[Hohti, Kanerva 88]\nocite{Hohti}).
+However, it would be necessary to create a whole \APL\ font family
+(different sizes and type styles) to obtain the flexibility
+of our system.
+We could incorporate special \APL\ fonts without
+any change in the \APL\ \TUBedit{9}front end as soon as they become available.
+ 
+The \APL\ \TUBedit{9}front end is currently implemented
+for \APL2 and Dyalog \APL\ and can be obtained from the authors.
+Further porting
+is intended.
+The \LaTeX\ \TUBedit{10}document style option will be submitted to the Clarkson
+and Aston archives as well as to the German \TeX\ server
+at Heidelberg.
+ 
+The authors would appreciate
+comments and suggestions for the improvement of the style
+as well as comments with regard to \APL\ symbols not available
+in this style. 
+ 
+%\input{literature}
+ 
+\begin{thebibliography}{99}
+ 
+\bibitem[Camacho et al. 87]{Camacho}
+        Camacho A., Chapman P., Ziemann D. (1987),
+        {\em I--APL Instruction Manual for PC Clones},
+        I--APL Limited, St. Albans, Herts, England.
+ 
+\bibitem[Dyadic Systems Ltd. 85]{Dyadic} Dyadic Systems Limited (1985),
+        {\em Lynwood Dyalog APL User Guide},
+        Dyadic Systems Limited, Farnborough, Hampshire, England.
+ 
+\bibitem[Falkoff, Iverson 73]{Falkoff} Falkoff A. D., Iverson K. E. (1973)
+        ``The Design of APL'', {\em IBM Journal of Research and
+        Development}, V17, N4,
+        reprinted in: Falkoff A. D., Iverson K. E. (1981),
+        {\em A Source Book in APL}, APL Press, Palo Alto.
+ 
+\bibitem[Hohti, Kanerva 88]{Hohti} Hohti A., Kanerva O. (1988),
+        ``Typesetting APL with \TeX'',
+        {\em APL Quote Quad}, V18, N3, p13--16.
+ 
+\bibitem[IBM 85]{IBM} IBM Corporation (1985),
+        {\em APL2 Programming: Language Reference},
+        IBM Corporation, San Jose, California.
+ 
+\bibitem[I.P. Sharp 85]{IPSharp} I.P. Sharp Associates Limited (1985),
+        {\em SHARP APL/PC Handbook},
+        I.P. Sharp Associates Limited, Toronto, Canada.
+ 
+\bibitem[Iverson 63]{Iverson} Iverson K. E. (1963), ``Formalism in
+        Programming Languages'', ACM Working Conference on
+        Mechanical Language Structures, Princeton N.J.,
+        reprinted in: Falkoff A. D., Iverson K. E. (1981),
+        {\em A Source Book in APL}, APL Press, Palo Alto.
+ 
+\bibitem[Iverson 87]{Iverson87} Iverson K. E. (1987),
+        ``A Dictionary of APL'', {\em APL Quote Quad}, V18, N1.
+ 
+\bibitem[Knuth 86]{Knuth} Knuth D. E. (1986),
+        {\em The \TeX book}, Computers \& Typesetting A,
+        \TUBedit{23}\AW, Reading, Massachusetts.
+ 
+\bibitem[Lamport 86]{Lamport} Lamport L. (1986),
+        {\em \LaTeX : A Document Preparation System},
+        \AW, Reading, Massachusetts.
+ 
+% Remark: the next line is typeset ugly (two words on a line)
+\bibitem[Micro APL Ltd. 86]{MicroAPL}
+	\hfill Micro\hfill  APL\hfill  Ltd.\hfill  (1986),\break
+        {\em APL.68000 for the Apple Macintosh},
+        Micro APL Ltd., London, England.
+ 
+\bibitem[The University of Chicago Press 82]{Chicago}
+        University of Chicago Press (1982),
+        {\em The Chicago Manual of Style $13^{th}$ Edition},
+        The University of Chicago Press, Chicago, USA.
+ 
+\end{thebibliography}
+ 
+\makesignature
+
+\clearpage 
+
+\appendix
+\section{The \protect\apl\ Style Macros}
+
+\verbatimfile{apl.sty}
+\end{document}
+

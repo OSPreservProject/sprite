@@ -1,0 +1,553 @@
+# This file combines the output from one or more invocations of fsstat
+# and writes the relevant data to standard out.  So far, the only data
+# combined are the counts of cache & disk I/O by file type, and the
+# deletion counts by file type.  To be added: overall I/O, and
+# histogram information (deletion distribution function).
+
+# Note: some of the counts tend to overflow awk's ideas of integers.
+# Since awk keeps numbers internally as floating-point, we can print
+# them as such, but then the accuracy diminishes somewhat.  However,
+# the margin of error should be small.
+
+# Initialization.  Define a few constants.  Arrays could be
+# initialized to 0, but awk does that for us automatically.  In some
+# places it would be nicer to use string subscripts, but awk used to die
+# with a Mem_Alloc error when I tried.  In addition, by using integers,
+# we can use for statements to iterate through them.
+
+BEGIN { TEMP = 0; SWAP = 1; OBJ = 2; BINARY = 3; OTHER = 4; TOTAL = 5; 
+	WT_TOTAL = 1; WT_DATA = 2; WT_INDEX = 3; WT_DESC = 4; WT_DIR = 5; 
+	WT_VM = 6;
+        strings[TEMP] = "temp"; strings[SWAP] = "swap"; strings[OBJ] = "obj";
+	strings[BINARY] = "bin"
+        strings[OTHER] = "other"; state = 0; maxRow = -1; row = -1;
+        lastHost = ""; longestUptime = 0;
+	numHosts = 0; numFiles = 0;
+}
+
+# The general methodology for determining what data we're looking at
+# is to look for a well-known string and set a state variable.
+# Since the inputs are effectively concatenated, each time we hit the
+# first line of an fsstat output, we reset the state to 0 and
+# initialize the "row" variable.  The states are as follows:
+#	state		meaning
+#	0		waiting to get to the interesting statistics
+#	1		gathering file type I/O statistics
+#	2		gathering overall deletion statistics
+#	3		gathering deletion histogram statistics
+
+/^Fs Stats:/{state = 0; if (row > maxRow) maxRow = row; row = -1; numFiles++}
+
+# Parse the uptime information, in the form:
+#        mint.Berkeley.EDU*   up   1+08:35   ...
+/^ +[a-z]*\.Berkeley\.EDU[ \*] *(up|down)/ {
+    n = split($1, spl, "*")
+    thisHost = spl[1]
+    if (thisHost != lastHost) {
+	lastHost = thisHost
+        numHosts ++
+    }
+    thisUp = $3
+    n = split(thisUp, spl, "+")
+    if (n == 1) {
+	days = 0
+    } else {
+	days = spl[1]
+	thisUp = spl[2]
+    }
+    n = split(thisUp, spl, ":")
+    if (n == 1) {
+        hours = 0
+	minutes = thisUp
+    } else {
+	hours = spl[1]
+	minutes = spl[2]
+    }
+    upTime = ((24 * days) + hours) * 60 + minutes
+    if (upTime > longestUptime) {
+        longestUptime = upTime
+    }
+    totalUptime += upTime
+#    print "days = " days " hours = " hours " minutes = " minutes " total = " totalUptime " upTime = " upTime
+}
+
+
+/^ READ *[0-9]/ {
+    blocksRead += $2; dirtyHits += $4; cleanHits += $6
+}
+
+/^ WRITE *[0-9]/ {
+    blocksWritten += $2
+}
+
+/^ WRITETHRU [0-9]/ {
+    writeThrus[WT_TOTAL] += $2
+    writeThrus[WT_DATA] += $4
+    writeThrus[WT_INDEX] += $7
+    writeThrus[WT_DESC] += $10
+    writeThrus[WT_DIR] += $13
+    writeThrus[WT_VM] += $16
+}
+
+/^ Read/ {
+    cacheReads[TOTAL] += $2
+    remoteReads += $3
+    diskReads[TOTAL] += $5
+    rawReads += $7
+}
+
+/^ Write/ {
+    cacheWrites[TOTAL] += $2
+    remoteWrites += $3
+    diskWrites[TOTAL] += $5
+    rawWrites += $7
+}
+
+# The count of calls has the following format (e.g.):
+# "Count of calls: open(R) N   (W) N   (R/W) N   set attributes 12"
+/^Count of calls:/ {
+    callCounts[0] += $5; callCounts[1] += $7;
+    callCounts[2] += $9; callCounts[3] += $12
+}
+
+/^File type.*Cache/ { state = 1}
+/^File type.*Deleted/ {state = 2}
+/^Deletion histogram/ {state = 3}
+
+# Each of the data lines that we care about is preceded by one of the
+# type strings.  (Unfortunately, I don't think we can make that a
+# variable unless we make this script go through cpp or something.)
+# Given a particular string, check the state and add to the
+# appropriate field.  The I/O and overall deletion counts are just
+# regular arrays.  The histogram is kept in separate arrays for each
+# file type, indexed by row number (corresponding to time bucket).
+# Awk doesn't allow 2-dimensional arrays. 
+
+/^ *temp/ {
+    if (state == 0) {
+        print("Error");
+    } else if (state == 1) {
+        cacheReads[TEMP] += $2
+        cacheWrites[TEMP] += $4
+        diskReads[TEMP] += $6
+        diskWrites[TEMP] += $8
+    } else if (state == 2) {
+        deletions[TEMP] += $2
+    } else {
+        row++
+        tempDels[row] += $NF
+    }
+}
+/^ *swap/ {
+    if (state == 0) {
+        print("Error");
+    } else if (state == 1) {
+        cacheReads[SWAP] += $2
+        cacheWrites[SWAP] += $4
+        diskReads[SWAP] += $6
+        diskWrites[SWAP] += $8
+    } else if (state == 2) {
+        deletions[SWAP] += $2
+    } else {
+        swapDels[row] += $NF
+    }
+}
+
+/^ *obj/ {
+    if (state == 0) {
+        print("Error");
+    } else if (state == 1) {
+        cacheReads[OBJ] += $2
+        cacheWrites[OBJ] += $4
+        diskReads[OBJ] += $6
+        diskWrites[OBJ] += $8
+    } else if (state == 2) {
+        deletions[OBJ] += $2
+    } else {
+        objDels[row] += $NF
+    }
+}
+/^ *bin/ {
+    if (state == 0) {
+        print("Error");
+    } else if (state == 1) {
+        cacheReads[BINARY] += $2
+        cacheWrites[BINARY] += $4
+        diskReads[BINARY] += $6
+        diskWrites[BINARY] += $8
+    } else if (state == 2) {
+        deletions[BINARY] += $2
+    } else {
+        binDels[row] += $NF
+    }
+}
+/^ *other/ {
+    if (state == 0) {
+        print("Error");
+    } else if (state == 1) {
+        cacheReads[OTHER] += $2
+        cacheWrites[OTHER] += $4
+        diskReads[OTHER] += $6
+        diskWrites[OTHER] += $8
+    } else if (state == 2) {
+        deletions[OTHER] += $2
+    } else {
+        otherDels[row] += $NF
+        totalDels[row] += tempDels[row] + swapDels[row] + \
+		objDels[row] + binDels[row] + otherDels[row]
+    }
+}
+/^Total/ {
+    if (state == 2) {
+        deletions[TOTAL] += $2
+    }
+}
+
+# Processing done after all counts have been finished.  First,
+# catch the last value of row before exiting.  Output total uptime.
+# Calculate the total number of I/O's and come up with the ratios.
+END {
+    if (row > maxRow) maxRow = row
+
+    days = totalUptime / (24 * 60)
+    minutes = totalUptime % (24 * 60)
+    hours = minutes / 60
+    minutes = minutes % 60
+#    print "days = " days " hours = " hours " minutes = " minutes " total = " totaUptime " upTime = " upTime
+#    printf ("%d %d %d\n", days, hours, minutes)
+    if (days >= 1) {
+        dayString = sprintf("%d+", days)
+    } else {
+        dayString = ""
+    }
+    if (minutes < 10) {
+	minutesString = sprintf("0%d", minutes)
+    } else {
+        minutesString = minutes
+    }
+    printf("Total combined uptime for %d host(s) over %d files:  %s%d:%s\n", \
+	   numHosts, numFiles, dayString, hours, minutesString)
+
+    days = longestUptime / (24 * 60)
+    minutes = longestUptime % (24 * 60)
+    hours = minutes / 60
+    minutes = minutes % 60
+    if (days >= 1) {
+        dayString = sprintf("%d+", days)
+    } else {
+        dayString = ""
+    }
+    if (minutes < 10) {
+	minutesString = sprintf("0%d", minutes)
+    } else {
+        minutesString = minutes
+    }
+    printf("Longest single uptime:  %s%d:%s\n", dayString, hours, minutesString)
+
+# Output the interesting cumulative statistics.  First, the block cache info.
+
+    print "Block Cache Statistics (in blocks):"
+    printf(" READ    %10.0f   dr_hits %10.0f   cl_hits  %10.0f   hit ratio %3d\n", \
+	     blocksRead, dirtyHits, cleanHits, \
+	     100 * (dirtyHits + cleanHits) / blocksRead)
+    if (blocksWritten > 0) {
+         ratio = writeThrus[WT_TOTAL] / blocksWritten * 100
+    } else {
+         ratio = 0
+    }
+    printf(" WRITE   %10.0f   writethrus %10.0f                       tfc ratio %3d\n", \
+			blocksWritten, writeThrus[WT_TOTAL], ratio)
+
+    print "\nByte transfers:\n"
+    print "Bytes:          cache          remote               disk           raw disk"
+
+    cacheBytes = cacheReads[TOTAL];
+    ratio = remoteReads / cacheBytes * 100.;
+    printf(" Read   %13.0f   %13.0f %3d%%", cacheBytes, remoteReads, ratio)
+
+    thruBytes = diskReads[TOTAL];
+    ratio = thruBytes / cacheBytes * 100.;
+    printf(" %13.0f %3d%%", thruBytes, ratio);
+
+    ratio = rawReads / cacheBytes * 100.;
+    printf(" %13.0f %3d%%\n", rawReads, ratio);
+    cacheBytes = cacheWrites[TOTAL];
+    ratio = remoteWrites / cacheBytes * 100.;
+    printf(" Write  %13.0f   %13.0f %3d%%", cacheBytes, remoteWrites, ratio)
+
+    thruBytes = diskWrites[TOTAL];
+    ratio = thruBytes / cacheBytes * 100.;
+    printf(" %13.0f %3d%%", thruBytes, ratio);
+
+    ratio = rawWrites / cacheBytes * 100.;
+    printf(" %13.0f %3d%%\n", rawWrites, ratio);
+
+    print "\nread/write ratios:"
+    if (cacheWrites[TOTAL] > 0) {
+	allCacheRatio = cacheReads[TOTAL] / cacheWrites[TOTAL];
+    } else {
+	allCacheRatio = 0
+    }
+    if (diskWrites[TOTAL] > 0) {
+	allDiskRatio = diskReads[TOTAL] / diskWrites[TOTAL];
+    } else {
+	allDiskRatio = 0
+    }
+    if (rawWrites > 0) {
+	rawRatio = rawReads / rawWrites;
+    } else {
+	rawRatio = 0
+    }
+    if (rawWrites + diskWrites[TOTAL] > 0) {
+	combRatio = (rawReads + diskReads[TOTAL]) / \
+			(rawWrites + diskWrites[TOTAL]);
+    } else {
+	combRatio = 0
+    }
+    printf ("Cache: %5.2f\tDisk: %5.2f\tRaw disk: %5.2f\t  All disk: %5.2f\n\n", \
+		allCacheRatio, allDiskRatio, rawRatio, combRatio)
+
+#
+# Call counts
+# 
+    print "Count of calls:"
+    printf("\topen for reading: %15d\n", callCounts[0]);
+    printf("\t  \"      writing: %15d\n", callCounts[1]);
+    printf("\t  \"   read/write: %15d\n", callCounts[2]);
+    printf("\t  set attributes: %15d\n", callCounts[3]);
+    print ""
+
+#
+# Per-type file I/O
+#
+
+# Recalculate totals to make sure the percentages add up correctly.
+
+    cacheReads[TOTAL] = cacheReads[TEMP] + cacheReads[SWAP] + \
+		cacheReads[OBJ] + cacheReads[BINARY] + cacheReads[OTHER]
+    cacheWrites[TOTAL] = cacheWrites[TEMP] + cacheWrites[SWAP] + \
+		cacheWrites[OBJ] + cacheWrites[BINARY] + cacheWrites[OTHER]
+    diskReads[TOTAL] = diskReads[TEMP] + diskReads[SWAP] + \
+		diskReads[OBJ] + diskReads[BINARY] + diskReads[OTHER]
+    diskWrites[TOTAL] = diskWrites[TEMP] + diskWrites[SWAP] + \
+		diskWrites[OBJ] + diskWrites[BINARY] + diskWrites[OTHER]
+
+    if (cacheReads[TOTAL] > 0) {
+	cacheReadRatio[TEMP] = cacheReads[TEMP] / cacheReads[TOTAL]
+	cacheReadRatio[SWAP] = cacheReads[SWAP] / cacheReads[TOTAL]
+	cacheReadRatio[OBJ] = cacheReads[OBJ] / cacheReads[TOTAL]
+	cacheReadRatio[BINARY] = cacheReads[BINARY] / cacheReads[TOTAL]
+	cacheReadRatio[OTHER] = cacheReads[OTHER] / cacheReads[TOTAL]
+     } else {
+	cacheReadRatio[TEMP] = 0
+	cacheReadRatio[SWAP] = 0
+	cacheReadRatio[OBJ] = 0
+	cacheReadRatio[BINARY] = 0
+	cacheReadRatio[OTHER] = 0
+    }
+    if (cacheWrites[TOTAL] > 0) {
+	cacheWriteRatio[TEMP] = cacheWrites[TEMP] / cacheWrites[TOTAL]
+	cacheWriteRatio[SWAP] = cacheWrites[SWAP] / cacheWrites[TOTAL]
+	cacheWriteRatio[OBJ] = cacheWrites[OBJ] / cacheWrites[TOTAL]
+	cacheWriteRatio[BINARY] = cacheWrites[BINARY] / cacheWrites[TOTAL]
+	cacheWriteRatio[OTHER] = cacheWrites[OTHER] / cacheWrites[TOTAL]
+     } else {
+	cacheWriteRatio[TEMP] = 0
+	cacheWriteRatio[SWAP] = 0
+	cacheWriteRatio[OBJ] = 0
+	cacheWriteRatio[BINARY] = 0
+	cacheWriteRatio[OTHER] = 0
+    }
+    if (diskReads[TOTAL] > 0) {
+	diskReadRatio[TEMP] = diskReads[TEMP] / diskReads[TOTAL]
+	diskReadRatio[SWAP] = diskReads[SWAP] / diskReads[TOTAL]
+	diskReadRatio[OBJ] = diskReads[OBJ] / diskReads[TOTAL]
+	diskReadRatio[BINARY] = diskReads[BINARY] / diskReads[TOTAL]
+	diskReadRatio[OTHER] = diskReads[OTHER] / diskReads[TOTAL]
+     } else {
+	diskReadRatio[TEMP] = 0
+	diskReadRatio[SWAP] = 0
+	diskReadRatio[OBJ] = 0
+	diskReadRatio[BINARY] = 0
+	diskReadRatio[OTHER] = 0
+    }
+    if (diskWrites[TOTAL] > 0) {
+	diskWriteRatio[TEMP] = diskWrites[TEMP] / diskWrites[TOTAL]
+	diskWriteRatio[SWAP] = diskWrites[SWAP] / diskWrites[TOTAL]
+	diskWriteRatio[OBJ] = diskWrites[OBJ] / diskWrites[TOTAL]
+	diskWriteRatio[BINARY] = diskWrites[BINARY] / diskWrites[TOTAL]
+	diskWriteRatio[OTHER] = diskWrites[OTHER] / diskWrites[TOTAL]
+     } else {
+	diskWriteRatio[TEMP] = 0
+	diskWriteRatio[SWAP] = 0
+	diskWriteRatio[OBJ] = 0
+	diskWriteRatio[BINARY] = 0
+	diskWriteRatio[OTHER] = 0
+    }
+
+    print "Per-type file I/O, in bytes:"
+    print "\nFile type    Cache(R)          Cache(W)           Disk(R)           Disk(W)"
+   
+    for (i = TEMP; i < TOTAL; i++) {
+        printf("%-5s ", strings[i]);
+        printf(" %12.0f %3d%%", cacheReads[i], cacheReadRatio[i] * 100  + .5)
+        printf(" %12.0f %3d%%", cacheWrites[i], cacheWriteRatio[i] * 100  + .5)
+        printf(" %12.0f %3d%%", diskReads[i], diskReadRatio[i] * 100  + .5)
+        printf(" %12.0f %3d%%\n", diskWrites[i], diskWriteRatio[i] * 100  + .5)
+    }
+
+# Output the total per-type deletion counts and the R/W ratios
+    if (deletions[TOTAL] > 0) {
+        hdr = "        Bytes Deleted"
+        tail = sprintf(" %15.0f 100%%", deletions[TOTAL]);
+    } else {
+        hdr = ""; tail = ""
+    }
+    printf("\nFile type   Cache R/W    Disk R/W    Read Hits   Write Tfc%s", hdr);
+    for (i = 0; i < TOTAL; i++) {
+	if (cacheWrites[i] > 0) {
+	    cacheRatio = cacheReads[i] / cacheWrites[i];
+	    trafficRatio = diskWrites[i] / cacheWrites[i];
+	} else {
+	    cacheRatio = 0
+	    trafficRatio = 0
+	}
+	if (cacheReads[i] > 0) {
+	    readHitRatio = 1 - diskReads[i] / cacheReads[i];
+	} else {
+	    readHitRatio = 0
+	}
+	if (diskWrites[i] > 0) {
+	    diskRatio = diskReads[i] / diskWrites[i];
+	} else {
+	    diskRatio = 0
+	}
+        if (deletions[TOTAL] > 0) {
+	    delStr = sprintf(" %15.0f %3d%%", deletions [i], \
+			deletions [i] / deletions[TOTAL] * 100 + 0.5)
+	} else {
+	    delStr = ""
+	}
+	printf("\n%-5s          %6.2f      %6.2f       %6.2f      %6.2f%s", \
+	       strings[i], cacheRatio, diskRatio, readHitRatio, \
+	       trafficRatio, delStr);
+    }
+    if (cacheReads[TOTAL] > 0) {
+	readHitRatio = 1 - diskReads[TOTAL] / cacheReads[TOTAL];
+    } else {
+	readHitRatio = 0
+    }
+    if (cacheWrites[TOTAL] > 0) {
+	trafficRatio = diskWrites[TOTAL] / cacheWrites[TOTAL];
+    } else {
+	trafficRatio = 0
+    }
+    printf("\nTotal          %6.2f      %6.2f       %6.2f      %6.2f%s\n", \
+		allCacheRatio, allDiskRatio, readHitRatio, trafficRatio, tail);
+    if (totalDels[maxRow] > 0) {
+        timeStrings[0] = "1 sec "
+        timeStrings[1] = "2 secs"
+	timeStrings[2] = "3 secs"
+	timeStrings[3] = "4 secs"
+	timeStrings[4] = "5 secs"
+	timeStrings[5] = "6 secs"
+	timeStrings[6] = "7 secs"
+	timeStrings[7] = "8 secs"
+	timeStrings[8] = "9 secs"
+	timeStrings[9] = "10 secs"
+	timeStrings[10] = "20 secs"
+	timeStrings[11] = "30 secs"
+	timeStrings[12] = "40 secs"
+	timeStrings[13] = "50 secs"
+	timeStrings[14] = "1 min "
+	timeStrings[15] = "2 mins"
+	timeStrings[16] = "3 mins"
+	timeStrings[17] = "4 mins"
+	timeStrings[18] = "5 mins"
+	timeStrings[19] = "6 mins"
+	timeStrings[20] = "7 mins"
+	timeStrings[21] = "8 mins"
+	timeStrings[22] = "9 mins"
+	timeStrings[23] = "10 mins"
+	timeStrings[24] = "20 mins"
+	timeStrings[25] = "30 mins"
+	timeStrings[26] = "40 mins"
+	timeStrings[27] = "50 mins"
+	timeStrings[28] = "1 hr "
+	timeStrings[29] = "2 hrs"
+	timeStrings[30] = "3 hrs"
+	timeStrings[31] = "4 hrs"
+	timeStrings[32] = "5 hrs"
+	timeStrings[33] = "6 hrs"
+	timeStrings[34] = "7 hrs"
+	timeStrings[35] = "8 hrs"
+	timeStrings[36] = "9 hrs"
+	timeStrings[37] = "10 hrs"
+	timeStrings[38] = "15 hrs"
+	timeStrings[39] = "20 hrs"
+	timeStrings[40] = "1 day "
+	timeStrings[41] = "2 days"
+	timeStrings[42] = "3 days"
+	timeStrings[43] = "4 days"
+	timeStrings[44] = "5 days"
+	timeStrings[45] = "6 days"
+	timeStrings[46] = "7 days"
+	timeStrings[47] = "8 days"
+	timeStrings[48] = "9 days"
+	timeStrings[49] = "10 days"
+	timeStrings[50] = "20 days"
+	timeStrings[51] = "30 days"
+	timeStrings[52] = "40 days"
+	timeStrings[53] = "50 days"
+	timeStrings[54] = "60 days"
+	timeStrings[55] = "90 days"
+	timeStrings[56] = "120 days"
+	timeStrings[57] = "180 days"
+	timeStrings[58] = "240 days"
+	timeStrings[59] = "300 days"
+	timeStrings[60] = "360 days"
+	timeStrings[61] = ">360 days"
+        numTimesToPrint = maxRow
+
+	printf("\nPercentiles for bytes deleted, by type.  Total is in 1K blocks:\n\n");
+	printf("      Time   %6s %6s %6s %6s %6s   Cumulative         Cum. Total\n", \
+	         strings[0],  strings[1], strings[2], strings[3], strings[4])
+	for (row = 0; row <= maxRow; row++) {
+	    printf("%10s    ", timeStrings[row]);
+            if (tempDels[maxRow] > 0) {
+	         ratio = tempDels[row] / tempDels[maxRow];
+	    } else {
+	         ratio = 0;
+	    }
+	    printf("%5.0f  ", ratio * 100);
+            if (swapDels[maxRow] > 0) {
+	         ratio = swapDels[row] / swapDels[maxRow];
+	    } else {
+	         ratio = 0;
+	    }
+	    printf("%5.0f  ", ratio * 100);
+            if (objDels[maxRow] > 0) {
+	         ratio = objDels[row] / objDels[maxRow];
+	    } else {
+	         ratio = 0;
+	    }
+	    printf("%5.0f  ", ratio * 100);
+            if (binDels[maxRow] > 0) {
+	         ratio = binDels[row] / binDels[maxRow];
+	    } else {
+	         ratio = 0;
+	    }
+	    printf("%5.0f  ", ratio * 100);
+            if (otherDels[maxRow] > 0) {
+	         ratio = otherDels[row] / otherDels[maxRow];
+	    } else {
+	         ratio = 0;
+	    }
+	    printf("%5.0f  ", ratio * 100);
+	    printf("      %5.0f    %15.0f\n", \
+	     	    totalDels[row] / totalDels[maxRow] * 100, totalDels[row]);
+
+	}
+    }
+    print ""
+}

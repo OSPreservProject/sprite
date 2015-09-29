@@ -1,0 +1,11 @@
+L CLOSEDIR.C;1                      	closedir.c	../../c.orig/dir/closedir.c
+D DS3100_M                          	ds3100.md
+L LOCAL.MK;1                        	local.mk	../etc/local.mk
+F MAKEFILE.;1                       	Makefile
+L OPENDIR.C;1                       	opendir.c	../../c.orig/dir/opendir.c
+D RCS                               	RCS
+L READDIR.C;1                       	readdir.c	../../c.orig/dir/readdir.c
+L SCANDIR.C;1                       	scandir.c	../../c.orig/dir/scandir.c
+L SEEKDIR.C;1                       	seekdir.c	../../c.orig/dir/seekdir.c
+D SUN3_MD                           	sun3.md
+L TELLDIR.C;1                       	telldir.c	../../c.orig/dir/telldir.c

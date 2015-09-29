@@ -1,0 +1,3 @@
+HDEFINES=-DHOST_SYS=SUN4_SYS
+#CC=gcc -Wall -ansi
+

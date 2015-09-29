@@ -1,0 +1,328 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.4
+date     89.06.16.09.08.06;  author mendel;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.12.28.12.05.02;  author mendel;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     87.12.14.09.43.16;  author nelson;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     87.01.12.14.46.36;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.4
+log
+@*** empty log message ***
+@
+text
+@#include <stdio.h>
+#include <stdlib.h>
+#include <sprite.h>
+#include <option.h>
+#include <sys/time.h>
+
+
+int	pageSize = 4096;
+int	numPageFaults = 1000;
+int	repeats = 3;
+Boolean	pause = FALSE;
+Boolean	trace = FALSE;
+Boolean dirty = FALSE;
+Boolean longcheck = FALSE;
+Boolean staticArray = FALSE;
+static  char sArray[4*1024*1024];
+
+Option optionArray[] = {
+    {OPT_INT, "p", (Address)&pageSize,
+	"The page size to fault on (default 4096)."},
+    {OPT_INT, "n", (Address)&numPageFaults,
+	"Number of page faults (default 1000)"},
+    {OPT_INT, "r", (Address)&repeats,
+	"Number of repeats of faulting sequence (default 3)"},
+    {OPT_TRUE, "P", (Address)&pause,
+	"Wait for input before starting"},
+    {OPT_TRUE, "t", (Address)&trace,
+	"Should print out information as page faults happen"},
+    {OPT_TRUE, "d", (Address)&dirty,
+	"Dirty the page on each pass."},
+    {OPT_TRUE, "c", (Address)&longcheck,
+	"Do a more complete check of the page."},
+    {OPT_TRUE, "s", (Address)&staticArray,
+	"Page from the static 4meg array."},
+};
+int numOptions = sizeof(optionArray) / sizeof(Option);
+
+static char	*big;
+
+main(argc, argv)
+    int  argc;
+    char *argv[];
+{
+    register	char	*bigPtr;
+    register	struct timeval	*beforeArr; 
+    register	struct timeval	*afterArr;
+    register	int	*intPtr;
+    register	int	i;
+    register	int	j;
+    struct	timeval		before, after;
+    char		*big;
+    char		c;
+    Boolean		once = FALSE;
+    double		rate;
+
+    (void)Opt_Parse(argc, argv, optionArray, numOptions,0);
+    if (pause) {
+	scanf("%c", &c);
+    }
+    if (staticArray) {
+	big = sArray;
+	numPageFaults = 4*1024*1024/pageSize;
+    } else { 
+	big = (char *)malloc(pageSize * numPageFaults);
+    }
+    if (big == NULL) {
+	fprintf(stderr,"Can't allocated %d bytes of memory.\n",
+			pageSize * numPageFaults);
+	exit(1);
+    }
+    beforeArr = (struct timeval *)malloc(sizeof(struct timeval) * repeats);
+    afterArr = (struct timeval *)malloc(sizeof(struct timeval) * repeats);
+    if (beforeArr == NULL || afterArr == NULL) {
+	fprintf(stderr,"Can't allocated memory for timing arrays.\n");
+	exit(1);
+    }
+    gettimeofday(&before, NULL);
+    for (j = 0; j < repeats; j++) {
+	gettimeofday(&beforeArr[j], NULL);
+	for (i = 1, bigPtr = big; i <= numPageFaults; i++, bigPtr += pageSize) {
+	    intPtr = (int *)bigPtr;
+	    if (dirty) {
+		*intPtr = *intPtr;
+	    }
+	    if (!longcheck) {
+		if (once && *intPtr != i) {
+		    printf("Error on page %d address 0x%x ", i, intPtr);
+		    printf("Found 0x%x should be 0x%x\n",*intPtr,i);
+		    fflush(stdout);
+		    abort();
+		}
+	    } else {
+		int	*end = intPtr + pageSize/sizeof(int);
+		int	*c;
+		if (once) {
+		   for (c = intPtr; c < end; c += 4) {
+		       if (*c != i) {
+			    printf("Error on page %d address 0x%x ", i,intPtr);
+			    printf("Found 0x%x should be 0x%x\n",*c,i);
+			    fflush(stdout);
+			}
+		    }
+		}
+	    }
+	    if (trace && (i % 100 == 0)) {
+		printf("%d\n", i);
+		fflush(stdout);
+	    }
+	    if (!once || dirty) {
+		if (!longcheck) {
+		    *intPtr = i;
+		} else {
+		    int	*end = intPtr + pageSize/sizeof(int);
+		    for (; intPtr < end; intPtr += 4) {
+			*intPtr = i;
+		    }
+	       }
+	    }
+	}
+	gettimeofday(&afterArr[j], NULL);
+	once = TRUE;
+	if (trace) {
+	    printf("Pass %d\n\n", j + 1);
+	    fflush(stdout);
+	}
+    }
+    for (j = 0; j < repeats; j++) {
+	rate = (afterArr[j].tv_sec - beforeArr[j].tv_sec) * 1000;
+	rate += (afterArr[j].tv_usec - beforeArr[j].tv_usec) / 1000;
+	rate = rate / numPageFaults;
+	printf("Pass %d: %0.3f ms per page fault\n", j + 1, rate);
+    }
+
+    gettimeofday(&after,NULL);
+    rate = (after.tv_sec - before.tv_sec) * 1000;
+    rate += (after.tv_usec - before.tv_usec)*.001;
+    rate = rate / (numPageFaults * repeats);
+    printf("Totals: time=%0.3f sec, faults=%d rate=%0.3f ms per fault\n", 
+		(after.tv_sec - before.tv_sec) + 
+		(after.tv_usec - before.tv_usec) / 1000000.0,
+		numPageFaults * repeats, rate);
+    exit(0);
+}
+@
+
+
+1.3
+log
+@Ported to new C library.
+@
+text
+@d7 1
+d13 4
+d29 6
+d60 6
+a65 2
+
+    big = (char *)malloc(pageSize * numPageFaults);
+d82 22
+a103 3
+	    if (once && *intPtr != i) {
+		printf("Error on page %d\n", i);
+		fflush(stdout);
+a104 1
+
+d109 9
+a117 2
+	    if (!once) {
+		*intPtr = i;
+@
+
+
+1.2
+log
+@Made it more flexible.  Can handle different page sizes and the like for
+example.
+@
+text
+@d1 5
+a5 5
+#include "sprite.h"
+#include "time.h"
+#include "option.h"
+#include "io.h"
+#include "time.h"
+d14 1
+a14 1
+    {OPT_INT, 'p', (Address)&pageSize,
+d16 1
+a16 1
+    {OPT_INT, 'n', (Address)&numPageFaults,
+d18 1
+a18 1
+    {OPT_INT, 'r', (Address)&repeats,
+d20 1
+a20 1
+    {OPT_TRUE, 'P', (Address)&pause,
+d22 1
+a22 1
+    {OPT_TRUE, 't', (Address)&trace,
+d34 2
+a35 2
+    register	Time	*beforeArr, before;
+    register	Time	*afterArr, after;
+d39 1
+d45 1
+a45 1
+    (void)Opt_Parse(&argc, argv, numOptions, optionArray);
+d47 1
+a47 1
+	Io_Scan("%c", &c);
+d50 13
+a62 4
+    big = (char *)Mem_Alloc(pageSize * numPageFaults);
+    beforeArr = (Time *)Mem_Alloc(sizeof(Time) * repeats);
+    afterArr = (Time *)Mem_Alloc(sizeof(Time) * repeats);
+    Sys_GetTimeOfDay(&before, NULL, NULL);
+d64 1
+a64 1
+	Sys_GetTimeOfDay(&beforeArr[j], NULL, NULL);
+d68 2
+a69 2
+		Io_Print("Error on page %d\n", i);
+		Io_Flush(io_StdOut);
+d73 2
+a74 2
+		Io_Print("%d\n", i);
+		Io_Flush(io_StdOut);
+d80 1
+a80 1
+	Sys_GetTimeOfDay(&afterArr[j], NULL, NULL);
+d83 2
+a84 2
+	    Io_Print("Pass %d\n\n", j + 1);
+	    Io_Flush(io_StdOut);
+d88 2
+a89 2
+	rate = (afterArr[j].seconds - beforeArr[j].seconds) * 1000;
+	rate += (afterArr[j].microseconds - beforeArr[j].microseconds) / 1000;
+d91 1
+a91 1
+	Io_Print("Pass %d: %0.3f ms per page fault\n", j + 1, rate);
+d94 3
+a96 3
+    Sys_GetTimeOfDay(&after, NULL, NULL);
+    rate = (after.seconds - before.seconds) * 1000;
+    rate += (after.microseconds - before.microseconds)*.001;
+d98 3
+a100 3
+    Io_Print("Totals: time=%0.3f sec, faults=%d rate=%0.3f ms per fault\n", 
+		(after.seconds - before.seconds) + 
+		(after.microseconds - before.microseconds) / 1000000.0,
+d102 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d3 1
+d5 1
+d7 5
+a11 1
+static	int	big[3000][512];
+d13 16
+d33 10
+a42 2
+    int		i, j;
+    Boolean	once = FALSE;
+d44 15
+a58 4
+    for (j = 1; j <= 3; j++) {
+	for (i = 1; i <= 2000; i++) {
+	    if (once && big[i][0] != i) {
+		Io_Print("Error: big[%d][0] = %d\n", i, big[i][0]);
+d62 1
+a62 1
+	    if (i % 100 == 0) {
+d67 1
+a67 1
+		big[i][0] = i;
+d70 1
+d72 4
+a75 2
+	Io_Print("\nPass %d\n", j);
+	Io_Flush(io_StdOut);
+d77 15
+@

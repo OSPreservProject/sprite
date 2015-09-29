@@ -1,0 +1,167 @@
+%!
+% PostScript code to generate derived fonts for PS-LaTeX
+%
+% Create a transformed font
+% params: symbol for name of new font,
+%         symbol for name of original font,
+%         font transformation matrix
+%         proc to execute on font (the transformed font dict is on the
+%               top of the stack when this proc is called)
+/TransformFont {
+  30 dict begin                 % for temporary storage
+    /Proc exch def              % the proc to exec
+    /TransformMatrix exch def   % transform matrix
+    /BaseName exch def          % existing font
+    /NewName exch def           % new name
+
+        % find old font, apply transfrom
+    /BaseFontDict BaseName findfont TransformMatrix makefont def
+        % make a dictionary for the new font
+    /NewFont BaseFontDict maxlength dict def
+        % copy entries into the new dictionary (see Cookbook for expln.)
+    BaseFontDict
+      { exch dup /FID ne
+          { dup /Encoding eq
+              { exch dup length array copy
+                NewFont 3 1 roll put }
+              { exch NewFont 3 1 roll put }
+            ifelse }
+          { pop pop }
+        ifelse
+      } forall
+    NewFont /FontName NewName put
+
+        % call procedure
+    NewFont Proc
+        % store new font in fontdict
+    NewName NewFont definefont
+    pop
+  end
+} def
+
+% Create an Oblique font
+% params:       new name for font
+%               old font
+%               angle of obliqueness
+/ObliqueFont {
+  20 dict begin
+    /Angle exch def
+    [1 0 Angle sin Angle cos div 1 0 0] % transform for obliqueness
+    {pop}
+    TransformFont
+  end
+} def
+
+% SmallCapsFont - construct a "Small Caps" font for use by PS-Latex
+%Creator: Bob Tinkelman <bob@ccavax.camb.com>
+%	  Cambridge Computer Associates, Inc.
+%	  56 Beaver Street, 3rd floor
+%	  New York, NY  10004  - USA
+
+% This procedure is invoked with stack containing:
+%	 /New-Font /Base-Font
+% It clears the stack and defines the new font /New-Font in terms
+% of the base font, /Base-Font
+
+% Example of use:
+%	/Times-SmallCaps /Times-Roman SmallCapsFont
+
+% The new font produces the same results as the base font except for "lower
+% case" letters (a-to-z).  For these, it outputs upper case (from the base
+% font) scaled by .8 in each dimension.  [This method of scaling was chosen,
+% in preference to the method recommended in the Blue Book (p157) only due
+% to the availability of corresponding TFM files in the PS-Latex distribution.]
+
+/SmallCapsFont          	% Stack: /New-Font,/Base-Font
+{ 11 dict dup 			% Stack: /New-Font,/Base-Font,dict,dict
+  3 1 roll			% Stack: /New-Font,dict,/Base-Font,dict
+  begin				% Make the new font be the current dictionary
+				% Stack: /New-Font,dict,/Base-Font
+    findfont dup		% Find base font (leave /New-Font,dict on stack)
+    1000 scalefont		%   Scale it by 1000
+    /BaseFont-L exch def	%     and save as /BaseFont-L 
+    800 scalefont		%   Also scale it by 800 and 
+    /BaseFont-S exch def	%     and save as /BaseFont-S 
+                                
+    /FontType 3 def				% 3 means "User defined"
+    /FontMatrix [.001 0 0 .001 0 0] def		% Scale by 1000 (see above)
+    /FontBBox BaseFont-L /FontBBox get def	% Copy bounding box
+    /Encoding BaseFont-L /Encoding get def	% Copy encoding 
+  
+    /TmpString 1 string def			% Storage for 1-char string
+    
+    /IsLowerCase				% See if char is a-z
+     {dup  (a) 0 get ge 
+      exch (z) 0 get le and
+     } def
+  
+    /ToUpperCase				% Convert lower to upper case
+     {dup IsLowerCase 
+      {(a) 0 get sub (A) 0 get add} if
+     } def
+  
+    /BuildChar					% Stack: font, char
+     {exch begin				% font begin
+        BaseFont-L setfont			% Set to large basefont
+        dup IsLowerCase				% If char is a-z, then
+          {BaseFont-S setfont ToUpperCase}	%   reset font & convert to A-Z
+          if					%
+        TmpString 0 3 -1 roll put		% put char into a temp string
+        TmpString stringwidth			% get width of current char
+        setcharwidth				% pass it to the font machinery
+        0 0 moveto				% BuildChar builds chars at 0,0
+        TmpString show				% output the temp string
+      end %font%				% font end
+     } def
+  
+  end %font dictionary
+
+  definefont pop		% Define the font
+
+} def % SmallCapsFont
+
+% Create a condensed font with different strokewidth
+% params:       new font name
+%               old font name
+%               factor to condense by (e.g., 0.8)
+%               factor to thicken lines by (e.g., 1.5)
+/CondensedFont {
+  20 dict begin
+    /LineThickening exch def
+    /WidthNarrowing exch def
+    [WidthNarrowing 0 0 1 0 0] % transform matrix
+    {dup /StrokeWidth get LineThickening mul /StrokeWidth exch put}
+    TransformFont
+  end
+} def
+
+% Create a Reduced font
+% params: new-name old-name scale
+/ReducedFont {
+  20 dict begin
+    /reduction exch def
+    [reduction 0 0 reduction 0 0]
+    {pop}         % no-op
+    TransformFont
+  end
+} def
+
+/Times-Oblique /Times-Roman 15 ObliqueFont
+/Times-BoldOblique /Times-Bold 15 ObliqueFont
+%/Times-ItalicUnslanted /Times-Italic -15.15 ObliqueFont
+/Symbol-Oblique /Symbol 15 ObliqueFont
+/Times-SmallCaps /Times-Roman SmallCapsFont
+/Courier-Condensed /Courier 0.85 1.5 CondensedFont
+/Helvetica-Reduced /Helvetica 0.875 ReducedFont
+
+% Can use these on a LaserWriter Plus
+/makeLWPlusFonts {
+  /Bookman-LightOblique /Bookman-Light 10 ObliqueFont
+  /Bookman-LightSmallCaps /Bookman-Light SmallCapsFont
+  /NewCenturySchlbk-Oblique /NewCenturySchlbk-Roman 10 ObliqueFont
+  /NewCenturySchlbk-SmallCaps /NewCenturySchlbk-Roman SmallCapsFont
+  /Palatino-SmallCaps /Palatino-Roman SmallCapsFont
+  /Palatino-Oblique /Palatino-Roman 10 ObliqueFont
+  /Palatino-BoldOblique /Palatino-Bold 10 ObliqueFont
+} def
+

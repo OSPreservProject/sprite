@@ -1,0 +1,74 @@
+.\" @(#)df.1 1.2 86/07/29 SMI;
+.TH XGONE 1 "25 February 1987"
+.SH NAME
+xgone \- lock the screen under the X window system
+.SH SYNOPSIS
+.B xgone
+.I args
+.SH DESCRIPTION
+.I Xgone
+locks the screen until a keypress is entered.
+While waiting, it displays a message telling where the person went and
+when they started the program and moves this text around the
+screen to avoid burning them in at a particular location.
+.PP
+If no
+.I args are provided, the program displays the text "X Gone" along with the
+time.  If
+.I args
+are provided, then the concatenation of the arguments, separated
+by spaces, is displayed instead of the default string.
+.PP
+To leave
+.I xgone,
+press any mouse key.  If password checking is enabled,
+it will prompt you for your password, which will
+not be echoed on the display.  End the password with ``Return.''  As
+an accelerator, you may simply type your password.  Password checking
+is disabled by default, so any input will then cause 
+.I xgone
+to exit.
+.SH OPTIONS
+.in +10
+.ti -10
+\-font     Specify the font to use for text on the screen.
+.ti -10
+\-sleep    Specify the interval between moves of the block of text on the
+screen.
+.ti -10
+\-delay    Make the program drop in the background and delay starting for a
+few seconds.  This is helpful when invoking
+.I xgone
+from a menu inside window managers like
+.I twm
+which don't allow a "grab" of mouse for a short time right at startup.
+.ti -10
+\-passwd    Enable password  checking.
+.in -10
+.SH DEFAULTS
+.in +15
+.ti -15
+xgone.Font:    fontname  (same as \-font)
+.ti -15
+xgone.Text:    default text to use instead of "X Gone"
+.ti -15
+xgone.Sleep:   sleeptime in seconds   (same as \-sleep)
+.ti -15
+xgone.Update:  interval between updates   (same as \-update)
+.ti -15
+xgone.Delay:   boolean   (same as \-delay)
+.ti -15
+xgone.Passwd:   boolean, with true indicating password checking
+should be done.
+.in -15
+.SH FILES
+/etc/passwd	
+.SH "SEE ALSO"
+lockscreen(1), xlock(l)
+.SH AUTHOR
+Originally written for X10 by Tim Morgan at UCI.
+.br
+Modified and extended for X11 by Richard Johnson also at UCI.
+.br
+Modified by Fred Douglis for Sprite.
+

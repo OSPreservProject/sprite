@@ -1,0 +1,52 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ds3100:1.1 sun3:1.1 sun4nw:1.1 symm:1.1 spur:1.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     91.07.26.17.24.02;  author shirriff;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Include file for vm module unix compatibility stubs.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/*
+ * vmUnixStubs.h --
+ *
+ *     Virtual memory Unix compatibility stub declarations.
+ *
+ * Copyright 1991 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/vm/RCS/vm.h,v 9.11 90/12/07 12:53:42 mgbaker Exp $ SPRITE (Berkeley)
+ */
+
+
+#ifndef _VM_UNIX_STUBS
+#define _VM_UNIX_STUBS
+
+#include <user/sys/types.h>
+
+extern int Vm_SbrkStub _ARGS_((Address addr));
+extern int Vm_GetpagesizeStub _ARGS_((void));
+extern int Vm_MmapStub _ARGS_((caddr_t addr, int len, int prot, int share, int fd, off_t pos));
+extern int Vm_MunmapStub _ARGS_((caddr_t addr, int len));
+extern int Vm_MincoreStub _ARGS_((caddr_t addr, int len, char vec[]));
+extern int Vm_MprotectStub _ARGS_((caddr_t addr, int len, int prot));
+
+#endif /* _VM_UNIX_STUBS */
+@

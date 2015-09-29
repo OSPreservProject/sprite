@@ -1,0 +1,52 @@
+MigHostCache.c:
+MigOpenPdev.c:
+Mig_ConfirmIdle.c:
+Mig_DeleteHost.c:
+Mig_Done.c:
+Mig_Evict.c:
+Mig_GetAllInfo.c:
+Mig_GetIdleNode.c:
+Mig_GetInfo.c:
+Mig_GetPdevName.c:
+Mig_GetStats.c:
+Mig_RequestIdleHosts.c:
+Mig_RequestIdleHosts.c 2(79): warning: argArray unused in function StartMigd
+Mig_RequestIdleHosts.c 2(112): warning: function StartMigd has return(e); and return;
+Mig_ReturnHosts.c:
+migAlarm.c:
+migAlarm.c 2(148): warning: illegal pointer combination
+migAlarm.c 2(137): warning: itimer unused in function MigClearAlarm
+migAlarm.c 2(136): warning: error unused in function MigClearAlarm
+migAlarm.c 2(151): warning: function MigClearAlarm has return(e); and return;
+sleep value declared inconsistently	llib-lc:sleepTmp.c 2(29)  ::  MigOpenPdev.c 2(99)
+Stat_GetMsg value used inconsistently	llib-lc:status.c 2(253)  ::  Mig_DeleteHost.c 2(73)
+Stat_GetMsg value declared inconsistently	llib-lc:status.c 2(253)  ::  Mig_DeleteHost.c 2(73)
+Stat_GetMsg value used inconsistently	llib-lc:status.c 2(253)  ::  Mig_Evict.c 2(73)
+Stat_GetMsg value declared inconsistently	llib-lc:status.c 2(253)  ::  Mig_Evict.c 2(73)
+Fs_IOControl, arg. 5 used inconsistently	llib-lc:Fs_IOControl.c 2(54)  ::  Mig_GetAllInfo.c 2(100)
+Stat_GetMsg value used inconsistently	llib-lc:status.c 2(253)  ::  Mig_GetAllInfo.c 2(111)
+Stat_GetMsg value declared inconsistently	llib-lc:status.c 2(253)  ::  Mig_GetAllInfo.c 2(111)
+bcopy value declared inconsistently	llib-lc:bcopy.c 2(69)  ::  Mig_GetAllInfo.c 2(125)
+Stat_GetMsg value used inconsistently	llib-lc:status.c 2(253)  ::  Mig_GetInfo.c 2(123)
+Stat_GetMsg value declared inconsistently	llib-lc:status.c 2(253)  ::  Mig_GetInfo.c 2(123)
+bcopy value declared inconsistently	llib-lc:bcopy.c 2(69)  ::  Mig_GetInfo.c 2(139)
+Stat_GetMsg value used inconsistently	llib-lc:status.c 2(253)  ::  Mig_GetStats.c 2(78)
+Stat_GetMsg value declared inconsistently	llib-lc:status.c 2(253)  ::  Mig_GetStats.c 2(78)
+Proc_Wait, arg. 2 used inconsistently	llib-lc:proc.c(117)  ::  Mig_RequestIdleHosts.c 2(94)
+Fs_IOControl, arg. 5 used inconsistently	llib-lc:Fs_IOControl.c 2(54)  ::  Mig_RequestIdleHosts.c 2(217)
+sleep value declared inconsistently	llib-lc:sleepTmp.c 2(29)  ::  Mig_RequestIdleHosts.c 2(240)
+exit value declared inconsistently	llib-lc:exit.c 2(57)  ::  Mig_RequestIdleHosts.c 2(111)
+free value declared inconsistently	llib-lc:free.c 2(60)  ::  Mig_RequestIdleHosts.c 2(282)
+MigHostCache: variable # of args.	MigHostCache.c 2(51)  ::  Mig_ReturnHosts.c 2(78)
+Stat_GetMsg value used inconsistently	llib-lc:status.c 2(253)  ::  Mig_ReturnHosts.c 2(120)
+free value declared inconsistently	llib-lc:free.c 2(60)  ::  Mig_ReturnHosts.c 2(115)
+Stat_GetMsg value declared inconsistently	llib-lc:status.c 2(253)  ::  Mig_ReturnHosts.c 2(120)
+signal, arg. 2 used inconsistently	llib-lc:signal.c 2(20)  ::  migAlarm.c 2(102)
+signal, arg. 2 used inconsistently	llib-lc:signal.c 2(20)  ::  migAlarm.c 2(109)
+signal, arg. 2 used inconsistently	llib-lc:signal.c 2(20)  ::  migAlarm.c 2(148)
+close returns value which is always ignored
+fflush returns value which is always ignored
+fprintf returns value which is always ignored
+printf returns value which is always ignored
+alarm returns value which is always ignored
+MigHostCache returns value which is sometimes ignored

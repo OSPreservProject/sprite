@@ -1,0 +1,92 @@
+(30 September 1991)
+
+July 1991
+  simple printf server that starts own client (done)
+  design changes to dev and net modules (dev: need to understand how
+    to do tty's; net: need to understand???) (done)
+
+August
+  client can map file read/write into its address space (done)
+  VM error handling (permissions, non-existent pages) (done)
+  server has no-op locking calls in place (done)
+  client is backed entirely by single-threaded Sprite pager (done)
+
+September
+  ds5000 running Mach 3.0 installed, but not used for Sprite work
+    (not done; got Mach 3.0 running on Ultrix disk, but need to get
+     second disk to fully install Mach)
+  server can read time-of-day chip (not started)
+  server is multi-threaded, with coarse-grained locking (done)
+  client can fork and exec children (fork done, but needs more
+    testing; exec needs small amt. of server changes and needs user
+    code)
+
+(Also done)
+  trivial exception handler (server code to handle user address
+    faults, etc.)
+  small libc started, with all knowledge about Mach and RPCs moved
+    into libc (from October list)
+  Proc_ServerProcs working to "immediately" start new process
+    (time-based calls aren't implemented) (head start on November)
+  fixed gdb (under Mach) to print the thread names registered by the
+    Sprite server
+
+(unexpected problems)
+  Setting up cross-development environment (on Sprite) for user
+    programs.  In particular, getting lint support and cleanly
+    separating the Sprite environment from the Mach environment (e.g.,
+    stdlib.h versus libc.h) were both a pain.
+  Ultrix 4.0 incompatibilities with Mach
+  couldn't reliably get back to gdb command prompt to find out what
+    Sprite server was doing (fixed thanks to patches from OSF
+    Grenoble).
+  stress testing of Sprite server tends to crash Unix server
+  covering potential race conditions (segment management and process
+    management) was harder than expected.
+
+(net estimate)
+  About a week's worth of stuff hasn't been done yet that was
+    scheduled to be done.
+  Around 3-4 days' worth of stuff has been done that was scheduled to
+    be done later.
+  Therefore, I'm a couple days behind schedule.
+--------------------
+October
+  doing all work on ds5000
+  server can ping a native Sprite system (i.e., RPC's work)
+  client makes system calls through emulation library, which then
+    invokes MIG stub
+  (SOSP)
+
+November
+  Proc_ServerProc's work (change timer queue to use message w/ timeout)
+  file system works (client can read & write file from Sprite file
+    server; cache memory is static & pinned)
+
+December
+  client can page across network
+  start on signals
+  (short Christmas vacation)
+
+January 1992
+  client can send, catch signals
+  (XPRS retreat)
+
+February
+  work on C library
+  access to console device.
+  be able to run gcc, maybe vi.
+
+March
+  run benchmarks, find bottlenecks
+  start fixing bottlenecks
+
+April
+  more benchmarks, performance work
+
+
+Dropped:
+  access to local disk
+  binary compatibility
+  support for X
+  TCP/IP support

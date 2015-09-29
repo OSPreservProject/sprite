@@ -1,0 +1,329 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  sprited:1.4.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     92.05.11.15.24.22;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.09.11.14.40.15;  author kupfer;  state Exp;
+branches 1.4.1.1;
+next     1.3;
+
+1.3
+date     89.06.23.11.30.25;  author rab;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.07.29.18.05.57;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.21.16.34.14;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.4.1.1
+date     91.08.15.21.47.02;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.5
+log
+@Add Time_ToMs, Time_Average.
+@
+text
+@/*
+ * time.h --
+ *
+ *     External definitions for the time utility routines.
+ *
+ * Copyright 1986, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * rcsid: $Header: /sprite/src/lib/include/RCS/spriteTime.h,v 1.4 90/09/11 14:40:15 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+ */
+
+#ifndef _SPRITETIME
+#define _SPRITETIME
+
+#ifndef _SPRITE
+#include "sprite.h"
+#endif
+
+/* DATA STRUCTURES */
+
+/*
+ *  Definition of a time value.
+ */
+
+typedef struct {
+    int	seconds;
+    int	microseconds;
+} Time;
+
+typedef struct {
+    int year;
+    int month;
+    int dayOfYear;
+    int dayOfMonth;
+    int dayOfWeek;
+    int	hours;
+    int	minutes;
+    int	seconds;
+    int localOffset;
+    Boolean dst;
+} Time_Parts;
+
+/* CONSTANTS */
+
+/*
+ *  The number of microseconds in one second and one millisecond.
+ */
+
+#define ONE_SECOND		1000000
+#define TENTH_SECOND		100000
+#define HUNDREDTH_SECOND	10000
+#define ONE_MILLISECOND		1000
+
+/*
+ *  Length of buffers required by the Time conversion routines.
+ */
+
+#define TIME_CVT_BUF_SIZE 30
+
+/*
+ *  Frequently used time values.
+ */
+
+extern Time time_ZeroSeconds;
+extern Time time_OneMicrosecond;
+extern Time time_OneMillisecond;
+extern Time time_TenMilliseconds;
+extern Time time_HundredMilliseconds;
+extern Time time_HalfSecond;
+extern Time time_OneSecond;
+extern Time time_TwoSeconds;
+extern Time time_TenSeconds;
+extern Time time_OneMinute;
+extern Time time_OneHour;
+extern Time time_OneDay;
+extern Time time_OneYear;
+extern Time time_OneLeapYear;
+
+
+/* PROCEDURES */
+
+extern void	Time_Add _ARGS_((Time time1, Time time2, Time *resultPtr));
+extern void	Time_Subtract _ARGS_((Time time1, Time time2,
+				      Time *resultPtr));
+extern void	Time_Multiply _ARGS_((Time time, int factor, Time *resultPtr));
+extern void	Time_Divide _ARGS_((Time time, int factor, Time *resultPtr));
+extern void	Time_Normalize _ARGS_((Time *timePtr));
+extern void	Time_ToAscii _ARGS_((int time, Boolean relativeTime,
+				     char *bufferPtr));
+extern void	Time_ToParts _ARGS_((int time, Boolean relativeTime,
+				     Time_Parts *partsPtr));
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Time Comparisons --
+ *
+ *	Time_LT:	time1  <   time2
+ *	Time_LE:	time1  <=  time2
+ *	Time_EQ:	time1  ==  time2
+ *	Time_GE:	time1  >=  time2
+ *	Time_GT:	time1  >   time2
+ *
+ * Results:
+ *     TRUE	- the relation holds for the 2 values.
+ *     FALSE	- the relation does not hold.
+ *
+ * Side effects:
+ *     None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#define Time_LT(time1, time2) \
+		(((time1).seconds     <  (time2).seconds) ||  \
+		 (((time1).seconds     == (time2).seconds) &&  \
+		  ((time1).microseconds <  (time2).microseconds)))
+
+#define Time_LE(time1, time2) \
+		(((time1).seconds     <  (time2).seconds) ||  \
+		 (((time1).seconds     == (time2).seconds) &&  \
+		  ((time1).microseconds <= (time2).microseconds)))
+
+#define Time_EQ(time1, time2) \
+		(((time1).seconds     == (time2).seconds) &&  \
+		 ((time1).microseconds == (time2).microseconds))
+
+#define Time_GE(time1, time2) \
+		(((time1).seconds     >  (time2).seconds) ||  \
+		 (((time1).seconds     == (time2).seconds) &&  \
+		  ((time1).microseconds >= (time2).microseconds)))
+
+#define Time_GT(time1, time2) \
+		(((time1).seconds     >  (time2).seconds) ||  \
+		 (((time1).seconds     == (time2).seconds) &&  \
+		  ((time1).microseconds >  (time2).microseconds)))
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Time_ToMs --
+ *
+ *	Convert a time value (usually a small interval) to a floating-point 
+ *	number of milliseconds.
+ *
+ * Results:
+ *	Returns a float.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#define Time_ToMs(time)	((float)(time).seconds * 1000 + \
+			 (float)(time).microseconds / 1000)
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Time_Average --
+ *
+ *	Return the average time from some total.
+ *
+ * Results:
+ *	Returns the total time divided by the given count.  Returns 0 if 
+ *	the count is 0.  Be sure to cast this if total is a float.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#define Time_Average(total, count) ((count) == 0 ? 0 : (total) / (count))
+
+#endif /* _SPRITETIME */
+@
+
+
+1.4
+log
+@Use function prototypes.
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: /sprite/src/lib/include/RCS/spriteTime.h,v 1.3 89/06/23 11:30:25 rab Exp Locker: kupfer $ SPRITE (Berkeley)
+d144 41
+@
+
+
+1.4.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: /sprite/src/lib/include/RCS/spriteTime.h,v 1.4 90/09/11 14:40:15 kupfer Exp $ SPRITE (Berkeley)
+@
+
+
+1.3
+log
+@*** empty log message ***
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: /sprite/src/lib/include/RCS/spriteTime.h,v 1.2 88/07/29 18:05:57 ouster Exp Locker: rab $ SPRITE (Berkeley)
+d88 10
+a97 7
+extern void 	Time_Add();
+extern void 	Time_Subtract();
+extern void 	Time_Multiply();
+extern void 	Time_Divide();
+extern void 	Time_Normalize();
+extern void	Time_ToAscii();
+extern void	Time_ToParts();
+d123 2
+a124 2
+		(((time1).seconds     == (time2).seconds) &&  \
+		((time1).microseconds <  (time2).microseconds)))
+d128 2
+a129 2
+		(((time1).seconds     == (time2).seconds) &&  \
+		((time1).microseconds <= (time2).microseconds)))
+d133 1
+a133 1
+		((time1).microseconds == (time2).microseconds))
+d137 2
+a138 2
+		(((time1).seconds     == (time2).seconds) &&  \
+		((time1).microseconds >= (time2).microseconds)))
+d142 2
+a143 2
+		(((time1).seconds     == (time2).seconds) &&  \
+		((time1).microseconds >  (time2).microseconds)))
+@
+
+
+1.2
+log
+@Change #ifdef identifier to match file name.
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: spriteTime.h,v 1.1 88/06/21 16:34:14 ouster Exp $ SPRITE (Berkeley)
+d142 1
+a142 1
+#endif _SPRITETIME
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: time.h,v 1.1 88/06/21 09:37:00 ouster Exp $ SPRITE (Berkeley)
+d18 2
+a19 2
+#ifndef _TIME
+#define _TIME
+d142 1
+a142 1
+#endif _TIME
+@

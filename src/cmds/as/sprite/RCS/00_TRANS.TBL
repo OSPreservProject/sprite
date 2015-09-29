@@ -1,0 +1,8 @@
+F APP.C_V;1                         	app.c,v
+F AS.C_V;1                          	as.c,v
+F M68K_OPC.H_V;1                    	m68k-opcode.h,v
+F MESSAGES.C_V;1                    	messages.c,v
+F SPARC.C_V;1                       	sparc.c,v
+F SPARC.H_V;1                       	sparc.h,v
+F SPARC_OP.H_V;1                    	sparc-opcode.h,v
+F WRITE.C_V;1                       	write.c,v

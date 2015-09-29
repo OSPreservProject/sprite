@@ -1,0 +1,35 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  srv030:1.1 srv027:1.1 srv026:1.1 srv024:1.1 srv021:1.1 srv018:1.1 srv014:1.1 srv010:1.1 srv008:1.1 srv007:1.1 srv006:1.1 srv004:1.1;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     91.10.04.14.15.51;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#
+# This file is included by Makefile.  Makefile is generated automatically
+# by mkmf, and this file provides additional local personalization.  The
+# variable SYSMAKEFILE is provided by Makefile;  it's a system Makefile
+# that must be included to set up various compilation stuff.
+#
+
+MAKE_USER_PROGRAM	= processTree
+
+#include "/users/kupfer/lib/pmake/spriteClient.mk"
+@

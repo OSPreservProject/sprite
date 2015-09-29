@@ -1,0 +1,546 @@
+head     9.8;
+branch   ;
+access   ;
+symbols  ds3100:9.8 sun3:9.8 sun4nw:9.8 symm:9.8 spur:9.8 sprited:9.8.1 Summer89:9.0 newlib:8.0 Summer88:6.0 argString:5.1;
+locks    ; strict;
+comment  @ * @;
+
+
+9.8
+date     91.08.15.20.14.41;  author kupfer;  state Exp;
+branches 9.8.1.1;
+next     9.7;
+
+9.7
+date     91.03.29.14.37.57;  author shirriff;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.10.09.11.52.16;  author jhh;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.10.01.18.55.25;  author mendel;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.09.12.13.57.57;  author jhh;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.09.06.17.56.50;  author jhh;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.26.15.22.08;  author douglis;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.12.11.12.48;  author douglis;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.14.33;  author douglis;  state Stable;
+branches ;
+next     8.4;
+
+8.4
+date     89.08.22.14.56.51;  author douglis;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.07.10.19.11.19;  author nelson;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.06.09.17.48.43;  author douglis;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.02.19.22.06.53;  author jhh;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.29.10;  author douglis;  state Stable;
+branches ;
+next     6.2;
+
+6.2
+date     88.11.08.15.59.27;  author douglis;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.31.17.54.55;  author douglis;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.21.37;  author brent;  state Stable;
+branches ;
+next     5.2;
+
+5.2
+date     88.04.18.09.07.15;  author ouster;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.12.15.15.19.13;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.46.44;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.8.1.1
+date     91.08.15.20.14.57;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.8
+log
+@Fix RCS Header line.
+@
+text
+@/*
+ * procInt.h --
+ *
+ *	Declarations internal to the proc module.
+ *
+ * Copyright (C) 1986, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ * $Header: proto.h,v 1.4 86/03/20 14:00:21 andrew Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _PROCINT
+#define _PROCINT
+#include <procMigrate.h>
+#include <migrate.h>
+#include <proc.h>
+#include <fs.h>
+#include <procMach.h>
+/*
+ * Information used by the Proc_Wait command for child termination information.
+ */
+
+typedef struct {
+    Proc_PID 			processID;
+    int 			termReason;
+    int 			termStatus;
+    int 			termCode;
+    int				numQuantumEnds;
+    int				numWaitEvents;
+    Timer_Ticks			kernelCpuUsage;
+    Timer_Ticks			userCpuUsage;
+    Timer_Ticks			childKernelCpuUsage;
+    Timer_Ticks			childUserCpuUsage;
+} ProcChildInfo;
+
+/*
+ * Machine independent object file information.
+ */
+typedef struct {
+    Address	codeLoadAddr;	/* Address in user memory to load code. */
+    unsigned	codeFileOffset;	/* Offset in obj file to load code from.*/
+    unsigned	codeSize;	/* Size of code segment. */
+    Address	heapLoadAddr;	/* Address in user memory to load heap. */
+    unsigned	heapFileOffset;	/* Offset in obj file to load initialized heap
+				 * from . */
+    unsigned	heapSize;	/* Size of heap segment. */
+    Address	bssLoadAddr;	/* Address in user memory to load bss. */
+    unsigned	bssSize;	/* Size of bss segment. */
+    Address	entry;		/* Entry point to start execution. */
+    Boolean	unixCompat;	/* True if running unix compat. mode */
+} ProcObjInfo;
+
+/*
+ * Procedures internal to the proc module.
+ */
+
+extern void 		ProcRemoteExit _ARGS_((register 
+				Proc_ControlBlock *procPtr, int reason, 
+				int exitStatus, int code));
+extern 	void 		ProcRemoteSuspend _ARGS_((Proc_ControlBlock *procPtr,
+				int exitFlags));
+extern void 		ProcExitProcess _ARGS_((register 
+				Proc_ControlBlock *exitProcPtr, int reason, 
+				int status, int code, Boolean thisProcess));
+extern void 		ProcFamilyHashInit _ARGS_((void));
+extern void 		ProcDebugInit _ARGS_((void));
+extern	void		ProcDebugWakeup _ARGS_((void));
+extern void 		ProcRecovInit _ARGS_((void));
+extern void 		ProcFamilyRemove _ARGS_((Proc_ControlBlock *procPtr));
+extern ReturnStatus 	ProcFamilyInsert _ARGS_((Proc_ControlBlock *procPtr, 
+				int familyID));
+extern	ReturnStatus	ProcChangeTimer _ARGS_((int timerType, 
+				Proc_TimerInterval *newTimerPtr,
+				Proc_TimerInterval *oldTimerPtr,
+				Boolean userMode));
+extern	void		ProcDeleteTimers _ARGS_((Proc_ControlBlock *procPtr));
+extern ReturnStatus 	ProcExecGetEncapSize _ARGS_((Proc_ControlBlock *procPtr,
+				int hostID, Proc_EncapInfo *infoPtr));
+extern ReturnStatus 	ProcExecEncapState _ARGS_((register 
+				Proc_ControlBlock *procPtr, int hostID, 
+				Proc_EncapInfo *infoPtr, Address bufPtr));
+extern ReturnStatus	ProcExecDeencapState _ARGS_((register 
+				Proc_ControlBlock *procPtr, 
+				Proc_EncapInfo *infoPtr, Address bufPtr));
+extern ReturnStatus 	ProcExecFinishMigration _ARGS_((register 
+				Proc_ControlBlock *procPtr, int hostID, 
+				Proc_EncapInfo *infoPtr, Address bufPtr, 
+				Boolean failure));
+extern void 		ProcDoRemoteExec _ARGS_((register 
+				Proc_ControlBlock *procPtr));
+extern void 		ProcRemoteExec _ARGS_((register 
+				Proc_ControlBlock *procPtr, int uid));
+extern  void		ProcRecordUsage _ARGS_((Timer_Ticks ticks,
+				ProcRecordUsageType type));
+extern  ReturnStatus	ProcRemoteWait _ARGS_((Proc_ControlBlock *procPtr,
+				int flags, int numPids, Proc_PID pidArray[],
+				ProcChildInfo *childInfoPtr));
+extern	ReturnStatus	ProcRemoteFork _ARGS_((Proc_ControlBlock *parentProcPtr,
+				Proc_ControlBlock *childProcPtr));
+extern	ReturnStatus	ProcInitiateMigration _ARGS_((
+				Proc_ControlBlock *procPtr, int hostID));
+extern	ReturnStatus	ProcServiceRemoteWait _ARGS_((
+				Proc_ControlBlock *curProcPtr,
+				int flags, int numPids, Proc_PID pidArray[],
+				int waitToken, ProcChildInfo *childInfoPtr));
+extern	void		ProcDebugInit _ARGS_((void));
+extern void 		ProcInitMainEnviron _ARGS_((register 
+				Proc_ControlBlock *procPtr));
+extern void 		ProcSetupEnviron _ARGS_((register 
+				Proc_ControlBlock *procPtr));
+extern void 		ProcDecEnvironRefCount _ARGS_((register 
+				Proc_EnvironInfo	*environPtr));
+extern	ReturnStatus	ProcIsObj _ARGS_((Fs_Stream *streamPtr,
+				int doErr));
+extern	void		ProcAddToGroupList _ARGS_((Proc_ControlBlock *procPtr,
+				int gid));
+extern	ReturnStatus	ProcMigReceiveProcess _ARGS_((ProcMigCmd *cmdPtr,
+				Proc_ControlBlock *procPtr,
+				Proc_MigBuffer *inBufPtr,
+				Proc_MigBuffer *outBufPtr));
+extern	ReturnStatus	ProcMigGetUpdate _ARGS_((ProcMigCmd *cmdPtr,
+				Proc_ControlBlock *procPtr,
+				Proc_MigBuffer *inBufPtr,
+				Proc_MigBuffer *outBufPtr));
+extern	ReturnStatus	ProcMigGetSupend _ARGS_((ProcMigCmd *cmdPtr,
+				Proc_ControlBlock *procPtr,
+				Proc_MigBuffer *inBufPtr, 
+				Proc_MigBuffer *outBufPtr));
+extern	ReturnStatus	ProcMigEncapCallback _ARGS_((ProcMigCmd *cmdPtr,
+				Proc_ControlBlock *procPtr,
+				Proc_MigBuffer *inBufPtr,
+				Proc_MigBuffer *outBufPtr));
+extern	void		ProcMigKillRemoteCopy _ARGS_((ClientData data,
+				Proc_CallInfo *infoPtr));
+extern	ReturnStatus	ProcMigCommand _ARGS_((int host, ProcMigCmd *cmdPtr,
+				Proc_MigBuffer *inBufPtr, 
+				Proc_MigBuffer *outBufPtr));
+extern	void		ProcMigWakeupWaiters _ARGS_((void));
+extern	void		ProcMigEvictionComplete _ARGS_((void));
+extern	void		ProcMigAddDependency _ARGS_((Proc_PID processID,
+				Proc_PID peerProcessID));
+extern	void		ProcMigRemoveDependency _ARGS_((Proc_PID processID,
+				Boolean notified));
+extern	ReturnStatus	ProcMigAcceptMigration _ARGS_((ProcMigCmd *cmdPtr,
+				Proc_ControlBlock *procPtr,
+				Proc_MigBuffer *inBufPtr,
+				Proc_MigBuffer *outBufPtr));
+extern	ReturnStatus	ProcMigDestroyCmd _ARGS_((ProcMigCmd *cmdPtr,
+				Proc_ControlBlock *procPtr,
+				Proc_MigBuffer *inBufPtr,
+				Proc_MigBuffer *outBufPtr));
+extern	ReturnStatus	ProcMigContinueProcess _ARGS_((ProcMigCmd *cmdPtr,
+				Proc_ControlBlock *procPtr,
+				Proc_MigBuffer *inBufPtr,
+				Proc_MigBuffer *outBufPtr));
+extern	ReturnStatus	ProcMigGetSuspend _ARGS_((ProcMigCmd *cmdPtr,
+				Proc_ControlBlock *procPtr,
+				Proc_MigBuffer *inBufPtr,
+				Proc_MigBuffer *outBufPtr));
+extern	void		ProcInitTable _ARGS_((void));
+extern	Proc_ControlBlock *ProcGetUnusedPCB _ARGS_((void));
+extern	void		ProcFreePCB _ARGS_((Proc_ControlBlock *procPtr));
+extern	int		ProcTableMatch _ARGS_((int maxPids,
+				Boolean (*booleanFuncPtr)
+					(Proc_ControlBlock *pcbPtr),
+				Proc_PID *pidArray));
+extern 	int		ProcGetObjInfo _ARGS_((Fs_Stream *filePtr,
+				ProcExecHeader *execPtr,
+				ProcObjInfo *objInfoPtr));
+#endif /* _PROCINT */
+@
+
+
+9.8.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/proc/RCS/procInt.h,v 9.8 91/08/15 20:14:41 kupfer Exp $ SPRITE (Berkeley)
+@
+
+
+9.7
+log
+@Added unix compatibility stuff.
+@
+text
+@d16 1
+a16 1
+ * $ProcInt: proto.h,v 1.4 86/03/20 14:00:21 andrew Exp $ SPRITE (Berkeley)
+@
+
+
+9.6
+log
+@function prototypes
+@
+text
+@d57 1
+d174 2
+a175 1
+extern 	int		ProcGetObjInfo _ARGS_((ProcExecHeader *execPtr,
+@
+
+
+9.5
+log
+@Added function prototypes for CallFunc routines and data structures.
+@
+text
+@d139 2
+a140 1
+extern	void		ProcMigKillRemoteCopy _ARGS_((Proc_PID processID));
+@
+
+
+9.4
+log
+@changed format of #includes to use <>
+@
+text
+@d169 2
+a170 1
+				Boolean (*booleanFuncPtr)(),
+@
+
+
+9.3
+log
+@First pass at function prototypes
+@
+text
+@d21 5
+a25 5
+#include "procMigrate.h"
+#include "migrate.h"
+#include "proc.h"
+#include "fs.h"
+#include "procMach.h"
+@
+
+
+9.2
+log
+@added some function declarations
+@
+text
+@d21 5
+a25 1
+
+d63 110
+a172 32
+extern 	void 			ProcRemoteExit();
+extern 	void 			ProcRemoteSuspend();
+extern 	void			ProcExitProcess();
+
+extern	void			ProcFamilyHashInit();
+extern	void			ProcDebugInit();
+extern	void			ProcRecovInit();
+extern 	void			ProcExitInit();
+extern	void			ProcMigrateInit();
+extern	void			ProcEnvironInit();
+
+extern	void			ProcDebugWakeup();
+extern	void			ProcFreePCB();
+extern	Proc_ControlBlock	*ProcGetUnusedPCB();
+extern	void			ProcFamilyRemove();
+extern	ReturnStatus		ProcFamilyInsert();
+
+extern	ReturnStatus		ProcChangeTimer();
+extern	void			ProcDeleteTimers();
+
+extern	int			ProcTableMatch();
+extern  void			ProcInitTable();
+extern	void			ProcAddToGroupList();
+
+extern	ReturnStatus		ProcExecGetEncapSize();
+extern	ReturnStatus		ProcExecEncapState();
+extern	ReturnStatus		ProcExecDeencapState();
+extern	ReturnStatus		ProcExecFinishMigration();
+extern	void			ProcDoRemoteExec();
+extern	void			ProcRemoteExec();
+extern  void			ProcRecordUsage();
+	  
+@
+
+
+9.1
+log
+@added procedure declaration.
+@
+text
+@d80 1
+d88 1
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d87 1
+@
+
+
+8.4
+log
+@added declarations
+@
+text
+@@
+
+
+8.3
+log
+@Incorporated changes from DECWRL.
+@
+text
+@d59 3
+a61 2
+extern void ProcRemoteExit();
+extern void ProcExitProcess();
+d76 3
+d86 1
+@
+
+
+8.2
+log
+@just added some remote exec related functions.
+@
+text
+@d39 15
+@
+
+
+8.1
+log
+@Changes due to lock registration
+@
+text
+@d62 5
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d49 3
+@
+
+
+6.2
+log
+@a couple of changes for procedure declarations.
+@
+text
+@@
+
+
+6.1
+log
+@de-linted and endif-fix'ed.
+@
+text
+@a45 1
+extern	void			ProcExitInit();
+d48 1
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d59 1
+a59 1
+#endif _PROCINT
+@
+
+
+5.2
+log
+@Lint cleanup, change copyright notices.
+@
+text
+@@
+
+
+5.1
+log
+@Fixed lint errors.
+@
+text
+@d6 8
+a13 2
+ * Copyright (C) 1986 Regents of the University of California
+ * All rights reserved.
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d50 2
+a51 1
+extern ENTRY int		ProcTableMatch();
+@

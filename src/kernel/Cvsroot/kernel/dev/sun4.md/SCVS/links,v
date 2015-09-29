@@ -1,0 +1,65 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ds3100:1.2 sun3:1.2 sun4nw:1.1 symm:1.1 spur:1.1;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     92.10.27.14.45.11;  author mgbaker;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.10.29.17.50.40;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@# This file is used by scvs and contains symbolic link
+# information.  Each line is of the form "link target"
+# $Header
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@a3 24
+console.h                ../sun3.md/console.h
+devConsole.c             ../sun3.md/devConsole.c
+devInit.c                ../sun3.md/devInit.c
+devInt.h                 ../sun3.md/devInt.h
+devJaguarHBA.c           ../sun3.md/devJaguarHBA.c
+devMouse.c               ../sun3.md/devMouse.c
+devMultibus.h            ../sun3.md/devMultibus.h
+devSCSI0.c               ../sun3.md/devSCSI0.c
+devSCSI3.c               ../sun3.md/devSCSI3.c
+devScsiTapeConfig.c      ../sun3.md/devScsiTapeConfig.c
+devTMR.c                 ../sun3.md/devTMR.c
+devTMR.h                 ../sun3.md/devTMR.h
+devTtyAttach.c           ../sun3.md/devTtyAttach.c
+devXylogics450.c         ../sun3.md/devXylogics450.c
+devZ8530.c               ../sun3.md/devZ8530.c
+devfb.h                  ../sun3.md/devfb.h
+jaguar.h                 ../sun3.md/jaguar.h
+jaguarDefs.h             ../sun3.md/jaguarDefs.h
+mouse.h                  ../sun3.md/mouse.h
+scsi0.h                  ../sun3.md/scsi0.h
+scsi3.h                  ../sun3.md/scsi3.h
+ttyAttach.h              ../sun3.md/ttyAttach.h
+xylogics450.h            ../sun3.md/xylogics450.h
+z8530.h                  ../sun3.md/z8530.h
+@

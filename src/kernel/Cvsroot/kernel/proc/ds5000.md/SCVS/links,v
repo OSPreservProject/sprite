@@ -1,0 +1,44 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ds3100:1.2 sun3:1.2 sun4nw:1.1 symm:1.1 spur:1.1;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     92.10.27.15.40.23;  author mgbaker;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.10.29.16.49.01;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@# This file is used by scvs and contains symbolic link
+# information.  Each line is of the form "link target"
+# $Header
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@a3 3
+migVersion.h             ../ds3100.md/migVersion.h
+procMach.c               ../ds3100.md/procMach.c
+procMach.h               ../ds3100.md/procMach.h
+@

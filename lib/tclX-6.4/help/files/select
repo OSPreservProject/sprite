@@ -1,0 +1,48 @@
+
+
+          select readhandles [writehandles] [excepthandles] [timeout]
+               This command allows an Extended Tcl program to wait on
+               zero or more files being ready for for reading,
+               writing, have an exceptional condition pending, or for
+               a timeout period to expire.  readhandles, writehandles,
+               excepthandles are each lists of file handles, as
+               returned from open, to query.  An empty list ({}) may
+               be specified if a category is not used.
+
+               The files specified by the readhandles list are checked
+               to see if data is available for reading. The
+               writehandles are checked if the specified files are
+               clear for writing.  The excepthandles are checked to
+               see if an exceptional condition has occured (typically,
+               an error).  The write and exception checking is most
+               useful on devices, however, the read checking is very
+               useful when communicating with multiple processes
+               through pipes.  Select considers data pending in the
+               stdio input buffer for read files as being ready for
+               reading, the files do.  not have to be unbuffered.
+
+               Timeout is a floating point timeout value, in seconds.
+               If an empty list is supplied (or the parameter is
+               omitted), then no timeout is set.  If the value is
+               zero, then the select command functions as a poll of
+               the files, returning immediately even if none are
+               ready.
+
+               If the timeout period expires with none of the files
+               becomming ready, then the command returns an empty
+               list.  Otherwise the command returns a list of three
+               elements, each of those elements is a list of the file
+               handles that are ready in the read, write and exception
+               classes.  If none are ready in a class, then that
+               element will be the null list.  For example:
+
+                       select {file3 file4 file5} {file6 file7} {} 10.5
+
+               could return
+
+                       {file3 file4} {file6} {}
+
+               or perhaps
+
+                       file3 {} {}
+

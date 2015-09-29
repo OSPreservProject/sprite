@@ -1,0 +1,1 @@
+../../dist/t/io/inplace.t

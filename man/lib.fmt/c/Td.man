@@ -1,0 +1,926 @@
+
+
+
+Td                    C Library Procedures                     Td
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Td_Create, Td_Delete, Td_PutRaw,  Td_GetRaw,  Td_ControlRaw,
+     Td_Open,      Td_Close,      Td_PutCooked,     Td_GetCooked,
+     Td_ControlCooked, Td_CreatePdev,  Td_DeletePdev  -  Terminal
+     driver implementing 4.3 BSD operations.
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttdd..hh>>
+
+     Td_Terminal
+     TTdd__CCrreeaattee(_b_u_f_f_e_r_S_i_z_e, _c_o_o_k_e_d_P_r_o_c, _c_o_o_k_e_d_D_a_t_a, _r_a_w_P_r_o_c, _r_a_w_D_a_t_a)
+
+     TTdd__DDeelleettee(_t_e_r_m_i_n_a_l)
+
+     TTdd__PPuuttRRaaww(_t_e_r_m_i_n_a_l, _n_u_m_B_y_t_e_s, _b_u_f_f_e_r)
+
+     int
+     TTdd__GGeettRRaaww(_t_e_r_m_i_n_a_l, _n_u_m_B_y_t_e_s, _b_u_f_f_e_r)
+
+     TTdd__CCoonnttrroollRRaaww(_t_e_r_m_i_n_a_l, _o_p_e_r_a_t_i_o_n)
+
+     int
+     TTdd__OOppeenn(_t_e_r_m_i_n_a_l, _s_e_l_e_c_t_B_i_t_s_P_t_r)
+
+     TTdd__CClloossee(_t_e_r_m_i_n_a_l)
+
+     int
+     TTdd__PPuuttCCooookkeedd(_t_e_r_m_i_n_a_l, _n_u_m_B_y_t_e_s_P_t_r, _b_u_f_f_e_r, _s_i_g_N_u_m_P_t_r, _s_e_l_e_c_t_B_i_t_s_P_t_r)
+
+     int
+     TTdd__GGeettCCooookkeedd(_t_e_r_m_i_n_a_l, _p_I_D, _f_a_m_i_l_y_I_D, _n_u_m_B_y_t_e_s_P_t_r, _b_u_f_f_e_r, _s_i_g_N_u_m_P_t_r, _s_e_l_e_c_t_B_i_t_s_P_t_r)
+
+     int
+     TTdd__CCoonnttrroollCCooookkeedd(_t_e_r_m_i_n_a_l, _c_o_m_m_a_n_d, _i_n_p_u_t_S_i_z_e, _i_n_p_u_t, _o_u_t_p_u_t_S_i_z_e_P_t_r, _o_u_t_p_u_t, _s_i_g_N_u_m_P_t_r, _s_e_l_e_c_t_B_i_t_s_P_t_r)
+
+     Td_Pdev
+     TTdd__CCrreeaatteePPddeevv(_n_a_m_e, _r_e_a_l_N_a_m_e_P_t_r, _t_e_r_m_P_t_r, _r_a_w_P_r_o_c, _r_a_w_D_a_t_a)
+
+     TTdd__DDeelleetteePPddeevv(_t_t_y_P_d_e_v)
+
+AARRGGUUMMEENNTTSS
+     int           _b_u_f_f_e_r_S_i_z_e        (in)      Size   of   output
+                                               buffer  to use for
+                                               terminal.  This is
+                                               not    an    exact
+                                               specification,  in
+                                               that  the terminal
+                                               driver  may  actu-
+                                               ally   allow  more
+                                               characters    than
+
+
+
+Sprite v.1.0         Printed:  April 9, 1990                    1
+
+
+
+
+
+
+Td                    C Library Procedures                     Td
+
+
+
+                                               this  to  be  buf-
+                                               fered, but it will
+                                               always   allow  at
+                                               least  this   many
+                                               characters  to  be
+                                               buffered.
+
+     int           (*_c_o_o_k_e_d_P_r_o_c)()   (in)      Procedure to  call
+                                               for control opera-
+                                               tions  on   cooked
+                                               side of driver.
+
+     ClientData    _c_o_o_k_e_d_D_a_t_a        (in)      Additional   value
+                                               to  pass  to _c_o_o_k_-
+                                               _e_d_P_r_o_c.
+
+     int           (*_r_a_w_P_r_o_c)()      (in)      Procedure to  call
+                                               for control opera-
+                                               tions on raw  side
+                                               of driver.
+
+     ClientData    _r_a_w_D_a_t_a           (in)      Additional   value
+                                               to     pass     to
+                                               _r_a_w_P_r_o_c.
+
+     Td_Terminal   _t_e_r_m_i_n_a_l          (in)      Token  for  termi-
+                                               nal;    must  have
+                                               been  returned  by
+                                               some previous call
+                                               to TTdd__CCrreeaattee.
+
+     int           _n_u_m_B_y_t_e_s          (in)      Total  number   of
+                                               bytes  to  get  or
+                                               put  for/from  raw
+                                               side of terminal.
+
+     char          *_b_u_f_f_e_r           (in/out)  Buffer  containing
+                                               characters  to  be
+                                               written,  or  con-
+                                               taining  space  in
+                                               which   to   place
+                                               characters   being
+                                               read.
+
+     int           _o_p_e_r_a_t_i_o_n         (in)      Control  operation
+                                               being invoked from
+                                               raw side of termi-
+                                               nal.  Currently no
+                                               operations     are
+                                               defined.
+
+     int           *_s_e_l_e_c_t_B_i_t_s_P_t_r    (in/out)  Points   to   word
+
+
+
+Sprite v.1.0         Printed:  April 9, 1990                    2
+
+
+
+
+
+
+Td                    C Library Procedures                     Td
+
+
+
+                                               whose         bits
+                                               (FFSS__RREEAADDAABBLLEE   and
+                                               FFSS__WWRRIITTAABBLLEE) indi-
+                                               cate whether  read
+                                               or   write  opera-
+                                               tions can complete
+                                               successfully.
+                                               Different     pro-
+                                               cedures may modify
+                                               either or both  of
+                                               these bits.
+
+     int           *_n_u_m_B_y_t_e_s_P_t_r      (in/out)  Points to  maximum
+                                               number of bytes to
+                                               read   or   write.
+                                               Gets   overwritten
+                                               with actual number
+                                               of  bytes  read or
+                                               written.
+
+     int           *_s_i_g_N_u_m_P_t_r        (out)     Overwritten   with
+                                               signal  number  to
+                                               apply to  invoking
+                                               process.      Zero
+                                               means no signal.
+
+     int           _p_I_D               (in)      Identifier of pro-
+                                               cess      invoking
+                                               operation.
+
+     int           _f_a_m_i_l_y_I_D          (in)      Process group that
+                                               _p_I_D belongs to.
+
+     int           _c_o_m_m_a_n_d           (in)      Number  of  IOCon-
+                                               trol    operation.
+                                               Note:   these  are
+                                               Sprite   IOControl
+                                               numbers, not  UNIX
+                                               ioctl     numbers.
+                                               See    <<ddeevv//ttttyy..hh>>
+                                               for definitions.
+
+     int           _i_n_p_u_t_S_i_z_e         (in)      Number of bytes of
+                                               information     in
+                                               _i_n_p_u_t
+
+     char          *_i_n_p_u_t            (in)      Input  buffer  for
+                                               IOControl   opera-
+                                               tion.  Its  struc-
+                                               ture   depends  on
+                                               the IOControl.
+
+
+
+
+Sprite v.1.0         Printed:  April 9, 1990                    3
+
+
+
+
+
+
+Td                    C Library Procedures                     Td
+
+
+
+     int           *_o_u_t_p_u_t_S_i_z_e_P_t_r    (in/out)  Points   to   word
+                                               specifiying  total
+                                               number of bytes of
+                                               output      buffer
+                                               space available at
+                                               _o_u_t_p_u_t.   Modified
+                                               to hold the actual
+                                               number  of  output
+                                               bytes provided  by
+                                               the IOControl.
+
+     char          *_o_u_t_p_u_t           (in)      Output buffer  for
+                                               IOControl   opera-
+                                               tion.  Its  struc-
+                                               ture   depends  on
+                                               the IOControl.
+
+     char          *_n_a_m_e             (in)      Name  of  file  to
+                                               use  for  terminal
+                                               pseudo-device.
+                                               May be either full
+                                               name or root.
+
+     char          **_r_e_a_l_N_a_m_e_P_t_r     (out)     Where   to   store
+                                               actual   name   of
+                                               terminal   pseudo-
+                                               device used.  NULL
+                                               means  _n_a_m_e  is  a
+                                               root;     non-NULL
+                                               means _n_a_m_e is  the
+                                               full path name.
+
+     Td_Terminal   *_t_e_r_m_P_t_r          (out)     If non-NULL, token
+                                               for  terminal gets
+                                               stored in the word
+                                               pointed    to   by
+                                               _t_e_r_m_P_t_r.
+
+     Td_Pdev       _t_t_y_P_d_e_v           (in)      Token          for
+                                               terminal-driven
+                                               pseudo-device   to
+                                               destroy.      Must
+                                               have been returned
+                                               previously      by
+                                               TTdd__CCrreeaatteePPddeevv.
+
+_________________________________________________________________
+
+
+IINNTTRROODDUUCCTTIIOONN
+     The Td library procedures implement a terminal  driver  with
+     the  same features as the terminal driver implemented in the
+     4.3 BSD kernel.  The  data  structures  managed  by  the  Td
+     library  are  called  Td_Terminals  and have two interfaces:
+
+
+
+Sprite v.1.0         Printed:  April 9, 1990                    4
+
+
+
+
+
+
+Td                    C Library Procedures                     Td
+
+
+
+     cooked and raw.  The raw interface is  used  to  communicate
+     between   the   Td   procedures  and  the  low-level  device
+     corresponding to the terminal (usually a serial line  device
+     or  a  window on a screen).  The cooked interface is used to
+     communicate with processes accessing the 4.3-BSD-like termi-
+     nal.   In  between, the Td library provides input and output
+     character buffering, echoing and line editing, flow control,
+     interrupt  characters, and all the other features of the 4.3
+     BSD terminal driver.
+
+     Each of the cooked and raw interfaces has at least four pro-
+     cedures  associated  with  it.   Three of the procedures are
+     provided by Td:  one to pass characters  into  the  terminal
+     driver  (e.g.  a  character  that was just typed on the key-
+     board, or a character that a user process wishes to ouput on
+     the  terminal),  one to extract characters from the terminal
+     driver (e.g. to pass them to a waiting user process,  or  to
+     output  them  onto  the terminal), and one to invoke control
+     operations on the terminal.  The fourth procedure  for  each
+     interface  is  provided by the program in which Td is embed-
+     ded.  These procedures are called back by Td to  notify  the
+     program  of various events, for example, that characters are
+     waiting in the terminal's output buffer, or that a full line
+     is present in the terminal's input buffer.
+
+     Most of the procedures in the Td library are generic in that
+     they  can  be  used  in many different situations, including
+     both user programs and the Sprite  kernel.   Two  additional
+     procedures,  TTdd__CCrreeaatteePPddeevv and TTdd__DDeelleetteePPddeevv are provided to
+     connect the cooked side of a Td_Terminal to a pseudo-device.
+     These procedures are used by user-level Sprite programs like
+     rrllooggiinndd and window-based terminal emulators.
+
+
+CCRREEAATTIINNGG AANNDD DDEELLEETTIINNGG TTEERRMMIINNAALLSS
+     The TTdd__CCrreeaattee procedure is used to create a Td_Terminal.  It
+     returns  a token that must be passed to most of the other Td
+     procedures.  Several Td_Terminals  may  exist  at  the  same
+     time,  each  created  by a separate call to TTdd__CCrreeaattee.  Each
+     Td_Terminal corresponds to one logical terminal with its own
+     input  and  output buffers.  The _c_o_o_k_e_d_P_r_o_c and _r_a_w_P_r_o_c pro-
+     cedures, and their associated ClientData values, are used to
+     invoke  control operations on the two sides of the terminal.
+     The use of these two procedures is described in the sections
+     below.   The _b_u_f_f_e_r_S_i_z_e argument is described in the BBUUFFFFEERR--
+     IINNGG section below.
+
+     TTdd__DDeelleettee simulates a hangup on a Td_Terminal, then destroys
+     all  of the state associated with the terminal.  After it is
+     called, the _t_e_r_m_i_n_a_l argument should never be used again  by
+     the caller.
+
+
+
+
+Sprite v.1.0         Printed:  April 9, 1990                    5
+
+
+
+
+
+
+Td                    C Library Procedures                     Td
+
+
+
+RRAAWW IINNTTEERRFFAACCEE
+     The raw interface is used to communicate between the  termi-
+     nal driver and the ``dumb'' terminal device.  It consists of
+     the three procedures  TTdd__PPuuttRRaaww,  TTdd__GGeettRRaaww,  TTdd__CCoonnttrroollRRaaww,
+     and the _r_a_w_P_r_o_c procedure passed to TTdd__CCrreeaattee.
+
+     When characters are typed on the  keyboard  associated  with
+     the  raw  terminal,  they  should  be passed to the temrinal
+     driver by calling TTdd__PPuuttRRaaww.  The Td library will then  per-
+     form input processing such as echoing and line editing.
+
+     The procedure TTdd__GGeettRRaaww should be invoked to remove  charac-
+     ters  from  the  terminal's  output  buffer and copy them to
+     _b_u_f_f_e_r.  The return value indicates how many characters were
+     actually  copied,  up to either _n_u_m_B_y_t_e_s or the total number
+     of characters in the output buffer.   The  return  value  is
+     zero if the output buffer is empty.  The caller of TTdd__GGeettRRaaww
+     should then pass the characters to the raw serial device, or
+     display them on the screen if the terminal is being emulated
+     in a window.  Note that it is up to the application in which
+     Td  is  embedded to decide when to call TTdd__GGeettRRaaww.  However,
+     Td  calls  _r_a_w_P_r_o_c  to  notify  the  application  that   the
+     terminal's output buffer contains characters;  see below for
+     details.
+
+     The procedure TTdd__CCoonnttrroollRRaaww should be  called  when  certain
+     interesting events occur on the raw terminal.  The _o_p_e_r_a_t_i_o_n
+     argument identifies the event that occurred, and must be one
+     of:
+
+          TTDD__BBRREEAAKK            Means that a break just occurred on
+                              the   raw   device.   TTdd__CCoonnttrroollRRaaww
+                              should  only  be  called  when  the
+                              break condition ends.
+
+          TTDD__GGOOTT__CCAARRRRIIEERR      Means that  there  is  now  carrier
+                              present  on  the raw device (e.g. a
+                              modem connection was just made).
+
+          TTDD__LLOOSSTT__CCAARRRRIIEERR     Means that carrier just  went  away
+                              on  the  raw device (e.g. the party
+                              on  the  other  end  hung  up   the
+                              phone).
+
+     The Td module will invoke the procedure _r_a_w_P_r_o_c,  which  was
+     passed  to  TTdd__CCrreeaattee, to ask for special actions on the raw
+     terminal device, or to provide additional  information  that
+     may  be useful in managing the raw terminal device.  _R_a_w_P_r_o_c
+     must have the following structure:
+
+          int
+          rawProc(rawData, operation, inputSize, input, outputSize, output)
+
+
+
+Sprite v.1.0         Printed:  April 9, 1990                    6
+
+
+
+
+
+
+Td                    C Library Procedures                     Td
+
+
+
+              ClientData rawData;
+              int operation;
+              int inputSize;
+              char *input;
+              int outputSize;
+              char *output;
+          {
+           ...
+          }
+     The _r_a_w_D_a_t_a argument will be the same as the  _r_a_w_D_a_t_a  argu-
+     ment  passed  to  TTdd__CCrreeaattee.   It  usually  refers to a data
+     structure describing the raw device, which will be  used  by
+     _r_a_w_P_r_o_c.   The  _o_p_e_r_a_t_i_o_n parameter gives the reason for the
+     call, the _i_n_p_u_t_S_i_z_e and _i_n_p_u_t arguments describe an area  of
+     data  that Td is making available to _r_a_w_P_r_o_c, and _o_u_t_p_u_t_S_i_z_e
+     and _o_u_t_p_u_t describe a buffer in which _r_a_w_P_r_o_c may place data
+     that  it  wishes  to  return  to  Td.  The return value from
+     _r_a_w_P_r_o_c indicates how  many  bytes  of  data  were  actually
+     placed  at  _o_u_t_p_u_t;  it must not be greater than _o_u_p_t_u_t_S_i_z_e.
+     At present, _o_p_e_r_a_t_i_o_n must be one of the following:
+
+          TTDD__RRAAWW__SSTTAARRTT__BBRREEAAKK            Initiate a  break  condi-
+                                        tion  on  the raw device,
+                                        if  the  device  supports
+                                        it.   There  is  no input
+                                        data or output  data  for
+                                        this operation.
+
+          TTDD__RRAAWW__SSTTOOPP__BBRREEAAKK             End a break condition  on
+                                        the  raw  device,  if the
+                                        device    supports    it.
+                                        There is no input data or
+                                        output  data   for   this
+                                        operation.
+
+          TTDD__RRAAWW__SSEETT__DDTTRR                Set the  ``data  terminal
+                                        ready''  condition on the
+                                        raw device,  if  it  sup-
+                                        ports  such an operation.
+                                        There is no input data or
+                                        output   data   for  this
+                                        operation.
+
+          TTDD__RRAAWW__CCLLEEAARR__DDTTRR              Clear the ``data terminal
+                                        ready''  condition on the
+                                        raw device,  if  it  sup-
+                                        ports  such an operation.
+                                        There is no input data or
+                                        output   data   for  this
+                                        operation.
+
+          TTDD__RRAAWW__SSHHUUTTDDOOWWNN               The  terminal  has   been
+
+
+
+Sprite v.1.0         Printed:  April 9, 1990                    7
+
+
+
+
+
+
+Td                    C Library Procedures                     Td
+
+
+
+                                        closed  and is being shut
+                                        down.   The  raw   device
+                                        should  now  be shut down
+                                        too  (e.g.  hang   up   a
+                                        modem).    There   is  no
+                                        input data or output data
+                                        for this operation.
+
+          TTDD__RRAAWW__OOUUTTPPUUTT__RREEAADDYY           This operation  indicates
+                                        that  the  output  buffer
+                                        for the terminal has just
+                                        become   non-empty.    At
+                                        some point in the future,
+                                        the   application  should
+                                        invoke TTdd__GGeettRRaaww and out-
+                                        put the characters to the
+                                        device.   There   is   no
+                                        input data or output data
+                                        for this operation.
+
+          TTDD__RRAAWW__FFLLUUSSHH__OOUUTTPPUUTT           If there are any  charac-
+                                        ters  buffered for output
+                                        on the raw device but not
+                                        yet  output,  they should
+                                        be discarded without out-
+                                        putting  them.   There is
+                                        no input data  or  output
+                                        data for this operation.
+
+          TTDD__RRAAWW__FFLLOOWW__CCHHAARRSS             The flow-control  charac-
+                                        ters   for  the  terminal
+                                        have just been  modified.
+                                        The _i_n_p_u_t argument points
+                                        to a structure  with  the
+                                        following format:
+
+                                        typedef struct {
+                                            char stop;
+                                            char start;
+                                        } Td_FlowChars;
+
+                                        Whenever _s_t_o_p is received
+                                        from  the  raw  terminal,
+                                        output should be  stopped
+                                        until  _s_t_a_r_t is received.
+                                        _S_t_o_p and _s_t_a_r_t may be the
+                                        same   character.    This
+                                        call is made so that  the
+                                        driver for the raw device
+                                        may implement  flow  con-
+                                        trol directly in order to
+                                        provide  faster  response
+
+
+
+Sprite v.1.0         Printed:  April 9, 1990                    8
+
+
+
+
+
+
+Td                    C Library Procedures                     Td
+
+
+
+                                        to  the  _s_t_a_r_t  and  _s_t_o_p
+                                        characters.  The raw dev-
+                                        ice   driver  may  ignore
+                                        these  calls  and  simply
+                                        pass   the  flow  control
+                                        characters to the  termi-
+                                        nal driver, in which case
+                                        Td  will  implement  flow
+                                        control,    albeit   with
+                                        slower   response.     If
+                                        either  _s_t_o_p  or _s_t_a_r_t is
+                                        -1, then the  raw  driver
+                                        must  not  implement flow
+                                        control.   There  is   no
+                                        output   data   for  this
+                                        operation.
+
+          TTDD__RRAAWW__SSEETT__BBAAUUDD__RRAATTEE          Someone has just asked to
+                                        change  the baud rate for
+                                        the  device.   Both   the
+                                        _i_n_p_u_t  and  _o_u_t_p_u_t  argu-
+                                        ments point to structures
+                                        with  the  following for-
+                                        mat:
+
+                                        typedef struct {
+                                            char ispeed;
+                                            char ospeed;
+                                        } Td_BaudRate;
+
+                                        The  iissppeeeedd  and   oossppeeeedd
+                                        fields   have   the  same
+                                        values as they  would  in
+                                        an ssggttttyybb structure, such
+                                        as  BB99660000.    The   _i_n_p_u_t
+                                        argument     gives    the
+                                        requested   baud   rates.
+                                        _R_a_w_P_r_o_c may either accept
+                                        these speeds or  override
+                                        them   and   return   the
+                                        actual speeds it used  in
+                                        the  _o_u_t_p_u_t area.  If the
+                                        _i_n_p_u_t     speeds      are
+                                        accepted,   then  _r_a_w_P_r_o_c
+                                        need not modify the  _o_u_t_-
+                                        _p_u_t  area;  it can simply
+                                        return 0.
+
+          TTDD__RRAAWW__GGEETT__BBAAUUDD__RRAATTEE          This operation is invoked
+                                        to   fetch   the  current
+                                        input and  output  speeds
+                                        for   the   raw   device.
+
+
+
+Sprite v.1.0         Printed:  April 9, 1990                    9
+
+
+
+
+
+
+Td                    C Library Procedures                     Td
+
+
+
+                                        There is no  _i_n_p_u_t  area,
+                                        but  _o_u_t_p_u_t  refers  to a
+                                        TTdd__BBaauuddRRaattee structure  as
+                                        described    above    for
+                                        TTDD__RRAAWW__SSEETT__BBAAUUDD__RRAATTEE.
+                                        _R_a_w_P_r_o_c  should  fill  in
+                                        the  current  speeds  for
+                                        the device at *_o_u_t_p_u_t and
+                                        return
+                                        ssiizzeeooff((TTdd__BBaauuddRRaattee)).
+
+
+CCOOOOKKEEDD IINNTTEERRFFAACCEE
+     The cooked interface is used to communicate between the ter-
+     minal  driver  and  the processes wishing to access a device
+     with full 4.3 BSD  terminal  semantics.   As  with  the  raw
+     interface, it consists of a collection of Td procedures that
+     the enclosing application invokes, plus one procedure in the
+     enclosing application that Td invokes.
+
+     Whenever a process attempts to open the terminal device, the
+     procedure  TTdd__OOppeenn  should be called.  If the terminal is in
+     ``exclusive'' mode (meaning opens are being refused), then a
+     UNIX  error  number is returned.  Otherwise zero is returned
+     and the FFSS__RREEAADDAABBLLEE and FFSS__WWRRIITTAABBLLEE bits  of  *_s_e_l_e_c_t_B_i_t_s_P_t_r
+     are  set  to  indicate whether there are input characters or
+     output buffer space available, respectively.
+
+     When the terminal is closed,  TTdd__CClloossee  should  be  invoked.
+     There  should  be exactly one TTdd__CClloossee call for each TTdd__OOppeenn
+     call:  if an open stream is dduupp-ed,  TTdd__CClloossee  shouldn't  be
+     called until the last dduupp-ed copy is closed.
+
+     When  a  process  writes  data  to  the   cooked   terminal,
+     TTdd__PPuuttCCooookkeedd  should be invoked to pass the data to the ter-
+     minal  driver.   The  characters  will  be  added   to   the
+     terminal's  output buffer after performing output processing
+     on them.  The return value is always zero (meaning that  the
+     characters  are  always  accepted).   The FFSS__WWRRIITTAABBLLEE bit in
+     *_s_e_l_e_c_t_B_i_t_s_P_t_r  will  be  updated  to  reflect  whether  the
+     terminal's  output buffer is now ``full'' (see the BBUUFFFFEERRIINNGG
+     section below for more on what this means).  If so, then  no
+     more calls should be made to TTdd__PPuuttCCooookkeedd until the terminal
+     driver gives notice that there is more space in  the  output
+     buffer  (this  is  done  by  calling _c_o_o_k_e_d_P_r_o_c as described
+     below).  TTdd__PPuuttCCooookkeedd overwrites the  value  at  *_s_i_g_N_u_m_P_t_r;
+     if  the  value  written is non-zero then it is a UNIX signal
+     number that should be applied to the calling process.
+
+     When a process wishes to read  characters  from  the  cooked
+     terminal,  TTdd__GGeettCCooookkeedd  should  be  called.  This procedure
+     will remove characters from the terminal's input buffer  (up
+
+
+
+Sprite v.1.0         Printed:  April 9, 1990                   10
+
+
+
+
+
+
+Td                    C Library Procedures                     Td
+
+
+
+     to *_n_u_m_B_y_t_e_s_P_t_r of them) and copy them to _b_u_f_f_e_r.  The value
+     at *_n_u_m_B_y_t_e_s_P_t_r will be updated to reflect the actual number
+     of  characters returned.  The return value from TTdd__GGeettCCooookkeedd
+     will normally be zero;   if  an  error  occurred,  then  the
+     return value will be a UNIX error number.  If the terminal's
+     input buffer is empty, then the return value will be EEWWOOUULLDD--
+     BBLLOOCCKK and *_n_u_m_B_y_t_e_s_P_t_r will be set to zero.  The FFSS__RREEAADDAABBLLEE
+     bit of *_s_e_l_e_c_t_B_i_t_s_P_t_r will be  updated  to  reflect  whether
+     there  are  still  more  characters  ready in the terminal's
+     input buffer.  TTdd__PPuuttCCooookkeedd overwrites the  value  at  *_s_i_g_-
+     _N_u_m_P_t_r;   if the value written is non-zero then it is a UNIX
+     signal number that should be applied to the calling  process
+     (this is used, for example, to generate SSIIGGTTTTIINN signals).
+
+     When a process invokes an IOControl operation on the  termi-
+     nal,  TTdd__CCoonnttrroollCCooookkeedd  should  be called.  The arguments to
+     TTdd__CCoonnttrroollCCooookkeedd indicate the  IOControl  number  (_c_o_m_m_a_n_d),
+     plus  an  input  buffer  (_i_n_p_u_t_S_i_z_e and _i_n_p_u_t) and an output
+     buffer (*_o_u_t_p_u_t_S_i_z_e_P_t_r and _o_u_t_p_u_t).  The value  at  *_o_u_t_p_u_t_-
+     _S_i_z_e_P_t_r  will  be  modified to reflect the actualy number of
+     bytes of output data written at _o_u_t_p_u_t (this will be no more
+     than the original value of *_o_u_t_p_u_t_S_i_z_e_P_t_r).  The contents of
+     the input and output buffers are determined by the  specific
+     _c_o_m_m_a_n_d  being  requested.  See the documentation on the 4.3
+     BSD terminal  driver  for  details.   TTdd__CCoonnttrroollCCooookkeedd  will
+     modify  the  FFSS__RREEAADDAABBLLEE  and  FFSS__WWRRIITTAABBLLEE  bits of *_s_e_l_e_c_t_-
+     _B_i_t_s_P_t_r to reflect the state of  the  terminal's  input  and
+     output  buffers  when the IOControl completes.  TTdd__PPuuttCCooookkeedd
+     overwrites the value at *_s_i_g_N_u_m_P_t_r;  if the value written is
+     non-zero  then  it  is  a  UNIX signal number that should be
+     applied to the calling process.
+
+     The Td library will invoke the _c_o_o_k_e_d_P_r_o_c, which was  passed
+     as  an  argument to TTdd__CCrreeaattee, when it wishes to give notice
+     of interesting events related to the cooked side of the ter-
+     minal.  _C_o_o_k_e_d_P_r_o_c should have the following structure:
+
+          int
+          cookedProc(cookedData, operation, inputSize, input, outputSize, output)
+              ClientData cookedData;
+              int operation;
+              int inputSize;
+              char *input;
+              int outputSize;
+              char *output;
+          {
+           ...
+          }
+     The _c_o_o_k_e_d_D_a_t_a argument will be the same as  the  _c_o_o_k_e_d_D_a_t_a
+     argument  passed  to TTdd__CCrreeaattee.  It usually refers to a data
+     structure describing the interface to  processes  using  the
+     cooked  terminal.  The other arguments to _c_o_o_k_e_d_P_r_o_c and its
+
+
+
+Sprite v.1.0         Printed:  April 9, 1990                   11
+
+
+
+
+
+
+Td                    C Library Procedures                     Td
+
+
+
+     result have the same meaning as the arguments and result for
+     _r_a_w_P_r_o_c, except that  _o_p_e_r_a_t_i_o_n has different meanings.  The
+     values currently defined for _o_p_e_r_a_t_i_o_n are:
+
+          TTDD__CCOOOOKKEEDD__SSIIGGNNAALL              A signal should  be  gen-
+                                        erated  for  the control-
+                                        ling process group  asso-
+                                        ciated with the terminal.
+                                        _I_n_p_u_t  will  point  to  a
+                                        structure  with  the fol-
+                                        lowing format:
+
+                                        typedef struct {
+                                            int sigNum;
+                                            int groupID;
+                                        } Td_Signal;
+
+                                        The _s_i_g_N_u_m field gives  a
+                                        UNIX  signal number (e.g.
+                                        SSIIGGIINNTT),   and    _g_r_o_u_p_I_D
+                                        identifies  the  control-
+                                        ling  process  group  for
+                                        the terminal.  _C_o_o_k_e_d_P_r_o_c
+                                        is not expected to return
+                                        any output data.
+
+          TTDD__CCOOOOKKEEDD__RREEAADDSS__OOKK            There  is  now   readable
+                                        data  in the input buffer
+                                        associated with the  ter-
+                                        minal,  so  that the next
+                                        call to TTdd__GGeettCCooookkeedd will
+                                        not  return  EEWWOOUULLDDBBLLOOCCKK.
+                                        If  there  is  a  waiting
+                                        process,  it should prob-
+                                        ably be woken up.   There
+                                        is  no input data or out-
+                                        put data for this  opera-
+                                        tion.
+
+          TTDD__CCOOOOKKEEDD__WWRRIITTEESS__OOKK           The output buffer for the
+                                        terminal  is  now  empty.
+                                        If  there  is  a  process
+                                        waiting  to do output, it
+                                        should probably be  woken
+                                        up.   There  is  no input
+                                        data or output  data  for
+                                        this operation.
+
+
+PPSSEEUUDDOO--DDEEVVIICCEE IINNTTEERRFFAACCEE
+     The Td library also contains routines to connect the  cooked
+     side  of  a  terminal to a pseudo-device.  The pseudo-device
+
+
+
+Sprite v.1.0         Printed:  April 9, 1990                   12
+
+
+
+
+
+
+Td                    C Library Procedures                     Td
+
+
+
+     routines use the facilities of the Pdev  library,  which  in
+     turn requires that the application use the FFss__SSeelleecctt library
+     to manage I/O channels.  The non-pseudo-device  portions  of
+     the Td library may be used without also using FFss__SSeelleecctt.
+
+     TTdd__CCrreeaatteePPddeevv creates a pseudo-device file and arranges  for
+     the  file  to  have terminal-like behavior by associating it
+     with  a  terminal  managed  by   the   Td   library.    Once
+     TTdd__CCrreeaatteePPddeevv  has  been  called,  the pseudo-device and the
+     cooked side of its terminal will be  managed  automatically.
+     However,  it  is  up to TTdd__CCrreeaatteePPddeevv's caller to manage the
+     raw side of the pseudo-terminal.  The  _r_a_w_P_r_o_c  and  _r_a_w_D_a_t_a
+     arguments to TTdd__CCrreeaatteePPddeevv are the same as the corresponding
+     arguments  to  TTdd__CCrreeaattee  (TTdd__CCrreeaatteePPddeevv  passes   them   to
+     TTdd__CCrreeaattee  when  it  creates  the terminal).  If the _t_e_r_m_P_t_r
+     argument to TTdd__CCrreeaatteePPddeevv is not  NULL,  then  TTdd__CCrreeaatteePPddeevv
+     stores  the  Td_Terminal  token  for  the pseudo-terminal at
+     *_t_e_r_m_P_t_r; this allows the application to  invoke  procedures
+     like TTdd__PPuuttRRaaww.
+
+     The name of the pseudo-device file created by  TTdd__CCrreeaatteePPddeevv
+     may  be specified in either of two ways.  If the _r_e_a_l_N_a_m_e_P_t_r
+     argument to TTdd__CCrreeaatteePPddeevv is NULL, then  the  _n_a_m_e  argument
+     gives the complete name of the pseudo-device file.  If _r_e_a_l_-
+     _N_a_m_e_P_t_r is not NULL, then the  pseudo-device  file  will  be
+     created  in  a  host-specific  directory  for the machine on
+     which the program is running, and the file  name  will  have
+     the form _n_a_m_e_X_X, where _X_X is a small integer chosen to avoid
+     conflict with other  files  that  have  the  same  _n_a_m_e.   A
+     pointer to the complete name will be stored in *_r_e_a_l_N_a_m_e_P_t_r;
+     the storage for the name is allocated by mmaalllloocc  and  should
+     eventually be freed by TTdd__CCrreeaatteePPddeevv's caller.
+
+     TTdd__CCrreeaatteePPddeevv normally  returns  a  token  for  the  pseudo-
+     terminal.   If  the  pseudo-device  couldn't be opened, then
+     NULL is returned and the variable ppddeevv__EErrrroorrMMssgg points to  a
+     string describing what went wrong.
+
+     The only use for the token returned by TTdd__CCrreeaatteePPddeevv  is  to
+     pass  it  to  TTdd__DDeelleetteePPddeevv.  When this happens, the pseudo-
+     device is closed and the associated terminal is destroyed by
+     calling TTdd__DDeelleettee.
+
+
+BBUUFFFFEERRIINNGG
+     The input buffer for a Td_Terminal  grows  automatically  to
+     accommodate  as  much data as is present:  there is no upper
+     limit on  its  size.   The  output  buffer  will  also  grow
+     automatically:   TTdd__PPuuttCCooookkeedd  always  accepts  all the data
+     passed to it.  However, it is usually a bad idea to buffer a
+     very large number of characters on output, since these char-
+     acters will have to be output even if the process is  killed
+
+
+
+Sprite v.1.0         Printed:  April 9, 1990                   13
+
+
+
+
+
+
+Td                    C Library Procedures                     Td
+
+
+
+     with  a  control-C.   The  _b_u_f_f_e_r_S_i_z_e  argument to TTdd__CCrreeaattee
+     specifies a nominal output buffer size;  whenever more  than
+     this  many  characters  are buffered, TTdd__PPuuttCCooookkeedd will turn
+     off the FFSS__WWRRIITTAABBLLEE bit in *_s_e_l_e_c_t_B_i_t_s_P_t_r to  indicate  that
+     the  buffer  is  nominally  full;  the enclosing application
+     should then refuse to  accept  more  characters  for  output
+     (e.g.,  by  suspending the process).  When the output buffer
+     empties,    _c_o_o_k_e_d_P_r_o_c    will    be    invoked    with    a
+     TTDD__CCOOOOKKEEDD__WWRRIITTEESS__OOKK command.
+
+
+EEXXAAMMPPLLEESS
+     The best way to learn how to use the Td library is  to  look
+     at examples in the Sprite source code.  The simplest example
+     is the mmkkttttyy  program;   other  examples  are  rrllooggiinndd  (the
+     remote-login  server) and ttxx (a window-based terminal emula-
+     tor).
+
+
+KKEEYYWWOORRDDSS
+     4.3 BSD, pseudo-device, terminal driver
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  April 9, 1990                   14
+
+
+

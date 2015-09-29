@@ -1,0 +1,23 @@
+' Copyright 1989 Regents of the University of California
+' Permission to use, copy, modify, and distribute this
+' documentation for any purpose and without fee is hereby
+' granted, provided that this notice appears in all copies.
+' The University of California makes no representations about
+' the suitability of this material for any purpose.  It is
+' provided "as is" without express or implied warranty.
+' 
+' $Header: /a/attcmds/diffh/RCS/diffh.man,v 1.1 89/01/19 08:33:14 ouster Exp $ SPRITE (Berkeley)
+' 
+.so \*(]ltmac.sprite
+.HS DIFFH cmds
+.BS
+.SH NAME
+diffh \- Used internally by diff for -h option
+.BE
+
+.SH DESCRIPTION
+.PP
+This program should never be invoked directly by users.  It's a
+program that's invoked by \fBdiff\fR when the \fB-h\fR option
+is given.  For details on its arguments and actions, read the
+\fBdiffh\fR and \fBdiff\fR code.

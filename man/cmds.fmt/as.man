@@ -1,0 +1,132 @@
+
+
+
+AS                        User Commands                        AS
+
+
+
+NNAAMMEE
+     as - Sun-1, Sun-2 and Sun-3 assembler
+
+SSYYNNOOPPSSIISS
+     aass [ --dd22 ] [ --ee ] [ --hh ] [ --jj ] [ --JJ ] [ --LL ]
+          [ --mmcc6688001100 ] [ --mmcc6688002200 ] [ --oo _o_b_j_f_i_l_e ]
+          [ --OO ] [ --RR ] _f_i_l_e_n_a_m_e
+
+DDEESSCCRRIIPPTTIIOONN
+     _a_s translates assembly code in the named _f_i_l_e_n_a_m_e into exe-
+     cutable object code in the specified _o_b_j_f_i_l_e.
+
+     All undefined symbols in the assembly are treated as global.
+
+     The output of the assembly is left in the file _o_b_j_f_i_l_e.
+
+OOPPTTIIOONNSS
+     --dd22  Specifies that instruction offsets involving forward or
+          external references and having sizes unspecified in the
+          assembly language are two bytes long.  The default is
+          four bytes. See also the --jj option.
+
+     --ee   Allows control sections to begin on any two-byte boun-
+          dary, rather than only four-byte boundaries.
+
+     --hh   Suppress span-dependent instruction calculations and
+          force all branches to be of medium length, but all
+          calls to take the most general form. This is used when
+          assembly must be minimized, while program size and
+          run-time are unimportant.  This option results in a
+          smaller and faster program than that produced by the --JJ
+          option, but some very large programs may not be able to
+          use it because of the limits of the medium-length
+          branches.
+
+     --jj   Use short (pc-relative) branches to resolve jump's and
+          jsr's to externals.  This is for compact programs which
+          cannot use the --dd22 flag because of large program relo-
+          cation.
+
+     --JJ   Suppress span-dependent instruction calculations and
+          force all branches and calls to take the most general
+          form. This is used when assembly time must be minim-
+          ized, but program size and run time are not important.
+
+     --LL   Save defined labels beginning with an `L', which are
+          normally discarded to save space in the resultant sym-
+          bol table.  The compilers generate such temporary
+          labels.
+
+     --mmcc6688001100
+          Accept only MC68010 instructions and addressing modes,
+
+
+
+Sprite v1.0               20 March 1986                         1
+
+
+
+
+
+
+AS                        User Commands                        AS
+
+
+
+          and put the MC68010 machine-type tag in the object
+          file.  This is the default on Sun-2's.
+
+     --mmcc6688002200
+          Accept the full MC68020, MC68881 and the Sun FPA
+          instruction sets and addressing modes, and put the
+          MC68020 machine-type tag in the object file.  This is
+          the default on Sun 3's.
+
+     --oo   The next argument is taken as the name of the object
+          file to be produced.  If the --oo flag isn't used, the
+          _o_b_j_f_i_l_e is named _a.._o_u_t.
+
+     --OO   Perform span-dependent instruction resolution over
+          entire files rather than just over individual pro-
+          cedures.
+
+     --RR   Make initialized data segments read-only by concatenat-
+          ing them to the text segments.  This eliminates the
+          need to run editor scripts on assembly code to make
+          initialized data read-only and shared.
+
+FFIILLEESS
+     /_t_m_p/_a_s*       default temporary file
+
+SSEEEE AALLSSOO
+     ld(1), nm(1), adb(1), dbx(1), a.out(5)
+
+     _A_s_s_e_m_b_l_y _L_a_n_g_u_a_g_e _R_e_f_e_r_e_n_c_e _M_a_n_u_a_l
+
+BBUUGGSS
+     The Pascal compiler, _p_c, qualifies a nested procedure name
+     by chaining the names of the enclosing procedures.  This
+     sometimes results in names long enough to abort the assem-
+     bler, which currently limits identifiers to 512 characters.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0               20 March 1986                         2
+
+
+

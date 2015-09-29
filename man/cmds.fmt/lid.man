@@ -1,0 +1,132 @@
+
+
+
+LID                       User Commands                       LID
+
+
+
+NNAAMMEE
+     lid, gid, eid, aid - query id database
+
+SSYYNNOOPPSSIISS
+     lliidd [--fffile] [--uun] [--eeddooxxaammssee]] patterns...
+
+     ggiidd [--fffile] [--eeddooxxaammssee]] patterns...
+
+     eeiidd [--fffile] [--ddooxxaammssee]] patterns...
+
+     aaiidd [--fffile] [--ddooxxaammss]] patterns...
+
+DDEESSCCRRIIPPTTIIOONN
+     These commands provide a flexible query interface to the _i_d
+     database.  _L_i_d does a lookup on _p_a_t_t_e_r_n_s and prints out
+     lines in this way:
+
+     idname        ../hdir/hfile.h ../cdir/{cfile1,cfile2}.c
+
+     Notice that multiple files with the same directory prefix
+     and suffix are concatenated in the globbing-set-notation of
+     _c_s_h(1).  Also notice that all of the _i_d database query com-
+     mands adjust the list of pathnames to be relative to your
+     current working directory, provided that _m_k_i_d(1) was used to
+     build the database, and your working directory is located
+     within the sub-tree covered by the _i_d database.
+
+     If multiple names match on pattern, then there will be one
+     line of output per name.  The mnemonic significance of the
+     name is _l(_o_o_k_u_p) _i_d.
+
+     _G_i_d does a lookup and then searches for the names it matches
+     in the files where they occur.  The mnemonic for this name
+     is _g(_r_e_p)_i_d.
+
+     _E_i_d does a lookup, and then invokes an editor on all files
+     with the matched name as an initial search string.  Of
+     course, this name stands for _e(_d_i_t) _i_d.
+
+     _E_i_d uses four environment variables to control its invoca-
+     tion of the editor.  Naturally, EEDDIITTOORR is used to locate the
+     editing program.  EEIIDDAARRGG is a _p_r_i_n_t_f(3S) string used to
+     specify the form of the initial-search-string argument.  If
+     the editor does not support such an argument, this variable
+     may be left unset.  EEIIDDLLDDEELL and EEIIDDRRDDEELL specify the form of
+     the left and right word-delimiters respectively.  The best
+     way to explain the use of these last three variables is with
+     an example.  Here are the proper settings for vi(1):
+     EIDARG='+/%s/' # initial search argument template
+     EIDLDEL='\<'   # left word-delimiter
+     EIDRDEL='\>'   # right word-delimiter
+
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+LID                       User Commands                       LID
+
+
+
+     _P_a_t_t_e_r_n_s may be simple alpha-numeric strings, or regular
+     expressions in the style of _r_e_g_c_m_p(3).  If the string con-
+     tains no regular-expression meta-characters, it is searched
+     for as a _w_o_r_d.  If the string contains meta-characters, or
+     if the -e argument is supplied, it is searched for as
+     regular-expression.
+
+     _A_i_d produces output in the style of _l_i_d but its pattern
+     arguments are searched for as substrings within the identif-
+     iers in the database.  No regular-expression search is per-
+     formed, even if the pattern contains meta-characters.  The
+     search is conducted in an alphabetic case insensitive
+     manner.  The mnemonic for this name is _a(_p_r_o_p_o_s) _i_d.
+
+     The following options are recognized:
+
+     --fffile    Use _f_i_l_e as the database instead of the default
+               IIDD.
+
+     --uun       Lists all identifiers in the database that are
+               non-unique within the first _n characters.  This
+               facility is particularly helpful when porting a
+               program to a system whose compiler or linker has
+               fewer significant characters for identifiers.
+
+     The remaining options are for use in conjunction with
+     numeric patterns:
+
+     --ddooxxaa     These options may be specified in any combination.
+               They limit numeric matches to specific radixes.
+               The --dd, --oo, and --xx options limit matches to
+               decimal, octal, and hexadecimal respectively.  The
+               --aa option is a shorthand for specifying all three
+               radixes.
+
+     Searches for numbers are conducted numerically rather than
+     lexically, so that all representations for a given number
+     are potentially available from a single search.
+
+     --mm        Merge multiple lines of output into a single line.
+
+     --ss        Limit the results of the search to identifiers
+               that occur only once in the entire set of sources
+               covered by the database.  This option is useful
+               for finding identifiers that are defined but never
+               used.
+
+SSEEEE AALLSSOO
+     mkid(1), fid(1).
+
+
+
+
+
+
+Sprite v1.0                                                     2
+
+
+

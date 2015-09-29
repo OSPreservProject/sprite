@@ -1,0 +1,22 @@
+This file lists future projects and enhancments for gawk.
+
+Synchronize alloca.[cs] and regex.[ch] with the latest versions at GNU.
+(this will likely be done as a patch to 2.11.)
+
+Convert yylex() to allow arbitrary-length program lines.
+
+Allow OFMT to be other than a floating point format.
+
+Make printf fully compatible with the ANSI C spec.
+
+Make it faster and smaller.
+
+Allow RS to be a regexp.
+
+Read in environment only if necessary. (Is this all that big a deal?)
+
+Use faster regex algorithms.
+
+Create a gawk-to-C translator?
+
+Create a gawk compiler?

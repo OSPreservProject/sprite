@@ -1,0 +1,524 @@
+head     1.11;
+branch   ;
+access   ;
+symbols  srv030:1.11 srv027:1.11 srv026:1.11 srv024:1.10 srv021:1.9 srv019:1.8 srv018:1.7 srv016:1.7 srv014:1.7 srv010:1.7 srv008:1.7 srv007:1.6 srv006:1.6 srv005:1.6 srv004:1.6 srv003:1.5 srv002:1.4 srv001:1.3;
+locks    ; strict;
+comment  @ * @;
+
+
+1.11
+date     92.07.09.15.43.33;  author kupfer;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     92.07.08.12.45.27;  author kupfer;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     92.07.02.16.45.23;  author kupfer;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     92.06.29.16.07.32;  author kupfer;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     92.06.02.14.57.43;  author kupfer;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     92.05.07.23.03.48;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     92.04.29.21.23.21;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     92.04.23.23.55.34;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     92.04.16.11.13.18;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     92.02.28.19.55.14;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     92.02.13.19.12.26;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.11
+log
+@Add swapPagesWasted field.
+@
+text
+@/*
+ * vmStat.h --
+ *
+ *	The statistics structure for the vm module.
+ *
+ * Copyright (C) 1986, 1992 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /user5/kupfer/spriteserver/include/user/RCS/vmStat.h,v 1.10 92/07/08 12:45:27 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+ */
+
+#ifndef _VMSTAT
+#define _VMSTAT
+
+#include <spriteTime.h>
+#ifdef SPRITED
+#include <vmTypes.h>
+#else
+#include <sprited/vmTypes.h>
+#endif
+
+/*
+ * Virtual memory statistics structure.
+ */
+
+typedef struct {
+    /* 
+     * Misc. stats.
+     */
+    int syncCalls;		/* number of calls to Vm_SyncAll */
+    int	numPhysPages;		/* number of pages in memory */
+
+    /* 
+     * External pager stats.
+     */
+    /* data_request */
+    int pagesRead[VM_NUM_SEGMENT_TYPES]; /* pages gotten 100% from FS */
+    int partialPagesRead[VM_NUM_SEGMENT_TYPES];	/* pages partially from FS */
+    int pagesZeroed[VM_NUM_SEGMENT_TYPES]; /* pages completely zero-filled */
+    Time readTime[VM_NUM_SEGMENT_TYPES]; /* time spent in data_request */
+    Time readCopyTime[VM_NUM_SEGMENT_TYPES]; /* data_request time for 
+					      * segment copy */ 
+    /* data_return */
+    int returnCalls;		/* calls to data_return */
+    int pagesWritten[VM_NUM_SEGMENT_TYPES]; /* pages written */
+    int pagesCleaned[VM_NUM_SEGMENT_TYPES]; /* pages written because of 
+					     * Sprite cleaning request */
+    Time writeTime[VM_NUM_SEGMENT_TYPES]; /* time spent in data_return */
+    /* memory_object_init */
+    int initCalls;		/* calls to memory_object_init */
+    int forcedInits;		/* number of times segment init was forced 
+				 * by VmAddrRegion */
+    Time initTime;		/* time spent in memory_object_init */
+    /* memory_object_terminate */
+    int terminateCalls;		/* calls to memory_object_terminate */
+    Time terminateTime;		/* time spent in memory_object_terminate */
+    /* memory_object_data_unlock */
+    int unlockCalls;		/* calls to memory_object_data_unlock */
+    /* memory_object_lock_completed */
+    int lockCompletedCalls;	/* calls to memory_object_lock_completed */
+    Time lockCompletedTime;	/* time spent in lock_completed */
+
+    /* 
+     * segment stats.
+     */
+    int segmentsCreated;
+    int segmentsDestroyed;
+    int segmentsNeedlesslyDestroyed;
+				/* swap segments that could have been 
+				 * trivially reused */
+    int swapPagesWasted;	/* number of pages that had to be faulted 
+				 * in again because the heap/stack segment 
+				 * was destroyed at exec */
+    int queueOverflows;		/* num times segment had to be removed from 
+				 * request port set because it was getting
+				 * swamped by requests */
+    int segmentLookups;		/* num times segment was sought in main list */
+    int segmentsLookedAt;	/* num of segments that had to be looked at 
+				 * when doing lookups */ 
+
+    /* 
+     * Debugging stats; liable to change.
+     */
+
+    /* Stats for segment copies. */
+    int segmentCopies;		/* number of copies */
+    Time forkTime;		/* total time spent in Vm_Fork */
+    Time findRegionTime;	/* Vm_Fork time in vm_region */
+    Time segLookupTime;		/* Vm_Fork time in VmSegByName */
+    Time segCopyTime;		/* Vm_Fork time in VmSegmentCopy */
+    Time regionCopyTime;	/* Vm_Fork time in CopyRegion */
+    int sourceCopyRead;		/* source pages read from swap while 
+				 * copying segment */ 
+    int sourceCopyZeroed;	/* source pages zero-filled */
+    int targetCopyRead;		/* target pages read from swap during 
+				 * copy, only to be overwritten */
+    int targetCopyZeroed;	/* target pages zero-filled before being 
+				 * overwritten  */
+    int pagesCopied;		/* sum of page sizes copied */
+    int swapPagesCopied;	/* sum of page sizes of segment backing 
+				 * files  */
+    int objPagesCopied;		/* sum of page sizes of heap "init" files */
+} Vm_Stat;
+
+#ifdef SPRITED
+extern	Vm_Stat	vmStat;
+#endif
+
+#endif /* _VMSTAT */
+@
+
+
+1.10
+log
+@Change read/write counts and times to be per segment type.  Add
+segmentsNeedlesslyDestroyed count.
+@
+text
+@d10 1
+a10 1
+ * $Header: /user5/kupfer/spriteserver/include/user/RCS/vmStat.h,v 1.9 92/07/02 16:45:23 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d70 5
+a74 1
+				/* swap segments that could have been reused */
+@
+
+
+1.9
+log
+@Add forcedInits field.
+@
+text
+@d10 1
+a10 1
+ * $Header: /user5/kupfer/spriteserver/include/user/RCS/vmStat.h,v 1.8 92/06/29 16:07:32 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d17 5
+d37 14
+a50 6
+    int pagesRead;		/* data_request pages gotten 100% from FS */
+    int partialPagesRead;	/* data_request pages partially from FS */
+    int pagesZeroed;		/* data_request pages that were zero-filled */
+    int pagesWritten;		/* data_write pages */
+    int pagesCleaned;		/* data_write pages caused by Sprite 
+				 * cleaning request */
+d54 2
+d57 2
+a58 1
+    int returnCalls;		/* calls to data_return */
+d60 1
+a61 6
+
+    Time readTime;		/* time spent in data_request */
+    Time readCopyTime;		/* data_request time for segment copy */
+    Time writeTime;		/* time spent in data_return */
+    Time initTime;		/* time spent in memory_object_init */
+    Time terminateTime;		/* time spent in memory_object_terminate */
+d69 2
+@
+
+
+1.8
+log
+@Instrument all of the pager calls.  More instrumentation for Vm_Fork.
+@
+text
+@d10 1
+a10 1
+ * $Header: /user5/kupfer/spriteserver/include/user/RCS/vmStat.h,v 1.7 92/06/02 14:57:43 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d39 2
+@
+
+
+1.7
+log
+@Add readTime & writeTime.
+@
+text
+@d10 1
+a10 1
+ * $Header: /user5/kupfer/spriteserver/include/user/RCS/vmStat.h,v 1.6 92/05/07 23:03:48 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d38 6
+d45 5
+a49 1
+    Time writeTime;		/* time spent in data_write */
+d70 4
+@
+
+
+1.6
+log
+@Change "copy" stats, now that segment copies are done using vm_read &
+vm_write, rather than the memory_object interface.
+@
+text
+@d10 1
+a10 1
+ * $Header: /user5/kupfer/spriteserver/include/user/RCS/vmStat.h,v 1.5 92/04/29 21:23:21 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d36 4
+a39 1
+    int pagesCleaned;		/* data_write pages from cleaning a segment */
+@
+
+
+1.5
+log
+@Add counters for the sizes of segments that get copied.
+@
+text
+@d6 1
+a6 1
+ * Copyright (C) 1986 Regents of the University of California
+d10 1
+a10 1
+ * $Header: /user5/kupfer/spriteserver/include/user/RCS/vmStat.h,v 1.4 92/04/23 23:55:34 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d54 1
+a54 1
+    /* Stats for successful segment copies. */
+d56 10
+a65 11
+    Time segmentCopyTime;	/* total time spent doing copies */
+    Time cleanTime;		/* time spent cleaning segment before 
+				 * copying swap file */
+    Time writeBackTime;		/* cleaning time spent actually writing to 
+				 * server */
+    Time fileCopyTime;		/* time spent copying the swap file */
+    Time getSegTime;		/* time to alloc segment & lock original */
+    Time unprotSegTime;		/* time to unprotect original after making 
+				 * copy */ 
+    int pagesCopied;		/* sum of page sizes of segments copied */
+    int realPagesCopied;	/* sum of page sizes of segment backing 
+d67 1
+@
+
+
+1.4
+log
+@Add more detailed instrumentation for copying segments.
+@
+text
+@d10 1
+a10 1
+ * $Header: /user5/kupfer/spriteserver/include/user/RCS/vmStat.h,v 1.3 92/04/16 11:13:18 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d65 3
+@
+
+
+1.3
+log
+@Replace Vm_Stat with sprited-related numbers
+@
+text
+@d10 1
+a10 1
+ * $Header: /user5/kupfer/spriteserver/include/user/RCS/vmStat.h,v 1.2 92/02/28 19:55:14 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d53 12
+a64 2
+    int segmentCopies;		/* number of successful segment copies */
+    Time copyTime;		/* total time spent doing successful copies */
+@
+
+
+1.2
+log
+@Get working with sprited.
+@
+text
+@d10 1
+a10 1
+ * $Header: /user5/kupfer/spriteserver/include/user/RCS/vmStat.h,v 1.1 92/02/13 19:12:26 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d16 1
+a16 8
+#if defined(KERNEL) || defined(SPRITED)
+#include <vmMachStat.h>
+#else
+#include <kernel/vmMachStat.h>
+#endif
+
+
+/*---------------------------------------------------------------------*/
+d23 2
+a24 80
+    int	numPhysPages;		/* The number of physical pages available. */
+    /*
+     * Different types of pages
+     */
+    int	numFreePages;		/* Number of pages on the free list. */
+    int	numDirtyPages;		/* Number of pages on the dirty list. */
+    int	numReservePages;	/* Number of pages held in reserve for the
+				 * kernel. */
+    int	numUserPages;		/* Number of pages on the allocate list.  Each
+				 * of these pages must be used by user
+				 * processes. */
+    int	kernStackPages;		/* Number of pages allocated to the kernel.*/
+    int kernMemPages;		/* Number of pages allocated to kernel code
+				 * + data. */
+    /*
+     * Page fault statistics.
+     */
+    int	totalFaults;		/* The total number of page faults that have
+				   occured. */
+    int	totalUserFaults;	/* The total number of page faults that have
+				   occured because of a user bus error. */
+    int	zeroFilled;		/* Page faults that were satisfied by zero
+				   filling the page. */
+    int	fsFilled;		/* Page faults that were satisifed by reading
+				   in from the file system. */
+    int	psFilled;		/* Page faults that were satisfied by reading
+				   in from the page server. */
+    int	collFaults;		/* Page faults that collided with another page
+				   fault in progress on the same page. */
+    int	quickFaults;		/* Page faults that were satisfied by just
+				   revalidating the page. */
+    int	codeFaults;		/* Code segment faults, ignoring quickFaults.*/
+    int	heapFaults;		/* Heap segment faults, ignoring quickFaults.*/
+    int	stackFaults;		/* Stack segm't faults, ignoring quickFaults.*/
+    /*
+     * Page allocation stats.
+     */
+    int	numAllocs;		/* Total number of page allocations. */
+    int	gotFreePage;		/* Number of allocations by using a free page.*/
+    int	pageAllocs;		/* Calls to internal page allocator. */
+    int	gotPageFromFS;		/* Number of allocations satisfied by 
+				 * stealing a page from the file system. */
+    int	numListSearches;	/* Number of allocations that actually search
+				 * the allocation list. */
+    int	usedFreePage;		/* List searches satisfied with free page. */
+    int	lockSearched;		/* Number of locked pages encountered 
+				 * while searching list. */
+    int	refSearched;		/* Number of referenced pages encountered 
+				 * while searching list. */
+    int	dirtySearched;		/* Number of dirty pages encountered 
+				 * while searching list. */
+    int	reservePagesUsed;	/* The number of pages held in reserve that */
+
+    /*
+     * Dirty page statistics.
+     */
+    int	pagesWritten;		/* The number of pages that were written out
+				   to the page server. */
+    int	cleanWait;		/* The number of times that a segment being 
+				   cleaned has to wait for a page to finish
+				   being cleaned. */
+    int	pageoutWakeup;		/* The number of times that the pageout daemon
+				   wakes up. */
+
+    int	pageoutNoWork;		/* The number of times that the pageout daemon
+				   woke up and there was nothing to do. */
+    int pageoutWait;		/* The number of times that a process has to
+				   wait for the pageout daemon to finish 
+				   because too many pages were dirty. */
+    /*
+     * Page mapping statistics.
+     */
+    int	mapPageWait;		/* The number of times that have to wait 
+				   because of run out of entries to map 
+				   pages. */
+    int	accessWait;		/* The number of times that have to wait
+				   because of run out of entries to make
+				   pages accessible. */
+    /*
+     * Machine dependent statistics.
+d26 26
+a51 4
+    VmMachDepStat	machDepStat;
+    /*
+     * The minimum number of virtual memory pages
+     * that the system guarantees itself. 
+d53 2
+a54 63
+    int	minVMPages;
+    /*
+     * File system mapping stats.
+     */
+    int	fsAsked;		/* The number of times that the file system
+				 * asked us for our reference time. */
+    int	haveFreePage;		/* We have a free page when fs asks us for the
+				 * reference time. */
+    int	fsMap;			/* The number of pages that the file system
+				 * got from us. */
+    int	fsUnmap;		/* The number of pages that the file system
+				 * returned to us. */
+    int	maxFSPages;		/* The maximum number of pages given to the
+				 * file system. */
+    int	minFSPages;		/* The minimum number of pages given to the 
+				 * file system. */
+    /*
+     * Copy-on-write info.
+     */
+    int	numCOWHeapPages;	/* Heap pages that were made copy-on-write. */
+    int	numCOWStkPages;		/* Stack pages that were made copy-on-write. */
+    int numCORHeapPages;	/* Heap pages that were made copy-on-ref. */
+    int numCORStkPages;		/* Stack pages that were made copy-on-ref. */
+    int	numCOWHeapFaults;	/* Heap copy-on-write faults. */
+    int	numCOWStkFaults;	/* Stack copy-on-write faults. */
+    int	quickCOWFaults;		/* COW faults that were unnecessary. */
+    int numCORHeapFaults;	/* Heap copy-on-ref faults. */
+    int numCORStkFaults;	/* Stack copy-on-ref faults. */
+    int	quickCORFaults;		/* COR faults that were unnecessary. */
+    int swapPagesCopied;	/* The number of swap file page copies. */
+    int	numCORCOWHeapFaults;	/* Number of copy-on-reference heap pages that
+				 * get modified after they are copied. */
+    int	numCORCOWStkFaults;	/* Number of copy-on-reference stack pages that
+				 * get modified after they are copied. */
+    /*
+     * Recycled potentially modified page stats.
+     */
+    int	potModPages;		/* Number of pages that came to the front of
+				 * the LRU list, were writeable but were not
+				 * modified. */
+    int	notModPages;		/* Pages out of potModPages that were never
+				 * modified in software or hardware. */
+    int	notHardModPages;	/* Pages out of potModPages that were never
+				 * modified in hardware. */
+    /*
+     * Prefetch stats.
+     */
+    int	codePrefetches;		/* Number of prefetches of code. */
+    int	heapSwapPrefetches;	/* Number of prefetches of heap from swap. */
+    int	heapFSPrefetches;	/* Number of heap prefetches from the object 
+				 * file. */
+    int	stackPrefetches;	/* Number of prefetches that hit from the
+				 * stack swap file. */
+    int	codePrefetchHits;	/* Number of code prefetches that hit. */
+    int	heapSwapPrefetchHits;	/* Number of heap prefetches from swap that
+				 * hit. */
+    int	heapFSPrefetchHits;	/* Number of heap prefetches from the object
+				 * file that hit. */
+    int	stackPrefetchHits;	/* Number of stack prefetches from swap that
+				 * hit. */
+    int	prefetchAborts;		/* Number of prefetches aborted because there
+    				 * is no memory available. */
+
+d57 1
+d59 2
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/lib/include/RCS/vmStat.h,v 8.4 91/03/04 16:09:28 kupfer Exp $ SPRITE (Berkeley)
+d16 2
+a17 2
+#ifdef KERNEL
+#include "vmMachStat.h"
+@

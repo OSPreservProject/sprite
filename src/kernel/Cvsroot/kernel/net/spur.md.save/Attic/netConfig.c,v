@@ -1,0 +1,88 @@
+head     8.0;
+branch   ;
+access   ;
+symbols  sun4nw:8.0 symm:8.0 spur:8.0 newlib:8.0;
+locks    ; strict;
+comment  @ * @;
+
+
+8.0
+date     88.11.11.18.28.12;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     88.08.01.17.18.22;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.30.10.01.44;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Ethernet device location table.
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@/*
+ * netConfig.c --
+ *
+ *	Machine-type dependent initialization of the network interfaces.
+ *
+ * Copyright (C) 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ * $Header: /sprite/src/kernel/net/spur.md/RCS/netConfig.c,v 1.2 88/08/01 17:18:22 mendel Exp Locker: douglis $ SPRITE (Berkeley)
+ */
+
+#include "sprite.h"
+#include "net.h"
+#include "netInt.h"
+#include "netIEInt.h"
+
+NetInterface netInterface[] = {
+    {"IE", 0, NET_IE_SLOT_ID, NetIEInit},
+};
+int numNetInterfaces = sizeof(netInterface) / sizeof(NetInterface);
+
+@
+
+
+1.2
+log
+@Address should specify SLOT_ID not SLOT_SPACE_ADDR.
+@
+text
+@d16 1
+a16 1
+ * $Header: netConfig.c,v 1.1 88/06/30 10:01:44 mendel Exp $ SPRITE (Berkeley)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+ * $Header: netConfig.c,v 1.2 88/06/20 09:49:12 brent Exp $ SPRITE (Berkeley)
+d25 1
+a25 1
+    {"IE", 0, NET_IE_SLOT_SPACE_ADDR, NetIEInit},
+@

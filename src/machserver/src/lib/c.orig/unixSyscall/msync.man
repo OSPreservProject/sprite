@@ -1,0 +1,32 @@
+.TH MSYNC 2 "November 19, 1989"
+.UC 5
+.SH NAME
+msync \- sync pages to disk.
+.SH SYNOPSIS
+.nf
+.ft B
+int msync(addr, len)
+caddr_t addr;
+int len;
+.fi
+.ft R
+.SH DESCRIPTION
+.I Msync
+takes an address range and forces the pages containing the range
+to disk.  The call will return after the pages are written to disk.
+After the call, the pages will no longer be valid in memory.
+.PP
+If the page is locked in memory it will be unlocked for the
+.IR msync
+call.  By using
+.IR msync
+and
+.IR mlock
+it is possible for the user to control the page-in/page-out process.
+.SH "RETURN VALUE
+.IR Msync
+returns 0 if the call is successful.  Otherwise they return -1 and
+an error code is returned in
+.IR errno .
+.SH "SEE ALSO"
+mmap(2), mlock(2), munlock(2)

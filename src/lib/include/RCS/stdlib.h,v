@@ -1,0 +1,744 @@
+head     1.21;
+branch   ;
+access   ;
+symbols  sprited:1.18.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.21
+date     91.12.05.10.44.35;  author ouster;  state Exp;
+branches ;
+next     1.20;
+
+1.20
+date     91.10.26.17.27.04;  author rab;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     91.09.24.17.38.46;  author rab;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     90.11.27.11.24.17;  author ouster;  state Exp;
+branches 1.18.1.1;
+next     1.17;
+
+1.17
+date     90.11.15.13.22.21;  author rab;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     90.11.06.17.21.08;  author rab;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     90.09.20.15.04.17;  author mgbaker;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     90.09.12.15.24.45;  author shirriff;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     90.09.11.14.40.09;  author kupfer;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     90.01.06.13.45.29;  author rab;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     89.07.11.17.26.56;  author nelson;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     89.04.06.10.08.11;  author rab;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     89.03.27.22.23.08;  author jhh;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     88.07.28.12.00.40;  author ouster;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.07.25.14.17.55;  author ouster;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.07.25.13.07.59;  author ouster;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.07.25.11.06.56;  author ouster;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.07.25.10.48.39;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.07.22.15.40.01;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.07.18.11.07.30;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.21.09.36.58;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.18.1.1
+date     91.09.25.16.51.03;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.21
+log
+@Removed "setenv" declaration:  it doesn't really belong here.
+@
+text
+@/*
+ * stdlib.h --
+ *
+ *	Declares facilities exported by the "stdlib" portion of
+ *	the C library.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/lib/include/RCS/stdlib.h,v 1.20 91/10/26 17:27:04 rab Exp Locker: ouster $ SPRITE (Berkeley)
+ */
+
+#ifndef _STDLIB
+#define _STDLIB
+
+/* 
+ * sprite.h is needed for typedefs that are used in some function
+ * prototypes.  Unfortunately, some user programs define conflicting
+ * typedefs.  Because many programs probably include stdlib.h, we
+ * should give advance warning before forcing users to use the
+ * typedefs from sprite.h.  This must be done before we can turn on
+ * function prototypes for Sprite user programs.  (Or, change the 
+ * prototypes so that they don't use the Sprite typedefs.)
+ */
+#include <cfuncproto.h>
+
+#ifdef KERNEL
+#include <sprite.h>
+#include <sys/types.h>
+#endif
+
+#define EXIT_SUCCESS    0
+#define EXIT_FAILURE    1
+
+#if defined(_HAS_PROTOTYPES) && !defined(_SIZE_T)
+#define _SIZE_T
+/* size_t is also defined in sys/types.h, stddef.h, and unistd.h. */
+typedef	int	size_t;
+#endif
+
+/*
+ *----------------------------
+ * String conversion routines:
+ *----------------------------
+ */
+
+_EXTERN double	 atof _ARGS_((_CONST char *string));
+_EXTERN int	 atoi _ARGS_((_CONST char *string));
+_EXTERN long int atol _ARGS_((_CONST char *string));
+_EXTERN double	 strtod _ARGS_((_CONST char *string, char **endPtr));
+_EXTERN long int strtol _ARGS_((_CONST char *string, char **endPtr, int base));
+_EXTERN unsigned long int
+		strtoul _ARGS_((_CONST char *string, char **endPtr, int base));
+
+/*
+ *------------------
+ * Memory allocator:
+ *------------------
+ */
+
+/* 
+ * (Many of the "char *"s should be "Address".  See the above comments 
+ * about sprite.h.)
+ */
+
+#ifdef KERNEL
+
+_EXTERN Address	malloc _ARGS_((unsigned int bytesNeeded));
+
+/*
+ * The mips compiler cannot handle some coercions on the left hand side.
+ */
+#ifndef mips
+
+_EXTERN void	_free _ARGS_((Address blockPtr));
+
+#ifdef lint
+#define		free(ptr) _free(ptr)
+#else
+#define		free(ptr) {_free(ptr); (ptr) = (Address) NIL; }
+#endif /* lint */
+
+#else /* mips */
+
+_EXTERN int	free _ARGS_((Address blockPtr));
+
+#endif /* mips */
+
+#else /* KERNEL */
+
+_EXTERN _VoidPtr	malloc _ARGS_((unsigned int bytesNeeded));
+_EXTERN int	free _ARGS_((_VoidPtr blockPtr));
+
+#endif /* KERNEL */
+
+_EXTERN _VoidPtr calloc _ARGS_((unsigned int numElems, unsigned int elemSize));
+_EXTERN _VoidPtr	realloc _ARGS_((_VoidPtr ptr, unsigned int newSize));
+_EXTERN void	Mem_Bin _ARGS_((int numBytes));
+_EXTERN char *	Mem_CallerPC();
+_EXTERN void	Mem_DumpTrace _ARGS_((int blockSize));
+_EXTERN void	Mem_PrintConfig _ARGS_((void));
+_EXTERN void	Mem_PrintInUse _ARGS_((void));
+_EXTERN void	Mem_PrintStats _ARGS_((void));
+_EXTERN void	Mem_PrintStatsInt _ARGS_((void));
+/* 
+ * The "proc" argument to Mem_SetPrintProc is a varargs function, 
+ * so we have delayed declaring the correct prototype for it.
+ */
+_EXTERN void	Mem_SetPrintProc _ARGS_((void (*proc)(), ClientData data));
+_EXTERN int	Mem_Size _ARGS_((Address blockPtr));
+
+/*
+ * Structure used to set up memory allocation traces.
+ */
+
+typedef struct {
+    int		size;	/* Size of block to trace. */
+    int		flags;	/* Flags defined below */
+} Mem_TraceInfo;
+
+_EXTERN void	Mem_SetTraceSizes _ARGS_((int numSizes,
+					  Mem_TraceInfo *arrayPtr));
+/*
+ * Flags to determine what type of tracing to do.
+ *
+ *	MEM_PRINT_TRACE		A trace record will be printed each time that
+ *				an object of this size is alloc'd or freed.
+ *	MEM_STORE_TRACE		The number of blocks in use by each caller
+ *				up to a predefined maximum number of callers
+ *				is kept in a trace array .
+ *	MEM_DONT_USE_ORIG_SIZE	Don't use the original size for tracing, but use
+ *				the modified size used by malloc.
+ *	MEM_TRACE_NOT_INIT	The trace records stored for MEM_STORE_TRACE
+ *				have not been initialized yet.
+ */
+
+#define	MEM_PRINT_TRACE		0x1
+#define	MEM_STORE_TRACE		0x2
+#define	MEM_DONT_USE_ORIG_SIZE	0x4
+#define	MEM_TRACE_NOT_INIT	0x8
+
+extern int	mem_SmallMinNum;
+extern int	mem_LargeMinNum;
+extern int	mem_LargeMaxSize;
+
+/*
+ * Statistics counters;  only incremented when tracing is enabled.
+ */
+
+extern int	mem_NumAllocs;
+extern int	mem_NumFrees;
+
+/*
+ *----------------------------------------------------------------
+ * Additional integer math routines, plus structures for returning
+ * results from them:
+ *----------------------------------------------------------------
+ */
+
+typedef struct div_t {
+    int quot;
+    int rem;
+} div_t;
+
+typedef struct {
+    long int quot;
+    long int rem;
+} ldiv_t;
+
+_EXTERN int	abs _ARGS_((int j));
+_EXTERN div_t	div _ARGS_((int numer, int denom));
+_EXTERN long int labs _ARGS_((long j));
+_EXTERN ldiv_t	ldiv _ARGS_((long int numer, long int denom));
+
+/*
+ *-----------------------------------
+ * Miscellaneous additional routines:
+ *-----------------------------------
+ */
+
+_EXTERN void	abort _ARGS_((void));
+_EXTERN int	atexit _ARGS_((void (*func)(void)));
+_EXTERN _VoidPtr bsearch _ARGS_((_CONST _VoidPtr key, _CONST _VoidPtr base,
+        size_t n, size_t size,
+	int (*cmp)(_CONST _VoidPtr searchKey, _CONST _VoidPtr tableEntry)));
+_EXTERN int	exit _ARGS_((int status));
+_EXTERN char *	getenv _ARGS_((char *name));
+_EXTERN void	qsort _ARGS_((_VoidPtr base, int n, int size,
+	  int (*compar)(_CONST _VoidPtr element1, _CONST _VoidPtr element2)));
+_EXTERN int	rand _ARGS_((void));
+_EXTERN long	random _ARGS_((void));
+_EXTERN int	srand _ARGS_((int seed));
+_EXTERN int	srandom _ARGS_((int seed));
+_EXTERN int	system _ARGS_((_CONST char *command));
+
+#endif /* _STDLIB */
+@
+
+
+1.20
+log
+@Removed declaration of alloca.  It belongs in alloca.h and breaks stuff if
+it is defined differently here.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/lib/include/RCS/stdlib.h,v 1.19 91/09/24 17:38:46 rab Exp Locker: rab $ SPRITE (Berkeley)
+a197 1
+_EXTERN void	setenv _ARGS_((_CONST char *name, _CONST char *value));
+@
+
+
+1.19
+log
+@Changed _free from int to void.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/lib/include/RCS/stdlib.h,v 1.18 90/11/27 11:24:17 ouster Exp Locker: rab $ SPRITE (Berkeley)
+a101 1
+_EXTERN _VoidPtr	alloca _ARGS_((int size));
+@
+
+
+1.18
+log
+@Don't define size_t unless prototypes are enabled.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/lib/include/RCS/stdlib.h,v 1.17 90/11/15 13:22:21 rab Exp Locker: ouster $ SPRITE (Berkeley)
+d81 1
+a81 1
+_EXTERN int	_free _ARGS_((Address blockPtr));
+@
+
+
+1.18.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/lib/include/RCS/stdlib.h,v 1.18 90/11/27 11:24:17 ouster Exp $ SPRITE (Berkeley)
+@
+
+
+1.17
+log
+@Added typedef for size_t.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/lib/include/RCS/stdlib.h,v 1.16 90/11/06 17:21:08 rab Exp Locker: rab $ SPRITE (Berkeley)
+d41 1
+a41 1
+#ifndef _SIZE_T
+@
+
+
+1.16
+log
+@Changed extern to _EXTERN for g++.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/lib/include/RCS/stdlib.h,v 1.15 90/09/20 15:04:17 mgbaker Exp Locker: rab $ SPRITE (Berkeley)
+d40 6
+@
+
+
+1.15
+log
+@Fixed a proto type problem that unleashes a bug in cproto.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/lib/include/RCS/stdlib.h,v 1.14 90/09/12 15:24:45 shirriff Exp Locker: mgbaker $ SPRITE (Berkeley)
+d47 7
+a53 7
+extern double	atof _ARGS_((char *string));
+extern int	atoi _ARGS_((char *string));
+extern long int	atol _ARGS_((char *string));
+extern double	strtod _ARGS_((char *string, char **endPtr));
+extern long int	strtol _ARGS_((char *string, char **endPtr, int base));
+extern unsigned long int
+		strtoul _ARGS_((char *string, char **endPtr, int base));
+d68 1
+a68 1
+extern Address	malloc _ARGS_((unsigned int bytesNeeded));
+d75 1
+a75 1
+extern int	_free _ARGS_((Address blockPtr));
+d85 1
+a85 1
+extern int	free _ARGS_((Address blockPtr));
+d91 2
+a92 2
+extern char *	malloc _ARGS_((unsigned int bytesNeeded));
+extern int	free _ARGS_((char *blockPtr));
+d96 10
+a105 10
+extern char * 	alloca _ARGS_((int size));
+extern char * 	calloc _ARGS_((unsigned int numElems, unsigned int elemSize));
+extern char *	realloc _ARGS_((Address ptr, unsigned int newSize));
+extern void	Mem_Bin _ARGS_((int numBytes));
+extern char *	Mem_CallerPC();
+extern void	Mem_DumpTrace _ARGS_((int blockSize));
+extern void	Mem_PrintConfig _ARGS_((void));
+extern void	Mem_PrintInUse _ARGS_((void));
+extern void	Mem_PrintStats _ARGS_((void));
+extern void	Mem_PrintStatsInt _ARGS_((void));
+d110 2
+a111 2
+extern void	Mem_SetPrintProc _ARGS_((void (*proc)(), ClientData data));
+extern int	Mem_Size _ARGS_((Address blockPtr));
+d122 1
+a122 1
+extern void	Mem_SetTraceSizes _ARGS_((int numSizes,
+d171 4
+a174 4
+extern int	abs _ARGS_((int j));
+extern div_t	div _ARGS_((int numer, int denom));
+extern long int	labs _ARGS_((long j));
+extern ldiv_t	ldiv _ARGS_((long int numer, long int denom));
+d182 15
+a196 14
+extern void	abort _ARGS_((void));
+extern int	atexit _ARGS_((void (*func)(void)));
+extern char *	bsearch _ARGS_((char * key, char * base, size_t n,
+	  size_t size, int (*cmp)(Address searchKey, Address tableEntry)));
+extern int	exit _ARGS_((int status));
+extern char *	getenv _ARGS_((char *name));
+extern void	qsort _ARGS_((char *base, int n, int size,
+	  int (*compar)(Address element1, Address element2)));
+extern int	rand _ARGS_((void));
+extern long	random _ARGS_((void));
+extern void	setenv _ARGS_((char *name, char *value));
+extern int	srand _ARGS_((int seed));
+extern int	srandom _ARGS_((int seed));
+extern int	system _ARGS_((char *command));
+@
+
+
+1.14
+log
+@Fixed declaration of Mem_SetPrintProc to match code.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/lib/include/RCS/stdlib.h,v 1.13 90/09/11 14:40:09 kupfer Exp Locker: shirriff $ SPRITE (Berkeley)
+d185 1
+a185 1
+				size_t size, int (*cmp)(Address, Address)));
+d189 1
+a189 1
+			      int (*compar)(Address, Address)));
+@
+
+
+1.13
+log
+@Use function prototypes.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/lib/include/RCS/stdlib.h,v 1.12 90/01/06 13:45:29 rab Exp Locker: kupfer $ SPRITE (Berkeley)
+d110 1
+a110 1
+extern void	Mem_SetPrintProc _ARGS_((int (*proc)(), ClientData data));
+@
+
+
+1.12
+log
+@Added define for EXIT_SUCCESS and EXIT_FAILURE.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/lib/include/RCS/stdlib.h,v 1.11 89/07/11 17:26:56 nelson Exp Locker: rab $ SPRITE (Berkeley)
+d22 16
+d47 7
+a53 6
+extern double		atof();
+extern int		atoi();
+extern long int		atol();
+extern double		strtod();
+extern long int		strtol();
+extern unsigned long	strtoul();
+d61 11
+a71 17
+extern char *	alloca();
+extern char *	calloc();
+extern char *	malloc();
+extern char *	realloc();
+extern void	Mem_Bin();
+extern char *	Mem_CallerPC();
+extern void	Mem_DumpTrace();
+extern void	Mem_PrintConfig();
+extern void	Mem_PrintInUse();
+extern void	Mem_PrintStats();
+extern void	Mem_PrintStatsInt();
+extern void	Mem_SetPrintProc();
+extern void	Mem_SetTraceSizes();
+extern int	Mem_Size();
+
+/*
+ * The mips compiler cannot handle some coercions on the left hand side
+d73 1
+a73 2
+#if defined(KERNEL) && !defined(mips)
+extern 		_free();
+d75 2
+d80 1
+a80 1
+#define		free(ptr) {_free(ptr); (ptr) = (char *) NIL; }
+d83 11
+a93 2
+#else
+extern		free();
+d96 17
+d122 2
+d171 4
+a174 4
+extern int	abs();
+extern div_t	div();
+extern long int	labs();
+extern ldiv_t	ldiv();
+d182 14
+a195 12
+extern void	abort();
+extern int	atexit();
+extern char *   bsearch();
+extern 		exit();
+extern char *	getenv();
+extern void	qsort();
+extern int	rand();
+extern long	random();
+extern void	setenv();
+extern 		srand();
+extern		srandom();
+extern int	system();
+@
+
+
+1.11
+log
+@Added ifdef mips for free call.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/lib/include/RCS/stdlib.h,v 1.10 89/04/06 10:08:11 rab Exp $ SPRITE (Berkeley)
+d21 3
+@
+
+
+1.10
+log
+@*** empty log message ***
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/lib/include/RCS/stdlib.h,v 1.9 89/03/27 22:23:08 jhh Exp Locker: rab $ SPRITE (Berkeley)
+d56 4
+a59 2
+
+#ifdef KERNEL
+@
+
+
+1.9
+log
+@added macro def of free() to set pointer to NIL
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/lib/include/RCS/stdlib.h,v 1.8 88/07/28 12:00:40 ouster Exp Locker: jhh $ SPRITE (Berkeley)
+d139 1
+d150 1
+a150 1
+#endif _STDLIB
+@
+
+
+1.8
+log
+@Declare procedures to match UNIX.
+@
+text
+@d16 1
+a16 1
+ * $Header: stdlib.h,v 1.7 88/07/25 14:17:55 ouster Exp $ SPRITE (Berkeley)
+a43 1
+extern 		free();
+d55 14
+@
+
+
+1.7
+log
+@Return type for strtol was wrong.
+@
+text
+@d16 1
+a16 1
+ * $Header: stdlib.h,v 1.6 88/07/25 13:07:59 ouster Exp $ SPRITE (Berkeley)
+d130 1
+d132 2
+a133 1
+extern void	srand();
+@
+
+
+1.6
+log
+@Use UNIX return value for exit().
+@
+text
+@d16 1
+a16 1
+ * $Header: stdlib.h,v 1.5 88/07/25 11:06:56 ouster Exp $ SPRITE (Berkeley)
+d32 1
+a32 1
+extern int		strtol();
+@
+
+
+1.5
+log
+@Add declaration for strtoul.
+@
+text
+@d16 1
+a16 1
+ * $Header: stdlib.h,v 1.4 88/07/25 10:48:39 ouster Exp $ SPRITE (Berkeley)
+d126 1
+a126 1
+extern void	exit();
+@
+
+
+1.4
+log
+@Change free return type to match UNIX.
+@
+text
+@d16 1
+a16 1
+ * $Header: stdlib.h,v 1.3 88/07/22 15:40:01 ouster Exp $ SPRITE (Berkeley)
+d28 6
+a33 5
+extern double	atof();
+extern int	atoi();
+extern long int	atol();
+extern double	strtod();
+extern int	strtol();
+@
+
+
+1.3
+log
+@Exterminate Mem_Alloc usage.
+@
+text
+@d16 1
+a16 1
+ * $Header: stdlib.h,v 1.2 88/07/18 11:07:30 ouster Exp $ SPRITE (Berkeley)
+d43 1
+a43 1
+extern void	free();
+@
+
+
+1.2
+log
+@Declare alloca.
+@
+text
+@d16 1
+a16 1
+ * $Header: stdlib.h,v 1.1 88/06/21 09:36:58 ouster Exp $ SPRITE (Berkeley)
+d74 1
+a74 1
+ *				the modified size used by Mem_Alloc.
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+ * $Header: stdlib.h,v 1.4 88/05/21 15:39:34 ouster Exp $ SPRITE (Berkeley)
+d40 1
+@

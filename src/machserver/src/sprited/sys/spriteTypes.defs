@@ -1,0 +1,111 @@
+/* 
+ * spriteTypes.defs --
+ *
+ *	MIG type definitions for the Sprite server.
+ *
+ * Copyright 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+/* $Header: /user5/kupfer/spriteserver/src/sprited/sys/RCS/spriteTypes.defs,v 1.10 92/07/16 18:07:28 kupfer Exp $ */
+
+#include <mach/std_types.defs>
+
+/* XXX want to import regular Sprite header files where possible. */
+
+
+/* 
+ * Definitions for sprite.h:
+ */
+
+import <sprite.h>;
+
+type ReturnStatus = int;
+
+
+/* 
+ * Definitions for spriteTime.h:
+ */
+
+import <spriteTime.h>;
+
+type Time = struct[2] of int;
+
+
+/* 
+ * Definitions for sys/types.h:
+ */
+
+import <sys/types.h>;
+
+type off_t = int;
+
+
+/* 
+ * Definitions for <user/proc.h>:
+ */
+
+import <user/proc.h>;
+
+type Proc_PID = unsigned;
+type Proc_TimerInterval = struct[2] of Time;
+type Proc_StringOffset = int;	/* offset into string table */
+type Proc_OffsetTable = array[] of Proc_StringOffset;
+type Proc_Strings = array[] of char;
+
+
+/* 
+ * Definitions for <user/fs.h>:
+ */
+
+#include <user/fs.h>
+import <user/fs.h>;
+
+/* 
+ * Note that a variable-length array results in 2 C parameters: one 
+ * for the array itself, and one for the length of the array.  
+ * Grumble. 
+ */
+type Fs_PathName = array[*:FS_MAX_PATH_NAME_LENGTH] of char;
+
+type Fs_Attributes = struct[FS_ATTRIBUTES_SIZE] of int;
+type Fs_Device = struct[FS_DEVICE_SIZE] of int;
+
+
+/* 
+ * Definitions for <user/test.h>
+ */
+
+#include <user/test.h>
+import <user/test.h>;
+    
+type Test_MessageBuffer = (MACH_MSG_TYPE_STRING_C, 8 * TEST_BUFFER_SIZE);
+
+
+/* 
+ * Definitions for <user/sig.h>
+ */
+
+#include <user/sig.h>
+import <user/sig.h>;
+
+type Sig_Action = struct[SIG_ACTION_SIZE] of int;
+
+
+/* 
+ * Definitions for <user/sys.h>.
+ */
+
+import <user/sys.h>;
+
+/* 
+ * Arbitrary-length array of bytes for use by any call that wants to pass a 
+ * byte array via the MIG stub instead of using copyin/copyout.
+ */
+type Sys_CharArray = array[] of char;

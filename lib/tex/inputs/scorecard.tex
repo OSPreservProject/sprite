@@ -1,0 +1,173 @@
+% Scorecard.tex v 1.1
+%
+% prints a baseball scorecard for one team;
+% also prints summary statistics boxes (Pitcher's stats, Offense,
+% Defense, and Pitching miscellanea, a Notes section, and a line score).
+%
+% This is currently intended to make a blank scorecard with which
+% to score a baseball game, and additional space to record information
+% with which to submit a Box Score with the information required by
+% newspapers, league offices, etc.
+%
+% Margins are set for landscape printing, be sure to DVI it with
+% the appropriate qualifiers.
+%
+% Shortly (ha ha) to come: scorecard.sty to allow full typesetting of
+% a baseball game. If anyone is actually writing a book/article that
+% could benefit from this, please let me know, as it may give me incentive
+% to finish.
+%
+% Dedicated to my wife who thinks the rules are the best part of baseball.
+%
+% Matthew Wall 4/89  revised 4/28/89 - looks much better, added space
+%                                      to keep defensive stats
+%
+% WALL@BRANDEIS.Bitnet -or- matt%cs.brandeis.edu@relay.cs.net
+% c/o Research and Academic Computing, Brandeis University,
+%     Waltham, MA, 02254
+%
+% (c) 1989
+% Free for the world to enjoy. Let no one gain commercial benefit
+% from this, lest ye be pushed into the pits of hell and the courts.
+%
+% May be freely modified and copied; please send neat changes/suggestions
+% to me in the email.
+%
+% God Bless the Designated Hitter;
+% To Lucifer with Astroturf;
+% Domes for the needy;
+% Smog for the undeserving;
+% May baseball return to Washington, D.C.
+%
+%
+\documentstyle[12pt]{article}
+\pagestyle{empty}
+
+      \setlength{\textwidth}{10.48in}
+      \setlength{\oddsidemargin}{-.95in}
+      \setlength{\evensidemargin}{-.95in}
+
+      \setlength{\textheight}{7.7in}
+      \setlength{\topmargin}{-.95in}
+
+
+\begin{document}
+\noindent ~~~~Date: ~\hrulefill~
+              At: ~\hrulefill~
+              Team: ~\hrulefill~
+              Vs: ~\hrulefill~\\
+
+              Start time: ~\hrulefill~
+              End time: ~\hrulefill~
+              Attendance: ~\hrulefill~
+              Temperature: ~\hrulefill~\\
+\LARGE
+
+\begin{tabular}{||l|c||c|c|c|c|c|c|c|c|c|c||c|c|c|c||c|c|c||} \hline \hline
+Player~~~~~& {\normalsize Pos}&~1~ & ~2~ & ~3~ & ~4~ & ~5~ & ~6~ & ~7~ & ~8~ &
+                  ~9~ & ~10 & AB & ~H~ & ~R~ & BI
+                      & P & A & E \\ \hline
+{\tt\small - - - - - - - - - - - } & {\tt\small - - }
+& & & & & & & & & & & & & & & & & \\ \hline
+{\tt\small - - - - - - - - - - - } & {\tt\small - - }
+& & & & & & & & & & & & & & & & & \\ \hline
+{\tt\small - - - - - - - - - - - } & {\tt\small - - }
+& & & & & & & & & & & & & & & & & \\ \hline
+{\tt\small - - - - - - - - - - - } & {\tt\small - - }
+& & & & & & & & & & & & & & & & & \\ \hline
+{\tt\small - - - - - - - - - - - } & {\tt\small - - }
+& & & & & & & & & & & & & & & & & \\ \hline
+{\tt\small - - - - - - - - - - - } & {\tt\small - - }
+& & & & & & & & & & & & & & & & & \\ \hline
+{\tt\small - - - - - - - - - - - } & {\tt\small - - }
+& & & & & & & & & & & & & & & & & \\ \hline
+{\tt\small - - - - - - - - - - - } & {\tt\small - - }
+& & & & & & & & & & & & & & & & & \\ \hline
+{\tt\small - - - - - - - - - - - } & {\tt\small - - }
+& & & & & & & & & & & & & & & & & \\ \hline
+{\tt\small - - - - - - - - - - - } & {\tt\small - - }
+& & & & & & & & & & & & & & & & & \\ \hline
+{\tt\small - - - - - - - - - - - } & {\tt\small - - }
+& & & & & & & & & & & & & & & & & \\ \hline \hline
+Totals &{\normalsize H/R} & / & / & / & / & / & / & / & / & / & /  & & & &
+& & & \\ \hline \hline
+\end{tabular} \\
+
+\normalsize
+% WP, LP, 2B, 3B, HR, SB, SF, S, HBP, BB, E, SO, WP, ER, R, H, IP,DP, PB, B, PO?
+     {\bf Notes:}  \\
+\pagebreak
+
+\noindent ~~~~Date: ~\hrulefill~
+              At: ~\hrulefill~
+              Team: ~\hrulefill~
+              Vs: ~\hrulefill~ \\
+
+\LARGE
+
+\begin{tabular}{||l|r|r|r|r|r|r||r} \cline{1- 7} \cline{1- 7}
+Pitcher~~~~~ & IP & ~H~ & ~R~ & ER & BB & SO &~~~{\bf\normalsize
+                                                   Notes:} \\ \cline{1- 7}
+ & & & & & & & \\  \cline{1- 7}
+ & & & & & & & \\  \cline{1- 7}
+ & & & & & & & \\  \cline{1- 7}
+ & & & & & & & \\  \cline{1- 7}
+ & & & & & & & \\  \cline{1- 7} \cline{2- 7}
+Totals & & & & & & & \\  \cline{1- 7} \cline{2- 7}
+\end{tabular}  \\
+\normalsize
+
+\medskip
+% I apologize for all the unbreakable spaces to follow. \fill commands
+% and tabular were just a bit too even to be useful, though they do look
+% better.
+
+\framebox{
+\parbox{9.2in}{
+{\bf Offense}  \\
+\noindent 2B:~~~~~~~~~~~~~~~~~~~~  \\
+3B:~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+HR:~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+\\
+\noindent BB:~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          SB:~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~CS:
+\\
+\noindent SF:~~~~~~~~~~~~~~~~
+             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+           S:~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         HBP:~~~~~~~~~~~~~~~~~~~~~~~~~~
+         LOB:~~~~~~~~
+}
+}     \\
+\medskip
+
+\framebox{
+\parbox{9.2in}{
+{\bf Defense}  \\
+\noindent PB:~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+E:~~~~~\\
+\noindent DP:~~~~~~~~~~~~
+}
+}     \\
+\medskip
+
+\framebox{
+\parbox{9.2in}{
+{\bf Pitching}  \\
+HB:~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+WP:~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Balk:~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+IW:~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \\
+Win/Loss: ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Save: ~~~~~~~~~~~~~~~~~~~~~~
+}
+}
+\LARGE
+\bigskip
+\bigskip
+
+\begin{tabular}{||l||r|r|r|r|r|r|r|r|r||r|r|r|r||}      \hline\hline
+~~~~~~~~~~~~~~~~&~ &~ &~ &~ &~ &~ &~ &~ &~ &~ &~ &~ &~ \\ \hline
+~~~~~~~~~~~~~~~~&~ &~ &~ &~ &~ &~ &~ &~ &~ &~ &~ &~ &~ \\ \hline\hline
+\end{tabular}   \\
+\end{document}

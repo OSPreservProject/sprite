@@ -1,0 +1,109 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  sprited:1.2.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     88.07.25.13.12.59;  author ouster;  state Exp;
+branches 1.2.1.1;
+next     1.1;
+
+1.1
+date     88.06.26.16.21.32;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.2.1.1
+date     91.10.02.18.53.23;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Lint.
+@
+text
+@/* 
+ * perror.c --
+ *
+ *	Source code for the "perror" library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: perror.c,v 1.1 88/06/26 16:21:32 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <stdio.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * perror --
+ *
+ *	Print a message describing the current error condition (as
+ *	given by errno), with a given introductory message.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Stuff gets printed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+perror(msg)
+    char *msg;			/* Message to print before the message
+				 * describing the error. */
+{
+    if ((msg != 0) && (*msg != 0)) {
+	fprintf(stderr, "%s: ", msg);
+    }
+    fprintf(stderr, "%s\n", strerror(errno));
+}
+@
+
+
+1.2.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdio/RCS/perror.c,v 1.2 88/07/25 13:12:59 ouster Exp $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: proto.c,v 1.2 88/03/11 08:39:08 ouster Exp $ SPRITE (Berkeley)";
+d23 1
+@

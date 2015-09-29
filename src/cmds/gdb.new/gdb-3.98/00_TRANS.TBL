@@ -1,0 +1,11 @@
+D BFD                               	bfd
+D BFD_MIPS                          	bfd.mips
+F CONFIGUR.;1                       	configure
+F CONFIGUR.IN;1                     	configure.in
+D GDB                               	gdb
+D INCLUDE                           	include
+D LIBIBERT                          	libiberty
+F MAKEFILE.IN;1                     	Makefile.in
+D READLINE                          	readline
+F README.CON;1                      	README.configure
+D TEXINFO                           	texinfo

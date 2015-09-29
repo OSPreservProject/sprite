@@ -1,0 +1,82 @@
+#!/sprite/cmds/perl
+
+if ($#ARGV != 1) {
+    printf("$#ARGV\n");
+    printf("Usage: kdiff oldKernel newKernel\n");
+    exit;
+}
+if (! -e $ARGV[0]) {
+    die("File $ARGV[0] does not exist.\n");
+}
+if (! -e $ARGV[1]) {
+    die("File $ARGV[1] does not exist.\n");
+}
+open(fid, "strings $ARGV[0] |") || die ("Can't open pipe.\n");
+while (<fid>) {
+    if (/RCS/) {
+	($d1,$file, $version) = split;
+	$versionArray{$file} = $version;
+    }
+}
+
+open(fid, "strings $ARGV[1] |") || die ("Can't open pipe.\n");
+while (<fid>) {
+    if (/RCS/) {
+	($d1, $file, $version) = split;
+	if (! defined($versionArray{$file})) {
+	    $#newFiles++;
+	    $newFiles[$#newFiles] = $file;
+	} elsif ($version != $versionArray{$file}) {
+	    do PrintLog($file, $versionArray{$file}, $version);
+	}
+	$used{$file} = 1;
+    }
+}
+if ($#newFiles > 0) {
+    printf("\nThe following files were added to the new kernel:\n\n");
+    for ($i = 0; $i <= $#newFiles; $i++) {
+	printf("$newFiles[$i]\n");
+    }
+}
+
+$headerPrinted = 0;
+while (($file, $version) = each(%versionArray)) {
+    if (! defined($used{$file})) {
+	if ($headerPrinted == 0) {
+	    printf(
+	"\nThe following files were not used in the new kernel:\n\n");
+	    $headerPrinted = 1;
+	}
+	printf("$file\n");
+    }
+}
+
+sub PrintLog {
+    local($stream);
+    local($start) = 0;
+    $oldVersion = $_[1];
+    $newVersion = $_[2];
+    open($stream, "rlog $_[0] |") || die("Can't rlog $_[0]\n");
+    printf("******* $_[0]:\n");
+    while (<$stream>) {
+	($f1, $f2) = split;
+	if (($f1 eq "revision") && ($f2 eq $newVersion)) {
+	    $start = 1;
+	} elsif ($f2 eq $oldVersion) {
+	    if ($start == 0) {
+		printf("New version %s appears older than old version %s\n",
+		    $newVersion, $oldVersion);
+		printf("Were the kernel arguments in the correct order?\n");
+	    }
+	    last;
+	}
+	if ($start) {
+	    print;
+	}
+    }
+    print("\n");
+}
+
+
+
+

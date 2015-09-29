@@ -1,0 +1,167 @@
+' $Header: /sprite/src/cmds/vmcmd/RCS/vmcmd.man,v 1.4 91/03/10 13:43:28 kupfer Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS VMCMD cmds
+.BS
+.SH NAME
+vmcmd \- set virtual memory parameters.
+.SH SYNOPSIS
+\fBvmcmd \fR[\fIoptions\fR]
+.SH OPTIONS
+.IP "\fB\-a \fIflagValue\fR" 20
+If \fIflagValue\fR is non-zero then the virtual memory system is forced to
+always refuse any file system requests for memory.
+.IP "\fB\-A \fIflagValue\fR" 20
+If \fIflagValue\fR is non-zero then the virtual memory system is forced
+to always satisfy any file system request for
+memory as long as it is possible.
+.IP "\fB\-c \fIpagesToCheck\fR" 20
+The number of pages to check during each interation
+of the clock algorithm is set to \fIpagesToCheck\fR .
+.IP "\fB\-C \fIflagValue\fR" 20
+If \fIflagValue\fR is non-zero then copy-on-write is enabled.
+.IP "\fB\-f \fIflagValue\fR" 20
+If \fIflagValue\fR is non-zero then pages are freed as soon as they are 
+cleaned.
+.IP "\fB\-F \fIpenalty\fR" 20
+If \fIpenalty\fR is less than zero then the file system is forced to pay
+a penalty of -\fIpenalty\fR seconds when asking for a page.  If it is
+greater than or equal to zero then the penalty is used in
+conjunction with the \fB\-n\fR option.
+.IP "\fB\-fsreset\fR" 20
+Reset the recorded minimum and maximum size of the file system cache
+to the current size.
+.IP "\fB\-x \fIsegNum\fR" 20
+Segment \fIsegNum\fR is flushed from memory; the \fB\-h\fR and 
+\fB\-l\fR options can be used to set upper and lower bounds respectively
+on the pages that are flushed.
+.IP "\fB\-h \fIpageNum\fR" 20
+The highest page that can be flushed is \fIpageNum\fR when using
+\fB\-x\fR option.
+.IP "\fB\-l \fIflagValue\fR" 20
+The lowest page that can be flushed is \fIpageNum\fR when using
+\fB\-x\fR option.
+.IP "\fB\-n \fInumGroups\fR" 20
+The number of groups to divide memory into when assessing a penalty is set to
+\fInumGroups\fR.
+.IP "\fB\-p \fIpageOutProcs\fR" 20
+The number of processes used to write back pages is set to \fIpageOutProcs\fR.
+.IP "\fB\-P \fIflagValue\fR" 20
+If \fIflagValue\fR is non-zero then pre-fetching is turned on.
+.IP "\fB\-r \fIflagValue\fR" 20
+If \fIflagValue\fR is non-zero then pages that are copied because of
+copy-on-reference faults are made read-only until they get modified.
+.IP "\fB\-R \fIflagValue\fR" 20
+If \fIflagValue\fR is non-zero then the virtual memory system will try
+to take advantage of the file system's read ahead policy.
+.IP "\fB\-s \fInumSeconds\fR" 20
+The number of seconds between iterations of the clock algorithm is set to
+be \fInumSeconds\fR.
+.IP "\fB\-t \fItracesPerSec\fR" 20
+Virtual memory tracing is turned on at the rate of \fItracesPerSec\fR
+traces per second.
+.IP "\fB\-T\fR" 20
+Virtual memory tracing is turned off.
+.IP "\fB\-e n [ -X n2 ]\fR" 20
+Hook for extra commands.  This executes \fIVm_Cmd(n,n2)\fP, with \fIn2\fP
+defaulting to 0.
+.BE
+
+.SH INTRODUCTION
+.LP
+This command sets various parameters of the virtual memory system.  It
+is implemented using the Vm_Cmd system call.  It controls behavior of
+the virtual memory system in 7 areas: virtual memory and file system
+negotiation, virtual memory tracing, the speed of the clock algorithm,
+flushing of segments, prefetch, copy-on-write and other miscellaneous
+things.
+.SH "VM-FS NEGOTIATION"
+.LP
+There are four options to \fBvmcmd\fR that can be used to control the
+negotiation between the virtual memory system and the file system.
+The most interesting are the options which allow the file  system
+to be penalized relative to the virtual memory system.
+The \fB\-F\fR and \fB\-n\fR options are
+used to control the penalty.  The simplest way to penalize the file system
+is to supply the \fB\-F \fIpenalty\fR option with a negative number.  
+In this case the file system is penalized by the absolute value of 
+\fIpenalty\fP each time that it asks for memory.  The penalty is assessed 
+by adding \fIpenalty\fP seconds to the access time of each VM page so that
+the VM pages seem to have been used more recently than they really have.
+.LP
+The \fB\-n \fInumGroups\fR option gives a more complex method of penalizing the
+file system.  With this option the number of available pages are divided
+up into \fInumGroups\fR groups.  When the file system asks for memory
+the penalty depends on how many pages that it already has.  Its
+penalty is assessed as
+.sp
+.in +0.5i
+(\fIcurrent-number-of-pages\fR / \fInumGroups\fR) * \fIpenalty\fP
+.in -0.5i
+.sp
+seconds.
+.LP
+There are two other ways to effect the VM-FS negotiation.  The \fB\-a\fR
+option can be used to force the virtual memory system to always refuse to
+give memory to the file system.  The \fB\-A\fR can be used to force the
+virtual memory sysytem to always satisfy the file system's requests for
+memory as long as they are feasible.  These options are designed to be used
+to determine the effect of different polices on VM and FS negotiation.
+.SH "TRACING"
+.LP
+The virtual memory system has the ability to trace segment creation
+and destruction, reference and modify bit use, page faults
+and copy-on-write behavior.  Tracing is turned on with \fB\-t \fItracePerSec\fR
+option.  Once tracing is turned on everything but the reference
+and modify bit traces will be traced as it occurs.  However,
+the reference and modify bits are traced by scanning the hardware page maps
+\fItracePerSec\fR times per second.  The output of the trace is stored in
+the file ``/sprite/vmtrace/tfile.\fIhost-id\fR'' where \fIhost-id\fR is the
+sprite id for the host.  Tracing is terminated with the \fB\-T\fR option.
+.SH CLOCK
+.LP
+The virtual memory system keeps all pages in approximate least-recently-used
+(LRU) order by using a version of the clock algorithm.  The clock algorithm
+is implemented by scanning a given number of pages in memory every few
+seconds.  The number of pages that are scanned can be set with the
+\fB\-c \fIpagesToCheck\fR option and how often the pages are scanned
+can be set with the \fB\-s \fInumSeconds\fR option.  The result is that
+\fIpagesToCheck\fR pages are checked every \fInumSeconds\fR.
+.SH FLUSHING
+.LP
+In order to allow measurement of the performance of
+the virtual memory system, \fBvmcmd\fR allows segments to be flushed from memory.
+When a segment is flushed dirty pages are written to swap
+space and the pages in the segment are removed from memory.  The
+\fB\-x \fIsegNum\fR option is used to specify which segment to flush and
+the \fB\-l \fIlowPageNum\fR and \fB\-h \fIhighPageNum\fR options are used to
+specify the range of pages to flush.  By default the lowest page to flush
+is the lowest page in the segment and the highest is the highest page in
+the segment.  However, the \fB\-l\fR or \fB\-h\fR
+options can be used to set the lowest page to \fIlowPageNum\fR and the
+highest to \fIhighPageNum\fP respectively.
+.SH PREFETCH
+.LP
+Both the virtual memory system and the file system implement prefetch.
+Virtual memory prefetch can be turned on or off by using the
+\fB\-P \fIflagValue\fR option; if \fIflagValue\fR is non-zero then
+prefetching is enabled and if it is zero prefetching is disabled.  Likewise
+whether or not the virtual memory system takes advantage of the file
+system's prefetech can be determined with the \fB\-R \fIflagValue\fR option;
+non-zero means use FS prefetch, 0 means don't use it.
+.SH COPY-ON-WRITE
+.LP
+Copy-on-write can be turned on or off by using the \fB\-C \fIflagValue\fR
+option.  If \fIflagValue\fR is non-zero then
+copy-on-write is enabled and if it zero copy-on-write is disabled.
+.SH MISCELLANEOUS
+.LP
+There are two other parameters of the virtual memory system that
+can be set with \fBvmcmd\fR.  The number of processes that are used to
+write out dirty pages can be set with the \fB\-p \fIpageOutProcs\fR option.
+Whether or not memory is freed once it gets to the front of the allocate
+list or it is left alone until it has to be recycled is controlled with the
+\fB\-f \fIflagValue\fR option; if \fIflagValue\fR is non-zero then
+pages are freed once they are cleaned and if it is zero 
+pages remain on the front of the allocate list after they are cleaned.
+.SH KEYWORDS
+virtual memory

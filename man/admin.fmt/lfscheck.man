@@ -1,0 +1,68 @@
+
+
+
+LFSCHECK                  User Commands                  LFSCHECK
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     lfscheck - Check lfs disk for problems.
+
+SSYYNNOOPPSSIISS
+     llffsscchheecckk [_o_p_t_i_o_n_s] ddeevviicceeNNaammee
+
+OOPPTTIIOONNSS
+     --bblloocckkSSiizzee ize Block size of file system.
+
+     --ssuuppeerrBBlloocckkOOffffsseett _o_f_f_s_e_t
+                    Offset into device of the superBlock.
+
+     --dduummpp          Print out a description of the file system.
+
+     --sshhoowwDDiirrLLoogg    Print out the directory operation log.
+
+     --ffuullll          Print a full error analysis.
+
+     --vveerrbboossee       Output progress messages during execution.
+
+     --oollddccpp         Uses old checkpoint  (?).   This  flag  makes
+                    lfscheck  use  the  opposite  checkpoint area
+                    from the one it would use otherwise.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     LLffsscchheecckk scans a LFS file system looking for  problems.   It
+     will report any inconsistency it finds.
+
+BBUUGGSS
+     This program is one of Mendel's private programs and may not
+     be reliable.
+
+KKEEYYWWOORRDDSS
+     lfs, disk, check
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  March 11, 1992                    1
+
+
+

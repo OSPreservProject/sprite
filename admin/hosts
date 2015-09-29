@@ -1,0 +1,81 @@
+#
+#   /sprite/admin/hosts
+#
+#   This is a list of machines currently running sprite.  This list is
+#   here so system administrators can quickly get the information.
+#   This file is currently used by nrup, which expects data to be in the
+#   proper columns.  The fields are separated by spaces, _not_ by tabs.
+#
+
+# Which        What           Where           Who
+aix            ds5000         484 Cory        Rob Pfile
+allspice       sun4/280       Evans 608-11    File Server
+anarchy        ds5000         Evans 608-2     Testing
+#anarchy        dsmach         Evans 608-2     Mach Testing
+anise          sun4/260       Cory            Raid
+apathy         sun4/60        Evans 508-5     Garth Gibson
+arson          ds5000         Evans 608-2     Matt Secor
+assault        ds3100         Evans 608-4     File Server
+babylon        ds3100         Evans 608-4     Postgres
+basil          sun4/75        Evans 508-5     Ed Lee
+blackmail      Sequent-s27    Evans 608-11    John Hartman
+boing          sun4/65        Evans 442       Klaus Schauser
+bribery        ds3100         Evans 508-14    Mike Hohmeyer
+burble         sun4/60        Evans 444       Paul de Dood
+buzz           sun3/60        Evans 444       John Wawrzynek
+cardamom       ds3100         Evans 529B      Dave Culler
+catnip         sun3/140       Evans 608-4     Shut Down
+chenonceau     sun4/60        Cory 484        Ken Lutz
+chisum         ds3100         Cory 524        Ken Lutz
+clove          ds5000         Evans 508-5     Ann L. Chervenak
+coons          ds5000         Evans 608-4     (Gone)
+covet          ds5000         Evans 608-11    Tape jukebox server
+crackle        sun4/60        Evans 444       Thorsten von Eicken
+espionage      sun4/60        Evans 508-5     Ed Lee
+fenugreek      sun3/140       Evans 608-4     Shut Down
+forgery        ds5000         Evans 508-5     Ed Lee
+garlic         ds5000         Evans 608-11    Pete Chen
+gluttony       ds3100         Evans 523       John Wawrzynek
+greed          ds3100         Evans 508-7     Mike Hohmeyer
+heresy         ds3100         Evans 608-8     Tzl-cker Chiueh
+hijack         ds5000         Evans 477       Ken Shirriff
+hoot           sun3/75        Evans 444       John W.
+jaywalk        sun4/75        Evans 477       Caroline Paxson
+jealousy       sun3           Evans 444       K. Yelick
+joyride        sun4/60        Evans 608-8     Peter Leong
+king           ds3100         Cory 524        Ken Lutz
+kvetching      ds3100         Evans 608-4     to be donated
+larceny        sun4/60        Evans 608-2     Testing
+loiter         ds5000         Evans 477       John Hartman
+lsisim         ds3100         Evans 475       Vojin Oklobdzija
+lust           ds5000         Evans 608-11    FileServer
+mayhem         ds5000         Evans 507       Randy Katz
+mercenary      sun4/60        Evans 531       Randy Katz
+murder         sun3/60        Evans 608-2     Shut Down
+mustard        ds5000         Evans 508-5     Pete Chen
+nutmeg         sun3/75        Evans 608-4     Shut Down
+oregano        sun3/140       Evans 608-4     Shut Down
+paprika        sun3/75        Evans 442       Anurag Sah
+parsley        ds3100         Evans 531       Randy Katz
+pepper         ds5000         Evans 527       Dave Patterson
+piquante       ds3100         Evans 477       Testing
+piracy         ds5000         Evans 477       Testing
+pride          ds3100         Evans 527       Dave Patterson
+raid           sun4/280       Cory 524        Raid
+raid1          sun4/280       Evans 608-11    File Server
+raid2          sun4           Cory 524        Ken Lutz
+roar           ds3100         Evans 442       Seth Copen Goldstein
+sabotage       sun4/75        Evans 608-2     Jim Mott-Smith
+saffron        sun4/60        Evans 508-5     Joel A. Fine
+sage           sun4/75        Evans 608-2     Mike Kupfer
+sassafras      sun4/60        Evans 608-2     Dump tape machine
+sedition       sun4/60        Evans 608-8     Tzl-cker Chiueh
+sioux          ds3100         Cory 524        Ken Lutz
+subversion     ds5000         Evans 533       Bob Miller
+terrorism      sun4/75        Evans 608-8     Ethan Miller
+thyme          sun4/60        Evans 608-11    Pete Chen
+tonkawa        sun3/160       Cory 524        Raid
+treason        sun4/75        Evans 477       Mary Baker
+tyranny        sun4/60        Evans 525       John Ousterhout
+vagrancy       ds3100         Evans 608-4     Testing
+violence       ds3100         Evans 47?       Thorsten von Eicken

@@ -1,0 +1,132 @@
+
+
+
+TRUNCATE              C Library Procedures               TRUNCATE
+
+
+
+NNAAMMEE
+     truncate, ftruncate - set a file to a specified length
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+
+     iinntt ttrruunnccaattee((ppaatthh,, lleennggtthh))
+     cchhaarr **ppaatthh;;
+     ooffff__tt lleennggtthh;;
+
+     iinntt ffttrruunnccaattee((ffdd,, lleennggtthh))
+     iinntt ffdd;;
+     ooffff__tt lleennggtthh;;
+
+DDEESSCCRRIIPPTTIIOONN
+     ttrruunnccaattee(()) causes the file referred to by _p_a_t_h (or for
+     ffttrruunnccaattee(()) the object referred to by _f_d) to have a size
+     equal to _l_e_n_g_t_h bytes.  If the file was previously longer
+     than _l_e_n_g_t_h, the extra bytes are removed from the file.  If
+     it was shorter, bytes between the old and new lengths are
+     read as zeroes.  With ffttrruunnccaattee(()), the file must be open for
+     writing.
+
+RREETTUURRNN VVAALLUUEESS
+     ttrruunnccaattee(()) returns:
+
+     0    on success.
+
+     -1   on failure and sets eerrrrnnoo to indicate the error.
+
+EERRRROORRSS
+     ttrruunnccaattee(()) may set eerrrrnnoo to:
+
+     EACCES              Search permission is denied for a com-
+                         ponent of the path prefix of _p_a_t_h.
+
+                         Write permission is denied for the file
+                         referred to by _p_a_t_h.
+
+     EFAULT              _p_a_t_h points outside the process's allo-
+                         cated address space.
+
+     EIO                 An I/O error occurred while reading from
+                         or writing to the file system.
+
+     EISDIR              The file referred to by _p_a_t_h is a direc-
+                         tory.
+
+     ELOOP               Too many symbolic links were encountered
+                         in translating _p_a_t_h.
+
+     ENAMETOOLONG        The length of the path argument exceeds
+
+
+
+Sprite v1.0              21 January 1990                        1
+
+
+
+
+
+
+TRUNCATE              C Library Procedures               TRUNCATE
+
+
+
+                         {PATH_MAX}.
+
+                         A pathname component is longer than
+                         {NAME_MAX} (see ssyyssccoonnff(2V)) while
+                         {_POSIX_NO_TRUNC} is in effect (see
+                         ppaatthhccoonnff(2V)).
+
+     ENOENT              The file referred to by _p_a_t_h does not
+                         exist.
+
+     ENOTDIR             A component of the path prefix of _p_a_t_h
+                         is not a directory.
+
+     EROFS               The file referred to by _p_a_t_h resides on
+                         a read-only file system.
+
+     ffttrruunnccaattee(()) may set eerrrrnnoo to:
+
+     EINVAL              _f_d is not a valid descriptor of a file
+                         open for writing.
+
+                         _f_d refers to a socket, not to a file.
+
+     EIO                 An I/O error occurred while reading from
+                         or writing to the file system.
+
+SSEEEE AALLSSOO
+     ooppeenn(2V)
+
+BBUUGGSS
+     These calls should be generalized to allow ranges of bytes
+     in a file to be discarded.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0              21 January 1990                        2
+
+
+

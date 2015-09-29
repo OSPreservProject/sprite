@@ -1,0 +1,310 @@
+head     9.1;
+branch   ;
+access   ;
+symbols  ds3100:9.1 sun3:9.1 sun4nw:9.1 symm:9.1 spur:9.1 sprited:9.1.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.1
+date     90.09.11.14.11.32;  author kupfer;  state Exp;
+branches 9.1.1.1;
+next     9.0;
+
+9.0
+date     89.09.12.15.21.52;  author douglis;  state Stable;
+branches ;
+next     8.1;
+
+8.1
+date     89.08.15.21.27.31;  author rab;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.41.00;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.28.36;  author brent;  state Stable;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.51.49;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.1.1.1
+date     91.09.09.22.33.19;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.1
+log
+@Use function prototypes. Lint.
+@
+text
+@/* hash.h --
+ *
+ * 	This file contains definitions used by the hash module,
+ * 	which maintains hash tables.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ *
+ * $Header: /sprite/src/kernel/utils/RCS/hash.h,v 9.0 89/09/12 15:21:52 douglis Stable Locker: kupfer $ SPRITE (Berkeley)
+ */
+
+
+#ifndef	_HASH
+#define	_HASH
+
+#include "list.h"
+
+/*
+ * Each hash bucket consists of a version number for the hash chain and
+ * a hash chain list header.
+ */
+
+typedef struct Hash_Bucket {
+    int		version;
+    List_Links	list;
+} Hash_Bucket;
+
+/*
+ * The following defines one entry in the hash table.
+ */
+
+typedef struct Hash_Entry {
+    List_Links	links;
+    Address	value;		/* Pointer to anything. */
+    Hash_Bucket	*bucketPtr;	/* Pointer to hash bucket that this entry is
+				 * in. */
+    union {
+	Address	 ptr;		/* One-word key value to identify entry. */
+	unsigned words[1];	/* N-word key value.  Note: the actual
+				 * size may be longer if necessary to hold
+				 * the entire key.
+				 */
+	char 	 name[4];	/* Text name of this entry.  Note: the
+				 * actual size may be longer if necessary
+				 * to hold the whole string. This MUST be
+				 * the last entry in the structure!!!
+				 */
+    } key;
+} Hash_Entry;
+
+/*
+ * A hash table consists of an array of pointers to hash
+ * lists.  Tables can be organized in either of three ways, depending
+ * on the type of comparison keys:
+ *
+ *	Strings:	  these are NULL-terminated; their address
+ *			  is passed to HashFind as a (char *).
+ *	Single-word keys: these may be anything, but must be passed
+ *			  to Hash_Find as an Address.
+ *	Multi-word keys:  these may also be anything; their address
+ *			  is passed to HashFind as an Address.
+ *
+ *	Single-word keys are fastest, but most restrictive.
+ */
+ 
+#define HASH_STRING_KEYS	0
+#define HASH_ONE_WORD_KEYS	1
+
+typedef struct Hash_Table {
+    Hash_Bucket 	*table;		/* Pointer to array of List_Links. */
+    int 		size;		/* Actual size of array. */
+    int			version;	/* Version of the hash table.  Goes up
+					 * every time hash table grows. */
+    int 		numEntries;	/* Number of entries in the table. */
+    int 		downShift;	/* Shift count, used in hashing
+					 * function. */
+    int 		mask;		/* Used to select bits for hashing. */
+    int 		ptrKeys;	/* 1 means that keys (h_names) are
+					 * 1-word values (char *'s).  0 means
+					 * keys are strings.  >1 means keys
+					 * are ht_ptrKeys-word values.  */
+} Hash_Table;
+
+/*
+ * The following structure is used by the searching routines
+ * to record where we are in the search.
+ */
+
+typedef struct Hash_Search {
+    int 	nextIndex;	/* Next bucket to check (after current). */
+    int		bucketVersion;	/* Version of the bucket currently being
+				 * searched.*/
+    int		tableVersion;	/* The version of the table being searched. */
+    Hash_Entry 	*hashEntryPtr;	/* Next entry to check in current bucket. */
+    List_Links	*hashList;	/* Hash chain that are currently checking. */
+} Hash_Search;
+
+/*
+ * Macros.
+ */
+
+/*
+ * char * Hash_GetValue(h)
+ *     HashEntry *h;
+ */
+
+#define Hash_GetValue(h) ((h)->value)
+
+/*
+ * Hash_SetValue(h, val);
+ *     HashEntry *h;
+ *     char *val;
+ */
+
+#define Hash_SetValue(h, val) ((h)->value = (Address) (val))
+
+/*
+ * Hash_Size(n) returns the number of words in an object of n bytes
+ */
+
+#define	Hash_Size(n)	(((n) + sizeof (unsigned) - 1) / sizeof (unsigned))
+
+/*
+ * The following procedure declarations and macros
+ * are the only things that should be needed outside
+ * the implementation code.
+ */
+
+extern void 		Hash_Init _ARGS_((Hash_Table *table, int numBuckets,
+					  int ptrKeys));
+extern void		Hash_Stats _ARGS_((Hash_Table *table));
+extern void		Hash_Kill _ARGS_((Hash_Table *table));
+extern Hash_Entry 	*Hash_Find _ARGS_((Hash_Table *table, Address key));
+extern Hash_Entry 	*Hash_LookOnly _ARGS_((Hash_Table *table,
+					       Address key));
+extern void 		Hash_Delete _ARGS_((Hash_Table *table,
+					    Hash_Entry *hashEntryPtr));
+extern void 		Hash_StartSearch _ARGS_((Hash_Search *hashSearchPtr));
+extern Hash_Entry	*Hash_Next _ARGS_((Hash_Table *table,
+					   Hash_Search *hashSearchPtr));
+
+#endif /* _HASH */
+@
+
+
+9.1.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/utils/RCS/hash.h,v 9.1 90/09/11 14:11:32 kupfer Exp $ SPRITE (Berkeley)
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/utils/RCS/hash.h,v 8.1 89/08/15 21:27:31 rab Exp Locker: douglis $ SPRITE (Berkeley)
+d129 12
+a140 8
+extern void 		Hash_Init();
+extern void		Hash_Stats();
+extern void		Hash_Kill();
+extern Hash_Entry 	*Hash_Find();
+extern Hash_Entry 	*Hash_LookOnly();
+extern void 		Hash_Delete();
+extern void 		Hash_StartSearch();
+extern Hash_Entry	*Hash_Next();
+@
+
+
+8.1
+log
+@Commented #endif labels.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/utils/RCS/hash.h,v 8.0 88/11/11 18:41:00 douglis Stable Locker: rab $ SPRITE (Berkeley)
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/utils/RCS/hash.h,v 6.0 88/08/11 12:28:36 brent Stable Locker: douglis $ SPRITE (Berkeley)
+d28 2
+a29 2
+/* 
+ * The following defines one entry in the hash table. 
+d51 1
+a51 1
+/* 
+d75 1
+a75 1
+    int 		downShift;	/* Shift count, used in hashing 
+d78 3
+a80 3
+    int 		ptrKeys;	/* 1 means that keys (h_names) are 
+					 * 1-word values (char *'s).  0 means 
+					 * keys are strings.  >1 means keys 
+d84 1
+a84 1
+/* 
+d91 1
+a91 1
+    int		bucketVersion;	/* Version of the bucket currently being 
+d103 2
+a104 2
+ * char * Hash_GetValue(h) 
+ *     HashEntry *h; 
+d109 4
+a112 4
+/* 
+ * Hash_SetValue(h, val); 
+ *     HashEntry *h; 
+ *     char *val; 
+d117 2
+a118 2
+/* 
+ * Hash_Size(n) returns the number of words in an object of n bytes 
+d138 1
+a138 1
+#endif _HASH
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d9 1
+a9 1
+ * $Header: hash.h,v 5.0 87/08/11 10:51:49 sprite Exp $ SPRITE (Berkeley)
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d9 1
+a9 1
+ * $Header: hash.h,v 4.1 87/04/20 09:13:02 brent Exp $ SPRITE (Berkeley)
+@

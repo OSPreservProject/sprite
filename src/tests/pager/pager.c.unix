@@ -1,0 +1,32 @@
+#include <stdio.h>
+#include "/sprite/lib/include/sprite.h"
+
+static	int	big[3000][512];
+
+main(argc, argv)
+    int  argc;
+    char *argv[];
+{
+    int		i, j;
+    Boolean	once = FALSE;
+
+    for (j = 1; j <= 3; j++) {
+	for (i = 1; i <= 2000; i++) {
+	    if (once && big[i][0] != i) {
+		printf("Error: big[%d][0] = %d\n", i, big[i][0]);
+		fflush(stdout);
+	    }
+
+	    if (i % 100 == 0) {
+		printf("%d\n", i);
+		fflush(stdout);
+	    }
+	    if (!once) {
+		big[i][0] = i;
+	    }
+	}
+	once = TRUE;
+	printf("\nPass %d\n", j);
+	fflush(stdout);
+    }
+}

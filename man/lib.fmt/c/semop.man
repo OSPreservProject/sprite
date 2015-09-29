@@ -1,0 +1,264 @@
+
+
+
+SEMOP                 C Library Procedures                  SEMOP
+
+
+
+NNAAMMEE
+     semop - semaphore operations
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<ssyyss//iippcc..hh>>
+     ##iinncclluuddee <<ssyyss//sseemm..hh>>
+
+     iinntt sseemmoopp((sseemmiidd,, ssooppss,, nnssooppss))
+     iinntt sseemmiidd;;
+     ssttrruucctt sseemmbbuuff **ssooppss;;
+     iinntt nnssooppss;;
+
+DDEESSCCRRIIPPTTIIOONN
+     sseemmoopp(()) is used to atomically perform an array of semaphore
+     operations on the set of semaphores associated with the
+     semaphore identifier specified by _s_e_m_i_d.  _s_o_p_s is a pointer
+     to the array of semaphore-operation structures.  _n_s_o_p_s is
+     the number of such structures in the array.  The contents of
+     each structure includes the following members:
+
+          sshhoorrtt   sseemm__nnuumm;;    //** sseemmaapphhoorree nnuummbbeerr **//
+          sshhoorrtt   sseemm__oopp;;     //** sseemmaapphhoorree ooppeerraattiioonn **//
+          sshhoorrtt   sseemm__ffllgg;;    //** ooppeerraattiioonn ffllaaggss **//
+
+     Each semaphore operation specified by sseemm__oopp is performed on
+     the corresponding semaphore specified by _s_e_m_i_d and sseemm__nnuumm.
+
+     sseemm__oopp specifies one of three semaphore operations as fol-
+     lows:
+
+             If sseemm__oopp is a negative integer, one of the follow-
+             ing will occur: {{AALLTTEERR}}
+
+             o+    If _s_e_m_v_a_l (see iinnttrroo(2)) is greater than or
+                  equal to the absolute value of sseemm__oopp, the
+                  absolute value of sseemm__oopp is subtracted from
+                  _s_e_m_v_a_l.
+
+             o+    If _s_e_m_v_a_l is less than the absolute value of
+                  sseemm__oopp and (sseemm__ffllgg & IIPPCC__NNOOWWAAIITT) is ``true'',
+                  sseemmoopp(()) will return immediately.
+
+             o+    If _s_e_m_v_a_l is less than the absolute value of
+                  sseemm__oopp and (sseemm__ffllgg & IIPPCC__NNOOWWAAIITT) is ``false'',
+                  sseemmoopp(()) will increment the _s_e_m_n_c_n_t associated
+                  with the specified semaphore and suspend execu-
+                  tion of the calling process until one of the
+                  following conditions occur.
+
+                         _s_e_m_v_a_l becomes greater than or equal to
+                         the absolute value of sseemm__oopp.  When this
+
+
+
+Sprite v1.0             21 November 1987                        1
+
+
+
+
+
+
+SEMOP                 C Library Procedures                  SEMOP
+
+
+
+                         occurs, the value of _s_e_m_n_c_n_t associated
+                         with the specified semaphore is decre-
+                         mented, the absolute value of _s_e_m__o_p is
+                         subtracted from _s_e_m_v_a_l .
+
+                         The _s_e_m_i_d for which the calling process
+                         is awaiting action is removed from the
+                         system (see sseemmccttll(2)).  When this
+                         occurs, eerrrrnnoo is set equal to EIDRM, and
+                         a value of -1 is returned.
+
+                         The calling process receives a signal.
+                         When this occurs, the value of _s_e_m_n_c_n_t
+                         associated with the specified semaphore
+                         is decremented, and the calling process
+                         resumes execution in the manner
+                         prescribed in ssiiggnnaall(2).
+
+             If sseemm__oopp is a positive integer, the value of sseemm__oopp
+             is added to _s_e_m_v_a_l . {{AALLTTEERR}}
+
+             If sseemm__oopp is zero, one of the following will occur:
+             {{RREEAADD}}
+
+             o+    If _s_e_m_v_a_l is zero, sseemmoopp(()) will return immedi-
+                  ately.
+
+             o+    If _s_e_m_v_a_l is not equal to zero and (sseemm__ffllgg &
+                  IIPPCC__NNOOWWAAIITT) is ``true'', sseemmoopp(()) will return
+                  immediately.
+
+             o+    If _s_e_m_v_a_l is not equal to zero and (sseemm__ffllgg &
+                  IIPPCC__NNOOWWAAIITT) is ``false'', sseemmoopp(()) will incre-
+                  ment the _s_e_m_z_c_n_t associated with the specified
+                  semaphore and suspend execution of the calling
+                  process until one of the following occurs:
+
+                         _s_e_m_v_a_l becomes zero, at which time the
+                         value of _s_e_m_z_c_n_t associated with the
+                         specified semaphore is decremented.
+
+                         The _s_e_m_i_d for which the calling process
+                         is awaiting action is removed from the
+                         system.  When this occurs, eerrrrnnoo is set
+                         equal to EIDRM, and a value of -1 is
+                         returned.
+
+                         The calling process receives a signal
+                         that is to be caught.  When this occurs,
+                         the value of _s_e_m_z_c_n_t associated with the
+                         specified semaphore is decremented, and
+                         the calling process resumes execution in
+
+
+
+Sprite v1.0             21 November 1987                        2
+
+
+
+
+
+
+SEMOP                 C Library Procedures                  SEMOP
+
+
+
+                         the manner prescribed in ssiiggnnaall(2).
+
+     Upon successful completion, the value of _s_e_m_p_i_d for each
+     semaphore specified in the array pointed to by _s_o_p_s is set
+     equal to the process ID of the calling process.
+
+RREETTUURRNN VVAALLUUEE
+     Upon successful completion, the value of _s_e_m_v_a_l at the time
+     of the call for the last operation in the array pointed to
+     by _s_o_p_s is returned.  Otherwise, a value of -1 is returned
+     and eerrrrnnoo is set to indicate the error.
+
+EERRRROORRSS
+     sseemmoopp(()) will fail if one or more of the following are true
+     for any of the semaphore operations specified by _s_o_p_s:
+
+     EINVAL              _s_e_m_i_d is not a valid semaphore identif-
+                         ier.
+
+     EIDRM               The set of semaphores referred to by
+                         _m_s_q_i_d was removed from the system.
+
+     EFBIG               sseemm__nnuumm is less than zero or greater
+                         than or equal to the number of sema-
+                         phores in the set associated with _s_e_m_i_d.
+
+     E2BIG               _n_s_o_p_s is greater than the system-imposed
+                         maximum.
+
+     EACCES              Operation permission is denied to the
+                         calling process (see iinnttrroo(2)).
+
+     EAGAIN              The operation would result in suspension
+                         of the calling process but (sseemm__ffllgg &
+                         IIPPCC__NNOOWWAAIITT) is ``true''.
+
+     ERANGE              An operation would cause a _s_e_m_v_a_l value
+                         to overflow the system-imposed limit.
+
+     EFAULT              _s_o_p_s points to an illegal address.
+
+     EINTR               The call was interrupted by the delivery
+                         of a signal.
+
+SSEEEE AALLSSOO
+     eexxeecc(2), eexxiitt(2), ffoorrkk(2), iinnttrroo(2), sseemmccttll(2), sseemmggeett(2),
+     ssiiggnnaall(2)
+
+BBUUGGSS
+     The SEM_UNDO function is not implemented.
+
+     Semaphores always exit with EINTR when a signal is received.
+
+
+
+Sprite v1.0             21 November 1987                        3
+
+
+
+
+
+
+SEMOP                 C Library Procedures                  SEMOP
+
+
+
+     The signal cannot be caught inside the semaphore.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0             21 November 1987                        4
+
+
+

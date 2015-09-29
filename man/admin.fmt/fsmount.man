@@ -1,0 +1,134 @@
+
+
+
+FSMOUNT                   User Commands                   FSMOUNT
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     fsmount - Check disks and export prefixes
+
+SSYYNNOOPPSSIISS
+     ffssmmoouunntt [_o_p_t_i_o_n_s]
+
+OOPPTTIIOONNSS
+     --WW             Check disks, but do not write changes.
+
+     --ff             Don't check disks (fastboot).
+
+     --vv             Have both ffssmmoouunntt and ffsscchheecckk  output verbose
+                    information while running (the default).
+
+     --nn             Don't attach disks or export prefixes.
+
+     --pp             Print out actions but don't execute them.
+
+     --hheellpp          Print a summary of the  command-line  options
+                    and exit.
+
+     --dd _d_e_v_i_c_e_D_i_r_e_c_t_o_r_y
+                    Specifies the directory containing the device
+                    files.  The default is "/dev/".
+
+     --ii _s_p_r_i_t_e_I_D    Causes prefixes that this machine will export
+                    to  be  preloaded  into the prefix table with
+                    _s_p_r_i_t_e_I_D as the  server.  This  prevents  the
+                    machine  from  broadcasting  for its own pre-
+                    fixes while the disks are being checked.
+
+     --ffsscchheecckk _f_s_c_h_e_c_k_P_r_o_g
+                    Use this to specify  an  alternative  fscheck
+                    program, i.e., when testing a new fscheck.
+
+     --cc             Conditionally check the disks.  If the  disks
+                    were  just  checked by _f_s_c_h_e_c_k and we are now
+                    rebooting, then we don't have to check again.
+                    If  the  --cc  flag  is  present then the disks
+                    won't be rechecked.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     FFssmmoouunntt is used during system boot to check  the  disks  for
+     inconsistencies and to export prefixes.  It is a replacement
+     for ffssaattttaacchh, and is intented to be  used  without  a  mount
+     table.   It uses ffssiinnffoo to determine what filesystems are on
+     the disks connected  to  the  host,  ffsscchheecckk  to  check  the
+     filesystems found (if they are OFS), and pprreeffiixx to mount and
+     export them.  In this way, disks can  change  hosts,  change
+
+
+
+Sprite v.1.0       Printed:  February 28, 1992                  1
+
+
+
+
+
+
+FSMOUNT                   User Commands                   FSMOUNT
+
+
+
+     prefixes, or change parititioning without having to update a
+     mount table file.
+
+     FFssmmoouunntt does some checking before it  pprreeffiixxes  filesystems.
+     If  it  finds filesystems whose cylinder extents overlap, it
+     will only pprreeffiixx the larger of  the  filesystems.   If  more
+     than  one  filesystem  has  the  same prefix, it will try to
+     mount those filesystems until one successfully mounts and it
+     will  ignore the remainder.  If a filesystem has a prefix of
+     a filesystem already in the prefix table, it is ignored.
+
+     Currently, ffssmmoouunntt detects and notes  root  partitions,  but
+     does not try to either check or mount them.
+
+     Upon  completion,  ffssmmoouunntt  creates  a  ffssmmoouunntteedd  file   in
+     //hhoossttss//$$HHOOSSTT//ffssmmoouunntteedd  reporting the filesystems it mounted
+     and exported, and when it did so.
+
+
+RREETTUURRNN CCOODDEESS
+     FFssmmoouunntt returns the same error codes as ffssaattttaacchh:
+
+     0    No error.
+
+     1    An error was found in the root  partition.  Reboot  the
+          system. See ffsscchheecckk for details.
+
+     2    A hard error occurred. There was some problem in either
+          ffssaattttaacchh,  ffsscchheecckk,  or  pprreeffiixx that prevented ffssaattttaacchh
+          from completing normally.
+
+     3    FFsscchheecckk returned a soft error indication.  See  ffsscchheecckk
+          for details.
+
+     4    An error was found  in  the  root  partition,  but  the
+          number of consecutive times that ffsscchheecckk was run and an
+          error found exceeds the limit.
+
+FFIILLEESS
+          /boot/cmds/fsinfo             command to list filesystems on disk
+          /boot/cmds/fscheck            command to check disks
+          /hosts/$HOST/*.fsc            output from fscheck
+          /bootTmp/.fscheck.out         temporary output from fscheck
+          /boot/cmds/prefix             command to mount and export filesystems
+          /hosts/$HOST/fsmounted        report file for fsmount
+
+KKEEYYWWOORRDDSS
+     fsmount, fscheck, prefix,  fsinfo,  fsdomain,  mount,  disk,
+     partition, crash, attach, boot
+
+
+
+
+
+
+Sprite v.1.0       Printed:  February 28, 1992                  2
+
+
+

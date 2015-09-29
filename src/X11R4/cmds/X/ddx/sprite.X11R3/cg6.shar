@@ -1,0 +1,587 @@
+From zimet@manray.berkeley.edu Wed Oct 11 10:59:01 1989
+Received: from jade.Berkeley.EDU by sprite.Berkeley.EDU (5.59/1.29)
+	id AA139329; Wed, 11 Oct 89 10:58:43 PDT
+Received: from manray.Berkeley.EDU
+	by jade.berkeley.edu (5.61.1/1.16.22)
+	id AA07694; Wed, 11 Oct 89 10:56:04 PDT
+Received: by manray.berkeley.edu. (4.0/SMI-4.0)
+	id AA13353; Wed, 11 Oct 89 10:57:39 PDT
+Date: Wed, 11 Oct 89 10:57:39 PDT
+From: zimet@manray.berkeley.edu (Martha Zimet)
+Message-Id: <8910111757.AA13353@manray.berkeley.edu.>
+To: tve@sprite.Berkeley.EDU
+Subject: Support for SPARC cgsix0 in X11R3
+Cc: johnw@sirius.Berkeley.EDU
+Status: R
+
+Thorsten:
+
+Here is a shar file that contains READ-ME instructions and  
+a file sunCG6.c (modified from sunCG4C.c) that adds CG6 
+support to Xsun for X11R3.  
+
+/martha
+
+-----------------  Cut Here --------------------------------------
+#! /bin/sh
+# This is a shell archive.  Remove anything before this line, then unpack
+# it by saving it into a file and typing "sh file".  To overwrite existing
+# files, type "sh file -c".  You can also feed this as standard input via
+# unshar, or by typing "sh <file", e.g..  If this archive is complete, you
+# will see the following message at the end:
+#		"End of shell archive."
+# Contents:  READ-ME sunCG6.c
+# Wrapped by zimet@manray.Berkeley.EDU on Wed Oct 11 10:51:38 1989
+PATH=/bin:/usr/bin:/usr/ucb ; export PATH
+if test -f 'READ-ME' -a "${1}" != "-c" ; then 
+  echo shar: Will not clobber existing file \"'READ-ME'\"
+else
+echo shar: Extracting \"'READ-ME'\" \(1075 characters\)
+sed "s/^X//" >'READ-ME' <<'END_OF_FILE'
+X
+X	How to add CG6 support to Xsun for X11R3.
+X
+Xmodify sunInit.c :
+X
+Xadd the following to the list of extern's at the top of the file.
+X
+X	extern Bool sunCG6Probe();
+X
+X
+Xmodify the sunFbDataRec declaration by adding an entry for the cg6 as
+Xfollows:
+X
+X	#ifdef ZOIDS
+X	sunFbDataRec sunFbData[] = {
+X	    sunBW2Probe,  	"/dev/bwtwo0",	    neverProbed,	0, 0,
+X	    sunCG2CProbe,  	"/dev/cgtwo0",	    neverProbed,	0, 0,
+X	    sunCG3CProbe,  	"/dev/cgthree0",    neverProbed,	0, 0,
+X	    sunCG4CProbe,  	"/dev/cgfour0",	    neverProbed,	0, 0,
+X	    sunCG6Probe,  	"/dev/cgsix0",	    neverProbed,	0, 0,
+X	};
+X	#else  ZOIDS
+X	sunFbDataRec sunFbData[] = {
+X	    sunBW2Probe,  	"/dev/bwtwo0",	    neverProbed,
+X	    sunCG2CProbe,  	"/dev/cgtwo0",	    neverProbed,
+X	    sunCG3CProbe,  	"/dev/cgthree0",    neverProbed,
+X	    sunCG4CProbe,  	"/dev/cgfour0",	    neverProbed,
+X	    sunCG6Probe,  	"/dev/cgsix0",	    neverProbed,
+X	};
+X	#endif ZOIDS
+X
+X
+X
+Xmodify Imakefile:
+X
+X	Add sunCG6.c and sunCG6.o
+X
+X
+XTo start Xsun you MUST specify -dev /dev/cgsix0 or else the auto
+Xconfig code seems to think that it is a cg4.
+X
+X
+END_OF_FILE
+if test 1075 -ne `wc -c <'READ-ME'`; then
+    echo shar: \"'READ-ME'\" unpacked with wrong size!
+fi
+# end of 'READ-ME'
+fi
+if test -f 'sunCG6.c' -a "${1}" != "-c" ; then 
+  echo shar: Will not clobber existing file \"'sunCG6.c'\"
+else
+echo shar: Extracting \"'sunCG6.c'\" \(12849 characters\)
+sed "s/^X//" >'sunCG6.c' <<'END_OF_FILE'
+X/*-
+X * sunCG6C.c --
+X *	Functions to support the sun CG6 board as a memory frame buffer.
+X */
+X
+X/************************************************************
+XCopyright 1987 by Sun Microsystems, Inc. Mountain View, CA.
+X
+X                    All Rights Reserved
+X
+XPermission  to  use,  copy,  modify,  and  distribute   this
+Xsoftware  and  its documentation for any purpose and without
+Xfee is hereby granted, provided that the above copyright no-
+Xtice  appear  in all copies and that both that copyright no-
+Xtice and this permission notice appear in  supporting  docu-
+Xmentation,  and  that the names of Sun or MIT not be used in
+Xadvertising or publicity pertaining to distribution  of  the
+Xsoftware  without specific prior written permission. Sun and
+XM.I.T. make no representations about the suitability of this
+Xsoftware for any purpose. It is provided "as is" without any
+Xexpress or implied warranty.
+X
+XSUN DISCLAIMS ALL WARRANTIES WITH REGARD TO  THIS  SOFTWARE,
+XINCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FIT-
+XNESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL SUN BE  LI-
+XABLE  FOR  ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR
+XANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,  DATA  OR
+XPROFITS,  WHETHER  IN  AN  ACTION OF CONTRACT, NEGLIGENCE OR
+XOTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION  WITH
+XTHE USE OR PERFORMANCE OF THIS SOFTWARE.
+X
+X********************************************************/
+X
+X#ifndef	lint
+Xstatic char sccsid[] = "@(#)sunCG6C.c	1.4 6/1/87 Copyright 1987 Sun Micro";
+X#endif
+X
+X#include    "sun.h"
+X
+X#include    <sys/mman.h>
+X#include    <pixrect/memreg.h>
+X#include    <sundev/cg4reg.h>
+X#include    <sundev/cg6reg.h>
+X#include    "colormap.h"
+X#include    "colormapst.h"
+X#include    "resource.h"
+X#include    <struct.h>
+X
+X#define	CG6_HEIGHT	900
+X#define	CG6_WIDTH	1152
+X
+Xtypedef struct cg6c {
+X	u_char cpixel[CG6_HEIGHT][CG6_WIDTH];	/* byte-per-pixel memory */
+X} CG6, CG6Rec, *CG6Ptr;
+X
+X
+X#define CG6_IMAGE(fb)	    ((caddr_t)(&(fb)->cpixel))
+X#define CG6_IMAGEOFF	    ((off_t)0x0)
+X#define CG6_IMAGELEN	    (((CG6_HEIGHT*CG6_WIDTH + 8191)/8192)*8192)
+X
+Xstatic CG6Ptr CG6fb = NULL;
+X
+X/* XXX - next line means only one CG6 - fix this */
+Xstatic ColormapPtr sunCG6InstalledMap;
+X
+Xextern int TellLostMap(), TellGainedMap();
+X
+Xstatic void
+XsunCG6UpdateColormap(pScreen, index, count, rmap, gmap, bmap)
+X    ScreenPtr	pScreen;
+X    int		index, count;
+X    u_char	*rmap, *gmap, *bmap;
+X{
+X    struct fbcmap sunCmap;
+X
+X    sunCmap.index = index;
+X    sunCmap.count = count;
+X    sunCmap.red = &rmap[index];
+X    sunCmap.green = &gmap[index];
+X    sunCmap.blue = &bmap[index];
+X
+X#ifdef SUN_WINDOWS
+X    if (sunUseSunWindows()) {
+X	static Pixwin *pw = 0;
+X
+X	if (! pw) {
+X	    if ( ! (pw = pw_open(windowFd)) )
+X		FatalError( "sunCG6UpdateColormap: pw_open failed\n" );
+X	    pw_setcmsname(pw, "X.V11");
+X	}
+X	pw_putcolormap(
+X	    pw, index, count, &rmap[index], &gmap[index], &bmap[index]);
+X    }
+X#endif SUN_WINDOWS
+X
+X    if (ioctl(sunFbs[pScreen->myNum].fd, FBIOPUTCMAP, &sunCmap) < 0) {
+X	perror("sunCG6UpdateColormap");
+X	FatalError( "sunCG6UpdateColormap: FBIOPUTCMAP failed\n" );
+X    }
+X}
+X
+X/*-
+X *-----------------------------------------------------------------------
+X * sunCG6SaveScreen --
+X *	Preserve the color screen by turning on or off the video
+X *
+X * Results:
+X *	None.
+X *
+X * Side Effects:
+X *	Video state is switched
+X *
+X *-----------------------------------------------------------------------
+X */
+Xstatic Bool
+XsunCG6SaveScreen (pScreen, on)
+X    ScreenPtr	  pScreen;
+X    Bool    	  on;
+X{
+X    int		state = on;
+X
+X    if (on != SCREEN_SAVER_ON) {
+X	SetTimeSinceLastInputEvent();
+X	state = 1;
+X    } else {
+X	state = 0;
+X    }
+X
+X    (void) ioctl(sunFbs[pScreen->myNum].fd, FBIOSVIDEO, &state);
+X    return( TRUE );
+X}
+X
+X/*-
+X *-----------------------------------------------------------------------
+X * sunCG6CloseScreen --
+X *	called to ensure video is enabled when server exits.
+X *
+X * Results:
+X *	Screen is unsaved.
+X *
+X * Side Effects:
+X *	None
+X *
+X *-----------------------------------------------------------------------
+X */
+X/*ARGSUSED*/
+Xstatic Bool
+XsunCG6CloseScreen(i, pScreen)
+X    int		i;
+X    ScreenPtr	pScreen;
+X{
+X    sunCG6InstalledMap = NULL;
+X    return (pScreen->SaveScreen(pScreen, SCREEN_SAVER_OFF));
+X}
+X
+X/*-
+X *-----------------------------------------------------------------------
+X * sunCG6InstallColormap --
+X *	Install given colormap.
+X *
+X * Results:
+X *	None
+X *
+X * Side Effects:
+X *	Existing map is uninstalled.
+X *	All clients requesting ColormapNotify are notified
+X *
+X *-----------------------------------------------------------------------
+X */
+Xstatic void
+XsunCG6InstallColormap(cmap)
+X    ColormapPtr	cmap;
+X{
+X    register int i;
+X    register Entry *pent = cmap->red;
+X    u_char	  rmap[256], gmap[256], bmap[256];
+X
+X    if (cmap == sunCG6InstalledMap)
+X	return;
+X    if (sunCG6InstalledMap)
+X	WalkTree(sunCG6InstalledMap->pScreen, TellLostMap,
+X		 (char *) &(sunCG6InstalledMap->mid));
+X    for (i = 0; i < cmap->pVisual->ColormapEntries; i++) {
+X	if (pent->fShared) {
+X	    rmap[i] = pent->co.shco.red->color >> 8;
+X	    gmap[i] = pent->co.shco.green->color >> 8;
+X	    bmap[i] = pent->co.shco.blue->color >> 8;
+X	}
+X	else {
+X	    rmap[i] = pent->co.local.red >> 8;
+X	    gmap[i] = pent->co.local.green >> 8;
+X	    bmap[i] = pent->co.local.blue >> 8;
+X	}
+X	pent++;
+X    }
+X    sunCG6InstalledMap = cmap;
+X    sunCG6UpdateColormap(cmap->pScreen, 0, 256, rmap, gmap, bmap);
+X    WalkTree(cmap->pScreen, TellGainedMap, (char *) &(cmap->mid));
+X}
+X
+X/*-
+X *-----------------------------------------------------------------------
+X * sunCG6UninstallColormap --
+X *	Uninstall given colormap.
+X *
+X * Results:
+X *	None
+X *
+X * Side Effects:
+X *	default map is installed
+X *	All clients requesting ColormapNotify are notified
+X *
+X *-----------------------------------------------------------------------
+X */
+Xstatic void
+XsunCG6UninstallColormap(cmap)
+X    ColormapPtr	cmap;
+X{
+X    if (cmap == sunCG6InstalledMap) {
+X	Colormap defMapID = cmap->pScreen->defColormap;
+X
+X	if (cmap->mid != defMapID) {
+X	    ColormapPtr defMap = (ColormapPtr) LookupID(defMapID, RT_COLORMAP, RC_CORE);
+X
+X	    if (defMap)
+X		sunCG6InstallColormap(defMap);
+X	    else
+X	        ErrorF("sunCG6: Can't find default colormap\n");
+X	}
+X    }
+X}
+X
+X/*-
+X *-----------------------------------------------------------------------
+X * sunCG6ListInstalledColormaps --
+X *	Fills in the list with the IDs of the installed maps
+X *
+X * Results:
+X *	Returns the number of IDs in the list
+X *
+X * Side Effects:
+X *	None
+X *
+X *-----------------------------------------------------------------------
+X */
+X/*ARGSUSED*/
+Xstatic int
+XsunCG6ListInstalledColormaps(pScreen, pCmapList)
+X    ScreenPtr	pScreen;
+X    Colormap	*pCmapList;
+X{
+X    *pCmapList = sunCG6InstalledMap->mid;
+X    return (1);
+X}
+X
+X
+X/*-
+X *-----------------------------------------------------------------------
+X * sunCG6StoreColors --
+X *	Sets the pixels in pdefs into the specified map.
+X *
+X * Results:
+X *	None
+X *
+X * Side Effects:
+X *	None
+X *
+X *-----------------------------------------------------------------------
+X */
+Xstatic void
+XsunCG6StoreColors(pmap, ndef, pdefs)
+X    ColormapPtr	pmap;
+X    int		ndef;
+X    xColorItem	*pdefs;
+X{
+X    switch (pmap->class) {
+X    case PseudoColor:
+X	if (pmap == sunCG6InstalledMap) {
+X	    /* We only have a single colormap */
+X	    u_char	rmap[256], gmap[256], bmap[256];
+X
+X	    while (ndef--) {
+X		register unsigned index = pdefs->pixel&0xff;
+X
+X		/* PUTCMAP assumes colors to be assigned start at 0 */
+X		rmap[index] = (pdefs->red) >> 8;
+X		gmap[index] = (pdefs->green) >> 8;
+X		bmap[index] = (pdefs->blue) >> 8;
+X	 	sunCG6UpdateColormap(pmap->pScreen,
+X				      index, 1, rmap, gmap, bmap);
+X		pdefs++;
+X	    }
+X	}
+X	break;
+X    case DirectColor:
+X    default:
+X	ErrorF("sunCG6StoreColors: bad class %d\n", pmap->class);
+X	break;
+X    }
+X}
+X
+X/*-
+X *-----------------------------------------------------------------------
+X * sunCG6ResolvePseudoColor --
+X *	Adjust specified RGB values to closest values hardware can do.
+X *
+X * Results:
+X *	Args are modified.
+X *
+X * Side Effects:
+X *	None
+X *
+X *-----------------------------------------------------------------------
+X */
+X/*ARGSUSED*/
+Xstatic void
+XsunCG6ResolvePseudoColor(pRed, pGreen, pBlue, pVisual)
+X    CARD16	*pRed, *pGreen, *pBlue;
+X    VisualPtr	pVisual;
+X{
+X    *pRed &= 0xff00;
+X    *pGreen &= 0xff00;
+X    *pBlue &= 0xff00;
+X}
+X
+X/*-
+X *-----------------------------------------------------------------------
+X * sunCG6Init --
+X *	Attempt to find and initialize a cg6 framebuffer used as mono
+X *
+X * Results:
+X *	TRUE if everything went ok. FALSE if not.
+X *
+X * Side Effects:
+X *	Most of the elements of the ScreenRec are filled in. Memory is
+X *	allocated for the frame buffer and the buffer is mapped. The
+X *	video is enabled for the frame buffer...
+X *
+X *-----------------------------------------------------------------------
+X */
+X/*ARGSUSED*/
+Xstatic Bool
+XsunCG6Init (index, pScreen, argc, argv)
+X    int	    	  index;    	/* The index of pScreen in the ScreenInfo */
+X    ScreenPtr	  pScreen;  	/* The Screen to initialize */
+X    int	    	  argc;	    	/* The number of the Server's arguments. */
+X    char    	  **argv;   	/* The arguments themselves. Don't change! */
+X{
+X    CARD16	zero = 0, ones = ~0;
+X
+X    if (!cfbScreenInit (index, pScreen, CG6fb->cpixel,	
+X			    sunFbs[index].info.fb_width,
+X			    sunFbs[index].info.fb_height, 90))
+X	return (FALSE);
+X
+X    pScreen->SaveScreen    =            sunCG6SaveScreen;
+X    pScreen->RecolorCursor = 	    	sunRecolorCursor;
+X
+X#ifndef STATIC_COLOR
+X    pScreen->InstallColormap = sunCG6InstallColormap;
+X    pScreen->UninstallColormap = sunCG6UninstallColormap;
+X    pScreen->ListInstalledColormaps = sunCG6ListInstalledColormaps;
+X    pScreen->StoreColors = sunCG6StoreColors;
+X    pScreen->ResolveColor = sunCG6ResolvePseudoColor;
+X#endif
+X
+X    {
+X	ColormapPtr cmap = (ColormapPtr)LookupID(pScreen->defColormap, RT_COLORMAP, RC_CORE);
+X
+X	if (!cmap)
+X	    FatalError("Can't find default colormap\n");
+X	if (AllocColor(cmap, &ones, &ones, &ones, &(pScreen->whitePixel), 0)
+X	    || AllocColor(cmap, &zero, &zero, &zero, &(pScreen->blackPixel), 0))
+X		FatalError("Can't alloc black & white pixels in cfbScreeninit\n");
+X	sunCG6InstallColormap(cmap);
+X    }
+X
+X
+X    sunCG6SaveScreen( pScreen, SCREEN_SAVER_FORCER );
+X    sunScreenInit (pScreen);
+X    return (TRUE);
+X}
+X
+X/*-
+X *--------------------------------------------------------------
+X * sunCG6Switch --
+X *      Enable or disable color plane 
+X *
+X * Results:
+X *      Color plane enabled for select =0, disabled otherwise.
+X *
+X *--------------------------------------------------------------
+X */
+Xstatic void
+XsunCG6Switch ()
+X{
+X}
+X
+X/*-
+X *-----------------------------------------------------------------------
+X * sunCG6Probe --
+X *	Attempt to find and initialize a cg6 framebuffer used as mono
+X *
+X * Results:
+X *	TRUE if everything went ok. FALSE if not.
+X *
+X * Side Effects:
+X *	Memory is allocated for the frame buffer and the buffer is mapped.
+X *
+X *-----------------------------------------------------------------------
+X */
+XBool
+XsunCG6Probe (pScreenInfo, index, fbNum, argc, argv)
+X    ScreenInfo	  *pScreenInfo;	/* The screenInfo struct */
+X    int	    	  index;    	/* The index of pScreen in the ScreenInfo */
+X    int	    	  fbNum;    	/* Index into the sunFbData array */
+X    int	    	  argc;	    	/* The number of the Server's arguments. */
+X    char    	  **argv;   	/* The arguments themselves. Don't change! */
+X{
+X    int         i, oldNumScreens;
+X
+X    if (sunFbData[fbNum].probeStatus == probedAndFailed) {
+X	return FALSE;
+X    }
+X
+X    if (sunFbData[fbNum].probeStatus == neverProbed) {
+X	int         fd;
+X	struct fbtype fbType;
+X
+X	if ((fd = sunOpenFrameBuffer(FBTYPE_SUN4COLOR, &fbType, index, fbNum,
+X				     argc, argv)) < 0) {
+X	    sunFbData[fbNum].probeStatus = probedAndFailed;
+X	    return FALSE;
+X	}
+X
+X#ifdef	_MAP_NEW
+X
+X	CG6fb = (CG6Ptr) 0;
+X
+X#else	_MAP_NEW
+X
+X
+X	CG6fb = (CG6Ptr) valloc(CG6_IMAGELEN);
+X	if (CG6fb == (CG6Ptr) NULL) {
+X	    ErrorF("Could not allocate room for frame buffer.\n");
+X	    sunFbData[fbNum].probeStatus = probedAndFailed;
+X	    return FALSE;
+X	}
+X
+X#endif	_MAP_NEW
+X
+X	CG6fb = (CG6Ptr) mmap((caddr_t) CG6fb,
+X		 CG6_IMAGELEN,
+X		 PROT_READ | PROT_WRITE,
+X		 MAP_SHARED | _MAP_NEW, fd, CG6_VADDR_COLOR);
+X
+X
+X	if ((CG6fb == (CG6Ptr) -1)  || (CG6fb == (CG6Ptr) 0)) {
+X	    Error("Mapping cg6c");
+X	    sunFbData[fbNum].probeStatus = probedAndFailed;
+X	    (void) close(fd);
+X	    return FALSE;
+X	}
+X
+X
+X	sunFbs[index].fd = fd;
+X	sunFbs[index].info = fbType;
+X	sunFbs[index].fb = (pointer) CG6fb;
+X        sunFbs[index].EnterLeave = sunCG6Switch;
+X	sunFbData[fbNum].probeStatus = probedAndSucceeded;
+X
+X    }
+X
+X    /*
+X     * If we've ever successfully probed this device, do the following. 
+X     */
+X
+X    oldNumScreens = pScreenInfo->numScreens;
+X    i = AddScreen(sunCG6Init, argc, argv);
+X    pScreenInfo->screen[index].CloseScreen = sunCG6CloseScreen;
+X    /* Now set the enable plane for color */
+X    if (index == 0) sunCG6Switch (&(pScreenInfo->screen[0]), 0);
+X
+X    return (i > oldNumScreens);
+X}
+END_OF_FILE
+if test 12849 -ne `wc -c <'sunCG6.c'`; then
+    echo shar: \"'sunCG6.c'\" unpacked with wrong size!
+fi
+# end of 'sunCG6.c'
+fi
+echo shar: End of shell archive.
+exit 0
+

@@ -1,0 +1,166 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     92.08.20.16.58.32;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.10.22.13.47.35;  author rab;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@checking in for rab -- jhh
+@
+text
+@XCOMM $XConsortium: sunLib.rules,v 1.6 91/03/24 17:55:58 rws Exp $
+
+/*
+ * SunOS shared library rules
+ */
+
+#ifndef HasSharedLibraries
+  #ifdef sprite
+    #define HasSharedLibraries NO
+  #else
+    #define HasSharedLibraries YES
+  #endif
+#endif
+#ifndef SharedDataSeparation
+  #ifdef sprite
+    #define SharedDataSeparation NO
+  #else
+    #define SharedDataSeparation YES
+  #endif
+#endif
+#ifndef SharedCodeDef
+  #ifdef sprite
+    #define SharedCodeDef
+  #else
+    #define SharedCodeDef -DSHAREDCODE
+  #endif
+#endif
+#ifndef SharedLibraryDef
+  #ifdef sprite
+    #define SharedLibraryDef
+  #else
+    #define SharedLibraryDef -DSUNSHLIB
+  #endif
+#endif
+#ifndef ShLibIncludeFile
+#define ShLibIncludeFile <sunLib.tmpl>
+#endif
+#ifndef SharedLibraryLoadFlags
+  #ifdef sprite  
+    #define SharedLibraryLoadFlags
+  #else
+    #define SharedLibraryLoadFlags -assert pure-text
+  #endif
+#endif
+#ifndef PositionIndependentCFlags
+  #ifdef sprite
+    #define PositionIndependentCFlags
+  #else
+    #define PositionIndependentCFlags -pic
+  #endif
+#endif
+
+/*
+ * InstallSharedLibrary - generate rules to install the shared library.
+ */
+#ifndef InstallSharedLibrary
+#define	InstallSharedLibrary(libname,rev,dest)				@@@@\
+install:: Concat(lib,libname.so.rev) 					@@@@\
+	MakeDir($(DESTDIR)dest)						@@@@\
+	$(INSTALL) -c $(INSTLIBFLAGS) Concat(lib,libname.so.rev) $(DESTDIR)dest @@@@\
+
+#endif /* InstallSharedLibrary */
+
+/*
+ * InstallSharedLibraryData - generate rules to install the shared library data
+ */
+#ifndef InstallSharedLibraryData
+#define	InstallSharedLibraryData(libname,rev,dest)			@@@@\
+install:: Concat(lib,libname.sa.rev)					@@@@\
+	MakeDir($(DESTDIR)dest)						@@@@\
+	$(INSTALL) -c $(INSTLIBFLAGS) Concat(lib,libname.sa.rev) $(DESTDIR)dest @@@@\
+	RanLibrary($(RANLIBINSTFLAGS) Concat($(DESTDIR)dest/lib,libname.sa.rev))
+
+#endif /* InstallSharedLibraryData */
+
+/*
+ * NormalSharedLibraryTarget - generate rules to create a shared library;
+ * build it into a different name so that the we do not hose people by having
+ * the library gone for long periods.
+ */
+#ifndef SharedLibraryTarget
+#define SharedLibraryTarget(libname,rev,solist,down,up)			@@@@\
+AllTarget(Concat(lib,libname.so.rev))					@@@@\
+									@@@@\
+Concat(lib,libname.so.rev):  solist					@@@@\
+	$(RM) $@@~							@@@@\
+	(cd down; $(LD) -o up/$@@~ $(SHLIBLDFLAGS) solist)		@@@@\
+	$(RM) $@@ 							@@@@\
+	$(MV) $@@~ $@@							@@@@\
+									@@@@\
+clean::									@@@@\
+	$(RM) Concat(lib,libname.so.rev)
+
+#endif /* SharedLibraryTarget */
+
+/*
+ * SharedLibraryDataTarget - generate rules to create shlib data file;
+ */
+#ifndef SharedLibraryDataTarget
+#define SharedLibraryDataTarget(libname,rev,salist)			@@@@\
+AllTarget(Concat(lib,libname.sa.rev))					@@@@\
+									@@@@\
+Concat(lib,libname.sa.rev):  salist					@@@@\
+	$(RM) $@@							@@@@\
+	$(AR) $@@ salist							@@@@\
+	RanLibrary($@@)							@@@@\
+									@@@@\
+clean::									@@@@\
+	$(RM) Concat(lib,libname.sa.rev)
+
+#endif /* SharedLibraryDataTarget */
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d8 5
+a12 1
+#define HasSharedLibraries YES
+d15 5
+a19 1
+#define SharedDataSeparation YES
+d22 5
+a26 1
+#define SharedCodeDef -DSHAREDCODE
+d29 5
+a33 1
+#define SharedLibraryDef -DSUNSHLIB
+d39 5
+a43 1
+#define SharedLibraryLoadFlags -assert pure-text
+d46 5
+a50 1
+#define PositionIndependentCFlags -pic
+@

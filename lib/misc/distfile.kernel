@@ -1,0 +1,54 @@
+# To exclude particular file(s), define EXCEPT on the command line.
+EXCEPT = ()
+
+BINARY_EXCEPT_PAT = (\\\([a-zA-Z0-9\\.]*\\\)/\\1\$)
+MD_EXCEPT_PAT = (\\\([^/]*\\\)/.*\\.md/\\1\$)
+
+EXCEPT_PAT = (${BINARY_EXCEPT_PAT} ${MD_EXCEPT_PAT} \
+		\\~\$ \\^#.*  /#.* \\.o\$ \\.dvi\$ \
+                \\.bak\$ /Mx\\. /LOCK.make\$ /version\\.h \
+                /l\\.out /a\\.out\$ \\.po\$ \\.go\$ /lost+found /xemacs\$ \
+		/temacs\$ \
+		^/b/sprite/src/kernel/[a-z]*/sun[23].* \
+		^/b/sprite/src/kernel/[a-z]*/spur.* \
+		\\.nm\$ \ /hosts/[a-zA-Z\\.]*/X \
+		kernel/[a-z]*/[a-z0-9]*\\.md/lint\$ \
+		kernel/[a-z]*/[a-z0-9]*\\.md/.*\\.ln\$ \
+		/hosts/[a-zA-Z\\.]*/tx /hosts/[a-zA-Z\\.]*/rlogin \
+		/hosts/[a-zA-Z\\.]*/dev /hosts/[a-zA-Z\\.]*/tty \
+		/hosts/[a-zA-Z\\.]*/net /hosts/[a-zA-Z\\.]*/syslog \
+		/Old \\.old/ \\.old\$ /Formatted /out\$ /make\\.list\$ \
+		/make\\.out\$ /src/.*\\.a\$ /rdist[0-9]*\$ \
+		/y\\.tab\\..\$  /1M.* /foo\$ /test.*/pdev.new\$ \
+		.*\\.md/llib-l.*\\.ln\$ /[qzx]\$ /.*\\.q\$ \
+		/lib.*_[gp]\\.a\$ /yacc.{tmp,acts}\$ \
+		/RCS \
+		)
+RHOST = (sprite@ginger.berkeley.edu)
+
+#
+# Exceptions under /sprite/src
+#
+SPRITE_SRC_EXCEPT = ( \
+		/sprite/src/kernel/./Lint \
+		/sprite/src/kernel/./dev.old \
+		/sprite/src/kernel/./brent \
+		/sprite/src/kernel/./douglis \
+		/sprite/src/kernel/./eklee \
+		/sprite/src/kernel/./jhh \
+		/sprite/src/kernel/./mendel \
+		/sprite/src/kernel/./mgbaker \
+		/sprite/src/kernel/./nelson \
+		/sprite/src/kernel/./ouster \
+		/sprite/src/kernel/./rab \
+		/sprite/src/kernel/./shirriff \
+		/sprite/src/kernel/./spur.md \
+		/sprite/src/kernel/./Lint \
+		/sprite/src/kernel/./Profiled \
+)
+
+src:
+( /sprite/src/kernel/. ) -> ${RHOST} install -y -w /sprite3;
+	except_pat ${EXCEPT_PAT};
+	except ${SPRITE_SRC_EXCEPT};
+

@@ -1,0 +1,1464 @@
+head     1.17;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.17
+date     89.01.15.14.43.00;  author ouster;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     88.10.30.22.28.46;  author douglis;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     88.10.24.23.46.07;  author douglis;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     88.10.16.16.39.14;  author douglis;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     88.09.15.16.23.37;  author brent;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     88.09.15.16.22.12;  author douglis;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     88.09.14.14.31.44;  author douglis;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     88.08.31.12.17.31;  author mendel;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     88.08.29.10.01.52;  author mendel;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     88.03.31.17.18.31;  author deboor;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     87.09.09.18.01.09;  author deboor;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     87.09.09.17.58.18;  author deboor;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     87.09.09.17.45.10;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     87.09.03.10.48.42;  author deboor;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     87.08.28.11.03.25;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     87.08.24.17.18.02;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     87.08.24.15.52.47;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.17
+log
+@Parse baud rate and set in tty (needed by vi).
+@
+text
+@/*
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ * Modified by John Ousterhout to use the terminal driver package so
+ * it can be incorporated into Sprite.
+ */
+
+#ifndef lint
+char copyright[] =
+"@@(#) Copyright (c) 1983 Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif not lint
+
+#ifndef lint
+static char sccsid[] = "@@(#)rlogind.c	5.12 (Berkeley) 3/10/87";
+#endif not lint
+
+/*
+ * remote login server:
+ *	remuser\0
+ *	locuser\0
+ *	terminal info\0
+ *	data
+ */
+
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/socket.h>
+#include <sys/wait.h>
+#include <sys/file.h>
+
+#include <netinet/in.h>
+
+#include <errno.h>
+#include <pwd.h>
+#include <signal.h>
+#include <sgtty.h>
+#include <netdb.h>
+#include <syslog.h>
+#include <strings.h>
+
+/*
+ * Sprite include files:
+ */
+
+#include <sprite.h>
+#include <fs.h>
+#include <proc.h>
+#include <status.h>
+#include <td.h>
+#include <ulog.h>
+
+# ifndef TIOCPKT_WINDOW
+# define TIOCPKT_WINDOW 0x80
+# endif TIOCPKT_WINDOW
+
+int	reapchild();
+struct	passwd *getpwnam();
+char	*malloc();
+
+/*
+ * The structure below is used to keep track of chunks of characters
+ * that have arrived from the tty pseudo-device and are waiting to
+ * go out over the network.
+ */
+
+#define CHARS_PER_BUFFER 1000
+
+typedef struct Buffer {
+    unsigned char chars[CHARS_PER_BUFFER];
+					/* Buffer space for characters. */
+    int firstChar;			/* Index of next character to be output
+					 * from buffer to network. */
+    int numChars;			/* Number of characters in buffer that
+					 * are ready to be output to network.
+					 */
+    struct Buffer *nextPtr;		/* Next buffer to be shipped over
+					 * network after this one, or NULL. */
+} Buffer;
+
+static Buffer *firstBuffer;		/* Address of next buffer to be
+					 * shipped over network. */
+static Buffer *lastBuffer;		/* Address of buffer to hold next
+					 * chars. received from tty
+					 * pseudo-device. */
+
+/*
+ * Information about the tty-driven pseudo-device (the end of things
+ * that connects to the shell).
+ */
+
+static char *pdevName;			/* Name of pseudo-device file. */
+static char *portStr;			/* Pointer to the unique number
+					   contained in this string. */
+static Td_Terminal term;		/* Token for pseudo-device. */
+static FILE outputStream;		/* Output characters for screen get
+					 * saved up here. */
+
+/*
+ * Information about the connection to the network:
+ */
+
+static int netID;			/* Stream ID for network file. */
+static Boolean selectOnOutput;		/* TRUE means the current select
+					 * mask asks for "output ready"
+					 * notification.  This only happens
+					 * when the network cannot accept
+					 * any more characters for output. */
+
+/*
+ * Initial strings received over the network connection:
+ */
+
+#define NMAX 32
+static char rusername[NMAX+1];	
+static char lusername[NMAX+1];
+static char termType[64];
+
+/*
+ * Miscellaneous variables.
+ */
+
+static Boolean timeToQuit = FALSE;	/* TRUE means we should close down
+					 * the connection. */
+static int childPID;			/* Login process's PID. */
+
+/*
+ * Forward references:
+ */
+
+extern void netProc();
+extern void tty2Net();
+extern void ttyFlush();
+
+char *findlastsubstring();
+
+
+	/* ARGSUSED */
+main(argc, argv)
+	int argc;
+	char **argv;
+{
+	int on = 1, fromlen;
+	struct sockaddr_in from;
+
+	
+	openlog("rlogind", LOG_PID | LOG_AUTH, LOG_AUTH);
+	fromlen = sizeof (from);
+	if (getpeername(0, (struct sockaddr *) &from, &fromlen) < 0) {
+		(void) fprintf(stderr, "%s: ", argv[0]);
+		perror("getpeername");
+		(void) _exit(1);
+	}
+	if (setsockopt(0, SOL_SOCKET, SO_KEEPALIVE, (char *) &on, 
+			sizeof (on)) < 0) {
+		syslog(LOG_WARNING, "setsockopt (SO_KEEPALIVE): %m");
+	}
+	doit(0, &from);
+}
+
+int	child;
+int	cleanup();
+int	netf;
+char	*line;
+extern	char	*inet_ntoa();
+
+struct winsize win = { 0, 0, 0, 0 };
+
+
+doit(f, fromp)
+	int f;
+	struct sockaddr_in *fromp;
+{
+	int t, on = 1;
+	register struct hostent *hp;
+	struct hostent hostent;
+	char c, *cPtr;
+	int baud;
+	struct sgttyb basic;
+	struct tchars ttyChars;
+	struct ltchars localChars;
+	int localMode;
+
+	(void) alarm(60);
+	(void) read(f, &c, 1);
+	if (c != 0)
+		exit(1);
+	(void) alarm(0);
+	fromp->sin_port = ntohs((u_short)fromp->sin_port);
+	hp = gethostbyaddr((char *) &fromp->sin_addr, 
+				sizeof (struct in_addr), fromp->sin_family);
+	if (hp == 0) {
+		/*
+		 * Only the name is used below.
+		 */
+		hp = &hostent;
+		hp->h_name = inet_ntoa(fromp->sin_addr);
+	}
+	if (fromp->sin_family != AF_INET ||
+	    fromp->sin_port >= IPPORT_RESERVED)
+		fatal(f, "Permission denied");
+	(void) write(f, "", 1);
+
+	/*
+	 *--------------------------------------
+	 * Read user/term info from the network.
+	 *--------------------------------------
+	 */
+
+	getstr(f, rusername, sizeof(rusername), "remuser");
+	getstr(f, lusername, sizeof(lusername), "locuser");
+	getstr(f, termType, sizeof(termType), "Terminal type");
+
+	/*
+	 *------------------------------------------------------
+	 * Terminal info = "name/baud".  Separate the two and
+	 * lookup the baud rate for later use.  Note:  the baud
+	 * rate is needed;  if not set, then programs like vi
+	 * won't work right for rlogin-ed dialups, for example.
+	 *------------------------------------------------------
+	 */
+
+	baud = B9600;
+	cPtr = index (termType, '/');
+	if (cPtr != 0) {
+	    int i, number;
+	    static char *strings[] = {
+		"0", "50", "75", "110", "134", "150", "200", "300", "600",
+		"1200", "1800", "2400", "4800", "9600", "EXTA", "EXTB", 0
+	    };
+	    static int values[] = {
+		B0, B50, B75, B110, B134, B150, B200, B300, B600,
+		B1200, B1800, B2400, B4800, B9600, EXTA, EXTB
+	    };
+
+	    *cPtr = 0;
+	    cPtr++;
+	    for (i = 0, baud = B9600; strings[i] != 0; i++) {
+		if (strcmp(strings[i], cPtr) == 0) {
+		    baud = values[i];
+		    break;
+		}
+	    }
+	}
+
+	/*
+	 *--------------------------------------
+	 * Create the terminal pseudo-device.
+	 *--------------------------------------
+	 */
+
+	firstBuffer = lastBuffer = (Buffer *) malloc(sizeof(Buffer));
+	firstBuffer->firstChar = 0;
+	firstBuffer->numChars = 0;
+	firstBuffer->nextPtr = NULL;
+	Stdio_Setup(&outputStream, FALSE, TRUE, &firstBuffer->chars[0],
+		CHARS_PER_BUFFER, (void (*)()) NULL, ttyFlush,
+		(int (*)()) NULL, (ClientData) NULL);
+	term = Td_Open("rlogin", &outputStream, &pdevName);
+	if (term == NULL)
+		fatal(f, "Couldn't open pseudo-device");
+	Td_GetState(term, &basic, &ttyChars, &localChars, &localMode);
+	basic.sg_ispeed = basic.sg_ospeed = baud;
+	Td_SetState(term, &basic, &ttyChars, &localChars, localMode, FALSE);
+
+/*
+ * The pdevName is "rloginN" where N is a number.  Hence, the port number,
+ * as a string, may be found as part of the pdevName after "rlogin".
+ */
+#define PORT_NUM_OFFSET 6
+
+	portStr = findlastsubstring(pdevName, "rlogin");
+	if (portStr == NULL) {
+	    syslog(LOG_WARNING, "bad name for pseudo-device: %s", pdevName);
+	} else {
+	    portStr += PORT_NUM_OFFSET;
+	}
+	/*
+	 *-------------------------------------
+	 * Spawn the login process.
+	 *-------------------------------------
+	 */
+
+	netf = f;
+	childPID = fork();
+	if (childPID < 0)
+		fatalperror(f, "", errno);
+	if (childPID == 0) {
+		int i;
+		static char *args[] =
+			{"login", "-u", 0, "-h", 0, "-R", 0, "-P", 0, 0};
+
+		t = open(pdevName, 2);
+		if (t < 0)
+			fatalperror(f, pdevName, errno);
+		for (i = 0; i < t; i++)
+			(void) close(i);
+		(void) dup2(t, 0), (void) dup2(t, 1), (void) dup2(t, 2);
+		(void) close(t);
+		
+		/*
+		 * Putting together an argument list like this leaves
+		 * a little to be desired.  Copy in the user name,
+		 * remote host, and port number.  Check the port number
+		 * to make sure it is legit; if not, don't use the user
+		 * log at all (a warning message would already have been
+		 * sent to the syslog).
+		 */
+		args[2] = lusername;
+		args[4] = hp->h_name;
+		args[6] = rusername;
+		if (portStr != NULL) {
+		    args[8] = portStr;
+		} else {
+		    args[7] = "-l";
+		}
+		
+
+		setenv("TTY", pdevName);
+		setenv("TERM", termType);
+		setenv("RUSER", rusername);
+		setenv("LUSER", lusername);
+		setenv("RHOST", hp->h_name);
+		(void) execv("/sprite/cmds.$MACHINE/login", args);
+		fatalperror(2, "/sprite/cmds.$MACHINE/login",errno);
+		/*NOTREACHED*/
+	} else {
+	    /*
+	     * Since we do no flow control on this side, we have to
+	     * tell the rlogin process to not do it, as well. This is
+	     * done by sending a byte of out-of-band data over the
+	     * connection with the IOCPKT_NOSTOP bit set. The rlogin
+	     * process will stop doing local flow control until it gets
+	     * another byte with TIOCPKT_DOSTOP set. UNIX rlogind sends
+	     * one byte of OOB data for each read from the pty. We
+	     * just send this single byte and leave it at that. (Note
+	     * also that we do not send TIOCPKT_WINDOW, so it doesn't
+	     * think we can handle window size changes)
+	     */
+	    char	mode = TIOCPKT_NOSTOP;
+
+	    if (send(f, &mode, 1, MSG_OOB) != 1) {
+		fatalperror(f,"sending oob data",errno);
+	    }
+	}
+	(void) ioctl(f, FIONBIO, (char *) &on);
+	(void) signal(SIGTSTP, SIG_IGN);
+	(void) signal(SIGCHLD, cleanup);
+	(void) setpgrp(0, 0);
+
+
+	/*
+	 *-------------------------------------
+	 * Process events.
+	 *-------------------------------------
+	 */
+
+	netID = f;
+	selectOnOutput = FALSE;
+	Fs_EventHandlerCreate(f, FS_READABLE, netProc, (ClientData) NULL);
+	while (!timeToQuit) {
+	    Fs_Dispatch();
+	    (void) fflush(&outputStream);
+	}
+
+	(void) signal(SIGCHLD, SIG_IGN);
+	cleanup();
+}
+
+char	magic[2] = { 0377, 0377 };
+char	oobdata[] = {TIOCPKT_WINDOW};
+
+/*
+ * Handle a "control" request (signaled by magic being present)
+ * in the data stream.  For now, we are only willing to handle
+ * window size changes.
+ */
+	/* ARGSUSED */
+control(pty, cp, n)
+	int pty;
+	char *cp;
+	int n;
+{
+	struct winsize w;
+
+	if (n < 4+sizeof (w) || cp[2] != 's' || cp[3] != 's')
+		return (0);
+	oobdata[0] &= ~TIOCPKT_WINDOW;	/* we know he heard */
+	bcopy(cp+4, (char *)&w, sizeof(w));
+	w.ws_row = ntohs(w.ws_row);
+	w.ws_col = ntohs(w.ws_col);
+	w.ws_xpixel = ntohs(w.ws_xpixel);
+	w.ws_ypixel = ntohs(w.ws_ypixel);
+	/* (void)ioctl(pty, TIOCSWINSZ, &w);  Do nothing in Sprite. */
+	return (4+sizeof (w));
+}
+
+/*
+ * The procedure below is called when the network stream becomes ready
+ * for reading or writing (as indicated by eventMask).  It passes characters
+ * back and forth between the network and the pseudo-device.
+ */
+
+	/* ARGSUSED */
+void
+netProc(clientData, streamID, eventMask)
+    ClientData clientData;		/* Not used. */
+    int streamID;			/* ID of network stream. */
+    int eventMask;			/* What can be done to the network:
+					 * some combination of FS_READABLE
+					 * and FS_WRITABLE. */
+{
+
+    if (eventMask & FS_READABLE) {
+	char buffer[CHARS_PER_BUFFER];
+	int count, i;
+
+	count = read(netID, buffer, CHARS_PER_BUFFER);
+	if (!(count < 0)) {
+	    if (count == 0) {
+		timeToQuit = TRUE;
+		return;
+	    }
+	    for (i = 0; i < count; i++) {
+		Td_InputChar(term, buffer[i]);
+	    }
+	} else if (errno != EWOULDBLOCK) {
+	    fatalperror(netID, "reading from net",errno);
+	}
+    }
+
+    if (eventMask & FS_WRITABLE) {
+	tty2Net();
+    }
+}
+
+/*
+ * The procedure below transfers characters from the pseudo-device
+ * output buffer(s) over the network, if possible.  It is invoked when
+ * the network connection is (probably) ready for output and there are
+ * characters waiting in the pseudo-device buffer.
+ */
+
+void
+tty2Net()
+{
+    int count;
+
+    while (TRUE) {
+
+	/*
+	 * If the current buffer is empty, then recycle it, unless
+	 * it's the last buffer (in that case, we're done).
+	 */
+
+	if (firstBuffer->numChars == 0) {
+	    if (firstBuffer == lastBuffer) {
+		if (selectOnOutput) {
+		    selectOnOutput = FALSE;
+		    Fs_EventHandlerDestroy(netID);
+		    Fs_EventHandlerCreate(netID, FS_READABLE, netProc,
+			    (ClientData) 0);
+		}
+		return;
+	    }
+	    free((Address) firstBuffer);
+	    firstBuffer = firstBuffer->nextPtr;
+	    continue;
+	}
+
+	/*
+	 * Output as many characters as possible from the current buffer.
+	 * If FS_WOULD_BLOCK ever gets returned, schedule a wakeup when
+	 * the network stream becomes writable again.
+	 */
+
+	count = write(netID, 
+		(Address) &firstBuffer->chars[firstBuffer->firstChar],
+		firstBuffer->numChars);
+	if (!(count < 0)) {
+	    if (count > 0) {
+		firstBuffer->firstChar += count;
+		firstBuffer->numChars -= count;
+	    }
+	} else if (errno == EWOULDBLOCK) {
+	    if (!selectOnOutput) {
+		selectOnOutput = TRUE;
+		Fs_EventHandlerDestroy(netID);
+		Fs_EventHandlerCreate(netID, FS_READABLE|FS_WRITABLE,
+			netProc, (ClientData) 0);
+	    }
+	    return;
+	} else {
+	    fatalperror(netID, "writing to net", errno);
+	}
+    }
+}
+
+/*
+ * This routine is called to flush the pdev output buffer.  It just
+ * passes information to the network.
+ */
+
+void
+ttyFlush()
+{
+    int count;
+
+    count = outputStream.lastAccess + 1 - outputStream.buffer;
+    if (count > 0) {
+	lastBuffer->numChars += count;
+	if (!selectOnOutput) {
+	    tty2Net();
+	}
+    }
+
+    /*
+     * See if we have to allocate another buffer in the chain.
+     */
+
+    count = lastBuffer->firstChar + lastBuffer->numChars;
+    if (count >= CHARS_PER_BUFFER) {
+	Buffer *newPtr;
+
+	newPtr = (Buffer *) malloc(sizeof(Buffer));
+	newPtr->firstChar = newPtr->numChars = 0;
+	newPtr->nextPtr = NULL;
+	lastBuffer->nextPtr = newPtr;
+	lastBuffer = newPtr;
+	count = 0;
+    }
+
+    /*
+     * Reset things to allow more I/O on the output stream.
+     */
+
+    outputStream.buffer = &lastBuffer->chars[count];
+    outputStream.bufSize = CHARS_PER_BUFFER - count;
+    outputStream.lastAccess = outputStream.buffer - 1;
+    outputStream.writeCount = outputStream.bufSize;
+}
+
+cleanup()
+{
+    int status;
+    int portID;
+
+	/* vhangup();		 No hangups in Sprite yet. */
+	if (childPID != 0) {	/* Partial compensation of lack of vhangup. */	
+	    status = kill(childPID, SIGKILL);
+	    /*
+	     * It would be nice to make the reaper process be able to
+	     * clean up after logins, but there's no easy way for it
+	     * to determine the "port number" that we've found out
+	     * here.  Record the logout here, if we succeed in killing
+	     * the child login process.  If the kill fails, then
+	     * the child likely already exited and recorded the logout, so
+	     * don't record it again (just in case the port has already
+	     * been recycled).
+	     *
+	     * Note: the ULog_RecordLogout routine doesn't use the
+	     * userID passed into it yet, and this program really
+	     * can't say who eventually logs in (only the login
+	     * program knows for sure).  Therefore, there's no point
+	     * in getting the userID from the user name.  Portid had
+	     * better be non-zero since we're using port 0 for the
+	     * console.
+	     */
+	    if (status == 0) {
+		portID = atoi(portStr);
+		if (portID <= 0 || portID >= ULOG_MAX_PORTS) {
+		    syslog(LOG_ERR, "error converting rlogin port number (%s)",
+			   portStr);
+		} else {
+		    Ulog_RecordLogout(NULL, portID);
+		}
+	    }
+	}
+	(void) shutdown(netf, 2);
+	exit(1);
+}
+
+fatal(f, msg)
+	int f;
+	char *msg;
+{
+	char buf[BUFSIZ];
+
+	buf[0] = '\01';		/* error indicator */
+	(void) sprintf(buf + 1, "rlogind: %s.\r\n", msg);
+	(void) write(f, buf, strlen(buf));
+	exit(1);
+}
+
+fatalperror(f, msg, errno)
+	int f;
+	char *msg;
+	int errno;
+{
+	char buf[BUFSIZ];
+	extern int sys_nerr;
+	extern char *sys_errlist[];
+
+	if ((unsigned)errno < sys_nerr)
+		(void) sprintf(buf, "%s: %s", msg, sys_errlist[errno]);
+	else
+		(void) sprintf(buf, "%s: Error %d", msg, errno);
+	fatal(f, buf);
+}
+
+getstr(f, buf, cnt, err)
+	int f;
+	char *buf;
+	int cnt;
+	char *err;
+{
+	char c;
+
+	do {
+		if (read(f, &c, 1) != 1)
+			exit(1);
+		if (--cnt < 0) {
+			(void) fprintf(stderr, "%s too long\r\n", err);
+			exit(1);
+		}
+		*buf++ = c;
+	} while (c != 0);
+}
+
+char *
+findlastsubstring(string, substring)
+    register char *string;	/* String to search. */
+    char *substring;		/* Substring to try to find in string. */
+{
+    register char *a, *b;
+    char *result = (char *) NULL;
+
+    /* First scan quickly through the two strings looking for a
+     * single-character match.  When it's found, then compare the
+     * rest of the substring.
+     */
+    
+    b = substring;
+    for ( ; *string != 0; string += 1) {
+	if (*string != *b) {
+	    continue;
+	}
+	a = string;
+	while (1) {
+	    if (*b == 0) {
+		result = string;
+	    }
+	    if (*a++ != *b++) {
+		break;
+	    }
+	}
+	b = substring;
+    }
+    return result;
+}
+@
+
+
+1.16
+log
+@changed proc_setenviron calls to setenv.
+@
+text
+@d180 6
+a185 1
+	char c;
+d218 6
+a223 4
+	 *-------------------------------------
+	 * For now, just drop the terminal info, 
+	 * except for the terminal type.
+	 *-------------------------------------
+d225 22
+a246 4
+	{
+	    register char *cPtr;
+	    cPtr = index (termType, '/');
+	    *cPtr = '\0';
+d265 3
+a267 14
+
+#ifdef DEBUG_PDEV
+	{
+	    struct stat stb;
+
+	    if (stat(pdevName, &stb) < 0) {
+		fatalperror(f, "Error stat-ing pseudo-device", errno);
+	    }
+	    if ((stb.st_mode & S_IFMT) != S_IFPDEV) {
+		fprintf(f, "file is not a pseudo-device!\n");
+		abort();
+	    }
+	}
+#endif /* DEBUG_PDEV */
+@
+
+
+1.15
+log
+@pass rusername to rlogin as an argument, for use in ruserok.
+@
+text
+@a278 1
+		Proc_EnvironVar env;
+d308 5
+a312 15
+		env.name = "TTY";
+		env.value = pdevName;
+		(void) Proc_SetEnviron(env);
+		env.name = "TERM";
+		env.value = termType;
+		(void) Proc_SetEnviron(env);
+		env.name = "RUSER";
+		env.value = rusername;
+		(void) Proc_SetEnviron(env);
+		env.name = "LUSER";
+		env.value = lusername;
+		(void) Proc_SetEnviron(env);
+		env.name = "RHOST";
+		env.value = hp->h_name;
+		(void) Proc_SetEnviron(env);
+@
+
+
+1.14
+log
+@This is JO for FD... probably was changes for new C library stuff.
+@
+text
+@d280 2
+a281 1
+		static char *args[] = {"login", "-u", 0, "-h", 0, "-P", 0, 0};
+d301 1
+d303 1
+a303 1
+		    args[6] = portStr;
+d305 1
+a305 1
+		    args[5] = "-l";
+d307 1
+@
+
+
+1.13
+log
+@Fixed tty2net so it broke out of its transfer loop if the
+network wwrite blocks.
+@
+text
+@d241 14
+d542 2
+d547 28
+a574 1
+	    (void) kill(childPID, SIGKILL);
+@
+
+
+1.12
+log
+@Changed arguments to login and inserted findlastsubstring()
+@
+text
+@d475 1
+@
+
+
+1.11
+log
+@changed call to login to be hard-coded /sprite/cmds.spur (!) -- done
+by Mendel, about to be undone after I check this in.
+@
+text
+@d54 1
+d96 2
+d138 3
+d149 1
+d241 12
+d266 1
+a266 1
+		static char *args[] = {"login", "-p", "-w", "-u", 0, 0};
+d276 15
+a290 1
+		args[4] = lusername;
+d307 2
+a308 2
+		(void) execv("/sprite/cmds.spur/login", args);
+		fatalperror(2, "/sprite/cmds.spur/login",errno);
+d581 32
+@
+
+
+1.10
+log
+@Ported to use new libc.a
+@
+text
+@d274 2
+a275 2
+		(void) execv("/sprite/cmds/login", args);
+		fatalperror(2, "/sprite/cmds/login",errno);
+@
+
+
+1.9
+log
+@Ported to use the new libc.a
+@
+text
+@d115 1
+a115 1
+static char rusername[NMAX+1];
+d145 2
+a146 2
+	if (getpeername(0, &from, &fromlen) < 0) {
+		fprintf(stderr, "%s: ", argv[0]);
+d148 1
+a148 1
+		_exit(1);
+d150 2
+a151 1
+	if (setsockopt(0, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof (on)) < 0) {
+d175 2
+a176 2
+	alarm(60);
+	read(f, &c, 1);
+d179 1
+a179 1
+	alarm(0);
+d181 2
+a182 2
+	hp = gethostbyaddr(&fromp->sin_addr, sizeof (struct in_addr),
+		fromp->sin_family);
+d193 1
+a193 1
+	write(f, "", 1);
+d229 1
+a229 1
+		(void (*)()) NULL, (ClientData) NULL);
+d253 3
+a255 3
+			close(i);
+		dup2(t, 0), dup2(t, 1), dup2(t, 2);
+		close(t);
+d274 1
+a274 1
+		execv("/sprite/cmds/login", args);
+d282 1
+a282 1
+	     * connection with the TIOCPKT_NOSTOP bit set. The rlogin
+d293 1
+a293 1
+		fatalperror("sending oob data");
+d296 4
+a299 4
+	ioctl(f, FIONBIO, &on);
+	signal(SIGTSTP, SIG_IGN);
+	signal(SIGCHLD, cleanup);
+	setpgrp(0, 0);
+d313 1
+a313 1
+	    fflush(&outputStream);
+d316 1
+a316 1
+	signal(SIGCHLD, SIG_IGN);
+a362 1
+    ReturnStatus status;
+a396 1
+    ReturnStatus status;
+d497 1
+a497 1
+	    kill(childPID, SIGKILL);
+d499 1
+a499 1
+	shutdown(netf, 2);
+d543 1
+a543 1
+			fprintf(f, "%s too long\r\n", err);
+@
+
+
+1.8
+log
+@turn off flow control on foreign side at start of connection
+@
+text
+@a49 1
+#include <compat.h>
+a50 2
+#include <io.h>
+#include <mem.h>
+a51 1
+#include <sig.h>
+a58 1
+extern	errno;
+d96 1
+a96 1
+static struct Io_Stream outputStream;	/* Output characters for screen get
+a141 1
+	Io_Stream stream;
+a158 1
+extern	errno;
+d222 1
+a222 1
+	firstBuffer = lastBuffer = Mem_New(Buffer);
+d226 1
+a226 1
+	Io_SetupStream(&outputStream, FALSE, TRUE, &firstBuffer->chars[0],
+d273 2
+a274 3
+		Proc_Exec("/sprite/cmds/login", args, FALSE);
+		fatalperror(2, "/sprite/cmds/login",
+			Compat_MapCode(stat_LastError));
+d312 1
+a312 1
+	    Io_Flush(&outputStream);
+d368 2
+a369 2
+	status = Fs_Read(netID, CHARS_PER_BUFFER, buffer, &count);
+	if (status == SUCCESS) {
+d377 2
+a378 3
+	} else if (status != FS_WOULD_BLOCK) {
+	    fatalperror(netID, "reading from net",
+		    Compat_MapCode(stat_LastError));
+d417 1
+a417 1
+	    Mem_Free((Address) firstBuffer);
+d428 4
+a431 3
+	status = Fs_Write(netID, firstBuffer->numChars,
+		(Address) &firstBuffer->chars[firstBuffer->firstChar], &count);
+	if (status == SUCCESS) {
+d436 1
+a436 1
+	} else if (status == FS_WOULD_BLOCK) {
+d444 1
+a444 2
+	    fatalperror(netID, "writing to net",
+		    Compat_MapCode(stat_LastError));
+d475 1
+a475 1
+	newPtr = Mem_New(Buffer);
+d498 1
+a498 1
+	    Sig_Send(SIG_KILL, childPID, FALSE);
+@
+
+
+1.7
+log
+@passed wrong name to login... (sheepish grin)
+@
+text
+@d284 18
+d307 1
+@
+
+
+1.6
+log
+@changed to pass the -u flag to login to attempt to log in as the desired
+user
+@
+text
+@d263 1
+a263 1
+		args[4] = rusername;
+@
+
+
+1.5
+log
+@changed to new pseudo-devices
+@
+text
+@d253 1
+a253 1
+		static char *args[] = {"login", "-p", "-w", 0};
+d263 2
+d280 1
+a280 1
+		Proc_Exec("/sprite/src/cmds/login/login", args, FALSE);
+@
+
+
+1.4
+log
+@fixed to drop the terminal info before setting the TERM envariable
+@
+text
+@d217 5
+a221 1
+	*index (termType, '/') = '\0';
+@
+
+
+1.3
+log
+@Appears to be working now.  Still need to increase buffer size,
+when kernel problem gets fixed.
+@
+text
+@d203 1
+a203 1
+	 * Read user/term info from the newtork.
+d212 8
+d258 1
+@
+
+
+1.2
+log
+@Intermediate check-in.
+@
+text
+@a40 1
+#include <stdio.h>
+d45 4
+d50 2
+d54 3
+d74 1
+a74 1
+#define CHARS_PER_BUFFER 10
+d79 5
+a83 5
+    int firstChar;			/* Index of first valid character in
+					 * buffer.  -1 means buffer empty. */
+    int nextChar;			/* Index of next place to put character
+					 * in buffer.  -1 means buffer
+					 * empty. */
+d85 1
+a85 1
+					 * network after this one, or NULL.
+d105 11
+d122 1
+a122 1
+static char term[64];
+d124 3
+d128 13
+d145 1
+a145 1
+	int on = 1, options = 0, fromlen;
+d147 1
+d176 1
+a176 1
+	int i, p, t, pid, on = 1;
+d209 1
+a209 1
+	getstr(f, term, sizeof(term), "Terminal type");
+d218 2
+a219 1
+	firstBuffer->firstChar = firstBuffer->lastChar = 0;
+d222 1
+a222 1
+		CHARS_PER_BUFFER, (void (*)()) NULL, flushToNet,
+d235 2
+a236 2
+	pid = fork();
+	if (pid < 0)
+d238 1
+a238 1
+	if (pid == 0) {
+d241 1
+d253 2
+a254 2
+		env.name = "TERM"
+		env.value = term;
+d265 3
+a267 2
+		execl("/sprite/cmds/login", "login", "-p", 0);
+		fatalperror(2, "/sprite/cmds/login", errno);
+d274 15
+a288 1
+	protocol(f, p);
+d301 1
+d322 3
+a324 3
+ * The procedure below transfers characters from the pseudo-device
+ * output buffer(s) over the network, if possible.  It is invoked when
+ * the network connection is ready for output.
+d327 8
+a334 1
+tty2net()
+d336 1
+a336 5
+    while (TRUE) {
+	if (firstBuffer->firstChar ==  firstBuffer->lastChar) {
+	    /*
+	     * Buffer empty.  Recycle it, unless it's the last buffer.
+	     */
+d338 24
+d363 4
+a366 1
+ * rlogin "protocol" machine.
+d368 3
+a370 2
+protocol(f, p)
+	int f, p;
+d372 2
+a373 4
+	char pibuf[1024], fibuf[1024], *pbp, *fbp;
+	register pcc = 0, fcc = 0;
+	int cc;
+	char cntl;
+d375 2
+d378 2
+a379 3
+	 * Must ignore SIGTTOU, otherwise we'll stop
+	 * when we try and set slave pty's window shape
+	 * (our controlling tty is the master pty).
+a380 4
+	(void) signal(SIGTTOU, SIG_IGN);
+	send(f, oobdata, 1, MSG_OOB);	/* indicate new rlogin */
+	for (;;) {
+		int ibits, obits, ebits;
+d382 7
+a388 16
+		ibits = 0;
+		obits = 0;
+		if (fcc)
+			obits |= (1<<p);
+		else
+			ibits |= (1<<f);
+		if (pcc >= 0)
+			if (pcc)
+				obits |= (1<<f);
+			else
+				ibits |= (1<<p);
+		ebits = (1<<p);
+		if (select(16, &ibits, &obits, &ebits, 0) < 0) {
+			if (errno == EINTR)
+				continue;
+			fatalperror(f, "select", errno);
+d390 6
+a395 24
+		if (ibits == 0 && obits == 0 && ebits == 0) {
+			/* shouldn't happen... */
+			sleep(5);
+			continue;
+		}
+#define	pkcontrol(c)	((c)&(TIOCPKT_FLUSHWRITE|TIOCPKT_NOSTOP|TIOCPKT_DOSTOP))
+		if (ebits & (1<<p)) {
+			cc = read(p, &cntl, 1);
+			if (cc == 1 && pkcontrol(cntl)) {
+				cntl |= oobdata[0];
+				send(f, &cntl, 1, MSG_OOB);
+				if (cntl & TIOCPKT_FLUSHWRITE) {
+					pcc = 0;
+					ibits &= ~(1<<p);
+				}
+			}
+		}
+		if (ibits & (1<<f)) {
+			fcc = read(f, fibuf, sizeof (fibuf));
+			if (fcc < 0 && errno == EWOULDBLOCK)
+				fcc = 0;
+			else {
+				register char *cp;
+				int left, n;
+d397 5
+a401 3
+				if (fcc <= 0)
+					break;
+				fbp = fibuf;
+d403 20
+a422 16
+			top:
+				for (cp = fibuf; cp < fibuf+fcc-1; cp++)
+					if (cp[0] == magic[0] &&
+					    cp[1] == magic[1]) {
+						left = fcc - (cp-fibuf);
+						n = control(p, cp, left);
+						if (n) {
+							left -= n;
+							if (left > 0)
+								bcopy(cp+n, cp, left);
+							fcc -= n;
+							goto top; /* n^2 */
+						}
+					}
+			}
+		}
+d424 4
+a427 7
+		if ((obits & (1<<p)) && fcc > 0) {
+			cc = write(p, fbp, fcc);
+			if (cc > 0) {
+				fcc -= cc;
+				fbp += cc;
+			}
+		}
+d429 10
+a438 29
+		if (ibits & (1<<p)) {
+			pcc = read(p, pibuf, sizeof (pibuf));
+			pbp = pibuf;
+			if (pcc < 0 && errno == EWOULDBLOCK)
+				pcc = 0;
+			else if (pcc <= 0)
+				break;
+			else if (pibuf[0] == 0)
+				pbp++, pcc--;
+			else {
+				if (pkcontrol(pibuf[0])) {
+					pibuf[0] |= oobdata[0];
+					send(f, &pibuf[0], 1, MSG_OOB);
+				}
+				pcc = 0;
+			}
+		}
+		if ((obits & (1<<f)) && pcc > 0) {
+			cc = write(f, pbp, pcc);
+			if (cc < 0 && errno == EWOULDBLOCK) {
+				/* also shouldn't happen */
+				sleep(5);
+				continue;
+			}
+			if (cc > 0) {
+				pcc -= cc;
+				pbp += cc;
+			}
+		}
+d440 26
+d471 4
+a474 1
+	vhangup();		/* XXX */
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d5 3
+d46 5
+d60 46
+d164 33
+a196 18
+	for (c = 'p'; c <= 's'; c++) {
+		struct stat stb;
+		line = "/dev/ptyXX";
+		line[strlen("/dev/pty")] = c;
+		line[strlen("/dev/ptyp")] = '0';
+		if (stat(line, &stb) < 0)
+			break;
+		for (i = 0; i < 16; i++) {
+			line[strlen("/dev/ptyp")] = "0123456789abcdef"[i];
+			p = open(line, 2);
+			if (p > 0)
+				goto gotpty;
+		}
+	}
+	fatal(f, "Out of ptys");
+	/*NOTREACHED*/
+gotpty:
+	(void) ioctl(p, TIOCSWINSZ, &win);
+a197 15
+	line[strlen("/dev/")] = 't';
+#ifdef DEBUG
+	{ int tt = open("/dev/tty", 2);
+	  if (tt > 0) {
+		ioctl(tt, TIOCNOTTY, 0);
+		close(tt);
+	  }
+	}
+#endif
+	t = open(line, 2);
+	if (t < 0)
+		fatalperror(f, line, errno);
+	{ struct sgttyb b;
+	  gtty(t, &b); b.sg_flags = RAW|ANYP; stty(t, &b);
+	}
+d202 8
+a209 1
+		close(f), close(p);
+d212 17
+a228 2
+		execl("/bin/login", "login", "-r", hp->h_name, 0);
+		fatalperror(2, "/bin/login", errno);
+a230 1
+	close(t);
+a231 2
+	ioctl(p, FIONBIO, &on);
+	ioctl(p, TIOCPKT, &on);
+d263 1
+a263 1
+	(void)ioctl(pty, TIOCSWINSZ, &w);
+d268 14
+a407 1
+	rmut();
+d441 5
+a445 9
+#include <utmp.h>
+
+struct	utmp wtmp;
+char	wtmpf[]	= "/usr/adm/wtmp";
+char	utmpf[] = "/etc/utmp";
+#define SCPYN(a, b)	strncpy(a, b, sizeof(a))
+#define SCMPN(a, b)	strncmp(a, b, sizeof(a))
+
+rmut()
+d447 1
+a447 5
+	register f;
+	int found = 0;
+	struct utmp *u, *utmp;
+	int nutmp;
+	struct stat statbf;
+d449 6
+a454 21
+	f = open(utmpf, O_RDWR);
+	if (f >= 0) {
+		fstat(f, &statbf);
+		utmp = (struct utmp *)malloc(statbf.st_size);
+		if (!utmp)
+			syslog(LOG_ERR, "utmp malloc failed");
+		if (statbf.st_size && utmp) {
+			nutmp = read(f, utmp, statbf.st_size);
+			nutmp /= sizeof(struct utmp);
+		
+			for (u = utmp ; u < &utmp[nutmp] ; u++) {
+				if (SCMPN(u->ut_line, line+5) ||
+				    u->ut_name[0]==0)
+					continue;
+				lseek(f, ((long)u)-((long)utmp), L_SET);
+				SCPYN(u->ut_name, "");
+				SCPYN(u->ut_host, "");
+				time(&u->ut_time);
+				write(f, (char *)u, sizeof(wtmp));
+				found++;
+			}
+d456 2
+a457 18
+		close(f);
+	}
+	if (found) {
+		f = open(wtmpf, O_WRONLY|O_APPEND);
+		if (f >= 0) {
+			SCPYN(wtmp.ut_line, line+5);
+			SCPYN(wtmp.ut_name, "");
+			SCPYN(wtmp.ut_host, "");
+			time(&wtmp.ut_time);
+			write(f, (char *)&wtmp, sizeof(wtmp));
+			close(f);
+		}
+	}
+	chmod(line, 0666);
+	chown(line, 0, 0);
+	line[strlen("/dev/")] = 'p';
+	chmod(line, 0666);
+	chown(line, 0, 0);
+@

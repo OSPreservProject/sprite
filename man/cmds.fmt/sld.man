@@ -1,0 +1,264 @@
+
+
+
+SLD                       User Commands                       SLD
+
+
+
+NNAAMMEE
+     sld - SPUR link editor
+
+SSYYNNOOPPSSIISS
+     sslldd [ --AA _b_a_s_e_f_i_l_e ] [ --dd ] [ --ee _e_n_t_r_y ] [ --jj ] [ --ll_x ]
+          [ --LL_d_i_r ] [ --NN ] [ --oo _n_a_m_e ] [ --pp[[dd]] ] [ --pptt ] [ --rr ] [
+     --ss ] [ --SS ]
+          [ --TT[[tteexxtt]] _h_e_x ] [ --TTddaattaa _h_e_x ] [ --TTssddaattaa hheexx ]
+          [ --uu _n_a_m_e ] [ --ww ] [ --xx ] [ --XX ] [ --yy_s_y_m ] [ --zz ]
+          file ...
+
+DDEESSCCRRIIPPTTIIOONN
+     _s_l_d combines several object programs into one, resolves
+     external references, and searches libraries.  In the sim-
+     plest case several object _f_i_l_es are given, and _s_l_d combines
+     them, producing an object module which can be either exe-
+     cuted or become the input for a further _s_l_d run.  In the
+     latter case, the --rr option must be given to preserve the
+     relocation bits. The output of _s_l_d is left on a file called
+     _a.._o_u_t if not otherwise specified by the --oo option.  The out-
+     put file is made executable only if no errors occurred dur-
+     ing the load, and the --NN and --rr options were not specified.
+
+     The argument _f_i_l_es are concatenated in the order specified.
+     The entry point of the output is the beginning of the text
+     unless the --ee option is specified.
+
+     If any _f_i_l_e is a library, it is searched exactly once at the
+     point it is encountered in the argument list.  Only those
+     routines defining an unresolved external reference are
+     loaded.  The library must have been processed by _r_a_n_l_i_b(1);
+     its first member must be a file named `__.SYMDEF', which is
+     the dictionary for the library.  The dictionary is searched
+     iteratively to satisfy as many references as possible.
+
+     The symbols __eetteexxtt, __eeddaattaa,  __eenndd, __bbppddaattaa, and __bbppbbssss
+     (eetteexxtt, eeddaattaa, eenndd, bbppddaattaa, and bbppbbssss in C) are reserved,
+     and if referred to, are set to the first location above the
+     program, the first location above initialized shared data,
+     and the first location above all shared data, the beginning
+     of private initialized data, and the beginning of uninitial-
+     ized private data, respectively.  It is erroneous to define
+     these symbols.
+
+OOPPTTIIOONNSS
+     Options should appear before the file names, except abbrevi-
+     ated library names specified by the --ll option which can
+     appear anywhere.
+
+     --AA _n_a_m_e
+          Incremental loading: the resulting object may be read
+          into an already executing program. _n_a_m_e is the name of
+
+
+
+SPUR Release 1.0          14 April 1987                         1
+
+
+
+
+
+
+SLD                       User Commands                       SLD
+
+
+
+          a file that supplies the initial symbol table for the
+          resulting object file.  Only newly linked material is
+          entered into the text and data portions of _a.._o_u_t, but
+          the new symbol table will reflect all symbols defined
+          before and after the incremental load.  This argument
+          must appear before any other object file in the argu-
+          ment list.  One or more of the --TT options may be used
+          as well, and will be taken to mean that the newly
+          linked segments will commence at the corresponding
+          addresses (which must divisible by 8).  By default,
+          text and private data are concatenated.  The default
+          starting point for text is the old value of __eenndd.  The
+          default starting point for shared data is the old value
+          of __eeddaattaa__ss..  The values of __eetteexxtt, etc., are the same
+          for the resulting object file as they were for _n_a_m_e.
+
+     --dd   Force definition of common storage even if the --rr flag
+          is present.
+
+     --ee _e_n_t_r_y
+          Define the eentry point: _e_n_t_r_y argument is the name of
+          the entry point of the loaded program.
+
+     --jj   Join private data to the end of text.  This is the
+          default for the --NN option.  The switch is ignored if
+          overridden by the --TTddaattaa or --ppdd options.
+
+     --ll_x  This option is an abbreviation for the library name
+          `_d_i_r/lib_x.a'.  Here, _x is a string.  _D_i_r is one of the
+          directories listed in preceding --LL options, or, if no
+          such file exists, then one of the directories `/lib',
+          `/lib/local', or `/usr/local/lib' (tried in that
+          order).  A library is searched when its name is encoun-
+          tered, so the placement of a --ll is significant.
+
+     --LL_d_i_r
+          See --ll above.
+
+     --NN   Do not make the text portion read only or sharable.
+          The data portion immediately follows the text, which is
+          relocated to begin at address 0 (i.e., not preceded by
+          the header).  (Use `magic number' 0507.)
+
+     --oo _n_a_m_e
+          _N_a_m_e is the name of the _s_l_d output file, instead of
+          aa..oouutt.
+
+     --pp[[dd]]
+          `Publicize' private data segment.  The initialized
+          private data in each object file is concatenated to the
+          front of the initialized shareable data of that file,
+          and relocated as shareable data.  Likewise, the
+
+
+
+SPUR Release 1.0          14 April 1987                         2
+
+
+
+
+
+
+SLD                       User Commands                       SLD
+
+
+
+          uninitialized private data is concatenated to the front
+          of the uninitialized shared data.  The -Tdata option,
+          if present, is ignored.  The -Tsdata option is honored,
+          and governs the position of the combined segment.
+          The names __eeddaattaa and __eenndd (eeddaattaa and eenndd in C) are set
+          to the values of _edata_s and _end_s, respectively.
+
+     --pptt  Publicize text segment.  The text segments of the
+          object files are concatenated together at the from of
+          the initialized shareable data of that file, and relo-
+          cated as shareable data.  The -Ttext option, if
+          present, only affects the placement of private data
+          (when this follows the text segment), and has no effect
+          on the placement of text.  The -Tsdata option is
+          honored, and governs the position of the combined seg-
+          ment.
+
+     --rr   Generate relocation bits in the output file so that it
+          can be the subject of another _s_l_d run.  This flag also
+          prevents final definitions from being given to common
+          symbols, and suppresses the `undefined symbol' diagnos-
+          tics.  It implies the --NN option.
+
+     --ss   Strip the output, that is, remove the symbol table and
+          relocation bits to save space (but impair the useful-
+          ness of the debuggers).  This information can also be
+          removed by _s_t_r_i_p(1).
+
+     --SS   Strip the output by removing all symbols except locals
+          and globals.
+
+     --TT[[tteexxtt]] _h_e_x
+          Relocate as if the text (i.e., exclusive of the header)
+          started at address _h_e_x (a hexadecimal number, possibly
+          with preceding `0x').  This does _n_o_t affect where the
+          text is actually loaded; loading the file in the usual
+          way will place the text segment at its standard loca-
+          tion, relocated as if it were at address _h_e_x.
+
+     --TTddaattaa_h_e_x
+          Relocate the private data segment as if it started at
+          location _h_e_x (a hexadecimal number as above).  Again,
+          this does not affect where the private data segments
+          are actually loaded.
+
+     --TTssddaattaa_h_e_x
+          Relocate the shared data segment as if it started at
+          location _h_e_x (a hexadecimal number as above).  This
+          does not affect where the shared data segments are
+          actually loaded.
+
+     --uu _n_a_m_e
+
+
+
+SPUR Release 1.0          14 April 1987                         3
+
+
+
+
+
+
+SLD                       User Commands                       SLD
+
+
+
+          Enter _n_a_m_e as an uundefined symbol.  This is useful for
+          loading wholly from a library, since initially the sym-
+          bol table is empty and an unresolved reference is
+          needed to force the loading of the first routine.
+
+     --ww   Each time an object file is automatically included from
+          a library, indicate the name of the object file and a
+          symbol that caused it to be loaded.
+
+     --xx   Do not preserve local (non-..gglloobbll) symbols in the out-
+          put symbol table; only enter external symbols.  This
+          option saves some space in the output file.
+
+     --XX   Save local symbols except for those whose names begin
+          with `L'.  This option is used by _c_c(1) to discard
+          internally-generated labels while retaining symbols
+          local to routines.
+
+     --yy_s_y_m
+          Display each file in which _s_y_m appears, its type and
+          whether the file defines or references it.  Many such
+          options may be given to trace many symbols.  It is usu-
+          ally necessary to begin _s_y_m with an `_', as external C,
+          FORTRAN and Pascal variables begin with underscores.
+
+     --zz   Arrange for the process to be loaded on demand from the
+          resulting executable file (0513 `magic number') rather
+          than preloaded. This is the default (and is present
+          here only for compatibility).  In the resulting object
+          file, the sizes of the text segment and initialized
+          data segments are multiples of the page size (padded
+          with nulls, if necessary).  When loaded in the usual
+          way, they all start on page boundaries, allowing easy
+          demand loading from the object file.  The header is
+          incorporated in the first page of text.  With this for-
+          mat the first few BSS segment symbols may actually end
+          up in the initialized data segment, and likewise for
+          SBSS segment symbols and the shared data segment; this
+          is to avoid wasting the space resulting from rounding
+          up the data segment sizes.
+
+FFIILLEESS
+     /lib/lib*.a            libraries
+     /usr/lib/lib*.a        more libraries
+     /usr/local/lib/lib*.a  still more libraries
+     a.out                  output file
+
+SSEEEE AALLSSOO
+     sas(1), ar(1), cc(1), ranlib(1), strip(1)
+
+
+
+
+
+
+SPUR Release 1.0          14 April 1987                         4
+
+
+

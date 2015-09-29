@@ -1,0 +1,6 @@
+
+
+          getclock
+               Return the current date and time as a system-dependent
+               integer value.  The unit of the value is seconds,
+               allowing it to be used for relative time calculations.

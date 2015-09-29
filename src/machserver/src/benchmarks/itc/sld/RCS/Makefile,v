@@ -1,0 +1,71 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  srv030:1.2 srv028:1.2 srv027:1.2 srv026:1.2 srv024:1.2 srv022:1.2 srv021:1.2 srv019:1.2 srv018:1.2 srv016:1.2 srv014:1.2 srv010:1.2 srv008:1.2 srv007:1.2 srv005:1.2;
+locks    ; strict;
+comment  @# @;
+
+
+1.2
+date     92.05.12.14.30.38;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     92.05.11.13.42.42;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Changes for sprited.
+@
+text
+@# 
+# The FIRST_BYTE preprocessor variable should be set to HIGH if the
+# host machine puts the most significant byte of a number first (e.g.
+# 68000s), and otherwise should be set to LOW (e.g. VAXes).
+# 
+# The FLOATING_FORM variable should be set to IEEE if the host machine
+# uses IEEE format, or else to OTHER.
+#
+# $Header$
+#
+
+default: ../bin/sld
+
+TM=ds3100
+NAME=sld
+#include "/users/kupfer/lib/pmake/spriteClient.mk"
+SPRITEDINCLUDES = -I$(SPRITEINCLUDE)/user/$(TM).md -I$(SPRITEINCLUDE)/user
+
+CFLAGS		= -O -DFIRST_BYTE=LOW -DFLOATING_FORM=IEEE \
+			-DTARGET=HOST -I../sas $(SPRITEDINCLUDES)
+
+../bin/sld:		sld.o
+	ld $(LOADFLAGS) $(INITOBJS) sld.o -lc -lmach_sa -lc -o ../bin/sld
+
+clean:
+	rm -f *.o ../bin/sld
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d9 2
+d12 7
+d20 1
+a20 1
+			-DTARGET=HOST -I../sas
+d23 1
+a23 1
+	$(CC) sld.o -o ../bin/sld
+@

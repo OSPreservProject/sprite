@@ -1,0 +1,198 @@
+
+
+
+jget                      User Commands                      jget
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     jget - list contents of a Jaquith archive directory.
+
+SSYYNNOOPPSSIISS
+     jjggeett   [--aarrcchh  _a_r_c_h_i_v_e]  [--sseerrvveerr  _h_o_s_t_n_a_m_e]   [--ppoorrtt  _p_o_r_t]
+     [--rraannggee  ((_d_a_t_e_1,_d_a_t_e_2)]  [--oowwnneerr  _n_a_m_e]  [--ggrroouupp _n_a_m_e] [--aabbss
+     _r_e_g_e_x_p] [--uu]] [[--aassooff _d_a_t_e] [--ssiinnccee _d_a_t_e] [--ffiirrsstt _n] [--llaasstt _n]
+     [--aallll]   [--mmooddddaattee]  [_f_i_l_e_l_i_s_t]  [--mmaaiill  _m_a_i_l_a_d_d_r]  [--ttaarrggeett
+     _d_i_r_e_c_t_o_r_y] [--ddiirr] [--ffiilltteerr]] [[--ttaarr] [--ttaarrbbuuff _b_u_f_S_i_z_e]
+
+
+OOPPTTIIOONNSS
+     --aarrcchh _a_r_c_h_i_v_e Name of logical archive.  If  none  is  speci-
+                   fied,  the  environment  variable  JARCHIVE is
+                   used, if defined, else the default archive  is
+                   used.
+
+     --sseerrvveerr _h_o_s_t_n_a_m_e
+                   Specifies host where Jaquith  server  is  run-
+                   ning.  Defaults  to  the  environment variable
+                   JSERVER.
+
+     --ppoorrtt _p_o_r_t    Specifies port number where Jaquith server  is
+                   running.  Defaults to the environment variable
+                   JPORT.
+
+     --rraannggee _d_a_t_e_1,_d_a_t_e_2
+                   Retrieve files with date in specified range.
+
+     --oowwnneerr _n_a_m_e   Retrieve only files with specified owner name.
+
+     --ggrroouupp _n_a_m_e   Retrieve only files with specified group name.
+
+     --aabbss _r_e_g_e_x_p   Retrieve files which  match  _r_e_g_e_x_p  in  their
+                   abstract lines.
+
+     --aassooff _d_a_t_e    Retrieve  version  which  was  current  as  of
+                   specified  date.  Equivalent to: -range(1-jan-
+                   1970,_d_a_t_e)
+
+     --ssiinnccee _d_a_t_e   Retrieve versions  between  _d_a_t_e  and  present
+                   date. Equivalent to: -range(_d_a_t_e,_p_r_e_s_e_n_t-_d_a_t_e)
+
+     --ffiirrsstt _n      Retrieve from the  nth  version  in  the  date
+                   range.
+
+     --llaasstt         Retrieve to the nth version in the date range.
+
+     --aallll          Retrieve all  the  versions  in  the  archive.
+                   Equivalent to: -first 1 -last -1
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+jget                      User Commands                      jget
+
+
+
+     --mmooddddaattee      Use the  file's  modification  date,  not  its
+                   archive date for all date comparisons.
+
+     --mmaaiill         Send response by mail to _m_a_i_l_a_d_d_r.
+
+     --ttaarrggeett _d_i_r_e_c_t_o_r_y
+                   Restore file hierarchy relative  to  specified
+                   directory.   By  default,  files  are restored
+                   with their original pathnames.
+
+     --ddiirr          Restore directory's top-level contents only.
+
+     --ffiilltteerr       Run jget as in filter mode. Data  is  restored
+                   directly to stdout.
+
+     --ttaarr          Data is restored directly  to  stdout  in  tar
+                   format.
+
+     --ttaarrbbuuff _b_u_f_S_i_z_e
+                   With --ttaarr option, use a buffer  size  of  _b_u_f_-
+                   _S_i_z_e.  Default is 10KB.
+_________________________________________________________________
+
+DDEESSCCRRIIPPTTIIOONN
+     JJggeett provides a  simple  file  retrieval  mechanism  for  an
+     archive tape system controlled by the Jaquith program.
+
+     The primary argument _f_i_l_e_l_i_s_t is a   file  expression  which
+     specifies  the  files  to be listed.  Shell-like globbing is
+     supported. '*' matches any number of characters. '?' matches
+     a  single  character. Additionally, curly braces can be used
+     to enclose alternatives.  For  example  foo.{bak,?}  matches
+     both foo.bak, foo.c and foo.h.
+
+     Note that any metacharacters which are not protected with  a
+     backslash  or  quotes  will be expanded by the shell, not by
+     the Jaquith system.
+
+     The default action is to retrieve the most  recent  versions
+     of  matching  filenames.   The set of files retrieved can be
+     controlled by the use of one or more options.   The  options
+     are  all  logically  ANDed together; only files matching all
+     criteria are retrieved.
+
+     The -range,  -first  and  -last  options  work  together  to
+     specify  a subset of the archived versions.  First, the date
+     range is applied, resulting in a list of candidates numbered
+     logically  from 1 to _n.  Then the first and last options are
+     applied to this list. First and last  can  be  positive  and
+     retrieve  the  specified  filenames from restricted list, or
+     they can be negative in which case they count from  the  end
+     of  the list. Thus, the most recent version of a file can be
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+jget                      User Commands                      jget
+
+
+
+     retrieved with 'first -1 last -1' without having to know how
+     many versions currently exist.
+
+     _d_a_t_e is of the form _D_a_t_e_S_p_e_c[:_T_i_m_e_S_p_e_c]. _T_i_m_e_S_p_e_c is of  the
+     form   [hh[:mm[:ss]]],   and   _D_a_t_e_S_p_e_c   is   of  the  form
+     dd-month[-yyyy]. Month is the first 3 letters of the  month;
+     all  others  are  numbers. The '/' character is a substitute
+     for '-' and '.' may be used instead of ':'.
+
+
+BBUUGGSS
+     A file which matches more than one regular  expression  will
+     be retrieved multiple times.
+
+     There is currently no support for hard links.
+
+     Only one archive can be specified at a time.
+
+     Unlike the shell, the Jaquith globbing  characters  '*'  and
+     '?' match a '.' in the first position.
+
+
+SSEEEE AALLSSOO
+     jaquith jmgr jls jstat jput jctrl jcopy jclean jbuild
+
+
+KKEEYYWWOORRDDSS
+     jaquith archive
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     3
+
+
+

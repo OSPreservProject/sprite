@@ -1,0 +1,297 @@
+head     8.1;
+branch   ;
+access   ;
+symbols  sun4nw:8.1 symm:8.1 spur:8.1 newlib:8.0;
+locks    ; strict;
+comment  @ * @;
+
+
+8.1
+date     89.09.18.17.37.42;  author shirriff;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.45.11;  author douglis;  state Stable;
+branches ;
+next     1.6;
+
+1.6
+date     88.09.22.21.28.21;  author nelson;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.08.30.22.14.45;  author nelson;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.08.27.19.47.32;  author nelson;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.08.27.15.08.26;  author nelson;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.08.17.11.55.11;  author nelson;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.07.29.11.29.47;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+8.1
+log
+@Added shared memory stubs.
+@
+text
+@/*
+ * vmMach.h
+ *
+ *     	Machine dependent virtual memory data structures and procedure 
+ *	headers.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/vm/spur.md/RCS/vmMach.h,v 8.0 88/11/11 18:45:11 douglis Stable Locker: shirriff $ SPRITE (Berkeley)
+ */
+
+#ifndef _VMMACH
+#define _VMMACH
+
+#include "vmSpurConst.h"
+
+typedef unsigned int	VmMachPTE;	
+
+/*
+ * Machine dependent data for each software segment.
+ */
+typedef struct VmMach_SegData {
+    VmMachPTE	*ptBasePtr;	/* Base of segments page table. */
+    VmMachPTE	*pt2BasePtr;	/* Base of page table that maps the segments
+				 * page table. */
+    int		firstPTPage;	/* First page table's page to be mapped. */
+    int		lastPTPage;	/* Last page table's page to be mapped.  */
+    int		RPTPM;		/* Root page table physical page number. */
+    unsigned 	createTime;	/* The time that this segment was created. */
+} VmMach_SegData;
+
+/*
+ * Machine dependent data for each process.
+ */
+typedef struct VmMach_ProcData {
+    int			segNums[VMMACH_NUM_SEGMENTS];
+    int			RPTPMs[VMMACH_NUM_SEGMENTS];
+    unsigned int	segRegMask;
+    unsigned int	mappedSegMask;
+    struct Vm_Segment	*mapSegPtr;
+} VmMach_ProcData;
+
+/*
+ * Device buffer structure.
+ */
+typedef struct {
+    Address	baseAddr;	/* Base virtual address to start 
+				   allocating at. */
+    Address	endAddr;	/* Last possible virtual address plus one. */
+} VmMach_DevBuffer;
+
+/*
+ * Machine dependent functions.
+ */
+/*
+ * Initialization
+ */
+extern	void		VmMach_BootInit();
+extern	Address		VmMach_AllocKernSpace();
+extern	void		VmMach_Init();
+/*
+ * Segment creation, expansion, and destruction.
+ */
+extern	void		VmMach_SegInit();
+extern	void		VmMach_SegExpand();
+extern	void		VmMach_SegDelete();
+/*
+ * Process initialization.
+ */
+extern	void		VmMach_ProcInit();
+/*
+ * Manipulating protection.
+ */
+extern	void		VmMach_SetSegProt();
+extern	void		VmMach_SetPageProt();
+/*
+ * Reference and modify bits.
+ */
+extern	void		VmMach_GetRefModBits();
+extern	void		VmMach_ClearRefBit();
+extern	void		VmMach_ClearModBit();		
+extern	void		VmMach_SetRefBit();
+extern	void		VmMach_SetModBit();
+/*
+ * Page validation and invalidation.
+ */
+extern	void		VmMach_PageValidate();
+extern	void		VmMach_PageInvalidate();
+/*
+ * Routine to parse a virtual address.
+ */
+extern	Boolean		VmMach_VirtAddrParse();
+
+/*
+ * Routines to manage contexts.
+ */
+extern	void		VmMach_SetupContext();
+extern	void		VmMach_FreeContext();
+extern	void		VmMach_ReinitContext();
+/*
+ * Routines to copy data to/from user space.
+ */
+extern	ReturnStatus	VmMach_CopyIn();
+extern	ReturnStatus	VmMach_CopyOut();
+extern	ReturnStatus	VmMach_CopyInProc();
+extern	ReturnStatus	VmMach_CopyOutProc();
+extern	ReturnStatus	VmMach_StringNCopy();
+/*
+ * Device mapping.
+ */
+extern	Address		VmMach_MapInDevice();
+extern	ReturnStatus	VmMach_MapKernelIntoUser();
+/*
+ * Tracing.
+ */
+extern	void		VmMach_Trace();
+/*
+ * Pinning and unpinning user memory pages.
+ */
+extern	void		VmMach_PinUserPages();
+extern	void		VmMach_UnpinUserPages();
+/*
+ * Cache flushing.
+ */
+extern	void		VmMach_FlushPage();
+
+extern	ReturnStatus	VmMach_Cmd();
+
+/*
+ * Shared memory.
+ */
+extern ReturnStatus	VmMach_SharedStartAddr();
+extern void		VmMach_SharedSegFinish();
+extern void		VmMach_SharedProcStart();
+extern void		VmMach_SharedProcFinish();
+#endif _VMMACH
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/spur.md/RCS/vmMach.h,v 1.6 88/09/22 21:28:21 nelson Exp Locker: douglis $ SPRITE (Berkeley)
+d131 7
+@
+
+
+1.6
+log
+@Added proc header.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmMach.h,v 1.5 88/08/30 22:14:45 nelson Exp $ SPRITE (Berkeley)
+@
+
+
+1.5
+log
+@Name change for user page pinning.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmMach.h,v 1.4 88/08/27 19:47:32 nelson Exp $ SPRITE (Berkeley)
+d128 2
+@
+
+
+1.4
+log
+@Fixed lint errors.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmMach.h,v 1.3 88/08/27 15:08:26 nelson Exp $ SPRITE (Berkeley)
+d122 2
+a123 2
+extern	void		VmMach_PinUserPage();
+extern	void		VmMach_UnpinUserPage();
+@
+
+
+1.3
+log
+@Added the creation time to make cache flushing better and added
+the mapped seg mask to make cross-address-space copies work.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmMach.h,v 1.2 88/08/17 11:55:11 nelson Exp $ SPRITE (Berkeley)
+d84 2
+d124 4
+@
+
+
+1.2
+log
+@Put in true headers.
+@
+text
+@d11 1
+a11 1
+ * $Header: vmMach.h,v 1.1 88/07/29 11:29:47 nelson Exp $ SPRITE (Berkeley)
+d31 1
+d41 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+ * $Header: vmMach.h,v 1.3 88/03/18 14:56:21 nelson Exp $ SPRITE (Berkeley)
+a106 5
+ * Routines for the INTEL device driver.
+ */
+extern	void		VmMach_MapIntelPage();
+extern	void		VmMach_UnmapIntelPage();
+/*
+a109 4
+extern	void		VmMach_DevBufferInit();
+extern	Address		VmMach_DevBufferAlloc();
+extern	Address		VmMach_DevBufferMap();
+extern	void		VmMach_GetDevicePage();
+d111 9
+@

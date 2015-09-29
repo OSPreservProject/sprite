@@ -1,0 +1,24 @@
+D DS3100_M                          	ds3100.md
+L INDEX.C;1                         	index.c	../../c.orig/string/index.c
+L LOCAL.MK;1                        	local.mk	../etc/local.mk
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+L RINDEX.C;1                        	rindex.c	../../c.orig/string/rindex.c
+L STRCAT.C;1                        	strcat.c	../../c.orig/string/strcat.c
+L STRCHR.C;1                        	strchr.c	../../c.orig/string/strchr.c
+L STRCMP.C;1                        	strcmp.c	../../c.orig/string/strcmp.c
+L STRCPY.C;1                        	strcpy.c	../../c.orig/string/strcpy.c
+L STRCSPN.C;1                       	strcspn.c	../../c.orig/string/strcspn.c
+F STRDUP.C;1                        	strdup.c
+F STRERROR.C;1                      	strerror.c
+L STRLEN.C;1                        	strlen.c	../../c.orig/string/strlen.c
+L STRNCAT.C;1                       	strncat.c	../../c.orig/string/strncat.c
+L STRNCMP.C;1                       	strncmp.c	../../c.orig/string/strncmp.c
+F STRNCPY.C;1                       	strncpy.c
+L STRPBRK.C;1                       	strpbrk.c	../../c.orig/string/strpbrk.c
+L STRRCHR.C;1                       	strrchr.c	../../c.orig/string/strrchr.c
+L STRSEP.C;1                        	strsep.c	../../c.orig/string/strsep.c
+L STRSPN.C;1                        	strspn.c	../../c.orig/string/strspn.c
+L STRSTR.C;1                        	strstr.c	../../c.orig/string/strstr.c
+L STRTOK.C;1                        	strtok.c	../../c.orig/string/strtok.c
+D SUN3_MD                           	sun3.md

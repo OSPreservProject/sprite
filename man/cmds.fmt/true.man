@@ -1,0 +1,68 @@
+
+
+
+TRUE                      User Commands                      TRUE
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     true - Return a zero status
+
+SSYYNNOOPPSSIISS
+     ttrruuee
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This command does nothing except return a zero  status.   It
+     is  normally  used  in Bourne shell scripts for loop control
+     and other conditional operations.
+
+
+SSEEEE AALLSSOO
+     false, sh
+
+
+KKEEYYWWOORRDDSS
+     shell, status, true
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  December 29, 1988                  1
+
+
+

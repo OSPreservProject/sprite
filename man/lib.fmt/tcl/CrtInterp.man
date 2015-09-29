@@ -1,0 +1,66 @@
+
+
+
+Tcl_CreateInterp      C Library Procedures       Tcl_CreateInterp
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tcl_CreateInterp, Tcl_DeleteInterp - create and  delete  Tcl
+     command interpreters
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttccll..hh>>
+
+     Tcl_Interp *
+     TTccll__CCrreeaatteeIInntteerrpp()
+
+     TTccll__DDeelleetteeIInntteerrpp(_i_n_t_e_r_p)
+
+AARRGGUUMMEENNTTSS
+     Tcl_Interp   *_i_n_t_e_r_p   (in)      Token for interpreter to be
+                                      destroyed.
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     TTccll__CCrreeaatteeIInntteerrpp creates a  new  interpreter  structure  and
+     returns  a  token for it.  The token is required in calls to
+     most  other  Tcl  procedures,  such  as   TTccll__CCrreeaatteeCCoommmmaanndd,
+     TTccll__EEvvaall, and TTccll__DDeelleetteeIInntteerrpp.  Clients are only allowed to
+     access a few of the fields of  Tcl_Interp  structures;   see
+     the  Tcl_Interp and TTccll__CCrreeaatteeCCoommmmaanndd man pages for details.
+     The new interpreter is initialized with no defined variables
+     and  only  the built-in Tcl commands.  To bind in additional
+     commands, call TTccll__CCrreeaatteeCCoommmmaanndd.
+
+     TTccll__DDeelleetteeIInntteerrpp destroys a command interpreter and releases
+     all  of  the  resources  associated with it, including vari-
+     ables, procedures, and  application-specific  command  bind-
+     ings.   After  TTccll__DDeelleetteeIInntteerrpp  returns  the  caller should
+     never again use the _i_n_t_e_r_p token.
+
+
+KKEEYYWWOORRDDSS
+     command, create, delete, interpreter
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     1
+
+
+

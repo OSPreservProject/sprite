@@ -1,0 +1,135 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  srv030:1.3 srv028:1.3 srv027:1.3 srv026:1.3 srv024:1.3 srv022:1.3 srv021:1.3 srv019:1.3 srv018:1.3 srv016:1.3 srv014:1.3 srv010:1.3 srv008:1.3 srv007:1.3 srv006:1.3 srv005:1.3 srv004:1.3 srv003:1.3 srv002:1.3 srv001:1.3;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     92.04.02.21.42.09;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     92.03.12.19.23.31;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     92.02.09.15.33.51;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Sig_Pause library routine.
+@
+
+
+1.3
+log
+@Check for pending signals and handle them if there are any.
+@
+text
+@/* 
+ * Sig_Pause.c --
+ *
+ *	Source code for the Sig_Pause library procedure.
+ *
+ * Copyright 1988, 1992 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/lib/c/emulator/RCS/Sig_Pause.c,v 1.2 92/03/12 19:23:31 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <status.h>
+#include <spriteEmuInt.h>
+#include <sig.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_Pause --
+ *
+ *      The "normal" Sig_Pause routine for user code.   This retries
+ *	the Sig_Pause in the event the return status is
+ *	GEN_INTERRUPTED_BY_SIGNAL since that return code means the process
+ * 	was migrated during the Sig_Pause.
+ *
+ * Results:
+ *	An error code.
+ *
+ * Side effects:
+ *	The process is put to sleep awaiting a signal.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Sig_Pause(sigHoldMask)
+    int	sigHoldMask;	/* The value that the mask of held signals is to be set
+			   to while waiting for a signal to arrive. */
+{
+    ReturnStatus status;
+    kern_return_t kernStatus;
+    Boolean sigPending;
+
+    do {
+	kernStatus = Sig_PauseStub(SpriteEmu_ServerPort(), sigHoldMask,
+				   &status, &sigPending);
+	if (kernStatus != KERN_SUCCESS) {
+	    status = Utils_MapMachStatus(kernStatus);
+	}
+	if (sigPending) {
+	    SpriteEmu_TakeSignals();
+	}
+    } while (status == GEN_ABORTED_BY_SIGNAL);
+    return(status);
+}
+@
+
+
+1.2
+log
+@Change for use with Sprite server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/lib/c.orig/syscall/RCS/Sig_Pause.c,v 1.1 92/02/09 15:33:51 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d52 1
+d56 1
+a56 1
+				   &status);
+d59 3
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d6 1
+a6 1
+ * Copyright 1988 Regents of the University of California
+d17 1
+a17 1
+static char rcsid[] = "$Header: Sig_Pause.c,v 1.2 88/06/21 11:14:50 ouster Exp $ SPRITE (Berkeley)";
+d22 1
+d51 1
+d54 5
+a58 1
+	status = Sig_RawPause(sigHoldMask);
+@

@@ -1,0 +1,60 @@
+/*
+ * fsDisk.h --
+ *
+ *	Definitions for utilities that examine a filesystem through
+ *	a raw disk interface.
+ */
+
+#ifndef _FSUSERDISK
+#define _FSUSERDISK
+
+#include "kernel/fs.h"
+#include "kernel/dev.h"
+#include "kernel/fsdm.h"
+#include "kernel/devDiskLabel.h"
+
+/*
+ * These should be here.  They should be in some machine dependent header
+ * file.  But for now ...
+ */
+#define BITS_PER_BYTE           8
+#define BITS_PER_INT            32
+
+/*
+ * DISK_SECTORS_PER_BLOCK	Number of disk sectors per file system block.
+ * DISK_KBYTES_PER_BLOCK	Number of kbyte chunks per file system block.
+ */
+#define DISK_SECTORS_PER_BLOCK       (FS_BLOCK_SIZE / DEV_BYTES_PER_SECTOR)
+#define DISK_KBYTES_PER_BLOCK        (FS_BLOCK_SIZE / 1024)
+
+typedef struct Disk_Info {
+    int firstCylinder;  /* First physical cylinder of the partition */
+    int numCylinders;   /* Number of cylinders in the partition */
+    int numHeads;       /* Number of heads on the disk */
+    int numSectors;     /* Number of sectors per track */
+    int domainSector;   /* Sector offset of Fsdm_DiskHeader information */
+    int numDomainSectors;       /* Size of the Fsdm_DiskHeader information */
+    int bootSector;     /* Sector offset of boot program */
+    int numBootSectors; /* Size of the boot program */
+    int summarySector;  /* Sector offset of the summary sector */
+    char asciiLabel[128];       /* Copy of ascii disk label */
+} Disk_Info;
+
+/*
+ * Forward Declarations.
+ */
+Disk_Info		*Disk_ReadDiskInfo();
+Dec_DiskLabel		*Disk_ReadDecLabel();
+Sun_DiskLabel		*Disk_ReadSunLabel();
+Fsdm_DiskHeader		*Disk_ReadDiskHeader();
+Fsdm_SummaryInfo	*Disk_ReadSummaryInfo();
+int			Disk_WriteSummaryInfo();
+void			Disk_PrintDomainHeader();
+void			Disk_PrintSummaryInfo();
+int			Disk_BlockWrite();
+int			Disk_SectorWrite();
+int			Disk_BlockRead();
+int			Disk_SectorRead();
+int			Disk_BadBlockRead();
+
+#endif FILESYSTEM

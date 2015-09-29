@@ -1,0 +1,2045 @@
+head     9.12;
+branch   ;
+access   ;
+symbols  ds3100:9.12 sun3:9.12 sprited:9.11.1 sun4nw:9.12 symm:9.12 spur:9.12 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.12
+date     91.09.10.18.38.43;  author rab;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     91.02.01.16.31.45;  author shirriff;  state Exp;
+branches 9.11.1.1;
+next     9.10;
+
+9.10
+date     91.01.10.12.43.31;  author shirriff;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     91.01.08.16.27.54;  author shirriff;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     90.12.15.13.37.36;  author shirriff;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.12.10.11.11.14;  author jhh;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.12.06.17.35.16;  author shirriff;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.10.08.15.19.35;  author mendel;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.07.20.18.08.33;  author shirriff;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.07.15.13.37.06;  author shirriff;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.11.29.14.48.35;  author brent;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.09.25.16.52.50;  author brent;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.06.58;  author douglis;  state Stable;
+branches ;
+next     8.2;
+
+8.2
+date     89.08.21.15.26.49;  author mendel;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.06.15.09.16.45;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.20.03;  author douglis;  state Stable;
+branches ;
+next     7.0;
+
+7.0
+date     88.11.11.15.31.48;  author brent;  state Exp;
+branches ;
+next     6.10;
+
+6.10
+date     88.10.14.12.15.44;  author brent;  state Exp;
+branches ;
+next     6.9;
+
+6.9
+date     88.10.11.16.00.05;  author brent;  state Exp;
+branches ;
+next     6.8;
+
+6.8
+date     88.09.09.11.18.50;  author brent;  state Exp;
+branches ;
+next     6.7;
+
+6.7
+date     88.09.09.08.43.26;  author brent;  state Exp;
+branches ;
+next     6.6;
+
+6.6
+date     88.09.06.15.40.13;  author brent;  state Exp;
+branches ;
+next     6.5;
+
+6.5
+date     88.09.06.09.32.28;  author brent;  state Exp;
+branches ;
+next     6.4;
+
+6.4
+date     88.09.06.09.25.53;  author brent;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.08.31.12.05.31;  author brent;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.24.18.08.34;  author brent;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.13.11.23.22;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.16.10;  author brent;  state Stable;
+branches ;
+next     1.5;
+
+1.5
+date     88.06.01.17.10.13;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.05.05.16.35.06;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.04.11.18.19.44;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.04.05.13.52.51;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.04.10.33.27;  author brent;  state Exp;
+branches ;
+next     ;
+
+9.11.1.1
+date     91.11.15.16.17.00;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Local naming operations, excluding the main recursive lookup routine.
+@
+
+
+9.12
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@/* 
+ * fslclDomain.c --
+ *
+ *	Implementation of name-space operations in the local domain.
+ *	The routines here are called via the prefix table.
+ *	They use FslclLookup (in fsLocalLookup.c) to do the guts of
+ *	recursive name lookup.
+ *
+ * Copyright (C) 1987 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fslclDomain.c,v 9.11 91/02/01 16:31:45 shirriff Exp Locker: rab $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <sprite.h>
+#include <fs.h>
+#include <fsconsist.h>
+#include <fsio.h>
+#include <fsutil.h>
+#include <fsNameOps.h>
+#include <fsprefix.h>
+#include <fslclInt.h>
+#include <fsdm.h>
+#include <rpc.h>
+#include <vm.h>
+#include <string.h>
+#include <proc.h>
+#include <spriteTime.h>
+
+char *fslclEmptyDirBlock;
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fslcl_DomainInit --
+ *
+ *	Do general initialization for the local domain.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Initializes the domain table and the image of a new directory.
+ *	
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Fslcl_DomainInit()
+{
+    register Fslcl_DirEntry *dirEntryPtr;
+
+    Fsdm_Init();
+
+    fslclEmptyDirBlock = (char *)malloc(FSLCL_DIR_BLOCK_SIZE);
+    dirEntryPtr = (Fslcl_DirEntry *)fslclEmptyDirBlock;
+    dirEntryPtr->fileNumber = FSDM_ROOT_FILE_NUMBER;
+    dirEntryPtr->nameLength = strlen(".");
+    dirEntryPtr->recordLength = Fslcl_DirRecLength(dirEntryPtr->nameLength);
+    (void)strcpy(dirEntryPtr->fileName, ".");
+    dirEntryPtr = (Fslcl_DirEntry *)((int)dirEntryPtr + dirEntryPtr->recordLength);
+    dirEntryPtr->fileNumber = FSDM_ROOT_FILE_NUMBER;
+    dirEntryPtr->nameLength = strlen("..");
+    dirEntryPtr->recordLength = FSLCL_DIR_BLOCK_SIZE - Fslcl_DirRecLength(1);
+    (void)strcpy(dirEntryPtr->fileName, "..");
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FslclExport --
+ *
+ *	This is called from the RPC_FS_PREFIX stub to export a domain
+ *	to a remote Sprite host.  The prefix table has already been
+ *	examined, and we are passed in the handle that's hooked to it.
+ *	This uses Fsio_FileNameOpen to setup Fsio_FileState so the client
+ *	can set up a remote file handle for its own prefix table.
+ *
+ * Results:
+ *	That of Fsio_FileNameOpen
+ *
+ * Side effects:
+ *	Adds the client to the set of clients using the directory that
+ *	is the top of the local domain.
+ *	
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+FslclExport(hdrPtr, clientID, ioFileIDPtr, dataSizePtr, clientDataPtr)
+     Fs_HandleHeader	*hdrPtr;	/* A handle from the prefix table. */
+     int		clientID;	/* Host ID of client importing prefix */
+     register Fs_FileID	*ioFileIDPtr;	/* Return - I/O handle ID */
+     int		*dataSizePtr;	/* Return - sizeof(Fsio_FileState) */
+     ClientData		*clientDataPtr;	/* Return - ref to Fsio_FileState */
+{
+    register Fsio_FileIOHandle *handlePtr = (Fsio_FileIOHandle *)hdrPtr;
+    register ReturnStatus status;
+    Fs_OpenArgs openArgs;
+    Fs_OpenResults openResults;
+
+    bzero((Address)&openArgs, sizeof(openArgs));
+    openArgs.clientID = clientID;
+    openArgs.useFlags = FS_PREFIX;
+
+    Fsutil_HandleLock(handlePtr);
+    status = Fsio_FileNameOpen(handlePtr, &openArgs, &openResults);
+    if (status == SUCCESS) {
+	*ioFileIDPtr = openResults.ioFileID;
+	*dataSizePtr = openResults.dataSize;
+	*clientDataPtr = openResults.streamData;
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FslclOpen --
+ *
+ *      Open a file stored locally.  This uses FslclLookup to get a
+ *	regular handle on the file, and then calls the server-open
+ *	routine to bundle up state needed later by the client-open routine.
+ *	That routine will set up a handle for I/O, which for devices and
+ *	other things will be different than the regular handle.
+ *
+ * Results:
+ *	An error code.  The results include a pointer to some client data
+ *	packaged up by the server-open routine.
+ *
+ * Side effects:
+ *	The file-type server-open routine is called to package
+ *	up state for the client-open routine.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+FslclOpen(prefixHandlePtr, relativeName, argsPtr, resultsPtr, 
+	    newNameInfoPtrPtr)
+    Fs_HandleHeader	*prefixHandlePtr; /* Handle that indicates the starting 
+					   * point of the lookup */
+    char 	*relativeName;		  /* The name of the file to open */
+    Address 	argsPtr;		  /* Bundled arguments for us */
+    Address 	resultsPtr;		  /* Bundled results for us */
+    Fs_RedirectInfo **newNameInfoPtrPtr;   /* We return this if the server 
+					   * leaves its domain during the 
+					   * lookup. */
+{
+    register Fs_OpenArgs *openArgsPtr = (Fs_OpenArgs *)argsPtr;
+    register Fs_OpenResults *openResultsPtr = (Fs_OpenResults *)resultsPtr;
+    Fsio_FileIOHandle *handlePtr;	/* The handle returned for the file */
+    ReturnStatus 	status;		/* Error return from RPC */
+
+    status = FslclLookup(prefixHandlePtr, relativeName, &openArgsPtr->rootID,
+	    openArgsPtr->useFlags, openArgsPtr->type, openArgsPtr->clientID,
+	    &openArgsPtr->id, openArgsPtr->permissions, 0, &handlePtr,
+	    newNameInfoPtrPtr);
+    if (status == SUCCESS) {
+	/*
+	 * Call the file-type server-open routine to set up any state
+	 * needed later by the client to open a stream to the file.
+	 * For regular files, this is when cache consistency is done.
+	 */
+	status = (*fsio_OpenOpTable[handlePtr->descPtr->fileType].nameOpen)
+		(handlePtr, openArgsPtr, openResultsPtr);
+	openResultsPtr->nameID = handlePtr->hdr.fileID;
+	if (openArgsPtr->clientID != rpc_SpriteID) {
+	    openResultsPtr->nameID.type = FSIO_RMT_FILE_STREAM;
+	}
+	Fsutil_HandleRelease(handlePtr, FALSE);
+	Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FslclGetAttrPath --
+ *
+ *	Get the attributes of a local file given its path name.  The attributes
+ *	are copied from the disk descriptor need to be updated by contacting
+ *	the I/O server for the file (for non-regular files).
+ *
+ * Results:
+ *	Return code from FslclLookup.
+ *
+ * Side effects:
+ *	Does call-backs to clients to grab up-to-date access and modify
+ *	times for regular files.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+FslclGetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
+				  newNameInfoPtrPtr)
+    Fs_HandleHeader	*prefixHandlePtr;	/* Handle from prefix table */
+    char		*relativeName;		/* The name of the file. */
+    Address		argsPtr;		/* Bundled arguments for us */
+    Address		resultsPtr;		/* == NIL */
+    Fs_RedirectInfo	**newNameInfoPtrPtr;	/* We return this if the server
+						 * leaves its domain during
+						 * the lookup. */
+{
+    ReturnStatus	status;
+    Boolean		isExeced;
+    Fs_OpenArgs 		*openArgsPtr;
+    Fsio_FileIOHandle *handlePtr;
+    Fs_GetAttrResults	*attrResultsPtr;
+    Fs_OpenResults	openResults;
+
+
+    openArgsPtr =  (Fs_OpenArgs *)argsPtr;
+    attrResultsPtr = (Fs_GetAttrResults *)resultsPtr;
+
+    status = FslclLookup(prefixHandlePtr, relativeName, &openArgsPtr->rootID,
+			openArgsPtr->useFlags, openArgsPtr->type,
+			openArgsPtr->clientID,
+			&openArgsPtr->id, openArgsPtr->permissions, 0,
+			&handlePtr, newNameInfoPtrPtr);
+    if (status != SUCCESS) {
+	return(status);
+    }
+    /*
+     * Do call-backs to get attributes cached (for regular files) on clients,
+     * then copy the attributes from the disk descriptor.
+     */
+    Fsconsist_GetClientAttrs(handlePtr, openArgsPtr->clientID, &isExeced);
+    FslclAssignAttrs(handlePtr, isExeced, attrResultsPtr->attrPtr);
+    /*
+     * Get the I/O fileID so our client can contact the I/O server.
+     */
+    openArgsPtr->useFlags = 0;
+    status = (*fsio_OpenOpTable[handlePtr->descPtr->fileType].nameOpen)
+	    (handlePtr, openArgsPtr, &openResults);
+    *attrResultsPtr->fileIDPtr = openResults.ioFileID;
+
+    if (status != SUCCESS) {
+	printf("FslclGetAttrPath, nameOpen of \"%s\" <%d,%d> failed <%x>\n",
+	    relativeName, handlePtr->hdr.fileID.minor,
+	    handlePtr->hdr.fileID.major, status);
+    }
+    Fsutil_HandleRelease(handlePtr, FALSE);
+    Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FslclSetAttrPath --
+ *
+ *	Set the attributes of a local file given its pathname.  First
+ *	we update the disk descriptor, then call the nameOpen routine
+ *	to get an I/O handle for the file.  This is used by our caller
+ *	to branch to the stream-type setIOAttr routine.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+FslclSetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
+				  newNameInfoPtrPtr)
+    Fs_HandleHeader *prefixHandlePtr;	/* File handle from prefix table */
+    char *relativeName;		/* The name of the file. */
+    Address argsPtr;		/* Bundled arguments for us */
+    Address resultsPtr;		/* Bundled results from us */
+    Fs_RedirectInfo **newNameInfoPtrPtr;/*We return this if the server leaves its
+				        * domain during the lookup. */
+{
+    ReturnStatus		status;
+    Fs_SetAttrArgs		*setAttrArgsPtr;
+    Fs_OpenArgs			*openArgsPtr;
+    Fs_FileID			*fileIDPtr;
+    Fsio_FileIOHandle		*handlePtr;
+    Fs_OpenResults		openResults;
+
+    setAttrArgsPtr =  (Fs_SetAttrArgs *)argsPtr;
+    openArgsPtr = &setAttrArgsPtr->openArgs;
+    fileIDPtr = (Fs_FileID *)resultsPtr;
+
+    status = FslclLookup(prefixHandlePtr, relativeName, &openArgsPtr->rootID,
+			openArgsPtr->useFlags, openArgsPtr->type,
+			openArgsPtr->clientID,
+			&openArgsPtr->id, openArgsPtr->permissions, 0,
+			&handlePtr, newNameInfoPtrPtr);
+    if (status != SUCCESS) {
+	return(status);
+    }
+    /*
+     * Set the attributes on the disk descriptor.
+     */
+    Fsutil_HandleUnlock(handlePtr);
+    status = FslclSetAttr(&handlePtr->hdr.fileID, &setAttrArgsPtr->attr,
+			    &openArgsPtr->id, setAttrArgsPtr->flags);
+    /*
+     * Get the I/O handle so our client can contact the I/O server.
+     */
+    if (status == SUCCESS) {
+	Fsutil_HandleLock(handlePtr);
+	openArgsPtr->useFlags = 0;
+	status = (*fsio_OpenOpTable[handlePtr->descPtr->fileType].nameOpen)
+		(handlePtr, openArgsPtr, &openResults);
+	*fileIDPtr = openResults.ioFileID;
+
+	if (status != SUCCESS) {
+	    printf(
+		"FslclSetAttrPath, nameOpen of \"%s\" <%d,%d> failed <%x>\n",
+		relativeName, handlePtr->hdr.fileID.minor,
+		handlePtr->hdr.fileID.major, status);
+	}
+    }
+    Fsutil_HandleRelease(handlePtr, FALSE);
+    Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FslclMakeDevice --
+ *
+ *	Create a device file.  A file is created with type FS_DEVICE and
+ *	then the handle and the descriptor have their device information
+ *	updated from the MakeDevice parameters.  This device information,
+ *	along with the FS_DEVICE file type, causes I/O operations on the
+ *	file to be directed to the device driver routines.
+ *
+ * Results:
+ *	The results of the lookup if it fails, or SUCCESS.
+ *
+ * Side effects:
+ *	Create the file and set up the descriptor's and handle' device info.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+FslclMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
+				newNameInfoPtrPtr)
+    Fs_HandleHeader	*prefixHandle;	/* Reference to prefix of the domain */
+    char		*relativeName;	/* The name of the file. */
+    Address		argsPtr;	/* Bundled arguments for us */
+    Address		resultsPtr;	/* == NIL */
+    Fs_RedirectInfo	**newNameInfoPtrPtr;	/* We return this if the server
+					 *leaves its domain during lookup. */
+{
+    ReturnStatus	status;
+    Fs_MakeDeviceArgs	*makeDevArgsPtr;
+    Fsio_FileIOHandle *handlePtr;
+    register Fsdm_FileDescriptor *descPtr;
+
+    makeDevArgsPtr = (Fs_MakeDeviceArgs *)argsPtr;
+    status = FslclLookup(prefixHandle, relativeName,
+		&makeDevArgsPtr->open.rootID,
+		FS_CREATE | FS_EXCLUSIVE | FS_FOLLOW, FS_DEVICE,
+		makeDevArgsPtr->open.clientID,
+		&makeDevArgsPtr->open.id, makeDevArgsPtr->open.permissions,
+		0, &handlePtr, newNameInfoPtrPtr);
+    if (status == SUCCESS) {
+	descPtr = handlePtr->descPtr;
+	descPtr->devServerID = makeDevArgsPtr->device.serverID;
+	descPtr->devType = makeDevArgsPtr->device.type;
+	descPtr->devUnit = makeDevArgsPtr->device.unit;
+	descPtr->flags |= FSDM_FD_OTHERS_DIRTY;
+	status = Fsdm_FileDescStore(handlePtr, FALSE);
+	Fsutil_HandleRelease(handlePtr, TRUE);
+    }
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FslclMakeDir --
+ *
+ *	Make the named directory.
+ *
+ * Results:
+ *	An error code.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+FslclMakeDir(prefixHandle, relativeName, argsPtr, resultsPtr, 
+	       newNameInfoPtrPtr)
+    Fs_HandleHeader	*prefixHandle;	/* Reference to prefix of the domain */
+    char		*relativeName;	/* The name of the dir. to create */
+    Address		argsPtr;	/* Ref. to Fs_OpenArgs */
+    Address		resultsPtr;	/* == NIL */
+    Fs_RedirectInfo	**newNameInfoPtrPtr;	/* We return this if the server
+					 * leaves its domain during lookup. */
+{
+    ReturnStatus	status;
+    Fs_OpenArgs		*openArgsPtr;	/* Pointer to bundled arguments */
+    Fsio_FileIOHandle	*handlePtr;
+
+    openArgsPtr = (Fs_OpenArgs *)argsPtr;
+    status = FslclLookup(prefixHandle, relativeName, &openArgsPtr->rootID,
+	    openArgsPtr->useFlags, openArgsPtr->type, openArgsPtr->clientID,
+	    &openArgsPtr->id, openArgsPtr->permissions, 0, &handlePtr,
+	    newNameInfoPtrPtr);
+    if (status == SUCCESS) {
+	Fsutil_HandleRelease(handlePtr, TRUE);
+	Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
+    }
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FslclRemove --
+ *
+ *	Remove a file from the local domain.
+ *
+ * Results:
+ *	An error code.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+FslclRemove(prefixHandle, relativeName, argsPtr, resultsPtr, 
+	      newNameInfoPtrPtr)
+    Fs_HandleHeader	*prefixHandle;	/* Reference to prefix of the domain */
+    char		*relativeName;	/* The name of the file to remove */
+    Address		argsPtr;	/* Bundled arguments for us */
+    Address		resultsPtr;	/* == NIL */
+    Fs_RedirectInfo	**newNameInfoPtrPtr;	/* We return this if the server 
+					 * leaves its domain during lookup. */
+{
+    register ReturnStatus status;
+    register Fs_LookupArgs *lookupArgsPtr;
+
+    lookupArgsPtr = (Fs_LookupArgs *)argsPtr;
+    status = FslclLookup(prefixHandle, relativeName, &lookupArgsPtr->rootID,
+	    lookupArgsPtr->useFlags, FS_FILE, lookupArgsPtr->clientID,
+	    &lookupArgsPtr->id, 0, 0, (Fsio_FileIOHandle **)NIL,
+	    newNameInfoPtrPtr);
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FslclRemoveDir --
+ *
+ *	Remove a directory from the local domain.
+ *
+ * Results:
+ *	An error code.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+FslclRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr, 
+	      newNameInfoPtrPtr)
+    Fs_HandleHeader	*prefixHandle;	/* Reference to prefix of the domain */
+    char		*relativeName;	/* The name of the file to remove */
+    Address		argsPtr;	/* Bundled arguments for us */
+    Address		resultsPtr;	/* == NIL */
+    Fs_RedirectInfo	**newNameInfoPtrPtr;	/* We return this if the server 
+					 * leaves its domain during lookup. */
+{
+    register ReturnStatus status;
+    register Fs_LookupArgs *lookupArgsPtr;
+
+    lookupArgsPtr = (Fs_LookupArgs *)argsPtr;
+    status = FslclLookup(prefixHandle, relativeName, &lookupArgsPtr->rootID,
+	    lookupArgsPtr->useFlags, FS_DIRECTORY, lookupArgsPtr->clientID,
+	    &lookupArgsPtr->id, 0, 0, (Fsio_FileIOHandle **)NIL,
+	    newNameInfoPtrPtr);
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FslclRename --
+ *
+ *	Rename a local file.
+ *
+ * Results:
+ *	An error code.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+FslclRename(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
+	    lookupArgsPtr, newNameInfoPtrPtr, name1ErrorPtr)
+    Fs_HandleHeader	*prefixHandle1;	/* Token from the prefix table */
+    char		*relativeName1;	/* The new name of the file. */
+    Fs_HandleHeader	*prefixHandle2;	/* Token from the prefix table */
+    char		*relativeName2;	/* The new name of the file. */
+    Fs_LookupArgs	*lookupArgsPtr;	/* Contains ID info */
+    Fs_RedirectInfo	**newNameInfoPtrPtr;	/* We return this if the server
+						 * leaves its domain during
+						 * lookup. */
+    Boolean		*name1ErrorPtr;	/* TRUE if redirect info or stale
+					 * handle error is for the first name,
+					 * FALSE if for the second. */
+{
+    ReturnStatus status;
+
+    lookupArgsPtr->useFlags = FS_LINK | FS_RENAME;
+    status = FslclHardLink(prefixHandle1, relativeName1, prefixHandle2,
+	    relativeName2, lookupArgsPtr, newNameInfoPtrPtr, name1ErrorPtr);
+    if (status == SUCCESS) {
+	lookupArgsPtr->useFlags = FS_DELETE | FS_RENAME;
+	status = FslclRemove(prefixHandle1, relativeName1, 
+		    (Address) lookupArgsPtr, (Address)NIL, newNameInfoPtrPtr);
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FslclHardLink --
+ *
+ *	Make another name for an existing file.
+ *
+ * Results:
+ *	An error code.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+FslclHardLink(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
+	    lookupArgsPtr, newNameInfoPtrPtr, name1ErrorPtr)
+    Fs_HandleHeader	*prefixHandle1;	/* Token from the prefix table */
+    char		*relativeName1;	/* The new name of the file. */
+    Fs_HandleHeader	*prefixHandle2;	/* Token from the prefix table */
+    char		*relativeName2;	/* The new name of the file. */
+    Fs_LookupArgs	*lookupArgsPtr;	/* Contains ID info */
+    Fs_RedirectInfo	**newNameInfoPtrPtr;	/* We return this if the server
+						 * leaves its domain during
+						 * lookup. */
+    Boolean		*name1ErrorPtr;	/* TRUE if redirect-info or stale
+					 * handle error is for first pathname,
+					 * FALSE if for the second. */
+{
+    ReturnStatus status;
+    Fsio_FileIOHandle *handle1Ptr;
+    Fsio_FileIOHandle *handle2Ptr;
+
+    *name1ErrorPtr = FALSE;
+
+    /*
+     * This lookup gets a locked handle on the (presumably) existing file.
+     */
+    status = FslclLookup(prefixHandle1, relativeName1, &lookupArgsPtr->rootID,
+	   lookupArgsPtr->useFlags & FS_FOLLOW, FS_FILE,
+	   lookupArgsPtr->clientID, &lookupArgsPtr->id,
+	   0, 0, (Fsio_FileIOHandle **)&handle1Ptr, newNameInfoPtrPtr);
+    if (status != SUCCESS) {
+	*name1ErrorPtr = TRUE;
+	return(status);
+    }
+    Fsutil_HandleUnlock(handle1Ptr);
+    if (prefixHandle2 == (Fs_HandleHeader *)NIL ||
+	prefixHandle2->fileID.major != prefixHandle1->fileID.major) {
+	/*
+	 * The second pathname which isn't in our domain.  We have
+	 * been called in this case to see if the first pathname would
+	 * redirect away from us, but it didn't.
+	 */
+	status = FS_CROSS_DOMAIN_OPERATION;
+    } else {
+	/*
+	 * This lookup does the linking.  If our caller has set FS_RENAME in
+	 * lookupArgsPtr->useFlags then directories can be linked.  Handle1
+	 * is unlocked because the linking will end up locking it again.
+	 * The result of a successful return from this call is that
+	 * both handle1 and handle2 reference the same handle, and that
+	 * handle is locked.
+	 */
+	status = FslclLookup(prefixHandle2, relativeName2,
+		&lookupArgsPtr->rootID,
+		lookupArgsPtr->useFlags, handle1Ptr->descPtr->fileType,
+		lookupArgsPtr->clientID,
+		&lookupArgsPtr->id, 0, handle1Ptr->hdr.fileID.minor,
+		(Fsio_FileIOHandle **)&handle2Ptr, newNameInfoPtrPtr);
+    }
+    if (status == SUCCESS) {
+	Fsutil_HandleRelease(handle2Ptr, TRUE);
+	Fsdm_DomainRelease(handle2Ptr->hdr.fileID.major);
+    }
+    Fsutil_HandleRelease(handle1Ptr, FALSE);
+    Fsdm_DomainRelease(handle1Ptr->hdr.fileID.major);
+    return(status);
+}
+@
+
+
+9.11
+log
+@Added client tracing for SetAttr.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fslclDomain.c,v 9.10 91/01/10 12:43:31 shirriff Exp $ SPRITE (Berkeley)";
+a33 1
+#include <fsutilTrace.h>
+a39 5
+#ifdef SOSP91
+#include <sospRecord.h>
+static Fs_FileID NullFileID = {0};
+#endif
+
+a163 7
+
+
+#ifdef SOSP91
+    SOSP_REMEMBERED_OP = FS_DOMAIN_OPEN;
+    SOSP_REMEMBERED_CLIENT = openArgsPtr->clientID;
+    SOSP_REMEMBERED_MIG = openArgsPtr->migClientID;
+#endif
+a225 5
+#ifdef SOSP91
+    SOSP_REMEMBERED_OP = FS_DOMAIN_GET_ATTR;
+    SOSP_REMEMBERED_CLIENT = openArgsPtr->clientID;
+    SOSP_REMEMBERED_MIG = openArgsPtr->migClientID;
+#endif
+a296 5
+#ifdef SOSP91
+    SOSP_REMEMBERED_OP = FS_DOMAIN_SET_ATTR;
+    SOSP_REMEMBERED_CLIENT = openArgsPtr->clientID;
+    SOSP_REMEMBERED_MIG = openArgsPtr->migClientID;
+#endif
+a308 6
+#ifdef SOSP91
+    status = FslclSetAttr(&handlePtr->hdr.fileID, &setAttrArgsPtr->attr,
+			    &openArgsPtr->id, setAttrArgsPtr->flags,
+			    openArgsPtr->clientID, openArgsPtr->migClientID,
+			    -1);
+#else
+a310 1
+#endif
+a368 5
+#ifdef SOSP91
+    SOSP_REMEMBERED_OP = FS_DOMAIN_MAKE_DEVICE;
+    SOSP_REMEMBERED_CLIENT = makeDevArgsPtr->open.clientID;
+    SOSP_REMEMBERED_MIG = makeDevArgsPtr->open.migClientID;
+#endif
+a418 6
+
+#ifdef SOSP91
+    SOSP_REMEMBERED_OP = FS_DOMAIN_MAKE_DIR;
+    SOSP_REMEMBERED_CLIENT = openArgsPtr->clientID;
+    SOSP_REMEMBERED_MIG = openArgsPtr->migClientID;
+#endif
+a460 6
+
+#ifdef SOSP91
+    SOSP_REMEMBERED_OP = FS_DOMAIN_REMOVE;
+    SOSP_REMEMBERED_CLIENT = lookupArgsPtr->clientID;
+    SOSP_REMEMBERED_MIG = lookupArgsPtr->migClientID;
+#endif
+a497 6
+
+#ifdef SOSP91
+    SOSP_REMEMBERED_OP = FS_DOMAIN_REMOVE_DIR;
+    SOSP_REMEMBERED_CLIENT = lookupArgsPtr->clientID;
+    SOSP_REMEMBERED_MIG = lookupArgsPtr->migClientID;
+#endif
+a586 7
+#ifdef SOSP91
+    SOSP_ADD_MKLINK_TRACE(lookupArgsPtr->clientID, lookupArgsPtr->migClientID, 
+	    NullFileID);
+    SOSP_REMEMBERED_OP = FS_DOMAIN_HARD_LINK;
+    SOSP_REMEMBERED_CLIENT = lookupArgsPtr->clientID;
+    SOSP_REMEMBERED_MIG = lookupArgsPtr->migClientID;
+#endif
+a612 5
+#ifdef SOSP91
+	SOSP_REMEMBERED_OP = FS_DOMAIN_HARD_LINK|0x80;
+	SOSP_REMEMBERED_CLIENT = lookupArgsPtr->clientID;
+	SOSP_REMEMBERED_MIG = lookupArgsPtr->migClientID;
+#endif
+@
+
+
+9.11.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fslcl/fslclDomain.c,v 9.11 91/02/01 16:31:45 shirriff Exp $ SPRITE (Berkeley)";
+@
+
+
+9.10
+log
+@Fixed a bug in set attributes tracing.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fslclDomain.c,v 9.9 91/01/08 16:27:54 shirriff Exp $ SPRITE (Berkeley)";
+d332 6
+d340 1
+@
+
+
+9.9
+log
+@Removed an extra getattr trace.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fslclDomain.c,v 9.8 90/12/15 13:37:36 shirriff Exp $ SPRITE (Berkeley)";
+a315 2
+    SOSP_ADD_SET_ATTR_TRACE(openArgsPtr->clientID, openArgsPtr->migClientID, 
+	    handlePtr->hdr.fileID);
+@
+
+
+9.8
+log
+@Fixed a trace stub in the wrong place.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fslclDomain.c,v 9.7 90/12/10 11:11:14 jhh Exp $ SPRITE (Berkeley)";
+a239 2
+    SOSP_ADD_GET_ATTR_TRACE(openArgsPtr->clientID, openArgsPtr->migClientID, 
+	    NullFileID);
+@
+
+
+9.7
+log
+@Fixed delete and set attrs trace records
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fslclDomain.c,v 9.6 90/12/06 17:35:16 shirriff Exp Locker: jhh $ SPRITE (Berkeley)";
+d317 7
+a331 7
+#ifdef SOSP91
+    SOSP_ADD_SET_ATTR_TRACE(openArgsPtr->clientID, openArgsPtr->migClientID, 
+	    handlePtr->hdr.fileID);
+    SOSP_REMEMBERED_OP = FS_DOMAIN_SET_ATTR;
+    SOSP_REMEMBERED_CLIENT = openArgsPtr->clientID;
+    SOSP_REMEMBERED_MIG = openArgsPtr->migClientID;
+#endif
+@
+
+
+9.6
+log
+@Added sosp measurements.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fslclDomain.c,v 9.5 90/10/08 15:19:35 mendel Exp Locker: shirriff $ SPRITE (Berkeley)";
+a316 7
+#ifdef SOSP91
+    SOSP_ADD_SET_ATTR_TRACE(openArgsPtr->clientID, openArgsPtr->migClientID, 
+	    NullFileID);
+    SOSP_REMEMBERED_OP = FS_DOMAIN_SET_ATTR;
+    SOSP_REMEMBERED_CLIENT = openArgsPtr->clientID;
+    SOSP_REMEMBERED_MIG = openArgsPtr->migClientID;
+#endif
+d325 7
+a500 2
+    SOSP_ADD_DELETE_TRACE(lookupArgsPtr->clientID, lookupArgsPtr->migClientID, 
+	    NullFileID, 0, 0);
+@
+
+
+9.5
+log
+@Changed file name to fslclDomain.c
+Fixed includes to use <> rather than "", added functions prototypes, and
+removed lint.
+Modified to use the new disk domain interface.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs.mendel/RCS/fsLocalDomain.c,v 1.1 90/01/16 17:10:52 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d41 5
+d172 5
+d239 7
+d317 7
+d396 5
+d452 5
+d500 7
+d545 5
+d639 7
+d672 5
+@
+
+
+9.4
+log
+@Undid previous change to prevent hard links to directories.
+a) It didn't work because I forgot the return.
+b) It would have kept rename from working if the change did work.
+@
+text
+@d2 1
+a2 1
+ * fsLocalDomain.c --
+d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fsLocalDomain.c,v 9.3 90/07/15 13:37:06 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d25 15
+a39 15
+#include "sprite.h"
+#include "fs.h"
+#include "fsio.h"
+#include "fsutil.h"
+#include "fsNameOps.h"
+#include "fsprefix.h"
+#include "fslclInt.h"
+#include "fsdm.h"
+#include "fsconsist.h"
+#include "fsutilTrace.h"
+#include "rpc.h"
+#include "vm.h"
+#include "string.h"
+#include "proc.h"
+#include "spriteTime.h"
+a368 1
+    Fsdm_Domain		*domainPtr;
+d383 2
+a384 9
+	domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, FALSE);
+	if (domainPtr == (Fsdm_Domain *)NIL) {
+	    status = FS_DOMAIN_UNAVAILABLE;
+	    printf( "FslclMakeDevice: Domain unavailable\n");
+	} else {
+	    status = Fsdm_FileDescStore(domainPtr, handlePtr->hdr.fileID.minor,
+				     descPtr);
+	    Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
+	}
+@
+
+
+9.3
+log
+@Added check to prevent hard link on directory unless superuser.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fsLocalDomain.c,v 9.2 89/11/29 14:48:35 brent Exp $ SPRITE (Berkeley)";
+a618 9
+	/*
+	 * Make sure user isn't trying to hard-link a directory.
+	 */
+	if (handle1Ptr->descPtr->fileType == FS_DIRECTORY) {
+	    Proc_ControlBlock *procPtr = Proc_GetEffectiveProc();
+	    if (procPtr->effectiveUserID != PROC_SUPER_USER_ID) {
+		status = GEN_EPERM;
+	    }
+	}
+@
+
+
+9.2
+log
+@srvOpen => nameOpen
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fsLocalDomain.c,v 9.1 89/09/25 16:52:50 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d619 9
+@
+
+
+9.1
+log
+@Updated to new fs typedefs
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fsLocalDomain.c,v 9.0 89/09/12 15:06:58 douglis Stable Locker: brent $ SPRITE (Berkeley)";
+d27 1
+d177 1
+a177 1
+	status = (*fsio_OpenOpTable[handlePtr->descPtr->fileType].srvOpen)
+d247 1
+a247 1
+    status = (*fsio_OpenOpTable[handlePtr->descPtr->fileType].srvOpen)
+d252 1
+a252 1
+	printf("FslclGetAttrPath, srvOpen of \"%s\" <%d,%d> failed <%x>\n",
+d267 1
+a267 1
+ *	we update the disk descriptor, then call the srvOpen routine
+d320 1
+a320 1
+	status = (*fsio_OpenOpTable[handlePtr->descPtr->fileType].srvOpen)
+d326 1
+a326 1
+		"FslclSetAttrPath, srvOpen of \"%s\" <%d,%d> failed <%x>\n",
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fsLocalDomain.c,v 8.2 89/08/21 15:26:49 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d61 1
+a61 1
+    register FslclDirEntry *dirEntryPtr;
+d66 1
+a66 1
+    dirEntryPtr = (FslclDirEntry *)fslclEmptyDirBlock;
+d69 1
+a69 1
+    dirEntryPtr->recordLength = FsDirRecLength(dirEntryPtr->nameLength);
+d71 1
+a71 1
+    dirEntryPtr = (FslclDirEntry *)((int)dirEntryPtr + dirEntryPtr->recordLength);
+d74 1
+a74 1
+    dirEntryPtr->recordLength = FSLCL_DIR_BLOCK_SIZE - FsDirRecLength(1);
+@
+
+
+8.2
+log
+@Break up fs into many modules.    
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsLocalDomain.c,v 8.1 89/06/15 09:16:45 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+8.1
+log
+@Updated srvOpen interface
+@
+text
+@d6 1
+a6 1
+ *	They use FsLocalLookup (in fsLocalLookup.c) to do the guts of
+d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsLocalDomain.c,v 8.0 88/11/11 18:20:03 douglis Stable Locker: brent $ SPRITE (Berkeley)";
+d27 1
+a27 1
+#include "fsInt.h"
+d29 5
+a33 6
+#include "fsPrefix.h"
+#include "fsLocalDomain.h"
+#include "fsConsist.h"
+#include "fsOpTable.h"
+#include "fsTrace.h"
+#include "fsDebug.h"
+d40 1
+a40 1
+char *fsEmptyDirBlock;
+d45 1
+a45 1
+ * FsLocalDomainInit --
+d59 1
+a59 1
+FsLocalDomainInit()
+d61 1
+a61 2
+    register int index;
+    register FsDirEntry *dirEntryPtr;
+d63 5
+a67 6
+    for (index = 0; index < FS_MAX_LOCAL_DOMAINS; index++) {
+        fsDomainTable[index] = (FsDomain *) NIL;
+    }
+    fsEmptyDirBlock = (char *)malloc(FS_DIR_BLOCK_SIZE);
+    dirEntryPtr = (FsDirEntry *)fsEmptyDirBlock;
+    dirEntryPtr->fileNumber = FS_ROOT_FILE_NUMBER;
+d71 2
+a72 2
+    dirEntryPtr = (FsDirEntry *)((int)dirEntryPtr + dirEntryPtr->recordLength);
+    dirEntryPtr->fileNumber = FS_ROOT_FILE_NUMBER;
+d74 1
+a74 1
+    dirEntryPtr->recordLength = FS_DIR_BLOCK_SIZE - FsDirRecLength(1);
+d81 1
+a81 1
+ * FsLocalExport --
+d86 1
+a86 1
+ *	This uses FsFileSrvOpen to setup FsFileState so the client
+d90 1
+a90 1
+ *	That of FsFileSrvOpen
+d100 2
+a101 2
+FsLocalExport(hdrPtr, clientID, ioFileIDPtr, dataSizePtr, clientDataPtr)
+     FsHandleHeader	*hdrPtr;	/* A handle from the prefix table. */
+d104 2
+a105 2
+     int		*dataSizePtr;	/* Return - sizeof(FsFileState) */
+     ClientData		*clientDataPtr;	/* Return - ref to FsFileState */
+d107 1
+a107 1
+    register FsLocalFileIOHandle *handlePtr = (FsLocalFileIOHandle *)hdrPtr;
+d109 2
+a110 2
+    FsOpenArgs openArgs;
+    FsOpenResults openResults;
+d116 2
+a117 2
+    FsHandleLock(handlePtr);
+    status = FsFileSrvOpen(handlePtr, &openArgs, &openResults);
+d129 1
+a129 1
+ * FsLocalOpen --
+d131 1
+a131 1
+ *      Open a file stored locally.  This uses FsLocalLookup to get a
+d148 1
+a148 1
+FsLocalOpen(prefixHandlePtr, relativeName, argsPtr, resultsPtr, 
+d150 1
+a150 1
+    FsHandleHeader	*prefixHandlePtr; /* Handle that indicates the starting 
+d155 1
+a155 1
+    FsRedirectInfo **newNameInfoPtrPtr;   /* We return this if the server 
+d159 3
+a161 3
+    register FsOpenArgs *openArgsPtr = (FsOpenArgs *)argsPtr;
+    register FsOpenResults *openResultsPtr = (FsOpenResults *)resultsPtr;
+    FsLocalFileIOHandle *handlePtr;	/* The handle returned for the file */
+d166 1
+a166 1
+    status = FsLocalLookup(prefixHandlePtr, relativeName, &openArgsPtr->rootID,
+d176 1
+a176 1
+	status = (*fsOpenOpTable[handlePtr->descPtr->fileType].srvOpen)
+d180 1
+a180 1
+	    openResultsPtr->nameID.type = FS_RMT_FILE_STREAM;
+d182 2
+a183 2
+	FsHandleRelease(handlePtr, FALSE);
+	FsDomainRelease(handlePtr->hdr.fileID.major);
+d191 1
+a191 1
+ * FsLocalGetAttrPath --
+d198 1
+a198 1
+ *	Return code from FsLocalLookup.
+d207 1
+a207 1
+FsLocalGetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
+d209 1
+a209 1
+    FsHandleHeader	*prefixHandlePtr;	/* Handle from prefix table */
+d213 1
+a213 1
+    FsRedirectInfo	**newNameInfoPtrPtr;	/* We return this if the server
+d219 4
+a222 4
+    FsOpenArgs 		*openArgsPtr;
+    FsLocalFileIOHandle *handlePtr;
+    FsGetAttrResults	*attrResultsPtr;
+    FsOpenResults	openResults;
+d225 2
+a226 2
+    openArgsPtr =  (FsOpenArgs *)argsPtr;
+    attrResultsPtr = (FsGetAttrResults *)resultsPtr;
+d228 1
+a228 1
+    status = FsLocalLookup(prefixHandlePtr, relativeName, &openArgsPtr->rootID,
+d240 2
+a241 2
+    FsGetClientAttrs(handlePtr, openArgsPtr->clientID, &isExeced);
+    FsAssignAttrs(handlePtr, isExeced, attrResultsPtr->attrPtr);
+d246 1
+a246 1
+    status = (*fsOpenOpTable[handlePtr->descPtr->fileType].srvOpen)
+d251 1
+a251 1
+	printf("FsLocalGetAttrPath, srvOpen of \"%s\" <%d,%d> failed <%x>\n",
+d255 2
+a256 2
+    FsHandleRelease(handlePtr, FALSE);
+    FsDomainRelease(handlePtr->hdr.fileID.major);
+d263 1
+a263 1
+ * FsLocalSetAttrPath --
+d279 1
+a279 1
+FsLocalSetAttrPath(prefixHandlePtr, relativeName, argsPtr, resultsPtr,
+d281 1
+a281 1
+    FsHandleHeader *prefixHandlePtr;	/* File handle from prefix table */
+d285 1
+a285 1
+    FsRedirectInfo **newNameInfoPtrPtr;/*We return this if the server leaves its
+d289 2
+a290 2
+    FsSetAttrArgs		*setAttrArgsPtr;
+    FsOpenArgs			*openArgsPtr;
+d292 2
+a293 2
+    FsLocalFileIOHandle		*handlePtr;
+    FsOpenResults		openResults;
+d295 1
+a295 1
+    setAttrArgsPtr =  (FsSetAttrArgs *)argsPtr;
+d299 1
+a299 1
+    status = FsLocalLookup(prefixHandlePtr, relativeName, &openArgsPtr->rootID,
+d310 2
+a311 2
+    FsHandleUnlock(handlePtr);
+    status = FsLocalSetAttr(&handlePtr->hdr.fileID, &setAttrArgsPtr->attr,
+d317 1
+a317 1
+	FsHandleLock(handlePtr);
+d319 1
+a319 1
+	status = (*fsOpenOpTable[handlePtr->descPtr->fileType].srvOpen)
+d325 1
+a325 1
+		"FsLocalSetAttrPath, srvOpen of \"%s\" <%d,%d> failed <%x>\n",
+d330 2
+a331 2
+    FsHandleRelease(handlePtr, FALSE);
+    FsDomainRelease(handlePtr->hdr.fileID.major);
+d338 1
+a338 1
+ * FsLocalMakeDevice --
+d356 1
+a356 1
+FsLocalMakeDevice(prefixHandle, relativeName, argsPtr, resultsPtr,
+d358 1
+a358 1
+    FsHandleHeader	*prefixHandle;	/* Reference to prefix of the domain */
+d362 1
+a362 1
+    FsRedirectInfo	**newNameInfoPtrPtr;	/* We return this if the server
+d366 4
+a369 4
+    FsMakeDeviceArgs	*makeDevArgsPtr;
+    FsLocalFileIOHandle *handlePtr;
+    FsDomain		*domainPtr;
+    register FsFileDescriptor *descPtr;
+d371 2
+a372 2
+    makeDevArgsPtr = (FsMakeDeviceArgs *)argsPtr;
+    status = FsLocalLookup(prefixHandle, relativeName,
+d383 2
+a384 2
+	domainPtr = FsDomainFetch(handlePtr->hdr.fileID.major, FALSE);
+	if (domainPtr == (FsDomain *)NIL) {
+d386 1
+a386 1
+	    printf( "FsLocalMakeDevice: Domain unavailable\n");
+d388 1
+a388 1
+	    status = FsStoreFileDesc(domainPtr, handlePtr->hdr.fileID.minor,
+d390 1
+a390 1
+	    FsDomainRelease(handlePtr->hdr.fileID.major);
+d392 1
+a392 1
+	FsHandleRelease(handlePtr, TRUE);
+d401 1
+a401 1
+ * FsLocalMakeDir --
+d415 1
+a415 1
+FsLocalMakeDir(prefixHandle, relativeName, argsPtr, resultsPtr, 
+d417 1
+a417 1
+    FsHandleHeader	*prefixHandle;	/* Reference to prefix of the domain */
+d419 1
+a419 1
+    Address		argsPtr;	/* Ref. to FsOpenArgs */
+d421 1
+a421 1
+    FsRedirectInfo	**newNameInfoPtrPtr;	/* We return this if the server
+d425 2
+a426 2
+    FsOpenArgs		*openArgsPtr;	/* Pointer to bundled arguments */
+    FsLocalFileIOHandle	*handlePtr;
+d428 1
+a428 1
+    openArgsPtr = (FsOpenArgs *)argsPtr;
+d430 1
+a430 1
+    status = FsLocalLookup(prefixHandle, relativeName, &openArgsPtr->rootID,
+d435 2
+a436 2
+	FsHandleRelease(handlePtr, TRUE);
+	FsDomainRelease(handlePtr->hdr.fileID.major);
+d445 1
+a445 1
+ * FsLocalRemove --
+d459 1
+a459 1
+FsLocalRemove(prefixHandle, relativeName, argsPtr, resultsPtr, 
+d461 1
+a461 1
+    FsHandleHeader	*prefixHandle;	/* Reference to prefix of the domain */
+d465 1
+a465 1
+    FsRedirectInfo	**newNameInfoPtrPtr;	/* We return this if the server 
+d469 1
+a469 1
+    register FsLookupArgs *lookupArgsPtr;
+d471 1
+a471 1
+    lookupArgsPtr = (FsLookupArgs *)argsPtr;
+d473 1
+a473 1
+    status = FsLocalLookup(prefixHandle, relativeName, &lookupArgsPtr->rootID,
+d475 1
+a475 1
+	    &lookupArgsPtr->id, 0, 0, (FsLocalFileIOHandle **)NIL,
+d483 1
+a483 1
+ * FsLocalRemoveDir --
+d497 1
+a497 1
+FsLocalRemoveDir(prefixHandle, relativeName, argsPtr, resultsPtr, 
+d499 1
+a499 1
+    FsHandleHeader	*prefixHandle;	/* Reference to prefix of the domain */
+d503 1
+a503 1
+    FsRedirectInfo	**newNameInfoPtrPtr;	/* We return this if the server 
+d507 1
+a507 1
+    register FsLookupArgs *lookupArgsPtr;
+d509 1
+a509 1
+    lookupArgsPtr = (FsLookupArgs *)argsPtr;
+d511 1
+a511 1
+    status = FsLocalLookup(prefixHandle, relativeName, &lookupArgsPtr->rootID,
+d513 1
+a513 1
+	    &lookupArgsPtr->id, 0, 0, (FsLocalFileIOHandle **)NIL,
+d521 1
+a521 1
+ * FsLocalRename --
+d534 1
+a534 1
+FsLocalRename(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
+d536 1
+a536 1
+    FsHandleHeader	*prefixHandle1;	/* Token from the prefix table */
+d538 1
+a538 1
+    FsHandleHeader	*prefixHandle2;	/* Token from the prefix table */
+d540 2
+a541 2
+    FsLookupArgs	*lookupArgsPtr;	/* Contains ID info */
+    FsRedirectInfo	**newNameInfoPtrPtr;	/* We return this if the server
+d551 1
+a551 1
+    status = FsLocalHardLink(prefixHandle1, relativeName1, prefixHandle2,
+d555 1
+a555 1
+	status = FsLocalRemove(prefixHandle1, relativeName1, 
+d564 1
+a564 1
+ * FsLocalHardLink --
+d577 1
+a577 1
+FsLocalHardLink(prefixHandle1, relativeName1, prefixHandle2, relativeName2,
+d579 1
+a579 1
+    FsHandleHeader	*prefixHandle1;	/* Token from the prefix table */
+d581 1
+a581 1
+    FsHandleHeader	*prefixHandle2;	/* Token from the prefix table */
+d583 2
+a584 2
+    FsLookupArgs	*lookupArgsPtr;	/* Contains ID info */
+    FsRedirectInfo	**newNameInfoPtrPtr;	/* We return this if the server
+d592 2
+a593 2
+    FsLocalFileIOHandle *handle1Ptr;
+    FsLocalFileIOHandle *handle2Ptr;
+d600 1
+a600 1
+    status = FsLocalLookup(prefixHandle1, relativeName1, &lookupArgsPtr->rootID,
+d603 1
+a603 1
+	   0, 0, (FsLocalFileIOHandle **)&handle1Ptr, newNameInfoPtrPtr);
+d608 2
+a609 2
+    FsHandleUnlock(handle1Ptr);
+    if (prefixHandle2 == (FsHandleHeader *)NIL ||
+d626 1
+a626 1
+	status = FsLocalLookup(prefixHandle2, relativeName2,
+d631 1
+a631 1
+		(FsLocalFileIOHandle **)&handle2Ptr, newNameInfoPtrPtr);
+d634 2
+a635 2
+	FsHandleRelease(handle2Ptr, TRUE);
+	FsDomainRelease(handle2Ptr->hdr.fileID.major);
+d637 2
+a638 2
+    FsHandleRelease(handle1Ptr, FALSE);
+    FsDomainRelease(handle1Ptr->hdr.fileID.major);
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsLocalDomain.c,v 7.0 88/11/11 15:31:48 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d112 2
+d115 4
+d120 6
+a125 2
+    status = FsFileSrvOpen(handlePtr, clientID, FS_PREFIX,
+		    ioFileIDPtr, (Fs_FileID *)NIL, dataSizePtr, clientDataPtr);
+d180 1
+a180 3
+		(handlePtr, openArgsPtr->clientID, openArgsPtr->useFlags,
+		 &openResultsPtr->ioFileID, &openResultsPtr->streamID,
+		 &openResultsPtr->dataSize, &openResultsPtr->streamData);
+d225 1
+d248 1
+d250 3
+a252 2
+	    (handlePtr, openArgsPtr->clientID, 0, attrResultsPtr->fileIDPtr,
+	     (Fs_FileID *)NIL, (int *)NIL, (ClientData *)NIL);
+d254 1
+a254 2
+	printf(
+	    "FsLocalGetAttrPath, srvOpen of \"%s\" <%d,%d> failed <%x>\n",
+d296 1
+d321 1
+d323 3
+a325 2
+		(handlePtr, openArgsPtr->clientID, 0, fileIDPtr,
+		 (Fs_FileID *)NIL, (int *)NIL, (ClientData *)NIL);
+d375 2
+a376 1
+    status = FsLocalLookup(prefixHandle, relativeName, &makeDevArgsPtr->rootID,
+d378 2
+a379 2
+		makeDevArgsPtr->clientID,
+		&makeDevArgsPtr->id, makeDevArgsPtr->permissions,
+@
+
+
+7.0
+log
+@New version for conversion to new C library
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsLocalDomain.c,v 6.10 88/10/14 12:15:44 brent Exp Locker: brent $ SPRITE (Berkeley)";
+@
+
+
+6.10
+log
+@FsFileID FsUserID change
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: fsLocalDomain.c,v 6.9 88/10/11 16:00:05 brent Exp $ SPRITE (Berkeley)";
+d68 1
+a68 1
+    fsEmptyDirBlock = (char *)Mem_Alloc(FS_DIR_BLOCK_SIZE);
+d71 1
+a71 1
+    dirEntryPtr->nameLength = String_Length(".");
+d73 1
+a73 1
+    (void)String_Copy(".", dirEntryPtr->fileName);
+d76 1
+a76 1
+    dirEntryPtr->nameLength = String_Length("..");
+d78 1
+a78 1
+    (void)String_Copy("..", dirEntryPtr->fileName);
+d243 1
+a243 1
+	Sys_Panic(SYS_WARNING,
+d314 1
+a314 1
+	    Sys_Panic(SYS_WARNING,
+d375 1
+a375 1
+	    Sys_Panic(SYS_WARNING, "FsLocalMakeDevice: Domain unavailable\n");
+@
+
+
+6.9
+log
+@Changed to Import/Export interface for prefix stuff.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: fsLocalDomain.c,v 6.8 88/09/09 11:18:50 brent Exp $ SPRITE (Berkeley)";
+d106 1
+a106 1
+     register FsFileID	*ioFileIDPtr;	/* Return - I/O handle ID */
+d115 1
+a115 1
+		    ioFileIDPtr, (FsFileID *)NIL, dataSizePtr, clientDataPtr);
+d241 1
+a241 1
+	     (FsFileID *)NIL, (int *)NIL, (ClientData *)NIL);
+d284 1
+a284 1
+    FsFileID			*fileIDPtr;
+d289 1
+a289 1
+    fileIDPtr = (FsFileID *)resultsPtr;
+d312 1
+a312 1
+		 (FsFileID *)NIL, (int *)NIL, (ClientData *)NIL);
+@
+
+
+6.8
+log
+@Added rootID parameter to FsLocalLookup to support exporting sub-directories
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: fsLocalDomain.c,v 6.7 88/09/09 08:43:26 brent Exp $ SPRITE (Berkeley)";
+d39 1
+a39 1
+#include "time.h"
+d84 1
+a84 1
+ * FsLocalPrefix --
+d86 5
+a90 4
+ *	This is a stub called from LocatePrefix.  Local domains are
+ *	hooked to the prefix table via Fs_AttachDisk, so any valid
+ *	local prefixes are already in the prefix table, so this
+ *	returns a failure code.
+d93 1
+a93 1
+ *	FS_FILE_NOT_FOUND
+d96 2
+a97 1
+ *	None.
+a101 1
+/*ARGSUSED*/
+d103 6
+a108 9
+FsLocalPrefix(token, relativeName, argsPtr, resultsPtr, newNameInfoPtrPtr)
+    ClientData token;	/* == NIL for prefix installation */
+    char *relativeName;	/* The name of the file to open (eventually this
+			 * will be relative to the domain root) */
+    Address argsPtr;	/* Bundled arguments for us */
+    Address resultsPtr;	/* == NIL */
+    FsRedirectInfo **newNameInfoPtrPtr; /* We return this if the server 
+					 * leaves its domain during the 
+					 * lookup. */
+d110 7
+a116 1
+    return(FS_FILE_NOT_FOUND);
+d158 1
+d217 1
+@
+
+
+6.7
+log
+@Just updated comments and return code for FsLocalDomain
+(FsLocalPrefix, that is)
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: fsLocalDomain.c,v 6.6 88/09/06 15:40:13 brent Exp $ SPRITE (Berkeley)";
+d154 4
+a157 4
+    status = FsLocalLookup(prefixHandlePtr, relativeName, openArgsPtr->useFlags,
+			  openArgsPtr->type, openArgsPtr->clientID,
+			  &openArgsPtr->id, openArgsPtr->permissions,
+			  0, &handlePtr, newNameInfoPtrPtr);
+d216 1
+a216 1
+    status = FsLocalLookup(prefixHandlePtr, relativeName,
+d285 1
+a285 1
+    status = FsLocalLookup(prefixHandlePtr, relativeName,
+d356 1
+a356 1
+    status = FsLocalLookup(prefixHandle, relativeName,
+d413 4
+a416 4
+    status = FsLocalLookup(prefixHandle, relativeName, openArgsPtr->useFlags,
+			  openArgsPtr->type, openArgsPtr->clientID,
+			  &openArgsPtr->id, openArgsPtr->permissions,
+			  0, &handlePtr, newNameInfoPtrPtr);
+d456 4
+a459 3
+    status = FsLocalLookup(prefixHandle, relativeName, lookupArgsPtr->useFlags,
+			 FS_FILE, lookupArgsPtr->clientID, &lookupArgsPtr->id,
+			 0, 0, (FsLocalFileIOHandle **)NIL, newNameInfoPtrPtr);
+d494 4
+a497 3
+    status = FsLocalLookup(prefixHandle, relativeName, lookupArgsPtr->useFlags,
+		     FS_DIRECTORY, lookupArgsPtr->clientID, &lookupArgsPtr->id,
+		     0, 0, (FsLocalFileIOHandle **)NIL, newNameInfoPtrPtr);
+d583 1
+a583 1
+    status = FsLocalLookup(prefixHandle1, relativeName1,
+d610 1
+@
+
+
+6.6
+log
+@Fixed parameters to TwoNameOperations so there is only one
+Boolean to indicate that an error or redirection applies
+to the first or second pathname.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: fsLocalDomain.c,v 6.5 88/09/06 09:32:28 brent Exp $ SPRITE (Berkeley)";
+d86 4
+a89 2
+ *	Establish a handle for a local prefix.  Currently this is done
+ *	by FsAttachDisk, not by this routine.
+d92 1
+a92 1
+ *	FAILURE
+d112 1
+a112 5
+    /*
+     * Now all local prefixes are installed with a valid handle so this
+     * routine doesn't try to look for local domains.
+     */
+    return(FAILURE);
+@
+
+
+6.5
+log
+@Fixed botched if statement (thanks lint -S!)
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: fsLocalDomain.c,v 6.4 88/09/06 09:25:53 brent Exp $ SPRITE (Berkeley)";
+d518 1
+a518 1
+	    lookupArgsPtr, newNameInfoPtrPtr, name1redirectPtr, name1StalePtr)
+d527 3
+a529 4
+    Boolean		*name1redirectPtr;	/* TRUE if newNameInfoPtr is
+						 * for the first name */
+    Boolean		*name1StalePtr;		/* TRUE if stale handle error
+						 * is for the first name */
+d535 1
+a535 2
+	    relativeName2, lookupArgsPtr, newNameInfoPtrPtr, name1redirectPtr,
+	    name1StalePtr);
+d561 1
+a561 1
+	    lookupArgsPtr, newNameInfoPtrPtr, name1redirectPtr, name1StalePtr)
+d570 3
+a572 5
+    Boolean		*name1redirectPtr;	/* TRUE if newNameInfoPtr is
+						 * for first name */
+    Boolean		*name1StalePtr;		/* TRUE if prefixHandle1
+						 * is stale, else second
+						 * prefix is stale. */
+d578 1
+a578 2
+    *name1redirectPtr = FALSE;
+    *name1StalePtr = FALSE;
+d588 1
+a588 5
+	if (status == FS_LOOKUP_REDIRECT) {
+	    *name1redirectPtr = TRUE;
+	} else if (status == FS_STALE_HANDLE) {
+	    *name1StalePtr = TRUE;
+	}
+a617 2
+    } else if (status == FS_LOOKUP_REDIRECT) {
+	*name1redirectPtr = FALSE;
+@
+
+
+6.4
+log
+@Updated the TwoName operation interface to better handle pathnames
+that redirect.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: fsLocalDomain.c,v 6.3 88/08/31 12:05:31 brent Exp $ SPRITE (Berkeley)";
+d595 1
+a595 1
+	} else if (status = FS_STALE_HANDLE) {
+@
+
+
+6.3
+log
+@Removed lint.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: fsLocalDomain.c,v 6.2 88/08/24 18:08:34 brent Exp $ SPRITE (Berkeley)";
+d518 1
+a518 1
+			lookupArgsPtr, newNameInfoPtrPtr, name1redirectPtr)
+d528 3
+a530 1
+						 * for first name */
+d536 2
+a537 1
+	    relativeName2, lookupArgsPtr, newNameInfoPtrPtr, name1redirectPtr);
+d563 1
+a563 1
+			lookupArgsPtr, newNameInfoPtrPtr, name1redirectPtr)
+d574 3
+d583 1
+d585 3
+d595 2
+d601 23
+a623 13
+    /*
+     * This lookup does the linking.  If our caller has set FS_RENAME in
+     * lookupArgsPtr->useFlags then directories can be linked.  Handle1
+     * is unlocked because the linking will end up locking it again.
+     * The result of a successful return from this call is that
+     * both handle1 and handle2 reference the same handle, and that
+     * handle is locked.
+     */
+    status = FsLocalLookup(prefixHandle2, relativeName2,
+	    lookupArgsPtr->useFlags, handle1Ptr->descPtr->fileType,
+	    lookupArgsPtr->clientID,
+	    &lookupArgsPtr->id, 0, handle1Ptr->hdr.fileID.minor,
+	    (FsLocalFileIOHandle **)&handle2Ptr, newNameInfoPtrPtr);
+@
+
+
+6.2
+log
+@Changed SrvOpen interface to return its handle unlocked
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: fsLocalDomain.c,v 6.1 88/08/13 11:23:22 brent Exp $ SPRITE (Berkeley)";
+d73 1
+a73 1
+    String_Copy(".", dirEntryPtr->fileName);
+d78 1
+a78 1
+    String_Copy("..", dirEntryPtr->fileName);
+@
+
+
+6.1
+log
+@Added flags to set attr routines
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: fsLocalDomain.c,v 6.0 88/08/11 12:16:10 brent Stable $ SPRITE (Berkeley)";
+d174 1
+a174 1
+	FsHandleRelease(handlePtr, TRUE);
+d244 1
+a244 1
+    FsHandleRelease(handlePtr, TRUE);
+a300 1
+    FsHandleLock(handlePtr);
+d305 1
+d316 1
+a316 1
+    FsHandleRelease(handlePtr, TRUE);
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: fsLocalDomain.c,v 1.5 88/06/01 17:10:13 brent Exp $ SPRITE (Berkeley)";
+d300 1
+a300 1
+			    &openArgsPtr->id);
+@
+
+
+1.5
+log
+@Fixed call-back to get attributes so it doesn't call the
+calling client.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: fsLocalDomain.c,v 1.4 88/05/05 16:35:06 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+1.4
+log
+@Added support for $MACHINE expansion during pathname lookup
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: fsLocalDomain.c,v 1.3 88/04/11 18:19:44 brent Exp $ SPRITE (Berkeley)";
+d230 1
+a230 1
+    FsGetClientAttrs(handlePtr, rpc_SpriteID, &isExeced);
+@
+
+
+1.3
+log
+@Added hook to FsLocalOpen to set up the returned nameID that
+gets saved in the stream's nameInfoPtr
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: fsLocalDomain.c,v 1.2 88/04/05 13:52:51 brent Exp $ SPRITE (Berkeley)";
+d157 2
+a158 2
+			  openArgsPtr->type, &openArgsPtr->id,
+			  openArgsPtr->permissions,
+d220 1
+d289 1
+d360 1
+d416 2
+a417 2
+			  openArgsPtr->type, &openArgsPtr->id,
+			  openArgsPtr->permissions,
+d459 1
+a459 1
+			 FS_FILE, &lookupArgsPtr->id,
+d496 2
+a497 2
+			 FS_DIRECTORY, &lookupArgsPtr->id,
+			 0, 0, (FsLocalFileIOHandle **)NIL, newNameInfoPtrPtr);
+d579 2
+a580 1
+	   lookupArgsPtr->useFlags & FS_FOLLOW, FS_FILE, &lookupArgsPtr->id,
+d599 1
+@
+
+
+1.2
+log
+@Fixed call to srvOPen routine
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: fsLocalDomain.c,v 1.1 88/04/04 10:33:27 brent Exp $ SPRITE (Berkeley)";
+d170 4
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: fsLocalDomain.c,v 5.15 87/11/25 13:34:01 brent Exp $ SPRITE (Berkeley)";
+d168 1
+a168 1
+		 &openResultsPtr->streamID, &openResultsPtr->ioFileID,
+d231 2
+a232 2
+	    (handlePtr, openArgsPtr->clientID, 0, (FsFileID *)NIL,
+	     attrResultsPtr->fileIDPtr, (int *)NIL, (ClientData *)NIL);
+d301 2
+a302 2
+		(handlePtr, openArgsPtr->clientID, 0, (FsFileID *)NIL,
+		 fileIDPtr, (int *)NIL, (ClientData *)NIL);
+@

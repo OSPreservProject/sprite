@@ -1,0 +1,8 @@
+/* *i bfd_log2
+Return the log base 2 of the value supplied, rounded up. eg an arg
+of 1025 would return 11.
+*/
+ PROTO(bfd_vma, bfd_log2,(bfd_vma x));
+
+/*
+*/

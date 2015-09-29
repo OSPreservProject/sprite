@@ -1,0 +1,110 @@
+L ASSERT.H;1                        	assert.h	../cc/dist/assert.h
+L AUX_OUTP.H;1                      	aux-output.h	../cc/dist/config/out-sparc.c
+L BASIC_BL.H;1                      	basic-block.h	../cc/dist/basic-block.h
+L CALLER_S.C;1                      	caller-save.c	../cc/dist/caller-save.c
+L CASE.C;1                          	case.c	../cc/g++-dist/case.c
+L COMBINE.C;1                       	combine.c	../cc/dist/combine.c
+L CONDITIO.H;1                      	conditions.h	../cc/dist/conditions.h
+L CONFIG.H;1                        	config.h	../cc/dist/config/xm-sparc.h
+L CPLUS_CL.C;1                      	cplus-class.c	../cc/g++-dist/cplus-class.c
+L CPLUS_CV.C;1                      	cplus-cvt.c	../cc/g++-dist/cplus-cvt.c
+L CPLUS_D0.C;1                      	cplus-decl.c	../cc/g++-dist/cplus-decl.c
+L CPLUS_D1.C;1                      	cplus-decl2.c	../cc/g++-dist/cplus-decl2.c
+L CPLUS_D2.C;1                      	cplus-dem.c	../cc/g++-dist/cplus-dem.c
+L CPLUS_DE.H;1                      	cplus-decl.h	../cc/g++-dist/cplus-decl.h
+L CPLUS_E0.C;1                      	cplus-except.c	../cc/g++-dist/cplus-except.c
+L CPLUS_E1.C;1                      	cplus-expr.c	../cc/g++-dist/cplus-expr.c
+L CPLUS_IN.C;1                      	cplus-init.c	../cc/g++-dist/cplus-init.c
+F CPLUS_LE.C;1                      	cplus-lex.c
+F CPLUS_LE.RAB;1                    	cplus-lex.c.rab
+L CPLUS_ME.C;1                      	cplus-method.c	../cc/g++-dist/cplus-method.c
+L CPLUS_PA.H;1                      	cplus-parse.h	../cc/g++-dist/cplus-parse.h
+L CPLUS_PA.YY;1                     	cplus-parse.yy	../cc/g++-dist/cplus-parse.y
+L CPLUS_PT.C;1                      	cplus-ptree.c	../cc/g++-dist/cplus-ptree.c
+L CPLUS_SE.C;1                      	cplus-search.c	../cc/g++-dist/cplus-search.c
+F CPLUS_T0.C;1                      	cplus-tab.c
+L CPLUS_T1.C;1                      	cplus-tree.c	../cc/g++-dist/cplus-tree.c
+L CPLUS_T2.C;1                      	cplus-type2.c	../cc/g++-dist/cplus-type2.c
+L CPLUS_T3.C;1                      	cplus-typeck.c	../cc/g++-dist/cplus-typeck.c
+F CPLUS_TA.H;1                      	cplus-tab.h
+F CPLUS_TA.OUT;1                    	cplus-tab.output
+L CPLUS_TR.DEF;1                    	cplus-tree.def	../cc/g++-dist/cplus-tree.def
+L CPLUS_TR.H;1                      	cplus-tree.h	../cc/g++-dist/cplus-tree.h
+L CSE.C;1                           	cse.c	../cc/dist/cse.c
+L C_TREE.H;1                        	c-tree.h	../cc/dist/c-tree.h
+L DBXOUT.C;1                        	dbxout.c	../cc/g++-dist/dbxout.c
+D DS3100_M                          	ds3100.md
+L EMIT_RTL.C;1                      	emit-rtl.c	../cc/dist/emit-rtl.c
+L EXPLOW.C;1                        	explow.c	../cc/dist/explow.c
+L EXPMED.C;1                        	expmed.c	../cc/dist/expmed.c
+L EXPR.C;1                          	expr.c	../cc/g++-dist/expr.c
+L EXPR.H;1                          	expr.h	../cc/g++-dist/expr.h
+L FINAL.C;1                         	final.c	../cc/dist/final.c
+L FLAGS.H;1                         	flags.h	../cc/g++-dist/flags.h
+L FLOW.C;1                          	flow.c	../cc/dist/flow.c
+L FOLD_CON.C;1                      	fold-const.c	../cc/dist/fold-const.c
+L GDBFILES.H;1                      	gdbfiles.h	../cc/dist/gdbfiles.h
+F GENCODES.O;1                      	gencodes.o
+F GENCONFI.O;1                      	genconfig.o
+F GENEMIT.O;1                       	genemit.o
+F GENFLAGS.O;1                      	genflags.o
+L GETPAGES.H;1                      	getpagesize.h	../cc/g++-dist/getpagesize.h
+L GLOBAL_A.C;1                      	global-alloc.c	../cc/dist/global-alloc.c
+L GPLUS.GPE;1                       	gplus.gperf	../cc/g++-dist/gplus.gperf
+L GVARARGS.H;1                      	gvarargs.h	../cc/dist/gvarargs.h
+L HARD_REG.H;1                      	hard-reg-set.h	../cc/dist/hard-reg-set.h
+L INPUT.H;1                         	input.h	../cc/g++-dist/input.h
+F INSN_COD.H;1                      	insn-codes.h
+F INSN_CON.H;1                      	insn-config.h
+F INSN_FLA.H;1                      	insn-flags.h
+L INTEGRAT.C;1                      	integrate.c	../cc/g++-dist/integrate.c
+L JUMP.C;1                          	jump.c	../cc/dist/jump.c
+L LASTFILE.C;1                      	lastfile.c	../cc/g++-dist/lastfile.c
+L LIMITS.H;1                        	limits.h	../cc/dist/limits.h
+F LOCAL.MK;1                        	local.mk
+L LOCAL_AL.C;1                      	local-alloc.c	../cc/dist/local-alloc.c
+L LOOP.C;1                          	loop.c	../cc/dist/loop.c
+L MACHMODE.DEF;1                    	machmode.def	../cc/dist/machmode.def
+F MAKEFILE.;1                       	Makefile
+L MD.;1                             	md	../cc/dist/config/sparc.md
+L MOVE_IF_.;1                       	move-if-change	../cc/dist/move-if-change
+L OBSTACK.C;1                       	obstack.c	../cc/dist/obstack.c
+L OBSTACK.H;1                       	obstack.h	../cc/dist/obstack.h
+L OPTABS.C;1                        	optabs.c	../cc/dist/optabs.c
+L OUTPUT.H;1                        	output.h	../cc/dist/output.h
+L PRINT_TR.C;1                      	print-tree.c	../cc/g++-dist/print-tree.c
+D RCS                               	RCS
+L REAL.H;1                          	real.h	../cc/dist/real.h
+L RECOG.C;1                         	recog.c	../cc/dist/recog.c
+L RECOG.H;1                         	recog.h	../cc/dist/recog.h
+L REGCLASS.C;1                      	regclass.c	../cc/dist/regclass.c
+L REGS.H;1                          	regs.h	../cc/dist/regs.h
+L RELOAD.C;1                        	reload.c	../cc/dist/reload.c
+L RELOAD.H;1                        	reload.h	../cc/dist/reload.h
+L RELOAD1.C;1                       	reload1.c	../cc/dist/reload1.c
+L RTL.C;1                           	rtl.c	../cc/dist/rtl.c
+L RTL.DEF;1                         	rtl.def	../cc/dist/rtl.def
+L RTL.H;1                           	rtl.h	../cc/dist/rtl.h
+L RTLANAL.C;1                       	rtlanal.c	../cc/dist/rtlanal.c
+L SDBOUT.C;1                        	sdbout.c	../cc/dist/sdbout.c
+L STAB.DEF;1                        	stab.def	../cc/dist/stab.def
+L STAB.H;1                          	stab.h	../cc/g++-dist/stab.h
+L STACK.H;1                         	stack.h	../cc/g++-dist/stack.h
+L STDARG.H;1                        	stdarg.h	../cc/dist/stdarg.h
+L STDDEF.H;1                        	stddef.h	../cc/dist/stddef.h
+L STMT.C;1                          	stmt.c	../cc/g++-dist/stmt.c
+L STOR_LAY.C;1                      	stor-layout.c	../cc/g++-dist/stor-layout.c
+L STUPID.C;1                        	stupid.c	../cc/dist/stupid.c
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md
+L SYMOUT.C;1                        	symout.c	../cc/g++-dist/symout.c
+L SYMSEG.H;1                        	symseg.h	../cc/dist/symseg.h
+L TM.H;1                            	tm.h	../cc/sprite/tm-sparc.h
+F TOPLEV.C;1                        	toplev.c
+L TREE.C;1                          	tree.c	../cc/g++-dist/tree.c
+L TREE.DEF;1                        	tree.def	../cc/g++-dist/tree.def
+L TREE.H;1                          	tree.h	../cc/g++-dist/tree.h
+L TYPECLAS.H;1                      	typeclass.h	../cc/dist/typeclass.h
+L UTILS.MK;1                        	utils.mk	../g++1.68k/utils.mk
+L VARASM.C;1                        	varasm.c	../cc/g++-dist/varasm.c
+L VERSION.C;1                       	version.c	../cc/g++-dist/version.c

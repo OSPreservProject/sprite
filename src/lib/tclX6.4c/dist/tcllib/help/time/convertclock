@@ -1,0 +1,20 @@
+
+
+          convertclock dateString [GMT|{}] [baseClock]
+               Convert dateString to an integer clock value (see
+               getclock).  This command can parse and convert
+               virtually any standard date and/or time string, which
+               can include standard time zone mnemonics.  If only a
+               time is specified, the current date is assumed.  If the
+               string does not contain a time zone mnemonic, the local
+               time zone is assumed, unless the GMT argument is
+               specified, in which case the clock value is calculated
+               assuming that the specified time is relative to
+               Greenwich Mean Time.  If baseClock is specified, it is
+               taken as the current clock value.  This is useful for
+               determining the time on a specific day.  Some examples
+               are:
+
+                   convertclock "14 Feb 92"
+                   convertclock "Feb 14, 1992 12:20 PM PST"
+                   convertclock "12:20 PM, Feb 14, 1992"

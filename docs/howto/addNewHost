@@ -1,0 +1,80 @@
+
+How to add a new host.
+
+---  If you change this file please edit the addhost script to summarize
+---  the changes.
+
+1.  Get the new host's ethernet address and internet address.
+    You can find out what these are by running `/etc/arp hostname'
+    on rosemary, ginger, or envy.
+
+2.  Run the "addhost" script.  See the man page for details.
+
+3.  Enable TFTP booting for Suns.  Login to ginger and make a symbolic link
+    in /tftpboot, using the internet address as a name, to the correct
+    ndboot.sun3.??? boot file.  If a link exists, note its target.
+    The internet address is in hex, i.e. 80209606 for 128.32.150.6.
+    The most likely ndboot file is ndboot.sun3.pub1.  Determining this
+    from first principles requires some understanding of the /etc/nd.local
+    file on the file server from which the machine will be booting (ginger).
+    For example, there are several 'public' nd partitions defined for ginger:
+    user 0 0 /dev/xy3g 0 12880 -1
+    user 0 1 /dev/xy0g 0 12880 -1
+    user 0 2 /dev/xy1g 0 -1 -1
+    user 0 3 /dev/xy2e 0 -1 -1
+    This indicates that public partition 1 is on /dev/xy0g.  The mount table
+    shows that /pub.MC68020 is mounted there.  Thus
+    ndboot.sun3.pub1 will use the boot file in /pub.MC68020.
+
+    To boot from ginger and this boot file you either have to ensure that
+    only ginger has an entry in its /tftpboot directory for the host,
+    or you specifically choose ginger in the boot command by puting
+    the last four digits of its internet address, again in hex,
+    as the second parameter to the boot argument:
+    b ie(0,961c,X)		961c specifies ginger.
+    The third argument is used to specify the ND partition to get
+    the kernel image from.  This is an XOR function of a partition
+    encoded in the ndboot file.  We keep kernel images on ginger in
+    /sprite3, which is /dev/xy2e.  Again looking at the nd.local file,
+    we see that this device is public ND partition 3.
+    The ndboot.sun3.pub1 file specifies public ND partition 1.
+    To change this to a 3, 2 must be XOR'ed in.
+    The ndboot.sun3.private file specifies private ND partition 0.
+    This is encoded as 0x40, with the 0x40 bit meaning private.  To change
+    this to a 3, 0x43 must be XOR'ed.
+
+    if ginger:/tftpboot file is ndboot.sun3.pub1,    b ie(0,961c,2)
+    if ginger:/tftpboot file is ndboot.sun3.private, b ie(0,961c,43)
+
+4.  Run `netroute -f /etc/spritehosts' on all important hosts (file servers).
+    This ensures that the servers;  know how to talk to the new host.
+    Otherwise they may ignore broadcast requests from the new host.
+    Likewise for the export command for the root partition.
+
+5.  Boot using `ie(0,961c,43)sun3' or `ie(0,961c,2)sun3', as determined
+    from the ndboot file in step 3 above.  If the workstation is a ds3100,
+    see point 6.
+
+6.  For decstations:
+
+	(First make sure the decstation is configured for thick, not thin
+	 ethernet!  There is a small switch next to the ethernet connectors.
+	 The green light should be lit next to the appropriate connector.
+	 Stick a pin into the recessed switch to change connectors.)
+
+    6a.  To boot off of an ultrix machine, go to dill:/sprite/mop and
+         copy one of the C sources to a file based on the first 6
+         letters of the new host's name.  Then edit the file to
+         include the host's internet and ethernet addresses.
+         Similarly, copy add_{some_host} to add_{new_host} and change
+         the names within the file, then su to `owner' and run
+	 add_{new_host} to get mop to respond.
+    6b.  Boot the kernel with "boot -f tftp()" or "boot -f
+	 tftp()kernel_name". 
+
+7. If this is a new hostname, add it to ginger:/etc/hosts.equiv.
+
+8. If you add a machine with a color framebuffer, add it into
+    /X11/R4/lib/fbtypes.  This is only necessary till the frame
+    buffer stuff is installed.
+

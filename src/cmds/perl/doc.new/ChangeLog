@@ -1,0 +1,73 @@
+Wed Feb 19 15:02:26 1992  Johan Vromans  (jv at largo)
+
+	* refbase.sty: add support for new font selection scheme.
+	  Get rid of overfull hboxes.
+
+	* refbase.sty, refmaster.tex, ch*.tex: update for 4.019.
+	  Add description for "sort { EXPR;...} @array" .
+	  Describe "eval { ... }" .
+	  Add "scalar(@array)" and "scalar(%array)" .
+	  Small corrections.
+
+	* Makefile: new kit assembly.
+
+Tue Aug 27 18:41:42 1991  Johan Vromans  (jv at largo)
+
+	* ch22: add 'gethostbyaddr'
+
+Fri Aug  2 09:44:47 1991  Johan Vromans  (jv at largo)
+
+	* parr: add code for duplex printing.
+
+	* README: describe duplex printing, version number.
+
+Sat Jul 27 15:23:01 1991  Johan Vromans  (jv at pronto)
+
+	* parr: Adjusted '%%Pages:' to reflect actual number of sheets.
+
+Fri Jul 26 23:10:00 1991  Johan Vromans  (jv at pronto)
+
+	* Add Layout document that describes in more detail how the
+	  Reference Guide should look like.
+
+	* Makefile/README: Incorporate Layout.
+
+Fri Jul 26 09:15:58 1991  Johan Vromans  (jv at largo)
+
+	* Released to USEnet (patch). Official version is 4.010.2.1.
+
+	* ch04: typo: | -> || (two locations)
+
+	* parr: slightly increase $topmargin for US paper.
+
+	* ch06: typo: log or/and | & -> || &&
+
+Thu Jul 25 11:11:24 1991  Johan Vromans  (jv at largo)
+
+	* Makefile/README: Clarify the use of guide-{odd,even?}.ps.
+
+	* parr: Suppress extraneous %%Page comments to obtain more
+	  conformant PostScript. Some PS viewers and printers (or
+	  print-spoolers) seem to choke in these extraneous comments.
+
+	  Set $leftmargin to 0 for US-Letter format. According to most
+	  respondents this seems to be the correct value.
+
+Tue Jul 23 18:32:54 1991  Johan Vromans  (jv at largo)
+
+	* Makefile: allow MASTER=test for testing.
+
+	* ch03: typo: $var -> $#var is last element of array.
+
+	* ch00: move front page info a bit down/right.
+
+Mon Jul 22 22:05:57 1991  Johan Vromans  (jv at pronto)
+
+	* ch00: typo: deigned -> designed.
+
+Sat Jul 20 00:31:47 1991  Johan Vromans  (jv at pronto)
+
+	* Released to USEnet. Official version is 4.010.1.8.
+
+	* This is a brand new version.
+

@@ -1,0 +1,247 @@
+\def\filedate{90/05/28}
+
+Copyright (C) 1989,1990 by Frank Mittelbach, Rainer Schoepf.
+All rights reserved.
+
+IMPORTANT NOTICE:
+
+You are not allowed to change this readme file.
+
+ Copying of the files mentioned below is authorized only if either
+ (1) you make absolutely no changes to your copy, including name, or
+ (2) if you do make changes, you rename the file(s). 
+
+ This restriction helps to ensure that all files developed at Mainz
+ are identical.
+
+
+Distribution of unchanged and changed versions:
+  
+  Redistribution of these files is allowed provided that all files
+  listed below are distributed, including this readme file.
+
+  You are NOT ALLOWED to take money for the distribution or use of
+  either these files or a changed version except for a nominal charge 
+  for copying, etc.  
+
+Error reports in case of UNCHANGED versions to
+
+                          F. Mittelbach
+                          Eichenweg 29
+                          D-6500 Mainz 1
+                          Federal Republic of Germany
+                 Bitnet:  <PZF5HZ@DRUEDS2>
+
+or:
+                          R. Sch\"opf
+                          Inst. f. Theor. Physik
+                          der Universit\"at Heidelberg
+                          Philosophenweg 16
+                          D-6900 Heidelberg
+                          Federal Republic of Germany
+                 Bitnet:  <BK4@DHDURZ1>
+
+
+
+
+This is a preliminary release of the new font selection scheme and its
+interface to LaTeX 2.09.  Please excuse the terseness of the documentation. 
+
+
+1) Basic macros for setting up a new format file:
+
+basefont.tex    File used during generation of format.  See fontsel.tex.
+ 
+fontdef.max     File containing font/shape definitions for standard TeX fonts
+                as well as nonstandard fonts like the AMS symbol fonts, etc.
+                You need a TeX with a large value for the pool size to use
+                this file.
+
+fontdef.ori     File containing font/shape definitions for the standard 
+                TeX fonts which are needed to set up a LaTeX format 
+                compatible with the old font selection.
+
+lfonts.new      File that should be used instead of the old lfonts.tex to
+                set up a new LaTeX format.  See fontsel.tex.
+        
+preload.min     File that preloads the absolute minimum of fonts.  May be
+                used during initex run.
+
+preload.med     File that preloads those fonts which are otherwise loaded
+                by LaTeXs \documentstyle command if 10pt size is requested.
+                If you normally use 11pt or 12pt as a style option you
+                shouldn't use this file but make a similar one.  May be
+                used during initex run. 
+
+preload.ori     File that preloads more or less the same fonts as the old
+                lfonts.tex.  May be used during initex run.
+
+
+
+2) Sub styles for the new font selection scheme: 
+
+euscript.sty    Style to set up a math alphabet identifier to access the
+                Euler script fonts.
+
+margid.sty      Makes math alphabet identifiers behave like commands with
+                one argument, i.e. use \cal{A} as syntax.
+
+newlfont.sty    Switches to new font selection if oldlfont is default.
+                See article.
+
+nomargid.sty    Makes math alphabet identifiers behave like font switches,
+                i.e. use {\cal A} as syntax.
+
+oldlfont.sty    Switches to old font selection if newlfont is default.
+                See article.
+
+syntonly.sty    Defines \syntaxonly command which can then be used in the
+                preample to suppress output (TeX will run \approx 4 times
+                faster).
+
+tracefnt.sty    Defines \tracingfonts integer. This is used to trace
+                font switches etc.  Setting \tracingfonts to <number> in the
+                preamble means:
+
+                1       Warnings are turned into error messages to show you
+                     the exact location of the problem.
+                2       Additionally, loading of external fonts are shown.
+                3       Additionally, switching of text fonts is traced. 
+                     You will see a lot of information if you set
+                     \tacingfonts this high.
+
+
+3) Example files and documentation:
+
+array.sty       The extension of the array and tabular environment
+                as described in tugboat 9#3. This file is without
+                documentation and not necessarily up to date. It is
+                provided only to run fontsel.tex. If you have a newer
+                version of array.sty use it instead.
+
+concrete.doc    Unfinished style option which should serve as an
+                example of how to use a style file to make new fonts
+                known to the new font selection scheme.  This file is
+                subject to changes!!
+
+concrete.sty    Stripped down version of concrete.doc without comments.
+
+fontsel.bug     This file contains a list of known problems, solved and
+                unsolved.
+
+fontsel.tex     Article published in TUGboat 11#1 about the LaTeX
+                interface to the new font selection scheme.  You will not
+                be able to run it successfully through LaTeX unless you
+                happen to have a new format and the Concrete and Euler
+                Math Fonts available. 
+        
+                Note that due to a misunderstanding 2 pages of the
+                article are missing in TUGboat 11#1.  Therefore the whole
+                article is reprinted in TUGboat 11#2. Unfortunately this
+                version got a few errors reinserted which had been corrected
+                for the first printing (that's life).
+
+
+4) Changes not covered in the article fontsel.tex:
+
+The files fam.tex, latinit.tex and setsize.tex have been removed and their
+contents merged directly into lfonts.new. 
+
+basefnt.tex was renamed to basefont.tex.
+
+
+5) Generation of a new format:
+
+5.1)   Copy all files to a directory where TeX can find them.
+5.2)   Rename the standard lfonts.tex to something like lfonts.old.
+5.3)   Start IniTeX using lplain.
+5.3.1) Use lfonts.new as a substitute for lfonts.tex
+5.3.2) Use fontdef.ori as a substitute for fontdef.tex
+5.3.3) Use preload.ori as a substitute for preload.tex
+5.3.3) Use oldlfont.sty as a substitute for xxxlfont.sty
+5.4)   Say \dump at the end of the run.
+
+This should generate a new format which behaves exactly like the old
+one, except, of course, that styles and files which use internals of the
+old lfonts.tex (like \xpt or \tenrm) won't work without changes.
+
+This format should enable you to process fontsel.tex.  This document
+will tell you more about the font selection scheme and how it can be
+customized to the needs of your installation. 
+
+If you have the concrete fonts you should uncomment the following two
+lines:
+   
+  *  The line in the \documentstyle command where the concrete style is
+     loaded 
+
+  *  The line following directly after the \begin{document}, namely
+
+       % \family{ccr}\size{10}{13pt}\selectfont
+
+You should also comment out this one 
+
+     \family{cmss}\size{10}{13pt}\selectfont
+
+The unchanged document will produce the article using Computer Modern
+sans serif fonts.  Please don't change the file in other respects.  If
+you have problems running it, make a copy and change the copy. 
+I'm sorry that the preamble of this file contains so many definitions
+but I didn't find the time so far to clear things up.
+ 
+Last remark: you will need ltugboat.sty and tugboat.com. If you don't
+have these files it is still possible to produce the documentation:
+comment out the ltugboat option and scroll the errors that will follow.
+Of course, some things will be missing or look different.
+
+Good luck!
+
+
+The \fileversion and \filedate lines below are generated so that you can
+easily check differences from your version by using GREP or DIFF etc.
+
+
+array.sty: \def\fileversion{v2.0b}
+array.sty: \def\filedate{89/5/17}
+basefont.tex: \def\fileversion{v1.2f}
+basefont.tex: \def\filedate{90/06/29}
+concrete.doc: \def\fileversion{v1.0f}
+concrete.doc: \def\filedate{90/04/05}
+concrete.sty: \def\fileversion{v1.0f}
+concrete.sty: \def\filedate{90/04/05}
+euscript.sty: \def\fileversion{v1.0d}
+euscript.sty: \def\filedate{90/04/05}
+fontdef.max: \def\fileversion{v1.1i}
+fontdef.max: \def\filedate{90/06/08}
+fontdef.ori: \def\fileversion{v1.1i}
+fontdef.ori: \def\filedate{90/06/08}
+fontsel.bug: \def\filedate{90/06/30}
+lfonts.new: \def\fileversion{v1.2l}
+lfonts.new: \def\filedate{90/06/30}
+lfonts.new: \def\fileversion{v1.0p}
+lfonts.new: \def\filedate{90/06/30}
+lfonts.new: \def\fileversion{v1.1c}
+lfonts.new: \def\filedate{90/06/06}
+lfonts.new: \def\fileversion{v1.1h}
+lfonts.new: \def\filedate{90/06/26}
+lfonts.new: \def\fileversion{v1.1k}
+lfonts.new: \def\filedate{90/06/23}
+margid.sty: \def\fileversion{v1.0b}
+margid.sty: \def\filedate{90/03/30}
+newlfont.sty: \def\fileversion{v1.2f}
+newlfont.sty: \def\filedate{90/06/29}
+nomargid.sty: \def\fileversion{v1.0b}
+nomargid.sty: \def\filedate{90/04/05}
+oldlfont.sty: \def\fileversion{v1.2i}
+oldlfont.sty: \def\filedate{90/06/29}
+preload.med: \def\fileversion{v1.0g}
+preload.med: \def\filedate{90/04/22}
+preload.min: \def\fileversion{v1.0g}
+preload.min: \def\filedate{90/04/22}
+preload.ori: \def\fileversion{v1.0g}
+preload.ori: \def\filedate{90/04/22}
+readme.mz3: \def\filedate{90/05/28}
+syntonly.sty: \def\fileversion{v1.0e}
+syntonly.sty: \def\filedate{90/04/05}
+tracefnt.sty: \def\fileversion{v1.0p}
+tracefnt.sty: \def\filedate{90/06/30}

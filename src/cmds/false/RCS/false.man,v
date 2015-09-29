@@ -1,0 +1,64 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     88.12.29.13.10.53;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.12.21.11.00.29;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Editorial cleanup.
+@
+text
+@' $Header: /a/newcmds/false/RCS/false.man,v 1.1 88/12/21 11:00:29 ouster Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS FALSE cmds
+.BS
+.SH NAME
+false \- Return a non-zero status
+.SH SYNOPSIS
+\fBfalse\fR
+.BE
+
+.SH DESCRIPTION
+.PP
+This command does nothing except return a non-zero status.
+It is normally used in Bourne shell scripts for loop control
+and other conditional operations.
+
+.SH "SEE ALSO"
+sh(1), true(1)
+
+.SH KEYWORDS
+false, shell, status
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/cpp/RCS/cpp.man,v 1.1 88/12/21 10:49:47 ouster Exp $ SPRITE (Berkeley)
+d11 1
+a11 1
+.SH INTRODUCTION
+@

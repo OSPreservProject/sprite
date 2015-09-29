@@ -1,0 +1,792 @@
+
+
+
+DVIPS                     User Commands                     DVIPS
+
+
+
+NNAAMMEE
+     dvips - convert a TeX DVI file to POSTSCRIPT
+
+SSYYNNOOPPSSIISS
+     ddvviippss [ --cc _n_u_m ] [ --dd _n_u_m ] [ --ee _n_u_m ] [ --ff ] [ --hh _f_i_l_e ] [
+     --ll _n_u_m ] [ --mm ] [ --nn _n_u_m ] [ --oo _f_i_l_e ] [ --pp _n_u_m ] [ --qq ] [
+     --rr ] [ --ss ] [ --tt _m_o_d_e_n_a_m_e ] [ --xx _n_u_m ] [ --CC _n_u_m ] [ --DD _n_u_m ]
+     [ --FF ] [ --KK ] [ --MM ] [ --NN ] [ --PP _p_r_i_n_t_e_r_n_a_m_e ] [ --UU ] [ --XX
+     _n_u_m ] [ --YY _n_u_m ] [ --ZZ ] [ --?? ] _f_i_l_e[.dvi]
+
+DDEESSCCRRIIPPTTIIOONN
+     The program ddvviippss converts a DVI file _f_i_l_e[.dvi] produced by
+     TeX (or by some other processor like GFtoDVI) and converts
+     it to POSTSCRIPT, normally sending the result directly to
+     the laserprinter.  The DVI file may be specified without the
+     ._d_v_i extension.  Fonts used may either be resident in the
+     printer or defined as bitmaps in PK files, or a `virtual'
+     combination of both.  If the MMaakkeeTTeeXXPPKK program is installed,
+     ddvviippss will automatically invoke METAFONT to generate fonts
+     that don't already exist.
+
+OOPPTTIIOONNSS
+     Boolean flags that are turned on by certain letters (such as
+     -r to reverse pages) can be turned off by following the
+     option immediately with a 0 (as in -r0).  The options that
+     this can be used with are ffmmqqrrFFKKNNUUZZ.  The command line
+     switches are:
+
+     --cc _n_u_m
+          Generate _n_u_m copies of every page.  Default is 1. (For
+          collated copies, see the --CC option below.)
+
+     --dd _n_u_m
+          Set the debug flags.  This is intended only for emer-
+          gencies or for unusual fact-finding expeditions; it
+          will work only if ddvviippss has been compiled with the
+          DEBUG option.  The file _d_e_b_u_g._h in the sources indi-
+          cates what the values of _n_u_m can be.  Use a value of -1
+          for maximum output.
+
+     --ee _n_u_m
+          Make sure that each character is placed at most this
+          many pixels from its `true' resolution-independent
+          position on the page. The default value of this parame-
+          ter is resolution dependent (it is the number of
+          entries in the list [100, 200, 300, 400, 500, 600, 800,
+          1000, 1200, 1600, 2000, 2400, 2800, 3200, ...] that are
+          less than or equal to the resolution in dots per inch).
+          Allowing individual characters to `drift' from their
+          correctly rounded positions by a few pixels, while
+          regaining the true position at the beginning of each
+          new word, improves the spacing of letters in words.
+
+
+
+TeXware                   9 August 1990                         1
+
+
+
+
+
+
+DVIPS                     User Commands                     DVIPS
+
+
+
+     --ff   Run as a filter.  Read the DVI file from standard input
+          and write the POSTSCRIPT to standard output.  The stan-
+          dard input must be seekable, so it cannot be a pipe.
+          If you must use a pipe, write a shell script that
+          copies the pipe output to a temporary file and then
+          points dvips at this file.
+
+     --hh _n_a_m_e
+          Prepend file _n_a_m_e as an additional header file. (How-
+          ever, if the name is simply `-', suppress all header
+          files from the output.)  This header file gets added to
+          the POSTSCRIPT userdict.
+
+     --ll _n_u_m
+          The last page printed will be the first one numbered
+          _n_u_m. Default is the last page in the document.
+
+     --mm   Specify manual feed for printer.
+
+     --nn _n_u_m
+          At most _n_u_m pages will be printed out.  Default is
+          100000.
+
+     --oo _n_a_m_e
+          The output will be sent to file _n_a_m_e. If no file name
+          is given, the default name is _f_i_l_e.ps; if this option
+          isn't given, the default name is !lpr.  If the first
+          character of the file name is an exclamation mark, then
+          the remainder will be used as an argument to popen;
+          thus, specifying !lpr as the output file will automati-
+          cally queue the file for printing.
+
+     --pp _n_u_m
+          The first page printed will be the first one numbered
+          _n_u_m. Default is the first page in the document.
+
+     --qq   Run in quiet mode.  Don't chatter about pages con-
+          verted, etc.; report nothing but errors to stderr.
+
+     --rr   Stack pages in reverse order.  Normally, page one will
+          be printed first.
+
+     --ss   Causes the entire global output to be enclosed in a
+          save/restore pair.  This causes the file to not be
+          truly conformant, and is thus not recommended, but is
+          useful if you are driving the printer directly and
+          don't care too much about the portability of the out-
+          put.
+
+     --tt _m_o_d_e_n_a_m_e
+          This sets the mode to _m_o_d_e_n_a_m_e.  Currently, the only
+          modes allowable are: lleetttteerr, which selects _l_e_t_t_e_r size
+
+
+
+TeXware                   9 August 1990                         2
+
+
+
+
+
+
+DVIPS                     User Commands                     DVIPS
+
+
+
+          (8.5 by 11 inch page); aa33, which selects _a_3 size; aa44,
+          which selects _a_4 size; lleeggaall, which selects _l_e_g_a_l size
+          (8.5 by 14 inches); lleeddggeerr, which selects _l_e_g_a_l size
+          (11 by 17 inches); llaannddssccaappee, which rotates the docu-
+          ment by ninety degrees.  The default page size is
+          _l_e_t_t_e_r.  The llaannddssccaappee option may be combined with any
+          of the others; doing so requires giving the --tt option
+          twice.  The upper left corner of each page in the DVI
+          file is placed one inch from the left and one inch from
+          the top.
+
+     --xx _n_u_m
+          Set the magnification ratio to _n_u_m /1000. Overrides the
+          magnification specified in the DVI file.  Must be
+          between 10 and 100000.
+
+     --CC _n_u_m
+          Create _n_u_m copies, but collated (by replicating the
+          data in the POSTSCRIPT file).  Slower than the --cc
+          option, but easier on the humans.
+
+     --DD _n_u_m
+          Set the resolution in dpi (dots per inch) to _n_u_m. This
+          affects the choice of bitmap fonts that are loaded and
+          also the positioning of letters in resident POSTSCRIPT
+          fonts. Must be between 10 and 10000.  This affects both
+          the horizontal and vertical resolution.
+
+     --FF   Causes control-D (ASCII code 4) to be appended as the
+          very last character of the POSTSCRIPT file.  This is
+          useful when ddvviippss is driving the printer directly, as
+          is common on extremely small systems, instead of work-
+          ing through a spooler.
+
+     --KK   Removes comments from included graphics files.  Only
+          necessary when using brain-damaged spoolers or
+          POSTSCRIPT postprocessors that don't properly interpret
+          structured comments.
+
+     --MM   Turns off the automatic font generation capability.
+
+     --NN   Turns off structured comments; this might be necessary
+          on some systems that try to interpret POSTSCRIPT com-
+          ments in weird ways, or on some POSTSCRIPT printers.
+
+     --PP _p_r_i_n_t_e_r_n_a_m_e
+          Sets up the output for the appropriate printer.  This
+          is implemented by reading in _c_o_n_f_i_g._p_r_i_n_t_e_r_n_a_m_e, which
+          can then set the output pipe (as in, o !lpr -Pprinter-
+          name) as well as the font paths and any other defaults
+          for that printer only.  It is recommended that all
+          standard defaults go in the one master _c_o_n_f_i_g._p_s file
+
+
+
+TeXware                   9 August 1990                         3
+
+
+
+
+
+
+DVIPS                     User Commands                     DVIPS
+
+
+
+          and only things that vary printer to printer go in the
+          _c_o_n_f_i_g._p_r_i_n_t_e_r_n_a_m_e files.  Note that _c_o_n_f_i_g._p_s is read
+          before _c_o_n_f_i_g._p_r_i_n_t_e_r_n_a_m_e. In addition, another file
+          called ~/._d_v_i_p_s_r_c is searched for immediately after
+          _c_o_n_f_i_g._p_s; this file is intended for user defaults.  If
+          no --PP command is given, the environment variable
+          PPRRIINNTTEERR is checked.  If that variable exists, and a
+          corresponding _c_o_n_f_i_g.PPRRIINNTTEERR exists, then that confi-
+          guration file is read in.
+
+     --UU   Turns off a virtual memory saving optimization that
+          triggers a bug in the Xerox 4045 POSTSCRIPT inter-
+          preter; not recommended unless you must generate output
+          to this printer.
+
+     --XX _n_u_m
+          Set the horizontal resolution in dpi (dots per inch) to
+          _n_u_m.
+
+     --YY _n_u_m
+          Set the vertical resolution in dpi (dots per inch) to
+          _n_u_m.
+
+     --ZZ   Causes bitmap fonts to be compressed before they are
+          downloaded, thereby reducing the size of the POSTSCRIPT
+          font-downloading information.  Especially useful at
+          high resolutions or when very large fonts are used.
+          Will slow down printing somewhat, especially on early
+          68000-based POSTSCRIPT printers.
+
+     --??   Print out the banner identifying the program.
+
+CCOONNFFIIGG FFIILLEE OOPPTTIIOONNSS
+     The file _c_o_n_f_i_g._p_s (and the user's own ~/._d_v_i_p_s_r_c) can be
+     used to set many of the options to configure ddvviippss for a
+     particular site and printer.  These will probably be set up
+     by the installer, so normal users can skip this section.
+     The name and location of the config file can be changed at
+     installation time.  The environment variable TTEEXXCCOONNFFIIGG (if
+     it exists) is used as the path to configuration files.  Each
+     line of the file specifies a configuration option.  If the
+     initial character is a space, an asterisk, a pound sign, or
+     a semicolon, the line is ignored.  But if the initial char-
+     acter is an option like "o", for example, the remainder of
+     the line is considered to be a parameter.  The options are:
+
+     ee _n_u_m
+          Sets the maximum drift parameter to _n_u_m dots (pixels)
+          as explained above.
+
+     ff    Run as a filter by default.
+
+
+
+
+TeXware                   9 August 1990                         4
+
+
+
+
+
+
+DVIPS                     User Commands                     DVIPS
+
+
+
+     hh _n_a_m_e
+          Add _n_a_m_e as a POSTSCRIPT header file to be downloaded
+          at the beginning.
+
+     mm _n_u_m
+          _n_u_m is the virtual memory available for fonts and
+          strings in the printer.  Default is 180000.
+
+     oo _n_a_m_e
+          The default output file is set to _n_a_m_e. As above, it
+          can be a pipe.
+
+     pp _n_a_m_e
+          Sets the name of the file to read for PostScript font
+          mapping.  This file name defaults to psfonts.map, but
+          can be changed in the printer configuration file to
+          allow different printers to have different sets of
+          PostScript fonts.
+
+     qq    Run in quiet mode by default.
+
+     rr    Reverse the order of pages by default.
+
+     ss    Enclose the entire document in a global save/restore
+          pair by default.  Not recommended, but useful in some
+          environments; this breaks the `conformance' of the
+          document.
+
+     tt _m_o_d_e_n_a_m_e
+          This sets the mode to _m_o_d_e_n_a_m_e.  Currently, the only
+          modes allowable are: lleetttteerr, which selects _l_e_t_t_e_r size
+          (8.5 by 11 inch page); aa44, which selects _a_4 size;
+          lleeggaall, which selects _l_e_g_a_l size (8.5 by 14 inches);
+          llaannddssccaappee, which rotates a _l_e_t_t_e_r size document by
+          ninety degrees.  The default mode is _l_e_t_t_e_r. The upper
+          left corner of each page in the DVI file is placed one
+          inch from the left and one inch from the top.  The --tt
+          _m_o_d_e_n_a_m_e option will override this.
+
+     DD _n_u_m
+          Sets the vertical and horizontal resolution to _n_u_m dots
+          per inch (dpi).
+
+     EE _c_o_m_m_a_n_d
+          Executes the command listed; can be used to get the
+          current date into a header file for inclusion, for
+          instance.  Possibly dangerous; in many installations
+          this may be disabled, in which case a warning message
+          will be printed if the option is used.
+
+     HH _p_a_t_h
+          The (colon-separated) path to search for POSTSCRIPT
+
+
+
+TeXware                   9 August 1990                         5
+
+
+
+
+
+
+DVIPS                     User Commands                     DVIPS
+
+
+
+          header files is _p_a_t_h.
+
+     KK    Removes POSTSCRIPT comments from included POSTSCRIPT
+          graphics files.
+
+     MM _m_o_d_e
+          Set _m_o_d_e as the METAFONT mode to be used when generat-
+          ing fonts.  This is passed along to MakeTeXPK and over-
+          rides mode derivation from the base resolution.
+
+     NN    Disable POSTSCRIPT comments by default.
+
+     PP _p_a_t_h
+          The (colon-separated) path to search for bitmap (PK)
+          font files is _p_a_t_h. The TEXPKS environment variable
+          will override this.  If a % character is found in _p_a_t_h,
+          the following substitutions will be made, and then a
+          search will be made for the resulting filenames.  A %f
+          is replaced by the font name.  A %d is replaced by the
+          font size in dots per inch (dpi).  A %p is replaced by
+          the font family.  This is always "pk".  A %m is
+          replaced by the font mode.  This is the _m_o_d_e given in
+          the MM option.
+
+     RR _n_u_m _n_u_m ...
+          Sets up a list of default resolutions to search for PK
+          fonts, if the requested size is not available.  The
+          output will then scale the font found using POSTSCRIPT
+          scaling to the requested size.  Note that the resultant
+          output will be ugly, and thus a warning is issued.  To
+          turn this off, simply don't use such a line in the con-
+          figuration file.
+
+     SS _p_a_t_h
+          The (colon-separated) path to search for special illus-
+          trations (encapsulated POSTSCRIPT files or psfiles) is
+          _p_a_t_h. The TEXINPUTS environment variable will override
+          this.
+
+     TT _p_a_t_h
+          The (colon-separated) path to search for the tfm files
+          is _p_a_t_h. The TEXFONTS environment variable will over-
+          ride this. This path is used for resident fonts and
+          fonts that can't be otherwise found. It's usually best
+          to make it identical to the path used by TeX.
+
+     UU    Turns off a memory-saving optimization; see the command
+          line option for more information.
+
+     VV _p_a_t_h
+          The (colon-separated) path to search for virtual font
+          (VF) files is _p_a_t_h. This may be device-dependent, if
+
+
+
+TeXware                   9 August 1990                         6
+
+
+
+
+
+
+DVIPS                     User Commands                     DVIPS
+
+
+
+          you use virtual fonts to simulate actual fonts on dif-
+          ferent devices.
+
+     WW _s_t_r_i_n_g
+          Sends _s_t_r_i_n_g to stderr, if it exists; otherwise it can-
+          cels another previous message.  This is useful in the
+          default configuration file if you want to require the
+          user to specify a printer, for instance, or if you want
+          to notify the user that the resultant output has spe-
+          cial characteristics.
+
+     XX _n_u_m
+          Sets the horizontal resolution to _n_u_m dots per inch
+          (dpi).
+
+     YY _n_u_m
+          Sets the vertical resolution to _n_u_m dots per inch
+          (dpi).
+
+     ZZ    Compress all downloaded fonts by default.
+
+PPAATTHH IINNTTEERRPPRREETTAATTIIOONN
+     All paths variables are the names of directories (path ele-
+     ments), separated by colons.  Each path element can be
+     either the literal name of a directory or one of the ~ forms
+     common under Unix.  If a path element is a single tilde, it
+     is replaced by the contents of the environment variable
+     HOME, which is normally set to the user's home directory.
+     If the path element is a tilde followed by anything, the
+     part after the tilde is interpreted as a user name, and his
+     home directory is fetched from the system password file and
+     used as the real path element.
+
+     Where environment variables can override paths, an addi-
+     tional path element form is allowed.  If a path element is
+     the empty string, it is replaced with the system defaults.
+     Thus, to say (with an environment variable) to search the
+     user's home directory, followed by the system default paths,
+     the following command would be used:
+
+          setenv TEXINPUTS ~:
+
+     This is a path of two elements.  The first is the user's
+     home directory.  The second path element is the empty
+     string, indicating that the system defaults should be
+     searched.
+
+PPOOSSTTSSCCRRIIPPTT FFOONNTT SSUUPPPPOORRTT
+     This version of dvips supports POSTSCRIPT fonts.  You need
+     TFM (TeX Font Metric) files for all fonts seen by TeX; they
+     can be generated from AFM (Adobe Font Metric) files by run-
+     ning the program aaffmm22ttffmm (which is described on its own
+
+
+
+TeXware                   9 August 1990                         7
+
+
+
+
+
+
+DVIPS                     User Commands                     DVIPS
+
+
+
+     manual page). That program also creates virtual fonts with
+     which you can use normal plain TeX conventions.  The set of
+     all resident fonts known to ddvviippss appears in the file
+     _p_s_f_o_n_t_s._m_a_p, which should be updated whenever you install a
+     new resident font. See aaffmm22ttffmm for examples and more infor-
+     mation on this file.
+
+\\ssppeecciiaall OOPPTTIIOONNSS
+     This DVI driver allows the inclusion of POSTSCRIPT code to
+     be inserted in a TeX file via TeX's \special command.  For
+     compatibility with other systems, several different conven-
+     tions are supported.
+
+     First, there's a flexible key-and-value scheme:
+
+          \special{psfile="filename"[ key=value]*}
+
+     This will download the POSTSCRIPT file called _f_i_l_e_n_a_m_e such
+     that the current point will be the origin of the POSTSCRIPT
+     coordinate system.  If the _f_i_l_e_n_a_m_e string begins with the `
+     (grave accent) character then the remainder of the _f_i_l_e_n_a_m_e
+     field is treated as a Unix Bourne shell script to be exe-
+     cuted with its _s_y_s_o_u_t down loaded as a POSTSCRIPT file.  For
+     example:
+
+          \special{psfile="`zcat packed.ps" ...}
+
+     will uncompress the file _p_a_c_k_e_d._p_s._Z for inclusion in ddvviippss
+     output.
+
+     The optional key/value assignments allow you to specify
+     transformations on the POSTSCRIPT in _f_i_l_e_n_a_m_e. The possible
+     keys are:
+          hoffset        The horizontal offset (default 0)
+          voffset        The vertical offset (default 0)
+          hsize          The horizontal clipping size (default 612)
+          vsize          The vertical clipping size (default 792)
+          hscale         The horizontal scaling factor (default 100)
+          vscale         The vertical scaling factor (default 100)
+          angle          The rotation (default 0)
+     The hoffset, voffset, hsize, and vsize are given in
+     POSTSCRIPT units (1/72 of an inch), called bp elsewhere in
+     TeX; these are the units of the default coordinate system
+     assumed to be valid in the POSTSCRIPT file.  The hscale and
+     vscale are given in non-dimensioned percentage units, and
+     the rotate value is specified in degrees.  Thus
+
+          \special{psfile=foo.ps hoffset=72 hscale=90 vscale=90}
+
+     will shift the graphics produced by file _f_o_o._p_s right by 1",
+     and will draw it at 0.9 normal size.  If either hsize or
+     vsize is specified, the figure will be clipped to a
+
+
+
+TeXware                   9 August 1990                         8
+
+
+
+
+
+
+DVIPS                     User Commands                     DVIPS
+
+
+
+     rectangular region from (0,0) to (hsize,vsize) in default
+     coordinates, after scaling, translation, and/or rotation.
+     Otherwise no clipping will be done.  Offsets are given rela-
+     tive to the point of the \special command, and are unaf-
+     fected by scaling or rotation. Rotation is counterclockwise
+     about (0,0).  The order of operations is: Take the
+     POSTSCRIPT figure, rotate it, then scale it, then offset it,
+     then clip it. For example, if you want to extract a
+     one-inch-square figure bounded by (100,200), (172,200),
+     (172,272), and (100,272) in the POSTSCRIPT coordinates of
+     the graphic in cropthis.ps, you would say
+
+          \special{psfile=cropthis.ps
+                    hoffset=-100 yoffset=-200
+                    hsize=72 vsize=72}
+
+     Secondly, if your file conforms to the _E_n_c_a_p_s_u_l_a_t_e_d _P_o_s_t
+     _S_c_r_i_p_t (EPS) conventions, then it is possible to use a
+     simpler \\ssppeecciiaall command that will automatically reserve the
+     required space.
+
+     To use, simply say
+
+          \input epsf           % at the beginning of your TeX document
+          \epsfbox{filename.ps} % at the place where you want the figure
+
+     A _v_b_o_x of the appropriate size for the bounding box will be
+     built. The height and width of this vbox will be the height
+     and width of the figure; the depth of the vbox will be zero.
+     By default, the graphic will have its `natural' width.  If
+     you wish to enlarge or reduce it, simply set the dimension
+     `\epsfxsize' to something else, such as `\hsize'; the figure
+     will be scaled so that \epsfxsize is its final width.  A
+     more general facility for sizing is available by defining
+     the `\epsfsize' macro.  This macro is used to give \epsfx-
+     size a value each time \epsffile is called.  It takes two
+     parameters; the first is the horizontal natural size of the
+     POSTSCRIPT figure, and the second is the vertical natural
+     size.  (Natural size, in this case, is the size in
+     POSTSCRIPT points from the bounding box comment.)  The
+     default definition of this macro is
+
+          \def\epsfsize#1#2{\epsfxsize}
+
+     which just means to take the value that was set before the
+     macro was invoked.  Note that the variable \epsfxsize is
+     reset to zero at the end of each call to \epsffile.  You can
+     redefine this macro to do almost anything.  It must return
+     the xsize to use, or 0 if natural scaling is to be used.
+     Common uses include:
+
+          \epsfxsize  % just leave the old value alone
+
+
+
+TeXware                   9 August 1990                         9
+
+
+
+
+
+
+DVIPS                     User Commands                     DVIPS
+
+
+
+          0pt         % use the natural sizes
+          #1          % use the natural sizes
+          \hsize      % scale to full width
+          0.5#1       % scale to 50% of natural size
+          \ifnum#1>\hsize\hsize\else#1\fi  % smaller of natural, hsize
+
+     The resultant vbox can be centered with \centerline, or
+     treated as any other vbox.  If you are using LaTeX and the
+     center environment, be sure to execute a \leavevmode before
+     each use of \epsffile, so that LaTeX leaves the vertical
+     mode and enters the paragraph making mode.  (This should
+     probably be provided by the LaTeX macros themselves.)
+
+     (The \epsfbox macro does its job by scanning filename.ps for
+     a standard `BoundingBox' comment. The figure is clipped to
+     the size of that bounding box. If the bounding box is not
+     found, a bounding box of `72 72 540 720' is assumed.  If the
+     POSTSCRIPT file to be included is not EPSF, you are probably
+     better off using the _p_s_f_i_l_e special instead.)
+
+     Thirdly, there are special commands for drawing diagrams
+     using the conventions of `TPIC' (a portable,
+     non-POSTSCRIPT-dependent program by Tim Morgan, with
+     POSTSCRIPT implementation by Dorab Patel). For example,
+     `\special{pn 2}' in this language sets the pen size to .002
+     inch.
+
+     A fourth type of \special allows you to write POSTSCRIPT
+     instructions that will be passed literally to dvips's output
+     file. These are intended for people whose favorite graphics
+     language is raw POSTSCRIPT.
+
+          \special{" _t_e_x_t}
+
+     includes _t_e_x_t literally in the output POSTSCRIPT document,
+     after translating the origin to the current page position,
+     opening a special user dictionary, and and reverting to the
+     POSTSCRIPT convention of 72 units=1in.
+
+          \special{! _t_e_x_t}
+
+     includes _t_e_x_t literally in the prolog (before all typeset-
+     ting is done), putting definitions in the special diction-
+     ary; this is good for definitions you intend to use with
+     \special{"}.  Note that _d_v_i_p_s will always include such spe-
+     cials in the prolog, unless they occur on pages after the
+     last page printed.  This allows correct printing of selected
+     pages, even when literal POSTSCRIPT definitions are used,
+     provided that you give definitions before their first use.
+
+     A fifth type of \special allows literal POSTSCRIPT instruc-
+     tions to be inserted _w_i_t_h_o_u_t enclosing them in an invisible
+
+
+
+TeXware                   9 August 1990                        10
+
+
+
+
+
+
+DVIPS                     User Commands                     DVIPS
+
+
+
+     protective shield; users of this feature are supposed to
+     understand what they are doing (and they shouldn't change
+     the POSTSCRIPT graphics state unless they are willing to
+     take the consequences). This command can take many forms,
+     because it has had a tortuous history; any of the following
+     will work:
+
+          \special{ps:_t_e_x_t}
+          \special{ps::_t_e_x_t}
+          \special{ps::[begin]_t_e_x_t}
+          \special{ps::[end]_t_e_x_t}
+
+     (with longer forms taking precedence over shorter forms,
+     when they are used).  Exception: The command
+
+          \special{ps: plotfile _f_i_l_e_n_a_m_e}
+
+     will copy the commands from _f_i_l_e_n_a_m_e verbatim into dvips's
+     output (but omitting lines that begin with %).  An example
+     of the proper use of literal specials can be found in the
+     file rroottaattee..tteexx,, which makes it easy to typeset text turned
+     90 degrees.
+
+     Finally, there are two special cases of \special, which pro-
+     vide alternatives to certain dvips command-line options: (1)
+     You may put the command
+
+          \\ssppeecciiaall{{llaannddssccaappee}}
+
+     anywhere in your document (except after the final page
+     selected for printing), and the entire document will be
+     printed in landscape mode.  (2) The command
+
+          \\ssppeecciiaall{{hheeaaddeerr==_f_i_l_e_n_a_m_e}}
+
+     may be used to add _f_i_l_e_n_a_m_e as a header file (i.e., a file
+     that will be downloaded before the start of processing).
+     This is usually used for Macintosh header files.  The header
+     file will be added to the POSTSCRIPT userdict.
+
+     For special effects, if any of the macros _b_o_p-_h_o_o_k,
+     _e_o_p-_h_o_o_k, _s_t_a_r_t-_h_o_o_k, or _e_n_d-_h_o_o_k are defined in the
+     POSTSCRIPT userdict, they will be executed at the beginning
+     of a page, end of a page, start of the document, and end of
+     a document, respectively.  When these macros are executed,
+     the default POSTSCRIPT coordinate system is in effect.  Such
+     macros can be defined in headers added by the --hh option or
+     the hheeaaddeerr== special, and might be useful for writing, for
+     instance, DRAFT across the entire page, or, with the aid of
+     a shell script, dating the document.  These macros are exe-
+     cuted outside of the save/restore context of the individual
+     pages, so it is possible for them to accumulate information,
+
+
+
+TeXware                   9 August 1990                        11
+
+
+
+
+
+
+DVIPS                     User Commands                     DVIPS
+
+
+
+     but if a document must be divided into sections because of
+     memory constraints, such added information will be lost
+     across section breaks.
+
+     Several of the above tricks can be used nicely together.
+     For instance, a --PP file can be set up to print the date on
+     each page; the particular configuration file will execute a
+     command to put the date into a header file, which is then
+     included with a hh line in the configuration file.  Note that
+     multiple --PP options can be used.
+
+     If the filename in any of the POSTSCRIPT inclusion options
+     begins with a backtick, that name is interpreted instead as
+     a command to be executed to generate the appropriate file.
+     The POSTSCRIPT must be generated to standard output by the
+     command.  This is useful, for instance, for uncompressing
+     large POSTSCRIPT files using zcat.
+
+FFIILLEESS
+     For more information, see the manual dvips.tex distributed
+     with the program.
+
+     Files used by dvips are usually system dependent, but the
+     following are typical:
+          the prolog dir           /usr/lib/tex/ps
+          the config dir           /usr/lib/tex/ps
+          the tfm dir              /usr/lib/tex/fonts/tfm
+          the font dir             /usr/lib/tex/fonts/pk
+          the virtual font dir     /usr/lib/tex/fonts/vf
+          the epsf/psfile dir      .:..:/usr/lib/tex/inputs
+
+SSEEEE AALLSSOO
+     mf(1), afm2tfm(1), tex(1), latex(1), lpr(1)
+
+NNOOTTEESS
+     POSTSCRIPT is a registered trademark of Adobe Systems Incor-
+     porated.
+
+AAUUTTHHOORR
+     Tomas Rokicki <rokicki@neon.stanford.edu>; extended to vir-
+     tual fonts by Don Knuth.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+TeXware                   9 August 1990                        12
+
+
+

@@ -1,0 +1,383 @@
+% This is the instructions for authors for IJCAI'89.
+\documentstyle[ijcai89,named]{article}
+% The file ijcai89.sty is the style file for IJCAI'89.
+% The file named.sty contains macros for named citations as produced 
+% by named.bst.
+
+\title{IJCAI'89 Format Instructions for Authors \\ (Computer-Typeset Papers)}
+\author{Shirley Jowell\thanks{Acknowledgments to sponsoring agencies
+		appear here as a footnote.}\\ 
+	Morgan Kaufmann Publishers \\
+	2929 Campus Drive, Suite 260 \\
+	San Mateo, California \hspace{1em} 94403
+	\And
+	Peter F. Patel-Schneider \\
+	AT\&T Bell Laboratories \\
+	600 Mountain Avenue \\
+	Murray Hill, New Jersey \hspace{1em} 07974
+	}
+
+\newcommand{\usa}[2]{#1}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+The {\it IJCAI'89 Proceedings} will be printed using the photo-offset print
+process directly from camera-ready copy furnished by the authors.  To
+ensure that all papers in the {\it Proceedings} have a uniform appearance,
+authors are asked to adhere to the following instructions.  
+\end{abstract}
+
+\section{Introduction}
+
+Papers produced for IJCAI'89 using computer typesetting systems (such as
+\LaTeX{} or Scribe) will be printed directly from {\bf $8$-$1/2 \times
+11''$} masters.
+
+Print your paper using a laser or other letter-quality printer in good
+condition.  (If you have a ``write-white'' laser printer you must use fonts
+specifically designed for it---not fonts for ``write-black'' printers.)
+{\em Do not use line printers or dot matrix printers.} Papers with poor
+quality output, e.g., light or gray type, and papers that significantly
+deviate from these instructions, e.g., by using 8-point fonts, will not be
+included in the proceedings.
+
+Print your paper on heavy bond white paper.  Do not fold or crease your paper.
+
+\subsection{Typewritten Papers}
+
+If you do not have access to a typesetting system, you can type your paper
+on special, oversize forms (``large mats'') that will be reduced before
+printing by Morgan Kaufmann Publishers.  
+
+\usa{If you must type your paper, please contact
+Shirley Jowell at Morgan Kaufmann for a supply of mats and a
+separate set of instructions for typing your paper.  {\em Discard these
+instructions\/ {\em (which are for computer-typeset papers only)} if you
+are typing your paper on large mats.}}{Included in this mailing is a set of
+large mats that should be adequate to handle your paper; also included is a
+separate set of instructions for using the mats.  If you type your paper,
+{\em please discard these instructions\/} (which are for computer-typeset
+papers only.)}
+
+\section{Style and Format}
+
+\LaTeX{} and Bib\TeX{} style files that implement these instructions have
+been placed in the \LaTeX{} style repository.  (See Appendix~\ref{latex} for
+instructions on how to obtain these files.)
+
+\subsection{General Instructions}
+
+Print manuscripts two columns to a page, in the manner in which these
+instructions are printed.  The exact dimensions for pages are:
+\begin{itemize}
+\item left and right margins: $.75''$,
+\item column width: $3.375''$,
+\item gap between columns: $.25''$,
+\item top margin---first page: $1.25''$,
+\item top margin---other pages: $.625''$,
+\item bottom margin: $1.0''$.
+\end{itemize}
+All measurements assume an {\bf $8$-$1/2 \times 11''$} page size.
+
+A format template is included with these instructions.
+
+Use 10-point type in a clear, readable font with 1-point leading (10
+on 11).  Indent when starting a new paragraph, except after major headings.
+
+\subsection{Title Page}
+
+\subsubsection{Title and Author Information}
+
+Center the title on the entire width of the page in a 14-point bold font.
+Place the names of authors below the title in a 12-point bold font and
+affiliations and complete addresses directly below the author names in a
+12-point (non-bold) font.
+
+Credit to a sponsoring agency appears in a footnote at the bottom of the
+left column of the first page.  See the example on this page.
+
+\subsubsection{Abstract}
+
+Place the abstract at the beginning of the first column $3.0''$ from the
+top of the page, unless that does not leave enough room for the title and
+author information.  Use a slightly smaller width than in the body of the
+paper.  Head the abstract with ``Abstract'' centered above the body of the
+abstract in a 12-point bold font.
+
+Abstracts should be no longer than 200 words.
+
+\subsection{Text}
+The main body of the text immediately follows the Abstract. 
+
+\subsection{Sections}
+
+Please note that the following section heading sizes are not the \LaTeX{}
+standard.
+
+\subsubsection{Section Headings}
+
+Print section headings in 12-point bold type in the style shown in these
+instructions.  Leave a blank space of approximately 10 points above and 8
+points below section headings.
+
+\subsubsection{Subsection Headings}
+
+Print subsection headings in 10-point bold type.  Leave a blank space of
+approximately 9 points above and 4 points below subsection headings.
+
+\subsubsection{Subsubsection Headings}
+
+Print subsubsection headings in 10-point bold type.  Leave a blank space of
+approximately 8 points above and 3 points below subsubsection headings.
+
+\subsubsection{Special Sections}
+
+Arrange special sections as follows:
+\begin{description}
+\item[Acknowledgments:] 
+The Acknowledgments section, if included, follows the main body of the text
+and is headed ``Acknowledgments,'' printed in the same style as a section
+heading, but without a number. 
+\item[Appendices:] 
+Any Appendices follow the Acknowledgments (or directly follow the text) and
+look like sections, except that they are numbered with capital letters
+instead of arabic numerals. 
+\item[References:]
+The References section is headed ``References,'' printed in the same
+style as a section heading, but without a number.
+A sample list of references is given at the end of these
+instructions.
+Use a consistent format for references, such as provided by
+Bib\TeX{}.
+\end{description}
+
+\subsection{Citations}
+
+Citations within the text should include the author's last name and
+the year of publication, for example \cite{cheeseman:probability}.
+Append lower case letters to the year in cases of ambiguity.
+Treat multiple authors as in the following examples:
+\cite{abelson-et-al:scheme} (for more than two authors) and
+\cite{brachman-schmolze:kl-one} (for two authors).
+If the author portion of a citation is obvious, omit it,
+e.g., Levesque \shortcite{levesque:belief}.
+Collapse multiple citations as follows:
+\cite{levesque:functional-foundations,haugeland:mind-design}.%
+\nocite{abelson-et-al:scheme}%
+\nocite{brachman-schmolze:kl-one}%
+\nocite{cheeseman:probability}%
+\nocite{haugeland:mind-design}%
+\nocite{lenat:heuristics}%
+\nocite{levesque:functional-foundations}%
+\nocite{levesque:belief}
+
+\subsection{Footnotes}
+
+Place footnotes at the bottom of the page in a 9-point font.  Refer to them
+with superscript numbers.\footnote{This is how your footnotes should
+appear.} Separate them from the text by a short line.\footnote{Note the
+line separating these footnotes from the text.}
+
+
+\section{Illustrations}
+
+\subsection{General Instructions}
+
+Place illustrations (figures, drawings, tables, and photographs) throughout
+the paper at the places where they are first discussed, rather than at the
+end of the paper.  If placed at the bottom or top of a page, illustrations
+may run across both columns.  Securely attach them to the master form with
+glue stick, spray adhesive, rubber cement, or write tape.  Do not use
+transparent tape as the printing process blurs copy under transparent tape.
+
+Number illustrations sequentially.  Use references of the following form:
+Figure 1, Table 2, etc.  Place illustration numbers and captions under
+illustrations.  Leave a margin of 1/4-inch around the area covered by the
+illustration and caption.  Use 9-point type for captions, labels, and
+other text in illustrations.
+
+{\em Do not use line printer printouts in illustrations.}
+
+\subsection{Drawings}
+
+Draw original line drawings in {\em black ink}, not pencil.  Do not color
+in drawings.  Lines should be heavy enough to reproduce clearly.
+
+\subsection{Photographs}
+
+Use only glossy black and white photographs.  Color photographs do not
+reproduce well.  (Red will reproduce as black, for example.)  Photographs
+incur extra expense, so please use them judiciously.
+
+\section{Length of Papers}
+
+Authors are allowed {\em six\/} (6) pages.  All illustrations and
+references must be included in the 6-page allowance.  
+
+{\em One} extra page may be included by accompanying the paper with a check
+for \$250, payable to the American Association for Artificial Intelligence.
+Papers over seven pages will not be accepted for publication.
+
+\section{Identification}
+
+Type or write your name on the {\em back\/} of every page of the masters.
+Number the pages sequentially.  This information is for identification only;
+final page numbers will be assigned by the publisher.
+
+\section{Mailing}
+
+{\em Make a photocopy of your final paper.}  Keep the photocopy in your
+files for reference or in case the original is lost in the mail.
+
+Your paper (the original) must be {\em received\/} by Morgan Kaufmann
+Publishers no later than {\bf May 1, 1989}.  {\em Papers received later
+than this date will not be included in the Proceedings.}
+
+Do not fold your paper for mailing.  Please use the enclosed envelope for
+mailing to Morgan Kaufmann.  If you use a different envelope, mark it
+clearly: {\bf Do Not Fold or Bend}.
+
+Send to:
+\begin{quote}
+Shirley Jowell \\
+Attn: IJCAI'89 Conference \\
+Morgan Kaufmann Publishers \\
+2929 Campus Drive, Suite 260 \\
+San Mateo, CA \hspace{1em} 94403\\
+U. S. A.
+\end{quote}
+
+\section{Inquiries}
+
+If you have any questions about the preparation or submission of your
+paper, please contact:
+\begin{quote}
+Shirley Jowell \\
+Morgan Kaufmann Publishers \\
+(415) 578-9911
+\end{quote}
+
+\appendix
+
+
+\section{Using \LaTeX{}}\label{latex}
+
+A \LaTeX{} style file (for version 2.09 of \LaTeX{}) that implements these
+instructions has been prepared, as have a Bib\TeX{} style file (for version
+0.99c of Bib\TeX{}, {\em not version 0.98i}) and a LaTeX style file that
+implement the citation and reference styles in these instructions.
+
+The relevant files have been placed in the \LaTeX{} style collection at
+Clarkson.  To retrieve these files use one of the following methods:
+
+\begin{enumerate} 
+\item For Internet users - how to ftp:
+
+Here is an example session.  Ftp syntax varies from host to
+host; your syntax may be different.
+
+\begin{verbatim}
+% ftp sun.soe.clarkson.edu
+Name: anonymous
+Password: <any non-null string>
+ftp> cd pub/latex-style
+ftp> get ijcai89.tex
+ftp> get ijcai89.sty
+ftp> get named.sty
+ftp> cd ../bibtex-style
+ftp> get named.bst
+ftp> quit
+\end{verbatim}
+
+\item  Non-Internet users - how to retrieve by mail:
+
+To retrieve files documentation send mail to
+archive-server@sun.soe.clarkson.edu as follows:
+
+\begin{verbatim}
+To: archive-server@sun.soe.clarkson.edu
+Subject:
+
+path <your address>
+send latex-style ijcai89.tex
+send latex-style ijcai89.sty named.sty
+send bibtex-style named.bst
+\end{verbatim}
+
+The address you put in the message should be a valid internet path,
+such as host!user@uunet.uu.net.
+
+\end{enumerate}
+
+Further information on using these styles for the preparation of papers for
+IJCAI'89 can be obtained by writing to
+\begin{quote}
+Peter F. Patel-Schneider \\
+AT\&T Bell Laboratories \\
+600 Mountain Ave., Room 3C-410A \\
+Murray Hill, New Jersey \hspace{1em} 07974 \\
+U. S. A. \\
+pfps@research.att.com \\
+(201) 582-3399
+\end{quote}
+
+%% This section was initially prepared using BibTeX.  The .bbl file was
+%% placed here later
+%\bibliography{publications}
+%\bibliographystyle{named}
+%% The file named.bst is a bibliography style file for BibTeX 0.99c
+\begin{thebibliography}{}
+
+\bibitem[\protect\citeauthoryear{Abelson \bgroup \em et al.\egroup
+  }{1985}]{abelson-et-al:scheme}
+Harold Abelson, Gerald~Jay Sussman, and Julie Sussman.
+\newblock {\em Structure and Interpretation of Computer Programs}.
+\newblock MIT Press, Cambridge, Massachusetts, 1985.
+
+\bibitem[\protect\citeauthoryear{Brachman and
+  Schmolze}{1985}]{brachman-schmolze:kl-one}
+Ronald~J. Brachman and James~G. Schmolze.
+\newblock An overview of the {KL-ONE} knowledge representation system.
+\newblock {\em Cognitive Science}, 9(2):171--216, April--June 1985.
+
+\bibitem[\protect\citeauthoryear{Cheeseman}{1985}]{cheeseman:probability}
+Peter Cheeseman.
+\newblock In defense of probability.
+\newblock In {\em Proceedings of the Ninth International Joint Conference on
+  Artificial Intelligence}, pages 1002--1009, Los Angeles, California, August
+  1985. International Joint Committee on Artificial Intelligence.
+
+\bibitem[\protect\citeauthoryear{Haugeland}{1981}]{haugeland:mind-design}
+John Haugeland, editor.
+\newblock {\em Mind Design}.
+\newblock Bradford Books, Montgomery, Vermont, 1981.
+
+\bibitem[\protect\citeauthoryear{Lenat}{1981}]{lenat:heuristics}
+Douglas~B. Lenat.
+\newblock The nature of heuristics.
+\newblock Technical Report CIS-12 (SSL-81-1), Xerox Palo Alto Research Centers,
+  April 1981.
+
+\bibitem[\protect\citeauthoryear{Levesque}{1984a}]{levesque:functional-foundat%
+ions}
+Hector~J. Levesque.
+\newblock Foundations of a functional approach to knowledge representation.
+\newblock {\em Artificial Intelligence}, 23(2):155--212, July 1984.
+
+\bibitem[\protect\citeauthoryear{Levesque}{1984b}]{levesque:belief}
+Hector~J. Levesque.
+\newblock A logic of implicit and explicit belief.
+\newblock In {\em Proceedings of the Fourth National Conference on Artificial
+  Intelligence}, pages 198--202, Austin, Texas, August 1984. American
+  Association for Artificial Intelligence.
+
+\end{thebibliography}
+
+
+
+\end{document}
+
+

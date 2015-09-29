@@ -1,0 +1,245 @@
+head     9.0;
+branch   ;
+access   ;
+symbols  ds3100:9.0 sun3:9.0 sun4nw:9.0 symm:9.0 spur:9.0 Summer89:9.0 newlib:8.0 Summer88:6.0 sbc:5.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.0
+date     89.09.12.14.58.42;  author douglis;  state Stable;
+branches ;
+next     8.4;
+
+8.4
+date     89.07.16.11.11.01;  author ouster;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.07.14.17.23.24;  author ouster;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.05.24.07.49.13;  author rab;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.05.24.02.07.59;  author rab;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.11.46;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.27.45;  author douglis;  state Stable;
+branches ;
+next     5.2;
+
+5.2
+date     88.06.04.13.52.24;  author mendel;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     88.06.01.17.37.51;  author brent;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.38.59;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@/*
+ * devAddrs.h --
+ *
+ *     Addresses and vector numbers for Sun-3 devices.
+ *
+ * Copyright 1985, 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/dev/sun3.md/RCS/devAddrs.h,v 8.4 89/07/16 11:11:01 ouster Exp Locker: douglis $ SPRITE (Berkeley)
+ */
+
+#ifndef _DEVADDRS
+#define _DEVADDRS
+
+/*
+ * Addresses of devices:
+ */
+
+#define	DEV_KBD_ADDR			0xfe00004
+#define DEV_MOUSE_ADDR			0xfe00000
+#define DEV_SERIALA_ADDR		0xfe02004
+#define DEV_SERIALB_ADDR		0xfe02000
+#define	DEV_TIMER_ADDR			0xfe06000
+#define	DEV_INTERRUPT_REG_ADDR		0xfe0a000
+#define DEV_VIDEO_MEM_ADDR		0xfe20000
+
+/*
+ * Interrupt vector assignments:
+ */
+
+#define DEV_UART_VECTOR			30
+
+#endif /* _DEVADDRS */
+@
+
+
+8.4
+log
+@Wrong serial address was screwing up timer.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/dev.jo/sun3.md/RCS/devAddrs.h,v 8.3 89/07/14 17:23:24 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+@
+
+
+8.3
+log
+@Changes for new terminal driver.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/dev.jo/sun3.md/RCS/devAddrs.h,v 8.2 89/05/24 07:49:13 rab Exp Locker: ouster $ SPRITE (Berkeley)
+d27 2
+a28 2
+#define DEV_SERIALA_ADDR		0xfe06004
+#define DEV_SERIALB_ADDR		0xfe06000
+@
+
+
+8.2
+log
+@Changes to allow optimization.
+@
+text
+@d4 1
+a4 1
+ *     Addresses of devices on the Sun.
+d6 8
+a13 2
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+d15 1
+a15 2
+ *
+ * $Header: /sprite/src/kernel/dev/sun3.md/RCS/devAddrs.h,v 8.1 89/05/24 02:07:59 rab Exp Locker: rab $ SPRITE (Berkeley)
+d21 8
+a28 2
+#define	DEV_KBD_ADDR			0xfe00000
+#define	DEV_ZILOG_SERIAL_ADDR		0xfe02000
+d32 6
+@
+
+
+8.1
+log
+@*** empty log message ***
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/dev/sun3.md/RCS/devAddrs.h,v 8.0 88/11/11 18:11:46 douglis Stable Locker: rab $ SPRITE (Berkeley)
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/dev/sun3.md/RCS/devAddrs.h,v 6.0 88/08/11 12:27:45 douglis Stable Locker: douglis $ SPRITE (Berkeley)
+d22 1
+a22 1
+#endif _DEVADDRS
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: devAddrs.h,v 5.2 88/06/04 13:52:24 mendel Exp $ SPRITE (Berkeley)
+@
+
+
+5.2
+log
+@Moved to *.md directory and removed #ifdefs
+@
+text
+@d10 1
+a10 1
+ * $Header: devAddrs.h,v 5.1 88/06/01 17:37:51 brent Exp $ SPRITE (Berkeley)
+@
+
+
+5.1
+log
+@Fixed INTEL definitions for ethernet chip
+@
+text
+@d10 1
+a10 1
+ * $Header: devAddrs.h,v 5.0 87/08/11 10:38:59 sprite Exp $ SPRITE (Berkeley)
+d15 1
+a15 1
+#ifdef SUN3
+d21 1
+a21 7
+#else
+#define	DEV_KBD_ADDR			0xeec000
+#define	DEV_TIMER_ADDR			0xee0000
+#define	DEV_ZILOG_SERIAL_ADDR		0xeec800
+#define DEV_VIDEO_MEM_ADDR		0xec0000
+#define DEV_VIDEO_CTRL_REG_ADDR		0xEE3800
+#endif
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d10 1
+a10 1
+ * $Header: devAddrs.h,v 4.0 87/02/01 18:05:34 andrew Exp $ SPRITE (Berkeley)
+a19 2
+#define	DEV_IE_CONTROL_REG_ADDR		0xfe0c000
+#define	DEV_IE_SYS_CONF_PTR_ADDR	0xffffff6
+a24 2
+#define	DEV_IE_CONTROL_REG_ADDR		0xee3000
+#define	DEV_IE_SYS_CONF_PTR_ADDR	0xfffff6
+@

@@ -1,0 +1,22 @@
+%
+% A tiny little style file that causes more of the page to be used
+%
+% Richard Furuta
+% Department of Computer Science
+% University of Maryland
+% College Park, MD  20742
+%
+% furuta@mimsy.umd.edu
+% seismo!umcp-cs!furuta
+%
+% October 22, 1986, first release
+%
+\marginparwidth 0pt
+\oddsidemargin  0pt
+\evensidemargin  0pt
+\marginparsep 0pt
+
+\topmargin   0pt
+
+\textwidth   6.5in
+\textheight  8.5 in

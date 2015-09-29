@@ -1,0 +1,1463 @@
+head     1.10;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.10
+date     91.01.12.16.48.11;  author jhh;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     90.02.16.17.32.39;  author brent;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     90.02.14.13.59.57;  author jhh;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     89.11.29.16.19.47;  author ouster;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.11.29.16.16.53;  author ouster;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.10.25.18.06.42;  author jhh;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.06.19.14.21.22;  author jhh;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.06.07.22.14.31;  author jhh;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.04.10.11.12.22;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.03.06.12.58.45;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.10
+log
+@new boot sequence
+@
+text
+@/* 
+ * fsattach.c --
+ *
+ *	Boot-time program to attach all disks to a server.  This
+ *	uses a mount file that indicates what prefixes/disks to
+ *	attach.  This also siphons off some availability/reliability
+ *	information that is put in the summary information sector
+ *	on each disk.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/admin/fsattach/RCS/fsattach.c,v 1.9 90/02/16 17:32:39 brent Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "fsattach.h"
+
+char *mountFile = "mount";
+char *devDir = "/dev/";
+char *fscheck = "fscheck";
+int verboseLevel = -1;
+Boolean nomount = FALSE;
+Boolean sequential = FALSE;
+Boolean printOnly = FALSE;
+Boolean writeDisk = TRUE;
+Boolean fastboot = FALSE;
+Boolean debug = FALSE;
+int	spriteID = 0;
+int	maxChildren = -1;
+Boolean condCheck = FALSE;
+
+Option optionArray[] = {
+    {OPT_STRING,   "d", (char *) &devDir,
+	"Device directory."},
+    {OPT_STRING,   "fscheck", (char *) &fscheck,
+	"fscheck program."},
+    {OPT_TRUE,   "f", (char *) &fastboot,
+	"Don't check disks."},
+    {OPT_INT,   "i", (char *) &spriteID,
+	"Preload prefix table with ourself as server of prefixes we export"},
+    {OPT_INT,   "j", (char *) &maxChildren,
+	"Maximum number of fscheck jobs to run at a time"},
+    {OPT_TRUE,   "k", (char *) &debug,
+	"Print debugging output."},
+    {OPT_STRING,   "m", (char *) &mountFile,
+	"File containing disk<=>prefix information."},
+    {OPT_TRUE,   "n", (char *) &nomount,
+	"No mount."},
+    {OPT_TRUE,   "p", (char *) &printOnly,
+	"Don't do anything. Just print out actions."},
+    {OPT_TRUE,   "s", (char *) &sequential,
+	"Ignore group information and run fscheck sequentially."},
+    {OPT_TRUE,   "v", (char *) &verbose,
+	"Verbose output from fsattach and fscheck."},
+    {OPT_FALSE,   "W", (char *) &writeDisk,
+	"Don't let fscheck write to the disks."},
+    {OPT_TRUE, "c", (char *) &condCheck,
+	"Conditionally check the disks (don't re-check)."},
+
+};
+int numOptions = Opt_Number(optionArray);
+
+char		*progName;
+int		returnCode;
+
+int 		mountTableSize = 30;
+int		mountTableSizeIncrement = 5;
+MountInfo	*mountTable;
+int		groupInfoSize = 10;
+int		groupInfoSizeIncrement = 2;
+GroupInfo	*groupInfo;
+int		numGroups;
+char		*tempOutputFile = ".fscheck.out";
+int		tempOutputFileSize = 8192;
+char		*heapLimitString = "1000000";
+Boolean		verbose = FALSE;
+Boolean 	reboot = FALSE;
+
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	Main program for "fsattach":  attach disks at boottime.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+main(argc, argv)
+    int argc;
+    char *argv[];
+{
+    int 		mountCount = 0;
+    int 		i;
+    int 		j;
+    ReturnStatus	status;
+    int			numChecks;
+
+    argc = Opt_Parse(argc, argv, optionArray, numOptions, 0);
+
+    returnCode = OK;
+    progName = argv[0];
+    Alloc(mountTable, MountInfo, mountTableSize, "mountTable");
+    assert(mountTable != NULL);
+    for (i = 0; i < mountTableSize; i++) {
+	mountTable[i].status = CHILD_OK;
+    }
+    Alloc(groupInfo, GroupInfo, groupInfoSize, "groupInfo");
+    assert(groupInfo != NULL);
+    bzero(groupInfo, sizeof(GroupInfo) * groupInfoSize);
+    strcpy(groupInfo[0].name, "root");
+    numGroups = 1;
+    status = ParseMount(mountFile, &mountCount);
+    if (status != SUCCESS) {
+	exit(HARDERROR);
+    }
+    if (spriteID != 0) {
+	PreloadPrefixTable(spriteID, mountCount);
+    }
+    /*
+     * We don't want to check the same partition twice. If two entries in
+     * the parse table have the same source then set doCheck on one to
+     * false. Also count how many partitions have to be done in each pass.
+     */
+    numChecks = 0;
+    for (i = 0; i < mountCount; i++) {
+	for (j = i+1; j < mountCount; j++) {
+	    if (!strcmp(mountTable[i].source, mountTable[j].source)) {
+		mountTable[j].doCheck = FALSE;
+	    }
+	}
+	if (mountTable[i].doCheck == TRUE) {
+	    numChecks++;
+	}
+    }
+    if (!fastboot) {
+	CacheWriteBack(FALSE);
+	CheckDisks(mountCount, numChecks);
+	if (!reboot) {
+	    CacheWriteBack(TRUE);
+	}
+    }
+    if (reboot) {
+	exit(REBOOT);
+    }
+    if (!nomount) {
+	Prefix(mountCount);
+    }
+    MoveOutput(mountCount);
+
+    if (debug) {
+	printf("(1) Exiting with %d.\n", returnCode);
+    }
+    (void) exit(returnCode);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CheckDisks --
+ *
+ *	Check the disks. For each pass fork of an fscheck process for
+ *	each partition to be checked.
+ *
+ * Results:
+ *	FAILURE if an error occurred, SUCCESS otherwise.
+ *
+ * Side effects:
+ *	MountTable entries are modified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+CheckDisks(mountCount, numChecks)
+    int			mountCount;	/* # entries in mount table */
+    int			numChecks;	/* # of partitions to check */
+{
+    int			i;
+    ChildInfo		*childInfo;
+    int			pass;
+    int			doneChildren;
+    int			activeChildren;
+    union wait 		waitStatus;
+    ReturnStatus	status;
+    int			childPid;
+    MountInfo		*mountPtr;
+
+    Alloc(childInfo, ChildInfo, numChecks, "childInfo");
+    assert(childInfo != NULL);
+    for (i = 0; i < numChecks; i++) {
+	childInfo[i].pid = -1;
+    }
+    activeChildren = 0;
+    doneChildren = 0;
+    if (maxChildren < 0) {
+	maxChildren = numGroups;
+    }
+    while (doneChildren < numChecks) {
+	while (activeChildren < maxChildren) {
+	    status = RunChild(mountCount, numChecks, childInfo, &i);
+	    if (status == FAILURE) {
+		if (i < 0) {
+		    /*
+		     * There are no available jobs that can be run.
+		     * Wait for some to finish.
+		     */
+		    assert(activeChildren > 0);
+		    break;
+		}
+		/*
+		 * Some sort of error occurred.
+		 */
+		mountTable[i].doCheck = FALSE;
+		returnCode = HARDERROR;
+		doneChildren++;
+	    } else {
+		mountTable[i].status = CHILD_RUNNING;
+		groupInfo[mountTable[i].group].running = TRUE;
+		activeChildren++;
+		if (sequential) {
+		    break;
+		}
+	    }
+	}
+	if (activeChildren > 0) {
+	    if (printOnly) {
+		for (i = 0; i < mountCount; i++) {
+		    if (mountTable[i].status == CHILD_RUNNING) {
+			break;
+		    }
+		}
+		assert(i != numChecks);
+		childPid = i;
+	    } else {
+		childPid = wait(&waitStatus);
+	    }
+	    activeChildren--;
+	    for (i = 0; i < numChecks; i++) {
+		if (childInfo[i].pid == childPid) {
+		    mountPtr = &(mountTable[childInfo[i].mountIndex]);
+		    childInfo[i].pid = -1;
+		    break;
+		}
+	    }
+	    if (verbose) {
+		printf("Fscheck of %s finished.\n", mountPtr->source);
+	    }
+	    if (printOnly) {
+		doneChildren++;
+		mountPtr->status = CHILD_OK;
+		mountPtr->doCheck = FALSE;
+		groupInfo[mountPtr->group].running = FALSE;
+		continue;
+	    }
+	    if (WIFEXITED(waitStatus) && 
+		waitStatus.w_retcode == FSCHECK_OUT_OF_MEMORY) {
+		continue;
+	    }
+	    doneChildren++;
+	    mountPtr->doCheck = FALSE;
+	    mountPtr->checked = TRUE;
+	    groupInfo[mountPtr->group].running = FALSE;
+	    if (WIFSIGNALED(waitStatus) || WIFSTOPPED(waitStatus)) {
+		(void) fprintf(stderr,"%s did not finish.\n", fscheck);
+		returnCode = HARDERROR;
+		mountPtr->status = CHILD_FAILURE;
+	    } else if (waitStatus.w_retcode == EXEC_FAILED) {
+		returnCode = HARDERROR;
+		mountPtr->status = CHILD_FAILURE;
+	    } else {
+		if (debug) {
+		    printf("%s returned 0x%x.\n", fscheck,
+			(unsigned int) waitStatus.w_retcode);
+		    printf("returnCode is %d.\n", returnCode);
+		}
+		mountPtr->status = CHILD_OK;
+		if ((char) waitStatus.w_retcode < 0 ) {
+		    PrintFscheckError((char)waitStatus.w_retcode, mountPtr);
+		    mountPtr->status = CHILD_FAILURE;
+		    returnCode = HARDERROR;
+		} else if ((char) waitStatus.w_retcode > 0) {
+		    PrintFscheckError((char)waitStatus.w_retcode, mountPtr);
+		    if ((char) waitStatus.w_retcode == FSCHECK_REBOOT) {
+			reboot = TRUE;
+		    }
+		    if (returnCode == OK) {
+			returnCode = SOFTERROR;
+		    }
+		} else if (verbose) {
+		    PrintFscheckError((char)waitStatus.w_retcode, mountPtr);
+		}
+	    }
+	}
+    }
+    assert(doneChildren == numChecks);
+    assert(activeChildren == 0);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CacheWriteBack --
+ *
+ *	Turns cache write-back on and off
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The cache write-back status is changed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+CacheWriteBack(value)
+    int		value;
+{
+
+    int			newValue;
+    ReturnStatus	status;
+    int			lockedBlocks;
+
+    if (printOnly && verbose) {
+	printf("Setting cache write-back to %d.\n", value);
+	return;
+    }
+    if (!writeDisk) {
+	if (verbose) {
+	    fprintf(stderr, 
+		    "Fscheck not writing disks -- not changing  write-back.\n");
+	}
+	return;
+    }
+    newValue = value;
+    status = Fs_Command(FS_DISABLE_FLUSH, sizeof(int), (Address) &value);
+    if (status != SUCCESS) {
+	(void) fprintf(stderr, "Fs_Command (1)  returned %d.\n", status);
+	(void) exit(HARDERROR);
+    }
+    if (verbose) {
+	(void) fprintf(stderr, "Cache write-back %s, was %s.\n", 
+		(newValue) ? "on" : "off",
+	        (value) ? "on" : "off");
+    }
+    /*
+     * If we're turning the write-back off flush what's in the cache already.
+     */
+    if (newValue == 0) {
+	status = Fs_Command(FS_EMPTY_CACHE, sizeof(int), 
+		    (Address) &lockedBlocks);
+	if (status != SUCCESS) {
+	    (void) fprintf(stderr, "Fs_Command (2)  returned %d.\n", status);
+	    (void) exit(HARDERROR);
+	}
+	if (lockedBlocks > 0) {
+	    fprintf(stderr, "There are %d locked blocks in the cache ?!\n", 
+		lockedBlocks);
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RunChild --
+ *
+ *	Forks a process to run fscheck.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	A process is forked.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+RunChild(mountCount, numChecks, childInfo, mountIndexPtr)
+    int		mountCount;		/* # entries in mount table */
+    int		numChecks;		/* # of jobs to run */
+    ChildInfo	*childInfo;		/* info on running children */
+    int		*mountIndexPtr;		/* ptr to index into mount table */
+{
+    int		mountIndex;
+    int		i;
+    MountInfo	*mountPtr = NULL;
+    static char	deviceName[MAX_FIELD_LENGTH];
+    static char	partition[MAX_FIELD_LENGTH];
+    static char	outputFile[MAX_FIELD_LENGTH];
+    int		pid;
+    ArgHeader	*argPtr;
+    Boolean	defaultOutputFile = TRUE;
+    Boolean	defaultRootPart = TRUE;
+    Boolean	defaultDir = TRUE;
+
+    /*
+     * Find a child to run.
+     */
+    *mountIndexPtr = -1;
+    for (mountIndex = 0; mountIndex < mountCount; mountIndex++) {
+	if (mountTable[mountIndex].group == 0 &&
+	    mountTable[mountIndex].status == CHILD_RUNNING) {
+	    break;
+	}
+	if ((mountTable[mountIndex].doCheck) &&
+	    (groupInfo[mountTable[mountIndex].group].running == FALSE) &&
+	    (mountTable[mountIndex].status != CHILD_RUNNING)) {
+	    mountPtr = &(mountTable[mountIndex]);
+	    break;
+	}
+    }
+    if (mountPtr == NULL) {
+	return FAILURE;
+    }
+    *mountIndexPtr = mountIndex;
+    /*
+     * Put together the arguments to fscheck.
+     */
+    (void) strcpy(partition, &(mountPtr->source[strlen(mountPtr->source) -1 ]));
+    (void) strcpy(deviceName, mountPtr->source);
+    deviceName[strlen(mountPtr->source) - 1] = '\0';
+    StartExec(fscheck, fscheck);
+    AddExecArgs("-dev", deviceName, NULL);
+    AddExecArgs("-part", partition, NULL);
+    LIST_FORALL((List_Links *) &mountPtr->argInfo.argList, 
+	(List_Links *) argPtr) {
+	if (!strcmp("-verbose", argPtr->arg) && verbose) {
+	    continue;
+	} else if (!strcmp(argPtr->arg, "-write") && !writeDisk) {
+	    continue;
+	} else if (!strcmp("-dir", argPtr->arg)) {
+	    defaultDir = FALSE;
+	}
+	AddExecArgs(argPtr->arg, NULL);
+    }
+    DeleteList(&mountPtr->argInfo.argList);
+    if (verbose) {
+	AddExecArgs("-verbose", NULL);
+    }
+    if (writeDisk) {
+	AddExecArgs("-write", NULL);
+    }
+    AddExecArgs("-outputFile", tempOutputFile, NULL);
+    AddExecArgs("-rawOutput", NULL);
+    if (condCheck) {
+	AddExecArgs("-cond", "-setCheck", NULL);
+    }
+    if (defaultDir) {
+	AddExecArgs("-dir", devDir, NULL);
+    }
+    pid = DoExec();
+    if (pid < 0) {
+	if (verbose) {
+	    fprintf(stderr, "Fork of child failed.\n");
+	    perror("");
+	}
+	return FAILURE;
+    }
+    /*
+     * Store info about the running child.
+     */
+    for (i = 0; i < numChecks; i++) {
+	if (childInfo[i].pid == -1) {
+	    if (printOnly) {
+		childInfo[i].pid = mountIndex;
+	    } else {
+		childInfo[i].pid = pid;
+	    }
+	    childInfo[i].mountIndex = mountIndex;
+	    break;
+	}
+    }
+    assert(i != numChecks);
+    return SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Prefix --
+ *
+ *	Adds all devices that were checked correctly to the prefix table.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Entries are added to the system prefix table.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Prefix(count)
+    int		count;		/* # entries in mount table */
+{
+    int			i;
+    ReturnStatus	status;
+    int			flags;
+    Fs_TwoPaths		paths;
+    char		buffer[128];
+    char		*source;
+    char		*dest;
+    Boolean		device;
+    char		*prefix;
+
+    for (i = 0; i < count; i ++) {
+	if (mountTable[i].status == CHILD_OK) {
+	    flags = 0;
+	    if (mountTable[i].readonly) {
+		flags |= FS_ATTACH_READ_ONLY;
+	    }
+	    if (mountTable[i].export == FALSE) {
+		flags |= FS_ATTACH_LOCAL;
+	    }
+	    source = mountTable[i].source;
+	    dest = mountTable[i].dest;
+	    device = mountTable[i].device;
+	    /*
+	     * Use Fs_AttachDisk to attach a disk.
+	     */
+	    if (device == TRUE) {
+		printf("Attaching %s%s as %s.\n", devDir, source, dest);
+		printf("%s %s.\n", mountTable[i].readonly ? "R" : "RW",
+		       mountTable[i].export ? "Export" : "Local");
+		if (printOnly) {
+		    continue;
+		}
+		sprintf(buffer, "%s%s", devDir, source);
+
+		status = Fs_AttachDisk(buffer, dest, flags);
+		if (status == FS_DOMAIN_UNAVAILABLE) {
+		    printf("%s is already attached.\n", buffer);
+		    prefix = GetAttachName(buffer);
+		    if (prefix != NULL) {
+			source = prefix;
+			device = FALSE;
+		    }
+		} else if (status != SUCCESS) {
+		    (void) fprintf(stderr, "Attach \"%s\" on \"%s\": %s\n", 
+			    buffer, dest, Stat_GetMsg(status));
+		}
+	    }
+	    if (device == FALSE) {
+		printf("Exporting %s as %s.\n", source, dest);
+		if (printOnly) {
+		    continue;
+		}
+		paths.pathLen1 = strlen(source) +1;
+		paths.path1 = source;
+		paths.pathLen2 = strlen(dest) +1;
+		paths.path2 = dest;
+		status = Fs_Command(FS_PREFIX_EXPORT, sizeof(paths), 
+			            (Address) &paths);
+		if (status != SUCCESS) {
+		    fprintf(stderr, 
+			    "Couldn't export  \"%s\" as \"%s\": %s\n",
+			    source, dest, Stat_GetMsg(status));
+		}
+	    }
+	}
+    }
+}
+@
+
+
+1.9
+log
+@Added -fscheck option to allow alternative fscheck program.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/admin/fsattach/RCS/fsattach.c,v 1.7 89/11/29 16:19:47 ouster Exp Locker: jhh $ SPRITE (Berkeley)";
+a27 1
+char *bootPrefix = "/bootTmp";
+d38 1
+a40 2
+    {OPT_STRING,   "b", (char *) &bootPrefix,
+	"Prefix under which first partition is attached during boot."},
+d60 1
+a60 1
+	"Ignore pass information and run fscheck sequentially."},
+d65 2
+d81 2
+a82 2
+char		*rootTempOutputFile = ".fscheck.out";
+int		rootTempOutputFileSize = 8192;
+d85 1
+d154 1
+d156 6
+d166 2
+d279 1
+d301 3
+a310 33
+	    if (mountTable[childInfo[i].mountIndex].group == 0) {
+	/*
+	 * If there was a soft error doing the root partition we may have
+	 * to reboot.  Re-enable cache write-backs EXCEPT in the case
+	 * where errors were fixed and a re-boot is needed;  in this
+	 * case leave write-backs off, so that bad old data from the
+	 * cache can't overwrite the new good data.
+	 */
+		if (returnCode == SOFTERROR) {
+		    if (writeDisk) {
+			if (waitStatus.w_retcode != FSCHECK_NOREBOOT) {
+			    if (debug) {
+				printf("(4) Exiting with %d.\n", REBOOT);
+			    }
+			    (void) exit(REBOOT);
+			} else {
+			    if (debug) {
+				printf("(2) Exiting with %d.\n", NOREBOOT);
+			    }
+			    CacheWriteBack(TRUE);
+			    (void) exit(NOREBOOT);
+			}
+		    }
+		} else if (returnCode != OK) {
+		    if (debug) {
+			printf("(3) Exiting with %d.\n", HARDERROR);
+		    }
+		    CacheWriteBack(TRUE);
+		    exit(HARDERROR);
+		}
+		CacheWriteBack(TRUE);
+		MoveRootOutput(mountPtr->source);
+	    }
+a435 13
+     * This code is kind is a special-case handling of the root partition.
+     * It should be able to go away with the new boot sequence.
+     * There will be no need to check the root partition first.
+     */
+    if (mountTable[mountIndex].group == 0) {
+	    /*
+	     * We are doing the root partition, which has already been mounted
+	     * as part of the boot. We don't want the cache to write back over
+	     * the disk as we are fixing it, so turn cache write-back off.
+	     */
+	    CacheWriteBack(FALSE);
+    }
+    /*
+a449 4
+	} else if (!strcmp("-outputFile", argPtr->arg)) {
+	    defaultOutputFile = FALSE;
+	} else if (!strcmp("-rootPart", argPtr->arg)) {
+	    defaultRootPart = FALSE;
+d462 4
+a465 12
+    (void) sprintf(outputFile, "/hosts/%s/%s%s.fsc", getenv("HOST"), 
+		deviceName, partition);
+    if (defaultOutputFile) {
+	AddExecArgs("-outputFile", NULL);
+	if (mountPtr->group == 0) {
+	    AddExecArgs(rootTempOutputFile,NULL);
+	} else {
+	    AddExecArgs(outputFile, NULL);
+	}
+    }
+    if (defaultRootPart && mountPtr->group == 0) {
+	AddExecArgs("-rootPart", NULL);
+d521 4
+d535 3
+d541 2
+a542 3
+	    if (mountTable[i].device == TRUE && mountTable[i].group != 0) {
+		printf("Attaching %s%s as %s.\n", devDir, 
+			       mountTable[i].source, mountTable[i].dest);
+d548 11
+a558 3
+		sprintf(buffer, "%s%s", devDir, mountTable[i].source);
+		status = Fs_AttachDisk(buffer, mountTable[i].dest, flags);
+		if (status != SUCCESS) {
+d560 1
+a560 1
+			    buffer, mountTable[i].dest, Stat_GetMsg(status));
+d562 3
+a564 16
+	    /*
+	     * Use Fs_Command to export a prefix under a different name.
+	     * The first partition is a bit funny since it was already
+	     * attached under a different name.  We need to export its
+	     * new name, even though it is an attach command in the
+	     * mount table rather than an export command.
+	     */
+	    } else {
+		char *source;
+		if (mountTable[i].group == 0) {
+		    source = bootPrefix;
+		} else {
+		    source = mountTable[i].source;
+		}
+		printf("Exporting %s as %s.\n", 
+			       source, mountTable[i].dest);
+d570 2
+a571 2
+		paths.pathLen2 = strlen(mountTable[i].dest) +1;
+		paths.path2 = mountTable[i].dest;
+d577 1
+a577 2
+			    source, mountTable[i].dest, 
+			    Stat_GetMsg(status));
+a582 1
+
+@
+
+
+1.8
+log
+@Uses groups instead of passes
+@
+text
+@d29 1
+d45 2
+d271 1
+a271 1
+		(void) fprintf(stderr,"fscheck did not finish.\n");
+d279 1
+a279 1
+		    printf("fscheck returned 0x%x.\n", 
+d473 1
+a473 1
+    StartExec("fscheck", "fscheck");
+@
+
+
+1.7
+log
+@Lint.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/admin/fsattach/RCS/fsattach.c,v 1.6 89/11/29 16:16:53 ouster Exp Locker: ouster $ SPRITE (Berkeley)";
+d37 1
+d40 2
+a41 2
+    {OPT_STRING,   "m", (char *) &mountFile,
+	"File containing disk<=>prefix information."},
+a43 4
+    {OPT_STRING,   "b", (char *) &bootPrefix,
+	"Prefix under which first partition is attached during boot."},
+    {OPT_FALSE,   "W", (char *) &writeDisk,
+	"Don't let fscheck write to the disks."},
+d46 12
+d62 2
+a63 8
+    {OPT_TRUE,   "n", (char *) &nomount,
+	"No mount."},
+    {OPT_TRUE,   "p", (char *) &printOnly,
+	"Don't do anything. Just print out actions."},
+    {OPT_TRUE,   "k", (char *) &debug,
+	"Print debugging output."},
+    {OPT_INT,   "i", (char *) &spriteID,
+	"Preload prefix table with ourself as server of prefixes we export"},
+d74 4
+a77 2
+int		*partsToDo;
+int		maxPass;
+d110 1
+a110 1
+    int			maxChildren;
+d121 5
+a132 5
+    Alloc(partsToDo, int, maxPass+1, "partsToDo");
+    assert(partsToDo != NULL);
+    for (i = 0; i <= maxPass; i++) {
+	partsToDo[i] = 0;
+    }
+d138 1
+d146 1
+a146 1
+	    partsToDo[mountTable[i].pass]++;
+a148 9
+    /*
+     * Find the maximum children per pass.
+     */
+    maxChildren = 0;
+    for (i = 0; i <= maxPass; i++) {
+	if (partsToDo[i] > maxChildren) {
+	    maxChildren = partsToDo[i];
+	}
+    }
+d150 1
+a150 1
+	CheckDisks(mountCount, maxChildren);
+d179 1
+a179 1
+CheckDisks(mountCount, maxChildren)
+d181 1
+a181 1
+    int			maxChildren;	/* max children per pass */
+d193 1
+a193 1
+    Alloc(childInfo, ChildInfo, maxChildren, "childInfo");
+d195 1
+a195 1
+    for (i = 0; i < maxChildren; i++) {
+d198 29
+a226 28
+    for (pass = 0; pass <= maxPass; pass++) {
+	if (partsToDo[pass] == 0) {
+	    continue;
+	}
+	if (verbose) {
+	    fprintf(stderr,"Pass %d.\n", pass);
+	}
+	if (pass == 0) {
+	    /*
+	     * We are doing the root partition, which has already been mounted
+	     * as part of the boot. We don't want the cache to write back over
+	     * the disk as we are fixing it, so turn cache write-back off.
+	     */
+	    CacheWriteBack(FALSE);
+	}
+	activeChildren = 0;
+	doneChildren = 0;
+	while (doneChildren < partsToDo[pass]) {
+	    while (activeChildren < partsToDo[pass] - doneChildren &&
+		   (!sequential || (sequential && activeChildren < 1))) {
+		status = RunChild(pass, mountCount, maxChildren, childInfo, &i);
+		if (status == FAILURE) {
+		    mountTable[i].doCheck = FALSE;
+		    returnCode = HARDERROR;
+		    doneChildren++;
+		} else {
+		    mountTable[i].status = CHILD_RUNNING;
+		    activeChildren++;
+d229 5
+a233 11
+	    if (activeChildren > 0) {
+		if (printOnly) {
+		    childPid = i;
+		} else {
+		    childPid = wait(&waitStatus);
+		}
+		activeChildren--;
+		for (i = 0; i < partsToDo[pass]; i++) {
+		    if (childInfo[i].pid == childPid) {
+			mountPtr = &(mountTable[childInfo[i].mountIndex]);
+			childInfo[i].pid = -1;
+d237 11
+a247 5
+		if (printOnly) {
+		    doneChildren++;
+		    mountPtr->status = CHILD_OK;
+		    mountPtr->doCheck = FALSE;
+		    continue;
+d249 5
+a253 4
+		if (WIFEXITED(waitStatus) && 
+		    waitStatus.w_retcode == FSCHECK_OUT_OF_MEMORY) {
+		    continue;
+		}
+d255 1
+d257 26
+a282 3
+		if (WIFSIGNALED(waitStatus) || WIFSTOPPED(waitStatus)) {
+		    (void) fprintf(stderr,"fscheck did not finish.\n");
+		    returnCode = HARDERROR;
+a283 1
+		} else if (waitStatus.w_retcode == EXEC_FAILED) {
+d285 4
+a288 19
+		    mountPtr->status = CHILD_FAILURE;
+		} else {
+		    if (debug) {
+			printf("fscheck returned 0x%x.\n", 
+			    (unsigned int) waitStatus.w_retcode);
+			printf("returnCode is %d.\n", returnCode);
+		    }
+		    mountPtr->status = CHILD_OK;
+		    if ((char) waitStatus.w_retcode < 0 ) {
+			PrintFscheckError((char)waitStatus.w_retcode, mountPtr);
+			mountPtr->status = CHILD_FAILURE;
+			returnCode = HARDERROR;
+		    } else if ((char) waitStatus.w_retcode > 0) {
+			PrintFscheckError((char)waitStatus.w_retcode, mountPtr);
+			if (returnCode == OK) {
+			    returnCode = SOFTERROR;
+			}
+		    } else if (verbose) {
+			PrintFscheckError((char)waitStatus.w_retcode, mountPtr);
+d290 2
+d294 21
+a314 16
+	}
+	assert(doneChildren == partsToDo[pass]);
+	assert(activeChildren == 0);
+	if (pass == 0) {
+	    /*
+	     * If there was a soft error doing the root partition we may have
+	     * to reboot.  Re-enable cache write-backs EXCEPT in the case
+	     * where errors were fixed and a re-boot is needed;  in this
+	     * case leave write-backs off, so that bad old data from the
+	     * cache can't overwrite the new good data.
+	     */
+	    if (returnCode == SOFTERROR) {
+		if (writeDisk) {
+		    if (waitStatus.w_retcode != FSCHECK_NOREBOOT) {
+			if (debug) {
+			    printf("(4) Exiting with %d.\n", REBOOT);
+d316 4
+a319 7
+			(void) exit(REBOOT);
+		    } else {
+			if (debug) {
+			    printf("(2) Exiting with %d.\n", NOREBOOT);
+			}
+			CacheWriteBack(TRUE);
+			(void) exit(NOREBOOT);
+d321 2
+a323 4
+	    } else if (returnCode != OK) {
+		if (debug) {
+		    printf("(3) Exiting with %d.\n", HARDERROR);
+		}
+d325 1
+a325 1
+		exit(HARDERROR);
+a326 2
+	    CacheWriteBack(TRUE);
+	    MoveRootOutput(mountPtr->source);
+d329 2
+d413 1
+a413 2
+RunChild(pass, mountCount, maxChildren, childInfo, mountIndexPtr)
+    int		pass;			/* pass we're doing */
+d415 1
+a415 1
+    int		maxChildren;		/* max children per pass */
+d434 1
+d436 7
+a442 4
+	if (mountTable[mountIndex].pass == pass && 
+	    mountTable[mountIndex].doCheck &&
+	    mountTable[mountIndex].status != CHILD_RUNNING) {
+
+d447 3
+a449 1
+    assert(mountPtr != NULL);
+d452 13
+d499 1
+a499 1
+	if (mountPtr->pass == 0) {
+d505 1
+a505 1
+    if (defaultRootPart && mountPtr->pass == 0) {
+d522 1
+a522 1
+    for (i = 0; i < maxChildren; i++) {
+d533 1
+a533 1
+    assert(i != maxChildren);
+d575 1
+a575 1
+	    if (mountTable[i].device == TRUE && mountTable[i].pass != 0) {
+d598 1
+a598 1
+		if (mountTable[i].pass == 0) {
+@
+
+
+1.6
+log
+@Don't re-enable cache write-backs if a re-boot is in order:
+disk might get corrupted.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/admin/fsattach/RCS/fsattach.c,v 1.5 89/10/25 18:06:42 jhh Exp $ SPRITE (Berkeley)";
+d51 1
+a51 1
+    {OPT_TRUE,   "v", (int *) &verbose,
+d59 1
+a59 1
+    {OPT_INT,   "i", (int *) &spriteID,
+@
+
+
+1.5
+log
+@exporting of root partition is now cleaner.
+@
+text
+@d5 4
+a8 4
+ *	uses a mount file in /local/bootBin that indicates what
+ *	prefixes/disks to attach.  This also siphons off some
+ *	availability/reliability information that is put in the summary
+ *	information sector on each disk.
+d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/admin/fsattach/RCS/fsattach.c,v 1.4 89/06/19 14:21:22 jhh Exp $ SPRITE (Berkeley)";
+a288 1
+	    CacheWriteBack(TRUE);
+d291 4
+a294 1
+	     * to reboot.
+d307 1
+d315 1
+d318 1
+@
+
+
+1.4
+log
+@Added stuff to preload prefix table
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/admin/fsattach/RCS/fsattach.c,v 1.3 89/06/07 22:14:31 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d28 1
+d43 2
+d59 1
+a59 1
+    {OPT_INT,   "i", (char *) &spriteID,
+d463 2
+a464 1
+    (void) sprintf(outputFile, "%s%s.fsc", deviceName, partition);
+d532 1
+a532 1
+	if (mountTable[i].status == CHILD_OK && mountTable[i].pass != 0) {
+d543 5
+a547 7
+	    if (mountTable[i].device == TRUE) {
+		if (verbose) {
+		    printf("Attaching %s%s as %s.\n", devDir, 
+				   mountTable[i].source, mountTable[i].dest);
+		    printf("%s %s.\n", mountTable[i].readonly ? "R" : "RW",
+			   mountTable[i].export ? "Export" : "Local");
+		}
+d553 1
+a553 1
+		if (verbose && status != SUCCESS) {
+d559 4
+d565 5
+a569 3
+		if (verbose) {
+		    printf("Exporting %s as %s.\n", 
+				   mountTable[i].source, mountTable[i].dest);
+d571 2
+d576 2
+a577 2
+		paths.pathLen1 = strlen(mountTable[i].source) +1;
+		paths.path1 = mountTable[i].source;
+d582 1
+a582 1
+		if (verbose && status != SUCCESS) {
+d585 1
+a585 1
+			    mountTable[i].source, mountTable[i].dest, 
+@
+
+
+1.3
+log
+@Spring cleaning - new mount table format, bug fixes
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/admin/fsattach/RCS/fsattach.c,v 1.2 89/04/10 11:12:22 jhh Exp $ SPRITE (Berkeley)";
+d35 1
+a37 4
+#if 0
+    {OPT_STRING,   "c", (char *) &configFile,
+	"File containing fsattach configuration information."},
+#endif
+d56 2
+d116 3
+@
+
+
+1.2
+log
+@First working version
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/users/jhh/fsattach/RCS/fsattach.c,v 1.1 89/03/06 12:58:45 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d26 3
+a28 3
+char *mountFile = "/local/bootBin/mount";
+char *configFile = "/local/bootBin/fsattach.config";
+Boolean verbose = FALSE;
+d34 1
+d37 1
+d40 1
+d43 2
+d51 2
+a52 2
+    {OPT_TRUE,   "v", (char *) &verbose,
+	"Verbose mode."},
+d57 2
+d66 2
+a67 1
+int 		mountTableSize = DEFAULT_MAX_MOUNT_ENTRIES;
+d71 4
+a74 5
+char		*rootTempOutputFile = DEFAULT_ROOT_TEMP_NAME;
+char		*outputDir = DEFAULT_OUTPUT_DIR;
+char		*heapLimitString = DEFAULT_HEAP_LIMIT;
+int		rootTempOutputFileSize = DEFAULT_ROOT_TEMP_SIZE;
+char		*fscheckPath = DEFAULT_FSCHECK_PATH;
+a108 1
+    status = ParseConfig(configFile);
+d118 1
+a118 1
+    Alloc(partsToDo, int, maxPass, "partsToDo");
+d153 3
+d194 1
+a194 1
+	childInfo[i].pid = 0;
+a225 4
+	    if (printOnly) {
+		printf("Waiting.\n");
+		continue;
+	    }
+d227 5
+a231 1
+		childPid = wait(&waitStatus);
+d236 1
+a236 1
+			childInfo[i].pid = 0;
+d240 6
+d260 5
+d292 9
+a300 1
+			returnCode = REBOOT;
+a301 1
+		    (void) exit(NOREBOOT);
+d304 3
+d336 1
+d338 1
+a338 1
+    if (printOnly) {
+d352 1
+a352 1
+	(void) fprintf(stderr, "Fs_Command returned %d.\n", status);
+d360 15
+a404 1
+    static char	deviceDir[MAX_FIELD_LENGTH];
+d408 4
+a431 1
+    (void) strcpy(deviceDir, mountPtr->source);
+d433 15
+a447 5
+    for(i = strlen(deviceName) - 1; i >= 0; i--) {
+	if (deviceName[i] == '/') {
+	    deviceDir[i+1] = '\0';
+	    i++;
+	    break;
+d449 1
+d451 1
+a451 7
+    (void) sprintf(outputFile, "%s/%s%s.fsc", outputDir, &(deviceName[i]),
+	           partition);
+    StartExec(fscheckPath, "fscheck");
+    AddExecArgs("-dev", &(deviceName[i]),NULL);
+    AddExecArgs("-part", partition, NULL);
+    AddExecArgs("-dir", deviceDir, NULL);
+    AddExecArgs("-heapLimit", heapLimitString, NULL);
+d458 14
+a471 5
+    AddExecArgs("-outputFile", NULL);
+    if (mountPtr->pass == 0) {
+	AddExecArgs(rootTempOutputFile, "-rootPart", NULL);
+    } else {
+	AddExecArgs(outputFile, NULL);
+d485 6
+a490 2
+	if (childInfo[i].pid == 0) {
+	    childInfo[i].pid = pid;
+d504 1
+a504 1
+ *	Adds all devices that where checked correctly to the prefix table.
+d523 1
+a523 2
+    struct stat		buf;
+    int			statStatus;
+a526 11
+	    statStatus = lstat(mountTable[i].dest, &buf);
+	    if (statStatus) {
+		(void) fprintf(stderr, "Can't lstat %s.\n", mountTable[i].dest);
+		perror("");
+		continue;
+	    }
+	    if (!(buf.st_mode & S_IFRLNK)) {
+		fprintf(stderr, "%s is not a remote link.\n", 
+			mountTable[i].dest);
+		continue;
+	    }
+d535 1
+a535 1
+	     * Use Fs_AttachDisk to export a disk.
+d538 2
+a539 2
+		if (printOnly) {
+		    printf("Attaching %s as %s.\n", 
+d543 2
+d547 2
+a548 2
+		status = Fs_AttachDisk(mountTable[i].source, 
+				       mountTable[i].dest, flags);
+d550 2
+a551 3
+		    (void) fprintf(stderr, "Mount \"%s\" on \"%s\": %s\n", 
+			    mountTable[i].source, mountTable[i].dest, 
+			    Stat_GetMsg(status));
+d557 1
+a557 1
+		if (printOnly) {
+d560 2
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: df.c,v 1.3 88/09/23 17:50:38 ouster Exp $ SPRITE (Berkeley)";
+d33 1
+d38 1
+a38 1
+    {OPT_STRING,   "f", (char *) &mountFile,
+d42 2
+d67 1
+a102 3
+    if (status != SUCCESS) {
+	(void) exit(HARDERROR);
+    }
+d106 1
+a106 7
+	mountTable[i].status = OK;
+	mountTable[i].pass = -1;
+	mountTable[i].device = TRUE;
+	mountTable[i].doCheck = TRUE;
+	mountTable[i].root = FALSE;
+	mountTable[i].export = TRUE;
+	mountTable[i].readonly = FALSE;
+d108 3
+a110 2
+    if (verbose) {
+	(void) printf("%-20s %-10s\n", "Prefix", "Device");
+a111 1
+    ParseMount(mountFile, &mountCount);
+d114 1
+a114 1
+    for (i = 0; i < maxPass; i++) {
+d117 5
+d123 3
+a125 8
+	for (j = 0; j < mountCount; j++) {
+	    if (!strcmp(mountTable[i].source, mountTable[j].dest)) {
+		mountTable[i].device = FALSE;
+		mountTable[i].doCheck = FALSE;
+	    }
+	    if (!strcmp(mountTable[i].source, mountTable[j].source) &&
+	        i != j) {
+		mountTable[max(i,j)].doCheck = FALSE;
+a127 2
+    }
+    for (i = 0; i < mountCount; i++) {
+d132 3
+d136 1
+a136 1
+    for (i = 0; i < maxPass; i++) {
+d141 3
+a143 1
+    CheckDisks(mountCount, maxChildren);
+d155 2
+a156 1
+ *	description.
+d159 1
+a159 1
+ *	None.
+d162 1
+a162 1
+ *	None.
+d169 2
+a170 2
+    int			mountCount;
+    int			maxChildren;
+d184 4
+a187 1
+    for (pass = 0; pass < maxPass; pass++) {
+d195 5
+d210 1
+d213 1
+a222 6
+		if (WIFSIGNALED(waitStatus) || WIFSTOPPED(waitStatus)) {
+		    (void) fprintf(stderr,"fscheck did not finish.\n");
+		    returnCode = HARDERROR;
+		    doneChildren++;
+		    continue;
+		}
+d227 1
+d231 18
+a248 5
+		if (waitStatus.w_retcode != FSCHECK_OUT_OF_MEMORY) {
+		    mountPtr->doCheck = FALSE;
+		    if ((int) waitStatus.w_retcode < 0 ) {
+			PrintFscheckError((int) waitStatus.w_retcode, mountPtr);
+			mountPtr->status = FAILURE;
+d250 2
+a251 2
+		    } else if ((int) waitStatus.w_retcode > 0) {
+			PrintFscheckError((int) waitStatus.w_retcode, mountPtr);
+d256 1
+a256 1
+			PrintFscheckError((int) waitStatus.w_retcode, mountPtr);
+a257 1
+		    doneChildren++;
+d264 5
+d270 8
+a277 3
+		(void) exit(REBOOT);
+	    } else if (returnCode == HARDERROR) {
+		(void) exit(HARDERROR);
+a278 1
+	    CacheWriteBack(TRUE);
+d349 5
+a353 5
+    int		pass;
+    int		mountCount;
+    int		maxChildren;
+    ChildInfo	*childInfo;
+    int		*mountIndexPtr;
+d358 2
+a359 1
+    static char	device[MAX_FIELD_LENGTH];
+a361 1
+    static char	deviceName[MAX_FIELD_LENGTH];
+d364 3
+d369 2
+a370 1
+	    mountTable[mountIndex].doCheck) {
+d378 3
+a380 1
+    (void) strcpy(device, mountPtr->source);
+a381 1
+    device[strlen(mountPtr->source) - 1] = '\0';
+d383 2
+d387 1
+d392 4
+a395 3
+    (void) sprintf(outputFile, "%s/%s.fsc", outputDir, &(deviceName[i]));
+    StartExec("fscheck");
+    AddExecArgs("-dev", device,NULL);
+d397 1
+d406 1
+a406 1
+    if (mountPtr->root == TRUE) {
+d413 4
+d419 3
+d426 1
+d444 1
+a444 1
+ *	A process is forked to add the prefixes.
+d451 1
+a451 1
+    int		count;
+d457 2
+d461 12
+a472 1
+	if (mountTable[i].status == OK && mountTable[i].root != TRUE) {
+d480 3
+d498 3
+@

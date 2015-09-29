@@ -1,0 +1,419 @@
+		  --------------------------------
+                   Mx Tutorial #1:  Basic Editing
+		  --------------------------------
+
+                         by John Ousterhout
+
+This document is an introduction to Mx, which is a mouse-based editor for
+use with the X window system.  The best way to read this tutorial is on-line
+in an Mx window, so that you can try out the commands as they are introduced.
+To access this tutorial on-line, invoke the shell command "mx" with no
+arguments.
+
+Simple Scrolling:
+----------
+The first thing for you to learn is how to move around within a file, so that
+you can at least read the tutorial.  This is called "scrolling".  The easiest
+way to scroll is by "dragging" the document:  hold down the shift key with
+your left hand, place the pointer over the center of this window, press the
+left mouse button, and move the mouse up and down while holding the button
+down.  As you move the mouse, the document will move up and down in the
+window.  In the shorthand notation I'll use in the tutorial, what you just
+did is called "shift-left-dragging".  If you'd like to move the document
+more quickly, for example to browse through it quickly, try
+shift-right-dragging (use the right mouse button instead of the left).  In
+this case, the document will move a lot in response to very small mouse
+motions.
+
+The vertical strip on the right side of the Mx window is called the
+"scrollbar".  A thin vertical rectangle is displayed inside the scrollbar.
+I call this the "elevator".  Its height and location indicate which portion
+of the file is visible in the window.  For example, if the top of the
+elevator is at the top of the scrollbar and the bottom of the elevator
+is halfway down the scrollbar, it means that the first half of the file
+is visible in the window.  Try dragging up and down and see how the elevator
+moves.
+
+You can also scroll by pressing mouse buttons with the pointer over the
+scrollbar.  If you move the pointer over the scrollbar and then "middle-click"
+(press the middle mouse button and then immediately release it) the view will
+change so that the center of the elevator is at the pointer position.  If you
+left-click in the scrollbar, the contents of the window will move up so that
+the line that used to be next to the pointer is now at the top of the window.
+Right-clicking is the inverse of left-clicking:  it moves the contents of the
+window down so that the line that used to be at the top is now next to the
+pointer.  If you have a reasonably fast display, you'll probably find that
+it's more convenient to scroll by dragging than by clicking in the scrollbar.
+
+Basics:
+-------
+Mx is a simple editor that allows you to examine and modify text files.  It
+provides basic editing functions such as insertion, deletion, copying,
+searching, and substitution.  It also supports multiple windows.  You can
+display several different files at the same time in different windows and
+copy information back and forth between them, and you can look at several
+different regions of the same file at the same time using a different
+window for each region.
+
+Each Mx window contains several subwindows.  The top-most subwindow is
+normally a title bar displayed by the window manager;  it may also be
+a title bar displayed by Mx, if you've specified the value "yes" for the
+"showTitle" X default.  The title bar displays the name of the file
+you're editing.  If you've modified the file, then an exclamation point
+will appear after the file's name (or the word "Modified" will appear
+at the right side of the title bar).  Just underneath the title bar is
+the "menu bar", which contains the names of several pull-down menus,
+and underneath that is a message window, which currently gives the name
+and size of this file. Information and error messages will appear in
+the message window at various times during editing.  At the right side
+of the window is the scrollbar, which you're already familiar with.
+The rest of the window displays a few lines of the file you're editing.
+A few other subwindows will appear later on, while you're editing. For
+example, one of them will be used to enter strings for searching and
+replacement.
+
+There are three ways that you can invoke operations in Mx: by positioning the
+pointer over the text of the file and clicking or dragging with the mouse, by
+typing keys on the keyboard, or by selecting menu entries with the mouse.
+For a simple example of each of these, first move the pointer over the leftmost
+"X" in the line below and left-click.  A little upside-down "V", called the
+"caret", will appear just to the left of the X.
+
+            XXXX - play here
+
+Second, type some characters on the keyboard.  Each keystroke invokes an Mx
+command to insert that character into the file just before the caret.  As
+you'll see later, various special keys, such as the control keys, can be used
+to invoke other Mx commands such as copying and deleting text.  Finally, for
+an example of a menu selection, move the pointer up to the menu bar (it's
+the horizontal strip at the top of the window just underneath the striped
+title bar), and position it over the word "Control".  The word will highlight.
+Press the left mouse button and hold it down.  This causes a menu to appear
+underneath the pointer.  With the button held down, drag the pointer down
+through the menu until the word "Undo" is highlighted, then release the mouse
+button.  This invokes the undo command, which will remove all the text you
+just typed in.
+
+Each word in the menu bar corresponds to a different menu.  To scan through
+the menus, press the left mouse button with the pointer over "Control", and
+hold the button down.  Then drag the pointer to the right so that it passes
+in turn over each of the other words in the menu bar.
+
+When an error occurs while Mx is executing a command, Mx will tell you in
+one of two ways.  For short messages, Mx will place the message in the message
+subwindow.  For an example of this, type control-Z on the keyboard:  there's
+no Mx command associated with this keystroke.  If an error message is long,
+or if Mx needs for you to make a decision, it will pop up a special window
+called a "notifier".  The notifier contains a message plus one or more options,
+which appear at the top of the notifier.  When you see a notifier, you must
+click on one of the options in order to tell Mx what to do.  Your screen will
+be frozen until you've responded to the notifier.  For example, insert some
+characters in this file then invoke the "Quit" entry in the "Control" menu.
+A notifier will warn you that you're about to lose the changes you just
+made to this file.  Click a mouse button on the "Skip command" option.
+
+The Caret and Insertion:
+------------------------
+The simplest operation in Mx is insertion.  If you type normal characters on
+the keyboard, they will be inserted in the file at the position of the caret.
+You can position the caret anywhere in the file by left-clicking or
+left-dragging.  If you make mistakes while you're typing, you can type
+control-h, BACKSPACE, or DELETE to delete the character just before the caret.
+Control-w will delete the entire word that precedes the caret.  Try inserting
+text at various positions within this file.
+
+The Selection:
+--------------
+The selection is a special range of text used in operations like copying
+and deletion.  To select a range of characters, position the caret at one
+end of the range, then move the pointer to the other end of the range and
+right-click.  All of the characters between the caret and the pointer will
+become highlighted.  These characters constitute the selection.  Try changing
+the selection by moving the pointer somewhere else and right-clicking.  You
+can drag the end of the selection by moving the mouse with the right button
+held down, just as you can drag the caret by moving with the left button
+down.  Try selecting various ranges of text in this tutorial.  There can
+only be one selection at a time:  when you make one selection, the previous
+one disappears.
+
+There are additional selection modes called "word selection" and "line
+selection".  To invoke word selection, point to a character in the middle of
+a word and left-click twice in a row (quickly) without moving the mouse.
+This is called "double-clicking", and will cause the entire word to be
+selected.  When you right-click now, Mx will ensure that only whole-words
+are selected.  If you triple-click the left button, then Mx will force the
+selection to consist of entire lines of the file.  Try making word and line
+selections.
+
+A word is any collection of adjacent letters and digits.  Each punctuation
+character is considered to be a word by itself, except that the bracket
+characters "()[]{}<>" are treated specially.  When you use word selection
+on a bracket character, Mx finds the matching bracket and selects the entire
+range, including the open and close brackets.  Brackets may be nested.
+Double-click in the code fragment below and hold the left button down during
+the second click.  Then drag the pointer around to see what happens when it
+passes over the various brackets:
+
+		if (template != NULL) {
+		    x = (foo[index+2, y] + (x/y)*42)/(y+1);
+		    y = 0;
+		}
+
+If you only want to select a single character, there is a faster way than
+first left-clicking to position the caret at one side of the character and
+then right-clicking to select the character.  Instead, "roll" the mouse
+buttons: press left then immediately press right before you've released left.
+This will select the character under the pointer and also place the caret
+at the left side of the character.  If you hold one or both of the mouse
+buttons down after you've rolled, you can drag both the caret and the
+selection.
+
+There are times when it's convenient to make a selection without moving
+the caret (e.g., you've already got the caret where you want it and you'd
+like to select some text to copy to the caret position).  To do this, hold
+the control key down while you select.  Control-left-click will select the
+character under the pointer without moving the caret, and control-right-click
+will select the range of characters between the pointer position and the
+character that you selected with control-left-click.
+
+Copying and Deleting:
+---------------------
+
+The selection is used for many purposes in Mx, the most common of which are
+deleting and copying.  You can delete a range of text by selecting the text
+and then invoking the "Delete $sel" entry in the "Selection" menu.  Throughout
+the Mx menus, the term "$sel" refers to the selection.  Note that you can
+select the newline character at the end of a line (when it's selected, all of
+the white space at the end of the line is highlighted);  if you delete the
+newline character, the following line will be joined to the current line.
+
+The "Copy $sel to caret" entry in the "Selection" menu will insert a copy of
+the selection at the position of the caret, and the "Move $sel to caret"
+entry in the "Selection" menu will move the selection to the caret position.
+Some people find it most convenient to first select the text to be copied
+or moved and then position the caret at the destination;  others find it more
+convenient to position the caret first, then hold the control key down while
+selecting the text.  Try using copy and delete to exchange the words "red"
+and "house" in the sentence below.  Then use move to put "red" back where it
+was originally.
+
+	    Thank goodness they're repainting their house red.
+
+Saving Files and Leaving the Editor:
+------------------------------------
+When you're ready to leave the editor, select the "Quit" entry in the
+"Control" menu.  This will destroy the X window.  It will also end the
+execution of Mx, if there are no other Mx windows open.
+
+When you make changes to a file in Mx, those changes are not automatically
+reflected in the original copy of the file on disk.  To change the disk
+version of the file, you must "save" the file.  The "Save" entry in the
+"Control" menu will write the file back to disk.  Or, if you've modified the
+file and then try to quit without saving the file, Mx will warn you with
+a notifier and give you a chance to save the file or skip the quit command.
+
+If you'd like to save the edits in a different file than the one you started
+out with, select the name of the file you'd like to save into and then invoke
+the "Save in file $sel" entry in the "Control" menu.  The only problem
+here is how to get the file name someplace where you can select it.  If it
+already appears on the screen somewhere, just select it.  If you use Tx for
+your terminal emulator, you can type the file name in a Tx window and
+select it there.  As a last resort, open the command subwindow by invoking
+the "Open command subwindow" in the "Window" menu.  The caret should
+appear in the small subwindow that just appeared at the bottom of the
+window.  Then type the file name there and select it for use in saving
+the file.  After saving the file, you can make the command subwindow go
+away by getting the caret into the command subwindow (if it isn't there
+already, invoke the "Open command subwindow" menu entry again, or left-click
+in the command subwindow) and typing control-q.  In general, typing
+control-q in an Mx window or subwindow is a request to make the (sub)window
+go away.
+
+Bindings:
+----------
+The menus are convenient for learning because they're easy to browse through
+to find commands.  However, if you use the menus a lot you won't be able to
+edit very quickly.  Fortunately, many of the Mx commands can be invoked
+by typing keys as well as by selecting menu entries.  The keystrokes are
+called "bindings":  a particular key or sequence of keys is "bound" to an
+Mx command.  If there is a keystroke sequence equivalent to a menu entry,
+the binding appears at the right side of the menu entry.  For example, the
+"Copy" entry in the "Selection" menu shows the binding "C-v", which is an
+abbreviation for "control-v".  The "Delete" entry in the same menu has the
+binding "control-d".  These two bindings and the control-q binding
+mentioned above are the most important ones;  I suggest that you learn
+them immediately and use them instead of the menu entries.  You can
+gradually learn other bindings as you become more familiar with the system.
+To get information about all of the default bindings, invoke the "Info on
+default key bindings" entry in the "Help" menu.
+
+The binding "M-v" in the "Selection" menu means "meta-v", which means
+different things on different keyboards.  On Sun-3 keyboards, "M-v" means
+first press either the "Left" or "Right" key (next to the space bar),
+then press "v" while holding down "Left" or "Right".  The term "ESC" refers
+to the escape key.  For example, the binding "ESC f" means first type the
+escape key, then the "f" key.
+
+You can change the bindings to eliminate old ones and define new ones if
+you wish.  You can also modify the menus, or even change the meanings of
+normal keystrokes (for example, you could arrange things so that typing
+the space character caused the selection to be deleted, if that turned out
+to be desirable).  For more information on how to do this see the "bind"
+command in the Mx manual entry.
+
+Undoing and Crash Recovery:
+---------------------------
+While you edit, Mx keeps a log of every modification that you make to the
+file.  The log is used for two purposes:  undoing and recovery.  If you ever
+make a change and then wish you hadn't, you can invoke the "Undo" entry in
+the "Control" menu or type the "C-u" binding.  This will cause the last
+modification you made to the file to be undone.  If you undo several times
+in a row without any intervening file modifications, each invocation will undo
+the next older action, all the way back to the beginning of the edit session.
+Make a series of changes to this file, then undo them. 
+
+Normally, each user-invoked action, such as a keystroke or button click or
+menu selection, constitutes one event as far as undoing is concerned.  Thus
+if you copy a huge selection, the whole copy will be undone at once.  The
+only exception to this rule is that if you type in a bunch of text on the
+same line, then all of the text will be undone together (i.e. you don't have
+to invoke undo once for each character; use backspace or control-W if you
+only want to erase a few characters).  If you type in many lines of text in
+a row, then the type-in will be undone one line at a time.
+
+The undo actions are recorded in the log, so they can be undone also. However,
+if you undo something and then wish you hadn't, you can't just undo again:
+that will undo the next next older action, rather than undoing the undo.
+Instead, hit the space bar, which inserts a space character in the file.
+This (or any other modification to the file) resets the undo mechanism so that
+the next undo refers to the most recent modification to the file;  now invoke
+undo twice:  the first will undo the space insertion and the second will undo
+the unwanted undo.
+
+The second purpose of the log is to allow recovery if Mx crashes during an edit
+session or if your machine goes down unexpectedly.  If a crash occurs, the
+log file will be left on disk.  The log file has a name beginning with "Mx"
+and is usually stored in the directory containing the file being edited.  If
+that directory isn't writable, then Mx stores the log file in your home
+directory.  To recover all the changes you made during a crashed edit
+session, just re-run Mx on the same file.  Mx will locate the log file and
+pop up a notifier giving you the choice of recovering or deleting the old
+log file.  If you select recovery, Mx will scan through the log file and
+update the file to reflect all of the changes made in the crashed edit
+session.  With the recovery mechanism, you should never lose any modifications
+except for those on the line where you were working when the crash occurred.
+You can try out the recovery features by starting up Mx and then killing it
+from the shell.
+
+Searching and Substitution:
+---------------------------
+Mx provides mechanisms that allow you to search through a file for a
+particular sequence of characters, or to replace a given sequence of
+characters with another sequence provided by you.  To see how this works,
+invoke the "Search forward" entry in the "Search" menu.  The first time you
+invoke this operation, Mx will open a new subwindow just under the menu bar,
+called the "search subwindow".  It contains two entry areas, where you can
+type in a search string and a replacement string.  To enter a search string,
+get the caret into the search entry (if it isn't already there) by moving
+the pointer over the entry and left-clicking.  Now you can type in a search
+string.  The editing characters "C-h" and "C-w" work in the search subwindow,
+and you can also use the selection and "C-d" to edit the search and
+replacement strings.  You can use "C-v" to copy information from almost
+anywhere on the screen to the search and replacement strings.
+
+Enter the characters "the" as the search string.  There are four different
+ways you can invoke searching now.  The simplest is to re-invoke the "Search
+forward" entry in the "Search" menu.  Mx will search for the next occurrence
+of the string "the", starting at the caret location, and will select that
+occurrence.  You can also search using the "C-f" binding, or by typing
+RETURN when the caret is in the search string, or by middle-clicking on the
+search string.  These four approaches all produce the same result.  The
+"Search" menu provides a "Search backward" entry to scan in the opposite
+direction.  If one end of the file is reached during a search, Mx skips to
+the opposite end of the file and continues.
+
+If you don't want to type the search string into the search subwindow, you
+can also select the string you'd like to search for and use the "Search
+forward for $sel" and "Search backward for $sel" menu entries.
+
+To make substitutions, enter a replacement string into the search subwindow
+and invoke the "Replace" command in the "Search" menu.  This will replace
+the selection with the replacement string.  You can also invoke replacement
+by typing RETURN in the replacement string, by middle-clicking on the
+replacement string, or by typing the "C-r" binding.
+
+By default, search and replacement strings are regular expressions in
+the style of the vi text editor.  If you'd prefer for searching and
+replacement to be done by exact matches only, without regular expressions,
+set the "noRegExps" variable to 1.
+
+If you'd like to replace all the instances of one string by another string,
+you have two choices.  One possibility is repeatedly to type "C-f" and "C-r"
+to step through the instances one at a time.  Or, you can select a range of
+text in which you'd like to make the substitution and invoke the
+"Substitute throughout $sel" entry in the "Search" menu.  This will replace
+all instances of the search string in a single operation.  Try using these
+commands to replace "the" with "my" in several areas of this document.
+The "Substitute everywhere" entry in the "Search" menu will make the
+substitution throughout the file.
+
+Two other bindings are useful when searching and replacing:  "ESC-f" will
+clear the search string entry and move the caret there, so you can type
+in a new search string;  and "ESC-r" will clear the replacement string
+entry and move the caret there
+
+When you no longer need the search subwindow, you can get rid of it by
+getting the caret into it (left-click on the window if necessary) and
+typing "C-q".
+
+Using Multiple Windows:
+-----------------------
+Mx allows you to open several windows on the same or different files and
+copy information back and forth between them.  Invoke the "New window on same
+file" entry in the "Window" menu.  The new window will display the same file
+as the old window, and you can modify the file from either window.  Try making
+changes in both windows:  you'll see the selection and the changes in each of
+the windows.  You can also open a new window on a different file by selecting
+the file's name and invoking the "New window on $sel" entry in the "Window"
+menu.  Once this is done, you can use the selection to copy information back
+and forth between the windows.
+
+The "Window" menu also includes additional entries for switching the current
+window from one file to another ("See file $sel"), opening a new window (or
+switching the current window) to display the definition of a symbol using the
+tags facility, and adjusting the view in a window to display a particular line
+number (e.g. for compiler error messages).
+
+Indentation:
+------------
+Mx automatically manages line indentation.  Whenever you type RETURN to start
+a new line, Mx will indent the new line to match the indentation of the
+previous line.  Whenever you move the caret away from a line Mx will clean up
+the line's indentation:  if there is any white space at the beginning of the
+line, Mx replaces as much of it as possible with tabs (one tab for each eight
+spaces).  In the lines below, position the caret at the end of the various
+lines and type RETURN to see how auto-indentation works:
+
+	    This line is indented.
+		    This line is indented even more.
+
+The "Indent" menu provides several commands to modify the indentation of
+lines.  "Indent selected lines 4" will shift all the lines in the selection
+right by 4 spaces, and "Outdent selected lines 4" will shift the lines left
+by 4 spaces.  "Indent caret line 4" and "Outdent caret line 4" do the same
+thing for the line containing the caret.  The last menu entry will eliminate
+all indentation in the selected lines.
+
+History and Repeating Commands:
+-------------------------------
+Mx automatically records commands you've invoked so that they can
+be replayed later.  For full details, read about the "history" command in
+the manual page.  The simplest mechanism is "Do again", which is
+available in the "Control" menu or with the "C-a" binding.  This will
+repeat all the commands you invoked between the last two button presses,
+searches, or undos.  For an example of how this works, select "Test"
+below, then delete it and type "Foo" in its place.  Then select "Test2",
+and type "C-a";  you can continue with "Test3" and "Test4" also.
+
+		Test		Test2		Test3		Test4
+

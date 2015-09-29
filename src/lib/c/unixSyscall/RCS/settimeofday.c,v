@@ -1,0 +1,136 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     88.11.07.14.43.30;  author douglis;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.06.21.17.25.12;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.19.14.31.59;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@allow NULL tp argument (apparently Unix does).
+@
+text
+@/* 
+ * settimeofday.c --
+ *
+ *	Procedure to map from Unix settimeofday system call to Sprite.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/unixSyscall/RCS/settimeofday.c,v 1.2 88/06/21 17:25:12 ouster Exp Locker: douglis $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <spriteTime.h>
+
+#include "compatInt.h"
+#include <sys/time.h>
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * settimeofday --
+ *
+ *	Procedure to map from Unix settimeofday system call to 
+ *	Sprite Sys_SetTimeOfDay.
+ *
+ * Results:
+ *	UNIX_SUCCESS 	- the call was successful.
+ *	UNIX_ERROR 	- the call was not successful. 
+ *			  The actual error code stored in errno.  
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+settimeofday(tp, tzp)
+    struct timeval *tp;
+    struct timezone *tzp;
+{
+    ReturnStatus status;	/* result returned by Sys_SetTimeOfDay */
+
+    /*
+     * Unix negates the local offset from UTC to make it positive
+     * for locations west of the prime meridian. 
+     */
+
+    if (tzp == NULL) {
+	int localOffset;
+	Boolean DST;
+
+	status = Sys_GetTimeOfDay((Time *) NULL, &localOffset, &DST);
+	status = Sys_SetTimeOfDay(tp, localOffset, DST);
+    } else if (tp == NULL) {
+	Time currentTime;
+
+	status = Sys_GetTimeOfDay(&currentTime, (int *) NULL,
+				  (Boolean *) NULL);
+	status = Sys_SetTimeOfDay(&currentTime,  -(tzp->tz_minuteswest),
+				  tzp->tz_dsttime);
+    } else {
+	status = Sys_SetTimeOfDay(tp, -(tzp->tz_minuteswest), tzp->tz_dsttime);
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}
+@
+
+
+1.2
+log
+@Various changes to make code compile under new library.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: settimeofday.c,v 1.1 88/06/19 14:31:59 ouster Exp $ SPRITE (Berkeley)";
+d59 7
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: proto.c,v 1.1 86/03/04 16:46:31 douglis Exp $ SPRITE (Berkeley)";
+d14 2
+a15 2
+#include "sprite.h"
+#include "/sprite/lib/include/time.h"
+@

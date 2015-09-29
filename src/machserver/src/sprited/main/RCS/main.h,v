@@ -1,0 +1,181 @@
+head     1.7;
+branch   ;
+access   ;
+symbols  srv030:1.7 srv028:1.7 srv027:1.7 srv026:1.7 srv024:1.7 srv022:1.7 srv021:1.7 srv019:1.7 srv018:1.7 srv016:1.7 srv015:1.7 srv014:1.7 srv012:1.7 srv011:1.7 srv010:1.7 srv008:1.7 srv007:1.7 srv006:1.7 srv005:1.7 srv004:1.7 srv003:1.7 srv002:1.7 srv001:1.7;
+locks    ; strict;
+comment  @ * @;
+
+
+1.7
+date     91.11.14.10.02.09;  author kupfer;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     91.10.04.11.37.22;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.09.23.14.19.43;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.09.04.14.18.01;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.09.01.21.02.51;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.08.15.14.40.39;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.07.19.15.25.46;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Public declarations for system startup.
+@
+
+
+1.7
+log
+@Snapshot. net, rpc, recov modules added.
+@
+text
+@/*
+ * main.h --
+ *
+ *	External definitions for system startup and shutdown.
+ *
+ * Copyright 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /r3/kupfer/spriteserver/src/sprited/main/RCS/main.h,v 1.6 91/10/04 11:37:22 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+ */
+
+#ifndef _MAIN
+#define _MAIN
+
+#include <mach.h>
+
+/* 
+ * This is the maximum number of arguments that can be passed to the init 
+ * program (not counting the trailing nil string pointer).  I suppose this 
+ * array should be allocated dynamically...
+ */
+#define MAIN_MAX_INIT_ARGS	10
+
+extern Boolean main_DebugFlag;
+extern Boolean main_MultiThreaded;
+extern int main_NumRpcServers;  /* # of rpc servers to spawn off */
+extern char *main_InitArgArray[];
+extern char *main_InitPath;
+
+/* procedures */
+
+#endif /* _MAIN */
+@
+
+
+1.6
+log
+@Snapshot.  fork/exec work.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/main/RCS/main.h,v 1.5 91/09/23 14:19:43 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d32 1
+@
+
+
+1.5
+log
+@Snapshot.  Server is multithreaded internally.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/main/RCS/main.h,v 1.4 91/09/04 14:18:01 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d23 10
+a32 1
+extern int main_DebugFlag;
+@
+
+
+1.4
+log
+@Get rid of unused port declarations.
+@
+text
+@d15 1
+a15 1
+ * $Header: /user6/kupfer/spriteserver/src/sprited/main/RCS/main.h,v 1.3 91/09/01 21:02:51 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d24 1
+a24 3
+extern mach_port_t main_RequestPort;
+
+extern Boolean main_shuttingDown;
+@
+
+
+1.3
+log
+@Snapshot.  Full VM support.
+@
+text
+@d15 1
+a15 1
+ * $Header: /user6/kupfer/spriteserver/src/printfd/RCS/main.h,v 1.2 91/08/15 14:40:39 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+a23 2
+extern mach_port_t main_ExceptionPort;
+extern mach_port_t main_SyscallPort;
+@
+
+
+1.2
+log
+@Snapshot.  Read-write mapped files work.
+@
+text
+@d15 1
+a15 1
+ * $Header: /user6/kupfer/spriteserver/src/printfd/RCS/main.h,v 1.1 91/07/19 15:25:46 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d23 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d4 1
+a4 1
+ *	External definitions for system startup.
+d15 1
+a15 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.7 91/02/09 13:24:52 ouster Exp $ SPRITE (Berkeley)
+d21 1
+a21 1
+/* constants */
+d23 5
+a27 1
+extern mach_port_t main_ServicePort;
+@

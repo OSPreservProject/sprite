@@ -1,0 +1,10 @@
+F AS_FRONT.C;1                      	as_front.c
+D DIST                              	dist
+D DS3100_M                          	ds3100.md
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+D SPRITE                            	sprite
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md
+D SYMM_MD                           	symm.md

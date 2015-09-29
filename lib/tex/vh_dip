@@ -1,0 +1,12 @@
+#!/bin/csh
+#
+
+setenv WINDOW_PARENT /dev/win0
+setenv WMGR_ENV_PLACEHOLDER /dev/win1
+setenv DEFAULT_FONT ~john/lib/fonts/screen.r.14
+
+cd /tmp
+
+/usr4/texers/jwm/src/vh_dip/vh_xd -V
+# /usr/local/lib/tex82/vh_xd -V
+

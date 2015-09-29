@@ -1,0 +1,205 @@
+512
+llib-lss:data.c
+2
+0 15 88 416 28697
+_ss_table
+2
+0 16 18 0 0
+_ss_pager_name
+512
+llib-lss:/sprite/lib/include/com_err.h
+2
+0 30 144 0 0
+com_err_hook
+512
+llib-lss:error.c
+2
+1 30 98 0 0
+ss_name
+4 0 0
+16
+0 64 18 0 0
+ss_name
+2
+1 72 32 0 0
+ss_error
+4 0 0
+2
+3 96 32 0 0
+ss_perror
+4 0 0
+5 0 0
+18 0 0
+512
+llib-lss:execute_cmd.c
+2
+2 159 36 0 0
+ss_execute_command
+4 0 0
+82 0 0
+16
+0 172 4 0 0
+ss_execute_command
+2
+2 193 36 0 0
+ss_execute_line
+4 0 0
+18 0 0
+16
+0 219 4 0 0
+ss_execute_line
+512
+llib-lss:help.c
+2
+4 20 32 0 0
+ss_help
+4 0 0
+82 0 0
+4 0 0
+18 0 0
+2
+3 90 32 0 0
+ss_add_info_dir
+4 0 0
+18 0 0
+20 0 0
+2
+3 127 32 0 0
+ss_delete_info_dir
+4 0 0
+18 0 0
+20 0 0
+512
+llib-lss:invocation.c
+2
+5 21 36 0 0
+ss_create_invocation
+18 0 0
+18 0 0
+18 0 0
+24 64 27320
+20 0 0
+16
+0 66 4 0 0
+ss_create_invocation
+2
+1 71 32 0 0
+ss_delete_invocation
+4 0 0
+512
+llib-lss:list_rqs.c
+2
+4 27 36 0 0
+ss_list_requests
+4 0 0
+82 0 0
+4 0 0
+18 0 0
+512
+llib-lss:listen.c
+2
+1 56 36 0 0
+ss_listen
+4 0 0
+16
+0 121 4 0 0
+ss_listen
+2
+2 125 32 0 0
+ss_abort_subsystem
+4 0 0
+4 0 0
+2
+4 136 36 0 0
+ss_quit
+4 0 0
+82 0 0
+4 0 0
+18 0 0
+512
+llib-lss:pager.c
+2
+0 32 36 0 0
+ss_pager_create
+16
+0 56 4 0 0
+ss_pager_create
+2
+0 67 32 0 0
+ss_page_stdin
+512
+llib-lss:parse.c
+2
+3 40 354 0 0
+ss_parse
+4 0 0
+18 0 0
+20 0 0
+16
+0 139 82 0 0
+ss_parse
+512
+llib-lss:prompt.c
+2
+2 22 36 0 0
+ss_set_prompt
+4 0 0
+18 0 0
+2
+1 29 98 0 0
+ss_get_prompt
+4 0 0
+16
+0 31 18 0 0
+ss_get_prompt
+512
+llib-lss:request_tbl.c
+2
+4 17 36 0 0
+ss_add_request_table
+4 0 0
+24 64 27320
+4 0 0
+20 0 0
+2
+3 48 36 0 0
+ss_delete_request_table
+4 0 0
+24 64 27320
+20 0 0
+512
+llib-lss:requests.c
+2
+3 19 36 0 0
+ss_self_identify
+4 0 0
+82 0 0
+4 0 0
+2
+3 29 36 0 0
+ss_subsystem_name
+4 0 0
+82 0 0
+4 0 0
+2
+3 37 36 0 0
+ss_subsystem_version
+4 0 0
+82 0 0
+4 0 0
+2
+3 46 36 0 0
+ss_unimplemented
+4 0 0
+82 0 0
+4 0 0
+512
+llib-lss:ss_err.c
+2
+0 43 32 0 0
+initialize_ss_error_table
+512
+llib-lss:std_rqs.c
+2
+0 108 8 64 27320
+ss_std_requests

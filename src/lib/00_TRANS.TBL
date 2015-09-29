@@ -1,0 +1,11 @@
+D C                                 	c
+D DISK                              	disk
+D INCLUDE                           	include
+D JAQ                               	jaq
+F LOCAL.MK;1                        	local.mk
+D M                                 	m
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+D TCL                               	tcl
+D TCLX6_4C                          	tclX6.4c
+D TK2_3                             	tk2.3

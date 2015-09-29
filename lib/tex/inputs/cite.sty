@@ -1,0 +1,95 @@
+%     CITE.STY -- compress numerical citations.
+%     See also OVERCITE.STY.
+%
+%     Copyright (C) 1989,1990 by Donald Arseneau
+%     These macros may be freely transmitted, reproduced, or modified for
+%     non-commercial purposes provided that this notice is left intact.
+%     
+%     Instructions follow \endinput.
+%  ------------------------------------
+%
+%  Pull out the code that writes the aux file citation and formats 
+%  the number.  \citen can be used by itself to give citation numbers 
+%  without the other formatting; e.g., "See also ref.~\citen{junk}."
+%
+\def\citen#1{%
+\if@filesw \immediate \write \@auxout {\string \citation {#1}}\fi 
+\@tempcntb\m@ne \let\@h@ld\relax \def\@citea{}%
+\@for \@citeb:=#1\do {%
+  \@ifundefined {b@\@citeb}%
+    {\@h@ld\@citea\@tempcntb\m@ne{\bf ?}%
+    \@warning {Citation `\@citeb ' on page \thepage \space undefined}}%
+% else, defined
+    {\@tempcnta\@tempcntb \advance\@tempcnta\@ne
+    \setbox\z@\hbox\bgroup % check if citation is a number:
+    \ifnum0<0\csname b@\@citeb \endcsname \relax
+       \egroup \@tempcntb\number\csname b@\@citeb \endcsname \relax
+       \else \egroup \@tempcntb\m@ne \fi
+    \ifnum\@tempcnta=\@tempcntb % Number follows previous--hold on to it
+       \ifx\@h@ld\relax % first pair of successives
+          \edef \@h@ld{\@citea\csname b@\@citeb\endcsname}% 
+       \else % compressible list of successives
+%         % use \hbox to avoid easy \exhyphenpenalty breaks 
+          \edef\@h@ld{\hbox{--}\penalty\@highpenalty
+            \csname b@\@citeb\endcsname}%
+       \fi
+    \else   %  non-successor--dump what's held and do this one
+       \@h@ld\@citea\csname b@\@citeb \endcsname 
+       \let\@h@ld\relax
+    \fi}%
+%%    To put space after the comma, use:
+ \def\@citea{,\penalty\@highpenalty\hskip.13em plus.1em minus.1em}%
+%%    For no space after comma, use:
+%% \def\@citea{,\penalty\@highpenalty}% 
+%%
+}\@h@ld}
+% 
+%     Replacement for \@citex:
+% 
+\def\@citex[#1]#2{\@cite{\citen{#2}}{#1}}%
+%
+%  Replacement for \@cite 
+%
+\def\@cite#1#2{\leavevmode\unskip
+  \ifnum\lastpenalty=\z@\penalty\@highpenalty\fi% highpenalty before
+  \ [{\multiply\@highpenalty 3 #1%             % triple-highpenalties within
+      \if@tempswa,\penalty\@highpenalty\ #2\fi % and before note.
+    }]\spacefactor\@m}
+%
+\endinput
+%
+%     
+%                          CITE.STY
+%
+%     Modify LaTeX's normal citation mechanism to:
+%
+%     o Allow, but strongly discourage, line breaks within a series of
+%       citations.  Each number is separated by a comma and a small space.
+%       A break at the beginning of an optional note is discouraged also.
+%
+%     o Compress lists of three or more consecutive numbers to one number 
+%       range which can be split, with difficulty, after the dash.  No sorting
+%       to optimize compression is done.  All numbers should be greater than
+%       zero. E.g., if you used to get [5,6,7,9,8,Einstein,6], then this style 
+%       will give you [5--7,9,8,Einstein,6]. 
+%
+%     o Always puts an interword space before the citation and allow a 
+%       highpenalty break there (unless you specifically forbid it with ~).
+%       E.g.,   Something really stupid \cite{Larry,Curly,Moe}.
+%                                      ^-- This space doesn't matter.
+%
+%     To get just the numbers (and write to the aux file) without the
+%     extra formatting, use \citen just like \cite.
+%
+%     Linebreaks are allowed with triple-highpenalties after dashes
+%     and commas; these may have to be taken if TeX sees no other 
+%     viable breakpoints.  If you think citations are being split 
+%     unnecessarily, try using \sloppy or a sloppypar environment.
+%
+%     FRAGILE!
+%
+% Send problem reports to asnd@triumfcl.bitnet or Arseneau@mtsg.ubc.ca
+%
+% test integrity:
+% brackets: round, square, curly, angle:   () [] {} <>
+% backslash, slash, vertical, hat, tilde:   \ / | ^ ~

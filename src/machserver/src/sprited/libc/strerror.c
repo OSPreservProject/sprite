@@ -1,0 +1,1 @@
+../../lib/c/string/strerror.c

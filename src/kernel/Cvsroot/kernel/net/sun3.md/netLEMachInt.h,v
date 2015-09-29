@@ -1,0 +1,114 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ds3100:1.3 sun3:1.3 sun4nw:1.2 symm:1.2 spur:1.2;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     91.11.15.20.58.02;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.03.19.14.04.26;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.03.19.10.50.07;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@Add missing RCS Header line.
+@
+text
+@/*
+ * netLEMachInt.h --
+ *
+ *	Internal definitions for the sun3 LANCE controller.
+ *
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header$ SPRITE (Berkeley)
+ */
+
+#ifndef _NETLEMACHINT
+#define _NETLEMACHINT
+
+#include <netInt.h>
+
+/*
+ * Register address port and register data port definition.
+ */
+
+typedef struct NetLEMach_Reg {
+	volatile unsigned short	dataPort;	/* RDP */
+        volatile unsigned short	addrPort[1];	/* RAP */
+} NetLEMach_Reg;
+
+#define NET_LE_REG_SIZE	4
+
+#define NET_LE_CONTROL_REG_ADDR 0xfe10000
+
+/*
+ * On the sun4c we don't have to copy packets because they are mapped
+ * into DVMA space.
+ */
+
+#define NET_LE_COPY_PACKET FALSE
+
+/*
+ * Macros for converting chip to cpu and cpu to chip address.
+ * We always deal with chip addresses in two parts, the lower 16 bits
+ * and the upper 8 bits.
+ */
+#define	NET_LE_FROM_CHIP_ADDR(statePtr, high,low)	\
+		((Address) (0xf000000 + ((high) << 16) + (low)))
+
+#define	NET_LE_TO_CHIP_ADDR_LOW(a) ( ((unsigned int) (a)) & 0xffff)
+#define	NET_LE_TO_CHIP_ADDR_HIGH(a) ( (((unsigned int) (a)) >> 16) & 0xff)
+
+/* 
+ * Routine to allocate a network buffer.
+ */
+#define BufAlloc(statePtr, numBytes) \
+    (char *) VmMach_NetMemAlloc(numBytes);
+
+#endif /* _NETLEMACHINT */
+@
+
+
+1.2
+log
+@same lance driver for sun3, sun4c, and ds5000.
+@
+text
+@d14 2
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d47 1
+a47 1
+		((Address) (0xff000000 + ((high) << 16) + (low)))
+@

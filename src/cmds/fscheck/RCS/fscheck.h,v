@@ -1,0 +1,693 @@
+head     1.17;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.17
+date     90.10.10.15.29.07;  author mendel;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     90.10.10.11.22.14;  author jhh;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     90.05.01.15.36.45;  author jhh;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     90.02.14.15.55.32;  author jhh;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     89.10.03.11.09.05;  author jhh;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     89.09.25.16.41.17;  author jhh;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     89.06.21.23.56.07;  author jhh;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     89.02.28.12.22.36;  author jhh;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     88.12.04.21.34.31;  author nelson;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     88.07.19.11.47.51;  author douglis;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.06.02.13.01.58;  author brent;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.06.02.12.58.19;  author brent;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     87.10.21.11.04.31;  author nelson;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     87.08.10.15.11.49;  author nelson;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     87.06.01.15.44.00;  author nelson;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     86.12.16.13.22.25;  author nelson;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.07.27.12.53.02;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.17
+log
+@Changes to reflect new OFS file system names.
+@
+text
+@/* 
+ * fscheck.h
+ *
+ *	Types for the file system check program.
+ *
+ * Copyright (C) 1986 Regents of the University of California
+ * All rights reserved.
+ *
+ * $Header: /sprite/src/cmds/fscheck/RCS/fscheck.h,v 1.16 90/10/10 11:22:14 jhh Exp Locker: mendel $ SPRITE (Berkeley)
+ */
+
+#ifndef _FSCHECK
+#define _FSCHECK
+
+#include "disk.h"
+#include <sys/types.h>
+#include <varargs.h>
+#include <stdio.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <time.h>
+#include <sys/time.h>
+
+/*
+ *  fscheck Proc_Exit status codes.
+ * 	Codes < 0 are hard errors. Codes > 0 are soft errors.
+ *
+ */
+#define EXIT_OK		(char) 0
+
+#define EXIT_SOFT_ERROR		(char) 1
+#define EXIT_OUT_OF_MEMORY	(char) 2
+#define EXIT_NOREBOOT		(char) 3
+#define EXIT_REBOOT		(char) 4
+
+#define EXIT_HARD_ERROR		(char) -1
+#define EXIT_READ_FAILURE	(char) -2
+#define EXIT_WRITE_FAILURE	(char) -3
+#define EXIT_BAD_ARG		(char) -4
+#define EXIT_MORE_MEMORY	(char) -5
+#define EXIT_DISK_FULL		(char) -6
+
+/*
+ * Structure kept for each file descriptor.
+ */
+typedef struct FdInfo {
+    short	flags;		/* Flags defined below. */
+    short	origLinkCount;	/* Link count from the file descriptor. */
+    short	newLinkCount;	/* Link computed by checkFS. */
+} FdInfo;
+
+/*
+ * Flag values.
+ *
+ *	IS_A_DIRECTORY	This file is a directory.
+ *	FD_REFERENCED	This file is referenced by a directory.
+ *	FD_MODIFIED	This file descriptor has been modified.
+ *	FD_SEEN		This file descriptor has already been checked.
+ *	FD_ALLOCATED	This file descriptor is allocated.	
+ *	ON_MOD_LIST	This file descriptor is on the modified list.
+ *	FD_UNREADABLE	This file descriptor is in an unreadable sector.
+ *	FD_RELOCATE	This file descriptor is in a readable sector in
+ *			an unreadable block and is being relocated.
+ */
+#define	IS_A_DIRECTORY	0x01
+#define	FD_REFERENCED	0x02
+#define	FD_MODIFIED	0x04
+#define	FD_SEEN		0x08
+#define	FD_ALLOCATED	0x10
+#define	ON_MOD_LIST	0x20
+#define	FD_UNREADABLE	0x40
+#define	FD_RELOCATE	0x80
+
+/*
+ * Structure for each element of the list of modified file descriptors.
+ */
+typedef struct ModListElement {
+    List_Links		links;
+    int			fdNum;
+    Fsdm_FileDescriptor	*fdPtr;
+} ModListElement;
+extern	List_Links	modListHdr;
+#define	modList &modListHdr
+
+/*
+ * Structure for each element of the list of relocating file descriptors.
+ * Note that it looks like a ModListElement with an extra file descriptor
+ * number at the end.  It can be inserted into the modList and written
+ * in location newFdNum once newFdNum has been assigned.
+ */
+typedef struct RelocListElement {
+    List_Links		links;
+    int			newFdNum;
+    Fsdm_FileDescriptor	*fdPtr;
+    int			origFdNum;
+} RelocListElement;
+extern	List_Links	relocListHdr;
+#define	relocList &relocListHdr
+
+typedef enum {
+    DIRECT, 
+    INDIRECT, 
+    DBL_INDIRECT
+} BlockIndexType;
+
+typedef enum {
+    FD, 
+    BLOCK, 
+} ParentType;
+
+/*
+ * Structure for each element of the list of file blocks that need to be copied.
+ */
+
+typedef struct CopyListElement {
+    List_Links		links;
+    BlockIndexType	blockType;
+    short		fragments;
+    int			index;
+    ParentType		parentType;
+    int			parentNum;
+    Fsdm_FileDescriptor	*fdPtr;
+} CopyListElement;
+
+extern	List_Links	copyListHdr;
+#define	copyList &copyListHdr
+
+
+/*
+ * Structure to contain the current state about a block index.
+ */
+
+
+typedef struct DirIndexInfo {
+    FdInfo	     *fdInfoPtr;	     /* Status info about the file 
+					      * descriptor being read. */
+    Fsdm_FileDescriptor *fdPtr;	     	     /* The file descriptor being
+						read. */
+    BlockIndexType indexType;		     /* Whether chasing direct, 
+						indirect, or doubly indirect 
+						blocks. */
+    int		 blockNum;		     /* Block that is being read, 
+						written, or allocated. */
+    int		 blockAddr;		     /* Address of directory block
+						to read. */
+    int		 dirOffset;		     /* Offset of the directory entry 
+						that we are currently examining 
+						in the directory. */
+    char	 dirBlock[FS_BLOCK_SIZE];    /* Where directory data is 
+						stored. */
+    int		 numFrags;		     /* Number of fragments stored in
+						the directory entry. */
+    int		 firstIndex;		     /* An index into either the direct
+					        block pointers or into an 
+					        indirect block. */
+    int		 secondIndex;		     /* An index into a doubly indirect
+					        block. */
+    char 	 firstBlock[FS_BLOCK_SIZE];  /* First level indirect block. */
+    int		 firstBlockNil;		     /* The first level block is 
+						empty.*/
+    char 	 secondBlock[FS_BLOCK_SIZE]; /* Second level indirect block. */
+    int		 secondBlockNil;	     /* The second level block 
+						is empty.*/
+    int		 dirDirty;		     /* 1 if the directory block is
+						dirty. */
+} DirIndexInfo;
+
+extern int	numBlocks;
+extern int	numFiles;
+extern int	numBadDesc;
+extern int	numFrags;
+extern int	foundError;
+extern int	errorType;
+extern int	fdBitmapError;
+extern Boolean	tooBig;
+extern int	noCopy;
+extern int	debug;
+extern char	end[];
+extern FILE 	*outputFile;
+extern int	patchHeader;
+extern int	writeDisk;
+extern int	verbose;
+extern int	silent;
+extern int	clearDomainNumber;
+extern int	recoveryCheck;
+extern int	badBlockInit;
+extern int	patchRoot;
+extern int	flushBuffer;
+extern int	maxHeapSize;
+extern int	bufferSize;
+extern int	heapSize;
+extern int	lastErrorFD;
+extern int	num1KBlocks;
+extern int	bytesPerCylinder;
+extern List_Links    modListHdr;
+extern List_Links    relocListHdr;
+extern unsigned char *fdBitmapPtr;
+extern unsigned char *cylBitmapPtr;
+extern unsigned char bitmasks[];
+extern int	rawOutput;
+extern int	attached;
+extern int	outputFileNum;
+extern char	*outputFileName;
+extern Ofs_DomainHeader  *domainPtr;
+extern int		partFID;
+extern int	bitmapVerbose;
+extern int	fixCount;
+extern int	numReboot;
+extern int	clearFixCount;
+extern int	blockToFind;
+extern int	fileToPrint;
+extern int	setCheckedBit;
+
+extern int Output();	
+extern void OutputPerror();	
+extern void WriteOutputFile();	
+extern int CloseOutputFile();	
+extern void ExitHandler();
+extern char *sbrk();
+extern void ClearFd();
+extern void UnmarkBitmap();
+extern int MarkBitmap();
+extern void AddToCopyList();
+
+/*
+ * Macro to get a pointer into the bit map for a particular block.
+ */
+#define BlockToCylinder(domainPtr, blockNum) \
+    (blockNum) / (domainPtr)->geometry.blocksPerCylinder
+
+#define GetBitmapPtr(domainPtr, bitmapPtr, blockNum) \
+  &((bitmapPtr)[BlockToCylinder(domainPtr, blockNum) * \
+  bytesPerCylinder + (blockNum) % (domainPtr)->geometry.blocksPerCylinder / 2])
+
+/*
+ * Macros to convirt physical block numbers to virtual block numbers. All direct
+ * blocks are virtual, indirect blocks are physical.
+ */
+#define VirtToPhys(domainPtr,blockNum) \
+    ((blockNum) + (domainPtr)->dataOffset * FS_FRAGMENTS_PER_BLOCK)
+
+#define PhysToVirt(domainPtr,blockNum) \
+    ((blockNum) - (domainPtr)->dataOffset * FS_FRAGMENTS_PER_BLOCK)
+
+#define MarkFDBitmap(num,bitmapPtr) \
+    (bitmapPtr)[(num) >> 3] |= (1 << (7 -((num)  & 7))) 
+
+#define UnmarkFDBitmap(num,bitmapPtr) \
+    (bitmapPtr)[(num) >> 3] &= ~(1 << (7 -((num)  & 7))) 
+
+/*
+ * Number of file descriptors in a sector, if we have to go through
+ * the sectors individually.
+ */
+#define FILE_DESC_PER_SECTOR (FSDM_FILE_DESC_PER_BLOCK / DISK_SECTORS_PER_BLOCK)
+
+
+
+#define Alloc(ptr,type,number) AllocByte((ptr),type,sizeof(type) * (number))
+
+#define AllocByte(ptr,type,numBytes) { \
+	int oldHeapSize = heapSize; \
+	(ptr) = (type *) malloc((unsigned) (numBytes)); \
+	heapSize = (int) (sbrk(0) - (char *) end); \
+	if ((heapSize != oldHeapSize) && (debug)) {\
+	    Output(stderr,"Heapsize now %d.\n",heapSize); \
+	}\
+	if ((maxHeapSize > 0) && (heapSize > maxHeapSize) && (!tooBig)) { \
+	    tooBig = TRUE; \
+	    Output(stderr,"Heap limit exceeded.\n"); \
+	    (ptr) = NULL; \
+	    foundError = 1;\
+	    errorType = EXIT_OUT_OF_MEMORY;\
+	} }
+
+#define min(a,b) (((a) < (b)) ? (a) : (b) )
+
+#endif _FSCHECK
+@
+
+
+1.16
+log
+@now can do raw output on any partition, fixed bug with ".."
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/cmds/fscheck/RCS/fscheck.h,v 1.15 90/05/01 15:36:45 jhh Exp $ SPRITE (Berkeley)
+d204 1
+a204 1
+extern Fsdm_DomainHeader  *domainPtr;
+@
+
+
+1.15
+log
+@ported to new Disk library
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/cmds/fscheck/RCS/fscheck.h,v 1.14 90/02/14 15:55:32 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+d26 1
+a26 2
+ * 	Codes < 0 are hard errors. Codes > 0 are soft errors that require
+ *	rerunning the program.
+d34 1
+d200 2
+a201 1
+extern int	rootPart;
+@
+
+
+1.14
+log
+@support for no recheck on reboot
+@
+text
+@d9 1
+a9 1
+ * $Header: /a/newcmds/fscheck/RCS/fscheck.h,v 1.13 89/10/03 11:09:05 jhh Exp $ SPRITE (Berkeley)
+d15 1
+a15 1
+#include "diskUtils.h"
+@
+
+
+1.13
+log
+@new scsi disk mapping
+@
+text
+@d9 1
+a9 1
+ * $Header: /a/newcmds/fscheck/RCS/fscheck.h,v 1.12 89/09/25 16:41:17 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+d211 1
+@
+
+
+1.12
+log
+@Uses new fs module structure
+@
+text
+@d9 1
+a9 1
+ * $Header: /a/newcmds/fscheck/RCS/fscheck.h,v 1.11 89/06/21 23:56:07 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+d209 2
+@
+
+
+1.11
+log
+@Various bug fixes
+@
+text
+@d9 1
+a9 1
+ * $Header: /a/newcmds/fscheck/RCS/fscheck.h,v 1.10 89/02/28 12:22:36 jhh Exp $ SPRITE (Berkeley)
+d80 1
+a80 1
+    FsFileDescriptor	*fdPtr;
+d94 1
+a94 1
+    FsFileDescriptor	*fdPtr;
+d122 1
+a122 1
+    FsFileDescriptor	*fdPtr;
+d137 1
+a137 1
+    FsFileDescriptor *fdPtr;	     	     /* The file descriptor being
+d203 1
+a203 1
+extern FsDomainHeader  *domainPtr;
+d251 1
+a251 1
+#define FILE_DESC_PER_SECTOR (FS_FILE_DESC_PER_BLOCK / DISK_SECTORS_PER_BLOCK)
+@
+
+
+1.10
+log
+@Converted to new C library, added lots of new functionality
+@
+text
+@d9 1
+a9 1
+ * $Header: /a/newcmds/fscheck/RCS/fscheck.h,v 1.9 88/12/04 21:34:31 nelson Exp $ SPRITE (Berkeley)
+d30 1
+a30 1
+#define EXIT_OK		0
+d32 10
+a41 2
+#define EXIT_SOFT_ERROR		1
+#define EXIT_OUT_OF_MEMORY	2
+a42 7
+#define EXIT_HARD_ERROR		-1
+#define EXIT_READ_FAILURE	-2
+#define EXIT_WRITE_FAILURE	-3
+#define EXIT_BAD_ARG		-4
+#define EXIT_MORE_MEMORY	-5
+#define EXIT_DISK_FULL		-6
+
+d205 4
+a208 1
+
+@
+
+
+1.9
+log
+@Converted over to new C library but not fully tested yet.
+@
+text
+@d9 1
+a9 1
+ * $Header: checkFS.h,v 1.8 88/07/19 11:47:51 douglis Exp $ SPRITE (Berkeley)
+d16 7
+a23 1
+
+d25 4
+a28 4
+ * checkFS Proc_Exit status codes.
+ *	EXIT_OK		No errors were encountered
+ *	EXIT_SOFT_ERR	Correctable errors were found and fixed
+ *	EXIT_HARD_ERR	Uncorrectable errors were found, bad arguments, etc.
+a30 2
+#define EXIT_SOFT_ERR	1
+#define EXIT_HARD_ERR	-1
+d32 10
+d79 1
+a79 1
+    FsFileDescriptor	fd;
+d93 1
+a93 1
+    FsFileDescriptor	fd;
+a98 4
+/*
+ * Structure to contain the current state about a block index.
+ */
+
+d105 28
+d167 102
+a268 1
+extern	Boolean	foundError;
+@
+
+
+1.8
+log
+@Added ability to salvage and relocate file descriptors in unreadable
+blocks and to mark those blocks as unuseable (temporarily -- if readable
+again later, they will be reclaimed).
+@
+text
+@d2 1
+a2 1
+ * checkFS.h
+d9 1
+a9 1
+ * $Header: checkFS.h,v 1.7 88/06/02 13:01:58 brent Exp $ SPRITE (Berkeley)
+d12 2
+a13 2
+#ifndef _CHECKFS
+#define _CHECKFS
+a14 1
+#include "sprite.h"
+a85 6
+ * Return statuses for searching directories.
+ */
+
+#define	DIR_HOLE  		0x80010001
+
+/*
+d120 1
+a120 1
+    Boolean	 firstBlockNil;		     /* The first level block is 
+d123 1
+a123 1
+    Boolean	 secondBlockNil;	     /* The second level block 
+d125 1
+a125 1
+    Boolean	 dirDirty;		     /* TRUE if the directory block is
+d131 1
+a131 1
+#endif _CHECKFS
+@
+
+
+1.7
+log
+@Fixed include
+@
+text
+@d9 1
+a9 1
+ * $Header: checkFS.h,v 1.6 88/06/02 12:58:19 brent Exp $ SPRITE (Berkeley)
+d47 3
+d57 2
+d70 15
+@
+
+
+1.6
+log
+@Added exit status codes
+@
+text
+@d9 1
+a9 1
+ * $Header: checkFS.h,v 1.5 87/10/21 11:04:31 nelson Exp $ SPRITE (Berkeley)
+d16 1
+a16 1
+#include "fsDisk.h"
+@
+
+
+1.5
+log
+@Set error status flag on error.
+@
+text
+@d9 1
+a9 1
+ * $Header: checkFS.h,v 1.4 87/08/10 15:11:49 nelson Exp $ SPRITE (Berkeley)
+d17 11
+@
+
+
+1.4
+log
+@Changed to handle new method that requires a lot less memory.
+@
+text
+@d9 1
+a9 1
+ * $Header: checkFS.h,v 1.3 87/06/01 15:44:00 nelson Exp $ SPRITE (Berkeley)
+d104 2
+@
+
+
+1.3
+log
+@Deleted unneeded fields from directory scanning structure.
+@
+text
+@d9 1
+a9 1
+ * $Header: checkFS.h,v 1.2 86/12/16 13:22:25 nelson Exp $ SPRITE (Berkeley)
+d18 3
+d22 3
+a24 5
+    FsFileDescriptor fileDesc;
+    int		     parentLinkCount;
+    int		     linkCount;
+    int		     blockCount;
+    Boolean	     seen;
+d28 28
+d72 4
+a75 2
+    FdInfo	   *descInfoPtr;	     /* The file descriptor that is 
+						being read. */
+@
+
+
+1.2
+log
+@Fixed various bugs and enhanced error statements.
+@
+text
+@d9 1
+a9 1
+ * $Header: checkFS.h,v 1.1 86/07/27 12:53:02 nelson Exp $ SPRITE (Berkeley)
+a42 2
+    int		   partFID;		     /* File id for the partition. */
+    FsDomainHeader *domainPtr;		     /* The domain. */
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d9 1
+a9 1
+ * $Header$ SPRITE (Berkeley)
+d20 1
+@

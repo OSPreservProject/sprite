@@ -1,0 +1,134 @@
+
+
+
+mem                   C Library Procedures                    mem
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     memchr, memcmp, memcpy, memset - Operations on byte arrays
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttrriinngg..hh>>
+
+     cchhaarr **
+     mmeemmcchhrr((_s,, _c,, _n))
+
+     iinntt
+     mmeemmccmmpp((_s,, _s_2,, _n))
+
+     cchhaarr **
+     mmeemmccppyy((_d_e_s_t,, _s_o_u_r_c_e,, _n))
+
+     cchhaarr **
+     mmeemmsseett((_d_e_s_t,, _c,, _n))
+
+AARRGGUUMMEENNTTSS
+     char   *_s       (in)      Pointer to array of characters.
+
+     char   *_s_o_u_r_c_e  (in)      Pointer to array of characters  to
+                               copy.
+
+     char   *_d_e_s_t    (out)     Pointer to array of characters  to
+                               modify.
+
+     int    _c        (in)      Value to search for  (mmeemmcchhrr),  or
+                               value to set to (mmeemmsseett).
+
+     int    _n        (in)      Count of number of  characters  to
+                               test, copy, or set.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     These procedures manipulate  memory  as  counted  arrays  of
+     bytes.
+
+     The mmeemmcchhrr procedure searches for the first occurrence of  _c
+     in the _n bytes starting at _s, and returns the address of the
+     first such occurrence.  If the value _c is  not  found,  then
+     NNUULLLL is returned.
+
+     MMeemmccmmpp compares two arrays of bytes, _s  and  _s_2,  in  order,
+     until  a  difference is found or _n bytes have been compared.
+     It returns a value  greater  than  zero  if,  in  the  first
+     differing byte, the value _s is greater than the value in _s_2.
+     If the value in _s is less than the value in _s_2, then a value
+     less than zero is returned.  If the two arrays are identical
+     in their first _n  bytes,  then  zero  is  returned.   Signed
+
+
+
+Sprite v.1.0        Printed:  April 14, 1989                    1
+
+
+
+
+
+
+mem                   C Library Procedures                    mem
+
+
+
+     character comparison is used.
+
+     MMeemmccppyy copies _n bytes from _s_o_u_r_c_e to _d_e_s_t and  returns  _d_e_s_t
+     as its result.
+
+     MMeemmsseett stores the value _c in each of the _n bytes starting at
+     _d_e_s_t, and returns _d_e_s_t as its result.
+
+
+KKEEYYWWOORRDDSS
+     characters, copy, memory, set, test
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  April 14, 1989                    2
+
+
+

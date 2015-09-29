@@ -1,0 +1,133 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    jhh:1.2; strict;
+comment  @@;
+
+
+1.2
+date     91.01.14.14.33.49;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.02.14.20.28.30;  author tve;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Original by xunpack
+@
+
+
+1.2
+log
+@tve's changes
+@
+text
+@#
+# special local.mk for ddx/cfb
+#
+# $Source: /mic/X11R4/src/cmds/X/ddx/cfb/RCS/local.mk,v $
+# $Date: 90/02/14 20:28:30 $
+# $Revision: 1.1 $ $Author: tve $
+
+#include <../../common.mk>
+
+# Additional include file paths
+.PATH.h: ../mfb ../mi
+
+#
+# "Imported" from Imakefile:
+# (cfbseg.c is a hard link to cfbline.c, this has to be done by hand...)
+#
+$(TM).md/cfbseg.o: cfbseg.c
+	${CC} -DPOLYSEGMENT $(CFLAGS) -c cfbseg.c -o $@@
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d2 1
+a2 1
+# local.mk created by "xunpack", modify as you wish!
+d4 3
+a6 3
+# $Source$
+# $Date$
+# $Revision$ $Author$
+d8 1
+a8 2
+# Root of X tree
+X	= /X11R4
+d10 2
+a11 3
+# Useful things
+LIBS	+= -lX11 -lm	# -lXaw -lXmu -lXt
+CFLAGS	+=
+a12 6
+# $(X)/root.mk includes $(SYSMAKEFILE)
+#include <$(X)/root.mk>
+
+# Additional include file paths (remove the '#'!)
+#.PATH.h:
+
+d14 2
+a15 4
+# The Imakefile follows in comments, look at it for libraries to include,
+# additional flags to specify and additional files to install. Then
+# delete this whole crap (the Imakefile still exists in ./.imake for
+# further reference).
+d17 2
+a18 45
+
+#>#include <Server.tmpl>
+#>
+#>SRCS =	 cfbgc.c cfbwindow.c \
+#>	 cfbpntwin.c cfbmskbits.c cfbpixmap.c cfbbitblt.c \
+#>	 cfbfillsp.c cfbsetsp.c cfbscrinit.c \
+#>	 cfbgetsp.c cfbfillrct.c cfbtileodd.c \
+#>	 cfbcmap.c cfbzerarc.c cfbfillarc.c \
+#>	 cfbtegblt.c cfbbstore.c \
+#>	 cfb8bit.c cfbteblt8.c cfbglblt8.c \
+#> 	 cfbpush8.c cfbrctstp8.c cfbpolypnt.c \
+#>	 cfbbres.c cfbline.c cfbhrzvert.c cfbbresd.c cfbimage.c
+#>
+#>OBJS =   cfbgc.o cfbwindow.o \
+#>	 cfbgetsp.o cfbfillrct.o cfbtileodd.o \
+#>	 cfbfillsp.o cfbsetsp.o cfbscrinit.o \
+#>	 cfbpntwin.o cfbmskbits.o cfbpixmap.o cfbbitblt.o \
+#>	 cfbcmap.o cfbzerarc.o cfbfillarc.o \
+#>	 cfbtegblt.o cfbbstore.o \
+#>	 cfb8bit.o cfbteblt8.o cfbglblt8.o \
+#> 	 cfbpush8.o cfbrctstp8.o cfbpolypnt.o \
+#>	 cfbbres.o cfbline.o cfbhrzvert.o cfbbresd.o cfbimage.o cfbseg.o
+#>
+#>   INCLUDES = -I. -I../mfb -I../mi -I../../include -I$(INCLUDESRC)
+#>   LINTLIBS = ../../dix/llib-ldix.ln ../../os/4.2bsd/llib-los.ln \
+#>	     ../mfb/llib-lmfb.ln ../mi/llib-lmi.ln
+#>
+#>NormalLibraryObjectRule()
+#>NormalLibraryTarget(cfb,$(OBJS))
+#>LintLibraryTarget(cfb,$(SRCS))
+#>
+#>NormalLintTarget($(SRCS))
+#>
+#>#if HasSaberC
+#>saber_src:
+#>	/**/#load $(CFLAGS) $(SRCS)
+#>#endif
+#>
+#>DependTarget()
+#>
+#>cfbseg.c:
+#>	$(LN) cfbline.c cfbseg.c
+#>
+#>cfbseg.o: cfbseg.c cfbline.c
+#>	${CC} -DPOLYSEGMENT $(CFLAGS) -c cfbseg.c
+@

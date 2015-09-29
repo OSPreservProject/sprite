@@ -1,0 +1,1898 @@
+head     1.55;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.55
+date     91.11.06.18.35.03;  author kupfer;  state Exp;
+branches ;
+next     1.54;
+
+1.54
+date     91.10.24.11.25.42;  author mgbaker;  state Exp;
+branches ;
+next     1.53;
+
+1.53
+date     91.09.15.14.23.29;  author kupfer;  state Exp;
+branches ;
+next     1.52;
+
+1.52
+date     91.08.15.14.09.36;  author jhh;  state Exp;
+branches ;
+next     1.51;
+
+1.51
+date     91.08.15.11.47.29;  author jhh;  state Exp;
+branches ;
+next     1.50;
+
+1.50
+date     91.08.02.17.36.14;  author mendel;  state Exp;
+branches ;
+next     1.49;
+
+1.49
+date     91.05.15.17.34.44;  author kupfer;  state Exp;
+branches ;
+next     1.48;
+
+1.48
+date     91.04.18.12.09.57;  author kupfer;  state Exp;
+branches ;
+next     1.47;
+
+1.47
+date     91.04.18.11.32.05;  author kupfer;  state Exp;
+branches ;
+next     1.46;
+
+1.46
+date     91.04.14.22.22.21;  author kupfer;  state Exp;
+branches ;
+next     1.45;
+
+1.45
+date     91.03.24.20.58.16;  author jhh;  state Exp;
+branches ;
+next     1.44;
+
+1.44
+date     90.12.11.14.18.13;  author kupfer;  state Exp;
+branches ;
+next     1.43;
+
+1.43
+date     90.12.11.12.44.20;  author shirriff;  state Exp;
+branches ;
+next     1.42;
+
+1.42
+date     90.11.20.23.09.57;  author kupfer;  state Exp;
+branches ;
+next     1.41;
+
+1.41
+date     90.11.15.23.20.43;  author jhh;  state Exp;
+branches ;
+next     1.40;
+
+1.40
+date     90.11.02.10.41.07;  author jhh;  state Exp;
+branches ;
+next     1.39;
+
+1.39
+date     90.10.10.11.52.13;  author douglis;  state Exp;
+branches ;
+next     1.38;
+
+1.38
+date     90.08.23.12.22.22;  author douglis;  state Exp;
+branches ;
+next     1.37;
+
+1.37
+date     90.08.06.20.57.35;  author rab;  state Exp;
+branches ;
+next     1.36;
+
+1.36
+date     90.07.27.12.59.54;  author douglis;  state Exp;
+branches ;
+next     1.35;
+
+1.35
+date     90.07.24.16.18.09;  author fubar;  state Exp;
+branches ;
+next     1.34;
+
+1.34
+date     90.03.19.13.19.53;  author douglis;  state Exp;
+branches ;
+next     1.33;
+
+1.33
+date     90.02.15.01.01.28;  author rab;  state Exp;
+branches ;
+next     1.32;
+
+1.32
+date     90.02.08.12.37.41;  author douglis;  state Exp;
+branches ;
+next     1.31;
+
+1.31
+date     90.02.08.12.36.45;  author douglis;  state Exp;
+branches ;
+next     1.30;
+
+1.30
+date     90.01.05.11.28.33;  author rab;  state Exp;
+branches ;
+next     1.29;
+
+1.29
+date     89.10.19.15.00.10;  author jhh;  state Exp;
+branches ;
+next     1.28;
+
+1.28
+date     89.10.10.10.34.16;  author douglis;  state Exp;
+branches ;
+next     1.27;
+
+1.27
+date     89.10.09.06.55.59;  author rab;  state Exp;
+branches ;
+next     1.26;
+
+1.26
+date     89.09.27.17.59.28;  author douglis;  state Exp;
+branches ;
+next     1.25;
+
+1.25
+date     89.09.27.12.32.17;  author douglis;  state Exp;
+branches ;
+next     1.24;
+
+1.24
+date     89.08.24.21.18.20;  author jhh;  state Exp;
+branches ;
+next     1.23;
+
+1.23
+date     89.08.21.17.10.25;  author douglis;  state Exp;
+branches ;
+next     1.22;
+
+1.22
+date     89.08.18.11.20.36;  author douglis;  state Exp;
+branches ;
+next     1.21;
+
+1.21
+date     89.08.18.11.06.50;  author douglis;  state Exp;
+branches ;
+next     1.20;
+
+1.20
+date     89.08.17.07.33.19;  author rab;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     89.08.16.22.48.27;  author rab;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     89.08.16.22.36.17;  author douglis;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     89.08.16.22.25.53;  author douglis;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     89.08.16.21.23.00;  author douglis;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     89.08.16.21.20.41;  author douglis;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     89.07.26.14.08.22;  author mgbaker;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     89.07.26.12.49.54;  author nelson;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     89.07.20.17.36.27;  author mgbaker;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     89.07.18.16.00.32;  author ouster;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     89.07.18.15.26.42;  author rab;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     89.07.02.23.31.06;  author rab;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     89.06.23.12.04.24;  author jhh;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     89.05.24.10.12.43;  author douglis;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.05.09.01.09.31;  author rab;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.04.23.23.10.35;  author jhh;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.03.15.22.12.47;  author jhh;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.02.24.13.29.41;  author mendel;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.01.11.19.34.49;  author mlgray;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.11.23.09.42.39;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.55
+log
+@Add -Dsprite and -Dsun3 to the usual sun3 CFLAGS, making the sun3
+consistent with all the other machine types.
+@
+text
+@#
+# This Makefile is included by several other system Makefiles.  It
+# sets up variables that depend on the particular target machine
+# being compiled for, such as compiler flags.  One variable should
+# be defined before including this file:
+#
+# TM		Target machine for which code is to be generated (e.g.
+#		sun2, sun3, spur, etc.)
+#
+# This file will create a variable TMCFLAGS, which, when passed to CC,
+# will ensure that an object file is generated for machines of type TM.
+# It will also generate a variable TMAFLAGS, which will serve the
+# same purpose for the assembler.  Finally, it will set program names
+# like AS and LD to values appropriate for the machine type.
+#
+# The only flags that should be defined here are those that are required 
+# for successful compilation on that machine.  Optional flags such as
+# optimization should be defined in local modules.  
+#
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.54 91/10/24 11:25:42 mgbaker Exp Locker: kupfer $
+# 
+
+# Down at the bottom we edit $MACHINES so that "make all" will behave
+# sensibly.  For the error messages below, though, we want to use the
+# real $MACHINES.  So, we define a new variable for use in the error
+# messages.
+
+SUPPORTED_MACHINES	:= $(MACHINES)
+
+# What follows is a big long if/elif chain, keyed on TM, to set flags,
+# CC, etc.  Each top-level branch also verifies that TM is in MACHINES.
+# It would be nice if we could do this in just one place, but pmake
+# doesn't like the construct "empty(MACHINES:M$(TM))".
+
+#if !empty(TM:Msun3)
+TMCFLAGS		= -msun3 -Dsun3 -Dsprite
+TMAFLAGS		= -m68020
+LDFLAGS			= -msun3
+#if empty(MACHINES:Msun3) && !make(newtm)
+.BEGIN::
+	@@echo "Sorry, the target machine ($(TM)) isn't in the list of"
+	@@echo "supported machines ($(SUPPORTED_MACHINES))."
+	exit 1
+#endif
+#if !empty(MACHINE:Mds3100) || !empty(MACHINE:Mds5000)
+CC                      = gcc
+AS                      = gas
+LD                      = gld
+#endif
+
+#elif !empty(TM:Mspur)
+TMCFLAGS		= -mspur -mlong-jumps -DLOCKREG 
+TMAFLAGS		=
+AS			= /sprite/cmds.$(MACHINE)/sas
+LD			= /sprite/cmds.$(MACHINE)/sld
+RANLIB			= /sprite/cmds.$(MACHINE)/sranlib
+XLD			= /sprite/cmds.$(MACHINE)/xld
+NOOPTIMIZATION		=
+LDFLAGS			= 
+#if empty(MACHINES:Mspur) && !make(newtm)
+.BEGIN::
+	@@echo "Sorry, the target machine ($(TM)) isn't in the list of"
+	@@echo "allowed machines ($(SUPPORTED_MACHINES))."
+	exit 1
+#endif
+
+#elif !empty(TM:Msun4)
+TMCFLAGS		= -msun4 -Dsprite -Dsun4
+TMAFLAGS		= -msparc
+LDFLAGS			= -msun4
+#if empty(MACHINES:Msun4) && !make(newtm)
+.BEGIN::
+	@@echo "Sorry, the target machine ($(TM)) isn't in the list of"
+	@@echo "allowed machines ($(SUPPORTED_MACHINES))."
+	exit 1
+#endif
+#if !empty(MACHINE:Mds3100) || !empty(MACHINE:Mds5000)
+CC                      = gcc
+AS                      = gas
+LD                      = gld
+#endif
+
+#elif !empty(TM:Mcleansun4)
+TMCFLAGS		= -msun4 -Dsprite -Dsun4 -DCLEAN -DCLEAN_LOCK
+TMAFLAGS		= -msparc
+LDFLAGS			= -msun4
+#if empty(MACHINES:Mcleansun4) && !make(newtm)
+.BEGIN::
+	@@echo "Sorry, the target machine ($(TM)) isn't in the list of"
+	@@echo "allowed machines ($(SUPPORTED_MACHINES))."
+	exit 1
+#endif
+#if !empty(MACHINE:Mds3100) || !empty(MACHINE:Mds5000)
+CC                      = gcc
+AS                      = gas
+LD                      = gld
+#endif
+
+#elif !empty(TM:Msun4c)
+TMCFLAGS		= -msun4 -Dsprite -Dsun4 -Dsun4c
+TMAFLAGS		= -msparc
+LDFLAGS			= -msun4
+#if empty(MACHINES:Msun4c) && !make(newtm)
+.BEGIN::
+	@@echo "Sorry, the target machine ($(TM)) isn't in the list of"
+	@@echo "allowed machines ($(SUPPORTED_MACHINES))."
+	exit 1
+#endif
+#if !empty(MACHINE:Mds3100) || !empty(MACHINE:Mds5000)
+CC                      = gcc
+AS                      = gas
+LD                      = gld
+#endif
+
+#elif !empty(TM:Mcleansun4c)
+TMCFLAGS		= -msun4 -Dsprite -Dsun4 -Dsun4c -DCLEAN -DCLEAN_LOCK
+TMAFLAGS		= -msparc
+LDFLAGS			= -msun4
+#if empty(MACHINES:Mcleansun4c) && !make(newtm)
+.BEGIN::
+	@@echo "Sorry, the target machine ($(TM)) isn't in the list of"
+	@@echo "allowed machines ($(SUPPORTED_MACHINES))."
+	exit 1
+#endif
+#if !empty(MACHINE:Mds3100) || !empty(MACHINE:Mds5000)
+CC                      = gcc
+AS                      = gas
+LD                      = gld
+#endif 
+
+#elif !empty(TM:Mcleansun3) 
+TMCFLAGS		= -msun3 -Dsun3 -Dsprite -DCLEAN -DCLEAN_LOCK
+TMAFLAGS		= -m68020
+LDFLAGS			= 
+#if empty(MACHINES:Mcleansun3) && !make(newtm)
+.BEGIN::
+	@@echo "Sorry, the target machine ($(TM)) isn't in the list of"
+	@@echo "allowed machines ($(SUPPORTED_MACHINES))."
+	exit 1
+#endif
+
+#elif !empty(TM:Mcleands3100)
+TMCFLAGS	= -Dds3100 -Dsprite -DCLEAN -DCLEAN_LOCK -Uultrix
+TMAFLAGS	= -Dds3100 -Dsprite -Uultrix
+LDFLAGS		= -L/sprite/lib/ds3100.md
+#if empty(MACHINES:Mcleands3100) && !make(newtm)
+.BEGIN::
+	@@echo "Sorry, the target machine ($(TM)) isn't in the list of"
+	@@echo "allowed machines ($(SUPPORTED_MACHINES))."
+	exit 1
+#endif
+
+#elif !empty(TM:Mds3100)
+TMCFLAGS	= -Dds3100 -Dsprite -Uultrix
+TMAFLAGS	= -Dds3100 -Dsprite -Uultrix
+LDFLAGS		= -L/sprite/lib/ds3100.md
+#if empty(MACHINES:Mds3100) && !make(newtm)
+.BEGIN::
+	@@echo "Sorry, the target machine ($(TM)) isn't in the list of"
+	@@echo "allowed machines ($(SUPPORTED_MACHINES))."
+	exit 1
+#endif
+#if !empty(CC:Mgcc)
+TMCFLAGS	+= -Dmips -DLANGUAGE_C
+#endif
+LINTFLAGS	+= -Dmips -DLANGUAGE_C
+
+#elif !empty(TM:Mds5000)
+TMCFLAGS	= -Dds5000 -Dsprite -Uultrix
+TMAFLAGS	= -Dds5000 -Dsprite -Uultrix
+LDFLAGS		= -L/sprite/lib/ds5000.md
+#if empty(MACHINES:Mds5000) && !make(newtm)
+.BEGIN::
+	@@echo "Sorry, the target machine ($(TM)) isn't in the list of"
+	@@echo "allowed machines ($(SUPPORTED_MACHINES))."
+	exit 1
+#endif
+#if !empty(CC:Mgcc)
+TMCFLAGS	+= -Dmips -DLANGUAGE_C
+#endif
+LINTFLAGS	+= -Dmips -DLANGUAGE_C
+
+#elif !empty(TM:Msun4nw)
+
+#    Sun4 compiled not to use save/restore register window instructions.
+TMCFLAGS		= -msun4 -Dsprite -Dsun4 -B/users/mendel/lib/$(MACHINE).md/ -mno-windows -DNOWINDOWS
+TMAFLAGS		= -msparc
+LDFLAGS			= -msun4
+#if empty(MACHINES:Msun4nw) && !make(newtm)
+.BEGIN::
+	@@echo "Sorry, the target machine ($(TM)) isn't in the list of"
+	@@echo "allowed machines ($(SUPPORTED_MACHINES))."
+	exit 1
+#endif
+
+#elif !empty(TM:Msymm)
+TMCFLAGS	= -msymm -Dsprite -Dsymm
+TMAFLAGS	= -msymm
+LDFLAGS		= -msymm
+#if empty(MACHINES:Msymm) && !make(newtm)
+.BEGIN::
+	@@echo "Sorry, the target machine ($(TM)) isn't in the list of"
+	@@echo "allowed machines ($(SUPPORTED_MACHINES))."
+	exit 1
+#endif
+#if !empty(MACHINE:Mds3100) || !empty(MACHINE:Mds5000)
+CC                      = gcc
+AS                      = gas
+LD                      = gld
+#endif
+
+#elif !empty(TM:Msym)
+TMCFLAGS	= -msym -Dsprite -Dsym
+TMAFLAGS	= -msym
+LDFLAGS		= -msym
+#if empty(MACHINES:Msym) && !make(newtm)
+.BEGIN::
+	@@echo "Sorry, the target machine ($(TM)) isn't in the list of"
+	@@echo "allowed machines ($(SUPPORTED_MACHINES))."
+	exit 1
+#endif
+#if !empty(MACHINE:Mds3100) || !empty(MACHINE:Mds5000)
+CC                      = gcc
+AS                      = gas
+LD                      = gld
+#endif
+
+#else
+
+# (some random TM)
+
+TMCFLAGS		?= -m$(TM)
+TMAFLAGS		?= -m$(TM)
+#endif
+
+# (End of big if/elif chain)
+
+
+
+# The line below makes "clean" machines types and people's private "machines"
+# invisible under for purposes of commands like "make all": you have
+# to ask for them explicitly with the TM= option.  Also make "spur"
+# and "symm" disappear; spur is obsolete, and symm is practically unused.
+
+#ifdef MACHINES
+MACHINES	:= $(MACHINES:Nfd:Njhh:Ncleansun4:Ncleansun4c:Ncleansun3:Ncleands3100:Ncleands5000:Nspur:Nsun4nw:Nsymm)
+#endif
+
+
+
+# This next tangle of tests checks for bogus cross-compilations.  The
+# allowable cross-compilations are:
+#
+# on/target	sun3	sun4		DECstation	symm
+# sun3		ok	ok		unsupported	unsupported
+# sun4		ok	ok		unsupported	unsupported
+# DECstation	ok	ok w/o ld	ok		ok
+# symm		unsup.	unsup.		unsupported	ok
+#
+# For example, suns and DECstations can build for a sun3, but only
+# DECstations can build for DECstations.  
+# You can build for a sun4 on a DECstation, but only if you don't need
+# to use ld. -mdk 15-Sep-1991.
+#
+# Complications:
+# 1. We make "make all" intelligent enough not to try an unsupported
+#    cross-compilation.  This is done by hacking the list of allowed
+#    target types (MACHINES)).
+# 2. We try to recognize that gcc does know something about
+#    cross-compiling (see the CC assignments above).
+#
+# The tests are done in a separate batch because we only want to do
+# them if we're actually going to compile, assemble, or link
+# something.
+
+# First check if we're actually going to build something.
+
+#if !make(clean) && !make(depend) && !make(mkmf) && !make(tidy) && \
+    !make(installhdrs) && !make(mkmfall) && !make(cleanall) && \
+    !make(dependall) && !make(tidyall) && !make(dist) && !make(distall)
+
+# We are.  Check for compatibility according to the above table, using
+# an if/elif chain based on MACHINE.
+
+#if !empty(MACHINE:Msun3) || !empty(MACHINE:Msun4)
+
+# This next expression is all on one line because the Symmetry pmake
+# can't handle continued lines in the middle of a parenthesized
+# expression. -mdk 15-May-1991.
+
+#if (!empty(TM:Mds3100) || !empty(TM:Mcleands3100) || !empty(TM:Mds5000) || !empty(TM:Mcleands5000)) && empty(CC:Mgcc)
+.BEGIN::
+	@@echo "you cannot compile for a DECstation on this machine"
+	exit 1
+#endif
+#if !empty(TM:Msymm)
+.BEGIN::
+	@@echo "you cannot compile for a Symmetry on this machine"
+	exit 1
+#endif
+#ifdef MACHINES
+MACHINES	:= $(MACHINES:Nds3100:Nds5000)
+#endif
+
+#elif !empty(MACHINE:Msymm)
+
+#if empty(TM:Msymm)
+.BEGIN::
+	@@echo "you can only compile for a Symmetry on this machine"
+	exit 1
+#endif
+MACHINES	= symm
+
+#endif /* MACHINE chain */
+#endif /* !make(clean), !make(depend), ... */
+
+LDFLAGS	?=
+@
+
+
+1.54
+log
+@Removed sun4c2 entry.
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.53 91/09/15 14:23:29 kupfer Exp Locker: mgbaker $
+d36 1
+a36 1
+TMCFLAGS		= -msun3 
+d132 1
+a132 1
+TMCFLAGS		= -msun3 -Dsun3 -DCLEAN -DCLEAN_LOCK
+@
+
+
+1.53
+log
+@Allow cross-compilation for sun4's on DECstations.
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.52 91/08/15 14:09:36 jhh Exp Locker: kupfer $
+a113 18
+
+#elif !empty(TM:Msun4c2)
+TMCFLAGS		= -msun4 -Dsprite -Dsun4 -Dsun4c -Dsun4c2
+TMAFLAGS		= -msparc
+LDFLAGS			= -msun4
+#if empty(MACHINES:Msun4c2) && !make(newtm)
+.BEGIN::
+	@@echo "Sorry, the target machine ($(TM)) isn't in the list of"
+	@@echo "allowed machines ($(SUPPORTED_MACHINES))."
+	exit 1
+#endif
+#if !empty(MACHINE:Mds3100) || !empty(MACHINE:Mds5000)
+CC                      = gcc
+AS                      = gas
+LD                      = gld
+#endif
+
+
+@
+
+
+1.52
+log
+@sun4c2 stuff was added incorrectly
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.51 91/08/15 11:47:29 jhh Exp $
+d275 1
+a275 1
+# DECstation	ok	broken		ok		ok
+d279 3
+a281 1
+# DECstations can build for DECstations.
+a320 13
+#endif
+
+#elif !empty(MACHINE:Mds3100) || !empty(MACHINE:Mds5000)
+
+#if !empty(TM:Msun4) || !empty(TM:Mcleansun4) || \
+    !empty(TM:Msun4c2) || !empty(TM:Mcleansun4c2) || \
+    !empty(TM:Msun4c) || !empty(TM:Mcleansun4c)
+.BEGIN::
+	@@echo "you cannot compile for a sun4 on this machine"
+	exit 1
+#endif
+#ifdef MACHINES
+MACHINES	:= $(MACHINES:Nsun4:Nsun4c:Nsun4c2)
+@
+
+
+1.51
+log
+@added some lint flags for the decstations
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.49 91/05/15 17:34:44 kupfer Exp Locker: mendel $
+d119 1
+a119 1
+#if empty(MACHINES:Msun4c) && !make(newtm)
+@
+
+
+1.50
+log
+@checking this in for mendel -- jhh
+@
+text
+@d184 1
+d199 1
+@
+
+
+1.49
+log
+@Clean up cross-compilation stuff.  
+Don't allow DECstations to build for SPARCstations (until gld is fixed).
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.48 91/04/18 12:09:57 kupfer Exp Locker: kupfer $
+d115 18
+d322 1
+a322 1
+    !empty(TM:Msun4nw) || !empty(TM:Mcleansun4nw) || \
+d329 1
+a329 1
+MACHINES	:= $(MACHINES:Nsun4:Nsun4c:Nsun4nw)
+@
+
+
+1.48
+log
+@Oops, the previous change was wrong.  Try again, and fix up some of
+the commenting to make it clearer what's going on.
+
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.47 91/04/18 11:32:05 kupfer Exp Locker: kupfer $
+d23 4
+a26 3
+# Down at the bottom we elide ds3100 from $MACHINES.  For the error
+# messages below, though, we want to keep the ds3100 in $MACHINES.
+# So, we define a new variable for use in the error messages.
+d31 3
+a33 3
+# CC, etc.  Each top-level branch also verifies that TM is in
+# MACHINES.  It would be nice if we could do this in just one place,
+# but pmake doesn't like the construct "empty(MACHINES:M$(TM))".
+d45 1
+a45 1
+#if !empty(MACHINE:Mds3100)
+d49 1
+a49 6
+#endif /* MACHINE:ds3100 */
+#if !empty(MACHINE:Mds5000)
+CC                      = gcc
+AS                      = gas
+LD                      = gld
+#endif /* MACHINE:ds5000 */
+d77 1
+a77 1
+#if !empty(MACHINE:Mds3100)
+d81 1
+a81 6
+#endif /* MACHINE:ds3100 */
+#if !empty(MACHINE:Mds5000)
+CC                      = gcc
+AS                      = gas
+LD                      = gld
+#endif /* MACHINE:ds5000 */
+d93 1
+a93 1
+#if !empty(MACHINE:Mds3100)
+d97 1
+a97 6
+#endif /* MACHINE:ds3100 */
+#if !empty(MACHINE:Mds5000)
+CC                      = gcc
+AS                      = gas
+LD                      = gld
+#endif /* MACHINE:ds5000 */
+d109 1
+a109 1
+#if !empty(MACHINE:Mds3100)
+d113 1
+a113 6
+#endif /* MACHINE:ds3100 */
+#if !empty(MACHINE:Mds5000)
+CC                      = gcc
+AS                      = gas
+LD                      = gld
+#endif /* MACHINE:ds5000 */
+d125 1
+a125 1
+#if !empty(MACHINE:Mds3100)
+d129 1
+a129 6
+#endif /* MACHINE:ds3100 */
+#if !empty(MACHINE:Mds5000)
+CC                      = gcc
+AS                      = gas
+LD                      = gld
+#endif /* MACHINE:ds5000 */
+d204 1
+a204 1
+#if !empty(MACHINE:Mds3100)
+d208 1
+a208 6
+#endif /* MACHINE:ds3100 */
+#if !empty(MACHINE:Mds5000)
+CC                      = gcc
+AS                      = gas
+LD                      = gld
+#endif /* MACHINE:ds5000 */
+d220 1
+a220 1
+#if !empty(MACHINE:Mds3100)
+d224 1
+a224 6
+#endif /* MACHINE:ds3100 */
+#if !empty(MACHINE:Mds5000)
+CC                      = gcc
+AS                      = gas
+LD                      = gld
+#endif /* MACHINE:ds5000 */
+d240 2
+a241 1
+# to ask for them explicitly with the TM= option.
+d249 22
+a270 7
+# This next tangle of tests verifies that we're using our compilers
+# correctly.  We can build for Suns on both Suns and DECstations, but
+# we can only build for DECstations on DECstations.  As an added
+# complication, we make "make all" intelligent enough not to try to
+# build for a DECstation on a Sun.  We also try to recognize that gcc
+# does know something about cross-compiling (see the CC assignments
+# above).
+d278 2
+a279 1
+# We are.  Is the target a DECstation?
+d281 1
+a281 2
+#if !empty(TM:Mds3100) || !empty(TM:Mds5000) || \
+    !empty(TM:Mcleands3100) || !empty(TM:Mcleands5000)
+d283 5
+a287 1
+#if empty(MACHINE:Mds3100) && empty(CC:Mgcc) && empty(MACHINE:Mds5000)
+d291 6
+a296 6
+
+#else /* MACHINE=decstation or using gcc */
+
+# We're compiling for a DECstation, on a DECstation.
+# Reset MACHINES variable so a make *all  will ignore spur.
+
+d298 1
+a298 1
+MACHINES	:= $(MACHINES:Nspur)
+a299 1
+#endif /* MACHINE=decstation or CC=gcc */
+d301 1
+a301 6
+#else /* TM test */
+
+# We're compiling for something other than a DECstation.  Probably, TM
+# defaulted to MACHINE, so we are (probably) compiling on something
+# other than a DECstation.  So, reset MACHINES variable so a "make *all"
+# will ignore DECstations.  (Yes, this is a hack.)
+d303 7
+d311 1
+a311 1
+MACHINES	:= $(MACHINES:Nds3100:Nds5000)
+d314 3
+a316 1
+#if (!empty(MACHINE:Mds3100) || !empty(MACHINE:Mds5000)) && empty(CC:Mgcc)
+d318 1
+a318 1
+	@@echo "you cannot compile for this machine on a DECstation"
+a319 1
+
+d321 1
+d323 1
+a323 1
+#endif /* TM test */
+@
+
+
+1.47
+log
+@Remove ds5000 from MACHINES for purposes of "make all", "make
+installall", etc.  (This is already done for ds3100).
+
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.46 91/04/14 22:22:21 kupfer Exp Locker: kupfer $
+d270 3
+a272 1
+# The line below makes ds3100, ds5000, and people's private "machines"
+a275 1
+
+d277 1
+a277 1
+MACHINES	:= $(MACHINES:Nfd:Njhh:Ncleansun4:Ncleansun4c:Ncleansun3:Ncleands3100:Nds5000:Nspur:Nsun4nw:Nsymm)
+d280 12
+a294 1
+# only allow compiles for ds3100 if and only if MACHINE is a ds3100.
+d296 1
+a296 1
+#if !empty(TM:Mds3100) || !empty(TM:Mds5000) || !empty(TM:Mcleands3100) 
+d298 3
+d303 1
+a303 1
+	@@echo "you cannot compile for a ds3100 on this machine"
+d306 6
+a311 2
+#else /* MACHINE:ds3100 or gcc */
+# reset MACHINES variable so a make *all  will ignore spur
+d313 4
+a316 1
+#endif /* ds3100/gcc */
+d318 4
+a321 1
+#else /* not DECstation */
+d324 1
+a324 2
+# reset MACHINES variable so a make *all  will ignore ds3100.
+MACHINES	:= $(MACHINES:Nds3100)
+d327 1
+a327 1
+#if !empty(MACHINE:Mds3100) && empty(CC:Mgcc)
+d329 1
+a329 1
+	@@echo "you cannot compile for this machine on a ds3100"
+d334 1
+a334 1
+#endif /* not DECstation */
+@
+
+
+1.46
+log
+@Use .BEGIN:: instead of .BEGIN: for the error checks.  This lets us
+have more than one error message (though the user sees only the first
+one) without getting ugly complaints about ``Extra command line for
+".BEGIN"''.
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.45 91/03/24 20:58:16 jhh Exp Locker: kupfer $
+d270 3
+a272 3
+# The line below makes ds3100 and people's private "machines" invisible
+# under for purposes of commands like "make all":  you have to ask for
+# them explicitly with the TM= option.
+d276 1
+a276 1
+MACHINES	:= $(MACHINES:Nfd:Njhh:Ncleansun4:Ncleansun4c:Ncleansun3:Ncleands3100:Nspur:Nsun4nw:Nsymm)
+@
+
+
+1.45
+log
+@ds5000's can compile for ds3100's.  (Mike checking in for John.)
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.44 90/12/11 14:18:13 kupfer Exp $
+d39 1
+a39 1
+.BEGIN:
+d65 1
+a65 1
+.BEGIN:
+d76 1
+a76 1
+.BEGIN:
+d97 1
+a97 1
+.BEGIN:
+d118 1
+a118 1
+.BEGIN:
+d139 1
+a139 1
+.BEGIN:
+d160 1
+a160 1
+.BEGIN:
+d171 1
+a171 1
+.BEGIN:
+d182 1
+a182 1
+.BEGIN:
+d196 1
+a196 1
+.BEGIN:
+d212 1
+a212 1
+.BEGIN:
+d223 1
+a223 1
+.BEGIN:
+d244 1
+a244 1
+.BEGIN:
+d287 1
+a287 1
+.BEGIN:
+d304 1
+a304 1
+.BEGIN:
+@
+
+
+1.44
+log
+@TM doesn't have to be in MACHINES if the command is "make newtm".
+Also, fixed the error message so that ds3100 wouldn't get omitted.
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.43 90/12/11 12:44:20 shirriff Exp Locker: kupfer $
+d286 1
+a286 1
+#if empty(MACHINE:Mds3100) && empty(CC:Mgcc)
+@
+
+
+1.43
+log
+@Fixed problem with undefined LDFLAGS.  This caused a strange error
+if you tried compiling for an invalid machine type.
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.42 90/11/20 23:09:57 kupfer Exp Locker: shirriff $
+d23 6
+d38 1
+a38 1
+#if empty(MACHINES:Msun3)
+d41 1
+a41 1
+	@@echo "supported machines ($(MACHINES))."
+d64 1
+a64 1
+#if empty(MACHINES:Mspur)
+d67 1
+a67 1
+	@@echo "allowed machines ($(MACHINES))."
+d75 1
+a75 1
+#if empty(MACHINES:Msun4)
+d78 1
+a78 1
+	@@echo "allowed machines ($(MACHINES))."
+d96 1
+a96 1
+#if empty(MACHINES:Mcleansun4)
+d99 1
+a99 1
+	@@echo "allowed machines ($(MACHINES))."
+d117 1
+a117 1
+#if empty(MACHINES:Msun4c)
+d120 1
+a120 1
+	@@echo "allowed machines ($(MACHINES))."
+d138 1
+a138 1
+#if empty(MACHINES:Mcleansun4c)
+d141 1
+a141 1
+	@@echo "allowed machines ($(MACHINES))."
+d159 1
+a159 1
+#if empty(MACHINES:Mcleansun3)
+d162 1
+a162 1
+	@@echo "allowed machines ($(MACHINES))."
+d170 1
+a170 1
+#if empty(MACHINES:Mcleands3100)
+d173 1
+a173 1
+	@@echo "allowed machines ($(MACHINES))."
+d181 1
+a181 1
+#if empty(MACHINES:Mds3100)
+d184 1
+a184 1
+	@@echo "allowed machines ($(MACHINES))."
+d195 1
+a195 1
+#if empty(MACHINES:Mds5000)
+d198 1
+a198 1
+	@@echo "allowed machines ($(MACHINES))."
+d211 1
+a211 1
+#if empty(MACHINES:Msun4nw)
+d214 1
+a214 1
+	@@echo "allowed machines ($(MACHINES))."
+d222 1
+a222 1
+#if empty(MACHINES:Msymm)
+d225 1
+a225 1
+	@@echo "allowed machines ($(MACHINES))."
+d243 1
+a243 1
+#if empty(MACHINES:Msym)
+d246 1
+a246 1
+	@@echo "allowed machines ($(MACHINES))."
+@
+
+
+1.42
+log
+@Verify that TM is in MACHINES.  Add some comments.  Add additional
+checks to set CC, etc. correctly when building on a DECstation for a
+Sun.
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.41 90/11/15 23:20:43 jhh Exp Locker: kupfer $
+d306 2
+@
+
+
+1.41
+log
+@added ds5000
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.40 90/11/02 10:41:07 jhh Exp Locker: jhh $
+d23 5
+d32 6
+d42 1
+a42 1
+#endif
+d47 1
+a47 1
+#endif
+d58 6
+d69 17
+d90 6
+d100 1
+a100 1
+#endif
+d105 1
+a105 1
+#endif
+d111 17
+d132 6
+d142 1
+a142 1
+#endif
+d147 1
+a147 1
+#endif
+d153 6
+a160 1
+
+d164 6
+a171 1
+
+d175 6
+a180 1
+
+a185 1
+
+d189 6
+a194 1
+
+d205 6
+a212 1
+
+d216 6
+d226 1
+a226 1
+#endif
+d231 1
+a231 1
+#endif
+a233 1
+
+d237 6
+d247 1
+a247 1
+#endif
+d252 1
+a252 1
+#endif
+d256 2
+d262 2
+d285 1
+a285 1
+#else
+d288 1
+a288 1
+#endif
+d290 1
+a290 1
+#else
+d304 2
+a305 2
+#endif
+#endif
+@
+
+
+1.40
+log
+@added -msymm flag for symmetry
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.38 90/08/23 12:22:22 douglis Exp Locker: douglis $
+d32 5
+d61 5
+d80 5
+d107 10
+d134 5
+d150 5
+d175 3
+a177 1
+#if !empty(TM:Mds3100) || !empty(TM:Mjhh) || !empty(TM:Mcleands3100)
+d187 1
+d189 1
+d194 1
+d201 1
+@
+
+
+1.39
+log
+@Cleaning up after Fred -- JHH
+@
+text
+@d101 1
+a101 1
+TMCFLAGS	= -Dsprite -Dsymm
+@
+
+
+1.38
+log
+@RAB changes for symmetry
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.37 90/08/06 20:57:35 rab Exp Locker: rab $
+d47 4
+d61 4
+d78 2
+a79 2
+TMCFLAGS	= -Dds3100 -Dsprite -DCLEAN -DCLEAN_LOCK
+TMAFLAGS	= -Dds3100 -Dsprite
+d133 1
+a133 1
+MACHINES	:= $(MACHINES:Nfd:Njhh:Ncleansun3:Ncleands3100:Nspur:Nsun4nw:Nsymm)
+@
+
+
+1.37
+log
+@Changed sym to symm.
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.36 90/07/27 12:59:54 douglis Exp Locker: rab $
+d93 19
+a111 3
+TMCFLAGS	=
+TMAFLAGS	=
+LDFLAGS		=
+@
+
+
+1.36
+log
+@exclude sym from $(MACHINES)
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.35 90/07/24 16:18:09 fubar Exp Locker: douglis $
+d91 1
+a91 1
+#elif !empty(TM:Msym)
+d109 1
+a109 1
+MACHINES	:= $(MACHINES:Nfd:Njhh:Ncleansun3:Ncleands3100:Nspur:Nsun4nw:Nsym)
+@
+
+
+1.35
+log
+@Added some stuff for the (addmittedly broken) Symmetry C compiler
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.34 90/03/19 13:19:53 douglis Exp Locker: fubar $
+d109 1
+a109 1
+MACHINES	:= $(MACHINES:Nfd:Njhh:Ncleansun3:Ncleands3100:Nspur:Nsun4nw)
+@
+
+
+1.34
+log
+@exclude sun4nw by default.
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.33 90/02/15 01:01:28 rab Exp Locker: douglis $
+d90 6
+@
+
+
+1.33
+log
+@Fixes for gcc on ds3100.
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.32 90/02/08 12:37:41 douglis Exp Locker: rab $
+d103 1
+a103 1
+MACHINES	:= $(MACHINES:Nfd:Njhh:Ncleansun3:Ncleands3100:Nspur)
+@
+
+
+1.32
+log
+@removed spur from default MACHINES list
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.31 90/02/08 12:36:45 douglis Exp Locker: douglis $
+d79 4
+@
+
+
+1.31
+log
+@MR changed it to add a sun4nw machine type
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.30 90/01/05 11:28:33 rab Exp Locker: mendel $
+d99 1
+a99 1
+MACHINES	:= $(MACHINES:Nfd:Njhh:Ncleansun3:Ncleands3100)
+@
+
+
+1.30
+log
+@Changes for ds3100 cross-compile capabilty.
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.29 89/10/19 15:00:10 jhh Exp Locker: rab $
+d79 7
+@
+
+
+1.29
+log
+@make LOCKREG standard for spur kernels
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.28 89/10/10 10:34:16 douglis Exp Locker: jhh $
+d26 6
+a31 1
+LDFLAGS			= 
+d47 5
+d57 5
+d100 1
+a100 1
+#if empty(MACHINE:Mds3100)
+d106 2
+a107 2
+# reset MACHINES variable so a make *all  will ignore all but ds3100.
+MACHINES	:= $(MACHINES:Mds3100) $(MACHINES:Mjhh)
+d114 1
+a114 1
+#if !empty(MACHINE:Mds3100)
+@
+
+
+1.28
+log
+@undefine ultrix when compiling for the ds3100
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.27 89/10/09 06:55:59 rab Exp Locker: douglis $
+d29 1
+a29 1
+TMCFLAGS		= -mspur -mlong-jumps  
+@
+
+
+1.27
+log
+@Fixed distribution stuff.
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.26 89/09/27 17:59:28 douglis Exp Locker: rab $
+d61 2
+a62 2
+TMCFLAGS	= -Dds3100 -Dsprite
+TMAFLAGS	= -Dds3100 -Dsprite
+@
+
+
+1.26
+log
+@enable -O for ds3100, with -g3 when needed
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.25 89/09/27 12:32:17 douglis Exp Locker: douglis $
+d82 1
+a82 1
+    !make(dependall) && !make(tidyall)
+@
+
+
+1.25
+log
+@added clean* targets
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.24 89/08/24 21:18:20 jhh Exp Locker: douglis $
+a54 1
+NOOPTIMIZATION		=
+a60 1
+NOOPTIMIZATION		=
+@
+
+
+1.24
+log
+@changed my personal machine type (jhh) from sun3 to ds3100
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.23 89/08/21 17:10:25 douglis Exp Locker: jhh $
+d48 1
+a48 1
+#elif !empty(TM:Mfd) 
+d51 8
+d79 1
+a79 1
+MACHINES	:= $(MACHINES:Nfd:Njhh)
+d86 1
+a86 1
+#if !empty(TM:Mds3100) || !empty(TM:Mjhh)
+d92 3
+@
+
+
+1.23
+log
+@more changes for cross-compilation checks
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.22 89/08/18 11:20:36 douglis Exp Locker: douglis $
+a47 5
+#elif !empty(TM:Mjhh) 
+TMCFLAGS		= -msun3 -Dsun3
+TMAFLAGS		= -m68020
+LDFLAGS			=
+
+d61 2
+a62 2
+TMCFLAGS		= -m$(TM)
+TMAFLAGS		= -m$(TM)
+d78 1
+a78 1
+#if !empty(TM:Mds3100)
+@
+
+
+1.22
+log
+@generate a syntax error instead of undefined variable, so "make" gets error 
+as well as "pmake".
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.22 89/08/18 11:17:41 douglis Exp $
+d62 1
+a62 1
+LDFLAGS		=
+d79 3
+a81 1
+#if !make(clean) && !make(depend) && !make(mkmf) && !make(tidy) && !make(installhdrs)
+d85 4
+a88 1
+all :: you-cant-run-on-this-machine
+d96 4
+a99 1
+all :: you-cant-run-on-this-machine
+@
+
+
+1.21
+log
+@allow machine-indep. installhdrs.
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.20 89/08/17 07:33:19 rab Exp Locker: jhh $
+d83 1
+a83 1
+syntax_error: $(
+d91 1
+a91 1
+syntax_error: $(
+@
+
+
+1.20
+log
+@Correctly deleted sun2 entry.
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.19 89/08/16 22:48:27 rab Exp Locker: rab $
+d79 1
+a79 1
+#if !make(clean) && !make(depend) && !make(mkmf) && !make(tidy) 
+@
+
+
+1.19
+log
+@Deleted sun2 entry.
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.18 89/08/16 22:36:17 douglis Exp Locker: rab $
+d23 1
+a23 1
+#elif !empty(TM:Msun3)
+@
+
+
+1.18
+log
+@remove ds3100 from MACHINES when doing a make all if not 
+machine-independent.
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.17 89/08/16 22:25:53 douglis Exp Locker: douglis $
+a21 5
+
+#if !empty(TM:Msun2)
+TMCFLAGS		= -msun2 
+TMAFLAGS		= -m68010
+LDFLAGS			= 
+@
+
+
+1.17
+log
+@sanity check on TM != MACHINE when one of them is a ds3100
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.16 89/08/16 21:23:00 douglis Exp Locker: douglis $
+d81 1
+a81 1
+MACHINES	:= $(MACHINES:Nds3100:Nfd:Njhh)
+d91 4
+@
+
+
+1.16
+log
+@check for MACHINES being defined before resetting it.
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.15 89/08/16 21:20:41 douglis Exp Locker: douglis $
+d67 1
+a67 1
+LDFLAGS		= 
+d82 13
+@
+
+
+1.15
+log
+@change of sparc1 to sun4c (rab)
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.14 89/07/26 14:08:22 mgbaker Exp Locker: rab $
+d79 2
+d82 1
+@
+
+
+1.14
+log
+@Added defines for sparc station 1
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.13 89/07/26 12:49:54 nelson Exp Locker: mgbaker $
+d48 2
+a49 2
+#elif !empty(TM:Msparc1)
+TMCFLAGS		= -msun4 -Dsprite -Dsun4 -Dsparc1
+@
+
+
+1.13
+log
+@Mary checking this in for Mike.
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.12 89/07/20 17:36:27 mgbaker Exp Locker: nelson $
+d45 5
+@
+
+
+1.12
+log
+@Got rid of extra porting stuff for sun4.
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.11 89/07/18 16:00:32 ouster Exp Locker: mgbaker $
+d44 1
+a44 1
+TMCFLAGS		= -msun4 -Dsprite -Dsun4 -DCLEAN_LOCK
+d51 1
+d60 2
+a61 16
+AS		= /bin/as
+CC		= /bin/cc
+CP		= /bin/cp
+CPP		= /lib/cpp
+CTAGS		= /usr/ucb/ctags
+LD		= /bin/ld
+MV		= /bin/mv
+RM		= /bin/rm
+SED		= /bin/sed
+TOUCH		= /usr/bin/touch
+RANLIB		= /usr/bin/ranlib
+MAKEDEPEND	= /sprite2/users/sprite/cmds.ds3100/makedepend
+LINT		= /sprite2/users/sprite/cmds.ds3100/lint
+MKVERSION	= /sprite2/users/sprite/cmds.ds3100/mkversion
+TMCFLAGS	=
+TMAFLAGS	=
+@
+
+
+1.11
+log
+@Remove ds3100, jhh, and fd from $MACHINES.
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.10 89/07/18 15:26:42 rab Exp Locker: ouster $
+a45 3
+BINDIR			= /usr/bin
+CPP			= /usr/bin/cc -E -msun4
+NOOPTIMIZATION		=
+@
+
+
+1.10
+log
+@*** empty log message ***
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.9 89/07/02 23:31:06 rab Exp Locker: rab $
+d85 6
+@
+
+
+1.9
+log
+@Fixed sun4 stuff to work with gcc & gld.
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.8 89/06/23 12:04:24 jhh Exp Locker: rab $
+d26 1
+d31 1
+d41 1
+a45 1
+MACHINE			= sun4
+d47 3
+a49 1
+CPP			= /usr/bin/cc -E
+d58 22
+@
+
+
+1.8
+log
+@*** empty log message ***
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.7 89/05/24 10:12:43 douglis Exp Locker: douglis $
+d41 2
+a42 4
+# TMCFLAGS		= -msun4 -Dsprite -Dsun4 -DCLEAN_LOCK
+# TMAFLAGS		= -msparc
+TMCFLAGS		= -Dsprite -Dsun4 -DCLEAN_LOCK
+TMAFLAGS		=
+@
+
+
+1.7
+log
+@i don't know, this is fred checking in for mary
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.6 89/05/09 01:09:31 rab Exp Locker: mgbaker $
+d26 1
+d30 1
+d38 2
+d48 2
+a49 1
+#elif !empty(TM:Mjhh)
+d52 4
+d57 1
+@
+
+
+1.6
+log
+@Added -m flags for sun4.
+
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.5 89/04/23 23:10:35 jhh Exp Locker: rab $
+d37 4
+a40 2
+TMCFLAGS		= -msun4 -Dsprite -Dsun4 -DCLEAN_LOCK -DNO_SUN4_CACHING
+TMAFLAGS		= -msparc
+d45 1
+a45 1
+TMCFLAGS		= -msun3 -DLOCKDEP -Dsun3
+@
+
+
+1.5
+log
+@added jhh machine type
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.4 89/03/15 22:12:47 jhh Exp Locker: jhh $
+d37 2
+a38 2
+TMCFLAGS		= -Dsprite -Dsun4 -DCLEAN_LOCK -DNO_SUN4_CACHING
+TMAFLAGS		=
+@
+
+
+1.4
+log
+@fixed flags concerning locks
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.2 89/01/11 19:34:49 mlgray Exp $
+d42 3
+@
+
+
+1.3
+log
+@Checking this in for mendel. JohnH
+@
+text
+@d24 1
+a24 1
+TMCFLAGS		= -msun2 -DCLEAN_LOCK
+d27 1
+a27 1
+TMCFLAGS		= -msun3 -DCLEAN_LOCK
+d30 1
+a30 1
+TMCFLAGS		= -mspur -mlong-jumps  -DCLEAN_LOCK
+d37 1
+a37 1
+TMCFLAGS		= -Dsprite -Dsun4 -DCLEAN_LOCK
+@
+
+
+1.2
+log
+@changes for adding sun4
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.1 88/11/23 09:42:39 ouster Exp Locker: mlgray $
+d24 1
+a24 1
+TMCFLAGS		= -msun2
+d27 1
+a27 1
+TMCFLAGS		= -msun3
+d30 1
+a30 1
+TMCFLAGS		= -mspur -mlong-jumps
+d37 1
+a37 1
+TMCFLAGS		=
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/tmflags.mk,v 1.17 88/11/07 14:28:58 mendel Exp $
+d36 6
+@

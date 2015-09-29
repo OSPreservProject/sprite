@@ -1,0 +1,126 @@
+# New routines to support the Mach memory management interface.
+
+# See notebook (11 June 1991) for list of operations and their desired effect
+# on backing files and memory objects.
+
+# Data structures that the VM compatibility layer must keep:
+#
+# - pool of processing threads (process requests, do pageouts), plus thread to
+#   read requests from the port set for the memory objects
+#   (Set up some sort of Vm_ServerProcs mechanism.  Native Sprite
+#   doesn't distinguish FS cache cleaners from VM cleaners, but having a
+#   separate thread pool might reduce the chance of deadlock.)
+# - synchronization variables (for threads)
+# - list of memory objects that are (potentially) shared among multiple
+#   processes, including text (used for mmap)
+# - list of valid memory objects
+# - list of free memory objects
+# 
+# - per memory object:
+#   - memory object port (recv. rights)
+#   - memory object control port (send rights)
+#   - memory name object port [for use with vm_region in Vm_CreateVA &
+#     Vm_CleanupSharedFile]
+#   - lock
+#   - condition variable [e.g., for processes waiting for pageout or pagein to
+#     complete] 
+#   - status flag(s)
+#     - pending synch [msync call]
+#     - pending flush [segment is being deleted or process is being migrated]
+#     - dead [avoid cleaning pages for unused heap or stack]
+#     - cached (unused but not on free list)
+#     - premature init (? - okay to just change the object control port?)
+#     - free (can be allocated)
+#   - handle for swap file + file name
+#   - handle for file to initially page in from + file name
+#   - map to show which pages are backed from which file (or zero-fill)
+#     Note: don't assume that memory object uses the swap file in a linear
+#     fashion, especially for heap & stack.
+#   - length of the memory object (e.g., may be longer than swap file if some
+#     pages are backed by object file or if some pages are allocated but
+#     unused)
+#   - a.out header info (for object files) [corr. Vm_ExecInfo; to simplify
+#     reuse of cached text objects]
+#   - Sprite flags: 
+#     - debugged (code) segment
+#     - Sprite type (code, heap, stack, etc.) (compatibility) [also to
+#       help manage anonymous backing store]
+#   - segment ID (compatibility)
+#   x worker thread (this would be used to serialize operations on a memory
+#     object, rather than having a scheme where the object is locked before
+#     passing it to a worker process from the pool).  It seems better to rely
+#     on explicit locks to serialize operations, rather than implicitly
+#     serializing on the worker thread, because some operations on the memory
+#     object might be invoked from outside the VM code.
+#
+# 
+# - per task (see Vm_ProcInfo):
+#   - reference count [for tasks with multiple threads]
+#   - list of memory objects used by the task (assume at least 3 memory
+#     objects: text, heap, stack) [so can deallocate at exec() time and get
+#     the refcount right]
+#     (Want cooperation from emulation library so can keep track of all
+#     files mapped into the user address space.)
+#   - list of memory objects to check when a file is closed (for
+#     Vm_CleanupSharedFile)
+#   - the break (where the current heap ends) and heap start [for brk, sbrk]
+# 
+# other notes:
+# 
+# - do not vm_allocate anything in a client address space--there doesn't
+#   seem to be any way to get the memory object, and you might want it
+#   for Vm_MakeAccessible.
+# 
+# - blocks that are mapped by the FS cache should be pinned into memory.
+#
+# - if a user process does file I/O to a mapped file, there will probably be a
+#   race for the final value of the affected blocks.  This is no worse than
+#   with native Sprite.
+#
+# - when processing a request from the kernel, be sure to check the control
+#   and name ports.  If they're not the same, complain and ignore the request.
+# 
+
+Vm_MemoryManager		# read messages on memory mgr port; call
+				# Proc_NewProc if need new server thread.
+				# Need to have a single reader thread that
+				# will lock the appropriate memory object
+				# before passing it off to the worker thread
+				# (cf. MIB's mail in +mach 4/10/91).
+memory_object_copy		# panic--shouldn't get called
+memory_object_data_request	# If stack, grow memory object (down).
+				# Otherwise verify that page is within memory
+				# object length.  Use Vm_PageIn code to get
+				# the page; call memory_object_data_provided
+				# to return it to the kernel.  (Do the right
+				# thing if zero-filled.)
+memory_object_data_unlock	# XXX shouldn't get called?
+memory_object_data_write	# use guts of PageOut.  Drop on the floor if
+				# the memory object is dead (heap, stack, or
+				# debugged text).  Grow memory object as
+				# necessary.  If there is a fatal error
+				# writing the page, set an error flag and
+				# destroy the memory object.
+memory_object_init		# initialize any remaining data structures in
+				# the memory object (that weren't initialized
+				# when the object was created); save the given
+				# ports.  Only a text segment may be cached by
+				# the kernel.
+memory_object_lock_completed	# update list of pending lock requests, wake
+				# up any threads waiting for the request to
+				# finish
+memory_object_terminate		# use guts from Vm_SegmentDelete.
+				# For code, close the object file and cache
+				# the object.  For heap, close the object
+				# file, delete the swap file, and cache the
+				# object.  For shared file, close the backing
+				# file.  For stack, delete the swap file.
+				# Verify that there are actually no processes
+				# using the memory object; ignore the request
+				# if there are.
+
+
+Local Variables:
+mode: xref
+fill-column: 78
+End:

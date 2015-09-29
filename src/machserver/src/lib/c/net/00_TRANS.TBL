@@ -1,0 +1,6 @@
+D DS3100_M                          	ds3100.md
+L LOCAL.MK;1                        	local.mk	../etc/local.mk
+F MAKEFILE.;1                       	Makefile
+F RCMD.C;1                          	rcmd.c
+D RCS                               	RCS
+L SWAP.C;1                          	swap.c	../../c.orig/net/swap.c

@@ -1,0 +1,354 @@
+                         * Changes to Extended Tcl *
+===============================================================================
+13 Nov 91: Extended Tcl 6.1a released
+===============================================================================
+20 Nov 91: 
+  o Fixed use of invalid variable when reporting an error in 
+    test/unixcmds.test.
+  o Changed temporary files names so they are 14 characters or less in 
+    test/chmod.test..
+  o Changed TCL_MAN_SECTION for SCO Unix to be "TCL" instead of "tcl".
+  o Modified src/main.c to be independent of the internal Tcl include files.
+  o Changed ar to not use the 'u' option in makes.
+  o For ucbsrc, delete the objects explicitly from libtcl.a, since sometimes
+    the modified version tclBasic.o was not replacing the standard version.
+-------------------------------------------------------------------------------
+29 Nov 91:
+  o Added configuration section for older versions of SunOS.
+  o Added an strtoul replacement for HP/UX, since their version accepts
+    negative numbers.
+  o Converted the global tclxPatchlevel from a string to an int.
+  o Modified test for chmod +t, since this will actually change the file mode
+    if run as root.  Changed chown tests to compare file group id against the 
+    effective group id, in case tests are run with the effective group id
+    changed.
+  o Fixed bad error message from id command when user or group name does not
+    exist.
+  o Made tclSignalReceived a external flag that can be checked by C code to
+    determine if signal a signal is pending.
+  o Corrected the spelling of the variable 'signalReceived' that is set when
+    trap code is by a signal (signal command). (*POTENTIAL INCOMPATIBILITY*)
+  o Changed code in src/createExtd.c that is supposed to force math error to
+    be included so that an optimizer doesn't decide to throw away the external
+    reference.
+  o Modified commandloop to reset command buffer when a signal is recieved,
+    enabling interrupting the input of multi-line commands.
+  o Fixed problem with math error tests were pow did not return an error on
+    some systems.
+-------------------------------------------------------------------------------
+29 Nov 91: tests/all, tests/fmath.test, tests/math.test, tests/loop.test,
+           tests/filescan.test
+  o Converted to current test support routines: fmath.test, math.test and
+    loop.test.
+  o Removed tests/testutil.test, as its no longer needed.
+-------------------------------------------------------------------------------
+30 Nov 91:
+  o Made detection of _tolower and _toupper automatic, instead of a 
+    configuration option.
+-------------------------------------------------------------------------------
+ 2 Dec 91:
+  o Updated showproc.tcl with Lance Ellinghouse's improved version that dumps
+    default argument info.  
+-------------------------------------------------------------------------------
+ 5 Dec 91:
+  o Fixed bug with doing a keylget on an empty string.
+-------------------------------------------------------------------------------
+ 4 Jan 92:
+  o Fixed BinSearch so it doesn't overwrite the error returned by
+    TclGetOpenFile with another error message.
+-------------------------------------------------------------------------------
+ 5 Jan 92:
+  o Fixed link and unlink commands to do tilde substitution.
+-------------------------------------------------------------------------------
+ 9 Jan 92:
+  o Fixed problem with Boyer-Moore optimization causing scanfile to fail
+    matches when the regular expression contains ORs (|).
+-------------------------------------------------------------------------------
+ 10 Jan 92:
+  o Convert execvp to execl to support passing arguments as a list, rather than
+    a series of parameters.  Added a execvp to the Tcl procedure library to
+    provide backwards compatibility.
+-------------------------------------------------------------------------------
+ 11 Jan 92: man/TclX.man
+  o Changes to make some manual sections more readable.
+-------------------------------------------------------------------------------
+ 13 Feb 92:
+  o Added `procs' option to cmdtrace that traces procedure calls only.
+  o Added `-nocomplain' flag to unlink command.
+  o Changed package index structure so the file name is not included in the
+    index file.
+  o Added support for optional #@packend, to mark end of packages.
+  o Merged in changes to support A/UX 2.01 (supplied by Parag Patel)
+-------------------------------------------------------------------------------
+ 15 Feb 92:
+  o Modified keylget to return a list of keyes in a keyed list if no field
+    name is spefieied.  Added Tcl_GetKeyedListKeys to support this operation.
+  o Added keyed list sub field support (i.e. FOO.BAZ).
+  o Added type attribute to the values returned by the fstat command to give
+    it the same functionality as the Tcl6.2 file command.
+  o Update help files based on the ucb manual pages and added help for
+    standard built-in variables.
+-------------------------------------------------------------------------------
+ 16 Feb 92:
+  o Modified install script to unlink manual pages before it links to new ones.
+-------------------------------------------------------------------------------
+ 23 Feb 92:
+  o Moved the external declaration of variables set by the startup code
+    to tclExtended.h.
+  o Made startup more modular to support applications like Tk.  Made setting
+    of globals variables for infox in the main optional.  If not set, start up
+    sets them to a default.  (All backwards compatible).
+-------------------------------------------------------------------------------
+  2 Mar 92:
+  o Added -sym option to link command to support symbolic links.
+-------------------------------------------------------------------------------
+  3 Mar 92:
+  o Modified keylset to take multiple keyword/value pairs.
+  o Moved all tcl++.h vararg routines into tcl++.C, since inlined varargs
+    don't work right with some compilers.
+-------------------------------------------------------------------------------
+  4 Mar 92:
+  o Added catopen, catgets and catclose commands.
+-------------------------------------------------------------------------------
+ 11 Mar 92:
+  o Combined TclShell.man and tcl.tlib.man with TclX.man to put all
+    documentation for Tcl language programing in one manual page.
+-------------------------------------------------------------------------------
+ 13 Mar 92:
+  o Moved configuration from the toplevel Makefile to Config.mk, which is now
+    included by all Makefiles and parsed by the install script.
+  o Changed all calls to cc use the $(CC) macro.
+-------------------------------------------------------------------------------
+ 19 Mar 92:
+  o Fixed bug in command loop were certain set commands were valid commands,
+    but invalid lists.
+-------------------------------------------------------------------------------
+ 24 Mar 92:
+  o Added support for numBytes or nonewline to `read_file' procedure.
+  o Added lgets command to read lists from a file, included embedded newlines.
+===============================================================================
+ 4 Mar 92: Extended Tcl 6.2b released
+===============================================================================
+ 7 Apr 92: 
+   o Fixed bug were no error message was returned with the TCLDEFAULT file
+     could not be found.
+-------------------------------------------------------------------------------
+13 Arp 92: 
+   o Moved definition of CLK_TCK if its undefined until after the place were
+     time.h might be included in tclExtdInt.h.
+-------------------------------------------------------------------------------
+15 Apr 92:
+   o Added TCL_TIMEZONE_VAR option for systems that don't return the timezone
+     offset in `struct tm'.
+   o Deleted test from tests/clock.test that returned a different result in
+     a different timezone.
+-------------------------------------------------------------------------------
+27 Apr 92:
+   o Fixed bug in fstat that caused the keyed list get of all status data
+     to return invalid data.
+-------------------------------------------------------------------------------
+ 1 May 92:
+   o Moved setting of prompt hooks before source ~/.tclrc so that prompts can
+     be modified in the .~/tclrc.
+-------------------------------------------------------------------------------
+ 3 May 92:
+   o Changed src/Makefile to use CCPLUSINCL.
+   o Fixed cast problems in src/clock.c and src/tcl++.c
+   o Added SGI and IBM RS6000 to Config.mk based on billa@msi.com (Bill
+     Alexander) porting.  Thses probably need more work..
+-------------------------------------------------------------------------------
+ 4 May 92:
+   o Added tcl 6.3 fixes to ucbsrc/tclBasic.c
+-------------------------------------------------------------------------------
+11 May 92:
+   o Delete closing of pipes from Tcl_System.
+-------------------------------------------------------------------------------
+14 May 92:
+   o Changed floating point math command to take expressions.
+-------------------------------------------------------------------------------
+18 May 92:
+   o Fixed bug in lvarpop were it core dumps if passed variable containing an
+     invalid list.
+-------------------------------------------------------------------------------
+28 May 92:
+   o Fixed search path so it does not return an error when a path contains
+     an invalid ~user.  
+   o Fixed keyedlists from occasionally returning incorrect error with no
+     error message when adding a field to an empty list.
+-------------------------------------------------------------------------------
+10 Jun 92:
+   o Update chmod tests to not make assumptions about what group id a file
+     as created with.
+   o Added support for implementations that indicate floating point errors from
+     math functions by returning not-a-number, rather than calling matherr.
+   o Changed cindex, crange, csubstr and replicate to take integer
+     expresssions.
+   o Improved documentation of Tcl_ShellEnvInit.
+-------------------------------------------------------------------------------
+14 Jun 92:
+   o Changed tclEdtdInt.h to use declare command executors as ANSI prototypes
+     instead of being of type Tcl_CmdProc, since this broke a DEC compiler.
+   o Fixed loop command so that the control variable is left at its
+     terminating value, not the previous value.
+   o Fixed Tcl_Startup so if used the defaultFile passed in, rather than
+     assuming the compiled default value.
+-------------------------------------------------------------------------------
+28 Jun 92:
+   o Fixed bug where a SIGINTR will sometimes cause the command loop to panic.
+   o To speed up package library index loading, changed the .tndx file to only
+     contain data, not commands to be sourced.  Added Tcl procedure to convert
+     Ousterhout-style tclIndex files into package libraries.
+   o Fixed problem with cmdtrace of procedures that have empty bodies.  Also
+     simplified and optimized the code for tracing procedures.
+-------------------------------------------------------------------------------
+30 Jun 92:
+   o Fixed ShellEnvInit member function in tcl++.h.
+-------------------------------------------------------------------------------
+12 Jul 92:
+   o Added profile command and profrep procedure.
+   o Changed alarm command to take floating point seconds and use setitimer
+     when available.
+   o Moved the system dependent parts of Config.mk to seperate files in a
+     directory called config.  A #define in Config.mk now indicates which file
+     to use.
+   o Droped the -i flag from the chmod command for compatibility with Tcl open
+     command changes.  Octal numbers must be prefixed with a "0".
+     *** Potential compatibility problem ***
+-------------------------------------------------------------------------------
+31 Jul 92:
+   o Fix max command so it works for negative numbers.
+-------------------------------------------------------------------------------
+9 Aug 92:
+   o Changed build of ucbsrc and tkSupport so that the modified files are
+     built from the original files using sed.
+   o Imporved autoloading, including not searching path if file name contains
+     directories.  Demand_load searchs "auto_path" if it can't find the proc
+     anywhere else, this should help Tk programs that dynamicly add directories
+     to the variable.  This code moved to C to speed it up.
+-------------------------------------------------------------------------------
+12 Aug 92:
+   o Made message catalog table process global, so a message catalog handle
+     is valid in all interpreters in a process.
+-------------------------------------------------------------------------------
+21 Aug 92:
+   o Added support for building a wish with signals.
+   o Fix bug where errorCode on a signal was not in the documented format.
+-------------------------------------------------------------------------------
+23 Aug 92:
+   o Added lvarpush command.
+-------------------------------------------------------------------------------
+3 Sept 92:
+   o Converted loading of Tcl library indexes from Tcl to C to speed up these
+     operations.
+   o Changed fcntl attributes to be named line the Posix standards:  NDELAY is
+     changed to NONBLOCK and CLEXEC to CLOEXEC. Fcntl nolonger returns a list
+     of current values on query, instead individule values may be queried.
+     This makes it easier to use in the normal case and better allows for
+     future expansion.  (*POTENTIAL INCOMPATIBILITY*)
+-------------------------------------------------------------------------------
+6 Sept 92:
+   o Changed the signal command to return a keyed list for signal state query.
+     Include the command associated with signals that are "trap".  This makes
+     it easier to restore the state of signals that you change.
+     (*POTENTIAL INCOMPATIBILITY*)
+-------------------------------------------------------------------------------
+7 Sept 92:
+   o Automatically build a Tk .tlib.
+   o Added installation of Extended Tk to the install script.
+-------------------------------------------------------------------------------
+11 Sept 92:
+   o Changed select to check read stdio buffers for pending data.  This way
+     the files do not have to be unbuffered.
+   o Added ability  to get a list of keys for a subfield to function
+     Tcl_GetKeyedListKeys.  This necessitated adding a parameter.
+     (*POTENTIAL INCOMPATIBILITY*)
+   o Added kelykeys command to return lists of keys from a keyed list.
+-------------------------------------------------------------------------------
+14 Sept 92:
+   o Changed the fstat command to make it easier to use and more consistent
+     with the file command.  This forced a syntax chang for fstat commands
+     were the data is returned in an array variable.
+     (*POTENTIAL INCOMPATIBILITY*)
+   o Added tty option to fstat (interface to isatty).
+-------------------------------------------------------------------------------
+20 Sept 92:
+   o Changed package library loading so that duplicate package names found in
+     a path are loaded.
+   o Added the -location options to the packages command.
+   o Changed write_file to take multiple strings.
+   o Added lvarcat command.
+   o Reorganized Makefiles to simplify and fix some make problems.
+-------------------------------------------------------------------------------
+ 1 Oct 92:
+   o Wait command was changed to take only one pid.  This is in preparation
+     for supporting full waitpid functionallity once the support has been
+     added to UCB Tcl.  (*POTENTIAL INCOMPATIBILITY*)
+-------------------------------------------------------------------------------
+ 2 Oct 92:
+  o Reorganized help categories.
+  o Changed floating point commands to always return floating point numbers
+    without lose of precision or demotion to integer.
+  o Patch the UCB tclExpr.c file to return doubles without lose of precision.
+    This is temporary until a fix is povided in the UCB code.
+-------------------------------------------------------------------------------
+ 4 Oct 92:
+  o Fixed behavior of Posix signals and SIGCHLD.
+  o Added block and unblock options.
+  o Added return of block state in the get option.
+  o Fixed potential bug in lrmdup.
+  o Process signals when encountered in the command loop rather than just clear
+    them.
+  o Stored the "wrong # args: " string in a single global  variable to save
+    memory rather than repeating in each command.
+-------------------------------------------------------------------------------
+ 5 Oct 92:
+  o Fixed bug in for_recursive_glob with continue and break not working as
+    expected.
+  o Delete chamge bar macros when installing manual pages.
+  o Changed startup so if no longer looks for a local TCLDEFAULT file.  Initial
+    tests are now run by setting the environment variable.
+  o Fixed bug in chmod were set permissions for two difference classes (u,g,o)
+    with = in the same command did not work.
+  o Changed help and buildhelp.tcl so that multiple brief files are allowed
+    (extension .brf).
+-------------------------------------------------------------------------------
+ 7 Oct 92:
+  o Signal handling changed so that if multiple signals are received before
+    before they are handle and if trap code is associated with that signal,
+    then the trap code will be run once for every signal received.
+-------------------------------------------------------------------------------
+ 8 Oct 92:
+  o Recoded assign_fields to use upvar.
+-------------------------------------------------------------------------------
+11 Oct 92:
+  o Modified install script to purge the target help tree before installing.
+-------------------------------------------------------------------------------
+12 Oct 92:
+  o Added a options argument to Tcl_Startup.  It is not currrently used.
+   (*POTENTIAL INCOMPATIBILITY*)
+===============================================================================
+15 Oct 92: Extended Tcl 6.4c released
+===============================================================================
+24 Oct 92:
+  o Fixed problem in tclXprocess were it will not compile if wait status
+    is union wait.
+  o Fixed minor manual page problems.
+  o Corrected problems in RS/6000 config file.
+  o Fixed problem with buildhelp.tcl always truncating filenames.
+-------------------------------------------------------------------------------
+27 Oct 92:
+  o Added configure file for new version of Ultrix (4.2+).
+-------------------------------------------------------------------------------
+ 7 Nov 92:
+  o Fixed problems with convertclock timezones on some machines.
+  o Added config file for ultrix4.2
+  o Deleted strtoul from osSupport directory and config files.  This is now
+    compiled with UCB Tcl if needed.
+-------------------------------------------------------------------------------
+ 8 Nov 92:
+  o Use our own strftime for SGI since their's is broken.
+  o Added changes to fix problems with systems using IEEE floating point math
+    error reporting.
+===============================================================================
+ 9 Oct 92: Extended Tcl 6.4c patch1 released
+===============================================================================

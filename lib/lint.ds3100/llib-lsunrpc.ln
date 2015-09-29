@@ -1,0 +1,851 @@
+512
+llib-lsunrpc:ds3100.md/xdr_float.c 2
+2
+2 67 36 0 0
+xdr_float
+24 192 -32768
+22 0 0
+16
+0 82 4 0 0
+xdr_float
+2
+2 94 36 0 0
+xdr_double
+24 192 -32768
+23 0 0
+16
+0 113 4 0 0
+xdr_double
+512
+llib-lsunrpc:auth_none.c 2
+2
+0 72 104 256 -32768
+authnone_create
+16
+0 95 24 256 -32768
+authnone_create
+512
+llib-lsunrpc:auth_unix.c 2
+2
+5 97 104 256 -32768
+authunix_create
+18 0 0
+4 0 0
+4 0 0
+4 0 0
+20 0 0
+16
+0 162 24 256 -32768
+authunix_create
+2
+0 170 104 256 -32768
+authunix_create_default
+16
+0 185 24 256 -32768
+authunix_create_default
+512
+llib-lsunrpc:authunix_prot.c 2
+2
+2 54 36 0 0
+xdr_authunix_parms
+24 192 -32768
+24 192 4132
+16
+0 65 4 0 0
+xdr_authunix_parms
+512
+llib-lsunrpc:bindresvport.c 2
+2
+2 49 36 0 0
+bindresvport
+4 0 0
+24 128 5171
+16
+0 85 4 0 0
+bindresvport
+512
+llib-lsunrpc:clnt_generic.c 2
+2
+4 53 104 96 -32768
+clnt_create
+18 0 0
+14 0 0
+14 0 0
+18 0 0
+16
+0 111 24 96 -32768
+clnt_create
+512
+llib-lsunrpc:clnt_perror.c 2
+2
+2 70 98 0 0
+clnt_sperror
+24 96 -32768
+18 0 0
+16
+0 147 18 0 0
+clnt_sperror
+2
+2 153 32 0 0
+clnt_perror
+24 96 -32768
+18 0 0
+2
+1 209 98 0 0
+clnt_sperrno
+10 0 0
+16
+0 218 18 0 0
+clnt_sperrno
+2
+1 223 32 0 0
+clnt_perrno
+10 0 0
+2
+1 231 98 0 0
+clnt_spcreateerror
+18 0 0
+16
+0 260 18 0 0
+clnt_spcreateerror
+2
+1 265 32 0 0
+clnt_pcreateerror
+18 0 0
+512
+llib-lsunrpc:clnt_raw.c 2
+2
+2 86 104 96 -32768
+clntraw_create
+15 0 0
+15 0 0
+16
+0 123 24 96 -32768
+clntraw_create
+512
+llib-lsunrpc:clnt_simple.c 2
+2
+8 59 36 0 0
+callrpc
+18 0 0
+4 0 0
+4 0 0
+4 0 0
+148 0 0
+18 0 0
+148 0 0
+18 0 0
+16
+0 113 4 0 0
+callrpc
+512
+llib-lsunrpc:clnt_tcp.c 2
+2
+6 118 104 96 -32768
+clnttcp_create
+24 128 5171
+15 0 0
+15 0 0
+20 0 0
+14 0 0
+14 0 0
+16
+0 221 24 96 -32768
+clnttcp_create
+512
+llib-lsunrpc:clnt_udp.c 2
+2
+7 125 104 96 -32768
+clntudp_bufcreate
+24 128 5171
+15 0 0
+15 0 0
+8 64 16140
+20 0 0
+14 0 0
+14 0 0
+16
+0 207 24 96 -32768
+clntudp_bufcreate
+2
+5 216 104 96 -32768
+clntudp_create
+24 128 5171
+15 0 0
+15 0 0
+8 64 16140
+20 0 0
+16
+0 220 24 96 -32768
+clntudp_create
+512
+llib-lsunrpc:get_myaddress.c 2
+2
+1 56 36 0 0
+get_myaddress
+24 128 5171
+512
+llib-lsunrpc:get_myaddress.c
+512
+llib-lsunrpc:getrpcent.c 2
+2
+0 58 24 -31360 6223
+rpcdata
+2
+1 82 104 96 25509
+getrpcbynumber
+4 0 0
+16
+0 98 24 96 25509
+getrpcbynumber
+2
+1 103 104 96 25509
+getrpcbyname
+18 0 0
+16
+0 118 24 96 25509
+getrpcbyname
+2
+1 122 36 0 0
+setrpcent
+4 0 0
+2
+0 138 36 0 0
+endrpcent
+2
+0 155 104 96 25509
+getrpcent
+16
+0 169 24 96 25509
+getrpcent
+512
+llib-lsunrpc:getrpcport.c 2
+2
+4 45 36 0 0
+getrpcport
+18 0 0
+4 0 0
+4 0 0
+4 0 0
+16
+0 55 4 0 0
+getrpcport
+512
+llib-lsunrpc:pmap_clnt.c 2
+2
+4 62 36 0 0
+pmap_set
+15 0 0
+15 0 0
+4 0 0
+14 0 0
+16
+0 86 4 0 0
+pmap_set
+2
+2 96 36 0 0
+pmap_unset
+15 0 0
+15 0 0
+16
+0 116 4 0 0
+pmap_unset
+512
+llib-lsunrpc:pmap_getmaps.c 2
+2
+1 64 104 160 5669
+pmap_getmaps
+24 128 5171
+16
+0 85 24 160 5669
+pmap_getmaps
+512
+llib-lsunrpc:pmap_getport.c 2
+2
+4 62 45 0 0
+pmap_getport
+24 128 5171
+15 0 0
+15 0 0
+14 0 0
+16
+0 88 13 0 0
+pmap_getport
+512
+llib-lsunrpc:pmap_prot.c 2
+2
+2 50 36 0 0
+xdr_pmap
+24 192 -32768
+24 128 32441
+16
+0 57 4 0 0
+xdr_pmap
+512
+llib-lsunrpc:pmap_prot2.c 2
+2
+2 88 36 0 0
+xdr_pmaplist
+24 192 -32768
+88 160 5669
+16
+0 116 4 0 0
+xdr_pmaplist
+512
+llib-lsunrpc:pmap_rmt.c 2
+2
+10 74 42 0 0
+pmap_rmtcall
+24 128 5171
+15 0 0
+15 0 0
+15 0 0
+148 0 0
+18 0 0
+148 0 0
+18 0 0
+8 64 16140
+31 0 0
+16
+0 101 10 0 0
+pmap_rmtcall
+2
+2 112 36 0 0
+xdr_rmtcall_args
+24 192 -32768
+24 192 30447
+16
+0 133 4 0 0
+xdr_rmtcall_args
+2
+2 143 36 0 0
+xdr_rmtcallres
+24 192 -32768
+24 128 21171
+16
+0 153 4 0 0
+xdr_rmtcallres
+2
+8 219 42 0 0
+clnt_broadcast
+15 0 0
+15 0 0
+15 0 0
+148 0 0
+18 0 0
+148 0 0
+18 0 0
+148 0 0
+16
+0 380 10 0 0
+clnt_broadcast
+512
+llib-lsunrpc:rpc_callmsg.c 2
+2
+2 52 36 0 0
+xdr_callmsg
+24 192 -32768
+24 384 4429
+16
+0 189 4 0 0
+xdr_callmsg
+512
+llib-lsunrpc:rpc_commondata.c 2
+2
+0 35 8 96 13857
+_null_auth
+2
+0 37 8 256 7888
+svc_fdset
+2
+0 41 8 128 7628
+rpc_createerr
+512
+llib-lsunrpc:rpc_dtablesize.c
+2
+0 40 36 0 0
+_rpc_dtablesize
+16
+0 46 4 0 0
+_rpc_dtablesize
+512
+llib-lsunrpc:rpc_prot.c 2
+2
+0 53 8 96 13857
+_null_auth
+2
+2 63 36 0 0
+xdr_opaque_auth
+24 192 -32768
+24 96 13857
+16
+0 69 4 0 0
+xdr_opaque_auth
+2
+2 80 36 0 0
+xdr_accepted_reply
+24 192 -32768
+24 192 27894
+16
+0 98 4 0 0
+xdr_accepted_reply
+2
+2 107 36 0 0
+xdr_rejected_reply
+24 192 -32768
+24 96 16301
+16
+0 123 4 0 0
+xdr_rejected_reply
+2
+2 137 36 0 0
+xdr_replymsg
+24 192 -32768
+24 384 4429
+16
+0 145 4 0 0
+xdr_replymsg
+2
+2 157 36 0 0
+xdr_callhdr
+24 192 -32768
+24 384 4429
+16
+0 169 4 0 0
+xdr_callhdr
+2
+2 240 32 0 0
+_seterr_reply
+24 384 4429
+24 96 3920
+512
+llib-lsunrpc:svc.c 2
+2
+1 85 32 0 0
+xprt_register
+24 416 -32768
+2
+1 112 32 0 0
+xprt_unregister
+24 416 -32768
+2
+5 143 36 0 0
+svc_register
+24 416 -32768
+15 0 0
+15 0 0
+144 0 0
+4 0 0
+16
+0 167 4 0 0
+svc_register
+2
+2 176 32 0 0
+svc_unregister
+15 0 0
+15 0 0
+2
+3 226 36 0 0
+svc_sendreply
+24 416 -32768
+148 0 0
+18 0 0
+16
+0 236 4 0 0
+svc_sendreply
+2
+1 244 32 0 0
+svcerr_noproc
+24 416 -32768
+2
+1 260 32 0 0
+svcerr_decode
+24 416 -32768
+2
+1 276 32 0 0
+svcerr_systemerr
+24 416 -32768
+2
+2 293 32 0 0
+svcerr_auth
+24 416 -32768
+10 0 0
+2
+1 309 32 0 0
+svcerr_weakauth
+24 416 -32768
+2
+1 320 32 0 0
+svcerr_noprog
+24 416 -32768
+2
+3 338 32 0 0
+svcerr_progvers
+24 416 -32768
+15 0 0
+15 0 0
+2
+1 371 32 0 0
+svc_getreq
+4 0 0
+2
+1 389 32 0 0
+svc_getreqset
+24 256 7888
+512
+llib-lsunrpc:svc_auth.c 2
+2
+2 93 42 0 0
+_authenticate
+24 256 4661
+24 384 4429
+16
+0 105 10 0 0
+_authenticate
+2
+0 111 42 0 0
+_svcauth_null
+16
+0 114 10 0 0
+_svcauth_null
+512
+llib-lsunrpc:svc_auth_unix.c 2
+2
+2 56 42 0 0
+_svcauth_unix
+24 256 4661
+24 384 4429
+16
+0 117 10 0 0
+_svcauth_unix
+2
+2 129 42 0 0
+_svcauth_short
+24 256 4661
+24 384 4429
+16
+0 131 10 0 0
+_svcauth_short
+512
+llib-lsunrpc:svc_raw.c 2
+2
+0 74 104 416 -32768
+svcraw_create
+16
+0 88 24 416 -32768
+svcraw_create
+512
+llib-lsunrpc:svc_run.c 2
+2
+0 44 32 0 0
+svc_run
+512
+llib-lsunrpc:svc_simple.c 2
+2
+0 56 24 192 24333
+pl
+2
+6 61 36 0 0
+registerrpc
+4 0 0
+4 0 0
+4 0 0
+402 0 0
+148 0 0
+148 0 0
+16
+0 95 4 0 0
+registerrpc
+512
+llib-lsunrpc:svc_tcp.c 2
+2
+3 126 104 416 -32768
+svctcp_create
+4 0 0
+14 0 0
+14 0 0
+16
+0 173 24 416 -32768
+svctcp_create
+2
+3 184 104 416 -32768
+svcfd_create
+4 0 0
+14 0 0
+14 0 0
+16
+0 187 24 416 -32768
+svcfd_create
+512
+llib-lsunrpc:svc_udp.c 2
+2
+3 98 104 416 -32768
+svcudp_bufcreate
+4 0 0
+14 0 0
+14 0 0
+16
+0 149 24 416 -32768
+svcudp_bufcreate
+2
+1 154 104 416 -32768
+svcudp_create
+4 0 0
+16
+0 157 24 416 -32768
+svcudp_create
+2
+2 374 36 0 0
+svcudp_enablecache
+24 416 -32768
+15 0 0
+16
+0 403 4 0 0
+svcudp_enablecache
+512
+llib-lsunrpc:xdr.c 2
+2
+2 70 32 0 0
+xdr_free
+148 0 0
+18 0 0
+2
+0 84 36 0 0
+xdr_void
+16
+0 87 4 0 0
+xdr_void
+2
+2 96 36 0 0
+xdr_int
+24 192 -32768
+20 0 0
+16
+0 108 4 0 0
+xdr_int
+2
+2 117 36 0 0
+xdr_u_int
+24 192 -32768
+30 0 0
+16
+0 129 4 0 0
+xdr_u_int
+2
+2 139 36 0 0
+xdr_long
+24 192 -32768
+21 0 0
+16
+0 151 4 0 0
+xdr_long
+2
+2 161 36 0 0
+xdr_u_long
+24 192 -32768
+31 0 0
+16
+0 170 4 0 0
+xdr_u_long
+2
+2 179 36 0 0
+xdr_short
+24 192 -32768
+19 0 0
+16
+0 199 4 0 0
+xdr_short
+2
+2 208 36 0 0
+xdr_u_short
+24 192 -32768
+29 0 0
+16
+0 228 4 0 0
+xdr_u_short
+2
+2 238 36 0 0
+xdr_char
+24 192 -32768
+18 0 0
+16
+0 247 4 0 0
+xdr_char
+2
+2 256 36 0 0
+xdr_u_char
+24 192 -32768
+18 0 0
+16
+0 265 4 0 0
+xdr_u_char
+2
+2 274 36 0 0
+xdr_bool
+24 192 -32768
+20 0 0
+16
+0 294 4 0 0
+xdr_bool
+2
+2 303 36 0 0
+xdr_enum
+24 192 -32768
+20 0 0
+512
+llib-lsunrpc:xdr.c
+16
+0 321 4 0 0
+xdr_enum
+2
+3 333 36 0 0
+xdr_opaque
+24 192 -32768
+18 0 0
+14 0 0
+16
+0 373 4 0 0
+xdr_opaque
+2
+4 386 36 0 0
+xdr_bytes
+24 192 -32768
+82 0 0
+30 0 0
+14 0 0
+16
+0 430 4 0 0
+xdr_bytes
+2
+2 439 36 0 0
+xdr_netobj
+24 192 -32768
+24 64 22454
+16
+0 442 4 0 0
+xdr_netobj
+2
+5 462 36 0 0
+xdr_union
+24 192 -32768
+20 0 0
+18 0 0
+24 64 22036
+148 0 0
+16
+0 487 4 0 0
+xdr_union
+2
+3 509 36 0 0
+xdr_string
+24 192 -32768
+82 0 0
+14 0 0
+16
+0 562 4 0 0
+xdr_string
+2
+2 572 36 0 0
+xdr_wrapstring
+24 192 -32768
+82 0 0
+16
+0 577 4 0 0
+xdr_wrapstring
+512
+llib-lsunrpc:xdr_array.c 2
+2
+6 66 36 0 0
+xdr_array
+24 192 -32768
+82 0 0
+30 0 0
+14 0 0
+14 0 0
+148 0 0
+16
+0 121 4 0 0
+xdr_array
+2
+5 140 36 0 0
+xdr_vector
+24 192 -32768
+18 0 0
+14 0 0
+14 0 0
+148 0 0
+16
+0 152 4 0 0
+xdr_vector
+512
+llib-lsunrpc:xdr_mem.c 2
+2
+4 80 32 0 0
+xdrmem_create
+24 192 -32768
+18 0 0
+14 0 0
+10 0 0
+512
+llib-lsunrpc:xdr_rec.c 2
+2
+6 140 32 0 0
+xdrrec_create
+24 192 -32768
+14 0 0
+14 0 0
+18 0 0
+148 0 0
+148 0 0
+2
+1 406 36 0 0
+xdrrec_skiprecord
+24 192 -32768
+16
+0 418 4 0 0
+xdrrec_skiprecord
+2
+1 428 36 0 0
+xdrrec_eof
+24 192 -32768
+16
+0 441 4 0 0
+xdrrec_eof
+2
+2 453 36 0 0
+xdrrec_endofrecord
+24 192 -32768
+4 0 0
+16
+0 469 4 0 0
+xdrrec_endofrecord
+512
+llib-lsunrpc:xdr_reference.c 2
+2
+4 64 36 0 0
+xdr_reference
+24 192 -32768
+82 0 0
+14 0 0
+148 0 0
+16
+0 91 4 0 0
+xdr_reference
+2
+4 119 36 0 0
+xdr_pointer
+24 192 -32768
+82 0 0
+14 0 0
+148 0 0
+16
+0 132 4 0 0
+xdr_pointer
+512
+llib-lsunrpc:xdr_stdio.c 2
+2
+3 81 32 0 0
+xdrstdio_create
+24 192 -32768
+24 384 23058
+10 0 0

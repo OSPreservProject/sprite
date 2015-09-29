@@ -1,0 +1,15 @@
+
+
+          wait pid
+               Waits for the process identified by process id pid to
+               terminate, either due to an untrapped signal or call to
+               exit system call.  Wait returns a list containing three
+               elements:  The first element is the process id of the
+               process that terminated.  If the process exited
+               normally, the second element is `EXIT', and the third
+               contains the numeric exit code.  If the process
+               terminated due to a signal, the second element is
+               `SIG', and the third contains the signal name.  If the
+               process is currently stopped (on systems that support
+               SIGSTP), the second element is `STOP', followed by the
+               signal name.

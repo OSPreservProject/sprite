@@ -1,0 +1,254 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ds3100:1.5 sun3:1.5 sun4nw:1.5 symm:1.5 spur:1.5;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     90.10.19.17.23.12;  author mendel;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.08.02.16.20.14;  author mendel;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.05.30.10.31.28;  author mendel;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.05.25.15.33.26;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.01.16.17.12.34;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.5
+log
+@Many bug fixed. First installed LFS.
+@
+text
+@/*
+ * lfsUsageArray.h --
+ *
+ *	Declarations defining the disk resident format of the LFS 
+ *	segment usage array. The main purpose of the segment usage array 
+ *	is to aid LFS in making intelligent choices for segment to clean
+ *	and segments to write. The segment usage array also keeps track of
+ *	the disk space usage for the file system.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/lfs/RCS/lfsUsageArray.h,v 1.4 90/08/02 16:20:14 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+ */
+
+#ifndef _LFSUSAGEARRAY
+#define _LFSUSAGEARRAY
+
+#ifdef KERNEL
+#include <lfsStableMem.h>
+#else
+#include <kernel/lfsStableMem.h>
+#endif
+/*
+ * The segment usage array layout on disk is described by the following 
+ * super block resident structure. 
+ * It must be LFS_USAGE_ARRAY_PARAM_SIZE (currently 64 bytes) in size. 
+ */
+#define	LFS_USAGE_ARRAY_PARAM_SIZE	64
+
+typedef struct LfsSegUsageParams {
+    int segmentSize;  	   /* The number of bytes in each of segment. 
+			    * Must be a multiple of the file system
+			    * block size. */
+    int numberSegments;	  /* The number of segments in the system. */
+    int   minNumClean;    /* The min number of clean segment we allow the
+			   * system to reach before starting clean. */
+    int   minFreeBlocks;  /* The min number of free blocks we allow the
+			   * system to reach. */
+    int	  wasteBlocks;	  /* The number of blocks we are willing to wasted at
+			   * the end of a segment. */
+    int	  numSegsToClean;  /* Number of segment to clean at a time. */
+    char  padding[LFS_USAGE_ARRAY_PARAM_SIZE - sizeof(LfsStableMemParams)-6*4];
+    LfsStableMemParams	 stableMem; /* Memory for locating the array. */
+} LfsSegUsageParams;
+
+
+/*
+ * The checkpoint data of segment usage array is described by a structure
+ * LfsSegUsageCheckPoint. The disk resident structure of a checkpoint
+ * contains a LfsSegUsageCheckPoint followed by a LfsStableMemCheckPoint.
+ */
+typedef struct LfsSegUsageCheckPoint {
+    int	freeBlocks;	/* Number of free blocks available. */ 
+    int numClean;	/* Number of clean segments. */
+    int numDirty;	/* Number of dirty segments. */
+    int dirtyActiveBytes; /* Number of known active bytes below which a 
+			   * segment is considered dirty. */
+    int	currentSegment;	/* Current segment being written. */
+    int	currentBlockOffset; /* Current block offset into last segment being
+			     * written. -1 means segment filled. */
+    int curSegActiveBytes; /* Active bytes of last segment written. */
+    int	previousSegment;   /* Previous segment written. */
+    int cleanSegList;	/* First segment in the list of clean segemnts. */
+} LfsSegUsageCheckPoint;
+
+/*
+ * For each segment in a LFS, the segment usage are keeped an 
+ * entry of type LfsSegUsageEntry. LfsSegUsageEntry are packed into blocks
+ * to form an array index by segment number. 
+ */
+typedef struct LfsSegUsageEntry {
+    int  activeBytes;     	    /* An estimate of the number of active
+				     * bytes in this segment. If the segment
+				     * is clean (LFS_SEG_USAGE_CLEAN is set
+				     * in flags), then activeBytes contains
+				     * the index of the next clean segment. */
+    int	 timeOfLastWrite;	    /* File system time of last write 
+				     * in seconds. */
+    int  flags;     		    /* Flags described below. */
+} LfsSegUsageEntry;
+
+/*
+ * Values for the flags field of the LfsSegUsageEntry.
+ *
+ * LFS_SEG_USAGE_CLEAN	- The segment has been cleaned and contains no 
+ *			  live data. 
+ * LFS_SEG_USAGE_DIRTY  - The segment is neither full or dirty.
+ * LFS_SEG_USAGE_CHAIN	- The segment is a member of checkpoint chain that
+ *			  hasn't been terminated. 
+ */
+#define	LFS_SEG_USAGE_CLEAN 0x0001
+#define	LFS_SEG_USAGE_DIRTY 0x0002
+#define	LFS_SEG_USAGE_CHAIN 0x0004
+
+
+#endif /* _LFSUSAGEARRAY */
+
+@
+
+
+1.4
+log
+@Checkin before adding recovery
+./
+@
+text
+@d19 1
+a19 1
+ * $Header: /sprite/src/kernel/lfs/RCS/lfsUsageArray.h,v 1.3 90/05/30 10:31:28 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d25 5
+a29 2
+#include "lfsStableMem.h"
+
+d48 2
+a50 1
+    char  padding[LFS_USAGE_ARRAY_PARAM_SIZE - sizeof(LfsStableMemParams)-5*4];
+d65 6
+a70 3
+    int	currentSegment;	/* Last segment written. */
+    int cleanLinks[2];	/* List head and tail for clean segment list. */
+    int dirtyLinks[2];	/* List head and tail for dirty segment list. */
+d74 1
+a74 11
+ * Index for links.
+ *	LFS_SEG_USAGE_NEXT - Next element of list pointer. For list headers
+ *			     the first element of list.
+ *	LFS_SEG_USAGE_PREV - Previous element of list pointer. For list headers
+ *			     the last element of list.
+ *
+ */
+#define	LFS_SEG_USAGE_NEXT	0
+#define	LFS_SEG_USAGE_PREV	1
+/*
+ * For each segment in a LFS, the segment usage arraykeeps an 
+a78 2
+    int  links[2];  	 	    /* Used to form doubly linked list of 
+				     * dirty and clean segments. */
+d80 6
+a85 2
+				     * bytes in this segment. A value of 
+				     * zero means the segment is clean. */
+@
+
+
+1.3
+log
+@Check in with no small writes.
+@
+text
+@d19 1
+a19 1
+ * $Header: /sprite/src/kernel/lfs/RCS/lfsUsageArray.h,v 1.2 90/05/25 15:33:26 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d30 1
+a30 1
+ * It must be LFS_USAGE_ARRAY_PARAM_SIZE (currently 32 bytes) in size. 
+d32 1
+a32 1
+#define	LFS_USAGE_ARRAY_PARAM_SIZE	32
+d35 4
+a38 4
+    unsigned int segmentSize;	/* The number of bytes in each of segment. 
+				 * Must be a multiple of the file system
+				 * block size. */
+    unsigned int numberSegments;/* The number of segments in the system. */
+d43 2
+d46 1
+a46 1
+    char  padding[LFS_USAGE_ARRAY_PARAM_SIZE - sizeof(LfsStableMemParams)-8];
+d82 1
+a82 1
+    unsigned int  links[2];  	    /* Used to form doubly linked list of 
+d84 1
+a84 1
+    unsigned int  activeBytes;      /* An estimate of the number of active
+d87 1
+a87 1
+    unsigned int  flags;     	    /* Flags described below. */
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d19 1
+a19 1
+ * $Header: /sprite/src/kernel/fs.mendel/RCS/lfsUsageArray.h,v 1.1 90/01/16 17:12:34 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d41 1
+a41 1
+    int   minCleanBlocks; /* The min number of clean blocks we allow the
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d19 1
+a19 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.4 89/10/28 15:57:26 rab Exp $ SPRITE (Berkeley)
+d39 4
+@

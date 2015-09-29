@@ -1,0 +1,3181 @@
+head     9.22;
+branch   ;
+access   ;
+symbols  ds3100:9.22 sun3:9.22 sprited:9.13.1 sun4nw:9.15 symm:9.15 spur:9.15 Summer89:9.0 newlib:8.0 Summer88:6.0 argString:5.4;
+locks    ; strict;
+comment  @ * @;
+
+
+9.22
+date     92.06.15.22.29.39;  author jhh;  state Exp;
+branches ;
+next     9.21;
+
+9.21
+date     92.06.01.14.40.52;  author kupfer;  state Exp;
+branches ;
+next     9.20;
+
+9.20
+date     92.04.17.17.38.24;  author jhh;  state Exp;
+branches ;
+next     9.19;
+
+9.19
+date     92.04.14.17.00.17;  author jhh;  state Exp;
+branches ;
+next     9.18;
+
+9.18
+date     92.02.14.14.44.56;  author kupfer;  state Exp;
+branches ;
+next     9.17;
+
+9.17
+date     92.01.06.15.12.36;  author kupfer;  state Exp;
+branches ;
+next     9.16;
+
+9.16
+date     91.11.15.21.08.04;  author kupfer;  state Exp;
+branches ;
+next     9.15;
+
+9.15
+date     91.09.04.09.27.05;  author mottsmth;  state Exp;
+branches ;
+next     9.14;
+
+9.14
+date     91.08.26.15.54.11;  author mottsmth;  state Exp;
+branches ;
+next     9.13;
+
+9.13
+date     91.05.30.15.09.30;  author kupfer;  state Exp;
+branches 9.13.1.1;
+next     9.12;
+
+9.12
+date     90.10.19.15.39.36;  author shirriff;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     90.09.12.13.58.00;  author jhh;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     90.09.06.17.56.55;  author jhh;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     90.08.15.14.19.48;  author douglis;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     90.08.15.14.00.02;  author douglis;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.07.30.15.46.28;  author douglis;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.06.22.11.29.52;  author douglis;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.03.16.14.15.43;  author douglis;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     89.11.13.11.39.02;  author douglis;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     89.10.26.15.22.16;  author douglis;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.17.11.12.11;  author douglis;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.12.11.13.30;  author douglis;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.14.47;  author douglis;  state Stable;
+branches ;
+next     8.14;
+
+8.14
+date     89.08.17.17.28.27;  author jhh;  state Exp;
+branches ;
+next     8.13;
+
+8.13
+date     89.08.15.18.28.38;  author douglis;  state Exp;
+branches ;
+next     8.12;
+
+8.12
+date     89.08.10.17.15.08;  author douglis;  state Exp;
+branches ;
+next     8.11;
+
+8.11
+date     89.07.31.17.57.32;  author douglis;  state Exp;
+branches ;
+next     8.10;
+
+8.10
+date     89.07.20.16.18.23;  author douglis;  state Exp;
+branches ;
+next     8.9;
+
+8.9
+date     89.06.09.17.49.15;  author douglis;  state Exp;
+branches ;
+next     8.8;
+
+8.8
+date     89.04.06.11.46.00;  author douglis;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.03.12.21.12.24;  author rab;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.02.20.00.16.03;  author rab;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.02.10.16.37.38;  author douglis;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.01.26.09.18.32;  author rab;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.01.12.08.33.13;  author douglis;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.12.23.11.41.35;  author douglis;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.16.10.12.19;  author douglis;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.29.26;  author douglis;  state Stable;
+branches ;
+next     6.5;
+
+6.5
+date     88.11.11.12.28.56;  author douglis;  state Exp;
+branches ;
+next     6.4;
+
+6.4
+date     88.10.27.20.01.58;  author mlgray;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.10.19.11.17.49;  author douglis;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.31.17.55.01;  author douglis;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.25.12.08.26;  author nelson;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.21.52;  author brent;  state Stable;
+branches ;
+next     5.11;
+
+5.11
+date     88.08.04.15.28.47;  author douglis;  state Exp;
+branches ;
+next     5.10;
+
+5.10
+date     88.08.02.15.15.12;  author douglis;  state Exp;
+branches ;
+next     5.9;
+
+5.9
+date     88.07.25.16.52.45;  author douglis;  state Exp;
+branches ;
+next     5.8;
+
+5.8
+date     88.06.30.17.34.52;  author douglis;  state Exp;
+branches ;
+next     5.7;
+
+5.7
+date     88.05.05.17.57.09;  author nelson;  state Exp;
+branches ;
+next     5.6;
+
+5.6
+date     88.05.04.16.45.17;  author nelson;  state Exp;
+branches ;
+next     5.5;
+
+5.5
+date     88.04.18.09.07.26;  author ouster;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     88.03.02.11.54.06;  author douglis;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     88.01.22.15.31.16;  author nelson;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.12.12.16.39.06;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.10.22.14.56.48;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.47.35;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.13.1.1
+date     91.11.20.22.22.01;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.22
+log
+@Added Sys_GetHostName and Sys_SetHostName system calls.
+@
+text
+@/*
+ * procRpc.c --
+ *
+ *	Procedures to handle remote procedure calls on behalf of migrated
+ *	processes, and for initial setup of migrated processes.
+ *
+ * Copyright (C) 1986, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/proc/procRpc.c,v 9.21 92/06/01 14:40:52 kupfer Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <stdlib.h>
+#include <proc.h>
+#include <procInt.h>
+#include <procMigrate.h>
+#include <mach.h>
+#include <fs.h>
+#include <migrate.h>
+#include <byte.h>
+#include <sig.h>
+#include <vm.h>
+#include <sys.h>
+#include <rpc.h>
+#include <timer.h>
+#include <sched.h>
+#include <sync.h>
+#include <sysSysCall.h>
+#include <sysSysCallParam.h>
+#include <devVid.h>
+#include <prof.h>
+#include <string.h>
+#include <stdio.h>
+#include <bstring.h>
+
+/* 
+ * Macro to verify that a process is migrated.  If its state is MIGRATED, 
+ * it's okay.  Otherwise, both the MIGRATING and MIGRATION_DONE flags must 
+ * be on.  The MIGRATING flag must be on because the home process hasn't 
+ * finished migrating yet (hasn't context switched).  The MIGRATION_DONE 
+ * flag must be on because otherwise we shouldn't yet be getting RPC 
+ * requests from the peer process.
+ */
+#define IsMigrated(procPtr) \
+    ((procPtr)->state == PROC_MIGRATED \
+     || (((procPtr)->genFlags & (PROC_MIGRATING|PROC_MIGRATION_DONE)) \
+	 == (PROC_MIGRATING|PROC_MIGRATION_DONE)))
+    
+/* 
+ * The PARANOIA code contains temporary checks to verify that 
+ * Proc_StringNCopy is being used correctly. -mdk 27-May-91.
+ */
+#define PARANOIA	1
+#if PARANOIA
+#define IsUserAddr(x)	((x) >= mach_FirstUserAddr && (x) <= mach_LastUserAddr)
+Boolean procStringChecks = FALSE; /* do some paranoia checks on StringNCopy */
+#endif
+
+static ReturnStatus 	RpcProcExit _ARGS_((Proc_ControlBlock *procPtr, 
+				Address dataPtr, int dataLength, 
+				Address *replyDataPtr, 
+				int *replyDataLengthPtr));
+static ReturnStatus 	RpcProcFork _ARGS_((Proc_ControlBlock *parentProcPtr, 
+				Address dataPtr, int dataLength, 
+				Address *replyDataPtr, 
+				int *replyDataLengthPtr));
+static ReturnStatus 	RpcProcExec _ARGS_((Proc_ControlBlock *procPtr, 
+				Address dataPtr, int dataLength, 
+				Address *replyDataPtr, 
+				int *replyDataLengthPtr));
+static ReturnStatus 	RpcRemoteCall _ARGS_((Proc_RemoteCall *callPtr, 
+				Address dataPtr, int dataLength, 
+				Address *replyDataPtr,
+				int *replyDataLengthPtr));
+static ReturnStatus	WaitSanityChecks _ARGS_((Proc_ControlBlock *procPtr,
+				int clientID));
+
+typedef ReturnStatus ((*PRS) ());
+
+/*
+ * When a migrated system call is handled, a local procedure is called
+ * to perform the system call.  If the procedure has side effects,
+ * then before the results are returned, the process state on the
+ * remote node needs to be updated.  (This will be the case for
+ * routines such as Proc_SetIDs or Fs_Open.)  The "CallBack" type
+ * defines a structure containing pointers to two procedures.
+ *
+ * For each system call, there are several possibilities for procedures to
+ * be invoked:
+ *
+ *	1) The call should never be migrated (or has not been implemented).
+ *	   This is a fatal error and is identified by localPtr being "RSNIL".
+ *	2) The call is a typical call that transfers data but has no side
+ *	   effects.  localPtr is set, but sideEffectsPtr is RSNIL.
+ *	3) The call has side effects.  localPtr and sideEffectsPtr are non-NIL.
+ */
+
+typedef struct {
+    PRS localPtr;		/* procedure to process call locally */
+    PRS sideEffectsPtr;		/* procedure to update info on remote node */
+} CallBack;
+
+#define RSNIL ((PRS) NIL)
+
+static CallBack callBackVector[] = {
+/*
+ *     callPtr	  (why)		sideEffectsPtr	call number
+ */
+    { RpcProcFork,			RSNIL }, /* SYS_PROC_FORK	   0 */
+    { RpcProcExec,			RSNIL }, /* SYS_PROC_EXEC	   1 */
+    { RpcProcExit,			RSNIL }, /* SYS_PROC_EXIT	   2 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_SYNC_WAITTIME	   3 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_TEST_PRINTOUT	   4 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_TEST_GETLINE	   5 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_TEST_GETCHAR	   6 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_OPEN		   7 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_READ		   8 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_WRITE	   9 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_CLOSE	  10 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_REMOVE	  11 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_REMOVE_DIR	  12 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_MAKE_DIR	  13 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_CHANGE_DIR	  14 */
+    { RSNIL /* Proc_Wait */,		RSNIL }, /* SYS_PROC_WAIT	  15 */
+    { Proc_Detach,			RSNIL }, /* SYS_PROC_DETACH	  16 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_PROC_GETIDS	  17 */
+    { Proc_SetIDs,			RSNIL }, /* SYS_PROC_SETIDS	  18 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_PROC_GETGROUPIDS  19 */
+    { RSNIL /* Proc_SetGroupIDs */,	RSNIL }, /* SYS_PROC_SETGROUPIDS  20 */
+    { Proc_GetFamilyID,			RSNIL }, /* SYS_PROC_GETFAMILYID  21 */
+    { Proc_SetFamilyID,			RSNIL }, /* SYS_PROC_SETFAMILYID  22 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_TEST_RPC	  23 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_TEST_STATS	  24 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_VM_CREATEVA	  25 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_VM_DESTROYVA      26 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_SIG_SEND	  27 */
+    { RSNIL /* Sig_Pause */,		RSNIL }, /* SYS_SIG_PAUSE	  28 */
+    { RSNIL /* Sig_SetHoldMask */,	RSNIL }, /* SYS_SIG_SETHOLDMASK   29 */
+    { RSNIL /* Sig_SetAction */,	RSNIL }, /* SYS_SIG_SETACTION     30 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_PROF_START	  31 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_PROF_END	  32 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_PROF_DUMP	  33 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_VM_CMD	          34 */
+    { Sys_GetTimeOfDay,			RSNIL }, /* SYS_SYS_GETTIMEOFDAY  35 */
+    { Sys_SetTimeOfDay,			RSNIL }, /* SYS_SYS_SETTIMEOFDAY  36 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_SYS_DONOTHING     37 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_PROC_GETPCBINFO   38 */
+    { RSNIL /* Vm_GetSegInfo */,	RSNIL }, /* SYS_VM_GETSEGINFO     39 */
+    { Proc_GetResUsage,			RSNIL }, /* SYS_PROC_GETRESUSAGE  40 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_PROC_GETPRIORITY  41 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_PROC_SETPRIORITY  42 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_PROC_DEBUG	  43 */
+    { RSNIL /* Not implemented */,	RSNIL }, /* SYS_PROC_PROFILE      44 */
+    { RSNIL /* obsolete */,		RSNIL }, /* SYS_FS_TRUNC	  45 */
+    { RSNIL /* obsolete */,		RSNIL }, /* SYS_FS_TRUNC_ID	  46 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_GET_NEW_ID	  47 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_GET_ATTRIBUTES 48 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_GET_ATTR_ID	  49 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_SET_ATTRIBUTES 50 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_SET_ATTR_ID	  51 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_SET_DEF_PERM	  52 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_IO_CONTROL	  53 */
+    { Dev_VidEnable,			RSNIL }, /* SYS_SYS_ENABLEDISPLAY 54 */
+    { RSNIL /* obsolete */,		RSNIL }, /* SYS_PROC_SET_ENVIRON  55 */
+    { RSNIL /* obsolete */,		RSNIL }, /* SYS_PROC_UNSET_ENVIRON 56 */
+    { RSNIL /* obsolete */,		RSNIL }, /* SYS_PROC_GET_ENVIRON_VAR 57 */
+    { RSNIL /* obsolete */,		RSNIL }, /* SYS_PROC_GET_ENVIRON_RANGE 58 */
+    { RSNIL /* obsolete */,  		RSNIL }, /* SYS_PROC_INSTALL_ENVIRON 59 */
+    { RSNIL /* obsolete */,		RSNIL }, /* SYS_PROC_COPY_ENVIRON 60 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_SYNC_SLOWLOCK 	  61 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_SYNC_SLOWWAIT     62 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_SYNC_SLOWBROADCAST 63 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_VM_PAGESIZE       64 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_HARDLINK       65 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_RENAME         66 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_SYMLINK        67 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_READLINK 	  68 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_CREATEPIPE     69 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_VM_MAPKERNELINTOUSER 70 */
+    { Fs_AttachDiskStub,		RSNIL }, /* SYS_FS_ATTACH_DISK    71 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_SELECT         72 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_SYS_SHUTDOWN	  73 */
+    { Proc_Migrate,			RSNIL }, /* SYS_PROC_MIGRATE	  74 */
+    { Fs_MakeDeviceStub,		RSNIL }, /* SYS_FS_MAKE_DEVICE    75 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_COMMAND        76 */
+    { RSNIL /* obsolete */,		RSNIL }, /* SYS_FS_LOCK		  77 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_GETMACHINEINFO    78 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_NET_INSTALL_ROUTE 79 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_READVECTOR	  80 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_WRITEVECTOR	  81 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_CHECKACCESS    82 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_PROC_GETINTERVALTIMER  83 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_PROC_SETINTERVALTIMER  84 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_WRITEBACKID    85 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_PROC_EXEC_ENV     86 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_SET_ATTR_NEW   87 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_FS_SET_ATTR_ID_NEW 88 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_PROC_GETHOSTIDS   89 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_SCHED_IDLE_PROCESSOR 90 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_SCHED_START_PROCESSOR 91 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_MACH_NUM_PROCESSORS 92 */
+    { RSNIL /* Not migrated */,         RSNIL }, /* SYS_PROF_PROFIL 93 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_PROC_REMOTE_EXEC     94 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_SYS_GETMACHINEINFO_NEW  95 */
+    { RSNIL /* Not migrated */,		RSNIL},  /* VM_MMAP 96 */
+    { RSNIL /* Not migrated */,		RSNIL},  /* VM_MUNMAP 97 */
+    { RSNIL /* Not migrated */,		RSNIL},  /* VM_MSYNC 98 */
+    { RSNIL /* Not migrated */,		RSNIL},  /* VM_MLOCK 99 */
+    { RSNIL /* Not migrated */,		RSNIL},  /* VM_MUNLOCK 100 */
+    { RSNIL /* Not migrated */,		RSNIL},  /* VM_MINCORE 101 */
+    { RSNIL /* Not migrated */,		RSNIL},  /* SYNC_SEMCTL 102 */
+    { RSNIL /* Not migrated */,		RSNIL},  /* SYNC_SEMGET 103 */
+    { RSNIL /* Not migrated */,		RSNIL},  /* SYNC_SEMOP 104 */
+    { RSNIL /* Not migrated */,		RSNIL},  /* VM_MPROTECT 105 */
+    { RpcProcFork,			RSNIL }, /* SYS_PROC_VFORK 106 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_NET_GET_ROUTES 107 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_NET_DELETE_ROUTE 108 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_ZSS_CMD 109 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_ZEBRA_CMD 110 */
+    { Sys_GetHostName,			RSNIL }, /* SYS_GET_HOSTNAME 111 */
+    { Sys_SetHostName,			RSNIL }, /* SYS_SET_HOSTNAME 112 */
+
+};
+
+
+/*
+ * Define an array of callbacks to do when handling migration commands.
+ * Each of these procedures is called with the following arguments:
+ *
+ *	func(cmdPtr, procPtr, inBufSize, inBufPtr, outBufSizePtr,
+ *	      outBufPtrPtr)
+ *
+ * cmdPtr is a pointer to a ProcMigCommand structure containing the
+ * processID of the process on this host, and the input and output
+ * buffers are dependent on the command.  The output buffer arguments
+ * may be left alone, or set to point to a newly allocated buffer.
+ * procPtr is generally a pointer to a locked control block for the
+ * process being operated on, or is NIL in the case of
+ * ProcMigAcceptMigration creating a new process.
+ */
+static PRS commandCallbacks[] = {
+    ProcMigAcceptMigration,
+    ProcMigReceiveProcess,
+    ProcMigGetUpdate,
+    ProcMigEncapCallback,
+    ProcMigDestroyCmd,
+    ProcMigContinueProcess,
+    ProcMigGetSuspend,
+};
+
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcRemoteCall --
+ *
+ *	Service a system call for a migrated process.  Call the rpc
+ *	module to return the results, if any.
+ *
+ * Results:
+ *	Any data retured by the system call is passed back in a buffer,
+ *	as is its length.  The result returned by the system call is
+ *	returned as the ReturnStatus for this procedure.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+static ReturnStatus
+RpcRemoteCall(callPtr, dataPtr, dataLength, replyDataPtr,
+		   replyDataLengthPtr)
+    Proc_RemoteCall *callPtr;
+    Address dataPtr;
+    int dataLength;
+    Address *replyDataPtr;
+    int *replyDataLengthPtr;
+{
+    register Proc_ControlBlock *procPtr;
+    ReturnStatus status;
+    Sys_ArgArray args;
+    int disp;
+    int size;
+    int paddedSize;
+    Address inputPtr;
+    Address outputPtr;
+    int i;
+    Proc_TraceRecord record;
+
+    if (proc_MigDebugLevel > 4) {
+	printf("Proc_RpcRemoteCall(%d) called.\n", callPtr->callNumber);
+    }
+
+    *replyDataLengthPtr = 0;
+    *replyDataPtr = (Address) NIL;
+
+    /*
+     * It's possible for an exit to come in while a process is in the NEW
+     * state if an error occurs while migrating it back home.  In this case,
+     * allow an exit to come in.  Otherwise, be more particular about which
+     * processIDs correspond to valid shadow processes.
+     */
+    procPtr = Proc_LockPID(callPtr->processID);
+    if (procPtr == (Proc_ControlBlock *) NIL
+	|| ((procPtr->state != PROC_MIGRATED) &&
+	    !((procPtr->state == PROC_NEW) &&
+	      (callPtr->callNumber == SYS_PROC_EXIT)))) {
+	if ((procPtr != (Proc_ControlBlock *) NIL) &&
+	    (procPtr->genFlags & PROC_MIGRATION_DONE)) {
+	    /*
+	     * Migration is complete, but it hasn't context switched yet.
+	     * This is okay, since nothing it does after that point
+	     * affects the process.  But, if the call is EXIT, flag an error.
+	     */
+	    if (callPtr->callNumber == SYS_PROC_EXIT) {
+		procPtr->genFlags |= PROC_MIG_ERROR;
+		Proc_Unlock(procPtr);
+		return(SUCCESS);
+	    }
+	} else {
+	    printf("Warning: Proc_RpcRemoteCall: invalid pid: %x.\n",
+		   callPtr->processID);
+	    if (procPtr != (Proc_ControlBlock *) NIL) {
+		printf("Proc_RpcRemoteCall: state = %d, call = %d.\n",
+		       (int) procPtr->state, callPtr->callNumber);
+		Proc_Unlock(procPtr);
+	    }
+	    /*
+	     * Return a special status that indicates the migrated process
+	     * should be destroyed.
+	     */
+	    return (PROC_NO_PEER);
+	}
+    }
+    Proc_Unlock(procPtr);
+    if (callBackVector[callPtr->callNumber].localPtr ==
+	    (ReturnStatus (*) ()) NIL) {
+ 	panic("Proc_RpcRemoteCall: can't handle call %d.\n",
+		  callPtr->callNumber);
+	return(SYS_INVALID_SYSTEM_CALL);
+    }
+
+    /*
+     * Set the effective process for this processor.
+     */
+
+    Proc_SetEffectiveProc(procPtr);
+
+    if (proc_DoTrace && proc_DoCallTrace) {
+	record.processID = callPtr->processID;
+	record.flags = PROC_MIGTRACE_START | PROC_MIGTRACE_HOME;
+	record.info.call.callNumber = callPtr->callNumber;
+	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_CALL,
+		     (ClientData) &record);
+    }
+
+    if (!callPtr->parseArgs) {
+	status = (*(callBackVector[callPtr->callNumber].localPtr))
+		(procPtr, dataPtr, dataLength, replyDataPtr,
+		 replyDataLengthPtr);
+	if (proc_MigDebugLevel > 4) {
+	    printf("Proc_RpcRemoteCall: unparsed call %d returned %x.\n",
+		       callPtr->callNumber, status);
+	}
+
+	if (proc_DoTrace && proc_DoCallTrace) {
+	    record.info.call.status = status;
+	    record.flags &= ~PROC_MIGTRACE_START;
+	    Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_CALL,
+			 (ClientData) &record);
+	}
+	Proc_SetEffectiveProc((Proc_ControlBlock *) NIL);
+	return(status);
+    }
+
+    *replyDataPtr = (Address) malloc(callPtr->replySize);
+    *replyDataLengthPtr = callPtr->replySize;
+    outputPtr = *replyDataPtr;
+    inputPtr = dataPtr;
+
+    for (i = 0; i < callPtr->numArgs; i++) {
+	disp = callPtr->info[i].disposition;
+	size = callPtr->info[i].size;
+	paddedSize = Byte_AlignAddr(size);
+	if (disp & (SYS_PARAM_ACC | SYS_PARAM_COPY)) {
+	    if (disp & SYS_PARAM_NIL) {
+		args.argArray[i] = USER_NIL;
+	    } else if (disp & SYS_PARAM_OUT) {
+		if (disp & SYS_PARAM_IN) {
+		    bcopy(inputPtr, outputPtr, size);
+		    inputPtr += paddedSize;
+		}
+		args.argArray[i] = (int) outputPtr;
+		outputPtr += paddedSize;
+	    } else {
+		args.argArray[i] = (int) inputPtr;
+		inputPtr += paddedSize;
+	    }
+	} else {
+	    if (size != sizeof(int)) {
+		panic("Proc_RpcRemoteCall: size mismatch.\n");
+	    }
+	    args.argArray[i] = * ((int *)inputPtr);
+	    inputPtr += paddedSize;
+	}
+    }
+
+    status = (*(callBackVector[callPtr->callNumber].localPtr)) (args);
+    if (proc_MigDebugLevel > 4) {
+ 	printf("Proc_RpcRemoteCall: parsed call %d returned %x.\n",
+		   callPtr->callNumber, status);
+    }
+    Proc_SetEffectiveProc((Proc_ControlBlock *) NIL);
+
+    if (proc_DoTrace && proc_DoCallTrace) {
+	record.info.call.status = status;
+	record.flags &= ~PROC_MIGTRACE_START;
+	Trace_Insert(proc_TraceHdrPtr, PROC_MIGTRACE_CALL,
+		     (ClientData) &record);
+    }
+
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcProcExit --
+ *
+ *	Perform an exit on the home node of a process.
+ *
+ * Results:
+ *	SUCCESS 		- the process exited successfully.
+ *	PROC_INVALID_PID 	- the process does not exist.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+static ReturnStatus
+RpcProcExit(procPtr, dataPtr, dataLength, replyDataPtr,
+		   replyDataLengthPtr)
+    register Proc_ControlBlock *procPtr;
+    Address dataPtr;
+    int dataLength;
+    Address *replyDataPtr;
+    int *replyDataLengthPtr;
+{
+    Timer_Ticks kernelTicks;
+    Timer_Ticks userTicks;
+    int count;
+    int reason;	/* Why the process is dying: EXITED, SIGNALED, DESTROYED  */
+    int	status;	/* Exit status or signal # or destroy status */
+    int code;	/* Signal sub-status */
+    Proc_PID pid;
+
+    if (proc_MigDebugLevel > 4) {
+	printf("RpcProcExit called.\n");
+    }
+
+    Proc_Lock(procPtr);
+    Byte_EmptyBuffer(dataPtr, Timer_Ticks,  kernelTicks);
+    Timer_AddTicks(procPtr->kernelCpuUsage.ticks, kernelTicks,
+		   &procPtr->kernelCpuUsage.ticks);
+    Byte_EmptyBuffer(dataPtr, Timer_Ticks,  userTicks);
+    Timer_AddTicks(procPtr->userCpuUsage.ticks, userTicks,
+		   &procPtr->userCpuUsage.ticks);
+#ifndef CLEAN
+    /*
+     * Record the remote usage for this process.  Note that the usage is
+     * also recorded in the total usage for this host under ProcExitProcess.
+     */
+    Timer_AddTicks(kernelTicks, userTicks, &userTicks);
+    ProcRecordUsage(userTicks, PROC_MIG_USAGE_REMOTE_CPU);
+#endif /* CLEAN */
+
+    Byte_EmptyBuffer(dataPtr, int,  count);
+    procPtr->numQuantumEnds += count;
+    Byte_EmptyBuffer(dataPtr, int, count);
+    procPtr->numWaitEvents += count;
+
+    Byte_EmptyBuffer(dataPtr, int, reason);
+    Byte_EmptyBuffer(dataPtr, int, status);
+    Byte_EmptyBuffer(dataPtr, int, code);
+
+
+    pid = procPtr->processID;
+
+    /*
+     * Perform an exit on behalf of the process.  The process is
+     * unlocked as a side effect.
+     */
+    ProcExitProcess(procPtr, reason, status, code, FALSE);
+
+    /*
+     * Remove the dependency on the other host.
+     */
+    ProcMigRemoveDependency(pid, TRUE);
+
+    /*
+     * Update statistics.
+     */
+#ifndef CLEAN
+    if (proc_MigDoStats) {
+	PROC_MIG_DEC_STAT(remote);
+    }
+#endif /* CLEAN */   
+
+    if (proc_MigDebugLevel > 4) {
+	printf("RpcProcExit returning SUCCESS.\n");
+    }
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcProcExec --
+ *
+ *	Perform an exec on the home node of a process.
+ *
+ * Results:
+ *	SUCCESS 		- The process is migrated and has been
+ * 				  modified.
+ *
+ * Side effects:
+ *	the process's argument string and effective userID are modified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+static ReturnStatus
+RpcProcExec(procPtr, dataPtr, dataLength, replyDataPtr,
+		   replyDataLengthPtr)
+    register Proc_ControlBlock *procPtr;
+    Address dataPtr;
+    int dataLength;
+    Address *replyDataPtr;
+    int *replyDataLengthPtr;
+{
+    int uid;
+    char *argString;
+
+    if (proc_MigDebugLevel > 4) {
+	printf("RpcProcExec called.\n");
+    }
+
+    Proc_Lock(procPtr);
+    Byte_EmptyBuffer(dataPtr, int, uid);
+    if (uid != -1) {
+	procPtr->effectiveUserID = uid;
+    }
+    /*
+     * The data area contains the uid followed by the argString. Therefore,
+     * we allocate space equal to the data length - 1.  (The null terminator
+     * is included in the string passed over).
+     */
+    argString = malloc(dataLength - 1);
+    if (procPtr->argString != (char *) NIL) {
+	free(procPtr->argString);
+    }
+    procPtr->argString = argString;
+    (void) strcpy(argString, dataPtr);
+
+    if (proc_MigDebugLevel > 6) {
+	printf("RpcProcExec setting argString to '%s'.\n", argString);
+    }
+
+
+    Proc_Unlock(procPtr);
+
+    if (proc_MigDebugLevel > 4) {
+	printf("RpcProcExec returning SUCCESS.\n");
+    }
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcProcFork --
+ *
+ *	Perform a fork on the home node of a process.  This involves allocating
+ *	a PCB and process ID for the process, and copying certain local
+ *	information such as the environment.
+ *
+ * Results:
+ *	SUCCESS 		- the process forked successfully.
+ *	PROC_INVALID_PID 	- the process does not exist.
+ *
+ * Side effects:
+ *	A new process is created.  The identifier of the newly-created
+ *	process is returned to the remote node in the data buffer.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+static ReturnStatus
+RpcProcFork(parentProcPtr, dataPtr, dataLength, replyDataPtr,
+	    replyDataLengthPtr)
+    register Proc_ControlBlock *parentProcPtr;
+    Address dataPtr;
+    int dataLength;
+    Address *replyDataPtr;
+    int *replyDataLengthPtr;
+{
+    Proc_ControlBlock 	*childProcPtr;	/* The new process being created */
+
+    if (proc_MigDebugLevel > 3) {
+	printf("RpcProcFork called.\n");
+    }
+    childProcPtr = ProcGetUnusedPCB();
+
+    childProcPtr->Prof_Scale = 0;
+    Prof_Enable(childProcPtr, parentProcPtr->Prof_Buffer, 
+        parentProcPtr->Prof_BufferSize, parentProcPtr->Prof_Offset,
+	parentProcPtr->Prof_Scale);
+
+    childProcPtr->state 		= PROC_MIGRATED;
+    childProcPtr->genFlags 	       |= PROC_USER | PROC_NO_VM;
+    childProcPtr->syncFlags		= 0;
+    childProcPtr->schedFlags		= 0;
+    childProcPtr->exitFlags		= 0;
+
+    childProcPtr->billingRate 	= parentProcPtr->billingRate;
+    childProcPtr->recentUsage 	= 0;
+    childProcPtr->weightedUsage 	= 0;
+    childProcPtr->unweightedUsage 	= 0;
+
+    childProcPtr->kernelCpuUsage.ticks 	= timer_TicksZeroSeconds;
+    childProcPtr->userCpuUsage.ticks 		= timer_TicksZeroSeconds;
+    childProcPtr->childKernelCpuUsage.ticks 	= timer_TicksZeroSeconds;
+    childProcPtr->childUserCpuUsage.ticks 	= timer_TicksZeroSeconds;
+    childProcPtr->numQuantumEnds	= 0;
+    childProcPtr->numWaitEvents	= 0;
+
+    childProcPtr->parentID 		= parentProcPtr->processID;
+    childProcPtr->userID 		= parentProcPtr->userID;
+    childProcPtr->effectiveUserID 	= parentProcPtr->effectiveUserID;
+    childProcPtr->familyID 		= parentProcPtr->familyID;
+
+    if (childProcPtr->argString != (char *) NIL) {
+	free(childProcPtr->argString);
+    }
+    if (parentProcPtr->argString != (Address) NIL) {
+	childProcPtr->argString =
+		(char *) malloc(strlen(parentProcPtr->argString) + 1);
+	(void) strcpy(childProcPtr->argString, parentProcPtr->argString);
+    } else {
+	childProcPtr->argString	= (char *) NIL;
+    }
+
+
+    Vm_ProcInit(childProcPtr);
+
+    if (ProcFamilyInsert(childProcPtr, childProcPtr->familyID) != SUCCESS) {
+	panic("RpcProcFork: ProcFamilyInsert failed\n");
+    }
+
+    /*
+     *  Initialize our child list to remove any old links.
+     *  Insert this PCB entry into the list of children of our parent.
+     */
+    List_Init((List_Links *) childProcPtr->childList);
+    List_Insert((List_Links *) &(childProcPtr->siblingElement),
+		LIST_ATREAR(parentProcPtr->childList));
+
+    Sig_Fork(parentProcPtr, childProcPtr);
+
+    /*
+     * Initialize information for migration.
+     */
+
+    Byte_EmptyBuffer(dataPtr, Proc_PID, childProcPtr->peerProcessID);
+    childProcPtr->peerHostID = parentProcPtr->peerHostID;
+
+    /*
+     * Set up the environment of the process.
+     */
+
+     ProcSetupEnviron(childProcPtr);
+
+    /*
+     * Have the new process inherit filesystem state.
+     */
+    Fs_InheritState(parentProcPtr, childProcPtr);
+
+    /*
+     * Note the dependency of the new process on the other host.
+     */
+    ProcMigAddDependency(childProcPtr->processID, childProcPtr->peerProcessID);
+
+    /*
+     * Update statistics.
+     */
+#ifndef CLEAN
+    if (proc_MigDoStats) {
+	PROC_MIG_INC_STAT(remote);
+    }
+#endif /* CLEAN */   
+
+    /*
+     * Send back the child's process ID in the replyData buffer.
+     */
+
+    *replyDataLengthPtr = sizeof(Proc_PID);
+    *replyDataPtr = (Address) malloc(sizeof(Proc_PID));
+    * ((Proc_PID *) *replyDataPtr) = childProcPtr->processID;
+
+    if (proc_MigDebugLevel > 3) {
+	printf("RpcProcFork returning SUCCESS.\n");
+    }
+
+    Proc_Unlock(childProcPtr);
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_ByteCopy --
+ *
+ *	Perform a copy into or out of the user's address space.  If
+ *	the user process is migrated, copy the arguments directly and
+ *	let the rpc server send the results to the remote node.
+ *
+ * Results:
+ *	SUCCESS 		- the copy was performed successfully.
+ *	SYS_ARG_NOACCESS 	- the argument was not accessible.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Proc_ByteCopy(copyIn, numBytes, sourcePtr, destPtr)
+    Boolean copyIn;		/* copy into or out of kernel address space */
+    int numBytes;		/* The number of bytes to copy */
+    Address sourcePtr;		/* Where to copy from */
+    Address destPtr;		/* Where to copy to */
+{
+    ReturnStatus status = SUCCESS;
+
+    if (Proc_UseRpcBuffer()) {
+	bcopy(sourcePtr, destPtr, numBytes);
+    } else if (copyIn) {
+	status = Vm_CopyIn(numBytes, sourcePtr, destPtr);
+    } else {
+	status = Vm_CopyOut(numBytes, sourcePtr, destPtr);
+    }
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_StringNCopy --
+ *
+ *	Copy a string from the user's address space to a buffer of 
+ *	limited length.  If the user process is a ghost (an RPC that 
+ *	was migrated home), copy the argument directly.  cf. 
+ *	Proc_ByteCopy and Vm_StringNCopy.
+ *
+ * Results:
+ *	SUCCESS
+ *
+ * Side effects:
+ *	*strNameLength is set to the actual length of the string copied.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Proc_StringNCopy(numBytes, srcStr, destStr, strLengthPtr)
+    register int	numBytes;	/* Maximum number of bytes to copy. */
+    register char	*srcStr;	/* String to copy. */
+    register char	*destStr;	/* Where to copy string to. */
+    int			*strLengthPtr;	/* Where to return actual length of
+					 * string copied. */
+{
+    register int length;
+    ReturnStatus status;
+
+    if (!Proc_UseRpcBuffer()) {
+	status =  Vm_StringNCopy(numBytes, srcStr, destStr,
+				 strLengthPtr);
+    } else {
+	for (length = 0; (length < numBytes) && (*srcStr != '\0'); length++) {
+	    *destStr++ = *srcStr++;
+	}
+	*destStr = '\0';
+	*strLengthPtr = length;
+	status = SUCCESS;
+    }
+
+#if PARANOIA
+    /* 
+     * If the copy succeeded, check whether it should have.  This test used 
+     * to come first, but then it would cause panics if someone passed in a 
+     * null pointer.
+     */
+    if (procStringChecks && status == SUCCESS) {
+	if (!Proc_UseRpcBuffer() && !IsUserAddr(srcStr)) {
+	    panic("Proc_StringNCopy: copying from kernel address 0x%x\n",
+		  srcStr);
+	}
+	if (IsUserAddr(destStr)) {
+	    panic("Proc_StringNCopy: copying to user address 0x%x\n",
+		  destStr);
+	}
+    }
+#endif
+
+    return status;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_MakeStringAccessible --
+ *
+ *	If the string is in user space, convert the user space path pointer
+ *	into a kernel valid pointer.  If the string is in kernel space
+ *	already (i.e., a system call is being performed on behalf of a
+ *	migrated process), do nothing.
+ *
+ *
+ * Results:
+ *	SYS_ARG_NOACCESS    - the Vm_MakeAccessible call failed.
+ *	PROC_INVALID_STRING - the length of the string exceeds the maximum
+ *            		      permissible length or is not null-terminated.
+ *
+ *	The new pointer is returned in *stringPtrPtr.  The length of the
+ *	string is returned in *newLengthPtr if newLengthPtr is non-NIL.
+ *
+ * Side effects:
+ *	Make an area of the user code accessible.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Proc_MakeStringAccessible(maxLength, stringPtrPtr, accessLengthPtr,
+			  newLengthPtr)
+    int maxLength;	 /* Maximum allowable string length */
+    char **stringPtrPtr; /* On input *stringPtrPtr is a user space pointer,
+			  * On output *stringPtrPtr is a kernel space pointer */
+    int *accessLengthPtr;/* Number of bytes actually made accessible. */
+    int *newLengthPtr;	 /* length of the string that is made accessible */
+{
+    int accessLength = maxLength;
+    register int realLength;
+    Boolean madeAccessible = FALSE;
+    register char *charPtr;
+
+    if (!Proc_UseRpcBuffer()) {
+	Vm_MakeAccessible(VM_READONLY_ACCESS,
+			  maxLength, (Address) *stringPtrPtr,
+			  &accessLength, (Address *) stringPtrPtr);
+	if (*stringPtrPtr == (Address)NIL) {
+	    return(SYS_ARG_NOACCESS);
+	}
+	madeAccessible = TRUE;
+	*accessLengthPtr = accessLength;
+    }
+    /*
+     * Do a length check.  If the file name takes up all the addressable
+     * space then it isn't null terminated and will cause problems later.
+     */
+    for (charPtr = *stringPtrPtr, realLength = 0;
+	 (realLength < accessLength) && (*charPtr != '\0');
+	 charPtr++, realLength++) {
+     }
+    if (realLength == accessLength && *charPtr != '\0') {
+	if (madeAccessible) {
+	    Vm_MakeUnaccessible((Address) *stringPtrPtr, accessLength);
+	}
+	*stringPtrPtr = (Address)NIL;
+	return(PROC_INVALID_STRING);
+    }
+    if (newLengthPtr != (int *) NIL) {
+	*newLengthPtr = realLength;
+    }
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_MakeUnaccessible
+ *
+ *	If the pointer is to something that was made accessible as a
+ *	result of a local system call, call Vm_MakeUnaccessible.  
+ *	Otherwise, the pointer is to a (kernel) RPC buffer and should 
+ *	be left alone.  This routine is used by generic system call
+ *	stubs that may be called either locally or on behalf of a
+ *	ghost process.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Kernel page table may be modified.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Proc_MakeUnaccessible(addr, numBytes)
+    Address		addr;
+    int			numBytes;
+{
+
+    if (!Proc_UseRpcBuffer()) {
+	Vm_MakeUnaccessible(addr, numBytes);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_RpcRemoteWait --
+ *
+ *	Perform a Proc_Wait on behalf of a migrated process.
+ *
+ * Results:
+ *	SUCCESS - an exiting/detached child was found and the information
+ *		  about it is being returned.
+ *	PROC_NO_EXITS - No children have performed an exit or detach
+ *		        (except possibly children about whom the parent has
+ *			already been notified).
+ *
+ * Side effects:
+ *	If the process has no exiting children and it has specified that
+ *	it should block until a child exits, the process is established
+ *	as performing a remote wait.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+ReturnStatus
+Proc_RpcRemoteWait(srvToken, clientID, command, storagePtr)
+    ClientData srvToken;	/* Handle on server process passed to
+				 * Rpc_Reply */
+    int clientID;		/* Sprite ID of client host */
+    int command;		/* Command identifier */
+    Rpc_Storage *storagePtr;	/* The request fields refer to the request
+				 * buffers and also indicate the exact amount
+				 * of data in the request buffers.  The reply
+				 * fields are initialized to NIL for the
+				 * pointers and 0 for the lengths.  This can
+				 * be passed to Rpc_Reply */
+{
+    ReturnStatus status;
+    ProcChildInfo *childInfoPtr;
+    register ProcRemoteWaitCmd *cmdPtr;
+    Proc_PID *pidArray;
+    Rpc_ReplyMem *replyMemPtr;
+    Proc_ControlBlock *procPtr;
+
+    if (proc_MigDebugLevel > 3) {
+	printf("Proc_RpcRemoteWait entered.\n");
+
+    }
+
+    cmdPtr = (ProcRemoteWaitCmd *) storagePtr->requestParamPtr;
+    procPtr = Proc_LockPID(cmdPtr->pid);
+
+    if (procPtr == (Proc_ControlBlock *) NIL) {
+	if (proc_MigDebugLevel > 1) {
+	    printf("Proc_RpcRemoteWait: no such process %x\n", cmdPtr->pid);
+	}
+	return (PROC_NO_PEER);
+    } else {
+	status = WaitSanityChecks(procPtr, clientID);
+	if (status != SUCCESS) {
+	    Proc_Unlock(procPtr);
+	    return (status);
+	}
+    }
+
+    /* 
+     * If the local process is still finishing up migration, wait for it to 
+     * complete. 
+     */
+    if (procPtr->state != PROC_MIGRATED) {
+	if (proc_MigDebugLevel > 2) {
+	    printf("%s: waiting for process %x to context switch.\n",
+		   "Proc_RpcRemoteWait", procPtr->processID);
+	}
+	Proc_Unlock(procPtr);
+	status = Proc_WaitForMigration(cmdPtr->pid);
+	if (status != SUCCESS) {
+	    if (proc_MigDebugLevel > 1) {
+		printf("%s: error waiting for pid %x to context switch.\n",
+		       "Proc_RpcRemoteWait", cmdPtr->pid);
+	    }
+	    return (PROC_NO_PEER);
+	}
+	Proc_Lock(procPtr);
+	status = WaitSanityChecks(procPtr, clientID);
+	if (status != SUCCESS) {
+	    if (proc_MigDebugLevel > 1) {
+		printf("%s: error after waiting for pid %x to ctxt switch\n",
+		       "Proc_RpcRemoteWait", procPtr->processID);
+	    }
+	    Proc_Unlock(procPtr);
+	    return (status);
+	}
+    }
+
+    pidArray = (Proc_PID *) storagePtr->requestDataPtr;
+    childInfoPtr = (ProcChildInfo *) malloc(sizeof(ProcChildInfo));
+
+    status = ProcServiceRemoteWait(procPtr, cmdPtr->flags, cmdPtr->numPids,
+				    pidArray, cmdPtr->token,
+				   childInfoPtr);
+
+    Proc_Unlock(procPtr);
+    if (status == SUCCESS) {
+	storagePtr->replyDataPtr = (Address) childInfoPtr;
+	storagePtr->replyDataSize = sizeof(ProcChildInfo);
+	replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
+	replyMemPtr->paramPtr = (Address) NIL;
+	replyMemPtr->dataPtr = storagePtr->replyDataPtr;
+
+	Rpc_Reply(srvToken, status, storagePtr, Rpc_FreeMem,
+		(ClientData) replyMemPtr);
+    } else {
+	free((Address) childInfoPtr);
+    }
+
+    if (proc_MigDebugLevel > 3) {
+	printf("Proc_RpcRemoteWait: returning %x.\n", status);
+    }
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WaitSanityChecks --
+ *
+ *	Do some sanity checks for the remote wait() call on the given 
+ *	locked PCB.
+ *
+ * Results:
+ *	Returns a Sprite status code.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+WaitSanityChecks(procPtr, clientID)
+    Proc_ControlBlock *procPtr;
+    int clientID;		/* host that made the wait request */
+{
+    /* 
+     * Verify that the process is migrated and that the process's remote
+     * host is the one making the wait request.
+     */
+    if (!IsMigrated(procPtr) || procPtr->peerHostID != clientID) {
+	if (proc_MigDebugLevel > 1) {
+	    if (procPtr->peerHostID != clientID) {
+		printf("%s: process %x has peer host %d, expected %d.\n",
+		       "Proc_RpcRemoteWait", procPtr->processID,
+		       procPtr->peerHostID, clientID);
+	    } else {
+		printf("%s: process %x not migrated (state %d, flags 0x%x)\n",
+		       "Proc_RpcRemoteWait", procPtr->processID,
+		       procPtr->state, procPtr->genFlags);
+	    }
+	}
+	return(PROC_NO_PEER);
+    }
+
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_RpcMigCommand --
+ *
+ *	Handle a request regarding process migration.  This may be a
+ *	request to initiate migration, a buffer containing part or all
+ *	of the encapsulated state of a process, a callback by another
+ *	module during state transfer, or a command to asynchronously
+ *	kill a migrated process due to some error.
+ *
+ * Results:
+ *	SUCCESS is returned to the rpc daemon invoking this procedure.
+ *	Various ReturnStatus values may be returned via the RPC itself.
+ *	It is either SUCCESS or some error returned by a lower level routine
+ *	(e.g., no such process). In addition, the called routine may
+ *	return arbitrary data.
+ *
+ * Side effects:
+ *	Variable (see above).
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+Proc_RpcMigCommand(srvToken, hostID, command, storagePtr)
+    ClientData srvToken;	/* Handle on server process passed to
+				 * Rpc_Reply */
+    int hostID;			/* Sprite ID of host invoking RPC */
+    int command;		/* Command identifier */
+    Rpc_Storage *storagePtr;	/* The request fields refer to the request
+				 * buffers and also indicate the exact amount
+				 * of data in the request buffers.  The reply
+				 * fields are initialized to NIL for the
+				 * pointers and 0 for the lengths.  This can
+				 * be passed to Rpc_Reply */
+{
+    ReturnStatus status;
+    Rpc_ReplyMem	*replyMemPtr;
+    ProcMigCmd *commandPtr =
+	(ProcMigCmd *) storagePtr->requestParamPtr;
+    Proc_MigBuffer	inBuf;
+    Proc_MigBuffer	outBuf;
+    Proc_ControlBlock *procPtr;
+    int requestSize;
+
+    if (proc_MigDebugLevel > 5) {
+	printf("Proc_RpcMigCommand: called from host %d with command %d commandPtr %x.\n",
+	       hostID, command, (int) commandPtr);
+    }
+    if (storagePtr->requestParamSize != sizeof(ProcMigCmd)) {
+	if (proc_MigDebugLevel > 0) {
+	    printf("Proc_RpcMigCommand: called from host %d with invalid input buffer size (%d instead of %d).\n",
+	       hostID, storagePtr->requestParamSize, sizeof(ProcMigCmd));
+	}
+	status = GEN_INVALID_ARG;
+	goto done;
+    }
+    
+    if (commandPtr->remotePid != (Proc_PID) NIL) {
+	PROC_GET_VALID_PCB(commandPtr->remotePid, procPtr);
+	if (procPtr == (Proc_ControlBlock *) NIL) {
+	    if (proc_MigDebugLevel > 3) {
+		panic("Proc_RpcMigCommand: Invalid pid: %x.\n", commandPtr->remotePid);
+	    }
+	    if (proc_MigDebugLevel > 1) {
+		printf("Proc_RpcMigCommand: Invalid pid: %x.\n",
+		       commandPtr->remotePid);
+	    }
+	    status = PROC_NO_PEER;
+	    goto done;
+	}
+    } else {
+	procPtr = (Proc_ControlBlock *) NIL;
+    }
+
+    if (commandPtr->command >= PROC_MIGRATE_CMD_NUM_TYPES ||
+	commandPtr->command < 0) {
+	if (proc_MigDebugLevel > 0) {
+	    printf("Proc_RpcMigCommand: invalid command number: %d.\n",
+		   commandPtr->command);
+	}
+	status = GEN_INVALID_ARG;
+	goto done;
+    }
+    requestSize = storagePtr->requestDataSize;
+    /*
+     * Normally we just pass the buffer as it's given to us, but
+     * it might be a piece of a larger buffer that we malloc and free.
+     * In that case, do some sanity checking and then copy in the buffer.
+     */
+    if (commandPtr->totalSize == requestSize) {
+	inBuf.size = requestSize;
+	inBuf.ptr = storagePtr->requestDataPtr;
+    } else {
+	if (procPtr == (Proc_ControlBlock *) NIL) {
+	    if (proc_MigDebugLevel > 0) {
+		printf("Proc_RpcMigCommand: partial buffer not allowed before process set up.\n");
+		status = PROC_NO_PEER;
+		goto done;
+	    }
+	}
+	if (commandPtr->offset == 0) {
+	    if (procPtr->migCmdBuffer != (Address) NIL) {
+		if (proc_MigDebugLevel > 0) {
+		    printf("Proc_RpcMigCommand: buffer already established for process %x.\n",
+			   procPtr->processID);
+		}
+		free(procPtr->migCmdBuffer);
+	    }
+	    procPtr->migCmdBuffer = malloc(commandPtr->totalSize);
+	    procPtr->migCmdBufSize = commandPtr->totalSize;
+	} else {
+	    if (procPtr->migCmdBuffer == (Address) NIL) {
+		if (proc_MigDebugLevel > 0) {
+		    printf("Proc_RpcMigCommand: no buffer established for process %x.\n",
+			   procPtr->processID);
+		}
+		status = GEN_INVALID_ARG;
+		goto done;
+	    }
+	    if (commandPtr->totalSize != procPtr->migCmdBufSize ||
+		commandPtr->offset + requestSize > commandPtr->totalSize) {
+		if (proc_MigDebugLevel > 0) {
+		    printf("Proc_RpcMigCommand: mismatch in buffer size for process %x.\n",
+			   procPtr->processID);
+		}
+		status = GEN_INVALID_ARG;
+		goto done;
+	    }
+	}
+	bcopy(storagePtr->requestDataPtr,
+	      procPtr->migCmdBuffer + commandPtr->offset,
+	      requestSize);
+	if (commandPtr->offset + requestSize < commandPtr->totalSize) {
+	    status = SUCCESS;
+	    goto done;
+	}
+	inBuf.size = commandPtr->totalSize;
+	inBuf.ptr = procPtr->migCmdBuffer;
+    }
+	
+    outBuf.size = 0;
+    outBuf.ptr = (Address) NIL;
+
+    status = (*commandCallbacks[commandPtr->command])
+	(commandPtr, procPtr, &inBuf, &outBuf);
+#ifdef lint
+    status = ProcMigAcceptMigration(commandPtr, procPtr, &inBuf, &outBuf);
+    status = ProcMigReceiveProcess(commandPtr, procPtr, &inBuf, &outBuf);
+    status = ProcMigUpdateState(commandPtr, procPtr, &inBuf, &outBuf);
+    status = ProcMigEncapCallback(commandPtr, procPtr, &inBuf, &outBuf);
+    status = ProcMigDestroyCmd(commandPtr, procPtr, &inBuf, &outBuf);
+#endif /* lint */
+    /*
+     * Free the malloc'ed buffer if it exists.
+     */
+    if ((procPtr != (Proc_ControlBlock *) NIL) &&
+	(procPtr->migCmdBuffer != (Address) NIL)) {
+	free(procPtr->migCmdBuffer);
+	procPtr->migCmdBuffer = (Address) NIL;
+    }
+    if (status == SUCCESS && outBuf.size > 0) {
+	storagePtr->replyDataPtr = outBuf.ptr;
+	storagePtr->replyDataSize = outBuf.size;
+
+	replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
+	replyMemPtr->paramPtr = (Address) NIL;
+	replyMemPtr->dataPtr = outBuf.ptr;
+	if (proc_MigDebugLevel > 5) {
+	    printf("Proc_RpcMigCommand: returning status %x.\n", status);
+	}
+	Rpc_Reply(srvToken, SUCCESS, storagePtr, Rpc_FreeMem,
+		(ClientData) replyMemPtr);
+    } else {
+done:
+	if (proc_MigDebugLevel > 2) {
+	    printf("Proc_RpcMigCommand: returning status %x.\n", status);
+	}
+	Rpc_Reply(srvToken, status,
+		  storagePtr, (int(*)()) NIL, (ClientData) NIL);
+    }
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_RpcRemoteCall --
+ *
+ *	Handle a system call for a migrated process.
+ *
+ *	Note: now that this has been moved into the proc module, it
+ *	can be collapsed into the routine it calls....
+ *
+ * Results:
+ *	A return status.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+Proc_RpcRemoteCall(srvToken, clientID, command, storagePtr)
+    ClientData srvToken;	/* Handle on server process passed to
+				 * Rpc_Reply */
+    int clientID;		/* Sprite ID of client host */
+    int command;		/* Command identifier */
+    Rpc_Storage *storagePtr;	/* The request fields refer to the request
+				 * buffers and also indicate the exact amount
+				 * of data in the request buffers.  The reply
+				 * fields are initialized to NIL for the
+				 * pointers and 0 for the lengths.  This can
+				 * be passed to Rpc_Reply */
+{
+    Rpc_ReplyMem	*replyMemPtr;
+    Address returnData = (Address) NIL;
+    int returnDataLength = 0;
+    ReturnStatus status;
+
+    status = RpcRemoteCall((Proc_RemoteCall *)storagePtr->requestParamPtr,
+ 	    storagePtr->requestDataPtr, storagePtr->requestDataSize,
+ 	    &returnData, &returnDataLength);
+
+    storagePtr->replyDataPtr = returnData;
+    storagePtr->replyDataSize = returnDataLength;
+
+    replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
+    replyMemPtr->paramPtr = (Address) NIL;
+    replyMemPtr->dataPtr = returnData;
+    Rpc_Reply(srvToken, status, storagePtr, Rpc_FreeMem,
+	    (ClientData) replyMemPtr);
+
+    return(status);
+}
+@
+
+
+9.21
+log
+@Fix a couple race conditions which could happen if an RPC is forwarded
+home before the home process has context switched.  This should fix
+the mysterious "error code 16"s that one occasionally sees from pmake.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/proc/procRpc.c,v 9.20 92/04/17 17:38:24 jhh Exp $ SPRITE (Berkeley)";
+d228 4
+@
+
+
+9.20
+log
+@Added a placeholder for a Zebra system call.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/proc/procRpc.c,v 9.19 92/04/14 17:00:17 jhh Exp $ SPRITE (Berkeley)";
+d46 13
+d81 5
+a85 2
+			Address dataPtr, int dataLength, 
+			Address *replyDataPtr, int *replyDataLengthPtr));
+a322 3
+	     * (There's still a race condition in the period between checking
+	     * for this bit and context switching in the migration trap
+	     * routine.  Hmm... Poll, maybe?)
+d992 1
+d998 17
+a1014 2
+    } else if (procPtr->state != PROC_MIGRATED ||
+	    procPtr->peerHostID != clientID) {
+d1016 14
+a1029 8
+	if (proc_MigDebugLevel > 1) {
+	    if (procPtr->state != PROC_MIGRATED) {
+		printf("Proc_RpcRemoteWait: process %x not migrated (%d)\n",
+		       procPtr->processID, procPtr->state);
+	    } else {
+		printf("%s: process %x has peer host %d, expected %d.\n",
+		       "Proc_RpcRemoteWait", procPtr->processID,
+		       procPtr->peerHostID, clientID);
+d1031 2
+a1033 1
+	return (PROC_NO_PEER);
+d1035 1
+d1063 44
+@
+
+
+9.19
+log
+@Added Net_GetRoutes and Net_DeleteRoute.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/proc/procRpc.c,v 9.18 92/02/14 14:44:56 kupfer Exp $ SPRITE (Berkeley)";
+d211 1
+@
+
+
+9.18
+log
+@Add some debugging printf's to track down the mysterious "Error code
+16"s we keep getting from pmake.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/proc/procRpc.c,v 9.17 92/01/06 15:12:36 kupfer Exp $ SPRITE (Berkeley)";
+d209 2
+@
+
+
+9.17
+log
+@Fix RpcProcFork to keep the PCB locked while it's being set up.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/proc/procRpc.c,v 9.16 91/11/15 21:08:04 kupfer Exp $ SPRITE (Berkeley)";
+d977 3
+d984 10
+d1089 4
+@
+
+
+9.16
+log
+@Put the paranoia checks in Proc_StringNCopy after the copy, so that a
+null pointer results in an error return instead of a panic.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/proc/procRpc.c,v 9.15 91/09/04 09:27:05 mottsmth Exp $ SPRITE (Berkeley)";
+d621 1
+a621 1
+    childProcPtr->genFlags 		= PROC_USER | PROC_NO_VM;
+d714 2
+@
+
+
+9.15
+log
+@Make sure a migrated vfork is reflected back on home machine.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRpc.c,v 9.14 91/08/26 15:54:11 mottsmth Exp Locker: mottsmth $ SPRITE (Berkeley)";
+a786 9
+#if PARANOIA
+    if (procStringChecks && !IsUserAddr(srcStr)) {
+	panic("Proc_StringNCopy: copying from kernel\n");
+    }
+    if (procStringChecks && IsUserAddr(destStr)) {
+	panic("Proc_StringNCopy: copying to user\n");
+    }
+#endif
+
+d798 18
+@
+
+
+9.14
+log
+@Add true vfork support.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRpc.c,v 9.13 91/05/30 15:09:30 kupfer Exp Locker: mottsmth $ SPRITE (Berkeley)";
+d208 1
+a208 1
+    { RSNIL /* Not migrated */,		RSNIL},  /* SYS_PROC_VFORK 106 */
+@
+
+
+9.13
+log
+@Temporary paranoia checks for Proc_StringNCopy.
+Proc_IsMigratedProcess renamed to Proc_UseRpcBuffer.  Change
+Proc_StringNCopy so that it checks Proc_UseRpcBuffer and calls
+Vm_StringNCopy if necessary.  Some tweaks to comments.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRpc.c,v 9.12 90/10/19 15:39:36 shirriff Exp Locker: kupfer $ SPRITE (Berkeley)";
+d208 1
+@
+
+
+9.13.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/proc/procRpc.c,v 9.13 91/05/30 15:09:30 kupfer Exp $ SPRITE (Berkeley)";
+@
+
+
+9.12
+log
+@Added system calls that I'd forgotten to add before.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRpc.c,v 9.11 90/09/12 13:58:00 jhh Exp Locker: shirriff $ SPRITE (Berkeley)";
+d45 10
+d745 1
+a745 1
+    if (Proc_IsMigratedProcess()) {
+d761 4
+a764 2
+ *	Copy a string to a buffer of limited length.  This routine is
+ *	a parallel routine to Vm_StringNCopy.
+d784 10
+d795 10
+a804 2
+    for (length = 0; (length < numBytes) && (*srcStr != '\0'); length++) {
+	*destStr++ = *srcStr++;
+d806 2
+a807 3
+    *destStr = '\0';
+    *strLengthPtr = length;
+    return(SUCCESS);
+d850 1
+a850 1
+    if (!Proc_IsMigratedProcess()) {
+d888 5
+a892 5
+ *	result of a local system call, call Vm_MakeUnaccessible.  If
+ *	the system call was migrated, do nothing since the address was
+ *	never made accessible in the first place.  This routine is
+ *	used by generic system call stubs that may be called either locally
+ *	or on behalf of a migrated process.
+d908 1
+a908 1
+    if (!Proc_IsMigratedProcess()) {
+@
+
+
+9.11
+log
+@changed format of #includes to use <>
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRpc.c,v 9.10 90/09/06 17:56:55 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d187 11
+a197 1
+    { RSNIL /* Not migrated */,		RSNIL},  /* SYS_SYS_GETMACHINEINFO_NEW 95 */
+@
+
+
+9.10
+log
+@First pass at function prototypes
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRpc.c,v 9.9 90/08/15 14:19:48 douglis Exp Locker: jhh $ SPRITE (Berkeley)";
+d21 23
+a43 23
+#include "sprite.h"
+#include "stdlib.h"
+#include "proc.h"
+#include "procInt.h"
+#include "procMigrate.h"
+#include "mach.h"
+#include "fs.h"
+#include "migrate.h"
+#include "byte.h"
+#include "sig.h"
+#include "vm.h"
+#include "sys.h"
+#include "rpc.h"
+#include "timer.h"
+#include "sched.h"
+#include "sync.h"
+#include "sysSysCall.h"
+#include "sysSysCallParam.h"
+#include "devVid.h"
+#include "prof.h"
+#include "string.h"
+#include "stdio.h"
+#include "bstring.h"
+@
+
+
+9.9
+log
+@fixed typos
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRpc.c,v 9.8 90/08/15 14:00:02 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d42 2
+d45 15
+a59 4
+static ReturnStatus RpcProcExit();
+static ReturnStatus RpcProcFork();
+static ReturnStatus RpcProcExec();
+static ReturnStatus RpcRemoteCall();
+@
+
+
+9.8
+log
+@changed a bunch of callback procedures to be "RSNIL" since they
+shouldn't be invoked on callback.  (had grown inconsistent with sysSysCall.c.)
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRpc.c,v 9.7 90/07/30 15:46:28 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d96 1
+a96 1
+    { RSNIL /* Not migrated */		RSNIL }, /* SYS_PROC_GETIDS	  17 */
+d106 1
+a106 1
+    { RSNIL /* Not migrated */		RSNIL }, /* SYS_SIG_SEND	  27 */
+d110 4
+a113 4
+    { RSNIL /* Not migrated */		RSNIL }, /* SYS_PROF_START	  31 */
+    { RSNIL /* Not migrated */		RSNIL }, /* SYS_PROF_END	  32 */
+    { RSNIL /* Not migrated */		RSNIL }, /* SYS_PROF_DUMP	  33 */
+    { RSNIL /* Not migrated */		RSNIL }, /* SYS_VM_CMD	          34 */
+d117 1
+a117 1
+    { RSNIL /* Not migrated */		RSNIL }, /* SYS_PROC_GETPCBINFO   38 */
+d120 1
+a120 1
+    { RSNIL /* Not migrated */		RSNIL }, /* SYS_PROC_GETPRIORITY  41 */
+@
+
+
+9.7
+log
+@changed parameter to ProcRecordUsage.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRpc.c,v 9.6 90/06/22 11:29:52 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d96 1
+a96 1
+    { Proc_GetIDs,			RSNIL }, /* SYS_PROC_GETIDS	  17 */
+d106 1
+a106 1
+    { Sig_UserSend,			RSNIL }, /* SYS_SIG_SEND	  27 */
+d110 4
+a113 4
+    { Prof_Start,			RSNIL }, /* SYS_PROF_START	  31 */
+    { Prof_End,				RSNIL }, /* SYS_PROF_END	  32 */
+    { Prof_DumpStub,			RSNIL }, /* SYS_PROF_DUMP	  33 */
+    { Vm_Cmd,				RSNIL }, /* SYS_VM_CMD	          34 */
+d117 1
+a117 1
+    { Proc_GetPCBInfo,			RSNIL }, /* SYS_PROC_GETPCBINFO   38 */
+d120 3
+a122 3
+    { Proc_GetPriority,			RSNIL }, /* SYS_PROC_GETPRIORITY  41 */
+    { Proc_SetPriority,			RSNIL }, /* SYS_PROC_SETPRIORITY  42 */
+    { Proc_Debug,			RSNIL }, /* SYS_PROC_DEBUG	  43 */
+d150 1
+a150 1
+    { Fs_AttachDiskStub ,		RSNIL }, /* SYS_FS_ATTACH_DISK    71 */
+d155 1
+a155 1
+    { Fs_CommandStub,			RSNIL }, /* SYS_FS_COMMAND        76 */
+d157 1
+a157 1
+    { Sys_GetMachineInfo,		RSNIL }, /* SYS_GETMACHINEINFO    78 */
+d172 1
+a172 1
+    { Prof_Profil,                      RSNIL }, /* SYS_PROF_PROFIL 93 */
+@
+
+
+9.6
+log
+@deal with oversized RPCs by storing them with PCB temporarily.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fd.proc/RCS/procRpc.c,v 9.5 90/03/16 14:15:43 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d432 4
+d437 1
+a437 1
+    ProcRecordUsage(userTicks, TRUE);
+d439 1
+@
+
+
+9.5
+log
+@changed Proc_AddMigDependency to ProcMigAddDependency, etc.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc.fd/RCS/procRpc.c,v 9.4 89/11/13 11:39:02 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+a22 2
+#include "mach.h"
+#include "fs.h"
+d26 2
+d987 1
+d990 10
+a999 2
+	printf("Proc_RpcMigCommand: called from host %d with command %d.\n",
+	       hostID, command);
+d1001 1
+d1009 1
+a1009 1
+	    goto failure;
+d1022 57
+a1078 1
+	goto failure;
+d1080 1
+a1080 2
+    inBuf.size = storagePtr->requestDataSize;
+    inBuf.ptr = storagePtr->requestDataPtr;
+d1093 8
+d1114 1
+a1114 1
+failure:
+@
+
+
+9.4
+log
+@set up child's argString properly after fork.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRpc.c,v 9.3 89/10/26 15:22:16 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d456 1
+a456 1
+    Proc_RemoveMigDependency(pid);
+d653 1
+a653 1
+    Proc_AddMigDependency(childProcPtr->processID, childProcPtr->peerHostID);
+@
+
+
+9.3
+log
+@added void casts for strcpy to make lint happy
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRpc.c,v 9.2 89/10/17 11:12:11 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d606 6
+d614 1
+@
+
+
+9.2
+log
+@use monitor (macro defs) to access proc_MigStats
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRpc.c,v 9.1 89/10/12 11:13:30 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d523 1
+a523 1
+    strcpy(argString, dataPtr);
+@
+
+
+9.1
+log
+@more statistics (cpu time used)
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc.fd/RCS/procRpc.c,v 9.0 89/09/12 15:14:47 douglis Stable Locker: douglis $ SPRITE (Berkeley)";
+d462 3
+a464 1
+    proc_MigStats.remote--;
+d652 3
+a654 1
+    proc_MigStats.remote++;
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRpc.c,v 8.14 89/08/17 17:28:27 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d412 2
+a413 1
+    Timer_Ticks ticks;
+d425 2
+a426 2
+    Byte_EmptyBuffer(dataPtr, Timer_Ticks,  ticks);
+    Timer_AddTicks(procPtr->kernelCpuUsage.ticks, ticks,
+d428 2
+a429 2
+    Byte_EmptyBuffer(dataPtr, Timer_Ticks,  ticks);
+    Timer_AddTicks(procPtr->kernelCpuUsage.ticks, ticks,
+d431 4
+@
+
+
+8.14
+log
+@added SYS_SYS_GETMACHINEINFO_NEW
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRpc.c,v 8.12 89/08/10 17:15:08 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+@
+
+
+8.13
+log
+@check for invalid command index.
+@
+text
+@d174 1
+@
+
+
+8.12
+log
+@check for process not quite yet in the PROC_MIGRATED state.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRpc.c,v 8.11 89/07/31 17:57:32 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d199 1
+d971 4
+d979 1
+a979 1
+		panic("Invalid pid: %x.\n", commandPtr->remotePid);
+d988 9
+d1018 3
+d1025 3
+@
+
+
+8.11
+log
+@> changes for statistics gathering, plus an attempt at fixing non-ready 
+proc on ready queue. [this is a recording]
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRpc.c,v 8.10 89/07/20 16:18:23 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d262 28
+a289 4
+ 	printf("Warning: Proc_RpcRemoteCall: invalid pid: %x.\n",
+		callPtr->processID);
+	if (procPtr != (Proc_ControlBlock *) NIL) {
+	    Proc_Unlock(procPtr);
+a290 5
+	/*
+	 * Return a special status that indicates the migrated process
+	 * should be destroyed.
+	 */
+	return (PROC_NO_PEER);
+@
+
+
+8.10
+log
+@don't unlock process before calling ProcExitProcess -- it doesn't lock when
+last arg (FALSE) indicates we're doing it on behalf of someone else.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRpc.c,v 8.9 89/06/09 17:49:15 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d259 1
+a259 2
+	|| ( ((procPtr->state != PROC_MIGRATED) &&
+	      !(procPtr->genFlags & PROC_MIGRATION_DONE)) &&
+d432 7
+d619 7
+@
+
+
+8.9
+log
+@Proc_RemoteExec, and a fix for incrementing the pointer during remote 
+system call.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRpc.c,v 8.8 89/04/06 11:46:00 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d397 1
+d419 8
+a426 1
+    Proc_Unlock(procPtr);
+d431 1
+a431 3
+    Proc_RemoveMigDependency(procPtr->processID);
+
+    ProcExitProcess(procPtr, reason, status, code, FALSE);
+@
+
+
+8.8
+log
+@reorganization for table-driven encapsulation.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRpc.c,v 8.7 89/03/12 21:12:24 rab Exp Locker: douglis $ SPRITE (Berkeley)";
+d173 1
+d343 1
+a343 1
+	    inputPtr += sizeof(int);
+@
+
+
+8.7
+log
+@*** empty log message ***
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRpc.c,v 8.6 89/02/20 00:16:03 rab Exp Locker: rab $ SPRITE (Berkeley)";
+d177 27
+d884 1
+d889 1
+a889 12
+ * Proc_RpcMigInit --
+ *
+ *	Handle a request to start process migration.
+ *	This could check things like the number of remote processes,
+ *	load, or whatever. For now, just check against a global flag
+ *	that says whether to refuse migrations, and compare architecture
+ *	types and version numbers.
+ *
+ * Results:
+ *	SUCCESS is returned if permission is granted.
+ *	PROC_MIGRATION_REFUSED is returned if the node is not accepting
+ *		migrated processes, or there is a mismatch.
+d891 13
+d905 1
+a905 1
+ *	None.
+d911 1
+a911 1
+Proc_RpcMigInit(srvToken, clientID, command, storagePtr)
+d914 1
+a914 1
+    int clientID;		/* Sprite ID of client host */
+d923 7
+a929 2
+    ProcMigInitiateCmd *cmdPtr;
+    char *machType;
+d931 11
+a941 2
+    if (proc_RefuseMigrations) {
+	goto error;
+a942 84
+    if (storagePtr->requestParamSize != sizeof(ProcMigInitiateCmd)) {
+	/*
+	 * Implicit version mismatch if they're not the same size.
+	 */
+	if (proc_MigDebugLevel > 0) {
+	    printf("Migration version mismatch: size of initiation request");
+	    printf(" is %d, not %d.\n", storagePtr->requestParamSize,
+	           sizeof(ProcMigInitiateCmd));
+        }
+	goto error;
+    }
+
+    cmdPtr = (ProcMigInitiateCmd *) storagePtr->requestParamPtr;
+    /*
+     * Note: the processID is ignored, at least for now. But we look
+     * at the version number passed across, plus what we know about this
+     * sprite host.
+     */
+    if (cmdPtr->version != proc_MigrationVersion) {
+	if (proc_MigDebugLevel > 1) {
+	    printf("Migration version mismatch: we are level %d; client %d is level %d.\n",
+		   proc_MigrationVersion, clientID, cmdPtr->version);
+	}
+	goto error;
+    }
+    machType = Net_SpriteIDToMachType(clientID);
+    if (machType == (char *) NIL) {
+	printf("Warning: Proc_RpcMigInit: couldn't get machine type for client %d.\n",
+	       clientID);
+	goto error;
+    }
+    if (strcmp(machType, mach_MachineType)) {
+	if (proc_MigDebugLevel > 0) {
+	    printf("Warning: Proc_RpcMigInit: client %d (%s) tried to migrate to this machine.\n",
+		   clientID, machType);
+	}
+	goto error;
+    }
+    Rpc_Reply(srvToken, SUCCESS, storagePtr, (int(*)()) NIL, (ClientData) NIL);
+    return(SUCCESS);
+
+error:
+    Rpc_Reply(srvToken, PROC_MIGRATION_REFUSED,
+	      storagePtr, (int(*)()) NIL, (ClientData) NIL);
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_RpcMigInfo --
+ *
+ *	Handle a request to transfer information for process migration.
+ *
+ *	Note: now that this has been moved into the proc module, it
+ *	can be collapsed into the routine it calls....
+ *
+ * Results:
+ *	A return status.
+ *
+ * Side effects:
+ *	Process state (process control block, virtual memory, or file state)
+ * 	is copied onto the remote workstation (the RPC server).
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+Proc_RpcMigInfo(srvToken, clientID, command, storagePtr)
+    ClientData srvToken;	/* Handle on server process passed to
+				 * Rpc_Reply */
+    int clientID;		/* Sprite ID of client host */
+    int command;		/* Command identifier */
+    Rpc_Storage *storagePtr;	/* The request fields refer to the request
+				 * buffers and also indicate the exact amount
+				 * of data in the request buffers.  The reply
+				 * fields are initialized to NIL for the
+				 * pointers and 0 for the lengths.  This can
+				 * be passed to Rpc_Reply */
+{
+    ReturnStatus status;
+    Rpc_ReplyMem	*replyMemPtr;
+    Proc_MigrateReply *returnInfoPtr;
+d944 17
+a960 9
+    returnInfoPtr = (Proc_MigrateReply *) malloc(sizeof(Proc_MigrateReply));
+    status = Proc_MigReceiveInfo(clientID,
+            (Proc_MigrateCommand *) storagePtr->requestParamPtr,
+	    storagePtr->requestDataSize,
+ 	    storagePtr->requestDataPtr,
+	    returnInfoPtr);
+    if (status == SUCCESS) {
+	storagePtr->replyParamPtr = (Address) returnInfoPtr;
+	storagePtr->replyParamSize = sizeof(Proc_MigrateReply);
+d963 2
+a964 2
+	replyMemPtr->paramPtr = (Address) returnInfoPtr;
+	replyMemPtr->dataPtr = (Address) NIL;
+d967 4
+d972 1
+a972 2
+
+    return(status);
+@
+
+
+8.6
+log
+@Added support for profiling.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRpc.c,v 8.5 89/02/10 16:37:38 douglis Exp Locker: rab $ SPRITE (Berkeley)";
+d508 4
+a511 5
+    childProcPtr->Prof_Buffer           = parentProcPtr->Prof_Buffer;
+    childProcPtr->Prof_BufferSize       = parentProcPtr->Prof_BufferSize;
+    childProcPtr->Prof_Offset           = parentProcPtr->Prof_Offset;
+    childProcPtr->Prof_Scale            = parentProcPtr->Prof_Scale;
+    childProcPtr->Prof_PC               = 0;
+@
+
+
+8.5
+log
+@changed a few callbacks to be NIL since the system calls are
+obsolete (environment-related) or are not migrated (Sys_Shutdown).
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRpc.c,v 8.4 89/01/26 09:18:32 rab Exp Locker: douglis $ SPRITE (Berkeley)";
+d507 7
+@
+
+
+8.4
+log
+@added entry for profil syscall.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRpc.c,v 8.3 89/01/12 08:33:13 douglis Exp Locker: rab $ SPRITE (Berkeley)";
+d134 6
+a139 6
+    { Proc_SetEnvironStub,		RSNIL }, /* SYS_PROC_SET_ENVIRON  55 */
+    { Proc_UnsetEnvironStub,		RSNIL }, /* SYS_PROC_UNSET_ENVIRON 56 */
+    { Proc_GetEnvironVarStub,		RSNIL }, /* SYS_PROC_GET_ENVIRON_VAR 57 */
+    { RSNIL /* Proc_GetEnvironRangeStub */, RSNIL }, /* SYS_PROC_GET_ENVIRON_RANGE 58 */
+    { RSNIL /* Proc_InstallEnvironStub */,  RSNIL }, /* SYS_PROC_INSTALL_ENVIRON 59 */
+    { Proc_CopyEnvironStub,		RSNIL }, /* SYS_PROC_COPY_ENVIRON 60 */
+d152 1
+a152 1
+    { Sys_Shutdown,			RSNIL }, /* SYS_SYS_SHUTDOWN	  73 */
+@
+
+
+8.3
+log
+@*** empty log message ***
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRpc.c,v 8.2 88/12/23 11:41:35 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d172 1
+@
+
+
+8.2
+log
+@check against process in PROC_NEW state with exit() coming in; this
+can happen if an error occurs while migrating back home.
+@
+text
+@d1 1
+a1 1
+/* 
+d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRpc.c,v 8.1 88/11/16 10:12:19 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d77 1
+a77 1
+ *     callPtr	  (why)		sideEffectsPtr	call number    
+d166 6
+a171 1
+
+d182 1
+a182 1
+ * 
+d195 1
+a195 1
+static ReturnStatus 
+d266 1
+a266 1
+    
+d341 2
+a342 2
+ *	Perform an exit on the home node of a process. 
+ * 
+d354 1
+a354 1
+static ReturnStatus 
+d375 2
+a376 2
+    Timer_AddTicks(procPtr->kernelCpuUsage.ticks, ticks, 
+		   &procPtr->kernelCpuUsage.ticks); 
+d379 1
+a379 1
+		   &procPtr->userCpuUsage.ticks); 
+d410 2
+a411 2
+ *	Perform an exec on the home node of a process. 
+ * 
+d414 1
+a414 1
+ * 				  modified.  
+d423 1
+a423 1
+static ReturnStatus 
+d434 1
+a434 1
+    
+d485 1
+a485 1
+ *	process is returned to the remote node in the data buffer.  
+d491 1
+a491 1
+static ReturnStatus 
+d545 1
+a545 1
+    List_Insert((List_Links *) &(childProcPtr->siblingElement), 
+d560 1
+a560 1
+ 
+d576 1
+a576 1
+    
+d580 1
+a580 1
+    
+d596 1
+a596 1
+ * 
+d615 1
+a615 1
+    
+d634 1
+a634 1
+ * 
+d636 1
+a636 1
+ *	SUCCESS 
+d649 1
+a649 1
+    int			*strLengthPtr;	/* Where to return actual length of 
+d689 1
+a689 1
+Proc_MakeStringAccessible(maxLength, stringPtrPtr, accessLengthPtr, 
+d703 1
+a703 1
+	Vm_MakeAccessible(VM_READONLY_ACCESS, 
+d888 1
+a888 1
+    
+d894 1
+a894 1
+	 * Implicit version mismatch if they're not the same size.  
+d903 1
+a903 1
+    
+d986 1
+a986 1
+	
+d1038 1
+a1038 1
+    
+@
+
+
+8.1
+log
+@fixed bug that left around a lingering association between rpc
+servers and client processes, thus causing later GetEffectiveProc
+calls to return the wrong process for an rpc server.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRpc.c,v 8.0 88/11/11 18:29:26 douglis Stable Locker: douglis $ SPRITE (Berkeley)";
+d217 6
+d225 4
+a228 2
+	|| ((procPtr->state != PROC_MIGRATED) &&
+	    !(procPtr->genFlags & PROC_MIGRATION_DONE)))   {
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRpc.c,v 6.5 88/11/11 12:28:56 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d269 1
+@
+
+
+6.5
+log
+@moved stubs from RPC module into this file; they still need to be
+merged into the functions they call, since all they were were ways
+to get from rpc into proc routines.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRpc.c,v 6.4 88/10/27 20:01:58 mlgray Exp $ SPRITE (Berkeley)";
+@
+
+
+6.4
+log
+@1st pass at multi-processor, conversion to new C library.
+@
+text
+@d5 1
+a5 1
+ *	processes.
+d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procRpc.c,v 6.3 88/10/19 11:17:49 douglis Exp $ SPRITE (Berkeley)";
+d22 1
+a29 1
+#include "mem.h"
+d45 2
+a46 1
+static ReturnStatus RpcFsOpenStream();
+d80 1
+a80 1
+    { RSNIL /* Proc_Exec */,		RSNIL }, /* SYS_PROC_EXEC	   1 */
+d173 1
+a173 1
+ * Proc_RpcRemoteCall --
+d190 2
+a191 2
+ReturnStatus 
+Proc_RpcRemoteCall(callPtr, dataPtr, dataLength, replyDataPtr,
+d394 65
+d618 2
+a619 5
+ *	Combine the operations of strncpy and String_NLength.  Used
+ *	by file system stubs when the file system operation is being done
+ *	by an rpc server.  This routine is a parallel routine to 
+ *	Vm_StringNCopy which is used for file system operations for 
+ *	non-migrated processes.
+d632 4
+a635 4
+    int		numBytes;		/* Maximum number of bytes to copy. */
+    char	*srcStr;		/* String to copy. */
+    char	*destStr;		/* Where to copy string to. */
+    int		*strLengthPtr;		/* Where to return actual length of 
+d638 7
+a644 2
+    *strLengthPtr = String_NLength(numBytes, srcStr);
+    strncpy(destStr, srcStr, numBytes);
+d684 1
+a684 1
+    int realLength;
+d686 1
+d702 5
+a706 2
+    realLength = String_NLength(accessLength, *stringPtrPtr);
+    if (realLength == accessLength) {
+d833 201
+@
+
+
+6.3
+log
+@If the old argument string is still around, when setting up the shadow
+process for a migrated fork, free the argument string.  It's not set
+to the argument string of the parent since we (currently, at least)
+don't track changes to the parent's argument.  Perhaps we should....
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: procRpc.c,v 6.2 88/08/31 17:55:01 douglis Exp $ SPRITE (Berkeley)";
+d210 1
+a210 1
+	Sys_Printf("Proc_RpcRemoteCall(%d) called.\n", callPtr->callNumber);
+d220 2
+a221 2
+ 	Sys_Panic(SYS_WARNING,
+		  "Proc_RpcRemoteCall: invalid pid: %x.\n", callPtr->processID);
+d234 1
+a234 2
+ 	Sys_Panic(SYS_FATAL,
+		  "Proc_RpcRemoteCall: can't handle call %d.\n",
+d258 1
+a258 1
+	    Sys_Printf("Proc_RpcRemoteCall: unparsed call %d returned %x.\n",
+d271 1
+a271 1
+    *replyDataPtr = Mem_Alloc(callPtr->replySize);
+d285 1
+a285 1
+		    Byte_Copy(size, inputPtr, outputPtr);
+d296 1
+a296 1
+		Sys_Panic(SYS_FATAL, "Proc_RpcRemoteCall: size mismatch.\n");
+d305 1
+a305 1
+ 	Sys_Printf("Proc_RpcRemoteCall: parsed call %d returned %x.\n",
+d355 1
+a355 1
+	Sys_Printf("RpcProcExit called.\n");
+d384 1
+a384 1
+	Sys_Printf("RpcProcExit returning SUCCESS.\n");
+d423 1
+a423 1
+	Sys_Printf("RpcProcFork called.\n");
+d450 1
+a450 1
+	Mem_Free(childProcPtr->argString);
+d457 1
+a457 1
+	Sys_Panic(SYS_FATAL, "RpcProcFork: ProcFamilyInsert failed\n");
+d498 1
+a498 1
+    *replyDataPtr = Mem_Alloc(sizeof(Proc_PID));
+d502 1
+a502 1
+	Sys_Printf("RpcProcFork returning SUCCESS.\n");
+d537 1
+a537 1
+	Byte_Copy(numBytes, sourcePtr, destPtr);
+d552 1
+a552 1
+ *	Combine the operations of String_NCopy and String_NLength.  Used
+d576 1
+a576 1
+    (void) String_NCopy(numBytes, srcStr, destStr);
+d724 1
+a724 1
+	Sys_Printf("Proc_RpcRemoteWait entered.\n");
+d738 1
+a738 1
+    childInfoPtr = (ProcChildInfo *) Mem_Alloc(sizeof(ProcChildInfo));
+d748 1
+a748 1
+	replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
+d755 1
+a755 1
+	Mem_Free((Address) childInfoPtr);
+d759 1
+a759 1
+	Sys_Printf("Proc_RpcRemoteWait: returning %x.\n", status);
+@
+
+
+6.2
+log
+@de-linted and endif-fix'ed.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: procRpc.c,v 6.1 88/08/25 12:08:26 nelson Exp $ SPRITE (Berkeley)";
+d449 5
+@
+
+
+6.1
+log
+@Changed to make cpu usage be represented in a format such that both the
+kernel and user programs can use time.
+@
+text
+@d18 2
+a19 2
+static char rcsid[] = "$Header: procRpc.c,v 6.0 88/08/11 12:21:52 brent Stable $ SPRITE (Berkeley)";
+#endif not lint
+d251 1
+a251 1
+		     (ClientData *) &record);
+d267 1
+a267 1
+			 (ClientData *) &record);
+d315 1
+a315 1
+		     (ClientData *) &record);
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: procRpc.c,v 5.11 88/08/04 15:28:47 douglis Exp $ SPRITE (Berkeley)";
+d361 2
+a362 1
+    Timer_AddTicks(procPtr->kernelCpuUsage, ticks, &procPtr->kernelCpuUsage); 
+d364 2
+a365 1
+    Timer_AddTicks(procPtr->kernelCpuUsage, ticks, &procPtr->userCpuUsage); 
+d438 4
+a441 4
+    childProcPtr->kernelCpuUsage 	= timer_TicksZeroSeconds;
+    childProcPtr->userCpuUsage 		= timer_TicksZeroSeconds;
+    childProcPtr->childKernelCpuUsage 	= timer_TicksZeroSeconds;
+    childProcPtr->childUserCpuUsage 	= timer_TicksZeroSeconds;
+@
+
+
+5.11
+log
+@track dependencies of migrated processes on the remote host.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: procRpc.c,v 5.10 88/08/02 15:15:12 douglis Exp $ SPRITE (Berkeley)";
+@
+
+
+5.10
+log
+@return PROC_NO_PEER when processID invalid.  Made fatal error into
+a warning as well
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: procRpc.c,v 5.9 88/07/25 16:52:45 douglis Exp $ SPRITE (Berkeley)";
+d374 6
+d381 1
+d481 5
+@
+
+
+5.9
+log
+@reinstated environments, since they are still used from user level.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: procRpc.c,v 5.8 88/06/30 17:34:52 douglis Exp $ SPRITE (Berkeley)";
+d220 1
+a220 1
+ 	Sys_Panic(SYS_FATAL,
+d225 5
+a229 1
+	return (PROC_INVALID_PID);
+d713 1
+a713 1
+	return (PROC_INVALID_PID);
+d717 2
+a718 2
+	return (PROC_INVALID_PID);
+    } 
+@
+
+
+5.8
+log
+@added new system calls to table.  removed reference to environments.
+removed code for forwarding Fs_Open call.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: procRpc.c,v 5.7 88/05/05 17:57:09 nelson Exp $ SPRITE (Berkeley)";
+d133 6
+a138 6
+    { RSNIL /* obsolete */,		RSNIL }, /* SYS_PROC_SET_ENVIRON  55 */
+    { RSNIL /* obsolete */,		RSNIL }, /* SYS_PROC_UNSET_ENVIRON 56 */
+    { RSNIL /* obsolete */,		RSNIL }, /* SYS_PROC_GET_ENVIRON_VAR 57 */
+    { RSNIL /* obsolete */, 		RSNIL }, /* SYS_PROC_GET_ENVIRON_RANGE 58 */
+    { RSNIL /* obsolete */,  		RSNIL }, /* SYS_PROC_INSTALL_ENVIRON 59 */
+    { RSNIL /* obsolete */,		RSNIL }, /* SYS_PROC_COPY_ENVIRON 60 */
+d459 7
+a465 1
+    
+@
+
+
+5.7
+log
+@Handles move of functionality from sys to mach.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: procRpc.c,v 5.6 88/05/04 16:45:17 nelson Exp $ SPRITE (Berkeley)";
+d85 8
+a92 8
+    { RpcFsOpenStream,			RSNIL }, /* SYS_FS_OPEN		   7 */
+    { Fs_UserRead,			RSNIL }, /* SYS_FS_READ		   8 */
+    { Fs_UserWrite,			RSNIL }, /* SYS_FS_WRITE	   9 */
+    { Fs_UserClose,			RSNIL }, /* SYS_FS_CLOSE	  10 */
+    { Fs_Remove,			RSNIL }, /* SYS_FS_REMOVE	  11 */
+    { Fs_RemoveDir,			RSNIL }, /* SYS_FS_REMOVE_DIR	  12 */
+    { Fs_MakeDir,			RSNIL }, /* SYS_FS_MAKE_DIR	  13 */
+    { Fs_ChangeDir,			RSNIL }, /* SYS_FS_CHANGE_DIR	  14 */
+d97 1
+a97 1
+    { Proc_GetGroupIDs,			RSNIL }, /* SYS_PROC_GETGROUPIDS  19 */
+d100 1
+a100 1
+    { RSNIL /* Proc_SetFamilyID */,	RSNIL }, /* SYS_PROC_SETFAMILYID  22 */
+d111 2
+a112 2
+    { Prof_Dump,			RSNIL }, /* SYS_PROF_DUMP	  33 */
+    { RSNIL /* Not migrated */,		RSNIL }, /* SYS_VM_CMD	          34 */
+d120 2
+a121 2
+    { RSNIL /* Proc_SetPriority */,	RSNIL }, /* SYS_PROC_SETPRIORITY  42 */
+    { RSNIL /* Proc_Debug */,		RSNIL }, /* SYS_PROC_DEBUG	  43 */
+d123 4
+a126 4
+    { RSNIL,				RSNIL }, /* SYS_FS_TRUNC	  45 */
+    { RSNIL,		RSNIL }, /* SYS_FS_TRUNC_ID	  46 */
+    { Fs_GetNewID,			RSNIL }, /* SYS_FS_GET_NEW_ID	  47 */
+    { Fs_GetAttributes,			RSNIL }, /* SYS_FS_GET_ATTRIBUTES 48 */
+d128 1
+a128 1
+    { Fs_SetAttributes,			RSNIL }, /* SYS_FS_SET_ATTRIBUTES 50 */
+d130 1
+a130 1
+    { Fs_SetDefPermStub,		RSNIL }, /* SYS_FS_SET_DEF_PERM	  52 */
+d133 6
+a138 6
+    { Proc_SetEnvironStub,		RSNIL }, /* SYS_PROC_SET_ENVIRON  55 */
+    { Proc_UnsetEnvironStub,		RSNIL }, /* SYS_PROC_UNSET_ENVIRON 56 */
+    { Proc_GetEnvironVarStub,		RSNIL }, /* SYS_PROC_GET_ENVIRON_VAR 57 */
+    { RSNIL /* Proc_GetEnvironRangeStub */, RSNIL }, /* SYS_PROC_GET_ENVIRON_RANGE 58 */
+    { RSNIL /* Proc_InstallEnvironStub */,  RSNIL }, /* SYS_PROC_INSTALL_ENVIRON 59 */
+    { Proc_CopyEnvironStub,		RSNIL }, /* SYS_PROC_COPY_ENVIRON 60 */
+d143 4
+a146 4
+    { Fs_HardLink,			RSNIL }, /* SYS_FS_HARDLINK       65 */
+    { Fs_Rename,			RSNIL }, /* SYS_FS_RENAME         66 */
+    { Fs_SymLink,			RSNIL }, /* SYS_FS_SYMLINK        67 */
+    { Fs_ReadLinkStub,			RSNIL }, /* SYS_FS_READLINK 	  68 */
+d155 1
+a155 1
+    { RSNIL,				RSNIL }, /* SYS_FS_LOCK		  77 */
+d158 7
+a436 4
+#ifdef notdef
+    childProcPtr->stackStart 		= NIL;
+#endif
+
+a460 6
+     * Set up the environment of the process.
+     */
+
+    ProcSetupEnviron(childProcPtr);
+    
+    /*
+a476 73
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * RpcFsOpenStream --
+ *
+ *	Perform an RPC to open a file stream on the home node of a process
+ *	and transfer the stream to this node.
+ *
+ * Results:
+ *	If the RPC returns a status other than SUCCESS, that status is
+ *	returned.  Otherwise, the status from deencapsulating the stream is
+ *	returned.  The new stream is returned in *newStreamPtrPtr.
+ *
+ * Side effects:
+ *	An RPC is performed and a file is opened.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+static ReturnStatus
+RpcFsOpenStream(procPtr, dataPtr, dataLength, replyDataPtr,
+		   replyDataLengthPtr)
+    Proc_ControlBlock *procPtr;
+    Address dataPtr;
+    int dataLength;
+    Address *replyDataPtr;
+    int *replyDataLengthPtr;
+{
+    char *name;		/* The name of the file to open */
+    int useFlags;	/* Indicates read/write etc. the valid bits to include
+			 * are defined in fs.h */
+    int type;		/* If FS_FILE then any type of file can be opened,
+			 * except if useFlags includes FS_CREATE then a regular
+			 * file will be created.  Otherwise only the
+			 * specified type can be opened (or created). */
+    int permissions;	/* A mask indicating the permission bits to turn on
+			 * if the file gets created */
+    Fs_Stream *streamPtr;/* To hold stream ptr before it is encapsulated. */
+    ReturnStatus status;
+
+    if (proc_MigDebugLevel > 3) {
+	Sys_Printf("RpcFsOpenStream called.\n");
+    }
+
+    name = dataPtr;
+    dataPtr += Byte_AlignAddr(String_Length(name) + 1);
+    
+    Byte_EmptyBuffer(dataPtr, int,  useFlags);
+    Byte_EmptyBuffer(dataPtr, int,  type);
+    Byte_EmptyBuffer(dataPtr, int,  permissions);
+
+    status = Fs_Open(name, useFlags, type, permissions, &streamPtr);
+    if (status != SUCCESS) {
+	if (proc_MigDebugLevel > 3) {
+	    Sys_Printf("RpcFsOpenStream: Fs_Open returned %x.\n", status);
+	}
+	*replyDataPtr = (Address) NIL;
+	*replyDataLengthPtr = 0;
+	return(status);
+    }
+
+
+    *replyDataLengthPtr = Fs_GetEncapSize();
+    *replyDataPtr = Mem_Alloc(*replyDataLengthPtr);
+    status = Fs_EncapStream(streamPtr, *replyDataPtr);
+    if (status == SUCCESS) {
+	status = Fs_Close(streamPtr);
+    }
+    return(status);
+@
+
+
+5.6
+log
+@ifdefed out migration.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: procRpc.c,v 5.5 88/04/18 09:07:26 ouster Exp $ SPRITE (Berkeley)";
+a20 1
+
+d22 1
+d233 1
+a233 1
+    Proc_SetEffectiveProc(Sys_GetProcessorNumber(), procPtr);
+d298 1
+a298 1
+    Proc_SetEffectiveProc(Sys_GetProcessorNumber(), (Proc_ControlBlock *) NIL);
+a439 2
+    childProcPtr->setJumpStatePtr 		= (Sys_SetJumpState *) NIL;
+
+d584 1
+a584 1
+    if (Proc_IsMigratedProcess(Sys_GetProcessorNumber())) {
+d667 1
+a667 1
+    if (!Proc_IsMigratedProcess(Sys_GetProcessorNumber())) {
+d722 1
+a722 1
+    if (!Proc_IsMigratedProcess(Sys_GetProcessorNumber())) {
+@
+
+
+5.5
+log
+@Lint cleanup, change copyright notices.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: procRpc.c,v 5.4 88/03/02 11:54:06 douglis Exp $ SPRITE (Berkeley)";
+d430 1
+d432 1
+@
+
+
+5.4
+log
+@Changed the names of the environment system calls not to conflict
+with the C library. 
+@
+text
+@d7 8
+a14 2
+ * Copyright (C) 1986 Regents of the University of California
+ * All rights reserved.
+d18 1
+a18 1
+static char rcsid[] = "$Header: procRpc.c,v 5.3 88/01/22 15:31:16 nelson Exp $ SPRITE (Berkeley)";
+d800 2
+a801 1
+	Rpc_Reply(srvToken, status, storagePtr, Rpc_FreeMem, replyMemPtr);
+@
+
+
+5.3
+log
+@Fixed up signals.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: procRpc.c,v 5.2 87/12/12 16:39:06 nelson Exp $ SPRITE (Berkeley)";
+d127 6
+a132 6
+    { Proc_SetEnviron,			RSNIL }, /* SYS_PROC_SET_ENVIRON  55 */
+    { Proc_UnsetEnviron,		RSNIL }, /* SYS_PROC_UNSET_ENVIRON 56 */
+    { Proc_GetEnvironVar,		RSNIL }, /* SYS_PROC_GET_ENVIRON_VAR 57 */
+    { RSNIL /* Proc_GetEnvironRange */, RSNIL }, /* SYS_PROC_GET_ENVIRON_RANGE 58 */
+    { RSNIL /* Proc_InstallEnviron */,  RSNIL }, /* SYS_PROC_INSTALL_ENVIRON 59 */
+    { Proc_CopyEnviron,			RSNIL }, /* SYS_PROC_COPY_ENVIRON 60 */
+@
+
+
+5.2
+log
+@Handles moving of hardware dependencies from vm to sun.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: procRpc.c,v 5.1 87/10/22 14:56:48 nelson Exp $ SPRITE (Berkeley)";
+d442 1
+a442 1
+    Sig_ProcInit(childProcPtr);
+@
+
+
+5.1
+log
+@Changed VM to only contain a single pointer.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: procRpc.c,v 5.0 87/08/11 10:47:35 sprite Exp $ SPRITE (Berkeley)";
+a395 1
+    int i;
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: procRpc.c,v 4.5 87/06/19 16:22:36 nelson Exp $ SPRITE (Berkeley)";
+a403 1
+    childProcPtr->vmFlags		= 0;
+d427 2
+a428 4
+    for (i = 0; i <= VM_STACK; i++) {
+	childProcPtr->segPtrArray[i] = (Vm_Segment *) NIL;
+    }
+    
+@

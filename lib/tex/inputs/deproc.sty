@@ -1,0 +1,183 @@
+% deproc.sty 24-Apr-86, by Barbara Beeton, AMS
+     
+\typeout{Document Style Option 'deproc' -- Released 24 April 1986}
+\input article.sty
+     
+\oddsidemargin -2.5pc \evensidemargin -2.5pc
+\topmargin -3pc \headheight 0pt \headsep 0pt
+%\footheight 0pt \footskip 0pt
+\footheight 1pc \footskip 2pc
+\textheight 58pc \textwidth 44pc \columnsep 2pc \columnseprule 0pt
+     
+\def\@oddhead{}\def\@evenhead{}
+%  For debugging, keep running footers.
+%\def\@oddfoot{}
+%\def\@oddfoot{\rm\rightmark \hfil Page \thepage}
+\def\@oddfoot{\hfil \tiny\thepage \hfil}
+\def\@evenfoot{\@oddfoot}
+\def\maketitle{\par
+ \begingroup
+ \def\@makefnmark{\hbox to 0pt{$^{\@thefnmark}$\hss}}
+ \twocolumn[\@maketitle]
+ \@thanks
+ \endgroup
+ \let\maketitle\relax
+ \let\@maketitle\relax
+ \gdef\@thanks{}\gdef\@author{}\gdef\@title{}\let\thanks\relax
+ \@afterheading}
+     
+\def\@maketitle{\vbox{\hsize\textwidth
+ \linewidth\hsize \vskip\baselineskip \centering
+ {\large\bf \@title \par} \vskip 2em
+ {%\let\@endline=\\\def\\{\@endline\rm}%
+  \def\and{\unskip\enspace{\rm and}\enspace}%
+  \def\And{\unskip\\\null\\\bf}%
+  \begin{tabular}[t]{c}\bf\@author \end{tabular}\par} \vskip 3\baselineskip
+ \unvbox\@abstractbox}}
+     
+%\def\copyrightspace{\footnotetext[0]{\mbox{}\vrule height 97pt width 0pt}}
+     
+\newbox\@abstractbox
+\long\def\abstract{\def\endabstract{\ifhmode\unskip\strut\endgraf\fi
+                         \vskip 3\baselineskip \egroup}%
+        \global\setbox\@abstractbox=\vbox\bgroup \hsize=\textwidth
+                \leftskip=1.25in \rightskip=\leftskip
+                \centerline{\bf Abstract}%
+                \vskip.5\baselineskip
+                \noindent\strut\ignorespaces }
+     
+     
+%  Allow more space above a narrower footnote rule.
+%  Footnotes not quite so far apart.
+\footnotesep=10pt
+\skip\footins=12pt              % full blank line
+\def\footnoterule{\kern-8pt
+  \hrule width 5pc \kern 7.6pt } % the \hrule is .4pt high
+     
+     
+%  Force footnotes to bottom of page, regardless of ragged bottom.
+\def\@makecol{\ifvoid\footins \setbox\@outputbox\box\@cclv
+   \else\setbox\@outputbox
+     \vbox to\@colht{\unvbox\@cclv\vfill\relax
+          \vskip\skip\footins\footnoterule\unvbox\footins}\fi
+     \xdef\@freelist{\@freelist\@midlist}\gdef\@midlist{}\@combinefloats
+     \setbox\@outputbox\vbox to\@colht{\boxmaxdepth\maxdepth
+        \@texttop\unvbox\@outputbox \@textbottom}\global\maxdepth\@maxdepth}
+     
+     
+%  All footnotes are numbered; no other symbols.
+\setcounter{footnote}{0}
+%  Section headings differ from those in ARTICLE.STY.
+%  Omit section numbers (just suppress printing), use different fonts.
+     
+\def\@sect#1#2#3#4#5#6[#7]#8{\ifnum #2>\c@secnumdepth
+     \def\@svsec{}\else
+     \refstepcounter{#1}\edef\@svsec{\csname the#1\endcsname\hskip 1em }\fi
+     \@tempskipa #5\relax
+      \ifdim \@tempskipa>\z@
+        \begingroup #6\relax
+          \interlinepenalty \@M #8\par
+        \endgroup
+       \csname #1mark\endcsname{#7}\addcontentsline
+         {toc}{#1}{\ifnum #2>\c@secnumdepth \else
+                      \protect\numberline{\csname the#1\endcsname}\fi
+                    #7}\else
+        \def\@svsechd{#6\hskip #3\@svsec #8\csname #1mark\endcsname
+                      {#7}\addcontentsline
+                           {toc}{#1}{\ifnum #2>\c@secnumdepth \else
+                             \protect\numberline{\csname the#1\endcsname}\fi
+                       #7}}\fi
+     \@xsect{#5}}
+     
+\def\section{\@startsection {section}{1}{\z@}{-3.5ex plus -1ex
+ minus -.2ex}{2.3ex plus .2ex}{\centering\normalsize\bf}}
+\def\subsection{\@startsection{subsection}{2}{\z@}{-3.25ex plus -1ex
+ minus -.2ex}{1.5ex plus .2ex}{\parindent=\z@\normalsize\bf}}
+\def\subsubsection{\@startsection{subsubsection}{3}{\z@}{-3.25ex plus -1ex
+ minus -.2ex}{1.5ex plus .2ex}{\parindent=\z@\normalsize\sl}}
+     
+%  Change the default item labels after the first.
+     
+\def\bull{\vrule height .9ex width .8ex depth -.1ex } % square bullet
+     
+\def\labelitemii{$\circ$}
+\def\labelitemiii{\bull}
+\def\labelitemiv{$\ast$}
+%  Indent verbatim blocks
+\def\verbatim{\@totalleftmargin\parindent
+   \@verbatim \frenchspacing\@vobeyspaces \@xverbatim}
+     
+%  Figure and table caption labels boldface
+\long\def\@makecaption#1#2{
+  \vskip 10pt
+  \setbox\@tempboxa\hbox{{\bf#1:}\enspace#2}
+  \ifdim \wd\@tempboxa >\hsize \unhbox\@tempboxa\par \else \hbox
+    to\hsize{\hfil\box\@tempboxa\hfil}
+  \fi}
+     
+%  Reference list varies from standard by permitting labels to be omitted.
+     
+\newif\ifomit@biblabels         \omit@biblabelsfalse
+\def\omit{\global\omit@biblabelstrue}
+     
+\def\thebibliography#1{\setbox0=\hbox{#1}\section*{References\markboth
+  {REFERENCES}{REFERENCES}}\list
+  {\ifomit@biblabels \else [\arabic{enumi}]\fi}{\ifomit@biblabels
+  \setlength{\labelwidth}{0pt}\setlength{\labelsep}{0pt}\else
+  \settowidth\labelwidth{[#1]}\fi\leftmargin\labelwidth
+  \advance\leftmargin\labelsep
+  \ifomit@biblabels\else\usecounter{enumi}\fi}}
+     
+\newlength{\n@rmal@parindent}   % set below after \parindent set
+\def\no@biblabelindent{\ifomit@biblabels\leavevmode\kern\n@rmal@parindent\fi}
+     
+\def\@lbibitem[#1]#2{\item[\@biblabel{#1}]\if@filesw
+      { \def\protect##1{\string ##1\space}\immediate
+        \write\@auxout{\string\bibcite{#2}{#1}}\fi
+    \no@biblabelindent\ignorespaces}}
+\def\@bibitem#1{\item\if@filesw \immediate\write\@auxout
+      {\string\bibcite{#1}{\the\c@enumi}}\fi\no@biblabelindent\ignorespaces}
+%  Abbreviations (same list as in DEPROC.TeX).
+     
+\def \careof{\leavevmode\hbox{\raise.75ex\hbox{c}\kern-.15em
+                /\kern-.125em\smash{\lower.3ex\hbox{o}}} }  % ends with space
+     
+%  This is \frac in DEPROC.TeX, but that conflicts with LaTeX \frac .
+\def \sfrac#1/#2{\leavevmode\kern.1em
+        \raise.5ex\hbox{\the\scriptfont0 #1}\kern-.1em
+        /\kern-.15em\lower.25ex\hbox{\the\scriptfont0 #2}}
+     
+\def \d@sh#1{\nobreak\thinspace#1\penalty0\thinspace}
+\def \dash{\d@sh{--}}
+\def \Dash{\d@sh{---}}
+     
+\def \DECUS{Digital Equipment Computer Users Society}
+\def \TeX{\leavevmode\hbox{T\kern-.1667em\lower.424ex\hbox{E}\kern-.125emX}}
+\def \AMSTeX{\leavevmode\hbox{$\cal A\kern-.2em\lower.376ex
+        \hbox{$\cal M$}\kern-.2em\cal S$-\TeX}}
+%  The following definition of \LaTeX does not depend on the presence
+%  of a small caps font to match every type style.
+%\newcount\TestCount
+%\def\LaTeX{\TestCount=\the\fam
+%       \leavevmode L\raise.4ex
+%       \hbox{$\fam\TestCount\scriptstyle\kern-.3em A$}\kern-.15em\TeX}
+%  Unfortunately, standard LaTeX does not provide scriptstyle \bf, \sl
+%  or \sf fonts, so a definition comparable to that used in LaTeX.TeX
+%  is kept; the definition used in LaTeX version 2.08 (the most recent
+%  available at AMS) does not incorporate the definitive TeX logo, so
+%  an adjusted version is given here.
+\def \LaTeX{{\rm L\kern-.36em\raise.3ex\hbox{\sc a}\kern-.15em\TeX}}
+\def \MF{{\logo META}\-{\logo FONT}}
+\def \WEB{{\tt WEB}}
+\twocolumn
+\sloppy
+\parindent 20pt
+\setlength{\n@rmal@parindent}{\parindent}
+\leftmargini 2em
+\leftmargin\leftmargini
+\leftmarginv .5em
+\leftmarginvi .5em
+%\flushbottom
+     
+\endinput
+

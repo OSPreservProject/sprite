@@ -1,0 +1,7 @@
+L DS3100.MD;1                       	ds3100.md	ds5000.md
+D DS5000_M                          	ds5000.md
+F MAKEFILE.;1                       	Makefile
+F RAIDIOC.C;1                       	raidioc.c
+D RCS                               	RCS
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md

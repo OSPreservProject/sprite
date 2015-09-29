@@ -1,0 +1,288 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  sprited:1.2.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     89.01.06.08.03.34;  author brent;  state Exp;
+branches 1.2.1.1;
+next     1.1;
+
+1.1
+date     88.06.19.14.31.17;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.2.1.1
+date     91.12.10.15.46.34;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Nuked user-level lock clean up.  It isn't correct and is
+correctly superceeded by kernel-level cleanup.
+@
+text
+@/* 
+ * flock.c --
+ *
+ *	Procedure to map from Unix flock system call to Sprite.
+ *
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/unixSyscall/RCS/flock.c,v 1.1 88/06/19 14:31:17 ouster Exp Locker: brent $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+#include "fs.h"
+#include <bit.h>
+
+#include "compatInt.h"
+#include <sys/file.h>
+#include <errno.h>
+#include <stdlib.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * flock --
+ *
+ *	Procedure to map from Unix flock system call to Sprite Ioc_Lock/Unlock.
+ *
+ * Results:
+ *      UNIX_SUCCESS    - the call was successful.
+ *      UNIX_ERROR      - the call was not successful.
+ *                        The actual error code stored in errno.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+flock(descriptor, operation)
+    int descriptor;		/* descriptor for stream to lock */
+    int operation;		/* flags for locking descriptor */
+{
+    ReturnStatus status;
+    int spriteLockOp = 0;
+
+    if (operation & LOCK_EX) {
+	spriteLockOp |= IOC_LOCK_EXCLUSIVE;
+    } else if (operation & LOCK_SH) {
+	spriteLockOp |= IOC_LOCK_SHARED;
+    }
+    if (operation & LOCK_NB) {
+	spriteLockOp |= IOC_LOCK_NO_BLOCK;
+    }
+    if (operation & LOCK_UN) {
+	status = Ioc_Unlock(descriptor, spriteLockOp);
+    } else {
+	status = Ioc_Lock(descriptor, spriteLockOp);
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Unix_CloseLock --
+ *
+ *	Release any locks held by this process on the given descriptor
+ *	before it is closed. Called by close().
+ *
+ *	This is superceeded by the cleanup done in the Sprite kernel.
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+void
+Unix_CloseLock (fd)
+    int fd;
+{
+    return;
+}
+
+@
+
+
+1.2.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/unixSyscall/RCS/flock.c,v 1.2 89/01/06 08:03:34 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: flock.c,v 1.4 88/01/07 11:57:06 deboor Exp $ SPRITE (Berkeley)";
+a22 4
+static int *exLocks = (int *)0;
+static int *shLocks = (int *)0;
+static int maskWidth = 0;
+
+d27 1
+a27 1
+ * UnlockAll --
+d29 1
+a29 2
+ *	An exit handler to make sure all our locks are released before
+ *	we exit...
+d32 3
+a34 1
+ *	None
+d36 2
+a37 2
+ * Side Effects:
+ *	Any locks we held are released
+d41 5
+a45 2
+static void
+UnlockAll()
+d47 2
+a48 1
+    int		fd;
+d50 4
+a53 3
+    while ((fd = Bit_FindFirstSet(maskWidth, exLocks)) >= 0) {
+	(void) Ioc_Unlock (fd, IOC_LOCK_EXCLUSIVE);
+	Bit_Clear (fd, exLocks);
+d55 2
+a56 3
+    while ((fd = Bit_FindFirstSet(maskWidth, shLocks)) >= 0) {
+	(void) Ioc_Unlock (fd, IOC_LOCK_SHARED);
+	Bit_Clear (fd, shLocks);
+d58 11
+a69 1
+
+d79 2
+d85 1
+a85 2
+ *	Any locks will be released and the bit for the fd cleared in the
+ *	corresponding mask.
+d89 1
+d94 1
+a94 10
+    if (fd >= maskWidth || fd < 0) {
+	return;
+    }
+    if (Bit_IsSet (fd, exLocks)) {
+	Ioc_Unlock (fd, IOC_LOCK_EXCLUSIVE);
+	Bit_Clear (fd, exLocks);
+    } else if (Bit_IsSet (fd, shLocks)) {
+	Ioc_Unlock (fd, IOC_LOCK_SHARED);
+	Bit_Clear (fd, shLocks);
+    }
+a95 18
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * flock --
+ *
+ *	Procedure to map from Unix flock system call to Sprite IOControls.
+ *
+ * Results:
+ *      UNIX_SUCCESS    - the call was successful.
+ *      UNIX_ERROR      - the call was not successful.
+ *                        The actual error code stored in errno.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+a96 58
+int
+flock(descriptor, operation)
+    int descriptor;		/* descriptor for stream to lock */
+    int operation;		/* flags for locking descriptor */
+{
+    ReturnStatus status;	/* result returned by Fs_Lock */
+    static Boolean initialized = FALSE;
+
+    if (!initialized) {
+	atexit (UnlockAll);
+	initialized = TRUE;
+    }
+
+    if (operation & LOCK_UN) {
+	int	lockType;
+
+	if (descriptor >= maskWidth) {
+	    return (UNIX_SUCCESS);
+	}
+	if (descriptor < 0) {
+	    errno = EBADF;
+	    return (UNIX_ERROR);
+	}
+	if (Bit_IsSet (descriptor, shLocks)) {
+	    lockType = IOC_LOCK_SHARED;
+	    Bit_Clear (descriptor, shLocks);
+	} else if (Bit_IsSet (descriptor, exLocks)) {
+	    lockType = IOC_LOCK_EXCLUSIVE;
+	    Bit_Clear (descriptor, exLocks);
+	} else {
+	    return (UNIX_SUCCESS);
+	}
+	status = Ioc_Unlock (descriptor, lockType);
+    } else {
+	if (operation & LOCK_NB) {
+	    operation = (operation & 3) | IOC_LOCK_NO_BLOCK;
+	}
+	status = Ioc_Lock (descriptor, operation);
+	if (status == SUCCESS) {
+	    if (descriptor >= maskWidth) {
+		exLocks = Bit_Expand (descriptor+1, maskWidth, exLocks);
+		shLocks = Bit_Expand (descriptor+1, maskWidth, shLocks);
+		maskWidth = descriptor+1;
+	    }
+	    if (operation & LOCK_EX) {
+		Bit_Set (descriptor, exLocks);
+	    } else {
+		Bit_Set (descriptor, shLocks);
+	    }
+	}
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}
+@

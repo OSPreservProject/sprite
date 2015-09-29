@@ -1,0 +1,274 @@
+ 136 ID
+   1 Makefile
+   1 common.mk@
+   1 local.mk
+   0 t
+
+Xcfbpmax:
+total 63
+   1 CHANGES
+   1 Makefile
+   2 Mx.cfbpm.1
+   1 Mx.cfbpm.3
+   1 RCS/
+   1 cfbpmax.h
+  28 cfbpmax_io.c
+   5 cfbpmaxcolor.c
+   1 cfbpmaxcolor.h
+   1 ds3100.md/
+   3 init.c
+   4 keynames.h
+  11 lk201.c
+   1 local.mk
+   1 machine/
+   1 sys/
+
+cfb:
+total 329
+   1 CHANGES
+   2 Makefile
+   1 RCS/
+   2 README
+   8 cfb.h
+   5 cfb8bit.c
+   5 cfb8bit.h
+  39 cfbbitblt.c
+   6 cfbbres.c
+   7 cfbbresd.c
+   5 cfbbstore.c
+   7 cfbcmap.c
+   7 cfbfillarc.c
+  12 cfbfillrct.c
+  22 cfbfillsp.c
+  20 cfbgc.c
+   5 cfbgetsp.c
+  11 cfbglblt8.c
+   5 cfbhrzvert.c
+   6 cfbimage.c
+  19 cfbline.c
+   6 cfbmskbits.c
+  15 cfbmskbits.h
+  11 cfbpixmap.c
+   4 cfbpntwin.c
+   4 cfbpolypnt.c
+   5 cfbpush8.c
+  11 cfbrctstp8.c
+   9 cfbscrinit.c
+  19 cfbseg.c
+   8 cfbsetsp.c
+  11 cfbteblt8.c
+   6 cfbtegblt.c
+   7 cfbtileodd.c
+   7 cfbwindow.c
+   6 cfbzerarc.c
+   2 ds3100.md/
+   1 local.mk
+   1 sun3.md/
+   1 sun4.md/
+
+dix:
+total 666
+  11 BuiltInAtoms
+   1 CHANGES
+   1 Makefile
+   1 Mx.dixut.1
+   1 Mx.event.1
+   1 RCS/
+  18 TAGS
+   5 atom.c
+   2 buildatoms*
+  68 colormap.c
+   9 cursor.c
+  32 devices.c
+  92 dispatch.c
+  11 dixfonts.c
+   8 dixutils.c
+   1 ds3100.md/
+  92 events.c
+  10 extension.c
+  27 gc.c
+   4 globals.c
+   5 glyphcurs.c
+  11 grabs.c
+   5 initatoms.c
+   1 local.mk@
+  19 main.c
+  16 property.c
+  14 resource.c
+   1 sun3.md/
+   1 sun4.md/
+  37 swaprep.c
+  26 swapreq.c
+  19 tables.c
+ 116 window.c
+
+ds3100.md:
+total 3508
+1752 Xcfbpmax*
+1756 Xcfbpmax.pg*
+
+extensions:
+total 42
+   1 Makefile
+   1 RCS/
+   1 ds3100.md/
+   1 local.mk
+  26 shape.c
+   3 shape.h
+   7 shapestr.h
+   1 sun3.md/
+   1 sun4.md/
+
+mfb:
+total 426
+   1 CHANGES
+   2 Makefile
+   1 RCS/
+   2 ds3100.md/
+   2 fastblt.h
+   8 local.mk
+  76 maskbits.c
+  18 maskbits.h
+  10 mfb.h
+  29 mfbbitblt.c
+   8 mfbbres.c
+   5 mfbbresd.c
+   5 mfbbstore.c
+   7 mfbclip.c
+   6 mfbcmap.c
+   8 mfbfillarc.c
+   5 mfbfillrct.c
+  31 mfbfillsp.c
+   3 mfbfont.c
+  29 mfbgc.c
+   5 mfbgetsp.c
+   4 mfbhrzvert.c
+   6 mfbimage.c
+  13 mfbimggblt.c
+  22 mfbline.c
+   2 mfbmisc.c
+   7 mfbpixmap.c
+  11 mfbplygblt.c
+   8 mfbpntarea.c
+   7 mfbpntwin.c
+   4 mfbpolypnt.c
+   8 mfbpushpxl.c
+   2 mfbscrclse.c
+   7 mfbscrinit.c
+  22 mfbseg.c
+   8 mfbsetsp.c
+   9 mfbtegblt.c
+   6 mfbtile.c
+   9 mfbwindow.c
+   7 mfbzerarc.c
+   1 sun3.md/
+   2 sun4.md/
+
+mi:
+total 810
+   1 CHANGES
+   2 Makefile
+   1 Mx.mibst.2
+   2 RCS/
+   2 ds3100.md/
+   1 local.mk@
+   4 mi.h
+  84 miarc.c
+  24 mibitblt.c
+  96 mibstore.c
+   1 mibstore.h
+ 184 mibstore.s
+   3 mibstorest.h
+   2 micursor.c
+   7 midash.c
+  18 midispcur.c
+  22 miexpose.c
+  17 mifillarc.c
+   4 mifillarc.h
+   4 mifillrct.c
+   3 mifpoly.h
+   8 mifpolycon.c
+   7 miglblt.c
+   3 miinitext.c
+  11 mipointer.c
+   2 mipointer.h
+   2 mipointrst.h
+   3 mipoly.c
+   6 mipoly.h
+   7 mipolycon.c
+   7 mipolygen.c
+   3 mipolypnt.c
+   2 mipolyrect.c
+   2 mipolyseg.c
+   6 mipolytext.c
+  10 mipolyutil.c
+   5 mipushpxl.c
+  68 miregion.c
+   4 miscanfill.h
+  11 mispans.c
+   3 mispans.h
+  56 misprite.c
+   2 misprite.h
+   3 mispritest.h
+   2 mistruct.h
+  20 mivaltree.c
+  39 miwideline.c
+   4 miwideline.h
+   3 miwindow.c
+  18 mizerarc.c
+   3 mizerarc.h
+   6 mizerline.c
+   1 sun3.md/
+   1 sun4.md/
+
+os:
+total 213
+   1 CHANGES
+   1 Makefile
+   1 Mx.acces.1
+   5 Mx.io.c.2
+   1 Mx.osdep.1
+   1 RCS/
+   8 WaitFor.c
+  18 access.c
+   1 common.mk@
+  27 connection.c
+   1 dix/
+   1 ds3100.md/
+   1 extensions/
+   1 fontdir.c@
+   3 fonttype.c
+   2 fonttype.h
+   6 genalloca.c
+  20 io.c
+   1 local.mk
+   3 oscolor.c
+   6 osdep.h
+  22 osfonts.c
+   4 osinit.c
+  21 pdev.c
+   1 sun3.md/
+   1 sun4.md/
+  10 tags
+  17 utils.c
+  28 xdmcp.c
+
+pcf:
+total 82
+   1 README
+   1 diffs.1
+  72 diffs.2
+   7 dixfonts.c
+   1 fonts/
+
+snf:
+total 19
+   1 CHANGES
+   1 Makefile
+   1 RCS/
+   1 ds3100.md/
+   1 local.mk@
+   8 snffonts.c
+   4 snfstruct.h
+   1 sun3.md/
+   1 sun4.md/

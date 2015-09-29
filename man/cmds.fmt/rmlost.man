@@ -1,0 +1,68 @@
+
+
+
+RMLOST                    User Commands                    RMLOST
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     rmlost - a perl script to clean lost+found directories
+
+SSYYNNOOPPSSIISS
+     rrmmlloosstt  [--vv] [-i] [-v] [-a] [_f_i_l_e_s_y_s_t_e_m_s]
+
+OOPPTTIIOONNSS
+     --ii            Interactive option. rmlost asks for  confirma-
+                   tion  for  each  group  of  files  found  in a
+                   filesystem before it deletes them.
+
+     --vv            Verbose option. Prints helpful messages as  it
+                   proceeds.
+
+     --aa            Examine all filesystems. This can be a lengthy
+                   process.
+
+_________________________________________________________________
+
+IINNTTRROODDUUCCTTIIOONN
+     RRmmlloosstt cleans out a user's files in  the  lost+found  direc-
+     tories.   With  no arguments, /lost+found is checked, other-
+     wise the specified  filesystems  are  checked.   If  the  --aa
+     option  is  given, all the filesystems generated with the ddff
+     command are examined.
+
+     For each filesystem, all the files owned  by  the  user  are
+     removed.   If  the  --ii  option  is  given,  confirmation  is
+     requested before the deletion is performed.
+
+BBUUGGSS
+     Perl doesn't seem to let you ^C  the  script.  To  kill  the
+     thing, type ^Z and issue a KILL to the process
+
+KKEEYYWWOORRDDSS
+     lost+found
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  August 16, 1991                   1
+
+
+

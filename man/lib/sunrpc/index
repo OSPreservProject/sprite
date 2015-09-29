@@ -1,0 +1,20 @@
+bindresvport
+bindresvport, 
+bind a socket to a privileged IP port
+
+getrpcent
+getrpcent, getrpcbyname, getrpcbynumber, 
+get RPC entry
+
+getrpcport
+getrpcport, 
+get RPC port number
+
+rpc
+rpc, 
+library routines for remote procedure calls
+
+xdr
+xdr, 
+library routines for external data representation
+

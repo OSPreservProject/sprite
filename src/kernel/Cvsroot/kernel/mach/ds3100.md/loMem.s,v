@@ -1,0 +1,113 @@
+head     9.2;
+branch   ;
+access   ;
+symbols  ds3100:9.2 sun3:9.2 sun4nw:9.2 symm:9.2 spur:9.2 Summer89:9.0;
+locks    ; strict;
+comment  @| @;
+
+
+9.2
+date     91.10.17.13.31.28;  author jhh;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     91.02.01.16.32.03;  author jhh;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.54.02;  author douglis;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.11.17.55.04;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Original source from DECWRL.
+@
+
+
+9.2
+log
+@got rid of signed instructions
+@
+text
+@/* loMem.s -
+ *
+ *     Contains code that is the first executed at boot time.
+ *
+ *	Copyright (C) 1989 Digital Equipment Corporation.
+ *	Permission to use, copy, modify, and distribute this software and
+ *	its documentation for any purpose and without fee is hereby granted,
+ *	provided that the above copyright notice appears in all copies.  
+ *	Digital Equipment Corporation makes no representations about the
+ *	suitability of this software for any purpose.  It is provided "as is"
+ *	without express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/mach/ds3100.md/RCS/loMem.s,v 9.1 91/02/01 16:32:03 jhh Exp $ SPRITE (DECWRL)
+ */
+
+#include "machConst.h"
+#include <regdef.h>
+
+/*
+ * Amount to take off of the stack for the benefit of the debugger.
+ */
+#define START_FRAME	((4 * 4) + 4 + 4)
+
+    .globl	start
+    .globl	eprol
+start:
+eprol:
+    mtc0	zero, MACH_COP_0_STATUS_REG	# Disable interrupts
+    li		sp, MACH_CODE_START - START_FRAME
+    la		gp, _gp
+    sw		zero, START_FRAME - 4(sp)	# Zero out old ra for debugger
+    sw		zero, START_FRAME - 8(sp)	# Zero out old fp for debugger
+    jal		main				# main(argc, argv, envp)
+    addu	a0, zero, zero			
+    jal		Proc_Exit			# Proc_Exit(0)
+@
+
+
+9.1
+log
+@added eprol symbol
+@
+text
+@d13 1
+a13 1
+ * $Header: /sprite/src/kernel/mach/ds3100.md/RCS/loMem.s,v 1.1 89/07/11 17:55:04 nelson Exp $ SPRITE (DECWRL)
+d34 1
+a34 1
+    add		a0, zero, zero			
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d13 1
+a13 1
+ * $Header: /sprite/src/kernel/mach/ds3100.md/RCS/loMem.s,v 1.1 89/07/11 17:55:04 nelson Exp Locker: douglis $ SPRITE (DECWRL)
+d25 1
+d27 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d13 1
+a13 1
+ * $Header: loMem.s,v 1.4 89/06/29 10:03:48 mnelson Exp $ SPRITE (DECWRL)
+@

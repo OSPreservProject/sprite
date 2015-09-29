@@ -1,0 +1,111 @@
+.\"	$Source: /afs/athena.mit.edu/astaff/project/zephyr/src/man/man1/RCS/znol.1,v $
+.\"	$Author: jtkohl $
+.\"	$Header: /afs/athena.mit.edu/astaff/project/zephyr/src/man/man1/RCS/znol.1,v 1.7 89/10/30 09:46:58 jtkohl Exp $
+.\"
+.\" Copyright 1987,1988 by the Massachusetts Institute of Technology
+.\" All rights reserved.  The file /usr/include/zephyr/mit-copyright.h
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)znol.1	6.1 (MIT) 7/9/87
+.\"
+.TH ZNOL 1 "July 1, 1988" "MIT Project Athena"
+.ds ]W MIT Project Athena
+.SH NAME
+znol \- notify via Zephyr upon login or logout of interesting people
+.SH SYNOPSIS
+.B znol
+[
+.BI on|off
+] [
+.BI \-f \ file
+] [
+.BI \-u \ username
+] [
+.BI \-l
+] [
+.BI \-q
+]
+.SH DESCRIPTION
+.I Znol
+provides a way for you to be notified when "interesting" people log in
+or out.  It uses the
+.I Zephyr(1)
+Notification Service, which causes a message to appear on your screen
+for every person specified in a namelist (which defaults to
+$HOME/.anyone).  The namelist should have one login name per line.  Any
+line starting with `#' is considered a comment and ignored.
+Anyone in the namelist who is logged in when
+.I znol
+is executed is printed to stdout.  The control arguments are as
+follows:
+.TP 12
+.B on|off
+Turns notification on or off.
+.TP
+.B \-f
+The namelist file is taken to be
+.I file.
+If
+.I file
+is "-", then the standard input is used instead of a file. If
+.I file
+does not exist, an error message is printed, and
+.I znol
+exits.
+This option may not be used in conjunction with the
+.B \-u
+option.
+.TP
+.B \-l
+Causes
+.I znol
+to just list the people in the namelist who are currently logged in,
+without subscribing to the login messages.   This option may not be used
+in conjunction with the
+.BI \-q
+option.
+.TP
+.B \-q
+Disables printing who is currently logged in when subscribing.  This
+option may not be used in conjunction with the
+.BI \-l
+option.
+.TP
+.B \-u
+Instead of reading a file to specify the "interesting" users, the next
+argument is used as the only "interesting" user.  This option may not be
+used in conjunction with the
+.B \-f
+option.
+.SH EXAMPLES
+.nf
+.in +.5in
+znol
+.in -.5in
+.fi
+reads the standard namelist file, prints the locations of any users
+named therein which can be found on the system, and enters subscriptions
+for notices about those users.
+.nf
+.in +.5in
+znol -l -u foo
+.in -.5in
+.fi
+prints the location (if visible) of the user 'foo'.
+.SH FILES
+$HOME/.anyone
+.SH SEE ALSO
+anyone(SIPB), nol(SIPB), zctl(1), zephyr(1), zwgc(1), zhm(8), zephyrd(8)
+.br
+Project Athena Technical Plan Section E.4.1, `Zephyr Notification
+Service'
+.SH AUTHOR
+.PP
+Robert S. French (MIT-Project Athena)
+.sp
+.SH RESTRICTIONS
+Copyright (c) 1987,1988 by the Massachusetts Institute of Technology.
+All Rights Reserved.
+.br
+.I zephyr(1)
+specifies the terms and conditions for redistribution.

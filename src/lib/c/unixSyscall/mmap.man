@@ -1,0 +1,379 @@
+.\" $Copyright:	$
+.\" Copyright (c) 1984, 1985, 1986, 1987 Sequent Computer Systems, Inc.
+.\" All rights reserved
+.\"  
+.\" This software is furnished under a license and may be used
+.\" only in accordance with the terms of that license and with the
+.\" inclusion of the above copyright notice.   This software may not
+.\" be provided or otherwise made available to, or used by, any
+.\" other person.  No title to or ownership of the software is
+.\" hereby transferred.
+...
+.V= $Header: mmap.2 1.23 87/08/01 $
+.TH MMAP 2 "\*(V)" "DYNIX" "\*(O)"
+.SH NAME
+mmap \- map an open file into the process's address space
+.SH SYNOPSIS
+.nf
+.ft 3
+NOTE: this man page is inaccurate.  It was borrowed from another machine
+and hasn't been updated to make it correct.
+#include <sys/types.h>
+#include <sys/mman.h>
+
+.ta 0.8i 1.6i
+mmap(addr, len, prot, share, fd, pos)
+caddr_t	addr;	/* starting virt-addr */
+int	len;	/* length (bytes) to map */
+int	prot;	/* RO, RW encoding */
+int	share;	/* private/shared modifications */
+int	fd;	/* open file to be mapped */
+off_t	pos;	/* where in file to begin map */
+.ft 1
+.fi
+.SH DESCRIPTION
+.I Mmap
+causes the file referenced by
+.IR fd ,
+starting at byte
+.I pos
+for
+.I len
+bytes in the file,
+to be mapped into the calling
+process's address space, starting at virtual address
+.I addr
+for
+.I len
+bytes, using protection specified by
+.IR prot ;
+modifications to the mapped memory are either
+private to the process or
+shared, as specified by
+.IR share .
+.I Mmap
+can be used
+to allocate regions of shared memory,
+to map files into memory,
+and to access special regions of the physical address space.
+.PP
+.I Fd
+must reference an open regular (IFREG) or character special
+(IFCHR) file.
+The device driver that implements the IFCHR special file
+must support mapping for this to succeed.
+Typically, a regular file is used to map shared memory.
+.PP
+The
+.I share
+argument specifies whether modifications to a mapped file
+are to be kept private to the calling process or shared with
+other processes accessing the file.
+If
+.I share
+is MAP_SHARED,
+all modifications to the file are shared with others
+who have it concurrently mapped.
+If
+.I share
+is MAP_PRIVATE, all modifications are local to the calling process;
+this doesn't restrict other processes from mapping the file.
+MAP_SHARED and MAP_PRIVATE have no relation
+to
+.IR flock (2),
+and do not restrict
+.I read
+and
+.I write
+system-calls.
+If
+.I share
+is MAP_ZEROFILL, the space indicated from
+.I addr
+for
+.I len
+bytes is replaced by
+private pages that are zero-filled when referenced.
+MAP_ZEROFILL ignores the
+.I fd
+argument, and
+.I pos
+is ignored other than being checked for alignment (specifying fd and pos = 0
+is recommended).
+.PP
+The
+.I prot
+argument should be PROT_WRITE for write access to the mapped region,
+PROT_READ for read access,
+PROT_EXEC for executable access.
+These values can be ORed to obtain read-write access, etc.
+For programming convenience, PROT_RDWR is defined as (PROT_READ|PROT_WRITE).
+The file access permissions on
+.I fd
+must allow the requested access.
+The
+.I prot
+argument affects only the calling process;
+other processes mapping the same file may have different access.
+.PP
+The
+.IR addr ,
+.IR len ,
+and
+.I pos
+arguments must be integral multiples of the system page size,
+as defined by
+.IR getpagesize (2).
+It is possible to map over previously mapped pages.
+If
+.I addr
+and
+.I len
+specify a nonexistent part of the process's address space,
+the process's data segment is grown to accommodate the request,
+and the process ``break'' (see
+.IR brk (2))
+is set to the high end of the mapped region.
+Reference to any ``holes'' between the mapped region and
+the rest of the data segment result in
+a segmentation fault (SIGSEGV).
+.I mmap
+does not allow mapping over text or stack pages.
+.PP
+When memory is mapped to a regular file,
+the file acts like a paging area for the mapped memory region.
+.I Read
+and
+.I write
+operations to mapped regions of the file also affect the corresponding memory.
+The memory contents are copied out to the file when the process is swapped
+or when it exits, or when the region is otherwise unmapped by the last process
+that has it mapped.
+For programs that use shared memory but do not need a permanent disk image
+of the memory,
+the file associated with
+.I fd
+can be
+.IR unlink ed
+(see
+.IR unlink (2))
+even before the call to
+.IR mmap :
+if the file is
+.IR unlink ed
+when the region is unmapped,
+the disk space will not be updated.
+.PP
+Regular files have their size rounded up to a file-system block boundary.
+Any non-existent space in the file at the time of the
+.I mmap
+request (for example, in a sparse file) is allocated,
+and filled with zeroes when referenced.
+Both of these operations require write access to the file.
+.PP
+The type of file referenced may impose further restrictions on the
+.IR pos ,
+.IR offset ,
+or other parameters.
+Refer to the manual entry of the relevant device driver (for example,
+.IR pmap (4))
+for details.
+.PP
+Closing a file descriptor previously used in an
+.I mmap
+operation unmaps all pages mapped by that file descriptor (see also
+.IR munmap (2)).
+(Note: this may change in order to provide compatibility with sunOS.)
+If the file-descriptor has been
+.IR dup ed
+prior to being closed, no unmap takes place.
+.PP
+.I Mmap
+can be called multiple times with the same file descriptor,
+resulting in several (possibly overlapping) mapped regions.
+A process can have up to 8 regions mapped simultaneously;
+mappings that are completely overlapped by subsequent mappings
+are not counted in this total.
+Mappings which use the same file descriptor, and
+addr and pos arguments which align virtually with a previous mapping,
+also don't count in this total; the simplest case is mapping more of a
+file, starting from the end of a previous mapping.
+.PP
+All mapped files remain mapped in both the parent and child process after a
+.IR fork .
+All flavors of the
+.I exec
+and
+.I exit
+system calls, when successful,
+remove all maps the calling process had established.
+If a process has any maps,
+.I vfork
+behaves exactly like
+.IR fork .
+A child of a
+.I vfork
+that has not
+yet
+.IR exec ed
+a new image cannot successfully execute
+.IR mmap .
+.PP
+There are three types of mapping:
+paged, physical, and non-paged memory.
+The type of mapping is determined by the type of file being mapped.
+Paged maps support shared memories and mapped regular files.
+Physical maps deal with hardware that has restrictive access capability
+(for example, the MULTIBUS address space, including Atomic Lock Memory).
+Non-paged memory maps are typically used
+for special reserved areas of system memory;
+they are assumed to behave exactly like memory,
+supporting accesses of arbitrary size and alignment, DMA, etc.
+.PP
+System services (raw IO, read/write, stat, etc.)
+are supported in paged and non-paged memory maps;
+attempts at such services in physically mapped address space
+result in an error, typically EFAULT.
+Core dumps include a copy of any mapped address space;
+however, physically mapped addresses read as zero.
+.PP
+Regular files (IFREG) are always page-mapped.
+Character special files (IFCHR) can support
+paged, physical, or non-paged maps,
+depending on the underlying hardware.
+Physical and non-paged maps are
+always valid in the process address space;
+references won't cause a page fault.
+.PP
+When \f2mmap\fP increases a program's address
+space, it also attempts to increase its allowable resident set size.
+.SH "RETURN VALUE"
+.I Mmap
+returns the address of the mapped region when successful.
+(Note: this may change, as some Unix machines return 0.)
+Otherwise it returns -1 and places the error number in the global variable
+.IR errno .
+.SH EXAMPLES
+The following code sets up a 1-Mbyte region of shared memory
+at the first page boundary above the current program ``break.''
+This region will be shared with the process's children
+and with any other process that maps the file ``shmem''.
+.ne 4
+.Ps
+pgsz = getpagesize();
+shm_base = (char *) ( ((int)sbrk(0) + (pgsz-1)) & ~(pgsz-1) );
+fd = open ("shmem", O_CREAT | O_RDWR, 0666);
+mmap (shm_base, 0x100000, PROT_RDWR, MAP_SHARED, fd, 0);
+.Pe
+.PP
+The following code maps the first page of Atomic Lock Memory
+into the process's virtual address space at address 0x200000.
+This region will be shared with the process's children
+and with any other process that maps the file ``/dev/alm/alm00''.
+.Ps
+pgsz = getpagesize();
+fd = open ("/dev/alm/alm00", O_RDWR, 0);
+mmap (0x200000, pgsz, PROT_RDWR, MAP_SHARED, fd, 0);
+.Pe
+.SH ERRORS
+.TP 15
+[EINVAL]
+.IR Addr ,
+.IR pos ,
+or
+.I len
+is not a multiple of the system page size.
+.TP 15
+[EINVAL]
+.I Prot
+did not specify at least one of PROT_WRITE or PROT_READ;
+.I share
+did not specify MAP_SHARED, MAP_PRIVATE, or MAP_ZEROFILL; or
+.I share
+specified MAP_ZEROFILL but
+.I prot
+did not contain PROT_RDWR.
+.TP 15
+[EINVAL]
+.I Fd
+does not represent a regular or character special file.
+.TP 15
+[EINVAL]
+The process is the child of a
+.IR vfork .
+.TP 15
+[EINVAL]
+The area defined by the
+.I addr
+and
+.I len
+arguments overlaps text or stack pages of the process.
+.TP 15
+[ENODEV]
+The device driver indicated by
+.I fd
+does not support mapping.
+.TP 15
+[ENOMEM]
+There is no swap space for the page table of a mapped regular file,
+or you are trying to create too large a process.
+.TP 15
+[EMFILE]
+The system-defined per-process limit on the number of
+.IR mmap ed
+files (currently 8)
+was exceeded.
+.TP 15
+[ENFILE]
+The system-wide limit on the number of mapped regular files was exceeded.
+This limit is defined by the variable
+.I nmfile
+in
+.IR /sys/conf/param.c .
+.TP 15
+[EACCES]
+.I Fd
+does not allow the desired access (read or write),
+or a write-only file descriptor was used.
+.TP 15
+[EACCES]
+A mapped regular file must be extended to a file-system block boundary,
+or the file must have space allocated,
+and the file descriptor is read-only.
+.TP 15
+[ENOSPC]
+A mapped regular file was sparse
+and there was insufficient space in the file-system to satisfy the request.
+.TP 15
+[EFBIG]
+The
+.I pos
+and
+.I len
+arguments would create too large a file.
+.TP 15
+[others]
+Other error values may be returned by some device drivers when requested to map.
+See the relevant driver manual entry for details.
+.SH "SEE ALSO"
+munmap(2), pmap(4), vm_ctl(2), fork(2),
+exec(2), getpagesize(2), msync(2), mlock(2), munlock(2), mincore(2)
+.I "Guide to Parallel Programming"
+.SH "BUGS"
+A mapped file may not be truncated.
+.PP
+If a file is extended to a file-system block boundary,
+its original size is lost.
+.PP
+Current restrictions on what parts of the address space can be
+re-mapped should be lifted.
+.SH NOTES
+Due to a hardware restriction, PROT_WRITE implies PROT_READ also.
+PROT_EXEC is ignored.
+.PP
+To minimize overhead,
+mapped regions should be kept as close as possible to the low end
+of process memory.
+.PP
+Address space holes under the process ``break''
+read as zeroes in core files.

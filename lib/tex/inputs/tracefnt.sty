@@ -1,0 +1,180 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TRACEFNT.STY						    July 1990      %
+%                                                                          %
+% This file is part of the AMS-LaTeX Version 1.0 distribution              %
+%   American Mathematical Society, Technical Support Group,                %
+%   P. O. Box 6248, Providence, RI 02940                                   %
+%   800-321-4AMS (321-4267) or 401-455-4080                                %
+%   Internet: Tech-Support@Math.AMS.com                                    %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% This is file `tracefnt.sty' generated
+%% on <1990/6/30> with the docstrip utility (v1.1k).
+%%
+%% The original source file was `tracefnt.doc'.
+%% Included modules: `trace,style'.
+%%
+%%
+%% Copyright (C) 1989,1990 by Frank Mittelbach, Rainer Schoepf.
+%% All rights reserved.
+%%
+%% IMPORTANT NOTICE:
+%%
+%% You are not allowed to change this file. You may however copy this file
+%% to a file with a different name and then change the copy.
+%%
+%% You are allowed to distribute this file under the condition that it is
+%% distributed together with all files mentioned in readme.mz3. If you
+%% receive only some of these files from someone, complain!
+%%
+%% You are NOT ALLOWED to distribute this file alone. You are NOT ALLOWED
+%% to take money for the distribution or use of either this file or a
+%% changed version, except for a nominal charge for copying etc.
+%%
+%% Error Reports in case of UNCHANGED versions to
+%%
+%% F. Mittelbach
+%% Eichenweg 29
+%% D-6500 Mainz 1
+%% Federal Republic of Germany
+%% Bitnet: <PZF5HZ@DRUEDS2>
+%%
+%% or:
+%% R. Sch\"opf
+%% Inst. f. Theor. Physik
+%% der Universit\"at Heidelberg
+%% Philosophenweg 16
+%% D-6900 Heidelberg
+%% Federal Republic of Germany
+%% Bitnet: <BK4@DHDURZ1>
+%%
+%%
+\def\fileversion{v1.0p}
+\def\filedate{90/06/30}
+\def\docdate {90/04/05}
+
+%% \CheckSum{288}
+%% \CharacterTable
+%%  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
+%%   Lower-case    \a\b\c\d\e\f\g\h\i\j\k\l\m\n\o\p\q\r\s\t\u\v\w\x\y\z
+%%   Digits        \0\1\2\3\4\5\6\7\8\9
+%%   Exclamation   \!     Double quote  \"     Hash (number) \#
+%%   Dollar        \$     Percent       \%     Ampersand     \&
+%%   Acute accent  \'     Left paren    \(     Right paren   \)
+%%   Asterisk      \*     Plus          \+     Comma         \,
+%%   Minus         \-     Point         \.     Solidus       \/
+%%   Colon         \:     Semicolon     \;     Less than     \<
+%%   Equals        \=     Greater than  \>     Question mark \?
+%%   Commercial at \@     Left bracket  \[     Backslash     \\
+%%   Right bracket \]     Circumflex    \^     Underscore    \_
+%%   Grave accent  \`     Left brace    \{     Vertical bar  \|
+%%   Right brace   \}     Tilde         \~}
+%%
+\@ifundefined{new@fontshape}
+ {\errmessage{The style option `tracefnt' does not make sense if you
+              do not use a format with the new font selection scheme.}
+  \endinput}
+  {}
+ \immediate\write\sixt@@n{Style Option: `tracefnt'
+ \fileversion\space <\filedate>  (FMi and RmS)}
+\immediate\write\sixt@@n{English Documentation
+ \@spaces\@spaces\space  <\docdate>  (FMi and RmS)}
+\immediate\write\sixt@@n{Includes module(s):
+ trace
+}
+\def\extract@font{%
+    \def\@tempa{\def\extract@fontinfo####1}%
+    \edef\@tempb{<\expandafter\strip@prefix\meaning\f@size>}%
+    \expandafter\@tempa\@tempb##2##3<##4\@nil{%
+      \global\expandafter\font \font@name
+           \ifcase0##2##3\relax\or
+                   ##3
+                    \font@warning{Font/shape
+                              `\f@family/\f@series/\f@shape'
+                              in size \@tempb\space  not available}%
+                    \font@warning{Using external font `##3'
+                                    instead}\else
+                  \default@errfont \errhelp\nofont@help
+                         \errmessage{Font \expandafter
+                                    \string\font@name\space
+                                    not found}%
+               \fi
+   \ifnum \tracingfonts >\@ne
+   \typeout{Loading external  ##2##3 as \font@name
+            \on@line}\fi
+              }%
+    \edef\font@info{\expandafter\expandafter\expandafter\string
+        \csname \f@family/\f@series/\f@shape \endcsname\@tempb}%
+    \expandafter\extract@fontinfo\font@info 3<\@nil
+    \csname +\f@family \expandafter
+       \endcsname \font@name \relax}
+
+\def\p@selectfont{%
+    \xdef\font@name{%
+      \csname\f@family/\f@series/\f@shape/\f@size\endcsname}%
+    \pickup@font
+    \font@name
+ \ifnum \tracingfonts>\tw@
+   \typeout{Switching to \font@name \on@line}\fi
+    \ifx \glb@currsize \lcl@currsize
+     \else
+    \setnew@baselineskip
+    \baselineskip\baselinestretch\baselineskip
+    \setbox\strutbox\hbox{\vrule\@height.7\baselineskip
+        \@depth.3\baselineskip \@width\z@}%
+    \normalbaselineskip\baselineskip
+     \glb@settings \the\every@size
+       \aftergroup\glb@settings \fi
+ \ifnum \tracingfonts>\tw@
+  \gdef\font@restore{\xdef\font@name{%
+    \csname\f@family/\f@series/\f@shape/\f@size\endcsname}%
+    \typeout{Restoring \space\space\space\font@name \on@line}%
+    \global\let\font@restore\@empty}%
+   \aftergroup\font@restore
+ \fi
+    }
+\def\baselinestretch{1}
+\newtoks\every@size
+\every@size={}
+\def\use@mathgroup#1#2{\relax\ifmmode
+ \ifnum \tracingfonts>\tw@
+   \typeout{Switching to \string\mathgroup\space #2 \on@line}\fi
+     \math@bgroup
+         #1\mathgroup#2\relax
+     \expandafter\math@egroup\fi}%
+\def\getanddefine@fonts#1#2{%
+ \ifnum \tracingfonts>\tw@
+   \typeout{Setting up \string\mathgroup\space #1 as
+            fontshape \string#2 \f@size/\sf@size/\ssf@size
+            \on@line}\fi
+  \xdef\font@name{\csname \string#2/\f@size\endcsname}%
+  \pickup@font \let\textfont@name\font@name
+  \xdef\font@name{\csname \string#2/\sf@size\endcsname}%
+  \pickup@font \let\scriptfont@name\font@name
+  \xdef\font@name{\csname \string#2/\ssf@size\endcsname}%
+  \pickup@font
+  \edef\math@fonts{\math@fonts
+               \textfont#1\textfont@name
+               \scriptfont#1\scriptfont@name
+               \scriptscriptfont#1\font@name}%
+    }
+\def\tracingfonts{\font@warning{\string\tracingfonts\space
+                  command not provided.^^J
+                  Use `tracefnt' option in \string\documentstyle\space
+                  command.^^J Command found:}%
+                  \count@}
+   \newcount\tracingfonts
+ \tracingfonts=1
+\def\font@warning#1{%
+ \ifnum\tracingfonts>\z@
+ \errhelp{This is only a warning message but it gives you^^J%
+          time to think about the font substitution above.}%
+ \errmessage{Warning: #1}\else
+          \immediate\write\sixt@@n{Warning: #1 \on@line.}%
+ \fi
+          }
+
+\endinput
+%%
+%% End of file `tracefnt.sty'.
+

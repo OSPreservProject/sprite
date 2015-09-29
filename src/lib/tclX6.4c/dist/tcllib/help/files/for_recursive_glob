@@ -1,0 +1,9 @@
+
+
+          for_recursive_glob var globlist code
+               Performs a foreach-style loop for each file and
+               directory that recursively matched one or more patterns
+               specified in the call to for_recursive_glob, setting
+               var to the matching file or directory, and calling
+               code.  The break and continue statements work as
+               expected.

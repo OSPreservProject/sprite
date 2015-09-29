@@ -1,0 +1,2168 @@
+head     9.19;
+branch   ;
+access   ;
+symbols  ds3100:9.19 sun3:9.19 sun4nw:9.19 symm:9.19 spur:9.19 sprited:9.14.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.19
+date     91.10.01.00.46.30;  author mgbaker;  state Exp;
+branches ;
+next     9.18;
+
+9.18
+date     91.09.06.13.59.27;  author mgbaker;  state Exp;
+branches ;
+next     9.17;
+
+9.17
+date     91.09.06.13.56.27;  author rab;  state Exp;
+branches ;
+next     9.16;
+
+9.16
+date     91.09.06.13.04.43;  author mgbaker;  state Exp;
+branches ;
+next     9.15;
+
+9.15
+date     91.09.05.22.33.54;  author rab;  state Exp;
+branches ;
+next     9.14;
+
+9.14
+date     91.04.12.17.34.05;  author kupfer;  state Exp;
+branches 9.14.1.1;
+next     9.13;
+
+9.13
+date     91.03.30.17.02.16;  author mgbaker;  state Exp;
+branches ;
+next     9.12;
+
+9.12
+date     91.01.26.15.33.37;  author mgbaker;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     90.11.06.16.50.16;  author shirriff;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     90.10.10.10.58.45;  author mendel;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     90.10.08.10.52.02;  author mendel;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     90.10.08.10.47.40;  author jhh;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.05.18.12.02.10;  author shirriff;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.05.03.19.15.07;  author douglis;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.04.19.10.08.45;  author brent;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     89.11.27.13.15.27;  author shirriff;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     89.11.01.10.48.38;  author shirriff;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.27.09.03.45;  author brent;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.26.18.48.08;  author shirriff;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.02.38;  author douglis;  state Stable;
+branches ;
+next     8.16;
+
+8.16
+date     89.08.29.15.37.10;  author mendel;  state Exp;
+branches ;
+next     8.15;
+
+8.15
+date     89.08.21.15.21.39;  author mendel;  state Exp;
+branches ;
+next     8.14;
+
+8.14
+date     89.08.17.17.20.51;  author jhh;  state Exp;
+branches ;
+next     8.13;
+
+8.13
+date     89.07.11.08.47.40;  author mendel;  state Exp;
+branches ;
+next     8.12;
+
+8.12
+date     89.06.16.12.05.55;  author brent;  state Exp;
+branches ;
+next     8.11;
+
+8.11
+date     89.06.15.10.13.59;  author brent;  state Exp;
+branches ;
+next     8.10;
+
+8.10
+date     89.06.07.16.50.26;  author brent;  state Exp;
+branches ;
+next     8.9;
+
+8.9
+date     89.05.14.13.58.51;  author brent;  state Exp;
+branches ;
+next     8.8;
+
+8.8
+date     89.04.14.04.36.39;  author rab;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.04.14.03.11.01;  author rab;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.04.06.11.48.36;  author douglis;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.02.04.12.36.29;  author brent;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.01.30.11.35.44;  author brent;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.01.30.11.10.44;  author brent;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.01.30.08.41.46;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.12.02.11.36.14;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.16.38;  author douglis;  state Stable;
+branches ;
+next     7.0;
+
+7.0
+date     88.11.07.14.47.00;  author brent;  state Exp;
+branches ;
+next     6.12;
+
+6.12
+date     88.10.22.14.24.01;  author brent;  state Exp;
+branches ;
+next     6.11;
+
+6.11
+date     88.10.14.10.25.36;  author brent;  state Exp;
+branches ;
+next     6.10;
+
+6.10
+date     88.10.10.10.07.41;  author douglis;  state Exp;
+branches ;
+next     6.9;
+
+6.9
+date     88.10.03.11.00.56;  author brent;  state Exp;
+branches ;
+next     6.8;
+
+6.8
+date     88.09.27.09.21.51;  author brent;  state Exp;
+branches ;
+next     6.7;
+
+6.7
+date     88.09.08.10.07.59;  author brent;  state Exp;
+branches ;
+next     6.6;
+
+6.6
+date     88.09.07.21.18.21;  author nelson;  state Exp;
+branches ;
+next     6.5;
+
+6.5
+date     88.09.07.17.02.48;  author brent;  state Exp;
+branches ;
+next     6.4;
+
+6.4
+date     88.09.07.12.59.40;  author brent;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.08.30.11.44.32;  author brent;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.23.17.39.38;  author douglis;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.12.16.17.17;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.13.42;  author brent;  state Stable;
+branches ;
+next     1.9;
+
+1.9
+date     88.08.05.10.38.13;  author ouster;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     88.08.04.14.40.04;  author mlgray;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.06.27.14.48.00;  author ouster;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.05.06.09.37.11;  author brent;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.05.06.08.13.15;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.04.11.15.37.24;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.04.11.13.44.06;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.04.09.15.08.55;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.04.10.26.35;  author brent;  state Exp;
+branches ;
+next     ;
+
+9.14.1.1
+date     91.08.21.18.09.57;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Main external definitions for the filesystem module
+@
+
+
+9.19
+log
+@Added back FS_DIR.
+@
+text
+@/*
+ * fs.h --
+ *
+ *	The external interface to the filesystem module is defined here.
+ *	The main object at the interface level is Fs_Stream.  A standard set
+ *	of operations apply to all streams.  A stream is created by
+ *	Fs_Open on a pathname, with flags used to differentiate between
+ *	the different kinds of streams.  After that, the main operations
+ *	are Fs_Read, Fs_Write, Fs_IOControl, Fs_Select, and Fs_Close.
+ *
+ *	Parts of the Fs to Dev interface are also described here, including
+ *	Fs_Device, which describes a device, and Fs_IOParam, Fs_IOCParam,
+ *	and Fs_IOReply, which are standard parameter blocks.
+ *
+ * Copyright (C) 1987 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 9.18 91/09/06 13:59:27 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+ */
+
+#ifndef _FS
+#define _FS
+
+#ifdef KERNEL
+#include <sys.h>
+#include <syncTypes.h>
+#include <procTypes.h>
+#include <user/fs.h>
+#include <fmt.h>
+#include <bstring.h>
+#else
+#include <kernel/sys.h>
+#include <kernel/syncTypes.h>
+#include <kernel/procTypes.h>
+#include <fs.h>
+#include <fmt.h>
+#endif
+
+/*
+ * Fragment stuff that is dependent on the filesystem block size
+ * defined in user/fs.h.  Actually, the fragmenting code is specific
+ * to a 4K block size and a 1K fragment size.
+ */
+
+#define	FS_BLOCK_OFFSET_MASK	(FS_BLOCK_SIZE - 1)
+#define	FS_FRAGMENT_SIZE	1024
+#define	FS_FRAGMENTS_PER_BLOCK	4
+
+
+/*
+ * The following structure is referenced by the process table entry for
+ * a process.  It contains all the filesystem related state for the process.
+ */
+typedef struct Fs_ProcessState {
+    struct Fs_Stream	*cwdPtr;	/* The current working directory. */
+    unsigned int   	filePermissions;/* The bits in this mask correspond
+					 * to the permissions mask of a file.
+					 * If one of these bits is set it
+					 * TURNS OFF the corresponding
+					 * permission when a file is created. */
+    int		   	numStreams;	/* Size of streamList array. */
+    struct Fs_Stream   **streamList;	/* Array of pointers to open files.
+					 * This list is indexed by an integer
+					 * known as a streamID. */
+    char		*streamFlags;	/* Array of flags, one for element
+					 * for each open stream.  Used to
+					 * keep the close-on-exec property */
+    int			numGroupIDs;	/* The length of the groupIDs array */
+    int			*groupIDs;	/* An array of group IDs.  Group IDs
+					 * are used similarly to the User ID. */
+} Fs_ProcessState;
+
+
+/*
+ * The following low-level file system types have to be exported because
+ * the type of Fs_Stream is already exported.  This could be fixed by
+ * only exporting an opaque Fs_StreamPtr type, or by changing the definition
+ * of Fs_Stream from a struct to a pointer to the struct.
+ */
+
+/*
+ * All kinds of things are referenced from the object hash table.  The generic
+ * term for each structure is "handle".  The following structure defines a 
+ * common structure needed in the beginning of each handle.  Note, most of
+ * these fields are private to the FsHandle* routines that do generic
+ * operations on handles.  One exception is that the refCount on FSIO_STREAM
+ * handles is manipulated by the stream routines.  The handle must be
+ * locked when examining the refCount, and it should only be changed
+ * under the handle monitor lock by the FsHandle* routines.
+ */
+
+typedef struct Fs_HandleHeader {
+    Fs_FileID		fileID;		/* Used as the hash key. */
+    int			flags;		/* Defined in fsHandle.c. */
+    Sync_Condition	unlocked;	/* Notified when handle is unlocked. */
+    int			refCount;	/* Used for garbage collection. */
+    char		*name;		/* Used for error messages */
+    List_Links		lruLinks;	/* For LRU list of handles */
+#ifndef CLEAN
+    Proc_ControlBlock	*lockProcPtr;	/* pcb of process that has the 
+					 * lock */
+#endif
+} Fs_HandleHeader;
+
+#define LRU_LINKS_TO_HANDLE(listPtr) \
+	( (Fs_HandleHeader *)((int)(listPtr) - sizeof(Fs_FileID) \
+		- 2 * sizeof(int) - sizeof(char *) - sizeof(Sync_Condition)) )
+
+
+
+/*
+ * The following name-related information is referenced by each stream.
+ * This identifies the name of the file, which will be different than
+ * the file itself in the case of devices.  This is used to get to the
+ * name server during set/get attributes operations.  Also, this name
+ * fileID is used as the starting point for relative lookups.
+ */
+
+typedef struct Fs_NameInfo {
+    Fs_FileID		fileID;		/* Identifies file and name server. */
+    Fs_FileID		rootID;		/* ID of file system root.  Passed
+					 * to name server to prevent ascending
+					 * past the root of a domain with ".."*/
+    int			domainType;	/* Name domain type */
+    struct Fsprefix	*prefixPtr;	/* Back pointer to prefix table entry.
+					 * This is kept for efficient handling
+					 * of lookup redirects. */
+} Fs_NameInfo;
+
+/*
+ * Fs_Stream - A clients handle on an open file is defined by the Fs_Stream
+ *      structure.  A stream has a read-write offset index, state flags
+ *	that determine how the stream is being used (ie, for reading
+ *	or writing, etc.), name state used for get/set attributes,
+ *	and an I/O handle used for I/O operations.
+ *	There are many different types of I/O handles; they correspond
+ *	to local files, remote files, local devices, remote devices,
+ *	local pipes, remote pipes, locally cached named pipes,
+ *	remotely cached named pipes, control streams for pseudo devices,
+ *	psuedo streams, their corresponding server streams, etc. etc.
+ *	The different I/O handles types are defined in fsInt.h
+ *
+ *	This top level Fs_Stream structure is also given a handle type
+ *	and kept in the handle table because of process migration and
+ *	the shadow streams that file servers have to keep - on both
+ *	the client and the server there will be a Fs_Stream that
+ *	references an I/O handle.  The I/O handles will be different
+ *	types on the client (i.e. remote file) and the server (local file).
+ *	The Fs_Stream object will be the same, however, with the same
+ *	usage flags and internal ID.
+ *
+ */
+
+typedef struct Fs_Stream {
+    Fs_HandleHeader	hdr;		/* Global stream identifier.  This
+					 * includes a reference count which
+					 * is incremented on fork/dup */
+    int			offset;		/* File access position */
+    int			flags;		/* Flags defined below */
+    Fs_HandleHeader	*ioHandlePtr;	/* Stream specific data used for I/O.
+					 * This really references a somewhat
+					 * larger object, see fsInt.h */
+    Fs_NameInfo	 	*nameInfoPtr;	/* Used to contact the name server */
+    List_Links		clientList;	/* Needed for recovery and sharing
+					 * detection */
+} Fs_Stream;
+
+/*
+ * Flags in Fs_Stream that are only set/used by the kernel.
+ * (Flags passed in from callers of Fs_Open are defined in user/fs.h
+ *  The low order 12 bits of the flags word are reserved for those flags.)
+ * There are two groups of flags, the first is used mainly at lookup time
+ *	and the rest apply to I/O operations.
+ *
+ *	(These open related bit values are defined in user/fs.h)
+ *	FS_CREATE - Create if it doesn't exist.
+ *	FS_TRUNC  - Truncate to zero length on opening
+ *	FS_EXCULSIVE - With FS_CREATE causes open to fail if the file exists.
+ *	FS_MASTER - Open pseudo-device as the server process
+ *	FS_NAMED_PIPE_OPEN - Open a named pipe
+ *	FS_CLOSE_ON_EXEC - Cause stream to be closed when the opening
+ *		process executes a different program.
+ *
+ *	(These I/O related bit values are defined in user/fs.h)
+ *	FS_READ - Open for reading	(also FS_READABLE)
+ *	FS_WRITE - Open for writing	(also FS_WRITABLE)
+ *	FS_EXECUTE - Open for execution	(also FS_EXCEPTION)
+ *	FS_APPEND - Open for append mode
+ *	FS_NON_BLOCKING - Open a stream with non-blocking I/O operations. If
+ *		the operation would normally block, FS_WOULD_BLOCK is returned.
+ *
+ *	(These open-time bit values are defined below)
+ *      FS_FOLLOW - follow symbolic links during look up.
+ *	FS_PREFIX - Set when opening prefixes for export.
+ *	FS_SWAP - Set when opening swap files.  They are not cached on
+ *		remote clients and this flag is used to set caching state.
+ *	FS_OWNERSHIP - ownership permission.  The calling process has to
+ *		own the file in order for a lookup to succeed.  This is
+ *		used for setting attributes.
+ *	FS_DELETE - Open a file for deletion.  Write permission is needed
+ *		in the parent directory for this to succeed.
+ *	FS_LINK - This is used by FslclLookup to make hard links.  Instead
+ *		of creating a new file, FslclLookup makes another directory
+ *		reference (hard link) to an existing file.
+ *	FS_RENAME - This goes with FS_LINK if the link is being made in
+ *		preparation for a rename operation.  This allows the link,
+ *		which in this case is temporary, to be made to a directory.
+ *
+ *	(These I/O related bit values are defined below)
+ *      FS_USER - the file is a user file.  The buffer space is
+ *              in a user's address space.
+ *	FS_USER_IN - For I/O Control, the input buffer is in user space
+ *	FS_USER_OUT - For I/O Control, the output buffer is in user space
+ *	FS_CLIENT_CACHE_WRITE -	This write is coming from a client's cache.
+ *              This means the modify time should not be updated
+ *              since the client has the correct modify time.
+ *	FS_HEAP - This is a heap page for special treatment in the cache.
+ *	FS_SERVER_WRITE_THRU - Set on writes that are supposed to be written
+ *			       through to the server.
+ *	FS_LAST_DIRTY_BLOCK - Set on remote writes when this is the
+ *		last dirty block of the file to be written back.
+ *	FS_RMT_SHARED - Set on streams that are shared among clients on
+ *		separate machines.  For regular files this means that the
+ *		stream offset is being maintained on the server.
+ *	FS_NEW_STREAM - Migration related.  This tells the I/O server that
+ *		the destination of a migration is getting a stream for
+ *		the first time.   It needs to know this in order to do
+ *		I/O client book-keeping correctly.
+ *	FS_WRITE_TO_DISK - Write this block through to disk.
+ *	FS_MAP - File is being mapped into virtual memory.
+ *	FS_MIGRATED_FILE - Migration related.  This says a file has been
+ *		involved in a migration, so (for example) if the file
+ *		gets flushed to the server then the host that's flushing
+ *		it knows to attribute the flush to migration.  Used
+ *		for statistics.
+ *	FS_MIGRATING - Migration related.  This says a file is in the
+ *		process of migrating.  Also used for statistics.
+ *		MIGRATED_FILE stays set for any file that has ever been
+ *		migrated (it is reset if the file is not open anywhere), while
+ *		MIGRATING is set as a temporary flag during cache consistency
+ *		operations, for a single reference to the file.
+ */
+#define FS_KERNEL_FLAGS		0xfffff000
+#define FS_FOLLOW		0x00001000
+#define FS_PREFIX		0x00002000
+#define FS_SWAP			0x00004000
+#define FS_USER			0x00008000
+#define FS_USER_IN		FS_USER
+#define FS_OWNERSHIP		0x00010000
+#define FS_DELETE		0x00020000
+#define FS_LINK			0x00040000
+#define FS_RENAME		0x00080000
+#define FS_CLIENT_CACHE_WRITE	0x00100000
+#define	FS_DIR			0x00200000
+#define FS_HEAP			0x00400000
+#define FS_USER_OUT		0x00800000
+#define	FS_SERVER_WRITE_THRU	0x01000000
+#define	FS_LAST_DIRTY_BLOCK	0x02000000
+#define FS_RMT_SHARED		0x04000000
+#define FS_NEW_STREAM		0x08000000
+#define	FS_WRITE_TO_DISK	0x10000000
+#define	FS_MAP			0x20000000
+#define	FS_MIGRATED_FILE	0x40000000
+#define	FS_MIGRATING		0x80000000
+
+
+/*
+ * Basic I/O parameters.  Note that the stream is identified by context,
+ * either the pseudo-device connection or additional RPC parameters.
+ * This structure is initialized in Fs_Read/Write and passed down to
+ * the stream-specific I/O routines.  This record should be considered
+ * read-only to avoid conflicts with other layers.
+ * Fs_IOReply is used to return information about the transfer.
+ */
+
+typedef struct Fs_IOParam {
+    Address	buffer;			/* Buffer for data */
+    int		length;			/* Byte amount to transfer */
+    int		offset;			/* Byte offset at which to transfer */
+    int		flags;			/* Operation specific flags */
+    Proc_PID	procID;			/* Process ID and Family ID of this */
+    Proc_PID	familyID;		/* process */
+    int		uid;			/* Effective user ID */
+    int		reserved;		/* Not used */
+} Fs_IOParam;
+
+/*
+ * FsSetIOParam - macro to initialize Fs_IOParam record.
+ */
+#define FsSetIOParam(ioPtr, zbuffer, zlength, zoffset, zflags) \
+    { \
+	register Proc_ControlBlock *procPtr = Proc_GetEffectiveProc(); \
+	(ioPtr)->buffer = zbuffer; \
+	(ioPtr)->length = zlength; \
+	(ioPtr)->offset = zoffset; \
+	(ioPtr)->flags = zflags; \
+	(ioPtr)->procID = procPtr->processID; \
+	(ioPtr)->familyID = procPtr->familyID; \
+	(ioPtr)->uid = procPtr->userID; \
+	(ioPtr)->reserved = 0; \
+    }
+
+/*
+ * Fs_IOReply is used to return info from stream-specific I/O routines
+ * back up to Fs_Read/Write.  The length has to be updated to reflect how
+ * much data was transferred.  The routines can also cause a signal to
+ * be generated by setting signal to non-zero.  The signal and code
+ * are initialized to zero by top-level routines, so these fields can
+ * be ignored if no signal is to be generated.  Finally, the flags field
+ * contains the three select bits that indicate the state of the object
+ * after the operation.
+ */
+typedef struct Fs_IOReply {
+    int		length;			/* Amount transferred */
+    int		flags;			/* Stream flags used, noted below. */
+    int		signal;			/* Signal to generate, or zero */
+    int		code;			/* Code to modify signal */
+} Fs_IOReply;
+
+/*
+ * Flag bits for Fs_IOReply:
+ *	FS_READABLE		Object is currently readable
+ *	FS_WRITABLE		Object is currently writable
+ *	FS_EXCEPTION		Object has an outstanding exception
+ *
+ * These bits are defined above because they come from the stream flags.
+ */
+
+/*
+ * Parameters for I/O Control.  There is also a returned Fs_IOReply
+ * that specifies the amount of valid data in the outBuffer,
+ * and a signal to return, if any.
+ */
+
+typedef struct Fs_IOCParam {
+    int		command;	/* I/O Control to perform. */
+    Address	inBuffer;	/* Input buffer */
+    int		inBufSize;	/* Size of input params to iocontrol. */
+    Address	outBuffer;	/* Output buffer */
+    int		outBufSize;	/* Size of results from iocontrol. */
+    Fmt_Format	format;		/* Defines client's byte order/alignment
+				 * format. */
+    Proc_PID	procID;		/* ID of invoking process */
+    Proc_PID	familyID;	/* Family of invoking process */
+    int		uid;		/* Effective user ID */
+    int		flags;		/* FS_USER_IN and FS_USER_OUT indicate if
+				 * input and output buffers are in user space,
+				 * respectively */
+} Fs_IOCParam;
+
+/*
+ * FS_MAX_LINKS	- the limit on the number of symbolic links that can be
+ *	expanded within a single domain.  This is also the limit on the
+ *	number of re-directs between domains that can occur during lookup.
+ */
+#define FS_MAX_LINKS	10
+
+/*
+ * Values for  page type for Fs_PageRead.
+ */
+typedef enum {
+    FS_CODE_PAGE,
+    FS_HEAP_PAGE,
+    FS_SWAP_PAGE,
+    FS_SHARED_PAGE
+} Fs_PageType;
+
+
+/*
+ * Device drivers use Fs_NotifyReader and Fs_NotifyWriter to indicate
+ * that a device is ready.  They pass a Fs_NotifyToken as an argument
+ * that represents to the file system the object that is ready.
+ */
+typedef Address Fs_NotifyToken;
+
+/*
+ * Flags returned from device driver open procedures.
+ *
+ * FS_DEV_DONT_LOCK	- Do not lock the device's handle during IO operations.
+ *			  The default is to only allow one call to a device's
+ *			  read or write procedures active at any time. Device's
+ *			  that set this flag are responsible for doing their
+ *			  own synchronization.
+ * FS_DEV_DONT_COPY	- Do not copy user resident IO buffers in and out of
+ *			  the kernel for this device. The default is to 
+ *			  malloc() a kernel resident buffer for device IO
+ *			  operation.  Device's that set this flag are
+ *			  responsible for doing IO operations directly to
+ *			  user's address spaces.
+ */
+
+#define	FS_DEV_DONT_LOCK	0x1
+#define	FS_DEV_DONT_COPY	0x2
+
+/*
+ * TRUE once the file system has been initialized, so we
+ * know we can sync the disks safely.
+ */
+extern  Boolean fsutil_Initialized;	
+
+/*
+ * These record the maximum transfer size supported by the RPC system.
+ */
+extern int fsMaxRpcDataSize;
+extern int fsMaxRpcParamSize;
+
+/*
+ * Filesystem initialization calls.
+ */
+extern void Fs_Init _ARGS_((void));
+extern void Fs_InitData _ARGS_((void));
+extern void Fs_InitNameSpace _ARGS_((void));
+extern void Fs_Bin _ARGS_((void));
+extern void Fs_ProcInit _ARGS_((void));
+extern void Fs_InheritState _ARGS_((Proc_ControlBlock *parentProcPtr,
+				Proc_ControlBlock *newProcPtr));
+extern void Fs_CloseState _ARGS_((Proc_ControlBlock *procPtr, int phase));
+
+
+/*
+ * Filesystem system calls.
+ */
+extern ReturnStatus Fs_AttachDiskStub _ARGS_((char *userDeviceName, 
+			char *userLocalName, int flags));
+extern ReturnStatus Fs_ChangeDirStub _ARGS_((char *pathName));
+extern ReturnStatus Fs_RemoveStub _ARGS_((char *pathName));
+extern ReturnStatus Fs_CommandStub _ARGS_((int command, int bufSize, 
+			Address buffer));
+extern ReturnStatus Fs_CreatePipeStub _ARGS_((int *inStreamIDPtr, 
+			int *outStreamIDPtr));
+extern ReturnStatus Fs_GetAttributesIDStub _ARGS_((int streamID, 
+			Fs_Attributes *attrPtr));
+extern ReturnStatus Fs_GetAttributesStub _ARGS_((char *pathName, 
+			int fileOrLink, Fs_Attributes *attrPtr));
+extern ReturnStatus Fs_GetNewIDStub _ARGS_((int streamID, int *newStreamIDPtr));
+extern ReturnStatus Fs_HardLinkStub _ARGS_((char *fileName, char *linkName));
+extern ReturnStatus Fs_IOControlStub _ARGS_((int streamID, int command, 
+			int inBufSize, Address inBuffer, int outBufSize, 
+			Address outBuffer));
+extern ReturnStatus Fs_MakeDeviceStub _ARGS_((char *pathName, 
+			Fs_Device *devicePtr, int permissions));
+extern ReturnStatus Fs_MakeDirStub _ARGS_((char *pathName, int permissions));
+extern ReturnStatus Fs_OpenStub _ARGS_((char *pathName, int usageFlags, 
+			int permissions, int *streamIDPtr));
+extern ReturnStatus Fs_ReadLinkStub _ARGS_((char *linkName, int bufSize, 
+			char *buffer, int *linkSizePtr));
+extern ReturnStatus Fs_ReadStub _ARGS_((int streamID, int amountRead, 
+			Address buffer, int *amountReadPtr));
+extern ReturnStatus Fs_ReadVectorStub _ARGS_((int streamID, int numVectors, 
+			Fs_IOVector userVectorArray[], int *amountReadPtr));
+extern ReturnStatus Fs_RemoveDirStub _ARGS_((char *pathName));
+extern ReturnStatus Fs_RemoveDirStub _ARGS_((char *pathName));
+extern ReturnStatus Fs_RenameStub _ARGS_((char *pathName, char *newName));
+extern ReturnStatus Fs_SelectStub _ARGS_((int numStreams, Time *userTimeoutPtr,
+			int *userReadMaskPtr, int *userWriteMaskPtr, 
+			int *userExceptMaskPtr, int *numReadyPtr));
+extern ReturnStatus Fs_SetAttributesIDStub _ARGS_((int streamID, 
+			Fs_Attributes *attrPtr));
+extern ReturnStatus Fs_SetAttributesStub _ARGS_((char *pathName, 
+			int fileOrLink, Fs_Attributes *attrPtr));
+extern ReturnStatus Fs_SetAttrIDStub _ARGS_((int streamID, 
+			Fs_Attributes *attrPtr, int flags));
+extern ReturnStatus Fs_SetAttrStub _ARGS_((char *pathName, int fileOrLink, 
+			Fs_Attributes *attrPtr, int flags));
+extern ReturnStatus Fs_SetDefPermStub _ARGS_((int permissions, int *oldPermPtr));
+extern ReturnStatus Fs_SymLinkStub _ARGS_((char *targetName, 
+			char *linkName, Boolean remoteFlag));
+extern ReturnStatus Fs_WriteStub _ARGS_((int streamID, int writeLength, 
+			Address buffer, int *writeLengthPtr));
+extern ReturnStatus Fs_WriteVectorStub _ARGS_((int streamID, int numVectors,
+			Fs_IOVector userVectorArray[], int *amountWrittenPtr));
+extern ReturnStatus Fs_FileWriteBackStub _ARGS_((int streamID, int firstByte, 
+			int lastByte, Boolean shouldBlock));
+
+/*
+ * Filesystem system calls given accessible arguments.
+ */
+extern ReturnStatus Fs_UserClose _ARGS_((int streamID));
+extern ReturnStatus Fs_UserRead _ARGS_((int streamID, int amountRead,
+			Address buffer, int *amountReadPtr));
+extern ReturnStatus Fs_UserReadVector _ARGS_((int streamID, int numVectors, 
+			Fs_IOVector *vectorPtr, int *amountReadPtr));
+extern ReturnStatus Fs_UserWrite _ARGS_((int streamID, int writeLength, 
+			Address buffer, int *writeLengthPtr));
+extern ReturnStatus Fs_WriteVectorStub _ARGS_((int streamID, int numVectors, 
+			Fs_IOVector userVectorArray[], int *amountWrittenPtr));
+extern ReturnStatus Fs_UserWriteVector _ARGS_((int streamID, int numVectors, 
+			Fs_IOVector *vectorPtr, int *amountWrittenPtr));
+
+/*
+ * Kernel equivalents of the filesystem system calls.
+ */
+extern ReturnStatus Fs_ChangeDir _ARGS_((char *pathName));
+extern ReturnStatus Fs_Close _ARGS_((register Fs_Stream *streamPtr));
+extern ReturnStatus Fs_Command _ARGS_((int command, int bufSize, 
+			Address buffer));
+extern ReturnStatus Fs_CheckAccess _ARGS_((char *pathName, int perm, 
+			Boolean useRealID));
+extern ReturnStatus Fs_GetAttributes _ARGS_((char *pathName, int fileOrLink,
+			Fs_Attributes *attrPtr));
+extern ReturnStatus Fs_GetNewID _ARGS_((int streamID, int *newStreamIDPtr));
+extern ReturnStatus Fs_HardLink _ARGS_((char *pathName, char *linkName));
+extern ReturnStatus Fs_IOControl _ARGS_((Fs_Stream *streamPtr,
+			Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus Fs_MakeDevice _ARGS_((char *name, Fs_Device *devicePtr,
+			int permissions));
+extern ReturnStatus Fs_MakeDir _ARGS_((char *name, int permissions));
+extern ReturnStatus Fs_Open _ARGS_((char *name, register int useFlags, 
+			int type, int permissions, Fs_Stream **streamPtrPtr));
+extern ReturnStatus Fs_Read _ARGS_((Fs_Stream *streamPtr, Address buffer, 
+			int offset, int *lenPtr));
+extern ReturnStatus Fs_Remove _ARGS_((char *name));
+extern ReturnStatus Fs_RemoveDir _ARGS_((char *name));
+extern ReturnStatus Fs_Rename _ARGS_((char *pathName, char *newName));
+extern ReturnStatus Fs_SetAttributes _ARGS_((char *pathName, int fileOrLink, 
+			Fs_Attributes *attrPtr, int flags));
+extern ReturnStatus Fs_SymLink _ARGS_((char *targetName, char *linkName, 
+			Boolean remoteFlag));
+extern ReturnStatus Fs_Trunc _ARGS_((char *pathName, int length));
+extern ReturnStatus Fs_TruncStream _ARGS_((Fs_Stream *streamPtr, int length));
+extern ReturnStatus Fs_Write _ARGS_((Fs_Stream *streamPtr, Address buffer, 
+			int offset, int *lenPtr));
+
+/*
+ * Filesystem utility routines.
+ */
+extern void Fs_CheckSetID _ARGS_((Fs_Stream *streamPtr, int *uidPtr, 
+				int *gidPtr));
+extern void Fs_CloseOnExec _ARGS_((Proc_ControlBlock *procPtr));
+
+
+/*
+ * Routines to support process migration: encapsulate and deencapsulate
+ * streams and other file state, and clear file state after migration.
+ */
+extern ReturnStatus Fs_InitiateMigration _ARGS_((Proc_ControlBlock *procPtr, 
+			int hostID, Proc_EncapInfo *infoPtr));
+extern int Fs_GetEncapSize _ARGS_((void));
+extern ReturnStatus Fs_EncapFileState _ARGS_((Proc_ControlBlock *procPtr, 
+			int hostID, Proc_EncapInfo *infoPtr, 
+			Address ptr));
+extern ReturnStatus Fs_DeencapFileState _ARGS_((Proc_ControlBlock *procPtr, 
+			 Proc_EncapInfo *infoPtr, Address buffer));
+
+/*
+ * Routines for virtual memory.
+ */
+extern ReturnStatus Fs_PageRead _ARGS_((Fs_Stream *streamPtr, Address pageAddr,
+			int offset, int numBytes, Fs_PageType pageType));
+extern ReturnStatus Fs_PageWrite _ARGS_((Fs_Stream *streamPtr,Address pageAddr,
+			int offset, int numBytes, Boolean toDisk));
+extern ReturnStatus Fs_PageCopy _ARGS_((Fs_Stream *srcStreamPtr, 
+			Fs_Stream *destStreamPtr, int offset, int numBytes));
+extern ReturnStatus Fs_FileBeingMapped _ARGS_((Fs_Stream *streamPtr, 
+			int isMapped));
+
+/*
+ * Routines that map to/from user-level streamIDs.
+ */
+extern ReturnStatus Fs_GetStreamID _ARGS_((Fs_Stream *streamPtr, 
+			int *streamIDPtr));
+extern void Fs_ClearStreamID _ARGS_((int streamID, Proc_ControlBlock *procPtr));
+extern ReturnStatus Fs_GetStreamPtr _ARGS_((Proc_ControlBlock *procPtr, 
+			int streamID, Fs_Stream **streamPtrPtr));
+
+extern ReturnStatus Fs_GetAttrStream _ARGS_((Fs_Stream *streamPtr, 
+			Fs_Attributes *attrPtr));
+extern ReturnStatus Fs_SetAttrStream _ARGS_((Fs_Stream *streamPtr,
+			Fs_Attributes *attrPtr, Fs_UserIDs *idPtr, int flags));
+extern void Fs_CheckSetID _ARGS_((Fs_Stream *streamPtr, int *uidPtr, 
+			int *gidPtr));
+
+extern ClientData Fs_GetFileHandle _ARGS_((Fs_Stream *streamPtr));
+extern struct Vm_Segment **Fs_GetSegPtr _ARGS_((ClientData fileHandle));
+
+#endif /* _FS */
+@
+
+
+9.18
+log
+@Added back FS_HEAP flag at a new and usable number.
+@
+text
+@d26 1
+a26 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 9.17 91/09/06 13:56:27 rab Exp Locker: mgbaker $ SPRITE (Berkeley)
+d262 1
+a262 1
+/* There's space for another flag here. */
+@
+
+
+9.17
+log
+@Removed tracing.
+@
+text
+@d26 1
+a26 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 9.16 91/09/06 13:04:43 mgbaker Exp Locker: rab $ SPRITE (Berkeley)
+d225 1
+a229 2
+    Now not used -- was in sosp changes and must find something else.
+ *	FS_HEAP - This is a heap page for special treatment in the cache.
+d262 2
+a266 4
+/*
+ * This was used in the sosp changes.  I've got to figure something else.
+#define	FS_HEAP			0x02000000
+ */ 
+@
+
+
+9.16
+log
+@Added FS_LAST_DIRTY_BLOCK flag.
+@
+text
+@d26 1
+a26 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 9.15 91/09/05 22:33:54 rab Exp Locker: mgbaker $ SPRITE (Berkeley)
+a224 4
+ *	FSUTIL_TRACE_FLAG - This is used to enable the taking of trace records
+ *		by low level routines.  This means that the tracing can
+ *		be confined to particular operations, like open, while
+ *		other operations, like remove, don't pollute the trace.
+a262 1
+#define FSUTIL_TRACE_FLAG	0x00400000
+@
+
+
+9.15
+log
+@Mary checking this in for Bob.  He was doing the kernel cleanup changes.
+I have an outstanding bug to fix...
+@
+text
+@d26 1
+a26 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 9.14 91/04/12 17:34:05 kupfer Exp Locker: rab $ SPRITE (Berkeley)
+d231 3
+d270 3
+d274 1
+@
+
+
+9.14
+log
+@lockProcID => lockProcPtr (this is more of a cleanliness change, since
+it was being used that way already).
+@
+text
+@d26 1
+a26 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 9.13 91/03/30 17:02:16 mgbaker Exp Locker: kupfer $ SPRITE (Berkeley)
+a224 3
+#ifdef SOSP91
+ *	FS_DIR - This is a directory.
+#endif SOSP91
+a263 3
+#ifdef SOSP91
+#define FS_DIR			0x00200000
+#endif SOSP91
+@
+
+
+9.14.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d26 1
+a26 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 9.14 91/04/12 17:34:05 kupfer Exp $ SPRITE (Berkeley)
+@
+
+
+9.13
+log
+@More sosp stats.
+@
+text
+@d26 1
+a26 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 9.12 91/01/26 15:33:37 mgbaker Exp $ SPRITE (Berkeley)
+d108 2
+a109 1
+    int			lockProcID;	/* Process ID of locker */
+@
+
+
+9.12
+log
+@Sosp stuff.
+@
+text
+@d26 1
+a26 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 9.11 90/11/06 16:50:16 shirriff Exp Locker: mgbaker $ SPRITE (Berkeley)
+d224 3
+a226 4
+ *	FS_CONSUME - This is a consuming read from a named pipe.  This is
+ *		usually the case for named pipes, although when the ioServer
+ *		is writing back blocks from its cache to the file server
+ *		this flag is not set.
+d233 1
+d266 3
+a268 1
+#define FS_CONSUME		0x00200000
+d272 1
+@
+
+
+9.11
+log
+@Added phase declaration to Fs_CloseState
+@
+text
+@d26 1
+a26 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 9.10 90/10/10 10:58:45 mendel Exp Locker: shirriff $ SPRITE (Berkeley)
+a275 6
+/*
+ * These functions were eliminated to free up their status bits.
+ * The code associated with them should be removed.
+ */
+#define FS_LAST_DIRTY_BLOCK	0x00000000
+#define FS_WB_ON_LDB		0x00000000
+a416 14
+
+/*
+ * The directory that temporary files will live in.
+ */
+extern	int	fsutil_TmpDirNum;
+
+/*
+ * Writing policies.
+ */
+extern	Boolean	fsutil_DelayTmpFiles;
+extern	Boolean	fsutil_WriteThrough;
+extern	Boolean	fsutil_WriteBackASAP;
+extern	Boolean	fsutil_WriteBackOnClose;
+extern	Boolean	fsutil_WBOnLastDirtyBlock;
+@
+
+
+9.10
+log
+@Added function prototype for Fs_RemoveStub.
+Fixed include file problem.
+@
+text
+@d26 1
+a26 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 9.9 90/10/08 10:52:02 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d448 1
+a448 1
+extern void Fs_CloseState _ARGS_((Proc_ControlBlock *procPtr));
+@
+
+
+9.9
+log
+@Added function prototypes.
+@
+text
+@d26 1
+a26 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 9.7 90/05/18 12:02:10 shirriff Exp $ SPRITE (Berkeley)
+a438 9
+ * Talk to jhh about this. 
+ */
+#ifdef KERNEL
+#include <procMigrate.h>
+#else
+#include <kernel/procMigrate.h>
+#endif
+
+/*
+d457 1
+@
+
+
+9.8
+log
+@Fixed includes to use new header files.
+@
+text
+@d26 1
+a26 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 9.7 90/05/18 12:02:10 shirriff Exp Locker: jhh $ SPRITE (Berkeley)
+d38 1
+d438 8
+a445 1
+
+d450 8
+a457 5
+extern	void	Fs_InitData();
+extern	void	Fs_InitNameSpace();
+extern	void	Fs_ProcInit();
+extern	void	Fs_InheritState();
+extern	void	Fs_CloseState();
+d463 50
+a512 31
+extern	ReturnStatus	Fs_AttachDiskStub();
+extern	ReturnStatus	Fs_ChangeDirStub();
+extern	ReturnStatus	Fs_CommandStub();
+extern	ReturnStatus	Fs_CreatePipeStub();
+extern	ReturnStatus	Fs_GetAttributesIDStub();
+extern	ReturnStatus	Fs_GetAttributesStub();
+extern	ReturnStatus	Fs_GetNewIDStub();
+extern	ReturnStatus	Fs_HardLinkStub();
+extern	ReturnStatus	Fs_IOControlStub();
+extern	ReturnStatus	Fs_LockStub();
+extern	ReturnStatus	Fs_MakeDeviceStub();
+extern	ReturnStatus	Fs_MakeDirStub();
+extern	ReturnStatus	Fs_OpenStub();
+extern	ReturnStatus	Fs_ReadLinkStub();
+extern	ReturnStatus	Fs_ReadStub();
+extern	ReturnStatus	Fs_ReadVectorStub();
+extern	ReturnStatus	Fs_RemoveDirStub();
+extern	ReturnStatus	Fs_RemoveStub();
+extern	ReturnStatus	Fs_RenameStub();
+extern	ReturnStatus	Fs_SelectStub();
+extern	ReturnStatus	Fs_SetAttributesIDStub();
+extern	ReturnStatus	Fs_SetAttributesStub();
+extern	ReturnStatus	Fs_SetAttrIDStub();
+extern	ReturnStatus	Fs_SetAttrStub();
+extern	ReturnStatus	Fs_SetDefPermStub();
+extern	ReturnStatus	Fs_SymLinkStub();
+extern	ReturnStatus	Fs_TruncateIDStub();
+extern	ReturnStatus	Fs_TruncateStub();
+extern	ReturnStatus	Fs_WriteStub();
+extern	ReturnStatus	Fs_WriteVectorStub();
+extern	ReturnStatus	Fs_FileWriteBackStub();
+d517 11
+a527 5
+extern	ReturnStatus	Fs_UserClose();
+extern	ReturnStatus	Fs_UserRead();
+extern	ReturnStatus	Fs_UserReadVector();
+extern	ReturnStatus	Fs_UserWrite();
+extern	ReturnStatus	Fs_UserWriteVector();
+d532 30
+a561 23
+extern	ReturnStatus	Fs_ChangeDir();
+extern	ReturnStatus	Fs_Close();
+extern	ReturnStatus	Fs_Command();
+extern	ReturnStatus	Fs_CheckAccess();
+extern	ReturnStatus	Fs_GetAttributes();
+extern	ReturnStatus	Fs_GetAttributesID();
+extern	ReturnStatus	Fs_GetNewID();
+extern	ReturnStatus	Fs_HardLink();
+extern	ReturnStatus	Fs_IOControl();
+extern	ReturnStatus	Fs_MakeDevice();
+extern	ReturnStatus	Fs_MakeDir();
+extern	ReturnStatus	Fs_Open();
+extern	ReturnStatus	Fs_Read();
+extern	ReturnStatus	Fs_Remove();
+extern	ReturnStatus	Fs_RemoveDir();
+extern	ReturnStatus	Fs_Rename();
+extern	ReturnStatus	Fs_SetAttributes();
+extern	ReturnStatus	Fs_SetAttributesID();
+extern	ReturnStatus	Fs_SetDefPerm();
+extern	ReturnStatus	Fs_SymLink();
+extern	ReturnStatus	Fs_Trunc();
+extern	ReturnStatus	Fs_TruncStream();
+extern	ReturnStatus	Fs_Write();
+d566 3
+a568 4
+extern	int		Fs_Cat();
+extern	int		Fs_Copy();
+extern  void		Fs_CheckSetID();
+extern  void		Fs_CloseOnExec();
+d575 8
+a582 4
+extern	int		Fs_GetEncapSize();
+extern	ReturnStatus	Fs_InitiateMigration();
+extern  ReturnStatus    Fs_EncapFileState();
+extern  ReturnStatus    Fs_DeencapFileState();
+a583 1
+
+d587 8
+a594 4
+extern	ReturnStatus	Fs_PageRead();
+extern	ReturnStatus	Fs_PageWrite();
+extern	ReturnStatus	Fs_PageCopy();
+extern	ReturnStatus	Fs_FileBeingMapped();
+d599 12
+a610 8
+extern ReturnStatus	Fs_GetStreamID();
+extern void		Fs_ClearStreamID();
+extern ReturnStatus	Fs_GetStreamPtr();
+
+extern  void		Fs_Bin();
+extern ReturnStatus	Fs_GetAttrStream();
+extern  void 		Fs_InstallDomainLookupOps();
+extern  void		Fs_CheckSetID();
+d612 2
+a613 2
+extern  ClientData      Fs_GetFileHandle();
+extern struct Vm_Segment **Fs_GetSegPtr();
+@
+
+
+9.7
+log
+@Added FS_WRITE_TO_DISK.  Removed FS_LAST_DIRTY_BLOCK, FS_WB_ON_LDB
+@
+text
+@d26 1
+a26 1
+ * $Header: /sprite/src/kernel/fs.ken/RCS/fs.h,v 1.2 90/05/15 14:34:42 shirriff Exp $ SPRITE (Berkeley)
+d33 4
+a36 4
+#include "sys.h"
+#include "sync.h"
+#include "proc.h"
+#include "user/fs.h"
+d40 2
+a41 2
+#include <kernel/sync.h>
+#include <kernel/proc.h>
+@
+
+
+9.6
+log
+@added FS_MIGRATED_FILE and FS_MIGRATING flags.
+./
+@
+text
+@d26 1
+a26 1
+ * $Header: /sprite/src/kernel/fd.fs/RCS/fs.h,v 9.5 90/04/19 10:08:45 brent Exp Locker: douglis $ SPRITE (Berkeley)
+a232 2
+ *	FS_LAST_DIRTY_BLOCK - Set on remote writes when this is the
+ *		last dirty block of the file to be written back.
+d240 1
+a240 2
+ *	FS_WB_ON_LDB - Write this file back to disk if this is the last dirty
+ *		       block.
+a268 1
+#define	FS_LAST_DIRTY_BLOCK	0x02000000
+d271 1
+a271 1
+#define	FS_WB_ON_LDB		0x10000000
+d275 6
+@
+
+
+9.5
+log
+@Added externs
+@
+text
+@d26 1
+a26 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 9.4 89/11/27 13:15:27 shirriff Exp Locker: brent $ SPRITE (Berkeley)
+d245 11
+d269 1
+a269 1
+#define FSUTIL_TRACE_FLAG		0x00400000
+d277 2
+@
+
+
+9.4
+log
+@Added definition for Fs_FileBeingMapped
+@
+text
+@d26 1
+a26 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 9.3 89/11/01 10:48:38 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+d427 2
+a428 1
+extern	void	Fs_Init();
+@
+
+
+9.3
+log
+@Added FS_MAP flag.
+@
+text
+@d26 1
+a26 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 9.2 89/10/27 09:03:45 brent Exp Locker: shirriff $ SPRITE (Berkeley)
+d529 1
+@
+
+
+9.2
+log
+@Nuked out-of-date externs
+@
+text
+@d26 1
+a26 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 9.1 89/10/26 18:48:08 shirriff Exp Locker: brent $ SPRITE (Berkeley)
+d244 1
+d265 1
+@
+
+
+9.1
+log
+@Added FS_SHARED_PAGE for use in memory mapped files
+@
+text
+@d26 1
+a26 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 9.0 89/09/12 15:02:38 douglis Stable Locker: shirriff $ SPRITE (Berkeley)
+a541 7
+
+/*
+ * Backward compatiblity stuff. 
+ */
+extern void Fs_Sync();
+extern void Fs_SyncProc();
+extern void Fs_SyncStub();
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d26 1
+a26 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 8.16 89/08/29 15:37:10 mendel Exp Locker: douglis $ SPRITE (Berkeley)
+d363 2
+a364 1
+    FS_SWAP_PAGE
+@
+
+
+8.16
+log
+@Added some stuff for backward compatibility.
+@
+text
+@d26 1
+a26 1
+ * $Header: /sprite/src/kernel/fs.mendel/RCS/fs.h,v 8.15 89/08/21 15:21:39 mendel Exp $ SPRITE (Berkeley)
+@
+
+
+8.15
+log
+@Break up fs to sperate modules.
+@
+text
+@d26 1
+a26 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 8.13 89/07/11 08:47:40 mendel Exp Locker: jhh $ SPRITE (Berkeley)
+d541 7
+@
+
+
+8.14
+log
+@Changed to use Fmt_Convert
+@
+text
+@d37 1
+a37 1
+#include "user/fmt.h"
+d45 10
+d93 1
+a93 1
+ * operations on handles.  One exception is that the refCount on FS_STREAM
+d99 1
+a99 1
+typedef struct FsHandleHeader {
+d109 1
+a109 1
+} FsHandleHeader;
+d112 1
+a112 1
+	( (FsHandleHeader *)((int)(listPtr) - sizeof(Fs_FileID) \
+d115 2
+d125 1
+a125 1
+typedef struct FsNameInfo {
+d131 1
+a131 1
+    struct FsPrefix	*prefixPtr;	/* Back pointer to prefix table entry.
+d134 1
+a134 1
+} FsNameInfo;
+d161 1
+a161 1
+    FsHandleHeader	hdr;		/* Global stream identifier.  This
+d166 1
+a166 1
+    FsHandleHeader	*ioHandlePtr;	/* Stream specific data used for I/O.
+d169 1
+a169 1
+    FsNameInfo	 	*nameInfoPtr;	/* Used to contact the name server */
+d208 2
+a209 2
+ *	FS_LINK - This is used by FsLocalLookup to make hard links.  Instead
+ *		of creating a new file, FsLocalLookup makes another directory
+d227 1
+a227 1
+ *	FS_TRACE_FLAG - This is used to enable the taking of trace records
+d257 1
+a257 1
+#define FS_TRACE_FLAG		0x00400000
+d340 1
+a340 1
+    Fmt_Format	format;		/* Defines client's byte order/alignment 
+a348 10
+
+/*
+ * Fragment stuff that is dependent on the filesystem block size
+ * defined in user/fs.h.  Actually, the fragmenting code is specific
+ * to a 4K block size and a 1K fragment size.
+ */
+
+#define	FS_BLOCK_OFFSET_MASK	(FS_BLOCK_SIZE - 1)
+#define	FS_FRAGMENT_SIZE	1024
+#define	FS_FRAGMENTS_PER_BLOCK	4
+a365 11
+#ifdef notdef
+/*
+ * Buffer type that includes size, location, and kernel space flag.
+ * This is passed into Fs_IOControl to specify the input/output buffers.
+ */
+typedef struct Fs_Buffer {
+    Address addr;
+    int size;
+    int flags;		/* 0 or FS_USER */
+} Fs_Buffer;
+#endif
+d392 29
+a425 1
+extern	void	Fs_SetupStream();
+a428 5
+/*
+ * Prefix Table routines.
+ */
+extern	void	Fs_PrefixLoad();
+extern	void	Fs_PrefixExport();
+a430 8
+ * Filesystem processes.
+ */
+
+extern	void	Fs_SyncProc();
+extern	void	Fs_Sync();
+extern	void	Fs_BlockCleaner();
+extern	void	Fs_ConsistProc();
+/*
+a479 1
+extern	ReturnStatus	Fs_CreatePipe();
+a485 1
+extern	ReturnStatus	Fs_Lock();
+a489 1
+extern	ReturnStatus	Fs_ReadLink();
+d498 1
+a498 2
+extern	ReturnStatus	Fs_TruncFile();
+extern	ReturnStatus	Fs_TruncID();
+a503 1
+extern	Boolean		Fs_SameFile();
+a505 3
+extern	void		Fs_HandleScavenge();
+extern	void		Fs_PrintTrace();
+extern  void		Fs_BlocksToDiskAddr();
+a507 1
+extern	char *		Fs_GetFileName();
+a508 7
+/*
+ * Routines called via the L1 key bindings.
+ */
+extern	void		Fs_HandleScavengeStub();
+extern	void		Fs_PdevPrintTrace();
+extern	void		Fs_DumpCacheStats();
+extern	void		Fs_NameHashStats();
+a513 2
+extern	ReturnStatus	Fs_EncapStream();
+extern	ReturnStatus	Fs_DeencapStream();
+a515 1
+extern	void		Fs_StreamCopy();
+a518 6
+/*
+ * Routines to wakeup readers and writers.
+ */
+extern	void		Fs_NotifyReader();
+extern	void		Fs_NotifyWriter();
+extern	void		Fs_WakeupProc();
+d526 14
+a539 3
+extern	void		Fs_CacheBlocksUnneeded();
+extern	void		Fs_GetPageFromFS();
+extern	ClientData	Fs_GetFileHandle();
+@
+
+
+8.13
+log
+@Added device driver open flags.
+@
+text
+@d26 1
+a26 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 8.12 89/06/16 12:05:55 brent Exp Locker: mendel $ SPRITE (Berkeley)
+d37 1
+d43 1
+d328 2
+a329 1
+    int		byteOrder;	/* Defines client's byte ordering */
+@
+
+
+8.12
+log
+@Added FS_USER_IN and FS_USER_OUT for use with I/O control.
+@
+text
+@d26 1
+a26 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 8.11 89/06/15 10:13:59 brent Exp $ SPRITE (Berkeley)
+d380 18
+@
+
+
+8.11
+log
+@Merged fsIO.h into this.
+@
+text
+@d26 1
+a26 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 8.10 89/06/07 16:50:26 brent Exp Locker: brent $ SPRITE (Berkeley)
+d204 2
+d236 1
+d244 1
+d269 1
+a269 1
+    int		gid;			/* Effective group ID */
+d285 1
+a285 5
+	if (procPtr->fsPtr->numGroupIDs > 0) { \
+	    (ioPtr)->gid = procPtr->fsPtr->groupIDs[0]; \
+	} else { \
+	    (ioPtr)->gid = -1; \
+	} \
+d330 3
+a332 1
+    int		gid;		/* Effective group ID */
+d361 1
+d371 1
+@
+
+
+8.10
+log
+@Added include of fsIO.h for the Fs_IO* typedefs.
+Cleaned up the stream flags, too.
+Added Fs_NotifyToken for device driver call-backs.
+@
+text
+@d11 4
+d26 1
+a26 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 8.9 89/05/14 13:58:51 brent Exp $ SPRITE (Berkeley)
+d35 1
+a36 1
+#include "fsIO.h"
+d40 1
+a41 1
+#include <kernel/fsIO.h>
+a214 3
+ *	FS_SIGNAL_REPLY - Valid in Fs_IOReply flags, which shares its
+ *		definitions with stream flags.  This flag indicates the
+ *		I/O operation is generating a signal.
+a240 1
+#define FS_SIGNAL_REPLY		0x00800000
+d247 85
+@
+
+
+8.9
+log
+@Added lockProcID to FsHandleHeader in order to trace handle deadlocks.
+@
+text
+@d22 1
+a22 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 8.8 89/04/14 04:36:39 rab Exp $ SPRITE (Berkeley)
+d32 1
+d37 1
+d173 3
+a175 3
+ *	FS_READ - Open for reading
+ *	FS_WRITE - Open for writing
+ *	FS_EXECUTE - Open for execution
+d211 3
+a226 3
+ *	FS_LAST_WRITER - Migration related.  This tells the I/O server to
+ *		decrement its write count even if the stream is still
+ *		referenced on the host from which it is migrating.
+d240 1
+a245 1
+#define	FS_LAST_WRITER		0x20000000
+d283 7
+@
+
+
+8.8
+log
+@*** empty log message ***
+@
+text
+@d22 1
+a22 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 8.7 89/04/14 03:11:01 rab Exp Locker: rab $ SPRITE (Berkeley)
+d73 6
+a78 1
+ * common structure needed in the beginning of each handle.
+d88 4
+a91 1
+} FsHandleHeader;			/* 40 BYTES */
+d114 1
+a114 1
+} FsNameInfo;				/* 40 BYTES */
+d152 1
+a152 1
+} Fs_Stream;				/* 64 BYTES */
+@
+
+
+8.7
+log
+@*** empty log message ***
+@
+text
+@d22 1
+a22 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 8.6 89/04/06 11:48:36 douglis Exp Locker: rab $ SPRITE (Berkeley)
+d261 1
+a261 1
+    FS_SWAP_PAGE,
+@
+
+
+8.6
+log
+@definitions for new process migration routines.
+@
+text
+@d22 1
+a22 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 8.5 89/02/04 12:36:29 brent Exp Locker: douglis $ SPRITE (Berkeley)
+d423 1
+a423 1
+#endif _FS
+@
+
+
+8.5
+log
+@Updated comments, including the sizes of structures
+@
+text
+@d22 1
+a22 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 8.4 89/01/30 11:35:44 brent Exp $ SPRITE (Berkeley)
+d400 1
+a403 1
+extern  void            Fs_ClearFileState();
+@
+
+
+8.4
+log
+@Fixed macro some more
+@
+text
+@d22 1
+a22 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 8.1 88/12/02 11:36:14 brent Exp $ SPRITE (Berkeley)
+d83 1
+a83 1
+} FsHandleHeader;			/* 32 BYTES */
+d112 3
+a114 3
+ *	or writing, etc.), a stream type, a name state used in name
+ *	related actions, and an I/O handle used for I/O operations.
+ *	There are many different types of streams; they correspond
+d119 1
+a119 1
+ *	The different stream types are defined in fsInt.h
+d121 9
+d144 1
+a144 1
+} Fs_Stream;				/* 56 BYTES */
+@
+
+
+8.3
+log
+@Fixed macro
+@
+text
+@d22 1
+a22 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 8.2 89/01/30 08:41:46 brent Exp Locker: brent $ SPRITE (Berkeley)
+d85 1
+a85 1
+#define LRU_LINKS_TO_HANDLE (listPtr) \
+@
+
+
+8.2
+log
+@Added lru list links to FsHandleHeader
+@
+text
+@d22 1
+a22 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 8.1 88/12/02 11:36:14 brent Exp $ SPRITE (Berkeley)
+d86 1
+a86 1
+	( (FsHandleHeader *)((int)listPtr - sizeof(Fs_FileID) \
+@
+
+
+8.1
+log
+@Nuked Fs_MakeNameAccessible
+@
+text
+@d22 1
+a22 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 8.0 88/11/11 18:16:38 douglis Stable Locker: brent $ SPRITE (Berkeley)
+d82 1
+d84 4
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d22 1
+a22 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 7.0 88/11/07 14:47:00 brent Exp Locker: douglis $ SPRITE (Berkeley)
+a239 12
+
+/*
+ * Fs_MakeNameAccessible uses Proc_MakeNameAccessible to make a string
+ * accessible if it isn't already in the kernel's address space.
+ */
+
+#define Fs_MakeNameAccessible(pathPtrPtr, numBytesPtr) \
+		Proc_MakeStringAccessible(FS_MAX_PATH_NAME_LENGTH, \
+		(pathPtrPtr), numBytesPtr, (int *) NIL)
+#ifdef comment
+    char **pathPtrPtr;
+#endif comment
+@
+
+
+7.0
+log
+@New version for conversion to new C library
+@
+text
+@d22 1
+a22 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 6.12 88/10/22 14:24:01 brent Exp Locker: brent $ SPRITE (Berkeley)
+@
+
+
+6.12
+log
+@Added externs used by dump.c
+@
+text
+@d22 1
+a22 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 6.11 88/10/14 10:25:36 brent Exp Locker: brent $ SPRITE (Berkeley)
+@
+
+
+6.11
+log
+@Moved FsFileID to user-visible Fs_FileID
+@
+text
+@d22 1
+a22 1
+ * $Header: fs.h,v 6.10 88/10/10 10:07:41 douglis Exp $ SPRITE (Berkeley)
+a376 1
+extern	void		Fs_HandleScavengeStub();
+d382 8
+@
+
+
+6.10
+log
+@Added FS_LAST_WRITER stream flag that is needed during migration.
+@
+text
+@d22 1
+a22 1
+ * $Header: fs.h,v 6.9 88/10/03 11:00:56 brent Exp $ SPRITE (Berkeley)
+a68 18
+/*
+ * FsFileID - Uniquely identify a filesystem object.  A type is the first
+ *	field, the hostID of the server is next, and the remaining fields 
+ *	are interpreted by the implementation of that type of filesystem object
+ *	(ie. files, devices, pipes, pseudo-devices, etc.)
+ *	A global hash table of filesystem objects, (called "handles")
+ *	is maintained with this FsFileID as the hash key.
+ */
+typedef struct FsFileID {
+    int		type;		/* Defined below. Used in I/O switch, and
+				 * implicitly indicates what kind of structure
+				 * follows the FsHandleHeader in the Handle. */
+    int		serverID;	/* Host that controls the object.  (This would
+				 * have to be a multi-cast ID for objects
+				 * that support replication.) */
+    int		major;		/* First type specific identifier. */
+    int		minor;		/* Second type sepcific identifier. */
+} FsFileID;			/* 16 BYTES */
+d77 1
+a77 1
+    FsFileID		fileID;		/* Used as the hash key. */
+d93 2
+a94 2
+    FsFileID		fileID;		/* Identifies file and name server. */
+    FsFileID		rootID;		/* ID of file system root.  Passed
+@
+
+
+6.9
+log
+@Added FS_PREFIX flag needed to export pseudo-domains.
+@
+text
+@d22 1
+a22 1
+ * $Header: fs.h,v 6.8 88/09/27 09:21:51 brent Exp $ SPRITE (Berkeley)
+d218 3
+d239 1
+@
+
+
+6.8
+log
+@Added Fs_Buffer type for Fs_IOControl
+@
+text
+@d22 1
+a22 1
+ * $Header: fs.h,v 6.7 88/09/08 10:07:59 brent Exp $ SPRITE (Berkeley)
+d176 1
+d221 1
+@
+
+
+6.7
+log
+@Nuked FS_NAME_SERVER and FS_IO_SERVER flags
+@
+text
+@d22 1
+a22 1
+ * $Header: fs.h,v 6.6 88/09/07 21:18:21 nelson Exp $ SPRITE (Berkeley)
+d273 11
+@
+
+
+6.6
+log
+@Put alternative writing policies into the file system.
+@
+text
+@d22 1
+a22 1
+ * $Header: fs.h,v 6.5 88/09/07 17:02:48 brent Exp $ SPRITE (Berkeley)
+a234 9
+/*
+ * Flags to Fs_WaitForHost
+ *	FS_NAME_SERVER		Wait on the name server for the stream
+ *	FS_IO_SERVER		Wait on the I/O server for the stream
+ *	FS_NON_BLOCKING		Don't wait, just start recovery in background,
+ *				(this is defined in user/fs.h)
+ */
+#define FS_NAME_SERVER		0x1
+#define FS_IO_SERVER		0x2
+@
+
+
+6.5
+log
+@Added extern
+@
+text
+@d22 1
+a22 1
+ * $Header: fs.h,v 6.4 88/09/07 12:59:40 brent Exp $ SPRITE (Berkeley)
+d204 2
+a205 2
+ *	FS_WRITE_THRU_ASAP - Write blocks for this file to disk as soon as
+ *		possible after the block is put into the cache.
+d215 2
+d229 1
+a229 1
+#define	FS_WRITE_THRU_ASAP	0x01000000
+d233 1
+@
+
+
+6.4
+log
+@Moved name information from stream to handle for better error messages.
+@
+text
+@d22 1
+a22 1
+ * $Header: fs.h,v 6.3 88/08/30 11:44:32 brent Exp $ SPRITE (Berkeley)
+d389 1
+@
+
+
+6.3
+log
+@Changed Fs_StreamCopy to a void
+@
+text
+@d22 1
+a22 1
+ * $Header: fs.h,v 6.2 88/08/23 17:39:38 douglis Exp $ SPRITE (Berkeley)
+d99 2
+a100 1
+} FsHandleHeader;			/* 28 BYTES */
+d119 1
+a119 2
+    char		*name;		/* For console error messages. */
+} FsNameInfo;
+d148 1
+a148 1
+} Fs_Stream;				/* 52 BYTES */
+@
+
+
+6.2
+log
+@Added a couple of function declarations.
+@
+text
+@d22 1
+a22 1
+ * $Header: fs.h,v 6.1 88/08/12 16:17:17 brent Exp $ SPRITE (Berkeley)
+d397 1
+a397 1
+extern	ReturnStatus	Fs_StreamCopy();
+@
+
+
+6.1
+log
+@Added externs for new SetAttr system calls
+@
+text
+@d22 1
+a22 1
+ * $Header: fs.h,v 6.0 88/08/11 12:13:42 brent Stable $ SPRITE (Berkeley)
+d387 2
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d22 1
+a22 1
+ * $Header: fs.h,v 1.9 88/08/05 10:38:13 ouster Exp $ SPRITE (Berkeley)
+d327 2
+@
+
+
+1.9
+log
+@Changed includes to make useable from new user programs.
+@
+text
+@d22 1
+a22 1
+ * $Header: fs.h,v 1.8 88/08/04 14:40:04 mlgray Exp $ SPRITE (Berkeley)
+@
+
+
+1.8
+log
+@merging changes from fs into fs.new
+@
+text
+@d22 1
+a22 1
+ * $Header: fs.h,v 1.7 88/06/27 14:48:00 ouster Exp $ SPRITE (Berkeley)
+d28 1
+d32 5
+@
+
+
+1.7
+log
+@Move Fs_Device from kernel/fs.h to fs.h.
+@
+text
+@d22 1
+a22 1
+ * $Header: fs.h,v 1.6 88/05/06 09:37:11 brent Exp $ SPRITE (Berkeley)
+d381 2
+a382 1
+ * Routines to encapsulate and deencapsulate streams.
+d388 3
+@
+
+
+1.6
+log
+@Added externs
+@
+text
+@d22 1
+a22 1
+ * $Header: fs.h,v 1.4 88/04/11 15:37:24 brent Exp $ SPRITE (Berkeley)
+a234 17
+
+/*
+ * An Fs_Device contains the information passed to device specific
+ * routines so they can operate on their particular device.
+ */
+typedef struct Fs_Device {
+    int		serverID;	/* The host ID of the server that controls
+				 * the device. */
+    int		type;		/* The type of device.  This field is used to
+				 * index into an operation switch */
+    int		unit;		/* Type dependent unit specification. The
+				 * interpretation is up to the device driver */
+    ClientData	data;		/* Device type dependent data. This can be set
+				 * during the device open routine and should
+				 * be cleaned up in the device close routine. */
+} Fs_Device;
+
+@
+
+
+1.5
+log
+@Added per-process filesystem state record that
+is referenced from the proc table
+@
+text
+@d420 2
+a421 1
+extern struct Vm_Segment **Fs_RetSegPtr();
+@
+
+
+1.4
+log
+@Worked on nameInfo again, put rootID and other stuff here to
+compartmentalize it.  It's mucked with mainly FsLocalLookup
+@
+text
+@d22 1
+a22 1
+ * $Header: fs.h,v 1.2 88/04/09 15:08:55 brent Exp $ SPRITE (Berkeley)
+d31 24
+@
+
+
+1.3
+log
+@Cleaned up FsNameInfo
+@
+text
+@d81 7
+@
+
+
+1.2
+log
+@Added Fs_PageType
+@
+text
+@d22 1
+a22 1
+ * $Header: fs.h,v 1.1 88/04/04 10:26:35 brent Exp $ SPRITE (Berkeley)
+d72 5
+a76 6
+ * For files on Sprite servers there is a common set of name related
+ * information.  This is used to direct name operations to the name server,
+ * to handle the lookup redirects that are part of the prefix table lookup,
+ * and for human readable error messages.  This is the structure referenced
+ * by a Fs_Stream and used to get to the name server, ie. the host that
+ * did the name lookup, not neccesarily the I/O server for the stream.
+a80 2
+    int			nameDomain;	/* Name domain type, defined in fs.h */
+    struct FsPrefix	*prefixPtr;	/* To handle naming re-directs. */
+d95 1
+d100 3
+a102 1
+    FsHandleHeader	hdr;		/* Global stream identifier. */
+a108 5
+    int			refCount;	/* This reference count is incremented
+					 * upon fork/dup, and is decremented
+					 * when the stream is closed.  After
+					 * no refs are left a close on the
+					 * stream's I/O handle is done. */
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d22 1
+a22 1
+ * $Header: fs.h,v 6.0 87/11/19 09:39:24 brent Exp $ SPRITE (Berkeley)
+d256 8
+@

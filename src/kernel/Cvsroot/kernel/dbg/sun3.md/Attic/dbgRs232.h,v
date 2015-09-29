@@ -1,0 +1,120 @@
+head     9.0;
+branch   ;
+access   ;
+symbols  sun4nw:9.0 symm:9.0 spur:9.0 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.0
+date     89.09.12.14.55.42;  author douglis;  state Stable;
+branches ;
+next     8.1;
+
+8.1
+date     89.06.29.22.15.46;  author rab;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.07.39;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.10.35;  author brent;  state Stable;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.38.38;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@/*
+ * dbgRs232.h --
+ *
+ *     Exported types and procedure headers for the rs232 driver.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/dbg/sun3.md/RCS/dbgRs232.h,v 8.1 89/06/29 22:15:46 rab Exp Locker: douglis $ SPRITE (Berkeley)
+ */
+
+#ifndef _DBGRS232
+#define _DBGRS232
+
+/*
+ * Which channel to use.
+ */
+
+typedef enum {
+    DBG_RS232_CHANNELA, 
+    DBG_RS232_CHANNELB
+} Dbg_Rs232Channel;
+
+extern	void		DbgRs232Init();
+extern	char 		DbgRs232ReadChar();
+extern	void 		DbgRs232WriteChar();
+
+#endif /* _DBGRS232 */
+@
+
+
+8.1
+log
+@*** empty log message ***
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/dbg/sun3.md/RCS/dbgRs232.h,v 8.0 88/11/11 18:07:39 douglis Stable Locker: rab $ SPRITE (Berkeley)
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/dbg/sun2.md/RCS/dbgRs232.h,v 6.0 88/08/11 12:10:35 brent Stable Locker: douglis $ SPRITE (Berkeley)
+d29 1
+a29 1
+#endif _DBGRS232
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: dbgRs232.h,v 5.0 87/08/11 10:38:38 sprite Exp $ SPRITE (Berkeley)
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d10 1
+a10 1
+ * $Header: dbgRs232.h,v 1.4 85/07/18 17:38:53 nelson Exp $ SPRITE (Berkeley)
+@

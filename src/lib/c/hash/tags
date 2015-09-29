@@ -1,0 +1,11 @@
+Hash	Hash.c	/^Hash(tablePtr, key)$/
+HashChainSearch	HashChainSearch.c	/^HashChainSearch(tablePtr, key, hashList)$/
+Hash_CreateEntry	Hash_CreateEntry.c	/^Hash_CreateEntry(tablePtr, key, newPtr)$/
+Hash_DeleteEntry	Hash_DeleteEntry.c	/^Hash_DeleteEntry(tablePtr, hashEntryPtr)$/
+Hash_DeleteTable	Hash_DeleteTable.c	/^Hash_DeleteTable(tablePtr)$/
+Hash_EnumFirst	Hash_EnumFirst.c	/^Hash_EnumFirst(tablePtr, hashSearchPtr)$/
+Hash_EnumNext	Hash_EnumNext.c	/^Hash_EnumNext(hashSearchPtr)$/
+Hash_FindEntry	Hash_FindEntry.c	/^Hash_FindEntry(tablePtr, key)$/
+Hash_InitTable	Hash_InitTable.c	/^Hash_InitTable(tablePtr, numBuckets, keyType)$/
+Hash_PrintStats	Hash_PrintStats.c	/^Hash_PrintStats(tablePtr, proc, clientData)$/
+RebuildTable	Hash_CreateEntry.c	/^RebuildTable(tablePtr)$/

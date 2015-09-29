@@ -1,0 +1,60 @@
+
+
+          signal action siglist [command]
+               Specify the action to take when a Unix signal is
+               received by Extended Tcl, or a program that embeds it.
+               Siglist is a list of either the symbolic or numeric
+               Unix signal (the SIG prefix is optional).  Action is
+               one of the following actions to be performed on receipt
+               of the signal.
+
+               default - Perform system default action when signal is
+               received (see signal system call documentation).
+
+               ignore - Ignore the signal.
+
+               error - Generate a catchable Tcl error.  It will be as
+               if the command that was running returned an error.  The
+               error code will be in the form:
+                   UNIX SIG signame
+               For the death of child signal, signame will always be
+               SIGCHLD, rather than SIGCLD, to allow writing portable
+               code.
+
+               trap - When the signal occures, execute command and
+               continue execution if an error is not returned by
+               command.  If will be executed in the global context and
+               the symbolic signal name (e.g. SIGINT) will be supplied
+               in a global variable signalReceived.  If an error is
+               returned, then follow the standard Tcl error mechanism.
+               Often command will just do an exit.
+
+               get - Retrieve the current settings of the specified
+               signals.  A keyed list will be returned were the keys
+               are one of the specified signals and the values are a
+               list cosisting of the action associated with the
+               signal, a 0 if the signal may be delivered (not block)
+               and a 1 if it is blocked. The actions maybe one of
+               `default',`ignore', `error' or `trap.  If the action is
+               trap, the third element is the command associated with
+               the action.
+
+               block - Block the specified signals from being
+               received. (Posix systems only).
+
+               unblock - Allow the specified signal to be received.
+               Pending signals will not occur. (Posix systems only).
+
+               The signal action will remain enabled after the
+               specified signal has occurred.  The exception to this
+               is SIGCHLD on systems without Posix signals.  For these
+               systems, SIGCHLD is not be automatically reenabled.
+               After a SIGCHLD signal is received, a call to wait must
+               be performed to retrieve the exit status of the child
+               process before issuing another signal SIGCHLD ...
+               command.  For code that is to be portable between both
+               types of systems, use this approach.
+
+               Signals are not processed until after the completion of
+               the Tcl command that is executing when the signal is
+               received.

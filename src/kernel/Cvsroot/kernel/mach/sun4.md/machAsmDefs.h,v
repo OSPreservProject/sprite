@@ -1,0 +1,1384 @@
+head     9.4;
+branch   ;
+access   ;
+symbols  ds3100:9.4 sun3:9.4 sun4nw:9.4 symm:9.4 spur:9.4 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.4
+date     91.10.18.01.23.01;  author dlong;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     91.09.10.18.17.46;  author rab;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.01.31.18.08.03;  author mgbaker;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.01.26.19.32.21;  author mgbaker;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.52.43;  author douglis;  state Stable;
+branches ;
+next     1.20;
+
+1.20
+date     89.08.09.12.34.24;  author mgbaker;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     89.07.22.15.55.44;  author mgbaker;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     89.07.12.06.19.32;  author rab;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     89.05.21.18.24.16;  author mgbaker;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     89.05.02.23.25.50;  author mgbaker;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     89.04.09.13.23.20;  author mgbaker;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     89.03.26.20.16.27;  author mgbaker;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     89.03.24.15.38.50;  author mgbaker;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     89.03.22.14.07.06;  author mgbaker;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     89.03.18.15.40.31;  author mgbaker;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     89.03.09.17.07.56;  author mgbaker;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     89.03.06.12.01.12;  author mgbaker;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     89.03.02.00.20.39;  author mgbaker;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     89.02.28.12.47.06;  author mgbaker;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.02.24.16.38.18;  author mgbaker;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.01.31.14.03.33;  author mgbaker;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.01.25.22.52.39;  author mgbaker;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.01.23.17.55.08;  author mgbaker;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.01.22.20.32.27;  author mgbaker;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.01.17.14.54.33;  author mgbaker;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Sixth Kernel!  It now uses my simple versions of the overflow and
+>> underflow trap handlers and my trap preamble and return-from-trap
+>> routines.
+@
+
+
+9.4
+log
+@sun4c/sun4c2 merge
+@
+text
+@/*
+ * machAsmDefs.h --
+ *
+ *     Machine-dependent macros.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsmDefs.h,v 9.2 90/01/31 18:08:03 mgbaker Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _MACHASMDEFS
+#define _MACHASMDEFS
+
+#ifdef KERNEL
+#include <vmSunConst.h>
+#include <machConst.h>
+#else
+#include <kernel/vmSunConst.h>
+#include <kernel/machConst.h>
+#endif
+
+/*
+ * Wait the 3 instructions necessary to allow a newly-written state register
+ * to settle.
+ */
+#define	MACH_WAIT_FOR_STATE_REGISTER()			\
+	nop;						\
+	nop;						\
+	nop
+/*
+ * Bump the invalid window forward one.  This is done by changing the
+ * invalid window mask.  We shift the invalid window bit left by 1,
+ * but modulo the number of implemented windows.
+ */
+
+#define	MACH_ADVANCE_WIM(REG1, REG2)			\
+	mov	%wim, REG1;				\
+	sethi	%hi(_machWimShift), REG2;		\
+	ld	[REG2 + %lo(_machWimShift)], REG2;	\
+	sll	REG1, REG2, REG2;			\
+	srl	REG1, 0x1, REG1;			\
+	or	REG1, REG2, REG1;			\
+	mov	REG1, %wim;				\
+	MACH_WAIT_FOR_STATE_REGISTER()
+
+/*
+ * Move the invalid window backwards one.  This is done by changing the
+ * invalid window mask.  We shift the invalid window bit right by 1,
+ * but modulo the number of implemented windows.
+ */
+
+#define	MACH_RETREAT_WIM(REG1, REG2)			\
+	mov	%wim, REG1;				\
+	sethi	%hi(_machWimShift), REG2;		\
+	ld	[REG2 + %lo(_machWimShift)], REG2;	\
+	srl	REG1, REG2, REG2;			\
+	sll	REG1, 0x1, REG1;			\
+	or	REG1, REG2, REG1;			\
+	mov	REG1, %wim;				\
+	MACH_WAIT_FOR_STATE_REGISTER()
+
+/*
+ * Set the window invalid mask to point to the current window.
+ */
+#define	MACH_SET_WIM_TO_CWP()					\
+	mov	%psr, %VOL_TEMP1;				\
+	set	0x1, %VOL_TEMP2;				\
+	sll	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP1;		\
+	mov	%VOL_TEMP1, %wim;				\
+	MACH_WAIT_FOR_STATE_REGISTER()
+
+/*
+ * Test whether we're in an invalid window.  If we are in an invalid window,
+ * then the condition codes should indicate a not zero ("bne" instruction
+ * will branch).
+ */
+#define	MACH_INVALID_WINDOW_TEST()				\
+	mov	%psr, %VOL_TEMP1;				\
+	set	0x1, %VOL_TEMP2;				\
+	sll	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP1;		\
+	mov	%wim, %VOL_TEMP2;				\
+	andcc	%VOL_TEMP1, %VOL_TEMP2, %g0
+
+/*
+ * Test whether we're about to encounter a window underflow condition.
+ * We put current cwp into temp1.  We shift a one by that many bits.
+ * Then we shift it again, to "advance" the window by one.  We and it
+ * with the valid window bits to get it modulo the number of windows - 1.
+ * Then we compare it with current wim to see if they're the same.  If
+ * so, then we would get an underflow if we did a restore operation.
+ * If we are in an underflow situation, then the condition codes should
+ * indicate a not zero ("bne" instruction will branch).
+ */
+
+#define	MACH_UNDERFLOW_TEST()					\
+	mov	%psr, %VOL_TEMP1;				\
+	set	0x1, %VOL_TEMP2;				\
+	sll	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP1;		\
+	sethi	%hi(_machWimShift), %VOL_TEMP2;			\
+	ld	[%VOL_TEMP2 + %lo(_machWimShift)], %VOL_TEMP2;	\
+	srl	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP2;		\
+	sll	%VOL_TEMP1, 0x1, %VOL_TEMP1;			\
+	or	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;		\
+	mov	%wim, %VOL_TEMP2;				\
+	andcc	%VOL_TEMP1, %VOL_TEMP2, %g0
+
+/*
+ * The sequence we need to go through to restore the psr without restoring
+ * the old current window number.  We want to remain in our current window.
+ * 1) Get old psr.  2) Clear only its cwp bits.  3) Get current psr.
+ * 4) Grab only its cwp bits.  5) Stick the two together and put it in
+ * the psr reg.  6) Wait for the register to be valid.
+ */
+#define	MACH_RESTORE_PSR()					\
+	mov	%CUR_PSR_REG, %VOL_TEMP2;			\
+	set     (~MACH_CWP_BITS), %VOL_TEMP1;			\
+	and     %VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2;		\
+	mov     %psr, %VOL_TEMP1;				\
+	and     %VOL_TEMP1, MACH_CWP_BITS, %VOL_TEMP1;		\
+	or      %VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2;		\
+	mov     %VOL_TEMP2, %psr;				\
+	MACH_WAIT_FOR_STATE_REGISTER()
+    
+
+/*
+ * Save global registers.
+ * Store-doubles are faster and we do this from even register boundaries.
+ * For now, we only save the globals here, since the locals and ins will
+ * be saved on normal save-window operations.  Note that this means the
+ * stack pointer and MACH_GLOBALS_OFFSET must be double-word aligned.
+ */
+#define	MACH_SAVE_GLOBAL_STATE()				\
+	add	%sp, MACH_GLOBALS_OFFSET, %VOL_TEMP1;		\
+	std	%g0, [%VOL_TEMP1];				\
+	std	%g2, [%VOL_TEMP1 + 8];				\
+	std	%g4, [%VOL_TEMP1 + 16];				\
+	std	%g6, [%VOL_TEMP1 + 24]
+
+/*
+ * Restore the global registers.  We do load doubles here for speed
+ * for even-register boundaries.  For now, we only restore the globals
+ * from here, since the locals and ins will be restored as part of the
+ * normal restore window operations.  Note that this means the stack pointer
+ * and MACH_GLOBALS_OFFSET must be double-word aligned.
+ */
+#define	MACH_RESTORE_GLOBAL_STATE()				\
+	add	%sp, MACH_GLOBALS_OFFSET, %VOL_TEMP1;		\
+	ldd	[%VOL_TEMP1], %g0;				\
+	ldd	[%VOL_TEMP1 + 8], %g2;				\
+	ldd	[%VOL_TEMP1 + 16], %g4;				\
+	ldd	[%VOL_TEMP1 + 24], %g6
+
+/*
+ * Save r16 to r23 (locals) and r24 to r31 (ins) to 16 words at
+ * the top of this window's stack.
+ */
+#define	MACH_SAVE_WINDOW_TO_STACK()			\
+	std	%r16, [%sp];				\
+	std	%r18, [%sp + 8];			\
+	std	%r20, [%sp + 16];			\
+	std	%r22, [%sp + 24];			\
+	std	%r24, [%sp + 32];			\
+	std	%r26, [%sp + 40];			\
+	std	%r28, [%sp + 48];			\
+	std	%r30, [%sp + 56]
+
+#define	MACH_RESTORE_WINDOW_FROM_STACK()		\
+	ldd	[%sp], %r16;				\
+	ldd	[%sp + 8], %r18;			\
+	ldd	[%sp + 16], %r20;			\
+	ldd	[%sp + 24], %r22;			\
+	ldd	[%sp + 32], %r24;			\
+	ldd	[%sp + 40], %r26;			\
+	ldd	[%sp + 48], %r28;			\
+	ldd	[%sp + 56], %r30
+
+#define	MACH_SAVE_WINDOW_TO_BUFFER(reg1)		\
+	std	%r16, [reg1];				\
+	std	%r18, [reg1 + 8];			\
+	std	%r20, [reg1 + 16];			\
+	std	%r22, [reg1 + 24];			\
+	std	%r24, [reg1 + 32];			\
+	std	%r26, [reg1 + 40];			\
+	std	%r28, [reg1 + 48];			\
+	std	%r30, [reg1 + 56]
+
+
+/*
+ * Clear out the local and out registers for a new window to move into
+ * or a window we're moving out of.
+ * Outs: r8 to r15, locals: r16 to r23.
+ */
+#define	MACH_CLEAR_WINDOW()				\
+	clr	%r8;					\
+	clr	%r9;					\
+	clr	%r10;					\
+	clr	%r11;					\
+	clr	%r12;					\
+	clr	%r13;					\
+	clr	%r14;					\
+	clr	%r15;					\
+	clr	%r16;					\
+	clr	%r17;					\
+	clr	%r18;					\
+	clr	%r19;					\
+	clr	%r20;					\
+	clr	%r21;					\
+	clr	%r22;					\
+	clr	%r23
+
+/*
+ * Enabling and disabling traps.
+ */
+#define	MACH_ENABLE_TRAPS(useReg)			\
+	mov	%psr, useReg;				\
+	or	useReg, MACH_ENABLE_TRAP_BIT, useReg;	\
+	mov	useReg, %psr;				\
+	MACH_WAIT_FOR_STATE_REGISTER()
+
+/*
+ * Should I use xor here and MACH_ENABLE_TRAP_BIT?
+ */
+#define	MACH_DISABLE_TRAPS(useReg1, useReg2)		\
+	mov	%psr, useReg1;				\
+	set	MACH_DISABLE_TRAP_BIT, useReg2;		\
+	and	useReg1, useReg2, useReg1;		\
+	mov	useReg1, %psr;				\
+	MACH_WAIT_FOR_STATE_REGISTER()
+
+/*
+ * Equivalents to C macros for enabling and disabling interrupts.
+ * They aren't quite equivalent, since they don't do panic's on negative
+ * disable counts.  These macros should really only be used for debugging,
+ * in any case.
+ */
+#define	DISABLE_INTR_ASM(reg1, reg2, NoDisableLabel)	\
+	set	_mach_AtInterruptLevel, reg1;	\
+	ld	[reg1], reg1;			\
+	tst	reg1;				\
+	bne	NoDisableLabel;			\
+	nop;					\
+	mov	%psr, reg1;			\
+	set	MACH_DISABLE_INTR, reg2;	\
+	or	reg1, reg2, reg1;		\
+	mov	reg1, %psr;			\
+	MACH_WAIT_FOR_STATE_REGISTER();		\
+	set	_mach_NumDisableIntrsPtr, reg1;	\
+	ld	[reg1], reg2;			\
+	add	reg2, 0x1, reg2;		\
+	st	reg2, [reg1];			\
+NoDisableLabel:
+
+#define	ENABLE_INTR_ASM(reg1, reg2, NoEnableLabel)	\
+	set	_mach_AtInterruptLevel, reg1;	\
+	ld	[reg1], reg1;			\
+	tst	reg1;				\
+	bne	NoEnableLabel;			\
+	nop;					\
+	set	_mach_NumDisableIntrsPtr, reg1;	\
+	ld	[reg1], reg2;			\
+	sub	reg2, 0x1, reg2;		\
+	st	reg2, [reg1];			\
+	tst	reg2;				\
+	bne	NoEnableLabel;			\
+	nop;					\
+	mov	%psr, reg1;			\
+	set	MACH_ENABLE_INTR, reg2;		\
+	and	reg1, reg2, reg1;		\
+	mov	reg1, %psr;			\
+	MACH_WAIT_FOR_STATE_REGISTER();		\
+NoEnableLabel:
+
+/*
+ * Enable interrupts and keep traps enabled.
+ * Uses given register.
+ */
+#define	QUICK_ENABLE_INTR(reg)				\
+	mov	%psr, reg;				\
+	andn	reg, MACH_DISABLE_INTR, reg;		\
+	mov	reg, %psr;				\
+	MACH_WAIT_FOR_STATE_REGISTER()
+
+/*
+ * Disable interrupts and keep traps enabled.
+ * Uses given register.
+ */
+#define	QUICK_DISABLE_INTR(reg)				\
+	mov	%psr, reg;				\
+	or	reg, MACH_DISABLE_INTR, reg;		\
+	mov	reg, %psr;				\
+	MACH_WAIT_FOR_STATE_REGISTER()
+
+/*
+ * Set interrupts to a particular value.  This is useful for a routine that
+ * just wants to save the value, change it, and then reset it without worrying
+ * about whether this turns interrupts on or off.
+ */
+#define	SET_INTRS_TO(regValue, useReg1, useReg2)		\
+	mov	%psr, useReg1;					\
+	set	MACH_ENABLE_INTR, useReg2;			\
+	and	useReg1, useReg2, useReg1;			\
+	set	MACH_DISABLE_INTR, useReg2;			\
+	and	regValue, useReg2, useReg2;			\
+	or	useReg1, useReg2, useReg1;			\
+	mov	useReg1, %psr;					\
+	MACH_WAIT_FOR_STATE_REGISTER()
+
+/*
+ * Run at high priority: supervisor mode, interrupts disabled, traps enabled.
+ * This must be done in 2 steps - 1) leaving traps off, if they were off,
+ * set new interrupt level.  2) Enable traps.  This keeps us from getting
+ * an interrupt at the old level rather than the new right after enabling
+ * traps.
+ */
+#define	MACH_SR_HIGHPRIO()					\
+	mov	%psr, %VOL_TEMP1;				\
+	set	(MACH_DISABLE_INTR | MACH_SUPER_BIT), %VOL_TEMP2;	\
+	or	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;		\
+	mov	%VOL_TEMP1, %psr;				\
+	or	%VOL_TEMP1, MACH_ENABLE_TRAP_BIT, %VOL_TEMP1;	\
+	mov	%VOL_TEMP1, %psr;				\
+	MACH_WAIT_FOR_STATE_REGISTER()
+
+/*
+ * Run at low supervisor priority: supervisor mode, interrupts enabled, traps
+ * enabled.  As described above for MACH_SR_HIGHPRIO, we must do this in
+ * 2 steps.
+ */
+#define	MACH_SR_LOWPRIO()					\
+	mov	%psr, %VOL_TEMP1;				\
+	set	MACH_SUPER_BIT, %VOL_TEMP2;			\
+	or	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;		\
+	set	MACH_ENABLE_INTR, %VOL_TEMP2;			\
+	and	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;		\
+	mov	%VOL_TEMP1, %psr;				\
+	or	%VOL_TEMP1, MACH_ENABLE_TRAP_BIT, %VOL_TEMP2;	\
+	mov	%VOL_TEMP1, %psr;				\
+	MACH_WAIT_FOR_STATE_REGISTER()
+/*
+ * Run at user priority: user mode, traps on.
+ */
+#define	MACH_SR_USERPRIO()					\
+	mov	%psr, %VOL_TEMP1;				\
+	set	MACH_ENABLE_TRAP_BIT, %VOL_TEMP2;		\
+	or	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;		\
+	set	(~MACH_SUPER_BIT), %VOL_TEMP2;			\
+	and	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;		\
+	mov	%VOL_TEMP1, %psr;				\
+	MACH_WAIT_FOR_STATE_REGISTER()
+
+
+/*
+ * For sticking debug info into a buffer.  After each value, stamp a special
+ * mark, which gets overwritten by the next value, so we always know where
+ * the end of the list is.
+ */
+#define	MACH_DEBUG_BUF(reg1, reg2, DebugLabel, stuff)	\
+	set	_debugCounter, reg1; 		\
+	ld	[reg1], reg1;			\
+	sll	reg1, 2, reg1;			\
+	set	_debugSpace, reg2;		\
+	add	reg2, reg1, reg2;		\
+	st	stuff, [reg2];			\
+	set	_debugCounter, reg1;		\
+	ld	[reg1], reg1;			\
+	add	reg1, 1, reg1;			\
+	set	500, reg2;			\
+	subcc	reg2, reg1, %g0;		\
+	bgu	DebugLabel;			\
+	nop;					\
+	clr	reg1;				\
+DebugLabel:					\
+	set	_debugCounter, reg2;		\
+	st	reg1, [reg2];			\
+	sll	reg1, 2, reg1;			\
+	set	_debugSpace, reg2;		\
+	add	reg2, reg1, reg2;		\
+	set	0x11100111, reg1;		\
+	st	reg1, [reg2]
+
+#define	MACH_DEBUG_ONCE(reg1, reg2, NoMoreLabel, DebugLabel, stuff, a_num)\
+	set	_debugCounter, reg1;		\
+	ld	[reg1], reg1;			\
+	cmp	reg1, a_num;			\
+	bg	NoMoreLabel;			\
+	nop;					\
+	MACH_DEBUG_BUF(reg1, reg2, DebugLabel, stuff);	\
+NoMoreLabel:					\
+	nop
+
+/*
+ * This is the equivalent to a call to VmmachGetPage followed by a test on
+ * the returned pte to see if it is resident and user readable and writable.
+ * This is used where a call to the vm code won't work since output registers
+ * aren't available.  This sets the condition codes so that 0 is returned
+ * if the address is resident and not protected and not zero is returned if
+ * a fault would occur.
+ */
+#define	MACH_CHECK_FOR_FAULT(checkReg, reg1)	\
+	set	VMMACH_PAGE_MAP_MASK, reg1;		\
+	and	checkReg, reg1, reg1;			\
+	lda	[reg1] VMMACH_PAGE_MAP_SPACE, reg1;	\
+	srl	reg1, VMMACH_PAGE_PROT_SHIFT, reg1;	\
+	cmp	reg1, VMMACH_PTE_OKAY_VALUE
+
+/*
+ * This is similar to the above macro, except that it is intended for checking
+ * stack pointers to see if a restore of a window would page fault.  We check
+ * the value of the stack pointer, and the offset of the window size.
+ */
+#define MACH_CHECK_STACK_FAULT(checkReg, reg1, ansReg, reg2, TestAgainLabel, LastOKLabel)	\
+	clr	ansReg;					\
+	set	VMMACH_PAGE_MAP_MASK, reg1;		\
+	and	checkReg, reg1, reg1;			\
+	lda	[reg1] VMMACH_PAGE_MAP_SPACE, reg1;	\
+	srl	reg1, VMMACH_PAGE_PROT_SHIFT, reg1;	\
+	cmp	reg1, VMMACH_PTE_OKAY_VALUE;		\
+	be	TestAgainLabel;				\
+	nop;						\
+	set	0x2, ansReg;				\
+TestAgainLabel:						\
+	set	VMMACH_PAGE_MAP_MASK, reg1;		\
+	add	checkReg, (MACH_SAVED_WINDOW_SIZE - 4), reg2;	\
+	and	reg2, reg1, reg1;			\
+	lda	[reg1] VMMACH_PAGE_MAP_SPACE, reg1;	\
+	srl	reg1, VMMACH_PAGE_PROT_SHIFT, reg1;	\
+	cmp	reg1, VMMACH_PTE_OKAY_VALUE;		\
+	be	LastOKLabel;				\
+	nop;						\
+	or	ansReg, 0x4, ansReg;			\
+LastOKLabel:						\
+	tst	ansReg
+	
+	
+
+
+/*
+ * Get a ptr to the pcb structure of the current process.
+ * Return this in reg1
+ */
+#define	MACH_GET_CUR_PROC_PTR(reg1)			\
+	set	_proc_RunningProcesses, reg1;		\
+	ld	[reg1], reg1;				\
+	ld	[reg1], reg1
+
+/*
+ * Get a ptr to the Mach_State struct of the current process.  Put it in reg1.
+ */
+#define	MACH_GET_CUR_STATE_PTR(reg1, reg2)		\
+	MACH_GET_CUR_PROC_PTR(reg1);			\
+        set     _machStatePtrOffset, reg2;		\
+        ld      [reg2], reg2;				\
+        add     reg1, reg2, reg1;			\
+        ld      [reg1], reg1
+
+#endif /* _MACHASMDEFS */
+@
+
+
+9.3
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsmDefs.h,v 9.2 90/01/31 18:08:03 mgbaker Exp Locker: rab $ SPRITE (Berkeley)
+d37 1
+d40 20
+a59 2
+	srl	REG1, 0x1, REG2;			\
+	sll	REG1, (MACH_NUM_WINDOWS - 1), REG1;	\
+a60 2
+	set	MACH_VALID_WIM_BITS, REG2;		\
+	and	REG1, REG2, REG1;			\
+a68 1
+	and	%VOL_TEMP1, MACH_CWP_BITS, %VOL_TEMP1;		\
+a74 17
+ * Move the invalid window backwards one.  This is done by changing the
+ * invalid window mask.  We shift the invalid window bit right by 1,
+ * but modulo the number of implemented windows.
+ */
+#define	MACH_RETREAT_WIM(REG1, REG2, happyWindow)	\
+	mov	%wim, REG1;				\
+	sll	REG1, 0x1, REG1;			\
+	set	MACH_VALID_WIM_BITS, REG2;		\
+	andcc	REG2, REG1, REG1;			\
+	bne	happyWindow;				\
+	nop;						\
+	mov	0x1, REG1;				\
+happyWindow:						\
+	mov	REG1, %wim;				\
+	MACH_WAIT_FOR_STATE_REGISTER()
+
+/*
+a80 1
+	and	%VOL_TEMP1, MACH_CWP_BITS, %VOL_TEMP1;		\
+d96 2
+a97 1
+#define	MACH_UNDERFLOW_TEST(moduloOkay)				\
+a98 1
+	and	%VOL_TEMP1, MACH_CWP_BITS, %VOL_TEMP1;		\
+d101 3
+d105 1
+a105 6
+	set	MACH_VALID_WIM_BITS, %VOL_TEMP2;		\
+	andcc	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;		\
+	bne	moduloOkay;					\
+	nop;							\
+	mov	0x1, %VOL_TEMP1;				\
+moduloOkay:							\
+d435 2
+a436 2
+
+
+@
+
+
+9.2
+log
+@Fixed bug in window underflow handler that caused some processes to
+infinite loop.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsmDefs.h,v 9.1 90/01/26 19:32:21 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d17 2
+a18 2
+#include "vmSunConst.h"
+#include "machConst.h"
+d439 2
+a440 2
+	
+	
+@
+
+
+9.1
+log
+@Maybe we've fixed the MachWindowUnderflow: Killing process
+problem.  An underflow that finds the user's stack page non-resident
+will just act like a page fault.  Then when the user restore instruction
+is re-executed, you get the real underflow.
+
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsmDefs.h,v 1.20 89/08/09 12:34:24 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d436 1
+a436 1
+	or	0x4, ansReg, ansReg;			\
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsmDefs.h,v 1.20 89/08/09 12:34:24 mgbaker Exp Locker: douglis $ SPRITE (Berkeley)
+a137 1
+#ifdef FP_ENABLED
+a142 23
+	std	%g6, [%VOL_TEMP1 + 24];				\
+	std	%f0, [%VOL_TEMP1 + 32];				\
+	std	%f2, [%VOL_TEMP1 + 40];				\
+	std	%f4, [%VOL_TEMP1 + 48];				\
+	std	%f6, [%VOL_TEMP1 + 56];				\
+	std	%f8, [%VOL_TEMP1 + 64];				\
+	std	%f10, [%VOL_TEMP1 + 72];			\
+	std	%f12, [%VOL_TEMP1 + 80];			\
+	std	%f14, [%VOL_TEMP1 + 88];			\
+	std	%f16, [%VOL_TEMP1 + 96];			\
+	std	%f18, [%VOL_TEMP1 + 104];			\
+	std	%f20, [%VOL_TEMP1 + 112];			\
+	std	%f22, [%VOL_TEMP1 + 120];			\
+	std	%f24, [%VOL_TEMP1 + 128];			\
+	std	%f26, [%VOL_TEMP1 + 136];			\
+	std	%f28, [%VOL_TEMP1 + 144];			\
+	std	%f30, [%VOL_TEMP1 + 152]
+#else
+#define	MACH_SAVE_GLOBAL_STATE()				\
+	add	%sp, MACH_GLOBALS_OFFSET, %VOL_TEMP1;		\
+	std	%g0, [%VOL_TEMP1];				\
+	std	%g2, [%VOL_TEMP1 + 8];				\
+	std	%g4, [%VOL_TEMP1 + 16];				\
+a143 1
+#endif /* FP_ENABLED */
+a151 24
+#ifdef FP_ENABLED
+#define	MACH_RESTORE_GLOBAL_STATE()				\
+	add	%sp, MACH_GLOBALS_OFFSET, %VOL_TEMP1;		\
+	ldd	[%VOL_TEMP1], %g0;				\
+	ldd	[%VOL_TEMP1 + 8], %g2;				\
+	ldd	[%VOL_TEMP1 + 16], %g4;				\
+	ldd	[%VOL_TEMP1 + 24], %g6;				\
+	ldd	[%VOL_TEMP1 + 32], %f0;				\
+	ldd	[%VOL_TEMP1 + 40], %f2;				\
+	ldd	[%VOL_TEMP1 + 48], %f4;				\
+	ldd	[%VOL_TEMP1 + 56], %f6;				\
+	ldd	[%VOL_TEMP1 + 64], %f8;				\
+	ldd	[%VOL_TEMP1 + 72], %f10;			\
+	ldd	[%VOL_TEMP1 + 80], %f12;			\
+	ldd	[%VOL_TEMP1 + 88], %f14;			\
+	ldd	[%VOL_TEMP1 + 96], %f16;			\
+	ldd	[%VOL_TEMP1 + 104], %f18;			\
+	ldd	[%VOL_TEMP1 + 112], %f20;			\
+	ldd	[%VOL_TEMP1 + 120], %f22;			\
+	ldd	[%VOL_TEMP1 + 128], %f24;			\
+	ldd	[%VOL_TEMP1 + 136], %f26;			\
+	ldd	[%VOL_TEMP1 + 144], %f28;			\
+	ldd	[%VOL_TEMP1 + 152], %f30
+#else
+a157 1
+#endif /* FP_ENABLED */
+d411 31
+@
+
+
+1.20
+log
+@Stable kernel.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsmDefs.h,v 1.19 89/07/22 15:55:44 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+@
+
+
+1.19
+log
+@Interrupt enabling and disabling has now been in-lined using gcc.
+Also, I don't disable traps before and after changing interrupts.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsmDefs.h,v 1.18 89/07/12 06:19:32 rab Exp Locker: mgbaker $ SPRITE (Berkeley)
+d330 24
+a353 55
+ * Enable interrupts if they are off and keep traps enabled.  To do this,
+ * we must disable traps, change the interrupt level, and then re-enable
+ * traps.  If interrupts are really off when we start, then this is safe.
+ * If they aren't off, then this is safe only if interrupt handlers are
+ * guarenteed to return to the same window they started in.  This is because
+ * if interrupts are enabled when we start, and we read the psr into a temp
+ * register and get an interrupt that changes the window value before we
+ * write back the new psr value, we would be writing back an old and incorrect
+ * current window pointer if the interrupt caused us to change widows.
+ *
+ * Uses registers %VOL_TEMP1 and %VOL_TEMP2.
+ */
+#define	QUICK_ENABLE_INTR()				\
+	mov	%psr, %VOL_TEMP1;			\
+	set	MACH_ENABLE_INTR, %VOL_TEMP2;		\
+	and	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;	\
+	mov	%VOL_TEMP1, %psr;			\
+	MACH_WAIT_FOR_STATE_REGISTER()
+
+#define	OLD_QUICK_ENABLE_INTR()				\
+	MACH_DISABLE_TRAPS(%VOL_TEMP1, %VOL_TEMP2);	\
+	mov	%psr, %VOL_TEMP1;			\
+	set	MACH_ENABLE_INTR, %VOL_TEMP2;		\
+	and	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;	\
+	mov	%VOL_TEMP1, %psr;			\
+	MACH_WAIT_FOR_STATE_REGISTER();			\
+	MACH_ENABLE_TRAPS(%VOL_TEMP1)
+/*
+ * Disable interrupts and keep traps enabled.  To do this,
+ * we must disable traps, change the interrupt level, and then re-enable
+ * traps.  This is safe only if interrupts are guarenteed to return to the same
+ * same window in which they occured.  This is because
+ * if interrupts are enabled when we start, and we read the psr into a temp
+ * register and get an interrupt that changes the window value before we
+ * write back the new psr value, we would be writing back an old and incorrect
+ * current window pointer if the interrupt caused us to change widows.
+ *
+ * Uses registers %VOL_TEMP1 and %VOL_TEMP2.
+ */
+#define	QUICK_DISABLE_INTR()				\
+	mov	%psr, %VOL_TEMP1;			\
+	set	MACH_DISABLE_INTR, %VOL_TEMP2;		\
+	or	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;	\
+	mov	%VOL_TEMP1, %psr;			\
+	MACH_WAIT_FOR_STATE_REGISTER()
+
+#define	OLD_QUICK_DISABLE_INTR()				\
+	MACH_DISABLE_TRAPS(%VOL_TEMP1, %VOL_TEMP2);	\
+	mov	%psr, %VOL_TEMP1;			\
+	set	MACH_DISABLE_INTR, %VOL_TEMP2;		\
+	or	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;	\
+	mov	%VOL_TEMP1, %psr;			\
+	MACH_WAIT_FOR_STATE_REGISTER();			\
+	MACH_ENABLE_TRAPS(%VOL_TEMP1)
+
+a362 12
+
+#define	OLD_SET_INTRS_TO(regValue, useReg1, useReg2)		\
+	MACH_DISABLE_TRAPS(useReg1, useReg2);			\
+	mov	%psr, useReg1;					\
+	set	MACH_ENABLE_INTR, useReg2;			\
+	and	useReg1, useReg2, useReg1;			\
+	set	MACH_DISABLE_INTR, useReg2;			\
+	and	regValue, useReg2, useReg2;			\
+	or	useReg1, useReg2, useReg1;			\
+	mov	useReg1, %psr;					\
+	MACH_WAIT_FOR_STATE_REGISTER();				\
+	MACH_ENABLE_TRAPS(useReg1)
+@
+
+
+1.18
+log
+@*** empty log message ***
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsmDefs.h,v 1.17 89/05/21 18:24:16 mgbaker Exp Locker: rab $ SPRITE (Berkeley)
+d343 7
+a356 1
+
+d370 7
+d385 9
+d395 1
+a395 1
+#define	SET_INTRS_TO(regValue, useReg1, useReg2)		\
+a405 1
+
+@
+
+
+1.17
+log
+@checkin before spring cleaning
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsmDefs.h,v 1.16 89/05/02 23:25:50 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d168 1
+a168 1
+#endif FP_ENABLED
+d207 1
+a207 1
+#endif FP_ENABLED
+d391 1
+a391 1
+ * traps.  
+@
+
+
+1.16
+log
+@New interrupts, device interface, etc.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsmDefs.h,v 1.15 89/04/09 13:23:20 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d138 1
+d144 23
+d168 1
+d177 24
+d207 1
+@
+
+
+1.15
+log
+@Seems to have fixed some interrupt problems, but now there's seg fault
+problems that don't print anything, so I'm removing some printf's to
+see what happens and I'm removing and changing some stuff that gets
+put into the debug buffer.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsmDefs.h,v 1.14 89/03/26 20:16:27 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d220 4
+a223 4
+#define	MACH_ENABLE_TRAPS()					\
+	mov	%psr, %VOL_TEMP1;				\
+	or	%VOL_TEMP1, MACH_ENABLE_TRAP_BIT, %VOL_TEMP1;	\
+	mov	%VOL_TEMP1, %psr;				\
+d229 5
+a233 5
+#define	MACH_DISABLE_TRAPS()					\
+	mov	%psr, %VOL_TEMP1;				\
+	set	MACH_DISABLE_TRAP_BIT, %VOL_TEMP2;		\
+	and	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1;		\
+	mov	%VOL_TEMP1, %psr;				\
+d293 1
+a293 1
+	MACH_DISABLE_TRAPS();				\
+d299 1
+a299 1
+	MACH_ENABLE_TRAPS()
+d314 1
+a314 1
+	MACH_DISABLE_TRAPS();				\
+d320 1
+a320 1
+	MACH_ENABLE_TRAPS()
+d323 11
+@
+
+
+1.14
+log
+@Seventeenth Kernel.  It executes its first system call: Sys_Shutdown().
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsmDefs.h,v 1.13 89/03/24 15:38:50 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d278 45
+@
+
+
+1.13
+log
+@Trying to get user procs to work.  I've just changed some stack-checking
+code.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsmDefs.h,v 1.12 89/03/22 14:07:06 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d377 19
+@
+
+
+1.12
+log
+@User process starts and gets successful page fault on its stack.
+I don't think it's returning to the user process correctly, though.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsmDefs.h,v 1.11 89/03/18 15:40:31 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d352 10
+@
+
+
+1.11
+log
+@Kernel processes work again, with a lot of user support.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsmDefs.h,v 1.10 89/03/09 17:07:56 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d341 1
+a341 1
+	bg	DebugLabel;			\
+a342 2
+	set	_debugCounter, reg1;		\
+	st	%g0, [reg1];			\
+@
+
+
+1.10
+log
+@Keyboard interrupts work.  Checking in before I've made too many
+further changes.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsmDefs.h,v 1.9 89/03/06 12:01:12 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d183 9
+d193 1
+d354 15
+@
+
+
+1.9
+log
+@Sixteenth Kernel.  Kernel processes work and play tag over a monitor
+lock.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsmDefs.h,v 1.8 89/03/02 00:20:39 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d315 3
+a317 1
+ * For sticking debug info into a buffer.
+d322 7
+d337 2
+d342 2
+a343 6
+	st	stuff, [reg2];			\
+	set	_debugCounter, reg1;		\
+	ld	[reg1], reg2;			\
+	add	reg2, 1, reg2;			\
+	st	reg2, [reg1]
+
+@
+
+
+1.8
+log
+@Kernel procs exist now, but it deadlocks.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsmDefs.h,v 1.7 89/02/28 12:47:06 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d225 44
+@
+
+
+1.7
+log
+@Not much difference here.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsmDefs.h,v 1.6 89/02/24 16:38:18 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d132 1
+a132 1
+ * Save trap state registers.
+d138 1
+a138 1
+#define	MACH_SAVE_TRAP_STATE()					\
+d146 1
+a146 1
+ * Restore the trap state registers.  We do load doubles here for speed
+d152 1
+a152 1
+#define	MACH_RESTORE_TRAP_STATE()				\
+a158 1
+
+d268 25
+@
+
+
+1.6
+log
+@Thirteenth Kernel.  sun4 finishes vm init now.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsmDefs.h,v 1.5 89/01/31 14:03:33 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d269 1
+@
+
+
+1.5
+log
+@Eleventh Kernel.  The debugger single steps, calls functions, etc.
+This means that state saving and restoring and stack switching works.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsmDefs.h,v 1.4 89/01/25 22:52:39 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d17 1
+a17 1
+#include "vmSun4Const.h"
+d20 1
+a20 1
+#include <kernel/vmSun4Const.h>
+@
+
+
+1.4
+log
+@Ninth Kernel.  Timer interrupts and overflow and underflow traps still
+are all it does functionally, but now I save and restore state in a fancy
+way that will allow nested interrupts, avoids duplicating saved state,
+and works the same way for the debugger.  See README and the code for
+details.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsmDefs.h,v 1.3 89/01/23 17:55:08 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d45 11
+@
+
+
+1.3
+log
+@Eigth Kernel.  It now takes interrupts and traps correctly.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsmDefs.h,v 1.2 89/01/22 20:32:27 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d52 1
+a52 1
+#define	MACH_RETREAT_WIM(REG1, REG2, happyWindowLabel)	\
+d57 1
+a57 1
+	bne	happyWindowLabel;			\
+d60 1
+a60 1
+happyWindowLabel:					\
+d87 1
+a87 1
+#define	MACH_UNDERFLOW_TEST()					\
+d95 1
+a95 1
+	bne	testWimOkay;					\
+d98 1
+a98 1
+testWimOkay:							\
+d101 17
+d121 5
+a125 5
+ * Save trap state registers.  This saves %l3 (= %VOL_TEMP1) and
+ * %l4 (= %VOLl_TEMP2) since store-doubles are faster and we do
+ * this from even register boundaries.  Note however that these
+ * registers are not restored, since this would overwrite the registers
+ * as they are being used to restore things...
+d128 1
+a128 2
+	set	_stateHolder, %VOL_TEMP1;			\
+	add	%VOL_TEMP1, MACH_GLOBALS_OFFSET, %VOL_TEMP1;	\
+d130 3
+a132 52
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	std	%g2, [%VOL_TEMP1];				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	std	%g4, [%VOL_TEMP1];				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	std	%g6, [%VOL_TEMP1];				\
+	set	_stateHolder, %VOL_TEMP1;			\
+	add	%VOL_TEMP1, MACH_OUTS_OFFSET, %VOL_TEMP1;	\
+	std	%o0, [%VOL_TEMP1];				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	std	%o2, [%VOL_TEMP1];				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	std	%o4, [%VOL_TEMP1];				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	std	%o6, [%VOL_TEMP1];				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	set	_stateHolder, %VOL_TEMP1;			\
+	add	%VOL_TEMP1, MACH_LOCALS_OFFSET, %VOL_TEMP1;	\
+	std	%l0, [%VOL_TEMP1];				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	std	%l2, [%VOL_TEMP1];				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	std	%l4, [%VOL_TEMP1];				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	std	%l6, [%VOL_TEMP1];				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	set	_stateHolder, %VOL_TEMP1;			\
+	add	%VOL_TEMP1, MACH_INS_OFFSET, %VOL_TEMP1;	\
+	std	%i0, [%VOL_TEMP1];				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	std	%i2, [%VOL_TEMP1];				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	std	%i4, [%VOL_TEMP1];				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	std	%i6, [%VOL_TEMP1];				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	set	_stateHolder, %VOL_TEMP1;			\
+	add	%VOL_TEMP1, MACH_PSR_OFFSET, %VOL_TEMP1;	\
+	mov	%psr, %VOL_TEMP2;				\
+	st	%VOL_TEMP2, [%VOL_TEMP1];			\
+	set	_stateHolder, %VOL_TEMP1;			\
+	add	%VOL_TEMP1, MACH_Y_OFFSET, %VOL_TEMP1;		\
+	mov	%y, %VOL_TEMP2;					\
+	st	%VOL_TEMP2, [%VOL_TEMP1];			\
+	set	_stateHolder, %VOL_TEMP1;			\
+	add	%VOL_TEMP1, MACH_TBR_OFFSET, %VOL_TEMP1;	\
+	mov	%tbr, %VOL_TEMP2;				\
+	st	%VOL_TEMP2, [%VOL_TEMP1];			\
+	set	_stateHolder, %VOL_TEMP1;			\
+	add	%VOL_TEMP1, MACH_WIM_OFFSET, %VOL_TEMP1;	\
+	mov	%wim, %VOL_TEMP2;				\
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+d135 5
+a139 8
+ * Restore the trap state registers.  Note that this does not restore
+ * %l3 or %l4, since they are the %VOL_TEMP1 and %VOL_TEMP2 registers
+ * that are in use for the macro.  NOTE that this doesn't restore the
+ * psr to exactly what it was.  It restores it to what it was, except for
+ * the current window pointer.  That part of the psr it leaves as it is
+ * right now.  This is because when returning from context switches, we
+ * may not return to the window we left from...  Also, I don't restore
+ * the window invalid mask.  That would only make it point to something wrong.
+d142 1
+a142 2
+	set	_stateHolder, %VOL_TEMP1;			\
+	add	%VOL_TEMP1, MACH_GLOBALS_OFFSET, %VOL_TEMP1;	\
+d144 3
+a146 54
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	ldd	[%VOL_TEMP1], %g2;				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	ldd	[%VOL_TEMP1], %g4;				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	ldd	[%VOL_TEMP1], %g6;				\
+	set	_stateHolder, %VOL_TEMP1;			\
+	add	%VOL_TEMP1, MACH_OUTS_OFFSET, %VOL_TEMP1;	\
+	ldd	[%VOL_TEMP1], %o0;				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	ldd	[%VOL_TEMP1], %o2;				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	ldd	[%VOL_TEMP1], %o4;				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	ldd	[%VOL_TEMP1], %o6;				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	set	_stateHolder, %VOL_TEMP1;			\
+	add	%VOL_TEMP1, MACH_LOCALS_OFFSET, %VOL_TEMP1;	\
+	ldd	[%VOL_TEMP1], %l0;				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	ld	[%VOL_TEMP1], %l2;				\
+	add	%VOL_TEMP1, 12, %VOL_TEMP1;			\
+	ld	[%VOL_TEMP1], %l5;				\
+	add	%VOL_TEMP1, 4, %VOL_TEMP1;			\
+	ldd	[%VOL_TEMP1], %l6;				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	set	_stateHolder, %VOL_TEMP1;			\
+	add	%VOL_TEMP1, MACH_INS_OFFSET, %VOL_TEMP1;	\
+	ldd	[%VOL_TEMP1], %i0;				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	ldd	[%VOL_TEMP1], %i2;				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	ldd	[%VOL_TEMP1], %i4;				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	ldd	[%VOL_TEMP1], %i6;				\
+	add	%VOL_TEMP1, 8, %VOL_TEMP1;			\
+	set	_stateHolder, %VOL_TEMP1;			\
+	add	%VOL_TEMP1, MACH_PSR_OFFSET, %VOL_TEMP1;	\
+	ld	[%VOL_TEMP1], %VOL_TEMP2;			\
+	set	(~MACH_CWP_BITS), %VOL_TEMP1;			\
+	and	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2;		\
+	mov	%psr, %VOL_TEMP1;				\
+	and	%VOL_TEMP1, MACH_CWP_BITS, %VOL_TEMP1;		\
+	or	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2;		\
+	mov	%VOL_TEMP2, %psr;				\
+	set	_stateHolder, %VOL_TEMP1;			\
+	add	%VOL_TEMP1, MACH_Y_OFFSET, %VOL_TEMP1;		\
+	ld	[%VOL_TEMP1], %VOL_TEMP2;			\
+	mov	%VOL_TEMP2, %y;					\
+	set	_stateHolder, %VOL_TEMP1;			\
+	add	%VOL_TEMP1, MACH_TBR_OFFSET, %VOL_TEMP1;	\
+	ld	[%VOL_TEMP1], %VOL_TEMP2;			\
+	mov	%VOL_TEMP2, %tbr;				\
+	MACH_WAIT_FOR_STATE_REGISTER()
+@
+
+
+1.2
+log
+@Checkpoint.  Traps work and interrupts remain enabled correctly.
+>> I've #ifdef'd out the code where I start the timer and try to take
+>> timer interrupts.  When I do that, interrupts get permanently disabled,
+>> somehow.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machAsmDefs.h,v 1.1 89/01/17 14:54:33 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d25 8
+d44 2
+a45 1
+	mov	REG1, %wim
+d61 2
+a62 1
+	mov	REG1, %wim
+d233 2
+a234 1
+	mov	%VOL_TEMP2, %tbr
+d291 2
+a292 1
+	mov	%VOL_TEMP1, %psr
+d301 2
+a302 1
+	mov	%VOL_TEMP1, %psr
+d306 4
+d313 1
+a313 2
+	set	(MACH_DISABLE_INTR | MACH_SUPER_BIT | MACH_ENABLE_TRAP_BIT), \
+			%VOL_TEMP2;				\
+d315 4
+a318 1
+	mov	%VOL_TEMP1, %psr
+a319 1
+
+d322 2
+a323 1
+ * enabled.
+d327 1
+a327 1
+	set	(MACH_SUPER_BIT | MACH_ENABLE_TRAP_BIT), %VOL_TEMP2;	\
+d331 4
+a334 1
+	mov	%VOL_TEMP1, %psr
+d344 2
+a345 1
+	mov	%VOL_TEMP1, %psr
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machConst.h,v 1.2 89/01/16 14:48:07 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d24 5
+d32 1
+a32 1
+	sll	REG1, (MACH_NWINDOWS - 1), REG1;	\
+d38 6
+a43 1
+#define	MACH_RETREAT_WIM(REG1, REG2)			\
+d48 1
+a48 1
+	bne	happy_wim;				\
+d51 1
+a51 1
+happy_wim:						\
+d55 172
+d274 7
+d282 8
+d291 9
+d302 21
+@

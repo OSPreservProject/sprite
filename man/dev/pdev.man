@@ -1,0 +1,544 @@
+.\"     $Header: /sprite/src/man/dev/RCS/pdev.man,v 1.3 90/01/17 18:05:14 jhh Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS PDEV dev
+.BS
+.SH NAME
+Pseudo-devices \- files controlled by server processes.
+.BE
+.SH INTRODUCTION
+A pseudo-device is a special file that is controlled by a user-level
+process, which is called its \fIserver\fP.
+To all other processes, called \fIclients\fP, the pseudo-device is
+accessed like an ordinary file or device using regular Sprite
+system calls.
+This allows user-level processes to emulate a file or device with
+arbitrary characteristics.
+Pseudo-devices are used in Sprite for terminal emulation,
+access to Internet protocols, the stream communication
+used by the window system, and for the user-level implementation
+of other services.
+.PP
+This document describes how to write server programs 
+that control pseudo-devices using the raw kernel interface.
+There is also a Pdev library package that takes
+care of most of these details.
+See the Pdev man page for details.
+.PP
+A pseudo-device server is much like an RPC server;
+it waits for requests,
+performs some task,
+and returns results.
+The server has a \fIservice stream\fP for each client that has
+opened the pseudo-device.
+Each time the client makes an operation on the pseudo-device
+the kernel maps this into a request-response exchange over the
+service stream.
+The remaining sections describe this protocol in more detail.
+(The header file /sprite/lib/include/dev/pdev.h contains the
+type definitions repeated here, and describes the Fs_IOControl()
+calls mentioned here in more detail.)
+.SH "CONTROL STREAM"
+.PP
+The server of a pseudo-device is established by opening the
+pseudo-device with the O_MASTER flag.  This returns a
+\fIcontrol stream\fP to the server process.
+The server listens on the control stream for messages issued
+when client open the pseudo-device.
+.nf
+
+  #include <sys/file.h>
+  #include <dev/pdev.h>
+
+  cntrlStreamID = open("\fIpseudo-device\fP", O_MASTER | O_RDONLY, 0666); 
+
+.fi
+The server's open call will fail with the FS_FILE_BUSY status if there is
+already a server process controlling the pseudo device.
+Similarly, a client's open will fail with DEV_OFFLINE if there
+is no server process controlling the pseudo-device.
+.PP
+The server establishes contact with a client in a two part process.
+First, it reads a Pdev_Notify message off the control stream
+that indicates the streamID of the
+new service stream used to communicate with the client.
+In the second phase,
+the server responds to an initial PDEV_OPEN
+request on the new service stream.
+The server's response determines if the client's
+open operation will succeed or fail.
+Refer to the following section
+on the request-response protocol for examples that use the control
+stream and handle client requests.
+
+.SH "REQUEST-RESPONSE"
+.PP
+Whenever a client invokes an operation on the pseudo-device
+(Fs_Read, Fs_Write, Fs_IOControl, Fs_Close)
+the kernel forwards it
+to the server process so the server can implement it in any way it chooses.
+This is done using a request-response protocol much like
+a Remote Procedure Call (RPC).
+The kernel packages up the parameters of the system call,
+passes them to the server process in a \fIrequest message\fP,
+blocks the client process until a \fIreply message\fP is returned,
+and unpackages the return parameters from the reply message.
+This is transparent to the client, but not to the server.
+.PP
+This is the format of the request and reply messages:
+.PP
+.ta 3.0i
+.nf
+
+typedef struct {
+    unsigned int magic;	/* PDEV_REQUEST_MAGIC or PFS_REQUEST_MAGIC */
+    int operation;	/* What action is requested. */
+    int messageSize;	/* The complete size of the request header
+	 * plus data, plus padding for alignment */
+    int requestSize;	/* Size of data following this header */
+    int replySize;	/* Max size of the reply data expected. */
+    int dataOffset;	/* Offset of data from start of header */
+} Pdev_RequestHdr;
+
+typedef struct {
+    Pdev_RequestHdr hdr;	/* with PDEV_REQUEST_MAGIC */
+    union {	/* Additional parameters to the operation. */
+        Pdev_OpenParam open;
+        Pdev_RWParam read;
+        Pdev_RWParam write;
+        Pdev_IOCParam ioctl;
+        Pdev_SetAttrParam setAttr;
+    } param;
+    /*
+     * Data, if any, follows.
+     */
+} Pdev_Request;
+
+typedef struct Pdev_Reply {
+    unsigned int magic;	/* == PDEV_REPLY_MAGIC */
+    int status;	/* Return status of remote call */
+    int selectBits;	/* Return select state bits */
+    int replySize;	/* Size of the data in replyBuf, if any */
+    Address replyBuf;	/* Server space address of reply data */
+    int reserved;	/* Room for future expansion */
+} Pdev_Reply;
+
+.fi
+.PP
+The server does not read the request messages directly from the service stream.
+Instead, there is a \fIrequest buffer\fP associated with each service stream
+that is in the server's own address space.
+The kernel puts request messages directly into this buffer.
+Access to the buffer is synchronized using two pointers,
+\fIfirstByte\fP and \fIlastByte\fP.  The server reads the
+values of these pointers from the service stream,
+and can safely examine the request(s) found in the request buffer
+between firstByte and lastByte.
+When the server is done with requests it updates firstByte by
+making an Fs_IOControl() call (IOC_PDEV_SET_PTRS) on the request stream.
+.PP
+The kernel fills the request buffer circularly, and it is possible that
+more than one request will be found between firstByte and lastByte.
+This occurs if write-behind is enabled (see below),
+or if the client process forks and both processes use their
+duplicated stream to the pseudo-device.
+As a convenience to servers, the kernel never wraps a request message
+around the end of the request buffer.
+Instead, if the request buffer fills up the kernel waits until the
+server has processed all the request messages before resetting and
+adding messages starting at the beginning of the buffer.
+.PP
+Three example procedures follow.
+The first, GetClient(),
+reads the control stream and sets up the new request stream
+and its associated request buffer.
+The second, Serve(), illustrates the use of \fIfirstByte\fP and \fIlastByte\fP.
+The last one, Reply(), uses Fs_IOControl to return the reply message.
+Fuller examples can be found in the Pdev library code,
+see /sprite/src/lib/c/etc/pdev.c.
+.nf
+.sp 1
+\fI/*
+\ * GetClient returns the streamID for a new request stream.
+\ */\fP
+int
+GetClient(cntrlStreamID, reqBufSize)
+    int cntrlStreamID;
+    int reqBufSize;
+{
+    Pdev_SetBufArgs setBuf;
+    Pdev_Notify notify;
+    int amountRead;
+    int newStreamID;
+
+    \fI/*
+    \ * Read the control stream to get a new request stream.
+    \ * (You should check the return from Fs_Read and verify
+    \ *  the magic number in the Pdev_Notify structure.)
+    \ */\fP
+    Fs_Read(cntrlStreamID, sizeof(Pdev_Notify), (Address) &notify, &amountRead);
+    newStreamID = notify.streamID;
+    \fI/*
+    \ * Allocate the request buffer, and tell the kernel about it.
+    \ */\fP
+    setBuf.requestBufAddr = Mem_Alloc(reqBufSize);
+    setBuf.requestBufSize = reqBufSize;
+    setBuf.readBufAddr = 0;
+    setBuf.readBufSize = 0;
+    Fs_IOControl(newStreamID, IOC_PDEV_SET_BUF, sizeof(Pdev_SetBufArgs),
+            (Address)&setBuf, 0, 0);
+    return(newStreamID);
+}
+.fi
+.sp 1
+.nf
+Serve(requestStream, requestBuffer)
+    int requestStream;
+    Address requestBuffer;
+{
+    Pdev_BufPtrs bufPtrs;
+    int amountRead;
+    Pdev_Request *requestMsg;
+
+    \fI/*
+    \ * Read the firstByte and lastByte pointers.
+    \ * (You should check the return from Fs_Read and verify
+    \ *  the magic number in the Pdev_BufPtrs structure.)
+    \ */\fP
+    Fs_Read(requestStreamID, sizeof(Pdev_BufPtrs), &bufPtrs, &amountRead);
+    while (bufPtrs.requestFirstByte < bufPtrs.requestLastByte) {
+            \fI/*
+            \ * Cast a pointer to the request message.
+            \ * (You should verify the magic number in the Pdev_Request.)
+            \ */\fP
+            requestMsg = (Pdev_Request *)&requestBuffer[bufPtrs.requestFirstByte];
+            switch (requestMsg->hdr.operation) {
+            \fI/*
+            \ * Switch out to operation specific code here...
+            \ */\fP
+            }
+            bufPtrs.requestFirstByte += requestMsg->hdr.messageSize;
+    }
+    \fI/*
+    \ * Move the firstByte pointer past the processed request messages.
+    \ */\fP
+    Fs_IOControl(requestStreamID, IOC_PDEV_SET_PTRS, sizeof(Pdev_BufPtrs), &bufPtrs, 0, 0);
+}
+.fi
+.sp 1
+.nf
+Reply(requestStream, status, selectBits, replyBuf)
+    int requestStream;
+    ReturnStatus status;
+    Address replyBuf;
+{
+    Pdev_Reply reply;
+    \fI/*
+    \ * Format and return the reply message.
+    \ */\fP
+    reply.magic = PDEV_REPLY_MAGIC;
+    reply.status = status;
+    reply.selectBits = selectBits;
+    reply.replySize = replySize;
+    reply.replyBuf = replyBuf;
+    Fs_IOControl(requestStream, IOC_PDEV_REPLY, sizeof(Pdev_Reply), (Address)&reply, 0, 0);
+}
+.fi
+.PP
+Let's review before moving on to select, write-behind, and read buffering.
+The control stream is returned when the server opens the pseudo-device
+using the O_MASTER flag.
+A service stream is created each time a client process opens the
+pseudo-device, and it is used by the server to handle requests
+from that client.
+The server reads the control stream to get new service stream IDs.
+The kernel forwards client operations on the pseudo-device to the
+server using a request-response protocol.
+The protocol uses a request buffer in the server's address space,
+and an associated pair of pointers, firstByte and lastByte.
+There is one request buffer and pair of pointers per service stream.
+The server reads new values of firstByte and lastByte from the
+service stream.
+After it is done with the request(s) found in the request buffer
+the server updates firstByte using IOC_PDEV_SET_PTRS.
+Replies are returned with another Fs_IOControl(), IOC_PDEV_REPLY.
+.SH "SELECT AND ASYNCHRONOUS I/O"
+.PP
+Note that the select operation is not forwarded to the server.
+It is too costly to switch out to the server process each time
+a client process makes a select that includes a stream to
+a pseudo-device.  Instead, the kernel maintains some select bits
+for each request stream
+(one bit each for readability, writability, and exceptional conditions)
+and checks this state itself.  The server updates the state bits each
+time it replies, or by making by using IOC_PDEV_READY.
+.PP
+The sever can optimize writes to the pseudo-device by enabling write-behind.
+With write-behind enabled the kernel does not block the client waiting
+for a reply to a write request.
+Instead, the write is assumed to have succeeded,
+and the client can continue to write until the request buffer fills up.
+This reduces the number of context switches made when handling writes
+to be proportional to the amount of data written,
+instead of proportional to the number of write calls by the client.
+If write-behind is enabled the operation code for writes will
+be \fBPDEV_WRITE_ASYNC\fP instead of \fBPDEV_WRITE\fP.
+Note that the server has to accept all data written (there is no
+opportunity for an error return),
+and it does not return a reply to write requests.
+Write-behind is enabled using the IOC_PDEV_WRITE_BEHIND Fs_IOControl() call.
+The input buffer for this Fs_IOControl() should contain a boolean which
+indicates whether or not write behind is enabled.
+.PP
+The server can optimize reads from the pseudo-device by using a
+read buffer.  The read buffer is used in a similar
+way as the request buffer.  In this case the server process adds
+data to the read buffer as it becomes available,
+and the kernel removes data in response to client read requests.
+Again, this reduces the number of context switches to the server process.
+Like the request buffer, the read buffer is in the server's address space.
+The IOC_PDEV_SET_BUF iocontrol() call is used to declare both buffers.
+Its input buffer contains a Pdev_SetBufArgs structure.
+Synchronization over the read buffer is also done with \fIfirstByte\fP
+and \fIlastByte\fP pointers.
+(The Pdev_BufPtrs structure that is read from the service stream contains
+a firstByte-lastByte pair for both the request and read buffers.)
+The kernel updates readFirstByte as the client process reads data,
+and the server process updates readLastByte as its adds data.
+The IOC_PDEV_SET_PTR iocontrol() call is used by the server to
+set both readLastByte and requestFirstByte.
+An important convention is that -1 (minus one) means ``no change''
+and can safely be passed in for either readLastByte or requestFirstByte.
+Another important convention is that the server should reset and
+begin filling the read buffer from the beginning after it empties.
+The server knows when it is empty when it reads (-1,-1) for readFirstByte
+and readLastByte.
+.SH "REGULAR OPERATIONS"
+.PP
+The following short sections describes the different request
+messages that the server will receive.
+They each have some extra parameters,
+and may require special actions on the part of the server.
+.IP PDEV_OPEN
+.ta 3.0i
+.nf
+
+  typedef struct Pdev_OpenParam {
+    int flags;	/* Flags from the Fs_Open call */
+    Proc_PID pid;	/* Client's process ID */
+    int hostID;	/* Host ID where client is from */
+    int uid;	/* User ID of the client process */
+    Fmt_Format format;	/* Defines byte order of client machine */
+    int reserved;	/* Reserved for future expansion */
+  } Pdev_OpenParam;
+
+.fi
+This is the first request to arrive on a new service stream when
+a client opens the pseudo-device.
+(The kernel waits until the request buffer is declared, of course,
+before issuing this request.)
+The client's open
+call will block until the server responds to this request.
+The reply status returned by the server will be the return status of the
+Fs_Open call by the client.
+The request parameters include a process ID and a user ID of
+the client so the server can do authentication.
+The format parameter is used in conjuction with library routines
+to handle byte swapping of data blocks sent and received with
+the PDEV_IOCTL command.
+
+.IP PDEV_CLOSE
+A client has closed the device. This is the last message that will
+arrive on the service stream so the server should close the service stream.
+There are no close specific parameters in the request header.
+
+.IP PDEV_READ
+.nf
+
+  typedef struct {
+    int offset;	/* Read/Write byte offset */
+    unsigned int familyID;	/* Process group ID */
+    Proc_PID procID;	/* Process ID */
+    int reserved;	/* Extra */
+  } Pdev_RWParam;
+
+.fi
+A client is requesting request.replySize bytes of data from the pseudo-device.
+The read request parameters include a byte offset at which the read should
+take place,
+and the process's familyID which can be used to enforce the notion
+of a controlling process group for the pseudo-device.
+The amount of data actually returned should be set in reply.replySize,
+and the status of the read should be set in reply.status.
+An end-of-file on the pseudo-device is indicated by returning zero bytes
+and a SUCCESS status.
+If no data is available the server should return
+the FS_WOULD_BLOCK status.  In this case the kernel will block
+the client process until the server indicates the pseudo-device is readable
+by making the IOC_PDEV_READY iocontrol() call:
+.nf
+
+    bits = FS_WRITABLE | FS_READABLE;	\fI/* as appropriate... */\fP
+    status = Fs_IOControl(streamID, IOC_PDEV_READY, sizeof(int),
+		(Address)&bits, 0, 0;
+
+.fi
+This will unblock the client process and cause another FS_PDEV_READ
+request to arrive on the service stream.
+.sp
+Note that the server will not see PDEV_READ requests if it has enabled
+read-ahead.  Read-ahead is implicitly enabled if the IOC_PDEV_SET_BUF
+iocontrol() call indicates a non-zero sized read-ahead buffer.
+
+.IP PDEV_WRITE
+A client is writing data to the pseudo-device.
+The amount of data being written is indicated in request.requestSize,
+and the write parameters are the same as those for read:
+they include an offset, and a familyID, and a processID.
+The data written follows the request header immediately.
+The reply information on a synchronous write is an integer
+containing the number of bytes accepted by the server.
+The server can accept some (or none) of the data being written
+by returning FS_WOULD_BLOCK and the number of bytes accepted.
+The server unblocks the client process (as described above for FS_PDEV_READ)
+using the IOC_PDEV_READY iocontrol().
+.IP
+The semantics of returning FS_WOULD_BLOCK are important because the
+Sprite kernel takes care of blocking client processes and retrying
+write operations until the full amount of data is transferred to the
+pseudo-device, unless the stream is set to non-blocking, of course.
+To repeat, the write service routine should return FS_WOULD_BLOCK if
+it doesn't accept all the data given to it.
+
+.IP PDEV_WRITE_SYNC
+If write-behind is enabled then this operation code is issued instead
+of \fBPDEV_WRITE\fP.  The message format is the same for both
+synchronous and asynchronous writes.
+The important difference is that the server has to
+accept all of the data and it does not return a reply.
+Thus asynchronous writes implicitly succeed.
+
+.IP PDEV_IOCONTROL
+.nf
+
+    typedef struct {
+	int command;	/* iocontrol() command #. */
+	unsigned int familyID;	/* Can be used to enforce controlling tty */
+	Proc_PID procID;	/* Process ID of client */
+	int byteOrder;	/* Defines client's byte ordering */
+	int reserved;	/* Extra */
+    } Pdev_IOCParam;
+
+.fi
+A client is doing some device-specific operation.
+The Fs_IOControl parameters include the client's command,
+an inBuffer, and an outBuffer.
+The server process is free to define and implement any command
+it desires.  For example, the Internet protocol pseudo-devices supports
+commands to bind to addresses, accept connections, etc.
+.SH "BYTE ORDERING ISSUES"
+.PP
+In order to correctly support clients executing on machines with a
+different byte order than their server,
+the format field is used to define the client's byte order.
+A set of library routines is available to byte swap the
+block of data that follows the PDEV_IOCTL message header.
+It is the servers responsibility to byte swap the input data block
+of the PDEV_IOCTL command, and to byte swap the return data block.
+This is not an issue with reads and writes because the data
+is assumed to be a string of characters.
+
+.SH "PSEUDO-FILE-SYSTEM SUPPORT"
+.PP
+Pseudo-device connections can be made into pseudo-file-systems when
+files in the pseudo-file-system are opened.
+The pseudo-device connection is exactly as described in this manual,
+except that the connection is created differently using
+the \fBIOC_PFS_OPEN\fP command on the pseudo-file-system naming
+service stream.  (See the devices pfs man page.)
+Additionally, however, there are two operations concerning attributes
+that appear in the request stream.
+These operations are only made on pseudo-device connections
+to pseudo-file-system servers.
+
+.IP PDEV_GET_ATTR
+This is used to get the attributes of a file in a pseudo-file-system.
+There are no extra input parameters to this call.
+The returned data is an \fBFs_Attributes\fR record.
+
+.IP PDEV_SET_ATTR
+.DS
+typedef struct {
+    int flags;	/* Which attributes to set */
+    int uid;	/* User ID */
+    int gid;	/* Group ID */
+} Pdev_SetAttrParam;
+.DE
+.PP
+This is used to set certain attributes of a file in a pseudo-file-system.
+The \fBflags\fP parameter is a combination of
+\fBFS_SET_TIMES\fR, \fBFS_SET_MODE\fR, \fBFS_SET_OWNER\fR,
+\fBFS_SET_FILE_TYPE\fR, \fBFS_SET_DEVICE\fR
+that indicates what attributes to set.
+The \fBuid\fP and \fBgid\fP identify the calling process and should be
+used to check permissions.  A \fBFs_Attributes\fP record follows the
+request message header and contains the new attributes.
+There is no return data for this call.
+
+.SH "SERVER I/O CONTROLS"
+.PP
+The server uses a number of IOC_PDEV iocontrol() calls to implement
+its part of the request-response protocol.  These are summarized here,
+although the header file pdev.h can also be consulted.
+.IP IOC_PDEV_SET_BUF
+This is used to tell the kernel where the
+request buffer and read ahead buffer (if any)
+are. The input buffer should contain a
+Pdev_SetBufArgs struct.
+.IP IOC_PDEV_WRITE_BEHIND
+Set (Unset) write-behind buffering in the
+request buffer.  The single input argument
+is a pointer to a Boolean; TRUE enables
+write-behind, FALSE inhibits it.  The default
+is no write-behind.
+.IP IOC_PDEV_BIG_WRITES
+Set (Unset) the ability of the client to
+write a chunk larger than will fit into
+the request buffer.  This is to support
+UDP socket semantics that prevent a client
+from writing more than the declared packet size.
+The input buffer should reference a Boolean;
+TRUE enables big writes (which is the default)
+FALSE prevents big writes.
+The default is to allow big writes.  Large client write requests
+are broken up by the server into write requests that will
+fit into the request buffer.
+The request stream is locked during this so that no other
+client operations can slip in.
+.IP IOC_PDEV_SET_PTRS
+This is used to update the firstByte and
+lastByte pointers into the request and
+read ahead buffers.  The input buffer
+is a Pdev_BufPtrs structure.
+.IP IOC_PDEV_REPLY
+This is used to send a reply to a request.
+The input buffer contains a Pdev_Reply.  This
+includes an address (in the server's space)
+of a buffer containing reply data, if any.
+.IP IOC_PDEV_READY
+The server uses this to notify the kernel that the pseudo-device
+is ready for I/O now.
+The input buffer should contain an int with an or'd combination of
+FS_READABLE, FS_WRITABLE, or FS_EXCEPTION.
+.IP IOC_PDEV_SIGNAL_OWNER
+The server uses this to signal the owning process or process group.
+The input buffer is a \fBPdev_Signal\fR record containing a
+\fBsignal\fR and \fBcode\fR field.  The owner gets established by
+a IOC_SET_OWNER operation on the client end of the pseudo-device connection.
+
+.SH FILES
+/sprite/lib/include/dev/pdev.h	\-	pseudo-device definitions
+.SH SEE ALSO
+Pdev, pfs, Fs_Open, Fs_Close, Fs_Read, Fs_Write, Fs_Select, Fs_IOControl,
+Fs_EventHandlerCreate, Bit
+.SH KEYWORDS
+pseudo-device, device, server, client, read, write, iocontrol

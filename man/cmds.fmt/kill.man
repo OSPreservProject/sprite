@@ -1,0 +1,68 @@
+
+
+
+KILL                      User Commands                      KILL
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     kill - Send a signal to a process or group
+
+SSYYNNOOPPSSIISS
+     kkiillll [_o_p_t_i_o_n_s] _p_i_d _p_i_d ...
+
+OOPPTTIIOONNSS
+     --gg             Treat each _p_i_d as the name of a process group
+                    rather  than  a  process,  and send the given
+                    signal to the entire group.
+
+     --hheellpp          Print a summary of the  command-line  options
+                    and exit without sending any signals.
+
+     --ll             Print out a list of valid  signal  names  and
+                    exit without sending any signals.
+
+     --_s_i_g_n_a_l        Send _s_i_g_n_a_l to the given  processes.   _S_i_g_n_a_l
+                    may  be  either  a number or a symbolic name.
+                    The legal names are the  same  as  the  names
+                    from  the  <signal.h>  include  file,  except
+                    without the ``SIG'' prefix.  _S_i_g_n_a_l  defaults
+                    to TTEERRMM.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This command sends a signal (usually a SIGTERM kill  signal)
+     to  one  or  more processes.  Depending on how the processes
+     have arranged for the signal to be  handled,  the  processes
+     may  exit, enter the debugger, ignore the signal altogether,
+     or execute a handler procedure within the process.   In  the
+     default  case  where  the SIGTERM signal is used, the normal
+     result is for the process to exit.  See  the  ssiiggvveecc  manual
+     page for more details on signal handling.
+
+     Note:  The C-shell (csh) contains a  built-in  command  kkiillll
+     that  behaves almost identically to this command (it doesn't
+     support the --gg or --hheellpp options, but is otherwise the same).
+     If  you  are running the C-shell and type kkiillll, you will get
+     the built-in command:  to get the  program  version,  invoke
+     kkiillll by typing its absolute path name.
+
+
+SSEEEE AALLSSOO
+     sigvec
+
+
+KKEEYYWWOORRDDSS
+     group, kill, process, signal
+
+
+
+
+Sprite v.1.0       Printed:  December 31, 1988                  1
+
+
+

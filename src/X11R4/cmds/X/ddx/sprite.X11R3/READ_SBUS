@@ -1,0 +1,40 @@
+Sbus geographical addressing [PA 26:25]
+----------------------------
+
+00	0x0000000	on board DMA, SCSI, Ethernet
+01	0x2000000	Sbus slot 1
+10	0x4000000	Sbus slot 2
+11	0x6000000	Sbus slot 3
+
+Video subsystem [typ. slot 3]
+---------------
+
+0x000000	ID (4 bytes)
+0x400000	Video and DAC Registers
+0x800000	Frame buffer
+
+Video controller & DAC
+----------------------
+
+0x400000	Video control reg
+0x400001	Video status reg
+0x400002	HBS (horiz blank set)
+0x400003	HBC (horiz blank clear)
+0x400004	HSS (horiz sync set)
+0x400005	HSC0 (horiz sync clear !VS)
+0x400006	HSC1 (horiz sync clear VS)
+0x400007	VBSH (vert blank set high byte)
+0x400008	VBSL (vert blank set low byte)
+0x400009	VBC (vertical blank clear)
+0x40000A	VSS (vertical sync start)
+0x40000B	VSC (vertical sync clear)
+Brooktree Bt458/451
+0x400010	DAC address register
+0x400014	DAC color palette register port
+0x400018	DAC control register port
+0x40001C	DAC overlay palette register port
+
+Frame buffer
+------------
+Can be half populated (4 bits instead of 8), upper four bits are then
+pulled high.

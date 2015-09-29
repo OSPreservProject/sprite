@@ -1,0 +1,239 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    rab:1.1; strict;
+comment  @ * @;
+
+
+1.1
+date     90.09.17.10.51.48;  author rab;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/* vm.c -
+ *
+ *     	This file contains all hardware dependent routines for Sun2's and
+ *	Sun3's.  I will not attempt to explain the Sun mapping hardware in 
+ *	here.  See the Sun2 and Sun3 architecture manuals for details on
+ *	the mapping hardware.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifdef notdef
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/sun2.md/RCS/vmSun.c,v 8.12 89/05/24 07:44:00 rab Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+#include "vmSunConst.h"
+#include "vmMachInt.h"
+#include "vm.h"
+#include "mach.h"
+
+/*
+ * Macros to translate from a virtual page to a physical page and back.
+ */
+#define	VirtToPhysPage(pfNum) ((pfNum) << VMMACH_CLUSTER_SHIFT)
+#define	PhysToVirtPage(pfNum) ((pfNum) >> VMMACH_CLUSTER_SHIFT)
+
+/*
+ * Macro to get a pointer into a software segment's hardware segment table.
+ */
+#define GetHardSegPtr(machPtr, segNum) \
+    ((machPtr)->segTablePtr + (segNum) - (machPtr)->offset)
+
+
+
+/*
+ ----------------------------------------------------------------------
+ *
+ * VmMach_MapInDevice --
+ *
+ *	Map a device at some physical address into kernel virtual address.
+ *	This is for use by the controller initialization routines.
+ *	This routine looks for a free page in the special range of
+ *	kernel virtual that is reserved for this kind of thing and
+ *	sets up the page table so that it references the device.
+ *
+ * Results:
+ *	The kernel virtual address needed to reference the device is returned.
+ *
+ * Side effects:
+ *	The hardware page table is modified.  This may steal another
+ *	page from kernel virtual space, unless a page can be cleverly re-used.
+ *
+ *----------------------------------------------------------------------
+ */
+Address
+VmMach_MapInDevice(devPhysAddr, type)
+    Address	devPhysAddr;	/* Physical address of the device to map in */
+    int		type;		/* Value for the page table entry type field.
+				 * This depends on the address space that
+				 * the devices live in, ie. VME D16 or D32 */
+{
+    Address 		virtAddr;
+    Address		freeVirtAddr = (Address)0;
+    Address		freePMEGAddr = (Address)0;
+    int			page;
+    int			pageFrame;
+    VmMachPTE		pte;
+
+    /*
+     * Get the page frame for the physical device so we can
+     * compare it against existing pte's.
+     */
+    pageFrame = (unsigned)devPhysAddr >> VMMACH_PAGE_SHIFT_INT;
+
+    /*
+     * Spin through the segments and their pages looking for a free
+     * page or a virtual page that is already mapped to the physical page.
+     */
+    virtAddr = (Address)VMMACH_DEV_START_ADDR;
+
+    pte = VMMACH_RESIDENT_BIT | VMMACH_KRW_PROT | pageFrame;
+#ifdef sun3
+    pte |= VMMACH_DONT_CACHE_BIT;
+#endif
+    VmMachSetPageType(pte, type);
+    VmMachSetPageMap(virtAddr, pte);
+	/*
+	 * Return the kernel virtual address used to access it.
+	 */
+	return(virtAddr + ((int)devPhysAddr & VMMACH_OFFSET_MASK_INT));
+}
+
+#define DMAPAGES  (VMMACH_DMA_SIZE / VMMACH_PAGE_SIZE_INT)
+static	Boolean	dmaPageBitMap[DMAPAGES];
+
+
+/*
+ ----------------------------------------------------------------------
+ *
+ * VmMach_DMAAlloc --
+ *
+ *	Allocate a set of virtual pages to a routine for mapping purposes.
+ *	
+ * Results:
+ *	Pointer into kernel virtual address space of where to access the
+ *	memory, or NIL if the request couldn't be satisfied.
+ *
+ * Side effects:
+ *	The hardware page table is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+Address
+VmMach_DMAAlloc(numBytes, srcAddr)
+    int		numBytes;		/* Number of bytes to map in. */
+    Address	srcAddr;	/* Kernel virtual address to start mapping in.*/
+{
+    Address	beginAddr;
+    Address	endAddr;
+    int		numPages;
+    int		i, j;
+    VmMachPTE	pte;
+    Boolean	foundIt = FALSE;
+    int		virtPage;
+    static initialized = FALSE;
+
+     /* calculate number of pages needed */
+						/* beginning of first page */
+    beginAddr = (Address) (((unsigned int)(srcAddr)) & ~VMMACH_OFFSET_MASK_INT);
+						/* begging of last page */
+    endAddr = (Address) ((((unsigned int) srcAddr) + numBytes) &
+	    ~VMMACH_OFFSET_MASK_INT);
+    numPages = (((unsigned int) endAddr) >> VMMACH_PAGE_SHIFT_INT) -
+	    (((unsigned int) beginAddr) >> VMMACH_PAGE_SHIFT_INT) + 1;
+
+    /* see if request can be satisfied */
+    for (i = 0; i < DMAPAGES; i++) {
+	if (dmaPageBitMap[i] == 1) {
+	    continue;
+	}
+	for (j = 1; j < numPages; j++) {
+	    if (dmaPageBitMap[i + j] == 1) {
+		break;
+	    }
+	}
+	if (j == numPages) {
+	    foundIt = TRUE;
+	    break;
+	}
+    }
+    if (!foundIt) {
+	return (Address) NIL;
+    }
+    for (j = 0; j < numPages; j++) {
+	unsigned frame;
+	dmaPageBitMap[i + j] = 1;	/* allocate page */
+	virtPage = ((unsigned int) srcAddr) >> VMMACH_PAGE_SHIFT_INT;
+	pte = VmMachGetPageMap(srcAddr);
+	VmMachSetPageMap(((i + j) * VMMACH_PAGE_SIZE_INT) +
+		VMMACH_DMA_START_ADDR, pte);
+	srcAddr += VMMACH_PAGE_SIZE_INT;
+    }
+    beginAddr = (Address) (VMMACH_DMA_START_ADDR + (i * VMMACH_PAGE_SIZE_INT) +
+	    (((unsigned int) srcAddr) & VMMACH_OFFSET_MASK_INT));
+    return beginAddr;
+}
+
+
+/*
+ ----------------------------------------------------------------------
+ *
+ * VmMach_DMAFree --
+ *
+ *	Free a previously allocated set of virtual pages for a routine that
+ *	used them for mapping purposes.
+ *	
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The hardware page table is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+VmMach_DMAFree(numBytes, mapAddr)
+    int		numBytes;		/* Number of bytes to map in. */
+    Address	mapAddr;	/* Kernel virtual address to unmap.*/
+{
+    Address	beginAddr;
+    Address	endAddr;
+    int		numPages;
+    int		i, j;
+    Boolean	foundIt = FALSE;
+    int		virtPage;
+ 
+    /* calculate number of pages to free */
+						/* beginning of first page */
+    beginAddr = (Address) (((unsigned int) mapAddr) & ~VMMACH_OFFSET_MASK_INT);
+						/* beginning of last page */
+    endAddr = (Address) ((((unsigned int) mapAddr) + numBytes) &
+	    ~VMMACH_OFFSET_MASK_INT);
+    numPages = (((unsigned int) endAddr) >> VMMACH_PAGE_SHIFT_INT) -
+	    (((unsigned int) beginAddr) >> VMMACH_PAGE_SHIFT_INT) + 1;
+
+    i = (((unsigned int) mapAddr) >> VMMACH_PAGE_SHIFT_INT) -
+	(VMMACH_DMA_START_ADDR >> VMMACH_PAGE_SHIFT_INT);
+    for (j = 0; j < numPages; j++) {
+	dmaPageBitMap[i + j] = 0;	/* free page */
+    }
+    return;
+}
+
+@

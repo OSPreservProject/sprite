@@ -1,0 +1,266 @@
+
+
+
+library           Tcl Command Language Library            library
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     library - standard library of Tcl procedures
+
+SSYYNNOOPPSSIISS
+     aauuttoo__eexxeeccookk _c_m_d                                               |
+     aauuttoo__llooaadd _c_m_d                                                 |
+     aauuttoo__mmkkiinnddeexx _d_i_r _p_a_t_t_e_r_n                                      |
+     aauuttoo__rreesseett                                                    |
+     ppaarrrraayy _a_r_r_a_y_N_a_m_e                                              |
+     uunnkknnoowwnn _c_m_d ?_a_r_g _a_r_g ...?                                     |
+
+_________________________________________________________________  |
+
+
+IINNTTRROODDUUCCTTIIOONN                                                       |
+     Tcl includes a library of Tcl procedures for commonly-needed  |
+     functions.   The  procedures  defined in the Tcl library are  |
+     generic ones suitable for use  by  many  different  applica-  |
+     tions.   The  location of the Tcl library is returned by the  |
+     iinnffoo lliibbrraarryy command.  In addition to the Tcl library,  each  |
+     application  will  normally  have its own library of support  |
+     procedures as well;  the location of this  library  is  nor-  |
+     mally given by the value of the $$aappppLLiibbrraarryy global variable.  |
+
+     To access the procedures in the Tcl library, an  application  |
+     should  source the file iinniitt..ttccll in the library, for example  |
+     with the Tcl command                                          |
+
+          ssoouurrccee [[iinnffoo lliibbrraarryy]]//iinniitt..ttccll                           |
+     This will define the uunnkknnoowwnn procedure and arrange  for  the  |
+     other  procedures to be loaded on-demand using the auto-load  |
+     mechanism defined below.                                      |
+
+
+CCOOMMMMAANNDD PPRROOCCEEDDUURREESS                                                 |
+     The following procedures are provided in the Tcl library:     |
+
+     aauuttoo__eexxeeccookk _c_m_d                                                    ||
+          Determines  whether  there is an executable file by the  |
+          name _c_m_d.  This command examines the directories in the  |
+          current  search  path  (given  by  the PATH enviornment  |
+          variable) to see if there is an executable  file  named  |
+          _c_m_d  in any of those directories.  If so, it returns 1;  |
+          if not it returns 0.  AAuuttoo__eexxeecc  remembers  information  |
+          about  previous  searches in an array named aauuttoo__eexxeeccss;  |
+          this avoids the path search in  future  calls  for  the  |
+          same  _c_m_d.  The command aauuttoo__rreesseett may be used to force  |
+          aauuttoo__eexxeeccookk to forget its cached information.            |
+
+     aauuttoo__llooaadd _c_m_d                                                      ||
+          This  command attempts to load the definition for a Tcl  |
+          procedure named _c_m_d.  To do this, it searches an  _a_u_t_o-  |
+
+
+
+Sprite v.1.0       Printed:  February 25, 1992                  1
+
+
+
+
+
+
+library           Tcl Command Language Library            library
+
+
+
+          _l_o_a_d  _p_a_t_h, which is a list of one or more directories.  |
+          The auto-load path is  given  by  the  global  variable  |
+          $$aauuttoo__ppaatthh  if  it  exists.   If there is no $$aauuttoo__ppaatthh  |
+          variable, then the TCLLIBPATH environment  variable  is  |
+          used,  if it exists.  Otherwise the auto-load path con-  |
+          sists of just the Tcl library directory.   Within  each  |
+          directory  in  the  auto-load path there must be a file  |
+          ttccllIInnddeexx that describes the procedures defined in  that  |
+          directory  and  the  file  in  which  each procedure is  |
+          defined.  The ttccllIInnddeexx file should  be  generated  with  |
+          the  aauuttoo__mmkkiinnddeexx command.  If _c_m_d is found in an index  |
+          file, then the appropriate script is ssoouurrcceed to  create  |
+          the  procedure.  The aauuttoo__llooaadd command returns 1 if the  |
+          script was successfully sourced  and  _c_m_d  now  exists.  |
+          The  command  returns 0 if there was no index entry for  |
+          _c_m_d or if the script didn't actually define  _c_m_d  (e.g.  |
+          because index information is out of date).  If an error  |
+          occurs while processing the script, then that error  is  |
+          returned.   AAuuttoo__llooaadd  only reads the index information  |
+          once and saves it  in  the  array  aauuttoo__iinnddeexx;   future  |
+          calls  to  aauuttoo__llooaadd  check for _c_m_d in the array rather  |
+          than re-reading the  index  files.   The  cached  index  |
+          information may be deleted with the command aauuttoo__rreesseett.  |
+          This will force the next aauuttoo__llooaadd  command  to  reload  |
+          the index database from disk.                            |
+
+     aauuttoo__mmkkiinnddeexx _d_i_r _p_a_t_t_e_r_n                                           ||
+          Generates  an index suitable for use by aauuttoo__llooaadd.  The  |
+          command searches _d_i_r for all files  whose  names  match  |
+          _p_a_t_t_e_r_n  (matching is done with the gglloobb command), gen-  |
+          erates an index  of  all  the  Tcl  command  procedures  |
+          defined in all the matching files, and stores the index  |
+          information in a file named ttccllIInnddeexx in _d_i_r.  For exam-  |
+          ple, the command                                         |
+
+               aauuttoo__mmkkiinnddeexx ffoooo **..ttccll                              |
+
+          will read all the ..ttccll files in  subdirectory  ffoooo  and  |
+          generate a new index file ffoooo//ttccllIInnddeexx.                  |
+
+          AAuuttoo__mmkkiinnddeexx parses the Tcl  scripts  in  a  relatively  |
+          unsophisticated  way:   if  any  line contains the word  |
+          pprroocc as its first characters then it is assumed to be a  |
+          procedure  definition  and the next word of the line is  |
+          taken as the procedure's name.   Procedure  definitions  |
+          that  don't  appear  in this way (e.g. they have spaces  |
+          before the pprroocc) will not be indexed.                    |
+
+     aauuttoo__rreesseett                                                         ||
+          Destroys  all the information cached by aauuttoo__eexxeeccookk and  |
+          aauuttoo__llooaadd.  This information will be re-read from  disk  |
+          the next time it is needed.                              |
+
+
+
+Sprite v.1.0       Printed:  February 25, 1992                  2
+
+
+
+
+
+
+library           Tcl Command Language Library            library
+
+
+
+     ppaarrrraayy _a_r_r_a_y_N_a_m_e                                                   ||
+          Prints  on  standard output the names and values of all  |
+          the elements in the array _a_r_r_a_y_N_a_m_e.  AArrrraayyNNaammee must be  |
+          a global array.                                          |
+
+     uunnkknnoowwnn _c_m_d ?_a_r_g _a_r_g ...?                                          ||
+          This  procedure  is  invoked  automatically  by the Tcl  |
+          interpreter whenever the  name  of  a  command  doesn't  |
+          exist.  The uunnkknnoowwnn procedure receives as its arguments  |
+          the name and arguments of the missing command.  UUnnkknnoowwnn  |
+          first  calls aauuttoo__llooaadd to load a procedure for the com-  |
+          mand.  If this succeeds, then it executes the  original  |
+          command  with its original arguments.  If the auto-load  |
+          fails then uunnkknnoowwnn calls aauuttoo__eexxeeccookk to see if there is  |
+          an  executable file by the name _c_m_d.  If so, it invokes  |
+          the Tcl eexxeecc command with _c_m_d and all the _a_r_g_s as argu-  |
+          ments.   If  _c_m_d can't be auto-executed, uunnkknnoowwnn checks  |
+          to see if _c_m_d is a unique abbreviation for an  existing  |
+          Tcl  command.   If  so, it expands the command name and  |
+          executes  the  command  with  the  original  arguments.  |
+          Finally,  if none of the above efforts has been able to  |
+          execute the command, uunnkknnoowwnn generates an error return.  |
+          If the global variable aauuttoo__nnoollooaadd is defined, then the  |
+          auto-load step is  skipped.   If  the  global  variable  |
+          aauuttoo__nnooeexxeecc  is  defined  then  the  auto-exec  step is  |
+          skipped.  Under normal circumstances the  return  value  |
+          from  uunnkknnoowwnn is the return value from the command that  |
+          was eventually executed.                                 |
+
+
+VVAARRIIAABBLLEESS                                                          |
+     The following global variables are defined or  used  by  the  |
+     procedures in the Tcl library:                                |
+
+     aauuttoo__eexxeeccss                                                         ||
+          Used by aauuttoo__eexxeeccookk to record information about whether  |
+          particular commands exist as executable files.           |
+
+     aauuttoo__iinnddeexx                                                         ||
+          Used  by  aauuttoo__llooaadd  to save the index information read  |
+          from disk.                                               |
+
+     aauuttoo__nnooeexxeecc                                                        ||
+          If  set  to any value, then uunnkknnoowwnn will not attempt to  |
+          auto-exec any commands.                                  |
+
+     aauuttoo__nnoollooaadd                                                        ||
+          If  set  to any value, then uunnkknnoowwnn will not attempt to  |
+          auto-load any commands.                                  |
+
+     aauuttoo__ppaatthh                                                          ||
+          If  set,  then  it must contain a valid Tcl list giving  |
+
+
+
+Sprite v.1.0       Printed:  February 25, 1992                  3
+
+
+
+
+
+
+library           Tcl Command Language Library            library
+
+
+
+          directories to search during auto-load operations.       |
+
+     eennvv((TTCCLLLLIIBBPPAATTHH))                                                    ||
+          If  set,  then  it must contain a valid Tcl list giving  |
+          directories  to  search  during  auto-load  operations.  |
+          This variable is only used if aauuttoo__ppaatthh is not defined.  |
+
+     uunnkknnoowwnn__aaccttiivvee                                                     ||
+          This  variable is set by uunnkknnoowwnn to indicate that it is  |
+          active.  It is used  to  detect  errors  where  uunnkknnoowwnn  |
+          recurses  on  itself infinitely.  The variable is unset  |
+          before uunnkknnoowwnn returns.                                  |
+
+
+KKEEYYWWOORRDDSS                                                           |
+     auto-exec, auto-load, library, unknown
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  February 25, 1992                  4
+
+
+

@@ -1,0 +1,219 @@
+head     1.8;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.8
+date     89.10.25.18.06.49;  author tve;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     89.10.23.17.44.32;  author tve;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.10.04.19.18.06;  author tve;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.09.09.18.00.23;  author ouster;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     87.11.01.20.21.12;  author deboor;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     87.06.23.13.36.06;  author deboor;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     87.06.13.11.27.50;  author deboor;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     87.06.11.17.47.22;  author deboor;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Initialization function
+@
+
+
+1.8
+log
+@added color database code
+@
+text
+@/*-
+ * osinit.c --
+ *	Initialization!
+ *
+ * Copyright (c) 1987 by the Regents of the University of California
+ *
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ */
+#ifndef lint
+static char rcsid[] =
+"$Header: /mic/X11R3/src/cmds/Xsp/os/sprite/RCS/osinit.c,v 1.7 89/10/23 17:44:32 tve Exp $ SPRITE (Berkeley)";
+#endif lint
+
+#include    "spriteos.h"
+#include    "opaque.h"
+#include    <dbm.h>
+#include    <bit.h>
+
+/*-
+ *-----------------------------------------------------------------------
+ * OsInit --
+ *	Initialize this module. Not much to do...
+ *
+ * Results:
+ *
+ * Side Effects:
+ *
+ *-----------------------------------------------------------------------
+ */
+OsInit()
+{
+    static havergb = 0;
+
+    GrabDone = FALSE;
+    List_Init(&allStreams);
+    if (ClientsWithInputMask != (int *)0) {
+	/*
+	 * On Reset, all the clients and devices should have gone away,
+	 * but that could still leave something bogus in the
+	 * ClientsWithInputMask...
+	 */
+	Bit_Zero (NumActiveStreams, ClientsWithInputMask);
+    }
+
+    if(!havergb)
+        if(dbminit (rgbPath) == 0)
+	    havergb = 1;
+        else
+	    ErrorF( "Couldn't open RGB_DB '%s'\n", rgbPath );
+}
+@
+
+
+1.7
+log
+@changes for X11R3
+@
+text
+@d19 1
+a19 1
+"$Header: /mic/X11R3/src/cmds/Xsprite/os/sprite/RCS/osinit.c,v 1.6 89/10/04 19:18:06 tve Exp Locker: tve $ SPRITE (Berkeley)";
+d23 2
+d40 2
+d52 6
+@
+
+
+1.6
+log
+@init allStreams in OsInit function
+@
+text
+@d19 1
+a19 1
+"$Header: osinit.c,v 1.5 88/09/09 18:00:23 ouster Exp $ SPRITE (Berkeley)";
+d39 1
+a39 1
+    List_Init(allStreams);
+@
+
+
+1.5
+log
+@Include bit.h.
+@
+text
+@d19 1
+a19 1
+"$Header: osinit.c,v 1.4 87/11/01 20:21:12 deboor Exp $ SPRITE (Berkeley)";
+d39 1
+@
+
+
+1.4
+log
+@Added clear out of ClientsWithInputMask and nuked stuff for allStreams
+list (used only by pdev.c)
+@
+text
+@d19 1
+a19 1
+"$Header: osinit.c,v 1.3 87/06/23 13:36:06 deboor Exp $ SPRITE (Berkeley)";
+d23 1
+@
+
+
+1.3
+log
+@Added initialization of the allStreams list.
+@
+text
+@a5 1
+ * Copyright (c) 1987 by Adam de Boor, UC Berkeley
+d19 1
+a19 1
+"$Header: osinit.c,v 1.2 87/06/13 11:27:50 deboor Exp $ SPRITE (Berkeley)";
+a36 2
+    extern void ConnectionClosed(); /* In connect.c */
+
+d38 7
+a44 2
+    if (allStreams != (Lst) 0) {
+	Lst_Destroy (allStreams, ConnectionClosed);
+a45 1
+    allStreams = Lst_Init (FALSE);
+@
+
+
+1.2
+log
+@Added reinitialization of GrabDone, just in case.
+@
+text
+@d20 1
+a20 1
+"$Header: osinit.c,v 1.1 87/06/11 17:47:22 deboor Exp $ SPRITE (Berkeley)";
+d38 2
+d41 4
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d20 1
+a20 1
+"$Header$ SPRITE (Berkeley)";
+d23 2
+d38 1
+@

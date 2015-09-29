@@ -1,0 +1,172 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @# @;
+
+
+1.5
+date     92.06.04.13.30.52;  author jhh;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.12.19.18.09.30;  author jhh;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.12.13.13.34.46;  author jhh;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.03.16.11.45.38;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.03.16.11.45.03;  author rab;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.5
+log
+@pathname needed to be in quotes
+@
+text
+@#!/bin/csh -f  
+
+onintr cleanup
+
+if ($#argv != 1) then
+    echo "Usage: $0 versionNumber"
+    exit
+endif
+set insDir = '/sprite/src/kernel/Snapshots'
+set srcDir = '/sprite/src/kernel'
+set version = $1
+if (-e "$insDir/$version/.ssdone") then
+    echo "$insDir/$version already exists. Skipping snapshot of sources."
+    exit
+endif
+pushd $srcDir
+pmake SNAPDIR=$insDir SNAPVERSION=$version snapshot
+popd
+
+mkdir $insDir/$version/include
+update /sprite/lib/include $insDir/$version/include
+pushd $insDir/$version/include
+rm user
+rm kernel
+ln -s ../Include kernel
+foreach i (*.md)
+    pushd $i
+    rm kernel
+    ln -s ../../Include/$i kernel
+    popd
+end
+popd
+
+mkdir $insDir/$version/Include
+update /sprite/src/kernel/Include $insDir/$version/Include
+pushd $insDir/$version/Include
+rm user
+ln -s ../include user
+foreach i (*.md)
+    pushd $i
+    rm user
+    ln -s ../../include/$i user
+    popd
+end
+popd
+
+touch $insDir/$version/.ssdone
+echo "***** KERNEL $version" `date` "*****" >> /sprite/src/kernel/scvs.log
+
+cleanup:
+    rm -f /tmp/ss.$$
+    rm -f /tmp/ss.libc.$$
+    rm -f /tmp/ss.script.$$
+
+@
+
+
+1.4
+log
+@puts a note in scvs.log when a snapshot is made
+@
+text
+@d12 1
+a12 1
+if (-e $insDir/$version/.ssdone) then
+@
+
+
+1.3
+log
+@uses pmake support for snapshots
+@
+text
+@a15 1
+
+d48 1
+@
+
+
+1.2
+log
+@Added raid.null to list of modules to be snapshoted.
+@
+text
+@d2 3
+d9 2
+a10 1
+set insDir = '/sprite/src/kernel/Installed'
+d12 1
+a12 1
+if (-e $insDir/$version) then
+d17 3
+a19 23
+mkdir $insDir/$version
+foreach i (`cat /sprite/src/kernel/Modules` raid.null)
+    mkdir $insDir/$version/$i
+    switch ($i)
+        #
+	# The following modules should have the target of a symbolic link
+	# copied, not the link itself
+	#
+	case 'libc'
+	    set updateOptions = $updateOptions '-l'
+	    breaksw
+	default
+	    set updateOptions = ""
+	    breaksw
+    endsw
+    update $updateOptions $insDir/$i $insDir/$version/$i
+end
+
+#
+# Snapshot the kernel and user include files.  We have to change the
+# 'kernel' and 'user' links, since they are absolute in the 
+# uninstalled sources.
+#
+d48 6
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d14 1
+a14 1
+foreach i (`cat /sprite/src/kernel/Modules`)
+@

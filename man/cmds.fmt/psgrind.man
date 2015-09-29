@@ -1,0 +1,264 @@
+
+
+
+PSGRIND                   User Commands                   PSGRIND
+
+
+
+NNAAMMEE
+     psgrind - convert C source files to POSTSCRIPT format for
+     printing
+
+SSYYNNOOPPSSIISS
+     ppssggrriinndd [ _o_p_t_i_o_n_s ] [ _f_i_l_e_s ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _p_s_g_r_i_n_d reads in C source files, converts them to POSTSCRIPT
+     format, and spools them for printing on a POSTSCRIPT
+     printer.  The different fonts used for the different syntac-
+     tic elements of C source code may be specified on the com-
+     mand line.  _P_s_g_r_i_n_d is also much faster than any other grind
+     program since it outputs a direct printer language without
+     going through a normal document formatter as other pretty
+     source printers must.
+
+     The five syntactic categories that _p_s_g_r_i_n_d recognizes and
+     displays in different ways are page headings (which are
+     actually not part of the C source code), the ``body'' or
+     main text, keywords, which are C reserved words, literal
+     strings and comments.  Normally, the heading and keywords
+     are set in a bold Helvetica font, the comments in a slanted
+     Helvetica font, the body in a normal Helvetica font and
+     literal strings and character constants in Courier font.
+
+     All the above fonts may be changed, see the --HH, --BB, --KK, --LL
+     and --CC options.  All these options take as their argument a
+     font specfication.  These font specifications have two
+     parts: A font name as known to POSTSCRIPT (e.g., Times-
+     Roman, Times-BoldItalic, Helvetica, Courier), and a point
+     size (1 point = 1/72 inch-8 point is a good small font).  So
+     ``Courier-Bold8'' is 8 point Courier Bold, ``Helvetica12''
+     is 12 point Helvetica.
+
+     The environment variable PSGRIND may be used to specify
+     defaults.  The value of PSGRIND is parsed as a string of
+     arguments _b_e_f_o_r_e the arguments that appear on the command
+     line.  For example setting the environment variable PSGRIND
+     to the string ``-B Times-Roman12'' sets your default body
+     font to 12 point Times Roman.
+
+     The possible options are:
+
+     --22   Sets two column mode.
+
+     --11   Force one column mode.
+
+     --gg   Causes the fact that a file is garbage to be ignored.
+          Normally, any file with more than a small number of
+          non-printing characters is suspected of being garbage,
+          and not printed-this option means ``print it anyway.''
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+PSGRIND                   User Commands                   PSGRIND
+
+
+
+     --oo   If _p_s_g_r_i_n_d cannot find characters in a font, the miss-
+          ing characters are listed.
+
+     --pp _f_i_l_e
+          Causes the POSTSCRIPT file to be written to the named
+          file rather than being spooled for printing.  As a spe-
+          cial case, --pp -- will send the POSTSCRIPT to the stan-
+          dard output.
+
+     --rr   Causes the output to be rotated 90 degrees on the page
+          (landscape mode).  This is good for output that
+          requires a wide page or for program listings when used
+          in conjunction with two column mode.  ``psgrind -2r
+          _f_i_l_e_s'' is a nice way to get program listings.
+
+     --RR   Force portrait (non-rotated) mode.
+
+     --kk   Enable page prefeed (if the printer supports it).  This
+          allows simple documents (e.g., program listings in one
+          font) to print somewhat faster by keeping the printer
+          running between pages.
+
+     --ss _p_a_g_e_s_p_e_c
+          Allows you to specify a range (or several ranges) of
+          pages to be printed.  _P_a_g_e_s_p_e_c is a string, not con-
+          taining spaces, of the form ``pagerange[,pagespec]''.
+          _P_a_g_e_r_a_n_g_e may be a single page number or a range of the
+          form ``N-M'' which means print pages N through M.  -N
+          means print from the beginning of the docment to page
+          N. M- means print from page M to the end of the docu-
+          ment.
+
+     --HH _f_o_n_t
+          This allows the respecification of the font used to
+          print running titles listing the source file name and
+          current page number.  The option argument to --HH, and
+          the other font options, should be a font specification
+          as described above.
+
+     --BB _f_o_n_t
+          This allows one to respecify the font to be used for
+          the main body of the source, that not set specially in
+          another font.
+
+     --KK _f_o_n_t
+          This option allows the respecification of the font used
+          to show keywords as separate from normal body text.
+
+     --LL _f_o_n_t
+          This option allows the respecification of the font used
+          to show string and character constants (literals)
+          separate from normal body text.
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+PSGRIND                   User Commands                   PSGRIND
+
+
+
+     --CC _f_o_n_t
+          This option respecifies the font used to print comment
+          text to show its separateness from normal text.
+
+     The following options are passed on as is to _l_p_r.
+
+     --PP_p_r_i_n_t_e_r
+          Causes the output to be sent to the named printer.
+
+     --##_n  Causes n copies of the output to be produced.  The
+          default is one.
+
+     --mm   Causes the printer daemon to send mail upon job comple-
+          tion.
+
+     --hh   Suppress the printing of the burst page.
+
+     --JJ _n_a_m_e
+          Set the job name for use on the burst page.  Otherwise,
+          the name of the first input file will be used.
+
+EENNVVIIRROONNMMEENNTT
+     PSGRIND
+          string of options to be used by _p_s_g_r_i_n_d.
+
+     METRICS
+          path name of a directory to use instead of /usr/lib/ps
+          for font metric files.
+
+     PRINTER
+          the name of a printer (as in the --PP option) for _l_p_r to
+          use.  If no --PP option is specified, _l_p_r will use this
+          printer.  If --PP is not specified and PRINTER is not
+          defined in the environment, _p_s_g_r_i_n_d will spool to a
+          printer named ``PostScript''.
+
+FFIILLEESS
+     /usr/local/lib/ps/*.afm
+                           font metrics files.
+
+     /usr/local/lib/ps/psgrind.pro
+                           prologue for _p_s_g_r_i_n_d POSTSCRIPT files.
+
+     lpr                   Printer spooler
+
+SSEEEE AALLSSOO
+     enscript(1), lpr(1)
+
+AAUUTTHHOORR
+     John Coker,
+     University of California, Berkeley
+     This code is based on the _e_n_s_c_r_i_p_t utility from Adobe
+
+
+
+Sprite v1.0                                                     3
+
+
+
+
+
+
+PSGRIND                   User Commands                   PSGRIND
+
+
+
+     Systems, Inc.
+
+BBUUGGSS
+     If you give the --pp argument after the file to be converted,
+     _p_s_g_r_i_n_d will lie and tell you that the file has been put in
+     the right place, when in fact it is in some obscure tem-
+     porary file.  Always give the --pp argument first.
+
+     Long lines are not truncated in 2 column mode.  Line trunca-
+     tion may be off by a little bit as printer margins vary.
+     There should be a ``wrap'' option and multiple (truncated or
+     wrapped) columns.
+
+     _P_s_g_r_i_n_d generates temporary files which are spooled for
+     printing.  The temporary file names are used by the spooling
+     software (e.g., _l_p_q), rather than the symbolic job name
+     passed to _l_p_r.
+
+NNOOTTEESS
+     POSTSCRIPT is a trademark of Adobe Systems, Incorporated.
+     Times is a trademark of Allied Corporation.
+     Helvetica is a registered trademark of Allied Corporation.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     4
+
+
+

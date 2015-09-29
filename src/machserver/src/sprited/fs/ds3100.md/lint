@@ -1,0 +1,27 @@
+ds3100.md/fsMach.c:
+fsInit.c:
+fsNameOps.c:
+fsOpTable.c:
+fsSelect.c:
+fsSysCall.c:
+fsAttributes.c:
+fsCommand.c:
+fsPageOps.c:
+fsStreamOps.c:
+fsTopStream.c:
+fsTopMigrate.c:
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(452)  ::  fsInit.c(544)
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(452)  ::  fsInit.c(545)
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(452)  ::  fsInit.c(571)
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(452)  ::  fsSysCall.c(1277)
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(452)  ::  fsSysCall.c(1293)
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(452)  ::  fsCommand.c 2(107)
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(452)  ::  fsCommand.c 2(108)
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(452)  ::  fsPageOps.c 2(233)
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(452)  ::  fsTopStream.c 2(181)
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(452)  ::  fsTopStream.c 2(182)
+Sig_Send returns value which is always ignored
+Fsutil_TraceInit returns value which is always ignored
+Fspdev_TraceInit returns value which is always ignored
+Fs_Close returns value which is sometimes ignored
+Timer_DescheduleRoutine returns value which is always ignored

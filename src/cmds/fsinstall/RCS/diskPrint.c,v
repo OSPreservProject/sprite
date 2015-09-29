@@ -1,0 +1,235 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     90.01.31.13.54.13;  author shirriff;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@File as of 1-31-90, before replaced by symbolic link.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/* 
+ * diskPrint.c --
+ *
+ *	Routines to print out data structures found on the disk.
+ *
+ * Copyright (C) 1987 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/disk/RCS/diskPrint.c,v 1.3 89/09/25 12:32:37 jhh Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <stdio.h> 
+#include "diskUtils.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_PrintDomainHeader --
+ *
+ *	Print out the domain header.  Used in testing.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Disk_PrintDomainHeader(headerPtr)
+    register Fsdm_DomainHeader *headerPtr;/* Reference to domain header to print*/
+{
+    register Fsdm_Geometry *geoPtr;
+    register int	index;
+
+    printf("Domain Header <%x>\n", headerPtr->magic);
+    printf("First Cyl %d, num Cyls %d", headerPtr->firstCylinder,
+		    headerPtr->numCylinders);
+    printf(", raw size %d kbytes\n", headerPtr->numCylinders *
+		headerPtr->geometry.sectorsPerTrack *
+		headerPtr->geometry.numHeads / 2);
+    printf("%-20s %10s %10s\n", "", "offset", "blocks");
+    printf("%-20s %10d %10d\n", "FD Bitmap", headerPtr->fdBitmapOffset,
+		    headerPtr->fdBitmapBlocks);
+    printf("%-20s %10d %10d %10d\n", "File Desc", headerPtr->fileDescOffset,
+		    headerPtr->numFileDesc/FSDM_FILE_DESC_PER_BLOCK,
+		    headerPtr->numFileDesc);
+    printf("%-20s %10d %10d\n", "Bitmap", headerPtr->bitmapOffset,
+		    headerPtr->bitmapBlocks);
+    printf("%-20s %10d %10d\n", "Data Blocks", headerPtr->dataOffset,
+		    headerPtr->dataBlocks);
+    geoPtr = &headerPtr->geometry;
+    printf("Geometry\n");
+    printf("sectorsPerTrack %d, numHeads %d\n", geoPtr->sectorsPerTrack,
+			      geoPtr->numHeads);
+    printf("blocksPerRotSet %d, tracksPerRotSet %d\n",
+			   geoPtr->blocksPerRotSet, geoPtr->tracksPerRotSet);
+    printf("rotSetsPerCyl %d, blocksPerCylinder %d\n",
+			   geoPtr->rotSetsPerCyl, geoPtr->blocksPerCylinder);
+    printf("Offset	(Sorted)\n");
+    for (index = 0 ; index < geoPtr->blocksPerRotSet ; index++) {
+	printf("%8d %8d\n", geoPtr->blockOffset[index],
+		       geoPtr->sortedOffsets[index]);
+    }
+
+    printf(">> %d files, %d kbytes\n", headerPtr->numFileDesc,
+		headerPtr->dataBlocks * 4);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_PrintSummaryInfo --
+ *
+ *	Print out the summary information.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Disk_PrintSummaryInfo(summaryPtr)
+    register Fsdm_SummaryInfo *summaryPtr; /* Reference to summary info to print */
+{
+    printf("\"%s\"\t%d Kbytes free, %d file descriptors free\n",
+	    summaryPtr->domainPrefix, summaryPtr->numFreeKbytes,
+	    summaryPtr->numFreeFileDesc);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_PrintFileDescBitmap --
+ *
+ *	Print out the file descriptor bitmap.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Disk_PrintFileDescBitmap(headerPtr, bitmap)
+    Fsdm_DomainHeader	*headerPtr;	/* Pointer to disk header info. */
+    char		*bitmap;	/* Pointer to file desc bit map. */
+{
+    register int index;
+
+    printf("File Descriptor bitmap\n");
+    for (index = 0;
+	 index < headerPtr->fdBitmapBlocks * FS_BLOCK_SIZE;) {
+	if ((index % 32) == 0) {
+	    printf("%6d ", index * BITS_PER_BYTE);
+	    if (index * BITS_PER_BYTE > headerPtr->numFileDesc) {
+		printf(" (The rest of the map is not used)\n");
+		break;
+	    }
+	}
+	printf("%02x", bitmap[index] & 0xff);
+	index++;
+	if ((index % 32) == 0) {
+	    printf("\n");
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_PrintDataBlockBitmap --
+ *
+ *	Print out the data block bitmap.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Disk_PrintDataBlockBitmap(headerPtr, bitmap)
+    Fsdm_DomainHeader	*headerPtr;	/* Ptr to disk header info. */
+    char		*bitmap;	/* Ptr to data block bit map. */
+{
+    register int index;
+
+    printf("Data block bitmap:\n");
+    for (index = 0;
+	 index < headerPtr->bitmapBlocks * FS_BLOCK_SIZE;) {
+	if ((index % 32) == 0) {
+	    printf("%6d ", index * BITS_PER_BYTE);
+	    if (index * BITS_PER_BYTE >
+		headerPtr->dataBlocks * DISK_KBYTES_PER_BLOCK) {
+		printf(" (The rest of the bitmap is not used)\n");
+		break;
+	    }
+	}
+	printf("%02x", bitmap[index] & 0xff);
+	index++;
+	if ((index % 32) == 0) {
+	    printf("\n");
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_PrintDirEntry --
+ *
+ *	Print out one directory entry
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Disk_PrintDirEntry(dirEntryPtr)
+    Fslcl_DirEntry *dirEntryPtr;	/* Ptr to directory entry. */
+{
+    printf("\"%-15s\", File Number = %d, Rec Len = %d, Name Len = %d\n",
+		   dirEntryPtr->fileName, dirEntryPtr->fileNumber,
+		   dirEntryPtr->recordLength, dirEntryPtr->nameLength);
+}
+
+@

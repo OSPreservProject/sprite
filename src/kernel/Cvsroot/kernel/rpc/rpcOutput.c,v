@@ -1,0 +1,1281 @@
+head     9.8;
+branch   ;
+access   ;
+symbols  ds3100:9.7 sun3:9.7 sun4nw:9.4 symm:9.4 spur:9.4 sprited:9.4.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.8
+date     92.12.13.18.21.34;  author mgbaker;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     92.08.10.22.59.03;  author mgbaker;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     92.06.03.17.27.54;  author jhh;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     92.04.14.17.04.30;  author jhh;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.11.05.21.24.59;  author jhh;  state Exp;
+branches 9.4.1.1;
+next     9.3;
+
+9.3
+date     90.10.09.11.57.15;  author jhh;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.10.02.16.29.48;  author mgbaker;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.09.11.11.35.20;  author mgbaker;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.17.24;  author douglis;  state Stable;
+branches ;
+next     8.5;
+
+8.5
+date     89.08.17.17.29.49;  author jhh;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.06.05.12.32.51;  author brent;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.06.02.12.57.10;  author mendel;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.02.01.12.57.52;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.22.19.34.47;  author jhh;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.34.28;  author douglis;  state Stable;
+branches ;
+next     6.5;
+
+6.5
+date     88.10.28.19.24.21;  author mlgray;  state Exp;
+branches ;
+next     6.4;
+
+6.4
+date     88.10.17.16.59.37;  author mendel;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.10.07.14.54.23;  author mlgray;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.29.14.29.10;  author mlgray;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.26.18.26.43;  author mlgray;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.24.23;  author brent;  state Stable;
+branches ;
+next     5.6;
+
+5.6
+date     88.08.04.17.52.05;  author mlgray;  state Exp;
+branches ;
+next     5.5;
+
+5.5
+date     88.08.01.17.11.33;  author mlgray;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     88.07.08.13.22.49;  author douglis;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     88.06.16.20.49.51;  author brent;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     88.05.10.14.07.25;  author brent;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.10.13.10.57.36;  author brent;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.09.09.10.33.50;  author brent;  state Exp;
+branches ;
+next     ;
+
+9.4.1.1
+date     91.10.22.14.41.03;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@First Sprite native copy
+@
+
+
+9.8
+log
+@Code for server-driven recovery.
+@
+text
+@/*
+ * rpcOutput.c --
+ *
+ *	The output routine for the RPC system.  Large packets are
+ *	fragmented upon ouput here.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/rpc/rpcOutput.c,v 9.7 92/08/10 22:59:03 mgbaker Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+
+#include <sprite.h>
+#include <mach.h>
+#include <rpc.h>
+#include <rpcInt.h>
+#include <rpcTrace.h>
+#include <net.h>
+#include <proc.h>
+#include <sync.h>
+#include <status.h>
+#include <dbg.h>
+#include <fsio.h>
+#include <fsrecov.h>
+#include <stdio.h>
+#include <recov.h>
+
+/*
+ * A delay variable that represents our preferred inter-fragment delay.
+ * This is told to other machines by including it in the RPC header.
+ * They use it to set the delay between packets in a fragmented send.
+ */
+unsigned	short rpcMyDelay;
+unsigned	short rpcOutputRate;
+short	rpcDelay[NET_NUM_SPRITE_HOSTS];
+
+short rpcLastDelay;
+
+#ifdef PRINT_PACKETS
+Boolean rpcDumpPackets = FALSE;
+#endif /* PRINT_PACKETS */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcOutput --
+ *
+ *      Send a message to the host specified by spriteID.  Packets over a
+ *      certain size are fragmented by this routine into several datagrams
+ *      and reassembled by the dispatch routine of the receiver.  Our
+ *      caller has to pass in an array of buffer specifications that this
+ *      routine uses if it has to fragment the message.  The RPC header
+ *      and the dontSendMask are also used in conjuction with fragmented
+ *      packets.
+ *      Master Lock note: This routine may busy wait for a few hundred
+ *      microseconds in between sending successive packets of a large
+ *      message.  This delay is defeated if there is a Master Lock held.
+ *      *mutexPtr, if non-NIL, is released during this delay, and then
+ *      reaquired.  (This is done because the DMA ethernet driver needs an
+ *      interrupt serviced after each packet output.  Things work without
+ *      enabling interrupts, but the packets get queued for output until
+ *      after the caller of RpcOutput releases the MasterLock.  This
+ *      causes one big delay between the 1rst and 2nd packet, and no delay
+ *      between ones after that.)
+ *
+ * Results:
+ *	SUCCESS on non-fragmented sends, or an error code related
+ *	to fragmenting.
+ *
+ * Side effects:
+ *	Call the ethernet output routine and trace.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+RpcOutput(spriteID, rpcHdrPtr, message, fragment, dontSendMask, mutexPtr)
+    int			spriteID;	/* Destination host */
+    register RpcHdr	*rpcHdrPtr;	/* The RPC header. */
+    RpcBufferSet	*message;	/* A set of 4 scatter/gather vector
+					 * elements that specify where the proto
+					 * header, RPC header, parameters, 
+					 * and data are. */
+    RpcBufferSet	*fragment;	/* An array of buffer sets used if
+					 * the message needs to be
+					 * fragmented.  This needs to be
+					 * previously set up so that the
+					 * first buffer references valid
+					 * storage for an RPC header. */
+    unsigned int	dontSendMask;	/* For fragmenting.  Bits set in this
+					 * mask suppress sending of the
+					 * corresponding fragment.  A good
+					 * value for this is returned in
+					 * partial acknowlegment messages */
+    Sync_Semaphore	*mutexPtr;	/* This mutex is released while we
+					 * output the message.  If NIL, no
+					 * mutex is released.  This is done
+					 * in honor of DMA interfaces that
+					 * interrupt after they output a packet.
+					 */
+{
+    Net_Route		*routePtr;
+    ReturnStatus	status;
+#ifdef PRINT_PACKETS
+    if (rpcDumpPackets) {
+	register unsigned short *shortPtr;
+	register int i;
+
+	printf("RpcOutput - Raw packet at %x:\n", rpcHdrPtr);
+	shortPtr = (unsigned short *)rpcHdrPtr;
+	for (i=0 ; i<sizeof(RpcHdr)/2 ; i++) {
+	    printf("%x ", *shortPtr);
+	    shortPtr++;
+	    if (((i+1)%8) == 0) {
+		printf("\n");
+	    }
+	}
+	printf("\n");
+
+	printf("RpcOutput - buffer set:\n");
+	printf("%x %x\n", message->rpcHdrBuffer.bufAddr,
+		       message->rpcHdrBuffer.length);
+	printf("%x %x\n", message->paramBuffer.bufAddr,
+		       message->paramBuffer.length);
+	printf("%x %x\n", message->dataBuffer.bufAddr,
+		       message->dataBuffer.length);
+    }
+#endif /* PRINT_PACKETS */
+    /*
+     * Mark our packets if we aren't up all the way.  This means that the
+     * other host won't pay attention to our packets in terms of recovery.
+     */
+    if (!rpcServiceEnabled) {
+	rpcHdrPtr->flags |= RPC_NOT_ACTIVE;
+    }
+    /* We're doing transparent server recovery. */
+    if (recov_Transparent && fsrecov_AlreadyInit) {
+	rpcHdrPtr->flags |= RPC_FAST;
+    }
+    if (recov_ServerDriven) {
+	rpcHdrPtr->flags |= RPC_SERVER_RECOV;
+    }
+    /* 
+     * Find a route to the host. 
+     */
+    routePtr = Net_IDToRoute(spriteID, -1, TRUE, mutexPtr, 
+		    rpcHdrPtr->paramSize + rpcHdrPtr->dataSize);
+    if (routePtr == (Net_Route *) NIL) {
+	return RPC_INTERNAL_ERROR;
+    }
+    /*
+     * Check to see if we have to fragment.   Note that we pack the first
+     * fragment as full as possible so that it might contain more than
+     * 1K of data.  If we fragment, however, we break things on 1K boundaries.
+     */
+    if (rpcHdrPtr->paramSize + rpcHdrPtr->dataSize >
+	routePtr->maxPacket - sizeof(RpcHdr)) {
+	if (rpcHdrPtr->paramSize > RPC_MAX_PARAMSIZE) {
+	    return(RPC_PARAMS_TOOBIG);
+	} else if (rpcHdrPtr->dataSize > RPC_MAX_DATASIZE) {
+	    return(RPC_DATA_TOOBIG);
+	} else {
+	    /*
+	     * Send a fragmented message.
+	     */
+	    register int dataSize, paramSize;	/* Size remaining in data and
+						 * parameter areas that needs
+						 * to go in subsequent frags. */
+	    int dataOffset, paramOffset;	/* Offset of fragment data */
+	    int frag;				/* Fragment index */
+	    int nfrags;				/* Total number of fragments */
+	    int delay;				/* Inter-fragment delay */
+	    register int fragID;		/* Bitmask ID of fragment.  The
+						 * I'th bit of this is set on
+						 * the I'th fragment. */
+	    register int sendFragMask;		/* Complement of the dont-send
+						 * mask. */
+	    register RpcHdr *fragRpcHdrPtr;	/* RPC header of a fragment */
+
+	    dataSize = rpcHdrPtr->dataSize;
+	    paramSize = rpcHdrPtr->paramSize;
+
+	    /*
+	     * Loop one time to compute and record the sizes of the
+	     * parameter and data areas of each fragment.
+	     */
+	    nfrags = 0;
+	    dataOffset = 0;
+	    paramOffset = 0;
+	    while (dataSize > 0 || paramSize > 0) {
+		register int dlen, plen;
+
+		/*
+		 * Fill the fragments with the parameter area followed by
+		 * the data area.  The max size ethernet packet is used
+		 * for best throughput.
+		 */
+		if (paramSize) {
+		    plen = (routePtr->maxPacket - sizeof(RpcHdr));
+		    plen = (plen > paramSize ? paramSize : plen);
+		    paramSize -= plen;
+		} else {
+		    plen = 0;
+		}
+		if (dataSize) {
+		    dlen = (routePtr->maxPacket - sizeof(RpcHdr) - plen);
+		    dlen = (dlen > dataSize ? dataSize : dlen);
+		    dataSize -= dlen;
+		} else {
+		    dlen = 0;
+		}
+		fragRpcHdrPtr = (RpcHdr *)fragment[nfrags].rpcHdrBuffer.bufAddr;
+
+		fragRpcHdrPtr->paramSize = plen;
+		fragRpcHdrPtr->dataSize = dlen;
+		fragRpcHdrPtr->paramOffset = paramOffset;
+		fragRpcHdrPtr->dataOffset = dataOffset;
+
+		fragment[nfrags].paramBuffer.length = plen;
+		fragment[nfrags].paramBuffer.bufAddr =
+			message->paramBuffer.bufAddr + paramOffset;
+
+		fragment[nfrags].dataBuffer.length = dlen;
+		fragment[nfrags].dataBuffer.bufAddr =
+			message->dataBuffer.bufAddr + dataOffset;
+
+		dataOffset += dlen;
+		paramOffset += plen;
+		nfrags++;
+	    }
+
+	    /*
+	     * An inter-fragment delay is setup when going to a slower machine.
+	     */
+	    if (rpcDelay[spriteID] > rpcOutputRate) {
+		delay = rpcDelay[spriteID] - rpcOutputRate;
+	    } else {
+		delay = 0;
+	    }
+	    /*
+	     * Loop (again) to output the fragments.  Fragments are not output
+	     * if their bit is set in the dontSendMask.  If dontSentMask
+	     * would suppress all fragments, i.e. this is a keep-alive resend,
+	     * we just send the last fragment.  Also, if this is a resend
+	     * by the client and we haven't recieved a partial acknowledgment
+	     * from the server we only resend the last fragment as a probe.
+	     * This is for the case of large writes where the initial
+	     * timeout period is too short.  We don't want to resend the
+	     * whole packet unless we have to.
+	     */
+	    if ((dontSendMask == rpcCompleteMask[nfrags]) ||
+		((rpcHdrPtr->flags & RPC_PLSACK) && (dontSendMask == 0))) {
+		sendFragMask = (1 << (nfrags - 1));
+	    } else {
+		sendFragMask = ~dontSendMask;
+	    }
+	    for (fragID = 1, frag = 0;
+		 frag < nfrags;
+		 fragID <<= 1, frag++) {
+		if (fragID & sendFragMask) {
+
+		    fragRpcHdrPtr =
+			    (RpcHdr *)fragment[frag].rpcHdrBuffer.bufAddr;
+
+		    sendFragMask &= ~fragID;
+		    /*
+		     * Mark the last fragment of the batch so the receiver
+		     * can check for a complete message.
+		     */
+		    if (sendFragMask == 0) {
+			fragRpcHdrPtr->flags |= RPC_LASTFRAG;
+		    }
+		    fragRpcHdrPtr->version =	rpc_NativeVersion;
+		    fragRpcHdrPtr->flags =	rpcHdrPtr->flags;
+		    fragRpcHdrPtr->clientID =	rpcHdrPtr->clientID;
+		    fragRpcHdrPtr->serverID =	rpcHdrPtr->serverID;
+		    fragRpcHdrPtr->channel =	rpcHdrPtr->channel;
+		    fragRpcHdrPtr->serverHint =	rpcHdrPtr->serverHint;
+		    fragRpcHdrPtr->bootID =	rpcHdrPtr->bootID;
+		    fragRpcHdrPtr->ID =		rpcHdrPtr->ID;
+		    fragRpcHdrPtr->delay =	rpcMyDelay;
+		    fragRpcHdrPtr->numFrags =	nfrags;
+		    fragRpcHdrPtr->fragMask =	fragID;
+		    fragRpcHdrPtr->command =	rpcHdrPtr->command;
+
+		    /*
+		     * The network routines expect an array of scatter/gather
+		     * elements.  The RpcBufferSet is a struct of 4 of
+		     * these so we cast its address into a (Net_ScatterGather *)
+		     *
+		     * Note that we only pass our mutex to Net on the last
+		     * fragment.  With a mutex the packet transmission is
+		     * synchronous, the Net_Output call doesn't return until
+		     * the packet has been transmitted.  We only want this
+		     * on the last fragment to prevent the obscure case where
+		     * otherwise we might time out and retransmit before
+		     * the packet is even on the wire.
+		     */
+		    status = Net_Output(spriteID,
+				(Net_ScatterGather *)&fragment[frag], 4,
+				((fragRpcHdrPtr->flags & RPC_LASTFRAG) ?
+				 mutexPtr : (Sync_Semaphore *)NIL ),
+				 routePtr);
+		    if (status != SUCCESS) {
+			return status;
+		    }
+		    /*
+		     * Insert a delay after all but the last fragment.
+		     * The master lock is released here to enable
+		     * interrupts.  The ethernet driver needs an interrupt
+		     * serviced in between the output of each packet.
+		     */
+		    RPC_TRACE(fragRpcHdrPtr, RPC_OUTPUT, "Fragout");
+		    if (mutexPtr != (Sync_Semaphore *)NIL) {
+			if (Mach_AtInterruptLevel()) {
+			    panic(
+			      "RpcOutput, unlocking mutex at interrupt level");
+			} else {
+			    MASTER_UNLOCK(mutexPtr);
+			}
+		    }
+		    rpcLastDelay = delay;
+		    if (delay &&
+			((fragRpcHdrPtr->flags & RPC_LASTFRAG) == 0)) {
+			MACH_DELAY(delay);
+		    }
+		    if (mutexPtr != (Sync_Semaphore *)NIL) {
+			MASTER_LOCK(mutexPtr);
+		    }
+		}
+	    }
+	}
+    } else {
+	/*
+	 * No fragmenting.
+	 */
+	rpcHdrPtr->numFrags = 0;
+	rpcHdrPtr->paramOffset = 0;
+	rpcHdrPtr->dataOffset = 0;
+	rpcHdrPtr->version = rpc_NativeVersion;
+	message->rpcHdrBuffer.length = sizeof(RpcHdr);
+	if ((rpcHdrPtr->flags & RPC_TYPE) == RPC_ACK) {
+	    /*
+	     * Don't disturb the fragment mask.
+	     */
+	} else {
+	    rpcHdrPtr->fragMask = 0;
+	}
+#ifdef TIMESTAMP
+	RPC_NIL_TRACE(RPC_ETHER_OUT, "Ether output");
+#endif /* TIMESTAMP */
+	status = Net_Output(spriteID, (Net_ScatterGather *)message, 4, mutexPtr,
+	    routePtr);
+	if (status != SUCCESS) {
+	    return status;
+	}
+	RPC_TRACE(rpcHdrPtr, RPC_OUTPUT, "Output");
+    }
+    Net_ReleaseRoute(routePtr);
+    return(SUCCESS);
+}
+@
+
+
+9.7
+log
+@Changes for transparent server recovery.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/rpc/rpcOutput.c,v 9.6 92/06/03 17:27:54 jhh Exp $ SPRITE (Berkeley)";
+d142 3
+@
+
+
+9.6
+log
+@Don't reset the network interface if an rpc shows up for a different client.
+The wrong index parameter was passed to Net_IDToRoute.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/rpc/rpcOutput.c,v 9.5 92/04/14 17:04:30 jhh Exp $ SPRITE (Berkeley)";
+d26 4
+d138 4
+@
+
+
+9.5
+log
+@Uses new net definitions.
+Net_IDToRoute interface changed slightly.
+Got rid of bogus "new" rpc format. It was for the UltraNet and it didn't
+make much difference anyway.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/rpc/rpcOutput.c,v 9.4 90/11/05 21:24:59 jhh Exp $ SPRITE (Berkeley)";
+d138 1
+a138 1
+    routePtr = Net_IDToRoute(spriteID, 0, TRUE, mutexPtr, 
+@
+
+
+9.4
+log
+@deal with status from net output routine
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcOutput.c,v 9.3 90/10/09 11:57:15 jhh Exp $ SPRITE (Berkeley)";
+a102 1
+    Boolean		newVersion = FALSE;
+d138 2
+a139 1
+    routePtr = Net_IDToRoute(spriteID, 0, TRUE, mutexPtr, 0);
+a142 3
+    if (routePtr->interPtr->netType == NET_NETWORK_ULTRA) {
+	newVersion = TRUE;
+    }
+d149 1
+a149 1
+	routePtr->maxBytes - sizeof(RpcHdr)) {
+d191 1
+a191 1
+		    plen = (routePtr->maxBytes - sizeof(RpcHdr));
+d198 1
+a198 1
+		    dlen = (routePtr->maxBytes - sizeof(RpcHdr) - plen);
+a325 1
+	RpcHdrNew		*newHdrPtr;
+d332 2
+a333 13
+	if (newVersion) {
+	    newHdrPtr = (RpcHdrNew *) rpcHdrPtr;
+	    newHdrPtr->paramStart = sizeof(RpcHdrNew);
+	    newHdrPtr->dataStart = sizeof(RpcHdrNew) + newHdrPtr->paramSize;
+	    newHdrPtr->version = rpc_NativeVersionNew;
+	    message->rpcHdrBuffer.length = sizeof(RpcHdrNew);
+	} else {
+	    /*
+	     * Delete this once we get rid of newVersion.
+	     */
+	    rpcHdrPtr->version = rpc_NativeVersion;
+	    message->rpcHdrBuffer.length = sizeof(RpcHdr);
+	}
+@
+
+
+9.4.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcOutput.c,v 9.4 90/11/05 21:24:59 jhh Exp $ SPRITE (Berkeley)";
+@
+
+
+9.3
+log
+@new net module
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcOutput.c,v 9.2 90/10/02 16:29:48 mgbaker Exp Locker: jhh $ SPRITE (Berkeley)";
+d300 1
+a300 1
+			panic("RpcOutput: Net_Output failed.\n");
+d362 1
+a362 1
+	    panic("RpcOutput: Net_Output failed.\n");
+@
+
+
+9.2
+log
+@More prototyping garbage.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcOutput.c,v 9.1 90/09/11 11:35:20 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d101 3
+a103 3
+    int		maxPacketSize;	/* Maximum packet size supported by
+				 * the network module for a packet 
+				 * destine for Sprite host spriteID */
+d136 2
+a137 3
+    /*
+     * Query the net module of the maximum transfer size of the route 
+     * to Sprite host spriteID.
+d139 7
+a145 1
+    maxPacketSize = Net_RouteMTU(spriteID);
+d152 1
+a152 1
+	maxPacketSize - sizeof(RpcHdr)) {
+d194 1
+a194 1
+		    plen = (maxPacketSize - sizeof(RpcHdr));
+d201 1
+a201 1
+		    dlen = (maxPacketSize - sizeof(RpcHdr) - plen);
+d294 1
+a294 1
+		    (void) Net_Output(spriteID,
+d297 5
+a301 2
+				 mutexPtr : (Sync_Semaphore *)NIL ) );
+
+d329 1
+d336 13
+a348 1
+
+d359 5
+a363 2
+	(void) Net_Output(spriteID, (Net_ScatterGather *)message, 4, mutexPtr);
+
+d366 1
+@
+
+
+9.1
+log
+@Added function prototypes (Mendel checking for mary)
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcOutput.c,v 9.0 89/09/12 15:17:24 douglis Stable Locker: mgbaker $ SPRITE (Berkeley)";
+d16 10
+a25 10
+#include "sprite.h"
+#include "mach.h"
+#include "rpc.h"
+#include "rpcInt.h"
+#include "rpcTrace.h"
+#include "net.h"
+#include "proc.h"
+#include "sync.h"
+#include "status.h"
+#include "dbg.h"
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcOutput.c,v 8.5 89/08/17 17:29:49 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d22 1
+@
+
+
+8.5
+log
+@made version number a variable
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcOutput.c,v 8.4 89/06/05 12:32:51 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+8.4
+log
+@Changed use of Net_Output so that only the last fragment
+is output synchronously.  This really improves transmission
+time of large packets!!
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcOutput.c,v 8.3 89/06/02 12:57:10 mendel Exp $ SPRITE (Berkeley)";
+d262 1
+a262 1
+		    fragRpcHdrPtr->version =	RPC_NATIVE_VERSION;
+@
+
+
+8.3
+log
+@Changes for RPC on IP. 
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcOutput.c,v 8.2 89/02/01 12:57:52 brent Exp $ SPRITE (Berkeley)";
+d277 1
+a277 1
+		     * elements.  The RpcBufferSet is a struct of 3 of
+d279 8
+d290 2
+a291 1
+				mutexPtr);
+@
+
+
+8.2
+log
+@Changed fragment resend so that one the first resend,
+before a partial acknowledgment has been received,
+only the last fragment is resent.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcOutput.c,v 8.1 88/11/22 19:34:47 jhh Exp $ SPRITE (Berkeley)";
+d78 4
+a81 3
+    RpcBufferSet	*message;	/* A set of 3 scatter/gather vector
+					 * elements that specify where the
+					 * header, parameters, and data are. */
+d100 3
+d136 5
+d146 1
+a146 1
+	RPC_MAX_PACKET_SIZE - sizeof(Net_EtherHdr) - sizeof(RpcHdr)) {
+d188 1
+a188 2
+		    plen = (RPC_MAX_PACKET_SIZE - sizeof(Net_EtherHdr)
+						- sizeof(RpcHdr));
+d195 1
+a195 2
+		    dlen = (RPC_MAX_PACKET_SIZE - sizeof(Net_EtherHdr)
+						- sizeof(RpcHdr) - plen);
+d281 1
+a281 1
+				(Net_ScatterGather *)&fragment[frag], 3,
+d328 1
+a328 1
+	(void) Net_Output(spriteID, (Net_ScatterGather *)message, 3, mutexPtr);
+@
+
+
+8.1
+log
+@new semaphore definition
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcOutput.c,v 6.5 88/10/28 19:24:21 mlgray Exp $ SPRITE (Berkeley)";
+d225 7
+a231 2
+	     * would suppress all fragments we just send the last one
+	     * as a keep-alive.
+d233 5
+a237 2
+	    if (dontSendMask == rpcCompleteMask[nfrags]) {
+		dontSendMask &= ~(1 << (nfrags - 1));
+a238 1
+	    sendFragMask = ~dontSendMask;
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcOutput.c,v 6.5 88/10/28 19:24:21 mlgray Exp Locker: douglis $ SPRITE (Berkeley)";
+d92 1
+a92 1
+    int			*mutexPtr;	/* This mutex is released while we
+d277 1
+a277 1
+		    if (mutexPtr != (int *)NIL) {
+d282 1
+a282 1
+			    MASTER_UNLOCK((*mutexPtr));
+d290 2
+a291 2
+		    if (mutexPtr != (int *)NIL) {
+			MASTER_LOCK((*mutexPtr));
+@
+
+
+6.5
+log
+@Conversion to new C library.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcOutput.c,v 6.4 88/10/17 16:59:37 mendel Exp Locker: mlgray $ SPRITE (Berkeley)";
+@
+
+
+6.4
+log
+@Modified to use Mach_AtInterruptLevel() macro.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcOutput.c,v 6.3 88/10/07 14:54:23 mlgray Exp Locker: mendel $ SPRITE (Berkeley)";
+a74 3
+#ifdef RPC_TEST_BYTE_SWAP
+RpcOutput(spriteID, rpcHdrPtr, swapRpcHdrPtr, message, swapMessage, fragment, dontSendMask, mutexPtr)
+#else /* RPC_TEST_BYTE_SWAP */
+a75 1
+#endif /* RPC_TEST_BYTE_SWAP */
+a77 4
+#ifdef RPC_TEST_BYTE_SWAP
+    register RpcHdr	*swapRpcHdrPtr;	/* The byte-swap RPC header. */
+#endif /* RPC_TEST_BYTE_SWAP */
+
+a80 3
+#ifdef RPC_TEST_BYTE_SWAP
+    RpcBufferSet	*swapMessage;	/* The scatter/gather byte-swap vector */
+#endif /* RPC_TEST_BYTE_SWAP */
+d104 1
+a104 1
+	Sys_Printf("RpcOutput - Raw packet at %x:\n", rpcHdrPtr);
+d107 1
+a107 1
+	    Sys_Printf("%x ", *shortPtr);
+d110 1
+a110 1
+		Sys_Printf("\n");
+d113 1
+a113 1
+	Sys_Printf("\n");
+d115 2
+a116 2
+	Sys_Printf("RpcOutput - buffer set:\n");
+	Sys_Printf("%x %x\n", message->rpcHdrBuffer.bufAddr,
+d118 1
+a118 1
+	Sys_Printf("%x %x\n", message->paramBuffer.bufAddr,
+d120 1
+a120 1
+	Sys_Printf("%x %x\n", message->dataBuffer.bufAddr,
+a260 1
+#ifdef RPC_TEST_BYTE_SWAP
+a261 34
+		     * If we're testing byte-swapping, swap the bits here so
+		     * that the receiving machine must unswap them.
+		     */
+		    /*
+		     * For now, only test byte-swapping with client doing
+		     * out-going byte-swapping.  This means that the out-going
+		     * packet must be intended for a server.
+		     */
+		    if (rpcTestByteSwap && (fragRpcHdrPtr->flags & RPC_SERVER)) {
+			Address	addr;
+			int	length;
+
+			/* save these values before byte-swapping */
+			addr = fragment[nfrags].paramBuffer.bufAddr;
+			length = fragment[nfrags].paramBuffer.length;
+
+			if (swapRpcHdrPtr == (RpcHdr *)NIL) {
+			    Sys_Panic(SYS_FATAL, "RpcOutput: NIL rpc header.");
+			}
+			if (swapMessage->paramBuffer.bufAddr == (Address)NIL) {
+			    Sys_Panic(SYS_FATAL, "RpcOutput: NIL param buffer.");
+			}
+			Byte_Copy(sizeof (RpcHdr), fragRpcHdrPtr, swapRpcHdrPtr);
+			RpcByteSwapBuffer(swapRpcHdrPtr, sizeof (RpcHdr) /
+				sizeof (int));
+			swapMessage->paramBuffer.length = length;
+			Byte_Copy(length, addr,
+				swapMessage->paramBuffer.bufAddr);
+			RpcByteSwapBuffer(swapMessage->paramBuffer.bufAddr,
+				length / sizeof (int));
+		    }
+#endif /* RPC_TEST_BYTE_SWAP */
+
+		    /*
+a265 10
+#ifdef RPC_TEST_BYTE_SWAP
+		    if (rpcTestByteSwap && (rpcHdrPtr->flags & RPC_SERVER)) {
+			(void) Net_Output(spriteID,
+				(Net_ScatterGather *)swapMessage, 3, mutexPtr);
+		    } else {
+			(void) Net_Output(spriteID,
+				    (Net_ScatterGather *)&fragment[frag], 3,
+				    mutexPtr);
+		    }
+#else /* RPC_TEST_BYTE_SWAP */
+a268 1
+#endif /* RPC_TEST_BYTE_SWAP */
+d279 1
+a279 1
+			    Sys_Panic(SYS_FATAL,
+a310 20
+	/*
+	 * If we're testing byte-swapping, swap the bits here so
+	 * that the receiving machine must unswap them.
+	 */
+	/*
+	 * For now, only test byte-swapping with client doing
+	 * out-going byte-swapping.  This means that the out-going
+	 * packet must be intended for a server.
+	 */
+#ifdef RPC_TEST_BYTE_SWAP
+	if (rpcTestByteSwap && (rpcHdrPtr->flags & RPC_SERVER)) {
+	    Byte_Copy(sizeof (RpcHdr), rpcHdrPtr, swapRpcHdrPtr);
+	    RpcByteSwapBuffer(swapRpcHdrPtr, sizeof (RpcHdr) / sizeof (int));
+	    Byte_Copy(message->paramBuffer.length, message->paramBuffer.bufAddr,
+		    swapMessage->paramBuffer.bufAddr);
+	    RpcByteSwapBuffer(swapMessage->paramBuffer.bufAddr,
+		    message->paramBuffer.length / sizeof (int));
+	}
+#endif /* RPC_TEST_BYTE_SWAP */
+
+a313 9
+#ifdef RPC_TEST_BYTE_SWAP
+	if (rpcTestByteSwap && (rpcHdrPtr->flags & RPC_SERVER)) {
+	    (void) Net_Output(spriteID, (Net_ScatterGather *)swapMessage, 3,
+		    mutexPtr);
+	} else {
+	    (void) Net_Output(spriteID, (Net_ScatterGather *)message, 3,
+		    mutexPtr);
+	}
+#else /* RPC_TEST_BYTE_SWAP */
+a314 1
+#endif /* RPC_TEST_BYTE_SWAP */
+@
+
+
+6.3
+log
+@Fixed include file references.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: rpcOutput.c,v 6.2 88/08/29 14:29:10 mlgray Exp $ SPRITE (Berkeley)";
+d335 1
+a335 1
+			if (mach_AtInterruptLevel) {
+@
+
+
+6.2
+log
+@lint
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: rpcOutput.c,v 6.1 88/08/26 18:26:43 mlgray Exp $ SPRITE (Berkeley)";
+a24 1
+#include "mach.h"
+@
+
+
+6.1
+log
+@Fixed some lint errors.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: rpcOutput.c,v 6.0 88/08/11 12:24:23 brent Stable $ SPRITE (Berkeley)";
+d32 3
+a34 3
+short rpcMyDelay;
+short rpcOutputRate;
+short rpcDelay[NET_NUM_SPRITE_HOSTS];
+d315 2
+a316 2
+			Net_Output(spriteID, (Net_ScatterGather *)swapMessage,
+				3, mutexPtr);
+d318 1
+a318 1
+			Net_Output(spriteID,
+d323 1
+a323 1
+		    Net_Output(spriteID,
+d394 2
+a395 1
+	    Net_Output(spriteID, (Net_ScatterGather *)swapMessage, 3, mutexPtr);
+d397 2
+a398 1
+	    Net_Output(spriteID, (Net_ScatterGather *)message, 3, mutexPtr);
+d401 1
+a401 1
+	Net_Output(spriteID, (Net_ScatterGather *)message, 3, mutexPtr);
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d1 1
+a1 1
+/* 
+d12 2
+a13 2
+static char rcsid[] = "$Header: rpcOutput.c,v 5.6 88/08/04 17:52:05 mlgray Exp $ SPRITE (Berkeley)";
+#endif not lint
+d40 1
+a40 1
+#endif PRINT_PACKETS
+d78 1
+a78 1
+#else RPC_TEST_BYTE_SWAP
+d80 1
+a80 1
+#endif RPC_TEST_BYTE_SWAP
+d85 1
+a85 1
+#endif RPC_TEST_BYTE_SWAP
+d92 1
+a92 1
+#endif RPC_TEST_BYTE_SWAP
+d135 1
+a135 1
+#endif PRINT_PACKETS
+d218 1
+a218 1
+		fragment[nfrags].dataBuffer.bufAddr = 
+d306 1
+a306 1
+#endif RPC_TEST_BYTE_SWAP
+d318 2
+a319 2
+			Net_Output(spriteID, 
+				    (Net_ScatterGather *)&fragment[frag], 3, 
+d322 3
+a324 3
+#else RPC_TEST_BYTE_SWAP
+		    Net_Output(spriteID, 
+				(Net_ScatterGather *)&fragment[frag], 3, 
+d326 1
+a326 1
+#endif RPC_TEST_BYTE_SWAP
+d387 1
+a387 1
+#endif RPC_TEST_BYTE_SWAP
+d391 1
+a391 1
+#endif TIMESTAMP
+d398 1
+a398 1
+#else RPC_TEST_BYTE_SWAP
+d400 1
+a400 1
+#endif RPC_TEST_BYTE_SWAP
+@
+
+
+5.6
+log
+@In preparation for installing.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: rpcOutput.c,v 5.5 88/08/01 17:11:33 mlgray Exp $ SPRITE (Berkeley)";
+@
+
+
+5.5
+log
+@Doing byte-swapping.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: rpcOutput.c,v 5.4 88/07/08 13:22:49 douglis Exp $ SPRITE (Berkeley)";
+a41 5
+/*
+ * Rpc debug variable.  Should move to rpcInt.h.
+ */
+extern	Boolean rpcPrintDebug;
+
+d273 1
+a286 3
+			if (rpcPrintDebug) {
+			    Sys_Printf("RpcOutput() - fragmenting message.\n");
+			}
+a290 1
+#ifdef RPC_TEST_BYTE_SWAP
+d305 1
+a306 1
+		    }
+d378 1
+a379 6
+	    if (rpcPrintDebug && rpcHdrPtr->command != RPC_ECHO_2) {
+		Sys_Printf("%s  %s\n", "RpcOutput - unfragmented.",
+			"Header before byte-swap:");
+		RpcPrintHdr(rpcHdrPtr);
+	    }
+#ifdef RPC_TEST_BYTE_SWAP
+a381 4
+	    if (rpcPrintDebug && rpcHdrPtr->command != RPC_ECHO_2) {
+		Sys_Printf("RpcOutput - header after byte-swapping:\n");
+		RpcPrintHdr(swapRpcHdrPtr);
+	    }
+d386 1
+a387 1
+	}
+@
+
+
+5.4
+log
+@added declaration for rpcDumpPackets since -DPRINT_PACKETS would
+otherwise cause compiler error.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: rpcOutput.c,v 5.3 88/06/16 20:49:51 brent Exp $ SPRITE (Berkeley)";
+d41 6
+d81 3
+d85 1
+d88 4
+d95 3
+d142 1
+a142 1
+     * Mark our packets if we arn't up all the way.  This means that the
+d279 38
+d321 10
+d334 1
+d377 29
+d409 7
+d417 1
+@
+
+
+5.3
+log
+@After new version number was added.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: rpcOutput.c,v 5.2 88/05/10 14:07:25 brent Exp $ SPRITE (Berkeley)";
+d37 4
+@
+
+
+5.2
+log
+@Fixed retransmission so only one fragment is sent as a keep-alive
+after the server process has started work on a request.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: rpcOutput.c,v 5.1 87/10/13 10:57:36 brent Exp $ SPRITE (Berkeley)";
+a235 1
+		    fragRpcHdrPtr->flags =	rpcHdrPtr->flags;
+d244 2
+a245 1
+		    fragRpcHdrPtr->delay =	rpcMyDelay;
+d250 1
+d252 1
+a252 1
+		    fragRpcHdrPtr->transport =	rpcHdrPtr->transport;
+a255 1
+		    fragRpcHdrPtr->bootID =	rpcHdrPtr->bootID;
+@
+
+
+5.1
+log
+@Added "not active" bit to packet headers when RPC service is not enabled.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: rpcOutput.c,v 5.0 87/09/09 10:33:50 brent Exp $ SPRITE (Berkeley)";
+d17 1
+d25 1
+a25 1
+#include "machine.h"
+d211 1
+a211 3
+	     * Loop again to output the fragments.  Fragments are not output
+	     * if their bit is set in the dontSendMask.  An inter-fragment
+	     * delay is setup if we are going to a slower machine.
+d218 9
+d274 1
+a274 1
+			if (sys_AtInterruptLevel) {
+d284 1
+a284 1
+			DELAY(delay);
+@
+
+
+5.0
+log
+@*** empty log message ***
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: rpcOutput.c,v 5.0 87/08/11 10:48:56 sprite Exp $ SPRITE (Berkeley)";
+d119 7
+@

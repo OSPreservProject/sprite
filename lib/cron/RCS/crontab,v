@@ -1,0 +1,145 @@
+head     1.7;
+branch   ;
+access   ;
+symbols  ;
+locks    jhh:1.7; strict;
+comment  @# @;
+
+
+1.7
+date     91.08.01.23.07.01;  author mendel;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     91.04.12.17.39.16;  author brent;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.04.02.17.35.55;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.01.29.14.09.04;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.01.28.18.11.29;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.01.17.15.08.49;  author mgbaker;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.09.21.17.37.23;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Global crontab file.
+@
+
+
+1.7
+log
+@checking this in for mendel -- jhh
+@
+text
+@#
+# Global crontab file.
+#
+# Collect system statistics.
+#
+#5 8,11,14,17,20,23 * * *	root /user2/brent/stats/RAW
+#
+# Update routing tables (this is lame)
+#
+30 58 * * * root netroute -f /etc/spritehosts
+10 * * * * root netroute.new -f /etc/spritehosts
+#
+# Synchronize your watches
+#
+0 4 * * * root /sprite/admin/Rdate > /dev/syslog 2 >& 1
+@
+
+
+1.6
+log
+@Stoped statistics taking, April 12.
+@
+text
+@d10 1
+a10 1
+30 * * * * root netroute -f /etc/spritehosts
+@
+
+
+1.5
+log
+@Mary checking this in for Brent.
+@
+text
+@d6 1
+a6 1
+5 8,11,14,17,20,23 * * *	root /user2/brent/stats/RAW
+@
+
+
+1.4
+log
+@Turned off rawstat sampling.
+@
+text
+@d6 1
+a6 1
+#5 8,11,14,17,20,23 * * *	root /user2/brent/stats/RAW
+@
+
+
+1.3
+log
+@Mary checking this in for Brent.
+@
+text
+@d4 1
+a4 1
+# Collect system statistics. (brent - delete after Jan 30 '91)
+d6 1
+a6 1
+5 8,11,14,17,20,23 * * *	root /user2/brent/stats/RAW
+@
+
+
+1.2
+log
+@Added netroute.new call
+@
+text
+@d4 1
+a4 1
+# Collect system statistics.
+d6 1
+a6 1
+# 5 8,11,14,17,20 * * *	root /c/stats/RAW
+a15 4
+#
+# Testing entry to generate load on arson
+#
+#15 * * * * brent /t5/stats/RAW
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+@

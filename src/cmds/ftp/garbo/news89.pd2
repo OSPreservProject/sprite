@@ -1,0 +1,316 @@
+University of Vaasa, Finland, Sun 4 node number 128.214.12.3
+(chyde.uwasa.fi) has a collection of PD and shareware programs which
+are available by anonymous ftp (file transfer program).  This
+/pc/pd2/news89.pd2 file contains news about the programs in the
+/pc/pd2 directory (in reverse order).  
+...................................................................
+Prof. Timo Salmi        (Moderating at anon. ftp site 128.214.12.3)
+School of Business Studies, University of Vaasa, SF-65101, Finland
+Internet: ts@chyde.uwasa.fi Funet: vakk::salmi Bitnet: salmi@finfun
+...................................................................
+
+                 N e w s   o f   1 9 8 9
+
+Sun 24-Dec-89: Let me wish A Merry Christmas to all users of our ftp
+archives here at Vaasa, Finland.  We are pleased at the popularity
+we seem to have gained, and the many new contacts we have made also
+in the international community.  It seems that we now really are
+beginning to live in the global electronic village which was pure
+science fiction only a few years ago.  Geographical coordinates have
+suddenly lost much their meaning in the most distinguishing feature
+of man, communication. 
+
+Sat 23-Dec-89: Obtained the new version pcopy83.arc of Patriquin's
+copy utility.  I think it is very impressive, but perhaps it has
+grown too large and complicated.  A scaled down option would be in
+order in my opinion.  It is as my brother-in-law says.  "Product
+development will never cease at the optimum".  This reminds me of a
+nice twist in Murphy's law I saw recently: "If anything can go
+wrong, it gill.  :-)"
+
+Tue 19-Dec-89: Acquired sizeit.arc.  It is a small resident ruler to
+show the columns on the screen.
+
+Sun 17-Dec-89: Obtained two new list of bulletin boards to
+complement the lists which cover only Finnish boards.  These are
+bbs1289.zip which list about 3100 US systems, and 96bb1289.zip which
+list some 9600 bps boards in the US and overseas.  The list latter
+list seem sporadic. 
+
+Fri 15-Dec-89: Updates pcopy81.arc and shez51.arc.  Obtained
+stpdos.zip.  It shows a program's calls to dos (int 21h).  For
+advanced programmers. 
+
+Wed 13-Dec-89: Acquired a new copy of files-mm.zip.  See an earlier
+date for the explanation of this file.
+
+Sun 10-Dec-89: Obtained version 3.12 of the Telix telecommunication
+program.  The files are tlx312-1.zip, tlx312-2.zip and tlx312-3.zip. 
+Obtained the new version of Buerg's list program list72a.zip.  Also
+obtained shez50.zip, the convenient shell for handling packed files. 
+All these three are shareware programs of real quality. 
+
+Wed 6-Dec-89: Keith Petersen kindly told me that progref1.zip and
+progref2.zip have been updated, and are available as 1216ref2.arc. 
+I have now obtained this more recent version from Simtel20 for
+download from our site, as well.  Thanks Keith. 
+
+Tue 5-Dec-89: Obtained progref1.zip and progref2.zip.  They are very
+impressive DOS technical references by Dave Williams.  And they make
+a nice complement to the well-known inter589.arc reference by Ralf
+Brown.
+
+Sun 3-Dec-89: Uploaded dsz1019.arc.  It is an older version of
+z-modem file transfer program dated 19-Oct-88.  I have tried out and
+uploaded many dsz versions, and I have had one problem or another
+with almost each and every one of the versions.  This dsz1019.arc
+seem for some unfathomable reason the most convenient of the
+versions I have looked at so far.  If anyone has any comments beyond
+the obvious "contact the author" I would be interested in hearing
+about your own experiences.  But until there is some consistence in
+the behavior of dsz I just have to keep the old versions available
+as well.  This is contrary to my usual policy, since normally I try
+to have available only the latest version I have myself.  (At the
+moment there are two versions of shez available, shez49.arc and
+shez491.arc, but this is simply because I have not had the time to
+look at shez491.arc, and I know that shez49.arc works ok.  Not that
+there has been any problems with shez.  It is a very nice package,
+indeed.  And, incidentally, do not forget the shareware rules.)
+
+Sat 2-Dec-89: Obtained two lists of Finnish BBSes, and put them in
+bx891202.arc.  At the same time removed three older lists, that is
+box.arc, boxivaxi.arc and vaxi_bbs.arc. 
+
+Wed 29-Nov-89: Obtained files-mm.arc the list of files available on
+Micro Maniacs Opus, BBS node 2:515/1.  It has a very large file
+collection, certainly one of the largest in Finland.  But, this is
+not an advertisement for the said BBS although it is most certainly
+worth it.  Rather my idea is to make available a comprehensive file
+list to act as one kind of a reference catalogue to files and
+programs available for the PC environment. 
+
+Sat 25-Nov-89: Obtained pdswstat.arc PD and SW statistical software
+list by Jim Groeneveld.
+
+Wed 22-Nov-89: Removed some of the files, because there are more
+recent versions in the other /pc/ directories. 
+
+Mon 20-Nov-89: Obtained onside.lzh, tp5patch.arc, and dsz1114.arc. 
+Onside is a sideways printing utility, and of the many such
+utilities I have looked at, it is the first one that seems to work
+properly.  Tp5patch contains some patches to Turbo Pascal 5.0 from
+Borland, and sdz1114 is an update of z-modem date 14-Nov-89. 
+
+Tue 14-Nov-89: Obtained dsz1111.arc z-modem 11-Nov-89, mkmst121.arc
+Market Master stock analysis, and sa210a.arc Security Analyst.
+
+Tue 7-Nov-89: Obtained shez49.arc, the menu driven shell for
+handling files packed as .arc, .zip, .zoo, .lzh, and .pak. 
+
+Mon 6-Nov-89: Obtained lh114b.exe which is the self-extracting lharc
+packing program version 1.14 beta.  It makes and unpacks .LZH files. 
+Also obtained a list of Finnish BBSes from VAXI 14-Oct 1989 and
+named it boxvaxi.zip.  It is in Finnish. 
+
+Tue 31-Oct-89: Obtained list71a.arc, Vernon Buerg's listing program. 
+The virtual standard in PCs. 
+
+Mon 30-Oct-89: Obtained batpower.zip.  It is yet another selection
+of the standard utilities which seem to (re)appear in so many of
+these packages. 
+
+Tue 24-Oct-89: Obtained vol8n16.zip and stkmkt.zip.  Vol8n16.zip
+contains the programs from PC-Magazine Volume 8 Number 16, that is
+September 1989.  Among the programs is the DIRMATCH program by
+Michael Mefford for comparing directories and copying files.  Very
+neat indeed.  Stkmkt.zip seems to contain some kind of stock market
+charting programs.  I have not tried stkmkt out. 
+
+Mon 23-Oct-89: Got todo38.zip and list70a.arc.  Todo38 is a "to do"
+reminder program.  List70a.arc is a new version of the file listing
+program, which has virtually become a PC standard. 
+
+Thu 19-Oct-89: Obtained three new packages: Keyb21.zip, a nice
+display of keyboard keyscan codes.  Pcopy787.zip, an update of
+Patriquin's fabulous copying program.  Sypstok3.zip, Stock Trader
+III, an update of the graphical stock market analyzer. 
+
+Thu 5-Oct-89: Got shez48.arc.  Shez48 has the ability to utilize the
+virus scanning program scanvxx.arc for ferreting out nasties. 
+
+Tue 3-Oct-89: Got Ample Notice reminder and calendar an130.arc.
+
+Sat 16-Sep-89: Replaced shez44.arc with shez46.arc.  The author has
+added handling .pak files to shez.  Got the latest version of
+simibm.arc from Simtel20.
+
+Sat 2-Sep-89: Got qmac12b.arc macro translator for Qedit, and
+tedplus.arc PC-Magazine tiny editor changed version with sources. 
+
+Mon 28-Aug-89: Got the current contents of Simtel20.  It is in
+simibm.arc. 
+
+Sun 27-Aug-89: Got buf128.arc, which is a keyboard buffer of 128
+characters.  I have not tested it yet myself.  Also got vaxi_bbs.arc
+from Casino Opus.  It contains, in Finnish, information about
+Finnish bulletin boards, and it originates from VAXI. 
+
+Sat 26-Aug-89: PKWARE's (long awaited?) pkzip version 1.01 has come
+out.  Pkzip un/packing program is the self-extracting package
+pkz101.exe.  Version 1.01 introduces a new, tighter packing method. 
+Thus 0.90 and 0.92 cannot unpack files compressed with 1.01. 
+
+Wed 23-Aug-89: Added keyfake.arc.
+
+Fri 18-Aug-89: Got pak210.exe, sharc876.arc, and shez44.arc from
+Simtel20.  I have not yet checked these packages, so I shall retain
+the older versions until I do.  - And having looked at pak210.exe
+and shez44.arc I deleted the old versions.  Shez now supports also
+zoo, so the only major packing method it does not support is pak. 
+
+Tue 8-Aug-89: Got the latest version of simibm.zoo from Simtel20.
+See an earlier notice what it is about.
+
+Tue 8-Aug-89: In response to the notice below, SIMTEL20 has removed
+file ICE114.EXE from the <MSDOS.ARC-LBR> directory, and so have I
+removed it from our archives here at Vaasa.  WARNING ! LH114.xxx is
+an unauthorized hack of LH113C.xxx.  Apparently some prankster
+thought it was "cute" to change the LHARC file type from ".LZH" to
+".ICE".  Direct contact with Yoshi, author of LHARC, has confirmed
+that he did NOT issue LH114, and has no desire to change the .LZH
+file type.  Therefore all SYSOPs and users are urged to delete the
+bogus LH114 file, and to pass along this message.  Who knows - the
+prankster may have added his favorite VIRUS !!! Thanks for your
+help.  Paul Foote (07/29/89)
+
+Mon 8-Aug-89: Got brik2exe.arc (general-purpose CRC-32 program) and
+pak201.exe (an update of NoGate's archive create/extract program)
+from Simtel20.  I have not (yet) looked into them. 
+
+Sun 6-Aug-89: Acquired ice114.exe and qedit208.arc.  Ice114.exe is a
+renamed lharc.  Lharc packed and unpacked files with extension lzh. 
+The default extension has been altered to ice.  Qedit208.arc is the
+shareware editor from SemWare.  It uses similar WordStar-like
+commands as Borland's Turbo compilers.  This is the editor I
+personally prefer, and would like to have a similar one in Unix
+environment.  I have not found an editor for Unix using
+WordStar-like commands, so I have to use MicroEmacs instead.  But I
+do not like it.  So, if anyone has information about a commercial or
+PD editor like Qedit, but for Unix environment, please let me know. 
+
+Sat 5-Aug-89: Obtained the proper, original copy of pak20.exe. This
+one displays the NoGate logo, and has the /sec security envelope.
+
+Thu 3-Aug-89: I have now converted pak20.lzh into a self-extracting
+pak20.exe package.  NoGate's pak.exe seems to be quite a useful
+utility for handling packed files.  In addition to .pak files, it
+can be used to handle .arc files.  And no more needing a separate
+configuration file present when using the new pak.exe is a definite
+improvement upon the earlier pak version 1.61. 
+
+Thu 3-Aug-89: Got a new version pak20.lzh of the NoGate compression
+package for handling .pak files.  Now whoever (re)packed pak20 did
+not obviously think the matter through, since you need another
+packing method (lharc) to open this package :-)  Obviously I have to
+make pak20 self-extracting at an appropriate juncture. 
+
+Wed 2-Aug-89: Got simibm.idx from Simtel20 and put it in simibm.zoo. 
+Simibm.idx is the list of files available by anonymous ftp from
+Simtel20.  We usually keep this file in the /pc/pd/doc directory,
+but moderator Harri Valkama is on vacation at the moment. 
+
+Fri 28-Jul-89: Got inter489.zoo from the Usenet binary postings,
+that is from comp.binaries.ibm.pc.  It is a very comprehensive list
+of interrupts on the PC.  I did not delete the old interrup.arc if
+somebody prefers this version, because it is so much smaller (one
+third of the current version). 
+
+Wed 26-Jul-89: A more recent version of simibm.zoo is in directory
+/pc/dp/doc.  The version that was in this directory has been
+deleted. 
+
+Fri 21-Jul-89: shez41.arc --> shez43.arc.
+
+Sat 15-Jul-89: Got simibm.idx from Simtel20 and packed it as
+simibm.zoo.  It is a list of Simtel20 files, which have a one line
+description.  Please notice that this file will soon get old as
+Simtel20 updates its program collection. 
+
+Tue 11-Jul-89: Got uu.zoo uuencode/uudecode for the PC from
+comp.binaries.ibm.pc. 
+
+Sun 9-Jul-89: Uploaded powtool1.lzh and powtool2.lzh.  These are
+collections tools from the PC-Magazine.  There is, however, no
+documentation, or rather the documentations have appeared in the
+magazine.  This is a problem, since there are well over two hundred
+files in all in these two packages.  Quite a number of these (and
+similar) tools seem appear in the other tool collections, as well. 
+Furthermore, at least the directory control program have later come
+out in a much enhanced form as a separate package.  I have looked at
+a few of the programs, and I particularly liked the following. 
+Calc.com is a nice resident calculator.  Dircomp.com compares two
+directories, and I have to admit that it does it more informatively
+than my own dird.exe and dirs.exe in the /pc/ts/tsutil collection. 
+
+Sat 1-Jul-89: New version shez41.arc of the .zip .arc .lzh shell now
+available. 
+
+Wed 21-Jun-89: The longest day of the year (summer solstice) in the
+Northern hemisphere.  In Northern Finland the sun does not set at
+all.  Added txl311-1.arc, tlx310-2 and tlx310-3.arc which make up
+the Telix telecommunication program package.  Telix is a program
+similar to Procomm Plus.  It is a very good shareware program with a
+nice user interface.  - Please recall that shareware means that you
+can try out a program for free, but if you adopt it, that is begin
+using it, you will have to pay a registration fee to the program's
+author(s). 
+
+Sun 18-Jun-89: Added lh113c.zip which contains version 1.13 of the
+lharc packing method from Japan.  It seems that after the SEA vs
+PKWARE incidence we have entered an era of a lot of different
+packing methods.  Gone are the days when most things were arc.  This
+is more and more reflected also in the /pc/pd2 directory which
+contains the files as were when obtained. 
+
+Sat 17-Jun-89: Flushot plus, version 1.6 made available as
+fsp_16.arc.  Z-modem updates.  This time dsz0525.arc and
+dsz0525x.arc.  I had problems with this dsz version, too, in
+transferring files to an Unix system from my PC through a server. 
+The server was jammed.  The other direction was ok.  It seems to me,
+that although slower, CKermit is the more robust file transfer
+alternative at least in my configuration.
+
+Thu 15-Jun-89: Replaced shez34.zip with version shez38.zip.  Shez is
+a nice shell for handling .zip, .arc, and .lzh packages. 
+
+Tue 13-Jun-89: Added SEA's arc602.exe, that is the latest version of
+the earlier(?) defacto packing standard. 
+
+Sun 11-Jun-89: nnansi.zoo from comp.binaries.ibm.pc has been added.
+It contains an ansi.sys replacement nnansi.sys.
+
+Tue 6-Jun-89: lharc113.exe and dsz0424.lzh have been added.  The
+self-extracting lharc113.exe contains lharc, which is the provides
+the densest compression method around, so far.  This is beta test
+version 1.13.  Dsz0424.lzh is z-modem released 24-Apr-89.  I could
+not get this version work properly between my PC and a unix machine
+through a server and net, where an older version of dsz does work. 
+
+Mon 29-May-89: Updated zoo201.exe from UseNet Binary Postings, that
+is comp.binaries.ibm.pc.  The name of the file is unchanged, but the
+contents of the file is more recent.
+
+Thu 25-May-89: Updated box.arc, the list of finnish BBSes (due to
+CityBox Opus).
+
+Mon 15-May-89: 1) Included pkzf10.exe.  Searches throughout a disk
+for given file name (and inside .zips too).  2) Updated the .zip
+shell to shez34.zip.  3) Included sharc875.zip.  It is a shell for
+handling .arc files. 
+
+Tue 9-May-89: box.arc (list of Finnish BBS phone numbers from
+CityBox) updated to the current version.
+
+Mon 8-May-89: Added dirtyd8d.zip containing information about
+trojans and hacked programs.
+

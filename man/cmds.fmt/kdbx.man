@@ -1,0 +1,266 @@
+
+
+
+KDBX                      User Commands                      KDBX
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     kdbx - Sprite debugger
+
+SSYYNNOOPPSSIISS
+     kdbx [ -ip ] [ -I _d_i_r  ]  [  -c  _f_i_l_e  ]  [  -h  _h_o_s_t_n_a_m_e  ]
+     [_o_b_j_f_i_l_e]
+
+_________________________________________________________________
+
+DDEESSCCRRIIPPTTIIOONN
+     kdbx is a debugger which can be used  to  debug  the  Sprite
+     kernel.   kdbx is nearly identical to dbx.  The only differ-
+     ence is the relationship between the debugger (kdbx) and the
+     debuggee  (the kernel).  This manual page describes how kdbx
+     must be used differently because of the different  debugging
+     relationship.   Since  kdbx accepts all options and commands
+     of dbx, these are not described in this manual page.  A com-
+     plete  reference  of  all  of  the  options and the commands
+     accepted by kdbx is contained in dbx(1).
+
+SSttaarrttiinngg uupp KKddbbxx
+     The Sprite debugging facilities are broken into two  pieces:
+     the  piece which resides in the Sprite kernel and kdbx which
+     runs on a Unix machine.  The Sprite kernel and kdbx communi-
+     cate  across a serial line or the ethernet.  In order to use
+     kdbx on the kernel, the  kernel  must  be  forced  into  the
+     debugging  routine so that it can communicate to kdbx.  Once
+     this is accomplished, kdbx can be used on  the  kernel  just
+     like dbx can be used on a normal stopped process.  Thus, the
+     normal two step sequence needed to startup kdbx on the  ker-
+     nel is:
+
+     1)   Force the  kernel  into  the  debugging  routine.   The
+          method of accomplishing this will be explained below.
+
+     2)   Invoke kdbx like dbx.  For example, the normal  command
+          would  be  ``kdbx  -I  ../Installed/mod.o  -h  hostname
+          sprite''.
+
+     It is also possible to invoke ``kdbx -p  ...''  to  indicate
+     that  kdbx  should read the symbol table but prompt the user
+     before communicating with the Sprite kernel.  In this  case,
+     kdbx  may be invoked before Sprite enters the debugger, thus
+     overlapping some of the overhead of booting and debugging.
+
+     By default kdbx uses the serial  line  for  debugging.   The
+     kernel  on the other hand defaults to the network.  In order
+     to have kdbx use the network the -h flag  must  be  used  in
+     order  to  specify  the  name  of  the  host  that  is to be
+     debugged.  There are two methods of making the sprite kernel
+     use the serial line instead of the network.  First, the L1-B
+     key described below can be used.  Second, the kernel can  be
+
+
+
+Sprite v.1.0       Printed:  October 25, 1990                   1
+
+
+
+
+
+
+KDBX                      User Commands                      KDBX
+
+
+
+     recompiled  with  the _d_b_g__R_s_2_3_2_D_e_b_u_g flag set to TRUE (it is
+     set to FALSE by the dbg module by  default).   This  can  be
+     done  in the mainHook.c file that is in each kernel's direc-
+     tory.
+
+     There are several different ways to force  the  kernel  into
+     the  debugging  routine.   The  first method of entering the
+     debugging routine is by an  unhandled  exception  which  the
+     operating  system  encountered.   If  this  happens  then no
+     further manipulation of the kernel is required and kdbx  can
+     be invoked directly.  The second method is by putting a call
+     to the debugger in the operating system code.  This is  done
+     by  including  dbg.h  and entering the macro DBG_CALL at the
+     point where you wish the debugger to be called.  An  example
+     piece of C code which uses this macro is
+
+          Sys_Printf("Kernel foobared");
+          DBG_CALL;
+
+
+     If this method is used, then kdbx can be invoked directly.
+
+     If the kernel is not already in the debugging routine,  then
+     it  must  be  interrupted and forced into the debugging rou-
+     tine.  The easiest way to do this is to  type  LL11--DD  at  the
+     console of the kernel being debugged.  This will immediately
+     force the kernel into the debugger and kdbx can  be  invoked
+     on  the kernel.  In this case the debugger will use the net-
+     work regardless of the value of the _d_b_g__R_s_2_3_2_D_e_b_u_g flag.  In
+     order to use the serial line use LL11--BB instead.
+
+     Another simple way of forcing the kernel into  the  debugger
+     is  to  issue the command ``l1d hostname'' which will send a
+     debug message to the kernel.
+
+     A more complicated method of forcing  the  kernel  into  the
+     debugger is:
+
+     1)   Type an  LL11--AA  at  the  console  of  the  kernel  being
+          debugged.   After  typing this the program counter (PC)
+          where the kernel was interrupted will be printed out.
+
+     2)   Type the command LL aa0044000088 _a_d_d_r where  _a_d_d_r  is  the  PC
+          that was printed out in step 1.
+
+     3)   Type the command CC aa0044000066.
+
+     After this last step the  kernel  debugger  will  have  been
+     entered and kdbx can now be invoked on the kernel.
+
+UUssiinngg KKddbbxx
+     Once kdbx has been invoked on the  kernel  it  can  be  used
+
+
+
+Sprite v.1.0       Printed:  October 25, 1990                   2
+
+
+
+
+
+
+KDBX                      User Commands                      KDBX
+
+
+
+     almost  exactly  like dbx.  All of the commands that work in
+     dbx will also work in kdbx  (i.e.  setting  of  breakpoints,
+     single stepping, tracing, printing of variables, etc.).  The
+     only difference  when  using  kdbx  is  if  after  typing  a
+     ``cont''  command  you  wish  to interrupt the kernel to get
+     back into kdbx.  When using normal dbx a  control-C  can  be
+     typed  at  the  terminal  to interrupt the debugged process.
+     This will not work with kdbx.  In  order  to  interrupt  the
+     kernel you must use the same method that was given above for
+     entering the kernel  debugging  routine  from  the  console.
+     Once this is done then kdbx will get the interrupt.
+
+QQuuiittttiinngg KKddbbxx
+     Kdbx can be exited just like dbx;  that  is,  by  using  the
+     ``quit''  command.   When  kdbx  is  exited  the kernel will
+     resume where kdbx tells it to resume.
+
+AAddddiittiioonnss ttoo KKddbbxx
+     The part of the debugger which resides in the Sprite  kernel
+     saves  the  state of the kernel when it is entered.  Kdbx is
+     aware of part of this state (such as the program counter and
+     the general purpose registers) but is unaware of most of it.
+     In order to get at this information the variables which con-
+     tain  this  information  can be printed out in kdbx by using
+     the normal print command.  These variables include:
+
+     dbgSfcReg
+          The source function code register.
+
+     dbgDfcReg
+          The destination function code register.
+
+     dbgUserContext
+          The user context register.
+
+     dbgKernelContext
+          The kernel context register.
+
+     dbgTrapStack
+          The stack  that  was  created  when  the  debugger  was
+          entered.   This  includes  the  bus error register, the
+          user stack pointer, the 16 general purpose registers in
+          the  order  d0-d7, a0-a7, and the exception stack.  The
+          exception stack includes the pc and the  status  regis-
+          ter.  See the header file exc.h for the exact format of
+          the trap stack and the exception stack.
+
+     In the normal case kdbx will only backtrace the stack of the
+     process  that  was  executing when the debugger was entered.
+     If you wish to backtrace the stack  of  some  other  waiting
+     process then go through the following steps:
+
+
+
+
+Sprite v.1.0       Printed:  October 25, 1990                   3
+
+
+
+
+
+
+KDBX                      User Commands                      KDBX
+
+
+
+     1)   Enter the command ``set $index =  process-table-index''
+          where  process-table-index  is the index of the process
+          control block of the process whose stack  you  want  to
+          trace.
+
+     2)   Now issue the normal ``where'' command.
+
+     3)   Go back to the original process by issuing the  command
+          ``set $index = 0''.
+
+     Note that the only command that  should  be  executed  after
+     switching  processes  is  the where command.  Continuing the
+     kernel after switching stacks would be a disaster.
+
+MMooddiiffiiccaattiioonnss ttoo KKddbbxx
+     There have been several modifications to kdbx:
+
+     1)   Parameter types are not checked when calling  functions
+          inside of kdbx.
+
+     2)   Objects  of  type  ``char  *''  are  not   dereferenced
+          automatically.   There  are  two  ways  to make them be
+          dereferenced while using the ``print'' command.  One is
+          to issue the command ``ps'' (an alias for print string)
+          instead of ``print''.  The other  is  to  automatically
+          set  the  variable  $dref  (i.e.  use the command ``set
+          $dref'').  This will make all subsequent ``print'' com-
+          mands dereference strings.
+
+BBUUGGSS
+     A good chunk of this man page is out of date.  We  currently
+     only use kdbx on Decstation 3100s.  Other machines use kgdb,
+     and we plan to switch 3100s  to  kgdb,  too.   Look  at  the
+     script /sprite/src/kernel/sprite/Kdbx for the correct way to
+     invoke kdbx.
+
+SSEEEE AALLSSOO
+     dbx, kgdb
+
+KKEEYYWWOORRDDSS
+     debugger, dbx, sprite debugger, kernel debugger
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  October 25, 1990                   4
+
+
+

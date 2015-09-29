@@ -1,0 +1,5 @@
+          break
+               This command may be invoked only inside the body  of  a
+               loop  command  such  as  for  or  foreach or while.  It
+               returns  a  TCL_BREAK  code  to  signal  the  innermost
+               containing loop command to return immediately.

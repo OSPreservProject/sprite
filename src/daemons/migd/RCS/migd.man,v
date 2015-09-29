@@ -1,0 +1,140 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     90.12.06.14.10.16;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.12.06.13.55.04;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Man page for the migration daemon.
+@
+
+
+1.2
+log
+@Add copyright notice.  Also, most of the files (e.g., log files,
+pdevs) have been renamed.
+@
+text
+@'\" Copyright 1990 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/daemons/migd/RCS/migd.man,v 1.1 90/12/06 13:55:04 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS MIGD daemons
+.BS
+.SH NAME
+migd \- Manage the migration load average and idle time database
+.SH SYNOPSIS
+.nf
+\fBmigd\fR \fR[\fB\-s\fR] [\fB\-D\fR \fIdebugLevel\fR] [\fB\-L\fR] [\fB\-F\fR]
+.fi
+.SH OPTIONS
+.IP "\fB\-s\fR" 15
+Run in ``silent'' mode, in which case messages about evictions are not
+displayed in the syslog.   The default is to print a message about
+each process evicted.
+.IP "\fB\-D\fI debugLevel\fR" 15
+Set the level of debugging messages.  The default is 0, which means
+only severe errors are printed.  Higher debugging levels produce more
+informational and debugging output to stderr.
+.IP "\fB\-L\fR" 15
+Log errors to files.  Rather than using the inherited stderr,
+\fBmigd\fR will append messages to the file \fB/sprite/admin/migd/$HOST.log\fR,
+and the global daemon will write to \fB/sprite/admin/migd/global-log\fR.  
+.IP "\fB\-F\fR" 15
+Don't fork; do all commands in a single process.  For debugging purposes.
+.BE
+.SH INTRODUCTION
+This command is used to manage the migration load average and idle
+time database.  A centralized daemon keeps track of all hosts and
+assigns idle hosts to processes upon request.  The interface to access
+the migration daemon is in the \fBMig\fR library.  Each host runs a
+copy of the migration daemon, which reports periodically to the
+central daemon.  The per-host daemon is responsible for sampling the
+load average and for detecting when foreign processes should be
+evicted --- i.e., migrated elsewhere --- when a user returns.  The
+per-host daemon also responds to \fIread\fR requests on a
+pseudo-device in its host-specific directory, in which case it returns
+a Mig_Info structure that may be used to obtain the current load
+averages. 
+.PP
+The global daemon is responsible for keeping track of which processes
+are using which hosts.  When an eviction occurs, the daemon notifies
+the process that had been using the host to inform it that the host is
+no longer available.  If a process requests more hosts than are
+available, then when additional hosts are available the daemon
+notifies the process that it may try to request more hosts.
+.PP
+If the global daemon is killed, or its host fails,
+one of the per-host instances of \fBmigd\fR will fork a process to
+become the new global daemon.  User processes will lose their
+connection to the global daemon.  The \fBMig\fR library is responsible
+for reestablishing the connection.  The new global daemon will restore
+its state from a checkpoint file in order to have an approximation of
+the last time each host was known to be up.  Hosts are assumed to be
+down until their migration daemons contact the new global daemon.
+.SH "SEE ALSO"
+mig, loadavg, pmake, migcmd, xload
+.SH FILES
+.IP /sprite/admin/migd/global-log
+The global migration daemon error log.  
+.IP /sprite/admin/migd/$HOST.log
+The error log used by host $HOST.
+.IP /sprite/admin/migd/pdev
+The pseudo-device used to communicate with the global daemon.
+.IP /hosts/$HOST/migd.pdev
+The pseudo-device used to communicate with the local daemon.
+.IP /sprite/admin/migd/check
+The file used to store the most recent information about host uptimes.
+.SH KEYWORDS
+database, eviction, foreign, idle time, load average, process migration,
+uptime
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 9
+a9 1
+' $Header: /a/newcmds/loadavg/RCS/loadavg.man,v 1.9 89/08/29 12:52:23 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+d30 2
+a31 2
+\fBmigd\fR will append messages to the file \fB/hosts/$HOST/migd.log\fR,
+and the global daemon will write to \fB/sprite/admin/migd.log\fR.  
+d67 1
+a67 1
+.IP /sprite/admin/migd.log
+d69 1
+a69 1
+.IP /hosts/$HOST/migd.log
+d71 1
+a71 1
+.IP /sprite/admin/migInfo.pdev
+d73 1
+a73 1
+.IP /hosts/$HOST/migInfo.pdev
+d75 1
+a75 1
+.IP /sprite/admin/migd.check
+@

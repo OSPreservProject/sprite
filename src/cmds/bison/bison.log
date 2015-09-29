@@ -1,0 +1,396 @@
+This is Common TeX, Version 2.9 (preloaded format=plain 89.9.18) 22 OCT 1989 23:56
+**&plain bison.texinfo 
+(./bison.texinfo (/sprite/lib/tex/texinfo.tex
+Loading texinfo package [Version 1.13]:  Basics,
+\bindingoffset=\dimen16
+\normaloffset=\dimen17
+\pagewidth=\dimen18
+\pageheight=\dimen19
+\cornerlong=\dimen20
+\cornerthick=\dimen21
+\topandbottommargin=\dimen22
+\outerhsize=\dimen23
+\outervsize=\dimen24
+\EMsimple=\toks12
+\singlespaceskip=\skip18
+ fonts,
+\fontdepth=\count25
+ page headings,
+\evenheadline=\toks13
+\oddheadline=\toks14
+\evenfootline=\toks15
+\oddfootline=\toks16
+
+tables,
+\tableindent=\dimen25
+\itemindent=\dimen26
+\itemmargin=\dimen27
+\itemmax=\dimen28
+\itemno=\count26
+ indexing,
+\initialskipamount=\skip19
+\secondaryindent=\skip20
+\partialpage=\box16
+\doublecolumnhsize=\dimen29
+\doublecolumnvsize=\dimen30
+ sectioning,
+\chapno=\count27
+\secno=\count28
+\subsecno=\count29
+\subsubsecno=\count30
+\appendixno=\count31
+\contentsfile=\write0
+\chapheadingskip=\skip21
+\subsecheadingskip=\skip22
+\secheadingskip=\skip23
+ toc printing, environments,
+\lispnarrowing=\skip24
+\aboveenvskipamount=\skip25
+ defuns,
+\defbodyindent=\skip26
+\defargsindent=\skip27
+\deftypemargin=\skip28
+\deflastargmargin=\skip29
+\parencount=\count32
+
+cross reference,
+\auxfile=\write1
+\footnoteno=\count33
+ and turning on texinfo input format.
+\cpindfile=\write2
+\fnindfile=\write3
+\vrindfile=\write4
+\tpindfile=\write5
+\kyindfile=\write6
+\pgindfile=\write7
+) [1] [2]
+(Introduction) (Conditions for Using Bison) [1] [2]
+(Bison General Public License) [3] [4] [5] [6] Chapter 1 [7] [8]
+[9]
+WARNING: Cross-reference "Grammar File-snt" used but not yet defined 
+WARNING: Cross-reference "Grammar File-pg" used but not yet defined 
+[10] WARNING: Cross-reference "Symbols-snt" used but not yet defined 
+WARNING: Cross-reference "Symbols-pg" used but not yet defined 
+WARNING: Cross-reference "Rules-snt" used but not yet defined 
+WARNING: Cross-reference "Rules-pg" used but not yet defined 
+WARNING: Cross-reference "Semantics-snt" used but not yet defined 
+WARNING: Cross-reference "Semantics-pg" used but not yet defined 
+[11] WARNING: Cross-reference "Actions-snt" used but not yet defined 
+WARNING: Cross-reference "Actions-pg" used but not yet defined  [12]
+WARNING: Cross-reference "Lexical-snt" used but not yet defined 
+WARNING: Cross-reference "Lexical-pg" used but not yet defined 
+WARNING: Cross-reference "Interface-snt" used but not yet defined 
+WARNING: Cross-reference "Interface-pg" used but not yet defined 
+[13] [14] Chapter 2 [15] [16]
+WARNING: Cross-reference "C Declarations-snt" used but not yet defined 
+WARNING: Cross-reference "C Declarations-pg" used but not yet defined 
+WARNING: Cross-reference "Value Type-snt" used but not yet defined 
+WARNING: Cross-reference "Value Type-pg" used but not yet defined 
+[17]
+WARNING: Cross-reference "Bison Declarations-snt" used but not yet defin
+ed 
+WARNING: Cross-reference "Bison Declarations-pg" used but not yet define
+d  [18]
+WARNING: Cross-reference "Recursion-snt" used but not yet defined 
+WARNING: Cross-reference "Recursion-pg" used but not yet defined 
+[19] [20] [21]
+WARNING: Cross-reference "Rpcalc Decls-snt" used but not yet defined 
+WARNING: Cross-reference "Rpcalc Decls-pg" used but not yet defined 
+[22]
+WARNING: Cross-reference "Error Recovery-snt" used but not yet defined 
+WARNING: Cross-reference "Error Recovery-pg" used but not yet defined 
+WARNING: Cross-reference "Grammar Layout-snt" used but not yet defined 
+WARNING: Cross-reference "Grammar Layout-pg" used but not yet defined 
+[23] [24]
+WARNING: Cross-reference "Precedence-snt" used but not yet defined 
+WARNING: Cross-reference "Precedence-pg" used but not yet defined 
+[25]
+WARNING: Cross-reference "Contextual Precedence-snt" used but not yet de
+fined 
+WARNING: Cross-reference "Contextual Precedence-pg" used but not yet def
+ined  [26] [27]
+WARNING: Cross-reference "Multiple Types-snt" used but not yet defined 
+WARNING: Cross-reference "Multiple Types-pg" used but not yet defined 
+WARNING: Cross-reference "Union Decl-snt" used but not yet defined 
+WARNING: Cross-reference "Union Decl-pg" used but not yet defined 
+WARNING: Cross-reference "Type Decl-snt" used but not yet defined 
+WARNING: Cross-reference "Type Decl-pg" used but not yet defined 
+[28] [29] [30] [31] [32] Chapter 3 [33] [34]
+WARNING: Cross-reference "Declarations-snt" used but not yet defined 
+WARNING: Cross-reference "Declarations-pg" used but not yet defined 
+[35] [36]
+WARNING: Cross-reference "Token Decl-snt" used but not yet defined 
+WARNING: Cross-reference "Token Decl-pg" used but not yet defined 
+WARNING: Cross-reference "Invocation-snt" used but not yet defined 
+WARNING: Cross-reference "Invocation-pg" used but not yet defined 
+[37] [38]
+WARNING: Cross-reference "Algorithm-snt" used but not yet defined 
+WARNING: Cross-reference "Algorithm-pg" used but not yet defined 
+[39] WARNING: Cross-reference "RPN Calc-snt" used but not yet defined 
+WARNING: Cross-reference "RPN Calc-pg" used but not yet defined 
+WARNING: Cross-reference "Grammar Outline-snt" used but not yet defined
+WARNING: Cross-reference "Grammar Outline-pg" used but not yet defined 
+[40]
+WARNING: Cross-reference "Mid-Rule Actions-snt" used but not yet defined
+
+WARNING: Cross-reference "Mid-Rule Actions-pg" used but not yet defined
+[41] [42] [43]
+WARNING: Cross-reference "Look-Ahead-snt" used but not yet defined 
+WARNING: Cross-reference "Look-Ahead-pg" used but not yet defined 
+[44] [45]
+WARNING: Cross-reference "Language and Grammar-snt" used but not yet def
+ined 
+WARNING: Cross-reference "Language and Grammar-pg" used but not yet defi
+ned 
+WARNING: Cross-reference "Precedence Decl-snt" used but not yet defined
+WARNING: Cross-reference "Precedence Decl-pg" used but not yet defined 
+[46] [47]
+WARNING: Cross-reference "Shift/Reduce-snt" used but not yet defined 
+WARNING: Cross-reference "Shift/Reduce-pg" used but not yet defined 
+[48] [49]
+WARNING: Cross-reference "Start Decl-snt" used but not yet defined 
+WARNING: Cross-reference "Start Decl-pg" used but not yet defined 
+WARNING: Cross-reference "Expect Decl-snt" used but not yet defined 
+WARNING: Cross-reference "Expect Decl-pg" used but not yet defined 
+WARNING: Cross-reference "Pure Decl-snt" used but not yet defined 
+WARNING: Cross-reference "Pure Decl-pg" used but not yet defined 
+Overfull \hbox (26.05666pt too wide) in paragraph at lines 2531--2533
+ \tenrm Re-quest a pure (reen-trant) parser pro-gram (see $\teni <$\tenr
+m undefined$\teni >$ \tenrm [Pure Decl], page $\teni <$\tenrm undefined$
+\teni >$\tenrm ). |
+
+\hbox(8.2125+2.73749)x469.75499, glue set - 1.0
+.\glue(\leftskip) 57.81621
+.\tenrm R
+.\tenrm e
+.\discretionary
+..\tenrm -
+.\tenrm q
+.etc.
+
+Chapter 4 [50] [51] [52]
+WARNING: Cross-reference "Action Features-snt" used but not yet defined
+WARNING: Cross-reference "Action Features-pg" used but not yet defined 
+[53]
+WARNING: Cross-reference "Action Types-snt" used but not yet defined 
+WARNING: Cross-reference "Action Types-pg" used but not yet defined 
+WARNING: Cross-reference "Parser Function-snt" used but not yet defined
+WARNING: Cross-reference "Parser Function-pg" used but not yet defined 
+[54] Chapter 5 [55] [56] [57] [58] [59] [60] [61] [62] [63] [64]
+Chapter 6 [65] [66] [67] Chapter 7 [68]
+WARNING: Cross-reference "Parser States-snt" used but not yet defined 
+WARNING: Cross-reference "Parser States-pg" used but not yet defined 
+Overfull \hbox (4.1136pt too wide) in paragraph at lines 3453--3456
+ [] []\tenrm Each time a to-ken is shifted, the depth and com-plete con-
+tents of the state stack (see $\teni <$\tenrm undefined$\teni >$|
+
+\hbox(8.2125+2.73749)x469.75499, glue set - 1.0
+.\glue(\leftskip) 21.68121
+.\hbox(0.0+0.0)x0.0
+.\glue 0.0
+.\hbox(4.44444+0.0)x0.0, glue set - 12.22745fil
+..\glue 0.0 plus 1.0fil minus 1.0fil
+..\mathon
+..\tensy ^^O
+..\mathoff
+..\glue 7.22743
+.\tenrm E
+.etc.
+
+Chapter 8 [69] [70]
+WARNING: Cross-reference "Debugging-snt" used but not yet defined 
+WARNING: Cross-reference "Debugging-pg" used but not yet defined 
+[71] Appendix \char 65 [72]
+Overfull \hbox (39.34856pt too wide) in paragraph at lines 3584--3587
+ []\tenrm Data type of se-man-tic val-ues; \tentt int[] \tenrm by de-fau
+lt. See $\teni <$\tenrm undefined$\teni >$ \tenrm [Value Type], page $\t
+eni <$\tenrm undefined$\teni >$\tenrm . |
+
+\hbox(8.2125+2.73749)x469.75499, glue set - 1.0
+.\glue(\leftskip) 57.81621
+.\hbox(6.69167+0.0)x0.0, glue set 17.5754fil
+..\glue -57.81621
+..\hbox(6.69167+0.0)x40.24081
+...\tentt Y
+...\tentt Y
+...\tentt S
+...\tentt T
+...\tentt Y
+...etc.
+..\glue 0.0 plus 1.0fil minus 1.0fil
+.\tenrm D
+.\tenrm a
+.\tenrm t
+.etc.
+
+
+WARNING: Cross-reference "Error Reporting-snt" used but not yet defined
+WARNING: Cross-reference "Error Reporting-pg" used but not yet defined 
+[73]
+Overfull \hbox (16.06738pt too wide) in paragraph at lines 3624--3627
+ []\tenrm The parser func-tion pro-duced by Bi-son; call this func-tion 
+to start pars-ing. See $\teni <$\tenrm undefined$\teni >$|
+
+\hbox(7.60416+2.43333)x469.75499, glue set - 1.0
+.\glue(\leftskip) 57.81621
+.\hbox(4.71457+2.43333)x0.0, glue set 17.5754fil
+..\glue -57.81621
+..\hbox(4.71457+2.43333)x40.24081
+...\tentt y
+...\tentt y
+...\tentt p
+...\tentt a
+...\tentt r
+...etc.
+..\glue 0.0 plus 1.0fil minus 1.0fil
+.\tenrm T
+.\tenrm h
+.\tenrm e
+.etc.
+
+
+Overfull \hbox (35.14119pt too wide) in paragraph at lines 3648--3650
+ []\tenrm Bison dec-la-ra-tion to spec-ify the start sym-bol. See $\teni
+ <$\tenrm undefined$\teni >$ \tenrm [Start Decl], page $\teni <$\tenrm u
+ndefined$\teni >$\tenrm . |
+
+\hbox(8.2125+2.73749)x469.75499, glue set - 1.0
+.\glue(\leftskip) 57.81621
+.\hbox(7.60416+0.91249)x0.0, glue set 23.32408fil
+..\glue -57.81621
+..\hbox(7.60416+0.91249)x34.49213
+...\tentt %
+...\tentt s
+...\tentt t
+...\tentt a
+...\tentt r
+...etc.
+..\glue 0.0 plus 1.0fil minus 1.0fil
+.\tenrm B
+.\tenrm i
+.\tenrm s
+.etc.
+
+
+Overfull \hbox (21.63611pt too wide) in paragraph at lines 3655--3657
+ []\tenrm Bison dec-la-ra-tion to de-clare non-ter-mi-nals. See $\teni <
+$\tenrm undefined$\teni >$ \tenrm [Type Decl], page $\teni <$\tenrm unde
+fined$\teni >$\tenrm . |
+
+\hbox(8.2125+2.73749)x469.75499, glue set - 1.0
+.\glue(\leftskip) 57.81621
+.\hbox(7.60416+2.43333)x0.0, glue set 29.07277fil
+..\glue -57.81621
+..\hbox(7.60416+2.43333)x28.74344
+...\tentt %
+...\tentt t
+...\tentt y
+...\tentt p
+...\tentt e
+...etc.
+..\glue 0.0 plus 1.0fil minus 1.0fil
+.\tenrm B
+.\tenrm i
+.\tenrm s
+.etc.
+
+
+Overfull \hbox (8.72304pt too wide) in paragraph at lines 3666--3670
+ \tenrm or the ad-di-tional C code sec-tion. See $\teni <$\tenrm undefin
+ed$\teni >$ \tenrm [Gram-mar Lay-out], page $\teni <$\tenrm undefined$\t
+eni >$\tenrm . |
+
+\hbox(8.2125+2.73749)x469.75499, glue set - 1.0
+.\glue(\leftskip) 57.81621
+.\tenrm o
+.\tenrm r
+.\glue 3.65 plus 1.825 minus 1.21666
+.\tenrm t
+.etc.
+
+
+Overfull \hbox (14.1536pt too wide) in paragraph at lines 3679--3681
+ []\tenrm Separates a rule's re-sult from its com-po-nents. See $\teni <
+$\tenrm undefined$\teni >$ \tenrm [Rules], page $\teni <$\tenrm undefine
+d$\teni >$\tenrm . |
+
+\hbox(8.2125+2.73749)x469.75499, glue set - 1.0
+.\glue(\leftskip) 57.81621
+.\hbox(7.60416+0.0)x0.0, glue set 45.98418fil
+..\glue -57.81621
+..\hbox(7.60416+0.0)x11.83203
+...\tenrm `
+...\tentt :
+...\tenrm '
+...\hbox(0.0+0.0)x0.0
+..\glue 0.0 plus 1.0fil minus 1.0fil
+.\tenrm S
+.\tenrm e
+.\tenrm p
+.etc.
+
+Appendix \char 66 [74]
+Overfull \hbox (9.16023pt too wide) in paragraph at lines 3721--3725
+ \tenrm sion' or `dec-la-ra-tion' in C. See $\teni <$\tenrm undefined$\t
+eni >$ \tenrm [Lan-guage and Gram-mar], page $\teni <$\tenrm undefined$\
+teni >$\tenrm . |
+
+\hbox(8.2125+2.73749)x469.75499, glue set - 1.0
+.\glue(\leftskip) 57.81621
+.\tenrm s
+.\tenrm i
+.\tenrm o
+.\tenrm n
+.etc.
+
+
+Overfull \hbox (11.26372pt too wide) in paragraph at lines 3738--3742
+ \tenrm putes `\tentt a+b\tenrm '[] and then com-bines with `\tentt c\te
+nrm '[]. See $\teni <$\tenrm undefined$\teni >$ \tenrm [Prece-dence], pa
+ge $\teni <$\tenrm undefined$\teni >$\tenrm . |
+
+\hbox(8.2125+2.73749)x469.75499, glue set - 1.0
+.\glue(\leftskip) 57.81621
+.\tenrm p
+.\tenrm u
+.\tenrm t
+.\tenrm e
+.etc.
+
+[75]
+Overfull \hbox (23.21663pt too wide) in paragraph at lines 3754--3756
+ \tenrm A to-ken al-ready read but not yet shifted. See $\teni <$\tenrm 
+undefined$\teni >$ \tenrm [Look-Ahead], page $\teni <$\tenrm undefined$\
+teni >$\tenrm . |
+
+\hbox(8.2125+2.73749)x469.75499, glue set - 1.0
+.\glue(\leftskip) 57.81621
+.\tenrm A
+.\glue 3.65 plus 1.82317 minus 1.21786
+.\tenrm t
+.\tenrm o
+.etc.
+
+
+Overfull \hbox (6.26305pt too wide) in paragraph at lines 3791--3795
+ \tenrm stream rather than re-duc-ing im-me-di-ately some already-recogn
+ized rule. See $\teni <$\tenrm undefined$\teni >$|
+
+\hbox(7.60416+2.12917)x469.75499, glue set - 1.0
+.\glue(\leftskip) 57.81621
+.\tenrm s
+.\tenrm t
+.\tenrm r
+.\tenrm e
+.etc.
+
+
+WARNING: Cross-reference "Grammar in Bison-snt" used but not yet defined
+
+WARNING: Cross-reference "Grammar in Bison-pg" used but not yet defined
+[76]
+WARNING: Cross-reference "Multi-function Calc-snt" used but not yet defi
+ned 
+WARNING: Cross-reference "Multi-function Calc-pg" used but not yet defin
+ed  (Index) [77] [78] (./bison.toc [-1]) [-2] [-3] [-4]
+Output written on bison.dvi (84 pages, 181776 bytes).

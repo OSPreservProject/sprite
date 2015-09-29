@@ -1,0 +1,32 @@
+#define IHaveSubdirs
+#define PassCDebugFlags 'CDEBUGFLAGS=$(CDEBUGFLAGS)'
+
+#ifdef UWSBuild
+       FONTBITS = fontbits
+#else
+       FONTBITS = 
+#endif
+        SUBDIRS = include lib tools $(FONTBITS)
+   INSTALLFLAGS = $(INSTINCFLAGS)
+
+#ifdef UWSBuild
+build:	$(IMAKE) $(DEPEND)
+	$(RM) Makefile.bak
+	$(MV) Makefile Makefile.bak
+	$(MAKE) -f Makefile.bak $(MFLAGS) Makefile
+	$(MAKE) $(MFLAGS) Makefiles
+	$(MAKE) $(MFLAGS) depend
+	$(MAKE) $(MFLAGS) all
+	$(MAKE) $(MFLAGS) install DESTDIR=$(DESTDIR)
+
+#endif /* UWS Build */
+
+MakeSubdirs($(SUBDIRS))
+DependSubdirs($(SUBDIRS))
+MakeLintLibSubdirs($(SUBDIRS))
+MakeLintSubdirs($(SUBDIRS),install.ln,install.ln)
+
+#ifdef UWSBuild
+clean::
+	find $(SUBDIRS) -name Makefile -exec /bin/rm -f {} \;
+#endif

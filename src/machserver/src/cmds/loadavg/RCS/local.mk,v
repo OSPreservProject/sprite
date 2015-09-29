@@ -1,0 +1,66 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  srv030:1.2 srv028:1.2 srv027:1.2 srv026:1.2 srv024:1.2 srv022:1.2 srv021:1.2 srv019:1.2 srv018:1.2 srv016:1.2 srv014:1.2 srv010:1.2 srv008:1.2 srv007:1.2 srv006:1.2 srv005:1.2 srv004:1.2 srv003:1.2;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     92.04.29.22.24.30;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     92.04.27.20.55.37;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Hack for use with sprited.
+@
+text
+@#
+# This file is included by Makefile.  Makefile is generated automatically
+# by mkmf, and this file provides additional local personalization.  The
+# variable SYSMAKEFILE is provided by Makefile;  it's a system Makefile
+# that must be included to set up various compilation stuff.
+#
+
+MAKE_USER_PROGRAM	= loadavg
+
+# Use the uninstalled C library, in general.
+LIBS += -lc_g
+
+#include	"/users/kupfer/lib/pmake/spriteClient.mk"
+
+#
+# Add more install stuff in order to create symbolic links for other
+# aliases.
+#
+
+SYNONYMS	= $(INSTALLDIR).$(TM)/la \
+		  $(INSTALLDIR).$(TM)/evict \
+		  $(INSTALLDIR).$(TM)/uptime
+install		:: $(SYNONYMS)
+$(SYNONYMS)	:
+	ln -s $(NAME) $(.TARGET)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d8 2
+d13 1
+a13 1
+#include	<$(SYSMAKEFILE)>
+@

@@ -1,0 +1,112 @@
+% eclbip.sty (C) Hideki ISOZAKI Nov. 24, 1990
+% \ignorespaces Dec.2, 1990
+% draw a bipartite graph with epic.sty
+
+\typeout{ECL Bipartite graph style file by isozaki Dec.2, 1990}
+
+\endlinechar=-1\relax
+\makeatletter
+
+\newdimen\bip@len
+\newbox\bip@box
+
+% #1...Width of Left Node Group
+% #2...Width of Gap between Left Node Group and Right Node Group
+% #3...Width of Right Node Group
+% #4...Height of Vertical Gap between Nodes
+% #5...Width of a Bullet and its Label
+
+\def\bipartite#1#2#3#4#5{
+	\bip@init\bip@sep{#4}
+	\bip@init\bip@lW{#1}
+	\bip@init\bip@eW{#2}
+	\bip@init\bip@rW{#3}
+	\let\bip@lX=\bip@lW
+	\bip@init\bip@rX{\bip@lX\p@}\bip@add\bip@rX{#2}
+	\bip@init\bip@tX{\bip@rX\p@}\bip@add\bip@tX{#3}
+	\bip@init\bip@lY{\z@}
+	\bip@init\bip@rY{\z@}
+	\xdef\bip@bot{0.0}
+        \bip@init\bip@elX{\bip@lX\p@}
+        \bip@add\bip@elX{#5}
+        \bip@init\bip@erX{\bip@rX\p@}
+        \bip@add\bip@erX{-#5}
+	\unitlength=\p@
+	\def\endbipartite{\endpicture
+	\hbox{\vrule\@depth\bip@bot\p@\@height\z@\@width\z@}}
+	\picture(\bip@tX,0)(0,0)\ignorespaces}
+
+%
+% \leftnode[#1]{#2}
+%   #1=label, #2=content
+%
+% \leftnode{#1}=\leftnode[#1]{#1}
+%
+
+\def\leftnode{\@dblarg{\@leftnode}}
+
+\def\@leftnode[#1]#2{
+	\setbox\bip@box=\hbox to \z@{\hss
+		\@iparbox[c]{\bip@lW\p@}{\raggedleft #2}}
+	\bip@init\bip@halfH{-.5\ht\bip@box}
+	\bip@add\bip@halfH{-.5\dp\bip@box}
+	\bip@init\bip@corrY{\bip@halfH\p@}
+	\bip@add\bip@corrY{\dp\bip@box}
+	\bip@add\bip@lY{\bip@halfH\p@}
+	\put(\bip@lX,\bip@lY){\raise\bip@corrY\p@\box\bip@box}
+	\put(\bip@elX,\bip@lY){\makebox(0,0){$\bullet$}}
+        \expandafter\edef\csname bip@L#1\endcsname{\bip@lY}
+	\bip@add\bip@lY{\bip@halfH\p@}
+	\bip@max\bip@bot{-\bip@lY\p@}
+	\bip@add\bip@lY{-\bip@sep\p@}\ignorespaces}
+
+\def\rightnode{\@dblarg{\@rightnode}}
+
+\def\@rightnode[#1]#2{
+	\setbox\bip@box=\hbox to \z@{
+		\@iparbox[c]{\bip@rW\p@}{\raggedright #2}\hss}
+	\bip@init\bip@halfH{-.5\ht\bip@box}
+	\bip@add\bip@halfH{-.5\dp\bip@box}
+	\bip@init\bip@corrY{\bip@halfH\p@}
+	\bip@add\bip@corrY{\dp\bip@box}
+	\bip@add\bip@rY{\bip@halfH\p@}
+	\put(\bip@rX,\bip@rY){\raise\bip@corrY\p@\box\bip@box}
+	\put(\bip@erX,\bip@rY){\makebox(0,0){$\bullet$}}
+        \expandafter\edef\csname bip@R#1\endcsname{\bip@rY}
+	\bip@add\bip@rY{\bip@halfH\p@}
+	\bip@max\bip@bot{-\bip@rY\p@}
+	\bip@add\bip@rY{-\bip@sep\p@}\ignorespaces}
+
+%
+%   Draw Edges between Nodes
+%
+
+\def\brush#1{\def\bip@brush{#1}\ignorespaces}
+\brush{\drawline}
+
+\def\match#1#2{
+	\bip@brush(\bip@elX,\@nameuse{bip@L#1})(\bip@erX,\@nameuse{bip@R#2})
+	\ignorespaces}
+
+%
+% (1) Avoidance of too much use of dimen.
+% (2) Easy conversion between picture coord and real dimen
+%  ---> Keep dimen without 'pt'
+%
+
+\def\bip@init#1#2{\bip@len=#2\relax
+	\edef#1{\expandafter\@RemoveDim\the\bip@len}}
+
+\def\bip@add#1#2{\bip@len=#1\p@\relax\advance\bip@len by #2\relax
+	\edef#1{\expandafter\@RemoveDim\the\bip@len}}
+
+\def\bip@max#1#2{\bip@len=#1\p@\relax
+	\ifdim\bip@len<#2\relax\bip@len=#2
+	\xdef#1{\expandafter\@RemoveDim\the\bip@len}\fi}
+
+{\catcode`\p=12 \catcode`\t=12
+\gdef\@RemoveDim#1pt{#1}}
+
+\endlinechar=13\relax
+
+\endinput

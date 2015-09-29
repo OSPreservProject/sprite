@@ -1,0 +1,77 @@
+%% 
+%% This is file `thp.sty' generated
+%% on <1991/6/21> with the docstrip utility (v1.1l test). 
+%% 
+%% The original source file was `thp.doc'.
+%% 
+%% 
+%% Copyright (C) 1989,1990,1991 by Frank Mittelbach. All rights reserved. 
+%% 
+%% IMPORTANT NOTICE: 
+%% 
+%% You are not allowed to change this file. You may however copy this file 
+%% to a file with a different name and then change the copy. 
+%% 
+%% You are NOT ALLOWED to distribute this file alone. You are NOT ALLOWED 
+%% to take money for the distribution or use of this file (or a changed 
+%% version) except for a nominal charge for copying etc. 
+%% 
+%% You are allowed to distribute this file under the condition that it is 
+%% distributed together with all files mentioned in readme.mz2. 
+%% 
+%% If you receive only some of these files from someone, complain! 
+%% 
+%% However, if these files are distributed by established suppliers as part 
+%% of a complete TeX distribution, and the structure of the distribution 
+%% would make it difficult to distribute the whole set of files, *those 
+%% parties* are allowed to distribute only some of the files provided that 
+%% it is made clear that the user will get a complete distribution-set upon 
+%% request to that supplier (not me). 
+%% Notice that this permission is not granted to the end user. 
+%% 
+%% Error Reports in case of UNCHANGED versions to 
+%% 
+%% F. Mittelbach 
+%% Eichenweg 29 
+%% D-6500 Mainz 1 
+%% Federal Republic of Germany 
+%% Bitnet: <PZF5HZ@RUIPC1E> 
+%% 
+
+\def\fileversion{v2.1b}
+\def\filedate{89/10/28}
+\def\docdate {89/09/19}
+
+%% \CharacterTable
+%%  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
+%%   Lower-case    \a\b\c\d\e\f\g\h\i\j\k\l\m\n\o\p\q\r\s\t\u\v\w\x\y\z
+%%   Digits        \0\1\2\3\4\5\6\7\8\9
+%%   Exclamation   \!     Double quote  \"     Hash (number) \#
+%%   Dollar        \$     Percent       \%     Ampersand     \&
+%%   Acute accent  \'     Left paren    \(     Right paren   \)
+%%   Asterisk      \*     Plus          \+     Comma         \,
+%%   Minus         \-     Point         \.     Solidus       \/
+%%   Colon         \:     Semicolon     \;     Less than     \<
+%%   Equals        \=     Greater than  \>     Question mark \?
+%%   Commercial at \@     Left bracket  \[     Backslash     \\
+%%   Right bracket \]     Circumflex    \^     Underscore    \_
+%%   Grave accent  \`     Left brace    \{     Vertical bar  \|
+%%   Right brace   \}     Tilde         \~}
+%%
+
+\begingroup \makeatletter
+\@ifundefined{theorem@style}{\input{theorem.sty}}{}
+\typeout{Style option: `theorem-plain' \fileversion \space\space
+         <\filedate>  (FMi)}
+\typeout{English documentation \@spaces\@spaces\@spaces\space\space
+         \space <\docdate>  (FMi)}
+\gdef\th@plain{\it
+  \def\@begintheorem##1##2{%
+        \item[\hskip\labelsep \theorem@headerfont ##1\ ##2]}%
+\def\@opargbegintheorem##1##2##3{%
+   \item[\hskip\labelsep \theorem@headerfont ##1\ ##2\ (##3)]}}
+\endgroup
+
+\endinput
+%% 
+%% End of file `thp.sty'.

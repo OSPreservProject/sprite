@@ -1,0 +1,507 @@
+head     9.0;
+branch   ;
+access   ;
+symbols  ds3100:9.0 sun3:9.0 sun4nw:9.0 symm:9.0 spur:9.0 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @# @;
+
+
+9.0
+date     89.09.12.14.51.17;  author douglis;  state Stable;
+branches ;
+next     8.3;
+
+8.3
+date     89.09.11.23.43.06;  author rab;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.05.24.02.03.18;  author rab;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.18.11.23.01;  author rab;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.03.15;  author douglis;  state Stable;
+branches ;
+next     6.2;
+
+6.2
+date     88.09.09.12.59.48;  author nelson;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.24.17.51.15;  author nelson;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.09.17;  author brent;  state Stable;
+branches ;
+next     5.5;
+
+5.5
+date     88.05.04.15.52.43;  author nelson;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     88.04.28.10.48.48;  author nelson;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     88.04.27.19.43.11;  author nelson;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     88.04.27.19.10.03;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.12.11.14.15.49;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.36.18;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@|* bootSys.s -
+|*
+|*     Contains code that is the first executed at boot time.
+|*
+|* Copyright (C) 1985 Regents of the University of California
+|* All rights reserved.
+|*
+
+.data
+.asciz "$Header: /sprite/src/kernel/mach/sun3.md/RCS/bootSysAsm.s,v 8.3 89/09/11 23:43:06 rab Exp Locker: douglis $ SPRITE (Berkeley)"
+.even
+.text
+
+#include "machConst.h"
+
+|
+| "Start" is used for the -e option to the loader.  "SpriteStart" is
+| used for the prof module, which prepends an underscore to the name of
+| global variables and therefore can't find "_start".
+|
+
+	.text
+	.globl	start
+	.globl	_spriteStart
+start:
+_spriteStart:
+	movw	#MACH_SR_HIGHPRIO,sr		| lock out interrupts
+|
+| The function codes are only used to get to and from MMU space so set them
+| permanently here.
+|
+	movl	#VMMACH_MMU_SPACE, d0
+	movc	d0, dfc
+	movc	d0, sfc
+#ifdef sun2
+|
+| The kernel has been loaded into the wrong location.  We copy it to the right
+| location by copying up 4 Meg worth of pmegs starting at address 10M.
+|
+	clrl	d0
+	movl	#(MACH_KERN_START + VMMACH_SEG_MAP_OFF), a0
+loopStart:
+	movsb	d0, a0@@
+	addql	#1, d0
+	addl	#VMMACH_SEG_SIZE, a0
+	cmpl	#(0x400000 / VMMACH_SEG_SIZE), d0
+	bne	loopStart
+
+#endif
+
+#ifdef sun3
+|
+| The kernel has been loaded into the wrong location.  We copy it to the right
+| location by copying up 8 Meg worth of pmegs.  This is done in all contexts.
+|
+
+	clrl	d1
+contextLoop:
+	movsb	d1, VMMACH_CONTEXT_OFF
+	clrl	d0
+	movl	#(MACH_KERN_START + VMMACH_SEG_MAP_OFF), a0
+loopStart:
+	movsb	d0, a0@@
+	addql	#1, d0
+	addl	#VMMACH_SEG_SIZE, a0
+	cmpl	#(0x800000 / VMMACH_SEG_SIZE), d0
+	bne	loopStart
+
+	addql	#1, d1
+	cmpl	#VMMACH_NUM_CONTEXTS, d1
+	bne 	contextLoop
+
+	clrl	d1
+	movsb	d1, VMMACH_CONTEXT_OFF
+
+|
+| Enable the mc68881 floating point coprocessor.
+|
+
+        .data
+
+	.globl _mach68881Present
+_mach68881Present:
+	.long   1
+
+        .globl _mach68881NullState
+_mach68881NullState:
+	.long   0
+
+        .globl _mach68881IdleState
+        .globl _mach68881Version
+_mach68881IdleState:
+_mach68881Version:
+	.long   0
+	.long   0
+	.long   0
+	.long   0
+	.long   0
+	.long   0
+	.long   0
+
+	.text
+
+        movsb   VMMACH_SYSTEM_ENABLE_REG, d0    | Read the enable register.
+	orb     #MACH_ENABLE_FPP, d0            | Set the fpu enable bit.
+	movsb   d0, VMMACH_SYSTEM_ENABLE_REG    | Write the enable register.
+	movl    (MACH_EMU1111*4), d1            | Save current inrpt 11 handler.
+	movl    #fcatch, (MACH_EMU1111*4)       | Set up to catch a trap.
+	movl    sp, a0                          | Save sp, just in case.
+	frestore _mach68881NullState            | Set the fpu to the null state.
+	                                        | If there is no fpu we will
+						| trap to `fcatch'.
+	fmovecrx    #0, fp1                     | Set fp register.
+	movw    #0x100, d0
+2:
+	dbra    d0, 2b                          | Wait for fpu op to complete.
+	fsave   _mach68881IdleState             | Save an idle state frame.
+	frestore _mach68881NullState            | Reset the fpu to null state.
+	bra     1f
+fcatch:                                         | Oops, there isn't any fpu.
+	movl    a0, sp                          | Restore the stack,
+	andb    #~MACH_ENABLE_FPP, d0           | Clear the fpu enable bit.
+	movsb   d0, VMMACH_SYSTEM_ENABLE_REG    | Write the enable register.
+	clrl    _mach68881Present               | Clear the fpu present flag.
+1:
+	movl    d1, (MACH_EMU1111*4)            | Restore the inrpt 11 handler.
+#endif
+
+|
+| Force non-PC relative jump to real start of kernel.
+|
+
+	jmp	begin:l
+
+|
+| Trap to the debugger.  Used when need to trap via the monitor.
+|
+
+	.globl _Dbg_Mon
+_Dbg_Mon:	
+	trap #15
+
+	.globl _edata, _end
+begin:
+|
+| Zero out the bss segment.
+|
+	movl	#_edata, a0
+	movl	#_end, a1
+1:
+	clrl	a0@@
+	addql	#4, a0
+	cmpl	a0, a1
+	bne	1b
+
+	movl	#start,sp		| Set the stack pointer
+ 	movl	#start,_dbgMaxStackAddr	| Store the top of the stack for the
+					|     debugger.
+	jsr	_main
+
+| 
+| We returned so call Proc_Exit
+|
+
+	clrl	sp@@-
+	jsr	_Proc_Exit
+@
+
+
+8.3
+log
+@Changes to fix floating point migration.
+@
+text
+@d10 1
+a10 1
+.asciz "$Header: /sprite/src/kernel/mach/sun3.md/RCS/bootSysAsm.s,v 8.2 89/05/24 02:03:18 rab Exp Locker: rab $ SPRITE (Berkeley)"
+@
+
+
+8.2
+log
+@Changes to support floating point.
+@
+text
+@d10 1
+a10 1
+.asciz "$Header: /sprite/src/kernel/mach/sun3.md/RCS/bootSysAsm.s,v 8.1 88/11/18 11:23:01 rab Exp Locker: rab $ SPRITE (Berkeley)"
+d77 1
+a77 1
+| Enable the floating point processor.
+d81 15
+a95 4
+	.globl fpu_present
+fpu_present:
+	.word 1
+fpu_null_state:
+d97 4
+d103 1
+d110 9
+a118 1
+	frestore fpu_null_state                 | Set the fpu to the null state.
+d124 1
+a124 1
+	movw    #0, fpu_present                 | Clear the fpu_present flag.
+@
+
+
+8.1
+log
+@changed SUN to sun
+@
+text
+@d10 1
+a10 1
+.asciz "$Header: /sprite/src/kernel/mach/sun2.md/RCS/bootSysAsm.s,v 8.0 88/11/11 18:03:15 douglis Stable Locker: rab $ SPRITE (Berkeley)"
+a75 1
+#ifdef notdef
+d79 24
+a102 4
+	movsb VMMACH_SYSTEM_ENABLE_REG, d0
+	orb   #MACH_ENABLE_FPP, d0
+	movsb d0, VMMACH_SYSTEM_ENABLE_REG
+#endif
+d126 1
+a126 1
+1$:
+d130 1
+a130 1
+	bne	1$
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+.asciz "$Header: /sprite/src/kernel/mach/sun2.md/RCS/bootSysAsm.s,v 6.2 88/09/09 12:59:48 nelson Exp Locker: douglis $ SPRITE (Berkeley)"
+d35 1
+a35 1
+#ifdef SUN2
+d51 1
+a51 1
+#ifdef SUN3
+@
+
+
+6.2
+log
+@Zero out bss segment.
+@
+text
+@d10 1
+a10 1
+.asciz "$Header: bootSysAsm.s,v 6.1 88/08/24 17:51:15 nelson Exp $ SPRITE (Berkeley)"
+@
+
+
+6.1
+log
+@Removed old dbg variables.
+@
+text
+@d10 1
+a10 1
+.asciz "$Header: bootSysAsm.s,v 5.5 88/05/04 15:52:43 nelson Exp $ SPRITE (Berkeley)"
+d100 1
+d102 12
+a113 1
+ 	movl	#start,sp		| Set the stack pointer
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d92 3
+a94 3
+| Trap to the debugger.  The two nops make space so that the pc can be stored
+| there.  The trap never returns to here, instead returning to the PC given in
+| Dbg_MonPC.
+d96 1
+a96 1
+	.globl _Dbg_Mon, _dbgMonPC, _dbgTraceLevel
+a98 6
+_dbgMonPC:
+	nop
+	nop
+_dbgTraceLevel:
+	nop
+	nop
+@
+
+
+5.5
+log
+@New trap handling code with machine state struct per proc.
+@
+text
+@d10 1
+a10 1
+.asciz "$Header: bootSysAsm.s,v 5.4 88/04/28 10:48:48 nelson Exp $ SPRITE (Berkeley)"
+@
+
+
+5.4
+log
+@ifdefed out enabling of floating point coprocessor.
+@
+text
+@d10 1
+a10 1
+.asciz "$Header: bootSysAsm.s,v 5.3 88/04/27 19:43:11 nelson Exp $ SPRITE (Berkeley)"
+d14 1
+a14 2
+#include "excAsm.h"
+#include "machineConst.h"
+d27 1
+a27 1
+	movw	#SUN_SR_HIGHPRIO,sr		| lock out interrupts
+d81 1
+a81 1
+	orb   #SUN_ENABLE_FPP, d0
+@
+
+
+5.3
+log
+@Named constant correctly.
+@
+text
+@d10 1
+a10 1
+.asciz "$Header: bootSysAsm.s,v 5.2 88/04/27 19:10:03 nelson Exp $ SPRITE (Berkeley)"
+d77 1
+d84 1
+@
+
+
+5.2
+log
+@Turn on FPA.
+@
+text
+@d10 1
+a10 1
+.asciz "$Header: bootSysAsm.s,v 5.1 87/12/11 14:15:49 nelson Exp $ SPRITE (Berkeley)"
+d81 1
+a81 1
+	orb   #VMMACH_ENABLE_FPP, d0
+@
+
+
+5.1
+log
+@Moved all machine dependencies (most of them anyway) to this directory.
+@
+text
+@d10 1
+a10 1
+.asciz "$Header: bootSysAsm.s,v 5.0 87/08/11 10:36:18 sprite Exp $ SPRITE (Berkeley)"
+d76 7
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d10 1
+a10 1
+.asciz "$Header: bootSysAsm.s,v 3.2 86/10/30 17:44:10 nelson Exp $ SPRITE (Berkeley)"
+d29 7
+a35 1
+
+a40 3
+	movl	#VM_MMU_SPACE, d0
+	movc	d0, dfc
+
+d42 1
+a42 1
+	movl	#(MACH_KERNEL_START + VM_SEG_MAP_OFF), a0
+d46 2
+a47 2
+	addl	#VM_SEG_SIZE, a0
+	cmpl	#(0x400000 / VM_SEG_SIZE), d0
+a57 3
+	movl	#VM_MMU_SPACE, d0
+	movc	d0, dfc
+
+d60 1
+a60 1
+	movsb	d1, VM_CONTEXT_OFF
+d62 1
+a62 1
+	movl	#(MACH_KERNEL_START + VM_SEG_MAP_OFF), a0
+d66 2
+a67 2
+	addl	#VM_SEG_SIZE, a0
+	cmpl	#(0x800000 / VM_SEG_SIZE), d0
+d71 1
+a71 1
+	cmpl	#VM_NUM_CONTEXTS, d1
+d75 1
+a75 1
+	movsb	d1, VM_CONTEXT_OFF
+a101 5
+
+	lea	VM_USER_DATA_SPACE,a0	| set default value for
+	movc	a0,sfc			|   source and destination
+	movc	a0,dfc			|   function code registers
+
+@

@@ -1,0 +1,1 @@
+TDEFINES = -DDEFAULT_VECTOR=sunos_big_vec

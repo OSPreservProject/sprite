@@ -1,0 +1,34 @@
+.TH MLOCK 2 "November 19, 1989"
+.UC 5
+.SH NAME
+mlock, munlock \- lock and unlock pages in memory.
+.SH SYNOPSIS
+.nf
+.ft B
+int mlock(addr, len)
+int munlock(addr, len)
+caddr_t addr;
+int len;
+.fi
+.ft R
+.SH DESCRIPTION
+.I Mlock
+takes an address range and locks the associated pages into physical
+memory.
+.PP
+.I Munlock
+takes an address range and unlocks the associated pages so they
+can be paged out.
+.SH "RETURN VALUE
+.IR Mlock
+and
+.IR Munlock
+return 0 if they are successful.  Otherwise they return -1 and
+an error code is returned in
+.IR errno .
+.SH "BUGS
+These functions don't have much error checking.  Pages that are
+locked down and not unlocked may remain unusable after the process
+terminates.
+.SH "SEE ALSO"
+mmap(2)

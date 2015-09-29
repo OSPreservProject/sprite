@@ -1,0 +1,269 @@
+head     9.4;
+branch   ;
+access   ;
+symbols  ds3100:9.4 sun3:9.4 sprited:9.4.1 sun4nw:9.4 symm:9.4 spur:9.4 Summer89:9.0 newlib:8.0 Summer88:6.0 sbc:5.1;
+locks    ; strict;
+comment  @ * @;
+
+
+9.4
+date     91.04.16.17.12.58;  author jhh;  state Exp;
+branches 9.4.1.1;
+next     9.3;
+
+9.3
+date     90.10.11.12.29.06;  author kupfer;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.10.10.22.35.02;  author shirriff;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.09.11.12.13.06;  author rab;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.57.57;  author douglis;  state Stable;
+branches ;
+next     8.2;
+
+8.2
+date     89.06.15.08.40.27;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.05.24.07.53.57;  author rab;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.10.25;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.26.39;  author douglis;  state Stable;
+branches ;
+next     5.1;
+
+5.1
+date     87.12.15.15.30.14;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.39.20;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.4.1.1
+date     92.03.26.19.12.37;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.4
+log
+@fixed include statements
+@
+text
+@/*
+ * devSyslog.h --
+ *
+ *	Declarations of data and procedures for the system log device.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/dev/RCS/devSyslog.h,v 9.3 90/10/11 12:29:06 kupfer Exp Locker: jhh $ SPRITE (Berkeley)
+ */
+
+#ifndef _DEVSYSLOG
+#define _DEVSYSLOG
+
+#include <user/fs.h>
+#include <fs.h>
+
+/*
+ * Forward Declarations.
+ */
+
+extern ReturnStatus Dev_SyslogOpen _ARGS_((Fs_Device *devicePtr, int useFlags,
+    Fs_NotifyToken token, int *flagsPtr));
+extern ReturnStatus Dev_SyslogReopen _ARGS_((Fs_Device *devicePtr, int refs,
+    int writers, Fs_NotifyToken token, int *flagsPtr));
+extern ReturnStatus Dev_SyslogRead _ARGS_((Fs_Device *devicePtr,
+    Fs_IOParam *readPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus Dev_SyslogWrite _ARGS_((Fs_Device *devicePtr,
+    Fs_IOParam *writePtr, Fs_IOReply *replyPtr));
+extern void Dev_SyslogPutChar _ARGS_((int ch));
+extern ReturnStatus Dev_SyslogClose _ARGS_((Fs_Device *devicePtr, int useFlags,
+    int openCount, int writerCount));
+extern ReturnStatus Dev_SyslogIOControl _ARGS_((Fs_Device *devicePtr,
+    Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus Dev_SyslogSelect _ARGS_((Fs_Device *devicePtr,
+    int *readPtr, int *writePtr, int *exceptPtr));
+extern void Dev_SyslogDebug _ARGS_((Boolean stopLog));
+extern void Dev_SyslogReturnBuffer _ARGS_((char **bufPtrPtr,
+    int **firstIndexPtrPtr, int **lastIndexPtrPtr, int *bufSizePtr));
+extern void Dev_SyslogDisable _ARGS_ ((ClientData dummy));
+
+#endif /* _DEVSYSLOG */
+@
+
+
+9.4.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/dev/devSyslog.h,v 9.4 91/04/16 17:12:58 jhh Exp $ SPRITE (Berkeley)
+@
+
+
+9.3
+log
+@Dev_SyslogDisable should take a ClientData.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/dev/RCS/devSyslog.h,v 9.2 90/10/10 22:35:02 shirriff Exp Locker: kupfer $ SPRITE (Berkeley)
+d16 2
+a17 2
+#include "user/fs.h"
+#include "fs.h"
+@
+
+
+9.2
+log
+@Added Dev_SyslogDisable to disable the syslog with L1-j.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/dev/RCS/devSyslog.h,v 9.1 90/09/11 12:13:06 rab Exp Locker: shirriff $ SPRITE (Berkeley)
+d41 1
+a41 1
+extern void Dev_SyslogDisable _ARGS_ ((void));
+@
+
+
+9.1
+log
+@Added prototypes.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/dev/RCS/devSyslog.h,v 9.0 89/09/12 14:57:57 douglis Stable Locker: rab $ SPRITE (Berkeley)
+d41 1
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/dev/RCS/devSyslog.h,v 8.2 89/06/15 08:40:27 brent Exp Locker: douglis $ SPRITE (Berkeley)
+d16 3
+d22 19
+a40 10
+extern ReturnStatus Dev_SyslogOpen();
+extern ReturnStatus Dev_SyslogReopen();
+extern ReturnStatus Dev_SyslogRead();
+extern ReturnStatus Dev_SyslogWrite();
+extern ReturnStatus Dev_SyslogIOControl();
+extern ReturnStatus Dev_SyslogClose();
+extern ReturnStatus Dev_SyslogSelect();
+extern void	    Dev_SyslogPutChar();
+extern void	    Dev_SyslogDebug();
+extern void	    Dev_SyslogReturnBuffer();
+@
+
+
+8.2
+log
+@Added reopen extern
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/dev/RCS/devSyslog.h,v 8.1 89/05/24 07:53:57 rab Exp Locker: brent $ SPRITE (Berkeley)
+@
+
+
+8.1
+log
+@Changes to allow optimization.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/dev/RCS/devSyslog.h,v 8.0 88/11/11 18:10:25 douglis Stable Locker: rab $ SPRITE (Berkeley)
+d20 1
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/dev/RCS/devSyslog.h,v 6.0 88/08/11 12:26:39 douglis Stable Locker: douglis $ SPRITE (Berkeley)
+d29 1
+a29 1
+#endif _DEVSYSLOG
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: devSyslog.h,v 5.1 87/12/15 15:30:14 nelson Exp $ SPRITE (Berkeley)
+@
+
+
+5.1
+log
+@Added a procedure header.
+@
+text
+@d10 1
+a10 1
+ * $Header: devSyslog.h,v 5.0 87/08/11 10:39:20 sprite Exp $ SPRITE (Berkeley)
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d10 1
+a10 1
+ * $Header: devSyslog.h,v 1.1 87/06/30 18:51:58 nelson Exp $ SPRITE (Berkeley)
+d27 1
+@

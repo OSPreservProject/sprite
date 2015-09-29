@@ -1,0 +1,108 @@
+'\" Copyright 1989 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/admin/fsmount/RCS/fsmount.man,v 1.2 92/02/06 12:04:45 voelker Exp Locker: voelker $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS FSMOUNT cmds
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+fsmount \- Check disks and export prefixes 
+.SH SYNOPSIS
+\fBfsmount\fR [\fIoptions\fR]
+.SH OPTIONS
+.IP "\fB\-W\fR" 15
+Check disks, but do not write changes.
+.IP "\fB\-f\fR" 15
+Don't check disks (fastboot).
+.IP "\fB\-v\fR" 15
+Have both \fBfsmount\fR and \fBfscheck\fR  output verbose information
+while running (the default).
+.IP "\fB\-n\fR" 15
+Don't attach disks or export prefixes.
+.IP "\fB\-p\fR" 15
+Print out actions but don't execute them.
+.IP "\fB\-help\fR" 15
+Print a summary of the command-line options and exit.
+.IP "\fB\-d \fIdeviceDirectory\fR" 15
+Specifies the directory containing the device files.
+The default is "/dev/".
+.IP "\fB\-i \fIspriteID\fR" 15
+Causes prefixes that this machine will export to be preloaded into the
+prefix table with \fIspriteID\fR as the server. 
+This prevents the machine from broadcasting for its own prefixes while
+the disks are being checked.
+.IP "\fB\-fscheck \fIfscheckProg\fR" 15
+Use this to specify an alternative fscheck program, i.e., when testing
+a new fscheck.
+.IP "\fB\-c\fR" 15
+Conditionally check the disks.  If the disks were just checked by \fIfscheck\fR
+and we are now rebooting, then we don't have to check again.  If the \fB\-c\fR
+flag is present then the disks won't be rechecked. 
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBFsmount\fR is used during system boot to check the disks for 
+inconsistencies and
+to export prefixes.
+It is a replacement for \fBfsattach\fR, and is intented to be used without
+a mount table.  It uses \fBfsinfo\fR to determine what filesystems are
+on the disks connected to the host, \fBfscheck\fR to check the filesystems
+found (if they are OFS), and \fBprefix\fR to mount and export them.
+In this way, disks can change hosts, change prefixes, or change
+parititioning without having to update a mount table file.
+.PP
+\fBFsmount\fR does some checking before it \fBprefix\fRes filesystems.  If
+it finds filesystems whose cylinder extents overlap, it will only
+\fBprefix\fR the larger of the filesystems.  If more than one
+filesystem has the same prefix, it will try to mount those filesystems
+until one successfully mounts and it will ignore the remainder.  If a
+filesystem has a prefix of a filesystem already in the prefix table,
+it is ignored.
+.PP
+Currently, \fBfsmount\fR detects and notes root partitions, but does
+not try to either check or mount them.
+.PP
+Upon completion, \fBfsmount\fR creates a \fBfsmounted\fR file in
+\fB/hosts/$HOST/fsmounted\fR reporting the filesystems it mounted
+and exported, and when it did so.
+
+.SH RETURN CODES
+\fBFsmount\fR returns the same error codes as \fBfsattach\fR:
+.IP 0
+No error.
+.IP 1
+An error was found in the root partition. Reboot the system. See \fBfscheck\fR
+for details.
+.IP 2
+A hard error occurred. There was some problem in either \fBfsattach\fR, 
+\fBfscheck\fR,
+or \fBprefix\fR that prevented \fBfsattach\fR from completing normally.
+.IP 3 
+\fBFscheck\fR returned a soft error indication. See \fBfscheck\fR for details.
+.IP 4
+An error was found in the root partition, but the number of consecutive
+times that \fBfscheck\fR was run and an error found exceeds the limit.
+.KS
+.SH FILES
+.DS L
+.nf
+/boot/cmds/fsinfo			command to list filesystems on disk
+/boot/cmds/fscheck			command to check disks
+/hosts/$HOST/*.fsc			output from fscheck
+/bootTmp/.fscheck.out		temporary output from fscheck
+/boot/cmds/prefix			command to mount and export filesystems
+/hosts/$HOST/fsmounted		report file for fsmount
+.DE
+.KE
+.fi
+.SH KEYWORDS
+fsmount, fscheck, prefix, fsinfo, fsdomain, mount, disk, partition, crash, attach, boot 
+

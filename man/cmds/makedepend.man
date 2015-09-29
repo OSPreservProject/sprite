@@ -1,0 +1,145 @@
+' Copyright 1989 Regents of the University of California
+' Permission to use, copy, modify, and distribute this
+' documentation for any purpose and without fee is hereby
+' granted, provided that this notice appears in all copies.
+' The University of California makes no representations about
+' the suitability of this material for any purpose.  It is
+' provided "as is" without express or implied warranty.
+' 
+' $Header: /sprite/src/attcmds/makedepend/RCS/makedepend.man,v 1.3 91/12/02 14:04:15 shirriff Exp $ SPRITE (Berkeley)
+' 
+.so \*(]ltmac.sprite
+.HS MAKEDEPEND cmds
+.BS
+.SH NAME
+makedepend \- Generate dependency list for make
+.SH SYNOPSIS
+\fBmakedepend\fR [\fIoptions\fR] \fIfile file ...\fR
+.SH OPTIONS
+.IP "\fB\-D \fIdef\fR" 20
+Define a macro.  This argument has the same meaning as the corresponding
+argument to \fBcc\fR.
+.IP "\fB\-f \fImakefile\fR" 20
+Use \fImakefile\fR as the makefile to modify.  If \fImakefile\fR
+is ``\-'', \fBmakedepend\fR will simply print dependency information
+on standard output.  \fIMakefile\fR defaults to \fBmakefile\fR if
+it exists, otherwise \fBMakefile\fR.
+.IP "\fB\-I \fIincludeDir\fR" 20
+Search for include files in \fIincludeDir\fR before looking in the
+default system directories.  If there are many \fB\-I\fR arguments,
+the directories are searched in the same order as the arguments.
+.IP "\fB\-m \fItm\fR" 20
+Use \fItm\fR as the target machine for generating dependencies.
+The target machine determines where \fBmakedepend\fR looks for
+machine-dependent header files (see below).  If this option is
+not specified, the target machine defaults to the value of the
+\fB$MACHINE\fR environment variable.
+.IP "\fB\-o \fIsuffix\fR" 20
+Use \fIsuffix\fR as the suffix for the ``object'' files listed in
+the output.  If this argument is not specified, the suffix defaults
+to \fB.o\fR.
+.IP "\fB\-p\fR" 20
+Output the full path name for each include file.  If this switch
+isn't specified, then only the include file name given in the
+\fB#include\fR statement is output.
+.IP "\fB\-s \fIstring\fR" 20
+If this switch is given, \fIstring\fR specifies the comment string
+that identifies the beginning of dependencies in the makefile.
+\fIString\fR must start with the comment character ``#''.
+.IP "\fB\-v\fR" 20
+Verbose mode.  For each file included by one of the \fIfile\fRs,
+output a sequence of comment lines that list the other include
+files included by that include file.
+.IP "\fB\-w \fIwidth\fR" 20
+Try to arrange for output lines not to contain more than \fIwidth\fR
+characters total.  If a single \fIfile\fR has multiple dependencies
+then they will be grouped onto a single line in the output file unless
+this grouping would cause the output line to exceed \fIwidth\fR characters
+in length.
+.BE
+
+.SH DESCRIPTION
+.LP
+\fBMakedepend\fR is a program that generates dependency lines for
+makefiles.  It reads a collection of C source files given by the
+\fIfile\fR arguments and generates a collection of lines each
+having the form
+.DS
+\fBfile.o:\ \ \ x.h\ \ \ y.h\ \ \ /a/b/c.h\fR
+.DE
+.LP
+These dependency lines describe all of the include files used
+directly or indirectly in compiling each source \fIfile\fR.
+.LP
+\fBMakedepend\fR normally inserts the dependency lines into the
+file \fBmakefile\fR if it exists, or \fBMakefile\fR otherwise
+(see the \fB\-f\fR option for other alternatives).  To insert the
+dependencies in a makefile, \fBmakedepend\fR searches the makefile
+for a trigger line.  Usually the trigger line is
+.DS C
+\fB# DO NOT DELETE THIS LINE -- make depend depends on it.\fR
+.DE
+.LP
+but a different trigger string may be selected with the \fB\-s\fR
+switch.  \fBMakedepend\fR locates the trigger line, deletes all of
+the information after the trigger line, and replaces it with the
+dependency lines.  A backup copy of the original makefile is saved
+in \fImakefile\fB.bak~\fR, where \fImakefile\fR is the name of the
+original makefile.
+.LP
+\fBMakedepend\fR duplicates the actions of \fBcc\fR in determining
+which include files are required for each \fIfile\fR.  It normally
+checks for include files in the current directory, then in
+\fB/sprite/lib/include\fR, then in \fB/sprite/lib/include/\fItm\fB.md\fR
+(where \fItm\fR is the target machine being compiled for;  this is
+either the value of the \fB$MACHINE\fR environment variable or
+the value given in the \fB\-m\fR option).  If \fB\-I\fR options are
+given, then those directories are searched before the standard system
+directories.  \fBMakedepend\fR processes conditional compilation
+statements such as \fB#define\fR and \fB#ifdef\fR in a fashion similar
+to the C preprocessor in order to consider only the include files that
+would be processed by the C compiler.  You should pass the same \fB\-D\fR
+options to \fBmakedepend\fR that you would give to \fBcc\fR.
+.VS
+\fBMakedepend\fR can also deal with \fB#if\fR and \fB#elif\fR directive, 
+except that the
+only allowable expressions are \fBdefined(\fIfoo\fB)\fR and 
+\fB!defined(\fIfoo\fB)\fR. 
+Any
+other expression will evaluate to false.
+.VE
+.LP
+There are several options that control the formatting of the dependency
+lines.  Normally, the first field of each output line is \fIx\fB.o\fR,
+where \fIx\fR is one of the \fIfile\fR arguments with the \fB.c\fR or
+any other suffix stripped off.  However, the \fB\-o\fR option may be used
+to place a suffix other than \fB.o\fR in the output lines.  The \fB\-p\fR
+option controls how completely the include file names are specified in
+the output.  If \fB\-p\fR is given, then the complete path name of each
+header file is output.  If \fB-p\fR is not given, then
+only the name from the actual \fB#include\fR statement is output
+(e.g., \fBsys/file.h\fR instead of \fB/sprite/lib/include/sys/file.h\fR).
+This default is useful for Pmake, which manages its own include file
+search path.  Finally, the \fB\-w\fR switch may be used to control the
+length of the output lines, and the \fB\-v\fR switch causes extra
+information about nested includes to be output in the form of comment
+lines.
+
+.SH "SEE ALSO"
+mkmf, pmake
+
+.SH BUGS
+.VS
+.LP
+Can't handle arbitrary expressions following \fB#if\fR or \fB#elif\fR.
+.LP
+Makedepend's algorithm can cause problems in some cases.  It only parses
+each include file once and generates a list of dependencies for that file.
+However, if defines are set differently, it could be that an include file
+will depend on two different sets of files in two different invocations.
+In this case, makedepend will return the wrong dependencies for the second
+case.
+.VE
+
+.SH KEYWORDS
+dependencies, include file, object file

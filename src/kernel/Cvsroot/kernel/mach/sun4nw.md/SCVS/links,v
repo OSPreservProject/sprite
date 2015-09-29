@@ -1,0 +1,89 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ds3100:1.3 sun3:1.3 symm:1.3 spur:1.3 sun4nw:1.3;
+locks    ; strict;
+comment  @@;
+
+
+1.3
+date     91.10.31.15.55.29;  author mgbaker;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.10.31.15.35.18;  author mgbaker;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.10.29.17.24.11;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@scvs
+@
+text
+@# This file is used by scvs and contains symbolic link
+# information.  Each line is of the form "link target"
+# $Header
+@
+
+
+1.2
+log
+@scvs
+@
+text
+@a3 4
+machAsm.s.old            ../sun4.md/machAsm.s
+machCode.c.old           ../sun4.md/machCode.c
+machIntr.s.old           ../sun4.md/machIntr.s
+machTrap.s.old           ../sun4.md/machTrap.s
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@a3 10
+addsub.c                 ../sun4.md/addsub.c
+bootSysAsm.s             ../sun4.md/bootSysAsm.s
+compare.c                ../sun4.md/compare.c
+div.c                    ../sun4.md/div.c
+fpu_simulator.c          ../sun4.md/fpu_simulator.c
+fpu_simulator.h          ../sun4.md/fpu_simulator.h
+globals.h                ../sun4.md/globals.h
+ieee.h                   ../sun4.md/ieee.h
+iu_simulator.c           ../sun4.md/iu_simulator.c
+mach.h                   ../sun4.md/mach.h
+a4 1
+machAsmDefs.h            ../sun4.md/machAsmDefs.h
+a5 3
+machConst.h              ../sun4.md/machConst.h
+machFPUGlue.c            ../sun4.md/machFPUGlue.c
+machInt.h                ../sun4.md/machInt.h
+a6 4
+machMigrate.c            ../sun4.md/machMigrate.c
+machMon.c                ../sun4.md/machMon.c
+machMon.h                ../sun4.md/machMon.h
+machSig.h                ../sun4.md/machSig.h
+a7 8
+md.mk.sed                ../sun4.md/md.mk.sed
+mul.c                    ../sun4.md/mul.c
+pack.c                   ../sun4.md/pack.c
+sun4                     ../sun4.md/sun4
+sys                      ../sun4.md/sys
+unpack.c                 ../sun4.md/unpack.c
+utility.c                ../sun4.md/utility.c
+uword.c                  ../sun4.md/uword.c
+@

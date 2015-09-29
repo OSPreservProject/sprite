@@ -1,0 +1,18 @@
+' $Header: /sprite/src/cmds/enabledisplay/RCS/enabledisplay.man,v 1.1 90/02/23 12:13:21 shirriff Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS ENABLEDISPLAY cmds
+.BS
+.SH NAME
+enabledisplay \- Enables display on a machine
+.SH SYNOPSIS
+\fBenabledisplay [-off]\fR
+.BE
+
+.SH DESCRIPTION
+.PP
+This command enables or disables the display.  The default is to
+enable, and with any argument the display is disabled.
+This command simply makes a call to Sys_EnableDisplay.
+
+.SH KEYWORDS
+enable, display

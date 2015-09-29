@@ -1,0 +1,1 @@
+../../dist/gdb/ns32k-pinsn.c

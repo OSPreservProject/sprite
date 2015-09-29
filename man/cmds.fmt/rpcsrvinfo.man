@@ -1,0 +1,68 @@
+
+
+
+RPCSRVINFO                User Commands                RPCSRVINFO
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     rpcsrvinfo - Print out statistics about the history  of  rpc
+     servers
+
+SSYYNNOOPPSSIISS
+     rrppccssrrvviinnffoo  -[_o_p_t_i_o_n_s]
+
+OOPPTTIIOONNSS
+     --oonn           Turn on tracing of rpc servers.
+
+     --ooffff          Turn off tracing of rpc servers.
+
+     --ffrreeee         Free up kernel memory used by past tracing  of
+                   rpc servers.
+
+     --dduummpp         Dump  out  information  from  tracing  of  rpc
+                   servers.
+
+_________________________________________________________________
+
+IINNTTRROODDUUCCTTIIOONN
+     This command enables or disables tracing of rpc  servers  on
+     the  machine on which you run it.  It also can print out the
+     trace information of the rpc servers, if tracing was at some
+     point enabled.
+
+KKEEYYWWOORRDDSS
+     rpc, servers, trace
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  January 25, 1990                   1
+
+
+

@@ -1,0 +1,169 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  sprited:1.3.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     89.03.10.18.50.51;  author douglis;  state Exp;
+branches 1.3.1.1;
+next     1.2;
+
+1.2
+date     88.09.29.20.53.26;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.10.16.23.31;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.3.1.1
+date     91.12.02.19.53.55;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@removed specification of O_APPEND for "a" mode, to be
+unix-compatible.
+@
+text
+@/* 
+ * StdioFileOpenMode.c --
+ *
+ *	Source code for the "StdioFileOpenMode" procedur used internally
+ *	in the stdio library.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdio/RCS/StdioFileOpenMode.c,v 1.2 88/09/29 20:53:26 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "stdio.h"
+#include "fileInt.h"
+#include "stdlib.h"
+#include <sys/file.h>
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StdioFileOpenMode --
+ *
+ *	Given an access mode string, return the corresponding flags to
+ *	pass to open.
+ *
+ * Results:
+ *	The return value is a the flags to pass to open when opening
+ *	a file in the given access mode.  -1 is returned if the
+ *	access string isn't legal.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+StdioFileOpenMode(access)
+    char *access;		/* Indicates type of access, as passed
+				 * to fopen and freopen. */
+{
+    int 	flags;
+    char	nextChar;
+
+    nextChar = access[1];
+    if (nextChar == 'b') {
+	nextChar = access[2];
+    }
+    switch (access[0]) {
+	case 'r':
+	    if (nextChar == '+') {
+		flags = O_RDWR;
+	    } else {
+		flags = O_RDONLY;
+	    }
+	    break;
+	case 'w':
+	    if (nextChar == '+') {
+		flags = O_RDWR | O_CREAT | O_TRUNC;
+	    } else {
+		flags = O_WRONLY | O_CREAT | O_TRUNC;
+	    }
+	    break;
+	case 'a':
+	    if (nextChar == '+') {
+		flags = O_CREAT | O_RDWR;
+	    } else {
+		flags = O_CREAT | O_WRONLY;
+	    }
+	    break;
+	default:
+	    return -1;
+	    break;
+    }
+    return flags;
+}
+@
+
+
+1.3.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdio/RCS/StdioFileOpenMode.c,v 1.3 89/03/10 18:50:51 douglis Exp $ SPRITE (Berkeley)";
+@
+
+
+1.2
+log
+@added O_CREAT flag to append-mode writes.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: StdioFileOpenMode.c,v 1.1 88/06/10 16:23:31 ouster Exp $ SPRITE (Berkeley)";
+d74 1
+a74 1
+		flags = O_CREAT | O_RDWR | O_APPEND;
+d76 1
+a76 1
+		flags = O_CREAT | O_WRONLY | O_APPEND;
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: atoi.c,v 1.1 88/04/28 17:20:23 ouster Exp $ SPRITE (Berkeley)";
+d74 1
+a74 1
+		flags = O_RDWR|O_APPEND;
+d76 1
+a76 1
+		flags = O_WRONLY|O_APPEND;
+@

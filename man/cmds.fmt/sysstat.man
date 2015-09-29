@@ -1,0 +1,134 @@
+
+
+
+SYSSTAT                   User Commands                   SYSSTAT
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     sysstat - print statistics and information about  the  state
+     of the system
+
+SSYYNNOOPPSSIISS
+     ssyyssssttaatt [--vvccRR]
+
+OOPPTTIIOONNSS
+     --vv            Print out the  compilation  version  timestamp
+                   for  the  kernel.   This  is the default if no
+                   options are specified.
+
+     --cc            Print out the number of times each system call
+                   has been invoked.
+
+     --pp _n          Enable or disable system call timing.
+
+     --tt            For each system  call,  print  the  number  of
+                   calls and how much time was required.
+
+     --RR            Reset the count and time information for  sys-
+                   tem calls.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This command prints out  statistics  and  other  information
+     about the system.
+
+VVEERRSSIIOONN TTIIMMEESSTTAAMMPP
+     --vv   By default,  ssyyssssttaatt  prints  the  compilation  version
+          timestamp  for the kernel.  This is a unique identifier
+          indicating who compiled  the  kernel  and  when.   This
+          information  is printed if no options are specified, or
+          if the -_v  option is specified.
+
+SSYYSSTTEEMM CCAALLLL SSTTAATTIISSTTIICCSS
+     --cc   This option indicates that  ssyyssssttaatt  should  display  a
+          count  of the number of times each system call has been
+          invoked.  For each call, the number of  invocations  is
+          printed  along  with an indication of whether the call,
+          if done by a migrated process, would be handled locally
+          or would require action by the process's _h_o_m_e _n_o_d_e.
+
+     --tt   This option tells ssyyssssttaatt to display  for  each  system
+          call  the  number  of  times  the call was invoked, the
+          total time spent in that call,  and  the  average  time
+          spent  in  that  call.   Note  that  if  a  process  is
+          migrated, its system calls are  recorded  by  the  host
+          that  it is executing on, rather than by the home node.
+          Normally system call timing is turned off; use  the  --pp
+
+
+
+Sprite v.1.0       Printed:  December 7, 1992                   1
+
+
+
+
+
+
+SYSSTAT                   User Commands                   SYSSTAT
+
+
+
+          option to turn it on.
+
+     --RR   This option causes ssyyssssttaatt reset the kernel's count  of
+          the  number of times each system call has been invoked,
+          as well as the accumulated time for each  system  call.
+          Thus,  subsequent invocations of ssyyssssttaatt with the --cc or
+          --tt option will report only activity since  the  invoca-
+          tion with the --RR option.
+
+     --pp   This option controls whether Sprite keeps track of  how
+          much  time  each  system call takes.  To turn on system
+          call timing, use --pp 11; to turn it off, use --pp 00.
+
+BBUUGGSS
+     System call timing is only available on ds5000s.
+
+SSEEEE AALLSSOO
+     migcmd, fscmd
+
+KKEEYYWWOORRDDSS
+     statistics, process migration, system call
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  December 7, 1992                   2
+
+
+

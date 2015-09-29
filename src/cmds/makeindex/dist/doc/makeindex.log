@@ -1,0 +1,116 @@
+This is Common TeX, Version 2.9 (preloaded format=lplain 89.9.18) 31 JUL 1990 17:36
+**&lplain makeindex.tex 
+(./makeindex.tex
+LaTeX Version 2.09 - Released 27 October 1986
+(/users/douglis/lib/tex/article.sty
+Document Style `article'. Released 4 September 1986.
+(/sprite/lib/tex/art11.sty)
+\c@part=\count78
+\c@section=\count79
+\c@subsection=\count80
+\c@subsubsection=\count81
+\c@paragraph=\count82
+\c@subparagraph=\count83
+\c@figure=\count84
+\c@table=\count85
+) (./makeindex.aux)
+Underfull \hbox (badness 4120) in paragraph at lines 57--60
+[] []\elvrm Put a \elvtt \makeindex \elvrm com-mand in the pream-ble (be
+-tween the
+
+\hbox(8.2125+2.73749)x332.62494, glue set 3.45757
+.\hbox(0.0+0.0)x0.0
+.\glue 0.0
+.\hbox(4.86667+0.0)x0.0
+..\glue 0.0
+..\glue -21.90005
+..\glue -5.475
+..\hbox(4.86667+0.0)x21.90005, glue set 21.90005fil
+...\glue 0.0 plus 1.0fil minus 1.0fil
+...\hbox(4.86667+0.0)x0.0, glue set - 5.475fil []
+..\glue 5.475
+.\penalty 0
+.\elvrm P
+.etc.
+
+[1
+
+] [2]
+Overfull \hbox (12.62238pt too wide) in paragraph at lines 178--190
+[] [][] [] 
+
+\hbox(9.51996+58.48006)x305.24988
+.\hbox(0.0+0.0)x0.0
+.\glue 0.0
+.\hbox(0.0+0.0)x0.0
+..\glue 0.0
+..\glue -21.90005
+..\glue -5.475
+..\hbox(0.0+0.0)x21.90005, glue set 21.90005fil
+...\glue 0.0 plus 1.0fil
+..\glue 5.475
+.\penalty 0
+.\hbox(9.51996+58.48)x224.87216
+..\mathon
+..\vbox(9.51996+58.48)x224.87216
+...\hbox(9.51996+4.08003)x224.87216 []
+...\glue(\lineskip) 0.0
+...\hbox(9.51996+4.08003)x224.87216 []
+...\glue(\lineskip) 0.0
+...\hbox(9.51996+4.08003)x224.87216 []
+...etc.
+..\mathoff
+.etc.
+
+[3]
+Overfull \hbox (20.41039pt too wide) in paragraph at lines 219--225
+[] [][] [] 
+
+\hbox(9.51996+17.68004)x305.24988
+.\hbox(0.0+0.0)x0.0
+.\glue 0.0
+.\hbox(0.0+0.0)x0.0
+..\glue 0.0
+..\glue -21.90005
+..\glue -5.475
+..\hbox(0.0+0.0)x21.90005, glue set 21.90005fil
+...\glue 0.0 plus 1.0fil
+..\glue 5.475
+.\penalty 0
+.\hbox(9.51996+17.68002)x221.49585
+..\mathon
+..\vbox(9.51996+17.68002)x221.49585
+...\hbox(9.51996+4.08003)x221.49585 []
+...\glue(\lineskip) 0.0
+...\hbox(9.51996+4.08003)x221.49585 []
+..\mathoff
+.etc.
+
+[4] [5] [6]
+Underfull \hbox (badness 7851) in paragraph at lines 429--433
+\elvrm An \elvtt \index{...|(} \elvrm com-mand was not fol-lowed by a ma
+tch-ing
+
+\hbox(7.60416+2.12917)x360.0, glue set 4.28467
+.\elvrm A
+.\elvrm n
+.\glue 3.65 plus 1.825 minus 1.21666
+.\elvtt \
+.\elvtt i
+.etc.
+
+[7]
+Underfull \hbox (badness 6641) in paragraph at lines 437--440
+\elvrm An \elvtt \index{...|(} \elvrm com-mand was not pre-ceded by a ma
+tch-ing
+
+\hbox(7.60416+2.12917)x360.0, glue set 4.05342
+.\elvrm A
+.\elvrm n
+.\glue 3.65 plus 1.825 minus 1.21666
+.\elvtt \
+.\elvtt i
+.etc.
+
+[8] (./makeindex.aux)
+Output written on makeindex.dvi (8 pages, 21836 bytes).

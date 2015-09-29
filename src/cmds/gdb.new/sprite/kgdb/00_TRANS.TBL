@@ -1,0 +1,7 @@
+F KGDBCMD.C;1                       	kgdbcmd.c
+F KGDB_PTR.C;1                      	kgdb_ptrace.c
+F KGDB_REM.C;1                      	kgdb_remote.c
+F MIPS_KGD.C;1                      	mips_kgdb_remote.c
+F SUN3_KGD.C;1                      	sun3_kgdb_remote.c
+F SUN4_KGD.C;1                      	sun4_kgdb_remote.c
+F SYMM_KGD.C;1                      	symm_kgdb_remote.c

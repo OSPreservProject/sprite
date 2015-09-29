@@ -1,0 +1,11 @@
+Here is another possibly useful LaTeX file.  This file is a modified
+lfonts.tex file that includes the stuff necessary for the American
+Mathematicsl Society fonts.  There is a file called mssymb.tex that
+they distribute that does the right things so that you can use their
+fonts with Plain TeX but it doesn't have the necessary wiggle to work
+with LaTeX.  I incorporated it into lfonts.tex and made up a special
+LaTeX called ``latex_ams''.  This way you can use the AMS symbols with
+LaTeX's \small, etc.  commands.  The biggest problem is that the
+largest size currently available of the AMS fonts is 10 point.  If you
+try to use anything larger than 10 point LaTeX will complain and tell
+you that it is substituting the 10 point size.

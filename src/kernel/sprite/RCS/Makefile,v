@@ -1,0 +1,2427 @@
+head     1.51;
+branch   ;
+access   ;
+symbols  ;
+locks    mgbaker:1.51; strict;
+comment  @# @;
+
+
+1.51
+date     92.06.04.13.29.09;  author jhh;  state Exp;
+branches ;
+next     1.50;
+
+1.50
+date     91.12.13.13.35.31;  author jhh;  state Exp;
+branches ;
+next     1.49;
+
+1.49
+date     91.10.24.11.19.48;  author mgbaker;  state Exp;
+branches ;
+next     1.48;
+
+1.48
+date     91.10.24.11.09.32;  author shirriff;  state Exp;
+branches ;
+next     1.47;
+
+1.47
+date     91.10.18.11.19.08;  author jhh;  state Exp;
+branches ;
+next     1.46;
+
+1.46
+date     91.10.18.11.16.08;  author rab;  state Exp;
+branches ;
+next     1.45;
+
+1.45
+date     91.09.25.00.52.36;  author mendel;  state Exp;
+branches ;
+next     1.44;
+
+1.44
+date     91.08.23.14.52.45;  author shirriff;  state Exp;
+branches ;
+next     1.43;
+
+1.43
+date     91.07.31.11.36.06;  author shirriff;  state Exp;
+branches ;
+next     1.42;
+
+1.42
+date     91.06.28.12.27.30;  author mgbaker;  state Exp;
+branches ;
+next     1.41;
+
+1.41
+date     91.06.28.12.25.47;  author jhh;  state Exp;
+branches 1.41.1.1;
+next     1.40;
+
+1.40
+date     91.02.12.15.56.11;  author jhh;  state Exp;
+branches ;
+next     1.39;
+
+1.39
+date     90.11.08.17.51.03;  author shirriff;  state Exp;
+branches ;
+next     1.38;
+
+1.38
+date     90.08.21.18.56.59;  author mgbaker;  state Exp;
+branches ;
+next     1.37;
+
+1.37
+date     90.08.14.16.51.04;  author mgbaker;  state Exp;
+branches ;
+next     1.36;
+
+1.36
+date     90.08.14.14.46.09;  author mgbaker;  state Exp;
+branches ;
+next     1.35;
+
+1.35
+date     90.08.14.14.45.44;  author douglis;  state Exp;
+branches ;
+next     1.34;
+
+1.34
+date     90.05.16.16.35.19;  author mgbaker;  state Exp;
+branches ;
+next     1.33;
+
+1.33
+date     90.03.29.18.23.45;  author mgbaker;  state Exp;
+branches ;
+next     1.32;
+
+1.32
+date     90.03.27.13.32.38;  author rab;  state Exp;
+branches ;
+next     1.31;
+
+1.31
+date     90.02.01.11.06.03;  author rab;  state Exp;
+branches ;
+next     1.30;
+
+1.30
+date     90.01.31.19.15.36;  author jhh;  state Exp;
+branches ;
+next     1.29;
+
+1.29
+date     89.12.30.23.44.16;  author rab;  state Exp;
+branches ;
+next     1.28;
+
+1.28
+date     89.12.30.23.41.49;  author rab;  state Exp;
+branches ;
+next     1.27;
+
+1.27
+date     89.11.28.12.21.11;  author douglis;  state Exp;
+branches ;
+next     1.26;
+
+1.26
+date     89.11.28.11.34.28;  author brent;  state Exp;
+branches ;
+next     1.25;
+
+1.25
+date     89.11.28.08.34.06;  author douglis;  state Exp;
+branches ;
+next     1.24;
+
+1.24
+date     89.11.09.12.39.01;  author brent;  state Exp;
+branches ;
+next     1.23;
+
+1.23
+date     89.11.08.10.25.24;  author rab;  state Exp;
+branches ;
+next     1.22;
+
+1.22
+date     89.10.30.18.07.56;  author shirriff;  state Exp;
+branches ;
+next     1.21;
+
+1.21
+date     89.08.30.11.16.50;  author brent;  state Exp;
+branches ;
+next     1.20;
+
+1.20
+date     89.08.25.09.43.24;  author brent;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     89.08.25.09.36.33;  author mendel;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     89.08.24.17.46.19;  author brent;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     89.08.24.17.37.16;  author jhh;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     89.08.17.17.06.59;  author brent;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     89.08.11.11.33.42;  author mgbaker;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     89.08.10.23.46.02;  author mgbaker;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     89.08.07.13.25.10;  author jhh;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     89.07.27.22.33.04;  author nelson;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     89.07.27.17.26.49;  author brent;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     89.06.02.14.13.45;  author douglis;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     89.01.08.10.59.36;  author brent;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     89.01.08.10.59.15;  author nelson;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.12.14.11.27.21;  author brent;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.08.20.10.54.25;  author ouster;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.04.27.19.15.26;  author nelson;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.04.05.12.27.39;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.02.24.11.34.48;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.02.10.20.06.55;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     87.08.25.16.03.25;  author brent;  state Exp;
+branches ;
+next     ;
+
+1.41.1.1
+date     91.06.29.18.07.05;  author mgbaker;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Makefile for standard kernels
+@
+
+
+1.51
+log
+@cleaned things up
+@
+text
+@#
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.50 91/12/13 13:35:31 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+#
+# No mkmf
+#
+LD = /sprite/cmds.${MACHINE}/ld
+
+# don't use TM, because that is set explicitly by the environment in some cases
+# and then we can't override it.  But set it by default to the current machine
+# type.
+
+TM          ?= $(MACHINE)
+
+#if make(sun3) || make(profile3)
+RTM = sun3
+MTFLAGS = -msun3
+#endif
+#ifmake ds3100
+RTM = ds3100
+MTFLAGS =
+#endif
+#ifmake ds5000
+RTM = ds5000
+MTFLAGS =
+#endif
+#ifmake sun4
+RTM = sun4
+MTFLAGS = -msun4
+#endif
+#ifmake sun4c
+RTM = sun4c
+MTFLAGS = -msun4
+#endif
+
+#if !empty(TM)
+RTM ?= $(TM)
+#else
+RTM ?= $(MACHINE)
+#endif
+
+MODULE = sprite
+SPRITEDIR =	/sprite/src/kernel
+USERH=		/sprite/lib/include
+H =		${SPRITEDIR}/Include
+INSTALLED =	{SPRITEDIR}/Installed/${MODULE}
+LIB =		${SPRITEDIR}/${RTM}.md
+PROFD =	${SPRITEDIR}/Profiled/${RTM}.md
+ODIR =		${RTM}.md
+IFLAGS=	-I. -I${H} -I${USERH} -I${USERH}/${RTM}.md -I${H}/${RTM}.md
+#PROFILE =	-p -DPROFILE
+PROFILE =
+CFLAGS =	${MTFLAGS} -g -DKERNEL ${PROFILE} ${IFLAGS}
+LINTFLAGS =	-I. -I${H}
+LINTLIBS =	${LINT}/*.ln
+DISTDIR     ?= /dist/sprite/src/kernel/sprite
+
+KERNELNAME	?= new
+
+# symbol looked for by 'make nm'
+NM = mcount
+
+UPDATE = /sprite/cmds.${MACHINE}/update
+TEST = /sprite/cmds.${MACHINE}/test
+MKVERSION = /sprite/cmds.${MACHINE}/mkversion
+RELEASE = 1
+NEWVERSION ?= TRUE
+
+GINGER = ginger.Berkeley.EDU
+ENVY = envy.Berkeley.EDU
+
+#
+#  Unprofiled object files
+#
+
+#
+# For tracing undefined symbols
+TRACE =
+
+#
+#  Uninstalled object files
+#
+TOP = ${SPRITEDIR}
+
+MACH = ${TOP}/mach/${ODIR}
+DBG = ${TOP}/dbg/${ODIR}
+DEV = ${TOP}/dev/${ODIR}
+FS = ${TOP}/fs/${ODIR}
+FSCACHE = ${TOP}/fscache/${ODIR}
+FSCONSIST = ${TOP}/fsconsist/${ODIR}
+FSDM = ${TOP}/fsdm/${ODIR}
+FSIO = ${TOP}/fsio/${ODIR}
+FSLCL = ${TOP}/fslcl/${ODIR}
+FSPDEV = ${TOP}/fspdev/${ODIR}
+FSPREFIX = ${TOP}/fsprefix/${ODIR}
+FSRMT = ${TOP}/fsrmt/${ODIR}
+FSUTIL = ${TOP}/fsutil/${ODIR}
+HOOK = mainHook.o
+LFS = ${TOP}/lfs/${ODIR}
+LIBC = ${TOP}/libc/${ODIR}
+MAIN = ${TOP}/main/${ODIR}
+NET = ${TOP}/net/${ODIR}
+OFS = ${TOP}/ofs/${ODIR}
+PROC = ${TOP}/proc/${ODIR}
+PROF = ${TOP}/prof/${ODIR}
+RAID = ${TOP}/raid/${ODIR}
+RAIDNULL = ${TOP}/raid.null/${ODIR}
+RECOV = ${TOP}/recov/${ODIR}
+RPC = ${TOP}/rpc/${ODIR}
+SCHED = ${TOP}/sched/${ODIR}
+SIG = ${TOP}/sig/${ODIR}
+SYNC = ${TOP}/sync/${ODIR}
+SYS = ${TOP}/sys/${ODIR}
+TIMER = ${TOP}/timer/${ODIR}
+UTILS = ${TOP}/utils/${ODIR}
+VM = ${TOP}/vm/${ODIR}
+MEM = ${TOP}/mem/${ODIR}
+LIBC = ${TOP}/libc/${ODIR}
+
+# This is the list of objects excluding raid.
+
+INSTALLED_OBJS = \
+        ${LIB}/mach.o \
+	${HOOK} \
+	${LIB}/dbg.o \
+	${LIB}/dev.o \
+	${LIB}/fs.o \
+        ${LIB}/fsdm.o  \
+        ${LIB}/fscache.o  \
+        ${LIB}/fsconsist.o \
+        ${LIB}/fsio.o \
+        ${LIB}/fslcl.o \
+        ${LIB}/fspdev.o \
+        ${LIB}/fsprefix.o \
+        ${LIB}/fsrmt.o \
+        ${LIB}/fsutil.o \
+	${LIB}/lfs.o \
+	${LIB}/libc.o \
+	${LIB}/main.o \
+	${LIB}/mem.o \
+	${LIB}/net.o \
+	${LIB}/ofs.o \
+	${LIB}/proc.o \
+	${LIB}/prof.o \
+	${LIB}/recov.o \
+	${LIB}/rpc.o \
+	${LIB}/sched.o \
+	${LIB}/sig.o \
+	${LIB}/sync.o \
+	${LIB}/sys.o \
+	${LIB}/timer.o \
+	${LIB}/utils.o \
+	${LIB}/vm.o
+
+UNINSTALLED_OBJS =	\
+        ${MACH}/mach.o \
+	${HOOK} \
+	${DBG}/dbg.o \
+	${DEV}/dev.o \
+	${FS}/fs.o \
+        ${FSDM}/fsdm.o  \
+        ${FSCACHE}/fscache.o  \
+        ${FSCONSIST}/fsconsist.o \
+        ${FSIO}/fsio.o \
+        ${FSLCL}/fslcl.o \
+        ${FSPDEV}/fspdev.o \
+        ${FSPREFIX}/fsprefix.o \
+        ${FSRMT}/fsrmt.o \
+        ${FSUTIL}/fsutil.o \
+	${LFS}/lfs.o \
+	${LIBC}/libc.o \
+	${MAIN}/main.o \
+	${MEM}/mem.o \
+	${NET}/net.o \
+	${OFS}/ofs.o \
+	${PROC}/proc.o \
+	${PROF}/prof.o \
+	${RECOV}/recov.o \
+	${RPC}/rpc.o \
+	${SCHED}/sched.o \
+	${SIG}/sig.o \
+	${SYNC}/sync.o \
+	${SYS}/sys.o \
+	${TIMER}/timer.o \
+	${UTILS}/utils.o \
+	${VM}/vm.o
+
+# Everybody uses the raid module now.
+
+OBJS =	${INSTALLED_OBJS} \
+	${LIB}/raid.o
+
+OBJS_SUN4 =	${OBJS}
+
+
+#
+# Profiled (perhaps) object files	####################################
+#
+
+PROFOBJS= ${LIB}/dbg.o	${PROFD}/fs.o	${LIB}/prof.o \
+	${PROFD}/dev.o	${PROFD}/net.o	${PROFD}/sig.o \
+	${PROFD}/main.o	${HOOK}	\
+	${PROFD}/mem.o	${PROFD}/proc.o	${PROFD}/rpc.o \
+	${PROFD}/sched.o \
+	${PROFD}/timer.o ${PROFD}/sync.o	${PROFD}/utils.o \
+	${PROFD}/vm.o \
+	${PROFD}/sun.o	${PROFD}/sys.o ${PROFD}/libc
+
+###############################################################################
+
+ALLSRCS= Makefile version.c
+
+HDRS = sprite.h
+
+DISTFILES ?= Save SnapshotSources doversion mainHook.c \
+             porting_comments version.h.template
+
+default: ${RTM}
+
+dist:
+#if defined(DISTDIR) && !empty(DISTDIR)
+	for i in $(ALLSRCS) $(HDRS) $(DISTFILES)
+	do
+	if $(TEST) -e $${i}; then
+	    $(UPDATE)  $${i} $(DISTDIR)/$${i} ;else true; fi
+	done
+#endif
+
+.BEGIN: 
+	doversion ${RELEASE} ${NEWVERSION} version.h.template
+	SnapshotSources `awk '{print $5;}' version.h.template`
+
+#sun2: ${OBJS} Makefile .PRECIOUS .NOEXPORT
+#	rm -f $@@ version.o
+#	rm -f mainHook.o
+#	cc -c ${CFLAGS} mainHook.c
+#	${MKVERSION} -p "SPRITE VERSION 1.0 (Sun2)" > version.h
+#	cc -c ${CFLAGS} version.c
+#	${LD} -X -o $@@ -e start -T 804000 ${OBJS} version.o
+#	@@ls -l $@@
+#	@@size $@@
+#	update -f -s $@@ /sprite/boot/$@@.sprite
+#	rcp /sprite/boot/$@@.sprite ${ENVY}:/bnf2/sprite/sun2.${KERNELNAME}
+#	nm -n $@@  > $@@.nm
+
+sun3: ${OBJS} Makefile .PRECIOUS .NOEXPORT
+	sed 's/MACHINE/$@@/g' version.h.template > version.h
+	cat version.h >> $@@.versionLog
+	-Save $@@
+	rm -f mainHook.o
+	cc -c ${CFLAGS} mainHook.c
+	cc -c ${CFLAGS} version.c
+	${LD} -X -msun3 -o $@@ -e start -T e004000 ${OBJS} version.o
+	@@ls -l $@@
+	@@size $@@
+	update -f -s sun3 /sprite/boot/sun3.md/${KERNELNAME}
+	rcp /sprite/boot/sun3.md/${KERNELNAME} ${GINGER}:/tftpboot/sun3.md/${KERNELNAME}
+	#rcp sun3 ginger:/home/ginger/sprite/kernels/sun3.sprite
+	#rsh ginger -n "(cd /home/ginger/sprite/kernels ; ./Save sun3.sprite)"
+	nm -n sun3 > sun3.nm
+	-Save sun3
+
+sun4: ${OBJS_SUN4} Makefile .PRECIOUS .NOEXPORT
+	sed 's/MACHINE/$@@/g' version.h.template > version.h
+	cat version.h >> $@@.versionLog
+	-Save $@@
+	rm -f mainHook.o
+	cc -c ${CFLAGS} -Dsun4 mainHook.c
+	cc -c ${CFLAGS} -Dsun4 version.c
+	${LD} -X -msun4 -o $@@ -e start -T f6004020 ${OBJS_SUN4} version.o
+	@@ls -l $@@
+	@@size $@@
+	update -f -s $@@ /sprite/boot/sun4.md/${KERNELNAME}
+	rcp /sprite/boot/sun4.md/${KERNELNAME} ${GINGER}:/tftpboot/sun4.md/${KERNELNAME}
+	rcp $@@ ginger:/home/ginger/sprite/kernels/$@@.`Version $@@`
+	nm -n sun4 > sun4.nm
+	update -f sun4 /allspiceA/${KERNELNAME}
+	strip /allspiceA/${KERNELNAME}
+	-Save sun4
+
+sun4c: ${OBJS} Makefile .PRECIOUS .NOEXPORT
+	sed 's/MACHINE/$@@/g' version.h.template > version.h
+	cat version.h >> $@@.versionLog
+	-Save $@@
+	rm -f mainHook.o
+	cc -c ${CFLAGS} -Dsun4 -Dsun4c mainHook.c
+	cc -c ${CFLAGS} -Dsun4 -Dsun4c version.c
+	${LD} -X -msun4 -o $@@ -e start -T f6004000 ${OBJS} version.o
+	@@ls -l $@@
+	@@size $@@
+	update -f -s sun4c /sprite/boot/sun4c.md/${KERNELNAME}
+	nm -n sun4c > sun4c.nm
+	-Save sun4c
+
+ds3100: ${OBJS} .PRECIOUS .NOEXPORT
+	sed 's/MACHINE/$@@/g' version.h.template > version.h
+	cat version.h >> $@@.versionLog
+	-Save $@@
+	rm -f mainHook.o
+	cc -c ${CFLAGS} mainHook.c
+	@@cc -c ${CFLAGS} version.c
+	${LD} -N -o ds3100 -e start -T 80030000 ${OBJS} version.o
+	@@ls -l $@@
+	@@size $@@
+	update -f ds3100 /sprite/boot/ds3100.md/${KERNELNAME}
+	strip /sprite/boot/ds3100.md/${KERNELNAME}
+	rm -f ds3100.nm
+	nm -n ds3100 > ds3100.nm
+	-Save ds3100
+
+ds5000: ${OBJS} .PRECIOUS .NOEXPORT
+	sed 's/MACHINE/$@@/g' version.h.template > version.h
+	cat version.h >> $@@.versionLog
+	-Save $@@
+	rm -f mainHook.o
+	cc -c ${CFLAGS} mainHook.c
+	@@cc -c ${CFLAGS} version.c
+	${LD} -N -o ds5000 -e start -T 80030000 ${OBJS} version.o
+	@@ls -l $@@
+	@@size $@@
+	update -f ds5000 /sprite/boot/ds5000.md/${KERNELNAME}
+	strip /sprite/boot/ds5000.md/${KERNELNAME}
+	rcp $@@ ginger:/home/ginger/sprite/kernels/$@@.`Version $@@`
+	rm -f $@@.nm
+	nm -n $@@ > $@@.nm
+	update -f $@@ /lustA/${KERNELNAME}
+	strip /lustA/${KERNELNAME}
+	-Save $@@
+
+# profile2: ${PROFOBJS} Makefile .PRECIOUS
+#	sed 's/MACHINE/$@@/g' version.h.template > version.h
+#	cat version.h >> $@@.versionLog
+#	rm -f $@@
+#	rm -f mainHook.o
+#	cc -c ${CFLAGS} mainHook.c
+#	@@cc -c ${CFLAGS} version.c
+#	${LD} -msun2 -X -o $@@ -e start -T 804000 ${PROFOBJS} version.o
+#	@@ls -l $@@
+#	@@size $@@
+#	update -f -s $@@ /sprite/boot/$@@.sprite
+#	rcp /sprite/boot/$@@.sprite ${ENVY}:/bnf2/sprite/sun2
+#	nm -n $@@ > $@@.nm
+
+profile3: ${PROFOBJS} Makefile .PRECIOUS
+	sed 's/MACHINE/$@@/g' version.h.template > version.h
+	cat version.h >> $@@.versionLog
+	rm -f $@@
+	rm -f mainHook.o
+	cc -c ${CFLAGS} mainHook.c
+	@@cc -c ${CFLAGS} version.c
+	${LD} -msun3 -X -o $@@ -e start -T e004000 ${PROFOBJS} version.o
+	@@ls -l $@@
+	@@size $@@
+	update -f -s $@@ /sprite/boot/sun3.md/prof
+	rcp /sprite/boot/sun3.md/prof ${GINGER}:/tftpboot/tmp/$@@
+	nm -n $@@ > $@@.nm
+
+nm: ${OBJS}
+	./NM ${NM} ${OBJS}
+
+clean:
+	rm *.o sun2 sun3
+
+# install: installhdrs /bnf/sprite/sprite
+
+# installhdrs:
+# 	@@${UPDATE} ${HDRS} ${H}
+# 	@@${UPDATE} ${HDRS} ${INSTALLED}
+
+.c.o:
+	rm -f $*.o
+	${CC} ${CFLAGS} -c $*.c
+
+
+
+mainHook.o: ${H}/proc.h ${H}/fs.h
+# DO NOT DELETE THIS LINE -- make depend depends on it.
+@
+
+
+1.50
+log
+@strip kernels copied to lust's disk
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.49 91/10/24 11:19:48 mgbaker Exp $ SPRITE (Berkeley)
+d187 1
+a187 1
+# sun4 should use the raid module.  Others should use raid.null.
+d190 1
+a190 4
+	${LIB}/raid.null.o
+
+#OBJS =	${UNINSTALLED_OBJS} \
+#	${RAIDNULL}/raid.null.o
+d192 1
+a192 2
+OBJS_SUN4 =	${INSTALLED_OBJS} \
+	${LIB}/raid.o
+a193 2
+#OBJS_SUN4 =	${UNINSTALLED_OBJS} \
+#	${RAID}/raid.o
+d272 1
+a272 1
+	update -f -s sun4 /sprite/boot/sun4.md/${KERNELNAME}
+d274 1
+a274 2
+	rcp sun4 ginger:/home/ginger/sprite/kernels/sun4.sprite
+	rsh ginger -n "(cd /home/ginger/sprite/kernels ; ./Save sun4.sprite)"
+a290 2
+	#rcp sun4c ginger:/home/ginger/sprite/kernels/sun4c.sprite
+	#rsh ginger -n "(cd /home/ginger/sprite/kernels ; ./Save sun4c.sprite)"
+a307 4
+	#rcp /sprite/src/kernel/sprite/ds3100 ginger:/home/ginger/sprite/kernels/ds3100
+	#rsh ginger -n "(cd /home/ginger/sprite/kernels; Save ds3100)"
+	update -f ds3100 /assaultA/${KERNELNAME}
+	strip /assaultA/${KERNELNAME}
+d322 3
+a324 4
+	rm -f ds5000.nm
+	nm -n ds5000 > ds5000.nm
+	#rcp /sprite/src/kernel/sprite/ds5000 ginger:/home/ginger/sprite/kernels/ds5000
+	#rsh ginger -n "(cd /home/ginger/sprite/kernels; Save ds5000)"
+@
+
+
+1.49
+log
+@Removed sun4c2 entry.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.48 91/10/24 11:09:32 shirriff Exp Locker: mgbaker $ SPRITE (Berkeley)
+d340 1
+@
+
+
+1.48
+log
+@Mary checking this in for Ken.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.47 91/10/18 11:19:08 jhh Exp Locker: shirriff $ SPRITE (Berkeley)
+a33 4
+#ifmake sun4c2
+RTM = sun4c2
+MTFLAGS = -msun4
+#endif
+a301 17
+
+
+sun4c2: ${OBJS} Makefile .PRECIOUS .NOEXPORT
+	sed 's/MACHINE/$@@/g' version.h.template > version.h
+	cat version.h >> $@@.versionLog
+	-Save $@@
+	rm -f mainHook.o
+	cc -c ${CFLAGS} -Dsun4 -Dsun4c -Dsun4c2 mainHook.c
+	cc -c ${CFLAGS} -Dsun4 -Dsun4c -Dsun4c2 version.c
+	${LD} -X -msun4 -o $@@ -e start -T f6004000 ${OBJS} version.o
+	@@ls -l $@@
+	@@size $@@
+	update -f -s sun4c2 /sprite/boot/sun4c2.md/${KERNELNAME}
+	#rcp sun4c2 ginger:/home/ginger/sprite/kernels/sun4c2.sprite
+	#rsh ginger -n "(cd /home/ginger/sprite/kernels ; ./Save sun4c2.sprite)"
+	nm -n sun4c2 > sun4c2.nm
+	-Save sun4c2
+@
+
+
+1.47
+log
+@ds5000 kernel now copied to /lustA
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.46 91/10/18 11:16:08 rab Exp Locker: jhh $ SPRITE (Berkeley)
+d61 2
+d252 1
+a252 1
+#	rcp /sprite/boot/$@@.sprite ${ENVY}:/bnf2/sprite/sun2.new
+d265 2
+a266 2
+	update -f -s sun3 /sprite/boot/sun3.md/new
+	rcp /sprite/boot/sun3.md/new ${GINGER}:/tftpboot/sun3.md/new
+d282 2
+a283 2
+	update -f -s sun4 /sprite/boot/sun4.md/new
+	rcp /sprite/boot/sun4.md/new ${GINGER}:/tftpboot/sun4.md/new
+d287 2
+a288 2
+	update -f sun4 /allspiceA/new
+	strip /allspiceA/new
+d301 1
+a301 1
+	update -f -s sun4c /sprite/boot/sun4c.md/new
+d318 1
+a318 1
+	update -f -s sun4c2 /sprite/boot/sun4c2.md/new
+d334 2
+a335 2
+	update -f ds3100 /sprite/boot/ds3100.md/new
+	strip /sprite/boot/ds3100.md/new
+d340 2
+a341 2
+	update -f ds3100 /assaultA/new
+	strip /assaultA/new
+d354 2
+a355 2
+	update -f ds5000 /sprite/boot/ds5000.md/new
+	strip /sprite/boot/ds5000.md/new
+d360 1
+a360 1
+	update -f $@@ /lustA/new
+@
+
+
+1.46
+log
+@Added changes for sun4c2.  Deleted sun2 stuff.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.45 91/09/25 00:52:36 mendel Exp Locker: rab $ SPRITE (Berkeley)
+d358 2
+a359 1
+	-Save ds5000
+@
+
+
+1.45
+log
+@rab checking in for mendel.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.44 91/08/23 14:52:45 shirriff Exp Locker: mendel $ SPRITE (Berkeley)
+d34 4
+d246 1
+a246 2
+#	${LD} -X -o $@@ -e start -T 804000 ${OBJS} version.o \
+#	    -L/sprite/lib/${RTM}.md ${LIBOLD} ${LIBNET}
+d260 1
+a260 2
+	${LD} -X -msun3 -o $@@ -e start -T e004000 ${OBJS} version.o \
+	    -L/sprite/lib/${RTM}.md
+d277 1
+a277 2
+	${LD} -X -msun4 -o $@@ -e start -T f6004020 ${OBJS_SUN4} version.o \
+	    -L/sprite/lib/${RTM}.md
+d296 1
+a296 2
+	${LD} -X -msun4 -o $@@ -e start -T f6004000 ${OBJS} version.o \
+	    -L/sprite/lib/sun4.md
+d305 17
+d329 1
+a329 2
+	${LD} -N -o ds3100 -e start -T 80030000 ${OBJS} version.o \
+		-L/sprite/lib/${RTM}.md
+d349 1
+a349 2
+	${LD} -N -o ds5000 -e start -T 80030000 ${OBJS} version.o \
+		-L/sprite/lib/${RTM}.md
+d367 1
+a367 2
+#	${LD} -msun2 -X -o $@@ -e start -T 804000 ${PROFOBJS} version.o \
+#	    -L/sprite/lib/${RTM}.md ${LIBOLD} ${LIBNET}
+d381 1
+a381 2
+	${LD} -msun3 -X -o $@@ -e start -T e004000 ${PROFOBJS} version.o \
+	    -L/sprite/lib/${RTM}.md
+@
+
+
+1.44
+log
+@*** empty log message ***
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.43 91/07/31 11:36:06 shirriff Exp $ SPRITE (Berkeley)
+d247 1
+a247 1
+#	rcp /sprite/boot/$@@.sprite ${ENVY}:/bnf2/sprite/sun2.compat
+d261 2
+a262 2
+	update -f -s sun3 /sprite/boot/sun3.md/compat
+#	rcp /sprite/boot/sun3.md/compat ${GINGER}:/tftpboot/sun3.md/compat
+d279 4
+a282 4
+	update -f -s sun4 /sprite/boot/sun4.md/compat
+#	rcp /sprite/boot/sun4.md/compat ${GINGER}:/tftpboot/sun4.md/compat
+#	rcp sun4 ginger:/home/ginger/sprite/kernels/sun4.sprite
+#	rsh ginger -n "(cd /home/ginger/sprite/kernels ; ./Save sun4.sprite)"
+d284 2
+a285 2
+	update -f sun4 /allspiceA/compat
+	strip /allspiceA/compat
+d299 1
+a299 1
+	update -f -s sun4c /sprite/boot/sun4c.md/compat
+d316 2
+a317 2
+	update -f ds3100 /sprite/boot/ds3100.md/compat
+	strip /sprite/boot/ds3100.md/compat
+d322 2
+a323 2
+	update -f ds3100 /assaultA/compat
+	strip /assaultA/compat
+d337 2
+a338 2
+	update -f ds5000 /sprite/boot/ds5000.md/compat
+	strip /sprite/boot/ds5000.md/compat
+@
+
+
+1.43
+log
+@Restored the 1.41 Makefile.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.41 91/06/28 12:25:47 jhh Exp $ SPRITE (Berkeley)
+d247 1
+a247 1
+#	rcp /sprite/boot/$@@.sprite ${ENVY}:/bnf2/sprite/sun2.new
+d261 2
+a262 2
+	update -f -s sun3 /sprite/boot/sun3.md/new
+	rcp /sprite/boot/sun3.md/new ${GINGER}:/tftpboot/sun3.md/new
+d279 4
+a282 4
+	update -f -s sun4 /sprite/boot/sun4.md/new
+	rcp /sprite/boot/sun4.md/new ${GINGER}:/tftpboot/sun4.md/new
+	rcp sun4 ginger:/home/ginger/sprite/kernels/sun4.sprite
+	rsh ginger -n "(cd /home/ginger/sprite/kernels ; ./Save sun4.sprite)"
+d284 2
+a285 2
+	update -f sun4 /allspiceA/new
+	strip /allspiceA/new
+d299 1
+a299 1
+	update -f -s sun4c /sprite/boot/sun4c.md/new
+d316 2
+a317 2
+	update -f ds3100 /sprite/boot/ds3100.md/new
+	strip /sprite/boot/ds3100.md/new
+d322 2
+a323 2
+	update -f ds3100 /assaultA/new
+	strip /assaultA/new
+d337 2
+a338 2
+	update -f ds5000 /sprite/boot/ds5000.md/new
+	strip /sprite/boot/ds5000.md/new
+@
+
+
+1.42
+log
+@Moved kernel load address for sun4's.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.41 91/06/28 12:25:47 jhh Exp Locker: mgbaker $ SPRITE (Berkeley)
+d275 1
+a275 1
+	${LD} -X -msun4 -o $@@ -e start -T f5804020 ${OBJS_SUN4} version.o \
+d295 1
+a295 1
+	${LD} -X -msun4 -o $@@ -e start -T f5804000 ${OBJS} version.o \
+@
+
+
+1.41
+log
+@Mary checking this in for Jhh.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.40 91/02/12 15:56:11 jhh Exp $ SPRITE (Berkeley)
+d275 1
+a275 1
+	${LD} -X -msun4 -o $@@ -e start -T f6004020 ${OBJS_SUN4} version.o \
+d295 1
+a295 1
+	${LD} -X -msun4 -o $@@ -e start -T f6004000 ${OBJS} version.o \
+@
+
+
+1.41.1.1
+log
+@Moving kernel back up again.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.41 91/06/28 12:25:47 jhh Exp Locker: mgbaker $ SPRITE (Berkeley)
+@
+
+
+1.40
+log
+@lfs support
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.39 90/11/08 17:51:03 shirriff Exp Locker: jhh $ SPRITE (Berkeley)
+d263 2
+a264 2
+	rcp sun3 ginger:/home/ginger/sprite/kernels/sun3.sprite
+	rsh ginger -n "(cd /home/ginger/sprite/kernels ; ./Save sun3.sprite)"
+d300 2
+a301 2
+	rcp sun4c ginger:/home/ginger/sprite/kernels/sun4c.sprite
+	rsh ginger -n "(cd /home/ginger/sprite/kernels ; ./Save sun4c.sprite)"
+d320 2
+a321 2
+	rcp /sprite/src/kernel/sprite/ds3100 ginger:/home/ginger/sprite/kernels/ds3100
+	rsh ginger -n "(cd /home/ginger/sprite/kernels; Save ds3100)"
+d341 2
+a342 2
+	rcp /sprite/src/kernel/sprite/ds5000 ginger:/home/ginger/sprite/kernels/ds5000
+	rsh ginger -n "(cd /home/ginger/sprite/kernels; Save ds5000)"
+@
+
+
+1.39
+log
+@Added ds5000 stuff.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.38 90/08/21 18:56:59 mgbaker Exp $ SPRITE (Berkeley)
+d96 1
+d100 1
+d134 1
+d139 1
+d167 1
+d172 1
+d284 2
+a285 2
+	update -f sun4 /allspiceA/vmsprite
+	strip /allspiceA/vmsprite
+@
+
+
+1.38
+log
+@Fixed bug in copying kernel over to ginger.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.37 90/08/14 16:51:04 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d22 4
+d319 19
+@
+
+
+1.37
+log
+@Another fix to make this work for ginger.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.36 90/08/14 14:46:09 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d270 1
+a270 1
+	rcp /sprite/boot/sun3.md/new ${GINGER}:/tftpboot/sun4.md/new
+@
+
+
+1.36
+log
+@Fixed to put kernels on ginger and not rosemary.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.34 90/05/16 16:35:19 mgbaker Exp Locker: douglis $ SPRITE (Berkeley)
+d252 1
+a252 1
+	rcp /sprite/boot/sun3.md/new ${GINGER}:/sprite3/sun3.new
+d270 1
+d343 1
+a343 1
+	rcp /sprite/boot/sun3.md/prof ${GINGER}:/sprite3/tmp/$@@
+@
+
+
+1.35
+log
+@Mary checking this in for Fred.
+@
+text
+@d253 2
+a254 2
+	rcp sun3 rosemary:/tmp/sprite/sun3.sprite
+	rsh rosemary -n "(cd /tmp/sprite ; ./Save sun3.sprite)"
+d270 2
+a271 2
+	rcp sun4 rosemary:/tmp/sprite/sun4.sprite
+	rsh rosemary -n "(cd /tmp/sprite ; ./Save sun4.sprite)"
+d289 2
+a290 2
+	rcp sun4c rosemary:/tmp/sprite/sun4c.sprite
+	rsh rosemary -n "(cd /tmp/sprite ; ./Save sun4c.sprite)"
+d309 2
+a310 2
+	rcp /sprite/src/kernel/sprite/ds3100 rosemary:/tmp/sprite/ds3100
+	rsh rosemary -n "(cd /tmp/sprite; Save ds3100)"
+@
+
+
+1.34
+log
+@Removed old LIBOLD and LIBNET references.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.33 90/03/29 18:23:45 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d251 3
+a253 3
+	update -f -s $@@ /sprite/boot/$@@.md/new
+	rcp /sprite/boot/$@@.md/new ${GINGER}:/sprite3/$@@.new
+	cp $@@ /rosemary/tmp/sprite/$@@.sprite
+d255 2
+a256 2
+	nm -n $@@ > $@@.nm
+	-Save $@@
+d269 2
+a270 2
+	update -f -s $@@ /sprite/boot/$@@.md/new
+	cp $@@ /rosemary/tmp/sprite/$@@.sprite
+d272 4
+a275 2
+	nm -n $@@ > $@@.nm
+	-Save $@@
+d288 2
+a289 2
+	update -f -s $@@ /sprite/boot/$@@.md/new
+	cp $@@ /rosemary/tmp/sprite/$@@.sprite
+d291 2
+a292 2
+	nm -n $@@ > $@@.nm
+	-Save $@@
+d305 7
+a311 7
+	update -f $@@ /sprite/boot/$@@.md/new
+	strip /sprite/boot/$@@.md/new
+	rm -f $@@.nm
+	nm -n $@@ > $@@.nm
+	rcp /sprite/src/kernel/sprite/$@@ dill:/sprite/src/kernel/nelson/$@@
+	rsh dill -n "(cd /sprite/src/kernel/nelson ; Save $@@)"
+	update -f $@@ /assaultA/new
+d313 1
+a313 1
+	-Save $@@
+a360 53
+ALL_MODULES = \
+dbg \
+dev \
+fs \
+fscache \
+fsconsist \
+fsdm \
+fsio \
+fslcl \
+fspdev \
+fsprefix \
+fsrmt \
+libc \
+main \
+mem \
+net \
+proc \
+prof \
+rpc \
+sched \
+sig \
+sync \
+sys \
+timer \
+utils \
+vm
+#fsutil
+#recov
+
+All:
+	for i in ${ALL_MODULES} ; do
+	    cd ../$i ; make
+	done
+
+All-install:
+	for i in ${ALL_MODULES} ; do
+	    cd ../$i ; make install
+	done
+
+All-installhdrs:
+	for i in ${ALL_MODULES} ; do
+	    cd ../$i ; make installhdrs
+	done
+
+All-lint:
+	for i in ${ALL_MODULES} ; do
+	    cd ../$i ; make ../Lint/$i.ln
+	done
+
+All-depend:
+	for i in ${ALL_MODULES} ; do
+	    cd ../$i ; make depend
+	done
+a361 4
+rcsinfo:
+	for i in ${ALL_MODULES} ; do
+	    cd ../$i ;  rcsinfo
+	done
+@
+
+
+1.33
+log
+@Changed default target from MACHINE to RTM so that pmake TM=sun3
+when executed on a sun4 will do the right thing.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.32 90/03/27 13:32:38 rab Exp Locker: mgbaker $ SPRITE (Berkeley)
+a36 2
+LIBNET = -lnet
+
+d248 1
+a248 1
+	    -L/sprite/lib/${RTM}.md ${LIBOLD} ${LIBNET}
+d266 1
+a266 1
+	    -L/sprite/lib/${RTM}.md ${LIBNET}
+d283 1
+a283 1
+	    -L/sprite/lib/sun4.md ${LIBNET}
+d300 1
+a300 1
+		-L/sprite/lib/${RTM}.md ${LIBNET}
+d336 1
+a336 1
+	    -L/sprite/lib/${RTM}.md ${LIBOLD} ${LIBNET}
+@
+
+
+1.32
+log
+@Automatically update /assaultA/new so the latest kernel is available
+for booting from assault's disk.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.31 90/02/01 11:06:03 rab Exp Locker: rab $ SPRITE (Berkeley)
+d213 1
+a213 1
+default: ${MACHINE}
+@
+
+
+1.31
+log
+@Added list of installed and unistalled objects.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.30 90/01/31 19:15:36 jhh Exp Locker: rab $ SPRITE (Berkeley)
+d311 2
+@
+
+
+1.30
+log
+@Added line to snapshot sources.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.29 89/12/30 23:44:16 rab Exp Locker: jhh $ SPRITE (Berkeley)
+d84 11
+a94 2
+FSNEW = ${TOP}/fs.new/${ODIR}
+HOOK= mainHook.o
+d99 2
+a100 2
+RAID = ${TOP}/raid.null/${ODIR}
+RAIDNULL = ${TOP}/raid/${ODIR}
+a101 1
+RPC_O = ${TOP}/rpc/${ODIR}/rpc.o
+d115 2
+a116 1
+OBJS1 =	${LIB}/mach.o \
+d146 31
+d179 1
+a179 1
+OBJS =	${OBJS1} \
+d182 4
+a185 1
+OBJS_SUN4 =	${OBJS1} \
+d188 3
+d210 2
+a211 1
+DISTFILES ?= Save doversion mainHook.c porting_comments version.h.template
+d213 2
+a240 2
+
+default: ${MACHINE}
+@
+
+
+1.29
+log
+@Added -msun3 flag to LD so cross compiles work.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.28 89/12/30 23:41:49 rab Exp Locker: rab $ SPRITE (Berkeley)
+d177 1
+d262 1
+a262 1
+	rsh thyme -n "rcp /sprite/src/kernel/sprite/$@@ dill:/sprite/src/kernel/nelson/$@@"
+@
+
+
+1.28
+log
+@Added dist stuff.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.27 89/11/28 12:21:11 douglis Exp Locker: rab $ SPRITE (Berkeley)
+d201 1
+a201 1
+	${LD} -X -o $@@ -e start -T e004000 ${OBJS} version.o \
+d265 14
+a278 14
+profile2: ${PROFOBJS} Makefile .PRECIOUS
+	sed 's/MACHINE/$@@/g' version.h.template > version.h
+	cat version.h >> $@@.versionLog
+	rm -f $@@
+	rm -f mainHook.o
+	cc -c ${CFLAGS} mainHook.c
+	@@cc -c ${CFLAGS} version.c
+	${LD} -X -o $@@ -e start -T 804000 ${PROFOBJS} version.o \
+	    -L/sprite/lib/${RTM}.md ${LIBOLD} ${LIBNET}
+	@@ls -l $@@
+	@@size $@@
+	update -f -s $@@ /sprite/boot/$@@.sprite
+	rcp /sprite/boot/$@@.sprite ${ENVY}:/bnf2/sprite/sun2
+	nm -n $@@ > $@@.nm
+d287 1
+a287 1
+	${LD} -X -o $@@ -e start -T e004000 ${PROFOBJS} version.o \
+@
+
+
+1.27
+log
+@added -n to rsh commands.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.26 89/11/28 11:34:28 brent Exp Locker: douglis $ SPRITE (Berkeley)
+d12 1
+a12 1
+TM ?= $(MACHINE)
+d53 1
+d59 1
+d163 11
+@
+
+
+1.26
+log
+@Tweaked use of doversion
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.24 89/11/09 12:39:01 brent Exp Locker: douglis $ SPRITE (Berkeley)
+d195 1
+a195 1
+	rsh rosemary "(cd /tmp/sprite ; ./Save sun3.sprite)"
+d212 1
+a212 1
+	rsh rosemary "(cd /tmp/sprite ; ./Save sun4.sprite)"
+d229 1
+a229 1
+	rsh rosemary "(cd /tmp/sprite ; ./Save sun4c.sprite)"
+d233 1
+a233 1
+ds3100: ${OBJS} .PRECIOUS
+d248 2
+a249 2
+	rsh thyme "rcp /sprite/src/kernel/sprite/$@@ dill:/sprite/src/kernel/nelson/$@@"
+	rsh dill "(cd /sprite/src/kernel/nelson ; Save $@@)"
+@
+
+
+1.25
+log
+@Added RTM to handle environment defined-TM
+@
+text
+@d163 1
+a163 1
+	doversion ${RELEASE} ${NEWVERSION} > version.h.template
+a192 1
+#	cp /sprite/boot/$@@.md/new /vmsprite.new
+d194 1
+a194 1
+	rcp $@@ rosemary:/tmp/sprite/$@@.sprite
+d211 1
+a211 1
+	rcp $@@ rosemary:/tmp/sprite/$@@.sprite
+d228 1
+a228 1
+	rcp $@@ rosemary:/tmp/sprite/$@@.sprite
+a245 1
+	rcp $@@ dill:/sprite/src/kernel/nelson/$@@
+d248 2
+a250 1
+	rsh dill '(cd /sprite/src/kernel/nelson ; Save $@@)'
+@
+
+
+1.24
+log
+@Fiddled with Save'ing of kernels
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.22 89/10/30 18:07:56 shirriff Exp Locker: rab $ SPRITE (Berkeley)
+d8 8
+a15 2
+#ifmake sun3 || profile3
+TM = sun3
+a17 4
+#ifmake sun2 
+TM = sun2
+MTFLAGS = -msun2
+#endif
+d19 1
+a19 1
+TM = ds3100
+d23 1
+a23 1
+TM = sun4
+d27 1
+a27 1
+TM = sun4c
+d31 6
+d44 4
+a47 4
+LIB =		${SPRITEDIR}/${TM}.md
+PROFD =	${SPRITEDIR}/Profiled/${TM}.md
+ODIR =		${TM}.md
+IFLAGS=	-I. -I${H} -I${USERH} -I${USERH}/${TM}.md -I${H}/${TM}.md
+d172 1
+a172 1
+#	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBNET}
+d179 2
+d189 1
+a189 1
+	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBNET}
+d208 1
+a208 1
+	    -L/sprite/lib/${TM}.md ${LIBNET}
+d242 1
+a242 1
+		-L/sprite/lib/${TM}.md ${LIBNET}
+d261 1
+a261 1
+	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBNET}
+d276 1
+a276 1
+	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBNET}
+@
+
+
+1.23
+log
+@Added stuff for libc module.
+@
+text
+@d174 1
+d193 1
+d210 1
+d227 1
+a227 1
+	rm -f $@@
+@
+
+
+1.22
+log
+@Added raid module for sun4 compile.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.21 89/08/30 11:16:50 brent Exp Locker: shirriff $ SPRITE (Berkeley)
+d29 1
+a29 1
+LIBC = -lnet -lc
+d93 1
+a94 1
+
+d111 1
+d146 2
+a147 1
+	${PROFD}/sun.o	${PROFD}/sys.o
+d164 1
+a164 1
+#	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBC}
+d178 1
+a178 1
+	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBC}
+d196 1
+a196 1
+	    -L/sprite/lib/${TM}.md ${LIBC}
+d212 1
+a212 1
+	    -L/sprite/lib/sun4.md ${LIBC}
+d229 1
+a229 1
+		-L/sprite/lib/${TM}.md ${LIBC}
+d248 1
+a248 1
+	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBC}
+d263 1
+a263 1
+	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBC}
+d286 29
+d316 3
+a318 17
+	cd ../dbg; make
+	cd ../dev; make
+	cd ../fs; make
+	cd ../main; make
+	cd ../mem; make
+	cd ../net; make
+	cd ../proc; make
+	cd ../prof; make
+	cd ../rpc; make
+	cd ../sched; make
+	cd ../sig; make
+	cd ../sun; make
+	cd ../sync; make
+	cd ../sys; make
+	cd ../timer; make
+	cd ../utils; make
+	cd ../vm; make
+d321 3
+a323 17
+	cd ../dbg; make install
+	cd ../dev; make install
+	cd ../fs; make install
+	cd ../main; make install
+	cd ../mem; make install
+	cd ../net; make install
+	cd ../proc; make install
+	cd ../prof; make install
+	cd ../rpc; make install
+	cd ../sched; make install
+	cd ../sig; make install
+	cd ../sun; make install
+	cd ../sync; make install
+	cd ../sys; make install
+	cd ../timer; make install
+	cd ../utils; make install
+	cd ../vm; make install
+d326 3
+a328 18
+	cd ../dbg; make installhdrs
+	cd ../dev; make installhdrs
+	cd ../fs; make installhdrs
+	cd ../main; make installhdrs
+	cd ../mem; make installhdrs
+	cd ../net; make installhdrs
+	cd ../proc; make installhdrs
+	cd ../prof; make installhdrs
+	cd ../rpc; make installhdrs
+	cd ../sched; make installhdrs
+	cd ../sig; make installhdrs
+	cd ../sun; make installhdrs
+	cd ../sync; make installhdrs
+	cd ../sys; make installhdrs
+	cd ../timer; make installhdrs
+	cd ../utils; make installhdrs
+	cd ../vm; make installhdrs
+
+d331 3
+a333 17
+	cd ../dbg; make ../Lint/dbg.ln
+	cd ../dev; make ../Lint/dev.ln
+	cd ../fs; make ../Lint/fs.ln
+	cd ../main; make ../Lint/main.ln
+	cd ../mem; make ../Lint/mem.ln
+	cd ../net; make ../Lint/net.ln
+	cd ../proc; make ../Lint/proc.ln
+	cd ../prof; make ../Lint/prof.ln
+	cd ../rpc; make ../Lint/rpc.ln
+	cd ../sched; make ../Lint/sched.ln
+	cd ../sig; make ../Lint/sig.ln
+	cd ../sun; make ../Lint/sun.ln
+	cd ../sync; make ../Lint/sync.ln
+	cd ../sys; make ../Lint/sys.ln
+	cd ../timer; make ../Lint/timer.ln
+	cd ../utils; make ../Lint/utils.ln
+	cd ../vm; make ../Lint/vm.ln
+d336 3
+a338 17
+	cd ../dbg; make depend
+	cd ../dev; make depend
+	cd ../fs; make depend
+	cd ../main; make depend
+	cd ../mem; make depend
+	cd ../net; make depend
+	cd ../proc; make depend
+	cd ../prof; make depend
+	cd ../rpc; make depend
+	cd ../sched; make depend
+	cd ../sig; make depend
+	cd ../sun; make depend
+	cd ../sync; make depend
+	cd ../sys; make depend
+	cd ../timer; make depend
+	cd ../utils; make depend
+	cd ../vm; make depend
+d341 3
+a343 17
+	cd ../dbg; rcsinfo
+	cd ../dev; rcsinfo
+	cd ../fs; rcsinfo
+	cd ../main; rcsinfo
+	cd ../mem; rcsinfo
+	cd ../net; rcsinfo
+	cd ../proc; rcsinfo
+	cd ../prof; rcsinfo
+	cd ../rpc; rcsinfo
+	cd ../sched; rcsinfo
+	cd ../sig; rcsinfo
+	cd ../sun; rcsinfo
+	cd ../sync; rcsinfo
+	cd ../sys; rcsinfo
+	cd ../timer; rcsinfo
+	cd ../utils; rcsinfo
+	cd ../vm; rcsinfo
+@
+
+
+1.21
+log
+@Fixed for new naming conventions
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.20 89/08/25 09:43:24 brent Exp Locker: brent $ SPRITE (Berkeley)
+d81 1
+d95 3
+a97 1
+OBJS = 	${LIB}/mach.o \
+a115 1
+	${LIB}/raid.null.o \
+d126 8
+d180 1
+a180 1
+	cp /sprite/boot/$@@.md/new /vmsprite.new
+d184 1
+a184 1
+	nm -n  > $@@.nm
+d187 1
+a187 1
+sun4: ${OBJS} Makefile .PRECIOUS .NOEXPORT
+d193 1
+a193 1
+	${LD} -X -msun4 -o $@@ -e start -T f6004020 ${OBJS} version.o \
+d198 2
+d210 1
+a210 1
+	    -L/sprite/lib/${TM}.md ${LIBC}
+d214 2
+@
+
+
+1.20
+log
+@Fixed /sprite/boot/${TM}.md names again!  The new kernels
+are installed as "new", not "sprite.new"
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.19 89/08/25 09:36:33 mendel Exp Locker: brent $ SPRITE (Berkeley)
+a161 1
+	-Save $@@
+d172 1
+a173 1
+	rcp $@@ rosemary:/tmp/sprite/$@@.sprite
+d175 1
+a179 1
+	-Save $@@
+d189 1
+a193 1
+	-Save $@@
+d203 1
+d205 1
+a205 1
+profile2: ${PROFOBJS} Makefile .PRECIOUS
+d212 2
+a213 2
+	${LD} -X -o $@@ -e start -T 804000 ${PROFOBJS} version.o \
+	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBC}
+d216 4
+a219 2
+	update -f -s $@@ /sprite/boot/$@@.sprite
+	rcp /sprite/boot/$@@.sprite ${ENVY}:/bnf2/sprite/sun2
+d221 2
+d224 1
+a224 1
+profile3: ${PROFOBJS} Makefile .PRECIOUS
+d231 1
+a231 1
+	${LD} -X -o $@@ -e start -T e004000 ${PROFOBJS} version.o \
+d235 2
+a236 2
+	update -f -s $@@ /sprite/boot/sun3.md/prof
+	rcp /sprite/boot/sun3.md/prof ${GINGER}:/sprite3/tmp/$@@
+d239 1
+a239 1
+ds3100: ${OBJS} .PRECIOUS
+d246 2
+a247 2
+	${LD} -N -o ds3100 -e start -T 80030000 ${OBJS} version.o \
+		-L/sprite/lib/${TM}.md ${LIBC}
+d250 2
+a251 3
+	update -f $@@ /sprite/boot/$@@.md/new
+	strip /sprite/boot/$@@.md/new
+	rm -f $@@.nm
+@
+
+
+1.19
+log
+@Added loading of new file system modules.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.18 89/08/24 17:46:19 brent Exp $ SPRITE (Berkeley)
+d170 3
+a172 3
+	update -f -s $@@ /sprite/boot/$@@.md/sprite.new
+	cp /sprite/boot/$@@.md/sprite.new /vmsprite.new
+	rcp /sprite/boot/$@@.md/sprite.new ${GINGER}:/sprite3/$@@.new
+d188 1
+a188 1
+	update -f -s $@@ /sprite/boot/$@@.md/sprite.new
+d202 1
+a202 1
+	update -f -s $@@ /sprite/boot/$@@.md/sprite.new
+d231 2
+a232 2
+	update -f -s $@@ /sprite/boot/$@@.sprite
+	rcp /sprite/boot/$@@.sprite ${GINGER}:/sprite3/tmp/$@@
+d246 2
+a247 2
+	update -f $@@ /sprite/boot/$@@.md/sprite.new
+	strip /sprite/boot/$@@.md/sprite.new
+@
+
+
+1.18
+log
+@Fixed up destination for ds3100 kernels.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.17 89/08/24 17:37:16 jhh Exp Locker: brent $ SPRITE (Berkeley)
+d99 9
+@
+
+
+1.17
+log
+@added real versions
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.14 89/08/10 23:46:02 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d237 2
+a238 2
+	update -f $@@ /sprite/boot/$@@.md/$@@.new
+	strip /sprite/boot/$@@.md/$@@.new
+@
+
+
+1.16
+log
+@Fixed where the kernel gets installed it.
+@
+text
+@d51 2
+d133 16
+a148 13
+sun2: ${OBJS} Makefile .PRECIOUS .NOEXPORT
+	rm -f $@@ version.o
+	rm -f mainHook.o
+	cc -c ${CFLAGS} mainHook.c
+	${MKVERSION} -p "SPRITE VERSION 1.0 (Sun2)" > version.h
+	cc -c ${CFLAGS} version.c
+	${LD} -X -o $@@ -e start -T 804000 ${OBJS} version.o \
+	    -L/sprite/lib/${TM}.md ${LIBOLD} ${LIBC}
+	@@ls -l $@@
+	@@size $@@
+	update -f -s $@@ /sprite/boot/$@@.sprite
+	rcp /sprite/boot/$@@.sprite ${ENVY}:/bnf2/sprite/sun2.new
+	nm $@@ | sort > $@@.nm
+d151 2
+a155 1
+	${MKVERSION} -p "SPRITE VERSION 1.0 (sun3)" > version.h
+d166 1
+a166 1
+	nm $@@ | sort > $@@.nm
+d169 2
+a173 1
+	${MKVERSION} -p "SPRITE VERSION 1.0 (sun4)" > version.h
+d180 1
+a180 1
+	nm $@@ | sort > $@@.nm
+d183 2
+a187 1
+	${MKVERSION} -p "SPRITE VERSION 1.0 (sun4c)" > version.h
+d194 1
+a194 1
+	nm $@@ | sort > $@@.nm
+d197 2
+a201 1
+	@@${MKVERSION} -p "SPRITE VERSION 1.0 (profile2)" > version.h
+d209 1
+a209 1
+	nm $@@ | sort > $@@.nm
+d212 2
+a216 1
+	@@${MKVERSION} -p "SPRITE VERSION 1.0 (profile3)" > version.h
+d224 1
+a224 1
+	nm $@@ | sort > $@@.nm
+d227 2
+a231 1
+	@@${MKVERSION} -p "SPRITE VERSION 1.0 (ds3100)" > version.h
+@
+
+
+1.15
+log
+@Added sun4 and sun4c entry points
+@
+text
+@d155 3
+a157 3
+	update -f -s $@@ /sprite/boot/$@@.sprite.new
+	cp /sprite/boot/$@@.sprite.new /vmsprite.new
+	rcp /sprite/boot/$@@.sprite.new ${GINGER}:/sprite3/$@@.new
+d172 1
+a172 4
+	update -f -s $@@ /sprite/boot/$@@.new
+#	rcp /sprite/boot/$@@.new ${GINGER}:/sprite3/$@@.new
+#	rsh rosemary "(cd /tmp/sprite ; ./Save sun3.sprite)"
+#	rcp $@@ rosemary:/tmp/sprite/$@@.sprite
+d185 1
+a185 4
+	update -f -s $@@ /sprite/boot/$@@.new
+#	rcp /sprite/boot/$@@.new ${GINGER}:/sprite3/$@@.new
+#	rsh rosemary "(cd /tmp/sprite ; ./Save sun3.sprite)"
+#	rcp $@@ rosemary:/tmp/sprite/$@@.sprite
+@
+
+
+1.14
+log
+@Checking this in for Bob, before I add sun4 stuff to it.
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.13 89/08/07 13:25:10 jhh Exp Locker: rab $ SPRITE (Berkeley)
+d20 8
+d160 32
+@
+
+
+1.13
+log
+@*** empty log message ***
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.11 89/07/27 17:26:49 brent Exp Locker: nelson $ SPRITE (Berkeley)
+d328 1
+a328 1
+mainHook.o: ${H}/proc.h ${H}/fs.h ${H}/mem.h
+@
+
+
+1.12
+log
+@checking this in for Mike -- John
+@
+text
+@d70 1
+d94 1
+d126 1
+a126 1
+	cc -c ${CFLAGS} mainHook.o
+d140 1
+a140 1
+	cc -c ${CFLAGS} mainHook.o
+d157 1
+a157 1
+	cc -c ${CFLAGS} mainHook.o
+d171 1
+a171 1
+	cc -c ${CFLAGS} mainHook.o
+@
+
+
+1.11
+log
+@*** empty log message ***
+@
+text
+@d2 1
+a2 1
+# $Header: /b/sprite/src/kernel/sprite/RCS/Makefile,v 1.10 89/06/02 14:13:45 douglis Exp $ SPRITE (Berkeley)
+d10 3
+a12 1
+#else
+d14 5
+d21 1
+a21 2
+LIBC = -lc
+LIBOLD = -lold
+d34 1
+a34 1
+CFLAGS =	-m${TM} -g -DKERNEL ${PROFILE} ${IFLAGS}
+d123 2
+d137 2
+d154 2
+d168 2
+d180 14
+@
+
+
+1.10
+log
+@Added installsun3
+@
+text
+@d2 1
+a2 1
+# $Header: /sprite/src/kernel/sprite/RCS/Makefile,v 1.9 89/01/08 10:59:36 brent Exp Locker: douglis $ SPRITE (Berkeley)
+d115 1
+a115 1
+sun2: ${OBJS} Makefile .PRECIOUS
+d123 2
+a124 2
+	update -f -s $@@ /sprite/kernels/$@@.sprite
+	rcp /sprite/kernels/$@@.sprite ${ENVY}:/bnf2/sprite/sun2
+d127 2
+a128 2
+sun3: ${OBJS} Makefile .PRECIOUS
+	-mv -f $@@ $@@.old
+d135 5
+a139 2
+	update -f -s $@@ /sprite/kernels/$@@.sprite.new
+	rcp /sprite/kernels/$@@.sprite.new ${GINGER}:/sprite3/tmp/$@@
+a141 11
+installsun3: sun3
+	-mv -f /sprite/kernels/sun3.sprite /sprite/kernels/sun3.sprite.old
+	-mv -f /sprite/kernels/sun3.sprite.new /sprite/kernels/sun3.sprite
+	update /sprite/kernels/sun3.sprite /vmsprite
+	rm -f /vmunix
+	ln /vmsprite /vmunix
+	rsh rosemary -l sprite mv -f /tmp/sprite/sun3.sprite /tmp/sprite/sun3.old
+	rcp sun3 rosemary:/tmp/sprite/sun3.sprite
+	rsh ginger -l sprite mv -f /sprite3/sun3 /sprite3/sun3.old
+	rsh ginger -l sprite mv -f /sprite3/tmp/sun3 /sprite3/sun3
+
+d150 2
+a151 2
+	update -f -s $@@ /sprite/kernels/$@@.sprite
+	rcp /sprite/kernels/$@@.sprite ${ENVY}:/bnf2/sprite/sun2
+d162 2
+a163 2
+	update -f -s $@@ /sprite/kernels/$@@.sprite
+	rcp /sprite/kernels/$@@.sprite ${GINGER}:/sprite3/tmp/$@@
+@
+
+
+1.9
+log
+@ginger:/sprite => ginger:/sprite3
+@
+text
+@d2 1
+a2 1
+# $Header: Makefile,v 1.6 88/08/20 10:54:25 ouster Exp $ SPRITE (Berkeley)
+d4 1
+a4 1
+# No makemake
+d28 1
+a28 1
+CFLAGS =	-m68010 -g -DKERNEL ${PROFILE} ${IFLAGS}
+d128 1
+a128 1
+	rm -f $@@
+d135 2
+a136 3
+	update -f -s $@@ /sprite/kernels/$@@.sprite
+	rcp /sprite/kernels/$@@.sprite ${GINGER}:/sprite3/tmp/$@@
+	rcp $@@ rosemary:/tmp/sprite/$@@.sprite
+d138 11
+@
+
+
+1.8
+log
+@(brent)
+@
+text
+@d136 1
+a136 1
+	rcp /sprite/kernels/$@@.sprite ${GINGER}:/sprite/tmp/$@@
+d161 1
+a161 1
+	rcp /sprite/kernels/$@@.sprite ${GINGER}:/sprite/tmp/$@@
+@
+
+
+1.7
+log
+@*** empty log message ***
+@
+text
+@d131 1
+a131 1
+	${LD} -X -o $@@ -e start -T f004000 ${OBJS} version.o \
+d156 1
+a156 1
+	${LD} -X -o $@@ -e start -T f004000 ${PROFOBJS} version.o \
+@
+
+
+1.6
+log
+@Replace cpstrip with update.
+@
+text
+@d2 1
+a2 1
+# $Header: Makefile,v 1.5 88/04/27 19:15:26 nelson Exp $ SPRITE (Berkeley)
+d6 1
+a6 1
+LD = /sprite/bin/ld
+d9 1
+a9 1
+MACHINE = sun3
+d11 1
+a11 1
+MACHINE = sun2
+d14 3
+a16 1
+CLIB = /sprite/lib/libc.a
+d18 1
+a18 1
+SPRITEDIR =	..
+d22 4
+a25 4
+LIB =		${SPRITEDIR}/${MACHINE}.md
+PROFD =	${SPRITEDIR}/Profiled/${MACHINE}.md
+ODIR =		${MACHINE}.md
+IFLAGS=	-I. -I${H} -I${USERH}
+d28 1
+a28 1
+CFLAGS =	-m68010 -g ${PROFILE} ${IFLAGS}
+d35 2
+a36 4
+UPDATE = /sprite/bin/update
+DEPEND = /sprite/bin/depend.csh
+DEPENDSCRIPT = /sprite/lib/ex.depend
+MKVERSION = /sprite/bin/mkversion
+a37 3
+ENDOBJ=${LIB}/end.o
+
+ALLSPICE = allspice.Berkeley.EDU
+d45 14
+a58 4
+DBG = ../dbg/${ODIR}
+DEV = ../dev/${ODIR}
+FS = ../fs/${ODIR}
+FSNEW = ../fs.new/${ODIR}
+d60 15
+a74 14
+MAIN = ../main/${ODIR}
+NET = ../net/${ODIR}
+PROC = ../proc/${ODIR}
+PROF = ../prof/${ODIR}
+RECOV = ../recov/${ODIR}
+RPC = ../rpc/${ODIR}
+SCHED = ../sched/${ODIR}
+SIG = ../sig/${ODIR}
+MACH = ../mach/${ODIR}
+SYNC = ../sync/${ODIR}
+SYS = ../sys/${ODIR}
+TIMER = ../timer/${ODIR}
+UTILS = ../utils/${ODIR}
+VM = ../vm/${ODIR}
+d76 1
+d115 1
+a115 1
+sun2: ${OBJS} ${ENDOBJ} Makefile
+d117 2
+a118 2
+	@@${MKVERSION} -p "SPRITE VERSION 1.0 (Sun2)" > version.h
+	 cc -c ${CFLAGS} version.c
+d120 1
+a120 1
+	    ${CLIB} ${ENDOBJ} -lg
+d127 1
+a127 1
+sun3: ${OBJS} ${ENDOBJ} Makefile
+d129 2
+a130 2
+	@@${MKVERSION} -p "SPRITE VERSION 1.0 (sun3)" > version.h
+	@@cc -c ${CFLAGS} version.c
+d132 1
+a132 1
+	    ${CLIB} ${ENDOBJ} -lg
+d136 2
+a137 2
+	rcp /sprite/kernels/$@@.sprite allspice:/sprite/tmp/$@@
+	rcp $@@ rosemary:/sprite/brent/$@@.sprite
+d140 1
+a140 1
+profile2: ${PROFOBJS} ${ENDOBJ} Makefile
+d145 1
+a145 1
+	    ${CLIB} ${ENDOBJ} -lg
+d152 1
+a152 1
+profile3: ${PROFOBJS} ${ENDOBJ} Makefile
+d157 1
+a157 1
+	    ${CLIB} ${ENDOBJ} -lg
+d161 1
+a161 1
+	rcp /sprite/kernels/$@@.sprite allspice:/sprite/tmp/$@@
+@
+
+
+1.5
+log
+@Have it put the kernel into tmp first.
+@
+text
+@d2 1
+a2 1
+# $Header: Makefile,v 1.4 88/04/05 12:27:39 brent Exp $ SPRITE (Berkeley)
+d20 3
+a22 3
+LIB =		${SPRITEDIR}/Object/${MACHINE}
+PROFD =	${SPRITEDIR}/Profiled/${MACHINE}
+ODIR =		Object.${MACHINE}
+d61 1
+a61 1
+SUN = ../sun/${ODIR}
+d68 1
+a68 1
+OBJS = 	${LIB}/sun.o \
+d114 1
+a114 1
+	cpstrip $@@ /sprite/kernels/$@@.sprite
+d126 1
+a126 1
+	cpstrip $@@ /sprite/kernels/$@@.sprite
+d128 1
+d139 1
+a139 1
+	cpstrip $@@ /sprite/kernels/$@@.sprite
+d151 1
+a151 1
+	cpstrip $@@ /sprite/kernels/$@@.sprite
+@
+
+
+1.4
+log
+@Took out reference to crt.a
+@
+text
+@d2 1
+a2 1
+# $Header: Makefile,v 1.3 88/02/24 11:34:48 brent Exp $ SPRITE (Berkeley)
+d127 1
+a127 1
+	rcp /sprite/kernels/$@@.sprite allspice:/sprite/$@@
+@
+
+
+1.3
+log
+@Fixed rcp commands
+@
+text
+@d2 1
+a2 1
+# $Header: Makefile,v 1.2 88/02/10 20:06:55 brent Exp $ SPRITE (Berkeley)
+d14 1
+a14 1
+CLIB = /sprite/lib/libc.a /sprite/lib/crt.a
+@
+
+
+1.2
+log
+@(who knows?  this has been checked out a long time... FD)
+@
+text
+@d2 1
+a2 1
+# $Header: Makefile,v 1.10 85/07/26 15:45:54 douglis Exp $ SPRITE (Berkeley)
+d115 1
+a115 4
+	rcp /sprite/kernels/$@@.fred ${ENVY}:/bnf2/sprite/sun2
+#	rcp /sprite/kernels/$@@.sprite ginger:/pub.MC68010/sprite/$@@
+#	rcp /sprite/kernels/$@@.sprite allspice:/pub.MC68010/sprite/$@@
+#	rcp /sprite/kernels/$@@.sprite envy-150:/pub.MC68010/sprite/$@@
+d139 1
+a139 3
+	rcp /sprite/kernels/$@@.sprite ginger:/pub.MC68010/sprite/$@@
+	rcp /sprite/kernels/$@@.sprite allspice:/pub.MC68010/sprite/$@@
+	rcp /sprite/kernels/$@@.sprite envy-150:/pub.MC68010/sprite/$@@
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@a0 2
+# 
+# $Header: Makefile,v 4.1 87/04/26 21:40:46 douglis Exp $ SPRITE (Berkeley)
+d2 5
+a6 22
+ROOT = /sprite
+SPRITESRC = ..
+SPRITEHOME = /sprite2/users/sprite
+H =       ${SPRITESRC}/Include
+LIB =     ${SPRITESRC}/Object
+LINT =    ${SPRITESRC}/Lint
+USERLINT =${ROOT}/lib/lint
+USERINCLUDE=${ROOT}/lib/include
+INSTALLED=${SPRITESRC}/Installed/${MODULE}
+PROFDIR=  ${SPRITESRC}/Profiled
+ALL=      ${SPRITESRC}/All
+IFLAGS =  -I. -I${H} -I${USERINCLUDE}
+DBX =     -g
+PROFILE = -p -DPROFILE
+DFLAGS =
+CFLAGS =  ${DBX} ${IFLAGS} ${DFLAGS}
+PCFLAGS = ${DBX} ${IFLAGS} ${DFLAGS} ${PROFILE}
+CTFLAGS = -t
+PPFLAGS = -E ${IFLAGS} ${DFLAGS}
+CC = cc -m68010
+AS = as -m68010
+LD = ld
+d8 30
+a37 6
+UPDATE = /usr/local/update
+DEPEND = ${SPRITEHOME}/bin/depend.csh
+DEPENDSCRIPT = ${SPRITEHOME}/lib/ex.depend
+MKVERSION = ${SPRITEHOME}/bin/mkversion
+LIBC = /sprite/lib/libc.a /sprite/lib/crt.a
+SPECIAL=${LIB}/bootSys.o
+d40 30
+a69 1
+OBJS= 	${LIB}/crt.o \
+a73 1
+	mainHook.o \
+d78 1
+d82 1
+a82 1
+	${LIB}/sun.o \
+a83 1
+	${LIB}/sync.o \
+d86 1
+a86 2
+	${LIB}/vm.o \
+	${LIB}/win.o
+d88 14
+d106 1
+a106 1
+sprite: ${SPECIAL} ${OBJS} ${ENDOBJ}
+d108 12
+a119 11
+	@@${MKVERSION} > version.h
+	${CC} -c ${CFLAGS} version.c
+	${LD} -X -o sprite -e start -T a04000 ${SPECIAL} version.o ${OBJS} \
+	    ${LIBC} ${ENDOBJ} -lg
+	modAout sprite 4000
+	cp sprite sprite.strip
+	strip sprite.strip
+	rcp sprite.strip allspice:/pub.MC68010/sprite/sprite
+	rcp sprite.strip envy:/pub.MC68010/sprite/sprite
+	rcp sprite.strip ginger:/pub.MC68010/sprite/sprite
+	rm sprite.strip
+d121 11
+a131 1
+install: sprite installhdrs
+d133 13
+a145 3
+installhdrs:
+	@@${UPDATE} ${HDRS} ${H}
+	@@${UPDATE} ${HDRS} ${INSTALLED}
+d147 11
+a157 3
+/pub/sprite/sprite: sprite
+	rm -f /pub/sprite/sprite
+	rcp sprite envy:/pub/sprite/sprite
+d159 13
+d177 17
+a193 18
+	cd ../dbg; make 
+	cd ../dev; make 
+	cd ../fs; make 
+	cd ../main; make 
+	cd ../mem; make 
+	cd ../net; make 
+	cd ../proc; make 
+	cd ../prof; make 
+	cd ../rpc; make 
+	cd ../sched; make 
+	cd ../sig; make 
+	cd ../sun; make 
+	cd ../sync; make 
+	cd ../sys; make 
+	cd ../timer; make 
+	cd ../utils; make 
+	cd ../vm; make 
+	cd ../win; make 
+a212 1
+	cd ../win; make install
+d214 18
+a231 19
+All-all-install:
+	cd ../dbg; make all-install
+	cd ../dev; make all-install
+	cd ../fs; make all-install
+	cd ../main; make all-install
+	cd ../mem; make all-install
+	cd ../net; make all-install
+	cd ../proc; make all-install
+	cd ../prof; make all-install
+	cd ../rpc; make all-install
+	cd ../sched; make all-install
+	cd ../sig; make all-install
+	cd ../sun; make all-install
+	cd ../sync; make all-install
+	cd ../sys; make all-install
+	cd ../timer; make all-install
+	cd ../utils; make all-install
+	cd ../vm; make all-install
+	cd ../win; make all-install
+a232 1
+#:.,.+15s,^\(	cd ../\)\([^;]*\); make install,\1\2; make ../Lint/\2.ln,
+d241 3
+a243 3
+	cd ../proc; make ../Lint/sched.ln
+	cd ../prof; make ../Lint/sched.ln
+	cd ../rpc; make ../Lint/sched.ln
+d245 1
+a245 1
+	cd ../sig; make ../Lint/sched.ln
+d248 1
+a248 1
+	cd ../sys; make ../Lint/rpc.ln
+a251 1
+	cd ../win; make ../Lint/win.ln
+a252 2
+All: All-install sprite
+
+a270 1
+	cd ../win; make depend
+d272 21
+a292 19
+All-makemake:
+	cd ../dbg; makemake
+#	cd ../dev; makemake
+#	cd ../fs; makemake
+	cd ../main; makemake
+	cd ../mem; makemake
+	cd ../net; makemake
+	cd ../proc; makemake
+	cd ../prof; makemake
+	cd ../rpc; makemake
+	cd ../sched; makemake
+	cd ../sig; makemake
+	cd ../sun; makemake
+	cd ../sync; makemake
+	cd ../sys; makemake
+	cd ../timer; makemake
+	cd ../utils; makemake
+	cd ../vm; makemake
+	cd ../win; makemake
+@

@@ -1,0 +1,51 @@
+anise% sun4.md/lfscheck -verbose /dev/rvj10c 
+17:43:34.470:Read LFS checkpoint from /dev/rvj10c
+/dev/rvj10c:UsageArray: FreeBlocks wrong; is 1047123 should be 1047357
+17:43:49.120:Checking files
+17:58:03.470:Checking usage array
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 160 is wrong; is 9088 should be 4992
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 174 is wrong; is 4096 should be 0
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 191 is wrong; is 436096 should be 432000
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 293 is wrong; is 7424 should be 3328
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 299 is wrong; is 75648 should be 71552
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 409 is wrong; is 28544 should be 24448
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 639 is wrong; is 4096 should be 0
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 649 is wrong; is 503424 should be 499328
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 656 is wrong; is 338944 should be 334848
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 657 is wrong; is 6528 should be 2432
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 663 is wrong; is 53632 should be 49536
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 670 is wrong; is 16128 should be 12032
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 673 is wrong; is 339968 should be 335872
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 688 is wrong; is 38272 should be 34176
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 758 is wrong; is 317056 should be 316544
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 787 is wrong; is 458752 should be 457728
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 789 is wrong; is 412288 should be 408192
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 848 is wrong; is 4096 should be 0
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 1023 is wrong; is 12288 should be 8192
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 1120 is wrong; is 11904 should be 7808
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 1301 is wrong; is 4096 should be 0
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 1318 is wrong; is 19072 should be 14976
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 1346 is wrong; is 4096 should be 0
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 1347 is wrong; is 107008 should be 102912
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 1348 is wrong; is 6912 should be 2816
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 1350 is wrong; is 4096 should be 0
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 1513 is wrong; is 4096 should be 0
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 1535 is wrong; is 5248 should be 1152
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 1571 is wrong; is 509952 should be 505856
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 1583 is wrong; is 12288 should be 8192
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 1682 is wrong; is 4096 should be 0
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 1727 is wrong; is 4096 should be 0
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 1765 is wrong; is 4096 should be 0
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 1802 is wrong; is 15232 should be 10624
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 1877 is wrong; is 34432 should be 30336
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 1898 is wrong; is 5248 should be 1152
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 1916 is wrong; is 41984 should be 37888
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 1917 is wrong; is 4096 should be 0
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 1919 is wrong; is 4096 should be 0
+17:58:03.900:Checking directory tree
+File 75166 is unreferenced
+1 unreferenced files
+18:01:17.810:Checking summary regions
+
+18:06:24.340:Reporting errors
+/dev/rvj10c: 0 major errors 40 minor errors

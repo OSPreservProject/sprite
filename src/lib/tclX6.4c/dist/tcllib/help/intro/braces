@@ -1,0 +1,38 @@
+     GROUPING ARGUMENTS WITH BRACES
+          Curly braces may also be used for grouping arguments.   They
+          are  similar  to  quotes except for two differences.  First,
+          they nest; this makes them easier  to  use  for  complicated
+          arguments  like  nested  Tcl  command  strings.  Second, the
+          substitutions described below for commands,  variables,  and
+          backslashes do not occur in arguments enclosed in braces, so
+          braces can be used to prevent substitutions where  they  are
+          undesirable.  If an argument field begins with a left brace,
+          then the argument ends at the  matching  right  brace.   Tcl
+          will  strip  off  the outermost layer of braces and pass the
+          information between the braces to the  command  without  any
+          further modification.  For example, in the command
+
+               set a {xyz a {b c d}}
+          the set command will receive two arguments: a and xyz a {b c
+          d}.
+
+          When braces or quotes are in effect, the matching  brace  or
+          quote  need not be on the same line as the starting quote or
+          brace; in this case the newline  will  be  included  in  the
+          argument  field  along  with  any other characters up to the
+          matching brace or quote.   For  example,  the  eval  command
+          takes  one argument, which is a command string; eval invokes
+          the Tcl interpreter to  execute  the  command  string.   The
+          command
+
+               eval {
+                    set a 22
+                    set b 33
+               }
+
+          will assign the value 22 to a and 33 to b.
+
+          If the first character of a command  field  is  not  a  left
+          brace,  then neither left nor right braces in the field will
+          be  treated  specially   (except   as   part   of   variable
+          substitution; see below).

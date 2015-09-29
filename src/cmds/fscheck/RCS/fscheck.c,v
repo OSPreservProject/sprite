@@ -1,0 +1,6319 @@
+head     1.38;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.38
+date     92.06.09.21.48.59;  author jhh;  state Exp;
+branches ;
+next     1.37;
+
+1.37
+date     90.11.01.23.27.34;  author jhh;  state Exp;
+branches ;
+next     1.36;
+
+1.36
+date     90.10.10.15.28.44;  author mendel;  state Exp;
+branches ;
+next     1.35;
+
+1.35
+date     90.10.10.11.21.46;  author jhh;  state Exp;
+branches ;
+next     1.34;
+
+1.34
+date     90.05.01.15.36.36;  author jhh;  state Exp;
+branches ;
+next     1.33;
+
+1.33
+date     90.02.14.15.55.20;  author jhh;  state Exp;
+branches ;
+next     1.32;
+
+1.32
+date     89.10.03.17.47.12;  author jhh;  state Exp;
+branches ;
+next     1.31;
+
+1.31
+date     89.10.03.11.08.59;  author jhh;  state Exp;
+branches ;
+next     1.30;
+
+1.30
+date     89.09.25.16.41.03;  author jhh;  state Exp;
+branches ;
+next     1.29;
+
+1.29
+date     89.08.25.22.24.25;  author jhh;  state Exp;
+branches ;
+next     1.28;
+
+1.28
+date     89.07.31.17.43.27;  author jhh;  state Exp;
+branches ;
+next     1.27;
+
+1.27
+date     89.06.21.23.55.49;  author jhh;  state Exp;
+branches ;
+next     1.26;
+
+1.26
+date     89.02.28.12.21.48;  author jhh;  state Exp;
+branches ;
+next     1.25;
+
+1.25
+date     88.12.04.21.33.57;  author nelson;  state Exp;
+branches ;
+next     1.24;
+
+1.24
+date     88.09.20.15.13.32;  author nelson;  state Exp;
+branches ;
+next     1.23;
+
+1.23
+date     88.09.20.13.38.04;  author douglis;  state Exp;
+branches ;
+next     1.22;
+
+1.22
+date     88.07.19.11.45.46;  author douglis;  state Exp;
+branches ;
+next     1.21;
+
+1.21
+date     88.06.06.12.02.40;  author brent;  state Exp;
+branches 1.21.1.1;
+next     1.20;
+
+1.20
+date     88.06.02.12.58.50;  author brent;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     87.10.21.11.03.01;  author nelson;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     87.10.21.10.37.47;  author nelson;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     87.10.15.15.16.16;  author nelson;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     87.10.12.17.49.03;  author nelson;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     87.09.30.10.48.45;  author nelson;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     87.08.10.10.48.03;  author nelson;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     87.07.14.14.37.17;  author nelson;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     87.07.14.11.32.12;  author brent;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     87.06.03.19.30.40;  author nelson;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     87.06.01.15.41.47;  author nelson;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     87.05.30.12.17.27;  author nelson;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     87.05.27.10.13.36;  author nelson;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     87.05.26.14.09.55;  author nelson;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     87.04.25.10.24.20;  author brent;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     87.04.24.17.36.45;  author douglis;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     86.12.16.13.21.42;  author nelson;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     86.11.10.11.33.00;  author nelson;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     86.09.19.18.18.00;  author nelson;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.07.27.12.52.54;  author nelson;  state Exp;
+branches ;
+next     ;
+
+1.21.1.1
+date     88.07.15.18.20.12;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.38
+log
+@got rid of dependency on first partition of disk
+@
+text
+@/* 
+ * fscheck.c --
+ *
+ *	Perform consistency checks on a filesystem.
+  *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/cmds/fscheck/RCS/fscheck.c,v 1.37 90/11/01 23:27:34 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "option.h"
+#include "list.h"
+#include "fscheck.h"
+#include <string.h>
+#include <host.h>
+#include <sys/file.h>
+#include <sys/stat.h>
+#include <stdio.h>
+
+int	numBlocks = 0;
+int	numFiles = 0;
+int	numBadDesc = 0;
+int	numFrags = 0;
+int	errorType = EXIT_OK;
+int	foundError = 0;
+int	fdBitmapError = 0;
+Boolean	tooBig = FALSE;
+Ofs_DomainHeader  *domainPtr;
+int		partFID;
+Boolean patchHeader = FALSE;
+Boolean	attached	= FALSE;
+
+/*
+ * The following are used to go from a command line like
+ * fscheck -dev rsd0 -part b
+ * to /dev/rsd0a 	- for the partition that has the disk label
+ * and to /dev/rsd0b	- for the partition to format.
+ */
+char *deviceName;		/* Set to "rsd0" or "rxy1", etc. */
+char *partName;			/* Set to "a", "b", "c" ... "g" */
+char defaultFirstPartName[] = "a";
+char *firstPartName = defaultFirstPartName;
+char defaultDevDirectory[] = "/dev/";
+char *devDirectory = defaultDevDirectory;
+char *outputFileName = NULL;
+
+int hostID = -1;
+int writeDisk = 0;
+int verbose = 0;
+int silent = 0;
+int clearDomainNumber = 0;
+int recoveryCheck = 0;
+int badBlockInit = 0;
+int patchRoot = 0;
+int rawOutput = FALSE;
+int maxHeapSize = -1;
+int bufferSize = BUFSIZ;
+int heapSize = 0;
+int noCopy = FALSE;
+int blocksToRead = 1;
+int debug = FALSE;
+int clearFixCount = FALSE;
+int bitmapVerbose = 0;
+int numReboot = 4;
+int blockToFind = -1;
+int fileToPrint = -1;
+int dontRecheck = 0;
+int setCheckedBit = FALSE;
+
+Option optionArray[] = {
+    {OPT_STRING, "dev", (Address)&deviceName,
+	"Required: Name of device, eg \"rsd0\" or \"rxy1\""},
+    {OPT_STRING, "part", (Address)&partName,
+	"Required: Partition ID: (a, b, c, d, e, f, g)"},
+    {OPT_STRING, "dir", (Address)&devDirectory,
+	"Name of device directory (\"/dev/\")"},
+    {OPT_STRING, "initialPart", (Address)&firstPartName,
+	"Name of initial partition (\"a\")"},
+    {OPT_TRUE, "write", (Address)&writeDisk,
+	"Write disk "},
+    {OPT_TRUE, "silent", (Address)&silent,
+	"Don't say anything unless there's a problem "},
+    {OPT_TRUE, "verbose", (Address)&verbose,
+	"Output information about differences in bitmaps "},
+    {OPT_TRUE, "fixRoot", (Address)&patchRoot,
+     "Re-create the missing/corrupt root directory."},
+    {OPT_TRUE, "clear", (Address)&clearDomainNumber,
+	"Clear the domain number field stored in the summary sector"},
+    {OPT_INT, "hostID", (Address)&hostID,
+	"Update the host ID in the disk header"},
+    {OPT_TRUE, "badBlock", (Address)&badBlockInit,
+	"Initialize the bad block file descriptor"},
+    {OPT_STRING, "outputFile", (Address)&outputFileName,
+	"Name of file in which to store output."},	
+    {OPT_TRUE, "rawOutput", (Address) &rawOutput,
+	"Bypass the filesystem when writing the output into the file."},
+    {OPT_INT, "heapLimit", (Address)&maxHeapSize,
+	"Maximum amount of dynamic storage allowed."},
+    {OPT_INT, "bufferSize", (Address)&bufferSize,
+	"Size of buffer for output file stream."},
+    {OPT_TRUE, "delete", (Address)&noCopy,
+	"Truncate files containing duplicate blocks."},
+    {OPT_TRUE, "debug", (Address)&debug,
+	"Print debugging information."},
+    {OPT_INT, "readBlock", (Address)&blocksToRead,
+	"Number of blocks to read at a time."},
+    {OPT_TRUE, "clearFixCount", (Address)&clearFixCount,
+	"Clear the count of consecutive disk fixes in summary sector"},
+    {OPT_TRUE, "bitmapVerbose", (Address)&bitmapVerbose,
+	"Print information about bitmap errors."},
+    {OPT_INT, "numReboot", (Address)&numReboot,
+	"Number of consecutive runs before returning EXIT_NOREBOOT"},
+    {OPT_INT, "block", (Address)&blockToFind,
+	"Block to look for"},
+    {OPT_INT, "file", (Address)&fileToPrint,
+	"File to print"},
+    {OPT_TRUE, "cond", (Address)&dontRecheck,
+	"Don't check the disk if it has just been checked successfully"},
+    {OPT_TRUE, "setCheck", (Address)&setCheckedBit,
+	"If the disk is checked and fixed ok set a bit in the summary sector"},
+};
+int numOptions = sizeof(optionArray) / sizeof(Option);
+
+/*
+ * Forward Declarations.
+ */
+void		CheckFilesystem();
+int		RecoveryCheck();
+
+/*
+ * The last file that an error message was printed about.
+ */
+int		lastErrorFD = -1;
+int		fixCount = 0;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	Create the required file names from the command line
+ *	arguments.  Then open the first partition on the disk
+ *	because it contains the disk label, and open the partition
+ *	that is to be checked.
+ *
+ * Results:
+ *
+ * Side effects:
+ *	File opening.
+ *
+ *----------------------------------------------------------------------
+ */
+main(argc, argv)
+    int argc;
+    char *argv[];
+{
+    char	firstPartitionName[64];
+    char	partitionName[64];
+    int		partition;
+    u_char  	*streamBuffer;
+    int		outputFID;
+    char	*timeString;
+    struct timeval tp;
+    struct timezone tzp;
+    int		argsReturned;
+
+
+    argsReturned = Opt_Parse(argc, argv, optionArray, numOptions, 0);
+    if (argsReturned > 1) {
+	Opt_PrintUsage(argv[0], optionArray, Opt_Number(optionArray));
+	exit(EXIT_BAD_ARG);
+    }
+    /*
+     * Set up stream for output to file, as well as output to stderr.
+     */
+    if (outputFileName == NULL) {
+	outputFile = NULL;
+    } else if (!rawOutput) {
+	outputFile = fopen(outputFileName,"a+");
+	if (outputFile == NULL ) {
+	    OutputPerror("fscheck: Can't open output file \"%s\\n", 
+		outputFileName);
+	    exit(EXIT_HARD_ERROR);
+	}
+	if (bufferSize != BUFSIZ) {
+	    if (setvbuf(outputFile,(char *) NULL,_IOFBF,bufferSize)) {
+		Output(stderr,
+		       "fscheck: Unable to change output buffer size.\n");
+		if (maxHeapSize > 0) {
+		    maxHeapSize -= bufferSize;
+		}
+	    }
+	}
+    } else {
+	if (bufferSize > FSDM_NUM_DIRECT_BLOCKS * FS_BLOCK_SIZE) {
+	    Output(stderr,
+"Maximum buffer size allowed when using raw output is %d bytes.\n",
+	    FSDM_NUM_DIRECT_BLOCKS * FS_BLOCK_SIZE);
+	    exit(EXIT_BAD_ARG);
+	}
+	Alloc(streamBuffer,u_char,bufferSize);
+        Stdio_Setup(outputFile,0,1,streamBuffer,bufferSize,NULL,
+	    WriteOutputFile, CloseOutputFile,NULL);
+    }
+    if (rawOutput) {
+	Output(stderr,"      \n");
+    }
+    gettimeofday(&tp,&tzp);
+    timeString = asctime(localtime(&tp.tv_sec));
+    if (verbose) {
+	Output(stderr,"***** Fscheck *****\n");
+    }
+    if (!silent) {
+	Output(stderr,"%s",timeString);
+    }
+    if (tooBig) {
+	Output(stderr,"fscheck: Heap limit too small.\n");
+	exit(EXIT_MORE_MEMORY);
+    }
+    if (deviceName == (char *)0) {
+	Output(stderr, "Specify device name with -dev option\n");
+	exit(EXIT_BAD_ARG);
+    }
+    if (partName == (char *)0) {
+	Output(stderr, "Specify partition with -part option\n");
+	exit(EXIT_BAD_ARG);
+    }
+    if (blocksToRead <= 0) {
+	Output(stderr,"blocksToRead value %d illegal - using 1.\n");
+	blocksToRead = 1;
+    }
+    if (patchRoot && !writeDisk) {
+	Output(stderr, 
+	     "Sorry but you can't patch the root without writing the disk.\n");
+	    exit(EXIT_BAD_ARG);
+    }
+    if (hostID != -1) {
+	patchHeader = TRUE;
+    }
+    /*
+     * Gen up the name of the first partition on the disk,
+     * and the name of the partition that needs to be checked.
+     */
+    (void)strcpy(firstPartitionName, devDirectory);  /* eg. /dev/ */
+    (void)strcpy(partitionName, devDirectory);    
+    (void)strcat(firstPartitionName, deviceName);	  /* eg. /dev/rxy0 */
+    (void)strcat(partitionName, deviceName);    
+    (void)strcat(firstPartitionName, firstPartName);  /* eg. /dev/rxy0a */
+    (void)strcat(partitionName, partName);		  /* eg. /dev/rxy0b */
+
+    partFID = open(partitionName, writeDisk ? O_RDWR : O_RDONLY);
+    if (partFID < 0) {
+	OutputPerror("fscheck: Can't open partition to check ");
+	exit(EXIT_HARD_ERROR);
+    }
+
+    partition = partName[0] - 'a';
+    if (partition < 0 || partition > 7) {
+	Output(stderr,
+         "fscheck: Can't determine partition index from the partition name\n");
+	exit(EXIT_BAD_ARG);
+    }
+    if ((maxHeapSize > 0) && (bufferSize >= maxHeapSize)) {
+	Output(stderr,
+	       "fscheck: Size of output buffer exceeds maximum heap size.\n");
+	exit(EXIT_MORE_MEMORY);
+    }
+    CheckFilesystem(partFID, partition);
+
+    if (outputFile != NULL) {
+	(void)fclose(outputFile);
+    }
+    (void)close(partFID);
+    if (foundError) {
+	if (attached) {
+	    exit(EXIT_REBOOT);
+	}
+	if (errorType != EXIT_OK) {
+	    exit(errorType);
+	}
+	exit(EXIT_SOFT_ERROR);
+    }
+    exit(EXIT_OK);
+}
+
+unsigned char *fdBitmapPtr;
+unsigned char *cylBitmapPtr;
+
+/*
+ * Array to provide the ability to set and extract bits out of a bitmap byte.
+ */
+unsigned char bitmasks[BITS_PER_BYTE] = {
+    0x80, 0x40, 0x20, 0x10, 0x8, 0x4, 0x2, 0x1
+};
+
+void 		ReadDomainHeader();
+void		CheckDirTree();
+void		CheckBlocks();
+unsigned char 	*ReadFileDescBitmap();
+unsigned char 	*ReadBitmap();
+FdInfo		*ReadFileDesc();
+void		WriteDomainHeader();
+void		WriteFileDescBitmap();
+void		WriteBitmap();
+void		WriteFileDesc();
+void		WriteSummaryInfo();
+void		CheckFDBitmap();
+void		SetBadDescBitmap();
+void		RelocateFD();
+
+int	num1KBlocks;
+int	bytesPerCylinder;
+
+List_Links	copyListHdr;
+List_Links	relocListHdr;
+List_Links	modListHdr;
+#define tempCopyList &tempCopyListHdr;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CheckFilesystem --
+ *
+ *	Perform consistency checks on the file system.
+ *
+ * Results:
+ *	An error code, probably from a read.
+ *
+ * Side effects:
+ *	Error flags may be set
+ *
+ *----------------------------------------------------------------------
+ */
+void
+CheckFilesystem(partFID, partition)
+    int partFID;	/* Handle on the partition of the disk to format */
+    int partition;	/* Index of parition that is to be dumped */
+{
+    Disk_Label			*labelPtr;
+    FdInfo	  	  	*descInfoPtr;
+    register	FdInfo	  	*tDescInfoPtr;
+    unsigned char		*tFdBitmapPtr;
+    unsigned	char	  	*newCylBitmapPtr;
+    int				i, j, k;
+    int				fdNum;
+    char			*block;
+    Fsdm_FileDescriptor		*fdPtr;
+    int				sector;
+    unsigned int		validMask;
+    int				valid;
+    int				salvage;
+    unsigned char 		*oldPtr;
+    unsigned char 		*newPtr;
+    int				blockNum;
+    int				bitmapError = 0;
+    RelocListElement		*relocElemPtr;
+    CopyListElement		*copyElemPtr;
+    Boolean			blockModified;
+    Fsdm_FileDescriptor		*fdCopyPtr = NULL;
+    Boolean			copyUsed;
+    Boolean			batchRead;
+    char			*blockBuffer;
+    Boolean			blockBufferModified;
+    int				numFileDescBlocks;
+    Boolean			fdMagicOkay;
+    int 			status;
+
+
+
+    /*
+     * Read the copy of the super block at the beginning of the partition
+     * to find out basic disk geometry and where to find the domain header.
+     */
+    labelPtr = Disk_ReadLabel(partFID);
+    if (labelPtr == NULL) {
+	Output(stderr, "CheckFilesystem: Could not read disk label\n");
+	exit(EXIT_READ_FAILURE);
+    }
+    fflush(stderr);
+    fflush(stdout);
+    Alloc(blockBuffer, char, blocksToRead * FS_BLOCK_SIZE);
+    if (tooBig) {
+	Output(stderr,"CheckFileSystem: Heap limit too small.\n");
+	exit(EXIT_MORE_MEMORY);
+    }
+    domainPtr = Disk_ReadDomainHeader(partFID, labelPtr);
+    if (domainPtr == NULL) {
+	Output(stderr, "CheckFilesystem: Could not read domain header\n");
+	exit(EXIT_READ_FAILURE);
+    }
+    /*
+     * See if we need to patch the host ID in the domain header.
+     */
+    if (patchHeader) {
+	int		spriteID;
+	struct stat	attrs;
+
+	if (hostID != 0) {
+	    spriteID = hostID;
+	} else {
+	    /*
+	     * Determine where the disk is located so we can set the
+	     * spriteID in the header correctly.  If the disk device is generic
+	     * we use our own hostID, otherwise use the hostID specified
+	     * by the device file.
+	     */
+	    fstat(partFID, &attrs);
+	    if (attrs.st_devServerID == FS_LOCALHOST_ID) {
+		Proc_GetHostIDs((int *) NULL, &spriteID);
+	    } else {
+		spriteID = attrs.st_devServerID;
+	    }
+	}
+	if (spriteID != domainPtr->device.serverID) {
+	    if (!silent) {
+		Output(stderr, "Setting hostID in disk header to 0x%x\n",
+			    spriteID);
+	    }
+	    domainPtr->device.serverID = spriteID;
+	} else {
+	    if (!silent) {
+		Output(stderr, "Leaving hostID as 0x%x\n",spriteID);
+	    }
+	    patchHeader = FALSE;
+	}
+    } else if (debug) {
+	Output(stderr,"HostID read off disk is 0x%x\n",
+	       domainPtr->device.serverID);
+    }
+    /*
+     * Read in the file descriptor bit map and the cylinder bit map.
+     */
+    fdBitmapPtr = ReadFileDescBitmap(partFID, domainPtr);
+    cylBitmapPtr = ReadBitmap(partFID, domainPtr);
+    AllocByte(newCylBitmapPtr,unsigned char,domainPtr->bitmapBlocks * 
+	FS_BLOCK_SIZE);
+    if (tooBig) {
+	Output(stderr,"CheckFileSystem: Heap limit too small.\n");
+	exit(EXIT_MORE_MEMORY);
+    }
+    bzero((Address)newCylBitmapPtr, domainPtr->bitmapBlocks * FS_BLOCK_SIZE); 
+    /*
+     * Allocate the descriptor info array.
+     */
+    Alloc(descInfoPtr,FdInfo,domainPtr->numFileDesc);
+    if (tooBig) {
+	Output(stderr,"CheckFileSystem: Heap limit too small.\n");
+	exit(EXIT_MORE_MEMORY);
+    }
+    bzero((Address)descInfoPtr, domainPtr->numFileDesc * sizeof(FdInfo));
+
+    num1KBlocks = domainPtr->dataCylinders * 
+	      domainPtr->geometry.blocksPerCylinder * FS_FRAGMENTS_PER_BLOCK;
+    bytesPerCylinder = (domainPtr->geometry.blocksPerCylinder + 1) / 2;
+    List_Init(modList);
+    List_Init(relocList);
+    List_Init(copyList);
+
+    /*
+     * Check the disk to see if the disk has been checked already.
+     */
+    if (verbose) {
+	    Output(stderr, "Performing recovery check\n");
+    }
+    status = RecoveryCheck(partFID, labelPtr);
+    if (dontRecheck && status) {
+	if (!silent) {
+	    Output(stderr, 
+    "Disk is marked as just checked. I won't bother checking it again.\n");
+	}
+	FindOutputFile();
+	return;
+    }
+    /*
+     * Recreate the file descriptor bit map and check the block counts and 
+     * make sure that all blocks are referenced.  Also recreate the data block
+     * bitmap.
+     */
+    if (verbose) {
+	Output(stderr, "Checking file descriptors:\n");
+    }
+
+    tDescInfoPtr = descInfoPtr;
+    tFdBitmapPtr = fdBitmapPtr;
+    fdNum = 0;
+    numFileDescBlocks = (domainPtr->numFileDesc + FSDM_FILE_DESC_PER_BLOCK - 1) / 
+		FSDM_FILE_DESC_PER_BLOCK;
+    if (blocksToRead > numFileDescBlocks) {
+	blocksToRead = numFileDescBlocks;
+    }
+    for (i = 0; 
+	 (i < numFileDescBlocks) && !tooBig;
+	i += blocksToRead) {
+	batchRead = TRUE;
+	if (Disk_BlockRead(partFID, domainPtr, 
+			   domainPtr->fileDescOffset + i,
+			   blocksToRead, (Address) blockBuffer) < 0) {
+	    batchRead = FALSE;
+	    OutputPerror("CheckFilesystem: read of fd's failed");
+	}
+	block = blockBuffer;
+	blockBufferModified = FALSE;
+	for (k = 0; k < blocksToRead; k++) {
+	    if (batchRead) {
+		block = &(blockBuffer[k * FS_BLOCK_SIZE]);
+		salvage = 0;
+	    } else {
+		/*
+		 * We couldn't read all of the disk blocks at once, so try
+		 * to read them one at a time.
+		 */
+		if (Disk_BlockRead(partFID, domainPtr, 
+				   domainPtr->fileDescOffset + i + k,
+				   1, (Address) block) < 0) {
+		    /*
+		     * Hit a disk error reading the block.  Read it a sector
+		     * at a time and try to salvage what we can.
+		     */
+		    OutputPerror("CheckFilesystem: BlockRead: Read failed");
+		    validMask = Disk_BadBlockRead(partFID, domainPtr,
+					      domainPtr->fileDescOffset + i + k,
+					      (Address) block);
+		    SetBadDescBitmap(domainPtr, fdNum, &tFdBitmapPtr);
+		    salvage = 1;
+		}
+	    }
+	    if (!salvage) {
+		CheckFDBitmap(domainPtr, fdNum, block, &tFdBitmapPtr);
+		valid = 1;
+	    }
+	    blockModified = FALSE;
+	    for (sector = 0; 
+	         sector < DISK_SECTORS_PER_BLOCK && !tooBig; 
+		 sector++) {
+		if (salvage) {
+		    valid = (validMask & (1 << sector)) != 0;
+		    numBadDesc++;
+		}
+		for (j = 0; 
+		     j < FILE_DESC_PER_SECTOR && 
+		     fdNum < domainPtr->numFileDesc && !tooBig;
+		     j++, fdNum++, tDescInfoPtr++, fdPtr++) {
+    
+		    int	modified = 0;
+		    fdPtr = (Fsdm_FileDescriptor *)	
+			    &block[(j + (FILE_DESC_PER_SECTOR * sector)) *
+			    FSDM_MAX_FILE_DESC_SIZE];
+		     if (fdPtr->magic != FSDM_FD_MAGIC) {
+			 if (!silent) {
+			     Output(stderr, 
+	 "File %d has an invalid magic number <0x%x> and is being reset.\n",
+				    fdNum, fdPtr->magic);
+			     Output(stderr,
+			     "Current block is %d.\n", 
+			     i + k + domainPtr->fileDescOffset);
+			 }
+			 UnmarkFDBitmap(fdNum,fdBitmapPtr);
+			 fdMagicOkay = FALSE;
+		     } else {
+			 fdMagicOkay = TRUE;
+		     }
+		    /* 
+		     * Make a copy of the fd to be used by elements in 
+		     * the lists. We have to do this because we can't keep
+		     * all of the fd's in memory at once.
+		     */
+		    if (fdCopyPtr == NULL) { 
+			Alloc(fdCopyPtr,Fsdm_FileDescriptor,1);
+			if (tooBig) {
+			    continue;
+			}
+		    }
+		    bcopy((Address)fdPtr, (Address)fdCopyPtr, 
+			  sizeof(Fsdm_FileDescriptor));
+		    copyUsed = FALSE;
+		    relocElemPtr = NULL;
+		    copyElemPtr = NULL;
+		    if (salvage) {
+			if (valid && fdMagicOkay && 
+			    (fdPtr->flags & FSDM_FD_ALLOC)) {
+			    /* 
+			     * If the descriptor is valid and is in a disk block
+			     * that is bad, put the fd on a list for relocation.
+			     */
+			    Alloc(relocElemPtr,RelocListElement,1);
+			    if (tooBig) {
+				continue;
+			    }
+			    tDescInfoPtr->flags |= FD_RELOCATE;
+			    relocElemPtr->origFdNum = fdNum;
+			    relocElemPtr->newFdNum = -1;
+			    relocElemPtr->fdPtr = fdCopyPtr;
+			    copyUsed = TRUE;
+			}
+			if (!valid) {
+			    tDescInfoPtr->flags |= FD_UNREADABLE;
+			}
+		    }
+		    if (valid && fdMagicOkay) {
+			if (fdPtr->fileType == FS_DIRECTORY) {
+			    tDescInfoPtr->flags |= IS_A_DIRECTORY;
+			}
+			if (fdPtr->flags & FSDM_FD_ALLOC) {
+			    tDescInfoPtr->flags |= FD_ALLOCATED;
+			    tDescInfoPtr->origLinkCount = fdPtr->numLinks;
+
+			    CheckBlocks(partFID, domainPtr, fdNum, fdCopyPtr,
+					newCylBitmapPtr, &modified,&copyUsed);
+			    if (modified) {
+				blockModified = TRUE;
+			    }
+			    if (tooBig) {
+				continue;
+			    }
+			} else if (debug && 
+			           fdNum == FSDM_BAD_BLOCK_FILE_NUMBER &&
+				   fdPtr->firstByte == -1){
+			    Output(stderr,"bad block has been reset.\n");
+			}
+		    }
+		    if ((badBlockInit && fdNum == FSDM_BAD_BLOCK_FILE_NUMBER) ||
+			    (salvage && !valid) || !(fdMagicOkay)) {
+			if (badBlockInit && 
+			    fdNum == FSDM_BAD_BLOCK_FILE_NUMBER) {
+			    Output(stderr,  
+				   "Clearing bad block file descriptor.\n");
+			}
+			ClearFd(fdMagicOkay ? FSDM_FD_ALLOC : FSDM_FD_FREE, 
+				fdCopyPtr);
+			blockModified = TRUE;
+			modified = 1;
+		    }
+		    if (relocElemPtr != NULL) {
+		       List_Insert((List_Links *)relocElemPtr,
+				   LIST_ATREAR(relocList));
+		    }
+		    if (modified) {
+			bcopy((Address)fdCopyPtr, (Address)fdPtr, 
+			      sizeof(Fsdm_FileDescriptor));
+		        fdPtr->version++;
+		    }
+		    if (copyUsed) {
+			fdCopyPtr = NULL;
+		    }
+		}
+	    }
+	    if (blockModified) {
+		blockBufferModified = TRUE;
+		if (!batchRead && writeDisk) {
+		    if (Disk_BlockWrite(partFID, domainPtr,
+					domainPtr->fileDescOffset + i + k,
+					1, (Address) block) < 0) {
+			OutputPerror("CheckFileSystem: FD write failed");
+			exit(EXIT_WRITE_FAILURE);
+		    }
+		}
+	    }
+	}
+	if (batchRead && blockBufferModified && writeDisk) {
+	    if (Disk_BlockWrite(partFID, domainPtr,
+				domainPtr->fileDescOffset + i,
+				blocksToRead, (Address) blockBuffer) < 0) {
+		OutputPerror("CheckFileSystem: FD write failed");
+		exit(EXIT_WRITE_FAILURE);
+	    }
+	}
+    }
+    if (!silent && fdBitmapError) {
+	Output(stderr, "Found error in file descriptor bitmap\n");
+    }
+
+
+    /*
+     * We now know which descriptors, if any, need to be relocated.  Allocate
+     * new descriptors to hold the information.
+     */
+
+    if (!(List_IsEmpty(relocList))) {
+	LIST_FORALL(relocList, (List_Links *)relocElemPtr) {
+	    RelocateFD(domainPtr, descInfoPtr, relocElemPtr);
+	}
+    }
+    /*
+     * Fix all blocks that appeared in more than one file.
+     */
+    if (!(List_IsEmpty(copyList))) {
+	int status = 0;
+
+	if (verbose) {
+	    Output(stderr, "\nCopying duplicate blocks\n");
+	}
+	LIST_FORALL(copyList, (List_Links *)copyElemPtr) {
+	    List_Remove((List_Links *) copyElemPtr);
+	    if (status != -1 && !noCopy) {
+		status = CopyBlock(domainPtr, descInfoPtr, partFID, 
+				   newCylBitmapPtr, copyElemPtr);
+	    }
+	    if ((copyElemPtr->parentType == FD) && 
+		!((descInfoPtr[copyElemPtr->parentNum].flags & 
+		 (ON_MOD_LIST | FD_RELOCATE)))) {
+		 free((Address) copyElemPtr->fdPtr);
+	    }
+	    free((Address) copyElemPtr);
+	}
+    }
+    /*
+     * Go through the file system starting at the root and perform a 
+     * consistency check.
+     */
+    if (!tooBig) {
+	if (verbose) {
+	    Output(stderr, "Traversing directory tree:\n\n");
+	}
+    
+	CheckDirTree(partFID, domainPtr, descInfoPtr, fdBitmapPtr,
+		     newCylBitmapPtr);
+    } else {
+	Output(stderr,
+	       "NOT traversing directory tree because heap limit exceeded.\n"
+	       );
+    }
+    /*
+     * Now compare the two data block bitmaps.
+     */
+    if (verbose) {
+	Output(stderr, "Comparing old and new data block bit maps:\n");
+    }
+    /*
+     * Block 0 is reserved for the root directory, so mark it as in use.
+     * There is code in the file system that will panic if block 0 is
+     * reallocated.
+     */
+    if ((*cylBitmapPtr & 0xf0) != 0xf0) {
+	if (!silent) {
+	    Output(stderr, "Block 0 is free. Marking it used.\n");
+	}
+	foundError = 1;
+	bitmapError = 1;
+    }
+    *newCylBitmapPtr |= 0xf0;
+    *cylBitmapPtr |= 0xf0;
+    for (oldPtr = cylBitmapPtr, newPtr = newCylBitmapPtr, i = 0, blockNum = 0; 
+	 i < domainPtr->dataCylinders; 
+	 i++, oldPtr = &cylBitmapPtr[bytesPerCylinder * i], 
+	      newPtr = &newCylBitmapPtr[bytesPerCylinder * i]) {
+	for (j = 0; 
+	     j < bytesPerCylinder; 
+	     j++, oldPtr++, newPtr++, blockNum += 2) {
+	    if ((*oldPtr & 0xf0) != (*newPtr & 0xf0)) {
+		if (bitmapVerbose) {
+		    Output(stderr,"Block %d: old %x new %x.\n",
+			blockNum * FS_FRAGMENTS_PER_BLOCK,
+			(*oldPtr & 0xf0) >> 4, (*newPtr & 0xf0) >> 4);
+		}
+		foundError = 1;
+		bitmapError = 1;
+	    } 
+	    if ((*oldPtr & 0x0f) != (*newPtr & 0x0f)) {
+		if (bitmapVerbose) {
+		    Output(stderr,"Block %d: old %x new %x.\n",
+		       (blockNum + 1) * FS_FRAGMENTS_PER_BLOCK,
+		       *oldPtr & 0x0f, *newPtr & 0x0f);
+		}
+		foundError = 1;
+		bitmapError = 1;
+	    }
+	}
+    }
+    if (!silent && bitmapError) {
+	Output(stderr, "Found error in data block bitmap\n");
+    }
+    fflush(stderr);
+
+    /*
+     * Print status information about disk.
+     */
+    Output(stdout, 
+	    "%d files, %d blocks in use, %d blocks free, %d fragments\n",
+	    numFiles, numBlocks, domainPtr->dataBlocks * 4 - numBlocks,
+	    numFrags);
+
+
+    if (foundError) {
+	fixCount++;
+	if (fixCount > numReboot) {
+	    foundError = 1;
+	    errorType = EXIT_NOREBOOT;
+	}
+    } else {
+	fixCount = 0;
+    }
+    if (!writeDisk) {
+	return;
+    }
+
+    if (verbose) {
+	Output(stderr, "Writing disk\n");
+    }
+    fflush(stderr);
+
+    /*
+     * Write the file descriptor and data block bitmaps back out along with
+     * the file descriptors.
+     */
+    if (patchHeader) {
+	status = Disk_WriteDomainHeader(partFID, labelPtr, domainPtr);
+	if (status != 0) {
+	    Output(stderr, "Unable to write domain header.\n");
+	    exit(EXIT_WRITE_FAILURE);
+	}
+    }
+
+    WriteFileDescBitmap(partFID, domainPtr, fdBitmapPtr);
+    WriteBitmap(partFID, domainPtr, newCylBitmapPtr);
+
+    /*
+     * Write out any modified file descriptors on the modified list.
+     */
+    WriteFileDesc(partFID, domainPtr, modList, descInfoPtr);
+    WriteFileDesc(partFID, domainPtr, relocList, descInfoPtr);
+    WriteSummaryInfo(partFID, labelPtr, domainPtr, 
+				numBlocks, numFiles);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CheckBlocks --
+ *
+ *	Check all the blocks associated with a file descriptor.
+ *
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Error flags may be set.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+CheckBlocks(partFID, domainPtr, fdNum, fdPtr, newCylBitmapPtr, modifiedPtr,
+	    copyUsedPtr)
+    int 		partFID;		/* Raw handle on disk. */
+    Ofs_DomainHeader	*domainPtr;		/* Ptr to domain info. */
+    int			fdNum;			/* File descriptor # to check.*/
+    Fsdm_FileDescriptor	*fdPtr;			/* Ptr to file descriptor that
+						 * are checking. */
+    unsigned char 	*newCylBitmapPtr;	/* Pointer to the disk block
+						 * bit map. */
+    int			*modifiedPtr;		/* TRUE => modified the file */
+    Boolean		*copyUsedPtr;		/* TRUE => copy of fd was stored 						 * somewhere. */
+ {
+    register int		*indexPtr;
+    register int		i, j;
+    static int 			*dblIndirectBlock[FSDM_INDICES_PER_BLOCK];
+    int				indBlock;
+    int				lastBlock;
+    int				lastFrag;
+    int				tBlock;
+    int				dirty;
+    int				lastRealBlock;
+    int				blockCount = 0;
+    int				status = 0;
+    Boolean			duplicate;
+    int				virtualIndex;
+
+    if (!(fdPtr->flags & FSDM_FD_ALLOC)) {
+	return;
+    }
+    numFiles++;
+    lastRealBlock = -1;
+    /*
+     * -1 is an empty file, anything less is an error.
+     */
+    if (fdPtr->lastByte < -1) {
+	if (verbose || lastErrorFD != fdNum) {
+	    Output(stderr, "File %d has bogus size %d. Setting to -1.\n",
+		    fdNum, fdPtr->lastByte);
+	}
+	fdPtr->lastByte = -1;
+	foundError = 1;
+	*modifiedPtr = 1;
+    }
+    if (fdPtr->lastByte == -1) {
+	lastBlock = -1;
+	lastFrag = FS_FRAGMENTS_PER_BLOCK - 1;
+    } else {
+	lastBlock = fdPtr->lastByte / FS_BLOCK_SIZE;
+	if (lastBlock < FSDM_NUM_DIRECT_BLOCKS) {
+	    lastFrag = (fdPtr->lastByte & FS_BLOCK_OFFSET_MASK) / FS_FRAGMENT_SIZE;
+	} else {
+	    lastFrag = FS_FRAGMENTS_PER_BLOCK - 1;
+	}
+    }
+
+    /*
+     * First check direct blocks. Loop through them first and see if the 
+     * file size corresponds to the number of blocks.
+     */
+    for (i = 0; i < FSDM_NUM_DIRECT_BLOCKS; i++) {
+	if (i > lastBlock && fdPtr->direct[i] != FSDM_NIL_INDEX) {
+	    lastBlock++;
+	    fdPtr->lastByte += FS_BLOCK_SIZE;
+	    foundError = 1;
+	    *modifiedPtr = 1;
+	    if (lastFrag != FS_FRAGMENTS_PER_BLOCK - 1) {
+		fdPtr->lastByte += (FS_FRAGMENTS_PER_BLOCK -1 - lastFrag) *
+				   FS_FRAGMENT_SIZE;
+		lastFrag = FS_FRAGMENTS_PER_BLOCK - 1;
+	    }
+	    if (verbose || lastErrorFD != fdNum) {
+		Output(stderr,
+	"Found a direct block beyond end of file %d. Increasing file size.\n",
+			fdNum);
+		lastErrorFD = fdNum;
+	    }
+	}
+    }
+    for (i = 0; i < FSDM_NUM_DIRECT_BLOCKS; i++) {
+	if (fileToPrint == fdNum) {
+	    Output(stderr, "File %d, d[%d] = %d.\n", fdNum, i, 
+		fdPtr->direct[i]);
+	}
+	if (fdPtr->direct[i] != FSDM_NIL_INDEX) {
+	    if (blockToFind == fdPtr->direct[i]) {
+		Output(stderr, "Block %d is d[%d] in file %d.\n", 
+		    fdPtr->direct[i], i, fdNum);
+	    }
+	    if (i == lastBlock) {
+		status = MarkBitmap(fdNum, fdPtr->direct[i],
+				    newCylBitmapPtr,
+				    lastFrag + 1, domainPtr);
+		if (status >= 0) {
+		    if (lastFrag + 1 != FS_FRAGMENTS_PER_BLOCK) {
+			numFrags++;
+		    }
+		    blockCount += lastFrag + 1;
+		    numBlocks += lastFrag + 1;
+		}
+	    } else {
+		if (fdPtr->direct[i] & 
+		    (FS_FRAGMENTS_PER_BLOCK - 1)) {
+		    if (verbose || lastErrorFD != fdNum) {
+			Output(stderr,
+  "Block pointer %d invalid  in direct block %d of file %d. Block deleted.\n",
+				    fdPtr->direct[i],i,fdNum);
+			lastErrorFD = fdNum;
+		    }
+		    foundError = 1;
+		    status = -1;
+		} else {
+		    status = MarkBitmap(fdNum, fdPtr->direct[i],
+					newCylBitmapPtr,
+					FS_FRAGMENTS_PER_BLOCK, domainPtr);
+		    if (status >= 0) {
+			blockCount += FS_FRAGMENTS_PER_BLOCK;
+			numBlocks += FS_FRAGMENTS_PER_BLOCK;
+		    }
+		}
+	    }
+	    /*
+	     * Current block is also used by another file. Put info in copy
+	     * list so block is copied.
+	     */
+	    if (status == 1) {
+		if (!tooBig) {
+		    AddToCopyList(FD,fdPtr,fdNum,0,i,DIRECT, 
+				  (i == lastBlock) ? lastFrag + 1 :
+			          FS_FRAGMENTS_PER_BLOCK,  copyUsedPtr);
+		}
+	    }
+	    if (status < 0) {
+		fdPtr->direct[i] = FSDM_NIL_INDEX;
+		if (fdPtr->fileType == FS_DIRECTORY) {
+		    if (verbose || lastErrorFD != fdNum) {
+			Output(stderr,
+			"Hole in directory %d at direct block %d.\n", fdNum,
+			i);
+			lastErrorFD = fdNum;
+		    }
+		    AddToCopyList(FD,fdPtr,fdNum,0,i,DIRECT, 
+				  (i == lastBlock) ? lastFrag + 1 :
+				  FS_FRAGMENTS_PER_BLOCK,  copyUsedPtr);
+		}
+	    } else {
+		lastRealBlock = i;
+		if (i == lastBlock) {
+		    break;
+		}
+	    }
+	} else if (fdPtr->fileType == FS_DIRECTORY) {
+	    if (verbose || lastErrorFD != fdNum) {
+		Output(stderr, "Hole in directory %d at direct block %d.\n", 
+		fdNum, i);
+		lastErrorFD = fdNum;
+	    }
+	    AddToCopyList(FD,fdPtr,fdNum,0,i,DIRECT, 
+			  (i == lastBlock) ? lastFrag + 1 :
+			  FS_FRAGMENTS_PER_BLOCK,  copyUsedPtr);
+	}
+    }
+    /*
+     * Now check the singly indirect block.
+     */
+    if (fdPtr->indirect[0] == FSDM_NIL_INDEX) {
+	if (fdPtr->fileType == FS_DIRECTORY && 
+	    lastBlock > FSDM_NUM_DIRECT_BLOCKS) {
+	    if (verbose || lastErrorFD != fdNum) {
+		Output(stderr,
+		"Hole in directory %d at single indirect block\n",
+			       fdNum);
+		lastErrorFD = fdNum;
+	    }
+	    AddToCopyList(FD,fdPtr,fdNum,0,FSDM_NUM_DIRECT_BLOCKS,INDIRECT, 
+			  FS_FRAGMENTS_PER_BLOCK, copyUsedPtr);
+	}
+	i += FSDM_INDICES_PER_BLOCK;
+    } else {
+	tBlock = i;
+	status = ProcessIndirectBlock(fdNum, partFID,lastBlock, FALSE, fdPtr, 
+				      &fdPtr->indirect[0], newCylBitmapPtr,
+				      domainPtr,&tBlock, &dirty,
+				      &lastRealBlock, modifiedPtr, &blockCount,
+				      copyUsedPtr);
+	i = tBlock;
+	/*
+	 * We need to copy block
+	 */
+	if (status == 1) {
+	    AddToCopyList(FD, fdPtr, fdNum, 0, FSDM_NUM_DIRECT_BLOCKS, INDIRECT,
+			  FS_FRAGMENTS_PER_BLOCK, copyUsedPtr);
+	}  
+	if (status < 0) {
+	    if (verbose || lastErrorFD != fdNum) {
+		Output(stderr, 
+			    "Hole in directory %d at single indirect block\n",
+			       fdNum);
+		lastErrorFD = fdNum;
+	    }
+	    AddToCopyList(FD, fdPtr, fdNum, 0, FSDM_NUM_DIRECT_BLOCKS, INDIRECT,
+			  FS_FRAGMENTS_PER_BLOCK, copyUsedPtr);
+	} 
+    }
+    if (fdPtr->indirect[1] == FSDM_NIL_INDEX) {
+	goto checkBlockCount;
+    }
+
+    /*
+     * Now check doubly indirect blocks.
+     */
+    indBlock = fdPtr->indirect[1];
+    if (indBlock & (FS_FRAGMENTS_PER_BLOCK - 1)) {
+	if (verbose || lastErrorFD != fdNum) {
+	    Output(stderr, 
+ "Doubly indirect block %d on non-block boundary in file %d.  Block deleted.\n",
+			  indBlock, fdNum);
+	    lastErrorFD = fdNum;
+	    setCheckedBit = FALSE;
+	}
+	foundError = 1;
+	status = -1;
+    } else {
+	status = MarkBitmap(fdNum, PhysToVirt(domainPtr, indBlock),
+		newCylBitmapPtr,
+		FS_FRAGMENTS_PER_BLOCK, domainPtr);
+    }
+    if (status >= 0) {
+	if (Disk_BlockRead(partFID, domainPtr, 
+			   indBlock / FS_FRAGMENTS_PER_BLOCK,
+			   1, (Address) dblIndirectBlock) < 0) {
+	    OutputPerror("CheckBlocks: Read failed");
+	    fdPtr->indirect[1] = FSDM_NIL_INDEX;
+	    *modifiedPtr = 1;
+	    goto truncFile;
+	}
+	/* 
+	 * Look over contents of block first and see if they make sense.
+	 */
+	for (j = 0, indexPtr = (int *) dblIndirectBlock; 
+	     j < FSDM_INDICES_PER_BLOCK; 
+	     j++, indexPtr++) {
+	    if (*indexPtr != FSDM_NIL_INDEX) {
+		virtualIndex = PhysToVirt(domainPtr, *indexPtr);
+		if (virtualIndex < 0 || virtualIndex >= num1KBlocks) {
+		    if (verbose || lastErrorFD != fdNum) {
+			Output(stderr, 
+			"Double indirect block %d of file %d contains garbage index %d\n", 
+				       indBlock, fdNum, *indexPtr);
+			lastErrorFD = fdNum;
+		    }
+		    fdPtr->indirect[1] = FSDM_NIL_INDEX;
+		    setCheckedBit = FALSE;
+		    *modifiedPtr = 1;
+		    goto truncFile;
+		} else if ( i + j * FSDM_INDICES_PER_BLOCK > lastBlock) {
+		    lastBlock = i + j * FSDM_INDICES_PER_BLOCK;
+		    fdPtr->lastByte += FS_BLOCK_SIZE * FSDM_INDICES_PER_BLOCK;
+		    *modifiedPtr = 1;
+		}
+
+	    }
+	}
+	duplicate = FALSE;
+	if (status == 1) {
+	    duplicate = TRUE;
+	    AddToCopyList(FD, fdPtr, fdNum, 0, FSDM_NUM_DIRECT_BLOCKS + 1,
+			  DBL_INDIRECT,	FS_FRAGMENTS_PER_BLOCK, copyUsedPtr);
+	}
+	for (j = 0, indexPtr = (int *) dblIndirectBlock; 
+	     j < FSDM_INDICES_PER_BLOCK && i <= lastBlock; 
+	     j++, indexPtr++) {
+	    if (*indexPtr == FSDM_NIL_INDEX) {
+		if (fdPtr->fileType == FS_DIRECTORY) {
+		    if (verbose || lastErrorFD != fdNum) {
+			Output(stderr, 
+			"Hole in directory %d in doubly indirect block\n",
+				       fdNum);
+			lastErrorFD = fdNum;
+		    }
+		    AddToCopyList(FD, fdPtr, fdNum, 0, FSDM_NUM_DIRECT_BLOCKS + 1,
+			  DBL_INDIRECT, FS_FRAGMENTS_PER_BLOCK, copyUsedPtr);
+		}
+		i += FSDM_INDICES_PER_BLOCK;
+		continue;
+	    }
+	    tBlock = i;
+	    status = ProcessIndirectBlock(fdNum, partFID, lastBlock, duplicate, 
+					  fdPtr, indexPtr, newCylBitmapPtr,
+					  domainPtr, &tBlock, &dirty,
+					  &lastRealBlock, modifiedPtr, 
+					  &blockCount, copyUsedPtr);
+	   i = tBlock;
+	   if (status < 0) {
+		if (verbose || lastErrorFD != fdNum) {
+		    Output(stderr, 
+		    "Hole in directory %d in doubly indirect blocks (2)\n",
+			           fdNum);
+		    lastErrorFD = fdNum;
+		}
+		AddToCopyList(FD, fdPtr, fdNum, 0, FSDM_NUM_DIRECT_BLOCKS + 1,
+		      DBL_INDIRECT, FS_FRAGMENTS_PER_BLOCK, copyUsedPtr);
+	    }
+	}
+	if (status == 1 && !duplicate) {
+	    AddToCopyList(BLOCK, fdPtr, 0, indBlock, j, INDIRECT, 
+			  FS_FRAGMENTS_PER_BLOCK, copyUsedPtr);
+	}
+	if (dirty) {
+	    if (writeDisk) {
+		if (Disk_BlockWrite(partFID, domainPtr, 
+			   indBlock / FS_FRAGMENTS_PER_BLOCK,
+			   1, (Address) dblIndirectBlock) < 0) {
+		    OutputPerror("CheckBlocks: Write failed");
+		    exit(EXIT_WRITE_FAILURE);
+		}
+	    }
+	}
+	numBlocks += FS_FRAGMENTS_PER_BLOCK;
+	blockCount += FS_FRAGMENTS_PER_BLOCK;
+
+    } else {
+	if (fdPtr->fileType == FS_DIRECTORY) {
+	    AddToCopyList(FD, fdPtr, fdNum, 0, FSDM_NUM_DIRECT_BLOCKS + 1,
+			  DBL_INDIRECT, FS_FRAGMENTS_PER_BLOCK, copyUsedPtr);
+        } else {
+	    fdPtr->indirect[1] = FSDM_NIL_INDEX;
+	    *modifiedPtr = 1;
+	}
+    }
+
+    if (lastRealBlock == lastBlock) {
+	goto checkBlockCount;
+    }
+
+truncFile:
+
+    if (lastRealBlock != -1) {
+	fdPtr->lastByte = (lastRealBlock + 1) * FS_BLOCK_SIZE - 1;
+    } else {
+	fdPtr->lastByte = -1;
+    }
+    Output(stderr,"Truncating file %d to length %d\n", fdNum,
+			     fdPtr->lastByte + 1);
+    foundError = 1;
+    *modifiedPtr = 1;
+
+checkBlockCount:
+
+    if (blockCount != fdPtr->numKbytes) {
+	if (verbose || lastErrorFD != fdNum) {
+	    Output(stderr,
+		"Block count corrected for file %d.  Is %d should be %d.\n", 
+			   fdNum, fdPtr->numKbytes, blockCount);
+	    lastErrorFD = fdNum;
+	}
+	fdPtr->numKbytes = blockCount;
+	foundError = 1;
+	*modifiedPtr = 1;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcessIndirectBlock --
+ *
+ *	Scan through the file descriptors in the indirect block and
+ *	update the cylinder map to reflect which blocks are allocated.
+ *
+ * Results:
+ *	-1 if found a hole in an indirect block for a directory
+ *	1 if block is already in use
+ *	0 otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+ProcessIndirectBlock(fdNum, partFID,lastBlock,duplicate, fdPtr, blockNumPtr, 
+		     newCylBitmapPtr,domainPtr,fileBlockNumPtr, dirtyPtr,
+		     lastRealBlockPtr, modifiedPtr, blockCountPtr,
+		     copyUsedPtr)
+    int			fdNum;		  /* Number of file descriptor that 
+					     indirect block is in. */
+    register Fsdm_FileDescriptor	*fdPtr;	  /* Actual file descriptor. */
+    int			*blockNumPtr;	  /* Pointer to indirect block number */
+    unsigned	char 	*newCylBitmapPtr; /* The cylinder bit map to set bits
+					     in for allocated blocks. */
+    int			partFID;	  /* File id to use to read in indirect
+					     blocks from disk. */
+    Ofs_DomainHeader	*domainPtr;	  /* Domain to read from. */
+    int			lastBlock;	  /* The last block in the file. */
+    int			*fileBlockNumPtr; /* Pointer to file block number. */
+    int			*dirtyPtr;	  /* 1 if *blockNumPtr gets 
+					     modified. */
+    int			*lastRealBlockPtr; /* Pointer to the number of the last
+					      valid block that was found for the
+					      file. */
+    int			*modifiedPtr;	   /* 1 if the file descriptor
+					      is modified. */
+    int			*blockCountPtr;	   /* Count of the number of blocks in
+					    * the file. */
+    Boolean		*copyUsedPtr;	   /* TRUE => copy of fd was stored
+					    * somewhere and should not be
+					    * reused. */
+    Boolean		duplicate;	   /* TRUE => we are processing a 
+					    * duplicate block, therefore all
+					    * direct blocks will also be 
+					    * duplicates. */
+{
+    static char		indirectBlock[FS_BLOCK_SIZE];
+    int			*indexPtr;
+    int			i;
+    int			dirty = 0;
+    int			status;
+    int 		tempFileBlock;
+    Boolean		foundDuplicate = FALSE;
+    int			zeroCount;
+
+
+
+    if (*blockNumPtr & (FS_FRAGMENTS_PER_BLOCK - 1)) {
+	if (verbose || lastErrorFD != fdNum) {
+	    Output(stderr, 
+    "Indirect block on a non-block boundary for file %d.  Block deleted.\n",
+			   fdNum);
+	    lastErrorFD = fdNum;
+	}
+	foundError = 1;
+	status = -1;
+    } else {
+	status = MarkBitmap(fdNum, PhysToVirt(domainPtr, *blockNumPtr), 
+			    newCylBitmapPtr, 
+			    FS_FRAGMENTS_PER_BLOCK, domainPtr);
+    }
+    if (status == 0) {
+	    /*
+	     * FIXME: need to be able to flag this as a bad block on error.
+	     */
+	status = Disk_BlockRead(partFID, domainPtr, 
+		               *blockNumPtr / FS_FRAGMENTS_PER_BLOCK, 1, 
+			       (Address) indirectBlock);
+	if (status < 0) {
+	    OutputPerror("ProcessIndirectBlock: Read failed");
+	}
+    } else if (status == 1 ) {
+	foundDuplicate = TRUE;
+    }
+    if (status < 0) {
+	if (verbose || lastErrorFD != fdNum) {
+	    Output(stderr,
+	    "Indirect block (%d) unreadable for file #%d.  Block deleted.\n", 
+			   *blockNumPtr, fdNum);
+	    lastErrorFD = fdNum;
+	}
+	*fileBlockNumPtr += FSDM_INDICES_PER_BLOCK;
+	*blockNumPtr = FSDM_NIL_INDEX;
+	*dirtyPtr = 1;
+	*modifiedPtr = 1;
+	setCheckedBit = FALSE;
+	return(0);
+    } else {
+	*dirtyPtr = 0;
+    }
+    /* 
+     * Look over contents of block first and see if they make sense.
+     */
+    zeroCount = 0;
+    for (i = 0, indexPtr = (int *) indirectBlock,
+	 tempFileBlock = *fileBlockNumPtr; 
+	 i < FSDM_INDICES_PER_BLOCK; 
+	 i++, tempFileBlock++, indexPtr++) {
+	if (*indexPtr != FSDM_NIL_INDEX) {
+	    if (*indexPtr == 0) {
+		zeroCount++;
+		continue;
+	    }
+	    if (*indexPtr == blockToFind) {
+		Output(stderr, "Block %d is i[%d] in file %d.\n",
+		    *indexPtr, i, fdNum);
+	    }
+	    if (*indexPtr < 0 || *indexPtr >= num1KBlocks) {
+		if (verbose || lastErrorFD != fdNum) {
+		    Output(stderr, 
+		    "Indirect block %d of file %d contains garbage index %d\n", 
+				   *blockNumPtr, fdNum, *indexPtr);
+		    lastErrorFD = fdNum;
+		    setCheckedBit = FALSE;
+		}
+	        *fileBlockNumPtr += FSDM_INDICES_PER_BLOCK;
+	        *blockNumPtr = FSDM_NIL_INDEX;
+	        *dirtyPtr = 1;
+	        *modifiedPtr = 1;
+	        foundError = 1;
+		if (fdPtr->fileType == FS_DIRECTORY) {
+		   return(-1);
+		} else {
+		   return(0);
+	        }
+	     } else if (tempFileBlock > lastBlock) {
+		 lastBlock = tempFileBlock;
+		 fdPtr->lastByte = tempFileBlock * FS_BLOCK_SIZE -1;
+		 *modifiedPtr = 1;
+	     }
+	 }
+     }
+    if (zeroCount == FSDM_INDICES_PER_BLOCK) {
+	if (verbose || lastErrorFD != fdNum) {
+	    Output(stderr, "Indirect block %d is all zeros.\n", 
+			   *blockNumPtr, *indexPtr);
+	    lastErrorFD = fdNum;
+	}
+	*fileBlockNumPtr += FSDM_INDICES_PER_BLOCK;
+	*blockNumPtr = FSDM_NIL_INDEX;
+	*dirtyPtr = 1;
+	*modifiedPtr = 1;
+	foundError = 1;
+	setCheckedBit = FALSE;
+	if (fdPtr->fileType == FS_DIRECTORY) {
+	   return(-1);
+	} else {
+	   return(0);
+	}
+    }
+    numBlocks += FS_FRAGMENTS_PER_BLOCK;
+    *blockCountPtr += FS_FRAGMENTS_PER_BLOCK;
+     for (i = 0, indexPtr = (int *) indirectBlock; 
+	 i < FSDM_INDICES_PER_BLOCK && *fileBlockNumPtr <= lastBlock; 
+	 i++, (*fileBlockNumPtr)++, indexPtr++) {
+
+	 if (*indexPtr == FSDM_NIL_INDEX) {
+	    if (fdPtr->fileType == FS_DIRECTORY) {
+		AddToCopyList(BLOCK, fdPtr, 0, 
+			    *blockNumPtr, i, DIRECT, 
+			     FS_FRAGMENTS_PER_BLOCK, 
+			     copyUsedPtr);
+	    }
+	    continue;
+	 }
+	 if (*indexPtr & (FS_FRAGMENTS_PER_BLOCK - 1)) {
+	     if (verbose || lastErrorFD != fdNum) {
+		 Output(stderr, 
+		 "Non-direct block fragmented for file %d.  Block deleted.\n",
+			   fdNum);
+		 lastErrorFD = fdNum;
+	     }
+	     foundError = 1;
+	     status = -1;
+	 } else {
+	     status = MarkBitmap(fdNum, *indexPtr, 
+				newCylBitmapPtr,
+				FS_FRAGMENTS_PER_BLOCK, domainPtr);
+	 }
+	/* 
+	 * One of the direct blocks is a duplicate.
+	 */
+	if (status == 1 && !duplicate) {
+	    AddToCopyList(BLOCK, fdPtr , 0, *blockNumPtr, 
+			 i, DIRECT, 
+			 FS_FRAGMENTS_PER_BLOCK, copyUsedPtr);
+	}
+	if (status >= 0) {
+	    *blockCountPtr += FS_FRAGMENTS_PER_BLOCK;
+	    numBlocks += FS_FRAGMENTS_PER_BLOCK;
+	    *lastRealBlockPtr = *fileBlockNumPtr;
+	} else {
+	    *indexPtr = FSDM_NIL_INDEX;
+	    dirty = 1;
+	}
+    }
+    if (dirty) {
+	if (writeDisk) {
+	    if (Disk_BlockWrite(partFID, domainPtr, 
+				*blockNumPtr / FS_FRAGMENTS_PER_BLOCK,
+				1, (Address) indirectBlock) < 0) {
+		OutputPerror("ProcessIndirectBlock: Write failed");
+		exit(EXIT_WRITE_FAILURE);
+	    }
+	}
+    }
+    if (foundDuplicate) {
+	return 1;
+    }
+    return(0);
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RelocateFD ---
+ *
+ *	Allocate a new file descriptor as close to the old one as possible.
+ *	This is used to relocate descriptors in blocks that get I/O errors.
+ *	This code is based on the kernel routine FsGetNewFileNumber.
+ *	
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The new descriptor is marked as allocated in the bitmap.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+RelocateFD(domainPtr, descInfoPtr, relocPtr)
+    register Ofs_DomainHeader *domainPtr;	/* Domain to allocate the file 
+					 * descriptor out of. */
+    FdInfo *descInfoPtr;		/* information for each file
+					 * descriptor */
+    RelocListElement *relocPtr;		/* Pointer to information for old
+					 * descriptor. */
+{
+    register int 	   	i;
+    register int		j;
+    int				startByte;
+    register unsigned char 	*bitmapPtr;
+    register unsigned char 	*bitmaskPtr;
+    int			   	found = 0;
+    static int		   	outOfDescriptors = 0;
+    int			   	descBytes;
+
+    /*
+     * If we can't relocate it, chuck it.
+     */
+    if (outOfDescriptors) {
+	descInfoPtr[relocPtr->origFdNum].flags |= FD_UNREADABLE;
+	return;
+    }
+
+    /*
+     * Linear search forward the bit map a byte at a time.
+     */
+    startByte = relocPtr->origFdNum / BITS_PER_BYTE;
+    bitmapPtr = &fdBitmapPtr[startByte];
+    descBytes = domainPtr->numFileDesc >> 3;
+    i = startByte;
+    do {
+	if (*bitmapPtr != 0xff) {
+	    found = 1;
+	    break;
+	}
+	i++;
+	if (i == descBytes) {
+	    i = 0;
+	    bitmapPtr = fdBitmapPtr;
+	} else {
+	    bitmapPtr++;
+	}
+    } while (i != startByte);
+
+    if (!found) {
+	/*
+	 * Couldn't relocate it, so throw it away and pretend we couldn't
+	 * recover it.
+	 */
+	if (!outOfDescriptors) {
+	    Output(stderr, "RelocateFD: out of file descriptors.\n");
+	    abort();
+	} else {
+	    outOfDescriptors = 1;
+	}
+	descInfoPtr[relocPtr->origFdNum].flags |= FD_UNREADABLE;
+	return;
+    }
+
+    /*
+     * Now find which file descriptor is free within the byte.
+     */
+    for (j = 0, bitmaskPtr = bitmasks; 
+	 j < 8 && (*bitmapPtr & *bitmaskPtr) != 0; 
+	 j++, bitmaskPtr++) {
+    }
+    relocPtr->newFdNum = i * 8 + j;
+    if (verbose || lastErrorFD != relocPtr->origFdNum) {
+	Output(stderr,
+	"Fd %d relocated to %d.\n",relocPtr->origFdNum,relocPtr->newFdNum);
+	lastErrorFD = relocPtr->origFdNum;
+    }
+    *bitmapPtr |= *bitmaskPtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  CopyBlock ---
+ *
+ *	Copy a block and fix up pointers to it.  FillNewBlock does the
+ *	real work. CopyBlock gets the block info off the copyList and
+ *	calls FillNewBlock.
+ *         This procedure is also used to fill in holes in directories.
+ * Results:
+ *	0  - ok
+ *	-1 -  disk is full
+ *	-2 - some other error
+ *
+ * Side effects:
+ *	Parent (either fd or indirect block) is changed to point to copy.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+CopyBlock(domainPtr, descInfoPtr, partFID, bitmapPtr, copyPtr)
+    register Ofs_DomainHeader 	*domainPtr;	/* Domain to allocate the file 
+						 * descriptor out of. */
+    FdInfo 			*descInfoPtr;	/* information for each file
+						 * descriptor */
+    int				 partFID;	/* File id to read from disk */
+    u_char			*bitmapPtr;	/* Cylinder bitmap pointer */
+    CopyListElement 		*copyPtr;	/* Pointer to information for 
+						 * block to be copied */
+{
+    int			blockNum;
+    int			parentBlockNum;
+    int			*blockNumPtr;
+    Fsdm_FileDescriptor	*fdPtr = NULL;
+    int			fdNum;
+    static int 		block[FSDM_INDICES_PER_BLOCK];
+    int			status;
+
+
+
+    fdPtr = copyPtr->fdPtr;
+    if (copyPtr->parentType == FD) {
+	fdNum = copyPtr->parentNum;
+	switch (copyPtr->blockType) {
+	    case DIRECT: 
+		blockNumPtr = &fdPtr->direct[copyPtr->index];
+		break;
+	    case INDIRECT:
+		blockNumPtr = &fdPtr->indirect[0];
+		break;
+	    case DBL_INDIRECT:
+		blockNumPtr = &fdPtr->indirect[1];
+		break;
+	}
+    } else {
+	parentBlockNum = copyPtr->parentNum;
+	status = Disk_BlockRead(partFID, domainPtr, 
+		               parentBlockNum / FS_FRAGMENTS_PER_BLOCK, 1, 
+			       (Address) block);
+	if (status < 0) {
+	    OutputPerror(
+		"CopyBlock: Previously readable block %d unreadable.\n",
+		parentBlockNum);
+	    foundError = 1;
+	    return -2;
+	}
+	blockNumPtr = &(block[copyPtr->index]);
+    }
+    blockNum = *blockNumPtr;
+    status = FillNewBlock(blockNum, copyPtr->blockType, copyPtr->fragments,
+			  fdPtr, domainPtr, descInfoPtr, partFID, 
+			  bitmapPtr, blockNumPtr);
+    /* 
+     * If status is -1 then disk is full so stop trying to copy blocks.
+     */
+    if (status == -1) {
+	Output(stderr,"fscheck: disk is full.\n");
+	foundError = 1;
+	errorType = EXIT_DISK_FULL;
+    }
+    if (!writeDisk) {
+	return 0;
+    }
+    if (copyPtr->parentType == FD) {
+	if (!(descInfoPtr[fdNum].flags & (ON_MOD_LIST | FD_RELOCATE))) {
+	     ModListElement	*modElemPtr;
+
+	    Alloc(modElemPtr,ModListElement,1);
+	    if (tooBig) {
+		return 0;
+	    }
+	    descInfoPtr[fdNum].flags |= ON_MOD_LIST;
+	    modElemPtr->fdNum = fdNum;
+	    modElemPtr->fdPtr = fdPtr;
+	    List_Insert((List_Links *)modElemPtr, LIST_ATREAR(modList));
+	}
+    } else {
+	if (Disk_BlockWrite(partFID, domainPtr,
+			    parentBlockNum / FS_FRAGMENTS_PER_BLOCK,
+			    1, (Address) block) < 0) {
+	    OutputPerror("CopyBlock: Unable to write block %d.\n",
+		parentBlockNum);
+	    foundError = 1;
+	    return 0;
+	}
+    }
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  FillNewBlock ---
+ *
+ *	Looks through the bitmap for a free block and copies the given block
+ *	into it. If the given block is an indirect block then we recurse to
+ *	also copy all included blocks. Note that we only look for an empty
+ *	full block (4 fragments). This may lead to a disk full error when
+ *	the disk really isn't full.
+ * 
+ * Results:
+ *	0 - ok
+ *	-1 - disk full
+ *	-2 - some other error
+ *
+ * Side effects:
+ *	A block in the bitmap is marked as in use.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+FillNewBlock(blockNum, blockType, fragments, fdPtr, domainPtr, 
+		     descInfoPtr, partFID, bitmapPtr, newBlockNumPtr)
+    int 		blockNum;		/* Block number of block to be
+						 * copied. */
+    BlockIndexType 	blockType;		/* Type of block to be copied
+						 */
+    int 		fragments;		/* Number of fragments in block
+						 */
+    Fsdm_FileDescriptor	*fdPtr;			/* Ptr at fd of file. */
+    Ofs_DomainHeader	*domainPtr;   		/* Ptr at domain info */
+    FdInfo		*descInfoPtr;		/* Descriptor info array */
+    int			partFID;		/* File id to read from disk */
+    u_char		*bitmapPtr;		/* Cylinder data block bitmap */
+    int 		*newBlockNumPtr;	/* Block number of new allocated
+						 * block */
+{
+    char		block[FS_BLOCK_SIZE];
+    int			*indBlock;
+    int			newBlockNum;
+    int			i;
+    int			status;
+    int			vBlockNum;
+
+    if (blockNum != FSDM_NIL_INDEX) { 
+	vBlockNum = (blockType == DIRECT) ? blockNum : 
+		    PhysToVirt(domainPtr,blockNum);
+	status = Disk_FragRead(partFID, domainPtr, 
+				VirtToPhys(domainPtr,vBlockNum), 
+				fragments, (Address) block);
+	if (status < 0) {
+	    OutputPerror("FillNewBlock: Unable to read block %d to copy.\n",
+			 vBlockNum);
+	    foundError = 1;
+	    return -2;
+	}
+    } else if (fdPtr->fileType == FS_DIRECTORY) {
+	vBlockNum = -1;
+	bzero(block, FS_BLOCK_SIZE);
+    } else {
+	Output(stderr,"Internal error: trying to copy null index.\n");
+	return -2;
+    }
+    newBlockNum = AllocBlock(domainPtr,fragments,bitmapPtr);
+    if (newBlockNum == -1) {
+	/*
+	 * Disk is full
+	 */
+	return -1;
+    }
+    if (blockType != DIRECT) {
+	BlockIndexType entryType;
+
+	if (blockType == INDIRECT) {
+	    entryType = DIRECT;
+	} else {
+	    entryType = INDIRECT;
+	}
+	for (i = 0,indBlock = (int *)block; 
+	     i < FSDM_INDICES_PER_BLOCK; 
+	     i++,indBlock++){
+
+	     if (*indBlock != FSDM_NIL_INDEX || 
+		 fdPtr->fileType == FS_DIRECTORY) {
+
+		status = FillNewBlock(*indBlock, entryType, 
+				      FS_FRAGMENTS_PER_BLOCK, fdPtr, domainPtr, 
+				      descInfoPtr, partFID, bitmapPtr,
+				      indBlock);
+	    }
+	    if (status == -1) {
+		break;
+	    } 
+	}
+    /*
+     * If the block number is nil then we are filling in a hole in a directory.
+     * Fill out the disk block with empty entries.
+     */
+    } else if (blockNum == FSDM_NIL_INDEX) {
+	Fslcl_DirEntry *entryPtr;
+	int i;
+
+	bzero( block, FS_BLOCK_SIZE);
+
+	for (entryPtr = (Fslcl_DirEntry *)block, i = 0; 
+	     i < fragments * FS_FRAGMENT_SIZE  / FSLCL_DIR_BLOCK_SIZE;
+	     i++,entryPtr=(Fslcl_DirEntry *)((int)entryPtr + FSLCL_DIR_BLOCK_SIZE)) {
+	     entryPtr->fileNumber = 0;
+	     entryPtr->recordLength = FSLCL_DIR_BLOCK_SIZE;
+	     entryPtr->nameLength = 0;
+	}
+    }
+    if (writeDisk) {
+	status = Disk_FragWrite(partFID, domainPtr,
+				 VirtToPhys(domainPtr, newBlockNum),
+				 fragments,
+			        (Address) block);
+	if (status < 0) {
+	    OutputPerror("FillNewBlock: Unable to write to new block %d.\n",
+			 newBlockNum);
+	    foundError = 1;
+	    return -2;
+	}
+    }
+    *newBlockNumPtr = (blockType == DIRECT) ? newBlockNum :
+		      VirtToPhys(domainPtr, newBlockNum);
+    if (verbose) {
+	if (vBlockNum != -1) {
+	    Output(stderr,"Copied %d fragments starting at %d to %d.\n", 
+	    fragments, vBlockNum, newBlockNum);
+	} else {
+	    Output(stderr,"Added new directory block %d.\n", newBlockNum);
+	}
+    }
+    return 0;
+}
+@
+
+
+1.37
+log
+@puts output in .fscheck.out even if disk already checked, updated ot
+ofs
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/cmds/fscheck/RCS/fscheck.c,v 1.36 90/10/10 15:28:44 mendel Exp $ SPRITE (Berkeley)";
+a166 1
+    int		firstPartFID;
+a260 5
+    firstPartFID = open(firstPartitionName, O_RDONLY);
+    if (firstPartFID < 0) {
+	OutputPerror("fscheck: Can't open first partition");
+	exit(EXIT_HARD_ERROR);
+    }
+d278 1
+a278 1
+    CheckFilesystem(firstPartFID, partFID, partition);
+a282 1
+    (void)close(firstPartFID);
+d346 1
+a346 2
+CheckFilesystem(firstPartFID, partFID, partition)
+    int firstPartFID;	/* Handle on the first partition of the disk */
+d385 1
+a385 1
+    labelPtr = Disk_ReadLabel(firstPartFID);
+d418 1
+a418 1
+	    fstat(firstPartFID, &attrs);
+@
+
+
+1.36
+log
+@Changes to reflect new OFS file system names.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/cmds/fscheck/RCS/fscheck.c,v 1.35 90/10/10 11:21:46 jhh Exp Locker: mendel $ SPRITE (Berkeley)";
+d490 1
+@
+
+
+1.35
+log
+@now can do raw output on any partition, fixed bug with ".."
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/cmds/fscheck.new/RCS/fscheck.c,v 1.34 90/05/01 15:36:36 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d37 1
+a37 1
+Fsdm_DomainHeader  *domainPtr;
+d864 1
+a864 1
+    Fsdm_DomainHeader	*domainPtr;		/* Ptr to domain info. */
+d1253 1
+a1253 1
+    Fsdm_DomainHeader	*domainPtr;	  /* Domain to read from. */
+d1471 1
+a1471 1
+    register Fsdm_DomainHeader *domainPtr;	/* Domain to allocate the file 
+d1569 1
+a1569 1
+    register Fsdm_DomainHeader 	*domainPtr;	/* Domain to allocate the file 
+d1688 1
+a1688 1
+    Fsdm_DomainHeader	*domainPtr;   		/* Ptr at domain info */
+@
+
+
+1.34
+log
+@ported to new Disk library
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/cmds/fscheck/RCS/fscheck.c,v 1.33 90/02/14 15:55:20 jhh Exp $ SPRITE (Berkeley)";
+d40 1
+d64 1
+a64 1
+int rootPart = FALSE;
+d104 2
+a109 2
+    {OPT_TRUE, "rootPart", (Address)&rootPart,
+	"Partition being processed is the root partition"},	
+d189 1
+a189 1
+    } else if (!rootPart) {
+d208 1
+a208 1
+"Maximum buffer size allowed when processing root partition is %d bytes.\n",
+d216 1
+a216 1
+    if (rootPart) {
+d292 3
+@
+
+
+1.33
+log
+@support for no recheck on reboot
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/cmds/fscheck/RCS/fscheck.c,v 1.32 89/10/03 17:47:12 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+a21 1
+#include "diskUtils.h"
+d354 1
+a354 1
+    Disk_Info	 	  	*diskInfoPtr;
+d389 3
+a391 3
+    diskInfoPtr = Disk_ReadDiskInfo(firstPartFID, partition);
+    if (diskInfoPtr == (Disk_Info *) NULL) {
+	Output(stderr, "CheckFilesystem: Could not read basic disk info\n");
+a395 2
+    AllocByte(domainPtr,Fsdm_DomainHeader,diskInfoPtr->numDomainSectors *
+						 DEV_BYTES_PER_SECTOR);
+d401 5
+a405 2
+    ReadDomainHeader(partFID, diskInfoPtr, domainPtr);
+
+d480 1
+a480 1
+    status = RecoveryCheck(partFID, diskInfoPtr);
+d820 5
+a824 1
+	WriteDomainHeader(partFID, diskInfoPtr, domainPtr);
+d835 1
+a835 1
+    WriteSummaryInfo(partFID, diskInfoPtr, domainPtr, 
+@
+
+
+1.32
+log
+@added device prefix to all output lines
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /a/newcmds/fscheck/RCS/fscheck.c,v 1.31 89/10/03 11:08:59 jhh Exp $ SPRITE (Berkeley)";
+d76 2
+d109 1
+a109 1
+	"Partition being processed is root partition"},	
+d126 4
+d192 2
+a193 1
+	    OutputPerror("fscheck: Can't open output file.");
+a211 1
+	Output(stderr, "Buffer size is %d.\n", bufferSize);
+d216 3
+a218 1
+    Output(stderr,"      \n");
+d223 3
+a225 1
+	Output(stderr,"%s\n",timeString);
+a283 3
+    if (!silent) {
+	Output(stderr, "Checking %s.\n", partitionName);
+    }
+d475 1
+a475 1
+     * Check the disk to make sure that it has safely been synced.
+d481 7
+a487 1
+
+d1070 1
+d1104 1
+d1314 1
+d1342 1
+d1372 1
+@
+
+
+1.31
+log
+@new scsi disk mapping
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /a/newcmds/fscheck/RCS/fscheck.c,v 1.30 89/09/25 16:41:03 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d205 1
+a205 1
+	printf("Buffer size is %d.\n", bufferSize);
+d214 2
+a215 1
+	Output(stderr,"***** Fscheck *****\n%s",timeString);
+d713 1
+a713 1
+	    Output(stderr, "\nTraversing directory tree:\n\n");
+d720 1
+a720 1
+	       "\nNOT traversing directory tree because heap limit exceeded.\n"
+d727 1
+a727 1
+	Output(stderr, "\nComparing old and new data block bit maps:\n");
+d1084 3
+a1086 2
+			Output(stderr, "Double indirect block %d contains garbage index %d\n", 
+				       indBlock, *indexPtr);
+d1322 3
+a1324 2
+		    Output(stderr, "Indirect block %d contains garbage index %d\n", 
+				   *blockNumPtr, *indexPtr);
+@
+
+
+1.30
+log
+@Uses new fs module structure
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /a/newcmds/fscheck/RCS/fscheck.c,v 1.29 89/08/25 22:24:25 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d74 2
+d120 4
+d499 1
+d513 1
+a513 1
+				   domainPtr->fileDescOffset + i,
+d521 2
+a522 2
+						  domainPtr->fileDescOffset + i,
+						  (Address) block);
+d551 5
+a555 2
+		     "File %d has an invalid magic number and is being reset.\n",
+				    fdNum);
+d651 1
+a651 1
+					domainPtr->fileDescOffset + i,
+d918 4
+d923 4
+d1313 4
+@
+
+
+1.29
+log
+@Added ability to modify host id in domain header.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /a/newcmds/fscheck/RCS/fscheck.c,v 1.28 89/07/31 17:43:27 jhh Exp $ SPRITE (Berkeley)";
+d38 1
+a38 1
+FsDomainHeader  *domainPtr;
+d193 1
+a193 1
+	if (bufferSize > FS_NUM_DIRECT_BLOCKS * FS_BLOCK_SIZE) {
+d196 1
+a196 1
+	    FS_NUM_DIRECT_BLOCKS * FS_BLOCK_SIZE);
+d349 1
+a349 1
+    FsFileDescriptor		*fdPtr;
+d361 1
+a361 1
+    FsFileDescriptor		*fdCopyPtr = NULL;
+d383 1
+a383 1
+    AllocByte(domainPtr,FsDomainHeader,diskInfoPtr->numDomainSectors *
+d480 2
+a481 2
+    numFileDescBlocks = (domainPtr->numFileDesc + FS_FILE_DESC_PER_BLOCK - 1) / 
+		FS_FILE_DESC_PER_BLOCK;
+d538 1
+a538 1
+		    fdPtr = (FsFileDescriptor *)	
+d540 2
+a541 2
+			    FS_MAX_FILE_DESC_SIZE];
+		     if (fdPtr->magic != FS_FD_MAGIC) {
+d558 1
+a558 1
+			Alloc(fdCopyPtr,FsFileDescriptor,1);
+d564 1
+a564 1
+			  sizeof(FsFileDescriptor));
+d570 1
+a570 1
+			    (fdPtr->flags & FS_FD_ALLOC)) {
+d593 1
+a593 1
+			if (fdPtr->flags & FS_FD_ALLOC) {
+d606 1
+a606 1
+			           fdNum == FS_BAD_BLOCK_FILE_NUMBER &&
+d611 1
+a611 1
+		    if ((badBlockInit && fdNum == FS_BAD_BLOCK_FILE_NUMBER) ||
+d614 1
+a614 1
+			    fdNum == FS_BAD_BLOCK_FILE_NUMBER) {
+d618 1
+a618 1
+			ClearFd(fdMagicOkay ? FS_FD_ALLOC : FS_FD_FREE, 
+d629 1
+a629 1
+			      sizeof(FsFileDescriptor));
+d832 1
+a832 1
+    FsDomainHeader	*domainPtr;		/* Ptr to domain info. */
+d834 1
+a834 1
+    FsFileDescriptor	*fdPtr;			/* Ptr to file descriptor that
+d843 1
+a843 1
+    static int 			*dblIndirectBlock[FS_INDICES_PER_BLOCK];
+d855 1
+a855 1
+    if (!(fdPtr->flags & FS_FD_ALLOC)) {
+d877 1
+a877 1
+	if (lastBlock < FS_NUM_DIRECT_BLOCKS) {
+d888 2
+a889 2
+    for (i = 0; i < FS_NUM_DIRECT_BLOCKS; i++) {
+	if (i > lastBlock && fdPtr->direct[i] != FS_NIL_INDEX) {
+d907 2
+a908 2
+    for (i = 0; i < FS_NUM_DIRECT_BLOCKS; i++) {
+	if (fdPtr->direct[i] != FS_NIL_INDEX) {
+d953 1
+a953 1
+		fdPtr->direct[i] = FS_NIL_INDEX;
+d985 1
+a985 1
+    if (fdPtr->indirect[0] == FS_NIL_INDEX) {
+d987 1
+a987 1
+	    lastBlock > FS_NUM_DIRECT_BLOCKS) {
+d994 1
+a994 1
+	    AddToCopyList(FD,fdPtr,fdNum,0,FS_NUM_DIRECT_BLOCKS,INDIRECT, 
+d997 1
+a997 1
+	i += FS_INDICES_PER_BLOCK;
+d1010 1
+a1010 1
+	    AddToCopyList(FD, fdPtr, fdNum, 0, FS_NUM_DIRECT_BLOCKS, INDIRECT,
+d1020 1
+a1020 1
+	    AddToCopyList(FD, fdPtr, fdNum, 0, FS_NUM_DIRECT_BLOCKS, INDIRECT,
+d1024 1
+a1024 1
+    if (fdPtr->indirect[1] == FS_NIL_INDEX) {
+d1051 1
+a1051 1
+	    fdPtr->indirect[1] = FS_NIL_INDEX;
+d1059 1
+a1059 1
+	     j < FS_INDICES_PER_BLOCK; 
+d1061 1
+a1061 1
+	    if (*indexPtr != FS_NIL_INDEX) {
+d1069 1
+a1069 1
+		    fdPtr->indirect[1] = FS_NIL_INDEX;
+d1072 3
+a1074 3
+		} else if ( i + j * FS_INDICES_PER_BLOCK > lastBlock) {
+		    lastBlock = i + j * FS_INDICES_PER_BLOCK;
+		    fdPtr->lastByte += FS_BLOCK_SIZE * FS_INDICES_PER_BLOCK;
+d1083 1
+a1083 1
+	    AddToCopyList(FD, fdPtr, fdNum, 0, FS_NUM_DIRECT_BLOCKS + 1,
+d1087 1
+a1087 1
+	     j < FS_INDICES_PER_BLOCK && i <= lastBlock; 
+d1089 1
+a1089 1
+	    if (*indexPtr == FS_NIL_INDEX) {
+d1097 1
+a1097 1
+		    AddToCopyList(FD, fdPtr, fdNum, 0, FS_NUM_DIRECT_BLOCKS + 1,
+d1100 1
+a1100 1
+		i += FS_INDICES_PER_BLOCK;
+d1117 1
+a1117 1
+		AddToCopyList(FD, fdPtr, fdNum, 0, FS_NUM_DIRECT_BLOCKS + 1,
+d1140 1
+a1140 1
+	    AddToCopyList(FD, fdPtr, fdNum, 0, FS_NUM_DIRECT_BLOCKS + 1,
+d1143 1
+a1143 1
+	    fdPtr->indirect[1] = FS_NIL_INDEX;
+d1204 1
+a1204 1
+    register FsFileDescriptor	*fdPtr;	  /* Actual file descriptor. */
+d1210 1
+a1210 1
+    FsDomainHeader	*domainPtr;	  /* Domain to read from. */
+d1275 2
+a1276 2
+	*fileBlockNumPtr += FS_INDICES_PER_BLOCK;
+	*blockNumPtr = FS_NIL_INDEX;
+d1289 1
+a1289 1
+	 i < FS_INDICES_PER_BLOCK; 
+d1291 1
+a1291 1
+	if (*indexPtr != FS_NIL_INDEX) {
+d1302 2
+a1303 2
+	        *fileBlockNumPtr += FS_INDICES_PER_BLOCK;
+	        *blockNumPtr = FS_NIL_INDEX;
+d1319 1
+a1319 1
+    if (zeroCount == FS_INDICES_PER_BLOCK) {
+d1325 2
+a1326 2
+	*fileBlockNumPtr += FS_INDICES_PER_BLOCK;
+	*blockNumPtr = FS_NIL_INDEX;
+d1339 1
+a1339 1
+	 i < FS_INDICES_PER_BLOCK && *fileBlockNumPtr <= lastBlock; 
+d1342 1
+a1342 1
+	 if (*indexPtr == FS_NIL_INDEX) {
+d1378 1
+a1378 1
+	    *indexPtr = FS_NIL_INDEX;
+d1420 1
+a1420 1
+    register FsDomainHeader *domainPtr;	/* Domain to allocate the file 
+d1518 1
+a1518 1
+    register FsDomainHeader 	*domainPtr;	/* Domain to allocate the file 
+d1530 1
+a1530 1
+    FsFileDescriptor	*fdPtr = NULL;
+d1532 1
+a1532 1
+    static int 		block[FS_INDICES_PER_BLOCK];
+d1636 2
+a1637 2
+    FsFileDescriptor	*fdPtr;			/* Ptr at fd of file. */
+    FsDomainHeader	*domainPtr;   		/* Ptr at domain info */
+d1651 1
+a1651 1
+    if (blockNum != FS_NIL_INDEX) { 
+d1686 1
+a1686 1
+	     i < FS_INDICES_PER_BLOCK; 
+d1689 1
+a1689 1
+	     if (*indBlock != FS_NIL_INDEX || 
+d1705 2
+a1706 2
+    } else if (blockNum == FS_NIL_INDEX) {
+	FsDirEntry *entryPtr;
+d1711 3
+a1713 3
+	for (entryPtr = (FsDirEntry *)block, i = 0; 
+	     i < fragments * FS_FRAGMENT_SIZE  / FS_DIR_BLOCK_SIZE;
+	     i++,entryPtr=(FsDirEntry *)((int)entryPtr + FS_DIR_BLOCK_SIZE)) {
+d1715 1
+a1715 1
+	     entryPtr->recordLength = FS_DIR_BLOCK_SIZE;
+@
+
+
+1.28
+log
+@sets file size to 0 if size is negative, then counts blocks to find real 
+size
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /a/newcmds/fscheck/RCS/fscheck.c,v 1.27 89/06/21 23:55:49 jhh Exp $ SPRITE (Berkeley)";
+d40 1
+d56 1
+a56 1
+int patchHeader = 0;
+d94 1
+a94 1
+    {OPT_TRUE, "hostID", (Address)&patchHeader,
+d231 3
+d399 2
+a400 14
+	/*
+	 * Determine where the disk is located so we can set the
+	 * spriteID in the header correctly.  If the disk device is generic
+	 * we use our own hostID, otherwise use the hostID specified
+	 * by the device file.
+	 */
+	fstat(firstPartFID, &attrs);
+	if (attrs.st_devServerID == FS_LOCALHOST_ID) {
+	    char	hostName[100];
+	    Host_Entry	*hostEntryPtr;
+
+	    gethostname(hostName, 100);
+	    hostEntryPtr = Host_ByName(hostName);
+	    spriteID = hostEntryPtr->id;
+d402 12
+a413 1
+	    spriteID = attrs.st_devServerID;
+d425 1
+a425 1
+	    patchHeader = 0;
+@
+
+
+1.27
+log
+@Various bug fixes
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /a/newcmds/fscheck/RCS/fscheck.c,v 1.26 89/02/28 12:21:48 jhh Exp $ SPRITE (Berkeley)";
+d857 12
+d871 1
+d889 2
+@
+
+
+1.26
+log
+@Converted to new C library, added lots of new functionality
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: fscheck.c,v 1.24 88/09/20 15:13:32 nelson Exp $ SPRITE (Berkeley)";
+d70 3
+d110 8
+a117 1
+	"Number of blocks to read at a time."},};
+d130 1
+d163 1
+d166 5
+a170 2
+    (void)Opt_Parse(argc, argv, optionArray, numOptions, 0);
+
+d198 1
+d206 3
+a208 1
+    Output(stderr,"***** Fscheck *****\n%s",timeString);
+d263 3
+d367 1
+d460 1
+a460 1
+    if (!silent) {
+a463 7
+    if (!silent) {
+	if (status) {
+	    Output(stderr, "Looks like the disk wasn't synced.\n");
+	} else {
+	    Output(stderr, "Looks like the disk was synced.\n");
+	}
+    }
+d470 1
+a470 1
+    if (!silent) {
+d655 1
+a655 1
+    if (!verbose && fdBitmapError) {
+d676 1
+a676 1
+	if (!silent) {
+d698 1
+a698 1
+	if (!silent) {
+d712 1
+a712 1
+    if (!silent) {
+d715 14
+d737 1
+a737 1
+		if (verbose) {
+d746 1
+a746 1
+		if (verbose) {
+d756 1
+a756 1
+    if (!verbose && bitmapError) {
+d769 10
+d783 1
+a783 1
+    if (!silent) {
+d1219 1
+d1268 1
+d1274 4
+d1301 17
+d1559 3
+d1650 1
+a1650 1
+	return;
+d1715 1
+a1715 1
+    if (debug) {
+@
+
+
+1.25
+log
+@Converted over to new C library but not fully tested yet.
+@
+text
+@d5 9
+a13 3
+ *
+ * Copyright (C) 1986 Regents of the University of California
+ * All rights reserved.
+d17 1
+a17 1
+static char rcsid[] = "$Header: checkFS.c,v 1.24 88/09/20 15:13:32 nelson Exp $ SPRITE (Berkeley)";
+d34 1
+d37 3
+d43 1
+a43 1
+ * fscheck -D rsd0 -P b
+d53 1
+d63 7
+d72 1
+a72 1
+    {OPT_STRING, "D", (Address)&deviceName,
+d74 1
+a74 1
+    {OPT_STRING, "P", (Address)&partName,
+d76 1
+a76 1
+    {OPT_STRING, "d", (Address)&devDirectory,
+d78 1
+a78 1
+    {OPT_STRING, "p", (Address)&firstPartName,
+d80 7
+a86 9
+    {OPT_TRUE, "W", (Address)&writeDisk,
+	"Write disk (0)"},
+    {OPT_TRUE, "S", (Address)&silent,
+	"Don't say anything unless there's a problem (0)"},
+    {OPT_TRUE, "V", (Address)&verbose,
+	"Output information about differences in bitmaps (0)"},
+    {OPT_TRUE, "r", (Address)&recoveryCheck,
+     "The domain wasn't synced, increment all version numbers for recovery."},
+    {OPT_TRUE, "R", (Address)&patchRoot,
+d88 1
+a88 1
+    {OPT_TRUE, "c", (Address)&clearDomainNumber,
+d90 1
+a90 1
+    {OPT_TRUE, "H", (Address)&patchHeader,
+d92 1
+a92 1
+    {OPT_TRUE, "b", (Address)&badBlockInit,
+d94 14
+a107 1
+};
+a114 1
+static int	incVersionNumbers;
+a132 3
+ *	checkFS exits with status == 0 if the disk was completly clean
+ *		with status == 1 if correctable errors were found
+ *		with status == -1 if really bad errors were found.
+a143 1
+    int		partFID;
+d147 5
+d153 1
+d156 39
+d196 2
+a197 2
+	fprintf(stderr, "Specify device name with -D option\n");
+	exit(EXIT_HARD_ERR);
+d200 2
+a201 2
+	fprintf(stderr, "Specify partition with -P option\n");
+	exit(EXIT_HARD_ERR);
+d203 9
+a211 1
+
+d225 2
+a226 2
+	perror("checkFS: Can't open first parition");
+	exit(EXIT_HARD_ERR);
+d230 2
+a231 2
+	perror("checkFS: Can't open partition to check ");
+	exit(EXIT_HARD_ERR);
+d236 3
+a238 3
+	fprintf(stderr,
+         "checkFS: Can't determine partition index from the partition name\n");
+	exit(EXIT_HARD_ERR);
+d240 5
+d247 3
+d253 4
+a256 3
+	exit(EXIT_SOFT_ERR);
+    } else {
+	exit(EXIT_OK);
+d258 1
+d267 1
+a267 1
+static unsigned char bitmasks[BITS_PER_BYTE] = {
+d286 2
+a287 2
+static int	num1KBlocks;
+static int	bytesPerCylinder;
+d289 2
+d292 1
+a292 1
+List_Links	relocListHdr;
+a293 16
+/*
+ * Macro to get a pointer into the bit map for a particular block.
+  */
+#define BlockToCylinder(domainPtr, blockNum) \
+    (blockNum) / (domainPtr)->geometry.blocksPerCylinder
+
+#define GetBitmapPtr(domainPtr, bitmapPtr, blockNum) \
+  &((bitmapPtr)[BlockToCylinder(domainPtr, blockNum) * \
+  bytesPerCylinder + (blockNum) % (domainPtr)->geometry.blocksPerCylinder / 2])
+
+/*
+ * Number of file descriptors in a sector, if we have to go through
+ * the sectors individually.
+ */
+#define FILE_DESC_PER_SECTOR (FS_FILE_DESC_PER_BLOCK / DISK_SECTORS_PER_BLOCK)
+
+d306 1
+a306 1
+ *	None.
+a318 1
+    register	FsDomainHeader  *domainPtr;
+d321 1
+a321 1
+    int				i, j;
+d323 1
+a323 1
+    char			block[FS_BLOCK_SIZE];
+a328 1
+    RelocListElement		*relocElemPtr;
+d333 11
+d352 2
+a353 2
+	fprintf(stderr, "CheckFilesystem: Could not read basic disk info\n");
+	exit(EXIT_HARD_ERR);
+d357 1
+a357 2
+
+    domainPtr = (FsDomainHeader *) malloc(diskInfoPtr->numDomainSectors *
+d359 5
+d391 4
+a394 2
+	    fprintf(stderr, "Setting hostID in disk header to 0x%x\n",
+			spriteID);
+d397 3
+d402 3
+a405 1
+
+d411 6
+a416 2
+    newCylBitmapPtr =
+	  (unsigned char *)malloc(domainPtr->bitmapBlocks * FS_BLOCK_SIZE);
+d421 5
+a425 1
+    descInfoPtr = (FdInfo *)malloc(domainPtr->numFileDesc * sizeof(FdInfo));
+d433 1
+d438 9
+a446 5
+    if (recoveryCheck) {
+	fprintf(stderr, "Performing recovery check\n");
+	incVersionNumbers = RecoveryCheck(partFID, diskInfoPtr);
+	if (incVersionNumbers) {
+	    fprintf(stderr, "Disk not safely synced.  Will increment all version numbers.\n");
+a447 2
+    } else {
+	incVersionNumbers = 0;
+d456 1
+a456 1
+	fprintf(stderr, "Checking file descriptors:\n");
+d462 5
+a466 1
+
+d468 7
+a474 19
+	 i < (domainPtr->numFileDesc + FS_FILE_DESC_PER_BLOCK - 1) / 
+		FS_FILE_DESC_PER_BLOCK;
+	 i++) {
+	if (Disk_BlockRead(partFID, domainPtr, domainPtr->fileDescOffset + i,
+				1, (Address) block) < 0) {
+	    /*
+	     * Hit a disk error reading the block.  Read it a sector
+	     * at a time and try to salvage what we can.
+	     */
+	    perror("CheckFilesystem: BlockRead: Read failed");
+	    validMask = Disk_BadBlockRead(partFID, domainPtr,
+					  domainPtr->fileDescOffset + i,
+					  (Address) block);
+	    SetBadDescBitmap(domainPtr, fdNum, &tFdBitmapPtr);
+	    salvage = 1;
+	} else {
+	    CheckFDBitmap(domainPtr, fdNum, block, &tFdBitmapPtr);
+	    salvage = 0;
+	    valid = 1;
+d476 25
+a500 4
+	for (sector = 0; sector < DISK_SECTORS_PER_BLOCK; sector++) {
+	    if (salvage) {
+		valid = (validMask & (1 << sector)) != 0;
+		numBadDesc++;
+d502 42
+a543 11
+	    for (j = 0; 
+		 j < FILE_DESC_PER_SECTOR && fdNum < domainPtr->numFileDesc;
+		 j++, fdNum++, tDescInfoPtr++, fdPtr++) {
+
+		int	modified = 0;
+		fdPtr = (FsFileDescriptor *)
+			&block[(j + (FILE_DESC_PER_SECTOR * sector)) *
+			       FS_MAX_FILE_DESC_SIZE];
+		if (valid) {
+		    if (fdPtr->fileType == FS_DIRECTORY) {
+			tDescInfoPtr->flags |= IS_A_DIRECTORY;
+d545 21
+a565 3
+		    if (fdPtr->flags & FS_FD_ALLOC) {
+			if (incVersionNumbers && fdPtr->fileType != FS_DEVICE) {
+			    fdPtr->version++;
+d567 3
+a569 5
+			tDescInfoPtr->flags |= FD_ALLOCATED;
+			tDescInfoPtr->origLinkCount = fdPtr->numLinks;
+
+			CheckBlocks(partFID, domainPtr, fdNum, fdPtr,
+				    newCylBitmapPtr, &modified);
+d571 7
+a577 4
+		}
+		if (salvage) {
+		    if (valid && (fdPtr->flags & FS_FD_ALLOC)) {
+			RelocListElement	*relocElemPtr;
+d579 13
+a591 9
+			tDescInfoPtr->flags |= FD_RELOCATE;
+			relocElemPtr = (RelocListElement *)
+				malloc(sizeof(RelocListElement));
+			relocElemPtr->origFdNum = fdNum;
+			relocElemPtr->newFdNum = -1;
+			bcopy((Address)fdPtr, (Address)&relocElemPtr->fd, 
+			      sizeof(FsFileDescriptor));
+			List_Insert((List_Links *)relocElemPtr,
+				    LIST_ATREAR(relocList));
+d593 11
+a603 2
+		    if (!valid) {
+			tDescInfoPtr->flags |= FD_UNREADABLE;
+d605 3
+a607 19
+		}
+		/*
+		 * Essentially the same code is used to zero out an unuseable
+		 * descriptor and to initialize the bad block descriptor.
+		 */
+		if ((badBlockInit && fdNum == FS_BAD_BLOCK_FILE_NUMBER) ||
+		        salvage) {
+		    int	index;
+
+		    fdPtr->flags = valid ? FS_FD_ALLOC : FS_FD_FREE;
+		    fdPtr->firstByte = -1;
+		    fdPtr->lastByte = -1;
+		    fdPtr->numKbytes = 0;
+		    fdPtr->fileType = FS_FILE;
+		    fdPtr->uid = 0;
+		    fdPtr->gid = 0;
+		    fdPtr->numLinks = 0;
+		    for (index = 0; index < FS_NUM_DIRECT_BLOCKS ; index++) {
+			fdPtr->direct[index] = FS_NIL_INDEX;
+d609 4
+a612 2
+		    for (index = 0; index < FS_NUM_INDIRECT_BLOCKS ; index++) {
+			fdPtr->indirect[index] = FS_NIL_INDEX;
+d614 3
+a616 1
+		    modified = 1;
+a617 11
+		if (modified) {
+		    ModListElement	*modElemPtr;
+
+		    tDescInfoPtr->flags |= ON_MOD_LIST;
+		    modElemPtr =
+			    (ModListElement *)malloc(sizeof(ModListElement));
+		    modElemPtr->fdNum = fdNum;
+		    bcopy((Address)fdPtr, (Address)&modElemPtr->fd, 
+		          sizeof(FsFileDescriptor));
+		    List_Insert((List_Links *)modElemPtr, LIST_ATREAR(modList));
+		}
+d619 9
+a627 6
+	    if (incVersionNumbers && writeDisk) {
+		if (Disk_BlockWrite(partFID, domainPtr,
+				    domainPtr->fileDescOffset + i,
+				    1, (Address) block) < 0) {
+		    perror("CheckFileSystem: FD write failed");
+		    exit(EXIT_HARD_ERR);
+d631 8
+a639 1
+
+d641 1
+a641 1
+	fprintf(stderr, "Found error in file descriptor bitmap\n");
+d644 1
+d646 49
+d698 1
+a698 1
+	fprintf(stderr, "\nComparing old and new data block bit maps:\n");
+d709 1
+a709 1
+		    fprintf(stderr,"Block %d: old %x new %x.\n",
+d711 1
+a711 1
+			*oldPtr & 0xf0, *newPtr & 0xf0);
+d718 1
+a718 1
+		    fprintf(stderr,"Block %d: old %x new %x.\n",
+d728 1
+a728 1
+	fprintf(stderr, "Found error in data block bitmap\n");
+a732 22
+     * We now know which descriptors, if any, need to be relocated.  Allocate
+     * new descriptors to hold the information.
+     */
+
+    if (!(List_IsEmpty(relocList))) {
+	LIST_FORALL(relocList, (List_Links *)relocElemPtr) {
+	    RelocateFD(domainPtr, descInfoPtr, relocElemPtr);
+	}
+    }
+	
+
+    /*
+     * Go through the file system starting at the root and perform a 
+     * consistency check.
+     */
+    if (!silent) {
+	fprintf(stderr, "\nTraversing directory tree:\n\n");
+    }
+
+    CheckDirTree(partFID, domainPtr, descInfoPtr);
+
+    /*
+d735 1
+a735 1
+    fprintf(stdout, 
+d745 1
+a745 1
+	fprintf(stderr, "Writing disk\n");
+d773 1
+a773 1
+ * ReadDomainHeader --
+d775 1
+a775 1
+ *	Read the domain header off the disk.
+a776 2
+ * Results:
+ *	None.
+a777 27
+ * Side effects:
+ *	Fill in the domain header.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+ReadDomainHeader(partFID, diskInfoPtr, domainPtr)
+    int			partFID;	/* Handle on raw disk */
+    Disk_Info		*diskInfoPtr;	/* Information from the super block */
+    FsDomainHeader	*domainPtr;	/* Reference to domain header to
+					 * fill in */
+{
+    if (Disk_SectorRead(partFID, diskInfoPtr->domainSector,
+		   diskInfoPtr->numDomainSectors, (Address)domainPtr) < 0) {
+	perror("ReadDomainHeader: Read failed");
+	exit(EXIT_HARD_ERR);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WriteDomainHeader --
+ *
+ *	Read the domain header off the disk.
+ *
+d782 1
+a782 1
+ *	Fill in the domain header.
+d787 2
+a788 412
+WriteDomainHeader(partFID, diskInfoPtr, domainPtr)
+    int			partFID;	/* Handle on raw disk */
+    Disk_Info		*diskInfoPtr;	/* Information from the super block */
+    FsDomainHeader	*domainPtr;	/* Reference to domain header to
+					 * fill in */
+{
+    if (Disk_SectorWrite(partFID, diskInfoPtr->domainSector,
+		    diskInfoPtr->numDomainSectors, (Address)domainPtr) < 0) {
+	perror("WriteDomainHeader: Write failed");
+	exit(EXIT_HARD_ERR);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+* ReadFileDescBitmap --
+ *
+ *	Read in the file descriptor bitmap.
+ *
+ * Results:
+ *	A pointer to the file descriptor bit map.
+ *
+ * Side effects:
+ *	Memory allocated for the bit map.
+ *
+ *----------------------------------------------------------------------
+ */
+unsigned char *
+ReadFileDescBitmap(partFID, domainPtr)
+    register FsDomainHeader *domainPtr;	/* Ptr to domain to read bitmap for. */
+{
+    register unsigned char *bitmap;
+
+    /*
+     * Allocate the bitmap.
+     */
+    bitmap =(unsigned char *)malloc(domainPtr->fdBitmapBlocks * FS_BLOCK_SIZE);
+
+    if (Disk_BlockRead(partFID, domainPtr, domainPtr->fdBitmapOffset,
+		  domainPtr->fdBitmapBlocks, (Address)bitmap) < 0) {
+	perror("ReadFileDescBitmap: Read failed");
+	exit(EXIT_HARD_ERR);
+    }
+    return(bitmap);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WriteFileDescBitmap --
+ *
+ *	Write out the file descriptor bitmap.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+WriteFileDescBitmap(partFID, domainPtr, bitmap)
+    int				partFID;	/* Raw handle on disk. */
+    register FsDomainHeader 	*domainPtr;	/* Domain to write bitmap for.*/
+    register unsigned char 	*bitmap;	/* Bitmap to write. */
+{
+    if (Disk_BlockWrite(partFID, domainPtr, domainPtr->fdBitmapOffset,
+		   domainPtr->fdBitmapBlocks, (Address)bitmap) < 0) {
+	perror("WriteFileDescBitmap: Write failed");
+	exit(EXIT_HARD_ERR);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ReadBitmap --
+ *
+ *	Read the bitmap off disk.
+ *
+ * Results:
+ *	A pointer to the bitmap.
+ *
+ * Side effects:
+ *	Memory allocated for the bit map.
+ *
+ *----------------------------------------------------------------------
+ */
+unsigned char *
+ReadBitmap(partFID, domainPtr)
+    int				partFID;	/* Raw disk handle. */
+    register FsDomainHeader	*domainPtr;	/* Domain to read. */
+{
+    unsigned char *bitmap;
+
+    bitmap = (unsigned char *)malloc(domainPtr->bitmapBlocks*FS_BLOCK_SIZE);
+
+    if (Disk_BlockRead(partFID, domainPtr, domainPtr->bitmapOffset,
+		  domainPtr->bitmapBlocks, (Address) bitmap) < 0) {
+	perror("ReadBitmap: Read failed");
+	exit(EXIT_HARD_ERR);
+    }
+    return(bitmap);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WriteBitmap --
+ *
+ *	Write the bitmap to disk.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+WriteBitmap(partFID, domainPtr, bitmap)
+    int				partFID;	/* Raw handle for disk. */
+    register FsDomainHeader	*domainPtr;	/* Domain to write. */
+    unsigned char		*bitmap;	/* Bitmap to write. */
+{
+    if (Disk_BlockWrite(partFID, domainPtr, domainPtr->bitmapOffset,
+		   domainPtr->bitmapBlocks, (Address) bitmap) < 0) {
+	perror("WriteBitmap: Write failed");
+	exit(EXIT_HARD_ERR);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WriteFileDesc --
+ *
+ *	Write the file descriptors to disk.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	File descriptors on the modified list are all written to disk.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+WriteFileDesc(partFID, domainPtr, listPtr, descInfoPtr)
+    int 			partFID;	/* Raw handle for disk. */
+    register FsDomainHeader 	*domainPtr;	/* Domain to write to. */
+    List_Links			*listPtr;	/* Pointer to list of modified
+						 * file descriptors to write
+						 * out. */
+    FdInfo			*descInfoPtr;	/* Pointer to info about all
+						 * of the descriptors. */
+					
+{
+    char		block[FS_BLOCK_SIZE];
+    int			blockNum;
+    int			offset;
+    ModListElement	*modElemPtr;
+    int			badBlock;
+
+    LIST_FORALL(listPtr, (List_Links *)modElemPtr) {
+	badBlock = 0;
+	blockNum = domainPtr->fileDescOffset + 
+			modElemPtr->fdNum / FS_FILE_DESC_PER_BLOCK;
+	offset = (modElemPtr->fdNum & (FS_FILE_DESC_PER_BLOCK - 1)) *
+		    FS_MAX_FILE_DESC_SIZE;
+	/*
+	 * Try to read the whole block at once unless we already know it's
+	 * bad.  Read it a sector at a time if we hit an error earlier
+	 * or if we get one now.
+	 */
+	if ((descInfoPtr[modElemPtr->fdNum].flags &
+	     (FD_RELOCATE|FD_UNREADABLE)) == 0) {
+	    if (Disk_BlockRead(partFID, domainPtr, blockNum, 1,
+			       (Address) block) < 0) {
+		perror("WriteFileDesc: Warning: read failed");
+		badBlock = 1;
+	    }
+	} else {
+	    badBlock = 1;
+	}
+	if (badBlock) {
+	    (void) Disk_BadBlockRead(partFID, domainPtr, blockNum,
+				     (Address) block);
+	}
+	bcopy((Address) &modElemPtr->fd, (Address) &block[offset],
+		  sizeof(FsFileDescriptor));
+	if (Disk_BlockWrite(partFID, domainPtr, blockNum, 1,
+		       (Address) block) < 0) {
+	    perror("WriteFileDesc: Write failed");
+	    exit(EXIT_HARD_ERR);
+	}
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WriteSummaryInfo --
+ *
+ *	Update summary information on disk.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+WriteSummaryInfo(partFID, diskInfoPtr, domainPtr, numKblocks, numFiles)
+    int			partFID;	/* Handle on raw disk */
+    Disk_Info		*diskInfoPtr;	/* Information from the super block */
+    FsDomainHeader	*domainPtr;	/* Reference to domain header to
+					 * fill in */
+    int			numKblocks;	/* Number of 1 Kbyte blocks. */
+    int			numFiles;	/* Number of files. */
+{
+    char		buffer[DEV_BYTES_PER_SECTOR];
+    FsSummaryInfo	*summaryInfoPtr;
+
+    if (Disk_SectorRead(partFID, diskInfoPtr->summarySector, 1, buffer) < 0) {
+	perror("WriteSummaryInfo: Read failed");
+	exit(EXIT_HARD_ERR);
+    }
+    summaryInfoPtr = (FsSummaryInfo *) buffer;
+    summaryInfoPtr->numFreeFileDesc = domainPtr->numFileDesc - numFiles -
+	    numBadDesc;
+    summaryInfoPtr->numFreeKbytes = 
+	    domainPtr->dataBlocks * FS_FRAGMENTS_PER_BLOCK - numKblocks;
+    if (clearDomainNumber) {
+	summaryInfoPtr->domainNumber = -1;
+    }
+    summaryInfoPtr->flags = 0;
+    if (Disk_SectorWrite(partFID, diskInfoPtr->summarySector, 1, buffer) < 0) {
+	perror("WriteSummaryInfo: Write failed");
+	exit(EXIT_HARD_ERR);
+    }
+
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RecoveryCheck --
+ *
+ *	See if the disk was successfully synced.
+ *
+ * Results:
+ *	Return 1 if the disk not safely synced.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+RecoveryCheck(partFID, diskInfoPtr)
+    int			partFID;	/* Handle on raw disk */
+    Disk_Info		*diskInfoPtr;	/* Information from the super block */
+{
+    char			buffer[DEV_BYTES_PER_SECTOR];
+    FsSummaryInfo		*summaryInfoPtr;
+
+    if (Disk_SectorRead(partFID, diskInfoPtr->summarySector, 1, buffer) < 0) {
+	perror("RecoveryCheck: Summary sector read failed");
+	exit(EXIT_HARD_ERR);
+    }
+    summaryInfoPtr = (FsSummaryInfo *)buffer;
+    return(summaryInfoPtr->flags & FS_DOMAIN_NOT_SAFE);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CheckFDBitmap --
+ *
+ *	Scan through the file descriptors and determine if all file 
+ *	descriptors marked as allocated and free in the bit map are
+ *	really that way.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+CheckFDBitmap(domainPtr, fdNum, block, bitmapPtrPtr)
+    register	FsDomainHeader	 *domainPtr;		/* Domain to check. */
+    int				 fdNum;			/* File descriptor to
+							 * check. */
+    Address			 block;			/* Disk block that
+							 * FD is in. */
+    register	unsigned char 	 **bitmapPtrPtr;	/* Ptr to FD bitmap
+							 * entry for fdNum. */
+{
+    int				i, j;
+    register unsigned char 	*bitmaskPtr;
+    int			   	allocated;
+    FsFileDescriptor		*fdPtr;
+
+    for (i = 0; 
+	 i < FS_FILE_DESC_PER_BLOCK / BITS_PER_BYTE && 
+		fdNum < domainPtr->numFileDesc;
+	 i++, (*bitmapPtrPtr)++){
+	for (j = 0, bitmaskPtr = bitmasks; 
+	     j < BITS_PER_BYTE && fdNum < domainPtr->numFileDesc; 
+	     j++, fdNum++, bitmaskPtr++) {
+
+	    fdPtr = (FsFileDescriptor *)&block[(i * BITS_PER_BYTE + j) * FS_MAX_FILE_DESC_SIZE];
+	    allocated = **bitmapPtrPtr & *bitmaskPtr;
+	    if (allocated && (fdPtr->flags & FS_FD_FREE)) {
+		if (verbose) {
+		    fprintf(stderr,
+	   "Free file descriptor %d allocated in bitmap.  Bitmap corrected.\n",
+				   fdNum);
+		}
+		foundError = 1;
+		fdBitmapError = 1;
+		**bitmapPtrPtr &= ~*bitmaskPtr;
+	    } else if (!allocated && !(fdPtr->flags & FS_FD_FREE)) {
+		if (verbose) {
+		    fprintf(stderr,
+	   "Allocated file descriptor %d free in bitmap.  Bitmap corrected.\n",
+				   fdNum);
+		}
+		foundError = 1;
+		fdBitmapError = 1;
+		**bitmapPtrPtr |= *bitmaskPtr;
+	    }
+	}
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetBadDescBitmap --
+ *
+ *	Go through the bitmaps and flag all the bits for this block as
+ *	allocated.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+SetBadDescBitmap(domainPtr, fdNum, bitmapPtrPtr)
+    register	FsDomainHeader	 *domainPtr;		/* Domain to fix. */
+    int				 fdNum;			/* Bad file desc. */
+    register	unsigned char 	 **bitmapPtrPtr;	/* Ptr to bitmap entry
+							 * for bad file desc.*/
+{
+    int				i, j;
+    register unsigned char 	*bitmaskPtr;
+
+    for (i = 0; i < FS_FILE_DESC_PER_BLOCK / BITS_PER_BYTE && 
+		fdNum < domainPtr->numFileDesc;
+	     i++, (*bitmapPtrPtr)++){
+	for (j = 0, bitmaskPtr = bitmasks; 
+	     j < BITS_PER_BYTE && fdNum < domainPtr->numFileDesc; 
+	     j++, fdNum++, bitmaskPtr++) {
+
+	     **bitmapPtrPtr |= *bitmaskPtr;
+	 }
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CheckBlocks --
+ *
+ *	Scan through the file descriptors and the cylinder bitmap and 
+ *	determine if all blocks marked as allocated are accounted for.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+CheckBlocks(partFID, domainPtr, fdNum, fdPtr, newCylBitmapPtr, modifiedPtr)
+d796 3
+a798 3
+    int			*modifiedPtr;		/* TRUE => modified the file
+						 * descriptor. */
+{
+d801 1
+a801 1
+    int 			*dblIndirectBlock[FS_INDICES_PER_BLOCK];
+d810 2
+d830 2
+a831 1
+     * First check direct blocks.
+d834 7
+a840 10
+	if (i > lastBlock) {
+	    if (fdPtr->direct[i] != FS_NIL_INDEX) {
+		if (verbose || lastErrorFD != fdNum) {
+		    fprintf(stderr, 
+		    "Extra direct block %d in file %d. Block %d abandoned\n",
+		    i, fdNum, fdPtr->direct[i]);
+		    lastErrorFD = fdNum;
+		}
+		fdPtr->direct[i] = FS_NIL_INDEX;
+		*modifiedPtr = 1;
+d842 10
+a851 1
+	} else if (fdPtr->direct[i] != FS_NIL_INDEX) {
+d867 3
+a869 3
+			fprintf(stderr,
+	"Fragmented block that is not the last in file %d. Block deleted.\n",
+				    fdNum);
+d884 11
+d897 11
+a907 1
+		*modifiedPtr = 1;
+d910 3
+d916 2
+a917 1
+		fprintf(stderr, "Hole in directory %d.\n", fdNum);
+d920 3
+a922 1
+	    goto truncFile;
+a924 13
+    if (i > lastBlock) {
+	if (lastRealBlock != lastBlock) {
+	    if (verbose || lastErrorFD != fdNum) {
+		fprintf(stderr, "Missing last block in file %d.\n",
+			       fdNum);
+		lastErrorFD = fdNum;
+	    }
+	    goto truncFile;
+	} else {
+	    goto checkBlockCount;
+	}
+    }
+
+d929 2
+a930 1
+	if (fdPtr->fileType == FS_DIRECTORY) {
+d932 2
+a933 2
+		fprintf(stderr,
+		"Hole in directory %d because single indirect block is NIL.\n",
+d937 2
+a938 1
+	    goto truncFile;
+d943 5
+a947 5
+	status = ProcessIndirectBlock(fdNum, fdPtr, 
+				      &fdPtr->indirect[0],
+				      newCylBitmapPtr, partFID, domainPtr, 
+				      lastBlock, &tBlock, &dirty, 
+				      &lastRealBlock, modifiedPtr, &blockCount);
+d949 7
+d958 2
+a959 2
+		fprintf(stderr, 
+			    "Hole in directory %d in single indirect block\n",
+d963 3
+a965 3
+	    goto truncFile;
+	}
+	numBlocks += FS_FRAGMENTS_PER_BLOCK;
+d967 2
+a968 20
+    if (i > lastBlock) {
+	if (lastRealBlock != lastBlock) {
+	    if (verbose || lastErrorFD != fdNum) {
+		fprintf(stderr, 
+		"Missing last block in singly indirect block for file %d\n",
+			       fdNum);
+		lastErrorFD = fdNum;
+	    }
+	    goto truncFile;
+	} else {
+	    goto checkBlockCount;
+	}
+    } else if (fdPtr->indirect[1] == FS_NIL_INDEX) {
+	if (verbose || lastErrorFD != fdNum) {
+	    fprintf(stderr,
+	"Last block missing in file %d because doubly indirect block is nil\n",
+			   fdNum);
+	    lastErrorFD = fdNum;
+	}
+	goto truncFile;
+d977 3
+a979 3
+	    fprintf(stderr, 
+  "Doubly indirect block on non-block boundary for file %d.  Block deleted.\n",
+			  fdNum);
+d985 1
+a985 2
+	status = MarkBitmap(fdNum, 
+		indBlock - domainPtr->dataOffset * FS_FRAGMENTS_PER_BLOCK, 
+a989 3
+        /*
+	 * FIXME: need to be able to flag this as a bad block on error.
+	 */
+d993 4
+a996 2
+	    perror("CheckBlocks: Read failed");
+	    exit(EXIT_HARD_ERR);
+d998 3
+d1002 28
+d1035 1
+a1035 1
+			fprintf(stderr, 
+d1040 2
+a1041 1
+		    goto truncFile;
+d1043 1
+d1047 7
+a1053 7
+	    status = ProcessIndirectBlock(fdNum, fdPtr, indexPtr, 
+					  newCylBitmapPtr, 
+					  partFID, domainPtr, lastBlock, 
+					  &tBlock, &dirty, &lastRealBlock,
+					  modifiedPtr, &blockCount);
+	    i = tBlock;
+	    if (status < 0) {
+d1055 1
+a1055 1
+		    fprintf(stderr, 
+d1060 2
+a1061 1
+		goto truncFile;
+a1062 1
+	    numBlocks += FS_FRAGMENTS_PER_BLOCK;
+d1064 4
+d1073 2
+a1074 2
+		    perror("CheckBlocks: Write failed");
+		    exit(EXIT_HARD_ERR);
+d1078 3
+d1082 7
+a1088 2
+	fdPtr->indirect[1] = FS_NIL_INDEX;
+	*modifiedPtr = 1;
+d1102 1
+a1102 1
+    fprintf(stderr,"Truncating file %d to length %d\n", fdNum,
+d1111 1
+a1111 1
+	    fprintf(stderr,
+a1119 25
+    /*
+     * Check against extra indirect block pointers.
+     */
+    if (lastRealBlock < FS_NUM_DIRECT_BLOCKS) {
+	j = 0;	/* check all indirect blocks */
+    } else if (lastRealBlock < FS_NUM_DIRECT_BLOCKS + FS_INDICES_PER_BLOCK) {
+	j = 1;	/* check double and triple indirect blocks */
+    } else if (lastRealBlock < FS_NUM_DIRECT_BLOCKS + FS_INDICES_PER_BLOCK +
+				FS_INDICES_PER_BLOCK * FS_INDICES_PER_BLOCK) {
+	j = 2;	/* check triple indirect block */
+    } else {
+	j = 3;
+    }
+    for (i=j ; i<3 ; i++) {
+	if (fdPtr->indirect[i] != FS_NIL_INDEX) {
+	    if (verbose || lastErrorFD != fdNum) {
+		fprintf(stderr, 
+		"Extra indirect block %d in file %d. Block %d abandoned\n",
+			       i, fdNum, fdPtr->indirect[i]);
+		lastErrorFD = fdNum;
+	    }
+	    fdPtr->indirect[i] = FS_NIL_INDEX;
+	    *modifiedPtr = 1;
+	}
+    }
+a1120 1
+
+d1131 2
+a1132 1
+ *	-1 if found a hole in an indirect block for a directory and
+d1141 4
+a1144 3
+ProcessIndirectBlock(fdNum, fdPtr, blockNumPtr, newCylBitmapPtr, partFID,
+			domainPtr, lastBlock, fileBlockNumPtr, dirtyPtr,
+			lastRealBlockPtr, modifiedPtr, blockCountPtr)
+d1165 7
+d1173 1
+a1173 1
+    char		indirectBlock[FS_BLOCK_SIZE];
+d1178 2
+d1181 2
+d1185 1
+a1185 1
+	    fprintf(stderr, 
+d1193 1
+a1193 2
+	status = MarkBitmap(fdNum, *blockNumPtr - 
+				domainPtr->dataOffset * FS_FRAGMENTS_PER_BLOCK, 
+d1197 1
+a1197 1
+    if (status >= 0) {
+d1205 1
+a1205 1
+	    perror("ProcessIndirectBlock: Read failed");
+d1207 2
+d1212 1
+a1212 1
+	    fprintf(stderr,
+a1220 1
+	foundError = 1;
+d1225 34
+a1258 1
+    for (i = 0, indexPtr = (int *) indirectBlock; 
+d1261 2
+a1262 1
+	if (*indexPtr == FS_NIL_INDEX) {
+d1264 4
+a1267 1
+		return(-1);
+d1270 5
+a1274 5
+	}
+	if (*indexPtr & (FS_FRAGMENTS_PER_BLOCK - 1)) {
+	    if (verbose || lastErrorFD != fdNum) {
+		fprintf(stderr, 
+		"Non-direct block fragmented for file %d.  Block deleted.\n",
+d1276 6
+a1281 6
+		lastErrorFD = fdNum;
+	    }
+	    foundError = 1;
+	    status = -1;
+	} else {
+	    status = MarkBitmap(fdNum, *indexPtr, 
+d1284 8
+d1307 2
+a1308 2
+		perror("ProcessIndirectBlock: Write failed");
+		exit(EXIT_HARD_ERR);
+d1312 2
+a1313 44
+
+    return(0);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MarkBitmap --
+ *
+ *	Mark the bits in the bit map.
+ *	update the cylinder map to reflect which blocks are allocated.
+ *
+ * Results:
+ *	-1 if couldn't mark the bitmap, 0 otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+MarkBitmap(fdNum, blockNum, bitmapPtr, numFrags, domainPtr)
+    int		  fdNum;
+    int		  blockNum;
+    unsigned char *bitmapPtr;
+    int		  numFrags;
+    FsDomainHeader  *domainPtr;
+{
+    register	unsigned char 	*bytePtr;
+    register	unsigned char 	*bitmaskPtr;
+    unsigned 	char	      	bitmask;
+    int				i;
+    int				fullBlockNum;
+    int				fragOffset;
+
+    if (blockNum >= num1KBlocks) {
+	if (verbose || lastErrorFD != fdNum) {
+	    fprintf(stderr, "Block pointer %d too large for fd %d\n", 
+			   blockNum, fdNum);
+	    lastErrorFD = fdNum;
+	}
+	foundError = 1;
+	return(-1);
+a1314 36
+    if (blockNum / FS_FRAGMENTS_PER_BLOCK < 
+	(blockNum + numFrags - 1) / FS_FRAGMENTS_PER_BLOCK) {
+	if (verbose || lastErrorFD != fdNum) {
+	    fprintf(stderr, 
+		       "Block %d extends past block boundary for fd %d\n",
+		       blockNum, fdNum);
+	    lastErrorFD = fdNum;
+	}
+
+	foundError = 1;
+	return(-1);
+    }
+    bitmask = 0;
+    fullBlockNum = blockNum / FS_FRAGMENTS_PER_BLOCK;
+    bytePtr = GetBitmapPtr(domainPtr, bitmapPtr, fullBlockNum);
+    fragOffset = blockNum & 0x3;
+    if ((fullBlockNum % domainPtr->geometry.blocksPerCylinder) & 0x1) {
+	fragOffset += 4;
+    }
+    bitmaskPtr = &bitmasks[fragOffset];
+
+    for (i = 0; i < numFrags; i++, bitmaskPtr++) {
+	if (*bitmaskPtr & *bytePtr) { 
+	    if (verbose || lastErrorFD != fdNum) {
+		fprintf(stderr,
+	"File %d references previously allocated block.  Block %d deleted.\n", 
+			   fdNum, blockNum + i);
+		lastErrorFD = fdNum;
+	    }
+
+	    foundError = 1;
+	    return(-1);
+	}
+	bitmask |= *bitmaskPtr;
+    }
+    *bytePtr |= bitmask;
+d1391 1
+a1391 1
+	    fprintf(stderr, "RelocateFD: out of file descriptors.\n");
+d1408 5
+d1414 245
+@
+
+
+1.24
+log
+@Changed it to print much less about errors unless verbose is on.
+@
+text
+@d2 1
+a2 1
+ * checkFS.c --
+d11 1
+a11 1
+static char rcsid[] = "$Header: checkFS.c,v 1.23 88/09/20 13:38:04 douglis Exp $ SPRITE (Berkeley)";
+a13 1
+#include "sprite.h"
+d15 1
+a15 1
+#include "io.h"
+d17 6
+a22 4
+#include "checkFS.h"
+#include "mem.h"
+#include "string.h"
+#include "byte.h"
+d28 2
+a29 2
+Boolean	foundError = FALSE;
+Boolean	fdBitmapError = FALSE;
+d33 1
+a33 1
+ * checkFS -D rsd0 -P b
+d44 8
+a51 8
+Boolean patchHeader = FALSE;
+Boolean	writeDisk = FALSE;
+Boolean verbose = FALSE;
+Boolean silent = FALSE;
+Boolean clearDomainNumber = FALSE;
+Boolean recoveryCheck = FALSE;
+Boolean	badBlockInit = FALSE;
+Boolean patchRoot = FALSE;
+d54 1
+a54 1
+    {OPT_STRING, 'D', (Address)&deviceName,
+d56 1
+a56 1
+    {OPT_STRING, 'P', (Address)&partName,
+d58 1
+a58 1
+    {OPT_STRING, 'd', (Address)&devDirectory,
+d60 1
+a60 1
+    {OPT_STRING, 'p', (Address)&firstPartName,
+d62 7
+a68 7
+    {OPT_TRUE, 'W', (Address)&writeDisk,
+	"Write disk (FALSE)"},
+    {OPT_TRUE, 'S', (Address)&silent,
+	"Don't say anything unless there's a problem (FALSE)"},
+    {OPT_TRUE, 'V', (Address)&verbose,
+	"Output information about differences in bitmaps (FALSE)"},
+    {OPT_TRUE, 'r', (Address)&recoveryCheck,
+d70 1
+a70 1
+    {OPT_TRUE, 'R', (Address)&patchRoot,
+d72 1
+a72 1
+    {OPT_TRUE, 'c', (Address)&clearDomainNumber,
+d74 1
+a74 1
+    {OPT_TRUE, 'H', (Address)&patchHeader,
+d76 1
+a76 1
+    {OPT_TRUE, 'b', (Address)&badBlockInit,
+d85 2
+a86 2
+Boolean		RecoveryCheck();
+static Boolean	incVersionNumbers;
+d118 5
+a122 8
+    ReturnStatus status;	/* status of system calls */
+    int firstPartFID;		/* File ID for first parition on the disk */
+    int partFID;		/* File ID for partiton to format */
+    char firstPartitionName[64];
+    char partitionName[64];
+    int partition;		/* Index of partition derived from the
+				 * partition name */
+    int	flags;
+d124 1
+a124 1
+    (void)Opt_Parse(&argc, argv, numOptions, optionArray);
+d127 2
+a128 2
+	Io_Print("Specify device name with -D option\n");
+	Proc_Exit(EXIT_HARD_ERR);
+d131 2
+a132 2
+	Io_Print("Specify partition with -P option\n");
+	Proc_Exit(EXIT_HARD_ERR);
+d139 6
+a144 6
+    (void)String_Copy(devDirectory, firstPartitionName);  /* eg. /dev/ */
+    (void)String_Copy(devDirectory, partitionName);    
+    (void)String_Cat(deviceName, firstPartitionName);	  /* eg. /dev/rxy0 */
+    (void)String_Cat(deviceName, partitionName);    
+    (void)String_Cat(firstPartName, firstPartitionName);  /* eg. /dev/rxy0a */
+    (void)String_Cat(partName, partitionName);		  /* eg. /dev/rxy0b */
+d146 4
+a149 4
+    status = Fs_Open(firstPartitionName, FS_READ, 0, &firstPartFID);
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "checkFS: Can't open first parition");
+	Proc_Exit(EXIT_HARD_ERR);
+d151 4
+a154 3
+    flags = FS_READ;
+    if (writeDisk) {
+	flags |= FS_WRITE;
+a155 5
+    status = Fs_Open(partitionName, flags, 0, &partFID);
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "checkFS: Can't open partition to check ");
+	Proc_Exit(EXIT_HARD_ERR);
+    }
+d159 1
+a159 1
+	Io_PrintStream(io_StdErr,
+d161 1
+a161 1
+	Proc_Exit(EXIT_HARD_ERR);
+d165 2
+a166 2
+    (void)Fs_Close(firstPartFID);
+    (void)Fs_Close(partFID);
+d168 1
+a168 1
+	Proc_Exit(EXIT_SOFT_ERR);
+d170 1
+a170 1
+	Proc_Exit(EXIT_OK);
+d219 1
+a219 1
+#define FILE_DESC_PER_SECTOR (FS_FILE_DESC_PER_BLOCK / SECTORS_PER_BLOCK)
+d243 1
+a243 2
+    ReturnStatus  	  	status;
+    BasicDiskInfo 	  	*diskInfoPtr;
+d255 2
+a256 2
+    Boolean			valid;
+    Boolean			salvage;
+d261 1
+a261 1
+    Boolean			bitmapError = FALSE;
+d268 4
+a271 5
+    diskInfoPtr = ReadBasicDiskInfo(firstPartFID, partition);
+    if (diskInfoPtr == (BasicDiskInfo *) NULL) {
+	Io_PrintStream(io_StdErr, 
+			"CheckFilesystem: Could not read basic disk info\n");
+	Proc_Exit(EXIT_HARD_ERR);
+d273 2
+a274 2
+    Io_Flush(io_StdErr);
+    Io_Flush(io_StdOut);
+d276 1
+a276 1
+    domainPtr = (FsDomainHeader *) Mem_Alloc(diskInfoPtr->numDomainSectors *
+d284 2
+a285 2
+	int spriteID;
+	Fs_Attributes attrs;
+d293 8
+a300 3
+	Fs_GetAttributesID(firstPartFID, &attrs);
+	if (attrs.devServerID == FS_LOCALHOST_ID) {
+	    Sys_GetMachineInfo(NULL, NULL, &spriteID);
+d302 1
+a302 1
+	    spriteID = attrs.devServerID;
+d305 1
+a305 1
+	    Io_PrintStream(io_StdErr, "Setting hostID in disk header to 0x%x\n",
+d309 1
+a309 1
+	    patchHeader = FALSE;
+d319 2
+a320 3
+	  (unsigned char *)Mem_Alloc(domainPtr->bitmapBlocks * FS_BLOCK_SIZE);
+    Byte_Zero(domainPtr->bitmapBlocks * FS_BLOCK_SIZE, 
+	      (Address) newCylBitmapPtr);
+d324 2
+a325 2
+    descInfoPtr = (FdInfo *) Mem_Alloc(domainPtr->numFileDesc * sizeof(FdInfo));
+    Byte_Zero(domainPtr->numFileDesc * sizeof(FdInfo), (Address)descInfoPtr);
+d337 1
+a337 1
+	Io_PrintStream(io_StdErr, "Performing recovery check\n");
+d340 1
+a340 1
+	    Io_PrintStream(io_StdErr, "Disk not safely synced.  Will increment all version numbers.\n");
+d343 1
+a343 1
+	incVersionNumbers = FALSE;
+d352 1
+a352 1
+	Io_PrintStream(io_StdErr, "Checking file descriptors:\n");
+d363 2
+a364 3
+	status = BlockRead(partFID, domainPtr, domainPtr->fileDescOffset + i,
+				1, (Address) block);
+	if (status != SUCCESS) {
+d369 1
+a369 1
+	    Stat_PrintMsg(status, "CheckFilesystem: BlockRead: Read failed");
+d374 1
+a374 3
+	    salvage = TRUE;
+					  
+
+d377 2
+a378 2
+	    salvage = FALSE;
+	    valid = TRUE;
+d380 1
+a380 1
+	for (sector = 0; sector < SECTORS_PER_BLOCK; sector++) {
+d389 1
+a389 1
+		Boolean	modified = FALSE;
+d414 1
+a414 1
+				Mem_Alloc(sizeof(RelocListElement));
+d417 2
+a418 2
+			Byte_Copy(sizeof(FsFileDescriptor), (Address)fdPtr,
+				  (Address)&relocElemPtr->fd);
+d448 1
+a448 1
+		    modified = TRUE;
+d455 1
+a455 1
+			    (ModListElement *)Mem_Alloc(sizeof(ModListElement));
+d457 2
+a458 2
+		    Byte_Copy(sizeof(FsFileDescriptor), (Address)fdPtr,
+				    (Address)&modElemPtr->fd);
+d463 1
+a463 1
+		status = BlockWrite(partFID, domainPtr,
+d465 3
+a467 4
+				    1, (Address) block);
+		if (status != SUCCESS) {
+		    Stat_PrintMsg(status, "CheckFileSystem: FD write failed");
+		    Proc_Exit(EXIT_HARD_ERR);
+d474 1
+a474 1
+	Io_PrintStream(io_StdErr, "Found error in file descriptor bitmap\n");
+d481 1
+a481 2
+	Io_PrintStream(io_StdErr,
+		       "\nComparing old and new data block bit maps:\n");
+d492 1
+a492 1
+		    Io_PrintStream(io_StdErr,"Block %d: old %x new %x.\n",
+d496 2
+a497 2
+		foundError = TRUE;
+		bitmapError = TRUE;
+d501 1
+a501 1
+		    Io_PrintStream(io_StdErr,"Block %d: old %x new %x.\n",
+d505 2
+a506 2
+		foundError = TRUE;
+		bitmapError = TRUE;
+d511 1
+a511 1
+	Io_PrintStream(io_StdErr, "Found error in data block bitmap\n");
+d513 1
+a513 1
+    Io_Flush(io_StdErr);
+d532 1
+a532 1
+	Io_PrintStream(io_StdErr, "\nTraversing directory tree:\n\n");
+d540 1
+a540 1
+    Io_PrintStream(io_StdOut, 
+d550 1
+a550 1
+	Io_PrintStream(io_StdErr, "Writing disk\n");
+d552 1
+a552 1
+    Io_Flush(io_StdErr);
+d592 4
+a595 3
+    int partFID;		/* Handle on raw disk */
+    BasicDiskInfo *diskInfoPtr;	/* Information from the super block */
+    FsDomainHeader *domainPtr;	/* Reference to domain header to fill in */
+d597 4
+a600 7
+    register ReturnStatus status;	/* General return code. */
+
+    status = SectorRead(partFID, diskInfoPtr->domainSector,
+			diskInfoPtr->numDomainSectors, (Address)domainPtr);
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "ReadDomainHeader: Read failed");
+	Proc_Exit(EXIT_HARD_ERR);
+d622 4
+a625 3
+    int partFID;		/* Handle on raw disk */
+    BasicDiskInfo *diskInfoPtr;	/* Information from the super block */
+    FsDomainHeader *domainPtr;	/* Reference to domain header to fill in */
+d627 4
+a630 7
+    register ReturnStatus status;	/* General return code. */
+
+    status = SectorWrite(partFID, diskInfoPtr->domainSector,
+			diskInfoPtr->numDomainSectors, (Address)domainPtr);
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "WriteDomainHeader: Write failed");
+	Proc_Exit(EXIT_HARD_ERR);
+d652 1
+a652 1
+    register FsDomainHeader *domainPtr;
+a653 1
+    ReturnStatus status;
+d659 1
+a659 1
+    bitmap =(unsigned char *)Mem_Alloc(domainPtr->fdBitmapBlocks*FS_BLOCK_SIZE);
+d661 4
+a664 5
+    status = BlockRead(partFID, domainPtr, domainPtr->fdBitmapOffset,
+				domainPtr->fdBitmapBlocks, (Address)bitmap);
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "ReadFileDescBitmap: Read failed");
+	Proc_Exit(EXIT_HARD_ERR);
+d687 3
+a689 3
+    int				partFID;
+    register FsDomainHeader 	*domainPtr;
+    register unsigned char 	*bitmap;
+d691 4
+a694 7
+    ReturnStatus	status;
+
+    status = BlockWrite(partFID, domainPtr, domainPtr->fdBitmapOffset,
+		      domainPtr->fdBitmapBlocks, (Address)bitmap);
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "WriteFileDescBitmap: Write failed");
+	Proc_Exit(EXIT_HARD_ERR);
+d716 2
+a717 2
+    int partFID;
+    register FsDomainHeader *domainPtr;
+a718 1
+    ReturnStatus status;
+d721 1
+a721 1
+    bitmap = (unsigned char *)Mem_Alloc(domainPtr->bitmapBlocks*FS_BLOCK_SIZE);
+d723 4
+a726 5
+    status = BlockRead(partFID, domainPtr, domainPtr->bitmapOffset,
+				domainPtr->bitmapBlocks, (Address) bitmap);
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "ReadBitmap: Read failed");
+	Proc_Exit(EXIT_HARD_ERR);
+d740 1
+a740 1
+ *	A return status.
+d749 3
+a751 3
+    int partFID;
+    register FsDomainHeader *domainPtr;
+    unsigned char *bitmap;
+d753 4
+a756 7
+    ReturnStatus	status;
+
+    status = BlockWrite(partFID, domainPtr, domainPtr->bitmapOffset,
+		      domainPtr->bitmapBlocks, (Address) bitmap);
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "WriteBitmap: Write failed");
+	Proc_Exit(EXIT_HARD_ERR);
+d778 7
+a784 4
+    int 			partFID;
+    register FsDomainHeader 	*domainPtr;
+    List_Links			*listPtr;
+    FdInfo *descInfoPtr;		
+a786 1
+    ReturnStatus 	status;
+d791 1
+a791 1
+    Boolean		badBlock;
+d794 1
+a794 1
+	badBlock = FALSE;
+d806 4
+a809 5
+	    status = BlockRead(partFID, domainPtr, blockNum, 1,
+			       (Address) block);
+	    if (status != SUCCESS) {
+		Stat_PrintMsg(status, "WriteFileDesc: Warning: read failed");
+		badBlock = TRUE;
+d812 1
+a812 1
+	    badBlock = TRUE;
+d818 6
+a823 6
+	Byte_Copy(sizeof(FsFileDescriptor), 
+	          (Address) &modElemPtr->fd, (Address) &block[offset]);
+	status = BlockWrite(partFID, domainPtr, blockNum, 1, (Address) block);
+	if (status != SUCCESS) {
+	    Stat_PrintMsg(status, "WriteFileDesc: Write failed");
+	    Proc_Exit(EXIT_HARD_ERR);
+d846 6
+a851 5
+    int partFID;		/* Handle on raw disk */
+    BasicDiskInfo *diskInfoPtr;	/* Information from the super block */
+    FsDomainHeader *domainPtr;	/* Reference to domain header to fill in */
+    int		numKblocks;	/* Number of 1 Kbyte blocks. */
+    int		numFiles;	/* Number of files. */
+d853 1
+a853 2
+    register ReturnStatus status;	/* General return code. */
+    char	buffer[DEV_BYTES_PER_SECTOR];
+d856 3
+a858 4
+    status = SectorRead(partFID, diskInfoPtr->summarySector, 1, buffer);
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "WriteSummaryInfo: Read failed");
+	Proc_Exit(EXIT_HARD_ERR);
+d869 3
+a871 4
+    status = SectorWrite(partFID, diskInfoPtr->summarySector, 1, buffer);
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "WriteSummaryInfo: Write failed");
+	Proc_Exit(EXIT_HARD_ERR);
+d885 1
+a885 1
+ *	Return TRUE if the disk not safely synced.
+d892 1
+a892 1
+Boolean
+d895 1
+a895 1
+    BasicDiskInfo	*diskInfoPtr;	/* Information from the super block */
+a896 1
+    register ReturnStatus	status;
+d900 3
+a902 4
+    status = SectorRead(partFID, diskInfoPtr->summarySector, 1, buffer);
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "RecoveryCheck: Summary sector read failed");
+	Proc_Exit(EXIT_HARD_ERR);
+d929 7
+a935 4
+    register	FsDomainHeader	 *domainPtr;
+    int				 fdNum;
+    Address			 block;
+    register	unsigned char 	 **bitmapPtrPtr;
+d939 1
+a939 1
+    Boolean		   	allocated;
+d954 1
+a954 1
+		    Io_PrintStream(io_StdErr,
+d958 2
+a959 2
+		foundError = TRUE;
+		fdBitmapError = TRUE;
+d963 1
+a963 1
+		    Io_PrintStream(io_StdErr,
+d967 2
+a968 2
+		foundError = TRUE;
+		fdBitmapError = TRUE;
+a991 1
+
+d994 4
+a997 3
+    register	FsDomainHeader	 *domainPtr;
+    int				 fdNum;
+    register	unsigned char 	 **bitmapPtrPtr;
+d1013 1
+d1033 9
+a1041 6
+    int 		partFID;
+    FsDomainHeader	*domainPtr;
+    int			fdNum;
+    FsFileDescriptor	*fdPtr;
+    unsigned char 	*newCylBitmapPtr;
+    Boolean		*modifiedPtr;
+a1045 1
+    ReturnStatus 		status;
+d1050 1
+a1050 1
+    Boolean			dirty;
+d1053 1
+d1078 1
+a1078 1
+		    Io_PrintStream(io_StdErr, 
+d1084 1
+a1084 1
+		*modifiedPtr = TRUE;
+d1091 1
+a1091 1
+		if (status == SUCCESS) {
+d1102 1
+a1102 1
+			Io_PrintStream(io_StdErr,
+d1107 2
+a1108 2
+		    foundError = TRUE;
+		    status = FAILURE;
+d1113 1
+a1113 1
+		    if (status == SUCCESS) {
+d1119 1
+a1119 1
+	    if (status != SUCCESS) {
+d1121 1
+a1121 1
+		*modifiedPtr = TRUE;
+d1127 1
+a1127 1
+		Io_PrintStream(io_StdErr, "Hole in directory %d.\n", fdNum);
+d1136 1
+a1136 1
+		Io_PrintStream(io_StdErr, "Missing last block in file %d.\n",
+d1152 1
+a1152 1
+		Io_PrintStream(io_StdErr,
+d1168 1
+a1168 1
+	if (status == DIR_HOLE) {
+d1170 1
+a1170 1
+		Io_PrintStream(io_StdErr, 
+a1175 3
+	} else if (status != SUCCESS) {
+	    Sys_Panic(SYS_FATAL,
+			"CheckBlocks: Bad status from ProcessIndirectBlock\n");
+d1182 1
+a1182 1
+		Io_PrintStream(io_StdErr, 
+d1193 1
+a1193 1
+	    Io_PrintStream(io_StdErr,
+d1207 1
+a1207 1
+	    Io_PrintStream(io_StdErr, 
+d1212 2
+a1213 2
+	foundError = TRUE;
+	status = FAILURE;
+d1220 1
+a1220 1
+    if (status == SUCCESS) {
+d1224 1
+a1224 1
+	status = BlockRead(partFID, domainPtr, 
+d1226 3
+a1228 4
+			   1, (Address) dblIndirectBlock);
+	if (status != SUCCESS) {
+	    Stat_PrintMsg(status, "CheckBlocks: Read failed");
+	    Proc_Exit(EXIT_HARD_ERR);
+d1236 1
+a1236 1
+			Io_PrintStream(io_StdErr, 
+d1252 1
+a1252 1
+	    if (status == DIR_HOLE) {
+d1254 1
+a1254 1
+		    Io_PrintStream(io_StdErr, 
+a1259 3
+	    } else if (status != SUCCESS) {
+		Sys_Panic(SYS_FATAL,
+		    "CheckBlocks: Bad status from ProcessIndirectBlock (2)\n");
+d1265 1
+a1265 1
+		status = BlockWrite(partFID, domainPtr, 
+d1267 3
+a1269 4
+			   1, (Address) dblIndirectBlock);
+		if (status != SUCCESS) {
+		    Stat_PrintMsg(status, "CheckBlocks: Write failed");
+		    Proc_Exit(EXIT_HARD_ERR);
+d1275 1
+a1275 1
+	*modifiedPtr = TRUE;
+d1289 1
+a1289 1
+    Io_PrintStream(io_StdErr,"Truncating file %d to length %d\n", fdNum,
+d1291 2
+a1292 2
+    foundError = TRUE;
+    *modifiedPtr = TRUE;
+d1298 1
+a1298 1
+	    Io_PrintStream(io_StdErr,
+d1304 2
+a1305 2
+	foundError = TRUE;
+	*modifiedPtr = TRUE;
+d1323 1
+a1323 1
+		Io_PrintStream(io_StdErr, 
+d1329 1
+a1329 1
+	    *modifiedPtr = TRUE;
+d1344 2
+a1345 1
+ *	FAILURE if could not read in the indirect block.
+d1352 1
+a1352 2
+
+ReturnStatus
+d1367 1
+a1367 1
+    Boolean		*dirtyPtr;	  /* TRUE if *blockNumPtr gets 
+d1372 1
+a1372 1
+    Boolean		*modifiedPtr;	   /* TRUE if the file descriptor
+d1380 2
+a1381 2
+    ReturnStatus	status;
+    Boolean		dirty = FALSE;
+d1385 1
+a1385 1
+	    Io_PrintStream(io_StdErr, 
+d1390 2
+a1391 2
+	foundError = TRUE;
+	status = FAILURE;
+d1398 1
+a1398 1
+    if (status == SUCCESS) {
+d1402 5
+a1406 5
+	    status = BlockRead(partFID, domainPtr, 
+		       *blockNumPtr / FS_FRAGMENTS_PER_BLOCK, 1, 
+			   (Address) indirectBlock);
+	if (status != SUCCESS) {
+	    Stat_PrintMsg(status, "ProcessIndirectBlock: Read failed");
+d1409 1
+a1409 1
+    if (status != SUCCESS) {
+d1411 1
+a1411 1
+	    Io_PrintStream(io_StdErr,
+d1418 4
+a1421 4
+	*dirtyPtr = TRUE;
+	*modifiedPtr = TRUE;
+	foundError = TRUE;
+	return(SUCCESS);
+d1423 1
+a1423 1
+	*dirtyPtr = FALSE;
+d1430 1
+a1430 1
+		return(DIR_HOLE);
+d1436 1
+a1436 1
+		Io_PrintStream(io_StdErr, 
+d1441 2
+a1442 2
+	    foundError = TRUE;
+	    status = FAILURE;
+d1448 1
+a1448 1
+	if (status == SUCCESS) {
+d1454 1
+a1454 1
+	    dirty = TRUE;
+d1459 1
+a1459 1
+	    status = BlockWrite(partFID, domainPtr, 
+d1461 3
+a1463 4
+				1, (Address) indirectBlock);
+	    if (status != SUCCESS) {
+		Stat_PrintMsg(status, "ProcessIndirectBlock: Write failed");
+		Proc_Exit(EXIT_HARD_ERR);
+d1468 1
+a1468 1
+    return(SUCCESS);
+d1481 1
+a1481 1
+ *	FAILURE if could not read in the indirect block.
+d1488 1
+a1488 2
+
+ReturnStatus
+d1505 1
+a1505 1
+	    Io_PrintStream(io_StdErr, "Block pointer %d too large for fd %d\n", 
+d1509 2
+a1510 2
+	foundError = TRUE;
+	return(FAILURE);
+d1515 1
+a1515 1
+	    Io_PrintStream(io_StdErr, 
+d1521 2
+a1522 2
+	foundError = TRUE;
+	return(FAILURE);
+d1536 1
+a1536 1
+		Io_PrintStream(io_StdErr,
+d1542 2
+a1543 2
+	    foundError = TRUE;
+	    return(FAILURE);
+d1548 1
+a1548 1
+    return(SUCCESS);
+d1585 2
+a1586 2
+    Boolean		   	found = FALSE;
+    static Boolean	   	outOfDescriptors = FALSE;
+d1606 1
+a1606 1
+	    found = TRUE;
+d1624 2
+a1625 1
+	    Sys_Panic(SYS_WARNING, "RelocateFD: out of file descriptors.\n");
+d1627 1
+a1627 1
+	    outOfDescriptors = TRUE;
+@
+
+
+1.23
+log
+@Made messages about file descriptor bit map only be printed if are in
+verbose mode.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkFS.c,v 1.22 88/07/19 11:45:46 douglis Exp $ SPRITE (Berkeley)";
+d28 1
+d87 5
+d265 4
+d270 1
+d481 4
+d488 1
+a488 5
+    if (verbose) {
+        unsigned char 	*oldPtr;
+	unsigned char 	*newPtr;
+	int		blockNum;
+
+d490 14
+a503 17
+		    "\nComparing old and new data block bit maps\n");
+	for (oldPtr = cylBitmapPtr, newPtr = newCylBitmapPtr, 
+	                            i = 0, blockNum = 0; 
+		i < domainPtr->dataCylinders; 
+		i++, oldPtr = &cylBitmapPtr[bytesPerCylinder * i], 
+		     newPtr = &newCylBitmapPtr[bytesPerCylinder * i]) {
+	    for (j = 0; 
+	         j < bytesPerCylinder; 
+		 j++, oldPtr++, newPtr++, blockNum += 2) {
+		     if ((*oldPtr & 0xf0) != (*newPtr & 0xf0)) {
+			 Io_PrintStream(io_StdErr, "Block %d: old %x new %x.\n", blockNum * FS_FRAGMENTS_PER_BLOCK, *oldPtr & 0xf0, *newPtr & 0xf0);
+			 foundError = TRUE;
+		     } 
+		     if ((*oldPtr & 0x0f) != (*newPtr & 0x0f)) {
+			 Io_PrintStream(io_StdErr, "Block %d: old %x new %x.\n", (blockNum + 1) * FS_FRAGMENTS_PER_BLOCK, *oldPtr & 0x0f, *newPtr & 0x0f);
+			 foundError = TRUE;
+		     }
+d505 11
+d517 6
+a523 2
+        Io_Flush(io_StdErr);
+    }
+d978 1
+a978 1
+				   "Free file descriptor %d allocated in bitmap.  Bitmap corrected.\n",
+d982 1
+d987 1
+a987 1
+				   "Allocated file descriptor %d free in bitmap.  Bitmap corrected.\n",
+d991 1
+d1096 2
+a1097 1
+		Io_PrintStream(io_StdErr, 
+d1100 2
+d1120 3
+a1122 1
+		    Io_PrintStream(io_StdErr, "Fragmented block that is not the last in file %d. Block deleted.\n",
+d1124 2
+d1145 4
+a1148 1
+	    Io_PrintStream(io_StdErr, "Hole in directory %d.\n", fdNum);
+d1154 5
+a1158 2
+	    Io_PrintStream(io_StdErr, "Missing last block in file %d.\n",
+			   fdNum);
+d1170 6
+a1175 2
+	    Io_PrintStream(io_StdErr, "Hole in directory %d because single indirect block is NIL.\n",
+			    fdNum);
+d1188 6
+a1193 2
+	    Io_PrintStream(io_StdErr, "Hole in directory %d in single indirect block\n",
+			    fdNum);
+d1203 6
+a1208 2
+	    Io_PrintStream(io_StdErr, "Missing last block in singly indirect block for file %d\n",
+			    fdNum);
+d1214 6
+a1219 1
+	Io_PrintStream(io_StdErr, "Last block missing in file %d because doubly indirect block is nil\n", fdNum);
+d1228 6
+a1233 1
+	Io_PrintStream(io_StdErr, "Doubly indirect block on non-block boundary for file %d.  Block deleted.\n", fdNum);
+d1258 6
+a1263 2
+		    Io_PrintStream(io_StdErr, "Hole in directory %d in doubly indirect block\n",
+			    fdNum);
+d1276 6
+a1281 2
+		Io_PrintStream(io_StdErr, "Hole in directory %d in doubly indirect blocks (2)\n",
+			       fdNum);
+d1324 6
+a1329 2
+	Io_PrintStream(io_StdErr, "Block count corrected for file %d.  Is %d should be %d.\n", 
+	    fdNum, fdPtr->numKbytes, blockCount);
+d1349 2
+a1350 1
+	    Io_PrintStream(io_StdErr, 
+d1352 5
+a1356 3
+		i, fdNum, fdPtr->indirect[i]);
+		fdPtr->indirect[i] = FS_NIL_INDEX;
+		*modifiedPtr = TRUE;
+d1411 6
+a1416 1
+	Io_PrintStream(io_StdErr, "Indirect block on a non-block boundary for file %d.  Block deleted.\n", fdNum);
+d1437 6
+a1442 1
+	Io_PrintStream(io_StdErr, "Indirect block (%d) unreadable for file #%d.  Block deleted.\n", *blockNumPtr, fdNum);
+d1462 3
+a1464 1
+	    Io_PrintStream(io_StdErr, "Non-direct block fragmented for file %d.  Block deleted.\n",
+d1466 2
+d1533 5
+a1537 2
+	Io_PrintStream(io_StdErr, "Block pointer %d too large for fd %d\n", 
+		       blockNum, fdNum);
+d1543 2
+a1544 1
+	Io_PrintStream(io_StdErr, 
+d1547 3
+d1564 3
+a1566 1
+	    Io_PrintStream(io_StdErr, "File %d references previously allocated block.  Block %d deleted.\n", 
+d1568 3
+@
+
+
+1.22
+log
+@Added ability to salvage and relocate file descriptors in unreadable
+blocks and to mark those blocks as unuseable (temporarily -- if readable
+again later, they will be reclaimed).
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkFS.c,v 1.21 88/06/06 12:02:40 brent Exp $ SPRITE (Berkeley)";
+d953 5
+a957 1
+		Io_PrintStream(io_StdErr, "Free file descriptor %d allocated in bitmap.  Bitmap corrected.\n", fdNum);
+d961 5
+a965 1
+		Io_PrintStream(io_StdErr, "Allocated file descriptor %d free in bitmap.  Bitmap corrected.\n", fdNum);
+@
+
+
+1.21
+log
+@Added code to look for extra blocks, those after lastByte.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkFS.c,v 1.20 88/06/02 12:58:50 brent Exp $ SPRITE (Berkeley)";
+d25 1
+d135 6
+a140 6
+    String_Copy(devDirectory, firstPartitionName);	/* eg. /dev/ */
+    String_Copy(devDirectory, partitionName);
+    String_Cat(deviceName, firstPartitionName);		/* eg. /dev/rxy0 */
+    String_Cat(deviceName, partitionName);
+    String_Cat(firstPartName, firstPartitionName);	/* eg. /dev/rxy0a */
+    String_Cat(partName, partitionName);		/* eg. /dev/rxy0b */
+d196 2
+a197 1
+void		CheckBlocks();
+d203 1
+d215 6
+a247 1
+    unsigned    char      	*fdBitmapPtr;
+a248 1
+    unsigned	char	  	*cylBitmapPtr;
+d254 5
+d324 1
+d359 16
+a374 2
+	    Stat_PrintMsg(status, "CheckFilesystem: Read failed");
+	    Proc_Exit(EXIT_HARD_ERR);
+d376 4
+a379 8
+	CheckFDBitmap(domainPtr, fdNum, block, &tFdBitmapPtr);
+	for (j = 0; 
+	     j < FS_FILE_DESC_PER_BLOCK && fdNum < domainPtr->numFileDesc;
+	     j++, fdNum++, tDescInfoPtr++, fdPtr++) {
+	    Boolean	modified;
+	    fdPtr = (FsFileDescriptor *)&block[j * FS_MAX_FILE_DESC_SIZE];
+	    if (fdPtr->fileType == FS_DIRECTORY) {
+		tDescInfoPtr->flags |= IS_A_DIRECTORY;
+d381 22
+a402 3
+	    if (fdPtr->flags & FS_FD_ALLOC) {
+		if (incVersionNumbers && fdPtr->fileType != FS_DEVICE) {
+		    fdPtr->version++;
+d404 17
+a420 18
+		tDescInfoPtr->flags |= FD_ALLOCATED;
+		tDescInfoPtr->origLinkCount = fdPtr->numLinks;
+    
+		modified = FALSE;
+		CheckBlocks(partFID, domainPtr, fdNum, fdPtr,
+				     cylBitmapPtr, newCylBitmapPtr, &modified);
+	    } else if (badBlockInit && fdNum == FS_BAD_BLOCK_FILE_NUMBER) {
+		int	index;
+		fdPtr->flags = FS_FD_ALLOC;
+		fdPtr->firstByte = -1;
+		fdPtr->lastByte = -1;
+		fdPtr->numKbytes = 0;
+		fdPtr->fileType = FS_FILE;
+		fdPtr->uid = 0;
+		fdPtr->gid = 0;
+		fdPtr->numLinks = 0;
+		for (index = 0; index < FS_NUM_DIRECT_BLOCKS ; index++) {
+		    fdPtr->direct[index] = FS_NIL_INDEX;
+d422 23
+a444 2
+		for (index = 0; index < FS_NUM_INDIRECT_BLOCKS ; index++) {
+		    fdPtr->indirect[index] = FS_NIL_INDEX;
+d446 2
+a447 4
+		modified = TRUE;
+	    }
+	    if (modified) {
+		ModListElement	*modElemPtr;
+d449 8
+a456 7
+		tDescInfoPtr->flags |= ON_MOD_LIST;
+		modElemPtr =
+			(ModListElement *)Mem_Alloc(sizeof(ModListElement));
+		modElemPtr->fdNum = fdNum;
+		Byte_Copy(sizeof(FsFileDescriptor), (Address)fdPtr,
+				(Address)&modElemPtr->fd);
+		List_Insert((List_Links *)modElemPtr, LIST_ATREAR(modList));
+d458 8
+a465 8
+	}
+	if (incVersionNumbers && writeDisk) {
+	    status = BlockWrite(partFID, domainPtr,
+				domainPtr->fileDescOffset + i,
+				1, (Address) block);
+	    if (status != SUCCESS) {
+		Stat_PrintMsg(status, "CheckFileSystem: FD write failed");
+		Proc_Exit(EXIT_HARD_ERR);
+d501 4
+d506 7
+d554 2
+a555 1
+    WriteFileDesc(partFID, domainPtr);
+d777 1
+a777 1
+WriteFileDesc(partFID, domainPtr)
+d780 3
+d789 1
+d791 2
+a792 1
+    LIST_FORALL(modList, (List_Links *)modElemPtr) {
+d797 15
+a811 4
+	status = BlockRead(partFID, domainPtr, blockNum, 1, (Address) block);
+	if (status != SUCCESS) {
+	    Stat_PrintMsg(status, "WriteFileDesc: Read failed");
+	    Proc_Exit(EXIT_HARD_ERR);
+d813 4
+d861 2
+a862 1
+    summaryInfoPtr->numFreeFileDesc = domainPtr->numFileDesc - numFiles;
+d964 1
+d969 38
+d1021 1
+a1021 2
+CheckBlocks(partFID, domainPtr, fdNum, fdPtr, cylBitmapPtr,
+		newCylBitmapPtr, modifiedPtr)
+a1025 1
+    unsigned char 	*cylBitmapPtr;
+d1175 3
+d1338 3
+d1469 92
+@
+
+
+1.21.1.1
+log
+@almost works, except when it writes back the descriptor.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkFS.c,v 1.21 88/06/06 12:02:40 brent Exp $ SPRITE (Berkeley)";
+a24 1
+int	numBadDesc = 0;
+d134 6
+a139 6
+    (void)String_Copy(devDirectory, firstPartitionName);  /* eg. /dev/ */
+    (void)String_Copy(devDirectory, partitionName);    
+    (void)String_Cat(deviceName, firstPartitionName);	  /* eg. /dev/rxy0 */
+    (void)String_Cat(deviceName, partitionName);    
+    (void)String_Cat(firstPartName, firstPartitionName);  /* eg. /dev/rxy0a */
+    (void)String_Cat(partName, partitionName);		  /* eg. /dev/rxy0b */
+d195 1
+a195 2
+void		SetBadDescBitmap();
+void		RelocateFD();
+a200 1
+List_Links	relocListHdr;
+a211 6
+/*
+ * Number of file descriptors in a sector, if we have to go through
+ * the sectors individually.
+ */
+#define FILE_DESC_PER_SECTOR (FS_FILE_DESC_PER_BLOCK / SECTORS_PER_BLOCK)
+
+d239 1
+d241 1
+a246 5
+    int				sector;
+    unsigned int		validMask;
+    Boolean			valid;
+    Boolean			salvage;
+    RelocListElement		*relocElemPtr;
+a311 1
+    List_Init(relocList);
+d346 2
+a347 16
+	    /*
+	     * Hit a disk error reading the block.  Read it a sector
+	     * at a time and try to salvage what we can.
+	     */
+	    Stat_PrintMsg(status, "CheckFilesystem: BlockRead: Read failed");
+	    validMask = Disk_BadBlockRead(partFID, domainPtr,
+					  domainPtr->fileDescOffset + i,
+					  (Address) block);
+	    SetBadDescBitmap(domainPtr, fdNum, &tFdBitmapPtr);
+	    salvage = TRUE;
+					  
+
+	} else {
+	    CheckFDBitmap(domainPtr, fdNum, block, &tFdBitmapPtr);
+	    salvage = FALSE;
+	    valid = TRUE;
+d349 8
+a356 4
+	for (sector = 0; sector < SECTORS_PER_BLOCK; sector++) {
+	    if (salvage) {
+		valid = (validMask & (1 << sector)) != 0;
+		numBadDesc++;
+d358 3
+a360 22
+	    for (j = 0; 
+		 j < FILE_DESC_PER_SECTOR && fdNum < domainPtr->numFileDesc;
+		 j++, fdNum++, tDescInfoPtr++, fdPtr++) {
+
+		Boolean	modified = FALSE;
+		fdPtr = (FsFileDescriptor *)
+			&block[(j + (FILE_DESC_PER_SECTOR * sector)) *
+			       FS_MAX_FILE_DESC_SIZE];
+		if (valid) {
+		    if (fdPtr->fileType == FS_DIRECTORY) {
+			tDescInfoPtr->flags |= IS_A_DIRECTORY;
+		    }
+		    if (fdPtr->flags & FS_FD_ALLOC) {
+			if (incVersionNumbers && fdPtr->fileType != FS_DEVICE) {
+			    fdPtr->version++;
+			}
+			tDescInfoPtr->flags |= FD_ALLOCATED;
+			tDescInfoPtr->origLinkCount = fdPtr->numLinks;
+
+			CheckBlocks(partFID, domainPtr, fdNum, fdPtr,
+				    newCylBitmapPtr, &modified);
+		    }
+d362 18
+a379 17
+		if (salvage) {
+		    if (valid && (fdPtr->flags & FS_FD_ALLOC)) {
+			RelocListElement	*relocElemPtr;
+
+			tDescInfoPtr->flags |= FD_RELOCATE;
+			relocElemPtr = (RelocListElement *)
+				Mem_Alloc(sizeof(RelocListElement));
+			relocElemPtr->origFdNum = fdNum;
+			relocElemPtr->newFdNum = -1;
+			Byte_Copy(sizeof(FsFileDescriptor), (Address)fdPtr,
+				  (Address)&relocElemPtr->fd);
+			List_Insert((List_Links *)relocElemPtr,
+				    LIST_ATREAR(relocList));
+		    }
+		    if (!valid) {
+			tDescInfoPtr->flags |= FD_UNREADABLE;
+		    }
+d381 2
+a382 23
+		/*
+		 * Essentially the same code is used to zero out an unuseable
+		 * descriptor and to initialize the bad block descriptor.
+		 */
+		if ((badBlockInit && fdNum == FS_BAD_BLOCK_FILE_NUMBER) ||
+		        salvage) {
+		    int	index;
+
+		    fdPtr->flags = valid ? FS_FD_ALLOC : FS_FD_FREE;
+		    fdPtr->firstByte = -1;
+		    fdPtr->lastByte = -1;
+		    fdPtr->numKbytes = 0;
+		    fdPtr->fileType = FS_FILE;
+		    fdPtr->uid = 0;
+		    fdPtr->gid = 0;
+		    fdPtr->numLinks = 0;
+		    for (index = 0; index < FS_NUM_DIRECT_BLOCKS ; index++) {
+			fdPtr->direct[index] = FS_NIL_INDEX;
+		    }
+		    for (index = 0; index < FS_NUM_INDIRECT_BLOCKS ; index++) {
+			fdPtr->indirect[index] = FS_NIL_INDEX;
+		    }
+		    modified = TRUE;
+d384 4
+a387 2
+		if (modified) {
+		    ModListElement	*modElemPtr;
+d389 7
+a395 8
+		    tDescInfoPtr->flags |= ON_MOD_LIST;
+		    modElemPtr =
+			    (ModListElement *)Mem_Alloc(sizeof(ModListElement));
+		    modElemPtr->fdNum = fdNum;
+		    Byte_Copy(sizeof(FsFileDescriptor), (Address)fdPtr,
+				    (Address)&modElemPtr->fd);
+		    List_Insert((List_Links *)modElemPtr, LIST_ATREAR(modList));
+		}
+d397 8
+a404 8
+	    if (incVersionNumbers && writeDisk) {
+		status = BlockWrite(partFID, domainPtr,
+				    domainPtr->fileDescOffset + i,
+				    1, (Address) block);
+		if (status != SUCCESS) {
+		    Stat_PrintMsg(status, "CheckFileSystem: FD write failed");
+		    Proc_Exit(EXIT_HARD_ERR);
+		}
+a439 4
+    /*
+     * We now know which descriptors, if any, need to be relocated.  Allocate
+     * new descriptors to hold the information.
+     */
+a440 7
+    if (!(List_IsEmpty(relocList))) {
+	LIST_FORALL(relocList, (List_Links *)relocElemPtr) {
+	    RelocateFD(domainPtr, descInfoPtr, relocElemPtr);
+	}
+    }
+	
+
+d482 1
+a482 2
+    WriteFileDesc(partFID, domainPtr, modList);
+    WriteFileDesc(partFID, domainPtr, relocList);
+d704 1
+a704 1
+WriteFileDesc(partFID, domainPtr, listPtr)
+a706 1
+    List_Links			*listPtr;
+d714 1
+a714 1
+    LIST_FORALL(listPtr, (List_Links *)modElemPtr) {
+d768 1
+a768 2
+    summaryInfoPtr->numFreeFileDesc = domainPtr->numFileDesc - numFiles -
+	    numBadDesc;
+a869 1
+
+a873 38
+ * SetBadDescBitmap --
+ *
+ *	Go through the bitmaps and flag all the bits for this block as
+ *	allocated.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+SetBadDescBitmap(domainPtr, fdNum, bitmapPtrPtr)
+    register	FsDomainHeader	 *domainPtr;
+    int				 fdNum;
+    register	unsigned char 	 **bitmapPtrPtr;
+{
+    int				i, j;
+    register unsigned char 	*bitmaskPtr;
+
+    for (i = 0; i < FS_FILE_DESC_PER_BLOCK / BITS_PER_BYTE && 
+		fdNum < domainPtr->numFileDesc;
+	     i++, (*bitmapPtrPtr)++){
+	for (j = 0, bitmaskPtr = bitmasks; 
+	     j < BITS_PER_BYTE && fdNum < domainPtr->numFileDesc; 
+	     j++, fdNum++, bitmaskPtr++) {
+
+	     **bitmapPtrPtr |= *bitmaskPtr;
+	 }
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+d888 2
+a889 1
+CheckBlocks(partFID, domainPtr, fdNum, fdPtr, newCylBitmapPtr, modifiedPtr)
+d894 1
+a1331 92
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RelocateFD ---
+ *
+ *	Allocate a new file descriptor as close to the old one as possible.
+ *	This is used to relocate descriptors in blocks that get I/O errors.
+ *	This code is based on the kernel routine FsGetNewFileNumber.
+ *	
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The new descriptor is marked as allocated in the bitmap.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+RelocateFD(domainPtr, descInfoPtr, relocPtr)
+    register FsDomainHeader *domainPtr;	/* Domain to allocate the file 
+					 * descriptor out of. */
+    FdInfo *descInfoPtr;		/* information for each file
+					 * descriptor */
+    RelocListElement *relocPtr;		/* Pointer to information for old
+					 * descriptor. */
+{
+    register int 	   	i;
+    register int		j;
+    int				startByte;
+    register unsigned char 	*bitmapPtr;
+    register unsigned char 	*bitmaskPtr;
+    Boolean		   	found = FALSE;
+    static Boolean	   	outOfDescriptors = FALSE;
+    int			   	descBytes;
+
+    /*
+     * If we can't relocate it, chuck it.
+     */
+    if (outOfDescriptors) {
+	descInfoPtr[relocPtr->origFdNum].flags |= FD_UNREADABLE;
+	return;
+    }
+
+    /*
+     * Linear search forward the bit map a byte at a time.
+     */
+    startByte = relocPtr->origFdNum / BITS_PER_BYTE;
+    bitmapPtr = &fdBitmapPtr[startByte];
+    descBytes = domainPtr->numFileDesc >> 3;
+    i = startByte;
+    do {
+	if (*bitmapPtr != 0xff) {
+	    found = TRUE;
+	    break;
+	}
+	i++;
+	if (i == descBytes) {
+	    i = 0;
+	    bitmapPtr = fdBitmapPtr;
+	} else {
+	    bitmapPtr++;
+	}
+    } while (i != startByte);
+
+    if (!found) {
+	/*
+	 * Couldn't relocate it, so throw it away and pretend we couldn't
+	 * recover it.
+	 */
+	if (!outOfDescriptors) {
+	    Sys_Panic(SYS_WARNING, "RelocateFD: out of file descriptors.\n");
+	} else {
+	    outOfDescriptors = TRUE;
+	}
+	descInfoPtr[relocPtr->origFdNum].flags |= FD_UNREADABLE;
+	return;
+    }
+
+    /*
+     * Now find which file descriptor is free within the byte.
+     */
+    for (j = 0, bitmaskPtr = bitmasks; 
+	 j < 8 && (*bitmapPtr & *bitmaskPtr) != 0; 
+	 j++, bitmaskPtr++) {
+    }
+    relocPtr->newFdNum = i * 8 + j;
+    *bitmapPtr |= *bitmaskPtr;
+@
+
+
+1.20
+log
+@Fixed so it returns consistent error codes that can be
+checked by the diskcmds script.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkFS.c,v 1.1 88/05/11 17:37:08 brent Exp $ SPRITE (Berkeley)";
+d914 1
+d916 1
+a916 5
+	return;
+    }
+    lastBlock = fdPtr->lastByte / FS_BLOCK_SIZE;
+    if (lastBlock < FS_NUM_DIRECT_BLOCKS) {
+	lastFrag = (fdPtr->lastByte & FS_BLOCK_OFFSET_MASK) / FS_FRAGMENT_SIZE;
+d918 6
+a923 1
+	lastFrag = FS_FRAGMENTS_PER_BLOCK - 1;
+a924 1
+    lastRealBlock = -1;
+d929 10
+a938 2
+    for (i = 0; i < FS_NUM_DIRECT_BLOCKS && i <= lastBlock; i++) {
+	if (fdPtr->direct[i] != FS_NIL_INDEX) {
+d1102 1
+a1102 2
+	fdPtr->lastByte = 
+			    (lastRealBlock + 1) * FS_BLOCK_SIZE - 1;
+d1119 22
+@
+
+
+1.19
+log
+@Set error status flag on error.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkFS.c,v 1.18 87/10/21 10:37:47 nelson Exp $ SPRITE (Berkeley)";
+d17 1
+a17 1
+#include "fsDisk.h"
+d48 1
+d51 4
+a54 2
+    {OPT_TRUE, 'c', (Address)&clearDomainNumber,
+	"Clear the domain number field stored in the summary sector"},
+d59 2
+a60 8
+    {OPT_TRUE, 'r', (Address)&recoveryCheck,
+     "The domain wasn't synced => increment all version numbers for recovery."},
+    {OPT_STRING, 'D', (Address)&deviceName,
+	"Required: Name of device, eg \"rsd0\" or \"rxy1\""},
+    {OPT_TRUE, 'H', (Address)&patchHeader,
+	"Update the host ID in the disk header"},
+    {OPT_STRING, 'P', (Address)&partName,
+	"Required: Partition ID: (a, b, c, d, e, f, g)"},
+d65 8
+a72 2
+    {OPT_TRUE, 'W', (Address)&writeDisk,
+	"Write disk (FALSE)"},
+d97 3
+a99 1
+ *	None.
+d123 1
+a123 1
+	Proc_Exit(FAILURE);
+d127 1
+a127 1
+	Proc_Exit(FAILURE);
+d144 1
+a144 1
+	Proc_Exit(status);
+d153 1
+a153 1
+	Proc_Exit(status);
+d160 1
+a160 1
+	Proc_Exit(FAILURE);
+d167 1
+a167 1
+	Proc_Exit(-1);
+d169 1
+a169 1
+	Proc_Exit(0);
+d256 1
+a256 1
+	Proc_Exit(status);
+d347 1
+a347 1
+	    Proc_Exit(status);
+d404 1
+a404 1
+		Proc_Exit(status);
+d515 1
+a515 1
+	Proc_Exit(status);
+d547 1
+a547 1
+	Proc_Exit(status);
+d583 1
+a583 1
+	Proc_Exit(status);
+d616 1
+a616 1
+	Proc_Exit(status);
+d650 1
+a650 1
+	Proc_Exit(status);
+d683 1
+a683 1
+	Proc_Exit(status);
+d722 1
+a722 1
+	    Proc_Exit(status);
+d729 1
+a729 1
+	    Proc_Exit(status);
+d765 1
+a765 1
+	Proc_Exit(status);
+d778 1
+a778 1
+	Proc_Exit(status);
+d811 1
+a811 1
+	Proc_Exit(status);
+d1040 1
+a1040 1
+	    Proc_Exit(status);
+d1077 1
+a1077 1
+		    Proc_Exit(status);
+d1173 8
+d1182 1
+d1187 1
+a1191 7
+    status = BlockRead(partFID, domainPtr, 
+		       *blockNumPtr / FS_FRAGMENTS_PER_BLOCK, 1, 
+		       (Address) indirectBlock);
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "ProcessIndirectBlock: Read failed");
+	Proc_Exit(status);
+    }
+d1227 1
+a1227 1
+		Proc_Exit(status);
+@
+
+
+1.18
+log
+@Added ability to handle the bad block file.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkFS.c,v 1.17 87/10/15 15:16:16 nelson Exp $ SPRITE (Berkeley)";
+d26 1
+d161 5
+d424 1
+d428 1
+d855 1
+d859 1
+d941 1
+d1021 1
+d1095 1
+d1104 1
+d1160 1
+d1196 1
+d1263 1
+d1271 1
+d1287 1
+@
+
+
+1.17
+log
+@Don't increment version on devices for recovery.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkFS.c,v 1.16 87/10/12 17:49:03 nelson Exp $ SPRITE (Berkeley)";
+d46 1
+d69 2
+d352 22
+a374 5
+	    tDescInfoPtr->origLinkCount = fdPtr->numLinks;
+
+	    modified = FALSE;
+	    CheckBlocks(partFID, domainPtr, fdNum, fdPtr,
+				 cylBitmapPtr, newCylBitmapPtr, &modified);
+@
+
+
+1.16
+log
+@Added recovery when detect that disk is not safely taken off line.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkFS.c,v 1.15 87/09/30 10:48:45 nelson Exp $ SPRITE (Berkeley)";
+d345 1
+a345 1
+		if (incVersionNumbers) {
+@
+
+
+1.15
+log
+@Changed to understand that Kbytes free is really kbytes and not bytes.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkFS.c,v 1.14 87/08/10 10:48:03 nelson Exp $ SPRITE (Berkeley)";
+d44 2
+d48 8
+d58 2
+a61 4
+    {OPT_STRING, 'd', (Address)&devDirectory,
+	"Name of device directory (\"/dev/\")"},
+    {OPT_STRING, 'p', (Address)&firstPartName,
+	"Name of initial partition (\"a\")"},
+d64 2
+a67 4
+    {OPT_TRUE, 'H', (Address)&patchHeader,
+	"Update the host ID in the disk header"},
+    {OPT_TRUE, 'V', (Address)&verbose,
+	"Output information about differences in bitmaps (FALSE)"},
+d74 3
+a76 1
+void CheckFilesystem();
+d280 1
+a280 2
+     * Read in the file descriptor bit map, the cylinder bit map and the
+     * file descriptors.
+d300 13
+d345 3
+d367 9
+d390 1
+a390 1
+     	        i < domainPtr->dataCylinders; 
+d738 4
+d748 34
+@
+
+
+1.14
+log
+@Changed to use new method that requires much less memory.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkFS.c,v 1.13 87/07/14 14:37:17 nelson Exp $ SPRITE (Berkeley)";
+d686 1
+a686 1
+WriteSummaryInfo(partFID, diskInfoPtr, domainPtr, numFreeKblocks, numFiles)
+d690 1
+a690 1
+    int		numFreeKblocks;	/* Number of 1 Kbyte blocks. */
+d705 1
+a705 1
+	(domainPtr->dataBlocks * 4 - numFreeKblocks) * FS_FRAGMENT_SIZE;   
+@
+
+
+1.13
+log
+@Allow lost and found to be anywhere, not just fd 3.  This allows a corrupted
+lost and found directory to be easily recreated.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkFS.c,v 1.12 87/07/14 11:32:12 brent Exp $ SPRITE (Berkeley)";
+d68 1
+a68 1
+ReturnStatus CheckFilesystem();
+d100 1
+d106 1
+a106 1
+	status = FAILURE;
+d110 1
+a110 1
+	status = FAILURE;
+a111 3
+    if (status != SUCCESS) {
+	Proc_Exit(status);
+    }
+d126 1
+a126 2
+	Io_PrintStream(io_StdErr, "Can't open first partition \"%s\" <%x>\n",
+				  firstPartitionName, status);
+d129 5
+a133 1
+    status = Fs_Open(partitionName, FS_READ|FS_WRITE, 0, &partFID);
+d135 1
+a135 2
+	Io_PrintStream(io_StdErr,"Can't open partition to dump \"%s\" <%x>\n",
+				  partitionName, status);
+d142 1
+a142 1
+	       "Can't determine partition index from the partition name\n");
+d145 1
+a145 1
+    status = CheckFilesystem(firstPartFID, partFID, partition);
+a146 2
+    Io_Flush(io_StdErr);
+    Io_Flush(io_StdOut);
+a148 1
+    Proc_Exit(status);
+d161 3
+d167 5
+d173 1
+a173 1
+ReturnStatus	CheckBlocks();
+d178 2
+d206 1
+a206 1
+ReturnStatus
+d212 4
+a215 3
+    ReturnStatus  	  status;
+    BasicDiskInfo 	  *diskInfoPtr;
+    register	FdInfo	  *descInfoPtr;
+d217 8
+a224 3
+    unsigned    char      *fdBitmapPtr;
+    unsigned	char	  *cylBitmapPtr;
+    unsigned	char	  *newCylBitmapPtr;
+d232 3
+a234 1
+	return(FAILURE);
+d241 2
+a242 6
+    status = ReadDomainHeader(partFID, diskInfoPtr, domainPtr);
+    if (status != SUCCESS) {
+	Io_PrintStream(io_StdErr, "DomainHeader read failed <%x>\n", status);
+	Io_Flush(io_StdErr);
+	return(status);
+    }
+a275 5
+    if (fdBitmapPtr == (unsigned char *) NULL) {
+	Io_PrintStream(io_StdErr, "File desc bitmap read failed.\n");
+	Io_Flush(io_StdErr);
+	return(FAILURE);
+    }
+a276 5
+    if (cylBitmapPtr == (unsigned char *) NULL) {
+	Io_PrintStream(io_StdErr, "Cylinder bitmap read failed.\n");
+	Io_Flush(io_StdErr);
+	return(FAILURE);
+    }
+a280 7
+    descInfoPtr = ReadFileDesc(partFID, domainPtr);
+    if (descInfoPtr == (FdInfo *) NULL) {
+	Io_PrintStream(io_StdErr, "File descriptor read failed.\n");
+	Io_Flush(io_StdErr);
+	return(FAILURE);
+    }
+	
+d282 1
+a282 1
+     * Recreate the file descriptor bit map.
+d284 2
+a285 3
+    if (!silent) {
+	Io_PrintStream(io_StdErr, "Checking file descriptor bitmap:\n");
+    }
+a286 6
+    CheckFDBitmap(fdBitmapPtr, descInfoPtr, domainPtr);
+
+    /*
+     * Check the block counts and make sure that all blocks are
+     * referenced.  Also recreate the data block bitmap.
+     */
+d290 1
+d292 5
+d298 1
+a298 1
+	Io_PrintStream(io_StdErr, "\nChecking file blocks:\n");
+d301 43
+a343 7
+    status = CheckBlocks(cylBitmapPtr, newCylBitmapPtr, descInfoPtr, 
+			 partFID, domainPtr);
+    if (status != SUCCESS) {
+	Io_PrintStream(io_StdErr, "Indirect block read failed with status %x\n",
+			status);
+	Io_Flush(io_StdErr);
+	return(status);
+d345 1
+a345 1
+    
+d347 30
+d384 1
+a384 8
+    status = CheckDirTree(partFID, domainPtr, descInfoPtr);
+    if (status != SUCCESS) {
+	Io_PrintStream(io_StdErr, 
+		       "Checking directory tree returned status %x\n",
+		       status);
+	Io_Flush(io_StdErr);
+	return(status);
+    }
+d395 1
+a395 1
+	return(SUCCESS);
+d411 8
+a418 19
+    status = WriteFileDescBitmap(partFID, domainPtr, fdBitmapPtr);
+    if (status != SUCCESS) {
+	Io_PrintStream(io_StdErr, "File desc bitmap write failed.\n");
+	Io_Flush(io_StdErr);
+	return(status);
+    }
+    status = WriteBitmap(partFID, domainPtr, newCylBitmapPtr);
+    if (status != SUCCESS) {
+	Io_PrintStream(io_StdErr, "Cylinder bitmap write failed.\n");
+	Io_Flush(io_StdErr);
+	return(status);
+    }
+    status = WriteFileDesc(partFID, domainPtr, descInfoPtr);
+    if (status != SUCCESS) {
+	Io_PrintStream(io_StdErr, "File descriptor write failed.\n");
+	Io_Flush(io_StdErr);
+	return(status);
+    }
+    status = WriteSummaryInfo(partFID, diskInfoPtr, domainPtr, 
+a419 7
+    if (status != SUCCESS) {
+	Io_PrintStream(io_StdErr, "Summary info write failed.\n");
+	Io_Flush(io_StdErr);
+	return(status);
+    }
+
+    return(SUCCESS);
+d431 1
+a431 1
+ *	A return code from the read.
+d438 1
+a438 2
+
+ReturnStatus
+d448 4
+a451 1
+    return(status);
+d463 1
+a463 1
+ *	A return code from the read.
+d470 1
+a470 2
+
+ReturnStatus
+d480 4
+a483 1
+    return(status);
+d490 1
+a490 1
+ * ReadFileDescBitmap --
+d517 2
+a518 3
+	return((unsigned char *) NULL);
+    } else {
+	return(bitmap);
+d520 1
+d532 1
+a532 1
+ *	A return status.
+d539 1
+a539 1
+ReturnStatus
+d545 8
+a552 2
+    return(BlockWrite(partFID, domainPtr, domainPtr->fdBitmapOffset,
+		      domainPtr->fdBitmapBlocks, (Address)bitmap));
+d584 2
+a585 3
+	return((unsigned char *) NULL);
+    } else {
+	return(bitmap);
+d587 1
+d606 1
+a606 1
+ReturnStatus
+d612 1
+a612 3
+    return(BlockWrite(partFID, domainPtr, domainPtr->bitmapOffset,
+		      domainPtr->bitmapBlocks, (Address) bitmap));
+}
+d614 5
+a618 54
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ReadFileDesc --
+ *
+ *	Read the file descriptors off of disk.
+ *
+ * Results:
+ *	A pointer to an array of file descriptor info structs.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+FdInfo *
+ReadFileDesc(partFID, domainPtr)
+    int partFID;
+    register FsDomainHeader *domainPtr;
+{
+    ReturnStatus 	status;
+    FdInfo		*retPtr;
+    char	 	block[FS_BLOCK_SIZE];
+    register	FdInfo	*fdInfoPtr;
+    register	 int 	i;
+    register	 int 	j;
+    int		 	fdsRead;
+
+    fdInfoPtr = (FdInfo *) Mem_Alloc(domainPtr->numFileDesc * sizeof(FdInfo));
+    retPtr = fdInfoPtr;
+
+    fdsRead = 0;
+    for (i = 0; 
+	 i < (domainPtr->numFileDesc + FS_FILE_DESC_PER_BLOCK - 1) / 
+		FS_FILE_DESC_PER_BLOCK;
+	 i++) {
+	status = BlockRead(partFID, domainPtr, domainPtr->fileDescOffset + i,
+				1, (Address) block);
+	if (status != SUCCESS) {
+	    return((FdInfo *) NULL);
+	}
+	for (j = 0; 
+	     j < FS_FILE_DESC_PER_BLOCK && fdsRead < domainPtr->numFileDesc;
+	     j++, fdsRead++, fdInfoPtr++) {
+	     Byte_Copy(sizeof(FsFileDescriptor), 
+		       (Address) &block[j * FS_MAX_FILE_DESC_SIZE],
+		       (Address) &fdInfoPtr->fileDesc);
+	     fdInfoPtr->linkCount = 0;
+	     fdInfoPtr->parentLinkCount = 0;
+	     fdInfoPtr->blockCount = 0;
+	     fdInfoPtr->seen = FALSE;
+	}
+a619 2
+
+    return(retPtr);
+d631 1
+a631 1
+ *	A pointer to an array of file descriptor info structs.
+d634 1
+a634 1
+ *	None.
+d638 2
+a639 3
+
+ReturnStatus
+WriteFileDesc(partFID, domainPtr, fdInfoPtr)
+a641 1
+    register	FdInfo		*fdInfoPtr;
+d644 4
+a647 4
+    char	 	block[FS_BLOCK_SIZE];
+    register	 int 	i;
+    register	 int 	j;
+    int		 	fdsWritten;
+d649 9
+a657 11
+    fdsWritten = 0;
+    for (i = 0; 
+	 i < (domainPtr->numFileDesc + FS_FILE_DESC_PER_BLOCK - 1) / 
+		FS_FILE_DESC_PER_BLOCK;
+	 i++) {
+	for (j = 0; 
+	     j < FS_FILE_DESC_PER_BLOCK && fdsWritten < domainPtr->numFileDesc;
+	     j++, fdsWritten++, fdInfoPtr++) {
+	     Byte_Copy(sizeof(FsFileDescriptor), 
+		       (Address) &fdInfoPtr->fileDesc,
+		       (Address) &block[j * FS_MAX_FILE_DESC_SIZE]);
+d659 3
+a661 2
+	status = BlockWrite(partFID, domainPtr, domainPtr->fileDescOffset + i,
+				1, (Address) block);
+d663 2
+a664 1
+	    return(status);
+a666 2
+
+    return(SUCCESS);
+d678 1
+a678 1
+ *	A return code from the read or write.
+d685 1
+a685 1
+ReturnStatus
+d699 2
+a700 1
+	return(status);
+d708 2
+a709 1
+	return(status);
+d734 5
+a738 4
+CheckFDBitmap(bitmapPtr, fdInfoPtr, domainPtr)
+    register	unsigned char 	*bitmapPtr;
+    register	FdInfo		*fdInfoPtr;
+    register	FsDomainHeader	*domainPtr;
+d740 4
+a743 3
+    int	i, j, fd;
+    register unsigned char *bitmaskPtr;
+    Boolean		   allocated;
+d745 4
+a748 3
+    for (fd = 0, i = 0; 
+	 i < (domainPtr->numFileDesc + BITS_PER_BYTE - 1) / BITS_PER_BYTE; 
+	 i++, bitmapPtr++){
+d750 11
+a760 9
+	     j < BITS_PER_BYTE && fd < domainPtr->numFileDesc; 
+	     j++, fd++, bitmaskPtr++) {
+	    allocated = *bitmapPtr & *bitmaskPtr;
+	    if (allocated && (fdInfoPtr->fileDesc.flags & FS_FD_FREE)) {
+		Io_PrintStream(io_StdErr, "Free file descriptor %d allocated in bitmap.  Bitmap corrected.\n", fd);
+		*bitmapPtr &= ~*bitmaskPtr;
+	    } else if (!allocated && !(fdInfoPtr->fileDesc.flags& FS_FD_FREE)) {
+		Io_PrintStream(io_StdErr, "Allocated file descriptor %d free in bitmap.  Bitmap corrected.\n", fd);
+		*bitmapPtr |= *bitmaskPtr;
+a761 1
+	    fdInfoPtr++;
+a763 1
+    Io_Flush(io_StdErr);
+d782 7
+a788 3
+
+ReturnStatus
+CheckBlocks(cylBitmapPtr, newCylBitmapPtr, descInfoPtr, partFID, domainPtr)
+d791 1
+a791 3
+    register FdInfo	*descInfoPtr;
+    int 		partFID;
+    FsDomainHeader	*domainPtr;
+a793 2
+    register unsigned char 	*oldPtr;
+    register unsigned char 	*newPtr;
+a794 1
+    int				fd;
+a800 1
+    int				blockNum;
+d803 1
+d805 14
+a818 16
+    for (fd = 0; fd < domainPtr->numFileDesc; fd++, descInfoPtr++) {
+	if (!(descInfoPtr->fileDesc.flags & FS_FD_ALLOC)) {
+	    continue;
+	}
+	numFiles++;
+	if (descInfoPtr->fileDesc.lastByte == -1) {
+	    continue;
+	}
+	lastBlock = descInfoPtr->fileDesc.lastByte / FS_BLOCK_SIZE;
+	if (lastBlock < FS_NUM_DIRECT_BLOCKS) {
+	    lastFrag = (descInfoPtr->fileDesc.lastByte & FS_BLOCK_OFFSET_MASK) /
+			    FS_FRAGMENT_SIZE;
+	} else {
+	    lastFrag = FS_FRAGMENTS_PER_BLOCK - 1;
+	}
+	lastRealBlock = -1;
+d820 12
+a831 15
+	/*
+	 * First check direct blocks.
+	 */
+	for (i = 0; i < FS_NUM_DIRECT_BLOCKS && i <= lastBlock; i++) {
+	    if (descInfoPtr->fileDesc.direct[i] != FS_NIL_INDEX) {
+		if (i == lastBlock) {
+		    status = MarkBitmap(fd, descInfoPtr->fileDesc.direct[i],
+				        newCylBitmapPtr,
+			                lastFrag + 1, domainPtr);
+		    if (status == SUCCESS) {
+			if (lastFrag + 1 != FS_FRAGMENTS_PER_BLOCK) {
+			    numFrags++;
+			}
+			descInfoPtr->blockCount += lastFrag + 1;
+			numBlocks += lastFrag + 1;
+d833 9
+d843 6
+a848 13
+		    if (descInfoPtr->fileDesc.direct[i] & 
+			(FS_FRAGMENTS_PER_BLOCK - 1)) {
+			Io_PrintStream(io_StdErr, "Fragmented block that is not the last in file %d. Block deleted.\n",
+					fd);
+			status = FAILURE;
+		    } else {
+			status = MarkBitmap(fd, descInfoPtr->fileDesc.direct[i],
+					    newCylBitmapPtr,
+					    FS_FRAGMENTS_PER_BLOCK, domainPtr);
+			if (status == SUCCESS) {
+			    descInfoPtr->blockCount += FS_FRAGMENTS_PER_BLOCK;
+			    numBlocks += FS_FRAGMENTS_PER_BLOCK;
+			}
+a850 8
+		if (status != SUCCESS) {
+		    descInfoPtr->fileDesc.direct[i] = FS_NIL_INDEX;
+		} else {
+		    lastRealBlock = i;
+		}
+	    } else if (descInfoPtr->fileDesc.fileType == FS_DIRECTORY) {
+		Io_PrintStream(io_StdErr, "Hole in directory %d.\n", fd);
+		goto truncFile;
+d852 3
+a854 6
+	}
+	if (i > lastBlock) {
+	    if (lastRealBlock != lastBlock) {
+		Io_PrintStream(io_StdErr, "Missing last block in file %d.\n",
+			       fd);
+		goto truncFile;
+d856 1
+a856 1
+		goto checkBlockCount;
+d858 3
+d862 10
+d873 72
+a944 8
+	/*
+	 * Now check the singly indirect block.
+	 */
+	if (descInfoPtr->fileDesc.indirect[0] == FS_NIL_INDEX) {
+	    if (descInfoPtr->fileDesc.fileType == FS_DIRECTORY) {
+		Io_PrintStream(io_StdErr, "Hole in directory %d because single indirect block is NIL.\n",
+				fd);
+		goto truncFile;
+a945 2
+	    i += FS_INDICES_PER_BLOCK;
+	} else {
+d947 5
+a951 5
+	    status = ProcessIndirectBlock(fd, descInfoPtr, 
+					  &descInfoPtr->fileDesc.indirect[0],
+			                  newCylBitmapPtr, partFID, domainPtr, 
+					  lastBlock, &tBlock, &dirty, 
+					  &lastRealBlock);
+d954 2
+a955 2
+		Io_PrintStream(io_StdErr, "Hole in directory %d in single indirect block\n",
+				fd);
+d958 2
+a959 1
+		return(status);
+d963 8
+a970 43
+	if (i > lastBlock) {
+	    if (lastRealBlock != lastBlock) {
+		Io_PrintStream(io_StdErr, "Missing last block in singly indirect block for file %d\n",
+				fd);
+		goto truncFile;
+	    } else {
+		goto checkBlockCount;
+	    }
+	} else if (descInfoPtr->fileDesc.indirect[1] == FS_NIL_INDEX) {
+	    Io_PrintStream(io_StdErr, "Last block missing in file %d because doubly indirect block is nil\n", fd);
+	    goto truncFile;
+	}
+
+	/*
+	 * Now check doubly indirect blocks.
+	 */
+	indBlock = descInfoPtr->fileDesc.indirect[1];
+	if (indBlock & (FS_FRAGMENTS_PER_BLOCK - 1)) {
+	    Io_PrintStream(io_StdErr, "Doubly indirect block on non-block boundary for file %d.  Block deleted.\n", fd);
+	    status = FAILURE;
+	} else {
+	    status = MarkBitmap(fd, 
+		    indBlock - domainPtr->dataOffset * FS_FRAGMENTS_PER_BLOCK, 
+		    newCylBitmapPtr,
+		    FS_FRAGMENTS_PER_BLOCK, domainPtr);
+	}
+	if (status == SUCCESS) {
+	    status = BlockRead(partFID, domainPtr, 
+			       indBlock / FS_FRAGMENTS_PER_BLOCK,
+			       1, (Address) dblIndirectBlock);
+	    if (status != SUCCESS) {
+		return(status);
+	    }
+	    for (j = 0, indexPtr = (int *) dblIndirectBlock; 
+		 j < FS_INDICES_PER_BLOCK && i <= lastBlock; 
+		 j++, indexPtr++) {
+		if (*indexPtr == FS_NIL_INDEX) {
+		    if (descInfoPtr->fileDesc.fileType == FS_DIRECTORY) {
+			Io_PrintStream(io_StdErr, "Hole in directory %d in doubly indirect block\n",
+				fd);
+			goto truncFile;
+		    }
+		    continue;
+a971 14
+		tBlock = i;
+		status = ProcessIndirectBlock(fd, descInfoPtr, indexPtr, 
+					      newCylBitmapPtr, 
+					      partFID, domainPtr, lastBlock, 
+					      &tBlock, &dirty, &lastRealBlock);
+		i = tBlock;
+		if (status == DIR_HOLE) {
+		    Io_PrintStream(io_StdErr, "Hole in directory %d in doubly indirect blocks (2)\n",
+				   fd);
+		    goto truncFile;
+		} else if (status != SUCCESS) {
+		    return(status);
+		}
+		numBlocks += FS_FRAGMENTS_PER_BLOCK;
+a972 14
+	    if (dirty) {
+		if (writeDisk) {
+		    status = BlockWrite(partFID, domainPtr, 
+			       indBlock / FS_FRAGMENTS_PER_BLOCK,
+			       1, (Address) dblIndirectBlock);
+		    if (status != SUCCESS) {
+			Io_PrintStream(io_StdErr, "Could not write back indirect block\n");
+			Io_Flush(io_StdErr);
+			return(status);
+		    }
+		}
+	    }
+	} else {
+	    descInfoPtr->fileDesc.indirect[1] = FS_NIL_INDEX;
+d974 4
+d979 3
+a981 3
+	if (lastRealBlock == lastBlock) {
+	    goto checkBlockCount;
+	}
+d985 9
+a993 8
+	if (lastRealBlock != -1) {
+	    descInfoPtr->fileDesc.lastByte = 
+				(lastRealBlock + 1) * FS_BLOCK_SIZE - 1;
+	} else {
+	    descInfoPtr->fileDesc.lastByte = -1;
+	}
+	Io_PrintStream(io_StdErr,"Truncating file %d to length %d\n", fd,
+				 descInfoPtr->fileDesc.lastByte + 1);
+d997 5
+a1001 5
+	if (descInfoPtr->blockCount != descInfoPtr->fileDesc.numKbytes) {
+	    Io_PrintStream(io_StdErr, "Block count corrected for file %d.  Is %d should be %d.\n", 
+		fd, descInfoPtr->fileDesc.numKbytes, descInfoPtr->blockCount);
+	    descInfoPtr->fileDesc.numKbytes = descInfoPtr->blockCount;
+	}
+a1002 30
+
+    Io_Flush(io_StdErr);
+
+
+    /*
+     * Now compare the two bitmaps.
+     */
+    if (verbose) {
+	Io_PrintStream(io_StdErr,
+		    "\nComparing old and new data block bit maps\n");
+	for (oldPtr = cylBitmapPtr, newPtr = newCylBitmapPtr, 
+	                            i = 0, blockNum = 0; 
+     	        i < domainPtr->dataCylinders; 
+		i++, oldPtr = &cylBitmapPtr[bytesPerCylinder * i], 
+		     newPtr = &newCylBitmapPtr[bytesPerCylinder * i]) {
+	    for (j = 0; 
+	         j < bytesPerCylinder; 
+		 j++, oldPtr++, newPtr++, blockNum += 2) {
+		     if ((*oldPtr & 0xf0) != (*newPtr & 0xf0)) {
+			 Io_PrintStream(io_StdErr, "Block %d: old %x new %x.\n", blockNum * FS_FRAGMENTS_PER_BLOCK, *oldPtr & 0xf0, *newPtr & 0xf0);
+		     } 
+		     if ((*oldPtr & 0x0f) != (*newPtr & 0x0f)) {
+			 Io_PrintStream(io_StdErr, "Block %d: old %x new %x.\n", (blockNum + 1) * FS_FRAGMENTS_PER_BLOCK, *oldPtr & 0x0f, *newPtr & 0x0f);
+		     }
+		}
+	    }
+
+        Io_Flush(io_StdErr);
+    }
+    return(SUCCESS);
+d1024 1
+a1024 1
+ProcessIndirectBlock(fdNum, descInfoPtr, blockNumPtr, newCylBitmapPtr, partFID,
+d1026 1
+a1026 1
+			lastRealBlockPtr)
+d1029 1
+a1029 1
+    register FdInfo	*descInfoPtr;	  /* Actual file descriptor. */
+d1043 4
+d1067 1
+d1076 2
+a1077 3
+	Io_PrintStream(io_StdErr, "Could not read indirect block\n");
+	Io_Flush(io_StdErr);
+	return(status);
+d1083 1
+a1083 1
+	    if (descInfoPtr->fileDesc.fileType == FS_DIRECTORY) {
+d1098 1
+a1098 1
+	    descInfoPtr->blockCount += FS_FRAGMENTS_PER_BLOCK;
+d1112 2
+a1113 2
+		Io_PrintStream(io_StdErr, "Error writing out indirect block\n");
+		return(status);
+@
+
+
+1.12
+log
+@Changed to include ioc.h.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkFS.c,v 1.11 87/06/03 19:30:40 nelson Exp $ SPRITE (Berkeley)";
+d328 1
+a328 1
+		       "Read failed checking directory tree with status %x\n",
+@
+
+
+1.11
+log
+@Added updating of summary info.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkFS.c,v 1.10 87/06/01 15:41:47 nelson Exp $ SPRITE (Berkeley)";
+a16 1
+#include "ioc.h"
+@
+
+
+1.10
+log
+@Fixed lint complaints.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkFS.c,v 1.9 87/05/30 12:17:27 nelson Exp $ SPRITE (Berkeley)";
+d378 7
+d681 43
+@
+
+
+1.9
+log
+@Now reports number of files, blocks and fragments.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkFS.c,v 1.8 87/05/27 10:13:36 nelson Exp $ SPRITE (Berkeley)";
+d20 3
+a527 1
+    int kbytesPerCyl;
+d532 1
+a532 1
+				domainPtr->bitmapBlocks, bitmap);
+d563 1
+a563 1
+		      domainPtr->bitmapBlocks, bitmap));
+d605 1
+a605 1
+				1, block);
+d667 1
+a667 1
+				1, block);
+d890 1
+a890 1
+			       1, dblIndirectBlock);
+d924 1
+a924 1
+			       1, dblIndirectBlock);
+d1054 2
+a1055 1
+		       *blockNumPtr / FS_FRAGMENTS_PER_BLOCK, 1, indirectBlock);
+d1092 1
+a1092 1
+				1, indirectBlock);
+@
+
+
+1.8
+log
+@Cleanup.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkFS.c,v 1.6 87/04/25 10:24:20 brent Exp $ SPRITE (Berkeley)";
+d21 4
+d332 8
+a721 1
+
+d764 1
+a764 2
+	if (!(descInfoPtr->fileDesc.flags & FS_FD_ALLOC) ||
+	     descInfoPtr->fileDesc.lastByte == -1) {
+d767 4
+d790 3
+d794 1
+d808 1
+d857 1
+d916 1
+d1078 1
+@
+
+
+1.7
+log
+@Fixed bug where wasn't handling disks that had an odd number of blocks
+per cylinder correctly.
+@
+text
+@a153 1
+
+a169 1
+
+d253 1
+a257 1
+
+a283 1
+
+a293 1
+
+a314 1
+
+a768 1
+
+a815 1
+
+a854 1
+
+a942 1
+
+d944 2
+a945 1
+    Io_PrintStream(io_StdErr, "\nComparing old and new data block bit maps\n");
+@
+
+
+1.6
+log
+@Added a hook to patch the spriteID in the domain header that
+the server needs if reverse arp doesn't find out a sprite ID.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkFS.c,v 1.5 87/04/24 17:36:45 douglis Exp $ SPRITE (Berkeley)";
+d1116 2
+d1132 8
+a1139 2
+    bytePtr = GetBitmapPtr(domainPtr, bitmapPtr, blockNum / FS_FRAGMENTS_PER_BLOCK);
+    bitmaskPtr = &bitmasks[blockNum & 0x7];
+@
+
+
+1.5
+log
+@Added silent option mode
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkFS.c,v 1.4 86/12/16 13:21:42 nelson Exp $ SPRITE (Berkeley)";
+d34 1
+d52 2
+a138 1
+
+d228 6
+d235 20
+d346 3
+d398 30
+@
+
+
+1.4
+log
+@Fixed various bugs and enhanced error statements.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkFS.c,v 1.3 86/11/10 11:33:00 nelson Exp $ SPRITE (Berkeley)";
+d36 1
+d47 2
+d259 3
+a261 1
+    Io_PrintStream(io_StdErr, "Checking file descriptor bitmap:\n");
+d274 3
+a276 1
+    Io_PrintStream(io_StdErr, "\nChecking file blocks:\n");
+d292 3
+a294 1
+    Io_PrintStream(io_StdErr, "\nTraversing directory tree:\n\n");
+d309 3
+a311 1
+    Io_PrintStream(io_StdErr, "Writing disk\n");
+@
+
+
+1.3
+log
+@Changed names so can compile again.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkFS.c,v 1.2 86/09/19 18:18:00 nelson Exp $ SPRITE (Berkeley)";
+d35 1
+d48 2
+a196 1
+    register 	int  	  numBlocks;
+d243 2
+a244 1
+    Byte_Zero(domainPtr->bitmapBlocks * FS_BLOCK_SIZE, newCylBitmapPtr);
+a381 1
+    register int index;
+a446 2
+    int bitmapBytesPerCyl;
+    int index;
+d535 1
+d880 1
+d882 15
+a896 12
+    for (oldPtr = cylBitmapPtr, newPtr = newCylBitmapPtr, i = 0, blockNum = 0; 
+	 i < domainPtr->dataCylinders; 
+	 i++, oldPtr = &cylBitmapPtr[bytesPerCylinder * i], 
+	      newPtr = &newCylBitmapPtr[bytesPerCylinder * i]) {
+	for (j = 0; 
+	     j < bytesPerCylinder; 
+	     j++, oldPtr++, newPtr++, blockNum += 2) {
+	    if ((*oldPtr & 0xf0) != (*newPtr & 0xf0)) {
+		Io_PrintStream(io_StdErr, "Block %d: old %x new %x.\n", blockNum * FS_FRAGMENTS_PER_BLOCK, *oldPtr & 0xf0, *newPtr & 0xf0);
+	    } 
+	    if ((*oldPtr & 0x0f) != (*newPtr & 0x0f)) {
+		Io_PrintStream(io_StdErr, "Block %d: old %x new %x.\n", (blockNum + 1) * FS_FRAGMENTS_PER_BLOCK, *oldPtr & 0x0f, *newPtr & 0x0f);
+d898 2
+a899 1
+	}
+a900 3
+
+    Io_Flush(io_StdErr);
+
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: checkFS.c,v 1.1 86/07/27 12:52:54 nelson Exp $ SPRITE (Berkeley)";
+d214 1
+a214 1
+						 BYTES_PER_SECTOR);
+d253 1
+a253 1
+    Io_PrintStream(io_StdErr, "\nChecking file descriptor bitmap:\n\n");
+d266 1
+a266 1
+    Io_PrintStream(io_StdErr, "\nChecking file blocks:\n\n");
+d631 1
+a631 1
+		Io_PrintStream(io_StdErr, "Allocated file descriptor %d free in bitmap.  Bitmap corrected.\n", fd);
+d634 1
+a634 1
+		Io_PrintStream(io_StdErr, "Free file descriptor %d allocated in bitmap.  Bitmap corrected.\n", fd);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: makeFilesystem.c,v 1.1 86/06/19 17:11:30 brent Exp $ SPRITE (Berkeley)";
+d866 2
+a867 1
+	    Io_PrintStream(io_StdErr, "Block count wrong for file %d\n", fd);
+d888 1
+a888 1
+		Io_PrintStream(io_StdErr, "Block %d differs.\n", blockNum * FS_FRAGMENTS_PER_BLOCK);
+d891 1
+a891 1
+		Io_PrintStream(io_StdErr, "Block %d differs.\n", (blockNum + 1) * FS_FRAGMENTS_PER_BLOCK);
+@

@@ -1,0 +1,50 @@
+#
+# compat.test
+#
+# Tests Tcl library compatiblity routines.
+#---------------------------------------------------------------------------
+# Copyright 1992 Karl Lehenbauer and Mark Diekhans.
+#
+# Permission to use, copy, modify, and distribute this software and its
+# documentation for any purpose and without fee is hereby granted, provided
+# that the above copyright notice appear in all copies.  Karl Lehenbauer and
+# Mark Diekhans make no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without express or
+# implied warranty.
+#------------------------------------------------------------------------------
+# $Id: compat.test,v 2.0 1992/10/16 04:49:32 markd Rel $
+#------------------------------------------------------------------------------
+#
+
+if {[info procs test] != "test"} then {source testlib.tcl}
+rename SAVED_UNKNOWN unknown
+
+# execvp compatability tests.
+
+set newPid [fork]
+if {$newPid == 0} {
+    execvp ../tcl "-qc" "sleep 1;exit 12"
+    error "Should never make it here"
+}
+test compatibility-1.1 {fork, execvp, wait and kill tests} {
+
+    wait $newPid
+} "$newPid EXIT 12"
+
+test compatibility-1.2 {fork, execvp, wait and kill tests} {
+    list [catch {kill} msg] $msg
+} {1 {wrong # args: kill [signal] processlist}}
+
+set newPid [fork]
+if {$newPid == 0} {
+    execvp ../tcl "-qc" "catch {while {1} {sleep 1}}; exit 10"
+    error "Should never make it here"
+}
+sleep 1
+
+test compatibility-1.3 {fork, execvp, wait and kill tests} {
+    kill $newPid
+    wait $newPid
+} "$newPid SIG SIGTERM"
+
+rename unknown SAVED_UNKNOWN

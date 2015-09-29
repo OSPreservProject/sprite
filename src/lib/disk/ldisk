@@ -1,0 +1,7 @@
+
+The Disk library has been installed as its own library (-ldisk).  It
+has also been extended to read/write/print LFS structures off of the disks.
+(The Disk manual page, of course, details the extensions...)
+
+-geoff
+

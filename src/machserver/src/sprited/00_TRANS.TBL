@@ -1,0 +1,40 @@
+D DEV                               	dev
+F DOID.;1                           	doID
+F DOVERSIO.;1                       	doversion
+D DS3100_M                          	ds3100.md
+F FILES.;1                          	FILES
+D FS                                	fs
+D FSCACHE                           	fscache
+D FSCONSIS                          	fsconsist
+D FSIO                              	fsio
+D FSPDEV                            	fspdev
+D FSPREFIX                          	fsprefix
+D FSRMT                             	fsrmt
+D FSUTIL                            	fsutil
+L ID.;1                             	ID	ID.$MACHINE
+L ID_DS310.;1                       	ID.ds3100	ID.ds5000
+F ID_DS500.;1                       	ID.ds5000
+L ID_SUN3.;1                        	ID.sun3	ID.sun4
+F ID_SUN4.;1                        	ID.sun4
+D LIBC                              	libc
+F LOCAL.MK;1                        	local.mk
+D MAIN                              	main
+F MAKEFILE.;1                       	Makefile
+F MODULES.;1                        	Modules
+D NET                               	net
+D PROC                              	proc
+D RCS                               	RCS
+D RECOV                             	recov
+D RPC                               	rpc
+D SIG                               	sig
+D SUN3_MD                           	sun3.md
+D SYNC                              	sync
+D SYS                               	sys
+F TAGS.;1                           	TAGS
+D TIMER                             	timer
+D UTILS                             	utils
+F VERSION.;1                        	version
+F VERSION.H;1                       	version.h
+F VERSIONL.;1                       	versionLog
+F VERSION_.TEM;1                    	version.h.template
+D VM                                	vm

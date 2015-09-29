@@ -1,0 +1,66 @@
+
+
+
+PIC                       User Commands                       PIC
+
+
+
+NNAAMMEE
+     pic - troff preprocessor for drawing simple pictures
+
+SSYYNNOOPPSSIISS
+     ppiicc [ --PP_t ] [ --xx# ] [ --yy# ] [ files ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _P_i_c is a _d_i_t_r_o_f_f preprocessor for drawing simple figures on
+     a typesetter.  The basic objects are _b_o_x, _l_i_n_e, _a_r_r_o_w, _c_i_r_-
+     _c_l_e, _e_l_l_i_p_s_e, _a_r_c and text.
+
+     The optional argument --PP_t specifies output device _t;
+     currently supported typesetters are _v_a (or varian, the
+     default), _v_p (or versatec), _i_p (or imagen).  The options --xx#
+     and --yy# reset the upper limit on width and height of the
+     resulting figure.  Their default settings are 8.0 and 10.0
+     (values are given and set in units of inches only).  There
+     is an internal limit of 32767 _t_y_p_e_s_e_t_t_e_r units to both hor-
+     izontal and vertical limits.  On a varian or versatec dev-
+     ice, for example, this is 163 inches.
+
+SSEEEE AALLSSOO
+     B. W. Kernighan, _P_I_C - _A _G_r_a_p_h_i_c_s _L_a_n_g_u_a_g_e _f_o_r _T_y_p_e_s_e_t_t_i_n_g
+     ditroff(1), grn(1), ideal(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     1
+
+
+

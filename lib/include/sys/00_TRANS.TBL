@@ -1,0 +1,40 @@
+F AUDIOIO.H;1                       	audioio.h
+F AUDIOREG.H;1                      	audioreg.h
+F AUDIOVAR.H;1                      	audiovar.h
+F DIR.H;1                           	dir.h
+F DIRENT.H;1                        	dirent.h
+L ERRNO.H;1                         	errno.h	../errno.h
+L EXEC.H;1                          	exec.h	../$MACHINE.md/sys/exec.h
+F FB.H;1                            	fb.h
+L FCNTL.H;1                         	fcntl.h	../fcntl.h
+F FILE.H;1                          	file.h
+L IOCCOM.H;1                        	ioccom.h	ioctl.h
+F IOCCOM_H.NOT;1                    	ioccom.h.notused
+F IOCTL.H;1                         	ioctl.h
+F IPC.H;1                           	ipc.h
+F MMAN.H;1                          	mman.h
+F PARAM.H;1                         	param.h
+F README.;1                         	README
+F RESOURCE.H;1                      	resource.h
+F SCSI.H;1                          	scsi.h
+F SCSI.NEW;1                        	scsi.new
+F SEM.H;1                           	sem.h
+F SHM.H;1                           	shm.h
+L SIGNAL.H;1                        	signal.h	../signal.h
+F SOCKET.H;1                        	socket.h
+F STAT.H;1                          	stat.h
+F STDTYPES.H;1                      	stdtypes.h
+F SYSLOG.H;1                        	syslog.h
+F TERMIO.H;1                        	termio.h
+F TERMIOS.H;1                       	termios.h
+F TIME.H;1                          	time.h
+F TIMEB.H;1                         	timeb.h
+F TIMES.H;1                         	times.h
+F TTYCHARS.H;1                      	ttychars.h
+F TTYDEV.H;1                        	ttydev.h
+F TYPES.H;1                         	types.h
+F UIO.H;1                           	uio.h
+F UN.H;1                            	un.h
+L UNISTD.H;1                        	unistd.h	../unistd.h
+F USER.H;1                          	user.h
+F WAIT.H;1                          	wait.h

@@ -1,0 +1,10 @@
+0 byte Bytes avg 3452 us each
+1 byte Bytes avg 3996 us each
+32 byte Bytes avg 4034 us each
+64 byte Bytes avg 4064 us each
+100 byte Bytes avg 4106 us each
+128 byte Bytes avg 4202 us each
+256 byte Bytes avg 4388 us each
+512 byte Bytes avg 4800 us each
+1024 byte Bytes avg 5710 us each
+1400 byte Pdev avg 6188 us each

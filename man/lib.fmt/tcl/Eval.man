@@ -1,0 +1,198 @@
+
+
+
+Tcl_Eval              C Library Procedures               Tcl_Eval
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tcl_Eval, Tcl_VarEval, Tcl_EvalFile, Tcl_GlobalEval  -  exe-
+     cute Tcl commands
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttccll..hh>>
+
+     int
+     TTccll__EEvvaall(_i_n_t_e_r_p, _c_m_d, _f_l_a_g_s, _t_e_r_m_P_t_r)
+
+     int
+     TTccll__VVaarrEEvvaall(_i_n_t_e_r_p, _s_t_r_i_n_g, _s_t_r_i_n_g, ... ((cchhaarr **)) NNUULLLL)
+
+     int
+     TTccll__EEvvaallFFiillee(_i_n_t_e_r_p, _f_i_l_e_N_a_m_e)
+
+     int                                                           |
+     TTccll__GGlloobbaallEEvvaall(_i_n_t_e_r_p, _c_m_d)                                   |
+
+AARRGGUUMMEENNTTSS
+     Tcl_Interp   *_i_n_t_e_r_p      (in)      Interpreter in which  to
+                                         execute   the   command.
+                                         String  result  will  be
+                                         stored     in    _i_n_t_e_r_p-
+                                         >_r_e_s_u_l_t.
+
+     char         *_c_m_d         (in)      Command (or sequence  of
+                                         commands) to execute.
+
+     int          _f_l_a_g_s        (in)      Either  TTCCLL__BBRRAACCKKEETT__TTEERRMM
+                                         or   0.    If   0,  then
+                                         TTccll__EEvvaall  will   process
+                                         commands  from _c_m_d until
+                                         it  reaches   the   null
+                                         character  at the end of
+                                         the     string.       If
+                                         TTCCLL__BBRRAACCKKEETT__TTEERRMM,   then
+                                         TTccll__EEvvaall  will   process
+                                         comands  from  _c_m_d until
+                                         either it reaches a null
+                                         character      or     it
+                                         encounters    a    close
+                                         bracket    that    isn't
+                                         backslashed or  enclosed
+                                         in   braces,   at  which
+                                         point  it  will  return.
+                                         Under normal conditions,
+                                         _f_l_a_g_s should be 0.
+
+     char         **_t_e_r_m_P_t_r    (out)     If _t_e_r_m_P_t_r is  non-NULL,
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+Tcl_Eval              C Library Procedures               Tcl_Eval
+
+
+
+                                         TTccll__EEvvaall     fills    in
+                                         *_t_e_r_m_P_t_r    with     the
+                                         address of the character
+                                         just after the last  one
+                                         in the last command suc-
+                                         cessfully executed (nor-
+                                         mally the null character
+                                         at the end of _c_m_d).   If
+                                         an  error  occurs in the
+                                         first  command  in  _c_m_d,
+                                         then  *_t_e_r_m_P_t_r  will  be
+                                         set to _c_m_d.
+
+     char         *_s_t_r_i_n_g      (in)      String forming  part  of
+                                         Tcl command.
+
+     char         *_f_i_l_e_N_a_m_e    (in)      Name of file  containing
+                                         Tcl command string.
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     All four of these procedures execute Tcl commands.  TTccll__EEvvaall
+     is the core procedure:  it parses commands from _c_m_d and exe-
+     cutes them in order until either an error occurs or TTccll__EEvvaall
+     reaches  a  terminating character (']' or '\0', depending on
+     the value of _f_l_a_g_s).  The return value from TTccll__EEvvaall is  one
+     of  the  Tcl  return  codes  TTCCLL__OOKK,  TTCCLL__EERRRROORR, TTCCLL__RREETTUURRNN,
+     TTCCLL__BBRREEAAKK, or TTCCLL__CCOONNTTIINNUUEE, and _i_n_t_e_r_p->_r_e_s_u_l_t will point to
+     a  string with additional information (result value or error
+     message).  This return information corresponds to  the  last
+     command executed from _c_m_d.
+
+     TTccll__VVaarrEEvvaall takes any number  of  string  arguments  of  any
+     length,  concatenates  them into a single string, then calls
+     TTccll__EEvvaall to execute  that  string  as  a  Tcl  command.   It
+     returns  the result of the command and also modifies _i_n_t_e_r_p-
+     >_r_e_s_u_l_t in the usual fashion for  Tcl  commands.   The  last
+     argument  to TTccll__VVaarrEEvvaall must be NULL to indicate the end of
+     arguments.
+
+     TTccll__EEvvaallFFiillee reads the file given by _f_i_l_e_N_a_m_e and  evaluates
+     its  contents  as  a  Tcl  command  by calling TTccll__EEvvaall.  It
+     returns a standard Tcl result that reflects  the  result  of
+     evaluating  the  file.   If the file couldn't be read then a
+     Tcl error is returned to describe why the file  couldn't  be
+     read.
+
+     TTccll__GGlloobbaallEEvvaall  is  similar  to  TTccll__EEvvaall  except  that   it  |
+     processes  the command at global level.  This means that the  |
+     variable context for the command consists  of  global  vari-  |
+     ables  only  (it  ignores any Tcl procedure that is active).  |
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+Tcl_Eval              C Library Procedures               Tcl_Eval
+
+
+
+     This produces an effect similar to the Tcl command ``uupplleevveell  |
+     00''.
+
+     During the processing of a Tcl command it is legal  to  make
+     nested  calls to evaluate other commands (this is how condi-
+     tionals, loops, and procedures are implemented).  If a  code
+     other than TTCCLL__OOKK is returned from a nested TTccll__EEvvaall invoca-
+     tion, then the caller should  normally  return  immediately,
+     passing  that same return code back to its caller, and so on
+     until the top-level application is reached.  A few commands,
+     like   ffoorr,  will  check  for  certain  return  codes,  like
+     TTCCLL__BBRREEAAKK  and  TTCCLL__CCOONNTTIINNUUEE,  and  process  them  specially
+     without returning.
+
+     TTccll__EEvvaall keeps track of how many nested Tcl_Eval invocations
+     are  in  progress  for  _i_n_t_e_r_p.   If  a  code of TTCCLL__RREETTUURRNN,
+     TTCCLL__BBRREEAAKK, or TTCCLL__CCOONNTTIINNUUEE is about to be returned from  the
+     topmost  TTccll__EEvvaall  invocation for _i_n_t_e_r_p, then TTccll__EEvvaall con-
+     verts the return code to TTCCLL__EERRRROORR and  sets  _i_n_t_e_r_p->_r_e_s_u_l_t
+     to  point  to  an  error message indicating that the rreettuurrnn,
+     bbrreeaakk, or ccoonnttiinnuuee command was invoked in  an  inappropriate
+     place.   This means that top-level applications should never
+     see a  return  code  from  TTccll__EEvvaall  other  then  TTCCLL__OOKK  or
+     TTCCLL__EERRRROORR.
+
+
+KKEEYYWWOORRDDSS
+     command, execute, file, global, interpreter, variable
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     3
+
+
+

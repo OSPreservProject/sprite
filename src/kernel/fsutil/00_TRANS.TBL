@@ -1,0 +1,14 @@
+D CVS_ADM                           	CVS.adm
+D DS3100_M                          	ds3100.md
+D DS5000_M                          	ds5000.md
+F FSUTIL.H;1                        	fsutil.h
+F FSUTILH0.C;1                      	fsutilHandle.c
+F FSUTILH1.C;1                      	fsutilHandleScavenge.c
+F FSUTILNO.C;1                      	fsutilNotify.c
+F FSUTILRE.C;1                      	fsutilRecovery.c
+F FSUTILSU.C;1                      	fsutilSubr.c
+F FSUTILSY.C;1                      	fsutilSync.c
+D SCVS                              	SCVS
+D SUN3_MD                           	sun3.md
+D SUN4C_MD                          	sun4c.md
+D SUN4_MD                           	sun4.md

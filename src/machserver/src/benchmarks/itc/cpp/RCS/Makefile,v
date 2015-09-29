@@ -1,0 +1,62 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  srv030:1.2 srv028:1.2 srv027:1.2 srv026:1.2 srv024:1.2 srv022:1.2 srv021:1.2 srv019:1.2 srv018:1.2 srv016:1.2 srv014:1.2 srv010:1.2 srv008:1.2 srv007:1.2 srv005:1.2;
+locks    ; strict;
+comment  @# @;
+
+
+1.2
+date     92.05.12.14.28.41;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     92.05.11.12.19.10;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Changes for sprited.
+@
+text
+@# $Header$
+
+default: ../bin/cpp
+
+OBJS =		cccp.o cexp.o version.o
+
+TM=ds3100
+NAME=cpp
+#include "/users/kupfer/lib/pmake/spriteClient.mk"
+SPRITEDINCLUDES = -I$(SPRITEINCLUDE)/user/$(TM).md -I$(SPRITEINCLUDE)/user
+
+CFLAGS =	-O -I. -I../gcc $(SPRITEDINCLUDES)
+
+../bin/cpp: $(OBJS)
+	ld $(LOADFLAGS) $(INITOBJS) $(OBJS) -lc -lmach_sa -lc -o ../bin/cpp
+
+clean:
+	rm -f *.o ../bin/cpp
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 4
+d7 6
+a12 1
+CFLAGS =	-O -I. -I../gcc
+d15 1
+a15 1
+	$(CC) $(OBJS) -o ../bin/cpp
+@

@@ -1,0 +1,743 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    tve:1.2; strict;
+comment  @ * @;
+
+
+1.2
+date     89.11.18.20.57.34;  author tve;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.10.23.18.24.49;  author tve;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@initial hack by TvE without colormap
+@
+
+
+1.2
+log
+@first working version with CG4 and CG6 for SPARC. CG4 for sun3 not yet ok.
+@
+text
+@/*-
+ * spriteCG6C.c --
+ *	Functions to support the sun CG6 board as a memory frame buffer.
+ */
+
+/************************************************************
+ * Copyright (c) 1989 by the Regents of the University of California
+ *
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ ********************************************************/
+
+#ifndef	lint
+static char rcsid[] =
+	"";
+#endif
+
+#include    "spriteddx.h"
+#include    "os.h"
+#include    "resource.h"
+
+#include    <sys.h>
+#include    <kernel/vmSunConst.h>
+
+#include    "colormap.h"
+#include    "colormapst.h"
+
+#define	CG6_HEIGHT	900
+#define	CG6_WIDTH	1152
+
+/* For the SPARCstation 1 */
+#define CG6_FB		0xffd80000
+#define	CG6_CMAP	0xffd1f000
+#define	CG6_FHC		0xffd1c000
+#define	CG6_THC		0xffd1d000
+
+/*
+ * Colormap stuff
+ */
+static ColormapPtr spriteCG6InstalledMap;
+
+/*
+ * Brooktree DAC
+ * Only topmost byte is active (but must be written as longword ...)
+ */
+typedef volatile struct {
+	unsigned int	addr;		/* colormap address register */
+	unsigned int	cmap;		/* colormap data register */
+	unsigned int	ctrl;		/* control register */
+	unsigned int	omap;		/* overlay map data register */
+} CG6Cmap;
+
+extern int TellLostMap(), TellGainedMap();
+
+static void
+spriteCG6UpdateColormap(pScreen, index, count, rmap, gmap, bmap)
+    ScreenPtr		pScreen;
+    int			index, count;
+    unsigned char	*rmap, *gmap, *bmap;
+{
+    volatile CG6Cmap	*cMap = (CG6Cmap *)spriteFbs[pScreen->myNum].cmap;
+
+    /* update the memory copy */
+    rmap+=index; gmap+=index; bmap+=index;
+    cMap->addr = index<<24;
+    while(count--) {
+	cMap->cmap = (*rmap++) << 24;
+	cMap->cmap = (*gmap++) << 24;
+	cMap->cmap = (*bmap++) << 24;
+    }
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * spriteCG6SaveScreen --
+ *	Preserve the color screen by turning on or off the video
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	Video state is switched
+ *
+ *-----------------------------------------------------------------------
+ */
+static Bool
+spriteCG6SaveScreen (pScreen, on)
+    ScreenPtr	  pScreen;
+    Bool    	  on;
+{
+#ifdef	NONONONNEVER
+    if (on != SCREEN_SAVER_ON) {
+	SetTimeSinceLastInputEvent();
+	screenSaved = FALSE;
+	Sys_EnableDisplay(TRUE);
+    } else {
+	screenSaved = TRUE;
+	Sys_EnableDisplay (FALSE);
+    }
+#endif
+
+    return TRUE;
+
+#ifdef	FOOSUN
+    int		state = on;
+
+    if (on != SCREEN_SAVER_ON) {
+	SetTimeSinceLastInputEvent();
+	state = 1;
+    } else {
+	state = 0;
+    }
+
+    (void) ioctl(sunFbs[pScreen->myNum].fd, FBIOSVIDEO, &state);
+    return( TRUE );
+#endif	FOOSUN
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * spriteCG6CloseScreen --
+ *	called to ensure video is enabled when server exits.
+ *
+ * Results:
+ *	Screen is unsaved.
+ *
+ * Side Effects:
+ *	None
+ *
+ *-----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static Bool
+spriteCG6CloseScreen(i, pScreen)
+    int		i;
+    ScreenPtr	pScreen;
+{
+    return ((* pScreen->SaveScreen)(pScreen, SCREEN_SAVER_OFF));
+#ifdef	FOOSUN
+    sunCG6InstalledMap = NULL;
+    return (pScreen->SaveScreen(pScreen, SCREEN_SAVER_OFF));
+#endif	FOOSUN
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * spriteCG6InstallColormap --
+ *	Install given colormap.
+ *
+ * Results:
+ *	None
+ *
+ * Side Effects:
+ *	Existing map is uninstalled.
+ *	All clients requesting ColormapNotify are notified
+ *
+ *-----------------------------------------------------------------------
+ */
+static void
+spriteCG6InstallColormap(cmap)
+    ColormapPtr	cmap;
+{
+    register int	i;
+    register Entry	*pent = cmap->red;
+    unsigned char	rmap[256], gmap[256], bmap[256];
+
+    if(cmap == spriteCG6InstalledMap)
+	return;
+    if(spriteCG6InstalledMap)
+	WalkTree(spriteCG6InstalledMap->pScreen, TellLostMap,
+		 (char *) &(spriteCG6InstalledMap->mid));
+    for(i=0; i<cmap->pVisual->ColormapEntries; i++) {
+	if (pent->fShared) {
+	    rmap[i] = pent->co.shco.red->color >> 8;
+	    gmap[i] = pent->co.shco.green->color >> 8;
+	    bmap[i] = pent->co.shco.blue->color >> 8;
+	}
+	else {
+	    rmap[i] = pent->co.local.red >> 8;
+	    gmap[i] = pent->co.local.green >> 8;
+	    bmap[i] = pent->co.local.blue >> 8;
+	}
+	pent++;
+    }
+    spriteCG6InstalledMap = cmap;
+    spriteCG6UpdateColormap(cmap->pScreen, 0, 256, rmap, gmap, bmap);
+    WalkTree(cmap->pScreen, TellGainedMap, (char *) &(cmap->mid));
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * spriteCG6UninstallColormap --
+ *	Uninstall given colormap.
+ *
+ * Results:
+ *	None
+ *
+ * Side Effects:
+ *	default map is installed
+ *	All clients requesting ColormapNotify are notified
+ *
+ *-----------------------------------------------------------------------
+ */
+static void
+spriteCG6UninstallColormap(cmap)
+    ColormapPtr	cmap;
+{
+    if(cmap == spriteCG6InstalledMap) {
+	Colormap defMapID = cmap->pScreen->defColormap;
+
+	if (cmap->mid != defMapID) {
+	    ColormapPtr defMap =
+		(ColormapPtr)LookupID(defMapID, RT_COLORMAP, RC_CORE);
+
+	    if (defMap)
+		spriteCG6InstallColormap(defMap);
+	    else
+	        ErrorF("spriteCG6: Can't find default colormap\n");
+	}
+    }
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * spriteCG6ListInstalledColormaps --
+ *	Fills in the list with the IDs of the installed maps
+ *
+ * Results:
+ *	Returns the number of IDs in the list
+ *
+ * Side Effects:
+ *	None
+ *
+ *-----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static int
+spriteCG6ListInstalledColormaps(pScreen, pCmapList)
+    ScreenPtr	pScreen;
+    Colormap	*pCmapList;
+{
+    *pCmapList = spriteCG6InstalledMap->mid;
+    return (1);
+}
+
+
+/*-
+ *-----------------------------------------------------------------------
+ * spriteCG6StoreColors --
+ *	Sets the pixels in pdefs into the specified map.
+ *
+ * Results:
+ *	None
+ *
+ * Side Effects:
+ *	None
+ *
+ *-----------------------------------------------------------------------
+ */
+static void
+spriteCG6StoreColors(pmap, ndef, pdefs)
+    ColormapPtr	pmap;
+    int		ndef;
+    xColorItem	*pdefs;
+{
+    switch(pmap->class) {
+    case PseudoColor:
+	if(pmap == spriteCG6InstalledMap) {
+	    /* We only have a single colormap */
+	    unsigned char	rmap[256], gmap[256], bmap[256];
+	    int			index;
+
+	    while (ndef--) {
+		index = pdefs->pixel&0xff;
+		rmap[index] = (pdefs->red) >> 8;
+		gmap[index] = (pdefs->green) >> 8;
+		bmap[index] = (pdefs->blue) >> 8;
+	 	spriteCG6UpdateColormap(pmap->pScreen,
+				      index, 1, rmap, gmap, bmap);
+		pdefs++;
+	    }
+	}
+	break;
+    case DirectColor:
+    default:
+	ErrorF("spriteCG6StoreColors: bad class %d\n", pmap->class);
+	break;
+    }
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * spriteCG6ResolvePseudoColor --
+ *	Adjust specified RGB values to closest values hardware can do.
+ *
+ * Results:
+ *	Args are modified.
+ *
+ * Side Effects:
+ *	None
+ *
+ *-----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static void
+spriteCG6ResolvePseudoColor(pRed, pGreen, pBlue, pVisual)
+    CARD16	*pRed, *pGreen, *pBlue;
+    VisualPtr	pVisual;
+{
+    *pRed &= 0xff00;
+    *pGreen &= 0xff00;
+    *pBlue &= 0xff00;
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * spriteCG6Init --
+ *	Attempt to find and initialize a cg6 framebuffer used as mono
+ *
+ * Results:
+ *	TRUE if everything went ok. FALSE if not.
+ *
+ * Side Effects:
+ *	Most of the elements of the ScreenRec are filled in. Memory is
+ *	allocated for the frame buffer and the buffer is mapped. The
+ *	video is enabled for the frame buffer...
+ *
+ *-----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static Bool
+spriteCG6Init (index, pScreen, argc, argv)
+    int	    	  index;    	/* The index of pScreen in the ScreenInfo */
+    ScreenPtr	  pScreen;  	/* The Screen to initialize */
+    int	    	  argc;	    	/* The number of the Server's arguments. */
+    char    	  **argv;   	/* The arguments themselves. Don't change! */
+{
+    CARD16	zero = 0, ones = ~0;
+
+    if (!cfbScreenInit (index, pScreen, spriteFbs[index].fb,
+			    CG6_WIDTH, CG6_HEIGHT, 100))
+	return (FALSE);
+
+    pScreen->SaveScreen    =            spriteCG6SaveScreen;
+    pScreen->RecolorCursor = 	    	spriteRecolorCursor;
+
+#ifndef STATIC_COLOR
+    pScreen->InstallColormap = spriteCG6InstallColormap;
+    pScreen->UninstallColormap = spriteCG6UninstallColormap;
+    pScreen->ListInstalledColormaps = spriteCG6ListInstalledColormaps;
+    pScreen->StoreColors = spriteCG6StoreColors;
+    pScreen->ResolveColor = spriteCG6ResolvePseudoColor;
+#endif
+
+    {
+	ColormapPtr cmap = (ColormapPtr)LookupID(pScreen->defColormap,
+		RT_COLORMAP, RC_CORE);
+
+	if (!cmap)
+	    FatalError("Can't find default colormap\n");
+	if (AllocColor(cmap, &ones, &ones, &ones, &(pScreen->whitePixel), 0)
+	    || AllocColor(cmap, &zero, &zero, &zero, &(pScreen->blackPixel), 0))
+		FatalError("Can't alloc black & white pixels in cfbScreeninit\n");
+	spriteCG6InstallColormap(cmap);
+    }
+
+    spriteCG6SaveScreen( pScreen, SCREEN_SAVER_OFF );
+    spriteScreenInit (pScreen);
+
+    return (TRUE);
+}
+
+/*-
+ *--------------------------------------------------------------
+ * spriteCG6Switch --
+ *      Enable or disable color plane 
+ *
+ * Results:
+ *      Color plane enabled for select =0, disabled otherwise.
+ *
+ *--------------------------------------------------------------
+ */
+static void
+spriteCG6Switch ()
+{
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * spriteCG6Probe --
+ *	Attempt to find and initialize a cg6 framebuffer used as mono
+ *
+ * Results:
+ *	TRUE if everything went ok. FALSE if not.
+ *
+ * Side Effects:
+ *	Memory is allocated for the frame buffer and the buffer is mapped.
+ *
+ *-----------------------------------------------------------------------
+ */
+Bool
+spriteCG6Probe(screenInfo, index, fbNum, argc, argv)
+    ScreenInfo	  *screenInfo;	/* The screenInfo struct */
+    int	    	  index;    	/* The index of pScreen in the ScreenInfo */
+    int	    	  fbNum;    	/* Index into the sunFbData array */
+    int	    	  argc;	    	/* The number of the Server's arguments. */
+    char    	  **argv;   	/* The arguments themselves. Don't change! */
+{
+    Sys_MachineInfo	machType;
+    pointer	  	pFb, pCm;	/* preallocated VM */
+    Address	  	vFb, vCm;	/* kernel virtual addresses to poke */
+    unsigned int	bCm, oCm;	/* base&offset for segment for cmap */
+    unsigned int	sFb;		/* how much mem to alloc */
+
+    if(strlen(argv[0]) < 4 || strcmp("Xcg6", argv[0]+strlen(argv[0])-4) != 0)
+	return FALSE;
+
+    if(!spriteFbs[index].mapped) {
+	if(Sys_GetMachineInfo(sizeof(machType), &machType) != SUCCESS) {
+	    return FALSE;
+	}
+	if(machType.architecture == SYS_SUN4) {
+	    if(machType.type == SYS_SUN_4_C) {
+		vFb = (Address)CG6_FB;		/* sparc station */
+		vCm = (Address)CG6_CMAP;
+	    }
+	} else {
+	    return FALSE;
+	}
+
+	sFb = (CG6_HEIGHT*CG6_WIDTH + VMMACH_SEG_SIZE - 1) / VMMACH_SEG_SIZE;
+	sFb *= VMMACH_SEG_SIZE;
+	pFb = (pointer)malloc(sFb + VMMACH_SEG_SIZE);
+	pCm = (pointer)malloc(2*VMMACH_SEG_SIZE);
+	oCm = (unsigned int)vCm -
+		((unsigned int)vCm)/VMMACH_SEG_SIZE*VMMACH_SEG_SIZE;
+	vCm = (Address)(((unsigned int)vCm)/VMMACH_SEG_SIZE*VMMACH_SEG_SIZE);
+
+	if(Vm_MapKernelIntoUser(vFb, sFb, pFb, &spriteFbs[index].fb) != SUCCESS)
+	      { perror("VmMap"); return (FALSE); }
+	if(Vm_MapKernelIntoUser(vCm, VMMACH_SEG_SIZE, pCm, &bCm) != SUCCESS)
+	      return (FALSE);
+	spriteFbs[index].cmap = (pointer)(bCm+oCm);
+	spriteFbs[index].mapped = TRUE;
+    }
+    if(AddScreen(spriteCG6Init, argc, argv) > index) {
+	screenInfo->screen[index].CloseScreen = spriteCG6CloseScreen;
+	return TRUE;
+    } else {
+	return FALSE;
+    }
+}
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a17 27
+Copyright 1987 by Sun Microsystems, Inc. Mountain View, CA.
+
+                    All Rights Reserved
+
+Permission  to  use,  copy,  modify,  and  distribute   this
+software  and  its documentation for any purpose and without
+fee is hereby granted, provided that the above copyright no-
+tice  appear  in all copies and that both that copyright no-
+tice and this permission notice appear in  supporting  docu-
+mentation,  and  that the names of Sun or MIT not be used in
+advertising or publicity pertaining to distribution  of  the
+software  without specific prior written permission. Sun and
+M.I.T. make no representations about the suitability of this
+software for any purpose. It is provided "as is" without any
+express or implied warranty.
+
+SUN DISCLAIMS ALL WARRANTIES WITH REGARD TO  THIS  SOFTWARE,
+INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FIT-
+NESS FOR A PARTICULAR PURPOSE. IN NO EVENT SHALL SUN BE  LI-
+ABLE  FOR  ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR
+ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,  DATA  OR
+PROFITS,  WHETHER  IN  AN  ACTION OF CONTRACT, NEGLIGENCE OR
+OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION  WITH
+THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+********************************************************/
+
+a26 1
+#include    <kernel/devVid.h>
+a29 8
+#include <stdio.h>
+
+/*
+ #include    <sys/mman.h>
+ #include    <pixrect/memreg.h>
+ #include    <sundev/cg4reg.h>
+ #include    <sundev/cg6reg.h>
+*/
+d36 5
+a40 4
+#ifdef	SUNFOO
+typedef struct cg6c {
+	u_char cpixel[CG6_HEIGHT][CG6_WIDTH];	/* byte-per-pixel memory */
+} CG6, CG6Rec, *CG6Ptr;
+d42 4
+a45 3
+#define CG6_IMAGE(fb)	    ((caddr_t)(&(fb)->cpixel))
+#define CG6_IMAGEOFF	    ((off_t)0x0)
+#define CG6_IMAGELEN	    (((CG6_HEIGHT*CG6_WIDTH + 8191)/8192)*8192)
+d47 10
+a56 5
+static CG6Ptr CG6fb = NULL;
+#endif SUNFOO
+
+/* XXX - next line means only one CG6 - fix this */
+static ColormapPtr spriteCG6InstalledMap;
+d66 1
+a66 8
+#ifdef	FOOSUN
+    struct fbcmap sunCmap;
+
+    sunCmap.index = index;
+    sunCmap.count = count;
+    sunCmap.red = &rmap[index];
+    sunCmap.green = &gmap[index];
+    sunCmap.blue = &bmap[index];
+d68 7
+a74 3
+    if (ioctl(sunFbs[pScreen->myNum].fd, FBIOPUTCMAP, &sunCmap) < 0) {
+	perror("sunCG6UpdateColormap");
+	FatalError( "sunCG6UpdateColormap: FBIOPUTCMAP failed\n" );
+a75 1
+#endif	FOOSUN
+a167 1
+#ifdef	FOOSUN
+d170 1
+a170 1
+    unsigned char	  rmap[256], gmap[256], bmap[256];
+d172 1
+a172 1
+    if (cmap == sunCG6InstalledMap)
+d174 4
+a177 4
+    if (sunCG6InstalledMap)
+	WalkTree(sunCG6InstalledMap->pScreen, TellLostMap,
+		 (char *) &(sunCG6InstalledMap->mid));
+    for (i = 0; i < cmap->pVisual->ColormapEntries; i++) {
+d190 2
+a191 2
+    sunCG6InstalledMap = cmap;
+    sunCG6UpdateColormap(cmap->pScreen, 0, 256, rmap, gmap, bmap);
+a192 1
+#endif	FOOSUN
+d213 1
+a213 2
+#ifdef	FOOSUN
+    if (cmap == sunCG6InstalledMap) {
+d217 2
+a218 1
+	    ColormapPtr defMap = (ColormapPtr) LookupID(defMapID, RT_COLORMAP, RC_CORE);
+d221 1
+a221 1
+		sunCG6InstallColormap(defMap);
+d223 1
+a223 1
+	        ErrorF("sunCG6: Can't find default colormap\n");
+a225 1
+#endif	FOOSUN
+d247 1
+a247 3
+return 0;
+#ifdef	FOOSUN
+    *pCmapList = sunCG6InstalledMap->mid;
+a248 1
+#endif	FOOSUN
+d271 1
+a271 2
+#ifdef	FOOSUN
+    switch (pmap->class) {
+d273 1
+a273 1
+	if (pmap == sunCG6InstalledMap) {
+d275 2
+a276 1
+	    u_char	rmap[256], gmap[256], bmap[256];
+d279 1
+a279 3
+		register unsigned index = pdefs->pixel&0xff;
+
+		/* PUTCMAP assumes colors to be assigned start at 0 */
+d283 1
+a283 1
+	 	sunCG6UpdateColormap(pmap->pScreen,
+d291 1
+a291 1
+	ErrorF("sunCG6StoreColors: bad class %d\n", pmap->class);
+a293 1
+#endif	FOOSUN
+d345 2
+a346 2
+    if (!cfbScreenInit (index, pScreen, spriteFbs[index].fb, /*CG6fb->cpixel,*/	
+			    CG6_WIDTH, CG6_HEIGHT, 90))
+a413 1
+    pointer	  	pBigFb;
+d415 4
+a418 2
+    Address	  	vidAddr;
+    unsigned int	size;
+d420 1
+a420 1
+    if(strlen(argv[0]) < 4 || strcmp("Xcfb", argv[0]+strlen(argv[0])-4) != 0)
+d423 2
+a424 6
+    if (!spriteFbs[index].mapped) {
+	size = (CG6_HEIGHT*CG6_WIDTH + VMMACH_SEG_SIZE - 1) / VMMACH_SEG_SIZE;
+	size *= VMMACH_SEG_SIZE;
+	pBigFb = (pointer) malloc(size + VMMACH_SEG_SIZE);
+
+	if (Sys_GetMachineInfo (sizeof (machType), &machType) != SUCCESS) {
+d427 4
+a430 5
+	if (machType.architecture == SYS_SUN4) {
+	    if (machType.type == SYS_SUN_4_C) {
+		vidAddr = (Address)0xffd80000;	/* sparc station */
+	    } else {
+		vidAddr = (Address)0xffd40000;	/* regular sun4 */
+d436 11
+a446 3
+	if (Vm_MapKernelIntoUser (vidAddr, size, pBigFb,
+		&spriteFbs[index].fb) != SUCCESS) {
+	      free ((char *) pBigFb);
+d448 1
+a448 1
+	}
+d451 1
+a451 1
+    if (AddScreen (spriteCG6Init, argc, argv) > index) {
+a456 68
+
+#ifdef	SUNFOO
+    int         i, oldNumScreens;
+
+    if (sunFbData[fbNum].probeStatus == probedAndFailed) {
+	return FALSE;
+    }
+
+    if (sunFbData[fbNum].probeStatus == neverProbed) {
+	int         fd;
+	struct fbtype fbType;
+
+	if ((fd = sunOpenFrameBuffer(FBTYPE_SUN4COLOR, &fbType, index, fbNum,
+				     argc, argv)) < 0) {
+	    sunFbData[fbNum].probeStatus = probedAndFailed;
+	    return FALSE;
+	}
+
+#ifdef	_MAP_NEW
+
+	CG6fb = (CG6Ptr) 0;
+
+#else	_MAP_NEW
+
+
+	CG6fb = (CG6Ptr) valloc(CG6_IMAGELEN);
+	if (CG6fb == (CG6Ptr) NULL) {
+	    ErrorF("Could not allocate room for frame buffer.\n");
+	    sunFbData[fbNum].probeStatus = probedAndFailed;
+	    return FALSE;
+	}
+
+#endif	_MAP_NEW
+
+	CG6fb = (CG6Ptr) mmap((caddr_t) CG6fb,
+		 CG6_IMAGELEN,
+		 PROT_READ | PROT_WRITE,
+		 MAP_SHARED | _MAP_NEW, fd, CG6_VADDR_COLOR);
+
+
+	if ((CG6fb == (CG6Ptr) -1)  || (CG6fb == (CG6Ptr) 0)) {
+	    Error("Mapping cg6c");
+	    sunFbData[fbNum].probeStatus = probedAndFailed;
+	    (void) close(fd);
+	    return FALSE;
+	}
+
+
+	sunFbs[index].fd = fd;
+	sunFbs[index].info = fbType;
+	sunFbs[index].fb = (pointer) CG6fb;
+        sunFbs[index].EnterLeave = sunCG6Switch;
+	sunFbData[fbNum].probeStatus = probedAndSucceeded;
+
+    }
+
+    /*
+     * If we've ever successfully probed this device, do the following. 
+     */
+
+    oldNumScreens = pScreenInfo->numScreens;
+    i = AddScreen(sunCG6Init, argc, argv);
+    pScreenInfo->screen[index].CloseScreen = sunCG6CloseScreen;
+    /* Now set the enable plane for color */
+    if (index == 0) sunCG6Switch (&(pScreenInfo->screen[0]), 0);
+
+    return (i > oldNumScreens);
+#endif	SUNFOO
+@

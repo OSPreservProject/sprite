@@ -1,0 +1,4 @@
+F COMPRESS.;1                       	compress
+F COMPRESS.O;1                      	compress.o
+F DEPENDEN.MK;1                     	dependencies.mk
+F MD.MK;1                           	md.mk

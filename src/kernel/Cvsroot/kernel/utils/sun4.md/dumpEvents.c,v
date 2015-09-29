@@ -1,0 +1,287 @@
+head     9.2;
+branch   ;
+access   ;
+symbols  ds3100:9.2 sun3:9.2 sun4nw:9.2 symm:9.2 spur:9.2 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.2
+date     90.10.11.22.02.32;  author kupfer;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.26.15.25.03;  author douglis;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.22.18;  author douglis;  state Stable;
+branches ;
+next     8.1;
+
+8.1
+date     89.07.19.15.34.40;  author ouster;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.41.33;  author douglis;  state Stable;
+branches ;
+next     6.1;
+
+6.1
+date     88.10.30.21.08.45;  author jhh;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.28.57;  author brent;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.16.21.11.51;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Sun dependent dump function register routines.
+@
+
+
+9.2
+log
+@Use <> include's.  Change the event table to avoid casts and compiler
+warning messages.
+@
+text
+@/* 
+ * dumpEvents.c --
+ *
+ * Routines to register events (characters) for debugging dump program.
+ *
+ * Copyright 1985 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/sun3.md/RCS/dumpEvents.c,v 9.1 89/10/26 15:25:03 douglis Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <sprite.h>
+#include <dev.h>
+#include <dumpInt.h>
+#include <stdio.h>
+
+static void ConsoleReset _ARGS_((ClientData data));
+
+/*
+ * Table of routines and their arguments to be called on dump events.
+ */
+static EventTableType sunEventTable[] = {
+    {'k', ConsoleReset, (ClientData) TRUE,"Reset console to keyboard mode"},
+    {'l', ConsoleReset, (ClientData) FALSE,
+					"Reset console to raw mode (for X)"},
+	/* This MUST be the last entry */
+    {'\000', LAST_EVENT, NULL_ARG, (char *) 0 }
+};
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConsoleReset --
+ *
+ *	Wrapper around Dev_ConsoleReset to avoid casts and 
+ *	compiler warning messages.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	(see Dev_ConsoleReset)
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ConsoleReset(data)
+    ClientData data;
+{
+    Dev_ConsoleReset((int) data);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dump_Register_Events --
+ *
+ *	Establish default procedural attachments for keyboard invocation
+ *	of Dump routines.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Dump_Register_Events(eventTable)
+    EventTableType	*eventTable;
+{
+    EventTableType	*entry;
+
+    for (entry = eventTable; entry->routine != LAST_EVENT; entry++) {
+	if (entry->routine == RESERVED_EVENT) {
+		continue;
+	}
+	Dev_RegisterConsoleCmd(entry->key, entry->routine, entry->argument);
+    }
+
+    for (entry = sunEventTable; entry->routine != LAST_EVENT; entry++) {
+	if (entry->routine == RESERVED_EVENT) {
+		continue;
+	}
+	Dev_RegisterConsoleCmd(entry->key, entry->routine, entry->argument);
+    }
+
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dump_Show_Local_Menu --
+ *
+ *	Dump out a list of the local to the Sun L1-key magic commands.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Dump_Show_Local_Menu()
+{
+    EventTableType	*entry;
+
+    for (entry = sunEventTable; entry->routine != LAST_EVENT; entry++) {
+	printf("%c - %s\n",entry->key, entry->description);
+    }
+}
+@
+
+
+9.1
+log
+@removed some lint
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/sun3.md/RCS/dumpEvents.c,v 9.0 89/09/12 15:22:18 douglis Stable Locker: douglis $ SPRITE (Berkeley)";
+d15 4
+a18 4
+#include "sprite.h"
+#include "dev.h"
+#include "dumpInt.h"
+#include "stdio.h"
+d20 2
+d26 2
+a27 2
+    {'k', Dev_ConsoleReset, (ClientData) TRUE,"Reset console to keyboard mode"},
+    {'l', Dev_ConsoleReset, (ClientData) FALSE,
+d33 24
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/sun3.md/RCS/dumpEvents.c,v 8.1 89/07/19 15:34:40 ouster Exp Locker: douglis $ SPRITE (Berkeley)";
+d18 1
+@
+
+
+8.1
+log
+@Change to use Dev_RegisterConsoleCmd.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/sun3.md/RCS/dumpEvents.c,v 8.0 88/11/11 18:41:33 douglis Stable Locker: ouster $ SPRITE (Berkeley)";
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/sun3.md/RCS/dumpEvents.c,v 6.1 88/10/30 21:08:45 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d16 1
+a16 2
+#include "devKeyboard.h"
+#include "devConsole.h"
+d58 1
+a58 1
+	Dev_KbdQueueAttachProc(entry->key, entry->routine, entry->argument);
+d65 1
+a65 1
+	Dev_KbdQueueAttachProc(entry->key, entry->routine, entry->argument);
+a94 1
+
+@
+
+
+6.1
+log
+@got rid of Sys calls
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/utils/sun3.md/RCS/dumpEvents.c,v 6.0 88/08/11 12:28:57 brent Stable Locker: jhh $ SPRITE (Berkeley)";
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: dumpEvents.c,v 1.1 88/06/16 21:11:51 mendel Exp $ SPRITE (Berkeley)";
+d93 1
+a93 1
+	Sys_Printf("%c - %s\n",entry->key, entry->description);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: dump.c,v 5.8 88/06/16 10:17:31 brent Exp $ SPRITE (Berkeley)";
+@

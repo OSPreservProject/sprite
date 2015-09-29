@@ -1,0 +1,1046 @@
+head     1.17;
+branch   ;
+access   ;
+symbols  sprited:1.17.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.17
+date     89.06.15.12.15.06;  author brent;  state Exp;
+branches 1.17.1.1;
+next     1.16;
+
+1.16
+date     89.06.15.11.29.56;  author brent;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     89.06.02.13.36.11;  author brent;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     89.03.13.08.58.35;  author brent;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     89.01.27.09.33.56;  author brent;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     89.01.19.09.35.14;  author brent;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     88.11.17.09.03.52;  author brent;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     88.10.19.16.04.38;  author brent;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     88.10.19.14.25.06;  author brent;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     88.10.19.14.12.53;  author brent;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.10.18.13.52.30;  author brent;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.10.16.13.21.13;  author brent;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.10.14.10.30.23;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.10.13.17.24.23;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.10.10.12.17.28;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.08.26.15.38.27;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.21.12.07.45;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.17.1.1
+date     91.11.17.18.30.20;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.17
+log
+@Fixed includes
+@
+text
+@/*
+ * pdev.h --
+ *
+ *	Declarations of the kernel/user-level-server interface for
+ *	pseudo-devices. A pseudo-device is a file
+ *	whose semantics are implemented by a user-level server process.
+ *	All other processes act on the file normally.  Their operations
+ *	on the file are mapped by the kernel into a request-response
+ *	exchange with the server process.  The types and constants defined
+ *	here are needed by the server programs to implement their
+ *	half of the pseudo-device protocol.  As well as implement the
+ *	regular file operations, Fs_Read, Fs_Write, and Fs_IOControl,
+ *	the server is involved in open/close time actions, and the
+ *	server helps control the select state of the pseudo device.
+ *	
+ *	A more complete explaination of pseudo-devices should be in
+ *	the man page (/sprite/doc/ref/devices/pdev), but the following
+ *	brief explaination may help.  The interface between the kernel
+ *	and the server process is based on filesystem streams.  The
+ *	server gets a "control stream" when it opens the pseudo-device
+ *	file with the FS_MASTER flag.  This control stream is readable
+ *	when a new client process has opened the pseudo-device.  The
+ *	control stream contains a short message with a new filesystem
+ *	streamID for a "service stream" that the server uses to communicate
+ *	with the new client.
+ *	Service streams are used by the server to get request messages
+ *	(that correspond to client operations) and return results.
+ *
+ *	Associated with each service stream is a "request buffer".  The server
+ *	gets request messages from clients indirectly; the requests are
+ *	placed into the request buffer, along with their data, and the server
+ *	learns about new requests by reading messages from the service stream
+ *	that contain 'firstByte' and 'lastByte' offsets into the request buffer.
+ *	This buffered interface lets the kernel stack up many requests (writes,
+ *	in particular) before a	context switch is required to the server
+ *	program.  Of course, this also lets the server handle all the queued
+ *	requests at one time.  When the	server has handled requests it updates
+ *	the 'firstByte' pointer by making a IOC_PDEV_SET_PTRS ioctl() on
+ *	the service stream.
+ *
+ *	There can also be a read ahead buffer associated with each service
+ *	stream.  This is filled with data by the server program that is to
+ *	be read by a client, and the kernel moves data from this buffer,
+ *	which is again in the server's address space, to the client without
+ *	having to switch out to the server process. 
+ *	
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ * $Header: /sprite/src/lib/include/dev/RCS/pdev.h,v 1.16 89/06/15 11:29:56 brent Exp Locker: brent $ SPRITE (Berkeley)
+ */
+
+#ifndef _PDEV
+#define _PDEV
+
+#include "proc.h"
+#ifdef KERNEL
+#include "fs.h"
+#else
+#include <kernel/fs.h>
+#endif
+
+/*
+ * Pseudo-device operations
+ *	PDEV_OPEN		The first request after a client open.
+ *	PDEV_DUP		OBSOLETE, but might resurrect itself.
+ *	PDEV_CLOSE		The last request.
+ *	PDEV_READ		Read data from the pseudo-device.
+ *	PDEV_WRITE		Write data to the pseudo-device.
+ *	PDEV_IOCTL		Special operation on the pseudo-device.
+ *	PDEV_WRITE_ASYNC	Asynchronous write.  No reply needed.
+ *
+ * These two only apply to pseudo-device connections to pseudo-file-systems.
+ * For regular pseudo-devices the kernel takes care of attribute handling.
+ *	PDEV_GET_ATTR		Get attributes given a pdev connection.
+ *	PDEV_SET_ATTR		Set attributes given a pdev connection.
+ */
+
+typedef int Pdev_Op;
+
+#define PDEV_OPEN		1
+/* #define PDEV_DUP		2 */
+#define PDEV_CLOSE		3
+#define PDEV_READ		4
+#define PDEV_WRITE		5
+#define PDEV_IOCTL		6
+#define PDEV_WRITE_ASYNC	7
+#define PDEV_GET_ATTR		8
+#define PDEV_SET_ATTR		9
+
+/*
+ * A pseudo-device server gets a 'control stream' when opening a pseudo-device.
+ * The following structure describes the messages read from the control stream.
+ * Control stream messages are used to notify the server that it
+ * has a new private stream because a client opened the pseudo-device.
+ */
+typedef struct Pdev_Notify {
+    unsigned int	magic;			/* == PDEV_NOTIFY_MAGIC */
+    int			newStreamID;
+    int			reserved;		/* Extra */
+} Pdev_Notify;
+
+#define PDEV_NOTIFY_MAGIC	0x1D4E4F52
+
+/*
+ * The first message on a private stream is a PDEV_OPEN.
+ * This message identifies the client process, its host, and the host's
+ * byte order to the server.
+ */
+
+typedef struct Pdev_OpenParam {
+    int flags;			/* Flags from the Fs_Open call */
+    Proc_PID pid;		/* Client's process ID */
+    int hostID;			/* Host ID where client is from */
+    int uid;			/* User ID of the client process */
+    int gid;			/* Group ID of the client process */
+    int byteOrder;		/* Byte order identifier */
+    int reserved;		/* Extra */
+} Pdev_OpenParam;
+
+/*
+ * PDEV_READ, PDEV_WRITE request parameters, see <kernel/fsIO.h>
+ */
+
+typedef Fs_IOParam Pdev_RWParam;
+
+/*
+ * PDEV_IOCTL request parameter, see <kernel/fsIO.h>
+ */
+
+typedef Fs_IOCParam Pdev_IOCParam;
+
+/*
+ * PDEV_SET_ATTR request parameters.  These are in the Pdev_Request header,
+ * and the new Fs_Attributes record is passed as the data block following
+ * the header.  The user and group ID are used for authentication.
+ */
+
+typedef struct {
+    int		flags;		/* Which attributes to set */
+    int		uid;		/* User ID */
+    int		gid;		/* Group ID */
+} Pdev_SetAttrParam;
+
+
+/*
+ * When a client does something to the pseudo-device the server gets
+ * a corresponding request message.  The structure of it is defined here.
+ * The control information in the request header is the same for both
+ * pseudo-device and pseudo-filesystem operations.
+ */
+
+typedef struct {
+    unsigned int magic;		/* PDEV_REQUEST_MAGIC or PFS_REQUEST_MAGIC */
+    Pdev_Op	operation;	/* What action is requested. */
+    int		messageSize;	/* The complete size of the request header
+				 * plus data, plus padding for alignment */
+    int		requestSize;	/* Size of data following this header */
+    int		replySize;	/* Max size of the reply data expected. */
+    int		dataOffset;	/* Offset of data from start of header */
+} Pdev_RequestHdr;
+
+typedef struct {
+    Pdev_RequestHdr	hdr;	/* with PDEV_REQUEST_MAGIC */
+    union {			/* Additional parameters to the operation. */
+	Pdev_OpenParam		open;
+	Pdev_RWParam		read;
+	Pdev_RWParam		write;
+	Pdev_IOCParam		ioctl;
+	Pdev_SetAttrParam	setAttr;
+    } param;
+} Pdev_Request;
+
+#define PDEV_REQUEST_MAGIC	0x7265717E
+
+/*
+ * IOC_PDEV_REPLY is used to return the following information about
+ * a reply to a client's request.  The status in
+ * the reply header will be the return value of the client's system call,
+ * except for FS_WOULD_BLOCK and FS_LOOKUP_REDIRECT which are processed
+ * by the kernel.
+ */
+
+typedef struct Pdev_Reply {
+    unsigned int magic;		/* PDEV_REPLY_MAGIC */
+    ReturnStatus status;	/* Return status of remote call */
+    int		selectBits;	/* Return select state bits */
+    int		replySize;	/* Size of the data in replyBuf, if any */
+    Address	replyBuf;	/* Server space address of reply data */
+    int		signal;		/* Signal to return, if non-zero */
+    int		code;		/* Code to modify signal */
+} Pdev_Reply;
+
+#define PDEV_REPLY_MAGIC	0x52455057
+
+/*
+ * IOC_PDEV_SMALL_REPLY uses the following struct to return a small
+ * amount of data to the client's request.
+ * Up to PDEV_SMALL_DATA_LIMIT bytes can be returned.
+ * 
+ */
+#define PDEV_SMALL_DATA_LIMIT	16
+
+typedef struct Pdev_ReplyData {
+    unsigned int magic;		/* PDEV_REPLY_DATA_MAGIC */
+    ReturnStatus status;	/* Return status of remote call */
+    int		selectBits;	/* Return select state bits */
+    int		replySize;	/* Size of following data */
+    Address	replyBuf;	/* Unused, needed for padding & compatibility */
+    int		signal;		/* (non-zero) Signal to generate, if any */
+    int		code;		/* Code to modify the signal */
+    char	data[PDEV_SMALL_DATA_LIMIT];	/* Reply data */
+} Pdev_ReplyData;
+
+#define PDEV_REPLY_DATA_MAGIC	0x524ABC57
+
+/*
+ * I/O Controls for server streams.
+ *	IOC_PDEV_READY		The server uses this to notify the kernel
+ *				that the pseudo-device is ready for I/O now.
+ *				The input buffer should contain an int
+ *				with an or'd combination of FS_READABLE,
+ *				FS_WRITABLE, or FS_EXCEPTION.
+ *	IOC_PDEV_SET_BUF	These are used to tell the kernel where the
+ *				request buffer and read ahead buffer (if any)
+ *				are. The input buffer should contain a
+ *				Pdev_SetBufArgs struct.  Note that this
+ *				needs to be done after getting a notification
+ *				on the control stream before any request
+ *				(i.e. the client's open request) comes through.
+ *				This can also be done later to change the
+ *				buffer if needed.  The buffer change takes
+ *				place as soon as the previous one empties.
+ *				The switch is indicated by the requestAddr
+ *				that you read from the service stream.
+ *	IOC_PDEV_WRITE_BEHIND	Set (Unset) write-behind buffering in the
+ *				request buffer.  The single input argument
+ *				is a pointer to a Boolean; TRUE enables
+ *				write-behind, FALSE inhibits it.  The default
+ *				is no write-behind.
+ *	IOC_PDEV_SET_PTRS	These are used to update the firstByte and
+ *				lastByte pointers into the request and
+ *				read ahead buffers.  The input buffer
+ *				is a Pdev_BufPtrs structure.
+ *	IOC_PDEV_REPLY		This is used to send a reply to a request.
+ *				The input buffer contains a Pdev_Reply.  This
+ *				includes an address (in the server's space)
+ *				of a buffer containing reply data, if any.
+ *	IOC_PDEV_SMALL_REPLY	This is like IOC_PDEV_REPLY, except that
+ *				the reply data is embedding in the struct
+ *				passed into the kernel.  The amount of data
+ *				that can be returned this was is defined
+ *				by PDEV_SMALL_DATA_LIMIT.
+ *	IOC_PDEV_BIG_WRITES	Set (Unset) the ability of the client to
+ *				write a chunk larger than will fit into
+ *				the request buffer.  This is to support
+ *				UDP socket semantics that prevent a client
+ *				from writing more than the declared packet size.
+ *				(Of course, we could do better by keeping the
+ *				 existing semantics that automatically break
+ *				 the write into smaller ones...)
+ *				The input buffer should reference a Boolean;
+ *				TRUE enables big writes (which is the default)
+ *				FALSE prevents big writes.
+ *	IOC_PDEV_SIGNAL_OWNER	This sends a signal to the controlling process
+ *				of the pseudo-device.  If there is no owner
+ *				then this is ignored.  The input buffer contains
+ *				the signal number and code to send.
+ *
+ */
+
+#define IOC_PDEV		(2 << 16)
+#define IOC_PDEV_READY		(IOC_PDEV | 0x1)
+#define IOC_PDEV_SET_BUF	(IOC_PDEV | 0x2)
+#define IOC_PDEV_WRITE_BEHIND	(IOC_PDEV | 0x3)
+#define IOC_PDEV_SET_PTRS	(IOC_PDEV | 0x4)
+#define IOC_PDEV_REPLY		(IOC_PDEV | 0x5)
+#define IOC_PDEV_BIG_WRITES	(IOC_PDEV | 0x6)
+#define IOC_PDEV_SIGNAL_OWNER	(IOC_PDEV | 0x7)
+#define IOC_PDEV_SMALL_REPLY	(IOC_PDEV | 0x8)
+
+/*
+ * Input structure for the IOC_PDEV_SET_BUF IOControl
+ */
+
+typedef struct Pdev_SetBufArgs {
+    Address	requestBufAddr;		/* Server's address of request buffer */
+    int		requestBufSize;		/* Num bytes in the request buffer */
+    Address	readBufAddr;		/* NULL if no read ahead.  Non-NULL
+					 * implicitly enables read-ahead. */
+    int		readBufSize;		/* Num bytes in the read ahead buffer */
+} Pdev_SetBufArgs;
+
+/*
+ * Input structure for IOC_PDEV_SET_PTRS IOControl.
+ */
+
+typedef struct Pdev_BufPtrs {
+    int magic;			/* == PDEV_BUF_PTR_MAGIC */
+    Address	requestAddr;	/* The address of the request buffer.  This is
+				 * valid when reading only, and it indicates
+				 * what request buffer is being used.  See
+				 * IOC_PDEV_SET_BUF. */
+    int requestFirstByte;	/* Byte offset of the first valid data byte
+				 * in the request buffer.  If -1 buf is empty */
+    int requestLastByte;	/* Byte offset of the last valid data byte. */
+    int readFirstByte;		/* Byte offset of the first valid data byte
+				 * in the read ahead buffer. -1 => empty */
+    int readLastByte;		/* Byte offset of the last data byte. */
+} Pdev_BufPtrs;
+
+#define PDEV_BUF_PTR_MAGIC	0x3C46DF14
+
+/*
+ * Stucture for the IOC_PDEV_SIGNAL_OWNER operation.
+ */
+typedef struct Pdev_Signal {
+    unsigned int signal;
+    unsigned int code;
+} Pdev_Signal;
+
+#endif _PDEV
+@
+
+
+1.17.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d58 1
+a58 1
+ * $Header: /sprite/src/lib/include/dev/RCS/pdev.h,v 1.17 89/06/15 12:15:06 brent Exp $ SPRITE (Berkeley)
+@
+
+
+1.16
+log
+@Nuked use of fsIO.h
+@
+text
+@d58 1
+a58 1
+ * $Header: /sprite/src/lib/include/dev/RCS/pdev.h,v 1.15 89/06/02 13:36:11 brent Exp Locker: brent $ SPRITE (Berkeley)
+d65 1
+d67 3
+@
+
+
+1.15
+log
+@New interface that includes signals and expanded parameter blocks
+@
+text
+@d58 1
+a58 1
+ * $Header: /sprite/src/lib/include/dev/RCS/pdev.h,v 1.14 89/03/13 08:58:35 brent Exp Locker: brent $ SPRITE (Berkeley)
+a65 5
+#ifdef KERNEL
+#include "fsIO.h"
+#else
+#include <kernel/fsIO.h>
+#endif
+@
+
+
+1.14
+log
+@Added IOC_PDEV_SIGNAL_OWNER constant
+@
+text
+@d58 1
+a58 1
+ * $Header: /sprite/src/lib/include/dev/RCS/pdev.h,v 1.13 89/01/27 09:33:56 brent Exp $ SPRITE (Berkeley)
+d66 5
+d112 1
+a112 1
+#define PDEV_NOTIFY_MAGIC	0x1D4E4F54
+d125 1
+d131 1
+a131 3
+ * PDEV_READ, PDEV_WRITE request parameters. 
+ *	There is a reply block for read, the data.  There is no
+ *	reply data for a write.
+d134 1
+a134 8
+typedef struct {
+    int		offset;		/* Byte offset for the transfer, the length of
+				 * the transfer is implied by the sizes in the
+				 * Request header. */
+    unsigned int familyID;	/* Can be used to enforce controlling tty */
+    Proc_PID	procID;		/* Needed for signalling, etc. */
+    int		reserved;	/* Extra */
+} Pdev_RWParam;
+d137 1
+a137 1
+ * PDEV_IOCTL request parameter.
+d140 1
+a140 8
+typedef struct {
+    int		command;	/* I/O control command #. */
+    unsigned int familyID;	/* Can be used to enforce controlling tty */
+    Proc_PID	procID;		/* Process id of calling process */
+    int		byteOrder;	/* Defines caller's byte order.  Needed
+				 * to correctly interpret following data. */
+    int		reserved;	/* Extra */
+} Pdev_IOCParam;
+d145 1
+a145 1
+ * the header.
+d183 1
+a183 1
+#define PDEV_REQUEST_MAGIC	0x7265717D
+d186 2
+a187 2
+ * The server replies to each message on the private stream with
+ * a reply header followed with reply data (if any).  The status in
+d194 1
+a194 1
+    unsigned int magic;		/* == PDEV_REPLY_MAGIC */
+d199 2
+a200 1
+    int		reserved;	/* Extra */
+d203 22
+a224 1
+#define PDEV_REPLY_MAGIC	0x52455058
+d258 5
+d289 1
+@
+
+
+1.13
+log
+@Added IOC_PDEV_SIGNAL
+@
+text
+@d58 1
+a58 1
+ * $Header: /sprite/src/lib/include/dev/RCS/pdev.h,v 1.12 89/01/19 09:35:14 brent Exp Locker: brent $ SPRITE (Berkeley)
+d271 1
+@
+
+
+1.12
+log
+@Removed pseudo-file-system definitions to their own file
+@
+text
+@d58 1
+a58 1
+ * $Header: /sprite/src/lib/include/dev/RCS/pdev.h,v 1.11 88/11/17 09:03:52 brent Exp Locker: brent $ SPRITE (Berkeley)
+d257 4
+d303 8
+@
+
+
+1.11
+log
+@Added rename parameters
+@
+text
+@d5 1
+a5 1
+ *	pseudoo-devices and pseudo-filesystems. A pseudo-device is a file
+a15 4
+ *	Pseudo-filesystem servers handle naming requests over the same
+ *	kind of communication channel that pseudo-device servers handle
+ *	I/O requests.
+ *
+d30 1
+a30 1
+ *	learns of new requests from clients indirectly; the requests are
+d44 2
+a45 1
+ *	which is again in the server's address space, to the client's buffer. 
+d49 7
+d58 1
+a58 1
+ * $Header: /sprite/src/lib/include.new/dev/RCS/pdev.h,v 1.10 88/10/19 16:04:38 brent Exp $ SPRITE (Berkeley)
+a66 6
+#ifdef KERNEL
+#include "fsNameOps.h"
+#else
+#include <kernel/fsNameOps.h>
+#endif
+
+a67 12
+ * Type of operation requested by a client.  There are two mutually exclusize
+ *	command groups, those for pseudo-devices, and those for
+ *	pseudo-filesystems.  The pseduo-device commands are used to open
+ *	a connection to a pseudo-device, and then to forward I/O operations
+ *	to the pseudo-device server.  The pseudo-filesystem commands are used
+ *	forward naming operations from the kernel to the pseudo-filesystem
+ *	server.  These are kept distinct, instead of overlapping,
+ *	for consistency checking.  Note that there are two variants of the
+ *	command request header, Pdev_Request vs. Pfs_Request.  These are
+ *	slightly different because of differences in command parameters.
+ *	(Typedefs below are used to marshal parameters to these calls.)
+ *
+a68 1
+ *	PDEV_INVALID		Not used
+d75 4
+a80 11
+ *
+ * Pseudo-filesystem pathname operations
+ *	PFS_OPEN		Open a file in the pseudo-filesystem.
+ *	PFS_GET_ATTR		Get attributes given a pathname in a pfs.
+ *	PFS_SET_ATTR		Set attributes given a pathname in a pfs.
+ *	PFS_MAKE_DEVICE		Make a device
+ *	PFS_MAKE_DIR		Make a directory
+ *	PFS_REMOVE		Remove a file
+ *	PFS_REMOVE_DIR		Remove a directory
+ *	PFS_RENAME		Rename a file
+ *	PFS_HARD_LINK		Make a hard link between two files.
+d83 1
+a83 20
+typedef enum {
+    PDEV_INVALID,
+    PDEV_OPEN,
+    PDEV_DUP,
+    PDEV_CLOSE,
+    PDEV_READ,
+    PDEV_WRITE,
+    PDEV_IOCTL,
+    PDEV_GET_ATTR,		/* For Fs_GetAttributesID */
+    PDEV_SET_ATTR,
+    PFS_OPEN,
+    PFS_GET_ATTR,		/* For Fs_GetAttributes */
+    PFS_SET_ATTR,
+    PFS_MAKE_DEVICE,
+    PFS_MAKE_DIR,
+    PFS_REMOVE,
+    PFS_REMOVE_DIR,
+    PFS_RENAME,
+    PFS_HARD_LINK,
+} Pdev_Op;
+d85 9
+a93 1
+#define PDEV_NUM_OPS	18
+d111 2
+a112 2
+ * This message provides a unique ID for the client and
+ * provides some other IDs for use by the server.
+d153 1
+a153 1
+ * PDEV_SET_ATTR request parameters.  These are in the Pfs_Request header,
+d164 1
+d168 1
+a168 1
+ * The control information in the command header is the same for both
+d173 1
+a173 1
+    unsigned int magic;		/* PDEV_REQUEST_MAGIC|PFS_REQUEST_MAGIC */
+a195 30
+ * When a naming operation is done in a pseudo-filesystem the pfs server
+ * gets a message of the following format.
+ */
+
+typedef struct {
+    Pdev_RequestHdr	hdr;	/* with PFS_REQUEST_MAGIC */
+    union {			/* Additional parameters to the operation. */
+	FsOpenArgs		open;
+	FsLookupArgs		lookup;
+	FsMakeDeviceArgs	makeDevice;
+	Fs2PathParams		rename;
+    } param;
+} Pfs_Request;
+
+#define PFS_REQUEST_MAGIC	0x73657C6A
+
+/*
+ * When a PFS_SET_ATTR operation is done the data that follows the message hdr
+ * has the following format.  The file name comes at the end and its true
+ * length is given in one field.
+ */
+
+typedef struct {
+    Fs_Attributes	attr;		/* Attribute values */
+    int			flags;		/* Indicates which attributes to set */
+    int			nameLength;	/* Number of bytes in name */
+    char		name[4];	/* Actually larger */
+} Pfs_SetAttrData;
+
+/*
+d198 3
+a200 1
+ * the reply header will be the return value of the client's system call.
+a257 28
+ * I/O Controls specific to pseudo-filesystem servers
+ *	IOC_PFS_OPEN		This is used instead of IOC_PDEV_REPLY to
+ *				respond to a PFS_OPEN request.  This reply
+ *				causes a new pseudo-device connection between
+ *				the server and the opening client.  The result
+ *				of this I/O control is a new streamID for
+ *				the server's half of the connection.  Unlike
+ *				pseudo-device servers, there is no need to
+ *				read a control stream to get this streamID,
+ *				it is returned as a result of this IOC.
+ *	IOC_PFS_SET_ID		This is used to set the file ID associated
+ *				with a connection to a pseudo-filesystem server.
+ *				There will be a naming connection, and perhaps
+ *				many more pdev-like connections that represent
+ *				files.  The ID set by this call we be passed in
+ *				as the 'prefixID' and 'rootID' fields of
+ *				the arguments to naming operations.  If this
+ *				call is not used then the kernel's own
+ *				fileIDs (which are unique, anyway) are used.
+ *	IOC_PFS_PASS_STREAM	This is used instead of IOC_PDEV_REPLY to
+ *				respond to a PFS_OPEN request.  This reply
+ *				passes the stream indicated by the input
+ *				streamID to the client as the result of its
+ *				open request.  Thus the pseudo-filesystem
+ *				server can open a file/device/whatever on
+ *				behalf of its client and return the open file.
+ *				The pseudo-filesystem server won't see any
+ *				more I/O operations, or the close.
+a266 3
+#define IOC_PFS_OPEN		(IOC_PDEV | 0x7)
+#define IOC_PFS_SET_ID		(IOC_PDEV | 0x8)
+#define IOC_PFS_PASS_STREAM	(IOC_PDEV | 0x9)
+@
+
+
+1.10
+log
+@Added gid to Pdev_SetAttrParam so pdev handler can check
+\both uid and gid before setting attributes.
+@
+text
+@d54 1
+a54 1
+ * $Header: /sprite/src/lib/include.new/dev/RCS/pdev.h,v 1.9 88/10/19 14:25:06 brent Exp $ SPRITE (Berkeley)
+d238 1
+@
+
+
+1.9
+log
+@Moved extern for tracing variable to library header file.
+This file just have stuff for kernel/server interface.
+@
+text
+@d54 1
+a54 1
+ * $Header: /sprite/src/lib/include.new/dev/RCS/pdev.h,v 1.8 88/10/19 14:12:53 brent Exp Locker: brent $ SPRITE (Berkeley)
+d186 3
+a188 1
+ * PDEV_SET_ATTR request parameters.
+d194 1
+@
+
+
+1.8
+log
+@Added pfsTraceNaming so clients of the library can have control
+over tracing.
+@
+text
+@d54 1
+a54 1
+ * $Header: /sprite/src/lib/include.new/dev/RCS/pdev.h,v 1.7 88/10/18 13:52:30 brent Exp Locker: brent $ SPRITE (Berkeley)
+a67 6
+
+/*
+ * If pfsTraceNaming is set the lookup operations to a pseudo-filesystem
+ * server are logged to standard output.
+ */
+extern int pfsTraceNaming;
+@
+
+
+1.7
+log
+@Added #define PDEV_NUM_OPS for use in the library.
+@
+text
+@d54 1
+a54 1
+ * $Header: /sprite/src/lib/include.new/dev/RCS/pdev.h,v 1.6 88/10/16 13:21:13 brent Exp $ SPRITE (Berkeley)
+d68 6
+@
+
+
+1.6
+log
+@Added IOC_PFS_SET_ID which is used to set the fileID associated
+with a pseudo-filesystem connection.
+@
+text
+@d54 1
+a54 1
+ * $Header: /sprite/src/lib/include.new/dev/RCS/pdev.h,v 1.5 88/10/14 10:30:23 brent Exp Locker: brent $ SPRITE (Berkeley)
+d125 2
+@
+
+
+1.5
+log
+@Updated includes.
+@
+text
+@d54 1
+a54 1
+ * $Header: pdev.h,v 1.4 88/10/13 17:24:23 brent Exp $ SPRITE (Berkeley)
+d322 9
+d338 2
+d350 2
+a351 1
+#define IOC_PFS_PASS_STREAM	(IOC_PDEV | 0x8)
+@
+
+
+1.4
+log
+@Added IOControls for completing pseudo-filesystem opens.
+Added get/set attributes support
+@
+text
+@d54 1
+a54 1
+ * $Header: pdev.h,v 1.3 88/10/10 12:17:28 brent Exp $ SPRITE (Berkeley)
+d61 1
+d184 9
+d206 1
+a206 1
+    int		reserved;	/* Extra */
+d216 1
+d249 1
+a249 1
+} Pdev_SetAttrData;
+@
+
+
+1.3
+log
+@Added request-response commands for pseudo-filesystems,
+and generalized message header so it can be used cleanly
+for both classes of commands.
+@
+text
+@d54 1
+a54 1
+ * $Header: pdev.h,v 1.2 88/08/26 15:38:27 brent Exp $ SPRITE (Berkeley)
+d89 2
+d92 1
+a92 1
+ * Pseudo-filesystem operations
+d94 2
+a95 2
+ *	PFS_GET_ATTR		Get the attributes of a file...
+ *	PFS_SET_ATTR		Set the attributes of a file...
+d112 2
+d115 1
+a115 1
+    PFS_GET_ATTR,
+d228 13
+d300 18
+d327 2
+@
+
+
+1.2
+log
+@Cleaned up structures and added byteOrder parameter for PDEV_IOCTL
+@
+text
+@d4 2
+a5 1
+ *	Declarations for pseudo-devices.  A pseudo-device is a special file
+d15 4
+d54 1
+a54 1
+ * $Header: pdev.h,v 2.4 88/03/31 10:00:25 brent Exp $ SPRITE (Berkeley)
+d62 6
+d69 13
+a81 2
+ * Type of operation requested by a client.  (There are typedefs below
+ *	that are used to marshal parameters to these calls.)
+d88 12
+a99 1
+ *	PDEV_IOCTL		Special operation on the pseudo-device.    
+d110 9
+d122 1
+a122 1
+ * The server gets a 'control stream' back when opening the pseudo-device.
+d181 2
+d186 1
+a186 1
+    unsigned int magic;		/* == PDEV_REQUEST_MAGIC */
+d193 4
+d206 16
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d23 1
+a23 1
+ *	streamID for a "server stream" that the server uses to communicate
+d25 1
+a25 1
+ *	These streams are used by the server to read request messages
+d28 11
+a38 10
+ *	The server learns of new requests from clients indirectly; the requests
+ *	are placed into a buffer, along with their data, and the server learns
+ *	about these additions by reading messages that contain 'firstByte'
+ *	and 'lastByte' offsets into the buffer.  This buffered interface lets
+ *	the kernel stack up many requests (writes, in particular) before a
+ *	context switch is required to the server program.  Of course, this also
+ *	lets the server handle all the queued requests at one time.  When the
+ *	server has handled requests it updates the 'firstByte' pointer by
+ *	making a IOC_PDEV_SET_PTRS IOControl on the private stream for the
+ *	client.
+d40 4
+a43 4
+ * There can also be a read ahead buffer for a pseudo-device.  This is
+ * filled with data by the server program that is to be read by the client,
+ * and the kernel moves data from this (server address space) buffer to
+ * the client's buffer. 
+d62 1
+a62 1
+ *	PDEV_DUP		OBSOLETE.
+d72 1
+a72 1
+    PDEV_DUP,			/* XXX going away, this is a placeholder */
+d86 1
+a86 1
+    unsigned int	magic;	/* == PDEV_NOTIFY_MAGIC */
+d88 1
+d104 2
+a105 1
+    int clientID;		/* Unique ID for the client. XXX for old junk */
+a107 6
+typedef struct Pdev_WaitInfo {	/* XXX for old stuff */
+    int hostID;
+    Proc_PID	pid;
+    int	token;
+} Pdev_WaitInfo;
+
+d115 3
+a117 4
+    int offset;		/* Byte offset for the transfer, the length of
+			 * the transfer is implied by the sizes in the
+			 * Request header. */
+    Pdev_WaitInfo wait;	/* XXX */
+d119 2
+a122 8
+typedef struct {
+    int offset;		/* Byte offset for the transfer, the length of
+			 * the transfer is implied by the sizes in the
+			 * Request header. */
+    unsigned int familyID;	/* Can be used to enforce controlling tty */
+    Proc_PID procID;	/* Needed for signalling, etc. */
+} Pdev_NewRWParam;
+
+d126 1
+d130 4
+a135 6
+typedef struct {
+    int		command;	/* I/O control command #. */
+    unsigned int familyID;	/* Can be used to enforce controlling tty */
+    Proc_PID procID;		/* Process id of calling process */
+} Pdev_NewIOCParam;
+
+d144 5
+a148 3
+    int		requestSize;	/* Size of the request data that immediately
+				 * follows this request header. */
+    int		replySize;	/* Max size of the reply expected. */
+d157 1
+a157 14
+typedef struct {
+    unsigned int magic;		/* == PDEV_REQUEST_MAGIC */
+    Pdev_Op	operation;	/* What action is requested. */
+    int		messageSize;	/* The complete size of the request header
+				 * plus data, plus padding for alignment */
+    int		requestSize;	/* Size of data following this header */
+    int		replySize;	/* Max size of the reply data expected. */
+    union {			/* Additional parameters to the operation. */
+	Pdev_OpenParam		open;
+	Pdev_NewRWParam		read;
+	Pdev_NewRWParam		write;
+	Pdev_NewIOCParam	ioctl;
+    } param;
+} Pdev_NewRequest;
+a158 2
+#define PDEV_REQUEST_MAGIC	0x7265717C
+
+d164 1
+a168 7
+    int		replySize;	/* Size of the data that follows, if any */
+} Pdev_Reply;
+
+typedef struct Pdev_NewReply {
+    unsigned int magic;		/* == PDEV_REPLY_MAGIC */
+    ReturnStatus status;	/* Return status of remote call */
+    int		selectBits;	/* Return select state bits */
+d171 2
+a172 1
+} Pdev_NewReply;
+d174 1
+a174 5
+#define PDEV_REPLY_MAGIC	0x52455059
+/*
+ * For convenience to the Write reply, this reply struct
+ * is defined for returning one int of reply data.
+ */
+a175 8
+typedef struct Pdev_EasyReply {
+    unsigned int magic;	/* == PDEV_REPLY_MAGIC */
+    ReturnStatus status;
+    int		selectBits;
+    int		replySize;	/* please set to sizeof(int) !! */
+    int		data;
+} Pdev_EasyReply;
+
+d194 1
+a194 1
+ *				that you read from the request stream.
+d205 1
+a205 1
+ *				The input buffer contains a Pdev_NewReply.  This
+d242 1
+a258 1
+#define PDEV_BUF_PTR_MAGIC_OLD	0x3C46DF15
+@

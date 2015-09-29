@@ -1,0 +1,2125 @@
+head     9.18;
+branch   ;
+access   ;
+symbols  ds3100:9.17 sun3:9.17 sun4nw:9.13 symm:9.13 spur:9.13 sprited:9.13.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.18
+date     92.12.13.18.21.27;  author mgbaker;  state Exp;
+branches ;
+next     9.17;
+
+9.17
+date     92.09.29.16.15.18;  author jhh;  state Exp;
+branches ;
+next     9.16;
+
+9.16
+date     92.08.10.22.58.57;  author mgbaker;  state Exp;
+branches ;
+next     9.15;
+
+9.15
+date     92.05.07.17.18.09;  author kupfer;  state Exp;
+branches ;
+next     9.14;
+
+9.14
+date     92.04.14.17.04.17;  author jhh;  state Exp;
+branches ;
+next     9.13;
+
+9.13
+date     90.10.09.11.58.04;  author jhh;  state Exp;
+branches 9.13.1.1;
+next     9.12;
+
+9.12
+date     90.10.02.16.29.05;  author mgbaker;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     90.09.11.11.35.28;  author mgbaker;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     90.04.18.19.25.22;  author mgbaker;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     90.03.29.12.45.41;  author mgbaker;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     90.03.22.12.13.12;  author mgbaker;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.03.22.11.54.22;  author mgbaker;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.03.13.16.26.00;  author douglis;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     89.11.27.09.19.51;  author brent;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     89.11.26.11.15.29;  author brent;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     89.11.26.10.53.00;  author jhh;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.30.11.16.32;  author shirriff;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.03.12.55.54;  author brent;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.17.37;  author douglis;  state Stable;
+branches ;
+next     8.4;
+
+8.4
+date     89.05.30.16.13.42;  author jhh;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.02.15.08.19.19;  author jhh;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.01.06.11.28.06;  author jhh;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.12.04.15.29.11;  author ouster;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.34.44;  author douglis;  state Stable;
+branches ;
+next     6.4;
+
+6.4
+date     88.10.28.19.23.35;  author mlgray;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.09.06.08.13.26;  author mlgray;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.26.18.26.05;  author mlgray;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.20.10.00.27;  author ouster;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.24.39;  author brent;  state Stable;
+branches ;
+next     5.13;
+
+5.13
+date     88.08.04.17.51.44;  author mlgray;  state Exp;
+branches ;
+next     5.12;
+
+5.12
+date     88.08.01.17.10.54;  author mlgray;  state Exp;
+branches ;
+next     5.11;
+
+5.11
+date     88.07.19.12.19.33;  author mlgray;  state Exp;
+branches ;
+next     5.10;
+
+5.10
+date     88.06.15.10.34.50;  author brent;  state Exp;
+branches ;
+next     5.9;
+
+5.9
+date     88.06.14.10.19.07;  author brent;  state Exp;
+branches ;
+next     5.8;
+
+5.8
+date     88.05.26.19.15.49;  author brent;  state Exp;
+branches ;
+next     5.7;
+
+5.7
+date     88.05.18.11.52.39;  author brent;  state Exp;
+branches ;
+next     5.6;
+
+5.6
+date     87.12.02.13.11.39;  author brent;  state Exp;
+branches ;
+next     5.5;
+
+5.5
+date     87.11.17.15.13.42;  author douglis;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     87.10.13.10.55.02;  author brent;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     87.10.09.09.30.29;  author brent;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.09.11.09.34.28;  author brent;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.09.09.10.47.08;  author brent;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.48.32;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.13.1.1
+date     91.10.21.21.53.07;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.18
+log
+@Code for server-driven recovery.
+@
+text
+@/*
+ * rpcCall.c --
+ *
+ *      These are the top-level routines for the client side of Remote
+ *      Procedure Call - the routines do overhead tasks like setting up a
+ *      message, and managing client channels.  The network protocol for
+ *      the client side is in rpcClient.c.
+ *
+ * Copyright 1985 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/rpc/rpcCall.c,v 9.17 92/09/29 16:15:18 jhh Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+
+#include <sprite.h>
+#include <stdio.h>
+
+#include <rpc.h>
+#include <rpcPacket.h>
+#include <rpcClient.h>
+#include <rpcTrace.h>
+#include <rpcHistogram.h>
+#include <sys.h>
+#include <timerTick.h>
+#include <timer.h>
+#include <user/limits.h>
+/* Not needed if recov tracing is removed. */
+#include <recov.h>
+
+/*
+ * So we can print out rpc names we include the rpcServer definitions.
+ */
+#include <rpcServer.h>
+
+/*
+ * The client channel table is kept as an array of pointers to channels.
+ * rpcClient.h describes the contents of a ClientChannel.  The number
+ * of channels limits the parallelism available on the client.  During
+ * system shutdown, for example, there may be many processes doing
+ * remote operations (removing swap files) at the same time.
+ */
+
+RpcClientChannel **rpcChannelPtrPtr = (RpcClientChannel **)NIL;
+int		   rpcNumChannels = 8;
+int		   numFreeChannels = 8;
+
+/*
+ * The allocation and freeing of channels is monitored.
+ * A process might have to wait for a free RPC channel.
+ */
+Sync_Condition freeChannels;
+Sync_Semaphore rpcMutex = Sync_SemInitStatic("Rpc:rpcMutex");
+
+/*
+ * There is sequence of rpc transaction ids that increases over time.
+ */
+
+unsigned int rpcID = 1;
+
+/*
+ * A boottime Id is used to help servers realize that a client has
+ * rebooted since it talked to it last.  It is zero for the first
+ * RPC, one that gets the time.  Then it is set to that time and does
+ * not change until we reboot.
+ */
+
+unsigned int rpcBootID = 0;
+/*
+ * A count is kept of the number of RPCs made.
+ * The zero'th element is used to count attempts at
+ * RPCs with unknown RPC numbers - RPC number 0 is unused.
+ */
+int rpcClientCalls[RPC_LAST_COMMAND+1];
+
+/*
+ * For one of the client policies for handling negative acknowledgements,
+ * we ramp down the number of channels used with the ailing server.  These
+ * data structures keep track of which servers are unhappy.
+ */
+typedef struct	UnhappyServer {
+    int		serverID;
+    Timer_Ticks	time;
+} UnhappyServer;
+
+UnhappyServer	serverAllocState[8];
+
+/* Initial back-off interval for negative acknowledgements. */
+unsigned int	channelStateInterval;
+
+/* forward declaration */
+static Boolean GetChannelAllocState _ARGS_((int serverID, Timer_Ticks *time));
+static void SetChannelAllocState _ARGS_((int serverID, Boolean trouble));
+static void SetChannelAllocStateInt _ARGS_((int serverID, Boolean trouble));
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_Call --
+ *
+ *      Top-level interface for a client that makes a remote procedure
+ *      call.  Our caller has to pre-allocate all storage for the data
+ *      going to the server in the request message, and for the data
+ *      returning in the reply message.  The storage argument contains
+ *      pointers and sizes for this preallocated space.  Upon return
+ *	the data from the reply message will be in the specified storage
+ *	areas.
+ *
+ * Results:
+ *      An error code that either reflects an error in delivery/transport
+ *      or is an error code from the remote procedure.  Also, the storage
+ *      input specification is modified - the return parameter and data
+ *      size fields are updated to reflect the true size of the return
+ *      parameter and data blocks.  Finally, the return parameter and data
+ *      areas contain the results of the remote procedure call.
+ *
+ * Side effects:
+ *	There are no side effects on this machine except that some addressing
+ *	information is kept as a hint for future RPCs.  The semantics of
+ *	the remote procedure are unlimited on the server machine.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Rpc_Call(serverID, command, storagePtr)
+    int serverID;		/* Indicates the server for the RPC.  The
+				 * special value SERVER_BROADCAST is used
+				 * to specify a broadcast RPC.  The first
+				 * reply received is returned and subsequent
+				 * replies get discarded.  Broadcast RPCs
+				 * are NOT retried if there is no response. */
+    int command;		/* Rpc command.  Values defined in rpcCall.h */
+    Rpc_Storage *storagePtr;	/* Specifies buffer areas for request and
+				 * reply messages. */
+{
+    register RpcClientChannel *chanPtr;	/* Handle for communication channel */
+    register ReturnStatus error;	/* General error return status */
+    Time histTime;			/* Time for histogram taking */
+    unsigned	int srvBootID;		/* Boot time stamp from server, used to
+					 * track server reboots */
+    Boolean notActive = 0;		/* Not active flag from server */
+    unsigned int recovType = 0;		/* Whether rpc reply had recov flags. */
+
+    if (serverID < 0 || serverID >= NET_NUM_SPRITE_HOSTS) {
+	printf("Rpc_Call, bad serverID <%d>\n", serverID);
+	return(GEN_INVALID_ARG);
+    } else if (serverID != RPC_BROADCAST_SERVER_ID &&
+	       serverID == rpc_SpriteID) {
+	printf("Rpc_Call: Trying RPC #%d to myself\n", command);
+	return(GEN_INVALID_ARG);
+    } else if ((serverID == RPC_BROADCAST_SERVER_ID) &&
+	       ! (command == RPC_FS_PREFIX ||
+		  command == RPC_GETTIME)) {
+	panic("Trying to broadcast a non-prefix RPC");
+	return(GEN_INVALID_ARG);
+    }
+#ifdef TIMESTAMP
+    RPC_NIL_TRACE(RPC_CLIENT_A, "Rpc_Call");
+#endif /* TIMESTAMP */
+
+allocAgain:
+    RPC_CALL_TIMING_START(command, &histTime);
+    chanPtr = RpcChanAlloc(serverID);
+
+#ifdef TIMESTAMP
+    RPC_NIL_TRACE(RPC_CLIENT_B, "alloc");
+#endif /* TIMESTAMP */
+    /*
+     * Initialize the RPC request message header and put buffer
+     * specifications of our caller into the state of the channel.  This
+     * is once-per-rpc initialization that does not need to be repeated if
+     * we have to re-send.
+     */
+    RpcSetup(serverID, command, storagePtr, chanPtr);
+
+    /*
+     * Update a histogram of RPCs made.  The zeroth element is used to
+     * count unknown rpcs
+     */
+    if (command > 0 &&
+	command <= RPC_LAST_COMMAND) {
+	rpcClientCalls[command]++;
+    } else {
+	/*
+	 */
+	printf("Rpc_Call: unknown rpc command (%d)\n", command);
+	rpcClientCalls[0]++;	/* 0 == RPC_BAD_COMMAND */
+    }
+#ifdef TIMESTAMP
+    RPC_NIL_TRACE(RPC_CLIENT_C, "setup");
+#endif /* TIMESTAMP */
+
+    /*
+     * Call RpcDoCall, which synchronizes with RpcClientDispatch,
+     * to do the send-receive-timeout loop for the RPC.
+     */
+/* Remove this debugging print stuff soon. */
+    if (command == RPC_ECHO_2 && recov_PrintLevel >= RECOV_PRINT_ALL) {
+	Sys_HostPrint(serverID, "Pinging server\n");
+    }
+    error = RpcDoCall(serverID, chanPtr, storagePtr, command,
+		      &srvBootID, &notActive, &recovType);
+    RpcChanFree(chanPtr);
+    
+#ifdef TIMESTAMP
+    RPC_NIL_TRACE(RPC_CLIENT_OUT, "return");
+#endif /* TIMESTAMP */
+
+    RPC_CALL_TIMING_END(command, &histTime);
+/* This slow printing stuff should be removed soon. It's for debugging. */
+    if (command == RPC_ECHO_2 && recov_PrintLevel >= RECOV_PRINT_ALL) {
+	if (error == RPC_NACK_ERROR) {
+	    Sys_HostPrint(serverID,
+		    "Ping result bad: Nack error from server\n");
+	} else if (error == RPC_TIMEOUT || error == NET_UNREACHABLE_NET) {
+	    Sys_HostPrint(serverID, "Ping result bad: server is dead.\n");
+	}
+	if (error == SUCCESS) {
+	    Sys_HostPrint(serverID, "Pinged serverID successfully.\n");
+	}
+    }
+    if (error == RPC_NACK_ERROR) {
+	/*
+	 * This error is only returned if the client policy for handling
+	 * negative acknowledgements is to ramp down the number of channels
+	 * used, so that's what we do.
+	 */
+	SetChannelAllocState(serverID, TRUE);
+	goto allocAgain;
+    }
+#ifndef NO_RECOVERY
+    if (error == RPC_TIMEOUT || error == NET_UNREACHABLE_NET) {
+	if (command != RPC_ECHO_2) {
+	    printf("<%s> ", rpcService[command].name);
+	    Sys_HostPrint(serverID, "RPC timed-out\n");
+	}
+	Recov_HostDead(serverID);
+    } else {
+	Recov_HostAlive(serverID, srvBootID, TRUE, notActive, recovType);
+    }
+#endif /* NO_RECOVERY */
+    return(error);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcSetup --
+ *
+ *      Initialize the RPC header for the request message and set up the
+ *      buffer specifications for the request and reply messages.  The
+ *      operations done here are done once before the request message is
+ *      sent out the first time, and they do not have to be re-done if the
+ *      request message needs to be re-sent.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *      The Rpc header is initialized.  The buffer specifications for the
+ *      request and reply messages are set up.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+RpcSetup(serverID, command, storagePtr, chanPtr)
+    int serverID;			/* The server for the RPC */
+    int command;			/* The RPC to perform */
+    register Rpc_Storage *storagePtr;	/* Specifies storage for the RPC
+					 * parameters */
+    register RpcClientChannel *chanPtr;	/* The channel for the RPC */
+{
+    register Net_ScatterGather *bufferPtr;	/* This specifies a part of the
+						 * packet to the network driver
+						 */
+    register RpcHdr *rpcHdrPtr;			/* The RPC header */
+
+    /*
+     * Initialize the RPC header for the request message.  A couple fields
+     * are set up elsewhere.  The server hint is left over from previous
+     * RPCs.  The channel ID and the version number are set up at
+     * boot time by Rpc_Init.
+     */
+    rpcHdrPtr = (RpcHdr *) &chanPtr->requestRpcHdr;
+    if(command == RPC_ECHO_1) {
+	rpcHdrPtr->flags = RPC_ECHO;
+    } else {
+	rpcHdrPtr->flags = RPC_REQUEST;
+    }
+    rpcHdrPtr->flags |= RPC_SERVER;
+
+    rpcHdrPtr->clientID = rpc_SpriteID;
+    rpcHdrPtr->serverID = serverID;
+    rpcHdrPtr->bootID = rpcBootID;
+    rpcHdrPtr->ID = rpcID++;
+    rpcHdrPtr->command = command;
+
+    /*
+     * Setup the timeout parameters depending on the route to the server.
+     * This is rather simple minded.
+     */
+    if (chanPtr->constPtr == (RpcConst *)NIL) {
+	Net_Route *routePtr = Net_IDToRoute(serverID, -1, FALSE, 
+				(Sync_Semaphore *) NIL, 0);
+	if (routePtr != (Net_Route *)NIL &&
+	    routePtr->protocol == NET_PROTO_INET) {
+	    chanPtr->constPtr = &rpcInetConst;
+	} else {
+	    chanPtr->constPtr = &rpcEtherConst;
+	}
+	if (routePtr != (Net_Route *)NIL) {
+	    Net_ReleaseRoute(routePtr);
+	}
+    }
+    /*
+     * Copy buffer pointers into the state of the channel.
+     */
+    bufferPtr		= &chanPtr->request.paramBuffer;
+    bufferPtr->bufAddr	= storagePtr->requestParamPtr;
+    bufferPtr->length	= storagePtr->requestParamSize;
+
+    rpcHdrPtr->paramSize = storagePtr->requestParamSize;
+
+    bufferPtr		= &chanPtr->request.dataBuffer;
+    bufferPtr->bufAddr	= storagePtr->requestDataPtr;
+    bufferPtr->length	= storagePtr->requestDataSize;
+
+    rpcHdrPtr->dataSize = storagePtr->requestDataSize;
+
+    bufferPtr		= &chanPtr->reply.paramBuffer;
+    bufferPtr->bufAddr	= storagePtr->replyParamPtr;
+    bufferPtr->length	= storagePtr->replyParamSize;
+
+    bufferPtr		= &chanPtr->reply.dataBuffer;
+    bufferPtr->bufAddr	= storagePtr->replyDataPtr;
+    bufferPtr->length	= storagePtr->replyDataSize;
+
+    /*
+     * Reset state about the reception of replies.
+     */
+    chanPtr->actualDataSize = 0;
+    chanPtr->actualParamSize = 0;
+    chanPtr->fragsReceived = 0;
+    chanPtr->fragsDelivered = 0;
+}
+#ifdef DEBUG
+#define CHAN_TRACESIZE 1000
+#define INC(ctr) { (ctr) = ((ctr) == CHAN_TRACESIZE-1) ? 0 : (ctr)+1; }
+typedef struct {
+    RpcClientChannel	*chanPtr;
+    char		*action;
+    int			pNum;
+    int			serverID;
+    int			chanNum;
+} debugElem;
+
+static debugElem	debugArray[CHAN_TRACESIZE];
+static int 		debugCtr;
+#define CHAN_TRACE(channel, string) \
+{	\
+    debugElem *ptr = &debugArray[debugCtr];	\
+    INC(debugCtr);	\
+    ptr->chanPtr = (channel);	\
+    ptr->action = string;	\
+    ptr->chanNum = (channel)->index;	\
+    ptr->serverID = (channel)->serverID;	\
+    ptr->pNum = Mach_GetProcessorNumber();	\
+}	
+#else
+#define CHAN_TRACE(channel, string)
+#endif
+
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetChannelAllocState --
+ *
+ *	Get the state of channel allocation in regards to a certain server.
+ *
+ * Results:
+ *	True if the server is marked as being congested.  False otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static Boolean
+GetChannelAllocState(serverID, time)
+    int		serverID;
+    Timer_Ticks	*time;
+{
+    int		i;
+    Boolean	found = FALSE;
+
+    for (i = 0; i < (sizeof (serverAllocState) / sizeof (UnhappyServer)); i++) {
+	if (serverAllocState[i].serverID == serverID) {
+	    found = TRUE;
+	    break;
+	}
+    }
+    if (!found) {
+	return FALSE;
+    }
+    *time = serverAllocState[i].time;
+    return TRUE;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetChannelAllocState--
+ *
+ *	Set the state of channel allocation in regards to a certain server.
+ *	If we've been getting "noAllocs" back from a server, we want to
+ *	ramp down our use of it by using fewer client channels with it.
+ *	This routine includes a master lock around it for places where
+ *	it's called unprotected.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static ENTRY void
+SetChannelAllocState(serverID, trouble)
+    int		serverID;
+    Boolean	trouble;
+{
+
+    MASTER_LOCK(&rpcMutex);
+
+    SetChannelAllocStateInt(serverID, trouble);
+
+    MASTER_UNLOCK(&rpcMutex);
+
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetChannelAllocStateInt --
+ *
+ *	Set the state of channel allocation in regards to a certain server.
+ *	If we've been getting "noAllocs" back from a server, we want to
+ *	ramp down our use of it by using fewer client channels with it.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+SetChannelAllocStateInt(serverID, trouble)
+    int		serverID;
+    Boolean	trouble;
+{
+    int		i;
+    Boolean	found = FALSE;
+
+
+    for (i = 0; i < (sizeof (serverAllocState) / sizeof (UnhappyServer)); i++) {
+	if (serverAllocState[i].serverID == serverID) {
+	    /* already marked as unhappy */
+	    found = TRUE;
+	    break;
+	}
+    }
+    if (!found && !trouble) {
+	/* server isn't already marked as being in trouble. */
+	return;
+    }
+    if (!found) {
+	/* Server is in trouble, we need to record this. */
+	for (i = 0; i < (sizeof (serverAllocState) / sizeof (UnhappyServer));
+		i++) {
+	    if (serverAllocState[i].serverID == -1) {
+		found = TRUE;
+		break;
+	    }
+	}
+	if (!found) {
+	    /* No more spaces to mark unhappy server! */
+	    rpcCltStat.noMark++;
+	    printf("SetChannelAllocStateInt: %s\n",
+		    "No more room to keep track of congested servers.");
+	    return;
+	}
+    }
+    if (trouble) {
+	Timer_GetCurrentTicks(&(serverAllocState[i].time));
+	if (serverAllocState[i].serverID == -1) {
+	    rpcCltStat.newTrouble++;
+	} else {
+	    rpcCltStat.moreTrouble++;
+	}
+	serverAllocState[i].serverID = serverID;
+    } else {
+	rpcCltStat.endTrouble++;
+	serverAllocState[i].serverID = -1;
+    }
+
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcChanAlloc --
+ *
+ *      Allocate a channel for an RPC.  A pointer to the channel is
+ *      returned.  The allocation is done on the basis of the server
+ *      machine involved.  The goal is to send a long series of RPC
+ *      requests to the same server over the same channel.  To that end a
+ *      channel is chosen first if its cached address matches the input
+ *      server address.  Second choice is a previously unused channel,
+ *      lastly we re-use a channel that has been used with a different server.
+ *
+ * Results:
+ *	A pointer to the channel.  This returns a good pointer, or it panics.
+ *
+ * Side effects:
+ *	The channel is dedicated to the RPC until the caller frees
+ *	the channel with RpcChanFree.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY RpcClientChannel *
+RpcChanAlloc(serverID)
+    int serverID;	/* Server ID to base our allocation on. */
+{
+    RpcClientChannel *chanPtr = (RpcClientChannel *) NULL;
+					/* The channel we allocate */
+    register int i;			/* Index into channel table */
+    int firstUnused = -1;		/* The first unused channel */
+    int firstBusy = -1;			/* The first busy channel for server */
+    int firstFreeMatch = -1;		/* The first chan free for server */
+    int firstFree = -1;			/* The first chan used but now free */
+    Timer_Ticks	time;			/* When server channel state set. */
+    Timer_Ticks	currentTime;		/* Current ticks. */
+    Boolean	srvCongested;		/* Server is marked as congested. */
+    unsigned int smallestID = UINT_MAX;
+
+    MASTER_LOCK(&rpcMutex);
+
+    while (numFreeChannels < 1) {
+	rpcCltStat.chanWaits++;
+waitForBusyChannel:
+	Sync_MasterWait(&freeChannels, &rpcMutex, FALSE);
+    }
+    firstUnused = -1;
+    firstBusy = -1;
+    firstFreeMatch = -1;
+    firstFree = -1;
+
+    srvCongested = GetChannelAllocState(serverID, &time);
+    if (srvCongested) {
+	Timer_AddIntervalToTicks(time, channelStateInterval, &time);
+	Timer_GetCurrentTicks(&currentTime);
+    }
+    if (srvCongested && (Timer_TickGE(time, currentTime))) {
+	/*
+	 * Server is congested, so ramp down use of channels.
+	 * If there's a channel, free or busy, for our server, use the
+	 * lowest numbered one.  If it's busy, wait till it's not.  If there's
+	 * no channel for this server, take free one.
+	 */
+	for (i=0 ; i<rpcNumChannels ; i++) {
+	    chanPtr = rpcChannelPtrPtr[i];
+	    if (serverID == chanPtr->serverID) {
+		if (chanPtr->state == CHAN_FREE) {
+		    if (firstFreeMatch < 0) {
+			firstFreeMatch = i;
+		    }
+		} else {
+		    if (firstBusy < 0) {
+			firstBusy = i;
+		    }
+		}
+	    } else if (chanPtr->serverID == -1) {
+		if (firstUnused < 0) {
+		    firstUnused = i;
+		}
+	    } else {
+		if (chanPtr->state == CHAN_FREE) {
+		    if (firstFree < 0)  {
+			firstFree = i;
+		    }
+		}
+	    }
+	}
+	if (firstFreeMatch >= 0 &&
+		(firstBusy == -1 || firstBusy > firstFreeMatch)) {
+	    /*
+	     * We've found a free channel matching our server ID and there
+	     * isn't a busy one for our server ID of lower number, so take
+	     * this one.
+	     */
+	    chanPtr = rpcChannelPtrPtr[firstFreeMatch];
+	    goto found;
+	}
+	if (firstBusy > 0) {
+	    /*
+	     * There's a busy channel matching our server ID and either it's
+	     * of lower number than a free channel matching our serverID or
+	     * else there's no free channel matching our server ID.  Wait for
+	     * this one to free up.
+	     */
+	    rpcCltStat.nackChanWait++;
+	    goto waitForBusyChannel;
+	}
+	/*
+	 * Otherwise, there's no free our busy channel matching our server ID
+	 * so we'll create one in the code later down below.
+	 */
+    } else {
+	/*
+	 * Server is not congested.  Make sure it's marked okay, and allocate
+	 * a channel in the regular fasion.
+	 */
+	if (srvCongested) {
+	    /* Mark server as okay now. */
+	    SetChannelAllocStateInt(serverID, FALSE);
+	}
+	/* use regular alloc */
+
+	for (i=0 ; i<rpcNumChannels ; i++) {
+	    chanPtr = rpcChannelPtrPtr[i];
+	    if (chanPtr->state == CHAN_FREE) {
+		if (chanPtr->serverID == -1) {
+		    /*
+		     * Remember the first unused channel.
+		     */
+		    if (firstUnused < 0) {
+			firstUnused = i;
+		    }
+		} else if (serverID == chanPtr->serverID) {
+		    /*
+		     * Agreement between the channels old server and the
+		     * server ID.  By reusing this channel we hope to give
+		     * the server an implicit acknowledgment for the
+		     * previous transaction.
+		     */
+		    rpcCltStat.chanHits++;
+		    CHAN_TRACE(chanPtr, "alloc channel w/ same server");
+		    goto found;
+		} else if (chanPtr->requestRpcHdr.ID < smallestID) {
+		    /*
+		     * Keep track of the channel with the smallest rpcID
+		     * (it's the least recently used). We'll use this one
+		     * if we can't reuse a channel with the same server or
+		     * find an unused channel.
+		     */
+		    firstFree = i;
+		    smallestID = chanPtr->requestRpcHdr.ID;
+		}
+	    }
+	}
+    }
+    /*
+     * We didn't find an address match on a free channel, so we use
+     * the first previously unused channel or the first used but free channel.
+     */
+    if (firstUnused >= 0) {
+	rpcCltStat.chanNew++;
+	chanPtr = rpcChannelPtrPtr[firstUnused];
+	CHAN_TRACE(chanPtr, "alloc first unused");
+    } else if (firstFree >= 0) {
+	rpcCltStat.chanReuse++;
+	chanPtr = rpcChannelPtrPtr[firstFree];
+	CHAN_TRACE(chanPtr, "alloc first free");
+    } else {
+	panic("Rpc_ChanAlloc can't find the free channel.\n");
+    }
+    chanPtr->serverID = serverID;
+    chanPtr->constPtr = (RpcConst *)NIL;	/* Set in RpcSetup */
+
+found:
+    chanPtr->state = CHAN_BUSY;
+    numFreeChannels--;
+
+    MASTER_UNLOCK(&rpcMutex);
+    return(chanPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcChanFree --
+ *
+ *	Free an RPC channel.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The channel is available for other RPC calls.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+RpcChanFree(chanPtr)
+    RpcClientChannel *chanPtr;		/* The channel to free */
+{
+
+    MASTER_LOCK(&rpcMutex);
+    CHAN_TRACE(chanPtr, "free channel");
+    if (chanPtr->state == CHAN_FREE) {
+	panic("Rpc_ChanFree: freeing free channel\n");
+    }
+    chanPtr->state = CHAN_FREE;
+
+    numFreeChannels++;
+    if (numFreeChannels == 1 || rpcChannelNegAcks) {
+	rpcCltStat.chanBroads++;
+	Sync_MasterBroadcast(&freeChannels);
+    }
+    
+    MASTER_UNLOCK(&rpcMutex);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcChanClose --
+ *
+ *	Process a close request from a server. This is called from
+ *	RpcClientDispatch at interrupt level.  If the channel is not
+ *	busy then the interrupt handler
+ *	needs to mark the channel as busy momentarily and send an
+ *	ack to the server. See RpcClientDispatch for more details.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The channel might be used to send an ack to the server.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+RpcChanClose(chanPtr,rpcHdrPtr)
+    register RpcClientChannel *chanPtr;	/* The channel to use.*/
+    register RpcHdr *rpcHdrPtr;		/* The Rpc header as it sits in the
+					 * network module's buffer.  The data
+					 * in the message follows this. */
+{
+    register RpcHdr *ackHdrPtr;
+    if ((chanPtr->state & CHAN_BUSY) == 0) {
+	MASTER_LOCK(&rpcMutex);
+	/*
+	 * Check again to make sure the channel isn't busy,
+	 * then temporarily allocate it while we issue the explicit ack.
+	 * If a process has slipped in and allocated the channel then its
+	 * request will serve as the acknowledgement and we can bail out.
+	 */
+	if ((chanPtr->state & CHAN_BUSY) != 0) {
+	    MASTER_UNLOCK(&rpcMutex);
+	    return;
+	}
+	chanPtr->state |= CHAN_BUSY;
+	numFreeChannels--;
+	MASTER_UNLOCK(&rpcMutex);
+
+	rpcCltStat.close++;
+	/*
+	 * Set up and transmit the explicit acknowledgement packet.
+	 * Note that fields that never change have already been
+	 * set in RpcBufferInit.
+	 */
+	ackHdrPtr = &chanPtr->ackHdr;
+	ackHdrPtr->flags = RPC_ACK | RPC_CLOSE | RPC_SERVER;
+	ackHdrPtr->clientID = rpc_SpriteID;
+	ackHdrPtr->serverID = rpcHdrPtr->serverID;
+	ackHdrPtr->serverHint = rpcHdrPtr->serverHint;
+	ackHdrPtr->command = rpcHdrPtr->command;
+	ackHdrPtr->bootID = rpcBootID;
+	ackHdrPtr->ID = rpcHdrPtr->ID;
+	(void)RpcOutput(rpcHdrPtr->serverID, &chanPtr->ackHdr, &chanPtr->ack,
+			     (RpcBufferSet *)NIL, 0, (Sync_Semaphore *)NIL);
+	/*
+	 * Note that the packet can linger in the network output queue,
+	 * so we are relying on the fact that it would only be reused
+	 * for another ack in the worst case.
+	 */
+
+	MASTER_LOCK(&rpcMutex);
+	chanPtr->state &= ~CHAN_BUSY;
+	numFreeChannels++;
+	MASTER_UNLOCK(&rpcMutex);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcInitServerChannelState --
+ *
+ *	Initialize data about the client's view of how the servers are doing.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+RpcInitServerChannelState()
+{
+    int		i;
+
+    for (i = 0; i < (sizeof (serverAllocState) / sizeof (UnhappyServer)); i++) {
+	serverAllocState[i].serverID = -1;
+	serverAllocState[i].time = timer_TicksZeroSeconds;
+    }
+    channelStateInterval = timer_IntOneSecond * 10;
+}
+@
+
+
+9.17
+log
+@If you can't find a channel that was previously used for the same server,
+then use the least-recently-used free channel, as determined by the rpcID.
+Also got rid of the printfs about lack of channels.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/rpc/rpcCall.c,v 9.16 92/08/10 22:58:57 mgbaker Exp $ SPRITE (Berkeley)";
+d145 1
+a145 1
+    Boolean fastBoot = FALSE;		/* Whether rpc reply had fast flag. */
+d205 1
+a205 1
+		      &srvBootID, &notActive, &fastBoot);
+d242 1
+a242 1
+	Recov_HostAlive(serverID, srvBootID, TRUE, notActive, fastBoot);
+@
+
+
+9.16
+log
+@Changes for transparent server recovery.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/rpc/rpcCall.c,v 9.15 92/05/07 17:18:09 kupfer Exp $ SPRITE (Berkeley)";
+d29 1
+d559 1
+a559 4
+    Boolean	haddaWait = FALSE; /* DEBUG: had to wait for free channel */
+    static int numWaits = 0;	/* DEBUG: number of calls that had to wait */
+    static int freeChanThreshold = 4; /* DEBUG: this many channels free 
+				       * means it's okay to complain again */
+a562 13
+    /* 
+     * Quick debugging hack: if RPCs were delayed because there were no 
+     * channels, see if the load has slacked back enough that it's okay to 
+     * complain about it.  It should be okay to do this here (rather than 
+     * in the code that frees channels) because there should at least be 
+     * some sort of regular heartbeat RPC.
+     */
+    if (numWaits > 0 && numFreeChannels >= freeChanThreshold) {
+	printf("RpcChanAlloc: %d RPCs were delayed due to lack of channels.\n",
+	       numWaits);
+	numWaits = 0;
+    }
+
+a565 8
+	if (!haddaWait) {
+	    haddaWait = TRUE;
+	    ++numWaits;
+	    if (numWaits == 1) {
+		printf("%s: RPC to host %d delayed: no channels available.\n", 
+		       "RpcChanAlloc", serverID);
+	    }
+	}
+d664 1
+a664 1
+		} else if (firstFree < 0) {
+d666 4
+a669 2
+		     * The first free channel (with some server) is less of
+		     * a good candidate for allocation.
+d672 1
+@
+
+
+9.15
+log
+@Improve the name of a local variable in RpcChanAlloc.  Add debug
+printfs to RpcChanAlloc to complain when all the RPC channels are
+busy.  This is to help track down a FS consistency problem.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/rpc/rpcCall.c,v 9.14 92/04/14 17:04:17 jhh Exp $ SPRITE (Berkeley)";
+d144 1
+d204 1
+a204 1
+		      &srvBootID, &notActive);
+d241 1
+a241 1
+	Recov_HostAlive(serverID, srvBootID, TRUE, notActive);
+@
+
+
+9.14
+log
+@Uses new net definitions.
+Net_IDToRoute interface changed slightly.
+Got rid of bogus "new" rpc format. It was for the UltraNet and it didn't
+make much difference anyway.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/rpc/rpcCall.c,v 9.13 90/10/09 11:58:04 jhh Exp $ SPRITE (Berkeley)";
+d556 5
+a560 1
+    Boolean	result;			/* Result of function call. */
+d564 13
+d580 8
+d595 2
+a596 2
+    result = GetChannelAllocState(serverID, &time);
+    if (result) {
+d600 1
+a600 1
+    if (result && (Timer_TickGE(time, currentTime))) {
+d660 1
+a660 1
+	if (result) {
+@
+
+
+9.13
+log
+@new net module
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCall.c,v 9.12 90/10/02 16:29:05 mgbaker Exp Locker: jhh $ SPRITE (Berkeley)";
+d304 1
+a304 1
+	Net_Route *routePtr = Net_IDToRoute(serverID, 0, FALSE, 
+@
+
+
+9.13.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCall.c,v 9.13 90/10/09 11:58:04 jhh Exp $ SPRITE (Berkeley)";
+@
+
+
+9.12
+log
+@More prototyping garbage.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCall.c,v 9.11 90/09/11 11:35:28 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d285 1
+a285 1
+    rpcHdrPtr = &chanPtr->requestRpcHdr;
+d304 2
+a305 1
+	Net_Route *routePtr = Net_IDToRoute(serverID);
+d307 1
+a307 1
+	    routePtr->type == NET_ROUTE_INET) {
+d311 3
+@
+
+
+9.11
+log
+@Added function prototypes (Mendel checking for mary)
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCall.c,v 9.10 90/04/18 19:25:22 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d18 2
+a19 1
+#include "sprite.h"
+d21 8
+a28 7
+#include "rpc.h"
+#include "rpcClient.h"
+#include "rpcTrace.h"
+#include "rpcHistogram.h"
+#include "sys.h"
+#include "timerTick.h"
+#include "timer.h"
+d30 1
+a30 1
+#include "recov.h"
+d35 1
+a35 1
+#include "rpcServer.h"
+d543 2
+a544 1
+    register RpcClientChannel *chanPtr;	/* The channel we allocate */
+@
+
+
+9.10
+log
+@Added hook for recovery print messages.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCall.c,v 9.9 90/03/29 12:45:41 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d91 3
+a93 2
+extern	void	RpcSetChannelAllocStateInt();
+extern	void	RpcSetChannelAllocState();
+d227 1
+a227 1
+	RpcSetChannelAllocState(serverID, TRUE);
+d368 2
+d374 1
+a374 1
+ * RpcGetChannelAllocState --
+d386 2
+a387 2
+Boolean
+RpcGetChannelAllocState(serverID, time)
+d412 1
+a412 1
+ * RpcSetChannelAllocState--
+d428 2
+a429 2
+ENTRY void
+RpcSetChannelAllocState(serverID, trouble)
+d436 1
+a436 1
+    RpcSetChannelAllocStateInt(serverID, trouble);
+d447 1
+a447 1
+ * RpcSetChannelAllocStateInt --
+d461 2
+a462 2
+void
+RpcSetChannelAllocStateInt(serverID, trouble)
+d493 1
+a493 1
+	    printf("RpcSetChannelAllocStateInt: %s\n",
+d563 1
+a563 1
+    result = RpcGetChannelAllocState(serverID, &time);
+d630 1
+a630 1
+	    RpcSetChannelAllocStateInt(serverID, FALSE);
+d805 1
+a805 1
+ *	description.
+@
+
+
+9.9
+log
+@New negative ack stuff.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCall.c,v 9.8 90/03/22 12:13:12 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d27 2
+d195 4
+d208 12
+@
+
+
+9.8
+log
+@After merge with rpc.mgb.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCall.c,v 9.5 89/11/27 09:19:51 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+a24 1
+#ifdef NEG_ACK
+a26 1
+#endif NEG_ACK
+d73 5
+a77 1
+#ifdef NEG_ACK
+d85 1
+d87 4
+a90 3
+#define RPC_NACK_ERROR	0x3000b		/* move to status.h after testing */
+    
+#endif NEG_ACK
+a156 1
+#ifdef NEG_ACK
+a157 1
+#endif
+a201 1
+#ifdef NEG_ACK
+d203 5
+a207 4
+	/* reroute to usable channel */
+	/* Check how many channels for this server */
+	/* reduce to one. */
+	/* do something to be able to unreduce! */
+a210 1
+#endif NEG_ACK
+a348 1
+#ifdef NEG_ACK
+d385 37
+a421 1
+    
+d426 1
+a426 1
+ * RpcSetChannelAllocState --
+d441 1
+a441 1
+RpcSetChannelAllocState(serverID, trouble)
+d448 1
+d451 1
+d461 1
+a461 1
+	found = FALSE;
+d471 2
+a472 1
+	    printf("RpcSetChannelAllocState: %s\n",
+d479 5
+d486 1
+d492 1
+a492 1
+#endif NEG_ACK
+d522 1
+a522 2
+    register int firstUnused = -1;	/* The first unused channel */
+#ifdef NEG_ACK
+d525 1
+a528 2
+#endif NEG_ACK
+    register int firstFree = -1;	/* The first chan used but now free */
+d531 1
+a531 3
+#ifdef NEG_ACK
+waitForBusyChannel:
+#endif NEG_ACK
+d534 1
+d537 4
+a541 1
+#ifdef NEG_ACK
+d550 3
+a552 5
+	 * If there's a channel, free or busy, with the server we want,
+	 * wait for it.  Make sure it's not stuck busy or something,
+	 * or put a retry limit on this.  Set something up so we know
+	 * we've done this with this server so that we know to undo it.
+	 * If no channel for this server, take free one.
+d578 11
+a588 12
+	if (firstFreeMatch < 0 && firstBusy < 0) {
+	    /* No channel for our serverID - so create one. */
+	    /* Fall through in case of Free or Unused */
+	} else if (firstFreeMatch >= 0) {
+	    if (firstBusy == -1 || firstBusy > firstFreeMatch) {
+		/* got it. */
+		goto found;
+	    } else {
+		/* We need to wait for busy one to free up. */
+		goto waitForBusyChannel;
+	    }
+	} else {
+d590 4
+a593 2
+	     * Busy one, wait for it to free up.  What will we do if it
+	     * never frees up?
+d595 1
+d598 4
+a601 1
+	/* Fall through in case of Free or Unused */
+d603 4
+d609 1
+a609 1
+	    RpcSetChannelAllocState(serverID, FALSE);
+a611 2
+	
+#endif NEG_ACK
+a641 1
+#ifdef NEG_ACK
+a642 1
+#endif NEG_ACK
+d697 1
+a697 1
+    if (numFreeChannels == 1) {
+a777 1
+#ifdef NEG_ACK
+a804 1
+#endif NEG_ACK
+@
+
+
+9.7
+log
+@Checking in for merge.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCall.c,v 9.6 90/03/13 16:26:00 douglis Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d25 4
+d75 13
+d153 3
+d200 10
+d347 101
+d478 7
+d488 3
+d496 28
+a523 7
+    for (i=0 ; i<rpcNumChannels ; i++) {
+	chanPtr = rpcChannelPtrPtr[i];
+	if (chanPtr->state == CHAN_FREE) {
+	    if (chanPtr->serverID == -1) {
+		/*
+		 * Remember the first unused channel.
+		 */
+d527 14
+a540 9
+	    } else if (serverID == chanPtr->serverID) {
+		/*
+		 * Agreement between the channels old server and the
+		 * server ID.  By reusing this channel we hope to give the
+		 * server an implicit acknowledgment for the previous
+		 * transaction.
+		 */
+		rpcCltStat.chanHits++;
+		CHAN_TRACE(chanPtr, "alloc channel w/ same server");
+d542 48
+a589 6
+	    } else if (firstFree < 0) {
+		/*
+		 * The first free channel (with some server) is less of
+		 * a good candidate for allocation.
+		 */
+		firstFree = i;
+d592 1
+d594 1
+d730 29
+@
+
+
+9.6
+log
+@Changed the panic about a bad server ID to a printf
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCall.c,v 9.5 89/11/27 09:19:51 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+@
+
+
+9.5
+log
+@Fixed up packet header initialization
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCall.c,v 9.4 89/11/26 11:15:29 brent Exp $ SPRITE (Berkeley)";
+d119 2
+a120 2
+    if (serverID < 0) {
+	panic("Rpc_Call, bad serverID");
+d124 1
+a124 5
+	if (command != RPC_ECHO) {
+	    panic("Trying to RPC to myself");
+	} else {
+	    printf("Warning: Trying to RPC to myself");
+	}
+a130 2
+    } else if (serverID >= NET_NUM_SPRITE_HOSTS) {
+	panic("Rpc_Call, server ID too large");
+@
+
+
+9.4
+log
+@Fixed botch.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCall.c,v 9.3 89/11/26 10:53:00 jhh Exp $ SPRITE (Berkeley)";
+a250 1
+    rpcHdrPtr->delay = rpcMyDelay;
+d499 2
+a500 1
+	 * Unset fragment and buffer fields have been initialized in Rpc_Init.
+a503 1
+	ackHdrPtr->delay = rpcMyDelay;
+a505 1
+	ackHdrPtr->channel = rpcHdrPtr->channel;
+d507 2
+@
+
+
+9.3
+log
+@Added debug trace for channel allocation.
+Fixed handling of explicit acknowledgments so they are
+properly synchronized with channel allocation.
+Required a change from a MONITOR to a MASTER_LOCK
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCall.c,v 9.2 89/10/30 11:16:32 shirriff Exp $ SPRITE (Berkeley)";
+d380 1
+a380 1
+		DEBUG(chanPtr, "alloc channel w/ same server");
+@
+
+
+9.2
+log
+@Lint fixes.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCall.c,v 9.1 89/10/03 12:55:54 brent Exp Locker: shirriff $ SPRITE (Berkeley)";
+d48 1
+a48 2
+Sync_Lock rpcLock = Sync_LockInitStatic("Rpc:rpcLock");
+#define LOCKPTR (&rpcLock)
+d298 26
+d356 1
+a356 3
+    LOCK_MONITOR;
+
+
+d359 1
+a359 1
+	(void) Sync_Wait(&freeChannels, FALSE);
+d361 1
+a361 1
+    
+d380 1
+d398 1
+d402 1
+d413 1
+a413 1
+    UNLOCK_MONITOR;
+d437 2
+a438 2
+    LOCK_MONITOR;
+
+d447 1
+a447 1
+	Sync_Broadcast(&freeChannels);
+d450 73
+a522 1
+    UNLOCK_MONITOR;
+d524 1
+@
+
+
+9.1
+log
+@Fixed up channels to have a server-specific set of timeout parameters.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCall.c,v 8.4 89/05/30 16:13:42 jhh Exp $ SPRITE (Berkeley)";
+d24 1
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCall.c,v 8.4 89/05/30 16:13:42 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d255 13
+d380 2
+@
+
+
+8.4
+log
+@Removed call to Sync_LockRegister
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCall.c,v 8.3 89/02/15 08:19:19 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+@
+
+
+8.3
+log
+@Updated Sync_Lock initialization
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCall.c,v 8.2 89/01/06 11:28:06 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+a318 1
+    Sync_LockRegister(&rpcLock);
+@
+
+
+8.2
+log
+@New Sync_Lock definition
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCall.c,v 8.1 88/12/04 15:29:11 ouster Exp Locker: jhh $ SPRITE (Berkeley)";
+d47 1
+a47 1
+Sync_Lock rpcLock = SYNC_LOCK_INIT_STATIC();
+d318 2
+@
+
+
+8.1
+log
+@Stop using obsolete header files.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCall.c,v 8.0 88/11/11 18:34:44 douglis Stable Locker: ouster $ SPRITE (Berkeley)";
+d47 1
+a47 1
+Sync_Lock rpcLock;
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCall.c,v 6.4 88/10/28 19:23:35 mlgray Exp Locker: douglis $ SPRITE (Berkeley)";
+a23 2
+#include "mem.h"
+#include "byte.h"
+@
+
+
+6.4
+log
+@Conversion to new C library.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCall.c,v 6.3 88/09/06 08:13:26 mlgray Exp Locker: mlgray $ SPRITE (Berkeley)";
+@
+
+
+6.3
+log
+@Removed lint.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: rpcCall.c,v 6.2 88/08/26 18:26:05 mlgray Exp $ SPRITE (Berkeley)";
+d122 1
+a122 1
+	Sys_Panic(SYS_FATAL, "Rpc_Call, bad serverID");
+d126 5
+a130 2
+	Sys_Panic((command != RPC_ECHO) ? SYS_FATAL : SYS_WARNING,
+		    "Trying to RPC to myself");
+a132 1
+#ifndef OLD_RPC_NUMBERS
+d135 1
+a135 5
+#else /* OLD_RPC_NUMBERS */
+	       ! (command == RPC_FS_SPRITE_PREFIX ||
+		  command == RPC_GETTIME)) {
+#endif /* OLD_RPC_NUMBERS */
+	Sys_Panic(SYS_FATAL, "Trying to broadcast a non-prefix RPC");
+d137 2
+d168 1
+a168 1
+	Sys_Printf("Rpc_Call: unknown rpc command (%d)\n", command);
+d191 1
+a191 1
+	    Sys_Printf("<%s> ", rpcService[command].name);
+a263 10
+#ifdef RPC_TEST_BYTE_SWAP
+    /*
+     * These fields used for byte-swapping.  Params are copied and byte-swapped
+     * into special buffer area in the channel.
+     */
+    bufferPtr		= &chanPtr->swapRequest.paramBuffer;
+    /* swapParamBuffer is an array, so this gives its address */
+    bufferPtr->bufAddr	= (Address) chanPtr->swapParamBuffer;
+    bufferPtr->length	= storagePtr->requestParamSize;
+#endif /* RPC_TEST_BYTE_SWAP */
+a269 6
+#ifdef RPC_TEST_BYTE_SWAP
+    bufferPtr		= &chanPtr->swapRequest.dataBuffer;
+    bufferPtr->bufAddr	= storagePtr->requestDataPtr;
+    bufferPtr->length	= storagePtr->requestDataSize;
+#endif /* RPC_TEST_BYTE_SWAP */
+    
+d310 1
+a310 1
+RpcClientChannel *
+d365 1
+a365 1
+	Sys_Panic(SYS_FATAL, "Rpc_ChanAlloc can't find the free channel.\n");
+d391 1
+a391 1
+void
+d399 1
+a399 1
+	Sys_Panic(SYS_FATAL, "Rpc_ChanFree: freeing free channel\n");
+@
+
+
+6.2
+log
+@Fixed some lint errors.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: rpcCall.c,v 6.1 88/08/20 10:00:27 ouster Exp $ SPRITE (Berkeley)";
+d117 1
+a117 1
+    int srvBootID;			/* Boot time stamp from server, used to
+d119 1
+a119 1
+    int notActive = 0;			/* Not active flag from server */
+@
+
+
+6.1
+log
+@Newline was missing from error message.
+@
+text
+@d1 1
+a1 1
+/* 
+d14 2
+a15 2
+static char rcsid[] = "$Header: rpcCall.c,v 6.0 88/08/11 12:24:39 brent Stable $ SPRITE (Berkeley)";
+#endif not lint
+d129 1
+a129 1
+    } else if ((serverID == RPC_BROADCAST_SERVER_ID) && 
+d133 1
+a133 1
+#else OLD_RPC_NUMBERS
+d136 1
+a136 1
+#endif OLD_RPC_NUMBERS
+d142 1
+a142 1
+#endif TIMESTAMP
+d149 1
+a149 1
+#endif TIMESTAMP
+d173 1
+a173 1
+#endif TIMESTAMP
+d185 1
+a185 1
+#endif TIMESTAMP
+d192 1
+a192 1
+	    Net_HostPrint(serverID, "RPC timed-out\n");
+d198 1
+a198 1
+#endif NO_RECOVERY
+d273 1
+a273 1
+#endif RPC_TEST_BYTE_SWAP
+d284 1
+a284 1
+#endif RPC_TEST_BYTE_SWAP
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: rpcCall.c,v 5.13 88/08/04 17:51:44 mlgray Exp $ SPRITE (Berkeley)";
+d192 1
+a192 1
+	    Net_HostPrint(serverID, "RPC timed-out");
+@
+
+
+5.13
+log
+@In preparation for installing.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: rpcCall.c,v 5.12 88/08/01 17:10:54 mlgray Exp $ SPRITE (Berkeley)";
+@
+
+
+5.12
+log
+@Doing byte-swapping.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: rpcCall.c,v 5.11 88/07/19 12:19:33 mlgray Exp $ SPRITE (Berkeley)";
+d130 1
+a130 1
+#ifdef NEW_RPC_NUMBERS
+d133 1
+a133 1
+#else NEW_RPC_NUMBERS
+d136 1
+a136 1
+#endif NEW_RPC_NUMBERS
+@
+
+
+5.11
+log
+@ready for testing
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: rpcCall.c,v 5.10 88/06/15 10:34:50 brent Exp $ SPRITE (Berkeley)";
+d130 1
+d133 4
+d264 10
+d280 6
+@
+
+
+5.10
+log
+@Fiddled with statment order so it matches the header file better.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: rpcCall.c,v 5.9 88/06/14 10:19:07 brent Exp $ SPRITE (Berkeley)";
+d130 1
+a130 2
+	       ! (command == RPC_FS_UNIX_PREFIX ||
+		  command == RPC_FS_SPRITE_PREFIX ||
+@
+
+
+5.9
+log
+@Took out warning message about echo's timing out so they
+don't pollute the screen after a server crashes.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: rpcCall.c,v 5.8 88/05/26 19:15:49 brent Exp $ SPRITE (Berkeley)";
+d234 1
+a234 2
+     * RPCs.  The channel ID and the transport ID (which should go away
+     * but the UNIX RPC implementation depends on it) are set up at
+a244 1
+    rpcHdrPtr->delay = rpcMyDelay;
+d247 1
+d249 1
+a250 1
+    rpcHdrPtr->bootID = rpcBootID;
+@
+
+
+5.8
+log
+@Added printf when an RPC times out.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: rpcCall.c,v 5.7 88/05/18 11:52:39 brent Exp $ SPRITE (Berkeley)";
+d186 4
+a189 2
+	Sys_Printf("<%s> ", rpcService[command].name);
+	Net_HostPrint(serverID, "RPC timed-out");
+@
+
+
+5.7
+log
+@Fiddled with panic
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: rpcCall.c,v 5.6 87/12/02 13:11:39 brent Exp $ SPRITE (Berkeley)";
+d28 5
+d186 2
+@
+
+
+5.6
+log
+@Added ifdef so I can compile without the recovery hooks
+in order to measure the cost.  It looks like it takes
+about 130 microseconds per call to Recov_HostAlive.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: rpcCall.c,v 5.5 87/11/17 15:13:42 douglis Exp $ SPRITE (Berkeley)";
+d121 2
+a122 1
+	Sys_Panic(SYS_FATAL, "Trying to RPC to myself");
+@
+
+
+5.5
+log
+@Only allow broadcast RPC's to get prefixes or time.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: rpcCall.c,v 5.4 87/10/13 10:55:02 brent Exp $ SPRITE (Berkeley)";
+d178 1
+d184 1
+@
+
+
+5.4
+log
+@Added notActive parameter to Recov_HostAlive
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: rpcCall.c,v 5.3 87/10/09 09:30:29 brent Exp $ SPRITE (Berkeley)";
+d122 6
+@
+
+
+5.3
+log
+@Created Recov module and updated our calls into it.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: rpcCall.c,v 5.2 87/09/11 09:34:28 brent Exp $ SPRITE (Berkeley)";
+d114 1
+d163 2
+a164 1
+    error = RpcDoCall(serverID, chanPtr, storagePtr, command, &srvBootID);
+d175 1
+a175 1
+	Recov_HostAlive(serverID, srvBootID, TRUE);
+@
+
+
+5.2
+log
+@Updated interface to RpcHostAlive
+Also throttled back the number of channels from 16 to 8
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: rpcCall.c,v 5.1 87/09/09 10:47:08 brent Exp $ SPRITE (Berkeley)";
+d171 1
+a171 1
+	RpcHostDead(serverID);
+d173 1
+a173 1
+	RpcHostAlive(serverID, srvBootID, TRUE);
+@
+
+
+5.1
+log
+@Cleaned up some lint
+@
+text
+@d5 1
+a5 1
+ *      Procedure Call.  The routines do overhead tasks like setting up a
+d14 1
+a14 1
+static char rcsid[] = "$Header: rpcCall.c,v 5.0 87/08/11 10:48:32 sprite Exp $ SPRITE (Berkeley)";
+d29 4
+a32 1
+ * rpcClient.h describes the contents of a ClientChannel.
+d36 2
+a37 2
+int		   rpcNumChannels = 16;
+int		   numFreeChannels = 16;
+d40 8
+a67 8
+/*
+ * The allocation and freeing of channels is monitored.
+ * A process might have to wait for a free RPC channel.
+ */
+Sync_Condition freeChannels;
+Sync_Lock rpcLock;
+#define LOCKPTR (&rpcLock)
+
+d110 4
+a113 2
+    register ReturnStatus error;/* General error return status */
+    Time histTime;
+d162 1
+a162 1
+    error = RpcDoCall(serverID, chanPtr, storagePtr, command);
+d173 1
+a173 1
+	RpcHostAlive(serverID);
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: rpcCall.c,v 4.5 87/08/10 14:49:37 brent Exp $ SPRITE (Berkeley)";
+a204 1
+    register ReturnStatus error;
+@

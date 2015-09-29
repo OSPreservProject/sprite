@@ -1,0 +1,341 @@
+512
+llib-ldisk:diskIO.c 2
+2
+4 50 36 0 0
+Disk_SectorRead
+4 0 0
+4 0 0
+4 0 0
+18 0 0
+16
+0 76 4 0 0
+Disk_SectorRead
+2
+4 100 36 0 0
+Disk_SectorWrite
+4 0 0
+4 0 0
+4 0 0
+18 0 0
+16
+0 127 4 0 0
+Disk_SectorWrite
+2
+5 155 36 0 0
+Disk_BlockRead
+4 0 0
+24 2752 16220
+4 0 0
+4 0 0
+18 0 0
+16
+0 198 4 0 0
+Disk_BlockRead
+2
+4 223 36 0 0
+Disk_BadBlockRead
+4 0 0
+24 2752 16220
+4 0 0
+18 0 0
+16
+0 249 4 0 0
+Disk_BadBlockRead
+2
+5 282 36 0 0
+Disk_BlockWrite
+4 0 0
+24 2752 16220
+4 0 0
+4 0 0
+18 0 0
+16
+0 325 4 0 0
+Disk_BlockWrite
+512
+llib-ldisk:diskPrint.c 2
+2
+1 43 32 0 0
+Disk_PrintDomainHeader
+24 2752 16220
+2
+1 99 32 0 0
+Disk_PrintSummaryInfo
+24 4096 26128
+2
+2 140 32 0 0
+Disk_PrintFileDescBitmap
+24 2752 16220
+18 0 0
+2
+2 180 32 0 0
+Disk_PrintDataBlockBitmap
+24 2752 16220
+18 0 0
+2
+1 220 32 0 0
+Disk_PrintDirEntry
+24 2112 3169
+2
+1 245 32 0 0
+Disk_PrintLabel
+24 3040 20640
+2
+1 297 98 0 0
+Disk_GetLabelTypeName
+4 0 0
+16
+0 304 18 0 0
+Disk_GetLabelTypeName
+2
+1 325 32 0 0
+Disk_PrintLfsSuperBlockHdr
+24 1024 17200
+2
+1 369 32 0 0
+Disk_PrintLfsStableMemParams
+24 192 24986
+2
+1 400 32 0 0
+Disk_PrintLfsDescMapParams
+24 512 20796
+2
+1 428 32 0 0
+Disk_PrintLfsSegUsageParams
+24 512 5396
+2
+1 466 32 0 0
+Disk_PrintLfsFileLayoutParams
+24 256 22745
+2
+1 492 32 0 0
+Disk_PrintLfsSuperBlock
+24 4096 26518
+2
+1 524 32 0 0
+Disk_PrintLfsCheckPointHdr
+24 736 22096
+2
+1 560 32 0 0
+Disk_PrintLfsCheckPointRegion
+24 64 14729
+2
+1 589 32 0 0
+Disk_PrintLfsCheckPointTrailer
+24 64 27601
+512
+llib-ldisk:diskFragIO.c 2
+2
+5 45 36 0 0
+Disk_FragRead
+4 0 0
+24 2752 16220
+4 0 0
+4 0 0
+18 0 0
+16
+0 80 4 0 0
+Disk_FragRead
+2
+5 108 36 0 0
+Disk_FragWrite
+4 0 0
+24 2752 16220
+4 0 0
+4 0 0
+18 0 0
+16
+0 144 4 0 0
+Disk_FragWrite
+512
+llib-ldisk:diskHeader.c 2
+2
+1 62 104 4096 18682
+Disk_ReadDecLabel
+4 0 0
+16
+0 88 24 4096 18682
+Disk_ReadDecLabel
+2
+1 109 104 4096 19781
+Disk_ReadSunLabel
+4 0 0
+16
+0 130 24 4096 19781
+Disk_ReadSunLabel
+2
+1 150 104 4096 17380
+Disk_ReadDiskHeader
+4 0 0
+16
+0 166 24 4096 17380
+Disk_ReadDiskHeader
+2
+2 187 104 2752 16220
+Disk_ReadDomainHeader
+4 0 0
+24 3040 20640
+16
+0 207 24 2752 16220
+Disk_ReadDomainHeader
+2
+3 229 36 0 0
+Disk_WriteDomainHeader
+4 0 0
+24 3040 20640
+24 2752 16220
+16
+0 233 4 0 0
+Disk_WriteDomainHeader
+2
+2 255 104 4096 26128
+Disk_ReadSummaryInfo
+4 0 0
+24 3040 20640
+16
+0 266 24 4096 26128
+Disk_ReadSummaryInfo
+2
+3 288 36 0 0
+Disk_WriteSummaryInfo
+4 0 0
+24 3040 20640
+24 4096 26128
+16
+0 291 4 0 0
+Disk_WriteSummaryInfo
+2
+2 311 36 0 0
+Disk_WriteDecLabel
+4 0 0
+24 4096 18682
+16
+0 313 4 0 0
+Disk_WriteDecLabel
+2
+2 334 36 0 0
+Disk_WriteSunLabel
+4 0 0
+24 4096 19781
+16
+0 336 4 0 0
+Disk_WriteSunLabel
+2
+1 358 104 3040 20640
+Disk_ReadLabel
+4 0 0
+16
+0 371 24 3040 20640
+Disk_ReadLabel
+2
+2 397 36 0 0
+Disk_WriteLabel
+4 0 0
+24 3040 20640
+16
+0 433 4 0 0
+Disk_WriteLabel
+2
+1 454 104 3040 20640
+Disk_NewLabel
+4 0 0
+16
+0 498 24 3040 20640
+Disk_NewLabel
+2
+2 866 36 0 0
+Disk_EraseLabel
+4 0 0
+4 0 0
+16
+0 883 4 0 0
+Disk_EraseLabel
+2
+2 906 36 0 0
+Disk_HasFilesystem
+4 0 0
+24 3040 20640
+16
+0 975 4 0 0
+Disk_HasFilesystem
+2
+2 996 104 4096 26518
+Disk_ReadLfsSuperBlock
+4 0 0
+24 3040 20640
+16
+0 1029 24 4096 26518
+Disk_ReadLfsSuperBlock
+2
+2 1050 36 0 0
+Disk_WriteLfsSuperBlock
+4 0 0
+24 4096 26518
+16
+0 1054 4 0 0
+Disk_WriteLfsSuperBlock
+2
+3 1081 104 736 22096
+Disk_ReadLfsCheckPointHdr
+4 0 0
+24 3040 20640
+20 0 0
+16
+0 1178 24 736 22096
+Disk_ReadLfsCheckPointHdr
+2
+4 1201 36 0 0
+Disk_WriteLfsCheckPointHdr
+4 0 0
+24 736 22096
+4 0 0
+24 3040 20640
+16
+0 1218 4 0 0
+Disk_WriteLfsCheckPointHdr
+2
+4 1243 36 0 0
+Disk_WriteLfsCheckPointArea
+4 0 0
+24 736 22096
+4 0 0
+24 3040 20640
+16
+0 1259 4 0 0
+Disk_WriteLfsCheckPointArea
+2
+1 1282 104 64 27601
+Disk_LfsCheckPointTrailer
+24 736 22096
+16
+0 1300 24 64 27601
+Disk_LfsCheckPointTrailer
+2
+2 1329 36 0 0
+Disk_ForEachCheckPointRegion
+24 736 22096
+148 0 0
+16
+0 1352 4 0 0
+Disk_ForEachCheckPointRegion
+2
+4 1383 104 192 29652
+Disk_ReadLfsSegSummary
+4 0 0
+24 4096 26518
+4 0 0
+24 192 29652
+16
+0 1403 24 192 29652
+Disk_ReadLfsSegSummary
+2
+5 1432 36 0 0
+Disk_WriteLfsSegSummary
+4 0 0
+24 4096 26518
+4 0 0
+24 192 29652
+24 192 29652
+16
+0 1449 4 0 0
+Disk_WriteLfsSegSummary

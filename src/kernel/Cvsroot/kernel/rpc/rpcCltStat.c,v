@@ -1,0 +1,760 @@
+head     9.4;
+branch   ;
+access   ;
+symbols  ds3100:9.4 sun3:9.4 sun4nw:9.4 symm:9.4 spur:9.4 sprited:9.4.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.4
+date     90.10.18.13.56.57;  author kupfer;  state Exp;
+branches 9.4.1.1;
+next     9.3;
+
+9.3
+date     90.10.02.16.29.16;  author mgbaker;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.09.11.11.35.37;  author mgbaker;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.03.29.12.46.16;  author mgbaker;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.18.05;  author douglis;  state Stable;
+branches ;
+next     8.5;
+
+8.5
+date     89.06.24.11.52.08;  author brent;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.05.30.16.13.46;  author jhh;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.02.15.08.19.30;  author jhh;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.01.06.11.28.10;  author jhh;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.12.04.15.29.31;  author ouster;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.35.28;  author douglis;  state Stable;
+branches ;
+next     6.2;
+
+6.2
+date     88.10.28.19.23.48;  author mlgray;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.26.18.26.17;  author mlgray;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.25.06;  author brent;  state Stable;
+branches ;
+next     5.1;
+
+5.1
+date     87.09.09.10.48.19;  author brent;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.48.39;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.4.1.1
+date     91.10.27.22.38.11;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.4
+log
+@Get rid of (unused) SpecialStat stuff.
+@
+text
+@/*
+ * rpcCltStat.c --
+ *      Manipulation and printing of the statistics taken on the client
+ *      side of the RPC system.  The statistics are kept as simple event
+ *      counts.  The counts are incremented in unsynchronized sections of
+ *      code.  They are reset and printed out with a pair of synchronized
+ *      routines.  Clients of the RPC system can use these to trace long
+ *      term RPC exersices.  At any time an RPC client can declare itself
+ *      as entering the RPC system for tracing purposes.  Any number of
+ *      processes can enter the system for tracing.  After the last
+ *      process has left the tracing system the statistics are printed on
+ *      the console and then reset.  (There should be a routine that
+ *      forces a printout of the statistics... If one process messes up
+ *      and doesn't leave then the stats won't get printed.)
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCltStat.c,v 9.3 90/10/02 16:29:16 mgbaker Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+
+#include <sprite.h>
+#include <stdio.h>
+#include <bstring.h>
+#include <sync.h>
+#include <rpcCltStat.h>
+#include <user/rpc.h>
+#include <rpcServer.h>
+#include <rpc.h>
+#include <rpcClient.h>
+
+/*
+ * Stats are taken during RPC to help make sure all parts
+ * of the algorithm are exersiced and to monitor the condition
+ * of the system.
+ * Two sets of statistics are kept, a total and a triptik.
+ */
+Rpc_CltStat rpcTotalCltStat;
+Rpc_CltStat rpcCltStat;
+static int numStats = sizeof(Rpc_CltStat) / sizeof(int);
+
+#ifdef notdef
+/*
+ * This is the monitored data whichs keeps track of how many processes
+ * are using the RPC system.
+ */
+static int numRpcProcesses;
+
+/*
+ * The entering and leaving monitored.
+ */
+static Sync_Lock rpcTraceLock = Sync_LockInitStatic("Rpc:rpcTraceLock");
+#define LOCKPTR (&rpcTraceLock)
+#endif /* notdef */
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_EnterProcess --
+ *
+ *      Note that a process is entering the RPC system for tracing.  This
+ *      call should be followed later by a call to Rpc_LeaveProcess.
+ *      These two procedures are used to start, stop, and print statistics
+ *      on the RPC system.  After a process enters, the system waits until
+ *      everyone that enters has left and then prints out the accumulated
+ *      statistics for the period when the first process registered and
+ *      the last process left.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Increment the number of processes in the RPC system, initialize
+ *	the statistics structre at the entry of the first process.
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef notdef
+ENTRY void
+Rpc_EnterProcess()
+{
+    LOCK_MONITOR;
+
+
+    numRpcProcesses++;
+    if (numRpcProcesses == 1) {
+	RpcResetCltStat();
+    }
+
+    UNLOCK_MONITOR;
+}
+#endif /* notdef */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcResetCltStat --
+ *
+ *      Accumulate the client side stats in the Totals struct and
+ *      reset the current counters.  This is not synchronized with
+ *      interrupt time code so errors may occur.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Increment the counters in the Total struct and reset the
+ *      current counters to zero.
+ *----------------------------------------------------------------------
+ */
+void
+RpcResetCltStat()
+    /*
+     * Could be parameterized and combined with RpcResetSrvStat...
+     */
+{
+    register int *totalIntPtr;
+    register int *deltaIntPtr;
+    register int index;
+    /*
+     * Add the current statistics to the totals and then
+     * reset the counters.  The statistic structs are cast
+     * into integer arrays to make this easier to maintain.
+     */
+    totalIntPtr = (int *)&rpcTotalCltStat;
+    deltaIntPtr = (int *)&rpcCltStat;
+    for (index = 0; index<numStats ; index++) {
+        *totalIntPtr += *deltaIntPtr;
+        totalIntPtr++;
+        deltaIntPtr++;
+    }
+    bzero((Address)&rpcCltStat, sizeof(Rpc_CltStat));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_LeaveProcess --
+ *
+ *	Note that a process has left the RPC system for tracing.
+ *	After the last process leaves the RPC system this prints out the
+ *	statistics that have accrued so far.
+ *
+ * Results:
+ *	Maybe to the printfs.
+ *
+ * Side effects:
+ *	Decrement the number of processes in the RPC system.
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef notdef
+ENTRY void
+Rpc_LeaveProcess()
+{
+    LOCK_MONITOR;
+
+    numRpcProcesses--;
+    if (numRpcProcesses <= 0) {
+	numRpcProcesses = 0;
+
+	Rpc_PrintCltStat();
+
+    }
+
+    UNLOCK_MONITOR;
+}
+#endif /* notdef */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_PrintCltStat --
+ *
+ *	Print the client RPC statistics structure.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Do the prints.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Rpc_PrintCltStat()
+{
+    printf("Rpc Statistics\n");
+    printf("toClient   = %5d ", rpcCltStat.toClient);
+    printf("badChannel  = %4d ", rpcCltStat.badChannel);
+    printf("chanBusy    = %4d ", rpcCltStat.chanBusy);
+    printf("badId       = %4d ", rpcCltStat.badId);
+    printf("\n");
+    printf("requests   = %5d ", rpcCltStat.requests);
+    printf("replies    = %5d ", rpcCltStat.replies);
+    printf("acks        = %4d ", rpcCltStat.acks);
+    printf("recvPartial = %4d ", rpcCltStat.recvPartial);
+    printf("\n");
+    printf("nacks       = %4d ", rpcCltStat.nacks);
+    printf("reNacks	= %4d ", rpcCltStat.reNacks);
+    printf("maxNacks	= %4d ", rpcCltStat.maxNacks);
+    printf("timeouts    = %4d ", rpcCltStat.timeouts);
+    printf("\n");
+    printf("aborts      = %4d ", rpcCltStat.aborts);
+    printf("resends     = %4d ", rpcCltStat.resends);
+    printf("sentPartial = %4d ", rpcCltStat.sentPartial);
+    printf("errors      = %d(%d)", rpcCltStat.errors,
+				       rpcCltStat.nullErrors);
+    printf("\n");
+    printf("dupFrag     = %4d ", rpcCltStat.dupFrag);
+    printf("close       = %4d ", rpcCltStat.close);
+    printf("oldInputs   = %4d ", rpcCltStat.oldInputs);
+    printf("badInputs   = %4d ", rpcCltStat.oldInputs);
+    printf("\n");
+    printf("tooManyAcks = %4d ", rpcCltStat.tooManyAcks);
+    printf("chanHits   = %5d ", rpcCltStat.chanHits);
+    printf("chanNew     = %4d ", rpcCltStat.chanNew);
+    printf("chanReuse   = %4d ", rpcCltStat.chanReuse);
+    printf("\n");
+    printf("newTrouble  = %4d ", rpcCltStat.newTrouble);
+    printf("moreTrouble = %4d ", rpcCltStat.moreTrouble);
+    printf("endTrouble  = %4d ", rpcCltStat.newTrouble);
+    printf("noMark      = %4d ", rpcCltStat.noMark);
+    printf("\n");
+    printf("nackChanWait= %4d ", rpcCltStat.nackChanWait);
+    printf("chanWaits   = %4d ", rpcCltStat.chanWaits);
+    printf("chanBroads  = %4d ", rpcCltStat.chanBroads);
+    printf("paramOverrun = %3d ", rpcCltStat.paramOverrun);
+    printf("\n");
+    printf("dataOverrun = %4d ", rpcCltStat.dataOverrun);
+    printf("shorts      = %4d ", rpcCltStat.shorts);
+    printf("longs       = %4d ", rpcCltStat.longs);
+    printf("\n");
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_PrintCallCount --
+ *
+ *	Print the RPC call counts.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Do the prints.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Rpc_PrintCallCount()
+{
+    register int call;
+
+    printf("Rpc Client Calls\n");
+    for (call=0 ; call<=RPC_LAST_COMMAND ; call++) {
+	printf("%-15s %8d\n", rpcService[call].name, rpcClientCalls[call]);
+    }
+}
+@
+
+
+9.4.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCltStat.c,v 9.4 90/10/18 13:56:57 kupfer Exp $ SPRITE (Berkeley)";
+@
+
+
+9.3
+log
+@More prototyping garbage.
+@
+text
+@a15 3
+ *	Also, there is one special tracing hook used internally by the RPC
+ *	system to trace unusual events.
+ *
+d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCltStat.c,v 9.2 90/09/11 11:35:37 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+a58 4
+static void SpecialStat _ARGS_((int packetLength, int expectedLength));
+static void SpecialStatReset _ARGS_((void));
+static void SpecialStatPrint _ARGS_((void));
+
+a137 2
+
+    SpecialStatReset();
+a238 2
+
+    SpecialStatPrint();
+a263 64
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SpecialStat --
+ *
+ *	Generic tracing hook.  This procedure gets changed to trace
+ *	different events.  This hides the details of the statistics
+ *	taking from the caller.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	rpcCltStat.longs is getting incremented.  This is a trace of
+ *	the expected packet size and the actual packet size to
+ *	try and see what is happening.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static struct {
+    int		hits;
+    int		sumLength;
+    int		lastLength;
+    int		sumExpLength;
+    int		lastExpLength;
+} specialStat;
+
+static void
+SpecialStat(packetLength, expectedLength)
+    int packetLength, expectedLength;
+{
+    specialStat.hits++;
+    specialStat.sumLength += packetLength;
+    specialStat.lastLength = packetLength;
+    specialStat.sumExpLength += expectedLength;
+    specialStat.lastExpLength = expectedLength;
+}
+
+static void
+SpecialStatReset()
+{
+    specialStat.hits = 0;
+    specialStat.sumLength = 0;
+    specialStat.lastLength = 0;
+    specialStat.sumExpLength = 0;
+    specialStat.lastExpLength = 0;
+}
+
+static void
+SpecialStatPrint()
+{
+    if (specialStat.hits) {
+	printf("Number of Special Stats: %d\n", specialStat.hits);
+
+	printf("Last packet length (%d), last expected length (%d)\n",
+			     specialStat.lastLength, specialStat.lastExpLength);
+
+	printf("Ave packet length (%d), ave expected length (%d)\n",
+	    (specialStat.sumLength / specialStat.hits),
+	    (specialStat.sumExpLength / specialStat.hits));
+@
+
+
+9.2
+log
+@Added function prototypes (Mendel checking for mary)
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCltStat.c,v 9.1 90/03/29 12:46:16 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d28 9
+a36 7
+#include "sprite.h"
+#include "sync.h"
+#include "rpcCltStat.h"
+#include "user/rpc.h"
+#include "rpcServer.h"
+#include "rpc.h"
+#include "rpcClient.h"
+@
+
+
+9.1
+log
+@New negative ack stuff.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCltStat.c,v 9.0 89/09/12 15:18:05 douglis Stable Locker: mgbaker $ SPRITE (Berkeley)";
+d33 1
+a33 1
+#include "rpcCall.h"
+d59 6
+d144 1
+a144 1
+    RpcSpecialStatReset();
+d166 1
+a166 2
+Rpc_LeaveProcess(pid)
+    int pid;
+d247 1
+a247 1
+    RpcSpecialStatPrint();
+d279 1
+a279 1
+ * RpcSpecialStat --
+d304 2
+a305 1
+RpcSpecialStat(packetLength, expectedLength)
+d315 2
+a316 1
+RpcSpecialStatReset()
+d325 2
+a326 1
+RpcSpecialStatPrint()
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCltStat.c,v 8.5 89/06/24 11:52:08 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d206 3
+d210 1
+a213 1
+    printf("\n");
+d216 1
+a218 1
+    printf("\n");
+d221 1
+a222 1
+    printf("\n");
+d227 6
+d235 1
+a236 1
+    printf("paramOverrun = %3d ", rpcCltStat.paramOverrun);
+@
+
+
+8.5
+log
+@Added syscall support to get call/service counters
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCltStat.c,v 8.4 89/05/30 16:13:46 jhh Exp Locker: brent $ SPRITE (Berkeley)";
+@
+
+
+8.4
+log
+@Removed call to Sync_LockRegister
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCltStat.c,v 8.3 89/02/15 08:19:30 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d32 3
+d234 26
+@
+
+
+8.3
+log
+@Updated Sync_Lock initialization
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCltStat.c,v 8.2 89/01/06 11:28:10 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+a84 1
+    Sync_LockRegister(&rpcTraceLock);
+@
+
+
+8.2
+log
+@New Sync_Lock definition
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCltStat.c,v 8.1 88/12/04 15:29:31 ouster Exp Locker: jhh $ SPRITE (Berkeley)";
+d53 1
+a53 1
+static Sync_Lock rpcTraceLock = SYNC_LOCK_INIT_STATIC();
+d84 2
+@
+
+
+8.1
+log
+@Stop using obsolete header files.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCltStat.c,v 8.0 88/11/11 18:35:28 douglis Stable Locker: ouster $ SPRITE (Berkeley)";
+d53 1
+a53 1
+static Sync_Lock rpcTraceLock;
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCltStat.c,v 6.2 88/10/28 19:23:48 mlgray Exp Locker: douglis $ SPRITE (Berkeley)";
+a29 1
+#include "byte.h"
+@
+
+
+6.2
+log
+@Conversion to new C library.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcCltStat.c,v 6.1 88/08/26 18:26:17 mlgray Exp Locker: mlgray $ SPRITE (Berkeley)";
+@
+
+
+6.1
+log
+@Fixed some lint errors.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: rpcCltStat.c,v 6.0 88/08/11 12:25:06 brent Stable $ SPRITE (Berkeley)";
+d81 1
+a81 1
+void
+d133 1
+a133 1
+    Byte_Zero(sizeof(Rpc_CltStat), (Address)&rpcCltStat);
+d156 1
+a156 1
+void
+d192 17
+a208 17
+    Sys_Printf("Rpc Statistics\n");
+    Sys_Printf("toClient   = %5d ", rpcCltStat.toClient);
+    Sys_Printf("badChannel  = %4d ", rpcCltStat.badChannel);
+    Sys_Printf("chanBusy    = %4d ", rpcCltStat.chanBusy);
+    Sys_Printf("badId       = %4d ", rpcCltStat.badId);
+    Sys_Printf("\n");
+    Sys_Printf("requests   = %5d ", rpcCltStat.requests);
+    Sys_Printf("replies    = %5d ", rpcCltStat.replies);
+    Sys_Printf("acks        = %4d ", rpcCltStat.acks);
+    Sys_Printf("recvPartial = %4d ", rpcCltStat.recvPartial);
+    Sys_Printf("\n");
+    Sys_Printf("timeouts    = %4d ", rpcCltStat.timeouts);
+    Sys_Printf("aborts      = %4d ", rpcCltStat.aborts);
+    Sys_Printf("resends     = %4d ", rpcCltStat.resends);
+    Sys_Printf("sentPartial = %4d ", rpcCltStat.sentPartial);
+    Sys_Printf("\n");
+    Sys_Printf("errors      = %d(%d)", rpcCltStat.errors,
+d210 19
+a228 19
+    Sys_Printf("dupFrag     = %4d ", rpcCltStat.dupFrag);
+    Sys_Printf("close       = %4d ", rpcCltStat.close);
+    Sys_Printf("\n");
+    Sys_Printf("oldInputs   = %4d ", rpcCltStat.oldInputs);
+    Sys_Printf("badInputs   = %4d ", rpcCltStat.oldInputs);
+    Sys_Printf("tooManyAcks = %4d ", rpcCltStat.tooManyAcks);
+    Sys_Printf("\n");
+    Sys_Printf("chanHits   = %5d ", rpcCltStat.chanHits);
+    Sys_Printf("chanNew     = %4d ", rpcCltStat.chanNew);
+    Sys_Printf("chanReuse   = %4d ", rpcCltStat.chanReuse);
+    Sys_Printf("\n");
+    Sys_Printf("chanWaits   = %4d ", rpcCltStat.chanWaits);
+    Sys_Printf("chanBroads  = %4d ", rpcCltStat.chanBroads);
+    Sys_Printf("\n");
+    Sys_Printf("paramOverrun = %3d ", rpcCltStat.paramOverrun);
+    Sys_Printf("dataOverrun = %4d ", rpcCltStat.dataOverrun);
+    Sys_Printf("shorts      = %4d ", rpcCltStat.shorts);
+    Sys_Printf("longs       = %4d ", rpcCltStat.longs);
+    Sys_Printf("\n");
+d283 1
+a283 1
+	Sys_SafePrintf("Number of Special Stats: %d\n", specialStat.hits);
+d285 1
+a285 1
+	Sys_SafePrintf("Last packet length (%d), last expected length (%d)\n",
+d288 1
+a288 1
+	Sys_SafePrintf("Ave packet length (%d), ave expected length (%d)\n",
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d1 1
+a1 1
+/* 
+d24 2
+a25 2
+static char rcsid[] = "$Header: rpcCltStat.c,v 5.1 87/09/09 10:48:19 brent Exp $ SPRITE (Berkeley)";
+#endif not lint
+d56 1
+a56 1
+#endif notdef
+d93 1
+a93 1
+#endif notdef
+d172 1
+a172 1
+#endif notdef
+@
+
+
+5.1
+log
+@Cleaned up some lint
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: rpcCltStat.c,v 5.0 87/08/11 10:48:39 sprite Exp $ SPRITE (Berkeley)";
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: rpcCltStat.c,v 4.2 87/08/04 13:47:27 nelson Exp $ SPRITE (Berkeley)";
+d44 1
+d56 1
+@

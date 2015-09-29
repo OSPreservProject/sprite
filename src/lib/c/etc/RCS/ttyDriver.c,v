@@ -1,0 +1,4236 @@
+head     1.20;
+branch   ;
+access   ;
+symbols  sprited:1.20.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.20
+date     92.03.18.16.33.08;  author rab;  state Exp;
+branches 1.20.1.1;
+next     1.19;
+
+1.19
+date     90.09.11.14.17.06;  author kupfer;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     90.09.05.18.56.18;  author rab;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     90.06.27.11.16.52;  author shirriff;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     90.02.28.11.10.06;  author brent;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     90.02.08.13.42.09;  author ouster;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     89.07.28.16.04.40;  author ouster;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     89.07.19.08.58.37;  author ouster;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     89.06.03.16.46.20;  author ouster;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     89.04.20.10.24.35;  author ouster;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     89.04.19.15.26.54;  author ouster;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     89.03.11.12.32.01;  author ouster;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     89.01.19.12.36.13;  author ouster;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     89.01.16.10.39.54;  author ouster;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.10.14.13.09.19;  author brent;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.10.07.19.00.59;  author douglis;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.09.28.10.06.32;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.07.28.17.47.40;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.07.25.13.27.45;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.07.01.09.40.52;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.20.1.1
+date     92.03.18.16.34.23;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.20
+log
+@Lint.  (Mike checking in for Bob.)
+@
+text
+@/* 
+ * ttyDriver.c --
+ *
+ *	The routines in this module implement an emulator for the
+ *	UNIX 4.2 BSD tty driver.  The emulation is done in a way
+ *	that is independent of the specific environme (kernel, user,
+ *	etc.) by using a set of callback procedures to interface to
+ *	a raw device on one side and a client on the "cooked" side..
+ *
+ * Copyright 1987, 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/etc/RCS/ttyDriver.c,v 1.19 90/09/11 14:17:06 kupfer Exp Locker: rab $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <dev/tty.h>
+#include <fs.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <errno.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <sys/ioctl.h>
+#include <fmt.h>
+#include "td.h"
+
+/*
+ * The structure below corresponds to one terminal (one call to Td_Create).
+ */
+
+typedef struct Terminal {
+    /*
+     * Controlling parameters for terminal.  These all have exactly the
+     * same meanings as in 4.3 BSD;  see the 4.3 BSD terminal driver
+     * documentation for details.
+     */
+
+    struct sgttyb sgttyb;
+    struct tchars tchars;
+    struct ltchars ltchars;
+    int localMode;
+    struct winsize winsize;
+
+    /*
+     * State of the terminal.
+     */
+
+    int column;			/* Column where the next character will be
+				 * echoed (i.e., cursor position).  Needed
+				 * in order to handle tabs correctly. */
+    int owner;			/* Identifier of controlling process or process
+				 * group (signals are sent here). */
+    int numOpens;		/* Number of opens that have been completed
+				 * successfully but not yet closed. */
+    int flags;			/* See below for definitions. */
+
+    /*
+     * Input buffer, indexed circularly.  The buffer is reallocated
+     * with a larger size if it ever fills up.
+     */
+
+    char *inputBuffer;		/* Input buffer area (malloc'ed). */
+    int inBufSize;		/* Number of bytes in inputBuffer. */
+    int lastAddedIn;		/* Index of last character added to buffer. */
+    int lastRemovedIn;		/* Index of last place from which character
+				 * was removed from buffer.  If lastAddedIn =
+				 * lastRemovedIn, the buffer is empty. */
+    int lastBreak;		/* Index of last break character (newline,
+				 * etc.) or lastRemovedIn if none in buffer. */
+    int lastHidden;		/* Value of lastAddedIn at the time the last
+				 * output to the terminal was done.  Characters
+				 * before this can't be smoothly backspaced
+				 * over, because there's output in front of
+				 * them on the screen.  -1 means there are no
+				 * editable characters in the buffer that are
+				 * hidden. */
+
+    /*
+     * In order to backspace correctly over weird things like tabs, the
+     * following two variables keep track of an index position in the input
+     * buffer, and the column just to the right of where that character was
+     * echoed on the display.  KeyIndex is either the same as lastBreak or
+     * lastHidden or lastRemovedIn, and has two properties:  a) it will
+     * never be backspaced over in CRT mode;  and b) no characters beyond
+     * this one will be returned to the application until keyIndex is first
+     * advanced.
+     */
+
+    int keyIndex;
+    int keyColumn;		/* Column just after keyIndex character. */
+
+    /*
+     * Output buffer, indexed circularly.  This buffer also grows
+     * dynamically if necessary (this is necessary so that new room can
+     * be made for characters being echoed, even if the buffer was
+     * previously "full").  However, the cooked side of the terminal
+     * is marked "not ready for output" whenever there are more than
+     * cookedOutputLimit characters in the buffer (but any call to
+     * Td_PutCooked will always complete;  it is up to the cooked-side
+     * callbacks to stop calling Td_PutCooked).  The goal here is to
+     * keep the application from getting too many characters ahead of
+     * the actual device.
+     */
+
+    char *outputBuffer;		/* Output buffer area (malloc'ed). */
+    int outBufSize;		/* Number of bytes in outputBuffer. */
+    int lastAddedOut;		/* Index of last character added to
+				 * outputBuffer. */
+    int lastRemovedOut;		/* Index of last character removed from
+				 * outputBufer. */
+    int outCharsBuffered;	/* Number of characters bufferred in
+				 * outputBuffer. */
+    int cookedOutputLimit;	/* Mark cooked side not ready for output
+				 * whenever outCharsBuffered is greater
+				 * than this. */
+
+    /*
+     * Callback procedures and data provided by the client:
+     */
+
+    int (*cookedProc)_ARGS_((ClientData, int operation, int inBufSize, 
+			     char *inBuffer, int outBufSize,
+			     char *outBuffer)); 
+				/* Procedure to call to register change
+				 * in state of cooked-side interface. */
+    ClientData cookedData;	/* Value to pass to cookedProc. */
+    int (*rawProc)_ARGS_((ClientData, int operation, int inBufSize,
+			  char *inBuffer, int outBufSize,
+			  char *outBuffer));
+				/* Procedure to call to register change
+				 * in state of raw-side interface. */
+    ClientData rawData;		/* Value to pass to rawProc. */
+} Terminal;
+
+/* Flag values:
+ *
+ * EXCLUSIVE:		No more opens should be allowed until terminal
+ *			has been completely closed.
+ * BS_IN_PROGRESS:	A printing backspace sequence (delimited by
+ *			"\" and "/") is in progress, and will eventually
+ *			need the closing "/".
+ * LITERAL_NEXT:	The next character should be taken literally,
+ *			and should be put into the input buffer with
+ *			no special interpretation.
+ * OWNER_FAMILY:	1 means the owner is a process family.  0 means
+ *			it's a single process.
+ * OUTPUT_OFF:		1 means output to the raw device has been stopped,
+ *			for example because ^S was typed.
+ */
+
+#define EXCLUSIVE		0x1
+#define BS_IN_PROGRESS		0x2
+#define LITERAL_NEXT		0x4
+#define OWNER_FAMILY		0x8
+#define OUTPUT_OFF		0x10
+
+/*
+ * Default values for tty parameters:
+ */
+
+struct sgttyb sgttybDefault = {
+    B9600, B9600, 010, 025, EVENP|ODDP|CRMOD|ECHO
+};
+struct tchars tcharsDefault = {
+    03, 034, 021, 023, 04, -1
+};
+struct ltchars ltcharsDefault = {
+    032, 031, 022, 017, 027, 026
+};
+int localModeDefault = LCRTBS|LCRTERA|LCRTKIL|LCTLECH;
+struct winsize winsizeDefault = {
+    0, 0, 0, 0
+};
+
+/*
+ * Macros for moving buffer pointers forward and backward circularly.
+ */
+
+#define NEXT(src, size, dst) 		\
+    (dst) = (src)+1;			\
+    if ((dst) >= (size)) {		\
+	(dst) = 0;			\
+    }
+
+#define PREV(src, size, dst)		\
+    (dst) = (src)-1;			\
+    if ((dst) < 0) {			\
+	(dst) = (size)-1;			\
+    }
+
+int td_Debug = 0;
+
+/*
+ * Forward declarations for procedures defined later in this file:
+ */
+
+static void	TdBackspace _ARGS_((Terminal *tPtr));
+static void	TdEcho _ARGS_((Terminal *tPtr, int c));
+static void	TdFlushInput _ARGS_((Terminal *tPtr));
+static void	TdFlushOutput _ARGS_((Terminal *tPtr));
+static void	TdPutChar _ARGS_((Terminal *tPtr, int c));
+static void	TdRetypeInput _ARGS_((Terminal *tPtr, int start));
+static int	FormatInput _ARGS_((int command, Fmt_Format format,
+				    int inputSize, Address input,
+				    int *newInputSizePtr, Address newInput));
+static int	FormatOutput _ARGS_((int command, Fmt_Format format,
+				     int outputSize, Address output,
+				     int *newOutputSizePtr,
+				     Address newOutput));
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Td_Create --
+ *
+ *	This procedure creates and initializes a new terminal
+ *	driver.
+ *
+ * Results:
+ *	The return value is a handle that is used to refer to the
+ *	driver when calling other Td_ procedures, such as Td_Delete.
+ *
+ * Side effects:
+ *	The procedures cookedProc and rawProc may be invoked by
+ *	other procedures in this module at later times.  See the
+ *	man page for details.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Td_Terminal
+Td_Create(bufferSize, cookedProc, cookedData, rawProc, rawData)
+    int bufferSize;		/* How much buffer space to allow on
+				 * output. */
+    int (*cookedProc)_ARGS_((ClientData, int operation, int inBufSize, 
+			     char *inBuffer, int outBufSize,
+			     char *outBuffer)); 
+				/* Procedure to call for control operations
+				 * on cooked side of driver. */
+    ClientData cookedData;	/* Arbitrary value, provided by caller,
+				 * which will be passed to cookedProc
+				 * whenever it is invoked. */
+    int (*rawProc)_ARGS_((ClientData, int operation, int inBufSize,
+			  char *inBuffer, int outBufSize,
+			  char *outBuffer));
+				/* Procedure to call for control operations
+				 * on raw side of driver. */
+    ClientData rawData;		/* Arbitrary value, provided by caller,
+				 * which will be passed to rawProc whenever
+				 * it is invoked. */
+{
+    register Terminal *tPtr;
+    Td_BaudRate baud;
+
+    tPtr = (Terminal *) malloc(sizeof(Terminal));
+    tPtr->sgttyb = sgttybDefault;
+    tPtr->tchars = tcharsDefault;
+    tPtr->ltchars = ltcharsDefault;
+    tPtr->localMode = localModeDefault;
+    tPtr->winsize = winsizeDefault;
+    tPtr->column = 0;
+    tPtr->owner = -1;
+    tPtr->flags = 0;
+    tPtr->inputBuffer = (char *) malloc(100);
+    tPtr->inBufSize = 100;
+    tPtr->lastAddedIn = 0;
+    tPtr->lastRemovedIn = 0;
+    tPtr->lastBreak = 0;
+    tPtr->lastHidden = -1;
+    tPtr->keyIndex = 0;
+    tPtr->keyColumn = 0;
+    tPtr->outputBuffer = (char *) malloc(1000);
+    tPtr->outBufSize = 1000;
+    tPtr->lastAddedOut = 0;
+    tPtr->lastRemovedOut = 0;
+    tPtr->outCharsBuffered = 0;
+    tPtr->cookedOutputLimit = bufferSize;
+    tPtr->cookedProc = cookedProc;
+    tPtr->cookedData = cookedData;
+    tPtr->rawProc = rawProc;
+    tPtr->rawData = rawData;
+
+    /*
+     * Fetch the actual baud rate from the raw device manager.
+     */
+
+    if ((*rawProc)(rawData, TD_RAW_GET_BAUD_RATE, 0, (char *) NULL,
+	    sizeof(baud), (char *) &baud) == sizeof(baud)) {
+	tPtr->sgttyb.sg_ispeed = baud.ispeed;
+	tPtr->sgttyb.sg_ospeed = baud.ospeed;
+    }
+
+    return (Td_Terminal) tPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  Td_Delete --
+ *
+ *	Close down a terminal driver, destroying all of the state
+ *	associated with it.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	A hangup is simulated on the cooked side of the driver, and
+ *	memory is released.  The caller should never again use
+ *	terminal.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Td_Delete(terminal)
+    Td_Terminal terminal;	/* Token identifying terminal (returned
+				 * by previous call to Td_Create). */
+{
+    register Terminal *tPtr = (Terminal *) terminal;
+
+    (*tPtr->rawProc)(tPtr->rawData, TD_RAW_SHUTDOWN, 0, (char *) NULL,
+	    0, (char *) NULL);
+    free((char *) tPtr->inputBuffer);
+    free((char *) tPtr->outputBuffer);
+    free((char *) tPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Td_Open --
+ *
+ *	This procedure should be called before accepting a new
+ *	"open" for a terminal.  It indicates whether new opens
+ *	are permitted.
+ *
+ * Results:
+ *	The return value is zero if the open is to be permitted,
+ *	and a non-zero errno value if it is to be denied.  If the
+ *	open is successful, *selectBitsPtr is filled in with the
+ *	initial select state for the terminal.
+ *
+ * Side effects:
+ *	Information counting open streams on the terminal gets
+ *	updated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Td_Open(terminal, selectBitsPtr)
+    Td_Terminal terminal;		/* Token for the terminal to be
+					 * checked. */
+    int *selectBitsPtr;			/* Put initial select state here. */
+{
+    register Terminal *tPtr = (Terminal *) terminal;
+
+    if (tPtr->flags & EXCLUSIVE) {
+	return EBUSY;
+    }
+    tPtr->numOpens++;
+    *selectBitsPtr = 0;
+    if ((tPtr->lastBreak != tPtr->lastRemovedIn)
+	    || (tPtr->localMode & LPENDIN)) {
+	*selectBitsPtr |= FS_READABLE;
+    }
+    if (tPtr->outCharsBuffered < tPtr->cookedOutputLimit) {
+	*selectBitsPtr |= FS_WRITABLE;
+    }
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Td_Close --
+ *
+ *	This procedure should be called whenever all of the I/O streams
+ *	associated with a single open on a terminal have been closed.
+ *
+ * Results:
+ *	none.
+ *
+ * Side effects:
+ *	State in the terminal is updated to reflect the close.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Td_Close(terminal)
+    Td_Terminal terminal;		/* Token for the terminal to be
+					 * checked. */
+{
+    register Terminal *tPtr = (Terminal *) terminal;
+
+    tPtr->numOpens--;
+    if (tPtr->numOpens == 0) {
+	tPtr->flags &= ~EXCLUSIVE;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Td_GetCooked --
+ *
+ *	Retrieve characters that are ready to be read from the cooked
+ *	side of a terminal driver.
+ *
+ * Results:
+ *	The return value is normally 0.  If non-zero, it indicates
+ *	that an error occurred and holds a UNIX errno.  Most often,
+ *	this is EWOULDBLOCK, meaning that no characters were
+ *	available.  The value at numCharsPtr is overwritten with the
+ *	actual number of characters returned at buffer, and will be
+ *	0 if an error or end-of-file occurred.  *SigNumPtr is overwritten
+ *	with a signal to send to the invoking process, or 0.  *SelectBitsPtr
+ *	is updated to reflect the readability of the terminal.
+ *
+ * Side effects:
+ *	Characters are removed from the terminal's input buffer.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Td_GetCooked(terminal, pID, familyID, numCharsPtr, buffer, 
+	sigNumPtr, selectBitsPtr)
+    Td_Terminal terminal;	/* Token identifying terminal. */
+    int pID;			/* Process invoking operation. */
+    int familyID;		/* Family of pID. */
+    int *numCharsPtr;		/* Points to maximum number of characters to
+				 * read from terminal. Overwritten by number
+				 * of chars. actually returned. */
+    char *buffer;		/* Where to place characters that are read. */
+    int *sigNumPtr;		/* Overwrite this with the number of a signal
+				 * to generate for the calling process.  0
+				 * means no signal. */
+    int *selectBitsPtr;		/* The FS_READABLE bit in this word gets
+				 * updated to reflect whether or not there
+				 * are still more readable characters after
+				 * the ones returned. */
+{
+    register Terminal *tPtr = (Terminal *) terminal;
+    register char *dest;
+    int count, result;
+
+    *sigNumPtr = 0;
+
+    /*
+     * See if this process owns the terminal.  If not, then signal it
+     * and don't give it any input.
+     */
+
+    if (!(tPtr->flags & OWNER_FAMILY)) {
+	if ((pID != tPtr->owner) && (tPtr->owner != -1)) {
+	    notOwner:
+	    *sigNumPtr = SIGTTIN;
+	    *numCharsPtr = 0;
+	    result = EINTR;
+	    goto done;
+	}
+    } else if ((familyID != tPtr->owner) && (tPtr->owner != -1)) {
+	goto notOwner;
+    }
+
+    /*
+     * Re-echo buffered characters, if so requested.
+     */
+
+    if (tPtr->localMode & LPENDIN) {
+	int oldCharsBuffered;
+
+	oldCharsBuffered = tPtr->outCharsBuffered;
+	tPtr->localMode &= ~LPENDIN;
+	TdRetypeInput(tPtr, tPtr->lastRemovedIn);
+	if ((oldCharsBuffered == 0) && (tPtr->outCharsBuffered != 0) &&
+		!(tPtr->flags & OUTPUT_OFF)) {
+	    (*tPtr->rawProc)(tPtr->rawData, TD_RAW_OUTPUT_READY,
+		    0, (char *) NULL, 0, (char *) NULL);
+	}
+    }
+
+    /*
+     * Make sure there's information ready for the terminal.  If not,
+     * then block the process.
+     */
+
+    if (tPtr->lastBreak == tPtr->lastRemovedIn) {
+	*numCharsPtr = 0;
+	*selectBitsPtr &= ~FS_READABLE;
+	return EWOULDBLOCK;
+    }
+
+    /*
+     * Copy bytes from the input buffer to the caller's buffer,
+     * and update the terminal's input buffer pointer.
+     */
+
+    count = 0;
+    dest = buffer;
+    while ((tPtr->lastRemovedIn != tPtr->lastBreak) &&
+	    (count < *numCharsPtr)) {
+	register char c;
+
+	NEXT(tPtr->lastRemovedIn, tPtr->inBufSize, tPtr->lastRemovedIn);
+	count++;
+	c = tPtr->inputBuffer[tPtr->lastRemovedIn];
+	*dest = c;
+	dest++;
+	if (!(tPtr->sgttyb.sg_flags & (RAW|CBREAK))) {
+	    if (c == tPtr->tchars.t_eofc) {
+		count--;		/* Don't return end-of-file chars. */
+		break;
+	    } else if ((c == '\n') || (c == tPtr->tchars.t_brkc)) {
+		break;
+	    }
+	}
+    }
+    *numCharsPtr = count;
+    result = 0;
+
+    done:
+    if (tPtr->lastBreak == tPtr->lastRemovedIn) {
+	*selectBitsPtr &= ~FS_READABLE;
+    } else {
+	*selectBitsPtr |= FS_READABLE;
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Td_PutCooked --
+ *
+ *	Add characters to the output buffer for a terminal.
+ *
+ * Results:
+ *	The return value is always 0 (the output is grown enough to
+ *	hold all the output characters).  The value at *numBytesPtr
+ *	is left unchanged to indicate that all the characters were
+ *	accepted, *sigNumPtr is overwritten with a signal to send
+ *	to the invoking process (or 0), and *selectBitsPtr is updated
+ *	to reflect whether the terminal's output buffer is now full.
+ *
+ * Side effects:
+ *	Output processing is performed on the characters in buffer,
+ *	and they are queued for output on the terminal's raw side.
+ *
+ *----------------------------------------------------------------------
+ */
+
+	/* ARGSUSED */
+int
+Td_PutCooked(terminal, numBytesPtr, buffer, sigNumPtr, selectBitsPtr)
+    Td_Terminal terminal;	/* Token identifying terminal. */
+    int *numBytesPtr;		/* Points to maximum number of characters
+				 * to write to terminal.  Not modified
+				 * by this procedure. */
+    register char *buffer;	/* Characters to write. */
+    int *sigNumPtr;		/* Overwrite this with the number of a signal
+				 * to generate for the calling process.  0
+				 * means no signal. */
+    int *selectBitsPtr;		/* The FS_WRITABLE bit in this word gets
+				 * updated to reflect whether or not there
+				 * are still more space available in the
+				 * terminal's output buffer. */
+{
+    register Terminal *tPtr = (Terminal *) terminal;
+    register char c;
+    int i, oldCharsBuffered;
+
+    *sigNumPtr = 0;
+
+    oldCharsBuffered = tPtr->outCharsBuffered;
+    for (i = 0; i < *numBytesPtr; i++, buffer++) {
+	c = *buffer;
+	if ((tPtr->sgttyb.sg_flags & RAW) || (tPtr->localMode & LLITOUT)) {
+	    TdPutChar(tPtr, c);
+	    continue;
+	}
+	c &= 0177;
+	if (c == 04) {	/* End of file (^D) ignored */
+	    continue;
+	} else if ((c == '\n') && (tPtr->sgttyb.sg_flags & CRMOD)) {
+	    TdPutChar(tPtr, '\r');
+	    TdPutChar(tPtr, '\n');
+	} else {
+	    TdPutChar(tPtr, c);
+	}
+    }
+    tPtr->keyIndex = tPtr->lastAddedIn;
+    tPtr->keyColumn = tPtr->column;
+    if (tPtr->lastAddedIn != tPtr->lastRemovedIn) {
+	tPtr->lastHidden = tPtr->lastAddedIn;
+    }
+    if ((oldCharsBuffered == 0) && (tPtr->outCharsBuffered != 0) &&
+	    !(tPtr->flags & OUTPUT_OFF)) {
+	(*tPtr->rawProc)(tPtr->rawData, TD_RAW_OUTPUT_READY,
+		0, (char *) NULL, 0, (char *) NULL);
+    }
+    if (tPtr->outCharsBuffered >= tPtr->cookedOutputLimit) {
+	*selectBitsPtr &= ~FS_WRITABLE;
+    } else {
+	*selectBitsPtr |= FS_WRITABLE;
+    }
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Td_ControlCooked --
+ *
+ *	This procedure is used to invoke iocontrol operations on the
+ *	cooked side of a terminal driver.
+ *
+ * Results:
+ *	If the operation completed successfully then the return value
+ *	is zero.  If the operation failed, then the return value is a
+ *	UNIX errno indicating what went wrong.  *SigNumPtr gets
+ *	overwritten with the number of a signal to send to the invoking
+ *	process (or 0), and *selectBitsPtr gets filled in with information
+ *	about whether or not the terminal is now readable or writable.
+ *
+ * Side effects:
+ *	Depends on the iocontrol;  see the tty(4) man page for details.
+ *
+ *----------------------------------------------------------------------
+ */
+
+	/* ARGSUSED */
+int
+Td_ControlCooked(terminal, command, format, inputSize, input, outputSizePtr,
+	output, sigNumPtr, selectBitsPtr)
+    Td_Terminal terminal;		/* Token for terminal. */
+    int command;			/* Iocontrol operation to perform
+					 * (	e.g. TIOCGETP). */
+    Fmt_Format format;			/* Byte-order/alignment format */
+    int inputSize;			/* Size of input, in bytes. */
+    char *input;			/* Input buffer:  contains information
+					 * provided by client as input to
+					 * operation. */
+    int *outputSizePtr;			/* Largest amount of output that
+					 * client is prepared to receive.  This
+					 * value is overwritten with the count
+					 * of actual bytes returned. */
+    char *output;			/* Place to store output bytes;
+					 * provided by caller. */
+    int *sigNumPtr;			/* Overwrite this with the number of
+					 * a signal to generate for the
+					 * calling process.  0 means no
+					 * signal. */
+    int *selectBitsPtr;			/* Store new select state of terminal
+					 * here. */
+{
+    register Terminal *tPtr = (Terminal *) terminal;
+    int count, result;
+    char *out = (char *) NIL;
+    int i;
+    Ioc_Owner owner;
+    int oldIspeed, oldOspeed, oldFlags, oldStopc, oldStartc;
+
+    /*
+     * The union below describes all of the possible formats in which
+     * the input area may appear.
+     */
+
+    typedef union {
+	int		i;
+	char		chars[20];
+	struct sgttyb	sgttyb;
+	struct tchars	tchars;
+	struct ltchars	ltchars;
+	Ioc_Owner	owner;
+	struct winsize	winsize;
+    } InBuf;
+    InBuf newInputBuf;
+    register InBuf *in = (InBuf *) input;
+
+    if (td_Debug) {
+	printf("Td_ControlCooked: command %d\n", command);
+    }
+
+    if (format != FMT_MY_FORMAT) {
+	/*
+	 * Fix up the formatting of the input buffer.
+	 */
+	int newSize = sizeof(newInputBuf);
+	if (FormatInput(command, format, inputSize, input,
+			    &newSize, (Address) &newInputBuf) != FMT_OK) {
+	    goto invalid;
+	}
+	in = &newInputBuf;
+	inputSize = newSize;
+    }
+    /*
+     * Save certain pieces of information about the terminal so that
+     * if they change we can call the raw control procedure.
+     */
+
+    oldIspeed = tPtr->sgttyb.sg_ispeed;
+    oldOspeed = tPtr->sgttyb.sg_ospeed;
+    oldFlags = tPtr->sgttyb.sg_flags;
+    oldStopc = tPtr->tchars.t_stopc;
+    oldStartc = tPtr->tchars.t_startc;
+
+    *sigNumPtr = 0;
+    count = 0;
+    switch (command) {
+
+	case IOC_TTY_SET_DISCIPLINE:
+	    if ((inputSize != sizeof(int))
+		    || (in->i != NTTYDISC)) {
+		goto invalid;
+	    }
+	    break;
+
+	case IOC_TTY_GET_DISCIPLINE:
+	    if (inputSize != 0) {
+		goto invalid;
+	    }
+	    i = NTTYDISC;
+	    out = (char *) &i;
+	    count = sizeof(int);
+	    break;
+
+	case IOC_TTY_GETP:
+	    if (inputSize != 0) {
+		goto invalid;
+	    }
+	    out = (char *) &tPtr->sgttyb;
+	    count = sizeof(struct sgttyb);
+	    break;
+
+	case IOC_TTY_SETP:
+	    /*
+	     * Technically, this code should delay until all characters
+	     * currently buffered for output have been printed, but
+	     * there's no easy way to do that here:  ioctls must complete
+	     * immediately.
+	     */
+	    TdFlushInput(tPtr);
+	case IOC_TTY_SETN:
+	    if (inputSize != sizeof(struct sgttyb)) {
+		goto invalid;
+	    }
+	    if ((tPtr->sgttyb.sg_flags ^ in->sgttyb.sg_flags) & RAW) {
+		/*
+		 * Going into or out of raw mode;  always flush input
+		 * buffer.
+		 */
+
+		TdFlushInput(tPtr);
+	    }
+	    tPtr->sgttyb = in->sgttyb;
+	    break;
+
+	case IOC_TTY_EXCL:
+	    if (inputSize != 0) {
+		goto invalid;
+	    }
+	    tPtr->flags |= EXCLUSIVE;
+	    break;
+
+	case IOC_TTY_NXCL:
+	    if (inputSize != 0) {
+		goto invalid;
+	    }
+	    tPtr->flags &= ~EXCLUSIVE;
+	    break;
+
+	case IOC_TTY_HUP_ON_CLOSE:		/* Not implemented. */
+	    goto invalid;
+
+	case IOC_TTY_FLUSH: {
+	    /*
+	     * For compatibility with TIOCFLUSH, we accept one
+	     * integer argument which has the FREAD and FWRITE bits in it.
+	     */
+	    int flags;
+	    if (inputSize == 0) {
+		flags = 0;
+	    } else {
+		flags = in->i;
+	    }
+#ifndef FREAD
+#define FREAD	0x1
+#define FWRITE	0x2
+#endif
+	    if (flags == 0) {
+		flags = FREAD|FWRITE;
+	    }
+	    if (flags & FREAD) {
+		TdFlushInput(tPtr);
+	    }
+	    if (flags & FWRITE) {
+		TdFlushOutput(tPtr);
+	    }
+	    break;
+	}
+	case IOC_TTY_INSERT_CHAR:
+	    if (inputSize != 1) {
+		goto invalid;
+	    }
+	    Td_PutRaw((Td_Terminal) tPtr, 1, &in->chars[0]);
+	    break;
+
+	case IOC_TTY_SET_BREAK:
+	    (*tPtr->rawProc)(tPtr->rawData, TD_RAW_START_BREAK,
+		    0, (char *) NULL, 0, (char *) NULL);
+	    break;
+
+	case IOC_TTY_CLEAR_BREAK:
+	    (*tPtr->rawProc)(tPtr->rawData, TD_RAW_START_BREAK,
+		    0, (char *) NULL, 0, (char *) NULL);
+	    break;
+
+	case IOC_TTY_SET_DTR:
+	    (*tPtr->rawProc)(tPtr->rawData, TD_RAW_SET_DTR,
+		    0, (char *) NULL, 0, (char *) NULL);
+	    break;
+
+	case IOC_TTY_CLEAR_DTR:	
+	    (*tPtr->rawProc)(tPtr->rawData, TD_RAW_CLEAR_DTR,
+		    0, (char *) NULL, 0, (char *) NULL);
+	    break;
+
+	case IOC_GET_OWNER:
+	    if (inputSize != 0) {
+		goto invalid;
+	    }
+	    owner.id = tPtr->owner;
+	    if (tPtr->flags & OWNER_FAMILY) {
+		owner.procOrFamily = IOC_OWNER_FAMILY;
+	    } else {
+		owner.procOrFamily = IOC_OWNER_PROC;
+	    }
+	    out = (char *) &owner;
+	    count = sizeof(owner);
+	    break;
+
+	case IOC_SET_OWNER:
+	    if (inputSize != sizeof(Ioc_Owner)) {
+		goto invalid;
+	    }
+	    tPtr->owner = in->owner.id;
+	    if (in->owner.procOrFamily == IOC_OWNER_FAMILY) {
+		tPtr->flags |= OWNER_FAMILY;
+	    } else {
+		tPtr->flags &= ~OWNER_FAMILY;
+	    }
+	    break;
+
+	case IOC_NUM_READABLE:
+	    i = tPtr->lastBreak - tPtr->lastRemovedIn;
+	    if (i < 0) {
+		i += tPtr->inBufSize;
+	    }
+	    out = (char *) &i;
+	    count = sizeof(int);
+	    break;
+
+	case IOC_TTY_GET_TCHARS:
+	    if (inputSize != 0) {
+		goto invalid;
+	    }
+	    out = (char *) &tPtr->tchars;
+	    count = sizeof(struct tchars);
+	    break;
+
+	case IOC_TTY_SET_TCHARS:
+	    if (inputSize != sizeof(struct tchars)) {
+		goto invalid;
+	    }
+	    tPtr->tchars = in->tchars;
+	    break;
+
+	case IOC_TTY_BIS_LM:
+	    if (inputSize != sizeof(int)) {
+		goto invalid;
+	    }
+	    tPtr->localMode |= in->i;
+	    break;
+
+	case IOC_TTY_BIC_LM:
+	    if (inputSize != sizeof(int)) {
+		goto invalid;
+	    }
+	    tPtr->localMode &= ~in->i;
+	    break;
+
+	case IOC_TTY_SET_LM:
+	    if (inputSize != sizeof(int)) {
+		goto invalid;
+	    }
+	    tPtr->localMode = in->i;
+	    break;
+
+	case IOC_TTY_GET_LM:
+	    if (inputSize != 0) {
+		goto invalid;
+	    }
+	    out = (char *) &tPtr->localMode;
+	    count = sizeof(int);
+	    break;
+
+	case IOC_TTY_SET_LTCHARS:
+	    if (inputSize != sizeof(struct ltchars)) {
+		goto invalid;
+	    }
+	    tPtr->ltchars = in->ltchars;
+	    break;
+
+	case IOC_TTY_GET_LTCHARS:
+	    if (inputSize != 0) {
+		goto invalid;
+	    }
+	    out = (char *) &tPtr->ltchars;
+	    count = sizeof(struct ltchars);
+	    break;
+
+	case IOC_GET_FLAGS:
+	    i = 0;
+	    out = (char *) &i;
+	    count = sizeof(int);
+	    break;
+	case IOC_SET_FLAGS:
+	case IOC_SET_BITS:
+	case IOC_CLEAR_BITS:
+	case IOC_TTY_NOT_CONTROL_TTY:
+	    break;
+
+	case IOC_TTY_GET_WINDOW_SIZE:
+	    if (inputSize != 0) {
+		goto invalid;
+	    }
+	    out = (char *) &tPtr->winsize;
+	    count = sizeof(struct winsize);
+	    break;
+
+	case IOC_TTY_SET_WINDOW_SIZE: {
+	    Td_Signal signalInfo;
+	    if (inputSize != sizeof(struct winsize)) {
+		goto invalid;
+	    }
+	    tPtr->winsize = in->winsize;
+	    signalInfo.sigNum = SIGWINCH;
+	    signalInfo.groupID = tPtr->owner;
+	    (*tPtr->cookedProc)(tPtr->cookedData, TD_COOKED_SIGNAL,
+		    sizeof(signalInfo), (char *) &signalInfo,
+		    0, (char *) NULL);
+	    break;
+	}
+
+	default:
+	    goto invalid;
+    }
+    /*
+     * Fix up output buffer for the client.  At this point
+     * count = size of output data
+     * out = pointer to output data
+     * Here we rely on the Fmt_ library doing essentially a bcopy
+     * if our format and the client's format are the same.
+     */
+    if (count != 0) {
+	result = FormatOutput(command, format, count, out,
+			      outputSizePtr, output);
+	if (result != FMT_OK) {
+	    result = EINVAL;
+	    if (td_Debug) {
+		printf("Td_ControlCooked: command %d invalid output\n", command);
+	    }
+	}
+    } else {
+	*outputSizePtr = 0;
+	result = 0;
+    }
+
+    /*
+     * Call the raw control procedure if anything changed that it needs
+     * to know about.
+     */
+
+    if ((oldIspeed != tPtr->sgttyb.sg_ispeed)
+	    || (oldOspeed != tPtr->sgttyb.sg_ospeed)) {
+	Td_BaudRate baud, baud2;
+
+	baud.ispeed = tPtr->sgttyb.sg_ispeed;
+	baud.ospeed = tPtr->sgttyb.sg_ospeed;
+	if ((*tPtr->rawProc)(tPtr->rawData, TD_RAW_SET_BAUD_RATE,
+		sizeof(baud), (char *) &baud,
+		sizeof(baud2), (char *) &baud2) == sizeof(baud2)) {
+
+	    /*
+	     * Device has overridden the baud-rate change;  take its advice.
+	     */
+
+	    tPtr->sgttyb.sg_ispeed = baud2.ispeed;
+	    tPtr->sgttyb.sg_ospeed = baud2.ospeed;
+	}
+    }
+    if (((oldFlags & RAW) != (tPtr->sgttyb.sg_flags & RAW))
+	    || (oldStopc != tPtr->tchars.t_stopc)
+	    || (oldStartc != tPtr->tchars.t_startc)) {
+	Td_FlowChars flow;
+
+	if (tPtr->sgttyb.sg_flags & RAW) {
+	    flow.stop = flow.start = -1;
+	} else {
+	    flow.stop = tPtr->tchars.t_stopc;
+	    flow.start = tPtr->tchars.t_startc;
+	}
+	(*tPtr->rawProc)(tPtr->rawData, TD_RAW_FLOW_CHARS,
+		sizeof(flow), (char *) &flow, 0, (char *) NULL);
+    }
+
+    /*
+     * Setting the select bits is a bit tricky:  if LPENDIN is set, then
+     * we need to find out when the next read is done.  So, make the device
+     * appear to be readable even if it isn't.  Otherwise, we won't be told
+     * when the device is read.
+     */
+
+    done:
+    *selectBitsPtr = 0;
+    if ((tPtr->lastBreak != tPtr->lastRemovedIn)
+	    || (tPtr->localMode & LPENDIN)) {
+	*selectBitsPtr |= FS_READABLE;
+    }
+    if (tPtr->outCharsBuffered < tPtr->cookedOutputLimit) {
+	*selectBitsPtr |= FS_WRITABLE;
+    }
+    return result;
+
+    invalid:
+    if (td_Debug) {
+	printf("Td_ControlCooked: command %d invalid input\n", command);
+    }
+    *outputSizePtr = 0;
+    result = EINVAL;
+    goto done;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FormatInput --
+ *
+ *	Re-format the input buffer of an I/O control.  This is required
+ *	if the client is on a host with a different byte order/alignment.
+ *	This uses the Fmt_Convert library routine.
+ *
+ * Results:
+ *	This returns zero if all goes well.
+ *	Otherwise a FMT_ error code is returned.
+ *
+ * Side effects:
+ *	The reformatted input is put into newBuffer.  The true size of
+ *	the data in this buffer is returned in *newInputSizePtr.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+FormatInput(command, format, inputSize, input, newInputSizePtr, newInput)
+    int command;		/* I/O Control command */
+    Fmt_Format format;		/* Format of client host */
+    int inputSize;		/* Size of input buffer */
+    Address input;		/* Input buffer in client format */
+    int *newInputSizePtr;	/* In/Out - Size of new input buffer */
+    Address newInput;		/* Out - Input buffer in our format */
+{
+    int status = FMT_OK;
+    char *fmtString = "";
+
+    switch (command) {
+
+	case IOC_TTY_GET_DISCIPLINE:
+	case IOC_TTY_GETP:
+	case IOC_TTY_EXCL:
+	case IOC_TTY_NXCL:
+	case IOC_GET_OWNER:
+	case IOC_TTY_GET_TCHARS:
+	case IOC_TTY_GET_LM:
+	case IOC_TTY_GET_LTCHARS:
+	case IOC_TTY_GET_WINDOW_SIZE:
+	case IOC_TTY_NOT_CONTROL_TTY:
+	default:
+	    *newInputSizePtr = 0;
+	    goto noconversion;
+
+	case IOC_TTY_FLUSH:
+	    /*
+	     * Optional int
+	     */
+	    if (inputSize == 0) {
+		*newInputSizePtr = 0;
+		goto noconversion;
+	    } else {
+		fmtString = "w";
+	    }
+	    break;
+
+	case IOC_TTY_SET_DISCIPLINE:
+	case IOC_TTY_BIS_LM:
+	case IOC_TTY_BIC_LM:
+	case IOC_TTY_SET_LM:
+	    /*
+	     * One int
+	     */
+	    fmtString = "w";
+	    break;
+
+	case IOC_TTY_SETP:
+	case IOC_TTY_SETN:
+	    /*
+	     * struct sgttyb
+	     */
+	    fmtString = "{b4h}";
+	    break;
+
+	case IOC_TTY_INSERT_CHAR:
+	    /*
+	     * One char
+	     */
+	    fmtString = "b";
+	    break;
+
+	case IOC_SET_OWNER:
+	    /*
+	     * Ioc_Owner
+	     */
+	    fmtString = "{w2}";
+	    break;
+
+	case IOC_TTY_SET_TCHARS:
+	    /*
+	     * struct tchars
+	     */
+	    fmtString = "{b6}";
+	    break;
+
+	case IOC_TTY_SET_LTCHARS:
+	    /*
+	     * struct ltchars
+	     */
+	    fmtString = "{b6}";
+	    break;
+
+
+	case IOC_TTY_SET_WINDOW_SIZE: {
+	    /*
+	     * struct winsize
+	     */
+	    fmtString = "{h4}";
+	    break;
+	}
+
+    }
+    status = Fmt_Convert(fmtString, format, &inputSize, input, FMT_MY_FORMAT,
+	    newInputSizePtr, newInput);
+noconversion:
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FormatOutput --
+ *
+ *	Re-format the output buffer of an I/O control.
+ *	This uses the Fmt_Convert library routine.
+ *
+ * Results:
+ *	This returns zero if all goes well.
+ *	Otherwise a FMT_ error code is returned.
+ *
+ * Side effects:
+ *	The reformatted output is put into newOutput.  The true size of
+ *	the data in this buffer is returned in *newOutputSizePtr.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+FormatOutput(command, format, outputSize, output, newOutputSizePtr, newOutput)
+    int command;		/* I/O Control command */
+    Fmt_Format format;		/* Format of client host */
+    int outputSize;		/* Size of input buffer (in our format) */
+    Address output;		/* Output buffer in our format */
+    int *newOutputSizePtr;	/* In/Out - Size of new output buffer */
+    Address newOutput;		/* Out - Output buffer in the client's format */
+{
+    int status = FMT_OK;
+    char *fmtString = "";
+
+    switch (command) {
+
+	case IOC_TTY_SET_DISCIPLINE:
+	case IOC_TTY_SETP:
+	case IOC_TTY_SETN:
+	case IOC_TTY_EXCL:
+	case IOC_TTY_NXCL:
+	case IOC_TTY_FLUSH:
+	case IOC_TTY_INSERT_CHAR:
+	case IOC_SET_OWNER:
+	case IOC_TTY_SET_TCHARS:
+	case IOC_TTY_BIS_LM:
+	case IOC_TTY_BIC_LM:
+	case IOC_TTY_SET_LM:
+	case IOC_TTY_SET_LTCHARS:
+	case IOC_TTY_NOT_CONTROL_TTY:
+	default:
+	    *newOutputSizePtr = 0;
+	    goto noconversion;
+
+	case IOC_TTY_GET_DISCIPLINE:
+	case IOC_NUM_READABLE:
+	case IOC_TTY_GET_LM:
+	case IOC_GET_FLAGS:
+	    /*
+	     * One int
+	     */
+	    fmtString = "w";
+	    break;
+
+	case IOC_TTY_GETP:
+	    /*
+	     * struct sgttyb
+	     */
+	    fmtString = "{b4h}";
+	    break;
+
+	case IOC_GET_OWNER:
+	    /*
+	     * Ioc_Owner
+	     */
+	    fmtString = "{w2}";
+	    break;
+
+	case IOC_TTY_GET_TCHARS:
+	    /*
+	     * struct tchars
+	     */
+	    fmtString = "{b6}";
+	    break;
+
+	case IOC_TTY_GET_LTCHARS:
+	    /*
+	     * struct ltchars
+	     */
+	    fmtString = "{b6}";
+	    break;
+
+	case IOC_TTY_GET_WINDOW_SIZE:
+	    /*
+	     * struct winsize
+	     */
+	    fmtString = "{h4}";
+	    break;
+    }
+    status = Fmt_Convert(fmtString, FMT_MY_FORMAT, &outputSize, output, format,
+	    newOutputSizePtr, newOutput);
+noconversion:
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Td_GetRaw --
+ *
+ *	Retrieve characters that are ready to be output from the
+ *	terminal driver to the raw device.
+ *
+ * Results:
+ *	The return value is a count of the number of characters
+ *	actually returned at buffer.  This will be less than or
+ *	equal to numChars.  A return value of 0 indicates that
+ *	there are no characters in terminal's output buffer or
+ *	that output has been disabled.
+ *
+ * Side effects:
+ *	Characters are removed from the terminal's output buffer,
+ *	and the cooked side may be notified that the terminal is
+ *	writable again.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Td_GetRaw(terminal, numChars, buffer)
+    Td_Terminal terminal;	/* Token identifying terminal. */
+    int numChars;		/* Maximum number of characters to read
+				 * from terminal's output buffer. */
+    register char *buffer;	/* Where to place characters that are read. */
+{
+    register Terminal *tPtr = (Terminal *) terminal;
+    int count;
+
+    if (tPtr->flags & OUTPUT_OFF) {
+	return 0;
+    }
+    for (count = 0; count < numChars; count++, buffer++) {
+	if (tPtr->lastRemovedOut == tPtr->lastAddedOut) {
+	    break;
+	}
+	NEXT(tPtr->lastRemovedOut, tPtr->outBufSize, tPtr->lastRemovedOut);
+	*buffer = tPtr->outputBuffer[tPtr->lastRemovedOut];
+    }
+    tPtr->outCharsBuffered -= count;
+    if (tPtr->outCharsBuffered < tPtr->cookedOutputLimit) {
+	(*tPtr->cookedProc)(tPtr->cookedData, TD_COOKED_WRITES_OK,
+		0, (char *) NULL, 0, (char *) NULL);
+    }
+    return count;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Td_PutRaw --
+ *
+ *	This procedure is invoked when characters arrive from the
+ *	raw device associated with the terminal (e.g., from the
+ *	keyboard).  It adds them to the input buffer of the terminal
+ *	and does appropriate line editing etc.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Characters are added to the input buffer, and may be made
+ *	available on the cooked side of the terminal.  Echoed
+ *	characters get added to the output buffer, which could result
+ *	in a call to the raw control procedure.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Td_PutRaw(terminal, numChars, buffer)
+    Td_Terminal terminal;	/* Token identifying terminal. */
+    int numChars;		/* Number of characters to process. */
+    char *buffer;		/* Characters that were ostensibly typed
+				 * on the raw device's keyboard. */
+{
+    register Terminal *tPtr = (Terminal *) terminal;
+    int next, oldCharsBuffered;
+    register char c = '\0';	/* dummy initial value */
+    Td_Signal signalInfo;
+
+    oldCharsBuffered = tPtr->outCharsBuffered;
+    tPtr->localMode &= ~LFLUSHO;
+
+    /*
+     * According to the 4.3 BSD manual page, we should re-echo everything
+     * in the input buffer if LPENDIN is set here.  But this appears to
+     * produce the wrong results and I suspect that it isn't even
+     * implemented in BSD.  So it's not implemented here either.
+     */
+
+    for ( ; numChars > 0; numChars--, buffer++) {
+	c = *buffer;
+
+	/*
+	 * Skip all further processing if in raw mode.
+	 */
+	
+	if (tPtr->sgttyb.sg_flags & RAW) {
+	    goto addToBuffer;
+	}
+	c &= 0x7f;
+
+	/*
+	 * Handle flow-control characters.
+	 */
+
+	
+	if (c == tPtr->tchars.t_stopc) {
+	    if (tPtr->flags & OUTPUT_OFF) {
+		if (c == tPtr->tchars.t_startc) {
+		    goto restartOutput;
+		}
+	    } else {
+		tPtr->flags |= OUTPUT_OFF;
+	    }
+	    continue;
+	} else if (c == tPtr->tchars.t_startc) {
+	    restartOutput:
+	    tPtr->flags &= ~OUTPUT_OFF;
+	    if (tPtr->outCharsBuffered != 0) {
+		(*tPtr->rawProc)(tPtr->rawData, TD_RAW_OUTPUT_READY,
+			0, (char *) NULL, 0, (char *) NULL);
+	    }
+	    continue;
+	} else if ((tPtr->flags & OUTPUT_OFF) && !(tPtr->localMode & LDECCTQ)) {
+	    tPtr->flags &= ~OUTPUT_OFF;
+	    if (tPtr->outCharsBuffered != 0) {
+		(*tPtr->rawProc)(tPtr->rawData, TD_RAW_OUTPUT_READY,
+			0, (char *) NULL, 0, (char *) NULL);
+	    }
+	}
+
+	/*
+	 * If the last character typed was a "quote" character, then
+	 * just add the new character to the input buffer without
+	 * additional processing.
+	 */
+
+	if (tPtr->flags & LITERAL_NEXT) {
+	    tPtr->flags &= ~LITERAL_NEXT;
+	    goto addToBuffer;
+	}
+
+	/*
+	 * Handle output-flushing character.  Clearing oldCharsBuffered
+	 * is essential, otherwise, the raw client won't be notified if
+	 * characters are added to the output buffer in this procedure.
+	 */
+
+	if (c == tPtr->ltchars.t_flushc) {
+	    if (tPtr->localMode & LFLUSHO) {
+		tPtr->localMode &= ~LFLUSHO;
+	    } else {
+		TdFlushOutput(tPtr);
+		oldCharsBuffered = 0;
+		TdEcho(tPtr, c);
+		TdRetypeInput(tPtr, tPtr->lastRemovedIn);
+		tPtr->localMode |= LFLUSHO;
+	    }
+	    continue;
+	}
+    
+	/*
+	 * Handle line-editing characters such as erase and kill.
+	 */
+	
+	if ((c == '\r') && (tPtr->sgttyb.sg_flags & CRMOD)) {
+	    c = '\n';
+	}
+	if (!(tPtr->sgttyb.sg_flags & CBREAK)) {
+	    if (c == tPtr->sgttyb.sg_erase) {		/* Backspace. */
+		if (tPtr->lastAddedIn != tPtr->lastBreak) {
+		    TdBackspace(tPtr);
+		}
+		continue;
+	    } else if (c == tPtr->ltchars.t_werasc) {	/* Delete word. */
+		int gotNonSpace = 0;
+    
+		while (tPtr->lastAddedIn != tPtr->lastBreak) {
+		    if (isspace(tPtr->inputBuffer[tPtr->lastAddedIn])) {
+			if (gotNonSpace) {
+			    break;
+			}
+		    } else {
+			gotNonSpace = 1;
+		    }
+		    TdBackspace(tPtr);
+		}
+		continue;
+	    } else if (c == tPtr->sgttyb.sg_kill) {	/* Delete line. */
+		if ((tPtr->lastHidden != -1) || !(tPtr->localMode & LCRTKIL)) {
+		    TdEcho(tPtr, c);
+		    TdEcho(tPtr, '\n');
+		    tPtr->lastAddedIn = tPtr->lastBreak;
+		    tPtr->lastHidden = -1;
+		} else {
+		    while (tPtr->lastAddedIn != tPtr->lastBreak) {
+			TdBackspace(tPtr);
+		    }
+		}
+		continue;
+	    } else if (c == tPtr->ltchars.t_rprntc) {	/* Re-echo all. */
+		TdEcho(tPtr, c);
+		TdEcho(tPtr, '\n');
+		TdRetypeInput(tPtr, tPtr->lastRemovedIn);
+		continue;
+	    }
+	}
+
+	if (c == tPtr->ltchars.t_lnextc) {
+	    tPtr->flags |= LITERAL_NEXT;
+	    continue;
+	}
+    
+	/*
+	 * Generate signals in response to certain input characters.  If this
+	 * isn't a signal character, then officially add it to the input
+	 * buffer.
+	 */
+    
+	if (c == tPtr->tchars.t_intrc) {
+	    signalInfo.sigNum = SIGINT;
+	    sendSignal:
+	    signalInfo.groupID = tPtr->owner;
+	    (*tPtr->cookedProc)(tPtr->cookedData, TD_COOKED_SIGNAL,
+		    sizeof(signalInfo), (char *) &signalInfo,
+		    0, (char *) NULL);
+	    TdFlushInput(tPtr);
+	    TdFlushOutput(tPtr);
+	    oldCharsBuffered = 0;
+	    goto echo;
+	} else if (c == tPtr->tchars.t_quitc) {
+	    signalInfo.sigNum = SIGQUIT;
+	    goto sendSignal;
+	} else if (c == tPtr->ltchars.t_suspc) {
+	    signalInfo.sigNum = SIGTSTP;
+	    goto sendSignal;
+	}
+    
+	/*
+	 * If the buffer is full, then reallocate it with a size twice as
+	 * large.  Then add the character to the buffer.
+	 */
+    
+	addToBuffer:
+	NEXT(tPtr->lastAddedIn, tPtr->inBufSize, next);
+	if (next == tPtr->lastRemovedIn) {
+	    char *newBuffer;
+	    int src, dst;
+    
+	    newBuffer = malloc((unsigned) 2*tPtr->inBufSize);
+	    for (src = tPtr->lastRemovedIn, dst = 0; src != tPtr->lastAddedIn; ) {
+		NEXT(src, tPtr->inBufSize, src);
+		dst += 1;
+		newBuffer[dst] = tPtr->inputBuffer[src];
+	    }
+	    tPtr->lastBreak -= tPtr->lastRemovedIn;
+	    if (tPtr->lastBreak < 0) {
+		tPtr->lastBreak += tPtr->inBufSize;
+	    }
+	    if (tPtr->lastHidden != -1) {
+		tPtr->lastHidden -= tPtr->lastRemovedIn;
+		if (tPtr->lastHidden < 0) {
+		    tPtr->lastHidden += tPtr->inBufSize;
+		}
+	    }
+	    tPtr->inputBuffer = newBuffer;
+	    tPtr->inBufSize *= 2;
+	    tPtr->lastRemovedIn = 0;
+	    tPtr->lastAddedIn = dst;
+	    NEXT(dst, tPtr->inBufSize, next);
+	}
+	tPtr->inputBuffer[next] = c;
+	tPtr->lastAddedIn = next;
+    
+	/*
+	 * Echo.
+	 */
+    
+	echo:
+	if ((tPtr->sgttyb.sg_flags & ECHO) && !(tPtr->sgttyb.sg_flags & RAW)) {
+	    if (tPtr->flags & BS_IN_PROGRESS) {
+		TdPutChar(tPtr, '/');
+		tPtr->flags &= ~BS_IN_PROGRESS;
+	    }
+	    TdEcho(tPtr, c);
+	}
+    }
+
+    /*
+     * Are there any characters that are ready for reading?  If so,
+     * change the terminal's state to be readable and notify the
+     * cooked side.
+     */
+
+    if ((tPtr->sgttyb.sg_flags & (RAW|CBREAK)) || (c == tPtr->tchars.t_eofc) ||
+	    (c == tPtr->tchars.t_brkc) || (c == '\n')) {
+	tPtr->lastBreak = tPtr->lastAddedIn;
+	tPtr->lastHidden = -1;
+	tPtr->keyIndex = tPtr->lastAddedIn;
+	tPtr->keyColumn = tPtr->column;
+	(*tPtr->cookedProc)(tPtr->cookedData, TD_COOKED_READS_OK,
+		0, (char *) NULL, 0, (char *) NULL);
+    }
+
+    /*
+     * If the output buffer just became non-empty, then notify the
+     * raw control procedure.
+     */
+
+    if ((oldCharsBuffered == 0) && (tPtr->outCharsBuffered != 0) &&
+	    !(tPtr->flags & OUTPUT_OFF)) {
+	(*tPtr->rawProc)(tPtr->rawData, TD_RAW_OUTPUT_READY,
+		0, (char *) NULL, 0, (char *) NULL);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Td_ControlRaw --
+ *
+ *	This procedure is used to tell the terminal driver that
+ *	certain special things happened on the raw side of the
+ *	terminal, such as a hangup or break.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Depends on the operation;  see the man page for details
+ *	on what commands may be invoked.
+ *
+ *----------------------------------------------------------------------
+ */
+
+	/* ARGSUSED */
+void
+Td_ControlRaw(terminal, operation)
+    Td_Terminal terminal;		/* Token for terminal. */
+    int operation;			/* What just happened: TD_BREAK etc. */
+{
+    register Terminal *tPtr = (Terminal *) terminal;
+
+    switch (operation) {
+	case TD_BREAK: {
+
+	    /*
+	     * Reset some of the terminal state, such as flow control,
+	     * then pretend an interrupt character was typed.
+	     */
+
+	    tPtr->flags &= ~(OUTPUT_OFF | BS_IN_PROGRESS | LITERAL_NEXT);
+	    if (tPtr->sgttyb.sg_flags & RAW) {
+		char c = 0;
+		Td_PutRaw(terminal, 1, &c);
+	    } else if ((int) tPtr->tchars.t_intrc != -1) {
+		Td_PutRaw(terminal, 1, &tPtr->tchars.t_intrc);
+	    }
+	    if (tPtr->outCharsBuffered != 0) {
+		(*tPtr->rawProc)(tPtr->rawData, TD_RAW_OUTPUT_READY,
+			0, (char *) NULL, 0, (char *) NULL);
+	    }
+	    break;
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TdPutChar --
+ *
+ *	Add a character to the output buffer associated with a
+ *	terminal, and keep track of the current column while outputting
+ *	the character.  This routine also substitutes spaces for tabs,
+ *	if that's the mode the terminal is in.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	TPtr->column gets updated and stuff gets added to the terminal's
+ *	output buffer.  The output buffer will get grown if necessary.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+TdPutChar(tPtr, c)
+    register Terminal *tPtr;	/* Terminal on which to output. */
+    char c;			/* Character to output. */
+{
+    /*
+     * Ignore the character if output is being flushed.
+     */
+
+    if (tPtr->localMode & LFLUSHO) {
+	return;
+    }
+
+    /*
+     * Grow the output buffer if there isn't enough space for the
+     * largest amount of information this procedure might want to
+     * add to it.
+     */
+
+    if ((tPtr->outCharsBuffered + 8) >= tPtr->outBufSize) {
+	char *newBuffer;
+	int dst;
+
+	newBuffer = malloc((unsigned) (2*tPtr->outBufSize));
+	for (dst = 0; tPtr->lastRemovedOut != tPtr->lastAddedOut; ) {
+	    dst += 1;
+	    NEXT(tPtr->lastRemovedOut, tPtr->outBufSize, tPtr->lastRemovedOut);
+	    newBuffer[dst] = tPtr->outputBuffer[tPtr->lastRemovedOut];
+	}
+	tPtr->outputBuffer = newBuffer;
+	tPtr->outBufSize *= 2;
+	tPtr->lastRemovedOut = 0;
+	tPtr->lastAddedOut = dst;
+    }
+
+    /*
+     * Update column position, and add character(s) to the buffer.
+     */
+
+    if (isprint(c)) {
+	tPtr->column += 1;
+    } else if (c == '\r') {
+	tPtr->column = 0;
+    } else if (c == '\t') {
+	int count = 8 - (tPtr->column & 07);
+
+	tPtr->column += count;
+	if ((tPtr->sgttyb.sg_flags & TBDELAY) == XTABS) {
+	    for ( ; count > 0; count--) {
+		NEXT(tPtr->lastAddedOut, tPtr->outBufSize, tPtr->lastAddedOut);
+		tPtr->outputBuffer[tPtr->lastAddedOut] = ' ';
+		tPtr->outCharsBuffered++;
+	    }
+	    return;
+	}
+    } else if (c == '\b') {
+	tPtr->column -= 1;
+    }
+    NEXT(tPtr->lastAddedOut, tPtr->outBufSize, tPtr->lastAddedOut);
+    tPtr->outputBuffer[tPtr->lastAddedOut] = c;
+    tPtr->outCharsBuffered++;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TdEcho --
+ *
+ *	Echo a character on a terminal, if echoing is enabled.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The appropriate echo sequence for c gets added to the 
+ *	terminal's output buffer.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+TdEcho(tPtr, c)
+    register Terminal *tPtr;	/* Terminal for which to echo. */
+    register char c;		/* Character to echo. */
+{
+    if (!(tPtr->sgttyb.sg_flags & ECHO)) {
+	return;
+    }
+    if (isprint(c)) {
+	TdPutChar(tPtr, c);
+    } else if (c == '\n') {
+	if (tPtr->sgttyb.sg_flags & CRMOD) {
+	    TdPutChar(tPtr, '\r');
+	}
+	TdPutChar(tPtr, '\n');
+    } else if (c == '\t') {
+	TdPutChar(tPtr, c);
+    } else if (c == 04) {
+	/* Don't echo control-D's. */
+    } else if (tPtr->localMode & LCTLECH) {
+	TdPutChar(tPtr, '^');
+	if (c == 0177) {
+	    TdPutChar(tPtr, '?');
+	} else {
+	    TdPutChar(tPtr, c + 'A' - 1);
+	}
+    } else {
+	TdPutChar(tPtr, c);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TdRetypeInput --
+ *
+ *	This procedure is called to re-echo all of the characters in
+ *	the input buffer.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Characters get added to the terminal's output buffer.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+TdRetypeInput(tPtr, start)
+    register Terminal *tPtr;	/* Which terminal to re-echo for. */
+    int start;			/* Index within tPtr's buffer:  start
+				 * echoing at the character AFTER this one. */
+{
+    tPtr->keyIndex = start;
+    tPtr->keyColumn = tPtr->column;
+    while (start != tPtr->lastAddedIn) {
+	NEXT(start, tPtr->inBufSize, start);
+	TdEcho(tPtr, tPtr->inputBuffer[start]);
+    }
+    tPtr->lastHidden = -1;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TdBackspace --
+ *
+ *	Using mode information from tPtr, output the appropriate
+ *	sequence to backspace over the most recently typed character
+ *	in tPtr's input buffer.  Also remove the character from
+ *	the input buffer.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	TPtr's input buffer ends up with less characters in it,
+ *	and stuff gets added to the output buffer.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+TdBackspace(tPtr)
+    register Terminal *tPtr;		/* Terminal to backspace. */
+{
+    if (tPtr->sgttyb.sg_flags & ECHO) {
+	if (tPtr->localMode & LCRTBS) {
+	    int count;
+	    char c;
+
+	    /*
+	     * CRT-style backspacing:  the character can actually be erased.
+	     * Figure out how wide the character was, then back over it one
+	     * space at a time.  If there's output intervening between us and
+	     * the next character to erase, then first re-echo everything.
+	     */
+
+	    if (tPtr->lastAddedIn == tPtr->lastHidden) {
+		c = tPtr->ltchars.t_rprntc;
+		if ((c & 0377) == 0377) {
+		    c = ltcharsDefault.t_rprntc;
+		}
+		TdEcho(tPtr, c);
+		TdEcho(tPtr, '\n');
+		TdRetypeInput(tPtr, tPtr->lastRemovedIn);
+		tPtr->lastHidden = -1;
+	    }
+	    c = tPtr->inputBuffer[tPtr->lastAddedIn];
+	    if (isprint(c)) {
+		count = 1;
+	    } else {
+		int i, pos;
+		char c2;
+
+		/*
+		 * Anything besides a normal printing character is tricky.  Tabs
+		 * are particularly nasty.  To figure out how much to erase,
+		 * work forwards from a known position, computing the position
+		 * of the character just before the one being erased.
+		 */
+
+		i = tPtr->keyIndex;
+		pos = tPtr->keyColumn;
+		while (TRUE) {
+		    NEXT(i, tPtr->inBufSize, i);
+		    if (i == tPtr->lastAddedIn) {
+			break;
+		    }
+		    c2 = tPtr->inputBuffer[i];
+		    if (isprint(c2)) {
+			pos++;
+		    } else if (c2 == '\t') {
+			pos = (pos + 8) & ~07;
+		    } else if (((c2 == '\n') && !(tPtr->sgttyb.sg_flags & CRMOD))
+			    || (c2 == 04)) {
+			/* No change to position. */
+		    } else if (tPtr->localMode & LCTLECH) {
+			pos += 2;
+		    } else if (c2 == '\b') {
+			pos -= 1;
+		    }
+		}
+		count = tPtr->column - pos;
+	    }
+
+	    for ( ; count > 0; count--) {
+		if (tPtr->localMode & LCRTERA) {
+		    TdPutChar(tPtr, '\b');
+		    TdPutChar(tPtr, ' ');
+		}
+		TdPutChar(tPtr, '\b');
+	    }
+	} else if (tPtr->localMode & LPRTERA) {
+
+	    /*
+	     * Hardcopy terminal:  backspace by outputting erased characters
+	     * between "\" and "/" delimiters.
+	     */
+
+	    if (!(tPtr->flags & BS_IN_PROGRESS)) {
+		TdPutChar(tPtr, '\\');
+		tPtr->flags |= BS_IN_PROGRESS;
+	    }
+	    TdEcho(tPtr, tPtr->inputBuffer[tPtr->lastAddedIn]);
+	} else {
+
+	    /*
+	     * Old-style backspace:  just echo the backspace character.
+	     */
+
+	    TdEcho(tPtr, tPtr->sgttyb.sg_erase);
+	}
+    }
+    PREV(tPtr->lastAddedIn, tPtr->inBufSize, tPtr->lastAddedIn);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TdFlushInput --
+ *
+ *	Empty the input buffer associated with a terminal.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	TPtr's input buffer is cleared.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+TdFlushInput(tPtr)
+    register Terminal *tPtr;		/* Terminal to flush. */
+{
+    tPtr->lastAddedIn = tPtr->lastRemovedIn = 0;
+    tPtr->lastBreak = tPtr->keyIndex = 0;
+    tPtr->lastHidden = -1;
+    tPtr->keyColumn = tPtr->column;
+    tPtr->flags &= ~(LITERAL_NEXT|BS_IN_PROGRESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TdFlushOutput --
+ *
+ *	Empty the output queue for a terminal.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The output buffer for tPtr is emptied, and the terminal's raw
+ *	control procedure is invoked to empty any other buffers down
+ *	the line.  The cooked side gets notified that the terminal
+ *	is now writable.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+TdFlushOutput(tPtr)
+    register Terminal *tPtr;		/* Terminal to flush. */
+{
+    tPtr->lastAddedOut = tPtr->lastRemovedOut = 0;
+    tPtr->outCharsBuffered = 0;
+    (*tPtr->rawProc)(tPtr->rawData, TD_RAW_FLUSH_OUTPUT, 0,
+	    (char *) NULL, 0, (char *) NULL);
+    (*tPtr->cookedProc)(tPtr->cookedData, TD_COOKED_WRITES_OK, 0,
+	    (char *) NULL, 0, (char *) NULL);
+}
+@
+
+
+1.20.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/etc/RCS/ttyDriver.c,v 1.20 92/03/18 16:33:08 rab Exp $ SPRITE (Berkeley)";
+@
+
+
+1.19
+log
+@Use function prototypes.  Lint.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/etc/RCS/ttyDriver.c,v 1.18 90/09/05 18:56:18 rab Exp Locker: kupfer $ SPRITE (Berkeley)";
+d1643 1
+a1643 1
+	    } else if (tPtr->tchars.t_intrc != -1) {
+@
+
+
+1.18
+log
+@Add prototypes.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/etc/RCS/ttyDriver.c,v 1.17 90/06/27 11:16:52 shirriff Exp Locker: rab $ SPRITE (Berkeley)";
+d24 1
+d130 4
+a133 1
+    int (*cookedProc)();	/* Procedure to call to register change
+d136 4
+a139 1
+    int (*rawProc)();		/* Procedure to call to register change
+d206 13
+a218 10
+static void TdBackspace _ARGS_((register Terminal *tPtr));
+static void TdEcho _ARGS_((register Terminal *tPtr, register char c));
+static void TdFlushInput _ARGS_((register Terminal *tPtr));
+static void TdFlushOutput _ARGS_((register Terminal *tPtr));
+static void TdPutChar _ARGS_((register Terminal *tPtr, char c));
+static void TdRetypeInput _ARGS_((register Terminal *tPtr, int start));
+static int FormatInput _ARGS_((int command, Fmt_Format format, int inputSize,
+    char *input, int *newInputSizePtr, char *newInput));
+static int FormatOutput _ARGS_((int command, Fmt_Format format, int outputSize,
+    char *output, int *newOutputSizePtr, char *newOutput));
+d245 4
+a248 1
+    int (*cookedProc)();	/* Procedure to call for control operations
+d253 4
+a256 1
+    int (*rawProc)();		/* Procedure to call for control operations
+d672 1
+a672 1
+    char *out;
+d691 1
+a691 1
+    InBuf newInputBuf, newOutputBuf;
+d704 1
+a704 1
+			    &newSize, &newInputBuf) != FMT_OK) {
+d1083 1
+a1083 1
+    char *input;		/* Input buffer in client format */
+d1085 1
+a1085 1
+    char *newInput;		/* Out - Input buffer in our format */
+d1204 1
+a1204 1
+    char *output;		/* Output buffer in our format */
+d1206 1
+a1206 1
+    char *newOutput;		/* Out - Output buffer in the client's format */
+d1364 1
+a1364 1
+    register char c;
+a1632 1
+	    Td_Signal signalInfo;
+@
+
+
+1.17
+log
+@Added IOC_TTY_NOT_CONTROL_TTY.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/etc/RCS/ttyDriver.c,v 1.16 90/02/28 11:10:06 brent Exp $ SPRITE (Berkeley)";
+d199 11
+a209 8
+extern void		TdBackspace();
+extern void		TdEcho();
+extern void		TdFlushInput();
+extern void		TdFlushOutput();
+extern void		TdPutChar();
+extern void		TdRetypeInput();
+static int		FormatInput();
+static int		FormatOutput();
+d1660 1
+a1660 1
+void
+d1740 1
+a1740 1
+void
+d1788 1
+a1788 1
+void
+d1823 1
+a1823 1
+void
+d1831 1
+a1831 1
+    
+d1838 1
+a1838 1
+    
+d1855 1
+a1855 1
+    
+d1862 1
+a1862 1
+    
+d1886 1
+a1886 1
+    
+d1895 1
+a1895 1
+    
+d1900 1
+a1900 1
+    
+d1907 1
+a1907 1
+    
+d1934 1
+a1934 1
+void
+d1964 1
+a1964 1
+void
+@
+
+
+1.16
+log
+@Added byteswapping for I/O controls.
+Fixed handling of IOC_TTY_FLUSH so it pays attention to the
+FREAD|FWRITE argument
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/etc/RCS/ttyDriver.c,v 1.15 90/02/08 13:42:09 ouster Exp Locker: brent $ SPRITE (Berkeley)";
+d925 1
+d1082 1
+d1207 1
+@
+
+
+1.15
+log
+@Generate SIGWINCH signal when window size changes.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/etc/RCS/ttyDriver.c,v 1.14 89/07/28 16:04:40 ouster Exp Locker: ouster $ SPRITE (Berkeley)";
+d32 1
+d193 2
+d205 2
+d628 1
+a628 1
+Td_ControlCooked(terminal, command, inputSize, input, outputSizePtr,
+d632 2
+a633 1
+					 * (e.g. TIOCGETP). */
+d672 1
+d675 16
+d770 23
+a792 3
+	case IOC_TTY_FLUSH:
+	    if (inputSize != 0) {
+		goto invalid;
+a793 2
+	    TdFlushInput(tPtr);
+	    TdFlushOutput(tPtr);
+d795 1
+a795 1
+
+d952 7
+a958 4
+
+    if (count < *outputSizePtr) {
+	count = *outputSizePtr;
+    }
+d960 11
+a970 1
+	bcopy(out, output, count);
+a971 2
+    *outputSizePtr = count;
+    result = 0;
+d1030 3
+d1036 222
+@
+
+
+1.14
+log
+@Implemented DECCTLQ (and its absence) correctly.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/etc/RCS/ttyDriver.c,v 1.13 89/07/19 08:58:37 ouster Exp $ SPRITE (Berkeley)";
+d894 2
+a895 1
+	case IOC_TTY_SET_WINDOW_SIZE:
+d900 5
+d906 1
+@
+
+
+1.13
+log
+@Various changes made to use in kernel:  baud-rate changes, break
+characters, default owner of "anyone".
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/etc/RCS/ttyDriver.c,v 1.12 89/06/03 16:46:20 ouster Exp $ SPRITE (Berkeley)";
+d1087 1
+d1105 6
+@
+
+
+1.12
+log
+@Several changes:  TD_HANGUP is now TD_GOT_CARRIER and TD_LOST_CARRIER,
+added TD_RAW_BAUD_RATE callback, changed TD_COOKED_SIGNAL to provide
+both signal number and controlling process group.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/etc/RCS/ttyDriver.c,v 1.11 89/04/20 10:24:35 ouster Exp Locker: ouster $ SPRITE (Berkeley)";
+d239 1
+d248 1
+a248 1
+    tPtr->owner = 0;
+d269 10
+d444 1
+a444 1
+	if (pID != tPtr->owner) {
+d451 1
+a451 1
+    } else if (familyID != tPtr->owner) {
+d921 1
+a921 1
+	Td_BaudRate baud;
+d925 11
+a935 2
+	(*tPtr->rawProc)(tPtr->rawData, TD_RAW_BAUD_RATE,
+		sizeof(baud), (char *) &baud, 0, (char *) NULL);
+d1081 1
+d1107 3
+a1109 1
+	 * Skip line-editing and output-flushing stuff if in cbreak mode.
+a1122 1
+	c &= 0177;
+d1316 25
+a1340 3
+    /*
+     * Not yet implemented...
+     */
+@
+
+
+1.11
+log
+@Flush buffer on signals.  Also fixed WRITES_OK info to be consistent
+(some places did it when buffer empty, others when below threshold;
+this caused wakeups to get missed in some situations).
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /a/newcmds/tty/RCS/ttyDriver.c,v 1.5 89/03/23 15:26:16 ouster Exp Locker: ouster $ SPRITE (Berkeley)";
+d297 2
+d639 1
+a639 1
+    Td_FlowChars flow;
+d657 11
+d711 1
+a711 1
+		 * buffer, and register change in flow control chars.
+a714 8
+		if (in->sgttyb.sg_flags & RAW) {
+		    flow.stop = flow.start = -1;
+		} else {
+		    flow.stop = tPtr->tchars.t_stopc;
+		    flow.start = tPtr->tchars.t_startc;
+		}
+		(*tPtr->rawProc)(tPtr->rawData, TD_RAW_FLOW_CHARS,
+			sizeof(flow), (char *) &flow, 0, (char *) NULL);
+a817 8
+	    if (((tPtr->tchars.t_stopc != in->tchars.t_stopc)
+		    || (tPtr->tchars.t_startc != in->tchars.t_startc))
+		    && !(tPtr->sgttyb.sg_flags & RAW)) {
+		flow.stop = tPtr->tchars.t_stopc;
+		flow.start = tPtr->tchars.t_startc;
+		(*tPtr->rawProc)(tPtr->rawData, TD_RAW_FLOW_CHARS,
+			sizeof(flow), (char *) &flow, 0, (char *) NULL);
+	    }
+d904 29
+d1037 1
+a1037 1
+    int next, sigNum, oldCharsBuffered;
+d1039 1
+d1173 1
+a1173 1
+	    sigNum = SIGINT;
+d1175 1
+d1177 2
+a1178 1
+		    sizeof(int), (char *) &sigNum, 0, (char *) NULL);
+d1181 1
+d1184 1
+a1184 1
+	    sigNum = SIGQUIT;
+d1187 1
+a1187 1
+	    sigNum = SIGTSTP;
+d1292 1
+a1292 2
+    int operation;			/* What just happened: TD_BREAK or
+					 * TD_HANGUP. */
+d1294 3
+@
+
+
+1.10
+log
+@Massive upgrade to "new version" that is more modular and
+suitable for inclusion in kernel as well as user processes.
+Plus, there's flow control now and a whole bunch of other
+stuff.
+@
+text
+@d974 1
+a974 1
+    if (tPtr->outCharsBuffered == 0) {
+a1147 1
+	    TdFlushInput(tPtr);
+d1150 2
+@
+
+
+1.9
+log
+@Upgrade to use stuff in sys/ioctl.h instead of dev/tty.h.
+@
+text
+@d5 4
+a8 2
+ *	UNIX 4.2 BSD tty driver, using pseudo-devices for the application
+ *	interface and callback procedures for the device interface.
+d10 1
+a10 1
+ * Copyright 1987 Regents of the University of California
+d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/etc/RCS/ttyDriver.c,v 1.8 89/01/19 12:36:13 ouster Exp Locker: ouster $ SPRITE (Berkeley)";
+d24 2
+a26 1
+#include <sprite.h>
+a27 2
+#include <dev/pdev.h>
+#include <dev/tty.h>
+d29 1
+a29 2
+#include <list.h>
+#include <status.h>
+a30 2
+#include <string.h>
+#include <sys/file.h>
+d32 1
+a32 1
+#include <td.h>
+d35 1
+a35 1
+ * The string below holds an error message if Td_Open fails.
+a37 25
+char td_ErrorMsg[150];
+
+/*
+ * The structure below corresponds to an application's stream.  There's
+ * one of these for each open that involves a pseudo-device for which
+ * this module is the server.
+ */
+
+typedef struct ApplStream {
+    List_Links links;		/* Application streams are linked into a
+				 * list of all streams for the same
+				 * terminal. */
+    struct Terminal *tPtr;	/* Terminal with which this stream is
+				 * associated. */
+    int streamID;		/* Sprite identifier for request stream. */
+    Address requestBuf;		/* A buffer for requests and data from the
+				 * client */
+} ApplStream;
+
+/*
+ * The structure below corresponds to one terminal (one call to Td_Open).
+ * It maintains our state about the terminal, including stuff like the
+ * input buffer and pointers to each of the open streams on the terminal.
+ */
+
+a38 7
+    int streamID;		/* Sprite stream identifier for control
+				 * stream for pseudo-device. */
+    List_Links applList;	/* List of all application streams for this
+				 * terminal. */
+    FILE *outputStream;		/* Stream to use for outputting chars. to
+				 * terminal. */
+
+d41 1
+a41 1
+     * same meanings as in 4.2 BSD;  see the 4.2 BSD terminal driver
+d49 1
+d58 1
+a58 1
+    Proc_PID owner;		/* Identifier of controlling process or process
+d60 2
+d70 5
+a74 5
+    int bufferSize;		/* Number of bytes in inputBuffer. */
+    int lastAdded;		/* Index of last character added to buffer. */
+    int lastRemoved;		/* Index of last place from which character
+				 * was removed from buffer.  If lastAdded =
+				 * lastRemoved, the buffer is empty. */
+d76 2
+a77 2
+				 * etc.) or lastRemoved if none in buffer. */
+    int lastHidden;		/* Value of lastAdded at the time the last
+d87 2
+a88 2
+     * following two variables keep track of an index position in the
+     * buffer, and column just to the right of where that character was
+d90 1
+a90 1
+     * lastHidden or lastRemoved, and has two properties:  a) it will
+d99 35
+a133 2
+    struct Terminal *nextPtr;	/* Next in list of all terminals, or NULL
+				 * for end-of-list. */
+d148 2
+d152 5
+a156 8
+#define EXCLUSIVE 1
+#define BS_IN_PROGRESS 2
+#define LITERAL_NEXT 4
+#define OWNER_FAMILY 8
+
+Terminal *firstTerminalPtr = NULL;
+				/* First in list of all terminals being
+			         * being managed right now. */
+d172 3
+d182 1
+a182 1
+    if ((dst) >= size) {		\
+d189 1
+a189 1
+	(dst) = size-1;			\
+d193 26
+a218 78
+ * The structure below describes the format of requests in the write
+ * buffer of an ApplStream.  The kernel queues up requests for us by
+ * appending them to this buffer.  In order to simplify the handling
+ * of requests with a large amount of data, the kernel may break a
+ * (write) request into smaller requests that each fit entirely in
+ * the write buffer.  The MAX_BYTES constant defines this upper limit
+ * on the request data size.  Also remember that writes are asynchronous
+ * so this request buffer size limits the number of writes that can
+ * be done before a context switch to the tty server process is required.
+ */
+
+#define MAX_BYTES	2048
+
+typedef struct {
+    Pdev_Request hdr;
+    union {
+	int		i;
+	char		chars[MAX_BYTES];
+	struct sgttyb	sgttyb;
+	struct tchars	tchars;
+	struct ltchars	ltchars;
+	Ioc_Owner	owner;
+    } data;
+} Request;
+
+/*
+ * WRITE_BUF_SIZE 	The size of the buffer containing requests
+ */
+
+#define REQUEST_BUF_SIZE	sizeof(Request)
+
+/*
+ * The structure below describes the format of reply messages returned
+ * to the client.
+ */
+
+typedef struct {
+    Pdev_Reply hdr;
+    union {
+	int		i;
+	char		chars[MAX_BYTES];
+	struct sgttyb	sgttyb;
+	struct tchars	tchars;
+	struct ltchars	ltchars;
+	Ioc_Owner	owner;
+    } data;
+} Reply;
+
+/*
+ * Forward references to procedures in this file:
+ */
+
+static void	TdApplRequest();
+static void	TdBackspace();
+static void	TdClose();
+static void	TdControlRequest();
+static void	TdEcho();
+static void	TdFlushInput();
+static void	TdFlushPdev();
+static void	TdIoc();
+static void	TdOpen();
+static void	TdPutChar();
+static void	TdRead();
+static int	TdReady();
+static void	TdReply();
+static void	TdRetypeInput();
+static void	TdSignal();
+static void	TdWrite();
+static int	TdSelectBits();
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Td_Open --
+ *
+ *	Arrange for filtering of characters between a pseudo-device
+ *	and a terminal device, emulating the UNIX 4.2 BSD "new"
+ *	terminal driver.
+a219 24
+ * Results:
+ *	The return value is a token for the terminal, which may be
+ *	used in later calls to Td_ procedures.  A NULL return value
+ *	means that the pseudo-device could not be opened.  If realNamePtr
+ *	is non-NULL, *realNamePtr is filled in with a dynamically-
+ *	allocated string giving the actual name of the pseudo-device
+ *	file.
+ *
+ * Side effects:
+ *	A pseudo-device is opened in master mode.  If realNamePtr is
+ *	NULL then name is the complete name of the pseudo device;  if
+ *	realNamePtr is not NULL, then this procedure generates a
+ *	pseudo-device name of the form hostDir/nameXX, where "hostDir"
+ *	is the name of a standard host-specific directory for holding
+ *	terminal pseudo-devices and XX is an integer id appended to
+ *	"name" in order to find a device that isn't already in use.
+ *	Once this procedure returns, this module manages the pseudo
+ *	device to emulate the characteristics of a 4.2BSD terminal.
+ *	During calls to other procedures in this module,  data will get
+ *	added to outputStream.  Callbacks are set up using the Fs_Dispatch
+ *	facilities, so that this module gets notified when the pdev
+ *	channels have data ready.  The caller must use the Fs_Dispatch
+ *	facilities.
+ *
+d224 13
+a236 12
+Td_Open(name, outputStream, realNamePtr)
+    char *name;			/* Name of pseudo-device file to use for
+				 * application interface, or key for generating
+				 * name (if realNamePtr != NULL).  If no
+				 * pseudo-device by that name exists, one
+				 * will be created. */
+    FILE *outputStream;		/* Where to write characters destined for
+				 * the device. */
+    char **realNamePtr;		/* If not NULL, then use "name" as a key for
+				 * a name (see above) and store actual name of
+				 * pseudo-device here.  The memory for the
+				 * string is dynamically allocated. */
+a237 1
+    int streamID;
+a238 59
+    int pdevOpenFlags;
+
+    /*
+     * Pick a file name to use for the pseudo-device, if the caller didn't
+     * give us one, then open the pseudo-device as the controlling process.
+     */
+
+    pdevOpenFlags = O_MASTER|O_RDWR|O_CREAT;
+    if (realNamePtr != NULL) {
+	char hostName[50];
+	int i;
+	char *actualName;
+
+	if (gethostname(hostName, 20) != 0) {
+	    sprintf(td_ErrorMsg, "couldn't get host name (%s)",
+		    strerror(errno));
+	    return (Td_Terminal) NULL;
+	} else {
+	    /*
+	     * Trim off domain name, if any
+	     */
+	    char *cp;
+
+	    cp = index(hostName, '.');
+	    if (cp != (char *)NULL) {
+		*cp = '\0';
+	    }
+	}
+	actualName = (char *) malloc((unsigned) (12 + strlen(hostName)
+		+ strlen(name)));
+	for (i = 1; i < 20; i++) {
+	    sprintf(actualName, "/hosts/%s/%s%d", hostName,
+		    name, i);
+
+	    /*
+	     * Because of umask, the file's mode may not actually get set
+	     * to 0666.  Once the file is open, change the mode explicitly
+	     * to force it.
+	     */
+
+	    streamID = open(actualName, pdevOpenFlags, 0666);
+	    if (streamID >= 0) {
+		fchmod(streamID, 0666);
+		*realNamePtr = actualName;
+		goto gotStream;
+	    }
+	}
+	free((char *) actualName);
+	sprintf(td_ErrorMsg, 
+		"couldn't open a pseudo-device in \"/hosts/%s\"", hostName);
+	return (Td_Terminal) NULL;
+    } else {
+	streamID = open(name, pdevOpenFlags, 0666);
+	if (streamID < 0) {
+	    sprintf(td_ErrorMsg, "couldn't open \"%s\" (%s)",
+		    name, strerror(errno));
+	    return (Td_Terminal) NULL;
+	}
+    }
+a239 1
+    gotStream:
+a240 8
+    tPtr->streamID = streamID;
+    List_Init(&tPtr->applList);
+    tPtr->outputStream = outputStream;
+
+    /*
+     * Should set (or get?) device's baud rate here.
+     */
+
+d245 1
+d250 3
+a252 3
+    tPtr->bufferSize = 100;
+    tPtr->lastAdded = 0;
+    tPtr->lastRemoved = 0;
+d257 10
+a266 2
+    tPtr->nextPtr = firstTerminalPtr;
+    firstTerminalPtr = tPtr;
+a267 3
+    Fs_EventHandlerCreate(streamID, FS_READABLE, TdControlRequest,
+	    (ClientData) tPtr);
+
+d274 1
+a274 1
+ * Td_Close --
+d276 2
+a277 2
+ *	Close down a terminal pseudo-device and release all of the
+ *	state associated with it.
+d283 3
+a285 3
+ *	Memory gets recycled, and clients on the other end of the
+ *	pseudo-device will probably terminate.  After this call,
+ *	the caller should never again use terminal.
+d291 3
+a293 3
+Td_Close(terminal)
+    Td_Terminal terminal;	/* Token identifying the terminal (the return
+				 * value from a previous Td_Open call). */
+d296 1
+a296 8
+    register Terminal *tPtr2;
+    register ApplStream *applPtr;
+
+    while (!List_IsEmpty(&tPtr->applList)) {
+	applPtr = (ApplStream *) List_First(&tPtr->applList);
+	TdClose(tPtr, applPtr, FALSE);
+    }
+    close(tPtr->streamID);
+d298 1
+a298 10
+    close(tPtr->streamID);
+    if (firstTerminalPtr == tPtr) {
+	firstTerminalPtr = tPtr->nextPtr;
+    } else {
+	for (tPtr2 = firstTerminalPtr; tPtr2->nextPtr != tPtr;
+		tPtr2 = tPtr2->nextPtr) {
+	    /* Empty loop body. */
+	}
+	tPtr2->nextPtr = tPtr->nextPtr;
+    }
+d305 5
+a309 1
+ * Td_InputChar --
+d311 20
+a330 34
+ *	When one or more characters arrive from the "device" end of
+ *	a tty connection, the client calls this routine to pass in
+ *	the characters, one at a time.  Td_InputChar handles echoing
+ *	and line editing, as appropriate, and .
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Characters may get output to the device, or passed on to
+ *	the application.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Td_InputChar(terminal, c)
+    Td_Terminal terminal;	/* Token identifying the terminal from
+				 * which the characters came (the return
+				 * value from a previous Td_Open call). */
+    register char c;		/* Character to be input. */
+{
+    register Terminal *tPtr = (Terminal *) terminal;
+    int next;
+
+    /*
+     * See if we're supposed to re-echo all the characters in the
+     * input buffer.
+     */
+    
+    if (tPtr->localMode & LPENDIN) {
+	tPtr->localMode &= ~LPENDIN;
+	TdRetypeInput(tPtr, tPtr->lastBreak);
+    }
+d332 2
+a333 156
+    /*
+     * Handle raw mode and literal characters specially.
+     */
+    
+    if (tPtr->sgttyb.sg_flags & RAW) {
+	goto addToBuffer;
+    }
+    if (tPtr->flags & LITERAL_NEXT) {
+	tPtr->flags &= ~LITERAL_NEXT;
+	goto addToBuffer;
+    }
+
+    /*
+     * Handle line-editing characters such as erase and kill.
+     */
+    
+    c &= 0177;
+    if ((c == '\r') && (tPtr->sgttyb.sg_flags & CRMOD)) {
+	c = '\n';
+    }
+    if (!(tPtr->sgttyb.sg_flags & CBREAK)) {
+	if (c == tPtr->sgttyb.sg_erase) {		/* Backspace. */
+	    if (tPtr->lastAdded != tPtr->lastBreak) {
+		TdBackspace(tPtr);
+	    }
+	    return;
+	} else if (c == tPtr->ltchars.t_werasc)	{	/* Delete word. */
+	    Boolean gotNonSpace = FALSE;
+
+	    while (tPtr->lastAdded != tPtr->lastBreak) {
+		if (isspace(tPtr->inputBuffer[tPtr->lastAdded])) {
+		    if (gotNonSpace) {
+			break;
+		    }
+		} else {
+		    gotNonSpace = TRUE;
+		}
+		TdBackspace(tPtr);
+	    }
+	    return;
+	} else if (c == tPtr->sgttyb.sg_kill) {		/* Delete line. */
+	    if ((tPtr->lastHidden != -1) || !(tPtr->localMode & LCRTKIL)) {
+		TdEcho(tPtr, c);
+		TdEcho(tPtr, '\n');
+		tPtr->lastAdded = tPtr->lastBreak;
+		tPtr->lastHidden = -1;
+	    } else {
+		while (tPtr->lastAdded != tPtr->lastBreak) {
+		    TdBackspace(tPtr);
+		}
+	    }
+	    return;
+	} else if (c == tPtr->ltchars.t_rprntc) {	/* Re-echo all. */
+	    TdEcho(tPtr, c);
+	    TdEcho(tPtr, '\n');
+	    TdRetypeInput(tPtr, tPtr->lastRemoved);
+	    return;
+	}
+    }
+
+    if (c == tPtr->ltchars.t_lnextc) {
+	tPtr->flags |= LITERAL_NEXT;
+	return;
+    }
+
+    /*
+     * Generate signals in response to certain input characters.  If this
+     * isn't a signal character, then officially add it to the input
+     * buffer.
+     */
+
+    if (c == tPtr->tchars.t_intrc) {
+	TdSignal(tPtr, SIG_INTERRUPT);
+	goto echo;
+    } else if (c == tPtr->tchars.t_quitc) {
+	TdSignal(tPtr, SIG_SUSPEND);
+	goto echo;
+    } else if (c == tPtr->ltchars.t_suspc) {
+	TdSignal(tPtr, SIG_TTY_SUSPEND);
+	goto echo;
+    }
+
+    /*
+     * If the buffer is full, then reallocate it with a size twice as
+     * large.  Then add the character to the buffer.
+     */
+
+    addToBuffer:
+    NEXT(tPtr->lastAdded, tPtr->bufferSize, next);
+    if (next == tPtr->lastRemoved) {
+	char *newBuffer;
+	int src, dst;
+
+	newBuffer = malloc((unsigned) 2*tPtr->bufferSize);
+	for (src = tPtr->lastRemoved, dst = 0; src != tPtr->lastAdded; ) {
+	    NEXT(src, tPtr->bufferSize, src);
+	    dst += 1;
+	    newBuffer[dst] = tPtr->inputBuffer[src];
+	}
+	tPtr->lastBreak -= tPtr->lastRemoved;
+	if (tPtr->lastBreak < 0) {
+	    tPtr->lastBreak += tPtr->bufferSize;
+	}
+	if (tPtr->lastHidden != -1) {
+	    tPtr->lastHidden -= tPtr->lastRemoved;
+	    if (tPtr->lastHidden < 0) {
+		tPtr->lastHidden += tPtr->bufferSize;
+	    }
+	}
+	tPtr->inputBuffer = newBuffer;
+	tPtr->bufferSize *= 2;
+	tPtr->lastRemoved = 0;
+	tPtr->lastAdded = dst;
+	NEXT(dst, tPtr->bufferSize, next);
+    }
+    tPtr->inputBuffer[next] = c;
+    tPtr->lastAdded = next;
+
+    /*
+     * Echo.
+     */
+
+    echo:
+    if ((tPtr->sgttyb.sg_flags & ECHO) && !(tPtr->sgttyb.sg_flags & RAW)) {
+	if (tPtr->flags & BS_IN_PROGRESS) {
+	    TdPutChar(tPtr, '/');
+	    tPtr->flags &= ~BS_IN_PROGRESS;
+	}
+	TdEcho(tPtr, c);
+    }
+
+    /*
+     * Are there any characters that are ready for reading?  If so,
+     * set the kernel's select state to be readable.
+     */
+
+    if ((tPtr->sgttyb.sg_flags & (RAW|CBREAK)) || (c == tPtr->tchars.t_eofc) ||
+	    (c == tPtr->tchars.t_brkc) || (c == '\n')) {
+	register ApplStream *applPtr;
+	ReturnStatus status;
+	int selectBits;
+
+	tPtr->lastBreak = tPtr->lastAdded;
+	tPtr->lastHidden = -1;
+	tPtr->keyIndex = tPtr->lastAdded;
+	tPtr->keyColumn = tPtr->column;
+	selectBits = TdSelectBits(tPtr);
+	LIST_FORALL(&tPtr->applList, (List_Links *) applPtr) {
+	    status = Fs_IOControl(applPtr->streamID, IOC_PDEV_READY,
+		    sizeof(int), (Address) &selectBits, 0,
+		    (Address) NULL);
+	    if (status != SUCCESS) {
+		panic("Td_InputChar set select state: %s",
+			Stat_GetMsg(status));
+	    }
+	}
+d335 10
+d350 1
+a350 1
+ * Td_GetState --
+d352 2
+a353 1
+ *	Return all of the state associated with the terminal.
+d356 1
+a356 2
+ *	The areas pointed to by the arguments get filled in with
+ *	the corresponding pieces of the terminal's state.
+d359 1
+a359 1
+ *	None.
+d365 3
+a367 6
+Td_GetState(terminal, basicPtr, charsPtr, localCharsPtr, localModePtr)
+    Td_Terminal terminal;		/* Token for terminal. */
+    struct sgttyb *basicPtr;		/* Where to store sgttyb stuff. */
+    struct tchars *charsPtr;		/* Where to store tchars stuff. */
+    struct ltchars *localCharsPtr;	/* Where to store ltchars stuff. */
+    int *localModePtr;			/* Where to store local mode word. */
+d370 5
+a374 4
+    *basicPtr = tPtr->sgttyb;
+    *charsPtr = tPtr->tchars;
+    *localCharsPtr = tPtr->ltchars;
+    *localModePtr = tPtr->localMode;
+d380 1
+a380 1
+ * Td_SetState --
+d382 2
+a383 1
+ *	Change the internal state associated with a terminal.
+d385 39
+a423 9
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The terminal's state gets set from the parameters.  The
+ *	terminal's input buffer may also get flushed.
+ *
+ *----------------------------------------------------------------------
+ */
+d425 4
+a428 142
+void
+Td_SetState(terminal, basicPtr, charsPtr, localCharsPtr, localMode, flush)
+    Td_Terminal terminal;		/* Token for terminal. */
+    struct sgttyb *basicPtr;		/* New sgttyb stuff. */
+    struct tchars *charsPtr;		/* New tchars. */
+    struct ltchars *localCharsPtr;	/* New ltchars. */
+    int localMode;			/* New local mode word. */
+    Boolean flush;			/* If TRUE, then flush input buffer. */
+{
+    register Terminal *tPtr = (Terminal *) terminal;
+
+    tPtr->sgttyb = *basicPtr;
+    tPtr->tchars = *charsPtr;
+    tPtr->ltchars = *localCharsPtr;
+    tPtr->localMode = localMode;
+    if (flush) {
+	TdFlushInput(tPtr);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TdControlRequest --
+ *
+ *	This procedure is invoked by Fs_Dispatcher when the control
+ *	stream for a pseudo-device is readable.  This means that
+ *	a new stream is being opened on the pdev;  TdControlRequest
+ *	handles this.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Add a new application stream to the pdev.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TdControlRequest(tPtr)
+    register Terminal *tPtr;	/* Terminal whose control stream is ready. */
+{
+    Pdev_Notify notify;
+    register ApplStream *applPtr;
+    int numBytes;
+    Pdev_SetBufArgs setBuf;
+    int true = 1;
+
+    /*
+     * Read the control stream for a message containing a new streamID.
+     */
+
+    numBytes = read(tPtr->streamID, (char *) &notify, sizeof(notify));
+    if (numBytes != sizeof(notify)) {
+	panic("%s; status \"%s\", count %d",
+		"Td_Check couldn't read control stream",
+		strerror(errno), numBytes);
+    }
+    if (notify.magic != PDEV_NOTIFY_MAGIC) {
+	panic("%s: %d", "Td_Check got bad notify magic number",
+		notify.magic);
+    }
+
+    /*
+     * Set up the application state.  This includes a request buffer used
+     * by the kernel to pass client requests to us.
+     */
+
+    applPtr = (ApplStream *) malloc(sizeof(ApplStream));
+    List_InitElement(&applPtr->links);
+    List_Insert(&applPtr->links, LIST_ATFRONT(&tPtr->applList));
+    applPtr->streamID = notify.newStreamID;
+    applPtr->tPtr = tPtr;
+    applPtr->requestBuf = (Address) malloc(REQUEST_BUF_SIZE);
+    setBuf.requestBufAddr = applPtr->requestBuf;
+    setBuf.requestBufSize = REQUEST_BUF_SIZE;
+    setBuf.readBufAddr = NULL;
+    setBuf.readBufSize = 0;
+    Fs_IOControl(applPtr->streamID, IOC_PDEV_WRITE_BEHIND,
+		    sizeof(int), (Address)&true, 0, (Address) NULL);
+    Fs_IOControl(applPtr->streamID, IOC_PDEV_SET_BUF,
+		    sizeof(Pdev_SetBufArgs), (Address)&setBuf,
+		    0, (Address) NULL);
+    Fs_EventHandlerCreate(notify.newStreamID, FS_READABLE, TdApplRequest,
+	    (ClientData) applPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TdApplRequest --
+ *
+ *	This procedure is invoked by Fs_Dispatch when a request appears
+ *	for an application stream.   This procedure reads the request and
+ *	dispatches to a routine to handle the request.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Characters may be output to devices or returned from a device's
+ *	internal buffer to an application.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TdApplRequest(applPtr)
+    register ApplStream *applPtr;	/* Application stream that has a
+					 * request ready for processing. */
+{
+    register Terminal *tPtr = applPtr->tPtr;
+    Pdev_BufPtrs bufPtrs;
+    Request *requestPtr;
+    int numBytes;
+
+    /*
+     * Read the current pointers for the request buffer.
+     */
+
+    numBytes = read(applPtr->streamID, (char *) &bufPtrs,
+	    sizeof(Pdev_BufPtrs));
+    if (numBytes != sizeof(Pdev_BufPtrs)) {
+	panic("%s; status \"%s\", count %d",
+		"Td_Check had trouble reading request buffer pointers",
+		strerror(errno), numBytes);
+    }
+    if (bufPtrs.magic != PDEV_BUF_PTR_MAGIC) {
+	panic("%s: %d", "Td_Check got bad pointer magic number",
+		bufPtrs.magic);
+    }
+    /*
+     * While there are still requests in the buffer, service them.
+     */
+    while (bufPtrs.requestFirstByte < bufPtrs.requestLastByte) {
+	requestPtr =
+	    (Request *)&applPtr->requestBuf[bufPtrs.requestFirstByte];
+	if (requestPtr->hdr.hdr.magic != PDEV_REQUEST_MAGIC) {
+	    panic("TdApplRequest, bad request magic # 0x%x\n",
+			    requestPtr->hdr.hdr.magic);
+	}
+d430 7
+a436 20
+	switch (requestPtr->hdr.hdr.operation) {
+	    case PDEV_OPEN:
+		TdOpen(tPtr, applPtr, requestPtr);
+		break;
+	    case PDEV_CLOSE:
+		TdClose(tPtr, applPtr, TRUE);
+		break;
+	    case PDEV_READ:
+		TdRead(tPtr, applPtr, requestPtr);
+		break;
+	    case PDEV_WRITE:
+	    case PDEV_WRITE_ASYNC:
+		TdWrite(tPtr, applPtr, requestPtr);
+		break;
+	    case PDEV_IOCTL:
+		TdIoc(tPtr, applPtr, requestPtr);
+		break;
+	    default:
+		panic("Td_Check: bad request on request stream: %d",
+			requestPtr->hdr.hdr.operation);
+d438 2
+a439 128
+	/*
+	 * Tell the kernel we removed a request and see if there are any more.
+	 */
+	bufPtrs.requestFirstByte += requestPtr->hdr.hdr.messageSize;
+	Fs_IOControl(applPtr->streamID, IOC_PDEV_SET_PTRS,
+			sizeof(Pdev_BufPtrs), (Address)&bufPtrs,
+			0, (Address) NULL);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TdOpen --
+ *
+ *	This procedure is called when an PDEV_OPEN request is
+ *	received over an application stream.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	If the terminal is in exclusive mode then reject the open
+ *	and close down the application's stream.  Otherwise, accept
+ *	it.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+TdOpen(tPtr, applPtr, reqPtr)
+    Terminal *tPtr;		/* Terminal for which a new stream was just
+				 * opened. */
+    ApplStream *applPtr;	/* Application's stream. */
+    Request *reqPtr;		/* Information about the open request. */
+{
+    if (reqPtr->hdr.hdr.requestSize != 0) {
+	panic("TdOpen got %d bytes of data with open or dup request",
+		reqPtr->hdr.hdr.requestSize);
+    }
+    if (tPtr->flags & EXCLUSIVE) {
+	TdReply(applPtr, (ReturnStatus) FS_FILE_BUSY, 0);
+	TdClose(tPtr, applPtr, FALSE);
+    } else {
+	TdReply(applPtr, (ReturnStatus) SUCCESS, TdSelectBits(tPtr));
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TdClose --
+ *
+ *	This procedure is called to recycle all the information
+ *	associated with an application's stream.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The request stream gets closed, and our information about
+ *	the application stream gets freed up.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+TdClose(tPtr, applPtr, sendReply)
+    register Terminal *tPtr;		/* Terminal for which request was
+					 * received. */
+    register ApplStream *applPtr;	/* Application stream info. */
+    Boolean sendReply;			/* TRUE if we should reply to the
+					 * close request.  This is done in
+					 * normal termination.  FALSE means
+					 * no reply needed, used in error
+					 * recovery */
+{
+    if (sendReply) {
+	TdReply(applPtr, (ReturnStatus) SUCCESS, 0);
+    }
+    List_Remove(&applPtr->links);
+    Fs_EventHandlerDestroy(applPtr->streamID);
+    close(applPtr->streamID);
+    free((char *) applPtr->requestBuf);
+    free((char *) applPtr);
+
+    if (List_IsEmpty(&tPtr->applList)) {
+	tPtr->flags &= ~EXCLUSIVE;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TdRead --
+ *
+ *	This procedure is called when an PDEV_READ request is
+ *	received over a request stream.  Read ahead is not implemented
+ *	because we want to see each request so we can enforce ownership
+ *	so we see every client read request.  Only the controlling
+ *	process (set via the IOC_OWNER IOControl) is allowed to read.
+ *	Other processes get signaled with SIG_TTY_INPUT.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Updates the lastRemoved and lastHidden pointers into the terminal's
+ *	input buffer.  The available data is moved to the pseudo-device
+ *	read buffer and the kernel is poked.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+TdRead(tPtr, applPtr, reqPtr)
+    register Terminal *tPtr;	/* Terminal for which request was received. */
+    ApplStream *applPtr;	/* Application stream info. */
+    Request *reqPtr;		/* Information about the request. */
+{
+    Reply reply;
+    register Reply *replyPtr;
+    int src, count;
+    ReturnStatus status;
+
+    if (reqPtr->hdr.hdr.requestSize != 0) {
+	panic("TdRead got %d requestSize for read operation",
+		reqPtr->hdr.hdr.requestSize);
+d447 3
+d451 5
+a455 14
+	TdRetypeInput(tPtr, tPtr->lastBreak);
+    }
+
+    /*
+     * See if this application is in the right process group.  If not,
+     * then signal it and don't give it any input.
+     */
+
+    if (tPtr->flags & OWNER_FAMILY) {
+	if (reqPtr->hdr.param.read.familyID != tPtr->owner) {
+	    notOwner:
+	    Sig_Send(SIG_TTY_INPUT, reqPtr->hdr.param.read.procID, FALSE);
+	    TdReply(applPtr, (ReturnStatus) FS_WOULD_BLOCK, FS_WRITABLE);
+	    return;
+a456 2
+    } else if (reqPtr->hdr.param.read.procID != tPtr->owner) {
+	goto notOwner;
+d464 4
+a467 3
+    if (tPtr->lastBreak == tPtr->lastRemoved) {
+	TdReply(applPtr, (ReturnStatus) FS_WOULD_BLOCK, FS_WRITABLE);
+	return;
+d469 17
+a485 13
+
+    /*
+     * Count how many bytes should be returned to the user, and
+     * update the terminal's input buffer pointer.
+     */
+    reply.hdr.replySize = 0;
+    src = tPtr->lastRemoved;
+    while (tPtr->lastRemoved != tPtr->lastBreak) {
+	NEXT(tPtr->lastRemoved, tPtr->bufferSize, tPtr->lastRemoved);
+	if (tPtr->lastRemoved == tPtr->lastHidden) {
+	    tPtr->lastHidden = -1;
+	}
+	reply.hdr.replySize++;
+a486 1
+	    register char c = tPtr->inputBuffer[tPtr->lastRemoved];
+d488 1
+a488 1
+		reply.hdr.replySize--;	/* Don't return end-of-file chars. */
+a493 3
+	if (reply.hdr.replySize >= reqPtr->hdr.hdr.replySize) {
+	    break;
+	}
+d495 2
+d498 3
+a500 7
+    if (reply.hdr.replySize > MAX_BYTES) {
+	/*
+	 * Have to dynamically allocate a large enough reply.
+	 */
+	replyPtr = (Reply *) malloc((unsigned) (sizeof(Pdev_Reply)
+		+ reply.hdr.replySize));
+	replyPtr->hdr = reply.hdr;
+d502 1
+a502 1
+	replyPtr = &reply;
+d504 21
+a524 36
+
+    /*
+     * Copy the data into the reply and give it to the kernel.
+     */
+
+    replyPtr->hdr.magic = PDEV_REPLY_MAGIC;
+    replyPtr->hdr.status = SUCCESS;
+    replyPtr->hdr.selectBits = TdSelectBits(tPtr);
+    for (count = 0 ; count < reply.hdr.replySize ; count++) {
+	NEXT(src, tPtr->bufferSize, src);
+	replyPtr->data.chars[count] = tPtr->inputBuffer[src];
+    }
+    replyPtr->hdr.replyBuf = &replyPtr->data.chars[0];
+    status = Fs_IOControl(applPtr->streamID, IOC_PDEV_REPLY,
+			    sizeof(Pdev_Reply),
+			    (Address) replyPtr, 0, (Address) NULL);
+    if (status != SUCCESS) {
+	panic("%s; status \"%s\"", "Td_Read couldn't send reply",
+		Stat_GetMsg(status));
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TdWrite --
+ *
+ *	This procedure is called when an PDEV_WRITE request is
+ *	received over a request stream.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Perform output processing on the characters, if enabled, and
+ *	pass the characters on to the device.
+d530 14
+a543 6
+static void
+TdWrite(tPtr, applPtr, reqPtr)
+    Terminal *tPtr;			/* Terminal for which request was
+					 * received. */
+    ApplStream *applPtr;		/* Application stream info. */
+    register Request *reqPtr;		/* Information about the request. */
+d545 1
+a545 1
+    register char *p;
+d547 1
+d549 1
+a549 5
+    /*
+     * Handle the write request in a loop, processing all the characters
+     * in the request data buffer, then refilling the buffer, until there
+     * are no more characters left.
+     */
+d551 3
+a553 3
+    for (p = reqPtr->data.chars; reqPtr->hdr.hdr.requestSize > 0;
+	 p++, reqPtr->hdr.hdr.requestSize--) {
+	c = *p;
+d555 1
+a555 1
+	    putc(c, tPtr->outputStream);
+d568 1
+a568 1
+
+d570 12
+a581 3
+    tPtr->keyIndex = tPtr->lastAdded;
+    if (tPtr->lastAdded != tPtr->lastRemoved) {
+	tPtr->lastHidden = tPtr->lastAdded;
+d583 60
+d644 10
+a653 33
+    /*
+     * Don't need to reply explicitly because the write has already
+     * been handled for the client by the kernel.
+     */
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TdIoc --
+ *
+ *	This procedure is called when an PDEV_IOCONTROL request is
+ *	received over a request stream.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects
+ *	Read the IOControl input data, if any, process the request,
+ *	and send a response back.  The exact actions taken depend on
+ *	the IOControl operation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+TdIoc(tPtr, applPtr, reqPtr)
+    register Terminal *tPtr;	/* Terminal for which request was received. */
+    ApplStream *applPtr;	/* Application stream info. */
+    Request *reqPtr;		/* Information about the request. */
+{
+    Reply reply;
+    ReturnStatus status;
+d655 3
+a657 2
+    reply.hdr.replySize = 0;
+    switch (reqPtr->hdr.param.ioctl.command) {
+d660 2
+a661 2
+	    if ((reqPtr->hdr.hdr.requestSize != sizeof(int))
+		    || (reqPtr->data.i != NTTYDISC)) {
+d667 1
+a667 1
+	    if (reqPtr->hdr.hdr.requestSize != 0) {
+d670 3
+a672 2
+	    reply.data.i = NTTYDISC;
+	    reply.hdr.replySize = sizeof(int);
+d676 1
+a676 1
+	    if (reqPtr->hdr.hdr.requestSize != 0) {
+d679 2
+a680 2
+	    reply.data.sgttyb = tPtr->sgttyb;
+	    reply.hdr.replySize = sizeof(struct sgttyb);
+d684 6
+d692 1
+a692 1
+	    if (reqPtr->hdr.hdr.requestSize != sizeof(struct sgttyb)) {
+d695 6
+a700 1
+	    if ((tPtr->sgttyb.sg_flags ^ reqPtr->data.sgttyb.sg_flags) & RAW) {
+d702 8
+d711 1
+a711 1
+	    tPtr->sgttyb = reqPtr->data.sgttyb;
+d715 1
+a715 1
+	    if (reqPtr->hdr.hdr.requestSize != 0) {
+d722 1
+a722 1
+	    if (reqPtr->hdr.hdr.requestSize != 0) {
+d732 1
+a732 1
+	    if (reqPtr->hdr.hdr.requestSize != 0) {
+d736 1
+d740 1
+a740 1
+	    if (reqPtr->hdr.hdr.requestSize != 1) {
+d743 1
+a743 1
+	    Td_InputChar((Td_Terminal) tPtr, reqPtr->data.chars[0]);
+d745 20
+a764 6
+
+	case IOC_TTY_SET_BREAK:			/* Not implemented. */
+	    goto invalid;
+
+	case IOC_TTY_CLEAR_BREAK:		/* Not implemented. */
+	    goto invalid;
+a765 6
+	case IOC_TTY_SET_DTR:			/* Not implemented. */
+	    goto invalid;
+
+	case IOC_TTY_CLEAR_DTR:			/* Not implemented. */
+	    goto invalid;
+
+d767 1
+a767 1
+	    if (reqPtr->hdr.hdr.requestSize != 0) {
+d770 1
+a770 1
+	    reply.data.owner.id = tPtr->owner;
+d772 1
+a772 1
+		reply.data.owner.procOrFamily = IOC_OWNER_FAMILY;
+d774 1
+a774 1
+		reply.data.owner.procOrFamily = IOC_OWNER_PROC;
+d776 2
+a777 1
+	    reply.hdr.replySize = sizeof(Ioc_Owner);
+d781 1
+a781 1
+	    if (reqPtr->hdr.hdr.requestSize != sizeof(Ioc_Owner)) {
+d784 2
+a785 2
+	    tPtr->owner = reqPtr->data.owner.id;
+	    if (reqPtr->data.owner.procOrFamily == IOC_OWNER_FAMILY) {
+d793 3
+a795 11
+	    /*
+	     * We ignore the request, but the kernel sticks in the offset
+	     * and makes the argument be an integer.  So, if this check
+	     * is actually needed, it should at least get the check right!
+	     */
+	    if (reqPtr->hdr.hdr.requestSize != sizeof(int)) {
+		goto invalid;
+	    }
+	    reply.data.i = tPtr->lastBreak - tPtr->lastRemoved;
+	    if (reply.data.i < 0) {
+		reply.data.i += tPtr->bufferSize;
+d797 2
+a798 1
+	    reply.hdr.replySize = sizeof(int);
+d802 1
+a802 1
+	    if (reqPtr->hdr.hdr.requestSize != 0) {
+d805 2
+a806 2
+	    reply.data.tchars = tPtr->tchars;
+	    reply.hdr.replySize = sizeof(struct tchars);
+d810 1
+a810 1
+	    if (reqPtr->hdr.hdr.requestSize != sizeof(struct tchars)) {
+d813 9
+a821 1
+	    tPtr->tchars = reqPtr->data.tchars;
+d825 1
+a825 1
+	    if (reqPtr->hdr.hdr.requestSize != sizeof(int)) {
+d828 1
+a828 1
+	    tPtr->localMode |= reqPtr->data.i;
+d832 1
+a832 1
+	    if (reqPtr->hdr.hdr.requestSize != sizeof(int)) {
+d835 1
+a835 1
+	    tPtr->localMode &= ~reqPtr->data.i;
+d839 1
+a839 1
+	    if (reqPtr->hdr.hdr.requestSize != sizeof(int)) {
+d842 1
+a842 1
+	    tPtr->localMode = reqPtr->data.i;
+d846 1
+a846 1
+	    if (reqPtr->hdr.hdr.requestSize != 0) {
+d849 2
+a850 2
+	    reply.data.i = tPtr->localMode;
+	    reply.hdr.replySize = sizeof(int);
+d854 1
+a854 1
+	    if (reqPtr->hdr.hdr.requestSize != sizeof(struct ltchars)) {
+d857 1
+a857 1
+	    tPtr->ltchars = reqPtr->data.ltchars;
+d861 1
+a861 1
+	    if (reqPtr->hdr.hdr.requestSize != 0) {
+d864 2
+a865 2
+	    reply.data.ltchars = tPtr->ltchars;
+	    reply.hdr.replySize = sizeof(struct ltchars);
+d869 3
+a871 2
+	    reply.hdr.replySize = sizeof(int);
+	    reply.data.i = 0;
+d877 16
+a892 1
+	    
+d897 313
+d1211 3
+a1213 2
+     * Send the reply back to the application.  We pass a reply to the
+     * kernel which includes a size and an address for any reply data.
+d1216 8
+a1223 13
+    reply.hdr.magic = PDEV_REPLY_MAGIC;
+    reply.hdr.status = SUCCESS;
+    if (reply.hdr.replySize != reqPtr->hdr.hdr.replySize) {
+	goto invalid;
+    }
+    reply.hdr.selectBits = TdSelectBits(tPtr);
+    reply.hdr.replyBuf = &reply.data.chars[0];
+    status = Fs_IOControl(applPtr->streamID, IOC_PDEV_REPLY,
+			    sizeof(Pdev_Reply), (Address) &reply,
+			    0, (Address) NULL);
+    if (status != SUCCESS) {
+	panic("%s; status \"%s\"", "Td_Ioc couldn't send reply",
+		Stat_GetMsg(status));
+d1225 5
+a1229 1
+    return;
+d1231 5
+a1235 2
+    invalid:
+    TdReply(applPtr, (ReturnStatus) FS_INVALID_ARG, TdSelectBits(tPtr));
+d1241 1
+a1241 1
+ * TdReply --
+d1243 3
+a1245 2
+ *	Send a reply back with no data;  just a return status.  This
+ *	procedure is most often used for error returns.
+d1251 2
+a1252 2
+ *	The application will receive status as the return from the
+ *	system call it invoked.
+d1257 6
+a1262 5
+static void
+TdReply(applPtr, status, selectBits)
+    ApplStream *applPtr;	/* Application stream info. */
+    ReturnStatus status;	/* Error code to send to application. */
+    int selectBits;		/* Current select state for the stream */
+a1263 13
+    Pdev_Reply reply;
+
+    reply.magic = PDEV_REPLY_MAGIC;
+    reply.selectBits = selectBits;
+    reply.status = status;
+    reply.replySize = 0;
+    reply.replyBuf = NULL;
+    status = Fs_IOControl(applPtr->streamID, IOC_PDEV_REPLY,
+		sizeof(Pdev_Reply), (Address) &reply, 0, (Address) NULL);
+    if (status != SUCCESS) {
+	panic("%s; status \"%s\"", "Td_Reply couldn't send reply",
+		Stat_GetMsg(status));
+    }
+d1269 1
+a1269 1
+ * TdSelectBits --
+d1271 4
+a1274 4
+ *	Return the current select state of the tty stream.  This
+ *	examines the mode of the tty and decides if there are any
+ *	characters available for reading.  The stream is always
+ *	writable, but never exceptable.
+a1275 3
+ *	Note, this doesn't pay any attention to terminal ownership,
+ *	although it could.
+ *
+d1277 1
+a1277 2
+ *	An or'd combination of FS_READABLE and FS_WRITABLE that
+ *	indicate the current select state.
+d1280 2
+a1281 1
+ *	None.
+d1286 4
+a1289 3
+static int
+TdSelectBits(tPtr)
+    register Terminal *tPtr;
+d1291 40
+a1330 1
+    register int selectBits = FS_WRITABLE;
+d1332 11
+a1342 2
+    if (tPtr->lastBreak != tPtr->lastRemoved) {
+	selectBits |= FS_READABLE;
+d1344 3
+a1346 1
+    return(selectBits);
+d1360 2
+a1361 2
+ *	The appropriate echo sequence for c get written to the 
+ *	terminal's output stream.
+d1400 1
+a1400 1
+ * TdPutChar --
+d1402 2
+a1403 4
+ *	Output a character to the device associated with a terminal,
+ *	and keep track of the current column while outputting the
+ *	character.  This routine also substitutes spaces for tabs,
+ *	if that's the mode the terminal is in.
+d1409 1
+a1409 2
+ *	TPtr->column gets updated and stuff gets added to the device's
+ *	output stream.
+d1415 4
+a1418 3
+TdPutChar(tPtr, c)
+    register Terminal *tPtr;	/* Terminal on which to output. */
+    char c;			/* Character to output. */
+d1420 5
+a1424 18
+    register FILE *stream = tPtr->outputStream;
+
+    if (isprint(c)) {
+	tPtr->column += 1;
+    } else if (c == '\r') {
+	tPtr->column = 0;
+    } else if (c == '\t') {
+	int count = 8 - (tPtr->column & 07);
+
+	tPtr->column += count;
+	if ((tPtr->sgttyb.sg_flags & TBDELAY) == XTABS) {
+	    for ( ; count > 0; count--) {
+		putc(' ', stream);
+	    }
+	    return;
+	}
+    } else if (c == '\b') {
+	tPtr->column -= 1;
+d1426 1
+a1426 1
+    putc(c, stream);
+d1436 2
+a1437 1
+ *	in tPtr's buffer.  Also remove the character from the buffer.
+d1443 2
+a1444 2
+ *	TPtr's buffer ends up with one less character in it.  Stuff
+ *	gets output on tPtr's outputStream.
+d1465 1
+a1465 1
+	    if (tPtr->lastAdded == tPtr->lastHidden) {
+d1467 1
+a1467 1
+		if (c == -1) {
+d1472 1
+a1472 1
+		TdRetypeInput(tPtr, tPtr->lastRemoved);
+d1475 1
+a1475 1
+	    c = tPtr->inputBuffer[tPtr->lastAdded];
+d1492 2
+a1493 2
+		    NEXT(i, tPtr->bufferSize, i);
+		    if (i == tPtr->lastAdded) {
+d1524 1
+a1524 1
+	     * between "\" and "/" delimeters.
+d1531 1
+a1531 1
+	    TdEcho(tPtr, tPtr->inputBuffer[tPtr->lastAdded]);
+d1537 1
+a1537 1
+    
+d1541 1
+a1541 1
+    PREV(tPtr->lastAdded, tPtr->bufferSize, tPtr->lastAdded);
+d1547 1
+a1547 1
+ * TdSignal --
+d1549 1
+a1549 2
+ *	Generate a signal for the process group associated with a
+ *	terminal.
+d1555 1
+a1555 2
+ *	Processes get signalled (unless there's no process group for
+ *	the terminal).  The terminal's buffer gets flushed.
+d1561 2
+a1562 3
+TdSignal(tPtr, signal)
+    register Terminal *tPtr;		/* Terminal for which to signal. */
+    int signal;				/* Number of signal to generate. */
+d1564 3
+a1566 30
+    TdFlushInput(tPtr);
+    if (tPtr->owner != 0) {
+	Sig_Send(signal, tPtr->owner, tPtr->flags & OWNER_FAMILY);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TdRetypeInput --
+ *
+ *	This procedure is called to re-echo all of the characters in
+ *	the input buffer.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Characters get written to the terminal device.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TdRetypeInput(tPtr, start)
+    register Terminal *tPtr;	/* Which terminal to re-echo for. */
+    int start;			/* Index within tPtr's buffer:  start
+				 * echoing at the character AFTER this one. */
+{
+    tPtr->keyIndex = tPtr->lastRemoved;
+d1568 1
+a1568 5
+    while (start != tPtr->lastAdded) {
+	NEXT(start, tPtr->bufferSize, start);
+	TdEcho(tPtr, tPtr->inputBuffer[start]);
+    }
+    tPtr->lastHidden = -1;
+d1574 1
+a1574 1
+ * TdFlushInput --
+d1576 1
+a1576 1
+ *	Empty the input buffer associated with a terminal.
+d1582 4
+a1585 1
+ *	TPtr's input buffer is flushed.
+d1591 1
+a1591 1
+TdFlushInput(tPtr)
+d1594 6
+a1599 5
+    tPtr->lastAdded = tPtr->lastRemoved = 0;
+    tPtr->lastBreak = tPtr->keyIndex = 0;
+    tPtr->lastHidden = -1;
+    tPtr->keyColumn = tPtr->column;
+    tPtr->flags &= ~(LITERAL_NEXT|BS_IN_PROGRESS);
+@
+
+
+1.8
+log
+@Make PDEV_WRITE_ASYNC equivalent to PDEV_WRITE.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/etc/RCS/ttyDriver.c,v 1.7 89/01/16 10:39:54 ouster Exp Locker: ouster $ SPRITE (Berkeley)";
+d33 1
+d241 17
+a257 17
+extern void	TdApplRequest();
+extern void	TdBackspace();
+extern void	TdClose();
+extern void	TdControlRequest();
+extern void	TdEcho();
+extern void	TdFlushInput();
+extern void	TdFlushPdev();
+extern void	TdIoc();
+extern void	TdOpen();
+extern void	TdPutChar();
+extern void	TdRead();
+extern int	TdReady();
+extern void	TdReply();
+extern void	TdRetypeInput();
+extern void	TdSignal();
+extern void	TdWrite();
+extern int	TdSelectBits();
+d671 3
+a673 3
+    Tty_BasicParams *basicPtr;		/* Where to store sgttyb stuff. */
+    Tty_Chars *charsPtr;		/* Where to store tchars stuff. */
+    Tty_LocalChars *localCharsPtr;	/* Where to store ltchars stuff. */
+d703 3
+a705 3
+    Tty_BasicParams *basicPtr;		/* New sgttyb stuff. */
+    Tty_Chars *charsPtr;		/* New tchars. */
+    Tty_LocalChars *localCharsPtr;	/* New ltchars. */
+@
+
+
+1.7
+log
+@Changed handling of hidden characters to make it more like UNIX.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: ttyDriver.c,v 1.6 88/10/14 13:09:19 brent Exp $ SPRITE (Berkeley)";
+d853 1
+@
+
+
+1.6
+log
+@Updated to new Pdev_Request declaration
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: ttyDriver.c,v 1.5 88/10/07 19:00:59 douglis Exp $ SPRITE (Berkeley)";
+d111 3
+a113 3
+				 * them.  -1 means none of the characters in
+				 * the buffer arrived before the last output
+				 * to the terminal. */
+d532 1
+a532 1
+	    if (!(tPtr->localMode & LCRTKIL)) {
+d536 1
+d634 1
+d1602 6
+d1609 1
+@
+
+
+1.5
+log
+@fixed bad check for size of arg to ioctl.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: ttyDriver.c,v 1.4 88/09/28 10:06:32 brent Exp $ SPRITE (Berkeley)";
+a27 1
+#include <fs.h>
+d835 1
+a835 1
+	if (requestPtr->hdr.magic != PDEV_REQUEST_MAGIC) {
+d837 1
+a837 1
+			    requestPtr->hdr.magic);
+d840 1
+a840 1
+	switch (requestPtr->hdr.operation) {
+d858 1
+a858 1
+			requestPtr->hdr.operation);
+d863 1
+a863 1
+	bufPtrs.requestFirstByte += requestPtr->hdr.messageSize;
+d896 1
+a896 1
+    if (reqPtr->hdr.requestSize != 0) {
+d898 1
+a898 1
+		reqPtr->hdr.requestSize);
+d985 1
+a985 1
+    if (reqPtr->hdr.requestSize != 0) {
+d987 1
+a987 1
+		reqPtr->hdr.requestSize);
+d1046 1
+a1046 1
+	if (reply.hdr.replySize >= reqPtr->hdr.replySize) {
+d1118 2
+a1119 2
+    for (p = reqPtr->data.chars; reqPtr->hdr.requestSize > 0;
+	 p++, reqPtr->hdr.requestSize--) {
+d1180 1
+a1180 1
+	    if ((reqPtr->hdr.requestSize != sizeof(int))
+d1187 1
+a1187 1
+	    if (reqPtr->hdr.requestSize != 0) {
+d1195 1
+a1195 1
+	    if (reqPtr->hdr.requestSize != 0) {
+d1205 1
+a1205 1
+	    if (reqPtr->hdr.requestSize != sizeof(struct sgttyb)) {
+d1215 1
+a1215 1
+	    if (reqPtr->hdr.requestSize != 0) {
+d1222 1
+a1222 1
+	    if (reqPtr->hdr.requestSize != 0) {
+d1232 1
+a1232 1
+	    if (reqPtr->hdr.requestSize != 0) {
+d1239 1
+a1239 1
+	    if (reqPtr->hdr.requestSize != 1) {
+d1258 1
+a1258 1
+	    if (reqPtr->hdr.requestSize != 0) {
+d1271 1
+a1271 1
+	    if (reqPtr->hdr.requestSize != sizeof(Ioc_Owner)) {
+d1288 1
+a1288 1
+	    if (reqPtr->hdr.requestSize != sizeof(int)) {
+d1299 1
+a1299 1
+	    if (reqPtr->hdr.requestSize != 0) {
+d1307 1
+a1307 1
+	    if (reqPtr->hdr.requestSize != sizeof(struct tchars)) {
+d1314 1
+a1314 1
+	    if (reqPtr->hdr.requestSize != sizeof(int)) {
+d1321 1
+a1321 1
+	    if (reqPtr->hdr.requestSize != sizeof(int)) {
+d1328 1
+a1328 1
+	    if (reqPtr->hdr.requestSize != sizeof(int)) {
+d1335 1
+a1335 1
+	    if (reqPtr->hdr.requestSize != 0) {
+d1343 1
+a1343 1
+	    if (reqPtr->hdr.requestSize != sizeof(struct ltchars)) {
+d1350 1
+a1350 1
+	    if (reqPtr->hdr.requestSize != 0) {
+d1377 1
+a1377 1
+    if (reply.hdr.replySize != reqPtr->hdr.replySize) {
+@
+
+
+1.4
+log
+@Updated to latest typedefs
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: ttyDriver.c,v 1.3 88/07/28 17:47:40 ouster Exp $ SPRITE (Berkeley)";
+d1284 6
+a1289 1
+	    if (reqPtr->hdr.requestSize != 0) {
+@
+
+
+1.3
+log
+@Lint.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: ttyDriver.c,v 1.2 88/07/25 13:27:45 ouster Exp $ SPRITE (Berkeley)";
+d203 1
+a203 1
+    Pdev_NewRequest hdr;
+d226 1
+a226 1
+    Pdev_NewReply hdr;
+d1056 1
+a1056 1
+	replyPtr = (Reply *) malloc((unsigned) (sizeof(Pdev_NewReply)
+d1076 1
+a1076 1
+			    sizeof(Pdev_NewReply),
+d1379 1
+a1379 1
+			    sizeof(Pdev_NewReply), (Address) &reply,
+d1415 1
+a1415 1
+    Pdev_NewReply reply;
+d1423 1
+a1423 1
+		sizeof(Pdev_NewReply), (Address) &reply, 0, (Address) NULL);
+@
+
+
+1.2
+log
+@Lint.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: ttyDriver.c,v 1.1 88/07/01 09:40:52 ouster Exp $ SPRITE (Berkeley)";
+d778 1
+a778 1
+		    sizeof(int), (Address)&true, 0, NULL);
+d780 2
+a781 1
+		    sizeof(Pdev_SetBufArgs), (Address)&setBuf, 0, NULL);
+d783 1
+a783 1
+	    (Address) applPtr);
+d867 1
+a867 1
+			0, NULL);
+d1077 1
+a1077 1
+			    (Address) replyPtr, 0, NULL);
+d1102 1
+d1379 2
+a1380 1
+			    sizeof(Pdev_NewReply), (Address) &reply, 0, NULL);
+d1423 1
+a1423 1
+		sizeof(Pdev_NewReply), (Address) &reply, 0, NULL);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: ttyDriver.c,v 2.9 88/05/24 17:13:38 deboor Exp $ SPRITE (Berkeley)";
+a311 1
+    ReturnStatus status;
+a811 1
+    ReturnStatus status;
+@

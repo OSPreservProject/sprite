@@ -1,0 +1,564 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.6
+date     89.08.25.22.24.31;  author jhh;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.06.21.23.56.10;  author jhh;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.02.28.12.22.40;  author jhh;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.12.30.09.26.56;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.12.21.11.51.17;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.12.21.11.10.02;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.6
+log
+@Added ability to modify host id in domain header.
+@
+text
+@' $Header: /a/newcmds/fscheck/RCS/fscheck.man,v 1.5 89/06/21 23:56:10 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS FSCHECK cmds
+.BS
+.SH NAME
+fscheck \- perform consistency check on file system
+.SH SYNOPSIS
+\fBfscheck -dev \fIdevice\fP -part \fIpartition\fP [\fIoptions\fR]
+.SH OPTIONS
+.IP "\fB\-dev\fI device\fR" 14
+\fIDevice\fP is the root name of a device, i.e. rxy0, rsd1, rsb0
+.IP "\fB\-part\fI partition\fR" 14
+\fIPartition\fP is a letter indicating a partition, i.e. a, b, c, d, e, f, g.
+.IP "\fB\-dir\fI devDir\fR" 14
+\fIDevDir\fR is an alternate directory in which to find the device file
+named by concatenating \fIDevice\fR and \fIPartition\fR.  The default 
+directory name is ``/dev/``.
+.IP "\fB\-initialPart\fI firstPartName\fR" 14
+\fIfirstPartName\fP is the name of the initial partition on the disk
+which contains basic disk geometry information.  The default is partition
+``a''.
+.IP "\fB\-write\fR" 14
+Write the disk when errors are encountered and fixed.  The default is to
+not write the disk.
+.IP "\fB\-silent\fR" 14
+Don't say anything unless there is an error.
+.IP "\fB\-verbose\fR" 14
+Output verbose information about errors.  The default is to print out
+terse information.
+.IP "\fB\-incVersion\fR" 14
+If the domain was not written back properly on system shutdown then all
+version numbers will be incremented.
+.IP "\fB\-fixRoot\fR" 14
+Re-create a missing or corrupted root directory.
+.IP "\fB\-clear\fR" 14
+Clear the domain number field stored in the summary sector.
+.IP "\fB\-hostID\fI id\fR" 14
+Update the host ID in the disk header. If \fIid\fR is not 0 then it is used
+as the host id to put in the header. If \fIid\fR equals 0 then one of two
+values are used as the host id.  If the device server is the local host
+then the kernel's internal idea of its host id is used, otherwise the
+device server's id is used.
+.IP "\fB\-badBlock\fR" 14
+Initialize the bad block file descriptor.
+.IP "\fB\-outputFile\fI outputFile\fR" 14
+All output to stdout and stderr is also appended to 
+\fIoutputFile\fR. 
+.IP "\fB\-bufferSize\fI size\fR" 14
+Set the size of the buffer associated with \fIoutputFile\fR to \fIsize\fR bytes.
+Default is to use whatever buffer is provided by the stdio library.
+This option has no effect if the \fB\-outputFile\fR option is not used.
+.IP "\fB\-rootPart\fR" 14
+This option controls the output to a file. If the \fB\-outputFile\fR option
+is not given then this option has no effect. 
+Otherwise, the output is stored in a buffer and only written to the
+file when the program exits.
+This allows the output to be written to a file on the partition being checked
+(usually the output is written to the root partition).
+The file IO in this case is very primative and restrictive. The output file
+must be in the root directory and must exist prior to running \fBfscheck\fR.
+If the size of the output exceeds the size of the file or if it exceeds the
+size of the direct data blocks then it will be truncated. If the output
+exceeds the size of the internal buffer it will be truncated
+(see \fB\-bufferSize\fR ).
+If the output is smaller than the size of the file, the remaining part of
+the file will be filled with null characters.
+Any file produced by this option will have a decimal number in the first
+line which represents the number of bytes in the file. This is used by
+\fBfscheck\fR to calculate the starting point for appending.
+The output file can be reset by either setting the first number to 0 or by
+overwriting the file with null characters.
+.IP "\fB\-heapLimit\fI size\fR" 14
+Program will not allocate more than \fIsize\fR bytes of memory. Default is to 
+allocate as much as is needed.
+.IP "\fB\-delete\fR" 14
+If a data block is shared by more than one file, delete it from all but one
+of the files. The default is to make a copy of the block for each file
+sharing the original.
+.IP "\fB\-readBlock\fI count\fR" 14
+Read count blocks at a time when reading the file descriptors. 
+Currently this does not provide better performance due to limitations in the
+disk interface library.
+.IP "\fB\-debug\fR" 14
+Print out debugging information.
+.IP "\fB\-bitmapVerbose\fR" 14
+Print out lots and lots of information about errors in the bitmaps.
+.IP "\fB\-numReboot\fI count\fR" 14
+Number of consecutive times to reboot before returning a warning indication.
+.IP "\fB\-clearFixCount\fR" 14
+Clear consecutive fix counter.
+.BE
+
+.SH DESCRIPTION
+.LP
+This program will perform a consistency check on a file system.  By default
+it will report inconsistencies but won't repair them.  If the \fB\-write\fP 
+option
+is used then it will repair any inconsistencies by modifying the disk as
+necessary.
+.LP
+This program performs the following consistency checks:
+.IP 1. 5
+It makes sure that the file descriptor allocation bit map agrees with the
+status information kept in each file descriptor.  If necessary it will correct
+the bit map.
+.IP 2. 5
+It confirms that data-block and indirect-block pointers are valid.  If a 
+pointer is invalid then the pointer is set to NIL and the file size is
+adjusted as necessary to reflect the new size of the file.
+.IP 3. 5
+It recreates the data block allocation bit map based on information in
+the file descriptors and indirect blocks.
+.IP 4. 5
+It checks for blocks that are allocated to more than one file.  
+If a block is multiply allocated then copies of the block are made and 
+all but one of 
+the files is corrected to use a copy.
+If the \fB\-delete\fR option is given, or if only a subset of the fragments in
+a block are shared, then the block is given to the 
+lowest numbered file
+descriptor and it is removed from all other files that reference it.
+A special case is made of block 0. This block belongs to the root directory
+and is copied (or deleted) for all other files even if the root directory
+is corrupted or doesn't exist.
+.IP 5. 5
+It verifies that directories are of the proper format.  In order to patch
+a directory, names may be deleted, the directory may be truncated,
+or in the worst case the directory may be turned into a normal file.
+.IP 6. 5
+It puts unreferenced files into the lost+found directory.  The name of each
+file in the lost+found directory is the file's file descriptor number.
+.IP 7. 5
+It corrects link counts and block counts in each file descriptor.
+.IP 8. 5
+It checks that indirect blocks contain valid pointers. If the pointers are
+invalid and the block is part of a file then a hole is created, 
+otherwise if the
+block is part of a directory then the directory is truncated.
+.IP 9. 5
+It checks that each file descriptor contains a valid magic number. If this is
+not the case then the file descriptor is cleared and marked as unused in the
+bitmap.
+.IP 10. 5
+It recreates the root directory if it is corrupted and the \fB\-fixRoot\fR
+option is given.
+.LP
+By default only terse information is given about the errors in the file system.
+Only the first error per file is reported.
+If the \fB\-verbose\fP 
+option is given then more verbose information will be given.
+If the \fB\-bitmapVerbose\fR option is given then differences between the
+bitmaps on disk and the recreated bitmaps are printed. Since the bitmaps
+on disk are not kept current use of this option is likely to produce 
+lots of output.
+.LP
+The \fBfscheck\fP program will also perform other actions depending on
+the options that are specified.  If the \fB\-incVersion\fP 
+option is given then flags
+in the file system header are checked to see if the file system
+was safely written back
+when it was detached or the system went down.  If it is determined that the
+file system was not safely written back then the version numbers for
+all files in the file system are incremented.  This will cause all
+reopens of files because of recovery to fail.
+.LP
+If the \fB\-fixRoot\fP option is given the root directory will
+be recreated if it has become corrupted.  If the root is recreated, then
+any directories that have the root directory as their parent
+will be inserted into the root with their file descriptor number
+as their name.
+Any files that used to be in the root directory will be placed in lost+found.
+\fBFscheck\fR assumes that data block 0 belongs to the root directory and
+will allocate this block to the directory when reconstructing it.
+The \fB\-fixRoot\fR option requires reading the root directory twice, hence
+it cannot be used without the \fB\-write\fR option.
+.LP
+The \fB\-clear\fP option should be used if the domain number field should be
+cleared from the summary sector.  Each file system that is attached is
+given a domain number under which it can be identified.
+When a file system is attached, the system will try to attach it with the same
+domain number that it was attached under last time.  This
+is required to allow clients of the file system to recover when the file
+system is reattached.  If the domain number field is cleared from the
+summary sector, then the system will attach the file system under a domain
+number of the system's choosing.
+.LP 
+The \fB\-hostID\fP option will force the system to update the host id in the
+file system header.  If the device under which the file system is being
+attached is generic then the id of the host on which \fBfscheck\fP is run is
+used.  Otherwise the host id specified by the device file is used.
+The default is not to modify the host id.
+.LP
+The \fB\-badBlock\fP 
+option will initialize the file descriptor which points
+to bad disk blocks.  Initializing it will clear out any pointers to bad
+blocks that are currently in the file descriptor.
+.LP
+The \fB\-heapLimit\fR option can be used to place an upper limit on the 
+size of the program heap. This can be used to prevent paging, since paging
+cannot be done at the point in the boot sequence when \fBfscheck\fR is run.
+If \fBfscheck\fR cannot 
+complete checking the disk because of the limit then it will
+do as much as it can. 
+This should allow multiple runs of \fBfscheck\fR to completely check the disk.
+The limit is only an approximation of how large \fBfscheck\fR will grow, since 
+the program stack is not restricted. Therefore the limit should be set as
+high as possible but it should not be set to the boundary at which
+paging will occur. 
+If it is set too small then \fBfscheck\fR may not be 
+able to run
+at all. Note that the \fBbufferSize\fR and \fBreadBlock\fR
+options will affect the amount of heap required.
+As a rule of thumb, the amount of heap space needed by \fBfscheck\fR 
+is proportional
+to the disk size and the amount of errors on the disk. 
+A heap limit of 1 Mb should be sufficient for all but the most extreme cases.
+.LP
+Each time \fBfscheck\fR runs and finds an error in a partition, a 
+counter on disk
+is incremented. The value of this counter is the number of consecutive
+times \fBfscheck\fR has run on the partition and corrected an error. 
+If the counter
+exceeds the value given by the \fB\-numReboot\fR option (default 4) and
+if \fBfscheck\fR corrects an error, then \fBfscheck\fR will return 
+EXIT_NOREBOOT
+instead of the standard soft error indication.
+This allows higher level software to avoid infinite reboot loops.
+.LP
+The \fB\-clearFixCount\fR option resets the consecutive counter to 0.
+.LP
+Finally, the \fB\-output\fR, \fB\-bufferSize\fR and \fB\-noFlush\fR options 
+control the output from fscheck. The \fB\-output\fR option
+allows the output from fscheck
+to be put into a file as well as printed on stdout and stderr.
+The \fB\-bufferSize\fR option sets the size of the IO buffer associated with 
+the output file.
+The \fB\-noFlush\fR option prevents the buffer from being flushed until the
+disk has been checked and corrected. 
+This allows the output to be written to the disk being checked.
+If the output exceeds the size of the buffer then it is truncated to the
+buffer size.
+If the buffer size is exceeded in the middle of an output string, then remainder
+of the string will wrap over the beginning of the buffer. 
+.SH EXIT CODES
+.LP 
+\fBFscheck\fR has a large number of exit codes. 
+Positive values indicate that some sort of error occurred that requires 
+\fBfscheck\fR be run again, although an exit code of 1 indicates that the
+filesystem was corrupted but was successfully corrected.
+Negative error codes indicate that a serious error occurred that requires
+user action before fscheck can be run again.
+.IP 0 5
+No errors occurred and no errors were fixed in the filesystem.
+.IP 1 5
+Errors were fixed in the filesystem.
+.IP 2 5
+\fBFscheck\fR ran out of memory before it was able to completely check the
+disk. Rerunning with the same heap limit should allow \fBfscheck\fR to finish.
+.IP 3 5
+Errors were fixed in the filesystem and the number of consecutive times
+\fBfscheck\fR has fixed this partition exceeds the limit.
+.IP -1 5
+An unspecified hard error occurred.
+.IP -2 5
+A disk read failed.
+.IP -3 5
+A disk write failed.
+.IP -4 5
+There was a problem with one of the arguments.
+.IP -5 5
+The heap limit is too small for \fBfscheck\fR to run. The heap limit must be
+made larger before rerunning \fBfscheck\fR.
+.IP -6 5
+The disk is full so that duplicate blocks cannot be copied. Either delete some
+stuff or rerun using the \fB\-delete\fR option.
+.LP 
+.SH BUGS/FEATURES
+.LP
+Indirect blocks are always marked as in use in the bitmap, even if they contain
+invalid entries. This is because the block may be in use by another file and
+cannot be marked as free.
+.LP
+The \fB\-fixRoot\fR option cannot be used without the \fB\-write\fR option.
+.SH KEYWORDS
+file system, disk
+@
+
+
+1.5
+log
+@Various bug fixes
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/fscheck/RCS/fscheck.man,v 1.4 89/02/28 12:22:40 jhh Exp $ SPRITE (Berkeley)
+d37 6
+a42 2
+.IP "\fB\-hostID\fR" 14
+Update the host ID in the disk header.
+d187 1
+a187 1
+The \fB\-hostID\fP option will force the system to update the host ID in the
+d189 3
+a191 2
+attached is generic then the ID of the host on which \fBfscheck\fP is run is
+used.  Otherwise the host ID specified by the device file is used.
+@
+
+
+1.4
+log
+@Converted to new C library, added lots of new functionality
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/fscheck/RCS/fscheck.man,v 1.3 88/12/30 09:26:56 ouster Exp Locker: jhh $ SPRITE (Berkeley)
+d81 6
+d144 1
+d147 4
+a150 6
+For example, by default, differences between the data block allocation bitmap
+that is stored on disk and the one that is recreated by scanning the file
+descriptors are not reported; only a single line of information will be
+printed out if the two versions of the bit map are not identical.
+However, if the \fB\-verbose\fP is given then
+all differences are printed out.
+d213 13
+d254 3
+d264 1
+a264 1
+There was a problem with one of the arguements.
+a278 4
+.LP
+If \fBfscheck\fR needs
+free disk space to copy a shared block or fragment it will
+look for an entire free block.
+@
+
+
+1.3
+log
+@More format upgrades.
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/fscheck/RCS/fscheck.man,v 1.2 88/12/21 11:51:17 ouster Exp $ SPRITE (Berkeley)
+d8 1
+a8 3
+\fBfscheck -D \fIdevice\fP -P \fIpartition\fP [-d \fIdevDir\fP]
+.br
+\fBfscheck -p \fIfirstPartName\fP -WSVrRcHb
+d10 1
+a10 1
+.IP "\fB\-D\fI device\fR" 14
+d12 1
+a12 1
+.IP "\fB\-P\fI partition\fR" 14
+d14 3
+a16 3
+.IP "\fB\-d\fI devDir\fR" 14
+\fIDevDir\fP is an alternate directory in which to find the device file
+named by concatenating \fIDevice\fP and \fIPartition\fP.  The default is
+d18 1
+a18 1
+.IP "\fB\-p\fI firstPartName\fR" 14
+d22 1
+a22 1
+.IP "\fB\-W\fI" 14
+d25 1
+a25 1
+.IP "\fB\-S\fI" 14
+d27 1
+a27 1
+.IP "\fB\-V\fI" 14
+d30 1
+a30 1
+.IP "\fB\-r\fI" 14
+d33 1
+a33 1
+.IP "\fB\-R\fI" 14
+d35 1
+a35 1
+.IP "\fB\-c\fI" 14
+d37 1
+a37 1
+.IP "\fB\-H\fI" 14
+d39 1
+a39 1
+.IP "\fB\-b\fI" 14
+d41 40
+d86 2
+a87 1
+it will report inconsistencies but won't repair them.  If the \fB\-W\fP option
+d97 1
+a97 1
+It validates that data-block and indirect-block pointers are valid.  If a 
+d104 7
+a110 2
+It checks for blocks that are allocated to more than one file.  If a block
+is doubly allocated, the block is given to the lowest numbered file
+d112 3
+d124 12
+d138 2
+a139 1
+If the \fB\-V\fP option is given then more verbose information will be given.
+d144 1
+a144 1
+However, if the \fB\-V\P is given then
+d148 2
+a149 1
+the options that are specified.  If the \fB\-r\fP option is given then flags
+d157 3
+a159 3
+The \fB\-R\fP option should be specified if the root directory should
+be recreated if it has become corrupted.  It the root is recreated, then
+any files that used to have the root directory as their parent
+d162 5
+d168 1
+a168 1
+The \fB\-c\fP option should be used if the domain number field should be
+d178 1
+a178 1
+The \fB\-H\fP option will force the system to update the host ID in the
+d183 2
+a184 1
+Finally, the \fB\-b\fP option will initialize the file descriptor which points
+d187 75
+a261 1
+
+@
+
+
+1.2
+log
+@Editorial cleanup.
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/fscheck/RCS/fscheck.man,v 1.1 88/12/21 11:10:02 ouster Exp $ SPRITE (Berkeley)
+d12 1
+a12 1
+.IP "\fB-D\fI device\fR" 14
+d14 1
+a14 1
+.IP "\fB-P\fI partition\fR" 14
+d16 1
+a16 1
+.IP "\fB-d\fI devDir\fR" 14
+d20 1
+a20 1
+.IP "\fB-p\fI firstPartName\fR" 14
+d24 1
+a24 1
+.IP "\fB-W\fI" 14
+d27 1
+a27 1
+.IP "\fB-S\fI" 14
+d29 1
+a29 1
+.IP "\fB-V\fI" 14
+d32 1
+a32 1
+.IP "\fB-r\fI" 14
+d35 1
+a35 1
+.IP "\fB-R\fI" 14
+d37 1
+a37 1
+.IP "\fB-c\fI" 14
+d39 1
+a39 1
+.IP "\fB-H\fI" 14
+d41 1
+a41 1
+.IP "\fB-b\fI" 14
+d48 1
+a48 1
+it will report inconsistencies but won't repair them.  If the \fB-W\fP option
+d79 1
+a79 1
+If the \fB-V\fP option is given then more verbose information will be given.
+d84 1
+a84 1
+However, if the \fB-V\P is given then
+d88 1
+a88 1
+the options that are specified.  If the \fB-r\fP option is given then flags
+d96 1
+a96 1
+The \fB-R\fP option should be specified if the root directory should
+d102 1
+a102 1
+The \fB-c\fP option should be used if the domain number field should be
+d112 1
+a112 1
+The \fB-H\fP option will force the system to update the host ID in the
+d117 1
+a117 1
+Finally, the \fB-b\fP option will initialize the file descriptor which points
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+' $Header: /sprite/doc/ref/cmds/RCS/fscheck,v 1.2 88/10/31 13:14:21 brent Exp $ SPRITE (Berkeley)
+d9 1
+@

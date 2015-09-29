@@ -1,0 +1,105 @@
+10/29/89
+	The files in this directory implement Customs -- a remote execution
+facility for PMake. Customs is designed to run on a network of machines with a
+consistent, shared filesystem. It requires Sun RPC only because I never got
+around to updating the logging functions to provide byte-swapping functions --
+they use XDR (eXternal Data Representation) routines instead.
+
+I wrote this primarily as a research project, so it doesn't have all the bells
+and whistles one might expect.
+
+	Note that I make no claim to its security. To quote from the standard
+copyright notice:
+
+	 Permission to use, copy, modify, and distribute this
+      software and its documentation for any purpose and without
+       fee is hereby granted, provided that the above copyright
+notice appears in all copies.  Neither the University of California nor
+ Adam de Boor makes any representations about the suitability of this
+      software for any purpose.  It is provided "as is" without
+		     express or implied warranty.
+
+The best that can be said for the security of the system is that any
+misuse can be logged, though not prevented.
+
+*******************************************************************************
+
+Customs is set up as a single server process (which must run on each
+participating machine) and a suite of client/control programs, one of which is
+PMake. The Customs server ("agent") is responsible for determining the avail-
+ability of the local machine, based on certain criteria you can modify, and
+to manage jobs from other participating machines.
+
+A single server is designated as the master agent and is additionally
+responsible for noting when a machine goes down, from which machines
+any given machine will accept jobs and parcelling out available
+machines to requesting clients. The job of master is not given to any
+one machine but, rather, is decided among the active agents whenever
+the previous master dies.
+
+A bit of logging (restarts, aborts, swap space available, things like that)
+is done to a log file, but actual usage is only logged by another program.
+I use the logging daemon mostly for debugging, but you may want it to detect
+abuses. If the system is used heavily, however, it will take a lot of disk
+space -- the messages are verbose.
+
+Clients are provided to:
+	- alter the availability criteria for the local machine (importquota)
+	- find the status of all registered hosts on the net (reginfo).
+	- abort, restart or ping any customs agent on the network (cctrl).
+	- export a command from the shell (export).
+	- accept log information from all hosts on the net (logd).
+
+*******************************************************************************
+
+To make the system, you should have already made PMake to run locally.
+Once this is done, you should (all this happens in the customs subdirectory):
+
+	1) if your compiler doesn't support the void * type used by the
+	   rpc system, change the definition of Rpc_Opaque in rpc.h.
+	2) Change INSTALL_DIR in the Makefile to the correct place. (Also
+	   change the definition of CC if you don't have gcc). Set OSOBJ
+	   to contain the name of the proper os-dependent .o file for your
+	   system.
+	3) Type "pmake install". If this doesn't work, you'll have to fix
+	   it...
+	4) Add entries for "customs", both tcp and udp protocols, in
+	   /etc/services. Any port will do (I use 8231 for both). You
+	   can make it less than 1024 if you want to add that extra little
+	   bit of security -- the daemon will be running as root so it can
+    	   use those ports. All communication between agents is checked to
+    	   make sure it's actually coming from the correct udp port to
+	   forestall fraud, so placing the port in the secure range will
+	   help some.
+	5) Place the same port numbers in customs.h in the DEF_*_PORT
+	   constants. I added these because yellow pages doesn't behave
+	   well under load, especially when fetching services, and more
+	   often than I liked, pmakes would fail with "customs/udp unknown"
+	   errors.
+	6) Read the manual page for customs (../doc/customs.8) to decide
+	   what initial criteria should be used to determine the machine's
+	   availability, then place a line like
+		if [ -f /etc/customs ]; then
+			echo ' customs'				>/dev/console
+			/etc/customs -arch 1 ALL
+		fi
+	   at the proper place in your /etc/rc.local file (I put it in the
+	   local daemons section. note that Sun requires the echo to be done in
+	   a subshell to avoid attaching the shell running the script to a
+	   controlling terminal). -arch tells the agent its architecture
+	   number, which is used to support the .EXPORTSAME attribute in PMake.
+	   There should be a unique number for each type of machine on the
+	   network. You can also have several different sub-nets of agents
+	   on the same network by assigning each individual sub-net a different
+	   network number with the -net flag. For maximum efficiency, however,
+	   you want as many machines on the net as possible.
+	7) Once the system is compiled and installed on all the different
+	   machines, start up a customs agent on each one.
+	8) After about 30 seconds (to give them time to elect a Master Agent),
+	   execute 'reginfo' to make sure all of them came up OK. If they're
+	   registered but say 'host down', don't worry about it unless it
+	   persists beyond whatever availability interval you chose.
+
+*******************************************************************************
+    $Id: README,v 1.3 89/11/14 13:46:33 adam Exp $
+

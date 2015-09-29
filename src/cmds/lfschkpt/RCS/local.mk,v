@@ -1,0 +1,37 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     91.05.31.13.01.07;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Local.mk file for lfschkpt program
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@LIBS	+= /sprite/src/admin/lfslib/installed/${TM}.md/liblfslib.a
+
+#include	<$(SYSMAKEFILE)>
+
+#if empty(TM:Mds3100)
+CFLAGS +=  -Wall 
+#endif
+
+
+.PATH.h		:  /sprite/src/admin/lfslib/installed
+
+@

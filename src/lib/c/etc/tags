@@ -1,0 +1,195 @@
+AlignPointer	fmt.c	/^#define AlignPointer(align, ptr) {					\\$/
+CalcComplexAlign	fmt.c	/^CalcComplexAlign(statePtr, contPtrPtr, repCountPtr/
+CalcPutByteSize	swapBuffer.c	/^CalcPutByteSize(outType, outSizePtr)$/
+CalcPutDoubleSize	swapBuffer.c	/^CalcPutDoubleSize(outType, outSizePtr)$/
+CalcPutHalfWordSize	swapBuffer.c	/^CalcPutHalfWordSize(outType, outSizePtr)$/
+CalcPutWordSize	swapBuffer.c	/^CalcPutWordSize(outType, outSizePtr)$/
+CalcSize	swapBuffer.c	/^CalcSize(inType, inPtrPtr, inSize, inBuf, outType,/
+CallTimeoutHandler	fsDispatch.c	/^CallTimeoutHandler()$/
+ChangeReady	ttyPdev.c	/^ChangeReady(streamPtr, selectState)$/
+ComputeTimeoutValue	fsDispatch.c	/^ComputeTimeoutValue(timeoutPtr)$/
+ConvertByte	fmt.c	/^ConvertByte(doCopy, repCount, statePtr)$/
+ConvertDoubleWord	fmt.c	/^ConvertDoubleWord(doCopy, repCount, statePtr)$/
+ConvertHalfWord	fmt.c	/^ConvertHalfWord(doCopy, repCount, statePtr)$/
+ConvertSequence	fmt.c	/^ConvertSequence(doCopy, unionIndex, openChar, stat/
+ConvertStruct	fmt.c	/^ConvertStruct(doCopy, doingUnion, statePtr, repCou/
+ConvertUnion	fmt.c	/^ConvertUnion(doCopy, doingUnion, statePtr, repCoun/
+ConvertWord	fmt.c	/^ConvertWord(doCopy, repCount, statePtr)$/
+CookedProc	ttyPdev.c	/^CookedProc(ptPtr, command, inSize, inBuffer, outSi/
+CopyData	swapBuffer.c	/^CopyData(inType, inPtrPtr, inSize, inBuf, buf, out/
+DispatcherInit	fsDispatch.c	/^DispatcherInit()$/
+EXPAND	getpwnamuid.c	/^#define	EXPAND(e)	passwd.e = tp; while (*tp++ = *c/
+FakePanicValue	swapBuffer.c	/^#define	FakePanicValue(errstring)	\\$/
+FakePanicVoid	swapBuffer.c	/^#define FakePanicVoid(errstring)	\\$/
+Fmt_Convert	fmt.c	/^Fmt_Convert(contents, inFormat, inSizePtr, inBuf, /
+Fmt_Size	fmt.c	/^Fmt_Size(contents, inFormat, inSizePtr, outFormat,/
+FormatInfo	fmt.c	/^} FormatInfo;$/
+Fs_Dispatch	fsDispatch.c	/^Fs_Dispatch()$/
+Fs_EventHandlerChangeData	fsDispatch.c	/^Fs_EventHandlerChangeData(streamID, newData)$/
+Fs_EventHandlerCreate	fsDispatch.c	/^Fs_EventHandlerCreate(streamID, eventMask, proc, c/
+Fs_EventHandlerData	fsDispatch.c	/^Fs_EventHandlerData(streamID)$/
+Fs_EventHandlerDestroy	fsDispatch.c	/^Fs_EventHandlerDestroy(streamID)$/
+Fs_TimeoutHandlerCreate	fsDispatch.c	/^Fs_TimeoutHandlerCreate(time, relativeTime, proc, /
+Fs_TimeoutHandlerDestroy	fsDispatch.c	/^Fs_TimeoutHandlerDestroy(token)$/
+GETWDERR	getwd.c	/^#define GETWDERR(s)	strcpy(pathname, (s));$/
+GetByte	swapBuffer.c	/^GetByte(inType, inPtrPtr, buf, inSizeLeft)$/
+GetDoubleWord	swapBuffer.c	/^GetDoubleWord(inType, inPtrPtr, buf, inSizeLeft)$/
+GetHalfWord	swapBuffer.c	/^GetHalfWord(inType, inPtrPtr, buf, inSizeLeft)$/
+GetWord	swapBuffer.c	/^GetWord(inType, inPtrPtr, buf, inSizeLeft)$/
+InBuf	ttyDriver.c	/^    } InBuf;$/
+LIST_TO_SRVPTR	pdev.c	/^#define LIST_TO_SRVPTR(listPtr) \\$/
+MAX	fmt.c	/^#define MAX(a,b) ((a) > (b)) ? (a) : (b)$/
+NEXT	ttyDriver.c	/^#define NEXT(src, size, dst) 		\\$/
+OptNoArg	option.c	/^#define OptNoArg(progName, opt) fprintf(stderr, \\/
+Opt_Parse	option.c	/^Opt_Parse(argc, argv, optionArray, numOptions, fla/
+Opt_PrintUsage	option.c	/^Opt_PrintUsage(commandName, optionArray, numOption/
+PREV	ttyDriver.c	/^#define PREV(src, size, dst)		\\$/
+PRIFAC	syslog.c	/^#define PRIFAC(p)	(((p) & LOG_FACMASK) >> 3)$/
+Pdev	pdev.c	/^} Pdev;$/
+PdevCleanup	pdev.c	/^PdevCleanup(srvPtr, sendReply)$/
+PdevClose	ttyPdev.c	/^PdevClose(streamPtr)$/
+PdevControlRequest	pdev.c	/^PdevControlRequest(pdevPtr)$/
+PdevDefaultClose	pdev.c	/^PdevDefaultClose(streamPtr)$/
+PdevDefaultGetAttr	pdev.c	/^PdevDefaultGetAttr(streamPtr, attrPtr, selectBitsP/
+PdevDefaultIoctl	pdev.c	/^PdevDefaultIoctl(streamPtr, command, procID, famil/
+PdevDefaultOpen	pdev.c	/^PdevDefaultOpen(pdevToken, streamPtr, readBuf, fla/
+PdevDefaultRead	pdev.c	/^PdevDefaultRead(streamPtr, offset, procID, familyI/
+PdevDefaultSetAttr	pdev.c	/^PdevDefaultSetAttr(streamPtr, flags, uid, gid, att/
+PdevDefaultWrite	pdev.c	/^PdevDefaultWrite(streamPtr, async, offset, procID,/
+PdevIoctl	ttyPdev.c	/^PdevIoctl(streamPtr, ioctlPtr, selectBitsPtr, sigP/
+PdevOpen	ttyPdev.c	/^PdevOpen(ptPtr, newStream, readBuffer, flags, proc/
+PdevRead	ttyPdev.c	/^PdevRead(streamPtr, readPtr, freeItPtr, selectBits/
+PdevServiceRequest	pdev.c	/^PdevServiceRequest(srvPtr)$/
+PdevSetup	pdev.c	/^PdevSetup(streamID, backPointer, streamList, reqBu/
+PdevTerm	ttyPdev.c	/^} PdevTerm;$/
+PdevWrite	ttyPdev.c	/^PdevWrite(streamPtr, async, writePtr, selectBitsPt/
+Pdev_Close	pdev.c	/^Pdev_Close(pdevToken)$/
+Pdev_EnumStreams	pdev.c	/^Pdev_EnumStreams(pdevToken, func, clientData)$/
+Pdev_Open	pdev.c	/^Pdev_Open(name, realNamePtr, requestBufSize, readB/
+PfsNamingRequest	pfs.c	/^PfsNamingRequest(clientData, streamID, eventMask)$/
+PfsNullProc	pfs.c	/^PfsNullProc()$/
+Pfs_Close	pfs.c	/^Pfs_Close(pfsToken)$/
+Pfs_Open	pfs.c	/^Pfs_Open(prefix, rootIDPtr, service, clientData)$/
+Pfs_OpenConnection	pfs.c	/^Pfs_OpenConnection(token, fileIDPtr, reqBufSize, r/
+Pfs_PassFile	pfs.c	/^Pfs_PassFile(pfsToken, streamID)$/
+PutByte	swapBuffer.c	/^PutByte(outType, outPtrPtr, buf, outSizeLeft)$/
+PutDoubleWord	swapBuffer.c	/^PutDoubleWord(outType, outPtrPtr, buf, outSizeLeft/
+PutHalfWord	swapBuffer.c	/^PutHalfWord(outType, outPtrPtr, buf, outSizeLeft)$/
+PutWord	swapBuffer.c	/^PutWord(outType, outPtrPtr, buf, outSizeLeft)$/
+ReplyNoData	pdev.c	/^ReplyNoData(srvPtr, status, selectBits)$/
+ReplyWithData	pdev.c	/^ReplyWithData(srvPtr, status, replyPtr, sigPtr)$/
+SendSignal	ttyPdev.c	/^SendSignal(streamPtr, signal)$/
+Server	pfs.c	/^} Server;$/
+ServiceStream	pdev.c	/^} ServiceStream;$/
+Stat_GetMsg	status.c	/^Stat_GetMsg(status)$/
+Stat_PrintMsg	status.c	/^Stat_PrintMsg(status, string)$/
+State	fmt.c	/^} State;$/
+StatusMsgs	status.c	/^} StatusMsgs;$/
+StreamInfo	fsDispatch.c	/^} StreamInfo;$/
+Swap_BufSize	swapBuffer.c	/^Swap_BufSize(inBuf, inSize, inType, outType, forma/
+Swap_Buffer	swapBuffer.c	/^Swap_Buffer(inBuf, inSize, inType, outType, format/
+TdBackspace	ttyDriver.c	/^TdBackspace(tPtr)$/
+TdEcho	ttyDriver.c	/^TdEcho(tPtr, c)$/
+TdFlushInput	ttyDriver.c	/^TdFlushInput(tPtr)$/
+TdFlushOutput	ttyDriver.c	/^TdFlushOutput(tPtr)$/
+TdPutChar	ttyDriver.c	/^TdPutChar(tPtr, c)$/
+TdRetypeInput	ttyDriver.c	/^TdRetypeInput(tPtr, start)$/
+Td_Close	ttyDriver.c	/^Td_Close(terminal)$/
+Td_ControlCooked	ttyDriver.c	/^Td_ControlCooked(terminal, command, inputSize, inp/
+Td_ControlRaw	ttyDriver.c	/^Td_ControlRaw(terminal, operation)$/
+Td_Create	ttyDriver.c	/^Td_Create(bufferSize, cookedProc, cookedData, rawP/
+Td_CreatePdev	ttyPdev.c	/^Td_CreatePdev(name, realNamePtr, termPtr, rawProc,/
+Td_Delete	ttyDriver.c	/^Td_Delete(terminal)$/
+Td_DeletePdev	ttyPdev.c	/^Td_DeletePdev(ttyPdev)$/
+Td_GetCooked	ttyDriver.c	/^Td_GetCooked(terminal, pID, familyID, numCharsPtr,/
+Td_GetRaw	ttyDriver.c	/^Td_GetRaw(terminal, numChars, buffer)$/
+Td_Open	ttyDriver.c	/^Td_Open(terminal, selectBitsPtr)$/
+Td_PutCooked	ttyDriver.c	/^Td_PutCooked(terminal, numBytesPtr, buffer, sigNum/
+Td_PutRaw	ttyDriver.c	/^Td_PutRaw(terminal, numChars, buffer)$/
+Terminal	ttyDriver.c	/^} Terminal;$/
+TimeoutInfo	fsDispatch.c	/^} TimeoutInfo;$/
+_gettemp	mktemp.c	/^_gettemp(as, doopen)$/
+additem	ndbm.c	/^additem(buf, item, item1)$/
+advance	regex.c	/^advance(lp, ep)$/
+alarm	alarm.c	/^alarm(secs)$/
+backref	regex.c	/^backref(i, lp)$/
+cclass	regex.c	/^cclass(set, c, af)$/
+chkblk	ndbm.c	/^chkblk(buf)$/
+comerr	regex.c	/^#define	comerr(msg) {expbuf[0] = 0; numbra = 0; re/
+crypt	crypt.c	/^crypt(pw,salt)$/
+cvt	ecvt.c	/^cvt(arg, ndigits, decpt, sign, eflag)$/
+dbm_access	ndbm.c	/^dbm_access(db, hash)$/
+dbm_close	ndbm.c	/^dbm_close(db)$/
+dbm_delete	ndbm.c	/^dbm_delete(db, key)$/
+dbm_fetch	ndbm.c	/^dbm_fetch(db, key)$/
+dbm_firstkey	ndbm.c	/^dbm_firstkey(db)$/
+dbm_forder	ndbm.c	/^dbm_forder(db, key)$/
+dbm_nextkey	ndbm.c	/^dbm_nextkey(db)$/
+dbm_open	ndbm.c	/^dbm_open(file, flags, mode)$/
+dbm_store	ndbm.c	/^dbm_store(db, key, dat, replace)$/
+dcalchash	ndbm.c	/^dcalchash(item)$/
+delitem	ndbm.c	/^delitem(buf, n)$/
+ecvt	ecvt.c	/^ecvt(arg, ndigits, decpt, sign)$/
+encrypt	crypt.c	/^encrypt(block, edflag)$/
+endgrent	getgrent.c	/^endgrent()$/
+endpwent	getpwent.c	/^endpwent()$/
+endusershell	getusershell.c	/^endusershell()$/
+fcvt	ecvt.c	/^fcvt(arg, ndigits, decpt, sign)$/
+fetchpw	getpwnamuid.c	/^fetchpw(key)$/
+finddatum	ndbm.c	/^finddatum(buf, item)$/
+ftime	ftime.c	/^ftime(tp)$/
+gcvt	gcvt.c	/^gcvt(number, ndigit, buf)$/
+getbit	ndbm.c	/^getbit(db)$/
+getgrent	getgrent.c	/^getgrent()$/
+getgrgid	getgrgid.c	/^getgrgid(gid)$/
+getgrnam	getgrnam.c	/^getgrnam(name)$/
+getlogin	getlogin.c	/^getlogin()$/
+getopt	getopt.c	/^getopt(nargc, nargv, ostr)$/
+getpass	getpass.c	/^getpass(prompt)$/
+getpwent	getpwent.c	/^getpwent()$/
+getpwnam	getpwnamuid.c	/^getpwnam(nam)$/
+getpwuid	getpwnamuid.c	/^getpwuid(uid)$/
+getusershell	getusershell.c	/^getusershell()$/
+getwd	getwd.c	/^getwd(pathname)$/
+grskip	getgrent.c	/^grskip(p,c)$/
+gtty	gtty.c	/^gtty(fd, buf)$/
+hashinc	ndbm.c	/^hashinc(db, hash)$/
+initgroups	initgroups.c	/^initgroups(uname, agroup)$/
+initshells	getusershell.c	/^initshells()$/
+insque	insque.c	/^insque(elem, pred)$/
+isatty	isatty.c	/^isatty(fd)$/
+makdatum	ndbm.c	/^makdatum(buf, n)$/
+mkstemp	mktemp.c	/^mkstemp(as)$/
+mktemp	mktemp.c	/^mktemp(as)$/
+nlist	nlist.c	/^nlist(name, list)$/
+panic	panic.c	/^panic(va_alist)$/
+pause	pause.c	/^pause()$/
+pclose	popen.c	/^pclose(ptr)$/
+popen	popen.c	/^popen(cmd,mode)$/
+prepend	getwd.c	/^prepend(dirname, pathname)$/
+pwskip	getpwent.c	/^pwskip(p)$/
+qelem	insque.c	/^struct qelem {$/
+re_comp	regex.c	/^re_comp(sp)$/
+re_exec	regex.c	/^re_exec(p1)$/
+remque	remque.c	/^remque(elem)$/
+setbit	ndbm.c	/^setbit(db)$/
+setegid	setegid.c	/^setegid(egid)$/
+seteuid	seteuid.c	/^seteuid(euid)$/
+setgid	setgid.c	/^setgid(gid)$/
+setgrent	getgrent.c	/^setgrent()$/
+setgrfile	getgrent.c	/^setgrfile(file)$/
+setkey	crypt.c	/^setkey(key)$/
+setpwent	getpwent.c	/^setpwent()$/
+setpwfile	getpwent.c	/^setpwfile(file)$/
+setrgid	setrgid.c	/^setrgid(rgid)$/
+setruid	setruid.c	/^setruid(ruid)$/
+setuid	setuid.c	/^setuid(uid)$/
+setusershell	getusershell.c	/^setusershell()$/
+sleep	sleep.c	/^sleep(seconds)$/
+stty	stty.c	/^stty(fd, buf)$/
+syslog	syslog.c	/^syslog(int pri, const char *fmt, ...)$/
+tell	getopt.c	/^#define	tell(s)	{ \\$/
+timeb	ftime.c	/^struct timeb {$/
+tst	popen.c	/^#define	tst(a,b)	(*mode == 'r'? (b) : (a))$/
+ttyname	ttyname.c	/^ttyname(filedes)$/
+ttyslot	ttyslot.c	/^ttyslot()$/

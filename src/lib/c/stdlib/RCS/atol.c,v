@@ -1,0 +1,144 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  sprited:1.2.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     89.03.22.00.47.01;  author rab;  state Exp;
+branches 1.2.1.1;
+next     1.1;
+
+1.1
+date     88.04.28.17.20.25;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.2.1.1
+date     91.12.02.21.57.52;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@/* 
+ * atol.c --
+ *
+ *	Source code for the "atol" library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdlib/RCS/atol.c,v 1.1 88/04/28 17:20:25 ouster Exp Locker: rab $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <stdlib.h>
+#include <ctype.h>
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * atol --
+ *
+ *	Convert an ASCII string into a long integer.
+ *
+ * Results:
+ *	The return value is the integer equivalent of string.  If there
+ *	are no decimal digits in string, then 0 is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+long int
+atol(string)
+    register char *string;	/* String of ASCII digits, possibly
+				 * preceded by white space.  For bases
+				 * greater than 10, either lower- or
+				 * upper-case digits may be used.
+				 */
+{
+    register long int result = 0;
+    register unsigned int digit;
+    int sign;
+
+    /*
+     * Skip any leading blanks.
+     */
+
+    while (isspace(*string)) {
+	string += 1;
+    }
+
+    /*
+     * Check for a sign.
+     */
+
+    if (*string == '-') {
+	sign = 1;
+	string += 1;
+    } else {
+	sign = 0;
+	if (*string == '+') {
+	    string += 1;
+	}
+    }
+
+    for ( ; ; string += 1) {
+	digit = *string - '0';
+	if (digit > 9) {
+	    break;
+	}
+	result = (10*result) + digit;
+    }
+
+    if (sign) {
+	return -result;
+    }
+    return result;
+}
+@
+
+
+1.2.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdlib/RCS/atol.c,v 1.2 89/03/22 00:47:01 rab Exp $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 2
+a18 2
+static char rcsid[] = "$Header: proto.c,v 1.2 88/03/11 08:39:08 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+d20 1
+@

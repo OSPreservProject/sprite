@@ -1,0 +1,16 @@
+F COMMON.MK;1                       	common.mk
+F COPYRIGH.;1                       	copyright
+D DS3100_M                          	ds3100.md
+L ID.;1                             	ID	ID.$MACHINE
+F ID_DS310.;1                       	ID.ds3100
+L ID_DS500.;1                       	ID.ds5000	ID.ds3100
+F LOCAL.MK;1                        	local.mk
+D LST                               	lst
+L MAKE.;1                           	make	$MACHINE.md/pmake
+F MAKEFILE.;1                       	Makefile
+F PATCHLEV.;1                       	patchlevel
+D RCS                               	RCS
+F README.;1                         	README
+D SRC                               	src
+F TAGS.;1                           	TAGS
+F _GDBINIT.;1                       	.gdbinit

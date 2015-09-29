@@ -1,0 +1,170 @@
+head     1.8;
+branch   ;
+access   ;
+symbols  ;
+locks    douglis:1.8; strict;
+comment  @# @;
+
+
+1.8
+date     89.01.16.14.53.56;  author ouster;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.12.19.10.19.53;  author douglis;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.12.16.09.53.21;  author brent;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.10.30.15.06.02;  author ouster;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.09.16.14.40.28;  author douglis;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.09.14.10.41.26;  author douglis;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.08.08.11.04.59;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.07.31.16.22.34;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@script to invoke rdist for various directories to back files up over to
+unix.
+@
+
+
+1.8
+log
+@Use /sprite3 instead of /sprite on UNIX side, eliminate things
+that don't need to be rdisted anymore.
+@
+text
+@#! /sprite/cmds/csh -fb
+# This file rdists the entire Sprite file system and is invoked
+# nightly by crontab.
+set path = (/sprite/cmds)
+
+echo -n "Rdist started: "; date
+set distfile=(/sprite/lib/misc/distfile.ALL)
+# Address to send error messages to
+set admin=douglis
+# Do each target individually, and do "misc" last since it's the one
+# that triggers the "expected control record" snafu.
+set targets=(src users kerneltest rootdirs mh newatt \
+             newcmds emacs misc2 misc)
+
+rdist -n -f $distfile $targets > /dev/null
+if ($status != 0) then
+    echo "Error in $distfile."
+    echo "Error in $distfile." | Mail -s "distfile problem" $admin
+else
+# Rdist each target individually to get around a bug that is causing
+# rdist to die.  Maybe.
+    foreach target ($targets)
+        echo "rdist $target"
+        rdist -f $distfile $target | grep -v "updated" | \
+                                     grep -v "Warning: remote mode"
+    end
+endif    
+echo -n "Rdist completed: "; date
+
+@
+
+
+1.7
+log
+@reinstated mail message on error
+@
+text
+@d12 1
+a12 1
+set targets=(src users userstounix kerneltest local rootdirs mh newatt \
+@
+
+
+1.6
+log
+@Nuked the 'test' target so /t2/test isn't being backed up.
+These are old testing programs anyway.
+@
+text
+@d18 1
+a18 1
+#    echo "Error in $distfile." | Mail -s "distfile problem" $admin
+@
+
+
+1.5
+log
+@Removed att stuff from nightly rdists.
+@
+text
+@d13 1
+a13 1
+             newcmds emacs misc2 test misc)
+@
+
+
+1.4
+log
+@added targets.
+@
+text
+@d12 1
+a12 1
+set targets=(src users userstounix kerneltest att local rootdirs mh newatt \
+@
+
+
+1.3
+log
+@added "test" target
+@
+text
+@d12 2
+a13 1
+set targets=(src users kerneltest att local rootdirs mh newatt newcmds emacs misc2 test misc)
+@
+
+
+1.2
+log
+@split misc into misc2 and misc, to get even more things to
+actually get rdisted before the bizarre bug hits
+@
+text
+@d12 1
+a12 1
+set targets=(src users kerneltest att local rootdirs mh newatt newcmds emacs misc2 misc)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d12 1
+a12 1
+set targets=(src users kerneltest att local rootdirs mh newatt newcmds emacs misc)
+@

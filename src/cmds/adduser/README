@@ -1,0 +1,3 @@
+Any changes to adduser (e.g., the UCB account database moves or the
+Sprite root fileserver is changed) should also be reflected in
+/sprite/admin/howto/addNewUser.

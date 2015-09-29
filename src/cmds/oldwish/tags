@@ -1,0 +1,120 @@
+AlphaForwards	wishGather.c	/^AlphaForwards(first, second)$/
+AlphaReverse	wishGather.c	/^AlphaReverse(first, second)$/
+AtimeCompare	wishGather.c	/^AtimeCompare(attrs1, attrs2)$/
+AtimeForwards	wishGather.c	/^AtimeForwards(first, second)$/
+AtimeReverse	wishGather.c	/^AtimeReverse(first, second)$/
+AtimeSort	wishGather.c	/^AtimeSort(d1, d2)$/
+Boolean	wishCmd.c	/^typedef	int	Boolean;$/
+CreateIcon	wishMain.c	/^CreateIcon(display, window, foreground, background/
+CtimeCompare	wishGather.c	/^CtimeCompare(attrs1, attrs2)$/
+CtimeForwards	wishGather.c	/^CtimeForwards(first, second)$/
+CtimeReverse	wishGather.c	/^CtimeReverse(first, second)$/
+CtimeSort	wishGather.c	/^CtimeSort(d1, d2)$/
+DtimeCompare	wishGather.c	/^DtimeCompare(attrs1, attrs2)$/
+DtimeForwards	wishGather.c	/^DtimeForwards(first, second)$/
+DtimeReverse	wishGather.c	/^DtimeReverse(first, second)$/
+DtimeSort	wishGather.c	/^DtimeSort(d1, d2)$/
+FigureWindowSize	wishDisplay.c	/^FigureWindowSize(aWindow, maxEntryWidth)$/
+FileAlphaReverseSort	wishGather.c	/^FileAlphaReverseSort(file1, file2)$/
+FileAlphaSort	wishGather.c	/^FileAlphaSort(file1, file2)$/
+FileAtimeReverseSort	wishGather.c	/^FileAtimeReverseSort(file1, file2)$/
+FileAtimeSort	wishGather.c	/^FileAtimeSort(file1, file2)$/
+FileCtimeReverseSort	wishGather.c	/^FileCtimeReverseSort(file1, file2)$/
+FileCtimeSort	wishGather.c	/^FileCtimeSort(file1, file2)$/
+FileDtimeReverseSort	wishGather.c	/^FileDtimeReverseSort(file1, file2)$/
+FileDtimeSort	wishGather.c	/^FileDtimeSort(file1, file2)$/
+FileMtimeReverseSort	wishGather.c	/^FileMtimeReverseSort(file1, file2)$/
+FileMtimeSort	wishGather.c	/^FileMtimeSort(file1, file2)$/
+FileSizeReverseSort	wishGather.c	/^FileSizeReverseSort(file1, file2)$/
+FileSizeSort	wishGather.c	/^FileSizeSort(file1, file2)$/
+GatherInfo	wishGather.c	/^} GatherInfo;$/
+GetColumnWidthInfo	wishDisplay.c	/^GetColumnWidthInfo(aWindow, maxEntryWidth, columnW/
+GetMaxEntryWidth	wishDisplay.c	/^GetMaxEntryWidth(aWindow)$/
+GetNewGroup	wishCmd.c	/^GetNewGroup(aWindow, interp, argv, newGrpPtr)$/
+GetString	wishCmd.c	/^GetString(string)$/
+HandleMonitorEvent	wishMain.c	/^HandleMonitorEvent(clientData, streamID, eventMask/
+HandleMonitorStats	wishMain.c	/^HandleMonitorStats(clientData, time)$/
+MtimeCompare	wishGather.c	/^MtimeCompare(attrs1, attrs2)$/
+MtimeForwards	wishGather.c	/^MtimeForwards(first, second)$/
+MtimeReverse	wishGather.c	/^MtimeReverse(first, second)$/
+MtimeSort	wishGather.c	/^MtimeSort(d1, d2)$/
+MwishMain	wishMain.c	/^main(argc, argv)$/
+NextPart	whence.c	/^NextPart(ppath, argv0, fullpath)$/
+SelectFiles	wishGather.c	/^SelectFiles(entryPtr)$/
+SelectGroupFiles	wishGather.c	/^SelectGroupFiles(entryPtr)$/
+SizeCompare	wishGather.c	/^SizeCompare(attrs1, attrs2)$/
+SizeForwards	wishGather.c	/^SizeForwards(first, second)$/
+SizeReverse	wishGather.c	/^SizeReverse(first, second)$/
+SizeSort	wishGather.c	/^SizeSort(d1, d2)$/
+TxIconInfo	wishMain.c	/^} TxIconInfo;$/
+Whence	whence.c	/^Whence(fullpath, argv_zero)$/
+WishAddGroupBinding	wishCmd.c	/^WishAddGroupBinding(grpPtr, button, command)$/
+WishBindCmd	wishCmd.c	/^WishBindCmd(aWindow, interp, argc, argv)$/
+WishChangeDir	wishHandlers.c	/^WishChangeDir(aWindow, where)$/
+WishChangeDirCmd	wishCmd.c	/^WishChangeDirCmd(aWindow, interp, argc, argv)$/
+WishChangeFieldsCmd	wishCmd.c	/^WishChangeFieldsCmd(aWindow, interp, argc, argv)$/
+WishChangeGroupCmd	wishCmd.c	/^WishChangeGroupCmd(aWindow, interp, argc, argv)$/
+WishChangeGroupsCmd	wishCmd.c	/^WishChangeGroupsCmd(aWindow, interp, argc, argv)$/
+WishChangeSelection	wishSelect.c	/^WishChangeSelection(aWindow, clientData, fileP, li/
+WishClearWholeSelection	wishSelect.c	/^WishClearWholeSelection(aWindow)$/
+WishCloseCmd	wishCmd.c	/^WishCloseCmd(aWindow, interp, argc, argv)$/
+WishCmdTableInit	wishCmd.c	/^WishCmdTableInit(cmdTablePtr, interpPtr, commands,/
+WishCreate	wishDisplay.c	/^WishCreate(aWindow, dir)$/
+WishCvtToPrintable	wishUtils.c	/^WishCvtToPrintable(string, length, result)$/
+WishDefineGroupCmd	wishCmd.c	/^WishDefineGroupCmd(aWindow, interp, argc, argv)$/
+WishDeleteGroupBinding	wishCmd.c	/^WishDeleteGroupBinding(grpPtr, button)$/
+WishDeleteGroupBindings	wishCmd.c	/^WishDeleteGroupBindings(grpPtr)$/
+WishDisplayEventProc	wishMain.c	/^WishDisplayEventProc(clientData, streamID, eventMa/
+WishDoCmd	wishCmd.c	/^WishDoCmd(aWindow, command)$/
+WishDoTclSelect	wishGather.c	/^WishDoTclSelect(interp, procName, arg, selectValPt/
+WishDumpState	wishDisplay.c	/^WishDumpState(aWindow)$/
+WishEditDir	wishHandlers.c	/^WishEditDir(window, eventPtr)$/
+WishEditRule	wishHandlers.c	/^WishEditRule(window, eventPtr)$/
+WishExecCmd	wishCmd.c	/^WishExecCmd(aWindow, interp, argc, argv)$/
+WishGarbageCollect	wishGarbage.c	/^WishGarbageCollect(aWindow)$/
+WishGarbageGroup	wishGarbage.c	/^WishGarbageGroup(aWindow, grpPtr)$/
+WishGatherNames	wishGather.c	/^WishGatherNames(aWindow)$/
+WishGatherSingleGroup	wishGather.c	/^WishGatherSingleGroup(aWindow, grpPtr)$/
+WishGetCompareProc	wishGather.c	/^WishGetCompareProc(aWindow, compareProcPtr, filePr/
+WishGetFileFields	wishDisplay.c	/^WishGetFileFields(aWindow, filePtr, buf)$/
+WishGetGroupBinding	wishCmd.c	/^WishGetGroupBinding(grpPtr, button)$/
+WishGroupBindCmd	wishCmd.c	/^WishGroupBindCmd(aWindow, interp, argc, argv)$/
+WishHandleDestructionEvent	wishHandlers.c	/^WishHandleDestructionEvent(aWindow, eventPtr)$/
+WishHandleDrawingEvent	wishHandlers.c	/^WishHandleDrawingEvent(aWindow, eventPtr)$/
+WishHandleEnterEvent	wishHandlers.c	/^WishHandleEnterEvent(aWindow, eventPtr)$/
+WishHandleMonitorUpdates	wishHandlers.c	/^WishHandleMonitorUpdates()$/
+WishHighlightMovement	wishSelect.c	/^WishHighlightMovement(window, eventPtr)$/
+WishInit	wishDisplay.c	/^WishInit(aWindow)$/
+WishKeyProc	wishHandlers.c	/^WishKeyProc(aWindow, eventPtr)$/
+WishMakeMenu	wishUtils.c	/^WishMakeMenu(aWindow, name, size, info)$/
+WishMapCoordsToFile	wishDisplay.c	/^WishMapCoordsToFile(aWindow, x, y)$/
+WishMapCoordsToGroup	wishDisplay.c	/^WishMapCoordsToGroup(aWindow, x, y)$/
+WishMenuCmd	wishCmd.c	/^WishMenuCmd(aWindow, interp, argc, argv)$/
+WishMenuEntryProc	wishUtils.c	/^WishMenuEntryProc(aWindow, eventPtr)$/
+WishMenuProc	wishUtils.c	/^WishMenuProc(command)$/
+WishMouseEvent	wishHandlers.c	/^WishMouseEvent(window, eventPtr)$/
+WishOpenCmd	wishCmd.c	/^WishOpenCmd(aWindow, interp, argc, argv)$/
+WishPatternCompareCmd	wishCmd.c	/^WishPatternCompareCmd(aWindow, interp, argc, argv)/
+WishPrintTclError	wishCmd.c	/^WishPrintTclError(aWindow)$/
+WishQuitCmd	wishCmd.c	/^WishQuitCmd(aWindow, interp, argc, argv)$/
+WishRedraw	wishDisplay.c	/^WishRedraw(aWindow)$/
+WishRedrawCmd	wishCmd.c	/^WishRedrawCmd(aWindow, interp, argc, argv)$/
+WishRedrawFile	wishDisplay.c	/^WishRedrawFile(aWindow, filePtr)$/
+WishRedrawGroup	wishDisplay.c	/^WishRedrawGroup(aWindow, groupPtr)$/
+WishResizeCmd	wishCmd.c	/^WishResizeCmd(aWindow, interp, argc, argv)$/
+WishRestartCmd	wishCmd.c	/^WishRestartCmd(aWindow, interp, argc, argv)$/
+WishScroll	wishScroll.c	/^WishScroll(clientData, distance, units, window)$/
+WishSelChange	wishSelect.c	/^WishSelChange(clientData)$/
+WishSelFetch	wishSelect.c	/^WishSelFetch(clientData, askedFormat, firstByte, n/
+WishSelectionCmd	wishCmd.c	/^WishSelectionCmd(aWindow, interp, argc, argv)$/
+WishSetPositions	wishDisplay.c	/^WishSetPositions(aWindow)$/
+WishSetSort	wishCmd.c	/^WishSetSort(aWindow, sortMethod, reverse)$/
+WishSetWindowAndRowInfo	wishDisplay.c	/^WishSetWindowAndRowInfo(aWindow, height, width)$/
+WishSortFilesCmd	wishCmd.c	/^WishSortFilesCmd(aWindow, interp, argc, argv)$/
+WishSourceConfig	wishHandlers.c	/^WishSourceConfig(aWindow)$/
+WishToggleSelEntryCmd	wishCmd.c	/^WishToggleSelEntryCmd(aWindow, interp, argc, argv)/
+WishToggleSelection	wishHandlers.c	/^WishToggleSelection(window, eventPtr, lineP)$/
+WishToggleSelectionCmd	wishCmd.c	/^WishToggleSelectionCmd(aWindow, interp, argc, argv/
+WishWhichButton	wishCmd.c	/^WishWhichButton(token)$/
+is_a_file	whence.c	/^is_a_file(name)$/
+is_executable	whence.c	/^is_executable(name)$/

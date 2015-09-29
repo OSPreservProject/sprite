@@ -1,0 +1,1642 @@
+head     1.12;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.12
+date     90.02.16.11.10.41;  author jhh;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     89.08.03.16.07.09;  author brent;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     89.01.04.15.37.24;  author david;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     88.09.29.17.02.51;  author david;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     88.09.13.17.30.30;  author brent;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.08.26.17.48.28;  author brent;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     87.12.22.10.15.20;  author brent;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     87.07.14.10.26.39;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     87.05.21.17.50.37;  author andrew;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     87.05.21.16.59.44;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     87.05.01.15.49.52;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     87.04.01.10.39.58;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Code for a server process to use a pseudo device to synchronize N clients.
+@
+
+
+1.12
+log
+@Option to start server on signal
+@
+text
+@/* 
+ * server.c --
+ *
+ *	The server part of some multi-program synchronization primatives.
+ *	The routines here control N client programs.  This just means
+ *	telling them all to start, and hearing back from them when they're done.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /a/newcmds/bench/RCS/server.c,v 1.11 89/08/03 16:07:09 brent Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include "sprite.h"
+#include "status.h"
+#include "fs.h"
+#include "dev/pdev.h"
+#include "sys/file.h"
+#include "stdio.h"
+#include "bit.h"
+#include "sys.h"
+
+char *pdev="/sprite/daemons/bench.pdev";
+
+typedef int  (*IntProc)();
+
+typedef struct ServerState {
+    int cntlStream;		/* StreamID of pdev control stream */
+    int numClients;		/* Number of client processes */
+    int *clientStream;		/* Array of server streamIDs used to communicate
+				 * with the N clients */
+    int maxStreamID;		/* Largest value in clientStream array */
+    char *clientState;		/* Array of state words, one per client */
+    Address *requestBuf;	/* Array of pointers to request buffers.  The
+				 * kernel puts request directly into these. */
+    int *selectMask;		/* Mask used to wait for requests */
+    int selectMaskBytes;	/* Number of bytes in selectMask */
+    IntProc opTable[7];		/* Op. switch for servicing requests */
+} ServerState;
+
+/*
+ * Flags for the client state words.
+ */
+#define CLIENT_OPENED	0x1
+#define CLIENT_STARTED	0x2
+#define CLIENT_FINISHED	0x4
+
+/*
+ * The size of the request buffers.
+ */
+#define REQ_BUF_SIZE	128
+
+extern int errno;
+
+/*
+ * Forward Declarations
+ */
+ReturnStatus ServeOpen();
+ReturnStatus ServeRead();
+ReturnStatus ServeWrite();
+ReturnStatus ServeIOControl();
+ReturnStatus ServeClose();
+
+Pdev_Op ServeRequest();
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ServerSetup --
+ *
+ *	Establish contact with N clients.  A pseudo device is opened
+ *	and we are declared its "master", or "server".  After this
+ *	other processes can open the pseudo device and we'll get a private
+ *	stream back that we use for requests from that process.
+ *
+ * Results:
+ *	A pointer to state about the clients needed by ServerStart and
+ *	ServerWait.
+ *
+ * Side effects:
+ *	Opens the pseudo device as the server and waits for numClients
+ *	opens by client processes.
+ *	This exits (kills the process) upon error.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+ServerSetup(numClients, dataPtr)
+    int numClients;
+    ClientData *dataPtr;
+{
+    ServerState *statePtr;
+    int client;
+    int len;
+    int amountRead;
+    ReturnStatus status;
+    Pdev_Notify notify;
+    int streamID;
+    Pdev_SetBufArgs setBuf;
+    extern Boolean waitForSignal;
+    extern Boolean startClients;
+
+    statePtr = (ServerState *)malloc(sizeof(ServerState));
+    statePtr->clientStream = (int *)malloc(numClients * sizeof(int));
+    statePtr->clientState = (char *)malloc(numClients);
+    statePtr->requestBuf = (Address *)malloc(numClients * sizeof(Address));
+    statePtr->numClients = numClients;
+
+    statePtr->opTable[(int)PDEV_OPEN] = ServeOpen;
+    statePtr->opTable[(int)PDEV_CLOSE] = ServeClose;
+    statePtr->opTable[(int)PDEV_READ] = ServeRead;
+    statePtr->opTable[(int)PDEV_WRITE] = ServeWrite;
+    statePtr->opTable[(int)PDEV_IOCTL] = ServeIOControl;
+
+    /*
+     * Open the pseudo device.
+     */
+    statePtr->cntlStream = open(pdev, O_RDONLY|O_MASTER, 0666);
+    if (statePtr->cntlStream < 0) {
+	statePtr->cntlStream = open(pdev, O_CREAT|O_RDONLY|O_MASTER, 0666);
+    }
+    if (statePtr->cntlStream < 0) {
+	Stat_PrintMsg(errno, "Error opening pseudo device as master");
+	exit(errno);
+    }
+    for (client=0 ; client<numClients ; client++) {
+	/*
+	 * Read on our control stream (the one we just opened) messages
+	 * that contain new streamIDs.  These are for private streams
+	 * back to the client process.
+	 */
+	len = sizeof(notify);
+	amountRead = read(statePtr->cntlStream, (Address)&notify, len);
+	if (amountRead < 0) {
+	    Stat_PrintMsg(errno, "Error reading control stream");
+	    exit(errno);
+	} else if (amountRead != sizeof(notify)) {
+	    fprintf(stderr,
+		"Warning, short read (%d) on control stream\n", amountRead);
+	    fflush(stderr);
+	}
+	streamID = notify.newStreamID;
+	if (streamID > statePtr->maxStreamID) {
+	    statePtr->maxStreamID = streamID;
+	}
+	/*
+	 * Set up state for the client.
+	 */
+	statePtr->clientStream[client] = streamID;
+	statePtr->clientState[client] = CLIENT_OPENED;
+	statePtr->requestBuf[client] = (Address) malloc(REQ_BUF_SIZE);
+	/*
+	 * Tell the kernel where the request buffer is.
+	 */
+	setBuf.requestBufAddr = statePtr->requestBuf[client];
+	setBuf.requestBufSize = REQ_BUF_SIZE;
+	setBuf.readBufAddr = NULL;
+	setBuf.readBufSize = 0;
+	Fs_IOControl(streamID, IOC_PDEV_SET_BUF, sizeof(Pdev_SetBufArgs),
+			(Address)&setBuf, 0, (Address)NULL);
+
+	fprintf(stderr, "Got client on stream %d\n",streamID);
+	fflush(stderr);
+    }
+    if (waitForSignal) {
+	while (!startClients) {
+	    sigpause(0);
+	}
+    }
+    /*
+     * Now start all clients at once by servicing their first PDEV_OPEN
+     * request.
+     */
+    for (client=0 ; client<numClients ; client++) {
+	(void) ServeRequest(statePtr->clientStream[client],
+		     statePtr->requestBuf[client], statePtr->opTable);
+    }
+    fflush(stderr);
+    /*
+     * Now that we know the largest stream ID used for a client stream
+     * we can allocate and initialize the select mask for the streams.
+     */
+    statePtr->selectMaskBytes = Bit_NumBytes(statePtr->maxStreamID);
+    statePtr->selectMask = (int *)malloc(statePtr->selectMaskBytes);
+    bzero((Address)statePtr->selectMask, statePtr->selectMaskBytes);
+    for (client=0 ; client < numClients ; client++) {
+	Bit_Set(statePtr->clientStream[client], statePtr->selectMask);
+    }
+    *dataPtr = (ClientData)statePtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ServeRequest --
+ *
+ *	The top level service routine that reads client requests
+ *	and branches out to a handler for the request.  This takes
+ *	care of error conditions and allocating space for the
+ *	request and the reply parameters.
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	Reads and writes on the client's stream.  malloc space for the
+ *	request and the reply.  Will reset the client stream upon error.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Pdev_Op
+ServeRequest(clientStreamID, requestBuf, opTable)
+    int clientStreamID;		/* StreamID of private channel to client */
+    Address requestBuf;		/* Buffer that holds client's requests */
+    IntProc *opTable;		/* Operation switch table */
+{
+    int amountRead;
+    ReturnStatus status;
+    Pdev_BufPtrs bufPtrs;		/* Used to read ptrs into req. buf. */
+    Pdev_Request *requestPtr;	/* Points to request header */
+    Pdev_Reply reply;
+    Address requestData;		/* Points to data that follows header */
+    char replyBuf[1024];
+    char *replyData = replyBuf;		/* Points to reply data */
+    int replySize;			/* Amount of valid data in replyBuf */
+    Boolean alloc;
+
+    /*
+     * Read the request header that indicates the operation and the
+     * offset within the request buffer of the request message.
+     */
+    amountRead = read(clientStreamID, (Address)&bufPtrs, sizeof(Pdev_BufPtrs));
+    if (amountRead < 0) { 
+	Stat_PrintMsg(errno, "ServeRequest: error reading request bufPtrs");
+	goto failure;
+    } else if (amountRead != sizeof(Pdev_BufPtrs)) {
+	fprintf(stderr,
+	    "ServeRequest: short read (%d) of request bufPtrs\n", amountRead);
+	fflush(stderr);
+	goto failure;
+    } else if ((int)bufPtrs.magic != PDEV_BUF_PTR_MAGIC) {
+	fprintf(stderr, "ServeRequest: bad bufPtr magic 0x%x\n",
+		bufPtrs.magic);
+	status = FAILURE;
+	goto failure;
+    }
+    /*
+     * While there are still requests in the buffer, service them.
+     */
+    while (bufPtrs.requestFirstByte < bufPtrs.requestLastByte) {
+	requestPtr = (Pdev_Request *)&requestBuf[bufPtrs.requestFirstByte];
+	if (requestPtr->hdr.magic != PDEV_REQUEST_MAGIC) {
+	    /*
+	    Sys_Panic(SYS_FATAL, "ServeRequest, bad request magic # 0x%x\n",
+			    requestPtr->magic);
+	    */
+	    abort();
+	}
+	/*
+	 * Set up a buffer for the reply data;
+	 */
+	if (requestPtr->hdr.replySize > 1024) {
+	    alloc = TRUE;
+	    replyData = (Address) malloc(requestPtr->hdr.replySize);
+	} else {
+	    alloc = FALSE;
+	    replyData = replyBuf;
+	}
+	requestData = (Address)((int)requestPtr + sizeof(Pdev_Request));
+	/*
+	 * Switch out the to the handler for the pdev operation.
+	 */
+	status = (*opTable[(int)requestPtr->hdr.operation])(clientStreamID,
+			requestPtr, requestData, replyData, &replySize);
+	/*
+	 * Copy the data into the reply and give it to the kernel.
+	 */
+    
+	reply.magic = PDEV_REPLY_MAGIC;
+	reply.status = status;
+	reply.selectBits = FS_READ|FS_WRITE;
+	reply.replySize = replySize;
+	reply.replyBuf = replyData;
+	reply.signal = 0;
+	reply.code = 0;
+	status = Fs_IOControl(clientStreamID, IOC_PDEV_REPLY,
+			    sizeof(Pdev_Reply), (Address) &reply, 0,
+			    (Address) NULL);
+	if (status != SUCCESS) {
+	    /*
+	    Sys_Panic(SYS_FATAL, "%s; status \"%s\"",
+		    "ServeRequest couldn't send reply",
+		    Stat_GetMsg(status));
+	    */
+	    abort();
+	}
+	if (alloc) {
+	    free(replyData);
+	}
+	/*
+	 * Tell the kernel we removed a request and see if there are any more.
+	 */
+	bufPtrs.requestFirstByte += requestPtr->hdr.messageSize;
+	Fs_IOControl(clientStreamID, IOC_PDEV_SET_PTRS,
+		    sizeof(Pdev_BufPtrs), (Address)&bufPtrs, 0, (Address) NULL);
+    }
+    return(requestPtr->hdr.operation);
+
+failure:
+    /*
+     * Couldn't even get started right.  We'd like to be able to "reset
+     * the connection" at this point - do something to cause the waiting
+     * client to return, and something to flush any remaining input
+     * in the request stream.  Need a special IOControl.
+     */
+    close(clientStreamID);
+    return((Pdev_Op)-1);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Serve --
+ *
+ *	Listen for requests from client's, returning after all clients
+ *	have closed their streams.
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	Handle all requests by clients.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Serve(data)
+    ClientData data;
+{
+    ServerState *statePtr;
+    int client;
+    ReturnStatus status;
+    int *selectMask;
+    int numFinishedClients;
+    int numReady;
+    int numBits;
+
+    statePtr = (ServerState *)data;
+    selectMask = (int *)malloc(statePtr->selectMaskBytes);
+    numBits = statePtr->selectMaskBytes * BIT_NUM_BITS_PER_BYTE;
+    numFinishedClients = 0;
+    do {
+	bcopy( (Address)statePtr->selectMask, (Address)selectMask, 
+		statePtr->selectMaskBytes);
+	status = Fs_Select(numBits, (Time *)NULL, selectMask,
+				(int *)NULL, (int *)NULL, &numReady);
+	if (status != SUCCESS) {
+	    /*
+	    Sys_Panic(SYS_FATAL, "Serve: select failed, %s\n",
+		Stat_GetMsg(status));
+	   */
+	   abort();
+	}
+	for (client=0 ; client < statePtr->numClients ; client++) {
+	    /*
+	     * Look for the each client's bit in the select mask and
+	     * service requests that have arrived.
+	     */
+	    if (Bit_IsSet(statePtr->clientStream[client], selectMask)) {
+		/*
+		 * Handle the client's request.  If it's a close
+		 * then clear the client's bit from the select mask so
+		 * don't bother checking it again.
+		 */
+		if (ServeRequest(statePtr->clientStream[client],
+				 statePtr->requestBuf[client],
+				 statePtr->opTable) == PDEV_CLOSE) {
+		    fprintf(stderr, "Client %d closed... ", client);
+		    fflush(stderr);
+		    numFinishedClients++;
+		    statePtr->clientState[client] |= CLIENT_FINISHED;
+		    Bit_Clear(statePtr->clientStream[client],
+			    statePtr->selectMask);
+		}
+	    }
+	}
+    } while (numFinishedClients < statePtr->numClients);
+    fprintf(stderr, "\n");
+    fflush(stderr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ServeOpen --
+ *
+ *	React to an Open or Dup request.
+ *
+ * Results:
+ *	SUCCESS
+ *
+ * Side effects:
+ *	Print statement.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+ServeOpen(streamID, requestPtr, requestData, replyData, replySizePtr)
+    int streamID;
+    Pdev_Request *requestPtr;
+    Address requestData;
+    Address replyData;
+    int *replySizePtr;
+{
+    fprintf(stderr, "Open request, streamID %d, pid %x\n",
+		streamID, requestPtr->param.open.pid);
+    fflush(stderr);
+    *replySizePtr = 0;
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ServeRead --
+ *
+ *	Return data for a read request.
+ *
+ * Results:
+ *	SUCCESS
+ *
+ * Side effects:
+ *	Zeroes out the reply buffer.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+ServeRead(streamID, requestPtr, requestBuf, replyBuf, replySizePtr)
+    int streamID;
+    Pdev_Request *requestPtr;
+    Address requestBuf;
+    Address replyBuf;
+    int *replySizePtr;
+{
+    if (requestPtr->hdr.replySize > 0) {
+	bzero(replyBuf, requestPtr->hdr.replySize);
+    }
+    *replySizePtr = requestPtr->hdr.replySize;
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ServeWrite --
+ *
+ *	Handle a write request.
+ *
+ * Results:
+ *	SUCCESS
+ *
+ * Side effects:
+ *	Sets up the return value, the number of bytes written.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+ServeWrite(streamID, requestPtr, requestBuf, replyBuf, replySizePtr)
+    int streamID;
+    Pdev_Request *requestPtr;
+    Address requestBuf;
+    Address replyBuf;
+    int *replySizePtr;
+{
+    *replySizePtr = 0;
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ServeIOControl --
+ *
+ *	Handle an IOControl.  This acts like an echo now.
+ *
+ * Results:
+ *	SUCCESS
+ *
+ * Side effects:
+ *	Copies the request buffer to the reply buffer.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+ServeIOControl(streamID, requestPtr, requestBuf, replyBuf, replySizePtr)
+    int streamID;
+    Pdev_Request *requestPtr;
+    Address requestBuf;
+    Address replyBuf;
+    int *replySizePtr;
+{
+    if (requestPtr->hdr.replySize <= requestPtr->hdr.requestSize) {
+	bcopy(requestBuf, replyBuf, requestPtr->hdr.replySize);
+    } else {
+	bcopy(requestBuf, replyBuf, requestPtr->hdr.requestSize);
+	bzero( replyBuf[requestPtr->hdr.requestSize],
+		requestPtr->hdr.replySize - requestPtr->hdr.requestSize);
+    }
+    *replySizePtr = requestPtr->hdr.replySize;
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ServeClose --
+ *
+ *	Handle a close request.
+ *
+ * Results:
+ *	SUCCESS
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+ServeClose(streamID, requestPtr, requestBuf, replyBuf, replySizePtr)
+    int streamID;
+    Pdev_Request *requestPtr;
+    Address requestBuf;
+    Address replyBuf;
+    int *replySizePtr;
+{
+    *replySizePtr = 0;
+    return(SUCCESS);
+}
+@
+
+
+1.11
+log
+@Updated to new Pdev_Reply struct
+@
+text
+@d13 1
+a13 1
+static char rcsid[] = "$Header: /a/newcmds/devbench/RCS/server.c,v 1.10 89/01/04 15:37:24 david Exp $ SPRITE (Berkeley)";
+d105 2
+d169 5
+@
+
+
+1.10
+log
+@Convert to machine dependent format and prints SPUR cache controller
+register results.
+@
+text
+@d13 1
+a13 1
+static char rcsid[] = "$Header: server.c,v 1.9 88/09/29 17:02:51 david Exp $ SPRITE (Berkeley)";
+d26 1
+a26 1
+char *pdev="/sprite/daemons/devbench";
+d283 2
+@
+
+
+1.9
+log
+@
+@
+text
+@d13 1
+a13 1
+static char rcsid[] = "$Header: server.c,v 1.8 88/09/13 17:30:30 brent Exp $ SPRITE (Berkeley)";
+d251 1
+a251 1
+	if (requestPtr->magic != PDEV_REQUEST_MAGIC) {
+d261 1
+a261 1
+	if (requestPtr->replySize > 1024) {
+d263 1
+a263 1
+	    replyData = (Address) malloc(requestPtr->replySize);
+d272 1
+a272 1
+	status = (*opTable[(int)requestPtr->operation])(clientStreamID,
+d300 1
+a300 1
+	bufPtrs.requestFirstByte += requestPtr->messageSize;
+d304 1
+a304 1
+    return(requestPtr->operation);
+d445 2
+a446 2
+    if (requestPtr->replySize > 0) {
+	bzero(replyBuf, requestPtr->replySize);
+d448 1
+a448 1
+    *replySizePtr = requestPtr->replySize;
+d504 2
+a505 2
+    if (requestPtr->replySize <= requestPtr->requestSize) {
+	bcopy(requestBuf, replyBuf, requestPtr->replySize);
+d507 3
+a509 3
+	bcopy(requestBuf, replyBuf, requestPtr->requestSize);
+	bzero( replyBuf[requestPtr->requestSize],
+		requestPtr->replySize - requestPtr->requestSize);
+d511 1
+a511 1
+    *replySizePtr = requestPtr->replySize;
+@
+
+
+1.8
+log
+@Fixed ancient bug in first argument to Fs_Select,
+needs to be number of bits, not number of streams.
+@
+text
+@d13 1
+a13 1
+static char rcsid[] = "$Header: server.c,v 1.7 88/08/26 17:48:28 brent Exp $ SPRITE (Berkeley)";
+d21 2
+a22 1
+#include "io.h"
+a23 1
+#include "mem.h"
+d26 1
+a26 1
+char *pdev="/sprite/daemons/devBench";
+d56 2
+d106 4
+a109 4
+    statePtr = (ServerState *)Mem_Alloc(sizeof(ServerState));
+    statePtr->clientStream = (int *)Mem_Alloc(numClients * sizeof(int));
+    statePtr->clientState = (char *)Mem_Alloc(numClients);
+    statePtr->requestBuf = (Address *)Mem_Alloc(numClients * sizeof(Address));
+d121 3
+a123 5
+    status = Fs_Open(pdev, FS_READ|FS_NEW_MASTER,
+		     0666, &statePtr->cntlStream);
+    if (status == FS_FILE_NOT_FOUND) {
+	status = Fs_Open(pdev, FS_CREATE|FS_READ|FS_NEW_MASTER,
+			 0666, &statePtr->cntlStream);
+d125 3
+a127 3
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "Error opening pseudo device as master");
+	Proc_Exit(status);
+d136 4
+a139 5
+	status = Fs_Read(statePtr->cntlStream, len, (Address)&notify,
+						 &amountRead);
+	if (status != SUCCESS) {
+	    Stat_PrintMsg(status, "Error reading control stream");
+	    Proc_Exit(status);
+d141 1
+a141 1
+	    Io_PrintStream(io_StdErr,
+d143 1
+a143 1
+	    Io_Flush(io_StdErr);
+d154 1
+a154 1
+	statePtr->requestBuf[client] = Mem_Alloc(REQ_BUF_SIZE);
+d165 2
+a166 2
+	Io_PrintStream(io_StdErr, "Got client on stream %d\n",streamID);
+	Io_Flush(io_StdErr);
+d176 1
+a176 1
+    Io_Flush(io_StdErr);
+d182 2
+a183 2
+    statePtr->selectMask = (int *)Mem_Alloc(statePtr->selectMaskBytes);
+    Byte_Zero(statePtr->selectMaskBytes, (Address)statePtr->selectMask);
+d204 1
+a204 1
+ *	Reads and writes on the client's stream.  Mem_Allocs space for the
+d231 3
+a233 4
+    status = Fs_Read(clientStreamID, sizeof(Pdev_BufPtrs), (Address)&bufPtrs,
+		&amountRead);
+    if (status != SUCCESS) { 
+	Stat_PrintMsg(status, "ServeRequest: error reading request bufPtrs");
+d236 1
+a236 1
+	Io_PrintStream(io_StdErr,
+d238 1
+a238 1
+	Io_Flush(io_StdErr);
+d241 1
+a241 1
+	Io_PrintStream(io_StdErr, "ServeRequest: bad bufPtr magic 0x%x\n",
+d252 1
+d255 2
+d263 1
+a263 1
+	    replyData = Mem_Alloc(requestPtr->replySize);
+d287 1
+d291 2
+d295 1
+a295 1
+	    Mem_Free(replyData);
+d313 1
+a313 1
+    Fs_Close(clientStreamID);
+d347 1
+a347 1
+    selectMask = (int *)Mem_Alloc(statePtr->selectMaskBytes);
+d351 2
+a352 2
+	Byte_Copy(statePtr->selectMaskBytes, (Address)statePtr->selectMask,
+					     (Address)selectMask);
+d356 1
+d359 2
+d376 2
+a377 2
+		    Io_PrintStream(io_StdErr, "Client %d closed... ", client);
+		    Io_Flush(io_StdErr);
+d386 2
+a387 2
+    Io_PrintStream(io_StdErr, "\n");
+    Io_Flush(io_StdErr);
+d414 1
+a414 1
+    Io_PrintStream(io_StdErr, "Open request, streamID %d, pid %x\n",
+d416 1
+a416 1
+    Io_Flush(io_StdErr);
+d446 1
+a446 1
+	Byte_Zero(requestPtr->replySize, replyBuf);
+d505 1
+a505 1
+	Byte_Copy(requestPtr->replySize, requestBuf, replyBuf);
+d507 3
+a509 3
+	Byte_Copy(requestPtr->requestSize, requestBuf, replyBuf);
+	Byte_Zero(requestPtr->replySize - requestPtr->requestSize,
+	    replyBuf[requestPtr->requestSize]);
+@
+
+
+1.7
+log
+@UPdated to new, standard, pseudo-device interface
+@
+text
+@d13 1
+a13 1
+static char rcsid[] = "$Header: server.c,v 1.6 87/12/22 10:15:20 brent Exp $ SPRITE (Berkeley)";
+d340 1
+d344 1
+d349 1
+a349 1
+	status = Fs_Select(statePtr->numClients, (Time *)NULL, selectMask,
+@
+
+
+1.6
+log
+@Changed to new pseudo-device format
+@
+text
+@d13 1
+a13 1
+static char rcsid[] = "$Header: server.c,v 1.5 87/07/14 10:26:39 brent Exp $ SPRITE (Berkeley)";
+d220 2
+a221 2
+    Pdev_NewRequest *requestPtr;	/* Points to request header */
+    Pdev_NewReply reply;
+d252 1
+a252 1
+	requestPtr = (Pdev_NewRequest *)&requestBuf[bufPtrs.requestFirstByte];
+d267 1
+a267 1
+	requestData = (Address)((int)requestPtr + sizeof(Pdev_NewRequest));
+d283 1
+a283 1
+			    sizeof(Pdev_NewReply), (Address) &reply, 0,
+d400 1
+a400 1
+    Pdev_NewRequest *requestPtr;
+d431 1
+a431 1
+    Pdev_NewRequest *requestPtr;
+d462 1
+a462 1
+    Pdev_NewRequest *requestPtr;
+d490 1
+a490 1
+    Pdev_NewRequest *requestPtr;
+d525 1
+a525 1
+    Pdev_NewRequest *requestPtr;
+@
+
+
+1.5
+log
+@Updated to handle new pseudo-device interface
+@
+text
+@d13 1
+a13 1
+static char rcsid[] = "$Header: server.c,v 1.4 87/05/21 17:50:37 andrew Exp $ SPRITE (Berkeley)";
+d23 2
+a27 3
+char requestBuffer[4096];
+int requestBufSize = sizeof(requestBuffer);
+
+d31 11
+a41 8
+    int cntlStream;
+    int numClients;
+    int *clientStream;
+    int maxStreamID;
+    char *clientState;
+    int *selectMask;
+    int selectMaskBytes;
+    IntProc opTable[9];
+d44 3
+d51 4
+a58 1
+ReturnStatus NullProc();
+a59 1
+ReturnStatus ServeDup();
+d63 2
+a64 1
+ReturnStatus ServeSelect();
+d102 1
+a102 1
+    int maxStreamID;
+d107 1
+d111 1
+a111 2
+    statePtr->opTable[(int)PDEV_DUP] = ServeDup;
+    statePtr->opTable[(int)PDEV_CLOSE] = NullProc;
+a114 1
+    statePtr->opTable[(int)PDEV_SELECT] = ServeSelect;
+d119 1
+a119 1
+    status = Fs_Open(pdev, FS_READ|FS_MASTER,
+d122 1
+a122 1
+	status = Fs_Open(pdev, FS_CREATE|FS_READ|FS_MASTER,
+a128 1
+    maxStreamID = 0;
+d133 1
+a133 1
+	 * back to the client process..
+d150 3
+d155 11
+d174 2
+a175 1
+	ServeRequest(statePtr->clientStream[client], statePtr->opTable);
+d212 4
+a215 3
+ServeRequest(clientStreamID, opTable)
+    int clientStreamID;
+    IntProc *opTable;
+a216 2
+    ServerState *statePtr;
+    int client;
+a217 1
+    int amountWritten;
+d219 8
+a226 5
+    Pdev_Request request;
+    Pdev_Reply reply;
+    Address requestBuf;
+    Address replyBuf;
+    int len;
+d230 1
+a230 1
+     * size of the following request parameters.
+d232 2
+a233 2
+    len = sizeof(request);
+    status = Fs_Read(clientStreamID, len, (Address)&request, &amountRead);
+d235 1
+a235 1
+	Stat_PrintMsg(status, "ServeRequest: error reading request header");
+d237 1
+a237 1
+    } else if (amountRead != sizeof(request)) {
+d239 1
+a239 1
+	    "ServeRequest: short read (%d) of the request\n", amountRead);
+d242 14
+a255 6
+    } else {
+	if ((int)request.magic != PDEV_REQUEST_MAGIC) {
+	    Io_PrintStream(io_StdErr, "ServeRequest: bad request header 0x%x\n",
+		    request.magic);
+	    status = FAILURE;
+	    goto failure;
+d257 6
+a262 14
+	if (request.requestSize > 0) {
+	    /*
+	     * Read the input parameters that follow the request header,
+	     * and allocate space for the return parameters.
+	     */
+	    requestBuf = (Address) Mem_Alloc(request.requestSize);
+	    status = Fs_Read(clientStreamID, request.requestSize, requestBuf,
+			&amountRead);
+	    if (status != SUCCESS) {
+		Stat_PrintMsg(status,
+			    "ServeRequest: error reading request params");
+		Mem_Free(requestBuf);
+		goto failure;
+	    }
+d264 2
+a265 7
+	   requestBuf = NULL;
+        }
+
+	if (request.replySize > 0) {
+	    replyBuf = (Address) Mem_Alloc(request.replySize);
+	} else {
+	    replyBuf = NULL;
+d267 1
+a267 1
+
+d271 2
+a272 2
+	status = (*opTable[(int)request.operation])(clientStreamID,
+			&request, requestBuf, replyBuf);
+d274 1
+a274 1
+	 * Write the reply header followed by the reply data.
+d276 2
+d279 6
+a284 4
+	reply.replySize = request.replySize;
+	reply.magic = PDEV_REPLY_MAGIC;
+	status = Fs_Write(clientStreamID, sizeof(reply), (Address)&reply,
+		    &amountWritten);
+d286 3
+a288 1
+	    Stat_PrintMsg(status, "ServeRequest: write of reply header failed");
+d290 2
+a291 8
+	if (replyBuf != NULL) {
+	    status = Fs_Write(clientStreamID, reply.replySize, replyBuf,
+			&amountWritten);
+	    if (status != SUCCESS) {
+		Stat_PrintMsg(status,
+			      "ServeRequest: write of reply data failed");
+	    }
+	    Mem_Free(replyBuf);
+d293 6
+a298 4
+	if (requestBuf != NULL) {
+	    Mem_Free(requestBuf);
+	}
+	return(request.operation);
+d300 2
+d309 1
+a309 4
+    reply.status = FAILURE;
+    reply.replySize = 0;
+    (void)Fs_Write(clientStreamID, sizeof(reply), (Address)&reply,
+	    &amountWritten);
+d347 6
+a352 2
+	status = Fs_Select(statePtr->numClients, NULL, selectMask,
+				NULL, NULL, &numReady);
+d355 2
+a356 2
+	     * Look for the each client's bit in the select mask and read the
+	     * corresponding stream for its initial request.
+d365 3
+a367 2
+			     statePtr->opTable) == PDEV_CLOSE) {
+		    Io_PrintStream(io_StdErr, "Client %d closed...", client);
+d384 1
+a384 1
+ * NullProc --
+d386 1
+a386 1
+ *	The do-nothing service procedure.
+d392 1
+a392 1
+ *	Zeroes out the reply buffer.
+d396 1
+a396 1
+
+d398 1
+a398 1
+NullProc(streamID, requestPtr, requestBuf, replyBuf)
+d400 4
+a403 3
+    Pdev_Request *requestPtr;
+    Address requestBuf;
+    Address replyBuf;
+d405 4
+a408 3
+    if (requestPtr->replySize > 0) {
+	Byte_Zero(requestPtr->replySize, replyBuf);
+    }
+d427 1
+d429 1
+a429 1
+ServeRead(streamID, requestPtr, requestBuf, replyBuf)
+d431 1
+a431 1
+    Pdev_Request *requestPtr;
+d434 1
+d439 1
+a445 62
+ * ServeOpen --
+ *
+ *	React to an Open or Dup request.
+ *
+ * Results:
+ *	SUCCESS
+ *
+ * Side effects:
+ *	Print statement.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+ServeOpen(streamID, requestPtr, requestBuf, replyBuf)
+    int streamID;
+    Pdev_Request *requestPtr;
+    Address requestBuf;
+    Address replyBuf;
+{
+    Pdev_OpenParam *paramPtr;
+
+    paramPtr = (Pdev_OpenParam *)requestBuf;
+    Io_PrintStream(io_StdErr, "Open request, streamID %d, clientID %d\n",
+		streamID, requestPtr->param.open.clientID);
+    Io_Flush(io_StdErr);
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ServeDup --
+ *
+ *	React to a Dup request.
+ *
+ * Results:
+ *	SUCCESS
+ *
+ * Side effects:
+ *	Print statement.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+ServeDup(streamID, requestPtr, requestBuf, replyBuf)
+    int streamID;
+    Pdev_Request *requestPtr;
+    Address requestBuf;
+    Address replyBuf;
+{
+    Pdev_OpenParam *paramPtr;
+
+    paramPtr = (Pdev_OpenParam *)requestBuf;
+    Io_PrintStream(io_StdErr, "Dup request, streamID %d, clientID %d\n",
+		streamID, requestPtr->param.open.clientID);
+    Io_Flush(io_StdErr);
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+d458 1
+d460 1
+a460 1
+ServeWrite(streamID, requestPtr, requestBuf, replyBuf)
+d462 1
+a462 1
+    Pdev_Request *requestPtr;
+d465 1
+d467 1
+a467 4
+    int *intPtr;
+
+    intPtr = (int *)replyBuf;
+    *intPtr = requestPtr->requestSize;
+d486 1
+d488 1
+a488 1
+ServeIOControl(streamID, requestPtr, requestBuf, replyBuf)
+d490 1
+a490 1
+    Pdev_Request *requestPtr;
+d493 1
+d502 1
+d509 1
+a509 1
+ * ServeSelect --
+d511 1
+a511 1
+ *	Handle a select.  This pseudo-device is always ready.
+d521 1
+d523 1
+a523 1
+ServeSelect(streamID, requestPtr, requestBuf, replyBuf)
+d525 1
+a525 1
+    Pdev_Request *requestPtr;
+d528 1
+d530 1
+a530 4
+    int *intPtr;
+
+    intPtr = (int *)replyBuf;
+    *intPtr = FS_READABLE|FS_WRITABLE;
+@
+
+
+1.4
+log
+@updated to corrspond to new pdev protocol in fsPdev.c
+@
+text
+@d13 1
+a13 1
+static char rcsid[] = "$Header: server.c,v 1.3 87/05/21 16:59:44 brent Exp $ SPRITE (Berkeley)";
+d20 1
+a20 1
+#include "kernel/fsPdev.h"
+d24 1
+a24 1
+char *devBench="/sprite/daemons/devBench";
+d29 1
+a29 10
+typedef struct Fs_PdevOpTable {
+    ReturnStatus (*open)();
+    ReturnStatus (*close)();
+    ReturnStatus (*read)();
+    ReturnStatus (*write)();
+    ReturnStatus (*ioctl)();
+    ReturnStatus (*getAttr)();
+    ReturnStatus (*setAttr)();
+    ReturnStatus (*select)();
+} Fs_PdevOpTable;
+d32 1
+a32 1
+    int devBenchStream;
+d39 1
+a39 1
+    Fs_PdevOpTable opTable;
+d51 7
+a57 1
+void ServeRequest();
+d92 2
+a93 1
+    Fs_PdevRequest notify;
+d101 7
+a107 12
+    /*
+     * The operations are only used for synchronization.  They
+     * just need to complete.
+     */
+    statePtr->opTable.open = NullProc;
+    statePtr->opTable.close = NullProc;
+    statePtr->opTable.read = NullProc;
+    statePtr->opTable.write = NullProc;
+    statePtr->opTable.ioctl = NullProc;
+    statePtr->opTable.getAttr = NullProc;
+    statePtr->opTable.setAttr = NullProc;
+    statePtr->opTable.select = NullProc;
+d112 2
+a113 2
+    status = Fs_Open(devBench, FS_READ|FS_MASTER,
+		     0666, &statePtr->devBenchStream);
+d115 2
+a116 2
+	status = Fs_Open(devBench, FS_CREATE|FS_READ|FS_MASTER,
+			 0666, &statePtr->devBenchStream);
+d130 1
+a130 1
+	status = Fs_Read(statePtr->devBenchStream, len, (Address)&notify,
+d140 3
+a142 20
+	switch (notify.operation) {
+	    case FS_PDEV_OPEN: {
+		register int streamID;
+
+		streamID = notify.param.open.streamID;
+		if (streamID > statePtr->maxStreamID) {
+		    statePtr->maxStreamID = streamID;
+		}
+		statePtr->clientStream[client] = streamID;
+		statePtr->clientState[client] = CLIENT_OPENED;
+		Io_PrintStream(io_StdErr, "Got client on stream %d\n",streamID);
+		Io_Flush(io_StdErr);
+	    }
+	    break;
+
+	    default:
+		Io_PrintStream("Unexpected control message 0x%x\n",
+				notify.operation);
+		Io_Flush(io_StdErr);
+		Proc_Exit(1);
+d144 4
+d150 8
+a172 61
+ * ServerStart --
+ *
+ *	Start the clients running.
+ *	(Synchronization Style 1) The clients are synchronized by waiting
+ *	for all their requests to come in, and then replying to all of them.
+ *	(Synchronization Style 2) Drop into a normal select-read-reply
+ *	loop as the Setup routine has done the synchronization already.
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	The first request-response with each client is done.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+ServerStart(data)
+    ClientData data;
+{
+    ServerState *statePtr;
+    int client;
+    int amountWritten;
+    ReturnStatus status;
+    int *selectMask;
+    int numStartedClients;
+    int numReady;
+
+    statePtr = (ServerState *)data;
+    selectMask = (int *)Mem_Alloc(statePtr->selectMaskBytes);
+    Byte_Copy(statePtr->selectMaskBytes, (Address)statePtr->selectMask,
+					 (Address)selectMask);
+    numStartedClients = 0;
+    do {
+	status = Fs_Select(statePtr->numClients, NULL, selectMask,
+				NULL, NULL, &numReady);
+	for (client=0 ; client < statePtr->numClients ; client++) {
+	    /*
+	     * Look for the each client's bit in the select mask and read the
+	     * corresponding stream for its initial request.
+	     */
+	    if ( ! (statePtr->clientState[client] & CLIENT_STARTED) &&
+		Bit_IsSet(statePtr->clientStream[client], selectMask)) {
+		/*
+		 * Handle the client's first request.
+		 * Then clear the client's bit from the select mask so it
+		 * doesn't bother us for a bit.
+		 */
+		ServeRequest(statePtr->clientStream[client],&statePtr->opTable);
+		numStartedClients++;
+		statePtr->clientState[client] |= CLIENT_STARTED;
+		Bit_Clear(statePtr->clientStream[client], selectMask);
+	    }
+	}
+    } while (numStartedClients < statePtr->numClients);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+d190 2
+a191 2
+void
+ServeRequest(clientStreamID, opTablePtr)
+d193 1
+a193 1
+    Fs_PdevOpTable *opTablePtr;
+d200 2
+a201 2
+    Fs_PdevRequest request;
+    Fs_PdevReply reply;
+d221 3
+a223 4
+	if ((int)request.operation <= (int)FS_PDEV_OPEN ||
+	    (int)request.operation >  (int)FS_PDEV_SET_ATTR) {
+	    Io_PrintStream("ServeRequest: bad operation 0x%x\n",
+		    request.operation);
+d254 2
+a255 42
+	switch (request.operation) {
+	    case FS_PDEV_OPEN:
+		Io_PrintStream(io_StdErr,
+			"Warning, got open on request stream\n");
+		break;
+	    case FS_PDEV_CLOSE:
+		status = (*opTablePtr->close)(clientStreamID,
+		    request.requestSize, requestBuf,
+		    request.replySize, replyBuf);
+		break;
+	    case FS_PDEV_READ:
+		status = (*opTablePtr->read)(clientStreamID,
+		    request.requestSize, requestBuf,
+		    request.replySize, replyBuf);
+		break;
+	    case FS_PDEV_WRITE:
+		status = (*opTablePtr->write)(clientStreamID,
+		    request.requestSize, requestBuf,
+		    request.replySize, replyBuf);
+		break;
+	    case FS_PDEV_IOCTL:
+		status = (*opTablePtr->ioctl)(clientStreamID,
+		    request.requestSize, requestBuf,
+		    request.replySize, replyBuf);
+		break;
+	    case FS_PDEV_SELECT:
+		status = (*opTablePtr->select)(clientStreamID,
+		    request.requestSize, requestBuf,
+		    request.replySize, replyBuf);
+		break;
+	    case FS_PDEV_GET_ATTR:
+		status = (*opTablePtr->getAttr)(clientStreamID,
+		    request.requestSize, requestBuf,
+		    request.replySize, replyBuf);
+		break;
+	    case FS_PDEV_SET_ATTR:
+		status = (*opTablePtr->setAttr)(clientStreamID,
+		    request.requestSize, requestBuf,
+		    request.replySize, replyBuf);
+		break;
+	}
+
+d261 1
+d279 1
+a279 1
+	return;
+d292 1
+d298 1
+a298 1
+ * ServerWait --
+d300 2
+a301 3
+ *	Wait for the client's to complete.  They signal this by simply
+ *	writing to their stream.  All we need to do is wait for a request
+ *	from each client.
+d307 1
+a307 1
+ *	The first request-response with each client is done.
+d313 1
+a313 1
+ServerWait(data)
+a324 2
+    Byte_Copy(statePtr->selectMaskBytes, (Address)statePtr->selectMask,
+					 (Address)selectMask);
+d327 2
+d336 1
+a336 2
+	    if ( ! (statePtr->clientState[client] & CLIENT_FINISHED) &&
+		Bit_IsSet(statePtr->clientStream[client], selectMask)) {
+d338 3
+a340 3
+		 * Handle the client's last request.
+		 * Then clear the client's bit from the select mask so it
+		 * doesn't bother us for a bit.
+d342 9
+a350 5
+		ServeRequest(statePtr->clientStream[client],
+			     &statePtr->opTable);
+		numFinishedClients++;
+		statePtr->clientState[client] |= CLIENT_FINISHED;
+		Bit_Clear(statePtr->clientStream[client], selectMask);
+d354 2
+d375 1
+a375 1
+NullProc(streamID, requestSize, requestBuf, replySize, replyBuf)
+d377 1
+a377 1
+    int requestSize;
+a378 1
+    int replySize;
+d381 2
+a382 2
+    if (replySize > 0) {
+	Byte_Zero(replySize, replyBuf);
+d384 180
+@
+
+
+1.3
+log
+@added Op table
+@
+text
+@d13 1
+a13 1
+static char rcsid[] = "$Header: server.c,v 1.2 87/05/01 15:49:52 brent Exp $ SPRITE (Berkeley)";
+d22 1
+a54 11
+/*
+ * FS_SET_SELECT_BIT(selectMask, streamID)
+ *	int *selectMask;
+ *	int streamID;
+ *
+ *	This is a macro that sets a bit in an array of integers that is
+ *	to be used as a mask for the Fs_Select system call.
+ */
+#define BITS_PER_INT	(sizeof(int) * 8)
+#define FS_SET_SELECT_BIT(selectMask, streamID) \
+    selectMask[ streamID / BITS_PER_INT ] |= (1 << (streamID % BITS_PER_INT))
+a56 23
+ * FS_IS_SELECT_BIT_SET(selectMask, streamID)
+ *	int *selectMask;
+ *	int streamID;
+ *
+ *	This is a macro that tests a bit in an array of integers to see
+ *	if it is set.
+ */
+
+#define FS_IS_SELECT_BIT_SET(selectMask, streamID) \
+    (selectMask[ streamID / BITS_PER_INT ] & (1 << (streamID % BITS_PER_INT)))
+
+/*
+ * FS_CLEAR_SELECT_BIT(selectMask, streamID)
+ *	int *selectMask;
+ *	int streamID;
+ *
+ *	This is a macro that clears a bit in an array of integers.
+ */
+
+#define FS_CLEAR_SELECT_BIT(selectMask, streamID) \
+    selectMask[ streamID / BITS_PER_INT ] &= ~(1 << (streamID % BITS_PER_INT))
+
+/*
+d95 1
+a95 1
+    Fs_PdevNotification notify;
+d136 1
+a136 1
+	len = sizeof(Fs_PdevNotification);
+a140 1
+	    Io_Flush(io_StdErr);
+d142 1
+a142 1
+	} else if (amountRead != sizeof(Fs_PdevNotification)) {
+d151 1
+a151 1
+		streamID = notify.data;
+d157 1
+a157 2
+		Io_PrintStream(io_StdErr, "Got client on stream %d\n",
+				streamID);
+a158 1
+		break;
+d160 2
+d164 1
+a164 1
+		    notify.operation);
+d173 1
+a173 2
+    statePtr->selectMaskBytes = (statePtr->maxStreamID / BITS_PER_INT + 1) *
+						sizeof(int);
+d177 1
+a177 2
+	FS_SET_SELECT_BIT(statePtr->selectMask,
+			  statePtr->clientStream[client]);
+d228 1
+a228 2
+		FS_IS_SELECT_BIT_SET(selectMask,
+				     statePtr->clientStream[client])) {
+d234 1
+a234 2
+		ServeRequest(statePtr->clientStream[client],
+			     &statePtr->opTable);
+d237 1
+a237 1
+		FS_CLEAR_SELECT_BIT(selectMask, statePtr->clientStream[client]);
+d283 2
+a284 3
+    len = sizeof(Fs_PdevRequest);
+    status = Fs_Read(clientStreamID, len, (Address)&request,
+		&amountRead);
+a286 1
+	Io_Flush(io_StdErr);
+d288 1
+a288 1
+    } else if (amountRead != sizeof(Fs_PdevRequest)) {
+d318 1
+d324 1
+d369 1
+d375 1
+a375 1
+	status = Fs_Write(clientStreamID, sizeof(Fs_PdevReply), (Address)&reply,
+d403 1
+a403 1
+    (void)Fs_Write(clientStreamID, sizeof(Fs_PdevReply), (Address)&reply,
+d450 1
+a450 2
+		FS_IS_SELECT_BIT_SET(selectMask,
+				     statePtr->clientStream[client])) {
+d460 1
+a460 1
+		FS_CLEAR_SELECT_BIT(selectMask, statePtr->clientStream[client]);
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d13 1
+a13 1
+static char rcsid[] = "$Header: server.c,v 1.1 87/02/17 15:10:15 brent Exp $ SPRITE (Berkeley)";
+d28 10
+d147 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d28 1
+d33 1
+d78 7
+d109 1
+a109 1
+ServerSetup(numClients, dataPtr, opTablePtr)
+a111 1
+    Fs_PdevOpTable *opTablePtr;
+d115 1
+d126 11
+a136 1
+    statePtr->opTable = *opTablePtr;
+d167 2
+a168 1
+		"Warning, short read on control stream\n");
+d180 3
+d184 1
+d237 1
+d317 1
+a317 1
+    } else if (amountRead != sizeof(Fs_PdevRequest) {
+d460 1
+d491 30
+@

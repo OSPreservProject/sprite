@@ -1,0 +1,325 @@
+head     1.7;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.7
+date     89.01.06.08.10.24;  author brent;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     86.07.23.13.31.47;  author brent;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     86.07.22.09.51.45;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     86.07.21.09.30.48;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     86.07.17.09.09.30;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     86.07.16.17.01.59;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.07.16.13.03.33;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Prototypical makefile for boot programs
+@
+
+
+1.7
+log
+@Updated to new mkmf structure and new directory structure
+@
+text
+@#
+# makefile for the sprite version of a Unix boot program.
+# The boot program gets loaded by the PROM and its job is
+# to read enough of the directory structure to open the
+# specified kernel (or diagnostic) image, read it into
+# memory, and transfer execution to it.
+#
+# Allow mkmf
+
+SPRITEHOME = /sprite/users/sprite
+
+TM ?= @@(DEFTARGET)
+
+ROOT = /sprite
+KERNEL_INCLUDE = ${ROOT}/src/kernel/Include
+USER_INCLUDE = ${ROOT}/lib/include
+
+#
+# Use .PATH.h to set the .INCLUDES variable
+.PATH.h		:
+.PATH.h		: $(TM).md $(KERNEL_INCLUDE) $(USER_INCLUDE) \
+			$(KERNEL_INCLUDE)/$(TM).md
+
+DFLAGS = -Dlint -DNO_PRINTF -DKERNEL -D$(TM)
+IFLAGS = -I. ${.INCLUDES}
+CFLAGS = -O ${IFLAGS} ${DFLAGS}
+PPFLAGS = ${IFLAGS} ${DFLAGS}
+LINTFLAGS = ${IFLAGS}
+LINTLIBS =
+
+LIBS = /sprite/lib/libc.a
+
+CC = /bin/cc -m68010
+AS = /bin/as -m68010
+MV = /sprite/cmds/mv
+SED = /sprite/cmds/sed
+LD = /bin/ld
+TOUCH = /bin/touch
+MAKEDEPEND = /sprite/cmds/makedepend
+
+UPDATE = /usr/local/update
+DEPEND = ${SPRITEHOME}/bin/depend.csh
+DEPENDSCRIPT = ${SPRITEHOME}/lib/ex.depend
+MKVERSION = ${SPRITEHOME}/bin/mkversion
+
+# TEXT_START is where the boot program is linked to run at.  This needs to
+# be large enough so that the kernel can be loaded before it.  If it is
+# too big then the monitor may not have mapped that memory for us.
+# b0000 is 3/4 a meg
+TEXT_START = b0000
+
+SRCS =			@@(SRCS)
+
+HDRS =			@@(HDRS)
+
+BOOTPROGS = 		@@(PROGRAM)
+
+SPECIAL = start.o
+
+OBJS = 			@@(OBJS)
+
+ENDOBJ = end.o
+
+.c.o:
+	@@rm -f $*.o
+	${CC} ${CFLAGS} -c $*.c
+	@@size $*.o
+
+.s.o:
+	@@rm -f $*.o
+	/lib/cpp ${PPFLAGS} $*.s > $*.pp
+	${AS} -o $*.o $*.pp
+	@@rm -f $*.pp
+
+all: ${BOOTPROGS}
+
+scsiDiskBoot: ${SPECIAL} ${OBJS} ${ENDOBJ}
+	${LD} -N -e start -T ${TEXT_START} -o $@@  ${SPECIAL} ${OBJS} ${LIBS} ${ENDOBJ}
+	cp $@@ $@@.adb
+	strip $@@
+	@@size $@@
+	@@ls -l $@@
+
+
+tags: ${HDRS} ${SRCS}
+	rm -f tags
+	ctags -t ${HDRS} ${SRCS}
+
+lint:   ${SRCS} ${HDRS} ${LINTLIBS}
+	rm -f lint
+	lint ${LINTFLAGS} ${SRCS} ${LINTLIBS} > lint
+
+install: ${BOOTPROGS}
+	rdist -c -w ${BOOTPROGS} lust:/usr/sprite/boot
+
+#
+# MAKEDEPEND usage:
+#	<dependency-file> : <sources> MAKEDEPEND
+#
+# Generate dependency file suitable for inclusion in future makes.  Must
+# mung the dependency file in two ways:  a) add a .md prefix on all the .o
+# file names;  b) for each entry for a .o file, generate an equivalent
+# entry for a .po file.
+
+MAKEDEPEND	: .USE
+	@@$(TOUCH) $(DEPFILE)
+	$(MAKEDEPEND) $(CFLAGS:M-[ID]*) -w50 -f $(DEPFILE) $(.ALLSRC)
+	@@$(MV) -f $(DEPFILE) $(DEPFILE).tmp
+	@@$(SED) -e '/^#/!s|^\([^:]*\)\.o[ 	]*:|$(TM).md/\1.po $(TM).md/&|' <$(DEPFILE).tmp > $(DEPFILE)
+	@@$(RM) -f $(DEPFILE).tmp
+
+DEPFILE = dependencies.mk
+
+depend			: $(DEPFILE)
+$(DEPFILE)		! $(SRCS:M*.c) $(SRCS:M*.s) MAKEDEPEND
+
+#if exists($(DEPFILE))
+#include	"$(DEPFILE)"
+#endif
+@
+
+
+1.6
+log
+@silenced some output
+@
+text
+@d8 1
+d12 2
+d18 8
+a25 2
+DFLAGS = -Dlint -DNO_PRINTF
+IFLAGS = -I. -I${KERNEL_INCLUDE} -I${USER_INCLUDE}
+d29 1
+d31 1
+a31 1
+LIBS = /sprite/lib/crt.a
+d35 2
+d38 2
+d49 2
+a50 2
+# 80000 is half a meg
+TEXT_START = 80000
+d52 1
+a52 1
+ASMSRCS = xxx.s
+d54 1
+a54 1
+CSRCS = xxx.c
+d56 1
+a56 1
+HDRS = xxx.h
+a57 2
+BOOTPROGS = scsiDiskBoot
+
+d60 1
+a60 1
+OBJS =  xxx.o
+d85 1
+a85 1
+tags: ${HDRS} ${CSRCS}
+d87 1
+a87 1
+	ctags -t ${HDRS} ${CSRCS}
+d89 1
+a89 1
+lint:   ${CSRCS} ${HDRS} ${LINTLIBS}
+d91 1
+a91 1
+	lint ${LINTFLAGS} ${CSRCS} ${LINTLIBS} > lint
+d96 8
+a103 3
+depend :
+	ex - Makefile < ${DEPENDSCRIPT}
+	${DEPEND} ${IFLAGS} ${CSRCS} >> Makefile
+d105 6
+a110 2
+# below is automatically generated
+###     don't delete this line, make depend looks for it
+d112 8
+@
+
+
+1.5
+log
+@added size to .o make
+@
+text
+@d19 1
+d53 1
+a53 1
+	-rm -f $*.o
+d55 1
+a55 1
+	-size $*.o
+d58 1
+a58 1
+	-rm -f $*.o
+d61 1
+a61 1
+	-rm -f $*.pp
+d69 2
+a70 2
+	size $@@
+	ls -l $@@
+@
+
+
+1.4
+log
+@*** empty log message ***
+@
+text
+@d52 1
+a52 1
+	rm -f $*.o
+d54 1
+d57 1
+a57 1
+	rm -f $*.o
+d60 1
+a60 1
+	rm -f $*.pp
+@
+
+
+1.3
+log
+@added lib crt.a
+@
+text
+@d15 1
+d17 2
+a18 2
+CFLAGS = -O ${IFLAGS}
+PPFLAGS = ${IFLAGS}
+d20 1
+a20 1
+LIBS = /sprite/lib/libc.a /sprite/lib/crt.a
+d65 5
+@
+
+
+1.2
+log
+@works fully to copying to lust:/usr/sprite/boot/*
+@
+text
+@d19 1
+a19 1
+LIBS = /sprite/lib/libc.a
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d19 4
+a22 2
+CC = /bin/cc -M68010
+AS = /bin/as -M68010
+d63 1
+a63 1
+	${LD} -N -e start -T ${TEXT_START} -o $@@  ${SPECIAL} ${OBJS} ${ENDOBJ}
+d73 3
+d78 1
+a78 1
+	${DEPEND} ${IFLAGS} ${SRCS} >> Makefile
+@

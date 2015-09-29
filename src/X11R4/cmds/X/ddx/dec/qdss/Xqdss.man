@@ -1,0 +1,48 @@
+.\" $XConsortium: Xqdss.man,v 1.3 89/12/21 10:08:47 rws Exp $
+.TH XQDSS 1 "Release 4" "X Version 11"
+.SH NAME
+Xqdss - VAXStation II/GPX server for the X Window System
+.SH DESCRIPTION
+.PP
+The QDSS hardware in the VAXStation II/GPX supports 8 plane or 4 plane
+displays.
+.PP
+.SH OPTIONS
+.br
+\fB-bp\fP \fIpixel-value\fP	set default black-pixel color
+.br
+\fB-wp\fP \fIpixel-value\fP	set default white-pixel color
+.sp
+The server also takes all of the standard server options (See
+/fIXserver(1)/fP for a complete list.)
+.PP
+.SH NOTE
+You need to make sure your kernel is configured with DMA_BUFSIZ
+set to 10 in sys/data/qd_data.c, or things won't work right.
+.PP
+.SH BUGS
+.PP
+Currently only numeric arguments from #000000 to #ffffff are
+accepted for default BlackPixel and WhitePixel, and no screen 
+number is accepted.
+.PP
+The GPX hardware contains a polygon edge address generation engine
+which does not conform to the polygon edge
+model specified in the X11 protocol document.
+The effect is that GPX polygon edges extend on average
+one-half pixel farther out than they ought.
+.SH "SEE ALSO"
+.PP
+Xserver(1), xinit(1), X(1)
+.SH COPYRIGHT
+Copyright 1987, 1988, Digital Equipment Corporation.
+.br
+Copyright 1987, 1988, Massachusetts Institute of Technology.
+.br
+See \fIX(1)\fP for a full statement of rights and permissions.
+.SH AUTHORS
+.PP
+Donald Mullis and Matt Pappas, Digital Equipment Corporation.
+.PP
+Thanks to Ram Rao, Vasudev Bhandarkar and Mary Larsen of UEG for their 4-plane
+code and numerous bug fixes.

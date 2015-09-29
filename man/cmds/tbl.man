@@ -1,0 +1,269 @@
+.ds f. tbl.1.tbl
+.\"	tbl tbl.1.tbl > tbl.1
+.TH TBL 1 
+.SH NAME
+tbl \- format tables for nroff or troff
+.SH SYNOPSIS
+.B tbl
+[ files ] ...
+.SH DESCRIPTION
+.I Tbl
+is a preprocessor for formatting tables for
+.I nroff
+or
+.IR troff (1).
+The input files are copied to the standard output,
+except for lines between .TS and .TE
+command lines, which are assumed to describe tables
+and reformatted.
+Details are given in the reference manual.
+.PP
+As an example, letting \\t represent a tab (which should
+be typed as a genuine tab)
+the input
+.IP ""
+\&.TS
+.nf
+doublebox;
+c s s
+c c s
+c c c
+l n n.
+Household Population
+Town\\tHouseholds
+\\tNumber\\tSize
+Bedminster\\t789\\t3.26
+Bernards Twp.\et3087\et3.74
+Bernardsville\et2018\et3.30
+Bound Brook\et3425\et3.04
+Branchburg\et1644\et3.49
+Bridgewater\et7897\et3.81
+Far Hills\et240\et3.19
+\&.TE
+.LP
+.fi
+yields
+.ne 10
+.IP " "
+.TS
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 3f
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if \n(.T .if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 3d \n(.s
+.rm 4i 4j 4k
+.nr 4i 0
+.nr 3i \wTown
+.if \n(4i<\n(3i .nr 4i \n(3i
+.nr 3i \wBedminster
+.if \n(4i<\n(3i .nr 4i \n(3i
+.nr 3i \wBernards Twp.
+.if \n(4i<\n(3i .nr 4i \n(3i
+.nr 3i \wBernardsville
+.if \n(4i<\n(3i .nr 4i \n(3i
+.nr 3i \wBound Brook
+.if \n(4i<\n(3i .nr 4i \n(3i
+.nr 3i \wBranchburg
+.if \n(4i<\n(3i .nr 4i \n(3i
+.nr 3i \wBridgewater
+.if \n(4i<\n(3i .nr 4i \n(3i
+.nr 3i \wFar Hills
+.if \n(4i<\n(3i .nr 4i \n(3i
+.4i
+.rm 4i
+.nr 4j 0
+.nr 3i \wNumber
+.if \n(4j<\n(3i .nr 4j \n(3i
+.nr 3b 0
+.nr 3c 0
+.nr 3i \w789
+.if \n(3b<\n(3i .nr 3b \n(3i
+.nr 3i \w3087
+.if \n(3b<\n(3i .nr 3b \n(3i
+.nr 3i \w2018
+.if \n(3b<\n(3i .nr 3b \n(3i
+.nr 3i \w3425
+.if \n(3b<\n(3i .nr 3b \n(3i
+.nr 3i \w1644
+.if \n(3b<\n(3i .nr 3b \n(3i
+.nr 3i \w7897
+.if \n(3b<\n(3i .nr 3b \n(3i
+.nr 3i \w240
+.if \n(3b<\n(3i .nr 3b \n(3i
+.4j
+.rm 4j
+.nr 4f \n(3b
+.nr 3i \n(4f+\n(3c
+.if \n(3i>\n(4j .nr 4j \n(3i
+.if \n(3i<\n(4j .nr 4f +(\n(4j-\n(3i)/2
+.nr 4k 0
+.nr 3i \wSize
+.if \n(4k<\n(3i .nr 4k \n(3i
+.nr 3b 0
+.nr 3c 0
+.nr 3i \w3
+.if \n(3b<\n(3i .nr 3b \n(3i
+.nr 3i \w.26
+.if \n(3c<\n(3i .nr 3c \n(3i
+.nr 3i \w3
+.if \n(3b<\n(3i .nr 3b \n(3i
+.nr 3i \w.74
+.if \n(3c<\n(3i .nr 3c \n(3i
+.nr 3i \w3
+.if \n(3b<\n(3i .nr 3b \n(3i
+.nr 3i \w.30
+.if \n(3c<\n(3i .nr 3c \n(3i
+.nr 3i \w3
+.if \n(3b<\n(3i .nr 3b \n(3i
+.nr 3i \w.04
+.if \n(3c<\n(3i .nr 3c \n(3i
+.nr 3i \w3
+.if \n(3b<\n(3i .nr 3b \n(3i
+.nr 3i \w.49
+.if \n(3c<\n(3i .nr 3c \n(3i
+.nr 3i \w3
+.if \n(3b<\n(3i .nr 3b \n(3i
+.nr 3i \w.81
+.if \n(3c<\n(3i .nr 3c \n(3i
+.nr 3i \w3
+.if \n(3b<\n(3i .nr 3b \n(3i
+.nr 3i \w.19
+.if \n(3c<\n(3i .nr 3c \n(3i
+.4k
+.rm 4k
+.nr 4g \n(3b
+.nr 3i \n(4g+\n(3c
+.if \n(3i>\n(4k .nr 4k \n(3i
+.if \n(3i<\n(4k .nr 4g +(\n(4k-\n(3i)/2
+.nr 3i \wHousehold Population-\n(4i-3n-\n(4j-3n-\n(4k
+.if \n(3i>0 .nr 3i \n(3i/2
+.if \n(3i<0 .nr 3i 0
+.nr 4f +\n(3i/2
+.nr 4j +\n(3i
+.nr 4g +\n(3i/2
+.nr 4k +\n(3i
+.nr 3i \wHouseholds-\n(4j-3n-\n(4k
+.if \n(3i>0 .nr 3i \n(3i/1
+.if \n(3i<0 .nr 3i 0
+.nr 4g +\n(3i/2
+.nr 4k +\n(3i
+.nr 3i 1n
+.nr 4h 0
+.nr 4a \n(4h+((2*\n(3i)/2)
+.nr 4i +\n(4a
+.nr 4b \n(4i+((6*\n(3i)/2)
+.nr 4j +\n(4b
+.nr 4f +\n(4b
+.nr 4c \n(4j+((6*\n(3i)/2)
+.nr 4k +\n(4c
+.nr 4g +\n(4c
+.nr TW \n(4k
+.nr TW +((2*\n(3i)/2)
+.if t .if \n(TW>\n(.lu .tm Table at line 63 file tbl.1.tbl is too wide - \n(TW units
+.ne 10v+0p
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.nr #a 0-1
+.eo
+.de T#
+.nr 3f 1m
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.if \n(#T>=0 .nr #a \n(#T
+.if \n(T. .vs \n(.vu-\n(.sp
+.if \n(T. \v'-1p'\h'|0'\h'1p'\s\n(3d\l'|\n(TWu-1p\(ul'\s0\v'2p'\h'|0'\h'-1p'\s\n(3d\l'|\n(TWu+1p\(ul'\s0\v'-1p'
+.if \n(T. .vs
+.if \n(#a>=0 .sp -1
+.if \n(#a>=0 \h'|0'\h'-1p'\v'1p'\s\n(3d\h'-\n(#~u'\L'|\n(#au-1v-2p'\s0\v'\n(\*(#du-\n(#au+1v+1p'\h'2p'\v'-1p'\s\n(3d\h'-\n(#~u'\L'|\n(#au-1v+2p'\s0\v'\n(\*(#du-\n(#au+1v-1p'\h'|\n(TWu'
+.if \n(#a>=0 .sp -1
+.if \n(#a>=0 \h'|\n(TWu'\h'-1p'\v'-1p'\s\n(3d\h'-\n(#~u'\L'|\n(#au-1v+2p'\s0\v'\n(\*(#du-\n(#au+1v-1p'\h'2p'\v'1p'\s\n(3d\h'-\n(#~u'\L'|\n(#au-1v-2p'\s0\v'\n(\*(#du-\n(#au+1v+1p'
+.ls
+..
+.ec
+.nr 3g \n(.v
+.vs \n(.vu-\n(.sp
+\v'-1p'\h'|0'\h'-1p'\s\n(3d\l'|\n(TWu+1p\(ul'\s0\v'2p'\h'|0'\h'1p'\s\n(3d\l'|\n(TWu-1p\(ul'\s0\v'-1p'
+.vs \n(3gu
+.mk #a
+.ta \n(4ku 
+.nr 3f 1m
+.nr 3b \n(.f
+\&\h'|\n(4au'Household Population
+.ta \n(4iu \n(4ku 
+.nr 3f 1m
+.nr 3b \n(.f
+\&\h'|\n(4au'Town\h'|\n(4bu'Households
+.ta \n(4iu \n(4ju \n(4ku 
+.nr 3f 1m
+.nr 3b \n(.f
+\&\h'|\n(4au'\h'|\n(4bu'Number\h'|\n(4cu'Size
+.ta \n(4iu \n(4fu \n(4gu \n(4ku 
+.nr 3f 1m
+.nr 3b \n(.f
+\&\h'|\n(4au'Bedminster\h'|\n(4bu'789\h'|\n(4cu'3.26
+.ta \n(4iu \n(4fu \n(4gu \n(4ku 
+.nr 3f 1m
+.nr 3b \n(.f
+\&\h'|\n(4au'Bernards Twp.\h'|\n(4bu'3087\h'|\n(4cu'3.74
+.ta \n(4iu \n(4fu \n(4gu \n(4ku 
+.nr 3f 1m
+.nr 3b \n(.f
+\&\h'|\n(4au'Bernardsville\h'|\n(4bu'2018\h'|\n(4cu'3.30
+.ta \n(4iu \n(4fu \n(4gu \n(4ku 
+.nr 3f 1m
+.nr 3b \n(.f
+\&\h'|\n(4au'Bound Brook\h'|\n(4bu'3425\h'|\n(4cu'3.04
+.ta \n(4iu \n(4fu \n(4gu \n(4ku 
+.nr 3f 1m
+.nr 3b \n(.f
+\&\h'|\n(4au'Branchburg\h'|\n(4bu'1644\h'|\n(4cu'3.49
+.ta \n(4iu \n(4fu \n(4gu \n(4ku 
+.nr 3f 1m
+.nr 3b \n(.f
+\&\h'|\n(4au'Bridgewater\h'|\n(4bu'7897\h'|\n(4cu'3.81
+.ta \n(4iu \n(4fu \n(4gu \n(4ku 
+.nr 3f 1m
+.nr 3b \n(.f
+\&\h'|\n(4au'Far Hills\h'|\n(4bu'240\h'|\n(4cu'3.19
+.fc
+.nr T. 1
+.T# 1
+.3f
+.nr #a 0
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-16
+.fi
+.PP
+If no arguments are given,
+.I tbl
+reads the standard input,
+so it may be used as a filter.
+When it is used with
+.I eqn
+or
+.I neqn
+the
+.I tbl
+command should be first, to minimize the volume
+of data passed through
+pipes.
+.SH SEE ALSO
+troff(1), eqn(1)
+.br
+M. E. Lesk,
+.I TBL.

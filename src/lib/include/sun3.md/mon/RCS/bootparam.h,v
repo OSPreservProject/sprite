@@ -1,0 +1,70 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     89.07.14.09.23.20;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.14.09.20.47;  author rab;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@/*
+ * bootparam.h
+ *
+ * @@(#)bootparam.h 1.5 88/02/08 SMI
+ * Copyright (c) 1986 by Sun Microsystems, Inc.
+ */
+
+/*
+ * Constants for stand-alone I/O (bootstrap) code.
+ */
+#ifdef SUN4
+#define	BBSIZE   (64*512) /* Boot block size.               */
+#ifdef CACHE
+#define LOADADDR 0x20000  /* Load address of boot programs. */
+#else /* CACHE */
+#define LOADADDR 0x4000   /* Load address of boot programs. */
+#endif /* CACHE */
+#else /* SUN4 */
+#define BBSIZE   8192     /* Boot block size.               */
+#define LOADADDR 0x4000   /* Load address of boot programs. */
+#endif /* SUN4 */
+
+#define	DEV_BSIZE 512
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+#else CACHE
+d17 2
+a18 2
+#endif CACHE
+#else SUN4
+d21 1
+a21 1
+#endif SUN4
+@

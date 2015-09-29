@@ -1,0 +1,378 @@
+head     1.10;
+branch   ;
+access   ;
+symbols  sprited:1.10.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.10
+date     90.10.19.15.23.05;  author kupfer;  state Exp;
+branches 1.10.1.1;
+next     1.9;
+
+1.9
+date     90.10.11.22.10.25;  author kupfer;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     90.09.11.14.27.24;  author kupfer;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.07.28.17.18.48;  author ouster;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.07.28.16.41.17;  author ouster;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.07.25.14.50.36;  author ouster;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.07.25.14.12.02;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.07.21.09.37.19;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.07.11.16.02.26;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.10.16.24.00;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.10.1.1
+date     91.12.02.20.02.54;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.10
+log
+@Include <sprite.h>.
+@
+text
+@/* 
+ * sprintf.c --
+ *
+ *	Source code for the "sprintf" library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdio/RCS/sprintf.c,v 1.9 90/10/11 22:10:25 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <stdio.h>
+#include <varargs.h>
+#include <cfuncproto.h>
+#include <sprite.h>		/* for Boolean typedef */
+
+#ifndef lint
+
+/* 
+ * Forward declarations:
+ */
+static void StringWriteProc _ARGS_((FILE *stream, Boolean flush));
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StringWriteProc --
+ *
+ *	This procedure is invoked when the "buffer" for the string
+ *	fills up.  Just give the string more space.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The stream's "buffer" gets enlarged.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+StringWriteProc(stream, flush)
+    register FILE *stream;
+    Boolean flush;		/* ignored */
+{
+    stream->writeCount = 5000;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * sprintf --
+ *
+ *	Format and print one or more values, placing the output into
+ *	a string.  See the manual page for details of how the format
+ *	string is interpreted.
+ *
+ * Results:
+ *	The return value is a pointer to string, which has been
+ *	overwritten with formatted information.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+sprintf(va_alist)
+    va_dcl			/* char *string, then char *format, then any
+				 * number of additional values to be printed
+				 * in string under control of format. */
+{
+    char *string;
+    char *format;
+    FILE stream;
+    va_list args;
+
+    va_start(args);
+    string = va_arg(args, char *);
+    format = va_arg(args, char *);
+    Stdio_Setup(&stream, 0, 1, (unsigned char *)string, 5000, (void (*)()) 0,
+		StringWriteProc, (int (*)()) 0, (ClientData) 0);
+    (void) vfprintf(&stream, format, args);
+    putc(0, &stream);
+    return string;
+}
+#else
+/* VARARGS2 */
+/* ARGSUSED */
+char *
+sprintf(string, format)
+    char *string;
+    char *format;
+{
+    return string;
+}
+#endif lint
+@
+
+
+1.10.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdio/RCS/sprintf.c,v 1.10 90/10/19 15:23:05 kupfer Exp $ SPRITE (Berkeley)";
+@
+
+
+1.9
+log
+@Lint.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdio/RCS/sprintf.c,v 1.8 90/09/11 14:27:24 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d23 1
+@
+
+
+1.8
+log
+@Use function prototypes. Lint.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdio/RCS/sprintf.c,v 1.7 88/07/28 17:18:48 ouster Exp Locker: kupfer $ SPRITE (Berkeley)";
+d29 1
+a29 1
+static void StringWriteProc _ARGS_((FILE *stream));
+d50 1
+a50 1
+StringWriteProc(stream)
+d52 1
+a85 1
+    extern void StringWriteProc();
+@
+
+
+1.7
+log
+@More lint.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: sprintf.c,v 1.6 88/07/28 16:41:17 ouster Exp $ SPRITE (Berkeley)";
+d22 1
+d25 6
+d90 2
+a91 2
+    Stdio_Setup(&stream, 0, 1, string, 5000, (void (*)()) 0,
+	    StringWriteProc, (int (*)()) 0, (ClientData) 0);
+@
+
+
+1.6
+log
+@Still cleaning stuff related to lint libraries.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: sprintf.c,v 1.5 88/07/25 14:50:36 ouster Exp $ SPRITE (Berkeley)";
+d91 1
+@
+
+
+1.5
+log
+@Lint.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: sprintf.c,v 1.4 88/07/25 14:12:02 ouster Exp $ SPRITE (Berkeley)";
+d23 1
+a23 1
+#ifndef LINTLIB
+d98 1
+a98 1
+#endif LINTLIB
+@
+
+
+1.4
+log
+@Generate more complete lint library information.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: sprintf.c,v 1.3 88/07/21 09:37:19 ouster Exp $ SPRITE (Berkeley)";
+d23 2
+d26 14
+a39 1
+ * Forward references to procedure defined in this file:
+d42 6
+a47 2
+extern void	StringWriteProc();
+
+a67 1
+#ifndef LINTLIB
+d78 1
+a98 24
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StringWriteProc --
+ *
+ *	This procedure is invoked when the "buffer" for the string
+ *	fills up.  Just give the string more space.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The stream's "buffer" gets enlarged.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+StringWriteProc(stream)
+    register FILE *stream;
+{
+    stream->writeCount = 5000;
+}
+@
+
+
+1.3
+log
+@Change to use vfprintf instead of _doprnt.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: sprintf.c,v 1.2 88/07/11 16:02:26 ouster Exp $ SPRITE (Berkeley)";
+d49 1
+a49 1
+	/* VARARGS0 */
+d70 10
+@
+
+
+1.2
+log
+@If using varargs, don't have any arguments preceding the va_alist.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: sprintf.c,v 1.1 88/06/10 16:24:00 ouster Exp $ SPRITE (Berkeley)";
+d66 1
+a66 1
+    _doprnt(format, &args, &stream);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: atoi.c,v 1.1 88/04/28 17:20:23 ouster Exp $ SPRITE (Berkeley)";
+d20 2
+a21 2
+#include "stdio.h"
+#include "varargs.h"
+d49 1
+d51 4
+a54 10
+sprintf(string, format, va_alist)
+    char *string;		/* Where to output formatted results.  Must
+				 * be large enough to accomodate all the
+				 * information that is generated. */
+    char *format;		/* Contains literal text and format control
+				 * sequences indicating how elements of
+				 * va_alist are to be printed.  See the
+				 * manual page for details. */
+    va_dcl			/* Variable number of values to be formatted
+				 * and printed. */
+d56 2
+d61 3
+a65 1
+    va_start(args);
+@

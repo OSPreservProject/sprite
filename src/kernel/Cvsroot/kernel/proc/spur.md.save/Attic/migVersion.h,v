@@ -1,0 +1,69 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  sun4nw:1.2 symm:1.2 spur:1.2;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     90.07.30.16.15.54;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.09.08.11.32.26;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@machine-dependent migration version number.
+@
+
+
+1.2
+log
+@incremented migration version
+@
+text
+@/*
+ * migVersion.h --
+ *
+ *	Define the migration version, which is machine-dependent.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/proc/spur.md/RCS/migVersion.h,v 1.1 89/09/08 11:32:26 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+ */
+
+/*
+ * Set the migration version number.  Machines can only migrate to other
+ * machines of the same architecture and version number.
+ */
+#ifndef PROC_MIGRATE_VERSION
+#define PROC_MIGRATE_VERSION 11
+#endif /* PROC_MIGRATE_VERSION */
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.2 89/01/07 04:12:44 rab Exp $ SPRITE (Berkeley)
+d23 1
+a23 1
+#define PROC_MIGRATE_VERSION 10
+@

@@ -1,0 +1,50 @@
+#
+# This is the prototype Makefile for kernel module machine-dependent 
+# Object subdirectories.
+#
+# This Makefile is automatically generated.
+# DO NOT EDIT IT OR YOU MAY LOSE YOUR CHANGES.
+#
+# Generated from @(TEMPLATE)
+# @(DATE)
+#
+# For more information, refer to the mkmf manual page.
+#
+# $Header: /sprite/lib/mkmf/RCS/Makefile.kernelObj,v 1.6 89/10/09 21:27:44 rab Exp $ SPRITE (Berkeley)
+#
+# Allow mkmf
+
+MACHDIR		= @(MACHDIR)
+MACH 		= @(MACH)
+CFLAGS		+= @(MACHFLAG)
+AFLAGS		+= @(MACHFLAG)
+
+#
+# Fetch source and header definitions from the parent makefile
+#
+IS_OBJECT	= True
+#include	"../Makefile"
+
+#
+# Include any machine-specific sources and objects.
+#
+MDCSRCS		= @(CSRCS)
+MDSSRCS		= @(SSRCS)
+MDHDRS		= @(HDRS)
+MDPUBHDRS	= @(PUBHDRS)
+CSRCS		+= $(MDCSRCS)
+SSRCS		+= $(MDSSRCS)
+HDRS		+= $(MDHDRS)
+PUBHDRS		+= $(MDPUBHDRS)
+
+# The label below is used as a special trigger for Makefile.sed scripts
+# to use to add extra stuff to the Makefile:
+# @(SPECIALS)
+
+#include	<kernelObj.mk>
+
+# Another label, for triggering Makefile.sed commands AFTER kernelObj.mk
+# is included:
+# @(POSTINCLUDE)
+
+#include	"dependencies.mk"

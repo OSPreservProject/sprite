@@ -1,0 +1,17 @@
+#!/sprite/cmds/csh -f
+
+set limit = 32768
+set incr = 1024
+set size = 0
+set count = 1000
+
+while ($size <= $limit) 
+    ultracmd -cnt $count -size $size -source 488/32
+    set foo = $<
+    @ newsize = $size + $incr
+    if ($newsize > $limit) then
+	set size = $limit
+    else 
+	set size = $newsize
+    endif
+end

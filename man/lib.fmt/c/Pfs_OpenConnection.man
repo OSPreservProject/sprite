@@ -1,0 +1,134 @@
+
+
+
+Pfs_OpenConnection UNKNOWN SECTION (libcalls)  Pfs_OpenConnection
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Pfs_OpenConnection - Create a pseudo-device connection to  a
+     pseudo-file-system
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ppddeevv..hh>>
+     Pdev_Stream *
+     PPffss__OOppeennCCoonnnneeccttiioonn(_p_f_s_T_o_k_e_n, _i_d_S_i_z_e, _i_d_P_t_r, _s_e_r_v_i_c_e)
+
+AARRGGUUMMEENNTTSS
+     Pfs_Token    *_p_f_s_T_o_k_e_n    (in)      Return value of PPffss__OOppeenn
+                                         call.
+
+     int          _i_d_S_i_z_e       (in)      Size of the ID.
+
+     Address      _i_d_P_t_r        (in)      Pointer to server's name
+                                         for this connection.
+
+     Pdev_Callbacks            *_s_e_r_v_i_c_e(in)
+                                         Array  of  pseudo-device
+                                         call-back procedures.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     PPffss__OOppeennCCoonnnneeccttiioonn is used to establish a pseudo-device con-
+     nection  in  response  to  an open request to a pseudo-file-
+     system server.  The _p_f_s_T_o_k_e_n argument is the return value of
+     the  PPffss__OOppeenn  call  used  to  establish  the  server of the
+     pseudo-file-system.  The _i_d_P_t_r references the server's iden-
+     tifier  for the pseudo-device connection.  If the file being
+     opened is a directory then this  identifier  may  be  passed
+     back as the pprreeffiixxIIDD for naming operations that are relative
+     to the directory.  The _s_e_r_v_i_c_e argument is a  set  of  call-
+     back  procedures  that  are  invoked  by the Pdev library in
+     response to subsequent operations  on  the  file.   See  the
+     PPddeevv__OOppeenn man page for a description of how these call-backs
+     are invoked.  Any of the elements of  _s_e_r_v_i_c_e  can  be  NULL
+     pointers  in  which case a default, no-op handler is used by
+     the Pdev library.
+
+     The return value of PPffss__OOppeennCCoonnnneeccttiioonn is a  token  for  the
+     connection.   It  contains the streamID of the server's half
+     of the connection on which various I/O controls can be done.
+     It also contains a cclliieennttDDaattaa field for use by the caller of
+     PPffss__OOppeennCCoonnnneeccttiioonn.  This token is passed into  all  of  the
+     pseudo-device service call-backs.
+
+SSEEEE AALLSSOO
+     Pfs_Open, Pdev_SetHandler, pdev
+
+
+
+
+Sprite v.1.0         Printed:  May 14, 1989                     1
+
+
+
+
+
+
+Pfs_OpenConnection UNKNOWN SECTION (libcalls)  Pfs_OpenConnection
+
+
+
+KKEEYYWWOORRDDSS
+     pseudo-device, pseudo-file-system, call-back
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  May 14, 1989                     2
+
+
+

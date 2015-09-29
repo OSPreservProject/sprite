@@ -1,0 +1,135 @@
+This is Common TeX, Version 2.9 (preloaded format=plain 89.9.18) 3 SEP 1991 11:27
+**&plain gdbint.texinfo 
+(./gdbint.texinfo (..//../texinfo/fsf/texinfo.tex
+Loading texinfo package [Version 2.53]:  Basics,
+\bindingoffset=\dimen16
+\normaloffset=\dimen17
+\pagewidth=\dimen18
+\pageheight=\dimen19
+\cornerlong=\dimen20
+\cornerthick=\dimen21
+\topandbottommargin=\dimen22
+\outerhsize=\dimen23
+\outervsize=\dimen24
+\EMsimple=\toks12
+\singlespaceskip=\skip18
+\mil=\dimen25
+ fonts,
+\sffam=\fam8
+\fontdepth=\count25
+\tclosesave=\dimen26
+\tcloserm=\dimen27
+ page headings,
+\titlepagetopglue=\skip19
+\titlepagebottomglue=\skip20
+\realeverypar=\toks13
+\evenheadline=\toks14
+\oddheadline=\toks15
+\evenfootline=\toks16
+\oddfootline=\toks17
+
+tables,
+\tableindent=\dimen28
+\itemindent=\dimen29
+\itemmargin=\dimen30
+\itemmax=\dimen31
+\itemno=\count26
+ indexing,
+\initialskipamount=\skip21
+\secondaryindent=\skip22
+\partialpage=\box16
+\doublecolumnhsize=\dimen32
+\doublecolumnvsize=\dimen33
+\availdimen@=\dimen34
+ sectioning,
+\chapno=\count27
+\secno=\count28
+\subsecno=\count29
+\subsubsecno=\count30
+\appendixno=\count31
+\contentsfile=\write0
+\chapheadingskip=\skip23
+\subsecheadingskip=\skip24
+\secheadingskip=\skip25
+ toc printing,
+\contentsrightmargin=\skip26
+\tocindent=\dimen35
+ environments,
+\dblarrowbox=\box17
+\longdblarrowbox=\box18
+\pushcharbox=\box19
+\bullbox=\box20
+\equivbox=\box21
+\errorbox=\box22
+\lispnarrowing=\skip27
+\aboveenvskipamount=\skip28
+\circthick=\dimen36
+\cartouter=\dimen37
+\cartinner=\dimen38
+\normbskip=\skip29
+\normpskip=\skip30
+\normlskip=\skip31
+\lskip=\skip32
+\rskip=\skip33
+ defuns,
+\defbodyindent=\skip34
+\defargsindent=\skip35
+\deftypemargin=\skip36
+\deflastargmargin=\skip37
+\parencount=\count32
+
+cross reference,
+\auxfile=\write1
+\footnoteno=\count33
+ and turning on texinfo input format.
+\defaultparindent=\dimen39
+) (./gdbint.aux)
+@cpindfile=@write2
+@fnindfile=@write3
+@vrindfile=@write4
+@tpindfile=@write5
+@kyindfile=@write6
+@pgindfile=@write7
+
+[1] [2] Chapter 1 Chapter 2 [1] Chapter 3 Chapter 4 [2] Chapter 5
+Overfull \hbox (5.64975pt too wide) in paragraph at lines 215--229
+ @textrm do not de-fine @texttt REGISTER_U_ADDR[]@textrm , but you are u
+s-ing the stan-dard @texttt fetch_core_registers[]@textrm ,|
+
+@hbox(7.60416+2.43333)x469.75499, glue set - 1.0
+.@glue(@leftskip) 57.81621
+.@textrm d
+.@textrm o
+.@glue 3.65 plus 1.825 minus 1.21666
+.@textrm n
+.etc.
+
+
+Overfull \hbox (42.66562pt too wide) in paragraph at lines 215--229
+ @texttt fetch_core_registers[]@textrm , you only need to de-fine @textt
+t register_addr[] @textrm if your @texttt fetch_core_registers[]|
+
+@hbox(7.60416+2.43333)x469.75499, glue set - 1.0
+.@glue(@leftskip) 57.81621
+.@texttt f
+.@texttt e
+.@texttt t
+.@texttt c
+.etc.
+
+[3] Chapter 6 [4] [5] Chapter 7 [6] Chapter 8 Chapter 9 [7] Chapter 10
+[8] Chapter 11 [9]
+Overfull \hbox (11.83047pt too wide) in paragraph at lines 570--577
+ []@textrm Called from @texttt psymtab_to_symtab[] @textrm (or the PSYMT
+AB[][]TO[][]SYMTAB macro) if the psymtab|
+
+@hbox(8.2125+2.73749)x469.75499, glue set - 1.0
+.@glue(@leftskip) 57.81621
+.@hbox(0.0+0.0)x0.0
+.@textrm C
+.@textrm a
+.@textrm l
+.etc.
+
+[10] (./gdbint.toc) [-1]
+Output written on gdbint.dvi (13 pages, 31032 bytes).

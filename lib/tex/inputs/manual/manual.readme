@@ -1,0 +1,52 @@
+Ken,
+
+   Following this message will be four messages containing the input files for 
+the MANUAL Style.  The MANUAL Style is based on the BOOK Style, but numbers 
+pages by chapter-page_in_chapter.  It also defines \preface and a couple of 
+other items.  
+
+   I orignally got the style off the VAX SIG Tape for Fall 1987.  It was 
+placed there by Harry Flowers.  Here is the statement on his submission and 
+his listing on the style:
+
+*****************************************************************************
+CUSTOM COMPUTER APPLICATIONS - A subsidiary of Traveler's Express
+Fall 1987 DECUS Submissions
+
+Most of the submissions are DCL command procedures.  Some I wouldn't be without
+and others are merely useful.  Several are documented internally.  A few of the
+procedures require VMS V4.4 or later (GOSUBs).  At any rate, I suggest reading
+the command procedures before using them.  As always, neither myself nor Custom
+Computer Applications accepts any responsibility for the use or reliability of
+these submissions.  They may not be sold for profit, but may be distributed
+freely otherwise.  Enjoy!
+                                              Harry Flowers
+                                              Custom Computer Applications
+                                              1780 Moriah Woods Blvd. #6
+                                              Memphis, TN  38117
+
+
+
+	LaTeX Document Style
+MANUAL.STY      -+A document style based on the "book" style, which supports  
+MAN10.STY        |page numbering by chapter, LaTeXing only selected pages, and
+MAN11.STY        |always produces right-handed odd-numbered pages (chapters   
+MAN12.STY       -+start on right-hand pages).  Details inside MANUAL.STY.     
+                                                            
+*****************************************************************************
+
+
+I have modified the style files to add the \preface and to correct a problem 
+with page numbering for the \part.  I think the style shoudl be included in 
+you style collection.
+
+--------------------------------------------------------------------------------
+|                M. Edward (Ted) Nieland - Systems Analyst                     |
+|------------------------------------------------------------------------------|
+| US Snail:                            | Arpa Internet:                        |
+| Systems Research Laboratories, Inc.  | TNIELAND@WPAFB-AAMRL.ARPA             |
+| 2800 Indian Ripple Road   WP 196     | TNIELAND%FALCON@WPAFB-AAMRL.ARPA      |
+| Dayton, OH  45440                    |                                       |
+|------------------------------------------------------------------------------|
+| A T & T:  (513) 255-8846/8760/5156                                           |
+--------------------------------------------------------------------------------

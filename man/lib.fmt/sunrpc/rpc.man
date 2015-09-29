@@ -1,0 +1,990 @@
+
+
+
+RPC                   C Library Procedures                    RPC
+
+
+
+NNAAMMEE
+     rpc - library routines for remote procedure calls
+
+SSYYNNOOPPSSIISS AANNDD DDEESSCCRRIIPPTTIIOONN
+     These routines allow C programs to make procedure calls on
+     other machines across the network.  First, the client calls
+     a procedure to send a data packet to the server.  Upon
+     receipt of the packet, the server calls a dispatch routine
+     to perform the requested service, and then sends back a
+     reply.  Finally, the procedure call returns to the client.
+
+     ##iinncclluuddee <<rrppcc//rrppcc..hh>>
+
+     vvooiidd
+     aauutthh__ddeessttrrooyy((aauutthh))
+     AAUUTTHH **aauutthh;;
+
+          A macro that destroys the authentication information
+          associated with aauutthh.  Destruction usually involves
+          deallocation of private data structures. The use of
+          aauutthh is undefined after calling aauutthh__ddeessttrrooyy.
+
+     AAUUTTHH **
+     aauutthhnnoonnee__ccrreeaattee(())
+
+          Creates and returns an RPC authentication handle that
+          passes nonusable authentication information with each
+          remote procedure call. This is the default authentica-
+          tion used by RPC.
+
+     AAUUTTHH **
+     aauutthhuunniixx__ccrreeaattee((hhoosstt,, uuiidd,, ggiidd,, lleenn,, aauupp__ggiiddss))
+     cchhaarr **hhoosstt;;
+     iinntt uuiidd,, ggiidd,, lleenn,, **aauupp..ggiiddss;;
+
+          Creates and returns an RPC authentication handle that
+          contains authentication information.  The parameter
+          hhoosstt is the name of the machine on which the informa-
+          tion was created; uuiidd is the user's user ID ; ggiidd is
+          the user's current group ID ; lleenn and aauupp__ggiiddss refer to
+          a counted array of groups to which the user belongs.
+          It is easy to impersonate a user.
+
+     AAUUTTHH **
+     aauutthhuunniixx__ccrreeaattee__ddeeffaauulltt(())
+
+          Calls aauutthhuunniixx__ccrreeaattee with the appropriate parameters.
+
+     ccaallllrrppcc((hhoosstt,, pprrooggnnuumm,, vveerrssnnuumm,, pprrooccnnuumm,, iinnpprroocc,, iinn,, oouuttpprroocc,, oouutt))
+     cchhaarr **hhoosstt;;
+     uu__lloonngg pprrooggnnuumm,, vveerrssnnuumm,, pprrooccnnuumm;;
+     cchhaarr **iinn,, **oouutt;;
+
+
+
+Sprite v1.0              3 November 1987                        1
+
+
+
+
+
+
+RPC                   C Library Procedures                    RPC
+
+
+
+     xxddrrpprroocc__tt iinnpprroocc,, oouuttpprroocc;;
+
+          Calls the remote procedure associated with pprrooggnnuumm,
+          vveerrssnnuumm, and pprrooccnnuumm on the machine, hhoosstt.  The parame-
+          ter iinn is the address of the procedure's argument(s),
+          and oouutt is the address of where to place the result(s);
+          iinnpprroocc is used to encode the procedure's parameters,
+          and oouuttpprroocc is used to decode the procedure's results.
+          This routine returns zero if it succeeds, or the value
+          of eennuumm ccllnntt__ssttaatt cast to an integer if it fails.  The
+          routine ccllnntt__ppeerrrrnnoo is handy for translating failure
+          statuses into messages.
+
+          Warning: calling remote procedures with this routine
+          uses UDP/IP as a transport; see ccllnnttuuddpp__ccrreeaattee for res-
+          trictions.  You do not have control of timeouts or
+          authentication using this routine.
+
+     eennuumm ccllnntt__ssttaatt
+     ccllnntt__bbrrooaaddccaasstt((pprrooggnnuumm,, vveerrssnnuumm,, pprrooccnnuumm,, iinnpprroocc,, iinn,, oouuttpprroocc,, oouutt,, eeaacchhrreessuulltt))
+     uu__lloonngg pprrooggnnuumm,, vveerrssnnuumm,, pprrooccnnuumm;;
+     cchhaarr **iinn,, **oouutt;;
+     xxddrrpprroocc__tt iinnpprroocc,, oouuttpprroocc;;
+     rreessuullttpprroocc__tt eeaacchhrreessuulltt;;
+
+          Like ccaallllrrppcc, except the call message is broadcast to
+          all locally connected broadcast nets. Each time it
+          receives a response, this routine calls eeaacchhrreessuulltt,
+          whose form is:
+               eeaacchhrreessuulltt((oouutt,, aaddddrr))
+               cchhaarr **oouutt;;
+               ssttrruucctt ssoocckkaaddddrr__iinn **aaddddrr;;
+
+          where oouutt is the same as oouutt passed to ccllnntt__bbrrooaaddccaasstt,
+          except that the remote procedure's output is decoded
+          there; aaddddrr points to the address of the machine that
+          sent the results.  If eeaacchhrreessuulltt returns zero,
+          ccllnntt__bbrrooaaddccaasstt waits for more replies; otherwise it
+          returns with appropriate status.
+
+          Warning: broadcast sockets are limited in size to the
+          maximum transfer unit of the data link. For ethernet,
+          this value is 1500 bytes.
+
+     eennuumm ccllnntt__ssttaatt
+     ccllnntt__ccaallll((ccllnntt,, pprrooccnnuumm,, iinnpprroocc,, iinn,, oouuttpprroocc,, oouutt,, ttoouutt))
+     CCLLIIEENNTT **ccllnntt;; uu__lloonngg pprrooccnnuumm;;
+     xxddrrpprroocc__tt iinnpprroocc,, oouuttpprroocc;;
+     cchhaarr **iinn,, **oouutt;;
+     ssttrruucctt ttiimmeevvaall ttoouutt;;
+
+          A macro that calls the remote procedure pprrooccnnuumm
+
+
+
+Sprite v1.0              3 November 1987                        2
+
+
+
+
+
+
+RPC                   C Library Procedures                    RPC
+
+
+
+          associated with the client handle, ccllnntt, which is
+          obtained with an RPC client creation routine such as
+          ccllnntt__ccrreeaattee.  The parameter iinn is the address of the
+          procedure's argument(s), and oouutt is the address of
+          where to place the result(s); iinnpprroocc is used to encode
+          the procedure's parameters, and oouuttpprroocc is used to
+          decode the procedure's results; ttoouutt is the time
+          allowed for results to come back.
+
+     ccllnntt__ddeessttrrooyy((ccllnntt))
+     CCLLIIEENNTT **ccllnntt;;
+
+          A macro that destroys the client's RPC handle. Destruc-
+          tion usually involves deallocation of private data
+          structures, including ccllnntt itself.  Use of ccllnntt is
+          undefined after calling ccllnntt__ddeessttrrooyy.  If the RPC
+          library opened the associated socket, it will close it
+          also.  Otherwise, the socket remains open.
+
+     CCLLIIEENNTT **
+     ccllnntt__ccrreeaattee ((hhoosstt,, pprroogg,, vveerrss,, pprroottoo))
+     cchhaarr **hhoosstt;;
+     uu__lloonngg pprroogg,, vveerrss;;
+     cchhaarr **pprroottoo;;
+
+          Generic client creation routine.  hhoosstt identifies the
+          name of the remote host where the server is located.
+          pprroottoo indicates which kind of transport protocol to
+          use. The currently supported values for this field are
+          ``udp'' and ``tcp''.  Default timeouts are set, but can
+          be modified using ccllnntt__ccoonnttrrooll..
+
+          Warning: Using UDP has its shortcomings.  Since UDP-
+          based RPC messages can only hold up to 8 Kbytes of
+          encoded data, this transport cannot be used for pro-
+          cedures that take large arguments or return huge
+          results.
+
+     bbooooll__tt
+     ccllnntt__ccoonnttrrooll((ccll,, rreeqq,, iinnffoo))
+     CCLLIIEENNTT **ccll;;
+     cchhaarr **iinnffoo;;
+
+          A macro used to change or retrieve various information
+          about a client object.  rreeqq indicates the type of
+          operation, and iinnffoo is a pointer to the information.
+          For both UDP and TCP, the supported values of rreeqq and
+          their argument types and what they do are:
+          CLSET_TIMEOUT       struct timeval      set total timeout
+          CLGET_TIMEOUT       struct timeval      get total timeout
+
+          Note: if you set the timeout using ccllnntt__ccoonnttrrooll, the
+
+
+
+Sprite v1.0              3 November 1987                        3
+
+
+
+
+
+
+RPC                   C Library Procedures                    RPC
+
+
+
+          timeout parameter passed to ccllnntt__ccaallll will be ignored
+          in all future calls.
+          CLGET_SERVER_ADDR   struct sockaddr     get server's address
+          The following operations are valid for UDP only:
+          CLSET_RETRY_TIMEOUT struct timevalset the retry timeout
+          CLGET_RETRY_TIMEOUT struct timevalget the retry timeout
+          The retry timeout is the time that UDP RPC waits for
+          the server to reply before retransmitting the request.
+
+     ccllnntt__ffrreeeerreess((ccllnntt,, oouuttpprroocc,, oouutt))
+     CCLLIIEENNTT **ccllnntt;;
+     xxddrrpprroocc__tt oouuttpprroocc;;
+     cchhaarr **oouutt;;
+
+          A macro that frees any data allocated by the RPC/XDR
+          system when it decoded the results of an RPC call.  The
+          parameter oouutt is the address of the results, and
+          oouuttpprroocc is the XDR routine describing the results in
+          simple primitives.  This routine returns one if the
+          results were successfully freed, and zero otherwise.
+
+     vvooiidd
+     ccllnntt__ggeetteerrrr((ccllnntt,, eerrrrpp))
+     CCLLIIEENNTT **ccllnntt;;
+     ssttrruucctt rrppcc__eerrrr **eerrrrpp;;
+
+          A macro that copies the error structure out of the
+          client handle to the structure at address eerrrrpp.
+
+     vvooiidd
+     ccllnntt__ppccrreeaatteeeerrrroorr((ss))
+     cchhaarr **ss;;
+
+          Prints a message to standard error indicating why a
+          client RPC handle could not be created.  The message is
+          prepended with string ss and a colon.  Used when a
+          ccllnntt__ccrreeaattee, ccllnnttrraaww__ccrreeaattee, ccllnnttttccpp__ccrreeaattee, or
+          ccllnnttuuddpp__ccrreeaattee call fails.
+
+     vvooiidd
+     ccllnntt__ppeerrrrnnoo((ssttaatt))
+     eennuumm ccllnntt__ssttaatt ssttaatt;;
+
+          Prints a message to standard error corresponding to the
+          condition indicated by ssttaatt.  Used after ccaallllrrppcc.
+
+     ccllnntt__ppeerrrroorr((ccllnntt,, ss))
+     CCLLIIEENNTT **ccllnntt;;
+     cchhaarr **ss;;
+
+          Prints a message to standard error indicating why an
+          RPC call failed; ccllnntt is the handle used to do the
+
+
+
+Sprite v1.0              3 November 1987                        4
+
+
+
+
+
+
+RPC                   C Library Procedures                    RPC
+
+
+
+          call.  The message is prepended with string ss and a
+          colon.  Used after ccllnntt__ccaallll.
+
+     cchhaarr **
+     ccllnntt__ssppccrreeaatteeeerrrroorr
+     cchhaarr **ss;;
+
+          Like ccllnntt__ppccrreeaatteeeerrrroorr, except that it returns a string
+          instead of printing to the standard error.
+
+          Bugs: returns pointer to static data that is overwrit-
+          ten on each call.
+
+     cchhaarr **
+     ccllnntt__ssppeerrrrnnoo((ssttaatt))
+     eennuumm ccllnntt__ssttaatt ssttaatt;;
+
+          Takes the same arguments as ccllnntt__ppeerrrrnnoo, but instread
+          of sending a message to the standard error indicating
+          why an RPC call failed, it returns a pointer to a
+          string which contains the message.  The string ends
+          with a newline.
+
+          ccllnntt__ssppeerrrrnnoo is used instead of ccllnntt__ppeerrrrnnoo if the pro-
+          gram doesn't have a standard error (as a program run-
+          ning as a server quite likely doesn't), or if the pro-
+          grammer doesn't want the message to be output with
+          pprriinnttff, or if a message format different than that sup-
+          ported by ccllnntt__ppeerrrrnnoo is to be used.  Note: unlike
+          ccllnntt__ssppeerrrroorr and ccllnntt__ssppccrreeaatteerrrroorr, ccllnntt__ssppeerrrrnnoo does
+          not return pointer to static data so the result will
+          not get overwritten on each call.
+
+     cchhaarr **
+     ccllnntt__ssppeerrrroorr((rrppcchh,, ss))
+     CCLLIIEENNTT **rrppcchh;;
+     cchhaarr **ss;;
+
+          Like ccllnntt__ppeerrrroorr, except that (like ccllnntt__ssppeerrrrnnoo) it
+          returns a string instead of printing to standard error.
+
+          Bugs: returns pointer to static data that is overwrit-
+          ten on each call.
+
+     CCLLIIEENNTT **
+     ccllnnttrraaww__ccrreeaattee((pprrooggnnuumm,, vveerrssnnuumm))
+     uu__lloonngg pprrooggnnuumm,, vveerrssnnuumm;;
+
+          This routine creates a toy RPC client for the remote
+          program pprrooggnnuumm, version vveerrssnnuumm.  The transport used
+          to pass messages to the service is actually a buffer
+          within the process's address space, so the
+
+
+
+Sprite v1.0              3 November 1987                        5
+
+
+
+
+
+
+RPC                   C Library Procedures                    RPC
+
+
+
+          corresponding RPC server should live in the same
+          address space; see ssvvccrraaww__ccrreeaattee.  This allows simula-
+          tion of RPC and acquisition of RPC overheads, such as
+          round trip times, without any kernel interference. This
+          routine returns NULL if it fails.
+
+     CCLLIIEENNTT **
+     ccllnnttttccpp__ccrreeaattee((aaddddrr,, pprrooggnnuumm,, vveerrssnnuumm,, ssoocckkpp,, sseennddsszz,, rreeccvvsszz))
+     ssttrruucctt ssoocckkaaddddrr__iinn **aaddddrr;;
+     uu__lloonngg pprrooggnnuumm,, vveerrssnnuumm;;
+     iinntt **ssoocckkpp;;
+     uu__iinntt sseennddsszz,, rreeccvvsszz;;
+
+          This routine creates an RPC client for the remote pro-
+          gram pprrooggnnuumm, version vveerrssnnuumm; the client uses TCP/IP
+          as a transport. The remote program is located at Inter-
+          net address **aaddddrr.  If aaddddrr-->>ssiinn__ppoorrtt is zero, then it
+          is set to the actual port that the remote program is
+          listening on (the remote ppoorrttmmaapp service is consulted
+          for this information). The parameter ssoocckkpp is a socket;
+          if it is RRPPCC__AANNYYSSOOCCKK, then this routine opens a new one
+          and sets ssoocckkpp.  Since TCP-based RPC uses buffered I/O
+          , the user may specify the size of the send and receive
+          buffers with the parameters sseennddsszz and rreeccvvsszz; values
+          of zero choose suitable defaults.  This routine returns
+          NULL if it fails.
+
+     CCLLIIEENNTT **
+     ccllnnttuuddpp__ccrreeaattee((aaddddrr,, pprroonnuumm,, vveerrssnnuumm,, wwaaiitt,, ssoocckkpp))
+     ssttrruucctt ssoocckkaaddddrr__iinn **aaddddrr;;
+     uu__lloonngg pprrooggnnuumm,, vveerrssnnuumm;;
+     ssttrruucctt ttiimmeevvaall wwaaiitt;;
+     iinntt **ssoocckkpp;;
+
+          This routine creates an RPC client for the remote pro-
+          gram pprrooggnnuumm, version vveerrssnnuumm; the client uses use
+          UDP/IP as a transport. The remote program is located at
+          Internet address aaddddrr.  If aaddddrr-->>ssiinn__ppoorrtt is zero, then
+          it is set to actual port that the remote program is
+          listening on (the remote ppoorrttmmaapp service is consulted
+          for this information). The parameter ssoocckkpp is a socket;
+          if it is RRPPCC__AANNYYSSOOCCKK , then this routine opens a new
+          one and sets ssoocckkpp.  The UDP transport resends the call
+          message in intervals of wwaaiitt time until a response is
+          received or until the call times out.  The total time
+          for the call to time out is specified by ccllnntt__ccaallll.
+
+          Warning: since UDP-based RPC messages can only hold up
+          to 8 Kbytes of encoded data, this transport cannot be
+          used for procedures that take large arguments or return
+          huge results.
+
+
+
+
+Sprite v1.0              3 November 1987                        6
+
+
+
+
+
+
+RPC                   C Library Procedures                    RPC
+
+
+
+     vvooiidd
+     ggeett__mmyyaaddddrreessss((aaddddrr))
+     ssttrruucctt ssoocckkaaddddrr__iinn **aaddddrr;;
+
+          Stuffs the machine's IP address into **aaddddrr, without
+          consulting the library routines that deal with
+          //eettcc//hhoossttss.  The port number is always set to hhttoonnss(
+          PMAPPORT ).
+
+     ssttrruucctt ppmmaapplliisstt **
+     ppmmaapp__ggeettmmaappss((aaddddrr))
+     ssttrruucctt ssoocckkaaddddrr__iinn **aaddddrr;;
+
+          A user interface to the ppoorrttmmaapp service, which returns
+          a list of the current RPC program-to-port mappings on
+          the host located at IP address **aaddddrr.  This routine can
+          return NULL . The command rrppcciinnffoo --pp uses this routine.
+
+     uu__sshhoorrtt
+     ppmmaapp__ggeettppoorrtt((aaddddrr,, pprrooggnnuumm,, vveerrssnnuumm,, pprroottooccooll))
+     ssttrruucctt ssoocckkaaddddrr__iinn **aaddddrr;;
+     uu__lloonngg pprrooggnnuumm,, vveerrssnnuumm,, pprroottooccooll;;
+
+          A user interface to the ppoorrttmmaapp service, which returns
+          the port number on which waits a service that supports
+          program number pprrooggnnuumm, version vveerrssnnuumm, and speaks the
+          transport protocol associated with pprroottooccooll.  The value
+          of pprroottooccooll is most likely IIPPPPRROOTTOO__UUDDPP or IIPPPPRROOTTOO__TTCCPP.
+          A return value of zero means that the mapping does not
+          exist or that the RPC system failured to contact the
+          remote ppoorrttmmaapp service.  In the latter case, the global
+          variable rrppcc__ccrreeaatteeeerrrr contains the RPC status.
+
+     eennuumm ccllnntt__ssttaatt
+     ppmmaapp__rrmmttccaallll((aaddddrr,, pprrooggnnuumm,, vveerrssnnuumm,, pprrooccnnuumm,, iinnpprroocc,, iinn,, oouuttpprroocc,, oouutt,, ttoouutt,, ppoorrttpp))
+     ssttrruucctt ssoocckkaaddddrr__iinn **aaddddrr;;
+     uu__lloonngg pprrooggnnuumm,, vveerrssnnuumm,, pprrooccnnuumm;;
+     cchhaarr **iinn,, **oouutt;;
+     xxddrrpprroocc__tt iinnpprroocc,, oouuttpprroocc;;
+     ssttrruucctt ttiimmeevvaall ttoouutt;;
+     uu__lloonngg **ppoorrttpp;;
+
+          A user interface to the ppoorrttmmaapp service, which
+          instructs ppoorrttmmaapp on the host at IP address **aaddddrr to
+          make an RPC call on your behalf to a procedure on that
+          host.  The parameter **ppoorrttpp will be modified to the
+          program's port number if the procedure succeeds. The
+          definitions of other parameters are discussed in
+          ccaallllrrppcc and ccllnntt__ccaallll.  This procedure should be used
+          for a ``ping'' and nothing else.  See also
+          ccllnntt__bbrrooaaddccaasstt.
+
+
+
+
+Sprite v1.0              3 November 1987                        7
+
+
+
+
+
+
+RPC                   C Library Procedures                    RPC
+
+
+
+     ppmmaapp__sseett((pprrooggnnuumm,, vveerrssnnuumm,, pprroottooccooll,, ppoorrtt))
+     uu__lloonngg pprrooggnnuumm,, vveerrssnnuumm,, pprroottooccooll;;
+     uu__sshhoorrtt ppoorrtt;;
+
+          A user interface to the ppoorrttmmaapp service, which estab-
+          lishes a mapping between the triple
+          [pprrooggnnuumm,,vveerrssnnuumm,,pprroottooccooll] and ppoorrtt on the machine's
+          ppoorrttmmaapp service. The value of pprroottooccooll is most likely
+          IIPPPPRROOTTOO__UUDDPP or IIPPPPRROOTTOO__TTCCPP.  This routine returns one
+          if it succeeds, zero otherwise.  Automatically done by
+          ssvvcc__rreeggiisstteerr.
+
+     ppmmaapp__uunnsseett((pprrooggnnuumm,, vveerrssnnuumm))
+     uu__lloonngg pprrooggnnuumm,, vveerrssnnuumm;;
+
+          A user interface to the ppoorrttmmaapp service, which destroys
+          all mapping between the triple [pprrooggnnuumm,, vveerrssnnuumm,, **]
+          and ppoorrttss on the machine's ppoorrttmmaapp service. This rou-
+          tine returns one if it succeeds, zero otherwise.
+
+     rreeggiisstteerrrrppcc((pprrooggnnuumm,, vveerrssnnuumm,, pprrooccnnuumm,, pprrooccnnaammee,, iinnpprroocc,, oouuttpprroocc))
+     uu__lloonngg pprrooggnnuumm,, vveerrssnnuumm,, pprrooccnnuumm;;
+     cchhaarr **((**pprrooccnnaammee)) (()) ;;
+     xxddrrpprroocc__tt iinnpprroocc,, oouuttpprroocc;;
+
+          Registers procedure pprrooccnnaammee with the RPC service pack-
+          age.  If a request arrives for program pprrooggnnuumm, version
+          vveerrssnnuumm, and procedure pprrooccnnuumm, pprrooccnnaammee is called with
+          a pointer to its parameter(s); pprrooggnnaammee should return a
+          pointer to its static result(s); iinnpprroocc is used to
+          decode the parameters while oouuttpprroocc is used to encode
+          the results.  This routine returns zero if the regis-
+          tration succeeded, -1 otherwise.
+
+          Warning: remote procedures registered in this form are
+          accessed using the UDP/IP transport; see ssvvccuuddpp__ccrreeaattee
+          for restrictions.
+
+     ssttrruucctt rrppcc__ccrreeaatteeeerrrr     rrppcc__ccrreeaatteeeerrrr;;
+
+          A global variable whose value is set by any RPC client
+          creation routine that does not succeed.  Use the rou-
+          tine ccllnntt__ppccrreeaatteeeerrrroorr to print the reason why.
+
+     ssvvcc__ddeessttrrooyy((xxpprrtt))
+     SSVVCCXXPPRRTT ** xxpprrtt;;
+
+          A macro that destroys the RPC service transport handle,
+          xxpprrtt.  Destruction usually involves deallocation of
+          private data structures, including xxpprrtt itself.  Use of
+          xxpprrtt is undefined after calling this routine.
+
+
+
+
+Sprite v1.0              3 November 1987                        8
+
+
+
+
+
+
+RPC                   C Library Procedures                    RPC
+
+
+
+     ffdd__sseett ssvvcc__ffddsseett;;
+
+          A global variable reflecting the RPC service side's
+          read file descriptor bit mask; it is suitable as a
+          parameter to the sseelleecctt system call. This is only of
+          interest if a service implementor does not call
+          ssvvcc__rruunn, but rather does his own asynchronous event
+          processing.  This variable is read-only (do not pass
+          its address to sseelleecctt!), yet it may change after calls
+          to ssvvcc__ggeettrreeqqsseett or any creation routines.
+
+     iinntt ssvvcc__ffddss;;
+
+          Similar to ssvvcc__ffeeddsseett, but limited to 32 descriptors.
+          This interface is obsoleted by ssvvcc__ffddsseett.
+
+     ssvvcc__ffrreeeeaarrggss((xxpprrtt,, iinnpprroocc,, iinn))
+     SSVVCCXXPPRRTT **xxpprrtt;;
+     xxddrrpprroocc__tt iinnpprroocc;;
+     cchhaarr **iinn;;
+
+          A macro that frees any data allocated by the RPC/XDR
+          system when it decoded the arguments to a service pro-
+          cedure using ssvvcc__ggeettaarrggss.  This routine returns one if
+          the results were successfully freed, and zero other-
+          wise.
+
+     ssvvcc__ggeettaarrggss((xxpprrtt,, iinnpprroocc,, iinn))
+     SSVVCCXXPPRRTT **xxpprrtt;;
+     xxddrrpprroocc__tt iinnpprroocc;;
+     cchhaarr **iinn;;
+
+          A macro that decodes the arguments of an RPC request
+          associated with the RPC service transport handle, xxpprrtt
+          .. The parameter iinn is the address where the arguments
+          will be placed; iinnpprroocc is the XDR routine used to
+          decode the arguments.  This routine returns one if
+          decoding succeeds, and zero otherwise.
+
+     ssttrruucctt ssoocckkaaddddrr__iinn
+     ssvvcc__ggeettccaalllleerr((xxpprrtt))
+     SSVVCCXXPPRRTT **xxpprrtt;;
+
+          The approved way of getting the network address of the
+          caller of a procedure associated with the RPC service
+          transport handle, xxpprrtt.
+
+     ssvvcc__ggeettrreeqqsseett((rrddffddss))
+     ffdd__sseett **rrddffddss;;
+
+          This routine is only of interest if a service implemen-
+          tor does not call ssvvcc__rruunn, but instead implements
+
+
+
+Sprite v1.0              3 November 1987                        9
+
+
+
+
+
+
+RPC                   C Library Procedures                    RPC
+
+
+
+          custom asynchronous event processing.  It is called
+          when the sseelleecctt system call has determined that an RPC
+          request has arrived on some RPC socket(s); rrddffddss is the
+          resultant read file descriptor bit mask.  The routine
+          returns when all sockets associated with the value of
+          rrddffddss have been serviced.
+
+     ssvvcc__ggeettrreeqq((rrddffddss))
+     iinntt rrddffddss;;
+
+          Similar to ssvvcc__ggeettrreeqqsseett, but limited to 32 descrip-
+          tors. This interface is obsoleted by ssvvcc__ggeettrreeqqsseett.
+
+     ssvvcc__rreeggiisstteerr((xxpprrtt,, pprrooggnnuumm,, vveerrssnnuumm,, ddiissppaattcchh,, pprroottooccooll))
+     SSVVCCXXPPRRTT **xxpprrtt;;
+     uu__lloonngg pprrooggnnuumm,, vveerrssnnuumm;;
+     vvooiidd ((**ddiissppaattcchh)) (());;
+     uu__lloonngg pprroottooccooll;;
+
+          Associates pprrooggnnuumm and vveerrssnnuumm with the service
+          dispatch procedure, ddiissppaattcchh.  If pprroottooccooll is zero, the
+          service is not registered with the ppoorrttmmaapp service.  If
+          pprroottooccooll is non-zero, then a mapping of the triple
+          [pprrooggnnuumm,, vveerrssnnuumm,, pprroottooccooll] to xxpprrtt-->>xxpp__ppoorrtt is esta-
+          blished with the local ppoorrttmmaapp service (generally pprroo--
+          ttooccooll is zero, IIPPPPRROOTTOO__UUDDPP or IIPPPPRROOTTOO__TTCCPP ).  The pro-
+          cedure ddiissppaattcchh has the following form:
+               ddiissppaattcchh((rreeqquueesstt,, xxpprrtt))
+               ssttrruucctt ssvvcc__rreeqq **rreeqquueesstt;;
+               SSVVCCXXPPRRTT **xxpprrtt;;
+
+          The ssvvcc__rreeggiisstteerr routine returns one if it succeeds,
+          and zero otherwise.
+
+     ssvvcc__rruunn(())
+
+          This routine never returns. It waits for RPC requests
+          to arrive, and calls the appropriate service procedure
+          using ssvvcc__ggeettrreeqq when one arrives. This procedure is
+          usually waiting for a sseelleecctt system call to return.
+
+     ssvvcc__sseennddrreeppllyy((xxpprrtt,, oouuttpprroocc,, oouutt))
+     SSVVCCXXPPRRTT **xxpprrtt;;
+     xxddrrpprroocc__tt oouuttpprroocc;;
+     cchhaarr **oouutt;;
+
+          Called by an RPC service's dispatch routine to send the
+          results of a remote procedure call.  The parameter xxpprrtt
+          is the request's associated transport handle; oouuttpprroocc
+          is the XDR routine which is used to encode the results;
+          and oouutt is the address of the results.  This routine
+          returns one if it succeeds, zero otherwise.
+
+
+
+Sprite v1.0              3 November 1987                       10
+
+
+
+
+
+
+RPC                   C Library Procedures                    RPC
+
+
+
+     vvooiidd
+     ssvvcc__uunnrreeggiisstteerr((pprrooggnnuumm,, vveerrssnnuumm))
+     uu__lloonngg pprrooggnnuumm,, vveerrssnnuumm;;
+
+          Removes all mapping of the double [pprrooggnnuumm,, vveerrssnnuumm] to
+          dispatch routines, and of the triple [pprrooggnnuumm,, vveerrssnnuumm,,
+          **] to port number.
+
+     vvooiidd
+     ssvvcceerrrr__aauutthh((xxpprrtt,, wwhhyy))
+     SSVVCCXXPPRRTT **xxpprrtt;;
+     eennuumm aauutthh__ssttaatt wwhhyy;;
+
+          Called by a service dispatch routine that refuses to
+          perform a remote procedure call due to an authentica-
+          tion error.
+
+     vvooiidd
+     ssvvcceerrrr__ddeeccooddee((xxpprrtt))
+     SSVVCCXXPPRRTT **xxpprrtt;;
+
+          Called by a service dispatch routine that can't suc-
+          cessfully decode its parameters. See also ssvvcc__ggeettaarrggss.
+
+     vvooiidd
+     ssvvcceerrrr__nnoopprroocc((xxpprrtt))
+     SSVVCCXXPPRRTT **xxpprrtt;;
+
+          Called by a service dispatch routine that doesn't
+          implement the procedure number that the caller
+          requests.
+
+     vvooiidd
+     ssvvcceerrrr__nnoopprroogg((xxpprrtt))
+     SSVVCCXXPPRRTT **xxpprrtt;;
+
+          Called when the desired program is not registered with
+          the RPC package. Service implementors usually don't
+          need this routine.
+
+     vvooiidd
+     ssvvcceerrrr__pprrooggvveerrss((xxpprrtt))
+     SSVVCCXXPPRRTT **xxpprrtt;;
+
+          Called when the desired version of a program is not
+          registered with the RPC package. Service implementors
+          usually don't need this routine.
+
+     vvooiidd
+     ssvvcceerrrr__ssyysstteemmeerrrr((xxpprrtt))
+     SSVVCCXXPPRRTT **xxpprrtt;;
+
+
+
+
+Sprite v1.0              3 November 1987                       11
+
+
+
+
+
+
+RPC                   C Library Procedures                    RPC
+
+
+
+          Called by a service dispatch routine when it detects a
+          system error not covered by any particular protocol.
+          For example, if a service can no longer allocate
+          storage, it may call this routine.
+
+     vvooiidd
+     ssvvcceerrrr__wweeaakkaauutthh((xxpprrtt))
+     SSVVCCXXPPRRTT **xxpprrtt;;
+
+          Called by a service dispatch routine that refuses to
+          perform a remote procedure call due to insufficient
+          (but correct) authentication parameters.  The routine
+          calls ssvvcceerrrr__aauutthh((xxpprrtt,, AAUUTTHH__TTOOOOWWEEAAKK ) .
+
+     SSVVCCXXPPRRTT **
+     ssvvccrraaww__ccrreeaattee(())
+
+          This routine creates a toy RPC service transport, to
+          which it returns a pointer.  The transport is really a
+          buffer within the process's address space, so the
+          corresponding RPC client should live in the same
+          address space; see ccllnnttrraaww__ccrreeaattee.  This routine allows
+          simulation of RPC and acquisition of RPC overheads
+          (such as round trip times), without any kernel
+          interference. This routine returns NULL if it fails.
+
+     SSVVCCXXPPRRTT **
+     ssvvccttccpp__ccrreeaattee((ssoocckk,, sseenndd__bbuuff__ssiizzee,, rreeccvv__bbuuff__ssiizzee))
+     iinntt ssoocckk;;
+     uu__iinntt sseenndd__bbuuff__ssiizzee,, rreeccvv__bbuuff__ssiizzee;;
+
+          This routine creates a TCP/IP-based RPC service tran-
+          sport, to which it returns a pointer.  The transport is
+          associated with the socket ssoocckk, which may be
+          RRPPCC__AANNYYSSOOCCKK ,, in which case a new socket is created.
+          If the socket is not bound to a local TCP port, then
+          this routine binds it to an arbitrary port. Upon com-
+          pletion, xxpprrtt-->>xxpp__ssoocckk is the transport's socket
+          number, and xxpprrtt-->>xxpp__ppoorrtt is the transport's port
+          number.  This routine returns NULL if it fails. Since
+          TCP-based RPC uses buffered I/O , users may specify the
+          size of buffers; values of zero choose suitable
+          defaults.
+
+     vvooiidd
+     ssvvccffdd__ccrreeaattee((ffdd,, sseennssiizzee,, rreeccvvssiizzee))
+     iinntt ffdd;;
+     uu__iinntt sseennddssiizzee;;
+     uu__iinntt rreeccvvssiizzee;;
+
+          Creates a service on top of any open desciptor. Typi-
+          cally, this descriptor is a connected socket for a
+
+
+
+Sprite v1.0              3 November 1987                       12
+
+
+
+
+
+
+RPC                   C Library Procedures                    RPC
+
+
+
+          stream protocol such as TCP . sseennddssiizzee and rreeccvvssiizzee
+          indicate sizes for the send and receive buffers.  If
+          they are zero, a reasonable default is chosen.
+
+     SSVVCCXXPPRRTT **
+     ssvvccuuddpp__ccrreeaattee((ssoocckk))
+     iinntt ssoocckk;;
+
+          This routine creates a UDP/IP-based RPC service tran-
+          sport, to which it returns a pointer.  The transport is
+          associated with the socket ssoocckk, which may be
+          RRPPCC__AANNYYSSOOCCKK ,, in which case a new socket is created.
+          If the socket is not bound to a local UDP port, then
+          this routine binds it to an arbitrary port. Upon com-
+          pletion, xxpprrtt-->>xxpp__ssoocckk is the transport's socket
+          number, and xxpprrtt-->>xxpp__ppoorrtt is the transport's port
+          number.  This routine returns NULL if it fails.
+
+          Warning: since UDP-based RPC messages can only hold up
+          to 8 Kbytes of encoded data, this transport cannot be
+          used for procedures that take large arguments or return
+          huge results.
+
+     xxddrr__aacccceepptteedd__rreeppllyy((xxddrrss,, aarr))
+     XXDDRR **xxddrrss;;
+     ssttrruucctt aacccceepptteedd__rreeppllyy **aarr;;
+
+          Used for describing RPC messages, externally. This rou-
+          tine is useful for users who wish to generate RPC-style
+          messages without using the RPC package.
+
+     xxddrr__aauutthhuunniixx__ppaarrmmss((xxddrrss,, aauupppp))
+     XXDDRR **xxddrrss;;
+     ssttrruucctt aauutthhuunniixx__ppaarrmmss **aauupppp;;
+
+          Used for describing UNIX credentials, externally. This
+          routine is useful for users who wish to generate these
+          credentials without using the RPC authentication pack-
+          age.
+
+     vvooiidd
+     xxddrr__ccaallllhhddrr((xxddrrss,, cchhddrr))
+     XXDDRR **xxddrrss;;
+     ssttrruucctt rrppcc__mmssgg **cchhddrr;;
+
+          Used for describing RPC messages, externally.  This
+          routine is useful for users who wish to generate RPC-
+          style messages without using the RPC package.
+
+     xxddrr__ccaallllmmssgg((xxddrrss,, ccmmssgg))
+     XXDDRR **xxddrrss;;
+     ssttrruucctt rrppcc__mmssgg **ccmmssgg;;
+
+
+
+Sprite v1.0              3 November 1987                       13
+
+
+
+
+
+
+RPC                   C Library Procedures                    RPC
+
+
+
+          Used for describing RPC messages, externally.  This
+          routine is useful for users who wish to generate RPC-
+          style messages without using the RPC package.
+
+     xxddrr__ooppaaqquuee__aauutthh((xxddrrss,, aapp))
+     XXDDRR **xxddrrss;;
+     ssttrruucctt ooppaaqquuee__aauutthh **aapp;;
+
+          Used for describing RPC messages, externally.  This
+          routine is useful for users who wish to generate RPC-
+          style messages without using the RPC package.
+
+     xxddrr__ppmmaapp((xxddrrss,, rreeggss))
+     XXDDRR **xxddrrss;;
+     ssttrruucctt ppmmaapp **rreeggss;;
+
+          Used for describing parameters to various ppoorrttmmaapp pro-
+          cedures, externally.  This routine is useful for users
+          who wish to generate these parameters without using the
+          ppmmaapp interface.
+
+     xxddrr__ppmmaapplliisstt((xxddrrss,, rrpp))
+     XXDDRR **xxddrrss;;
+     ssttrruucctt ppmmaapplliisstt ****rrpp;;
+
+          Used for describing a list of port mappings, exter-
+          nally.  This routine is useful for users who wish to
+          generate these parameters without using the ppmmaapp inter-
+          face.
+
+     xxddrr__rreejjeecctteedd__rreeppllyy((xxddrrss,, rrrr))
+     XXDDRR **xxddrrss;;
+     ssttrruucctt rreejjeecctteedd__rreeppllyy **rrrr;;
+
+          Used for describing RPC messages, externally.  This
+          routine is useful for users who wish to generate RPC-
+          style messages without using the RPC package.
+
+     xxddrr__rreeppllyymmssgg((xxddrrss,, rrmmssgg))
+     XXDDRR **xxddrrss;;
+     ssttrruucctt rrppcc__mmssgg **rrmmssgg;;
+
+          Used for describing RPC messages, externally.  This
+          routine is useful for users who wish to generate RPC
+          style messages without using the RPC package.
+
+     vvooiidd
+     xxpprrtt__rreeggiisstteerr((xxpprrtt))
+     SSVVCCXXPPRRTT **xxpprrtt;;
+
+          After RPC service transport handles are created, they
+          should register themselves with the RPC service
+
+
+
+Sprite v1.0              3 November 1987                       14
+
+
+
+
+
+
+RPC                   C Library Procedures                    RPC
+
+
+
+          package.  This routine modifies the global variable
+          ssvvcc__ffddss.  Service implementors usually don't need this
+          routine.
+
+     vvooiidd
+     xxpprrtt__uunnrreeggiisstteerr((xxpprrtt))
+     SSVVCCXXPPRRTT **xxpprrtt;;
+
+          Before an RPC service transport handle is destroyed, it
+          should unregister itself with the RPC service package.
+          This routine modifies the global variable ssvvcc__ffddss.
+          Service implementors usually don't need this routine.
+
+SSEEEE AALLSSOO
+     XXDDRR(3N)
+     The following manuals:
+          _R_e_m_o_t_e _P_r_o_c_e_d_u_r_e _C_a_l_l_s: _P_r_o_t_o_c_o_l _S_p_e_c_i_f_i_c_a_t_i_o_n
+          _R_e_m_o_t_e _P_r_o_c_e_d_u_r_e _C_a_l_l _P_r_o_g_r_a_m_m_i_n_g _G_u_i_d_e
+          _r_p_c_g_e_n _P_r_o_g_r_a_m_m_i_n_g _G_u_i_d_e
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0              3 November 1987                       15
+
+
+

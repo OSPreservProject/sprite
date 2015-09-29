@@ -1,0 +1,557 @@
+head     1.11;
+branch   ;
+access   ;
+symbols  ;
+locks    jhh:1.11; strict;
+comment  @ * @;
+
+
+1.11
+date     90.01.24.07.46.05;  author douglis;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     89.11.28.15.50.43;  author douglis;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     89.06.19.14.33.33;  author jhh;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     89.05.21.16.49.06;  author jhh;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.09.26.11.26.43;  author nelson;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.08.16.11.27.44;  author nelson;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.08.16.11.03.56;  author nelson;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     87.10.21.12.28.19;  author nelson;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     87.09.15.19.55.40;  author nelson;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     87.04.26.21.46.25;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     87.02.18.14.03.40;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Program to shutdown and possibly reboot the system.
+@
+
+
+1.11
+log
+@do local wall msg and wait a bit, by default.
+@
+text
+@/* 
+ * shutdown.c --
+ *
+ *	Program to shutdown the operating system.
+ *
+ * Copyright (C) 1988 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/cmds/shutdown/RCS/shutdown.c,v 1.10 89/11/28 15:50:43 douglis Exp Locker: douglis $ SP RITE (Berkeley)";
+#endif not lint
+
+#include "sys.h"
+#include "option.h"
+#include <stdio.h>
+#include <sys/file.h>
+#include <errno.h>
+
+#define FASTBOOT "/local/fastboot"
+
+/*
+ * Options.
+ */
+static int	halt = 0;		/* Non-zero means halt. */
+static int	dontSyncDisks = 0;	/* Non-zero means don't sync the disks
+					 * when shutting down the system. */
+static int	reboot = 0;		/* Non-zero means reboot. */
+static int	debug = 0;		/* Non-zero means enter the debugger. */
+static int	fastBoot = 0;		/* Non-zero means don't check the disks
+					 * on reboot. */
+static int	quickBoot = 0;		/* Whether not to do wall. */
+static int	sleepTime = 30;		/* Number of seconds to sleep after
+					 * wall. */
+static int	singleUser = 0;		/* Non-zero means reboot single user. */
+static int	client	= 0;		/* Non-zero means reboot fileserver
+					 * without using /boot on local disk. */
+static int	rootcmds = 0;		/* Non-zero means run rootcmds. */
+static int	debugShutdown = 0;	/* Non-zero means don't really
+					 * shut down. */
+/*
+ * String to use when rebooting the system.
+ */
+char		nullString[] = "";
+char		*rebootString = nullString;
+char		buffer[100];
+
+/*
+ * Flags to command-line options:
+ */
+Option optionArray[] = {
+    {OPT_TRUE, "h", (Address) &halt, "Halt (This is the default)"},
+    {OPT_TRUE, "r", (Address) &reboot, "Reboot"},
+    {OPT_STRING, "R", (Address) &rebootString, "String to pass to boot prom (implies -r)"},
+    {OPT_TRUE, "d", (Address) &debug, "Enter the debugger"},
+    {OPT_TRUE, "f", (Address) &fastBoot,
+	     "Don't check disk consistency upon reboot (reboot if no other options.)"},
+    {OPT_TRUE, "w", (Address) &dontSyncDisks, "Dont write back the cache (Default is to write it back)"},
+    {OPT_TRUE, "s", (Address) &singleUser, "Reboot single user mode"},
+    {OPT_TRUE, "c", (Address) &client, 
+	"Reboot fileserver as a client (don't use /boot on local disk)"},
+    {OPT_TRUE, "x", (Address) &rootcmds, "Run rootcmds before diskcmds"},
+    {OPT_TRUE, "q", (Address) &quickBoot, "Don't do a wall, and wait, before rebooting"},
+    {OPT_INT, "S", (Address) &sleepTime, "Number of seconds to wait after wall"},
+    {OPT_TRUE, "D", (Address) &debugShutdown, "Don't actually shut down"},
+};
+int numOptions = sizeof(optionArray) / sizeof(Option);
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	The main program for shutdown.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints information on standard output.
+ *
+ *----------------------------------------------------------------------
+ */
+main(argc, argv)
+    int argc;
+    char *argv[];
+{
+    int	flags;
+
+    (void) Opt_Parse(argc, argv, optionArray, numOptions, OPT_ALLOW_CLUSTERING);
+    if (!quickBoot) {
+	char *args[3];
+	int fd[2];
+	int pid;
+	
+	sprintf(buffer, "system shutting down in %d seconds\n", sleepTime);
+	if (pipe(fd) < 0) {
+	    perror("pipe");
+	    exit(1);
+	}
+	if (write(fd[1], buffer, strlen(buffer) + 1) < 0) {
+	    perror("write");
+	    exit(1);
+	}
+	close(fd[1]);
+	pid = fork();
+	if (pid < 0) {
+	    perror("fork");
+	    exit(1);
+	}
+	if (pid == 0) {
+	    args[0] = "wall";
+	    args[1] = "-l";
+	    args[2] = 0;
+	    if (dup2(fd[0], 0) < 0) {
+		perror("dup2");
+		exit(0);
+	    }
+	    execv("/sprite/cmds/wall", args);
+	    perror("execv");
+	} else {
+	    wait(0);
+	    sleep(sleepTime);
+	}
+    }
+    strncpy(buffer, rebootString, 100);
+    if (strlen(rebootString) > 0) {
+	reboot = 1;
+    }
+    if (dontSyncDisks) {
+	flags = 0;
+    } else {
+	flags = SYS_WRITE_BACK;
+    }
+    if (fastBoot) {
+	char	str[80];
+	int	fd;
+
+	fd = open(FASTBOOT, O_CREAT, 0777);
+	if (fd < 0) {
+	    if (errno != ENOENT) {
+		sprintf(str, "Couldn't open %s", FASTBOOT);
+		perror(str);
+		exit(1);
+	    }
+	}
+
+	strcat(buffer, " -f");
+	if (!halt && !debug) {
+	    reboot = 1;
+	}
+    }
+    if (singleUser) {
+	strcat(buffer, " -s");
+	if (!halt && !debug) {
+	    reboot = 1;
+	}
+    }
+    if (client) {
+	strcat(buffer, " -c");
+	if (!halt && !debug) {
+	    reboot = 1;
+	}
+    }
+    if (rootcmds) {
+	strcat(buffer, " -x");
+	if (!halt && !debug) {
+	    reboot = 1;
+	}
+    }
+    if (debugShutdown) {
+	fprintf(stderr, "Would call Sys_Shutdown(%s) here.\n", reboot ? buffer : "");
+    } else if (debug) {
+	Sys_Shutdown(flags | SYS_KILL_PROCESSES | SYS_DEBUG, NULL);
+    } else if (reboot) { 
+	Sys_Shutdown(flags | SYS_KILL_PROCESSES | SYS_REBOOT, buffer);
+    } else {
+	Sys_Shutdown(flags | SYS_KILL_PROCESSES | SYS_HALT, NULL);
+    }
+}
+@
+
+
+1.10
+log
+@added -q -S options, wall call
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/cmds/shutdown/RCS/shutdown.c,v 1.9 89/06/19 14:33:33 jhh Exp Locker: douglis $ SP RITE (Berkeley)";
+d92 35
+a130 6
+    if (!quickBoot) {
+	sprintf(buffer, "echo system shutting down in %d seconds|wall -l",
+		sleepTime);
+	system(buffer);
+	sleep(sleepTime);
+    }
+d173 1
+a173 1
+	fprintf(stderr, "Would call Sys_Shutdown here.\n");
+@
+
+
+1.9
+log
+@Added -x and -c options
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /a/newcmds/shutdown/RCS/shutdown.c,v 1.8 89/05/21 16:49:06 jhh Exp Locker: jhh $ SP RITE (Berkeley)";
+d32 3
+d39 2
+d46 1
+a46 1
+char		rebootBuffer[100];
+d63 3
+d91 2
+a92 2
+    (void) Opt_Parse(argc, argv, optionArray, numOptions, 0);
+    strncpy(rebootBuffer, rebootString, 100);
+d96 6
+d120 1
+a120 1
+	strcat(rebootBuffer, " -f");
+d126 1
+a126 1
+	strcat(rebootBuffer, " -s");
+d132 1
+a132 1
+	strcat(rebootBuffer, " -c");
+d138 1
+a138 1
+	strcat(rebootBuffer, " -x");
+d143 3
+a145 1
+    if (debug) {
+d148 1
+a148 1
+	Sys_Shutdown(flags | SYS_KILL_PROCESSES | SYS_REBOOT, rebootBuffer);
+@
+
+
+1.8
+log
+@added -s and new handling of -f flag
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: shutdown.c,v 1.7 88/09/26 11:26:43 nelson Exp $ SP RITE (Berkeley)";
+d32 4
+a35 1
+static int	singleUser = 0;		/* Non-zero means reboot single user */
+d54 4
+a57 1
+    {OPT_TRUE, "s", (Address) &singleUser, "Reboot single user mode."},
+d82 2
+a83 2
+    
+    (void)Opt_Parse(argc, argv, optionArray, numOptions, 0);
+d94 12
+d113 12
+@
+
+
+1.7
+log
+@Differentiates between a permission problem and a file bad directory
+problem when trying to open /fastboot
+@
+text
+@d11 1
+a11 2
+static char rcsid[] = "$Header: shutdown.c,v 1.6 88/08/16 11:27:44 nelson Exp $ SP
+RITE (Berkeley)";
+d32 1
+d38 1
+d51 1
+d78 1
+d88 3
+a90 10
+	char	str[80];
+	int	fd;
+
+	fd = open(FASTBOOT, O_CREAT, 0777);
+	if (fd < 0) {
+	    if (errno != ENOENT) {
+		sprintf(str, "Couldn't open %s", FASTBOOT);
+		perror(str);
+		exit(1);
+	    }
+d92 3
+a98 1
+
+d102 1
+a102 1
+	Sys_Shutdown(flags | SYS_KILL_PROCESSES | SYS_REBOOT, rebootString);
+@
+
+
+1.6
+log
+@Removed the -s option and changed -S to be -w.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: shutdown.c,v 1.5 88/08/16 11:03:56 nelson Exp $ SP
+d19 1
+d90 5
+a94 3
+	    sprintf(str, "Couldn't open %s", FASTBOOT);
+	    perror(str);
+	    exit(1);
+@
+
+
+1.5
+log
+@Changed to halt by default.  Have to use the sync call now just to sync
+disk and not halt.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmstat.c,v 1.3 88/08/15 15:53:19 nelson Exp $ SP
+a42 1
+    {OPT_TRUE, "S", (Address) &dontSyncDisks, "Dont sync the disks (Default is to sync the disks)"},
+d48 1
+@
+
+
+1.4
+log
+@Can have not sync disks.  Useful for when rebooting.
+@
+text
+@d1 14
+a14 1
+#include "sprite.h"
+a15 1
+#include "fs.h"
+d17 2
+d22 15
+a36 7
+static Boolean dontSyncDisks = FALSE;
+static Boolean reboot = FALSE;
+static Boolean halt = FALSE;
+static Boolean debug = FALSE;
+static Boolean fastBoot = FALSE;
+char	nullString[] = "";
+char	*rebootString = nullString;
+d38 3
+d42 7
+a48 7
+    {OPT_TRUE, 'S', (Address) &dontSyncDisks, "Dont sync the disks (Default is to sync the disks)\n"},
+    {OPT_TRUE, 'r', (Address) &reboot, "Reboot"},
+    {OPT_STRING, 'R', (Address) &rebootString, "String to pass to boot prom (implies -r)"},
+    {OPT_TRUE, 'h', (Address) &halt, "Halt"},
+    {OPT_TRUE, 'd', (Address) &debug, "Enter the debugger"},
+    {OPT_TRUE, 'f', (Address) &fastBoot,
+	     "Don't check disk consistency upon reboot (implies \"-h\" option if none other set)"},
+d52 16
+a71 2
+    ReturnStatus status;
+    int streamID;
+d74 3
+a76 3
+    (void) Opt_Parse(&argc, argv, numOptions, optionArray);
+    if (String_Length(rebootString) > 0) {
+	reboot = TRUE;
+d78 3
+a80 1
+    if (!dontSyncDisks) {
+a81 2
+    } else {
+	flags = 0;
+d84 8
+a91 10
+	status = Fs_Open(FASTBOOT, FS_CREATE, 0777, &streamID);
+	if (status == SUCCESS) {
+	    status = Fs_Close(streamID);
+	    if (status != SUCCESS) {
+		Stat_PrintMsg(status, "Error in Fs_Close");
+		Proc_Exit(status);
+	    }
+	} else {
+	    Stat_PrintMsg(status, "Shutdown: Fs_Open");
+	    Proc_Exit(status);
+d93 2
+a94 2
+	if (! (debug || reboot || halt)) {
+	    halt = TRUE;
+d97 1
+a97 1
+	
+d102 1
+a102 1
+    } else if (halt) { 
+a103 2
+    } else {
+	Sys_Shutdown(flags, NULL);
+@
+
+
+1.3
+log
+@Made -R => -r.
+@
+text
+@d8 1
+a8 1
+static Boolean syncDisks = FALSE;
+d17 2
+a18 2
+    {OPT_TRUE, 's', (Address) &syncDisks, "Sync the disks and continue"},
+    {OPT_TRUE, 'r', (Address) &reboot, "Sync the disks and reboot"},
+d20 2
+a21 2
+    {OPT_TRUE, 'h', (Address) &halt, "Sync the disks and halt"},
+    {OPT_TRUE, 'd', (Address) &debug, "Sync the disks and enter the debugger"},
+d23 1
+a23 1
+	     "Don't check disk consistency upon reboot (implies \"-h\" option, only because \"-r\" doesn't work)"},
+d33 1
+d39 5
+d62 1
+a62 1
+	Sys_Shutdown(SYS_KILL_PROCESSES | SYS_DEBUG, NULL);
+d64 1
+a64 1
+	Sys_Shutdown(SYS_KILL_PROCESSES | SYS_REBOOT, rebootString);
+d66 1
+a66 1
+	Sys_Shutdown(SYS_KILL_PROCESSES | SYS_HALT, NULL);
+d68 1
+a68 1
+	Sys_Shutdown(0, NULL);
+@
+
+
+1.2
+log
+@Added fastboot.
+@
+text
+@d13 2
+d19 1
+d35 3
+d47 2
+a48 1
+	    Stat_PrintMsg(status, "Warning: Fs_Open");
+d56 1
+a56 1
+	Sys_Shutdown(SYS_KILL_PROCESSES | SYS_DEBUG);
+d58 1
+a58 1
+	Sys_Shutdown(SYS_KILL_PROCESSES | SYS_REBOOT);
+d60 1
+a60 1
+	Sys_Shutdown(SYS_KILL_PROCESSES | SYS_HALT);
+d62 1
+a62 1
+	Sys_Shutdown(0);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d3 1
+d6 2
+d12 1
+d19 2
+d28 3
+d32 16
+@

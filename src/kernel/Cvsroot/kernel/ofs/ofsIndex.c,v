@@ -1,0 +1,1450 @@
+head     9.7;
+branch   ;
+access   ;
+symbols  ds3100:9.7 sun3:9.7 sun4nw:9.6 symm:9.6 spur:9.6 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.7
+date     92.05.07.17.15.03;  author kupfer;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     91.09.10.18.41.49;  author rab;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.12.11.01.02.14;  author mgbaker;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.12.11.00.50.26;  author mgbaker;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.10.08.16.12.59;  author mendel;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.02.13.16.49.44;  author brent;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.12.14.13.10.54;  author brent;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.05.07;  author douglis;  state Stable;
+branches ;
+next     8.3;
+
+8.3
+date     89.08.21.15.25.17;  author mendel;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.06.02.12.58.11;  author jhh;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.03.03.08.14.24;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.19.37;  author douglis;  state Stable;
+branches ;
+next     7.0;
+
+7.0
+date     88.11.11.15.31.22;  author brent;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.11.02.09.37.33;  author douglis;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.10.11.12.16.11;  author mlgray;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.09.14.11.21.58;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.15.52;  author brent;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.04.10.33.07;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Block indexing module
+@
+
+
+9.7
+log
+@Add debug printfs to track down bogus "disk full" messages.
+@
+text
+@/* 
+ * ofsIndex.c --
+ *
+ *	Routines to allow moving through a files block pointers.  The method
+ *	of using these routines is the following:
+ *
+ *	    1) Call OfsGetFirstIndex to get the first block.
+ *	    2) Call OfsGetNextIndex to get subsequent blocks.
+ *	    3) Call OfsEndIndex when finished.
+ *
+ *	There are flags to OfsGetFirstIndex that allow indirect blocks
+ *	to be deleted and allocated as appropriate.
+ *
+ *	The data structure operated on is the disk map kept in the disk
+ *	file descriptor (Fsdm_FileDescriptor).  This has 10 direct block pointers,
+ *	then a singly indirect block full of direct block pointers,
+ *	then a doubly indirect block full of singly indirect pointers.
+ *	The triple indirect block pointer is not implemented, limiting
+ *	the file size to 40K + 4Meg + 4Gigabytes.
+ *
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/ofs/ofsIndex.c,v 9.6 91/09/10 18:41:49 rab Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsNameOps.h>
+#include <fsio.h>
+#include <fslcl.h>
+#include <fscache.h>
+#include <fsStat.h>
+#include <spriteTime.h>
+#include <fsdm.h>
+#include <ofs.h>
+
+static ReturnStatus MakePtrAccessible _ARGS_((Fsio_FileIOHandle *handlePtr,
+		 OfsBlockIndexInfo *indexInfoPtr));
+static ReturnStatus FetchIndirectBlock _ARGS_((int indBlockNum,
+		Fsio_FileIOHandle *handlePtr, 
+		OfsBlockIndexInfo *indexInfoPtr, 
+		int *blockAddrPtr, int cacheBlockNum));
+static void FreeIndirectBlock _ARGS_((int indBlockNum, 
+		Fsio_FileIOHandle *handlePtr, OfsBlockIndexInfo *indexInfoPtr,
+		int *blockAddrPtr));
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * OfsGetFirstIndex --
+ *
+ *	Initialize the index structure.  This will set up the index info
+ *	structure so that it contains a pointer to the desired block pointer.
+ *
+ * Results:
+ *	A status indicating whether there was sufficient space to allocate
+ *	indirect blocks.
+ *
+ * Side effects:
+ *	The index structure is initialized.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+OfsGetFirstIndex(ofsPtr, handlePtr, blockNum, indexInfoPtr, flags)
+    Ofs_Domain		      *ofsPtr;	     /* Domain of file. */
+    Fsio_FileIOHandle	      *handlePtr;    /* Handle for file that are 
+					      * indexing. */
+    int			      blockNum;      /* Where to start indexing. */
+    register OfsBlockIndexInfo *indexInfoPtr; /* Index structure to initialize.*/
+    int			      flags;	     /* OFS_ALLOC_INDIRECT_BLOCKS,
+						OFS_DELETE_INDIRECT_BLOCKS,
+						OFS_DELETE_EVERYTHING,
+						FSCACHE_DONT_BLOCK */
+{
+    register Fsdm_FileDescriptor 	*descPtr;
+    int			      	indirectBlock;
+    ReturnStatus		status = SUCCESS;
+
+    indexInfoPtr->ofsPtr = ofsPtr,
+
+    descPtr = handlePtr->descPtr;
+    indexInfoPtr->lastDiskBlock = FSDM_NIL_INDEX;
+    indexInfoPtr->indInfo[0].blockPtr = (Fscache_Block *) NIL;
+    indexInfoPtr->indInfo[0].deleteBlock = 0;
+    indexInfoPtr->indInfo[1].blockPtr = (Fscache_Block *) NIL;
+    indexInfoPtr->indInfo[1].deleteBlock = 0;
+    indexInfoPtr->flags = flags;
+    indexInfoPtr->blockNum = blockNum;
+
+    if (blockNum < FSDM_NUM_DIRECT_BLOCKS) {
+	/*
+	 * This is a direct block.
+	 */
+	indexInfoPtr->indexType = OFS_DIRECT;
+	indexInfoPtr->directIndex = blockNum;
+	indexInfoPtr->blockAddrPtr = &(descPtr->direct[blockNum]);
+	return(SUCCESS);
+    }
+
+    /*
+     * Is an indirect block.
+     */
+
+    blockNum -= FSDM_NUM_DIRECT_BLOCKS;
+    indirectBlock = blockNum / FSDM_INDICES_PER_BLOCK;
+    if (indirectBlock == 0) {
+	/*
+	 * This is a singly indirect block.
+	 */
+	indexInfoPtr->indexType = OFS_INDIRECT;
+	indexInfoPtr->indInfo[0].index = blockNum;
+	if (flags & OFS_DELETE_EVERYTHING) {
+	    indexInfoPtr->indInfo[0].deleteBlock = FSCACHE_DELETE_BLOCK;
+	}
+    } else if (indirectBlock < FSDM_INDICES_PER_BLOCK + 1) {
+	/*
+	 * This a doubly indirect block.
+	 */
+	indexInfoPtr->indexType = OFS_DBL_INDIRECT;
+	indexInfoPtr->indInfo[0].index = indirectBlock - 1;
+	indexInfoPtr->indInfo[1].index = 
+			    blockNum - indirectBlock * FSDM_INDICES_PER_BLOCK;
+	if (flags & OFS_DELETE_EVERYTHING) {
+	    indexInfoPtr->indInfo[0].deleteBlock = FSCACHE_DELETE_BLOCK;
+	    indexInfoPtr->indInfo[1].deleteBlock = FSCACHE_DELETE_BLOCK;
+	}
+    } else {
+	/*
+	 * Past the largest file size that we support.
+	 */
+	status = FS_INVALID_ARG;
+    }
+
+    /*
+     * Finish off by making the block pointer accessible.  This may include
+     * reading indirect blocks into the cache.
+     */
+
+    if (status == SUCCESS) {
+	status = MakePtrAccessible(handlePtr, indexInfoPtr);
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * OfsGetNextIndex --
+ *
+ *	Put the correct pointers in the index structure to access the
+ *	block after the current block.
+ *
+ * Results:
+ *	A status indicating whether there was sufficient space to allocate
+ *	indirect blocks if they were needed.
+ *
+ * Side effects:
+ *	The allocation structure is modified.  Indirect blocks may
+ *	be read into the cache.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+OfsGetNextIndex(handlePtr, indexInfoPtr, dirty)
+    Fsio_FileIOHandle	      *handlePtr;    /* Handle for file that is being
+						indexed. */
+    register OfsBlockIndexInfo *indexInfoPtr; /* Index structure to set up. */
+    Boolean		      dirty;	     /* True if allocated a new block
+						so dirtied block pointer. */
+{
+    Boolean			accessible = FALSE;
+    register Fsdm_FileDescriptor	*descPtr = handlePtr->descPtr;
+
+    indexInfoPtr->blockNum++;
+
+    if (indexInfoPtr->blockAddrPtr != (int *) NIL &&
+	*indexInfoPtr->blockAddrPtr != FSDM_NIL_INDEX) {
+	indexInfoPtr->lastDiskBlock = 
+			*(indexInfoPtr->blockAddrPtr) / FS_FRAGMENTS_PER_BLOCK;
+    } else {
+	indexInfoPtr->lastDiskBlock = FSDM_NIL_INDEX;
+    }
+
+    if (dirty) {
+	if (indexInfoPtr->indexType == OFS_INDIRECT) {
+	    indexInfoPtr->indInfo[0].blockDirty = TRUE;
+	} else if (indexInfoPtr->indexType == OFS_DBL_INDIRECT) {
+	    indexInfoPtr->indInfo[1].blockDirty = TRUE;
+	}
+    }
+    /*
+     * Determine whether we are now in direct, indirect or doubly indirect
+     * blocks.
+     */
+
+    switch (indexInfoPtr->indexType) {
+	case OFS_DIRECT:
+	    if (indexInfoPtr->blockNum < FSDM_NUM_DIRECT_BLOCKS) {
+		/*
+		 * Still in the direct blocks.
+		 */
+		indexInfoPtr->directIndex++;
+		indexInfoPtr->blockAddrPtr = 
+				&(descPtr->direct[indexInfoPtr->directIndex]);
+		accessible = TRUE;
+	    } else {
+		/*
+		 * Moved into indirect blocks.
+		 */
+		indexInfoPtr->indexType = OFS_INDIRECT;
+		indexInfoPtr->indInfo[0].index = 0;
+		if (indexInfoPtr->flags & OFS_DELETE_INDIRECT_BLOCKS) {
+		    indexInfoPtr->indInfo[0].deleteBlock = FSCACHE_DELETE_BLOCK;
+		}
+	    }
+	    break;
+	case OFS_INDIRECT:
+	    if (indexInfoPtr->blockNum < 
+			FSDM_NUM_DIRECT_BLOCKS + FSDM_INDICES_PER_BLOCK) {
+		/*
+		 * Still in singly indirect blocks.
+		 */
+		indexInfoPtr->indInfo[0].index++;
+		if (indexInfoPtr->indInfo[0].blockPtr != (Fscache_Block *) NIL) {
+		    indexInfoPtr->blockAddrPtr++;
+		}
+		accessible = TRUE;
+		break;
+	   } else {
+		/*
+		 * Moved into doubly indirect blocks.
+		 */
+		indexInfoPtr->indInfo[0].index = 0;
+		indexInfoPtr->indInfo[1].index = 0;
+		indexInfoPtr->indexType = OFS_DBL_INDIRECT;
+		/*
+		 * Free up the indirect pointer block.
+		 */
+		FreeIndirectBlock(0, handlePtr, indexInfoPtr, 
+		    &descPtr->indirect[0]);
+		if (indexInfoPtr->flags & OFS_DELETE_INDIRECT_BLOCKS) {
+		    indexInfoPtr->indInfo[0].deleteBlock = FSCACHE_DELETE_BLOCK;
+		    indexInfoPtr->indInfo[1].deleteBlock = FSCACHE_DELETE_BLOCK;
+		}
+	    }
+	    break;
+	case OFS_DBL_INDIRECT:
+	    indexInfoPtr->indInfo[1].index++;
+	    if (indexInfoPtr->indInfo[1].index == FSDM_INDICES_PER_BLOCK) {
+		indexInfoPtr->indInfo[0].index++;
+		indexInfoPtr->indInfo[1].index = 0;
+		/*
+		 * Free up the indirect pointer block.
+		 */
+		FreeIndirectBlock(1, handlePtr, indexInfoPtr,
+			(int *) (indexInfoPtr->indInfo[0].blockPtr->blockAddr +
+			sizeof(int) * (indexInfoPtr->indInfo[0].index - 1)));
+		if (indexInfoPtr->indInfo[0].index == FSDM_INDICES_PER_BLOCK) {
+		    /*
+		     * We are at the end of the doubly indirect block and the
+		     * caller wants us to go off of the end.  Free up the
+		     * indirect block and return an error.
+		     */
+		    FreeIndirectBlock(0, handlePtr, indexInfoPtr,
+			     &(descPtr->indirect[FSDM_DBL_INDIRECT]));
+		    return(FS_INVALID_ARG);
+		}
+		if (indexInfoPtr->flags & OFS_DELETE_INDIRECT_BLOCKS) {
+		    indexInfoPtr->indInfo[1].deleteBlock = FSCACHE_DELETE_BLOCK;
+		}
+	    } else {
+		if (indexInfoPtr->indInfo[1].blockPtr != 
+						(Fscache_Block *) NIL) {
+		    indexInfoPtr->blockAddrPtr++;
+		}
+		accessible = TRUE;
+	    }
+	    break;
+    }
+
+    /*
+     * Make the block pointers accessible if necessary.
+     */
+
+    if (!accessible) {
+	return(MakePtrAccessible(handlePtr, indexInfoPtr));
+    } else {
+	return(SUCCESS);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * OfsEndIndex --
+ *
+ *	Free up cache blocks locked for indexing.  This also frees
+ *	a reference to the domain acquired with OfsGetFirstIndex.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Cache blocks unlocked.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+OfsEndIndex(handlePtr, indexInfoPtr, dirty) 
+    Fsio_FileIOHandle	      *handlePtr;    /* Handle for file that is being
+						indexed. */
+    register OfsBlockIndexInfo *indexInfoPtr; /* Index structure to cleanup. */
+    Boolean		      dirty;	     /* True if allocated a new block
+						so dirtied block pointer. */
+{
+    register Fsdm_FileDescriptor	*descPtr = handlePtr->descPtr;
+
+    if (dirty) {
+	if (indexInfoPtr->indexType == FSDM_INDIRECT) {
+	    indexInfoPtr->indInfo[0].blockDirty = TRUE;
+	} else if (indexInfoPtr->indexType == FSDM_DBL_INDIRECT) {
+	    indexInfoPtr->indInfo[1].blockDirty = TRUE;
+	}
+    }
+	
+    /*
+     * Free up the second level indirect block and then the first level
+     * indirect block.
+     */
+
+    if (indexInfoPtr->indInfo[1].blockPtr != (Fscache_Block *) NIL) {
+	FreeIndirectBlock(1, handlePtr, indexInfoPtr,
+			(int *) (indexInfoPtr->indInfo[0].blockPtr->blockAddr +
+			     sizeof(int) * indexInfoPtr->indInfo[0].index));
+    }
+    FreeIndirectBlock(0, handlePtr, indexInfoPtr,
+		     &(descPtr->indirect[indexInfoPtr->indexType]));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MakePtrAccessible --
+ *
+ *	Make the block pointer in the file descriptor accessible.  This
+ *	may entail reading in indirect blocks and locking them down in the
+ *	cache.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Indirect blocks are locked down in the cache.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+MakePtrAccessible(handlePtr, indexInfoPtr)
+    register	Fsio_FileIOHandle	 *handlePtr;
+    register	OfsBlockIndexInfo 	*indexInfoPtr;
+{
+    register	Fsdm_FileDescriptor 	*descPtr;
+    register	int 			*blockAddrPtr;
+    ReturnStatus			status;
+    int					cacheBlockNum;
+
+    descPtr = handlePtr->descPtr;
+
+    if (indexInfoPtr->indexType == FSDM_INDIRECT) {
+	blockAddrPtr = &(descPtr->indirect[0]);
+	if (*blockAddrPtr == FSDM_NIL_INDEX && 
+	    !(indexInfoPtr->flags & OFS_ALLOC_INDIRECT_BLOCKS)) {
+	    indexInfoPtr->blockAddrPtr = (int *) NIL;
+	    return(SUCCESS);
+	}
+	cacheBlockNum = -1;
+    } else {
+	blockAddrPtr = &(descPtr->indirect[1]);
+	cacheBlockNum = -2;
+    }
+
+    /* 
+     * Lock the first level block into the cache.
+     */
+    status = FetchIndirectBlock(0, handlePtr, indexInfoPtr, blockAddrPtr,
+				cacheBlockNum);
+    if (status != SUCCESS) {
+	return(status);
+    }
+    blockAddrPtr = (int *) (indexInfoPtr->indInfo[0].blockPtr->blockAddr + 
+			    sizeof(int) * indexInfoPtr->indInfo[0].index);
+
+    if (indexInfoPtr->indexType == FSDM_INDIRECT) {
+	indexInfoPtr->blockAddrPtr = blockAddrPtr;
+	return(SUCCESS);
+    }
+
+    /* 
+     * Lock the second level block into the cache.
+     */
+    if (*blockAddrPtr == FSDM_NIL_INDEX &&
+	!(indexInfoPtr->flags & OFS_ALLOC_INDIRECT_BLOCKS)) {
+	indexInfoPtr->blockAddrPtr = (int *) NIL;
+	return(SUCCESS);
+    }
+
+    cacheBlockNum = 
+	    -(3 + indexInfoPtr->indInfo[0].index);
+    status = FetchIndirectBlock(1, handlePtr, indexInfoPtr, blockAddrPtr,
+				cacheBlockNum);
+    if (status == SUCCESS) {
+	indexInfoPtr->blockAddrPtr = 
+    		(int *) (indexInfoPtr->indInfo[1].blockPtr->blockAddr + 
+			 sizeof(int) * indexInfoPtr->indInfo[1].index);
+    } else {
+	FreeIndirectBlock(0, handlePtr, indexInfoPtr, &(descPtr->indirect[1]));
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FetchIndirectBlock --
+ *
+ *	Read the indirect block into the cache.  Called by MakePtrAccessible
+ *	to fetch both indirect and doubly-indirect blocks.
+ *
+ * Results:
+ *	Error if could not read in or allocate indirect block.
+ *
+ * Side effects:
+ *	Indirect block is locked down in the cache.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+FetchIndirectBlock(indBlockNum, handlePtr, indexInfoPtr, blockAddrPtr,
+		   cacheBlockNum)
+    int				indBlockNum;	/* 0 if first level, 1 if 
+						 * second level indirect 
+						 * block. */
+    Fsio_FileIOHandle		*handlePtr;	/* File to fetch indirect
+					  	 * block for. */
+    register OfsBlockIndexInfo 	*indexInfoPtr;  /* Indexing information for
+						 * this file. */
+    register int		*blockAddrPtr;	/* Disk block number. */
+    int				cacheBlockNum;	/* The block number by which
+						 * the cache knows this block.*/
+{
+    unsigned	char		*bitmapPtr;
+    int				blockNum;
+    Boolean			found;
+    ReturnStatus		status = SUCCESS;
+    register OfsIndirectInfo	*indInfoPtr;
+    register int		*intPtr;
+    Boolean			dontBlock;
+    extern void			printf(); /* DEBUG */
+
+    dontBlock = indexInfoPtr->flags & FSCACHE_DONT_BLOCK;
+    indInfoPtr = &(indexInfoPtr->indInfo[indBlockNum]);
+    if (indInfoPtr->blockPtr == (Fscache_Block *) NIL) {
+	if (*blockAddrPtr == FSDM_NIL_INDEX) {
+	    OfsBlockFind(handlePtr->hdr.fileID.minor, indexInfoPtr->ofsPtr, 
+			-1, TRUE, &blockNum, &bitmapPtr);
+	    if (blockNum == -1) {
+		printf("FetchIndirectBlock: no space on %s.\n",
+		       indexInfoPtr->ofsPtr->domainPtr->domainPrefix); /* DEBUG */
+		return(FS_NO_DISK_SPACE);
+	    }
+	    blockNum += indexInfoPtr->ofsPtr->headerPtr->dataOffset;
+	    *blockAddrPtr = blockNum * FS_FRAGMENTS_PER_BLOCK;
+	    handlePtr->descPtr->numKbytes += FS_FRAGMENTS_PER_BLOCK;
+	    Fscache_FetchBlock(&handlePtr->cacheInfo, cacheBlockNum,
+		FSCACHE_IND_BLOCK|dontBlock, &(indInfoPtr->blockPtr), &found);
+	    if (indInfoPtr->blockPtr == (Fscache_Block *)NIL) {
+		return(FS_WOULD_BLOCK);
+	    }
+	    if (found) {
+		/*
+		 * The block should not be in the cache since we are just
+		 * allocating it now.
+		 */
+		panic("Physical block already in cache.\n");
+	    }
+	    for (intPtr = (int *)indInfoPtr->blockPtr->blockAddr;
+		 (int)intPtr < (int)indInfoPtr->blockPtr->blockAddr + FS_BLOCK_SIZE;
+		 intPtr++) {
+		*intPtr = FSDM_NIL_INDEX;
+	    }
+	    indexInfoPtr->indInfo[0].blockDirty = TRUE;
+	    indexInfoPtr->indInfo[1].blockDirty = TRUE;
+	    Fscache_IODone(indInfoPtr->blockPtr);
+	} else {
+	    fs_Stats.blockCache.indBlockAccesses++;
+	    Fscache_FetchBlock(&handlePtr->cacheInfo, cacheBlockNum,
+		FSCACHE_IND_BLOCK|dontBlock, &(indInfoPtr->blockPtr), &found);
+	    if (indInfoPtr->blockPtr == (Fscache_Block *)NIL) {
+		return(FS_WOULD_BLOCK);
+	    }
+	    if (!found) {
+		status = OfsDeviceBlockIO(indexInfoPtr->ofsPtr, FS_READ,
+		       *blockAddrPtr, FS_FRAGMENTS_PER_BLOCK, 
+		       indInfoPtr->blockPtr->blockAddr);
+		if (status == SUCCESS) {
+		    fs_Stats.gen.physBytesRead += FS_BLOCK_SIZE;
+		}
+		Fscache_IODone(indInfoPtr->blockPtr);
+	    } else {
+		fs_Stats.blockCache.indBlockHits++;
+	    }
+	    indInfoPtr->blockDirty = FALSE;
+	}
+    }
+
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FreeIndirectBlock --
+ *
+ *	Remove the given block from the cache and, if appropriate, from disk.
+ *	This is called whenever OfsGetNextIndex or OfsEndIndex are 
+ *	finished with an indirect block that has previously been locked
+ *	into the cache by MakePtrAccessible.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Block may be freed.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+FreeIndirectBlock(indBlockNum, handlePtr, indexInfoPtr, blockAddrPtr)
+    int				indBlockNum;	/* Which indirect block to 
+						 * free.*/
+    Fsio_FileIOHandle		*handlePtr;	/* File to delete indirect
+						 * block from. */
+    register OfsBlockIndexInfo 	*indexInfoPtr; 	/* Index structure to use. */
+    int				*blockAddrPtr;	/* Pointer to block to free. */
+{
+    int				modTime;
+    int				indBlock;
+    register	OfsIndirectInfo	*indInfoPtr;
+
+    indInfoPtr = &indexInfoPtr->indInfo[indBlockNum];
+
+    if (indInfoPtr->blockPtr != (Fscache_Block *) NIL) {
+	if (indInfoPtr->blockDirty) {
+	    modTime = Fsutil_TimeInSeconds();
+	    if (!indInfoPtr->deleteBlock) {
+		fs_Stats.blockCache.indBlockWrites++;
+	    }
+	} else {
+	    modTime = 0;
+	}
+	Fscache_UnlockBlock(indInfoPtr->blockPtr, 
+	   (unsigned )modTime, -(*blockAddrPtr), FS_BLOCK_SIZE,
+	   indInfoPtr->deleteBlock);
+	if (indInfoPtr->deleteBlock) {
+	    indBlock = *blockAddrPtr / FS_FRAGMENTS_PER_BLOCK;
+	    OfsBlockFree(indexInfoPtr->ofsPtr,
+		    indBlock - indexInfoPtr->ofsPtr->headerPtr->dataOffset);
+	    *blockAddrPtr = FSDM_NIL_INDEX;
+	    handlePtr->descPtr->numKbytes -= FS_FRAGMENTS_PER_BLOCK;
+	}
+	indInfoPtr->blockPtr = (Fscache_Block *) NIL;
+    }
+}
+@
+
+
+9.6
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@d33 1
+a33 1
+static char rcsid[] = "$Header: /sprite/src/kernel/ofs/RCS/ofsIndex.c,v 9.5 90/12/11 01:02:14 mgbaker Exp Locker: rab $ SPRITE (Berkeley)";
+d478 1
+d487 2
+@
+
+
+9.5
+log
+@typos
+@
+text
+@d33 1
+a33 1
+static char rcsid[] = "$Header: /sprite/src/kernel/ofs/RCS/ofsIndex.c,v 9.4 90/12/11 00:50:26 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+a477 3
+#ifdef SOSP91
+    Boolean		isForeign = FALSE;	/* Due to migration? */
+#endif SOSP91
+a479 10
+#ifdef SOSP91
+    if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
+	if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
+		(proc_RunningProcesses[0]->genFlags &
+		(PROC_FOREIGN | PROC_MIGRATING))) {
+	    isForeign = TRUE;
+	}
+    }
+#endif SOSP91
+
+a512 5
+#ifdef SOSP91
+	    if (isForeign) {
+		fs_SospMigStats.blockCache.indBlockAccesses++;
+	    }
+#endif SOSP91
+a527 5
+#ifdef SOSP91
+		if (isForeign) {
+		    fs_SospMigStats.blockCache.indBlockHits++;
+		}
+#endif SOSP91
+a565 3
+#ifdef SOSP91
+    Boolean		isForeign = FALSE;	/* Due to migration? */
+#endif SOSP91
+a572 9
+#ifdef SOSP91
+		if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
+		    if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
+			    (proc_RunningProcesses[0]->genFlags &
+			    (PROC_FOREIGN | PROC_MIGRATING))) {
+			isForeign = TRUE;
+		    }
+		}
+#endif SOSP91
+a573 5
+#ifdef SOSP91
+		if (isForeign) {
+		    fs_SospMigStats.blockCache.indBlockWrites++;
+		}
+#endif SOSP91
+@
+
+
+9.4
+log
+@Sosp counters.
+@
+text
+@d33 1
+a33 1
+static char rcsid[] = "$Header: /sprite/src/kernel/ofs/RCS/ofsIndex.c,v 9.3 90/10/08 16:12:59 mendel Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d589 3
+d599 9
+@
+
+
+9.3
+log
+@Changed to ofsIndex.c.
+@
+text
+@d33 1
+a33 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsdm/RCS/fsIndex.c,v 9.2 90/02/13 16:49:44 brent Exp $ SPRITE (Berkeley)";
+d478 3
+d483 9
+d526 5
+d546 5
+d597 5
+@
+
+
+9.2
+log
+@Fixed MakePtrAccessible so it backs out right if it gets an
+error fetching the second indirect block.  Previously it
+would leave an extra reference to the block, hanging
+a subsequent deletion.
+@
+text
+@d2 1
+a2 1
+ * fsIndex.c --
+d7 3
+a9 3
+ *	    1) Call Fsdm_GetFirstIndex to get the first block.
+ *	    2) Call Fsdm_GetNextIndex to get subsequent blocks.
+ *	    3) Call Fsdm_EndIndex when finished.
+d11 1
+a11 1
+ *	There are flags to Fsdm_GetFirstIndex that allow indirect blocks
+d33 1
+a33 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsdm/RCS/fsIndex.c,v 9.1 89/12/14 13:10:54 brent Exp $ SPRITE (Berkeley)";
+d36 24
+a59 17
+#include "sprite.h"
+#include "fs.h"
+#include "fsutil.h"
+#include "fsNameOps.h"
+#include "fsio.h"
+#include "fslcl.h"
+#include "fscache.h"
+#include "fsStat.h"
+#include "spriteTime.h"
+#include "fsdm.h"
+#include "fsdmInt.h"
+
+static ReturnStatus	FetchIndirectBlock();
+static ReturnStatus	MakePtrAccessible();
+static void		FreeIndirectBlock();
+
+
+d63 1
+a63 1
+ * Fsdm_GetFirstIndex --
+d79 2
+a80 1
+Fsdm_GetFirstIndex(handlePtr, blockNum, indexInfoPtr, flags)
+d84 4
+a87 4
+    register Fsdm_BlockIndexInfo *indexInfoPtr; /* Index structure to initialize.*/
+    int			      flags;	     /* FSDM_ALLOC_INDIRECT_BLOCKS,
+						FSDM_DELETE_INDIRECT_BLOCKS,
+						FSDM_DELETE_EVERYTHING,
+d94 2
+a95 5
+    indexInfoPtr->domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major,
+					    FALSE);
+    if (indexInfoPtr->domainPtr == (Fsdm_Domain *)NIL) {
+	return(FS_DOMAIN_UNAVAILABLE);
+    }
+d109 1
+a109 1
+	indexInfoPtr->indexType = FSDM_DIRECT;
+d125 1
+a125 1
+	indexInfoPtr->indexType = FSDM_INDIRECT;
+d127 1
+a127 1
+	if (flags & FSDM_DELETE_EVERYTHING) {
+d134 1
+a134 1
+	indexInfoPtr->indexType = FSDM_DBL_INDIRECT;
+d138 1
+a138 1
+	if (flags & FSDM_DELETE_EVERYTHING) {
+a156 3
+    if (status != SUCCESS) {
+	Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
+    }
+d163 1
+a163 1
+ * Fsdm_GetNextIndex --
+d180 1
+a180 1
+Fsdm_GetNextIndex(handlePtr, indexInfoPtr, dirty)
+d183 1
+a183 1
+    register Fsdm_BlockIndexInfo *indexInfoPtr; /* Index structure to set up. */
+d201 1
+a201 1
+	if (indexInfoPtr->indexType == FSDM_INDIRECT) {
+d203 1
+a203 1
+	} else if (indexInfoPtr->indexType == FSDM_DBL_INDIRECT) {
+d213 1
+a213 1
+	case FSDM_DIRECT:
+d226 1
+a226 1
+		indexInfoPtr->indexType = FSDM_INDIRECT;
+d228 1
+a228 1
+		if (indexInfoPtr->flags & FSDM_DELETE_INDIRECT_BLOCKS) {
+d233 1
+a233 1
+	case FSDM_INDIRECT:
+d251 1
+a251 1
+		indexInfoPtr->indexType = FSDM_DBL_INDIRECT;
+d257 1
+a257 1
+		if (indexInfoPtr->flags & FSDM_DELETE_INDIRECT_BLOCKS) {
+d263 1
+a263 1
+	case FSDM_DBL_INDIRECT:
+d284 1
+a284 1
+		if (indexInfoPtr->flags & FSDM_DELETE_INDIRECT_BLOCKS) {
+d312 1
+a312 1
+ * Fsdm_EndIndex --
+d315 1
+a315 1
+ *	a reference to the domain acquired with Fsdm_GetFirstIndex.
+d327 1
+a327 1
+Fsdm_EndIndex(handlePtr, indexInfoPtr, dirty) 
+d330 1
+a330 1
+    register Fsdm_BlockIndexInfo *indexInfoPtr; /* Index structure to cleanup. */
+a355 1
+    Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
+d379 1
+a379 1
+    register	Fsdm_BlockIndexInfo 	*indexInfoPtr;
+d391 1
+a391 1
+	    !(indexInfoPtr->flags & FSDM_ALLOC_INDIRECT_BLOCKS)) {
+d421 1
+a421 1
+	!(indexInfoPtr->flags & FSDM_ALLOC_INDIRECT_BLOCKS)) {
+d465 1
+a465 1
+    register Fsdm_BlockIndexInfo 	*indexInfoPtr;  /* Indexing information for
+d475 1
+a475 1
+    register Fsdm_IndirectInfo	*indInfoPtr;
+d484 1
+a484 1
+	    FsdmBlockFind(handlePtr->hdr.fileID.minor, indexInfoPtr->domainPtr, 
+d489 1
+a489 1
+	    blockNum += indexInfoPtr->domainPtr->headerPtr->dataOffset;
+d520 1
+a520 2
+		status = Fsio_DeviceBlockIO(FS_READ,
+			&(indexInfoPtr->domainPtr->headerPtr->device), 
+d543 1
+a543 1
+ *	This is called whenever Fsdm_GetNextIndex or Fsdm_EndIndex are 
+d561 1
+a561 1
+    register Fsdm_BlockIndexInfo 	*indexInfoPtr; 	/* Index structure to use. */
+d566 1
+a566 1
+    register	Fsdm_IndirectInfo	*indInfoPtr;
+d572 1
+a572 1
+	    modTime = fsutil_TimeInSeconds;
+d584 2
+a585 2
+	    FsdmBlockFree(indexInfoPtr->domainPtr,
+		    indBlock - indexInfoPtr->domainPtr->headerPtr->dataOffset);
+@
+
+
+9.1
+log
+@Made Fsdm_GetFirstIndex be non-blocking, if desired.
+@
+text
+@d33 1
+a33 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsdm/RCS/fsIndex.c,v 8.3 89/08/21 15:25:17 mendel Exp $ SPRITE (Berkeley)";
+d84 1
+a84 1
+    ReturnStatus		status;
+d141 1
+a141 1
+	return(FS_INVALID_ARG);
+d149 3
+a151 1
+    status = MakePtrAccessible(handlePtr, indexInfoPtr);
+d433 2
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d33 1
+a33 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsdm/RCS/fsIndex.c,v 8.3 89/08/21 15:25:17 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d79 2
+a80 1
+						FSDM_DELETE_EVERYTHING */
+d472 1
+d474 2
+d488 4
+a491 1
+			FSCACHE_IND_BLOCK, &(indInfoPtr->blockPtr), &found);
+d510 4
+a513 1
+			FSCACHE_IND_BLOCK, &(indInfoPtr->blockPtr), &found);
+@
+
+
+8.3
+log
+@Break up fs into many modules.    
+@
+text
+@d33 1
+a33 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsIndex.c,v 8.2 89/06/02 12:58:11 jhh Exp $ SPRITE (Berkeley)";
+@
+
+
+8.2
+log
+@numKbytes field in inode now includes indirect blocks
+@
+text
+@d7 3
+a9 3
+ *	    1) Call FsGetFirstIndex to get the first block.
+ *	    2) Call FsGetNextIndex to get subsequent blocks.
+ *	    3) Call FsEndIndex when finished.
+d11 1
+a11 1
+ *	There are flags to FsGetFirstIndex that allow indirect blocks
+d15 1
+a15 1
+ *	file descriptor (FsFileDescriptor).  This has 10 direct block pointers,
+d33 1
+a33 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsIndex.c,v 8.1 89/03/03 08:14:24 brent Exp $ SPRITE (Berkeley)";
+d38 5
+a42 5
+#include "fsInt.h"
+#include "fsOpTable.h"
+#include "fsDevice.h"
+#include "fsLocalDomain.h"
+#include "fsBlockCache.h"
+d45 2
+d56 1
+a56 1
+ * FsGetFirstIndex --
+d72 2
+a73 2
+FsGetFirstIndex(handlePtr, blockNum, indexInfoPtr, flags)
+    FsLocalFileIOHandle	      *handlePtr;    /* Handle for file that are 
+d76 4
+a79 4
+    register FsBlockIndexInfo *indexInfoPtr; /* Index structure to initialize.*/
+    int			      flags;	     /* FS_ALLOC_INDIRECT_BLOCKS,
+						FS_DELETE_INDIRECT_BLOCKS,
+						FS_DELETE_EVERYTHING */
+d81 1
+a81 1
+    register FsFileDescriptor 	*descPtr;
+d85 1
+a85 1
+    indexInfoPtr->domainPtr = FsDomainFetch(handlePtr->hdr.fileID.major,
+d87 1
+a87 1
+    if (indexInfoPtr->domainPtr == (FsDomain *)NIL) {
+d91 2
+a92 2
+    indexInfoPtr->lastDiskBlock = FS_NIL_INDEX;
+    indexInfoPtr->indInfo[0].blockPtr = (FsCacheBlock *) NIL;
+d94 1
+a94 1
+    indexInfoPtr->indInfo[1].blockPtr = (FsCacheBlock *) NIL;
+d99 1
+a99 1
+    if (blockNum < FS_NUM_DIRECT_BLOCKS) {
+d103 1
+a103 1
+	indexInfoPtr->indexType = FS_DIRECT;
+d113 2
+a114 2
+    blockNum -= FS_NUM_DIRECT_BLOCKS;
+    indirectBlock = blockNum / FS_INDICES_PER_BLOCK;
+d119 1
+a119 1
+	indexInfoPtr->indexType = FS_INDIRECT;
+d121 2
+a122 2
+	if (flags & FS_DELETE_EVERYTHING) {
+	    indexInfoPtr->indInfo[0].deleteBlock = FS_DELETE_BLOCK;
+d124 1
+a124 1
+    } else if (indirectBlock < FS_INDICES_PER_BLOCK + 1) {
+d128 1
+a128 1
+	indexInfoPtr->indexType = FS_DBL_INDIRECT;
+d131 4
+a134 4
+			    blockNum - indirectBlock * FS_INDICES_PER_BLOCK;
+	if (flags & FS_DELETE_EVERYTHING) {
+	    indexInfoPtr->indInfo[0].deleteBlock = FS_DELETE_BLOCK;
+	    indexInfoPtr->indInfo[1].deleteBlock = FS_DELETE_BLOCK;
+d150 1
+a150 1
+	FsDomainRelease(handlePtr->hdr.fileID.major);
+d158 1
+a158 1
+ * FsGetNextIndex --
+d175 2
+a176 2
+FsGetNextIndex(handlePtr, indexInfoPtr, dirty)
+    FsLocalFileIOHandle	      *handlePtr;    /* Handle for file that is being
+d178 1
+a178 1
+    register FsBlockIndexInfo *indexInfoPtr; /* Index structure to set up. */
+d183 1
+a183 1
+    register FsFileDescriptor	*descPtr = handlePtr->descPtr;
+d188 1
+a188 1
+	*indexInfoPtr->blockAddrPtr != FS_NIL_INDEX) {
+d192 1
+a192 1
+	indexInfoPtr->lastDiskBlock = FS_NIL_INDEX;
+d196 1
+a196 1
+	if (indexInfoPtr->indexType == FS_INDIRECT) {
+d198 1
+a198 1
+	} else if (indexInfoPtr->indexType == FS_DBL_INDIRECT) {
+d208 2
+a209 2
+	case FS_DIRECT:
+	    if (indexInfoPtr->blockNum < FS_NUM_DIRECT_BLOCKS) {
+d221 1
+a221 1
+		indexInfoPtr->indexType = FS_INDIRECT;
+d223 2
+a224 2
+		if (indexInfoPtr->flags & FS_DELETE_INDIRECT_BLOCKS) {
+		    indexInfoPtr->indInfo[0].deleteBlock = FS_DELETE_BLOCK;
+d228 1
+a228 1
+	case FS_INDIRECT:
+d230 1
+a230 1
+			FS_NUM_DIRECT_BLOCKS + FS_INDICES_PER_BLOCK) {
+d235 1
+a235 1
+		if (indexInfoPtr->indInfo[0].blockPtr != (FsCacheBlock *) NIL) {
+d246 1
+a246 1
+		indexInfoPtr->indexType = FS_DBL_INDIRECT;
+d252 3
+a254 3
+		if (indexInfoPtr->flags & FS_DELETE_INDIRECT_BLOCKS) {
+		    indexInfoPtr->indInfo[0].deleteBlock = FS_DELETE_BLOCK;
+		    indexInfoPtr->indInfo[1].deleteBlock = FS_DELETE_BLOCK;
+d258 1
+a258 1
+	case FS_DBL_INDIRECT:
+d260 1
+a260 1
+	    if (indexInfoPtr->indInfo[1].index == FS_INDICES_PER_BLOCK) {
+d269 1
+a269 1
+		if (indexInfoPtr->indInfo[0].index == FS_INDICES_PER_BLOCK) {
+d276 1
+a276 1
+			     &(descPtr->indirect[FS_DBL_INDIRECT]));
+d279 2
+a280 2
+		if (indexInfoPtr->flags & FS_DELETE_INDIRECT_BLOCKS) {
+		    indexInfoPtr->indInfo[1].deleteBlock = FS_DELETE_BLOCK;
+d284 1
+a284 1
+						(FsCacheBlock *) NIL) {
+d307 1
+a307 1
+ * FsEndIndex --
+d310 1
+a310 1
+ *	a reference to the domain acquired with FsGetFirstIndex.
+d322 2
+a323 2
+FsEndIndex(handlePtr, indexInfoPtr, dirty) 
+    FsLocalFileIOHandle	      *handlePtr;    /* Handle for file that is being
+d325 1
+a325 1
+    register FsBlockIndexInfo *indexInfoPtr; /* Index structure to cleanup. */
+d329 1
+a329 1
+    register FsFileDescriptor	*descPtr = handlePtr->descPtr;
+d332 1
+a332 1
+	if (indexInfoPtr->indexType == FS_INDIRECT) {
+d334 1
+a334 1
+	} else if (indexInfoPtr->indexType == FS_DBL_INDIRECT) {
+d344 1
+a344 1
+    if (indexInfoPtr->indInfo[1].blockPtr != (FsCacheBlock *) NIL) {
+d351 1
+a351 1
+    FsDomainRelease(handlePtr->hdr.fileID.major);
+d374 2
+a375 2
+    register	FsLocalFileIOHandle	 *handlePtr;
+    register	FsBlockIndexInfo 	*indexInfoPtr;
+d377 1
+a377 1
+    register	FsFileDescriptor 	*descPtr;
+d384 1
+a384 1
+    if (indexInfoPtr->indexType == FS_INDIRECT) {
+d386 2
+a387 2
+	if (*blockAddrPtr == FS_NIL_INDEX && 
+	    !(indexInfoPtr->flags & FS_ALLOC_INDIRECT_BLOCKS)) {
+d408 1
+a408 1
+    if (indexInfoPtr->indexType == FS_INDIRECT) {
+d416 2
+a417 2
+    if (*blockAddrPtr == FS_NIL_INDEX &&
+	!(indexInfoPtr->flags & FS_ALLOC_INDIRECT_BLOCKS)) {
+d457 1
+a457 1
+    FsLocalFileIOHandle		*handlePtr;	/* File to fetch indirect
+d459 1
+a459 1
+    register FsBlockIndexInfo 	*indexInfoPtr;  /* Indexing information for
+d469 1
+a469 1
+    register FsIndirectInfo	*indInfoPtr;
+d473 3
+a475 3
+    if (indInfoPtr->blockPtr == (FsCacheBlock *) NIL) {
+	if (*blockAddrPtr == FS_NIL_INDEX) {
+	    FsFindBlock(handlePtr->hdr.fileID.minor, indexInfoPtr->domainPtr, 
+d483 2
+a484 2
+	    FsCacheFetchBlock(&handlePtr->cacheInfo, cacheBlockNum,
+			FS_IND_CACHE_BLOCK, &(indInfoPtr->blockPtr), &found);
+d495 1
+a495 1
+		*intPtr = FS_NIL_INDEX;
+d499 1
+a499 1
+	    FsCacheIODone(indInfoPtr->blockPtr);
+d501 3
+a503 3
+	    fsStats.blockCache.indBlockAccesses++;
+	    FsCacheFetchBlock(&handlePtr->cacheInfo, cacheBlockNum,
+			FS_IND_CACHE_BLOCK, &(indInfoPtr->blockPtr), &found);
+d505 1
+a505 1
+		status = FsDeviceBlockIO(FS_READ,
+d510 1
+a510 1
+		    fsStats.gen.physBytesRead += FS_BLOCK_SIZE;
+d512 1
+a512 1
+		FsCacheIODone(indInfoPtr->blockPtr);
+d514 1
+a514 1
+		fsStats.blockCache.indBlockHits++;
+d529 1
+a529 1
+ *	This is called whenever FsGetNextIndex or FsEndIndex are 
+d545 1
+a545 1
+    FsLocalFileIOHandle		*handlePtr;	/* File to delete indirect
+d547 1
+a547 1
+    register FsBlockIndexInfo 	*indexInfoPtr; 	/* Index structure to use. */
+d552 1
+a552 1
+    register	FsIndirectInfo	*indInfoPtr;
+d556 1
+a556 1
+    if (indInfoPtr->blockPtr != (FsCacheBlock *) NIL) {
+d558 1
+a558 1
+	    modTime = fsTimeInSeconds;
+d560 1
+a560 1
+		fsStats.blockCache.indBlockWrites++;
+d565 1
+a565 1
+	FsCacheUnlockBlock(indInfoPtr->blockPtr, 
+d570 1
+a570 1
+	    FsFreeBlock(indexInfoPtr->domainPtr,
+d572 1
+a572 1
+	    *blockAddrPtr = FS_NIL_INDEX;
+d575 1
+a575 1
+	indInfoPtr->blockPtr = (FsCacheBlock *) NIL;
+@
+
+
+8.1
+log
+@Fixed static procedure declarations
+@
+text
+@d33 1
+a33 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsIndex.c,v 8.0 88/11/11 18:19:37 douglis Stable Locker: brent $ SPRITE (Berkeley)";
+d248 2
+a249 1
+		FreeIndirectBlock(0, indexInfoPtr, &descPtr->indirect[0]);
+d264 1
+a264 1
+		FreeIndirectBlock(1, indexInfoPtr,
+d273 1
+a273 1
+		    FreeIndirectBlock(0, indexInfoPtr,
+d343 1
+a343 1
+	FreeIndirectBlock(1, indexInfoPtr,
+d347 1
+a347 1
+    FreeIndirectBlock(0, indexInfoPtr,
+d480 1
+d540 1
+a540 1
+FreeIndirectBlock(indBlockNum, indexInfoPtr, blockAddrPtr)
+d543 2
+d571 1
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d33 1
+a33 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsIndex.c,v 7.0 88/11/11 15:31:22 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d46 3
+a48 3
+ReturnStatus	FetchIndirectBlock();
+ReturnStatus	MakePtrAccessible();
+void		FreeIndirectBlock();
+@
+
+
+7.0
+log
+@New version for conversion to new C library
+@
+text
+@d33 1
+a33 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsIndex.c,v 6.3 88/11/02 09:37:33 douglis Exp Locker: brent $ SPRITE (Berkeley)";
+@
+
+
+6.3
+log
+@added some missing statistics gathering assignments (physBytes*).
+@
+text
+@d33 1
+a33 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsIndex.c,v 6.2 88/10/11 12:16:11 mlgray Exp Locker: douglis $ SPRITE (Berkeley)";
+d467 1
+d486 1
+a486 1
+		Sys_Panic(SYS_FATAL, "Physical block already in cache.\n");
+d488 5
+a492 2
+	    Byte_Fill(FS_NIL_INDEX, FS_BLOCK_SIZE, 
+		      indInfoPtr->blockPtr->blockAddr);
+@
+
+
+6.2
+log
+@time -> spriteTime.h
+@
+text
+@d33 1
+a33 1
+static char rcsid[] = "$Header: fsIndex.c,v 6.1 88/09/14 11:21:58 brent Exp $ SPRITE (Berkeley)";
+d501 3
+@
+
+
+6.1
+log
+@Fixed MakePtrAccessible bug when it runs out of disk space
+allocating doubly indirect blocks
+@
+text
+@d33 1
+a33 1
+static char rcsid[] = "$Header: fsIndex.c,v 6.0 88/08/11 12:15:52 brent Stable $ SPRITE (Berkeley)";
+d44 1
+a44 1
+#include "time.h"
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d33 1
+a33 1
+static char rcsid[] = "$Header: fsIndex.c,v 1.1 88/04/04 10:33:07 brent Exp $ SPRITE (Berkeley)";
+d423 2
+a424 1
+    indexInfoPtr->blockAddrPtr = 
+d427 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d33 1
+a33 1
+static char rcsid[] = "$Header: fsIndex.c,v 6.0 87/12/03 14:39:04 brent Exp $ SPRITE (Berkeley)";
+@

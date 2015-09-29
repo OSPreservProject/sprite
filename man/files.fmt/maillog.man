@@ -1,0 +1,66 @@
+
+
+
+<maillog>                 User Commands                 <maillog>
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     maillog - repository for  sprite-related  mail,  indexed  by
+     subject
+
+DDEESSCCRRIIPPTTIIOONN
+     This document describes the Sprite  log,  a  repository  for
+     sprite-related mail.  Mail sent to sspprriittee--lloogg will be stored
+     in a directory in the  sprite  account,  ~sprite/Log.   Each
+     message is stored in its own file.
+
+     The lloogg subdirectory of the Sprite log contains the messages
+     themselves,  which  are  numbered  sequentially.   The iinnddeexx
+     subdirectory contains information to help  users  find  mes-
+     sages  in the log.  Each time a message is added to the log,
+     its log entry number, originator, date sent, size, and  sub-
+     ject  line  are recorded in a number of files.  Each message
+     is entered in cchhrroonn, which is a chronlogically-ordered list-
+     ing of all messages in the log.  In addition, the message is
+     entered in ffrroomm-_u_s_e_r, where _u_s_e_r is the  account  that  sent
+     the message.
+
+     Finally,  the  message  is  entered  in  files  with   names
+     corresponding  to  the keywords associated with the message.
+     If the message contains a KKeeyywwoorrddss:: line, the words on  that
+     line  are  taken  to be keywords; otherwise, the non-trivial
+     words in the subject line are used.   Punctuation  and  case
+     are ignored.  Typical keywords include ``bug'', ``fix'', and
+     the names of kernel modules, libraries, and programs.
+
+     As an example, consider a message sent from douglis  to  the
+     Sprite  log  with  the subject ``bug: fs recovery''.  If the
+     next message in the log were 00143, then the message  itself
+     would be stored in ~sprite/Log/log/00143, and a line like
+
+     00143 douglis Mon Sep 14 12:01:14 1987   13 bug: fs recovery
+
+     would be written to the files cchhrroonn, ffrroomm--ddoouugglliiss, bbuugg,  ffss,
+     and rreeccoovveerryy in ~sprite/Log/index.
+
+     Note: the Sprite log is currently stored under Unix.
+
+FFIILLEESS
+          ~sprite/Log/log     messages in the Sprite log.
+          ~sprite/Log/index   lists of messages by keyword.
+
+SSEEEE AALLSSOO
+     Mail, sendmail, MH
+
+KKEEYYWWOORRDDSS
+     Sprite, log, index, keyword, bug, mail
+
+
+
+Sprite v.1.0       Printed:  February 21, 1989                  1
+
+
+

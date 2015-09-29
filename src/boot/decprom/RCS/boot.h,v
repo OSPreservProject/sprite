@@ -1,0 +1,45 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     90.02.16.16.14.17;  author shirriff;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/*
+ * boot.h --
+ *
+ *	Boot program definitions.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: boot.h,v 1.2 87/05/08 17:43:52 brent Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _BOOT
+#define _BOOT
+
+/*
+ * SCSI_DISK_BOOT - boot using the dec prom SCSI disk drivers
+ */
+#define SCSI_DISK_BOOT
+#endif
+@

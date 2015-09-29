@@ -1,0 +1,1425 @@
+head     9.11;
+branch   ;
+access   ;
+symbols  ds3100:9.11 sun3:9.11 sun4nw:9.9 symm:9.9 spur:9.9 sprited:9.8.1 Summer89:9.0 newlib:8.0 Summer88:6.0 argString:5.4;
+locks    ; strict;
+comment  @ * @;
+
+
+9.11
+date     91.11.15.21.06.46;  author kupfer;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     91.11.11.15.07.11;  author shirriff;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     91.08.24.19.55.11;  author mottsmth;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     91.07.26.16.59.50;  author shirriff;  state Exp;
+branches 9.8.1.1;
+next     9.7;
+
+9.7
+date     91.03.29.17.58.54;  author shirriff;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     91.03.29.14.37.10;  author shirriff;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.09.12.13.58.10;  author jhh;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.09.06.17.57.57;  author jhh;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.06.21.13.58.01;  author shirriff;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.26.15.22.52;  author douglis;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.12.11.13.14;  author jhh;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.15.18;  author douglis;  state Stable;
+branches ;
+next     8.7;
+
+8.7
+date     89.05.21.18.27.31;  author mgbaker;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.03.26.20.17.45;  author mgbaker;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.03.12.21.12.44;  author rab;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.02.20.00.16.32;  author rab;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     88.12.22.09.16.12;  author douglis;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.12.04.15.17.22;  author ouster;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.30.15.30.01;  author douglis;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.30.49;  author douglis;  state Stable;
+branches ;
+next     6.3;
+
+6.3
+date     88.10.27.20.03.27;  author mlgray;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.31.17.55.33;  author douglis;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.25.12.09.28;  author nelson;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.22.30;  author brent;  state Stable;
+branches ;
+next     5.11;
+
+5.11
+date     88.08.04.15.29.48;  author douglis;  state Exp;
+branches ;
+next     5.10;
+
+5.10
+date     88.07.25.16.53.21;  author douglis;  state Exp;
+branches ;
+next     5.9;
+
+5.9
+date     88.06.30.17.33.34;  author douglis;  state Exp;
+branches ;
+next     5.8;
+
+5.8
+date     88.05.05.17.58.03;  author nelson;  state Exp;
+branches ;
+next     5.7;
+
+5.7
+date     88.05.04.16.46.22;  author nelson;  state Exp;
+branches ;
+next     5.6;
+
+5.6
+date     88.04.18.09.08.04;  author ouster;  state Exp;
+branches ;
+next     5.5;
+
+5.5
+date     88.04.13.11.27.10;  author ouster;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     88.03.02.11.57.45;  author douglis;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     88.01.22.15.31.39;  author nelson;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.12.12.16.39.36;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.10.22.14.59.18;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.47.12;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.8.1.1
+date     91.08.15.21.17.12;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.11
+log
+@When creating a new process, don't unlock the PCB until we're done
+with it.
+@
+text
+@/* 
+ *  procFork.c --
+ *
+ *	Routines to create new processes.  No monitor routines are required
+ *	in this file.  Synchronization to proc table entries is by a call
+ *	to the proc table monitor to get a PCB and calls to the family monitor
+ *	to put a newly created process into a process family.
+ *
+ * Copyright (C) 1985, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/proc/procFork.c,v 9.10 91/11/11 15:07:11 shirriff Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <mach.h>
+#include <list.h>
+#include <proc.h>
+#include <procInt.h>
+#include <sched.h>
+#include <status.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sync.h>
+#include <sys.h>
+#include <timer.h>
+#include <vm.h>
+#include <prof.h>
+#include <procUnixStubs.h>
+
+/*
+ * There is only one vfork sleep condition in the system.
+ * When a child does a Sync_Broadcast, all sleeping parents
+ * wake up, check the VFORKPARENT flag in their respective
+ * PCBs and all but one (hopefully) go back to sleep.
+ * If the contention level is too high we can put a condition lock
+ * in each PCB, but this requires recompiling most of the world
+ * so lets try the easy way first.
+ */
+static Sync_Condition vforkCondition;
+static Sync_Lock vforkLock;
+#define LOCKPTR &vforkLock
+
+static ReturnStatus    InitUserProc _ARGS_((Proc_ControlBlock *procPtr,
+			    Proc_ControlBlock *parentProcPtr,
+			    Boolean shareHeap, Boolean vforkFlag));
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_Fork --
+ *
+ *	Process the fork system call.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Proc_Fork(shareHeap, pidPtr)
+    Boolean	shareHeap;
+    Proc_PID	*pidPtr;
+{
+    Proc_PID		*newPidPtr;
+    int			numBytes;
+    ReturnStatus	status;
+    
+    /*
+     * Make the pointer to the process id that is to be returned accessible.
+     */
+
+    Vm_MakeAccessible(VM_OVERWRITE_ACCESS, 
+		      sizeof(Proc_PID), (Address) pidPtr,
+		      &numBytes, (Address *) &newPidPtr);
+    if (numBytes < sizeof(Proc_PID)) {
+	return(SYS_ARG_NOACCESS);
+    }
+
+    /*
+     * Start up the new process.  The PC where to begin execution doesn't 
+     * matter since it has already been stored in the proc table entry before
+     * we were called.
+     */
+
+    status = Proc_NewProc((Address) 0, PROC_USER, shareHeap, newPidPtr,
+			  (char *)NIL, FALSE);
+
+    Vm_MakeUnaccessible((Address) newPidPtr, numBytes);
+
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_Vfork --
+ *
+ *	Process the vfork system call.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Proc_Vfork()
+{
+    ReturnStatus	status;
+    Proc_PID newPid;
+
+    status = Proc_NewProc((Address) 0, PROC_USER, FALSE, &newPid,
+			  (char *) NIL, TRUE);
+    if (status != SUCCESS) {
+	Mach_SetErrno(Compat_MapCode(status));
+	return -1;
+    }
+    return (int) newPid;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Proc_VforkWakeup
+ *
+ *	Called by vfork'd child to wakeup waiting parent
+ *      (when child dies or execs). Caller must hold a lock
+ *      on the child's PCB entry (ie. must have called Proc_Lock()).
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Will make parent process runnable.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+void
+Proc_VforkWakeup(procPtr)
+Proc_ControlBlock 	*procPtr;
+{
+    Proc_ControlBlock 	*parentProcPtr;
+
+    parentProcPtr = Proc_GetPCB(procPtr->parentID);
+    Proc_Lock(parentProcPtr);
+    if (!(parentProcPtr->genFlags & PROC_VFORKPARENT)) {
+	panic("VForkWakeup called but VFORKPARENT flag == 0.");
+    }
+    parentProcPtr->genFlags &= ~PROC_VFORKPARENT;
+    Proc_Unlock(parentProcPtr);
+
+    LOCK_MONITOR;
+    Sync_Broadcast(&vforkCondition);
+    UNLOCK_MONITOR;
+
+    procPtr->genFlags &= ~PROC_VFORKCHILD;
+
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Proc_NewProc --
+ *
+ *	Allocates a PCB and initializes it.
+ *
+ * Results:
+ *	Pointer to process control block for created process.
+ *
+ * Side effects:
+ *	PCB initialized and made runnable.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+ReturnStatus
+Proc_NewProc(PC, procType, shareHeap, pidPtr, procName, vforkFlag)
+    Address 	PC;		/* The program counter where to start. */
+    int		procType;	/* One of PROC_KERNEL or PROC_USER. */
+    Boolean	shareHeap;	/* TRUE if share heap, FALSE if not. */
+    Proc_PID	*pidPtr;	/* A pointer to where to return the process
+				   ID in. */
+    char	*procName;	/* Name for process control block */
+    Boolean     vforkFlag;      /* Added for vfork */
+{
+    ReturnStatus	status;
+    Proc_ControlBlock 	*procPtr;	/* The new process being created */
+    Proc_ControlBlock 	*parentProcPtr;	/* The parent of the new process,
+					 * the one that is making this call */
+    Boolean		migrated = FALSE;
+
+    parentProcPtr = Proc_GetActualProc();
+
+    if (parentProcPtr->genFlags & PROC_FOREIGN) {
+	migrated = TRUE;
+    }
+
+    procPtr = ProcGetUnusedPCB();
+    if (pidPtr != (Proc_PID *) NIL) {
+	*pidPtr		= procPtr->processID;
+    }
+
+    procPtr->Prof_Scale = 0;
+    Prof_Enable(procPtr, parentProcPtr->Prof_Buffer, 
+        parentProcPtr->Prof_BufferSize, parentProcPtr->Prof_Offset,
+	parentProcPtr->Prof_Scale);
+
+    procPtr->processor		= parentProcPtr->processor;
+    procPtr->genFlags 		|= procType;
+    if (vforkFlag) {
+	procPtr->genFlags |= PROC_VFORKCHILD;
+    }
+    procPtr->syncFlags		= 0;
+    procPtr->schedFlags		= 0;
+    procPtr->exitFlags		= 0;
+
+    if (!migrated) {
+	procPtr->parentID 	= parentProcPtr->processID;
+    } else {
+	procPtr->parentID 	= parentProcPtr->peerProcessID;
+    }
+    procPtr->familyID 		= parentProcPtr->familyID;
+    procPtr->userID 		= parentProcPtr->userID;
+    procPtr->effectiveUserID 	= parentProcPtr->effectiveUserID;
+
+    procPtr->billingRate 	= parentProcPtr->billingRate;
+    procPtr->recentUsage 	= 0;
+    procPtr->weightedUsage 	= 0;
+    procPtr->unweightedUsage 	= 0;
+
+    procPtr->kernelCpuUsage.ticks 	= timer_TicksZeroSeconds;
+    procPtr->userCpuUsage.ticks 	= timer_TicksZeroSeconds;
+    procPtr->childKernelCpuUsage.ticks = timer_TicksZeroSeconds;
+    procPtr->childUserCpuUsage.ticks 	= timer_TicksZeroSeconds;
+    procPtr->numQuantumEnds	= 0;
+    procPtr->numWaitEvents	= 0;
+    procPtr->event		= NIL;
+
+    procPtr->kcallTable		= mach_NormalHandlers;
+    procPtr->unixProgress	= parentProcPtr->unixProgress;
+
+    /* 
+     * Free up the old argument list, if any.  Note, this could be put
+     * in Proc_Exit, but is put here for consistency with the other
+     * reinitializations of control block fields.  
+p     */
+
+    if (procPtr->argString != (Address) NIL) {
+	free((Address) procPtr->argString);
+	procPtr->argString = (Address) NIL;
+    }
+
+    /*
+     * Create the argument list for the child.  If no name specified, take
+     * the list from the parent.  If one is specified, just make a one-element
+     * list containing that name.
+     */
+    if (procName != (char *)NIL) {
+	procPtr->argString = (char *) malloc(strlen(procName) + 1);
+	(void) strcpy(procPtr->argString, procName);
+    } else if (parentProcPtr->argString != (Address) NIL) {
+	procPtr->argString =
+		(char *) malloc(strlen(parentProcPtr->argString) + 1);
+	(void) strcpy(procPtr->argString, parentProcPtr->argString);
+    }
+
+    if (!migrated) {
+	if (ProcFamilyInsert(procPtr, procPtr->familyID) != SUCCESS) {
+	    panic("Proc_NewProc: ProcFamilyInsert failed\n");
+	}
+    }
+
+    /*
+     *  Initialize our child list to remove any old links.
+     *  If not migrated, insert this PCB entry into the list
+     *  of children of our parent.
+     */
+    List_Init((List_Links *) procPtr->childList);
+    if (!migrated) {
+	List_Insert((List_Links *) &(procPtr->siblingElement), 
+		    LIST_ATREAR(parentProcPtr->childList));
+    }
+    Sig_Fork(parentProcPtr, procPtr);
+
+    Vm_ProcInit(procPtr);
+
+    /*
+     * If the process is migrated, setup its process state on the home node.
+     */
+    if (migrated) {
+	status = ProcRemoteFork(parentProcPtr, procPtr);
+	if (status != SUCCESS) {
+	    /*
+	     * We couldn't fork on the home node, so free up the new
+	     * process that we were in the process of allocating.
+	     */
+
+	    Proc_Unlock(procPtr);
+	    ProcFreePCB(procPtr);
+
+	    return(status);
+	}
+
+	/*
+	 * Change the returned process ID to be the process ID on the home
+	 * node.
+	 */
+	if (pidPtr != (Proc_PID *) NIL) {
+	    *pidPtr = procPtr->peerProcessID;
+	}
+    } else {
+	procPtr->peerHostID = NIL;
+	procPtr->peerProcessID = NIL;
+    }
+
+    /*
+     * Set up the virtual memory of the new process.
+     */
+
+    if (procType == PROC_KERNEL) {
+	status = Mach_SetupNewState(procPtr, (Mach_State *)NIL,
+				    Sched_StartKernProc, PC, FALSE);
+	if (status != SUCCESS) {
+	    /*
+	     * We are out of kernel stacks.
+	     */
+	    Proc_Unlock(procPtr);
+	    ProcFreePCB(procPtr);
+	    return(status);
+	}
+    } else {
+	status = InitUserProc(procPtr, parentProcPtr, shareHeap, vforkFlag);
+	if (status != SUCCESS) {
+	    /*
+	     * We couldn't allocate virtual memory, so free up the new
+	     * process that we were in the process of allocating.
+	     */
+
+	    if (!migrated) {
+		ProcFamilyRemove(procPtr);
+		List_Remove((List_Links *) &(procPtr->siblingElement));
+	    }
+	    Proc_Unlock(procPtr);
+	    ProcFreePCB(procPtr);
+
+	    return(status);
+	}
+    }
+
+    /*
+     * Mark ourselves waiting, if necessary
+     */
+    if (vforkFlag) {
+	Proc_Lock(parentProcPtr);
+	parentProcPtr->genFlags |= PROC_VFORKPARENT;
+	Proc_Unlock(parentProcPtr);
+    }
+
+    /*
+     * Set up the environment of the process.
+     */
+
+    if (!migrated) {
+	ProcSetupEnviron(procPtr);
+    }
+    
+    /*
+     * Have the new process inherit filesystem state.
+     */
+    Fs_InheritState(parentProcPtr, procPtr);
+
+    /*
+     * Return PROC_CHILD_PROC to the newly created process.
+     */
+    if (procPtr->unixProgress == PROC_PROGRESS_NOT_UNIX) {
+	Mach_SetReturnVal(procPtr, (vforkFlag ? 0 : (int) PROC_CHILD_PROC), 1);
+    } else {
+	Mach_SetReturnVal(procPtr, 0, 1);
+    }
+
+    /* 
+     * Now that we're done messing with the PCB, unlock it.  Maybe this 
+     * could get moved up to happen earlier in the function, but there's 
+     * probably no harm to delaying until now.
+     */
+    Proc_Unlock(procPtr);
+
+    /*
+     * Put the process on the ready queue.
+     */
+    Sched_MakeReady(procPtr);
+
+    /*
+     * Now make the parent wait until child exec`s or exits
+     */
+    if (vforkFlag) {
+	LOCK_MONITOR;
+	while (parentProcPtr->genFlags & PROC_VFORKPARENT) {
+	    Sync_Wait(&vforkCondition, FALSE);
+	}
+	UNLOCK_MONITOR;
+    }
+
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * InitUserProc --
+ *
+ *	Initalize the state for a user process.  This involves allocating
+ *	the segments for the new process.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+InitUserProc(procPtr, parentProcPtr, shareHeap, vforkFlag)
+    register	Proc_ControlBlock	*procPtr;	/* PCB to initialized.*/
+    register	Proc_ControlBlock	*parentProcPtr;	/* Parent's PCB. */
+    Boolean				shareHeap;	/* TRUE => share heap
+							 * with parent. */
+    Boolean				vforkFlag;	/* TRUE => share all
+							 * segs with parent. */
+{
+    ReturnStatus	status;
+
+    /*
+     * Set up a kernel stack for the process.
+     */
+    status = Mach_SetupNewState(procPtr, parentProcPtr->machStatePtr,
+				Sched_StartUserProc, (Address)NIL, TRUE);
+    if (status != SUCCESS) {
+	return(status);
+    }
+
+    /*
+     * Initialize all of the segments.  The system segment is the standard one.
+     * The code segment is the same as the parent process.  The stack segment
+     * is a copy of the parents, unless vforkFlag == TRUE in which case
+     * the ref count is boosted.  Finally the heap segment is either a copy
+     * or the same as the parent depending on the share heap flag.
+     */
+
+    procPtr->vmPtr->segPtrArray[VM_SYSTEM] = (Vm_Segment *) NIL;
+
+    if (vforkFlag) {
+	Vm_SegmentIncRef(parentProcPtr->vmPtr->segPtrArray[VM_STACK], procPtr);
+	procPtr->vmPtr->segPtrArray[VM_STACK] = 
+				parentProcPtr->vmPtr->segPtrArray[VM_STACK];
+    } else {
+	status = Vm_SegmentDup(parentProcPtr->vmPtr->segPtrArray[VM_STACK],
+			procPtr, &(procPtr->vmPtr->segPtrArray[VM_STACK]));
+	if (status != SUCCESS) {
+	    Mach_FreeState(procPtr);
+	    return(status);
+	}
+    }
+
+    if (shareHeap || vforkFlag) {
+	Vm_SegmentIncRef(parentProcPtr->vmPtr->segPtrArray[VM_HEAP], procPtr);
+	procPtr->vmPtr->segPtrArray[VM_HEAP] = 
+				parentProcPtr->vmPtr->segPtrArray[VM_HEAP];
+    } else {
+	status = Vm_SegmentDup(parentProcPtr->vmPtr->segPtrArray[VM_HEAP],
+			   procPtr, &(procPtr->vmPtr->segPtrArray[VM_HEAP]));
+	if (status != SUCCESS) {
+	    Vm_SegmentDelete(procPtr->vmPtr->segPtrArray[VM_STACK], procPtr);
+	    Mach_FreeState(procPtr);
+	    return(status);
+	}
+    }
+
+    if (parentProcPtr->vmPtr->sharedSegs != (List_Links *)NIL) {
+	Vm_CopySharedMem(parentProcPtr, procPtr);
+    }
+
+    Vm_SegmentIncRef(parentProcPtr->vmPtr->segPtrArray[VM_CODE], procPtr);
+    procPtr->vmPtr->segPtrArray[VM_CODE] =
+				parentProcPtr->vmPtr->segPtrArray[VM_CODE];
+
+    return(SUCCESS);
+}
+@
+
+
+9.10
+log
+@I fixed a problem that Bob found with compat fork returning the wrong value.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/proc/procFork.c,v 9.9 91/08/24 19:55:11 mottsmth Exp $ SPRITE (Berkeley)";
+d230 1
+a230 2
+    procPtr->state 		= PROC_READY;
+    procPtr->genFlags 		= procType;
+d319 1
+d348 1
+d364 1
+d401 7
+@
+
+
+9.9
+log
+@Add true vfork support
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procFork.c,v 9.8 91/07/26 16:59:50 shirriff Exp $ SPRITE (Berkeley)";
+d37 1
+d394 5
+a398 1
+    Mach_SetReturnVal(procPtr, (vforkFlag ? 0 : (int) PROC_CHILD_PROC), 1);
+@
+
+
+9.8
+log
+@Large install for unix compatibility
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc.ken/RCS/procFork.c,v 1.1 91/05/30 18:12:44 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d38 13
+d53 1
+a53 1
+			    Boolean shareHeap));
+d99 1
+a99 1
+			  (char *)NIL);
+d106 57
+d181 1
+a181 1
+Proc_NewProc(PC, procType, shareHeap, pidPtr, procName)
+d188 1
+d215 3
+d251 1
+a251 1
+     */
+d335 1
+a335 1
+	status = InitUserProc(procPtr, parentProcPtr, shareHeap);
+d353 9
+d377 1
+a377 1
+    Mach_SetReturnVal(procPtr, (int) PROC_CHILD_PROC, 1);
+d384 11
+d417 1
+a417 1
+InitUserProc(procPtr, parentProcPtr, shareHeap)
+d422 2
+d439 2
+a440 1
+     * is a copy of the parents.  Finally the heap segment is either a copy
+d446 6
+a451 1
+    status = Vm_SegmentDup(parentProcPtr->vmPtr->segPtrArray[VM_STACK],
+d453 4
+a456 3
+    if (status != SUCCESS) {
+	Mach_FreeState(procPtr);
+	return(status);
+d459 1
+a459 1
+    if (shareHeap) {
+@
+
+
+9.8.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procFork.c,v 9.8 91/07/26 16:59:50 shirriff Exp $ SPRITE (Berkeley)";
+@
+
+
+9.7
+log
+@Added unix mode flag.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procFork.c,v 9.6 91/03/29 14:37:10 shirriff Exp $ SPRITE (Berkeley)";
+d171 1
+a171 1
+    procPtr->unixProgress	= -1;
+@
+
+
+9.6
+log
+@Added second return value for fork, because unix compatibility needs it.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procFork.c,v 9.5 90/09/12 13:58:10 jhh Exp $ SPRITE (Berkeley)";
+d171 1
+@
+
+
+9.5
+log
+@changed format of #includes to use <>
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procFork.c,v 9.4 90/09/06 17:57:57 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d293 1
+a293 1
+    Mach_SetReturnVal(procPtr, (int) PROC_CHILD_PROC);
+@
+
+
+9.4
+log
+@First pass at function prototypes
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procFork.c,v 9.3 90/06/21 13:58:01 shirriff Exp Locker: jhh $ SPRITE (Berkeley)";
+d23 7
+a29 7
+#include "sprite.h"
+#include "mach.h"
+#include "list.h"
+#include "proc.h"
+#include "procInt.h"
+#include "sched.h"
+#include "status.h"
+d31 6
+a36 6
+#include "string.h"
+#include "sync.h"
+#include "sys.h"
+#include "timer.h"
+#include "vm.h"
+#include "prof.h"
+@
+
+
+9.3
+log
+@Added Vm_CopySharedMem call to copy shared memory on a fork.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procFork.c,v 9.2 89/10/26 15:22:52 douglis Exp $ SPRITE (Berkeley)";
+d38 3
+a40 1
+static ReturnStatus    InitUserProc();
+@
+
+
+9.2
+log
+@removed some lint
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procFork.c,v 9.1 89/10/12 11:13:14 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d365 4
+@
+
+
+9.1
+log
+@processor field of PCB wasn't initialized for new process.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procFork.c,v 9.0 89/09/12 15:15:18 douglis Stable Locker: mgbaker $ SPRITE (Berkeley)";
+d36 1
+d188 1
+a188 1
+	strcpy(procPtr->argString, procName);
+d192 1
+a192 1
+	strcpy(procPtr->argString, parentProcPtr->argString);
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procFork.c,v 8.7 89/05/21 18:27:31 mgbaker Exp Locker: douglis $ SPRITE (Berkeley)";
+d138 1
+@
+
+
+8.7
+log
+@checkin before sprint cleaning
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procFork.c,v 8.6 89/03/26 20:17:45 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+@
+
+
+8.6
+log
+@Seventeenth Kernel for the sun4.  It executes its first system call:
+Sys_Shutdown().
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procFork.c,v 8.5 89/03/12 21:12:44 rab Exp Locker: mgbaker $ SPRITE (Berkeley)";
+a131 3
+#ifdef sun4
+    printf("Creating new proc 0x%x\n", procPtr);
+#endif sun4
+@
+
+
+8.5
+log
+@*** empty log message ***
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procFork.c,v 8.4 89/02/20 00:16:32 rab Exp Locker: rab $ SPRITE (Berkeley)";
+d132 3
+@
+
+
+8.4
+log
+@Added support for profiling.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procFork.c,v 8.3 88/12/22 09:16:12 douglis Exp Locker: rab $ SPRITE (Berkeley)";
+d127 1
+a127 1
+    
+d133 4
+a136 5
+    procPtr->Prof_Buffer        = parentProcPtr->Prof_Buffer;
+    procPtr->Prof_BufferSize    = parentProcPtr->Prof_BufferSize;
+    procPtr->Prof_Offset        = parentProcPtr->Prof_Offset;
+    procPtr->Prof_Scale         = parentProcPtr->Prof_Scale;
+    procPtr->Prof_PC            = 0;
+d145 1
+a145 1
+	procPtr->parentID 		= parentProcPtr->processID;
+d147 1
+a147 1
+	procPtr->parentID 		= parentProcPtr->peerProcessID;
+@
+
+
+8.3
+log
+@don't set PROC_DONT_MIGRATE flag when forking -- that flag is
+now used for something else.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procFork.c,v 8.2 88/12/04 15:17:22 ouster Exp Locker: douglis $ SPRITE (Berkeley)";
+d132 6
+@
+
+
+8.2
+log
+@
+Stop using obsolete header files.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procFork.c,v 8.1 88/11/30 15:30:01 douglis Exp $ SPRITE (Berkeley)";
+d134 1
+a134 1
+    procPtr->genFlags 		= procType | PROC_DONT_MIGRATE;
+@
+
+
+8.1
+log
+@set parentID of migrated process properly.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procFork.c,v 8.0 88/11/11 18:30:49 douglis Stable Locker: douglis $ SPRITE (Berkeley)";
+a24 1
+#include "byte.h"
+a25 1
+#include "mem.h"
+d30 1
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procFork.c,v 6.3 88/10/27 20:03:27 mlgray Exp Locker: douglis $ SPRITE (Berkeley)";
+d140 5
+a144 1
+    procPtr->parentID 		= parentProcPtr->processID;
+@
+
+
+6.3
+log
+@1st pass at multi-processor, conversion to new C library.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: procFork.c,v 6.2 88/08/31 17:55:33 douglis Exp $ SPRITE (Berkeley)";
+@
+
+
+6.2
+log
+@de-linted and endif-fix'ed.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: procFork.c,v 6.1 88/08/25 12:09:28 nelson Exp $ SPRITE (Berkeley)";
+d167 1
+a167 1
+	Mem_Free((Address) procPtr->argString);
+d174 1
+a174 2
+     * list containing that name.  Note that String_Copy(..,NULL) allocates
+     * space dynamically.
+d177 2
+a178 1
+	procPtr->argString = String_Copy(procName, (char *) NULL);
+d181 2
+a182 1
+		    String_Copy(parentProcPtr->argString, (char *) NULL);
+d187 1
+a187 1
+	    Sys_Panic(SYS_FATAL, "Proc_NewProc: ProcFamilyInsert failed\n");
+@
+
+
+6.1
+log
+@Changed to make cpu usage be represented in a format such that both the
+kernel and user programs can use time.
+@
+text
+@d20 2
+a21 2
+static char rcsid[] = "$Header: procFork.c,v 5.11 88/08/04 15:29:48 douglis Exp $ SPRITE (Berkeley)";
+#endif not lint
+d280 1
+a280 1
+    Mach_SetReturnVal(procPtr, PROC_CHILD_PROC);
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d150 4
+a153 4
+    procPtr->kernelCpuUsage 	= timer_TicksZeroSeconds;
+    procPtr->userCpuUsage 	= timer_TicksZeroSeconds;
+    procPtr->childKernelCpuUsage = timer_TicksZeroSeconds;
+    procPtr->childUserCpuUsage 	= timer_TicksZeroSeconds;
+@
+
+
+5.11
+log
+@removed duplicate include of mach.h
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: procFork.c,v 5.10 88/07/25 16:53:21 douglis Exp $ SPRITE (Berkeley)";
+@
+
+
+5.10
+log
+@don't copy signal state in InitUserProc, since it's done earlier by
+Sig_Fork() call.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: procFork.c,v 5.9 88/06/30 17:33:34 douglis Exp $ SPRITE (Berkeley)";
+a36 1
+#include "mach.h"
+@
+
+
+5.9
+log
+@changed around to use new distinction between inheriting PC and
+being user/kernel proc.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: procFork.c,v 5.8 88/05/05 17:58:03 nelson Exp $ SPRITE (Berkeley)";
+a316 16
+
+    /*
+     * Child inherits the parents signal stuff.
+     */
+
+    procPtr->sigHoldMask = parentProcPtr->sigHoldMask;
+    procPtr->sigPendingMask = parentProcPtr->sigPendingMask;
+    if (Sig_Pending(procPtr)) {
+	procPtr->specialHandling = 1;
+    }
+    Byte_Copy(sizeof(procPtr->sigActions), (Address) parentProcPtr->sigActions,
+	      (Address) procPtr->sigActions);
+    Byte_Copy(sizeof(procPtr->sigMasks), (Address) parentProcPtr->sigMasks,
+	      (Address) procPtr->sigMasks);
+    Byte_Copy(sizeof(procPtr->sigCodes), (Address) parentProcPtr->sigCodes,
+	      (Address) procPtr->sigCodes);
+@
+
+
+5.8
+log
+@Handles move of functionality from sys to mach.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: procFork.c,v 5.7 88/05/04 16:46:22 nelson Exp $ SPRITE (Berkeley)";
+d39 1
+a39 1
+ReturnStatus    InitUserProc();
+d239 1
+a239 1
+				    Sched_StartKernProc, PC);
+d248 1
+a248 1
+	status = InitUserProc(PC, procPtr, parentProcPtr, shareHeap);
+d310 1
+a310 3
+InitUserProc(PC, procPtr, parentProcPtr, shareHeap)
+    Address				PC;		/* Program where to 
+							 * start executing. */
+d338 1
+a338 1
+				Sched_StartUserProc, (Address)NIL);
+@
+
+
+5.7
+log
+@Uses new mach module stuff.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: procFork.c,v 5.6 88/04/18 09:08:04 ouster Exp $ SPRITE (Berkeley)";
+d24 1
+d124 1
+a124 1
+    parentProcPtr = Proc_GetActualProc(Sys_GetProcessorNumber());
+a189 2
+
+    procPtr->setJumpStatePtr = (Sys_SetJumpState *) NIL;
+@
+
+
+5.6
+log
+@Lint cleanup, change copyright notices.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: procFork.c,v 5.5 88/04/13 11:27:10 ouster Exp $ SPRITE (Berkeley)";
+a25 1
+#include "machine.h"
+d36 1
+d158 1
+a158 1
+    procPtr->kcallTable		= exc_NormalHandlers;
+d180 1
+a180 1
+	    procPtr->argString =
+d239 3
+a241 2
+	procPtr->stackStart = Vm_GetKernelStack((int) PC, Sched_StartProcess);
+	if (procPtr->stackStart == -1) {
+d246 1
+a246 1
+	    return(PROC_NO_STACKS);
+d280 1
+a280 1
+     * Set up the stack and frame pointers.
+d282 1
+a283 3
+   procPtr->saveRegs[mach_SP] = mach_DummySPOffset + procPtr->stackStart;
+   procPtr->saveRegs[mach_FP] = mach_DummyFPOffset + procPtr->stackStart;
+
+d340 4
+a343 3
+    procPtr->stackStart = Vm_GetKernelStack((int) PC, Sched_StartUserProc);
+    if (procPtr->stackStart == -1) {
+	return(PROC_NO_STACKS);
+d358 1
+a358 1
+	Vm_FreeKernelStack(procPtr->stackStart);
+d371 1
+a371 1
+	    Vm_FreeKernelStack(procPtr->stackStart);
+a379 10
+    /*
+     * Now copy over all of the internal state of the user process so that
+     * the forked process can resume properly.
+     */
+
+    procPtr->progCounter = parentProcPtr->progCounter;
+    Byte_Copy(sizeof(procPtr->genRegs), 
+	      (Address) parentProcPtr->genRegs, 
+	      (Address) procPtr->genRegs);
+    
+@
+
+
+5.5
+log
+@Changes to make kernel calls much faster.
+@
+text
+@d9 8
+a16 2
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+d20 1
+a20 1
+static char rcsid[] = "$Header: procFork.c,v 5.4 88/03/02 11:57:45 douglis Exp $ SPRITE (Berkeley)";
+d24 4
+d30 3
+d34 1
+a34 1
+#include "sched.h"
+a35 1
+#include "list.h"
+a36 5
+#include "sys.h"
+#include "machine.h"
+#include "byte.h"
+#include "string.h"
+#include "status.h"
+@
+
+
+5.4
+log
+@Copy the argument list from parent to child.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: procFork.c,v 5.3 88/01/22 15:31:39 nelson Exp $ SPRITE (Berkeley)";
+d133 5
+d151 1
+a151 4
+    procPtr->parentID 		= parentProcPtr->processID;
+    procPtr->userID 		= parentProcPtr->userID;
+    procPtr->effectiveUserID 	= parentProcPtr->effectiveUserID;
+    procPtr->familyID 		= parentProcPtr->familyID;
+d321 3
+@
+
+
+5.3
+log
+@Fixed up signals.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: procFork.c,v 5.2 87/12/12 16:39:36 nelson Exp $ SPRITE (Berkeley)";
+d151 22
+a172 4
+    if (procName == (char *)NIL) {
+	String_Copy(parentProcPtr->codeFileName, procPtr->codeFileName);
+    } else {
+	String_Copy(procName, procPtr->codeFileName);
+@
+
+
+5.2
+log
+@Handles moving of hardware dependencies from vm to sun.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: procFork.c,v 5.1 87/10/22 14:59:18 nelson Exp $ SPRITE (Berkeley)";
+d175 1
+a175 1
+    Sig_ProcInit(procPtr);
+@
+
+
+5.1
+log
+@Changed VM to only contain a single pointer.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: procFork.c,v 5.0 87/08/11 10:47:12 sprite Exp $ SPRITE (Berkeley)";
+d255 2
+a256 2
+   procPtr->saveRegs[MACH_STACK_PTR] = MACH_DUMMY_SP_OFFSET + procPtr->stackStart;
+   procPtr->saveRegs[MACH_FRAME_PTR] = MACH_DUMMY_FP_OFFSET + procPtr->stackStart;
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: procFork.c,v 4.2 87/06/11 17:03:16 nelson Exp $ SPRITE (Berkeley)";
+a128 1
+    procPtr->vmFlags		= 0;
+d156 1
+a156 1
+    
+d177 2
+a211 1
+	procPtr->context = VM_KERN_CONTEXT;
+a294 2
+    procPtr->context = VM_INV_CONTEXT;
+
+d323 1
+a323 1
+    procPtr->segPtrArray[VM_SYSTEM] = (Vm_Segment *) NIL;
+d325 2
+a326 2
+    status = Vm_SegmentDup(parentProcPtr->segPtrArray[VM_STACK], procPtr, 
+			&(procPtr->segPtrArray[VM_STACK]));
+d333 3
+a335 2
+	Vm_SegmentIncRef(parentProcPtr->segPtrArray[VM_HEAP], procPtr);
+	procPtr->segPtrArray[VM_HEAP] = parentProcPtr->segPtrArray[VM_HEAP];
+d337 2
+a338 2
+	status = Vm_SegmentDup(parentProcPtr->segPtrArray[VM_HEAP], procPtr, 
+			&(procPtr->segPtrArray[VM_HEAP]));
+d340 1
+a340 1
+	    Vm_SegmentDelete(procPtr->segPtrArray[VM_STACK], procPtr);
+d346 3
+a348 2
+    Vm_SegmentIncRef(parentProcPtr->segPtrArray[VM_CODE], procPtr);
+    procPtr->segPtrArray[VM_CODE] = parentProcPtr->segPtrArray[VM_CODE];
+@

@@ -1,0 +1,40 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    mendel:1.1; strict;
+comment  @ * @;
+
+
+1.1
+date     89.06.19.19.37.29;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@
+/*	@@(#)dpy.h 1.6 88/02/08 SMI	*/
+
+/*
+ * Copyright (c) 1986 by Sun Microsystems, Inc.
+ */
+
+#if defined(SUN2) || defined(sun2)
+#include "../sun2/dpy.h"
+#endif
+
+#if defined(SUN3) || defined(sun3)
+#include "../sun3/dpy.h"
+#endif
+
+@

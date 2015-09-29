@@ -1,0 +1,170 @@
+head     9.1;
+branch   ;
+access   ;
+symbols  ds3100:9.1 sun3:9.1 sprited:9.1.1 sun4nw:9.1 symm:9.1 spur:9.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.1
+date     90.09.11.12.12.53;  author rab;  state Exp;
+branches 9.1.1.1;
+next     9.0;
+
+9.0
+date     89.09.12.14.57.13;  author douglis;  state Stable;
+branches ;
+next     8.1;
+
+8.1
+date     89.05.24.07.53.24;  author rab;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.10.18;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.26.33;  author douglis;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     88.07.15.16.58.28;  author mendel;  state Exp;
+branches ;
+next     ;
+
+9.1.1.1
+date     92.03.18.17.44.25;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@/dev/null device declarations.
+@
+
+
+9.1
+log
+@Added prototypes.
+@
+text
+@/*
+ * devNull.h --
+ *
+ *	Declarations of  procedures for the /dev/null device.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ * $Header: /sprite/src/kernel/dev/RCS/devNull.h,v 9.0 89/09/12 14:57:13 douglis Stable Locker: rab $ SPRITE (Berkeley)
+ */
+
+#ifndef _DEVNULL
+#define _DEVNULL
+
+/*
+ * Forward Declarations.
+ */
+
+/*  extern ReturnStatus Dev_NullOpen(); */
+/*  extern ReturnStatus Dev_NullClose(); */
+
+extern ReturnStatus Dev_NullRead _ARGS_((Fs_Device *devicePtr,
+    Fs_IOParam *readPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus Dev_NullWrite _ARGS_((Fs_Device *devicePtr,
+    Fs_IOParam *writePtr, Fs_IOReply *replyPtr));
+extern ReturnStatus Dev_NullIOControl _ARGS_((Fs_Device *devicePtr,
+    Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus Dev_NullSelect _ARGS_((Fs_Device *devicePtr, int *readPtr,
+    int *writePtr, int *exceptPtr));
+
+#endif /* _DEVNULL */
+@
+
+
+9.1.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/dev/devNull.h,v 9.1 90/09/11 12:12:53 rab Exp $ SPRITE (Berkeley)
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/dev/RCS/devNull.h,v 8.1 89/05/24 07:53:24 rab Exp Locker: douglis $ SPRITE (Berkeley)
+d25 12
+a36 6
+extern ReturnStatus Dev_NullOpen();
+extern ReturnStatus Dev_NullRead();
+extern ReturnStatus Dev_NullWrite();
+extern ReturnStatus Dev_NullIOControl();
+extern ReturnStatus Dev_NullClose();
+extern ReturnStatus Dev_NullSelect();
+@
+
+
+8.1
+log
+@Changes to allow optimization.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/dev/RCS/devNull.h,v 8.0 88/11/11 18:10:18 douglis Stable Locker: rab $ SPRITE (Berkeley)
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/dev/RCS/devNull.h,v 6.0 88/08/11 12:26:33 douglis Stable Locker: douglis $ SPRITE (Berkeley)
+d32 1
+a32 1
+#endif _DEVNULL
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+ * $Header: devNull.h,v 1.1 88/07/15 16:58:28 mendel Exp $ SPRITE (Berkeley)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+ * $Header: devSyslog.h,v 5.1 87/12/15 15:30:14 nelson Exp $ SPRITE (Berkeley)
+@

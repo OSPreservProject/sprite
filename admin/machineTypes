@@ -1,0 +1,9 @@
+#
+# This file contains a list of all the machine types currently
+# supported by this Sprite system.  It is used, for example,
+# by Mkmf when generating Makefiles for scripts (which can
+# always be used on any machine type).
+#
+sun3
+sun4
+ds3100

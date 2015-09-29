@@ -1,0 +1,72 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     89.07.18.09.19.57;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.18.09.19.05;  author rab;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@#ifdef TARGET_SPUR
+#include "va-spur.h"
+#else
+
+/* These macros implement traditional (non-ANSI) varargs
+   for GNU C.  */
+
+#define va_alist  __builtin_va_alist
+#define va_dcl    int __builtin_va_alist;
+#define va_list   char *
+
+#ifdef TARGET_SUN4
+#define va_start(AP) 						\
+ (__builtin_saveregs (),					\
+  AP = ((void *) &__builtin_va_alist))
+#else
+#define va_start(AP)  AP=(char *) &__builtin_va_alist
+#endif
+#define va_end(AP)
+
+#define __va_rounded_size(TYPE)  \
+  (((sizeof (TYPE) + sizeof (int) - 1) / sizeof (int)) * sizeof (int))
+
+#define va_arg(AP, TYPE)						\
+ (AP += __va_rounded_size (TYPE),					\
+  *((TYPE *) (AP - __va_rounded_size (TYPE))))
+
+#endif /* not spur */
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@a0 4
+#ifndef __GNUC__
+/* Use the system's macros with the system's compiler.  */
+#include "/usr/include/varargs.h"
+#else
+a28 1
+#endif /* __GNUC__ */
+@

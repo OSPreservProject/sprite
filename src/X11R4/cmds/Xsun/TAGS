@@ -1,0 +1,2489 @@
+
+Xsun/keymap.h,0
+
+Xsun/sun.h,207
+} CrPrivRec,150,5636
+} CrState;135,4876
+} KbPrivRec,87,2714
+} PtrPrivRec,107,3599
+#define TVTOMILLI(247,8719
+} fbFd;174,6632
+} sunFbDataRec;183,6911
+#define tvminus(227,8137
+#define tvplus(235,8388
+
+Xsun/sunBW2.c,232
+} BW2,76,2415
+} BW2HR,80,2527
+    ScreenPtr	100,2965
+    ScreenPtr	100,2965
+static 83,2572
+static 98,2922
+sunBW2CloseScreen(130,3580
+sunBW2Create(322,8802
+sunBW2Init 158,4281
+sunBW2Probe(202,5607
+sunBW2SaveScreen 99,2934
+
+Xsun/sunCG3C.c,584
+} CG3AC,87,2511
+} CG3BC,95,2763
+    ScreenPtr	116,3365
+#define 97,2794
+#define 98,2850
+#define 99,2917
+#define 100,2973
+extern 111,3233
+    int	117,3388
+    int	117,3388
+static 102,3041
+static 103,3073
+static 106,3107
+static 109,3192
+static 114,3290
+sunCG3CCloseScreen(202,5195
+sunCG3CCreate(584,15526
+sunCG3CInit 394,10073
+sunCG3CInstallColormap(237,6109
+sunCG3CListInstalledColormaps(332,8644
+sunCG3CProbe 443,11690
+sunCG3CSaveScreen 163,4465
+sunCG3CStoreColors(356,9119
+sunCG3CUninstallColormap(299,7875
+sunCG3CUpdateColormap(115,3302
+    u_char	118,3411
+
+Xsun/sunCG4C.c,613
+} CG4C,75,2367
+    ScreenPtr	96,3016
+#define 77,2395
+#define 78,2449
+#define 79,2488
+#define	80,2558
+#define	81,2611
+#define	82,2647
+#define	83,2702
+extern 92,2897
+    int	97,3039
+    int	97,3039
+static 85,2740
+static 87,2771
+static 90,2856
+static 94,2941
+sunCG4CCloseScreen(181,4833
+sunCG4CCreate(512,13892
+sunCG4CInit 369,9666
+sunCG4CInstallColormap(215,5739
+sunCG4CListInstalledColormaps(309,8263
+sunCG4CProbe 443,11887
+sunCG4CSaveScreen 142,4103
+sunCG4CStoreColors(332,8725
+sunCG4CSwitch 409,11062
+sunCG4CUninstallColormap(276,7494
+sunCG4CUpdateColormap(95,2953
+    u_char	98,3062
+
+Xsun/sunCG6C.c,528
+} CG6,69,2257
+    ScreenPtr	86,2703
+#define 72,2283
+#define 73,2336
+#define 74,2374
+extern 82,2584
+    int	87,2726
+    int	87,2726
+static 77,2458
+static 80,2543
+static 84,2628
+sunCG6CCloseScreen(170,4519
+sunCG6CCreate(502,13326
+sunCG6CInit 358,9338
+sunCG6CInstallColormap(204,5425
+sunCG6CListInstalledColormaps(298,7949
+sunCG6CProbe 419,11210
+sunCG6CSaveScreen 132,3790
+sunCG6CStoreColors(321,8411
+sunCG6CSwitch 399,10749
+sunCG6CUninstallColormap(265,7180
+sunCG6CUpdateColormap(85,2640
+    u_char	88,2749
+
+Xsun/sunCursor.c,53
+sunInitCursor 45,1374
+sunSetCursorPosition(76,1988
+
+Xsun/sunInit.c,144
+InitInput(249,7051
+InitOutput(159,4648
+nthdev 344,9468
+sunNonBlockConsoleOff(132,4136
+sunOpenFrameBuffer(389,10608
+sunScreenInit 289,8120
+
+Xsun/sunIo.c,210
+AbortDDX(213,6054
+ProcessInputEvents 124,3636
+SetTimeSinceLastInputEvent(201,5841
+TimeSinceLastInputEvent(96,2997
+ddxGiveUp(220,6141
+ddxProcessArgument 225,6162
+ddxUseMsg(263,6991
+sunInputAvail(76,2590
+
+Xsun/sunKbd.c,550
+LegalModifier(445,12869
+} SunKbPrivRec,86,3139
+extern 88,3171
+extern 89,3205
+    (pointer)106,3780
+static 91,3239
+static 92,3265
+static 93,3294
+static 94,3333
+static 95,3370
+static 96,3405
+static 98,3435
+static 99,3468
+sunBell 220,6863
+sunBlockHandler 466,13293
+sunKbdCtrl 261,7848
+    sunKbdDoneEvents,104,3690
+sunKbdDoneEvents 425,12469
+    sunKbdGetEvents,102,3578
+sunKbdGetEvents 304,9097
+sunKbdProc 131,4577
+    sunKbdProcessEvent,103,3630
+sunKbdProcessEvent 367,10967
+sunWakeupHandler 519,14851
+    &sysKbCtrl,108,3881
+
+Xsun/sunKeyMap.c,0
+
+Xsun/sunMouse.c,529
+MouseAccelerate 244,6905
+} SunMsPrivRec,72,2461
+    (pointer)91,3113
+static 74,2493
+static 75,2525
+static 76,2567
+static 77,2609
+static 78,2649
+static 80,2688
+static 82,2723
+sunCrossScreen 383,10629
+sunCursorOffScreen 341,9782
+sunEventTime 376,10540
+sunMouseCtrl 178,5252
+    sunMouseDoneEvents,86,2912
+sunMouseDoneEvents 414,11428
+    sunMouseGetEvents,84,2797
+sunMouseGetEvents 222,6386
+sunMouseGetMotionEvents 199,5756
+sunMouseProc 117,3913
+    sunMouseProcessEvent,85,2851
+sunMouseProcessEvent 278,7729
+
+Xsun/sunUtils.c,26
+sunUseSunWindows(42,1694
+
+cfb/cfb.h,992
+( ((alu)220,6831
+    (((alu)221,6863
+     (((alu)222,6889
+       (((alu)223,6925
+         (((alu)224,6955
+         (((alu)225,7012
+       (((alu)226,7082
+	 (((alu)227,7114
+	 (((alu)228,7170
+     (((alu)229,7236
+       (((alu)230,7271
+	 (((alu)231,7300
+	 (((alu)232,7361
+       (((alu)233,7415
+	 (((alu)234,7451
+	 (((alu)235,7510
+    } cfbPrivGC;142,4506
+typedef cfbPrivGC	*cfbPrivGCPtr;144,4524
+    } cfbPrivWin;154,4870
+#define 172,5363
+#define 173,5390
+#define 174,5415
+#define 175,5439
+#define 178,5500
+#define 179,5522
+#define 180,5545
+#define 181,5568
+#define 184,5630
+#define 185,5647
+#define 188,5718
+#define 189,5740
+#define 190,5764
+#define 197,5949
+#define 198,5979
+#define 199,6016
+#define 200,6060
+#define 201,6091
+#define 202,6136
+#define 203,6167
+#define 204,6204
+#define 205,6240
+#define 206,6280
+#define 207,6319
+#define 208,6353
+#define 209,6396
+#define 210,6435
+#define 211,6479
+#define 212,6519
+#define 219,6800
+} 169,5318
+
+cfb/cfb8bit.c,55
+cfb8ComputeClipMasks32 101,2697
+cfb8SetPixels 36,757
+
+cfb/cfb8bit.h,273
+#define GetFourBits(28,896
+#define GetFourBits(31,993
+#define GetFourPixels(35,1074
+#define NextFourBits(29,950
+#define NextFourBits(32,1029
+#define WriteFourBits(58,1797
+#define WriteFourBits(67,2054
+#define WriteFourBits(127,3508
+#define cfb8CheckPixels(44,1315
+
+cfb/cfbbitblt.c,321
+#define GetBits(1311,32354
+#define StepBit(1305,32230
+#define StepBit(1308,32302
+cfbCopyArea(695,17121
+cfbCopyImagePlane 1320,32537
+RegionPtr cfbCopyPlane(1504,36880
+cfbCopyPlane1to8 947,23575
+cfbCopyPlane8to1 1333,32908
+cfbDoBitblt(38,1088
+#define mfbmaskbits(1292,31864
+#define mfbmaskpartialbits(1300,32090
+
+cfb/cfbbres.c,18
+cfbBresS(36,1484
+
+cfb/cfbbresd.c,29
+	if 37,1539
+    if 80,2796
+
+cfb/cfbbstore.c,48
+cfbRestoreAreas(107,3250
+cfbSaveAreas(51,1628
+
+cfb/cfbcmap.c,181
+cfbCreateDefColormap(203,6230
+cfbInitializeColormap(138,4239
+cfbInstallColormap(52,1769
+cfbListInstalledColormaps(40,1491
+cfbResolveColor(92,2649
+cfbUninstallColormap(72,2263
+
+cfb/cfbfillarc.c,162
+#define FILLSLICESPANS(155,3847
+#define FILLSPAN(130,3297
+cfbFillArcSliceSolidCopy(169,4071
+cfbFillEllipseSolidCopy(40,1207
+cfbPolyFillArcSolidCopy(239,5669
+
+cfb/cfbfillrct.c,78
+cfbFillBoxSolid 40,1161
+cfbFillBoxTile32 206,4347
+cfbPolyFillRect(343,7689
+
+cfb/cfbfillsp.c,102
+cfbSolidFS(109,3966
+cfbUnnaturalStippleFS(493,14238
+cfbUnnaturalTileFS(304,8874
+dumpspans(93,3708
+
+cfb/cfbgc.c,255
+cfbChangeClip(742,17801
+cfbChangeGC(195,4640
+cfbCopyClip 771,18519
+cfbCopyGC 796,19173
+cfbCreateGC(155,3644
+cfbCreateOps 219,5037
+cfbDestroyClip(721,17338
+cfbDestroyGC(203,4731
+cfbDestroyOps 236,5363
+cfbValidateGC(254,5823
+matchCommon 127,3042
+
+cfb/cfbgetsp.c,21
+cfbGetSpans(45,1681
+
+cfb/cfbglblt8.c,380
+    CharInfoPtr 63,1815
+    DrawablePtr 59,1733
+    GCPtr	60,1760
+					(bits)47,1365
+58,1667
+cfbPolyGlyphBlt8Clipped 241,6130
+typedef	unsigned char	42,1213
+#define 45,1273
+#define 48,1392
+#define 53,1536
+#define 54,1585
+					(dst)46,1338
+					dst 49,1460
+extern 43,1250
+56,1661
+    int 61,1775
+    unsigned 62,1790
+    unsigned 64,1869
+    int 61,1775
+51,1498
+
+cfb/cfbhrzvert.c,37
+cfbHorzS(38,1469
+cfbVertS(128,3465
+
+cfb/cfbimage.c,42
+cfbGetImage(84,2912
+cfbPutImage(38,1521
+
+cfb/cfbline.c,189
+#define OUTCODES(66,2764
+#define SWAPINT(83,3123
+#define SWAPPT(89,3201
+#define SignTimes(80,3061
+cfbLineSD(509,11903
+cfbLineSS 104,3453
+cfbSegmentSD 503,11760
+cfbSegmentSS 98,3319
+
+cfb/cfbmskbits.c,0
+
+cfb/cfbmskbits.h,748
+#define BitLeft(211,7935
+#define BitLeft(214,8051
+#define BitRight(210,7898
+#define BitRight(213,8014
+#define FASTGETBITS(287,9976
+#define FASTPUTBITS(297,10234
+#define GET_VALID_BITS_FROM_LONG(383,12606
+#define GET_VALID_BITS_FROM_LONG(385,12652
+#define PFILL(224,8357
+#define PFILL2(228,8485
+#define SCRLEFT(217,8132
+#define SCRRIGHT(218,8179
+#define getbits(251,9067
+#define getbits(291,10109
+#define getleftbits(351,11751
+#define getleftbits(361,12064
+#define getleftbits(371,12333
+#define getstipplepixels(411,13595
+#define getstipplepixels(426,14089
+#define mask32bits(246,8936
+#define maskbits(235,8590
+#define maskpartialbits(243,8823
+#define putbits(265,9322
+#define putbits(303,10409
+#define putbitsrop(320,10868
+
+cfb/cfbpixmap.c,215
+cfbCopyPixmap(159,4003
+cfbCopyRotatePixmap(390,9811
+cfbCreatePixmap 115,2930
+cfbDestroyPixmap(149,3862
+cfbPadPixmap(193,5116
+cfbXRotatePixmap(278,6967
+cfbYRotatePixmap(348,8740
+static cfbdumppixmap(237,6070
+
+cfb/cfbpntwin.c,24
+cfbPaintWindow(40,1463
+
+cfb/cfbpolypnt.c,22
+cfbPolyPoint(30,1032
+
+cfb/cfbpush8.c,24
+cfbPushPixels8 39,1104
+
+cfb/cfbrctstp8.c,80
+cfb8FillBoxOpaqueStippled32 39,1097
+cfb8FillBoxTransparentStippled32 145,4045
+
+cfb/cfbscrinit.c,49
+cfbCloseScreen 100,3134
+cfbScreenInit(110,3312
+
+cfb/cfbseg.c,189
+#define OUTCODES(66,2762
+#define SWAPINT(83,3121
+#define SWAPPT(89,3199
+#define SignTimes(80,3059
+cfbLineSD(501,11745
+cfbLineSS 104,3451
+cfbSegmentSD 495,11602
+cfbSegmentSS 98,3317
+
+cfb/cfbsetsp.c,46
+cfbSetScanline(46,1777
+cfbSetSpans(128,4001
+
+cfb/cfbteblt8.c,1261
+			BitRight 63,1739
+			BitRight 64,1773
+			BitRight 65,1807
+			BitRight 67,1897
+			BitRight 68,1931
+			BitRight 69,1965
+			BitRight 70,1999
+			BitRight 72,2067
+			BitRight 73,2101
+			BitRight 74,2135
+		    c 81,2304
+			BitRight 120,3676
+		    IncChar(107,3164
+		    IncChar(110,3279
+		    IncChar(113,3410
+		    IncChar(116,3535
+		    c 81,2304
+		    c 84,2430
+		    c 87,2556
+		    c 90,2682
+		    c 94,2842
+		    c 106,3131
+		    c 111,3306
+		    c 115,3502
+cfbTEGlyphBlt8 202,5560
+typedef unsigned char	49,1461
+		    char1 82,2343
+		    char2 85,2469
+		    char3 88,2595
+		    char4 91,2721
+118,3566
+#define 50,1498
+#define 55,1588
+#define 62,1684
+#define 66,1838
+#define 71,2030
+#define 78,2210
+#define 80,2232
+#define 92,2749
+#define 97,2913
+#define 104,2995
+#define 105,3064
+#define 108,3186
+#define 112,3343
+#define 114,3432
+#define 119,3618
+#define 121,3707
+#define 122,3741
+#define 126,3835
+extern 102,2972
+52,1526
+57,1616
+61,1683
+100,2951
+124,3803
+#define glyphbits(38,1144
+		    glyphbits 83,2372
+		    glyphbits 86,2498
+		    glyphbits 89,2624
+		    glyphbits 93,2781
+		    glyphbits 109,3218
+typedef unsigned int	59,1640
+		    leftChar 95,2881
+typedef unsigned short	54,1550
+77,2173
+
+cfb/cfbtegblt.c,23
+cfbTEGlyphBlt(60,2308
+
+cfb/cfbtileodd.c,27
+cfbFillBoxTileOdd 73,1831
+
+cfb/cfbwindow.c,185
+cfbChangeWindowAttributes(179,4964
+cfbCopyWindow(132,3650
+cfbCreateWindow(36,1410
+cfbDestroyWindow(51,1746
+cfbMapWindow(67,2101
+cfbPositionWindow(82,2501
+cfbUnmapWindow(117,3413
+
+cfb/cfbzerarc.c,59
+cfbZeroArcSS8Copy(41,1305
+cfbZeroPolyArcSS8Copy(173,4738
+
+dix/atom.c,297
+Atom 46,1667
+AtomError(142,3580
+    Bool 50,1739
+FreeAllAtoms(160,3931
+FreeAtom(171,4124
+InitAtoms(147,3635
+MakeAtom(47,1673
+NameForAtom(133,3403
+} NodeRec,39,1513
+ValidAtom(126,3311
+    char 48,1703
+static 41,1535
+static 42,1564
+static 43,1605
+static 44,1639
+    unsigned 49,1721
+
+dix/colormap.c,818
+AllComp 1171,33269
+AllocCP 1708,46829
+AllocColor 616,17669
+AllocColorCells 1353,37155
+AllocColorPlanes 1432,39106
+AllocDirect 1527,41537
+AllocPseudo 1647,45051
+AllocShared 1884,51568
+BlueComp 1203,33805
+CopyColormapAndFree 363,10941
+CopyFree 413,12410
+CreateColormap 97,3556
+FakeAllocColor 767,22470
+FakeAllocColor 858,25490
+FakeFreeColor(829,24621
+FindBestPixel(939,27932
+FindColor 991,29158
+FreeCell 501,15012
+FreeClientPixels 1340,36926
+FreeCo 2027,55335
+FreeColormap 242,8147
+FreeColors 1982,53949
+FreePixels(1301,35730
+#define GetNextBitsOrBreak(72,2934
+GreenComp 1193,33656
+IsMapInstalled(2425,64858
+QueryColors 1216,33983
+RedComp 1183,33513
+StoreColors 2166,58703
+TellGainedMap 342,10500
+TellLostMap 321,10021
+TellNoMap 296,9443
+UpdateColors 550,16116
+	} colorResource;85,3216
+
+dix/cursor.c,201
+AllocCursor(103,2736
+AllocGlyphCursor(160,4180
+CreateRootCursor(341,8320
+    CursorBitsPtr 48,1720
+FreeCursor(77,2225
+FreeCursorBits(47,1699
+} GlyphShare,42,1598
+static 44,1629
+static 46,1687
+
+dix/devices.c,1267
+AddInputDevice(49,1838
+AllModifierKeysAreUp(575,14769
+BadDeviceMap(548,14277
+CloseDevice(158,4647
+CloseDownDevices(187,5207
+DisableDevice(111,3564
+EnableDevice(92,3165
+InitAndStartDevices(130,3944
+InitButtonClassDeviceStruct(381,9996
+InitFocusClassDeviceStruct(431,11274
+InitKbdFeedbackClassDeviceStruct(450,11673
+InitKeyClassDeviceStruct(345,9022
+InitKeyboardDeviceStruct(504,13029
+InitModMap(302,7994
+InitPointerDeviceStruct(486,12540
+InitPtrFeedbackClassDeviceStruct(469,12140
+InitValuatorClassDeviceStruct(404,10514
+LookupKeyboardDevice(232,6257
+LookupPointerDevice(238,6335
+MaybeStopHint(1158,29482
+NoteLedState(856,22643
+NumMotionEvents(204,5479
+Ones(869,22877
+ProcBell(1071,27264
+ProcChangeKeyboardControl 880,23099
+ProcChangeKeyboardMapping(725,18620
+ProcChangePointerControl(1094,27860
+ProcGetKeyboardControl 1046,26564
+ProcGetKeyboardMapping(800,20962
+ProcGetModifierMapping(702,17881
+ProcGetMotionEvents(1176,29972
+ProcGetPointerControl(1139,28994
+ProcGetPointerMapping(838,22137
+ProcQueryKeymap(1243,32115
+ProcSetModifierMapping(600,15237
+ProcSetPointerMapping(760,19760
+QueryMinMaxKeyCodes(244,6406
+RegisterKeyboardDevice(221,5905
+RegisterPointerDevice(210,5564
+SendMappingNotify(519,13456
+SetKeySymsMap(252,6612
+
+dix/dispatch.c,3064
+CloseDownClient(3181,81734
+CloseDownRetainedResources(3249,83312
+DeleteClientFromAnySelections(3468,89311
+DeleteWindowFromAnySelections(3453,88959
+Dispatch(183,5265
+FlushClientCaches(153,4638
+InitProcVectors(3155,81225
+InitSelections(144,4483
+KillAllClients(3234,82975
+MarkClientException(3483,89664
+NextAvailableClient(3271,83829
+ProcAllocColor 2301,59750
+ProcAllocColorCells 2389,61947
+ProcAllocColorPlanes(2445,63413
+ProcAllocNamedColor 2340,60683
+ProcBadRequest(281,7517
+ProcChangeAccessControl(2973,76883
+ProcChangeCloseDownMode(3106,80185
+ProcChangeGC(1388,36271
+ProcChangeHosts(2920,75584
+ProcChangeSaveSet(405,10540
+ProcChangeWindowAttributes(333,8800
+ProcCirculateWindow(552,14285
+ProcClearToBackground(1507,39111
+ProcCloseFont(1037,26980
+ProcConfigureWindow(528,13622
+ProcConvertSelection(868,22509
+ProcCopyArea(1534,39833
+ProcCopyColormapAndFree(2196,57118
+ProcCopyGC(1412,36844
+ProcCopyPlane(1576,40901
+ProcCreateColormap(2129,55601
+ProcCreateCursor(2691,69588
+ProcCreateGC(1358,35485
+ProcCreateGlyphCursor(2774,71649
+ProcCreatePixmap(1289,33829
+ProcCreateWindow(290,7616
+ProcDeleteProperty(719,18604
+ProcDestroySubwindows(390,10202
+ProcDestroyWindow(374,9848
+ProcEstablishConnection(3351,85996
+ProcFillPoly(1734,45169
+int ProcForceScreenSaver(3126,80614
+ProcFreeColormap(2172,56643
+ProcFreeColors 2499,64852
+ProcFreeCursor(2799,72278
+ProcFreeGC(1494,38850
+ProcFreePixmap(1336,35101
+ProcGetAtomName(691,18008
+ProcGetFontPath(3064,78960
+ProcGetGeometry(573,14819
+ProcGetImage(1854,48566
+ProcGetScreenSaver(2903,75080
+ProcGetSelectionOwner(836,21729
+ProcGetWindowAttributes(359,9506
+ProcGrabServer(925,24298
+ProcImageText16(2111,55194
+ProcImageText8(2094,54789
+ProcInitialConnection(3323,85207
+ProcInstallColormap(2223,57746
+ProcInternAtom(661,17276
+ProcKillClient(2992,77344
+ProcListFonts(1165,30399
+ProcListFontsWithInfo(1213,31716
+ProcListHosts(2945,76183
+ProcListInstalledColormaps(2266,58678
+ProcLookupColor(2653,68564
+ProcMapSubwindows(481,12538
+ProcMapWindow(465,12166
+int ProcNoOperation(3143,81023
+ProcOpenFont(1017,26522
+ProcPolyArc(1714,44648
+ProcPolyFillArc 1787,46602
+ProcPolyFillRectangle(1766,46025
+ProcPolyLine(1649,42926
+ProcPolyPoint(1625,42267
+ProcPolyRectangle 1693,44100
+ProcPolySegment(1673,43577
+ProcPolyText(2013,52934
+ProcPutImage(1807,47159
+ProcQueryBestSize 2820,72671
+ProcQueryColors(2602,67277
+ProcQueryFont(1058,27406
+ProcQueryTextExtents(1116,29026
+ProcQueryTree(610,15860
+ProcReparentWindow(434,11275
+ProcSetClipRectangles(1464,38032
+ProcSetDashes(1436,37440
+ProcSetFontPath(3033,78254
+ProcSetScreenSaver 2860,73753
+ProcSetSelectionOwner(748,19227
+ProcStoreColors 2534,65649
+ProcStoreNamedColor 2568,66445
+ProcTranslateCoords(946,24694
+ProcUngrabServer(935,24487
+ProcUninstallColormap(2244,58186
+ProcUnmapSubwindows(513,13295
+ProcUnmapWindow(497,12919
+#define SAME_SCREENS(100,3468
+SendErrorToClient(3433,88514
+SetInputCheck(104,3534
+UpdateCurrentTime(112,3639
+UpdateCurrentTimeIf(131,4192
+dixDestroyPixmap(1281,33692
+
+dix/dixfonts.c,235
+CloseFont(106,2885
+DescribeFont(135,3468
+GetGlyphs(228,5643
+OpenFont(64,2068
+#define QUERYCHARINFO(40,1555
+QueryFont(168,4231
+QueryGlyphExtents(341,8143
+QueryTextExtents(398,9731
+SetDefaultFont(48,1714
+queryCharInfo(217,5412
+
+dix/dixutils.c,503
+AlterSaveSetForClient(150,3964
+BlockHandler(242,5967
+} BlockHandlerRec,235,5813
+ClientTimeToServerTime(64,2008
+CompareTimeStamps(44,1629
+CopyISOLatin1Lowered(93,2611
+DeleteWindowFromAnySaveSet(207,5097
+InitBlockAndWakeupHandlers 316,8041
+LookupDrawable(132,3558
+LookupWindow(114,3164
+NoopDDA(227,5681
+RegisterBlockAndWakeupHandlers 273,6925
+RemoveBlockAndWakeupHandlers 297,7578
+WakeupHandler(258,6453
+pointer	243,6001
+pointer 244,6073
+static 237,5851
+static 238,5884
+static 239,5909
+
+dix/events.c,2461
+ActivateKeyboardGrab(723,19488
+ActivatePointerGrab(666,17913
+AllowSome(773,20913
+ChangeToCursor(398,11247
+CheckCursorConfinement(3255,87098
+CheckDeviceGrabs(1614,42989
+CheckGrabForSyncs(630,17006
+CheckMotion(1359,35788
+CheckPassiveGrabsOnWindow(1553,40981
+CheckPhysLimits(278,8217
+CheckVirtualMotion(320,9311
+CommonAncestor(2114,55596
+ComputeFreezes(567,15191
+ConfineCursorToWindow(366,10513
+ConfineToShape(239,7513
+DeactivateKeyboardGrab(749,20239
+DeactivatePointerGrab(698,18830
+DefineInitialRootWindow(1423,37568
+DeleteWindowFromAnyEvents(3172,84908
+DeliverDeviceEvents(1210,31945
+DeliverEvents(1276,33567
+DeliverEventsToWindow(1021,26958
+DeliverFocusedEvent(1654,43785
+DeliverGrabbedEvent(1682,44520
+DoEnterLeaveEvents(2212,58392
+DoFocusEvents(2319,61346
+EnqueueEvent(482,12993
+EnterLeaveEvent(2123,55759
+EnterNotifies(2187,57753
+EventMaskForClient(3272,87536
+EventSelectForWindow(1979,52409
+EventSuppressForWindow(2055,54424
+FixUpEventFromWindow(1155,30523
+FocusEvent(2242,59422
+FocusInEvents(2278,60311
+FocusOutEvents(2304,60970
+FreezeThaw(555,14948
+GetCurrentRootWindow(453,12358
+GetNextEventMask(196,6630
+GetSpriteWindow(459,12413
+GrabDevice(2708,72812
+} HotSpot;114,3849
+InitEvents(2861,76779
+IsParent(414,11670
+LeaveNotifies(2199,58089
+MaybeDeliverEventsToClient(1125,29808
+#define Motion_Filter(75,2809
+NewCurrentScreen(1461,38741
+NoticeEventTime(470,12649
+#define NoticeTime(464,12459
+OtherClientGone(1950,51844
+PlayReleasedEvents(523,14096
+PointerConfinedToScreen(390,11112
+PostNewCursor(423,11817
+ProcAllowEvents(883,23735
+ProcChangeActivePointerGrab(2643,71140
+ProcGetInputFocus(2521,67743
+ProcGrabButton(3065,82172
+ProcGrabKey(3017,80866
+ProcGrabKeyboard(2773,74559
+ProcGrabPointer(2543,68305
+ProcQueryPointer(2815,75663
+ProcRecolorCursor(3289,87867
+ProcSendEvent(2906,78035
+ProcSetInputFocus(2510,67501
+ProcUngrabButton(3138,84031
+ProcUngrabKey(2983,80004
+ProcUngrabKeyboard(2795,75148
+ProcUngrabPointer(2688,72291
+ProcWarpPointer(1472,38980
+ProcessKeyboardEvent 1754,46623
+ProcessPointerEvent 1842,49015
+RecalculateDeliverableEvents(1916,51067
+ReleaseActiveGrabs(927,24829
+SetCriticalEvent(213,6905
+SetInputFocus(2433,65311
+SetMaskForEvent(203,6710
+SyntheticMotion(222,7088
+TryClientEvents 944,25300
+#define WID(79,2910
+WindowHasNewCursor(1454,38665
+WindowsRestructured(1417,37496
+WriteEventsToClient(3324,88704
+XYToWindow(1311,34604
+#define rClient(81,2957
+
+dix/extension.c,293
+ExtensionEntry *AddExtension(52,1942
+Bool AddExtensionAlias(126,3873
+CloseDownExtensions(169,4771
+LookupProc(308,8262
+MinorOpcodeOfRequest(155,4466
+ProcListExtensions(252,6816
+ProcQueryExtension(204,5538
+RegisterProc(325,8675
+RegisterScreenProc(334,8831
+StandardMinorOpcode(148,4346
+
+dix/gc.c,512
+AllocateGC(448,9775
+AllocateGCPrivateIndex(442,9703
+ChangeGC(65,2003
+CopyGC(618,13617
+CreateDefaultStipple(946,21379
+CreateDefaultTile 574,12516
+CreateGC(480,10381
+CreateGCperDepth(915,20655
+CreateScratchGC(833,18835
+DoChangeGC(86,2604
+FreeDefaultStipple(983,22371
+FreeGC(786,17500
+FreeGCperDepth(898,20344
+FreeScratchGC(1184,27111
+GetScratchGC(1134,25813
+ResetGCPrivates(436,9652
+SetClipRects(1093,24698
+SetDashes(991,22540
+SetGCMask(806,17910
+ValidateGC(51,1669
+VerifyRectOrder(1040,23486
+
+dix/globals.c,100
+long TimeOutValue = DEFAULT_TIMEOUT * MILLI_PER_SECOND;97,3167
+int 71,2343
+long 69,2213
+75,2491
+
+dix/glyphcurs.c,62
+CursorMetricsFromGlyph(122,3741
+ServerBitsFromGlyph(54,1959
+
+dix/grabs.c,461
+AddPassiveGrabToList(249,6648
+#define BITCLEAR(39,1619
+#define BITMASK(35,1449
+#define BITSET(38,1565
+CreateGrab(43,1740
+DeleteDetailFromMask(130,3813
+DeletePassiveGrab(105,3349
+DeletePassiveGrabFromList(283,7421
+DetailSupersedesSecond(186,4995
+FreeGrab(88,3059
+#define GETBIT(40,1676
+GrabMatchesSecond(217,5724
+GrabSupersedesSecond(201,5344
+IdenticalExactDetails(173,4712
+IsInGrabMask(152,4258
+#define MASKIDX(36,1494
+#define MASKWORD(37,1524
+
+dix/initatoms.c,28
+MakePredeclaredAtoms(9,159
+
+dix/main.c,245
+AddScreen(522,15513
+AllocateGCPrivate(483,14576
+AllocateScreenPrivateIndex(428,13367
+AllocateWindowPrivate(452,13824
+CreateConnectionBlock(281,8815
+FreeScreen(616,18459
+NotImplemented(78,2514
+ResetScreenPrivates(419,13185
+main(134,4211
+
+dix/property.c,201
+DeleteAllWindowProperties(329,9599
+DeleteProperty(289,8625
+PrintPropertys(51,1944
+ProcChangeProperty(148,4700
+ProcGetProperty(362,10563
+ProcListProperties(495,14270
+ProcRotateProperties(71,2388
+
+dix/resource.c,515
+AddResource(212,6265
+ChangeResourceValue 391,10461
+} ClientResourceRec;81,3026
+92,3233
+CreateNewResourceClass(111,3640
+typedef int (*DeleteType)87,3141
+    DeleteType 93,3267
+FakeClientID(203,6104
+FreeAllResources(461,12283
+FreeClientResources(416,10955
+FreeResource(301,8398
+FreeResourceByType(347,9520
+Hash(179,5583
+InitClientResources(131,4030
+LegalNewID(473,12452
+LookupIDByClass(509,13284
+LookupIDByType(486,12786
+RebuildTable(251,7185
+} ResourceRec,71,2780
+#define 72,2809
+static 89,3171
+
+dix/swaprep.c,2264
+CopySwap16Write(105,3039
+CopySwap32Write(58,1960
+SAllocColorCellsReply(584,13231
+SAllocColorPlanesReply(600,13552
+SAllocColorReply(549,12447
+SAllocNamedColorReply(565,12776
+SCirculateEvent(1088,27425
+SClientMessageEvent(1184,30569
+SColormapEvent(1160,29832
+SConfigureNotifyEvent(1017,24836
+SConfigureRequestEvent(1039,25708
+SCreateNotifyEvent(944,22343
+SDestroyNotifyEvent(961,23047
+SEnterLeaveEvent(854,19267
+SErrorEvent(813,17949
+SExposeEvent(885,20429
+SFocusEvent(874,20139
+SGenericReply(154,4149
+SGetAtomNameReply(235,5906
+SGetFontPathReply(506,11532
+SGetGeometryReply(188,4936
+SGetImageReply(520,11812
+SGetInputFocusReply(361,8458
+SGetKeyboardControlReply(734,16278
+SGetKeyboardMappingReply(695,15479
+SGetModifierMappingReply(721,16011
+SGetMotionEventsReply(332,7853
+SGetPointerControlReply(750,16642
+SGetPointerMappingReply(708,15746
+SGetPropertyReply(250,6193
+SGetScreenSaverReply(765,16986
+SGetSelectionOwnerReply(280,6836
+SGetWindowAttributesReply(167,4390
+SGraphicsExposureEvent(899,20901
+SGravityEvent(1065,26684
+SInternAtomReply(222,5659
+SKeyButtonPtrEvent(825,18249
+SKeymapNotifyEvent(1236,32429
+SLHostsExtend(779,17277
+SListExtensionsReply(682,15220
+SListFontsReply(482,11023
+SListFontsWithInfoReply(496,11299
+SListHostsReply(797,17671
+SListInstalledColormapsReply(535,12137
+SListPropertiesReply(266,6543
+SLookupColorReply(650,14520
+SMapNotifyEvent(982,23712
+SMapRequestEvent(993,24052
+SMappingEvent(1172,30212
+SNoExposureEvent(923,21700
+SPropertyEvent(1101,27861
+SQColorsExtend(617,13938
+SQueryBestSizeReply(668,14937
+SQueryColorsReply(636,14239
+SQueryFontReply(453,10350
+SQueryKeymapReply(375,8735
+SQueryPointerReply(294,7101
+SQueryTextExtentsReply(463,10545
+SQueryTreeReply(206,5324
+SReparentEvent(1003,24340
+SResizeRequestEvent(1077,27053
+SSelectionClearEvent(1113,28243
+SSelectionNotifyEvent(1143,29271
+SSelectionRequestEvent(1124,28616
+STranslateCoordsReply(346,8144
+SUnmapNotifyEvent(971,23348
+SVisibilityEvent(934,22065
+Swap32Write(40,1582
+SwapCharInfo(388,8995
+SwapConnSetup(1304,34264
+SwapFont(419,9667
+SwapFontInfo(402,9288
+SwapTimeCoordWrite(313,7517
+SwapVisual(1346,36104
+SwapWinRoot(1324,35208
+WriteSConnSetupPrefix(1359,36488
+WriteSConnectionInfo(1245,32627
+
+dix/swapreq.c,2081
+SProcAllocColor 775,18027
+SProcAllocColorCells 802,18628
+SProcAllocColorPlanes(815,18936
+SProcAllocNamedColor 789,18349
+SProcChangeActivePointerGrab(357,8619
+SProcChangeGC(540,12685
+SProcChangeHosts(1045,24330
+SProcChangeKeyboardControl 1006,23388
+SProcChangeKeyboardMapping 985,22954
+SProcChangePointerControl 1019,23722
+SProcChangeProperty(214,5248
+SProcChangeWindowAttributes(158,3998
+SProcClearToBackground(595,13866
+SProcConfigureWindow(187,4685
+SProcConvertSelection(278,6742
+SProcCopyArea(610,14204
+SProcCopyColormapAndFree(762,17747
+SProcCopyGC(554,12990
+SProcCopyPlane(629,14659
+SProcCreateColormap(748,17453
+SProcCreateCursor(900,20904
+SProcCreateGC(525,12348
+SProcCreateGlyphCursor(921,21432
+SProcCreatePixmap(510,12029
+SProcCreateWindow(135,3442
+SProcDeleteProperty(237,5797
+SProcFillPoly(668,15695
+SProcFreeColors 830,19290
+SProcGetImage(700,16368
+SProcGetMotionEvents(406,9715
+SProcGetProperty(250,6081
+SProcGrabButton(330,7995
+SProcGrabKey(382,9205
+SProcGrabKeyboard(370,8943
+SProcGrabPointer(315,7640
+SProcImageText(734,17151
+SProcInternAtom(203,5024
+SProcListFonts(475,11272
+SProcListFontsWithInfo(487,11525
+SProcLookupColor(888,20649
+SProcNoOperation(1073,24971
+SProcOpenFont(463,11027
+SProcPoly(651,15275
+SProcPolyText(718,16789
+SProcPutImage(682,15964
+SProcQueryBestSize 960,22417
+SProcQueryColors(875,20357
+SProcQueryExtension 974,22715
+SProcRecolorCursor(943,21992
+SProcReparentWindow(173,4369
+SProcResourceReq(123,3226
+int SProcRotateProperties(1057,24559
+SProcSendEvent(293,7110
+SProcSetClipRectangles(581,13541
+SProcSetDashes(567,13258
+SProcSetFontPath(499,11802
+SProcSetInputFocus(451,10770
+SProcSetScreenSaver 1033,24049
+SProcSetSelectionOwner(265,6436
+SProcSimpleReq(109,2905
+SProcStoreColors 845,19621
+SProcStoreNamedColor 862,20050
+SProcTranslateCoords(419,10011
+SProcUngrabButton(345,8352
+SProcUngrabKey(394,9457
+SProcWarpPointer(433,10336
+SwapColorItem(1101,25373
+SwapConnClientPrefix(1112,25557
+SwapLongs 43,1705
+SwapRGB(1091,25235
+SwapShorts 72,2175
+SwapTimecoord(1080,25080
+
+dix/tables.c,0
+
+dix/window.c,2297
+AllocateWindow(587,15544
+AllocateWindowPrivateIndex(404,10971
+AnyWindowOverlapsMe(2563,66245
+#define BOXES_OVERLAP(94,3162
+ChangeBorderWidth(2388,62077
+ChangeSaveUnder(280,8287
+ChangeWindowAttributes(1184,30596
+CheckSaveUnder 248,7306
+CheckSubSaveUnder(153,4919
+CheckWindowOptionalNeed 4056,103705
+CirculateWindow(3104,80638
+ClippedRegionFromBox(754,19878
+CompareWIDs(3162,82119
+ConfigureWindow(2791,72250
+CreateRootWindow(624,16284
+CreateUnclippedWinSize 1765,45604
+CreateWindow(801,20891
+CrushTree(1066,27731
+#define DO_SAVE_UNDERS(126,4163
+DeleteWindow(1123,28965
+DestroySubwindows(1158,29773
+DisposeWindowOptional 4148,105943
+DoChangeSaveUnder(316,9329
+DrawLogo(4170,106372
+FindWindowWithOptional 4039,103400
+FreeWindowResources(1032,26748
+#define GET_CARD16(2463,63838
+#define GET_CARD8(2470,63960
+#define GET_INT16(2457,63715
+GetWindowAttributes(1656,42001
+GravityTranslate 1932,50160
+HandleExposures(464,12362
+HandleSaveSet(3749,96394
+#define HasSaverWindow(69,2326
+IOverlapAnyWindow(2588,66717
+#define IS_SHAPED(2519,65040
+InitRootWindow(727,19129
+IsSiblingAboveMe(2487,64303
+MakeBoundingRegion 2522,65126
+MakeRootTile(543,14469
+MakeWindowOptional 4107,104878
+MapSubwindows(3483,89797
+MapWindow(3392,87582
+MarkOverlappedWindows(3284,85194
+MarkWindow(3265,84700
+MoveWindow(1854,48141
+MoveWindowInStack(1695,43220
+NotClippedByChildren(3805,97713
+PointInWindowIsVisible(3789,97415
+PrintChildren(357,10222
+PrintWindowTree(375,10542
+RealChildHead(784,20544
+RealizeTree(3350,86629
+RecomputeExposures 2056,53110
+#define RedirectSend(100,3350
+ReflectStackChange(2738,71161
+ReparentWindow(3177,82330
+ResetWindowPrivates(398,10912
+ResizeChildrenWinSize(1985,51231
+SaveScreens(3838,98371
+} ScreenSaverStuffRec;62,2181
+SendVisibilityNotify(3819,98009
+SetBorderSize 1822,47212
+SetShape(3032,78949
+SetWinSize 1796,46454
+SetWindowToDefaults(512,13679
+ShapeOverlap 2541,65644
+SlideAndSizeWindow(2083,53762
+#define StrSend(106,3551
+#define SubSend(103,3454
+#define SubStrSend(109,3645
+TileScreenSaver(3926,100744
+TraverseTree(410,11042
+UnmapSubwindows(3683,94851
+UnmapWindow(3626,93390
+UnrealizeTree(3569,91977
+VisibleBoundingBoxFromPoint(3776,97100
+WalkTree(448,11946
+WhereDoIGoInTheStack(2641,68537
+WindowExtents(2505,64638
+
+extensions/shape.c,938
+CreateBoundingShape 168,4734
+CreateClipShape 181,5091
+ProcShapeCombine 347,9172
+ProcShapeDispatch 837,21912
+ProcShapeGetRectangles 760,19799
+ProcShapeInputSelected 720,18789
+ProcShapeMask 288,7787
+ProcShapeOffset 427,11064
+ProcShapeQueryExtents 462,11844
+ProcShapeQueryVersion 194,5356
+ProcShapeRectangles 223,6086
+ProcShapeSelectInput 563,14671
+RegionOperate 107,3309
+SProcShapeCombine 923,23931
+SProcShapeDispatch 1000,25510
+SProcShapeGetRectangles 988,25263
+SProcShapeInputSelected 976,25015
+SProcShapeMask 908,23626
+SProcShapeOffset 938,24245
+SProcShapeQueryExtents 952,24528
+SProcShapeQueryVersion 882,23095
+SProcShapeRectangles 893,23309
+SProcShapeSelectInput 964,24773
+SShapeNotifyEvent(866,22662
+SendShapeNotify 662,17205
+typedef struct _ShapeEvent *ShapeEventPtr;62,2208
+} ShapeEventRec;69,2388
+ShapeExtensionInit(80,2585
+ShapeFreeClient 522,13747
+ShapeFreeEvents 547,14334
+ShapeResetProc 101,3245
+
+extensions/shape.h,23
+} XShapeEvent;68,2471
+
+extensions/shapestr.h,458
+} xShapeCombineReq;105,3461
+} xShapeGetRectanglesReply;222,6848
+} xShapeGetRectanglesReq;208,6479
+} xShapeInputSelectedReply;197,6102
+} xShapeInputSelectedReq;183,5777
+} xShapeMaskReq;90,3022
+} xShapeNotifyEvent;175,5523
+} xShapeOffsetReq;118,3833
+} xShapeQueryExtentsReply;146,4702
+} xShapeQueryExtentsReq;126,4081
+} xShapeQueryVersionReply;60,2143
+} xShapeQueryVersionReq;45,1739
+} xShapeRectanglesReq;74,2589
+} xShapeSelectInputReq;157,5032
+
+mfb/fastblt.h,125
+#define BitLeft(22,816
+#define BitRight(21,780
+#define DuffL(51,1514
+#define SwitchEven(17,676
+#define SwitchOdd(16,636
+
+mfb/maskbits.c,0
+
+mfb/maskbits.h,1511
+#define FASTGETBITS(238,8260
+#define FASTGETBITS(251,8671
+#define FASTPUTBITS(244,8446
+#define FASTPUTBITS(261,8911
+#define LONG2CHARS(193,6862
+#define LONG2CHARS(199,6980
+#define SCRLEFT(214,7590
+#define SCRLEFT(217,7720
+#define SCRRIGHT(215,7641
+#define SCRRIGHT(218,7757
+#define SHL(206,7274
+#define SHL(209,7422
+#define SHR(207,7345
+#define SHR(210,7475
+#define getandputbits(487,15045
+#define getandputbits(531,16495
+#define getandputbits0(512,15842
+#define getandputbits0(553,17106
+#define getandputrop(494,15247
+#define getandputrop(538,16691
+#define getandputrop0(515,15940
+#define getandputrop0(566,17508
+#define getandputrrop(503,15543
+#define getandputrrop(545,16897
+#define getandputrrop0(518,16050
+#define getandputrrop0(579,17894
+#define getbits(242,8389
+#define getbits(255,8806
+#define getbits(328,10997
+#define getleftbits(440,13571
+#define getleftbits(444,13708
+#define getleftbits(454,13967
+#define getshiftedleftbits(466,14223
+#define mask32bits(232,8107
+#define maskbits(221,7803
+#define maskpartialbits(229,8026
+#define putbits(248,8577
+#define putbits(266,9071
+#define putbits(319,10745
+#define putbitsrop(370,11995
+#define putbitsrop(389,12463
+#define putbitsrop(409,12871
+#define putbitsrrop(378,12213
+#define putbitsrrop(396,12637
+#define putbitsrrop(413,12977
+#define slo_putbits(293,10081
+#define u_FASTPUT(482,14889
+#define u_FASTPUT(484,14958
+#define u_putbits(313,10584
+#define u_putbits(315,10654
+#define u_putbitsrop(339,11246
+
+mfb/mfb.h,695
+#define DoRRop(311,9679
+#define Duff(318,9905
+#define 200,6632
+#define 201,6659
+#define 202,6684
+#define 203,6708
+#define 206,6769
+#define 207,6791
+#define 208,6814
+#define 209,6837
+#define 212,6899
+#define 213,6916
+#define 216,6987
+#define 217,7009
+#define 218,7033
+#define 225,7218
+#define 226,7248
+#define 227,7285
+#define 228,7329
+#define 229,7360
+#define 230,7405
+#define 231,7436
+#define 232,7473
+#define 233,7509
+#define 234,7549
+#define 235,7588
+#define 236,7622
+#define 237,7665
+#define 238,7704
+#define 239,7748
+#define 240,7788
+#define 256,8473
+    } mfbPrivGC;168,5622
+typedef mfbPrivGC	*mfbPrivGCPtr;169,5639
+    } mfbPrivWin;182,6130
+} 197,6587
+
+mfb/mfbbitblt.c,176
+#define getunalignedword(312,9796
+#define getunalignedword(318,9919
+mfbCopyArea(74,3100
+mfbCopyPlane(1052,27180
+mfbDoBitblt(327,10113
+mfbRegisterCopyPlaneProc 1023,26366
+
+mfb/mfbbres.c,18
+mfbBresS(36,1522
+
+mfb/mfbbresd.c,45
+	if 38,1553
+    if 79,2871
+    if 87,3168
+
+mfb/mfbbstore.c,48
+mfbRestoreAreas(100,3446
+mfbSaveAreas(48,1799
+
+mfb/mfbclip.c,52
+#define ADDRECT(34,1453
+mfbPixmapToRegion(67,2499
+
+mfb/mfbcmap.c,206
+mfbCreateColormap(115,3894
+mfbCreateDefColormap 159,4852
+mfbDestroyColormap 152,4782
+mfbInstallColormap(59,2542
+mfbListInstalledColormaps(47,2264
+mfbResolveColor 98,3429
+mfbUninstallColormap(79,3038
+
+mfb/mfbfillarc.c,154
+#define FILLSLICESPANS(219,4910
+#define FILLSPAN(170,3866
+mfbFillArcSliceSolidCopy(233,5134
+mfbFillEllipseSolid(33,1085
+mfbPolyFillArcSolid(303,6729
+
+mfb/mfbfillrct.c,48
+#define MODEQ(38,1569
+mfbPolyFillRect(48,1744
+
+mfb/mfbfillsp.c,299
+#define FILLSPAN32(574,17694
+void mfbBlackSolidFS(58,2182
+mfbBlackStippleFS(396,12197
+void mfbInvertSolidFS(224,7035
+mfbInvertStippleFS(485,14929
+void mfbTileFS(612,18640
+mfbUnnaturalStippleFS(903,26738
+mfbUnnaturalTileFS(734,21802
+void mfbWhiteSolidFS(141,4609
+mfbWhiteStippleFS(307,9469
+
+mfb/mfbfont.c,50
+mfbRealizeFont(41,1578
+mfbUnrealizeFont(86,2977
+
+mfb/mfbgc.c,282
+matchCommon 343,6879
+mfbChangeClip(1238,27665
+mfbChangeGC(409,8555
+mfbCopyClip 1272,28534
+mfbCopyGC 418,8648
+mfbCreateGC(378,7684
+mfbCreateOps 445,9140
+mfbDestroyClip(1217,27209
+mfbDestroyGC(427,8761
+mfbDestroyOps 462,9469
+mfbReduceRop(1100,25280
+mfbValidateGC(481,9935
+
+mfb/mfbgetsp.c,21
+mfbGetSpans(48,1818
+
+mfb/mfbhrzvert.c,37
+mfbHorzS(39,1529
+mfbVertS(117,3242
+
+mfb/mfbimage.c,43
+mfbGetImage(117,3986
+mfbPutImage(64,2269
+
+mfb/mfbimggblt.c,26
+MFBIMAGEGLYPHBLT(78,3151
+
+mfb/mfbline.c,261
+#define OUTCODES(66,2762
+#define SWAPINT(87,3248
+#define SWAPPT(93,3326
+#define SignTimes(84,3186
+#define ceiling(78,3089
+mfbClipLine(826,19185
+mfbLineSD(512,11852
+mfbLineSS 109,3573
+mfbSegmentSD 506,11709
+mfbSegmentSS 103,3439
+#define round(76,3003
+
+mfb/mfbmisc.c,26
+mfbQueryBestSize(34,1402
+
+mfb/mfbpixmap.c,181
+mfbCopyPixmap(87,2577
+mfbCopyRotatePixmap(233,6221
+mfbCreatePixmap 42,1531
+mfbDestroyPixmap(76,2435
+mfbPadPixmap(120,3622
+mfbXRotatePixmap(160,4459
+mfbYRotatePixmap(200,5374
+
+mfb/mfbplygblt.c,25
+MFBPOLYGLYPHBLT(82,3187
+
+mfb/mfbpntarea.c,55
+MFBSOLIDFILLAREA(61,2118
+MFBSTIPPLEFILLAREA(177,4780
+
+mfb/mfbpntwin.c,51
+mfbPaintWindow(48,1696
+mfbPaintWindow32(112,3284
+
+mfb/mfbpolypnt.c,22
+mfbPolyPoint(40,1575
+
+mfb/mfbpushpxl.c,44
+mfbPushPixels(135,4707
+mfbSolidPP(73,2909
+
+mfb/mfbscrclse.c,24
+mfbCloseScreen(30,1334
+
+mfb/mfbscrinit.c,52
+mfbAllocatePrivates(67,2121
+mfbScreenInit(90,2797
+
+mfb/mfbseg.c,261
+#define OUTCODES(66,2762
+#define SWAPINT(87,3248
+#define SWAPPT(93,3326
+#define SignTimes(84,3186
+#define ceiling(78,3089
+mfbClipLine(826,19185
+mfbLineSD(512,11852
+mfbLineSS 109,3573
+mfbSegmentSD 506,11709
+mfbSegmentSS 103,3439
+#define round(76,3003
+
+mfb/mfbsetsp.c,46
+mfbSetScanline(49,1902
+mfbSetSpans(127,3925
+
+mfb/mfbtegblt.c,305
+    DrawablePtr 115,3677
+    GC 116,3704
+114,3615
+		    c 107,3476
+typedef	unsigned char	92,3175
+		    char1 108,3500
+110,3568
+#define 93,3212
+#define 98,3302
+#define 106,3418
+95,3240
+100,3330
+104,3397
+112,3609
+typedef unsigned int	102,3354
+    GC 116,3704
+typedef unsigned short	97,3264
+
+mfb/mfbtile.c,23
+mfbTileArea32(53,1894
+
+mfb/mfbwindow.c,190
+mfbChangeWindowAttributes(192,5621
+mfbCopyWindow(145,4342
+mfbCreateWindow(37,1513
+mfbDestroyWindow(54,1989
+Bool mfbMapWindow(69,2349
+mfbPositionWindow(85,2757
+mfbUnmapWindow(130,4105
+
+mfb/mfbzerarc.c,160
+#define DoPix(56,1768
+#define Pixelate(49,1599
+#define PixelateBlack(46,1501
+#define PixelateWhite(44,1407
+mfbZeroArcSS(59,1845
+mfbZeroPolyArcSS(204,5703
+
+mi/mi.h,43
+typedef struct _miDash *miDashPtr;29,1329
+
+mi/miarc.c,2380
+# define Dcos(721,19030
+# define Dsin(720,18952
+				 GCLineWidth 129,4016
+inline static const double Sqrt 1810,44500
+Sqrt 1813,44569
+addArc 1027,26847
+addCap 973,25755
+addJoin 998,26216
+# define allocFinalSpan(2656,64530
+angleBetween 470,12179
+angleToLength 1468,38133
+arcSpan 2579,62862
+# define binaryIndexFromY(2129,52381
+binaryValue 2135,52588
+# define binaryValue(2151,52863
+#define boundedLe(1829,44829
+#define boundedLt(1826,44740
+computeAcc 1986,47778
+computeAngleFromPath 1590,40675
+computeBound 2010,48353
+computeDashMap 1092,28270
+computeLine 1958,47312
+# define dashIndexToAngle(1082,27866
+# define dashIndexToXAngle(1084,28037
+} dashMap;1089,28246
+#define 122,3787
+#define 123,3813
+#define 124,3841
+#define 125,3869
+#define 126,3896
+#define 127,3923
+#define 128,3950
+#define 142,4386
+deleteFinalSpan 2865,69023
+disposeFinalSpans 2696,65442
+drawArc 3026,71923
+drawQuadrant 3261,76711
+drawZeroArc 1635,41428
+ellipseX 2340,57088
+ellipseY 2156,53029
+extern 132,4084
+144,4412
+fillSpans 2711,65677
+# define findSpan(2756,66701
+inline static const double fmax 156,4587
+fmax 181,4874
+inline static const double fmin 161,4675
+fmin 188,4939
+hookEllipseY 2497,60980
+hookX 2522,61498
+inline 146,4431
+innerXfromXY 1910,46399
+innerXfromY 1920,46600
+innerXs 2383,57938
+innerYfromXY 1934,46858
+innerYfromY 1944,47059
+intersectLine 1972,47542
+lengthToAngle 1518,39058
+max 169,4781
+miArcCap 617,16131
+} miArcCapRec,90,3029
+} miArcDataRec,106,3446
+} miArcFaceRec,96,3155
+miArcJoin 503,12837
+} miArcJoinRec,85,2941
+miArcSegment(201,5091
+miComputeArcs 1117,28768
+miDasin 761,19650
+miDatan2 774,19816
+miDcos 725,19176
+miDsin 743,19413
+miFreeArcs(1052,27301
+miGetArcPts(816,21122
+miPolyArc(271,6896
+} miPolyArcRec,120,3755
+miRoundCap(668,17544
+inline static const int min 151,4509
+min 175,4826
+mirrorSppPoint 2901,69703
+# define mod(722,19108
+newFinalSpan 2808,68086
+outerX 2350,57282
+outerXfromXY 1862,45488
+outerXfromY 1872,45688
+outerYfromXY 1886,45944
+outerYfromY 1896,46144
+realAllocSpan 2673,64938
+realFindSpan 2761,66854
+span 2930,70138
+static 130,4061
+static 133,4113
+static 134,4188
+static 135,4214
+static 136,4249
+tailEllipseY 1841,45151
+# define todeg(68,2619
+translateBounds 490,12601
+unspan 2974,70910
+# define xAngleToDashIndex(1083,27954
+# define yFromBinaryIndex(2130,52465
+
+mi/mibitblt.c,137
+miCopyArea(47,1837
+miCopyPlane(531,16063
+miGetImage(625,19318
+miGetPlane(250,8363
+miOpqStipDrawable(383,11461
+miPutImage(718,22049
+
+mi/mibstore.c,1996
+#define CHEAP_FUNC_EPILOGUE(214,7835
+#define CHEAP_FUNC_PROLOGUE(211,7730
+#define EPILOGUE(105,4626
+#define FUNC_EPILOGUE(185,7016
+#define FUNC_PROLOGUE(181,6905
+#define PROLOGUE(100,4514
+#define SCREEN_EPILOGUE(276,9742
+#define SCREEN_PROLOGUE(271,9597
+#define SETUP_BACKING(89,4085
+#define SETUP_BACKING_TERSE(85,3936
+#define SETUP_BACKING_VERBOSE(95,4335
+miBSAllocate(2361,61093
+miBSChangeClip(3255,86438
+miBSChangeGC 3209,85553
+miBSChangeWindowAttributes 574,17599
+miBSCheapChangeClip 705,20196
+miBSCheapChangeGC 670,19611
+miBSCheapCopyClip(719,20453
+miBSCheapCopyGC 682,19806
+miBSCheapDestroyClip(730,20649
+miBSCheapDestroyGC 694,20039
+miBSCheapValidateGC 649,19114
+miBSClearBackingStore(2087,54421
+miBSCloseScreen 285,9946
+miBSCopyArea 1316,36101
+miBSCopyClip(3271,86761
+miBSCopyGC 3223,85817
+miBSCopyPlane 1423,38613
+miBSCreateGC 606,18281
+miBSCreateGCPrivate 745,20862
+miBSDestroyClip(3284,87029
+miBSDestroyGC 3237,86122
+miBSDestroyGCPrivate 766,21381
+miBSDestroyWindow 626,18660
+miBSDoCopy(976,26945
+miBSDrawGuarantee 2940,78546
+miBSExposeCopy 3435,91043
+miBSFillPolygon(1731,45687
+miBSFillSpans(800,22132
+miBSFillVirtualBits 2258,58732
+miBSFree(2463,64022
+miBSGetImage 306,10518
+miBSGetSpans 475,15043
+miBSImageGlyphBlt(1972,51374
+miBSImageText16(1943,50680
+miBSImageText8(1914,49997
+miBSLineHelper(2063,53682
+miBSPolyArc(1692,44839
+miBSPolyFillArc(1812,47686
+miBSPolyFillRect(1771,46661
+miBSPolyGlyphBlt(2004,52216
+miBSPolyPoint 1535,41231
+miBSPolyRectangle(1654,43940
+miBSPolySegment(1614,43058
+miBSPolyText16(1881,49260
+miBSPolyText8(1849,48535
+miBSPolylines 1575,42134
+miBSPushPixels(2035,53045
+miBSPutImage(925,25298
+miBSRestoreAreas(2690,70490
+miBSSaveDoomedAreas(2603,67802
+miBSSetSpans(862,23758
+miBSTranslateBackingStore(2832,74853
+miBSValidateGC 2998,80094
+miCreateBSPixmap 3345,88643
+miDestroyBSPixmap 3297,87258
+miInitializeBackingStore 222,8037
+miResizeBackingStore(2505,65144
+miTileVirtualBS 3316,87886
+
+mi/mibstore.h,37
+extern 29,897
+} miBSFuncRec,27,867
+
+mi/mibstorest.h,156
+#define 58,2088
+#define 59,2147
+#define 60,2218
+#define 61,2287
+#define 62,2353
+} miBSGCRec,41,1481
+} miBSScreenRec,78,2783
+} miBSWindowRec,56,2054
+
+mi/micursor.c,25
+miRecolorCursor(32,1387
+
+mi/midash.c,68
+CheckDashStorage(230,5109
+miDashLine(59,2068
+miStepDash 252,5593
+
+mi/midispcur.c,693
+    miDCChangeSave,77,2155
+miDCChangeSave 391,11078
+miDCCloseScreen 129,3397
+} miDCCursorRec,59,1691
+miDCInitialize 81,2184
+    miDCMoveCursor,76,2135
+miDCMoveCursor 538,14514
+miDCPutBits 242,6830
+    miDCPutUpCursor,73,2061
+miDCPutUpCursor 271,7704
+miDCRealize 160,4267
+    miDCRealizeCursor,71,2013
+miDCRealizeCursor 150,4048
+    miDCRestoreUnderCursor,75,2107
+miDCRestoreUnderCursor 357,10134
+    miDCSaveUnderCursor,74,2082
+miDCSaveUnderCursor 316,8969
+} miDCScreenRec,53,1505
+    miDCUnrealizeCursor,72,2036
+miDCUnrealizeCursor 224,6379
+static 65,1763
+static 66,1823
+static 67,1881
+static 68,1939
+static 70,1970
+#define tossGC(125,3259
+#define tossPix(126,3316
+
+mi/miexpose.c,157
+miClearDrawable(758,21331
+miHandleExposures(73,2500
+miPaintWindow(513,15339
+miSendGraphicsExpose 308,8937
+miWindowExposures(358,10261
+tossGC 500,15166
+
+mi/mifillarc.c,414
+#define ADDSLICESPANS(578,12740
+#define ADDSPAN(569,12619
+#define ADDSPANS(458,10433
+#define Dcos(41,1267
+#define Dsin(40,1221
+} miFillArcDRec;50,1467
+miFillArcDSetup(114,2847
+miFillArcSetup(53,1490
+miFillArcSliceD(664,14511
+miFillArcSliceI(592,12937
+miFillArcSliceSetup(260,6010
+miFillEllipseD(527,11719
+miFillEllipseI(473,10685
+miGetArcEdge(147,3709
+miGetPieEdge(195,4670
+miPolyFillArc(732,16138
+
+mi/mifillarc.h,433
+#define MIARCSLICELOWER(119,3048
+#define MIARCSLICESTEP(96,2466
+#define MIARCSLICEUPPER(111,2812
+#define MIFILLARCSETUP(39,1335
+#define MIFILLCIRCSTEP(53,1597
+#define MIFILLELLSTEP(65,1811
+} miArcSliceRec;94,2448
+#define miCanFillArc(34,1159
+#define miFillArcEmpty(30,1010
+#define miFillArcLower(77,2024
+} miFillArcRec;28,993
+#define miFillSliceLower(108,2724
+#define miFillSliceUpper(105,2636
+} miSliceEdgeRec,86,2230
+
+mi/mifillrct.c,24
+miPolyFillRect(44,1723
+
+mi/mifpoly.h,348
+#define ICEIL(45,2045
+static inline int ICEIL(48,2099
+#define ICEIL(55,2227
+#define ISEQUAL(27,1313
+#define ISZERO(32,1580
+#define PTISEQUAL(33,1622
+#define PTUNEQUAL(34,1684
+#define PtEqual(35,1746
+#define ROUNDTOINT(31,1506
+} SppArcRec,70,2626
+} SppPointRec,65,2518
+#define UNEQUAL(28,1363
+#define WITHINHALF(29,1412
+extern 72,2652
+
+mi/mifpolycon.c,49
+GetFPolyYBounds(226,6855
+miFillSppPoly(51,1991
+
+mi/miglblt.c,50
+miImageGlyphBlt(167,5152
+miPolyGlyphBlt(59,2191
+
+mi/miinitext.c,24
+InitExtensions(56,1816
+
+mi/mipointer.c,521
+miPointerCheckScreen 216,5731
+miPointerCloseScreen 107,3316
+miPointerConstrainCursor 162,4679
+miPointerCursorLimits(185,5120
+miPointerDeltaCursor 250,6544
+miPointerDisplayCursor 146,4257
+miPointerInitialize 58,1691
+miPointerMoveCursor 269,7011
+miPointerPointerNonInterestBox 176,4991
+miPointerPosition 376,10047
+miPointerQueueEvent 363,9683
+miPointerRealizeCursor 124,3691
+miPointerSetCursor 287,7464
+miPointerSetCursorPosition(195,5318
+miPointerUnrealizeCursor 135,3972
+miRegisterPointerDevice 391,10359
+
+mi/mipointer.h,115
+extern 36,1315
+extern 37,1376
+extern 38,1436
+} miPointerCursorFuncRec,34,1263
+} miPointerSpriteFuncRec,27,997
+
+mi/mipointrst.h,54
+} miPointerRec,32,1155
+} miPointerScreenRec,38,1302
+
+mi/mipoly.c,23
+miFillPolygon(44,1673
+
+mi/mipoly.h,163
+} 74,3176
+#define EVALUATEEDGEEVENODD(139,5048
+#define EVALUATEEDGEWINDING(116,4396
+} EdgeTable;81,3397
+} EdgeTableEntry;67,2937
+} ScanLineListBlock;94,3709
+
+mi/mipolycon.c,51
+getPolyYBounds(195,6534
+miFillConvexPoly(47,1936
+
+mi/mipolygen.c,27
+miFillGeneralPoly(44,1684
+
+mi/mipolypnt.c,21
+miPolyPoint(32,1403
+
+mi/mipolyrect.c,25
+miPolyRectangle(32,1402
+
+mi/mipolyseg.c,23
+miPolySegment(43,1754
+
+mi/mipolytext.c,132
+miImageText(125,3660
+miImageText16(174,4914
+miImageText8(152,4375
+miPolyText(42,1587
+miPolyText16(97,2942
+miPolyText8(70,2288
+
+mi/mipolyutil.c,147
+miCreateETandAET(146,4199
+miFreeStorage(366,9325
+miInsertEdgeInET(55,1873
+miInsertionSort(329,8396
+micomputeWAET(290,7630
+miloadAET(242,6468
+
+mi/mipushpxl.c,22
+miPushPixels(49,2155
+
+mi/miregion.c,1388
+#define ADDRECT(130,5228
+#define	AppendRegions(555,15901
+#define Coalesce(493,14301
+#define DOWNSIZE(152,5801
+#define EXTENTCHECK(103,4404
+#define ExchangeRects(1257,35745
+#define ExchangeSpans(2051,56028
+#define FindBand(546,15676
+#define INBOX(110,4619
+#define MERGERECT(984,29102
+#define NEWRECT(139,5423
+#define NextBand(2151,58311
+QuickSortRects(1266,35902
+static void QuickSortSpans(2065,56465
+#define RECTALLOC(126,5096
+#define SUBSUMES(117,4790
+#define assert(46,1679
+#define assert(50,1808
+#define good(53,1837
+miAppendNonO 518,15080
+miClipSpans(2170,58890
+miCoalesce 434,12461
+miFindMaxBand(2287,61596
+miIntersect(930,27568
+miIntersectO 882,26604
+miInverse(1794,49445
+miPointInRegion(1990,54906
+miPrintRegion(170,6263
+miRectAlloc(347,10280
+miRectIn(1852,51727
+miRectsToRegion(1537,43413
+miRegionAppend(1174,33607
+miRegionCopy(381,10935
+miRegionCreate(272,8957
+miRegionDestroy(330,10086
+miRegionEmpty(2033,55737
+miRegionExtents(2044,55937
+miRegionInit(306,9709
+miRegionNotEmpty(2024,55636
+miRegionOp(595,17394
+miRegionReset(1977,54670
+miRegionUninit(339,10192
+miRegionValidate(1357,38221
+miRegionsEqual(192,6773
+miSetExtents 823,25027
+miSubtract(1731,47550
+miSubtractO 1607,45188
+miTranslateRegion(1948,54170
+miUnion(1079,31160
+miUnionO 1019,30087
+miValidRegion(217,7543
+#define xallocData(123,4958
+#define xfreeData(124,5015
+
+mi/miscanfill.h,155
+#define BRESINCRPGON(69,2552
+#define BRESINCRPGONSTRUCT(111,3633
+} BRESINFO;104,3449
+#define BRESINITPGON(43,1764
+#define BRESINITPGONSTRUCT(107,3463
+
+mi/mispans.c,259
+static void QuickSortSpansX(82,2551
+static int UniquifySpansX(169,4664
+void miAppendSpans(52,1774
+miDisposeSpanGroup 222,5971
+void miFillSpanGroup(392,10249
+void miFillUniqueSpanGroup(236,6203
+void miFreeSpanGroup(76,2427
+void miInitSpanGroup(42,1547
+
+mi/mispans.h,38
+} SpanGroup;38,1728
+} Spans;31,1482
+
+mi/misprite.c,1988
+#define GC_CHECK(158,5142
+#define GC_FUNC_EPILOGUE(100,2853
+#define GC_FUNC_PROLOGUE(93,2613
+#define GC_OP_EPILOGUE(170,5601
+#define GC_OP_PROLOGUE(165,5478
+#define GC_SETUP(147,4731
+#define GC_SETUP_AND_CHECK(153,4953
+#define GC_SETUP_CHEAP(143,4562
+#define SCREEN_EPILOGUE(69,2069
+#define SCREEN_PROLOGUE(65,1922
+miSpriteBlockHandler 443,13351
+miSpriteChangeClip 829,23068
+miSpriteChangeGC 794,22486
+miSpriteClearToBackground 729,20938
+miSpriteCloseScreen 292,9242
+miSpriteComputeSaved 1968,50141
+miSpriteCopyArea 972,25949
+miSpriteCopyClip(843,23318
+miSpriteCopyGC 806,22680
+miSpriteCopyPlane 1007,26723
+miSpriteCopyWindow 689,19858
+miSpriteCreateGC 420,12880
+miSpriteDestroyClip(854,23507
+miSpriteDestroyGC 818,22912
+miSpriteDisplayCursor 1808,45524
+miSpriteFillPolygon(1303,33051
+miSpriteFillSpans(869,23686
+miSpriteFindColors 525,15390
+miSpriteGetImage 322,10319
+miSpriteGetSpans 350,11112
+miSpriteImageGlyphBlt(1701,42911
+miSpriteImageText16(1678,42346
+miSpriteImageText8(1657,41860
+miSpriteInitialize 203,6353
+miSpriteInstallColormap 465,13922
+miSpriteLineHelper(1774,44786
+miSpritePaintWindowBackground 631,18280
+miSpritePaintWindowBorder 660,19079
+miSpritePolyArc(1265,32265
+miSpritePolyFillArc(1409,35168
+miSpritePolyFillRect(1376,34394
+miSpritePolyGlyphBlt(1724,43550
+miSpritePolyPoint 1045,27518
+miSpritePolyRectangle(1222,31282
+miSpritePolySegment(1179,30348
+miSpritePolyText16(1631,41264
+miSpritePolyText8(1607,40747
+miSpritePolylines 1104,28762
+miSpritePushPixels(1747,44187
+miSpritePutImage(942,25308
+miSpriteRealizeCursor 1786,44934
+miSpriteRemoveCursor 1913,48578
+miSpriteRestoreAreas 600,17594
+miSpriteRestoreCursor 1936,49169
+miSpriteSaveDoomedAreas 565,16772
+miSpriteSetSpans(905,24544
+miSpriteSourceValidate 395,12153
+miSpriteStoreColors 489,14496
+miSpriteText 1534,38626
+miSpriteTextOverlap 1450,35983
+miSpriteUndisplayCursor 1896,48222
+miSpriteUnrealizeCursor 1797,45227
+miSpriteValidateGC 767,21854
+
+mi/misprite.h,33
+} miSpriteCursorFuncRec,33,1278
+
+mi/mispritest.h,325
+    BOX_OVERLAP(82,2153
+#define LINE_OVERLAP(100,2700
+    ORG_OVERLAP(88,2326
+#define 61,1692
+#define 62,1715
+#define 74,1910
+#define 81,2106
+#define 87,2277
+#define 93,2483
+#define 95,2558
+extern 69,1834
+		(int)89,2389
+} miSpriteGCRec,67,1800
+} miSpriteScreenRec,59,1650
+ 	(((pCbox)75,1951
+	 ((pCbox)76,2006
+
+mi/mistruct.h,25
+    } miDashRec;38,1661
+
+mi/mivaltree.c,125
+miClipNotify 65,2346
+miComputeClips 155,4195
+miShapedWindowIn 75,2472
+miTreeObscured(445,12751
+miValidateTree 505,14580
+
+mi/miwideline.c,507
+#define CLIPSTEPEDGE(537,11661
+#define StepAround(231,5030
+miCleanupSpanData 1243,26360
+miFillPolyHelper 45,1256
+miLineArc 850,17449
+miLineArcD 561,12045
+miLineArcI 475,10576
+miLineJoin 344,7413
+miMiter(1803,39944
+miNotMiter(1808,39964
+miPolyBuildEdge 175,4047
+miPolyBuildPoly 234,5153
+miRoundCapClip 800,16595
+miRoundJoinClip 776,16072
+miRoundJoinFace 728,15273
+miSetupSpanData 1208,25371
+miWideDash 1714,37614
+miWideDashSegment 1370,29540
+miWideLine 1258,26743
+miWideSegment 968,20256
+
+mi/miwideline.h,453
+#define ICEIL(124,3426
+} LineFaceRec,67,1840
+} PolyEdgeRec,41,1334
+} PolySlopeRec,56,1660
+} PolyVertexRec,51,1535
+} SpanDataRec,27,950
+#define 43,1364
+#define 73,1908
+	    	    	    	--left_count;81,2256
+	    	    	    	left_dx 80,2218
+	    	    	    	left_dy 79,2180
+	    	    	    	left_e 78,2144
+	    	    	    	left_height 74,1972
+	    	    	    	left_signdx 77,2098
+	    	    	    	left_stepx 76,2054
+	    	    	    	left_x 75,2018
+
+mi/miwindow.c,29
+miClearToBackground(34,1442
+
+mi/mizerarc.c,240
+} DashInfo;62,1912
+#define Dcos(51,1603
+#define DoPix(335,7898
+#define DoPix(432,10301
+#define Dsin(47,1445
+#define Pixelate(328,7807
+miZeroArcDashPts(441,10458
+miZeroArcPts(338,7985
+miZeroArcSetup(81,2174
+miZeroPolyArc(629,14865
+
+mi/mizerarc.h,201
+#define MIARCCIRCLESTEP(95,2108
+#define MIARCOCTANTSHIFT(54,1537
+#define MIARCSETUP(43,1346
+#define MIARCSTEP(76,1897
+#define miCanZeroArc(38,1193
+} miZeroArcPtRec;24,900
+} miZeroArcRec;36,1176
+
+mi/mizerline.c,45
+miZeroDashLine(267,5478
+miZeroLine(35,1434
+
+os/WaitFor.c,44
+ANYSET(103,3247
+WaitForSomething(117,3415
+
+os/access.c,612
+AccessUsingXdmcp 133,3387
+AddHost 492,11734
+AddLocalHosts 352,8503
+AugmentSelf(321,7902
+AuthorizedClient(459,11004
+ChangeAccessControl(797,18529
+CheckAddr 656,15505
+ConvertAddr 758,17778
+DefineSelf 146,3761
+DefineSelf 205,5214
+EnableLocalHost 119,3175
+} FamilyMap;94,2747
+GetHosts 597,14194
+} HOST;84,2522
+InvalidHost 697,16302
+InvalidPdevConn 742,17434
+NewHost 534,12833
+RemoveHost 560,13312
+ResetHosts 361,8694
+static int UnixFamily(817,18888
+static int XFamily(807,18716
+#define acmp(58,1804
+#define acopy(59,1868
+#define addrEqual(60,1934
+#define getpeername(66,2105
+static 89,2645
+
+os/auth.c,260
+AddAuthorization 214,5151
+AuthorizationFromID 177,4363
+AuthorizationToID 163,4034
+CheckAuthorization 129,3386
+InitAuthorization 76,2342
+LoadAuthorization 83,2434
+RegisterAuthorizations 118,3196
+RemoveAuthorization 196,4746
+ResetAuthorization 153,3894
+
+os/connection.c,680
+AddEnabledDevice(882,22829
+AttendClient 992,25649
+typedef long CCID;98,2955
+CheckConnections(830,21717
+ClientAuthorized(545,14483
+CloseDownConnection(866,22477
+CloseDownFileDescriptor(792,20629
+CreateWellKnownSockets(396,10575
+DontListenToAnybody(1035,27032
+ErrorConnMax(732,18935
+EstablishNewConnections(606,16092
+IgnoreClient 962,24811
+ListenToAllClients(942,24314
+OnlyListenToOneClient(907,23505
+PayAttentionToClientsAgain(1053,27440
+RemoveEnabledDevice(890,22928
+ResetWellKnownSockets 482,12695
+#define getpeername(354,9643
+hpux_getpeername(333,9243
+open_dnet_socket 360,9754
+open_sprite_pdev 306,8582
+open_tcp_socket 153,4809
+open_unix_socket 237,6823
+
+os/fontdir.c,311
+int AddFileEntry(52,1759
+int AddNameEntry(198,4976
+int FindNameInFontTable(177,4413
+static int FindNormalNameInFontTable(86,2576
+static int FindWildNameInFontTable(154,3965
+void FreeFontTable(265,6611
+static char *MakeCopy(39,1490
+MakeFontTable(243,6008
+int Match(282,7045
+int SetupWildMatch(116,3160
+
+os/fonttype.c,0
+
+os/fonttype.h,165
+} FontFileReaderRec,47,1889
+typedef void (*FreeFontProc)39,1673
+typedef FontPtr (*ReadFontProc)37,1553
+typedef Bool (*ReadPropertiesProc)38,1597
+extern 49,1928
+
+os/genalloca.c,128
+alloca 135,3801
+find_stack_direction 79,2358
+} header;121,3343
+typedef void	*pointer;45,1526
+typedef char	*pointer;47,1583
+
+os/io.c,523
+AllocateInputBuffer(677,17951
+AllocateOutputBuffer(698,18396
+FlushAllOutput(558,15303
+FlushClient(360,10356
+FlushIfCriticalOutputPending(602,16323
+FreeOsBuffers(717,18790
+InsertFakeRequest(252,7543
+PdevClearWriteBlockHack(780,19836
+ReadRequestFromClient(103,4056
+ResetCurrentRequest(321,9248
+ResetOsBuffers(758,19439
+SetCriticalOutputPending(609,16414
+WriteToClient 626,16959
+#define YieldControl(93,3786
+#define YieldControlDeath(99,3982
+#define YieldControlNoInput(96,3881
+#define request_length(66,2421
+
+os/mitauth.c,131
+MitAddCookie 32,999
+MitCheckCookie 56,1462
+MitFromID 98,2224
+MitRemoveCookie 115,2502
+MitResetCookie 71,1763
+MitToID 84,1946
+
+os/oscolor.c,23
+OsLookupColor(49,1840
+
+os/osdep.h,1063
+#define ANYSET(61,2261
+#define ANYSET(75,2735
+#define ANYSET(92,3361
+#define ANYSET(113,4258
+#define BITCLEAR(52,1895
+#define BITMASK(42,1652
+#define BITMASK(46,1725
+#define BITSET(51,1841
+#define CLEARBITS(57,2067
+#define CLEARBITS(65,2373
+#define CLEARBITS(79,2875
+#define CLEARBITS(97,3536
+#define CLEARBITS(119,4430
+#define COPYBITS(56,2024
+#define COPYBITS(64,2313
+#define COPYBITS(78,2797
+#define COPYBITS(95,3433
+#define COPYBITS(117,4340
+} ConnectionInput,146,5370
+} ConnectionOutput,153,5535
+#define GETBIT(53,1952
+#define MASKANDSETBITS(58,2101
+#define MASKANDSETBITS(66,2419
+#define MASKANDSETBITS(80,2933
+#define MASKANDSETBITS(98,3606
+#define MASKANDSETBITS(120,4495
+#define MASKIDX(43,1682
+#define MASKIDX(47,1762
+#define MASKWORD(50,1800
+#define ORBITS(59,2162
+#define ORBITS(69,2526
+#define ORBITS(84,3075
+#define ORBITS(103,3839
+#define ORBITS(124,4638
+} OsCommRec,161,5783
+#define UNSETBITS(60,2215
+#define UNSETBITS(72,2625
+#define UNSETBITS(88,3209
+#define UNSETBITS(108,4064
+#define UNSETBITS(128,4778
+
+os/osfonts.c,643
+AddFileNameAliases(370,8852
+AddFontPathElement(101,2772
+CloseFontFile(878,20104
+ExpandFontNamePattern(676,15202
+FindFileType(271,6544
+FindFontFile(778,18062
+FontFileLoad(890,20287
+FontFilePropLoad(930,21326
+FontFileRead(725,16328
+FontFileSkip(735,16518
+FontFilter(818,19038
+void FontUnload(964,22201
+FreeFontPath(156,3958
+FreeFontRecord(63,1992
+GetFontPath(265,6490
+MakeFontPathRecord(77,2230
+OpenFontFile(852,19541
+ReadFontAlias(420,9982
+ReadFontDir(288,6853
+SearchDirectory(630,13865
+SetDefaultFontPath(187,4743
+SetFontPath(226,5582
+lexAlias 518,12164
+lexc 596,13451
+#define vfork(810,18878
+#define vfork(814,18996
+
+os/osinit.c,16
+OsInit(63,1859
+
+os/pdev.c,379
+103,3153
+PdevAccept 139,3917
+PdevClose 256,7739
+PdevIsMaster(618,16649
+PdevIsPdevConn(624,16723
+} PdevPrivRec,80,2606
+PdevRead 293,8419
+PdevRequestHandled(719,19490
+PdevSetPtrs(646,17328
+PdevWrite(606,16458
+PdevWritev(525,14371
+    char 104,3174
+#define	82,2636
+#define	min(40,1409
+    char 104,3174
+static 83,2656
+static 84,2696
+static 86,2725
+static 87,2752
+
+os/utils.c,749
+AbortServer(97,2704
+AutoResetServer 74,2345
+CheckNode(621,15507
+DumpMemoryInUse 645,16144
+DumpMemorySince 664,16471
+Error(107,2806
+ErrorF(686,16903
+FatalError(673,16582
+GetTimeInMillis(121,3046
+GiveUp(89,2610
+typedef struct _MallocHeader	*MallocHeaderPtr;417,10586
+MallocHeaderPtr	436,11027
+} MallocHeaderRec;425,10777
+} MallocTrailerRec,429,10851
+MarkMemoryTime 659,16414
+ProcessCommandLine 185,5805
+SetupBlock(443,11336
+void UseMsg(130,3179
+ValidateAllActiveMemory 466,11970
+Xalloc 496,13125
+Xcalloc 528,13856
+Xfree(598,15188
+Xrealloc 544,14094
+#define 438,11057
+#define 439,11147
+#define 440,11231
+static 442,11313
+unsigned 431,10891
+unsigned 432,10922
+unsigned 433,10964
+unsigned 434,10996
+    unsigned 444,11360
+
+os/xdmcp.c,1211
+} AuthenticationFuncsRec,185,5046
+XdmcpAddAuthorization 730,17934
+XdmcpAddHost(565,14580
+XdmcpBlockHandler(461,12093
+XdmcpCheckAuthentication 721,17648
+XdmcpCloseDisplay(438,11566
+XdmcpDeadSession 656,16431
+XdmcpFatal 1078,27376
+XdmcpInit(383,10382
+XdmcpOpenDisplay(424,11294
+XdmcpOptions(94,2891
+XdmcpRegisterAuthentication 189,5154
+XdmcpRegisterAuthorization 318,9012
+XdmcpRegisterAuthorizations 312,8892
+XdmcpRegisterBroadcastAddress 161,4317
+XdmcpRegisterConnection 270,7777
+XdmcpRegisterDisplayClass 345,9606
+XdmcpRegisterManufacturerDisplayID 364,9960
+XdmcpReset 405,10918
+XdmcpSelectHost(546,14035
+XdmcpSetAuthentication 246,7207
+XdmcpUseMsg 79,2256
+XdmcpWakeupHandler(502,13011
+XdmcpWarning(1091,27614
+    char 190,5244
+get_manager_by_name(1098,27699
+get_xdmcp_sock(751,18436
+    char 190,5244
+receive_packet(580,14955
+recv_accept_msg(896,22496
+recv_alive_msg 1049,26648
+recv_decline_msg(945,24139
+recv_failed_msg(1010,25800
+recv_refuse_msg(990,25457
+recv_willing_msg(809,19803
+restart(714,17566
+send_keepalive_msg(1032,26246
+send_manage_msg(972,24978
+send_packet(629,15927
+send_query_msg(765,18786
+send_request_msg(846,20750
+static 187,5098
+timeout(673,16747
+
+pcf/dixfonts.c,113
+CloseFont(138,4098
+OpenFont(78,2570
+#define QUERYCHARINFO(52,1981
+QueryFont(182,5093
+SetDefaultFont(60,2147
+
+snf/snffonts.c,71
+FreeSNFFont(296,7648
+ReadSNFFont(55,1901
+ReadSNFProperties(206,5418
+
+snf/snfstruct.h,351
+#define ADDRCHARGLYPHS(73,2570
+#define ADDRCharInfoRec(70,2508
+#define ADDRSTRINGTAB(82,2802
+#define ADDRXFONTPROPS(79,2695
+#define BYTESOFCHARINFO(86,2940
+#define	BYTESOFFONTINFO(85,2889
+#define	BYTESOFGLYPHINFO(89,3125
+#define BYTESOFINKINFO(90,3196
+#define	BYTESOFPROPINFO(87,3007
+#define	BYTESOFSTRINGINFO(88,3074
+} FontPropRec;65,2413

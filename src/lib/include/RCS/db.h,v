@@ -1,0 +1,272 @@
+head     1.7;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.7
+date     89.06.23.11.27.53;  author rab;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.01.13.09.40.12;  author douglis;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.11.10.17.23.41;  author douglis;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.09.21.14.10.16;  author douglis;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.09.21.14.09.17;  author douglis;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.09.13.16.51.59;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.08.12.16.24.07;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Declarations for the generic "database" package.
+@
+
+
+1.7
+log
+@*** empty log message ***
+@
+text
+@/*
+ * db.h --
+ *
+ *	Declarations of constants and structures for the db module.
+ *
+ * Copyright 1987, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/lib/include/RCS/db.h,v 1.6 89/01/13 09:40:12 douglis Exp Locker: rab $ SPRITE (Berkeley) 
+ */
+
+#ifndef _DB
+#define _DB
+
+/*
+ * A file can be locked for the entire duration it is open (for example,
+ * scanning the entire database for records), each time it is written or
+ * read (for example, when updating the shared load average file one might
+ * want to leave it open but lock it only during updates), or not at all
+ * for example, the file specific to a host that is shared between one process
+ * updating it and one process reading it, each atomic).
+ */
+typedef enum {
+    DB_LOCK_OPEN,		/* lock the file on open and keep it locked
+				 * until close. */
+    DB_LOCK_ACCESS,		/* lock should be obtained each time
+				 * the file is accessed. */
+    DB_LOCK_NEVER,		/* do not lock the file at all */
+    DB_LOCK_READ_MOD_WRITE,	/* lock should be obtained when the file
+				 * is read and released when it is
+				 * written. */
+} Db_LockWhen;
+
+/*
+ * Action to take when obtaining a lock: abort immediately, poll for a
+ * timeout period, poll forever, or poll but break the lock upon timeout.
+ * DB_LOCK_NONE is equivalent to DB_LOCK_NEVER but is used for the single
+ * open + read/write + close interface.
+ */
+typedef enum {
+    DB_LOCK_NO_BLOCK,		/* return immediately with error */
+    DB_LOCK_POLL,		/* poll the lock; time out if necessary */
+    DB_LOCK_WAIT,		/* wait indefinitely */
+    DB_LOCK_BREAK,		/* poll, plus break the lock if needed */
+    DB_LOCK_NONE,		/* do not lock the file at all */
+} Db_LockHow;
+
+/*
+ * Information used for repeated scanning through database.
+ */
+
+typedef struct {
+    int		  streamID;	/* stream identifier for the open file */
+    int		  lockType;	/* LOCK_{SH,EX} */
+    Db_LockWhen	  lockWhen;	/* See above */
+    Db_LockHow 	  lockHow;	/* See above */
+    int		  structSize;	/* size of one entry */
+    int		  index;	/* current index into file */
+    int		  firstRec;  	/* index of first record stored in buffer */
+    int		  numBuf;  	/* number of records in buffer */
+    char	  *buffer;	/* pointer to buffer containing records */
+    char	  *fileName;    /* name of database file, for error messages */
+} Db_Handle;
+
+extern int 	Db_Open();
+extern int 	Db_Close();
+
+/*
+ * The following two routines perform (optional lock)/io/(optional unlock)
+ * together.
+ */
+extern int 	Db_Get();
+extern int 	Db_Put();
+
+/*
+ * The following two routines perform open/lock/io/unlock/close together.
+ */
+extern int 	Db_WriteEntry();
+extern int 	Db_ReadEntry();
+
+#endif /* _DB */
+@
+
+
+1.6
+log
+@changed Db_Header structure to allow for buffering.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/db.h,v 1.5 88/11/10 17:23:41 douglis Exp Locker: douglis $ SPRITE (Berkeley) 
+d87 1
+a87 1
+#endif _DB
+@
+
+
+1.5
+log
+@added an option to say to lock a database when doing a get and wait for
+the subsequent put to unlock it.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include.new/RCS/db.h,v 1.4 88/09/21 14:10:16 douglis Exp Locker: douglis $ SPRITE (Berkeley) 
+a62 1
+    int		  index;	/* index into file */
+d64 5
+@
+
+
+1.4
+log
+@changed old sprite lock name in comment to be LOCK_SH/EX
+@
+text
+@d15 1
+a15 1
+ * $Header: db.h,v 1.3 88/09/21 14:09:17 douglis Exp $ SPRITE (Berkeley) 
+d35 3
+@
+
+
+1.3
+log
+@removed Db_LockDesc, which is now an internal procedure.
+@
+text
+@d15 1
+a15 1
+ * $Header: db.h,v 1.2 88/09/13 16:51:59 douglis Exp $ SPRITE (Berkeley) 
+d57 1
+a57 1
+    int		  lockType;	/* IOC_LOCK_{SHARED,EXCLUSIVE} */
+@
+
+
+1.2
+log
+@Added DB_LOCK_NONE as specification saying not to lock the file at all.
+Changed DATABASE to DB and DB to Db.
+@
+text
+@d15 1
+a15 1
+ * $Header: proto.h,v 1.7 87/01/04 17:28:51 andrew Exp $ SPRITE (Berkeley) 
+a78 6
+
+/*
+ * The following routine may be used to lock the file associated with a
+ * Db_Handle.
+ */
+extern int 	Db_LockDesc();
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d2 1
+a2 1
+ * dataBase.h --
+d4 1
+a4 1
+ *	Declarations of constants and structures for the database module.
+d15 1
+a15 1
+ * $DataBase: proto.h,v 1.7 87/01/04 17:28:51 andrew Exp $ SPRITE (Berkeley) 
+d18 2
+a19 2
+#ifndef _DATABASE
+#define _DATABASE
+d35 1
+a35 1
+} DB_LockWhen;
+d40 2
+d48 2
+a49 1
+} DB_LockHow;
+d58 2
+a59 2
+    DB_LockWhen	  lockWhen;	/* See above */
+    DB_LockHow 	  lockHow;	/* See above */
+d62 1
+a62 1
+} DB_Handle;
+d64 2
+a65 2
+extern int 	DB_Open();
+extern int 	DB_Close();
+d71 2
+a72 2
+extern int 	DB_Get();
+extern int 	DB_Put();
+d77 2
+a78 2
+extern int 	DB_WriteEntry();
+extern int 	DB_ReadEntry();
+d82 1
+a82 1
+ * DB_Handle.
+d84 1
+a84 1
+extern int 	DB_LockDesc();
+d86 1
+a86 1
+#endif _DATABASE
+@

@@ -1,0 +1,6 @@
+The following changes have been made to this directory since R3:
+
+	o  Mostly new code from DEC which fixes all of the bugs
+	   we've been able to readily duplicate on the GPX
+	   (stipples, tiles, copyplane etc).  This server is in
+	   pretty good shape now.

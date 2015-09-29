@@ -1,0 +1,379 @@
+'#	$Header: tmac.ansp.doc,v 1.12 86/07/11 08:11:34 ouster Exp $ SPRITE (Berkeley)
+'#	Troff/Nroff macros for Sprite manual pages
+'#	 default tabs - set tabs every half inch
+.de DT
+'ta .5i 1i 1.5i 2i 2.5i 3i 3.5i 4i 4.5i 5i 5.5i 6i 6.5i
+..
+'#	 set title and heading, initialize parameters
+.de TH
+.PD
+.DT
+.AS
+.if n .nr )N .5i
+.if t .nr )N .5i
+.if t .po .8i
+.ll 6.5i
+.nr LL \\n(.l
+.ds ]C \\$1
+.ie '\\$3'' .ds ]M  Modified:\\ \\ \\*(DY
+.el         .ds ]M  Modified:\\ \\ \\$3
+.ie '\\$4'' .ds ]V Sprite v1.0
+.el         .ds ]V Sprite \\$4
+.ds ]S UNKNOWN SECTION (\\$2)
+.if '\\$2'programs'   .ds ]S User Commands
+.if '\\$2'prog'       .ds ]S User Commands
+.if '\\$2'syscalls'   .ds ]S Library Routines
+.if '\\$2'sys'        .ds ]S Library Routines
+.if '\\$2'libcalls'   .ds ]S Library Routines
+.if '\\$2'lib'        .ds ]S Library Routines
+.if '\\$2'libc'       .ds ]S Library Routines
+.if '\\$2'devices'    .ds ]S Devices
+.if '\\$2'dev'        .ds ]S Devices
+.if '\\$2'ioctls'     .ds ]S I/O Control
+.if '\\$2'ioc'        .ds ]S I/O Control
+.if '\\$2'formats'    .ds ]S Formats
+.if '\\$2'form'       .ds ]S Formats
+.if '\\$2'headers'    .ds ]S Header Files
+.if '\\$2'head'       .ds ]S Header Files
+.if '\\$2'misc'       .ds ]S Miscellaneous Commands
+.if '\\$2'sx'         .ds ]S Sx Window Library
+.wh 0 }H
+.if t .wh -1i }F
+.if n .wh -1.167i }F
+.if \\n(nl .bp 1
+.}E
+.DT
+.nr )I .5i
+.nr )R 0
+.mk )b
+.if !'\\n()b'-1' .bp
+..
+'#	 NAME section heading
+.de NA
+.SH "NAME"
+..
+'#	 SYNOPSIS section heading
+.de SY
+.br
+.SH "SYNOPSIS"
+.nf
+..
+'#	 ARGUMENTS section heading
+.de AR
+.br
+.fi
+.SH "ARGUMENTS"
+..
+'#	 OPTIONS section heading
+.de OP
+.br
+.fi
+.SH "OPTIONS"
+..
+'#	 section heading
+.de SH
+.}X 0
+.nr )E 2
+\&\\$1 \|\\$2 \|\\$3 \|\\$4 \|\\$5 \|\\$6
+..
+'#	 sub section heading
+.de SS
+.}X \\n()Ru+\\n()Nu
+.nr )E 0
+\&\\$1 \|\\$2 \|\\$3 \|\\$4 \|\\$5 \|\\$6
+.br
+..
+'#	 Display Start
+.de DS
+.RS
+.nf
+..
+'#	 Display End
+.de DE
+.RE
+.fi
+..
+'#	 italic
+.de I
+.ft 2
+.it 1 }N
+.if !"\\$1"" \&\\$1 \\$2 \\$3 \\$4 \\$5 \\$6
+..
+'#	 bold
+.de B
+.ft 3
+.it 1 }N
+.if !"\\$1"" \&\\$1 \\$2 \\$3 \\$4 \\$5 \\$6
+..
+'#	 smaller size
+.de SM
+.ps -1
+.it 1 }N
+.if !"\\$1"" \&\\$1 \\$2 \\$3 \\$4 \\$5 \\$6
+..
+'#	 larger size
+.de LG
+.ps +1
+.it 1 }N
+.if !"\\$1"" \&\\$1 \\$2 \\$3 \\$4 \\$5 \\$6
+..
+'#	 combinations of roman, italic, bold
+.de RI
+.}S 1 2 \& "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
+.de RB
+.}S 1 3 \& "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
+.de IR
+.}S 2 1 \& "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
+.de IB
+.}S 2 3 \& "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
+.de BR
+.}S 3 1 \& "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
+.de BI
+.}S 3 2 \& "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
+'#		start vertical bar in margin
+.de VS
+'mc \s12\(br\s0
+..
+'#		end vertical bar in margin
+.de VE
+'mc
+..
+'#	 start a new paragraph
+.de LP
+.PP
+..
+.de PP
+.sp \\n()Pu
+.ne 2
+.}E
+.nr )I .5i
+.ns
+..
+'#	 set the inter-paragraph distance
+.de PD
+.if t .nr )P .5v
+.if n .nr )P 1v
+.if !"\\$1"" .nr )P \\$1v
+..
+'#	 start an indented paragraph with label as argument
+.de IP
+.TP \\$2 \\$3
+\&\\$1
+..
+'#	 define tabbing values for .AP
+.de AS
+.nr )A 10n
+.if !"\\$1"" .nr )A \\w'\\$1'u+3n
+.nr )B \\n()Au+15n
+.if !"\\$2"" .nr )B \\w'\\$2'u+\\n()Au+3n
+.nr )C \\n()Bu+\\w'(in/out)'u+2n
+..
+'#      special .IP used for printing command/procedure args
+.de AP
+.ie !"\\$4"" .TP \\$4 0v
+.el \{\
+.   ie !"\\$2"" .TP \\n()Cu 0v
+.   el          .TP 15 0v
+.\}
+.ie !"\\$3"" \{\
+.ta \\n()Au \\n()Bu
+\&\\$1	\\fI\\$2\\fP	(\\$3)
+.\}
+.el \{\
+.br
+.ie !"\\$2"" \{\
+\&\\$1	\\fI\\$2\\fP
+.\}
+.el \{\
+\&\\fI\\$1\\fP
+.\}
+.\}
+.DT
+..
+'#	 start an indented paragraph with label on next line
+.de TP
+.if !"\\$1"" .nr )I \\$1n
+.ie !"\\$2"" .sp \\$2
+.el          .sp \\n()Pu
+.in \\n()Ru
+.nr )E 1
+.ns
+.it 1 }N
+.di ]T
+..
+'#	 set hanging indent
+.de HP
+.sp \\n()Pu
+.ne 2
+.if !"\\$1"" .nr )I \\$1n
+.ll \\n(LLu
+.in \\n()Ru+\\n()Nu+\\n()Iu
+.ti \\n()Ru+\\n()Nu
+.}f
+..
+'#	 increase relative indent
+.de RS
+.nr ]\\n+()p \\n()I
+.nr )\\n()p \\n()R
+.ie !"\\$1"" .nr )R +\\$1n
+.el .nr )R +\\n()I
+.nr )I .5i
+.}E
+..
+'#	 decrease relative indent
+.de RE
+.if !"\\$1"" \{
+.   ie "\\$1"0" .nr )p 1 1
+.   el          .nr )p \\$1 1
+.\}
+.ds ]i \\*(]I\\n()p
+.ds ]r \\*(]R\\n()p
+.nr )I \\*(]i
+.nr )R \\*(]r
+.if \\n()p .nr )p -1
+.}E
+..
+'       # BX - place a word in a box
+.de BX
+.if t \(br\|\\$1\|\(br\l'|0\(rn'\l'|0\(ul'
+.if n \(br\\kA\|\\$1\|\\kB\(br\v'-1v'\h'|\\nBu'\l'|\\nAu'\v'1v'\l'|\\nAu'
+..
+'#	  BS - start boxed text
+.de BS
+.br
+.mk )a
+..
+'#	  BE - end boxed text
+.de BE
+.sp -1
+.nf
+.ti 0
+.ie t \{
+\h'-1.5n'\L'|\\n()au-1.5v'\l'\\n(.lu+3n\(ul'\L'-|\\n()au+1.5v'\l'|0u-1.5n\(ul'
+.\}
+.el \l'\\n(.lu\(ul'
+.fi
+.br
+..
+'#	B1 - same as BS (compatible with -ms)
+.de B1
+.BS
+..
+'#	B2 - same as BE (compatible with -ms)
+.de B2
+.BE
+..
+'#	 reset the basic page layout
+.de }E
+.}f
+.in \\n()Ru+\\n()Nu
+.ll \\n(LLu
+..
+'#	 set type font and size
+.de }f
+.ps 11
+.vs 13
+.ft 1
+..
+'#	 print the title line at the head of the page
+.de }H
+.ev 1
+'sp .5i
+.}f
+.tl '\\*(]C'\\*(]S'\\*(]C'
+'sp .5i
+.ev
+.ns
+..
+'#	 print the title line at the foot of the page
+.de }F
+.ev 1
+.ft 1
+.ps 10
+'sp .5i
+.tl '\\*(]V'\\*(]M'%'
+'bp
+.ev
+..
+'#	 subroutine to shift fonts
+.de }S
+.ds ]F
+.if "\\$1"2" .if !"\\$5"" .ds ]F\^
+.ie !"\\$4"" .}S \\$2 \\$1 "\\$3\f\\$1\\$4\\*(]F" "\\$5" "\\$6" "\\$7" "\\$8" "\\$9"
+.el \\$3
+.}f
+..
+'#	 subroutine for section heading
+.de }X
+.}E
+.ti \\$1
+.sp \\n()Pu
+.ne 2
+.nr )R 0
+.fi
+.it 1 }N
+.SM
+.B
+..
+'#	 end of .TP 
+.de }1
+.ds ]X \&\\*(]T\\
+.nr )E 0
+.if !"\\$1"" .nr )I \\$1n
+.}f
+.ll \\n(LLu
+.in \\n()Ru+\\n()Nu+\\n()Iu
+.ti \\n()Nu
+.ie !\\n()Iu+\\n()Ru-\w'\\*(]X'u-3p \{ \\*(]X
+.br \}
+.el \\*(]X\h'|\\n()Iu+\\n()Ru'\c
+.}f
+..
+'#	 end of SH
+.de }2
+.nr )E 0
+.}E
+.nr )I .5i
+.ns
+..
+'#	 handle end of 1-line features
+.de }N
+.if \\n()E .br
+.di
+.if "\\n()E"0" .}f
+.if "\\n()E"1" .}1
+.if "\\n()E"2" .}2
+.nr )E 0
+..
+'#	 EOF handler
+.de }K
+.}N
+.ll \\n(LLu
+..
+.em }K
+.nr )p 0 1
+.ds ]I \\\\n(]
+.ds ]R \\\\n()
+.ds S \\s11
+.bd S 3 3
+.hy 14
+.if t .tr *\(**
+.if \n(mo-0 .ds MO January
+.if \n(mo-1 .ds MO February
+.if \n(mo-2 .ds MO March
+.if \n(mo-3 .ds MO April
+.if \n(mo-4 .ds MO May
+.if \n(mo-5 .ds MO June
+.if \n(mo-6 .ds MO July
+.if \n(mo-7 .ds MO August
+.if \n(mo-8 .ds MO September
+.if \n(mo-9 .ds MO October
+.if \n(mo-10 .ds MO November
+.if \n(mo-11 .ds MO December
+.ds DY \*(MO \n(dy, 19\n(yr

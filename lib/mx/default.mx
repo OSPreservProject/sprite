@@ -1,0 +1,457 @@
+# default.mx -
+#
+# This file is an initialization script read by Mx whenever it starts
+# up.  It defines a bunch of procedures, configures bindings, and
+# initializes variables.
+#
+# Copyright 1990 Regents of the University of California
+# Permission to use, copy, modify, and distribute this
+# software and its documentation for any purpose and without
+# fee is hereby granted, provided that the above copyright
+# notice appear in all copies.  The University of California
+# makes no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without
+# express or implied warranty.
+
+# Command procedures to extend the built-in command set:
+
+proc move {} {
+    set _t [mark caret]
+    insert [selection]
+    set _l [mark sel.left]
+    set _r [mark sel.right]
+    selection set $_t [mark caret back 1 char]
+    delete $_l $_r noviewchange
+}
+
+proc line i {
+    if {[scan $i %d _t] != 1} {error [format {bad line number "%s"} $i]}
+    set _t [format %d.0 $i]
+    see $_t
+    selection set $_t [mark $_t char -1]
+    caret $_t
+}
+
+proc next {} {
+    global files
+    if {[length $files] == 1} {error {no more files left to edit}}
+    switch [index $files 1]
+    set files [range $files 1 end]
+}
+
+proc tag name {
+    global newWindow
+    set i [taginfo $name]
+    open [index $i 0]
+    send $newWindow [list search forw [index $i 1]]
+}
+
+proc showBindings {args} {
+    global newWindow
+    open {}
+    send $newWindow {insert Keystroke\ Bindings:\n}
+    send $newWindow {insert ---------\ --------\n}
+    if {[length $args] == 0} {set args [bind]}
+    foreach binding $args {
+	send $newWindow [list insert [format {\n%-10s => "%s"}
+		[control binding $binding] [bind $binding]]]
+    }
+    send $newWindow clean
+    send $newWindow {see 0.0}
+}
+
+proc showMenus {args} {
+    global newWindow
+    open {}
+    send $newWindow {insert Menu\ information:\n}
+    send $newWindow {insert ----\ -----------\n}
+    send $newWindow {insert \n(Format:\ displayed\ information\ |\ command)}
+    if {[length $args] == 0} {set args [menu info]}
+    foreach i $args {
+	set leftSize 5
+	set midSize 5
+	set rightSize 5
+	send $newWindow clean
+	foreach j [menu info $i] {
+	    set t [length [index $j 0] chars]
+	    if {$t > $leftSize} {set leftSize $t}
+	    set t [length [index $j 1] chars]
+	    if {$t > $midSize} {set midSize $t}
+	    set t [length [index $j 2] chars]
+	    if {$t > $rightSize} {set rightSize $t}
+	}
+	send $newWindow [list insert [format \n\n%s: $i]]
+	foreach j [menu info $i] {
+	    send $newWindow [list insert [format {\n  %-*s %-*s %-*s | %s} \
+		    $leftSize [index $j 0] $midSize [index $j 1] \
+		    $rightSize [index $j 2] [index $j 3]]]
+	}
+    }
+    send $newWindow clean
+    send $newWindow {see 0.0}
+}
+
+proc showProcs {args} {
+    global newWindow
+    open {}
+    send $newWindow {insert Procedure\ information:\n}
+    send $newWindow {insert ---------\ -----------}
+    if {[length $args] == 0} {set args [info procs]}
+    foreach proc $args {
+	set space {}
+	send $newWindow [list insert [format \n\n%s( $proc]]
+	send $newWindow clean
+	foreach param [info args $proc] {
+	    send $newWindow [list insert [format %s%s $space $param]]
+	    set space {, }
+	    if [info default $proc $param default] {
+		send $newWindow [list insert [format { [%s]} $default]]
+	    }
+	}
+	send $newWindow {insert ):\n}
+	send $newWindow [list insert [info body $proc]]
+    }
+    send $newWindow clean
+    send $newWindow {see 0.0}
+}
+
+proc showVars {args} {
+    global newWindow
+    open {}
+    send $newWindow {insert Variable\ values:\n}
+    send $newWindow {insert --------\ -------\n}
+    set _maxLength 10
+    if {[length $args] == 0} {set args [uplevel {info vars}]}
+    foreach _i $args {
+	if {[length $_i chars] > $_maxLength} {
+	    set _maxLength [length $_i chars]
+	}
+    }
+    set _maxLength [expr $_maxLength+6]
+    foreach _i $args {
+	send $newWindow [list insert [format {\n%-*s = "%s"} \
+		$_maxLength $_i [uplevel set $_i]]]
+    }
+    send $newWindow clean
+    send $newWindow {see 0.0}
+}
+
+proc where {} {
+    global newWindow errorInfo
+
+    if {![info exists errorInfo]} {
+	return "no error has occurred yet"
+    }
+    open {}
+    send $newWindow {insert "Stack trace for last error:\n"}
+    send $newWindow {insert "----- ----- --- ---- ------\n\n"}
+    send $newWindow [list insert $errorInfo]
+    send $newWindow "clean; see 0.0"
+}
+
+proc caretinfo {} {
+    global file
+    scan [mark eof] %d _t
+    scan [mark caret] %d _t2
+    return [format {"%s": %d total lines, caret on line %d} $file $_t $_t2]
+}
+
+# Copying and deletion bindings:
+
+bind \Cv {insert [selection]}
+bind \Mv {move}
+bind \Cd {delete sel.left sel.right}
+bind \ed {
+    set saved [selection]
+    delete sel.left sel.right
+}
+bind \ev {insert $saved}
+bind \Ch {!delete [mark caret back 1 char]}
+bind \177 {!delete [mark caret back 1 char]}
+bind \Cl {delete caret}
+bind \Cw {!delete [mark caret back 1 word] [mark caret back 1 char]}
+bind \Cn {delete caret [mark [mark caret forw 1 word] back 1 char]}
+bind \Ce {
+    if {[string compare [mark caret] [mark caret char -1]] != 0} {
+	delete caret [mark [mark caret char -1] back 1 char]
+	} else {
+	delete [mark caret]}
+}
+
+# Non-destructive caret motion bindings:
+
+bind \Mh {
+    caret [mark caret back 1 char]
+    see caret
+}
+set _lastPos 0.0
+bind \Mj {
+    if {[string compare $_lastPos [mark caret]] != 0} {
+	    set _lastCol [column caret]
+    }
+    set _lastPos [mark [mark caret forw 1 line] column $_lastCol]
+    caret $_lastPos
+    see caret
+}
+bind \Mk {
+    if {[string compare $_lastPos [mark caret]] != 0} {
+	set _lastCol [column caret]
+    }
+    set _lastPos [mark [mark caret back 1 line] column $_lastCol]
+    caret $_lastPos
+    see caret
+}
+bind \Ml {
+    caret [mark caret forw 1 char]
+    see caret
+}
+bind \Mw {
+    caret [mark caret back 1 word]
+    see caret
+}
+bind \Mn {
+    caret [mark caret forw 1 word]
+    see caret
+}
+bind \Me {
+    set _t [mark caret char -1]
+    if {[string compare [mark caret] $_t] == 0} {
+	set _t [mark [mark caret forw 1 line] char -1]
+    }
+    caret $_t
+    see caret
+}
+bind \215 {
+    caret [mark [mark caret forw 1 line] char 0]
+    see caret
+}
+bind \Cg {history next history {line [selection]}}
+
+# Searching and replacement bindings:
+
+bind \Cf {history next history {search forw}}
+bind \Cb {history next history {search back}}
+bind \Mf {history next history {search forw [selection]}}
+bind \Mb {history next history {search back [selection]}}
+bind \e\Cf {history next history {
+    set _l [mark sel.left]
+    set _r [mark sel.right]
+    selection set caret
+    search forw
+    selection set $_l $_r
+}}
+bind \e\Cb {history next history {
+    set _l [mark sel.left]
+    set _r [mark sel.right]
+    selection set caret
+    search back
+    selection set $_l $_r
+}}
+bind \ef {history ignore {focus search clear}}
+bind \er {history ignore {focus replace clear}}
+bind \Cr {replace}
+
+# Indentation bindings:
+
+bind \Cp {indent caret caret + 4}
+bind \Cy {indent caret caret - 4}
+bind \Mp {indent sel.left sel.right + 4}
+bind \My {indent sel.left sel.right - 4}
+
+# File and tag bindings:
+
+bind \Co {
+    open $file
+    send $newWindow [list see [mark top] top]
+}
+bind \Mo {open [selection]}
+bind \Ms {switch [selection]}
+bind \Ct {
+    set _t [taginfo [selection]]
+    switch [index $_t 0]
+    search forw [index $_t 1]
+}
+bind \Mt {tag [selection]}
+bind \et {
+    set _t [mark caret back 1 char]
+    selection set [mark $_t back 1 word] $_t
+    tag [selection]
+}
+
+# Mark-related bindings:
+
+bind \ema {set _marka [mark caret]}
+bind \Mma {see $_marka; caret $_marka}
+bind \emb {set _markb [mark caret]}
+bind \Mmb {see $_markb; caret $_markb}
+bind \emc {set _markc [mark caret]}
+bind \Mmc {see $_markc; caret $_markc}
+bind \emd {set _markd [mark caret]}
+bind \Mmd {see $_markd; caret $_markd}
+bind \eme {set _marke [mark caret]}
+bind \Mme {see $_marke; caret $_marke}
+bind \emf {set _markf [mark caret]}
+bind \Mmf {see $_markf; caret $_markf}
+bind \emg {set _markg [mark caret]}
+bind \Mmg {see $_markg; caret $_markg}
+bind \emh {set _markh [mark caret]}
+bind \Mmh {see $_markh; caret $_markh}
+bind \emi {set _marki [mark caret]}
+bind \Mmi {see $_marki; caret $_marki}
+bind \emj {set _markj [mark caret]}
+bind \Mmj {see $_markj; caret $_markj}
+bind \emk {set _markk [mark caret]}
+bind \Mmk {see $_markk; caret $_markk}
+bind \eml {set _markl [mark caret]}
+bind \Mml {see $_markl; caret $_markl}
+bind \emm {set _markm [mark caret]}
+bind \Mmm {see $_markm; caret $_markm}
+bind \emn {set _markn [mark caret]}
+bind \Mmn {see $_markn; caret $_markn}
+bind \emo {set _marko [mark caret]}
+bind \Mmo {see $_marko; caret $_marko}
+bind \emp {set _markp [mark caret]}
+bind \Mmp {see $_markp; caret $_markp}
+bind \emq {set _markq [mark caret]}
+bind \Mmq {see $_markq; caret $_markq}
+bind \emr {set _markr [mark caret]}
+bind \Mmr {see $_markr; caret $_markr}
+bind \ems {set _marks [mark caret]}
+bind \Mms {see $_marks; caret $_marks}
+bind \emt {set _markt [mark caret]}
+bind \Mmt {see $_markt; caret $_markt}
+bind \emu {set _marku [mark caret]}
+bind \Mmu {see $_marku; caret $_marku}
+bind \emv {set _markv [mark caret]}
+bind \Mmv {see $_markv; caret $_markv}
+bind \emw {set _markw [mark caret]}
+bind \Mmw {see $_markw; caret $_markw}
+bind \emx {set _markx [mark caret]}
+bind \Mmx {see $_markx; caret $_markx}
+bind \emy {set _marky [mark caret]}
+bind \Mmy {see $_marky; caret $_marky}
+bind \emz {set _markz [mark caret]}
+bind \Mmz {see $_markz; caret $_markz}
+
+# Miscellaneous bindings:
+
+bind \Cq {quit}
+bind \Cu {history next history {undo more}}
+bind \Cs {write}
+bind \t {!insert \t}
+bind \15 {newline}
+bind \Cj {
+    caret [mark caret char -1]
+    newline
+}
+bind \Ck {
+    insert \n [mark caret char 0]
+    caret [mark [mark caret char 0] back 1 char]
+}
+bind \Ca {
+    history add $history
+    history ignore {eval $history}
+}
+bind \Cc {history ignore {focus command clear}}
+bind \C? caretinfo
+
+# Menus:
+
+menu create Control \
+    {Save and quit} - - - {write; quit} \
+    {Save} - {C-s} - {write} \
+    {Save in file $sel} - - - {write [selection]} \
+    {Undo} - {C-u} - {history next history {undo more}} \
+    {Do again} - {C-a} - {
+	history add $history
+	history ignore {eval $history}
+    } \
+    {Reset} - - - reset \
+    {Quit} - {C-q} - quit
+menu create Help \
+    {Introductory tutorial} - - - {open [format %s/tutorial1 $helpDir]} \
+    {Info on last error} - - - {where} \
+    {Info on default key bindings} - - - {
+	open [format %s/bindings.doc $helpDir]
+    } \
+    {Current key bindings} - - - {showBindings} \
+    {Current variable values} - - - {showVars} \
+    {Current menus} - - - {showMenus} \
+    {Current command procedures} - - - {showProcs}
+menu create Search \
+    {Search forward} - {C-f} - {history next history {search forw}} \
+    {Search backward} - {C-b} - {history next history {search back}} \
+    {Search forward for $sel} - {M-f} - \
+	{history next history {search forw [selection]}} \
+    {Search backward for $sel} - {M-b} - \
+	{history next history {search back [selection]}} \
+    {Replace} - {C-r} - {replace} \
+    {Substitute throughout $sel} - - - {
+	replace range sel.left sel.right
+	focus file
+    } \
+    {Substitute everywhere} - - - {replace range 0.0 eof; focus file}
+menu create Window \
+    {See tag $sel} - {C-t} - {
+	set _t [taginfo [selection]]
+	switch [index $_t 0]
+	search forw [index $_t 1]
+    } \
+    {See file $sel} - {M-s} - {switch [selection]} \
+    {See line $sel} - {C-g} - {
+	history next history {
+	    if {[scan [selection] %d _t] != 1} {error
+		    {you didn't select a line number}}
+	    line $_t
+	}
+    } \
+    {New window on tag $sel} - {M-t} - {tag [selection]} \
+    {New window on file $sel} - {M-o} - {open [selection]} \
+    {New window on same file} - {C-o} - {
+	open $file
+	send $newWindow [list see [mark top] top]
+    } \
+    {Open command subwindow} - {C-c} - {history ignore {focus command clear}}
+menu create Indent \
+    {Indent selected lines 4} - {M-p} - {indent sel.left sel.right + 4} \
+    {Outdent selected lines 4} - {M-y} - {indent sel.left sel.right - 4} \
+    {Indent caret line 4} - {C-p} - {indent caret caret + 4} \
+    {Outdent caret line 4} - {C-y} - {indent caret caret - 4} \
+    {Left-justify selected lines} - - - {indent sel.left sel.right 0}
+menu create Selection \
+    {Copy $sel to caret} - {C-v} - {insert [selection]} \
+    {Move $sel to caret} - {M-v} - {move} \
+    {Delete $sel} - {C-d} - {delete sel.left sel.right}
+menu create Misc \
+    {Caret location} - {C-?} - {caretinfo} \
+    {Convert to control characters} - - - {
+	set _t [extract sel.left sel.right]
+	set _t2 [mark sel.left]
+	insert [control make $_t] $_t2
+	set _t3 [mark sel.left back 1 char]
+	delete sel.left sel.right
+	selection set $_t2 $_t3
+    } \
+    {Insert file $sel at caret} - - - {read [selection]}
+
+if [file /sprite/lib/forms isdirectory] {
+    menu create Forms \
+	local.mk - - - {read /sprite/lib/forms/local.mk} \
+	prochead - - - {read /sprite/lib/forms/prochead} \
+	proto.c - - - {read /sprite/lib/forms/proto.c} \
+	proto.csh - - - {read /sprite/lib/forms/proto.csh} \
+	proto.h - - - {read /sprite/lib/forms/proto.h} \
+	cmd.man - - - {read /sprite/lib/forms/cmd.man} \
+	lib.man - - - {read /sprite/lib/forms/lib.man} \
+	sun3.md/proto.s - - - {read /sprite/lib/forms/sun3.md/proto.s} \
+	sun3.md/asmhead - - - {read /sprite/lib/forms/sun3.md/asmhead}
+}
+
+# Various controlling variables:
+
+set searchCmd {history next history search}
+set replaceCmd replace
+
+# Miscellaneous variables:
+
+set history {}

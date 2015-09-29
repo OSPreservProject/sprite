@@ -1,0 +1,20 @@
+# This file is used by scvs and contains symbolic link
+# information.  Each line is of the form "link target"
+# $Header
+console.h                ../sun4.md/console.h
+devConsole.c             ../sun4.md/devConsole.c
+devGraphics.c            ../sun4.md/devGraphics.c
+devInit.c                ../sun4.md/devInit.c
+devInt.h                 ../sun4.md/devInt.h
+devMouse.c               ../sun4.md/devMouse.c
+devMultibus.h            ../sun4.md/devMultibus.h
+devSCSIC90.c             ../ds5000.md/devSCSIC90.c
+devSCSIC90.h             ../ds5000.md/devSCSIC90.h
+devSCSIC90Int.h          ../ds5000.md/devSCSIC90Int.h
+devTtyAttach.c           ../sun4.md/devTtyAttach.c
+devVidSun4.s             ../sun4.md/devVidSun4.s
+devZ8530.c               ../sun4.md/devZ8530.c
+devfb.h                  ../sun4.md/devfb.h
+mouse.h                  ../sun4.md/mouse.h
+ttyAttach.h              ../sun4.md/ttyAttach.h
+z8530.h                  ../sun4.md/z8530.h

@@ -1,0 +1,7 @@
+I'm not sure what the status of these sources is supposed to be, but
+when I tried installing this on the ds3100, it failed miserably.  
+"gld -r" produced a file that wasn't even recognizable as a
+relocatable file.
+
+Mike Kupfer
+9 May 1991

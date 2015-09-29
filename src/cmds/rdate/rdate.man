@@ -1,0 +1,70 @@
+.TH "RDATE" 8L "14 November 1990" "Execucom" "LOCAL USER COMMANDS"
+.SH NAME
+rdate \- set the system date/time from a remote host
+.SH SYNOPSIS
+.LP
+.B rdate
+[
+.B \-adD
+]
+.I host
+[
+.I host
+] ...
+.SH DESCRIPTION
+.B rdate
+uses a specified remote host as a time server and resets the local system
+date/time to the value supplied by the remote host.  One or more hosts
+can be specified on the command line.
+.B rdate
+will use the value from the first host which responds.  Thus, the date/time
+can be reset even if the primary time server does not respond.
+.LP
+When a host has responded to the
+.B rdate
+request and the local date/time has been set, the name of the responding
+host and the time will be displayed on standard output.
+.LP
+.B rdate
+uses the TCP Time Protocol service specified in RFC868.  This service
+provides the number of seconds since 00:00:00 1 January 1900 GMT on port 37.
+The returned value is corrected to the Unix epoch, 00:00:00 1 January 1970
+GMT. Depending on the command line options, this value is used
+(1) to reset the local machine's date/time immediately to the new value,
+(2) to adjust the local machine's date/time gradually to the new value,
+or (3) for display only.  The default is to reset the local date/time.
+Since the system calls used to modify the date/time
+are privileged,
+.B rdate
+must be run by root to successfully change the local date/time.
+.LP
+.B rdate
+is often used in a startup file such as /etc/rc.local to set the system
+date/time.
+.SH OPTIONS
+.TP
+.B \-a
+Use the server's time to gradually adjust the local date/time to the new
+value.
+This technique guarantees that there are no time discontinuities as the
+time is changed.
+.ft I
+(N.B.:
+The system call to gradually adjust time
+is not available on all versions of Unix and this
+option will not be provided on those systems.)
+.ft R
+.TP
+.B \-d
+Display the time from the first server to respond.
+Do not adjust or set the local machine's date/time.
+.TP
+.B \-D
+Display the time from all servers that respond.
+Do not adjust or set the local machine's date/time.
+.SH AUTHOR
+Keith Pyle
+.SH DIAGNOSTICS
+The exit status is 0 for mormal execution.  If none of the specified hosts
+respond or if the time can not changed, the exit status is set to 1.  Syntax
+errors result in a usage message and an exit status of 2.

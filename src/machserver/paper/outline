@@ -1,0 +1,144 @@
+* introduction
+** Sprite 
+*** fast, single-image file system
+*** fast RPC
+*** process migration
+*** movable FS/VM cache boundary (leave out?)
+*** minimal mapped-file support
+** why combine with Mach?
+*** portability
+*** research
+*** distribute Sprite technology
+   include discussion of previous work.
+
+* design goals
+** portability
+** simplicity
+** minimize changes to existing code
+** roughly equivalent performance
+
+* overview of changes
+   Sort of treat Mach as virtual machine.
+** rewrite bottom layer of proc, dev, timer modules
+     Provide same high-level interface.  Provide facade of process
+   running in kernel state (e.g., notion of current process).
+** rewrite sync/sched modules.
+     Leave all scheduling to Mach.  Provide Sprite synch primitives,
+   keeping facade of process running in kernel state (esp. PCB state
+   field).
+** external pager for everything
+     To support Sprite process migration.
+     Keep interface for use by other modules.
+** use Sprite RPC instead of Mach IPC
+     Compatibility with other Sprite hosts.
+** fixed-size cache
+     To simplify the initial implementation.
+
+* measurements
+** approx. number/percentage lines code kept, thrown out, (re)written
+   Percentages of total kernel source bytes (from moduleSizes list),
+   rounded to nearest whole percent, with a certain amount of
+   guesswork (e.g., for the numbers for local filesystem and device
+   code).
+   		kept		thrown out		rewritten
+   FS		38		 			 
+   dev		 3		 7			 1
+   proc		 6					 4
+   vm				 5			 4
+   net		 2		 			 1
+   rpc		 4
+   libc		 5
+   sys							 2
+   sync							 2
+   mach				 6
+   timer			 			 1
+   utils	 2
+   prof				 1
+   sig		 1
+   recov	 1
+   dbg				 1
+   sched			 1
+   mem				 1
+   main		 					 0
+   total:	62		22			15
+** comparison w.r.t. size (native vs. server), portability
+   Size is simple number of lines of code.  Portability is
+   (approximated by) number of lines of machine-dependent code.
+   total size: 
+     native: 143K lines (201K lines counting if'd out code) 
+     server: 111K lines
+   md code:
+     native: 27K lines (29K lines counting if'd out code) (19%, 14% of total)
+             (incl. 3600 lines of assembly code)
+     server: 1300 (1% of total)
+** performance tests
+   Andrew benchmark, assorted micro-benchmarks.
+***  Native Sprite versus UX server versus sprited.
+***  changes req'd to get this far
+***  breakdown of why sprited is slower than native Sprite.
+
+* evaluation
+** portability
+   Success.  Server is 4/5 size of native code (would like to be
+   smaller, but oh, well).  Much less machine-dependent code,
+   practically no assembly code.
+** simplicity
+   Success.  Most things worked the first time or soon after.
+   Debugging pretty easy.  Some complication if code isn't already
+   safe for multiprocessors (e.g., timer module bug).  
+   Complication dealing with asynchronicity and shared data structures
+   (no direct VM or proc control; race condition between
+   killing/suspending/signalling process and getting exception or
+   syscall message; no direct control over segments (memory objects)).
+   Complication handling name port race (vm_region can return a
+   segment's name port before the pager has been called to initialize
+   the segment).  Potential complication w.r.t. copyin because pager
+   error might not get detected until server actually tries to
+   reference data (depending on how copyin is implemented).
+** minimize changes to existing code
+   Success.  Look at numbers.  No changes to other native Sprite were
+   required to coexist with Sprite server.
+   Some complication trying to maintain process model (need to allow
+   asynchronous signal delivery, which changes sig module; exit more
+   complicated; have to deal with some system calls that don't have
+   normal return, e.g., exec), net result lots of deadlocks.  Had to
+   punt on FS/VM cache tradeoff, still not sure how to do right.  Some
+   low-level routines much more expensive than they used to be (e.g.,
+   copyin/copyout & Vm_MakeAccessible).  Note that there's more to the
+   "data copy" perf problem than just bcopy (i.e., crossing the
+   server/client boundary is expensive).  
+   Problem because native Sprite condition variables don't need
+   initialization.
+** Good performance.
+   Problems.  Either need to (1) fix external pager interface to
+   support copy-on-write for memory objects (for fork()), or (2) have
+   to sacrifice simplicity in the server.  Might also have to make
+   major changes (including native Sprite changes?) to handle mapped
+   files better (to use UX approach for files).  RPC latency a
+   problem, but not as big as you might at first suspect.  Need to say
+   more about the other perf problems?  Comparison with 4.2BSD or
+   SunOS 4.0?  If you fix the problems that you have (tentative) fixes
+   for, what do you get for performance?
+
+* future work
+** performance
+***more tuning
+*** other macro benchmarks
+*** design comparisons 
+    e.g., use of Sprite RPC versus Mach IPC for remote access
+** boring functionality
+*** user-level debugger
+*** binary compatibility
+** researchy functionality
+*** process migration
+*** local devices
+
+* conclusions
+** qualified success
+*** more portable
+*** performance still bad, but potentially fixable
+*** some hairy sections
+*** more work needed (tuning, process migration, use as file server)
+** important to measure before & after changing
+    Fixing RPC latency didn't do as much as was hoped.
+** avoid RPCs rather than making RPCs fast

@@ -1,0 +1,132 @@
+
+
+
+SEMGET                C Library Procedures                 SEMGET
+
+
+
+NNAAMMEE
+     semget - get set of semaphores
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<ssyyss//iippcc..hh>>
+     ##iinncclluuddee <<ssyyss//sseemm..hh>>
+
+     iinntt sseemmggeett((kkeeyy,, nnsseemmss,, sseemmffllgg))
+     kkeeyy__tt kkeeyy;;
+     iinntt nnsseemmss,, sseemmffllgg;;
+
+DDEESSCCRRIIPPTTIIOONN
+     sseemmggeett(()) returns the semaphore identifier associated with
+     _k_e_y.
+
+     A semaphore identifier and associated data structure and set
+     containing _n_s_e_m_s semaphores (see iinnttrroo(2)) are created for
+     _k_e_y if one of the following are true:
+
+     o+    _k_e_y is equal to IIPPCC__PPRRIIVVAATTEE.
+
+     o+    _k_e_y does not already have a semaphore identifier asso-
+          ciated with it, and (_s_e_m_f_l_g & IIPPCC__CCRREEAATT) is ``true''.
+
+     Upon creation, the data structure associated with the new
+     semaphore identifier is initialized as follows:
+
+     o+    sseemm__ppeerrmm..ccuuiidd, sseemm__ppeerrmm..uuiidd, sseemm__ppeerrmm..ccggiidd, and
+          sseemm__ppeerrmm..ggiidd are set equal to the effective user ID and
+          effective group ID, respectively, of the calling pro-
+          cess.
+
+     o+    The low-order 9 bits of sseemm__ppeerrmm..mmooddee are set equal to
+          the low-order 9 bits of _s_e_m_f_l_g.
+
+     o+    sseemm__nnsseemmss is set equal to the value of _n_s_e_m_s.
+
+     o+    sseemm__oottiimmee is set equal to 0 and sseemm__ccttiimmee is set equal
+          to the current time.
+
+RREETTUURRNN VVAALLUUEE
+     Upon successful completion, a non-negative integer, namely a
+     semaphore identifier, is returned.  Otherwise, a value of -1
+     is returned and eerrrrnnoo is set to indicate the error.
+
+EERRRROORRSS
+     sseemmggeett(()) will fail if one or more of the following are true:
+
+     EINVAL              _n_s_e_m_s is either less than or equal to
+                         zero or greater than the system-imposed
+                         limit.
+
+
+
+Sprite v1.0             21 November 1987                        1
+
+
+
+
+
+
+SEMGET                C Library Procedures                 SEMGET
+
+
+
+     EACCES              A semaphore identifier exists for _k_e_y,
+                         but operation permission (see iinnttrroo(2))
+                         as specified by the low-order 9 bits of
+                         _s_e_m_f_l_g would not be granted.
+
+     EINVAL              A semaphore identifier exists for _k_e_y,
+                         but the number of semaphores in the set
+                         associated with it is less than _n_s_e_m_s
+                         and _n_s_e_m_s is not equal to zero.
+
+     ENOENT              A semaphore identifier does not exist
+                         for _k_e_y and (_s_e_m_f_l_g & IIPPCC__CCRREEAATT) is
+                         ``false''.
+
+     ENOSPC              A semaphore identifier is to be created
+                         but the system-imposed limit on the max-
+                         imum number of allowed semaphore iden-
+                         tifiers system wide would be exceeded.
+
+     ENOSPC              A semaphore identifier is to be created
+                         but the system-imposed limit on the max-
+                         imum number of allowed semaphores system
+                         wide would be exceeded.
+
+     EEXIST              A semaphore identifier exists for _k_e_y
+                         but ( (_s_e_m_f_l_g & IIPPCC__CCRREEAATT) and (_s_e_m_f_l_g &
+                         IIPPCC__EEXXCCLL))) is ``true''.
+
+SSEEEE AALLSSOO
+     iinnttrroo(2), sseemmccttll(2), sseemmoopp(2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0             21 November 1987                        2
+
+
+

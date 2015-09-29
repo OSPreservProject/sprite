@@ -1,0 +1,4 @@
+
+
+          write_file fileName string [string...]
+               Writes the specified strings to the named file.

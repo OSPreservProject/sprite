@@ -1,0 +1,250 @@
+head     9.2;
+branch   ;
+access   ;
+symbols  ds3100:9.2 sun3:9.2 sun4nw:9.2 symm:9.2 spur:9.2 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.2
+date     90.09.26.12.23.21;  author kupfer;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.07.30.11.35.50;  author shirriff;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.55.36;  author douglis;  state Stable;
+branches ;
+next     8.2;
+
+8.2
+date     89.07.21.12.27.16;  author rab;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.07.14.09.33.21;  author rab;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.07.18;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.10.29;  author brent;  state Stable;
+branches ;
+next     5.1;
+
+5.1
+date     87.12.12.16.32.51;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.38.36;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.2
+log
+@Changes for function prototypes.
+@
+text
+@/*
+ * dbgInt.h --
+ *
+ *     Internal types, constants,  and procedure headers for the debugger module.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/dbg/sun3.md/RCS/dbgInt.h,v 9.1 90/07/30 11:35:50 shirriff Exp Locker: kupfer $ SPRITE (Berkeley)
+ */
+
+#ifndef _DBGINT
+#define _DBGINT
+
+#include <dbgAsm.h>
+#include <vmMach.h>
+
+/*
+ * There are sixteen registers: d0-d7 and a0-7.
+ */
+
+#define	NUMGENERALREGISTERS	16
+
+/*
+ * The following are the registers that are saved when the debugger is
+ * called.
+ */
+
+extern	int		dbgTermReason;		/* Reason why debugger was
+						   called */
+extern	int		dbgSfcReg;		/* Source function code reg */
+extern	int		dbgDfcReg;		/* Dest function code reg */
+extern	int		dbgUserContext;		/* User context register */
+extern	int		dbgKernelContext;	/* Kernel context register */
+
+extern	Boolean	dbgTracing;		/* Flag to say whether we are being
+					   traced by the debugger. */
+			
+/*
+ * Entry point into the debugger from the monitor.  If want to enter the
+ * debugger from the monitor should continue execution at this location.
+ */
+
+extern	int	dbgMonPC;
+
+
+extern	int	dbgTermReason;		/* Why the debugger was entered. */
+
+extern	int	dbgInDebugger; 		/* How many levels deep we are in
+					   the debugger. */
+
+extern	int	dbgTraceLevel; 		/* Our trace level. */
+
+extern 	int	dbgIntPending; 		/* Whether there is an interrupt
+					   pending for the debugger. */
+extern	int	dbgExcType;		/* The exception type when an
+					   interrupt was blocked */
+extern	int	dbgSavedSP;		/* Contains the true kernel stack
+					   pointer after return from
+					   the call to Dbg_Main */
+
+#endif /* _DBGINT */
+@
+
+
+9.1
+log
+@Removed include of vmMachInt.h
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/dbg/sun3.md/RCS/dbgInt.h,v 9.0 89/09/12 14:55:36 douglis Stable Locker: shirriff $ SPRITE (Berkeley)
+d16 2
+a17 2
+#include "dbgAsm.h"
+#include "vmMach.h"
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/dbg/sun3.md/RCS/dbgInt.h,v 8.2 89/07/21 12:27:16 rab Exp Locker: douglis $ SPRITE (Berkeley)
+a17 1
+#include "vmMachInt.h"
+@
+
+
+8.2
+log
+@*** empty log message ***
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/dbg/sun3.md/RCS/dbgInt.h,v 8.1 89/07/14 09:33:21 rab Exp Locker: rab $ SPRITE (Berkeley)
+@
+
+
+8.1
+log
+@*** empty log message ***
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/dbg/sun3.md/RCS/dbgInt.h,v 8.0 88/11/11 18:07:18 douglis Stable Locker: rab $ SPRITE (Berkeley)
+a16 1
+#include "dbgRs232.h"
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/dbg/sun2.md/RCS/dbgInt.h,v 6.0 88/08/11 12:10:29 brent Stable Locker: douglis $ SPRITE (Berkeley)
+d28 1
+a28 1
+ * The following are the registers that are saved when the debugger is 
+d32 1
+a32 1
+extern	int		dbgTermReason;		/* Reason why debugger was 
+d43 1
+a43 1
+ * Entry point into the debugger from the monitor.  If want to enter the 
+d52 1
+a52 1
+extern	int	dbgInDebugger; 		/* How many levels deep we are in 
+d57 1
+a57 1
+extern 	int	dbgIntPending; 		/* Whether there is an interrupt 
+d59 1
+a59 1
+extern	int	dbgExcType;		/* The exception type when an 
+d62 1
+a62 1
+					   pointer after return from 
+d65 1
+a65 1
+#endif _DBGINT
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: dbgInt.h,v 5.1 87/12/12 16:32:51 nelson Exp $ SPRITE (Berkeley)
+@
+
+
+5.1
+log
+@Handles moving of hardware dependencies from vm to sun.
+@
+text
+@d10 1
+a10 1
+ * $Header: dbgInt.h,v 5.0 87/08/11 10:38:36 sprite Exp $ SPRITE (Berkeley)
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d10 1
+a10 1
+ * $Header: dbgInt.h,v 1.5 85/07/15 13:45:09 nelson Exp $ SPRITE (Berkeley)
+d18 2
+a19 1
+#include "vmSun.h"
+@

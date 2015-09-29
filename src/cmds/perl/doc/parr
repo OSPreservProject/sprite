@@ -1,0 +1,164 @@
+#!/usr/bin/perl
+
+# @(#)@ parr 4.2.1
+
+# rearrange conforming PS code to print the pages in an arbitrary
+# order.  The -o option takes a list of ranges, like this:
+#	1-5    1-10,11-20    11-,1-10
+# usage: parr [-a4] [-o list] [file]
+#
+# jgreely@cis.ohio-state.edu, 89/10/23
+# modified by jv@mh.nl, 91/078/15
+
+$order='';
+$signFlag='';
+$signCount=0;
+$DEBUG=0;
+$TMPDIR='/usr/tmp';
+
+while ($_ = $ARGV[0],/^-/) {
+	shift;
+	last if /^-\-$/;
+	/^-o/ && ($order = shift,next);
+	/^-a4/ && ($a4flag++,next);
+	die "usage: parr [-a4] [-o list] [file]\n";
+}
+
+$file = "$TMPDIR/p$$.header";
+@files = ($file);
+$sheet=0;
+open(FILE,">$file") || die "$file: $!\n";
+while (<>) {
+	#
+	# hack to use NeXT Preview: strip old '%%Pages:' lines
+	#
+	next if /^%%Pages:/;
+	if (/^%%Page:/) {
+		$sheet++;
+		$pagemap{$sheet} = $1 if /%%Page:\s+(\S+)\s+\S+/;
+		close(FILE);
+		$file = "$TMPDIR/p$$.$sheet";
+		push(@files,$file);
+		open(FILE,">$file") || die "$file: $!\n";
+	}
+	if (/^%%Trailer/) {
+		close(FILE);
+		$file = "$TMPDIR/p$$.trailer";
+		push(@files,$file);
+		open(FILE,">$file") || die "$file: $!\n";
+	}
+	if (/^TeXDict begin @(a4|letter)/) {
+		# Insert twoup before switching to TeXDict
+		&twoup;
+		$twoup++;
+		print FILE "TeXDict begin @landscape\n";
+		next;
+	}
+	print FILE $_;
+}
+close(FILE);
+die "twoup insertion error\n" unless $twoup == 1;
+
+@order = ();
+if ($order) {
+	foreach $range (split(/,/,$order)) {
+		($start,$sep,$end) = split(/(-)/,$range);
+		$start = 1 unless $start;
+		$end = $sheet unless $end;
+		if ($sep) {
+			push(@order,$start..$end);
+		}else{
+			push(@order,$start);
+		}
+	}
+}elsif ($signFlag) {
+	if (! $signCount) {
+		$signCount = $sheet;
+		$signCount += (4 - $sheet % 4) if ($sheet % 4);
+	}else{
+		$signCount *=4;
+	}
+	for($base=0;$base<$sheet;$base+=$signCount) {
+		@tmp = ($signCount/2+$base);
+		push(@tmp,$tmp[0]+1,$tmp[0]+2,$tmp[0]-1);
+		while ($tmp[3] > $base) {
+			push(@order,@tmp);
+			@tmp = ($tmp[0]-2,$tmp[1]+2,$tmp[2]+2,$tmp[3]-2);
+		}
+	}
+}else{
+	@order = (1..$sheet);
+}
+
+@tmp=@order;
+@order=();
+foreach $page (@tmp) {
+	push(@order,$page > $sheet ? "B" : $page);
+}
+
+open(FILE,"$TMPDIR/p$$.header");
+$_ = <FILE>;
+print $_,"%%Pages: (atend)\n";
+print while <FILE>;
+close(FILE);
+
+foreach $page (@order) {
+	$count++;
+	$num = "?";
+	$num = $pagemap{$page} if defined $pagemap{$page};
+	$num .= "/" . $pagemap{$order[$count]} 
+		if defined $pagemap{$order[$count]};
+	print "%%Page: $num ", ($count+1)/2, "\n" if $count & 1;
+	print "%%OldPage: $page\n";
+	if ($page eq "B") {
+		print "showpage\n";
+	}else{
+		open(FILE,"$TMPDIR/p$$.$page");
+		while (<FILE>) {
+			print unless /^%%Page:/;
+		}
+		close(FILE);
+	}
+}
+open(FILE,"$TMPDIR/p$$.trailer");
+print while <FILE>;
+close(FILE);
+print "%%Pages: $count\n";
+
+unlink @files unless $DEBUG;
+exit(0);
+
+sub twoup {
+$factor = 0.707106781187;
+
+# Measurements are in 1/100 inch approx.
+if ( $a4flag) {
+	$topmargin = -57;
+	$leftmargin = 28;
+	$othermargin = 445;	# do not change -- relative to $leftmargin
+}
+else {
+	$topmargin = -30;
+	$leftmargin = 0;
+	$othermargin = 445;	# do not change -- relative to $leftmargin
+}
+$vsize = -1 - $factor;
+print FILE <<EOD;
+/isoddpage true def
+/orig-showpage /showpage load def
+/showpage {
+        isoddpage not { orig-showpage } if
+        /isoddpage isoddpage not store 
+    } def
+ 
+/bop-hook {
+	/vsize $vsize def
+        isoddpage 
+	{ $factor $factor scale $topmargin $leftmargin translate }
+        { 0 $othermargin translate}
+	ifelse
+    } def
+ 
+/end-hook{ isoddpage not { orig-showpage } if } def
+EOD
+}

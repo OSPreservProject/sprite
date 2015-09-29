@@ -1,0 +1,29 @@
+# DO NOT DELETE THIS LINE -- make depend depends on it.
+
+ds3100.md/showlfssegment.o: showlfssegment.c
+ds3100.md/showlfssegment.o: ../lfslib/lfslib.h
+ds3100.md/showlfssegment.o: /sprite/lib/include/cfuncproto.h
+ds3100.md/showlfssegment.o: /sprite/lib/include/sprite.h
+ds3100.md/showlfssegment.o: /sprite/lib/include/bit.h
+ds3100.md/showlfssegment.o: /sprite/lib/include/fs.h
+ds3100.md/showlfssegment.o: /sprite/lib/include/list.h
+ds3100.md/showlfssegment.o: /sprite/lib/include/kernel/fs.h
+ds3100.md/showlfssegment.o: /sprite/lib/include/kernel/dev.h
+ds3100.md/showlfssegment.o: /sprite/lib/include/kernel/fsdm.h
+ds3100.md/showlfssegment.o: /sprite/lib/include/kernel/fslcl.h
+ds3100.md/showlfssegment.o: /sprite/lib/include/kernel/devDiskLabel.h
+ds3100.md/showlfssegment.o: /sprite/lib/include/kernel/lfsDesc.h
+ds3100.md/showlfssegment.o: /sprite/lib/include/kernel/lfsDescMap.h
+ds3100.md/showlfssegment.o: /sprite/lib/include/kernel/lfsFileLayout.h
+ds3100.md/showlfssegment.o: /sprite/lib/include/kernel/lfsDirOpLog.h
+ds3100.md/showlfssegment.o: /sprite/lib/include/kernel/lfsSegLayout.h
+ds3100.md/showlfssegment.o: /sprite/lib/include/kernel/lfsStableMem.h
+ds3100.md/showlfssegment.o: /sprite/lib/include/kernel/lfsSuperBlock.h
+ds3100.md/showlfssegment.o: /sprite/lib/include/kernel/lfsUsageArray.h
+ds3100.md/showlfssegment.o: /sprite/lib/include/kernel/lfsStats.h
+ds3100.md/showlfssegment.o: /sprite/lib/include/stdio.h
+ds3100.md/showlfssegment.o: /sprite/lib/include/option.h
+ds3100.md/showlfssegment.o: /sprite/lib/include/sys/types.h
+ds3100.md/showlfssegment.o: /sprite/lib/include/stdlib.h
+ds3100.md/showlfssegment.o: /sprite/lib/include/string.h
+ds3100.md/showlfssegment.o: /sprite/lib/include/sys/file.h

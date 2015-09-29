@@ -1,0 +1,8 @@
+D DS3100_M                          	ds3100.md
+F EXECTEST.C;1                      	exectest.c
+F MAKEFILE.;1                       	Makefile
+D OUTPUT                            	output
+D RCS                               	RCS
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md
+F TIME.FIL;1                        	time.file

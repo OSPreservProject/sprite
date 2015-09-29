@@ -1,0 +1,119 @@
+EEPIC is a set of TeX macros for LaTeX. It includes several extensions to EPIC 
+and LaTeX picture drawing environement and provides several new commands.
+
+------------------------------
+Additions to Version 1.00
+o new commands to draw filled cirlces and ellipsis.
+o new command to set line thickness to any width.
+o bugs in EEPICEMU.sty are fixed.
+------------------------------
+
+Extensions to LaTeX and EPIC include:
+o drawing of lines in any slopes
+o drawing of circles in any radii
+o drawing of dotted lines and dash lines in a much faster way and much less 
+  TeX memory
+
+It also provides new commands for:
+o drawing ellipsis
+o drawing arcs
+o drawing of splines
+
+Please read the manual for details. 
+
+************IMPORTANT**************
+
+The standard EEPIC style file generates tpic \special. If your printer does not 
+support those specials, you have to either change "eepic" in the 
+\documentstyle command to "eepicemu" or rename "eepicemu.sty" to "eepic.sty" 
+before formating the manual. "eepicemu.sty" is the emulation package of EEPIC 
+using EPIC and it does not generate any \special command. However, \arc 
+command is not supported in the emulation package. Hence, you will get 3 error 
+messages if you use "eepicemu" to format the manual. Furthermore, the 
+emulation package uses a lot more TeX memory. If your TeX run out of memory 
+during the formating of the manual, you can insert \clearpage between example 
+3 and example 4 to put them on different pages.
+
+EPIC is an TeX macro package for use with LaTeX. It is written by 
+Sunil Podar, Dept of Computer Science, SUNY at Stony Brook, NY 11794.
+The "epic.sty" file is include in the distribution so that you can format the 
+manual. I strongly recommend everyone using EEPIC should get a full package of 
+EPIC. Information on getting EPIC and printer drivers that support tpic 
+specials are given at the end of this file.
+
+[ I tried to contact the author to get permission to include "epic.sty"  ] 
+[ in EEPIC distribution but I did not get any reply. I hope this is okay ]
+
+********MISC***********
+o Any line beginning with "%%" in eepic.sty may be removed for efficiency
+
+
+*******E-MAIL Address*******
+% Internet : kwok@iris
+% csnet    : kwok@ucd.csnet
+% csnet    : kwok%iris.ucdavis.edu@csnet.relay
+% UUCP	   : ...!ucbvax!ucdavis!iris!kwok
+
+
+--Conrad Kwok
+
+----------------------------------------------------------------------
+First, thanks to all who have responsed to my question. It seems
+to me that not many DVI drivers currently support tpic
+specials but a number of people are planning to support tpic
+specials in their new DVI drivers. Here is the summary.
+
+1) "iptex" written by Chris Torek --- This is for imagen printer. 
+It is included in the UNIX TeX distribution.  It is also
+available for anonymous ftp from a.cs.uiuc.edu in
+pub/TeX/iptex.tar
+
+2) "texx" written by Dirk Grunwald --- DVI previewers for X11. 
+It supports most of the tpic specials but not all. It is part of
+the iptex package. See 1) above.
+
+3) "texsun" written by Dirk Grunwald --- DVI previewers for
+Sunview window system. It supports most of the tpic specials. It
+is also part of the iptex package. See 1) above.
+
+4) "dvips" written by Tomas Rokicki and tpic special codes are
+added by Dorab Patel --- A DVI to Postscript translator. It is
+available for anonymous ftp from labrea.stanford.edu.
+
+5) L. Michael Gray in the University of New Hamsphire said he has
+modified dln01 (for DEC LN01S), dvi2ps and xdvi (for X10.4) to
+handle tpic specials. He may be reached at lmg%unhcs@RELAY.CS.NET.
+
+6) "dviis" previewers for Integrated Solutions. I think it is
+available on june.cs.washington.edu.
+
+7) DVI previewers written by Randy Buckland for VMS vaxstations.
+The program is written in Ada. The executable is available for
+anonymous ftp from argon.rti.org [128.109.139.64].
+
+8) There are a number of DVI drivers in science.utah.edu but I
+don't know which one support tpic specials and who one don't.
+
+9) Another "dvips" is available from a.cs.uiuc.edu in
+pub/TeX/dvips.tar.Z
+
+10) quicspool that come with the distribution also supports tpic
+specials.
+
+
+Some of the information here come at second hand. Correct me if
+any of these are wrong. If you know any DVI drivers that support
+tpic specials but they are not list here. Please send me a
+message so that I can keep this list up-to-date.
+
+================================================
+Additions to Version 1.1
+o new commands to do area fill for circles, ellipses, paths and
+  arcs.
+o allows user to define the area fill pattern. It may not work on
+  all dvi drivers but it is known to work using iptex.
+================================================
+
+Thanks.
+
+--Conrad

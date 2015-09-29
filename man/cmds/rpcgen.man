@@ -1,0 +1,452 @@
+.\" @(#)rpcgen.1 1.1 86/04/15 SMI
+.TH RPCGEN 1 "11 March 1986"
+.SH NAME
+rpcgen \- an RPC protocol compiler
+.SH SYNOPSIS
+\fBrpcgen\fP \fB-h\fP \fB[-o \fIoutfile\fP]\fP \fB[\fIinputfile\fP]\fP
+.br
+\fBrpcgen\fP \fB-c\fP \fB[-o \fIoutfile\fP]\fP \fB[\fIinfile\fP]\fP 
+.br
+\fBrpcgen\fP \fIinfile\fP
+.br
+\fBrpcgen\fP \fB[-s \fItransport\fP]*\fP \fB[-o\fP \fIoutfile\fP]\fP \fB[\fIinfile\fP]\fP 
+.br
+.SH DESCRIPTION
+\fIrpcgen\fP is a tool that generates 
+.B C 
+code to implement an 
+.SM RPC
+protocol.  The input to \fIrpcgen\fP is a language with striking 
+similarity to 
+.B C 
+known as RPCL (Remote Procedure Call Language).
+.I rpcgen 
+operates in four modes.  The first mode is used to convert
+RPCL definitions into 
+.B C 
+definitions for use as a header file.
+The second mode compiles the XDR routines required to serialize the protocol
+described by RPCL.  The third mode compiles both, leaving the
+header file in a file named \fIinfile\fP with a 
+.B .h 
+extension and the XDR routines in \fIinfile\fP with a 
+.B .c 
+extension.  The fourth mode is used to compile an RPC server skeleton, so that 
+all you have to do is write local procedures that know nothing about RPC
+in order to implement an RPC server.
+.LP
+The input may contain 
+.BR C -style 
+comments and preprocessor directives.  Comments are ignored, while the 
+directives are simply stuffed uninterpreted in the output header file. 
+.LP
+You can customize some of your XDR routines by leaving those data
+types undefined.  For every data type that is undefined, \fIrpcgen\fP 
+will assume that there exists a routine with the name `xdr_' prepended
+to the name of the undefined type. 
+.SH OPTIONS
+.IP \fB-c\fP
+Compile XDR routines.
+.IP \fB-h\fP
+Compile 
+.B C 
+data-definitions (a header file)
+.IP "\fB-o\fP \fIoutfile\fP"
+Specify the name of the output file.  If none is specified, standard
+output is used (\fB-c\fP, \fB-h\fP and \fB-s\fP modes only).
+.IP "\fB-s\fP \fItransport\fP"
+Compile a server, using the the given transport.  The supported transports
+are \fBudp\fP and \fBtcp\fP. This option may be invoked more than once
+so as to compile a server that serves multiple transports.
+.SH USAGE
+.SS "RPCL Syntax Summary"
+This summary of RPCL syntax, which is used for 
+.I rpcgen 
+input, is intended more for aiding 
+comprehension than as an exact statement of the language.
+.SS "Primitive Data Types"
+.RS
+.nf
+[ \fBunsigned\fP ] \fBchar\fP
+[ \fBunsigned\fP ] \fBshort\fP
+[ \fBunsigned\fP ] \fBint\fP
+[ \fBunsigned\fP ] \fBlong\fP
+\fBunsigned\fP
+\fBfloat\fP
+\fBdouble\fP
+\fBvoid\fP
+\fBbool\fP
+.fi
+.RE
+Except for the added boolean data-type \fBbool\fP,
+RPCL is identical to 
+.BR C .
+\fIrpcgen\fP converts \fBbool\fP declarations to \fBint\fP declarations in the 
+output header file (literally it is converted to a \fBbool_t\fP, which has been
+\fB#define\fP'd to be an \fBint\fP). Also, \fBvoid\fP declarations
+may appear only inside of 
+.B union 
+and 
+.B program 
+definitions.  For those averse to typing the prefix 
+\fBunsigned\fP, the abbreviations \fBu_char\fP, \fBu_short\fP, \fBu_int\fP and 
+\fBu_long\fP are available. 
+.SS Declarations
+RPCL allows only three kinds of declarations:
+.LP
+\fIdeclaration:\fP
+.RS
+.nf
+\fIsimple-declaration\fP
+\fIpointer-declaration\fP
+\fIvector-declaration\fP
+.fi
+.RE
+.LP
+\fIsimple-declaration:\fP
+.RS
+\fItype-name\fP \fIobject-ident\fP
+.RE
+.LP	
+\fIpointer-declaration:\fP
+.RS
+\fItype-name\fP \fB*\fP\fIobject-ident\fP
+.RE
+.LP
+\fIvector-declaration:\fP
+.RS
+\fItype-name\fP \fIobject-ident\fP\fB[\fP\fIsize\fP\fB]\fP
+.RE
+.LP 
+(\fIsize\fP can be either an integer or a symbolic constant)
+.RE
+.LP
+RPCL declarations contain both limitations and extensions with
+respect to 
+.BR C .  
+The limitations are that you cannot declare
+multidimensional arrays or pointers-to-pointers in-line (You
+can still declare them though, using \fBtypedef\fP). There
+are two extensions:
+.LP
+.RS
+Opaque data is declared as a vector as follows:
+.LP
+.RS
+\fBopaque\fP \fIobject-ident\fP \fB[\fP \fIsize\fP \fB]\fP
+.RE
+.LP
+In the protocol, this results in an object of \fIsize\fP bytes. Note that
+this is \fInot\fP the same as a declaration of \fIsize\fP characters, 
+since XDR characters are 32-bits. Opaque declarations are compiled in the
+output header file into character array declarations of \fIsize\fP bytes.
+.LP
+Strings are special and are declared as a vector declaration:
+.LP
+.RS
+\fBstring\fP \fIobject-ident\fP \fB[\fP \fImax-size\fP \fB]\fP
+.RE
+.LP
+If \fImax-size\fP is unspecified, then there is essentially no limit to
+the maximum length of the string. String declarations get compiled into
+the following:
+.LP
+.RS
+char *\fIobject-ident\fP
+.RE
+.RE
+.RE
+.SS "Type Definitions"
+The only way to generate an XDR routine is to define a type. For
+every type \fIzetype\fP you define, there is a corresponding
+XDR routine named \fIxdr_zetype\fP.  
+.LP
+There are six ways to define a type:
+.LP
+\fItype-definition:\fP
+.RS
+.nf
+\fItypedef\fP
+\fIenumeration-def\fP
+\fIstructure-def\fP
+\fIvariable-length-array-def\fP
+\fIdiscriminated-union-def\fP
+\fIprogram-def\fP
+.fi
+.RE
+.LP
+The first three are very similar to their 
+.B C 
+namesakes. 
+.B C 
+does not have a formal type mechanism to define variable-length arrays and
+XDR unions are quite different from their 
+.B C 
+counterparts. Program definitions are not really type definitions, 
+but they are useful nonetheless.
+.LP
+You may not nest XDR definitions.  For example, the following will 
+cause \fIrpcgen\fP to choke:
+.RS
+.nf
+struct dontdoit {
+	struct ididit {
+		int oops;
+	} sorry;
+	enum ididitagain { OOPS, WHOOPS } iapologize;
+};
+.fi
+.RE
+.SS \fRTypedefs
+An XDR \fBtypedef\fP looks as follows:
+.LP
+\fItypedef:\fP
+.RS
+\fBtypedef\fP \fIdeclaration\fP \fB;\fP
+.RE
+The \fIobject-ident\fP part of \fIdeclaration\fP is the name of the new type,
+whereas the \fItype-name\fP part is the name of the type from which it is
+derived.
+.LP
+.SS "\fIEnumeration Types"
+The syntax is:
+.LP
+\fIenumeration-def:\fP
+.RS
+\fBenum\fP \fIenum-ident\fP \fB{\fP
+.RS
+\fIenum-list\fP
+.RE
+\fB};\fP
+.RE
+.LP
+\fIenum-list:\fP
+.RS
+\fIenum-symbol-ident\fP [ \fB=\fP \fIassignment\fP ]
+.br
+\fIenum-symbol-ident\fP [ \fB=\fP \fIassignment\fP ] \fB,\fP \fIenum-list\fP
+.RE
+.LP
+(\fIassignment\fP may be either an integer or a symbolic constant)
+.LP
+If there is no explicit assignment, then the implicit assignment is the
+value of the previous enumeration plus 1.  If not explicitly assigned,
+the first enumeration receives the value 0.
+.SS \fIStructures
+\fIstructure-def:\fP
+.RS
+\fBstruct\fP \fIstruct-ident\fP \fB{\fP
+.RS
+\fIdeclaration-list\fP
+.RE
+\fB};\fP
+.RE
+.LP
+\fIdeclaration-list:\fP
+.RS
+\fIdeclaration\fP \fB;\fP
+.br
+\fIdeclaration\fP \fB;\fP \fIdeclaration-list\fP
+.RE
+.RE
+.LP
+.SS "\fIVariable-Length Arrays"
+\fIvariable-length-array-def:\fP
+.RS
+\fBarray\fP \fIarray-ident\fP \fB{\fP
+.RS
+\fBunsigned\fP \fIlength-identifer\fP \fB;\fP
+.br
+\fIvector-declaration\fP \fB;\fP
+.RE
+\fB};\fP
+.RE
+.LP	
+A variable length array definition looks much like a structure 
+definition. Here's an example:
+.RS
+.nf
+array mp_int {
+	unsigned len;
+	short val[MAX_MP_LENGTH];
+};
+.fi
+.RE
+This is compiled into:
+.RS
+.nf
+struct mp_int {
+	unsigned len;
+	short *val;
+};
+typedef struct mp_int mp_int;
+.fi
+.RE
+.SS "\fIDisriminated Unions"
+\fIdiscriminated-union-def:\fP
+.RS
+\fBunion\fP \fIunion-ident\fP \fBswitch\fP \fB(\fP \fIdiscriminant-declaration\fP \fB)\fP \fB{\fP
+.RS
+\fIcase-list\fP
+.br
+[ \fBdefault\fP \fB:\fP \fIdeclaration\fP \fB;\fP ]
+.RE
+\fB};\fP
+.RE
+.LP
+\fIcase-list:\fP
+.RS
+\fBcase\fP \fIcase-ident\fP \fB:\fP \fIdeclaration\fP \fB;\fP
+.br
+\fBcase\fP \fIcase-ident\fP \fB:\fP \fIdeclaration\fP \fB;\fP \fIcase-list\fP
+.RE
+.LP
+\fIdiscriminant-declaration:\fP
+.RS
+\fIdeclaration\fP
+.RE
+.LP
+The union definition looks like a cross between a C-union and a C-switch.
+An example:
+.RS
+.nf
+union net_object switch (net_kind kind) {
+case MACHINE:
+	struct sockaddr_in sin;
+case USER:
+	int uid;
+default:
+	string whatisit;
+};
+.fi
+.RE
+Compiles into:
+.RS
+.nf
+struct net_object {
+	net_kind kind;
+	union {
+		struct sockaddr_in sin;
+		int uid;
+		char *whatisit;
+	} net_object;
+};
+typedef struct net_object net_object;
+.fi
+.RE
+Note that the name of the union component of the output struct is the
+same as the name of the type itself.
+.SS "\fIProgram Definitions"
+\fIprogram-def:\fP
+.RS
+\fBprogram\fP \fIprogram-ident\fP \fB{\fP
+.RS
+\fIversion-list\fP
+.RE
+\fB}\fP \fB=\fP \fIprogram-number\fP \fB;\fP
+.RE
+.LP
+\fIversion-list:\fP
+.RS
+\fIversion\fP
+.br
+\fIversion\fP \fIversion-list\fP
+.RE
+\fIversion:\fP
+.RS
+\fBversion\fP \fIversion-ident\fP \fB{\fP
+.RS
+\fIprocedure-list\fP
+.RE
+\fB} =\fP \fIversion-number\fP \fB;\fP
+.RE
+\fIprocedure-list:\fP
+.RS
+\fIprocedure-declaration\fP
+.br
+\fIprocedure-declaration procedure-list\fP
+.RE
+\fIprocedure-declaration:\fP
+.RS
+\fItype-name\fP \fIprocedure-ident\fP \fB(\fP \fItype-name\fP \fB)\fP \fB=\fP \fIprocedure-number\fP \fB;\fP
+.RE
+.LP
+Program definitions look like nothing you've ever seen before, so we
+turn to an example to explain them.  Suppose you wanted to create server
+that could get or set the date. It's declaration might look like this:
+.RS
+.nf
+program DATE_PROG {
+	version DATE_VERS {
+		date DATE_GET(timezone) = 1;
+		void DATE_SET(date) = 2;	/* Greenwich mean time */
+	} = 1;
+} = 100;
+.fi
+.RE
+In the header file, this compiles into the following:
+.RS
+.nf
+#define DATE_PROG 100
+#define DATE_VERS 1
+#define DATE_GET 1
+#define DATE_SET 2
+.fi
+.RE
+These \fBdefine\fP's are intended for use by the client program to 
+reference the remote procedures. 
+.LP
+If you are using \fIrpcgen\fP to compile your server, then there are
+some important things for you to know. The server interfaces to
+your local procedures by expecting a 
+.B C 
+function with the same name as that in the program definition, but in all 
+lower-case letters and followed by the version number.  Here is the local 
+procedure that implements DATE_GET:
+.RS
+.nf
+date *	/* always returns a pointer to the results */
+date_get_1(tz)	
+	timezone *tz;	/* always takes a a pointer to the arguments */
+{
+	static date d;	/* must be static! */
+	
+	/* 
+	 * figure out the date
+	 * and store it in d
+	 */
+	return(&d);	
+}
+.fi
+.RE
+The name of the routine is the same as the \fB#define\fP'd name, but in all 
+lower case letters and followed by the version number. XDR will recursively 
+free the argument after getting the 
+results from your local procedure, so you should copy from the argument 
+any data that you will need between calls. However, XDR neither allocates 
+nor frees your results. You must take care of their storage yourself.
+.LP
+.SS "Make Inference Rules For Compiling XDR Headers"
+.LP
+It is possible to set up suffix transformation rules in 
+.IR make  (1)
+for compiling XDR routines and header files.  The 
+convention is that RPCL protocol files have the extension 
+.BR .x .  
+The \fImake\fP rules to do this are:
+.nf
+	.SUFFIXES: .x
+	.x.c: 
+		rpcgen -c $< -o $@
+
+	.x.h:
+		rpcgen -h $< -o $@
+.fi
+.SH "SEE ALSO"
+\fIRemote Procedure Call: Programming Guide\fP 
+and \fIExternal Data Representation: Protocol Specification\fP 
+in\fI Networking on the Sun Workstation\fP
+.SH BUGS
+Name clashes can occur when using program definitions, since the apparent
+scoping does not really apply. Most of these can be avoided by giving 
+unique names for programs, versions, procedures and types.

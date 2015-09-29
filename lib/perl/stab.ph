@@ -1,0 +1,27 @@
+sub N_GSYM {0x20;}
+sub N_FNAME {0x22;}
+sub N_FUN {0x24;}
+sub N_STSYM {0x26;}
+sub N_LCSYM {0x28;}
+sub N_MAIN {0x2a;}
+sub N_RSYM {0x40;}
+sub N_SLINE {0x44;}
+sub N_SSYM {0x60;}
+sub N_SO {0x64;}
+sub N_LSYM {0x80;}
+sub N_BINCL {0x82;}
+sub N_SOL {0x84;}
+sub N_PSYM {0xa0;}
+sub N_EINCL {0xa2;}
+sub N_ENTRY {0xa4;}
+sub N_LBRAC {0xc0;}
+sub N_EXCL {0xc2;}
+sub N_RBRAC {0xe0;}
+sub N_BCOMM {0xe2;}
+sub N_ECOMM {0xe4;}
+sub N_ECOML {0xe8;}
+sub N_LENG {0xfe;}
+sub N_PC {0x30;}
+sub N_M2C {0x42;}
+sub N_SCOPE {0xc4;}
+1;

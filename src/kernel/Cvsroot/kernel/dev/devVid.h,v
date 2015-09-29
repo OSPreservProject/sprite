@@ -1,0 +1,181 @@
+head     9.3;
+branch   ;
+access   ;
+symbols  ds3100:9.3 sun3:9.3 sun4nw:9.3 symm:9.3 spur:9.3 Summer89:9.0 newlib:8.0 Summer88:6.0 sbc:5.1;
+locks    ; strict;
+comment  @ * @;
+
+
+9.3
+date     91.04.16.17.12.59;  author jhh;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     91.02.12.14.32.11;  author jhh;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.09.20.14.13.04;  author rab;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.57.59;  author douglis;  state Stable;
+branches ;
+next     8.1;
+
+8.1
+date     89.05.24.07.54.01;  author rab;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.10.29;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.26.42;  author douglis;  state Stable;
+branches ;
+next     5.1;
+
+5.1
+date     87.08.17.21.52.58;  author andrew;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.39.29;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.3
+log
+@fixed include statements
+@
+text
+@/*
+ * devVid.h --
+ *
+ *	Declarations of the video display module.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/dev/RCS/devVid.h,v 9.2 91/02/12 14:32:11 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+ */
+
+#ifndef _DEVVID
+#define _DEVVID
+
+#include <sprite.h>
+
+extern ReturnStatus Dev_VidEnable _ARGS_((Boolean onOff));
+
+#endif /* _DEVVID */
+@
+
+
+9.2
+log
+@fixed problem with function prototypes
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/dev/RCS/devVid.h,v 9.1 90/09/20 14:13:04 rab Exp Locker: jhh $ SPRITE (Berkeley)
+d16 1
+a16 1
+#include "sprite.h"
+@
+
+
+9.1
+log
+@*** empty log message ***
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/dev/RCS/devVid.h,v 9.0 89/09/12 14:57:59 douglis Stable Locker: rab $ SPRITE (Berkeley)
+d18 1
+a18 1
+extern ReturnStatus Dev_VidEnable(Boolean onOff);
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/dev/RCS/devVid.h,v 8.1 89/05/24 07:54:01 rab Exp Locker: douglis $ SPRITE (Berkeley)
+d18 1
+a18 1
+extern ReturnStatus Dev_VidEnable();
+@
+
+
+8.1
+log
+@Changes to allow optimization.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/dev/RCS/devVid.h,v 8.0 88/11/11 18:10:29 douglis Stable Locker: rab $ SPRITE (Berkeley)
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/dev/RCS/devVid.h,v 6.0 88/08/11 12:26:42 douglis Stable Locker: douglis $ SPRITE (Berkeley)
+d20 1
+a20 1
+#endif _DEVVID
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: devVid.h,v 5.1 87/08/17 21:52:58 andrew Exp $ SPRITE (Berkeley)
+@
+
+
+5.1
+log
+@*** empty log message ***
+@
+text
+@d10 1
+a10 1
+ * $Header: devVid.h,v 5.0 87/08/10 15:44:09 brent Stable $ SPRITE (Berkeley)
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@@

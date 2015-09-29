@@ -1,0 +1,281 @@
+% Document Type: LaTeX
+% Master File: pslatex.tex
+% PSLaTeX.tex
+% Documentation for PS-LaTeX
+% process with pslatex for the whole thing; should be OK with LaTeX
+% except that some examples won't appear
+\documentstyle{article}
+
+\title{A PostScript-based \LaTeX}
+
+\author{Mario Wolczko\\
+Dept.~of Computer Science\\
+The University\\
+Manchester M13 9PL\\
+U.K.\\
+{\tt mario@ux.cs.man.ac.uk, mcvax!ukc!man.cs.ux!mario}}
+
+\date{September 1989}
+
+\newcommand{\cs}[1]{{\tt \string#1}}
+\newcommand{\pslatex}{{\rm PS-\LaTeX}}
+\newcommand{\ps}{PostScript}
+\def\psfmtname{pslplain}
+
+\ifx\fmtname\psfmtname
+  \def\psonly{}
+\else 
+  \let\psonly\cs
+\fi
+\hyphenation{Post-Script}
+
+\begin{document}
+\maketitle
+
+\pslatex\ is a modified version of \LaTeX.  Rather than use the
+Computer Modern family of fonts (CM) developed by Donald Knuth,
+\pslatex\ tries to use \ps\footnote{\ps\ is a trademark of Adobe
+Systems Incorporated} fonts wherever possible.  This has a number of
+advantages:
+\begin{itemize}
+\item	There are a large number of fonts available for \ps\ devices.
+	Format designers can choose fonts more appropriate to their
+	documents, rather than being restricted to the CM set.
+\item	Sending a document to a \ps\ device can be much faster, as
+	large character bitmaps need not be sent.  Also, the disk
+	space required by the bitmap fonts can be saved.
+\item	\ps\ fonts can be arbitrarily scaled and rotated by the \ps\
+	device. 
+\end{itemize}
+However, there are also drawbacks:
+\begin{itemize}
+\item	At present there are no \ps\ fonts that can entirely take the
+	place of the {\sc cmex, cmsy} and {\sc cmmi} fonts, and also
+	the \LaTeX\ circle, line and symbol fonts, without some loss
+	of compatibility with \LaTeX.  Therefore, these fonts are
+	still required.
+\item	The scalability of the \ps\ fonts implies that they are not
+	as good at all point sizes as fonts specially designed to a
+	size. 
+\item	The CM and \ps\ encodings of character positions are quite
+	different; this means that substantial modification is
+	required to \LaTeX, and that any files that depend on
+	specific character encodings (using \cs\char\ or \cs\mathchar,
+	for instance) may not work properly with \pslatex.
+\item	The device driver that converts from \TeX\footnote{\TeX\ is a
+	trademark of the American Mathematical Society} DVI format to
+	\ps\ must be capable of coping with device-resident fonts.
+\item	Some of the information required by \TeX\ (such as that for
+	positioning of accents) is unavailable in the \ps\ fonts, or
+	only available in different forms, which means that output may
+	not be of optimal quality.
+\item	It is unlikely that documents produced with \pslatex\ can be
+	previewed on a bitmap display, as \ps\ previewers are still
+	scarce. 
+\end{itemize}
+
+Having enumerated all the drawbacks, it's worth saying that most of
+them are not likely to affect the casual user of \pslatex (except
+perhaps the last).  However, sophisticated users should bear in mind
+the limitations.  A detailed list of extensions and restrictions to
+\LaTeX\ can be found in Sections \ref{extensions}
+and~\ref{restrictions}.
+
+In use, \pslatex\ should behave just as \LaTeX\ does (except for the
+restrictions documented below).  No modifications should be required
+to \LaTeX\ documents; \pslatex\ is {\em not\/} a style or style
+option; it replaces the standard \LaTeX\ ``format''  file ({\tt
+lplain.fmt}) with another, called {\tt pslplain.fmt}.  This can
+be invoked explicitly by {\sc virtex}, so:
+\begin{verbatim}
+     $ virtex
+     This is TeX 2.0 (no format preloaded)
+     **&pslplain \input file
+     (file.tex
+     PostScript-based LaTeX, Version 0.99
+     ...
+\end{verbatim}
+Alternatively, your \LaTeX\ system administrator may choose to make a
+``preloaded'' version of \pslatex, perhaps called {\tt pslatex}.  This
+can be used in the same way as \LaTeX:
+\begin{verbatim}
+     $ pslatex file
+     This is TeX 2.0 (preloaded format=pslplain 88.4.31)
+     (file.tex
+     PostScript-based LaTeX, Version 0.99
+     ...
+\end{verbatim}
+Installation instructions can be found in Section~\ref{install}.
+
+\section{Extensions to \LaTeX\ within \pslatex}\label{extensions}
+
+(If you have used \LaTeX\ rather than \pslatex\ to process this
+document the examples will not be printed properly.)
+
+A number of new commands are available in \pslatex, due to extra
+characters in the standard \ps\ fonts.  These are:
+
+\begin{itemize}
+\item
+	The \cs\og\ command is used to produce the ogonek accent
+	(e.g.,~\verb;\og c; is \psonly\og c).
+\item
+	The commands \cs\registered, \cs\copyright\ and \cs\trademark\
+	produce the symbols
+	\psonly\registered\psonly\copyright\psonly\trademark.  Within
+	an \cs\sf\ environment, these are in a sans-serif font, thus:
+	{\sf \psonly\registered\psonly\copyright\psonly\trademark}.
+\item
+	The following new characters are available:
+	\begin{center}
+	\begin{tabular}{lc@{\quad}lc}
+	\cs\cent		& \psonly\cent&
+	\cs\yen			& \psonly\yen\\
+	\cs\currency		& \psonly\currency&
+	\cs\guillemotleft	& \psonly\guillemotleft\\
+	\cs\guillemotright	& \psonly\guillemotright&
+	\cs\guilsinglleft	& \psonly\guilsinglleft\\
+	\cs\guilsinglright	& \psonly\guilsinglright&
+	\cs\quotesingle		& \psonly\quotesingle\\
+	\cs\quotesinglbase	& \psonly\quotesinglbase&
+	\cs\quotedblbase	& \psonly\quotedblbase\\
+	\cs\ellipsis		& \psonly\ellipsis&
+	\cs\perthousand		& \psonly\perthousand\\
+	\cs\ordfeminine		& \psonly\ordfeminine&
+	\cs\ordmasculine	& \psonly\ordmasculine\\
+	\end{tabular}
+	\end{center}
+	
+\item
+	The following new symbols are available in math mode:
+	\begin{center}
+	\begin{tabular}{lc@{\quad}lc}
+	\cs\therefore	& $\psonly\therefore$&
+	\cs\cret	& $\psonly\cret$\\
+	\cs\seconds	& $\psonly\seconds$&
+	\cs\fulldiamondsuit&$\psonly\fulldiamondsuit$\\
+	\cs\degree	& $\psonly\degree$&
+	\cs\fullheartsuit&$\psonly\fullheartsuit$\\
+	\end{tabular}
+	\end{center}
+\item
+	Within math mode upright Greek letters
+	$\psonly\ualpha,\ldots,\psonly\uomega$ are available by using the
+	names \cs\ualpha,\ldots,\penalty0 \cs\uomega, etc.
+\end{itemize}
+Note that these characters are not available in standard \LaTeX; if
+you use any of them in your document you will lose the ability
+to process it at a site which does not have \pslatex.
+
+
+\section{Features of \LaTeX\ unavailable in
+\pslatex}\label{restrictions}
+
+The following \LaTeX\ commands and features are not supported in
+\pslatex: 
+\begin{itemize}
+\item
+	The \cs\boldmath\ and \cs\unboldmath\ commands (there is no
+	bold \ps\ symbol font)
+\item
+	The \cs\j\ and \cs\jmath\ commands (letter j without a dot)
+\item
+	The \cs\varepsilon\ and \cs\varrho\ Greek letters
+\item
+	The \cs\Longleftarrow\ and \cs\Longrightarrow\ symbols
+\item
+	The \cs\prime\ command produces a superscript prime, rather
+	than a normal (large) one.  This means that \verb;$x^\prime$;
+	will produce a tiny prime.  Rather than use \cs\prime\ you are
+	advised to use the \verb;'; command, so that instead of
+	\verb;$x^\prime$; you should type \verb;$x'$;.
+\end{itemize}
+Use of these commands will cause a warning message to be typed on your
+terminal (and entered into the log file).  The DVI file will contain
+approximations to the desired output.  With the exception of these few
+commands, all standard \LaTeX\ commands should work as described in
+the \LaTeX\ book.
+
+
+
+\section{Installing \pslatex}\label{install}
+
+\pslatex\ is composed of three basic files: {\tt fntchoice.tex},
+{\tt lfonts.tex} and {\tt psplain.tex}.  
+
+The file {\tt fntchoice.tex} contains definitions of the fonts to be
+used in \cs\rm, \cs\it, etc., environments.  Modify these for the
+names in use at your site.  For example, at my site the Times Roman
+font\footnote{Times is a trademark of Allied Corporation} is known as
+{\tt t-rom}.  
+
+Having modified {\tt fntchoice.tex}, you may need to modify {\tt
+lfonts.tex} to reflect which sizes of \TeX\ and \LaTeX\ fonts are
+available at your site; do this based on the copy of {\tt lfonts.tex}
+that you use with \LaTeX.
+
+Finally, to install \pslatex, follow the same procedure as you would
+to build \LaTeX\ (this varies from site to site), but use {\tt
+pslplain} where you would use {\tt lplain}.  For example, to build a
+{\tt .fmt} file under {\sc unix}\footnote{{\sc unix} is a trademark of
+AT\&T} you would normally type the command
+\begin{verbatim}
+     initex lplain '\dump'
+\end{verbatim}
+To build {\tt pslplain.fmt} you should type
+\begin{verbatim}
+     initex pslplain '\dump'
+\end{verbatim}
+
+You will also need {\sc .tfm} files for the \ps\ fonts that you intend
+to use.  A set of these is distributed with the {\sc unix} \TeX\
+distribution, and can be found on the Aston \TeX\ archive server in
+the UKm and on june.cs.washington.edu in the US.  A few fonts used by
+\pslatex\ are not in this set; {\tt .pl} files for these are
+distributed with \pslatex, and can be converted to {\tt .tfm} files
+using the {\tt pltotf} utility.
+
+\subsection{Possible Problems}
+
+\begin{description}
+\item[Insufficient font capacity]
+	As distributed, \pslatex\ preloads about 100 fonts.  You may
+	find that when creating the format file using {\sc initex} or
+	when using \pslatex\ that the font capacity is exceeded.  If
+	this is so your \TeX\ guru can increase the font capacity of
+	both {\sc initex} and {\sc virtex} (this is usually done by
+	altering the initialisation of {\tt font\_max} in the
+	change-file for {\tt tex.web}), or reduce the number of
+	preloaded fonts (see {\tt lfonts.tex}).
+\item[Device driver problems]
+	Your device driver must be capable of recognising font names
+	that represent \ps\ device-resident fonts.   Furthermore, your
+	device driver must not perform any mapping between the
+	encoding of characters within the DVI file and the \ps\ fonts;
+	this is done by \pslatex.
+	
+	The \ps\ fonts contain characters in positions 128--255;
+	\pslatex\ uses many of these characters.  Your device driver
+	must be able to cope with the DVI commands that access these
+	characters. 
+
+	The particular fonts used by \pslatex\ can vary from site to
+	site; a description of the set used by the distribution
+	version can be found in a separate document.
+\item[Tiny characters]
+	The {\tt .tfm} files distributed with the {\sc unix} \TeX\
+	tape have a design size of 1pt; \pslatex\ expects the design
+	size to be 10pt.  Use the script {\tt cnvfonts} to convert
+	your fonts.
+\end{description}
+
+\section{Acknowledgements}
+
+Many thanks to Graeme McKinstry for providing a set of files that
+formed the basis of \pslatex.  Thanks also to those who have been
+patient beta-testers (Michael Fisher, Graham Gough and Bill Mitchell),
+to all those who reported bugs (Nick North, Alasdair Rawsthorne, Ralf
+Kneuper, John Fitzgerald and Jon Warbrick) and to Leslie Lamport for
+useful suggestions.
+
+\end{document}

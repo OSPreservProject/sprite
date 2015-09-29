@@ -1,0 +1,34 @@
+% OPBIBA DOCUMENT-STYLE OPTION FOR ARTICLE STYLE
+%    for LaTeX version 2.08
+% Copyright (C) 1985, all rights reserved
+
+% The following commands make the bibliography have an "open" format,
+% where each new block (major unit of information) of an entry begins
+% on a new line, with successive lines of the block indented a bit.
+%	\def\newblock{\par}
+%
+% This is a slightly modified version of LaTeX's \raggedright:
+%	\let\\=\@centercr\@rightskip\@flushglue
+%	       \rightskip\@rightskip\leftskip\z@
+%
+% It's rather hard to do line breaks in bibliographies,
+% so we allow "sloppy" setting.
+%	\sloppy
+%
+% The following \sfcode declaration causes a `.' (period) not to
+% produce an end-of-sentence space.
+%	\sfcode`\.=1000\relax
+
+\def\thebibliography#1{\section*{References\markboth
+  {REFERENCES}{REFERENCES}}\list
+  {[\arabic{enumi}]}{\settowidth\labelwidth{[#1]}
+    \leftmargin\labelwidth
+    \advance\leftmargin\labelsep
+    \listparindent -1.5em \advance\leftmargin-\listparindent
+    \itemindent\listparindent \parsep 0pt
+    \usecounter{enumi}}
+    \def\newblock{\par}
+    \let\\=\@centercr\@rightskip\@flushglue
+	   \rightskip\@rightskip\leftskip\z@
+    \sloppy
+    \sfcode`\.=1000\relax}

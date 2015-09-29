@@ -1,0 +1,7 @@
+vm3max.c
+vm3maxAsm.s
+vm3maxConst.h
+vmMach.h
+vmMachInt.h
+vmMachStat.h
+vmMap.g

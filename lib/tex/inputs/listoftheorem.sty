@@ -1,0 +1,123 @@
+%%
+%%	LaTeX Style sheet to permit theorem environments to generate
+%%	table-of-contents-like entries similar to those produced
+%%	bye the \listoffigures command.
+%%   		...Art Mulder, July/90         art@maccs.DCSS.mcmaster.ca
+%%                                         ...!uunet!utai!utgpu!maccs!art
+%%
+%%	Permission granted to do whatever you want with this style
+%%	file.  Use at your own risk, it works for me, but I make no
+%%	warranty as to its performance.
+
+%% STEP ONE:
+%% modify one of the 'begin theorem' commands so that it executes an
+%% \addcontentsline, on a file called whatever the theorem is.  ie: if
+%% this is a "theo" type theorem, them write on a file called foo.theo
+
+%% %% based on \@thm macro found in latex.tex and modified to suit 
+%% %% my purposes
+%% 
+%% % \@thm{NAME}{TEXT} ==
+%% %   BEGIN
+%% %    \addcontentsline{NAME}{figure}{\theNAME}
+%% %%	^ above line added by art mulder
+%% %    \refstepcounter{NAME}
+%% %    if next char = [
+%% %       then \@ythm{NAME}{TEXT}
+%% %       else \@xthm{NAME}{TEXT}
+%% %    fi
+%% %   END
+%% 
+%% \def\@thm#1#2{\addcontentsline{#1}{figure}{\protect
+%% 	\numberline{\csname the#1\endcsname}}
+%% 	\refstepcounter
+%%     {#1}\@ifnextchar[{\@ythm{#1}{#2}}{\@xthm{#1}{#2}}}
+%% 
+%% THIS ABOVE CODE WORKS, HOWEVER IT MAKES NO PROVISION FOR INCLUDING
+%% THE OPTIONAL ARGUMENT IN THE LISTING.  THIS NEXT CODE (UP TO STEP TWO)
+%% DOES INCLUDE THE OPTIONAL ARGUMENT IN THE LISTING.
+
+%% based on \@xthm and \@ythm macros found in latex.tex
+
+% \@xthm{NAME}{TEXT} ==
+%   BEGIN
+%    \addcontentsline{NAME}{figure}{\theNAME}
+%%	^ above line added by art mulder
+%    \@begintheorem{TEXT}{\theNAME}
+%    \ignorespaces
+%   END
+%
+% \@ythm{NAME}{TEXT}[OPARG] ==
+%   BEGIN
+%    \addcontentsline{NAME}{figure}{\theNAME OPARG}
+%%	^ above line added by art mulder
+%%        Put the Optional Argument into the List-Of file
+%    \@opargbegintheorem{TEXT}{\theNAME}{OPARG}
+%    \ignorespaces
+%   END
+
+\def\@xthm#1#2{\addcontentsline{#1}{figure}{\protect
+ 	\numberline{\csname the#1\endcsname}}
+	\@begintheorem{#2}{\csname the#1\endcsname}\ignorespaces}
+\def\@ythm#1#2[#3]{\addcontentsline{#1}{figure}{\protect
+ 	\numberline{\csname the#1\endcsname}{\ignorespaces #3}}
+	\@opargbegintheorem{#2}{\csname
+       the#1\endcsname}{#3}\ignorespaces}
+
+%% STEP TWO:
+%% write \listof{}{} macro to generate lists of desired theorem 
+%% environments.
+
+%% based on listoffigures macro from book.doc (or book.sty)
+
+\def\listof#1#2{\@restonecolfalse\if@twocolumn\@restonecoltrue\onecolumn
+  \fi\chapter*{List of #1\@mkboth
+     {LIST OF \uppercase{#1}}{LIST OF \uppercase{#1}}}
+     \@starttoc{#2}\if@restonecol \twocolumn\fi}
+
+%\def\l@figure{\@dottedtocline{1}{1.5em}{2.3em}
+
+%%--------------------
+%% INSTRUCTIONS FOR USE:
+%% - read the sections in the LaTeX manual in regards to:
+%%	\addcontentsline, \newtheorem
+%% - use a theorem envornment as usual (all changes there are "behind the 
+%%	scenes" so you don't have to do anything different)
+%% - insert a \listof command in your document wherever you want a 
+%%	listing to go (DISCLAIMER: I have only tried this at the 
+%%	front of the book, following the Table of Contents)
+%% - the listof command has the following form:
+%%		\listof{HEADING}{THEOREM_ENV_NAME}
+%%   where:
+%%	HEADING = whatever you want to follow the words
+%%		"List Of" in the heading.
+%%	THEOREM_ENV_NAME = the environment name that you gave
+%%		to your theorem environment.
+
+%% EXAMPLE USAGE:
+%% - define a theorem environment:
+%%	\newtheorem{lem}{Lemma}[section]
+%%		^ define a "Lemma" theorem environment, numbered within
+%%		  chapters (NO CHANGE from before use of
+%%		  listoftheorem.sty)
+%%
+%% - request a list of theorems
+%%	\listof{Lemmas}{lem}
+%%		^ will now get a listing similar to a "list of figures"
+%%		  entitled "List Of Lemmas".
+%%
+%% - use the lemma theorem environment
+%%	\begin{lem}
+%%		blah blah
+%%	\end{lem}
+%%		^ In addition to what the theorem environment would 
+%%		  normally do, this will write a "list of lemmas"
+%%		  entry on a file entitled foo.lem, where foo is the name
+%%		  of the document (as in foo.tex).
+%%		  Note there is NO CHANGE in use from before use of
+%%		  listoftheorem.sty
+
+%% BUGS:
+%% - two theorem environments can share a counter (see numbered_like
+%%   option in definition of Theorem environments in LaTeX manual)
+%%   But there is no way for two theorem environments to share listing.

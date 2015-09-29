@@ -1,0 +1,11 @@
+The awk script fsstats.awk contains an awk script to combine the output
+from multiple invocations of fsstat.  If the output format of fsstat changes,
+the awk script may have to change as well.  The scripts
+
+		    Clients
+		    ClientsCurrent
+		    Mint
+		    Servers
+
+select one or more files from the repository of fsstats output
+(symlinked to by "Sys") and pipe them into awk.

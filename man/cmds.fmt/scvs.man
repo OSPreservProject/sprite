@@ -1,0 +1,398 @@
+
+
+
+SCVS                      User Commands                      SCVS
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     scvs - Sprite Concurrent Version System
+
+SSYYNNOOPPSSIISS
+     ssccvvss [_s_c_v_s__o_p_t_i_o_n_s] [_c_v_s__o_p_t_i_o_n_s] _c_o_m_m_a_n_d  [_c_o_m_m_a_n_d__o_p_t_i_o_n_s]
+     [_c_o_m_m_a_n_d__a_r_g_s]
+
+OOPPTTIIOONNSS
+     --VV             Print out verbose status messages during pro-
+                    cessing.
+
+     --DD             Print out debugging information.
+
+     --hheellpp          Print a summary of the  command-line  options
+                    and exit without updating any targets.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     SSccvvss is a front end to the ccvvss source control system,  which
+     in  turn is turn a front end for rrccss. It would probably help
+     to be familiar with both ccvvss and  rrccss  before  dealing  with
+     ssccvvss.   SSccvvss has the following features in addition to those
+     of ccvvss and rrccss:
+
+     o+    A configuration file is used to specify the root of the
+          ccvvss  repository, rather than an environment variable or
+          a command line option.
+
+     o+    SSccvvss keeps track of who has copies  of  which  modules.
+          When  you  check  out a module ssccvvss will tell you about
+          other copies of the same module  you  might  have,  and
+          about other users that have copies of the module.  This
+          allows users to coordinate  their  modifications  to  a
+          module.
+
+     o+    Changes to several modules can be committed  simultane-
+          ously.
+
+     o+    SSccvvss remembers the options used to checkout  a  module,
+          so  that  subsequent updates of the module use the same
+          options, thus guaranteeing that the same version of the
+          module is updated.
+
+     o+    SSccvvss has limited support for  symbolic  links.  When  a
+          module  is  checked  into  the  repository any symbolic
+          links  it  contains  are  stored  in  a   file   called
+          _S_C_V_S/_l_i_n_k_s.   When a module is checked out its symbolic
+          links are created from the contents of _S_C_V_S/_l_i_n_k_s.
+
+
+
+
+
+Sprite v.1.0       Printed:  October 29, 1991                   1
+
+
+
+
+
+
+SCVS                      User Commands                      SCVS
+
+
+
+CCOOMMMMAANNDDSS
+     Each invocation of ssccvvss must specify a particular command to
+     be  performed.  Most of these commands are slight variations
+     on the corresponding ccvvss commands.
+
+     aadddd [--mm '_m_e_s_s_a_g_e'] _f_i_l_e_s...
+          Create a new  file  or  directory  in  the  repository.
+          Files  are not actually added to the repository until a
+          ccoommmmiitt command is issued. See the ccvvss man page for more
+          details.
+
+     cchheecckkoouutt [--QQqqllnnffPPii] [--cc] [--rr _t_a_g | --DD _d_a_t_e] _m_o_d_u_l_e_s...
+          Retrieves copies of  the  specified  modules  from  the
+          repository.   For  each  module a subdirectory with the
+          module's name is made in the current directory and  the
+          module's  source  tree  is put in the subdirectory. The
+          default is to check out the most recent version of  the
+          module,  although  a  particular version can be checked
+          out by using either the --rr or --DD  options,  which  will
+          check  out  a  version  matching the given tag or date,
+          respectively. The semantics of the ssccvvss  checkout  com-
+          mand  differ  from  ccvvss's in that empty directories are
+          pruned unless the --PP option  is  given.   Empty  direc-
+          tories  usually  occur  if you check out a version of a
+          module from before a directory was created.  The --QQ and
+          --qq  options cause varying degrees of quietness, and the
+          --ll option causes the command to not be recursive.   The
+          cchheecckkoouutt  command  will tell you of other copies of the
+          module that you might have, and about other users  that
+          have  copies  of the module.  If you are checking out a
+          version to go off on your own  and  make  changes  that
+          will  never be checked back in, then you should use the
+          -_i option.  You will not be listed as having  an  offi-
+          cial  copy  of  the module, so other people will not be
+          told that you have a copy.  Everything else  works  the
+          same,  however.   ccoo can be used as an abbreviation for
+          cchheecckkoouutt.
+
+[_f_i_l_e_s...]
+     ccoommmmiitt  [--ffnnll]  [--mm  '_l_o_g__m_e_s_s_a_g_e']  [--rr  _r_e_v_i_s_i_o_n]  [_m_o_d_u_l_e_s...]
+          The ccoommmmiitt command is used to check in the changes made
+          to your copies of modules.  If no modules are specified
+          then the current directory is checked in.  SSccvvss differs
+          from ccvvss in that multiple modules  can  be  checked  in
+          simultaneously,  and  that  commit  is recursive.  SSccvvss
+          achieves this by locking all  modules,  verifying  that
+          they are up-to-date with the sources in the repository,
+          then committing the changes. SSccvvss will  also  update  a
+          snapshot  or installed copy of the sources as indicated
+          in the _S_C_V_S._c_o_n_f_i_g file (see FFIILLEESS section below).  The
+          --ff  option  allows you to commit files that do not con-
+          tain the RCS $Id or $Header keywords.  The --rr sets  the
+
+
+
+Sprite v.1.0       Printed:  October 29, 1991                   2
+
+
+
+
+
+
+SCVS                      User Commands                      SCVS
+
+
+
+          RCS version number, and the --nn option causes any commit
+          command in the module database to not be run. If the --mm
+          option  is not specified than an editor will be invoked
+          to allow you to enter the log message.  ccii can be  used
+          as an abbreviation for ccoommmmiitt.
+
+     ddiiffff [--llRR] [_r_c_s_d_i_f_f__o_p_t_i_o_n_s] [_f_i_l_e_s...]
+          Same as for ccvvss. Runs rrccssddiiffff on the  specified  files,
+          or  on  only those files that you have changed. DDiiffff is
+          recursive unless the --ll option  is  specified.   If  no
+          options  are  given ddiiffff will print out the differences
+          between your copy of the file and the copy you  checked
+          out,  i.e.  it prints the changes you made to the file.
+          If the --RR option is given then the differences  between
+          your copy of the file and the current version is given.
+          This is useful if your copy is out-of-date and you want
+          to see what changed.  See the rrccssddiiffff man page for more
+          details on the options.
+
+     ddoonnee [--dd] _m_o_d_u_l_e_s...
+          When you have finished with a module you should use the
+          ddoonnee  command,  so that ssccvvss can update its database of
+          module copies.  If the --dd option  is  given  then  your
+          copy  of  the  module  will  be  deleted.  If your copy
+          differs from the repository ssccvvss will ask  you  whether
+          or  not  you  are  really  done.  Make sure you really,
+          truly are done before running  this  command,  particu-
+          larly with the --dd option.
+
+     iinnffoo [--ll] [_f_i_l_e_s...]
+          Prints out status information about your sources.  Out-
+          put  is  the  same  as for the uuppddaattee command.  IInnffoo is
+          recursive unless the --ll option is given.
+
+     jjooiinn [--QQqqff] [--rr _t_a_g | --DD _d_a_t_e] _f_i_l_e_s...
+          Same as for ccvvss. Used to merge in a new vendor  release
+          of  a  software  package.   See  the  ccvvss  man page for
+          details.
+
+     lloocckk [--rrww] [_m_o_d_u_l_e_s...]
+          Each ssccvvss command locks the module  in  the  repository
+          before  mucking  around  with  it, thus preventing con-
+          current ssccvvss commands from creating chaos.  If you wish
+          to  run  several  ssccvvss  commands without allowing other
+          users to run commands inbetween you can  use  lloocckk.   A
+          common  example is committing your changes to a module.
+          If you don't lloocckk the module first there are  potential
+          races  between the time you update your sources and the
+          time you commit them, and between the time  you  commit
+          them  and  update the installed copy.  To prevent these
+          races you should lloocckk any modules you want  to  commit,
+          then run any ccoommmmiitt commands, verify that the installed
+
+
+
+Sprite v.1.0       Printed:  October 29, 1991                   3
+
+
+
+
+
+
+SCVS                      User Commands                      SCVS
+
+
+
+          sources are correct, then uunnlloocckk the modules.   The  --ww
+          option  creates a write lock (the default), so that you
+          have exclusive access to the  module.   The  --rr  option
+          creates  a  read lock, allowing other users to read the
+          module but not  modify  it.   See  the  uunnlloocckk  command
+          below.
+
+     lloogg [--ll] [_r_l_o_g__o_p_t_i_o_n_s] [_f_i_l_e_s...]
+          Same as for ccvvss. Does an rrlloogg on the  specified  files,
+          or  on  every  file  in  the  current directory. LLoogg is
+          recursive unless the --ll option is specified.   See  the
+          ccvvss man page for details.
+
+     ppaacckk [--ll] [_d_i_r_s...]
+          The pack command is used to put entries  for  all  sym-
+          bolic  links  in  the given directories (or the current
+          directory) into the file _S_C_V_S/_l_i_n_k_s (see FFIILLEESS  section
+          below).  This file can then be used later by the uunnppaacckk
+          command to recreate the symbolic links. The  ppaacckk  com-
+          mand is run implicitly during a ccoommmmiitt, and is not usu-
+          ally invoked explicitly.  PPaacckk  is   recursive,  unless
+          the --ll option is given.
+
+_m_o_d_u_l_e_s...
+     ppaattcchh  [--QQqqllff]  [--ss|--tt]  [--rr  _t_a_g|--DD  _d_a_t_e  [--rr   _t_a_g|--DD   _d_a_t_e]]
+          Same  as for ccvvss.  Creates a ppaattcchh file between the two
+          versions of the modules.  See  the  ccvvss  man  page  for
+          details.
+
+     rreemmoovvee _f_i_l_e_s...
+          Same as for ccvvss. Removes the specified files  from  the
+          repository.   The  files are not actually deleted until
+          the current module is ccoommmmiittted.  See the ccvvss man  page
+          for details.
+
+     ssttaattuuss [--ll] [_f_i_l_e_s...]
+          Same as for ccvvss. Prints out the  rrccss  version  in  your
+          copy  of  the  file  and the current rrccss version of the
+          file in the repository.  SSttaattuuss is recursive unless the
+          --ll  option  is  specified.   See  the  ccvvss man page for
+          details.
+
+     ttaagg [--QQqqllffnn] [--dd] [--rr _t_a_g|--DD _d_a_t_e] _s_y_m_b_o_l_i_c__t_a_g _m_o_d_u_l_e_s...
+          Same as for ccvvss. Assigns a symbolic  tag  name  to  the
+          given  (or current) version of the sources in the repo-
+          sitory.  See the ccvvss man page for details.
+
+     uunnlloocckk [--aa] [_m_o_d_u_l_e_s...]
+          Removes any locks you have on the modules.  If  the  --aa
+          option  is  given  then  all  locks  on  the module are
+          removed.  See the lloocckk command above.
+
+
+
+
+Sprite v.1.0       Printed:  October 29, 1991                   4
+
+
+
+
+
+
+SCVS                      User Commands                      SCVS
+
+
+
+     uunnppaacckk [--ll] [_d_i_r_s...]
+          Creates symbolic links in the specified directories (or
+          the   current  directory)  from  the  contents  of  the
+          SCVS.links file.  The uunnppaacckk command is run  implicitly
+          during a cchheecckkoouutt or uuppddaattee, and is not usually invoked
+          explicitly.  UUnnppaacckk is  recursive, unless the --ll option
+          is given.
+
+[[_f_i_l_e_s...]]
+     uuppddaattee [--QQqqllffppBB] [--ee _d_i_r]]  [[--dd]]  [[--rr  _t_a_g||--
+          DD  _d_a_t_e]]  [[_m_o_d_u_l_e_s...]]
+          The update command is  used  to  make  your  copies  of
+          modules  up-to-date with the sources in the repository.
+          The default behavior is to bring your  copy  up-to-date
+          with  the  version  that was checked out, although this
+          can be modified with the --rr or --DD  options.   You  will
+          have to specify these options to subsequent uuppddaattee com-
+          mands if you wish to continue to use a  different  ver-
+          sion  than  the  one  that  was checked out.  UUppddaattee is
+          recursive by default, but this can be overridden by the
+          --ll  option.   The  --BB  option  will cause uuppddaattee to not
+          update your sources with any  new  directories  in  the
+          repository.   The  default  behavior  is to do so (this
+          differs from ccvvss).  See  the  ccvvss  man  page  for  more
+          details  on  the  algorithm  used  by uuppddaattee and for an
+          explanation of its output.
+
+     wwhhoo [_m_o_d_u_l_e_s...]
+          Prints out the names of  users  who  have  checked  out
+          copies of the modules.
+
+FFIILLEESS
+     SSCCVVSS..ccoonnffiigg
+          When ssccvvss is invoked it works its way up the  directory
+          tree  looking  for the file SSCCVVSS..ccoonnffiigg.  The first one
+          that is found is used.  The SSCCVVSS..ccoonnffiigg  file  has  the
+          following  format.   A  blank  line or a line beginning
+          with '#' is ignored. A  line  beginning  with  ccvvssrroooott::
+          specifies  the pathname of the ccvvss root directory.  The
+          following is a sample SCVS.config file for  the  Sprite
+          kernel sources.
+
+                    cvsroot: /sprite/src/kernel/Cvsroot
+                    installdir: /sprite/src/kernel
+
+
+     SSCCVVSS//aarrggss
+          This file is created by the cchheecckkoouutt  command,  and  is
+          put in the top-level subdirectory of a module copy.  It
+          contains the arguments passed to the cchheecckkoouutt  command,
+          so that subsequent uuppddaattee commands use the correct ver-
+          sion of the sources.
+
+
+
+Sprite v.1.0       Printed:  October 29, 1991                   5
+
+
+
+
+
+
+SCVS                      User Commands                      SCVS
+
+
+
+     SSCCVVSS//lliinnkkss
+          The SSCCVVSS//lliinnkkss file contains information about symbolic
+          links  in  the module sources. Each line is of the form
+          "_l_i_n_k_N_a_m_e _t_a_r_g_e_t", where _l_i_n_k_N_a_m_e is the  name  of  the
+          symbolic  link to be created, and _t_a_r_g_e_t is the file to
+          which the link points.  SSCCVVSS//lliinnkkss is  created  by  the
+          ppaacckk  and ccoommmmiitt commands, and read by the cchheecckkoouutt and
+          uuppddaattee commands.  Each subdirectory of a module has its
+          own SSCCVVSS//lliinnkkss file.
+
+     SSCCVVSS//uusseerrss
+          The SSCCVVSS//uusseerrss file exists in each module in the  repo-
+          sitory  and  contains  information  about the users who
+          have the module checked out.  Each line is of the form:
+          "_u_s_e_r  _p_a_t_h  _d_a_t_e",  where _u_s_e_r is the name of the user
+          who has the module checked out, _p_a_t_h is the pathname of
+          their copy of the module, and _d_a_t_e is the time when the
+          copy was checked out.
+
+     SSCCVVSS//lloocckkss
+          Exists in the module directory in  the  repository  and
+          contains  a  list of locks on the module.  Each line is
+          of the form "_t_y_p_e _u_s_e_r _d_a_t_e", where _t_y_p_e is one of _r or
+          _w,  _u_s_e_r  is the login name of the lock owner, and _d_a_t_e
+          is the time the lock was created.
+
+SSEEEE AALLSSOO
+     rrccss(1), ccii(1),  ccoo(1),  rrccssddiiffff(1),  ppaattcchh(1),  rrccssmmeerrggee(1),
+     rrlloogg(1), ccvvss(1)
+
+KKEEYYWWOORRDDSS
+     source control, rcs, cvs
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  October 29, 1991                   6
+
+
+

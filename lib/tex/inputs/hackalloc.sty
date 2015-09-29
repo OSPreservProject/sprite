@@ -1,0 +1,17 @@
+% -*-LaTeX-*-
+% hackalloc.sty: make allocation local for LaTeX.
+% This redefines the allocation primitive so _all_ allocation becomes
+% block-local after this is loaded; no idea what the side-effects of this
+% may be.  If it breaks, change \alloc@ to \localloc@, and either redefine
+% just what you need to use \alloc@, or define \locnew* for local
+% allocation, as in the commented lines.
+% NOTE: lying again... this doesn't work for inserts which are still
+% global.
+
+%\def\locnewdimen{\localloc@1\dimen\dimendef\insc@unt}
+%\def\localloc@#1#2#3#4#5{\advance\count1#1 by 1
+\def\alloc@#1#2#3#4#5{\advance\count1#1 by 1
+  \ch@ck#1#4#2% Check room
+  \allocationnumber=\count1#1
+  #3#5=\allocationnumber
+  \wlog{Locally \string#5=\string#2\the\allocationnumber}}

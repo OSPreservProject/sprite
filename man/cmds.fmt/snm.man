@@ -1,0 +1,132 @@
+
+
+
+SNM                       User Commands                       SNM
+
+
+
+NNAAMMEE
+     snm - print name list for SPUR binary
+
+SSYYNNOOPPSSIISS
+     ssnnmm [ --ggnnoopprruuaa ] [ [ _f_i_l_e_n_a_m_e ] ...
+
+DDEESSCCRRIIPPTTIIOONN
+     _S_n_m is similar to _n_m except that it operates on SPUR object
+     files.  _S_n_m prints the name list (symbol table) of each
+     object _f_i_l_e_n_a_m_e in the argument list.  If an argument is an
+     archive, a listing for each object file in the archive will
+     be produced.  If no _f_i_l_e_n_a_m_e is given, the symbols in _a._o_u_t
+     are listed.
+
+     Each symbol name is preceded by its value (blanks if unde-
+     fined) and one of the letters:
+
+     AA    absolute
+
+     BB    bss segment symbol
+
+     CC    common symbol
+
+     DD    data segment symbol
+
+     TT    text segment symbol
+
+     UU    undefined
+
+     --    debug, giving symbol table entries (see --aa below)
+
+     The type letter is upper case if the symbol is external, and
+     lower case if it is local.  Symbols given values in shared
+     regions are followed by `S' or `s'.  By default, the output
+     is sorted alphabetically by symbol name.
+
+OOPPTTIIOONNSS
+     --gg   Print only global (external) symbols.
+
+     --nn   Sort numerically rather than alphabetically.
+
+     --oo   Prepend file or archive element name to each output
+          line rather than only once.
+
+     --pp   Don't sort; print in symbol-table order.
+
+     --rr   Sort in reverse order.
+
+     --uu   Print only undefined symbols.
+
+     --aa   Print all symbols.
+
+
+
+
+SPUR Release 1.0           29 May 1988                          1
+
+
+
+
+
+
+SNM                       User Commands                       SNM
+
+
+
+EEXXAAMMPPLLEE
+          snm
+
+     prints the symbol list of _a._o_u_t, the default output file for
+     the CC, FORTRAN 77 and Pascal compilers.
+
+SSEEEE AALLSSOO
+     ar(1), ar(5), a.out(5)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SPUR Release 1.0           29 May 1988                          2
+
+
+

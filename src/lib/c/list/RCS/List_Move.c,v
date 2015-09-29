@@ -1,0 +1,128 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     90.11.27.11.06.32;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.09.11.14.25.08;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.20.09.27.28;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@Eliminated inclusion of <sys.h> (didn't work for user programs
+anyway), add explicit declaration for panic.
+@
+text
+@/* 
+ * List_Move.c --
+ *
+ *	Source code for the List_Move library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/list/RCS/List_Move.c,v 1.2 90/09/11 14:25:08 kupfer Exp Locker: ouster $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <stdio.h>
+#include "list.h"
+
+extern void panic();
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * List_Move --
+ *
+ *	Move the list element referenced by itemPtr to follow destPtr.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	List ordering is modified.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+List_Move(itemPtr, destPtr)
+    register List_Links *itemPtr; /* list element to be moved */
+    register List_Links *destPtr; /* element after which it is to be placed */
+{
+    if (itemPtr == (List_Links *) NIL || destPtr == (List_Links *) NIL
+	    || !itemPtr || !destPtr) {
+	panic("List_Move: One of the list items is NIL.\n");
+    }
+    /*
+     * It is conceivable that someone will try to move a list element to
+     * be after itself.
+     */
+    if (itemPtr != destPtr) {
+	/*
+	 * Remove the item.
+	 */
+        itemPtr->prevPtr->nextPtr = itemPtr->nextPtr;
+	itemPtr->nextPtr->prevPtr = itemPtr->prevPtr;
+	/*
+	 * Insert the item at its new place.
+	 */
+	itemPtr->nextPtr = destPtr->nextPtr;
+	itemPtr->prevPtr = destPtr;
+	destPtr->nextPtr->prevPtr = itemPtr;
+	destPtr->nextPtr = itemPtr;
+    }    
+}
+@
+
+
+1.2
+log
+@Lint.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/list/RCS/List_Move.c,v 1.1 88/06/20 09:27:28 ouster Exp Locker: kupfer $ SPRITE (Berkeley)";
+a20 1
+#include <sys.h>
+d23 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: proto.c,v 1.2 88/03/11 08:39:08 ouster Exp $ SPRITE (Berkeley)";
+d21 1
+@

@@ -1,0 +1,436 @@
+head     1.9;
+branch   ;
+access   ;
+symbols  sprited:1.7.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.9
+date     92.05.14.18.57.09;  author kupfer;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     92.03.27.13.32.23;  author rab;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     91.03.24.19.03.11;  author kupfer;  state Exp;
+branches 1.7.1.1;
+next     1.6;
+
+1.6
+date     90.09.11.14.13.21;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     90.09.07.14.20.30;  author jhh;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.07.25.13.16.02;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.07.19.13.26.46;  author mendel;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.04.25.21.32.57;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.25.17.21.58;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.7.1.1
+date     91.12.02.21.28.12;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.9
+log
+@Remove the debug check for bogus accesses to user addresses.  Use the
+ANSI signature (void pointers, etc).
+@
+text
+@/* 
+ * bcopy.c --
+ *
+ *	Source code for the "bcopy" library routine.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/bstring/RCS/bcopy.c,v 1.8 92/03/27 13:32:23 rab Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <bstring.h>
+#include <machparam.h>
+
+/*
+ * The following mask is used to detect proper alignment of addresses
+ * for doing word operations instead of byte operations.  It is
+ * machine-dependent.  If none of the following bits are set in an
+ * address, then word-based operations may be used. This value is imported
+ * from machparam.h
+ */
+
+/*
+ * Just because we can do loads from half-word addresses on a sun3 doesn't
+ * mean we want to.  Make sure the load address is word-aligned and you'll
+ * bcopy twice as fast when the dest is greater than the source.
+ */
+#ifdef sun3
+#define WORDMASK 0x3
+#else
+#define WORDMASK WORD_ALIGN_MASK
+#endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * bcopy --
+ *
+ *	Copy numBytes from *sourcePtr to *destPtr.  This routine is
+ *	optimized to do transfers when sourcePtr and destPtr are both
+ *	integer-aligned and point to large areas.
+ *
+ * Results:
+ *	There is no return value.  The memory at *destPtr is modified.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+bcopy(sourceVoidPtr, destVoidPtr, numBytes)
+    _CONST _VoidPtr sourceVoidPtr; /* Where to copy from */
+    _VoidPtr destVoidPtr;	/* Where to copy to */
+    register int numBytes;	/* The number of bytes to copy */
+{
+    register _CONST int *sPtr = (int *) sourceVoidPtr;
+    register int *dPtr = (int *) destVoidPtr;
+    _CONST char *sourcePtr = sourceVoidPtr;
+    char *destPtr = destVoidPtr;
+
+    /*
+     * If the destination is below the source then it is safe to copy
+     * in the forward direction.  Otherwise, we must start at the top
+     * and work down, again optimizing for large transfers.
+     */
+
+    if (dPtr < sPtr) {
+	/*
+	 * If both the source and the destination point to aligned
+	 * addresses then copy as much as we can in large transfers.  Once
+	 * we have less than a whole int to copy then it must be done by
+	 * byte transfers.  Furthermore, use an expanded loop to avoid
+	 * the overhead of continually testing loop variables.
+	 */
+
+	if (!((((int) sPtr) | (int) dPtr) & WORDMASK)) {
+	    while (numBytes >= 16*sizeof(int)) {
+		dPtr[0] = sPtr[0];
+		dPtr[1] = sPtr[1];
+		dPtr[2] = sPtr[2];
+		dPtr[3] = sPtr[3];
+		dPtr[4] = sPtr[4];
+		dPtr[5] = sPtr[5];
+		dPtr[6] = sPtr[6];
+		dPtr[7] = sPtr[7];
+		dPtr[8] = sPtr[8];
+		dPtr[9] = sPtr[9];
+		dPtr[10] = sPtr[10];
+		dPtr[11] = sPtr[11];
+		dPtr[12] = sPtr[12];
+		dPtr[13] = sPtr[13];
+		dPtr[14] = sPtr[14];
+		dPtr[15] = sPtr[15];
+		sPtr += 16;
+		dPtr += 16;
+		numBytes -= 16*sizeof(int);
+	    }
+	    while (numBytes >= sizeof(int)) {
+		*dPtr++ = *sPtr++;
+		numBytes -= sizeof(int);
+	    }
+	    if (numBytes == 0) {
+		return;
+	    }
+	}
+
+	/*
+	 * Copy the remaining bytes.
+	 */
+
+	sourcePtr = (char *) sPtr;
+	destPtr = (char *) dPtr;
+	while (numBytes > 0) {
+	    *destPtr++ = *sourcePtr++;
+	    numBytes--;
+	}
+    } else {
+	/*
+	 * Handle extra bytes at the top that are due to the transfer
+	 * length rather than pointer misalignment.
+	 */
+	while (numBytes & WORDMASK) {
+	    numBytes --;
+	    destPtr[numBytes] = sourcePtr[numBytes];
+	}
+	sPtr = (int *) (sourcePtr + numBytes);
+	dPtr = (int *) (destPtr + numBytes);
+
+	if (!((((int) sPtr) | (int) dPtr) & WORDMASK)) {
+	    while (numBytes >= 16*sizeof(int)) {
+		sPtr -= 16;
+		dPtr -= 16;
+		dPtr[15] = sPtr[15];
+		dPtr[14] = sPtr[14];
+		dPtr[13] = sPtr[13];
+		dPtr[12] = sPtr[12];
+		dPtr[11] = sPtr[11];
+		dPtr[10] = sPtr[10];
+		dPtr[9] = sPtr[9];
+		dPtr[8] = sPtr[8];
+		dPtr[7] = sPtr[7];
+		dPtr[6] = sPtr[6];
+		dPtr[5] = sPtr[5];
+		dPtr[4] = sPtr[4];
+		dPtr[3] = sPtr[3];
+		dPtr[2] = sPtr[2];
+		dPtr[1] = sPtr[1];
+		dPtr[0] = sPtr[0];
+		numBytes -= 16*sizeof(int);
+	    }
+	    while (numBytes >= sizeof(int)) {
+		*--dPtr = *--sPtr;
+		numBytes -= sizeof(int);
+	    }
+	    if (numBytes == 0) {
+		return;
+	    }
+	}
+
+	/*
+	 * Copy the remaining bytes.
+	 */
+
+	destPtr = (char *) dPtr;
+	sourcePtr = (char *) sPtr;
+	while (numBytes > 0) {
+	    *--destPtr = *--sourcePtr;
+	    numBytes--;
+	}
+    }
+}
+@
+
+
+1.8
+log
+@Fixed a couple lint errors.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/bstring/RCS/bcopy.c,v 1.7 91/03/24 19:03:11 kupfer Exp Locker: rab $ SPRITE (Berkeley)";
+d20 3
+a30 3
+#include "machparam.h"
+#include <bstring.h>
+
+a41 4
+#ifdef KERNEL
+#include <vmHack.h>
+#endif
+
+d61 3
+a63 3
+bcopy(sourcePtr, destPtr, numBytes)
+    char *sourcePtr;		/* Where to copy from */
+    char *destPtr;		/* Where to copy to */
+d66 4
+a69 2
+    register int *sPtr = (int *) sourcePtr;
+    register int *dPtr = (int *) destPtr;
+@
+
+
+1.7
+log
+@Small hack so that the kernel can check for incorrect references to
+user addresses.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/bstring/RCS/bcopy.c,v 1.6 90/09/11 14:13:21 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a72 4
+#ifdef VM_CHECK_BSTRING_ACCESS
+    Vm_CheckAccessible(sourcePtr, numBytes);
+    Vm_CheckAccessible(destPtr, numBytes);
+#endif
+d87 1
+a87 1
+	
+d118 1
+a118 1
+	
+d122 1
+a122 1
+	
+d171 1
+a171 1
+	
+d175 1
+a175 1
+	
+@
+
+
+1.7.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/bstring/RCS/bcopy.c,v 1.7 91/03/24 19:03:11 kupfer Exp Locker: rab $ SPRITE (Berkeley)";
+@
+
+
+1.6
+log
+@Lint.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/bstring/RCS/bcopy.c,v 1.5 90/09/07 14:20:30 jhh Exp Locker: kupfer $ SPRITE (Berkeley)";
+d42 4
+d73 4
+@
+
+
+1.5
+log
+@fixed mis-aligned bcopy on a sun3
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/bstring/RCS/bcopy.c,v 1.4 88/07/25 13:16:02 ouster Exp Locker: jhh $ SPRITE (Berkeley)";
+d60 1
+@
+
+
+1.4
+log
+@Lint.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: bcopy.c,v 1.3 88/07/19 13:26:46 mendel Exp $ SPRITE (Berkeley)";
+d29 1
+d31 8
+d40 1
+@
+
+
+1.3
+log
+@Import WORD_ALIGN_MASK from machparam.h.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: bcopy.c,v 1.2 88/04/25 21:32:57 ouster Exp $ SPRITE (Berkeley)";
+a56 1
+    int tmp;
+@
+
+
+1.2
+log
+@Bug fixes.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: bcopy.c,v 1.1 88/04/25 17:21:58 ouster Exp $ SPRITE (Berkeley)";
+d24 2
+a25 2
+ * address, then word-based transfers may be used.  Eventually this
+ * mask needs to be handled in a more machine-independent fashion.
+d28 4
+a31 1
+#define WORDMASK 0x1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: bcopy.c,v 1.1 88/04/25 13:25:41 ouster Exp $ SPRITE (Berkeley)";
+d52 2
+a53 2
+    register int *sPtr;
+    register int *dPtr;
+d62 1
+a62 1
+    if (destPtr < sourcePtr) {
+d64 1
+a64 1
+	 * If both the sourcePtr and the destPtr point to aligned
+a70 3
+	sPtr = (int *)sourcePtr;
+	dPtr = (int *)destPtr;
+
+a99 2
+	    sourcePtr = (char *) sPtr;
+	    destPtr = (char *) dPtr;
+d106 2
+d113 10
+a122 2
+	destPtr += numBytes;
+	sourcePtr += numBytes;
+d124 1
+a124 3
+	if (!((int) sPtr & WORDMASK) && !((int) dPtr & WORDMASK)) {
+	    sPtr = (int *) sourcePtr;
+	    dPtr = (int *) destPtr;
+a152 2
+	    sourcePtr = (char *) sPtr;
+	    destPtr = (char *) dPtr;
+d159 2
+@

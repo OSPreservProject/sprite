@@ -1,0 +1,10 @@
+#!/bin/csh
+fscmd -t 0 -p 0
+rpccmd -t 0
+rpchist -off
+foreach size (1 128 256 512 1024 2048 3072 4096 6144 8192 10240 12288 16384)
+echo $size ; cat /dev/null > write.$size
+Doit.w $size >> write.$size
+#echo "$size (async)" ; cat /dev/null > writeBehind.$size
+#Doit.w $size -W >> write.$size
+end

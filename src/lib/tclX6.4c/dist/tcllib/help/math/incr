@@ -1,0 +1,8 @@
+          incr varName ?increment?
+               Increment the value stored in the variable  whose  name
+               is   varName.   The  value  of  the  variable  must  be
+               integral.  If increment  is  supplied  then  its  value
+               (which  must  be  an  integer) is added to the value of
+               variable varName;  otherwise 1  is  added  to  varName.
+               The new value is stored as a decimal string in variable
+               varName and also returned as result.

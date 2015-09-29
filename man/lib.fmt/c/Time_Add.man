@@ -1,0 +1,68 @@
+
+
+
+Time_Add              C Library Procedures               Time_Add
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Time_Add, Time_Subtract, Time_Multiply, Time_Divide  -  time
+     arithmetic operations
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<sspprriitteeTTiimmee..hh>>
+
+     TTiimmee__AAdddd(_a, _b, _r_e_s_u_l_t_P_t_r)
+
+     TTiimmee__SSuubbttrraacctt(_a, _b, _r_e_s_u_l_t_P_t_r)
+
+     TTiimmee__MMuullttiippllyy(_a, _c, _r_e_s_u_l_t_P_t_r)
+
+     TTiimmee__DDiivviiddee(_a, _c, _r_e_s_u_l_t_P_t_r)
+
+AARRGGUUMMEENNTTSS
+     Time      _a              (in)
+
+     Time      _b              (in)      Time   values    to    be
+                                        operated on.
+
+     int       _c              (in)      An integer factor used to
+                                        modify a time.
+
+     Time      *_r_e_s_u_l_t_P_t_r     (out)     The result of the  opera-
+                                        tion.
+
+_________________________________________________________________
+
+DDEESSCCRRIIPPTTIIOONN
+     These procedures perform the following arithmetic operations
+     on Time values.
+     Add:      *resultPtr = a + b;
+     Subtract: *resultPtr = a - b;
+     Multiply: *resultPtr = a X c;
+     Divide:        *resultPtr = a / c;
+     An in parameter can be specified as the the out parameter.
+
+KKEEYYWWOORRDDSS
+     time
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  November 27, 1990                  1
+
+
+

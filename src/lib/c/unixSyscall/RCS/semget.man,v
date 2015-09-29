@@ -1,0 +1,169 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     90.03.15.12.32.11;  author shirriff;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Original Unix man page.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@.\" @@(#)semget.2 1.15 88/03/01 SMI; from S5R3
+.TH SEMGET 2 "21 November 1987"
+.SH NAME
+semget \- get set of semaphores
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/sem.h>
+.LP
+.ft B
+int semget(key, nsems, semflg)
+key_t key;
+int nsems, semflg;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX  "semget" "" "\fLsemget\fR \(em get semaphore set"
+.IX  semaphore "get set of  \(em \fLsemget\fR"
+.B semget(\|)
+returns the semaphore identifier associated with
+.IR key .
+.LP
+A semaphore identifier and associated data structure and set containing
+.I nsems
+semaphores
+(see
+.BR intro (2))
+are created for
+.I key
+if one of the following are true:
+.TP
+\(bu
+.I key
+is equal to
+.SM
+.BR IPC_PRIVATE \s0.
+.TP
+\(bu
+.I key
+does not already have a semaphore identifier associated with it, and
+.RI ( semflg " & "
+.SM
+.BR IPC_CREAT \s0)
+is ``true''.
+.LP
+Upon creation, the data structure associated with the new semaphore
+identifier is initialized as follows:
+.TP
+\(bu
+.BR sem_perm.cuid ", " sem_perm.uid ,
+.BR sem_perm.cgid ", and " sem_perm.gid
+are set equal to the effective user
+.SM ID
+and effective group
+.SM ID\s0,
+respectively, of the calling process.
+.TP
+\(bu
+The low-order 9 bits of
+.B sem_perm.mode
+are set equal to the low-order 9 bits of
+.IR semflg .
+.TP
+\(bu
+.B sem_nsems
+is set equal to the value of
+.IR nsems .
+.TP
+\(bu
+.B sem_otime
+is set equal to 0 and
+.B sem_ctime
+is set equal to the current time.
+.SH "RETURN VALUE"
+Upon successful completion,
+a non-negative integer,
+namely a semaphore identifier, is returned.
+Otherwise, a value of \-1 is returned and
+.B errno
+is set to indicate the error.
+.SH ERRORS
+.B semget(\|)
+will fail if one or more of the following are true:
+.TP 20
+.SM EINVAL
+.I nsems
+is either less than or equal to zero or greater than the system-imposed limit.
+.TP
+.SM EACCES
+A semaphore identifier exists for
+.IR key ,
+but operation permission (see
+.BR intro (2))
+as specified by the low-order 9 bits of
+.I semflg
+would not be granted.
+.TP
+.SM EINVAL
+A semaphore identifier exists for
+.IR key ,
+but the number of semaphores in the set associated with it is less than
+.IR nsems " and " nsems
+is not equal to zero.
+.TP
+.SM ENOENT
+A semaphore identifier does not exist for
+.I key
+and
+.RI ( semflg " &"
+.SM
+.BR IPC_CREAT \s0)
+is ``false''.
+.TP
+.SM ENOSPC
+A semaphore identifier is to be created but
+the system-imposed limit on the maximum number of
+allowed semaphore identifiers system wide
+would be exceeded.
+.TP
+.SM ENOSPC
+A semaphore identifier is to be created but
+the system-imposed limit on the maximum number of
+allowed semaphores system wide
+would be exceeded.
+.TP
+.SM EEXIST
+A semaphore identifier exists for
+.I key
+but
+.RI "( (" semflg " & "
+.SM
+.BR IPC_CREAT \s0)
+and
+.RI ( semflg " & "
+.SM
+.BR IPC_EXCL \s0) )
+is ``true''.
+.SH SEE ALSO
+.BR intro (2),
+.BR semctl (2),
+.BR semop (2)
+@

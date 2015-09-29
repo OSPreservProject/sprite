@@ -1,0 +1,1244 @@
+10
+# or something immediately after the boot program prints out the kernel sizes.)
+# BOOTDIR is the directory in which the boot things live.
+#
+
+#if !empty(TM:Msun3)
+KERNELSTART	?= 0x3fe0
+LINKSTART	?= d4000
+#else
+#if !empty(TM:Msun4)
+KERNELSTART	?= 0x4000
+LINKSTART	?= $(KERNELSTART:S/0x/20/)
+#else
+#if !empty(TM:Mds3100)
+KERNELSTART	?= 0x80010000
+LINKSTART	?= $(KERNELSTART:S/0x//)
+#else
+#if !empty(TM:Msun4c)
+KERNELSTART	?= 0x3fe0
+LINKSTART	?= $(KERNELSTART:S/0x/20/)
+#else
+KERNELSTART	?= 0x4000
+LINKSTART	?= $(KERNELSTART:S/0x/b/)
+#endif
+#endif
+#endif
+#endif
+
+CFLAGS		+= -DBOOT_CODE=0x$(LINKSTART) \
+		-DKERNEL_START=$(KERNELSTART) -DBOOTDIR=\"$(INSTALLDIR)\" \
+		-DBOOT_FILE=\"$(TM)\"
+
+
+#
+# The .INCLUDES variable already includes directories that should be
+# used by cc and other programs by default.  Remove them, just so that
+# the output looks cleaner.
+
+CFLAGS		+= $(.INCLUDES:S|^-I/sprite/lib/include$||g:S|^-I/sprite/lib/include/$(TM).md$||g)
+
+#
+# Transformation rules: these have special features to place .o files
+# in md subdirectories, run preprocessor over .s files, etc.
+# There are no profile rules for boot programs because they aren't profiled.
+#
+
+.c.o		:
+	$(RM) -f $(.TARGET)
+	$(CC) $(CFLAGS) -c $(.IMPSRC) -o $(.TARGET)
+.s.o	:
+#if empty(TM:Mds3100)
+	$(CPP) $(CFLAGS:M-[ID]*) -m$(TM) -D$(TM) -D_ASM $(.IMPSRC) > $(.PREFIX).pp
+	$(AS) -o $(.TARGET) $(AFLAGS) $(.PREFIX).pp
+	$(RM) -f $(.PREFIX).pp
+#else
+	$(RM) -f $(.TARGET)
+	$(AS) $(AFLAGS) $(.IMPSRC) -o $(.TARGET)
+#endif
+
+#
+# The following targets are .USE rules for creating things.
+#
+
+#
+# MAKEBOOT usage:
+#	<program> : <objects> <libraries> MAKEBOOT
+#
+# Similar to MAKECMD, except it doesn't create the version.[ho] files,
+# and the variable LINKSTART is used to define where the boot program
+# gets loaded.
+#
+MAKEBOOT	:  .USE -lc
+	rm -f $(.TARGET)
+	$(LD) -N -e start -T $(LINKSTART) $(CFLAGS:M-L*) $(LDFLAGS) \
+		-o $(.TARGET) $(.ALLSRC:N-lc:Nend.o) -lc $(.ALLSRC:Mend.o)
+
+#
+# MAKEINSTALL usage:
+#	install :: <dependencies> MAKEINSTALL
+#
+# The program is installed in $(TMINSTALLDIR) and backed-up to
+# $(TMINSTALLDIR).old
+#
+#ifndef NOBACKUP
+BACKUP		= -b $(TMINSTALLDIR).old
+#ifdef BACKUPAGE
+BACKUP += -B $(BACKUPAGE)
+#endif
+#else
+BACKUP		=
+#endif  NOBACKUP
+
+MAKEINSTALL	: .USE
+	${RM} -f $(TMINSTALLDIR)/$(NAME)
+	${INSTALL_PROG} $(TM).md/$(NAME) $(TMINSTALLDIR)/$(NAME)
+
+#
+# MAKELINT usage:
+#	<fluff-file> : <sources to be linted> MAKELINT
+#
+# <fluff-file> is the place to store the output from the lint.
+#
+MAKELINT	: .USE
+	$(RM) -f $(.TARGET)
+	$(LINT) $(LINTFLAGS) $(CFLAGS:M-[ID]*) $(.ALLSRC) > $(.TARGET) 2>&1
+
+#
+# MAKEDEPEND usage:
+#	<dependency-file> : <sources> MAKEDEPEND
+#
+# Generate dependency file suitable for inclusion in future makes.
+
+MAKEDEPEND	: .USE
+	@$(TOUCH) $(DEPFILE)
+	$(MAKEDEPEND) $(CFLAGS:M-[ID]*) -m $(TM) -w60 -f $(DEPFILE) $(.ALLSRC)
+	@$(MV) -f $(DEPFILE) $(DEPFILE).tmp
+	@$(SED) -e '/^#/!s|^.|$(TM).md/&|' <$(DEPFILE).tmp > $(DEPFILE)
+	@$(RM) -f $(DEPFILE).tmp
+
+#if !defined(no_targets) && defined(NAME)
+#
+# We should define the main targets (make, make install, etc.).  See the
+# mkmf man page for details on what these do.
+#
+LIBS			?=
+
+#
+# start.o must come first
+default			: $(TM).md/$(NAME)
+$(TM).md/$(NAME)	: $(TM).md/start.o $(OBJS:S/$(TM).md\/start.o//:S/makeBoot.o//) MAKEBOOT
+
+
+clean			:: .NOEXPORT tidy 
+	$(RM) -f $(TM).md/$(NAME) 
+
+tidy			:: .NOEXPORT 
+	$(RM) -f $(CLEANOBJS) $(CLEANOBJS:M*.o:S/.o$/.po/g) \
+	    	y.tab.c lex.yy.c core \
+		$(TM).md/lint \
+		a.out *~ $(TM).md/*~ version.h gmon.out mon.out
+
+DEPFILE = $(TM).md/dependencies.mk
+
+depend			: $(DEPFILE)
+$(DEPFILE)		! $(SRCS:M*.c) $(SRCS:M*.s) MAKEDEPEND
+
+
+#
+# For "install", a couple of tricks.  First, allow local.mk to disable
+# by setting no_install.  Second, use :: instead of : so that local.mk
+# can augment install with additional stuff.  Third, don't install if
+# TMINSTALLDIR isn't set.
+#
+#ifndef no_install
+#ifdef TMINSTALLDIR
+install			:: $(TM).md/$(NAME) installman MAKEINSTALL
+#else
+install			:: .SILENT
+	echo "Can't install $(NAME):  no install directory defined"
+#endif TMINSTALLDIR
+#endif no_install
+
+
+#if eg immediately after the boot program prints out the kernel sizes.)
+# BOOTDIR is the directory in which the boot things live.
+#
+
+#if !empty(TM:Msun3)
+KERNELSTART	?= 0x3fe0
+LINKSTART	?= d4000
+#else
+#if !empty(TM:Msun4)
+KERNELSTART	?= 0x4000
+LINKSTART	?= $(KERNELSTART:S/0x/20/)
+#else
+#if !empty(TM:Mds3100)
+KERNELSTART	?= 0x80010000
+LINKSTART	?= $(KERNELSTART:S/0x//)
+#else
+#if !empty(TM:Msun4c)
+KERNELSTART	?= 0x3fe0
+LINKSTART	?= $(KERNELSTART:S/0x/20/)
+#else
+KERNELSTART	?= 0x4000
+LINKSTART	?= $(KERNELSTART:S/0x/b/)
+#endif
+#endif
+#endif
+#endif
+
+CFLAGS		+= -DBOOT_CODE=0x$(LINKSTART) \
+		-DKERNEL_START=$(KERNELSTART) -DBOOTDIR=\"$(INSTALLDIR)\" \
+		-DOPENPROMS -DSAIO_COMPAT -DBOOT_FILE=\"$(TM)\"
+
+
+#
+# The .INCLUDES variable already includes directories that should be
+# used by cc and other programs by default.  Remove them, just so that
+# the output looks cleaner.
+
+CFLAGS		+= $(.INCLUDES:S|^-I/sprite/lib/include$||g:S|^-I/sprite/lib/include/$(TM).md$||g)
+
+#
+# Transformation rules: these have special features to place .o files
+# in md subdirectories, run preprocessor over .s files, etc.
+# There are no profile rules for boot programs because they aren't profiled.
+#
+
+.c.o		:
+	$(RM) -f $(.TARGET)
+	$(CC) $(CFLAGS) -c $(.IMPSRC) -o $(.TARGET)
+.s.o	:
+#if empty(TM:Mds3100)
+	$(CPP) $(CFLAGS:M-[ID]*) -m$(TM) -D$(TM) -D_ASM $(.IMPSRC) > $(.PREFIX).pp
+	$(AS) -o $(.TARGET) $(AFLAGS) $(.PREFIX).pp
+	$(RM) -f $(.PREFIX).pp
+#else
+	$(RM) -f $(.TARGET)
+	$(AS) $(AFLAGS) $(.IMPSRC) -o $(.TARGET)
+#endif
+
+#
+# The following targets are .USE rules for creating things.
+#
+
+#
+# MAKEBOOT usage:
+#	<program> : <objects> <libraries> MAKEBOOT
+#
+# Similar to MAKECMD, except it doesn't create the version.[ho] files,
+# and the variable LINKSTART is used to define where the boot program
+# gets loaded.
+#
+MAKEBOOT	:  .USE -lc
+	rm -f $(.TARGET)
+	$(LD) -N -e start -T $(LINKSTART) $(CFLAGS:M-L*) $(LDFLAGS) \
+		-o $(.TARGET) $(.ALLSRC:N-lc:Nend.o) -lc $(.ALLSRC:Mend.o)
+
+#
+# MAKEINSTALL usage:
+#	install :: <dependencies> MAKEINSTALL
+#
+# The program is installed in $(TMINSTALLDIR) and backed-up to
+# $(TMINSTALLDIR).old
+#
+#ifndef NOBACKUP
+BACKUP		= -b $(TMINSTALLDIR).old
+#ifdef BACKUPAGE
+BACKUP += -B $(BACKUPAGE)
+#endif
+#else
+BACKUP		=
+#endif  NOBACKUP
+
+MAKEINSTALL	: .USE
+	${RM} -f $(TMINSTALLDIR)/$(NAME)
+	${INSTALL_PROG} $(TM).md/$(NAME) $(TMINSTALLDIR)/$(NAME)
+
+#
+# MAKELINT usage:
+#	<fluff-file> : <sources to be linted> MAKELINT
+#
+# <fluff-file> is the place to store the output from the lint.
+#
+MAKELINT	: .USE
+	$(RM) -f $(.TARGET)
+	$(LINT) $(LINTFLAGS) $(CFLAGS:M-[ID]*) $(.ALLSRC) > $(.TARGET) 2>&1
+
+#
+# MAKEDEPEND usage:
+#	<dependency-file> : <sources> MAKEDEPEND
+#
+# Generate dependency file suitable for inclusion in future makes.
+
+MAKEDEPEND	: .USE
+	@$(TOUCH) $(DEPFILE)
+	$(MAKEDEPEND) $(CFLAGS:M-[ID]*) -m $(TM) -w60 -f $(DEPFILE) $(.ALLSRC)
+	@$(MV) -f $(DEPFILE) $(DEPFILE).tmp
+	@$(SED) -e '/^#/!s|^.|$(TM).md/&|' <$(DEPFILE).tmp > $(DEPFILE)
+	@$(RM) -f $(DEPFILE).tmp
+
+#if !defined(no_targets) && defined(NAME)
+#
+# We should define the main targets (make, make install, etc.).  See the
+# mkmf man page for details on what these do.
+#
+LIBS			?=
+
+#
+# start.o must come first
+default			: $(TM).md/$(NAME)
+$(TM).md/$(NAME)	: $(TM).md/start.o $(OBJS:S/$(TM).md\/start.o//:S/makeBoot.o//) MAKEBOOT
+
+
+clean			:: .NOEXPORT tidy 
+	$(RM) -f $(TM).md/$(NAME) 
+
+tidy			:: .NOEXPORT 
+	$(RM) -f $(CLEANOBJS) $(CLEANOBJS:M*.o:S/.o$/.po/g) \
+	    	y.tab.c lex.yy.c core \
+		$(TM).md/lint \
+		a.out *~ $(TM).md/*~ version.h gmon.out mon.out
+
+DEPFILE = $(TM).md/dependencies.mk
+
+depend			: $(DEPFILE)
+$(DEPFILE)		! $(SRCS:M*.c) $(SRCS:M*.s) MAKEDEPEND
+
+
+#
+# For "install", a couple of tricks.  First, allow local.mk to disable
+# by setting no_install.  Second, use :: instead of : so that local.mk
+# can augment install with additional stuff.  Third, don't install if
+# TMINSTALLDIR isn't set.
+#
+#ifndef no_install
+#ifdef TMINSTALLDIR
+install			:: $(TM).md/$(NAME) installman MAKEINSTALL
+#else
+install			:: .SILENT
+	echo "Can't install $(NAME):  no install directory defined"
+#endif TMINSTALLDIR
+#endif no_insta–†Dë2 ñ
+ ˇ–†Dò
+ ˇ   ê  í 	î 
+ñ ò ?˙ ⁄ `xü√@    Å«‡ÅË  %x:%x:%x:%x:%x:%x
+          ù„øê'†D‡†D“  ‘ ÷ ÿ ⁄ ú#†– –#†\   ê  í 	î 
+ñ ò ö ?˙ ‚ `xüƒ@    ú†Å«‡ÅË      @(#)inet.c	1.12 88/02/08	Copyr 1986 Sun Micro ˇˇˇˇˇˇ      p    $  l    $  ¯    ®  Ù    ®  »  
+ÜˇˇÛ8  ¨  
+ÜˇˇÛT  à  
+ÜˇˇÛx  `    ‚  \    ‚  0  	ÜˇˇÛ–  t    ÿ  p    ÿ  D  	ÜˇˇÙº  
+8    ‘  
+4    ‘  	‰    —  	‡    —  	Ä    Ø  	|    Ø  	`  
+Üˇˇˆ†  	8    ç  	4    ç  	  
+Üˇˇˆ¸  0    ÷  ,    ÷       à      à  \  Üˇˇ¯§  ƒ  
+Üˇˇ˘<  x    ÷  t    ÷  $    ÷       ÷  ò  
+Üˇˇ˙h  H  
+Üˇˇ˙∏  l  	Üˇˇ˚î  ¯  	Üˇˇ¸  \  	Üˇˇ¸§  ƒ  
+Üˇˇ˛<  ò  	Üˇˇ˛h      ÷      ÷   ¸  Üˇˇˇ   Ë  Üˇˇˇ   `         \         D  Üˇˇˇº                  ®        ÷   .      0   ;          C      ¿   N          U        ]     `   h          n          u        z         É     ‡   ç     –   õ         £     ¿   Ø     @   º     @   ∆         Õ         ◊gcc_compiled. _sccsid _etherbroadcastaddr _myetheraddr _idprom _inet_init _bzero _revarp _ip_output _bcmp _bcopy _arp _ipcksum _ip_input _in_broadaddr _comarp _inet_print _ether_print _in_lnaof _ifnet _rawintrq                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    dlong:1.2; strict;
+comment  @ * @;
+
+
+1.2
+date     89.06.16.08.30.31;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.06.02.11.10.59;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Header file for sprite tftp boot program
+@
+
+
+1.2
+log
+@Added machparam.h
+@
+text
+@/*-
+ * boot.h --
+ *	 Header file for sprite tftp boot program
+ *
+ * Copyright (c) 1987 by the Regents of the University of California
+ *
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *	"$Header$ SPRITE (Berkeley)"
+ */
+#ifndef _BOOT_H
+#define _BOOT_H
+
+#include <machparam.h>
+
+#ifndef ASM
+#include    "sunromvec.h"
+#endif /* ASM */
+
+#define BOOT_START	    (BOOT_CODE-KERNEL_START)
+
+#define printf	  (*romp->v_printf)
+#define printhex  (*romp->v_printhex)
+
+#endif /* _BOOT_H */
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d19 2
+@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               #
+# This Makefile is included by several other system Makefiles.  It
+# sets up variables that depend on the particular target machine
+# being compiled for, such as compiler flags.  One variable should
+# be defined before including this file:
+#
+# TM		Target machine for which code is to be generated (e.g.
+#		sun2, sun3, spur, etc.)
+#
+# This file will create a variable TMCFLAGS, which, when passed to CC,
+# will ensure that an object file is generated for machines of type TM.
+# It will also generate a variable TMAFLAGS, which will serve the
+# same purpose for the assembler.  Finally, it will set program names
+# like AS and LD to values appropriate for the machine type.
+#
+# The only flags that should be defined here are those that are required 
+# for successful compilation on that machine.  Optional flags such as
+# optimization should be defined in local modules.  
+#
+# $Header: /sprite/lib/pmake/RCS/tm.mk,v 1.44 90/12/11 14:18:13 kupfer Exp $
+# 
+
+# Down at the bottom we elide ds3100 from $MACHINES.  For the error
+# messages below, though, we want to keep the ds3100 in $MACHINES.
+# So, we define a new variable for use in the error messages.
+
+SUPPORTED_MACHINES	:= $(MACHINES)
+
+# What follows is a big long if/elif chain, keyed on TM, to set flags,
+# CC, etc.  Each top-level branch also verifies that TM is in
+# MACHINES.  It would be nice if we could do this in just one place,
+# but pmake doesn't like the construct "empty(MACHINES:M$(TM))".
+
+#if !empty(TM:Msun3)
+TMCFLAGS		= -msun3 
+TMAFLAGS		= -m68020
+LDFLAGS			= -msun3
+#if empty(MACHINES:Msun3) && !make(newtm)
+.BEGIN:
+	@echo "Sorry, the target machine ($(TM)) isn't in the list of"
+	@echo "supported machines ($(SUPPORTED_MACHINES))."
+	exit 1
+#endif
+#if !empty(MACHINE:Mds3100)
+CC                      = gcc
+AS                      = gas
+LD                      = gld
+#endif /* MACHINE:ds3100 */
+#if !empty(MACHINE:Mds5000)
+CC                      = gcc
+AS                      = gas
+LD                      = gld
+#endif /* MACHINE:ds5000 */
+
+#elif !empty(TM:Mspur)
+TMCFLAGS		= -mspur -mlong-jumps -DLOCKREG 
+TMAFLAGS		=
+AS			= /sprite/cmds.$(MACHINE)/sas
+LD			= /sprite/cmds.$(MACHINE)/sld
+RANLIB			= /sprite/cmds.$(MACHINE)/sranlib
+XLD			= /sprite/cmds.$(MACHINE)/xld
+NOOPTIMIZATION		=
+LDFLAGS			= 
+#if empty(MACHINES:Mspur) && !make(newtm)
+.BEGIN:
+	@echo "Sorry, the target machine ($(TM)) isn't in the list of"
+	@echo "allowed machines ($(SUPPORTED_MACHINES))."
+	exit 1
+#endif
+
+#elif !empty(TM:Msun4)
+TMCFLAGS		= -msun4 -Dsprite -Dsun4
+TMAFLAGS		= -msparc
+LDFLAGS			= -msun4
+#if empty(MACHINES:Msun4) && !make(newtm)
+.BEGIN:
+	@echo "Sorry, the target machine ($(TM)) isn't in the list of"
+	@echo "allowed machines ($(SUPPORTED_MACHINES))."
+	exit 1
+#endif
+#if !empty(MACHINE:Mds3100)
+CC                      = gcc
+AS                      = gas
+LD                      = gld
+#endif /* MACHINE:ds3100 */
+#if !empty(MACHINE:Mds5000)
+CC                      = gcc
+AS                      = gas
+LD                      = gld
+#endif /* MACHINE:ds5000 */
+
+#elif !empty(TM:Mcleansun4)
+TMCFLAGS		= -msun4 -Dsprite -Dsun4 -DCLEAN -DCLEAN_LOCK
+TMAFLAGS		= -msparc
+LDFLAGS			= -msun4
+#if empty(MACHINES:Mcleansun4) && !make(newtm)
+.BEGIN:
+	@echo "Sorry, the target machine ($(TM)) isn't in the list of"
+	@echo "allowed machines ($(SUPPORTED_MACHINES))."
+	exit 1
+#endif
+#if !empty(MACHINE:Mds3100)
+CC                      = gcc
+AS                      = gas
+LD                      = gld
+#endif /* MACHINE:ds3100 */
+#if !empty(MACHINE:Mds5000)
+CC                      = gcc
+AS                      = gas
+LD                      = gld
+#endif /* MACHINE:ds5000 */
+
+#elif !empty(TM:Msun4c)
+TMCFLAGS		= -msun4 -Dsprite -Dsun4c -Usun4
+TMAFLAGS		= -msparc
+LDFLAGS			= -msun4
+#if empty(MACHINES:Msun4c) && !make(newtm)
+.BEGIN:
+	@echo "Sorry, the target machine ($(TM)) isn't in the list of"
+	@echo "allowed machines ($(SUPPORTED_MACHINES))."
+	exit 1
+#endif
+#if !empty(MACHINE:Mds3100)
+CC                      = gcc
+AS                      = gas
+LD                      = gld
+#endif /* MACHINE:ds3100 */
+#if !empty(MACHINE:Mds5000)
+CC                      = gcc
+AS                      = gas
+LD                      = gld
+#endif /* MACHINE:ds5000 */
+
+#elif !empty(TM:Mcleansun4c)
+TMCFLAGS		= -msun4 -Dsprite -Dsun4 -Dsun4c -DCLEAN -DCLEAN_LOCK
+TMAFLAGS		= -msparc
+LDFLAGS			= -msun4
+#if empty(MACHINES:Mcleansun4c) && !make(newtm)
+.BEGIN:
+	@echo "Sorry, the target machine ($(TM)) isn't in the list of"
+	@echo "allowed machines ($(SUPPORTED_MACHINES))."
+	exit 1
+#endif
+#if !empty(MACHINE:Mds3100)
+CC                      = gcc
+AS                      = gas
+LD                      = gld
+#endif /* MACHINE:ds3100 */
+#if !empty(MACHINE:Mds5000)
+CC                      = gcc
+AS                      = gas
+LD                      = gld
+#endif /* MACHINE:ds5000 */
+
+#elif !empty(TM:Mcleansun3) 
+TMCFLAGS		= -msun3 -Dsun3 -DCLEAN -DCLEAN_LOCK
+TMAFLAGS		= -m68020
+LDFLAGS			= 
+#if empty(MACHINES:Mcleansun3) && !make(newtm)
+.BEGIN:
+	@echo "Sorry, the target machine ($(TM)) isn't in the list of"
+	@echo "allowed machines ($(SUPPORTED_MACHINES))."
+	exit 1
+#endif
+
+#elif !empty(TM:Mcleands3100)
+TMCFLAGS	= -Dds3100 -Dsprite -DCLEAN -DCLEAN_LOCK -Uultrix
+TMAFLAGS	= -Dds3100 -Dsprite -Uultrix
+LDFLAGS		= -L/sprite/lib/ds3100.md
+#if empty(MACHINES:Mcleands3100) && !make(newtm)
+.BEGIN:
+	@echo "Sorry, the target machine ($(TM)) isn't in the list of"
+	@echo "allowed machines ($(SUPPORTED_MACHINES))."
+	exit 1
+#endif
+
+#elif !empty(TM:Mds3100)
+TMCFLAGS	= -Dds3100 -Dsprite -Uultrix
+TMAFLAGS	= -Dds3100 -Dsprite -Uultrix
+LDFLAGS		= -L/sprite/lib/ds3100.md
+#if empty(MACHINES:Mds3100) && !make(newtm)
+.BEGIN:
+	@echo "Sorry, the target machine ($(TM)) isn't in the list of"
+	@echo "allowed machines ($(SUPPORTED_MACHINES))."
+	exit 1
+#endif
+#if !empty(CC:Mgcc)
+TMCFLAGS	+= -Dmips -DLANGUAGE_C
+#endif
+
+#elif !empty(TM:Mds5000)
+TMCFLAGS	= -Dds5000 -Dsprite -Uultrix
+TMAFLAGS	= -Dds5000 -Dsprite -Uultrix
+LDFLAGS		= -L/sprite/lib/ds5000.md
+#if empty(MACHINES:Mds5000) && !make(newtm)
+.BEGIN:
+	@echo "Sorry, the target machine ($(TM)) isn't in the list of"
+	@echo "allowed machines ($(SUPPORTED_MACHINES))."
+	exit 1
+#endif
+#if !empty(CC:Mgcc)
+TMCFLAGS	+= -Dmips -DLANGUAGE_C
+#endif
+
+#elif !empty(TM:Msun4nw)
+
+#    Sun4 compiled not to use save/restore register window instructions.
+TMCFLAGS		= -msun4 -Dsprite -Dsun4 -B/users/mendel/lib/$(MACHINE).md/ -mno-windows -DNOWINDOWS
+TMAFLAGS		= -msparc
+LDFLAGS			= -msun4
+#if empty(MACHINES:Msun4nw) && !make(newtm)
+.BEGIN:
+	@echo "Sorry, the target machine ($(TM)) isn't in the list of"
+	@echo "allowed machines ($(SUPPORTED_MACHINES))."
+	exit 1
+#endif
+
+#elif !empty(TM:Msymm)
+TMCFLAGS	= -msymm -Dsprite -Dsymm
+TMAFLAGS	= -msymm
+LDFLAGS		= -msymm
+#if empty(MACHINES:Msymm) && !make(newtm)
+.BEGIN:
+	@echo "Sorry, the target machine ($(TM)) isn't in the list of"
+	@echo "allowed machines ($(SUPPORTED_MACHINES))."
+	exit 1
+#endif
+#if !empty(MACHINE:Mds3100)
+CC                      = gcc
+AS                      = gas
+LD                      = gld
+#endif /* MACHINE:ds3100 */
+#if !empty(MACHINE:Mds5000)
+CC                      = gcc
+AS                      = gas
+LD                      = gld
+#endif /* MACHINE:ds5000 */
+
+#elif !empty(TM:Msym)
+TMCFLAGS	= -msym -Dsprite -Dsym
+TMAFLAGS	= -msym
+LDFLAGS		= -msym
+#if empty(MACHINES:Msym) && !make(newtm)
+.BEGIN:
+	@echo "Sorry, the target machine ($(TM)) isn't in the list of"
+	@echo "allowed machines ($(SUPPORTED_MACHINES))."
+	exit 1
+#endif
+#if !empty(MACHINE:Mds3100)
+CC                      = gcc
+AS                      = gas
+LD                      = gld
+#endif /* MACHINE:ds3100 */
+#if !empty(MACHINE:Mds5000)
+CC                      = gcc
+AS                      = gas
+LD                      = gld
+#endif /* MACHINE:ds5000 */
+
+#else
+
+# (some random TM)
+
+TMCFLAGS		?= -m$(TM)
+TMAFLAGS		?= -m$(TM)
+#endif
+
+# (End of big if/elif chain)
+
+# The line below makes ds3100 and people's private "machines" invisible
+# under for purposes of commands like "make all":  you have to ask for
+# them explicitly with the TM= option.
+
+
+#ifdef MACHINES
+MACHINES	:= $(MACHINES:Nfd:Njhh:Ncleansun4:Ncleansun4c:Ncleansun3:Ncleands3100:Nspur:Nsun4nw:Nsymm)
+#endif
+
+#if !make(clean) && !/*	@(#)idprom.h 1.17 89/12/13 SMI	*/
+
+/*
+ * Copyright (c) 1986 by Sun Microsystems, Inc.
+ */
+
+#ifndef _mon_idprom_h
+#define _mon_idprom_h
+
+#ifndef LOCORE
+/*
+ * Structure declaration for ID prom in CPU and Ethernet boards
+ */
+
+struct idprom {
+	unsigned char	id_format;	/* format identifier */
+	/* The following fields are valid only in format IDFORM_1. */
+	unsigned char	id_machine;	/* machine type */
+	unsigned char	id_ether[6];	/* ethernet address */
+	long		id_date;	/* date of manufacture */
+	unsigned	id_serial:24;	/* serial number */
+	unsigned char	id_xsum;	/* xor checksum */
+	unsigned char	id_undef[16];	/* undefined */
+};
+#endif LOCORE
+
+#define IDFORM_1	1	/* Format number for first ID proms */
+
+/*
+ * The machine type field assignments are constrained such that the
+ * IDM_ARCH_MASK bits define the CPU architecture and the remaining bits
+ * identify the individual implementation of that architecture.
+ */
+#define	IDM_ARCH_MASK	0xf0	/* mask for architecture bits */
+#define	IDM_ARCH_SUN2	0x00	/* arch value for Sun-2 */
+#define	IDM_ARCH_SUN3	0x10	/* arch value for Sun-3 */
+#define IDM_ARCH_SUN4   0x20    /* arch value for Sun-4 */
+#define IDM_ARCH_SUN3X	0x40    /* arch value for Sun-3x */
+#define	IDM_ARCH_SUN4C	0x50	/* arch value for Sun-4c */
+
+/* 
+ * All possible values of the id_machine field (so far): 
+ */
+#define	IDM_SUN2_MULTI		1	/* Machine type for Multibus CPU brd */
+#define	IDM_SUN2_VME		2	/* Machine type for VME CPU board    */
+#define	IDM_SUN3_CARRERA	0x11	/* Carrera CPU	*/
+#define	IDM_SUN3_M25		0x12	/* M25 CPU	*/
+#define	IDM_SUN3_SIRIUS		0x13	/* Sirius CPU	*/
+#define IDM_SUN3_PRISM		0x14    /* Prism CPU	*/
+#define IDM_SUN3_F		0x17    /* Sun3F CPU	*/
+#define IDM_SUN3_E		0x18    /* Sun3E CPU	*/
+#define IDM_SUN4		0x21    /* Sparc CPU	*/
+#define IDM_SUN4_COBRA		0x22    /* Cobra CPU	*/
+#define IDM_SUN4_STINGRAY	0x23    /* Stingray CPU	*/
+#define IDM_SUN4_SUNRAY		0x24	/* Sunray CPU   */
+#define IDM_SUN3X_PEGASUS	0x41    /* Pegasus CPU	*/
+#define IDM_SUN3X_HYDRA         0x42    /* Hydra CPU    */
+#define IDM_SUN4C               0x51    /* Campus CPU   */
+#define IDM_SUN4C_60		0x51	/* Campus-1 CPU */
+#define IDM_SUN4C_40		0x52	/* Reserve some names */
+#define IDM_SUN4C_65		0x53	/* That we might do */
+#define IDM_SUN4C_20		0x54	/* It might be bigger */
+#define IDM_SUN4C_70		0x55	/* It might be smaller */
+#define IDM_SUN4C_30		0x56	/* It might be faster */
+#define IDM_SUN4C_50		0x57	/* It might be slower */
+#define IDM_SUN4C_75		0x58	/* It might cost more */
+#define IDM_SUN4C_80		0x59	/* It might cost less */
+#define IDM_SUN4C_10		0x5a	/* It might sell well */
+#define IDM_SUN4C_45		0x5b	/* And then it might not */
+#define IDM_SUN4C_05		0x5c	/* It might be pink */
+#define IDM_SUN4C_85		0x5d	/* It might be blue */
+#define IDM_SUN4C_32		0x5e	/* I certainly don't know */
+#define IDM_SUN4C_HIKE		0x5f	/* Do you? */
+
+#endif /*!_mon_idprom_h*/
+                                                                                                                                                                                              !
+!	.seg	"data"
+!	.asciz	"@(#)getidprom.s 1.3 88/02/08"
+!	Copyright (c) 1986 by Sun Microsystems, Inc.
+!
+
+IDPROMBASE=0xffd047d8		! base address of idprom in CTL space
+IDPROMSIZE=0x20			! size of idprom
+
+	.align 4
+	.seg	"text"
+!
+! getidprom(addr, size)
+!
+! Read the ID prom.
+! This is mapped from IDPROMBASE for IDPROMSIZE bytes in the
+! ASI_CTL address space for byte access only.
+! 
+	.global _getidprom
+_getidprom:
+	set     IDPROMBASE, %g1
+	clr     %g2
+1:
+	ldub   [%g1 + %g2], %g7 ! get id prom byte
+	add     %g2, 1, %g2		! interlock
+	stb     %g7, [%o0]		! put it out
+	cmp     %g2, %o1		! done yet?
+	bne,a   1b
+	add     %o0, 1, %o0		! delay slot
+	retl				! leaf routine return
+	nop				! delay slot
+                                                                                                                                                                                                                                                                                                                                     lSet * geoPtr->blocksPerRotSet;
+d285 14
+a298 5
+    sectorNumber = geoPtr->sectorsPerTrack * geoPtr->numHeads * cylinder +
+		  geoPtr->sectorsPerTrack * geoPtr->tracksPerRotSet *
+		  rotationalSet +
+		  geoPtr->blockOffset[blockNumber];
+    sectorNumber += (fragNumber % FS_FRAGMENTS_PER_BLOCK) * SECTORS_PER_FRAG;
+d302 1
+a302 1
+#endif SCSI_DISK_BOOT
+d328 1
+a328 1
+    register Dev_DiskAddr *diskAddrPtr;
+d330 1
+a330 1
+    register FsGeometry *geoPtr;
+d336 1
+a336 1
+    geoPtr 		= (FsGeometry *)data;
+d355 4
+d360 2
+a361 1
+		  	  rotationalSet + geoPtr->blockOffset[blockNumber] +
+d363 1
+d368 1
+a368 1
+#endif XYLOGICS_BOOT
+d393 5
+a397 4
+    register int sector;	/* Sector number, counting from zero  */
+    register int numSectors;	/* Number of sectors per track */
+    register int numHeads;	/* Number of heads on the disk */
+    register Dev_DiskAddr *diskAddrPtr;
+d407 2
+a408 1
+#endif XYLOGICS_BOOT
+d413 4
+a416 1
+ * Fs_IsSunLabel --
+d418 2
+a419 2
+ *	Poke around in the input buffer and see if it looks like
+ *	a Sun format disk label.
+d422 1
+a422 1
+ *	TRUE or FALSE
+d425 1
+a425 1
+ *	None.
+d429 23
+a451 6
+#ifdef notdef
+Boolean
+Fs_IsSunLabel(buffer)
+    Address buffer;	/* Buffer containing zero'th sector */
+{
+    register Sun_DiskLabel *sunLabelPtr;
+d453 15
+a467 2
+    sunLabelPtr = (Sun_DiskLabel *)buffer;
+    if (sunLabelPtr->magic == SUN_DISK_MAGIC) {
+d469 1
+a469 1
+	 * Should check checkSum...
+d471 4
+a474 4
+	return(TRUE);
+    } else {
+	Sys_Printf("Sun magic <%x>\n", sunLabelPtr->magic);
+	return(FALSE);
+d476 1
+a477 24
+#endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_IsSpriteLabel --
+ *
+ *	Poke around in the input buffer and see if it looks like
+ *	a Sprite format disk header.
+ *
+ * Results:
+ *	TRUE or FALSE
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef notdef
+Boolean
+Fs_IsSpriteLabel(buffer)
+    Address buffer;	/* Buffer containing zero'th sector */
+{
+    register FsDiskHeader *diskHeaderPtr;
+a478 11
+    diskHeaderPtr = (FsDiskHeader *)buffer;
+    if (diskHeaderPtr->magic == FS_DISK_MAGIC) {
+	return(TRUE);
+    } else {
+#ifndef NO_PRINTF
+	Sys_Printf("Sprite magic <%x>\n", diskHeaderPtr->magic);
+#endif
+	return(FALSE);
+    }
+}
+#endif
+@
+
+
+1.7
+log
+@Wasn't calling the correct device type read routine.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsDisk.c,v 1.6 87/05/19 12:14:44 brent Exp $ SPRITE (Berkeley)";
+a17 1
+#include "fsInt.h"
+a18 1
+#include "fsLocalDomain.h"
+d20 1
+a20 2
+#include "fsPrefix.h"
+#include "sunDiskLabel.h"
+@
+
+
+1.6
+log
+@Added mapping routines for drivers that need head/sector/cylinder
+addresses.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsDisk.c,v 1.5 87/05/11 11:18:18 brent Exp $ SPRITE (Berkeley)";
+d84 6
+d96 1
+a96 1
+    status = (*fsRawDeviceOpsTable[0].readWrite)(FS_READ,
+d112 1
+a112 1
+	Sys_Printf("No header <%x>\n", status);
+d121 1
+a121 1
+    status = (*fsRawDeviceOpsTable[0].readWrite)(FS_READ,
+@
+
+
+1.5
+log
+@Final trimmed down version
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsDisk.c,v 1.4 87/05/08 17:45:18 brent Exp $ SPRITE (Berkeley)";
+d30 2
+d99 1
+a99 1
+	numHeaderSectors = FS_NUM_DOMAIN_SECTORS;
+d103 1
+a103 1
+	numHeaderSectors = ((FsDiskHeader *)fsLabelBuffer)->numDomainSectors;
+d106 1
+a106 1
+	Sys_Printf("No disk header <%x>\n", status);
+d114 1
+a114 1
+					    numHeaderSectors);
+d124 1
+a124 1
+	Sys_Printf("Bad disk magic <%x>\n", headerPtr->magic);
+d162 1
+d187 99
+@
+
+
+1.4
+log
+@Updated to reflect changes in fs header files
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsDisk.c,v 1.3 86/07/24 11:35:31 brent Exp $ SPRITE (Berkeley)";
+a35 5
+ * Global variables used because there is only one domain during a boot.
+ */
+Address fsLabelBuffer;
+
+/*
+d44 5
+a48 2
+FsDomain *fsDomainPtr;
+FsHandle *fsRootHandlePtr;
+a73 1
+    register  Address buffer;		/* Read buffer */
+a86 1
+    buffer = (Address)Mem_Alloc(DEV_BYTES_PER_SECTOR);
+d90 2
+a91 2
+		 buffer, 0, &sectorsRead);
+    if (Fs_IsSunLabel(buffer)) {
+d98 1
+d100 3
+a102 2
+	headerSector = ((FsDiskHeader *)buffer)->domainSector;
+	numHeaderSectors = ((FsDiskHeader *)buffer)->numDomainSectors;
+a106 1
+    fsLabelBuffer = buffer;
+a119 1
+    fsDomainPtr = (FsDomain *)Mem_Alloc(sizeof(FsDomain));
+a135 1
+    fsRootHandlePtr = (FsHandle *)Mem_Alloc(sizeof(FsHandle));
+d201 1
+d219 1
+d237 1
+d254 1
+@
+
+
+1.3
+log
+@more trimming
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsDisk.c,v 1.2 86/07/21 09:36:00 brent Exp $ SPRITE (Berkeley)";
+d90 1
+a90 1
+    buffer = (Address)Mem_Alloc(BYTES_PER_SECTOR);
+d114 1
+a114 1
+    headerPtr = (FsDomainHeader *)Mem_Alloc(BYTES_PER_SECTOR *
+d164 1
+a164 1
+#define SECTORS_PER_FRAG	(FS_FRAGMENT_SIZE / BYTES_PER_SECTOR)
+d168 1
+a168 1
+    register Fs_Geometry *geoPtr;
+@
+
+
+1.2
+log
+@Scrunched the code down.  Solidified Fs_AttachDisk
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsDisk.c,v 1.1 86/07/18 09:32:40 brent Exp $ SPRITE (Berkeley)";
+d78 1
+a78 1
+    int numHeaderSectors;		/* Number of sectors in volume header */
+d118 1
+a118 1
+		 &numHeaderSectors);
+d126 1
+a126 1
+	Sys_Printf("FsDiskAttach: Bad magic # <%x>\n", headerPtr->magic);
+d250 1
+d252 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsDisk.c,v 1.10 86/07/09 14:08:53 brent Exp $ SPRITE (Berkeley)";
+d25 1
+d33 1
+a33 2
+static Boolean IsSunLabel();
+static Boolean IsSpriteLabel();
+d35 4
+a38 1
+static Fs_Device fsDevice;
+d40 5
+a44 1
+FsDomain *fsDomainPtr;	/* Top level info for the boot domain */
+d46 5
+a50 1
+FsHandle *fsDiskHandlePtr;
+d57 3
+a59 7
+ *	Make a file handle for the raw disk we are booting from.
+ *	This makes sure the disk is up, reads the volume header,
+ *	and calls the initialization routine for the block I/O module
+ *	of the disk's driver.  By the time this is called the device
+ *	initialization routines have already been called from Dev_Config
+ *	so the device driver knows how the disk is partitioned into
+ *	volumes.
+d70 1
+a70 1
+Fs_AttachDisk(ctlrNum, unitNum, partNum, handlePtrPtr)
+a73 1
+    FsHandle **handlePtrPtr;	/* Return, handle for raw disk */
+d75 6
+a80 8
+    ReturnStatus status;	/* Error code */
+    Address buffer;		/* Read buffer */
+    int headerSector;		/* Starting sector of volume header */
+    int numHeaderSectors;	/* Number of sectors in volume header */
+    int sectorsRead;		/* Returned from read call */
+    FsHandle	*handlePtr;	/* Reference to file handle for root */
+    FsFileID	fileID;		/* ID for root directory of domain */
+
+a84 1
+    buffer = (Address)Mem_Alloc(BYTES_PER_SECTOR);
+d86 3
+a88 7
+     * This dives right down to the device specific I/O routines in order
+     * to read the special info kept at the beginning of the volume.
+     * Once the volume header has been read the regular block I/O interface
+     * to the device can be used.
+     * Read the zero'th sector of the partition.  It has a copy of the
+     * disk header, and that describes how the rest of the zero'th
+     * cylinder is layed out.
+d90 1
+d93 3
+a95 8
+		 fsDevice.unit, buffer, 0, &sectorsRead);
+    if (status != SUCCESS) {
+	return(status);
+    }
+    /*
+     * Check for different disk formats.
+     */
+    if (IsSunLabel(buffer)) {
+d102 3
+a104 5
+    } else if (IsSpriteLabel(buffer)) {
+	register FsDiskHeader *diskHeaderPtr;
+	diskHeaderPtr = (FsDiskHeader *)buffer;
+	headerSector = diskHeaderPtr->domainSector;
+	numHeaderSectors = diskHeaderPtr->numDomainSectors;
+d106 1
+a106 1
+	Sys_Printf("No disk header\n");
+d109 1
+d111 2
+a112 1
+     * Read the volume header and save it with the domain.
+d114 2
+a115 1
+    buffer = (Address)Mem_Alloc(BYTES_PER_SECTOR * numHeaderSectors);
+d117 2
+a118 1
+		 fsDevice.unit, buffer, headerSector, &numHeaderSectors);
+d124 3
+a126 4
+    fsDomainPtr->headerPtr = (FsDomainHeader *)buffer;
+    if (fsDomainPtr->headerPtr->magic != FS_DOMAIN_MAGIC) {
+	Sys_Printf("FsDiskAttach: Bad magic # on volume header <%x>\n",
+				  fsDomainPtr->headerPtr->magic);
+d130 2
+a131 5
+     * Call the Block I/O initialization routine which sets up the
+     * ClientData part of *devicePtr to reference the Fs_Geometry
+     * part of the domain header.  Then overwrite the device
+     * specification at was on the disk because the device unit depends on
+     * the system configuration.
+d133 9
+a141 11
+    (*fsBlockOpsTable[0].init)(&fsDevice, &fsDomainPtr->headerPtr->geometry);
+    fsDomainPtr->headerPtr->device = fsDevice;
+
+    fsDiskHandlePtr = (FsHandle *)Mem_Alloc(sizeof(FsHandle));
+    fsDiskHandlePtr->fileID.serverID = -1;
+    fsDiskHandlePtr->fileID.domain = 0;
+    fsDiskHandlePtr->fileID.fileNumber = 0;
+    fsDiskHandlePtr->fileID.version = -1;
+    fsDiskHandlePtr->domainToken = (ClientData)fsDomainPtr;
+
+    *handlePtrPtr = fsDiskHandlePtr;
+d148 10
+a157 1
+ * IsSunLabel --
+d159 36
+d206 2
+a207 2
+static Boolean
+IsSunLabel(buffer)
+d219 1
+d227 1
+a227 1
+ * IsSpriteLabel --
+d240 2
+a241 2
+static Boolean
+IsSpriteLabel(buffer)
+a244 2
+    register int index;
+    register int checkSum;
+d250 1
+a252 45
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_BlocksToSectors --
+ *
+ *	Convert from block indexes (actually, fragment indexes) to
+ *	sectors using the geometry information on the disk.  This
+ *	is a utility for block device drivers.
+ *
+ * Results:
+ *	The sector number that corresponds to the fragment index.
+ *	The caller has to make sure that its I/O doesn't cross a
+ *	filesystem block boundary.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+#define SECTORS_PER_FRAG	(FS_FRAGMENT_SIZE / BYTES_PER_SECTOR)
+int
+Fs_BlocksToSectors(fragNumber, geoPtr)
+    int fragNumber;
+    register Fs_Geometry *geoPtr;
+{
+    register int sectorNumber;	/* The sector corresponding to the fragment */
+    register int cylinder;	/* The cylinder number of the fragment */
+    register int rotationalSet;	/* The rotational set with cylinder of frag */
+    register int blockNumber;	/* The block number within rotational set */
+
+    blockNumber		= fragNumber / FS_FRAGMENTS_PER_BLOCK;
+    cylinder		= blockNumber / geoPtr->blocksPerCylinder;
+    blockNumber		-= cylinder * geoPtr->blocksPerCylinder;
+    rotationalSet	= blockNumber / geoPtr->blocksPerRotSet;
+    blockNumber		-= rotationalSet * geoPtr->blocksPerRotSet;
+
+    sectorNumber = geoPtr->sectorsPerTrack * geoPtr->numHeads * cylinder +
+		  geoPtr->sectorsPerTrack * geoPtr->tracksPerRotSet *
+		  rotationalSet +
+		  geoPtr->blockOffset[blockNumber];
+    sectorNumber += (fragNumber % FS_FRAGMENTS_PER_BLOCK) * SECTORS_PER_FRAG;
+
+    return(sectorNumber);
+@

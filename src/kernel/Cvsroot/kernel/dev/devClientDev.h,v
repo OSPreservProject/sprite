@@ -1,0 +1,85 @@
+head     9.2;
+branch   ;
+access   ;
+symbols  ds3100:9.1 sun3:9.1;
+locks    ; strict;
+comment  @ * @;
+
+
+9.2
+date     92.12.13.18.11.55;  author mgbaker;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     92.10.26.13.41.03;  author mgbaker;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@File for new network monitoring device.
+@
+
+
+9.2
+log
+@Code to handle device that talks to user-level daemon about state of hosts
+on network.
+
+@
+text
+@/*
+ * devClientDev.h --
+ *
+ *	Declarations for the device used to monitor client state.
+ *
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/dev/devClientDev.h,v 9.1 92/10/26 13:41:03 mgbaker Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _DEVCLIENTDEV
+#define _DEVCLIENTDEV
+
+/* procedures */
+extern ReturnStatus DevClientStateOpen _ARGS_((Fs_Device *devicePtr,
+	int useFlags, Fs_NotifyToken data, int *flagsPtr));
+extern ReturnStatus DevClientStateClose _ARGS_((Fs_Device *devicePtr,
+	int useFlags, int openCount, int writerCount));
+extern ReturnStatus DevClientStateRead _ARGS_((Fs_Device *devicePtr,
+	Fs_IOParam *readPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus DevClientStateIOControl _ARGS_((Fs_Device *devicePtr,
+	Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
+extern void Dev_ClientHostUp _ARGS_((int spriteID));
+extern void Dev_ClientHostDown _ARGS_((int spriteID));
+extern void Dev_ClientStateWakeRecovery _ARGS_((void));
+    extern ReturnStatus DevClientStateWrite _ARGS_((Fs_Device *devicePtr,
+	    Fs_IOParam *writePtr, Fs_IOReply *replyPtr));
+
+#endif /* _DEVCLIENTDEV */
+@
+
+
+9.1
+log
+@New device for monitoring network state.
+
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/dev/devQueue.h,v 9.2 91/03/30 17:01:00 jhh Exp $ SPRITE (Berkeley)
+a28 2
+extern ReturnStatus DevClientStateSelect _ARGS_((Fs_Device *devicePtr,
+	int *readPtr, int *writePtr, int *exceptPtr));
+d33 3
+@

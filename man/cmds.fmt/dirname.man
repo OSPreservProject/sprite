@@ -1,0 +1,66 @@
+
+
+
+DIRNAME                   User Commands                   DIRNAME
+
+
+
+NNAAMMEE
+     dirname - display directory portion of a pathname
+
+SSYYNNOOPPSSIISS
+     ddiirrnnaammee string
+
+DDEESSCCRRIIPPTTIIOONN
+     ddiirrnnaammee delivers all but the last level of the path name in
+     _s_t_r_i_n_g.
+
+     The following example will set the shell variable NNAAMMEE to
+     //uussrr//ssrrcc//ccmmdd:
+          NNAAMMEE==``ddiirrnnaammee //uussrr//ssrrcc//ccmmdd//ccaatt..cc``
+
+SSEEEE AALLSSOO
+     sh(1), basename(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0              April 29, 1985                         1
+
+
+

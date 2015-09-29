@@ -1,0 +1,707 @@
+head     9.9;
+branch   ;
+access   ;
+symbols  ds3100:9.8 sun3:9.8 sun4nw:9.6 symm:9.6 spur:9.6 sprited:9.6.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.9
+date     92.12.13.18.21.31;  author mgbaker;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     92.08.10.22.59.00;  author mgbaker;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     92.04.14.17.04.20;  author jhh;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.10.09.11.57.44;  author jhh;  state Exp;
+branches 9.6.1.1;
+next     9.5;
+
+9.5
+date     90.10.02.16.29.13;  author mgbaker;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.09.11.11.35.24;  author mgbaker;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.03.29.12.46.11;  author mgbaker;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.11.26.10.46.40;  author jhh;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.03.12.55.29;  author brent;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.17.31;  author douglis;  state Stable;
+branches ;
+next     8.2;
+
+8.2
+date     89.06.23.12.58.40;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.22.19.34.52;  author jhh;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.34.37;  author douglis;  state Stable;
+branches ;
+next     6.2;
+
+6.2
+date     88.10.28.19.24.59;  author mlgray;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.26.18.27.30;  author mlgray;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.24.28;  author brent;  state Stable;
+branches ;
+next     5.2;
+
+5.2
+date     88.08.01.17.12.03;  author mlgray;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     88.03.04.14.37.39;  author brent;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.48.18;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.6.1.1
+date     91.10.21.21.03.43;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.9
+log
+@Code for server-driven recovery.
+@
+text
+@/*
+ * rpcClient.h --
+ *
+ *	Definitions for the client side of the RPC system.  The main object
+ *	here is the Client Channel that keeps state during an RPC.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/rpc/rpcClient.h,v 9.8 92/08/10 22:59:00 mgbaker Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _RPCCLIENT
+#define _RPCCLIENT
+
+#include <netEther.h>
+#ifdef KERNEL
+#include <net.h>
+#include <sync.h>
+#include <timer.h>
+#include <rpcTypes.h>
+#include <rpcPacket.h>
+#include <rpcCltStat.h>
+#include <rpcHistogram.h>
+#else
+#include <kernel/net.h>
+#include <kernel/sync.h>
+#include <kernel/timer.h>
+#include <kernel/rpcTypes.h>
+#include <kernel/rpcPacket.h>
+#include <kernel/rpcCltStat.h>
+#include <kernel/rpcHistogram.h>
+#endif /* KERNEL */
+
+
+/*
+ * Tunable parameters used by Rpc_Call.  They are packaged up here so
+ * the values can be set/reported conveniently.
+ */
+typedef struct RpcConst {
+    /*
+     * The initial wait period is defined by retryWait, in ticks.  It
+     * is initialized from the millisecond valued retryMsec.  This is
+     * how long we wait after sending the first request packet.  If
+     * we are sending a fragmented packet we have a longer retry period.
+     */
+    int  		retryMsec;
+    unsigned int 	retryWait;
+    int  		fragRetryMsec;
+    unsigned int	fragRetryWait;
+    /*
+     * The wait period increases if we have to resend.  If we are recieving
+     * acknowledgments then we increase the timout until maxAckWait (ticks),
+     * which is initialized from maxAckMsec.  If we are not getting acks
+     * then we still back off a bit (as a heuristic in case  we are talking
+     * to a slow host) until the timout period is maxTimeoutWait, which
+     * is initialized from maxTimeoutMsec.
+     */
+    int  		maxAckMsec;
+    unsigned int	maxAckWait;
+    int  		maxTimeoutMsec;
+    unsigned int	maxTimeoutWait;
+    /*
+     * maxTries is the maximum number of times we resend a request
+     * without getting any response (i.e. acknowledgments or the reply).
+     * maxAcks is the maximum number of acknowledgments we'll receive
+     * before complaining "so and so seems hung".  In the case of a
+     * broadcast rpc, we'll abort the RPC after maxAcks acknowledgments.
+     */
+    int 		maxTries;
+    int 		maxAcks;
+} RpcConst;
+
+/*
+ * Two sets of timeouts are defined, one for local ethernet, one for IP.
+ */
+extern RpcConst rpcEtherConst;
+extern RpcConst rpcInetConst;
+
+
+/*
+ * Global used by Rpc_Call and initialized by Rpc_Start.  This is set
+ * once at boot-time to the real time clock.  The servers track this value
+ * and detects a reboot by us when this changes.  Note that if the boot
+ * ID is zero then the server doesn't attempt to detect a reboot.  Thus
+ * we can use a GET_TIME RPC in order to set this.  See Rpc_Start.
+ */
+extern unsigned int rpcBootId;
+
+
+/*
+ *      An RPC channel is described here.  It is used during an RPC to
+ *      keep the state of the RPC.  Between uses the channel carries over
+ *      some information to use as hints in subsequent transactions.
+ */
+typedef struct RpcClientChannel {
+    /*
+     * The Channel Index is a self reference to this channel.
+     * It is this channels index in the array of channel pointers.
+     * It is kept here because it will be part of the packet header.
+     */
+    int			index;
+    /*
+     * Rpc transaction state:  There are state bits to drive the algorithm,
+     * the values are described below with their definitions.
+     */
+    int			state;
+    /*
+     * The ID of the server the channel is being used with.
+     * A value of -1 means the channel has not been used yet.
+     */
+    int			serverID;
+    /*
+     * These timeout parameters depend on the server being used.
+     */
+    RpcConst		*constPtr;
+    /*
+     * A channel may wait on input, and be taken out of the timeout queue
+     * at interrupt time.  The timer queue element is stored here so
+     * it is accessable by the interrupt time routine.
+     */
+    Timer_QueueElement timeoutItem;
+    /*
+     * RpcDoCall and RpcClientDispatch synchronize with a master lock.
+     * The interrupt level routine notifies waitCondition when the waiting
+     * process should wakeup and check for input.
+     */
+    Sync_Semaphore	mutex;
+    Sync_Condition	waitCondition;
+    /*
+     * This bitmask indicates which fragments in the current
+     * request message the server has received.
+     */
+    int			fragsDelivered;
+    /*
+     * This bitmask indicates which fragments in the current reply
+     * message we have received.
+     */
+    int			fragsReceived;
+    /*
+     * Two temporaries are needed to record the
+     * amount of data actually returned by the server.
+     */
+    int			actualDataSize;
+    int			actualParamSize;
+    /*
+     * The header and buffer specifications for the request message.
+     */
+    RpcHdr		requestRpcHdr;
+    RpcBufferSet	request;
+    /*
+     * An array of RPC headers and buffer sets that are used when fragmenting
+     * a request message.
+     */
+    RpcHdr		fragRpcHdr[RPC_MAX_NUM_FRAGS];
+    RpcBufferSet	fragment[RPC_MAX_NUM_FRAGS];
+
+    /*
+     * Header and buffer specification for the reply message.
+     */
+    RpcHdr		replyRpcHdr;
+    RpcBufferSet	reply;
+    /*
+     * The header and buffer specifications for the explicit acknowledgments.
+     */
+    RpcHdr		ackHdr;
+    RpcBufferSet	ack;
+} RpcClientChannel;
+
+/*
+ * Definitions of state bits for a remote procedure call.
+ *  CHAN_FREE		The channel is free.
+ *  CHAN_BUSY		The channel is in use.
+ *  CHAN_WAITING	The channel available for input.
+ *  CHAN_INPUT		The channel has received input.
+ *  CHAN_TIMEOUT	The channel is in the timeout queue.
+ *  CHAN_FRAGMENTING	The channel is awaiting fragment reassembly.
+ */
+#define CHAN_FREE		0x40
+#define CHAN_BUSY		0x01
+#define CHAN_WAITING		0x02
+#define CHAN_INPUT		0x04
+#define CHAN_TIMEOUT		0x08
+#define CHAN_FRAGMENTING	0x10
+
+/*
+ * The set of channels is dynamically allocated at boot time and
+ * they are referenced through an array of pointers.
+ */
+extern RpcClientChannel **rpcChannelPtrPtr;
+extern int		  rpcNumChannels;
+
+/*
+ * These are variables to control handling of negative acknowledgement
+ * back-off on the clients.  Maybe they should be in the client channel
+ * state?  But there's no server state associated with the negative ack,
+ * so this wouldn't necessarily make sense.
+ */
+extern	int	rpcNackRetryWait;
+extern	int	rpcMaxNackWait;
+
+/* Whether or not client ramps down channels in response to a neg. ack. */
+extern	Boolean	rpcChannelNegAcks;
+
+/*
+ * A histogram of the call times for the different RPCs.
+ */
+extern Rpc_Histogram	*rpcCallTime[];
+
+/*
+ * A raw count of the number of rpc calls.
+ */
+extern int		rpcClientCalls[];
+
+/*
+ * Forward declarations.
+ */
+extern void RpcChanFree _ARGS_((RpcClientChannel *chanPtr));
+extern void RpcChanClose _ARGS_((register RpcClientChannel *chanPtr, register RpcHdr *rpcHdrPtr));
+extern void RpcSetup _ARGS_((int serverID, int command, register Rpc_Storage *storagePtr, register RpcClientChannel *chanPtr));
+extern RpcClientChannel *RpcChanAlloc _ARGS_((int serverID));
+extern ReturnStatus RpcDoCall _ARGS_((int serverID, register RpcClientChannel *chanPtr, Rpc_Storage *storagePtr, int command, unsigned int *srvBootIDPtr, int *notActivePtr, unsigned int *recovTypePtr));
+extern void RpcClientDispatch _ARGS_((register RpcClientChannel *chanPtr, register RpcHdr *rpcHdrPtr));
+extern void RpcInitServerChannelState _ARGS_((void));
+
+
+#endif /* _RPCCLIENT */
+@
+
+
+9.8
+log
+@Changes for transparent server recovery.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/rpc/rpcClient.h,v 9.7 92/04/14 17:04:20 jhh Exp $ SPRITE (Berkeley)
+d223 1
+a223 1
+extern ReturnStatus RpcDoCall _ARGS_((int serverID, register RpcClientChannel *chanPtr, Rpc_Storage *storagePtr, int command, unsigned int *srvBootIDPtr, int *notActivePtr, Boolean *fastBootPtr));
+@
+
+
+9.7
+log
+@Uses new net definitions.
+Net_IDToRoute interface changed slightly.
+Got rid of bogus "new" rpc format. It was for the UltraNet and it didn't
+make much difference anyway.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/rpc/rpcClient.h,v 9.6 90/10/09 11:57:44 jhh Exp $ SPRITE (Berkeley)
+d223 1
+a223 1
+extern ReturnStatus RpcDoCall _ARGS_((int serverID, register RpcClientChannel *chanPtr, Rpc_Storage *storagePtr, int command, unsigned int *srvBootIDPtr, int *notActivePtr));
+@
+
+
+9.6
+log
+@new net module
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/rpc/RCS/rpcClient.h,v 9.5 90/10/02 16:29:13 mgbaker Exp Locker: jhh $ SPRITE (Berkeley)
+d150 1
+a150 1
+    RpcHdrNew		requestRpcHdr;
+@
+
+
+9.6.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/rpc/RCS/rpcClient.h,v 9.6 90/10/09 11:57:44 jhh Exp $ SPRITE (Berkeley)
+@
+
+
+9.5
+log
+@More prototyping garbage.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/rpc/RCS/rpcClient.h,v 9.4 90/09/11 11:35:24 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d150 1
+a150 1
+    RpcHdr		requestRpcHdr;
+@
+
+
+9.4
+log
+@Added function prototypes (Mendel checking for mary)
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/rpc/RCS/rpcClient.h,v 9.3 90/03/29 12:46:11 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d17 18
+a34 4
+#include "netEther.h"
+#include "net.h"
+#include "sync.h"
+#include "timer.h"
+a35 3
+#include "rpcInt.h"
+#include "rpcCltStat.h"
+#include "rpcHistogram.h"
+@
+
+
+9.3
+log
+@New negative ack stuff.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/rpc/RCS/rpcClient.h,v 9.2 89/11/26 10:46:40 jhh Exp Locker: mgbaker $ SPRITE (Berkeley)
+d208 8
+a215 5
+RpcClientChannel	*RpcChanAlloc();
+void			 RpcChanFree();
+void			 RpcSetup();
+ReturnStatus		 RpcDoCall();
+void			 RpcClientDispatch();
+@
+
+
+9.2
+log
+@Changed CHAN_FREE to non-zero value to help find a bug.
+Added an extra packet buffer for explicit acknowledgments.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/rpc/RCS/rpcClient.h,v 9.1 89/10/03 12:55:29 brent Exp Locker: jhh $ SPRITE (Berkeley)
+d182 12
+@
+
+
+9.1
+log
+@Shuffled around the RpcConst structure
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/rpc/RCS/rpcClient.h,v 8.2 89/06/23 12:58:40 brent Exp $ SPRITE (Berkeley)
+d73 4
+a76 2
+ * once at boot-time to the real time clock.  The server tracks this value
+ * and detects a reboot by us when this changes.
+d153 5
+d169 5
+a173 5
+#define CHAN_FREE	0x00
+#define CHAN_BUSY	0x01
+#define CHAN_WAITING	0x02
+#define CHAN_INPUT	0x04
+#define CHAN_TIMEOUT	0x08
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/rpc/RCS/rpcClient.h,v 8.2 89/06/23 12:58:40 brent Exp Locker: douglis $ SPRITE (Berkeley)
+d34 2
+a35 1
+     * how long we wait after sending the first request packet.
+d39 2
+d46 1
+a46 1
+     * to a slow host) until the timout periodis maxTimeoutWait, which
+d64 6
+a69 6
+extern RpcConst rpc;
+extern int rpcRetryMsec;
+extern int rpcMaxAckMsec;
+extern int rpcMaxTimeoutMsec;
+extern int rpcMaxTries;
+extern int rpcMaxAcks;
+a85 30
+     * The ID of the server the channel is being used with.
+     * A value of -1 means the channel has not been used yet.
+     */
+    int			serverID;
+    /*
+     * The header and buffer specifications for the request message.
+     */
+    RpcHdr		requestRpcHdr;
+    RpcBufferSet	request;
+    /*
+     * An array of RPC headers and buffer sets that are used when fragmenting
+     * a request message.
+     */
+    RpcHdr		fragRpcHdr[RPC_MAX_NUM_FRAGS];
+    RpcBufferSet	fragment[RPC_MAX_NUM_FRAGS];
+
+    /*
+     * Header and buffer specification for the reply message.
+     */
+    RpcHdr		replyRpcHdr;
+    RpcBufferSet	reply;
+
+    /*
+     * Two temporaries are needed to record the
+     * amount of data actually returned by the server.
+     */
+    int			actualDataSize;
+    int			actualParamSize;
+
+    /*
+d97 2
+a98 2
+     * This bitmask indicates which fragments in the current
+     * request message the server has received.
+d100 1
+a100 1
+    int			fragsDelivered;
+d102 1
+a102 2
+     * This bitmask indicates which fragments in the current reply
+     * message we have received.
+d104 1
+a104 2
+    int			fragsReceived;
+
+a110 1
+
+d118 27
+d146 5
+@
+
+
+8.2
+log
+@Added extern
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/rpc/RCS/rpcClient.h,v 8.1 88/11/22 19:34:52 jhh Exp $ SPRITE (Berkeley)
+@
+
+
+8.1
+log
+@new semaphore definition
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/rpc/RCS/rpcClient.h,v 6.2 88/10/28 19:24:59 mlgray Exp $ SPRITE (Berkeley)
+d178 5
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/rpc/RCS/rpcClient.h,v 6.2 88/10/28 19:24:59 mlgray Exp Locker: douglis $ SPRITE (Berkeley)
+d146 1
+a146 1
+    int			mutex;
+@
+
+
+6.2
+log
+@Conversion to new C library.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/rpc/RCS/rpcClient.h,v 6.1 88/08/26 18:27:30 mlgray Exp Locker: mlgray $ SPRITE (Berkeley)
+@
+
+
+6.1
+log
+@Fixed some lint errors.
+@
+text
+@d11 1
+a11 1
+ * $Header: rpcClient.h,v 6.0 88/08/11 12:24:28 brent Stable $ SPRITE (Berkeley)
+a91 8
+#ifdef RPC_TEST_BYTE_SWAP
+#define RPC_SWAP_PARAM_SIZE (RPC_MAX_PACKET_SIZE - sizeof(Net_EtherHdr) -\
+sizeof(RpcHdr))
+    RpcHdr		swapRequestRpcHdr;
+    int			swapParamBuffer[RPC_SWAP_PARAM_SIZE / sizeof (int)];
+    RpcBufferSet	swapRequest;
+#endif /* RPC_TEST_BYTE_SWAP */
+
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+ * $Header: rpcClient.h,v 5.2 88/08/01 17:12:03 mlgray Exp $ SPRITE (Berkeley)
+d98 1
+a98 1
+#endif RPC_TEST_BYTE_SWAP
+d196 1
+a196 1
+#endif _RPCCLIENT
+@
+
+
+5.2
+log
+@Doing byte-swapping.
+@
+text
+@d11 1
+a11 1
+ * $Header: rpcClient.h,v 5.1 88/03/04 14:37:39 brent Exp $ SPRITE (Berkeley)
+@
+
+
+5.1
+log
+@added RpcConst struct to embed all the rpc magic constants
+@
+text
+@d11 1
+a11 1
+ * $Header: rpcClient.h,v 5.0 87/08/11 10:48:18 sprite Exp $ SPRITE (Berkeley)
+d92 7
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d11 1
+a11 1
+ * $Header: rpcClient.h,v 3.1 86/12/09 22:03:10 brent Exp $ SPRITE (Berkeley)
+d26 49
+a187 18
+
+/*
+ * Tunable parameters used by Rpc_Call.  These are documented in rpcClient.c
+ * There are exported because Rpc_Init sets up some of them.
+ */
+extern unsigned int 	rpcRetryWait;
+extern int  		rpcRetryFactor;
+extern unsigned int 	rpcMaxWait;
+extern int  		rpcMaxFactor;
+extern int 		rpcMaxTries;
+extern int 		rpcMaxAcks;
+
+/*
+ * Global used by Rpc_Call and initialized by Rpc_Start.  This is set
+ * once at boot-time to the real time clock.  The server tracks this value
+ * and detects a reboot by us when this changes.
+ */
+extern unsigned int rpcBootId;
+@

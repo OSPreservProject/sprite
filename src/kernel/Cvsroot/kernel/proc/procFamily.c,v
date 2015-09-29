@@ -1,0 +1,770 @@
+head     9.1;
+branch   ;
+access   ;
+symbols  ds3100:9.1 sun3:9.1 sun4nw:9.1 symm:9.1 spur:9.1 sprited:9.1.1 Summer89:9.0 newlib:8.0 Summer88:6.0 argString:5.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.1
+date     90.09.12.13.58.09;  author jhh;  state Exp;
+branches 9.1.1.1;
+next     9.0;
+
+9.0
+date     89.09.12.15.15.15;  author douglis;  state Stable;
+branches ;
+next     8.4;
+
+8.4
+date     89.05.30.16.13.08;  author jhh;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.04.06.11.48.20;  author douglis;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.02.19.22.07.45;  author jhh;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.01.06.11.22.38;  author jhh;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.30.03;  author douglis;  state Stable;
+branches ;
+next     6.4;
+
+6.4
+date     88.10.27.20.03.21;  author mlgray;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.10.07.12.55.30;  author douglis;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.09.09.12.12.41;  author nelson;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.31.17.55.30;  author douglis;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.22.26;  author brent;  state Stable;
+branches ;
+next     5.2;
+
+5.2
+date     88.05.05.17.57.58;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     88.04.18.09.08.00;  author ouster;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.47.09;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.1.1.1
+date     91.09.09.18.12.39;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.1
+log
+@changed format of #includes to use <>
+@
+text
+@/*
+ *  procFamily.c --
+ *
+ *	Routines to manage process families.  Families are implemented using
+ *	a hash table each entry of which points to a process family list.
+ *	This hash table and process families in general are managed by a 
+ *	monitor lock.
+ *
+ *	The only field in the proc table managed by routines in this monitor
+ *	is the familyID field.
+ *
+ * Copyright (C) 1986 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procFamily.c,v 9.0 89/09/12 15:15:15 douglis Stable Locker: jhh $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <proc.h>
+#include <stdlib.h>
+#include <status.h>
+#include <sync.h>
+#include <sched.h>
+#include <hash.h>
+
+static	Sync_Lock	familyLock;
+#define	LOCKPTR &familyLock
+Sync_Condition	familyCondition;
+
+static Hash_Table	famHashTableStruct;
+static Hash_Table	*famHashTable = &famHashTableStruct;
+
+#define	FAMILY_HASH_SIZE	8
+
+/*
+ * A family list header.
+ */
+
+typedef struct {
+    List_Links		famList;	/* Pointer to family list. */
+    Boolean		locked;		/* TRUE => family locked. */
+    Sync_Condition	condition;	/* Condition to wait on when family
+					 * locked. */
+    int			userID;		/* Effective userid of process that
+					 * created the family. */
+} FamilyHeader;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcFamilyHashInit --
+ *
+ *	Initialize the family id hash table and the family lock.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Family id hash table initialized.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+ProcFamilyHashInit()
+{
+    Sync_LockInitDynamic(&familyLock, "Proc:familyLock");
+    Hash_Init(famHashTable, FAMILY_HASH_SIZE, Hash_Size(sizeof(int)));
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcFamilyInsert --
+ *
+ *	Insert the process into the given family.
+ *
+ * Results:
+ *	PROC_UID_MISMATCH if effective userid of process does not match
+ *	userid of family.  SUCCESS otherwise.
+ *
+ * Side effects:
+ *	Process inserted into family list.  If family doesn't exist then
+ *	the family is created with the userid of the given process.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY ReturnStatus
+ProcFamilyInsert(procPtr, familyID)
+    Proc_ControlBlock	*procPtr;
+    int			familyID;
+{
+    register	Hash_Entry	*hashEntryPtr;
+    register	FamilyHeader	*famHdrPtr;
+
+    LOCK_MONITOR;
+
+    if (familyID == PROC_NO_FAMILY) {
+	UNLOCK_MONITOR;
+	return(SUCCESS);
+    }
+
+again:
+    hashEntryPtr = Hash_Find(famHashTable, (Address) familyID);
+    famHdrPtr = (FamilyHeader *) Hash_GetValue(hashEntryPtr);
+    if (famHdrPtr == (FamilyHeader *) NIL) {
+	famHdrPtr = (FamilyHeader *) malloc(sizeof(FamilyHeader));
+	List_Init(&famHdrPtr->famList);
+	Hash_SetValue(hashEntryPtr, famHdrPtr);
+	famHdrPtr->locked = FALSE;
+	famHdrPtr->userID = procPtr->effectiveUserID;
+    } else {
+	if (famHdrPtr->locked) {
+	    (void) Sync_Wait(&famHdrPtr->condition, FALSE);
+	    goto again;
+	}
+#ifdef CHECK_PROT
+	if (famHdrPtr->userID != procPtr->effectiveUserID &&
+	        procPtr->effectiveUserID != PROC_SUPER_USER_ID) {
+	    printf("Uid-mismatch: pid %x puid %d fid %x fuid %d\n",
+		    procPtr->processID, procPtr->effectiveUserID,
+		    familyID, famHdrPtr->userID);
+	    UNLOCK_MONITOR;
+	    return(PROC_UID_MISMATCH);
+	}
+#endif /* */
+    }
+    List_Insert((List_Links *) &(procPtr->familyElement), 
+		LIST_ATFRONT(&famHdrPtr->famList));
+
+    UNLOCK_MONITOR;
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcFamilyRemove --
+ *
+ *	Remove the process from the given family list.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Process removed from its family list.  If process isn't in a family
+ *	then nothing happens.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+ProcFamilyRemove(procPtr)
+    Proc_ControlBlock	*procPtr;
+{
+    register	Hash_Entry	*hashEntryPtr;
+    register	FamilyHeader	*famHdrPtr;
+
+    LOCK_MONITOR;
+
+    if (procPtr->familyID == PROC_NO_FAMILY) {
+	UNLOCK_MONITOR;
+	return;
+    }
+
+    hashEntryPtr = Hash_LookOnly(famHashTable, (Address) procPtr->familyID);
+    if (hashEntryPtr == (Hash_Entry *) NIL) {
+	panic("ProcFamilyRemove: Family not in hash table\n");
+    }
+    famHdrPtr = (FamilyHeader *) Hash_GetValue(hashEntryPtr);
+    while (famHdrPtr->locked) {
+	(void) Sync_Wait(&famHdrPtr->condition, FALSE);
+    }
+
+    List_Remove((List_Links *) &(procPtr->familyElement));
+    if (List_IsEmpty(&famHdrPtr->famList)) {
+	free((Address) famHdrPtr);
+	Hash_Delete(famHashTable, hashEntryPtr);
+    }
+
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_LockFamily --
+ *
+ *	Prevent the given family from being modified.
+ *
+ * Results:
+ *	PROC_INVALID_FAMILYID 	- The pid argument was illegal.
+ *	PROC_UID_MISMATCH	- The callers uid doesn't match the uid of the
+ *				  family.
+ *
+ * Side effects:
+ *	Process family lock flag set.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY ReturnStatus
+Proc_LockFamily(familyID, familyListPtr, userIDPtr)
+    int		familyID;		/* Family to lock. */
+    List_Links	**familyListPtr;	/* Where to return pointer to family
+					 * list. */
+    int		*userIDPtr;		/* Place to return the user id of the
+					 * family. */
+{
+    register	Hash_Entry	*hashEntryPtr;
+    register	FamilyHeader	*famHdrPtr;
+
+    LOCK_MONITOR;
+
+again:
+    hashEntryPtr = Hash_LookOnly(famHashTable, (Address) familyID);
+    if (hashEntryPtr == (Hash_Entry *) NIL) {
+	UNLOCK_MONITOR;
+	return(PROC_INVALID_FAMILY_ID);
+    }
+    famHdrPtr = (FamilyHeader *) Hash_GetValue(hashEntryPtr);
+
+    if (famHdrPtr->locked) {
+	/*
+	 * The family is locked so wait for it to become unlocked.  When
+	 * wake up start over because the family could have been deleted while
+	 * we were sleeping.
+	 */
+	(void) Sync_Wait(&famHdrPtr->condition, FALSE);
+	goto again;
+    }
+    famHdrPtr->locked = TRUE;
+    *familyListPtr = &(famHdrPtr->famList);
+    *userIDPtr = famHdrPtr->userID;
+
+    UNLOCK_MONITOR;
+
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_UnlockFamily --
+ *
+ *	Allow the family to be modified.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Family id header element lock bit cleared.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+Proc_UnlockFamily(familyID)
+    int	familyID;
+{
+    register	Hash_Entry	*hashEntryPtr;
+    register	FamilyHeader	*famHdrPtr;
+
+    LOCK_MONITOR;
+
+    hashEntryPtr = Hash_LookOnly(famHashTable, (Address) familyID);
+    if (hashEntryPtr == (Hash_Entry *) NIL) {
+	panic("Proc_UnlockFamily: Family doesn't exist\n");
+    }
+    famHdrPtr = (FamilyHeader *) Hash_GetValue(hashEntryPtr);
+
+    if (!famHdrPtr->locked) {
+	panic("Proc_UnlockFamily: Family isn't locked\n");
+    }
+
+    famHdrPtr->locked = FALSE;
+    Sync_Broadcast(&famHdrPtr->condition);
+
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_GetFamilyID --
+ *
+ *	Returns the ID of the head of the process family
+ *	for the given process.
+ *
+ * Results:
+ *	SYS_ARG_NOACCESS - 	the argument was not accessible.
+ *	SYS_INVALID_ARG - 	the argument was was invalid.
+ *	PROC_INVALID_PID -	the pid argument was illegal.
+ *	PROC_UID_MISMATCH -	the calling process does not have permission
+ *				to read the given process's family id.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Proc_GetFamilyID(pid, familyIDPtr)
+    Proc_PID	pid;
+    Proc_PID	*familyIDPtr;
+{
+    register	Proc_ControlBlock 	*procPtr;
+    Proc_PID				familyID;
+
+    if (familyIDPtr == USER_NIL) {
+	return(SYS_INVALID_ARG);
+    } 
+
+    if (pid == PROC_MY_PID) {
+	procPtr = Proc_GetEffectiveProc();
+	Proc_Lock(procPtr);
+    } else {
+	/*
+	 *   Get the PCB entry for the given process.
+	 */
+	procPtr = Proc_LockPID(pid);
+	if (procPtr == (Proc_ControlBlock *) NIL) {
+	    return(PROC_INVALID_PID);
+	}
+	if (!Proc_HasPermission(procPtr->effectiveUserID)) {
+	    Proc_Unlock(procPtr);
+	    return(PROC_UID_MISMATCH);
+	}
+    }
+
+    familyID = procPtr->familyID;
+    Proc_Unlock(procPtr);
+    if (Proc_ByteCopy(FALSE, sizeof(Proc_PID), (Address) &familyID, 
+		      (Address) familyIDPtr) != SUCCESS){
+	return(SYS_ARG_NOACCESS);
+    }
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_SetFamilyID --
+ *
+ *	Changes the family ID of a process to the one specified.
+ *
+ *
+ * Results:
+ *	PROC_UID_MISMATCH - 	The current process did not have the same
+ *				uid as the family or the calling process
+ *				does not have permission to set the given
+ *				process's family id.
+ *	PROC_INVALID_FAMILY_ID  The given family ID is not a valid process ID.
+ *
+ * Side effects:
+ *	Changes the family ID field in the Proc_ControlBlock for a process.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Proc_SetFamilyID(pid, familyID)
+    Proc_PID	pid;
+    Proc_PID	familyID;
+{
+    register Proc_ControlBlock	*procPtr;
+    Proc_ControlBlock		*famProcPtr;
+    ReturnStatus		status;
+
+    /*
+     * Make sure that the familyID is a valid process ID.  This is necessary
+     * to let process group signals to be sent across machines.
+     */
+    famProcPtr = Proc_LockPID(familyID);
+    if (famProcPtr == (Proc_ControlBlock *) NIL) {
+	return(PROC_INVALID_FAMILY_ID);
+    }
+    Proc_Unlock(famProcPtr);
+
+    if (pid == PROC_MY_PID) {
+	procPtr = Proc_GetEffectiveProc();
+	Proc_Lock(procPtr);
+    } else {
+	/*
+	 *   Get the PCB entry for the given process.
+	 */
+	procPtr = Proc_LockPID(pid);
+	if (procPtr == (Proc_ControlBlock *) NIL) {
+	    return(PROC_INVALID_PID);
+	}
+	if (!Proc_HasPermission(procPtr->effectiveUserID)) {
+	    Proc_Unlock(procPtr);
+	    return(PROC_UID_MISMATCH);
+	}
+    }
+
+    ProcFamilyRemove(procPtr);
+    status = ProcFamilyInsert(procPtr, (int) familyID);
+    if (status == SUCCESS) {
+	procPtr->familyID = familyID;
+    } else {
+	procPtr->familyID = PROC_NO_FAMILY;
+    }
+
+    if (procPtr->state == PROC_MIGRATED) {
+	status = Proc_MigUpdateInfo(procPtr);
+    }
+
+    Proc_Unlock(procPtr);
+
+    return(status);
+}
+@
+
+
+9.1.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procFamily.c,v 9.1 90/09/12 13:58:09 jhh Exp $ SPRITE (Berkeley)";
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procFamily.c,v 8.4 89/05/30 16:13:08 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d26 7
+a32 7
+#include "sprite.h"
+#include "proc.h"
+#include "stdlib.h"
+#include "status.h"
+#include "sync.h"
+#include "sched.h"
+#include "hash.h"
+@
+
+
+8.4
+log
+@Removed call to Sync_LockRegister
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procFamily.c,v 8.3 89/04/06 11:48:20 douglis Exp Locker: jhh $ SPRITE (Berkeley)";
+@
+
+
+8.3
+log
+@changed Proc_MigSendUserInfo  to Proc_MigUpdateInfo.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procFamily.c,v 8.2 89/02/19 22:07:45 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+a107 1
+    Sync_LockRegister(LOCKPTR);
+@
+
+
+8.2
+log
+@Changes due to lock registration
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procFamily.c,v 8.1 89/01/06 11:22:38 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d423 1
+a423 1
+	status = Proc_MigSendUserInfo(procPtr);
+@
+
+
+8.1
+log
+@New Sync_Lock definition
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procFamily.c,v 8.0 88/11/11 18:30:03 douglis Stable Locker: jhh $ SPRITE (Berkeley)";
+d28 1
+a28 1
+#include "mem.h"
+d34 1
+a34 1
+static	Sync_Lock	familyLock = SYNC_LOCK_INIT_STATIC();
+d62 1
+a62 1
+ *	Initialize the family id hash table.
+d76 1
+d108 2
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procFamily.c,v 6.4 88/10/27 20:03:21 mlgray Exp Locker: douglis $ SPRITE (Berkeley)";
+d34 1
+a34 1
+static	Sync_Lock	familyLock = {0, 0};
+@
+
+
+6.4
+log
+@1st pass at multi-processor, conversion to new C library.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: procFamily.c,v 6.3 88/10/07 12:55:30 douglis Exp $ SPRITE (Berkeley)";
+@
+
+
+6.3
+log
+@update familyID for migrated processes.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: procFamily.c,v 6.2 88/09/09 12:12:41 nelson Exp $ SPRITE (Berkeley)";
+d116 1
+a116 1
+	famHdrPtr = (FamilyHeader *) Mem_Alloc(sizeof(FamilyHeader));
+d129 1
+a129 1
+	    Sys_Printf("Uid-mismatch: pid %x puid %d fid %x fuid %d\n",
+d178 1
+a178 1
+	Sys_Panic(SYS_FATAL, "ProcFamilyRemove: Family not in hash table\n");
+d187 1
+a187 1
+	Mem_Free((Address) famHdrPtr);
+d280 1
+a280 1
+	Sys_Panic(SYS_FATAL, "Proc_UnlockFamily: Family doesn't exist\n");
+d285 1
+a285 1
+	Sys_Panic(SYS_FATAL, "Proc_UnlockFamily: Family isn't locked\n");
+@
+
+
+6.2
+log
+@Initalize locks to zero.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: procFamily.c,v 6.1 88/08/31 17:55:30 douglis Exp $ SPRITE (Berkeley)";
+d418 5
+@
+
+
+6.1
+log
+@de-linted and endif-fix'ed.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: procFamily.c,v 6.0 88/08/11 12:22:26 brent Stable $ SPRITE (Berkeley)";
+d34 1
+a34 1
+static	Sync_Lock	familyLock;
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d23 2
+a24 2
+static char rcsid[] = "$Header: procFamily.c,v 5.2 88/05/05 17:57:58 nelson Exp $ SPRITE (Berkeley)";
+#endif not lint
+d135 1
+a135 1
+#endif
+@
+
+
+5.2
+log
+@Handles move of functionality from sys to mach.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: procFamily.c,v 5.1 88/04/18 09:08:00 ouster Exp $ SPRITE (Berkeley)";
+@
+
+
+5.1
+log
+@Lint cleanup, change copyright notices.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: procFamily.c,v 5.0 87/08/11 10:47:09 sprite Exp $ SPRITE (Berkeley)";
+d328 1
+a328 1
+	procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+d395 1
+a395 1
+	procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d13 7
+a19 1
+ * All rights reserved.
+d23 1
+a23 1
+static char rcsid[] = "$Header: procFamily.c,v 4.3 87/08/04 09:49:06 andrew Exp $ SPRITE (Berkeley)";
+d113 1
+a113 1
+    hashEntryPtr = Hash_Find(famHashTable, familyID);
+d176 1
+a176 1
+    hashEntryPtr = Hash_LookOnly(famHashTable, procPtr->familyID);
+d227 1
+a227 1
+    hashEntryPtr = Hash_LookOnly(famHashTable, familyID);
+d278 1
+a278 1
+    hashEntryPtr = Hash_LookOnly(famHashTable, familyID);
+d412 1
+a412 1
+    status = ProcFamilyInsert(procPtr, familyID);
+@

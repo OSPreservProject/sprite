@@ -1,0 +1,1017 @@
+.\"	$Source: /mit/zephyr/src/man/man1/RCS/zwgc.1,v $
+.\"	$Author: lwvanels $
+.\"	$Id: zwgc.1,v 1.18 1992/02/11 21:53:35 lwvanels Exp lwvanels $
+'	# end of TP (cf }N below)
+'	# copied here, since we use @ in some of our tags, and that
+'	# messes up \w and \h
+.de }1
+.ds ]X \&\\*(]B\\
+.nr )E 0
+.if !"\\$1"" .nr )I \\$1n
+.}f
+.ll \\n(LLu
+.in \\n()Ru+\\n(INu+\\n()Iu
+.ti \\n(INu
+.ie !\\n()Iu+\\n()Ru-\w'\\*(]X'u-3p \{\\*(]X
+.br\}
+.el \\*(]X\h@|\\n()Iu+\\n()Ru@\c
+.}f
+..
+'	# tagged paragraph (paragraph with hanging label, but no para spacing)
+.de TQ
+.if !"\\$1"" .nr )I \\$1n
+.ne 1.1v
+.in \\n()Ru
+.nr )E 1
+.ns
+.it 1 }N
+.di ]B
+..
+.TH ZWGC 1 "November 30, 1989" "MIT Project Athena"
+.SH NAME
+zwgc \- Zephyr Windowgram Client program
+.SH SYNOPSIS
+.B zwgc
+[ \-reenter ] [ \-nofork ] [ \-ttymode ] [ \-f
+.I filename
+] [ \-subfile
+.I filename
+] [ \-default
+.I portname
+] [ \-disable 
+.I portname
+] ... [ output driver options ]
+[ X Toolkit options... ]
+.SH DESCRIPTION
+.I Zwgc
+is the main
+.I zephyr(1)
+client.  It is responsible for receiving selected zephyr notices on
+behalf of the user, formatting them, and displaying them using
+one or more of the output devices.
+
+.SS "Selection of Zephyr Notices"
+.PP 
+.I Zwgc
+subscribes to various notice classes and instances on behalf of the
+user.  Only notices in the subscription list will be received.  The
+subscription list is composed of the default subscriptions (stored on
+the server), the user's subscriptions file, and any subscriptions made
+using
+.IR zctl (1).
+The user's subscription file defaults to
+.IR $HOME/.zephyr.subs ,
+or it can be specified with the \-subfile
+option.  If "\-" is specified as the subscription filename, the
+subscriptions will be read from standard input.
+
+.PP
+The
+.I zctl
+command is used to manipulate and change subscriptions.  See the
+.IR zctl (1)
+man page for details.
+
+.SS "Zephyr Description Files"
+.PP
+.I Zwgc
+formats its output messages according to the commands in its
+description file.  The user's description file 
+.RI ( $HOME/.zwgc.desc
+by default, or whatever is specified by -f) is read, or the system file
+is read if the user's does not exist.
+.PP
+Every time a notice is received, 
+.I zwgc
+runs through the description file, and executes the appropriate commands.
+
+.SS "Zephyr Description File Syntax"
+.PP
+A description file is simply a list of commands.  Whitespace (spaces,
+tabs, and line breaks) is used
+to separate tokens.  The type and amount of whitespace separating tokens
+is irrelevant.
+Comments can be delimited by # and newline (for line-oriented comments,
+e.g. "# this is a comment" on a line by itself) or by /* and */ (e.g. "/*
+this is a comment */").
+
+.SH "DESCRIPTION LANGUAGE"
+.SS Expressions
+Expressions are used by certain commands.
+They are composed from string literals, variable references,
+function calls, and operators.  Parentheses can be used anywhere in an
+expression to group expressions or increase readability.
+.PP
+String literals are specified by putting the contents in "double quotes".
+.PP
+Variables are set using the
+.B set
+command (see "COMMANDS", below).  They are
+referenced in an expression by using the form
+.IR $varname .
+Some variables are set by default for each notice.
+All other variables retain their values between notice interpretations,
+so that if you set a variable, it retains that value until later
+modified.
+.PP
+Functions are called using a C-like syntax,
+\fBfname\fR(\fIexpr1\fR,\fIexpr2\fR), where
+.B fname
+is the
+function name and
+.IB expr n
+are the arguments.
+.PP
+Binary operators use infix notation, such as "a == b".
+.PP
+Some commands use an expression list (exprlist), which is simply a set
+of expressions separated by whitespace (e.g. $var1 "lit1" $var2).
+
+.SS "Default variables"
+.PP
+The following variables are always available:
+.TP 5
+.B 1, ...
+Numeric variables are assigned values corresponding to that field in the
+notice (the body of each notice is conceptually an array of fields, each
+terminated with a null character).  If the number is greater than the
+number of fields actually in the notice, the value is "".  For example,
+the standard zwrite messages have two fields: $1 is the signature, and
+$2 is the text of the message.
+.TP 5
+.B auth
+An indication of the authenticity of the notice.  ``yes'' means the
+notice is authentic, ``no'' means it is not, and ``forged'' means that
+the message claimed to be authentic but the verification of the claim
+failed.  The ``forged'' indication usually appears when a user has
+changed his Kerberos tickets with
+.IR kinit (1)
+but has not run ``zctl sub'' to
+register this change with the Zephyr servers.
+.TP
+.B class
+The class of the current notice.
+.TP
+.B date
+The date on which the notice was sent.
+.TP
+.B default
+The default output format for the current notice
+.TP
+.B error
+An error message from the port read/write commands.
+.TP
+.B fromhost
+The full name of the host from which the notice appears to have been
+sent.  
+.I This is not fully reliable,
+as the information used to determine this hostname is not guaranteed to
+be correct (even for authentic messages).
+.TP
+.B fullsender
+The notice sender's name, including the zephyr realm name.
+.TP
+.B instance
+The instance of the current notice.
+.TP
+.B kind
+The kind of notice.
+.TP
+.B message
+The full text of the message, with nulls converted to newlines.
+.TP
+.B number_of_fields
+The number of fields in the message (a string representation of a
+decimal number).
+.TP
+.B opcode
+The opcode of the current notice.
+.TP
+.B output_driver
+The name of the output driver in use.
+.TP
+.B port
+The port from which the notice was sent.
+.TP
+.B realm
+The local zephyr realm.
+.TP
+.B recipient
+The recipient for the current notice.  If the notice is a multicast
+(sent to several people), the recipient is set to ``*''.
+.TP
+.B sender
+Usually a shortened version of fullsender.  If the realm of the sender
+is equal to the realm of the recipient,
+.I sender
+omits the realm name.
+.TP
+.B time
+The time of day at which the notice was sent.
+.TP
+.B user
+The full zephyr name of the user (e.g. marc@ATHENA.MIT.EDU).
+.TP
+.B version
+The current version of 
+.IR zwgc .
+.TP
+.B zephyr_version
+The protocol version of the notice.
+.PP
+All of these variables (except for error, output_driver, and version)
+are re-set before each notice is processed.
+
+.SS Functions
+.PP
+Following is a list of functions available for use in the description
+file.
+.TP 5
+.BI buffer ()
+The contents of the current output buffer.
+.TP
+.BI downcase (expr)
+Returns the value of \fIexpr\fR, converted to lower case.
+.TP
+.BI get (expr)
+Returns a line from the port named \fIexpr\fR.  If there is no text
+waiting on the port (e.g. the program connected to the port has not
+printed any output), this function will wait until it can read a line of
+text from the port.
+.TP
+.BI getenv (expr)
+Returns the value of the environment variable \fIexpr\fR, or the empty
+string if it does not exist.
+
+.TP
+.BI lany "(expr1, expr2), " rany "(expr1, expr2)"
+Return a number of characters equal to the length of
+.I expr2
+from the beginning
+.RB ( lany )
+or end 
+.RB ( rany )
+of
+.I expr1
+(e.g. lany("1234567890","foo") would return "123").
+If
+.I expr1
+is a variable reference, the variable
+is modified to remove the characters returned.
+If
+.I expr2
+is longer than
+.IR expr1 ,
+the value of
+.I expr1
+is returned (and 
+.I expr1
+is set to "", if a variable).
+.TP
+.BI lbreak "(expr1, expr2), " rbreak "(expr1, expr2)"
+.I Expr2
+defines a set of characters.  The function returns the longest
+initial
+.RB ( lbreak )
+or final 
+.RB ( rbreak )
+string from
+.I expr1
+composed of characters
+.I not
+in this set (e.g. lbreak("characters", "tuv") would return "charac").  If
+.I expr1
+is a variable reference, the variable
+is modified to remove the characters returned.  If no characters
+in
+.IR expr2 " are in " "expr1, " then " expr1 "
+is returned (and 
+.I expr1
+is set to "", if a variable).
+.TP
+.BI lspan "(expr1, expr2), " rspan "(expr1, expr2)"
+These functions are the negation of the 
+.B break
+functions; the returned string consists of characters 
+.I in 
+the set defined by
+.I expr2
+.TP
+.BI protect (expr)
+Returns a string which will be evaluated identically to \fIexpr\fR,
+but will not affect any surrounding environments.  That is, any
+characters which could close outside environments are quoted, and any
+environments in \fIexpr\fR which are not closed at the end are closed.
+.TP
+.BI substitute (expr)
+Evaluates variable references of the form \fI$variable\fR in expr and
+converts $$ to $.
+.TP
+.BI upcase (expr)
+Returns the value of \fIexpr\fR, converted to upper case.
+.TP
+.BI verbatim (expr)
+Returns a string that will be displayed exactly as \fIexpr\fR looks.
+Anything which could be mistaken for an environment is quoted.
+.TP
+.BI zvar (expr)
+Returns the value of the zephyr variable \fIexpr\fR,
+or the empty
+string if it does not exist.  [Zephyr variables
+can be set and examined with 
+.IR zctl (1).]
+
+.SS Operators
+.PP
+Following is a list of operators which can be used in the description
+file to compose expressions:
+.TP
+.IB expr1 " + " expr2
+String concatenation of
+.IR expr1 " and " expr2
+.TP
+.IB expr1 " == " expr2
+True if the two expressions are equal, false otherwise.
+.TP
+.IB expr " =~ " expr2
+True if the regular expression pattern
+.IR expr2 " matches " expr1.
+.TP
+.IB expr1 " !~ " expr2
+Negation of "=~".
+.TP
+.IB expr1 " != " expr2
+Negation of "=="
+.TP
+\fIexpr1\fB and \fIexpr2\fR, \fIexpr1\fB & \fIexpr2\fR
+True if
+.IR expr1 " and " expr2
+are both true.
+.TP
+\fIexpr1\fB or \fIexpr2\fR, \fIexpr1\fB | \fIexpr2\fR
+True if either of
+.IR expr1 " or " expr2
+are true.
+.TP
+\fB! \fIexpr1\fR, \fBnot \fIexpr1\fR
+The logical negation of
+.I expr1.
+
+.SS Commands
+.PP
+Following is a list of the commands usable in the description
+language:
+.TP 5
+.BI appendport " expr1 expr2"
+Creates a port called \fIexpr1\fR.  All output to the port will be
+appended to the file \fIexpr2\fR.  There is no input.  If the file is
+created, its mode is set to read-write, owner only (no access for others).
+.TP
+.B break
+Exits the innermost if, case, or while block.
+.if n .ll +2in
+.TP
+\fBcase \fIexpr1\fR [ ((\fBmatch \fIexpr\fR [,\fIexpr ...\fR]) | \fBdefault\fR)\fI commands \fR] ... \fBendcase\fR
+Evaluates \fIexpr1\fR.  Then, each of the match expressions is
+evaluated in order.  The first time an expression matches \fIexpr1\fR,
+then the body of commands under it is executed, and the rest of the case
+statement is skipped.  This compare is case-insensitive.  default always
+matches, so it should always appear as the last set of commands.  See
+the default description file for an example of use.
+.TP
+.B clearbuf
+Clears the output buffer (see below for details on buffering).
+.TP
+.BI closeinput " expr"
+Closes the file associated with \fIexpr\fR.
+.TP
+.BI closeoutput " expr"
+Sends an EOF (end-of-file) to the process if \fIexpr\fR was a port created by
+execport, or closes the file if it was created by outputport or
+appendport.
+.TP
+.BI closeport " expr"
+Closes both input and output of \fIexpr\fR as defined above.
+.TP
+.BI fields " variable1 ..."
+sets the list of variables to be equal to the fields in the
+notice.  If there are more variables than fields, the extra
+variables are left empty.
+.TP
+.BI exec " exprlist"
+Executes a program without any input or output.  A command named by
+\fIexprlist\fR is executed.  Each expression is used as an argument to
+the program; the first expression names the program (it may be either an
+absolute pathname, or a program name; the user's PATH is searched to
+find simple program names).
+.TP
+.BI execport " expr1 exprlist"
+Creates a port called \fIexpr1\fR.  A command named by \fIexprlist\fR
+is executed, as described above for \fBexec\fR.
+All output to the port is sent to the standard input
+of the process.  Reading from the port will return the standard output
+of the process.
+.TP
+.B exit
+Completes processing of the current notice.  The remainder of the
+description file is ignored after execution of this command.
+.\" hack because the following line otherwise breaks because it is too long.
+.if n .ll +2in
+.TP
+\fBif \fIexpr1 \fBthen \fIcommands1\fR [\fBelseif \fIexpr2 \fBthen \fIcommands2\fR] ... [\fBelse \fIcommandsn\fR] \fBendif\fR
+If \fIexpr1\fR evaluates to true, execute \fIcommands1\fI, etc. [A conditional
+construct, similar to the constructs in the C shell (csh).]
+.TP
+.BI inputport " expr1 expr2"
+Creates a port called \fIexpr1\fR.  All input from the port comes from
+the file \fIexpr2\fR.  There is no output.
+.TP
+.B noop
+does nothing
+.TP
+.BI outputport " expr1 expr2"
+Creates a port called \fIexpr1\fR.  The file \fIexpr2\fR will be
+truncated, or created if it does not exist.  All output to the port
+will be appended to the file \fIexpr2\fR.  There is no input.  If the file is
+created, its mode is set to read-write, owner only (no access for others).
+.TP
+.BI print " expr1 ..."
+adds the values of the expressions to the current output buffer.  The
+values of the expressions are separated by spaces in the output.
+.TP
+.B put \fR[\fIexpr \fR[\fIexprlist\fR]]
+Sends data to a port.  If \fIexpr\fR is provided, then it is used as the
+port, otherwise the port used is the
+port corresponding to the default output device.
+If \fIexprlist\fR is provided, the expressions in the list are sent to
+the port, separated by spaces.  If it is omitted, then the contents
+of the output buffer are sent as the data.
+.TP
+.BI set " variable " = " expr"
+sets
+.I variable
+equal to
+.IR expr .
+Variable can later be
+referenced by 
+.IR $variable .
+.TP
+.BI show " text " endshow
+Appends text to the output buffer.  This command is special, because
+the string does not need to be quoted.  Whitespace at the beginning or
+end of the lines of text is ignored.  The \fIendshow\fR must appear as
+the first token on a line (it may only be preceded on that line by whitespace).
+Variable substitutions and formatting commands
+(but not expressions or functions) are processed in the text.  Example:
+.nf
+show
+   this is some text
+   from: $sender
+endshow
+.fi
+.TP
+.BI while " expr " do " statements " endwhile
+Executes \fIstatements\fR until \fIexpr\fR is false.
+
+.SH PORTS
+.PP
+Ports are an abstraction encompassing all I/O forms of which
+zwgc is capable.  There are pre-existing output ports corresponding to each
+of the output devices, and more ports can be created with the
+port commands described above.
+
+.SH OUTPUT
+The output is usually collected in the
+.I "output buffer"
+and saved until a
+.I put
+command sends the output to an output device (such as an X display or a
+terminal).  The output buffer is implicitly cleared after each notice is
+completely processed.
+
+.PP
+Output devices are implemented as output ports.  A message is
+displayed in a device-dependent manner when a string is output to the
+port corresponding to the output device.  Formatting commands are
+embedded in the text as @ commands of the form @command(text).
+Command names are case-insensitive and consist of alphanumeric
+characters and underscores.  Valid brackets are () [] {} and <>.
+If the command name is empty (such as in
+.RB `` @(foo) ''),
+then a new
+environment with no changes is created (This is useful to temporarily
+change some parameter of the output, such as the font).
+.PP
+The following output devices are supported:
+.TP 5
+stdout
+Sends the string to standard output exactly as is.
+.TP
+stderr
+Sends the string to standard error exactly as is.
+.TP
+plain
+Sends the string with all formatting environments removed to standard
+output.
+.TP
+tty
+Does formatting on the message according to @ commands embedded in the
+text.  The output,
+with appropriate mode-changing sequences, is sent to the standard output.
+The appropriate characteristics of the display are taken from
+the TERMCAP entry (see
+.IR termcap (5)) 
+for the terminal named by the TERM environment variable.
+Supported @ commands are:
+.RS 10
+.\" .TQ 15
+.\" @em
+.\" Emphasis.  Use underline if available, else reverse video.
+.TQ 15
+@roman
+Roman (plain) letters (turns off all special modes).
+.TQ
+@b or @bold
+Bold letters.  If not available, reverse video, else underline.
+.TQ
+@i or @italic
+Italic letters (underlining, if available).
+.TQ
+@beep
+"bl" termcap entry, else "^G" (beep the terminal); limited to once per
+message.
+.\" .TQ
+.\" @blink
+.\" "mb"/"me" termcap entry, else nothing.
+.\" .TQ
+.\" @rv
+.\" "so"/"se" termcap entry.
+.\" .TQ
+.\" @u
+.\" "us"/"ue" termcap entry.
+.TQ
+@l or @left
+left aligned
+.TQ
+@c or @center
+center aligned
+.TQ
+@r or @right
+right aligned
+.RE
+.IP "" 5
+Other @-commands are silently ignored.
+.TP 5
+X
+Displays one window per string output to the port.  The output is
+formatted according to @ commands embedded in the string.  Supported
+@ commands are:
+.RS 10
+.TQ 15
+@roman
+turns off @italic and @bold
+.TQ
+@b or @bold
+turns on boldface
+.TQ
+@i or @italic
+turns on italics
+.TQ
+@l or @left
+left aligned
+.TQ
+@c or @center
+center aligned
+.TQ
+@r or @right
+right aligned
+.TQ
+@large
+large type size
+.TQ
+@medium
+medium type size
+.TQ
+@small
+small type size
+.TQ
+@beep
+Ring the X bell (limited to once per message)
+.TP
+@font
+sets the current font to the font specified in the contents of the
+environment (e.g. @font(fixed)).  This will remain in effect for the
+rest of the environment (a temporary change can be achieved by enclosing the
+font-change in an @(...) environment).  If the named font is not
+available, the font ``fixed'' is used instead.
+.TP
+@color
+sets the color to the color specified in the contents of the
+environment.  The color name should appear in the X color name database.
+This color will remain in effect for the rest of the environment.  If
+the named color is not available, the default foreground color is used.
+.RE
+.IP "" 5
+Any other environment name not corresponding to the above environment
+names will set the current ``substyle.''
+.IP
+The attributes of a given block of text are determined by any active
+environments, evaluated in the context of the current style and
+substyle.
+.IP
+The style is specific to each window.  Its name has three dot
+(``.'') separated fields, which are by default the values of the class,
+instance, and recipient variables, with all dots changed to underscores
+(``_'') and all letters converted to lowercase.  The style can be
+altered by setting the
+.I style
+variable.  Note that it \fBmust always\fR have exactly two ``.''
+characters in it.
+.IP
+The substyle is determined by @ commands in the message text.
+.IP
+Zwgc variables which the X output device reads are:
+.RS 10
+.TQ 15
+default_X_geometry
+default geometry for notices, set from resources
+.TQ
+X_geometry
+overrides geometry in resource file, if set
+.TQ
+default_X_background
+default background color for notices, set from resources
+.TQ
+X_background
+overrides bgcolor in resource file, if set
+.TQ
+style
+style, as described above
+.RE
+.IP "" 5
+The expected geometry values are described below.
+.IP
+The fonts and color for a piece of text are determined by the styles
+defined in the X resources file.  The following resources relating to
+text style are used by zwgc:
+.RS 10
+.TP 10
+zwgc.style.\fIstylenames\fR.geometry
+geometry for messages of the specified style
+.TP
+zwgc.style.\fIstylenames\fR.background
+background color for messages of the specified style
+.TP
+zwgc.style.\fIstylenames\fR.substyle.\fIsubstylename\fR.fontfamily
+fontfamily name for the specified style and substyle
+.TP
+zwgc.style.\fIstylenames\fR.substyle.\fIsubstylename\fR.foreground
+foreground color for the specified style and substyle
+.TP
+zwgc.fontfamily.\fIfontfamilyname\fR.\fIsize\fR.\fIface\fR
+specifies the fonts for a given fontfamily.  \fIsize\fR is one
+of small, medium, or large, and \fIface\fR is one of roman,
+bold, italic, or bolditalic.
+.RE
+.IP "" 5
+The best way to get started in customizing X resources for
+.I zwgc
+is to examine the default application resources and other users'
+resources to understand how they specify the default appearance.
+
+.SH "X RESOURCES"
+Other X resources used by
+.I zwgc
+are listed below.
+Entries like
+.sp
+.nf
+.in +5
+zwgc*option: value
+Zwgc*option: value
+zwgc.option: value
+*option: value
+.option: value
+.in -5
+.fi
+.sp
+will work.
+.PP
+An entry labeled with zwgc*option in any of the sources takes precedence
+over Zwgc*option, which takes precedence over *option entries.
+The following sources are searched in order:
+.nf
+.in +5
+command-line arguments (-xrm)
+contents of file named by XENVIRONMENT environment variable
+X server resource database (see \fIxrdb\fR(1))
+application resources file
+.in -5
+.fi
+.PP
+Logical values can be ( Yes On True T ) or ( No Off False nil ).
+.TP 15
+\fBOPTION:\fR
+\fBMEANING [default]:\fR
+.TP
+cursorCode
+number of a code from the cursorfont (should be an even integer, see
+\fI<X11/cursorfont.h>\fR) to use for the windows.
+.TP
+foreground
+Primary foreground color
+.TP
+Foreground
+Secondary foreground color (if foreground not set) [BlackPixel is the default if neither is set]
+.TP
+background
+Primary background color
+.TP
+Background
+Secondary background color (if background not set) [WhitePixel is the
+default if neither is set]
+.TP
+borderColor
+Primary border color
+.TP
+BorderColor
+Secondary border color (if borderColor not set) [BlackPixel is the
+default if neither is set]
+.TP
+pointerColor
+Primary mouse pointer color [foreground color is the default if not set]
+.TP
+reverseVideo
+(logical) Toggles foreground and background (and border, if it matches
+foreground or background). 
+.TP
+ReverseVideo
+Secondary toggle, if reverseVideo is not set. [off is the default if
+neither is set]
+.TP
+borderWidth
+Primary border width selector
+.TP
+BorderWidth
+Secondary border width selector (if borderWidth is not set) [1 is the
+default value if neither is set]
+.TP
+internalBorder
+Primary border between edge and text
+.TP
+InternalBorder
+Secondary selector (if internalBorder not set) [2 is the default value
+if neither is set]
+.TP
+geometry
+Primary POSITION (not size) geometry specifier.
+The geometry should be of the form "{+|\-}x{+|\-}y", specifying an (x,y)
+coordinate for a corner of the window displaying the notice.  The
+interpretation of positive and negative location specifications follows
+the X conventions.  A special location of `c' for either x or y
+indicates that the window should be centered along that axis.  Example:
+a geometry of "+0+c" specifies the window should be at the top of the
+screen, centered horizontally.
+.TP
+Geometry
+Secondary position specifer. [+0+0 is the default if neither is set.]
+.TP
+resetSaver
+(logical) Primary value to force screen to unsave when a message first
+appears.
+.TP
+ResetSaver
+(logical) Secondary value to force screen to unsave. [default True] 
+.TP
+reverseStack
+(logical) Primary value to specify that zwgc should attempt to stack
+WindowGram windows such that the oldest messages
+normally show on top.  Some X window managers may silently ignore
+.IR zwgc 's
+attempts to restack its windows.  This option can cause some unusual
+interactions with other windows if the user manually restacks either the
+other windows or the WindowGram windows.
+.TP
+ReverseStack
+Secondary value to enable reverse stacking. [default False] 
+.TP
+title
+(string) Primary window title
+.TP
+Title
+Secondary window title [defaults to the last pathname component
+of the program name, usually "zwgc"]
+.TP
+transient
+(logical) Primary value which determines if zephyrgram windows will be
+created with the \fBWM_TRANSIENT_FOR\fR property set.  If this
+resource is true, the property will be set, telling certain
+windowmanagers to treat zephyrgram windows specially.  For instance,
+\fItwm\fR will not put decorations on transient windows, \fImwm\fR
+will not let you iconify them, and \fIuwm\fR ignores the resource
+entirely.
+.TP
+Transient
+Secondary transient determining value [default False]
+.TP
+minTimeToLive
+Primary value which specifies the minimum amount of time (``minimum time to
+live'') a WindowGram must be on-screen (in milliseconds) until it can
+be destroyed.  This feature is useful to avoid accidentally clicking
+on new WindowGrams when trying to delete old ones.
+.TP
+MinTimeToLive
+Secondary value of ``minimum time to live.''
+.TP
+iconName
+(string) Primary icon name
+.TP
+IconName
+Secondary icon name [defaults to the last pathname component
+of the program name, usually "zwgc"]
+.TP
+name
+(string) Primary window class name
+.TP
+name
+Secondary window class name [defaults to the last pathname component
+of the program name, usually "zwgc"]
+.TP
+synchronous
+(logical) Primary X synchronous mode specifier.  On means to put the X
+library into synchronous mode.
+.TP
+Synchronous
+Secondary X synchronous mode specifier.  [default is `off']
+.PP
+The window class is always "Zwgc".
+.SH X BUTTONS
+.PP
+Clicking and releasing any button without the shift key depressed while
+the pointer remains inside a WindowGram window will cause it to
+disappear. If the pointer leaves the window
+while the button is depressed, the window does not disappear; this
+provides a way to avoid accidentally losing messages.
+.PP
+If the control button is held down while clicking on a WindowGram,
+then that WindowGram and all windowgrams under the point where the
+button is released will be erased.
+.PP
+.B WARNING:
+If you do this with too many WindowGrams under the mouse, it is
+possible for your subscriptions to be lost.  If \fIzctl retrieve\fR
+returns nothing, then issue a \fIzctl load\fR command to re-subscribe
+to your default set of subscriptions.  If you use znol, then \fIznol
+-q &\fR will restore the subscriptions you need for \fIznol\fR.
+.PP
+Portions of the text of a message may be selected for "pasting" into other X
+applications by using the shift key in cooperation with the pointer
+buttons.
+Holding the Shift key while depressing Button1 (usually the left button)
+will set a marker at the
+text under the pointer.  Dragging the pointer with Shift-Button1 still
+depressed extends the selection from the start point, until the button
+is released.  The end of the selection may also be
+indicated by releasing Button1, holding down the Shift key, and pressing
+Button3 (usually the right button) at the desired endpoint of the selection.
+The selection will appear with the text and background colors reversed.
+
+.SH COMMAND LINE
+.I zwgc
+is normally invoked from 
+.IR /usr/athena/lib/init/login ,
+.IR $HOME/.xsession ,
+or 
+.I /usr/athena/lib/init/xsession
+in the foreground
+and with no arguments. When it has successfully set your location, it
+will put itself into the background (unless the \-nofork option has been
+specified). At this point it is safe to
+invoke additional zephyr commands, such as 
+.IR znol (1).
+(You can also put these commands in the
+.I initprogs
+Zephyr variable; the value of this variable is passed as the argument to
+the
+.IR system (3)
+library call during initialization.)
+.I zwgc
+will exit with an exit
+status of 0 if it was able to open the X display successfully or 1 if it
+couldn't open the display and the Zephyr variable
+.I fallback
+was set to ``false''. If
+.I fallback
+is set to ``true'',
+.I zwgc
+will fall back to ``ttymode'' (making the tty driver the default output
+device) if it can't open the X display.  If
+.I fallback
+is not set and the display cannot be opened,
+.I zwgc
+prints an explanatory message and exits with a status of 1.
+.PP
+If the
+.I \-ttymode
+option is specified,
+.I zwgc
+will ignore any X display and use the terminal as its primary output
+device.  This flag overrides any setting of the fallback variable.
+.PP
+The
+.I \-reenter
+option is provided for compatibility with the previous version of
+.IR zwgc .
+.PP
+.I zwgc
+will exit cleanly (unset location and cancel subscriptions) on:
+.nf
+	SIGTERM
+	SIGHUP
+	XIOError (with a message to stderr)
+.fi
+SIGHUP is what it expects to get upon logout.  Also, the signals
+SIGINT, SIGQUIT, and SIGTSTP are ignored because they can be sent
+inadvertently, and bizarre side-effects can result.  If you want them
+to be acted on, then run
+.I zwgc -nofork &
+
+.SH CONTROL MESSAGES
+In order to allow some special user controls over the behavior of
+.IR zwgc ,
+certain Zephyr control notices can be sent directly to
+.I zwgc
+using the
+.IR zctl (1)
+program. Currently implemented controls are
+.TP 15
+wg_read
+tell
+.I zwgc
+to re-read the current description file.
+.TP
+wg_shutdown
+tell 
+.I zwgc
+to cancel all subscriptions and stop acting on incoming notices. 
+.I zwgc
+saves the subscriptions that were in effect at the time of the shutdown
+so that it can restore them later if needed.
+.TP
+wg_startup
+tell 
+.I zwgc
+to restart from being shutdown and reinstall the saved subscriptions.
+.PP
+Other control messages may be implemented in the future.
+
+.SH EXAMPLES
+For an example of a description file, see
+.IR /usr/athena/lib/zephyr/zwgc.desc .
+For an example of X resources, see
+.IR /usr/athena/lib/zephyr/zwgc_resources .
+
+.SH BUGS
+The X selection code can highlight the wrong portions of messages
+containing formatted text placed with the @center() or @right()
+directives.
+
+.SH FILES
+.TQ 15
+$HOME/.zwgc.desc
+Default location of user's description file
+.TQ
+/usr/athena/lib/zephyr/zwgc.desc
+System-wide description file
+.TQ
+/usr/athena/lib/zephyr/zwgc_resources
+Default X application resources.
+.TQ
+$HOME/.zephyr.vars
+File containing variable definitions
+.TQ
+$HOME/.zephyr.subs
+Supplementary subscription file
+.TQ
+$HOME/.Xresources
+Standard X resources file
+.TQ
+$WGFILE or /tmp/wg.\fIuid\fR
+File used to store WindowGram port number for other clients
+.SH SEE ALSO
+csh(1), kinit(1), xrdb(1), zctl(1), zephyr(1), znol(1), X(1), getenv(3),
+system(3), termcap(5), zephyrd(8), zhm(8)
+.br
+Project Athena Technical Plan Section E.4.1, `Zephyr Notification Service'
+.SH AUTHORS
+.nf
+John Carr (MIT/Project Athena) <jfc@athena.mit.edu>
+Marc Horowitz (MIT/Project Athena) <marc@athena.mit.edu>
+Mark Lillibridge (MIT/Project Athena) <mdl@CS.CMU.EDU>
+.fi
+.SH RESTRICTIONS
+Copyright (c) 1989 by the Massachusetts Institute of Technology.
+All Rights Reserved.
+.br
+.I zephyr(1)
+specifies the terms and conditions for redistribution.

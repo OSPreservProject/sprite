@@ -1,0 +1,151 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  ds3100:1.4 sun3:1.4 sun4nw:1.4 symm:1.4 spur:1.4;
+locks    ; strict;
+comment  @ * @;
+
+
+1.4
+date     90.10.19.17.23.02;  author mendel;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.08.02.16.19.41;  author mendel;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.05.30.10.31.07;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.01.16.17.12.30;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.4
+log
+@Many bug fixed. First installed LFS.
+@
+text
+@/*
+ * lfsSegLayout.h --
+ *
+ *	Declarations of the structures defining the resident image
+ *	of an LFS segment. An LFS segment is divided into two 
+ *	regions the summary region and data block region. The
+ *	summary region is used the identify the blocks in the data 
+ *	block region during clean and aid in crash recovery.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/lfs/RCS/lfsSegLayout.h,v 1.3 90/08/02 16:19:41 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+ */
+
+#ifndef _LFSSEGLAYOUT
+#define _LFSSEGLAYOUT
+
+
+/*
+ * The summary area of each segment contains a LfsSegSummary structured 
+ * followed by Lfs*Summary for each region type with blocks in the segment.
+ * Each region summary type is started by a LfsSegSummaryHdr.
+ */
+typedef struct LfsSegSummary {
+    unsigned int  magic;	/* Better be LFS_SEG_SUMMARY_MAGIC. */
+    unsigned int  timestamp;    /* Timestamp of last write. */
+    unsigned int  prevSeg;      /* The previous segment written. */
+    unsigned int  nextSeg;      /* The next segment to write. */
+    int  size;			/* The size of this segment's summary region
+				 * in bytes including this structure. */
+    int nextSummaryBlock;	/* The block offset of the next summary block 
+				 * in this segment segment. -1 if this is the
+				 * last summary block in this segment. */
+} LfsSegSummary;
+
+#define	LFS_SEG_SUMMARY_MAGIC	0x1065e6	/* logseg */
+
+typedef struct LfsSegSummaryHdr {
+    unsigned short moduleType;	   /* Module type of this summary region. */
+    unsigned short lengthInBytes;  /* Length of this summary region in bytes. */
+    int   numDataBlocks; 	  /* Number data blocks described by this 
+				    * region. */
+} LfsSegSummaryHdr;
+
+/*
+ * A list of module type and their priorities. 
+ */
+#define	LFS_FILE_LAYOUT_MOD 0
+#define	LFS_DESC_MAP_MOD    1
+#define	LFS_SEG_USAGE_MOD   2
+#define	LFS_MAX_NUM_MODS    3
+
+#endif /* _LFSSEGLAYOUT */
+
+@
+
+
+1.3
+log
+@Checkin before adding recovery
+./
+@
+text
+@d19 1
+a19 1
+ * $Header: /sprite/src/kernel/lfs/RCS/lfsSegLayout.h,v 1.2 90/05/30 10:31:07 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d48 1
+a48 1
+    int   numDataBlocks; 	 /* Number data blocks described by this 
+d56 2
+a57 2
+#define	LFS_SEG_USAGE_MOD   1
+#define	LFS_DESC_MAP_MOD    2
+@
+
+
+1.2
+log
+@Check in with no small writes.
+@
+text
+@d19 1
+a19 1
+ * $Header: /sprite/src/kernel/fs.mendel/RCS/lfsSegLayout.h,v 1.1 90/01/16 17:12:30 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d29 1
+a29 1
+ * Each region summary type is started by a LfsSegSummaryRegion.
+d36 5
+a40 2
+    unsigned int  size;		/* The size of this segment's summary region
+				 * in blocks including this structure. */
+d48 1
+a48 1
+    unsigned int   numDataBlocks;  /* Number data blocks described by this 
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d19 1
+a19 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.4 89/10/28 15:57:26 rab Exp $ SPRITE (Berkeley)
+@

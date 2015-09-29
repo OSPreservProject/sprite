@@ -1,0 +1,2573 @@
+head     1.17;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.17
+date     92.06.16.13.03.53;  author jhh;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     90.08.06.17.17.22;  author mendel;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     90.01.03.15.46.29;  author nelson;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     89.07.23.17.34.48;  author nelson;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     89.05.19.14.40.54;  author douglis;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     89.05.19.10.51.05;  author douglis;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     89.04.10.16.30.42;  author brent;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     89.03.23.09.40.33;  author brent;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     89.02.21.10.07.08;  author brent;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     88.09.28.11.44.59;  author mendel;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.09.15.09.33.45;  author mendel;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.08.26.16.34.52;  author mendel;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.08.25.13.49.32;  author mendel;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.08.16.11.17.29;  author mendel;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.05.15.21.31.36;  author andrew;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.04.27.09.09.36;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.27.08.51.52;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Routing module
+@
+
+
+1.17
+log
+@port to new Host library
+@
+text
+@/* 
+ * route.c --
+ *
+ *	This file contains routines to handle low-level IP packet I/O and to
+ *	maintain information about the network interfaces and packet routing.
+ *	Currently, most routines are ethernet-specific.
+ *
+ *	When an IP packet is to be sent out on the ethernet, the packet's
+ *	destination address must be translated to an ethernet address.
+ *	This task is called routing and is performed by Rte_FindOutputNet.
+ *	The routine uses a static table of <IP, ethernet> entries to map
+ *	an IP address into an ethernet address.	The table is initialized
+ *	from a file by Rte_AddressInit() and contains entires for hosts on
+ *	the ethernet. The IP output routine calls Rte_FindOutputNet to get 
+ *	a token (a Rte_NetID structure) that identifies	a route. Along with 
+ *	the packet, the route token is passed to Rte_OutputPacket, which uses 
+ *	it to insert the ethernet address into the packet. If a corresponding 
+ *	ethernet address can't be found for an IP address, it is assumed that 
+ *	host is on a different network. In that case, the Rte_NetID token 
+ *	identifies a gateway host that can forward the packet to the proper 
+ *	network.
+ *
+ *	(Aside: "Ethernet (capital E) is a specific Xerox protocol used for LAN,
+ *	  whereas an ethernet (small e) refers to an Ethernet-like network."
+ *	  Quarterman and Hoskins, CACM v29#10, 10/86, p.938)
+ *
+ *
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/daemons/ipServer/RCS/route.c,v 1.16 90/08/06 17:17:22 mendel Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include "sprite.h"
+#include "ipServer.h"
+#include "ip.h"
+#include "route.h"
+#include "stat.h"
+
+#ifndef KERNEL
+#include <errno.h>
+#include <sys/file.h>
+#include <host.h>
+#endif
+
+#include <netEther.h>
+#include <list.h>
+#include <string.h>
+#include <fs.h>
+#include <hash.h>
+
+
+#ifdef TEST_DISCONNECT
+extern int	ips_Disconnect;
+#endif
+/*
+ * Comment character used in the config file. Lines beginning with this
+ * character are ignored.
+ */
+#define COMMENT_CHAR 	'#'
+
+
+/*
+ * Address information kept in a hash table keyed on the internet address.
+ * There are a few possibilities for each address
+ * NET_NEIGHBOR		The host is a neighbor on the local network
+ * NET_GATEWAY		The host is a gateway to other networks
+ * NET_ALIAS		This is another alias for ourselves
+ * NET_BROADCAST	This is a broadcast address
+ * NET_UPDATE_ADDR	Update the physical address information when installing.
+ * NET_ETHERNET		The ethernet field has the physical net address.
+ */
+
+typedef struct NetAddrInfo {
+    Net_InetAddress	inet;		/* Hash key, must be first */
+    int			flags;		/* NET_NEIGHBOR, NET_GATEWAY,
+					 * NET_ALIAS, NET_BROADCAST,
+					 * plus type for addr union */
+    union {
+	Net_EtherAddress ether;		/* NET_ETHERNET */
+    } addr;
+    struct NetInfo	*netPtr;	/* Interface information */
+} NetAddrInfo;
+
+/*
+ * NET_GATEWAY is also defined to be 0x2 in the kernel's netRoute.h.  Don't
+ * change one without the other.  Obviously this should be fixed.
+ */
+#define NET_NEIGHBOR	0x1
+#define NET_GATEWAY	0x2
+#define NET_ALIAS	0x4
+#define NET_BROADCAST	0x8
+#define NET_UPDATE_ADDR	0x10
+#define NET_ETHERNET	0x20
+
+Hash_Table addrHashTable;
+Hash_Table *addrTable = &addrHashTable;
+
+#ifdef KERNEL
+    /*
+     * UGH.  Kernel and user hash packages not the same.
+     */
+#define Hash_InitTable(table, numBuckets, keys) \
+	Hash_Init(table, numBuckets, keys)
+
+#define Hash_FindEntry(table, key) \
+	Hash_LookOnly(table, key)
+#endif
+
+/*
+ * Information about network interfaces.
+ */
+
+typedef struct NetInfo {
+    char	*name;		/* Device name. */
+    int		streamID;	/* Used with Read, Write. */
+    int		maxOutputSize;	/* Size in bytes of max. packet size
+				 * that this interface can output. */
+    int		flags;		/* Defined below. */
+    Net_InetAddress address;	/* Official IP address. */
+    Net_InetAddress localBrdcastAddr;	/* Broadcast address for the subnet
+					 * (directly-connected network). */
+    Net_InetAddress netBrdcastAddr;	/* Broadcast address for all subnets
+					 * on the logical network. */
+    unsigned int netPart;	/* Network number but unshifted. */
+    unsigned int netMask;	/* Mask to generate network # from an address.*/
+    unsigned int subnetPart;	/* Subnet # (included net #) but unshifted. */
+    unsigned int subnetMask;	/* Mask to generate subnet # from an addr. */
+
+    NetAddrInfo	*gatewayPtr;	/* The address of the local gateway. */
+} NetInfo;
+
+
+static NetAddrInfo *localHostAddrPtr;	/* Our own address for loopback. */
+/*
+ * Values used in the flags field of NetInfo.
+ */
+#define NET_IN_USE	0x1
+
+
+#define MAX_NUM_NETS	4
+static NetInfo	netInfo[MAX_NUM_NETS];
+static int	numNetInterfaces = 0;
+
+/*
+ * IP Address to look for route to.  When IPInput sees this address come
+ * by it snarfs up the source ethernet address.  The localhost value will
+ * never arrive as input, so it is the "do nothing" value.
+ */
+static Net_InetAddress lookforIPAddress = NET_INET_LOCAL_HOST;
+/*
+ * Forward declaration of internal procedures.
+ */
+NetAddrInfo *RteInsertAddress();
+NetAddrInfo *RteFetchAddress();
+
+static void ReadIPPacket();
+static void GetLineList();
+static Net_EtherAddress broadcast = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rte_AddressInit --
+ *
+ *	Reads a file that contains the following information: 
+ *	1) the name of IP network device,
+ *	2) a bit mask used to generate a host number for hosts on the same
+ *	   network (subnet mask).
+ *	3) the maximum # of bytes the network device can output.
+ *	4) a list of alias IP addresses for this program. Packets sent
+ *	   to one of these addresses will be handled.
+ *	5) a name of a gateway for the network. 
+ *	Host Internet and ethernet addresses are obtained from 
+ *	/etc/spritehosts. This information is used to initialize 
+ *	the network and neighbor information tables.
+ *
+ *	To do: extend to multiple networks.
+ *
+ * Kernel Implementation:
+ *	This doesn't read the configuration file when running in the kernel.
+ *	Instead the Net_RouteInstall system uses RteInsertAddress to
+ *	give us addressing information.  This just sets up the net stucture
+ *	and installs the various broadcast addresses that map to it.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The network table is initialized.  There is both a per-interface
+ *	structure and a hash table of internet addresses.  Addresses
+ *	are installed for our own aliases, for our local neighbors,
+ *	for the gateway, and for various broadcast addresses.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Rte_AddressInit(myHostName, filename, newOfficialAddr)
+    char *myHostName;
+    char *filename;		/* Name of configuration file. */
+    char *newOfficialAddr;	/* If not NULL, use this as the official 
+				 * IP address. */
+{
+#ifndef KERNEL
+    /*
+     * Only the user-level version reads the config file.
+     * The kernel gets routing information via the Net_Route system call.
+     */
+
+#define LINE_LEN	80
+#define ARRAY_SIZE	100
+
+    FILE		*stream;
+    char		*array[ARRAY_SIZE];
+    int			numGateways;
+    int			numAliases;
+    char		devName[LINE_LEN];
+    char		etherString[LINE_LEN];
+    char		inetString[LINE_LEN];
+    char		line[LINE_LEN];
+    char		host[LINE_LEN];
+    Host_Entry 		*hostPtr;
+#endif
+    Net_InetAddress	address;
+    Net_EtherAddress	etherAddr;
+    NetAddrInfo		*addrPtr;
+    Boolean		foundOfficialAddr = FALSE;
+    register NetInfo	*infoPtr;
+    int			i;
+    int			numHosts;
+    unsigned int	subpart;
+
+#ifndef KERNEL
+    stream = fopen(filename, "r");
+    if (stream == (FILE *) NULL) {
+	(void) fprintf(stderr, "Can't open net info file '%s'\n", filename);
+	exit(1);
+    }
+#endif
+
+    /*
+     * For now, assume just one net in the netinfo file.
+     */
+
+    infoPtr = &netInfo[0];
+
+#ifndef KERNEL
+    do {
+	(void) fgets(line, LINE_LEN, stream);
+    } while (line[0] == COMMENT_CHAR);
+
+    /*
+     * Look for the config file version and print it if debug is set.
+     */
+
+    if (strncmp("version", line, strlen("version")) != 0) {
+	(void) fprintf(stderr, "Bad format in %s: version.\n", filename);
+	exit(1);
+    }
+    (void) printf("Config file: %s\n   %s\n", filename, line);
+
+
+    /*
+     ***********************************************************************
+     *
+     * Group 1:  network device name, subnet mask,
+     *		 max. # bytes output on the network device.
+     *	Example: /dev/etherIP    0xffffff00      1500
+     *
+     ***********************************************************************
+     */
+
+    do {
+	(void) fgets(line, LINE_LEN, stream);
+    } while (line[0] == COMMENT_CHAR);
+
+    i = sscanf(line, "%s 0x%x %d", devName, &infoPtr->subnetMask, 
+			&infoPtr->maxOutputSize);
+    if (i != 3) {
+	panic("Bad format in %s: device name.\n", filename);
+    }
+
+    infoPtr->streamID = open(devName, O_RDWR | O_NDELAY , 0); 
+    if (infoPtr->streamID < 0) {
+	perror("Rte_AddressInit (open net)");
+	exit(1);
+    }
+
+    /*
+     * Tell the dispatcher we're interested when packets arrive on
+     * this stream.
+     */
+    Fs_EventHandlerCreate(infoPtr->streamID, FS_READABLE, ReadIPPacket, 
+			(ClientData) 0);
+
+    infoPtr->name = malloc((unsigned int) strlen(devName) + 1);
+    (void) strcpy(infoPtr->name, devName);
+#endif
+
+    infoPtr->flags		|= NET_IN_USE;
+
+    /*
+     * Initialize the address table and insert our official address.
+     */
+    Hash_InitTable(addrTable, 64, HASH_ONE_WORD_KEYS);
+
+    if (newOfficialAddr != (char *) NULL) {
+	infoPtr->address = 
+		Net_NetToHostInt(Net_StringToInetAddr(newOfficialAddr));
+	foundOfficialAddr = TRUE;
+	(void)RteInsertAddress(infoPtr->address, (Net_EtherAddress *)NULL,
+		NET_ALIAS, infoPtr);
+    }
+
+    /*
+     ***********************************************************************
+     *
+     * Group 2:  List of aliases for this machine.
+     *		 Format:  <name> <inet address>
+     *  	 Delimited by "Start_Aliases" and "End_Aliases"
+     *
+     ***********************************************************************
+     */
+#ifndef KERNEL
+    GetLineList(stream, "Start_Aliases", "End_Aliases", ARRAY_SIZE, array, 
+		&numAliases);
+    for (i = 0; i < numAliases; i++) {
+	(void) sscanf(array[i], "%s %s", host, inetString);
+	address = Net_NetToHostInt(Net_StringToInetAddr(inetString));
+	(void)RteInsertAddress(address, (Net_EtherAddress *)NULL, NET_ALIAS,
+		infoPtr);
+	free(array[i]);
+    }
+#endif
+    /*
+     ************************************************************************
+     *
+     * Read /etc/spritehosts to get local host (neighbor) information
+     *
+     ************************************************************************
+     */
+#ifndef KERNEL
+    if (!foundOfficialAddr) {
+	hostPtr = Host_ByName(myHostName);
+	if (hostPtr != NULL) {
+	    /*
+	     * Look for the ethernet interface and get its internet address.
+	     * TODO: in reality the physical address for the interface
+	     * should be obtained via an ioctl on the open device. This
+	     * address would then be used to determine the internet address
+	     * for the interface, and which hosts are local as well.
+	     */
+	    for (i = 0; i < hostPtr->numNets; i++) {
+		if (hostPtr->nets[i].netAddr.type == NET_ADDRESS_ETHER) {
+		    infoPtr->address = 
+			Net_NetToHostInt(hostPtr->nets[i].inetAddr);
+		    foundOfficialAddr = TRUE;
+		}
+	    }
+	} else {
+	    panic("Rte_AddressInit: could not find myself in the host file\n");
+	}
+    }
+    if (!foundOfficialAddr) {
+	panic("Rte_AddressInit: can't find IP address for %s\n", myHostName);
+    }
+    subpart = infoPtr->subnetMask & infoPtr->address;
+    if (Host_Start() != SUCCESS) {
+	panic("Rte_AddressInit: Host_Start failed (?no /etc/spritehosts?)\n");
+    }
+    for (hostPtr = Host_Next();
+         hostPtr != (Host_Entry *)NULL;
+	 hostPtr = Host_Next()) {
+	register int flags;
+
+	flags = NET_NEIGHBOR;
+	for (i = 0; i < hostPtr->numNets; i++) {
+	    /*
+	     * Only install the route if the interfaces are on the same 
+	     * subnet. We assume that a host will have only one interface
+	     * on the same subnet.
+	     */
+	    address = Net_NetToHostInt(hostPtr->nets[i].inetAddr);
+	    if ((infoPtr->subnetMask & address) == subpart) {
+		if (address == infoPtr->address) {
+		    flags |= NET_ALIAS;
+		}
+		(void)RteInsertAddress(address, 
+			&hostPtr->nets[i].netAddr.address.ether, 
+			flags, infoPtr);
+		break;
+	    }
+	}
+    }
+    Host_End();
+
+#endif /* not KERNEL */
+
+    /*
+     * Now that we know our own ethernet address we add the "localhost"
+     * address that points back to ourself.
+     */
+    addrPtr = RteFetchAddress(infoPtr->address);
+    if ((addrPtr != (NetAddrInfo *)NULL) && (addrPtr->flags & NET_ETHERNET)) {
+	(void)RteInsertAddress(NET_INET_LOCAL_HOST, &addrPtr->addr.ether,
+		NET_ALIAS|NET_UPDATE_ADDR, infoPtr);
+    }
+    /*
+     ***********************************************************************
+     *
+     * Group 3: Gateway info
+     *		Format:  <name> <ip-addr> <ether-addr>
+     * 		Delimited by "Start_Gateways" and "End_Gateways"
+     *
+     *	 Assume just 1 gateway for now.
+     *
+     ***********************************************************************
+     */
+#ifndef KERNEL
+    GetLineList(stream, "Start_Gateways", "End_Gateways", ARRAY_SIZE, array,
+		&numGateways);
+    if (numGateways == 0) {
+	panic("Rte_AddressInit: can't find gateway name in '%s'\n", filename);
+    }
+    for (i=0 ; i<numGateways ; i++) {
+	(void) sscanf(array[i], "%s %s %s", host, inetString, etherString);
+	address = Net_NetToHostInt(Net_StringToInetAddr(inetString));  
+	Net_StringToEtherAddr(etherString, &etherAddr);
+	infoPtr->gatewayPtr = RteInsertAddress(address, &etherAddr,
+				NET_NEIGHBOR|NET_GATEWAY, infoPtr);
+	free(array[i]);
+    }
+#endif
+    /*
+     * Note our address and the various pieces of it for sub-netting.
+     */
+
+    address			= infoPtr->address;
+    infoPtr->netMask		= Net_InetAddrNetMask(address);
+    infoPtr->netPart		= infoPtr->netMask & address;
+    infoPtr->subnetMask		|= infoPtr->netMask;
+    infoPtr->subnetPart		= infoPtr->subnetMask & address;
+
+    infoPtr->localBrdcastAddr	= (infoPtr->subnetPart | 
+			    (NET_INET_BROADCAST_ADDR & ~infoPtr->subnetMask));
+
+    infoPtr->netBrdcastAddr	= (infoPtr->netPart |
+				(NET_INET_BROADCAST_ADDR & ~infoPtr->netMask));
+
+    /*
+     * Install various BROADCAST addresses that we should accept.
+     * The old-style broadcast address uses a host part of 0, hence
+     * the use of the (sub)netPart values.
+     */
+    (void)RteInsertAddress(NET_INET_BROADCAST_ADDR, &broadcast,
+			    NET_BROADCAST, infoPtr);
+    (void)RteInsertAddress(NET_INET_ANY_ADDR, (Net_EtherAddress *)NULL,
+			    NET_BROADCAST, infoPtr);
+    (void)RteInsertAddress(infoPtr->localBrdcastAddr, &broadcast,
+			    NET_BROADCAST, infoPtr);
+    (void)RteInsertAddress(infoPtr->netBrdcastAddr, &broadcast,
+			    NET_BROADCAST, infoPtr);
+    (void)RteInsertAddress(infoPtr->subnetPart, (Net_EtherAddress *)NULL,
+			    NET_BROADCAST, infoPtr);
+    (void)RteInsertAddress(infoPtr->netPart, (Net_EtherAddress *)NULL,
+			    NET_BROADCAST, infoPtr);
+
+#ifndef KERNEL
+    if (ips_Debug) {
+	(void) fprintf(stderr, "Host name = %s\n", myHostName);
+	(void) fprintf(stderr, "Official address = %s\n", 
+			Net_InetAddrToString(infoPtr->address, line));
+	(void) fprintf(stderr, "Local broadcast address = %s\n",
+			Net_InetAddrToString(infoPtr->localBrdcastAddr, line));
+	(void) fprintf(stderr, "Net broadcast address = %s\n",
+			Net_InetAddrToString(infoPtr->netBrdcastAddr, line));
+    }
+#endif
+
+    numNetInterfaces++;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RteInsertAddress --
+ *
+ *	Allocate and insert an address entry in the table.  This can be
+ *	used to update the ethernet address for an existing entry.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Allocate and insert an address entry in the table.
+ *
+ *----------------------------------------------------------------------
+ */
+
+NetAddrInfo *
+RteInsertAddress(inet, etherPtr, flags, netPtr)
+    Net_InetAddress inet;		/* Internet address, the address KEY */
+    Net_EtherAddress *etherPtr;		/* Ethernet address, or NULL */
+    int flags;				/* NET_NEIGHBOR, NET_GATEWAY, NET_ALIAS,
+					 * NET_BROADCAST, NET_UPDATE_ADDR */
+    NetInfo *netPtr;			/* Pointer to interface info */
+{
+    register NetAddrInfo *addrPtr;
+    register Hash_Entry *hashEntryPtr;
+    int created;
+
+#ifdef KERNEL
+    if (netPtr == (NetInfo *)NIL) {
+	netPtr = &netInfo[0];
+    }
+    if (etherPtr == (Net_EtherAddress *)NIL) {
+	etherPtr = (Net_EtherAddress *)NULL;
+    }
+    hashEntryPtr = Hash_Find(addrTable, inet);
+    addrPtr = (NetAddrInfo *)Hash_GetValue(hashEntryPtr);
+    if (addrPtr == (NetAddrInfo *)NIL) {
+	created = TRUE;
+    }
+#else
+    hashEntryPtr = Hash_CreateEntry(addrTable, inet, &created);
+#endif
+    if (created) {
+	addrPtr = (NetAddrInfo *)malloc(sizeof(NetAddrInfo));
+	addrPtr->inet = inet;
+	addrPtr->flags = flags & ~NET_ETHERNET;
+	addrPtr->netPtr = netPtr;
+	Hash_SetValue(hashEntryPtr, addrPtr);
+    } else {
+	addrPtr = (NetAddrInfo *)Hash_GetValue(hashEntryPtr);
+    }
+    /*
+     * Update the ethernet address if we are told to, or if we are given
+     * an address and we don't already have one.
+     */
+    if ((((addrPtr->flags & NET_ETHERNET) == 0) || (flags & NET_UPDATE_ADDR)) &&
+	(etherPtr != (Net_EtherAddress *)NULL)) {
+	NET_ETHER_ADDR_COPY(*etherPtr, addrPtr->addr.ether);
+	addrPtr->flags |= NET_ETHERNET;
+    }
+    return(addrPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RteFetchAddress --
+ *
+ *	Fetch an address entry from the table.
+ *
+ * Results:
+ *	NULL, or a pointer to the address information.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+NetAddrInfo *
+RteFetchAddress(inet)
+    Net_InetAddress inet;		/* Internet address, the address KEY */
+{
+    register NetAddrInfo *addrPtr;
+    register Hash_Entry *hashEntryPtr;
+
+    hashEntryPtr = Hash_FindEntry(addrTable, inet);
+    if (hashEntryPtr != (Hash_Entry *)NULL) {
+	addrPtr = (NetAddrInfo *)Hash_GetValue(hashEntryPtr);
+	return(addrPtr);
+    }
+    return((NetAddrInfo *)NULL);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rte_AddrIsForUs --
+ *
+ *	Returns TRUE if the specified address can be used to name 
+ *	this server. The address is checked to see if it's a broadcast
+ *	address and if not, it is compared with official and alias
+ *	IP addresses for this server.
+ *
+ * Results:
+ *	TRUE	- the address is for us.
+ *	FALSE	- the address is not for us.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Boolean
+Rte_AddrIsForUs(addr)
+    Net_InetAddress	addr;
+{
+    register NetAddrInfo *addrPtr;
+
+    addr = Net_NetToHostInt(addr);
+    addrPtr = RteFetchAddress(addr);
+
+    if ((addrPtr != (NetAddrInfo *)0) &&
+	(addrPtr->flags & (NET_BROADCAST|NET_ALIAS))) {
+	return(TRUE);
+    }
+    return(FALSE);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rte_ValidateAddress --
+ *
+ *	This routine returns TRUE if the specified address corresponds
+ *	to one of the addresses (official or alias) of this server.
+ *	The address has to be an exact match -- that is it can't be
+ *	a broadcast address.
+ *
+ * Results:
+ *	TRUE	- the address is a valid for this server.
+ *	FALSE	- the address doesn't match one of the server's addresses.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Boolean
+Rte_ValidateAddress(addr)
+    Net_InetAddress	addr;
+{
+    register NetAddrInfo *addrPtr;
+
+    addr = Net_NetToHostInt(addr);
+    addrPtr = RteFetchAddress(addr);
+
+    if ((addrPtr != (NetAddrInfo *)0) && (addrPtr->flags & NET_ALIAS)) {
+	return(TRUE);
+    }
+    return(FALSE);
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rte_FindOutputNet --
+ *
+ *	This routine determines the network interface to use when sending
+ *	an IP datagram to the given destination (i.e. address routing).
+ *	The caller is given a netID to pass to Rte_OutputPacket routine
+ *	that contains the required addressing info.
+ *
+ *	For the time being, a very simple routing method is used: if the 
+ *	destination address is on the same network, and we have an ethernet 
+ *	address for it, then the datagram can be sent directly. In all other 
+ *	cases, a Unix gateway machine is chosen to receive the datagram.
+ *
+ *	In the future, this routine should 1) use the address resolution
+ *	protocol to find ethernet addresses of directly-connected hosts
+ *	and 2) use a routing tables to do proper routing when there's more
+ *	than 1 gateway.
+ *
+ * Results:
+ *	TRUE		- a route was found.
+ *	FALSE		- no route could be found for the address.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Boolean
+Rte_FindOutputNet(dest, netIDPtr, maxOutSizePtr)
+    Net_InetAddress	dest;
+    register Rte_NetID	*netIDPtr;
+    int			*maxOutSizePtr;
+{
+    register NetInfo	*infoPtr;
+    register NetAddrInfo *addrPtr;
+
+#ifdef notdef
+    static Net_InetAddress	prevDest;
+    static Rte_NetID		prevID;
+    static int			prevOutSize = -1;
+#endif notdef
+
+    dest = Net_NetToHostInt(dest);
+    stats.misc.routeCalls++;
+
+    /*
+     * If the destination is the same as the one in the last call,
+     * return the same information.
+     */
+#ifdef notdef
+    if (dest == prevDest && prevOutSize != -1) {
+	*netIDPtr = prevID;
+	*maxOutSizePtr = prevOutSize;
+	stats.misc.routeCacheHits++;
+	return(TRUE);
+    }
+#endif notdef
+
+    addrPtr = RteFetchAddress(dest);
+    if (addrPtr == (NetAddrInfo *)NULL) {
+	if (ips_Debug) {
+	    fprintf(stderr, "RteFindOutputNet: !found, inserting gateways\n");
+	}
+	/*
+	 * No address found.  Create an entry with the physical address
+	 * of the gateway.  When we get a redirect ICMP then we save
+	 * the physical address.  This uses a hack in IPInput
+	 * to grab the ethernet source address of packets from lookforIPAddress.
+	 */
+	infoPtr = &netInfo[0];
+	addrPtr = RteInsertAddress(dest, &infoPtr->gatewayPtr->addr.ether,
+			0, infoPtr);
+	lookforIPAddress = dest;
+    } else if (ips_Debug) {
+	fprintf(stderr, "RteFindOutputNet: (%x:%x:%x:%x:%x:%x)\n",
+		(unsigned char)NET_ETHER_ADDR_BYTE1(addrPtr->addr.ether),
+		(unsigned char)NET_ETHER_ADDR_BYTE2(addrPtr->addr.ether),
+		(unsigned char)NET_ETHER_ADDR_BYTE3(addrPtr->addr.ether),
+		(unsigned char)NET_ETHER_ADDR_BYTE4(addrPtr->addr.ether),
+		(unsigned char)NET_ETHER_ADDR_BYTE5(addrPtr->addr.ether),
+		(unsigned char)NET_ETHER_ADDR_BYTE6(addrPtr->addr.ether));
+    }
+    netIDPtr->net = (int)addrPtr->netPtr;
+    netIDPtr->host = (int)addrPtr;
+    *maxOutSizePtr = addrPtr->netPtr->maxOutputSize;
+
+found:
+#ifdef notdef
+    prevID = *netIDPtr;
+    prevDest = dest;
+    prevOutSize = *maxOutSizePtr;
+#endif notdef
+    return(TRUE);
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rte_UpdateRoute --
+ *
+ *	Update a route.  This tells IPInput to look for the 'useAddr'
+ *	so we can get a good ethernet address for it.
+ * 	
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Rte_UpdateRoute(toAddr, useAddr)
+    Net_InetAddress	toAddr;	/* What we were using.  */
+    Net_InetAddress	useAddr;	/* What we should use. */
+{
+
+        register NetInfo	*infoPtr;
+	int			i;
+
+    for (i=0; i < numNetInterfaces; i++) {
+	infoPtr = &netInfo[i];
+	if ((infoPtr->subnetMask & toAddr) == infoPtr->subnetPart) {
+	    /*
+	     * The address is for our subnet.
+	     */
+	    lookforIPAddress = toAddr;
+	}
+    }
+    return (0);
+
+}
+
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rte_OutputPacket --
+ *
+ *	Sends an IP packet on the network. The ethernet header is
+ *	formatted to send the packet to the given destination. The
+ *	packet type is set to the IP type value.
+ *		
+ *	This routine only works for ethernets. 
+ *
+ * Results:
+ *	SUCCESS 	- the packet was sent.
+ *	FAILURE		- the write failed.
+ *
+ * Side effects:
+ *	A packet is sent out on the wire.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Rte_OutputPacket(netID, packetPtr)
+    Rte_NetID	netID;
+    register IPS_Packet	*packetPtr;
+{
+    register NetInfo	*infoPtr;
+    register NetAddrInfo *addrPtr;
+    ReturnStatus	status;
+    int			numWritten;
+    int			len;
+#ifdef KERNEL
+    Net_ScatterGather	ioVector;
+#endif
+
+    infoPtr = (NetInfo *)netID.net;
+    addrPtr = (NetAddrInfo *)netID.host;
+
+    if ((addrPtr->flags & NET_ETHERNET) == 0) {
+	/*
+	 * We don't have an ethernet address for this guy.
+	 */
+	return(FAILURE);
+    }
+
+    packetPtr->net.etherPtr = (Net_EtherHdr *)(((Address) packetPtr->ipPtr) - 
+					sizeof(*packetPtr->net.etherPtr));
+    NET_ETHER_HDR_TYPE(*(packetPtr->net.etherPtr)) = Net_HostToNetShort(NET_ETHER_IP);
+    NET_ETHER_ADDR_COPY(addrPtr->addr.ether,
+			NET_ETHER_HDR_DESTINATION(*(packetPtr->net.etherPtr)));
+
+    len = packetPtr->ipLen + packetPtr->hdrLen + packetPtr->dataLen;
+
+    if (len > infoPtr->maxOutputSize) {
+	panic(
+    "Rte_OutputPacket: tried to send too much: ip = %d, hdr = %d, data= %d\n",
+		    packetPtr->ipLen, packetPtr->hdrLen, packetPtr->dataLen);
+	return(FAILURE);
+    }
+			
+    if (ips_Debug) {
+	(void) fprintf(stderr, "Rte_OutputPacket: %d\n", len);
+    }
+
+#ifdef TEST_RANDOM_OUTPUT_LOST
+    if ((random()&0x1) == 0) {
+	printf("Losing a output packet\n");
+	return(SUCCESS);
+    }
+#endif
+
+#ifdef TEST_DISCONNECT
+
+	if (ips_Disconnect) {
+	    printf("Losing a output packet\n");
+	    return(SUCCESS);
+	}
+#endif
+
+#ifdef KERNEL
+    /*
+     * Call the network output routine.   By now the packet has been assembled
+     * contiguously.  However, we have separate pointers to the ethernet
+     * header and the IP header that follows immediately.
+     */
+    ioVector.bufAddr 	= (Address)packetPtr->ipPtr;
+    ioVector.length	= len;
+
+    Net_EtherOutputSync(packetPtr->net.etherPtr, &ioVector, 1);
+    numWritten = len;
+    status = SUCCESS;
+#else
+    /*
+     * Write the packet to the network device file.
+     */
+    len += sizeof(*packetPtr->net.etherPtr);
+    numWritten = write(infoPtr->streamID, (Address)packetPtr->net.etherPtr,len);
+    status = (numWritten == len) ? SUCCESS : FAILURE; 
+    if (status != SUCCESS) {
+        perror("Rte_OutputPacket");
+    }
+    if (numWritten != len) {
+	(void) fprintf(stderr, 
+	"Rte_OutputPacket: write failed: num written (%d) != len (%d)\n",
+	    numWritten, len);
+    }
+#endif
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ReadIPPacket --
+ *
+ *	Reads one or more packets from the IP network device and passes them
+ *	to the IP input routine. Called from the FS dispatcher.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Allocates memory which might not be deallocated immediately.
+ *	If the incomming address is lookforIPAddress we update the
+ *	routing information for it.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifndef KERNEL
+
+/*ARGSUSED*/
+static void
+ReadIPPacket(data, streamID, eventMask)
+    ClientData	data;			/* Network interface number. */
+    int		streamID;		/* ID of stream that became readable.*/
+    int		eventMask;		/* Mask to show what event happened.
+					 * Must be FS_READABLE. */
+{
+    Rte_NetID		netID;
+    int			amtRead;
+    int			bufLen = NET_ETHER_MAX_BYTES;
+    Boolean		reusePacket = FALSE;
+    int			packets = 0;
+    NetInfo		*infoPtr;
+    NetAddrInfo		*addrPtr;
+    IPS_Packet		packet;
+
+#define MAX_PACKETS	4
+
+    infoPtr = &netInfo[(int)data];
+    while (packets < MAX_PACKETS) {
+	packets++;
+	netID.net = (int)infoPtr;
+	netID.host = -1;
+    
+	/*
+	 * We have to allocate a buffer from the heap and not from the
+	 * stack because the IP routine may need to hang on to it after this
+	 * routine returns. To make the SPUR happy, we insure that the ethernet
+	 * header starts on a short-word boundry.
+	 */
+    
+	bufLen = NET_ETHER_MAX_BYTES;
+    
+	if (!reusePacket) {
+	    packet.base = malloc((unsigned int) bufLen + 2);
+	    packet.dbase = packet.base+2;
+	    reusePacket = TRUE;
+	}
+    
+	amtRead = read(streamID, packet.dbase, bufLen);
+	if (amtRead < 0) {
+	    if (errno == EWOULDBLOCK) {
+		break;
+	    } else {
+		perror("ReadIPPacket (Fs_Read)");
+		exit(1);
+	    }
+	}
+	if (amtRead <= 0) {
+	    panic("ReadIPPacket: EOF reading network");
+	}
+
+	packet.totalLen  = amtRead;
+	packet.ipLen = amtRead - sizeof(*packet.net.etherPtr);
+	packet.ipPtr = (Net_IPHeader *) (packet.dbase + sizeof(*packet.net.etherPtr));
+    
+#ifdef TEST_RANDOM_INPUT_LOST
+	if ((random()&0x1) == 0) {
+	    fprintf(stderr, "Losing an input packet\n");
+	    continue;
+	}
+#endif
+#ifdef TEST_DISCONNECT
+       if (ips_Disconnect) {
+	    printf(stderr, "Losing an input packet\n");
+	    continue;
+	}
+#endif
+	/*
+	 * PRIMITIVE ROUTING.  Snarf up the ethernet source address of
+	 * packets comming from hosts (1) that we want to know about.
+	 */
+	if (Net_NetToHostInt(packet.ipPtr->source) == lookforIPAddress) {
+	    RteInsertAddress(lookforIPAddress,
+		NET_ETHER_HDR_SOURCE_PTR(*(Net_EtherHdr *) packet.dbase),
+		NET_UPDATE_ADDR, infoPtr);
+	    lookforIPAddress = NET_INET_LOCAL_HOST;
+	}
+    
+	if (IP_Input(netID, &packet) == SUCCESS) {
+	    reusePacket = FALSE;
+	} else {
+	    reusePacket = TRUE;;
+	}
+    }
+    if (reusePacket) {
+	free(packet.base);
+    }
+}
+#endif /* not KERNEL */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * IP_PacketInput --
+ *
+ *	Called to take a packet off the input queue.  We are called
+ *	via a Proc_CallFunc initiated from interrupt handler.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Allocates memory which might not be deallocated immediately.
+ *	If the incomming address is lookforIPAddress we update the
+ *	routing information for it.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifdef KERNEL
+
+/*ARGSUSED*/
+void
+IP_PacketInput(protoPtr, callInfoPtr)
+    ClientData protoPtr;
+    Proc_CallInfo *callInfoPtr;
+{
+    Rte_NetID		netID;
+    NetInfo		*infoPtr;
+    NetAddrInfo		*addrPtr;
+    Fs_Device		device;
+    IPS_Packet		packet;
+    int			amtRead;
+    ReturnStatus	status;
+
+    infoPtr = &netInfo[0];
+    netID.net = (int)infoPtr;
+    netID.host = -1;
+    
+    /*
+     * We have to allocate a buffer from the heap and not from the
+     * stack because the IP routine may need to hang on to it after this
+     * routine returns. To make the SPUR happy, we insure that the ethernet
+     * header (dbase) starts on a short word boundary causing the rest of
+     * the packet to be word aligned.
+     */
+
+    amtRead = NET_ETHER_MAX_BYTES;
+    
+    packet.base = malloc((unsigned int) amtRead + 2);
+    packet.dbase = packet.base+2;
+
+    /*
+     * Fake a Fs_Device structure and pass it to DevNet_FsRead to
+     * get the packet off of the input queue.
+     */
+    device.data = protoPtr;
+    status = DevNet_FsRead(&device, 0, amtRead, packet.dbase, &amtRead);
+    if (status != SUCCESS) {
+	goto exit;
+    }
+
+    packet.totalLen  = amtRead;
+    packet.ipLen = amtRead - sizeof(*packet.net.etherPtr);
+    packet.ipPtr = (Net_IPHeader *) (packet.dbase + sizeof(*packet.net.etherPtr));
+    
+#ifdef TEST_RANDOM_INPUT_LOST
+    if ((random()&0x1) == 0) {
+	printf("IP_PacketInput: Losing an input packet\n");
+	status = FAILURE;
+	goto exit;
+    }
+#endif
+#ifdef TEST_DISCONNECT
+   if (ips_Disconnect) {
+	printf("IP_PacketInput: Losing an input packet\n");
+	status = FAILURE;
+	goto exit;
+    }
+#endif
+    /*
+     * PRIMITIVE ROUTING.  Snarf up the ethernet source address of
+     * packets comming from hosts (1) that we want to know about.
+     */
+    if (Net_NetToHostInt(packet.ipPtr->source) == lookforIPAddress) {
+	RteInsertAddress(lookforIPAddress,
+	    &NET_ETHER_HDR_SOURCE(*(Net_EtherHdr *) packet.dbase),
+	    NET_UPDATE_ADDR, infoPtr);
+	lookforIPAddress = NET_INET_LOCAL_HOST;
+    }
+    status = IP_Input(netID, &packet);
+exit:
+    if (status != SUCCESS) {
+	free(packet.base);
+    }
+}
+#endif /* KERNEL */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rte_GetNetNum --
+ *
+ *	Returns the Internet network # for a route address specified
+ *	by the argument.
+ *
+ * Results:
+ *	An Internet network #.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+unsigned int
+Rte_GetNetNum(netID)
+    Rte_NetID	netID;
+{
+    return(((NetInfo *)netID.net)->netPart);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rte_GetBroadcastAddr --
+ *
+ *	Returns the official Internet address for a route address specified
+ *	by the argument.
+ *
+ * Results:
+ *	An Internet address.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Net_InetAddress
+Rte_GetBroadcastAddr(netID)
+    Rte_NetID	netID;
+{
+    return(Net_HostToNetInt( ((NetInfo *)netID.net)->localBrdcastAddr ));
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rte_GetSubnetMask --
+ *
+ *	Returns the official Internet address for the route address specified
+ *	by the argument.
+ *
+ * Results:
+ *	An Internet address.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+unsigned int
+Rte_GetSubnetMask(netID)
+    Rte_NetID	netID;
+{
+    return(((NetInfo *)netID.net)->subnetMask);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rte_GetOfficialAddr --
+ *
+ *	Returns the official Internet (broadcast) address for this host.
+ *
+ * Results:
+ *	An Internet address.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Net_InetAddress
+Rte_GetOfficialAddr(broadcastWanted)
+    Boolean 	broadcastWanted;	/* If TRUE, return the official 
+					 * broadcast address, else the
+					 * official address. */
+{
+    if (broadcastWanted) {
+	return(Net_HostToNetInt(netInfo[0].localBrdcastAddr));
+    } else {
+	return(Net_HostToNetInt(netInfo[0].address));
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rte_IsLocalAddr --
+ *	Determines whether an address is local.
+ *
+ * Results:
+ *	Returns TRUE if the address is on the local net (including different
+ *	subnets), FALSE otherwise.
+ *	
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Boolean
+Rte_IsLocalAddr(netID)
+    Rte_NetID	netID;			/* Net identifier for remote host */
+{
+    register NetAddrInfo *addrPtr = (NetAddrInfo *)netID.host;
+    int remoteNet = Net_HostToNetInt(addrPtr->inet) &
+	((NetInfo *)netID.net)->netMask;
+    int localNet = Net_HostToNetInt(netInfo[0].address) & netInfo[0].netMask;
+
+    return(remoteNet == localNet);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rte_IsBroadcastAddr --
+ *
+ *	Checks an Internet address to see if it's a broadcast address.
+ *	There are two types of general broadcast addresses: the old style 
+ *	(0.0.0.0) and the new style (255.255.255.255). In addition, 
+ *	there are broadcast addresses for the local network: e.g.
+ *	(128.32.0.0) and (128.32.255.255). If subnetting is in use,
+ *	(128.32.150.0) and (128.32.150.255) are examples of subnet
+ *	broadcast addresses using the old and new styles.
+ *
+ *	This depends on these various addresses having been installed.
+ *
+ * Results:
+ *	TRUE	- it is a broadcast address.
+ *	FALSE	- it is an address of a host.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Boolean
+Rte_IsBroadcastAddr(address)
+    Net_InetAddress	address;
+{
+    NetAddrInfo *addrPtr;
+
+    address = Net_NetToHostInt(address);
+    addrPtr = RteFetchAddress(address);
+    if ((addrPtr != (NetAddrInfo *)NULL) && (addrPtr->flags & NET_BROADCAST)) {
+	return(TRUE);
+    }
+    return(FALSE);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetLineList --
+ *
+ *	Reads in a group of lines delimited by startDelim and endDelim
+ *	into arrayPtr. Each line in the array is stored in a separate 
+ *	buffer that must be freed when it is no longer needed.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Memory for the lines is allocated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifndef KERNEL
+static void
+GetLineList(stream, startDelim, endDelim, arraySize, arrayPtr, numLinesPtr)
+    FILE	*stream;	/* Stream to read from. */
+    char	*startDelim;	/* Starting delimiter, rest of line ignored. */
+    char	*endDelim;	/* Ending delimiter, rest of line ignored. */
+    int		arraySize;	/* Number of lines in arrayPtr. */
+    char	**arrayPtr;	/* Array to store ptrs to each line. */
+    int		*numLinesPtr;	/* Actual number of lines stored in arrayPtr.*/
+{
+    char 	*linePtr;
+    int		lineNum = -1;
+
+    /*
+     * Search for the start delimiter, ignoring the rest of the line.
+     */
+
+    linePtr = malloc(LINE_LEN+1);
+    do {
+	if (fgets(linePtr, LINE_LEN, stream) == NULL) {
+	    goto done;
+	}
+    } while (strncmp(startDelim, linePtr, strlen(startDelim)) != 0);
+    /*
+
+     * Now save all lines until the ending delimiter is seen.
+     * Lines starting with # are not saved.
+     */
+
+    if (fgets(linePtr, LINE_LEN, stream) == NULL) {
+	goto done;
+    }
+    while (strncmp(endDelim, linePtr, strlen(endDelim)) != 0) {
+	if (linePtr[0] != COMMENT_CHAR) {
+	    lineNum++;
+	    if (lineNum == arraySize) {
+		(void) fprintf(stderr, 
+			"GetLineList: max num lines reached %d\n", arraySize);
+		lineNum--;
+		break;
+	    }
+	    arrayPtr[lineNum] = linePtr;
+	    linePtr = malloc(LINE_LEN+1);
+	}
+	if (fgets(linePtr, LINE_LEN, stream) == NULL) {
+	    break;
+	}
+    }
+    /*
+     * Free the line that contains the end delimiter.
+     */
+done:
+    free(linePtr);
+
+    *numLinesPtr = lineNum + 1;
+}
+#endif
+@
+
+
+1.16
+log
+@Added byte swapping so ICMP redirects will work on machine with backward
+byte sex (ie ds3100).  
+
+@
+text
+@d40 1
+a40 1
+static char rcsid[] = "$Header: /sprite/src/daemons/ipServer/RCS/route.c,v 1.15 90/01/03 15:46:29 nelson Exp $ SPRITE (Berkeley)";
+d245 1
+d357 25
+d389 1
+a389 4
+	if (hostPtr->netType != HOST_ETHER) {
+	    continue;
+	}
+	address = *((Net_InetAddress *)&(hostPtr->inetAddr));
+d391 16
+a406 5
+	if (!foundOfficialAddr && 
+	    strcmp(hostPtr->name, myHostName) == 0) {
+	    infoPtr->address = address;
+	    flags |= NET_ALIAS;
+	    foundOfficialAddr = TRUE;
+a407 2
+	(void)RteInsertAddress(address,
+		(Net_EtherAddress *)hostPtr->netAddr.etherAddr, flags, infoPtr);
+a410 3
+    if (!foundOfficialAddr) {
+	panic("Rte_AddressInit: can't find IP address for %s\n", myHostName);
+    }
+@
+
+
+1.15
+log
+@Got UDP broadcast to work.
+@
+text
+@d40 1
+a40 1
+static char rcsid[] = "$Header: /sprite/src/daemons/ipServer/RCS/route.c,v 1.14 89/07/23 17:34:48 nelson Exp $ SPRITE (Berkeley)";
+d989 1
+a989 1
+	if (packet.ipPtr->source == lookforIPAddress) {
+d1093 1
+a1093 1
+    if (packet.ipPtr->source == lookforIPAddress) {
+@
+
+
+1.14
+log
+@Fixed up debugging info.
+@
+text
+@d40 1
+a40 1
+static char rcsid[] = "$Header: /sprite/src/daemons/ipServer/RCS/route.c,v 1.13 89/05/19 14:40:54 douglis Exp Locker: nelson $ SPRITE (Berkeley)";
+d169 1
+d171 1
+d366 1
+a366 1
+	address = Net_NetToHostInt(* (Net_InetAddress *) &(hostPtr->inetAddr));
+d440 1
+a440 1
+    (void)RteInsertAddress(NET_INET_BROADCAST_ADDR, (Net_EtherAddress *)NULL,
+d444 1
+a444 1
+    (void)RteInsertAddress(infoPtr->localBrdcastAddr, (Net_EtherAddress *)NULL,
+d446 1
+a446 1
+    (void)RteInsertAddress(infoPtr->netBrdcastAddr, (Net_EtherAddress *)NULL,
+d458 4
+d704 3
+d717 8
+@
+
+
+1.13
+log
+@Rte_IsLocalAddr to tell if a netID is for a local address.
+@
+text
+@d40 1
+a40 1
+static char rcsid[] = "$Header: /sprite/src/daemons/ipServer/RCS/route.c,v 1.12 89/05/19 10:51:05 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d928 1
+a928 1
+	 * header starts on a short world boundry.
+d951 1
+a951 1
+    
+d958 1
+a958 1
+	    printf("Losing an input packet\n");
+d964 1
+a964 1
+	    printf("Losing a input packet\n");
+d969 1
+a969 1
+	 * PRIMATIVE ROUTING.  Snarf up the ethernet source address of
+d1073 1
+a1073 1
+     * PRIMATIVE ROUTING.  Snarf up the ethernet source address of
+@
+
+
+1.12
+log
+@change by jhh to use NET_ETHER_HDR_SOURCE_PTR
+@
+text
+@d40 1
+a40 1
+static char rcsid[] = "$Header: /sprite/src/daemons/ipServer/RCS/route.c,v 1.11 89/04/10 16:30:42 brent Exp $ SPRITE (Berkeley)";
+d1193 30
+@
+
+
+1.11
+log
+@Changed initialization of the localhost route so it also includes
+an ethernet address.  This is needed when trying to talk to oneself.
+@
+text
+@d40 1
+a40 1
+static char rcsid[] = "$Header: /sprite/src/daemons/ipServer/RCS/route.c,v 1.10 89/03/23 09:40:33 brent Exp $ SPRITE (Berkeley)";
+d974 1
+a974 1
+		&NET_ETHER_HDR_SOURCE(*(Net_EtherHdr *) packet.dbase),
+@
+
+
+1.10
+log
+@Added #ifdef KERNEL for kernel-resident ipServer
+@
+text
+@d40 1
+a40 1
+static char rcsid[] = "$Header: /sprite/src/daemons/ipServer/RCS/route.c,v 1.9 89/02/21 10:07:08 brent Exp $ SPRITE (Berkeley)";
+d238 1
+a324 2
+    (void)RteInsertAddress(NET_INET_LOCAL_HOST, (Net_EtherAddress *)NULL,
+		NET_ALIAS, infoPtr);
+d382 9
+@
+
+
+1.9
+log
+@Added a hash table of routes and eliminated the searches
+of the neighbors list.
+@
+text
+@d40 1
+a40 1
+static char rcsid[] = "$Header: route.c,v 1.8 88/09/28 11:44:59 mendel Exp $ SPRITE (Berkeley)";
+d50 1
+a50 1
+#include <stdio.h>
+d53 3
+a58 1
+#include <host.h>
+d95 4
+d109 11
+d191 6
+d216 6
+d225 1
+d234 2
+a238 1
+    FILE		*stream;
+a240 1
+    Host_Entry 		*hostPtr;
+d243 1
+d249 1
+d257 1
+a257 1
+
+a305 1
+    infoPtr->flags		|= NET_IN_USE;
+d308 3
+d336 1
+a336 1
+
+d346 1
+a346 1
+
+d354 1
+a354 1
+
+d381 1
+d394 1
+a394 1
+
+d408 1
+a408 1
+
+d443 1
+d449 1
+d484 13
+d498 1
+d692 3
+a694 3
+	 * of the gateway.  If we get a redirect ICMP then we should
+	 * the physical address.  For now we just use a hack in IPInput
+	 * to grab the ethernet source address of packets from dest.
+d790 3
+a822 1
+    len += sizeof(*packetPtr->net.etherPtr);
+d837 18
+d865 1
+d889 2
+d981 100
+d1246 1
+a1246 1
+
+d1302 1
+@
+
+
+1.8
+log
+@Added dynamic routing table updating and code for testing packet lost 
+recovery code.
+@
+text
+@d40 1
+a40 1
+static char rcsid[] = "$Header: route.c,v 1.7 88/09/15 09:33:45 mendel Exp $ SPRITE (Berkeley)";
+d51 8
+a58 6
+#include "sys/file.h"
+#include "netEther.h"
+#include "list.h"
+#include "string.h"
+#include "host.h"
+#include "fs.h"
+d72 8
+a79 6
+ * NeighborInfo is used to map Inet addresses to ethernet addresses.
+ * A table is kept of other hosts that are directly connected to us on the
+ * same network. It is used during IP output to see if a packet can be
+ * sent directly or needs to be sent through a gateway.
+ *
+ * To do: replace with ARP or use a hash lookup.
+d82 10
+a91 4
+typedef struct {
+    Net_EtherAddress	ether;
+    Net_InetAddress	inet;
+} NeighborInfo;
+d93 10
+d107 1
+a107 1
+typedef struct {
+d123 1
+a123 7
+    int		numAliases;	/* Size of aliases array. */
+    Net_InetAddress *aliases;	/* Array of addresses that correspond to us. */
+    int		numNeighbors;	/* # of neighbors in the following array. */
+    NeighborInfo *neighbors;	/* Other hosts directly connect to
+				 * this network. */
+    int	gateway;		/* The index into the neighbors list for the
+				 * neighbor that's a gateway. */
+d126 2
+a127 2
+static int localHostIndex;	/* The index into the neighbors list for
+				 * the current host's entry. */
+d139 3
+a141 1
+ * Dynamic routes.
+a142 12
+#define	MAX_DYNAMIC_ROUTES	256	/* Max number of dynamic routes. */
+/*
+ * Dynamic route entries are managed in a first come first server base
+ * with firstDynamicRoute pointer at the first dynamic route in the list 
+ * nextDynamicRoute points to the next available route entry.
+ */
+NeighborInfo		*firstDynamicRoute;
+NeighborInfo		*nextDynamicRoute;
+
+/*
+ * IP Address to look for route to.
+ */
+d147 3
+d178 4
+a181 1
+ *	The network table is initialized.
+a196 1
+    char		*gateway;
+d198 1
+d205 1
+a212 4
+    /*
+     * For now, assume just one net in the netinfo file.
+     */
+
+d219 4
+d278 5
+d287 2
+d290 2
+a292 2
+
+
+d304 7
+a310 10
+		&infoPtr->numAliases);
+    if (infoPtr->numAliases > 0) {
+	infoPtr->aliases = (Net_InetAddress *) 
+	  malloc((unsigned int) infoPtr->numAliases * sizeof(Net_InetAddress));
+	for (i = 0; i < infoPtr->numAliases; i++) {
+	    (void) sscanf(array[i], "%s %s", host, inetString);
+	    infoPtr->aliases[i] = 
+		    Net_NetToHostInt(Net_StringToInetAddr(inetString));
+	    free(array[i]);
+	}
+d314 5
+a318 1
+     *  Count the neighbors in /etc/spritehosts.
+a319 13
+     if (Host_Start() != SUCCESS) {
+	panic("Rte_AddressInit: can't read host file\n");
+     }
+     numHosts = 0;
+     hostPtr = Host_Next();
+     while (hostPtr != (Host_Entry *) NULL) {
+	if (hostPtr->netType != HOST_ETHER) {
+	    continue;
+	}
+	numHosts++;
+	hostPtr = Host_Next();
+    }
+    Host_End();
+a320 16
+    if (numHosts == 0) { 
+	panic("Rte_AddressInit: can't find addresses for neighbors\n");
+    }
+    infoPtr->numNeighbors = numHosts;
+
+    /*
+     * Allocate one extra slot for the gateway info and room of the 
+     * dynamic routes. 
+     */
+    infoPtr->neighbors = (NeighborInfo *) 
+	    malloc((unsigned int) 
+		(1 + MAX_DYNAMIC_ROUTES + infoPtr->numNeighbors) * 
+						sizeof(NeighborInfo));
+
+
+
+d322 1
+a322 1
+	panic("Rte_AddressInit: can't read host file\n");
+d324 4
+a327 2
+    for (i = 0; i < infoPtr->numNeighbors; i++) {
+	hostPtr = Host_Next();
+d331 2
+a332 5
+	bcopy((Address) hostPtr->netAddr.etherAddr, 
+	      (Address) &(infoPtr->neighbors[i].ether),
+		    HOST_ETHER_ADDRESS_SIZE) ;
+	infoPtr->neighbors[i].inet  = 
+	    Net_NetToHostInt(* (Net_InetAddress *) &(hostPtr->inetAddr));
+d335 2
+a336 2
+	    infoPtr->address = infoPtr->neighbors[i].inet;
+	    localHostIndex = i;
+d339 2
+d343 1
+a343 1
+    infoPtr->gateway = infoPtr->numNeighbors++;
+a348 5
+     * Set up the pointers to the dynamic route entries.
+     */
+    firstDynamicRoute = nextDynamicRoute = 
+			&(infoPtr->neighbors[infoPtr->numNeighbors]);
+    /*
+d360 1
+a360 1
+    GetLineList(stream, "Start_Gateways", "End_Gateways", 1, &gateway,
+d362 15
+a376 15
+    if (                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                faces; i++) {
+	infoPtr = &netInfo[i];
+	if ((infoPtr->subnetMask & newAddress) == infoPtr->subnetPart) {
+	    /*
+	     * The address is for our subnet.
+	     */
+	    for (j = 0; j < infoPtr->numNeighbors; j++) {
+		if (infoPtr->neighbors[j].inet == newAddress) {
+		    break;
+		}
+	    }
+	    if (j != infoPtr->numNeighbors) {
+		/*
+		 * Found it!
+		 */
+d378 5
+a382 16
+		NET_ETHER_ADDR_COPY(etherAddress,infoPtr->neighbors[j].ether);
+		return(j);
+	    } else {
+		/* 
+		 * Create a dynamic entry.
+		 */
+		if (nextDynamicRoute > (firstDynamicRoute+MAX_DYNAMIC_ROUTES)){
+		    /*
+		     * No room, just return the entry of the gateway.
+		     */
+		    return (0);
+		}
+		nextDynamicRoute->inet = newAddress;
+		NET_ETHER_ADDR_COPY(etherAddress,nextDynamicRoute->ether);
+		nextDynamicRoute++;
+		return(infoPtr->numNeighbors++);
+d384 28
+a411 2
+	    }
+	}
+a412 1
+    return (0);
+d414 1
+d416 1
+d418 50
+d473 195
+d670 2
+a671 1
+ *	Update a route.
+d735 1
+d740 2
+a741 1
+    infoPtr = &netInfo[netID.net];
+d743 7
+d753 1
+a753 1
+    NET_ETHER_ADDR_COPY(infoPtr->neighbors[netID.host].ether,
+d784 1
+a784 2
+    numWritten = write(infoPtr->streamID, 
+				(Address) packetPtr->net.etherPtr, len);
+d803 1
+a803 1
+ *	Reads a packet from the IP network device and passes it
+d811 2
+d820 1
+a820 1
+    ClientData	data;			/* Private data for this routine. */
+d827 5
+a831 1
+    int			bufLen;
+d834 1
+a834 1
+#define ReadOnePacketAndReturn
+d836 38
+a873 29
+    netID.net = 0;
+    netID.host = -1;
+
+    /*
+     * We have to allocate a buffer from the heap and not from the
+     * stack because the IP routine may need to hang on to it after this
+     * routine returns. To make the SPUR happy, we insure that the ethernet
+     * header starts on a short world boundry.
+     */
+
+    bufLen = NET_ETHER_MAX_BYTES;
+
+#ifdef ReadOnePacketAndReturn
+    packet.base = malloc((unsigned int) bufLen + 2);
+    packet.dbase = packet.base+2;
+
+    amtRead = read(streamID, packet.dbase, bufLen);
+    if (amtRead < 0) {
+	perror("ReadIPPacket (Fs_Read)");
+	exit(1);
+    }
+    if (amtRead <= 0) {
+	panic("ReadIPPacket: EOF reading network");
+    }
+
+    packet.totalLen  = amtRead;
+    packet.ipLen = amtRead - sizeof(*packet.net.etherPtr);
+    packet.ipPtr = (Net_IPHeader *) (packet.dbase + sizeof(*packet.net.etherPtr));
+
+d875 4
+a878 5
+    if ((random()&0x1) == 0) {
+	printf("Losing a input packet\n");
+	free(packet.base);
+	return;
+    }
+d881 4
+a884 5
+   if (ips_Disconnect) {
+	printf("Losing a input packet\n");
+	free(packet.base);
+	return;
+    }
+d886 16
+a901 4
+    if (packet.ipPtr->source == lookforIPAddress) {
+	Rte_AddDynamicRoute(lookforIPAddress,
+	    NET_ETHER_HDR_SOURCE(*(Net_EtherHdr *) packet.dbase));
+	lookforIPAddress = NET_INET_LOCAL_HOST;
+d903 1
+a903 2
+
+    if (IP_Input(netID, &packet) == FAILURE) {
+a905 37
+
+#endif ReadOnePacketAndReturn
+
+#ifdef ReadManyPackets
+    {
+	Boolean reusePacket = FALSE;
+
+	while (TRUE) {
+	    if (!reusePacket) {
+		packet.base = malloc((unsigned int) bufLen+2);
+		packet.dbase = packet.base + 2;
+	    }
+
+	    amtRead = read(streamID,  packet.dbase, bufLen);
+	    if (amtRead < 0 && errno == EWOULDBLOCK) { 
+		free(packet.base);
+		break;
+	    } else if (amtRead < 0) {
+		perror("ReadIPPacket (Fs_Read)");
+		exit(1);
+	    } else if (amtRead <= 0) {
+		panic("ReadIPPacket: EOF reading network");
+	    }
+
+	    packet.totalLen  = amtRead;
+	    packet.ipLen = amtRead - sizeof(*packet.net.etherPtr);
+	    packet.ipPtr = (Net_IPHeader *)(packet.dbase +
+			sizeof(*packet.net.etherPtr));
+
+	    if (IP_Input(netID, &packet) == SUCCESS) {
+		reusePacket = FALSE;
+	    } else {
+		reusePacket = TRUE;
+	    }
+	}
+    }
+#endif ReadManyPackets
+d930 1
+a930 1
+    return(netInfo[netID.net].netPart);
+d955 1
+a955 1
+    return(Net_HostToNetInt(netInfo[netID.net].localBrdcastAddr));
+d980 1
+a980 1
+    return(netInfo[netID.net].subnetMask);
+d1027 2
+d1043 1
+d1046 3
+a1048 6
+
+    if ((address == NET_INET_BROADCAST_ADDR) || 
+	(address == NET_INET_ANY_ADDR) ||
+        (address == netInfo[0].localBrdcastAddr) ||
+	(address == netInfo[0].netBrdcastAddr)) {
+        return(TRUE);
+a1049 10
+
+    /*
+     * See if address is the old-stye broadcast address for the local subnet 
+     * and net.
+     */
+    if ((address == netInfo[0].subnetPart) ||
+	(address == netInfo[0].netPart)) {
+        return(TRUE);
+    }
+
+@
+
+
+1.7
+log
+@Added/removed byte swapping for SPUR.
+@
+text
+@d40 1
+a40 1
+static char rcsid[] = "$Header: route.c,v 1.6 88/08/26 16:34:52 mendel Exp $ SPRITE (Berkeley)";
+d58 4
+d124 11
+d137 4
+d319 1
+d321 2
+a322 1
+     * Allocate one extra slot for the gateway info.
+d325 3
+a327 2
+	    malloc((unsigned int) (1 + infoPtr->numNeighbors) * 
+					    sizeof(NeighborInfo));
+d329 2
+a356 1
+
+d358 5
+d643 3
+a645 1
+		netIDPtr->host = infoPtr->gateway;
+d673 116
+d839 14
+d928 20
+@
+
+
+1.6
+log
+@Patches for SPUR
+@
+text
+@d40 1
+a40 1
+static char rcsid[] = "$Header: route.c,v 1.5 88/08/25 13:49:32 mendel Exp $ SPRITE (Berkeley)";
+d249 2
+a250 1
+	infoPtr->address = Net_StringToInetAddr(newOfficialAddr);
+d273 2
+a274 1
+	    infoPtr->aliases[i] = Net_StringToInetAddr(inetString);
+d319 1
+a319 1
+			    * (Net_InetAddress *) &(hostPtr->inetAddr);
+d322 1
+a322 1
+	    infoPtr->address = * (Net_InetAddress *) &(hostPtr->inetAddr);
+d353 3
+a355 1
+    infoPtr->neighbors[infoPtr->gateway].inet= Net_StringToInetAddr(inetString);    Net_StringToEtherAddr(etherString, 
+d367 1
+a367 1
+    infoPtr->localBrdcastAddr	= Net_HostToNetInt(infoPtr->subnetPart | 
+d370 1
+a370 1
+    infoPtr->netBrdcastAddr	= Net_HostToNetInt(infoPtr->netPart |
+d412 2
+a420 1
+	unsigned int	temp;
+a421 3
+
+	temp = Net_NetToHostInt(addr);
+
+d433 2
+a434 2
+		(temp == infoPtr->subnetPart) ||
+		(temp == infoPtr->netPart)) {
+d485 1
+d556 1
+d858 1
+a858 1
+    return(netInfo[netID.net].localBrdcastAddr);
+d910 1
+a910 1
+	return(netInfo[0].localBrdcastAddr);
+d912 1
+a912 1
+	return(netInfo[0].address);
+a943 1
+    unsigned int temp;
+d945 2
+d958 2
+a959 3
+    temp = Net_NetToHostInt(address);
+    if ((temp == netInfo[0].subnetPart) ||
+	(temp == netInfo[0].netPart)) {
+@
+
+
+1.5
+log
+@Patches for SPUR.
+@
+text
+@d40 1
+a40 1
+static char rcsid[] = "$Header: route.c,v 1.4 88/08/16 11:17:29 mendel Exp $ SPRITE (Berkeley)";
+d750 1
+d752 1
+a752 1
+    amtRead = read(streamID, packet.base + 2, bufLen);
+d763 1
+a763 1
+    packet.ipPtr = (Net_IPHeader *) (packet.base + 2 + sizeof(*packet.net.etherPtr));
+d778 1
+d781 1
+a781 1
+	    amtRead = read(streamID,  packet.base+2, bufLen);
+d794 1
+a794 1
+	    packet.ipPtr = (Net_IPHeader *)(packet.base + 2 +
+@
+
+
+1.4
+log
+@
+@
+text
+@d40 1
+a40 1
+static char rcsid[] = "$Header: route.c,v 1.3 88/05/15 21:31:36 andrew Exp $ SPRITE (Berkeley)";
+d671 3
+a673 2
+    packetPtr->net.etherPtr->type = Net_HostToNetShort(NET_ETHER_IP);
+    packetPtr->net.etherPtr->destination = infoPtr->neighbors[netID.host].ether;
+d742 2
+a743 1
+     * routine returns.
+d749 1
+a749 1
+    packet.base = malloc((unsigned int) bufLen);
+d751 1
+a751 1
+    amtRead = read(streamID, packet.base, bufLen);
+d762 1
+a762 1
+    packet.ipPtr = (Net_IPHeader *) (packet.base + sizeof(*packet.net.etherPtr));
+d776 1
+a776 1
+		packet.base = malloc((unsigned int) bufLen);
+d779 1
+a779 1
+	    amtRead = read(streamID,  packet.base, bufLen);
+d792 1
+a792 1
+	    packet.ipPtr = (Net_IPHeader *)(packet.base + 
+@
+
+
+1.3
+log
+@use Host_ routines to get neighbors info, instead from ipServer.config
+@
+text
+@d40 1
+a40 1
+static char rcsid[] = "$Header: route.c,v 6.2 88/04/24 23:06:58 andrew Exp $ SPRITE (Berkeley)";
+d50 2
+a52 2
+#include "sys.h"
+#include "byte.h"
+a53 3
+#include "io.h"
+#include "fs.h"
+#include "mem.h"
+d56 1
+d85 1
+a85 1
+    int		streamID;	/* Used with Fs_Read,Fs_Write. */
+a169 1
+    Host_Entry		*hosts[ARRAY_SIZE];
+d177 1
+a177 2
+    ReturnStatus	status;
+    Io_Stream		stream;
+d180 2
+d187 4
+a190 4
+    stream = Io_Open(filename, "r");
+    if (stream == (Io_Stream) NULL) {
+	Io_PrintStream(io_StdErr, "Can't open net info file '%s'\n", filename);
+	Proc_Exit(1);
+d197 1
+a197 1
+	(void) Io_GetLine(stream, LINE_LEN, line);
+d204 3
+a206 3
+    if (String_NCompare(String_Length("version"), "version", line) != 0) {
+	Io_PrintStream(io_StdErr, "Bad format in %s: version.\n", filename);
+	Proc_Exit(1);
+d208 1
+a208 1
+    Io_Print("Config file: %s\n   %s\n", filename, line);
+d222 1
+a222 1
+	(void) Io_GetLine(stream, LINE_LEN, line);
+d225 1
+a225 1
+    i = Io_ScanString(line, "%s 0x%x %d", devName, &infoPtr->subnetMask, 
+d228 1
+a228 1
+	Sys_Panic(SYS_FATAL, "Bad format in %s: device name.\n", filename);
+d231 4
+a234 5
+    status = Fs_Open(devName, FS_READ|FS_WRITE|FS_NON_BLOCKING, 
+			0, &infoPtr->streamID);
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "Rte_AddressInit (open net)");
+	Proc_Exit(status);
+d245 2
+a246 1
+    infoPtr->name		= String_Copy(devName, (char *) NULL);
+d269 1
+a269 1
+		    Mem_Alloc(infoPtr->numAliases * sizeof(Net_InetAddress));
+d271 1
+a271 1
+	    (void) Io_ScanString(array[i], "%s %s", host, inetString);
+d273 1
+a273 1
+	    Mem_Free(array[i]);
+d278 1
+a278 1
+     *  Find out the neighbors from /etc/spritehosts.
+d280 13
+d294 10
+a303 1
+    GetHosts(ARRAY_SIZE, hosts, &infoPtr->numNeighbors);
+d305 7
+a311 26
+    if (infoPtr->numNeighbors <= 0) {
+	Sys_Panic(SYS_FATAL, 
+		"Rte_AddressInit: can't find addresses for neighbors\n");
+    } else {
+	register Host_Entry *hostPtr;
+
+	/*
+	 * Allocate one extra slot for the gateway info.
+	 */
+	infoPtr->neighbors = (NeighborInfo *) 
+		Mem_Alloc((1 + infoPtr->numNeighbors) * sizeof(NeighborInfo));
+
+	for (i = 0; i < infoPtr->numNeighbors; i++) {
+	    hostPtr = hosts[i];
+	    if (hostPtr->netType != HOST_ETHER) {
+		continue;
+	    }
+	    infoPtr->neighbors[i].ether = hostPtr->netAddr.etherAddr;
+	    infoPtr->neighbors[i].inet  = hostPtr->inetAddr;
+	    if (!foundOfficialAddr && 
+		String_Compare(hostPtr->name, myHostName) == 0) {
+		infoPtr->address = hostPtr->inetAddr;
+		localHostIndex = i;
+		foundOfficialAddr = TRUE;
+	    }
+	    Host_FreeEntry(hostPtr);
+d313 11
+a323 1
+	infoPtr->gateway = infoPtr->numNeighbors++;
+d325 2
+d328 1
+a328 2
+	Sys_Panic(SYS_FATAL, "Rte_AddressInit: can't find IP address for %s\n",
+		myHostName);
+d347 1
+a347 1
+	Sys_Panic(SYS_FATAL, 
+d350 4
+a353 5
+    (void) Io_ScanString(gateway, "%s %s %s", host, inetString, etherString);
+    infoPtr->neighbors[infoPtr->gateway].inet= Net_StringToInetAddr(inetString);
+    infoPtr->neighbors[infoPtr->gateway].ether = 
+			Net_StringToEtherAddr(etherString);
+    Mem_Free(gateway);
+d371 2
+a372 2
+	Io_PrintStream(io_StdErr, "Host name = %s\n", myHostName);
+	Io_PrintStream(io_StdErr, "Official address = %s\n", 
+d374 1
+a374 1
+	Io_PrintStream(io_StdErr, "#neighbors = %d, aliases = %d\n\n", 
+d649 1
+a649 1
+ *	?		- result from Fs_Write.
+d671 1
+a671 1
+    packetPtr->net.etherPtr->type = NET_ETHER_IP;
+d677 1
+a677 1
+	Sys_Panic(SYS_FATAL, 
+d684 1
+a684 1
+	Io_PrintStream(io_StdErr, "Rte_OutputPacket: %d\n", len);
+d688 3
+a690 3
+    status = Fs_Write(infoPtr->streamID, len, (Address) packetPtr->net.etherPtr, 
+			&numWritten);
+
+d692 1
+a692 1
+	Stat_PrintMsg(status, "Rte_OutputPacket");
+d695 1
+a695 1
+	Sys_Panic(SYS_WARNING, 
+a727 1
+    ReturnStatus	status;
+d747 1
+a747 1
+    packet.base = Mem_Alloc(bufLen);
+d749 4
+a752 4
+    status = Fs_Read(streamID, bufLen, packet.base, &amtRead);
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "ReadIPPacket (Fs_Read)");
+	Proc_Exit(status);
+d755 1
+a755 2
+	Sys_Panic(SYS_FATAL, "ReadIPPacket: EOF reading network");
+	Proc_Exit(FAILURE);
+d763 1
+a763 1
+	Mem_Free(packet.base);
+d774 1
+a774 1
+		packet.base = Mem_Alloc(bufLen);
+d777 3
+a779 3
+	    status = Fs_Read(streamID, bufLen, packet.base, &amtRead);
+	    if (status == FS_WOULD_BLOCK) {
+		Mem_Free(packet.base);
+d781 3
+a783 3
+	    } else if (status != SUCCESS) {
+		Stat_PrintMsg(status, "ReadIPPacket (Fs_Read)");
+		Proc_Exit(status);
+d785 1
+a785 2
+		Sys_Panic(SYS_FATAL, "ReadIPPacket: EOF reading network");
+		Proc_Exit(FAILURE);
+d980 1
+a980 1
+    Io_Stream	stream;		/* Stream to read from. */
+d994 1
+a994 1
+    linePtr = Mem_Alloc(LINE_LEN+1);
+d996 1
+a996 1
+	if (Io_GetLine(stream, LINE_LEN, linePtr) == NULL) {
+d999 1
+a999 2
+    } while (String_NCompare(String_Length(startDelim), 
+						startDelim, linePtr) != 0);
+d1006 1
+a1006 1
+    if (Io_GetLine(stream, LINE_LEN, linePtr) == NULL) {
+d1009 1
+a1009 1
+    while (String_NCompare(String_Length(endDelim), endDelim, linePtr) != 0) {
+d1013 1
+a1013 1
+		Io_PrintStream(io_StdErr, 
+d1019 1
+a1019 1
+	    linePtr = Mem_Alloc(LINE_LEN+1);
+d1021 1
+a1021 1
+	if (Io_GetLine(stream, LINE_LEN, linePtr) == NULL) {
+d1029 1
+a1029 1
+    Mem_Free(linePtr);
+a1033 22
+GetHosts(arraySize, arrayPtr, numPtr)
+    int		arraySize;	/* Number of lines in arrayPtr. */
+    Host_Entry	**arrayPtr;	/* Array of ptrs to host entries */
+    int		*numPtr;	/* Actual number of entries stored in arrayPtr*/
+{
+     register int i = 0;
+     register Host_Entry *hostPtr;
+
+     if (Host_Start() != SUCCESS) {
+	Sys_Panic(SYS_FATAL, "GetHosts: can't read host file\n");
+     }
+     while (i < arraySize) {
+	hostPtr = Host_Next();
+	if (hostPtr == (Host_Entry *) NULL) {
+	    break;
+	} 
+	arrayPtr[i] = hostPtr;
+	i++;
+     }
+     Host_End();
+     *numPtr = i;
+}
+@
+
+
+1.2
+log
+@New update with Jacobson enhancements
+@
+text
+@d58 1
+a78 3
+    Boolean		isGateway; /* TRUE -> the host is connected to other 
+				  *  networks (so we can send it packets not 
+				  *  for this network.) */
+d143 4
+a146 4
+ *	5) a list of hosts on the same network. The official address is
+ *	   obtained from this if not specified as an argument.
+ *	This information is used to initialize the network and neighbor 
+ *	information tables.
+d170 3
+d178 1
+a180 1
+    Net_InetAddress	address;
+a184 2
+
+
+a278 2
+
+
+d280 1
+a280 11
+     ***********************************************************************
+     *
+     * Group 3: List of gateways and neighbors
+     *		Format:  <name> <ip-addr> <ethernet addr> {neighbor | gateway}
+     * 		Delimited by "Start_Neighbors" and "End_Neighbors"
+     *
+     *  If the official IP address has not been assigned, look at each
+     *  <name> to see if it's our host name. If so, then use the <ip-addr>
+     *  as our official address.
+     *
+     ***********************************************************************
+d283 1
+d285 5
+a289 2
+    GetLineList(stream, "Start_Neighbors", "End_Neighbors", ARRAY_SIZE, array, 
+    		&infoPtr->numNeighbors);
+d291 3
+a293 1
+    if (infoPtr->numNeighbors > 0) {
+d295 1
+a295 1
+			Mem_Alloc(infoPtr->numNeighbors * sizeof(NeighborInfo));
+d298 9
+a306 10
+
+	    (void) Io_ScanString(array[i], "%s %s %s %s", 
+			    host, inetString, etherString, line);
+
+	    Mem_Free(array[i]);
+	    infoPtr->neighbors[i].ether = Net_StringToEtherAddr(etherString);
+	    address			= Net_StringToInetAddr(inetString);
+	    infoPtr->neighbors[i].inet  = address;
+	    if (!foundOfficialAddr && String_Compare(host, myHostName) == 0) {
+		infoPtr->address = address;
+d310 1
+a310 7
+
+	    if (String_Compare("gateway", line) == 0) {
+		infoPtr->neighbors[i].isGateway = TRUE;
+		infoPtr->gateway = i;
+	    } else {
+		infoPtr->neighbors[i].isGateway = FALSE;
+	    }
+d312 1
+a313 1
+
+d319 27
+d1025 23
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d40 1
+a40 1
+static char rcsid[] = "$Header: route.c,v 6.0 87/09/08 15:56:11 andrew Stable $ SPRITE (Berkeley)";
+d112 2
+d262 1
+a262 1
+     *		 Format:  <name> <address>
+d315 1
+d542 12
+@

@@ -1,0 +1,171 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.5
+date     89.01.27.08.36.02;  author ouster;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.01.27.08.34.05;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.01.09.11.43.01;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.01.05.17.31.38;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.12.29.17.09.50;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.5
+log
+@Typo in last change.
+@
+text
+@'\" Copyright 1989 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/lib/forms/RCS/proto.man,v 1.3 89/01/09 11:43:01 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS <NAME> cmds
+.BS
+.SH NAME
+name \- Short description of what program does
+.SH SYNOPSIS
+.nf
+\fBname\fR [\fIoptions\fR] \fIfile file ...\fR
+.SH OPTIONS
+.IP "\fB\-x\fR" 14
+Sample option so you can see what it looks like.
+.IP "\fB\-y \fIname\fR" 14
+Another sample option with an argument \fIname\fR.
+.SH ARGUMENTS
+.AS biggestType biggestName
+.AP int argc in
+Number of arguments on command line.
+.AP char **argv in/out
+Command line arguments passed to main program.
+.BE
+
+.SH DESCRIPTION
+.PP
+In this section you describe how to use the program.  The description
+should be relatively complete, but terse.  For complex programs,
+use multiple sections, each describing some aspect of the program.
+Here are some notes about how to write manual pages:
+.IP [1]
+For commands, all the options should be described in the summary box above,
+using an \fBOPTIONS\fR section and one \fB.IP\fR for each option.
+.IP [2]
+For procedures, all of the arguments to the procedure or procedures
+should be described in the summary box above, using a \fBARGUMENTS\fR
+section and one \fB.AP\fR for each argument.  You shouldn't normally
+have both the \fBOPTIONS\fR and \fBARGUMENTS\fR sections in the
+same man page.  The \fB.AS\fR macro is used to set tab stops for
+the arguments, so they don't run into each other.
+.IP [3]
+Wherever a term in the manual entry refers to something you
+would type verbatim, such as the name of a program or a switch,
+use \fBboldface\fR for that term wherever it appears in the manual
+entry.
+.IP [4]
+Wherever a term in the manual entry refers to a meta-symbol, in
+place of which the user would type something else, such as \fIfile\fR
+in the synopsis above, or the \fIname\fR argument in the \fB-y\fR
+option, use \fIitalics\fR for the term wherever it appears in
+the manual entry.
+.SH KEYWORDS
+form, manual
+@
+
+
+1.4
+log
+@Change comment mechanism.
+@
+text
+@d1 9
+a9 9
+'/" Copyright 1989 Regents of the University of California
+'/" Permission to use, copy, modify, and distribute this
+'/" documentation for any purpose and without fee is hereby
+'/" granted, provided that this notice appears in all copies.
+'/" The University of California makes no representations about
+'/" the suitability of this material for any purpose.  It is
+'/" provided "as is" without express or implied warranty.
+'/" 
+'/" $Header: /sprite/lib/forms/RCS/proto.man,v 1.3 89/01/09 11:43:01 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+@
+
+
+1.3
+log
+@Made last change in wrong place.
+@
+text
+@d1 10
+a10 10
+' Copyright 1989 Regents of the University of California
+' Permission to use, copy, modify, and distribute this
+' documentation for any purpose and without fee is hereby
+' granted, provided that this notice appears in all copies.
+' The University of California makes no representations about
+' the suitability of this material for any purpose.  It is
+' provided "as is" without express or implied warranty.
+' 
+' $Header: /sprite/lib/forms/RCS/proto.man,v 1.2 89/01/05 17:31:38 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+' 
+@
+
+
+1.2
+log
+@Trivial cleanups.
+@
+text
+@d9 1
+a9 1
+' $Header: /sprite/lib/forms/RCS/proto.man,v 1.1 88/12/29 17:09:50 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d17 1
+a19 1
+.nf
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d9 1
+a9 1
+' $Header: /a/newcmds/prefix/RCS/prefix.man,v 1.1 88/12/22 11:23:28 ouster Exp $ SPRITE (Berkeley)
+d19 1
+a58 1
+.DE
+@

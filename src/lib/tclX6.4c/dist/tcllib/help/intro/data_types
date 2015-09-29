@@ -1,0 +1,23 @@
+     DATA TYPES
+          Tcl supports only one type of data:  strings.  All commands,
+          all  arguments  to  commands,  all  command results, and all
+          variable values are strings.  Where commands require numeric
+          arguments  or  return  numeric  results,  the  arguments and
+          results are passed as strings.  Many commands  expect  their
+          string   arguments   to   have  certain  formats,  but  this
+          interpretation  is  up  to  the  individual  commands.   For
+          example,  arguments often contain Tcl command strings, which
+          may get executed as part of the commands.  The  easiest  way
+          to  understand  the  Tcl  interpreter  is  to  remember that
+          everything is just an operation on a string.  In many  cases
+          Tcl   constructs   will  look  similar  to  more  structured
+          constructs  from  other   languages.    However,   the   Tcl
+          constructs  are not structured at all; they are just strings
+          of characters, and this gives them a different behavior than
+          the structures they may look like.
+
+          Although the exact interpretation of a Tcl string depends on
+          who  is  doing  the  interpretation,  there are three common
+          forms that strings take:  commands, expressions, and  lists.
+          The  major  sections below discuss these three forms in more
+          detail.

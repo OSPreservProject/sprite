@@ -1,0 +1,360 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.6
+date     91.09.14.15.17.11;  author mendel;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     90.03.16.17.41.10;  author jhh;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.10.02.23.17.55;  author jhh;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.09.25.12.32.32;  author jhh;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.10.27.15.30.32;  author nelson;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.02.12.53.43;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Fragment aligned I/O to a raw disk.
+@
+
+
+1.6
+log
+@Changes to reflect the old Sprite file system name being OFS and the
+addition of LFS.
+@
+text
+@/* 
+ * fragIO.c --
+ *
+ *	Routines to allow fragments to be read and written.
+ *
+ * Copyright (C) 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/disk/RCS/diskFragIO.c,v 1.5 90/03/16 17:41:10 jhh Exp Locker: mendel $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <disk.h>
+#include <stdio.h>
+
+#define	SECTORS_PER_FRAG       (FS_FRAGMENT_SIZE / DEV_BYTES_PER_SECTOR)
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_FragRead --
+ *	Read fragments from the disk file at a specified 1K block offset.
+ *	This has to use the disk geometry information to figure out
+ *	what disk sectors correspond to the block.
+ *
+ * Results:
+ *	0 if could read the disk, -1 if could not.  If couldn't read the disk
+ *	then the error is stored in errno.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Disk_FragRead(openFileID, headerPtr, firstFrag, numFrags, buffer)
+    int 		openFileID; /* Handle on raw disk */
+    Ofs_DomainHeader 	*headerPtr; /* Domain header with geometry 
+				     * information. */
+    int 		firstFrag;  /* First frag to read */
+    int 		numFrags;   /* The number of fragments to read */
+    Address 		buffer;	    /* The buffer to read into */
+{
+    register Ofs_Geometry	*geoPtr;
+    register int	cylinder;
+    register int	rotationalSet;
+    register int	blockNumber;
+    int			sector;
+
+    geoPtr = &headerPtr->geometry;
+
+    blockNumber		= firstFrag / FS_FRAGMENTS_PER_BLOCK;
+    cylinder		= blockNumber / geoPtr->blocksPerCylinder;
+    if (geoPtr->rotSetsPerCyl > 0) {
+	/*
+	 * Original mapping scheme using rotational sets.
+	 */
+	blockNumber		-= cylinder * geoPtr->blocksPerCylinder;
+	rotationalSet	= blockNumber / geoPtr->blocksPerRotSet;
+	blockNumber		-= rotationalSet * geoPtr->blocksPerRotSet;
+    
+	sector = geoPtr->sectorsPerTrack * geoPtr->numHeads * cylinder +
+		 geoPtr->sectorsPerTrack * geoPtr->tracksPerRotSet *
+		 rotationalSet + geoPtr->blockOffset[blockNumber];
+	sector += (firstFrag % FS_FRAGMENTS_PER_BLOCK) * SECTORS_PER_FRAG;
+    } else if (geoPtr->rotSetsPerCyl == OFS_SCSI_MAPPING){
+	/*
+	 * New mapping for scsi devices.
+	 */
+	sector = geoPtr->sectorsPerTrack * geoPtr->numHeads * cylinder +
+		    firstFrag * SECTORS_PER_FRAG - cylinder * 
+		    geoPtr->blocksPerCylinder * DISK_SECTORS_PER_BLOCK;
+    } else {
+	return -1;
+    }
+    return(Disk_SectorRead(openFileID, sector, 
+		numFrags * SECTORS_PER_FRAG, buffer));
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_FragWrite --
+ *	Write fragments to the disk file at a specified 1K block offset.
+ *	This has to use the disk geometry information to figure out
+ *	what disk sectors correspond to the block.
+ *
+ * Results:
+ *	0 if could write the disk, -1 if could not.  If couldn't write the
+ *	disk then the error is stored in errno.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Disk_FragWrite(openFileID, headerPtr, firstFrag, numFrags, buffer)
+    int 		openFileID; /* Handle on raw disk */
+    Ofs_DomainHeader 	*headerPtr; /* Domain header with geometry 
+				       information. */
+    int 		firstFrag;  /* First frag to write */
+    int 		numFrags;   /* The number of fragments to write */
+    Address 		buffer;	    /* The buffer to write out of. */
+{
+    register Ofs_Geometry *geoPtr;
+    register int cylinder;
+    register int rotationalSet;
+    register int blockNumber;
+    int 	 sector;
+
+    geoPtr = &headerPtr->geometry;
+
+    blockNumber		= firstFrag / FS_FRAGMENTS_PER_BLOCK;
+    cylinder		= blockNumber / geoPtr->blocksPerCylinder;
+    if (geoPtr->rotSetsPerCyl > 0) {
+	/*
+	 * Original mapping scheme using rotational sets.
+	 */
+	blockNumber		-= cylinder * geoPtr->blocksPerCylinder;
+	rotationalSet	= blockNumber / geoPtr->blocksPerRotSet;
+	blockNumber		-= rotationalSet * geoPtr->blocksPerRotSet;
+    
+	sector = geoPtr->sectorsPerTrack * geoPtr->numHeads * cylinder +
+		 geoPtr->sectorsPerTrack * geoPtr->tracksPerRotSet *
+		 rotationalSet + geoPtr->blockOffset[blockNumber];
+	sector += (firstFrag % FS_FRAGMENTS_PER_BLOCK) * SECTORS_PER_FRAG;
+    } else if (geoPtr->rotSetsPerCyl == OFS_SCSI_MAPPING){
+	/*
+	 * New mapping for scsi devices.
+	 */
+	sector = geoPtr->sectorsPerTrack * geoPtr->numHeads * cylinder +
+		    firstFrag * SECTORS_PER_FRAG - cylinder * 
+		    geoPtr->blocksPerCylinder * DISK_SECTORS_PER_BLOCK;
+    } else {
+	return -1;
+    }
+
+     return(Disk_SectorWrite(openFileID, sector,
+		numFrags * SECTORS_PER_FRAG, buffer));
+}
+@
+
+
+1.5
+log
+@replaced DiskInfo abstraction with Disk_Label
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/disk/RCS/diskFragIO.c,v 1.4 89/10/02 23:17:55 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d14 1
+a14 1
+#include "disk.h"
+d40 1
+a40 1
+    Fsdm_DomainHeader 	*headerPtr; /* Domain header with geometry 
+d46 1
+a46 1
+    register Fsdm_Geometry	*geoPtr;
+d68 1
+a68 1
+    } else if (geoPtr->rotSetsPerCyl == FSDM_SCSI_MAPPING){
+d103 1
+a103 1
+    Fsdm_DomainHeader 	*headerPtr; /* Domain header with geometry 
+d109 1
+a109 1
+    register Fsdm_Geometry *geoPtr;
+d131 1
+a131 1
+    } else if (geoPtr->rotSetsPerCyl == FSDM_SCSI_MAPPING){
+@
+
+
+1.4
+log
+@new scsi disk mapping
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/disk/RCS/diskFragIO.c,v 1.3 89/09/25 12:32:32 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d14 1
+a14 1
+#include "diskUtils.h"
+@
+
+
+1.3
+log
+@Conforms to new fs module structure
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/disk/RCS/diskFragIO.c,v 1.2 88/10/27 15:30:32 nelson Exp Locker: jhh $ SPRITE (Berkeley)";
+d56 22
+a77 8
+    blockNumber		-= cylinder * geoPtr->blocksPerCylinder;
+    rotationalSet	= blockNumber / geoPtr->blocksPerRotSet;
+    blockNumber		-= rotationalSet * geoPtr->blocksPerRotSet;
+
+    sector = geoPtr->sectorsPerTrack * geoPtr->numHeads * cylinder +
+	     geoPtr->sectorsPerTrack * geoPtr->tracksPerRotSet *
+	     rotationalSet + geoPtr->blockOffset[blockNumber];
+    sector += (firstFrag % FS_FRAGMENTS_PER_BLOCK) * SECTORS_PER_FRAG;
+d79 1
+a79 1
+		numFrags * (FS_FRAGMENT_SIZE / DEV_BYTES_PER_SECTOR), buffer));
+d119 22
+a140 3
+    blockNumber		-= cylinder * geoPtr->blocksPerCylinder;
+    rotationalSet	= blockNumber / geoPtr->blocksPerRotSet;
+    blockNumber		-= rotationalSet * geoPtr->blocksPerRotSet;
+d142 2
+a143 6
+    sector = geoPtr->sectorsPerTrack * geoPtr->numHeads * cylinder +
+	     geoPtr->sectorsPerTrack * geoPtr->tracksPerRotSet *
+	     rotationalSet + geoPtr->blockOffset[blockNumber];
+    sector += (firstFrag % FS_FRAGMENTS_PER_BLOCK) * SECTORS_PER_FRAG;
+    return(Disk_SectorWrite(openFileID, sector,
+		numFrags * (FS_FRAGMENT_SIZE / DEV_BYTES_PER_SECTOR), buffer));
+@
+
+
+1.2
+log
+@Ported to the new C library.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/disk/RCS/diskFragIO.c,v 1.1 88/06/02 12:53:43 brent Exp Locker: nelson $ SPRITE (Berkeley)";
+d40 1
+a40 1
+    FsDomainHeader 	*headerPtr; /* Domain header with geometry 
+d46 1
+a46 1
+    register FsGeometry	*geoPtr;
+d89 1
+a89 1
+    FsDomainHeader 	*headerPtr; /* Domain header with geometry 
+d95 1
+a95 1
+    register FsGeometry *geoPtr;
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fragIO.c,v 1.4 87/07/14 11:32:35 brent Exp $ SPRITE (Berkeley)";
+a13 3
+#include "sprite.h"
+#include "option.h"
+#include "io.h"
+d15 1
+d23 1
+a23 1
+ * FragRead --
+d29 2
+a30 1
+ *	The return code from the read.
+d37 2
+a38 2
+ReturnStatus
+FragRead(openFileID, headerPtr, firstFrag, numFrags, buffer)
+d41 1
+a41 1
+				       information. */
+d46 5
+a50 6
+    ReturnStatus status;
+    register FsGeometry *geoPtr;
+    register int cylinder;
+    register int rotationalSet;
+    register int blockNumber;
+    int	sector;
+d64 2
+a65 3
+    status = SectorRead(openFileID, sector, 
+		numFrags * (FS_FRAGMENT_SIZE / DEV_BYTES_PER_SECTOR), buffer);
+    return(status);
+d72 1
+a72 1
+ * FragWrite --
+d78 2
+a79 1
+ *	The return code from the write.
+d86 2
+a87 2
+ReturnStatus
+FragWrite(openFileID, headerPtr, firstFrag, numFrags, buffer)
+a94 1
+    ReturnStatus status;
+d113 2
+a114 3
+    status = SectorWrite(openFileID, sector,
+		numFrags * (FS_FRAGMENT_SIZE / DEV_BYTES_PER_SECTOR), buffer);
+    return(status);
+@

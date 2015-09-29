@@ -1,0 +1,353 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.6
+date     91.11.29.16.43.21;  author jhh;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.11.29.16.40.01;  author mgbaker;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.04.19.20.02.40;  author mgbaker;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.12.22.11.05.26;  author douglis;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.11.07.11.55.53;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.08.07.12.39.15;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.6
+log
+@added ds5000
+@
+text
+@/* 
+ * hostname.c --
+ *
+ *	A very simple program that prints out the textual name of
+ *	the host on which it is running.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/cmds/hostname/RCS/hostname.c,v 1.5 91/11/29 16:40:01 mgbaker Exp Locker: jhh $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <errno.h>
+#include <stdio.h>
+#include <string.h>
+#include <option.h>
+#include <host.h>
+#include <sys.h>
+
+/*
+ * This is for the sprite Proc_GetIDs call, until it is added to the unix
+ * library.
+ */
+#include <sprite.h>
+#include <status.h>
+#include <proc.h>
+
+int getIDs = 0;
+int virtual = 0;
+int physical = 0;
+int machType = -1;
+
+Option optionArray[] = {
+    {OPT_TRUE, "v", (char *)&virtual,
+	 "Print the name of the host on which the process is effectively executing (its 'home node' -- DEFAULT)."},
+    {OPT_TRUE, "p", (char *)&physical,
+	 "Print the name of the host on which the process is physically executing ."},
+    {OPT_TRUE, "i", (char *)&getIDs,
+	 "Print hostIDs instead of host names."},
+    {OPT_TRUE, "type", (char *)&machType,
+	 "Print machine type for host."},
+};
+
+static void PrintInfo();
+
+main(argc, argv)
+    int argc;
+    char **argv;
+{
+    int spriteID;
+    char *myName;
+    int virtualHost;
+    int physicalHost;
+    int status = SUCCESS;
+
+    argc = Opt_Parse(argc, argv, optionArray, Opt_Number(optionArray), 
+		     OPT_ALLOW_CLUSTERING);
+
+    myName = argv[0];
+    
+    if (argc > 1) {
+	fprintf(stderr, "%s: warning: extra arguments; assuming old format.\n",
+		myName);
+	getIDs = 1;
+    }
+    if (machType != -1) {
+	Sys_MachineInfo	info;
+
+	status = Sys_GetMachineInfo(sizeof (info), &info);
+	switch (info.architecture) {
+	case SYS_SUN2:
+	    printf("sun2\n");
+	    break;
+	case SYS_SUN3:
+	    switch (info.type) {
+	    case SYS_SUN_3_75:
+		printf("sun3/75\n");
+		break;
+/*
+	    Duplicate to 3/75!
+	    case SYS_SUN_3_160:
+		printf("sun3/160\n");
+		break;
+*/
+	    case SYS_SUN_3_50:
+		printf("sun3/50\n");
+		break;
+	    case SYS_SUN_3_60:
+		printf("sun3/60\n");
+		break;
+	    default:
+		printf("sun3\n");
+		break;
+	    }
+	    break;
+	case SYS_SUN4:
+	    switch (info.type & SYS_SUN_ARCH_MASK) {
+	    case SYS_SUN_4_C:
+		printf("sun4c\n");
+		break;
+	    default:
+		printf("sun4\n");
+		break;
+	    }
+	    break;
+	case SYS_DS3100:
+	    printf("ds3100\n");
+	    break;
+	case SYS_SYM:
+	    printf("symmetry\n");
+	    break;
+	case SYS_MICROVAX_2:
+	    printf("microvax2\n");
+	    break;
+	case SYS_SPUR:
+	    printf("spur\n");
+	    break;
+	case SYS_DS5000:
+	    printf("ds5000\n");
+	    break;
+	default:
+	    printf("unknown\n");
+	    status = 1;
+	    break;
+	}
+	exit(status);
+    }
+
+    if (!virtual & !physical) {
+	virtual = 1;
+    }
+    
+    status = Proc_GetHostIDs(&virtualHost, &physicalHost);
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	perror("Proc_GetHostIDs");
+	exit(1);
+    }
+    if (virtual) {
+	PrintInfo(virtualHost, physical ? "virtual" : (char *) NULL);
+    }
+    if (physical) {
+	PrintInfo(physicalHost, virtual ? "physical" : (char *) NULL);
+    }
+    exit(0);
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintInfo --
+ *
+ *	Print the information contained in a Host_Entry structure, as
+ *	specified by command line arguments, and with any other string
+ * 	specified by the caller.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Data is written to stdout.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+PrintInfo(spriteID, prefix)
+    int spriteID;
+    char *prefix;
+{
+    extern int errno;
+    Host_Entry *hostPtr;
+
+    hostPtr = Host_ByID(spriteID);
+    if (hostPtr == (Host_Entry *) NULL) {
+	perror("Host_ByID");
+	exit(1);
+    }
+    if (prefix) {
+	printf("%s: ", prefix);
+    }
+    if (getIDs) {
+	printf("%d\n", hostPtr->id);
+    } else {
+	printf("%s\n", hostPtr->name);
+    }
+}
+@
+
+
+1.5
+log
+@checking this in for mgbaker -- jhh.  Looks like she added the
+SYS_SUN_ARCH_MASK to the test of info.type.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/cmds/hostname/RCS/hostname.c,v 1.4 90/04/19 20:02:40 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d125 3
+@
+
+
+1.4
+log
+@Added flag to print machine type.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/cmds/hostname/RCS/hostname.c,v 1.3 88/12/22 11:05:26 douglis Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d105 1
+a105 1
+	    switch (info.type) {
+@
+
+
+1.3
+log
+@allow options to print spriteID or name, and to print physical or
+virtual host.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /a/newcmds/hostname/RCS/hostname.c,v 1.2 88/11/07 11:55:53 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d26 1
+d39 1
+d48 2
+d62 1
+a62 1
+    int status;
+d74 60
+@
+
+
+1.2
+log
+@Added ability to print out SpriteID as a number.
+This is used in the /bootcmds script.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /a/newcmds/hostname/RCS/hostname.c,v 1.1 88/08/07 12:39:15 ouster Exp Locker: brent $ SPRITE (Berkeley)";
+d24 2
+d27 23
+a53 1
+#define MAX_LENGTH 100
+d55 4
+a58 1
+    char hostName[MAX_LENGTH];
+d60 5
+d66 22
+a87 3
+	(void)Sys_GetMachineInfo((int *)NULL, (int *)NULL, &spriteID);
+	printf("%d\n", spriteID);
+    } else {
+d89 32
+a120 6
+	if (gethostname(hostName, MAX_LENGTH) < 0) {
+	    fprintf(stderr, "%s couldn't retrieve host name: %s\n",
+		    argv[0], strerror(errno));
+	    exit(1);
+	}
+	printf("%s\n", hostName);
+d122 8
+a129 1
+    exit(0);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: proto.c,v 1.2 88/03/11 08:39:08 ouster Exp $ SPRITE (Berkeley)";
+d30 1
+d34 3
+a36 3
+	fprintf(stderr, "%s doesn't take any arguments.\n", argv[0]);
+	exit(1);
+    }
+d38 6
+a43 4
+    if (gethostname(hostName, MAX_LENGTH) < 0) {
+	fprintf(stderr, "%s couldn't retrieve host name: %s\n",
+		argv[0], strerror(errno));
+	exit(1);
+a44 1
+    printf("%s\n", hostName);
+@

@@ -1,0 +1,441 @@
+head     1.7;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.7
+date     89.11.18.20.57.32;  author tve;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.03.27.21.17.24;  author deboor;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     87.08.04.17.30.23;  author deboor;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     87.07.07.18.00.24;  author deboor;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     87.06.30.19.10.32;  author deboor;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     87.06.20.19.56.50;  author deboor;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     87.06.16.12.21.43;  author deboor;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@header for sprite ddx functions
+@
+
+
+1.7
+log
+@first working version with CG4 and CG6 for SPARC. CG4 for sun3 not yet ok.
+@
+text
+@/*-
+ * sprite.h --
+ *	Internal declarations for the sprite ddx interface
+ *
+ * Copyright (c) 1987 by the Regents of the University of California
+ *
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *	"$Header: spriteddx.h,v 1.6 88/03/27 21:17:24 deboor Exp $ SPRITE (Berkeley)"
+ */
+#ifndef _SPRITEDDX_H_
+#define _SPRITEDDX_H_
+
+#define Time	  SpriteTime
+
+#include    <sprite.h>
+#include    <kernel/devVid.h>
+#include    <dev/mouse.h>
+#include    <vm.h>
+
+#undef Time
+
+#include    "X.h"
+#include    "Xproto.h"
+#include    "scrnintstr.h"
+#include    "screenint.h"
+#ifdef NEED_EVENTS
+#include    "inputstr.h"
+#endif NEED_EVENTS
+#include    "input.h"
+#include    "cursorstr.h"
+#include    "cursor.h"
+#include    "pixmapstr.h"
+#include    "pixmap.h"
+#include    "gc.h"
+#include    "gcstruct.h"
+#include    "region.h"
+#include    "colormap.h"
+#include    "miscstruct.h"
+#include    "dix.h"
+#include    "mfb.h"
+#include    "mi.h"
+
+/*
+ * MAXEVENTS is the maximum number of events the mouse and keyboard functions
+ * will read on a given call to their GetEvents vectors.
+ */
+#define MAXEVENTS 	32
+
+/*
+ * Data private to any sprite keyboard.
+ *	GetEvents reads any events which are available for the keyboard
+ *	ProcessEvent processes a single event and gives it to DIX
+ *	DoneEvents is called when done handling a string of keyboard
+ *	    events or done handling all events.
+ *	devPrivate is private to the specific keyboard.
+ *	map_q is TRUE if the event queue for the keyboard is memory mapped.
+ */
+typedef struct kbPrivate {
+    int	    	  type;           	/* Type of keyboard */
+    int	    	  fd;	    	    	/* Descriptor open to device */
+    Mouse_Event   *(*GetEvents)();  	/* Function to read events */
+    void    	  (*ProcessEvent)();	/* Function to process an event */
+    void    	  (*DoneEvents)();  	/* Function called when all events */
+					/* have been handled. */
+    int	    	  offset;   	    	/* Offset for keyboard codes */
+    KeybdCtrl	  *ctrl;    	    	/* Current control info */
+    pointer 	  devPrivate;	    	/* Private to keyboard device */
+} KbPrivRec, *KbPrivPtr;
+
+/*
+ * Data private to any sprite pointer device.
+ *	GetEvents, ProcessEvent and DoneEvents have uses similar to the
+ *	    keyboard fields of the same name.
+ *	pScreen is the screen the pointer is on (only valid if it is the
+ *	    main pointer device).
+ *	x and y are absolute coordinates on that screen (they may be negative)
+ */
+typedef struct ptrPrivate {
+    int	    	  fd;	    	    	/* Descriptor to device */
+    Mouse_Event   *(*GetEvents)(); 	/* Function to read events */
+    void    	  (*ProcessEvent)();	/* Function to process an event */
+    void    	  (*DoneEvents)();  	/* When all the events have been */
+					/* handled, this function will be */
+					/* called. */
+    short   	  x,	    	    	/* Current X coordinate of pointer */
+		  y;	    	    	/* Current Y coordinate */
+    ScreenPtr	  pScreen;  	    	/* Screen pointer is on */
+    pointer    	  devPrivate;	    	/* Field private to device */
+} PtrPrivRec, *PtrPrivPtr;
+
+/*
+ * Cursor-private data
+ *	screenBits	saves the contents of the screen before the cursor
+ *	    	  	was placed in the frame buffer.
+ *	source	  	a bitmap for placing the foreground pixels down
+ *	srcGC	  	a GC for placing the foreground pixels down.
+ *	    	  	Prevalidated for the cursor's screen.
+ *	invSource 	a bitmap for placing the background pixels down.
+ *	invSrcGC  	a GC for placing the background pixels down.
+ *	    	  	Also prevalidated for the cursor's screen Pixmap.
+ *	temp	  	a temporary pixmap for low-flicker cursor motion --
+ *	    	  	exists to avoid the overhead of creating a pixmap
+ *	    	  	whenever the cursor must be moved.
+ *	fg, bg	  	foreground and background pixels. For a color display,
+ *	    	  	these are allocated once and the rgb values changed
+ *	    	  	when the cursor is recolored.
+ *	scrX, scrY	the coordinate on the screen of the upper-left corner
+ *	    	  	of screenBits.
+ *	state	  	one of CR_IN, CR_OUT and CR_XING to track whether the
+ *	    	  	cursor is in or out of the frame buffer or is in the
+ *	    	  	process of going from one state to the other.
+ */
+typedef enum {
+    CR_IN,		/* Cursor in frame buffer */
+    CR_OUT,		/* Cursor out of frame buffer */
+    CR_XING	  	/* Cursor in flux */
+} CrState;
+
+typedef struct crPrivate {
+    PixmapPtr  	        screenBits; /* Screen before cursor put down */
+    PixmapPtr  	        source;     /* Cursor source (foreground bits) */
+    GCPtr   	  	srcGC;	    /* Foreground GC */
+    PixmapPtr  	        invSource;  /* Cursor source inverted (background) */
+    GCPtr   	  	invSrcGC;   /* Background GC */
+    PixmapPtr  	        temp;	    /* Temporary pixmap for merging screenBits
+				     * and the sources. Saves creation time */
+    Pixel   	  	fg; 	    /* Foreground color */
+    Pixel   	  	bg; 	    /* Background color */
+    int	    	  	scrX,	    /* Screen X coordinate of screenBits */
+			scrY;	    /* Screen Y coordinate of screenBits */
+    CrState		state;      /* Current state of the cursor */
+} CrPrivRec, *CrPrivPtr;
+
+/*
+ * Frame-buffer-private info.
+ *	fb  	  	pointer to the mapped image of the frame buffer. Used
+ *	    	  	by the driving routines for the specific frame buffer
+ *	    	  	type.
+ *	cmap		pointer to the mapped colormap of tha frame buffer.
+ *			Used by the driving routines for the specific frame
+ *	    	  	buffer type.
+ *	pGC 	  	A graphics context to be used by the cursor functions
+ *	    	  	when drawing the cursor on the screen.
+ *	GetImage  	Original GetImage function for this screen.
+ *	CreateGC  	Original CreateGC function
+ *	CreateWindow	Original CreateWindow function
+ *	ChangeWindowAttributes	Original function
+ *	GetSpans  	GC function which needs to be here b/c GetSpans isn't
+ *	    	  	called with the GC as an argument...
+ *	mapped	  	flag set true by the driver when the frame buffer has
+ *	    	  	been mapped in.
+ */
+typedef struct {
+    pointer 	  	fb; 	    /* Frame buffer itself */
+    pointer 	  	cmap; 	    /* Color map */
+    GCPtr   	  	pGC;	    /* GC for cursor operations */
+
+    void    	  	(*GetImage)();
+    Bool	      	(*CreateGC)();/* GC Creation function previously in the
+				       * Screen structure */
+    Bool	      	(*CreateWindow)();
+    Bool		(*ChangeWindowAttributes)();
+    unsigned int  	*(*GetSpans)(); /* XXX: Shouldn't need this */
+    
+    Bool    	  	mapped;	    /* TRUE if frame buffer already mapped */
+} fbFd;
+
+/*
+ * Cursor functions in spriteCursor.c
+ */
+extern void 	  spriteInitCursor();
+extern Bool 	  spriteRealizeCursor();
+extern Bool 	  spriteUnrealizeCursor();
+extern Bool 	  spriteDisplayCursor();
+extern Bool 	  spriteSetCursorPosition();
+extern void 	  spriteCursorLimits();
+extern void 	  spritePointerNonInterestBox();
+extern void 	  spriteConstrainCursor();
+extern void 	  spriteRecolorCursor();
+extern Bool	  spriteCursorLoc();
+extern void 	  spriteRemoveCursor();
+extern void	  spriteRestoreCursor();
+extern void 	  spriteMoveCursor();
+
+/*
+ * Initialization
+ */
+extern void 	  spriteScreenInit();
+
+/*
+ * GC Interceptions in spriteGC.c and spriteCursor.c
+ */
+extern GCPtr	  spriteCreatePrivGC();
+extern Bool	  spriteCreateGC();
+extern Bool	  spriteCreateWindow();
+extern Bool	  spriteChangeWindowAttributes();
+
+extern void 	  spriteGetImage();
+extern unsigned int *spriteGetSpans();
+
+extern fbFd 	  spriteFbs[];
+
+extern unsigned int lastEventTime;    /* Time (in real ms.) of last event */
+extern unsigned int lastEventTimeMS;  /* Time (in ms.) of last event */
+extern void 	  SetTimeSinceLastInputEvent();
+
+extern Bool 	  screenSaved;	    /* TRUE if any screen is saved */
+
+extern int  	  spriteCheckInput;
+extern void 	  spriteInputAvail();
+extern void 	  spriteCursorGone();
+extern void 	  spriteBlockHandler();
+extern void 	  spriteWakeupHandler();
+#endif _SPRITEDDX_H_
+@
+
+
+1.6
+log
+@*** empty log message ***
+@
+text
+@d15 1
+a15 1
+ *	"$Header: spriteddx.h,v 1.5 87/08/04 17:30:23 deboor Exp $ SPRITE (Berkeley)"
+d24 1
+a24 1
+#include    <kernel/devKeyboard.h>
+d68 1
+a68 1
+    Dev_KbdEvent  *(*GetEvents)();  	/* Function to read events */
+d87 1
+a87 1
+    Dev_KbdEvent  *(*GetEvents)(); 	/* Function to read events */
+d146 3
+a160 5
+    /*
+     * These first fields (up to 'mapped') match with the fields in the
+     * fbFd structure for the sun server. They must not be changed
+     * unless the sun server changes too.
+     */
+d162 1
+a220 5
+/*-
+ * TVTOMILLI(tv)
+ *	Given a SpriteTime, convert its time into milliseconds...
+ */
+#define TVTOMILLI(tv)	(((tv).microseconds/1000)+((tv).seconds*1000))
+@
+
+
+1.5
+log
+@Added declaration of spriteGetSpans so it can be used in
+spriteScreenInit
+@
+text
+@d15 1
+a15 1
+ *	"$Header: spriteddx.h,v 1.4 87/07/07 18:00:24 deboor Exp $ SPRITE (Berkeley)"
+d72 2
+d191 1
+d199 1
+a199 1
+ * GC Interceptions in spriteGC.c
+d211 2
+a212 1
+extern int  	  lastEventTime;    /* Time (in ms.) of last event */
+d220 2
+@
+
+
+1.4
+log
+@Put pGC back into the frame buffer description
+@
+text
+@d15 1
+a15 1
+ *	"$Header: spriteddx.h,v 1.3 87/06/30 19:10:32 deboor Exp $ SPRITE (Berkeley)"
+d204 1
+@
+
+
+1.3
+log
+@Removed GC since can't create a scratch GC -- we'll just snag a
+scratch one in the cursor module
+@
+text
+@d15 1
+a15 1
+ *	"$Header: spriteddx.h,v 1.2 87/06/20 19:56:50 deboor Exp $ SPRITE (Berkeley)"
+d162 1
+@
+
+
+1.2
+log
+@adapted to Beta-0
+@
+text
+@d15 1
+a15 1
+ *	"$Header: spriteddx.h,v 1.1 87/06/16 12:21:43 deboor Exp $ SPRITE (Berkeley)"
+a161 2
+    GCPtr    	  	pGC;	    /* Graphics context for cursors on this */
+				    /* screen... */
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+ *	"$Header: spriteddx.h,v 2.7 87/05/13 15:07:23 deboor Exp $ SPRITE (Berkeley)"
+a45 2
+#include    "Xvendors.h"
+#include    "SUNDev.h"
+a83 1
+    int	       	  type;	    	    	/* Pointer type */
+d101 2
+d104 2
+d127 1
+d129 1
+d162 1
+a162 1
+    GC	    	  	*pGC;	    /* Graphics context for cursors on this */
+d170 1
+a170 1
+    int	    	  	*(*GetSpans)(); /* XXX: Shouldn't need this */
+a172 15
+
+    /*
+     * The next three fields exist to keep this fbFd the same size as the
+     * fbFd used in the Sun UNIX cursor/gc code.
+     */
+    int	    	  	fd; 	    /* Descriptor open to frame buffer */
+    struct fbtype {	    	    /* From <sun/fbio.h> */
+	int     fb_type;            	/* as (not) defined below */
+        int     fb_height;          	/* in pixels */
+        int     fb_width;           	/* in pixels */
+        int     fb_depth;           	/* bits per pixel */
+        int     fb_cmsize;          	/* size of color map (entries) */
+        int     fb_size;            	/* total size in bytes */
+    } 	    	  	info;	    /* Frame buffer characteristics */
+    Bool		parent;	    /* TRUE if fd is a SunWindows window */
+d176 1
+a176 1
+ * Cursor functions in sunCursor.c
+d178 12
+a189 12
+extern void 	  sunInitCursor();
+extern Bool 	  sunRealizeCursor();
+extern Bool 	  sunUnrealizeCursor();
+extern Bool 	  sunDisplayCursor();
+extern Bool 	  sunSetCursorPosition();
+extern void 	  sunCursorLimits();
+extern void 	  sunPointerNonInterestBox();
+extern void 	  sunConstrainCursor();
+extern void 	  sunRecolorCursor();
+extern Bool	  sunCursorLoc();
+extern void 	  sunRemoveCursor();
+extern void	  sunRestoreCursor();
+d197 1
+a197 1
+ * GC Interceptions in sunGC.c
+d199 4
+a202 3
+extern Bool	  sunCreateGC();
+extern Bool	  sunCreateWindow();
+extern Bool	  sunChangeWindowAttributes();
+d204 1
+a204 1
+extern void 	  sunGetImage();
+d215 1
+@

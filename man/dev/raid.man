@@ -1,0 +1,118 @@
+'\" Copyright 1990 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/man/dev/RCS/raid.man,v 1.2 92/09/04 16:19:44 eklee Exp Locker: eklee $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS RAID dev
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+raid \- Devices used to send ioctl's to RAID devices.
+.SH SYNOPSIS
+\fB#include <dev/raid.h>\fR
+.BE
+
+.SH OVERVIEW
+.PP
+This document describes the configuration and management of raid devices.
+
+.SH THE RAID CONFIGURATION FILE
+.PP
+An example RAID configuration file is as follows:
+.DS
+.in -12
+#                                              R L S N
+#              512B        32KB      323MB
+#numRow numCol logSectSize sectPerSU SUPerDisk parityConfig logDev(d,u,offset)
+1       4      9           64        9859      L            516 5128 0
+516    7176
+516    7192
+516    7208
+516    7224
+.DE
+
+Lines starting with '#' are considereded comments.  Comments can only occure
+at the BEGINNING of the configuration file.
+.IP numRow, numCol
+The number of rows and columns of disks in the disk array.  Parity is computed
+accross the disks in each row.
+.IP logSectSize
+The log base 2 of the sector size.  A 9 => 2^9 = 512 byte sectors.
+.IP sectPerSU
+The number of sectors per stripe unit.  The stripe unit is the amount of data
+placed on a given disk before data is placed on the next disk.
+.IP SUPerDisk
+The number of stripe units per disk.
+.IP parityConfig
+The parity configuration to use.  L => left-symmetric (the best all-around
+choice), R => right-symmetric, N => RAID level 4 placement and S => do not
+compute parity; i.e., only data striping.
+.IP logDev
+The type, unit and device offset for the log disk.  By specifying different
+offsets, the same disk can be used as the log for several disk arrays.
+If the parity configuration is S, logging is not neccessary and this field
+should be set to -1 -1 -1 instead of 516 5128 0 in the above example.
+.LP
+The rest of the file contains a list of the type and unit number of each disk
+in the disk array.
+
+.SH ADDING A NEW RAID DEVICE
+
+.DS
+.in -12
+Create a new raid device ($x = new raid device number):
+--  If necessary, create:
+        fsmakedev -d 10 -u $x /dev/raid$x
+        fsmakedev -d 10 -u $x /dev/raid${x}a
+--  Create raid configuration file /boot/cmds/RAID$x.config.
+--  Issue IOC's to configure new device:
+    If parityConfig == 'S' (i.e. no parity, only data striping)
+        /boot/cmds/raidioc /dev/raid$x reconfig /boot/cmds/RAID$x.config
+    else
+        /boot/cmds/raidioc /dev/raid$x reconfig /boot/cmds/RAID$x.config
+        /boot/cmds/raidioc /dev/raid$x savestate
+        /boot/cmds/raidioc /dev/raid$x hardinit 0 -1
+        /boot/cmds/raidioc /dev/raid$x enablelog
+        /boot/cmds/raidioc /dev/raid$x unlock
+    endif
+--  Add commands to /hosts/<machine name>/bootcmds to restore existing
+    raid device on system boots.
+    If parityConfig == 'S' (i.e. no parity, only data striping)
+        /boot/cmds/raidioc /dev/raid$x reconfig /boot/cmds/RAID$x.config
+    else
+        /boot/cmds/raidioc /dev/raid$x restorestate <logDev(d,u,offset)> && \
+        /boot/cmds/raidioc /dev/raid$x enablelog                         && \
+        /boot/cmds/raidioc /dev/raid$x unlock
+    endif
+--  Add new device to ~eklee/bin/paritycheckraid if automatic periodic
+    parity checks are desired.
+.DE
+
+.SH ADDING A NEW RAID LFS FILE SYSTEM
+
+.DS
+.in -12
+--  Find out numSector and dataBytesPerStripe (printed to /dev/syslog).
+        /boot/cmds/raidioc /dev/raid$x print
+--  labeldisk -w /dev/raid$x            # use numSector info here
+--  mklfs -segAlignment <dataBytesPerStripe> /dev/raid0
+--  If necessary create:
+        cd /
+        ln -r /r$x
+--  Mount file system:
+        prefix -M /dev/raid$x -l /r$x
+--  Add commands to /hosts/<machine name>/bootcmds to automatically
+    export file system.
+        prefix -M /dev/raid$x -l /r$x
+.DE
+
+.SH SEE ALSO
+
+.SH KEYWORDS
+raid command, raid device

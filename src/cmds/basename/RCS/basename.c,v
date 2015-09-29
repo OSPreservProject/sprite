@@ -1,0 +1,131 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     88.12.13.11.05.07;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.11.28.14.05.10;  author rab;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@
+@
+
+
+1.2
+log
+@rewrote basename to make it more readable, and provide
+better error msgs.  Also fixed a bug that occurs if the
+filename is shorter than the suffix.
+@
+text
+@/*
+ * basename.c --
+ *
+ *  Basename deletes any prefix ending with '/' from its first
+ *  argument, and also deletes any suffix from the first argument
+ *  that matches the second argument.  The resulting string is
+ *  printed to the standard output.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header$";
+#endif
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+void
+main(argc, argv)
+    int argc;
+    char **argv;
+{
+    char *s;
+    int len;
+
+    if (argc < 2) {
+	fputs("usage: basename string [suffix]\n", stderr);
+	exit(1);
+    }
+    if ((s = strrchr(argv[1], '/')) == NULL) {
+	s = argv[1];
+    } else {
+	++s;
+    }
+    if (argc > 2) {
+	if ((len = strlen(s) - strlen(argv[2])) >= 0) {
+	    if (strcmp(s + len, argv[2]) == 0)
+		s[len] = 0;
+	}
+    }
+    puts(s);
+    exit(0);
+}
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 17
+a17 1
+static char *sccsid = "@@(#)basename.c	4.2 (Berkeley) 10/20/82";
+d19 3
+a21 1
+#include	<stdio.h>
+d23 5
+d29 2
+a30 1
+char **argv;
+d32 2
+a33 1
+	register char *p1, *p2, *p3;
+d35 13
+a47 3
+	if (argc < 2) {
+		putchar('\n');
+		exit(1);
+d49 3
+a51 17
+	p1 = argv[1];
+	p2 = p1;
+	while (*p1) {
+		if (*p1++ == '/')
+			p2 = p1;
+	}
+	if (argc>2) {
+		for(p3=argv[2]; *p3; p3++) 
+			;
+		while(p1>p2 && p3>argv[2])
+			if(*--p3 != *--p1)
+				goto output;
+		*p1 = '\0';
+	}
+output:
+	puts(p2, stdout);
+	exit(0);
+d53 1
+@

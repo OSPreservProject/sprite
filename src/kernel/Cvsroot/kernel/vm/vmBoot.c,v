@@ -1,0 +1,489 @@
+head     9.4;
+branch   ;
+access   ;
+symbols  ds3100:9.4 sun3:9.4 sun4nw:9.3 symm:9.3 spur:9.3 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.4
+date     92.07.22.16.55.13;  author jhh;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     91.03.11.11.45.14;  author kupfer;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.09.12.13.36.19;  author shirriff;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.09.11.10.44.31;  author shirriff;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.22.28;  author douglis;  state Stable;
+branches ;
+next     8.3;
+
+8.3
+date     89.02.24.15.01.10;  author mgbaker;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.12.12.14.27.11;  author nelson;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.12.04.15.50.01;  author ouster;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.41.43;  author douglis;  state Stable;
+branches ;
+next     6.3;
+
+6.3
+date     88.10.28.19.14.29;  author mlgray;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.10.28.18.18.11;  author mlgray;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.24.19.36.56;  author nelson;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.29.07;  author brent;  state Stable;
+branches ;
+next     5.3;
+
+5.3
+date     88.07.29.11.28.03;  author nelson;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.12.15.15.19.59;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.12.11.13.25.55;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.09.10.11.08.21;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.4
+log
+@Added vmBootEnd which demarks end of kernel data allocated via
+Vm_BootAlloc. 
+@
+text
+@/* vmBoot.c -
+ *
+ *	This file contains routines that allocate memory for tables at boot 
+ *	time.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/vm/vmBoot.c,v 9.3 91/03/11 11:45:14 kupfer Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <sys.h>
+#include <vm.h>
+#include <vmInt.h>
+#include <bstring.h>
+
+Address	vmMemEnd;
+Address vmBootEnd;
+Boolean	vmNoBootAlloc = TRUE;
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Vm_BootInit --
+ *
+ *	Initialize virtual memory and the variable that determines 
+ *	where to start allocating memory at boot time.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *     	vmMemEnd is set and several variables are set by the machine dependent
+ *	boot routine.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+Vm_BootInit()
+{
+    extern unsigned int end;
+
+    /* 
+     * Don't bother initializing vmStat.minFSPages.  During booting it
+     * will get set to 0 or 1, which isn't interesting.  So we will
+     * put something in the bootcmds script to set minFSPages to the
+     * current cache size after the system has finished booting.
+     */
+    bzero((Address) &vmStat, sizeof(vmStat));
+
+    vmNoBootAlloc = FALSE;
+    vmMemEnd = (Address) &end;
+    /*
+     * Make sure that we start on a four byte boundary.
+     */
+#ifdef sun4		/* temporary test - this will not last */
+    vmMemEnd = (Address) (((int) vmMemEnd + 7) & ~7);	/* double-word bound. */
+#else
+    vmMemEnd = (Address) (((int) vmMemEnd + 3) & ~3);
+#endif /* sun4 */
+
+    VmMach_BootInit(&vm_PageSize, &vmPageShift, &vmPageTableInc,
+		    &vmKernMemSize, &vmStat.numPhysPages, &vmMaxMachSegs,
+		    &vmMaxProcesses);
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Vm_BootAlloc --
+ *
+ *     Allocate a block of memory of the given size starting at the
+ *     current end of kernel memory.
+ *
+ * Results:
+ *     A pointer to the allocated memory.
+ *
+ * Side effects:
+ *     vmMemEnd is incremented.
+ *
+ * ----------------------------------------------------------------------------
+ */
+Address
+Vm_BootAlloc(numBytes)
+int numBytes;
+{
+    Address	addr;
+
+    if (vmNoBootAlloc) {
+	panic("Trying to use Vm_BootAlloc either before calling Vm_BootAllocInit\r\nor after calling Vm_Init\r\n");
+	addr = 0;
+	return(addr);
+    }
+    addr =  vmMemEnd;
+#ifdef sun4	/* temporary test - this will not last */
+    vmMemEnd += (numBytes + 7) & ~7;	/* double-word boundary */
+#else
+    vmMemEnd += (numBytes + 3) & ~3;
+#endif /* sun4 */
+    return(addr);
+}
+@
+
+
+9.3
+log
+@Add comment about initializing vmStat.minFSPages.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmBoot.c,v 9.2 90/09/12 13:36:19 shirriff Exp Locker: kupfer $ SPRITE (Berkeley)";
+d21 1
+@
+
+
+9.2
+log
+@Changed includes from quotes to angles.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmBoot.c,v 9.1 90/09/11 10:44:31 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d46 6
+d53 1
+@
+
+
+9.1
+log
+@Added function prototyping.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm.ken/RCS/vmBoot.c,v 9.1 90/08/31 16:00:15 shirriff Exp $ SPRITE (Berkeley)";
+d14 5
+a18 5
+#include "sprite.h"
+#include "sys.h"
+#include "vm.h"
+#include "vmInt.h"
+#include "bstring.h"
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmBoot.c,v 8.3 89/02/24 15:01:10 mgbaker Exp Locker: douglis $ SPRITE (Berkeley)";
+a15 1
+#include "vmMach.h"
+d18 1
+d82 1
+@
+
+
+8.3
+log
+@Sun4 finishes vm init now.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmBoot.c,v 8.2 88/12/12 14:27:11 nelson Exp Locker: mgbaker $ SPRITE (Berkeley)";
+@
+
+
+8.2
+log
+@Made the number of processes set by the machine dependent module.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmBoot.c,v 8.1 88/12/04 15:50:01 ouster Exp $ SPRITE (Berkeley)";
+d52 3
+d56 1
+d91 3
+d95 1
+@
+
+
+8.1
+log
+@Stop using obsolete header files.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmBoot.c,v 8.0 88/11/11 18:41:43 douglis Stable Locker: ouster $ SPRITE (Berkeley)";
+d55 2
+a56 1
+		    &vmKernMemSize, &vmStat.numPhysPages, &vmMaxMachSegs);
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmBoot.c,v 6.3 88/10/28 19:14:29 mlgray Exp Locker: douglis $ SPRITE (Berkeley)";
+a18 1
+#include "byte.h"
+@
+
+
+6.3
+log
+@Missing ptr casts.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmBoot.c,v 6.2 88/10/28 18:18:11 mlgray Exp $ SPRITE (Berkeley)";
+@
+
+
+6.2
+log
+@Converted to new C library.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmBoot.c,v 6.1 88/08/24 19:36:56 nelson Exp Locker: mlgray $ SPRITE (Berkeley)";
+d47 1
+a47 1
+    bzero((Address) &vmStat, sizeof(vmStat)) &vmStat);
+@
+
+
+6.1
+log
+@Bounded maximum growth of stack and allow the machine dependent side to
+limit the number of segments.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmBoot.c,v 5.3 88/07/29 11:28:03 nelson Exp $ SPRITE (Berkeley)";
+d47 1
+a47 1
+    Byte_Zero(sizeof(vmStat), (Address) &vmStat);
+d82 1
+a82 1
+	Sys_Panic(SYS_FATAL, "Trying to use Vm_BootAlloc either before calling Vm_BootAllocInit\r\nor after calling Vm_Init\r\n");
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d56 1
+a56 1
+		    &vmKernMemSize, &vmStat.numPhysPages);
+@
+
+
+5.3
+log
+@Remove references to symbols in end.o.  Use the normal loader symbols
+instead.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmBoot.c,v 5.2 87/12/15 15:19:59 nelson Exp $ SPRITE (Berkeley)";
+@
+
+
+5.2
+log
+@Comments.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmBoot.c,v 5.1 87/12/11 13:25:55 nelson Exp $ SPRITE (Berkeley)";
+d45 2
+d49 1
+a49 1
+    vmMemEnd = (Address) &endBss;
+@
+
+
+5.1
+log
+@New VM system where put machine dependent VM stuff into the SUN module.
+@
+text
+@d1 1
+a1 1
+/* vmSunBoot.c -
+d4 1
+a4 2
+ *	time.  This contains some hardware dependencies when it initializes
+ *	the virtual address space for the kernel.
+d11 1
+a11 1
+static char rcsid[] = "$Header: vmSunBoot.c,v 5.0 87/09/10 11:08:21 nelson Exp $ SPRITE (Berkeley)";
+d34 1
+a34 1
+ *     None.
+d37 2
+a38 1
+ *     vmMemEnd is set.
+@
+
+
+5.0
+log
+@*** empty log message ***
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: vmSunBoot.c,v 5.0 87/08/11 10:53:15 sprite Exp $ SPRITE (Berkeley)";
+a14 1
+#include "vmSunConst.h"
+a15 1
+#include "machine.h"
+d17 1
+d20 1
+a41 1
+
+d45 1
+a45 21
+    Vm_PTE	pte;
+    int 	i;
+    int		virtAddr;
+
+    /*
+     * We map all of the kernel memory that we might need (VM_NUM_KERN_PAGES
+     * worth) one for one.  We know that the monitor maps the first part of
+     * memory one for one but for some reason it doesn't map enough.  We
+     * assume that the pmegs have been mapped correctly.
+     */
+
+    *(int *) &pte = 0;
+    pte.protection = VM_KRW_PROT;
+    pte.resident = 1;
+    for (i = 0, virtAddr = MACH_KERNEL_START; 
+	 i < VM_NUM_KERN_PAGES * VM_CLUSTER_SIZE;
+	 i++, virtAddr += VM_PAGE_SIZE_INT) {
+        pte.pfNum = i;
+        Vm_SetPageMap((Address) virtAddr, pte);
+    }
+
+a46 5
+
+    /*
+     * Determine where memory ends.
+     */
+
+a47 1
+
+d51 1
+d53 2
+a54 1
+    vmMemEnd = (Address) (((int) vmMemEnd + 3) & ~3);
+a73 1
+
+a83 1
+
+a84 1
+
+a85 1
+
+@

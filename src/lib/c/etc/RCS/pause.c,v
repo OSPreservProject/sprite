@@ -1,0 +1,124 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     88.12.31.12.26.17;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.19.14.31.39;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Simplify so as not to need compatibility routines or Sprite kernel calls.
+@
+text
+@/* 
+ * pause.c --
+ *
+ *	Source for "pause" library procedure.
+ *
+ * Copyright (C) 1986, 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: pause.c,v 1.1 88/06/19 14:31:39 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * pause --
+ *
+ *	Go to sleep until a signal is received.
+ *
+ * Results:
+ *	Always returns -1, with errno set to EINTR.
+ *
+ * Side effects:
+ *	The process waits until a non-masked signal is received.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+pause()
+{
+    return sigpause(sigblock(0));
+}
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d4 1
+a4 1
+ *	Procedure to map from Unix pause system call to Sprite.
+d6 8
+a13 2
+ * Copyright (C) 1986 Regents of the University of California
+ * All rights reserved.
+d17 1
+a17 1
+static char rcsid[] = "$Header: pause.c,v 1.1 86/04/17 15:20:52 douglis Exp $ SPRITE (Berkeley)";
+a19 7
+#include "sprite.h"
+#include "sig.h"
+
+#include "compatInt.h"
+#include <signal.h>
+#include <errno.h>
+
+d26 1
+a26 3
+ *	Procedure to map from Unix pause system call to Sprite Sig_Pause.
+ *	Since the Unix version doesn't take a signal hold mask, we need
+ *	to get the current mask and pass it in to Sig_Pause.
+d29 1
+a29 1
+ *	Pause always returns UNIX_ERROR with errno set to EINTR.
+d40 1
+a40 18
+    int currentMask;		/* placeholder for signal mask */
+    ReturnStatus status;	/* generic result code */
+
+    status = Compat_GetSigHoldMask(&currentMask);
+    if (status == FAILURE) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    }
+    status = Sig_Pause(currentMask);
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);	
+    } else {
+	/*
+	 * should Sig_Pause ever return SUCCESS?
+	 */
+	return(UNIX_SUCCESS);
+    }
+@

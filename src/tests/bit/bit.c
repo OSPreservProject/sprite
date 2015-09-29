@@ -1,0 +1,155 @@
+/* 
+ * bit.c --
+ *
+ *	This file contains a program that exercises the bit
+ *	library procedures.  Invoke it with no parameters;  it
+ *	will print messages on stderr for any problems it detects
+ *	with the string procedures.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/tests/bit/RCS/bit.c,v 1.1 88/06/19 17:53:41 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <stdio.h>
+#include <bit.h>
+
+#define error(string) \
+    fprintf(stderr, string); \
+    exit(1);
+
+/*
+ * Utility procedure to compare two arrays for equality.
+ */
+
+void
+check(a1, a2, size, msg)
+    register int *a1;		/* First array. */
+    register int *a2;		/* Second array. */
+    int size;			/* No. of bits in each array. */
+    char *msg;			/* Message to print if there's a mismatch. */
+{
+    int i;
+
+    for (i = 0; i < size; i++) {
+	if (Bit_Set(i, a1)) {
+	    if (Bit_Set(i, a2)) {
+		continue;
+	    }
+	} else {
+	    if (Bit_Clear(i, a2)) {
+		continue;
+	    }
+	}
+	error(msg);
+    }
+}
+
+main()
+{
+    int *a1, *a2, *a3, i;
+    static int test1[] = {0xf0f0f0f0, 0xf0f0f0f0, 0xffff};
+    static int test2[] = {0x11111111, 0x88888888, 0x0000};
+    static int test3[] = {0x10101010, 0x80808080, 0x0000};
+    static int test4[] = {0xf1f1f1f1, 0xf8f8f8f8, 0xffff};
+
+    /*
+     * Bit_Set, Bit_Clear, Bit_FindFirstSet
+     */
+
+    Bit_Alloc(99, a1);
+    if (Bit_FindFirstSet(100, a1) != -1) {
+	error("Bit_FindFirstSet error 1\n");
+    }
+    Bit_Set(99, a1);
+    if (Bit_FindFirstSet(100, a1) != 99) {
+	error("Bit_FindFirstSet error 2\n");
+    }
+    Bit_Set(0, a1);
+    if (Bit_FindFirstSet(100, a1) != 0) {
+	error("Bit_FindFirstSet error 3\n");
+    }
+    Bit_Clear(0, a1);
+    if (Bit_FindFirstSet(100, a1) != 99) {
+	error("Bit_FindFirstSet error 4\n");
+    }
+    Bit_Clear(99, a1);
+    if (Bit_FindFirstSet(100, a1) != -1) {
+	error("Bit_FindFirstSet error 5\n");
+    }
+
+    /*
+     * Bit_IsSet, Bit_IsClear
+     */
+
+    Bit_Set(45, a1);
+    if (!Bit_IsSet(45, a1)) {
+	error("Bit_IsSet error 1\n");
+    }
+    if (Bit_IsClear(45, a1)) {
+	error("Bit_IsSet error 2\n");
+    }
+    if (Bit_IsSet(46, a1)) {
+	error("Bit_IsSet error 3\n");
+    }
+    if (!Bit_IsClear(46, a1)) {
+	error("Bit_IsSet error 4\n");
+    }
+    if (Bit_FindFirstSet(100, a1) != 45) {
+	error("Bit_IsSet error 5\n");
+    }
+
+    /*
+     * Bit_FindFirstClear
+     */
+
+    for (i = 0; i < 37; i++) {
+	Bit_Set(i, a1);
+    }
+    if (Bit_FindFirstClear(100, a1) != 37) {
+	error("Bit_FindFirstClear error 1\n");
+    }
+    Bit_Clear(36, a1);
+    if (Bit_FindFirstClear(100, a1) != 36) {
+	error("Bit_FindFirstClear error 2\n");
+    }
+
+    /*
+     * Bit_AnySet, Bit_Zero
+     */
+
+    if (!Bit_AnySet(100, a1)) {
+	error("Bit_AnySet error 1\n");
+    }
+    Bit_Zero(100, a1);
+    if (Bit_AnySet(100, a1)) {
+	error("Bit_AnySet error 2\n");
+    }
+
+    /*
+     * Bit_Union, Bit_Intersect
+     */
+
+    Bit_Intersect(72, test1, test2, a1);
+    check(a1, test3, 72, "Bit_Intersect error 1\n");
+    Bit_Union(72, test1, test2, a1);
+    check(a1, test4, 72, "Bit_Union error 1\n");
+
+    /*
+     * Bit_Copy
+     */
+
+    Bit_Copy(65, test1, a1);
+    check(test1, a1, 65, "Bit_Copy error 1\n");
+
+    exit(0);
+}

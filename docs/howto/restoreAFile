@@ -1,0 +1,169 @@
+Procedure for doing a restore (Revised: $Date: 92/06/10 13:15:42 $).
+
+0.  Summary
+
+    /sprite/admin/restore -v [-n 6] [-r] -f /dev/rst05.nr /sprite/foobar
+
+    This restores /sprite/foobar from tape rst05.  The -n flag specifies
+    a particular dump file on the tape.  The -r flag does the restore
+    relative to the current directory, rather than the original location.
+
+1.  The first thing you need to do is find a tape that contains
+    the file you want to restore.  A level zero dump is done once
+    a week (usually over the weekend) and contains all the files.
+    Level one dumps are done on the other days.  Each level one dump
+    contains all the files that have been modified since the last
+    level zero dump.
+
+    The file /sprite/admin/dump/dumpdates contains a list of recent
+    dumps.  If you have created or changed the file since the latest
+    level zero, you can use a subsequent level one dump, otherwise
+    you should use the most recent level zero.
+
+    Each line in /sprite/admin/dump/dumpdates has information
+    about a filesystem dump.  The first number is the tape number.
+    Starting from the end of the file and working forward, find the
+    tape number that corresponds to the filesystem that contains the
+    file you want to restore.
+
+    If the dump was done in the last day or two, then the tape
+    that contains it may still be in the tape drive.  That is
+    the first place you should look.  The tape number is written
+    on the back of the tape, and should be visible when the tape
+    is in the drive.
+
+    If it is not in the drive it is probably in Evans 608-2 in the
+    rack on the wall (over the map of the Middle East).
+
+    There are two Exabyte drives, both in 608-2, attached to
+    Sassafras.  The top drive usually holds the tape for the daily
+    dumps.  Unless you're restoring from that tape, it's usually
+    better to use the (usually empty) drive beneath it.
+
+2.  If necessary, remove the tape that is currently in the exabyte:
+    Push the button on the drive.  The green light should go out
+    immediately.  The drive will whir for about 30 seconds or so, and
+    then the tape will pop out.
+
+3.  Put the dump tape into the exabyte.  Close the door.  The
+    drive will emit about 30 seconds of whirring noise, and then
+    the green light should come on.
+
+4.  If you are restoring files that you do not have write permission
+    for, you will need to run the restore as the super-user.
+
+    You should login to sassafras to do the restore.  Remote login is
+    fine, but you should avoid logging out until the restore is
+    finished.
+
+    Type `/sprite/admin.sun4/restore -v -f <device> <pathname>'.  
+
+    The device names for the tape drives are /dev/rst04.nr (for the
+    drive labeled "target 4") and /dev/rst05.nr ("target 5").
+
+    The path name should be a hard, absolute path.  It should not
+    contain any symbolic links.  If you specify a symbolic link, then
+    the link will be restored, but not the file it points to.  Be
+    especially careful about using ~ to mean your home directory.
+    This is often a symbolic link in the /users directory.  You should
+    use the hard path instead.
+
+    The pathname can be a single file, a directory, or a
+    regular expression.
+
+    The -v option to restore means `verbose' and will cause the
+    files to be listed as they are restored.  Once all your files
+    are restored you can kill the restore process.  This is often
+    convenient, since it can otherwise take several hours to scan
+    to the end of the tape.
+
+    If you want to restore a file without overwriting a current
+    file of the same name, then you can use the -r option to restore.
+    This will cause the leading '/' to be stripped off the restored
+    files.  They will be restored relative to the current directory
+    instead of root.
+
+    There are often multiple copies of a filesystem on a tape.  If
+    there is only one copy of a filesystem on a tape, then the
+    restore program will know which copy to use.  But since the
+    daily dumps are appended to the same tape for several days,
+    there are often multiple copies of a filesystem on a tape.  In
+    this case you need to tell the restore program which one you
+    want to use.  You can figure out which file to use by either
+    looking at the file /sprite/admin/dump/dumpdates, or by reading
+    the label on the tape.  You can read the label on the tape by
+    using the command `` dump -t -f <device> ''.  The file number
+    is the second number on each line.  Use that argument with the
+    -n option to restore to tell it which file to use.
+
+    Here is an example.  Lets say you are using the tape drive on
+    allspice and the tape is already in the drive.  When you type
+    `` dump -t -f /hosts/allspice/dev/exabyte.norewind '' it prints
+
+    108 01 1    7977882  Tue Jul  3 02:20:29 1990  /user1
+    108 02 1   10111764  Tue Jul  3 02:33:06 1990  /user2
+    108 03 1    2529351  Tue Jul  3 02:42:05 1990  /user4
+    108 04 1          0  Tue Jul  3 02:49:19 1990  /postdev
+    108 05 1    4471199  Tue Jul  3 02:53:57 1990  /mic
+    108 06 1   22500114  Tue Jul  3 03:17:54 1990  /sprite
+    108 07 1   11044107  Tue Jul  3 03:29:16 1990  /sprite/src
+    108 08 1   76187648  Tue Jul  3 03:41:55 1990  /sprite/src/kernel
+    108 09 1    7679234  Tue Jul  3 04:03:50 1990  /c
+    108 10 1      74240  Tue Jul  3 04:33:57 1990  /b
+    108 11 1    4330284  Tue Jul  3 05:25:10 1990  /X11
+    108 12 1          0  Tue Jul  3 05:33:02 1990  /X11/R3
+    108 13 1    1620000  Tue Jul  3 05:39:15 1990  /newroot
+    108 14 1   16934100  Tue Jul  3 06:03:20 1990  /scratch3
+    108 15 1     542694  Tue Jul  3 06:10:39 1990  /
+    108 16 1     496976  Tue Jul  3 06:35:44 1990  /tic
+    108 17 1   10336362  Wed Jul  4 06:16:53 1990  /user1
+    108 18 1   12253526  Wed Jul  4 06:29:19 1990  /user2
+    108 19 1    4762611  Wed Jul  4 06:40:44 1990  /user4
+    108 20 1     420875  Wed Jul  4 06:49:43 1990  /postdev
+    108 21 1   24229891  Wed Jul  4 06:56:17 1990  /mic
+    108 22 1   31474112  Wed Jul  4 07:21:02 1990  /sprite
+    108 23 1   22377767  Wed Jul  4 07:34:55 1990  /sprite/src
+    108 24 1  101965368  Wed Jul  4 07:49:05 1990  /sprite/src/kernel
+    108 25 1   21589264  Wed Jul  4 08:14:21 1990  /c
+    108 26 1      74240  Wed Jul  4 08:36:38 1990  /b
+    108 27 1   18857383  Wed Jul  4 08:55:40 1990  /X11
+    108 28 1     152091  Wed Jul  4 09:09:33 1990  /X11/R3
+    108 29 1    1620000  Wed Jul  4 09:18:28 1990  /newroot
+    108 30 1   17130708  Wed Jul  4 09:52:58 1990  /scratch3
+    108 31 1    1742978  Wed Jul  4 10:03:14 1990  /
+    108 32 1    2158018  Wed Jul  4 10:34:22 1990  /tic
+
+    The first number on each line is the tape number.  So this must
+    be tape 108.  That number should also be written on the back of
+    the tape, and the tape box.  The second number is the file number.
+    These should be sequential numbers.  The tape label itself is the
+    0th file on the tape.  /user1 is the 1st file, /mic is the 2nd, etc.
+    The next number is the number of bytes the file contains.  The
+    next entry is the date and time the files were dumped.
+
+    Let's say you want to restore the file /sprite/foobar from
+    the dump on July 3.  /sprite is the 6th file on the tape.
+    You should use the command:
+
+    restore -v -n 6 -f /hosts/allspice/dev/exabyte.norewind /sprite/foobar
+
+    If you want to restore the same file from the July 4 dump then
+    you should use the command:
+
+    restore -v -n 22 -f /hosts/allspice/dev/exabyte.norewind /sprite/foobar
+
+    The restore program will skip 22 files before invoking tar.
+
+    When the tape drive is reading the tape the orange light next
+    to the green light will be on.  When it is done reading the
+    tape the orange light will go off, but the green light will
+    stay on.
+
+5.  Remove the tape, put it back in the correct box, and then put
+    it back where you got it from.
+
+    If there was a tape in the drive when you started, make sure
+    you put it back when you are done.
+
+6.  For more information see the manual entries for `dump' and `restore'.
+

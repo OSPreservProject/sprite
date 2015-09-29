@@ -1,0 +1,257 @@
+% The following defines procedures assumed and used by program "dvips"
+% and must be downloaded or sent as a header file for all TeX jobs.
+% Originated by Neal Holtz, Carleton University, Ottawa, Canada
+%      <holtz@cascade.carleton.cdn>
+%      June, 1985
+%
+%   Hacked by tgr, July 1987, stripped down to bare essentials,
+%   plus a few new commands for speed.
+%
+%   Hacked by don, December 1989, to give characters top down and to
+%   remove other small nuisances; merged with tgr's compression scheme
+%
+% To convert this file into a downloaded file instead of a header
+% file, uncomment all of the lines beginning with %-%
+%
+%   To observe available VM, uncomment the following.
+%   (The first ten lines define a general 'printnumber' routine.)
+%
+% /VirginMtrx 6 array currentmatrix def
+% /dummystring 20 string def
+% /numberpos 36 def
+% /printnumber { gsave VirginMtrx setmatrix
+%   /Helvetica findfont 10 scalefont setfont
+%   36 numberpos moveto
+%   /numberpos numberpos 12 add def
+%   dummystring cvs show
+%   grestore
+%   } bind def
+% /showVM { vmstatus exch sub exch pop printnumber } def
+% /eop-aux { showVM } def
+%
+%-%0000000 			% Server loop exit password
+%-%serverdict begin exitserver
+%-%  systemdict /statusdict known
+%-%  {statusdict begin 9 0 3 setsccinteractive /waittimeout 300 def end}
+%-% if
+
+/TeXDict 200 dict def   % define a working dictionary
+TeXDict begin           % start using it.
+
+/bdf { bind def } def
+
+% The output of dvips assumes pixel units, Resolution/inch, with
+% increasing y coordinates corresponding to moving DOWNWARD.
+% The PostScript default is big point units (bp), 72/inch, with
+% increasing y coordinates corresponding to moving UP; the
+% following routines handle conversion to dvips conventions. 
+
+% Let the PostScript origin be (xps,yps) in dvips coordinates.
+/@rigin                 % -xps -yps @rigin -   establishes dvips conventions
+  { 72 Resolution div dup neg scale
+    translate
+  } bdf
+
+% Here we assume the PostScript origin is at the bottom left corner
+% and that the paper is 11 inches high;
+% the dvips origin is 1 inch from top left corner;
+% hence if Resolution=300, we have (xps,yps)=(-300,3000). 
+/@letter                % setup for standard letter format
+  { Resolution dup -10 mul @rigin } bdf
+
+/@landscape
+  { [ 0 1 -1 0 0 0 ] concat
+    Resolution dup @rigin } bdf
+
+/@a4
+  { Resolution dup -10.6929133858 mul @rigin } bdf
+
+/@legal
+  { Resolution dup -13 mul @rigin } bdf
+
+/@manualfeed
+   { statusdict /manualfeed true put
+   } bdf
+
+        % n @copies -   set number of copies
+/@copies
+   { /#copies exch def
+   } bdf
+
+% Bitmap fonts are called fa, fb, ..., fz, f0, f1, ...; the maximum
+% supported by these macros is f999, but if you really go up that high
+% you need to increase the size of TeXDict.
+% The calling sequence for downloading font foo is
+%           /foo df chardef1 ... chardefn dfe
+% where each chardef is
+%           [<hexstring> wd ht xoff yoff dx] charno dc
+
+/@FontMatrix [1 0 0 -1 0 0] def
+/@FontBBox [0 0 0 0] def
+
+/dmystr (ZZf@@@) def       % define a place to put the new name
+/newname {dmystr cvn} bdf  % make it easy to get that name
+/df       % id df -         -- initialize a new font dictionary
+  { /fontname exch def
+    dmystr 2 fontname cvx (@@@@) cvs putinterval  % put name in template
+    newname 7 dict def              % allocate new font dictionary
+    newname load begin
+        /FontType 3 def
+	/FontMatrix @FontMatrix def
+	/FontBBox @FontBBox def
+        /BitMaps 256 array def
+        /BuildChar {CharBuilder} def
+        /Encoding IdentityEncoding def
+        end
+    fontname { /foo setfont }       %  dummy macro to be filled in
+       2 array copy cvx def         %  have to allocate a new one
+    fontname load                   %  now we change it
+       0 dmystr 6 string copy       %  get a copy of the font name
+       cvn cvx put                  %  and stick it in the dummy macro
+  } bdf
+
+/dfe { newname dup load definefont setfont } bdf
+
+% the following is the only character builder we need.  it looks up the
+% char data in the BitMaps array, and paints the character if possible.
+% char data  -- a bitmap descriptor -- is an array of length 6, of
+%          which the various slots are:
+
+/ch-image {ch-data 0 get} bdf   % the hex string image
+/ch-width {ch-data 1 get} bdf   % the number of pixels across
+/ch-height {ch-data 2 get} bdf  % the number of pixels tall
+/ch-xoff  {ch-data 3 get} bdf   % number of pixels to right of origin
+/ch-yoff  {ch-data 4 get} bdf   % number of pixels below origin
+/ch-dx  {ch-data 5 get} bdf   % number of pixels to next character
+
+/CharBuilder    % fontdict ch Charbuilder -     -- image one character
+     {save 3 1 roll exch /BitMaps get exch get /ch-data exch def
+      ch-data null ne
+      {ch-dx 0 ch-xoff ch-yoff neg
+       ch-xoff ch-width add ch-height ch-yoff sub
+       setcachedevice
+       ch-width ch-height true
+       [1 0 0 -1 -.1 ch-xoff sub ch-height ch-yoff sub .1 add]
+% here's the alternate code for unpacking compressed fonts
+     /id ch-image def                          % image data
+     /rw ch-width 7 add 8 idiv string def      % row, initially zero
+     /rc 0 def                                 % repeat count
+     /gp 0 def                                 % image data pointer
+     /cp 0 def                                 % column pointer
+     { rc 0 ne { rc 1 sub /rc exch def rw } { G } ifelse } imagemask
+   }if
+   restore
+} bdf
+/G { { id gp get /gp gp 1 add def
+  dup 18 mod exch 18 idiv pl exch get exec } loop } bdf
+/adv { cp add /cp exch def } bdf
+/chg { rw cp id gp 4 index getinterval putinterval
+        dup gp add /gp exch def adv } bdf
+/nd { /cp 0 def rw exit } bdf
+/lsh { rw cp 2 copy get dup 0 eq { pop 1 } { dup 255 eq { pop 254 }
+    { dup dup add 255 and exch 1 and or } ifelse } ifelse put 1 adv } bdf
+/rsh { rw cp 2 copy get dup 0 eq { pop 128 } { dup 255 eq { pop 127 }
+    { dup 2 idiv exch 128 and or } ifelse } ifelse put 1 adv } bdf
+/clr { rw cp 2 index string putinterval adv } bdf
+/set { rw cp fillstr 0 4 index getinterval putinterval adv } bdf
+/fillstr 18 string 0 1 17 { 2 copy 255 put pop } for def
+/pl [
+   { adv 1 chg } bind
+   { adv 1 chg nd } bind
+   { 1 add chg } bind
+   { 1 add chg nd } bind
+   { adv lsh } bind
+   { adv lsh nd } bind
+   { adv rsh } bind
+   { adv rsh nd } bind
+   { 1 add adv } bind
+   { /rc exch def nd } bind
+   { 1 add set } bind
+   { 1 add clr } bind
+   { adv 2 chg } bind
+   { adv 2 chg nd } bind
+   { pop nd } bind ] def
+% end of code for unpacking compressed fonts
+
+               % in the following, the font-cacheing mechanism requires that
+                % a name unique in the particular font be generated
+
+/dc            % char-data ch dc -    -- define character bitmap in current font
+  { /ch-code exch def
+    /ch-data exch def
+    newname load /BitMaps get ch-code ch-data put
+  } bdf
+
+/bop           % bop -              -- begin a brand new page
+  {
+    gsave /SaveImage save def
+    0 0 moveto
+  } bdf
+
+/eop           % - eop -              -- end a page
+  { % eop-aux  % -- to observe VM usage
+    clear SaveImage restore
+    showpage grestore
+  } bdf
+
+/@start         % - @start -            -- start everything
+  {
+    /Resolution exch def
+    /IdentityEncoding 256 array def
+    0 1 255 {IdentityEncoding exch 1 string dup 0 3 index put cvn put} for
+  } bdf
+
+/p { show } bdf        %  the main character setting routine
+
+/RuleMatrix [ 1 0 0 -1 -.1 -.1 ] def % things we need for rules
+/BlackDots 8 string def
+/v {                   % can't use ...fill; it makes rules too big
+   gsave
+      currentpoint translate
+      false RuleMatrix { BlackDots } imagemask
+   grestore
+} bdf
+/a { moveto } bdf    % absolute positioning
+/delta 0 def         % we need a variable to hold space moves
+%
+%   The next ten macros allow us to make horizontal motions that
+%   are within 4 of the previous horizontal motion with a single
+%   character.  These are typically used for spaces.
+%
+/tail { dup /delta exch def 0 rmoveto } bdf
+/b { exch show tail } bdf      % show and tail!
+/c { show delta 4 sub tail } bdf
+/d { show delta 3 sub tail } bdf
+/e { show delta 2 sub tail } bdf
+/f { show delta 1 sub tail } bdf
+/g { show delta 0 rmoveto } bdf
+/h { show delta 1 add tail } bdf
+/i { show delta 2 add tail } bdf
+/j { show delta 3 add tail } bdf
+/k { show delta 4 add tail } bdf
+%
+%   These next allow us to make small motions (-4..4) cheaply.
+%   Typically used for kerns.
+%
+/l { show -4 0 rmoveto } bdf
+/m { show -3 0 rmoveto } bdf
+/n { show -2 0 rmoveto } bdf
+/o { show -1 0 rmoveto } bdf
+/q { show 1 0 rmoveto } bdf
+/r { show 2 0 rmoveto } bdf
+/s { show 3 0 rmoveto } bdf
+/t { show 4 0 rmoveto } bdf
+%
+%   w is good for small horizontal positioning.  x is good for small
+%   vertical positioning.  And y is good for a print followed by a move.
+%
+/w { 0 rmoveto } bdf
+/x { 0 exch rmoveto } bdf
+/y { 3 2 roll show moveto } bdf
+%
+%   The bos and eos commands bracket sections of downloaded characters.
+%
+/bos { /section save def } bdf
+/eos { clear section restore } bdf
+
+end  % revert to previous dictionary

@@ -1,0 +1,232 @@
+.\" @(#)semctl.2 1.18 88/03/07 SMI; from S5R3
+.TH SEMCTL 2 "21 November 1987"
+.SH NAME
+semctl \- semaphore control operations
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/sem.h>
+.LP
+.ft B
+int semctl (semid, semnum, cmd, arg)
+int semid, cmd;
+int semnum;
+union semun {
+	val;
+	struct semid_ds \(**buf;
+	ushort \(**array;
+} arg;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX  semctl  "" "\fLsemctl\fR \(em semaphore controls"
+.IX  semaphore "control \(em \fLsemctl\fR"
+.B semctl(\|)
+provides a variety of semaphore control operations as specified by
+.IR cmd .
+.LP
+The following
+.IR cmd s
+are executed with respect to the semaphore specified by
+.IR semid " and " semnum:
+.RS
+.TP 20
+.B GETVAL
+Return the value of
+.I semval
+(see
+.BR intro (2)).
+.B {\s-1READ\s0}
+.TP
+.B SETVAL
+Set the value of
+.I semval
+to
+.IR arg.val .
+.B {\s-1ALTER\s0}
+.TP
+.B GETPID
+Return the value of
+.IR sempid .
+.B {\s-1READ\s0}
+.TP
+.B GETNCNT
+Return the value of
+.IR semncnt .
+.B {\s-1READ\s0}
+.TP
+.B GETZCNT
+Return the value of
+.IR semzcnt .
+.B {\s-1READ\s0}
+.RE
+.LP
+The following
+.IR cmd s
+return and set, respectively, every
+.I semval
+in the set of semaphores.
+.RS
+.TP
+.B GETKEYS
+Place the partial contents of all semaphore
+entries into the array pointed to by
+.I arg.buf .
+.TP
+.B GETALL
+Place
+.I semvals
+into the array pointed to by
+.IR arg.array .
+.B {\s-1READ\s0}
+.TP
+.B SETALL
+Set
+.I semvals
+according to the array pointed to by
+.IR arg.array .
+.B {\s-1ALTER\s0}
+.RE
+.LP
+The following
+.IR cmd s
+are also available:
+.RS
+.TP 20
+.B IPC_STAT
+Place the current value of each member of the data structure associated with
+.I semid
+into the structure pointed to by
+.IR arg.buf .
+The contents of this structure are defined in
+.BR intro (2).
+.B {\s-1READ\s0}
+.TP
+.B IPC_SET
+Set the value of the following members of the data structure associated with
+.I semid
+to the corresponding value found in the structure pointed to by
+.IR arg.buf :
+.IP
+.nf
+.B sem_perm.uid
+.B sem_perm.gid
+.B "sem_perm.mode /\(** only low 9 bits \(**/"
+.fi
+.IP
+This
+.I cmd
+can only be executed by a process that has an effective user
+.SM ID
+equal to either that of super-user, or to the value of
+.B sem_perm.cuid
+or
+.B sem_perm.uid
+in the data structure associated with
+.IR semid .
+.br
+.ne 5
+.TP 20
+.B IPC_RMID
+Remove the semaphore identifier specified by
+.I semid
+from the system and destroy the set of semaphores and data structure
+associated with it.
+This cmd can only be executed by a process that has an effective user
+.SM ID
+equal to either that of super-user, or to the value of
+.B sem_perm.cuid
+or
+.B sem_perm.uid
+in the data structure associated with
+.IR semid .
+.RE
+.SH "RETURN VALUE"
+.LP
+Upon successful completion,
+the value returned depends on
+.I cmd
+as follows:
+.PD 0
+.RS
+.TP 20
+.B GETVAL
+The value of
+.IR semval .
+.TP
+.B GETPID
+The value of
+.IR sempid .
+.TP
+.B GETNCNT
+The value of
+.IR semncnt .
+.TP
+.B GETZCNT
+The value of
+.IR semzcnt .
+.TP
+All others
+A value of 0.
+.RE
+.LP
+.PD
+Otherwise, a value of \-1 is returned and
+.B errno
+is set to indicate the error.
+.SH ERRORS
+.B semctl(\|)
+will fail if one or more of the following are true:
+.TP 20
+.SM EINVAL
+.I semid
+is not a valid semaphore identifier.
+.TP
+.SM EINVAL
+.I semnum
+is less than zero or greater than
+.BR sem_nsems .
+.TP
+.SM EINVAL
+.I cmd
+is not a valid command.
+.TP
+.SM EACCES
+Operation permission is denied to the calling process (see
+.BR intro (2)).
+.TP
+.SM ERANGE
+.I cmd
+is
+.B SETVAL
+or
+.B SETALL
+and the value to which
+.I semval
+is to be set is greater than the system imposed maximum.
+.TP
+.SM EPERM
+.I cmd
+is equal to
+.B IPC_RMID
+or
+.B IPC_SET
+and the effective user
+.SM ID
+of the calling process is not equal to that of super-user, or
+to the value of
+.B sem_perm.cuid
+or
+.B sem_perm.uid
+in the data structure associated with
+.IR semid .
+.TP
+.SM EFAULT
+.I arg.buf
+points to an illegal address.
+.SH SEE ALSO
+.BR intro (2),
+.BR semget (2),
+.BR semop (2).

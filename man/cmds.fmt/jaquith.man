@@ -1,0 +1,330 @@
+
+
+
+JAQUITH                   User Commands                   JAQUITH
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     jaquith - Tertiary storage manager
+
+SSYYNNOOPPSSIISS
+     jjaaqquuiitthh  [--ppoorrtt _p_o_r_t] [--llooggffiillee _l_o_g_f_i_l_e] [--llooggddeettaaiill  _l_e_v_e_l]
+     [--rroooott _r_o_o_t_n_a_m_e] [--ppuutteexxeecc _f_i_l_e_n_a_m_e]
+     [--ggeetteexxeecc _f_i_l_e_n_a_m_e] [--cclleeaanneexxeecc  _f_i_l_e_n_a_m_e]  [--ddiisskkhhiigghh  _p_e_r_-
+     _c_e_n_t] [--ddiisskkllooww _p_e_r_c_e_n_t] [--nneettmmaasskk _m_a_s_k]
+     [--ffssyynnccffrreeqq _c_o_u_n_t] [--cchhiillddddbbgg]]
+
+OOPPTTIIOONNSS
+     --ppoorrtt _p_o_r_t    Port number where jaquith  should  listen  for
+                   new connections.  Defaults to 10001 (decimal).
+
+     --llooggffiillee _l_o_g_f_i_l_e
+                   Enable activity logging to specified file
+
+     --llooggddeettaaiill _d_e_t_a_i_l
+                   Amount of logging information. There are  four
+                   levels,  with  high levels including the lower
+                   ones.  0x0 == None.  0x01  =  errors.  0x02  =
+                   major  events.   0x04  =  minor events. 0x08 =
+                   code tracing.
+
+     --rroooott _r_o_o_t_n_a_m_e
+                   Root of index tree
+
+     --ppuutteexxeecc _f_i_l_e_n_a_m_e
+                   Path to Jaquith update  program.  Defaults  to
+                   /usr/bin/jupdate.
+
+     --ggeetteexxeecc _f_i_l_e_n_a_m_e
+                   Path to Jaquith retrieval program. Defaults to
+                   /usr/bin/jfetch.
+
+     --cclleeaanneexxeecc _f_i_l_e_n_a_m_e
+                   Path to Jaquith cleaner program.  Defaults  to
+                   /usr/bin/jclean.
+
+     --ddiisskkhhiigghh _p_e_r_c_e_n_t
+                   Disk  threshold  at  which  cleaner  will   be
+                   invoked  to  free  disk  space by copying data
+                   buffers to tape.
+
+     --ddiisskkllooww _p_e_r_c_e_n_t
+                   Disk threshold at which cleaner will stop try-
+                   ing to free disk space by copying data buffers
+                   to tape.
+
+     --nneettmmaasskk _m_a_s_k Refuse  service  to  clients  whose   internet
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+JAQUITH                   User Commands                   JAQUITH
+
+
+
+                   address doesn't match _m_a_s_k. The mask is speci-
+                   fied in the form "128.32.1.2".  A "*"  can  be
+                   substituted  for a number to accept all values
+                   in that position.
+
+     --ffssyynnccffrreeqq _c_o_u_n_t
+                   For jput  operations,  force  an  fsync  every
+                   _c_o_u_n_t files.  Default is 10.
+
+     --cchhiillddddbbgg     Invoke update  and  retrieval  processes  with
+                   -debug flag.
+_________________________________________________________________
+
+DDEESSCCRRIIPPTTIIOONN
+     The JJaaqquuiitthh system is a tertiary storage manager which  pro-
+     vides  storage,  indexing  and retrieval services to network
+     clients.
+
+
+     This man page describes JJaaqquuiitthh, the main server. The  other
+     parts of the system include:
+
+
+          jmgr   -- the jukebox manager
+          jclean -- the archive cleaner
+          jput, jget, jls, jstat -- Client utilities
+          jupdate, jfetch, jquery -- Jaquith servant processes
+          jcopy, jctrl, jbuild -- System administration utilities
+
+     The jaquith process is the primary server  for  the  Jaquith
+     archive  system.   It  listens on a public port for incoming
+     client requests and spawns child processes to  handle  those
+     requests.  The port is specified with the --ppoorrtt option. Each
+     jjppuutt request spawns a _w_r_i_t_e_r as specified with the  --ppuutteexxeecc
+     option. Similarly, each jjggeett or jls request spawns a _r_e_a_d_e_r.
+     jjssttaatt requests spawn _q_u_e_r_y processes.
+
+
+     Jaquith also spawns a _c_l_e_a_n_e_r process which writes data from
+     disk  to  tertiary  storage,  as  necessary.  The cleaner is
+     specified with the  --cclleeaanneexxeecc  option,  and  the  threshold
+     which controls its invocation is specified with the -disklow
+     and --ddiisskkhhiigghh options. DDiisskkHHiigghh gives the level of disk use,
+     in  percent, when the cleaner should be invoked. The cleaner
+     will clean the disk down to the low water mark, --ddiisskkllooww.
+
+
+     Jaquith assumes the presence of the jukebox manager, a  pro-
+     cess which mediates access to the physical jukebox. See jmgr
+     for details.
+
+
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+JAQUITH                   User Commands                   JAQUITH
+
+
+
+     To install Jaquith initially, create a directory to  act  as
+     the  Jaquith  root,  typically  /jaquith.  It's  easiest  if
+     DEF_ROOT (in jaquith.h) is set to this name and all the pro-
+     grams  are  recompiled.  Then create volconfig and devconfig
+     files for jmgr. Start jaquith and jmgr and you're set.
+
+
+     To grant access to Jaquith to a new user, create a new logi-
+     cal  archive,  if desired, by creating a subdirectory in the
+     Jaquith root called _a_r_c_h_N_a_m_e..aarrcchh.   In  this  subdirectory,
+     create the aauutthh file, as described in the RELATED FILES sec-
+     tion, or just add the user  to  the  existing  authorization
+     file.
+
+
+RREELLAATTEEDD FFIILLEESS
+     Jaquith maintains a number of files describing the state  of
+     the  physical and logical archive. All of these files reside
+     in the Jaquith root (usually /arch  but  settable  with  the
+     -root flag).
+
+     ffrreeeevvoollss      The global pool of available  volumes.   These
+                   will be consumed as needed by the cleaner pro-
+                   cess. Format of an entry is  just  the  volume
+                   ID.
+
+     ddeevvccoonnffiigg     The list of device names to be  controlled  by
+                   the  jukebox  manager.   Format is device name
+                   followed by its slot in the jukebox.
+
+     vvoollccoonnffiigg     The list of volumes and their  slot  locations
+                   in the jukebox. Format is the volume name fol-
+                   lowed by its slot in the jukebox.
+
+     ttbbuuff..llrruu      The global  least-recently-used  buffer  list.
+                   Buffers  at the top of the list are prime can-
+                   didates for removal if disk  space  is  tight.
+                   Format  is  logical  archive  name followed by
+                   tbuf number.
+
+     rreebbuuiilldd.._p_i_d   Temporary work file created by jjbbuuiilldd.
+
+     tthhddrr.._p_i_d._n_u_m  Emergency work file created by jjbbuuiilldd when  it
+                   can't parse the thdr file it got from tape.
+
+     _a_r_c_h_i_v_e//ccoonnffiigg
+                   Archive configuration information.  Format  is
+                   jmgr  server  name and port number followed by
+                   desired buffer size.
+
+     _a_r_c_h_i_v_e//ttbbuuff  Current buffer number. I.E. current buffer  is
+                   ttbbuuff.._n_u_m.
+
+
+
+Sprite v1.0                                                     3
+
+
+
+
+
+
+JAQUITH                   User Commands                   JAQUITH
+
+
+
+     _a_r_c_h_i_v_e//ttbbuuff.._n_u_m
+                   Tape buffer files. These  files  contain  user
+                   file data in Posix tar format.
+
+     _a_r_c_h_i_v_e//tthhddrr.._n_u_m
+                   Tape header files.  These  files  contain  the
+                   indexing  information  in  case the disk index
+                   structure is destroyed.
+
+     _a_r_c_h_i_v_e//mmeettaa.._n_u_m
+                   Meta  information  about  tbuf._n_u_m  maintained
+                   while buffer is being built in case of crash.
+
+     _a_r_c_h_i_v_e//lloogg   The  list  of  operations  which   have   been
+                   requested on this logical archive.
+
+     _a_r_c_h_i_v_e//ffiilleemmaapp
+                   The list of volumes assigned to  this  archive
+                   along  with  the starting buffer number on the
+                   volume and the date the volume was assigned.
+
+     _a_r_c_h_i_v_e//aauutthh  The authorization information for the  logical
+                   archive.  The  file  consists  of  single-line
+                   entries in no particular order. Each entry has
+                   the  form  _u_s_e_r_n_a_m_e _g_r_o_u_p_n_a_m_e _h_o_s_t_n_a_m_e _p_e_r_m_i_s_-
+                   _s_i_o_n.  _u_s_e_r_n_a_m_e, _g_r_o_u_p_n_a_m_e, and  _h_o_s_t_n_a_m_e  are
+                   globbing  expressions.  _P_e_r_m_i_s_s_i_o_n is RR, WW, or
+                   OO  for  read,  read-and-write   or   ownership
+                   respectively.  Ownership means that the speci-
+                   fied user or group has 'root' access  to  this
+                   logical archive. Client requests are validated
+                   by  first  looking  for  an   entry   with   a
+                   corresponding user name. If none is found then
+                   an entry with a matching group name  is  used,
+                   else permission is denied.
+
+     _a_r_c_h_i_v_e//vvoolliinnffoo
+                   Physical volume information for  this  logical
+                   archive.  Entries are: current volume id, next
+                   location on volume where buffer is to be writ-
+                   ten,  remaining  space  in  KB on volume, last
+                   buffer number written, current buffer number.
+
+     _a_r_c_h_i_v_e//ttbbuuffiinnffoo
+                   Current buffer information  for  this  logical
+                   archive.  Entries  are:  buffer size in bytes,
+                   buffer header size in bytes,  number  of  user
+                   files in buffer.
+
+BBUUGGSS
+     None. Jaquith is perfection personified.
+
+
+
+
+Sprite v1.0                                                     4
+
+
+
+
+
+
+JAQUITH                   User Commands                   JAQUITH
+
+
+
+SSEEEE AALLSSOO
+     jmgr jls jstat jput jget jctrl jcopy jclean jbuild
+
+
+KKEEYYWWOORRDDSS
+     jaquith archive
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     5
+
+
+

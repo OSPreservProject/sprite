@@ -1,0 +1,819 @@
+head     9.4;
+branch   ;
+access   ;
+symbols  ds3100:9.4 sun3:9.4 sun4nw:9.4 symm:9.4 spur:9.4 Summer89:9.0;
+locks    ; strict;
+comment  @| @;
+
+
+9.4
+date     91.10.18.01.23.13;  author dlong;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     91.07.23.12.42.52;  author mendel;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.11.08.15.18.34;  author rab;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.08.07.18.11.24;  author mgbaker;  state Exp;
+branches 9.1.1.1;
+next     9.0;
+
+9.0
+date     89.09.12.14.53.05;  author douglis;  state Stable;
+branches ;
+next     1.15;
+
+1.15
+date     89.08.09.12.34.35;  author mgbaker;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     89.07.20.16.59.31;  author mgbaker;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     89.05.02.23.26.13;  author mgbaker;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     89.04.29.19.51.43;  author mgbaker;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     89.03.22.14.07.30;  author mgbaker;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     89.03.18.15.40.46;  author mgbaker;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     89.03.09.17.08.22;  author mgbaker;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     89.03.03.15.40.38;  author mgbaker;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     89.02.28.12.48.34;  author mgbaker;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.02.05.17.33.01;  author mgbaker;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.01.29.13.10.12;  author mgbaker;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.01.25.22.52.22;  author mgbaker;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.01.23.00.06.35;  author mgbaker;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.01.22.23.44.57;  author mgbaker;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.01.22.20.33.15;  author mgbaker;  state Exp;
+branches ;
+next     ;
+
+9.1.1.1
+date     90.08.07.18.12.14;  author mgbaker;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Checkpoint.  Traps work and interrupts remain enabled correctly.
+>> I've #ifdef'd out the code where I start the timer and try to take
+>> timer interrupts.  When I do that, interrupts get permanently disabled,
+>> somehow.
+@
+
+
+9.4
+log
+@sun4c/sun4c2 merge
+@
+text
+@/*
+ * machIntr.s --
+ *
+ *	Interrupts for sun4.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+.seg	"data"
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machIntr.s,v 9.3 91/07/23 12:42:52 mendel Exp $ SPRITE (Berkeley)"
+.align	8
+.seg	"text"
+
+#include "machConst.h"
+#include "machAsmDefs.h"
+#include "vmSunConst.h"
+#ifndef sun4c
+#include "devAddrs.h"
+#endif
+
+.align	8
+.seg	"text"
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MachHandleInterrupt --
+ *
+ *	Handle an interrupt by calling the specific interrupt handler whose
+ *	address is given as our first (and only) argument.
+ *
+ *	MachHandleInterrupt(SpecificInterruptHandlerAddress)
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------
+ */
+.globl	MachHandleInterrupt
+MachHandleInterrupt:
+	/* set us at interrupt level - do this in trap handler?? */
+	sethi	%hi(_mach_AtInterruptLevel), %VOL_TEMP1
+	ld	[%VOL_TEMP1 + %lo(_mach_AtInterruptLevel)], %SAFE_TEMP
+	mov	1, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1 + %lo(_mach_AtInterruptLevel)]
+
+	and	%CUR_PSR_REG, MACH_PS_BIT, %VOL_TEMP1
+	sethi	%hi(_mach_KernelMode), %VOL_TEMP2
+						/* 0 = user, !0 = kernel */
+	st	%VOL_TEMP1, [%VOL_TEMP2 + %lo(_mach_KernelMode)]
+
+	/* Call into vector table using tbr */
+	and	%CUR_TBR_REG, MACH_TRAP_TYPE_MASK, %o0
+	sub	%o0, MACH_LEVEL0_INT, %o0	/* get interrupt level */
+	srl	%o0, 2, %VOL_TEMP1		/* convert to index */
+	sethi	%hi(_machInterruptArgs), %VOL_TEMP2
+	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2
+						/* arg, if any */
+	ld	[%VOL_TEMP2 + %lo(_machInterruptArgs)], %o0
+	/*
+	 * For now, this is the only way to get the interrupt pc to the
+	 * profiler via the Timer_TimerService callback.  It's an implicit
+	 * parameter.
+	 */
+	mov	%CUR_PC_REG, %o1	/* pc as next arg. */
+	sethi	%hi(_machVectorTable), %VOL_TEMP2
+	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP1
+	ld	[%VOL_TEMP1 + %lo(_machVectorTable)], %VOL_TEMP1
+	call	%VOL_TEMP1
+	nop
+
+	sethi	%hi(_mach_AtInterruptLevel), %VOL_TEMP1
+#ifdef NOTDEF
+	tst	%SAFE_TEMP
+	bne	LeaveInterruptLevel
+#endif NOTDEF
+	nop
+	st	%g0, [%VOL_TEMP1 + %lo(_mach_AtInterruptLevel)]
+LeaveInterruptLevel:
+	/*
+	 * Put a good return value into the return value register so that
+	 * MachReturnFromTrap will be happy if we're returning to user mode.
+	 */
+	mov	MACH_OK, %RETURN_VAL_REG
+
+	set	_MachReturnFromTrap, %VOL_TEMP1
+	jmp	%VOL_TEMP1
+	nop
+
+
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MachVectoredInterrupt --
+ *
+ *	Handle an interrupt that requires getting an interrupt vector in
+ *	an interrupt acknowledge cycle.  The single argument to the routine is
+ *	the vme trap vector address to read.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Handle the interrupt.
+ *
+ * ----------------------------------------------------------------------
+ */
+.globl	_MachVectoredInterrupt
+_MachVectoredInterrupt:
+	/* We need to return to a leaf routine, so we need to save a frame */
+	save	%sp, -MACH_FULL_STACK_FRAME, %sp
+.globl	_MachVectoredInterruptLoad
+_MachVectoredInterruptLoad:
+	lduba	[%i0] VMMACH_CONTROL_SPACE, %VOL_TEMP1	/* got vector */
+	sll	%VOL_TEMP1, 2, %VOL_TEMP1		/* convert to index */
+	sethi	%hi(_machInterruptArgs), %VOL_TEMP2
+	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2
+							/* clientData arg */
+	ld	[%VOL_TEMP2 + %lo(_machInterruptArgs)], %o0
+	sethi	%hi(_machVectorTable), %VOL_TEMP2
+	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2
+	ld	[%VOL_TEMP2 + %lo(_machVectorTable)], %VOL_TEMP2
+	call	%VOL_TEMP2				/* %o0 is arg */
+	nop
+	ret
+	restore
+
+
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MachHandleLevel15Intr --
+ *
+ *	Handle a level 15 interrrupt.  This is a non-maskable memory error
+ *	interrupt, and we want to clear the condition so we report only
+ *	the first CE.  Then we'll jump to MachTrap and go into the debugger.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	We should go into the debugger.
+ *
+ * ----------------------------------------------------------------------
+ */
+.globl	MachHandleLevel15Intr
+MachHandleLevel15Intr:
+	/*
+	 * Put the register values into global registers so we can see
+	 * what they were easily when entering the debugger, since we'll
+	 * mess up the locals before we get there.  We won't survive this
+	 * error anyway, so we won't be needing the globals again.
+	 */
+#ifdef sun4c
+	set	VMMACH_ASYNC_ERROR_REG, %VOL_TEMP1
+	lda	[%VOL_TEMP1] VMMACH_CONTROL_SPACE, %g5
+
+	set	VMMACH_ASYNC_ERROR_ADDR_REG, %VOL_TEMP1
+	lda	[%VOL_TEMP1] VMMACH_CONTROL_SPACE, %g6
+
+	/* I must clear these too to clear async error.  Very silly. */
+	set	VMMACH_SYNC_ERROR_REG, %VOL_TEMP1
+	lda	[%VOL_TEMP1] VMMACH_CONTROL_SPACE, %g0
+
+	set	VMMACH_SYNC_ERROR_ADDR_REG, %VOL_TEMP1
+	lda	[%VOL_TEMP1] VMMACH_CONTROL_SPACE, %g0
+
+	/*
+	 * To clear the interrupt condition, first write a 0 to the enable
+	 * all interrupts bit, and then write a one again.
+	 */
+	sethi	%hi(_machInterruptReg), %VOL_TEMP1
+	ld	[%VOL_TEMP1 + %lo(_machInterruptReg)], %VOL_TEMP1
+	ldub	[%VOL_TEMP1], %VOL_TEMP2
+	andn	%VOL_TEMP2, MACH_ENABLE_ALL_INTERRUPTS, %VOL_TEMP2
+	stb	%VOL_TEMP2, [%VOL_TEMP1]
+	or	%VOL_TEMP2, MACH_ENABLE_ALL_INTERRUPTS, %VOL_TEMP2
+	stb	%VOL_TEMP2, [%VOL_TEMP1]
+#else
+	set	VMMACH_ADDR_CONTROL_REG, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %g5
+
+	and	%VOL_TEMP2, ~VMMACH_ENABLE_MEM_ERROR_BIT, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+	set	VMMACH_ADDR_ERROR_REG, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %g6
+#endif
+	set	_MachTrap, %VOL_TEMP1
+	jmp	%VOL_TEMP1
+	nop
+@
+
+
+9.3
+log
+@Added code to handle VME bus timeouts on interrupt vector loads.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machIntr.s,v 9.2 90/11/08 15:18:34 rab Exp $ SPRITE (Berkeley)"
+d24 1
+d26 1
+d52 4
+a55 4
+	set	_mach_AtInterruptLevel, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %SAFE_TEMP
+	set	1, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+d58 3
+a60 2
+	set	_mach_KernelMode, %VOL_TEMP2
+	st	%VOL_TEMP1, [%VOL_TEMP2]	/* 0 = user, !0 = kernel */
+d66 1
+a66 1
+	set	_machInterruptArgs, %VOL_TEMP2
+d68 2
+a69 1
+	ld	[%VOL_TEMP2], %o0		/* arg, if any */
+d76 1
+a76 1
+	set	_machVectorTable, %VOL_TEMP2
+d78 1
+a78 1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+d82 1
+a82 1
+	set	_mach_AtInterruptLevel, %VOL_TEMP1
+d88 1
+a88 1
+	st	%g0, [%VOL_TEMP1]
+d127 1
+a127 1
+	set	_machInterruptArgs, %VOL_TEMP2
+d129 3
+a131 2
+	ld	[%VOL_TEMP2], %o0			/* clientData arg */
+	set	_machVectorTable, %VOL_TEMP2
+d133 1
+a133 1
+	ld	[%VOL_TEMP2], %VOL_TEMP2
+d184 3
+a186 2
+	set	DEV_INTERRUPT_REG_ADDR, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2
+d188 1
+a188 1
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+d190 1
+a190 1
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+@
+
+
+9.2
+log
+@Fixed comment.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machIntr.s,v 9.1 90/08/07 18:11:24 mgbaker Exp Locker: rab $ SPRITE (Berkeley)"
+d119 2
+a130 1
+
+d133 2
+@
+
+
+9.1
+log
+@Something weird is going on with rcs, so I'm checking this in.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machIntr.s,v 9.0 89/09/12 14:53:05 douglis Stable Locker: mgbaker $ SPRITE (Berkeley)"
+d57 1
+a57 1
+	st	%VOL_TEMP1, [%VOL_TEMP2]	/* 0 = user, 1 = kernel */
+@
+
+
+9.1.1.1
+log
+@Contains asplos statistics-gathering code.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machIntr.s,v 1.15 89/08/09 12:34:35 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+a52 6
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+
+	/* Temporary statistics for asplos paper. */
+	set	_numInterrupts, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2
+	add	%VOL_TEMP2, 1, %VOL_TEMP2
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machIntr.s,v 1.15 89/08/09 12:34:35 mgbaker Exp Locker: douglis $ SPRITE (Berkeley)"
+@
+
+
+1.15
+log
+@Stable kernel.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machIntr.s,v 1.14 89/07/20 16:59:31 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+@
+
+
+1.14
+log
+@Checkin before changing interrupt stuff
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machIntr.s,v 1.13 89/05/02 23:26:13 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d24 1
+d152 31
+d184 2
+a185 2
+	ld	[%VOL_TEMP1], %VOL_TEMP2
+	mov	%VOL_TEMP2, %g5
+d190 1
+@
+
+
+1.13
+log
+@New interrupts, device interface, etc.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machIntr.s,v 1.12 89/04/29 19:51:43 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d53 5
+d65 6
+@
+
+
+1.12
+log
+@Caching of kernel stacks now works.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machIntr.s,v 1.11 89/03/22 14:07:30 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d53 11
+a63 1
+	call	%o0				/* call specific handler */
+d83 37
+@
+
+
+1.11
+log
+@User process starts and gets successful page fault on its stack.
+I don't think it's returning to the user process correctly, though.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machIntr.s,v 1.10 89/03/18 15:40:46 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d23 1
+d71 30
+@
+
+
+1.10
+log
+@Kernel processes work again, with a lot of user support.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machIntr.s,v 1.9 89/03/09 17:08:22 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+a51 4
+	mov	%psr, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, InterruptDebugLabel1, %OUT_TEMP1)
+	mov	%o0, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, InterruptDebugLabel2, %OUT_TEMP1)
+@
+
+
+1.9
+log
+@Keyboard interrupts work.  Checking in before I've made too many
+further changes.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machIntr.s,v 1.8 89/03/03 15:40:38 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d67 6
+@
+
+
+1.8
+log
+@Fifteenth Kernel.  Initializes all kernel procs and gets to idle loop.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machIntr.s,v 1.7 89/02/28 12:48:34 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d52 4
+@
+
+
+1.7
+log
+@Added more interrupt-handling support.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machIntr.s,v 1.6 89/02/05 17:33:01 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d56 1
+d59 1
+@
+
+
+1.6
+log
+@Twelfth Kernel.  It uses only my trap table now.  The net module
+and the debugger work, plus it's taking timer and ethernet interrupts.
+Although it seems interrupts are disabled, I don't think they are.  It's
+just that I don't do keyboard interrupts yet.
+Because it uses my trap table, I've rearranged things so there's one
+less indirection.  Window overflow and underflow traps are direct now.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machIntr.s,v 1.5 89/01/29 13:10:12 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d32 2
+a33 3
+ *	For now, this only takes us to clock interrupts.
+ *	We have to indirect this way so that we come back to the return from
+ *	trap routine.
+d35 2
+d45 2
+a46 2
+.globl	MachHandleTimerInterrupt
+MachHandleTimerInterrupt:
+d52 1
+a52 2
+	set	_Timer_TimerServiceInterrupt, %VOL_TEMP1
+	call	%VOL_TEMP1
+d57 1
+a57 1
+	bne	TimerLeaveIntrLevel
+d60 1
+a60 1
+TimerLeaveIntrLevel:
+a62 29
+	nop
+
+.globl	MachHandleEtherInterrupt
+MachHandleEtherInterrupt:
+	set	_mach_AtInterruptLevel, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %SAFE_TEMP
+	set	1, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+	set	_NetIEIntr, %VOL_TEMP1
+	set	0, %o0				/* argument "FALSE" */
+	call	%VOL_TEMP1, 1
+	nop
+
+	set	_mach_AtInterruptLevel, %VOL_TEMP1
+	tst	%SAFE_TEMP
+	bne	EtherLeaveIntrLevel
+	nop
+	st	%g0, [%VOL_TEMP1]
+EtherLeaveIntrLevel:
+	set	_MachReturnFromTrap, %VOL_TEMP1
+	jmp	%VOL_TEMP1
+	nop
+
+
+.globl	MachHandleLevel0Interrupt
+MachHandleLevel0Interrupt:
+	set	~0xFFF, %VOL_TEMP1
+	and	%CUR_TBR_REG, %VOL_TEMP1, %CUR_TBR_REG
+	ba	MachHandleLevel0Interrupt
+@
+
+
+1.5
+log
+@Putting in net module and debugger.  There are still problems,
+but this is progress.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machIntr.s,v 1.4 89/01/25 22:52:22 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d44 7
+a50 3
+.globl	MachHandleInterrupt
+MachHandleInterrupt:
+#ifdef NOTDEF
+a53 1
+#endif /* NOTDEF */
+d55 6
+d63 29
+@
+
+
+1.4
+log
+@Ninth Kernel.  Timer interrupts and overflow and underflow traps still
+are all it does functionally, but now I save and restore state in a fancy
+way that will allow nested interrupts, avoids duplicating saved state,
+and works the same way for the debugger.  See README and the code for
+details.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machIntr.s,v 1.3 89/01/23 00:06:35 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d46 1
+d50 1
+@
+
+
+1.3
+log
+@Seventh kernel.  Clock interrupt level is now at 10.  Interrupts work for
+>> what I have, but I'm not printing anything, which didn't work before,
+>> so I must try that again.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machIntr.s,v 1.2 89/01/22 23:44:57 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d32 3
+a34 12
+ *	Handle an interrupt.  This means
+ *		1) Check to see if we're in an invalid window.  If so, deal
+ *		first with window overflow.
+ *		2) Now that it's safe to overwrite our out registers, update
+ *		the stack pointer.
+ *		3) Save the trap state - return from trap pc, psr, etc.
+ *		4) Re-enable traps so that if we get another window overflow,
+ *		we can handle it.
+ *		5) Deal with interrupt.
+ *		6) Re-disable traps.
+ *		7) Restore the trap state - return from trap pc, psr, etc.
+ *		8) Call the usual return from trap routine.
+a45 18
+	MACH_INVALID_WINDOW_TEST()
+	be	WindowOkay
+	nop
+	/* deal with window overflow */
+	set	MachWindowOverflow, %VOL_TEMP1
+	jmpl	%VOL_TEMP1, %SAFE_TEMP
+	nop
+WindowOkay:
+	/* add stack frame to stack pointer */
+	mov	%fp, %sp
+	set	MACH_SAVED_WINDOW_SIZE, %VOL_TEMP1
+	sub	%sp, %VOL_TEMP1, %sp
+	MACH_SAVE_TRAP_STATE()
+	MACH_SR_HIGHPRIO()		/* turn on traps, off interrupts */
+	/*
+	 * Deal with interrupt - for now we don't look at trap type, since
+	 * we know it can only be a clock interrupt.
+	 */
+d49 1
+a49 15
+	/*
+	 * The read psr, write psr sequence is interruptible, but this should
+	 * be okay here since we have all but non-maskable interrupts disabled
+	 * here...
+	 */
+	MACH_DISABLE_TRAPS()
+	/*
+	 * There's some redundancy here.  MACH_RESTORE_TRAP_STATE also writes
+	 * the psr.  It puts into it the value it had above during
+	 * MACH_SAVE_TRAP_STATE, except that it doesn't change the current
+	 * CWP bits in case we're in a different window.  In MachReturnFromTrap,
+	 * we move the %CUR_PSR_REG back into the psr, also taking care not
+	 * to change the CWP bits.  This seems like extra work someplace.
+	 */
+	MACH_RESTORE_TRAP_STATE()
+@
+
+
+1.2
+log
+@Interrupts seem to work again, but I've got lots of debugging
+code in here.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machIntr.s,v 1.1 89/01/22 20:33:15 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+a54 24
+	set	_saveCounter, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2
+	mov	1000, %VOL_TEMP1
+	cmp	%VOL_TEMP1, %VOL_TEMP2
+	be	finishedHere
+	nop
+	sll	%VOL_TEMP2, 0x2, %VOL_TEMP2	/* get array offset */
+	set	_saveBuffer, %VOL_TEMP1
+	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2	/* add to array */
+	mov	0x0, %VOL_TEMP1
+	st	%VOL_TEMP1, [%VOL_TEMP2]
+	add	%VOL_TEMP2, 4, %VOL_TEMP2
+	mov	%psr, %VOL_TEMP1
+	st	%VOL_TEMP1, [%VOL_TEMP2]
+	add	%VOL_TEMP2, 4, %VOL_TEMP2
+	st	%l0, [%VOL_TEMP2]
+	add	%VOL_TEMP2, 4, %VOL_TEMP2
+	mov	%wim, %VOL_TEMP1
+	st	%VOL_TEMP1, [%VOL_TEMP2]
+	set	_saveCounter, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2
+	add	%VOL_TEMP2, 4, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+finishedHere:
+a90 24
+	set	_saveCounter, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2
+	mov	1000, %VOL_TEMP1
+	cmp	%VOL_TEMP1, %VOL_TEMP2
+	be	finished2
+	nop
+	sll	%VOL_TEMP2, 0x2, %VOL_TEMP2	/* get array offset */
+	set	_saveBuffer, %VOL_TEMP1
+	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2	/* add to array */
+	mov	0x1, %VOL_TEMP1
+	st	%VOL_TEMP1, [%VOL_TEMP2]
+	add	%VOL_TEMP2, 4, %VOL_TEMP2
+	mov	%psr, %VOL_TEMP1
+	st	%VOL_TEMP1, [%VOL_TEMP2]
+	add	%VOL_TEMP2, 4, %VOL_TEMP2
+	st	%l0, [%VOL_TEMP2]
+	add	%VOL_TEMP2, 4, %VOL_TEMP2
+	mov	%wim, %VOL_TEMP1
+	st	%VOL_TEMP1, [%VOL_TEMP2]
+	set	_saveCounter, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2
+	add	%VOL_TEMP2, 4, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+finished2:
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.2 89/01/17 18:41:54 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d55 24
+d90 1
+a90 1
+	add	%sp, %VOL_TEMP1, %sp
+d115 24
+@

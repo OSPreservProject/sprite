@@ -1,0 +1,13 @@
+The following changes have been made to this directory since R3:
+
+     o  Support for SPARCstation1, both CG3 and CG6.
+
+     o  Should work on Sun 3/80 as well (even with CG6), but
+     	we were unable to test this configuration.
+
+     o	Support for SunOS 4.0.x.
+
+     o  Now uses mi software cursors
+
+     o  Keyboard mapping update, should match xnews now.
+     

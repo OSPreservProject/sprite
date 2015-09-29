@@ -1,0 +1,162 @@
+               Revision History for MakeIndex
+
+This is a reverse time-ordered history of changes to MakeIndex.
+
+-----------------------------------------------------------------
+[3/20/1988]
+	Version 2.4 released by Pehong Chen (phc@berkeley.edu),
+	the ``official'' version of MakeIndex that enters public domain.
+
+        * length() (originally defined in mkind.c) is replaced by
+	the standard function strlen(), which in some C implementations
+	is, or can be, expanded to in-line efficient hardware instructions
+	(e.g.  Microsoft C and VAX Unix); I have not yet done this.
+
+-----------------------------------------------------------------
+[20-Jan-88]
+        Portable version 2.3 released by Nelson H.F. Beebe
+        (BEEBE@SCIENCE.UTAH.EDU).
+
+        I spent 3 days implementing MakeIndex on Sun OS3.3 Unix
+        (cc and gcc), TOPS-20 (KCC-20 and PCC-20 compilers), PC
+        DOS (Microsoft C Version 5.0), and VAX VMS.  This was at
+        times a frustrating experience, because the effort
+        revealed a great many portability problems in the
+        original code (from VAX Unix, I think), plus some genuine
+        bugs in MakeIndex, plus a bug in each of two compilers
+        (KCC-20 and PCC-20)!
+
+        The changes for this version over 2.2 are exclusively bug
+        fixes and portability enhancements.  Thanks to the
+        original authors' careful design, no functionality
+        changes are likely to be necessary.
+
+        Besides getting the code working correctly on 4 systems
+        and 6 compilers, I have made several passes over the code
+        to reduce the lint complaints to a minimum, and remove
+        all of the warnings produced by the IBM PC Microsoft C
+        Version 5.0 compiler, which is the only one of the above
+        systems which completely implements October 1986 draft
+        ANSI C; the ANSI function prototype checking caught
+        numerous problems.
+
+        With these changes, I believe that we now have a version
+        of MakeIndex that satisfies the important goal of TeX --
+        the same input will produce identical output results on
+        all machines, whether they be micros, minis, mainframes,
+        or supercomputers.  This is true at least for the 6
+        systems for which testing has been possible at Utah.
+
+        Here is a summary of bug corrections and other changes:
+
+        * Several routines fell off the end without returning a
+        value, when the caller expected it; this was particularly
+        hard to trace (2 days of effort--the code only failed on
+        PCC-20, and work correctly with the other 4).
+
+        * Equivalence of *short and *int was incorrectly assumed
+        in one routine; this made the code dependent on the byte
+        storage order (it works on the little-Endian VAX
+        architecture, but will fail on big-Endian architectures
+        (IBM et al)).
+
+        * Equivalence of *int and *char was incorrectly assumed
+        in the call to qsort(); the only one of the 6 compilers
+        which uses a different format for *char values is KCC-20,
+        and that feature caught this bug (the compiler didn't
+        find it for me, but when the sort failed, I tracked it down).
+
+        * Routines which do not return a value are now explicitly
+        typed `void' instead of nothing or `int', and mkind.h has
+        both K&R old-style and new ANSI style function
+        declarations for all routines; the choice is made on the
+        basis of the compiler and operating-system switch
+        selections.
+
+        * A single (incorrect) use of backslash-dot (\.) escape
+        sequence in scanid.h has been reduced to dot (.).
+
+        * exit() was called without a valid argument in mkind.h.
+
+        * In several places, code of the form
+                char c;
+                while ((c = getchar()) != EOF)
+        existed; this is incorrect and will fail on many machines
+        when the EOF (== -1) value returned by getchar() is
+        truncated to a byte value for storage in c, then extended
+        to an integer again and compared with EOF.  The correct
+        approach is to use "int c;" instead of "char c;".  Type
+        declarations have been changed from "short" or "int" to
+        "char" or vice versa in several places in order to
+        achieve consistency, and explicit typecasts are used when
+        data types are intentionally changed by assignment or
+        argument association.
+
+        * mkind.h now has a SHORTNAMES section to define short
+        names for the 45 long ones which clash when reduced to 6
+        characters (although KCC-20 and PCC-20 both handle long
+        names, they produce assembly code output, and the
+        assembler limits names to 6 case-insensitive chars).
+
+        * File names have been reduced to 6 characters, allowing
+        the source to be ported to all of the above systems
+        without tedious file renaming.  The TOPS-20 LINK program
+        also runs under TOPS-10, and because TOPS-10 has a
+        6-character file name limit, LINK-20 does too, sigh...
+        The executable is called makeindex on all systems except
+        PC DOS, where the 8-character limit reduces it to
+        makeindx.  Similarly, filenames with special characters
+        (ind+ and ind-) have been renamed to portable names.
+
+        * Reference to sys/file.h has been eliminated; it was
+        only needed for the symbol R_OK passed to access().
+        sys/file.h is missing from most non-Unix C
+        implementations, while the value of R_OK (4) for access()
+        is consistent for all but PCC-20, where only F_OK (0) is
+        implemented.
+
+        * Makefiles have been produced for each of the above
+        systems (I have the same version of a public-domain make
+        running on all of them).
+
+        * A public version of qsort.c has been included in
+        MakeIndex for two reasons.  First, some non-Unix C
+        implementations lack it.  Second, quicksort is not a
+        `stable' sorting algorithm; that is, the order of items
+        with equal keys is not necessarily identical between the
+        input and the output.  Different implementations of the
+        sort algorithm in the host qsort() can therefore give
+        different ordering in such cases (PCC-20 and KCC-20
+        differed, which is how I caught this).  qsort is
+        #define'd to qqsort for all systems, in order to avoid
+        possible clashes with the standard library version (this
+        happens with IBM PC Microsoft C and with VAX VMS).
+
+        * Version 2.2 did not come with any documents containing
+        index entries to test MakeIndex with.  I have taken the
+        liberty of preparing an index for Leslie Lamport's
+        article, ../doc/makeindex.tex for a test version,
+        ../test/test.tex.   This can be used both to test MakeIndex,
+        as well as to illustrate the production of an index for
+        new users (I'm using it in a class that I am teaching on
+        LaTeX).  test.tex uses the showidx document style option
+        to get the index entries displayed as marginal notes, and
+        the index entries in test.tex have been carefully
+        formatted  to always begin a line; that way, they can be
+        easily extracted (e.g. by grep), so that one can see the
+        original entries, the LaTeX output .idx file, and the
+        MakeIndex output .ind file.
+
+        * The bug fix for PCC-20 has been posted to the TOPS-20
+        bulletin board; PCC-20 was developed at CS.UTAH.EDU, but
+        we (SCIENCE.UTAH.EDU) now have their DEC-20, so I guess
+        we have become the default PCC bug-fix site.  The bug in
+        KCC-20's preprocessor has been reported to the KCC
+        developers at SRI-NIC.ARPA but cannot be easily fixed
+        until the draft ANSI C support in KCC-20 is complete; in
+        the meantime, conditional compilation is used to provide
+        alternate code which compiles correctly.
+
+-----------------------------------------------------------------
+[29-May-87]
+        Version 2.2 (5/29/1987) released by Pehong Chen (phc@berkeley.edu)

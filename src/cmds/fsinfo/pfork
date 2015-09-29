@@ -1,0 +1,8 @@
+#!/usr/bin/perl
+
+if ($pid = fork) {
+  print "I'm the parent of ", $pid, "\nwho waited on ", wait, "\n";
+} elsif (defined $pid) {
+  print "I'm the child.\n";
+  exit;
+}

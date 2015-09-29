@@ -1,0 +1,14 @@
+%
+% Modify \em so that is uses \sl rather than \it
+%
+% Richard Furuta
+% Department of Computer Science
+% University of Maryland
+% College Park, MD  20742
+%
+% furuta@mimsy.umd.edu
+% seismo!umcp-cs!furuta
+%
+% October 22, 1986, first release
+%
+\renewcommand{\pem}{\ifdim \fontdimen\@ne\font >\z@ \rm \else \sl \fi}

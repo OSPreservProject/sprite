@@ -1,0 +1,2385 @@
+(Message server:128)
+Return-Path: erik@wsl.dec.com
+Received: from decwrl.dec.com by expo.lcs.mit.edu; Sat, 23 Sep 89 15:37:42 EDT
+Received: by decwrl.dec.com; id AA22731; Sat, 23 Sep 89 12:37:37 -0700
+Received: by westworld.pa.dec.com (5.57/4.7.34)
+	id AA13398; Sat, 23 Sep 89 12:38:55 PDT
+Message-Id: <8909231938.AA13398@westworld.pa.dec.com>
+To: keith@expo.lcs.mit.edu
+Subject: srvpcf.diffs
+Date: Sat, 23 Sep 89 12:38:53 PDT
+From: erik@wsl.dec.com
+
+*** /a19c/R4-tape/mit/server/dix/Imakefile	Thu Apr 13 05:25:56 1989
+--- server/dix/Imakefile	Mon Sep 11 16:26:26 1989
+***************
+*** 9,15 ****
+  
+   STD_DEFINES = ServerDefines
+   CDEBUGFLAGS = ServerCDebugFlags
+!     INCLUDES = -I. -I../include -I$(INCLUDESRC)
+   EXT_DEFINES = ExtensionDefines
+      LINTLIBS = ../ddx/snf/llib-lsnf.ln ../os/4.2bsd/llib-los.ln
+  
+--- 9,15 ----
+  
+   STD_DEFINES = ServerDefines
+   CDEBUGFLAGS = ServerCDebugFlags
+!     INCLUDES = -I. -I../include -I$(INCLUDESRC) -I$(FONTSRC)/include
+   EXT_DEFINES = ExtensionDefines
+      LINTLIBS = ../ddx/snf/llib-lsnf.ln ../os/4.2bsd/llib-los.ln
+  
+*** /a19c/R4-tape/mit/server/dix/cursor.c	Sun Jul 16 14:24:29 1989
+--- server/dix/cursor.c	Mon Sep 11 16:26:33 1989
+***************
+*** 30,40 ****
+  #include "scrnintstr.h"
+  #include "dixstruct.h"
+  #include "cursorstr.h"
+- #include "dixfontstr.h"
+  #include "opaque.h"
+  
+  typedef struct _GlyphShare {
+!     FontPtr font;
+      unsigned short sourceChar;
+      unsigned short maskChar;
+      CursorBitsPtr bits;
+--- 30,42 ----
+  #include "scrnintstr.h"
+  #include "dixstruct.h"
+  #include "cursorstr.h"
+  #include "opaque.h"
++  
++ #include "servermd.h"
++ #include "serverfont.h"
+  
+  typedef struct _GlyphShare {
+!     EncodedFontPtr font;
+      unsigned short sourceChar;
+      unsigned short maskChar;
+      CursorBitsPtr bits;
+***************
+*** 167,173 ****
+      CursorPtr *ppCurs;
+      ClientPtr client;
+  {
+!     FontPtr  sourcefont, maskfont;
+      unsigned char   *srcbits;
+      unsigned char   *mskbits;
+      CursorMetricRec cm;
+--- 169,175 ----
+      CursorPtr *ppCurs;
+      ClientPtr client;
+  {
+!     EncodedFontPtr  sourcefont, maskfont;
+      unsigned char   *srcbits;
+      unsigned char   *mskbits;
+      CursorMetricRec cm;
+***************
+*** 178,185 ****
+      ScreenPtr 	pscr;
+      GlyphSharePtr pShare;
+  
+!     sourcefont = (FontPtr) LookupIDByType(source, RT_FONT);
+!     maskfont = (FontPtr) LookupIDByType(mask, RT_FONT);
+  
+      if (!sourcefont)
+      {
+--- 180,187 ----
+      ScreenPtr 	pscr;
+      GlyphSharePtr pShare;
+  
+!     sourcefont = (EncodedFontPtr) LookupIDByType(source, RT_FONT);
+!     maskfont = (EncodedFontPtr) LookupIDByType(mask, RT_FONT);
+  
+      if (!sourcefont)
+      {
+***************
+*** 343,349 ****
+      unsigned short	glyph;
+  {
+      CursorPtr 	curs;
+!     FontPtr 	cursorfont;
+      XID		fontID;
+  
+      fontID = FakeClientID(0);
+--- 345,351 ----
+      unsigned short	glyph;
+  {
+      CursorPtr 	curs;
+!     EncodedFontPtr 	cursorfont;
+      XID		fontID;
+  
+      fontID = FakeClientID(0);
+*** /a19c/R4-tape/mit/server/dix/gc.c	Thu Jul 20 13:13:58 1989
+--- server/dix/gc.c	Mon Sep 11 16:26:59 1989
+***************
+*** 31,41 ****
+  #include "resource.h"
+  #include "gcstruct.h"
+  #include "pixmapstr.h"
+- #include "dixfontstr.h"
+  #include "scrnintstr.h"
+  #include "region.h"
+  
+  #include "dix.h"
+  
+  extern XID clientErrorValue;
+  
+--- 31,41 ----
+  #include "resource.h"
+  #include "gcstruct.h"
+  #include "pixmapstr.h"
+  #include "scrnintstr.h"
+  #include "region.h"
+  
+  #include "dix.h"
++ #include "serverfont.h"
+  
+  extern XID clientErrorValue;
+  
+***************
+*** 256,268 ****
+  		break;
+  	    case GCFont:
+                {
+! 		FontPtr	pFont;
+  
+  
+  		if(fPointer)
+! 		    pFont = (FontPtr) *pval;
+  		else
+! 		    pFont = (FontPtr)LookupIDByType((CARD32)*pval, RT_FONT);
+  
+  		if (pFont)
+  		{
+--- 256,268 ----
+  		break;
+  	    case GCFont:
+                {
+! 		EncodedFontPtr	pFont;
+  
+  
+  		if(fPointer)
+! 		    pFont = (EncodedFontPtr) *pval;
+  		else
+! 		    pFont = (EncodedFontPtr)LookupIDByType((CARD32)*pval, RT_FONT);
+  
+  		if (pFont)
+  		{
+***************
+*** 484,490 ****
+      int		*pStatus;
+  {
+      register GCPtr pGC;
+!     extern FontPtr defaultFont;
+  #ifdef DEBUG
+      void 	(**j)();
+  #endif /* DEBUG */
+--- 484,490 ----
+      int		*pStatus;
+  {
+      register GCPtr pGC;
+!     extern EncodedFontPtr defaultFont;
+  #ifdef DEBUG
+      void 	(**j)();
+  #endif /* DEBUG */
+***************
+*** 704,710 ****
+  		    break;
+  		if (pgcDst->font)
+  		    CloseFont(pgcDst->font, (Font)0);
+! 		if ((pgcDst->font = pgcSrc->font) != NullFont)
+  		    (pgcDst->font)->refcnt++;
+  		break;
+  	    case GCSubwindowMode:
+--- 704,710 ----
+  		    break;
+  		if (pgcDst->font)
+  		    CloseFont(pgcDst->font, (Font)0);
+! 		if ((pgcDst->font = pgcSrc->font) != NullEncodedFont)
+  		    (pgcDst->font)->refcnt++;
+  		break;
+  	    case GCSubwindowMode:
+***************
+*** 834,840 ****
+      unsigned depth;
+  {
+      register GCPtr pGC;
+!     extern FontPtr defaultFont;
+  #ifdef DEBUG
+      void 	(**j)();
+  #endif /* DEBUG */
+--- 834,840 ----
+      unsigned depth;
+  {
+      register GCPtr pGC;
+!     extern EncodedFontPtr defaultFont;
+  #ifdef DEBUG
+      void 	(**j)();
+  #endif /* DEBUG */
+*** /a19c/R4-tape/mit/server/dix/globals.c	Tue Jul 18 15:18:55 1989
+--- server/dix/globals.c	Mon Sep 11 16:27:05 1989
+***************
+*** 30,40 ****
+  #include "windowstr.h"
+  #include "scrnintstr.h"
+  #include "input.h"
+- #include "dixfont.h"
+  #include "site.h"
+  #include "dixstruct.h"
+  #include "os.h"
+  
+  ScreenInfo screenInfo;
+  KeybdCtrl defaultKeyboardControl = {
+  	DEFAULT_KEYBOARD_CLICK,
+--- 30,41 ----
+  #include "windowstr.h"
+  #include "scrnintstr.h"
+  #include "input.h"
+  #include "site.h"
+  #include "dixstruct.h"
+  #include "os.h"
+  
++ #include "serverfont.h"
++ 
+  ScreenInfo screenInfo;
+  KeybdCtrl defaultKeyboardControl = {
+  	DEFAULT_KEYBOARD_CLICK,
+***************
+*** 77,84 ****
+  char *defaultTextFont = COMPILEDDEFAULTFONT;
+  char *defaultCursorFont = COMPILEDCURSORFONT;
+  char *rgbPath = RGB_DB;
+! FontPtr defaultFont;   /* not declared in dix.h to avoid including font.h in
+! 			every compilation of dix code */
+  CursorPtr rootCursor;
+  ClientPtr requestingClient;	/* XXX this should be obsolete now, remove? */
+  
+--- 78,85 ----
+  char *defaultTextFont = COMPILEDDEFAULTFONT;
+  char *defaultCursorFont = COMPILEDCURSORFONT;
+  char *rgbPath = RGB_DB;
+! EncodedFontPtr defaultFont;   /* not declared in dix.h to avoid including 
+! 				 font.h in every compilation of dix code */
+  CursorPtr rootCursor;
+  ClientPtr requestingClient;	/* XXX this should be obsolete now, remove? */
+  
+server/dix/main.c
+*** /tmp/,RCSt1a13006	Sat Sep 23 11:51:31 1989
+--- main.c	Fri Sep 22 12:06:09 1989
+***************
+*** 51,57 ****
+  xConnSetupPrefix connSetupPrefix;
+  
+  extern WindowPtr *WindowTable;
+! extern FontPtr defaultFont;
+  
+  extern void SetInputCheck();
+  extern void InitProcVectors();
+--- 51,57 ----
+  xConnSetupPrefix connSetupPrefix;
+  
+  extern WindowPtr *WindowTable;
+! extern EncodedFontPtr defaultFont;
+  
+  extern void SetInputCheck();
+  extern void InitProcVectors();
+***************
+*** 228,234 ****
+  	if (InitAndStartDevices(argc, argv) != Success)
+  	    FatalError("failed to initialize core devices");
+  
+! 	if (SetDefaultFontPath(defaultFontPath) != Success)
+  	    ErrorF("failed to set default font path '%s'", defaultFontPath);
+  	if (!SetDefaultFont(defaultTextFont))
+  	    FatalError("could not open default font '%s'", defaultTextFont);
+--- 228,234 ----
+  	if (InitAndStartDevices(argc, argv) != Success)
+  	    FatalError("failed to initialize core devices");
+  
+! 	if (fpSetDefaultFontPath(defaultFontPath) != Success)
+  	    ErrorF("failed to set default font path '%s'", defaultFontPath);
+  	if (!SetDefaultFont(defaultTextFont))
+  	    FatalError("could not open default font '%s'", defaultTextFont);
+***************
+*** 259,265 ****
+  	xfree(WindowTable);
+  
+          CloseFont(defaultFont, (Font)0);
+!         defaultFont = (FontPtr)NULL;
+  
+  	if (dispatchException & DE_TERMINATE)
+  	{
+--- 259,265 ----
+  	xfree(WindowTable);
+  
+          CloseFont(defaultFont, (Font)0);
+!         defaultFont = (EncodedFontPtr)NULL;
+  
+  	if (dispatchException & DE_TERMINATE)
+  	{
+*** /a19c/R4-tape/mit/server/dix/glyphcurs.c	Mon Jul  3 10:28:31 1989
+--- server/dix/glyphcurs.c	Mon Sep 11 16:27:15 1989
+***************
+*** 27,34 ****
+  #include "X.h"
+  #include "Xmd.h"
+  #include "Xproto.h"
+- #include "dixfontstr.h"
+- #include "fontstruct.h"
+  #include "scrnintstr.h"
+  #include "gcstruct.h"
+  #include "resource.h"
+--- 27,32 ----
+***************
+*** 38,43 ****
+--- 36,42 ----
+  #include "opaque.h"
+  #include "servermd.h"
+  
++ #include "serverfont.h"
+  
+  /*
+      get the bits out of the font in a portable way.  to avoid
+***************
+*** 52,58 ****
+  
+  int
+  ServerBitsFromGlyph(pfont, ch, cm, ppbits)
+!     FontPtr	pfont;
+      unsigned short ch;
+      register CursorMetricPtr cm;
+      unsigned char **ppbits;
+--- 51,57 ----
+  
+  int
+  ServerBitsFromGlyph(pfont, ch, cm, ppbits)
+!     EncodedFontPtr	pfont;
+      unsigned short ch;
+      register CursorMetricPtr cm;
+      unsigned char **ppbits;
+***************
+*** 120,134 ****
+  
+  Bool
+  CursorMetricsFromGlyph( pfont, ch, cm)
+!     register FontPtr 	pfont;
+!     unsigned		ch;
+!     register CursorMetricPtr cm;
+  {
+      register CharInfoPtr 	pci;
+  
+!     if (   ch < pfont->pFI->chFirst
+! 	|| ch >= pfont->pFI->chFirst + n1dChars(pfont->pFI))
+! 	return FALSE;
+      pci = ADDRXTHISCHARINFO(pfont, ch);
+      cm->width = pci->metrics.rightSideBearing - pci->metrics.leftSideBearing;
+      cm->height = pci->metrics.descent + pci->metrics.ascent;
+--- 119,138 ----
+  
+  Bool
+  CursorMetricsFromGlyph( pfont, ch, cm)
+!     register EncodedFontPtr 	pfont;
+!     unsigned			ch;
+!     register CursorMetricPtr	cm;
+  {
+      register CharInfoPtr 	pci;
++     int				row,col;
+  
+!     row=	(ch>>8)&0xff;
+!     col=	(ch&0xff);
+!     if  ( (ch==NO_SUCH_CHAR) ||
+! 	  ( row < pfont->firstRow ) || ( row > pfont->lastRow ) ||
+! 	  ( col < pfont->firstCol ) || ( col > pfont->lastCol ) ) {
+! 	return(FALSE);
+!     }
+      pci = ADDRXTHISCHARINFO(pfont, ch);
+      cm->width = pci->metrics.rightSideBearing - pci->metrics.leftSideBearing;
+      cm->height = pci->metrics.descent + pci->metrics.ascent;
+*** /a19c/R4-tape/mit/server/dix/swaprep.c	Mon Jul  3 16:50:59 1989
+--- server/dix/swaprep.c	Mon Sep 11 16:27:33 1989
+***************
+*** 30,36 ****
+  #include "Xproto.h"
+  #include "misc.h"
+  #include "dixstruct.h"
+- #include "fontstruct.h"
+  #include "scrnintstr.h"
+  
+  void SwapVisual(), SwapConnSetup(), SwapWinRoot();
+--- 30,35 ----
+server/dix/dispatch.c
+*** /tmp/,RCSt1a13038	Sat Sep 23 11:52:34 1989
+--- dispatch.c	Fri Sep 22 16:29:15 1989
+***************
+*** 28,37 ****
+  #define NEED_EVENTS
+  #include "Xproto.h"
+  #include "windowstr.h"
+- #include "fontstruct.h"
+- #include "dixfontstr.h"
+  #include "gcstruct.h"
+! #include "osstruct.h"
+  #include "selection.h"
+  #include "colormapst.h"
+  #include "cursorstr.h"
+--- 28,35 ----
+  #define NEED_EVENTS
+  #include "Xproto.h"
+  #include "windowstr.h"
+  #include "gcstruct.h"
+! #include "os.h"
+  #include "selection.h"
+  #include "colormapst.h"
+  #include "cursorstr.h"
+***************
+*** 41,46 ****
+--- 39,46 ----
+  #include "servermd.h"
+  #include "extnsionst.h"
+  
++ #include "serverfont.h"
++ 
+  extern WindowPtr *WindowTable;
+  extern xConnSetupPrefix connSetupPrefix;
+  extern char *ConnectionInfo;
+***************
+*** 1017,1023 ****
+  ProcOpenFont(client)
+      register ClientPtr client;
+  {
+!     FontPtr pFont;
+      REQUEST(xOpenFontReq);
+  
+      REQUEST_FIXED_SIZE(xOpenFontReq, stuff->nbytes);
+--- 1017,1023 ----
+  ProcOpenFont(client)
+      register ClientPtr client;
+  {
+!     EncodedFontPtr pFont;
+      REQUEST(xOpenFontReq);
+  
+      REQUEST_FIXED_SIZE(xOpenFontReq, stuff->nbytes);
+***************
+*** 1037,1048 ****
+  ProcCloseFont(client)
+      register ClientPtr client;
+  {
+!     FontPtr pFont;
+      REQUEST(xResourceReq);
+  
+      REQUEST_SIZE_MATCH(xResourceReq);
+!     pFont = (FontPtr)LookupIDByType(stuff->id, RT_FONT);
+!     if ( pFont != (FontPtr)NULL)	/* id was valid */
+      {
+          FreeResource(stuff->id, RT_NONE);
+  	return(client->noClientException);
+--- 1037,1048 ----
+  ProcCloseFont(client)
+      register ClientPtr client;
+  {
+!     EncodedFontPtr pFont;
+      REQUEST(xResourceReq);
+  
+      REQUEST_SIZE_MATCH(xResourceReq);
+!     pFont = (EncodedFontPtr)LookupIDByType(stuff->id, RT_FONT);
+!     if ( pFont != (EncodedFontPtr)NULL)	/* id was valid */
+      {
+          FreeResource(stuff->id, RT_NONE);
+  	return(client->noClientException);
+***************
+*** 1059,1071 ****
+      register ClientPtr client;
+  {
+      xQueryFontReply	*reply;
+!     FontPtr pFont;
+      register GC *pGC;
+      REQUEST(xResourceReq);
+  
+      REQUEST_SIZE_MATCH(xResourceReq);
+      client->errorValue = stuff->id;		/* EITHER font or gc */
+!     pFont = (FontPtr)LookupIDByType(stuff->id, RT_FONT);
+      if (!pFont)
+      {
+  	  /* can't use VERIFY_GC because it might return BadGC */
+--- 1059,1071 ----
+      register ClientPtr client;
+  {
+      xQueryFontReply	*reply;
+!     EncodedFontPtr pFont;
+      register GC *pGC;
+      REQUEST(xResourceReq);
+  
+      REQUEST_SIZE_MATCH(xResourceReq);
+      client->errorValue = stuff->id;		/* EITHER font or gc */
+!     pFont = (EncodedFontPtr)LookupIDByType(stuff->id, RT_FONT);
+      if (!pFont)
+      {
+  	  /* can't use VERIFY_GC because it might return BadGC */
+***************
+*** 1079,1099 ****
+      }
+  
+      {
+! 	CharInfoPtr	pmax = pFont->pInkMax;
+! 	CharInfoPtr	pmin = pFont->pInkMin;
+  	int		nprotoxcistructs;
+  	int		rlength;
+  
+  	nprotoxcistructs = (
+! 	   pmax->metrics.rightSideBearing == pmin->metrics.rightSideBearing &&
+! 	   pmax->metrics.leftSideBearing == pmin->metrics.leftSideBearing &&
+! 	   pmax->metrics.descent == pmin->metrics.descent &&
+! 	   pmax->metrics.ascent == pmin->metrics.ascent &&
+! 	   pmax->metrics.characterWidth == pmin->metrics.characterWidth) ?
+! 		0 : n2dChars(pFont->pFI);
+  
+  	rlength = sizeof(xQueryFontReply) +
+! 	             pFont->pFI->nProps * sizeof(xFontProp)  +
+  		     nprotoxcistructs * sizeof(xCharInfo);
+  	reply = (xQueryFontReply *)ALLOCATE_LOCAL(rlength);
+  	if(!reply)
+--- 1079,1099 ----
+      }
+  
+      {
+! 	xCharInfo	*pmax = &pFont->inkMax;
+! 	xCharInfo	*pmin = &pFont->inkMin;
+  	int		nprotoxcistructs;
+  	int		rlength;
+  
+  	nprotoxcistructs = (
+! 	   pmax->rightSideBearing == pmin->rightSideBearing &&
+! 	   pmax->leftSideBearing == pmin->leftSideBearing &&
+! 	   pmax->descent == pmin->descent &&
+! 	   pmax->ascent == pmin->ascent &&
+! 	   pmax->characterWidth == pmin->characterWidth) ?
+! 		0 : n2dChars(pFont);
+  
+  	rlength = sizeof(xQueryFontReply) +
+! 	             pFont->pCS->nProps * sizeof(xFontProp)  +
+  		     nprotoxcistructs * sizeof(xCharInfo);
+  	reply = (xQueryFontReply *)ALLOCATE_LOCAL(rlength);
+  	if(!reply)
+***************
+*** 1118,1124 ****
+  {
+      REQUEST(xQueryTextExtentsReq);
+      xQueryTextExtentsReply reply;
+!     FontPtr pFont;
+      GC *pGC;
+      ExtentInfoRec info;
+      unsigned long length;
+--- 1118,1124 ----
+  {
+      REQUEST(xQueryTextExtentsReq);
+      xQueryTextExtentsReply reply;
+!     EncodedFontPtr pFont;
+      GC *pGC;
+      ExtentInfoRec info;
+      unsigned long length;
+***************
+*** 1125,1131 ****
+  
+      REQUEST_AT_LEAST_SIZE(xQueryTextExtentsReq);
+          
+!     pFont = (FontPtr)LookupIDByType(stuff->fid, RT_FONT);
+      if (!pFont)
+      {
+          pGC = (GC *)LookupIDByType(stuff->fid, RT_GC);
+--- 1125,1131 ----
+  
+      REQUEST_AT_LEAST_SIZE(xQueryTextExtentsReq);
+          
+!     pFont = (EncodedFontPtr)LookupIDByType(stuff->fid, RT_FONT);
+      if (!pFont)
+      {
+          pGC = (GC *)LookupIDByType(stuff->fid, RT_GC);
+***************
+*** 1173,1179 ****
+  
+      REQUEST_FIXED_SIZE(xListFontsReq, stuff->nbytes);
+  
+!     fpr = ExpandFontNamePattern( stuff->nbytes, 
+  				 (char *) &stuff[1], stuff->maxNames);
+      if (!fpr)
+  	return(BadAlloc);
+--- 1173,1179 ----
+  
+      REQUEST_FIXED_SIZE(xListFontsReq, stuff->nbytes);
+  
+!     fpr = fpExpandFontNamePattern( stuff->nbytes, 
+  				 (char *) &stuff[1], stuff->maxNames);
+      if (!fpr)
+  	return(BadAlloc);
+***************
+*** 1189,1195 ****
+      bufptr = bufferStart = (char *)ALLOCATE_LOCAL(reply.length << 2);
+      if(!bufptr)
+      {
+! 	FreeFontRecord(fpr);
+          return(BadAlloc);
+      }
+  
+--- 1189,1195 ----
+      bufptr = bufferStart = (char *)ALLOCATE_LOCAL(reply.length << 2);
+      if(!bufptr)
+      {
+! 	fpFreeFontPath(fpr);
+          return(BadAlloc);
+      }
+  
+***************
+*** 1203,1209 ****
+      }
+      WriteReplyToClient(client, sizeof(xListFontsReply), &reply);
+      (void)WriteToClient(client, stringLens + fpr->npaths, bufferStart);
+!     FreeFontRecord(fpr);
+      DEALLOCATE_LOCAL(bufferStart);
+      
+      return(client->noClientException);
+--- 1203,1209 ----
+      }
+      WriteReplyToClient(client, sizeof(xListFontsReply), &reply);
+      (void)WriteToClient(client, stringLens + fpr->npaths, bufferStart);
+!     fpFreeFontPath(fpr);
+      DEALLOCATE_LOCAL(bufferStart);
+      
+      return(client->noClientException);
+***************
+*** 1215,1222 ****
+  {
+      register xListFontsWithInfoReply *reply, *nreply;
+      xListFontsWithInfoReply last_reply;
+!     FontRec font;
+!     FontInfoRec finfo;
+      register FontPathPtr fpaths;
+      register char **path;
+      register int n, *length;
+--- 1215,1223 ----
+  {
+      register xListFontsWithInfoReply *reply, *nreply;
+      xListFontsWithInfoReply last_reply;
+!     EncodedFontRec font,*pRtrnFont;
+!     Mask		 unread;
+!     CharSetRec charset;
+      register FontPathPtr fpaths;
+      register char **path;
+      register int n, *length;
+***************
+*** 1225,1237 ****
+  
+      REQUEST_FIXED_SIZE(xListFontsWithInfoReq, stuff->nbytes);
+  
+!     fpaths = ExpandFontNamePattern( stuff->nbytes,
+  				    (char *) &stuff[1], stuff->maxNames);
+      if (!fpaths)
+  	return(BadAlloc);
+!     font.pFI = &finfo;
+!     font.pInkMin = &finfo.minbounds;
+!     font.pInkMax = &finfo.maxbounds;
+      reply = (xListFontsWithInfoReply *)NULL;
+      curlength = 0;
+      for (n = fpaths->npaths, path = fpaths->paths, length = fpaths->length;
+--- 1226,1239 ----
+  
+      REQUEST_FIXED_SIZE(xListFontsWithInfoReq, stuff->nbytes);
+  
+!     fpaths = fpExpandFontNamePattern( stuff->nbytes,
+  				    (char *) &stuff[1], stuff->maxNames);
+      if (!fpaths)
+  	return(BadAlloc);
+!     bzero(&font,sizeof(font));
+!     bzero(&charset,sizeof(charset));
+!     font.pCS=  &charset;
+! 
+      reply = (xListFontsWithInfoReply *)NULL;
+      curlength = 0;
+      for (n = fpaths->npaths, path = fpaths->paths, length = fpaths->length;
+***************
+*** 1238,1247 ****
+  	 --n >= 0;
+  	 path++, length++)
+      {
+! 	if (!(DescribeFont(*path, *length, &finfo, &font.pFP)))
+! 	   continue;
+  	rlength = sizeof(xListFontsWithInfoReply)
+! 		    + finfo.nProps * sizeof(xFontProp);
+  	if (rlength > curlength)
+  	{
+  	    nreply = (xListFontsWithInfoReply *)xrealloc(reply, rlength);
+--- 1240,1253 ----
+  	 --n >= 0;
+  	 path++, length++)
+      {
+! 	charset.nChars=	0;
+! 	pRtrnFont=	&font;
+! 	unread= fpLookupFont(*path,*length,&pRtrnFont,
+! 			   FONT_ACCELERATORS|FONT_PROPERTIES,fosNaturalParams);
+! 	if ((pRtrnFont==NullEncodedFont)||(unread!=0))
+! 	    continue;
+  	rlength = sizeof(xListFontsWithInfoReply)
+! 		    + charset.nProps * sizeof(xFontProp);
+  	if (rlength > curlength)
+  	{
+  	    nreply = (xListFontsWithInfoReply *)xrealloc(reply, rlength);
+***************
+*** 1262,1273 ****
+  		reply->nReplies = n;
+  		WriteReplyToClient(client, rlength, reply);
+  		(void)WriteToClient(client, *length, *path);
+- 		DEALLOCATE_LOCAL(reply);
+  	}
+! 	xfree(font.pFP);
+      }
+      xfree(reply);
+!     FreeFontRecord(fpaths);
+      bzero((char *)&last_reply, sizeof(xListFontsWithInfoReply));
+      last_reply.type = X_Reply;
+      last_reply.sequenceNumber = client->sequence;
+--- 1268,1281 ----
+  		reply->nReplies = n;
+  		WriteReplyToClient(client, rlength, reply);
+  		(void)WriteToClient(client, *length, *path);
+  	}
+! 	if (pRtrnFont==&font) {
+! 	    fpUnloadFont(pRtrnFont,FALSE);
+! 	}
+! 	charset.tables= 0;
+      }
+      xfree(reply);
+!     fpFreeFontPath(fpaths);
+      bzero((char *)&last_reply, sizeof(xListFontsWithInfoReply));
+      last_reply.type = X_Reply;
+      last_reply.sequenceNumber = client->sequence;
+***************
+*** 2017,2023 ****
+      REQUEST(xPolyTextReq);
+      register DrawablePtr pDraw;
+      register GC *pGC;
+!     register FontPtr pFont;
+  
+      int (* polyText)();
+      register unsigned char *pElt;
+--- 2025,2031 ----
+      REQUEST(xPolyTextReq);
+      register DrawablePtr pDraw;
+      register GC *pGC;
+!     register EncodedFontPtr pFont;
+  
+      int (* polyText)();
+      register unsigned char *pElt;
+***************
+*** 2057,2063 ****
+  		 | ((Font)*(pElt+3)) << 8
+  		 | ((Font)*(pElt+2)) << 16
+  		 | ((Font)*(pElt+1)) << 24;
+! 	    pFont = (FontPtr)LookupIDByType(fid, RT_FONT);
+  	    if (!pFont)
+  	    {
+  		client->errorValue = fid;
+--- 2065,2071 ----
+  		 | ((Font)*(pElt+3)) << 8
+  		 | ((Font)*(pElt+2)) << 16
+  		 | ((Font)*(pElt+1)) << 24;
+! 	    pFont = (EncodedFontPtr)LookupIDByType(fid, RT_FONT);
+  	    if (!pFont)
+  	    {
+  		client->errorValue = fid;
+***************
+*** 3033,3042 ****
+      unsigned long nbytes, total;
+      long nfonts;
+      int n, result;
+      REQUEST(xSetFontPathReq);
+!     
+      REQUEST_AT_LEAST_SIZE(xSetFontPathReq);
+!     
+      nbytes = (stuff->length << 2) - sizeof(xSetFontPathReq);
+      total = nbytes;
+      ptr = (unsigned char *)&stuff[1];
+--- 3041,3051 ----
+      unsigned long nbytes, total;
+      long nfonts;
+      int n, result;
++     int	error= -1;
+      REQUEST(xSetFontPathReq);
+! 
+      REQUEST_AT_LEAST_SIZE(xSetFontPathReq);
+! 
+      nbytes = (stuff->length << 2) - sizeof(xSetFontPathReq);
+      total = nbytes;
+      ptr = (unsigned char *)&stuff[1];
+***************
+*** 3043,3058 ****
+      nfonts = stuff->nFonts;
+      while (--nfonts >= 0)
+      {
+! 	if ((total == 0) || (total < (n = (*ptr + 1))))
+! 	    return(BadLength);
+! 	total -= n;
+! 	ptr += n;
+      }
+      if (total >= 4)
+! 	return(BadLength);
+!     result = SetFontPath(client, stuff->nFonts, (char *)&stuff[1]);
+      if (!result)
+! 	result = client->noClientException;
+      return (result);
+  }
+  
+--- 3052,3069 ----
+      nfonts = stuff->nFonts;
+      while (--nfonts >= 0)
+      {
+!         if ((total == 0) || (total < (n = (*ptr + 1))))
+!             return(BadLength);
+!         total -= n;
+!         ptr += n;
+      }
+      if (total >= 4)
+!         return(BadLength);
+!     result = fpSetFontPath(stuff->nFonts, (char *)&stuff[1], &error);
+!     if (error!=-1)
+!         client->errorValue=     error;
+      if (!result)
+!         result = client->noClientException;
+      return (result);
+  }
+  
+***************
+*** 3068,3074 ****
+      REQUEST (xReq);
+  
+      REQUEST_SIZE_MATCH(xReq);
+!     pFP = GetFontPath();
+      if (!pFP)
+  	return(BadAlloc);
+      stringLens = 0;
+--- 3079,3085 ----
+      REQUEST (xReq);
+  
+      REQUEST_SIZE_MATCH(xReq);
+!     pFP = fpGetFontPath();
+      if (!pFP)
+  	return(BadAlloc);
+      stringLens = 0;
+server/ddx/mi/mibstore.c
+*** /tmp/,RCSt1a13054	Sat Sep 23 11:52:56 1989
+--- mibstore.c	Fri Sep 22 10:53:31 1989
+***************
+*** 30,38 ****
+  #include "extnsionst.h"
+  #include "windowstr.h"
+  #include "pixmapstr.h"
+- #include "fontstruct.h"
+- #include "dixfontstr.h"
+- #include "dixstruct.h"		/* For requestingClient */
+  #include "mi.h"
+  #include "mibstorest.h"
+  
+--- 30,35 ----
+*** /a19c/R4-tape/mit/server/ddx/mi/miglblt.c	Fri Jun  9 12:08:27 1989
+--- server/ddx/mi/miglblt.c	Mon Sep 11 16:14:48 1989
+***************
+*** 27,34 ****
+  #include	"X.h"
+  #include	"Xmd.h"
+  #include	"Xproto.h"
+- #include	"fontstruct.h"
+- #include	"dixfontstr.h"
+  #include	"gcstruct.h"
+  #include	"windowstr.h"
+  #include	"scrnintstr.h"
+--- 27,32 ----
+***************
+*** 35,40 ****
+--- 33,40 ----
+  #include	"pixmap.h"
+  #include	"servermd.h"
+  
++ #include	"serverfont.h"
++ 
+  extern void QueryGlyphExtents();
+  
+  /*
+***************
+*** 67,73 ****
+      int width, height;
+      PixmapPtr pPixmap;
+      int nbyLine;			/* bytes per line of padded pixmap */
+!     FontRec *pfont;
+      GCPtr pGCtmp;
+      register int i;
+      register int j;
+--- 67,73 ----
+      int width, height;
+      PixmapPtr pPixmap;
+      int nbyLine;			/* bytes per line of padded pixmap */
+!     EncodedFontPtr	pfont;
+      GCPtr pGCtmp;
+      register int i;
+      register int j;
+***************
+*** 88,97 ****
+      }
+  
+      pfont = pGC->font;
+!     width = pfont->pFI->maxbounds.metrics.rightSideBearing - 
+! 	pfont->pFI->minbounds.metrics.leftSideBearing;
+!     height = pfont->pFI->maxbounds.metrics.ascent + 
+! 	pfont->pFI->maxbounds.metrics.descent;
+  
+      pPixmap = (*pDrawable->pScreen->CreatePixmap)(pDrawable->pScreen,
+  						  width, height, 1);
+--- 88,97 ----
+      }
+  
+      pfont = pGC->font;
+!     width = pfont->pCS->maxbounds.rightSideBearing - 
+! 	pfont->pCS->minbounds.leftSideBearing;
+!     height = pfont->pCS->maxbounds.ascent + 
+! 	pfont->pCS->maxbounds.descent;
+  
+      pPixmap = (*pDrawable->pScreen->CreatePixmap)(pDrawable->pScreen,
+  						  width, height, 1);
+***************
+*** 122,128 ****
+      while(nglyph--)
+      {
+  	pci = *ppci++;
+! 	pglyph = pglyphBase + pci->byteOffset;
+  	gWidth = GLYPHWIDTHPIXELS(pci);
+  	gHeight = GLYPHHEIGHTPIXELS(pci);
+  	if (gWidth && gHeight)
+--- 122,128 ----
+      while(nglyph--)
+      {
+  	pci = *ppci++;
+! 	pglyph = pci->pPriv;
+  	gWidth = GLYPHWIDTHPIXELS(pci);
+  	gHeight = GLYPHHEIGHTPIXELS(pci);
+  	if (gWidth && gHeight)
+***************
+*** 174,183 ****
+      QueryGlyphExtents(pGC->font, ppci, (unsigned long)nglyph, &info);
+  
+      backrect.x = x;
+!     backrect.y = y - pGC->font->pFI->fontAscent;
+      backrect.width = info.overallWidth;
+!     backrect.height = pGC->font->pFI->fontAscent + 
+! 		      pGC->font->pFI->fontDescent;
+  
+      oldAlu = pGC->alu;
+      oldFG = pGC->fgPixel;
+--- 174,183 ----
+      QueryGlyphExtents(pGC->font, ppci, (unsigned long)nglyph, &info);
+  
+      backrect.x = x;
+!     backrect.y = y - pGC->font->pCS->fontAscent;
+      backrect.width = info.overallWidth;
+!     backrect.height = pGC->font->pCS->fontAscent + 
+! 		      pGC->font->pCS->fontDescent;
+  
+      oldAlu = pGC->alu;
+      oldFG = pGC->fgPixel;
+server/ddx/mi/misprite.c
+*** /tmp/,RCSt1a13078	Sat Sep 23 11:53:32 1989
+--- misprite.c	Fri Sep 22 11:23:20 1989
+***************
+*** 34,41 ****
+  # include   "gcstruct.h"
+  # include   "mipointer.h"
+  # include   "mispritest.h"
+! # include   "dixfontstr.h"
+! # include   "fontstruct.h"
+  
+  /*
+   * screen wrappers
+--- 34,40 ----
+  # include   "gcstruct.h"
+  # include   "mipointer.h"
+  # include   "mispritest.h"
+! # include   "serverfont.h"
+  
+  /*
+   * screen wrappers
+***************
+*** 1417,1423 ****
+  static Bool
+  miSpriteTextOverlap (pDraw, font, x, y, n, charinfo, imageblt, w, cursorBox)
+      DrawablePtr   pDraw;
+!     FontPtr	  font;
+      int		  x, y;
+      unsigned long n;
+      CharInfoPtr   *charinfo;
+--- 1416,1422 ----
+  static Bool
+  miSpriteTextOverlap (pDraw, font, x, y, n, charinfo, imageblt, w, cursorBox)
+      DrawablePtr   pDraw;
+!     EncodedFontPtr	  font;
+      int		  x, y;
+      unsigned long n;
+      CharInfoPtr   *charinfo;
+***************
+*** 1430,1436 ****
+      x += pDraw->x;
+      y += pDraw->y;
+  
+!     if (font->pFI->minbounds.metrics.characterWidth >= 0)
+      {
+  	/* compute an approximate (but covering) bounding box */
+  	if (!imageblt || (charinfo[0]->metrics.leftSideBearing < 0))
+--- 1429,1435 ----
+      x += pDraw->x;
+      y += pDraw->y;
+  
+!     if (font->pCS->minbounds.characterWidth >= 0)
+      {
+  	/* compute an approximate (but covering) bounding box */
+  	if (!imageblt || (charinfo[0]->metrics.leftSideBearing < 0))
+***************
+*** 1440,1446 ****
+  	if (w)
+  	    extents.overallRight = w - charinfo[n-1]->metrics.characterWidth;
+  	else
+! 	    extents.overallRight = font->pFI->maxbounds.metrics.characterWidth
+  				    * (n - 1);
+  	if (imageblt && (charinfo[n-1]->metrics.characterWidth >
+  			 charinfo[n-1]->metrics.rightSideBearing))
+--- 1439,1445 ----
+  	if (w)
+  	    extents.overallRight = w - charinfo[n-1]->metrics.characterWidth;
+  	else
+! 	    extents.overallRight = font->pCS->maxbounds.characterWidth
+  				    * (n - 1);
+  	if (imageblt && (charinfo[n-1]->metrics.characterWidth >
+  			 charinfo[n-1]->metrics.rightSideBearing))
+***************
+*** 1448,1462 ****
+  	else
+  	    extents.overallRight += charinfo[n-1]->metrics.rightSideBearing;
+  	if (imageblt &&
+! 	    (font->pFI->fontAscent > font->pFI->maxbounds.metrics.ascent))
+! 	    extents.overallAscent = font->pFI->fontAscent;
+  	else
+! 	    extents.overallAscent = font->pFI->maxbounds.metrics.ascent;
+  	if (imageblt &&
+! 	    (font->pFI->fontDescent > font->pFI->maxbounds.metrics.descent))
+! 	    extents.overallDescent = font->pFI->fontDescent;
+  	else
+! 	    extents.overallDescent = font->pFI->maxbounds.metrics.descent;
+  	if (!BOX_OVERLAP(cursorBox,
+  			 x + extents.overallLeft,
+  			 y - extents.overallAscent,
+--- 1447,1461 ----
+  	else
+  	    extents.overallRight += charinfo[n-1]->metrics.rightSideBearing;
+  	if (imageblt &&
+! 	    (font->pCS->fontAscent > font->pCS->maxbounds.ascent))
+! 	    extents.overallAscent = font->pCS->fontAscent;
+  	else
+! 	    extents.overallAscent = font->pCS->maxbounds.ascent;
+  	if (imageblt &&
+! 	    (font->pCS->fontDescent > font->pCS->maxbounds.descent))
+! 	    extents.overallDescent = font->pCS->fontDescent;
+  	else
+! 	    extents.overallDescent = font->pCS->maxbounds.descent;
+  	if (!BOX_OVERLAP(cursorBox,
+  			 x + extents.overallLeft,
+  			 y - extents.overallAscent,
+***************
+*** 1522,1528 ****
+  	    miSpriteRemoveCursor(pDraw->pScreen);
+  
+  	drawFunc = imageblt ? pGC->ops->ImageGlyphBlt : pGC->ops->PolyGlyphBlt;
+! 	(*drawFunc) (pDraw, pGC, x, y, n, charinfo, pGC->font->pGlyphs);
+      }
+      DEALLOCATE_LOCAL(charinfo);
+      return x + w;
+--- 1521,1527 ----
+  	    miSpriteRemoveCursor(pDraw->pScreen);
+  
+  	drawFunc = imageblt ? pGC->ops->ImageGlyphBlt : pGC->ops->PolyGlyphBlt;
+! 	(*drawFunc) (pDraw, pGC, x, y, n, charinfo, pGC->font->pCS->pBitmaps);
+      }
+      DEALLOCATE_LOCAL(charinfo);
+      return x + w;
+***************
+*** 1569,1575 ****
+      if (GC_CHECK((WindowPtr) pDrawable))
+  	ret = miSpriteText (pDrawable, pGC, x, y, (unsigned long)count,
+  			    (char *)chars,
+! 			    pGC->font->pFI->lastRow == 0 ?
+  			    Linear16Bit : TwoD16Bit, FALSE, &pScreenPriv->saved);
+      else
+  	ret = (*pGC->ops->PolyText16) (pDrawable, pGC, x, y, count, chars);
+--- 1568,1574 ----
+      if (GC_CHECK((WindowPtr) pDrawable))
+  	ret = miSpriteText (pDrawable, pGC, x, y, (unsigned long)count,
+  			    (char *)chars,
+! 			    pGC->font->lastRow == 0 ?
+  			    Linear16Bit : TwoD16Bit, FALSE, &pScreenPriv->saved);
+      else
+  	ret = (*pGC->ops->PolyText16) (pDrawable, pGC, x, y, count, chars);
+***************
+*** 1614,1620 ****
+      if (GC_CHECK((WindowPtr) pDrawable))
+  	(void) miSpriteText (pDrawable, pGC, x, y, (unsigned long)count,
+  			     (char *)chars,
+! 			    pGC->font->pFI->lastRow == 0 ?
+  			    Linear16Bit : TwoD16Bit, TRUE, &pScreenPriv->saved);
+      else
+  	(*pGC->ops->ImageText16) (pDrawable, pGC, x, y, count, chars);
+--- 1613,1619 ----
+      if (GC_CHECK((WindowPtr) pDrawable))
+  	(void) miSpriteText (pDrawable, pGC, x, y, (unsigned long)count,
+  			     (char *)chars,
+! 			    pGC->font->lastRow == 0 ?
+  			    Linear16Bit : TwoD16Bit, TRUE, &pScreenPriv->saved);
+      else
+  	(*pGC->ops->ImageText16) (pDrawable, pGC, x, y, count, chars);
+*** /a19c/R4-tape/mit/server/ddx/mi/mipolytext.c	Fri Jun  9 12:08:42 1989
+--- server/ddx/mi/mipolytext.c	Mon Sep 11 16:15:40 1989
+***************
+*** 34,43 ****
+  #include	"X.h"
+  #include	"Xmd.h"
+  #include	"Xproto.h"
+- #include	"fontstruct.h"
+- #include	"dixfontstr.h"
+  #include	"gcstruct.h"
+  
+  int
+  miPolyText(pDraw, pGC, x, y, count, chars, fontEncoding)
+      DrawablePtr pDraw;
+--- 34,43 ----
+  #include	"X.h"
+  #include	"Xmd.h"
+  #include	"Xproto.h"
+  #include	"gcstruct.h"
+  
++ #include	"serverfont.h"
++ 
+  int
+  miPolyText(pDraw, pGC, x, y, count, chars, fontEncoding)
+      DrawablePtr pDraw;
+***************
+*** 59,65 ****
+      for (i=0; i < n; i++) w += charinfo[i]->metrics.characterWidth;
+      if (n != 0)
+          (*pGC->ops->PolyGlyphBlt)(
+! 	    pDraw, pGC, x, y, n, charinfo, pGC->font->pGlyphs);
+  
+      DEALLOCATE_LOCAL(charinfo);
+      return x+w;
+--- 59,65 ----
+      for (i=0; i < n; i++) w += charinfo[i]->metrics.characterWidth;
+      if (n != 0)
+          (*pGC->ops->PolyGlyphBlt)(
+! 	    pDraw, pGC, x, y, n, charinfo, pGC->font->pCS->pBitmaps);
+  
+      DEALLOCATE_LOCAL(charinfo);
+      return x+w;
+***************
+*** 86,92 ****
+      for (i=0; i < n; i++) w += charinfo[i]->metrics.characterWidth;
+      if (n != 0)
+          (*pGC->ops->PolyGlyphBlt)(
+! 	    pDraw, pGC, x, y, n, charinfo, pGC->font->pGlyphs);
+  
+      DEALLOCATE_LOCAL(charinfo);
+      return x+w;
+--- 86,92 ----
+      for (i=0; i < n; i++) w += charinfo[i]->metrics.characterWidth;
+      if (n != 0)
+          (*pGC->ops->PolyGlyphBlt)(
+! 	    pDraw, pGC, x, y, n, charinfo, pGC->font->pCS->pBitmaps);
+  
+      DEALLOCATE_LOCAL(charinfo);
+      return x+w;
+***************
+*** 108,120 ****
+      if(!(charinfo = (CharInfoPtr *)ALLOCATE_LOCAL(count*sizeof(CharInfoPtr ))))
+  	return x ;
+      GetGlyphs(pGC->font, (unsigned long)count, (unsigned char *)chars,
+! 	      (pGC->font->pFI->lastRow == 0) ? Linear16Bit : TwoD16Bit,
+  	      &n, charinfo);
+      w = 0;
+      for (i=0; i < n; i++) w += charinfo[i]->metrics.characterWidth;
+      if (n != 0)
+          (*pGC->ops->PolyGlyphBlt)(
+! 	    pDraw, pGC, x, y, n, charinfo, pGC->font->pGlyphs);
+  
+      DEALLOCATE_LOCAL(charinfo);
+      return x+w;
+--- 108,120 ----
+      if(!(charinfo = (CharInfoPtr *)ALLOCATE_LOCAL(count*sizeof(CharInfoPtr ))))
+  	return x ;
+      GetGlyphs(pGC->font, (unsigned long)count, (unsigned char *)chars,
+! 	      (pGC->font->lastRow == 0) ? Linear16Bit : TwoD16Bit,
+  	      &n, charinfo);
+      w = 0;
+      for (i=0; i < n; i++) w += charinfo[i]->metrics.characterWidth;
+      if (n != 0)
+          (*pGC->ops->PolyGlyphBlt)(
+! 	    pDraw, pGC, x, y, n, charinfo, pGC->font->pCS->pBitmaps);
+  
+      DEALLOCATE_LOCAL(charinfo);
+      return x+w;
+***************
+*** 132,138 ****
+  {
+      register CharInfoPtr *charinfo;
+      unsigned long n, i;
+!     FontPtr font = pGC->font;
+      unsigned int w;
+  
+      if(!(charinfo = (CharInfoPtr *)ALLOCATE_LOCAL(count*sizeof(CharInfoPtr))))
+--- 132,138 ----
+  {
+      register CharInfoPtr *charinfo;
+      unsigned long n, i;
+!     EncodedFontPtr font = pGC->font;
+      unsigned int w;
+  
+      if(!(charinfo = (CharInfoPtr *)ALLOCATE_LOCAL(count*sizeof(CharInfoPtr))))
+***************
+*** 142,148 ****
+      w = 0;
+      for (i=0; i < n; i++) w += charinfo[i]->metrics.characterWidth;
+      if (n !=0 )
+!         (*pGC->ops->ImageGlyphBlt)(pDraw, pGC, x, y, n, charinfo, font->pGlyphs);
+      DEALLOCATE_LOCAL(charinfo);
+      return x+w;
+  }
+--- 142,149 ----
+      w = 0;
+      for (i=0; i < n; i++) w += charinfo[i]->metrics.characterWidth;
+      if (n !=0 )
+!         (*pGC->ops->ImageGlyphBlt)(pDraw, pGC, x, y, n, charinfo, 
+! 						font->pCS->pBitmaps);
+      DEALLOCATE_LOCAL(charinfo);
+      return x+w;
+  }
+***************
+*** 158,164 ****
+  {
+      CharInfoPtr *charinfo;
+      unsigned long n;
+!     FontPtr font = pGC->font;
+  
+      if(!(charinfo = (CharInfoPtr *)ALLOCATE_LOCAL(count*sizeof(CharInfoPtr))))
+  	return;
+--- 159,165 ----
+  {
+      CharInfoPtr *charinfo;
+      unsigned long n;
+!     EncodedFontPtr font = pGC->font;
+  
+      if(!(charinfo = (CharInfoPtr *)ALLOCATE_LOCAL(count*sizeof(CharInfoPtr))))
+  	return;
+***************
+*** 165,171 ****
+      GetGlyphs(font, (unsigned long)count, (unsigned char *)chars,
+  	      Linear8Bit, &n, charinfo);
+      if (n !=0 )
+!         (*pGC->ops->ImageGlyphBlt)(pDraw, pGC, x, y, n, charinfo, font->pGlyphs);
+      DEALLOCATE_LOCAL(charinfo);
+  }
+  
+--- 166,173 ----
+      GetGlyphs(font, (unsigned long)count, (unsigned char *)chars,
+  	      Linear8Bit, &n, charinfo);
+      if (n !=0 )
+!         (*pGC->ops->ImageGlyphBlt)(pDraw, pGC, x, y, n, charinfo, 
+! 						font->pCS->pBitmaps);
+      DEALLOCATE_LOCAL(charinfo);
+  }
+  
+***************
+*** 180,193 ****
+  {
+      CharInfoPtr *charinfo;
+      unsigned long n;
+!     FontPtr font = pGC->font;
+  
+      if(!(charinfo = (CharInfoPtr *)ALLOCATE_LOCAL(count*sizeof(CharInfoPtr))))
+  	return;
+      GetGlyphs(font, (unsigned long)count, (unsigned char *)chars,
+! 	      (pGC->font->pFI->lastRow == 0) ? Linear16Bit : TwoD16Bit,
+  	      &n, charinfo);
+      if (n !=0 )
+!         (*pGC->ops->ImageGlyphBlt)(pDraw, pGC, x, y, n, charinfo, font->pGlyphs);
+      DEALLOCATE_LOCAL(charinfo);
+  }
+--- 182,196 ----
+  {
+      CharInfoPtr *charinfo;
+      unsigned long n;
+!     EncodedFontPtr font = pGC->font;
+  
+      if(!(charinfo = (CharInfoPtr *)ALLOCATE_LOCAL(count*sizeof(CharInfoPtr))))
+  	return;
+      GetGlyphs(font, (unsigned long)count, (unsigned char *)chars,
+! 	      (pGC->font->lastRow == 0) ? Linear16Bit : TwoD16Bit,
+  	      &n, charinfo);
+      if (n !=0 )
+!         (*pGC->ops->ImageGlyphBlt)(pDraw, pGC, x, y, n, charinfo, 
+! 							font->pCS->pBitmaps);
+      DEALLOCATE_LOCAL(charinfo);
+  }
+*** /a19c/R4-tape/mit/server/ddx/mi/Imakefile	Sun Jul  9 12:43:52 1989
+--- server/ddx/mi/Imakefile	Mon Sep 11 17:59:02 1989
+***************
+*** 19,25 ****
+  STD_DEFINES = ServerDefines
+  CDEBUGFLAGS = ServerCDebugFlags
+  EXT_DEFINES = ExtensionDefines
+! INCLUDES = -I. -I../../include -I$(INCLUDESRC)
+  LINTLIBS = ../../dix/llib-ldix.ln ../../os/4.2bsd/llib-los.ln
+  
+  NormalLibraryObjectRule()
+--- 19,25 ----
+  STD_DEFINES = ServerDefines
+  CDEBUGFLAGS = ServerCDebugFlags
+  EXT_DEFINES = ExtensionDefines
+! INCLUDES = -I. -I../../include -I$(INCLUDESRC) -I$(FONTSRC)/include
+  LINTLIBS = ../../dix/llib-ldix.ln ../../os/4.2bsd/llib-los.ln
+  
+  NormalLibraryObjectRule()
+*** /a19c/R4-tape/mit/server/ddx/mfb/Imakefile	Sat Jul 22 11:13:34 1989
+--- server/ddx/mfb/Imakefile	Mon Sep 11 17:48:49 1989
+***************
+*** 21,27 ****
+  
+  STD_DEFINES = ServerDefines
+  CDEBUGFLAGS = ServerCDebugFlags
+! INCLUDES = -I. -I../mi -I../../include -I$(INCLUDESRC)
+  LINTDEFS = -DMFBPOLYGLYPHBLT=mfbPolyGlyphBltWhite \
+  	   -DMFBIMAGEGLYPHBLT=mfbImageGlyphBltWhite \
+  	   -DEQWHOLEWORD=\=~0 -DOPEQ=\|=
+--- 21,27 ----
+  
+  STD_DEFINES = ServerDefines
+  CDEBUGFLAGS = ServerCDebugFlags
+! INCLUDES = -I. -I../mi -I../../include -I$(INCLUDESRC) -I$(FONTSRC)/include
+  LINTDEFS = -DMFBPOLYGLYPHBLT=mfbPolyGlyphBltWhite \
+  	   -DMFBIMAGEGLYPHBLT=mfbImageGlyphBltWhite \
+  	   -DEQWHOLEWORD=\=~0 -DOPEQ=\|=
+*** /a19c/R4-tape/mit/server/ddx/mfb/mfbfont.c	Sat Mar 18 09:27:07 1989
+--- server/ddx/mfb/mfbfont.c	Mon Sep 11 16:20:38 1989
+***************
+*** 25,34 ****
+  #include "X.h"
+  #include "Xmd.h"
+  #include "Xproto.h"
+- #include "fontstruct.h"
+- #include "dixfontstr.h"
+  #include "scrnintstr.h"
+  
+  #include "mfb.h"
+  
+  /*
+--- 25,34 ----
+  #include "X.h"
+  #include "Xmd.h"
+  #include "Xproto.h"
+  #include "scrnintstr.h"
+  
++ #include "serverfont.h"
++ 
+  #include "mfb.h"
+  
+  /*
+***************
+*** 40,76 ****
+  Bool
+  mfbRealizeFont( pscr, pFont)
+      ScreenPtr	pscr;
+!     FontPtr	pFont;
+  {
+      /*
+       * pGC->font is now known to be valid
+       */
+      int			index = pscr->myNum;
+!     FontInfoPtr		pfi = pFont->pFI;
+!     CharInfoPtr		maxb = &pfi->maxbounds;
+!     CharInfoPtr		minb = &pfi->minbounds;
+  
+      /*
+       * pick the fastest output routines that can do the job.
+       */
+!     if (   maxb->metrics.rightSideBearing -
+!    		minb->metrics.leftSideBearing > 32	/* big glyphs */
+! 	  || pfi->drawDirection != FontLeftToRight
+! 	  || pfi->noOverlap == 0)
+  	pFont->devPriv[ index] = (pointer)FT_VARPITCH;
+      else  /* an optimizable case */
+      {
+! 	if (     maxb->metrics.leftSideBearing ==
+! 		    minb->metrics.leftSideBearing /* fixed pitch */
+! 	      && maxb->metrics.leftSideBearing == 0	  /* fixed pitch */
+! 	      && maxb->metrics.rightSideBearing ==
+! 	            minb->metrics.rightSideBearing /* fixed pitch */
+! 	      && maxb->metrics.characterWidth ==
+! 	            minb->metrics.characterWidth  /* fixed pitch */
+! 	      && maxb->metrics.ascent ==
+! 	            minb->metrics.ascent	  /* fixed height */
+! 	      && maxb->metrics.descent ==
+! 	            minb->metrics.descent)  /* fixed height */
+  	    pFont->devPriv[ index] = (pointer)FT_FIXPITCH;
+  	else
+  	    pFont->devPriv[ index] = (pointer)FT_SMALLPITCH;
+--- 40,76 ----
+  Bool
+  mfbRealizeFont( pscr, pFont)
+      ScreenPtr	pscr;
+!     EncodedFontPtr	pFont;
+  {
+      /*
+       * pGC->font is now known to be valid
+       */
+      int			index = pscr->myNum;
+!     CharSetPtr		pcs = pFont->pCS;
+!     xCharInfo		*maxb = &pcs->maxbounds;
+!     xCharInfo		*minb = &pcs->minbounds;
+  
+      /*
+       * pick the fastest output routines that can do the job.
+       */
+!     if (   maxb->rightSideBearing -
+!    		minb->leftSideBearing > 32	/* big glyphs */
+! 	  || pcs->drawDirection != FontLeftToRight
+! 	  || pcs->noOverlap == 0)
+  	pFont->devPriv[ index] = (pointer)FT_VARPITCH;
+      else  /* an optimizable case */
+      {
+! 	if (     maxb->leftSideBearing ==
+! 		    minb->leftSideBearing /* fixed pitch */
+! 	      && maxb->leftSideBearing == 0	  /* fixed pitch */
+! 	      && maxb->rightSideBearing ==
+! 	            minb->rightSideBearing /* fixed pitch */
+! 	      && maxb->characterWidth ==
+! 	            minb->characterWidth  /* fixed pitch */
+! 	      && maxb->ascent ==
+! 	            minb->ascent	  /* fixed height */
+! 	      && maxb->descent ==
+! 	            minb->descent)  /* fixed height */
+  	    pFont->devPriv[ index] = (pointer)FT_FIXPITCH;
+  	else
+  	    pFont->devPriv[ index] = (pointer)FT_SMALLPITCH;
+***************
+*** 85,91 ****
+  Bool
+  mfbUnrealizeFont( pscr, pFont)
+      ScreenPtr	pscr;
+!     FontPtr	pFont;
+  {
+      return (TRUE);
+  }
+--- 85,91 ----
+  Bool
+  mfbUnrealizeFont( pscr, pFont)
+      ScreenPtr	pscr;
+!     EncodedFontPtr	pFont;
+  {
+      return (TRUE);
+  }
+server/ddx/mfb/mfbgc.c
+*** /tmp/,RCSt1a13126	Sat Sep 23 11:54:12 1989
+--- mfbgc.c	Thu Sep 21 18:25:39 1989
+***************
+*** 25,32 ****
+  #include "X.h"
+  #include "Xmd.h"
+  #include "Xproto.h"
+- #include "dixfontstr.h"
+- #include "fontstruct.h"
+  #include "gcstruct.h"
+  #include "windowstr.h"
+  #include "pixmapstr.h"
+--- 25,30 ----
+***************
+*** 38,43 ****
+--- 36,43 ----
+  
+  #include "maskbits.h"
+  
++ #include "serverfont.h"
++ 
+  static void mfbDestroyOps();
+  
+  static void mfbValidateGC(),	mfbChangeGC(),	    mfbCopyGC();
+***************
+*** 283,290 ****
+      if (pGC->fillStyle != FillSolid)
+  	return 0;
+      if (!pGC->font ||
+!         pGC->font->pFI->maxbounds.metrics.rightSideBearing -
+! 	pGC->font->pFI->minbounds.metrics.leftSideBearing > 32)
+  	return 0;
+      for (i = 0; i < numberCommonOps; i++) {
+  	cop = &mfbCommonOps[i];
+--- 283,290 ----
+      if (pGC->fillStyle != FillSolid)
+  	return 0;
+      if (!pGC->font ||
+!         pGC->font->pCS->maxbounds.rightSideBearing -
+! 	pGC->font->pCS->minbounds.leftSideBearing > 32)
+  	return 0;
+      for (i = 0; i < numberCommonOps; i++) {
+  	cop = &mfbCommonOps[i];
+***************
+*** 295,301 ****
+  	priv = (mfbPrivGC *) pGC->devPrivates[mfbGCPrivateIndex].ptr;
+  	if (priv->rop != cop->rrop)
+  	    continue;
+! 	if (cop->terminalFont != pGC->font->pFI->terminalFont)
+  	    continue;
+  	priv->FillArea = cop->fillArea;
+  	return cop->ops;
+--- 295,301 ----
+  	priv = (mfbPrivGC *) pGC->devPrivates[mfbGCPrivateIndex].ptr;
+  	if (priv->rop != cop->rrop)
+  	    continue;
+! 	if (cop->terminalFont != pGC->font->pCS->terminalFont)
+  	    continue;
+  	priv->FillArea = cop->fillArea;
+  	return cop->ops;
+***************
+*** 823,830 ****
+      if (new_text || new_fill)
+      {
+  	if ((pGC->font) &&
+! 	    (pGC->font->pFI->maxbounds.metrics.rightSideBearing -
+! 	     pGC->font->pFI->minbounds.metrics.leftSideBearing) > 32)
+  	{
+  	    pGC->ops->PolyGlyphBlt = miPolyGlyphBlt;
+  	    pGC->ops->ImageGlyphBlt = miImageGlyphBlt;
+--- 823,830 ----
+      if (new_text || new_fill)
+      {
+  	if ((pGC->font) &&
+! 	    (pGC->font->pCS->maxbounds.rightSideBearing -
+! 	     pGC->font->pCS->minbounds.leftSideBearing) > 32)
+  	{
+  	    pGC->ops->PolyGlyphBlt = miPolyGlyphBlt;
+  	    pGC->ops->ImageGlyphBlt = miImageGlyphBlt;
+***************
+*** 833,839 ****
+  	{
+  	    /* special case ImageGlyphBlt for terminal emulator fonts */
+  	    if ((pGC->font) &&
+! 		(pGC->font->pFI->terminalFont) &&
+  		(pGC->fgPixel != pGC->bgPixel))
+  	    {
+  		/* pcc bug makes this not compile...
+--- 833,839 ----
+  	{
+  	    /* special case ImageGlyphBlt for terminal emulator fonts */
+  	    if ((pGC->font) &&
+! 		(pGC->font->pCS->terminalFont) &&
+  		(pGC->fgPixel != pGC->bgPixel))
+  	    {
+  		/* pcc bug makes this not compile...
+*** /a19c/R4-tape/mit/server/ddx/mfb/mfbtegblt.c	Fri Jun  9 12:07:06 1989
+--- server/ddx/mfb/mfbtegblt.c	Mon Sep 11 16:20:54 1989
+***************
+*** 26,33 ****
+  #include	"X.h"
+  #include	"Xmd.h"
+  #include	"Xproto.h"
+- #include	"fontstruct.h"
+- #include	"dixfontstr.h"
+  #include	"gcstruct.h"
+  #include	"windowstr.h"
+  #include	"scrnintstr.h"
+--- 26,31 ----
+***************
+*** 36,41 ****
+--- 34,41 ----
+  #include	"mfb.h"
+  #include	"maskbits.h"
+  
++ #include	"serverfont.h"
++ 
+  /*
+      this works for fonts with glyphs <= 32 bits wide.
+  
+***************
+*** 69,76 ****
+      CharInfoPtr *ppci;		/* array of character info */
+      unsigned char *pglyphBase;	/* start of array of glyphs */
+  {
+!     CharInfoPtr pci;
+!     FontInfoPtr pfi = pGC->font->pFI;
+      int xorg, yorg;
+      int widthDst;
+      unsigned int *pdstBase;	/* pointer to longword with top row 
+--- 69,76 ----
+      CharInfoPtr *ppci;		/* array of character info */
+      unsigned char *pglyphBase;	/* start of array of glyphs */
+  {
+!     CharInfoRec ci;
+!     CharSetPtr pcs = pGC->font->pCS;
+      int xorg, yorg;
+      int widthDst;
+      unsigned int *pdstBase;	/* pointer to longword with top row 
+***************
+*** 108,120 ****
+      xpos = x + xorg;
+      ypos = y + yorg;
+  
+!     pci = &pfi->maxbounds;
+!     w = pci->metrics.characterWidth;
+!     h = pfi->fontAscent + pfi->fontDescent;
+!     widthGlyph = GLYPHWIDTHBYTESPADDED(pci);
+  
+!     xpos += pci->metrics.leftSideBearing;
+!     ypos -= pfi->fontAscent;
+  
+      bbox.x1 = xpos;
+      bbox.x2 = xpos + (w * nglyph);
+--- 108,120 ----
+      xpos = x + xorg;
+      ypos = y + yorg;
+  
+!     ci.metrics = pcs->maxbounds;
+!     w = ci.metrics.characterWidth;
+!     h = pcs->fontAscent + pcs->fontDescent;
+!     widthGlyph = GLYPHWIDTHBYTESPADDED(&ci);
+  
+!     xpos += ci.metrics.leftSideBearing;
+!     ypos -= pcs->fontAscent;
+  
+      bbox.x1 = xpos;
+      bbox.x2 = xpos + (w * nglyph);
+***************
+*** 154,160 ****
+          xpos &= 0x1f;
+          while(nglyph--)
+          {
+! 	    pglyph = pglyphBase + (*ppci++)->byteOffset;
+  	    hTmp = h;
+  	    pdst = pdstBase;
+  
+--- 154,160 ----
+          xpos &= 0x1f;
+          while(nglyph--)
+          {
+! 	    pglyph = (*ppci++)->pPriv;
+  	    hTmp = h;
+  	    pdst = pdstBase;
+  
+*** /a19c/R4-tape/mit/server/ddx/mfb/mfbimggblt.c	Mon Jul 17 07:23:37 1989
+--- server/ddx/mfb/mfbimggblt.c	Mon Sep 11 16:21:02 1989
+***************
+*** 26,33 ****
+  #include	"X.h"
+  #include	"Xmd.h"
+  #include	"Xproto.h"
+- #include	"fontstruct.h"
+- #include	"dixfontstr.h"
+  #include	"gcstruct.h"
+  #include	"windowstr.h"
+  #include	"scrnintstr.h"
+--- 26,31 ----
+***************
+*** 36,41 ****
+--- 34,41 ----
+  #include	"mfb.h"
+  #include	"maskbits.h"
+  
++ #include	"serverfont.h"
++ 
+  extern void QueryGlyphExtents();
+  
+  /*
+***************
+*** 142,151 ****
+      QueryGlyphExtents(pGC->font, ppci, (unsigned long)nglyph, &info);
+  
+      backrect.x = x;
+!     backrect.y = y - pGC->font->pFI->fontAscent;
+      backrect.width = info.overallWidth;
+!     backrect.height = pGC->font->pFI->fontAscent + 
+! 		      pGC->font->pFI->fontDescent;
+  
+      x += xorg;
+      y += yorg;
+--- 142,151 ----
+      QueryGlyphExtents(pGC->font, ppci, (unsigned long)nglyph, &info);
+  
+      backrect.x = x;
+!     backrect.y = y - pGC->font->pCS->fontAscent;
+      backrect.width = info.overallWidth;
+!     backrect.height = pGC->font->pCS->fontAscent + 
+! 		      pGC->font->pCS->fontDescent;
+  
+      x += xorg;
+      y += yorg;
+***************
+*** 199,205 ****
+          while(nglyph--)
+          {
+  	    pci = *ppci;
+! 	    pglyph = pglyphBase + pci->byteOffset;
+  	    w = pci->metrics.rightSideBearing - pci->metrics.leftSideBearing;
+  	    h = pci->metrics.ascent + pci->metrics.descent;
+  	    widthGlyph = GLYPHWIDTHBYTESPADDED(pci);
+--- 199,205 ----
+          while(nglyph--)
+          {
+  	    pci = *ppci;
+! 	    pglyph = pci->pPriv;
+  	    w = pci->metrics.rightSideBearing - pci->metrics.leftSideBearing;
+  	    h = pci->metrics.ascent + pci->metrics.descent;
+  	    widthGlyph = GLYPHWIDTHBYTESPADDED(pci);
+***************
+*** 374,380 ****
+  
+  		glyphRow = (topEdge - y) + pci->metrics.ascent;
+  		widthGlyph = ppos[i].widthGlyph;
+! 		pglyph = pglyphBase + pci->byteOffset;
+  		pglyph += (glyphRow * widthGlyph);
+  
+  		pdst = ppos[i].pdstBase - ((y-topEdge) * widthDst);
+--- 374,380 ----
+  
+  		glyphRow = (topEdge - y) + pci->metrics.ascent;
+  		widthGlyph = ppos[i].widthGlyph;
+! 		pglyph = pci->pPriv;
+  		pglyph += (glyphRow * widthGlyph);
+  
+  		pdst = ppos[i].pdstBase - ((y-topEdge) * widthDst);
+*** /a19c/R4-tape/mit/server/ddx/mfb/mfbplygblt.c	Sun Jul  9 12:57:50 1989
+--- server/ddx/mfb/mfbplygblt.c	Mon Sep 11 16:21:08 1989
+***************
+*** 26,33 ****
+  #include "X.h"
+  #include "Xmd.h"
+  #include "Xproto.h"
+- #include "fontstruct.h"
+- #include "dixfontstr.h"
+  #include "gcstruct.h"
+  #include "windowstr.h"
+  #include "pixmapstr.h"
+--- 26,31 ----
+***************
+*** 37,42 ****
+--- 35,42 ----
+  #include "maskbits.h"
+  #include "miscstruct.h"
+  
++ #include "serverfont.h"
++ 
+  extern void QueryGlyphExtents();
+  
+  /*
+***************
+*** 156,162 ****
+          while(nglyph--)
+          {
+  	    pci = *ppci;
+! 	    pglyph = pglyphBase + pci->byteOffset;
+  	    w = pci->metrics.rightSideBearing - pci->metrics.leftSideBearing;
+  	    h = pci->metrics.ascent + pci->metrics.descent;
+  	    widthGlyph = GLYPHWIDTHBYTESPADDED(pci);
+--- 156,162 ----
+          while(nglyph--)
+          {
+  	    pci = *ppci;
+! 	    pglyph = pci->pPriv;
+  	    w = pci->metrics.rightSideBearing - pci->metrics.leftSideBearing;
+  	    h = pci->metrics.ascent + pci->metrics.descent;
+  	    widthGlyph = GLYPHWIDTHBYTESPADDED(pci);
+***************
+*** 321,327 ****
+  
+  		glyphRow = (topEdge - y) + pci->metrics.ascent;
+  		widthGlyph = ppos[i].widthGlyph;
+! 		pglyph = pglyphBase + pci->byteOffset;
+  		pglyph += (glyphRow * widthGlyph);
+  
+  		pdst = ppos[i].pdstBase - ((y-topEdge) * widthDst);
+--- 321,327 ----
+  
+  		glyphRow = (topEdge - y) + pci->metrics.ascent;
+  		widthGlyph = ppos[i].widthGlyph;
+! 		pglyph = pci->pPriv;
+  		pglyph += (glyphRow * widthGlyph);
+  
+  		pdst = ppos[i].pdstBase - ((y-topEdge) * widthDst);
+*** /a19c/R4-tape/mit/server/ddx/cfb/Imakefile	Sat Jul 22 11:15:59 1989
+--- server/ddx/cfb/Imakefile	Mon Sep 11 17:57:48 1989
+***************
+*** 14,20 ****
+  
+  STD_DEFINES = ServerDefines
+  CDEBUGFLAGS = ServerCDebugFlags
+!    INCLUDES = -I. -I../mfb -I../mi -I../../include -I$(INCLUDESRC)
+     LINTLIBS = ../../dix/llib-ldix.ln ../../os/4.2bsd/llib-los.ln \
+  	     ../mfb/llib-lmfb.ln ../mi/llib-lmi.ln
+  
+--- 14,20 ----
+  
+  STD_DEFINES = ServerDefines
+  CDEBUGFLAGS = ServerCDebugFlags
+!    INCLUDES = -I. -I../mfb -I../mi -I../../include -I$(INCLUDESRC)
+-I$(FONTSRC)/include
+     LINTLIBS = ../../dix/llib-ldix.ln ../../os/4.2bsd/llib-los.ln \
+  	     ../mfb/llib-lmfb.ln ../mi/llib-lmi.ln
+  
+*** /a19c/R4-tape/mit/server/ddx/cfb/cfbgc.c	Wed Jul 19 06:31:34 1989
+--- server/ddx/cfb/cfbgc.c	Mon Sep 11 16:16:24 1989
+***************
+*** 24,31 ****
+  #include "X.h"
+  #include "Xmd.h"
+  #include "Xproto.h"
+- #include "dixfontstr.h"
+- #include "fontstruct.h"
+  #include "gcstruct.h"
+  #include "windowstr.h"
+  #include "pixmapstr.h"
+--- 24,29 ----
+***************
+*** 38,43 ****
+--- 36,43 ----
+  
+  #include "cfbmskbits.h"
+  
++ #include "serverfont.h"
++ 
+  static void cfbValidateGC(), cfbChangeGC(), cfbCopyGC(), cfbDestroyGC();
+  static void cfbChangeClip(), cfbDestroyClip(), cfbCopyClip();
+  static cfbDestroyOps();
+***************
+*** 113,121 ****
+      if (pGC->fillStyle != FillSolid)
+  	return 0;
+      if (pGC->font &&
+! 	(pGC->font->pFI->maxbounds.metrics.rightSideBearing -
+!          pGC->font->pFI->minbounds.metrics.leftSideBearing) <= 32 &&
+! 	 pGC->font->pFI->terminalFont &&
+  	 pGC->fgPixel != pGC->bgPixel)
+      {
+  	return &cfbTEOps;
+--- 113,121 ----
+      if (pGC->fillStyle != FillSolid)
+  	return 0;
+      if (pGC->font &&
+! 	(pGC->font->pCS->maxbounds.rightSideBearing -
+!          pGC->font->pCS->minbounds.leftSideBearing) <= 32 &&
+! 	 pGC->font->pCS->terminalFont &&
+  	 pGC->fgPixel != pGC->bgPixel)
+      {
+  	return &cfbTEOps;
+***************
+*** 510,517 ****
+  
+      if (new_text && (pGC->font))
+      {
+!         if ((pGC->font->pFI->maxbounds.metrics.rightSideBearing -
+!              pGC->font->pFI->minbounds.metrics.leftSideBearing) > 32)
+          {
+              pGC->ops->PolyGlyphBlt = miPolyGlyphBlt;
+              pGC->ops->ImageGlyphBlt = miImageGlyphBlt;
+--- 510,517 ----
+  
+      if (new_text && (pGC->font))
+      {
+!         if ((pGC->font->pCS->maxbounds.rightSideBearing -
+!              pGC->font->pCS->minbounds.leftSideBearing) > 32)
+          {
+              pGC->ops->PolyGlyphBlt = miPolyGlyphBlt;
+              pGC->ops->ImageGlyphBlt = miImageGlyphBlt;
+***************
+*** 519,525 ****
+          else
+          {
+              /* special case ImageGlyphBlt for terminal emulator fonts */
+!             if ((pGC->font->pFI->terminalFont) &&
+                  (pGC->fgPixel != pGC->bgPixel))
+  	    {
+                  pGC->ops->ImageGlyphBlt = cfbTEGlyphBlt;
+--- 519,525 ----
+          else
+          {
+              /* special case ImageGlyphBlt for terminal emulator fonts */
+!             if ((pGC->font->pCS->terminalFont) &&
+                  (pGC->fgPixel != pGC->bgPixel))
+  	    {
+                  pGC->ops->ImageGlyphBlt = cfbTEGlyphBlt;
+*** /a19c/R4-tape/mit/server/ddx/cfb/cfbtegblt.c	Fri Jun  9 12:01:45 1989
+--- server/ddx/cfb/cfbtegblt.c	Wed Sep 20 15:52:33 1989
+***************
+*** 25,32 ****
+  #include	"X.h"
+  #include	"Xmd.h"
+  #include	"Xproto.h"
+- #include	"fontstruct.h"
+- #include	"dixfontstr.h"
+  #include	"gcstruct.h"
+  #include	"windowstr.h"
+  #include	"scrnintstr.h"
+--- 25,30 ----
+***************
+*** 35,40 ****
+--- 33,40 ----
+  #include	"cfb.h"
+  #include	"cfbmskbits.h"
+  
++ #include 	"serverfont.h"
++ 
+  extern void miImageGlyphBlt();
+  
+  /*
+***************
+*** 65,71 ****
+      unsigned char *pglyphBase;	/* start of array of glyphs */
+  {
+      CharInfoPtr pci;
+!     FontInfoPtr pfi = pGC->font->pFI;
+      int widthDst;
+      unsigned int *pdstBase;	/* pointer to longword with top row 
+  				   of current glyph */
+--- 65,71 ----
+      unsigned char *pglyphBase;	/* start of array of glyphs */
+  {
+      CharInfoPtr pci;
+!     CharSetPtr pcs = pGC->font->pCS;
+      int widthDst;
+      unsigned int *pdstBase;	/* pointer to longword with top row 
+  				   of current glyph */
+***************
+*** 100,112 ****
+  	widthDst = (int)(((PixmapPtr)pDrawable)->devKind) >> 2;
+      }
+  
+!     pci = &pfi->maxbounds;
+!     wtmp = pci->metrics.characterWidth;
+!     h = pfi->fontAscent + pfi->fontDescent;
+!     widthGlyph = GLYPHWIDTHBYTESPADDED(pci);
+  
+!     xpos += pci->metrics.leftSideBearing;
+!     ypos -= pfi->fontAscent;
+  
+      bbox.x1 = xpos;
+      bbox.x2 = xpos + (wtmp * nglyph);
+--- 100,112 ----
+  	widthDst = (int)(((PixmapPtr)pDrawable)->devKind) >> 2;
+      }
+  
+!     wtmp = pcs->maxbounds.characterWidth;
+!     h = pcs->fontAscent + pcs->fontDescent;
+!     widthGlyph = PADGLYPHWIDTHBYTES(pcs->maxbounds.rightSideBearing-
+! 				     pcs->maxbounds.leftSideBearing);
+  
+!     xpos += pcs->maxbounds.leftSideBearing;
+!     ypos -= pcs->fontAscent;
+  
+      bbox.x1 = xpos;
+      bbox.x2 = xpos + (wtmp * nglyph);
+***************
+*** 150,156 ****
+          while(nglyph--)
+          {
+  
+! 	    pglyph = pglyphBase + (*ppci++)->byteOffset;
+              pdst = pdtmp;
+  	    hTmp = h;
+  
+--- 150,156 ----
+          while(nglyph--)
+          {
+  
+! 	    pglyph = (*ppci++)->pPriv;
+              pdst = pdtmp;
+  	    hTmp = h;
+  
+***************
+*** 182,188 ****
+  		pglyph += widthGlyph;
+                  pdst += widthDst;
+  	    }
+! 	    xpos += pci->metrics.characterWidth; 
+          }     
+  	break;
+      }
+--- 182,188 ----
+  		pglyph += widthGlyph;
+                  pdst += widthDst;
+  	    }
+! 	    xpos += pcs->maxbounds.characterWidth; 
+          }     
+  	break;
+      }
+*** /a19c/R4-tape/mit/server/include/gcstruct.h	Tue Jul 18 14:56:51 1989
+--- server/include/gcstruct.h	Mon Sep 11 16:29:17 1989
+***************
+*** 32,38 ****
+  #include "region.h"
+  #include "pixmap.h"
+  #include "screenint.h"
+! #include "dixfont.h"
+  
+  /*
+   * functions which modify the state of the GC
+--- 32,38 ----
+  #include "region.h"
+  #include "pixmap.h"
+  #include "screenint.h"
+! #include "font.h"
+  
+  /*
+   * functions which modify the state of the GC
+***************
+*** 111,117 ****
+      PixUnion		tile;
+      PixmapPtr		stipple;
+      DDXPointRec		patOrg;		/* origin for (tile, stipple) */
+!     FontPtr		font;
+      DDXPointRec		clipOrg;
+      DDXPointRec		lastWinOrg;	/* position of window
+last validated */
+      pointer		clientClip;
+--- 111,117 ----
+      PixUnion		tile;
+      PixmapPtr		stipple;
+      DDXPointRec		patOrg;		/* origin for (tile, stipple) */
+!     EncodedFontPtr	font;
+      DDXPointRec		clipOrg;
+      DDXPointRec		lastWinOrg;	/* position of window
+last validated */
+      pointer		clientClip;
+diff: /a19c/R4-tape/mit/server/include/serverfont.h: No such file or directory
+*** /a19c/R4-tape/mit/server/include/os.h	Fri Jul 21 09:57:13 1989
+--- server/include/os.h	Mon Sep 11 16:29:36 1989
+***************
+*** 41,47 ****
+  #define MAX_REQUEST_SIZE 16384
+  
+  typedef pointer	FID;
+- typedef struct _FontPathRec *FontPathPtr;
+  typedef struct _NewClientRec *NewClientPtr;
+  
+  #ifndef NO_ALLOCA
+--- 41,46 ----
+***************
+*** 104,116 ****
+  char		*strcpy();
+  char		*strncpy();
+  Bool		CloseDownConnection();
+- FontPathPtr	GetFontPath();
+- FontPathPtr	ExpandFontNamePattern();
+- FID		FiOpenForRead();
+  void		CreateWellKnownSockets();
+- int		SetDefaultFontPath();
+- void		FreeFontRecord();
+- int		SetFontPath();
+  void		ErrorF();
+  void		Error();
+  void		FatalError();
+--- 103,109 ----
+No differences encountered
+*** /a19c/R4-tape/mit/server/os/4.2bsd/Imakefile	Thu Apr 13 05:28:34 1989
+--- server/os/4.2bsd/Imakefile	Mon Sep 11 16:30:33 1989
+***************
+*** 21,30 ****
+  #endif
+  
+  BOOTSTRAPCFLAGS = 
+!            SRCS = WaitFor.c access.c connection.c fonttype.c io.c oscolor.c \
+!                   osfonts.c osinit.c utils.c auth.c mitauth.c OtherSources
+!            OBJS = WaitFor.o access.o connection.o fonttype.o io.o oscolor.o \
+!                   osfonts.o osinit.o utils.o auth.o mitauth.o OtherObjects
+     FONT_DEFINES = FontDefines FontFilters
+      STD_DEFINES = ServerDefines
+      CDEBUGFLAGS = ServerCDebugFlags
+--- 21,30 ----
+  #endif
+  
+  BOOTSTRAPCFLAGS = 
+!            SRCS = WaitFor.c access.c connection.c io.c oscolor.c \
+!                   osinit.c utils.c auth.c mitauth.c OtherSources
+!            OBJS = WaitFor.o access.o connection.o io.o oscolor.o \
+!                   osinit.o utils.o auth.o mitauth.o OtherObjects
+     FONT_DEFINES = FontDefines FontFilters
+      STD_DEFINES = ServerDefines
+      CDEBUGFLAGS = ServerCDebugFlags
+***************
+*** 85,91 ****
+  
+  SpecialObjectRule(osinit.o, $(ICONFIGFILES), -DADMPATH=\"$(ADMDIR)/X\%smsgs\")
+  SpecialObjectRule(WaitFor.o, $(ICONFIGFILES), $(EXT_DEFINES))
+- SpecialObjectRule(fonttype.o, $(ICONFIGFILES), $(FONT_DEFINES))
+  
+  saber_src:
+  	#load $(CFLAGS) -DADMPATH=\"$(ADMDIR)/X\%smsgs\" $(EXT_DEFINES) \
+--- 85,90 ----
+server/os/4.2bsd/connection.c
+*** /tmp/,RCSt1a13230	Sat Sep 23 11:55:48 1989
+--- connection.c	Fri Sep 22 11:50:50 1989
+***************
+*** 76,82 ****
+  
+  #include <stdio.h>
+  #include <sys/uio.h>
+! #include "osstruct.h"
+  #include "osdep.h"
+  #include "opaque.h"
+  #include "dixstruct.h"
+--- 76,82 ----
+  
+  #include <stdio.h>
+  #include <sys/uio.h>
+! #include "misc.h"
+  #include "osdep.h"
+  #include "opaque.h"
+  #include "dixstruct.h"
+*** /a19c/R4-tape/mit/server/Imakefile	Wed Jul 19 18:27:35 1989
+--- server/Imakefile	Thu Sep 14 14:25:26 1989
+***************
+*** 9,16 ****
+      CDEBUGFLAGS = ServerCDebugFlags
+       EXTENSIONS = $(EXTENSIONSRC)/server/libext.a
+           EXTDIR = $(EXTENSIONSRC)/server
+!     FONTUTILDIR = $(FONTSRC)/mkfontdir
+!        FONTUTIL = $(FONTUTILDIR)/fontdir.o
+              BSD = os/4.2bsd/libos.a $(XAULIB)
+          BSDEMUL = os/bsdemul/libbsdemul.a
+             SYSV = os/sysV/libos.a
+--- 9,20 ----
+      CDEBUGFLAGS = ServerCDebugFlags
+       EXTENSIONS = $(EXTENSIONSRC)/server/libext.a
+           EXTDIR = $(EXTENSIONSRC)/server
+!     FONTUTILDIR = $(FONTSRC)/utils
+!         FONTDIR = $(FONTSRC)/lib
+!        FONTLIBS = $(FONTSRC)/lib/os/libfontos.a \
+! 		  $(FONTSRC)/lib/pcf/libpcf.a \
+! 		  $(FONTSRC)/lib/bdf/libbdf.a \
+!                   $(FONTSRC)/lib/utils/libfontutils.a
+              BSD = os/4.2bsd/libos.a $(XAULIB)
+          BSDEMUL = os/bsdemul/libbsdemul.a
+             SYSV = os/sysV/libos.a
+***************
+*** 18,24 ****
+              CFB = ddx/cfb/libcfb.a
+               MI = ddx/mi/libmi.a
+              DIX = dix/libdix.a
+!             SNF = ddx/snf/libsnf.a
+           APOLLO = ddx/apollo/libapollo.a
+              APC = ddx/apollo/apc/libapc.a
+              SUN = ddx/sun/libsun.a
+--- 22,28 ----
+              CFB = ddx/cfb/libcfb.a
+               MI = ddx/mi/libmi.a
+              DIX = dix/libdix.a
+! #            SNF = ddx/snf/libsnf.a
+           APOLLO = ddx/apollo/libapollo.a
+              APC = ddx/apollo/apc/libapc.a
+              SUN = ddx/sun/libsun.a
+***************
+*** 152,170 ****
+  /**/# qvss server
+  /**/#
+  #define need_dix
+- #define need_ddx_snf
+  #define need_ddx_mi
+  #define need_ddx_mfb
+  #define need_ddx_dec_lk201
+  #define need_ddx_dec_qvss
+  #define need_os_42bsd
+! QVSSDIRS = dix ddx/snf ddx/mi ddx/mfb ddx/dec/lk201 ddx/dec/qvss os/4.2bsd
+! QVSSOBJS = ddx/dec/qvss/init.o ddx/dec/qvss/qvss_io.o ddx/dec/lk201/lk201.o\
+! 	$(FONTUTIL)
+! QVSSLIBS = $(DIX) $(BSD) $(SNF) $(MFB) $(MI) $(EXTENSIONS)
+  XqvssDIRS = $(QVSSDIRS)
+  
+! ServerTarget(Xqvss,$(EXTDIR) $(FONTUTILDIR)
+$(QVSSDIRS),$(QVSSOBJS),$(QVSSLIBS),$(SYSLIBS))
+  #endif /* doqvssServer */
+  
+  
+--- 156,172 ----
+  /**/# qvss server
+  /**/#
+  #define need_dix
+  #define need_ddx_mi
+  #define need_ddx_mfb
+  #define need_ddx_dec_lk201
+  #define need_ddx_dec_qvss
+  #define need_os_42bsd
+! QVSSDIRS = dix ddx/mi ddx/mfb ddx/dec/lk201 ddx/dec/qvss os/4.2bsd
+! QVSSOBJS = ddx/dec/qvss/init.o ddx/dec/qvss/qvss_io.o ddx/dec/lk201/lk201.o
+! QVSSLIBS = $(DIX) $(BSD) $(MFB) $(MI) $(EXTENSIONS) $(FONTLIBS)
+  XqvssDIRS = $(QVSSDIRS)
+  
+! ServerTarget(Xqvss,$(EXTDIR) $(FONTDIR)
+$(QVSSDIRS),$(QVSSOBJS),$(QVSSLIBS),$(SYSLIBS))
+  #endif /* doqvssServer */
+  
+  
+***************
+*** 174,195 ****
+  /**/# qdss server
+  /**/#
+  #define need_dix
+- #define need_ddx_snf
+  #define need_ddx_mi
+  #define need_ddx_mfb
+  #define need_ddx_dec_lk201
+  #define need_ddx_dec_qdss
+  #define need_os_42bsd
+! QDSSDIRS = dix ddx/snf ddx/mi ddx/mfb ddx/dec/lk201 ddx/dec/qdss \
+             ddx/dec/qdss/libtl os/4.2bsd
+! QDSSOBJS = ddx/dec/qdss/init.o ddx/dec/qdss/qdss_io.o ddx/dec/lk201/lk201.o\
+! 	$(FONTUTIL)
+  QDSSLIBS = ddx/dec/qdss/libqdss.a ddx/dec/qdss/libtl/libtl.a \
+             ddx/dec/qdss/libqdss.a \
+!            $(DIX) $(BSD) $(SNF) $(MFB) $(MI) $(EXTENSIONS)
+  XqdssDIRS = $(QDSSDIRS)
+  
+! ServerTarget(Xqdss,$(EXTDIR) $(FONTUTILDIR)
+$(QDSSDIRS),$(QDSSOBJS),$(QDSSLIBS),$(SYSLIBS))
+  #endif /* doqdssServer */
+  
+  #ifdef domfbpmaxServer
+--- 176,195 ----
+  /**/# qdss server
+  /**/#
+  #define need_dix
+  #define need_ddx_mi
+  #define need_ddx_mfb
+  #define need_ddx_dec_lk201
+  #define need_ddx_dec_qdss
+  #define need_os_42bsd
+! QDSSDIRS = dix ddx/mi ddx/mfb ddx/dec/lk201 ddx/dec/qdss \
+             ddx/dec/qdss/libtl os/4.2bsd
+! QDSSOBJS = ddx/dec/qdss/init.o ddx/dec/qdss/qdss_io.o ddx/dec/lk201/lk201.o
+  QDSSLIBS = ddx/dec/qdss/libqdss.a ddx/dec/qdss/libtl/libtl.a \
+             ddx/dec/qdss/libqdss.a \
+!            $(DIX) $(BSD) $(MFB) $(MI) $(EXTENSIONS) $(FONTLIBS)
+  XqdssDIRS = $(QDSSDIRS)
+  
+! ServerTarget(Xqdss,$(EXTDIR) $(FONTDIR)
+$(QDSSDIRS),$(QDSSOBJS),$(QDSSLIBS),$(SYSLIBS))
+  #endif /* doqdssServer */
+  
+  #ifdef domfbpmaxServer
+***************
+*** 197,215 ****
+  /**/# mfbpmax server
+  /**/#
+  #define need_dix
+- #define need_ddx_snf
+  #define need_ddx_mi
+  #define need_ddx_mfb
+  #define need_ddx_dec_lk201
+  #define need_ddx_dec_mfbpmax
+  #define need_os_42bsd
+! PMAXMFBDIRS = dix ddx/snf ddx/mi ddx/mfb ddx/dec/lk201 ddx/dec/mfbpmax os/4.2bsd
+! PMAXMFBOBJS = ddx/dec/mfbpmax/init.o ddx/dec/mfbpmax/mfbpmax_io.o
+ddx/dec/lk201/lk201.o\
+! 	$(FONTUTIL)
+! PMAXMFBLIBS = $(DIX) $(BSD) $(SNF) $(MFB) $(MI) $(EXTENSIONS)
+  XmfbpmaxDIRS = $(PMAXMFBDIRS)
+  
+! ServerTarget(Xmfbpmax,$(EXTDIR) $(FONTUTILDIR)
+$(PMAXMFBDIRS),$(PMAXMFBOBJS),$(PMAXMFBLIBS),$(SYSLIBS))
+  #endif /* domfbpmaxServer */
+  
+  #ifdef docfbpmaxServer
+--- 197,213 ----
+  /**/# mfbpmax server
+  /**/#
+  #define need_dix
+  #define need_ddx_mi
+  #define need_ddx_mfb
+  #define need_ddx_dec_lk201
+  #define need_ddx_dec_mfbpmax
+  #define need_os_42bsd
+! PMAXMFBDIRS = dix ddx/mi ddx/mfb ddx/dec/lk201 ddx/dec/mfbpmax os/4.2bsd
+! PMAXMFBOBJS = ddx/dec/mfbpmax/init.o ddx/dec/mfbpmax/mfbpmax_io.o
+ddx/dec/lk201/lk201.o
+! PMAXMFBLIBS = $(DIX) $(BSD) $(MFB) $(MI) $(EXTENSIONS) $(FONTLIBS)
+  XmfbpmaxDIRS = $(PMAXMFBDIRS)
+  
+! ServerTarget(Xmfbpmax,$(EXTDIR) $(FONTDIR)
+$(PMAXMFBDIRS),$(PMAXMFBOBJS),$(PMAXMFBLIBS),$(SYSLIBS))
+  #endif /* domfbpmaxServer */
+  
+  #ifdef docfbpmaxServer
+***************
+*** 217,223 ****
+  /**/# cfbpmax server
+  /**/#
+  #define need_dix
+- #define need_ddx_snf
+  #define need_ddx_mi
+  #define need_ddx_mfb
+  #define need_ddx_cfb
+--- 215,220 ----
+***************
+*** 224,236 ****
+  #define need_ddx_dec_lk201
+  #define need_ddx_dec_cfbpmax
+  #define need_os_42bsd
+! PMAXCFBDIRS = dix ddx/snf ddx/mi ddx/mfb ddx/cfb ddx/dec/lk201
+ddx/dec/cfbpmax os/4.2bsd
+  PMAXCFBOBJS = ddx/dec/cfbpmax/init.o ddx/dec/cfbpmax/cfbpmax_io.o\
+! 	ddx/dec/cfbpmax/cfbpmaxcolor.o ddx/dec/lk201/lk201.o $(FONTUTIL)
+! PMAXCFBLIBS = $(DIX) $(BSD) $(SNF) $(CFB) $(MFB) $(MI) $(EXTENSIONS)
+  XcfbpmaxDIRS = $(PMAXCFBDIRS)
+  
+! ServerTarget(Xcfbpmax,$(EXTDIR) $(FONTUTILDIR)
+$(PMAXCFBDIRS),$(PMAXCFBOBJS),$(PMAXCFBLIBS),$(SYSLIBS))
+  #endif /* docfbpmaxServer */
+  
+  #ifdef dosunServer
+--- 221,233 ----
+  #define need_ddx_dec_lk201
+  #define need_ddx_dec_cfbpmax
+  #define need_os_42bsd
+! PMAXCFBDIRS = dix ddx/mi ddx/mfb ddx/cfb ddx/dec/lk201 ddx/dec/cfbpmax os/4.2bsd
+  PMAXCFBOBJS = ddx/dec/cfbpmax/init.o ddx/dec/cfbpmax/cfbpmax_io.o\
+! 	ddx/dec/cfbpmax/cfbpmaxcolor.o ddx/dec/lk201/lk201.o
+! PMAXCFBLIBS = $(DIX) $(BSD) $(CFB) $(MFB) $(MI) $(EXTENSIONS) $(FONTLIBS)
+  XcfbpmaxDIRS = $(PMAXCFBDIRS)
+  
+! ServerTarget(Xcfbpmax,$(EXTDIR) $(FONTDIR)
+$(PMAXCFBDIRS),$(PMAXCFBOBJS),$(PMAXCFBLIBS),$(SYSLIBS))
+  #endif /* docfbpmaxServer */
+  
+  #ifdef dosunServer
+***************
+*** 241,253 ****
+  SUNWINDOWSLIBS = -lsunwindow -lpixrect
+  #endif
+  #define need_dix
+- #define need_ddx_snf
+  #define need_ddx_mi
+  #define need_ddx_mfb
+  #define need_ddx_cfb
+  #define need_ddx_sun
+  #define need_os_42bsd
+! SUNDIRS = dix ddx/snf ddx/mi ddx/mfb ddx/cfb ddx/sun os/4.2bsd
+  SUNOBJS = ddx/sun/sunInit.o $(FONTUTIL)
+  SUNLIBS = $(SUN) $(CFB) $(DIX) $(BSD) $(SNF) $(MFB) $(MI) $(EXTENSIONS)
+  SUNSYSLIBS = $(SYSLIBS) $(SUNWINDOWSLIBS)
+--- 238,249 ----
+  SUNWINDOWSLIBS = -lsunwindow -lpixrect
+  #endif
+  #define need_dix
+  #define need_ddx_mi
+  #define need_ddx_mfb
+  #define need_ddx_cfb
+  #define need_ddx_sun
+  #define need_os_42bsd
+! SUNDIRS = dix ddx/mi ddx/mfb ddx/cfb ddx/sun os/4.2bsd
+  SUNOBJS = ddx/sun/sunInit.o $(FONTUTIL)
+  SUNLIBS = $(SUN) $(CFB) $(DIX) $(BSD) $(SNF) $(MFB) $(MI) $(EXTENSIONS)
+  SUNSYSLIBS = $(SYSLIBS) $(SUNWINDOWSLIBS)

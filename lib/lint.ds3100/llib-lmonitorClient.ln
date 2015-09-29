@@ -1,0 +1,52 @@
+512
+llib-lmonitorClient:monClientPub.c 2
+2
+0 31 4 0 0
+monClient_ReadPort
+2
+0 32 4 0 0
+monWritePort
+2
+0 33 4 0 0
+monClientID
+2
+0 34 4 0 0
+monClientNumDirs
+2
+0 35 24 128 24854
+monClientDirList
+2
+0 72 36 0 0
+MonClient_Register
+16
+0 85 4 0 0
+MonClient_Register
+2
+2 92 36 0 0
+MonClient_AddDir
+18 0 0
+4 0 0
+16
+0 103 4 0 0
+MonClient_AddDir
+2
+2 121 36 0 0
+MonClient_ChangeDir
+18 0 0
+18 0 0
+16
+0 140 4 0 0
+MonClient_ChangeDir
+2
+2 146 36 0 0
+MonClient_DeleteDir
+18 0 0
+4 0 0
+16
+0 178 4 0 0
+MonClient_DeleteDir
+2
+0 208 32 0 0
+Mon_StatDirs
+512
+llib-lmonitorClient:monClientPub.c

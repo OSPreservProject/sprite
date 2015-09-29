@@ -1,0 +1,252 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.6
+date     92.04.21.17.34.28;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.01.02.13.54.17;  author douglis;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.09.22.22.14.38;  author douglis;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.09.15.10.17.08;  author douglis;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.09.13.16.44.35;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.08.14.15.12.04;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Record information that someone is logged in, in the per-host and
+per-person database files.
+@
+
+
+1.6
+log
+@Include the remote site in the syslog message when the number of ulog
+slots for the host is exceeded.
+@
+text
+@/* 
+ * Ulog_RecordLogin.c --
+ *
+ *	Source code for the Ulog_RecordLogin procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/ulog/RCS/Ulog_RecordLogin.c,v 1.5 89/01/02 13:54:17 douglis Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <ulog.h>
+#include "ulogInt.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ulog_RecordLogin --
+ *
+ *	Record information for a user in the database.
+ *
+ * Results:
+ *	-1 indicates an error, in which case errno indicates more details.
+ *	0 indicates success.
+ *
+ * Side effects:
+ *	The database file is updated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ulog_RecordLogin(uid, location, portID)
+    int uid;		/* user identifier */
+    char *location;	/* string identifying user's location (host
+			   or "terminal") */
+    int portID;		/* index into host's area in file*/
+{
+    struct timeval time;
+    int status;
+    char myHostName[ULOG_LOC_LENGTH];
+    char buffer[ULOG_RECORD_LENGTH];
+    Host_Entry *hostPtr;
+
+
+    if (portID >= ULOG_MAX_PORTS) {
+	syslog(LOG_WARNING,
+	       "Unable to record login from %s for uid %d, port %d: maximum number of entries exceeded.",
+	       location, uid, portID);
+	errno = EINVAL;
+	return(-1);
+    }
+    if (portID < 0) {
+	syslog(LOG_ERR, "Invalid port for recording login: %d\n", portID);
+	errno = EINVAL;
+	return(-1);
+    }
+    if (strlen(location) >= ULOG_LOC_LENGTH) {
+	syslog(LOG_ERR, "Ulog_RecordLogin: location name (%s) too large.",
+	       location);
+	errno = EINVAL;
+	return(-1);
+    }
+#ifdef DEBUG
+    syslog(LOG_INFO, "Recording login for uid %d, port %d.", uid, portID);
+#endif 
+    status = gettimeofday(&time, (struct timezone *) NULL);
+    if (status == -1) {
+	return(status);
+    }
+    if (gethostname(myHostName, ULOG_LOC_LENGTH) < 0) {
+	syslog(LOG_ERR, "Ulog_RecordLogin: error in gethostname.\n");
+	return(-1);
+    }
+    hostPtr = Host_ByName(myHostName);
+    Host_End();
+    if (hostPtr == (Host_Entry *) NULL) {
+	syslog(LOG_ERR,
+	       "Ulog_RecordLogin: error in Host_ByName for current host.\n");
+	return(-1);
+    }
+    bzero(buffer, ULOG_RECORD_LENGTH);
+    (void) sprintf(buffer, ULOG_FORMAT_STRING, uid, hostPtr->id, portID,
+		     time.tv_sec, location);
+
+    status = Db_WriteEntry(ULOG_FILE_NAME, buffer, 
+			   hostPtr->id * ULOG_MAX_PORTS + portID,
+			   ULOG_RECORD_LENGTH, DB_LOCK_BREAK);
+    if (status != 0) {
+	return(status);
+    }
+    status = Db_WriteEntry(LASTLOG_FILE_NAME, buffer, uid, ULOG_RECORD_LENGTH,
+			   DB_LOCK_BREAK);
+    return(status);
+}
+@
+
+
+1.5
+log
+@added call to Host_End.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: Ulog_RecordLogin.c,v 1.4 88/09/22 22:14:38 douglis Exp $ SPRITE (Berkeley)";
+d58 2
+a59 2
+	       "Unable to record login for uid %d, port %d: maximum number of entries exceeded.",
+	       uid, portID);
+@
+
+
+1.4
+log
+@changed order of args to DB_*Entry routines.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: Ulog_RecordLogin.c,v 1.3 88/09/15 10:17:08 douglis Exp $ SPRITE (Berkeley)";
+d86 1
+@
+
+
+1.3
+log
+@fixed bug using uninitialized structure for hostID instead of taking
+it from hostPtr.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: Ulog_RecordLogin.c,v 1.2 88/09/13 16:44:35 douglis Exp $ SPRITE (Berkeley)";
+d95 1
+a95 1
+    status = Db_WriteEntry(ULOG_FILE_NAME,
+d97 1
+a97 1
+			   ULOG_RECORD_LENGTH, buffer, DB_LOCK_BREAK);
+d101 1
+a101 1
+    status = Db_WriteEntry(LASTLOG_FILE_NAME, uid, ULOG_RECORD_LENGTH, buffer,
+@
+
+
+1.2
+log
+@changed to use ascii representation in database file.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: Ulog_RecordLogin.c,v 1.1 88/08/14 15:12:04 douglis Exp $ SPRITE (Berkeley)";
+a48 1
+    Ulog_Data data;
+d96 1
+a96 1
+			   data.hostID * ULOG_MAX_PORTS + portID,
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: proto.c,v 1.2 88/03/11 08:39:08 ouster Exp $ SPRITE (Berkeley)";
+d53 1
+d69 6
+a77 2
+    data.uid = uid;
+    data.portID = portID;
+a81 4
+    data.updated = time.tv_sec;
+    (void) strncpy(data.location, location, ULOG_LOC_LENGTH - 1);
+    data.location[ULOG_LOC_LENGTH] = '\0';
+
+d92 3
+a94 1
+    data.hostID = hostPtr->id;
+d98 1
+a98 1
+			   sizeof(data), (char *) &data, DB_LOCK_BREAK);
+d102 2
+a103 2
+    status = Db_WriteEntry(LASTLOG_FILE_NAME, uid, sizeof(data),
+			   (char *) &data, DB_LOCK_BREAK);
+@

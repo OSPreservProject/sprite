@@ -1,0 +1,99 @@
+
+This document describes how to port X11R5 to sprite.  It is also
+intended to help in maitaining X11.
+
+
+        1. Intro
+
+	2. How to compile X
+
+	3. How to make changes to X
+
+	4. How to port a new version of X
+
+=========================================================================
+1. Intro
+==================================
+
+If you have not already done so, you should read the release notes in
+mit/RELNOTES.TXT.  There is a lot of good information about how to
+compile X.
+
+The X sources are available via anonymous ftp from export.lcs.mit.edu.
+
+=========================================================================
+2. How to compile X
+==================================
+
+    Make World
+
+        This will remake all the Makefiles (using imake), generate
+	dependencies, clean out all the object files, and then recompile
+	everything from scratch.
+
+    Make Everything
+
+        This will recompile everything that is out of date.
+
+    Make install
+
+        This will install everything in the directory  $(DESTDIR)/usr/X11R5.
+	To install everything in the normal places, run
+
+            make DESTDIR=/ install
+
+	/usr/X11R5 is a symbolic link to /X11/R5.
+
+=========================================================================
+3. How to make changes to X
+==================================
+
+X does not use pmake, it uses imake instead.  So if you need to change
+the compiler flags or reconfigure the way it is compiled, then you need
+to check out the files in /X11/R5/mit.$MACHINE/config.  Most of these
+files are symbolic links to /sprite/lib/imake.
+
+Be careful when you change things in /sprite/lib/imake because there
+are other programs besides X that use imake.
+
+The X sources contains about 50 gazillion files, so to make it easier
+to find a particular file, there is a list in the top directories called
+file.lst.  You can grep through it to find a particular file.  If this
+file does not exist, you can recreate it by running
+
+    find /X11/R5/mit.$MACHINE -print > /X11/R5/mit.$MACHINE/file.lst
+
+Each of the root X source directories contains an ID file, so you can
+find variable names using lid, gid, etc.  You can recreate the ID
+database using this command:
+
+    find . -name '*.[ch]' -print | mkid -v -
+
+The master sources for X11R5 are in /X11/R5/mit.  Do not change anything
+in the master sources.  For each machine type there is a tree of symbolic
+links that point to the master sources.  If you need to make any changes,
+to a file, you should replace the link with a copy of the file, and then
+edit it.
+
+
+=========================================================================
+4. How to port a new version of X to Sprite.
+==================================
+
+The X sources are available via anonymous ftp from export.lcs.mit.edu.
+
+./server/os/connection.c
+
+        Sprite Pdevs
+
+./server/os/io.c
+
+        Sprite Pdevs
+
+./server/os/osinit.c
+
+        Use /dev/syslog for X error messages.
+
+=========================================================================
+=========================================================================
+

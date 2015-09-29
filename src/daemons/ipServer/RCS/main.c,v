@@ -1,0 +1,2045 @@
+head     1.23;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.23
+date     92.06.16.13.02.30;  author jhh;  state Exp;
+branches ;
+next     1.22;
+
+1.22
+date     92.04.21.21.09.00;  author shirriff;  state Exp;
+branches ;
+next     1.21;
+
+1.21
+date     89.08.10.16.44.28;  author douglis;  state Exp;
+branches ;
+next     1.20;
+
+1.20
+date     89.08.10.16.12.19;  author douglis;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     89.07.23.17.33.21;  author nelson;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     89.06.16.08.30.54;  author brent;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     89.06.02.13.54.14;  author brent;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     89.06.02.13.50.05;  author brent;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     89.04.10.16.33.01;  author mgbaker;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     89.03.23.09.52.17;  author brent;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     89.02.21.10.04.47;  author brent;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     88.10.17.08.59.47;  author ouster;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     88.09.28.11.41.58;  author mendel;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     88.08.30.09.53.33;  author brent;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     88.08.26.16.34.13;  author mendel;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     88.08.16.11.47.09;  author mendel;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.08.16.11.24.33;  author mendel;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.06.26.12.14.02;  author mendel;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.06.01.16.32.57;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.05.16.09.11.28;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     87.12.13.18.57.23;  author andrew;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     87.10.22.21.27.09;  author deboor;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     87.10.19.15.58.56;  author deboor;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.23
+log
+@changed the configuration file to be /etc/ipServer.config
+@
+text
+@/* 
+ * main.c --
+ *	
+ *	This file contains the initialization and file-system interface
+ *	routines for the Sprite Internet Protocol Server.
+ *
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/daemons/ipServer.new/RCS/main.c,v 1.22 92/04/21 21:09:00 shirriff Exp Locker: jhh $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include "sprite.h"
+#include "inet.h"
+#include "ipServer.h"
+#include "stat.h"
+#include "socket.h"
+#include "route.h"
+#include "raw.h"
+#include "ip.h"
+#include "icmp.h"
+#include "tcp.h"
+#include "udp.h"
+
+#include "netInet.h"
+#include "dev/pdev.h"
+#include "spriteTime.h"
+#include "proc.h"
+
+#include "option.h"
+#include <stdio.h>
+#include "fs.h"
+#include "sys/file.h"
+
+/*
+ * Command line options.
+ */
+
+Boolean ips_Debug = FALSE;
+static Boolean detach = TRUE;
+static char defaultConfigFile[100] = "/etc/ipServer.config";
+static char *configFile = defaultConfigFile;
+static char *ipAddress = (char *) NULL;
+
+static Option optionArray[] = {
+    {OPT_TRUE,   "d", (Address)&ips_Debug, "Turn on debugging output"},
+    {OPT_STRING, "c", (Address)&configFile, "Name of configuration file"},
+    {OPT_STRING, "i", (Address)&ipAddress, "IP address"},
+    {OPT_FALSE,  "b", (Address)&detach, "Don't run in background"},
+};
+static int numOptions = sizeof(optionArray) / sizeof(Option);
+
+char		myHostName[100];
+
+typedef struct Sock_PrivInfo *PrivPtr;
+
+static void 	PdevRequestHandler();
+static void 	PdevControlHandler();
+static int 	PrintMemStats();
+static int 	ToggleDebug();
+static int 	PrintInfoAndDebug();
+#ifdef TEST_DISCONNECT
+static int ToggleDisconnect();
+int	ips_Disconnect = 0;
+#endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *      The main program for the Internet Protocol Server. The
+ *      initialization routines of the important modules are called to
+ *      set up their data structures. The socket pseudo-devices and the
+ *      network device are opened and the FS dispatcher is called to
+ *      process events from them.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Files are opened. Signal handlers are established.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+main(argc, argv)
+    int		argc;
+    char	**argv;
+{
+    int			streamID;
+    Sig_Action		sigAction;
+    Proc_PID		pid;
+    char		deviceName[100];
+#ifdef DEBUG
+    extern int		Sys_PrintNumCalls();
+#endif DEBUG
+    extern int		memAllowFreeingFree;
+
+    /*
+     * Turn on checks for duplicate frees in the memory allocator.
+     */
+
+    memAllowFreeingFree = 0;
+
+    IP_MemBin();
+    TCP_MemBin();
+    Mem_Bin(sizeof(Sock_BufDataInfo));
+    Mem_Bin(sizeof(Sock_SharedInfo));
+    Mem_Bin(sizeof(Sock_PrivInfo));
+    Mem_SetPrintProc(fprintf, (ClientData)stderr);
+
+    argc = Opt_Parse(argc, argv, optionArray, numOptions, 0);
+
+    /*
+     * Print debugging information when the signals are caught. 
+     */
+
+#define SetHandler(sig, routine) \
+    sigAction.action = SIG_HANDLE_ACTION; \
+    sigAction.handler = routine; \
+    sigAction.sigHoldMask = 1 << (sig-1); \
+    if (Sig_SetAction(sig, &sigAction, NULL) != SUCCESS) { \
+	(void) fprintf(stderr, "main: can't set signal handler %d\n", sig); \
+    }
+
+    SetHandler(25, ToggleDebug);
+    SetHandler(26, Stat_PrintInfo);
+    SetHandler(27, Sock_PrintInfo);
+#ifdef TEST_DISCONNECT
+    SetHandler(28, ToggleDisconnect);
+#else
+    SetHandler(28, PrintMemStats);
+#endif
+#ifdef DEBUG
+    SetHandler(29, Sys_PrintNumCalls);
+#endif DEBUG
+    SetHandler(30, PrintInfoAndDebug);
+
+
+    setlinebuf(stderr);
+#ifndef sun4
+    {
+	char	*Version();
+	(void) fprintf(stderr, "Sprite Internet Protocol Server: %s\n", 
+			Version());
+    }
+#endif sun4
+
+    if (gethostname(myHostName, sizeof(myHostName)) != 0) {
+	panic("Can't find my hostname\n");
+    }
+
+    Rte_AddressInit(myHostName, configFile, ipAddress);
+
+    Sock_Init();
+
+    Sys_GetTimeOfDay(&stats.startTime, (int *) NULL, (Boolean *) NULL);
+
+    IP_Init();
+    ICMP_Init();
+    UDP_Init();
+    TCP_Init(stats.startTime.seconds);
+
+
+    /*
+     * Open the pseudo-devices that correspond to the stream (TCP), 
+     * datagram (UDP) and raw (IP) socket abstractions. The raw socket
+     * is opened with 0600 permission so only set-root-uid programs can 
+     * access it.
+     */
+
+    (void) umask(0);
+
+    (void) sprintf(deviceName, INET_STREAM_NAME_FORMAT, myHostName);
+    streamID = open(deviceName, O_RDONLY|O_CREAT|O_MASTER, 0666);
+    if (streamID < 0) {
+	perror(deviceName);
+	exit(1);
+    }
+    Fs_EventHandlerCreate(streamID, FS_READABLE, PdevControlHandler, 
+			(ClientData) TCP_PROTO_INDEX);
+
+
+    (void) sprintf(deviceName, INET_DGRAM_NAME_FORMAT, myHostName);
+    streamID = open(deviceName, O_RDONLY|O_CREAT|O_MASTER, 0666);
+    if (streamID < 0) {
+	perror(deviceName);
+	exit(1);
+    }
+    Fs_EventHandlerCreate(streamID, FS_READABLE, PdevControlHandler,
+			(ClientData) UDP_PROTO_INDEX);
+
+
+    (void) sprintf(deviceName, INET_RAW_NAME_FORMAT, myHostName);
+    streamID = open(deviceName, O_RDONLY|O_CREAT|O_MASTER, 0600);
+    if (streamID < 0) {
+	perror(deviceName);
+	exit(1);
+    }
+    Fs_EventHandlerCreate(streamID, FS_READABLE, PdevControlHandler, 
+			(ClientData) RAW_PROTO_INDEX);
+
+
+    pid = getpid(); 
+    (void) fprintf(stderr, "PID = %x\n", pid);
+
+
+    /*
+     * Now that everything is set up, run in the background if the
+     * debug flag is not set.
+     */
+    if (!ips_Debug && detach) {
+	Proc_Detach(0);
+    }
+
+
+    /*
+     * Everything's initialized. Start processing events from the
+     * the socket pseudo-devices and the network device.
+     */
+    while (TRUE) {
+	stats.misc.dispatchLoop++;
+	Fs_Dispatch();
+	IP_DelayedOutput();
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PdevControlHandler --
+ *
+ *	This routine handles the creation of new pseudo-device connections 
+ *	to the server from client programs. It is called from the
+ *	FS dispatcher whenever one of "stream/datagram/raw" control streams
+ *	become readable. A socket is created for the connection. Further
+ *	requests on the new stream will be handled by PdevRequestHandler()
+ *	(or UdpRequestHandler)
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	A new socket is created for the connection.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+PdevControlHandler(clientData, streamID, eventMask)
+    ClientData	clientData;	/* Protocol index # for the socket type. */
+    int		streamID;	/* ID of stream that became readable, writable,
+				 * or has an exception condition ready. */
+    int		eventMask;	/* Mask to show what event happened. A combo of
+				 * Should be just FS_READABLE. */
+{
+    ReturnStatus	status;
+    Pdev_Notify		notify;
+    Pdev_SetBufArgs	bufArgs;
+    SockPdevState	*sockPdevPtr;
+    int			amount;
+    int			state;
+    int			reqBufSize;
+    int			bigWrites;
+    int			writeBehind;
+    void		(*handler)();
+
+    if (!(eventMask & FS_READABLE)) {
+	panic("PdevControlHandler: bad event mask %x\n", eventMask);
+    }
+
+    /*
+     * Read the notify message from the control stream.
+     */
+
+    amount = read(streamID, (Address)&notify, sizeof(notify));
+    if (amount < 0) {
+	perror("PdevControlHandler: read notify");
+	exit(1);
+    } else if (amount != sizeof(notify)) {
+	panic("PdevControlHandler: short read (%d) of the notify\n", amount);
+	exit(1);
+    } else if (notify.magic != PDEV_NOTIFY_MAGIC) {
+	panic("PdevControlHandler: bad magic # (%x) in the notify\n", 
+		notify.magic);
+	exit(1);
+    }
+
+    sockPdevPtr = (SockPdevState *)malloc(sizeof(SockPdevState));
+    switch ((int)clientData) {
+	case TCP_PROTO_INDEX:
+	    sockPdevPtr->reqBufSize = TCP_REQUEST_BUF_SIZE;
+	    sockPdevPtr->protoIndex = TCP_PROTO_INDEX;
+	    bigWrites = TRUE;
+	    writeBehind = FALSE;
+	    break;
+	case UDP_PROTO_INDEX:
+	    sockPdevPtr->reqBufSize = UDP_REQUEST_BUF_SIZE;
+	    sockPdevPtr->protoIndex = UDP_PROTO_INDEX;
+	    bigWrites = FALSE;
+	    writeBehind = UDP_WRITE_BEHIND;
+	    break;
+	case RAW_PROTO_INDEX:
+	    sockPdevPtr->reqBufSize = RAW_REQUEST_BUF_SIZE;
+	    sockPdevPtr->protoIndex = RAW_PROTO_INDEX;
+	    bigWrites = FALSE;
+	    writeBehind = FALSE;
+	    break;
+    }
+    /*
+     * Allocate the pseudo-device request buffer, leaving room at the
+     * front to create packet headers, and adding enough room to account
+     * for the pdev message header in front of the data.
+     * Make sure the request buffer is a multiple of the word size.
+     * (The kernel should do this.)
+     */
+    sockPdevPtr->reqBufSize += sizeof(Pdev_Request) + sizeof(int);
+    sockPdevPtr->reqBufSize &= ~(sizeof(int) - 1);
+    sockPdevPtr->requestBuf = (Address) malloc(sockPdevPtr->reqBufSize +
+						IPS_ROOM_FOR_HEADERS);
+    bufArgs.requestBufAddr = sockPdevPtr->requestBuf + IPS_ROOM_FOR_HEADERS;
+    bufArgs.requestBufSize = sockPdevPtr->reqBufSize;
+    bufArgs.readBufAddr = (Address) NULL;
+    bufArgs.readBufSize = 0;
+    status = Fs_IOControl(notify.newStreamID, IOC_PDEV_SET_BUF,
+		sizeof(bufArgs), (Address) &bufArgs, 
+		0, (Address) NULL);
+    if (status != SUCCESS){
+	Stat_PrintMsg(status, "PdevControlHandler: ioc set buf");
+	exit(1);
+    }
+    status = Fs_IOControl(notify.newStreamID, IOC_PDEV_BIG_WRITES,
+		sizeof(state), (Address) &bigWrites, 
+		0, (Address) NULL);
+    if (status != SUCCESS){
+	Stat_PrintMsg(status, "PdevControlHandler: ioc big write");
+	exit(1);
+    }
+    status = Fs_IOControl(notify.newStreamID, IOC_PDEV_WRITE_BEHIND,
+		sizeof(state), (Address) &writeBehind, 
+		0, (Address) NULL);
+    if (status != SUCCESS){
+	Stat_PrintMsg(status, "PdevControlHandler: ioc write behind");
+	exit(1);
+    }
+
+    Fs_EventHandlerCreate(notify.newStreamID, FS_READABLE, PdevRequestHandler,
+			    (ClientData)sockPdevPtr);
+}
+
+
+static int origFirstByte;
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PdevRequestHandler --
+ *
+ *	Handle an request from a client accessing a socket pseudo-device.
+ *	We read a short message off the request stream that indicates
+ *	where in the buffer the next request message(s) are.  Depending
+ *	on the client's operation, we may allocate a return data block
+ *	that gets filled in by the socket routine.  We reply with a
+ *	return status for the client's system call and, optionally, the
+ *	return data block.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The operation-specific routines may cause side-effects.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+PdevRequestHandler(clientData, streamID, eventMask)
+    ClientData	clientData;	/* Token passed the Sock_ routines to identify
+				 * a socket. */
+    int		streamID;	/* ID of stream that became readable, writable
+				 * or has an exception condition ready. */
+    int		eventMask;	/* Mask to show what event happened.
+				 * Must be FS_READABLE. */
+{
+    ReturnStatus	status;
+    register Pdev_Request	*requestPtr;
+    Pdev_Reply	reply;
+    Pdev_BufPtrs	bufPtrs;
+    int			amount;
+    Address		requestData;
+    int			messageSize;
+    int			replySize;
+    Pdev_Op		operation;
+    /*
+     * All requests, except PDEV_OPEN, get passed the socket private pointer
+     * as the client data from Fs_Dispatch.
+     */
+    Sock_PrivInfo	*privPtr = (Sock_PrivInfo *)clientData;
+
+
+    if (!(eventMask & FS_READABLE)) {
+	panic("PdevRequestHandler: bad event mask %x\n", 
+				eventMask);
+    }
+
+    /*
+     * Read the short request header that tells us where in the buffer
+     * the next request message is.  Check size and magic number.
+     */
+
+    amount = read(streamID, (Address)&bufPtrs, sizeof(bufPtrs));
+    if (amount  != sizeof(bufPtrs)) {
+	perror("PdevRequestHandler: get ptr ioctl");
+	exit(1);
+    } else if (bufPtrs.magic != PDEV_BUF_PTR_MAGIC) {
+	panic("PdevControlHandler: bad magic # (%x) in the bufPtrs\n", 
+		bufPtrs.magic);
+	exit(1);
+    } 
+
+    origFirstByte = bufPtrs.requestFirstByte;
+    while (bufPtrs.requestFirstByte < bufPtrs.requestLastByte) {
+	requestPtr = (Pdev_Request *)
+			&bufPtrs.requestAddr[bufPtrs.requestFirstByte];
+	if (requestPtr->hdr.magic != PDEV_REQUEST_MAGIC) {
+	    printf("PdevControlHandler: bad magic # (%x) comitting hari-kari\n",
+		    requestPtr->hdr.magic);
+#ifdef notdef
+	    /*
+	     * This will put us more cleanly into the debugger than a panic
+	     * will.
+	     */
+	    *(int *)0 = 100;
+	    exit(1);
+#endif
+	    /*
+	     * Hack to attempt to get around the server lieing to us by
+	     * telling us that there is more data than there really is.
+	     */
+	    bufPtrs.requestFirstByte = bufPtrs.requestLastByte + 1;
+	    break;
+	} 
+	requestData = (Address)((Address)requestPtr + sizeof(Pdev_Request));
+	reply.replySize = 0;
+	reply.replyBuf = (Address) NULL;
+
+	/*
+	 * Decode the operation and call a routine for the operation.
+	 * The operation handler may overwrite the request header with
+	 * a packet header, so we are careful not to use anything from
+	 * the request header after calling the service procedure.
+	 */
+	messageSize = requestPtr->hdr.messageSize;
+	replySize = requestPtr->hdr.replySize;
+	operation = requestPtr->hdr.operation;
+	switch (operation) {
+
+
+	    case PDEV_OPEN: {
+		    /*
+		     * Create a new socket structure. If the open was 
+		     * successful, create an event handler to handle future 
+		     * requests on the stream.  Sock_Open returns a token 
+		     * for the new socket, which is associated with the event 
+		     * handler for the socket's stream.
+		     *
+		     * The first arg. to Sock_Open ("clientData") is a pointer
+		     * to some state about the pseudo-device setup.
+		     */
+
+		    reply.status = Sock_Open((SockPdevState *) clientData, 
+				    requestPtr->hdr.operation == PDEV_OPEN,
+				    streamID,
+				    requestPtr->param.open.flags, 
+				    requestPtr->param.open.pid, 
+				    requestPtr->param.open.hostID, 
+				    requestPtr->param.open.uid, 
+				    -1, /* no more client ID */
+				    &privPtr);
+		    free((char *)clientData);
+		    if (reply.status == SUCCESS) {
+			/*
+			 * Save the address of the socket data structure
+			 * with the stream so subsequent requests can
+			 * access it.
+			 */
+			(void)Fs_EventHandlerChangeData(streamID,
+							(ClientData)privPtr);
+			reply.selectBits = Sock_Select(privPtr, TRUE); 
+		    } else {
+			reply.selectBits = 0;
+		    }
+		    PdevReply(streamID, &reply, "open");
+		}
+		break;
+
+
+	    case PDEV_CLOSE:
+		(void) Sock_Close(privPtr);
+		Fs_EventHandlerDestroy(streamID);
+		reply.status == SUCCESS;
+		PdevReply(streamID, &reply, "close");
+		(void) close(streamID);
+		break;
+
+
+	    /*
+	     * The client wants data from the server.
+	     */
+	    case PDEV_READ:
+		if (privPtr->sharePtr->protoIndex == UDP_PROTO_INDEX) {
+		    /*
+		     * Special case optimized UDP read request handler.
+		     * It sends its own reply
+		     */
+		    UDP_ReadRequest(privPtr, requestPtr, streamID);
+		} else {
+		    /*
+		     * Allocate a reply buffer to hold the data from the socket.
+		     */
+		    reply.replyBuf = 
+				malloc((unsigned int)requestPtr->hdr.replySize);
+		    reply.status = Sock_Read( privPtr, 
+				requestPtr->hdr.replySize, reply.replyBuf,
+				&reply.replySize);
+		    /*
+		     * Make sure we don't supply more than what was requested.
+		     */
+		    if (reply.replySize > replySize) {
+			(void) fprintf(stderr, 
+			  "PdevRequestHandler: gave too much data for READ.\n");
+		    }
+		    reply.selectBits = Sock_Select(privPtr, TRUE); 
+		    PdevReply(streamID, &reply, "read");
+		    if (reply.replyBuf != (Address) NULL) {
+			free(reply.replyBuf);
+		    }
+		}
+		break;
+
+
+	    /*
+	     * The client wants to send data to the server.
+	     */
+	    case PDEV_WRITE_ASYNC:
+	    case PDEV_WRITE:
+		if (ips_Debug) {
+		    (void) fprintf(stderr, "Pdev_write: %d\n", 
+				requestPtr->hdr.requestSize);
+		}
+		amount = 0;
+		reply.replySize = sizeof(int);
+		reply.replyBuf = (Address)&amount;
+		if (requestPtr->hdr.requestSize < 0) {
+		    reply.status = GEN_INVALID_ARG;
+		} else {
+		    reply.status = Sock_Write( privPtr, 
+					requestPtr->param.write.procID,
+					requestPtr->hdr.requestSize,
+					requestData,
+					&amount);
+		}
+		if (operation == PDEV_WRITE) {
+		    reply.selectBits = Sock_Select(privPtr, TRUE); 
+		    PdevReply(streamID, &reply, "write");
+		}
+		break;
+
+	    case PDEV_IOCTL: {
+		    Address outBuffer;
+
+		    if (requestPtr->hdr.requestSize < 0) {
+			reply.status = GEN_INVALID_ARG;
+			outBuffer = (Address) NULL;
+		    } else {
+			outBuffer = malloc((unsigned int)requestPtr->hdr.replySize);
+
+			reply.status = Sock_IOControl(privPtr,
+					requestPtr->param.ioctl.command,
+				        requestPtr->param.ioctl.uid, 
+					requestPtr->hdr.requestSize,
+					requestData,
+					requestPtr->hdr.replySize, outBuffer);
+		    }
+		    reply.selectBits = Sock_Select(privPtr, TRUE); 
+
+		    if (reply.status == SUCCESS) {
+			reply.replySize = replySize;
+			reply.replyBuf = outBuffer;
+		    } else {
+			reply.replySize = 0;
+			reply.replyBuf = (Address) NULL;
+		    }
+		    PdevReply(streamID, &reply, "ioctl");
+		    if (outBuffer != (Address) NULL) {
+			free(outBuffer);
+		    }
+		}
+		break;
+
+	    default:
+		reply.status = FAILURE;
+		PdevReply(streamID, &reply, "??");
+		(void) fprintf(stderr, 
+			"PdevRequestHandler: unknown operation %d\n",
+				requestPtr->hdr.operation);
+		break;
+	}
+	bufPtrs.requestFirstByte += messageSize;
+    }
+    if (operation != PDEV_CLOSE) {
+	status = Fs_IOControl(streamID, IOC_PDEV_SET_PTRS,
+		sizeof(bufPtrs), (Address) &bufPtrs, 
+		0, (Address) NULL);
+	if (status != SUCCESS){
+	    Stat_PrintMsg(status, "set ptrs");
+	    exit(1);
+	}
+    }
+}
+
+PdevReply(streamID, replyPtr, caller)
+    int			streamID;
+    Pdev_Reply	*replyPtr;
+    char		*caller;
+{
+    ReturnStatus	status;
+
+    replyPtr->magic = PDEV_REPLY_MAGIC;
+    replyPtr->signal = 0;
+    replyPtr->code = 0;
+    status = Fs_IOControl(streamID, IOC_PDEV_REPLY,
+		sizeof(*replyPtr), (Address) replyPtr, 
+		0, (Address) NULL);
+    if (status != SUCCESS && status != SYS_ARG_NOACCESS){
+	Stat_PrintMsg(status, caller);
+	exit(1);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintInfoAndDebug --
+ *
+ *	Calls the Stat_PrintInfo and Sock_PrintInfo routines and then
+ *	turns on debugging. This routine is useful when debugging
+ *	is normally off and something goes wrong.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Information is printed and debugging turned on.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*ARGSUSED*/
+static int
+PrintInfoAndDebug(sigNum, sigCode)
+    int		sigNum;
+    int		sigCode;
+{
+    Stat_PrintInfo(0,0);
+    Sock_PrintInfo(0,0);
+    ips_Debug = TRUE;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintMemStats --
+ *
+ *	Prints a summary of the memory allocator statistics.
+ *	Can be called as a signal handler.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Statistics are printed on the standard error stream.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*ARGSUSED*/
+static int
+PrintMemStats(sigNum, sigCode)
+    int		sigNum;		/* Ignored. */
+    int		sigCode;	/* Ignored. */
+{
+    Mem_PrintStats();
+    Mem_PrintInUse();
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ToggleDebug --
+ *
+ *	Toggles the state of the ips_Debug flag.
+ *	Can be called as a signal handler.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The debug flag is toggled.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*ARGSUSED*/
+static int
+ToggleDebug(sigNum, sigCode)
+    int		sigNum;		/* Ignored. */
+    int		sigCode;	/* Ignored. */
+{
+    ips_Debug = !ips_Debug;
+    (void) fprintf(stderr, "*****  Debugging now  %s  *****\n",
+		ips_Debug ? "ON" : "off");
+}
+
+#ifdef TEST_DISCONNECT
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ToggleDisconnect --
+ *
+ *	Toggles the state of the ips_Disconnect flag.
+ *	Can be called as a signal handler.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The  flag is toggled.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*ARGSUSED*/
+static int
+ToggleDisconnect(sigNum, sigCode)
+    int		sigNum;		/* Ignored. */
+    int		sigCode;	/* Ignored. */
+{
+    ips_Disconnect = !ips_Disconnect;
+    (void) fprintf(stderr, "*****  Disconnect now  %s  *****\n",
+		ips_Disconnect ? "ON" : "off");
+}
+
+#endif
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * IPS_GetTimestamp --
+ *
+ *	Returns the number of milliseconds since midnight.
+ *
+ * Results:
+ *	The # of milliseconds since midnight.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+IPS_GetTimestamp()
+{
+    Time	time;
+    Time_Parts	parts;
+
+    Sys_GetTimeOfDay(&time, (int *) NULL, (Boolean *) NULL);
+
+    Time_ToParts(time.seconds, FALSE, &parts);
+    return((((parts.hours * 3600) + (parts.minutes * 60) + 
+	     parts.seconds) * 1000) + (time.microseconds/ONE_MILLISECOND));
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * IPS_InitPacket --
+ *
+ *	Initializes a packet by allocating memory for the data and
+ *	packet headers and setting up the pointer to the data part
+ *	of the packet.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Memory is allocated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+IPS_InitPacket(dataLen, packetPtr)
+    int		dataLen;
+    register IPS_Packet	*packetPtr;
+{
+    packetPtr->dataLen = dataLen;
+    packetPtr->totalLen = dataLen + IPS_ROOM_FOR_HEADERS;
+    packetPtr->base = malloc((unsigned int) packetPtr->totalLen + 4);
+    packetPtr->dbase = packetPtr->base + 2;
+    packetPtr->data = packetPtr->dbase + IPS_ROOM_FOR_HEADERS;
+    if (((unsigned)packetPtr->data & 0x3) != 0) {
+	packetPtr->data += 2;
+	packetPtr->totalLen += 2;
+    }
+}
+
+f1(iPtr)
+    int	*iPtr;
+{
+    printf("i: %x = %x\n", iPtr, *iPtr);
+}
+@
+
+
+1.22
+log
+@Changed so it wouldn't go into an infinite loop on SYS_ARG_NOACCESS
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/daemons/ipServer/RCS/main.c,v 1.21 89/08/10 16:44:28 douglis Exp Locker: shirriff $ SPRITE (Berkeley)";
+d51 1
+a51 1
+static char defaultConfigFile[100] = "/sprite/daemons/ipServer.config";
+@
+
+
+1.21
+log
+@fixed bug with bind not using current uid
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/daemons/ipServer/RCS/main.c,v 1.20 89/08/10 16:12:19 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d648 1
+a648 1
+    if (status != SUCCESS){
+@
+
+
+1.20
+log
+@JKO fixes for duplicate free
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/daemons/ipServer/RCS/main.c,v 1.19 89/07/23 17:33:21 nelson Exp $ SPRITE (Berkeley)";
+d593 1
+@
+
+
+1.19
+log
+@Fixed alignment problem.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/daemons/ipServer/RCS/main.c,v 1.18 89/06/16 08:30:54 brent Exp Locker: nelson $ SPRITE (Berkeley)";
+d109 1
+d111 6
+d365 2
+d434 1
+d439 1
+a439 1
+	    panic("PdevControlHandler: bad magic # (%x) in the request\n", 
+d441 6
+d448 7
+d835 6
+@
+
+
+1.18
+log
+@Fixed perror calls to print out the actual
+name of the device causing trouble.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/daemons/ipServer/RCS/main.c,v 1.17 89/06/02 13:54:14 brent Exp $ SPRITE (Berkeley)";
+d805 2
+a806 2
+    packetPtr->base = packetPtr->dbase = 
+			malloc((unsigned int) packetPtr->totalLen);
+d808 4
+@
+
+
+1.17
+log
+@Fixed include
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/daemons/ipServer/RCS/main.c,v 1.16 89/06/02 13:50:05 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d182 1
+a182 1
+	perror("main (open stream)");
+d192 1
+a192 1
+	perror("main (open dgram)");
+d202 1
+a202 1
+	perror("main (open raw)");
+@
+
+
+1.16
+log
+@Updated to new pseudo-device interface
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/daemons/ipServer/RCS/main.c,v 1.15 89/04/10 16:33:01 mgbaker Exp Locker: brent $ SPRITE (Berkeley)";
+d36 1
+a36 1
+#include "dev/pdev.new.h"
+@
+
+
+1.15
+log
+@Added ifndef sun4 to inhibit certain extraneous library routines.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/daemons/ipServer/RCS/main.c,v 1.14 89/03/23 09:52:17 brent Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d36 1
+a36 1
+#include "dev/pdev.h"
+d619 2
+@
+
+
+1.14
+log
+@Fixed request buffer size declarations so only main knows about
+Pdev_Request's
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/daemons/ipServer/RCS/main.c,v 1.13 89/02/21 10:04:47 brent Exp $ SPRITE (Berkeley)";
+d146 1
+d152 1
+@
+
+
+1.13
+log
+@Tuned pseudo-device interface to eliminate malloc's and copies.
+Added fast paths for UDP.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/daemons/ipServer/RCS/main.c,v 1.12 88/10/17 08:59:47 ouster Exp Locker: brent $ SPRITE (Berkeley)";
+d316 4
+a319 2
+     * front to create packet headers.  We rely on this room for the
+     * headers when formatting packets later.
+d321 4
+a324 1
+    sockPdevPtr->requestBuf = (Address) malloc(sockPdevPtr->reqBufSize);
+d326 1
+a326 1
+    bufArgs.requestBufSize = sockPdevPtr->reqBufSize - IPS_ROOM_FOR_HEADERS;
+d510 1
+a510 1
+				malloc((unsigned int) requestPtr->hdr.replySize);
+d533 1
+d551 4
+a554 2
+		reply.selectBits = Sock_Select(privPtr, TRUE); 
+		PdevReply(streamID, &reply, "write");
+@
+
+
+1.12
+log
+@Convert for new pdev header format.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: main.c,v 1.11 88/09/28 11:41:58 mendel Exp $ SPRITE (Berkeley)";
+d29 1
+d110 5
+a114 5
+    Mem_Bin(84);
+    Mem_Bin(142);
+    Mem_Bin(144);
+    Mem_Bin(1514);
+    Mem_Bin(4096);
+d117 1
+a117 1
+    (void)Opt_Parse(argc, argv, optionArray, numOptions, 0);
+d241 2
+a242 1
+ *	requests on the new stream will be handled by PdevRequestHandler().
+d264 1
+d267 4
+d293 29
+a321 4
+#define BUF_SIZE	(9000+sizeof(Pdev_Request))
+
+    bufArgs.requestBufAddr = (Address) malloc(BUF_SIZE);
+    bufArgs.requestBufSize = BUF_SIZE;
+a330 5
+    if ((int)clientData == TCP_PROTO_INDEX) {
+	state = TRUE;	/* on */
+    } else {
+	state = FALSE;	/* off */
+    }
+d332 1
+a332 1
+		sizeof(state), (Address) &state, 
+a337 1
+    state = FALSE;	/* off */
+d339 1
+a339 1
+		sizeof(state), (Address) &state, 
+d346 2
+a347 2
+    Fs_EventHandlerCreate(notify.newStreamID, FS_READABLE, PdevRequestHandler, 
+				clientData);
+d388 8
+d432 3
+d436 4
+a439 1
+	switch (requestPtr->hdr.operation) {
+a442 2
+		    ClientData	token;
+
+d450 2
+a451 2
+		     * The first arg. to Sock_Open ("clientData") is the 
+		     * protocol index for the socket.
+d454 1
+a454 1
+		    reply.status = Sock_Open((int) clientData, 
+d462 2
+a463 1
+				    &token);
+d470 3
+a472 2
+			(void)Fs_EventHandlerChangeData(streamID, token);
+			reply.selectBits = Sock_Select(token, TRUE); 
+d476 1
+a476 1
+		    Reply(streamID, &reply, "open");
+d482 1
+a482 1
+		(void) Sock_Close((PrivPtr)clientData);
+d485 1
+a485 1
+		Reply(streamID, &reply, "close");
+a486 1
+		free(bufPtrs.requestAddr);
+d494 6
+a499 3
+		if (requestPtr->hdr.replySize < 0) {
+		    reply.status = GEN_INVALID_ARG;
+		    reply.replyBuf = (Address) NULL;
+d506 1
+a506 1
+		    reply.status = Sock_Read( (PrivPtr) clientData, 
+d512 1
+a512 1
+		    if (reply.replySize > requestPtr->hdr.replySize) {
+d516 5
+a521 5
+		reply.selectBits = Sock_Select(clientData, TRUE); 
+		Reply(streamID, &reply, "read");
+		if (reply.replyBuf != (Address) NULL) {
+		    free(reply.replyBuf);
+		}
+d539 1
+a539 1
+		    reply.status = Sock_Write( (PrivPtr) clientData, 
+d545 2
+a546 2
+		reply.selectBits = Sock_Select(clientData, TRUE); 
+		Reply(streamID, &reply, "write");
+d558 1
+a558 2
+			reply.status = Sock_IOControl(
+					 (PrivPtr) clientData,
+d564 1
+a564 1
+		    reply.selectBits = Sock_Select(clientData, TRUE); 
+d567 1
+a567 1
+			reply.replySize = requestPtr->hdr.replySize;
+d573 1
+a573 1
+		    Reply(streamID, &reply, "ioctl");
+d582 1
+a582 1
+		Reply(streamID, &reply, "??");
+d588 1
+a588 1
+	bufPtrs.requestFirstByte += requestPtr->hdr.messageSize;
+d590 2
+a591 2
+    if (requestPtr->hdr.operation != PDEV_CLOSE) { 
+        status = Fs_IOControl(streamID, IOC_PDEV_SET_PTRS,
+d601 1
+a601 1
+Reply(streamID, replyPtr, caller)
+a790 3
+    int maxHdrSize = 
+    (NET_TCP_MAX_HDR_SIZE + NET_IP_MAX_HDR_SIZE + sizeof(IPS_PacketNetHdr));
+
+d792 1
+a792 1
+    packetPtr->totalLen = dataLen + maxHdrSize;
+d795 1
+a795 1
+    packetPtr->data = packetPtr->dbase + maxHdrSize;
+@
+
+
+1.11
+log
+@Added ToggleDisconnect for testing TCP lost packet recovery.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: main.c,v 1.10 88/08/30 09:53:33 brent Exp $ SPRITE (Berkeley)";
+d387 1
+a387 1
+	if (requestPtr->magic != PDEV_REQUEST_MAGIC) {
+d389 1
+a389 1
+		    requestPtr->magic);
+d399 1
+a399 1
+	switch (requestPtr->operation) {
+d417 1
+a417 1
+				    requestPtr->operation == PDEV_OPEN,
+d455 1
+a455 1
+		if (requestPtr->replySize < 0) {
+d463 1
+a463 1
+				malloc((unsigned int) requestPtr->replySize);
+d465 2
+a466 2
+					requestPtr->replySize, reply.replyBuf,
+					&reply.replySize);
+d470 1
+a470 1
+		    if (reply.replySize > requestPtr->replySize) {
+d489 1
+a489 1
+				requestPtr->requestSize);
+d494 1
+a494 1
+		if (requestPtr->requestSize < 0) {
+d499 2
+a500 1
+					requestPtr->requestSize, requestData,
+d510 1
+a510 1
+		    if (requestPtr->requestSize < 0) {
+d514 1
+a514 1
+			outBuffer = malloc((unsigned int)requestPtr->replySize);
+d519 3
+a521 2
+					requestPtr->requestSize, requestData,
+					requestPtr->replySize, outBuffer);
+d526 1
+a526 1
+			reply.replySize = requestPtr->replySize;
+d544 1
+a544 1
+				requestPtr->operation);
+d547 1
+a547 1
+	bufPtrs.requestFirstByte += requestPtr->messageSize;
+d549 1
+a549 1
+    if (requestPtr->operation != PDEV_CLOSE) { 
+@
+
+
+1.10
+log
+@Changed to new pseudo-device definitions
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: main.c,v 1.9 88/08/26 16:34:13 mendel Exp $ SPRITE (Berkeley)";
+d71 4
+a74 1
+
+d133 3
+d137 1
+d661 32
+@
+
+
+1.9
+log
+@Patches for SPUR
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: main.c,v 1.8 88/08/16 11:47:09 mendel Exp $ SPRITE (Berkeley)";
+d279 1
+a279 1
+#define BUF_SIZE	(9000+sizeof(Pdev_NewRequest))
+d350 2
+a351 2
+    register Pdev_NewRequest	*requestPtr;
+    Pdev_NewReply	reply;
+d378 1
+a378 1
+	requestPtr = (Pdev_NewRequest *)
+d385 1
+a385 1
+	requestData = (Address)((Address)requestPtr + sizeof(Pdev_NewRequest));
+d416 1
+a416 1
+				    requestPtr->param.open.clientID, 
+d553 1
+a553 1
+    Pdev_NewReply	*replyPtr;
+@
+
+
+1.8
+log
+@Patched bug that caused a SIG_PIPE signal to be sent to the wrong process.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: main.c,v 1.7 88/08/16 11:24:33 mendel Exp $ SPRITE (Berkeley)";
+d714 3
+a716 2
+    packetPtr->base = malloc((unsigned int) packetPtr->totalLen);
+    packetPtr->data = packetPtr->base + maxHdrSize;
+@
+
+
+1.7
+log
+@Converted to use new libc.a
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: main.c,v 1.6 88/06/26 12:14:02 mendel Exp $ SPRITE (Berkeley)";
+d491 1
+@
+
+
+1.6
+log
+@Increased the size of the Pdev buffer to 9000 bytes to allow large Sun
+RPC packets for NFS.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: main.c,v 1.5 88/06/01 16:32:57 brent Exp $ SPRITE (Berkeley)";
+d36 1
+a36 6
+#include "fs.h"
+#include "io.h"
+#include "time.h"
+#include "sys.h"
+#include "mem.h"
+#include "sig.h"
+d40 3
+d55 4
+a58 4
+    {OPT_TRUE,   'd', (Address)&ips_Debug, "Turn on debugging output"},
+    {OPT_STRING, 'c', (Address)&configFile, "Name of configuration file"},
+    {OPT_STRING, 'i', (Address)&ipAddress, "IP address"},
+    {OPT_FALSE,  'b', (Address)&detach, "Don't run in background"},
+d64 2
+a71 2
+typedef struct Sock_PrivInfo *PrivPtr;
+
+a97 1
+    ReturnStatus	status;
+d111 1
+a111 1
+    Mem_SetPrintProc(Io_PrintStream, (ClientData)io_StdErr);
+d113 1
+a113 1
+    (void)Opt_Parse(&argc, argv, numOptions, optionArray);
+a115 7
+     * Run in the background if the debug flag is not set.
+     */
+    if (!ips_Debug && detach) {
+	Proc_Detach(0);
+    }
+
+    /*
+d124 1
+a124 1
+	Sys_Panic(SYS_WARNING, "main: can't set signal handler %d\n", sig); \
+d137 4
+a140 3
+    Io_SetLineBuffer(io_StdErr, TRUE);
+
+    Io_PrintStream(io_StdErr, "Sprite Internet Protocol Server: %s\n", 
+d142 1
+d144 2
+a145 2
+    if (Sys_GetHostName(sizeof(myHostName), myHostName) != SUCCESS) {
+	Sys_Panic(SYS_FATAL, "Can't find my hostname\n");
+d167 1
+a167 1
+    Fs_SetDefPerm(0777);
+d169 5
+a173 6
+    Io_PrintString(deviceName, INET_STREAM_NAME_FORMAT, myHostName);
+    status = Fs_Open(deviceName, FS_READ|FS_CREATE|FS_NEW_MASTER, 0666, 
+			&streamID);
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "main (open stream)");
+	Proc_Exit(status);
+d179 5
+a183 6
+    Io_PrintString(deviceName, INET_DGRAM_NAME_FORMAT, myHostName);
+    status = Fs_Open(deviceName, FS_READ|FS_CREATE|FS_NEW_MASTER, 0666, 
+			&streamID);
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "main (open dgram)");
+	Proc_Exit(status);
+d189 5
+a193 6
+    Io_PrintString(deviceName, INET_RAW_NAME_FORMAT, myHostName);
+    status = Fs_Open(deviceName, FS_READ|FS_CREATE|FS_NEW_MASTER, 0600, 
+			&streamID);
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "main (open raw)");
+	Proc_Exit(status);
+d199 2
+a200 2
+    Proc_GetIDs(&pid, NULL, NULL, NULL, NULL);
+    Io_PrintStream(io_StdErr, "PID = %x\n", pid);
+d204 9
+d259 1
+a259 2
+	Sys_Panic(SYS_FATAL, "PdevControlHandler: bad event mask %x\n", 
+				eventMask);
+d266 4
+a269 4
+    status = Fs_Read(streamID, sizeof(notify), (Address)&notify, &amount);
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "PdevControlHandler: read notify");
+	Proc_Exit(status);
+d271 2
+a272 3
+	Sys_Panic(SYS_FATAL,
+		"PdevControlHandler: short read (%d) of the notify\n", amount);
+	Proc_Exit(FAILURE);
+d274 1
+a274 2
+	Sys_Panic(SYS_FATAL,
+		"PdevControlHandler: bad magic # (%x) in the notify\n", 
+d276 1
+a276 1
+	Proc_Exit(FAILURE);
+d281 1
+a281 1
+    bufArgs.requestBufAddr = (Address) Mem_Alloc(BUF_SIZE);
+d285 1
+a285 1
+    if (Fs_IOControl(notify.newStreamID, IOC_PDEV_SET_BUF,
+d287 4
+a290 3
+		0, (Address) NULL) != SUCCESS){
+	Stat_PrintMsg(stat_LastError, "PdevControlHandler: ioc set buf");
+	Proc_Exit(stat_LastError);
+d297 1
+a297 1
+    if (Fs_IOControl(notify.newStreamID, IOC_PDEV_BIG_WRITES,
+d299 4
+a302 3
+		0, (Address) NULL) != SUCCESS){
+	Stat_PrintMsg(stat_LastError, "PdevControlHandler: ioc big write");
+	Proc_Exit(stat_LastError);
+d305 1
+a305 1
+    if (Fs_IOControl(notify.newStreamID, IOC_PDEV_WRITE_BEHIND,
+d307 4
+a310 3
+		0, (Address) NULL) != SUCCESS){
+	Stat_PrintMsg(stat_LastError, "PdevControlHandler: ioc write behind");
+	Proc_Exit(stat_LastError);
+d358 1
+a358 1
+	Sys_Panic(SYS_FATAL, "PdevRequestHandler: bad event mask %x\n", 
+d367 4
+a370 4
+    status = Fs_Read(streamID, sizeof(bufPtrs), (Address)&bufPtrs, &amount);
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "PdevRequestHandler: get ptr ioctl");
+	Proc_Exit(status);
+d372 1
+a372 2
+	Sys_Panic(SYS_FATAL,
+		"PdevControlHandler: bad magic # (%x) in the bufPtrs\n", 
+d374 1
+a374 1
+	Proc_Exit(FAILURE);
+d381 1
+a381 2
+	    Sys_Panic(SYS_FATAL,
+		    "PdevControlHandler: bad magic # (%x) in the request\n", 
+d383 1
+a383 1
+	    Proc_Exit(FAILURE);
+d435 1
+a435 1
+		(void) Sock_Close((PrivPtr) clientData);
+d439 2
+a440 2
+		Fs_Close(streamID);
+		Mem_Free(bufPtrs.requestAddr);
+d455 3
+a457 2
+		    reply.replyBuf = Mem_Alloc(requestPtr->replySize);
+		    reply.status = Sock_Read((PrivPtr) clientData, 
+d464 1
+a464 1
+			Sys_Panic(SYS_WARNING, 
+d471 1
+a471 1
+		    Mem_Free(reply.replyBuf);
+d481 1
+a481 1
+		    Io_PrintStream(io_StdErr, "Pdev_write: %d\n", 
+d490 1
+a490 1
+		    reply.status = Sock_Write((PrivPtr) clientData, 
+d505 1
+a505 1
+			outBuffer = Mem_Alloc(requestPtr->replySize);
+d507 2
+a508 1
+			reply.status = Sock_IOControl((PrivPtr)  clientData,
+d524 1
+a524 1
+			Mem_Free(outBuffer);
+d532 1
+a532 1
+		Sys_Panic(SYS_WARNING, 
+d539 2
+a540 2
+    if (requestPtr->operation != PDEV_CLOSE &&
+	Fs_IOControl(streamID, IOC_PDEV_SET_PTRS,
+d542 5
+a546 3
+		0, (Address) NULL) != SUCCESS){
+	Stat_PrintMsg(stat_LastError, "set ptrs");
+	Proc_Exit(stat_LastError);
+d555 2
+d558 1
+a558 1
+    if (Fs_IOControl(streamID, IOC_PDEV_REPLY,
+d560 4
+a563 3
+		0, (Address) NULL) != SUCCESS){
+	Stat_PrintMsg(stat_LastError, caller);
+	Proc_Exit(stat_LastError);
+d650 1
+a650 1
+    Io_PrintStream(io_StdErr, "*****  Debugging now  %s  *****\n",
+d713 1
+a713 1
+    packetPtr->base = Mem_Alloc(packetPtr->totalLen);
+@
+
+
+1.5
+log
+@Fixed the server to close its server streams after
+a client closes its socket.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: main.c,v 1.4 88/05/16 09:11:28 brent Exp $ SPRITE (Berkeley)";
+d284 1
+a284 1
+#define BUF_SIZE	(4096+sizeof(Pdev_NewRequest))
+@
+
+
+1.4
+log
+@Conversion to new pseudo-device implementation
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: main.c,v 1.3 87/12/13 18:57:23 andrew Exp $ SPRITE (Berkeley)";
+d443 1
+@
+
+
+1.3
+log
+@made myHostName global for stat.c
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: main.c,v 1.2 87/10/22 21:27:09 deboor Exp $ SPRITE (Berkeley)";
+d114 1
+d178 2
+a179 1
+    status = Fs_Open(deviceName, FS_READ|FS_CREATE|FS_MASTER, 0666, &streamID);
+d189 2
+a190 1
+    status = Fs_Open(deviceName, FS_READ|FS_CREATE|FS_MASTER, 0666, &streamID);
+d200 2
+a201 1
+    status = Fs_Open(deviceName, FS_READ|FS_CREATE|FS_MASTER, 0600, &streamID);
+a254 2
+    Pdev_Request	request;
+    Pdev_Reply		reply;
+d256 1
+a256 1
+    ClientData		token;
+d258 1
+d284 1
+a284 4
+    /*
+     * Read a request from the new stream. The operation must be
+     * PDEV_OPEN or PDEV_DUP.
+     */
+d286 12
+a297 43
+    status = Fs_Read(notify.newStreamID, sizeof(request), (Address)&request, 
+			&amount);
+
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "PdevControlHandler: read request");
+	Proc_Exit(status);
+    } else if (amount != sizeof(request)) {
+	Sys_Panic(SYS_FATAL,
+		"PdevControlHandler: short read (%d) of the request\n", amount);
+	Proc_Exit(FAILURE);
+    } 
+    
+    if ((request.operation != PDEV_OPEN) &&
+	(request.operation != PDEV_DUP)) {
+	Sys_Panic(SYS_FATAL, "PdevControlHandler: bad request op %x\n", 
+			request.operation);
+	return;
+    } 
+
+
+    /*
+     * Create a new socket structure. If the open was successful,
+     * create an event handler to handle future requests on the stream.
+     * Sock_Open returns a token for the new socket, which is associated
+     * with the event handler for the socket's stream.
+     *
+     * The 1st arg. to Sock_Open ("clientData") is the protocol index for 
+     * the socket.
+     */
+
+    reply.status = Sock_Open((int) clientData, 
+		    request.operation == PDEV_OPEN,
+		    notify.newStreamID,
+		    request.param.open.flags, 
+		    request.param.open.pid, 
+		    request.param.open.hostID, 
+		    request.param.open.uid, 
+		    request.param.open.clientID, 
+		    &token);
+    if (reply.status == SUCCESS) {
+	Fs_EventHandlerCreate(notify.newStreamID, FS_READABLE,
+		    PdevRequestHandler, token);
+	reply.selectBits = Sock_Select(token, TRUE); 
+d299 1
+a299 1
+	reply.selectBits = 0;
+d301 16
+a316 4
+    reply.replySize = 0;
+    reply.magic = PDEV_REPLY_MAGIC;
+    (void) Fs_Write(notify.newStreamID, sizeof(reply), (Address) &reply,
+				&amount);
+d326 6
+a331 4
+ *	The request is read from the pseudo-device and decoded.
+ *	Depending on the request, additional data from client may be read
+ *	from the pseudo-device. The socket routines may produce data
+ *	which is written to the pseudo-device after the reply is written.
+d352 3
+a354 2
+    Pdev_Request	request;
+    Pdev_Reply		reply;
+d356 1
+a356 2
+    Address		buffer;
+    IPS_Packet		packet;
+d365 2
+a366 1
+     * Read the request. Make sure it's the correct size.
+d369 1
+a369 1
+    status = Fs_Read(streamID, sizeof(request), (Address)&request, &amount);
+d371 1
+a371 1
+	Stat_PrintMsg(status, "PdevRequestHandler: read request");
+d373 1
+a373 1
+    } else if (amount != sizeof(request)) {
+d375 2
+a376 1
+		"PdevRequestHandler: short read (%d) of the request\n", amount);
+a377 5
+    } else if (request.magic != PDEV_REQUEST_MAGIC) {
+	Sys_Panic(SYS_FATAL,
+		"PdevControlHandler: bad magic # (%x) in the request\n", 
+		request.magic);
+	Proc_Exit(FAILURE);
+d380 12
+a391 4
+    /*
+     * Decode the operation and call a routine for the operation.
+     */
+    switch (request.operation) {
+a392 7
+	case PDEV_CLOSE:
+	    (void) Sock_Close((PrivPtr) clientData);
+	    Fs_EventHandlerDestroy(streamID);
+	    Fs_Close(streamID);
+	    break;
+
+
+d394 1
+a394 1
+	 * The client wants data from the server.
+d396 1
+a396 9
+	case PDEV_READ:
+	    if (request.replySize < 0) {
+		reply.status = GEN_INVALID_ARG;
+		buffer = (Address) NULL;
+	    } else {
+		/*
+		 * Allocate a buffer to hold the reply and the data.
+		 */
+		buffer = Mem_Alloc(request.replySize + sizeof(reply));
+a397 3
+		reply.status = Sock_Read((PrivPtr) clientData, 
+				    request.replySize, buffer + sizeof(reply), 
+				    &reply.replySize);
+d399 2
+a400 8
+		/*
+		 * Make sure we don't supply more than what was requested.
+		 */
+		if (reply.replySize > request.replySize) {
+		    Sys_Panic(SYS_WARNING, 
+			"PdevRequestHandler: gave too much data for READ.\n");
+		}
+	    }
+d402 10
+a411 1
+	    reply.selectBits = Sock_Select(clientData, TRUE); 
+d413 23
+a435 1
+	    reply.magic = PDEV_REPLY_MAGIC;
+a436 17
+	    if (reply.status == SUCCESS) {
+		*(Pdev_Reply *) buffer = reply;
+		status = Fs_Write(streamID, sizeof(reply)+reply.replySize, 
+				    buffer, &amount);
+	    } else {
+		reply.replySize = 0;
+		status = Fs_Write(streamID, sizeof(reply), (Address) &reply,
+			    &amount);
+	    }
+	    if (status != SUCCESS) {
+		Sys_Panic(SYS_FATAL, 
+		    "PdevRequestHandler: writing READ data failed %x\n",status);
+	    }
+	    if (buffer != (Address) NULL) {
+		Mem_Free(buffer);
+	    }
+	    break;
+d438 7
+a445 5
+	/*
+	 * The client wants to send data to the server.
+	 */
+	case PDEV_WRITE: {
+		Pdev_EasyReply	reply;
+d447 5
+a451 6
+		if (ips_Debug) {
+		    Io_PrintStream(io_StdErr, "Pdev_write: %d\n", 
+				request.requestSize);
+		}
+
+		if (request.requestSize < 0) {
+d453 1
+a453 1
+		    reply.data = 0;
+a454 3
+		    Address ptr;
+		    int size;
+
+d456 1
+a456 5
+		     * Allocate a packet to hold the client's data.
+		     * If the data needs to be sent on the network, the 
+		     * lower-level routines can use the packet directly.
+		     * They are responsible for freeing the memory allocated
+		     * to the packet.
+d458 11
+a468 18
+		    IPS_InitPacket(request.requestSize, &packet);
+
+		    ptr = packet.data;
+		    size = request.requestSize;
+
+		    do {
+			status = Fs_Read(streamID, size, ptr, &amount);
+			if (status != SUCCESS) {
+			    Sys_Panic(SYS_FATAL, 
+			   "PdevRequestHandler: reading WRITE data failed %x\n",
+				 status);
+			}
+			size -= amount;
+			ptr  += amount;
+		    } while (size > 0);
+
+		    reply.status = Sock_Write((PrivPtr) clientData, 
+				    &packet, &reply.data);
+a469 1
+
+d471 5
+a476 4
+		reply.replySize = sizeof(int);
+		reply.magic = PDEV_REPLY_MAGIC;
+		status = Fs_Write(streamID, sizeof(reply), (Address) &reply, 
+				    &amount);
+d478 7
+a484 4
+		if (status != SUCCESS) {
+		    Sys_Panic(SYS_FATAL, 
+			 "PdevRequestHandler: writing WRITE reply failed %x\n", 
+			 status);
+d486 4
+a489 8
+	    }
+	    break;
+
+	case PDEV_IOCTL: {
+		Address inBuffer;
+		Address outBuffer;
+
+		if (request.requestSize < 0) {
+a490 3
+		    inBuffer  = (Address) NULL;
+		    outBuffer = (Address) NULL;
+
+d492 3
+a494 14
+		    if (request.requestSize == 0) {
+			inBuffer = (Address) NULL;
+		    } else {
+			inBuffer = Mem_Alloc(request.requestSize);
+			status = Fs_Read(streamID, request.requestSize, 
+					    inBuffer, &amount);
+		    }
+		    outBuffer = Mem_Alloc(sizeof(reply) + request.replySize);
+
+		    reply.status = Sock_IOControl((PrivPtr)  clientData,
+				    request.param.ioctl.command,
+				    request.requestSize, inBuffer,
+				    request.replySize, 
+				    outBuffer + sizeof(reply));
+d497 2
+d500 2
+a501 12
+		reply.magic = PDEV_REPLY_MAGIC;
+		if (reply.status == SUCCESS) {
+		    reply.replySize = request.replySize;
+		    *(Pdev_Reply *) outBuffer = reply;
+		    status = Fs_Write(streamID, 
+					sizeof(reply) + reply.replySize,
+					outBuffer, &amount);
+		} else {
+		    reply.replySize = 0;
+		    status = Fs_Write(streamID, sizeof(reply), 
+				    (Address) &reply, &amount);
+		}
+d503 5
+a507 5
+		if (status != SUCCESS) {
+		    Sys_Panic(SYS_FATAL, 
+			"PdevRequestHandler: writing IOC reply failed %x\n", 
+			status);
+		}
+d509 18
+a526 2
+		if (inBuffer != (Address) NULL) {
+		    Mem_Free(inBuffer);
+d528 1
+a528 5
+		if (outBuffer != (Address) NULL) {
+		    Mem_Free(outBuffer);
+		}
+	    }
+	    break;
+d530 18
+d549 11
+a559 12
+
+	    break;
+
+	default:
+	    reply.status = FAILURE;
+	    reply.replySize = 0;
+	    reply.magic = PDEV_REPLY_MAGIC;
+	    (void) Fs_Write(streamID, sizeof(reply), (Address) &reply, 
+				    &amount);
+	    Sys_Panic(SYS_WARNING, "PdevRequestHandler: unknown operation %d\n",
+			    request.operation);
+	    break;
+d617 1
+a617 1
+    Mem_PrintStats(Io_PrintStream, (ClientData) io_StdErr);
+@
+
+
+1.2
+log
+@Nuked debug handler to print number of times system calls are executed
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: main.c,v 1.1 87/10/19 15:58:56 deboor Exp $ SPRITE (Berkeley)";
+d64 1
+a103 1
+    char		myHostName[100];
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: main.c,v 6.0 87/09/09 01:17:22 andrew Stable $ SPRITE (Berkeley)";
+d105 1
+d107 1
+d140 1
+d142 1
+@

@@ -1,0 +1,12 @@
+To install this version of dvips:
+
+	Update makefile, in particular, the paths.
+	Check file name definitions in MakeTeXPK.
+	Check the configuration parameters in config.ps.
+	Run "make".
+	Run "make install" if all went well.
+
+If the font caching is a security hole, then make the `cache'
+directory be something like /tmp/pks, and cron a job to move the
+good PK files into the real directory.  Or simply disable this
+feature by not installing MakeTeXPK.

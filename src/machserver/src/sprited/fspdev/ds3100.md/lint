@@ -1,0 +1,11 @@
+fspdevControl.c:
+fspdevOps.c:
+fspdevPfs.c:
+fspdevSetup.c:
+fspdevSrv.c:
+fspdevTrace.c:
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(452)  ::  fspdevPfs.c 2(686)
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(452)  ::  fspdevPfs.c 2(857)
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(452)  ::  fspdevSrv.c 2(1137)
+Sig_Send, arg. 1 used inconsistently	llib-lsig:signals.c(602)  ::  fspdevSrv.c 2(1270)
+Sig_Send, arg. 2 used inconsistently	llib-lsig:signals.c(602)  ::  fspdevSrv.c 2(1270)

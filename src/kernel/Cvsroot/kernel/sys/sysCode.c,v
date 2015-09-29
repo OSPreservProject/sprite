@@ -1,0 +1,650 @@
+head     9.4;
+branch   ;
+access   ;
+symbols  ds3100:9.4 sun3:9.4 sun4nw:9.3 symm:9.3 spur:9.3 sprited:9.3.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.4
+date     92.06.15.22.29.24;  author jhh;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.10.09.12.00.41;  author jhh;  state Exp;
+branches 9.3.1.1;
+next     9.2;
+
+9.2
+date     90.09.12.13.40.40;  author shirriff;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.09.11.10.50.58;  author shirriff;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.20.19;  author douglis;  state Stable;
+branches ;
+next     8.1;
+
+8.1
+date     89.06.21.14.29.23;  author ouster;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.38.26;  author douglis;  state Stable;
+branches ;
+next     6.4;
+
+6.4
+date     88.11.01.14.53.13;  author douglis;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.10.28.19.05.19;  author mlgray;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.29.12.30.45;  author mlgray;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.24.16.56.55;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.27.22;  author brent;  state Stable;
+branches ;
+next     5.3;
+
+5.3
+date     88.05.05.18.00.44;  author nelson;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     88.05.04.17.23.38;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.09.30.11.09.09;  author brent;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.51.22;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.3.1.1
+date     91.08.22.13.17.10;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.4
+log
+@Added Sys_GetHostName and Sys_SetHostName system calls.
+@
+text
+@/* 
+ * sysCode.c --
+ *
+ *	Miscellaneous routines for the system.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/sys/sysCode.c,v 9.3 90/10/09 12:00:41 jhh Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <dbg.h>
+#include <sys.h>
+#include <sysInt.h>
+#include <rpc.h>
+#include <sync.h>
+#include <sched.h>
+#include <vm.h>
+#include <net.h>
+#include <stdio.h>
+
+/*
+ * Should be in some header file?
+ */
+extern	void	SysInitSysCall();
+
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Sys_Init --
+ *
+ *	Initializes system-dependent data structures.
+ *
+ *	The number of calls to disable interrupts is set to 1 for 
+ *	each processor, since Sys_Init is assumed to be called with 
+ *	interrupts off and to be followed with an explicit call to 
+ *	enable interrupts.
+ *
+ *	Until ENABLE_INTR() is called without a prior DISABLE_INTR() (i.e.,
+ *	when it is called outside the context of a MASTER_UNLOCK), interrupts
+ *	will remain disabled.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	For each processor, the number of disable interrupt calls outstanding
+ *	is initialized.  
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+void 
+Sys_Init()
+{
+    SysInitSysCall();
+    strcpy(sys_HostName, "unknown");
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sys_GetHostId --
+ *
+ *	This returns the Sprite Host Id for the system.  This Id is
+ *	guaranteed to be unique accross all Sprite Hosts participating
+ *	in the system.  This is plucked from the RPC system now,
+ *	but perhaps should be determined from the filesystem.
+ *
+ * Results:
+ *	The Sprite Host Id.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Sys_GetHostId()
+{
+    return(rpc_SpriteID);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sys_HostPrint --
+ *
+ *	Print out a statement concerning a host.  This maps to a
+ *	string hostname if possible, and prints out the message.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	printf.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int lastDay[13] = {0,31,28,31,30,31,30,31,31,30,31,30,31};
+
+void
+Sys_HostPrint(spriteID, string)
+    int spriteID;
+    char *string;
+{
+    char hostName[128];
+    Time time;
+    int offset;
+    int seconds;
+    Boolean dstFlag;
+    Time_Parts timeParts;
+
+    Timer_GetTimeOfDay(&time, &offset, &dstFlag);
+    seconds = time.seconds + offset * 60;
+    Time_ToParts(seconds, FALSE, &timeParts);
+    /*
+     * Until Time_ToParts makes the month count from 1, not zero.
+     */
+    timeParts.month += 1;
+    /*
+     * Gag, my own (simplified) daylight savings correction.
+     */
+    if (dstFlag) {
+	if ((timeParts.month >= 4) &&	/* All of April */
+	    (timeParts.month <= 10)) {	/* thru October */
+	    timeParts.hours++;
+	    if (timeParts.hours >= 24) {
+		timeParts.hours = 0;
+		timeParts.dayOfMonth++;
+		if (timeParts.dayOfMonth > lastDay[timeParts.month]) {
+		    timeParts.month++;
+		    timeParts.dayOfMonth = 1;
+		}
+	    }
+	}
+    }
+    printf("%d/%d/%d %d:%02d:%02d ", timeParts.month, timeParts.dayOfMonth,
+	    timeParts.year, timeParts.hours, timeParts.minutes,
+	    timeParts.seconds);
+
+    Net_SpriteIDToName(spriteID, 128, hostName);
+    if (*hostName == '\0') {
+	printf("Sprite Host <%d> %s", spriteID, string);
+    } else {
+	printf("%s (%d) %s", hostName, spriteID, string);
+    }
+}
+
+@
+
+
+9.3
+log
+@new net module
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCode.c,v 9.2 90/09/12 13:40:40 shirriff Exp Locker: jhh $ SPRITE (Berkeley)";
+d62 1
+@
+
+
+9.3.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCode.c,v 9.3 90/10/09 12:00:41 jhh Exp $ SPRITE (Berkeley)";
+@
+
+
+9.2
+log
+@Changed includes to angle brackets.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCode.c,v 9.1 90/09/11 10:50:58 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d25 6
+d112 1
+a112 1
+    char *hostName;
+d147 2
+a148 2
+    Net_SpriteIDToName(spriteID, &hostName);
+    if ((hostName == (char *)NIL) || (hostName == (char *)NULL)) {
+@
+
+
+9.1
+log
+@Added function prototyping.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys.ken/RCS/sysCode.c,v 9.0 89/09/12 15:20:19 douglis Stable Locker: shirriff $ SPRITE (Berkeley)";
+d14 10
+a23 10
+#include "sprite.h"
+#include "dbg.h"
+#include "sys.h"
+#include "sysInt.h"
+#include "rpc.h"
+#include "sync.h"
+#include "sched.h"
+#include "vm.h"
+#include "net.h"
+#include "stdio.h"
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCode.c,v 8.1 89/06/21 14:29:23 ouster Exp Locker: douglis $ SPRITE (Berkeley)";
+d17 1
+d23 1
+a23 6
+
+/*
+ * Should be in some header file?
+ */
+extern	void	SysInitSysCall();
+
+@
+
+
+8.1
+log
+@Eliminate unneeded #include.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCode.c,v 6.4 88/11/01 14:53:13 douglis Exp $ SPRITE (Berkeley)";
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCode.c,v 6.4 88/11/01 14:53:13 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+a19 1
+#include "proc.h"
+@
+
+
+6.4
+log
+@made the stupid daylight savings correction at least stop
+correcting on 11/1 instead of 12/1.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCode.c,v 6.3 88/10/28 19:05:19 mlgray Exp Locker: douglis $ SPRITE (Berkeley)";
+@
+
+
+6.3
+log
+@Conversion to new C library.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysCode.c,v 6.2 88/08/29 12:30:45 mlgray Exp Locker: mlgray $ SPRITE (Berkeley)";
+d130 1
+a130 1
+	    (timeParts.month <= 11)) {	/* thru November */
+@
+
+
+6.2
+log
+@fixed lint errors.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sysCode.c,v 6.1 88/08/24 16:56:55 brent Exp $ SPRITE (Berkeley)";
+d99 1
+a99 1
+ *	Sys_Printf.
+d142 1
+a142 1
+    Sys_Printf("%d/%d/%d %d:%02d:%02d ", timeParts.month, timeParts.dayOfMonth,
+d148 1
+a148 1
+	Sys_Printf("Sprite Host <%d> %s", spriteID, string);
+d150 1
+a150 1
+	Sys_Printf("%s (%d) %s", hostName, spriteID, string);
+@
+
+
+6.1
+log
+@Moved Sys_HostPrint here from Net_HostPrin
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sysCode.c,v 6.0 88/08/11 12:27:22 brent Stable $ SPRITE (Berkeley)";
+d23 5
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sysCode.c,v 5.3 88/05/05 18:00:44 nelson Exp $ SPRITE (Berkeley)";
+d22 1
+d81 68
+@
+
+
+5.3
+log
+@Handles move of functionality from sys to mach.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sysCode.c,v 5.2 88/05/04 17:23:38 nelson Exp $ SPRITE (Berkeley)";
+@
+
+
+5.2
+log
+@Changed to handle new structure of mach module.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sysCode.c,v 5.1 87/09/30 11:09:09 brent Exp $ SPRITE (Berkeley)";
+a22 4
+/*
+ *  Number of processors in the system.
+ *
+ */
+a23 28
+#ifndef NUM_PROCESSORS
+#define NUM_PROCESSORS 1
+#endif NUM_PROCESSORS
+
+/*
+ * TRUE if cpu was in kernel mode before the interrupt, FALSE if was in 
+ * user mode.
+ */
+
+Boolean	sys_KernelMode;
+
+int sys_NumProcessors = NUM_PROCESSORS;
+
+/*
+ *  Flag used by routines to determine if they are running at
+ *  interrupt level.
+ */
+
+Boolean sys_AtInterruptLevel = FALSE;
+
+/*
+ *  Count of number of ``calls'' to enable interrupts minus number of calls
+ *  to disable interrupts.  Kept on a per-processor basis.
+ */
+
+int sys_NumDisableInterrupts[NUM_PROCESSORS];
+int *sys_NumDisableIntrsPtr = sys_NumDisableInterrupts;
+
+a53 7
+    int processorNumber;
+    extern void SysInitSysCall();
+
+    for (processorNumber = 0; processorNumber < NUM_PROCESSORS;
+	    processorNumber++) {
+	sys_NumDisableInterrupts[processorNumber] = 1;
+    }
+a78 113
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sys_GetProcessorNumber --
+ *
+ *	CURRENTLY replaced by a macro in sys.h.
+ *
+ *	Return the processor number of the processor making the call.
+ *	This will probably be an assembly routine once we have multiple
+ *	processors with a register containing the processor number.
+ *
+ * Results:
+ *	The processor number of the processor making the call is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifdef not_defined
+int
+Sys_GetProcessorNumber()
+{
+    return(0);
+}
+#endif
+
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Sys_ProcessorState --
+ *
+ *	Determines what state the processor is in.
+ *
+ * Results:
+ *	SYS_USER	if was at user level
+ *	SYS_KERNEL	if was at kernel level
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+
+/*ARGSUSED*/
+Sys_ProcessorStates 
+Sys_ProcessorState(processor)
+    int processor;	/* processor number for which info is requested */
+{
+    if (sys_KernelMode) {
+	return(SYS_KERNEL);
+    } else {
+	return(SYS_USER);
+    }
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Sys_InterruptProcessor --
+ *
+ *	Interrupts processor i with a command to execute.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+/*ARGSUSED*/
+void
+Sys_InterruptProcessor(processorNum, command)
+    int	processorNum;
+    Sys_InterruptCodes	command;
+{
+    return;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Sys_UnsetJump --
+ *
+ *	Clear out the pointer to the saved state from a set jump.
+ *
+ * Results:
+ *	None. of SysSetJump.
+ *
+ * Side effects:
+ *	setJumpStatePtr field of proc table for current process is nil'd out.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+void
+Sys_UnsetJump()
+{
+    Proc_ControlBlock	*procPtr;
+
+    procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+    procPtr->setJumpStatePtr = (Sys_SetJumpState *) NIL;
+@
+
+
+5.1
+log
+@Changed from Rpc_GetClientId to rpc_SpriteID
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sysCode.c,v 5.0 87/08/11 10:51:22 sprite Exp $ SPRITE (Berkeley)";
+a15 1
+#include "machine.h"
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: sysCode.c,v 1.20 86/08/03 23:48:20 douglis Exp $ SPRITE (Berkeley)";
+a13 1
+
+d18 1
+d118 1
+a118 1
+    return(Rpc_GetClientId());
+@

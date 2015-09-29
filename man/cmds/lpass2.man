@@ -1,0 +1,35 @@
+' Copyright 1989 Regents of the University of California
+' Permission to use, copy, modify, and distribute this
+' documentation for any purpose and without fee is hereby
+' granted, provided that this notice appears in all copies.
+' The University of California makes no representations about
+' the suitability of this material for any purpose.  It is
+' provided "as is" without express or implied warranty.
+' 
+' $Header: /a/attcmds/lpass2/RCS/lpass2.man,v 1.1 89/01/18 12:01:14 ouster Exp $ SPRITE (Berkeley)
+' 
+.so \*(]ltmac.sprite
+.HS LPASS2 cmds
+.BS
+.SH NAME
+lpass2 \- Second pass of lint program
+.SH SYNOPSIS
+.nf
+\fBlpass1\fR [\fIoptions\fR]\fR \fIfile\fR \fIfile\fR ...
+.SH OPTIONS
+.PP
+See code for details.
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBLpass2\fR is a program used internally by \fBlint\fR.  It reads
+its \fIfile\fR arguments, which were output by \fBlpass1\fR, and
+outputs lint diagnostics resulting from improper procedure calls
+(wrong number of arguments, wrong argument type, etc.).
+.PP
+This program should only be invoked by \fBlint\fR;  users should
+not normally invoke it directly.
+
+.SH KEYWORDS
+check, lint, pass

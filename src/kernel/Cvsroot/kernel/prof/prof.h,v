@@ -1,0 +1,265 @@
+head     9.3;
+branch   ;
+access   ;
+symbols  ds3100:9.3 sun3:9.3 sun4nw:9.3 symm:9.3 spur:9.3 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.3
+date     90.10.19.15.51.10;  author rab;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.09.11.12.04.19;  author rab;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.30.20.44.57;  author rab;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.16.34;  author douglis;  state Stable;
+branches ;
+next     8.2;
+
+8.2
+date     89.04.06.11.49.21;  author douglis;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.01.26.08.42.56;  author rab;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.32.54;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.23.35;  author brent;  state Stable;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.48.02;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.3
+log
+@Added prototypes.
+@
+text
+@/*
+ * prof.h --
+ *
+ *	External declarations of the profile module.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/prof/RCS/prof.h,v 9.2 90/09/11 12:04:19 rab Exp Locker: rab $ SPRITE (Berkeley)
+ */
+
+#ifndef _PROF
+#define _PROF
+
+#include "sprite.h"
+#include "proc.h"
+#include "procMigrate.h"
+#include "timer.h"
+
+/* procedures */
+
+extern void Prof_Init _ARGS_((void));
+extern ReturnStatus Prof_Start _ARGS_((void));
+
+#ifdef sun3
+extern void Prof_CollectInfo _ARGS_((Mach_IntrStack *stackPtr));
+#else
+extern void Prof_CollectInfo _ARGS_((unsigned int pc));
+#endif
+
+extern ReturnStatus Prof_End _ARGS_((void));
+extern ReturnStatus Prof_Dump _ARGS_((char *dumpName));
+extern ReturnStatus Prof_DumpStub _ARGS_((char *pathName));
+extern ReturnStatus Prof_Profil _ARGS_((short *buffer, int bufSize, int offset, int scale));
+extern void Prof_Enable _ARGS_((Proc_ControlBlock *procPtr, short *buffer, int bufSize, int offset, int scale));
+extern void Prof_RecordPC _ARGS_((Proc_ControlBlock *procPtr));
+extern void Prof_Disable _ARGS_((Proc_ControlBlock *procPtr));
+
+/*
+ * Procedures to support process migration.
+ */
+
+extern ReturnStatus Prof_GetEncapSize _ARGS_((Proc_ControlBlock *procPtr, int hostID, Proc_EncapInfo *infoPtr));
+extern ReturnStatus Prof_EncapState _ARGS_((register Proc_ControlBlock *procPtr, int hostID, Proc_EncapInfo *infoPtr, Address ptr));
+extern ReturnStatus Prof_DeencapState _ARGS_((register Proc_ControlBlock *procPtr, Proc_EncapInfo *infoPtr, Address ptr));
+
+#endif /* _PROF */
+
+@
+
+
+9.2
+log
+@Added prototypes.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/prof/RCS/prof.h,v 9.1 89/10/30 20:44:57 rab Exp Locker: rab $ SPRITE (Berkeley)
+a36 1
+extern void Prof_Tick _ARGS_((Timer_Ticks time, ClientData clientData));
+@
+
+
+9.1
+log
+@fixed lint stuff.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/prof/RCS/prof.h,v 9.0 89/09/12 15:16:34 douglis Stable Locker: rab $ SPRITE (Berkeley)
+d23 5
+a27 15
+#ifdef __STDC__
+extern ReturnStatus     Prof_Profil(short *buffer, int bufSize,
+                            int offset, int scale);
+extern void             Prof_Tick(Timer_Ticks time, 
+                            ClientData clientData);
+extern void             Prof_Disable(Proc_ControlBlock *procPtr);
+extern void             Prof_Enable(Proc_ControlBlock *procPtr, short *buffer,
+                            int bufSize, int offset, int scale);
+extern void             Prof_RecordPC(Proc_ControlBlock *procPtr);
+extern void		Prof_Init(void);
+extern ReturnStatus	Prof_Start(void);
+extern ReturnStatus	Prof_End(void);
+extern void		Prof_CollectInfo();
+extern ReturnStatus	Prof_Dump(char *dumpName);
+extern ReturnStatus	Prof_DumpStub(char *pathName);
+d29 2
+a30 12
+extern ReturnStatus     Prof_Profil();
+extern void             Prof_Tick();
+extern void             Prof_Disable();
+extern void             Prof_Enable();
+extern void             Prof_RecordPC();
+extern void		Prof_Init();
+extern ReturnStatus	Prof_Start();
+extern ReturnStatus	Prof_End();
+extern ReturnStatus     Prof_Profil();
+extern void		Prof_CollectInfo();
+extern ReturnStatus	Prof_Dump();
+extern ReturnStatus	Prof_DumpStub();
+d32 8
+a39 1
+#endif
+d44 5
+a48 12
+#ifdef __STDC__
+extern ReturnStatus	Prof_GetEncapSize(Proc_ControlBlock *procPtr,
+                            int hostID, Proc_EncapInfo *infoPtr);
+extern ReturnStatus	Prof_EncapState(Proc_ControlBlock *procPtr, int hostID,
+                            Proc_EncapInfo *infoPtr, Address ptr);
+extern ReturnStatus	Prof_DeencapState(Proc_ControlBlock *procPtr,
+                            Proc_EncapInfo *infoPtr, Address ptr);
+#else
+extern ReturnStatus	Prof_GetEncapSize();
+extern ReturnStatus	Prof_EncapState();
+extern ReturnStatus	Prof_DeencapState();
+#endif
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/prof/RCS/prof.h,v 8.2 89/04/06 11:49:21 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+d17 3
+d23 21
+d52 2
+d57 8
+a64 1
+
+d68 1
+a68 1
+
+@
+
+
+8.2
+log
+@definitions for new process migration routines.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/prof/RCS/prof.h,v 8.1 89/01/26 08:42:56 rab Exp Locker: douglis $ SPRITE (Berkeley)
+@
+
+
+8.1
+log
+@Added extern
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/prof/RCS/prof.h,v 8.0 88/11/11 18:32:54 douglis Stable Locker: rab $ SPRITE (Berkeley)
+d28 8
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/prof/RCS/prof.h,v 6.0 88/08/11 12:23:35 brent Stable Locker: douglis $ SPRITE (Berkeley)
+d23 1
+d28 1
+a28 1
+#endif _PROF
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: prof.h,v 5.0 87/08/11 10:48:02 sprite Exp $ SPRITE (Berkeley)
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d10 1
+a10 1
+ * $Header: prof.h,v 3.1 86/12/02 10:27:21 andrew Exp $ SPRITE (Berkeley)
+@

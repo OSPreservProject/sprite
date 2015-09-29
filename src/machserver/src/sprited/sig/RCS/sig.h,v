@@ -1,0 +1,316 @@
+head     1.8;
+branch   ;
+access   ;
+symbols  srv030:1.8 srv028:1.8 srv027:1.8 srv026:1.8 srv024:1.8 srv022:1.8 srv021:1.8 srv019:1.8 srv018:1.8 srv016:1.8 srv015:1.8 srv014:1.8 srv012:1.8 srv011:1.8 srv010:1.8 srv008:1.8 srv007:1.8 srv006:1.8 srv005:1.8 srv004:1.8 srv003:1.7 srv002:1.7 srv001:1.7;
+locks    ; strict;
+comment  @ * @;
+
+
+1.8
+date     92.05.08.15.11.40;  author kupfer;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     92.03.23.14.50.32;  author kupfer;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     92.03.12.17.46.15;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     92.02.28.19.59.38;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     92.02.27.16.38.08;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.11.11.23.01.53;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.09.26.12.24.05;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.09.09.17.24.35;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.8
+log
+@Don't lock the parent process in Proc_NewProc.
+@
+text
+@/*
+ * sig.h --
+ *
+ *     Data structures and procedure headers exported by the
+ *     the signal module.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /user5/kupfer/spriteserver/src/sprited/sig/RCS/sig.h,v 1.7 92/03/23 14:50:32 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+ */
+
+#ifndef _SIG
+#define _SIG
+
+#ifdef SPRITED
+#include <sigTypes.h>
+#include <rpc.h>
+#include <procTypes.h>
+#include <procMigrate.h>
+#else /* SPRITED */
+#include <sprited/sigTypes.h>
+#include <sprited/rpc.h>
+#include <sprited/procTypes.h>
+#include <sprited/procMigrate.h>
+#endif /* SPRITED */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sig_Pending --
+ *
+ *	Return TRUE if a signal is pending and FALSE if not.  This routine
+ *	does not impose any synchronization.
+ *
+ * Results:
+ *	Returns a bit mask with bits enabled for pending signals.  If no 
+ *	signals are pending, returns zero.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+#define Sig_Pending(procPtr) \
+    ((procPtr)->sigPendingMask & ~((procPtr)->sigHoldMask))
+
+#ifdef SPRITED
+
+extern ReturnStatus Sig_Send _ARGS_((int sigNum, int code, Proc_PID id, 
+		Boolean familyID, Address addr));
+extern ReturnStatus Sig_SendProc _ARGS_((Proc_LockedPCB *procPtr, 
+		int sigNum, Boolean isException, int code, Address addr));
+extern ReturnStatus Sig_SetHoldMask _ARGS_((int newMask, int *oldMaskPtr));
+extern ReturnStatus Sig_SetAction _ARGS_((int sigNum, Sig_Action *newActionPtr,
+		Sig_Action *oldActionPtr));
+extern ReturnStatus Sig_Pause _ARGS_((int sigHoldMask));
+
+extern void Sig_Init _ARGS_((void));
+extern void Sig_ProcInit _ARGS_((Proc_ControlBlock *procPtr));
+extern void Sig_Fork _ARGS_((Proc_ControlBlock *parProcPtr, 
+		Proc_LockedPCB *childProcPtr));
+extern void Sig_Exec _ARGS_((Proc_LockedPCB *procPtr));
+extern void Sig_ChangeState _ARGS_((Proc_LockedPCB *procPtr, 
+		int actions[], int sigMasks[], int pendingMask, int sigCodes[],
+		int holdMask));
+extern Boolean Sig_Handle _ARGS_((Proc_LockedPCB *procPtr, 
+		Boolean doNow, Boolean *suspendedPtr, Sig_Stack *sigStackPtr, 
+		Address *pcPtr));
+extern void Sig_CheckForKill _ARGS_((Proc_ControlBlock *procPtr));
+extern void Sig_ExcToSig _ARGS_((int exceptionType, int exceptionCode, 
+		int exceptionSubcode, int *sigNumPtr, int *codePtr,
+		Address *sigAddrPtr));
+extern void Sig_RestoreAfterSignal _ARGS_((Proc_LockedPCB *procPtr,
+		Sig_Context *sigContextPtr));
+extern void Sig_SetUpHandler _ARGS_((Proc_LockedPCB *procPtr, 
+		Boolean suspended, Sig_Stack *sigStackPtr, Address pc));
+
+extern ReturnStatus Sig_RpcSend _ARGS_((ClientData srvToken, int clientID,
+			int command, Rpc_Storage *storagePtr));
+
+/*
+ * Procedures to support process migration.
+ */
+
+#ifdef SPRITED_MIGRATION
+extern ReturnStatus Sig_GetEncapSize _ARGS_((Proc_ControlBlock *procPtr, 
+			int hostID, Proc_EncapInfo *infoPtr));
+extern ReturnStatus Sig_EncapState _ARGS_((Proc_ControlBlock *procPtr, 
+			int hostID, Proc_EncapInfo *infoPtr, Address bufPtr));
+extern ReturnStatus Sig_DeencapState _ARGS_((Proc_ControlBlock *procPtr, 
+			Proc_EncapInfo *infoPtr, Address bufPtr));
+extern void Sig_AllowMigration _ARGS_((Proc_ControlBlock *procPtr));
+#endif /* SPRITED_MIGRATION */
+
+#endif /* SPRITED */
+
+#endif /* _SIG */
+@
+
+
+1.7
+log
+@Sig_SetHoldMask returns a status code, so that it's compatible with the
+libc version.
+@
+text
+@d11 1
+a11 1
+ * $Header: /user5/kupfer/spriteserver/src/sprited/sig/RCS/sig.h,v 1.6 92/03/12 17:46:15 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d62 1
+a62 1
+extern void Sig_Fork _ARGS_((Proc_LockedPCB *parProcPtr, 
+@
+
+
+1.6
+log
+@Flush unused functions.  Add support for user signal handlers.
+@
+text
+@d11 1
+a11 1
+ * $Header: /user5/kupfer/spriteserver/src/sprited/sig/RCS/sig.h,v 1.5 92/02/28 19:59:38 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d55 1
+a55 1
+extern void Sig_SetHoldMask _ARGS_((int newMask, int *oldMaskPtr));
+@
+
+
+1.5
+log
+@Add Sig_ExcToSig.
+@
+text
+@d11 1
+a11 1
+ * $Header: /user5/kupfer/spriteserver/src/sprited/sig/RCS/sig.h,v 1.4 92/02/27 16:38:08 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+a54 2
+extern ReturnStatus Sig_UserSend _ARGS_((int sigNum, Proc_PID pid, 
+		Boolean familyID));
+a71 2
+extern void Sig_Return _ARGS_((Proc_ControlBlock *procPtr, 
+		Sig_Stack *sigStackPtr));
+d75 4
+@
+
+
+1.4
+log
+@Snapshot.  Can kill, suspend, and resume processes.
+@
+text
+@d11 1
+a11 1
+ * $Header: /user5/kupfer/spriteserver/src/sprited/sig/RCS/sig.h,v 1.3 91/11/11 23:01:53 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d76 3
+@
+
+
+1.3
+log
+@Snapshot.  net and rpc modules work.
+@
+text
+@d11 1
+a11 1
+ * $Header: /r3/kupfer/spriteserver/include/RCS/sig.h,v 1.2 91/09/26 12:24:05 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+a16 1
+#ifdef SPRITED_SIGNALS
+a27 1
+#endif /* SPRITED_SIGNALS */
+d38 2
+a39 1
+ *	TRUE if a signal is pending and FALSE if not.
+a45 1
+#if SPRITED_SIGNALS
+d47 1
+a47 4
+    ((Boolean) (procPtr->sigPendingMask & ~procPtr->sigHoldMask))
+#else
+#define Sig_Pending(procPtr) 0
+#endif
+a48 1
+#if SPRITED_SIGNALS
+d53 2
+a54 2
+extern ReturnStatus Sig_SendProc _ARGS_((Proc_ControlBlock *procPtr, 
+		int sigNum, int code, Address addr));
+d57 1
+a57 1
+extern ReturnStatus Sig_SetHoldMask _ARGS_((int newMask, int *oldMaskPtr));
+d64 4
+a67 4
+extern void Sig_Fork _ARGS_((Proc_ControlBlock *parProcPtr, 
+		Proc_ControlBlock *childProcPtr));
+extern void Sig_Exec _ARGS_((Proc_ControlBlock *procPtr));
+extern void Sig_ChangeState _ARGS_((Proc_ControlBlock *procPtr, 
+d70 3
+a72 2
+extern Boolean Sig_Handle _ARGS_((Proc_ControlBlock *procPtr, 
+		Sig_Stack *sigStackPtr, Address *pcPtr));
+d84 1
+d92 1
+a95 7
+#else /* SPRITED_SIGNALS */
+
+#include <rpc.h>
+#define Sig_RpcSend	Rpc_NotImplemented
+
+#endif /* SPRITED_SIGNALS */
+
+a96 1
+
+@
+
+
+1.2
+log
+@Provide some stubs for sprited.
+@
+text
+@d11 1
+a11 1
+ * $Header: /r3/kupfer/spriteserver/include/RCS/sig.h,v 1.1 91/09/09 17:24:35 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d98 6
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/sig/RCS/sig.h,v 9.6 90/10/05 16:15:58 mendel Exp $ SPRITE (Berkeley)
+d17 2
+a18 1
+#ifdef KERNEL
+d23 7
+a29 6
+#else
+#include <kernel/sigTypes.h>
+#include <kernel/rpc.h>
+#include <kernel/procTypes.h>
+#include <kernel/procMigrate.h>
+#endif
+d47 1
+d50 3
+d54 2
+a55 1
+#ifdef KERNEL
+d97 2
+a98 1
+#endif /* KERNEL */
+@

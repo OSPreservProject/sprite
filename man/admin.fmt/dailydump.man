@@ -1,0 +1,134 @@
+
+
+
+DAILYDUMP                 User Commands                 DAILYDUMP
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     dailydump - Script to do daily dumps
+
+SSYYNNOOPPSSIISS
+     ddaaiillyydduummpp [--ii] [_s_t_a_r_t_F_s]
+
+     _s_t_a_r_t_F_s        Start dumping with the named filesystem.
+
+     -i             Initialize the tape drive, remove the  weekly
+                    dump lock file, and exit.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This script does a level-1 dump of all filesystems that  are
+     normally  backed  up.   (A level-1 dump captures all changes
+     since the previous level-0 dump for the  given  filesystem.)
+     It  is  normally  invoked in the wee hours of the morning by
+     ccrroonn.
+
+     When the script has completed, it sends mail to the  current
+     dumper  (see the man page for wweeeekkllyydduummpp), giving the amount
+     of free space left  on  the  current  tape.   If  there  are
+     detectable  errors, mail is sent to the dumper with an error
+     message.
+
+     There are normally two reasons for manually invoking  ddaaiillyy--
+     dduummpp.   The  first is to re-enable the daily dumps after the
+     weekly dumps have completed.  This is what the --ii option  is
+     for.  It ensures that the lock file used by the weekly dumps
+     is gone, and it initializes the tape currently in the drive.
+     (The dumps won't actually commence until invoked by ccrroonn).
+
+     The other reason for invoking ddaaiillyydduummpp by hand is  to  res-
+     tart  the  dumps  if the machine running them crashed before
+     the dumps could  finish.   In  this  case  the  user  should
+     specify  the  filesystem  that  was  being  dumped  when the
+     machine crashed.  The dumps will begin immediately.
+
+     When invoking ddaaiillyydduummpp, be sure you're running as root.
+
+
+FFIILLEESS
+     All of the following files are in /sprite/admin/dump:
+
+     doingdaily.active
+                    status file used to detect crashes.  Contains
+                    the name of the host running the dumps.
+
+     doingweekly    lock file to prevent daily dump from running
+
+
+
+
+Sprite v.1.0       Printed:  October 13, 1991                   1
+
+
+
+
+
+
+DAILYDUMP                 User Commands                 DAILYDUMP
+
+
+
+     dumpdates      list of filesystems  dumped,  at  what  time,
+                    what tape, etc.
+
+     dumplist       list of filesystems to dump
+
+     dumplog        very large status log from the dump programs
+
+     tapelist       list of tape devices to use.  Dailydump  uses
+                    the first drive on the list.
+
+
+KKEEYYWWOORRDDSS
+     dump, tape, backup
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  October 13, 1991                   2
+
+
+

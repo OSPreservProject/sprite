@@ -1,0 +1,9 @@
+devAddrs.h
+devConfig.c
+devFsOpTable.c
+devSCSIC90Mach.c
+devSCSIC90Mach.h
+devScsiTapeConfig.c
+devSmem.c
+devSmem.h
+scsiC90.h

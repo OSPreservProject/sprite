@@ -1,0 +1,2 @@
+dir src
+dir lst

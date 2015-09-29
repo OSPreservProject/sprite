@@ -1,0 +1,13 @@
+replace range 0.0 eof Fsdm_DomainHeader Ofs_DomainHeader
+replace range 0.0 eof Fsdm_Geometry Ofs_Geometry
+replace range 0.0 eof Fsdm_DomainHeader Ofs_DomainHeader
+replace range 0.0 eof Fsdm_SummaryInfo Ofs_SummaryInfo
+replace range 0.0 eof FSDM_SCSI_MAPPING OFS_SCSI_MAPPING
+replace range 0.0 eof FSDM_DOMAIN_NOT_SAFE OFS_DOMAIN_NOT_SAFE
+replace range 0.0 eof FSDM_DOMAIN_ATTACHED_CLEAN OFS_DOMAIN_ATTACHED_CLEAN
+replace range 0.0 eof FSDM_DOMAIN_TIMES_VALID	OFS_DOMAIN_TIMES_VALID
+replace range 0.0 eof FSDM_DOMAIN_JUST_CHECKED OFS_DOMAIN_JUST_CHECKED
+replace range 0.0 eof FSDM_DOMAIN_MAGIC OFS_DOMAIN_MAGIC
+replace range 0.0 eof FSDM_NUM_DOMAIN_SECTORS OFS_NUM_DOMAIN_SECTORS
+replace range 0.0 eof FSDM_MAX_ROT_POSITIONS OFS_MAX_ROT_POSITIONS
+replace range 0.0 eof FSDM_NUM_LOST_FOUND_BLOCKS OFS_NUM_LOST_FOUND_BLOCKS

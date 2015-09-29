@@ -1,0 +1,44 @@
+dResults of running the "open" benchmark on different
+configurations.  This benchmark repeatedly opens and
+closes a given file, and prints out how long it took
+per iteration.  File name caching can have a big impact
+on its performance.
+
+Configuration				"foo"		"a/b/c/foo"
+-------------				----		-----------
+
+DS5000 Ultrix 3.1D Local 3/20/90	  .16 ms	  .31 ms
+DS3100 Mach 2.5 Local 4/3/90		  .19		  .33
+DS5000 Ultrix 4.2 Local 7/23/91		  .19		  .34
+Sun-4 SunOS 4.0.3 Local 3/25/90		  .25		  .38
+DS3100 Ultrix 3.1 Local 10/25/89	  .27		  .41
+Sun-4 Mach 2.5 Local 4/4/90		  .30		  .40
+SS-1 SunOS 4.0.3c Local 3/25/90		  .31		  .44
+M2000 RISC/os 4.0 Local 10/3/89		  .32		  .83
+DS3100 Ultrix 3.0 Local 9/13/89		  .36		  .52
+HP835 UP-UX Local 4/13/90		  .38		  .61
+VAX 8800 Ultrix 3.0 Local 9/18/89	  .45		  .68
+RS/6000-320 AIX 3.1 Local 5/9/90	  .43		  .69
+DS3100 Sprite Local 9/13/89		  .82		  .97
+RT-APC Mach 2.5 Local 11/8/89		  .95		 1.6
+Sun-3 SunOS 3.5 Local 2/4/90		 1.1		 2.2
+Sun-4 Sprite 1.017 Local 9/13/89	 1.2		 1.4
+RT-APC Mach 2.5 AFS 11/26/89		 1.7		 3.5
+RT-APC Mach 2.5 AFS 11/9/89
+(Sun-3/280 Server)			 1.7		 3.7
+DS5000 Ultrix 4.2 NFS 7/23/91		 2.8		 2.8
+MVAX2 Ultrix 3.0 Local 9/27/89		 2.9		 4.7
+SS-1 SunOS 4.0.3c NFS 4/8/90		 3.4		 3.5
+Sun-4 SunOS 4.0.3 NFS 3/25/90		 3.5		 3.7
+DS3100 Mach 2.5 NFS 4/3/90		 3.6		 3.9
+DS3100 Ultrix 3.1 NFS 11/1/89		 3.8		 3.9
+DS3100 Sprite Remote 9/13/89		 4.3		 4.4
+Sun-3 Sprite 1.016 Local 9/13/89	 4.3		 5.2
+Sun-4 Sprite 1.017 Remote 9/13/89	 6.1		 6.4
+HP835 HP-UX NFS 4/13/90			 7.1		 7.3
+Sun-3 SunOS 3.5 NFS 2/4/90		10.4		11.4
+DS3100 Ultrix 3.0 NFS 9/13/89		12.0		12.8
+Sun-3 Sprite 1.010 Remote 9/13/89	12.8		16.3
+RS/6000-320 AIX 3.1 NFS 5/1/90		19.1		30.9
+(Sun-3/280 server)
+MVAX2 Ultrix 3.0 NFS 10/4/89		36.0		36.9

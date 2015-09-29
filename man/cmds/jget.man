@@ -1,0 +1,308 @@
+'\"
+'\" Copyright 1992 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /user5/mottsmth/j/g/jget.man,v 1.8 92/05/07 09:02:14 mottsmth Exp $ SPRITE (Berkeley)
+'\" 
+.\" The definitions below are for supplemental macros used in Sprite
+.\" manual entries.
+.\"
+.\" .HS name section [date [version]]
+.\"	Replacement for .TH in other man pages.  See below for valid
+.\"	section names.
+.\"
+.\" .AP type name in/out [indent]
+.\"	Start paragraph describing an argument to a library procedure.
+.\"	type is type of argument (int, etc.), in/out is either "in", "out",
+.\"	or "in/out" to describe whether procedure reads or modifies arg,
+.\"	and indent is equivalent to second arg of .IP (shouldn't ever be
+.\"	needed;  use .AS below instead)
+.\"
+.\" .AS [type [name]]
+.\"	Give maximum sizes of arguments for setting tab stops.  Type and
+.\"	name are examples of largest possible arguments that will be passed
+.\"	to .AP later.  If args are omitted, default tab stops are used.
+.\"
+.\" .BS
+.\"	Start box enclosure.  From here until next .BE, everything will be
+.\"	enclosed in one large box.
+.\"
+.\" .BE
+.\"	End of box enclosure.
+.\"
+.\" .VS
+.\"	Begin vertical sidebar, for use in marking newly-changed parts
+.\"	of man pages.
+.\"
+.\" .VE
+.\"	End of vertical sidebar.
+.\"
+.\" .DS
+.\"	Begin an indented unfilled display.
+.\"
+.\" .DE
+.\"	End of indented unfilled display.
+.\"
+'\"	# Heading for Sprite man pages
+.de HS
+.if '\\$2'cmds'       .TH \\$1 1 \\$3 \\$4
+.if '\\$2'lib'        .TH \\$1 3 \\$3 \\$4
+.if '\\$2'tcl'        .TH \\$1 3 \\$3 \\$4
+.if '\\$2'tk'         .TH \\$1 3 \\$3 \\$4
+.if t .wh -1.3i ^B
+.nr ^l \\n(.l
+.ad b
+..
+'\"	# Start an argument description
+.de AP
+.ie !"\\$4"" .TP \\$4
+.el \{\
+.   ie !"\\$2"" .TP \\n()Cu
+.   el          .TP 15
+.\}
+.ie !"\\$3"" \{\
+.ta \\n()Au \\n()Bu
+\&\\$1	\\fI\\$2\\fP	(\\$3)
+.\".b
+.\}
+.el \{\
+.br
+.ie !"\\$2"" \{\
+\&\\$1	\\fI\\$2\\fP
+.\}
+.el \{\
+\&\\fI\\$1\\fP
+.\}
+.\}
+..
+'\"	# define tabbing values for .AP
+.de AS
+.nr )A 10n
+.if !"\\$1"" .nr )A \\w'\\$1'u+3n
+.nr )B \\n()Au+15n
+.\"
+.if !"\\$2"" .nr )B \\w'\\$2'u+\\n()Au+3n
+.nr )C \\n()Bu+\\w'(in/out)'u+2n
+..
+'\"	# BS - start boxed text
+'\"	# ^y = starting y location
+'\"	# ^b = 1
+.de BS
+.br
+.mk ^y
+.nr ^b 1u
+.if n .nf
+.if n .ti 0
+.if n \l'\\n(.lu\(ul'
+.if n .fi
+..
+'\"	# BE - end boxed text (draw box now)
+.de BE
+.nf
+.ti 0
+.mk ^t
+.ie n \l'\\n(^lu\(ul'
+.el \{\
+.\"	Draw four-sided box normally, but don't draw top of
+.\"	box if the box started on an earlier page.
+.ie !\\n(^b-1 \{\
+\h'-1.5n'\L'|\\n(^yu-1v'\l'\\n(^lu+3n\(ul'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.el \}\
+\h'-1.5n'\L'|\\n(^yu-1v'\h'\\n(^lu+3n'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.\}
+.fi
+.br
+.nr ^b 0
+..
+'\"	# VS - start vertical sidebar
+'\"	# ^Y = starting y location
+'\"	# ^v = 1 (for troff;  for nroff this doesn't matter)
+.de VS
+.mk ^Y
+.ie n 'mc \s12\(br\s0
+.el .nr ^v 1u
+..
+'\"	# VE - end of vertical sidebar
+.de VE
+.ie n 'mc
+.el \{\
+.ev 2
+.nf
+.ti 0
+.mk ^t
+\h'|\\n(^lu+3n'\L'|\\n(^Yu-1v\(bv'\v'\\n(^tu+1v-\\n(^Yu'\h'-|\\n(^lu+3n'
+.sp -1
+.fi
+.ev
+.\}
+.nr ^v 0
+..
+'\"	# Special macro to handle page bottom:  finish off current
+'\"	# box/sidebar if in box/sidebar mode, then invoked standard
+'\"	# page bottom macro.
+.de ^B
+.ev 2
+'ti 0
+'nf
+.mk ^t
+.if \\n(^b \{\
+.\"	Draw three-sided box if this is the box's first page,
+.\"	draw two sides but no top otherwise.
+.ie !\\n(^b-1 \h'-1.5n'\L'|\\n(^yu-1v'\l'\\n(^lu+3n\(ul'\L'\\n(^tu+1v-\\n(^yu'\h'|0u'\c
+.el \h'-1.5n'\L'|\\n(^yu-1v'\h'\\n(^lu+3n'\L'\\n(^tu+1v-\\n(^yu'\h'|0u'\c
+.\}
+.if \\n(^v \{\
+.nr ^x \\n(^tu+1v-\\n(^Yu
+\kx\h'-\\nxu'\h'|\\n(^lu+3n'\ky\L'-\\n(^xu'\v'\\n(^xu'\h'|0u'\c
+.\}
+.bp
+'fi
+.ev
+.if \\n(^b \{\
+.mk ^y
+.nr ^b 2
+.\}
+.if \\n(^v \{\
+.mk ^Y
+.\}
+..
+'\"	# DS - begin display
+.de DS
+.RS
+.nf
+.sp
+..
+'\"	# DE - end display
+.de DE
+.fi
+.RE
+.sp .5
+..
+.HS jget cmds
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+jget \- list contents of a Jaquith archive directory. 
+.SH SYNOPSIS
+\fBjget\fR  [\fB\-arch \fIarchive\fR]
+[\fB\-server \fIhostname\fR]  [\fB\-port \fIport\fR]
+[\fB\-range (\fIdate1\fR,\fIdate2\fR)]
+[\fB\-owner \fIname\fR] [\fB\-group \fIname\fR] 
+[\fB\-abs \fIregexp\fR] [\fB-u]
+[\fB\-asof \fIdate\fR] [\fB\-since \fIdate\fR]
+[\fB-first \fIn\fR] [\fB-last \fIn\fR] [\fB\-all\fR]
+[\fB\-moddate\fR] [\fIfilelist\fR]
+[\fB-mail \fImailaddr\fR]
+[\fB\-target \fIdirectory\fR] [\fB\-dir\fR]
+[\fB\-filter] [\fB\-tar\fR] [\fB\-tarbuf \fIbufSize\fR]
+
+.SH OPTIONS
+.IP "\fB\-arch \fIarchive\fR" 14
+Name of logical archive.  If none is specified, the environment
+variable JARCHIVE is used, if defined, else the default archive
+is used.
+.IP "\fB\-server \fIhostname\fR" 14 
+Specifies host where Jaquith server is running. Defaults
+to the environment variable JSERVER.
+.IP "\fB\-port \fIport\fR" 14 
+Specifies port number where Jaquith server is running. Defaults
+to the environment variable JPORT.
+.IP "\fB\-range \fIdate1\fR,\fIdate2\fR" 14
+Retrieve files with date in specified range.
+.IP "\fB\-owner \fIname\fR" 14 
+Retrieve only files with specified owner name. 
+.IP "\fB\-group \fIname\fR" 14 
+Retrieve only files with specified group name. 
+.IP "\fB\-abs \fIregexp\fR" 14 
+Retrieve files which match \fIregexp\fR in their abstract lines.
+.IP "\fB\-asof \fIdate\fR
+Retrieve version which was current as of specified date. Equivalent to:
+\-range(1-jan-1970,\fIdate\fR)
+.IP "\fB\-since \fIdate\fR
+Retrieve versions between \fIdate\fR and present date. Equivalent to:
+\-range(\fIdate\fR,\fIpresent-date\fR)
+.IP "\fB\-first \fIn\fR
+Retrieve from the nth version in the date range.
+.IP "\fB\-last\fR
+Retrieve to the nth version in the date range.
+.IP "\fB\-all\fR
+Retrieve all the versions in the archive. Equivalent to: -first 1 -last -1
+.IP "\fB\-moddate\fR
+Use the file's modification date, not its archive date
+for all date comparisons.
+.IP "\fB\-mail\fR"  14
+Send response by mail to \fImailaddr\fR.
+.IP "\fB\-target \fIdirectory\fR" 14 
+Restore file hierarchy relative to specified directory.
+By default, files are restored with their original pathnames.
+.IP "\fB\-dir\fR" 14 
+Restore directory's top-level contents only.
+.IP "\fB\-filter\fR" 14 
+Run jget as in filter mode. Data is restored directly to stdout.
+.IP "\fB\-tar\fR" 14 
+Data is restored directly to stdout in tar format.
+.IP "\fB\-tarbuf \fIbufSize\fR" 14 
+With \fB-tar\fR option, use a buffer size of \fIbufSize\fR.
+Default is 10KB.
+.BE
+.SH DESCRIPTION
+.PP
+\fBJget\fP provides a simple file retrieval mechanism
+for an archive tape system controlled by the Jaquith program.
+.PP
+The primary argument \fIfilelist\fR is a  file expression
+which specifies the files to be listed.  Shell-like globbing
+is supported. '*' matches any number of characters. '?'
+matches a single character. Additionally, curly braces can
+be used to enclose alternatives. For example foo.{bak,?}
+matches both foo.bak, foo.c and foo.h.
+.PP
+Note that any metacharacters which are
+not protected with a backslash or quotes will be expanded by the
+shell, not by the Jaquith system.
+.PP
+The default action is to retrieve the 
+most recent versions of matching filenames.
+The set of files retrieved can be controlled by the use of
+one or more options.  The options are all logically ANDed
+together; only files matching all criteria are retrieved.
+.PP
+The -range, -first and -last options work together to specify
+a subset of the archived versions.  First, the date range is
+applied, resulting in a list of candidates numbered logically
+from 1 to \fIn\fR.  Then the first and last options are applied
+to this list. First and last can be positive and retrieve the
+specified filenames from restricted list, or they can be negative
+in which case they count from the end of the list. Thus, the
+most recent version of a file can be retrieved with 'first -1
+last -1' without having to know how many versions currently exist.
+.PP
+\fIdate\fR is of the form \fIDateSpec[:TimeSpec]\fR. \fITimeSpec\fR
+is of the form [hh[:mm[:ss]]], and \fIDateSpec\fR is of the form
+dd\(hymonth[\(hyyyyy]. Month is the first 3 letters of the month;
+all others are numbers. The '/' character is a substitute
+for '-' and '.' may be used instead of ':'.
+
+.SH BUGS
+A file which matches more than one regular expression will be
+retrieved multiple times.
+.PP
+There is currently no support for hard links.
+.PP
+Only one archive can be specified at a time.
+.PP
+Unlike the shell, the Jaquith globbing characters '*' and '?' match
+a '.' in the first position.
+
+.SH "SEE ALSO"
+jaquith jmgr jls jstat jput jctrl jcopy jclean jbuild
+
+.SH KEYWORDS
+jaquith archive

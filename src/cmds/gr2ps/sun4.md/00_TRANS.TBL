@@ -1,0 +1,5 @@
+F CURVE.O;1                         	curve.o
+F DEPENDEN.MK;1                     	dependencies.mk
+F GR2PS.;1                          	gr2ps
+F GR2PS.O;1                         	gr2ps.o
+F MD.MK;1                           	md.mk

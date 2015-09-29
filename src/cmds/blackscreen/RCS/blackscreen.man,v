@@ -1,0 +1,97 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.3
+date     88.12.30.08.43.54;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.12.21.09.46.23;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.12.21.09.10.20;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@More format upgrades.
+@
+text
+@' $Header: /a/newcmds/blackscreen/RCS/blackscreen.man,v 1.2 88/12/21 09:46:23 ouster Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS BLACKSCREEN cmds
+.BS
+.SH NAME
+blackscreen \- Turn the display off or on
+.SH SYNOPSIS
+\fBblackscreen\fR [\fIoption\fR]
+.SH OPTIONS
+.IP "\fB\-n\fR" 15
+Turn the display back on again.
+.IP "\fB\-y\fR" 15
+Turn the display off.
+.BE
+
+.SH INTRODUCTION
+.PP
+This command may be used to turn the display off when a
+workstation is about to be
+idle for a long period of time.  When invoked with no arguments,
+it turns the display off, waits for a carriage-return to be typed,
+then turns the display back on again.  If invoked with any argument
+except \fB\-n\fR, \fBblackscreen\fR turns the display off and exits with
+the display left off.  If the \fB\-n\fR argument is given, \fBblackscreen\fR
+re-enables the display immediately and exits.
+
+.SH KEYWORDS
+black, display, off, screen
+@
+
+
+1.2
+log
+@Capitalize program name.
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/blackscreen/RCS/blackscreen.man,v 1.1 88/12/21 09:10:20 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d10 1
+a10 1
+.IP "\fB-n\fR" 15
+d12 1
+a12 1
+.IP "\fB-y\fR" 15
+d23 2
+a24 2
+except \fB-n\fR, Blackscreen turns the display off and exits with
+the display left off.  If the \fB-n\fR argument is given, Blackscreen
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+' $Header: /sprite/doc/ref/cmds/RCS/blackscreen,v 1.1 88/10/27 16:48:12 ouster Exp $ SPRITE (Berkeley)
+d3 1
+a3 1
+.HS blackscreen cmds
+@

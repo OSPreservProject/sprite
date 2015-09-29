@@ -1,0 +1,93 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     89.07.14.09.15.41;  author rab;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.06.29.14.48.29;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.21.12.01.48;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@*** empty log message ***
+@
+text
+@/*
+ * Copyright (c) 1982, 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@@(#)uio.h	7.1 (Berkeley) 6/4/86
+ */
+
+#ifndef _UIO
+#define	_UIO
+
+struct iovec {
+	caddr_t	iov_base;
+	int	iov_len;
+};
+
+struct uio {
+	struct	iovec *uio_iov;
+	int	uio_iovcnt;
+	off_t	uio_offset;
+	int	uio_segflg;
+	int	uio_resid;
+};
+
+enum	uio_rw { UIO_READ, UIO_WRITE };
+
+/*
+ * Segment flag values (should be enum).
+ */
+#define UIO_USERSPACE	0		/* from user data space */
+#define UIO_SYSSPACE	1		/* from system space */
+#define UIO_USERISPACE	2		/* from user I space */
+#endif /* _UIO */
+@
+
+
+1.2
+log
+@Add ifdefs to prevent files from being included multiple times.
+@
+text
+@d33 1
+a33 1
+#endif _UIO
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d9 2
+a10 2
+#ifndef _UIO_
+#define	_UIO_
+d33 1
+a33 1
+#endif
+@

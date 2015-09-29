@@ -1,0 +1,62 @@
+% podar@sbcs (Sunil Podar) July 14, 1986
+% following commands implemented here (see the comments below for more info):
+% \pmb
+% \timeofday
+% \verbfile
+% \listing
+%----------------------------------------------------------------------------
+% poor man's bold. from pp. 386 of TeXbook. 1.732*0.025=0.0433 (the ratio of
+% em to ex)
+\newdimen\pmboffset
+\pmboffset 0.025em
+\def\pmb#1{\setbox0=\hbox{#1}%
+ \kern-\pmboffset\copy0\kern-\wd0
+ \kern 2\pmboffset\copy0\kern-\wd0
+ \kern-\pmboffset\raise 1.732\pmboffset\box0 }
+%----------------------------------------------------------------------------
+% \timeofday is just like \today; it gives the current time of day in the form
+% hh:mm as in the military style. It eats up a blank so normally one would
+% say: \timeofday\  (i.e. a \<space>.
+\def\timeofday{{\@tempcnta=\time \divide\@tempcnta by 60 \@tempcntb=\@tempcnta
+\multiply\@tempcntb by 60 \advance\@tempcntb by -\time %@tempcntb is -ve here
+\ifnum\@tempcntb < -9 \number\@tempcnta:\number-\@tempcntb
+  \else\number\@tempcnta:0\number-\@tempcntb\fi}}
+%----------------------------------------------------------------------------
+%From: Tim Morgan <morgan@uci-icsa>
+%Subject: verbatim macros
+%Here are some macros which I mostly stole from the TeXbook source and
+%other places.  You can say
+%
+%	\verbfile{filename}
+%to \input all of "filename" in verbatim mode.  The end of the file is the
+%only thing that gets you back out of verbatim -- no characters are special.
+%\listing is the same except that each line of the file is automatically
+%numbered.
+%Tim
+%
+% Produce verbatim listings of various sorts
+
+\def\uncatcodespecials{\def\do##1{\catcode`##1=12 } \dospecials}
+
+\def\setupverbatim{%
+    \par \tt \spaceskip=0pt	% Make sure we get fixed tt spacing
+    \obeylines\uncatcodespecials\obeyspaces\verbatimdefs
+}
+{\catcode`\^^M=13{\catcode`\ =13\gdef\verbatimdefs{\def^^M{\ \par}\let =\ }}
+  \gdef\verbatimgobble#1^^M{}}
+%
+% Input a file in verbatim mode.  Sometimes useful for including
+% real-life examples into a paper.
+\def\verbfile#1{\begingroup\setupverbatim
+    \parskip=0pt plus .05\baselineskip \parindent=0pt
+    \input#1 \endgroup
+}
+
+% This is the same as the above, but it adds line numbers to each
+% line of the file printed.
+\newcount\lineno
+\def\listing#1{\lineno=0\begingroup\setupverbatim
+    \parskip=0pt plus .05\baselineskip \parindent=20pt
+    \everypar{\advance\lineno by 1 \llap{\the\lineno\ \ }}\input#1
+    \endgroup
+}

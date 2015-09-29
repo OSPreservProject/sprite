@@ -1,0 +1,110 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @# @;
+
+
+1.3
+date     92.08.11.12.53.04;  author jhh;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.01.20.22.42.20;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.01.20.21.36.24;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Nightly backup script using rdist.
+@
+
+
+1.3
+log
+@changed kupfer to jhh
+@
+text
+@#! /sprite/cmds/csh -fb
+#
+# This file rdists the entire Sprite file system and is invoked
+# nightly by crontab.
+#
+# $Header: /sprite/admin/RCS/Rdist,v 1.2 91/01/20 22:42:20 kupfer Exp Locker: jhh $
+
+set path = (/sprite/cmds)
+
+echo -n "Rdist started: "; date
+set distfile=(/sprite/admin/distfile)
+
+# Address to send error messages to
+set admin=jhh
+
+set targets=(kernel include)
+
+# First make a dry run through to make sure the distfile is
+# acceptable.
+rdist -n -f $distfile $targets > /dev/null
+if ($status != 0) then
+    echo "Error in $distfile."
+    echo "Error in $distfile." | Mail -s "distfile problem" $admin
+else
+# The dry run worked.
+# Rdist each target individually to get around a bug that is causing
+# rdist to die.  Maybe.
+    foreach target ($targets)
+        echo "rdist $target"
+        rdist -f $distfile $target | grep -v "updated" | \
+                                     grep -v "Warning: remote mode"
+	if ($status != 0) then
+	    echo "Please check /sprite/admin/Rdist.log." | \
+		    Mail -s "rdist of $target failed" $admin
+	endif
+    end
+endif    
+echo -n "Rdist completed: "; date
+
+@
+
+
+1.2
+log
+@Change admin to kupfer.  Send mail if the rdist fails (e.g., no space
+on the backup host).
+@
+text
+@d6 1
+a6 1
+# $Header$
+d14 1
+a14 1
+set admin=kupfer
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d2 1
+d5 3
+d12 1
+d14 2
+a15 5
+set admin=douglis
+# Do each target individually, and do "misc" last since it's the one
+# that triggers the "expected control record" snafu.
+#set targets=(src users kerneltest rootdirs mh newatt \
+#             newcmds emacs misc2 misc)
+d18 2
+d25 1
+d32 4
+@

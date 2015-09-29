@@ -1,0 +1,64 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ds3100:1.1 sun3:1.1 sun4nw:1.1 symm:1.1 spur:1.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     90.10.04.12.59.17;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/*
+ * devfb.h --
+ *
+ *	Declarations of local stuff for frame buffer device.
+ *
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/dev/sun4.md/RCS/devfb.h,v 1.1 90/08/14 18:46:16 mgbaker Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _DEVFB
+#define _DEVFB
+#include <sys/fb.h>
+
+/* procedures */
+
+extern ReturnStatus DevFBOpen _ARGS_((Fs_Device *devicePtr, int useFlags,
+    Fs_NotifyToken token, int *flagsPtr));
+extern ReturnStatus DevFBIOControl _ARGS_((Fs_Device *devicePtr,
+    Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus DevFBClose _ARGS_((Fs_Device *devicePtr, int useFlags,
+    int openCount, int writerCount));
+extern ReturnStatus DevFBMMap _ARGS_((Fs_Device *devicePtr,
+    Address startAddr, int length, int offset, Address *newAddrPtr));
+
+typedef fbtype  FBType;
+typedef fbinfo  FBInfo;
+typedef fbcmap  FBCMap;
+typedef fbsattr FBSAttr;
+typedef fbgattr FBGAttr;
+
+#endif /* _DEVFB */
+@

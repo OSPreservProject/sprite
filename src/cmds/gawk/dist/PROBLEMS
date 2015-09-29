@@ -1,0 +1,13 @@
+This is a list of known problems in gawk 2.11.
+Hopefully they will all be fixed in the next major release of gawk.
+
+Please keep in mind that this is still beta software and the code
+is still undergoing significant evolution.
+
+1. The debugging code does not print redirection info.
+
+2. The scanner needs work.
+
+3. Gawk's printf doesn't yet match the latest nawk's.
+
+Arnold Robbins

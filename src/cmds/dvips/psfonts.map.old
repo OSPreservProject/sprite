@@ -1,0 +1,44 @@
+AvantGarde-Book
+AvantGarde-BookOblique
+AvantGarde-Demi
+AvantGarde-DemiOblique
+Bookman-Demi
+Bookman-DemiItalic
+Bookman-Light
+Bookman-LightItalic
+Courier-Bold
+Courier-BoldOblique
+Courier-Oblique
+Courier
+Helvetica-Bold
+Helvetica-BoldOblique
+Helvetica-Narrow-Bold "/Helvetica-Bold .82 ExtendFont"
+Helvetica-Narrow-BoldOblique "/Helvetica-BoldOblique .82 ExtendFont"
+Helvetica-Narrow-Oblique "/Helvetica-Oblique .82 ExtendFont"
+Helvetica-Narrow "/Helvetica .82 ExtendFont"
+Helvetica-Oblique
+Helvetica
+NewCenturySchlbk-Bold
+NewCenturySchlbk-BoldItalic
+NewCenturySchlbk-Italic
+NewCenturySchlbk-Roman
+Palatino-Bold
+Palatino-BoldItalic
+Palatino-BoldUnslanted "/Palatino-BoldItalic -.1763 SlantFont"
+Palatino-Condensed "/Palatino-Roman .82 ExtendFont"
+Palatino-Extended "/Palatino-Roman 1.2 ExtendFont"
+Palatino-Italic
+Palatino-Slanted "/Palatino-Roman .167 SlantFont"
+Palatino-Roman
+Palatino-Unslanted "/Palatino-Italic -.1763 SlantFont"
+Symbol
+Symbol-Slanted "/Symbol .167 SlantFont"
+Times-Bold
+Times-BoldItalic
+Times-Condensed "/Times-Roman .8 ExtendFont"
+Times-Extended "/Times-Roman 1.2 ExtendFont"
+Times-Italic
+Times-Slanted "/Times-Roman .167 SlantFont"
+Times-Roman
+ZapfChancery-MediumItalic
+ZapfDingbats

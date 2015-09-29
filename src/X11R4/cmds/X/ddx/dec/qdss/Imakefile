@@ -1,0 +1,52 @@
+#include <Server.tmpl>
+
+DEFINES = -DNPLANES=`cat NPLANESFILE` 
+
+SRCS = init.c qdss_io.c \
+	qdcolor.c \
+	qdcopy.c \
+	qdcursor.c \
+	qddopixel.c \
+	qdfill.c \
+	qdfont.c \
+	qdgc.c \
+	qdimage.c \
+	qdmisc.c \
+	qdpixmap.c \
+	qdpushpxl.c \
+	qdregion.c \
+	qdspans.c \
+	qdtext.c \
+	qdwindow.c
+OBJS = init.o qdss_io.o
+LIBOBJS = qdcolor.o \
+	qdcopy.o \
+	qdcursor.o \
+	qddopixel.o \
+	qdfill.o \
+	qdfont.o \
+	qdgc.o \
+	qdimage.o \
+	qdmisc.o \
+	qdpixmap.o \
+	qdpushpxl.o \
+	qdregion.o \
+	qdspans.o \
+	qdtext.o \
+	qdwindow.o
+
+INCLUDES = -I. -I../../../include -I$(INCLUDESRC) -I../../mfb -I$(FONTSRC)/include -I../../mi
+
+all:: $(OBJS)
+
+NormalLibraryObjectRule()
+
+NormalLibraryTarget(qdss,$(LIBOBJS))
+
+DependTarget()
+
+InstallManPage(Xqdss,$(MANDIR))
+
+NormalLintTarget($(SRCS))
+
+lintlib:

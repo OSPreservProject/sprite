@@ -1,0 +1,68 @@
+
+
+
+CLICK                     User Commands                     CLICK
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     click - turn key click on or off
+
+SSYYNNOOPPSSIISS
+     cclliicckk [oonn] [ooffff]
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This command turns the keyboard key click on or off.
+
+
+KKEEYYWWOORRDDSS
+     keyboard, key, click
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  January 6, 1989                   1
+
+
+

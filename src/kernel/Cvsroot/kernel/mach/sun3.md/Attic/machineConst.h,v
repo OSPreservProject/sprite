@@ -1,0 +1,299 @@
+head     9.0;
+branch   ;
+access   ;
+symbols  sun4nw:9.0 symm:9.0 spur:9.0 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.0
+date     89.09.12.14.51.54;  author douglis;  state Stable;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.04.26;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.09.49;  author brent;  state Stable;
+branches ;
+next     5.4;
+
+5.4
+date     88.04.27.19.10.19;  author nelson;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     87.12.12.16.30.37;  author nelson;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.12.11.14.18.47;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.10.27.16.19.26;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.50.24;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@/*
+ * machineConst.h --
+ *
+ *     Constants for the Sun hardware.
+ *
+ * Copyright 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ * $Header: /sprite/src/kernel/mach/sun3.md/RCS/machineConst.h,v 8.0 88/11/11 18:04:26 douglis Stable Locker: douglis $ SPRITE (Berkeley)
+ *
+ */
+
+#ifndef _MACHINECONST
+#define _MACHINECONST
+
+#include "vmSunConst.h"
+#include "sunSR.h"
+
+/*
+ * MACH_STACK_PTR	The register which serves as the stack pointer.
+ * MACH_FRAME_PTR	The register that serves as the frame pointer.
+ */
+
+#define	MACH_STACK_PTR	15
+#define	MACH_FRAME_PTR	14
+
+/*
+ * MACH_KERN_START	The address where the kernel image is loaded at.
+ * MACH_CODE_START	The address where the kernel code is loaded at.
+ * MACH_STACK_BOTTOM	The address of the bottom of the kernel stack for the
+ *			main process that is initially run.
+ * MACH_KERN_END	The address where the last kernel virtual address is
+ *			at.
+ * MACH_KERN_STACK_SIZE Number of bytes in a kernel stack.
+ * MACH_DUMMY_SP_OFFSET	The offset from the bottom of a newly created kernel
+ *			where the new stack pointer is to be initially.
+ * MACH_DUMMY_FP_OFFSET	The offset from the bottom of a newly created kernel
+ *			where the new frame pointer is to be initially.
+ * MACH_EXEC_STACK_OFFSET	Offset of where to start the kernel stack after
+ *				an exec.
+ * MAGIC		A magic number which is pushed onto the stack before
+ *			a context switch.  Used to verify that the stack 
+ *			doesn't get trashed.
+ */
+
+#ifdef SUN3
+#define	MACH_KERN_START		0xf000000
+#define	MACH_CODE_START		0xf004000
+#define	MACH_STACK_BOTTOM	0xf000000
+#else
+#define	MACH_KERN_START		0x800000
+#define	MACH_CODE_START		0x804000
+#define	MACH_STACK_BOTTOM	0x802000
+#endif
+#define MACH_KERN_END		VMMACH_DEV_START_ADDR
+#define	MACH_KERN_STACK_SIZE	(MACH_CODE_START - MACH_STACK_BOTTOM)
+#define	MACH_EXEC_STACK_OFFSET	(MACH_KERN_STACK_SIZE - 8)
+
+#define	MAGIC			0xFeedBabe
+
+/*
+ * Constants for the user's address space.
+ * 
+ * MACH_FIRST_USER_ADDR		The lowest possible address in the user's VAS.
+ * MACH_LAST_USER_ADDR		The highest possible address in the user's VAS.
+ * MACH_LAST_USER_STACK_PAGE	The highest page in the user stack segment.
+ * MACH_MAX_USER_STACK_ADDR	The highest value that the user stack pointer
+ *				can have.  Note that the stack pointer must be 
+ *				decremented before anything can be stored on 
+ *				the stack.
+ */
+
+#define	MACH_FIRST_USER_ADDR		VMMACH_PAGE_SIZE
+#define	MACH_LAST_USER_ADDR		(MACH_MAX_USER_STACK_ADDR - 1)
+#define	MACH_LAST_USER_STACK_PAGE	((MACH_MAX_USER_STACK_ADDR - 1) / VMMACH_PAGE_SIZE)
+#define	MACH_MAX_USER_STACK_ADDR	VMMACH_MAP_SEG_ADDR
+
+#ifdef SUN3
+/*
+ * Constants to access bits in the interrupt register.
+ */
+
+#define	SUN_ENABLE_ALL_INTERRUPTS	0x01
+#define	SUN_ENABLE_LEVEL7_INTR		0x80
+#define	SUN_ENABLE_LEVEL5_INTR		0x20
+
+/*
+ * Constants to access bits in the system enable register.
+ */
+#define SUN_ENABLE_FPP			0x40
+
+#endif SUN3
+
+#endif _MACHINECONST
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/mach/sun2.md/RCS/machineConst.h,v 6.0 88/08/11 12:09:49 brent Stable Locker: douglis $ SPRITE (Berkeley)
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d9 1
+a9 1
+ * $Header: machineConst.h,v 5.4 88/04/27 19:10:19 nelson Exp $ SPRITE (Berkeley)
+@
+
+
+5.4
+log
+@Define constant for the system enable register.
+@
+text
+@d9 1
+a9 1
+ * $Header: machineConst.h,v 5.3 87/12/12 16:30:37 nelson Exp $ SPRITE (Berkeley)
+@
+
+
+5.3
+log
+@More work on moving rest of machine dependencies here.
+@
+text
+@d9 1
+a9 1
+ * $Header: machineConst.h,v 5.2 87/12/11 14:18:47 nelson Exp $ SPRITE (Berkeley)
+d86 5
+@
+
+
+5.2
+log
+@Internal defines.
+@
+text
+@d9 1
+a9 1
+ * $Header: machineConst.h,v 5.1 87/10/27 16:19:26 nelson Exp $ SPRITE (Berkeley)
+d55 1
+a55 1
+#define MACH_KERN_END		VMMACH_DMA_START_ADDR
+@
+
+
+5.1
+log
+@Changed where the top of the user stack is.
+@
+text
+@d9 1
+a9 1
+ * $Header: machineConst.h,v 5.0 87/08/11 10:50:24 sprite Exp $ SPRITE (Berkeley)
+d28 1
+a28 7
+ * The number of general purpose registers (d0-d7 and a0-a7)
+ */
+
+#define	MACH_NUM_GENERAL_REGS	16
+
+/*
+ * MACH_KERNEL_START	The address where the kernel image is loaded at.
+d32 3
+a34 1
+ * MACH_NUM_STACK_PAGES	The number of kernel stack pages.
+d47 1
+a47 1
+#define	MACH_KERNEL_START	0xf000000
+d51 1
+a51 1
+#define	MACH_KERNEL_START	0x800000
+d55 3
+a57 1
+#define	MACH_NUM_STACK_PAGES	((MACH_CODE_START - MACH_STACK_BOTTOM ) / VM_PAGE_SIZE)
+a58 4
+#define	MACH_DUMMY_SP_OFFSET	(MACH_NUM_STACK_PAGES * VM_PAGE_SIZE - 42)
+#define	MACH_DUMMY_FP_OFFSET	(MACH_NUM_STACK_PAGES * VM_PAGE_SIZE - 24)
+#define	MACH_EXEC_STACK_OFFSET	(MACH_NUM_STACK_PAGES * VM_PAGE_SIZE - 8)
+
+d62 1
+a62 1
+ * Constants for the user stack.
+d64 2
+d73 4
+a76 26
+#define	MACH_LAST_USER_STACK_PAGE	((MACH_MAX_USER_STACK_ADDR - 1) / VM_PAGE_SIZE)
+#define	MACH_MAX_USER_STACK_ADDR	VM_MAP_SEG_ADDR
+
+/*
+ * The indices of all of the registers in the standard 16 register array of
+ * saved register.
+ */
+
+#define	D0	0
+#define	D1	1
+#define	D2	2
+#define	D3	3
+#define	D4	4
+#define	D5	5
+#define	D6	6
+#define	D7	7
+#define	A0	8
+#define	A1	9
+#define	A2	10
+#define	A3	11
+#define	A4	12
+#define	A5	13
+#define	A6	14
+#define	FP	14
+#define	A7	15
+#define	SP	15
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d9 1
+a9 1
+ * $Header: machineConst.h,v 3.8 86/12/11 17:46:43 brent Exp $ SPRITE (Berkeley)
+d78 1
+a78 5
+#ifdef SUN3
+#define	MACH_MAX_USER_STACK_ADDR	0xf000000
+#else
+#define	MACH_MAX_USER_STACK_ADDR	0x800000
+#endif
+@

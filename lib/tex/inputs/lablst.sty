@@ -1,0 +1,55 @@
+% LABLST.STY -- A document style option for printing label definitions at
+% the end of the document.  Use with
+
+%  \documentstyle[11pt,lablst]{article}
+
+% for example.  WARNING: This redefines \end{document} which may break
+% some document styles.
+
+% This borrows heavily from:
+%   LABLST.TEX -- A LaTeX input file for printing label definitions.
+%   Copyright (c) 1985 by Leslie Lamport (5 January 1985).
+
+% Putting this functionality into a style option turns out to be much more
+% convenient for users of TeXtures, because of the way files are organized
+% with that system.
+
+% This file was put together on October 18, 1989 by:
+%   Charles Karney              Phone:    +1 609 243 2607
+%   Plasma Physics Laboratory   FAX:      +1 609 243 2160
+%   Princeton University        MFEnet:   Karney@PPC.MFENET
+%   PO Box 451                  Internet: Karney%PPC.MFENET@CCC.NMFECC.GOV
+%   Princeton, NJ 08543-0451    Bitnet:   Karney%PPC.MFENET@LBL.BITNET
+
+
+\def\enddocument{\@checkend{document}\clearpage\begingroup  
+\if@filesw \immediate\closeout\@mainaux
+\@lablst   % This line is the sole modification to \enddocument
+\def\global\@namedef##1##2{}\def\newlabel{\@testdef r}%
+\def\bibcite{\@testdef b}\@tempswafalse \makeatletter\input \jobname.aux
+\if@tempswa \@warning{Label(s) may have changed.  Rerun to get
+cross-references right}\fi\fi\endgroup\deadcycles\z@\@@end}
+
+\def\@lablst{
+   \parindent 0pt \parskip 0pt
+   \xpt \baselineskip 12pt
+   \newwrite \labfile \relax
+   \immediate\openout \labfile =\jobname.lab\relax
+   {\def\toc{toc}
+    \def\@writefile##1##2{\def\temp{##1}\ifx\temp\toc
+                                         \immediate\write\labfile{##2}\fi}
+    \def\newlabel##1##2{\immediate\write\labfile{\string\newlabel{##1}{##2}}}
+    \def\bibcite##1##2{\immediate\write\labfile{\string\bibcite{##1}{##2}}}
+    \makeatletter
+    \input \jobname.aux }
+   \immediate\closeout\labfile
+   \def\newlabel##1##2{\par \hbox to \textwidth
+      {\hfill\makebox[10em][l]{\tt ##1}\makebox[3.5em][l]{\first 
+       ##2}\hspace{1em}Page:\makebox[3em][r]{\second ##2}\hspace{4em}}}
+   \def\first##1##2{##1}
+   \def\second##1##2{##2}
+   \def\bibcite##1##2{\par\makebox[2in][l]{\tt ##1}[##2]}
+   \input \jobname.lab
+   \clearpage
+}
+\endinput

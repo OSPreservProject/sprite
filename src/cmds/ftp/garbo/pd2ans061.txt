@@ -1,0 +1,607 @@
+From ts@uwasa.fi Tue 26 May 00:00:00 1992
+Subject: Prerecorded garbo instructions
+
+------------------- begin prerecorded message ----------------------
+
+From: Prof. Timo Salmi
+Moderating at garbo.uwasa.fi anonymous FTP archives 128.214.87.1
+Faculty of Accounting & Industrial Management; University of Vaasa
+Internet: ts@uwasa.fi Bitnet: salmi@finfun   ; SF-65101, Finland
+
+There are some frequently asked questions about the programs
+available from garbo.uwasa.fi, by anonymous ftp, from the /pc/..
+directories here at the University of Vaasa, Finland, site
+128.214.87.1.  Below you will find many of them prerecorded with
+answers.  Please notice that the questions & answers are not in any
+logical order.  The order has more or less been dictated by the
+arriving questions.  And, there is overlapping.
+
+If you are well familiar with FTP and mail servers please note the
+following. Using automated FTP (batchftp) is preferred, since it
+minimizes the connection time (it is convenient for you, anyway).
+Furthermore, use mail servers *ONLY* if you don't have the FTP
+potential.
+
+.......................................................................
+FTP archives garbo.uwasa.fi, U of Vaasa, Finland, moderated by
+Timo Salmi ts@uwasa.fi     Publicity, MsDos, selected MsDos uploads
+Harri Valkama hv@uwasa.fi  MsDos, Win, Mac, Unix, uploads, garbo SysMgr
+Hannu Hirvonen hh@uwasa.fi Unix, chyde SysMgr, postmaster
+.......................................................................
+
+1)  What is this anonymous ftp?
+2)  Send file(s) to me by email.  (Or how to use the mail server?)
+3)  Why announce programs in c.b.i.p.a when not everybody can ftp?
+4)  Do you announce all additions to your archives in c.b.i.p.a?
+5)  How is anonymous ftp used?
+6)  When I try to unpack the package I received, it is corrupt.
+7)  Send me a list where on Simtel20 I can find the same programs.
+8)  What is garbo.uwasa.fi guest user-id?
+9)  The .arc .arj .lzh .pak .zip .zoo extensions, what are they?
+10) I have made some programs myself. Are you interested?
+11) I want a description of the programs to decide what to get.
+12) Why don't you reply to my email messages?
+13) I get an "unknown packing method" error message.
+14) I need a program for such and such purpose. Any directions?
+15) What are these peculiar files with a .Z extension?
+16) Where does one get the files listed in files-mm.zip?
+17) What if my site does not know garbo or connection refused?
+18) Is there any way of automating getting the files?
+19) Why doesn't your mail server respond to my correct request?
+20) Are garbo files mirrored?  Which directories? How to connect?
+21) The answer to my question is not in this list, what next?
+...................................................................
+
+From ts@uwasa.fi Tue 26 May 00:00:01 1992
+Subject: What is anonymous FTP
+
+1. *****
+ Q: I do not understand this getting files with anonymous ftp.  What
+does it mean?
+
+ A: FTP stands for file transfer program, which is a standard
+feature in many mainframe Unix and VAX/VMS systems.  It also means
+that you must have a network connection to reach the University of
+Vaasa.  Please contact your computer's system manager for more
+information on the connection.  When this is ok, just follow the
+instructions in Appendix A at the end of this prerecorded message.
+--------------------------------------------------------------------
+
+From ts@uwasa.fi Tue 26 May 00:00:02 1992
+Subject: Email server instructions
+
+2. *****
+ Q: Many of us users have no ftp access.  Would you please send
+programs to me by email.
+
+ A1: To get files sent to you by email, please use our mail server.
+ To get more information write a message to mailserv@garbo.uwasa.fi.
+ The subject line of this message must be
+   garbo-request
+ The message must contain just the following text (at the beginning
+of the line):
+   send help
+ Do not include a signature because it may confuse the server.
+ If you do not understand, please don't send the mail server request.
+ If you have ftp capability, please use FTP only, since it causes
+less load.
+
+ A2: Our customary format for the file names when announcing
+ programs for ANONYMOUS FTP is e.g.
+    garbo.uwasa.fi:/pc/dirutil/dirmat20.zip  or
+    /pc/dirutil/dirmat20.zip
+ IMPORTANT!!! The format for the MAIL SERVER is slightly different:
+    send pc/dirutil/dirmat20.zip
+ In other words omit / from the path when using our mail server.
+ ....
+Here are some common examples of INCORRECT requests:
+    send pc/dirutil/dirmat20.arc
+The format is correct, but there is no such file. Look at the file
+list more carefully.
+ ....
+    send pc/dirutil/dirmat19.zip
+The format is correct, but the package has just been updated with a
+more recent version. Look at the directory list again.
+ ....
+    send /pc/dirutil/dirmat20.zip
+    send dirutil/dirmat20.zip
+The directory path is incorrect.
+ ....
+    send pc/ts/dirmat20.zip
+The format is correct, but the file is not in that directory.
+ ....
+    send pc/dirutil/DIRMAT20.ZIP
+The system is case sensitive. Almost all the files and all the
+directories are lower case.
+ ....
+    send pc/dirutil/dirmat*.zip
+No wildcards.
+--------------------------------------------------------------------
+
+From ts@uwasa.fi Tue 26 May 00:00:03 1992
+Subject: Poor souls without FTP
+
+3. *****
+ Q: Why announce programs in the UseNet newsgroups when many users
+do not have the ftp capability?
+
+ A1: Look at it this way.  I know this is a problem.  In fact I once
+had an interesting and lengthy email discussion with one user about
+this dilemma.  Let me put forward my own view about the c.b.i.p
+newsgroups.  I feel that the primary purpose of groups like these is
+(or should be) to disseminate and exchange useful information about
+PC programs.  A secondary purpose is to exchange information about
+getting files.  In getting the files there are five major
+alternatives, that is posting in binaries, ftp, emailing between
+users, using mail servers, and BBSes.  What this amounts to is that
+even if you do not have the ftp capability, the information may give
+you useful hints what programs to look for via the many alternative
+methods of getting the files.
+
+ A2: The garbo file collection is also available on a CDROM which
+can be obtained from WasaWare Oy, Harri Valkama, Palosaarentie 31,
+SF-65200 VAASA, FINLAND, Telephone & Fax: 358-61-173365, Email:
+hv@uwasa.fi.
+--------------------------------------------------------------------
+
+From ts@uwasa.fi Tue 26 May 00:00:04 1992
+Subject: Are all programs announced
+
+4. *****
+ Q: Do you announce all your new programs in the UseNet news?
+
+ A: Not quite.  With the exception of the programs in the /pc/ts
+directory (which have always been announced) we have announced
+programs that we have felt particularly interesting for one reason
+or another.  This also goes for the uploads that users make to us,
+but since the beginning of 1992 we have tried to post all the upload
+announcements (cf question 10 and /pc/UPLOAD.INF).  But do take a
+look at /pc/_files.in. It gives a monthly list of all our new MsDos
+files.
+--------------------------------------------------------------------
+
+From ts@uwasa.fi Tue 26 May 00:00:05 1992
+Subject: FTP transfer commands
+
+5. *****
+ Q: I have the ftp (file transfer program) capability and a network
+access that includes your 128.214.87.1 site garbo.uwasa.fi.  But
+how do I transfer the files? What are the commands?
+
+ A: The information and examples in Appendix A of this message
+should enable you to get the files.
+--------------------------------------------------------------------
+
+From ts@uwasa.fi Tue 26 May 00:00:06 1992
+Subject: Allegedly corrupt packages
+
+6. *****
+ Q: I have received the programs but the package is corrupt.  When I
+try to unpack them with my unpacking program (pkxarc, pkunpak, arc,
+pkunzip, lharc, zoo, arj, etc.) the unpacking fails or produces
+files that lock my PC.
+
+A: The files with the .zip, .zoo, .arc, .arj, .lzh, .pak, and .exe
+extension are binary packages and you have to use the correct
+transfer mode when you transfer the programs from the remote FTP
+site to our host, and when you transfer the files from our main
+frame to your PC.
+   Very frequently the problems the users report are due to failing
+to set the binary mode when transferring the files from the user's
+host to the users PC.  Please see Appendix B for more information.
+There have been over million of successful downloads a year from us,
+and it is very unlikely that the original file at garbo.uwasa.fi is
+really corrupted.  It is not impossible, but first check all the
+other possibilities.  Perhaps the most common error is failing to
+make the transfer binary.
+   There is another common cause for allegedly corrupt packages
+besides failing to use the correct mode in the file transfer from
+the FTP site to one's own host, or in the file transfer from one's
+own host to one's PC.  This is failing to use the correct version of
+the relevant archiver for archived packages.  In particular, if a
+.zip file at the FTP site has been constructed with Unix zip version
+1.0, and you try to unzip it with old (pre 1.1) PKZIP versions,
+you'll get an error message indicating a CRC error.  This is a
+misleading error message since it really is an incompatible version
+error.
+--------------------------------------------------------------------
+
+From ts@uwasa.fi Tue 26 May 00:00:07 1992
+Subject: SIMTEL20 questions
+
+7. *****
+ Q: I would rather like to get the files from SIMTEL20 (or some
+other archive site near me) since I have an easier access there.
+Send me a list telling in which directories the files are at
+SIMTEL20 or some other near-by FTP archive.
+
+ A: We are often asked this (and other) information about SIMTEL20.
+We like to and do cooperate much with SIMTEL20, but nevertheless
+this is really something you should be finding out from SIMTEL20,
+not us.  SIMTEL20 archives maintainer is Keith Petersen
+w8sdz@vela.acs.oakland.edu. The SIMTEL20 filelist to get is
+PD1:<MSDOS.FILEDOCS>SIMLIST.ARC.
+  North American downloaders should first try one of the many
+archives in the USA such as SIMTEL20 and wuarchive.wustl.edu instead
+of overseas sites to cut down the load on the overseas link.  For
+the other users the reciprocal seems logical.  First take a look at
+garbo.uwasa.fi archives (or some other European site).  There is a
+good list of MsDos FTP sites in garbo.uwasa.fi:/pc/pd2/moder*.lst.
+--------------------------------------------------------------------
+
+From ts@uwasa.fi Tue 26 May 00:00:08 1992
+Subject: What is garbo's guest user-id
+
+8. *****
+ Q: Do you have a guest user-id? I cannot ftp, but I can reach your
+site through the net.  I type anonymous at the login: and then try
+to give my email address at the Password:.  I am not let in, but get
+a "Login incorrect" message instead.
+
+ A: We do not accept guest users.  This means that what you tried,
+is not allowed at our site.  The only way you can get connected to
+our system is using the true ftp system, which is described in
+Appendix A.
+--------------------------------------------------------------------
+
+From ts@uwasa.fi Tue 26 May 00:00:09 1992
+Subject: The .arc .arj .lzh .pak .zip .zoo extensions
+
+9. *****
+ Q: I now have the files, but they have this .arc (or .arj, .lzh,
+.pak, .zip, .zoo) extension and they won't run then I write their
+name at my DOS prompt.
+
+ A: The files are packed (also often called archived) entities.
+These are special formats of compressing files and packing several
+files together.  This is usually standard knowledge for PC users,
+and if you are not familiar with the system, just ask a
+knowledgeable fellow user.  What you need is the proper unpacking
+programs such as ARJ, ARC, PKXARC, PKUNPAK, PKUNZIP, PAK, LHARC,
+LHA,ZOO and so on.  And, you will find all the necessary tools for
+handling packed files in the /pc/arcers directory.  For example, if
+the extension is .zip get the self-extracting pkz110eu.exe utility
+(or whatever is latest version).
+   Note that if you use an out of date PKUNZIP version, it may
+report a CRC error in your .zip file although the true reason for
+your problems is using the out of date version. 
+--------------------------------------------------------------------
+
+From ts@uwasa.fi Tue 26 May 00:00:10 1992
+Subject: Upload instructions
+
+10. *****
+ Q: I have made some programs myself which I think might be of
+general interest.  Or I have obtained this fabulous program which I
+think would be of general interest.  Or I have a more recent version
+of this program than you have on your archives.  Would it be
+possible to upload them to your system.
+
+ A: Please see garbo.uwasa.fi:/pc/UPLOAD.INF and /pc/UPTEXT.INF for
+the full information on this question.  In brief, we welcome quality
+MsDos uploads in many but not all categories. 
+--------------------------------------------------------------------
+
+From ts@uwasa.fi Tue 26 May 00:00:11 1992
+Subject: Need file descriptions
+
+11. *****
+ Q: Is there a description of the programs? I would like to have
+some information on the files before I start transferring them.
+
+ A1: Yes, certainly.  This approach is even recommended.  There is a
+file called /pc/INDEX.ZIP (with MsDos eolns) which is the annotated
+list of the MsDos files on garbo.  This index file is also available
+in the (more bloated) ascii format as /pc/INDEX and Unix compressed
+format /pc/filelist/garboidx.Z (Unix eolns). Furthermore, there are
+three news files /pc/pd2/news-pd2, /pc/ts/0news-ts, and
+/unix/ts/0news-u. Note that /pc/pd2/news-pd2 contains selected news
+on all /pc (MsDos) directories, not just on /pc/pd2.  Finally there
+is a /pc/INDEXTS.ZIP. It contains detailed information on the
+contents of each package in the /pc/ts directory.  For the annotated
+contents of our Unix directories see /unix/INDEX.
+
+ A2: Even if I like to try to help whenever I can, I cannot answer
+questions asking me to describe particular files, or to take a
+closer look what is in them on behalf of an individual user.  I
+simply cannot afford the time.
+--------------------------------------------------------------------
+
+From ts@uwasa.fi Tue 26 May 00:00:12 1992
+Subject: Problems with sending replys
+
+12. *****
+ Q: I sent you a message a couple of weeks ago.  Did you receive it?
+Why don't you reply?
+
+ A: I try to reply to all queries I have received.  But getting the
+reply to you successfully is not always technically possible.  The
+reason for this is, that the reply address which the mail program
+gives, is sometimes not adequate.  My reply bounces back to me as a
+consequence.  Therefore you should include your InterNet and/or
+BitNet address in your message.  Using proper signatures in email is
+customary, anyway.  This does not guarantee a successful reply, but
+it definitely increases the possibility of getting an eventual
+reply.
+   Since 1991 I have had to backtrack on this promise.  I now get so
+much email that if my reply bounces I simply can't afford the time
+to try to fix it.  So if you don't hear from me within a week,
+contact your own system manager.  Ask him/her to see to it that your
+email address in your message header is a returnable address.
+--------------------------------------------------------------------
+
+From ts@uwasa.fi Tue 26 May 00:00:13 1992
+Subject: Unknown packing methods
+
+13. *****
+ Q: When I try to unpack the package I get something like an
+"unknown packing method" error message.  What is wrong?
+
+ A: First check that you are using the correct unpacking program by
+looking at the extension of the file name, and select the unpacking
+program accordingly.  If this does not help, you are most likely
+using an outdated version of the relevant unpacking program.  Get
+the latest version.  The /pc/arcers directory at garbo.uwasa.fi has
+a good collection of these tools.
+--------------------------------------------------------------------
+
+From ts@uwasa.fi Tue 26 May 00:00:14 1992
+Subject: Looking for particular programs
+
+14. *****
+ Q: I am interested to know if there exists a program for such and
+such purpose.  Would you point me in the right direction.  (This
+question also often occurs in the news postings, especially in
+the comp.binaries.ibm.pc.wanted newsgroup.)
+
+ A1: Most often the best answer is to look through file lists.  We
+have several such lists which should together have quite a good
+coverage of the PD programs in circulation.  These lists are
+/pc/INDEX.ZIP and /pc/INDEXTS.ZIP (these are the MsDos file lists
+for our site, garbo.uwasa.fi), /pc/filelist/cbbs_dos.zip,
+/pc/filelist/files-mm.zip (a good English speaking Finnish BBS), and
+/pc/filelist/simlist.zip (SIMTEL20 list).
+
+A2: How to find MsDos files on garbo.uwasa.fi: If you are looking
+for a particular program at garbo.uwasa.fi you should start by
+getting the following files:
+   /pc/INDEX.ZIP       (/pc/INDEX in the heavier ascii form)
+   /pc/INDEXTS.ZIP     (ts-package contents)
+ For seeing what is new in the /pc and /pc/ts directories, get
+   /pc/pd2/news-pd2    (selected news on all MsDos directories)
+   /pc/ts/0news-ts     (all news on ts-programs)
+
+A3: There is more advice on finding files in the Frequently Asked
+Questions collection /pc/ts/tsfaq28.zip (or whatever version number
+is current), and the garbo feedback files /pc/pd2/post##.lst (where
+## = 01,02,03,04,05,06,07,08,09 at the time of writing this).
+--------------------------------------------------------------------
+
+From ts@uwasa.fi Tue 26 May 00:00:15 1992
+Subject: Files with .Z extension
+
+15. *****
+ Q: I have noticed that some directories at garbo.uwasa.fi archives
+include files that have a .Z extension.  What are they?
+
+ A1: They are Unix files that are processed with compress,
+uncompress, and zcat.  The garbo.uwasa.fi archives are on a Unix
+system, and many these files are related to handling the PC files
+without having first to transfer them to from the Unix mainframe to
+the PC.  Please see /unix/ts/0news-u and /pc/ts/tsfaq28.zip (or
+whatever is the current version number) for more details and
+instructions.  Also try
+   man compress
+on a Unix system for information.
+
+ A2: You can handle these compressed files also on your MsDos PC.
+For that you need a program like /pc/unix/comp430d.zip (or whatever
+version is the latest).  Note for text files that Unix and MsDos use
+different eolns (end-of-lines).  You may filter them properly eg
+with unix2pc.exe which is in /pc/ts/tsfilt19.zip (or whatever
+version number is current).
+--------------------------------------------------------------------
+
+From ts@uwasa.fi Tue 26 May 00:00:16 1992
+Subject: File list of unavailable files
+
+16. *****
+ Q: Exactly where does one obtain the files listed in files-mm.zip?
+There didn't seem to be any indication to that effect in the
+FILES.TXT file, and I'm almost certain you don't keep them at
+garbo.uwasa.fi...
+
+ A: They are available at FidoNet node 2:220/22, Micro Maniacs Opus,
+Finland, phone 358-0-463636.  The reason for having files-mm.zip is
+to have a file list of one good BBS so that the users can look what
+kind of files are available in one good bulletin board, even if
+SIMTEL20 or garbo.uwasa.fi do not have all these files.  There is
+also a huge file list of another BBS on garbo.uwasa.fi archives,
+that is /pc/filelist/cbbs_dos.zip.  The phone is 358-0-5063329.
+--------------------------------------------------------------------
+
+From ts@uwasa.fi Tue 26 May 00:00:17 1992
+Subject: I cannot make the connection
+
+17. *****
+ Q: What if my site does not know garbo or connection refused? 
+(This question comes in various formats, but the point of all the
+queries is that the user cannot connect to garbo). 
+
+A: Garbo, the system, is managed by Harri Valkama (hv@uwasa.fi), and
+our main system chyde is managed by Hannu Hirvonen (hh@uwasa.fi) who
+is also our postmaster.  Timo Salmi specializes in garbo publicity,
+and MsDos material.  Nevertheless, here is some general information. 
+   In general if you are having problems in reaching garbo (not
+problems with garbo itself) the first person to contact is your own
+site's system manager.  For example, if you might get an error
+message like "host unknown".  This means that your own host does not
+know garbo.uwasa.fi.  The garbo information is missing from your
+site's hosts-file, and your host is not using distributed name
+service.  There is nothing we can do about from this end.  (You can
+try to use the IP number 128.214.87.1 in that case as a temporary
+measure). 
+   You might also get a more radical error message like "Access to
+the Scandinavian nodes has been discontinued, due to the slowness
+and unreliability of the network connections." Again this is a
+problem that has nothing to do directly with garbo.  It is probably
+a question of your site's net privileges and arrangements, or a
+problem between different networks quite beyond our control. 
+
+--------------------------------------------------------------------
+
+From ts@uwasa.fi Tue 26 May 00:00:18 1992
+Subject: Automated downloads (see this)
+
+18. *****
+ Q: The ftp session is repetitive and tedious, and the connection is
+not always available.  Is there any way to automate getting files
+from garbo.uwasa.fi by anonymous ftp.
+
+ A: Yes, there is a useful facility called batchftp by Shawn Cooper,
+which achieves this if you have a BSD Unix system.  You can get it
+by downloading /unix/ftp/batchftp102.tar.Z (or whatever version is
+the latest).  The package contains documentation, and also see
+/unix/ftp/batchftp.inf and /unix/ts/0news-u for brief instructions.
+This system has the added advantage of cutting down the unnecessary
+idle time inherent in "manual" ftp connections.
+--------------------------------------------------------------------
+
+From ts@uwasa.fi Tue 26 May 00:00:19 1992
+Subject: Problems with mail server requests
+
+19. *****
+ Q: I sent a mail server request to garbo.uwasa.fi but I get no
+response at all.  And I am sure that I did everything as instructed.
+
+ A: In that case your, or your system's email address is probably
+badly configured. Please contact your own system manager.
+   DON'T send a repeat request until your email address problem has
+been resolved!!!  This is very important, so I repeat DON'T!
+   What happens is this.  We get your request, but when
+garbo.uwasa.fi tries to honor your request to send you the file(s)
+by email, the email bounces back to us because of the problems in
+your email address.  If you send repeat requests, it will just clog
+our post-master with the bounced email.
+   Try using a corrected mail address to return the requests.  You
+can do this by adding the following command to (the body of) your
+message to our mail server.
+    path <path to your machine>
+ e.g.
+    path youruserid@yourmachine.yourdomain.yourcountry
+    send WhateverYouWant
+You should contact your system manager to asses an optimized path
+especially if you are using UUCP or BANG paths to get your mail
+delivered to us. Our mail server checks the mail queue every 15
+minutes so if you don't get response in a reasonable time you'd
+better check this one out with a little help from your friends. You
+can use this command with or without the <> characters.
+--------------------------------------------------------------------
+
+From ts@uwasa.fi Tue 26 May 00:00:21 1992
+Subject: Garbo mirrors
+
+20. *****
+ Q: Are garbo files mirrored?  Which directories? How to connect?
+
+ A: Garbo is mirrored in North America by wuarchive.wustl.edu. 
+Oceanian users are referred to the archie.au mirror.  The mirrors
+are independent operations.  Therefore you should direct any
+detailed questions about the mirroring to the relevant moderators of
+those sites, not to us.  Note, however, that much of what is in
+Appendix A on how to download the files is directly applicable to
+the mirrors as well.  See garbo.uwasa.fi: /pc/pd2/moder*.lst for
+preliminary information on the main mirror directories, and the
+mirror moderators' email addresses.  
+   Also note that there is no guarantee that the mirror will not lag
+even week(s) behind, _or_ might not have all the files. 
+--------------------------------------------------------------------
+
+From ts@uwasa.fi Tue 26 May 00:00:21 1992
+Subject: Answer not found
+
+21. *****
+ Q: The answer to my question is not in this list, what next?
+
+ A: It depends very much on your question.  Try take a look at the
+/pc/ts/tsfaq28.zip (or whichever version is current) Frequently
+Asked Questions and the /pc/pd2/post*.txt (* = 01,02,...) garbo
+information files.  If these do not help document your problem
+carefully.  Please note that I cannot guarantee that we have the
+answer, or that I will have the time to look for it. I like to help,
+but I often simply cannot afford the time. Therefore you should save
+a copy of your question so that you can consider posting it to the
+UseNet news when relevant.
+--------------------------------------------------------------------
+
+From ts@uwasa.fi Tue 26 May 00:00:51 1992
+Subject: Appendix A: FTP downloading
+
+A. *****
+ Q: APPENDIX A: Obtaining (downloading) the Programs by FTP
+ ==========================================================
+
+   You can obtain the file(s) from garbo.uwasa.fi (128.214.87.1)
+using the InterNet ftp (file transfer program) with username
+"anonymous".  For a login password use your electronic mail address.
+If you are using ftp from a VAX/VMS system, set case lower before
+proceeding.
+   Consider as an example the programs of Timo Salmi.  The files are
+in directory /pc/ts.  At the ftp> prompt first type binary (for
+binary files).  To go to the relevant directory apply cd /pc/ts.  To
+see its contents apply ls or dir.  To download a file, use get
+filename or mget filenames.  The files have been packed with Unix
+Zip so on MsDos you will need PKUNZIP from PKWARE or some other
+unzip program to unpack them on your PC.
+   The following contains the same information by giving the
+commands needed for transferring vaasa.inf (contains text on
+Finland, Vaasa, and University of Vaasa) and tspfon29.zip as an
+example.  In the example its is assumed that you are calling from a
+Unix system.  The usage for a VAX/VMS system is quite similar.
+
+ftp                   #Invoke the file transfer program
+open 128.214.87.1     #Connect to garbo.uwasa.fi at the University
+                      #of Vaasa
+anonymous             #Use this name to get temporary privileges
+Give your email address as your password
+cd /pc/ts             #Go to the relevant directory
+dir  (or ls -lF)      #Directory of available files
+ascii                 #vaasa.inf is an ordinary text file
+get vaasa.inf         #Copy the file to your default directory
+binary                #tspfon29.zip is a binary file
+mget tspfon*.zip      #mget allows wildcards
+close                 #Terminate the connection
+quit                  #Quit the file transfer program
+--------------------------------------------------------------------
+
+From ts@uwasa.fi Tue 26 May 00:00:52 1992
+Subject: Appendix B: Your host -> your PC
+
+B. *****
+ Q: APPENDIX B: Transferring the Programs to PC
+ ==============================================
+   After you have received the files to your host, there still
+remains the task of transferring the programs to your PC.  This is
+familiar to most users, but occasionally there are problems.  It
+impossible to give advice that would cover resolving all the
+difficulties, but the most common can be described.  The most usual
+file transfer method between the host and the user's PC is MsKermit.
+(Zmodem and others may be used as well, but I would guess that most
+often persons using these alternatives are advanced users, and can
+resolve any problems by themselves.)
+   The most common problem is probably that after getting a packed
+file to one's PC, the file appears damaged.  Almost always this is
+due to failing to set correctly the Kermit parameters at ONE or BOTH
+ends of the transfer.  What you have to do is the following.  In
+your host Kermit set file type binary, set parity even (or none or
+whatever), and in your PC MsKermit you must have the SAME parity you
+set for your host (select host Kermit parity on the basis of your
+PC's).  If you fail to get these compatible, the transfer will not
+result in what you want.  Transferring text files does not lead to
+problems so often.  The trick is set file type text (or ascii
+depending on your Kermit version).
+   Finally, if nothing else, absolutely nothing else(!), seems to
+resolve the problem, please let us know, and we will check that the
+file at our site is good and proper.
+
+-------------------- end prerecorded message -----------------------

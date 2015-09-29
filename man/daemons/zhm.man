@@ -1,0 +1,87 @@
+.\"	$Source: /usr/sww/share/src/Zephyr/src/man/man8/RCS/zhm.8,v $
+.\"	$Author: smoot $
+.\"	$Header: /usr/sww/share/src/Zephyr/src/man/man8/RCS/zhm.8,v 1.8 1992/09/18 00:48:07 smoot Exp $
+.\"
+.\" Copyright 1987, 1988 by the Massachusetts Institute of Technology
+.\" All rights reserved.  The file /usr/include/zephyr/mit-copyright.h
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"
+.TH ZHM 8 "November 1, 1988" "MIT Project Athena"
+.ds ]W MIT Project Athena
+.SH NAME
+zhm \- Zephyr HostManager
+.SH SYNOPSIS
+.B /usr/sww/etc/zephyr/zhm
+[
+.BI -d
+] [
+.BI -h
+] [
+.BI -r
+] [
+.BI -i
+] [
+.BI server
+.BI ...
+]
+.SH DESCRIPTION
+.I Zhm
+is the link between a client machine and the zephyr server.  All
+notices sent from programs on the client are funneled through
+.I zhm.
+This allows all client programs to be much simpler in function, since
+the HostManager is responsible for handling errors, retransmitting
+lost notices, and holding all notices until they are acknowledged.
+.PP
+The
+.I -d
+option turns on debugging mode, and sends its information to syslog
+LOG_DAEMON messages.
+.PP
+The
+.I -h
+option causes
+.I zhm
+to send a shutdown message and exit upon delivery of a SIGHUP signal.
+The normal action on SIGHUP is to send a flush notice to the zephyr server.
+.PP
+The
+.I -r
+option causes
+.I zhm
+to send a boot notice to the server and exit when the notice is acknowledged.
+.PP
+The
+.I -i
+option indicates that
+.I zhm
+is being started by
+.I inetd(8).
+When this option is specified,
+.I zhm
+assumes that file descriptor zero (0) is bound to the UDP datagram port
+designated for hostmanager use.  In this mode, SIGHUP is handled as if the
+.I -h
+option were specified.
+.PP
+The optional
+.I server
+arguments are used to replace the set of server names supplied by
+the
+.I hesiod(3)
+name server.
+.SH SEE ALSO
+zephyr(1), zephyrd(8), inetd(8)
+.br
+Project Athena Technical Plan Section E.4.1, `Zephyr Notification
+Service'
+.SH AUTHOR
+.PP
+David C. Jedlinsky, MIT Project Athena
+.SH RESTRICTIONS
+Copyright (c) 1987,1988 by the Massachusetts Institute of Technology.
+All Rights Reserved.
+.br
+.I zephyr(1)
+specifies the terms and conditions for redistribution.

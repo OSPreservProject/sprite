@@ -1,0 +1,30 @@
+head     1.1;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @# @;
+
+
+1.1
+date     88.06.19.14.35.36;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@	.text
+	.globl Vaddd, Vsubd, Vfloord, _ffloat_
+Vfloord:jmp	Ffloord:L
+Vaddd:	jmp	Faddd:L
+Vsubd:	jmp	Fsubd:L
+_ffloat_:	rts
+@

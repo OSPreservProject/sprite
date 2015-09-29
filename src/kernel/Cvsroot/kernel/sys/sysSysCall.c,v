@@ -1,0 +1,2046 @@
+head     9.14;
+branch   ;
+access   ;
+symbols  ds3100:9.14 sun3:9.14 sun4nw:9.9 symm:9.9 spur:9.9 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.14
+date     92.06.15.22.29.27;  author jhh;  state Exp;
+branches ;
+next     9.13;
+
+9.13
+date     92.06.03.12.37.07;  author jhh;  state Exp;
+branches ;
+next     9.12;
+
+9.12
+date     92.06.01.14.37.05;  author kupfer;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     92.04.17.17.30.36;  author jhh;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     92.04.14.17.08.20;  author jhh;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     91.08.24.20.01.32;  author mottsmth;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     90.12.06.17.38.21;  author shirriff;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.10.19.15.55.05;  author mendel;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.09.12.13.40.43;  author shirriff;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.09.11.10.51.02;  author shirriff;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.07.30.11.40.56;  author shirriff;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.03.22.12.20.22;  author shirriff;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.11.07.15.00.05;  author shirriff;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.11.16.41.20;  author douglis;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.20.29;  author douglis;  state Stable;
+branches ;
+next     8.10;
+
+8.10
+date     89.09.08.16.21.49;  author shirriff;  state Exp;
+branches ;
+next     8.9;
+
+8.9
+date     89.08.22.15.31.46;  author douglis;  state Exp;
+branches ;
+next     8.8;
+
+8.8
+date     89.08.17.17.35.30;  author jhh;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.07.31.17.59.02;  author douglis;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.06.09.17.52.10;  author douglis;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.02.28.12.08.02;  author jhh;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.02.10.16.43.20;  author douglis;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.01.26.09.19.38;  author rab;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.01.12.07.57.27;  author douglis;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.12.04.15.35.30;  author ouster;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.38.37;  author douglis;  state Stable;
+branches ;
+next     6.9;
+
+6.9
+date     88.11.11.14.42.29;  author douglis;  state Exp;
+branches ;
+next     6.8;
+
+6.8
+date     88.11.02.10.33.23;  author douglis;  state Exp;
+branches ;
+next     6.7;
+
+6.7
+date     88.10.28.18.49.53;  author mlgray;  state Exp;
+branches ;
+next     6.6;
+
+6.6
+date     88.10.28.18.44.05;  author mlgray;  state Exp;
+branches ;
+next     6.5;
+
+6.5
+date     88.10.24.09.17.24;  author douglis;  state Exp;
+branches ;
+next     6.4;
+
+6.4
+date     88.10.19.17.54.11;  author douglis;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.08.29.12.30.52;  author mlgray;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.25.15.11.44;  author brent;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.12.15.52.40;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.27.32;  author brent;  state Stable;
+branches ;
+next     5.11;
+
+5.11
+date     88.07.17.23.21.04;  author douglis;  state Exp;
+branches ;
+next     5.10;
+
+5.10
+date     88.05.05.18.00.55;  author nelson;  state Exp;
+branches ;
+next     5.9;
+
+5.9
+date     88.05.04.17.23.48;  author nelson;  state Exp;
+branches ;
+next     5.8;
+
+5.8
+date     88.04.13.11.32.50;  author ouster;  state Exp;
+branches ;
+next     5.7;
+
+5.7
+date     88.03.08.14.19.11;  author douglis;  state Exp;
+branches ;
+next     5.6;
+
+5.6
+date     87.12.24.16.37.54;  author douglis;  state Exp;
+branches ;
+next     5.5;
+
+5.5
+date     87.12.12.16.42.09;  author nelson;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     87.10.16.17.51.01;  author nelson;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     87.10.13.10.45.13;  author brent;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.09.21.10.26.29;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.08.25.15.39.39;  author brent;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.51.28;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.14
+log
+@Added Sys_GetHostName and Sys_SetHostName system calls.
+@
+text
+@/*
+ * sysSyscall.c --
+ *
+ *	Routines and structs for system calls.  Contains information
+ *	about each system call such as the number of arguments and how
+ *	to invoke the call for migrated processes.  All local
+ *	processes invoke system calls by copying in the arguments from
+ *	the user's address space and passing them to the kernel
+ *	routine uninterpreted.  When migrated processes invoke system
+ *	calls, when possible the arguments are passed to a generic
+ *	stub that packages the arguments and sends them to the home
+ *	node of the process through RPC.  This file contains
+ *	information about the sizes and types of each argument for
+ *	those procedures.  The generic stub is called with information
+ *	about which system call was invoked and what its arguments consist
+ *	of.  The information stored for each argument is described below.
+ *
+ *	Many system calls, however, are handled exclusively on the
+ *	current machine or are processed by special-purpose routines
+ *	on the current machine before being sent to the home machine.
+ *	In these cases no information about parameter types is kept,
+ *	and the procedure is invoked in the same manner as for local
+ *	processes.
+ *
+ *	NOTES ON ADDING SYSTEM CALLS:
+ *	   Add an entry for the system call to the two arrays
+ *	   declared below, sysCalls and paramsArray.  For sysCalls,
+ *	   list the procedures to be invoked, whether to use the
+ *	   generic stub (in which case special == FALSE), and the number
+ *	   of words passed to the system call.  For paramsArray, if
+ *	   special is FALSE, list the type and disposition of each
+ *	   parameter.  If special is TRUE, just add a comment as a
+ *	   placeholder within the array.  Finally, add an entry in
+ *	   procRpc.c for the callback routine corresponding to the new
+ *	   procedure (NIL if the call is not migrated).
+ *
+ * Copyright 1985, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/sys/sysSysCall.c,v 9.13 92/06/03 12:37:07 jhh Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <fs.h>
+#include <sys.h>
+#include <sysInt.h>
+#include <dbg.h>
+#include <proc.h>
+#include <sync.h>
+#include <sched.h>
+#include <vm.h>
+#include <user/vm.h>
+#include <rpc.h>
+#include <prof.h>
+#include <devVid.h>
+#include <net.h>
+#include <sysSysCall.h>
+#include <sysSysCallParam.h>
+#include <status.h>
+#include <stdio.h>
+#include <sysTestCall.h>
+#include <user/sys/param.h>
+
+/*
+ * Forward declarations to procedures defined in this file:
+ */
+
+static int ErrorProc _ARGS_((void));
+static ReturnStatus OutputCallTimes _ARGS_((int numToCopy,
+					    Address buffer));
+static ReturnStatus SysMigCall _ARGS_((Sys_ArgArray args));
+
+#define TMP_EXTERN
+#ifdef TMP_EXTERN
+extern	int Proc_RemoteExec();
+#endif
+
+#ifndef CLEAN
+Boolean sysTraceSysCalls = FALSE;
+#endif CLEAN
+
+/*
+ * For each system call, keep track of:
+ *	- which procedure to invoke if the process is local;
+ *	- which to invoke if it is remote;
+ *	- whether the remoteFunc is "special" and is to be invoked
+ *	  without interpreting the arguments, or whether the generic
+ *	  stub will be called (passing it information such as the
+ *	  number of arguments and the type of system call);
+ *	- a pointer to an array of parameter information, which includes
+ *	  the types and dispositions of each argument.  For "special"
+ *	  routines, this pointer is NIL.  Refer to sysSysCallParam.h for
+ *	  documentation on the Sys_CallParam type.
+ */
+
+typedef struct {
+    ReturnStatus (*localFunc)();  /* procedure to invoke for local processes */
+    ReturnStatus (*remoteFunc)(); /* procedure to invoke for migrated procs */
+    Boolean special;		  /* whether the remoteFunc is called without
+				     passing it additional information */
+    int numWords;		  /* The number of 4-byte quantities that must
+				     be passed to the system call. */
+    Sys_CallParam *paramsPtr;	  /* pointer to parameter information for
+				     generic stub to use */
+} SysCallEntry;
+
+/*
+ * Sys_ParamSizes is an array of sizes corresponding to
+ * each system call argument type.  Sys_ParamSizesDecl is used to
+ * assign the elements of the array at compile time.  Due to compiler
+ * restrictions, sys_ParamSizes needs to be a "pointer" while
+ * sys_ParamSizesDecl is an "array".  The argument types are documented
+ * in sysSysCallParam.h.
+ */
+
+int sys_ParamSizesDecl[] = {
+    sizeof(int),			/* SYS_PARAM_INT		*/
+    sizeof(char),			/* SYS_PARAM_CHAR		*/
+    sizeof(Proc_PID),			/* SYS_PARAM_PROC_PID		*/
+    sizeof(Proc_ResUsage),		/* SYS_PARAM_PROC_RES		*/
+    sizeof(Sync_Lock),			/* SYS_PARAM_SYNC_LOCK		*/
+    sizeof(Fs_Attributes),		/* SYS_PARAM_FS_ATT		*/
+    FS_MAX_PATH_NAME_LENGTH,		/* SYS_PARAM_FS_NAME		*/
+    sizeof(Time),			/* SYS_PARAM_TIMEPTR		*/
+    sizeof(Time) / 2,			/* SYS_PARAM_TIME1		*/
+    sizeof(Time) / 2,			/* SYS_PARAM_TIME2		*/
+    sizeof(int),			/* SYS_PARAM_VM_CMD		*/
+    0, 					/* SYS_PARAM_DUMMY	 	*/
+    sizeof(int),			/* SYS_PARAM_RANGE1	 	*/
+    sizeof(int),			/* SYS_PARAM_RANGE2		*/
+    sizeof(Proc_ControlBlock),		/* SYS_PARAM_PCB		*/
+    sizeof(Fs_Device),			/* SYS_PARAM_FS_DEVICE		*/
+    sizeof(Proc_PCBArgString),		/* SYS_PARAM_PCBARG		*/
+    MAXHOSTNAMELEN,			/* SYS_PARAM_HOSTNAME		*/
+
+};
+
+int *sys_ParamSizes = sys_ParamSizesDecl;
+
+static int ErrorProc()
+{
+    printf("Warning: Obsolete system call.\n");
+    return(GEN_FAILURE);
+}
+
+/*
+ * sysCalls --
+ *
+ *	This table is used during a system call trap to branch to the
+ *	correct procedure for each system call.  There are two functions,
+ *	one if the process is local, the other if the process is an immigrant.
+ *	The number of integers (parameters) on the user's stack that have
+ *	to be copied to the kernel stack is also listed here.  The last field
+ *	of each record is filled in dynamically but initialized here to NIL.
+ *
+ *	N.B.: The format of this table is relied on to generate the file
+ *	Dummy.c, a file with just the declarations of the system calls
+ *	and no body.  See the CreateDummy script in src/lib/libc.
+ */
+
+#define NILPARM ((Sys_CallParam *) NIL)
+#define CAST	(ReturnStatus (*) ())
+
+static SysCallEntry sysCalls[] = {
+/*
+ *	localFunc		  remoteFunc	   special numWords  NILPARM
+ */
+/* DON'T DELETE THIS LINE - CreateDummy depends on it */
+    Proc_Fork,		       Proc_Fork,	   TRUE,	2,   NILPARM,
+    Proc_Exec,		       Proc_Exec,	   TRUE,	5,   NILPARM,
+    CAST Proc_Exit,       CAST Proc_Exit,	   TRUE,	1,   NILPARM,
+    Sync_WaitTime,	       Sync_WaitTime,	   TRUE,	2,   NILPARM,
+    Test_PrintOut,	       Test_PrintOut,      TRUE,       10,   NILPARM,
+    Test_GetLine,	       Test_GetLine,   	   TRUE,	2,   NILPARM,
+    Test_GetChar,	       Test_GetChar,   	   TRUE,	1,   NILPARM,
+    Fs_OpenStub,	       Fs_OpenStub,  	   TRUE,	4,   NILPARM,
+    Fs_ReadStub,	       Fs_ReadStub,  	   TRUE, 	4,   NILPARM,
+    Fs_WriteStub,	       Fs_WriteStub,  	   TRUE, 	4,   NILPARM,
+    Fs_UserClose,	       Fs_UserClose,  	   TRUE, 	1,   NILPARM,
+    Fs_RemoveStub,	       Fs_RemoveStub,  	   TRUE,	1,   NILPARM,
+    Fs_RemoveDirStub,	       Fs_RemoveDirStub,   TRUE,	1,   NILPARM,
+    Fs_MakeDirStub,	       Fs_MakeDirStub,     TRUE,	2,   NILPARM,
+    Fs_ChangeDirStub,	       Fs_ChangeDirStub,   TRUE,	1,   NILPARM,
+    Proc_Wait,		       Proc_Wait,   	   TRUE,	8,   NILPARM,
+    Proc_Detach,	       Proc_DoRemoteCall,  FALSE,	1,   NILPARM,
+    Proc_GetIDs,	       Proc_GetIDs,  	   TRUE,	4,   NILPARM,
+    Proc_SetIDs,	       Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
+    Proc_GetGroupIDs,	       Proc_GetGroupIDs,   TRUE,	3,   NILPARM,
+/*
+ * Need not be forwarded home because groups only used during FS operations.
+ */
+    Proc_SetGroupIDs,	       Proc_SetGroupIDs,   TRUE,	2,   NILPARM,
+/*
+ * Must be forwarded home because can ask about arbitrary process on home node.
+ */
+    Proc_GetFamilyID,	       Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
+    Proc_SetFamilyID,	       Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
+    Test_RpcStub,	       Test_RpcStub,   	   TRUE,	4,   NILPARM,
+    Sys_StatsStub,	       Sys_StatsStub,      TRUE,	4,   NILPARM,
+    Vm_CreateVA,	       Vm_CreateVA,	   TRUE, 	2,   NILPARM,
+    Vm_DestroyVA,	       Vm_DestroyVA,	   TRUE, 	2,   NILPARM,
+    Sig_UserSend,	       Sig_UserSend,  	   TRUE,	3,   NILPARM,
+    Sig_Pause,		       Sig_Pause,          TRUE,	1,   NILPARM,
+    Sig_SetHoldMask,	       Sig_SetHoldMask,    TRUE,	2,   NILPARM,
+    Sig_SetAction,	       Sig_SetAction,      TRUE,	3,   NILPARM,
+    Prof_Start,		       Prof_Start,  	   TRUE,	0,   NILPARM,
+    Prof_End,		       Prof_End,  	   TRUE,	0,   NILPARM,
+    Prof_DumpStub,	       Prof_DumpStub,  	   TRUE,	1,   NILPARM,
+    Vm_Cmd,		       Vm_Cmd,  	   TRUE,	2,   NILPARM,
+    Sys_GetTimeOfDay,	       Proc_DoRemoteCall,  FALSE,	3,   NILPARM,
+    Sys_SetTimeOfDay,	       Proc_DoRemoteCall,  FALSE,	3,   NILPARM,
+    Sys_DoNothing,	       Sys_DoNothing,      TRUE,	0,   NILPARM,
+    Proc_GetPCBInfo,	       Proc_GetPCBInfo,    TRUE,	7,   NILPARM,
+    Vm_GetSegInfo,	       Vm_GetSegInfo,      TRUE,	4,   NILPARM,
+    Proc_GetResUsage,	       Proc_GetResUsage,   TRUE,	2,   NILPARM,
+    Proc_GetPriority,	       Proc_GetPriority,   TRUE,	2,   NILPARM,
+    Proc_SetPriority,          Proc_SetPriority,   TRUE,	3,   NILPARM,
+    Proc_Debug,		       Proc_Debug,   	   TRUE,	5,   NILPARM,
+    Proc_Profile,	       Proc_Profile,       TRUE,	6,   NILPARM,
+    ErrorProc,		       ErrorProc,   	   TRUE,	2,   NILPARM,
+    ErrorProc,	   	       ErrorProc, 	   TRUE,	2,   NILPARM,
+    Fs_GetNewIDStub,	       Fs_GetNewIDStub,    TRUE,	2,   NILPARM,
+    Fs_GetAttributesStub,      Fs_GetAttributesStub, TRUE,	3,   NILPARM,
+    Fs_GetAttributesIDStub,    Fs_GetAttributesIDStub, TRUE,	2,   NILPARM,
+    Fs_SetAttributesStub,      Fs_SetAttributesStub, TRUE,	3,   NILPARM,
+    Fs_SetAttributesIDStub,    Fs_SetAttributesIDStub, TRUE,	2,   NILPARM,
+    Fs_SetDefPermStub,	       Fs_SetDefPermStub,  TRUE,	2,   NILPARM,
+    Fs_IOControlStub,	       Fs_IOControlStub,   TRUE,	6,   NILPARM,
+    Dev_VidEnable,	       Proc_DoRemoteCall,  FALSE,	1,   NILPARM,
+    /*
+     * The following ErrorProc listings correspond to obsolete
+     * environment-related procedures.
+     */
+    ErrorProc,       		ErrorProc,  TRUE,	2,   NILPARM,
+    ErrorProc,     		ErrorProc,  TRUE,	2,   NILPARM,
+    ErrorProc,    		ErrorProc,  TRUE,	2,   NILPARM,
+    ErrorProc,  		ErrorProc,   TRUE,	4,   NILPARM,
+    ErrorProc,   		ErrorProc,   TRUE,	2,   NILPARM,
+    ErrorProc,      		ErrorProc,  TRUE,	0,   NILPARM,
+
+    Sync_SlowLockStub,	       Sync_SlowLockStub,  TRUE,	1,   NILPARM,
+    Sync_SlowWaitStub,	       Sync_SlowWaitStub,  TRUE,	3,   NILPARM,
+    Sync_SlowBroadcastStub,    Sync_SlowBroadcastStub,  TRUE,	2,   NILPARM,
+    Vm_PageSize,		Vm_PageSize,  	   TRUE,	1,   NILPARM,
+    Fs_HardLinkStub,		Fs_HardLinkStub,   TRUE,	2,   NILPARM,
+    Fs_RenameStub,		Fs_RenameStub, 	   TRUE,	2,   NILPARM,
+    Fs_SymLinkStub,		Fs_SymLinkStub,    TRUE,	3,   NILPARM,
+    Fs_ReadLinkStub,		Fs_ReadLinkStub,   TRUE,	4,   NILPARM,
+    Fs_CreatePipeStub,		Fs_CreatePipeStub, TRUE,	2,   NILPARM,
+    VmMach_MapKernelIntoUser,	Proc_RemoteDummy, FALSE,	4,   NILPARM,
+    Fs_AttachDiskStub,		Proc_DoRemoteCall, FALSE,	3,   NILPARM,
+    Fs_SelectStub,		Fs_SelectStub, 	   TRUE,	6,   NILPARM,
+    CAST Sys_Shutdown,		Sys_Shutdown, 	   TRUE,	2,   NILPARM,
+    Proc_Migrate,		Proc_DoRemoteCall, FALSE,	2,   NILPARM,
+    Fs_MakeDeviceStub,		Proc_DoRemoteCall, FALSE,	3,   NILPARM,
+    Fs_CommandStub,		Fs_CommandStub,    TRUE,	3,   NILPARM,
+    ErrorProc,       		ErrorProc, 	   TRUE,	2,   NILPARM,
+    Sys_GetMachineInfo,       	Sys_GetMachineInfo,  TRUE,	3,   NILPARM,
+    Net_InstallRouteStub, 	Net_InstallRouteStub, TRUE, 	6,   NILPARM,
+    Fs_ReadVectorStub, 		Fs_ReadVectorStub, TRUE, 	4,   NILPARM,
+    Fs_WriteVectorStub, 	Fs_WriteVectorStub, TRUE, 	4,   NILPARM,
+    Fs_CheckAccess,     	Fs_CheckAccess, 	TRUE,	3,   NILPARM,
+    Proc_GetIntervalTimer,	Proc_GetIntervalTimer, 	TRUE,	2,   NILPARM,
+    Proc_SetIntervalTimer,	Proc_SetIntervalTimer, 	TRUE,	3,   NILPARM,
+    Fs_FileWriteBackStub,	Fs_FileWriteBackStub, TRUE,	4,   NILPARM,
+    Proc_ExecEnv,		Proc_ExecEnv,	   TRUE,	4,   NILPARM,
+    Fs_SetAttrStub,		Fs_SetAttrStub,	   TRUE,	4,   NILPARM,
+    Fs_SetAttrIDStub,		Fs_SetAttrIDStub,   TRUE,	3,   NILPARM,
+    Proc_GetHostIDs,		Proc_GetHostIDs,   TRUE,	2,   NILPARM,
+    Sched_IdleProcessor,	Sched_IdleProcessor,  TRUE,	1,   NILPARM,
+    Sched_StartProcessor,	Sched_StartProcessor,   TRUE,	1,   NILPARM,
+#if 0
+    Mach_GetNumProcessors,	Mach_GetNumProcessors,   TRUE,	1,   NILPARM,
+#else
+    0,                          0,                      TRUE,   1,   NILPARM,
+#endif
+    Prof_Profil,                Prof_Profil,            TRUE,   4,   NILPARM,
+    Proc_RemoteExec,		Proc_RemoteExec,   TRUE,	4,   NILPARM,
+    Sys_GetMachineInfoNew,	Sys_GetMachineInfoNew,   TRUE,	2,   NILPARM,
+    Vm_Mmap,			Vm_Mmap,		TRUE,	7,   NILPARM,
+    Vm_Munmap,			Vm_Munmap,		TRUE,	3,   NILPARM,
+    Vm_Msync,			Vm_Msync,		TRUE,	2,   NILPARM,
+    Vm_Mlock,			Vm_Mlock,		TRUE,	2,   NILPARM,
+    Vm_Munlock,			Vm_Munlock,		TRUE,	2,   NILPARM,
+    Vm_Mincore,			Vm_Mincore,		TRUE,	3,   NILPARM,
+    Sync_SemctlStub,		Sync_SemctlStub,	TRUE,	5,   NILPARM,
+    Sync_SemgetStub,		Sync_SemgetStub,	TRUE,	4,   NILPARM,
+    Sync_SemopStub,		Sync_SemopStub,		TRUE,	4,   NILPARM,
+    Vm_Mprotect,		Vm_Mprotect,		TRUE,   3,   NILPARM,
+    Proc_Vfork,	                Proc_Vfork,	        TRUE,	0,   NILPARM,
+    Net_GetRoutes,		Net_GetRoutes,		TRUE,	5,   NILPARM,
+    Net_DeleteRouteStub,	Net_DeleteRouteStub,	TRUE,	1,   NILPARM,
+    /*
+     * The following are placeholders for Zebra system calls which aren't 
+     * in the standard kernel. 
+     */
+    ErrorProc,   		ErrorProc,   		TRUE,	3,   NILPARM,
+    ErrorProc,   		ErrorProc,   		TRUE,	3,   NILPARM,
+    Sys_GetHostName,		Proc_DoRemoteCall, 	FALSE,	1,   NILPARM,
+    Sys_SetHostName,		Proc_DoRemoteCall, 	FALSE,	1,   NILPARM,
+};
+
+
+/*
+ * paramsArray is a static array of parameter information.  The array is
+ * one gigantic array so that it may be initialized at compile time, but
+ * conceptually it is distinct arrays, one per system call.  SysInitSysCall,
+ * called at system initialization time, maps points within this array
+ * to paramsPtr fields within the sysCalls array.  ParamsPtr is initialized
+ * to NIL at compile time, but for procedures that are not flagged as
+ * "special", paramsPtr is reset to point into paramsArray at the point of
+ * the first Sys_CallParam structure corresponding to that procedure.
+ *
+ * For system calls that are "special", there is no entry in paramsArray.
+ * However, a comment with the system call number and " special" is useful
+ * to keep track of the correspondence between parameter information and
+ * the rest of the sysCall struct.  Note that "special" is equivalent to
+ * "local": "special" usually means a special-purpose routine is called,
+ * while "local" means the same routine is used for both local and migrated
+ * processes.
+ *
+ * The format of paramsArray is as follows.  For each non-special
+ * SysCallEntry, there should be -numWords- Sys_CallParam structures.
+ * A number of defined constants are given to simplify the information
+ * given for each one.  Essentially, the crucial things to consider are
+ * whether a given parameter is passed IN to a procedure, OUT of it, or
+ * both.  At the same time, is the parameter passed into the system call
+ * in its entirety, such as an integer; or is the parameter a pointer to
+ * something that needs to be copied into or out of the kernel address
+ * space, or made accessible?  Finally, if the parameter is a pointer, is
+ * it a pointer to an object of fixed size or does it point to an array
+ * of objects?  The generic stub will handle arrays if the size of the
+ * array is an IN parameter that is passed in just before the pointer to
+ * the array, in the argument list.  It will also handle arrays with
+ * a range of numbers that indicates the size of the array; for example,
+ * if the preceding arguments were 2 and 5, the size of the array would
+ * be (5 - 2 + 1) * sizeof(...).
+ *
+ * Note that multi-word parameters must be treated in this array as
+ * *separate* arguments.  For example, Time structures are given as
+ * TIME1 and TIME2.  This is because the procedures & structures in this
+ * file do not know the actual number of arguments, but rather the number
+ * of words that a system call is passed.
+ */
+
+#define PARM 		0
+#define PARM_I 		SYS_PARAM_IN
+#define PARM_O 		SYS_PARAM_OUT
+#define PARM_IO		(SYS_PARAM_IN | SYS_PARAM_OUT)
+#define PARM_IA 	(SYS_PARAM_IN | SYS_PARAM_ACC)
+#define PARM_OA 	(SYS_PARAM_OUT | SYS_PARAM_ACC)
+#define PARM_IOA	(PARM_IO | SYS_PARAM_ACC)
+#define PARM_IC 	(SYS_PARAM_IN | SYS_PARAM_COPY)
+#define PARM_OC		(SYS_PARAM_OUT | SYS_PARAM_COPY)
+#define PARM_IOC	(PARM_IO | SYS_PARAM_COPY)
+#define PARM_ICR 	(SYS_PARAM_IN | SYS_PARAM_COPY | SYS_PARAM_ARRAY)
+#define PARM_OCR	(SYS_PARAM_OUT | SYS_PARAM_COPY | SYS_PARAM_ARRAY)
+
+static Sys_CallParam paramsArray[] = {
+    /* special */				/* SYS_PROC_FORK	0 */
+    /* special */			     	/* SYS_PROC_EXEC	1 */
+    /* special */ 				/* SYS_PROC_EXIT	2 */
+    /* local */		      			/* SYS_SYNC_WAITTIME	3 */
+    /* local */					/* SYS_TEST_PRINTOUT	4 */
+    /* local */					/* SYS_TEST_GETLINE	5 */
+    /* local */					/* SYS_TEST_GETCHAR	6 */
+    /* local */					/* SYS_FS_OPEN		7 */
+    /* local */					/* SYS_FS_READ		8 */
+    /* local */					/* SYS_FS_WRITE		9 */
+    /* local */					/* SYS_FS_CLOSE		10 */
+    /* local */					/* SYS_FS_REMOVE	11 */
+    /* local */					/* SYS_FS_REMOVE_DIR	12 */
+    /* local */					/* SYS_FS_MAKE_DIR	13 */
+    /* local */					/* SYS_FS_CHANGE_DIR	14 */
+    /* special */			     	/* SYS_PROC_WAIT	15 */
+    SYS_PARAM_INT,	      PARM_I,		/* SYS_PROC_DETACH	16 */
+    /* local */				     	/* SYS_PROC_GETIDS	17 */
+    SYS_PARAM_INT,	      PARM_I,		/* SYS_PROC_SETIDS	18 */
+    SYS_PARAM_INT,	      PARM_I,
+    /* local */				     	/* SYS_PROC_GETGROUPIDS 19 */
+    /* local */				     	/* SYS_PROC_SETGROUPIDS 20 */
+    SYS_PARAM_PROC_PID,	      PARM_I,		/* SYS_PROC_GETFAMILYID 21 */
+    SYS_PARAM_PROC_PID,	      PARM_OC,
+    SYS_PARAM_PROC_PID,	      PARM_I,		/* SYS_PROC_SETFAMILYID 22 */
+    SYS_PARAM_INT,	      PARM_I,
+    /* test */					/* SYS_TEST_RPC		23 */
+    /* test */					/* SYS_SYS_STATS	24 */
+    /* local */					/* SYS_VM_CREATEVA	25 */
+    /* local */					/* SYS_VM_DESTROYVA	26 */
+    /* local */					/* SYS_SIG_SEND		27 */
+    /* local */ 				/* SYS_SIG_PAUSE	28 */
+    /* local */ 				/* SYS_SIG_SETHOLDMASK	29 */
+    /* local */				     	/* SYS_SIG_SETACTION	30 */
+
+    /* local */				     	/* SYS_PROF_START	31 */
+    /* local */				     	/* SYS_PROF_END		32 */
+    /* local */				     	/* SYS_PROF_DUMP	33 */
+    /* local */					/* SYS_VM_CMD		34 */
+    SYS_PARAM_TIMEPTR,	      PARM_OC,		/* SYS_SYS_GETTIMEOFDAY 35 */
+    SYS_PARAM_INT,	      PARM_OC,
+    SYS_PARAM_INT,	      PARM_OC,
+    SYS_PARAM_TIMEPTR,	      PARM_IC,		/* SYS_SYS_SETTIMEOFDAY 36 */
+    SYS_PARAM_INT,	      PARM_I,
+    SYS_PARAM_INT,	      PARM_I,
+    /* local */				     	/* SYS_SYS_DONOTHING	37 */
+    /* local */				     	/* SYS_PROC_GETPCBINFO	38 */
+    /* local */					/* SYS_VM_GETSEGINFO	39 */
+    /* local */					/* SYS_PROC_GETRESUSAGE 40 */
+    /* local */					/* SYS_PROC_GETPRIORITY 41 */
+    /* local */					/* SYS_PROC_SETPRIORITY 42 */
+    /* special (don't migrate?) */	     	/* SYS_PROC_DEBUG	43 */
+    /* local case not implemented */		/* SYS_PROC_PROFILE	44 */
+    /* local */					/* SYS_FS_TRUNC		45 */
+    /* local */					/* SYS_FS_TRUNC_ID	46 */
+    /* local */ 				/* SYS_FS_GET_NEW_ID	47 */
+    /* local */					/* SYS_FS_GET_ATTRIBUTES 48 */
+    /* local */ 				/* SYS_FS_GET_ATTR_ID	49 */
+    /* local */					/* SYS_FS_SET_ATTRIBUTES 50 */
+    /* local */ 				/* SYS_FS_SET_ATTR_ID	51 */
+    /* local */					/* SYS_FS_SET_DEF_PERM	52 */
+    /* local */			     		/* SYS_FS_IO_CONTROL	53 */
+    SYS_PARAM_INT,	      PARM_I,		/* SYS_SYS_ENABLEDISPLAY 54 */
+    /* obsolete */				/* SYS_PROC_SET_ENVIRON 55 */
+    /* obsolete */				/* SYS_PROC_UNSET_ENVIRON 56 */
+    /* obsolete */				/* ..._GET_ENVIRON_VAR	57 */
+    /* obsolete */				/* ..._GET_ENVIRON_RANGE 58 */
+    /* obsolete */				/* ..._INSTALL_ENVIRON	59 */
+    /* obsolete */				/* SYS_PROC_COPY_ENVIRON 60 */
+    /* local */					/* SYS_SYNC_SLOWLOCK	61 */
+    /* local */					/* SYS_SYNC_SLOWWAIT	62 */
+    /* local */					/* SYS_SYNC_SLOWBROADCAST 63 */
+    /* local */					/* SYS_VM_PAGESIZE	64 */
+    /* local */					/* SYS_FS_HARDLINK	65 */
+    /* local */					/* SYS_FS_RENAME	66 */
+    /* local */					/* SYS_FS_SYMLINK	67 */
+    /* local */					/* SYS_FS_READLINK	68 */
+    /* local */					/* SYS_FS_CREATEPIPE	69 */
+    SYS_PARAM_INT,	      PARM_I,		/* ..VM_MAPKERNELINTOUSER 70 */
+    SYS_PARAM_INT,	      PARM_I,
+    SYS_PARAM_INT,	      PARM_I,
+    SYS_PARAM_INT,	      PARM_OC,
+    SYS_PARAM_FS_NAME,	      PARM_IA,		/* SYS_FS_ATTACH_DISK	71 */
+    SYS_PARAM_FS_NAME,	      PARM_IA,
+    SYS_PARAM_INT,	      PARM_I,
+    /* local */			     		/* SYS_FS_SELECT	72 */
+    /* local */					/* SYS_SYS_SHUTDOWN	73 */
+    SYS_PARAM_PROC_PID,	      PARM_I,		/* SYS_PROC_MIGRATE	74 */
+    SYS_PARAM_INT,	      PARM_I,
+    SYS_PARAM_FS_NAME, 	      PARM_IA,		/* SYS_FS_MAKE_DEVICE	75 */
+    SYS_PARAM_FS_DEVICE,      PARM_IC,
+    SYS_PARAM_INT,	      PARM_I,
+    /* local */					/* SYS_FS_COMMAND	76 */
+    /* local */					/* -obsolete-		77 */
+    /* local */					/* SYS_GETMACHINEINFO	78 */
+    /* special */				/* SYS_NET_INSTALL_ROUTE 79 */
+    /* local */					/* SYS_FS_READVECTOR	80 */
+    /* local */					/* SYS_FS_WRITEVECTOR	81 */
+    /* local */					/* SYS_FS_CHECKACCESS	82 */
+    /* local */				/* SYS_PROC_GETINTERVALTIMER	83 */
+    /* local */				/* SYS_PROC_SETINTERVALTIMER	84 */
+    /* local */				/* SYS_FS_WRITEBACKID		85 */
+    /* special */			     	/* SYS_PROC_EXEC_ENV	86 */
+    /* local */				/* SYS_FS_SET_ATTR_NEW		87 */
+    /* local */ 			/* SYS_FS_SET_ATTR_ID_NEW	88 */
+    /* local */ 			/* SYS_PROC_GETHOSTIDS		89 */
+    /* local */ 			/* SYS_SCHED_IDLE_PROCESSOR	90 */
+    /* local */ 			/* SYS_SCHED_START_PROCESSOR	91 */
+    /* local */ 			/* SYS_MACH_NUM_PROCESSORS	92 */
+    /* local */                         /* SYS_PROF_PROFIL              93 */
+    /* local */                         /* SYS_PROC_REMOTE_EXEC         94 */
+    /* local */                         /* SYS_SYS_GETMACHINEINFO_NEW   95 */
+    /* local */                         /* SYS_VM_MMAP			96 */
+    /* local */                         /* SYS_VM_MUNMAP		97 */
+    /* local */                         /* SYS_VM_MSYNC			98 */
+    /* local */                         /* SYS_VM_MLOCK			99 */
+    /* local */                         /* SYS_VM_MUNLOCK		100 */
+    /* local */                         /* SYS_VM_MINCORE		101 */
+    /* local */                         /* SYS_SYNC_SEMCTL		102 */
+    /* local */                         /* SYS_SYNC_SEMGET		103 */
+    /* local */                         /* SYS_SYNC_SEMOP		104 */
+    /* local */                         /* VM_MPROTECT			105 */
+    /* special */			/* SYS_PROC_VFORK	        106 */
+    /* local */				/* SYS_NET_GET_ROUTES		107 */
+    /* local */				/* SYS_NET_DELETE_ROUTE		108 */
+    /* local */				/* SYS_ZSS_CMD			109 */
+    /* local */				/* SYS_ZEBRA_CMD		110 */
+    SYS_PARAM_HOSTNAME,		PARM_OC,	/* SYS_SYS_GET_HOSTNAME	111 */
+    SYS_PARAM_HOSTNAME,		PARM_IA,	/* SYS_SYS_SET_HOSTNAME	112 */
+
+    /*
+     * Insert new system call information above this line.
+     */
+    NIL,		      NIL		/* array compatibility check */
+};
+
+/*
+ * Define an array to count the number of system calls performed for local
+ * and foreign processes, as well as subscripts and a macro to reset it.
+ */
+
+#define LOCAL_CALL 0
+#define FOREIGN_CALL 1
+int sys_NumCalls[SYS_NUM_SYSCALLS];
+#define RESET_NUMCALLS() bzero((Address) sys_NumCalls, \
+				SYS_NUM_SYSCALLS * sizeof(int));
+
+/* 
+ * Define an array of ticks, to keep track of the total time spent in each 
+ * system call.  sys_CallProfiling indicates whether to maintain the array 
+ * or not.
+ */
+
+Boolean sys_CallProfiling = FALSE;
+Timer_Ticks sys_CallTimes[SYS_NUM_SYSCALLS];
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SysInitSysCall --
+ *
+ *	Initialize the data structures for performing a system call.
+ *	Make sure the last entry in the array of parameters is (NIL, NIL)
+ * 	(serving as a cross check on the total number of parameters to
+ *	be initialized).  Initialize the count of the number of system
+ *	calls performed.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The mapping between system calls and their argument types is
+ *	established.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+SysInitSysCall()
+{
+    int sysCallNum;
+    SysCallEntry *entryPtr;
+    Sys_CallParam *paramPtr;
+
+    paramPtr = paramsArray;
+    entryPtr = sysCalls;
+    for (sysCallNum = 0; sysCallNum < SYS_NUM_SYSCALLS; sysCallNum++) {
+	if (!entryPtr->special) {
+	    entryPtr->paramsPtr = paramPtr;
+	    paramPtr += entryPtr->numWords;
+	/*
+	 * Won't lint due to cast of function pointer.
+	 */
+#ifndef lint
+	    Mach_InitSyscall(sysCallNum, entryPtr->numWords,
+		    entryPtr->localFunc, SysMigCall);
+#endif /* lint */
+	} else {
+	/*
+	 * Won't lint due to cast of function pointer.
+	 */
+#ifndef lint
+	    Mach_InitSyscall(sysCallNum, entryPtr->numWords,
+		    entryPtr->localFunc, entryPtr->remoteFunc);
+#endif /* lint */
+	}
+	entryPtr++;
+    }
+    if (paramPtr->type != NIL || paramPtr->disposition != NIL) {
+	panic("SysInitSysCall: error initializing parameter array.\n");
+    }
+    RESET_NUMCALLS();
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SysMigCall --
+ *
+ *	This procedure is invoked whenever a migrated process invokes
+ *	a kernel call that doesn't have "special" set.  It arranges
+ *	for the kernel call to be sent home in a standard fashion.
+ *
+ * Results:
+ *	Returns the result of the kernel call, whatever that is.
+ *
+ * Side effects:
+ *	Depends on the kernel call.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+SysMigCall(args)
+    Sys_ArgArray args;			/* The arguments to the system call. */
+{
+    int sysCall;
+    register SysCallEntry *entryPtr;
+
+    sysCall = Mach_GetLastSyscall();
+    entryPtr = &sysCalls[sysCall];
+    return (*entryPtr->remoteFunc)(sysCall, entryPtr->numWords,
+	    (ClientData *) &args, entryPtr->paramsPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sys_OutputNumCalls --
+ *
+ *	Copy the number of invocations of system calls into user space.
+ *	Takes an argument, the number of calls to copy, which indicates the
+ *	size of the user's buffer.  This is protection against any
+ *	inconsistency between the kernel and user program's ideas of how
+ *	many system calls there are.  An argument of 0 calls indicates that
+ *	the statistics should be reset to 0.
+ *
+ * Results:
+ *	The return status from Vm_CopyOut is returned.
+ *
+ * Side effects:
+ *	Data is copied into user space.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Sys_OutputNumCalls(requestedCount, buffer, doTimes)
+    int requestedCount;	/* number of system calls statistics to copy */
+    Address buffer;		/* start address of user's buffer */
+    Boolean doTimes;		/* copy per-call times as well */
+{
+    ReturnStatus status = SUCCESS;
+    int numToCopy;		/* number of calls actually copied out */
+
+    if (requestedCount == 0) {
+	RESET_NUMCALLS();
+	bzero(sys_CallTimes, SYS_NUM_SYSCALLS * sizeof(Timer_Ticks));
+    } else {
+	/* 
+	 * If the user wants the per-call times as well, put them after the 
+	 * per-call counts.  If there are fewer calls than the user 
+	 * requested, there will be a gap.  (Otherwise, how would the user 
+	 * know where to find the times?)
+	 */
+	numToCopy = (requestedCount > SYS_NUM_SYSCALLS
+		     ? SYS_NUM_SYSCALLS
+		     : requestedCount);
+	status = Vm_CopyOut(numToCopy * sizeof(int), (Address) sys_NumCalls,
+			    buffer);
+	if (doTimes && status == SUCCESS) {
+	    status = OutputCallTimes(numToCopy,
+				     buffer + requestedCount * sizeof(int));
+	}
+    }
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * OutputCallTimes --
+ *
+ *	Copy the per-call times to a user buffer.
+ *
+ * Results:
+ *	Returns the usual Sprite status code.
+ *
+ * Side effects:
+ *	The current cumulative times for the system calls are converted 
+ *	from Ticks to Time's and then copied out.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+OutputCallTimes(numToCopy, buffer)
+    int numToCopy;		/* number of calls to copy; already 
+				 * truncated if necessary*/
+    Address buffer;		/* where to put the times */
+{
+    Time times[SYS_NUM_SYSCALLS];
+    int index;
+
+    for (index = 0; index < SYS_NUM_SYSCALLS; ++index) {
+	Timer_TicksToTime(sys_CallTimes[index], &times[index]);
+    }
+
+    return Vm_CopyOut(numToCopy * sizeof(Time), (Address)times,
+		      buffer);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sys_RecordCallStart --
+ *
+ *	Record the current time in the PCB.  Called at the start of a 
+ *	system call.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Sys_RecordCallStart()
+{
+    Proc_ControlBlock *procPtr = Proc_GetCurrentProc();
+
+    Timer_GetCurrentTicks(&procPtr->syscallStartTime);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sys_RecordCallFinish --
+ *
+ *	Update the time spent for a particular system call.  Called after 
+ *	the call has been handled.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Updates the appropriate tick count in sys_CallTimes.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Sys_RecordCallFinish(callNum)
+    int callNum;		/* system call number */
+{
+    Timer_Ticks totalTime;
+    Timer_Ticks now;
+    Proc_ControlBlock *procPtr;
+
+    procPtr = Proc_GetCurrentProc();
+    Timer_GetCurrentTicks(&now);
+    Timer_SubtractTicks(now, procPtr->syscallStartTime, &totalTime);
+    Timer_AddTicks(sys_CallTimes[callNum], totalTime,
+		   &sys_CallTimes[callNum]);
+}
+@
+
+
+9.13
+log
+@Added a new system call for Zebra_Cmd.
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/sys/sysSysCall.c,v 9.12 92/06/01 14:37:05 kupfer Exp $ SPRITE (Berkeley)";
+d70 1
+d142 1
+d305 4
+a308 2
+    ErrorProc,   		ErrorProc,   TRUE,	3,   NILPARM,
+    ErrorProc,   		ErrorProc,   TRUE,	3,   NILPARM,
+d491 7
+a497 1
+    /* local */				/* SYS_NET_GET_ROUTES		107 */			
+@
+
+
+9.12
+log
+@Add support for system call timing.
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/sys/sysSysCall.c,v 9.11 92/04/17 17:30:36 jhh Exp $ SPRITE (Berkeley)";
+d300 2
+a301 2
+     * The following is a placeholder for a Zebra Storage Server system
+     * call which isn't in the standard kernel. 
+d303 2
+a304 1
+    ErrorProc,   		ErrorProc,   TRUE,	2,   NILPARM,
+@
+
+
+9.11
+log
+@Added a placeholder for a Zebra system call (Zss_Cmd).
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/sys/sysSysCall.c,v 9.10 92/04/14 17:08:20 jhh Exp $ SPRITE (Berkeley)";
+d76 2
+d504 9
+d625 4
+a628 3
+Sys_OutputNumCalls(numToCopy, buffer)
+    int numToCopy;	/* number of system calls statistics to copy */
+    Address buffer;
+d631 1
+d633 1
+a633 1
+    if (numToCopy == 0) {
+d635 1
+d637 5
+a641 2
+	/*
+	 * Are arrays stored in row-major or column-major order???
+d643 3
+d648 4
+d654 94
+@
+
+
+9.10
+log
+@Added Net_GetRoutes and Net_DeleteRoute.
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/sys/sysSysCall.c,v 9.9 91/08/24 20:01:32 mottsmth Exp $ SPRITE (Berkeley)";
+d297 5
+@
+
+
+9.9
+log
+@Add true vfork support
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysSysCall.c,v 9.8 90/12/06 17:38:21 shirriff Exp $ SPRITE (Berkeley)";
+d295 2
+d479 1
+@
+
+
+9.8
+log
+@Put Test_PrintOut back, since it was almost, but not quite, obsolete.
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysSysCall.c,v 9.7 90/10/19 15:55:05 mendel Exp Locker: shirriff $ SPRITE (Berkeley)";
+d294 1
+d476 1
+@
+
+
+9.7
+log
+@Removed include of non-existant include file sysTestCall.h
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysSysCall.c,v 9.6 90/09/12 13:40:43 shirriff Exp $ SPRITE (Berkeley)";
+d69 1
+d177 3
+a179 3
+    ErrorProc,		       ErrorProc,   	   TRUE,       10,   NILPARM,
+    ErrorProc,		       ErrorProc,   	   TRUE,	2,   NILPARM,
+    ErrorProc,		       ErrorProc,   	   TRUE,	1,   NILPARM,
+@
+
+
+9.6
+log
+@Changed includes to angle brackets.
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysSysCall.c,v 9.5 90/09/11 10:51:02 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+a66 1
+#include <sysTestCall.h>
+@
+
+
+9.5
+log
+@Added function prototyping.
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys.ken/RCS/sysSysCall.c,v 9.4 90/07/30 11:40:56 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d51 19
+a69 19
+#include "sprite.h"
+#include "fs.h"
+#include "sys.h"
+#include "sysInt.h"
+#include "dbg.h"
+#include "proc.h"
+#include "sync.h"
+#include "sched.h"
+#include "vm.h"
+#include "user/vm.h"
+#include "rpc.h"
+#include "prof.h"
+#include "devVid.h"
+#include "net.h"
+#include "sysSysCall.h"
+#include "sysSysCallParam.h"
+#include "sysTestCall.h"
+#include "status.h"
+#include "stdio.h"
+@
+
+
+9.4
+log
+@Added mprotect syscall.
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysSysCall.c,v 9.3 90/03/22 12:20:22 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d54 1
+d69 1
+d75 2
+a76 2
+extern	ReturnStatus	SysMigCall();
+extern	ReturnStatus	Sys_StatsStub();
+a77 4
+extern	ReturnStatus	Sync_SemctlStub();
+extern	ReturnStatus	Sync_SemgetStub();
+extern	ReturnStatus	Sync_SemopStub();
+
+a112 6
+ * This declaration will go away when all system calls have been set up
+ * for migration.
+ */
+extern ReturnStatus Proc_RemoteDummy();
+
+/*
+d177 3
+a179 3
+    Test_PrintOut,	       Test_PrintOut,      TRUE,       10,   NILPARM,
+    Test_GetLine,	       Test_GetLine,       TRUE,	2,   NILPARM,
+    Test_GetChar,	       Test_GetChar,  	   TRUE,	1,   NILPARM,
+d569 1
+a569 1
+ReturnStatus
+@
+
+
+9.3
+log
+@Added system calls for semaphore functions (semctl, semget, semop).
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysSysCall.c,v 9.2 89/11/07 15:00:05 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d301 1
+d482 1
+@
+
+
+9.2
+log
+@Added Vm_Mmap, unmap, sync, lock.
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysSysCall.c,v 9.1 89/10/11 16:41:20 douglis Exp Locker: shirriff $ SPRITE (Berkeley)";
+d76 4
+d298 3
+d478 3
+@
+
+
+9.1
+log
+@don't forward as many calls home
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysSysCall.c,v 9.0 89/09/12 15:20:29 douglis Stable Locker: douglis $ SPRITE (Berkeley)";
+a75 2
+extern	ReturnStatus	Vm_Mmap(), Vm_Munmap();
+
+d290 4
+d465 6
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysSysCall.c,v 8.10 89/09/08 16:21:49 shirriff Exp Locker: douglis $ SPRITE (Berkeley)";
+d196 1
+a196 1
+    Proc_GetIDs,	       Proc_DoRemoteCall,  FALSE,	4,   NILPARM,
+d199 3
+d203 3
+d212 1
+a212 1
+    Sig_UserSend,	       Proc_DoRemoteCall,  FALSE,	3,   NILPARM,
+d216 3
+a218 3
+    Prof_Start,		       Proc_DoRemoteCall,  TRUE,	0,   NILPARM,
+    Prof_End,		       Proc_DoRemoteCall,  TRUE,	0,   NILPARM,
+    Prof_DumpStub,	       Proc_DoRemoteCall,  FALSE,	1,   NILPARM,
+d225 3
+a227 3
+    Proc_GetResUsage,	       Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
+    Proc_GetPriority,	       Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
+    CAST Proc_SetPriority,     Proc_DoRemoteCall,  FALSE,	3,   NILPARM,
+d266 1
+a266 1
+    Fs_CommandStub,		Proc_DoRemoteCall, FALSE,	3,   NILPARM,
+d268 1
+a268 1
+    Sys_GetMachineInfo,       	Proc_DoRemoteCall, FALSE,	3,   NILPARM,
+d368 1
+a368 4
+    SYS_PARAM_PROC_PID,	      PARM_OC,	     	/* SYS_PROC_GETIDS	17 */
+    SYS_PARAM_PROC_PID,	      PARM_OC,
+    SYS_PARAM_INT,	      PARM_OC,
+    SYS_PARAM_INT,	      PARM_OC,
+d381 1
+a381 3
+    SYS_PARAM_INT,	      PARM_I,		/* SYS_SIG_SEND		27 */
+    SYS_PARAM_PROC_PID,	      PARM_I,
+    SYS_PARAM_INT,	      PARM_I,
+d386 3
+a388 3
+    /* no args */			     	/* SYS_PROF_START	31 */
+    /* no args */			     	/* SYS_PROF_END		32 */
+    SYS_PARAM_FS_NAME,	      PARM_IA,		/* SYS_PROF_DUMP	33 */
+d399 3
+a401 7
+    SYS_PARAM_PROC_PID,	      PARM_I,		/* SYS_PROC_GETRESUSAGE 40 */
+    SYS_PARAM_PROC_RES,	      PARM_OC,
+    SYS_PARAM_PROC_PID,	      PARM_I,		/* SYS_PROC_GETPRIORITY 41 */
+    SYS_PARAM_INT,	      PARM_OC,
+    SYS_PARAM_PROC_PID,	      PARM_I,		/* SYS_PROC_SETPRIORITY 42 */
+    SYS_PARAM_INT,	      PARM_I,
+    SYS_PARAM_INT,	      PARM_I,
+d443 3
+a445 7
+    SYS_PARAM_INT,	      PARM_I,		/* SYS_FS_COMMAND	76 */
+    SYS_PARAM_INT,	      PARM_I,
+    SYS_PARAM_CHAR,           PARM_ICR,
+    /* local */					/* SYS_FS_LOCK		77 */
+    SYS_PARAM_INT,	      PARM_OC,		/* SYS_GETMACHINEINFO	78 */
+    SYS_PARAM_INT,	      PARM_OC,
+    SYS_PARAM_INT,	      PARM_OC,
+@
+
+
+8.10
+log
+@Added Vm_Mmap, Vm_Munmap calls.
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysSysCall.c,v 8.9 89/08/22 15:31:46 douglis Exp Locker: shirriff $ SPRITE (Berkeley)";
+@
+
+
+8.9
+log
+@don't migrate Proc_Debug call.
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysSysCall.c,v 8.8 89/08/17 17:35:30 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d76 2
+d284 2
+@
+
+
+8.8
+log
+@Changed arguments to Sys_GetMachineInfo
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysSysCall.c,v 8.7 89/07/31 17:59:02 douglis Exp $ SPRITE (Berkeley)";
+d220 2
+a221 2
+    Proc_Debug,		       Proc_RemoteDummy,   TRUE,	5,   NILPARM,
+    Proc_Profile,	       Proc_RemoteDummy,   TRUE,	6,   NILPARM,
+@
+
+
+8.7
+log
+@use Mach_GetLastSyscall
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysSysCall.c,v 8.6 89/06/09 17:52:10 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d281 1
+d465 1
+@
+
+
+8.6
+log
+@changed # of args to Proc_Exec, which isn't generally used anymore anyway,
+and added Proc_RemoteExec.
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysSysCall.c,v 8.5 89/02/28 12:08:02 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d562 1
+a562 2
+    int sysCallType;
+    ReturnStatus status;
+d565 3
+a567 7
+    status = Vm_CopyIn(sizeof(sysCallType), Mach_GetStackPointer(),
+	    (Address) &sysCallType);
+    if (status != SUCCESS) {
+	return SYS_ARG_NOACCESS;
+    }
+    entryPtr = &sysCalls[sysCallType];
+    return (*entryPtr->remoteFunc)(sysCallType, entryPtr->numWords,
+@
+
+
+8.5
+log
+@New interface for Proc_GetPCBInfo and Vm_GetSegInfo
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysSysCall.c,v 8.4 89/02/10 16:43:20 douglis Exp $ SPRITE (Berkeley)";
+d76 5
+d178 1
+a178 1
+    Proc_Exec,		       Proc_Exec,	   TRUE,	3,   NILPARM,
+d280 1
+d463 1
+@
+
+
+8.4
+log
+@got rid of references to SYS_PARAM_STRING and SYS_PARAM_PROC_ENV_*.
+Changed environment-related calls to be ErrorProc (finally!!).  don't
+forward Sys_Shutdown (used to sync disks, for example).
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysSysCall.c,v 8.3 89/01/26 09:19:38 rab Exp Locker: douglis $ SPRITE (Berkeley)";
+d210 2
+a211 2
+    Proc_GetPCBInfo,	       Proc_GetPCBInfo,    TRUE,	6,   NILPARM,
+    Vm_GetSegInfo,	       Vm_GetSegInfo,      TRUE,	3,   NILPARM,
+a456 1
+
+@
+
+
+8.3
+log
+@Added profil syscall.
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysSysCall.c,v 8.2 89/01/12 07:57:27 douglis Exp Locker: rab $ SPRITE (Berkeley)";
+a122 1
+    NIL,				/* SYS_PARAM_STRING		*/
+a131 2
+    PROC_MAX_ENVIRON_NAME_LENGTH,	/* SYS_PARAM_PROC_ENV_NAME  	*/
+    PROC_MAX_ENVIRON_VALUE_LENGTH, 	/* SYS_PARAM_PROC_ENV_VALUE 	*/
+d227 11
+a237 6
+    Proc_SetEnvironStub,       Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
+    Proc_UnsetEnvironStub,     Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
+    Proc_GetEnvironVarStub,    Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
+    Proc_GetEnvironRangeStub,  Proc_RemoteDummy,   TRUE,	4,   NILPARM,
+    Proc_InstallEnvironStub,   Proc_RemoteDummy,   TRUE,	2,   NILPARM,
+    Proc_CopyEnvironStub,      Proc_DoRemoteCall,  FALSE,	0,   NILPARM,
+d250 1
+a250 1
+    CAST Sys_Shutdown,		Proc_DoRemoteCall, FALSE,	2,   NILPARM,
+d406 6
+a411 9
+    SYS_PARAM_PROC_ENV_NAME,  PARM_IA,	     	/* SYS_PROC_SET_ENVIRON 55 */
+    SYS_PARAM_PROC_ENV_VALUE, PARM_IA,
+    SYS_PARAM_PROC_ENV_NAME,  PARM_IA,	     	/* SYS_PROC_UNSET_ENVIRON 56 */
+    SYS_PARAM_DUMMY,  	      PARM,
+    SYS_PARAM_PROC_ENV_NAME,  PARM_IA,	     	/* ..._GET_ENVIRON_VAR	57 */
+    SYS_PARAM_PROC_ENV_VALUE, PARM_OC,
+    /* special */				/* ..._GET_ENVIRON_RANGE 58 */
+    /* special */				/* ..._INSTALL_ENVIRON	59 */
+    /* no args */			     	/* SYS_PROC_COPY_ENVIRON 60 */
+d429 1
+a429 2
+    SYS_PARAM_INT,	      PARM_I,		/* SYS_SYS_SHUTDOWN	73 */
+    SYS_PARAM_STRING,	      PARM_IC,
+@
+
+
+8.2
+log
+@*** empty log message ***
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysSysCall.c,v 8.1 88/12/04 15:35:30 ouster Exp Locker: douglis $ SPRITE (Berkeley)";
+d267 1
+d269 4
+d458 2
+@
+
+
+8.1
+log
+@Stop using obsolete headers.
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysSysCall.c,v 8.0 88/11/11 18:38:37 douglis Stable Locker: ouster $ SPRITE (Berkeley)";
+d265 3
+d353 1
+a353 1
+    SYS_PARAM_PROC_PID,	      PARM_OC,		
+d426 1
+a426 1
+    SYS_PARAM_STRING,	      PARM_IC,	
+d450 3
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysSysCall.c,v 6.9 88/11/11 14:42:29 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+a57 1
+#include "byte.h"
+@
+
+
+6.9
+log
+@Added Proc_GetHostIDs system call.
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysSysCall.c,v 6.8 88/11/02 10:33:23 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+@
+
+
+6.8
+log
+@changed Vm_Cmd and Vm_GetSegInfo not to be forwarded.
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysSysCall.c,v 6.7 88/10/28 18:49:53 mlgray Exp Locker: douglis $ SPRITE (Berkeley)";
+d265 1
+d447 1
+@
+
+
+6.7
+log
+@More conversion to new C library.
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysSysCall.c,v 6.6 88/10/28 18:44:05 mlgray Exp Locker: mlgray $ SPRITE (Berkeley)";
+d210 1
+a210 1
+    Vm_Cmd,		       Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
+d215 1
+a215 1
+    Vm_GetSegInfo,	       Proc_RemoteDummy,   TRUE,	3,   NILPARM,
+d367 1
+a367 2
+    SYS_PARAM_VM_CMD,	      PARM_I,		/* SYS_VM_CMD		34 */
+    SYS_PARAM_INT,	      PARM_I,
+d376 1
+a376 1
+    /* special (don't migrate?) */		/* SYS_VM_GETSEGINFO	39 */
+@
+
+
+6.6
+log
+@More conversion to new C library.
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysSysCall.c,v 6.5 88/10/24 09:17:24 douglis Exp Locker: mlgray $ SPRITE (Berkeley)";
+d149 1
+a149 1
+    Sys_Panic(SYS_WARNING, "Obsolete system call.\n");
+d518 1
+a518 2
+	Sys_Panic(SYS_FATAL,
+		  "SysInitSysCall: error initializing parameter array.\n");
+@
+
+
+6.5
+log
+@added an argument to Proc_GetPCBInfo and made it non-forwardable.
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysSysCall.c,v 6.4 88/10/19 17:54:11 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d461 2
+a462 2
+#define RESET_NUMCALLS() Byte_Zero(SYS_NUM_SYSCALLS * sizeof(int), \
+				   (Address) sys_NumCalls)
+@
+
+
+6.4
+log
+@changed Vm_Command to int (done by MR)
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: sysSysCall.c,v 6.3 88/08/29 12:30:52 mlgray Exp $ SPRITE (Berkeley)";
+d214 1
+a214 1
+    Proc_GetPCBInfo,	       Proc_DoRemoteCall,  FALSE,	5,   NILPARM,
+d376 1
+a376 5
+    SYS_PARAM_RANGE1,	      PARM_I,		/* SYS_PROC_GETPCBINFO	38 */
+    SYS_PARAM_RANGE2,	      PARM_I,
+    SYS_PARAM_PCB,	      PARM_OCR,
+    SYS_PARAM_PCBARG,         PARM_OCR,
+    SYS_PARAM_INT,            PARM_OC,
+@
+
+
+6.3
+log
+@fixed lint errors.
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: sysSysCall.c,v 6.2 88/08/25 15:11:44 brent Exp $ SPRITE (Berkeley)";
+d133 1
+a133 1
+    sizeof(Vm_Command),			/* SYS_PARAM_VM_CMD		*/
+@
+
+
+6.2
+log
+@Fixed parameter count on Net_InstallRoute
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: sysSysCall.c,v 6.1 88/08/12 15:52:40 brent Exp $ SPRITE (Berkeley)";
+d218 1
+a218 1
+    Proc_SetPriority,	       Proc_DoRemoteCall,  FALSE,	3,   NILPARM,
+d249 1
+a249 1
+    Sys_Shutdown,		Proc_DoRemoteCall, FALSE,	2,   NILPARM,
+d503 4
+d508 2
+a509 1
+		    (Address) entryPtr->localFunc, (Address) SysMigCall);
+d511 4
+d516 2
+a517 2
+		    (Address) entryPtr->localFunc,
+		    (Address) entryPtr->remoteFunc);
+@
+
+
+6.1
+log
+@Added new variants of Fs_SetAttributes system calls
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: sysSysCall.c,v 5.11 88/07/17 23:21:04 douglis Exp $ SPRITE (Berkeley)";
+d255 1
+a255 1
+    Net_InstallRouteStub, 	Net_InstallRouteStub, TRUE, 	5,   NILPARM,
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d261 1
+a261 1
+    Fs_FileWriteBackStub,	Fs_FileWriteBackStub, TRUE, 4,  NILPARM,
+d263 2
+d449 2
+@
+
+
+5.11
+log
+@changed incorrect param setup for GetMachineInfo, and changed
+copyright notice.
+@
+text
+@d48 1
+a48 1
+static char rcsid[] = "$Header: sysSysCall.c,v 5.10 88/05/05 18:00:55 nelson Exp $ SPRITE (Berkeley)";
+@
+
+
+5.10
+log
+@Handles move of functionality from sys to mach.
+@
+text
+@d37 8
+a44 2
+ * Copyright 1985 Regents of the University of California
+ * All rights reserved.
+d48 1
+a48 1
+static char rcsid[] = "$Header: sysSysCall.c,v 5.9 88/05/04 17:23:48 nelson Exp $ SPRITE (Berkeley)";
+d246 1
+a246 1
+    VmMach_MapKernelIntoUser,	Proc_DoRemoteCall, FALSE,	4,   NILPARM,
+d436 3
+a438 3
+    SYS_PARAM_INT,	      PARM_I,		/* SYS_GETMACHINEINFO	78 */
+    SYS_PARAM_INT,	      PARM_I,
+    SYS_PARAM_INT,	      PARM_I,
+@
+
+
+5.9
+log
+@Changed to handle new structure of mach module.
+@
+text
+@d42 1
+a42 1
+static char rcsid[] = "$Header: sysSysCall.c,v 5.8 88/04/13 11:32:50 ouster Exp $ SPRITE (Berkeley)";
+a54 1
+#include "sunMon.h"
+@
+
+
+5.8
+log
+@Changes to make kernel calls much faster.
+@
+text
+@d42 1
+a42 1
+static char rcsid[] = "$Header: sysSysCall.c,v 5.7 88/03/08 14:19:11 douglis Exp $ SPRITE (Berkeley)";
+a46 1
+#include "exc.h"
+a49 1
+#include "machine.h"
+d494 1
+a494 1
+	    Exc_InitSyscall(sysCallNum, entryPtr->numWords,
+d497 1
+a497 1
+	    Exc_InitSyscall(sysCallNum, entryPtr->numWords,
+@
+
+
+5.7
+log
+@Changed environment-related system calls to use "Stub" names, and added
+argument to Proc_GetPCBInfo.
+@
+text
+@d42 1
+a42 1
+static char rcsid[] = "$Header: sysSysCall.c,v 5.6 87/12/24 16:37:54 douglis Exp $ SPRITE (Berkeley)";
+d65 1
+d67 5
+d444 1
+a444 1
+   /*
+d457 1
+a457 1
+static int numCalls[SYS_NUM_SYSCALLS];
+d459 1
+a459 1
+				   (Address) numCalls)
+d496 6
+a510 1
+
+d515 1
+a515 1
+ * Sys_SysCall --
+d517 3
+a519 1
+ *	Perform a system call.
+d522 1
+a522 1
+ *	None.
+d525 1
+a525 1
+ *	None.
+d531 2
+a532 3
+Sys_SysCall(trapStackPtr)
+    register	Exc_TrapStack	*trapStackPtr;	/* The trap stack set up on 
+						 * the system call. */
+d534 3
+a536 5
+    register SysCallEntry	*entryPtr;
+    register int		sysCallType;
+    register Proc_ControlBlock	*procPtr;
+    Sys_ArgArray		args;
+    int				argsSize;
+d538 4
+a541 36
+    /*
+     *	User stack format:
+     *
+     *		|------------------|<- user stack pointer
+     *		| Sys call type.   |
+     *		|------------------|
+     *		| PC where user	   |
+     *		| called from.	   |
+     *		|------------------|<- user stack pointer + SYS_ARG_OFFSET
+     *		| Arguments	   |
+     *		| ...		   |
+     *
+     */
+
+    /*
+     * Determine the type of system call.  The type is stored in D0 in addition
+     * to being pushed onto the user stack, but the type in D0 is reset to NIL
+     * if a system call is restarted after migration.
+     */
+    sysCallType = trapStackPtr->genRegs[D0];
+    if (sysCallType == NIL) {
+	int tempSysCallType;
+	if (Vm_CopyIn(sizeof(sysCallType),
+		      (Address) trapStackPtr->userStackPtr,
+		      (Address) &tempSysCallType) != SUCCESS) {
+     	    return(FAILURE);
+	}
+	sysCallType = tempSysCallType;
+     }
+
+
+    /*
+     * See if the system call is legal.
+     */
+    if (sysCallType > sizeof(sysCalls) / sizeof(SysCallEntry) - 1) {
+	return(SYS_INVALID_SYSTEM_CALL);
+d544 2
+a545 59
+#ifndef CLEAN
+    if (sysTraceSysCalls) {
+	Sys_Printf("SysCall #%d:", sysCallType);
+    }
+#endif CLEAN
+
+    /*
+     * Copy the arguments in.
+     */
+    argsSize = SYS_ARG_SIZE * entryPtr->numWords;
+    if (argsSize > 0) {
+	if (Vm_CopyIn(argsSize,
+		       (Address) (trapStackPtr->userStackPtr + SYS_ARG_OFFSET),
+		       (Address) &args) != SUCCESS) {
+	    return(FAILURE);
+	}
+    }
+
+    /*
+     * If the process is foreign, then [for now] don't let it make any
+     * system calls other than Proc_Exit.
+     */
+    procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+
+    /*
+     * If this is a fork call then the registers and the program counter
+     * have to be saved in the proc table entry.
+     */
+    if (sysCallType == SYS_PROC_FORK) {
+	procPtr->progCounter = trapStackPtr->excStack.pc;
+	Byte_Copy(sizeof(procPtr->genRegs),
+		 (Address) trapStackPtr->genRegs,
+		 (Address) procPtr->genRegs);
+	procPtr->genRegs[SP] = trapStackPtr->userStackPtr;
+    }
+
+    /*
+     * Now perform the system call.
+     */
+    numCalls[sysCallType] += 1;
+    if (!(procPtr->genFlags & PROC_FOREIGN)) {
+	trapStackPtr->genRegs[D0] = (*entryPtr->localFunc)(args);
+    } else {
+	if (entryPtr->special) {
+	    trapStackPtr->genRegs[D0] = (*entryPtr->remoteFunc)(args);
+	} else {
+	    trapStackPtr->genRegs[D0] = (*entryPtr->remoteFunc)
+			(sysCallType, entryPtr->numWords,
+			 (ClientData *) args.argArray, entryPtr->paramsPtr);
+	}
+    }
+#ifndef CLEAN
+    if (sysTraceSysCalls) {
+	Sys_Printf("#%d returns %x\n", sysCallType,
+			trapStackPtr->genRegs[D0]);
+    }
+#endif CLEAN
+
+    return(SUCCESS);
+a546 1
+
+d582 1
+a582 1
+	status = Vm_CopyOut(numToCopy * sizeof(int), (Address) numCalls,
+a586 2
+
+
+@
+
+
+5.6
+log
+@Added Proc_ExecEnv system call.
+@
+text
+@d42 1
+a42 1
+static char rcsid[] = "$Header: sysSysCall.c,v 5.5 87/12/12 16:42:09 nelson Exp $ SPRITE (Berkeley)";
+a66 4
+/*
+ * The following is a temporary replacement for the Proc_Exec system call.
+ */
+extern	ReturnStatus	Proc_ExecEnv();
+d132 1
+d205 1
+a205 1
+    Proc_GetPCBInfo,	       Proc_DoRemoteCall,  FALSE,	4,   NILPARM,
+d222 6
+a227 6
+    Proc_SetEnviron,	       Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
+    Proc_UnsetEnviron,	       Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
+    Proc_GetEnvironVar,	       Proc_DoRemoteCall,  FALSE,	2,   NILPARM,
+    Proc_GetEnvironRange,      Proc_RemoteDummy,   TRUE,	4,   NILPARM,
+    Proc_InstallEnviron,       Proc_RemoteDummy,   TRUE,	2,   NILPARM,
+    Proc_CopyEnviron,	       Proc_DoRemoteCall,  FALSE,	0,   NILPARM,
+d368 1
+@
+
+
+5.5
+log
+@Handles moving of hardware dependencies from vm to sun.
+@
+text
+@d42 1
+a42 1
+static char rcsid[] = "$Header: sysSysCall.c,v 5.4 87/10/16 17:51:01 nelson Exp $ SPRITE (Berkeley)";
+d67 4
+d256 1
+d439 2
+a440 1
+    /*
+@
+
+
+5.4
+log
+@Changed number of args to Vm_GetSegInfo.
+@
+text
+@d42 1
+a42 1
+static char rcsid[] = "$Header: sysSysCall.c,v 5.3 87/10/13 10:45:13 brent Exp $ SPRITE (Berkeley)";
+d236 1
+a236 1
+    Vm_MapKernelIntoUser,	Proc_DoRemoteCall, FALSE,	4,   NILPARM,
+@
+
+
+5.3
+log
+@Added an argument to a system call
+@
+text
+@d42 1
+a42 1
+static char rcsid[] = "$Header: sysSysCall.c,v 5.2 87/09/21 10:26:29 nelson Exp $ SPRITE (Berkeley)";
+d205 1
+a205 1
+    Vm_GetSegInfo,	       Proc_RemoteDummy,   TRUE,	2,   NILPARM,
+@
+
+
+5.2
+log
+@Added write back ID system call.
+@
+text
+@d42 1
+a42 1
+static char rcsid[] = "$Header: sysSysCall.c,v 5.1 87/08/25 15:39:39 brent Exp $ SPRITE (Berkeley)";
+d245 1
+a245 1
+    Net_InstallRouteStub, 	Net_InstallRouteStub, TRUE, 	4,   NILPARM,
+@
+
+
+5.1
+log
+@Added return code to sysCall tracing
+@
+text
+@d42 1
+a42 1
+static char rcsid[] = "$Header: sysSysCall.c,v 5.0 87/08/11 10:51:28 sprite Exp $ SPRITE (Berkeley)";
+d251 1
+d433 1
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d42 1
+a42 1
+static char rcsid[] = "$Header: sysSysCall.c,v 4.13 87/08/04 13:47:55 nelson Exp $ SPRITE (Berkeley)";
+d560 5
+d613 1
+a613 1
+	Sys_Printf("SysCall #%d returns %x\n", sysCallType,
+@

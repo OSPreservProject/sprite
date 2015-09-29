@@ -1,0 +1,7 @@
+
+
+          recursive_glob globlist
+               Does the same thing as glob, except that it recursively
+               descends all the matched subdirectories, returning a
+               list of all the files that matched all pattern in the
+               list globlist.

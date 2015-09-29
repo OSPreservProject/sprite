@@ -1,0 +1,4 @@
+
+
+          cos expr
+               Returns the cosine of expr.  expr is in radians.

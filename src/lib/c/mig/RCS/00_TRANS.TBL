@@ -1,0 +1,14 @@
+F MIGHOSTC.C_V;1                    	MigHostCache.c,v
+F MIGINT.H_V;1                      	migInt.h,v
+F MIGOPENP.C_V;1                    	MigOpenPdev.c,v
+F MIG_CONF.C_V;1                    	Mig_ConfirmIdle.c,v
+F MIG_DELE.C_V;1                    	Mig_DeleteHost.c,v
+F MIG_DONE.C_V;1                    	Mig_Done.c,v
+F MIG_EVIC.C_V;1                    	Mig_Evict.c,v
+F MIG_GET0.C_V;1                    	Mig_GetAllInfo.c,v
+F MIG_GET1.C_V;1                    	Mig_GetIdleNode.c,v
+F MIG_GET2.C_V;1                    	Mig_GetInfo.c,v
+F MIG_GET3.C_V;1                    	Mig_GetPdevName.c,v
+F MIG_MAN_.;1                       	Mig.man,v
+F MIG_REQU.C_V;1                    	Mig_RequestIdleHosts.c,v
+F MIG_RETU.C_V;1                    	Mig_ReturnHosts.c,v

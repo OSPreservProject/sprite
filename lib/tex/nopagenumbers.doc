@@ -1,0 +1,15 @@
+%
+% A tiny style file to suppress page numbers on LaTeX pages.  I can never
+% remember {\em what} LaTeX calls it!
+%
+% Richard Furuta
+% Department of Computer Science
+% University of Maryland
+% College Park, MD  20742
+%
+% furuta@mimsy.umd.edu
+% seismo!umcp-cs!furuta
+%
+% October 22, 1986, first release
+%
+\pagestyle{empty}

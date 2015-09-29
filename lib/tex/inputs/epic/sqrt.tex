@@ -1,0 +1,106 @@
+\appendix
+%\section{Estimating Pythagorean Square-root}
+\medskip\noindent
+{\Large\bf Appendix A\ \ \ Estimating Pythagorean Square-root}
+
+\medskip\noindent
+For the line drawing commands described in the main sections of this
+document, we need to estimate the Pythagorean square-root in order to
+determine the length of the line (along its slope). More precisely, we need
+to estimate the number of segments of a given length needed to draw a line.
+\TeX\ does not provide for floating point calculations, and thus there are no
+direct means of calculating the above square-root. Most standard numerical
+techniques are iterative and would be too slow when used with \TeX\ for lack
+of floating point calculations, and in particular, real division, since
+calculation of such a square-root is needed very frequently.
+
+A simple non-iterative formula for estimating the square-root is derived and
+described below.
+
+\bigskip\noindent
+{\bf Problem: } Given $a$ and $b$, to find $c$ = $\sqrt{a^2 + b^2}$ using
+only operations in \{$+,-,*,/$\}.
+
+We can get very tight bounds on the square-root as follows.
+Without loss of generality, let $a \ge b$. We seek a simple $n$
+such that:
+\[\sqrt{a^2 + b^2} \ge a + \frac{b}{n}\]
+
+Squaring both sides, we have
+\[\begin{array}{lrcl}
+\Leftrightarrow & a^2+b^2 &\ge& a^2 + \displaystyle\frac{b^2}{n^2} +
+\displaystyle\frac{2ab}{n} \\[2mm]
+\Leftrightarrow & (1 - \displaystyle\frac{1}{n^2}) b^2 &\ge&
+\displaystyle\frac{2ab}{n}\\[2mm]
+\Leftrightarrow & \displaystyle\frac{b}{a} &\ge& \displaystyle\frac{2n}{(n^2
+-1)}\\[2mm]
+\mbox{or }      & (\displaystyle\frac{b}{a})n^2 - 2n -(\displaystyle
+\frac{b}{a}) &\ge& 0
+\end{array}\hfill\]
+
+>From the quadratic equation above, we finally get an expression for $n$,
+\[ n \;=\; \frac{2 \pm \sqrt{4 + 4(\frac{b}{a})^2}}{\frac{2b}{a}}
+      \;=\; \frac{1 \pm \sqrt{1 + (\frac{b}{a})^2}}{\frac{b}{a}} \]
+
+Only the $+$ve root interests us since $n$ has to be positive.
+Note that the term under the root is  bounded above and below (since
+$\frac{b}{a} \le 1$):
+\[1 \;\le\; \sqrt{1 + (\frac{b}{a})^2} \;\le\; \sqrt{2}\]
+
+Hence, we have two values for $n$,
+\[ n_l\;=\; \frac{1+1}{\frac{b}{a}} \;=\; \frac{2a}{b};\;\;\;\;\;\;\;\;\;\;
+n_u \;=\; \frac{1+ \sqrt{2}}{\frac{b}{a}} \;=\; \frac{(1+ \sqrt{2})a}{b}
+\]
+%
+which finally gives us a lower and an upper bound for $c$, the Pythagorean
+square-root,
+\[ a + \frac{b^2}{(1+ \sqrt{2})a} \;\le\; c \;\le\; a + \frac{b^2}{2a}\]
+
+These are very tight bounds. Denoting the lower bound as $c_l$ and upper
+one $c_u$, below are some numerical results ($c$ = exact square-root):
+
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+a & b & c & $c_l$ & $c_u$\\
+\hline
+100.0 & 100.0 & 141.4213 & 141.4213 & 150.0\ \ \ \ \ \ \\
+100.0 & \ \,80.0  & 128.0642 & 126.5096 & 132.0\ \ \ \ \ \  \\
+\ \,30.0  & \ \,20.0  & \ \,36.0555  & \ 35.5228  & \ 36.6667 \\
+\hline
+\end{tabular}
+\end{center}
+
+With the above bounds, one can do a linear interpolation to get exact values.
+In our case, since it is not required to be {\it extremely\/} accurate, for 
+estimating the square-root in the line drawing commands,
+we simply take the midpoint of the two bounds. For small
+numbers, which is expected to be the case most of the time,
+the error is very small.
+
+With some algebra, we get the mid-point estimate of $c$,
+\[c = \frac{c_l+c_u}{2} = a + \frac{b^2 * (3 + \sqrt{2})}{a*4*(1 + \sqrt{2})}
+= a + \frac{0.457\: b^2}{a} \;\;\;\;(a \ge b) \]
+
+The macro \verb|\sqrtandstuff| uses the above formula for estimating the
+number of points (for \verb|\dottedline| macro) and number of segments (for
+\verb|\dashline| macro). The \verb|\sqrtandstuff| macro, instead of
+calculating the length of the line, directly calculates the {\it number\/} of
+segments of a given length. For example, to draw a dotted line from
+($x_1,y_1$) to ($x_2,y_2$) with the inter-dot-gap as $d$, we estimate the
+number of dots $n$ using the following expression,
+\[ n= \frac{\Delta x}{d} + 
+\frac{0.457\:(\frac{\Delta y}{d})^2}{\frac{\Delta x}{d}} \;\;\;\;\;\;\;
+\Delta x = |x_2 - x_1| \mbox{ and } \Delta y = |y_2 - y_1|\]
+assuming $\Delta x \ge \Delta y$ (otherwise they may be inter-changed).
+
+Note that since divisions in \TeX\ are integer-divisions, it is simpler to
+deal in ``number of segments'' rather than actual lengths
+(e.g. in the expression above, $\frac{\Delta x}{d} = $ number of segments
+along X-axis).
+
+\noindent
+{\bf Caveat:} The approach presented here for estimation of
+Pythagorean square-root is an independent effort by the author. It may
+already exist in the literature --- the author is neither aware of it nor has
+he made any serious attempts at uncovering it.

@@ -1,0 +1,83 @@
+Fscache_Write(cacheInfoPtr, flags, buffer, offset, lenPtr, remoteWaitPtr)
+    firstBlock = (unsigned int) offset / FS_BLOCK_SIZE; 
+    lastBlock = (unsigned int) (offset + size - 1) / FS_BLOCK_SIZE;
+    for (blockNum = firstBlock; 
+	 blockNum <= lastBlock; 
+	 blockNum++, size -= toWrite, buffer += toWrite, offset += toWrite) {
+#ifdef lint
+	status = Fsdm_BlockAllocate(cacheInfoPtr->hdrPtr,
+		    offset, toAlloc, dontBlock, &blockAddr, &newBlock);
+	status = FsrmtBlockAllocate(cacheInfoPtr->hdrPtr,
+		    offset, toAlloc, dontBlock, &blockAddr, &newBlock);
+#endif /* lint */
+	    Fscache_FetchBlock(cacheInfoPtr, blockNum, 
+		 (int)(FSCACHE_IO_IN_PROGRESS | FSCACHE_DATA_BLOCK | dontBlock),
+		 &blockPtr, &found);
+	    Vm_CopyIn(toWrite, buffer, blockPtr->blockAddr + 
+				(offset & FS_BLOCK_OFFSET_MASK));
+	Fscache_UnlockBlock(blockPtr, (unsigned) modTime, blockAddr,
+				blockSize, FSCACHE_CLEAR_READ_AHEAD);
+
+Fsdm_BlockAllocate(hdrPtr, offset, numBytes, flags, blockAddrPtr, newBlockPtr)
+    newLastByte = offset + numBytes - 1;
+    blockNum = (unsigned int) offset / FS_BLOCK_SIZE;
+	    status = FragToBlock(handlePtr, curLastBlock, flags);
+	status = Fsdm_GetFirstIndex(handlePtr, blockNum, &indexInfo,
+				 FSDM_ALLOC_INDIRECT_BLOCKS);
+	status = Fsdm_GetNextIndex(handlePtr, &indexInfo, FALSE);
+    status = AllocateBlock(handlePtr, descPtr, &indexInfo, newLastByte, 
+		       curLastBlock, flags, &dirtiedIndex);
+    Fsdm_EndIndex(handlePtr, &indexInfo, dirtiedIndex);
+    if (newLastByte > descPtr->lastByte) {
+	descPtr->lastByte = newLastByte;
+    }
+    descPtr->flags |= FSDM_FD_DIRTY;
+
+AllocateBlock(handlePtr, descPtr, indexInfoPtr, newLastByte, curLastBlock, 
+	      dontBlock, dirtiedIndexPtr)
+    domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, FALSE);
+	    FsdmFragFind(handlePtr->hdr.fileID.minor, domainPtr,
+			newFragIndex + 1, -1, -1, -1,
+			&blockNum, &newFragOffset);
+		*(indexInfoPtr->blockAddrPtr) = 
+			    blockNum * FS_FRAGMENTS_PER_BLOCK + newFragOffset;
+	    FsdmBlockFind(handlePtr->hdr.fileID.minor, domainPtr,
+			indexInfoPtr->lastDiskBlock, 
+			TRUE, &blockNum, &bitmapPtr);
+		*(indexInfoPtr->blockAddrPtr) = 
+					    blockNum * FS_FRAGMENTS_PER_BLOCK;
+	    UpgradeFragment(handlePtr, indexInfoPtr, 
+				 curLastBlock, newFragIndex, TRUE,
+				 dontBlock, dirtiedIndexPtr);
+    Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
+
+UpgradeFragment(handlePtr, indexInfoPtr, curLastBlock, newLastFrag, 
+		dontWriteThru, dontBlock, dirtiedIndexPtr)
+    domainPtr = Fsdm_DomainFetch(handlePtr->hdr.fileID.major, FALSE);
+    blockAddr = *(indexInfoPtr->blockAddrPtr);
+    curLastFrag = (unsigned int) (descPtr->lastByte & FS_BLOCK_OFFSET_MASK) /
+					FS_FRAGMENT_SIZE;
+    curFragBlock = (unsigned int) blockAddr / FS_FRAGMENTS_PER_BLOCK;
+    curFragOffset = blockAddr & FRAG_OFFSET_MASK;
+	FsdmFragFind(handlePtr->hdr.fileID.minor, domainPtr, newLastFrag + 1, 
+		    curFragBlock, curFragOffset, curLastFrag + 1,
+		    &newFragBlock, &newFragOffset);
+	FsdmBlockFind(handlePtr->hdr.fileID.minor, domainPtr,
+		    indexInfoPtr->lastDiskBlock,
+		    TRUE, &newFragBlock, &bitmapPtr);
+    Fscache_FetchBlock(&handlePtr->cacheInfo, 
+		      curLastBlock, FSCACHE_DATA_BLOCK | dontBlock,
+		      &fragCacheBlockPtr, &found);
+	status = Fsio_DeviceBlockIO(FS_READ, &domainPtr->headerPtr->device,
+		   blockAddr +
+		   domainPtr->headerPtr->dataOffset * FS_FRAGMENTS_PER_BLOCK,
+		   curLastFrag + 1, fragCacheBlockPtr->blockAddr);
+    Fscache_UnlockBlock(fragCacheBlockPtr, (unsigned) fsutil_TimeInSeconds, 
+		       *indexInfoPtr->blockAddrPtr, 
+		       (newLastFrag + 1) * FS_FRAGMENT_SIZE, flags);
+    *(indexInfoPtr->blockAddrPtr) = 
+		    newFragBlock * FS_FRAGMENTS_PER_BLOCK + newFragOffset;
+    descPtr->flags |= FSDM_FD_DIRTY;
+    FsdmFragFree(domainPtr, curLastFrag + 1, curFragBlock, curFragOffset);
+    Fsdm_DomainRelease(handlePtr->hdr.fileID.major);
+

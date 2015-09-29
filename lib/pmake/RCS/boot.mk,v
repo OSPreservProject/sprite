@@ -1,0 +1,963 @@
+head     1.21;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.21
+date     92.04.13.18.33.50;  author elm;  state Exp;
+branches ;
+next     1.20;
+
+1.20
+date     92.03.13.14.22.24;  author jhh;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     91.11.19.18.26.11;  author kupfer;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     91.11.06.18.35.15;  author kupfer;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     91.10.17.13.45.20;  author jhh;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     90.11.02.10.41.30;  author jhh;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     90.03.08.12.19.27;  author douglis;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     90.02.27.17.43.07;  author douglis;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     90.02.20.11.50.19;  author douglis;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     90.02.16.11.00.29;  author shirriff;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     90.02.15.17.02.47;  author rab;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     90.02.15.01.03.05;  author mendel;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     89.10.09.06.56.01;  author rab;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     89.10.02.10.06.00;  author rab;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     89.09.15.07.34.08;  author rab;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.08.31.16.11.23;  author rab;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.07.21.18.29.56;  author douglis;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.07.20.17.36.28;  author mgbaker;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.06.25.21.22.19;  author jhh;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.06.02.11.53.54;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.06.02.09.01.37;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Makefile template for boot programs.
+@
+
+
+1.21
+log
+@Added support for dependency analysis on .cc (C++) files.
+@
+text
+@#
+# Makefile for boot programs in general.
+# This is included by Makefile.boot after $(TM).md/md.mk is included
+# The following variables should be defined already:
+#	NAME		program to be created
+#	OBJS		object files from which to create it
+#	CLEANOBJS	object files to be removed as part of "make clean"
+#			(need not just be object files)
+#	SRCS		sources for dependency generation
+#	TM		target machine type for object files, etc.
+#	TM		target machine type for object files etc.
+#	MACHINES	list of all target machines currently available
+#	INSTALLDIR	place to install program
+#	LINKSTART	address at which the boot program should be linked.
+#
+# Optional variables that may be defined by the invoker:
+#	XAFLAGS		additional flags to pass to assembler
+#	XCFLAGS		additional flags to pass to linker
+#	DEPFLAGS	additional flags to pass to makedepend
+#	no_targets	if defined, this file will not define all of the
+#			basic targets (make, make clean, etc.)
+#	use_version	if defined, then this file will set things up
+#			to include a version number that is automatically
+#			incremented
+#
+# $Header: /sprite/lib/pmake/RCS/boot.mk,v 1.20 92/03/13 14:22:24 jhh Exp Locker: elm $
+#
+
+#
+# The variables below should be defined in md.mk, but they are given
+# default values just in case md.mk doesn't exist yet.
+#
+HDRS		?=
+OBJS		?=
+SRCS		?=
+
+#
+# First define search paths for libraries, include files, lint libraries,
+# and even sources.
+#
+.PATH.h		:
+.PATH.h		: $(TM).md /sprite/lib/include /sprite/lib/include/$(TM).md
+.PATH.ln	: /sprite/lib/lint
+.PATH.c		:
+.PATH.c		: $(TM).md
+.PATH.s		:
+.PATH.s		: $(TM).md
+
+#
+# Important directories. 
+#
+MISCLIBDIR	= /sprite/lib/misc
+BINDIR		= /sprite/cmds.$(MACHINE)
+
+#
+# System programs -- assign conditionally so they may be redefined in
+# including makefile
+#
+AS		?= $(BINDIR)/as
+CC		?= $(BINDIR)/cc
+CHGRP		?= $(BINDIR)/chgrp
+CHMOD		?= $(BINDIR)/chmod
+CHOWN		?= $(BINDIR)/chown
+CP		?= $(BINDIR)/cp
+CPP		?= $(BINDIR)/cpp -traditional -$
+CTAGS		?= $(BINDIR)/ctags
+ECHO		?= $(BINDIR)/echo
+LD		?= $(BINDIR)/ld
+LINT		?= $(BINDIR)/lint
+MAKEDEPEND	?= $(BINDIR)/makedepend
+MKVERSION	?= $(BINDIR)/mkversion
+MV		?= $(BINDIR)/mv
+RM		?= $(BINDIR)/rm
+SED		?= $(BINDIR)/sed
+TEST            ?= $(BINDIR)/test
+TOUCH		?= $(BINDIR)/touch
+UPDATE		?= $(BINDIR)/update
+
+INSTALL_PROG    ?= /sprite/admin.$(MACHINE)/makeboot
+#
+# Several variables (such as where to install) are set based on the
+# TYPE variable.  Of course, any of these variables can be overridden
+# by explicit assignments.
+#
+TYPE		?= boot
+INSTALLDIR	?= /sprite/boot
+TMINSTALLDIR	?= /sprite/boot/$(TM).md
+
+#
+# Figure out what stuff we'll pass to sub-makes.
+#
+PASSVARS	= 'INSTALLDIR=$(INSTALLDIR)' 'TM=$(TM)' $(.MAKEFLAGS)
+#ifdef		XCFLAGS
+PASSVARS	+= 'XCFLAGS=$(XCFLAGS)'
+#endif
+#ifdef		XAFLAGS
+PASSVARS	+= 'XAFLAGS=$(XAFLAGS)'
+#endif
+#ifdef		NOBACKUP
+PASSVARS	+= 'NOBACKUP=$(NOBACKUP)'
+#endif
+#ifdef		BACKUPAGE
+PASSVARS	+= 'BACKUPAGE=$(BACKUPAGE)'
+#endif
+
+#
+# Flags. These are ones that are needed by *all* boot programs. Any other
+# ones should be added with the += operator in the local.mk file.
+# The FLAGS variables are defined with the += operator in case this file
+# is included after the main makefile has already defined them...
+
+#include 	<tm.mk>
+
+XCFLAGS		?=
+XAFLAGS		?=
+LINTFLAGS	?= -m$(TM)
+INSTALLFLAGS	?=
+LDFLAGS		+= -L/sprite/lib/${TM}.md
+AFLAGS		+= $(TMAFLAGS) $(XAFLAGS)
+CFLAGS		+= $(TMCFLAGS) $(XCFLAGS) -I.
+
+#if !empty(TM:Mds3100) || !empty(TM:Mds5000)
+CFLAGS		+= -I/sprite/lib/include -I/sprite/lib/include/$(TM).md
+AFLAGS		+= $(.INCLUDES)
+#endif
+
+CFLAGS		+= -I../../kernel/Include/$(TM).md -I../../kernel/Include
+
+# KERNELSTART is the absolute address at which the kernel expects to have
+# its code loaded.
+# LINKSTART is where the boot program is loaded into memory.  It has
+# to be loaded high enough so that the kernel image it loads does
+# not overwrite the boot program.  (If it does, it generally happens
+# as it zeros out the bss segment.  The PROM will abort with Exception 10
+# or something immediately after the boot program prints out the kernel sizes.)
+# BOOTDIR is the directory in which the boot things live.
+#
+
+#if !empty(TM:Msun3)
+KERNELSTART	?= 0x3fe0
+LINKSTART	?= e4000
+#else
+#if !empty(TM:Msun4)
+KERNELSTART	?= 0x4000
+LINKSTART	?= $(KERNELSTART:S/0x/20/)
+#else
+#if !empty(TM:Mds3100) 
+KERNELSTART	?= 0x80010000
+LINKSTART	?= $(KERNELSTART:S/0x//)
+#else
+#if !empty(TM:Mds5000)
+KERNELSTART	?= 0x80010000
+LINKSTART	?= 80a00000
+#else
+#if !empty(TM:Msun4c)
+KERNELSTART	?= 0x3fe0
+LINKSTART	?= $(KERNELSTART:S/0x/20/)
+#else
+KERNELSTART	?= 0x4000
+LINKSTART	?= $(KERNELSTART:S/0x/b/)
+#endif
+#endif
+#endif
+#endif
+#endif
+
+CFLAGS		+= -DBOOT_CODE=0x$(LINKSTART) \
+		-DKERNEL_START=$(KERNELSTART) -DBOOTDIR=\"$(INSTALLDIR)\" \
+		-DSAIO_COMPAT -DBOOT_FILE=\"$(TM)\"
+
+
+#
+# The .INCLUDES variable already includes directories that should be
+# used by cc and other programs by default.  Remove them, just so that
+# the output looks cleaner.
+
+CFLAGS		+= $(.INCLUDES:S|^-I/sprite/lib/include$||g:S|^-I/sprite/lib/include/$(TM).md$||g)
+
+#
+# Transformation rules: these have special features to place .o files
+# in md subdirectories, run preprocessor over .s files, etc.
+# There are no profile rules for boot programs because they aren't profiled.
+#
+
+.c.o		:
+	$(RM) -f $(.TARGET)
+	$(CC) $(CFLAGS) -c $(.IMPSRC) -o $(.TARGET)
+.s.o	:
+#if empty(TM:Mds3100) && empty(TM:Mds5000)
+	$(CPP) $(CFLAGS:M-[IDU]*) -m$(TM) -D$(TM) -D_ASM $(.IMPSRC) > $(.PREFIX).pp
+	$(AS) -o $(.TARGET) $(AFLAGS) $(.PREFIX).pp
+	$(RM) -f $(.PREFIX).pp
+#else
+	$(RM) -f $(.TARGET)
+	$(AS) $(AFLAGS) $(.IMPSRC) -o $(.TARGET)
+#endif
+
+#
+# The following targets are .USE rules for creating things.
+#
+
+#
+# MAKEBOOT usage:
+#	<program> : <objects> <libraries> MAKEBOOT
+#
+# Similar to MAKECMD, except it doesn't create the version.[ho] files,
+# and the variable LINKSTART is used to define where the boot program
+# gets loaded.
+#
+MAKEBOOT	:  .USE -lc
+	rm -f $(.TARGET)
+	$(LD) -N -e start -T $(LINKSTART) $(CFLAGS:M-L*) $(LDFLAGS) \
+		-o $(.TARGET) $(.ALLSRC:N-lc:Nend.o) -lc $(.ALLSRC:Mend.o)
+
+#
+# MAKEINSTALL usage:
+#	install :: <dependencies> MAKEINSTALL
+#
+# The program is installed in $(TMINSTALLDIR) and backed-up to
+# $(TMINSTALLDIR).old
+#
+#ifndef NOBACKUP
+BACKUP		= -b $(TMINSTALLDIR).old
+#ifdef BACKUPAGE
+BACKUP += -B $(BACKUPAGE)
+#endif
+#else
+BACKUP		=
+#endif  NOBACKUP
+
+MAKEINSTALL	: .USE
+	${RM} -f $(TMINSTALLDIR)/$(NAME)
+	${INSTALL_PROG} $(TM).md/$(NAME) $(TMINSTALLDIR)/$(NAME)
+
+#
+# MAKELINT usage:
+#	<fluff-file> : <sources to be linted> MAKELINT
+#
+# <fluff-file> is the place to store the output from the lint.
+#
+MAKELINT	: .USE
+	$(RM) -f $(.TARGET)
+	$(LINT) $(LINTFLAGS) $(CFLAGS:M-[IDU]*) $(.ALLSRC) > $(.TARGET) 2>&1
+
+#
+# MAKEDEPEND usage:
+#	<dependency-file> : <sources> MAKEDEPEND
+#
+# Generate dependency file suitable for inclusion in future makes.
+
+MAKEDEPEND	: .USE
+	@@$(TOUCH) $(DEPFILE)
+	$(MAKEDEPEND) $(CFLAGS:M-[ID]*) -m $(TM) -w60 -f $(DEPFILE) $(.ALLSRC)
+	@@$(MV) -f $(DEPFILE) $(DEPFILE).tmp
+	@@$(SED) -e '/^#/!s|^.|$(TM).md/&|' <$(DEPFILE).tmp > $(DEPFILE)
+	@@$(RM) -f $(DEPFILE).tmp
+
+#if !defined(no_targets) && defined(NAME)
+#
+# We should define the main targets (make, make install, etc.).  See the
+# mkmf man page for details on what these do.
+#
+LIBS			?=
+
+#
+# start.o must come first
+default			: $(TM).md/$(NAME)
+$(TM).md/$(NAME)	: $(TM).md/start.o $(OBJS:S/$(TM).md\/start.o//:S/makeBoot.o//) MAKEBOOT
+
+
+clean			:: .NOEXPORT tidy 
+	$(RM) -f $(TM).md/$(NAME) 
+
+tidy			:: .NOEXPORT 
+	$(RM) -f $(CLEANOBJS) $(CLEANOBJS:M*.o:S/.o$/.po/g) \
+	    	y.tab.c lex.yy.c core \
+		$(TM).md/lint \
+		a.out *~ $(TM).md/*~ version.h gmon.out mon.out
+
+DEPFILE = $(TM).md/dependencies.mk
+
+depend			: $(DEPFILE)
+$(DEPFILE)		! $(SRCS:M*.c) $(SRCS:M*.s) $(SRCS:M*.cc) MAKEDEPEND
+
+
+#
+# For "install", a couple of tricks.  First, allow local.mk to disable
+# by setting no_install.  Second, use :: instead of : so that local.mk
+# can augment install with additional stuff.  Third, don't install if
+# TMINSTALLDIR isn't set.
+#
+#ifndef no_install
+#ifdef TMINSTALLDIR
+install			:: $(TM).md/$(NAME) installman MAKEINSTALL
+#else
+install			:: .SILENT
+	echo "Can't install $(NAME):  no install directory defined"
+#endif TMINSTALLDIR
+#endif no_install
+
+
+#if empty(MANPAGES)
+installman		:: .SILENT
+	echo "There's no man page for $(NAME).  Please write one."
+#elif !empty(MANPAGES:MNONE)
+installman		::
+
+#elif defined(INSTALLMAN)
+installman		:: .SILENT
+	$(UPDATE) -m 444 -l $(INSTALLMANFLAGS) $(MANPAGES) $(INSTALLMAN)
+#else
+installman		:: .SILENT
+	echo "Can't install man page(s): no install directory defined"
+#endif
+
+
+lint			: $(TM).md/lint
+$(TM).md/lint		: $(SRCS:M*.c) $(HDRS) $(LIBS:M-l*) MAKELINT
+
+
+mkmf			:: .SILENT
+	mkmf
+
+
+newtm			:: .SILENT
+	if $(TEST) -d $(TM).md; then
+	    true
+	else
+	    mkdir $(TM).md;
+	    chmod 775 $(TM).md;
+	    mkmf -m$(TM)
+	fi
+
+#
+# No profiling for boot programs
+#
+#profile			: $(TM).md/$(NAME)$(PROFSUFFIX)
+#$(TM).md/$(NAME)$(PROFSUFFIX)	: $(OBJS:S/.o$/.po/g) $(LIBS:S/.a$/_p.a/g)
+#	$(RM) -f $(.TARGET)
+#	$(CC) $(CFLAGS) -pg -o $(.TARGET) $(.ALLSRC)
+
+
+tags			:: $(SRCS:M*.c) $(HDRS)
+	$(CTAGS) $(CTFLAGS) $(SRCS:M*.c)
+
+#
+# No version header for boot programs
+#
+#version.h		:
+#	$(RM) -f version.h
+#	$(MKVERSION) > version.h
+
+DISTOBJS    ?=
+
+dist:
+#if defined(DISTDIR) && !empty(DISTDIR)
+	for i in Makefile local.mk $(TM).md/md.mk $(SRCS) $(HDRS) $(DISTOBJS)
+	do
+	if $(TEST) -e $${i}; then
+	    $(UPDATE)  $${i} $(DISTDIR)/$${i} ;else true; fi
+	done
+#else
+	@@echo "Sorry, no distribution directory defined"
+#endif
+
+#include	<all.mk>
+
+#endif no_targets && NAME
+
+.MAKEFLAGS	: -C		# No compatibility needed
+
+#include	<rdist.mk>
+@
+
+
+1.20
+log
+@moved the sun3 downloader up in memory a bit
+@
+text
+@d26 1
+a26 1
+# $Header: /sprite/lib/pmake/RCS/boot.mk,v 1.19 91/11/19 18:26:11 kupfer Exp Locker: jhh $
+d283 1
+a283 1
+$(DEPFILE)		! $(SRCS:M*.c) $(SRCS:M*.s) MAKEDEPEND
+@
+
+
+1.19
+log
+@makedepend doesn't like -U, so don't pass it in from CFLAGS.
+@
+text
+@d26 1
+a26 1
+# $Header: /sprite/lib/pmake/RCS/boot.mk,v 1.18 91/11/06 18:35:15 kupfer Exp Locker: kupfer $
+d141 1
+a141 1
+LINKSTART	?= d4000
+@
+
+
+1.18
+log
+@Pass -U flags to cpp, lint, makedepend.
+@
+text
+@d26 1
+a26 1
+# $Header: /sprite/lib/pmake/RCS/boot.mk,v 1.17 91/10/17 13:45:20 jhh Exp Locker: kupfer $
+d253 1
+a253 1
+	$(MAKEDEPEND) $(CFLAGS:M-[IDU]*) -m $(TM) -w60 -f $(DEPFILE) $(.ALLSRC)
+@
+
+
+1.17
+log
+@disk boot for the ds5000
+@
+text
+@d26 1
+a26 1
+# $Header: /sprite/lib/pmake/RCS/boot.mk,v 1.16 90/11/02 10:41:30 jhh Exp Locker: jhh $
+d190 1
+a190 1
+	$(CPP) $(CFLAGS:M-[ID]*) -m$(TM) -D$(TM) -D_ASM $(.IMPSRC) > $(.PREFIX).pp
+d243 1
+a243 1
+	$(LINT) $(LINTFLAGS) $(CFLAGS:M-[ID]*) $(.ALLSRC) > $(.TARGET) 2>&1
+d253 1
+a253 1
+	$(MAKEDEPEND) $(CFLAGS:M-[ID]*) -m $(TM) -w60 -f $(DEPFILE) $(.ALLSRC)
+@
+
+
+1.16
+log
+@changed load address for sun3 because kernel got bigger
+@
+text
+@d26 1
+a26 1
+# $Header: /sprite/lib/pmake/RCS/boot.mk,v 1.15 90/03/08 12:19:27 douglis Exp Locker: jhh $
+d122 1
+a122 1
+#if !empty(TM:Mds3100)
+d147 1
+a147 1
+#if !empty(TM:Mds3100)
+d151 4
+d165 1
+d189 1
+a189 1
+#if empty(TM:Mds3100)
+@
+
+
+1.15
+log
+@changed s/ to S/
+@
+text
+@d26 1
+a26 1
+# $Header: /sprite/lib/pmake/RCS/boot.mk,v 1.14 90/02/27 17:43:07 douglis Exp Locker: douglis $
+d141 1
+a141 1
+LINKSTART	?= b4000
+d157 1
+@
+
+
+1.14
+log
+@added support for backup age flag BACKUPAGE
+@
+text
+@d26 1
+a26 1
+# $Header: /sprite/lib/pmake/RCS/boot.mk,v 1.13 90/02/20 11:50:19 douglis Exp Locker: douglis $
+d145 1
+a145 1
+LINKSTART	?= $(KERNELSTART:s/0x/20/)
+d149 1
+a149 1
+LINKSTART	?= $(KERNELSTART:s/0x//)
+d153 1
+a153 1
+LINKSTART	?= $(KERNELSTART:s/0x/20/)
+d156 1
+a156 1
+LINKSTART	?= $(KERNELSTART:s/0x/b/)
+d262 1
+a262 1
+$(TM).md/$(NAME)	: $(TM).md/start.o $(OBJS:s/$(TM).md\/start.o//:s/makeBoot.o//) MAKEBOOT
+@
+
+
+1.13
+log
+@tried to add some consistency to ::/: operators, and fixed tve's TYPE==personal complaint
+@
+text
+@d26 1
+a26 1
+# $Header: /sprite/lib/pmake/RCS/boot.mk,v 1.12 90/02/16 11:00:29 shirriff Exp Locker: douglis $
+d102 3
+d218 3
+@
+
+
+1.12
+log
+@Fixed includes, assembler for ds3100.
+@
+text
+@d26 1
+a26 1
+# $Header: /sprite/lib/pmake/RCS/boot.mk,v 1.11 90/02/15 17:02:47 rab Exp Locker: shirriff $
+d208 1
+a208 1
+#	install : <dependencies> MAKEINSTALL
+@
+
+
+1.11
+log
+@Fixed distribution stuff.
+@
+text
+@d26 1
+a26 1
+# $Header: /sprite/lib/pmake/RCS/boot.mk,v 1.10 90/02/15 01:03:05 mendel Exp Locker: rab $
+d117 1
+a117 2
+CFLAGS		+= $(TMCFLAGS) $(XCFLAGS) -I. \
+		-I../../kernel/Include/$(TM).md -I../../kernel/Include
+d119 7
+d144 4
+d180 1
+d184 4
+d314 1
+a314 1
+	if test -d $(TM).md; then
+@
+
+
+1.10
+log
+@*** empty log message ***
+@
+text
+@d26 1
+a26 1
+# $Header: /sprite/lib/pmake/RCS/boot.mk,v 1.9 89/10/09 06:56:01 rab Exp Locker: mendel $
+d61 4
+a65 2
+LD		?= $(BINDIR)/ld
+CP		?= $(BINDIR)/cp
+d68 1
+d70 1
+a71 1
+MAKEDEPEND	?= $(BINDIR)/makedepend
+d74 2
+d77 1
+a77 4
+SED		?= $(BINDIR)/sed
+CHOWN		?= $(BINDIR)/chown
+CHGRP		?= $(BINDIR)/chgrp
+CHMOD		?= $(BINDIR)/chmod
+d332 2
+a333 1
+	if test -e $${i}; then $(UPDATE)  $${i} $(DISTDIR)/$${i} ;else true; fi
+@
+
+
+1.9
+log
+@Fixed distribution stuff.
+@
+text
+@d26 1
+a26 1
+# $Header: /sprite/lib/pmake/RCS/boot.mk,v 1.8 89/10/02 10:06:00 rab Exp Locker: rab $
+d77 1
+d85 1
+a85 1
+TMINSTALLDIR	?= /sprite/boot.$(TM)
+d113 1
+a113 1
+LDFLAGS		?=
+d129 4
+d134 5
+a138 1
+LINKSTART	?= $(KERNELSTART:s/0x/b/)
+d143 2
+d147 2
+a148 1
+		-DKERNEL_START=$(KERNELSTART) -DBOOTDIR=\"$(INSTALLDIR)\"
+d203 2
+a204 1
+	/sprite/admin.$(MACHINE)/makeboot $(TM).md/$(NAME) $(TMINSTALLDIR)/$(NAME)
+d243 1
+a243 1
+	$(RM) -f $(TM).md/$(NAME) $(TM).md/$(NAME)$(PROFSUFFIX)
+@
+
+
+1.8
+log
+@Added Distribution stuff.
+@
+text
+@d26 1
+a26 1
+# $Header: /sprite/lib/pmake/RCS/boot.mk,v 1.7 89/09/15 07:34:08 rab Exp Locker: rab $
+d317 1
+a317 1
+	if test -e $${i}; then $(UPDATE)  $${i} $(DISTDIR)/$${i} ;fi
+@
+
+
+1.7
+log
+@Added -m$(TM) flag to cpp.
+@
+text
+@d26 1
+a26 1
+# $Header: /sprite/lib/pmake/RCS/boot.mk,v 1.6 89/08/31 16:11:23 rab Exp Locker: rab $
+d310 12
+@
+
+
+1.6
+log
+@Added -D_ASM to .s.o rule.
+@
+text
+@d26 1
+a26 1
+# $Header: /sprite/lib/pmake/RCS/boot.mk,v 1.5 89/07/21 18:29:56 douglis Exp Locker: rab $
+d156 1
+a156 1
+	$(CPP) $(CFLAGS:M-[ID]*) -D$(TM) -D_ASM $(.IMPSRC) > $(.PREFIX).pp
+@
+
+
+1.5
+log
+@changed newtm to do mkmf for only the new machine type
+@
+text
+@d26 1
+a26 1
+# $Header: /sprite/lib/pmake/RCS/boot.mk,v 1.4 89/07/20 17:36:28 mgbaker Exp Locker: douglis $
+d156 1
+a156 1
+	$(CPP) $(CFLAGS:M-[ID]*) -D$(TM) $(.IMPSRC) > $(.PREFIX).pp
+@
+
+
+1.4
+log
+@Got rid of extra porting stuff for sun4.
+@
+text
+@d26 1
+a26 1
+# $Header: /sprite/lib/pmake/RCS/boot.mk,v 1.3 89/06/25 21:22:19 jhh Exp Locker: mgbaker $
+d289 1
+a289 1
+	    mkmf
+@
+
+
+1.3
+log
+@added special case of end.o
+@
+text
+@d26 1
+a26 1
+# $Header: /sprite/lib/pmake/RCS/boot.mk,v 1.2 89/06/02 11:53:54 brent Exp Locker: jhh $
+a143 1
+#if empty(TM:Msun4)
+a144 3
+#else
+CFLAGS		+= $(.INCLUDES)
+#endif
+@
+
+
+1.2
+log
+@Updated to use $(TM) sub-directories
+@
+text
+@d26 1
+a26 1
+# $Header: command.mk,v 1.1 88/03/24 19:46:39 deboor Exp $
+d114 2
+a115 1
+CFLAGS		+= $(TMCFLAGS) $(XCFLAGS) -I.
+d179 1
+a179 1
+		-o $(.TARGET) $(.ALLSRC:N-lc) -lc
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d3 1
+d5 1
+a5 1
+#	PROGRAM		program to be created
+d7 2
+d10 3
+d14 1
+a14 1
+#	LINKADDR	address at which the boot program should be linked.
+d16 10
+d30 10
+a39 1
+# First define search paths for libraries, include files and lint libraries
+d41 2
+a42 2
+.PATH.a		: /sprite/lib /sprite/att/lib
+.PATH.h		: /sprite/lib/include /sprite/att/lib/include
+d44 4
+d52 2
+a53 2
+MISCLIBDIR	= /sprite/src/lib/misc
+BINDIR		= /sprite/cmds
+d61 1
+a61 1
+CPP		?= /sprite/lib/cpp
+a65 1
+INSTALL		?= $(BINDIR)/install
+d68 1
+d71 2
+d78 25
+a102 2
+# Flags. These are ones that are needed by *all* programs. Any other
+# ones should be added with the += operator in the command-specific makefile.
+d105 6
+a110 6
+#
+CCFLAGS		?=
+CAFLAGS		?=
+AFLAGS		+= -m68010 $(CAFLAGS)
+CFLAGS		+= -m68010 -I. $(.INCLUDES) $(.LIBS) $(CCFLAGS)
+LINTFLAGS	?=
+d113 35
+d150 3
+a152 4
+# Special transformations to take care of anti-social umask's by removing any
+# existing object file first. If NO.C.O is defined, however, this rule isn't
+# used and one is assumed to be in the including makefile. Similarly for
+# NO.S.O and assembler source files.
+d154 1
+a154 1
+#ifndef NO.C.O
+d157 5
+a161 10
+	$(CC) $(CFLAGS) -c $(.IMPSRC)
+#endif NO.C.O
+
+#ifndef NO.S.O
+.s.o		:
+	$(RM) -f $(.TARGET)
+	$(CPP) $(CFLAGS:M-[ID]*) $(.IMPSRC) > $$$$.s
+	$(AS) $(AFLAGS) -o $(.TARGET) $$$$.s
+	$(RM) -f $$$$.s
+#endif NO.S.O
+d171 3
+a173 1
+# Similar to MAKECMD, except it doesn't create the version.[ho] files.
+d178 1
+a178 1
+		-o $(.TARGET) $(.ALLSRC) -lc
+d182 1
+a182 1
+#	install : <files to install> MAKEINSTALL
+d184 2
+a185 1
+# The sources are installed in $(INSTALLDIR) and backed-up to $(INSTALLDIR).old
+d188 1
+a188 1
+BACKUP		= -b $(INSTALLDIR).old
+d192 1
+d194 1
+a194 2
+	$(INSTALL) -s -m 775 -o root $(BACKUP) \
+		$(INSTALLFLAGS) $(.ALLSRC) $(INSTALLDIR)
+d207 45
+a251 3
+# To keep -lc from being passed to cc when the MAKECMD and MAKECMDNOVERS
+# rules are used, we mark -lc as being INVISIBLE. Note we also make sure
+# pmake doesn't think it's the main target by marking it NOTMAIN as well.
+d253 62
+a314 25
+-lc	: .NOTMAIN .INVISIBLE
+
+#ifdef define_targets && PROGRAM
+#
+# We should define the main targets.
+#
+LIBS		?=
+
+$(PROGRAM)	: $(OBJS) $(LIBS) MAKEBOOT
+install		:: $(PROGRAM) MAKEINSTALL
+lint		: $(SRCS) MAKELINT
+#endif define_targets && PROGRAM
+
+#
+# Make sure CLEANOBJS and PROGRAM are defined and create the "clean" rule.
+#
+CLEANOBJS	?=
+PROGRAM		?=
+
+clean		:: .NOTMAIN tidy
+	$(RM) -f $(PROGRAM)
+
+tidy		:: .NOTMAIN
+	$(RM) -f $(CLEANOBJS) y.tab.c lex.yy.c core a.out *~ \
+		version.h version.o
+d316 1
+a316 1
+mkmf makemake	:: .NOTMAIN	# Does nothing. Says nothing
+a319 2
+DEPFILE		?= $(MAKEFILE)
+#include	<makedepend.mk>
+@

@@ -1,0 +1,323 @@
+
+% /u/lex2/agw/ibc/ibc.sty, Thu Jul  9 10:02:23 1987, edit by agw
+
+\documentstyle{amsppt}
+
+\font\twelverm=cmr12
+\font\twelvebf=cmbx12
+
+\def\makeatletter{\catcode`\@=11\relax}
+\def\makeatother{\catcode`\@=12\relax}
+\makeatletter
+
+\def\B@{B } \def\D@{D }
+\def\askstyle{\immediate\write\sixt@@n{Do you want B(ook style)
+ or D(raft style)?  (Type B or D, follow by <return>:) }\loop
+ \read\m@ne to\ans@
+ \xdef\next{\def\noexpand\Ans@{\ans@}}%
+ \uppercase\expandafter{\next}%
+ \ifx\Ans@\B@\badans@false\bookstyle\else
+ \ifx\Ans@\D@\badans@false\draftstyle\else
+ \badans@true\fi\fi
+ \ifbadans@\immediate\write\sixt@@n{Type B or D, follow by <return>: }%
+ \repeat}
+
+\def\bookstyle{\hsize=28truepc\vsize=46truepc}
+\def\draftstyle{\magnification 1200\parindent=10pt\baselineskip=15pt}
+\askstyle
+
+\newif\iftitle			% for title pages of chapters
+\titlefalse			% in case we start in the middle of a chapter
+
+\def\chapterbeg#1#2{
+   \global\titletrue
+   \vfill\eject
+   \null\vskip 8 truepc
+   \centerline{\twelverm Chapter #1}
+   \line{\hrulefill}
+   \centerline{\twelvebf #2}
+   \global\def\chaptertitle{#1. \lowercase{#2}}
+   \global\def\currentsectiontitle{\lowercase{#2}}
+   \message{#1. #2: }
+   \null\vskip 9 truepc
+}
+
+\def\unnumberedchapterbeg#1{
+   \global\titletrue
+   \null\vskip 8 truepc
+   \vskip 12 pt
+   \line{\hrulefill}
+   \centerline{\twelvebf #1}
+   \global\def\chaptertitle{\lowercase{#1}}
+   \global\def\currentsectiontitle{\lowercase{#1}}
+   \message{#1}
+   \null\vskip 9 truepc
+}
+
+\def\sectionbeg#1#2\medskip{
+   \vskip 2 truepc
+   \centerline{\bf #1.  #2}
+   \nopagebreak\vskip 1truepc\nopagebreak
+   \global\def\currentsectiontitle{#1. \lowercase{#2}}
+   \message{#1. #2}
+}
+
+\newif\if@nobreak \@nobreakfalse 
+\newif\ifignore
+\def\@makeother#1{\catcode`#112\relax}
+\def\newwrite{\alloc@7\write\chardef\sixt@@n}
+\newwrite\@unused
+\def\typeout#1{{\let\protect\string\immediate\write\@unused{#1}}}
+
+\newdimen\@savsk
+\newcount\@savsf
+
+\def\@bsphack{\@savsk\lastskip 
+    \ifhmode\@savsf\spacefactor\fi}
+
+\def\@esphack{\relax\ifhmode\spacefactor\@savsf
+     {}\ifdim \@savsk >\z@ \global\ignoretrue \ignorespaces 
+  \fi \fi}
+
+\def\@sanitize{\@makeother\ \@makeother\\\@makeother\$\@makeother\&%
+\@makeother\#\@makeother\^\@makeother\^^K\@makeother\_\@makeother\^^A%
+\@makeother\%\@makeother\~}
+
+\def\makeindex{\newwrite\@indexfile
+  \immediate\openout\@indexfile=\jobname.idx
+  \def\index{\@bsphack\begingroup\@sanitize\@wrindex\@indexfile}
+  \typeout{Writing index file \jobname.idx }}
+
+\def\thepage{\the\pageno}
+
+\def\@wrindex#1#2{\let\thepage\relax
+   \xdef\gtempa{\write#1{\string
+      \indexentry{#2}{\thepage}}}\endgroup\gtempa
+   \if@nobreak \ifvmode\@nobreak\fi\fi\@esphack}
+
+\def\index{\@bsphack\begingroup\@sanitize\@index}
+\def\@index#1{\endgroup\@esphack}
+
+\def\@idxitem{\par\hangindent 40pt}
+\def\subitem{\par\hangindent 40pt \hskip 20pt}
+\def\subsubitem{\par\hangindent 40pt \hskip 30pt}
+\def\indexspace{\par \vskip 10pt plus 5pt minus 3pt\relax}
+
+\def\beginindex{\begingroup\let\item\@idxitem\begindoublecolumns}
+\def\endindex{\enddoublecolumns\endgroup}
+
+\newbox\partialpage
+\newdimen\pagewidth  \pagewidth=\hsize
+\newdimen\pageheight \pageheight=\vsize
+\newdimen\colwidth \colwidth=\pagewidth  \divide\colwidth by 2
+\newdimen\twicecolheight \twicecolheight=\pageheight 
+   \multiply\twicecolheight by 2
+   \advance\twicecolheight by 1truepc  % well, a little more than twice
+\def\begindoublecolumns{\begingroup
+  \output={\global\setbox\partialpage=\vbox{\unvbox255\bigskip}}\eject
+  \raggedright
+  \output={\splitcolumns} 
+  \hsize=\colwidth
+  \vsize=\twicecolheight
+  \let\item\@idxitem}
+\def\enddoublecolumns{\output={\balancecolumns}\eject
+  \endgroup \pagegoal=\vsize}
+\def\splitcolumns{\splittopskip=\topskip \splitmaxdepth=\maxdepth
+  \dimen@=\pageheight \advance\dimen@ by-\ht\partialpage
+  \setbox0=\vsplit255 to\dimen@ \setbox2=\vsplit255 to\dimen@
+  \unvbox255 \penalty\outputpenalty
+  \doublecolumnout}
+\def\doublecolumnout{\shipout\vbox{%
+       \hsize=\pagewidth
+       \iftitle\else\makeheadline\fi%
+       \unvbox\partialpage
+       \wd0=\colwidth \wd2=\colwidth
+       \hbox to\pagewidth{\box0\hfil\box2}
+       \iftitle\makefootline\global\titlefalse\fi
+       \hsize=\colwidth}
+  \advancepageno
+  \global\def\sectiontitle{\currentsectiontitle}
+  \ifnum\outputpenalty>-\@MM \else\dosupereject\fi}
+
+\def\balancecolumns{\setbox0=\vbox{\unvbox255} \dimen@=\ht0
+  \advance\dimen@ by\topskip \advance\dimen@ by-\baselineskip
+  \divide\dimen@ by2 \splittopskip=\topskip
+  {\vbadness=10000 \loop \global\setbox3=\copy0
+    \global\setbox1=\vsplit3 to\dimen@
+    \ifdim\ht3>\dimen@ \global\advance\dimen@ by1pt \repeat}
+  \setbox0=\vbox to\dimen@{\unvbox1}
+  \setbox2=\vbox to\dimen@{\unvbox3}
+  \doublecolumnout}
+
+\output={\ibcoutput}
+
+\def\leftheadline{\eightbf\folio\hfil\smc\chaptertitle}
+\def\rightheadline{\smc\sectiontitle\hfil\eightbf\folio}
+\headline={\ifodd\pageno\rightheadline\else\leftheadline\fi}
+
+\def\leftfootline{\eightbf\folio\hfil}
+\def\rightfootline{\eightbf\hfil\folio}
+\footline={\ifodd\pageno\rightfootline\else\leftfootline\fi}
+
+\def\ibcoutput{\shipout\vbox{%
+       \iftitle\else\makeheadline\fi
+       \pagebody
+       \iftitle\makefootline\global\titlefalse\fi}
+  \advancepageno
+  \global\def\sectiontitle{\currentsectiontitle}
+  \ifnum\outputpenalty>-\@MM \else\dosupereject\fi}
+
+\def\Y@{Y } \def\N@{N }
+\def\makingindex{\immediate\write\sixt@@n{Do you want to make an 
+index?  (Type Y or N, follow by <return>:) }\loop
+ \read\m@ne to\ans@
+ \xdef\next{\def\noexpand\Ans@{\ans@}}%
+ \uppercase\expandafter{\next}%
+ \ifx\Ans@\Y@\badans@false\makeindex\else
+ \ifx\Ans@\N@\badans@false\else
+ \badans@true\fi\fi
+ \ifbadans@\immediate\write\sixt@@n{Type Y or N, follow by <return>: }%
+ \repeat}
+\makingindex
+
+\makeatother
+
+% various abbreviations ... form Greg and Henryk
+
+\define\a{\operatorname{a}}
+\define\avg{\operatorname{avg}}
+\define\card{\operatorname{card}}
+\define\codim{\operatorname{codim}}
+\define\comp{\operatorname{comp}}
+\define\cost{\operatorname{cost}}
+\define\trace{\operatorname{trace}}
+\define\diam{\operatorname{diam}}
+\define\dist{\operatorname{dist}}
+\define\e{\varepsilon}
+\define\E{\operatorname{E}}
+\define\error{\operatorname{error}}
+\define\non{\operatorname{non}}
+\define\nor{\operatorname{nor}}
+\define\sspan{\operatorname{span}}
+\define\var{\operatorname{var}}
+\define\ER{\operatorname{ER}}
+\define\HH{\operatorname{H}}
+\define\ter{\operatorname{ter}}
+\define\pre{\operatorname{pre}}
+\define\prob{\operatorname{prob}}
+\define\prerel{\operatorname{pre-rel}}
+\define\rad{\operatorname{rad}}
+\define\ran{\operatorname{ran}}
+\define\wor{\operatorname{wor}}
+\define\rel{\operatorname{rel}}
+\define\REL{\operatorname{REL}}
+\define\per{\operatorname{per}}
+\define\sign{\operatorname{sign}}
+\define\infp{\operatornamewithlimits{inf\vphantom{p}}} 
+\define\maxp{\operatornamewithlimits{max\vphantom{p}}} 
+\define\Prob{\operatorname{Prob}} 
+\def\reals{\operatorname{I\negthinspace\bold R}}
+\def\Re{\reals}
+\def\complexes{\operatorname{\bold C}}
+\define\ofi{\overline \phi }
+\define\ofig{\overline {\phi^*}}
+\define\ofis{\overline {\phi^s}}
+\define\on{\overline N }
+\define\norm{||Sf-\phi_n(N_n(f))||}
+\define\norg{||Sf-\phi_n^*\,(N_n(f))||}
+\define\nors{||Sf-\phi_n^s\,(N_n(f))||}
+\define\ong{\overline {N^*}}
+\define\ongg{\overline {N^{**}}}
+\define\nnn{N^{\non}}
+\define\kr{\operatorname{kr}}
+\define\mr{\operatorname{mr}}
+\define\gmr{\operatorname{gmr}}
+\def\bullet{\raise.5ex\hbox{\bf .}}
+\def\liminf{\mathop{\underline{\text{lim}}}}
+
+% various abbreviations ... from Art
+
+\def\epsilon{\varepsilon}
+\def\COMP{\operatorname{\hbox{\smc comp}}}
+\def\esssup{\operatornamewithlimits{ess\ sup}}
+\def\FEM{\operatorname{\hbox{\smc fem}}}
+\def\FEMQ{\operatorname{\hbox{\smc femq}}}
+\def\interior{\operatorname{int}}
+\def\lin{\operatorname{lin}}
+\def\range{\operatorname{ran}}
+\def\SPLINE{\operatorname{\hbox{\smc spline}}}
+\def\ter{\operatorname{ter}}
+\def\volume{\operatorname{vol}}
+\define\Lstd{\Lambda^{\operatorname{std}}}
+\define\MFEM{\operatorname{\hbox{\smc mfem}}}
+
+%\def\reals{\Bbb R}
+%\def\complexes{\Bbb C}
+\def\reals{\operatorname{I\negthinspace\bold R}}
+
+%---For remarks and the like
+\define\demonp#1{\demo\nofrills{#1\usualspace}}
+
+%---Start a new section
+\define\subsection#1{\par\vskip 1pc\noindent{\bf #1} 
+   \nopagebreak\medskip\nopagebreak}
+
+%---Start and end the Notes & Remarks/Exercises (smaller type, single space)
+\define\startNRE{\bgroup\eightpoint\parindent=5pt}
+\define\endNRE{\egroup}
+\define\NR #1 {\noindent{\bf NR #1: }}	% Notes and Remarks
+\define\Ex #1 {\noindent{\bf E #1: }}	% Exercises
+
+% angle brackets for inner products
+\define\<{\langle}
+\define\>{\rangle}
+
+% Script letters and other useful control sequences
+\define\Sscr{{\Cal S}}
+\define\Tscr{{\Cal T}}
+\define\Sn{{\Cal S}_{n,k}}
+\define\Tn{{\Cal T}_n}
+\define\Snset{\{\Sn\}_{n=1}^\infty}
+\define\Tnset{\{\Tn\}_{n=1}^\infty}
+
+\define\phisn{\phi^{\operatorname{s}}_{n,k}}
+
+% Needed for References
+
+\define\BabAz{Babu\u ska and Aziz~[72]}
+\define\Bakhvalov{Bakhvalov~[77]}
+\define\Carasso{Carasso and Stone~[75]}
+\define\Ciarlet{Ciarlet~[78]}
+\define\CiarletRaviart{Ciarlet and Raviart~[72]}
+\define\Dunford{Dunford and Schwartz~[63]}
+\define\Dunn{Dunn~[67]}
+\define\Emel{Emelyanov and Ilin~[67]}
+\define\Fried{Fried~[73]}
+\define\Gehatia{Gehatia and Wiff~[70]}
+\define\Gelfand{Gel'fand and Vilenkin~[64]}
+\define\Hadamard{Hadamard~[52]}
+\define\Hammerlin{H\"ammerlin and Hoffman~[83]}
+\define\Kuo{Kuo~[75]}
+\define\Lattes{Lattes and Lions~[69]}
+\define\Morozov{Morozov~[85]}
+\define\OdRed{Oden and Reddy~[76]}
+\define\Pinkus{Pinkus~[85]}
+\define\Poggio{Poggio, Torre, and Koch~[85]}
+\define\Pour{Pour-El and Richards~[83]}
+\define\Rokhlin{Rokhlin~[86]}
+\define\Shilov{Shilov and Fan Dyk Tin~[67]}
+\define\Skorohod{Skorohod~[74]}
+\define\Tikhonov{Tikhonov~[63]}
+\define\TikhonovArsenin{Tikhonov and Arsenin~[77]}
+\define\GTOA{GOTA}
+\define\Twomey{Twomey~[77]}
+\define\GregVarying{Wasilkowski~[86]}			%needed?
+\define\WWAvg{Wasilkowski and Wo\'zniakowski~[84]}	%needed?
+\define\SecondOrder{Werschulz~[82]}
+\define\Fredholm{Werschulz~[85]}
+\define\Indef{Werschulz~[86a]}
+\define\IllPosed{Werschulz~[86b]}
+\define\Fembad{Werschulz~[87a]}
+\define\AprilAGW{Werschulz~[87b]}
+\define\Resid{Werschulz~[87c]}
+\define\Zen{Zeni\v sek~[72]}

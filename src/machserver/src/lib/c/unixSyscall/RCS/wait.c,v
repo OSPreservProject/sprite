@@ -1,0 +1,404 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  srv030:1.4 srv028:1.4 srv027:1.4 srv026:1.4 srv024:1.4 srv022:1.4 srv021:1.4 srv019:1.4 srv018:1.4 srv016:1.4 srv014:1.4 srv010:1.4 srv008:1.4 srv007:1.4 srv006:1.4 srv005:1.4 srv004:1.4 srv003:1.4 srv002:1.4 srv001:1.4;
+locks    ; strict;
+comment  @ * @;
+
+
+1.4
+date     92.03.12.18.03.43;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.12.12.21.21.14;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.10.04.12.09.26;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.10.02.12.49.31;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.4
+log
+@Take out the temporary definition for Compat_SpriteSignalToUnix.
+@
+text
+@/* 
+ * wait.c --
+ *
+ *	Procedure to map from Unix wait system call to Sprite.
+ *
+ * Copyright (C) 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/lib/c/unixSyscall/RCS/wait.c,v 1.3 91/12/12 21:21:14 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <bstring.h>
+#include <proc.h>
+#include <spriteTime.h>
+
+#include "compatInt.h"
+
+#include <sys/wait.h>
+#include <sys/time.h>
+#include <sys/resource.h>
+#include <status.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * wait --
+ *
+ *	Procedure to map from Unix wait system call to Sprite Proc_Wait.
+ *
+ * Results:
+ *	If wait returns due to a stopped or terminated child process, the
+ *	process ID of the child is returned to the calling process.  In
+ *	addition, if statusPtr is non-null then fields in
+ *	*statusPtr will be set to contain the exit status of the child
+ *	whose process ID is returned.
+ *
+ *	Otherwise, UNIX_ERROR is returned and errno is set to indicate
+ *	the error.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+    
+int
+wait(statusPtr)
+    union wait *statusPtr;
+{
+    ReturnStatus status;	/* result returned by Proc_Wait */
+    Proc_PID pid;		/* process ID of child */
+    int reason;			/* reason child exited */
+    int childStatus;		/* returnStatus of child */
+    int subStatus;		/* additional signal status */
+    int	unixSignal;
+
+    status = Proc_Wait(0, (Proc_PID *) NULL, PROC_WAIT_BLOCK, &pid, &reason,
+		    &childStatus, &subStatus, (Proc_ResUsage *) NULL);
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	if (statusPtr != NULL)  {
+	    statusPtr->w_status = 0;
+	    if (reason == PROC_TERM_SUSPENDED) {
+		(void)Compat_SpriteSignalToUnix(childStatus, &unixSignal);
+		statusPtr->w_stopval = WSTOPPED;
+		statusPtr->w_stopsig = unixSignal;
+	    } else if (reason == PROC_TERM_SIGNALED ||
+		       reason == PROC_TERM_RESUMED) {
+		(void)Compat_SpriteSignalToUnix(childStatus, &unixSignal);
+		statusPtr->w_termsig = unixSignal;
+		/* NEED TO HANDLE coredump FIELD */
+	    } else {
+		statusPtr->w_retcode = childStatus;
+	    }
+	}
+	return((int) pid);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * wait3 --
+ *
+ *	Procedure to map from Unix wait3 system call to Sprite Proc_Wait.
+ *
+ * Results:
+ *	If wait returns due to a stopped or terminated child process, the
+ *	process ID of the child is returned to the calling process.  In
+ *	addition, if statusPtr is non-null then fields in
+ *	*statusPtr will be set to contain the exit status of the child
+ *	whose process ID is returned.
+ *
+ *	Otherwise, UNIX_ERROR is returned and errno is set to indicate
+ *	the error.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+wait3(statusPtr, options, unixRusagePtr)
+    union	wait	*statusPtr;
+    int			options;
+    struct	rusage	*unixRusagePtr;
+{
+    Proc_ResUsage spriteRusage;
+    ReturnStatus status;	/* result returned by Proc_Wait */
+    Proc_PID pid;		/* process ID of child */
+    int reason;			/* reason child exited */
+    int childStatus;		/* returnStatus of child */
+    int subStatus;		/* additional signal status */
+    int	flags = 0;
+
+    if (!(options & WNOHANG)) {
+	flags |= PROC_WAIT_BLOCK;
+    }
+    if (options & WUNTRACED) {
+	flags |= PROC_WAIT_FOR_SUSPEND;
+    }
+
+    status = Proc_Wait(0, (Proc_PID *) NULL, flags, &pid, &reason, 
+		&childStatus, &subStatus, &spriteRusage);
+    if (status != SUCCESS) {
+	if ((status == PROC_NO_EXITS) && (options & WNOHANG)) {
+	    return(0);
+	}
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	if (statusPtr != NULL)  {
+	    int	unixSignal;
+	    statusPtr->w_status = 0;
+	    if (reason == PROC_TERM_SUSPENDED) {
+		(void)Compat_SpriteSignalToUnix(childStatus, &unixSignal);
+		statusPtr->w_stopval = WSTOPPED;
+		statusPtr->w_stopsig = unixSignal;
+	    } else if (reason == PROC_TERM_SIGNALED ||
+		       reason == PROC_TERM_RESUMED) {
+		(void)Compat_SpriteSignalToUnix(childStatus, &unixSignal);
+		statusPtr->w_termsig = unixSignal;
+		/* NEED TO HANDLE coredump FIELD */
+	    } else {
+		statusPtr->w_retcode = childStatus;
+	    }
+	}
+	if (unixRusagePtr != NULL) {
+	    /*
+	     * Return the total time used by the process and all its children.
+	     */
+	    Time totalKTime;
+	    Time totalUTime;
+
+	    bzero((char *) unixRusagePtr, sizeof(*unixRusagePtr));
+	    Time_Add(spriteRusage.userCpuUsage, spriteRusage.childUserCpuUsage,
+						&totalUTime);
+	    Time_Add(spriteRusage.kernelCpuUsage,
+		     spriteRusage.childKernelCpuUsage, &totalKTime);
+	    unixRusagePtr->ru_utime.tv_sec = totalUTime.seconds;
+	    unixRusagePtr->ru_utime.tv_usec = totalUTime.microseconds;
+	    unixRusagePtr->ru_stime.tv_sec = totalKTime.seconds;
+	    unixRusagePtr->ru_stime.tv_usec = totalKTime.microseconds;
+	    unixRusagePtr->ru_nvcsw = spriteRusage.numWaitEvents;
+	    unixRusagePtr->ru_nivcsw = spriteRusage.numQuantumEnds;
+	}
+	return((int) pid);
+    }
+}
+@
+
+
+1.3
+log
+@Call Proc_Wait, not Proc_WaitStub, so that signal interruptions are
+retried.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/lib/c/unixSyscall/RCS/wait.c,v 1.2 91/10/04 12:09:26 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a24 6
+
+#ifndef SPRITED_SIGNALS
+#include <signal.h>
+#define Compat_SpriteSignalToUnix(sprite, unixPtr) \
+	(*(unixPtr) = SIGSTOP)
+#endif
+@
+
+
+1.2
+log
+@Convert for use with Sprite server.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/lib/c/emulator/RCS/wait.c,v 1.1 91/10/02 12:49:31 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a15 1
+#include <mach.h>
+a16 2
+#include <spriteEmuInt.h>
+#include <spriteSrv.h>
+d43 2
+a44 2
+ *	addition, if waitStatusPtr is non-null then fields in
+ *	*waitStatusPtr will be set to contain the exit status of the child
+d57 2
+a58 2
+wait(waitStatusPtr)
+    union wait *waitStatusPtr;
+a59 1
+    kern_return_t kernStatus;
+d67 2
+a68 7
+    kernStatus = Proc_WaitStub(SpriteEmu_ServerPort(), 0, (vm_address_t)NULL,
+			       PROC_WAIT_BLOCK, &pid, &reason,
+			       &childStatus, &subStatus,
+			       (vm_address_t)NULL, &status);
+    if (kernStatus != KERN_SUCCESS) {
+	status = Utils_MapMachStatus(kernStatus);
+    }
+d73 2
+a74 2
+	if (waitStatusPtr != NULL)  {
+	    waitStatusPtr->w_status = 0;
+d77 2
+a78 2
+		waitStatusPtr->w_stopval = WSTOPPED;
+		waitStatusPtr->w_stopsig = unixSignal;
+d82 1
+a82 1
+		waitStatusPtr->w_termsig = unixSignal;
+d85 1
+a85 1
+		waitStatusPtr->w_retcode = childStatus;
+d103 2
+a104 2
+ *	addition, if waitStatusPtr is non-null then fields in
+ *	*waitStatusPtr will be set to contain the exit status of the child
+d117 2
+a118 2
+wait3(waitStatusPtr, options, unixRusagePtr)
+    union	wait	*waitStatusPtr;
+a122 1
+    kern_return_t kernStatus;
+d137 2
+a138 7
+    kernStatus = Proc_WaitStub(SpriteEmu_ServerPort(), 0,
+			       (vm_address_t)NULL, flags, &pid, &reason,
+			       &childStatus, &subStatus,
+			       (vm_address_t)&spriteRusage, &status);
+    if (kernStatus != KERN_SUCCESS) {
+	status = Utils_MapMachStatus(kernStatus);
+    }
+d146 1
+a146 1
+	if (waitStatusPtr != NULL)  {
+d148 1
+a148 1
+	    waitStatusPtr->w_status = 0;
+d151 2
+a152 2
+		waitStatusPtr->w_stopval = WSTOPPED;
+		waitStatusPtr->w_stopsig = unixSignal;
+d156 1
+a156 1
+		waitStatusPtr->w_termsig = unixSignal;
+d159 1
+a159 1
+		waitStatusPtr->w_retcode = childStatus;
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/unixSyscall/RCS/wait.c,v 1.6 91/09/23 18:22:55 mottsmth Exp $ SPRITE (Berkeley)";
+d15 2
+d18 2
+d29 6
+d44 5
+a48 5
+ *	If wait returns due to a stopped or terminated child process,
+ *	the process ID of the child is returned to the calling process.
+ *	In addition, if statusPtr is non-null then fields in *statusPtr
+ *	will be set to contain the exit status of the child whose process
+ *	ID is returned.
+d58 1
+a58 1
+
+d60 2
+a61 2
+wait(statusPtr)
+union wait *statusPtr;
+d63 1
+d65 1
+a65 1
+    int pid;			/* process ID of child */
+d71 7
+a77 2
+    status = Proc_Wait(0, (int *) NULL, PROC_WAIT_BLOCK, &pid, &reason,
+		    &childStatus, &subStatus, (Proc_ResUsage *) NULL);
+d82 2
+a83 2
+	if (statusPtr != NULL)  {
+	    statusPtr->w_status = 0;
+d86 2
+a87 2
+		statusPtr->w_stopval = WSTOPPED;
+		statusPtr->w_stopsig = unixSignal;
+d91 1
+a91 1
+		statusPtr->w_termsig = unixSignal;
+d94 1
+a94 1
+		statusPtr->w_retcode = childStatus;
+d110 5
+a114 5
+ *	If wait returns due to a stopped or terminated child process,
+ *	the process ID of the child is returned to the calling process.
+ *	In addition, if statusPtr is non-null then fields in *statusPtr
+ *	will be set to contain the exit status of the child whose process
+ *	ID is returned.
+d125 3
+a127 2
+wait3(statusPtr, options, unixRusagePtr)
+    union	wait	*statusPtr;
+d132 1
+d134 1
+a134 1
+    int pid;			/* process ID of child */
+d147 7
+a153 2
+    status = Proc_Wait(0, (int *) NULL, flags, &pid, &reason, 
+		&childStatus, &subStatus, &spriteRusage);
+d161 1
+a161 1
+	if (statusPtr != NULL)  {
+d163 1
+a163 1
+	    statusPtr->w_status = 0;
+d166 2
+a167 2
+		statusPtr->w_stopval = WSTOPPED;
+		statusPtr->w_stopsig = unixSignal;
+d171 1
+a171 1
+		statusPtr->w_termsig = unixSignal;
+d174 1
+a174 1
+		statusPtr->w_retcode = childStatus;
+@

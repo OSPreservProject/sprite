@@ -1,0 +1,1297 @@
+head     9.11;
+branch   ;
+access   ;
+symbols  ds3100:9.11 sun3:9.11 sun4nw:9.10 symm:9.10 spur:9.10 sprited:9.7.1 Summer89:9.0 newlib:8.0 Summer88:6.0 argString:5.1;
+locks    ; strict;
+comment  @ * @;
+
+
+9.11
+date     92.06.01.14.41.39;  author kupfer;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     91.09.10.18.28.54;  author rab;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     91.08.24.19.55.37;  author mottsmth;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     91.08.22.12.59.42;  author mendel;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     91.05.06.14.36.44;  author kupfer;  state Exp;
+branches 9.7.1.1;
+next     9.6;
+
+9.6
+date     90.10.09.11.54.13;  author jhh;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.10.01.18.55.30;  author mendel;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.09.12.13.58.21;  author jhh;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.09.06.17.58.09;  author jhh;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.07.29.15.51.38;  author shirriff;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.02.15.11.54.52;  author brent;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.15.49;  author douglis;  state Stable;
+branches ;
+next     8.6;
+
+8.6
+date     89.06.30.15.14.48;  author douglis;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.06.22.17.19.53;  author douglis;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.05.28.01.18.34;  author rab;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.02.19.22.08.38;  author jhh;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.12.04.15.17.55;  author ouster;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.22.19.32.59;  author jhh;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.32.04;  author douglis;  state Stable;
+branches ;
+next     6.2;
+
+6.2
+date     88.10.27.20.04.38;  author mlgray;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.31.17.56.09;  author douglis;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.23.04;  author brent;  state Stable;
+branches ;
+next     5.4;
+
+5.4
+date     88.05.05.17.58.39;  author nelson;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     88.05.04.16.47.35;  author nelson;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     88.04.18.09.10.35;  author ouster;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     88.01.21.17.34.01;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.47.51;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.7.1.1
+date     91.09.15.17.20.03;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.11
+log
+@Lint.
+@
+text
+@/* 
+ *  procServer.c --
+ *
+ *	Routines to manage pool of server processes.
+ *
+ * Copyright 1987, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/proc/procServer.c,v 9.10 91/09/10 18:28:54 rab Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <mach.h>
+#include <proc.h>
+#include <procInt.h>
+#include <sync.h>
+#include <sched.h>
+#include <timer.h>
+#include <list.h>
+#include <vm.h>
+#include <fs.h>
+#include <fscache.h>
+#include <sys.h>
+#include <string.h>
+#include <status.h>
+#include <stdlib.h>
+#include <procServer.h>
+#include <stdio.h>
+
+/*
+ * Circular queue of pending function calls.
+ */
+QueueElement	queue[NUM_QUEUE_ELEMENTS];
+
+/*
+ * Indices into circular queue.  frontIndex is index of next function to call.
+ * nextIndex is index of where to put next call.  When frontIndex and nextIndex
+ * are equal then queue is full.  When frontIndex = -1 then queue is empty.
+ */
+int	frontIndex = -1;
+int	nextIndex = 0;
+
+ServerInfo	*serverInfoTable = (ServerInfo *) NIL;
+
+int	proc_NumServers = 0;
+
+/*
+ * MAX_NUM_SERVER_PROCS - The maximum number of Proc_ServerProcs allowed.
+ */
+#define	MAX_NUM_SERVER_PROCS	32
+
+/* 
+ * Mutex to synchronize accesses to the queue of pending requests and
+ * to the process state.
+ */
+Sync_Semaphore	serverMutex; 
+
+static void 	ScheduleFunc _ARGS_((void (*func)(ClientData clientData,
+						  Proc_CallInfo	*callInfoPtr),
+			ClientData clientData, unsigned int interval, 
+			FuncInfo *funcInfoPtr));
+static void 	CallFuncFromTimer _ARGS_((Timer_Ticks time, 
+			ClientData data));
+static void	CallFunc _ARGS_((FuncInfo *funcInfoPtr));	
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_CallFunc --
+ *
+ *	Start a process that calls the given function.  The process will
+ *	be started after waiting for interval amount of time where interval is
+ *	of the form expected by the timer module (e.g. timer_IntOneSecond). 
+ *	Proc_CallFunc can be called with interrupts disabled as long as
+ *	interval is 0 (when interval is non-zero, the memory allocator is
+ *	called).  When func is called it will be called as 
+ *
+ *		void
+ *		func(clientData, callInfoPtr)
+ *			ClientData	clientData;
+ *			Proc_CallInfo	*callInfoPtr;
+ *
+ *	The callInfoPtr struct contains two fields: a client data field and
+ *	an interval field.  callInfoPtr->interval is initialized to 0 and
+ *	callInfoPtr->clientData is initialized to clientData.  If when func
+ *	returns the callInfoPtr->interval is non-zero then the function will
+ *	be scheduled to be called again after waiting the given interval.  It
+ *	will be passed the client data in callInfoPtr->clientData.
+ *
+ *	NOTE: There are a fixed number of processes to execute functions 
+ *	      specified by Proc_CallFunc.  Therefore the functions given
+ *	      to Proc_CallFunc should always return after a short period
+ *	      of time.  Otherwise all processes will be tied up.
+ *	      
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Proc_CallFunc(func, clientData, interval)
+    void		(*func) _ARGS_((ClientData clientData, 
+			Proc_CallInfo	*callInfoPtr));	/* Function to call. */
+    ClientData		clientData;	/* Data to pass function. */
+    unsigned	int	interval;	/* Time to wait before calling func. */
+{
+    FuncInfo	funcInfo;
+
+    if (interval != 0) {
+	ScheduleFunc(func, clientData, interval, (FuncInfo *) NIL);
+    } else {
+	funcInfo.func = func;
+	funcInfo.data = clientData;
+	funcInfo.allocated = FALSE;
+	CallFunc(&funcInfo);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_CallFuncAbsTime --
+ *
+ *	This routine is a variant of Proc_CallFunc. It starts a process
+ *	to call the given function at a specific time.  Proc_CallFuncAbsTime 
+ *	can not be called with interrupts disabled. When func is called it 
+ *	will be called as:
+ *
+ *		void
+ *		func(clientData, callInfoPtr)
+ *			ClientData	clientData;
+ *			Proc_CallInfo	*callInfoPtr;
+ *
+ *	The callInfoPtr struct must not be modified!! (it is used by
+ *	routines scheduled with Proc_CallFunc).	The only field of interest
+ *	is "token" -- it is the same value that was returned by 
+ *	Proc_CallFuncAbsTime when func was scheduled. Func will be called 
+ *	exactly once: if func needs to be resecheduled, it must call 
+ *	Proc_CallFuncAbsTime with a new time value.
+ *
+ *	NOTE:	There are a fixed number of processes to execute functions 
+ *		specified by the Proc_CallFunc* routines.  Therefore the 
+ *		functions given to Proc_CallFuncAbsTime should always 
+ *		return after a short period of time.  Otherwise all 
+ *		processes will be tied up.
+ *	      
+ * Results:
+ *	A token to identify this instance of the Proc_CallFuncAbsTime call.
+ *	The token is passed to the func in the Proc_CallInfo struct.
+ *
+ * Side effects:
+ *	Memory for the FuncInfo struct is allocated.
+ *
+ *----------------------------------------------------------------------
+ */
+ClientData
+Proc_CallFuncAbsTime(func, clientData, time)
+    void		(*func) _ARGS_((ClientData clientData, 
+			Proc_CallInfo	*callInfoPtr));	/* Function to call. */
+    ClientData		clientData;	/* Data to pass to func. */
+    Timer_Ticks		time;		/* Time when to call func. */
+{
+    register FuncInfo	*funcInfoPtr;
+
+    funcInfoPtr = (FuncInfo *) malloc(sizeof (FuncInfo));
+    funcInfoPtr->func = func;
+    funcInfoPtr->data = clientData;
+    funcInfoPtr->allocated = TRUE;
+    funcInfoPtr->queueElement.routine = CallFuncFromTimer;
+    funcInfoPtr->queueElement.clientData = (ClientData) funcInfoPtr;
+    funcInfoPtr->queueElement.time = time;
+    funcInfoPtr->queueElement.interval = 0;
+    Timer_ScheduleRoutine(&funcInfoPtr->queueElement, FALSE);
+    return((ClientData) funcInfoPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_CancelCallFunc --
+ *
+ *	This routine is used to deschedule a timer entry created by
+ *	Proc_CallFuncAbsTime.   
+ *	      
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The timer entry is removed from the timer queue.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Proc_CancelCallFunc(token)
+    ClientData		token;	/* Opaque identifier for function info */
+{
+    register FuncInfo	*funcInfoPtr = (FuncInfo *) token;
+    Boolean removed;
+
+    removed = Timer_DescheduleRoutine(&funcInfoPtr->queueElement);
+    if (removed && funcInfoPtr->allocated) {
+	free((Address) funcInfoPtr);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_ServerInit --
+ *
+ *	Initialize the state and the set of processes needed to execute
+ *	functions.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Server info table initialized.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Proc_ServerInit()
+{
+    int		i;
+
+    serverInfoTable = 
+	 (ServerInfo *) Vm_RawAlloc(MAX_NUM_SERVER_PROCS * sizeof(ServerInfo));
+    for (i = 0; i < MAX_NUM_SERVER_PROCS; i++) {
+	serverInfoTable[i].index = i;
+	serverInfoTable[i].flags = 0;
+	serverInfoTable[i].condition.waiting = 0;
+    }
+    Sync_SemInitDynamic(&serverMutex, "Proc:serverMutex");
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_ServerProcCreate --
+ *
+ *	Create the specified number of Proc_Servers. 
+ *
+ * Results:
+ *	The number created.
+ *
+ * Side effects:
+ *	proc_NumServer increased and processes created.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Proc_ServerProcCreate(numToCreate)
+    int	numToCreate;	/* Number of procServer processes to create. */
+{
+    Proc_PID	pid;
+    int		i;
+    Boolean	maxedOut;
+
+    if (serverInfoTable == (ServerInfo *) NIL) {
+	panic("Proc_ServerProcCreate called before Proc_ServerInit\n");
+	return 0;
+    }
+    maxedOut = FALSE;
+    for (i = 0; i < numToCreate; i++) { 
+	/*
+	 * Until proc_NumServers is maxedOut increment it. We grab
+	 * serverMutux to protect others against others doing the
+	 * same.
+	 */
+	MASTER_LOCK(&serverMutex);
+	if (proc_NumServers < MAX_NUM_SERVER_PROCS) {
+	    proc_NumServers++;
+	} else {
+	    maxedOut = TRUE;
+	}
+	MASTER_UNLOCK(&serverMutex);
+	if (maxedOut) {
+	    break;
+	}
+	(void) Proc_NewProc((Address) Proc_ServerProc, PROC_KERNEL, FALSE, 
+			&pid, "Proc_ServerProc", FALSE);
+    }
+    return i;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_ServerProc --
+ *
+ *	Function for a server process.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Proc_ServerProc()
+{
+    register	ServerInfo	*serverInfoPtr;
+    Proc_CallInfo		callInfo;
+    int				i;
+
+    MASTER_LOCK(&serverMutex);
+    Sync_SemRegister(&serverMutex);
+    /*
+     * Find which server table entry that we are to use.
+     */
+    for (i = 0, serverInfoPtr = serverInfoTable;
+	 i < proc_NumServers;
+	 i++, serverInfoPtr++) {
+	if (serverInfoPtr->flags == 0) {
+	    serverInfoPtr->flags = ENTRY_INUSE;
+	    break;
+	}
+    }
+    if (i == proc_NumServers) {
+	MASTER_UNLOCK(&serverMutex);
+	printf("Warning: Proc_ServerProc: No server entries free.\n");
+	Proc_Exit(0);
+    }
+
+    Sched_SetClearUsageFlag();
+
+    while (!sys_ShuttingDown) {
+	if (!(serverInfoPtr->flags & FUNC_PENDING)) {
+	    /*
+	     * There is nothing scheduled for us to do.  If there is something
+	     * on the queue then dequeue it.  Otherwise sleep.
+	     */
+	    if (!QUEUE_EMPTY) {
+		serverInfoPtr->info = queue[frontIndex];
+		if (frontIndex == NUM_QUEUE_ELEMENTS - 1) {
+		    frontIndex = 0;
+		} else {
+		    frontIndex++;
+		}
+		if (frontIndex == nextIndex) {
+		    frontIndex = -1;
+		    nextIndex = 0;
+		}
+	    } else {
+		Sync_MasterWait(&serverInfoPtr->condition,
+				&serverMutex, TRUE);
+		continue;
+	    }
+	}
+
+	serverInfoPtr->flags |= SERVER_BUSY;
+	serverInfoPtr->flags &= ~FUNC_PENDING;
+
+	MASTER_UNLOCK(&serverMutex);
+
+	/*
+	 * Call the function.
+	 */
+	callInfo.interval = 0;
+	callInfo.clientData = serverInfoPtr->info.data;
+	callInfo.token = (ClientData) serverInfoPtr->info.funcInfoPtr;
+	serverInfoPtr->info.func(serverInfoPtr->info.data, &callInfo);
+
+	if (callInfo.interval != 0) {
+	    /* 
+	     * It wants us to call it again.
+	     */
+	    ScheduleFunc(serverInfoPtr->info.func, callInfo.clientData,
+			 callInfo.interval, serverInfoPtr->info.funcInfoPtr);
+	} else {
+	    /*
+	     * Aren't supposed to call it again.  Free up function info
+	     * if was allocated for this function.
+	     */
+	    if (serverInfoPtr->info.funcInfoPtr != (FuncInfo *) NIL) {
+		free((Address) serverInfoPtr->info.funcInfoPtr);
+	    }
+	}
+
+	/*
+	 * Go back around looking for something else to do.
+	 */
+	MASTER_LOCK(&serverMutex);
+	serverInfoPtr->flags &= ~SERVER_BUSY;
+    }
+    MASTER_UNLOCK(&serverMutex);
+    printf("Proc_ServerProc exiting.\n");
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ScheduleFunc --
+ *
+ *	Schedule the given function to be called at the given time.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ScheduleFunc(func, clientData, interval, funcInfoPtr)
+    void		(*func) _ARGS_((ClientData clientData, 
+			Proc_CallInfo	*callInfoPtr));	/* Function to call. */
+    ClientData		clientData;	/* Data to pass function. */
+    unsigned	int	interval;	/* Time to wait before calling func. */
+    FuncInfo		*funcInfoPtr;	/* Pointer to function information
+					 * structure that may already exist. */
+{
+    if (funcInfoPtr == (FuncInfo *) NIL) {
+	/*
+	 * We have not allocated a structure yet for waiting.  Do it now.
+	 */
+	funcInfoPtr = (FuncInfo *) malloc(sizeof (FuncInfo));
+	funcInfoPtr->func = func;
+	funcInfoPtr->data = clientData;
+	funcInfoPtr->allocated = TRUE;
+	funcInfoPtr->queueElement.routine = CallFuncFromTimer;
+	funcInfoPtr->queueElement.clientData = (ClientData) funcInfoPtr;
+    } else {
+	funcInfoPtr->data = clientData;
+    }
+
+    /*
+     * Schedule the call back.
+     */
+    funcInfoPtr->queueElement.interval = interval;
+    Timer_ScheduleRoutine(&funcInfoPtr->queueElement, TRUE);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CallFuncFromTimer --
+ *
+ *	Actually schedule the calling of the function by one of the
+ *	server processes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Item will be enqueued if no free processes are available.  Otherwise
+ *	The state of one of the processes is mucked with so that it knows
+ *	that it has a function to executed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+static void
+CallFuncFromTimer(time, data)
+    Timer_Ticks		time;		/* Unused. */
+    ClientData		data;		/* FuncInfo. */
+{
+    CallFunc((FuncInfo *) data);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CallFunc --
+ *
+ *	Actually schedule the calling of the function by one of the
+ *	server processes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Item will be enqueued if no free processes are available.  Otherwise
+ *	The state of one of the processes is mucked with so that it knows
+ *	that it has a function to executed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+CallFunc(funcInfoPtr)
+    FuncInfo		*funcInfoPtr;
+{
+    register	ServerInfo	*serverInfoPtr;
+    register	QueueElement	*queueElementPtr;
+    Boolean			queueIt = TRUE;
+    int				i;
+
+    MASTER_LOCK(&serverMutex);
+    if (QUEUE_EMPTY) {
+	/*
+	 * If the the queue is empty then there may in fact be a
+	 * server ready to call out function.
+	 */
+	for (i = 0, serverInfoPtr = serverInfoTable;
+	     i < proc_NumServers;
+	     i++, serverInfoPtr++) {
+	    if (!(serverInfoPtr->flags & ENTRY_INUSE) ||
+	        (serverInfoPtr->flags & (SERVER_BUSY | FUNC_PENDING))) {
+		continue;
+	    }
+	    serverInfoPtr->flags |= FUNC_PENDING;
+	    serverInfoPtr->info.func = funcInfoPtr->func;
+	    serverInfoPtr->info.data = funcInfoPtr->data;
+	    if (funcInfoPtr->allocated) {
+		serverInfoPtr->info.funcInfoPtr = funcInfoPtr;
+	    } else {
+		serverInfoPtr->info.funcInfoPtr = (FuncInfo *) NIL;
+	    }
+	    Sync_MasterBroadcast(&serverInfoPtr->condition);
+	    queueIt = FALSE;
+	    break;
+	}
+    }
+
+    if (queueIt) {
+	/*
+	 * There are no free servers available so we have to queue up the
+	 * message.
+	 */
+	if (QUEUE_FULL) {
+	    extern Boolean sys_ShouldSyncDisks;
+	    Mach_EnableIntr();
+	    sys_ShouldSyncDisks = FALSE;
+	    panic("CallFunc: Process queue full.\n");
+	}
+	queueElementPtr = &queue[nextIndex];
+	queueElementPtr->func = funcInfoPtr->func;
+	queueElementPtr->data = funcInfoPtr->data;
+	if (funcInfoPtr->allocated) {
+	    queueElementPtr->funcInfoPtr = funcInfoPtr;
+	} else {
+	    queueElementPtr->funcInfoPtr = (FuncInfo *) NIL;
+	}
+	if (nextIndex == NUM_QUEUE_ELEMENTS - 1) {
+	    nextIndex = 0;
+	} else {
+	    nextIndex++;
+	}
+	if (frontIndex == -1) {
+	    frontIndex = 0;
+	}
+    }
+
+    MASTER_UNLOCK(&serverMutex);
+}
+@
+
+
+9.10
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procServer.c,v 9.9 91/08/24 19:55:37 mottsmth Exp Locker: rab $ SPRITE (Berkeley)";
+a322 3
+    Proc_ControlBlock		*procPtr; /* our process information */
+
+    procPtr = Proc_GetCurrentProc();
+@
+
+
+9.9
+log
+@Add true vfork support
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procServer.c,v 9.7 91/05/06 14:36:44 kupfer Exp $ SPRITE (Berkeley)";
+a376 4
+	if (procPtr->locksHeld != 0) {
+	    panic("Proc_ServerProc holding lock before starting function.\n");
+	}
+
+a383 4
+
+	if (procPtr->locksHeld != 0) {
+	    panic("Proc_ServerProc holding lock after calling function.\n");
+	}
+@
+
+
+9.8
+log
+@Added Proc_ServerProcCreate. Allow for the growth in the number of
+Proc_ServerProcs.
+@
+text
+@d295 1
+a295 1
+			&pid, "Proc_ServerProc");
+@
+
+
+9.7
+log
+@Verify that a Proc_ServerProc doesn't hold any locks before or after
+calling its function.
+
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procServer.c,v 9.6 90/10/09 11:54:13 jhh Exp Locker: kupfer $ SPRITE (Berkeley)";
+d51 1
+a51 1
+ServerInfo	*serverInfoTable;
+d53 1
+a53 1
+int	proc_NumServers = PROC_NUM_SERVER_PROCS;
+d55 5
+d240 2
+a241 2
+	    (ServerInfo *) Vm_RawAlloc(proc_NumServers * sizeof(ServerInfo));
+    for (i = 0; i < proc_NumServers; i++) {
+d247 51
+@
+
+
+9.7.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procServer.c,v 9.7 91/05/06 14:36:44 kupfer Exp $ SPRITE (Berkeley)";
+@
+
+
+9.6
+log
+@function prototypes
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procServer.c,v 9.5 90/10/01 18:55:30 mendel Exp $ SPRITE (Berkeley)";
+d267 1
+d269 2
+d321 4
+d332 4
+@
+
+
+9.5
+log
+@Added function prototypes for CallFunc routines and data structures.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procServer.c,v 9.4 90/09/12 13:58:21 jhh Exp Locker: mendel $ SPRITE (Berkeley)";
+d59 1
+a59 1
+volatile Sync_Semaphore	serverMutex; 
+d66 1
+a66 1
+			FuncInfo *funcInfoPtr));
+d421 3
+a423 3
+CallFuncFromTimer(time, funcInfoPtr)
+    Timer_Ticks		time;
+    FuncInfo		*funcInfoPtr;
+d425 1
+a425 1
+    CallFunc(funcInfoPtr);
+@
+
+
+9.4
+log
+@changed format of #includes to use <>
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procServer.c,v 9.3 90/09/06 17:58:09 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d61 4
+a64 2
+static void 	ScheduleFunc _ARGS_((void (*func)(), ClientData clientData,
+			unsigned int interval, FuncInfo *funcInfoPtr));
+d108 2
+a109 1
+    void		(*func)();	/* Function to call. */
+d164 2
+a165 1
+    void		(*func)();	/* Function to call. */
+d371 2
+a372 1
+    void		(*func)();	/* Function to call. */
+@
+
+
+9.3
+log
+@First pass at function prototypes
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procServer.c,v 9.2 90/07/29 15:51:38 shirriff Exp Locker: jhh $ SPRITE (Berkeley)";
+d20 17
+a36 17
+#include "sprite.h"
+#include "mach.h"
+#include "proc.h"
+#include "procInt.h"
+#include "sync.h"
+#include "sched.h"
+#include "timer.h"
+#include "list.h"
+#include "vm.h"
+#include "fs.h"
+#include "fscache.h"
+#include "sys.h"
+#include "string.h"
+#include "status.h"
+#include "stdlib.h"
+#include "procServer.h"
+#include "stdio.h"
+@
+
+
+9.2
+log
+@Moved stuff to procServer.h.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procServer.c,v 9.1 90/02/15 11:54:52 brent Exp Locker: shirriff $ SPRITE (Berkeley)";
+d36 1
+d61 5
+@
+
+
+9.1
+log
+@Made the number of Proc_ServerProcs a function of the
+FSCACHE_MAX_CLEANER_PROCS and VM_MAX_PAGE_OUT_PROCS
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procServer.c,v 9.0 89/09/12 15:15:49 douglis Stable Locker: brent $ SPRITE (Berkeley)";
+d35 1
+a37 30
+ * Information kept for each function that is scheduled to be called in the
+ * future.
+ */
+typedef struct {
+    void		(*func)();	/* Function to call. */
+    ClientData		data;		/* Data to pass to function. */
+    Boolean		allocated;	/* TRUE => Struct was allocated by
+					 *         malloc. */
+    Timer_QueueElement	queueElement;	/* Element used to put onto timer
+					 * queue. */
+} FuncInfo;
+
+/*
+ * Element of queue of pending requests for functions to be called.
+ */
+typedef struct {
+    void	(*func)();		/* Function to call. */
+    ClientData	data;			/* Data to pass to function. */
+    FuncInfo	*funcInfoPtr;		/* Pointer to function info struct
+					 * that was allocated if were
+					 * put onto timer queue. */
+} QueueElement;
+
+/*
+ * NUM_QUEUE_ELEMENTS	Maximum number of entries in the queue of pending
+ *			functions.
+ */
+#define	NUM_QUEUE_ELEMENTS	128
+
+/*
+a48 2
+#define	QUEUE_EMPTY	(frontIndex == -1)
+#define	QUEUE_FULL	(frontIndex == nextIndex)
+a49 11
+/*
+ * Information kept for each server process.
+ */
+typedef struct {
+    int			index;
+    int			flags;	/* Flags defined below. */
+    QueueElement	info;	/* Information to indicate next function to
+				 * execute. */
+    Sync_Condition	condition;	/* Condition to sleep on when waiting
+					 * for something to do. */
+} ServerInfo;
+a51 18
+/*
+ * Flags for server info struct:
+ *
+ *	ENTRY_INUSE	There is a server process associated with this
+ *			entry.
+ *	SERVER_BUSY	The server is busy executing some command.
+ *	FUNC_PENDING	There is a function to execute.
+ */
+#define	ENTRY_INUSE	0x1
+#define	SERVER_BUSY	0x2
+#define	FUNC_PENDING	0x4
+
+/*
+ * Number of server processes.  There have to be enough to allow for
+ * pageouts and block cleaning at the same time. This occurs while
+ * paging heavily on a file server (or with a local disk used for paging).
+ */
+#define PROC_NUM_SERVER_PROCS	(FSCACHE_MAX_CLEANER_PROCS + VM_MAX_PAGE_OUT_PROCS)
+d55 1
+a55 1
+ * Mutex to synchronize accsess to the queue of pending requests and
+a58 7
+
+
+
+extern void	Proc_ServerProc();
+static void	ScheduleFunc();
+static void	CallFunc();
+static void	CallFuncFromTimer();
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procServer.c,v 8.6 89/06/30 15:14:48 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d29 2
+d107 3
+a109 1
+ * Number of processes
+d111 2
+a112 1
+int	proc_NumServers = 5;
+@
+
+
+8.6
+log
+@fixed bug relating to race condition freeing old timeout
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procServer.c,v 8.5 89/06/22 17:19:53 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+@
+
+
+8.5
+log
+@added routine to cancel a callback given its token.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procServer.c,v 8.4 89/05/28 01:18:34 rab Exp Locker: douglis $ SPRITE (Berkeley)";
+d115 2
+d242 1
+a242 2
+ *	Proc_CallFuncAbsTime.   Proc_CallFuncAbsTime 
+ *	can not be called with interrupts disabled.
+d254 1
+a254 1
+    ClientData		token;	/* Data to pass to func. */
+d257 1
+d259 3
+a261 3
+    if (funcInfoPtr->allocated == FALSE) {
+	panic("Proc_CancelCallFunc: called with unallocated callback entry");
+	return;
+a262 2
+    Timer_DescheduleRoutine(&funcInfoPtr->queueElement);
+    free((Address) funcInfoPtr);
+@
+
+
+8.4
+log
+@*** empty log message ***
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procServer.c,v 8.3 89/02/19 22:08:38 jhh Exp Locker: rab $ SPRITE (Berkeley)";
+d233 31
+@
+
+
+8.3
+log
+@Changes due to lock registration
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procServer.c,v 8.2 88/12/04 15:17:55 ouster Exp Locker: jhh $ SPRITE (Berkeley)";
+d113 1
+a113 1
+Sync_Semaphore	serverMutex; 
+d115 4
+a118 4
+void	Proc_ServerProc();
+void	ScheduleFunc();
+void	CallFunc();
+void	CallFuncFromTimer();
+d390 1
+a390 1
+void
+d440 1
+a440 1
+void
+d468 1
+a468 1
+void
+@
+
+
+8.2
+log
+@
+Stop using obsolete header files.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procServer.c,v 8.1 88/11/22 19:32:59 jhh Exp $ SPRITE (Berkeley)";
+d113 1
+a113 1
+Sync_Semaphore	serverMutex = SYNC_SEM_INIT_STATIC("serverMutex");
+d262 1
+d290 1
+@
+
+
+8.1
+log
+@new semaphore definition
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procServer.c,v 6.2 88/10/27 20:04:38 mlgray Exp $ SPRITE (Berkeley)";
+a29 1
+#include "byte.h"
+d32 1
+a32 1
+#include "mem.h"
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procServer.c,v 6.2 88/10/27 20:04:38 mlgray Exp Locker: douglis $ SPRITE (Berkeley)";
+d114 1
+a114 1
+int	serverMutex = 0;
+d289 1
+a289 1
+    MASTER_LOCK(serverMutex);
+d302 1
+a302 1
+	MASTER_UNLOCK(serverMutex);
+d336 1
+a336 1
+	MASTER_UNLOCK(serverMutex);
+d365 1
+a365 1
+	MASTER_LOCK(serverMutex);
+d368 1
+a368 1
+    MASTER_UNLOCK(serverMutex);
+d476 1
+a476 1
+    MASTER_LOCK(serverMutex);
+d532 1
+a532 1
+    MASTER_UNLOCK(serverMutex);
+@
+
+
+6.2
+log
+@1st pass at multi-processor, conversion to new C library.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: procServer.c,v 6.1 88/08/31 17:56:09 douglis Exp $ SPRITE (Berkeley)";
+@
+
+
+6.1
+log
+@de-linted and endif-fix'ed.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: procServer.c,v 6.0 88/08/11 12:23:04 brent Stable $ SPRITE (Berkeley)";
+d43 1
+a43 1
+					 *         Mem_Alloc. */
+d222 1
+a222 1
+    funcInfoPtr = Mem_New(FuncInfo);
+d303 1
+a303 1
+	Sys_Panic(SYS_WARNING, "Proc_ServerProc: No server entries free.\n");
+d358 1
+a358 1
+		Mem_Free((Address) serverInfoPtr->info.funcInfoPtr);
+d369 1
+a369 1
+    Sys_Printf("Proc_ServerProc exiting.\n");
+d401 1
+a401 1
+	funcInfoPtr = Mem_New(FuncInfo);
+d512 1
+a512 1
+	    Sys_Panic(SYS_FATAL, "CallFunc: Process queue full.\n");
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d17 2
+a18 2
+static char rcsid[] = "$Header: procServer.c,v 5.4 88/05/05 17:58:39 nelson Exp $ SPRITE (Berkeley)";
+#endif not lint
+@
+
+
+5.4
+log
+@Handles move of functionality from sys to mach.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: procServer.c,v 5.3 88/05/04 16:47:35 nelson Exp $ SPRITE (Berkeley)";
+@
+
+
+5.3
+log
+@Uses new mach module stuff.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: procServer.c,v 5.2 88/04/18 09:10:35 ouster Exp $ SPRITE (Berkeley)";
+d21 1
+d510 1
+a510 1
+	    Sys_EnableIntr();
+@
+
+
+5.2
+log
+@Lint cleanup, change copyright notices.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: procServer.c,v 5.1 88/01/21 17:34:01 nelson Exp $ SPRITE (Berkeley)";
+a28 1
+#include "machine.h"
+@
+
+
+5.1
+log
+@Changed panic to allow interrupts and turn of syncing disks so can
+crash gracefully.
+@
+text
+@d6 8
+a13 2
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+d17 1
+a17 1
+static char rcsid[] = "$Header: procServer.c,v 5.0 87/08/11 10:47:51 sprite Exp $ SPRITE (Berkeley)";
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: procServer.c,v 1.11 87/08/04 09:48:34 andrew Exp $ SPRITE (Berkeley)";
+d503 3
+@

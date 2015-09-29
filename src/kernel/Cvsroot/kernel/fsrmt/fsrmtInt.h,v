@@ -1,0 +1,1069 @@
+head     9.7;
+branch   ;
+access   ;
+symbols  ds3100:9.7 sun3:9.7 sprited:9.4.1 sun4nw:9.5 symm:9.5 spur:9.5 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.7
+date     92.10.28.18.09.01;  author mgbaker;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     92.10.26.14.09.57;  author mgbaker;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     91.09.10.18.24.00;  author rab;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     91.02.01.16.33.26;  author shirriff;  state Exp;
+branches 9.4.1.1;
+next     9.3;
+
+9.3
+date     90.12.06.21.56.13;  author jhh;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.10.08.15.07.59;  author mendel;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.11.29.14.49.43;  author brent;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.10.45;  author douglis;  state Stable;
+branches ;
+next     8.7;
+
+8.7
+date     89.08.21.15.29.36;  author mendel;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.08.17.17.21.56;  author jhh;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.06.16.12.07.40;  author brent;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.06.15.11.14.05;  author brent;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.06.14.22.51.28;  author brent;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.06.02.13.04.24;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.05.31.10.09.39;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.23.39;  author douglis;  state Stable;
+branches ;
+next     7.0;
+
+7.0
+date     88.11.07.14.48.06;  author brent;  state Exp;
+branches ;
+next     6.7;
+
+6.7
+date     88.11.04.09.43.12;  author brent;  state Exp;
+branches ;
+next     6.6;
+
+6.6
+date     88.10.14.12.18.11;  author brent;  state Exp;
+branches ;
+next     6.5;
+
+6.5
+date     88.10.04.09.03.29;  author brent;  state Exp;
+branches ;
+next     6.4;
+
+6.4
+date     88.09.22.08.58.41;  author brent;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.09.06.13.47.28;  author brent;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.26.17.30.08;  author brent;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.13.11.22.08;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.18.30;  author brent;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     88.08.03.17.22.15;  author mlgray;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.04.10.41.50;  author brent;  state Exp;
+branches ;
+next     ;
+
+9.4.1.1
+date     91.11.15.16.52.36;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@
+Definitions for remote naming operations to Sprite servers
+@
+
+
+9.7
+log
+@Fixed error in return type of function.
+@
+text
+@/*
+ * fsrmtInt.h --
+ *
+ *	Definitions of the parameters required for Sprite Domain operations
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/fsrmt/fsrmtInt.h,v 9.6 92/10/26 14:09:57 mgbaker Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _FSSPRITEDOMAIN
+#define _FSSPRITEDOMAIN
+
+#include <fsNameOps.h>
+#include <proc.h>
+#include <fsrmt.h>
+
+#include <stdio.h>
+
+/*
+ * Parameters for the read and write RPCs.
+ */
+
+typedef struct FsrmtIOParam {
+    Fs_FileID	fileID;			/* Identifies file to read from */
+    Fs_FileID	streamID;		/* Identifies stream (for offset) */
+    Sync_RemoteWaiter waiter;		/* Process info for remote waiting */
+    Fs_IOParam	io;			/* I/O parameter block */
+} FsrmtIOParam;
+
+/*
+ * Parameters for the iocontrol RPC
+ */
+
+typedef struct FsrmtIOCParam {
+    Fs_FileID	fileID;		/* File to manipulate. */
+    Fs_FileID	streamID;	/* Stream to the file, needed for locking */
+    Proc_PID	procID;		/* ID of invoking process */
+    Proc_PID	familyID;	/* Family of invoking process */
+    int		command;	/* I/O Control to perform. */
+    int		inBufSize;	/* Size of input params to ioc. */
+    int		outBufSize;	/* Size of results from ioc. */
+    Fmt_Format	format;		/* Defines client's byte order/alignment 
+				 * format. */
+    int		uid;		/* Effective User ID */
+} FsrmtIOCParam;
+
+/*
+ * Parameters for the I/O Control RPC.  (These aren't used, oops,
+ * someday they should be used.)
+ */
+
+typedef struct FsrmtIOCParamNew {
+    Fs_FileID	fileID;		/* File to manipulate. */
+    Fs_FileID	streamID;	/* Stream to the file, needed for locking */
+    Fs_IOCParam	ioc;		/* IOControl parameter block */
+} FsrmtIOCParamNew;
+
+/*
+ * Parameters for the block copy RPC.
+ */
+typedef struct FsrmtBlockCopyParam {
+    Fs_FileID	srcFileID;	/* File to copy from. */
+    Fs_FileID	destFileID;	/* File to copy to. */
+    int		blockNum;	/* Block to copy to. */
+} FsrmtBlockCopyParam;
+
+
+/*
+ * RPC debugging.
+ */
+#ifndef CLEAN
+#define FSRMT_RPC_DEBUG_PRINT(string) \
+	if (fsrmt_RpcDebug) {\
+	    printf(string);\
+	}
+#define FSRMT_RPC_DEBUG_PRINT1(string, arg1) \
+	if (fsrmt_RpcDebug) {\
+	    printf(string, arg1);\
+	}
+#define FSRMT_RPC_DEBUG_PRINT2(string, arg1, arg2) \
+	if (fsrmt_RpcDebug) {\
+	    printf(string, arg1, arg2);\
+	}
+#define FSRMT_RPC_DEBUG_PRINT3(string, arg1, arg2, arg3) \
+	if (fsrmt_RpcDebug) {\
+	    printf(string, arg1, arg2, arg3);\
+	}
+#define FSRMT_RPC_DEBUG_PRINT4(string, arg1, arg2, arg3, arg4) \
+	if (fsrmt_RpcDebug) {\
+	    printf(string, arg1, arg2, arg3, arg4);\
+	}
+#else
+#define FSRMT_RPC_DEBUG_PRINT(string)
+#define FSRMT_RPC_DEBUG_PRINT1(string, arg1)
+#define FSRMT_RPC_DEBUG_PRINT2(string, arg1, arg2)
+#define FSRMT_RPC_DEBUG_PRINT3(string, arg1, arg2, arg3)
+#define FSRMT_RPC_DEBUG_PRINT4(string, arg1, arg2, arg3, arg4)
+#endif not CLEAN
+
+
+ /*
+ * Sprite Domain functions called via Fsprefix_LookupOperation.
+ * These are called with a pathname.
+ */
+extern ReturnStatus FsrmtImport _ARGS_((char *prefix, int serverID, 
+		Fs_UserIDs *idPtr, int *domainTypePtr,
+		Fs_HandleHeader **hdrPtrPtr));
+extern ReturnStatus FsrmtOpen _ARGS_((Fs_HandleHeader *prefixHandle,
+		char *relativeName, Address argsPtr, Address resultsPtr,
+		Fs_RedirectInfo **newNameInfoPtrPtr));
+extern ReturnStatus FsrmtReopen _ARGS_((Fs_HandleHeader *hdrPtr, int inSize,
+		Address inData, int *outSizePtr, Address outData));
+extern ReturnStatus FsrmtGetAttrPath _ARGS_((Fs_HandleHeader *prefixHandle, 
+		char *relativeName, Address argsPtr, Address resultsPtr,
+		Fs_RedirectInfo **newNameInfoPtrPtr));
+extern ReturnStatus FsrmtSetAttrPath _ARGS_((Fs_HandleHeader *prefixHandle, 
+		char *relativeName, Address argsPtr, Address resultsPtr, 
+		Fs_RedirectInfo **newNameInfoPtrPtr));
+extern ReturnStatus FsrmtMakeDevice _ARGS_((Fs_HandleHeader *prefixHandle, 
+		char *relativeName, Address argsPtr, Address resultsPtr, 
+		Fs_RedirectInfo **newNameInfoPtrPtr));
+extern ReturnStatus FsrmtMakeDir _ARGS_((Fs_HandleHeader *prefixHandle, 
+		char *relativeName, Address argsPtr, Address resultsPtr, 
+		Fs_RedirectInfo **newNameInfoPtrPtr));
+extern ReturnStatus FsrmtRemove _ARGS_((Fs_HandleHeader *prefixHandle, 
+		char *relativeName, Address argsPtr, Address resultsPtr, 
+		Fs_RedirectInfo **newNameInfoPtrPtr));
+extern ReturnStatus FsrmtRemoveDir _ARGS_((Fs_HandleHeader *prefixHandle, 
+		char *relativeName, Address argsPtr, Address resultsPtr, 
+		Fs_RedirectInfo **newNameInfoPtrPtr));
+extern ReturnStatus FsrmtRename _ARGS_((Fs_HandleHeader *prefixHandle1, 
+		char *relativeName1, Fs_HandleHeader *prefixHandle2, 
+		char *relativeName2, Fs_LookupArgs *lookupArgsPtr, 
+		Fs_RedirectInfo **newNameInfoPtrPtr, Boolean *name1ErrorPtr));
+extern ReturnStatus FsrmtHardLink _ARGS_((Fs_HandleHeader *prefixHandle1,
+		char *relativeName1, Fs_HandleHeader *prefixHandle2, 
+		char *relativeName2, Fs_LookupArgs *lookupArgsPtr, 
+		Fs_RedirectInfo **newNameInfoPtrPtr, Boolean *name1ErrorPtr));
+
+
+/*
+ * Sprite Domain functions called via the fsAttrOpsTable switch.
+ * These are called with a fileID.
+ */
+extern ReturnStatus FsrmtGetAttr _ARGS_((Fs_FileID *fileIDPtr, int clientID, 
+		Fs_Attributes *attrPtr));
+extern ReturnStatus FsrmtSetAttr _ARGS_((Fs_FileID *fileIDPtr, 
+		Fs_Attributes *attrPtr, Fs_UserIDs *idPtr, int flags));
+extern ReturnStatus FsrmtDeviceIoOpen _ARGS_((Fs_FileID *ioFileIDPtr, 
+		int *flagsPtr, int clientID, ClientData streamData,
+		char *name, Fs_HandleHeader **ioHandlePtrPtr));
+extern Fs_HandleHeader *FsrmtDeviceVerify _ARGS_((Fs_FileID *fileIDPtr, 
+		int clientID, int *domainTypePtr));
+extern ReturnStatus FsrmtDeviceMigrate _ARGS_((Fsio_MigInfo *migInfoPtr, 
+		int dstClientID, int *flagsPtr, int *offsetPtr, int *sizePtr, 
+		Address *dataPtr));
+extern ReturnStatus FsrmtDeviceReopen _ARGS_((Fs_HandleHeader *hdrPtr, 
+		int clientID, ClientData inData, int *outSizePtr, 
+		ClientData *outDataPtr));
+
+extern Fs_HandleHeader *FsrmtPipeVerify _ARGS_((Fs_FileID *fileIDPtr,
+		int clientID, int *domainTypePtr));
+extern ReturnStatus FsrmtPipeReopen _ARGS_((Fs_HandleHeader *hdrPtr, 
+		int clientID, ClientData inData, int *outSizePtr, 
+		ClientData *outDataPtr));
+
+
+extern ReturnStatus FsrmtFileIoOpen _ARGS_((Fs_FileID *ioFileIDPtr, 
+		int *flagsPtr, int clientID, ClientData streamData, char *name,
+		Fs_HandleHeader **ioHandlePtrPtr));
+extern ReturnStatus FsrmtFileReopen _ARGS_((Fs_HandleHeader *hdrPtr, 
+		int clientID, ClientData inData, int *outSizePtr, 
+		ClientData *outDataPtr));
+extern ReturnStatus FsrmtFileClose _ARGS_((Fs_Stream *streamPtr, int clientID, 
+		Proc_PID procID, int flags, int dataSize, ClientData closeData));
+
+extern ReturnStatus FsrmtSetupFileReopen _ARGS_((Fs_HandleHeader *hdrPtr,
+	Address paramsPtr));
+extern void FsrmtFinishFileReopen _ARGS_((Fs_HandleHeader *hdrPtr,
+	Address statePtr, ReturnStatus status));
+extern ReturnStatus FsrmtSetupDeviceReopen _ARGS_((Fs_HandleHeader *hdrPtr,
+	Address paramsPtr));
+extern void FsrmtFinishDeviceReopen _ARGS_((Fs_HandleHeader *hdrPtr,
+	Address statePtr, ReturnStatus status));
+extern ReturnStatus FsrmtSetupPipeReopen _ARGS_((Fs_HandleHeader *hdrPtr,
+	Address paramsPtr));
+extern void FsrmtFinishPipeReopen _ARGS_((Fs_HandleHeader *hdrPtr,
+	Address statePtr, ReturnStatus status));
+
+extern Boolean FsrmtFileScavenge _ARGS_((Fs_HandleHeader *hdrPtr));
+extern Fs_HandleHeader *FsrmtFileVerify _ARGS_((Fs_FileID *fileIDPtr, 
+		int clientID, int *domainTypePtr));
+extern ReturnStatus FsrmtFileMigClose _ARGS_((Fs_HandleHeader *hdrPtr, 
+		int flags));
+extern ReturnStatus FsrmtFileMigOpen _ARGS_((Fsio_MigInfo *migInfoPtr, 
+		int size, ClientData data, Fs_HandleHeader **hdrPtrPtr));
+extern ReturnStatus FsrmtFileMigrate _ARGS_((Fsio_MigInfo *migInfoPtr, 
+		int dstClientID, int *flagsPtr, int *offsetPtr, int *sizePtr, 
+		Address *dataPtr));
+extern ReturnStatus FsrmtFileRead _ARGS_((Fs_Stream *streamPtr, 
+		Fs_IOParam *readPtr, Sync_RemoteWaiter *remoteWaitPtr, 
+		Fs_IOReply *replyPtr));
+extern ReturnStatus FsrmtFileWrite _ARGS_((Fs_Stream *streamPtr, 
+		Fs_IOParam *writePtr, Sync_RemoteWaiter *remoteWaitPtr, 
+		Fs_IOReply *replyPtr));
+extern ReturnStatus FsrmtFilePageRead _ARGS_((Fs_Stream *streamPtr, 
+		Fs_IOParam *readPtr, Sync_RemoteWaiter *remoteWaitPtr, 
+		Fs_IOReply *replyPtr));
+extern ReturnStatus FsrmtFilePageWrite _ARGS_((Fs_Stream *streamPtr, 
+		Fs_IOParam *writePtr, Sync_RemoteWaiter *remoteWaitPtr, 
+		Fs_IOReply *replyPtr));
+extern ReturnStatus FsrmtFileIOControl _ARGS_((Fs_Stream *streamPtr, 
+		Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus FsrmtFileGetIOAttr _ARGS_((Fs_FileID *fileIDPtr, 
+		int clientID, Fs_Attributes *attrPtr));
+extern ReturnStatus FsrmtFileSetIOAttr _ARGS_((Fs_FileID *fileIDPtr, 
+		Fs_Attributes *attrPtr, int flags));
+
+
+#endif _FSSPRITEDOMAIN
+@
+
+
+9.6
+log
+@Support for bulk reopen rpcs.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/fsrmt/fsrmtInt.h,v 9.5 91/09/10 18:24:00 rab Exp $ SPRITE (Berkeley)
+d189 1
+a189 1
+extern ReturnStatus FsrmtFinishFileReopen _ARGS_((Fs_HandleHeader *hdrPtr,
+d193 1
+a193 1
+extern ReturnStatus FsrmtFinishDeviceReopen _ARGS_((Fs_HandleHeader *hdrPtr,
+d197 1
+a197 1
+extern ReturnStatus FsrmtFinishPipeReopen _ARGS_((Fs_HandleHeader *hdrPtr,
+@
+
+
+9.5
+log
+@ Fixed lint errors and removed tracing.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/fsrmt/RCS/fsrmtInt.h,v 9.4 91/02/01 16:33:26 shirriff Exp Locker: rab $ SPRITE (Berkeley)
+d186 14
+@
+
+
+9.4
+log
+@Added client ID tracing to attributes.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/fsrmt/RCS/fsrmtInt.h,v 9.3 90/12/06 21:56:13 jhh Exp $ SPRITE (Berkeley)
+a154 1
+#ifdef SOSP91
+a155 6
+		Fs_Attributes *attrPtr, int hostID, int userID));
+extern ReturnStatus FsrmtSetAttr _ARGS_((Fs_FileID *fileIDPtr, 
+		Fs_Attributes *attrPtr, Fs_UserIDs *idPtr, int flags, int
+		clientID, int hostID, int userID));
+#else
+extern ReturnStatus FsrmtGetAttr _ARGS_((Fs_FileID *fileIDPtr, int clientID, 
+a158 2
+#endif
+
+a183 5
+#ifdef SOSP91
+extern ReturnStatus FsrmtFileClose _ARGS_((Fs_Stream *streamPtr, int clientID, 
+		Proc_PID procID, int flags, int dataSize, 
+		ClientData closeData, int *offsetPtr, int *rwFlagsPtr));
+#else
+a185 1
+#endif
+@
+
+
+9.4.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/fsrmt/fsrmtInt.h,v 9.4 91/02/01 16:33:26 shirriff Exp $ SPRITE (Berkeley)
+@
+
+
+9.3
+log
+@Added sosp tracing code
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/fsrmt/RCS/fsrmtInt.h,v 9.2 90/10/08 15:07:59 mendel Exp $ SPRITE (Berkeley)
+d155 1
+d157 6
+d166 1
+@
+
+
+9.2
+log
+@Fixed includes to use <> rather than "", added functions prototypes, and
+removed lint.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/fs.mendel/RCS/fsrmtInt.h,v 1.1 90/01/16 17:12:12 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d185 1
+d187 4
+d192 1
+@
+
+
+9.1
+log
+@Added PageRead and PageWrite routines.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/fsrmt/RCS/fsrmtInt.h,v 9.0 89/09/12 15:10:45 douglis Stable Locker: brent $ SPRITE (Berkeley)
+d23 6
+a28 3
+#include "fsNameOps.h"
+#include "proc.h"
+#include "fsrmt.h"
+d115 34
+a148 13
+extern	ReturnStatus	FsrmtImport();
+extern	ReturnStatus	FsrmtOpen();
+extern	ReturnStatus	FsrmtReopen();
+extern	ReturnStatus	FsrmtDevOpen();
+extern	ReturnStatus	FsrmtDevClose();
+extern	ReturnStatus	FsrmtGetAttrPath();
+extern	ReturnStatus	FsrmtSetAttrPath();
+extern	ReturnStatus	FsrmtMakeDevice();
+extern	ReturnStatus	FsrmtMakeDir();
+extern	ReturnStatus	FsrmtRemove();
+extern	ReturnStatus	FsrmtRemoveDir();
+extern	ReturnStatus	FsrmtRename();
+extern	ReturnStatus	FsrmtHardLink();
+d155 4
+a158 2
+extern	ReturnStatus	FsrmtGetAttr();
+extern	ReturnStatus	FsrmtSetAttr();
+d160 55
+a214 31
+extern ReturnStatus FsrmtDeviceIoOpen();
+extern Fs_HandleHeader *FsrmtDeviceVerify();
+extern ReturnStatus FsrmtDeviceMigrate();
+extern ReturnStatus FsrmtDeviceReopen();
+
+extern Fs_HandleHeader *FsrmtPipeVerify();
+extern ReturnStatus FsrmtPipeMigrate();
+extern ReturnStatus FsrmtPipeReopen();
+extern ReturnStatus FsrmtPipeClose();
+
+
+extern ReturnStatus	FsrmtFileIoOpen();
+extern Fs_HandleHeader	*FsrmtFileVerify();
+extern ReturnStatus	FsrmtFileRead();
+extern ReturnStatus	FsrmtFileWrite();
+extern ReturnStatus	FsrmtFilePageRead();
+extern ReturnStatus	FsrmtFilePageWrite();
+extern ReturnStatus	FsrmtFileIOControl();
+extern ReturnStatus	FsrmtFileSelect();
+extern ReturnStatus	FsrmtFileGetIOAttr();
+extern ReturnStatus	FsrmtFileSetIOAttr();
+extern ReturnStatus	FsrmtFileMigClose();
+extern ReturnStatus	FsrmtFileMigOpen();
+extern ReturnStatus	FsrmtFileMigrate();
+extern ReturnStatus	FsrmtFileReopen();
+extern ReturnStatus     FsrmtFileBlockAllocate();
+extern ReturnStatus     FsrmtFileBlockRead();
+extern ReturnStatus     FsrmtFileBlockWrite();
+extern ReturnStatus     FsrmtFileBlockCopy();
+extern Boolean		FsrmtFileScavenge();
+extern ReturnStatus	FsrmtFileClose();
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/fsrmt/RCS/fsrmtInt.h,v 8.7 89/08/21 15:29:36 mendel Exp Locker: douglis $ SPRITE (Berkeley)
+d149 2
+@
+
+
+8.7
+log
+@Break up fs into many modules.    
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsSpriteDomain.h,v 8.5 89/06/16 12:07:40 brent Exp $ SPRITE (Berkeley)
+@
+
+
+8.6
+log
+@Changed to use Fmt_Convert
+@
+text
+@d2 1
+a2 1
+ * fsSpriteDomain.h --
+d17 1
+a17 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsSpriteDomain.h,v 8.5 89/06/16 12:07:40 brent Exp Locker: jhh $ SPRITE (Berkeley)
+d25 1
+a25 1
+
+d30 1
+a30 1
+typedef struct FsRemoteIOParam {
+d35 1
+a35 1
+} FsRemoteIOParam;
+d41 1
+a41 1
+typedef struct FsSpriteIOCParams {
+d52 1
+a52 1
+} FsSpriteIOCParams;
+d59 1
+a59 1
+typedef struct FsRemoteIOCParam {
+d63 1
+a63 1
+} FsRemoteIOCParam;
+d68 1
+a68 1
+typedef struct FsRemoteBlockCopyParams {
+d72 2
+a73 1
+} FsRemoteBlockCopyParams;
+d76 34
+a109 1
+ * Sprite Domain functions called via FsLookupOperation.
+d112 13
+a124 13
+extern	ReturnStatus	FsSpriteImport();
+extern	ReturnStatus	FsSpriteOpen();
+extern	ReturnStatus	FsSpriteReopen();
+extern	ReturnStatus	FsSpriteDevOpen();
+extern	ReturnStatus	FsSpriteDevClose();
+extern	ReturnStatus	FsRemoteGetAttrPath();
+extern	ReturnStatus	FsRemoteSetAttrPath();
+extern	ReturnStatus	FsSpriteMakeDevice();
+extern	ReturnStatus	FsSpriteMakeDir();
+extern	ReturnStatus	FsSpriteRemove();
+extern	ReturnStatus	FsSpriteRemoveDir();
+extern	ReturnStatus	FsSpriteRename();
+extern	ReturnStatus	FsSpriteHardLink();
+d126 1
+d131 32
+a162 2
+extern	ReturnStatus	FsRemoteGetAttr();
+extern	ReturnStatus	FsRemoteSetAttr();
+a163 12
+/*
+ * General purpose remote stubs shared by remote files, devices, pipes, etc.
+ */
+extern	ReturnStatus	FsRemoteRead();
+extern	ReturnStatus	FsRemoteWrite();
+extern	ReturnStatus	FsRemoteSelect();
+extern	ReturnStatus	FsRemoteIOControl();
+extern	ReturnStatus	FsRemoteClose();
+extern	ReturnStatus	FsRemoteGetIOAttr();
+extern	ReturnStatus	FsRemoteSetIOAttr();
+extern	ReturnStatus	FsRemoteBlockCopy();
+extern	ReturnStatus	FsRemoteDomainInfo();
+d165 1
+a165 1
+#endif /* _FSSPRITEDOMAIN */
+@
+
+
+8.5
+log
+@Updated I/O Control interface
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsSpriteDomain.h,v 8.4 89/06/15 11:14:05 brent Exp $ SPRITE (Berkeley)
+d49 2
+a50 1
+    int		byteOrder;	/* Defines client's byte ordering */
+d112 1
+a112 1
+#endif _FSSPRITEDOMAIN
+@
+
+
+8.4
+log
+@Nuked use of fsIO.h
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsSpriteDomain.h,v 8.3 89/06/14 22:51:28 brent Exp $ SPRITE (Berkeley)
+a37 11
+ * Parameters for the I/O Control RPC.
+ */
+
+typedef struct FsRemoteIOCParam {
+    Fs_FileID	fileID;		/* File to manipulate. */
+    Fs_FileID	streamID;	/* Stream to the file, needed for locking */
+    Fs_IOCParam	ioc;		/* IOControl parameter block */
+} FsRemoteIOCParam;
+
+
+/*
+d50 1
+a50 1
+    int		reserved;	/* Extra */
+d52 11
+@
+
+
+8.3
+log
+@Changed the Read/Write RPCs to use Fs_IOParam and Fs_IOReply.
+Change the IOControl RPC to use FS_IOCPARAM
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsSpriteDomain.h,v 8.2 89/06/02 13:04:24 brent Exp $ SPRITE (Berkeley)
+a23 1
+#include "fsIO.h"
+@
+
+
+8.2
+log
+@Fixed a typedef name.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsSpriteDomain.h,v 8.1 89/05/31 10:09:39 brent Exp $ SPRITE (Berkeley)
+d28 1
+a28 1
+ * (New) Parameters for the read and write RPCs.
+d39 1
+a39 1
+ * (New) Parameters for the I/O Control RPC.
+a46 32
+
+/*
+ * Parameters for the read RPC.
+ */
+
+typedef struct FsRemoteReadParams {
+    Fs_FileID	fileID;			/* Identifies file to read from */
+    Fs_FileID	streamID;		/* Identifies stream (for offset) */
+    int		offset;			/* Byte offset at which to read */
+    int		length;			/* Byte amount to read */
+    int		flags;			/* FS_CLIENT_CACHE_READ if file is
+					 * being cached. FS_RMT_SHARED if
+					 * the server's offset is to be used */
+    Sync_RemoteWaiter waiter;		/* Process info for remote waiting */
+    Proc_PID	pid, familyID;		/* Process ID and Family ID of this
+					 * process used to read from
+					 * a remote device */
+} FsRemoteReadParams;
+
+/*
+ * Parameters for the write RPC.
+ */
+
+typedef struct FsRemoteWriteParams {
+    Fs_FileID	fileID;			/* File to write to */
+    Fs_FileID	streamID;		/* Stream to write to (for offset) */
+    int		offset;			/* Byte offset at which to write */
+    int		length;			/* Byte amout to write */
+    int		flags;			/* FS_APPEND | FS_CLIENT_CACHE_WRITE
+					 * FS_LAST_DIRTY_BLOCK | FS_RMT_SHARED*/
+    Sync_RemoteWaiter waiter;		/* Process info for remote waiting */
+} FsRemoteWriteParams;
+@
+
+
+8.1
+log
+@Adding use of common IO and IOC parameter blocks
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsSpriteDomain.h,v 7.0 88/11/07 14:48:06 brent Exp $ SPRITE (Berkeley)
+d31 1
+a31 1
+typedef struct FsRemoteIOParams {
+d36 1
+a36 1
+}
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d8 7
+d17 1
+a17 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsSpriteDomain.h,v 7.0 88/11/07 14:48:06 brent Exp Locker: douglis $ SPRITE (Berkeley)
+d24 1
+d28 21
+a79 19
+/*
+ * Parameters for the Device Open RPC.
+ */
+
+typedef struct FsSpriteDevOpenParams {
+    Fs_FileID	fileID;		/* File ID from the name server used by the
+				 * I/O server to construct its own file ID */
+    Fs_Device	device;		/* Specifies device server, type, unit */
+    int		flags;		/* FS_MIGRATING_HANDLE. */
+    int		streamType;	/* Type of stream being opened, either a
+				 * domain stream, a cacheable stream for
+				 * named pipes, or a pdev stream to
+				 * open up the master's req/res pipes */
+} FsSpriteDevOpenParams;
+
+typedef struct FsSpriteDevOpenResults {
+    Fs_FileID	fileID;		/* File ID that identifies the handle on the
+				 * I/O server. */
+} FsSpriteDevOpenResults;
+@
+
+
+7.0
+log
+@New version for conversion to new C library
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsSpriteDomain.h,v 6.7 88/11/04 09:43:12 brent Exp Locker: brent $ SPRITE (Berkeley)
+@
+
+
+6.7
+log
+@Moved 2Path operation typedefs from fsSpriteDomain.h to fsNameOps.h
+so they can be used by the pseudo-filesystem implementation
+@
+text
+@d10 1
+a10 1
+ * $Header: fsSpriteDomain.h,v 6.6 88/10/14 12:18:11 brent Exp $ SPRITE (Berkeley)
+d23 1
+a23 1
+typedef struct FsSpriteReadParams {
+d35 1
+a35 1
+} FsSpriteReadParams;
+d41 1
+a41 1
+typedef struct FsSpriteWriteParams {
+d49 1
+a49 1
+} FsSpriteWriteParams;
+d90 1
+a90 1
+typedef struct FsSpriteBlockCopyParams {
+d94 1
+a94 1
+} FsSpriteBlockCopyParams;
+d105 2
+a106 2
+extern	ReturnStatus	FsSpriteGetAttrPath();
+extern	ReturnStatus	FsSpriteSetAttrPath();
+d118 2
+a119 2
+extern	ReturnStatus	FsSpriteGetAttr();
+extern	ReturnStatus	FsSpriteSetAttr();
+d124 3
+a126 4
+extern	ReturnStatus	FsSpriteRead();
+extern	ReturnStatus	FsSpriteWrite();
+extern	ReturnStatus	FsSpriteBlockWrite();
+extern	ReturnStatus	FsSpriteSelect();
+d128 1
+a128 1
+extern	ReturnStatus	FsSpriteClose();
+d131 2
+a132 2
+extern	ReturnStatus	FsSpriteBlockCopy();
+extern	ReturnStatus	FsSpriteDomainInfo();
+@
+
+
+6.6
+log
+@FsFileID FsUserID change
+@
+text
+@d10 1
+a10 1
+ * $Header: fsSpriteDomain.h,v 6.5 88/10/04 09:03:29 brent Exp $ SPRITE (Berkeley)
+a94 22
+
+/*
+ * Parameters for the two path name rpcs (link and rename).
+ */
+
+typedef struct FsSprite2PathParams {
+    FsLookupArgs	lookupArgs;	/* Includes first prefixID */
+    Fs_FileID		prefixID2;
+} FsSprite2PathParams;
+
+typedef struct FsSprite2PathData {
+    char		path1[FS_MAX_PATH_NAME_LENGTH];
+    char		path2[FS_MAX_PATH_NAME_LENGTH];
+} FsSprite2PathData;
+
+typedef struct FsSprite2PathReplyParams {
+    int		prefixLength;	/* Length of returned prefix on re-direct */
+    Boolean	name1ErrorP;	/* TRUE if the error returned, which is either
+				 * a re-direct or stale-handle, applies to
+				 * the first of the two pathnames, FALSE if
+				 * it applies to the second pathname */
+} FsSprite2PathReplyParams;
+@
+
+
+6.5
+log
+@Fixed extern. DomainPrefix => DomainImport/DomainExport
+@
+text
+@d10 1
+a10 1
+ * $Header: fsSpriteDomain.h,v 6.4 88/09/22 08:58:41 brent Exp $ SPRITE (Berkeley)
+d24 2
+a25 2
+    FsFileID	fileID;			/* Identifies file to read from */
+    FsFileID	streamID;		/* Identifies stream (for offset) */
+d42 2
+a43 2
+    FsFileID	fileID;			/* File to write to */
+    FsFileID	streamID;		/* Stream to write to (for offset) */
+d56 1
+a56 1
+    FsFileID	fileID;		/* File ID from the name server used by the
+d67 1
+a67 1
+    FsFileID	fileID;		/* File ID that identifies the handle on the
+d76 2
+a77 2
+    FsFileID	fileID;		/* File to manipulate. */
+    FsFileID	streamID;	/* Stream to the file, needed for locking */
+d91 2
+a92 2
+    FsFileID	srcFileID;	/* File to copy from. */
+    FsFileID	destFileID;	/* File to copy to. */
+d102 1
+a102 1
+    FsFileID		prefixID2;
+@
+
+
+6.4
+log
+@Fixed IOControl parameters so we pass streams to iocontrol routines.
+@
+text
+@d10 1
+a10 1
+ * $Header: fsSpriteDomain.h,v 6.3 88/09/06 13:47:28 brent Exp $ SPRITE (Berkeley)
+d122 1
+a122 1
+extern	ReturnStatus	FsSpritePrefix();
+@
+
+
+6.3
+log
+@Fixed Fs2PathReturnParams to be more general
+@
+text
+@d10 1
+a10 1
+ * $Header: fsSpriteDomain.h,v 6.2 88/08/26 17:30:08 brent Exp $ SPRITE (Berkeley)
+d62 1
+a62 1
+				 * named pipes, or a proc-file stream to
+a69 3
+/*
+ * Parameters for the file lock RPC.
+ */
+a70 8
+typedef struct FsSpriteLockParams {
+    FsFileID	fileID;		/* File to be re-opened */
+    int		operation;	/* Operation argument to Fs_Lock */
+    Sync_RemoteWaiter waiter;	/* Process info for remote waiting */
+    int		streamType;	/* This is used to generate an Fs_Stream
+				 * on the server. */
+} FsSpriteLockParams;
+
+d76 5
+a80 2
+    FsFileID	fileID;		/* File for iocontrol. */
+    int		command;	/* Iocontrol to perform. */
+@
+
+
+6.2
+log
+@Added byteOrder to IOControl RPC parameters
+@
+text
+@d10 1
+a10 1
+ * $Header: fsSpriteDomain.h,v 6.1 88/08/13 11:22:08 brent Exp $ SPRITE (Berkeley)
+d119 5
+a123 2
+    int		prefixLength;
+    Boolean	name1RedirectP;
+@
+
+
+6.1
+log
+@Change some "Sprite" names to "Remote"
+@
+text
+@d10 1
+a10 1
+ * $Header: fsSpriteDomain.h,v 6.0 88/08/11 12:18:30 brent Stable $ SPRITE (Berkeley)
+d91 2
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: fsSpriteDomain.h,v 1.2 88/08/03 17:22:15 mlgray Exp $ SPRITE (Berkeley)
+d155 2
+a156 2
+extern	ReturnStatus	FsSpriteGetIOAttr();
+extern	ReturnStatus	FsSpriteSetIOAttr();
+@
+
+
+1.2
+log
+@works on Spur.
+@
+text
+@d10 1
+a10 1
+ * $Header: fsSpriteDomain.h,v 1.1 88/04/04 10:41:50 brent Exp $ SPRITE (Berkeley)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d10 1
+a10 1
+ * $Header: fsSpriteDomain.h,v 5.4 87/09/28 15:58:50 nelson Exp $ SPRITE (Berkeley)
+d109 3
+d113 7
+a119 1
+} FsSprite2PathParams;
+@

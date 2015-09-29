@@ -1,0 +1,513 @@
+head     9.2;
+branch   ;
+access   ;
+symbols  ds3100:9.2 sun3:9.2 sun4nw:9.2 symm:9.2 spur:9.2 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.2
+date     90.10.19.15.53.08;  author rab;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.09.11.12.07.45;  author rab;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.16.43;  author douglis;  state Stable;
+branches ;
+next     8.4;
+
+8.4
+date     89.03.15.16.04.12;  author brent;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.02.19.22.09.54;  author jhh;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.11.30.12.11.11;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.22.19.33.42;  author jhh;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.33.23;  author douglis;  state Stable;
+branches ;
+next     6.2;
+
+6.2
+date     88.11.08.11.46.55;  author brent;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.09.26.10.21.36;  author nelson;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.23.38;  author brent;  state Stable;
+branches ;
+next     5.1;
+
+5.1
+date     88.05.04.18.21.35;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.48.08;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.2
+log
+@Changed "" to <> for include files.
+@
+text
+@/* 
+ * _mcount.c --
+ *
+ *	This is the code for the routine mcount.  mcount is the routine
+ *	called at the beginning of each procedure if it the code has
+ *	been compiled with the -p option to cc.
+ *
+ *	NB: The compiler compiles this procedure into something called
+ *	"_mcount" which we massage back into "mcount" (see the Makefile).
+ *
+ * Copyright 1985 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/prof/sun3.md/RCS/_mcount.c,v 9.1 90/09/11 12:07:45 rab Exp Locker: rab $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <sprite.h>
+#include <stdio.h>
+#include <prof.h>
+#include <profInt.h>
+#include <sync.h>
+#include <sys.h>
+#include <dbg.h>
+
+/*
+ * Boolean to prevent recursion in mcount.  This only works
+ * on a uniprocessor.  This is needed in case we call printf
+ * or a Sync_ routine from within mcount and those routines
+ * have been instrumented with calls to mcount.
+ */
+static Boolean inMcount = FALSE;
+
+/*
+ * There is a critical section when mcount does a pseudo-alloc
+ * of the storage for its arcs.
+ */
+
+static Sync_Semaphore	mcountMutex = Sync_SemInitStatic("mcountMutex");
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * mcount --
+ *
+ *	A call to this routine is inserted by the compiler at the
+ *	beginning of every routine. (Use the -p option to cc.)
+ *	This looks up the call stack a bit to determine which arc
+ *	of the call graph is being executed.  A call graph arc represents
+ *	one routine calling another.  The routine with the call to mcount
+ *	is the callee of the arc, its caller (mcount's "grandparent")
+ *	is the caller of the arc.  An execution count is kept for each
+ *	arc.  The counts are dumped out and analyzed by the gprof program.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Increment a counter corresponding to the call graph arc.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+mcount()
+{
+    register unsigned int calleePC;	/* PC of instr. that called mcount */
+    register unsigned int callerPC;	/* PC of instr. that called mcount's 
+					 * caller */
+    register unsigned int instructionNumber;	/* Index into profArcIndex */
+    register ProfRawArc *arcPtr;	/* Pointer to arc data storage */
+
+    if (!profEnabled) {
+	return;
+    }
+
+    if (inMcount) {
+	return;
+    } else {
+	inMcount = TRUE;
+    }
+
+    /*
+     * Get the PC that was saved after the jsr mcount instruction.
+     * This is done by getting our frame pointer and then looking
+     * next to it on the stack for the saved PC.
+     * The saved PC identifies the caller of mcount and the callee
+     * of the call graph arc.
+     */
+
+    calleePC  = Prof_ThisPC( Prof_ThisFP() );
+
+
+    /*
+     * Get the PC that was saved after the jsr foo instruction.
+     * This PC identifies the caller of foo and the caller in
+     * the call graph arc.
+     */
+
+    callerPC = Prof_ThisPC( Prof_CallerFP() );
+
+    /*
+     * Use the PC of the jsr foo instruction as an index into the
+     * index of stored arcs.  There should only be one call instruction
+     * that corresponds to the index.
+     *
+     * Go from PC to instruction number by subracting off the base
+     * PC and dividing by the instruction size (2 bytes).
+     */
+
+    if (callerPC < (unsigned int)&spriteStart) {
+	/*
+	 * The PC from the caller's frame is bad. This happens when a 
+	 * new process is started. 
+	 */
+	goto exit;
+    }
+
+    instructionNumber = 
+	    (callerPC - (unsigned int) &spriteStart) >> PROF_ARC_SHIFT;
+    if (instructionNumber > profArcIndexSize) {
+	printf("_mcount: PC %x: Index (%d) exceeds bounds (%d)\n",
+		  callerPC, instructionNumber, profArcIndexSize);
+	goto exit;
+    }
+
+    /*
+     * Check to see if arcPtr equals an unused value (which is 0 because
+     * profArcIndex is initialized with bzero in Prof_Start).
+     */
+
+    arcPtr = profArcIndex[instructionNumber];
+    if (arcPtr == (ProfRawArc *) 0) {
+
+#ifdef DEBUG
+	printf("mcount: 1 callerPC = %x(%d), calleePC = %x\n",
+			    callerPC, instructionNumber, calleePC);
+	/* DBG_CALL; */
+#endif DEBUG
+
+	/*
+	 * First time call graph arc has been traversed.  Allocate arc
+	 * storage from the arcList and initialize it.  This is locked
+	 * to prevent the scheduler from interrupting the allocation
+	 * and initialization.
+	 */
+
+	if (profArcListFreePtr >= profArcListEndPtr) {
+	    profEnabled = FALSE;
+	    printf("_mcount: No more arcs, stopping profiling\n");
+	} else {
+
+	    MASTER_LOCK(&mcountMutex);
+	    Sync_SemRegister(&mcountMutex);
+
+	    arcPtr = profArcListFreePtr;
+	    profArcListFreePtr++;
+	    profArcIndex[instructionNumber] = arcPtr;
+	    arcPtr->calleePC = calleePC;
+	    arcPtr->count    = 1;
+	    arcPtr->link     = (ProfRawArc *)NIL;
+
+	    MASTER_UNLOCK(&mcountMutex);
+	}
+	goto exit;
+    }
+
+    while (arcPtr->calleePC != calleePC) {
+	/*
+	 * Loop through the list of callee's for this caller.
+	 */
+
+	if (arcPtr->link == (ProfRawArc *)NIL) {
+
+	    /*
+	     *  Allocate, link, and initialize another arc storage unit.
+	     */
+#ifdef DEBUG
+	    printf("mcount 2 callerPC = %x(%d), calleePC = %x\n",
+			callerPC, instructionNumber, calleePC);
+	/* DBG_CALL; */
+#endif DEBUG
+
+	    if (profArcListFreePtr >= profArcListEndPtr) {
+		printf("_mcount: No more arcs\n");
+	    } else {
+		MASTER_LOCK(&mcountMutex);
+
+		arcPtr->link = profArcListFreePtr;
+		profArcListFreePtr++;
+
+		arcPtr = arcPtr->link;
+		arcPtr->calleePC	= calleePC;
+		arcPtr->count		= 1;
+		arcPtr->link		= (ProfRawArc *) NIL;
+
+		MASTER_UNLOCK(&mcountMutex);
+	    }
+	    goto exit;
+	}
+	arcPtr = arcPtr->link;
+    }
+    arcPtr->count++;
+
+exit:
+
+    inMcount = FALSE;
+    return;
+}
+@
+
+
+9.1
+log
+@Declared mcount as void, instead of defaulting to int.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/prof/sun3.md/RCS/_mcount.c,v 9.0 89/09/12 15:16:43 douglis Stable Locker: rab $ SPRITE (Berkeley)";
+d20 7
+a26 6
+#include "sprite.h"
+#include "prof.h"
+#include "profInt.h"
+#include "sync.h"
+#include "sys.h"
+#include "dbg.h"
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/prof/sun3.md/RCS/_mcount.c,v 8.4 89/03/15 16:04:12 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d66 1
+@
+
+
+8.4
+log
+@Reenabled checks against recursion.  Recursion happens if the
+Sync_Lock code makes a procedure call, or if a printf occurs
+inside mcount().
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/prof/sun3.md/RCS/_mcount.c,v 8.3 89/02/19 22:09:54 jhh Exp Locker: brent $ SPRITE (Berkeley)";
+@
+
+
+8.3
+log
+@Changes due to lock registration
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/prof/sun3.md/RCS/_mcount.c,v 8.2 88/11/30 12:11:11 brent Exp Locker: jhh $ SPRITE (Berkeley)";
+d28 5
+a32 4
+ * Boolean to prevent recursion in mcount.  This would only work
+ * on a uniprocessor, and can be eliminated if you never compile
+ * this file with -p.
+ *
+a33 2
+ *  
+ */
+a77 1
+/*
+a82 1
+*/
+d123 2
+a124 3
+	printf(
+		  "_mcount: Index (%d) exceeds bounds (%d) of index array.\n",
+		  instructionNumber, profArcIndexSize);
+d137 1
+a137 1
+	printf( "mcount: 1 callerPC = %x(%d), calleePC = %x\n",
+d151 1
+a151 2
+	    printf( 
+			"_mcount: No more arcs, stopping profiling\n");
+d180 1
+a180 2
+	    printf( 
+			"mcount 2 callerPC = %x(%d), calleePC = %x\n",
+d186 1
+a186 1
+		printf( "_mcount: No more arcs\n");
+d208 1
+a208 1
+    /* inMcount = FALSE; */
+@
+
+
+8.2
+log
+@Sys_Panic => panic    Sys_Printf => printf
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/prof/sun3.md/RCS/_mcount.c,v 8.1 88/11/22 19:33:42 jhh Exp Locker: brent $ SPRITE (Berkeley)";
+d41 1
+a41 1
+static Sync_Semaphore	mcountMutex = SYNC_SEM_INIT_STATIC("mcountMutex");
+d160 1
+@
+
+
+8.1
+log
+@new semaphore definition
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/prof/sun3.md/RCS/_mcount.c,v 6.2 88/11/08 11:46:55 brent Exp $ SPRITE (Berkeley)";
+d126 1
+a126 1
+	Sys_Panic(SYS_WARNING,
+d141 1
+a141 1
+	Sys_Panic(SYS_WARNING, "mcount: 1 callerPC = %x(%d), calleePC = %x\n",
+d155 1
+a155 1
+	    Sys_Panic(SYS_WARNING, 
+d184 1
+a184 1
+	    Sys_Panic(SYS_WARNING, 
+d191 1
+a191 1
+		Sys_Panic(SYS_WARNING, "_mcount: No more arcs\n");
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/prof/sun3.md/RCS/_mcount.c,v 6.2 88/11/08 11:46:55 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d41 1
+a41 1
+static int	mcountMutex;
+d159 1
+a159 1
+	    MASTER_LOCK(mcountMutex);
+d168 1
+a168 1
+	    MASTER_UNLOCK(mcountMutex);
+d193 1
+a193 1
+		MASTER_LOCK(mcountMutex);
+d203 1
+a203 1
+		MASTER_UNLOCK(mcountMutex);
+@
+
+
+6.2
+log
+@Fixed references to Byte_Zero
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/src/kernel/prof/sun3.md/RCS/_mcount.c,v 6.1 88/09/26 10:21:36 nelson Exp Locker: brent $ SPRITE (Berkeley)";
+@
+
+
+6.1
+log
+@Reduced the size of arrays that have to be kept for profiling.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: _mcount.c,v 5.1 88/05/04 18:21:35 nelson Exp $ SPRITE (Berkeley)";
+d134 1
+a134 1
+     * profArcIndex is initialized with Byte_Zero in Prof_Start).
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d124 1
+a124 1
+	    (callerPC - (unsigned int) &spriteStart) >> PROF_INSTR_SIZE_SHIFT;
+@
+
+
+5.1
+log
+@Handles new mach module structure.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: _mcount.c,v 5.0 87/08/11 10:48:08 sprite Exp $ SPRITE (Berkeley)";
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: _mcount.c,v 3.1 86/12/02 13:23:35 andrew Exp $ SPRITE (Berkeley)";
+a22 1
+#include "machine.h"
+@

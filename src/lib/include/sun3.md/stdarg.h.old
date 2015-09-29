@@ -1,0 +1,38 @@
+/*
+ * stdarg.h --
+ *
+ *	Macros for handling variable-length argument lists.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/lib/include/sun3.md/RCS/stdarg.h,v 1.2 88/11/15 21:41:23 rab Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _STDARG
+#define _STDARG
+
+typedef struct {
+    char *vl_current;			/* Pointer to last arg returned from
+					 * list. */
+    char *vl_next;			/* Pointer to next arg to return. */
+} va_list;
+
+
+#define va_start(list, lastarg) \
+    (list).vl_current = (list).vl_next = ((char *) &lastarg) + 4;
+
+#define va_arg(list, type)			\
+    ((list).vl_current = (list).vl_next,	\
+    (list).vl_next += sizeof(type),		\
+     *((type *) (list).vl_current))
+
+#define va_end(list)
+
+#endif /* _STDARG */

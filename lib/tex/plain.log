@@ -1,0 +1,29 @@
+This is Common TeX, Version 2.9 (INITEX) 3 DEC 1991 20:18
+**/lib/tex/plain 
+(/lib/tex/plain.tex Preloading the plain format: codes, registers,
+\maxdimen=\dimen10
+\hideskip=\skip10
+\centering=\skip11
+\p@=\dimen11
+\z@=\dimen12
+\z@skip=\skip12
+\voidb@x=\box10
+
+parameters,
+\smallskipamount=\skip13
+\medskipamount=\skip14
+\bigskipamount=\skip15
+\normalbaselineskip=\skip16
+\normallineskip=\skip17
+\normallineskiplimit=\dimen13
+\jot=\dimen14
+\interdisplaylinepenalty=\count22
+\interfootnotelinepenalty=\count23
+ fonts,
+! Font \tenrm=cmr10 not loadable: Metric (TFM) file not found.
+<to be read again> 
+                   \font 
+l.389 \font
+           \preloaded=cmr9
+? X
+No pages of output.

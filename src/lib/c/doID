@@ -1,0 +1,15 @@
+#!/bin/csh -f
+
+#Redo the ID database for lid, etc.
+
+set a = (`cat Modules`)
+cp /dev/null ID.files$$
+echo "Generating source file list"
+foreach i ($a)
+    echo $i/*.{c,h,s} $i/{sun3,sun4,ds3100}.md/*.{c,h,s} | tr ' ' '\012' >> ID.files$$
+end
+echo "Generated source file list"
+echo "Making database"
+mkid -aID.files$$
+echo "Made database"
+rm ID.files$$

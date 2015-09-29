@@ -1,0 +1,325 @@
+head     9.3;
+branch   ;
+access   ;
+symbols  ds3100:9.3 sun3:9.3 sun4nw:9.3 symm:9.3 spur:9.3 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.3
+date     91.06.21.12.07.11;  author jhh;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.09.12.13.36.30;  author shirriff;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.09.11.10.44.41;  author shirriff;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.23.26;  author douglis;  state Stable;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.43.26;  author douglis;  state Stable;
+branches ;
+next     6.1;
+
+6.1
+date     88.10.28.18.18.35;  author mlgray;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.30.27;  author brent;  state Stable;
+branches ;
+next     5.1;
+
+5.1
+date     87.12.11.13.26.57;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.52.32;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.3
+log
+@added copyright to top of file
+@
+text
+@/* 
+ * vmList.c --
+ *
+ *	Routines for maintaining lists
+ *
+ * Copyright 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.5 91/02/09 13:24:44 ouster Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <list.h>
+#include <sys.h>
+#include <vm.h>
+#include <vmInt.h>
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmListInsert --
+ *
+ *	Insert the list element pointed to by itemPtr into a List after 
+ *	destPtr.  Perform a primitive test for self-looping by returning
+ *	failure if the list element is being inserted next to itself.
+ *
+ * Results:
+ *	If neither List_Links structure is NIL, they are assumed to be valid
+ *	and SUCCESS is returned.  If either one is NIL then FAILURE is
+ *	returned.  
+ *
+ * Side effects:
+ *	The list containing destPtr is modified to contain itemPtr.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+VmListInsert(itemPtr, destPtr)
+    register	List_Links *itemPtr;	/* structure to insert */
+    register	List_Links *destPtr;	/* structure after which to insert it */
+{
+    if (itemPtr->nextPtr != (List_Links *) NIL ||
+	itemPtr->prevPtr != (List_Links *) NIL) {
+	panic("VmListInsert: Inserting element twice.\n");
+    }
+
+    if (itemPtr == (List_Links *) NIL || destPtr == (List_Links *) NIL
+	    || !itemPtr || !destPtr || (itemPtr == destPtr)) {
+	panic("VmListInsert: Bad item or dest ptr.\n");
+    }
+    itemPtr->nextPtr = destPtr->nextPtr;
+    itemPtr->prevPtr = destPtr;
+    destPtr->nextPtr->prevPtr = itemPtr;
+    destPtr->nextPtr = itemPtr;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmListRemove --
+ *
+ *	Remove a list element from the list in which it is contained.
+ *
+ * Results:
+ *	If the list element is invalid or is the list header, FAILURE is 
+ *	returned.  Otherwise SUCCESS is returned.
+ *
+ * Side effects:
+ *	The given structure is removed from its containing list.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+VmListRemove(itemPtr)
+    register	List_Links *itemPtr;	/* list element to remove */
+{
+    if (itemPtr->nextPtr == (List_Links *) NIL ||
+	itemPtr->prevPtr == (List_Links *) NIL) {
+	panic("VmListRemove: Item not on list.\n");
+    }
+    if (itemPtr == (List_Links *) NIL || itemPtr == itemPtr->nextPtr
+	    || !itemPtr) {
+	panic("VmListRemove: Bad itemPtr.\n");
+    }
+    itemPtr->prevPtr->nextPtr = itemPtr->nextPtr;
+    itemPtr->nextPtr->prevPtr = itemPtr->prevPtr;
+    itemPtr->prevPtr = (List_Links *) NIL;
+    itemPtr->nextPtr = (List_Links *) NIL;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmListMove --
+ *
+ *	Move the list element referenced by itemPtr to follow destPtr.
+ *
+ * Results:
+ *	If either list element is invalid, FAILURE is returned.
+ *	Otherwise SUCCESS is returned.
+ *
+ * Side effects:
+ *	List ordering is modified.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+VmListMove(itemPtr, destPtr)
+    register List_Links *itemPtr; /* list element to be moved */
+    register List_Links *destPtr; /* element after which it is to be placed */
+{
+    if (itemPtr == (List_Links *) NIL || destPtr == (List_Links *) NIL
+	    || !itemPtr || !destPtr) {
+	panic("VmListMove: Bad item or dest ptr.\n");
+    }
+    /*
+     * It is conceivable that someone will try to move a list element to
+     * be after itself.
+     */
+    if (itemPtr != destPtr) {
+	VmListRemove(itemPtr);
+	VmListInsert(itemPtr, destPtr);
+    }    
+}
+
+@
+
+
+9.2
+log
+@Changed includes from quotes to angles.
+@
+text
+@d1 19
+@
+
+
+9.1
+log
+@Added function prototyping.
+@
+text
+@d1 5
+a5 5
+#include "sprite.h"
+#include "list.h"
+#include "sys.h"
+#include "vm.h"
+#include "vmInt.h"
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d4 2
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@@
+
+
+6.1
+log
+@Converted to new C library.
+@
+text
+@@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d32 1
+a32 1
+	Sys_Panic(SYS_FATAL, "VmListInsert: Inserting element twice.\n");
+d37 1
+a37 1
+	Sys_Panic(SYS_FATAL, "VmListInsert: Bad item or dest ptr.\n");
+d68 1
+a68 1
+	Sys_Panic(SYS_FATAL, "VmListRemove: Item not on list.\n");
+d72 1
+a72 1
+	Sys_Panic(SYS_FATAL, "VmListRemove: Bad itemPtr.\n");
+d104 1
+a104 1
+	Sys_Panic(SYS_FATAL, "VmListMove: Bad item or dest ptr.\n");
+@
+
+
+5.1
+log
+@New VM system where put machine dependent VM stuff into the SUN module.
+@
+text
+@@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d25 1
+a25 1
+ReturnStatus
+d37 1
+a37 1
+	return(FAILURE);
+a42 1
+    return(SUCCESS);
+d62 1
+a62 1
+ReturnStatus
+d72 1
+a72 1
+	return(FAILURE);
+a77 1
+    return(SUCCESS);
+d97 1
+a97 1
+ReturnStatus
+a101 2
+    ReturnStatus status;
+
+d104 1
+a104 1
+	return(FAILURE);
+d111 2
+a112 8
+	status = VmListRemove(itemPtr);
+	if (status != SUCCESS) {
+	    return(status);
+	}
+	status = VmListInsert(itemPtr, destPtr);
+	if (status != SUCCESS) {
+	    return(status);
+	}
+a113 1
+    return(SUCCESS);
+@

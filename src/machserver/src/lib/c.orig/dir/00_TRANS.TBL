@@ -1,0 +1,11 @@
+F CLOSEDIR.C;1                      	closedir.c
+F DIRECTOR.MAN;1                    	directory.man
+D DS3100_M                          	ds3100.md
+F MAKEFILE.;1                       	Makefile
+F OPENDIR.C;1                       	opendir.c
+F READDIR.C;1                       	readdir.c
+F SCANDIR.C;1                       	scandir.c
+F SCANDIR.MAN;1                     	scandir.man
+F SEEKDIR.C;1                       	seekdir.c
+D SUN3_MD                           	sun3.md
+F TELLDIR.C;1                       	telldir.c

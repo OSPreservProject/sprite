@@ -1,0 +1,109 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    jhh:1.2; strict;
+comment  @# @;
+
+
+1.2
+date     90.11.15.17.50.22;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.01.24.14.04.14;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Shell script to invoke the correct kgdb based on a -m option.
+@
+
+
+1.2
+log
+@Added symmetry.
+@
+text
+@#! /bin/csh -f
+#
+#   Script to invoke the correct kgdb based on the specified -m option. 
+#   All options other that -m are assumed to be kgdb options and are
+#   passed unmodified to kgdb. Since this script is intended to run on
+#   both unix and sprite, it uses unix style path names.
+#
+# $Header: /sprite/src/cmds/kgdb/RCS/kgdb,v 1.1 89/01/24 14:04:14 mendel Exp Locker: rab $SPRITE (Berkeley)
+#
+# Copyright 1989 Regents of the University of California
+# Permission to use, copy, modify, and distribute this
+# software and its documentation for any purpose and without
+# fee is hereby granted, provided that the above copyright
+# notice appear in all copies.  The University of California
+# makes no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without
+# express or implied warranty.
+#
+
+# 
+# Default to the machine type in the $MACHINE variable.
+#
+set tm = $MACHINE
+
+#
+# Set the variable tm to the -m option specified.  This code assumes that if
+# if it exists then the -m must be the first argument. argv is shifted to 
+# remove the -m option.
+
+if ($#argv > 0) then
+        switch ($argv[1])
+#
+# Currently, sun3 and sun2 shared the same kdbx with tm=sun3.
+#
+        case -msun2:
+        case -msun3:
+	    set tm=sun3
+            shift argv
+	    goto out
+	case -mspur:
+	    set tm=spur
+            shift argv
+	    goto out
+	case -msun4:
+	    set tm=sun4
+            shift argv
+	    goto out
+	case -msymm
+	    set tm=symm
+            shift argv
+	    goto out
+	case -mds3100
+	    set tm=ds3100
+            shift argv
+	    goto out
+# 
+# Added addition machine types here.  
+        case -m*:
+            echo "unknown machine" $argv[1]
+            exit(1)
+	default:
+	endsw
+endif
+
+out:
+echo "Sprite" $tm "kernel debugger"
+exec kgdb.$tm $argv
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d8 1
+a8 1
+# $Header: /sprite/lib/forms/RCS/proto.csh,v 1.2 89/01/16 11:13:37 ouster Exp $SPRITE (Berkeley)
+d46 8
+@

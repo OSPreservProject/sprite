@@ -1,0 +1,40 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @| @;
+
+
+1.1
+date     89.01.06.08.11.36;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Last assembly instructions for a boot program
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@|
+| end.s
+|	This sets up some well known addresses used at boot time initialization.|	By putting end.o at the end of the load command we get the loader
+|	to tell us how big things are.
+|
+	.text
+	.globl _endText
+_endText:
+	.data
+	.globl _endData
+_endData:    .word 	0
+	.bss
+	.globl _endBss
+_endBss:    .word 	0
+@

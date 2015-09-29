@@ -1,0 +1,1 @@
+TDEFINES = -DDEFAULT_VECTOR=newsos3_vec

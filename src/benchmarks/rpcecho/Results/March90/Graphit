@@ -1,0 +1,7 @@
+#!/bin/csh -f
+#
+egrep '^[0-9]' $1 | sed '/timeout/d' > /tmp/rpcecho.$$
+awk -f ~/awk/rpcAvg < /tmp/rpcecho.$$
+echo ""
+awk -f ~/awk/rpcBand.raw < /tmp/rpcecho.$$
+rm /tmp/rpcecho.$$

@@ -1,0 +1,88 @@
+     BACKSLASH SUBSTITUTION
+          Backslashes may be used to  insert  non-printing  characters
+          into  command  fields  and also to insert special characters
+          like braces and brackets  into  fields  without  them  being
+          interpreted  specially  as  described  above.  The backslash
+          sequences understood  by  the  Tcl  interpreter  are  listed
+          below.   In each case, the backslash sequence is replaced by
+          the given character:
+
+          \b                  Backspace (0x8).
+
+          \f                  Form feed (0xc).
+
+          \n                  Newline (0xa).
+
+          \r                  Carriage-return (0xd).
+
+          \t                  Tab (0x9).
+
+          \v                  Vertical tab (0xb).
+
+          \{                  Left brace (``{'').
+
+          \}                  Right brace (``}'').
+
+          \[                  Open bracket (``['').
+
+          \]                  Close bracket (``]'').
+
+          \$                  Dollar sign (``$'').
+
+          \<space>            Space   (``   ''):   doesn't   terminate
+                              argument.
+
+          \;                  Semi-colon: doesn't terminate command.
+
+          \"                  Double-quote.
+
+          \<newline>          Nothing:  this joins two lines  together
+                              into  a  single  line.   This  backslash
+                              feature is unique in  that  it  will  be
+                              applied  even  when  the sequence occurs
+                              within braces.
+
+          \\                  Backslash (``\'').
+
+          \ddd                The digits ddd (one, two,  or  three  of
+                              them)   give  the  octal  value  of  the
+                              character.  Null characters may  not  be
+                              embedded  in  command  fields; if ddd is
+                              zero  then  the  backslash  sequence  is
+                              ignored   (i.e.  it  maps  to  an  empty
+                              string).
+
+          For example, in the command
+
+               set a \{x\[\ yz\141
+
+          the second argument to set will be ``{x[ yza''.
+
+          If a backslash is followed by something other  than  one  of
+          the   options   described   above,  then  the  backslash  is
+          transmitted  to  the  argument  field  without  any  special
+          processing,  and the Tcl scanner continues normal processing
+          with the next character.  For example, in the command
+
+               set \*a \\\{foo
+          The first argument  to  set  will  be  \*a  and  the  second
+          argument will be \{foo.
+
+          If  an  argument  is  enclosed  in  braces,  then  backslash
+          sequences inside the argument are parsed but no substitution
+          occurs  (except  for  backslash-newline):    the   backslash
+          sequence  is  passed  through to the argument as is, without
+          making any special interpretation of the characters  in  the
+          backslash  sequence.   In particular, backslashed braces are
+          not counted  in  locating  the  matching  right  brace  that
+          terminates the argument.  For example, in the command
+
+               set a {\{abc}
+
+          the second argument to set will be \{abc.
+
+          This backslash  mechanism  is  not  sufficient  to  generate
+          absolutely  any  argument structure; it only covers the most
+          common cases.  To produce particularly complicated arguments
+          it  is probably easiest to use the format command along with
+          command substitution.

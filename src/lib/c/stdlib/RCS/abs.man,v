@@ -1,0 +1,77 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     89.01.05.17.59.52;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.01.05.17.20.54;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Added labs to man page.
+@
+text
+@.\"	@@(#)abs.3	6.1 (Berkeley) 5/15/85
+.\"
+.TH ABS 3 "May 15, 1985"
+.AT 3
+.SH NAME
+abs, labs \- integer absolute value
+.SH SYNOPSIS
+.nf
+.B #include <stdlib.h>
+
+.B int abs(i)
+.B int i;
+
+.B long int labs(i)
+.B long int i;
+.fi
+.SH DESCRIPTION
+.I Abs
+returns the absolute value of its integer operand.  \fILabs\fR is
+similar to \fIabs\fR except that its argument and its resul are both
+of type \fBlong int\fR.
+.SH SEE ALSO
+floor(3M) for
+.I fabs
+.SH BUGS
+Applying the \fIabs\fP function to the most negative integer generates a
+result which is the most negative integer.  That is, 
+.IP "abs(0x80000000)"
+.LP
+returns 0x80000000 as a result.
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d6 1
+a6 1
+abs \- integer absolute value
+d9 3
+a11 1
+.B abs(i)
+d13 3
+d19 3
+a21 1
+returns the absolute value of its integer operand.
+@

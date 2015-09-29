@@ -1,0 +1,52 @@
+\def\filedate{90/06/30}
+
+This file contains problem-records and bug-reports.  Unsolved problems
+and uncorrected but known bugs (so called features) start out with two
+exclamation marks before the number.  Fixed problems will start with two
+asterisks. 
+
+
+!! (1)  FMi 90/04/05: \process@table will never be called in the letter
+        style, or more exactly in any style that redefines \document. 
+        This means that you can't use math alphabet identifiers in letters.
+        This is a problem of the upgrade to LaTeX 2.10 and will vanish
+        then.  A fix for LaTeX 2.09 styles is to insert \process@table
+        immediately before
+            \def\do ....
+        inside any redefinition of the \document command.
+
+
+** (2)  FMi 90/04/05: \makelabels in letter will cause an error because \xpt
+        is redefined to \@preamerr after \document.
+        FMi 90/06/03: Fixed by redefining \xpt inside \xpt. (v1.1j lfonts.doc)
+
+!! (3)  FMi 90/04/05: Problems similar to (1) will be encountered in
+        style files that redefine internals like \@outputpage, etc. 
+
+** (4)  SPQR 90/05/22: In oldlfont.sty and newlfont.sty we forgot to
+        add the lasy math alphabet identifier to the math versions.
+        FMi 90/05/24: fixed.
+
+** (5)  MDo 90/06/08: An \hbox{\small ...} in vertical mode will be
+        placed into the vertical list using the \baselineskip current
+        inside the box not the one outside the box.  Temp. fix: use
+        extra braces to keep the change from \small local.  Final fix
+        will move part of the code from \gbl@settings into \selectfont.
+        FMi 90/06/24: fixed.
+
+** (6)  DH  90/06/18: \hbox instead of \mbox was used in \text.
+        FMi 90/06/24: fixed.
+
+** (7)  DH  90/06/29: oldlfont.sty shouldn't be read in twice to
+        avoid math group overflow.
+        FMi 90/06/29: fixed.
+
+** (8)  MDo 90/06/28: \no@font@help message was too long for some
+        version of TeX (buffer size).  
+        FMi 90/06/30: fixed by shortening the error message.
+        We recommend increase of buffer size to at least 2000!!!!!
+
+** (9)  FMi (long known): In certain cases \addtoversion would produce
+        a misleading error message.
+        RmS 90/06/30: Fixed by adding another error message text.
+        

@@ -1,0 +1,248 @@
+head     9.5;
+branch   ;
+access   ;
+symbols  ds3100:9.5 sun3:9.5 sun4nw:9.4 symm:9.4 spur:9.4 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.5
+date     92.08.10.17.58.55;  author mgbaker;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     91.08.27.16.06.52;  author mgbaker;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.10.09.11.49.33;  author jhh;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.10.03.14.15.42;  author mgbaker;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.09.11.13.43.21;  author mendel;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.53.08;  author douglis;  state Stable;
+branches ;
+next     1.3;
+
+1.3
+date     89.07.12.06.19.36;  author rab;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.05.02.23.26.09;  author mgbaker;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.02.28.12.48.22;  author mgbaker;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Needed for include file dependencies.
+@
+
+
+9.5
+log
+@Changes for transparent server recovery.
+@
+text
+@/*
+ * machInt.h --
+ *
+ *	This file defines things that are shared between the "mach" modules
+ *	but aren't used by the rest of Sprite.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/mach/sun4.md/machInt.h,v 9.4 91/08/27 16:06:52 mgbaker Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _MACHINT
+#define _MACHINT
+
+#include "sys/types.h"
+#ifdef KERNEL
+#include <mach.h>
+#else
+#include <kernel/mach.h>
+#endif
+
+/*
+ * The bounds of the code that copies arguments from the user stack to
+ * the kernel stack.
+ */
+extern void MachFetchArgs _ARGS_((void));
+extern void MachFetchArgsEnd _ARGS_((void));
+extern void MachProbeStart _ARGS_((void));
+extern void MachProbeEnd _ARGS_((void));
+
+extern void MachPageFault _ARGS_((unsigned int busErrorReg, Address addrErrorReg, unsigned int trapPsr, Address pcValue));
+extern int MachUserAction _ARGS_((void));
+extern void MachHandleTrap _ARGS_((int trapType, Address pcValue, unsigned int trapPsr));
+extern void MachUserDebug _ARGS_((void));
+
+/*
+ * Asm routines.
+ */
+extern void MachRunUserProc _ARGS_((void));
+extern void MachHandleBadQuickCopy _ARGS_((void));
+extern void MachHandleBadProbe _ARGS_((void));
+extern void MachHandleBadArgs _ARGS_((void));
+extern void MachHandleBadArgs _ARGS_((void));
+/*
+ * FPU routines.
+ */
+extern void MachFPU_Emulate _ARGS_((int processID, Address instAddr, 
+		Mach_RegState *userRegsPtr, Mach_RegWindow *curWinPtr));
+extern void MachFPUDumpState _ARGS_((Mach_RegState *regStatePtr));
+extern void MachFPULoadState _ARGS_((Mach_RegState *regStatePtr));
+
+extern void MachCallSigReturn _ARGS_((void));
+extern int fuword _ARGS_((caddr_t address));
+extern int fubyte _ARGS_((caddr_t address));
+extern int suword _ARGS_((caddr_t address, int value));
+extern void MachDoFastBoot _ARGS_((void));
+
+#endif /* _MACHINT */
+@
+
+
+9.4
+log
+@Fixed kernel includes to use angle brackets.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machInt.h,v 9.3 90/10/09 11:49:33 jhh Exp Locker: mgbaker $ SPRITE (Berkeley)
+d63 1
+@
+
+
+9.3
+log
+@function prototypes
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machInt.h,v 9.2 90/10/03 14:15:42 mgbaker Exp Locker: jhh $ SPRITE (Berkeley)
+d24 1
+a24 1
+#include "mach.h"
+@
+
+
+9.2
+log
+@this is JohnH checking it in for mary.  Looks like she was doing 
+prototyping.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machInt.h,v 9.1 90/09/11 13:43:21 mendel Exp Locker: mgbaker $ SPRITE (Berkeley)
+d33 4
+a36 4
+extern Address MachFetchArgs;
+extern Address MachFetchArgsEnd;
+extern Address MachProbeStart;
+extern Address MachProbeEnd;
+@
+
+
+9.1
+log
+@Fixed lint caused by prototyping.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machInt.h,v 9.0 89/09/12 14:53:08 douglis Stable Locker: mendel $ SPRITE (Berkeley)
+d22 2
+d25 4
+d33 9
+a41 4
+extern int MachFetchArgs();
+extern int MachFetchArgsEnd();
+extern Address Mach_ProbeStart;
+extern Address Mach_ProbeEnd;
+d59 4
+a62 3
+extern	void		Mach_FreeState();
+extern	ReturnStatus	Mach_SetupNewState();
+extern void Mach_MonTrap();
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machInt.h,v 1.3 89/07/12 06:19:36 rab Exp Locker: douglis $ SPRITE (Berkeley)
+d22 1
+d31 20
+@
+
+
+1.3
+log
+@*** empty log message ***
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machInt.h,v 1.2 89/05/02 23:26:09 mgbaker Exp Locker: rab $ SPRITE (Berkeley)
+@
+
+
+1.2
+log
+@New interrupts, device interface, etc.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/mach/sun4.md/RCS/machInt.h,v 1.1 89/02/28 12:48:22 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d31 1
+a31 1
+#endif _MACHINT
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+ * $Header: machInt.h,v 1.2 88/05/04 16:40:42 nelson Exp $ SPRITE (Berkeley)
+d28 2
+@

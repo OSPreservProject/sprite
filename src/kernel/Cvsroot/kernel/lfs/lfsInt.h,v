@@ -1,0 +1,779 @@
+head     1.16;
+branch   ;
+access   ;
+symbols  ds3100:1.16 sun3:1.16 sun4nw:1.11 symm:1.11 spur:1.11;
+locks    ; strict;
+comment  @ * @;
+
+
+1.16
+date     92.09.27.23.36.32;  author shirriff;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     92.09.03.17.35.43;  author shirriff;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     92.03.19.17.31.54;  author jhh;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     92.03.12.15.27.31;  author jhh;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     92.03.06.11.56.52;  author mgbaker;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     91.08.08.17.47.22;  author mendel;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     91.06.29.17.01.36;  author mendel;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     91.05.29.14.06.13;  author mendel;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     91.01.09.12.16.16;  author mendel;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     90.12.07.10.07.22;  author mendel;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     90.10.30.10.02.39;  author mendel;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     90.10.19.17.22.50;  author mendel;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.08.02.16.19.29;  author mendel;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.05.30.10.30.42;  author mendel;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.05.25.15.33.02;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.01.16.17.12.25;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.16
+log
+@Fixed problem with include file order; problem from my creation of
+lfsTypes.h.
+@
+text
+@/*
+ * lfsInt.h --
+ *
+ *	Type and data uses internally to the LFS module.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/lfs/lfsInt.h,v 1.15 92/09/03 17:35:43 shirriff Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _LFSINT
+#define _LFSINT
+
+#include <sprite.h>
+#include <fs.h>
+#include <fsconsist.h>
+#include <user/fs.h>
+#include <lfs.h>
+#include <lfsTypes.h>
+#include <lfsDesc.h>
+#include <lfsDescMapInt.h>
+#include <lfsDescInt.h>
+#include <lfsSuperBlock.h>
+#include <lfsSegUsageInt.h>
+#include <lfsFileLayoutInt.h>
+#include <lfsDirLogInt.h>
+#include <lfsMemInt.h>
+#include <lfsStats.h>
+
+#include <fsdm.h>
+
+/*
+ * So we can use printf and bzero, bcopy in the lfs module.
+ */
+#include <stdio.h> 
+#include <bstring.h>
+
+/* constants */
+/*
+ * Flags for checkpoint callback.
+ * LFS_CHECKPOINT_DETACH - This checkpoint is part of a file system detach.
+ *	                   Any data structures malloc'ed for this file
+ *		           system during attach should be freed.
+ * LFS_CHECKPOINT_NOSEG_WAIT - This checkpoint shouldn't wait for clean
+ *				segments because it is a checkpoint after
+ *				a cleaning.
+ * LFS_CHECKPOINT_WRITEBACK - This checkpoint is being done for a domain
+ *			      writeback operation.
+ * LFS_CHECKPOINT_TIMER - This checkpoint is part of the regular callback.
+ * LFS_CHECKPOINT_CLEANER - This checkpoint is part of the cleaner.
+ * 
+ */
+#define	LFS_CHECKPOINT_DETACH		 0x1
+#define	LFS_CHECKPOINT_NOSEG_WAIT	 0x2
+#define	LFS_CHECKPOINT_WRITEBACK	 0x4
+#define	LFS_CHECKPOINT_TIMER		 0x8
+#define	LFS_CHECKPOINT_CLEANER		 0x10
+
+/*
+ * Possible values for activeFlags:
+ * LFS_CLEANER_ACTIVE	  - A segment cleaner process is active on this file 
+ *			    system.
+ * LFS_WRITE_ACTIVE	  - Someone is actively writing to the log.
+ * LFS_CHECKPOINT_ACTIVE  - A checkpoint is active on this file system.
+ * LFS_SHUTDOWN_ACTIVE    - The file system is about to be shutdown.
+ * LFS_CHECKPOINTWAIT_ACTIVE - Someone is waiting for a checkpoint to be
+ *			       performed.
+ * LFS_CLEANER_CHECKPOINT_ACTIVE - A segment cleaner is doing a checkpoint.
+ * LFS_SYNC_CHECKPOINT_ACTIVE - A segment cleaner is doing a checkpoint.
+ * LFS_CLEANSEGWAIT_ACTIVE - Someone is waiting for clean segments to be
+ *			     generated.
+ */
+
+#define	LFS_WRITE_ACTIVE	  0x1
+#define	LFS_CLEANER_ACTIVE	 0x10
+#define	LFS_SHUTDOWN_ACTIVE	 0x40
+#define	LFS_CHECKPOINTWAIT_ACTIVE 0x80
+#define	LFS_SYNC_CHECKPOINT_ACTIVE 0x100
+#define	LFS_CLEANER_CHECKPOINT_ACTIVE 0x200
+#define	LFS_CHECKPOINT_ACTIVE 0x300
+#define	LFS_CLEANSEGWAIT_ACTIVE	0x400
+
+extern int lfsMinNumberToClean;
+
+/*
+ * This is for ASPLOS stats only.  Remove when that's done.  -Mary 2/16/92.
+ */
+extern Boolean Lfs_DoASPLOSStats;
+
+/* Useful macros for LFS.
+ *
+ * LfsFromDomainPtr(domainPtr) - Return the Lfs data stucture for a Fsdm_domain.
+ *
+ * LfsSegSize(lfsPtr)	- Return the segment size in bytes.
+ * LfsSegSizeInBlocks(lfsPtr) - Return the segment size in blocks.
+ * LfsBlockSize(lfsPtr)       - Return the block size.
+ * LfsBytesToBlocks(lfsPtr, bytes) - Convert bytes into the number of blocks
+ *				     it would take to contain the bytes.
+ * LfsBlocksToBytes(lfsPtr, blocks) - Convert from blocks into bytes.
+ * LfsSegNumToDiskAddress(lfsPtr, segNum) - Convert a segment number into
+ *					    a disk address.
+ * LfsBlockToSegmentNum(lfsPtr, diskAdress)  - Compute the segment number 
+ *					 of a disk  address .
+ * LfsIsCleanerProcess(lfsPtr) - Return TRUE if current process is a cleaner.
+ *
+ * LfsGetCurrentTimestamp(lfsPtr) - Return the current file system timestamp
+ */
+
+#define	LfsFromDomainPtr(domainPtr) ((Lfs *) ((domainPtr)->clientData))
+
+#define	LfsSegSize(lfsPtr) ((lfsPtr)->usageArray.params.segmentSize)
+
+#define	LfsSegSizeInBlocks(lfsPtr) \
+			(LfsSegSize(lfsPtr)>>(lfsPtr)->blockSizeShift)
+
+#define	LfsBlockSize(lfsPtr) ((lfsPtr)->superBlock.hdr.blockSize)
+
+#define	LfsBytesToBlocks(lfsPtr, bytes)	\
+	 (((bytes) + (LfsBlockSize(lfsPtr)-1))>>(lfsPtr)->blockSizeShift)
+
+#define	LfsBlocksToBytes(lfsPtr, blocks) ((blocks)<<(lfsPtr)->blockSizeShift)
+
+
+#define LfsValidSegmentNum(lfsPtr, segNum) (((segNum) >= 0) && \
+		((segNum) < (lfsPtr)->usageArray.params.numberSegments))
+
+
+#define LfsSegNumToDiskAddress(lfsPtr, segNum, diskAddrPtr) \
+		LfsOffsetToDiskAddr(  \
+		     ((lfsPtr)->superBlock.hdr.logStartOffset + \
+		(LfsSegSizeInBlocks((lfsPtr)) * (segNum))), diskAddrPtr)
+
+#define LfsDiskAddrToSegmentNum(lfsPtr, diskAddress) \
+		((LfsDiskAddrToOffset(diskAddress) - \
+				(lfsPtr)->superBlock.hdr.logStartOffset) / \
+					 LfsSegSizeInBlocks((lfsPtr)))
+
+#define	LfsGetCurrentTimestamp(lfsPtr)	(++((lfsPtr)->checkPoint.timestamp))
+
+#define	LfsIsCleanerProcess(lfsPtr) \
+		(Proc_GetCurrentProc() == (lfsPtr)->cleanerProcPtr)
+
+/*
+ * Attach detach routines. 
+ */
+extern ReturnStatus LfsLoadFileSystem _ARGS_((Lfs *lfsPtr, int flags));
+extern ReturnStatus LfsDetachFileSystem _ARGS_((Lfs *lfsPtr));
+extern ReturnStatus LfsCheckPointFileSystem _ARGS_((Lfs *lfsPtr, int flags));
+
+
+
+/*
+ * Utility  routines.
+ */
+extern int LfsLogBase2 _ARGS_((unsigned int val));
+extern void LfsError _ARGS_((Lfs *lfsPtr, ReturnStatus status, char *message));
+extern void LfsSegCleanStart _ARGS_((Lfs *lfsPtr));
+extern void LfsWaitForCheckPoint _ARGS_((Lfs *lfsPtr));
+extern void LfsSegmentWriteProc _ARGS_((ClientData clientData,
+				Proc_CallInfo *callInfoPtr));
+extern void LfsWaitForCleanSegments _ARGS_((Lfs *lfsPtr));
+
+extern void Lfs_ReallocBlock _ARGS_((ClientData data, 
+				Proc_CallInfo *callInfoPtr));
+/*
+ * Second parameter below is for ASPLOS measurements and can be removed
+ * after that's all over.  Mary 2/14/92.
+ */
+extern Boolean Lfs_StartWriteBack _ARGS_((Fscache_Backend *backendPtr, Boolean fileFsynced));
+extern void LfsStopWriteBack _ARGS_((Lfs *lfsPtr));
+extern Boolean LfsMoreToWriteBack _ARGS_((Lfs *lfsPtr));
+extern Fscache_Backend *LfsCacheBackendInit _ARGS_((Lfs *lfsPtr));
+/*
+ * I/o routines. 
+ */
+extern ReturnStatus LfsReadBytes _ARGS_((Lfs *lfsPtr, LfsDiskAddr diskAddress, 
+			int numBytes, char *bufferPtr));
+extern ReturnStatus LfsWriteBytes _ARGS_((Lfs *lfsPtr, LfsDiskAddr diskAddress, 
+			int numBytes, char *bufferPtr));
+extern void LfsCheckRead _ARGS_((Lfs *lfsPtr, LfsDiskAddr diskAddress, 
+				int numBytes));
+
+/*
+ * File index routines. 
+ */
+extern ReturnStatus LfsFile_GetIndex _ARGS_((Fsio_FileIOHandle *handlePtr,
+			int blockNum, int cacheFlags, 
+			LfsDiskAddr *diskAddressPtr));
+extern ReturnStatus LfsFile_SetIndex _ARGS_((Fsio_FileIOHandle *handlePtr, 
+			int blockNum, int blockSize, int cacheFlags, 
+			LfsDiskAddr diskAddress));
+
+extern ReturnStatus LfsFile_TruncIndex _ARGS_((struct Lfs *lfsPtr, 
+			Fsio_FileIOHandle *handlePtr, 
+			int length));
+
+extern ReturnStatus LfsFile_GrowBlock _ARGS_((Lfs *lfsPtr, 
+			Fsio_FileIOHandle *handlePtr,
+			int offset, int numBytes));
+
+#endif /* _LFSINT */
+
+@
+
+
+1.15
+log
+@Split lfsInt.h into lfsInt.h and lfsTypes.h
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/lfs/lfsInt.h,v 1.14 92/03/19 17:31:54 jhh Exp $ SPRITE (Berkeley)
+d26 1
+a35 1
+#include <lfsTypes.h>
+@
+
+
+1.14
+log
+@Fixed up bug introduced when verification of clean segments was added. 
+A short read is no longer a fatal error at the low level, instead it
+is passed up. Otherwise short reads when looking for the root panic
+the machine.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/lfs/lfsInt.h,v 1.13 92/03/12 15:27:31 jhh Exp $ SPRITE (Berkeley)
+d35 1
+a64 104
+/* data structures */
+
+/*
+ * LfsCheckPoint contains the info and memory needed to perform checkpoints.
+ * The file system timestamp and the next checkpoint area to write
+ * indicator are kept here. 
+ */
+typedef struct LfsCheckPoint {
+    int	  timestamp;	/* Current file system timestamp. */
+    int	  nextArea;	/* Next checkpoint area to write. Must be 0 or 1. */
+    char  *buffer;	/* Memory buffer to place checkpoint. */
+    int	  maxSize;	/* Maximum size of the buffer. */
+} LfsCheckPoint;
+
+/*
+ * LfsSegCache - Data structure describing the in memory cache of segments.  
+ * With the current implementation, this cache contains the last segment
+ * read during cleaning and it takes any hits during cleaning.
+ */
+typedef struct LfsSegCache {
+    Boolean valid;	        /* TRUE if the cache contains valid data. */
+    int	    segNum;		/* The segment number being cached. */
+    LfsDiskAddr  startDiskAddress;  /* The starting and ending disk address */
+    LfsDiskAddr  endDiskAddress;    /* of the cached segment.  */
+    char    *memPtr;		/* Memory location of segment. */
+} LfsSegCache;
+
+/*
+ * Lfs - The main data structure describing an LFS file system.
+ */
+typedef struct Lfs {
+		/*
+		 * Fields that are set at attach time and then read-only
+		 * until detach.
+		 */
+    Fs_Device	  *devicePtr;	/* Device containing file system. */
+    char	  *name;	/* Name used for error messages. */
+    int		  controlFlags;	/* Flags controlling file system operating. 
+				 * see lfs.h for definitions.  */
+    Fsdm_Domain	  *domainPtr;	/* Domain this file system belongs. */
+    /*
+     * Routine for cache backend. 
+     */
+    Sync_Lock	  cacheBackendLock; /* Lock for cache backend use. */
+    Boolean	   writeBackActive; /* TRUE if cache backend is active. */
+    Boolean 	   writeBackMoreWork; /* TRUE if more work is available for
+				       * the cache backend. */
+    Boolean	   shutDownActive;   /* TRUE if the file system is being 
+				      * shutdown. */
+    int		  cacheBlocksReserved; /* Number of file cache blocks
+					* reserved for file system. */
+    int	   	  attachFlags;	/* Flags from Lfs_AttachDisk() call.  */
+    int	      	  blockSizeShift;   /* Log base 2 of blockSize. Used by
+				     * Blocks<->Bytes macros below to 
+				     * use fast shifts rather than costly 
+				     * multiplies and divides. */
+    int	*checkpointIntervalPtr; /* A pointer to the interval to call
+				* the checkpoint processor on. A 
+				* value of zero will cause the 
+				* checkpoint process to stop. */
+		/*
+		 * Fields modified after boot that require locking.
+		 */
+    Sync_Lock      lock;	/* Lock protecting the below data structures. */
+    int		activeFlags;	/* Flags specifing what processes are active
+				 * on file system. See below for values. */
+    Proc_ControlBlock *cleanerProcPtr; /* Process Control block of cleaner
+					* process. NIL if cleaner is not
+					* active. */
+    Sync_Condition writeWait; /* Condition to wait for the file system 
+			       * write to complete. */
+    Sync_Condition cleanSegmentsWait; /* Condition to wait for clean
+				       * segments to be generated. */
+    Sync_Condition checkPointWait; /* Condition to wait for checkpoint
+				    * completing or starting. */
+    int		dirModsActive;	/* Number of processes inside directory 
+				 * modification code. */
+    int		numDirtyBlocks; /* Estimate of the number of dirty blocks
+				 * in the file cache. */
+    LfsSegCache   segCache;	  /* Cache of recently read segments. */
+    LfsDescCache  descCache;	  /* Cache of file desciptors. */
+    Sync_Lock     logLock;	/* Lock protecting the directory log. */
+    LfsDirLog	  dirLog;	 /* Directory change log data structures. */
+    Boolean	  segMemInUse;	/* TRUE if segment memory is being used. */
+    LfsDescMap	  descMap;	/* Descriptor map data. */
+    LfsSegUsage   usageArray;   /* Segment usage array data. */
+    Sync_Lock     checkPointLock; /* Lock protecting the checkpoint data. */
+    LfsCheckPoint checkPoint;   /* Checkpoint data. */
+    LfsFileLayout fileLayout;	/* File layout data structures. */
+    LfsSuperBlock superBlock;	/* Copy of the file system's super block 
+				 * read at attach time. */
+    Lfs_Stats	stats;		/* Stats on the file system.  */
+    /*
+     * Segment data structures. Currently three segments are 
+     * preallocated: one for writing, one for cleaning, and one for the
+     * checkpoint processes.
+     */
+#define	LFS_NUM_PREALLOC_SEGS	3
+
+    int		segsInUse;
+    struct LfsSeg *segs;
+    char   *writeBuffers[2];    /* Buffers used to speed segment writes. */
+    LfsMem	mem;		/* Memory resources allocated to file system. */
+} Lfs;
+@
+
+
+1.13
+log
+@Added sanity checking that verifies that a segment really is clean after
+it has been cleaned.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/lfs/lfsInt.h,v 1.12 92/03/06 11:56:52 mgbaker Exp $ SPRITE (Berkeley)
+a160 3
+#ifdef VERIFY_CLEAN
+#define	LFS_NUM_PREALLOC_SEGS	1024
+#else
+a161 1
+#endif
+@
+
+
+1.12
+log
+@Added temporary measurements for ASPLOS paper.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/lfs/lfsInt.h,v 1.11 91/08/08 17:47:22 mendel Exp $ SPRITE (Berkeley)
+d161 3
+d165 2
+@
+
+
+1.11
+log
+@Added active flag LFS_CLEANSEGWAIT_ACTIVE.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/lfs/RCS/lfsInt.h,v 1.10 91/06/29 17:01:36 mendel Exp $ SPRITE (Berkeley)
+d194 5
+d274 5
+a278 1
+extern Boolean Lfs_StartWriteBack _ARGS_((Fscache_Backend *backendPtr));
+@
+
+
+1.10
+log
+@Added count of number of dirty block in file cache.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/lfs/RCS/lfsInt.h,v 1.9 91/05/29 14:06:13 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d179 2
+d190 4
+@
+
+
+1.9
+log
+@Implemented LfsIsCleanerProcess() so LFS code can test to see if
+it is being invoked by a cleaner.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/lfs/RCS/lfsInt.h,v 1.8 91/01/09 12:16:16 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d141 2
+d259 1
+@
+
+
+1.8
+log
+@Added controlFlags.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/lfs/RCS/lfsInt.h,v 1.7 90/12/07 10:07:22 mendel Exp $ SPRITE (Berkeley)
+d130 3
+d200 1
+d235 3
+@
+
+
+1.7
+log
+@Redid checkpoint sync to remove races.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/lfs/RCS/lfsInt.h,v 1.6 90/10/30 10:02:39 mendel Exp $ SPRITE (Berkeley)
+d25 1
+d101 2
+@
+
+
+1.6
+log
+@Added buffers to speed segment writes.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/lfs/RCS/lfsInt.h,v 1.5 90/10/19 17:22:50 mendel Exp $ SPRITE (Berkeley)
+d55 1
+d62 1
+d74 1
+d169 2
+a174 1
+#define LFS_CHECKPOINT_ACTIVE	 0x20
+d177 3
+@
+
+
+1.5
+log
+@Many bug fixed. First installed LFS.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/lfs/RCS/lfsInt.h,v 1.4 90/08/02 16:19:29 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d153 1
+@
+
+
+1.4
+log
+@Checkin before adding recovery
+./
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/lfs/RCS/lfsInt.h,v 1.3 90/05/30 10:30:42 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d21 13
+a33 6
+#include "user/fs.h"
+#include "lfsDescMapInt.h"
+#include "lfsSuperBlock.h"
+#include "lfsSegUsageInt.h"
+#include "lfsFileLayoutInt.h"
+#include "lfsStats.h"
+d35 1
+a35 2
+#include "fsioFile.h"
+#include "fsdm.h"
+d37 6
+d46 10
+a55 3
+ * LFS_DETACH - This checkpoint is part of a file system detach.
+ *	            Any data structures malloc'ed for this file
+ *		    system during attach should be freed.
+d57 4
+a60 2
+#define	LFS_DETACH	 0x1
+
+d64 3
+a66 1
+ * LfsSegLogRange describes the position in the log of the segment. 
+a67 6
+typedef struct LfsSegLogRange {
+    int		current;	/* Current segment being written. */
+    int		prevSeg;	/* Previous segment that was written. */
+    int		nextSeg;	/* Next segment to be written. */
+} LfsSegLogRange;
+
+d70 1
+a71 1
+    int	  nextArea;	/* Next checkpoint area to write. Must be 0 or 1. */
+d74 5
+d80 5
+a84 5
+    Boolean valid;	
+    int	    segNum;
+    int     startDiskAddress;
+    int     endDiskAddress;
+    char    *memPtr;
+d87 3
+d91 5
+a95 2
+    Fs_Device	  *devicePtr;	/* Device containing file system. 
+				 * bytes and back. */
+d98 34
+a131 23
+    Boolean   	  readOnly;	/* TRUE if the file system is readonly. */
+    Boolean	  dirty;	/* TRUE if the file system has been modified
+				 * since the last checkpoint. */
+    Sync_Lock      lfsLock;	/* Lock for file system. */
+    Sync_Condition lfsUnlock;	/* Condition to wait for unlock on */
+    Sync_Condition cleanSegments; /* Condition to wait for clean
+				   * segments to be generated. */
+    Boolean	   locked;	/* File system is locked. */
+    int	      blockSizeShift;   /* Log base 2 of blockSize. */
+    LfsSegLogRange activeLogRange; /* The current segment being written. */
+    int	      activeBlockOffset; /* The block offst in tp the current segment
+				  * to be written. -1 means activeLogRange
+				  * is not valid. */
+    Boolean	writeBackActive; /* TRUE if an writeback process active on this
+				  * file system. */
+    Boolean  	checkForMoreWork; /* TRUE if writeback should check for more
+				   * file to be written before exiting. 
+				   */
+    Boolean	cleanActive;	/* TRUE if an cleaner is active on this
+				 * file system. */
+    int		cleanBlocks;	/* Maximum number of blocks to clean. */
+    Fsio_FileIOHandle descCacheHandle; /* File handle use to cache descriptor
+					* block under. */
+d133 3
+a135 2
+    char	  *segMemoryPtr; /* Memory to be used for segment writing. */
+    char	  *cleaningMemPtr; /* Memory to be used for cleaning. */
+d139 1
+d145 9
+d156 16
+d174 2
+d179 2
+a180 1
+ * LfsBytesToBlocks(lfsPtr, bytes) - Convert bytes into number of blocks.
+d184 4
+a187 2
+ * LfsBlockToSegmentNum(lfsPtr, block)  - Number the segment of a disk 
+ *					  address .
+d190 2
+d209 4
+a212 3
+#define LfsSegNumToDiskAddress(lfsPtr, segNum) \
+		((int)(lfsPtr)->superBlock.hdr.logStartOffset + \
+				 (LfsSegSizeInBlocks((lfsPtr)) * (segNum)))
+d214 3
+a216 2
+#define LfsBlockToSegmentNum(lfsPtr, blockNum) \
+		((blockNum - (lfsPtr)->superBlock.hdr.logStartOffset) / \
+d221 8
+a228 1
+#define	LfsFromDomainPtr(domainPtr) ((Lfs *) ((domainPtr)->clientData))
+d230 25
+d256 13
+a268 2
+extern void LfsError();
+extern void LfsSegCleanStart();
+d270 3
+a272 4
+extern void LfsDescCacheInit();
+extern void LfsDescMapInit();
+extern void LfsSegUsageInit();
+extern void LfsFileLayoutInit();
+@
+
+
+1.3
+log
+@Check in with no small writes.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/lfs/RCS/lfsInt.h,v 1.2 90/05/25 15:33:02 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d26 1
+d42 9
+d57 8
+d79 4
+d93 1
+d95 1
+d103 1
+d106 5
+a110 2
+/* procedures */
+/*
+d115 2
+d118 8
+d127 2
+a128 1
+    (((bytes) + (lfsPtr)->superBlock.hdr.blockSize-1)>>(lfsPtr)->blockSizeShift)
+d131 5
+d138 1
+a138 1
+ (LfsBytesToBlocks((lfsPtr),(lfsPtr)->usageArray.params.segmentSize) * (segNum)))
+d142 1
+a142 1
+	    LfsBytesToBlocks((lfsPtr),(lfsPtr)->usageArray.params.segmentSize))
+a143 3
+#define LfsValidSegmentNum(lfsPtr, segNum) (((segNum) >= 0) && \
+		((segNum) < (lfsPtr)->usageArray.params.numberSegments))
+
+d147 1
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/fs.mendel/RCS/lfsInt.h,v 1.1 90/01/16 17:12:25 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d88 2
+a89 1
+#define	LfsBytesToBlocks(lfsPtr, bytes)	((bytes)>>(lfsPtr)->blockSizeShift)
+d97 1
+a97 2
+		(((blockNum - (lfsPtr)->superBlock.hdr.logStartOffset) + \
+	LfsBytesToBlocks((lfsPtr),(lfsPtr)->usageArray.params.segmentSize)-1)/ \
+d99 3
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.4 89/10/28 15:57:26 rab Exp $ SPRITE (Berkeley)
+a51 1
+    int		  domainNumber; /* Local domain number of file system. */
+d55 5
+d61 6
+a66 1
+    Boolean	writeActive;	/* TRUE if an write is active on this
+d68 1
+d92 1
+a92 1
+		((lfsPtr)->superBlock.hdr.logStartOffset + \
+d102 10
+a111 1
+#define	LfsFromDomainPtr(domainPtr) ((Lfs *) ((domainPtr)->dataBlockBitmap))
+@

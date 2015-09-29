@@ -1,0 +1,80 @@
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/file.h>
+#include <sys/time.h>
+#ifdef sprite
+#include "proc.h"
+#endif
+
+#define MAX_SIZE	4*1024*1024
+
+struct tests {
+    int	size;
+    int numreps;
+}  tests[] = { { 1, 1000000}, {1024, 10000}, {4*1024, 10000}, {8*1024, 10000},
+	       {16*1024, 10000}, {32*1024, 10000}, {64*1024, 10000},
+	       {128*1024, 1000}, {512*1024, 1000}, {1024*1024, 1000},
+	       {512*1024, 1000}, {1024*1024, 1000}, {4*1024*1024, 100},
+	       {0,0} };
+
+main(argc, argv)
+    int argc;
+    char *argv[];
+{
+    register 	int 	i, j;
+    char	fileName[128];
+    int		numReps, size;
+    int		fd;
+    struct timeval stp, etp;
+    struct tests *t;
+    char *buf, *rbuf;
+
+    buf = (char *)malloc(MAX_SIZE);
+    if (buf == (char *) NULL) {
+	fprintf(stderr,"Can't malloc buffer of %d bytes\n", MAX_SIZE);
+	exit(1);
+    }
+    (void) strcpy(fileName,"tmpXXXXXX");
+    mkstemp(fileName);
+    fd = open(fileName, O_RDWR, 0);
+    if (fd < 0) {
+	perror("open");
+	fprintf(stderr,"Can't open %s\n",fileName);
+	exit(1);
+    }
+    unlink(fileName);
+
+    for (t = tests; t->numreps > 0; t++) {
+	for (j = 0; j < 1000; j++) { 
+	    rbuf = buf+(j*4096);
+	    bzero(rbuf,4096);
+	    gettimeofday(&stp,0);
+	    for (i = 0; i < 10*1000; i++) {
+		 lseek(fd,0L,L_SET);
+	    }
+	    gettimeofday(&etp,0);
+	    fixtime(&stp,&etp);
+	     printf("seek time %4d.%-03d\n", etp.tv_sec, etp.tv_usec/1000);
+	    gettimeofday(&stp,0);
+	    for (i = 0; i < 10*1000; i++) {
+		lseek(fd,0L,L_SET);
+		read(fd,rbuf,4096); 
+	    }
+	    gettimeofday(&etp,0);
+	    fixtime(&stp,&etp);
+	    printf("seek and read to 0x%x time %4d.%-03d\n",rbuf, etp.tv_sec, etp.tv_usec/1000);
+	    sleep(10);
+	}
+    }
+}
+fixtime(s, e)
+        struct  timeval *s, *e;
+{
+
+        e->tv_sec -= s->tv_sec;
+        e->tv_usec -= s->tv_usec;
+        if (e->tv_usec < 0) {
+                e->tv_sec--; e->tv_usec += 1000000;
+        }
+}
+

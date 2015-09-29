@@ -1,0 +1,543 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  ;
+locks    shirriff:1.4; strict;
+comment  @ * @;
+
+
+1.4
+date     89.01.29.16.09.07;  author rab;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.01.29.15.25.40;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.09.29.15.51.30;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.09.29.15.32.16;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Simple program to get the attributes of a file
+@
+
+
+1.4
+log
+@Converted printDate to use localtime so that it will automatically
+compensate for daylight savings time.
+@
+text
+@/* 
+ * stat.c --
+ *
+ *	Get the complete attributes of a file
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header$";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <fs.h>
+#include <stdio.h>
+#include <option.h>
+#include <sys/types.h>
+#include <time.h>
+
+/*
+ * Default values for parameters
+ */
+Boolean shortForm = FALSE;
+Boolean link = FALSE;
+Boolean showDay = FALSE;
+Boolean timing = FALSE;
+int	numTimes = 1000;
+
+Option optionArray[] = {
+    OPT_TRUE, "s", (Address)&shortForm, "Output a short form of the attributes",
+    OPT_TRUE, "l", (Address)&link, "Get attributes of the link, not the target",
+    OPT_TRUE, "d", (Address)&link, "Include day of the week in dates",
+    OPT_TRUE, "t", (Address)&timing, "Time N Fs_GetAttributes calls",
+    OPT_INT,  "n", (Address)&numTimes, "Number of repititions (with -t)",
+};
+int numOptions = sizeof(optionArray) / sizeof(Option);
+
+int localOffset;
+char * PrintDate();
+
+/*
+ * main --
+ *	Collect arguments, then call Stat() for each file.
+ */
+void
+main(argc, argv)
+    int argc;
+    char **argv;
+{
+    register ReturnStatus status;
+    register int i;
+    register char *fileName;
+
+    argc = Opt_Parse(argc, argv, optionArray, numOptions, OPT_ALLOW_CLUSTERING);
+
+    if (argc < 2) {
+	fprintf(stderr, "usage: %s filename [filename ...]\n", 
+			argv[0]);
+	exit(0);
+    }
+    Sys_GetTimeOfDay(NULL, &localOffset, NULL);
+    localOffset = (localOffset * 60) + 3600;
+
+    if (!timing) {
+	for (i=1 ; i<argc ; i++) {
+	    fileName = argv[i];
+
+	    status = Stat(fileName, link);
+	    if (status != SUCCESS) {
+		fprintf(stderr, "%s: ", fileName);
+		Stat_PrintMsg(status, "");
+	    }
+	}
+    } else {
+	Time before, after;
+	Fs_Attributes attrs;
+
+	Sys_GetTimeOfDay(&before, NULL, NULL);
+	for (i=0 ; i<numTimes ; i++) {
+	    status = Fs_GetAttributes(argv[1], link, &attrs);
+	    if (status != SUCCESS) {
+		fprintf(stderr, "%s: ", argv[1]);
+		Stat_PrintMsg(status, "");
+		break;
+	    }
+	}
+	Sys_GetTimeOfDay(&after, NULL, NULL);
+	if (i > 0) {
+	    Time_Subtract(after, before, &after);
+	    printf("%d Fs_GetAttributes of %s at %dus each\n", i, argv[1],
+		(after.seconds * 1000000 + after.microseconds) / i);
+	}
+    }
+    exit(status);
+}
+
+/*
+ * Stat --
+ *	Get the attributes of a file and print them.
+ *
+ * Results:
+ *	The status code from Fs_GetAttributes
+ *
+ * Side Effects:
+ *	None.
+ */
+ReturnStatus
+Stat(fileName, link)
+    char *fileName;	/* File to get the attributes of */
+    Boolean link;	/* If TRUE the attributes of a link file are printed,
+			 * otherwise the attributes of the target of the link 
+			 * are printed */
+{
+    ReturnStatus status;
+    Fs_Attributes attrs;
+
+    status = Fs_GetAttributes(fileName, link, &attrs);
+    if (status != SUCCESS) {
+	return(status);
+    }
+
+    PrintFileType(attrs.type);
+    PrintFilePermissions(attrs.permissions);
+    printf("%2d  ID=(%d,%d) ", attrs.numLinks, attrs.uid, attrs.gid);
+    if (shortForm) {
+	/*
+	 * Print a 1-line summary of the attributes.
+	 */
+	if (attrs.type == FS_DEVICE) {
+	    printf("%5d%5d ", attrs.devType, attrs.devUnit);
+	} else {
+	    printf("%10d ", attrs.size);
+	}
+	printf("%s %s\n", PrintDate(attrs.dataModifyTime), fileName);
+    } else {
+	/*
+	 * Print the complete attributes.
+	 */
+	printf("%7d bytes  %s\n", attrs.size, fileName);
+
+	printf("%7s %7s %10s", "Server", "Domain", "File #");
+	if (attrs.type == FS_DEVICE) {
+	    printf("  Device: %7s %7s %7s", "Server", "Type", "Unit");
+	}
+	printf("\n");
+
+	printf("%7d %7d %10d", 
+			attrs.serverID, attrs.domain, attrs.fileNumber);
+	if (attrs.type == FS_DEVICE) {
+	    printf("          %7d %7d %7d", 
+		attrs.devServerID, attrs.devType, attrs.devUnit);
+	}
+	printf("\n");
+
+	printf("Version %d	UserType 0x%x\n",
+		attrs.version, attrs.userType);
+
+	printf("Created:         %s\n", PrintDate(attrs.createTime));
+	printf("Data modified:   %s\n", PrintDate(attrs.dataModifyTime));
+	printf("Descr. modified: %s\n", PrintDate(attrs.descModifyTime));
+	printf("Last accessed:   %s\n", PrintDate(attrs.accessTime));
+    }
+    return(SUCCESS);
+}
+
+/*
+ * PrintFileType --
+ *	Print a character to represent a file's type.
+ */
+PrintFileType(type)
+    int type;
+{
+    char c;
+    switch(type) {
+	case FS_FILE:
+	    c = '-';
+	    break;
+	case FS_DIRECTORY:
+	    c = 'd';
+	    break;
+	case FS_SYMBOLIC_LINK:
+	    c = 'l';
+	    break;
+	case FS_REMOTE_LINK:
+	    c = 'r';
+	    break;
+	case FS_DEVICE:
+	case FS_REMOTE_DEVICE:
+	    c = 'D';
+	    break;
+	case FS_NAMED_PIPE:
+	    c = 'p';
+	    break;
+	case FS_PSEUDO_DEV:
+	    c = 'x';
+	    break;
+	default:
+	    printf("(%d)", type);
+	    return;
+    }
+    printf("%c", c);
+}
+/*
+ * PrintFilePermissions --
+ *	Print out characters to represent the permission bits of a file.
+ */
+PrintFilePermissions(permissions)
+    int permissions;
+{
+    char c;
+    register int i;
+    register int bits;
+
+    if (permissions & FS_SET_UID) {
+	printf("u");
+    } else if (permissions & FS_SET_GID) {
+	printf("g");
+    } else {
+	printf("-");
+    }
+    for (i=0 ; i<3 ; i++) {
+	bits = (permissions >> ((2-i)*3)) & 0x7;
+	if (bits & FS_WORLD_READ) { c = 'r'; } else { c = '-'; }
+	printf("%c", c);
+	if (bits & FS_WORLD_WRITE) { c = 'w'; } else { c = '-'; }
+	printf("%c", c);
+	if (bits & FS_WORLD_EXEC) { c = 'x'; } else { c = '-'; }
+	printf("%c", c);
+    }
+}
+/*
+ * PrintDate --
+ *	Print a date in ascii format
+ */
+
+char *
+PrintDate(time)
+    Time time;
+{
+    time_t t;
+    char *string;
+
+    t = time.seconds;
+    string = asctime(localtime(&t));        
+    string[strlen(string) - 1] = '\0';      /* remove trailing '\n' */
+    if (showDay) {
+	return(string);
+    } else {
+	return(&string[4]);
+    }
+}
+@
+
+
+1.3
+log
+@Nuked help feature, which was out-of-date
+@
+text
+@d1 13
+a13 2
+/*
+ * stat - Get the complete attributes of a file
+a14 4
+#include "sprite.h"
+#include "fs.h"
+#include "stdio.h"
+#include "option.h"
+d16 11
+d52 1
+d55 1
+a55 1
+    char *argv[];
+d74 1
+a74 1
+    
+d247 2
+a248 1
+    static char string[50];
+d250 3
+a252 1
+    Time_ToAscii(time.seconds + localOffset, FALSE, string);
+@
+
+
+1.2
+log
+@Ported to standard C library
+@
+text
+@a11 1
+Boolean help = FALSE;
+a18 1
+    OPT_TRUE, "h", (Address)&help, "Print explaination of the fields",
+a43 31
+    if (help) {
+	if (shortForm) {
+	    printf("The short form of %s output is:\n", argv[0]);
+	    printf("Tfppppppppp owner size modifyDate fileName\n");
+	    printf(" T is file type: (-, file)\n");
+	    printf("                 (d, directory)\n");
+	    printf("                 (l, symbolic link)\n");
+	    printf("                 (r, remote link)\n");
+	    printf("                 (D, device)\n");
+	    printf("                 (p, pipe)\n");
+	    printf(" f is S for SetUid, - otherwise\n");
+	    printf(" ppppppppp are the 9 permission bits\n");
+	} else {
+	    printf("The long form of %s output is:\n", argv[0]);
+	    printf("fileName\tIn-core flags\n");
+	    printf("<fileServer, fileDomain, fileNumber>, creation date\n");
+	    printf("<devServer, devType, devUnit>, dataModify date\n");
+	    printf("owner, group, descModify date\n");
+	    printf("Tfppppppppp, numLinks, size, accessDate\n");
+	    printf(" T is file type: (-, file)\n");
+	    printf("                 (d, directory)\n");
+	    printf("                 (l, symbolic link)\n");
+	    printf("                 (r, remote link)\n");
+	    printf("                 (D, device)\n");
+	    printf("                 (p, pipe)\n");
+	    printf("                 (x, pseudo-device)\n");
+	    printf(" f is u for SetUid, g for SetGid, - otherwise\n");
+	    printf(" ppppppppp are the 9 permission bits\n");
+	}
+	exit(SUCCESS);
+    }
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@a4 2
+#include "kernel/fs.h"
+#include "kernel/fsInt.h"
+d6 1
+a6 3
+#include "io.h"
+#include "rpc.h"
+#include "proc.h"
+d20 6
+a25 6
+    OPT_TRUE, 'h', (Address)&help, "Print explaination of the fields",
+    OPT_TRUE, 's', (Address)&shortForm, "Output a short form of the attributes",
+    OPT_TRUE, 'l', (Address)&link, "Get attributes of the link, not the target",
+    OPT_TRUE, 'd', (Address)&link, "Include day of the week in dates",
+    OPT_TRUE, 't', (Address)&timing, "Time N Fs_GetAttributes calls",
+    OPT_INT,  'n', (Address)&numTimes, "Number of repititions (with -t)",
+d44 1
+a44 1
+    Opt_Parse(&argc, argv, numOptions, optionArray);
+d48 10
+a57 10
+	    Io_Print("The short form of %s output is:\n", argv[0]);
+	    Io_Print("Tfppppppppp owner size modifyDate fileName\n");
+	    Io_Print(" T is file type: (-, file)\n");
+	    Io_Print("                 (d, directory)\n");
+	    Io_Print("                 (l, symbolic link)\n");
+	    Io_Print("                 (r, remote link)\n");
+	    Io_Print("                 (D, device)\n");
+	    Io_Print("                 (p, pipe)\n");
+	    Io_Print(" f is S for SetUid, - otherwise\n");
+	    Io_Print(" ppppppppp are the 9 permission bits\n");
+d59 15
+a73 15
+	    Io_Print("The long form of %s output is:\n", argv[0]);
+	    Io_Print("fileName\tIn-core flags\n");
+	    Io_Print("<fileServer, fileDomain, fileNumber>, creation date\n");
+	    Io_Print("<devServer, devType, devUnit>, dataModify date\n");
+	    Io_Print("owner, group, descModify date\n");
+	    Io_Print("Tfppppppppp, numLinks, size, accessDate\n");
+	    Io_Print(" T is file type: (-, file)\n");
+	    Io_Print("                 (d, directory)\n");
+	    Io_Print("                 (l, symbolic link)\n");
+	    Io_Print("                 (r, remote link)\n");
+	    Io_Print("                 (D, device)\n");
+	    Io_Print("                 (p, pipe)\n");
+	    Io_Print("                 (x, pseudo-device)\n");
+	    Io_Print(" f is u for SetUid, g for SetGid, - otherwise\n");
+	    Io_Print(" ppppppppp are the 9 permission bits\n");
+d75 1
+a75 1
+	Proc_Exit(SUCCESS);
+d78 1
+a78 1
+	Io_PrintStream(io_StdErr, "usage: %s filename [filename ...]\n", 
+d80 1
+a80 1
+	Proc_Exit(0);
+d91 1
+a91 1
+		Io_PrintStream(io_StdErr, "%s: ", fileName);
+d103 1
+a103 1
+		Io_PrintStream(io_StdErr, "%s: ", argv[1]);
+d111 1
+a111 1
+	    Io_Print("%d Fs_GetAttributes of %s at %dus each\n", i, argv[1],
+d115 1
+a115 1
+    Proc_Exit(status);
+d145 1
+a145 1
+    Io_Print("%2d  ID=(%d,%d) ", attrs.numLinks, attrs.uid, attrs.gid);
+d151 1
+a151 1
+	    Io_Print("%5d%5d ", attrs.devType, attrs.devUnit);
+d153 1
+a153 1
+	    Io_Print("%10d ", attrs.size);
+d155 1
+a155 1
+	Io_Print("%s %s\n", PrintDate(attrs.dataModifyTime), fileName);
+d160 1
+a160 1
+	Io_Print("%7d bytes  %s\n", attrs.size, fileName);
+d162 1
+a162 1
+	Io_Print("%7s %7s %10s", "Server", "Domain", "File #");
+d164 1
+a164 1
+	    Io_Print("  Device: %7s %7s %7s", "Server", "Type", "Unit");
+d166 1
+a166 1
+	Io_Print("\n");
+d168 1
+a168 1
+	Io_Print("%7d %7d %10d", 
+d171 1
+a171 1
+	    Io_Print("          %7d %7d %7d", 
+d174 1
+a174 1
+	Io_Print("\n");
+d176 1
+a176 1
+	Io_Print("Version %d	UserType 0x%x\n",
+d179 4
+a182 4
+	Io_Print("Created:         %s\n", PrintDate(attrs.createTime));
+	Io_Print("Data modified:   %s\n", PrintDate(attrs.dataModifyTime));
+	Io_Print("Descr. modified: %s\n", PrintDate(attrs.descModifyTime));
+	Io_Print("Last accessed:   %s\n", PrintDate(attrs.accessTime));
+d219 1
+a219 1
+	    Io_Print("(%d)", type);
+d222 1
+a222 1
+    Io_Print("%c", c);
+a224 25
+ * PrintFileFlags --
+ *	Print out characters to represent the flag bits of a file.
+ */
+PrintFileFlags(flags)
+    int flags;
+{
+    Io_Print("Flags:    ");
+    if (flags & FS_CACHEABLE) {
+	Io_Print("Cacheable  ");
+    }
+    if (flags & FS_WRITE_THRU) {
+	Io_Print("Write-thru  ");
+    }
+    if (flags & FS_FILE_DELETED) {
+	Io_Print("Deleted  ");
+    }
+    if (flags & FS_SHARED_LOCK) {
+	Io_Print("Shared lock  ");
+    }
+    if (flags & FS_EXCLUSIVE_LOCK) {
+	Io_Print("Exclusive lock  ");
+    }
+    Io_Print("\n");
+}
+/*
+d236 1
+a236 1
+	Io_Print("u");
+d238 1
+a238 1
+	Io_Print("g");
+d240 1
+a240 1
+	Io_Print("-");
+d245 1
+a245 1
+	Io_Print("%c", c);
+d247 1
+a247 1
+	Io_Print("%c", c);
+d249 1
+a249 1
+	Io_Print("%c", c);
+@

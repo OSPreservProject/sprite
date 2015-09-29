@@ -1,0 +1,155 @@
+.TH LID 1
+.SH NAME
+lid, gid, eid, aid \- query id database
+.SH SYNOPSIS
+.B lid
+.RB [ \-f \^file]
+.RB [ \-u \^n]
+.RB [ \-edoxamse]
+patterns...
+.PP
+.B gid
+.RB [ \-f \^file]
+.RB [ \-edoxamse]
+patterns...
+.PP
+.B eid
+.RB [ \-f \^file]
+.RB [ \-doxamse]
+patterns...
+.PP
+.B aid
+.RB [ \-f \^file]
+.RB [ \-doxams]
+patterns...
+.SH DESCRIPTION
+These commands provide a flexible query interface to the
+.I id
+database.
+.I Lid\^
+does a lookup on
+.IR patterns
+and prints out lines in this way:
+.PP
+.nf
+idname        ../hdir/hfile.h ../cdir/{cfile1,cfile2}.c
+.fi
+.PP
+Notice that multiple files with the same directory prefix
+and suffix are concatenated in the globbing-set-notation of
+.IR csh (1).
+Also notice that all of the
+.I id
+database query commands adjust the list of pathnames to be relative
+to your current working directory, provided that
+.IR mkid (1)
+was used to build the database, and your working directory
+is located within the sub-tree covered by the
+.I id
+database.
+.PP
+If multiple names match on pattern, then there will be one line
+of output per name.  The mnemonic significance of the name is
+\fI\|l(ookup) id\fP.
+.PP
+.I Gid
+does a lookup and then searches for the names it matches in the
+files where they occur.  The mnemonic for this name is
+\fI\|g(rep)id\fP. 
+.PP
+.I Eid
+does a lookup, and then invokes an editor on all files with
+the matched name as an initial search string.  Of course, this
+name stands for
+\fI\|e(dit) id\fP.
+.PP
+.I Eid
+uses four environment variables to control its invocation of the
+editor.
+Naturally,
+.B EDITOR
+is used to locate the editing program.
+.B EIDARG
+is a
+.IR printf (3S)
+string used to specify the form of the initial-search-string
+argument.  If the editor does not support such an argument,
+this variable may be left unset.
+.B EIDLDEL
+and
+.B EIDRDEL
+specify the form of the left and right word-delimiters respectively.
+The best way to explain the use of these last three variables is
+with an example.  Here are the proper settings for vi(1):
+.nf
+EIDARG='+/%s/'	# initial search argument template
+EIDLDEL='\\<'	# left word-delimiter
+EIDRDEL='\\>'	# right word-delimiter
+.fi
+.PP
+.I Patterns
+may be simple alpha-numeric strings, or regular expressions in the
+style of
+.IR regcmp (3).
+If the string contains no regular-expression meta-characters, it is
+searched for as a
+.IR word .
+If the string contains meta-characters, or if the \-e argument is
+supplied, it is searched for as regular-expression.
+.PP
+.I Aid\^
+produces output in the style of
+.I lid\^
+but its pattern arguments are searched for as substrings within
+the identifiers in the database.  No regular-expression search
+is performed, even if the pattern contains meta-characters.
+The search is conducted in an alphabetic case insensitive manner.
+The mnemonic for this name is
+\fI\|a(propos) id\fP. 
+.PP
+The following options are recognized:
+.TP 10
+.BR \-f file\^
+Use
+.I file\^
+as the database instead of the default
+.BR ID .
+.TP 10
+.BR \-u n
+Lists all identifiers in the database that are non-unique within the first
+.I n
+characters.  This facility is particularly helpful when porting a program
+to a system whose compiler or linker has fewer significant characters
+for identifiers.
+.PP
+The remaining options are for use in conjunction with numeric patterns:
+.TP 10
+.B \-doxa
+These options may be specified in any combination.
+They limit numeric matches to specific radixes.
+The
+.BR \-d ,
+.BR \-o ,
+and
+.B \-x
+options limit matches to decimal, octal, and hexadecimal respectively.
+The
+.BR \-a
+option is a shorthand for specifying all three radixes.
+.PP
+Searches for numbers 
+are conducted numerically rather than lexically, so that all
+representations for a given number are potentially available
+from a single search.
+.TP 10
+.B \-m
+Merge multiple lines of output into a single line.
+.TP 10
+.B \-s
+Limit the results of the search to identifiers that occur only
+once in the entire set of sources covered by the database.
+This option is useful for finding identifiers that are defined
+but never used.
+.SH SEE ALSO
+mkid(1),
+fid(1).

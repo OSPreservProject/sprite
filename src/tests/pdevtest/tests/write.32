@@ -1,0 +1,16 @@
+32 Bytes
+[1] 4216f
+Slave: 0.000u 0.000s 3.000
+[1]  +  4216f Done                     pdevtest.new -M 1 >& /dev/null
+[1] 42173
+Slave: 0.000u 0.000s 2.840
+[1]  +  42173 Done                     pdevtest.new -M 1 >& /dev/null
+[1] 42177
+Slave: 0.000u 0.000s 3.340
+[1]  +  42177 Done                     pdevtest.new -M 1 >& /dev/null
+[1] 4217b
+Slave: 0.000u 0.000s 2.990
+[1]  +  4217b Done                     pdevtest.new -M 1 >& /dev/null
+[1] 4217f
+Slave: 0.000u 0.000s 3.010
+[1]  +  4217f Done                     pdevtest.new -M 1 >& /dev/null

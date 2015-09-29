@@ -1,0 +1,31 @@
+512
+llib-ltest:test.c 2
+2
+3 8 36 0 0
+Test_Num
+4 0 0
+18 0 0
+4 0 0
+16
+0 16 4 0 0
+Test_Num
+2
+2 22 36 0 0
+Test_Type
+4 0 0
+18 0 0
+16
+0 30 4 0 0
+Test_Type
+2
+0 34 36 0 0
+Test_ReturnType
+16
+0 40 4 0 0
+Test_ReturnType
+2
+0 44 36 0 0
+Test_Use
+16
+0 54 4 0 0
+Test_Use

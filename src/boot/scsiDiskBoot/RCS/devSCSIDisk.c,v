@@ -1,0 +1,300 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  ;
+locks    mendel:1.4; strict;
+comment  @ * @;
+
+
+1.4
+date     87.05.08.17.47.22;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     86.07.24.11.31.02;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     86.07.21.09.34.27;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.07.18.09.31.50;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Block interface to the SCSI disk.
+@
+
+
+1.4
+log
+@Fs_Geometry -> FsGeometry, added DevSCSIDiskError
+@
+text
+@/* 
+ * devSCSIDisk.c --
+ *
+ *	A sector oriented version of the SCSI device interface.
+ *	Only sector operations are defined
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: devSCSIDisk.c,v 1.3 86/07/24 11:31:02 brent Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include "sprite.h"
+#include "fs.h"
+#include "fsDisk.h"
+#include "dev.h"
+#include "devInt.h"
+#include "devSCSI.h"
+#include "devSCSIDisk.h"
+
+#define SECTORS_PER_FRAGMENT	(FS_FRAGMENT_SIZE / DEV_BYTES_PER_SECTOR)
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_SCSIDiskBlockIOInit --
+ *
+ *	Initialization routine for the Block I/O interface to the SCSI disk.
+ *
+ * Results:
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	Saves a pointer to the geometry information for the ClientData
+ *	field of the Fs_Device object passed in.
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef notdef
+ReturnStatus
+Dev_SCSIDiskBlockIOInit(devicePtr, geometryPtr)
+    Fs_Device *devicePtr;	/* Use the unit number to specify partition */
+    FsGeometry *geometryPtr;	/* Specifies how filesystem blocks are layed
+				 * out on the disk */
+{
+    if (devicePtr->data != (ClientData)0) {
+	Sys_Panic(SYS_WARNING, "SCSI Block Init: non NIL device data");
+	return(FAILURE);
+    } else {
+	devicePtr->data = (ClientData)geometryPtr;
+	return(SUCCESS);
+    }
+}
+#endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_SCSIDiskBlockIO --
+ *
+ *	Do block I/O on the SCSI disk.  This uses the disk geometry
+ *	information to map from filesystem fragments indexes to filesystem
+ *	block indexes, and finally to disk sectors.
+ *
+ * Results:
+ *	The return code from the I/O operation.
+ *
+ * Side effects:
+ *	The disk write, if readWrite == FS_WRITE.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Dev_SCSIDiskBlockIO(readWrite, devicePtr, fragNumber, numFrags, buffer)
+    int readWrite;		/* FS_READ or FS_WRITE */
+    Fs_Device *devicePtr;	/* Use the unit number to specify partition */
+    register int fragNumber;	/* Index of first fragment to transfer*/
+    register int numFrags;	/* Number of fragments to transfer */
+    register Address buffer;	/* I/O buffer */
+{
+    register FsGeometry *geoPtr;/* Specifies how filesystem blocks are layed
+				 * out on the disk */
+    register ReturnStatus status;/* General return code */
+    register int firstSector;	/* Starting sector of transfer */
+    int numSectors;		/* Number of sectors to transfer */
+    register int length;
+
+    geoPtr = (FsGeometry *)devicePtr->data;
+    if ((fragNumber % FS_FRAGMENTS_PER_BLOCK) != 0) {
+	/*
+	 * The I/O doesn't start on a block boundary.  Transfer the
+	 * first few extra fragments to get things going on a block boundary.
+	 */
+	register int extraFrags;
+
+	extraFrags = FS_FRAGMENTS_PER_BLOCK -
+		    (fragNumber % FS_FRAGMENTS_PER_BLOCK);
+	if (extraFrags > numFrags) {
+	    extraFrags = numFrags;
+	}
+	firstSector = Fs_BlocksToSectors(fragNumber, geoPtr);
+	numSectors = extraFrags * SECTORS_PER_FRAGMENT;
+	status = Dev_SCSIDiskIO(readWrite, devicePtr->unit, buffer, firstSector,
+					&numSectors);
+	extraFrags = numSectors / SECTORS_PER_FRAGMENT;
+	fragNumber += extraFrags;
+	buffer += extraFrags * FS_FRAGMENT_SIZE;
+	numFrags -= extraFrags;
+	if (status != SUCCESS) {
+	    return(status);
+	}
+    }
+    while (numFrags >= FS_FRAGMENTS_PER_BLOCK) {
+	/*
+	 * Transfer whole blocks.
+	 */
+	firstSector = Fs_BlocksToSectors(fragNumber, geoPtr);
+	numSectors = SECTORS_PER_FRAGMENT * FS_FRAGMENTS_PER_BLOCK;
+	status = Dev_SCSIDiskIO(readWrite, devicePtr->unit, buffer, firstSector,
+					&numSectors);
+	fragNumber += FS_FRAGMENTS_PER_BLOCK;
+	buffer += FS_BLOCK_SIZE;
+	numFrags -= FS_FRAGMENTS_PER_BLOCK;
+	if (status != SUCCESS) {
+	    return(status);
+	}
+    }
+    if (numFrags > 0) {
+	/*
+	 * Transfer the left over fragments.
+	 */
+	firstSector = Fs_BlocksToSectors(fragNumber, geoPtr);
+	numSectors = numFrags * SECTORS_PER_FRAGMENT;
+	status = Dev_SCSIDiskIO(readWrite, devicePtr->unit, buffer, firstSector,
+					&numSectors);
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevSCSIDiskError --
+ *
+ *	Handle errors indicated by the sense data returned from the disk.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+DevSCSIDiskError(devPtr, sensePtr)
+    DevSCSIDevice *devPtr;
+    DevSCSISense *sensePtr;
+{
+    if (sensePtr->error != SCSI_NO_SENSE_DATA) {
+#ifdef notdef
+	register int addr;
+	addr = (sensePtr->highAddr << 16) |
+		(sensePtr->midAddr << 8) |
+		sensePtr->lowAddr;
+	Sys_Printf("SCSI-%d: Sense error (%d-%d) at <%x> ",
+			 devPtr->scsiPtr->number, class, code, addr);
+	if (scsiNumErrors[class] > code) {
+	    Sys_Printf("%s", scsiErrors[class][code]);
+	}
+	Sys_Printf("\n");
+#else
+	register int class = (sensePtr->error & 0x70) >> 4;
+	register int code = sensePtr->error & 0xF;
+	Sys_Printf("Disk error (%d-%d)\n", class, code);
+#endif notdef
+
+	return (DEV_INVALID_ARG);
+    } else {
+	return(SUCCESS);
+    }
+}
+
+@
+
+
+1.3
+log
+@trimming with register declarations (356 bytes to 296)
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: devSCSIDisk.c,v 1.2 86/07/21 09:34:27 brent Exp $ SPRITE (Berkeley)";
+d16 1
+d22 1
+a22 1
+#define SECTORS_PER_FRAGMENT	(FS_FRAGMENT_SIZE / BYTES_PER_SECTOR)
+d44 1
+a44 1
+    Fs_Geometry *geometryPtr;	/* Specifies how filesystem blocks are layed
+d82 1
+a82 1
+    register Fs_Geometry *geoPtr;/* Specifies how filesystem blocks are layed
+d89 1
+a89 1
+    geoPtr = (Fs_Geometry *)devicePtr->data;
+d104 1
+a104 1
+	status = Dev_SCSIIO(readWrite, devicePtr->unit, buffer, firstSector,
+d120 1
+a120 1
+	status = Dev_SCSIIO(readWrite, devicePtr->unit, buffer, firstSector,
+d135 1
+a135 1
+	status = Dev_SCSIIO(readWrite, devicePtr->unit, buffer, firstSector,
+d140 45
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: devSCSIDisk.c,v 1.1 86/07/18 09:31:50 brent Exp $ SPRITE (Berkeley)";
+d77 3
+a79 3
+    int fragNumber;		/* Index of first fragment to transfer*/
+    int numFrags;		/* Number of fragments to transfer */
+    Address buffer;		/* I/O buffer */
+d81 1
+a81 1
+    Fs_Geometry *geoPtr;	/* Specifies how filesystem blocks are layed
+d83 2
+a84 2
+    ReturnStatus status;	/* General return code */
+    int firstSector;		/* Starting sector of transfer */
+d86 1
+a86 1
+    int length;
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: devSCSIDisk.c,v 1.4 86/07/07 10:54:42 brent Exp $ SPRITE (Berkeley)";
+d39 1
+d46 1
+a46 1
+    if (devicePtr->data != (ClientData)NIL) {
+d54 1
+@

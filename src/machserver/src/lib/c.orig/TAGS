@@ -1,0 +1,1946 @@
+
+bit/Bit_Expand.c,20
+Bit_Expand(46,1313
+
+bit/Bit_FindFirstClear.c,28
+Bit_FindFirstClear(48,1340
+
+bit/Bit_FindFirstSet.c,26
+Bit_FindFirstSet(47,1322
+
+bit/Bit_Intersect.c,23
+Bit_Intersect(46,1329
+
+bit/Bit_Union.c,19
+Bit_Union(46,1285
+
+bit/bitInt.h,142
+#define CLEAR_TEST(43,1626
+#define FIND_FIRST(51,1860
+#define GET_MASK_AND_INTS(187,4312
+#define RETURN(49,1795
+#define SET_TEST(42,1575
+
+bit/Bit_AnySet.c,20
+Bit_AnySet(42,1085
+
+bstring/bcopy.c,15
+bcopy(65,1839
+
+bstring/bzero.c,15
+bzero(55,1509
+
+bstring/bcmp.c,14
+bcmp(57,1658
+
+bstring/ffs.c,13
+ffs(74,1964
+
+crt/sun3.md/divide.h,16
+|	ldivt(16,266
+
+crt/sun3.md/DEFSInt.h,134
+#define	ENTRY(31,526
+#define PARAMX(18,349
+#define PARAMX(27,479
+#define RETN(17,317
+#define RETN(26,456
+#define	RTENTRY(32,579
+
+crt/sun3.md/fpcrtInt.h,373
+#define CVDDTOD(64,1604
+#define CVDTOD(59,1518
+#define CVVDDTOD(91,2122
+#define CVVDTOD(86,2006
+#define ENTER(9,128
+#define OBSOLETE(10,159
+#define RTOBSOLETE(12,244
+#define VCDDTOD(77,1836
+#define VCDTOD(70,1711
+#define VECTOR(50,1317
+#define VECTORED(44,1210
+#define VFDDTOD(124,2802
+#define VFDTOD(116,2658
+#define VFSSTOS(107,2494
+#define VFSTOS(99,2354
+
+crt/sun3.md/gmon.h,52
+#define ROUNDDOWN(85,2057
+#define ROUNDUP(86,2096
+
+crt/sun3.md/gmon.c,108
+_mcleanup(79,1818
+brk(312,7100
+mcount(124,2982
+moncontrol(287,6654
+monitor(251,5834
+monstartup(30,503
+
+crt/ds3100.md/alloca.c,128
+alloca 119,3350
+find_stack_direction 63,1907
+} header;105,2892
+typedef void	*pointer;34,1168
+typedef char	*pointer;36,1225
+
+crt/ds3100.md/gmon.h,52
+#define ROUNDDOWN(85,2057
+#define ROUNDUP(86,2096
+
+crt/ds3100.md/mon.c,95
+_mcleanup(115,2439
+_mcount(39,731
+moncontrol(194,4374
+monitor(157,3549
+monstartup(66,1124
+
+crt/sun4.md/gmon.c,127
+__mcount(329,7289
+_mcleanup(79,1818
+brk(312,7100
+mcount(124,2982
+moncontrol(287,6654
+monitor(251,5834
+monstartup(30,503
+
+crt/symm.md/modf.c,13
+modf(23,718
+
+crt/symm.md/values.h,21
+#define BITS(25,743
+
+crt/symm.md/Setjmp.h,0
+
+crt/symm.md/DEFS.h,46
+#define	ENTRY(45,1176
+#define	ENTRY(49,1345
+
+crt/symm.md/crt0.c,34
+_start 179,7660
+start1 187,7776
+
+ctype/ctypeBits.c,0
+
+ctype/isalpha.c,17
+isalpha(40,1029
+
+ctype/isalnum.c,17
+isalnum(40,1038
+
+ctype/isascii.c,17
+isascii(40,1038
+
+ctype/isdigit.c,17
+isdigit(40,1044
+
+ctype/iscntrl.c,17
+iscntrl(40,1040
+
+ctype/isgraph.c,17
+isgraph(41,1063
+
+ctype/islower.c,17
+islower(40,1037
+
+ctype/tolower.c,17
+tolower(40,1062
+
+ctype/isprint.c,17
+isprint(41,1056
+
+ctype/ispunct.c,17
+ispunct(41,1073
+
+ctype/isspace.c,17
+isspace(40,1030
+
+ctype/isupper.c,17
+isupper(40,1039
+
+ctype/isxdigit.c,18
+isxdigit(40,1045
+
+ctype/toupper.c,17
+toupper(40,1063
+
+ctype/toascii.c,17
+toascii(39,1029
+
+db/Db_Get.c,16
+Db_Get(44,1152
+
+db/Db_Close.c,18
+Db_Close(44,1199
+
+db/Db_Open.c,17
+Db_Open(44,1147
+
+db/Db_WriteEntry.c,23
+Db_WriteEntry(46,1328
+
+db/dbInt.h,0
+
+db/Db_ReadEntry.c,22
+Db_ReadEntry(45,1234
+
+db/Db_Put.c,16
+Db_Put(44,1185
+
+db/DbLockDesc.c,42
+AlarmHandler(55,1363
+DbLockDesc(86,2027
+
+dir/opendir.c,16
+opendir(20,449
+
+dir/readdir.c,53
+readdir(24,499
+swapLong(76,1898
+swapShort(93,2122
+
+dir/telldir.c,16
+telldir(18,422
+
+dir/seekdir.c,16
+seekdir(19,487
+
+dir/closedir.c,17
+closedir(19,428
+
+dir/scandir.c,35
+alphasort(87,2332
+scandir(22,691
+
+disk/diskIO.c,130
+Disk_BadBlockRead(210,6534
+Disk_BlockRead(140,4328
+Disk_BlockWrite(267,8579
+Disk_SectorRead(45,1326
+Disk_SectorWrite(88,2632
+
+disk/disk.h,91
+} Disk_Label;102,3911
+typedef int Disk_NativeLabelType;56,1552
+} Disk_Partition;68,1939
+
+disk/diskHeader.c,576
+CheckSunCheckSum(816,23494
+ConvertFromDecLabel(612,16788
+ConvertFromSunLabel(517,13567
+ConvertToDecLabel(743,21230
+ConvertToSunLabel(690,19507
+Disk_EraseLabel(860,24444
+Disk_NewLabel(449,11503
+Disk_ReadDecLabel(60,1840
+Disk_ReadDiskHeader(145,3977
+Disk_ReadDomainHeader(181,4835
+Disk_ReadLabel(353,9331
+Disk_ReadSummaryInfo(249,6613
+Disk_ReadSunLabel(107,3107
+Disk_WriteDecLabel(305,8146
+Disk_WriteDomainHeader(222,5873
+Disk_WriteLabel(391,10233
+Disk_WriteSummaryInfo(281,7426
+Disk_WriteSunLabel(328,8733
+MakeSunCheckSum(829,23778
+SeeSunCheckSum(803,23216
+
+disk/diskPrint.c,221
+Disk_GetLabelTypeName(295,8476
+Disk_PrintDataBlockBitmap(177,5020
+Disk_PrintDirEntry(218,5929
+Disk_PrintDomainHeader(41,1080
+Disk_PrintFileDescBitmap(137,4117
+Disk_PrintLabel(243,6507
+Disk_PrintSummaryInfo(97,3039
+
+disk/diskFragIO.c,47
+Disk_FragRead(38,972
+Disk_FragWrite(101,3065
+
+etc/sun3.md/nlist.c,14
+nlist(18,464
+
+etc/getpass.c,16
+getpass(12,305
+
+etc/getpwent.c,204
+endpwent(164,3421
+fetch_pw(232,4842
+getpw(275,5880
+getpwent(41,1426
+getpwnam(61,1797
+getpwuid(88,2236
+scanpw(183,3635
+setpassent(154,3306
+setpwent(149,3266
+setpwfile(176,3576
+start_pw(115,2665
+
+etc/getwd.c,76
+#define GETWDERR(26,648
+getwd(36,826
+oldGetwd(147,3957
+prepend(132,3645
+
+etc/syslog.c,115
+#define PRIFAC(53,1289
+closelog(230,4660
+openlog(206,4283
+setlogmask(242,4776
+syslog(78,1989
+syslog(193,4159
+
+etc/pfs.c,188
+PfsNamingRequest(350,10693
+PfsNullProc(766,22517
+Pfs_Close(735,21871
+Pfs_Open(112,3641
+Pfs_OpenConnection(650,19284
+Pfs_PassFile(703,21146
+Pfs_SetHandler(221,7442
+} Server;56,2139
+
+etc/regex.c,89
+advance(266,6352
+backref(373,7838
+cclass(387,8014
+re_comp(102,3623
+re_exec(226,5785
+
+etc/getgrent.c,85
+endgrent(30,571
+getgrent(49,772
+grskip(39,647
+setgrent(22,491
+setgrfile(73,1216
+
+etc/getgrgid.c,17
+getgrgid(14,321
+
+etc/getgrnam.c,17
+getgrnam(14,321
+
+etc/seteuid.c,16
+seteuid(11,328
+
+etc/setgid.c,15
+setgid(14,366
+
+etc/setrgid.c,16
+setrgid(11,328
+
+etc/setruid.c,16
+setruid(11,328
+
+etc/setuid.c,15
+setuid(14,366
+
+etc/setegid.c,16
+setegid(11,328
+
+etc/ndbm.c,349
+additem(495,10156
+chkblk(520,10620
+dbm_access(274,5602
+dbm_close(73,1608
+dbm_delete(121,2371
+dbm_fetch(100,2031
+dbm_firstkey(226,4660
+dbm_forder(83,1720
+dbm_nextkey(236,4769
+dbm_open(37,779
+dbm_store(148,2899
+dcalchash(438,9268
+delitem(463,9648
+finddatum(369,7604
+getbit(298,6179
+hashinc(419,9017
+makdatum(347,7292
+setbit(321,6645
+
+etc/utime.c,15
+utime(57,1939
+
+etc/a.out.c,0
+
+etc/remque.c,16
+remque(43,1063
+
+etc/getopt.c,37
+getopt(39,1137
+#define	tell(29,968
+
+etc/popen.c,50
+pclose(74,1549
+popen(27,562
+#define	tst(15,389
+
+etc/siglist.c,0
+
+etc/alarm.c,14
+alarm(16,387
+
+etc/mktemp.c,49
+_gettemp(46,1009
+mkstemp(30,831
+mktemp(39,915
+
+etc/signal.c,15
+signal(17,402
+
+etc/insque.c,16
+insque(43,1066
+
+etc/ecvt.c,38
+cvt(32,621
+ecvt(16,360
+fcvt(24,487
+
+etc/gcvt.c,13
+gcvt(13,227
+
+etc/fmt.c,381
+#define AlignPointer(134,4782
+CalcComplexAlign(1054,31136
+ConvertByte(702,21314
+ConvertDoubleWord(955,28385
+ConvertHalfWord(777,23382
+ConvertSequence(343,11350
+ConvertStruct(520,16141
+ConvertUnion(607,18667
+ConvertWord(865,25833
+Fmt_Convert(175,5939
+Fmt_Size(251,8169
+} FormatInfo;62,2190
+#define MAX(144,5022
+} State;94,3340
+static int formatCount = sizeof(79,2654
+
+etc/isatty.c,15
+isatty(35,764
+
+etc/ttyname.c,17
+ttyname(48,1368
+
+etc/ttyslot.c,17
+ttyslot(41,1260
+
+etc/iszero.c,106
+int isnormal(86,2043
+int issubnormal(63,1594
+int iszero(109,2470
+parts(161,3523
+int signbit(132,2924
+
+etc/pdev.c,656
+#define LIST_TO_SRVPTR(95,3475
+} Pdev;65,2323
+PdevCleanup(361,11541
+PdevControlRequest(416,12993
+PdevDefaultClose(1196,36148
+PdevDefaultGetAttr(1309,39031
+PdevDefaultIoctl(1280,38246
+PdevDefaultOpen(1163,35115
+PdevDefaultRead(1220,36586
+PdevDefaultSetAttr(1340,39794
+PdevDefaultWrite(1251,37420
+PdevServiceRequest(570,18188
+PdevSetup(461,14348
+Pdev_Close(298,9996
+Pdev_EnumStreams(958,29832
+Pdev_GetStreamID(333,10861
+Pdev_Open(172,6097
+Pdev_SetDefaultHandler(1002,30963
+Pdev_SetStreamHandler(1038,32031
+ReplyNoData(851,26658
+ReplyWithData(896,27834
+} ServiceStream;93,3457
+static int    (*SetHandler(133,4454
+SetHandler(1073,32979
+
+etc/ttyDriver.c,484
+FormatInput(1079,30676
+FormatOutput(1200,33134
+#define NEXT(188,6662
+#define PREV(194,6773
+TdBackspace(1839,49671
+TdEcho(1756,47662
+TdFlushInput(1950,52394
+TdFlushOutput(1980,53171
+TdPutChar(1676,45671
+TdRetypeInput(1804,48703
+Td_Close(402,12746
+Td_ControlCooked(647,20135
+Td_ControlRaw(1625,44263
+Td_Create(242,8186
+Td_Delete(326,10726
+Td_GetCooked(439,13874
+Td_GetRaw(1306,35595
+Td_Open(362,11754
+Td_PutCooked(568,17552
+Td_PutRaw(1356,37148
+} Terminal;142,5461
+
+etc/crypt.c,51
+crypt(333,7007
+encrypt(244,5279
+setkey(116,2133
+
+etc/option.c,89
+#define OptNoArg(27,811
+Opt_Parse(61,1894
+Opt_PrintUsage(300,7719
+ParseTime(380,9678
+
+etc/initgroups.c,19
+initgroups(20,440
+
+etc/ttyPdev.c,232
+ChangeReady(436,12501
+CookedProc(379,10866
+PdevClose(229,6535
+PdevIoctl(339,9623
+PdevOpen(182,5015
+PdevRead(256,7103
+} PdevTerm;46,1347
+PdevWrite(295,8261
+SendSignal(472,13534
+Td_CreatePdev(86,2490
+Td_DeletePdev(146,4282
+
+etc/panic.c,30
+panic(42,1084
+panic(62,1524
+
+etc/getlogin.c,17
+getlogin(14,302
+
+etc/swapBuffer.c,497
+CalcPutByteSize(701,21077
+CalcPutDoubleSize(750,22202
+CalcPutHalfWordSize(710,21204
+CalcPutWordSize(727,21617
+CalcSize(344,11712
+CopyData(440,13965
+#define	FakePanicValue(41,1295
+#define FakePanicValue(47,1462
+#define FakePanicVoid(38,1207
+#define FakePanicVoid(45,1405
+GetByte(549,16992
+GetDoubleWord(667,20124
+GetHalfWord(564,17245
+GetWord(610,18387
+PutByte(789,23521
+PutDoubleWord(918,26861
+PutHalfWord(804,23770
+PutWord(850,24844
+Swap_BufSize(261,9081
+Swap_Buffer(103,3265
+
+etc/gtty.c,14
+gtty(42,1114
+
+etc/getusershell.c,84
+endusershell(48,962
+getusershell(36,814
+initshells(67,1181
+setusershell(60,1119
+
+etc/shm.c,99
+} SHMIDS;71,2127
+shmat(214,5296
+shmctl(170,4188
+shmdt(259,6402
+shmget(94,2548
+shmop(165,4160
+
+etc/ldexp.c,21
+double ldexp(28,821
+
+etc/stty.c,14
+stty(41,1091
+
+etc/pause.c,15
+pause(38,1048
+
+etc/sleep.c,69
+#define setvec(23,718
+sleep(46,1142
+sleep(97,2776
+sleepx(89,2722
+
+etc/ftime.c,14
+ftime(26,518
+
+etc/status.c,43
+Stat_GetMsg(225,8474
+} StatusMsgs;29,840
+
+etc/statusPrint.c,23
+Stat_PrintMsg(45,1243
+
+etc/symm.md/nlist.c,14
+nlist(18,464
+
+etc/frexp.c,14
+frexp(46,977
+
+etc/isinf.c,15
+isinf(51,1223
+
+etc/fsDispatch.c,359
+CallTimeoutHandler(783,21511
+ComputeTimeoutValue(893,24566
+DispatcherInit(150,4432
+Fs_Dispatch(194,5744
+Fs_EventHandlerChangeData(517,14520
+Fs_EventHandlerCreate(411,11747
+Fs_EventHandlerData(480,13681
+Fs_EventHandlerDestroy(559,15480
+Fs_TimeoutHandlerCreate(648,18138
+Fs_TimeoutHandlerDestroy(742,20695
+} StreamInfo;49,1683
+} TimeoutInfo;89,2986
+
+etc/isnan.c,15
+isnan(51,1221
+
+etc/Rpc_GetName.c,59
+Rpc_GetName(89,2107
+static int numNames = sizeof(69,1712
+
+etc/Misc_InvokeEditor.c,27
+Misc_InvokeEditor(50,1357
+
+exec/execle.c,31
+execl(75,1830
+execle(53,1332
+
+exec/execv.c,15
+execv(48,1217
+
+exec/_ExecArgs.c,19
+_ExecArgs(52,1405
+
+exec/execl.c,30
+execl(54,1361
+execl(74,1785
+
+exec/execvp.c,33
+DoExec(51,1299
+execvp(103,2531
+
+exec/execlp.c,32
+execlp(56,1516
+execlp(76,1932
+
+gnulib/_eprintf.c,16
+__eprintf 4,67
+
+gnulib/_adddi3.c,0
+
+gnulib/_subdi3.c,0
+
+gnulib/_muldi3.c,0
+
+gnulib/_divdi3.c,0
+
+gnulib/_moddi3.c,0
+
+gnulib/_udivdi3.c,0
+
+gnulib/_umoddi3.c,0
+
+gnulib/_negdi2.c,0
+
+gnulib/_anddi3.c,0
+
+gnulib/_iordi3.c,0
+
+gnulib/_xordi3.c,0
+
+gnulib/_lshrdi3.c,0
+
+gnulib/_lshldi3.c,0
+
+gnulib/_ashldi3.c,0
+
+gnulib/_ashrdi3.c,0
+
+gnulib/_bdiv.c,0
+
+gnulib/_one_cmpldi2.c,0
+
+gnulib/_cmpdi2.c,0
+
+gnulib/_ucmpdi2.c,0
+
+gnulib/_fixunsdfdi.c,0
+
+gnulib/_fixdfdi.c,0
+
+gnulib/_floatdidf.c,0
+
+gnulib/symm.md/tm.h,104
+#define FUNCTION_PROFILER(55,1614
+#define FUNCTION_VALUE_REGNO_P(49,1408
+#define VALUE_REGNO(44,1252
+
+gnulib/symm.md/alloca.c,128
+alloca 139,3910
+find_stack_direction 83,2467
+} header;125,3452
+typedef void	*pointer;49,1635
+typedef char	*pointer;51,1692
+
+gnulib/symm.md/config.h,24
+#define alloca(41,1300
+
+gnulib/symm.md/tm-bsd386.h,768
+#define ADDR_BEG(69,2314
+#define ADDR_END(70,2355
+#define AS1(33,1289
+#define AS1(35,1322
+#define AS2(31,1208
+#define AS2(36,1345
+#define AS3(32,1244
+#define AS3(37,1372
+#define ASM_FILE_START(110,3518
+#define ASM_GENERATE_INTERNAL_LABEL(172,5469
+#define ASM_GLOBALIZE_LABEL(195,6244
+#define ASM_OUTPUT_ALIGN(164,5138
+#define ASM_OUTPUT_COMMON(147,4599
+#define ASM_OUTPUT_DOUBLE(201,6465
+#define ASM_OUTPUT_INTERNAL_LABEL(178,5711
+#define ASM_OUTPUT_LABELREF(183,5882
+#define ASM_OUTPUT_LOCAL(155,4848
+#define ASM_OUTPUT_SKIP(131,4208
+#define PRINT_B_I_S(86,2849
+#define PRINT_IMMED_PREFIX(59,2012
+#define PRINT_IREG(73,2449
+#define PRINT_OFFSET_PREFIX(60,2066
+#define PRINT_PTR(66,2230
+#define PRINT_SCALE(79,2612
+#define PUT_OP_SIZE(44,1611
+
+gnulib/symm.md/tm-i386.h,2668
+#define ASM_FORMAT_PRIVATE_NAME(950,36347
+#define ASM_OUTPUT_ADDR_DIFF_ELT(1014,38219
+#define ASM_OUTPUT_ADDR_VEC_ELT(1006,37928
+#define ASM_OUTPUT_BYTE(988,37357
+#define ASM_OUTPUT_CHAR(981,37149
+#define ASM_OUTPUT_DOUBLE(932,35803
+#define ASM_OUTPUT_FLOAT(938,35973
+#define ASM_OUTPUT_INT(958,36588
+#define ASM_OUTPUT_LABEL(927,35634
+#define ASM_OUTPUT_REG_POP(1000,37754
+#define ASM_OUTPUT_REG_PUSH(994,37552
+#define ASM_OUTPUT_SHORT(966,36809
+#define CLASS_MAX_NREGS(357,13184
+#define CONSTANT_ADDRESS_P(645,25301
+#define CONST_COSTS(819,32352
+#define CONST_DOUBLE_OK_FOR_LETTER_P(331,11989
+#define CONST_OK_FOR_LETTER_P(325,11774
+#define DBX_REGISTER_NUMBER(921,35353
+#define FINAL_PRESCAN_INSN(838,32902
+#define FIRST_PARM_OFFSET(388,14446
+#define FIX_FRAME_POINTER_ADDRESS(533,20326
+#define FP_REGNO_P(285,10363
+#define FP_REG_P(284,10305
+#define FUNCTION_ARG(472,17838
+#define FUNCTION_ARG_ADVANCE(448,16844
+#define FUNCTION_ARG_PARTIAL_NREGS(480,18137
+#define FUNCTION_ARG_REGNO_P(423,15934
+#define FUNCTION_EPILOGUE(524,20038
+#define FUNCTION_PROFILER(501,19006
+#define FUNCTION_PROLOGUE(495,18817
+#define FUNCTION_VALUE(408,15415
+#define GO_IF_INDEXABLE_BASE(652,25523
+#define GO_IF_INDEXING(671,26149
+#define GO_IF_LEGITIMATE_ADDRESS(685,26716
+#define GO_IF_MODE_DEPENDENT_ADDRESS(746,29570
+#define HARD_REGNO_MODE_OK(173,6206
+#define HARD_REGNO_NREGS(164,5854
+#define INIT_CUMULATIVE_ARGS(441,16616
+#define INSN_CLOBBERS_REGNO_P(1065,39964
+#define INTIFY(1061,39870
+#define LEGITIMATE_CONSTANT_P(650,25487
+#define LEGITIMATE_INDEX_P(660,25775
+#define LEGITIMATE_INDEX_REG_P(655,25625
+#define LEGITIMIZE_ADDRESS(712,27916
+#define LIBCALL_VALUE(415,15640
+#define MODES_TIEABLE_P(181,6539
+#define NON_QI_REG_P(281,10209
+#define NOTICE_UPDATE_CC(854,33448
+#define OUTPUT_JUMP(864,33857
+#define OVERLAPPING_REGNO_P(297,10859
+#define PREFERRED_RELOAD_CLASS(342,12566
+#define PRESERVE_DEATH_INFO_REGNO_P(290,10590
+#define PRINT_OPERAND(1049,39523
+#define PRINT_OPERAND_ADDRESS(1053,39598
+#define PRINT_OPERAND_PUNCT_VALID_P(1046,39457
+#define PUSH_ROUNDING(385,14318
+#define REGNO_OK_FOR_BASE_P(593,23053
+#define REGNO_OK_FOR_DIREG_P(597,23264
+#define REGNO_OK_FOR_INDEX_P(591,22923
+#define REGNO_OK_FOR_SIREG_P(596,23185
+#define REGNO_REG_CLASS(270,9938
+#define REG_CLASS_FROM_LETTER(306,11138
+#define REG_OK_FOR_BASE_P(620,24319
+#define REG_OK_FOR_BASE_P(629,24730
+#define REG_OK_FOR_INDEX_P(616,24109
+#define REG_OK_FOR_INDEX_P(627,24601
+#define REG_OK_FOR_STRREG_P(621,24421
+#define REG_OK_FOR_STRREG_P(630,24791
+#define RETURN_POPS_ARGS(403,15195
+#define TRULY_NOOP_TRUNCATION(786,31082
+
+gnulib/gnulib3.c,127
+#define ON_EXIT(35,594
+__do_global_cleanup 89,1395
+__do_global_init 78,1203
+__main 40,688
+exit 68,1096
+} set_vector;6,92
+
+hash/Hash.c,14
+Hash(47,1254
+
+hash/Hash_InitTable.c,24
+Hash_InitTable(41,1044
+
+hash/Hash_FindEntry.c,24
+Hash_FindEntry(49,1245
+
+hash/Hash_DeleteEntry.c,26
+Hash_DeleteEntry(49,1211
+
+hash/Hash_DeleteTable.c,26
+Hash_DeleteTable(43,1138
+
+hash/Hash_EnumNext.c,23
+Hash_EnumNext(42,1201
+
+hash/Hash_EnumFirst.c,24
+Hash_EnumFirst(43,1276
+
+hash/Hash_PrintStats.c,25
+Hash_PrintStats(55,1456
+
+hash/HashChainSearch.c,25
+HashChainSearch(41,1112
+
+hash/Hash_CreateEntry.c,49
+Hash_CreateEntry(119,3216
+RebuildTable(57,1453
+
+host/Host_Next.c,19
+Host_Next(52,1567
+
+host/hostInt.h,0
+
+host/Host_SetFile.c,22
+Host_SetFile(45,1262
+
+host/Host_End.c,18
+Host_End(42,1039
+
+host/Host_ByName.c,21
+Host_ByName(47,1372
+
+host/Host_ByID.c,19
+Host_ByID(43,1253
+
+host/Host_ByNetAddr.c,24
+Host_ByNetAddr(46,1334
+
+host/Host_ByInetAddr.c,25
+Host_ByInetAddr(45,1360
+
+host/Host_Start.c,20
+Host_Start(49,1326
+
+host/Host_Stat.c,19
+Host_Stat(44,1124
+
+inet/inet_addr.c,18
+inet_addr(29,956
+
+inet/inet_lnaof.c,19
+inet_lnaof(26,833
+
+inet/inet_makeaddr.c,22
+inet_makeaddr(25,842
+
+inet/inet_netof.c,19
+inet_netof(25,806
+
+inet/inet_network.c,21
+inet_network(27,863
+
+inet/inet_ntoa.c,18
+inet_ntoa(27,816
+
+list/List_Init.c,19
+List_Init(42,1166
+
+list/List_Move.c,19
+List_Move(41,1090
+
+list/List_Insert.c,21
+List_Insert(43,1266
+
+list/List_Remove.c,21
+List_Remove(41,1127
+
+list/List_ListInsert.c,25
+List_ListInsert(43,1203
+
+mig/Mig_ConfirmIdle.c,25
+Mig_ConfirmIdle(63,1935
+
+mig/Mig_Evict.c,19
+Mig_Evict(47,1420
+
+mig/Mig_Done.c,18
+Mig_Done(51,1334
+
+mig/MigHostCache.c,22
+MigHostCache(47,1226
+
+mig/migInt.h,21
+} MigCacheOp;29,956
+
+mig/Mig_ReturnHosts.c,25
+Mig_ReturnHosts(52,1354
+
+mig/Mig_GetInfo.c,21
+Mig_GetInfo(55,1637
+
+mig/Mig_GetStats.c,22
+Mig_GetStats(46,1193
+
+mig/MigOpenPdev.c,21
+MigOpenPdev(63,1900
+
+mig/Mig_DeleteHost.c,24
+Mig_DeleteHost(47,1404
+
+mig/Mig_RequestIdleHosts.c,71
+Mig_RequestIdleHosts(141,4058
+} MigdState;52,1530
+StartMigd(76,2241
+
+mig/Mig_GetAllInfo.c,24
+Mig_GetAllInfo(53,1445
+
+mig/migAlarm.c,67
+AlarmHandler(60,1603
+MigClearAlarm(134,3131
+MigSetAlarm(87,2152
+
+mig/Mig_GetPdevName.c,25
+Mig_GetPdevName(64,1820
+
+mig/Mig_GetIdleNode.c,25
+Mig_GetIdleNode(47,1303
+
+net/getnetbyname.c,21
+getnetbyname(22,718
+
+net/getnetent.c,71
+any(103,2057
+endnetent(45,1125
+getnetent(55,1225
+setnetent(35,1008
+
+net/getproto.c,25
+getprotobynumber(22,718
+
+net/getprotoent.c,76
+any(100,2067
+endprotoent(43,1121
+getprotoent(53,1233
+setprotoent(33,992
+
+net/getprotoname.c,23
+getprotobyname(22,722
+
+net/getservbyname.c,22
+getservbyname(22,721
+
+net/getservbyport.c,22
+getservbyport(22,721
+
+net/herror.c,16
+herror(35,1074
+
+net/rcmd.c,93
+_checkhost(281,5976
+_validuser(248,5292
+rcmd(35,945
+rresvport(166,3715
+ruserok(194,4238
+
+net/res_comp.c,153
+_getlong(284,6249
+_getshort(266,5998
+dn_comp(112,2944
+dn_expand(32,1069
+dn_find(214,4994
+dn_skipname(182,4347
+putlong(308,6545
+putshort(297,6429
+
+net/res_debug.c,122
+fp_query(79,1441
+p_cdname(172,3410
+p_class(429,8830
+p_query(67,1270
+p_rr(196,3824
+*p_time(448,9103
+p_type(365,7445
+
+net/res_init.c,18
+res_init(55,1721
+
+net/res_mkquery.c,20
+res_mkquery(28,861
+
+net/res_query.c,86
+hostalias(220,6019
+res_query(47,1420
+res_querydomain(186,5221
+res_search(121,3261
+
+net/res_send.c,138
+#define	FD_CLR(41,1153
+#define	FD_ISSET(42,1230
+#define	FD_SET(40,1077
+#define FD_ZERO(43,1307
+_res_close(362,7981
+res_send(49,1425
+
+net/rexec.c,14
+rexec(31,857
+
+net/ruserpass.c,398
+blkencrypt(654,12769
+char *deblkclr(373,7105
+deblknot(409,7630
+enblkclr(358,6839
+enblknot(391,7346
+getutmp(751,14716
+mkenvkey(785,15301
+mkpwclear(838,16223
+mkpwunclear(819,15909
+nbs8decrypt(341,6564
+nbs8encrypt(324,6288
+nbsdecrypt(303,5948
+nbsencrypt(284,5585
+nbssetkey(528,9721
+renv(77,1916
+renvlook(106,2458
+rnetrc(159,3281
+ruserpass(48,1326
+sreverse(773,15146
+token(230,4633
+
+net/getnetbyaddr.c,21
+getnetbyaddr(22,718
+
+net/getservent.c,74
+any(104,2138
+endservent(45,1154
+getservent(55,1260
+setservent(35,1031
+
+net/swap.c,62
+htonl(156,3136
+htons(120,2475
+ntohl(82,1744
+ntohs(44,1070
+
+net/sethostent.c,58
+endhostent(28,832
+sethostent(22,747
+sethostfile(34,911
+
+net/gethostnamadr.c,207
+_endhtent(290,6214
+_gethtbyaddr(386,7892
+_gethtbyname(366,7564
+_gethtent(299,6318
+_sethtent(280,6098
+any(350,7354
+getanswer(65,1526
+gethostbyaddr(242,5170
+gethostbyname(207,4495
+} querybuf;53,1409
+
+quad/Quad_AddUns.c,21
+Quad_AddUns(41,1090
+
+quad/Quad_CompareUns.c,25
+Quad_CompareUns(41,1096
+
+quad/Quad_AddUnsLong.c,25
+Quad_AddUnsLong(40,1017
+
+quad/Quad_UnsToDouble.c,26
+Quad_UnsToDouble(41,1064
+
+quad/Quad_PutUns.c,21
+Quad_PutUns(40,1023
+
+stdio/fread.c,15
+fread(43,1302
+
+stdio/fileno.c,16
+fileno(42,1126
+
+stdio/vfprintf.c,54
+CvtFtoA(175,4441
+CvtUtoA(66,1777
+vfprintf(368,9151
+
+stdio/fgetc.c,15
+fgetc(44,1313
+
+stdio/getw.c,14
+getw(43,1222
+
+stdio/putw.c,14
+putw(40,1056
+
+stdio/fputc.c,15
+fputc(43,1269
+
+stdio/fgets.c,15
+fgets(44,1331
+
+stdio/gets.c,14
+gets(43,1282
+
+stdio/fputs.c,15
+fputs(41,1124
+
+stdio/puts.c,14
+puts(43,1219
+
+stdio/fwrite.c,16
+fwrite(43,1297
+
+stdio/fflush.c,16
+fflush(40,1094
+
+stdio/fclose.c,16
+fclose(42,1226
+
+stdio/clearerr.c,18
+clearerr(45,1377
+
+stdio/ungetc.c,16
+ungetc(47,1537
+
+stdio/fopen.c,15
+fopen(45,1216
+
+stdio/setvbuf.c,17
+setvbuf(51,1777
+
+stdio/fseek.c,15
+fseek(47,1417
+
+stdio/sscanf.c,57
+StringReadProc(52,1298
+sscanf(80,1911
+sscanf(102,2509
+
+stdio/tmpnam.c,48
+tempnam(52,1160
+tmpfile(25,772
+tmpnam(39,996
+
+stdio/_cleanup.c,18
+_cleanup(41,1060
+
+stdio/perror.c,16
+perror(44,1104
+
+stdio/ftell.c,15
+ftell(48,1375
+
+stdio/fdopen.c,16
+fdopen(50,1551
+
+stdio/fileInt.h,0
+
+stdio/scanf.c,30
+scanf(45,1236
+scanf(61,1564
+
+stdio/sprintf.c,60
+StringWriteProc(51,1309
+sprintf(78,1922
+sprintf(101,2515
+
+stdio/setbuf.c,16
+setbuf(40,1069
+
+stdio/StdioFileReadProc.c,27
+StdioFileReadProc(54,1727
+
+stdio/setlinebuf.c,20
+setlinebuf(41,1110
+
+stdio/printf.c,32
+printf(44,1169
+printf(60,1487
+
+stdio/fprintf.c,34
+fprintf(44,1173
+fprintf(62,1565
+
+stdio/fscanf.c,32
+fscanf(45,1211
+fscanf(64,1620
+
+stdio/setbuffer.c,19
+setbuffer(40,1082
+
+stdio/rewind.c,16
+rewind(41,1105
+
+stdio/getchar.c,17
+getchar(44,1272
+
+stdio/vfscanf.c,17
+vfscanf(61,1644
+
+stdio/putchar.c,17
+putchar(41,1120
+
+stdio/vsprintf.c,37
+WriteProc(85,2297
+vsprintf(51,1414
+
+stdio/vprintf.c,17
+vprintf(43,1159
+
+stdio/StdioFileOpenMode.c,27
+StdioFileOpenMode(46,1305
+
+stdio/vsnprintf.c,38
+WriteProc(89,2544
+vsnprintf(53,1500
+
+stdio/freopen.c,17
+freopen(45,1289
+
+stdio/StdioFileCloseProc.c,28
+StdioFileCloseProc(46,1311
+
+stdio/StdioFileWriteProc.c,28
+StdioFileWriteProc(95,3021
+
+stdio/Stdio_Setup.c,21
+Stdio_Setup(44,1386
+
+stdlib/MemData.c,0
+
+stdlib/MemDoTrace.c,40
+MemDoTrace(86,2268
+PrintTrace(50,1340
+
+stdlib/Mem_Bin.c,17
+Mem_Bin(39,1148
+
+stdlib/memInt.h,610
+#define ADMIN_BITS(112,4373
+} AdminInfo;87,3652
+typedef double AdminInfo;102,4119
+#define BLOCKSIZE_TO_INDEX(189,7302
+#define BYTES_TO_BLOCKSIZE(188,7225
+#define GET_ADMIN(89,3666
+#define GET_ADMIN(104,4146
+#define GET_ORIG_SIZE(96,3954
+#define GET_PC(93,3822
+#define INDEX_TO_BLOCKSIZE(190,7357
+#define IS_DUMMY(114,4466
+#define IS_IN_USE(113,4421
+#define MARK_DUMMY(115,4538
+#define MARK_FREE(117,4643
+#define MARK_IN_USE(116,4596
+} MemTraceElement;314,12032
+#define SET_ADMIN(90,3730
+#define SET_ADMIN(105,4209
+#define SET_ORIG_SIZE(97,4025
+#define SET_PC(94,3880
+#define SIZE(118,4691
+
+stdlib/MemInit.c,17
+MemInit(42,1261
+
+stdlib/MemPanic.c,18
+MemPanic(46,1398
+
+stdlib/Mem_DumpTrace.c,23
+Mem_DumpTrace(43,1219
+
+stdlib/cfree.c,15
+cfree(42,1096
+
+stdlib/realloc.c,17
+realloc(43,1265
+
+stdlib/calloc.c,16
+calloc(42,1143
+
+stdlib/Mem_Size.c,18
+Mem_Size(45,1381
+
+stdlib/bsearch.c,17
+bsearch(52,1391
+
+stdlib/abort.c,15
+abort(43,1121
+
+stdlib/Mem_PrintInUse.c,24
+Mem_PrintInUse(45,1403
+
+stdlib/Mem_SetTraceSizes.c,27
+Mem_SetTraceSizes(41,1248
+
+stdlib/setenv.c,16
+setenv(47,1381
+
+stdlib/Mem_SetPrintProc.c,26
+Mem_SetPrintProc(53,1604
+
+stdlib/abs.c,13
+abs(40,1070
+
+stdlib/Mem_PrintConfig.c,25
+Mem_PrintConfig(41,1203
+
+stdlib/Mem_PrintStats.c,52
+Mem_PrintStats(78,2322
+Mem_PrintStatsInt(109,3049
+
+stdlib/div.c,13
+div(41,1100
+
+stdlib/malloc.c,16
+malloc(47,1454
+
+stdlib/atexit.c,16
+atexit(55,1675
+
+stdlib/atof.c,14
+atof(65,1793
+
+stdlib/atoi.c,14
+atoi(41,1113
+
+stdlib/atol.c,14
+atol(41,1122
+
+stdlib/exit.c,14
+exit(53,1411
+
+stdlib/free.c,14
+free(58,1744
+
+stdlib/getenv.c,16
+getenv(45,1273
+
+stdlib/labs.c,14
+labs(40,1075
+
+stdlib/ldiv.c,14
+ldiv(41,1108
+
+stdlib/qsort.c,29
+qsort(48,1712
+qst(124,4594
+
+stdlib/rand.c,109
+initstate(224,8703
+rand(369,12664
+random(344,12228
+setstate(292,10590
+srand(374,12697
+srandom(184,7533
+
+stdlib/strtod.c,16
+strtod(70,1939
+
+stdlib/strtol.c,16
+strtol(45,1294
+
+stdlib/strtoul.c,17
+strtoul(62,1949
+
+stdlib/system.c,16
+system(42,1101
+
+stdlib/unsetenv.c,18
+unsetenv(45,1161
+
+stdlib/MemChunkAlloc.c,23
+MemChunkAlloc(69,2265
+
+string/strcat.c,16
+strcat(39,1051
+
+string/strerror.c,51
+int sys_nerr = sizeof(107,4420
+strerror(128,4953
+
+string/strcpy.c,16
+strcpy(39,1060
+
+string/strncpy.c,17
+strncpy(43,1295
+
+string/strncat.c,17
+strncat(40,1104
+
+string/strcmp.c,16
+strcmp(44,1293
+
+string/strncmp.c,17
+strncmp(45,1400
+
+string/strlen.c,16
+strlen(40,1087
+
+string/rindex.c,16
+rindex(41,1125
+
+string/strchr.c,16
+strchr(41,1139
+
+string/strstr.c,16
+strstr(42,1270
+
+string/strrchr.c,17
+strrchr(41,1129
+
+string/index.c,15
+index(41,1123
+
+string/strpbrk.c,17
+strpbrk(41,1158
+
+string/memcmp.c,15
+memcmp(20,675
+
+string/memcpy.c,15
+memcpy(20,678
+
+string/strcspn.c,17
+strcspn(42,1229
+
+string/strspn.c,16
+strspn(41,1142
+
+string/memset.c,15
+memset(20,678
+
+string/strtok.c,16
+strtok(47,1288
+
+string/memchr.c,15
+memchr(20,678
+
+string/memmove.c,16
+memmove(25,702
+
+string/strsep.c,16
+strsep(41,1406
+
+string/strdup.c,16
+strdup(44,1418
+
+string/stringArray.c,52
+String_FreeArray(89,2304
+String_SaveArray(47,1342
+
+string/strcasecmp.c,41
+strcasecmp(61,2994
+strncasecmp(79,3249
+
+sync/Sync_SlowLock.c,23
+Sync_SlowLock(45,1325
+
+sync/Sync_SlowWait.c,23
+Sync_SlowWait(43,1268
+
+syscall/sun3.md/userSysCallInt.h,113
+|* rcs = $Header: userSysCallInt.h,v 1.1 88/06/19 14:30:08 ouster Exp $ SPRITE 15,551
+#define SYS_CALL(32,1103
+
+syscall/proc.c,86
+Proc_Exec(39,846
+Proc_Migrate(128,3455
+Proc_RemoteExec(201,5404
+Proc_Wait(79,1846
+
+syscall/ds3100.md/userSysCallInt.h,26
+#define SYS_CALL(42,1343
+
+syscall/Fs_Read.c,17
+Fs_Read(56,1885
+
+syscall/Fs_ReadVector.c,23
+Fs_ReadVector(48,1425
+
+syscall/Ioc_Lock.c,18
+Ioc_Lock(46,1491
+
+syscall/Fs_Write.c,18
+Fs_Write(57,1990
+
+syscall/procEnviron.c,199
+Proc_CopyEnviron(282,7007
+Proc_FetchGlobalEnv(316,7826
+Proc_GetEnvironRange(90,2163
+Proc_GetEnvironVar(56,1257
+Proc_InstallEnviron(239,5839
+Proc_SetEnviron(177,4139
+Proc_UnsetEnviron(202,4662
+
+syscall/Fs_Select.c,19
+Fs_Select(45,1238
+
+syscall/Ioc_Reposition.c,24
+Ioc_Reposition(44,1264
+
+syscall/Ioc_GetFlags.c,22
+Ioc_GetFlags(42,1178
+
+syscall/sun4.md/userSysCallInt.h,52
+#define SYS_CALL(44,1694
+#define SYS_CALL(51,1834
+
+syscall/Fs_WriteVector.c,24
+Fs_WriteVector(48,1401
+
+syscall/Fs_Truncate.c,21
+Fs_Truncate(42,1144
+
+syscall/Fs_WriteBack.c,22
+Fs_WriteBack(40,1063
+
+syscall/Ioc_ClearBits.c,23
+Ioc_ClearBits(41,1060
+
+syscall/Ioc_SetOwner.c,22
+Ioc_SetOwner(42,1144
+
+syscall/Ioc_Map.c,16
+Ioc_Map(40,977
+
+syscall/Ioc_SetFlags.c,22
+Ioc_SetFlags(43,1217
+
+syscall/Ioc_SetBits.c,21
+Ioc_SetBits(41,1131
+
+syscall/symm.md/userSysCallInt.h,316
+#define SVC(67,2335
+#define SVC0(40,1318
+#define SVC1(41,1368
+#define SVC10(50,1854
+#define SVC2(42,1422
+#define SVC3(43,1476
+#define SVC4(44,1530
+#define SVC5(45,1584
+#define SVC6(46,1638
+#define SVC7(47,1692
+#define SVC8(48,1746
+#define SVC9(49,1800
+#define SYS_CALL(58,2096
+#define SYS_CALL(74,2490
+
+syscall/Ioc_NumReadable.c,25
+Ioc_NumReadable(40,1050
+
+syscall/Ioc_Unlock.c,20
+Ioc_Unlock(41,1068
+
+syscall/Ioc_Truncate.c,22
+Ioc_Truncate(40,1044
+
+syscall/Ioc_GetOwner.c,22
+Ioc_GetOwner(43,1214
+
+syscall/Sig_Pause.c,19
+Sig_Pause(45,1249
+
+syscall/Fs_IOControl.c,22
+Fs_IOControl(45,1221
+
+syscall/Ioc_WriteBack.c,23
+Ioc_WriteBack(44,1267
+
+time/times.c,30
+scale60(17,434
+times(24,535
+
+time/timeConstants.c,0
+
+time/Time_Subtract.c,23
+Time_Subtract(41,1045
+
+time/Time_Multiply.c,23
+Time_Multiply(50,1336
+
+time/Time_Divide.c,21
+Time_Divide(50,1389
+
+time/Time_Normalize.c,24
+Time_Normalize(42,1090
+
+time/Time_GetTime.c,22
+Time_GetTime(42,1135
+
+time/Time_Add.c,18
+Time_Add(41,1015
+
+time/time.c,13
+time(18,418
+
+time/timezone.c,34
+_tztab(87,2464
+timezone(33,1080
+
+time/ctime.c,178
+asctime(40,996
+ctime(26,867
+detzcode(102,2291
+gmtime(323,7096
+localtime(285,6287
+offtime(344,7480
+tzload(115,2474
+tzset(267,5914
+tzsetgmt(253,5686
+tzsetkernel(232,5215
+
+time/Time_ToParts.c,67
+Time_FromParts(197,4073
+Time_ToParts(80,1731
+YearLength(44,1094
+
+time/mktime.c,36
+comparTime(90,2365
+mktime(46,1244
+
+time/Time_ToAscii.c,44
+ConvertToNum(50,1269
+Time_ToAscii(89,2108
+
+ulog/ulogInt.h,0
+
+ulog/Ulog_RecordLogout.c,27
+Ulog_RecordLogout(50,1444
+
+ulog/Ulog_LastLogin.c,24
+Ulog_LastLogin(45,1284
+
+ulog/Ulog_GetAllLogins.c,27
+Ulog_GetAllLogins(50,1566
+
+ulog/Ulog_ClearLogins.c,26
+Ulog_ClearLogins(44,1186
+
+ulog/Ulog_RecordLogin.c,26
+Ulog_RecordLogin(43,1151
+
+unixSyscall/brk.c,61
+#define FirstAddrOnPage(53,1689
+brk(75,2215
+sbrk(136,3648
+
+unixSyscall/chown.c,30
+chown(42,930
+fchown(83,1975
+
+unixSyscall/_exit.c,14
+_exit(39,813
+
+unixSyscall/open.c,14
+open(44,1030
+
+unixSyscall/mmap.c,116
+mincore(223,4811
+mlock(149,3257
+mmap(40,792
+mprotect(258,5580
+msync(114,2556
+munlock(184,3963
+munmap(80,1834
+
+unixSyscall/chdir.c,14
+chdir(38,785
+
+unixSyscall/compatSig.c,176
+Compat_GetSigHoldMask(202,4258
+Compat_SpriteSigMaskToUnix(159,3413
+Compat_SpriteSignalToUnix(80,1790
+Compat_UnixSigMaskToSprite(112,2435
+Compat_UnixSignalToSprite(49,1129
+
+unixSyscall/compatInt.h,0
+
+unixSyscall/socket.c,347
+#  define	DebugMsg(36,813
+Wait(1092,27854
+accept(74,1858
+bind(206,5213
+connect(261,6779
+getpeername(352,8912
+getsockname(405,10290
+getsockopt(450,11340
+listen(567,14580
+recv(602,15311
+recvfrom(633,16117
+recvmsg(713,18333
+send(794,20193
+sendmsg(900,23124
+sendto(827,21119
+setsockopt(511,12932
+shutdown(1053,26990
+socket(973,24941
+
+unixSyscall/select.c,15
+select(40,880
+
+unixSyscall/compatSig.h,0
+
+unixSyscall/creat.c,14
+creat(40,889
+
+unixSyscall/dup.c,26
+dup(38,836
+dup2(72,1695
+
+unixSyscall/errno.c,0
+
+unixSyscall/fsync.c,14
+fsync(38,702
+
+unixSyscall/wait.c,30
+wait(49,1118
+wait3(108,2858
+
+unixSyscall/fcntl.c,14
+fcntl(42,908
+
+unixSyscall/flock.c,38
+Unix_CloseLock 91,2058
+flock(43,940
+
+unixSyscall/fork.c,13
+fork(42,971
+
+unixSyscall/kill.c,13
+kill(43,900
+
+unixSyscall/close.c,14
+close(38,881
+
+unixSyscall/ftruncate.c,18
+ftruncate(39,738
+
+unixSyscall/getdirentries.c,22
+getdirentries(45,989
+
+unixSyscall/getdtablesize.c,22
+getdtablesize(36,704
+
+unixSyscall/getgid.c,32
+getegid(59,1083
+getgid(36,700
+
+unixSyscall/getgroups.c,18
+getgroups(40,856
+
+unixSyscall/getitimer.c,37
+getitimer(43,831
+setitimer(80,1606
+
+unixSyscall/getpagesize.c,20
+getpagesize(36,698
+
+unixSyscall/getpgrp.c,16
+getpgrp(39,826
+
+unixSyscall/getpriority.c,20
+getpriority(37,725
+
+unixSyscall/getrlimit.c,18
+getrlimit(35,630
+
+unixSyscall/getrusage.c,44
+#define COPYTIME(28,607
+getrusage(56,1347
+
+unixSyscall/access.c,15
+access(40,777
+
+unixSyscall/stat.c,104
+CvtSpriteToUnixAtts(42,820
+CvtSpriteToUnixType(87,2442
+fstat(226,5960
+lstat(185,4851
+stat(143,3649
+
+unixSyscall/getppid.c,17
+getppid(43,1179
+
+unixSyscall/lseek.c,14
+lseek(39,773
+
+unixSyscall/geteuid.c,17
+geteuid(42,1179
+
+unixSyscall/sigvec.c,39
+sigvec(97,2810
+unixHandleSig 57,1653
+
+unixSyscall/killpg.c,15
+killpg(42,856
+
+unixSyscall/link.c,13
+link(39,865
+
+unixSyscall/mkdir.c,14
+mkdir(38,800
+
+unixSyscall/vfork.c,14
+vfork(42,975
+
+unixSyscall/pipe.c,13
+pipe(40,768
+
+unixSyscall/read.c,13
+read(39,878
+
+unixSyscall/readlink.c,17
+readlink(40,988
+
+unixSyscall/readv.c,15
+readv(43,1063
+
+unixSyscall/rename.c,15
+rename(39,826
+
+unixSyscall/rmdir.c,14
+rmdir(38,801
+
+unixSyscall/ioctl.c,65
+DecodeRequest(505,13176
+} RequestName;502,13148
+ioctl(78,1777
+
+unixSyscall/setgroups.c,18
+setgroups(40,856
+
+unixSyscall/setpgrp.c,16
+setpgrp(38,801
+
+unixSyscall/setpriority.c,20
+setpriority(37,731
+
+unixSyscall/setrlimit.c,18
+setrlimit(35,630
+
+unixSyscall/chmod.c,30
+chmod(41,914
+fchmod(79,1913
+
+unixSyscall/sigblock.c,17
+sigblock(42,949
+
+unixSyscall/sigpause.c,17
+sigpause(42,949
+
+unixSyscall/sigsetmask.c,19
+sigsetmask(42,959
+
+unixSyscall/getuid.c,16
+getuid(42,1169
+
+unixSyscall/settimeofday.c,21
+settimeofday(42,903
+
+unixSyscall/truncate.c,17
+truncate(38,717
+
+unixSyscall/symlink.c,16
+symlink(39,890
+
+unixSyscall/umask.c,15
+umask(47,1004
+
+unixSyscall/unlink.c,15
+unlink(38,828
+
+unixSyscall/utimes.c,15
+utimes(42,947
+
+unixSyscall/gettimeofday.c,21
+gettimeofday(42,868
+
+unixSyscall/write.c,14
+write(38,872
+
+unixSyscall/writev.c,15
+writev(41,953
+
+unixSyscall/execve.c,16
+execve(53,1440
+
+unixSyscall/mknod.c,15
+mknod(45,1142
+
+unixSyscall/getpid.c,16
+getpid(42,1201
+
+unixSyscall/setfiletype.c,21
+setfiletype(48,1375
+
+unixSyscall/setregid.c,18
+setregid(46,1416
+
+unixSyscall/setreuid.c,18
+setreuid(43,1292
+
+unixSyscall/profil.c,16
+profil(41,1002
+
+unixSyscall/semop.c,47
+semctl(113,2529
+semget(77,1693
+semop(41,824
+
+unixSyscall/tell.c,13
+tell(38,898
+
+unixSyscall/gethostname.c,20
+gethostname(38,842
+
+unixSyscall/symm.md/tmp_ctl.c,16
+tmp_ctl(14,177
+
+unixSyscall/symm.md/tmp_ctl.h,0
+
+unixSyscall/compatMapCode.c,105
+Compat_MapCode(125,3705
+Compat_MapToSprite(183,5250
+} StatusMappings;44,1248
+#define fprintf(37,1014

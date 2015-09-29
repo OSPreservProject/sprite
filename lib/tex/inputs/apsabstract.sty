@@ -1,0 +1,428 @@
+% APS abstract style.  June 26, 1989.
+% Written by
+%    Charles Karney
+%    Plasma Physics Laboratory  Phone:    +1 609 243 2607
+%    Princeton University       MFEnet:   Karney@PPC.MFEnet
+%    PO Box 451                 Internet: Karney%PPC.MFEnet@NMFECC.LLNL.GOV
+%    Princeton, NJ 08543-0451   Bitnet:   Karney%PPC.MFEnet@LBL.Bitnet
+% with contributions from Cris Barnes and Tom Murphy.
+
+\typeout{Document Substyle 'APS abstract'.  Released 26 June 1989}
+
+% ******************** User documentation ********************
+
+% APSABSTRACT: LaTeX style for abstracts submitted to American Physical
+% Society conferences.
+
+% Summary.  This following is a minimal abstract.
+
+%   \documentstyle[11pt,apsabstract,dpp1989]{article}
+
+%   \submittedby{Charles F. F. Karney}
+%   \submittedaddress{Princeton Plasma Physics Laboratory\\
+%   P.O. Box 451\\Princeton, NJ 08543-0451}
+%   \category{1.6/T}
+%   \theory                  %  or \experiment or both
+%   \preferposter            %  or \preferoral or \nopreference
+%   \title{Current drive efficiency in a hot plasma\thanks
+%   {This work supported by DoE contract No.\ DE--AC02--76--CHO--3073.}}
+%   \author{C. F. F. Karney and B. J. Braams}
+%   \affiliation{Princeton University}
+
+%   \begin{document}
+%   \maketitle
+%   Body of abstract.  (This can include equations, bibliography, etc.)
+%   \end{document}
+
+% Details.
+
+% Specify apsabstract,dpp1989 (in this order) as optional arguments to
+% \documentstyle, e.g.,
+%   \documentstyle[11pt,apsabstract,dpp1989]{article}
+% (apsabstract contains the formatting commands.  dpp1989 includes the
+% information specific by the 1989 DPP meeting.)  11pt is the prefered size.
+
+% Place various declarations between \documentstyle and \begin{document}.
+% These are mostly self explanatory:
+
+%   \invitedabstract: If this is an invited abstract (print in landscape
+%     mode).  Many of the fields (\category, \preferposter, etc.) are
+%     irrelevant and are ignored.
+
+%   \submittedby{name}: Name of APS member submitting abstract
+%   \submittedaddress{address}: and his address (lines separated with \\)
+%   \category{number}: The subject category number
+
+%   \theory or \experiment or both: To get one of the experiment/theory
+%     boxes checked (optional)
+%   \preferposter or \preferoral or \nopreference: Ditto
+
+%   \placement{placment instructions}: optional
+%   \specialfacilities{special facilities}: optional
+%   \otherrequests{other requests}: optional
+
+%   \title{title}: The title of the abstract.  Probably should include
+%     something like
+%       \thanks{This work supported by DoE contract 
+%               No.\ DE--AC02--76--CHO--3073.}
+%   \author{authors}: Author list punctuated with commas (and `and')
+%   \affiliation{Princeton University}: Affiliation
+
+% For papers with authors from more than one institution, you can use
+% footnotes to indicate the affiliation of the minorities (via \thanks).  If
+% you want to list multiple affiliations in the heading, then use
+% \affiliation to specify the last institution and include the other
+% institutions in the author list (in italics).  Thus
+%   \author{A. Shadrack, B. Misheck, 
+%           C. Abednego, {\it Princeton University}, and
+%           N. Nebuchadnezzar}
+%   \affiliation{Babylonian Institute of Furnaces}
+
+% Stick \maketitle between \begin{document} and the body of the abstract.
+
+% Pretty much anything can go into the body of the abstract.  LaTeX thinks
+% you are merely typing an ordinary paper that happens to have a small
+% \textheight and \texwidth.
+
+% LaTeX normally sets footnotes in \footnotesize.  This is probably too
+% small considering that APS abstracts get reduced when printed in the
+% Bulletin of the APS.  Therefore, both footnotes and references are set in
+% \referencesize, which apsabstract.sty defines to be \normalsize.  If you
+% would like these set smaller, try
+%   \renewcommand{\referencesize}{\small}
+
+% You'll know if your abstract is too long if it spills over onto a second
+% page.  Try changing to 10pt type.  Or else, reduce the baseline separation
+% with \renewcommand{\baselinestretch}{0.9}.
+
+% A complete abstract is given in tex$doc:apstest.tex.
+
+% ******************** End of user documentation ********************
+
+% SEE END OF FILE FOR INSTALLER'S INSTRUCTIONS
+
+\textwidth=120mm       \textheight=105mm    % APS rules
+
+\oddsidemargin=25mm    \topmargin=-15mm
+\parskip=0pt
+\headheight=31mm
+\headsep=5ex
+\onecolumn \raggedbottom \sloppy
+\def\baselinestretch{1}
+
+\newif\if@invited \@invitedfalse
+\def\invitedabstract{\@invitedtrue
+  \textheight=4.7in \textwidth=8.2in   % Invited abstracts are larger
+  \headsep=2ex                         % The title etc. is part of the header
+  \parindent=0pt                       % First line of body is not indented
+  \headheight=40mm
+  \topmargin=0mm
+  \oddsidemargin=11mm
+}
+
+% All the field declarations
+
+\def\conference#1{\gdef\@conference{#1}}              \conference{}
+\def\location#1{\gdef\@location{#1}}                  \location{}
+\def\date#1{\gdef\@date{#1}}                          \date{}
+\def\mailto#1{\gdef\@mailto{#1}}                      \mailto{}
+\def\receiptdate#1{\gdef\@receiptdate{#1}}            \receiptdate{}
+
+\def\category#1{\gdef\@category{#1}}                  \category{}
+\def\submittedby#1{\gdef\@submittedby{#1}}            \submittedby{}
+\def\submittedaddress#1{\gdef\@submittedaddress{#1}}  \submittedaddress{}
+
+\def\title#1{\gdef\@title{#1}}                        \title{}
+\def\author#1{\gdef\@author{#1}}                      \author{}
+\def\affiliation#1{\gdef\@affiliation{#1}}            \affiliation{}
+
+\def\experiment{\gdef\@experiment{y}}
+\def\theory{\gdef\@theory{y}}
+\gdef\@experiment{}\gdef\@theory{}
+
+\def\preferposter
+   {\gdef\@preferposter{y}\gdef\@preferoral{}\gdef\@nopreference{}}
+\def\preferoral
+   {\gdef\@preferposter{}\gdef\@preferoral{y}\gdef\@nopreference{}}
+\def\nopreference
+   {\gdef\@preferposter{}\gdef\@preferoral{}\gdef\@nopreference{y}}
+\gdef\@preferposter{}\gdef\@preferoral{}\gdef\@nopreference{}
+
+\def\placement#1{\gdef\@placement{#1}}                \placement{}
+\def\specialfacilities#1{\gdef\@specialfacilities{#1}}\specialfacilities{}
+\def\otherrequests#1{\gdef\@otherrequests{#1}}        \otherrequests{}
+
+% Most of the formatting goes into the header and footer.
+% Define the myheadings to get the top and bottom typeset
+
+\def\ps@myheadings{\let\@mkboth\@gobbletwo
+\def\@oddhead{\@maketop}\def\@oddfoot{\@makebottom}%
+\def\@evenhead{}\def\@evenfoot{}}
+\pagestyle{myheadings}
+
+% Need to define \pagenumbering even though pagestyle is empty
+%  in order to get \thepage defined
+
+\pagenumbering{arabic}
+
+% Boxes with/without X's
+
+\newbox\@emptybox   \newbox\@fullbox
+
+\setbox\@emptybox=\hbox{\lower1.5pt
+   \hbox{\unitlength=10pt\begin{picture}(1,1)(0,0)
+   \put(0,0){\framebox(1,1){}}\end{picture}}}
+\setbox\@fullbox=\hbox{\lower1.5pt
+   \hbox{\unitlength=10pt\begin{picture}(1,1)(0,0)
+   \put(0,0){\line(1,1){1}}\put(1,0){\line(-1,1){1}}
+   \put(0,0){\framebox(1,1){}}\end{picture}}}
+
+\def\@checkedbox{\copy\@fullbox}
+\def\@uncheckedbox{\copy\@emptybox}
+
+\def\@choosebox#1{\ifx\@empty#1\@uncheckedbox\else\@checkedbox\fi}
+
+% Top matter
+
+\def\@maketop{\hbox to \hsize{\hss
+    \vbox{\if@invited\else\hsize=180 mm \fi
+          \xpt\baselineskip=12pt\maketop}\hss}}
+\def\maketop{%
+  {\centering
+    {\xipt\bf\if@invited Invited \fi\@conference\\[1ex]
+      \ifx\@empty\@location  \else\@location, \fi  % Location field is optional
+      \@date}\\[2ex]
+    \if@invited\vspace{7ex}\noindent\box\@titlebox\else
+    Category Number and Subject%
+    \ifx\@empty\@category\  \rule{5cm}{0.4pt} \relax\else
+          : {\xipt \@category} \fi\\[1ex]
+    \noindent
+    \@choosebox{\@theory}\ Theory\qquad
+    \@choosebox{\@experiment}\ Experiment \\ \fi
+  }}
+
+% Bottom matter
+
+\def\@makebottom{\if@invited\else\hbox to \hsize{\hss
+   \vbox{\hsize=180 mm \xpt\baselineskip=12pt \makebottom}\hss}\fi}
+\def\makebottom{%
+  {\vspace{\headsep}
+    \def\rrule{\penalty0
+    \rule{0pt}{15pt}\rule{57mm}{0.4pt}}\parindent=0pt\parskip=0pt
+    \hspace{18mm}
+    \begin{minipage}[t]{65mm}\raggedright\sloppy
+      \def\@para##1{\par\noindent\hangindent=6mm
+      \hbox to \hangindent{##1\hfil}}
+      \@para{\@choosebox{\@preferposter}}Prefer Poster Session
+      \@para{\@choosebox{\@preferoral}}Prefer Oral Session
+      \@para{\@choosebox{\@nopreference}}No Preference
+      \@para{\@choosebox{\@placement}}This poster/oral should be
+              placed in the following grouping:
+      \@para{}\ifx\@empty\@placement\rrule\rrule\else
+              {\xipt\bf \@placement}\fi
+      \@para{\@choosebox{\@specialfacilities}}Special Facilities Requested
+      \@para{}\ifx\@empty\@specialfacilities\rrule\rrule\else
+             {\xipt\bf \@specialfacilities}\fi
+      \@para{\@choosebox{\@otherrequests}}Other Special Requests
+      \@para{}\ifx\@empty\@otherrequests\rrule\rrule\else
+             {\xipt\bf \@otherrequests}\fi
+    \end{minipage}%
+    \hspace{25mm}%
+    \begin{minipage}[t]{65mm}
+      Submitted by:\par
+      \vspace{30pt}\hrule
+      (\strut Signature of APS Member) \par
+      \begin{flushleft}
+        \@submittedby\\\@submittedaddress
+      \end{flushleft}
+    \end{minipage}
+  }
+  \par\vspace{10pt}\noindent
+  {\xipt
+    This form, or a reasonable facsimile, plus {\large\bf TWO XEROX COPIES},
+    must be received by {\large\bf NO LATER THAN NOON}, \@receiptdate\
+    at the following address:\par}
+  \begin{flushleft}\leftskip=18mm\relax
+    \@mailto
+  \end{flushleft}
+}
+
+\let\abstract\relax     % So text can optionally be put in abstract environment
+
+% Set the title
+
+\def\maketitle{\par
+ \begingroup
+   \def\@makefnmark{\hbox   
+       to 0pt{$^{\@thefnmark}$\hss}}   
+   \if@twocolumn               
+     \twocolumn[\@maketitle]   
+     \else \newpage
+     \global\@topnum\z@        % Prevents figures from going at top of page.
+     \@maketitle \fi\thispagestyle{myheadings}\@thanks
+ \endgroup
+ \let\maketitle\relax
+ \let\@maketitle\relax
+ \gdef\@thanks{}\gdef\@author{}\gdef\@title{}\let\thanks\relax\@gobblecr}
+
+\long\def\@gobble#1{}  % So gobble can discard a \par
+
+\newbox\@titlebox
+
+\def\@maketitle{\if@invited
+  \newpage\par\global\setbox\@titlebox
+    \vbox{\hsize\columnwidth \@parboxrestore
+     {\large\bf \@title.}\strut\par
+     {\sc\@author}, {\it\@affiliation}\strut\par}
+\else
+  \newpage\par\noindent\kern .67in % 8 spaces at 12 chars/in
+  \relax{\large\bf\@title}\@.
+  {\sc\@author}, {\it\@affiliation}---%
+\fi}
+
+% Footnotes are handled by putting them in \box\@footins.  This is spat out
+% either by the bibliography or by \end{document}
+
+\newbox\@footins  % Declare a box for the footnotes
+
+\def\thefootnote{\fnsymbol{footnote}}  % Use symbols for footnotes
+
+% Redefine \LaTeX's \@footnotetext
+\long\def\@footnotetext#1{\global\setbox\@footins
+    \vbox{\unvbox\@footins
+    \referencesize
+    \hsize\columnwidth \@parboxrestore
+   \edef\@currentlabel{\csname p@mpfootnote\endcsname\@thefnmark}\@makefntext
+     {\rule{\z@}{\footnotesep}\ignorespaces #1\strut}}}
+
+\long\def\@makefntext#1{\parindent 1em\noindent
+            $^{\@thefnmark}$#1}
+
+% The citations handled with superscript numbers as in aip style.
+% In addition, we have to put out the footnotes.
+
+\def\newblock{}
+
+\def\thebibliography#1{\vskip\skip\footins\footnoterule\unvbox\@footins
+\setcounter{biblionum}{0}\frenchspacing\referencesize}
+\let\endthebibliography=\par
+
+\@definecounter{biblionum}
+\def\@bibnum{\arabic{biblionum}}
+\def\bibitem#1{\stepcounter{biblionum}\par\noindent
+   $\m@th^{\@bibnum}$%
+   \if@filesw \immediate\write\@auxout
+       {\string\bibcite{#1}{\@bibnum}}\fi\ignorespaces}
+% Still using aip style citations
+\def\@cite#1#2{\unskip\nobreak\relax
+    \def\@tempa{$\m@th^{\hbox{\the\scriptfont0 #1}}$}%
+        \futurelet\@tempc\@citexx}
+\let\citea=\@cite
+\def\@citexx{\ifx.\@tempc\let\@tempd=\@citepunct\else
+        \ifx,\@tempc\let\@tempd=\@citepunct\else
+         \let\@tempd=\@tempa\fi\fi\@tempd}
+\def\@citepunct{\@tempc\edef\@sf{\spacefactor=\the\spacefactor\relax}\@tempa
+         \@sf\@gobble}
+\def\citenum#1{{\def\@cite##1{##1}\cite{#1}}}
+
+% Add check for \@footins in \enddocument
+\def\enddocument{\@checkend{document}
+\ifvoid\@footins\else\vskip\skip\footins\footnoterule\unvbox\@footins\fi
+\clearpage\begingroup
+\if@filesw \immediate\closeout\@mainaux
+\def\global\@namedef##1##2{}\def\newlabel{\@testdef r}%
+\def\bibcite{\@testdef b}\@tempswafalse \makeatletter\input \jobname.aux
+\if@tempswa \@warning{Label(s) may have changed.  Rerun to get
+cross-references right}\fi\fi\endgroup\deadcycles\z@\@@end}
+
+\let\referencesize\normalsize
+
+\endinput
+
+******************** INSTALLER'S INSTRUCTIONS ********************
+
+Put this file, apsabstract.sty into your standard texinputs directory.  You
+might want to extract the user documentation from the top of this file,
+edit it where appropriate and place it somewhere canonical (in your Local
+Guide, INFO system, or wherever).  You need to create a file describing the
+conference.  Here is a typical example, dpp1989.sty, for the 1989 Division
+of Plasma Physics meeting.  The format should be obvious.
+
+******************** dpp1989.sty ********************
+
+\conference{Abstract Submitted for the Thirty-first Annual Meeting\\
+        Division of Plasma Physics}
+
+\date{November 13--17, 1989}
+
+\location{Anaheim, California}    % This is optional
+
+\mailto{Saralyn Stewart \\
+Institute for Fusion Studies \\
+RLM 11.234 \\
+The University of Texas at Austin \\
+Austin, TX\ \ 78712\\
+Telephone: (512) 471-4378}
+
+\receiptdate{Monday, July 10, 1989}
+
+******************** End of dpp1989.sty ********************
+
+Here is the example refered to in the user documentation,
+tex$doc:apstest.tex:
+
+******************** apstest.tex ********************
+
+% Test of APS abstract styles
+
+\documentstyle[11pt,apsabstract,dpp1989]{article}
+
+\newcommand{\DOEcredit}{This work supported by DoE contract
+No.\ DE--AC02--76--CHO--3073.}
+
+\submittedby{Charles F. F. Karney}
+\submittedaddress{Princeton Plasma Physics Laboratory\\
+P.O. Box 451\\Princeton, NJ 08543-0451}
+
+\category{1.6/T}
+
+\theory                  % one or both of \theory or \experiment
+\preferposter            % one of \preferposter or \preferoral or \nopreference
+
+% These three are optional
+\placement{next to paper by B. J. Braams and C. F. F. Karney}
+\specialfacilities{35mm movie projector}
+\otherrequests{Please schedule on Monday morning}
+
+
+\title{Current drive efficiency in a hot plasma\thanks{\DOEcredit}}
+
+\author{C. F. F. Karney and B. J. Braams}
+
+\affiliation{Princeton University}
+
+\begin{document}
+
+\maketitle
+
+The efficiency of current drive by rf waves may be computed by means of a
+response function \cite{AntChu82}.  Here we use the response function
+calculated for a relativistic plasma \cite{BraKar87} to calculate the
+efficiency of current drive by lower-hybrid and electron-cyclotron waves in
+a hot reactor plasma.  The results are compared to those obtained by
+neglecting either relativistic effects or the self-consistent reaction of
+the bulk on the tail electrons.
+
+\begin{thebibliography}{1}
+
+\bibitem{AntChu82} T. M. Antonsen and K. R. Chu, Phys.\ Fluids {\bf 25},
+1295 (1982).
+
+\bibitem{BraKar87} B. J. Braams and C. F. F. Karney, Phys.\ Rev.\ Lett.\
+{\bf 59}, 1817 (1987).
+
+\end{thebibliography}
+
+\end{document}
+
+******************** End of apstest.tex ********************

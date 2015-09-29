@@ -1,0 +1,824 @@
+University of Vaasa, Finland, Sun 4 node number 128.214.12.3
+(chyde.uwasa.fi) has a collection of PD and shareware programs which
+are available by anonymous ftp (file transfer program).  This
+/pc/pd2/news90.pd2 file contains news about the programs in the
+/pc/pd2 directory (in reverse order). 
+...................................................................
+Prof. Timo Salmi        (Moderating at anon. ftp site 128.214.12.3)
+School of Business Studies, University of Vaasa, SF-65101, Finland
+Internet: ts@chyde.uwasa.fi Funet: gado::salmi Bitnet: salmi@finfun
+...................................................................
+
+                 N e w s   o f   1 9 9 0
+
+Mon 31-Dec-90: Now that the year 1990 has gone by it is interesting
+to take brief a subjective look back at some features from a
+moderator's vantage point. 
+   The number one product of the year on the net seems to have been
+McAfee's virus scanner which was updated at very frequent intervals
+throughout the year.  (Currently /pc/pd2/scanv72.zip.)
+   Another product that captivated the scene at the beginning half
+of 1990 was LZEXE from France by Fabrice Bellard.  (Currently
+/pc/pd2/lzexe91.zip).  The idea is brilliant in its simplicity. 
+Compress any executable program, and place the code to decompress it
+at run time into the program.  Later PKWare followed suit with its
+pklite, and will probably dominate in the future because of its
+well-known brandname and US background.  (Not perhaps fair in a
+sense, but that's the way "the market" stands.)
+   I was pleased to see one of my own packages (currently
+/pc/ts/tsfaq15.arc) to do particularly well.  When I started
+collecting frequently asked questions from the news, and find
+answers to them, I didn't quite foresee that it would so quickly
+become this popular. 
+   One of the depressing features I saw repeated many times over in
+program packages in 1990 was poor testing before releasing.  There
+were several programs which were either very difficult to implement,
+had poor user interfaces, or simply did not work at all.  More than
+ever before I saw what I call my "ten minute rule" broken.  (The
+rule: If an experienced user is still completely stuck after the
+first ten minutes, a shareware product is badly done.)
+   The turbulent PC file compression scene earlier dominated by the
+.arc packing method saw .zip emerge the dominant archiver in 1990. 
+What lies ahead is difficult to say, since this is a volatile and
+competition prone area.  We had repeated gossip of much enhanced
+versions of .lzh and .zoo archivers throughout the year, but nothing
+happened. 
+   Net connections improved in general during the year, but there
+were occasional breaks in the overseas link in particular.  Another
+sad feature was that so many parts of comp.binaries.ibm.pc had
+technical difficulties in reaching the destinations.  This is
+probably due to the length of these packages.  Also our site
+experienced repeated problems in this respect. 
+   One of the nice features (and perhaps a sign of maturity) is that
+no really serious flame wars had to be endured in c.b.i.p.d this
+year. 
+   A Happy New Year from uwasa.fi archives.
+
+Tue 25-Dec-90: Bug warning pkbug.zip about PKWare's pklt10.exe
+executable file compressor. 
+
+Mon 24-Dec-90: Merry Christmas! Acquired the following program
+updates:
+ bx901223.zip A collection of lists of Finnish BBS phone and node
+              numbers. In Finnish, but that is not really a problem
+              in BBS lists (the long distance tariffs are).
+ chk4lz20.zip List lzexe and pklite compressed executables.
+              By John Land. Has been updated to detect pklited
+              files, since I last looked at it. Useful.
+ drx091.zip   List axe, lzexe, and pklite compressed executables.
+              By Raymond Kaya. Screen divided in two. The first half
+              gives the directory listing of compressed executbles,
+              the other half to normal executables. Nice and
+              definitely useful if you use compressed executables.
+ dsz1216.zip  External Zmodem by Omen Technology.  Umpteenth update,
+              16-Dec-90. An excellent product with a frustrating
+              documentation.
+ dsz1216n.zip What's new in dsz1216.zip.
+              had difficulties with the installation and the user
+              interface, and didn't quite like it compared with some
+              other help interfaces I've seen. Many potentially
+              useful utilities get discarded by these kinds of first
+              impressions (right or wrong).
+ pattr15.zip  Set file attributes in many ways from Patri-Soft. Norm
+              Patrquin has hit upon a successful formula for writing
+              useful utilities. The basic idea is that you can
+              choose in very many ways the files you want to handle
+              with a user interface that is very similar across his
+              utilities. His perhaps best known utility is pcopy85d.
+              The only problem is that the utilities have so many
+              options, that they sometimes feel a bit bloated.
+ where44a.zip An excellent file finder by Keith Ledbetter. This one
+              is one of my favorites as a well made program. It
+              searches files by a wild card name, executes the
+              optionally, searches optionally for duplicate names,
+              pklited executables, and so on. And all you have to
+              know is to write whereis. The self-documentation is
+              good and concise enough. The unixish feature of
+              executing files perhaps feels slightly superfluous.
+
+Sat 22-Dec-90: Updated the Finnish BBS list to be bx901222.zip.
+
+Thu 20-Dec-90: Acquired /pc/pd2/pklt10.exe.  It is an .exe and .com
+file compressor from PKWare.  The idea is the same as in Fabrice
+Bellard's /pc/pd2/lzexe91.zip, which was one of the biggest program
+hits of the first half of this year.  These utilities compress your
+executable program and insert an extraction code, which uncompresses
+your program when you call your program.  This is a great space
+saver especially on (older) laptops.  
+   Some users were worried about extraction times, but they are not
+significant.  Another worry was the possibility of compressed
+viruses, but scan.exe currently checks for lzexed files. A third
+worry is confusing the original and the compressed files, but the
+system can be made to work both ways.
+
+Tue 18-Dec-90: Darwin's list of US BBSes usbbs79.zip 1-Dec-90. 
+
+Mon 17-Dec-90: Acquired the following updates
+  scanv72.zip  --> scanv71b.zip
+  where42b.zip --> where42a.zip
+
+Sat 15-Dec-90: Updated the Finnish BBS list.  It is now available as
+/pc/pd2/bx901214.zip by anonymous ftp from uwasa.fi archives.
+ 
+Wed 12-Dec-90: Obtained Adnrew Rossmann's /pc/pd2/infop141.zip
+system information program with Turbo Pascal sources.  It is a good
+program, but it still crashes on some systems like Sharp PC-6200. 
+
+Mon 10-Dec-90: Received TeleReplica update 3.6 directly from the
+author Doug Thomson.  This remote control of PC is available as
+/pc/pd2/tr3-6.zip. 
+
+Mon 10-Dec-90: Replaced arj015a.zip with the self-extracting version
+arj015a.exe.  Arj015a.exe is a beta test version of Robert Kung's
+.arj archiver. 
+
+Mon 10-Dec-90: Updated the following files at uwasa.fi archives.
+ bx901208.zip  A collection of Finnish BBS lists. Even there is some
+               text in Finnish the list are internationally readable
+ dosref18.zip  Programmer's Technical Reference for MSDOS and the
+               IBM PC by Dave Williams
+ where42a.zip  Fast file finder + executor by Keith Ledbetter
+
+Sun 9-Dec-90: Obtained beta test update arj015a.zip of Robert Kung's
+.arj archiver.
+
+Sat 8-Dec-90: Well folks, it looks like we have yet another archiver
+to our plethora of PC file compressors.  This one makes packages
+designated with an .arj extension.  It is available from uwasa.fi
+archives as /pc/pd2/arj014.zip.  The author Robert Kung puts forward
+that arj beats both .zip and .lzh compressions.  According to the
+documentation, this is the second alpha test release. 
+
+Fri 7-Dec-90: Acquired McAfee's instant update scanv71b.zip from a  
+Finnish BBS to replace the newly released scanv71.zip.
+
+Fri 7-Dec-90: Acquired /pc/pd2/pak251.exe to replace pak250.exe and
+pak251.zip.  It is NoGate Consulting's self-extracting compression
+program with a security envelope.  This update can handle files with
+.pak, .arc and .zip extensions.  The switches of the program can be
+configured by the user. 
+
+Fri 7-Dec-90: Micro Maniac's BBS file list files-mm.zip has been
+updated. 
+
+Wed 5-Dec-90: Acquired McAfee's virus scanner latest version
+/pc/pd2/scanv71.zip, and deleted the previous scanv67c.zip.
+
+Fri 30-Nov-90: Downloaded uuexe413.zip from UseNet binary postings
+(comp.binaries.ibm.pc.d).  This uuencode/uudecode for MsDos by
+Richard Marks can also handle xxencoding/xxdecoding, and and looks a
+good one also in general.  At the same time I deleted (unlinked)
+uu.zip and toaduu19.zip from the /pc/pd2 directory. 
+
+Thu 29-Nov-90: Got update danix102.zip of Unix-like MsDos utilities
+from the author, Dan Schikore.  This is a useful package.
+
+Wed 28-Nov-90: Update of the Finnish BBS list.  It is now
+bx901118.zip. 
+
+Tue 27-Nov-90: TeleReplica version 3.5 PC remote control by Doug
+Thomson is now available as /pc/pd2/tr3-5.zip.  Howard Harvey's
+resident upper right-hand corner clock and alarm is available as
+clockon.zip. 
+
+Mon 26-Nov-90: Acquired /pc/pd2/dsz1119.zip, the 19-Nov-90 release
+of Zmodem, and /pc/pd2/dsznew.zip, what's new in dsz111990.
+
+Thu 22-Nov-90: Update of Andrew Rossmann's system information
+program infop140.zip.  I haven't tested this version myself.  All
+the version before this one have caused crashes on one machine or
+another, but there is much useful source code in there.  These kinds
+of programs are not easy to write. 
+
+Tue 20-Nov-90: Updated the node and phone number list of Finnish
+BBSes to be bx901112.zip.
+
+Mon 19-Nov-90: Acquired the following updates to uwasa.fi archives,
+directory /pc/pd2:
+  shez59.zip    A very good shell for handling packed files.
+  where41a.zip  File finder by Keith Ledbetter, now can optionally
+                run the found files.
+
+Sat 17-Nov-90: Dan Schikore's collection of Unix-like MsDos
+utilities has been updated to be /pc/pd2/danix101.zip.  The update
+corrects a bug in the ls program.  Available as usual by anonymous
+ftp or mail server from uwasa.fi. 
+
+Fri 16-Nov-90: Acquired /pc/pd2/96bb1190.zip, World-Wide 9600 baud
+BBS list by Mark Montgomery dated 27-Oct-90.  I checked it for
+Finnish BBSes, and found it practically useless.  If this is any
+indication of its general quality as a world-wide 9600 list, the
+information the list provides is poor. 
+
+Thu 15-Nov-90: There are often questions asking for Unix-like
+utilities from the MsDos, perhaps since many users have a Unix
+background and would like to use familiar commands.  And some of
+these commands are useful for MSDos even if one hasn't used Unix. 
+We have the following packages at uwasa.fi archives in directory
+/pc/pd2.
+     danix.zip
+     dantools.zip
+     picnix3a.zip
+     picnix3b.zip
+     picnix3up.zip 
+   The daxic.zip collection by Dan Schikore is the latest dated
+12-Nov-90.  It is a nice set and includes for example man, head, and
+tail, which have been sought my many users.  The well-known picnix
+utilities are by Peter Heitman, and date back to 1988.  The oldest
+collection we have is the alse useful dantools.zip by Daniel Norton
+dating back to 1987.  Also see directory /pc/unix.
+
+Mon 12-Nov-90: Acquired Ample Notice appointment calendar version
+2.0x /pc/pd2/an201.zip by Mark Harris. The outward appearance has
+changed markedly since the an131 version. More information has been
+packed on the screen. Whether this cramming is for the better or not
+is up to your own taste. Be that as may, AN is a useful reminder and
+calendar.
+   There are a couple of other new versions at uwasa.fi /pc/pd2
+directory.  They are list75f.zip file viewing and browsing utility
+by Vernon Buerg, and Darwin's list of US BBSes usbbs78.zip 1-Nov-90. 
+
+Fri 9-Nov-90: Replaced the Finnish BBS and node list bx900825.zip
+by the update bx901102.zip.
+
+Wed 7-Nov-90. Updated the files-mm.zip huge file list.
+
+Mon 5-Nov-90: Acquired to uwasa.fi archives
+  /pc/pd2/pak251.zip    NoGate Consulting file compression in zipped
+                        form, version 2.51
+  /pc/pd2/chk4l191.zip  Detect lzexe compressed files by John Land,
+                        version 1.91
+
+Mon 5-Nov-90: Replaced Telix 3.12 with version 3.12a.  The new files
+are tlx312a1.zip, tlx312a2.zip, and tlx312a3.zip.
+
+Sat 3-Nov-90: Update /pc/pd2/ps44.zip of Patri-Soft shareware text
+finder.  This is a good one, but not without bugs.  Textsearches for
+ascii below 32 and beyond 127 tend to cause crashes.  And it does
+not take properly into account the need of searching for text with
+diacritical characters, which are needed in Scandinavia.
+
+Sat 27-Oct-90: Got update tr2-8.zip of TeleReplica 2.8 PC remote
+control by Doug Thomson directly from the author. 
+
+Fri 26-Oct-90: A couple of weeks ago there was much discussion in
+the UseNet news about utilities which would move entire directories
+for MsDos (in a similar way as mv does for Unix).  Two main
+suggestions came up repeatedly.  The first was to use an MsDos
+equivalent of Unix mv.  Many users pointed out that the Picnix
+utilities (picnix3a.zip, picnix3b.zip, and picnixup.zip) contain
+Unix like commands for MsDos.  Another solution that was suggested
+was a program called prune.  Such a utility has been published by Pc
+Magazine's ever skilful contributor Michael Mefford.  I have made
+this prune utility available at uwasa.fi archives as
+/pc/pd2/prune10.zip. 
+
+Fri 26-Oct-90: Here are some of the new uploads at uwasa.fi.
+ /pc/sysutil/4d302aup.zip  An 3.02A update to 4Dos 3.02 
+ /pc/diskutil/copyq224.zip A multi-disk copy utility
+ /pc/pd2/ps43.zip          File and text search from Patri-Soft
+
+Fri 26-Oct-90: Acquired update /pc/pd2/usbbs77.arc of Darwin's US
+BBS list.
+
+Tue 23-Oct-90: Acquired a new release of /pc/pd2/files-mm.zip.  This
+is a huge (some 1.4Mb ! when unpacked) list of files available at
+Micro Maniacs Opus 2:515/1 tel 358-0-425966.  I feel that it is
+instructive to have available a file list of a good bulletin board,
+even if you don't intend to call long-distance to Finland :-).  This
+is to show what files are circulating in BBSes.  
+   Not a bad idea for the users to look at this, or a similar list,
+when wanting to know if a utility exists for a such and such
+purpose.  This is NOT saying that you shouldn't pose questions about
+the existence of utilities for a task you have in mind.  It is
+saying that the answer is often found directly by searching through
+these filelists.  (Editors can very handy for performing the
+search). 
+   Our own file lists of chyde.uwasa.fi archives are /pc/INDEX,
+/pc/ts/0dir-ts, /pc/pd2/0dir-pd2, and /unix/ts/0dir-u.  
+   We also keep a copy Simtel20 file list /pc/pd2/simibm.arc in case
+you have difficulties in connecting to Simtel20.  Notice though,
+that the most up-to-date version is best found at the original site. 
+
+Mon 22-Oct-90: McAfee's virus scanner /pc/pd2/scanv67c.zip now
+available from chyde.uwasa.fi thanks to Ralph Sims. 
+
+Wed 17-Oct-90: The printer to file rediction utility version 7.00
+dating back to 1987 (/pc/pd2/)lptx700.zip is now available from
+chyde.uwasa.fi.  If anyone knows of a more recent version, please
+let me know, and have it so, I can make it available to the net.  I
+am not deleting (yet) the (/pc/pd2/)lptx.zip version 6.00, because,
+in the words of the author, the different versions are rather
+parallel (there is a underlying pun there somewhere) than upgrades. 
+
+Tue 16-Oct-90: Acquired the following upgrades:
+  bbs1090.zip   A list of US BBSes by James Toro, October release.
+  infop135.zip  PC system information with sources by Andy Rossmann
+  pdel42.zip    Norm Patriquin's selective delete with many options
+  shez58.zip    The Compression Companion by Jim Derr
+
+Mon 15-Oct-90: Got update /pc/pd2/inter590.zip of Ralf Brown's
+interrupt list.  The definite must for every advanced MsDos
+programmer. 
+
+Sat 13-Oct-90: TeleReplica 2.6 remote control of PC by Doug Thomson
+is now available as /pc/pd2/tr2-6.zip. 
+
+Wed 10-Oct-90: PC-Magazine Vol 9 Num 14 published a potentially very
+useful batch to com file compiler bat2exec.com by Douglas Boling.  I
+recently tested version 1.2 of this compiler and found it too buggy
+to be really operative yet.  Now an updated version 1.3 has been
+published, and this looks very promising.  Definitely worth a closer
+look.  I had to do some mild hacking to put together a package
+/pc/pd2/bat2ex13.zip, because I found updated parts scattered around
+in different files in a BBS.  I took the liberty of creating the
+bat2ex13.zip package myself from the constituents I found.  The
+documentation is from version 1.2, but as far as I can see this
+shouldn't cause any problems.  The assembler source and the .com
+file in the created package are version 1.3 files. 
+
+Mon 8-Oct-90: McAfee's virus scanner scanv67.zip now available.
+
+Fri 5-Oct-90: Ralph Sims (ralphs@sumax.seattleu.edu) kindly uploaded
+/pc/pd2/list75e.zip and /pc/pd2/fed153.zip to chyde.uwasa.fi.  The
+former is an update of Vernon Buerg's well-know file viewing
+facility.  The latter is FileEdit binary file editor of Phillip
+Nickell.  I have had trouble in finding a satisfactory binary
+editor, but this one looks a potentially good one.  There is some
+minor confusion in the documentation, though.  The document file
+contains several needless double captions. 
+
+Wed 3-Oct-90: Acquired /pc/pd2/pak250.exe.  It is a self-extracting
+compression program from NoGate Consulting's.  This update can
+handle files with .pak, .arc and .zip extension.  The switches of
+the program can be configured by the user. 
+
+Fri 28-Sep-90: Available at chyde.uwasa.fi archives
+/pc/pd2/chop11.zip by Flint Pellet.  For extracting parts from
+binary files.  Some users have asked / discussed such a utility on
+the news in comp.binaries.ibm.pc.d. 
+
+Thu 27-Sep-90: There was a very interesting utility in PC-Magazine
+Vol 9 Issue 14 called bat2exec by Doug Boling.  It compiles .bat
+batch files into .com files to speed them up, and perhaps also to
+hide the sources.  There have been a couple of updates since, and we
+currently have /pc/pd2/bat2ex12.zip at chyde.uwasa.fi archives.  The
+concept is excellent, but I think that there are still serious bugs
+in the utility.
+
+Fri 14-Sep-90: Update of Andrew Rossmann's system information
+program infop131.zip.
+
+Tue 11-Sep-90: Ralph Sims kindly uploaded a facility called ronset
+to chyde.uwasa.fi today.  The author Ron Bemis calls it a batch file
+enhancer, but a better description for this impressive utility would
+be an environment variable programming language.  I took the liberty
+of renaming it in accordance with the version number, and it is now
+available as /pc/pd2/ronset21.zip by anonymous ftp. 
+
+Tue 11-Sep-90: Vernon Buerg's file listing utility list75b.zip is
+now available for anonymous ftp download at chyde.uwasa.fi thanks to
+Ralph Sims (ralphs@sumax.seattleu.edu). 
+
+Sat 7-Sep-90: Acquired Vernon Buerg's 30-Aug-90 release of the de
+facto PC standard of file listing utilities (/pc/pd2/)list75a.zip
+for anonymous download from chyde.uwasa.fi, Vaasa, Finland. 
+
+Wed 5-Sep-90: Acquired pdel41.zip.  Patriquin's file and directory
+deleting facility.  Very handy, but use very carefully. 
+
+Sun 26-Aug-90: Acquired an update of Chris Dunford's memory mapper
+(/pc/pd2/)pmap203.zip for anonymous ftp download from our site
+chyde.uwasa.fi.  Also acquired the latest Finnish BBS list and put
+it in (/pc/pd2/)bx900825.zip.  Although the captions are in Finnish,
+the essential information is easily drawn from from the list. 
+
+Tue 21-Aug-90: Acquired /pc/pd2/list74a.zip and /pc/pd2/pcopy85d.zip
+for anonymous ftp download at chyde.uwasa.fi, Vaasa, Finland.  The
+former is an update of Buerg's very well-known file browsing
+utility.  The latter is Patriquin's excellent, if not somewhat
+overbearing selective copying facility.  - Updated the Finnish BBS
+list from bx900501.zip to bx900614.zip. 
+
+Sun 19-Aug-90: I have made Bill Davidsen's guide on submitting to
+InterNet ibm binary postings available as /pc/pd2/submbin.arc.  -
+Turbo Power Software's excellent tsr utilities are available as
+/pc/pd2/tsrcom29.zip.  - Because my fellow moderator Harri Valkama
+(hv@chyde.uwasa.fi) is on vacation, I have made McAfee's virus
+scanner scanv66b.zip available also in this /pc/pd2 directory.  -
+This also reminds me of the fact that you are very welcome to upload
+good programs to chyde.uwasa.fi to the /incoming directory.  If you
+kindly do so, please send a description to Harri. 
+
+Thu 14-Aug-90: The system information program infoplus has now been
+updated to infop125.zip.  On my 25/386 it still crashes on page 2. 
+
+Tue 14-Aug-90: I have removed /pc/pd2/anonlist.arc because it is
+available as /pc/doc/ftpsites.lst. 
+
+Tue 14-Aug-90: I have removed the following packages from the
+/pc/pd2 directory.  See /pc/0contents for their current directories. 
+ esc.zip         Send escape sequences by Jouni Leppajarvi
+ global.com      The precedessor of sweep
+ invest1.zip     A very simple funds investment calculation program
+ mkmst121.zip    Market Master stock analysis
+ spin.zip        Spin (even an unformatted) disk
+
+Mon 13-Aug-90: I have removed the following packages from the
+/pc/pd2 directory.  See /pc/0contents for their current directories. 
+ pkfind11.arc    Find files anywhere, even within .arcs
+ pkzf10.exe      Search for a file throughout a disk. .zip files too.
+ remind49.zip    A reminder from Robert M W Tsou
+ reminder.zip    A reminder from Jukka Jarvela
+ sa210a.zip      Security analyst program
+ sprm23.zip      A stock portfolio record manager
+ stkmkt.zip      An old stock market charting programs.
+ stockmar.zip    A stockmarket program.
+ sypstok3.zip    Stock trader III. Graphical stock market analysis.
+ tfe_210.zip     Telix phone directory editor
+ vol8n16.zip     From PC-Magazine. Includes dirmatch.com. Neat indeed.
+
+Sun 12-Aug-90: Acquired 5-Aug-90 version of Ralf Brown's list of
+interrupts inter490.zip.
+
+Thu 8-Aug-90: Downloaded from the binaries the system information
+utility infop100.zip by Andrew Rossmann based on sysid44 by Steve
+Grant.  Consequently deleted sysid50.zip
+
+Sun 5-Aug-90: Extracted Darwin's US BBS list (/pc/pd2/)usbbs75.zip
+(1-Aug-90) from the UseNet news.  Obtained Norm Patriquin's pcopy
+version 85C pcopy85c.zip.  Pcopy is a well-known file copier with a
+really great number of switch options.  Obtained chk4lze.zip by John
+Land.  It is yet another (useful) facility for detecting .exe files
+that have been compressed with lzexe.  Finally, obtained fast file
+finder with sources fff345.zip by Don Williams. 
+
+Thu 2-Aug-90: Acquired (/pc/pd2/)dosref17.zip programmer's technical
+reference for msdos and the ibm pc (21-Mar-90), by Dave Williams. 
+Omitted the older versions progref1.zip, progref2.zip, and
+1216ref2.zip.  Also acquired Jim Derr's archive shell
+(/pc/pd2/)shez57.zip (25-Jul-90) update.  Again there is some (this
+time really minor) confusion with validate cheksum, but since this
+seems to occur regularly with shez, I'll ignore this. 
+
+Mon 30-Jul-90: Update 96bb0690.zip.  A sporadic list of 9600 bps
+BBSes 1-Jyl-90.
+
+Thu 26-Jul-90: The archive shell shez56.zip is now available from
+chyde.uwasa.fi.  This one is the same as in Simtel20.  Obviously
+someone likes practical jokes or there is some other confusion in
+the distribution.  The first copy (now discarded) I acquired had its
+validation information changed in the readme.now file.  And it also
+contained an inserted superfluous text file advertising some BBS. 
+Incidentally, this is not the first time when there is confusion
+with shez validate information.  In version 5.4 the author informed
+Keith Petersen that there had been a mistake. 
+
+Wed 25-Jul-90: Acquired a new version dsz0626.zip of z-modem for
+download by anonymous ftp from chyde.uwasa.fi.  Also acquired
+shez56.zip, but here I run into a dilemma.  The validate crc's
+differ from that of the documentation.  The documentation says for
+shez.exe 07D4 and 0793, but the validate program gives 09E5 and
+1829.  Also the file sizes differ documentation saying 122344 and
+validation 122184.  The shezcfg.exe informations agree.  Can someone
+shed some light on this.  For the time being I shall not put the
+suspect shez56.zip up for general download. 
+
+Thu 19-Jul-90: Added three packages to directory /pc/pd2 in the
+chyde.uwasa.fi anonymous ftp archives.  Two of the utilities are by
+Michael Mefford from the PC-Magazine.  The first is dirmat20.zip. 
+It is an update of his excellent dirmatch utility for comparing and
+manipulating two directories.  The second is dirmag2.zip.  It is a
+very worthwhile two-part utility for managing directories.  The
+third of the acquisitions is script.zip which complements the
+utilities for capturing scrolling screen output to a file.  It is
+quite similar to concpy11.zip which we already have, but this one
+includes C sources. 
+
+Sat 14-Jul-90: Recently there was a query in the c.b.i.p.d news for
+a utility capturing screen output to a file.  In addition to
+(/pc/pd2/)snippr22.zip which we already have another utility came
+up.  It is (/pc/pd2)concpy11.zip containing an excellent capture
+utility by Christopher Dunford from 1988.  I have now acquired it to
+the chyde.uwasa.fi collections.  The two utilities are somewhat
+different and thus serve complementary purposes.  Snipper can be
+used to capture what the user wants from a still screen.  Concopy,
+on the other hand, captures to a file everything that scrolls
+through the screen. 
+
+Thu 12-Jul-90: Acquired a new release of /pc/pd2/files-mm.zip.  This
+is a huge (some 1.2Mb ! when unpacked) list of files available at
+Micro Maniacs Opus 2:515/1 tel 358-0-425966.  I feel that it is
+instructive to have available a file list of a good bulletin board. 
+This is to show what files are circulating in BBSes.  Not a bad idea
+for the users to look at this, or a similar list, when wanting to
+know if a utility exists for a such and such purpose.  This is not
+saying that you shouldn't pose questions about the existence of
+utilities for a task you have in mind.  It is saying that the answer
+is often found directly by searching through these filelists. 
+(Editors can very handy for performing the search).  We also keep a
+copy Simtel20 file list /pc/pd2/simibm.arc.  Notice, that the most
+up-to-date versions are at the original sites, naturally. 
+
+Sat 7-Jul-90: Extracted Jon Granrose's list of anonymous ftp sites
+from the news and made it available by anonymous ftp from
+chyde.uwasa.fi, Vaasa, Finland, as /pc/pd2/anonlist.arc. 
+
+Wed 4-Jul-90: Downloaded Darwins usbbs list for jul 1990 from the
+news, and named it /pc/pd2/usbbs74.arc. 
+
+Tue 3-Jul-90: Acquired update /pc/pd2/fff342.zip of the fast file
+finder by Don A Williams.  In addition to being able to search
+within .arc, .lzh, and .zip files this useful utility has the
+ability to handle extended wildcards, that is wildcard definitions
+such as *onfi*.sys. 
+
+Thu 21-Jun-90: Acquired a revised version unlzexe5.zip of the
+utility reversing lzexe packing of an .exe file. 
+
+Sun 27-May-90: Since the introduction of Fabrice Bellard's excellent
+executable file compression idea (/pc/pd2/lzexe91.zip) there have
+emerged a number of useful companion programs.  Here is information
+on some which are available by anonymous ftp from chyde.uwasa.fi
+from directory /pc/pd2.  Because the original program is in French,
+an English shell lzeshl30.zip has been programmed by Pete Petrakis. 
+- Since the compressed files (usually) have exactly the same name as
+the original, utilities are needed for identifying which files have
+been compressed.  There are two such utilities currently in the
+/pc/pd2 directory.  They are islzexe.zip by Derrick Burgess, and
+isl12.zip by Alan Posner.  Their user interfaces are somewhat
+different, so you may adopt them both.  - It is also very useful to
+be able to reverse the compression process.  The unlzexe4.zip
+package by Mitugu Kurizono performs this feat.  One problem with
+lz-compressed executables is the possibility of undetectable
+viruses.  Until the introduction of the announced scanv63, they way
+to check for on infection is first to decompress, and then apply
+scanners. 
+
+Fri 25-May-90: It has been almost exactly a month since the last
+update in chyde.uwasa.fi /pc/pd2 directory, because I have been
+rather occupied otherwise.  In the meanwhile we have had the sad
+news of the cutbacks in Simtel20, which is an unfortunate loss to
+the net.  - This time I have update an131.zip of the Ample Notice
+calendar reminder.  The shell for lzexe executable files compression
+program has been updated to be lzeshl30.zip.  I have obtained a new
+(shell-type) utility tozip51.zip for converting other packing
+methods to .zip.  The excellent whereis file finder is now in
+version where37.zip.  Shez shell for all kinds of archives has been
+updated to shez55.zip.  The file list of Micro Maniacs Opus
+(358-0-425966) files-mm.zip is again up-to-date. 
+
+Thu 26-Apr-90: More PD programs from Finland.  Three utilities by
+Jouni Leppajarvi.  All available by anonymous ftp from site
+chyde.uwasa.fi, the first two in directory /pc/pd2.  A neat small
+utility esc.zip to send escape sequences.  A program to spin even an
+unformatted disk, spin.zip.  Useful when using a cleaning diskette. 
+And some C routines for interrupt driven i/o on serial ports.  For
+the relevant directory, see the /pc/0contents file.
+
+Tue 17-Apr-90: More PD program production from Finland: Available by
+anonymous ftp from chyde.uwasa.fi (/pc/pd2/)du11.zip recursive disk
+usage utility by Jussi Puttonen. 
+
+Tue 17-Apr-90: Acquired to chyde.uwasa.fi two auxiliary programs for
+the (/pc/pd2/)lzexe91.zip .exe file compresser.  The first is
+(/pc/pd2/)islzexe.zip by Derrick Burgess.  It tells whether a file,
+or a set of files, has been compressed with lzexe.  The second is
+(/pc/pd2/)lzeshl21.zip shell for lzexe by Pete Petrakis.  It is
+useful, especially if you insist on you program comments to be in
+English, and it preserves the original date of the .exe file to be
+compressed.  (Personally I prefer dating all the compressed .exe
+files to 1-1-81 as marker of their being compressed).  But, when I
+tried to test the /u option of the shell, it merrily proceeded to
+crash my laptop. 
+
+Mon 16-Apr-90: The executable files compressor (/pc/pd2/)lzexe91.zip
+is now available (also) from chyde.uwasa.fi, Vaasa, Finland.  There
+has been much discussion in b.b.i.p.d.  about this French utility by
+Fabrice Bellard.  I like the concept.  It is particularly useful on
+a laptop with a limited ram disk where I want to keep a few (four,
+actually) of the most frequently needed utilities.  It is true that
+the compressed exe files do not load quite as quick as
+noncompressed, but the difference is not material from the user's
+point of view.  Ca, c'est tres bien!
+
+Mon 16-Apr-90: Acquired (/pc/pd2/)zdoc0108.zip documentation for dsz
+z-modem.  I believe that this is a definite must for users of dsz,
+since it seems to include many useful tips, and cover much
+information not directly present in the original dsz documents. 
+
+Sun 15-Apr-90: Deleted masa_bbs.zip, and updated bx900211.zip to be
+bx900411.zip.  These are lists of Finnish BBSes.
+
+Sat 14-Apr-90: One frequently posed question in c.b.i.p.d has been
+for a small PD / shareware editor, and Tiny Editor ted.com (as well
+as Qedit, and a few others) has often been suggested.  I have
+updated (/pc/pd2/) ted.zip at chyde.uwasa.fi by including the
+original assembler and basic codes in the package.  (Otherwise the
+package is unchanged.)
+
+Fri 13-Apr-90: Acquired a number of packages to the /pc/pd2
+directory.  Package dsz0411.zip is an update of the z-modem, and
+dszop3.zip contains some older instructions for using dsz.  Package
+fff332.zip is a fast file finder that can look into archives. 
+Package masa_bbs.zip contains information about Finnish BBSes.  It
+is in Finnish.  Package pctech is a collection of older utilities
+dating back to 1987.  Package snippr22.zip is a useful screen
+snapshot utility. 
+
+Fri 12-Apr-90: Update of the long path and environment utility
+cpath20.zip from Cor J Veenman.
+
+Wed 11-Apr-90: Mottos seem to be popular in email signatures.  I
+don't have one, but if I did it would be something like: 
+
+"I work at a university.  But what is your excuse." 
+   or 
+"This sounds reasonable.  Let's do so anyway."
+
+Wed 11-Apr-90: Updated the files-mm.zip file list from Micro Maniacs
+BBS.  A nice list to show what can be found at a good BBS.
+
+Tue 10-Apr-90: Came upon a screen speed-up program which might be
+quite useful, that is (/pc/pd2/)thefast6.zip.  It is inevitable that
+in using a PC something has to be the bottleneck.  Since the advent
+of 386 and fast hard disks it seldom is the processor or the disk
+access any more, and lately I have noticed that the video adapter
+(especially if 8-bit) is the problem.  The way it shows is that the
+cursor movement is not at par with the other parts of the PC.  It
+will be interesting to see if this program provides a temporary
+respite, and whether there are side effects.
+
+Sat 7-Apr-90: Got shez541.zip update.  As you know this is a very
+good shell for handling packed files of many types. 
+
+Fri 6-Apr-90: Cor J Veenman kindly provided his cpath.zip, which is
+a utility for adding directories to make paths longer than 128
+bytes. It also includes utilities to give information about the
+environment space.
+
+Thu 5-Apr-90: Obtained the following updates.
+  find211d.zip  Fast file finder
+  msker301.zip  MsKermit version 3.01
+  onside13.zip  Sideways printing
+  sysid50.zip   System information about your PC
+  where36.zip   File finder capable of scanning archives too
+
+Fri 30-Mar-90: Acquired PKWARE's .zip file handling facility version
+1.10.  This one is the "European distribution" version, and I have
+consequently renamed it (/pc/pd2/)pkz110eu.exe.  Available by
+anonymous ftp for chyde.uwasa.fi, Vaasa, Finland, as usual. 
+
+Tue 27-Mar-90: Acquired dsz0321.zip z-modem version 21-Mar-90.
+
+Thu 23-Mar-90: Replaced pcopy83f.zip by pcopy84.zip.
+
+Mon 05-Mar-90: Here is information on some recent uploads made
+available for anonymous ftp at chyde.uwasa.fi.  - QEDIT21.ZIP is an
+examination version of SemWare's newly released QEdit Advanced 2.1. 
+This is a flexible and compact editor, which I personally use
+extensively (version 2.08).  And being but "a satisfied customer", I
+feel that can recommend it on the news.  (No editor wars, please). 
+- There is also a utility called QMAC21.ZIP containing marco
+utilities for the new Qedit.  - Another update is BBS0390.ZIP which
+replaces BBS0290.ZIP.  It is named "TheList".  It is a list of US
+BBSes from James E Toro - REMIND49.ZIP is an update of a nice
+reminder (what else) program by Robert M W Tsou.  - The Micro
+Maniacs files list FILES-MM.ZIP has been updated up to 5-Mar-90.  -
+Finally, there is a rather specialized program dating back to 1988,
+so there might be more recent versions around.  It is called
+JMOONS.ZIP.  It is a Moons of Jupiter Orbital Clock by Andrew Jones. 
+It is because of this last program that this message is also
+(cross)posted to the sci.astro news group.  - All these files with
+the exception of jmoons.zip will be located in the /pc/pd2
+directory.  To locate jmoons.zip please see the /pc/0contents files. 
+
+Tue 20-Feb-90: The directory /pc/pd2/ at chyde.uwasa.fi has a number
+of utility collections available by anonymous ftp.  The latest
+addition to this collection is z10.zip.  It is called General
+Purpose MS-DOS Utilities / Enhancements.  This is a nice collection
+by Scott M Pazur.  It is certainly worth looking at.  Not entirely
+novel (what utility collection could be), but there are some useful
+twists from the usual plot. 
+
+Fri 16-Feb-90: Update 96bb0290.zip, a world-wide (but not
+comprehensive) list of 9600 bps BBSes.
+
+Wed 14-Feb-90: Update pcopy83f.zip of Patriquin's good, but bloated
+copy program.  Update shez53.zip of the shell for handling packed
+files of any kind. 
+
+The 13-Feb-90: Converted the few remaining .lzh, .pak, and .zoo
+files in the /pc/pd2/ directory to .zip at chyde.uwasa.fi.  The
+converted files were onside.lzh, powtool1.lzh, powtool2.lzh,
+toaduu17.pak, nnansi.zoo, and uu.zoo.  This also means that until
+Harri Valkama (hv@chyde.uwasa.fi) returns next week you can only get
+these converted files from the /pc/pd2 directory.  The old files
+will remain as ghosts in /pc/..  directories, but they are not
+available.  (For those in the know, this results from the fact that
+we use hard links to files in our directories.)
+
+Mon 12-Feb-89: Updated the world-wide 9600 bps BBS list.  The new
+list is (/pc/pd2/)96bb0190.zip replacing 96bb1289.zip.  Also got
+(/pc/pd2/)blp1.zip, which is a world-wide BBS listing as of
+26-Jan-90. 
+
+Sun 11-Feb-90: Took down the 256K typeahead buffer posted by John
+Joubert in comp.sys.ibm.pc, checked and processed it to be
+(/pc/pd2/)typeahd.zip.
+
+Sat 10-Feb-90: Version list73d.zip of Buerg's list program.  Update
+bx900129.zip of Finnish BBSes (in Finnish).  If someone has a direct
+access to updates Finnish BBS lists, I would appreciate the
+information, because the way I get these lists is more or less
+haphazard.  Updated files-mm.zip.  Removed all dsz z-modem packages
+except the latest one: dsz0128.zip, and dsz1019.zip (the one that
+works). 
+
+Fri 9-Feb-90: I have renamed the 0contents file to 0dir-pd2.  This
+is to avoid duplicate naming with other directories.  Likewise, I
+have renamed 0news file to be the current 0news-pd2 file.  The file
+of last year's news has been renamed 0news89.pd2. 
+
+Wed 7-Feb-90: Acquired bonus507.zip.  It is a non-commercial
+collection of Turbo Pascal 5.0 units with source code from
+TurboPower Software.  Also acquired dsz0128.zip.  I decline from
+further comments about the transfer problems I keep having with
+these new z-modem versions. 
+
+Mon 5-Feb-90: Received update list73a.zip of Vernon Buerg's list
+program, the definite must.
+
+Sat 3-Feb-90: Updates xanadu20.zip (utilities), bbs0290.zip (US BBS
+list), and a new file sprm23.zip (stock portfolio record manager). 
+
+Thu 1-Feb-90: Updates pcopy83d.zip and where35.zip.  Acquired
+tfe_210.zip.  It is an editor for Telix .fon directories. 
+
+Wed 31-Jan-90: Pretty Printer pascal code made available as
+pritprn.zip. 
+
+Fri 26-Jan-90: Acquired z-modem version dated 22-Jan-90.  The files
+are dsz0122.zip, dsz0122n.zip, and dsz0122x.zip.  I don't understand
+if this is intended to be some kind of a joke or what, but many of
+the dsz versions (this one included) refuse to cooperate, while some
+of the older ones get trough. 
+
+Sun 21-Jan-90: Acquired a new release of files-mm.zip.  This is a
+list of files available at Micro Maniacs Opus 2:515/1 tel
+358-0-425966.  I feel that it is instructive to have available a
+file list of a good bulletin board.  This is to show what files are
+circulating in BBSes.  Not a bad idea for the users to look at this,
+or a similar list, when wanting to know if a utility exists for a
+such and such purpose.  - Obtained dc106.zip.  It is a very useful
+directory control (copying files etc) utility (ver 1.06f) by Peter
+Esherick along the ideas of Michael Mefford.  - Also acquired update
+pcopy83b.zip of Patriquin's copy program with a zillion options.  -
+The older (1989) news concerning the /pc/pd2 directory have been
+transferred to 0news89 from the 0news file. 
+ 
+Fri 19-Jan-90: The new MsKermit 3.00 version has come out and Harri
+Valkama has obtained it for our archives, and it is available as
+msker300.zip.  I have not tested it yet, but I certainly will very
+soon.  But I have had the opportunity of looking at the beta test
+version. 
+
+Fri 12-Jan-90: After I posted the message about file finders in the
+news, Forrest Gehrke kindly mailed me two more good file finders,
+which are now available by anonymous ftp from chyde.uwasa.fi at
+Vaasa Finland.  These packages are (/pc/pd2/)tf77.zip and
+(/pc/pd2/)ff211.zip.  The former is called TurboFIND, and it is by
+Paul Giroux.  The latter is called Fast file finder, and is by Keith
+P Graham.  The ff.exe fast file finder has a number of useful
+switches, and it can search through .arc and .zip files on request. 
+Thank you, Forrest, for these nice additions to the chyde.uwasa.fi
+archives. 
+
+Wed 10-Jan-90: Converted (with a couple of exceptions) all the .arc
+files to .zip files.  The saving of disk space was considerable. 
+The reduction was about 25%, that is from 5Mb to 4Mb.  The added
+nice feature is that the datestamp of these files can be made the
+locically correct one, that is the date of the most recent file
+within the .zip package.  I have exercised this option.
+   Harri Valkama kindly obtained the beta test version msker30t.zoo
+of the new MsKermit 3.0 version.  The testing period for this
+program is announced to be brief.  Only one week. 
+   Also obtained the new version shez52.zip of the package handling
+shell. 
+
+Tue 9-Jan-90: Obtained a more recent version of the arc to zip
+converter. The current version is a2z16d.zip.
+
+Sun 7-Jan-90: There are many many conversion programs between the
+different packing methods.  Obtained a2z16.zip for converting .arc
+files to .zip files.
+
+Sat 6-Jan-90: Got sysid47.zip. It gives comprehensive system
+information about your pc.  Source seems to be included.
+
+Fri 5-Jan-90: Obtained where34.zip.  It is a very good file finding
+program from Keith Ledbetter.  It searches the disk(s) for given
+file name(s) even within files packed with the common packing
+programs.  Has many useful switches.
+
+For the older news please see 0news89.pd2.

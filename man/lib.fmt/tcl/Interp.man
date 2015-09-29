@@ -1,0 +1,198 @@
+
+
+
+Tcl_Interp            C Library Procedures             Tcl_Interp
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tcl_Interp - client-visible fields of interpreter structures
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttccll..hh>>
+
+     typedef struct {
+          char *_r_e_s_u_l_t;
+          Tcl_FreeProc *_f_r_e_e_P_r_o_c;                                  |
+          int _e_r_r_o_r_L_i_n_e;
+     } Tcl_Interp;
+
+     typedef void Tcl_FreeProc(char *_b_l_o_c_k_P_t_r);                    |
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The TTccll__CCrreeaatteeIInntteerrpp procedure returns a pointer to a
+     Tcl_Interp structure.  This pointer is then passed into
+     other Tcl procedures to process commands in the interpreter
+     and perform other operations on the interpreter.  Inter-
+     preter structures contain many many fields that are used by
+     Tcl, but only three that may be accessed by clients:          |
+     _r_e_s_u_l_t, _f_r_e_e_P_r_o_c, and _e_r_r_o_r_L_i_n_e.                              |
+
+     The _r_e_s_u_l_t and _f_r_e_e_P_r_o_c fields are used to return results or  |
+     error messages from commands.  This information is returned   |
+     by command procedures back to TTccll__EEvvaall, and by TTccll__EEvvaall back  |
+     to its callers.  The _r_e_s_u_l_t field points to the string that   |
+     represents the result or error message, and the _f_r_e_e_P_r_o_c      |
+     field tells how to dispose of the storage for the string      |
+     when it isn't needed anymore.  The easiest way for command    |
+     procedures to manipulate these fields is to call procedures   |
+     like TTccll__SSeettRReessuulltt or TTccll__AAppppeennddRReessuulltt;  they will hide all   |
+     the details of managing the fields.  The description below    |
+     is for those procedures that manipulate the fields directly.  |
+
+     Whenever a command procedure returns, it must ensure that     |
+     the _r_e_s_u_l_t field of its interpreter points to the string      |
+     being returned by the command.  The _r_e_s_u_l_t field must always  |
+     point to a valid string.  If a command wishes to return no    |
+     result then _i_n_t_e_r_p->_r_e_s_u_l_t should point to an empty string.   |
+     Normally, results are assumed to be statically allocated,     |
+     which means that the contents will not change before the      |
+     next time TTccll__EEvvaall is called or some other command procedure  |
+     is invoked.  In this case, the _f_r_e_e_P_r_o_c field must be zero.   |
+     Alternatively, a command procedure may dynamically allocate   |
+     its return value (e.g. using mmaalllloocc) and store a pointer to   |
+     it in _i_n_t_e_r_p->_r_e_s_u_l_t.  In this case, the command procedure    |
+     must also set _i_n_t_e_r_p->_f_r_e_e_P_r_o_c to the address of a procedure  |
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+Tcl_Interp            C Library Procedures             Tcl_Interp
+
+
+
+     that can free the value (usually ffrreeee).  If _i_n_t_e_r_p->_f_r_e_e_P_r_o_c  |
+     is non-zero, then Tcl will call _f_r_e_e_P_r_o_c to free the space    |
+     pointed to by _i_n_t_e_r_p->_r_e_s_u_l_t before it invokes the next com-  |
+     mand.  If a client procedure overwrites _i_n_t_e_r_p->_r_e_s_u_l_t when   |
+     _i_n_t_e_r_p->_f_r_e_e_P_r_o_c is non-zero, then it is responsible for      |
+     calling _f_r_e_e_P_r_o_c to free the old _i_n_t_e_r_p->_r_e_s_u_l_t (the          |
+     TTccll__FFrreeeeRReessuulltt macro should be used for this purpose).        |
+
+     _F_r_e_e_P_r_o_c should have arguments and result that match the      |
+     TTccll__FFrreeeePPrroocc declaration above:  it receives a single argu-   |
+     ment which is a pointer to the result value to free.  In      |
+     most applications ffrreeee is the only non-zero value ever used   |
+     for _f_r_e_e_P_r_o_c.  However, an application may store a different  |
+     procedure address in _f_r_e_e_P_r_o_c in order to use an alternate    |
+     memory allocator or in order to do other cleanup when the     |
+     result memory is freed.                                       |
+
+     As part of processing each command, TTccll__EEvvaall initializes      |
+     _i_n_t_e_r_p->_r_e_s_u_l_t and _i_n_t_e_r_p->_f_r_e_e_P_r_o_c just before calling the   |
+     command procedure for the command.  The _f_r_e_e_P_r_o_c field will   |
+     be initialized to zero, and _i_n_t_e_r_p->_r_e_s_u_l_t will point to an   |
+     empty string.  Commands that do not return any value can      |
+     simply leave the fields alone.  Furthermore, the empty
+     string pointed to by _r_e_s_u_l_t is actually part of an array of
+     TTCCLL__RREESSUULLTT__SSIIZZEE characters (approximately 200).  If a com-
+     mand wishes to return a short string, it can simply copy it
+     to the area pointed to by _i_n_t_e_r_p->_r_e_s_u_l_t.  Or, it can use
+     the sprintf procedure to generate a short result string at
+     the location pointed to by _i_n_t_e_r_p->_r_e_s_u_l_t.
+
+     It is a general convention in Tcl-based applications that
+     the result of an interpreter is normally in the initialized
+     state described in the previous paragraph.  Procedures that
+     manipulate an interpreter's result (e.g. by returning an
+     error) will generally assume that the result has been ini-
+     tialized when the procedure is called.  If such a procedure
+     is to be called after the result has been changed, then
+     TTccll__RReesseettRReessuulltt should be called first to reset the result
+     to its initialized state.
+
+     The _e_r_r_o_r_L_i_n_e field is valid only after TTccll__EEvvaall returns a
+     TTCCLL__EERRRROORR return code.  In this situation the _e_r_r_o_r_L_i_n_e
+     field identifies the line number of the command being exe-
+     cuted when the error occurred.  The line numbers are rela-
+     tive to the command being executed:  1 means the first line
+     of the command passed to TTccll__EEvvaall, 2 means the second line,
+     and so on.  The _e_r_r_o_r_L_i_n_e field is typically used in con-
+     junction with TTccll__AAddddEErrrroorrIInnffoo to report information about
+     where an error occurred.  _E_r_r_o_r_L_i_n_e should not normally be
+     modified except by TTccll__EEvvaall.
+
+
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+Tcl_Interp            C Library Procedures             Tcl_Interp
+
+
+
+KKEEYYWWOORRDDSS
+     free, initialized, interpreter, malloc, result
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     3
+
+
+

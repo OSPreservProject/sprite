@@ -1,0 +1,128 @@
+#
+# string.test
+#
+# Tests for the cindex, clength, crange, replicate, csubstr, and translit
+# commands.
+#---------------------------------------------------------------------------
+# Copyright 1992 Karl Lehenbauer and Mark Diekhans.
+#
+# Permission to use, copy, modify, and distribute this software and its
+# documentation for any purpose and without fee is hereby granted, provided
+# that the above copyright notice appear in all copies.  Karl Lehenbauer and
+# Mark Diekhans make no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without express or
+# implied warranty.
+#------------------------------------------------------------------------------
+# $Id: string.test,v 2.0 1992/10/16 04:50:12 markd Rel $
+#------------------------------------------------------------------------------
+#
+
+if {[info procs test] != "test"} then {source testlib.tcl}
+
+# Test the 'cindex' command.
+
+test string-1.1 {cindex tests} {
+    cindex ABCDEFG 1
+} {B}
+
+test string-1.2 {cindex tests} {
+    cindex ABCDEFG 3+1
+} {E}
+
+test string-1.3 {cindex tests} {
+    cindex ABCDEFG 3*2
+} {G}
+
+test string-1.4 {cindex tests} {
+    cindex ABCDEFG 7
+} {}
+
+# Test the 'clength' command.
+
+test string-2.1 {clength tests} {
+    clength ABCDEFG
+} {7}
+
+test string-2.2 {clength tests} {
+    clength "ABCD XYZ"
+} {8}
+
+test string-2.3 {clength tests} {
+    list [catch {clength} msg] $msg
+} {1 {wrong # args: clength string}}
+
+# Test the crange command.
+
+test string-3.1 {crange tests} {
+    crange ABCDEFG 1 3
+} {BCD}
+
+test string-3.2 {crange tests} {
+    crange ABCDEFG 2 end
+} {CDEFG}
+
+test string-3.3 {crange tests} {
+    set foo [replicate ABCD 500]
+    crange $foo 25*4 500-1
+} [replicate ABCD 100]
+
+test string-3.4 {crange tests} {
+    list [catch {crange} msg] $msg
+} {1 {wrong # args: crange string firstExpr lastExpr}}
+
+test string-3.5 {crange tests} {
+    crange ABCD 4 1
+} {}
+
+# Test the 'replicate' command
+
+test string-4.1 {replicate tests} {
+    replicate AbCd 4
+} {AbCdAbCdAbCdAbCd}
+
+test string-4.2 {replicate tests} {
+    replicate X 1000
+} "[replicate X 250][replicate X 250][replicate X 250][replicate X 250]"
+
+test string-4.3 {replicate tests} {
+    list [catch {replicate X} msg] $msg
+} {1 {wrong # args: replicate string countExpr}}
+
+# Test the csubstr command.
+
+test string-5.1 {csubstr tests} {
+    csubstr ABCDEFG 1 2+1
+} {BCD}
+
+test string-5.2 {csubstr tests} {
+    csubstr ABCDEFG 1+1 end
+} {CDEFG}
+
+test string-5.3 {csubstr tests} {
+    set foo [replicate ABCD 500]
+    csubstr $foo 25*4 100*4
+} [replicate ABCD 100]
+
+test string-5.4 {csubstr tests} {
+    list [catch {csubstr} msg] $msg
+} {1 {wrong # args: csubstr string firstExpr lengthExpr}}
+
+test string-5.5 {csubstr tests} {
+    csubstr ABCD 4 1
+} {}
+
+test string-5.6 {translit tests} {
+    set str "Captain Midnight Secret Decoder Ring"
+    translit {A-MN-Za-mn-z} {N-ZA-Mn-za-m} $str
+} {Pncgnva Zvqavtug Frperg Qrpbqre Evat}
+
+test string-5.7 {translit tests} {
+    set str "Captain Midnight Secret Decoder Ring"
+    set str2 [translit {A-MN-Za-mn-z} {N-ZA-Mn-za-m} $str]
+    translit {A-MN-Za-mn-z} {N-ZA-Mn-za-m} $str2
+} {Captain Midnight Secret Decoder Ring}
+
+test string-5.8 {translit tests} {
+    list [catch {translit} msg] $msg
+} {1 {wrong # args: translit from to string}}
+

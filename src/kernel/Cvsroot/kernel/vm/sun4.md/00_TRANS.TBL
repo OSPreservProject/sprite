@@ -1,0 +1,9 @@
+D ATTIC                             	Attic
+D SCVS                              	SCVS
+F SUNMEMOR.;1                       	sunMemoryMap,v
+F VMMACH.H_V;1                      	vmMach.h,v
+F VMMACHIN.H_V;1                    	vmMachInt.h,v
+F VMMACHST.H_V;1                    	vmMachStat.h,v
+F VMSUN.C_V;1                       	vmSun.c,v
+F VMSUNASM.S_V;1                    	vmSunAsm.s,v
+F VMSUNCON.H_V;1                    	vmSunConst.h,v

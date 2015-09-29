@@ -1,0 +1,200 @@
+
+
+
+RPCCMD                    User Commands                    RPCCMD
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     rpccmd - Control the RPC system
+
+SSYYNNOOPPSSIISS
+     rrppccccmmdd  [_o_p_t_i_o_n_s]
+
+OOPPTTIIOONNSS
+     --oonn           Turn on the server half of the RPC system.
+
+     --ooffff          Turn off the server half of the RPC system.
+
+     --ppiinngg _h_o_s_t    Do an RPC test against the specified host.
+
+     --bb _s_i_z_e       The amount of data to send in each RPC test.
+
+     --tt [00||11]      Set the value  of  the  rpc_Tracing  variable.
+                   RPC  tracing  facilitates  debugging, but adds
+                   overhead to each RPC.
+
+     --DD [00||11]      Set the value of the  rpc_Debug  variable.   A
+                   non-zero value causes each RPC to be logged to
+                   /dev/syslog.  This really slows things down!
+
+     --TT [00||11]      Set the value of the rpc_NoTimeouts  variable.
+                   A  non-zero  value makes all RPCs try forever.
+                   This is dangerous because a  server  call-back
+                   to a dead client will hang the server.
+
+     --CC [00||11]      Turn off/on timings of RPC on the client side.
+                   Use  rrppccssttaatt  to  dump  out  the histograms of
+                   times that are taken by the kernel.
+
+     --SS [00||11]      Turn off/on timing of the RPC service times as
+                   measured by the server.
+
+     --CCrreesseett       Reset the client-side timing histograms.
+
+     --SSrreesseett       Reset the server-side timing histograms.
+
+     --mmaaxxSSeerrvveerrss _n_u_m_b_e_r
+                   Set the maximum number of allowed  rpc  server
+                   processes.
+
+     --nnuummSSeerrvveerrss _n_u_m_b_e_r
+                   Create more  rpc  servers  until  this  number
+                   exists.
+
+     --nneeggAAcckkssOOnn    Allow the machine to  generate  negative  ack-
+                   nowledgements.
+
+
+
+
+Sprite v.1.0        Printed:  August 13, 1992                   1
+
+
+
+
+
+
+RPCCMD                    User Commands                    RPCCMD
+
+
+
+     --nneeggAAcckkssOOffff   Prevent the machine from  generating  negative
+                   acknowledgements.
+
+     --cchhaannnneellNNeeggAAcckkssOOnn
+                   Turn on the client policy of ramping down  the
+                   number  of channels it uses with a server that
+                   has  returned   a   negative   acknowledgement
+                   recently.
+
+     --cchhaannnneellNNeeggAAcckkssOOffff
+                   Turn off the client policy of ramping down the
+                   number  of channels it uses with a server that
+                   has  returned   a   negative   acknowledgement
+                   recently.  Use back-off instead.
+
+     --nnuummPPiinnggss     Number of pings to send to the specified  host
+                   (defaults to 100).
+
+     --ssaanniittyy [00||11] Turn off/on sanity checking  of  RPC  packets.
+                   The  types  of sanity checks done are intended
+                   for debugging purposes and probably  shouldn't
+                   be used during normal operation.
+
+_________________________________________________________________
+
+IINNTTRROODDUUCCTTIIOONN
+     This command is used to set various  control  parameters  of
+     the RPC system.  The most important is the --oonn option, which
+     is used during the boot sequence to enable RPC service after
+     local  initialization (i.e. disk checks) is done.  The --ppiinngg
+     option is used to ping another sprite host.  This is  useful
+     to  find  out  if the host is up, and the make sure that the
+     host knows you are alive.  This does an  RPC_SEND,  and  the
+     amount of data sent can be specified with the --bb option.
+
+     Each of the --tt, --DD, --TT, --CC, and --SS options set the value  of
+     a  kernel  variable.  --tt is used to turn on or off the trace
+     of the last 100 RPC packets.  --DD is used to turn on  or  off
+     debugging  print  statements.   --TT is used to turn on or off
+     "no timeout mode".  This mode is  useful  when  debugging  a
+     client  and  you  don't want the server to timeout and think
+     the client has crashed.  It is dangerous,  however,  because
+     if the server ever makes a call-back to a truely dead client
+     it will hang until the no timeout mode is turned off.
+
+     The --CC and --SS options turn on or off timings  of  individual
+     RPCs.   --CC  controls  timing on the client side, and --SS con-
+     trols timing on the server side.  The timings  are  kept  in
+     histogram form.  Use the --CCrreesseett and --SSrreesseett options to zero
+     out the histograms.  Use rrppccssttaatt to display them.
+
+SSEEEE AALLSSOO
+     rpcstat
+
+
+
+
+Sprite v.1.0        Printed:  August 13, 1992                   2
+
+
+
+
+
+
+RPCCMD                    User Commands                    RPCCMD
+
+
+
+KKEEYYWWOORRDDSS
+     rpc, trace, debug
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  August 13, 1992                   3
+
+
+

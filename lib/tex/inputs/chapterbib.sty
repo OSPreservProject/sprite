@@ -1,0 +1,215 @@
+%==========================================================================
+% chapterbib.sty        Version 1.0 (23-NOV-1988)
+% ~~~~~~~~~~~~~~
+% Allow multiple bibliographies in a LaTeX document, including items
+% \cite'd in more than one bibliography.
+%
+% Restrictions
+% ~~~~~~~~~~~~
+%
+%   1.  The \bibliography and \bibliographystyle commands may not be used
+%       in the root file, only in files that have been \include'd. If you
+%       try to use them, a LaTeX warning is issued and the offending
+%       command(s) ignored. This restriction occurs because the root .aux
+%       file includes the subsidiary .aux files and when BibTeX processes
+%       the root .aux file, it complains about multiple \bibdata commands.
+%
+%   2.  If you want to \cite in the root file, you must provide your own
+%       bibliography within the root file using the thebibliography
+%       environment. I don't suppose that this will appeal to BibTeX users!
+%
+%   3.  The subsidiary files must be \include'd (not \input'ed) by the root
+%       file, with only one bibliography per \include'd file.
+%
+%   4.  The style file works by redefining the \bibcite, so if you've got
+%       any other style files that use \bibcite, watch out!  The only style 
+%       files (that I've seen) with \bibcite in them are deproc.sty, 
+%       ctswan.sty & ipr.sty.
+%
+% Author
+% ~~~~~~
+% Niel Kempson                       | Telephone:      Swindon (0793) 785687
+% School of Elec Eng & Science,      |  International: +44-793-785687
+% Royal Military College of Science, | 
+% Shrivenham, SWINDON,               | E-mail:
+% SN6 8LA,                           |  JANET: rmcs-tex@uk.ac.cranfield.cdvc
+% United Kingdom                     |
+%==========================================================================
+
+
+\let\@debugoutput=\@gobble
+%
+%*************************************************************************
+% DEBUGGING MACROS. To see what global variables are being assigned and
+% tested, uncomment these lines.
+%
+%
+% \let\@debugoutput=\typeout
+% \def\@debugnamedef#1#2{\expandafter\def\csname #1\endcsname{#2}%
+%    \@debugoutput{\string\@debugnamedef: defined `#1' \space as `#2'}}
+% \def\@debugtestdef #1#2#3{%
+%   \@debugoutput{\string\@debugtestdef: testing whether `#1@#2' = `#3'}
+%   \def\@tempa{#3}\expandafter \ifx \csname #1@#2\endcsname%
+%   \@tempa  \else \@tempswatrue \fi}
+% \def\@debugbibtestdef #1#2#3#4{%
+%   \@debugoutput{\string\@debugbibtestdef: testing whether `#1@#2@#4' %
+%                = `#3'}
+%   \def\@tempa{#3}\expandafter \ifx \csname #1@#2@#4\endcsname%
+%   \@tempa  \else \@tempswatrue \fi}
+% \let\@testdef=\@debugtestdef
+% \let\@bibtestdef=\xbibtestdef
+% \let\@namedef=\@debugnamedef
+%
+%*************************************************************************
+
+%
+%-------------------------------------------------------------------------
+% Keep track of files currently opened.
+% 1. The counter @ipfilectr keeps track of the currently open I/P file,
+%    and @includefilectr keeps track of the \include files.
+% 2. @ipfilectr is set to @includefilectr, except when processing the root
+%    file. An arbitrary large (number greater than the maximum number of
+%    include files) is used to denote the root file.
+%-------------------------------------------------------------------------
+\newcounter{@ipfilectr}                 % current I/P file,
+\def\the@ipfilectr{\roman{@ipfilectr}}  % displayed as roman numerals
+\newcounter{@includefilectr}            % current \include file
+\def\@rootfilevalue{1988}               % arbitrary value for root file 
+\def\savedjobname{\jobname}             % save root file name as a macro
+
+%
+%-----------------------------------------------------------------------
+% The name of the current I/P file is stored in macro \@currentipfile 
+% and the global macro ipfile@the@ipfilectr is set to this name whenever
+% \@currentipfile changes.
+%-----------------------------------------------------------------------
+\def\@currentipfile{\jobname}           % initialize to root file
+\setcounter{@ipfilectr}{\@rootfilevalue}        % ditto
+\global\@namedef{ipfile@\the@ipfilectr}{\@currentipfile}
+
+%
+%-----------------------------------------------------------------------
+% Redefine the \include macro (taken from LATEX.TEX of 25-JAN-1988) so
+% that when a file is \include'd
+% 1. \@currentipfile is updated and \includefilectr incremented
+% 2. ipfilectr set to includefilectr
+% 3. global macro ipfile@\the@ipfilectr set to \@currentfile
+%
+% When the \include'd file is finished with
+% 1. reset \@currentipfile to the root file name (\jobname)
+% 2. reset ipfilectr to \@rootfilevalue
+% 3. global macro ipfile@\the@ipfilectr set to \@currentfile
+%-----------------------------------------------------------------------
+\def\include#1{\clearpage
+\def\@currentipfile{#1}                             
+\@debugoutput{\string\@currentipfile = `\@currentipfile'}    
+\addtocounter{@includefilectr}{1}                           
+\setcounter{@ipfilectr}{\value{@includefilectr}}            
+\global\@namedef{ipfile@\the@ipfilectr}{\@currentipfile}   
+%
+\if@filesw \immediate\write\@mainaux{\string\@input{#1.aux}}\fi
+\@tempswatrue\if@partsw \@tempswafalse\def\@tempb{#1}\@for
+\@tempa:=\@partlist\do{\ifx\@tempa\@tempb\@tempswatrue\fi}\fi
+\if@tempswa \if@filesw \let\@auxout=\@partaux
+\immediate\openout\@partaux #1.aux
+\immediate\write\@partaux{\relax}\fi\@input{#1.tex}\clearpage
+\@writeckpt{#1}\if@filesw\immediate\closeout\@partaux \fi
+\let\@auxout=\@mainaux\else\@nameuse{cp@#1}\fi
+%
+\def\@currentipfile{\jobname}                              
+\@debugoutput{\string\@currentipfile = `\@currentipfile'}    
+\setcounter{@ipfilectr}{\@rootfilevalue}                    
+\global\@namedef{ipfile@\the@ipfilectr}{\@currentipfile}}
+
+%
+%-------------------------------------------------------------------------
+%      ****************************************
+%      *            BIBLIOGRAPHY              *
+%      ****************************************
+%
+%  A bibliography is created by the bibliography environment, which
+%  generates a title such as ``References'', and a list of entries.  The
+%  BIBTeX program will create a file containing such an environment, which
+%  will be read in by the \bibliography command.  With BIBTeX, the
+%  following commands will be used.
+%
+%  CONVENTION
+%
+%  \b@FOO@ipfile@iv     : The name or number of the reference created by
+%                         \cite{FOO} in \include file iv
+%               e.g.    if in the 4th \include file, \cite{FOO} -> [17],
+%                       then \b@FOO@ipfile@iv -> 17.
+%-------------------------------------------------------------------------
+
+%
+%-------------------------------------------------------------------------
+% \bibcite is now defined as: \bibcite{LABEL}{VALUE}{IPFILECTR}, so make
+% the \bibitem & \bibiteml commands output the extra parameter.
+%-------------------------------------------------------------------------
+\def\@lbibitem[#1]#2{\item[\@biblabel{#1}]\if@filesw
+  { \def\protect##1{\string ##1\space}\immediate
+    \write\@auxout{\string\bibcite{#2}{#1}{\the@ipfilectr}}}\fi\ignorespaces}
+%% Placement of `}' in def of \@lbibitem corrected 29 Apr 87
+%% (Error found by Arthur Ogawa.)
+
+\def\@bibitem#1{\item\if@filesw \immediate\write\@auxout
+    {\string\bibcite{#1}{\the\c@enumi}{\the@ipfilectr}}\fi\ignorespaces}
+
+\def\bibcite#1#2#3{{\global\@namedef{b@#1@#3}{#2}}}
+
+\def\cite{\@ifnextchar [{\@tempswatrue\@citex}{\@tempswafalse\@citex[]}}
+%
+% \penalty\@m added to definition of \@citex to allow a line
+% break after the `,' in citations like [Jones80,Smith77]
+% (Added 23 Oct 86)
+%
+% space added after the `,' (21 Nov 87)
+%
+
+\def\@citex[#1]#2{\if@filesw\immediate\write\@auxout{\string\citation{#2}}\fi
+  \def\@citea{}\@cite{\@for\@citeb:=#2\do
+    {\@citea\def\@citea{,\penalty\@m\ }%
+    \@debugoutput{\string\@citex: testing whether `b@\@citeb @\the@ipfilectr'%
+      is defined.}%
+    \@ifundefined
+    {b@\@citeb @\the@ipfilectr}{{\bf ?}\@warning
+        {Citation `\@citeb' in file `\@nameuse{ipfile@\the@ipfilectr}' %
+            on page \thepage \space undefined}}%
+    \hbox{\csname b@\@citeb @\the@ipfilectr\endcsname}}}{#1}}
+
+%
+%-------------------------------------------------------------------------
+% We don't allow \bibliography and \bibliographystyle commands in the root
+% file, so warn and ignore if appropriate.
+%-------------------------------------------------------------------------
+\def\bibliographystyle#1{%
+  \ifx\@currentipfile\savedjobname
+    \@warning{\string\bibliographystyle \space commands in the root file %
+              are ignored ^^Jby the `chapterbib' style option.}
+  \else 
+    \if@filesw\immediate\write\@auxout{\string\bibstyle{#1}}\fi
+  \fi}
+    
+\def\bibliography#1{%
+  \ifx\@currentipfile\savedjobname
+    \@warning{\string\bibliography \space commands in the root file %
+            are ignored ^^Jby the `chapterbib' style option.}
+  \else 
+    \if@filesw\immediate\write\@auxout{\string\bibdata{#1}}\fi
+    \@input{\@currentipfile.bbl}\fi}
+
+%
+%-------------------------------------------------------------------------
+% All we need to do now is to redefine \enddocument so that it properly
+% checks whether the \cite labels have changed. 
+%-------------------------------------------------------------------------
+\def\enddocument{\@checkend{document}\clearpage\begingroup  
+\if@filesw \immediate\closeout\@mainaux 
+\def\global\@namedef##1##2{}\def\newlabel{\@testdef r}%
+\def\bibcite{\@bibtestdef b}\@tempswafalse \makeatletter\input \jobname.aux
+\if@tempswa \@warning{Label(s) may have changed.  Rerun to get
+cross-references right}\fi\fi\endgroup\deadcycles\z@\@@end}
+
+\def\@bibtestdef #1#2#3#4{%
+  \def\@tempa{#3}\expandafter \ifx \csname #1@#2@#4\endcsname%
+  \@tempa  \else \@tempswatrue \fi}

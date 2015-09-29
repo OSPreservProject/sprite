@@ -1,0 +1,543 @@
+head     1.11;
+branch   ;
+access   ;
+symbols  srv030:1.11 srv028:1.11 srv027:1.11 srv026:1.11 srv024:1.11 srv022:1.11 srv021:1.11 srv019:1.11 srv018:1.11 srv016:1.11 srv015:1.11 srv014:1.11 srv012:1.11 srv011:1.11 srv010:1.11 srv008:1.11 srv007:1.11 srv006:1.11 srv005:1.11 srv004:1.11 srv003:1.10 srv002:1.10 srv001:1.10;
+locks    ; strict;
+comment  @ * @;
+
+
+1.11
+date     92.05.08.15.10.12;  author kupfer;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     92.01.21.16.07.32;  author kupfer;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     91.12.01.22.03.16;  author kupfer;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     91.11.14.10.11.17;  author kupfer;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     91.10.04.11.41.23;  author kupfer;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     91.09.23.14.29.15;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.09.04.15.30.27;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.09.01.21.02.56;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.08.19.12.17.21;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.08.15.14.43.00;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.07.19.15.27.56;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Process management for the sun3.
+@
+
+
+1.11
+log
+@Don't keep the child pcb locked so long during Proc_NewProc.
+@
+text
+@/* 
+ * procMach.c --
+ *
+ *	Process management for the sun3.
+ *
+ * Copyright (C) 1989 Digital Equipment Corporation.
+ * Copyright 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this software and
+ * its documentation for any purpose and without fee is hereby granted,
+ * provided that the above copyright notice appears in all copies.  
+ * Digital Equipment Corporation and the University of California make no
+ * representations about the suitability of this software for any purpose.
+ * It is provided "as is" without express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/proc/sun3.md/RCS/procMach.c,v 1.10 92/01/21 16:07:32 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <bstring.h>
+#include <mach/sun3/thread_status.h>
+#include <mach/sun3/vm_param.h>
+#include <mach.h>
+#include <mach_error.h>
+#include <status.h>
+#include <sun3/psl.h>
+
+#include <fs.h>
+#include <proc.h>
+#include <procInt.h>
+#include <procMach.h>
+#include <utils.h>
+#include <vm.h>
+
+/* 
+ * This is the address immediately following a user process's stack.
+ */
+Address procMach_MaxUserStackAddr;
+
+/* 
+ * This is 1 plus the highest address that can be used in a user process.
+ */
+Address procMach_MaxUserAddr;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcMachInit --
+ *
+ *	Initialization routine for machine-dependent process 
+ *	management code. 
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Various variables initialized.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+ProcMachInit()
+{
+    procMach_MaxUserStackAddr = Vm_TruncPage(KERNELBASE);
+    procMach_MaxUserAddr = procMach_MaxUserStackAddr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcMachSetRegisters --
+ *
+ *	Set up the registers for a locked process to start execution.
+ *
+ * Results:
+ *	status code.
+ *
+ * Side effects:
+ *	Sets the thread state for the given process.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+ProcMachSetRegisters(procPtr, topOfStack, startAddr)
+    Proc_ControlBlock *procPtr;	/* the process to set up */
+    Address topOfStack;		/* addr. of top of stack */
+    Address startAddr;		/* where to start execution */
+{
+    kern_return_t kernStatus;
+    struct sun_thread_state registers;
+
+    bzero(&registers, sizeof(registers));
+    /* 
+     * Note that on a sun3 the stack pointer contains the address of the 
+     * top element of the stack.
+     */
+    registers.sp = (int)topOfStack;
+    registers.pc = (int)startAddr;
+    registers.sr = PSL_USERSET;
+
+    kernStatus = thread_set_state(procPtr->thread, SUN_THREAD_STATE_REGS,
+				  (thread_state_t)&registers,
+				  SUN_THREAD_STATE_REGS_COUNT);
+    if (kernStatus != KERN_SUCCESS) {
+	printf("ProcMachSetRegisters: couldn't set thread state: %s\n",
+	       mach_error_string(kernStatus));
+	return Utils_MapMachStatus(kernStatus);
+    }
+
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcGetObjInfo --
+ *
+ *	Translate the object file information into the machine independent
+ *	form.
+ *	XXX UNIX compatibility stuff ripped out for simplicity's sake. 
+ *	Needs to be put back in.
+ *
+ * Results:
+ *	Returns SUCCESS if could translate, PROC_BAD_AOUT_FORMAT if could not.
+ *	*objInfoPtr is filled in.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/* ARGSUSED */
+ReturnStatus
+ProcGetObjInfo(filePtr, execPtr, objInfoPtr)
+    Fs_Stream		*filePtr; /* the object file */
+    ProcExecHeader	*execPtr; /* the raw exec header from the file */
+    Proc_ObjInfo	*objInfoPtr; /* processed exec info (OUT) */
+{
+#ifdef sun3
+    if (execPtr->machineType != PROC_MC68010 &&
+        execPtr->machineType != PROC_MC68020) {
+	printf("ProcGetObjInfo: bad machine type: 0x%x\n",
+	       execPtr->machineType);
+	return(PROC_BAD_AOUT_FORMAT);
+    }
+#endif
+#ifdef sun4
+    /*
+     * Sun's compiler includes a tool version number or something in the
+     * top 16 bits of the machineType field, so we can only look at the
+     * low 16 bits.
+     */
+    if ((execPtr->machineType & 0xff) != PROC_SPARC) {
+	return(PROC_BAD_AOUT_FORMAT);
+    }
+    if (execPtr->dynamic) {
+	return(PROC_BAD_AOUT_FORMAT);
+    }
+#endif
+    switch (execPtr->magic) {
+
+    case PROC_ZMAGIC:
+	objInfoPtr->codeLoadAddr = (Address)PROC_CODE_LOAD_ADDR(*execPtr);
+	objInfoPtr->codeFileOffset = PROC_CODE_FILE_OFFSET(*execPtr);
+	objInfoPtr->codeSize = execPtr->code;
+	objInfoPtr->heapLoadAddr = (Address)PROC_DATA_LOAD_ADDR(*execPtr);
+	objInfoPtr->heapFileOffset = PROC_DATA_FILE_OFFSET(*execPtr);
+	objInfoPtr->heapSize = execPtr->data;
+	objInfoPtr->bssLoadAddr = (Address)PROC_BSS_LOAD_ADDR(*execPtr);
+	objInfoPtr->bssSize = execPtr->bss;
+	objInfoPtr->entry = (Address)execPtr->entry;
+	objInfoPtr->unixCompat = 0;
+	break;
+
+    case PROC_OMAGIC:
+	objInfoPtr->codeLoadAddr = (Address)PROC_CODE_LOAD_ADDR(*execPtr);
+	objInfoPtr->codeFileOffset = 0;
+	objInfoPtr->codeSize = 0;
+	objInfoPtr->heapLoadAddr = (Address)PROC_CODE_LOAD_ADDR(*execPtr);
+	objInfoPtr->heapFileOffset = PROC_CODE_FILE_OFFSET(*execPtr);
+	objInfoPtr->heapSize = execPtr->data + execPtr->code;
+	objInfoPtr->bssLoadAddr = (Address)PROC_BSS_LOAD_ADDR(*execPtr);
+	objInfoPtr->bssSize = execPtr->bss;
+	objInfoPtr->entry = (Address)execPtr->entry;
+	objInfoPtr->unixCompat = 0;
+	break;
+
+
+    default:
+	printf("bad magic number: 0x%x\n", execPtr->magic);
+	return(PROC_BAD_AOUT_FORMAT);
+    }
+    return(SUCCESS);
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcMachGetUserRegs --
+ *
+ *	Get the current "standard" registers of the given user process.
+ *
+ * Results:
+ *	Returns a status code.  If successful, fills in the user-space PC 
+ *	and stack pointer for the given process.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+ProcMachGetUserRegs(procPtr, userPcPtr, userStackPtr)
+    Proc_LockedPCB *procPtr;	/* the user process to check */
+    Address *userPcPtr;		/* OUT: the PC that the process is at */
+    Address *userStackPtr;	/* OUT: the process's stack pointer value */
+{
+    kern_return_t kernStatus;
+    struct sun_thread_state registers;
+    int stateCount = SUN_THREAD_STATE_REGS_COUNT;
+    ReturnStatus status = SUCCESS;
+
+    if (!(procPtr->pcb.genFlags & PROC_USER)) {
+	panic("ProcGetUserPC: not a user process.\n");
+    }
+
+    kernStatus = thread_get_state(procPtr->pcb.thread,
+				  SUN_THREAD_STATE_REGS,
+				  (thread_state_t)&registers, 
+				  (mach_msg_type_number_t *)&stateCount);
+    if (kernStatus != KERN_SUCCESS) {
+	printf("PRocMachGetUserPC: couldn't read registers: %s\n",
+	       mach_error_string(kernStatus));
+	status = Utils_MapMachStatus(kernStatus);
+    } else {
+	*userPcPtr = (Address)registers.pc;
+	*userStackPtr = (Address)registers.sp;
+    }
+
+    return status;
+}
+@
+
+
+1.10
+log
+@Change VM code to use Sprite FS instead of UNIX.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/proc/sun3.md/RCS/procMach.c,v 1.9 91/12/01 22:03:16 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d90 1
+a90 1
+    Proc_LockedPCB *procPtr;	/* the process to set up */
+d106 1
+a106 2
+    kernStatus = thread_set_state(procPtr->pcb.thread,
+				  SUN_THREAD_STATE_REGS,
+d110 1
+a110 1
+	printf("ProcMachSetRegiters: couldn't set thread state: %s\n",
+@
+
+
+1.9
+log
+@Ditch libc.h.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/proc/sun3.md/RCS/procMach.c,v 1.8 91/11/14 10:11:17 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d29 1
+a29 1
+#include <tempFs.h>
+d142 1
+a142 1
+    TempFs_Stream	*filePtr; /* the object file */
+@
+
+
+1.8
+log
+@Snapshot.  net, rpc, recov modules added.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/proc/sun3.md/RCS/procMach.c,v 1.7 91/10/04 11:41:23 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d21 1
+a21 1
+#include <libc.h>
+@
+
+
+1.7
+log
+@Snapshot.  fork/exec work.
+@
+text
+@d7 1
+d11 3
+a13 3
+ * Digital Equipment Corporation makes no representations about the
+ * suitability of this software for any purpose.  It is provided "as is"
+ * without express or implied warranty.
+d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/proc/sun3.md/RCS/procMach.c,v 1.6 91/09/23 14:29:15 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d37 1
+a37 2
+ * This is the highest address that can be used in a user process's 
+ * stack.
+d39 1
+a39 1
+Address procMach_HighestStackAddr;
+d42 1
+a42 1
+ * This is the highest address that can be used in a user process.
+d44 1
+a44 1
+Address procMach_HighestUserAddr;
+d67 2
+a68 2
+    procMach_HighestStackAddr = Vm_TruncPage(KERNELBASE) - 1;
+    procMach_HighestUserAddr = procMach_HighestStackAddr;
+d139 1
+@
+
+
+1.6
+log
+@Snapshot.  Server is multithreaded internally.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/proc/sun3.md/RCS/procMach.c,v 1.5 91/09/04 15:30:27 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d37 1
+a37 1
+ * stack. 
+d39 1
+a39 1
+Address procMachHighestStackAddr;
+d41 5
+d67 2
+a68 1
+    procMachHighestStackAddr = Vm_TruncPage(KERNELBASE) - 1;
+d89 1
+a89 1
+ProcMachSetRegisters(procPtr, codeStart, heapStart, topOfStack, startAddr)
+a90 2
+    Address codeStart;		/* start of text region */
+    Address heapStart;		/* start of heap region */
+d148 2
+a149 1
+	printf("bad machine type: 0x%x\n", execPtr->machineType);
+d200 50
+@
+
+
+1.5
+log
+@Source reorg.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/sprited/RCS/procMach.c,v 1.4 91/09/01 21:02:56 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d83 2
+a84 2
+ProcMachSetRegisters(procPtr, codeStart, heapStart, stackPointer, startAddr)
+    Proc_ControlBlock *procPtr;	/* the process to set up */
+d87 1
+a87 1
+    Address stackPointer;	/* what to set stack pointer to */
+d94 5
+a98 1
+    registers.sp = (int)stackPointer;
+d102 1
+a102 1
+    kernStatus = thread_set_state(procPtr->thread,
+d107 1
+a107 1
+	printf("Couldn't initialize the thread state: %s\n",
+@
+
+
+1.4
+log
+@Snapshot.  Full VM support.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/printfd/RCS/procMach.c,v 1.3 91/08/19 12:17:21 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d20 5
+d26 84
+a109 5
+#include "tempFs.h"
+#include "proc.h"
+#include "procInt.h"
+#include "procMach.h"
+#include "util.h"
+@
+
+
+1.3
+log
+@Snapshot: Code reorg. and locking for processes & segments.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/printfd/RCS/procMach.c,v 1.2 91/08/15 14:43:00 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d51 1
+a51 1
+    ProcObjInfo		*objInfoPtr; /* processed exec info (OUT) */
+@
+
+
+1.2
+log
+@Snapshot.  Read-write mapped files work.
+@
+text
+@d6 7
+a12 8
+ * Copyright 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+d16 1
+a16 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/printfd/RCS/procMach.c,v 1.1 91/07/19 15:27:56 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d25 1
+d35 2
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.5 91/02/09 13:24:44 ouster Exp $ SPRITE (Berkeley)";
+d22 1
+a22 1
+#include "fs.h"
+d47 1
+a47 1
+    Fs_Stream		*filePtr; /* the object file */
+@

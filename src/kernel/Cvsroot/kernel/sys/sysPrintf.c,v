@@ -1,0 +1,1306 @@
+head     9.14;
+branch   ;
+access   ;
+symbols  ds3100:9.14 sun3:9.14 sun4nw:9.12 symm:9.12 spur:9.12 sprited:9.12.1 Summer89:9.0 newlib:8.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.14
+date     92.08.18.11.26.40;  author jhh;  state Exp;
+branches ;
+next     9.13;
+
+9.13
+date     92.08.03.17.41.53;  author mgbaker;  state Exp;
+branches ;
+next     9.12;
+
+9.12
+date     90.12.06.17.36.58;  author shirriff;  state Exp;
+branches 9.12.1.1;
+next     9.11;
+
+9.11
+date     90.09.12.13.40.42;  author shirriff;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     90.09.11.16.50.29;  author mendel;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     90.09.11.10.51.00;  author shirriff;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     90.08.13.17.37.54;  author rab;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.07.31.21.32.02;  author shirriff;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.07.31.14.17.39;  author shirriff;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.07.31.13.35.16;  author shirriff;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.06.08.16.12.26;  author eklee;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.05.14.14.44.28;  author mgbaker;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.26.15.24.21;  author douglis;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.24.17.19.34;  author jhh;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.20.49;  author douglis;  state Stable;
+branches ;
+next     8.8;
+
+8.8
+date     89.06.29.18.16.19;  author douglis;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.06.21.14.38.47;  author ouster;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.06.15.09.50.59;  author brent;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.02.19.22.12.01;  author jhh;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.01.26.09.58.17;  author brent;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     88.12.15.10.02.21;  author brent;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.11.30.15.08.47;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.22.19.37.05;  author jhh;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.39.04;  author douglis;  state Stable;
+branches ;
+next     1.3;
+
+1.3
+date     88.11.02.11.42.14;  author mlgray;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.10.28.19.06.32;  author mlgray;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.10.20.14.01.40;  author mlgray;  state Exp;
+branches ;
+next     ;
+
+9.12.1.1
+date     91.09.15.15.46.28;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@First checkin of new printf code.  This replaces the machine-dependent
+printf code.  The code here was originally from the spur subdirectory.
+@
+
+
+9.14
+log
+@Printf enables interrupts, so panic needs to be careful about calling it.
+It should not be called if we are at interrupt level. Also the sysPanicing
+flag needs to be set to TRUE before calling printf to prevent loops.
+@
+text
+@/*
+ *  sysPrintf --
+ *
+ *      Perform all formatted printing to the console.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/sys/sysPrintf.c,v 9.13 92/08/03 17:41:53 mgbaker Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <machMon.h>
+#include <sync.h>
+#include <mach.h>
+#include <main.h>
+#include <fs.h>
+#include <varargs.h>
+#include <stdio.h>
+#include <sys.h>
+#include <sysInt.h>
+#include <dbg.h>
+#include <dev.h>
+#include <devVid.h>
+
+/*
+ * Calls to panic and printf are protected.
+ */
+Sync_Semaphore	sysPrintMutex = Sync_SemInitStatic("sysPrintMutex");
+
+/*
+ * Set during a panic to prevent recursion.
+ */
+Boolean	sysPanicing = FALSE;
+
+/*
+ * To turn off all printfs during booting.
+ */
+Boolean sys_DontPrint = FALSE;
+
+/*
+ * Used to keep track of bytes written.
+ */
+static int bytesWritten;
+
+static void writeProc _ARGS_((FILE *stream, Boolean flush));
+
+/*
+ * vprintf buffer.
+ */
+#define	STREAM_BUFFER_SIZE	512
+static unsigned char streamBuffer[STREAM_BUFFER_SIZE];
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * writeProc --
+ *
+ *      Stream writeProc - flushes data to syslog. 
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *      None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static void
+writeProc(stream, flush)
+    FILE *stream;
+    Boolean flush;
+{
+    Fs_IOParam	io;
+    Fs_IOReply	reply;
+
+    bzero((char *)&io, sizeof(io));
+    io.buffer = (Address) stream->buffer;
+    io.length = stream->lastAccess + 1 - stream->buffer;
+    bzero((char *)&reply, sizeof(reply));
+
+    if (io.length > 0) { 
+	(void)Dev_SyslogWrite((Fs_Device *) NIL, &io, &reply);
+	stream->lastAccess = stream->buffer - 1;
+	stream->writeCount = stream->bufSize;
+	bytesWritten += reply.length;
+    }
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * vprintf --
+ *
+ *	Printing routine that is called from varargs procedures.  The
+ *	caller should use to varargs macros to extract the format
+ *	string and the va_list structure.  This also checks for
+ *	recursion that can result from a panic and initializes
+ *	the stream data structure needed by the standard vfprintf.
+ *
+ * Results:
+ *      Number of characters printed.
+ *
+ * Side effects:
+ *      None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+#ifdef lint
+/* VARARGS1 */
+/* ARGSUSED */
+int vprintf(format)
+    char *format;
+{
+    /*
+     * Lint complains about unused variables...  This is all #ifdef'ed lint.
+     * It's silly and can probably be cut down a bit....
+     */
+    char foo;
+    Sync_Semaphore *barPtr;
+    barPtr = &sysPrintMutex;
+    sysPrintMutex = *barPtr;
+    writeProc((FILE *) NULL, 0);
+    streamBuffer[0] = '\0';
+    foo = streamBuffer[0];
+    streamBuffer[0] = foo;
+}
+#else
+/*VARARGS1*/
+int
+vprintf(format, args)
+    char	*format;
+    va_list	args;
+{
+    static Boolean	initialized = FALSE;
+    static FILE		stream;
+    static int	recursiveCallP = 0;	/* prevent recursive calls
+					 * that could occur if vprintf
+					 * fails, etc.  */
+
+    if (recursiveCallP != 0) {
+	return 0;
+    }
+    recursiveCallP = 1;
+    MASTER_LOCK(&sysPrintMutex);
+    if (!initialized) {
+	Stdio_Setup(&stream, 0, 1, streamBuffer, STREAM_BUFFER_SIZE,
+		(void (*)()) 0, writeProc,  (int (*)()) 0, (ClientData) 0);
+	initialized = TRUE;
+    }
+
+    bytesWritten = 0;
+    if (!sys_DontPrint) {
+	vfprintf(&stream, format, args);
+    }
+    fflush(&stream);
+    MASTER_UNLOCK(&sysPrintMutex);
+    recursiveCallP = 0;
+    return (bytesWritten);
+
+}
+#endif
+
+
+/* 
+ *----------------------------------------------------------------------
+ *
+ * panic --
+ *
+ *	Print an error message and enter the debugger. This entry is 
+ *	provided for libc.a routines.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The kernel dies, entering the debugger if possible.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifdef lint
+/* VARARGS1 */
+/* ARGSUSED */
+void panic(format)
+    char *format;
+{}
+#else
+void
+panic(va_alist)
+    va_dcl			/* char *format, then any number of additional
+				 * values to be printed under the control of
+				 * format.  This is all just the same as you'd
+				 * pass to printf. */
+{
+    char *format;
+    va_list args;
+
+    va_start(args);
+    format = va_arg(args, char *);
+
+    if (!main_PanicOK || Mach_AtInterruptLevel()) {
+	Mach_MonPrintf("Fatal Error: ");
+	Mach_MonPrintf(format, args);
+    }
+    Dev_VidEnable(TRUE);	/* unblank the screen */
+    Dev_SyslogDebug(TRUE);	/* divert /dev/syslog output to the screen */
+    if (!sysPanicing) {
+	sysPanicing = TRUE;
+	printf("Fatal Error: ");
+	(void) vprintf(format, args);
+	va_end(args);
+    }
+    DBG_CALL;
+    Dev_SyslogDebug(FALSE);
+}
+#endif
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * printf --
+ *
+ *      Perform a C style printf with disabling of interrupts.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+
+#ifdef lint
+/* VARARGS1 */
+/* ARGSUSED */
+void printf(format)
+    char *format;
+{}
+#else
+void
+printf(va_alist)
+    va_dcl
+{
+    char *format;
+    va_list	args;
+
+    va_start(args);
+    format = va_arg(args, char *);
+
+    (void) vprintf(format, args);
+    va_end(args);
+}
+#endif
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * fprintf --
+ *
+ *      Perform a C style fprintf with disabling of interrupts (output
+ *	always goes to the console:  stream arg is ignored).
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+#ifdef lint
+/* VARARGS */
+/* ARGSUSED */
+int fprintf()
+{}
+#else
+/*
+int
+fprintf(va_alist)
+    va_dcl
+{
+    char *format;
+    va_list	args;
+    int result;
+
+    va_start(args);
+    (void) va_arg(args, FILE *);
+    format = va_arg(args, char *);
+
+    result = vprintf(format, args);
+    va_end(args);
+    return result;
+}
+*/
+#endif
+@
+
+
+9.13
+log
+@Added variable to turn off printing to console -- useful for making booting
+go faster.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/sys/sysPrintf.c,v 9.12 90/12/06 17:36:58 shirriff Exp $ SPRITE (Berkeley)";
+d176 1
+d215 1
+a215 1
+    if (!main_PanicOK) {
+d222 1
+a226 1
+    sysPanicing = TRUE;
+@
+
+
+9.12
+log
+@Added missing declaration.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysPrintf.c,v 9.11 90/09/12 13:40:42 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d46 5
+d166 3
+a168 1
+    vfprintf(&stream, format, args);
+@
+
+
+9.12.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysPrintf.c,v 9.12 90/12/06 17:36:58 shirriff Exp $ SPRITE (Berkeley)";
+@
+
+
+9.11
+log
+@Changed includes to angle brackets.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysPrintf.c,v 9.10 90/09/11 16:50:29 mendel Exp Locker: shirriff $ SPRITE (Berkeley)";
+d33 1
+@
+
+
+9.10
+log
+@Removed lint.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysPrintf.c,v 9.9 90/09/11 10:51:00 shirriff Exp $ SPRITE (Berkeley)";
+d21 12
+a32 12
+#include "sprite.h"
+#include "machMon.h"
+#include "sync.h"
+#include "mach.h"
+#include "main.h"
+#include "fs.h"
+#include "varargs.h"
+#include "stdio.h"
+#include "sys.h"
+#include "sysInt.h"
+#include "dbg.h"
+#include "dev.h"
+@
+
+
+9.9
+log
+@Added function prototyping.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys.ken/RCS/sysPrintf.c,v 9.8 90/08/13 17:37:54 rab Exp Locker: shirriff $ SPRITE (Berkeley)";
+d55 1
+a55 1
+static char streamBuffer[STREAM_BUFFER_SIZE];
+@
+
+
+9.8
+log
+@Made sysPrintMutex external because the symmetry mucks with it from
+the mach module.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysPrintf.c,v 9.7 90/07/31 21:32:02 shirriff Exp Locker: rab $ SPRITE (Berkeley)";
+a22 2
+#include "stdio.h"
+#include "varargs.h"
+d25 1
+d27 2
+d30 1
+d49 2
+a56 1
+int sysPanicOK = 0;	/* 1 if initialized enough to panic */
+d206 1
+a206 1
+    if (!sysPanicOK) {
+@
+
+
+9.7
+log
+@Moved around includes to make ds3100 happy.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysPrintf.c,v 9.6 90/07/31 14:17:39 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d35 1
+a35 1
+static	Sync_Semaphore	sysPrintMutex = Sync_SemInitStatic("sysPrintMutex");
+@
+
+
+9.6
+log
+@Fixed panic so it wouldn't fail if panic occurs early in boot.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysPrintf.c,v 9.5 90/07/31 13:35:16 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d22 1
+a30 1
+#include "machMon.h"
+@
+
+
+9.5
+log
+@Added panic check to avoid crash if panic during boot.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysPrintf.c,v 9.4 90/06/08 16:12:26 eklee Exp Locker: shirriff $ SPRITE (Berkeley)";
+d30 1
+@
+
+
+9.4
+log
+@Commented out fprintf (not used in kernel and conflicts with stdio library).
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysPrintf.c,v 9.3 90/05/14 14:44:28 mgbaker Exp Locker: eklee $ SPRITE (Berkeley)";
+d51 2
+d202 4
+@
+
+
+9.3
+log
+@Got rid of recursive call to panic due to panic inside master lock
+grabbed in panic!
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysPrintf.c,v 9.2 89/10/26 15:24:21 douglis Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d275 1
+d292 1
+@
+
+
+9.2
+log
+@removed some lint
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysPrintf.c,v 9.1 89/10/24 17:19:34 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d202 5
+a206 4
+    printf("Fatal Error: ");
+    (void) vprintf(format, args);
+    va_end(args);
+    MASTER_LOCK(&sysPrintMutex);
+a207 1
+    MASTER_UNLOCK(&sysPrintMutex);
+@
+
+
+9.1
+log
+@modified ifdef lint declarations so we don't get lint errors using
+printf or panic elsewhere in the kernel
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysPrintf.c,v 8.8 89/06/29 18:16:19 douglis Exp $ SPRITE (Berkeley)";
+a72 2
+    int		count;
+    int		written;
+d115 14
+a128 1
+{}
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysPrintf.c,v 8.8 89/06/29 18:16:19 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d112 8
+d150 1
+d169 7
+a175 6
+/*
+ * panic, printf, and fprintf are only defined when not using lint.
+ * For lint, use the libc versions to avoid conflicts.
+ */
+#ifndef lint
+/* VARARGS0 */
+d200 1
+d218 8
+a225 1
+/*VARARGS0*/
+d239 1
+d258 6
+a263 1
+/*VARARGS0*/
+d280 1
+a280 1
+#endif /* lint */
+@
+
+
+8.8
+log
+@made things ifdef'ed on lint.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysPrintf.c,v 8.7 89/06/21 14:38:47 ouster Exp Locker: douglis $ SPRITE (Berkeley)";
+@
+
+
+8.7
+log
+@Added fprintf procedure to allow library routines using stderr
+to be used in the kernel.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysPrintf.c,v 8.6 89/06/15 09:50:59 brent Exp $ SPRITE (Berkeley)";
+d160 5
+d256 1
+@
+
+
+8.6
+log
+@Updated call to Dev_SyslogWrite
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysPrintf.c,v 8.5 89/02/19 22:12:01 jhh Exp Locker: brent $ SPRITE (Berkeley)";
+d79 1
+a79 1
+    io.buffer = stream->buffer;
+a184 2
+
+
+d216 30
+d247 4
+@
+
+
+8.5
+log
+@Changes due to lock registration
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysPrintf.c,v 8.4 89/01/26 09:58:17 brent Exp $ SPRITE (Berkeley)";
+d75 2
+d78 4
+d83 2
+a84 5
+    count = stream->lastAccess + 1 - stream->buffer;
+
+    if (count > 0) { 
+	(void)Dev_SyslogWrite((Fs_Device *) NIL, 0, count, 
+				    (char *) stream->buffer, &written);
+d87 1
+a87 1
+	bytesWritten += written;
+@
+
+
+8.4
+log
+@Removed lint
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysPrintf.c,v 8.3 88/12/15 10:02:21 brent Exp $ SPRITE (Berkeley)";
+d34 1
+a34 1
+static	Sync_Semaphore	sysPrintMutex = SYNC_SEM_INIT_STATIC("sysPrintMutex");
+@
+
+
+8.3
+log
+@Added vprint as an exported procedure
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysPrintf.c,v 8.2 88/11/30 15:08:47 brent Exp $ SPRITE (Berkeley)";
+a74 1
+    Boolean	status;
+d80 1
+a80 1
+	status = Dev_SyslogWrite((Fs_Device *) NIL, 0, count, 
+a81 9
+#ifdef NOTDEF
+	/*
+	 * What to do here?  This would cause deadlock and probably won't
+	 * succeed anyway!
+	 */
+	if (status != SUCCESS) {
+	    printf("sys printf: Dev_SyslogWrite failed\n");
+	}
+#endif /* NOTDEF */
+d121 1
+a121 1
+	return;
+@
+
+
+8.2
+log
+@Nuked Sys_Printf and Sys_Panice
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysPrintf.c,v 8.1 88/11/22 19:37:05 jhh Exp $ SPRITE (Berkeley)";
+d102 1
+a102 1
+ * doVprintf --
+d104 5
+a108 1
+ *      Perform a C style vprintf to the monitor. 
+d119 2
+a120 2
+static int
+doVprintf(format, args)
+d122 1
+a122 1
+    va_list	*args;
+d127 1
+a127 1
+					 * that could occur if doVprintf
+d142 1
+a142 1
+    vfprintf(&stream, format, *args);
+d184 2
+a185 1
+    (void) doVprintf(format,&args);
+a197 56
+ * Sys_Panic --
+ *
+ *	This should go away as soon as everyone converts their WARNING-level
+ *	calls to printf and their FATAL-level calls to panic.
+ *
+ *      Print a formatted string to the monitor and then either abort to the
+ *      debugger or continue depending on the panic level.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+#ifdef notdef
+/*VARARGS0*/
+void
+Sys_Panic(va_alist)
+    va_dcl
+{
+    Sys_PanicLevel 	level;
+    char 		*format;
+    va_list 		args;
+
+    va_start(args);
+
+    level = va_arg(args, Sys_PanicLevel);
+    format = va_arg(args, char *);
+
+    if (level == SYS_WARNING) {
+        printf("Warning: ");
+    } else {
+	Dev_SyslogDebug(TRUE);
+        printf("Fatal Error: ");
+    }
+
+    (void) doVprintf(format,&args);
+
+    if (level != SYS_FATAL) {
+	return;
+    }
+
+    MASTER_LOCK(&sysPrintMutex);
+    sysPanicing = TRUE;
+    MASTER_UNLOCK(&sysPrintMutex);
+    DBG_CALL;
+    Dev_SyslogDebug(FALSE);
+    return;
+}
+#endif
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+d222 1
+a222 1
+    (void) doVprintf(format, &args);
+a225 20
+/*
+ * The following will go away after everyone has converted their calls
+ * to Sys_Printf to calls to printf.
+ */
+#ifdef notdef
+/*VARARGS0*/
+void
+Sys_Printf(va_alist)
+    va_dcl
+{
+    char *format;
+    va_list	args;
+
+    va_start(args);
+    format = va_arg(args, char *);
+
+    (void) doVprintf(format, &args);
+    va_end(args);
+}
+#endif notdef
+@
+
+
+8.1
+log
+@new semaphore definition
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysPrintf.c,v 8.0 88/11/11 18:39:04 douglis Stable Locker: jhh $ SPRITE (Berkeley)";
+d37 5
+a144 4
+
+
+#ifdef NOTDEF
+/* No one calls this one anyway. */
+a145 36
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Sys_DoPrintf --
+ *
+ *      Perform a C style printf to the monitor. 
+ *
+ * Results:
+ *      Number of characters printed.
+ *
+ * Side effects:
+ *      None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+/*VARARGS*/
+int
+Sys_DoPrintf(va_alist)
+    va_dcl
+{
+	char *format;
+	int  count;
+	va_list	args;
+
+	va_start(args);
+	format = va_arg(args, char *);
+	count = doVprintf(format, &args);
+	va_end(args);
+
+	return (count);
+}
+#endif /* NOTDEF */
+
+Boolean	sysPanicing = FALSE;
+
+
+d177 2
+a178 1
+    Dev_SyslogDebug(TRUE);
+d209 1
+a209 1
+
+d244 1
+a244 3
+
+#ifdef NOTDEF
+/* No one calls this one, anyway. */
+a248 33
+ * Sys_UnSafePrintf --
+ *
+ *      Perform a C style printf without disabling interrupts.
+ *	This routine does not get the sysPrintMutex and is thus truly
+ *	unsafe.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+/*VARARGS*/
+void
+Sys_UnSafePrintf(va_alist)
+    va_dcl
+{
+    va_list	args;
+    char *format;
+
+    va_start(args);
+    format = va_arg(args, char *);
+    (void) doVprintf(format,  &args);
+    va_end(args);
+}
+#endif NOTDEF
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+d281 1
+d296 1
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysPrintf.c,v 1.3 88/11/02 11:42:14 mlgray Exp Locker: douglis $ SPRITE (Berkeley)";
+d24 1
+d34 1
+a34 1
+static	int	sysPrintMutex = 0;
+d125 1
+a125 1
+    MASTER_LOCK(sysPrintMutex);
+d135 1
+a135 1
+    MASTER_UNLOCK(sysPrintMutex);
+d215 1
+a215 1
+    MASTER_LOCK(sysPrintMutex);
+d217 1
+a217 1
+    MASTER_UNLOCK(sysPrintMutex);
+d271 1
+a271 1
+    MASTER_LOCK(sysPrintMutex);
+d273 1
+a273 1
+    MASTER_UNLOCK(sysPrintMutex);
+@
+
+
+1.3
+log
+@Fixed deadlock problem.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysPrintf.c,v 1.2 88/10/28 19:06:32 mlgray Exp $ SPRITE (Berkeley)";
+@
+
+
+1.2
+log
+@Conversion to new C library.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sys/RCS/sysPrintf.c,v 1.1 88/10/20 14:01:40 mlgray Exp Locker: mlgray $ SPRITE (Berkeley)";
+d116 3
+d120 5
+d134 2
+a169 1
+	MASTER_LOCK(sysPrintMutex);
+a170 1
+	MASTER_UNLOCK(sysPrintMutex);
+a206 3
+    static int	recursiveCallP = 0;	/* prevent recursive calls to panic
+					 * that could occur if doVprintf
+					 * fails, etc.  */
+a210 5
+    if (recursiveCallP != 0) {
+	return;
+    }
+    recursiveCallP = 1;
+	
+d213 1
+a214 1
+    (void) doVprintf(format,&args);
+a216 1
+    recursiveCallP = 0;
+a250 3
+    static int	recursiveCallP = 0;	/* prevent recursive calls to panic
+					 * that could occur if doVprintf
+					 * fails, etc.  */
+a256 4
+    if (recursiveCallP != 0) {
+	return;
+    }
+    recursiveCallP = 1;
+a263 1
+    MASTER_LOCK(sysPrintMutex);
+a266 2
+	MASTER_UNLOCK(sysPrintMutex);
+	recursiveCallP = 0;
+d270 1
+a272 1
+    recursiveCallP = 0;
+a336 3
+    static int	recursiveCallP = 0;	/* prevent recursive calls to panic
+					 * that could occur if doVprintf
+					 * fails, etc.  */
+a340 5
+    if (recursiveCallP != 0) {
+	return;
+    }
+    recursiveCallP = 1;
+    MASTER_LOCK(sysPrintMutex);
+a341 2
+    MASTER_UNLOCK(sysPrintMutex);
+    recursiveCallP = 0;
+a355 3
+    static int	recursiveCallP = 0;	/* prevent recursive calls to panic
+					 * that could occur if doVprintf
+					 * fails, etc.  */
+a359 5
+    if (recursiveCallP != 0) {
+	return;
+    }
+    recursiveCallP = 1;
+    MASTER_LOCK(sysPrintMutex);
+a360 2
+    MASTER_UNLOCK(sysPrintMutex);
+    recursiveCallP = 0;
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: sysPrintf.c,v 1.2 88/08/29 12:38:50 mendel Exp $ SPRITE (Berkeley)";
+d31 5
+d77 5
+d83 1
+a83 1
+	    Sys_Panic(SYS_WARNING,"Sys_Printf: Dev_SyslogWrite failed\n");
+d85 1
+a116 1
+
+d131 2
+a132 1
+
+d160 1
+d162 1
+d167 1
+d172 52
+d229 3
+d252 3
+d261 4
+d266 1
+a266 1
+        Sys_Printf("Warning: ");
+d269 1
+a269 1
+        Sys_Printf("Fatal Error: ");
+d272 1
+d275 4
+a278 4
+    if (level == SYS_FATAL) {
+	sysPanicing = TRUE;
+        DBG_CALL;
+	Dev_SyslogDebug(FALSE);
+d280 7
+d289 2
+d298 2
+d323 1
+d328 1
+a328 1
+ * Sys_Printf --
+d343 1
+a343 1
+Sys_Printf(va_alist)
+d348 3
+d354 6
+a359 1
+    DISABLE_INTR();
+d361 2
+a362 1
+    ENABLE_INTR();
+a365 1
+
+d367 2
+a368 14
+ * ----------------------------------------------------------------------------
+ *
+ * Sys_SafePrintf --
+ *
+ *      Perform a C style printf except for floating point.
+ *	Interrupts are disabled while printing.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ * ----------------------------------------------------------------------------
+a369 1
+
+d372 1
+a372 1
+Sys_SafePrintf(va_alist)
+d377 3
+d384 8
+a391 3
+    DISABLE_INTR();
+    (void) doVprintf(format,  &args);
+    ENABLE_INTR();
+a393 41
+
+
+/* 
+ *----------------------------------------------------------------------
+ *
+ * panic --
+ *
+ *	Print an error message and enter the debugger. This entry is 
+ *	provided for libc.a routines.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The kernel dies, entering the debugger if possible.
+ *
+ *----------------------------------------------------------------------
+ */
+
+	/* VARARGS0 */
+void
+panic(va_alist)
+    va_dcl			/* char *format, then any number of additional
+				 * values to be printed under the control of
+				 * format.  This is all just the same as you'd
+				 * pass to printf. */
+{
+    char *format;
+    va_list args;
+
+    va_start(args);
+    format = va_arg(args, char *);
+
+    Sys_Printf("Fatal Error: ");
+    (void) doVprintf(format,&args);
+    sysPanicing = TRUE;
+    DBG_CALL;
+
+    Dev_SyslogDebug(FALSE);
+}
+
+@

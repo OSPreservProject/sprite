@@ -1,0 +1,4 @@
+F FSCONSI0.C;1                      	fsconsistCache.c
+F FSCONSI1.C;1                      	fsconsistIOClient.c
+F FSCONSIS.H;1                      	fsconsist.h
+F MAKEFILE.;1                       	Makefile

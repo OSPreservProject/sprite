@@ -1,0 +1,25 @@
+.\"	@(#)dirname.1	6.1 (Berkeley) 4/29/85
+.\"
+.TH DIRNAME 1 "April 29, 1985"
+.AT 3
+.SH NAME
+dirname \- display directory portion of a pathname
+.SH SYNOPSIS
+.B dirname
+string
+.SH DESCRIPTION
+.B dirname
+delivers all but the last level of the path name in
+.IR string .
+.PP
+The following example will set the shell variable
+.B
+.SM NAME
+to
+.BR /usr/src/cmd :
+.RS
+.B
+.SM NAME\s0=`dirname /usr/src/cmd/cat.c`
+.RE
+.SH "SEE ALSO"
+sh(1), basename(1)

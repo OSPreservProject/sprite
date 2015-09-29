@@ -1,0 +1,237 @@
+' $Header: /sprite/src/cmds/fsstat/RCS/fsstat.man,v 1.6 92/05/28 16:33:44 kupfer Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS FSSTAT cmds
+.BS
+.SH NAME
+fsstat \- Print filesystem statistics
+.SH SYNOPSIS
+.nf
+\fBfsstat \fR[\fB\-H\fR]
+\fBfsstat -F \fR[\fB-d \fR[\fB-S \fInumSizes\fR] [\fB-T\fI numTimes\fR]]
+.SH OPTIONS
+.IP "\fB\-H\fP" 14
+Print kernel version and uptime information before statistics.
+.IP "\fB\-F\fP" 14
+Print file I/O and deletion statistics.
+.IP "\fB\-d\fP" 14
+Print histogram of file sizes and ages at deletion.
+.IP "\fB\-S \fInumSizes\fP" 14
+The number of sizes to print in the histogram
+.IP "\fB\-T \fInumTimes\fP" 14
+The number of times to print in the histogram
+.BE
+.SH INTRODUCTION
+This prints out the various statistics kept by the filesystem.
+The stats are printed in several groups
+that correspond roughly to sub-structs in the Fs_Stat datatype defined
+in \fB<kernel/fsStat.h>\fR.
+The following sections decribe statistics by section as printed
+by \fBfsstat\fR.  Obvious fields are not explained.
+.LP
+\fBBlock Cache Statistics.\fP
+The BLOCKS line counts 4 Kbyte cache blocks.  The first number is the
+current number of blocks; the rest are minimum, maximum, etc.
+The two numbers in the ``max'' field are the current maximum
+and the physical maximum (in parens).
+``free'' is the number of blocks with no data in them.
+There are different kinds of hits on a cache block:
+``dr_hits'' are hits on a dirty block,
+``cl_hits'' are hits on a clean block,
+``p-hits'' are write hits on a partially filled block.
+``p-misses'' are write misses on a partially filled block.
+.LP
+The WRITETHRU line has percentages which are relative to
+the number of WRITE blocks reported on the WRITE line.
+Virtual memory page-outs are not included in the WRITE blocks,
+but are counted in the ``vm'' field of WRITETHRU.
+Thus WRITETHRU can be bigger than WRITE if there is lots of paging.
+ZERO FILL has two numbers by write, one for zero fills because
+the read of the existing block was less than 4K,
+the second for zero fills because the write was less than 4K.
+The ``append'' field is probably obsolete.
+The ``over'' field is for blocks that were overwritten.
+.LP
+For READ AHEAD the ``all in cache'' field has two numbers:
+one for the number of times we asked if all the blocks were already
+in the cache, the second for the number of times they were.
+Read ahead is currently implemented by scheduling a background
+process.  This has too much overhead and so read ahead is usually disabled.
+FRAGMENT upgrades are fragments that got promoted to a full block.
+.LP
+The VM line has four numbers.  The first is
+the number of times VM asked FS for a page.  The ``we tried'' number counts
+the number of requests where it was possible for the FS to give away a
+page (non-empty free list, and more than the minimum number of blocks
+in the cache).
+The ``gave up'' number counts the number of times the FS actually gave
+away a page.  The ``pitched'' field is the number of cache blocks that were
+discarded (put at the front of the LRU list) because they duplicated
+VM-managed blocks.
+.LP
+The ALLOC line indicates where cache blocks were obtained:
+``free'' means the free list,
+``new'' means newly created blocks,
+``lru'' means blocks replaced via the least-recently-used algorithm,
+``part free'' means the partially free list, i.e. those (8K) pages
+which had one valid (4K) block and one free block.
+.LP
+\fBName Cache Statistics\fP.
+The ``size'' indicates how many entries are kept in the hash table.
+The other fields indicate the number of accesses and the hit ratio.
+File deletion removes entries so the number of replacements is not the
+complement of the number of hits.
+.LP
+\fBBlock Allocation Statistics\fP.
+The CYLINDERS line indicates how many cylinders were searched
+to find one with free blocks.
+The ``hashes'' field is the number of hashes done to choose
+a cylinder for a file.  ``bit-searches'' is the number
+of bytes scanned in the free block bitmask.
+The FRAGS line concerns block fragments.
+``fr->block'' is the number of free fragments collapsed into blocks.
+``block->fr'' is the number of free blocks broken into fragments.
+``upgrades'' is the number of fragmented blocks promoted to full blocks.
+``bad hints'' is the number of fragment list entries that proved wrong.
+The kernel keeps a free list for each fragment size,
+but growth of an allocated fragment can invalidate entries in these lists.
+.LP
+\fBFile Handle Statistics\fP.
+The internal data structure kept for each file is known as
+a ``file handle''.  Handles are ``installed'' into a hash table initially.
+``create'' indicates the number of times the handle was not already
+present.  ``version'' indicates the number of existing handles that
+were out-of-date due to attribute changes.  ``flush'' indicates the number
+of times the cached blocks (if any) for a file were invalid when its
+handle was installed.  Uncachable files are also counted by this field.
+Existing handles may also be ``fetched'',
+``locked'', and then ``released''.  There are two numbers by the
+``lock'' field, but one is obsolete and is always zero.
+The ``wait'' field is the number of locks that had to wait.
+Information about handle LRU replacement is printed later
+(for historical reasons) after Object information.
+.LP
+\fBSegment\fP.
+The VM sticky segment information is tucked away after the
+file handle statistics.  Text segments along with their page tables
+are cached, and this line counts the hit ratio for this feature.
+.LP
+\fBPrefix Statistics\fP.
+This counts the number of ``absolute'' and ``relative'' file name lookups.
+``redirect'' is the number of lookups that bounced from one server to
+another.  Symbolic links back to the root cause a bounce,
+as can ascending via "..", as can descending through remote links.
+``loop'' is the number of symbolic link loops detected.
+``timeout'' is the number of lookups that failed because of a
+timeout to the server.
+``stale'' is the number of lookups that failed because of stale
+handles for the starting point of the lookup.
+``found'' is the number of prefix table entries found via broadcast.
+.LP
+\fBInternal Fragmentation\fP.
+This counts the bytes wasted due to the use of 4 Kbyte blocks in the cache.
+There are two lines, one in comparision to a cache with variable sized blocks,
+the other relative to a cache with 1K byte blocks.
+.LP
+\fBCount of Calls\fP.
+This is the number of open calls made by local processes,
+i.e. remote requests are not counted.  (FIX!)
+The opens are broken into opens for reading, writing, and read-write.
+The number of set attribute calls is also given.
+.LP
+\fBBytes\fP.
+This section gives statistics on a per-byte basis of
+cache traffic, network traffic, disk traffic, and raw device traffic.
+.LP
+\fBObjects\fP.  Counts of the number of different kinds of objects
+occur next to the two lines labeled \fBOBJECTS\fP.
+``stream'' is the number of top-level open file descriptors there are.
+There is one per open system call, plus there are shadow streams on I/O
+servers.  The ``(clt)'' field is the number of stream clients.   This is
+the same as the number of streams except during process migration when
+a stream may be shared by different hosts.
+There is also a ``ioClt'' field that is the number of entries in
+object descriptor client lists.  Devices, pseudo-devices, files,
+and directories all have lists of the clients using them.
+The rest of the fields are for the different kinds of objects
+implemented by the file system.  There is one object descriptor
+kept for each object in use, including those that are not open
+but do have data in the cache.
+The fields ``file'', ``dir'', ``rmtFile'', ``pipe'', ``dev''
+correspond to the obvious object.  ``pdevCtrl'' corresponds to
+the number of active pseudo-devices.
+There will be one of these on the file server with the
+pseudo-device name and one on the host running the pseudo-device process.
+``pdev'' corresponds to pseudo-device connections, of which there
+can be more than one to any particular pseudo-device.
+There are two internal object descriptors for a pseudo-device connection,
+one for the client and one for the server.
+The total number of object descriptors (including streams and 2 per ``pdev'')
+is given in the ``Total'' field.
+.LP
+\fBHandles\fP.  More statistics on the handle table are printed after
+the object information on the line labeled \fBHANDLES\fP.
+``Handle'' is the kernel venacular for
+``object-descriptor'', so there is one handle per object.  The current
+maximum number of handles is given by the ``max'' field.  The table will grow
+if necessary.  The current number of handles is given by the ``exist''
+field, and should match the ``Total'' field of the object counts.
+The ``limbo'' field is a count of handles that have been removed
+from the table, but have not had their memory de-allocated.
+``scans'' is the number of times the table was searched in LRU order
+to replace a handle because the table was at the maximum size.
+``looks'' is the number of handles that were examined and found in-use
+and so not available for replacement.  ``scav'' was the number that
+were reclaimed, or scavenged.  Of these, the number that were
+directories is listed in the ``(dirs)'' field.  One handle is replaced
+per scan, and if none can be replaced then the table is allowed to grow.
+Thus the difference between ``scans'' and ``scav'' is the number of
+times the table had to grow.  (The table starts at 400 handles
+and grows in increments of 25.  These constants might be different
+on your system.)
+.LP
+\fBRecovery\fP.  Failure recovery statistics are printed on two lines
+labeled \fBRECOVERED\fP.  The first line contains the number of
+times the re-open protocol was gone through with a server (``times'').
+This line also lists the number of operations that failed due to
+a communication failure and registered a need for recovery (``wants''),
+and the number of these operations that were retried successfully
+after recovery (``ok''),
+the number that could not be retried due to failed recovery (``bad''),
+and the number that were aborted before recovery was attempted (``abort'').
+The second line summaries how many handles were re-opened (``handles''),
+the number that could not be reopened (``failed''), and the
+number that had communication failures during the re-open attempt
+(``timed out'').
+.LP
+\fBClient Recovery\fP.  The line labeled \fBCLIENTS\fP appears on
+servers.  The field ``crashed'' counts how many of the server's
+clients have crashed.  The field ``reopened'' counts how many clients
+reopened files at the server after the server rebooted.
+.LP
+\fBFile type I/O and deletion statistics\fP.
+If the \fB-F\fP option is specified then the cache and disk
+traffic due to different kinds of regular files is given,
+plus the number of bytes deleted.  The type is the
+``userType'' in the file descriptor, which is a user-settable attribute.
+The types are ``temp'', for files in the \fB/tmp\fP directory,
+``swap'' for swap files,
+``obj'' for .o files,
+``bin'' for binary executables,
+and ``other'' for all other kinds of files.
+If the histogram option (\fB-d\fP) is specified the deletion
+info is further broken
+down and presented in a histogram of cumulative bytes deleted
+verses file age and type.
+.SH BUGS
+Somebody needs to look at each of the numbers given by this program
+and verify whether (a) the number still makes sense and (b) the number
+is correctly documented.
+.LP
+Some of the percentage figures are at best misleading.  For example,
+the vm ``percentage'' on the \%WRITETHRU line does not mean ``what
+fraction of the data blocks written were due to VM,'' nor does it mean
+``what fraction of write requests resulted in VM pageouts.''
+.SH "SEE ALSO"
+fscmd, prefix, rpccmd
+.SH KEYWORDS
+file system, cache, statistics

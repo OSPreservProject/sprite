@@ -1,0 +1,8 @@
+
+
+          link [-sym] srcpath destpath
+               Create a directory entry, destpath, linking it to the
+               existing file, srcpath.  If -sym is specified, a
+               symbolic link, rather than a hard link, is created.
+               (The -sym option is only available on systems that
+               support symbolic links.)

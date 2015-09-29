@@ -1,0 +1,895 @@
+head     1.14;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.14
+date     90.09.24.14.38.37;  author douglis;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     90.05.08.12.09.33;  author douglis;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     90.02.20.15.00.36;  author douglis;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     90.02.16.11.08.05;  author douglis;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     90.01.03.17.33.12;  author douglis;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     89.07.31.17.52.58;  author douglis;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     89.07.12.13.29.55;  author douglis;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     89.06.15.22.56.07;  author douglis;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.05.05.10.37.29;  author douglis;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.05.04.17.01.35;  author douglis;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.12.21.15.59.07;  author douglis;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.11.25.15.59.39;  author douglis;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.11.19.17.31.34;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.11.19.16.48.51;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Program to use process migration for remote execution.
+@
+
+
+1.14
+log
+@allow user to specify background priority
+@
+text
+@/* 
+ * mig.c --
+ *
+ *	Program to perform remote execution using process migration.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/cmds/mig/RCS/mig.c,v 1.13 90/05/08 12:09:33 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <sprite.h>
+#include <status.h>
+#include <option.h>
+#include <proc.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <host.h>
+#include <sys/wait.h>
+#include <signal.h>
+#include <string.h>
+#include <errno.h>
+#include <mig.h>
+
+/*
+ * Library imports:
+ */
+
+extern char **environ;
+
+/*
+ * Forward declarations
+ */
+static void DoExec();
+static int RemotePathExec();
+
+int debug = 0;
+char *host = NULL;
+int hostID = -1;
+char *procIDString = NULL;
+int local = 0;
+int background = 0;
+int backPrio = 0;
+int verbose = 0;
+char *execName = NULL;
+
+Option optionArray[] = {
+    {OPT_STRING, "h", (Address) &host,
+	 "String identifier for host to migrate onto (default is random selection)."},
+    {OPT_INT, "H", (Address) &hostID,
+	 "Numeric identifier for host to migrate onto."},
+    {OPT_TRUE, "b", (Address) &background,
+	 "Execute command in background and print processID."},
+    {OPT_TRUE, "B", (Address) &backPrio,
+	 "Execute command at background priority."},
+    {OPT_TRUE, "l", (Address) &local,
+	 "Execute command locally if no idle node is available."},
+    {OPT_TRUE, "D", (Address) &debug,
+	 "Enable debugging messages."},
+    {OPT_STRING, "E", (Address) &execName,
+	 "Exec the command specified by this argument, setting argv[0] to the first argument following the option list."},
+    {OPT_TRUE, "v", (Address) &verbose,
+	 "Print useful information, such as which host is selected."},
+    {OPT_STRING, "p", (Address) &procIDString,
+	 "Process ID of process to migrate (default is to start shell, or issue command given as remaining arguments)"},
+};
+
+/*
+ * Default shell to invoke if none found in environment.
+ */
+#define SHELL "csh"
+
+main(argc, argv)
+    int  argc;
+    char *argv[];
+{
+    ReturnStatus status;
+    char *myName;
+    char **argArray;
+    char *shell;
+    int pid;
+    Host_Entry *hostPtr;
+    int i;
+    int selectedHost;
+    int doCmd;
+    int procID;
+    int flags;
+    
+    argc = Opt_Parse(argc, argv, optionArray, Opt_Number(optionArray), 
+		     OPT_ALLOW_CLUSTERING|OPT_OPTIONS_FIRST);
+
+    myName = argv[0];
+    if (hostID != -1 && host != (char *) NULL) {
+	fprintf(stderr, "%s: -h and -H options are mutually exclusive\n",
+		myName);
+	exit(1);
+    }
+    if (debug) {
+	verbose = 1;
+    }
+    if (procIDString != (char *) NULL) {
+	if (background) {
+	    fprintf(stderr, "%s: -b and -p options are mutually exclusive\n",
+		    myName);
+	    exit(1);
+	}
+	procID = strtol(procIDString, (char **) NULL, 16);
+	if (procID <= 0) {
+	    (void)fprintf(stderr, "%s: invalid process ID: %s.\n", myName,
+			  procIDString);
+	    exit(1);
+	}
+	doCmd = 0;
+	if (argc > 1) {
+	    (void)fprintf(stderr, "%s: extra arguments ignored.\n", myName);
+	}
+	if (local) {
+	    (void)fprintf(stderr,
+			  "%s: -l argument ignored when migrating process.\n",
+			  myName);
+	    local = 0;
+	}
+	flags = MIG_PROC_AGENT;
+    } else {
+	doCmd = 1;
+	procID = PROC_MY_PID;
+	if (argc == 1) {
+	    argArray = (char **) malloc(2 * sizeof(char *));
+	    shell = getenv("SHELL");
+	    if (shell == (char *) NULL) {
+		shell = SHELL;
+	    }
+	    argArray[0] = shell;
+    	    execName = shell;
+	    argArray[1] = NULL;
+	} else {
+	    argArray = &argv[1];
+	    if (!execName) {
+		execName = argArray[0];
+	    }
+	}
+	flags = background ? MIG_PROC_AGENT : 0;
+    }  
+    if (host != (char *) NULL) {
+	selectedHost = 0;
+	hostPtr = Host_ByName(host);
+	if (hostPtr == (Host_Entry *) NULL) {
+	    fprintf(stderr, "%s: %s: no such host.\n", myName, host);
+	    exit(1);
+	}
+	hostID = hostPtr->id;
+	Host_End();
+    } else if (hostID != -1) {
+	selectedHost = 0;
+    } else {
+	int hostNumbers[1];
+	int hostsAssigned;
+	
+	selectedHost = 1;
+	(void) signal(SIGINT, SIG_IGN);
+	hostsAssigned = Mig_RequestIdleHosts(1, backPrio ?
+					     MIG_LOW_PRIORITY :
+					     MIG_NORMAL_PRIORITY,
+					     flags,
+					     (void (*)()) NULL, hostNumbers);
+	if (hostsAssigned < 0) {
+	    perror("Mig_RequestIdleHosts");
+	    exit(1);
+	}
+	if (hostsAssigned == 0) {
+	    if (!local) {
+		fprintf(stderr, "%s: no idle host available.\n", myName);
+		exit(1);
+	    }
+	    hostID = 0;
+	} else {
+	    hostID = hostNumbers[0];
+	}
+	if (verbose) {
+	    if (hostID) {
+		hostPtr = Host_ByID(hostID);
+		if (hostPtr == (Host_Entry *) NULL) {
+		    fprintf(stderr, "%s: unable to find host %d.\n",
+			    myName, hostID);
+		    exit(1);
+		}
+		fprintf(stderr, "%s: migrating to host %s.\n", myName,
+			hostPtr->name);
+		Host_End();
+	    } else {
+		fprintf(stderr,
+			"%s: no idle host available; running locally.\n",
+			myName);
+	    }
+	}
+    }
+
+    if ((selectedHost || background) && hostID && doCmd) {
+	/*
+	 * Wait for the process to complete so we can register that we're
+	 * through with the host.
+	 */
+	pid = fork();
+	if (pid < 0) {
+	    perror("Error forking child");
+	    exit(1);
+	}
+		
+	if (pid) {
+	    union wait status;
+	    int error;
+	    int exited = 0;
+	    int exitCode;
+
+
+	    if (background) {
+		printf("%x\n", pid);
+		exit(0);
+	    }
+	    do {
+	    
+		error = wait(&status);
+		if (error == -1) {
+		    perror("wait");
+		    exit(1);
+		} else if (error != pid && debug) {
+		    (void) fprintf(stderr, "%s: received status %d from wait.\n",
+				   myName, error);
+		} else if (error == pid) {
+		    if (status.w_stopval != WSTOPPED) {
+			exited = 1;
+			if (status.w_termsig != 0) {
+			    if (debug) {
+				(void) fprintf(stderr,
+					       "%s: process was signalled.\n",
+					       myName);
+			    }
+			    exitCode = status.w_termsig;
+			} else {
+			    exitCode = status.w_retcode;
+			}
+		    } else {
+			if (debug) {
+			    (void) fprintf(stderr,
+					   "%s: process was suspended.\n",
+					   myName);
+			}
+		    }
+		}
+	    } while (!exited);
+#ifdef undef
+	    if (debug) {
+		(void) fprintf(stderr,
+			       "%s: Exited(%d).  Calling Mig_Done(%d).\n",
+			       myName, exitCode, hostID);
+		(void) fflush(stderr);
+	    }
+	    (void) Mig_Done(hostID);
+#endif
+	    exit(exitCode);
+	} else {
+	    (void) signal(SIGINT, SIG_DFL);
+	}
+    }
+    if (hostID && !doCmd) {
+	/*
+	 * We're migrating someone else.
+	 */
+	
+	if (debug) {
+	    (void) fprintf(stderr, "Calling Proc_Migrate(%d, %d).\n", procID,
+			   hostID);
+	    (void) fflush(stderr);
+	}
+	
+	status = Proc_Migrate(procID, hostID);
+	if (status != SUCCESS) {
+	    fprintf(stderr, "%s: error in Proc_Migrate: %s\n",
+		    myName, Stat_GetMsg(status));
+	    fflush(stderr);
+	    if (!local) {
+		exit(1);
+	    }
+	}
+    }
+    if (!doCmd) {
+	exit(0);
+    }
+    /*
+     * Still the child here, or the only process if we were running locally
+     * and never forked.
+     */
+    if (debug) {
+	(void) fprintf(stderr, "Calling RemotePathExec(%s,...,%d).\n",
+		       execName, hostID);
+	(void) fflush(stderr);
+    }
+    status = RemotePathExec(execName, argArray, hostID);
+    perror("Error execing program");
+    exit(status);
+}
+
+
+/*
+ *-----------------------------------------------------------------------
+ *
+ * DoExec --
+ *
+ *	Function to actually execute a program. If the exec didn't succeed
+ *	because the file isn't in a.out format, attempt to execute
+ *	it as a bourne shell script.
+ *
+ * Results:
+ *	None.  Doesn't even return unless the exec failed.
+ *
+ * Side Effects:
+ *	A program may be execed over this one.
+ *
+ *-----------------------------------------------------------------------
+ */
+
+static void
+DoExec(file, argv, hostID)
+    char *file;			/* File to execute. */
+    char **argv;		/* Arguments to the program. */
+    int hostID;			/* ID of host on which to exec */
+{
+    ReturnStatus status;
+    status = Proc_RemoteExec(file, argv, environ, hostID);
+    if (debug) {
+	fprintf(stderr, "Proc_RemoteExec(\"%s\"): %s\n", file,
+		Stat_GetMsg(status));
+    }
+    errno = Compat_MapCode(status);
+    if (errno == ENOEXEC) {
+	/*
+	 * Attempt to execute the file as a shell script using
+	 * the Bourne shell)
+	 */
+	register char **newargv;
+	register int i;
+
+	for (i = 0; argv[i] != 0; i++) {
+	    /* Empty loop body */
+	}
+	newargv = (char **) malloc((unsigned) ((i+1)*sizeof (char *)));
+	newargv[0] = "sh";
+	newargv[1] = file;
+	for (i = 1; argv[i] != 0; i++) {
+	    newargv[i+1] = argv[i];
+	}
+	newargv[i+1] = 0;
+	status = Proc_RemoteExec("/sprite/cmds/sh", newargv, environ, hostID);
+	errno = Compat_MapCode(status);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RemotePathExec --
+ *
+ *	Execute a process, using the current environment variable,
+ *	instead of an explicitly-supplied one.  Also, imitate the
+ *	shell's actions in trying each directory in a search path
+ *	(given by the "PATH" environment variable).  Also, specify
+ *	a remote host.  This is taken from the library execve call.
+ *
+ * Results:
+ *	This procedure returns only if the exec fails.  In this case
+ *	the return value is -1.
+ *
+ * Side effects:
+ *	Overlays the current process with a new image.  See the man
+ *	page for details.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+RemotePathExec(name, argv, hostID)
+    char *name;			/* Name of file containing program to exec. */
+    char **argv;		/* Array of arguments to pass to program. */
+    int hostID;			/* ID of host on which to exec */
+{
+    char *path;
+    char *fullName;
+    register char *first, *last;
+    int size, noAccess;
+
+    noAccess = 0;
+
+    if (index(name, '/') != 0) {
+	/*
+	 * If the name specifies a path, don't search for it on the search path,
+	 * just try and execute it.
+	 */
+	DoExec(name, argv, hostID);
+	return -1;
+    }
+
+    path = getenv("PATH");
+    if (path == 0) {
+	path = "/sprite/cmds";
+    }
+    fullName = malloc((unsigned) (strlen(name) + strlen(path)) + 2);
+    for (first = path; ; first = last+1) {
+
+	/*
+	 * Generate the next file name to try.
+	 */
+
+	for (last = first; (*last != 0) && (*last != ':'); last++) {
+	    /* Empty loop body. */
+	}
+	size = last-first;
+	(void) strncpy(fullName, first, size);
+	if (last[-1] != '/') {
+	    fullName[size] = '/';
+	    size++;
+	}
+	(void) strcpy(fullName + size, name);
+
+	if (debug) {
+	    fprintf(stderr, "Trying DoExec(\"%s\")....\n", fullName);
+	}
+	DoExec(fullName, argv, hostID);
+	if (debug) {
+	    fprintf(stderr, "DoExec(\"%s\") => %d.\n", fullName, errno);
+	}
+	if (errno == EACCES) {
+	    noAccess = 1;
+	} else if (errno != ENOENT) {
+	    break;
+	}
+	if (*last == 0) {
+	    /*
+	     * Hit the end of the path. We're done.
+	     * If there existed a file by the right name along the search path,
+	     * but its permissions were wrong, return FS_NO_ACCESS. Else return
+	     * whatever we just got back.
+	     */
+	    if (noAccess) {
+		errno = EACCES;
+	    }
+	    break;
+	}
+    }
+    free((char *) fullName);
+    return -1;
+}
+@
+
+
+1.13
+log
+@added -b for background option.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/cmds/mig.new/RCS/mig.c,v 1.12 90/02/20 15:00:36 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d52 1
+d63 2
+d170 3
+a172 1
+	hostsAssigned = Mig_RequestIdleHosts(1, MIG_NORMAL_PRIORITY,
+@
+
+
+1.12
+log
+@use Mig_RequestIdleHosts.
+./
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user2/douglis/pdev_mig/src/cmds/mig/RCS/mig.c,v 1.11 90/02/11 21:55:35 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d51 1
+d60 2
+d93 1
+d108 5
+d129 1
+d148 1
+d168 1
+a168 1
+					     doCmd ? 0 : MIG_PROC_AGENT,
+d202 1
+a202 1
+    if (selectedHost && hostID && doCmd) {
+d219 5
+d255 1
+d263 1
+@
+
+
+1.11
+log
+@debugging statements
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/cmds/mig/RCS/mig.c,v 1.10 90/01/03 17:33:12 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d32 1
+d151 3
+d156 5
+a160 3
+	hostID = Mig_GetIdleNode();
+	if (hostID < 0) {
+	    perror("Mig_GetIdleNode");
+d163 8
+a170 3
+	if (hostID == 0 && !local) {
+	    fprintf(stderr, "%s: no idle host available.\n", myName);
+	    exit(1);
+@
+
+
+1.10
+log
+@changed Proc_RawRemoteExec to Proc_RemoteExec calls.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/cmds/mig/RCS/mig.c,v 1.9 89/07/31 17:52:58 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d305 4
+d399 3
+d403 3
+@
+
+
+1.9
+log
+@removed lint
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /a/newcmds/mig/RCS/mig.c,v 1.8 89/07/12 13:29:55 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d250 1
+d304 1
+a304 1
+    status = Proc_RawExec(file, argv, environ, 0, hostID);
+d324 1
+a324 1
+	status = Proc_RawExec("/sprite/cmds/sh", newargv, environ, 0, hostID);
+@
+
+
+1.8
+log
+@use remote exec instead of migrate + local exec
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /a/newcmds/mig/RCS/mig.c,v 1.7 89/06/15 22:56:07 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+a30 1
+#include <stdlib.h>
+d350 1
+a350 1
+int
+@
+
+
+1.7
+log
+@allow hostID instead of hostName, for efficiency
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /a/newcmds/mig/RCS/mig.c,v 1.6 89/05/05 10:37:29 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d30 9
+d40 6
+d241 1
+a241 1
+    if (hostID) {
+d243 1
+a243 2
+	 * We're the child, or we were directed to a particular host so
+	 * we never forked, or we're migrating someone else.
+d269 2
+a270 1
+	(void) fprintf(stderr, "Calling execvp(%s,...).\n", execName);
+d273 1
+a273 1
+    status = execvp(execName, argArray);
+d276 140
+@
+
+
+1.6
+log
+@fixed bug i introduced regarding name to exec if no arg specified.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /a/newcmds/mig/RCS/mig.c,v 1.5 89/05/04 17:01:35 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d29 1
+d33 1
+d41 3
+a43 1
+	 "Host to migrate onto (default is random selection)."},
+a69 1
+    int hostID;
+d80 5
+d133 2
+d137 1
+d222 2
+@
+
+
+1.5
+log
+@added capability to separate exec name and argv[0] via -E option.
+useful for pmake.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /a/newcmds/mig/RCS/mig.c,v 1.4 88/12/21 15:59:07 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d107 1
+@
+
+
+1.4
+log
+@allow mig to migrate a particular process when given "-p pid".
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /a/newcmds/mig/RCS/mig.c,v 1.3 88/11/25 15:59:39 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d35 1
+d44 2
+d110 3
+d116 1
+a116 1
+	selectedHost = 1;
+d125 1
+a125 1
+	selectedHost = 0;
+d241 1
+a241 1
+	(void) fprintf(stderr, "Calling execvp(%s,...).\n", argArray[0]);
+d244 1
+a244 1
+    status = execvp(argArray[0], argArray);
+@
+
+
+1.3
+log
+@exit w/ status from process exec'ed.  added verbose mode.  changed to
+use modified Opt library call that stops parsing when it hits a non-option.
+therefore gets rid of "-x" option.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /a/newcmds/mig/RCS/mig.c,v 1.2 88/11/19 17:31:34 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d32 1
+d38 1
+a38 1
+	"Host to migrate onto (default is random selection)."},
+d40 1
+a40 1
+	"Execute command locally if no idle node is available."},
+d42 1
+a42 1
+	"Enable debugging messages."},
+d44 3
+a46 1
+	"Print useful information, such as which host is selected."},
+d67 3
+a69 1
+
+d77 6
+a82 6
+
+    if (argc == 1) {
+	argArray = (char **) malloc(2 * sizeof(char *));
+	shell = getenv("SHELL");
+	if (shell == (char *) NULL) {
+	    shell = SHELL;
+d84 10
+a93 2
+	argArray[0] = shell;
+	argArray[1] = NULL;
+d95 14
+a108 3
+	argArray = &argv[1];
+    }
+	    
+d148 1
+a148 1
+    if (selectedHost && hostID) {
+d158 1
+d205 2
+d209 1
+a209 1
+	 * we never forked.
+d211 1
+d213 2
+a214 1
+	    (void) fprintf(stderr, "Calling Proc_Migrate(%d).\n", hostID);
+d217 1
+a217 1
+	status = Proc_Migrate(PROC_MY_PID, hostID);
+d226 3
+@
+
+
+1.2
+log
+@fixed bugs, seems to work now.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /a/newcmds/mig/RCS/mig.c,v 1.1 88/11/19 16:48:51 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d26 1
+d28 1
+d33 1
+a33 1
+int rest;
+d41 3
+a43 3
+	"Enable debugging of this program."},
+    {OPT_REST, "x", (Address) &rest,
+	"Treat remaining arguments as command to execute."},
+d46 5
+d58 1
+d63 1
+d66 1
+a66 1
+		     OPT_ALLOW_CLUSTERING);
+d69 3
+d75 5
+a79 1
+	argArray[0] = "csh";
+d86 1
+d95 1
+d105 17
+d124 5
+a128 1
+    if (hostID) {
+d135 36
+a170 1
+	    (void) wait(0);
+d172 3
+a174 1
+		(void) fprintf(stderr, "Calling Mig_Done(%d).\n", hostID);
+d178 1
+a178 1
+	    exit(0);
+d181 2
+a182 1
+	 * We're the child.
+d190 1
+a190 1
+	    fprintf(stderr, "%s: error in Proc_Migrate: %s",
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: proto.c,v 1.2 88/03/11 08:39:08 ouster Exp $ SPRITE (Berkeley)";
+d31 1
+d34 1
+a34 1
+    {OPT_STRING, 'h', (Address) &host,
+d36 1
+a36 1
+    {OPT_TRUE, 'l', (Address) &local,
+d38 4
+d52 3
+d56 1
+a56 1
+    (void) Opt_Parse(&argc, argv, Opt_Number(optionArray), optionArray,
+d62 1
+a62 1
+	argArray = (char **) malloc(2, sizeof(char *));
+d75 1
+a75 1
+	hostID = hostPtr->spriteID;
+@

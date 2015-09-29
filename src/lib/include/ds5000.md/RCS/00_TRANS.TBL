@@ -1,0 +1,17 @@
+F ALLOCA.H_V;1                      	alloca.h,v
+F AOUTHDR.H_V;1                     	aouthdr.h,v
+F A_OUT.H_V;1                       	a.out.h,v
+F FILEHDR.H_V;1                     	filehdr.h,v
+F LIMITS.H_V;1                      	limits.h,v
+F MACHPARA.H_V;1                    	machparam.h,v
+F REGDEF.H_V;1                      	regdef.h,v
+F RELOC.H_V;1                       	reloc.h,v
+F SCNHDR.H_V;1                      	scnhdr.h,v
+F SETJMP.H_V;1                      	setjmp.h,v
+F SIGMACH.H_V;1                     	sigMach.h,v
+F SIGNAL_H.NOT;1                    	signal.h.notused,v
+F STDARG.H_V;1                      	stdarg.h,v
+F SYMCONST.H_V;1                    	symconst.h,v
+F SYMS.H_V;1                        	syms.h,v
+F VARARGS.H_V;1                     	varargs.h,v
+F VMMACH.H_V;1                      	vmMach.h,v

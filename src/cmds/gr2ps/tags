@@ -1,0 +1,54 @@
+BC1	curve.c	/^#define BC1		1.0\/9		\/* coefficient of Bezier con/
+BC2	curve.c	/^#define BC2		4*BC1$/
+BC3	curve.c	/^#define BC3		3*BC2$/
+BC4	curve.c	/^#define BC4		8*BC2$/
+BLACK	gr2ps.c	/^#define BLACK	16$/
+BOTTOM	gr2ps.c	/^#define BOTTOM		2	\/* bottom oriented text *\/$/
+BS_ComputePoint	curve.c	/^BS_ComputePoint(i, u)$/
+BS_Convert	curve.c	/^BS_Convert(output)$/
+BS_Initialize	curve.c	/^BS_Initialize(count, list, output)$/
+BZ_Convert	curve.c	/^BZ_Convert(output)$/
+BZ_Offsets	curve.c	/^BZ_Offsets(count, list, output)$/
+BezierMax	curve.c	/^#define BezierMax	5$/
+BezierSegment	curve.c	/^BezierSegment(output, x1, y1, x2, y2, x3, y3, x4, /
+CENTER	gr2ps.c	/^#define CENTER		4	\/* centered text *\/$/
+IS_Convert	curve.c	/^IS_Convert(output)$/
+IS_Initialize	curve.c	/^IS_Initialize(count, list, output)$/
+IS_NaturalEnd	curve.c	/^IS_NaturalEnd(h, z, dz, d2z, d3z)$/
+IS_Parameterize	curve.c	/^IS_Parameterize()$/
+IS_PeriodicEnd	curve.c	/^IS_PeriodicEnd(h, z, dz, d2z, d3z)$/
+LARGE	gr2ps.c	/^#define LARGE	1000000		\/* initial value for max\//
+LEFT	gr2ps.c	/^#define LEFT		3	\/* left justified text *\/$/
+MAXELEMENTS	gr2ps.c	/^#define MAXELEMENTS	5000	\/* maximum elements per /
+MAXPOINTS	curve.c	/^#define MAXPOINTS	200$/
+MEDWIDTH	gr2ps.c	/^#define MEDWIDTH	0.8$/
+MakePoints	curve.c	/^MakePoints(count, list, output)$/
+Mgr2ps	gr2ps.c	/^main(argc, argv)$/
+RIGHT	gr2ps.c	/^#define RIGHT		5	\/* right justified text *\/$/
+THICKWIDTH	gr2ps.c	/^#define THICKWIDTH	1.4$/
+THINWIDTH	gr2ps.c	/^#define THINWIDTH	0.3$/
+TOP	gr2ps.c	/^#define TOP		1	\/* top oriented text *\/$/
+TWOPI	gr2ps.c	/^#define TWOPI	(2.0 * 3.1415927)$/
+WHITE	gr2ps.c	/^#define WHITE	1$/
+element	gr2ps.c	/^struct element {$/
+error	gr2ps.c	/^error(va_alist)$/
+findbbox	gr2ps.c	/^findbbox(elt)$/
+grn_to_ps	gr2ps.c	/^grn_to_ps(input, output)$/
+isfloat	gr2ps.c	/^#define isfloat(c)	(isdigit(c) || (c) == '.' || (c/
+isinteger	gr2ps.c	/^#define isinteger(c)	(isdigit(c) || (c) == '-')$/
+linestyle	gr2ps.c	/^linestyle(brush, size, output)$/
+makearc	gr2ps.c	/^makearc(count, list, output)$/
+makebezier	curve.c	/^makebezier(count, list, output)$/
+makebspline	curve.c	/^makebspline(count, list, output)$/
+makecurve	curve.c	/^makecurve(count, list, output)$/
+makepolygon	gr2ps.c	/^makepolygon(count, list, output, brush, size)$/
+makevector	gr2ps.c	/^makevector(count, list, output)$/
+point	curve.c	/^struct point {$/
+polystyle	gr2ps.c	/^polystyle(brush, size, output)$/
+savestr	gr2ps.c	/^savestr(str)$/
+scale	gr2ps.c	/^scale(elt, xscale, yscale)$/
+sqr	gr2ps.c	/^#define sqr(x)	((x) * (x))$/
+textadjust	gr2ps.c	/^textadjust(text, vert, hor, output)$/
+textpoint	gr2ps.c	/^textpoint(count, list, output)$/
+textstyle	gr2ps.c	/^textstyle(brush, size, output)$/
+translate	gr2ps.c	/^translate(elt, xtrans, ytrans)$/

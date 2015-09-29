@@ -1,0 +1,293 @@
+/* 
+ * diskHeader.c --
+ *
+ *	Routines to read in the disk header information.
+ *
+ * Copyright (C) 1987 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/disk/RCS/diskHeader.c,v 1.8 90/01/31 17:05:19 jhh Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "diskUtils.h"
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+/*
+ * BOOT_SECTOR		Where the boot sectors start on disk.
+ */
+#define	BOOT_SECTOR		1
+#define NUM_BOOT_SECTORS	15
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_ReadDiskInfo--
+ *
+ *	Read the first sector and determine the basic disk info.
+ *
+ * Results:
+ *	A pointer to Disk_Info for the disk if could read it, 0
+ *	otherwise.
+ *
+ * Side effects:
+ *	Memory allocation.
+ *
+ *----------------------------------------------------------------------
+ */
+Disk_Info *
+Disk_ReadDiskInfo(fileID, partition)
+    int fileID;			/* Handle on raw disk */
+    int partition;		/* Index of the partition to format */
+{
+    Sun_DiskLabel	*sunLabelPtr;
+    Disk_Info		*diskInfoPtr;
+    char 		buffer[DEV_BYTES_PER_SECTOR * FSDM_NUM_DOMAIN_SECTORS];
+    Fsdm_DomainHeader	*domainHeaderPtr = (Fsdm_DomainHeader *) buffer;
+    int			i;
+
+    diskInfoPtr = (Disk_Info *)malloc(sizeof(Disk_Info));
+
+    sunLabelPtr = Disk_ReadSunLabel(fileID);
+    if (sunLabelPtr != (Sun_DiskLabel *)0) {
+	Sun_DiskMap *sunMapPtr;
+	/*
+	 * First sector looks like a sun label.
+	 */
+	sunMapPtr = &sunLabelPtr->map[partition];
+	(void)strcpy(diskInfoPtr->asciiLabel, sunLabelPtr->asciiLabel);
+	diskInfoPtr->bootSector = BOOT_SECTOR;
+	diskInfoPtr->numDomainSectors = FSDM_NUM_DOMAIN_SECTORS;
+	diskInfoPtr->firstCylinder = sunMapPtr->cylinder;
+	diskInfoPtr->numCylinders = sunMapPtr->numBlocks /
+		(sunLabelPtr->numHeads * sunLabelPtr->numSectors);
+	diskInfoPtr->numHeads = sunLabelPtr->numHeads;
+	diskInfoPtr->numSectors = sunLabelPtr->numSectors;
+	for (i = BOOT_SECTOR + 1; 
+	     i < FSDM_MAX_BOOT_SECTORS + 3; 
+	     i+= FSDM_BOOT_SECTOR_INC) {
+	    if (Disk_SectorRead(fileID, i, FSDM_NUM_DOMAIN_SECTORS, buffer) < 0) {
+		fprintf(stderr, "Can't read sector %d.\n", i);
+		return((Disk_Info *)0);
+	    }
+	    if (domainHeaderPtr->magic == FSDM_DOMAIN_MAGIC) {
+		diskInfoPtr->summarySector = i - 1;
+		diskInfoPtr->domainSector = i;
+		diskInfoPtr->numBootSectors = diskInfoPtr->summarySector - 1;
+		break;
+	    }
+	}
+	if (i >= FSDM_MAX_BOOT_SECTORS + 3) {
+	    diskInfoPtr->summarySector = -1;
+	    diskInfoPtr->domainSector = -1;
+	    diskInfoPtr->numBootSectors = -1;
+	}
+    } else {
+	Fsdm_DiskHeader *diskHeaderPtr;
+	Fsdm_DiskPartition *mapPtr;
+
+	/*
+	 * Not a sun label, try a sprite label.
+	 */
+	diskHeaderPtr = Disk_ReadDiskHeader(fileID);
+	if (diskHeaderPtr == (Fsdm_DiskHeader *)0) {
+	    fprintf(stderr, "Neither Sun nor Sprite label\n");
+	    return((Disk_Info *)0);
+	}
+	mapPtr = &diskHeaderPtr->map[partition];
+	(void)strcpy(diskInfoPtr->asciiLabel, diskHeaderPtr->asciiLabel);
+	diskInfoPtr->bootSector = diskHeaderPtr->bootSector;
+	diskInfoPtr->numBootSectors = diskHeaderPtr->numBootSectors;
+	diskInfoPtr->summarySector = diskHeaderPtr->summarySector;
+	diskInfoPtr->domainSector = diskHeaderPtr->domainSector;
+	diskInfoPtr->numDomainSectors = diskHeaderPtr->numDomainSectors;
+	diskInfoPtr->firstCylinder = mapPtr->firstCylinder;
+	diskInfoPtr->numCylinders = mapPtr->numCylinders;
+	diskInfoPtr->numHeads = diskHeaderPtr->numHeads;
+	diskInfoPtr->numSectors = diskHeaderPtr->numSectors;
+    }
+    return(diskInfoPtr);
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_ReadSunLabel --
+ *
+ *	Read the first sector of a disk partition and see if its
+ *	a sun label.  If so, return a pointer to a Sun_DiskLabel.
+ *
+ * Results:
+ *	A pointer to the super block data if could read it, 0 otherwise.
+ *
+ * Side effects:
+ *	Memory allocation.
+ *
+ *----------------------------------------------------------------------
+ */
+Sun_DiskLabel *
+Disk_ReadSunLabel(fileID)
+    int fileID;	/* Handle on raw disk */
+{
+    Address		buffer;
+    Sun_DiskLabel	*sunLabelPtr;
+
+    buffer = (Address)malloc(DEV_BYTES_PER_SECTOR);
+
+    if (Disk_SectorRead(fileID, 0, 1, buffer) < 0) {
+	return((Sun_DiskLabel *)0);
+    } else {
+	sunLabelPtr = (Sun_DiskLabel *)buffer;
+	if (sunLabelPtr->magic != SUN_DISK_MAGIC) {
+	    return((Sun_DiskLabel *)0);
+	} else {
+	    return(sunLabelPtr);
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_ReadDiskHeader --
+ *	Read the super block and return a pointer to it.
+ *
+ * Results:
+ *	A pointer to the super block data if could read it, 0 otherwise.
+ *
+ * Side effects:
+ *	Memory allocation.
+ *
+ *----------------------------------------------------------------------
+ */
+Fsdm_DiskHeader *
+Disk_ReadDiskHeader(openFileID)
+    int openFileID;	/* Handle on raw disk */
+{
+    Address		buffer;
+    Fsdm_DiskHeader	*diskHeaderPtr;
+
+    buffer = (Address) malloc(DEV_BYTES_PER_SECTOR);
+
+    if (Disk_SectorRead(openFileID, 0, 1, buffer) < 0) {
+	return((Fsdm_DiskHeader *)0);
+    } else {
+	diskHeaderPtr = (Fsdm_DiskHeader *)buffer;
+	if (diskHeaderPtr->magic != FSDM_DISK_MAGIC) {
+	    return((Fsdm_DiskHeader *)0);
+	} else {
+	    return(diskHeaderPtr);
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_ReadDomainHeader --
+ *	Read the domain header and return a pointer to it.
+ *
+ * Results:
+ *	A pointer to the domain header if could read it, NULL otherwise.
+ *
+ * Side effects:
+ *	Memory allocation.
+ *
+ *----------------------------------------------------------------------
+ */
+Fsdm_DomainHeader *
+Disk_ReadDomainHeader(fileID, diskInfoPtr)
+    int fileID;			/* Stream to raw disk */
+    Disk_Info *diskInfoPtr;	/* Basic disk information */
+{
+    Fsdm_DomainHeader	*headerPtr;
+
+    headerPtr = (Fsdm_DomainHeader *)malloc(diskInfoPtr->numDomainSectors *
+					 DEV_BYTES_PER_SECTOR);
+
+    if (Disk_SectorRead(fileID, diskInfoPtr->domainSector,
+				    diskInfoPtr->numDomainSectors,
+				    (Address)headerPtr) < 0) {
+	return((Fsdm_DomainHeader *)0);
+    } else {
+	if (headerPtr->magic != FSDM_DOMAIN_MAGIC) {
+	    fprintf(stderr, "Disk_ReadDomainHeader, bad magic <%x>\n",
+		    headerPtr->magic);
+	    free((Address)headerPtr);
+	    return((Fsdm_DomainHeader *)0);
+	} else {
+	    return(headerPtr);
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_ReadSummaryInfo --
+ *
+ *	Read the summary information and return a pointer to it.
+ *
+ * Results:
+ *	A pointer to the summary information if it could be read,
+ *	NULL otherwise.
+ *
+ * Side effects:
+ *	Memory allocation.
+ *
+ *----------------------------------------------------------------------
+ */
+Fsdm_SummaryInfo *
+Disk_ReadSummaryInfo(fileID, diskInfoPtr)
+    int fileID;			/* Stream to raw disk */
+    Disk_Info *diskInfoPtr;	/* Basic disk information */
+{
+    Fsdm_SummaryInfo *summaryPtr;
+
+    summaryPtr = (Fsdm_SummaryInfo *) malloc (sizeof(Fsdm_SummaryInfo));
+
+    if (Disk_SectorRead(fileID, diskInfoPtr->summarySector, 1,
+				    (Address)summaryPtr) < 0) {
+	return((Fsdm_SummaryInfo *)0);
+    } else {
+	return(summaryPtr);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_WriteSummaryInfo --
+ *
+ *	Write the summary information.
+ *
+ * Results:
+ *	0 if write succeeded, -1 otherwise
+ *
+ * Side effects:
+ *	The summary information is written to the disk.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Disk_WriteSummaryInfo(fileID, diskInfoPtr, summaryPtr)
+    int fileID;			/* Stream to raw disk */
+    Disk_Info *diskInfoPtr;	/* Basic disk information */
+    Fsdm_SummaryInfo *summaryPtr; /* Summary information */
+{
+
+    return Disk_SectorWrite(fileID, diskInfoPtr->summarySector, 1,
+				    (Address)summaryPtr);
+}

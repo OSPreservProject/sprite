@@ -1,0 +1,258 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  srv030:1.5 srv028:1.5 srv027:1.5 srv026:1.5 srv024:1.5 srv022:1.5 srv021:1.5 srv019:1.5 srv018:1.5 srv016:1.5 srv015:1.5 srv014:1.5 srv012:1.5 srv011:1.5 srv010:1.5 srv008:1.5 srv007:1.5 srv006:1.5 srv005:1.5 srv004:1.5 srv003:1.5 srv002:1.5 srv001:1.5;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     91.11.14.10.20.23;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.09.04.15.29.36;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.09.01.21.02.53;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.08.19.12.17.06;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.07.19.15.26.26;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Machine-independent declarations for machine-dependent module.
+@
+
+
+1.5
+log
+@Add delay macro and macro to workaround DECstation compiler bug.
+@
+text
+@/*
+ * utilsMach.h --
+ *
+ *	Declarations for random sun3-dependent stuff.
+ *
+ * Copyright 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /r3/kupfer/spriteserver/src/sprited/utils/sun3.md/RCS/utilsMach.h,v 1.4 91/09/04 15:29:36 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+ */
+
+#ifndef _UTILSMACH
+#define _UTILSMACH
+
+#include <sprite.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UtilsMach_GetPC --
+ *
+ *	Returns the PC of the current instruction.
+ *
+ * Results:
+ *	Current PC
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifdef lint
+#define UtilsMach_GetPC() 	0
+#else
+#define UtilsMach_GetPC() \
+    ({\
+	register Address __pc; \
+	asm volatile ("1:\n\tlea\t1b,%0\n":"=a" (__pc));\
+	(__pc);\
+    })
+#endif
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UtilsMach_GetCallerPC --
+ *
+ *	Returns the PC of the caller of the current routine.
+ *
+ * Results:
+ *	Our caller's PC.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifdef lint
+#define UtilsMach_GetCallerPC() 	0
+#else
+#define UtilsMach_GetCallerPC() \
+    ({\
+	register Address __pc; \
+	asm volatile ("\tmovl a6@@(4),%0\n":"=a" (__pc));\
+	__pc;\
+    })
+#endif
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UtilsMach_Delay --
+ *
+ *	Delay for N microseconds.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifdef sun3
+#define	UtilsMach_Delay(n) \
+	{ register int N = (n)<<1; N--; while (N > 0) {N--;} }
+#else
+#define	UtilsMach_Delay(n) \
+	{ register int N = (n)>>1; N--; while (N > 0) {N--;} }
+#endif
+
+/* Workaround for DECstation compiler bug. */
+#define UTILSMACH_MAGIC_CAST
+
+#endif /* _UTILSMACH */
+@
+
+
+1.4
+log
+@Track the source reorg.  (was mach.h.)
+@
+text
+@d15 1
+a15 1
+ * $Header: /user6/kupfer/spriteserver/src/sprited/utils/sun3.md/RCS/utilsMach.h,v 1.3 91/09/01 21:02:53 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d78 28
+@
+
+
+1.3
+log
+@Snapshot.  Full VM support.
+@
+text
+@d2 1
+a2 1
+ * md.h --
+d4 1
+a4 2
+ *	Declarations for sun3-dependent stuff.  Should be called 
+ *	mach.h, but that conflicts with the Mach kernel.
+d15 1
+a15 1
+ * $Header: /user6/kupfer/spriteserver/src/printfd/RCS/md.h,v 1.2 91/08/19 12:17:06 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d18 2
+a19 2
+#ifndef _MACH
+#define _MACH
+a21 1
+#include "procTypes.h"
+a22 6
+/* 
+ * The sun3 stack grows from high addresses to low addresses.
+ */
+
+#define MACH_STACK_GROWS_DOWN	TRUE
+
+d27 1
+a27 1
+ * Mach_GetPC --
+d41 1
+a41 1
+#define Mach_GetPC() 	0
+d43 1
+a43 1
+#define Mach_GetPC() \
+d55 1
+a55 1
+ * Mach_GetCallerPC --
+d69 1
+a69 1
+#define Mach_GetCallerPC() 	0
+d71 1
+a71 1
+#define Mach_GetCallerPC() \
+d79 1
+a79 11
+extern Address mach_HighestStackAddr;
+
+extern void Mach_Init _ARGS_((void));
+extern ReturnStatus Mach_SetRegisters _ARGS_((Proc_ControlBlock
+					      *procPtr,
+					      Address codeStart,
+					      Address heapStart,
+					      Address stackPointer,
+					      Address startAddr));
+
+#endif /* _MACH */
+@
+
+
+1.2
+log
+@Snapshot: Code reorg. and locking for processes & segments.
+@
+text
+@d16 1
+a16 1
+ * $Header: /user6/kupfer/spriteserver/src/printfd/RCS/md.h,v 1.1 91/07/19 15:26:26 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d25 6
+d87 1
+a87 1
+extern Address mach_InitialUserStackPage;
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d4 1
+a4 1
+ *	Declarations for machine-dependent stuff.  Should be called 
+d16 1
+a16 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.7 91/02/09 13:24:52 ouster Exp $ SPRITE (Berkeley)
+d23 57
+a79 1
+#include "proc.h"
+@

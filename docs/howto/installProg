@@ -1,0 +1,41 @@
+From brent Mon Jun 26 10:28:46 1989
+Received: by sprite.Berkeley.EDU (5.59/1.29)
+	id AA794895; Mon, 26 Jun 89 10:28:45 PDT
+Date: Mon, 26 Jun 89 10:28:45 PDT
+From: brent (Brent Welch)
+Message-Id: <8906261728.AA794895@sprite.Berkeley.EDU>
+To: stolcke@icsia1
+Subject: less
+Cc: brent
+Status: R
+
+It is quite easy to install a program on Sprite.
+Finding or writing the man page is probably the
+hardest part ;)  We have a 'mkmf' program that makes
+it trivial to set up a makefile for a set of sources.
+Put all the sources into a directory, ideally
+/sprite/src/cmds/less, (unless 'less' is an AT&T program,
+in which case it goes in /sprite/src/attcmds/less)
+After you've collected the sources, make some
+machine-type subdirectories:  sun3.md sun4.md
+and then execute 'mkmf'.  It takes no arguments.
+It will create a Makefile and a number of
+associated .mk files  (sun3.md/dependencies.mk sun3.md/tm.mk)
+and it will run 'pmake depend'.  Finally, if you
+type 'pmake' you'll get parallel make.  'pmake sun3'
+will create a sun3 program (which is the default if
+you are executing on a sun3.) or 'pmake sun4' will
+make a sun4 program.  The compiled image will be
+put into sun3.md/less (or sun4.md/less) and will
+be installed to /sprite/cmds.sun3 (or cmds.sun4).
+You should also try to find a man page.  If you can't
+find the 4.3BSD man page you can edit /sprite/lib/forms/man
+(that may not be the exact name).  The man page goes into
+the file 'less.man' in the source directory.  The makefile
+copies it to the correct place when you 'pmake install'.
+	brent
+
+ps.  You can use this same procedure for programs under your
+home directory.  You might try experimenting with the
+less program there first.  Let me know if you have problems.
+

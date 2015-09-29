@@ -1,0 +1,214 @@
+# Note: not all modules are in this list.  Any "really" totals and
+# totals with machine-dependent code were done by hand.  "If'd out"
+# counts should be the same here as in the "native" list.
+# dev...
+      37     147    1066 dev.h
+     221    1221    9171 devBlockDevice.h
+     203    1064    7095 devDiskLabel.h
+     171     861    6991 devFsOpTable.h
+      28     125     852 devInt.h
+      73     262    1895 devMachKern.c
+     135     397    3286 devNull.c
+      38     162    1283 devNull.h
+     583    1625   13646 devSyslog.c
+      43     161    1559 devSyslog.h
+     833    2914   23289 devTty.c
+     118     454    2898 devTypes.h
+     392    1510   10865 devUnixConsole.c
+     170     893    6476 tty.h
+     232     591    6301 ds3100.md/devFsOpTable.c
+    3277   12387   96673 total
+rpc...
+     117     526    4343 rpc.h
+     195     713    5480 rpcByteSwap.c
+     838    3244   24638 rpcCall.c
+     219    1239    9115 rpcCall.h
+     675    2908   22179 rpcClient.c
+     228    1058    7491 rpcClient.h
+     265     942    7803 rpcCltStat.c
+      31      93     725 rpcCltStat.h
+     498    1946   14699 rpcDaemon.c
+     655    1992   17426 rpcDebug.c
+     558    2224   17164 rpcDispatch.c
+     278     823    7501 rpcHistogram.c
+      82     409    3066 rpcHistogram.h
+     526    2082   17058 rpcInit.c
+      69     263    2087 rpcInt.h
+     364    1576   12012 rpcOutput.c
+     271    1679   10610 rpcPacket.h
+    1404    5176   41410 rpcServer.c
+     254    1142    8413 rpcServer.h
+     246     853    7128 rpcSrvStat.c
+      31      98     762 rpcSrvStat.h
+     262    1175    8960 rpcStubs.c
+     391    1106    9912 rpcTest.c
+     393    1283   10795 rpcTrace.c
+     139     463    3330 rpcTrace.h
+      93     483    3169 rpcTypes.h
+      56     208    1559 ds3100.md/rpcDelays.c
+    9138   35704  278835 total
+libc...
+      51     202    1470 List_Init.c
+      61     264    1942 List_Insert.c
+      63     253    1944 List_ListInsert.c
+      67     266    1893 List_Move.c
+      54     212    1622 List_Remove.c
+      76     240    1974 Net_AddrToString.c
+      58     186    1611 Net_EtherAddrToString.c
+      63     209    1463 Net_HostToNetInt.c
+      61     209    1473 Net_HostToNetShort.c
+      59     188    1479 Net_InetAddrToString.c
+     157     676    4154 Net_InetChecksum.c
+      61     210    1470 Net_NetToHostInt.c
+      59     210    1472 Net_NetToHostShort.c
+     114     339    2811 Rpc_GetName.c
+      85     403    2911 Stdio_Setup.c
+      56     192    1478 Time_Add.c
+      93     368    2573 Time_Divide.c
+     110     438    3064 Time_Multiply.c
+      53     180    1405 Time_Subtract.c
+     178     535    4032 Time_ToAscii.c
+     252     781    5509 Time_ToParts.c
+     533    1584   14254 ckalloc.c
+      58     246    1817 compatInt.h
+     286    1138    8415 compatMapCode.c
+     220     613    4798 compatSig.c
+     115     527    3484 compatSig.h
+     159     770    6779 ctypeBits.c
+      20     106     648 errno.c
+      55     214    1459 fflush.c
+      71     297    2013 fgetc.c
+      68     303    1929 fgets.c
+      47     209    1463 fileInt.h
+    1186    4797   34320 fmt.c
+      68     244    1655 fprintf.c
+      84     420    2766 fputc.c
+      52     212    1439 fputs.c
+      70     253    1709 fscanf.c
+     111     374    2423 isinf.c
+     113     378    2436 isnan.c
+     222     687    4805 iszero.c
+     107     357    2610 sprintf.c
+     108     357    2598 sscanf.c
+     270    1560   10361 status.c
+     140     758    5325 strerror.c
+      60     261    1700 strncpy.c
+     190     779    4415 strtoul.c
+      48     256    1667 timeConstants.c
+    1990    7064   53568 ttyDriver.c
+      81     387    2559 ungetc.c
+     961    3500   22319 vfprintf.c
+     463    1603   10525 vfscanf.c
+    9787   36815  264009 total
+utils...
+     574    2258   14221 bf.h
+      45     204    1272 byte.h
+      26     110     677 dump.h
+     645    1946   15601 hash.c
+     142     615    4141 hash.h
+     118     456    3744 mapStatus.c
+     381    1284   10391 trace.c
+      81     352    2537 trace.h
+      40     181    1313 utils.h
+     118     389    2961 utilsMisc.c
+      74     253    1873 ds3100.md/utilsMach.h
+      37     137    1057 ds3100.md/utilsMachAsm.s
+    2281    8185   59788 total
+recov...
+     230    1135    8649 recov.h
+     380     973    8901 recovProc.c
+    2020    6709   57283 recovery.c
+    2630    8817   74833 total
+main...
+      38     174    1167 main/main.h
+     349    1107    8637 main/mainInit.c
+     387    1281    9804 total
+fs...
+     539    3148   21825 fs.h		# if'd out:   7      29     378 (mig)
+     216     821    7226 fsAttributes.c
+     545    1478   13571 fsCommand.c
+     674    2255   18246 fsInit.c	# if'd out: 129     410    3701 (disk)
+     832    2978   25106 fsNameOps.c
+     322    1532   11790 fsNameOps.h
+     150     567    4917 fsOpTable.c
+     289    1163    9199 fsPageOps.c
+     826    3076   24993 fsSelect.c
+     600    3411   23960 fsStat.h
+    1026    3722   31068 fsStreamOps.c
+    1481    5190   43059 fsSysCall.c	# if'd out:  47     150    1165 (disk)
+     462    1683   13843 fsTopMigrate.c # if'd out: 381    1376   11637 (mig)
+     371    1509   11161 fsTopStream.c
+     119     683    5887 fsUnixStubs.h
+      26     127     877 ds3100.md/fsMach.c
+      30     140     960 ds3100.md/fsMach.h
+    8452   33216  265851 total		# really: 7944   31518   250807
+fscache...
+     605    2702   23438 fscache.h
+    3721   11869  107577 fscacheBlocks.c
+      55     235    1741 fscacheBlocks.h
+    1376    4949   41533 fscacheOps.c	# if'd out:  24      55     837 (disk)
+     358     902    9022 fscacheReadAhead.c
+    6115   20657  183311 total		# really: 6091   20602   182474
+fsconsist...
+     223    1025    8598 fsconsist.h
+    2352    9479   78205 fsconsistCache.c
+     487    1840   14131 fsconsistIOClient.c
+    3062   12344  100934 total
+fsio...
+     494    2534   20792 fsio.h
+     159     599    4552 fsioClientList.c
+    1372    4864   42989 fsioDevice.c	# if'd out:  44     152    1563 (mig)
+     130     593    5029 fsioDevice.h
+    1854    6481   56722 fsioFile.c	# if'd out: 694    2303   22588 (disk)
+					# if'd out:  61     219    2134 (mig)
+     210    1033    8214 fsioFile.h
+     438    1520   13238 fsioLock.c
+      59     299    2137 fsioLock.h
+     421    1923   14568 fsioMigrate.c	# if'd out: 122     636    4109 (mig)
+     187     701    5940 fsioOps.c
+    1165    3930   34242 fsioPipe.c	# if'd out:  44     144    1481 (mig)
+      95     446    3765 fsioPipe.h
+      35     146    1150 fsioRpc.h
+    1136    4623   37904 fsioStream.c	# if'd out: 476    2090   16799 (mig)
+     313    1124    9632 fsioStreamOpTable.c
+    8068   30816  260874 total		# really: 6627   25272   212200
+fspdev...
+     211    1401    9282 fspdev.h
+     683    2226   20845 fspdevControl.c
+     419    1666   16709 fspdevInt.h
+     328    1301   11599 fspdevOps.c
+    1213    4825   43455 fspdevPfs.c
+     891    3778   32035 fspdevSetup.c	# if'd out: 129    448    4571 (mig)
+    2537    9461   84749 fspdevSrv.c
+     252     692    6243 fspdevTrace.c
+    6534   25350  224917 total		# really: 6405   24902   220346
+fsprefix...
+     159     930    6652 fsprefix.h
+      43     169    1218 fsprefixInt.h
+    2241    8241   67998 fsprefixOps.c
+    2443    9340   75868 total
+fsrmt...
+     144     633    5543 fsrmt.h
+    1072    4066   36436 fsrmtAttributes.c
+     729    2919   23938 fsrmtDevice.c	# if'd out:  21      67     653 (mig)
+    1565    5836   53767 fsrmtDomain.c
+     119     453    3340 fsrmtDomain.h
+    1749    5741   51917 fsrmtFile.c	# if'd out:  23      73     791 (mig)
+    1401    4795   44368 fsrmtIO.c
+     229     938    9055 fsrmtInt.h
+      41     141    1101 fsrmtNameOpsInt.h
+     218     578    5655 fsrmtOps.c
+     249     923    8064 fsrmtPipe.c	# if'd out:  21      67     644 (mig)
+      68     298    3196 fsrmtRpcStubs.h
+    7584   27321  246380 total		# really: 7519   27114   244292
+fsutil...
+     259    1074    9760 fsutil.h
+    1356    4845   39399 fsutilHandle.c	# if'd out:  15      42     467 (disk)
+     209     653    5397 fsutilHandleScavenge.c
+     296     947    7779 fsutilNotify.c
+    1174    3786   33368 fsutilRecovery.c
+     371     872    8188 fsutilSubr.c
+     207     590    4970 fsutilSync.c
+     253     884    8071 fsutilTrace.c
+     174     564    5298 fsutilTrace.h
+    4299   14215  122230 total		# really: 4284   14173   121763

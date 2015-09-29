@@ -1,0 +1,68 @@
+
+
+
+EXABYTESTAT               User Commands               EXABYTESTAT
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     exabyteStat - Determine how much space left on exabyte tape
+
+SSYYNNOOPPSSIISS
+     eexxaabbyytteeSSttaatt ddeevviiccee [[sslleeeeppttiimmee]]
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This program determines how much space remains on  the  exa-
+     byte tape.
+
+KKEEYYWWOORRDDSS
+     dump, tape, backup
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  October 2, 1991                   1
+
+
+

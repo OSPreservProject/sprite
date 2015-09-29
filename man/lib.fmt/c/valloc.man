@@ -1,0 +1,68 @@
+
+
+
+valloc                C Library Procedures                 valloc
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     valloc - page-aligned memory allocator
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uunniissttdd..hh>>
+
+     void *
+     vvaalllloocc(_s_i_z_e)
+
+AARRGGUUMMEENNTTSS
+     size_t   _s_i_z_e   (in)      Number of bytes to allocate.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     vvaalllloocc is like mmaalllloocc, except that the pointer it returns is
+     guaranteed to be page-aligned.
+
+
+BBUUGGSS
+     Using ffrreeee to deallocate vvaalllloocc'd memory can corrupt mmaalllloocc.
+     Unfortunately, there is no vvffrreeee routine, so it is currently
+     impossible to free vvaalllloocc'd memory.
+
+
+KKEEYYWWOORRDDSS
+     memory, alloc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  April 20, 1992                    1
+
+
+

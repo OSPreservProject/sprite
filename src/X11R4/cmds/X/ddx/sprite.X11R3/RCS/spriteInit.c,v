@@ -1,0 +1,593 @@
+head     1.8;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.8
+date     89.11.18.20.57.30;  author tve;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     89.10.08.16.04.31;  author tve;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.03.27.21.17.08;  author deboor;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     87.08.04.17.29.42;  author deboor;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     87.07.07.18.00.52;  author deboor;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     87.06.30.19.08.36;  author deboor;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     87.06.20.19.56.42;  author deboor;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     87.06.16.12.20.52;  author deboor;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Initialization functions
+@
+
+
+1.8
+log
+@first working version with CG4 and CG6 for SPARC. CG4 for sun3 not yet ok.
+@
+text
+@/*-
+ * spriteInit.c --
+ *	Initialization functions for screen/keyboard/mouse, etc.
+ *
+ * Copyright (c) 1987 by the Regents of the University of California
+ *
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ */
+#ifndef lint
+static char rcsid[] =
+"$Header: /mic/X11R3/src/cmds/Xsprite/ddx/sprite/RCS/spriteInit.c,v 1.7 89/10/08 16:04:31 tve Exp Locker: tve $ SPRITE (Berkeley)";
+#endif lint
+
+#include    "spriteddx.h"
+#include    <servermd.h>
+#include    "opaque.h"
+
+extern void spriteMouseProc();
+extern void spriteKbdProc();
+extern Bool spriteBW2Probe();
+extern Bool spriteCG4Probe();
+extern Bool spriteCG6Probe();
+
+extern GCPtr CreateScratchGC();
+
+	/* What should this *really* be? */
+#define MOTION_BUFFER_SIZE 0
+
+/*
+ * Data describing each type of frame buffer. The probeProc is called to
+ * see if such a device exists and to do what needs doing if it does. devName
+ * is the expected name of the device in the file system. Note that this only
+ * allows one of each type of frame buffer. This may need changing later.
+ */
+static struct {
+    Bool    (*probeProc)();
+} spriteFbData[] = {
+    spriteBW2Probe, spriteCG4Probe, spriteCG6Probe,
+};
+
+/*
+ * NUMSCREENS is the number of supported frame buffers (i.e. the number of
+ * structures in spriteFbData which have an actual probeProc).
+ */
+#define NUMSCREENS (sizeof(spriteFbData)/sizeof(spriteFbData[0]))
+#define NUMDEVICES 2
+
+fbFd	spriteFbs[NUMSCREENS];  /* Space for descriptors of open frame buffers */
+
+static PixmapFormatRec	formats[] = {
+    1, 1, BITMAP_SCANLINE_PAD,	/* 1-bit deep */
+    8, 8, BITMAP_SCANLINE_PAD,	/* 8-bit deep */
+};
+#define NUMFORMATS	sizeof(formats)/sizeof(formats[0])
+
+/*-
+ *-----------------------------------------------------------------------
+ * InitOutput --
+ *	Initialize screenInfo for all actually accessible framebuffers.
+ *	I kept this like the sun version just because you never know when
+ *	support for multiple video devices might be added to Sprite...
+ *
+ * Results:
+ *	screenInfo init proc field set
+ *
+ * Side Effects:
+ *	None
+ *
+ *-----------------------------------------------------------------------
+ */
+
+InitOutput(screenInfo, argc, argv)
+    ScreenInfo 	  *screenInfo;
+    int     	  argc;
+    char    	  **argv;
+{
+    int     	  i, index;
+
+    screenInfo->imageByteOrder = IMAGE_BYTE_ORDER;
+    screenInfo->bitmapScanlineUnit = BITMAP_SCANLINE_UNIT;
+    screenInfo->bitmapScanlinePad = BITMAP_SCANLINE_PAD;
+    screenInfo->bitmapBitOrder = BITMAP_BIT_ORDER;
+
+    screenInfo->numPixmapFormats = NUMFORMATS;
+    for (i=0; i< NUMFORMATS; i++)
+    {
+        screenInfo->formats[i] = formats[i];
+    }
+
+    for (i = 0, index = 0; i < NUMSCREENS; i++) {
+	if ((*spriteFbData[i].probeProc) (screenInfo, index, i, argc, argv)) {
+	    /* This display exists OK */
+	    index++;
+	} else {
+	    /* This display can't be opened */
+	    ;
+	}
+    }
+    if (index == 0)
+	FatalError("Can't find any displays\n");
+
+    spriteInitCursor();
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * InitInput --
+ *	Initialize all supported input devices...what else is there
+ *	besides pointer and keyboard?
+ *	NOTE: InitOutput must have already been called.
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	Two DeviceRec's are allocated and registered as the system pointer
+ *	and keyboard devices.
+ *
+ *-----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+InitInput(argc, argv)
+    int	    argc;
+    char    **argv;
+{
+    DevicePtr p, k;
+    static int  zero = 0;
+    
+    p = AddInputDevice(spriteMouseProc, TRUE);
+
+    k = AddInputDevice(spriteKbdProc, TRUE);
+
+    RegisterPointerDevice(p, MOTION_BUFFER_SIZE);
+    RegisterKeyboardDevice(k);
+
+    spriteCheckInput = 0;
+    SetInputCheck (&zero, &spriteCheckInput);
+
+    screenInfo.screen[0].blockData =
+	screenInfo.screen[0].wakeupData = (pointer)k;
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * spriteQueryBestSize --
+ *	Supposed to hint about good sizes for things.
+ *
+ * Results:
+ *	Perhaps change *pwidth (Height irrelevant)
+ *
+ * Side Effects:
+ *	None.
+ *
+ *-----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+void
+spriteQueryBestSize(class, pwidth, pheight)
+    int      	  class;	/* Object class being queried */
+    short   	  *pwidth;	/* Width of object */
+    short   	  *pheight;	/* Height of object */
+{
+    unsigned int  width,
+		  test;
+
+    switch(class) {
+      case CursorShape:
+      case TileShape:
+      case StippleShape:
+	  width = *pwidth;
+	  if (width > 0) {
+	      /*
+	       * Return the closes power of two not less than what they gave
+	       * me
+	       */
+	      test = 0x80000000;
+	      /*
+	       * Find the highest 1 bit in the width given
+	       */
+	      while(!(test & width)) {
+		 test >>= 1;
+	      }
+	      /*
+	       * If their number is greater than that, bump up to the next
+	       *  power of two
+	       */
+	      if((test - 1) & width) {
+		 test <<= 1;
+	      }
+	      *pwidth = test;
+	  }
+	  /*
+	   * We don't care what height they use
+	   */
+	  break;
+    }
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * spriteScreenInit --
+ *	Things which must be done for all types of frame buffers...
+ *	Should be called last of all.
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	The graphics context for the screen is created. The CreateGC,
+ *	CreateWindow and ChangeWindowAttributes vectors are changed in
+ *	the screen structure.
+ *
+ *-----------------------------------------------------------------------
+ */
+void
+spriteScreenInit (pScreen)
+    ScreenPtr	  pScreen;
+{
+    fbFd    	  *fb;
+    DrawablePtr	  pDrawable;
+    BITS32  	  junk;
+
+    fb = &spriteFbs[pScreen->myNum];
+
+    /*
+     * We need a GC for the cursor functions. We also don't want to
+     * have to allocate one each time. Note that it is allocated before
+     * CreateGC is intercepted so there are no extra indirections when
+     * drawing the cursor...
+     */
+    fb->pGC = CreateScratchGC (pScreen, pScreen->rootDepth);
+    fb->pGC->graphicsExposures = FALSE;
+    
+    /*
+     * Preserve the "regular" functions
+     */
+    fb->CreateGC =	    	    	pScreen->CreateGC;
+    fb->CreateWindow = 	    	    	pScreen->CreateWindow;
+    fb->ChangeWindowAttributes =    	pScreen->ChangeWindowAttributes;
+    fb->GetImage =	    	    	pScreen->GetImage;
+    fb->GetSpans =	    	    	pScreen->GetSpans;
+
+    /*
+     * Interceptions
+     */
+    pScreen->CreateGC =	    	    	spriteCreateGC;
+    pScreen->CreateWindow = 	    	spriteCreateWindow;
+    pScreen->ChangeWindowAttributes = 	spriteChangeWindowAttributes;
+    pScreen->QueryBestSize =	    	spriteQueryBestSize;
+    pScreen->GetImage =	    	    	spriteGetImage;
+    pScreen->GetSpans =	    	    	spriteGetSpans;
+
+    /*
+     * Cursor functions
+     */
+    pScreen->RealizeCursor = 	    	spriteRealizeCursor;
+    pScreen->UnrealizeCursor =	    	spriteUnrealizeCursor;
+    pScreen->DisplayCursor = 	    	spriteDisplayCursor;
+    pScreen->SetCursorPosition =    	spriteSetCursorPosition;
+    pScreen->CursorLimits = 	    	spriteCursorLimits;
+    pScreen->PointerNonInterestBox = 	spritePointerNonInterestBox;
+    pScreen->ConstrainCursor = 	    	spriteConstrainCursor;
+    pScreen->RecolorCursor = 	    	spriteRecolorCursor;
+
+    /*
+     * Set pixel values for sun's view of the world...
+     */
+    pScreen->whitePixel = 0;
+    pScreen->blackPixel = 1;
+
+    /*
+     *	Block/Unblock handlers
+     */
+    screenInfo.screen[0].BlockHandler = spriteBlockHandler;
+    screenInfo.screen[0].WakeupHandler = spriteWakeupHandler;
+}
+
+@
+
+
+1.7
+log
+@added X11R3 mods
+@
+text
+@d19 1
+a19 1
+"$Header: spriteInit.c,v 1.6 88/03/27 21:17:08 deboor Exp $ SPRITE (Berkeley)";
+d29 2
+a30 2
+extern Bool spriteCG2CProbe();
+extern Bool spriteCG4CProbe();
+d32 1
+a44 1
+    char    *devName;
+d46 1
+a46 3
+    spriteBW2Probe,  	"/dev/bwtwo0",
+    spriteCG2Probe,  	"/dev/cgtwo0",
+    spriteCG4Probe,  	"/dev/cgfour0",
+d95 1
+a95 4
+        screenInfo->formats[i].depth = formats[i].depth;
+        screenInfo->formats[i].bitsPerPixel = formats[i].bitsPerPixel;
+        screenInfo->formats[i].bitsPerPixel = formats[i].bitsPerPixel;
+        screenInfo->formats[i].scanlinePad = formats[i].scanlinePad;
+d99 1
+a99 1
+	if ((* spriteFbData[i].probeProc) (screenInfo, index, i, argc, argv)) {
+d147 2
+a283 2
+    screenInfo.screen[0].blockData =
+	screenInfo.screen[0].wakeupData = (pointer)k;
+@
+
+
+1.6
+log
+@*** empty log message ***
+@
+text
+@d19 1
+a19 1
+"$Header: spriteInit.c,v 1.5 87/08/04 17:29:42 deboor Exp $ SPRITE (Berkeley)";
+d23 1
+a23 1
+#include    "servermd.h"
+a28 2
+extern Bool spriteCG2MProbe();
+#ifdef DO_COLOR
+d30 1
+a30 1
+#endif
+a31 5
+#ifdef DO_COLOR
+#define spriteCG2Probe	spriteCG2CProbe
+#else
+#define spriteCG2Probe	spriteCG2MProbe
+#endif
+d48 1
+d62 1
+d112 2
+a151 7
+    /*
+     * XXX: Shouldn't really be attached to the screen...
+     */
+    screenInfo.screen[0].BlockHandler = spriteBlockHandler;
+    screenInfo.screen[0].WakeupHandler = spriteWakeupHandler;
+    screenInfo.screen[0].blockData =
+	screenInfo.screen[0].wakeupData = (pointer)k;
+d260 1
+d277 1
+a277 1
+     * Other
+d279 2
+a280 1
+    pScreen->QueryBestSize =	    	spriteQueryBestSize;
+d283 1
+a283 1
+     * Set pixel values for sun's view of the world...
+d285 4
+a288 2
+    pScreen->whitePixel = 0;
+    pScreen->blackPixel = 1;
+@
+
+
+1.5
+log
+@Added pixmap format so PixmapBytePad actually works. Changed
+call to GetScratchGC in spriteScreenInit to be CreateScratchGC again.
+@
+text
+@d19 1
+a19 1
+"$Header: spriteInit.c,v 1.4 87/07/07 18:00:52 deboor Exp $ SPRITE (Berkeley)";
+d23 1
+a23 1
+
+a116 2
+    if (index == 0)
+	FatalError("Can't find any displays\n");
+d126 1
+d137 4
+a140 1
+InitInput()
+d154 8
+d166 56
+d284 5
+@
+
+
+1.4
+log
+@reorganized InitOutput so the pixmap width padding stuff gets setup
+correctly by AddScreen
+@
+text
+@d19 1
+a19 1
+"$Header: spriteInit.c,v 1.3 87/06/30 19:08:36 deboor Exp $ SPRITE (Berkeley)";
+d66 4
+a69 2
+PixmapFormatRec	*formats;	/* None for now! */
+#define NUMFORMATS	0
+d182 1
+a182 4
+     * have to allocate one each time. Since the GCPerDepthArray for
+     * the screen hasn't been allocated yet, this call to GetScratchGC
+     * will give us a freshly-allocated, pristine scratch GC to use,
+     * and we never have to free it... Note that it is allocated before
+d186 2
+a187 1
+    fb->pGC = GetScratchGC (pScreen->rootDepth, pScreen);
+d196 1
+d205 1
+@
+
+
+1.3
+log
+@Nuked GC in fbFd
+@
+text
+@d19 1
+a19 1
+"$Header: spriteInit.c,v 1.2 87/06/20 19:56:42 deboor Exp $ SPRITE (Berkeley)";
+a91 13
+    for (i = 0, index = 0; i < NUMSCREENS; i++) {
+	if ((* spriteFbData[i].probeProc) (screenInfo, index, i, argc, argv)) {
+	    /* This display exists OK */
+	    index++;
+	} else {
+	    /* This display can't be opened */
+	    ;
+	}
+    }
+    if (index == 0)
+	FatalError("Can't find any displays\n");
+
+    screenInfo->numScreens = index;
+d106 12
+d179 11
+d218 1
+a218 1
+     * Set pixel values for sprite's view of the world...
+@
+
+
+1.2
+log
+@adapted to Beta-0
+@
+text
+@d19 1
+a19 1
+"$Header: spriteInit.c,v 1.1 87/06/16 12:20:52 deboor Exp $ SPRITE (Berkeley)";
+a177 16
+
+    /*
+     * Prepare the GC for cursor functions on this screen.
+     * Do this before setting interceptions to avoid looping when
+     * putting down the cursor...
+     */
+    pDrawable = (DrawablePtr)(pScreen->devPrivate);
+
+    fb->pGC = CreateScratchGC (pDrawable, (BITS32)0, (long *)0, &junk);
+
+    /*
+     * By setting graphicsExposures false, we prevent any expose events
+     * from being generated in the CopyArea requests used by the cursor
+     * routines.
+     */
+    fb->pGC->graphicsExposures = FALSE;
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d19 1
+a19 1
+"$Header: spriteInit.c,v 2.9 87/05/13 15:06:46 deboor Exp $ SPRITE (Berkeley)";
+a39 2
+#define	XDEVICE	"XDEVICE"
+
+d73 2
+a74 1
+ *	The
+a94 1
+	    screenInfo->CloseScreen[index] = (Bool (*)())NoopDDA;
+d119 1
+a119 1
+    sunInitCursor();
+d142 1
+a142 3
+    p = AddInputDevice(
+	MakeDevice(DEVICE_MOUSE, SUN_MS3, M_SUN, 0),
+	spriteMouseProc, TRUE);
+d144 1
+a144 3
+    k = AddInputDevice(
+	MakeDevice(DEVICE_KEYBOARD, 0, M_SUN, 0),
+	spriteKbdProc, TRUE);
+d186 1
+a186 1
+    fb->pGC = CreateGC (pDrawable, (BITS32)0, (long *)0, &junk);
+d206 4
+a209 4
+    pScreen->CreateGC =	    	    	sunCreateGC;
+    pScreen->CreateWindow = 	    	sunCreateWindow;
+    pScreen->ChangeWindowAttributes = 	sunChangeWindowAttributes;
+    pScreen->GetImage =	    	    	sunGetImage;
+d214 8
+a221 8
+    pScreen->RealizeCursor = 	    	sunRealizeCursor;
+    pScreen->UnrealizeCursor =	    	sunUnrealizeCursor;
+    pScreen->DisplayCursor = 	    	sunDisplayCursor;
+    pScreen->SetCursorPosition =    	sunSetCursorPosition;
+    pScreen->CursorLimits = 	    	sunCursorLimits;
+    pScreen->PointerNonInterestBox = 	sunPointerNonInterestBox;
+    pScreen->ConstrainCursor = 	    	sunConstrainCursor;
+    pScreen->RecolorCursor = 	    	sunRecolorCursor;
+@

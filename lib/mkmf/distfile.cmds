@@ -1,0 +1,13 @@
+# The following variable should be redefined from the command-line using
+# the format "rdist -f [this makefile] -d DIR=`pwd`"
+DIR = /dev/null
+
+EXCEPT_PAT = (\\~\$ \\^#.* .*#\..* /#.* \\.o\$ \\.bak\$ /version.h\$)
+EXCEPT = ()
+RHOST = (allspice)
+
+
+${DIR} -> ${RHOST} install -y -w ;
+        except_pat ${EXCEPT_PAT};
+	except ${EXCEPT};
+	special ${DIR} "cd $FILE; make clean";

@@ -1,0 +1,110 @@
+(Note: "keep" refers primarily to machine-independent code.)
+
+mach (md/mach.h md/machAsmDefs.h md/machConst.h md/machMon.h
+     md/machTypes.h) - use Mach for some (exec, migration); rest
+     (e.g., interrupt stuff) goes away.  asm defs not needed unless we keep
+     assembly files (e.g., for performance).
+     Note that some migration routines live in this module.
+
+dbg (md/{dbg.h,dbgAsm.h}) - put into kernel?
+
+dev (dev.h devBlockDevice.h devDiskLabel.h devDiskStats.h
+    devFsOpTable.h devNet.h devNull.h devQueue.h devSCSIDisk.h
+    devSCSITape.h devSyslog.h devTypes.h devVid.h) - keep syslog and
+    interface needed for other modules.  Otherwise replace with Mach
+    drivers and device interface.  How good is Mach device
+    instrumentation?  May want to later replace Mach drivers with Sprite
+    drivers, either for licensing or code quality reasons (e.g., Sprite
+    uses common code for some classes of devices).  (For syslog,
+    may want to initially replace with a printf stub.)
+    => For "MD" interface, look for cooperation between the MD code and
+    any machine-independent code (i.e., not just "dev").
+
+fs (fs.h fsNameOps.h fsStat.h) - keep; whole-page routines (e.g.,
+   Fs_PageRead) will these be needed by the pager.  Some scheduling
+   code 
+
+fscache (fscache.h fscacheBlocks.h) - keep (may need some changes for
+	block management, though)
+
+fsconsist (fsconsist.h) - keep
+
+fsdm (fsdm.h) - keep (domain interface), except have to redo disk
+     header stuff?
+
+fsio (fsio.h fsioDevice.h fsioFile.h fsioLock.h fsioPipe.h fsioRpc.h) -
+     keep; local device stuff probably needs changes
+
+fslcl (fslcl.h fslclNameHash.h) - keep
+
+fspdev (fspdev.h) - keep
+
+fsprefix (fsprefix.h) - keep
+
+fsrmt (fsrmt.h fsrmtDomain.h fsrmtMigrate.h fsrmtRpcStubs.h) - keep
+
+fsutil (fsutil.h fsutilTrace.h) - keep
+
+lfs (lfs.h lfsDesc.h lfsDescMap.h lfsDirOpLog.h lfsFileLayout.h
+  lfsSeg.h lfsSegLayout.h lfsStableMem.h lfsStats.h lfsSuperBlock.h
+  lfsUsageArray.h) - keep, but don't need right away (won't run on LFS
+  initially).
+
+libc - keep
+
+main (main.h) - keep, except for some stuff related to scheduling
+
+mem (mem.h) - keep (uses vm for low-level allocation; will replace
+  those routines with malloc calls).
+
+net (net.h netArp.h netRoute.h netTypes.h) - keep high-level code
+    (netArp, netCode, netRoute); replace with Mach drivers if faster
+    (netIE*, netLE*); rewrite Ultranet driver.  [See notes on "dev".]
+
+ofs (ofs.h) - keep, assuming we keep the Sprite disk layout.  Ideally,
+    we never actually teach Sprite about BSD disk layout; use an
+    existing server instead.
+
+proc (proc.h procMigrate.h procServer.h procTypes.h md/migVersion.h
+     md/procMach.h) - some stuff changes or goes away because we use Mach
+     tasks and Mach scheduling
+
+prof (prof.h) - keep user profiling (prof/{profMigrate,profProfil}.c);
+     need to think about kernel profiling (how is it driven off the
+     timer?)  Can you flush this code and use a second server for
+     profiling?  What are the CMU guys doing for the BSD
+     single-server?
+
+raid (raidExt.h) - keep
+
+recov (recov.h) - keep
+
+rpc (rpc.h rpcCall.h rpcClient.h rpcCltStat.h rpcHistogram.h
+  rpcPacket.h rpcServer.h rpcSrvStat.h rpcTrace.h rpcTypes.h) - keep
+
+sched (sched.h) - mostly goes away (let Mach do scheduling)
+
+sig (sig.h sigTypes.h) - (see BSD uxkern/ux_exception.c, signal code)
+    may need to rewrite signals.c?
+
+sync (sync.h syncLock.h syncTypes.h) - Initially keep most of impl,
+     rewriting bottom layer to use C threads (or to mimic C threads).
+     May want to later use C threads directly, but would also like to
+     keep the debugging facilities and other instrumentation.  In any
+     event, keep the System V stuff.
+
+sys (sys.h sysSysCall.h sysSysCallParam.h) - rewrite some system call
+    stub stuff (to use MIG); keep the rest.
+
+timer (timer.h md/timerMach.h md/timerTick.h) - keep queue mgmt,
+      manipulation of timer values.; must make sure server doesn't
+      interfere with kernel's use of timers. What does BSD server do?
+
+utils (bf.h byte.h dump.h hash.h trace.h) - keep 
+
+vm (vm.h vmSwapDir.h vmTrace.h md/vmMach.h md/vmMachStat.h
+   md/vmMachTrace.h mv/vmFooConts.h) - rewrite, using Mach
+
+Local Variables:
+mode: indented-text
+End:

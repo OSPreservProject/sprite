@@ -1,0 +1,558 @@
+head     9.1;
+branch   ;
+access   ;
+symbols  ds3100:9.1 sun3:9.1 sun4nw:9.1 symm:9.1 spur:9.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.1
+date     90.09.26.12.23.23;  author kupfer;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.55.39;  author douglis;  state Stable;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.30.11.39.37;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.07.23;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.10.32;  author brent;  state Stable;
+branches ;
+next     5.2;
+
+5.2
+date     87.12.15.15.27.02;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.09.30.12.48.00;  author andrew;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.38.39;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.1
+log
+@Changes for function prototypes.
+@
+text
+@/* 
+ * dbgIP.c --
+ *
+ *	Routines to handle the IP/UDP protocol for the debugger. Validates
+ *	input packets and formats pacjkets for output.
+ *
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/dbg/sun3.md/RCS/dbgIP.c,v 9.0 89/09/12 14:55:39 douglis Stable Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <dbg.h>
+#include <sys.h>
+#include <user/net.h>
+#include <stdio.h>
+
+extern	int	dbgTraceLevel;
+
+/*
+ * Forward declarations.
+ */
+
+#ifdef DEBUG
+static void 	TestInputProc _ARGS_((int size, Net_IPHeader *headerPtr));
+static char *	ProtNumToName _ARGS_((int num)); /* unsigned char */
+#endif /* DEBUG */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dbg_ValidatePacket --
+ *
+ *	This routine checks to see if an IP/UDP packet is proper. This
+ *	involves checking for the the proper sizes and that the packet 
+ *	has not been corrupted. The packet is checked to see if has the 
+ *	right UDP port. If the port matches then it is assumed that the 
+ *	packet is addressed to us.
+ *
+ *	Note: IP options processing and fragment reasssembly are not done.
+ *
+ * Results:
+ *	TRUE if packet processed successfully.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Boolean
+Dbg_ValidatePacket(size, ipPtr, lenPtr, dataPtrPtr, 
+		destIPAddrPtr, srcIPAddrPtr, srcPortPtr)
+
+    int				size;		/* IP packet size in bytes. */
+    register Net_IPHeader	*ipPtr;		/* Ptr to IP packet buffer. */
+    int				*lenPtr;	/* Size of data in bytes.(out)*/
+    Address			*dataPtrPtr;	/* Address of data in the
+						 * in the packet. (out) */
+    Net_InetAddress		*destIPAddrPtr;	/* IP addr of this machine. 
+						 * (out) */
+    Net_InetAddress		*srcIPAddrPtr;	/* IP addr of sender. (out) */
+    unsigned int		*srcPortPtr;	/* UDP port from the sender
+						 * (needed to reply to the 
+						 * sender). */
+{
+    register Net_UDPHeader	*udpPtr;
+    register int		headerLenInBytes;
+
+    if (size < sizeof(Net_IPHeader)) {
+	if (dbgTraceLevel >= 4) {
+	    printf("Dbg_ValidatePacket: Bad size %d\n", size);
+	}
+	return(FALSE);
+    }
+
+    headerLenInBytes = ipPtr->headerLen * 4;
+    udpPtr = (Net_UDPHeader *) ((Address) ipPtr + headerLenInBytes);
+
+    /*
+     * Validate the IP/UDP packet. The packet is checked for the following:
+     *  1) have a proper IP header length,
+     *  2) the total length of the packet must be larger than the IP header,
+     *  3) the IP checksum is ok,
+     *  4) the protocol is UDP,
+     *  5) the UDP packet length is proper,
+     *  6) the UDP dest. port matches the given port #,
+     *  7) the IP packet is not a fragment.
+     *
+     * The checks are done in order of importance and likelihood of being false.
+     * For instance, the header length should be validated before accessing
+     * fields in the header and it is more likely that the UDP port won't match
+     * than the packet is a fragment.
+     */
+    if (headerLenInBytes < sizeof(Net_IPHeader)) {
+	if (dbgTraceLevel >= 5) {
+	    printf("Failed case 1: %d\n", headerLenInBytes);
+	}
+	return(FALSE);
+    } else if (Net_NetToHostShort(ipPtr->totalLen) < ipPtr->headerLen) {
+	if (dbgTraceLevel >= 5) {
+	    printf("Failed case 2: %d, %d\n", 
+			Net_NetToHostShort(ipPtr->totalLen), ipPtr->headerLen);
+	}
+	return(FALSE);
+    } else if (Net_InetChecksum(headerLenInBytes, (Address) ipPtr) != 0) {
+	if (dbgTraceLevel >= 5) {
+	    printf("Failed case 3 (IP checksum: %x)\n", ipPtr->checksum);
+	}
+	return(FALSE);
+    } else if (ipPtr->protocol != NET_IP_PROTOCOL_UDP) {
+	if (dbgTraceLevel >= 5) {
+	    printf("Failed case 4: %d\n", ipPtr->protocol);
+	}
+	return(FALSE);
+    } else if (Net_NetToHostShort(udpPtr->len) < sizeof(Net_UDPHeader)) {
+	if (dbgTraceLevel >= 5) {
+	    printf("Failed case 5: %d, %d\n",
+		    Net_NetToHostShort(udpPtr->len), sizeof(Net_UDPHeader));
+	}
+	return(FALSE);
+    } else if (Net_NetToHostShort(udpPtr->destPort) < DBG_UDP_PORT) {
+	if (dbgTraceLevel >= 5) {
+	    printf("Failed case 6: %d, %d\n", 
+		    Net_NetToHostShort(udpPtr->destPort), DBG_UDP_PORT);
+	}
+	return(FALSE);
+    } else if ((ipPtr->flags & NET_IP_MORE_FRAGS) || (ipPtr->fragOffset != 0)) {
+	if (dbgTraceLevel >= 5) {
+	    printf("Failed case 7: %d, %d\n",
+		(ipPtr->flags & NET_IP_MORE_FRAGS), (ipPtr->fragOffset != 0));
+	}
+	return(FALSE);
+    } 
+
+    /*
+     * If the UDP packet was sent with a checksum, the checksum will be
+     * non-zero.
+     */
+    if (udpPtr->checksum != 0) {
+	Net_IPPseudoHdr		pseudoHdr;
+
+	/*
+	 * The checksum is computed for the IP "pseudo-header" and
+	 * the UDP header and data. When the UDP checksum was calculated,
+	 * the checksum field in the header was set to zero. When we 
+	 * recalculate the value, we don't zero the field so the computed 
+	 * value should be zero if the packet didn't get garbled.
+	 */
+	pseudoHdr.source	= ipPtr->source;
+	pseudoHdr.dest		= ipPtr->dest;
+	pseudoHdr.zero		= 0;
+	pseudoHdr.protocol	= ipPtr->protocol;
+	pseudoHdr.len		= udpPtr->len;
+	if (Net_InetChecksum2((int) udpPtr->len, (Address) udpPtr, 
+		&pseudoHdr) != 0) {
+
+	    if (dbgTraceLevel >= 4) {
+		printf("Dbg_ValidatePacket: Bad UDP checksum: %x\n", 
+				udpPtr->checksum);
+	    }
+	    return(FALSE);
+	}
+    }
+
+    *lenPtr	   = Net_NetToHostShort(udpPtr->len) - sizeof(Net_UDPHeader);
+    *dataPtrPtr	   = ((Address) udpPtr) + sizeof(Net_UDPHeader);
+    *destIPAddrPtr = Net_NetToHostInt(ipPtr->dest);
+    *srcIPAddrPtr  = Net_NetToHostInt(ipPtr->source);
+    *srcPortPtr	   = Net_NetToHostShort(udpPtr->srcPort);
+
+    if (dbgTraceLevel >= 4) {
+	printf("Dbg_ValidatePacket: Good packet\n");
+    }
+    return(TRUE);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dbg_FormatPacket --
+ *
+ *	Formats an IP/UDP packet for sending on the network.
+ *	The first Dbg_PacketHdrSize() bytes of *dataPtr must not be used -- 
+ *	this area is filled in with the IP and UDP headers.
+ *	The IP addresses and UDP port arguments are assumed to be in the
+ *	machine's native byte order. They are converted to network
+ *	byte order when the header is formatted.
+ *
+ *	Note: The IP header checksum is computed but the UDP checksum is not. 
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Dbg_FormatPacket(srcIPAddress, destIPAddress, destPort, dataSize, dataPtr)
+
+    Net_InetAddress	srcIPAddress;	/* IP address of this machine. */
+    Net_InetAddress	destIPAddress;	/* IP address of destination. */
+    unsigned int	destPort;	/* UDP port of destination. */
+    int			dataSize;	/* Size in bytes of data in *dataPtr. */
+    Address		dataPtr;	/* Buffer containing data. */
+{
+    register Net_IPHeader *ipPtr;	/* Ptr to IP header. */
+    register Net_UDPHeader *udpPtr;	/* Ptr to UDP header. */
+    static	int	ident = 0;
+
+    ipPtr  = (Net_IPHeader *) dataPtr;
+    udpPtr = (Net_UDPHeader *) (dataPtr + sizeof(Net_IPHeader));
+
+    ipPtr->version	= NET_IP_VERSION;
+    ipPtr->headerLen	= sizeof(Net_IPHeader) / 4;
+    ipPtr->typeOfService = 0;
+    ipPtr->totalLen	= Net_HostToNetShort(sizeof(Net_IPHeader) + 
+					sizeof(Net_UDPHeader) + dataSize);
+    ipPtr->ident	= ident++;
+    ipPtr->fragOffset	= 0;
+    ipPtr->flags	= 0;
+    ipPtr->timeToLive	= NET_IP_MAX_TTL;
+    ipPtr->protocol	= NET_IP_PROTOCOL_UDP;
+    ipPtr->source	= Net_HostToNetInt(srcIPAddress);
+    ipPtr->dest		= Net_HostToNetInt(destIPAddress);
+    ipPtr->checksum	= 0;
+    ipPtr->checksum	= 
+	    Net_HostToNetShort(Net_InetChecksum(sizeof(Net_IPHeader), 
+					(Address) ipPtr));
+
+    udpPtr->srcPort	= Net_HostToNetShort(DBG_UDP_PORT);
+    udpPtr->destPort	= Net_HostToNetShort(destPort);
+    udpPtr->len		= Net_HostToNetShort(sizeof(Net_UDPHeader) + dataSize);
+    udpPtr->checksum	= 0;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dbg_PacketHdrSize --
+ *
+ *	Returns the number of bytes that Dbg_FormatPacket expects to
+ *	format.
+ *
+ * Results:
+ *	The size of the packet header.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Dbg_PacketHdrSize()
+{
+    return(sizeof(Net_IPHeader) + sizeof(Net_UDPHeader));
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestInputProc --
+ *
+ *	Debugging code to print the header of an IP datagram.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifdef DEBUG
+
+static char srcAddr[18];
+static char destAddr[18];
+
+static void
+TestInputProc(size, headerPtr)
+    int				size;
+    register Net_IPHeader       *headerPtr;
+{
+    unsigned short		checksum;
+
+
+    (void) Net_InetAddrToString(headerPtr->source, srcAddr);
+    (void) Net_InetAddrToString(headerPtr->dest, destAddr);
+
+    printf("IP Packet: size = %d\n", size);
+    printf("Protocol, version:	%s, %d\n", 
+		    ProtNumToName(headerPtr->protocol),
+		    headerPtr->version);
+    printf("Src, dest addrs:	%s, %s\n", srcAddr, destAddr);
+    printf("Header, total len:	%d, %d\n", 
+		    headerPtr->headerLen, headerPtr->totalLen);
+
+    checksum = headerPtr->checksum, 
+    headerPtr->checksum = 0;
+    printf("checksum, recomp:	%x, %x\n", checksum, 
+		Net_InetChecksum((int)headerPtr->headerLen*4, 
+					(Address)headerPtr));
+    printf("Frag flags, offset, ID:	%x, %d, %x\n", 
+		    headerPtr->flags, headerPtr->fragOffset, 
+		    headerPtr->ident);
+    printf("\n");
+
+    return;
+}
+
+static char *
+ProtNumToName(num) 
+    unsigned char num;
+{
+    switch (num) {
+	case NET_IP_PROTOCOL_IP:
+	    return("IP");
+	case NET_IP_PROTOCOL_ICMP:
+	    return("ICMP");
+	case NET_IP_PROTOCOL_TCP:
+	    return("TCP");
+	case NET_IP_PROTOCOL_EGP:
+	    return("EGP");
+	case NET_IP_PROTOCOL_UDP:
+	    return("UDP");
+	default:
+	    return("???");
+    }
+}
+#endif DEBUG
+ 
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dbg/sun3.md/RCS/dbgIP.c,v 8.1 88/11/30 11:39:37 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d15 5
+a19 4
+#include "sprite.h"
+#include "dbg.h"
+#include "sys.h"
+#include "user/net.h"
+a22 1
+#ifdef DEBUG
+d26 5
+a30 2
+static void 		TestInputProc();
+#endif
+a286 1
+#include "sys.h"
+a289 1
+static char *ProtNumToName();
+d299 2
+a300 2
+    (void) Net_InetAddrToString(&(headerPtr->source), srcAddr);
+    (void) Net_InetAddrToString(&(headerPtr->dest), destAddr);
+@
+
+
+8.1
+log
+@Sys_Panic => panic
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dbg/sun2.md/RCS/dbgIP.c,v 8.0 88/11/11 18:07:23 douglis Stable Locker: brent $ SPRITE (Berkeley)";
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dbg/sun2.md/RCS/dbgIP.c,v 6.0 88/08/11 12:10:32 brent Stable Locker: douglis $ SPRITE (Berkeley)";
+d73 1
+a73 1
+	    Sys_Printf("Dbg_ValidatePacket: Bad size %d\n", size);
+d98 1
+a98 1
+	    Sys_Printf("Failed case 1: %d\n", headerLenInBytes);
+d103 1
+a103 1
+	    Sys_Printf("Failed case 2: %d, %d\n", 
+d109 1
+a109 1
+	    Sys_Printf("Failed case 3 (IP checksum: %x)\n", ipPtr->checksum);
+d114 1
+a114 1
+	    Sys_Printf("Failed case 4: %d\n", ipPtr->protocol);
+d119 1
+a119 1
+	    Sys_Printf("Failed case 5: %d, %d\n",
+d125 1
+a125 1
+	    Sys_Printf("Failed case 6: %d, %d\n", 
+d131 1
+a131 1
+	    Sys_Printf("Failed case 7: %d, %d\n",
+d160 1
+a160 1
+		Sys_Printf("Dbg_ValidatePacket: Bad UDP checksum: %x\n", 
+d174 1
+a174 1
+	Sys_Printf("Dbg_ValidatePacket: Good packet\n");
+d301 2
+a302 2
+    Sys_Printf("IP Packet: size = %d\n", size);
+    Sys_Printf("Protocol, version:	%s, %d\n", 
+d305 2
+a306 2
+    Sys_Printf("Src, dest addrs:	%s, %s\n", srcAddr, destAddr);
+    Sys_Printf("Header, total len:	%d, %d\n", 
+d311 1
+a311 1
+    Sys_Printf("checksum, recomp:	%x, %x\n", checksum, 
+d314 1
+a314 1
+    Sys_Printf("Frag flags, offset, ID:	%x, %d, %x\n", 
+d317 1
+a317 1
+    Sys_Printf("\n");
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: dbgIP.c,v 5.2 87/12/15 15:27:02 nelson Exp $ SPRITE (Berkeley)";
+@
+
+
+5.2
+log
+@Fixed lint errors.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: dbgIP.c,v 5.1 87/09/30 12:48:00 andrew Exp $ SPRITE (Berkeley)";
+@
+
+
+5.1
+log
+@Fixed check sums.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: dbgIP.c,v 5.0 87/08/10 15:39:08 brent Stable $ SPRITE (Berkeley)";
+d17 1
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: dbgIP.c,v 1.4 87/06/26 13:24:03 andrew Exp $ SPRITE (Berkeley)";
+d108 1
+a108 1
+	    Sys_Printf("Failed case 3\n");
+d155 3
+a157 2
+	if (~(Net_InetChecksum(sizeof(pseudoHdr), (Address) &pseudoHdr) +
+		Net_InetChecksum((int) udpPtr->len, (Address) udpPtr)) != 0) {
+d159 2
+a160 1
+		Sys_Printf("Dbg_ValidatePacket: Bad checksum\n");
+d341 1
+@

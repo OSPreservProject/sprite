@@ -1,0 +1,14 @@
+
+
+          assign_fields list var [var...]
+               Assign successive elements in a list to specified
+               variables.  Any leftover fields are discarded.  When
+               there are more variable names than fields, the
+               remaining variables are set to the empty string.
+
+               For example,
+
+                  assign_fields {dave 100 200 "Dave Foo"} name uid gid longName
+
+               Assigns name to ``dave'', uid to ``100'', gid to
+               ``200'', and longName to ``Dave Foo''.

@@ -1,0 +1,18984 @@
+# 1 "lfsrebuild.c"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static char rcsid[] = "$Header: /user2/mendel/lfs/src/cmds/checkLfs/RCS/checkLfs.c,v 1.1 90/06/01 10:10:18 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+
+
+# 25 "lfsrebuild.c"
+
+
+
+# 1 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 44 "/sprite/lib/include/cfuncproto.h"
+
+
+# 52 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+
+# 59 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+# 65 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+# 71 "/sprite/lib/include/cfuncproto.h"
+
+typedef char *_VoidPtr;
+
+
+
+
+
+# 28 "lfsrebuild.c"
+
+# 1 "/sprite/lib/include/varargs.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef char *va_list;
+
+
+
+
+
+
+# 28 "/sprite/lib/include/varargs.h"
+
+
+
+
+# 32 "/sprite/lib/include/varargs.h"
+
+
+
+
+# 29 "lfsrebuild.c"
+
+# 1 "/sprite/lib/include/sprite.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 76 "/sprite/lib/include/cfuncproto.h"
+
+
+# 22 "/sprite/lib/include/sprite.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef int Boolean;
+
+
+
+
+
+
+typedef int  ReturnStatus;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef char *Address;
+
+
+
+
+
+
+
+
+typedef int *ClientData;
+
+
+
+
+
+
+
+
+extern void panic();
+
+
+
+
+# 30 "lfsrebuild.c"
+
+# 1 "/sprite/lib/include/stdio.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 76 "/sprite/lib/include/cfuncproto.h"
+
+
+# 31 "/sprite/lib/include/stdio.h"
+
+# 34 "/sprite/lib/include/stdio.h"
+
+
+
+
+
+
+# 42 "/sprite/lib/include/stdio.h"
+
+
+# 47 "/sprite/lib/include/stdio.h"
+
+
+# 52 "/sprite/lib/include/stdio.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct _file {
+    unsigned char *lastAccess;	
+
+
+    int readCount;		
+
+
+    int writeCount;		
+
+
+
+
+
+    unsigned char *buffer;	
+
+    int bufSize;		
+
+
+    void (*readProc)	();
+				
+    void (*writeProc)	();
+				
+    int (*closeProc)	();
+				
+
+    ClientData clientData;	
+
+
+    int status;			
+
+
+    int flags;			
+
+    struct _file *nextPtr;	
+
+
+
+
+} FILE;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 201 "/sprite/lib/include/stdio.h"
+
+
+
+
+
+
+
+# 208 "/sprite/lib/include/stdio.h"
+
+# 212 "/sprite/lib/include/stdio.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern FILE stdioInFile, stdioOutFile, stdioErrFile;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        extern void	clearerr 	();
+        extern int	fclose 	();
+        extern FILE *	fdopen 	();
+        extern int	fflush 	();
+        extern int	fgetc 	();
+        extern char *	fgets 	();
+        extern int	fileno 	();
+        extern FILE *	fopen 	();
+        extern int	fputc 	();
+        extern int	fputs 	();
+        extern int	fread 
+	();
+        extern FILE *	freopen 
+	();
+        extern long	fseek 	();
+        extern long	ftell 	();
+        extern int	fwrite 
+	();
+        extern char *	gets 	();
+        extern int	getw 	();
+        extern void	perror 	();
+        extern FILE *	popen 	();
+        extern int	pclose 	();
+        extern int      remove 	();
+        extern int      rename 	();
+
+
+
+
+
+
+# 336 "/sprite/lib/include/stdio.h"
+
+
+
+
+
+
+
+
+        extern int	printf 	();
+        extern int	fprintf 	();
+        extern int	scanf 	();
+        extern char *	sprintf 	();
+        extern int	sscanf 	();
+        extern int	fscanf 	();
+        extern int	vfprintf 
+	();
+        extern int	vfscanf 
+	();
+        extern int	vprintf 	();
+        extern char *	vsprintf 
+	();
+
+
+        extern int	puts 	();
+        extern int	putw 	();
+        extern void	rewind 	();
+        extern void	setbuf 	();
+        extern void	setbuffer 	();
+        extern void	setlinebuf 	();
+        extern int	setvbuf 	();
+        extern FILE *	tmpfile 	();
+        extern char *	tmpnam 	();
+        extern char *	tempnam 	();
+        extern int	ungetc 	();
+        extern void	_cleanup 	();
+
+        extern void	Stdio_Setup 
+
+
+
+
+	();
+
+
+# 31 "lfsrebuild.c"
+
+# 1 "/sprite/lib/include/sys/types.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef	unsigned char	u_char;
+typedef	unsigned short	u_short;
+typedef	unsigned int	u_int;
+typedef	unsigned long	u_long;
+typedef	unsigned short	ushort;		
+
+# 46 "/sprite/lib/include/sys/types.h"
+
+# 52 "/sprite/lib/include/sys/types.h"
+
+
+
+typedef struct  _physadr { int r[1]; } *physadr;
+typedef struct  label_t {
+        int     val[12];
+} label_t;
+
+
+
+
+
+typedef struct _quad {long val[2]; } quad;
+typedef	struct	_uquad {unsigned long val[2]; } u_quad;
+
+typedef	long	daddr_t;
+typedef	char *	caddr_t;
+typedef	long *	qaddr_t;	
+typedef	u_long	ino_t;
+typedef	long	swblk_t;
+
+
+typedef	int	size_t;
+
+
+
+typedef	long	time_t;
+
+
+
+typedef	long	clock_t;
+
+typedef	short	dev_t;
+typedef	long	off_t;
+typedef	short	uid_t;
+typedef	short	gid_t;
+
+
+
+
+
+
+
+typedef int	pid_t;
+
+typedef long	key_t;		
+
+
+
+
+
+
+
+
+
+
+
+
+typedef long	fd_mask;
+
+
+
+
+
+typedef	struct fd_set {
+	fd_mask	fds_bits[	(((256)+(( (sizeof(fd_mask) * 8		)	)-1))/( (sizeof(fd_mask) * 8		)	))];
+} fd_set;
+
+
+
+
+
+
+
+# 32 "lfsrebuild.c"
+
+# 1 "/sprite/lib/include/option.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 76 "/sprite/lib/include/cfuncproto.h"
+
+
+# 22 "/sprite/lib/include/option.h"
+
+
+
+
+
+
+
+
+
+
+typedef struct Option {
+    int		type;		
+    char	*key;		
+    char *	address;	
+    char	*docMsg;	
+} Option;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int Opt_Parse 
+	();
+
+void Opt_PrintUsage 
+	();
+
+
+
+
+
+
+
+
+# 33 "lfsrebuild.c"
+
+# 1 "/sprite/lib/include/stdlib.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 76 "/sprite/lib/include/cfuncproto.h"
+
+
+# 32 "/sprite/lib/include/stdlib.h"
+
+# 36 "/sprite/lib/include/stdlib.h"
+
+
+
+
+
+# 45 "/sprite/lib/include/stdlib.h"
+
+
+
+
+
+
+
+
+        extern double	 atof 	();
+        extern int	 atoi 	();
+        extern long int atol 	();
+        extern double	 strtod 	();
+        extern long int strtol 	();
+        extern unsigned long int
+		strtoul 	();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 95 "/sprite/lib/include/stdlib.h"
+
+
+        extern _VoidPtr	malloc 	();
+        extern int	free 	();
+
+
+
+        extern _VoidPtr calloc 	();
+        extern _VoidPtr	realloc 	();
+        extern void	Mem_Bin 	();
+        extern char *	Mem_CallerPC();
+        extern void	Mem_DumpTrace 	();
+        extern void	Mem_PrintConfig 	();
+        extern void	Mem_PrintInUse 	();
+        extern void	Mem_PrintStats 	();
+        extern void	Mem_PrintStatsInt 	();
+
+
+
+
+        extern void	Mem_SetPrintProc 	();
+        extern int	Mem_Size 	();
+
+
+
+
+
+typedef struct {
+    int		size;	
+    int		flags;	
+} Mem_TraceInfo;
+
+        extern void	Mem_SetTraceSizes 
+	();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern int	mem_SmallMinNum;
+extern int	mem_LargeMinNum;
+extern int	mem_LargeMaxSize;
+
+
+
+
+
+extern int	mem_NumAllocs;
+extern int	mem_NumFrees;
+
+
+
+
+
+
+
+
+typedef struct div_t {
+    int quot;
+    int rem;
+} div_t;
+
+typedef struct {
+    long int quot;
+    long int rem;
+} ldiv_t;
+
+        extern int	abs 	();
+        extern div_t	div 	();
+        extern long int labs 	();
+        extern ldiv_t	ldiv 	();
+
+
+
+
+
+
+
+        extern void	abort 	();
+        extern int	atexit 	();
+        extern _VoidPtr bsearch 
+
+	();
+        extern int	exit 	();
+        extern char *	getenv 	();
+        extern void	qsort 
+	();
+        extern int	rand 	();
+        extern long	random 	();
+        extern int	srand 	();
+        extern int	srandom 	();
+        extern int	system 	();
+
+
+# 34 "lfsrebuild.c"
+
+# 1 "/sprite/lib/include/string.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 76 "/sprite/lib/include/cfuncproto.h"
+
+
+# 22 "/sprite/lib/include/string.h"
+
+extern _VoidPtr	memchr 	();
+extern int	memcmp 	();
+extern _VoidPtr	memcpy 	();
+extern _VoidPtr	memmove 	();
+extern _VoidPtr	memset 	();
+
+extern int	strcasecmp 	();
+extern char *	strcat 	();
+extern char *	strchr 	();
+extern int	strcmp 	();
+extern char *	strcpy 	();
+extern int	strcspn 	();
+extern char *	strdup 	();
+extern char *	strerror 	();
+extern int	strlen 	();
+extern int	strncasecmp 	();
+extern char *	strncat 	();
+extern int	strncmp 	();
+extern char *	strncpy 	();
+extern char *	strpbrk 	();
+extern char *	strrchr 	();
+extern int	strspn 	();
+extern char *	strstr 	();
+extern char *	strtok 	();
+
+
+
+
+
+extern char *	index 	();
+extern char *	rindex 	();
+
+
+# 35 "lfsrebuild.c"
+
+# 1 "/sprite/lib/include/sys/file.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 36 "lfsrebuild.c"
+
+# 1 "/sprite/lib/include/alloca.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 26 "/sprite/lib/include/alloca.h"
+
+extern char *alloca();
+
+
+
+
+# 37 "lfsrebuild.c"
+
+# 1 "/sprite/lib/include/bstring.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 76 "/sprite/lib/include/cfuncproto.h"
+
+
+# 22 "/sprite/lib/include/bstring.h"
+
+extern int	bcmp 	();
+extern void	bcopy 	();
+extern void	bzero 	();
+extern int	ffs 	();
+
+
+# 38 "lfsrebuild.c"
+
+# 1 "/sprite/lib/include/unistd.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 76 "/sprite/lib/include/cfuncproto.h"
+
+
+# 22 "/sprite/lib/include/unistd.h"
+
+# 1 "/sprite/lib/include/sys/types.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 125 "/sprite/lib/include/sys/types.h"
+
+# 23 "/sprite/lib/include/unistd.h"
+
+# 26 "/sprite/lib/include/unistd.h"
+
+
+
+
+# 32 "/sprite/lib/include/unistd.h"
+
+
+# 37 "/sprite/lib/include/unistd.h"
+
+
+
+
+
+
+
+extern void  _exit 	();
+extern int access 	();
+extern int chdir 	();
+extern int chown 	();
+extern int close 	();
+extern int dup 	();
+extern int dup2 	();
+extern int execl 	();
+extern int execle 	();
+extern int execlp 	();
+extern int execv 	();
+extern int execve 	();
+extern int execvp 	();
+extern int fork 	();
+extern char *getcwd 	();
+extern gid_t getegid 	();
+extern uid_t geteuid 	();
+extern gid_t getgid 	();
+extern int getgroups 	();
+extern int getpid 	();
+extern uid_t getuid 	();
+extern int isatty 	();
+extern long lseek 	();
+extern int pipe 	();
+extern int read 	();
+extern int setgid 	();
+extern int setuid 	();
+extern unsigned sleep 	();
+extern int unlink 	();
+extern int write 	();
+
+
+extern char *crypt 	();
+extern int fchown 	();
+extern int flock 	();
+extern int ftruncate 	();
+extern int readlink 	();
+extern int setegid 	();
+extern int seteuid 	();
+extern int setreuid 	();
+extern int symlink 	();
+extern int truncate 	();
+extern int umask 	();
+extern int vfork 	();
+
+
+
+
+# 39 "lfsrebuild.c"
+
+# 1 "/sprite/lib/include/bit.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 26 "/sprite/lib/include/bit.h"
+
+
+# 1 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 76 "/sprite/lib/include/cfuncproto.h"
+
+
+# 28 "/sprite/lib/include/bit.h"
+
+# 1 "/sprite/lib/include/bstring.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 28 "/sprite/lib/include/bstring.h"
+
+# 29 "/sprite/lib/include/bit.h"
+
+
+
+
+
+# 34 "/sprite/lib/include/bit.h"
+
+
+
+# 37 "/sprite/lib/include/bit.h"
+
+
+
+
+# 41 "/sprite/lib/include/bit.h"
+
+
+
+# 44 "/sprite/lib/include/bit.h"
+
+
+
+
+# 48 "/sprite/lib/include/bit.h"
+
+
+
+
+# 52 "/sprite/lib/include/bit.h"
+
+
+
+
+# 56 "/sprite/lib/include/bit.h"
+
+
+
+# 59 "/sprite/lib/include/bit.h"
+
+
+
+
+# 63 "/sprite/lib/include/bit.h"
+
+
+
+# 66 "/sprite/lib/include/bit.h"
+
+
+extern int	  Bit_FindFirstSet 	();
+extern int	  Bit_FindFirstClear 	();
+extern Boolean	  Bit_Intersect 	();
+extern Boolean 	  Bit_Union 	();
+extern Boolean 	  Bit_AnySet 	();
+extern int  	  *Bit_Expand 	();
+	 
+
+# 40 "lfsrebuild.c"
+
+# 1 "/sprite/lib/include/time.h"
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 76 "/sprite/lib/include/cfuncproto.h"
+
+
+# 13 "/sprite/lib/include/time.h"
+
+# 17 "/sprite/lib/include/time.h"
+
+# 21 "/sprite/lib/include/time.h"
+
+
+
+
+
+struct tm {
+	int	tm_sec;
+	int	tm_min;
+	int	tm_hour;
+	int	tm_mday;
+	int	tm_mon;
+	int	tm_year;
+	int	tm_wday;
+	int	tm_yday;
+	int	tm_isdst;
+	long	tm_gmtoff;
+	char	*tm_zone;
+};
+
+        extern clock_t clock 	();
+        extern time_t time 	();
+        extern time_t mktime 	();
+        extern double difftime 	();
+        extern struct tm *gmtime 	();
+        extern struct tm *localtime 	();
+        extern char *asctime 	();
+        extern char *ctime 	();
+        extern int strftime 
+	();
+
+
+# 41 "lfsrebuild.c"
+
+# 1 "/sprite/lib/include/sys/time.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 76 "/sprite/lib/include/cfuncproto.h"
+
+
+# 14 "/sprite/lib/include/sys/time.h"
+
+
+
+
+
+struct timeval {
+	long	tv_sec;		
+	long	tv_usec;	
+};
+
+struct timezone {
+	int	tz_minuteswest;	
+	int	tz_dsttime;	
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 44 "/sprite/lib/include/sys/time.h"
+
+
+
+
+
+
+
+
+
+
+
+struct	itimerval {
+	struct	timeval it_interval;	
+	struct	timeval it_value;	
+};
+
+
+
+# 1 "/sprite/lib/include/time.h"
+
+
+
+
+
+
+
+
+
+
+# 51 "/sprite/lib/include/time.h"
+
+# 62 "/sprite/lib/include/sys/time.h"
+
+
+        extern int	getitimer 	();
+        extern int	gettimeofday 
+	();
+        extern int	settimeofday 
+	();
+        extern int	setitimer 
+	();
+        extern int	utimes 
+	();
+
+
+# 42 "lfsrebuild.c"
+
+# 1 "/sprite/lib/include/fs.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/spriteTime.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 23 "/sprite/lib/include/spriteTime.h"
+
+
+
+
+
+
+
+
+typedef struct {
+    int	seconds;
+    int	microseconds;
+} Time;
+
+typedef struct {
+    int year;
+    int month;
+    int dayOfYear;
+    int dayOfMonth;
+    int dayOfWeek;
+    int	hours;
+    int	minutes;
+    int	seconds;
+    int localOffset;
+    Boolean dst;
+} Time_Parts;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern Time time_ZeroSeconds;
+extern Time time_OneMicrosecond;
+extern Time time_OneMillisecond;
+extern Time time_TenMilliseconds;
+extern Time time_HundredMilliseconds;
+extern Time time_HalfSecond;
+extern Time time_OneSecond;
+extern Time time_TwoSeconds;
+extern Time time_TenSeconds;
+extern Time time_OneMinute;
+extern Time time_OneHour;
+extern Time time_OneDay;
+extern Time time_OneYear;
+extern Time time_OneLeapYear;
+
+
+
+
+extern void	Time_Add 	();
+extern void	Time_Subtract 
+	();
+extern void	Time_Multiply 	();
+extern void	Time_Divide 	();
+extern void	Time_Normalize 	();
+extern void	Time_ToAscii 
+	();
+extern void	Time_ToParts 
+	();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 124 "/sprite/lib/include/spriteTime.h"
+
+
+
+
+
+# 129 "/sprite/lib/include/spriteTime.h"
+
+
+
+
+# 133 "/sprite/lib/include/spriteTime.h"
+
+
+
+
+
+# 138 "/sprite/lib/include/spriteTime.h"
+
+
+
+
+
+# 143 "/sprite/lib/include/spriteTime.h"
+
+
+
+# 23 "/sprite/lib/include/fs.h"
+
+# 1 "/sprite/lib/include/kernel/procTypes.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 32 "/sprite/lib/include/kernel/procTypes.h"
+
+
+# 1 "/sprite/lib/include/proc.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef unsigned int 	Proc_PID;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef enum {
+    PROC_UNUSED,	
+    PROC_RUNNING,	
+    PROC_READY,		
+    PROC_WAITING,	
+
+    PROC_EXITING,	
+
+    PROC_DEAD,		
+    PROC_MIGRATED,	
+    PROC_NEW,		
+    PROC_SUSPENDED	
+} Proc_State;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/sprite.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 97 "/sprite/lib/include/sprite.h"
+
+# 227 "/sprite/lib/include/proc.h"
+
+# 1 "/sprite/lib/include/spriteTime.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 145 "/sprite/lib/include/spriteTime.h"
+
+# 228 "/sprite/lib/include/proc.h"
+# 232 "/sprite/lib/include/proc.h"
+
+
+# 1 "/sprite/lib/include/kernel/sigTypes.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 21 "/sprite/lib/include/kernel/sigTypes.h"
+
+
+# 1 "/sprite/lib/include/kernel/machTypes.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 23 "/sprite/lib/include/kernel/machTypes.h"
+
+
+# 1 "/sprite/lib/include/kernel/machConst.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 22 "/sprite/lib/include/kernel/machConst.h"
+
+
+# 1 "/sprite/lib/include/kernel/vm3maxConst.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 24 "/sprite/lib/include/kernel/machConst.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 371 "/sprite/lib/include/kernel/machConst.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 25 "/sprite/lib/include/kernel/machTypes.h"
+
+# 1 "/sprite/lib/include/fmt.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 76 "/sprite/lib/include/cfuncproto.h"
+
+
+# 22 "/sprite/lib/include/fmt.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef int Fmt_Format;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 54 "/sprite/lib/include/fmt.h"
+
+# 57 "/sprite/lib/include/fmt.h"
+
+
+
+
+# 63 "/sprite/lib/include/fmt.h"
+
+# 66 "/sprite/lib/include/fmt.h"
+
+# 69 "/sprite/lib/include/fmt.h"
+
+
+
+
+extern int Fmt_Convert 
+
+
+	();
+extern int Fmt_Size 
+
+	();
+
+
+
+# 26 "/sprite/lib/include/kernel/machTypes.h"
+
+
+
+
+
+typedef enum {
+    MACH_USER,
+    MACH_KERNEL
+} Mach_ProcessorStates;
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct {
+    Address		pc;			
+    unsigned		regs[32];	
+    unsigned		fpRegs[32];	
+
+    unsigned		fpStatusReg;		
+
+    unsigned		mflo, mfhi;		
+
+} Mach_RegState;
+
+
+
+
+typedef struct {
+    Mach_RegState	regState;		
+
+    int			unixRetVal;		
+
+    int                 savedV0, savedA3;       
+} Mach_UserState;
+
+
+
+
+typedef struct Mach_State {
+    Mach_UserState	userState;		
+    Mach_RegState	switchRegState;		
+
+    Address		kernStackStart;		
+
+    Address		kernStackEnd;		
+
+    unsigned		sstepInst;		
+
+
+    unsigned		tlbHighEntry;		
+
+    unsigned		tlbLowEntries[4 - 1];
+    						
+
+
+} Mach_State;
+
+
+
+
+typedef struct {
+    int		  	break1Inst;	
+
+    Mach_UserState	userState;	
+
+    unsigned		fpRegs[32];	
+
+    unsigned		fpStatusReg;		
+
+} Mach_SigContext;
+
+
+
+
+typedef struct {
+    int		regs[32];
+    int		fpRegs[32];
+    unsigned	sig[32];
+    unsigned	excPC;
+    unsigned	causeReg;
+    unsigned	multHi;
+    unsigned	multLo;
+    unsigned	fpCSR;
+    unsigned	fpEIR;
+    unsigned	trapCause;
+    unsigned	trapInfo;
+    unsigned	tlbIndex;
+    unsigned	tlbRandom;
+    unsigned	tlbLow;
+    unsigned	tlbContext;
+    unsigned	badVaddr;
+    unsigned	tlbHi;
+    unsigned	statusReg;
+} Mach_DebugState;
+
+
+
+
+
+typedef struct {
+    char	revision[9];	
+    char	vendor[9];	
+    char	module[9];	
+    char	type[5];	
+} Mach_SlotInfo;
+
+
+# 23 "/sprite/lib/include/kernel/sigTypes.h"
+
+
+
+
+
+# 31 "/sprite/lib/include/kernel/sigTypes.h"
+
+
+# 1 "/sprite/lib/include/sig.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef	struct {
+    int		action;
+    int		(*handler)();
+    int		sigHoldMask;
+} Sig_Action;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 33 "/sprite/lib/include/kernel/sigTypes.h"
+
+# 1 "/sprite/lib/include/kernel/procTypes.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 542 "/sprite/lib/include/kernel/procTypes.h"
+
+# 34 "/sprite/lib/include/kernel/sigTypes.h"
+
+
+
+
+
+typedef struct {
+    int			oldHoldMask;	
+
+
+    Mach_SigContext	machContext;	
+
+} Sig_Context;
+
+
+
+
+
+
+typedef struct {
+    int		sigNum;		
+    int		sigCode;    	
+    Sig_Context	*contextPtr;	
+
+    int		sigAddr;	
+    int		pad;		
+} Sig_Stack;
+
+
+
+# 234 "/sprite/lib/include/proc.h"
+
+# 1 "/sprite/lib/include/kernel/machTypes.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 140 "/sprite/lib/include/kernel/machTypes.h"
+
+# 235 "/sprite/lib/include/proc.h"
+
+# 1 "/sprite/lib/include/vmTypes.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/sprite.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 97 "/sprite/lib/include/sprite.h"
+
+# 22 "/sprite/lib/include/vmTypes.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef int Vm_SegmentID;
+
+
+
+
+
+typedef struct Vm_SegmentInfo {
+    int			segNum;		
+    int 		refCount;	
+
+				        
+
+    char		objFileName[50];
+    int           	type;		
+    int			numPages;	
+    int			ptSize;		
+    int			resPages;	
+
+    int			flags;		
+
+    int			ptUserCount;	
+
+    int			numCOWPages;	
+
+    int			numCORPages;	
+
+    Address		minAddr;	
+
+    Address		maxAddr;	
+
+    int			traceTime;	
+
+} Vm_SegmentInfo;
+
+
+
+# 236 "/sprite/lib/include/proc.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct {
+    Time kernelCpuUsage;	
+    Time userCpuUsage;		
+
+    Time childKernelCpuUsage;	
+
+    Time childUserCpuUsage;	
+
+    int	numQuantumEnds;		
+
+    int numWaitEvents;		
+
+
+} Proc_ResUsage;
+
+
+
+
+
+typedef enum {
+    PROC_GET_THIS_DEBUG,
+    PROC_GET_NEXT_DEBUG,
+    PROC_CONTINUE,
+    PROC_SINGLE_STEP,
+    PROC_GET_DBG_STATE,
+    PROC_SET_DBG_STATE,
+    PROC_READ,
+    PROC_WRITE,
+    PROC_DETACH_DEBUGGER
+} Proc_DebugReq;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct {
+    Proc_PID	processID;		
+    int	termReason;			
+
+    int	termStatus;			
+
+    int	termCode;			
+    Mach_RegState regState;		
+    int	sigHoldMask;			
+    int	sigPendingMask;			
+    int	sigActions[		32]; 	
+
+    int	sigMasks[		32]; 	
+
+    int	sigCodes[		32]; 	
+
+
+} Proc_DebugState;
+
+
+
+
+
+typedef struct {
+    char *name;		
+    char *value;	
+} Proc_EnvironVar;
+
+
+
+
+typedef struct  {
+    int		processor;	
+
+
+
+    Proc_State	state;		
+ 
+
+    int		genFlags;	
+ 
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    Proc_PID	processID;		
+
+
+
+    Proc_PID	parentID;		
+
+    int		familyID;		
+
+    int		userID;			
+
+
+    int		effectiveUserID;	
+
+
+    
+
+
+
+
+
+
+
+
+
+    int		 event;		 
+
+    
+
+
+
+
+
+
+
+
+    int 	 billingRate;	
+
+    unsigned int recentUsage;	
+    unsigned int weightedUsage;	
+
+    unsigned int unweightedUsage; 
+
+
+    
+
+
+
+
+
+
+
+    Time kernelCpuUsage;	
+    Time userCpuUsage;		
+
+    Time childKernelCpuUsage;	
+
+    Time childUserCpuUsage;	
+
+    int 	numQuantumEnds;		
+
+
+    int		numWaitEvents;		
+
+
+    unsigned int schedQuantumTicks;	
+
+
+    
+
+
+
+
+
+
+    Vm_SegmentID		vmSegments[	4];
+
+
+    
+
+
+
+
+
+
+
+    int		sigHoldMask;		
+    int		sigPendingMask;		
+    					
+
+    int		sigActions[		32];
+    					
+
+    
+
+
+
+
+
+
+    int		peerHostID;		 
+
+
+    Proc_PID	peerProcessID;		 
+
+} Proc_PCBInfo;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct {
+    Time	interval;	
+    Time	curValue;	
+} Proc_TimerInterval;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct {
+    char argString[256];
+} Proc_PCBArgString;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 555 "/sprite/lib/include/proc.h"
+
+
+
+
+
+
+
+
+
+
+
+extern ReturnStatus Proc_SetExitHandler();
+extern void	    Proc_Exit();
+
+
+
+
+
+extern ReturnStatus Proc_Fork();
+extern void	    Proc_RawExit();
+extern ReturnStatus Proc_Detach();
+extern ReturnStatus Proc_Wait();
+extern ReturnStatus Proc_RawWait();
+extern ReturnStatus Proc_Exec();
+extern ReturnStatus Proc_ExecEnv();
+
+extern ReturnStatus Proc_GetIDs();
+extern ReturnStatus Proc_SetIDs();
+extern ReturnStatus Proc_GetGroupIDs();
+extern ReturnStatus Proc_SetGroupIDs();
+extern ReturnStatus Proc_GetFamilyID();
+extern ReturnStatus Proc_SetFamilyID();
+
+extern ReturnStatus Proc_GetPCBInfo();
+extern ReturnStatus Proc_GetResUsage();
+extern ReturnStatus Proc_GetPriority();
+extern ReturnStatus Proc_SetPriority();
+
+extern ReturnStatus Proc_Debug();
+extern ReturnStatus Proc_Profile();
+
+extern ReturnStatus Proc_SetIntervalTimer();
+extern ReturnStatus Proc_GetIntervalTimer();
+
+extern ReturnStatus Proc_SetEnviron();
+extern ReturnStatus Proc_UnsetEnviron();
+extern ReturnStatus Proc_GetEnvironVar();
+extern ReturnStatus Proc_GetEnvironRange();
+extern ReturnStatus Proc_InstallEnviron();
+extern ReturnStatus Proc_CopyEnviron();
+
+extern ReturnStatus Proc_Migrate();
+
+
+
+
+# 34 "/sprite/lib/include/kernel/procTypes.h"
+
+# 1 "/sprite/lib/include/sync.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 33 "/sprite/lib/include/sync.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct Sync_UserLock {
+    Boolean inUse;		
+    Boolean waiting;		
+} Sync_UserLock;
+
+
+typedef Sync_UserLock Sync_Lock;	 
+
+
+
+
+
+
+
+
+
+
+
+typedef struct Sync_Condition {
+    Boolean waiting;		
+} Sync_Condition;
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 86 "/sprite/lib/include/sync.h"
+
+
+
+
+
+
+typedef struct {
+    int		inUse;				
+    int		class;				
+    int		hit;				
+    int		miss;				
+    char	name[30];			
+    int		priorCount;			
+    int		priorTypes[1];	
+    int		activeCount;			
+    int		deadCount;			
+    int		spinCount;			
+} Sync_LockStat;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 168 "/sprite/lib/include/sync.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 198 "/sprite/lib/include/sync.h"
+
+
+
+
+
+
+extern ReturnStatus	Sync_GetLock();
+extern ReturnStatus	Sync_Unlock();
+extern ReturnStatus	Sync_SlowLock();
+extern ReturnStatus	Sync_SlowWait();
+extern ReturnStatus	Sync_SlowBroadcast();
+
+
+# 35 "/sprite/lib/include/kernel/procTypes.h"
+
+# 1 "/sprite/lib/include/kernel/syncLock.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 34 "/sprite/lib/include/kernel/syncLock.h"
+
+
+# 1 "/sprite/lib/include/list.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 23 "/sprite/lib/include/list.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct List_Links {
+    struct List_Links *prevPtr;
+    struct List_Links *nextPtr;
+} List_Links;
+
+
+
+
+
+extern void	List_Init 	(); 
+				
+
+extern void	List_Insert 	();
+				
+
+extern void	List_ListInsert 
+	();
+				
+
+extern void	List_Remove 	();
+				
+
+extern void	List_Move 	();
+				
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 113 "/sprite/lib/include/list.h"
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 146 "/sprite/lib/include/list.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 162 "/sprite/lib/include/list.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 179 "/sprite/lib/include/list.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 36 "/sprite/lib/include/kernel/syncLock.h"
+
+# 1 "/sprite/lib/include/sync.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 210 "/sprite/lib/include/sync.h"
+
+# 37 "/sprite/lib/include/kernel/syncLock.h"
+
+
+
+
+
+
+# 46 "/sprite/lib/include/kernel/syncLock.h"
+
+
+
+
+
+# 53 "/sprite/lib/include/kernel/syncLock.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct Sync_ListInfo {
+    List_Links	links;		
+    Address	lock;		
+
+} Sync_ListInfo;
+
+
+# 85 "/sprite/lib/include/kernel/syncLock.h"
+
+
+
+
+
+
+typedef enum Sync_LockClass {
+    SYNC_SEMAPHORE,			
+    SYNC_LOCK
+} Sync_LockClass;
+
+
+
+
+typedef struct Sync_Semaphore {
+    
+
+
+    int value;				
+
+
+
+# 114 "/sprite/lib/include/kernel/syncLock.h"
+
+
+
+    char *name;				
+    Address holderPC;			
+    struct Proc_ControlBlock *holderPCBPtr; 
+
+
+
+# 126 "/sprite/lib/include/kernel/syncLock.h"
+
+
+} Sync_Semaphore;
+
+
+
+
+
+typedef struct Sync_KernelLock{
+    
+
+
+    Boolean inUse;			
+    Boolean waiting;	        	
+
+
+# 149 "/sprite/lib/include/kernel/syncLock.h"
+
+
+
+    char *name;				
+    Address holderPC;			
+    struct Proc_ControlBlock *holderPCBPtr; 
+
+
+
+# 162 "/sprite/lib/include/kernel/syncLock.h"
+
+} Sync_KernelLock;
+
+
+# 168 "/sprite/lib/include/kernel/syncLock.h"
+
+
+
+
+
+# 36 "/sprite/lib/include/kernel/procTypes.h"
+
+# 1 "/sprite/lib/include/list.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 280 "/sprite/lib/include/list.h"
+
+# 37 "/sprite/lib/include/kernel/procTypes.h"
+
+# 1 "/sprite/lib/include/kernel/timer.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/list.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 280 "/sprite/lib/include/list.h"
+
+# 22 "/sprite/lib/include/kernel/timer.h"
+
+# 28 "/sprite/lib/include/kernel/timer.h"
+
+
+# 1 "/sprite/lib/include/spriteTime.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 145 "/sprite/lib/include/spriteTime.h"
+
+# 30 "/sprite/lib/include/kernel/timer.h"
+
+# 1 "/sprite/lib/include/kernel/timerTick.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/spriteTime.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 145 "/sprite/lib/include/spriteTime.h"
+
+# 21 "/sprite/lib/include/kernel/timerTick.h"
+
+
+
+
+typedef Time Timer_Ticks;
+
+
+
+
+
+extern unsigned int 	timer_IntZeroSeconds; 
+extern unsigned int 	timer_IntOneMillisecond;   
+extern unsigned int 	timer_IntOneSecond;
+extern unsigned int 	timer_IntOneMinute;
+extern unsigned int 	timer_IntOneHour; 
+extern Timer_Ticks	timer_TicksZeroSeconds;
+extern Time 		timer_MaxIntervalTime; 
+
+
+
+
+
+
+# 51 "/sprite/lib/include/kernel/timerTick.h"
+
+
+
+
+
+
+
+
+
+
+
+extern void Timer_AddIntervalToTicks 
+	();
+extern void Timer_GetCurrentTicks 	();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 93 "/sprite/lib/include/kernel/timerTick.h"
+
+
+
+
+
+
+
+
+
+# 31 "/sprite/lib/include/kernel/timer.h"
+
+# 1 "/sprite/lib/include/kernel/timerMach.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 32 "/sprite/lib/include/kernel/timer.h"
+
+# 1 "/sprite/lib/include/kernel/syncLock.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 171 "/sprite/lib/include/kernel/syncLock.h"
+
+
+# 33 "/sprite/lib/include/kernel/timer.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct {
+    List_Links	links;		
+
+    void	(*routine) 
+	();	
+			        
+    Timer_Ticks	time;		
+ 
+    ClientData	clientData;	
+
+
+    Boolean	processed;	
+
+
+    unsigned int interval;	
+
+
+} Timer_QueueElement;
+
+
+
+
+
+typedef struct {
+    int		callback;	
+    int		profile;	
+    int		spurious;	
+    int		schedule;	
+    int		resched;	
+    int		desched;	
+} Timer_Statistics;
+
+extern Timer_Statistics	timer_Statistics;
+extern Time		timer_UniversalApprox;
+extern Sync_Semaphore 	timer_ClockMutex;
+
+# 240 "/sprite/lib/include/kernel/timer.h"
+
+
+
+
+
+
+
+
+
+extern void Timer_Init 	();
+extern void Timer_ScheduleRoutine 
+	();
+extern Boolean Timer_DescheduleRoutine 
+	();
+extern void Timer_GetTimeOfDay 
+	();
+extern void Timer_GetRealTimeOfDay 
+	();
+extern void Timer_GetRealTimeFromTicks 
+
+	();
+extern void Timer_SetTimeOfDay 
+	();
+# 267 "/sprite/lib/include/kernel/timer.h"
+
+
+
+
+
+
+
+
+extern void Timer_TimerInit 	();
+extern void Timer_TimerStart 	();
+extern void Timer_TimerInactivate 	();
+
+
+
+
+
+extern void Timer_TimerGetInfo 	();
+extern void Timer_DumpQueue 	();
+extern void Timer_DumpStats 	();
+
+
+# 38 "/sprite/lib/include/kernel/procTypes.h"
+
+# 1 "/sprite/lib/include/kernel/sigTypes.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 21 "/sprite/lib/include/kernel/sigTypes.h"
+
+
+# 1 "/sprite/lib/include/kernel/machTypes.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 140 "/sprite/lib/include/kernel/machTypes.h"
+
+# 23 "/sprite/lib/include/kernel/sigTypes.h"
+
+
+
+
+
+
+
+
+
+
+
+
+# 61 "/sprite/lib/include/kernel/sigTypes.h"
+
+
+# 39 "/sprite/lib/include/kernel/procTypes.h"
+
+# 1 "/sprite/lib/include/kernel/machTypes.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 140 "/sprite/lib/include/kernel/machTypes.h"
+
+# 40 "/sprite/lib/include/kernel/procTypes.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct {
+    unsigned int	interval;	
+
+    ClientData		clientData;	
+    ClientData		token;		
+} Proc_CallInfo;
+
+
+
+
+
+typedef struct {
+    int			refCount;	
+
+    int			size;		
+    struct ProcEnvironVar *varArray;	
+} Proc_EnvironInfo;
+
+
+
+
+
+
+
+
+
+
+typedef struct {
+    List_Links links;			
+    struct Proc_ControlBlock *procPtr;	
+} Proc_PCBLink;
+
+
+
+
+
+
+
+
+
+typedef union {
+    Timer_Ticks	ticks;	
+    Time	time;	
+} Proc_Time;
+
+typedef struct {
+    int		type;		
+    Address	lockPtr;	
+} Proc_LockStackElement;
+
+
+
+
+
+
+
+
+typedef struct Proc_ControlBlock {
+    List_Links	links;		
+
+    int		processor;	
+
+
+
+    Proc_State	state;		
+
+ 
+
+    int		genFlags;	
+ 
+    int		syncFlags;	
+    int		schedFlags;	
+    int		exitFlags;	
+
+
+    List_Links		childListHdr;	
+    List_Links		*childList;	
+    Proc_PCBLink	siblingElement;	
+
+    Proc_PCBLink	familyElement;	
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    Proc_PID	processID;		
+
+
+
+    Proc_PID	parentID;		
+
+    int		familyID;		
+
+    int		userID;			
+
+
+    int		effectiveUserID;	
+
+
+    
+
+
+
+
+
+
+
+
+
+
+    int		 event;		 
+    Proc_PCBLink eventHashChain; 
+
+    
+
+
+
+    Sync_Condition	waitCondition;
+    Sync_Condition	lockedCondition;
+
+    
+
+
+
+
+    int			waitToken;
+
+    
+
+
+
+
+
+
+
+
+    int 	 billingRate;	
+
+    unsigned int recentUsage;	
+    unsigned int weightedUsage;	
+
+    unsigned int unweightedUsage; 
+
+
+    
+
+
+
+
+
+
+
+    Proc_Time kernelCpuUsage;	
+    Proc_Time userCpuUsage;	
+
+    Proc_Time childKernelCpuUsage;	
+
+    Proc_Time childUserCpuUsage;	
+
+    int 	numQuantumEnds;		
+
+
+    int		numWaitEvents;		
+
+
+    unsigned int schedQuantumTicks;	
+
+
+
+    
+
+
+
+
+
+
+
+ 
+    struct	Mach_State	*machStatePtr;
+
+
+    
+
+
+
+
+
+
+    struct	Vm_ProcInfo	*vmPtr;
+
+    
+
+
+
+
+
+
+
+    struct Fs_ProcessState	*fsPtr;
+
+    
+
+
+
+
+
+
+
+    int	termReason;		
+
+				
+    int	termStatus;		
+
+				
+    int	termCode;		
+				
+
+
+    
+
+
+
+
+
+
+
+    int		sigHoldMask;		
+    int		sigPendingMask;		
+
+
+    					
+
+    int		sigActions[		32];
+    					
+
+    int		sigMasks[		32];
+					
+
+    int		sigCodes[		32];
+    int		sigFlags;		
+
+    int		oldSigHoldMask;		
+
+    int		sigAddr;		
+
+    
+
+
+
+
+
+    struct ProcIntTimerInfo	*timerArray;
+
+    
+
+
+
+
+
+
+    int			peerHostID;	
+
+
+    Proc_PID		peerProcessID; 	
+
+    struct Proc_ControlBlock
+	             *rpcClientProcess;	
+
+
+
+    
+
+
+
+
+
+
+
+    
+
+
+    Proc_EnvironInfo	*environPtr;
+
+    
+
+
+    char	*argString;
+
+
+
+# 389 "/sprite/lib/include/kernel/procTypes.h"
+
+
+
+    
+
+
+
+
+
+     Sync_Semaphore		lockInfo;
+
+
+    
+
+
+
+
+
+
+    ReturnStatus (**kcallTable)();	
+
+
+
+
+
+    int specialHandling;		
+
+
+
+
+
+    
+
+
+
+
+
+
+
+     short *Prof_Buffer;    
+
+     int Prof_BufferSize;   
+     int Prof_Offset;       
+     int Prof_Scale;        
+
+     int Prof_PC;           
+
+
+    
+
+
+
+    Address	remoteExecBuffer;	 
+
+    Address	migCmdBuffer;		 
+
+    int		migCmdBufSize;		 
+
+    int		migFlags;		 
+
+
+
+    Proc_Time   preEvictionUsage; 	 
+
+
+
+    
+
+
+
+    int         unixErrno;               
+    
+
+
+
+
+    int         unixProgress;            
+
+
+    
+
+
+
+
+
+
+
+
+    int		extraField[10];		
+
+} Proc_ControlBlock;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef enum {
+    PROC_MIG_ENCAP_PROC,
+    PROC_MIG_ENCAP_VM,
+    PROC_MIG_ENCAP_FS,
+    PROC_MIG_ENCAP_MACH,
+    PROC_MIG_ENCAP_PROF,
+    PROC_MIG_ENCAP_SIG,
+    PROC_MIG_ENCAP_EXEC
+} Proc_EncapToken;
+
+
+
+
+
+
+
+
+
+
+typedef struct {
+    Proc_EncapToken	token;		
+    int			size;		
+    ClientData		data;		
+    int			special;	
+    ClientData		specialToken;	
+    int			processed;	
+
+
+
+
+} Proc_EncapInfo;
+
+
+# 24 "/sprite/lib/include/fs.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct Fs_Attributes {
+    int	serverID;		
+    int domain;			
+    int fileNumber;		
+    int type;			
+    int size;			
+    int numLinks;		
+    unsigned int permissions;	
+    int uid;			
+    int gid;			
+    int devServerID;		
+    int devType;		
+    int devUnit;		
+    Time createTime;		
+    Time accessTime;		
+    Time descModifyTime;	
+    Time dataModifyTime;	
+    int  blocks;		
+    int  blockSize;		
+    int	version;		
+    int userType;		
+    int pad[4];			
+} Fs_Attributes;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct Fs_FileID {
+    int		type;		
+
+
+
+    int		serverID;	
+
+
+    int		major;		
+    int		minor;		
+} Fs_FileID;			
+
+
+
+
+
+
+
+typedef struct Fs_UserIDs {
+    int user;			
+    int numGroupIDs;		
+    int group[8];	
+} Fs_UserIDs;			
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct Ioc_RepositionArgs {
+    int base;	
+    int offset;	
+} Ioc_RepositionArgs;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct Ioc_LockArgs {
+    int		flags;		
+
+
+
+
+
+    
+
+
+
+
+    int		hostID;		
+    Proc_PID	pid;		
+    int		token;		
+} Ioc_LockArgs;
+
+
+
+
+
+
+
+
+
+typedef struct Ioc_Owner {
+    Proc_PID	id;		
+    int		procOrFamily;	
+} Ioc_Owner;
+
+
+
+
+
+
+
+typedef struct Ioc_MapArgs {
+    int		numBytes;
+    Address	address;
+} Ioc_MapArgs;
+
+
+
+
+typedef struct Ioc_PrefixArgs {
+    char	prefix[1024];  
+} Ioc_PrefixArgs;
+
+
+
+
+
+
+
+
+typedef struct Ioc_WriteBackArgs {
+    int		firstByte;	
+    int		lastByte;	
+    Boolean	shouldBlock;	
+} Ioc_WriteBackArgs;
+
+
+
+
+
+typedef struct Ioc_MmapInfoArgs {
+    int		isMapped;	
+    int		clientID;	
+} Ioc_MmapInfoArgs;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct Fs_TwoPaths {
+    int		pathLen1;	
+    int		pathLen2;	
+    char 	*path1;		
+    char 	*path2;		
+} Fs_TwoPaths;
+
+
+
+
+typedef struct {
+    int	maxKbytes;		
+
+    int	freeKbytes;		
+
+
+
+    int	maxFileDesc;		
+
+    int	freeFileDesc;		
+    int blockSize;		
+    int optSize;		
+} Fs_DomainInfo;
+
+
+
+
+
+
+
+
+typedef struct Fs_Prefix {
+    int serverID;		
+
+    int domain;			
+    int fileNumber;		
+    int version;		
+    int flags;			
+    char prefix[64];
+    Fs_DomainInfo domainInfo;	
+} Fs_Prefix;
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct {
+    int		bufSize;	
+    Address	buffer;		
+
+
+} Fs_IOVector;
+
+
+
+
+
+
+
+typedef struct Fs_Device {
+    int		serverID;	
+
+    int		type;		
+
+    int		unit;		
+
+    ClientData	data;		
+
+
+} Fs_Device;
+
+
+
+
+typedef ClientData Fs_TimeoutHandler;
+
+extern void		    Fs_Dispatch();
+extern void		    Fs_EventHandlerCreate();
+extern void 		    Fs_EventHandlerDestroy();
+extern ClientData 	    Fs_EventHandlerData();
+extern ClientData 	    Fs_EventHandlerChangeData();
+extern char		    *Fs_GetTempName();
+extern int		    Fs_GetTempFile();
+extern int                  Fs_IOControl();
+extern Boolean		    Fs_IsATerm();
+extern Fs_TimeoutHandler    Fs_TimeoutHandlerCreate();
+extern void 		    Fs_TimeoutHandlerDestroy();
+
+extern int                  Ioc_ClearBits();
+extern int                  Ioc_GetFlags();
+extern int                  Ioc_GetOwner();
+extern int                  Ioc_Lock();
+extern int                  Ioc_Map();
+extern int                  Ioc_NumReadable();
+extern int                  Ioc_SetBits();
+extern int                  Ioc_Reposition();
+extern int                  Ioc_SetFlags();
+extern int                  Ioc_SetOwner();
+extern int                  Ioc_Truncate();
+extern int                  Ioc_Unlock();
+extern int                  Ioc_WriteBack();
+
+
+# 43 "lfsrebuild.c"
+
+# 1 "/sprite/lib/include/kernel/fs.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 39 "/sprite/lib/include/kernel/fs.h"
+
+
+# 1 "/sprite/lib/include/kernel/sys.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 23 "/sprite/lib/include/kernel/sys.h"
+
+
+# 1 "/sprite/lib/include/sys.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 24 "/sprite/lib/include/sys.h"
+
+
+typedef enum {
+    SYS_WARNING,
+    SYS_FATAL
+} Sys_PanicLevel;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct {
+    int architecture;		
+    int type;			
+    int	processors;		
+} Sys_MachineInfo;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern ReturnStatus		Sys_GetMachineInfo();
+
+
+# 25 "/sprite/lib/include/kernel/sys.h"
+
+# 1 "/sprite/lib/include/sprite.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 97 "/sprite/lib/include/sprite.h"
+
+# 26 "/sprite/lib/include/kernel/sys.h"
+
+# 1 "/sprite/lib/include/status.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 39 "/sprite/lib/include/status.h"
+
+
+extern char *Stat_GetMsg 	();
+extern char *Stat_GetPrivateMsg();
+extern void Stat_PrintMsg 	();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern ReturnStatus	stat_LastError;
+extern void 	  	Stat_SetErrorHandler();
+extern void 	  	Stat_SetErrorData();
+extern void		Stat_GetErrorHandler();
+extern ReturnStatus	Stat_Error();
+
+
+
+
+
+
+
+extern int		Compat_MapCode 	();
+extern ReturnStatus	Compat_MapToSprite 	();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 27 "/sprite/lib/include/kernel/sys.h"
+
+# 1 "/sprite/lib/include/spriteTime.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 145 "/sprite/lib/include/spriteTime.h"
+
+# 28 "/sprite/lib/include/kernel/sys.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 75 "/sprite/lib/include/kernel/sys.h"
+
+
+
+
+
+
+
+extern ReturnStatus Sys_GetTimeOfDay();
+extern ReturnStatus Sys_SetTimeOfDay();
+extern ReturnStatus Sys_DoNothing();
+extern ReturnStatus Sys_Shutdown();
+extern ReturnStatus Sys_GetMachineInfo();
+extern ReturnStatus Sys_GetMachineInfoNew();
+
+
+
+
+# 41 "/sprite/lib/include/kernel/fs.h"
+
+# 1 "/sprite/lib/include/kernel/syncTypes.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 57 "/sprite/lib/include/kernel/syncTypes.h"
+
+
+# 1 "/sprite/lib/include/sync.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 210 "/sprite/lib/include/sync.h"
+
+# 59 "/sprite/lib/include/kernel/syncTypes.h"
+
+# 1 "/sprite/lib/include/kernel/procTypes.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 542 "/sprite/lib/include/kernel/procTypes.h"
+
+# 60 "/sprite/lib/include/kernel/syncTypes.h"
+
+# 1 "/sprite/lib/include/kernel/syncLock.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 171 "/sprite/lib/include/kernel/syncLock.h"
+
+
+# 61 "/sprite/lib/include/kernel/syncTypes.h"
+
+# 1 "/sprite/lib/include/kernel/machTypes.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 140 "/sprite/lib/include/kernel/machTypes.h"
+
+# 62 "/sprite/lib/include/kernel/syncTypes.h"
+
+# 1 "/sprite/lib/include/proc.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 610 "/sprite/lib/include/proc.h"
+
+# 63 "/sprite/lib/include/kernel/syncTypes.h"
+
+
+
+
+
+
+# 72 "/sprite/lib/include/kernel/syncTypes.h"
+
+
+
+
+
+# 79 "/sprite/lib/include/kernel/syncTypes.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct Sync_Instrument {
+    int numWakeups;		
+    int numWakeupCalls;		
+    int numSpuriousWakeups;	
+    int numLocks;		
+    int numUnlocks;		
+    int spinCount[60+1]; 
+    int sched_MutexMiss;	
+
+
+    char pad[	32];
+
+} Sync_Instrument;
+
+
+
+
+
+
+typedef struct Sync_RegElement {
+    List_Links 		links;			
+    int			hit;			
+    int			miss;			
+    int			type;			
+    char		*name;			
+    Sync_LockClass	class;			
+    int			priorCount;		
+    int			priorTypes[1]; 
+    int			activeLockCount;	
+    List_Links		activeLocks;		
+    int			deadLockCount;		
+} Sync_RegElement;
+
+
+
+
+typedef struct semid_ds Sync_SysVSem;
+
+
+
+
+
+
+typedef struct {
+    List_Links	links;		
+    int		hostID;		
+    Proc_PID	pid;		
+    int		waitToken;	
+} Sync_RemoteWaiter;
+
+
+
+
+
+
+
+
+
+# 42 "/sprite/lib/include/kernel/fs.h"
+
+# 1 "/sprite/lib/include/kernel/procTypes.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 542 "/sprite/lib/include/kernel/procTypes.h"
+
+# 43 "/sprite/lib/include/kernel/fs.h"
+
+# 1 "/sprite/lib/include/fs.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 619 "/sprite/lib/include/fs.h"
+
+# 44 "/sprite/lib/include/kernel/fs.h"
+
+# 1 "/sprite/lib/include/fmt.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 81 "/sprite/lib/include/fmt.h"
+
+
+# 45 "/sprite/lib/include/kernel/fs.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct Fs_ProcessState {
+    struct Fs_Stream	*cwdPtr;	
+    unsigned int   	filePermissions;
+
+
+
+
+    int		   	numStreams;	
+    struct Fs_Stream   **streamList;	
+
+
+    char		*streamFlags;	
+
+
+    int			numGroupIDs;	
+    int			*groupIDs;	
+
+} Fs_ProcessState;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct Fs_HandleHeader {
+    Fs_FileID		fileID;		
+    int			flags;		
+    Sync_Condition	unlocked;	
+    int			refCount;	
+    char		*name;		
+    List_Links		lruLinks;	
+
+    Proc_ControlBlock	*lockProcPtr;	
+
+
+} Fs_HandleHeader;
+
+
+
+# 115 "/sprite/lib/include/kernel/fs.h"
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct Fs_NameInfo {
+    Fs_FileID		fileID;		
+    Fs_FileID		rootID;		
+
+
+    int			domainType;	
+    struct Fsprefix	*prefixPtr;	
+
+
+} Fs_NameInfo;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct Fs_Stream {
+    Fs_HandleHeader	hdr;		
+
+
+    int			offset;		
+    int			flags;		
+    Fs_HandleHeader	*ioHandlePtr;	
+
+
+    Fs_NameInfo	 	*nameInfoPtr;	
+    List_Links		clientList;	
+
+} Fs_Stream;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct Fs_IOParam {
+    Address	buffer;			
+    int		length;			
+    int		offset;			
+    int		flags;			
+    Proc_PID	procID;			
+    Proc_PID	familyID;		
+    int		uid;			
+    int		reserved;		
+} Fs_IOParam;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 309 "/sprite/lib/include/kernel/fs.h"
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct Fs_IOReply {
+    int		length;			
+    int		flags;			
+    int		signal;			
+    int		code;			
+} Fs_IOReply;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct Fs_IOCParam {
+    int		command;	
+    Address	inBuffer;	
+    int		inBufSize;	
+    Address	outBuffer;	
+    int		outBufSize;	
+    Fmt_Format	format;		
+
+    Proc_PID	procID;		
+    Proc_PID	familyID;	
+    int		uid;		
+    int		flags;		
+
+
+} Fs_IOCParam;
+
+
+
+
+
+
+
+
+
+
+
+typedef enum {
+    FS_CODE_PAGE,
+    FS_HEAP_PAGE,
+    FS_SWAP_PAGE,
+    FS_SHARED_PAGE
+} Fs_PageType;
+
+
+
+
+
+
+
+typedef Address Fs_NotifyToken;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern  Boolean fsutil_Initialized;	
+
+
+
+
+extern int fsMaxRpcDataSize;
+extern int fsMaxRpcParamSize;
+
+
+
+
+extern void Fs_Init 	();
+extern void Fs_InitData 	();
+extern void Fs_InitNameSpace 	();
+extern void Fs_Bin 	();
+extern void Fs_ProcInit 	();
+extern void Fs_InheritState 
+	();
+extern void Fs_CloseState 	();
+
+
+
+
+
+extern ReturnStatus Fs_AttachDiskStub 
+	();
+extern ReturnStatus Fs_ChangeDirStub 	();
+extern ReturnStatus Fs_RemoveStub 	();
+extern ReturnStatus Fs_CommandStub 
+	();
+extern ReturnStatus Fs_CreatePipeStub 
+	();
+extern ReturnStatus Fs_GetAttributesIDStub 
+	();
+extern ReturnStatus Fs_GetAttributesStub 
+	();
+extern ReturnStatus Fs_GetNewIDStub 	();
+extern ReturnStatus Fs_HardLinkStub 	();
+extern ReturnStatus Fs_IOControlStub 
+
+	();
+extern ReturnStatus Fs_MakeDeviceStub 
+	();
+extern ReturnStatus Fs_MakeDirStub 	();
+extern ReturnStatus Fs_OpenStub 
+	();
+extern ReturnStatus Fs_ReadLinkStub 
+	();
+extern ReturnStatus Fs_ReadStub 
+	();
+extern ReturnStatus Fs_ReadVectorStub 
+	();
+extern ReturnStatus Fs_RemoveDirStub 	();
+extern ReturnStatus Fs_RemoveDirStub 	();
+extern ReturnStatus Fs_RenameStub 	();
+extern ReturnStatus Fs_SelectStub 
+
+	();
+extern ReturnStatus Fs_SetAttributesIDStub 
+	();
+extern ReturnStatus Fs_SetAttributesStub 
+	();
+extern ReturnStatus Fs_SetAttrIDStub 
+	();
+extern ReturnStatus Fs_SetAttrStub 
+	();
+extern ReturnStatus Fs_SetDefPermStub 	();
+extern ReturnStatus Fs_SymLinkStub 
+	();
+extern ReturnStatus Fs_WriteStub 
+	();
+extern ReturnStatus Fs_WriteVectorStub 
+	();
+extern ReturnStatus Fs_FileWriteBackStub 
+	();
+
+
+
+
+extern ReturnStatus Fs_UserClose 	();
+extern ReturnStatus Fs_UserRead 
+	();
+extern ReturnStatus Fs_UserReadVector 
+	();
+extern ReturnStatus Fs_UserWrite 
+	();
+extern ReturnStatus Fs_WriteVectorStub 
+	();
+extern ReturnStatus Fs_UserWriteVector 
+	();
+
+
+
+
+extern ReturnStatus Fs_ChangeDir 	();
+extern ReturnStatus Fs_Close 	();
+extern ReturnStatus Fs_Command 
+	();
+extern ReturnStatus Fs_CheckAccess 
+	();
+extern ReturnStatus Fs_GetAttributes 
+	();
+extern ReturnStatus Fs_GetNewID 	();
+extern ReturnStatus Fs_HardLink 	();
+extern ReturnStatus Fs_IOControl 
+	();
+extern ReturnStatus Fs_MakeDevice 
+	();
+extern ReturnStatus Fs_MakeDir 	();
+extern ReturnStatus Fs_Open 
+	();
+extern ReturnStatus Fs_Read 
+	();
+extern ReturnStatus Fs_Remove 	();
+extern ReturnStatus Fs_RemoveDir 	();
+extern ReturnStatus Fs_Rename 	();
+extern ReturnStatus Fs_SetAttributes 
+	();
+extern ReturnStatus Fs_SymLink 
+	();
+extern ReturnStatus Fs_Trunc 	();
+extern ReturnStatus Fs_TruncStream 	();
+extern ReturnStatus Fs_Write 
+	();
+
+
+
+
+extern void Fs_CheckSetID 
+	();
+extern void Fs_CloseOnExec 	();
+
+
+
+
+
+
+extern ReturnStatus Fs_InitiateMigration 
+	();
+extern int Fs_GetEncapSize 	();
+extern ReturnStatus Fs_EncapFileState 
+
+	();
+extern ReturnStatus Fs_DeencapFileState 
+	();
+
+
+
+
+extern ReturnStatus Fs_PageRead 
+	();
+extern ReturnStatus Fs_PageWrite 
+	();
+extern ReturnStatus Fs_PageCopy 
+	();
+extern ReturnStatus Fs_FileBeingMapped 
+	();
+
+
+
+
+extern ReturnStatus Fs_GetStreamID 
+	();
+extern void Fs_ClearStreamID 	();
+extern ReturnStatus Fs_GetStreamPtr 
+	();
+
+extern ReturnStatus Fs_GetAttrStream 
+	();
+extern ReturnStatus Fs_SetAttrStream 
+	();
+extern void Fs_CheckSetID 
+	();
+
+extern ClientData Fs_GetFileHandle 	();
+extern struct Vm_Segment **Fs_GetSegPtr 	();
+
+
+# 44 "lfsrebuild.c"
+
+# 1 "/sprite/lib/include/kernel/dev.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/status.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 219 "/sprite/lib/include/status.h"
+
+# 23 "/sprite/lib/include/kernel/dev.h"
+# 26 "/sprite/lib/include/kernel/dev.h"
+
+
+# 1 "/sprite/lib/include/kernel/devSyslog.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/user/fs.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 619 "/sprite/lib/include/user/fs.h"
+
+# 17 "/sprite/lib/include/kernel/devSyslog.h"
+
+# 1 "/sprite/lib/include/fs.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 619 "/sprite/lib/include/fs.h"
+
+# 18 "/sprite/lib/include/kernel/devSyslog.h"
+
+
+
+
+
+extern ReturnStatus Dev_SyslogOpen 
+	();
+extern ReturnStatus Dev_SyslogReopen 
+	();
+extern ReturnStatus Dev_SyslogRead 
+	();
+extern ReturnStatus Dev_SyslogWrite 
+	();
+extern void Dev_SyslogPutChar 	();
+extern ReturnStatus Dev_SyslogClose 
+	();
+extern ReturnStatus Dev_SyslogIOControl 
+	();
+extern ReturnStatus Dev_SyslogSelect 
+	();
+extern void Dev_SyslogDebug 	();
+extern void Dev_SyslogReturnBuffer 
+	();
+extern void Dev_SyslogDisable 	();
+
+
+# 28 "/sprite/lib/include/kernel/dev.h"
+
+# 1 "/sprite/lib/include/sysStats.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct Sys_TracelogRecord {
+    int		recordLen;	
+    int		time[2];	
+    ClientData	data;		
+} Sys_TracelogRecord;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct Sys_TracelogHeader {
+    int		numBytes;	
+				
+    int		numRecs;	
+    int		machineID;	
+    char	kernel[32];	
+    char	machineType[8]; 
+    int		bootTime[2];	
+    int		lostRecords;	
+    int		traceDir[4];	
+} Sys_TracelogHeader;
+
+
+
+
+typedef struct Sys_TracelogHeaderKern {
+    int		numBytes;	
+				
+    int		numRecs;	
+    int		machineID;	
+    char	kernel[32];	
+    char	machineType[8]; 
+    int		bootTime[2];	
+    int		lostRecords;	
+} Sys_TracelogHeaderKern;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct Sys_DiskStats {
+    char	name[100];	
+    int		controllerID;			
+    int		numSamples;			
+
+    int		idleCount;			
+
+    int		diskReads;			
+
+    int		diskWrites;			
+
+} Sys_DiskStats;
+
+extern ReturnStatus		Sys_Stats();
+
+
+# 29 "/sprite/lib/include/kernel/dev.h"
+
+# 32 "/sprite/lib/include/kernel/dev.h"
+
+
+
+
+
+
+
+typedef struct Dev_DiskAddr {
+    int cylinder;
+    int head;
+    int sector;
+} Dev_DiskAddr;
+
+
+
+
+
+extern Time	dev_LastConsoleInput;
+
+extern void Dev_ConsoleReset 	();
+extern void Dev_Init 	();
+extern void Dev_Config 	();
+
+extern void Dev_GatherDiskStats 	();
+extern int Dev_GetDiskStats 	();
+extern void Dev_RegisterConsoleCmd 
+	();
+extern void Dev_InvokeConsoleCmd 	();
+extern int Dev_KbdQueueAttachProc 
+	();
+
+
+# 45 "lfsrebuild.c"
+
+# 1 "/sprite/lib/include/kernel/fsdm.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 27 "/sprite/lib/include/kernel/fsdm.h"
+
+
+# 1 "/sprite/lib/include/kernel/dev.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 63 "/sprite/lib/include/kernel/dev.h"
+
+# 29 "/sprite/lib/include/kernel/fsdm.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct Fsdm_DiskPartition {
+    int firstCylinder;	
+    int numCylinders;	
+
+} Fsdm_DiskPartition;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct Fsdm_DiskHeader {
+    char asciiLabel[128];	
+
+    
+
+
+
+
+    char pad[512 - 128 -
+	     (12 + 8 * 2) * sizeof(int)];
+    unsigned int magic;		
+    int numCylinders;		
+    int numAltCylinders;	
+    int numHeads;		
+    int numSectors;		
+    int bootSector;		
+
+    int numBootSectors;		
+
+    int summarySector;		
+    int domainSector;		
+    int numDomainSectors;	
+
+    int partition;		
+
+
+    Fsdm_DiskPartition map[8];	
+    int checkSum;		
+
+
+} Fsdm_DiskHeader;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct Fsdm_FileDescriptor {
+    unsigned short magic;
+    short flags;	
+    short fileType;	
+
+    short permissions;	
+
+    int uid;		
+    int gid;		
+    int lastByte;	
+    int lastByteXtra;	
+    int firstByte;	
+    int userType;	
+    int numLinks;	
+    int devServerID;	
+    short devType;	
+
+    unsigned short devUnit;	
+
+    
+
+
+
+    int createTime;	
+    int accessTime;	
+
+    int descModifyTime;	
+    int dataModifyTime;	
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    int direct[10];
+    int indirect[3];
+    int numKbytes;	
+
+
+    int version;	
+
+} Fsdm_FileDescriptor;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 479 "/sprite/lib/include/kernel/fsdm.h"
+
+
+
+# 46 "lfsrebuild.c"
+
+# 1 "/sprite/lib/include/kernel/fslcl.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 26 "/sprite/lib/include/kernel/fslcl.h"
+
+
+# 1 "/sprite/lib/include/fs.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 619 "/sprite/lib/include/fs.h"
+
+# 28 "/sprite/lib/include/kernel/fslcl.h"
+
+
+
+
+
+typedef struct Fslcl_DirEntry {
+    int fileNumber;		
+    short recordLength;		
+    short nameLength;		
+    char fileName[255+1];	
+} Fslcl_DirEntry;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 58 "/sprite/lib/include/kernel/fslcl.h"
+
+
+
+
+# 69 "/sprite/lib/include/kernel/fslcl.h"
+
+
+
+# 47 "lfsrebuild.c"
+
+# 1 "/sprite/lib/include/kernel/devDiskLabel.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct Sun_DiskMap {
+    int cylinder;
+    int numBlocks;
+} Sun_DiskMap;
+
+
+
+
+
+
+
+
+typedef struct Sun_DiskLabel {
+    char    asciiLabel[128];    	
+
+    char    pad[512-(128+8*8+11*2)];	
+
+
+    unsigned short  gap1;		
+    unsigned short  gap2;		
+    unsigned short  interleave;		
+    unsigned short  numCylinders;	
+    unsigned short  numAltCylinders;	
+    unsigned short  numHeads;		
+    unsigned short  numSectors;		
+    unsigned short  bhead;		
+
+    unsigned short  partitionID;	
+    Sun_DiskMap map[ 8]; 
+
+    unsigned short  magic;		
+    unsigned short  checkSum;		
+} Sun_DiskLabel;
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct Dec_DiskMap {
+    int numBytes;	
+    int offsetBytes;	
+} Dec_DiskMap;
+
+typedef struct Dec_BootMap {
+    int numBlocks;	
+    int startBlock;	
+} Dec_BootMap;
+
+
+
+
+typedef struct Dec_DiskLabel {
+
+    int		magic;			
+    int		isPartitioned;		
+    Dec_DiskMap map[ 8]; 
+    
+
+
+
+    int		numCylinders;
+    int		numAltCylinders;
+    int		numHeads;
+    int		numSectors;
+    int		bootSector;
+    int		numBootSectors;
+    int		summarySector;
+    int		domainSector;
+    int		numDomainSectors;
+    int		spriteMagic;		
+    char	asciiLabel[128];    	
+    int		version;
+    char	pad[512-(13*4+ 8*8+128)];
+} Dec_DiskLabel;
+
+
+
+
+
+
+
+
+typedef struct Dec_DiskBoot {
+    char	pad[8];
+    int		magic;			
+    int		mode;			
+    int		loadAddr;		
+    int		execAddr;		
+    Dec_BootMap	map[61];		
+} Dec_DiskBoot;
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct DevDiskMap {
+    int firstCylinder;		
+    int numCylinders;		
+} DevDiskMap;
+
+
+
+
+
+
+
+
+
+# 48 "lfsrebuild.c"
+
+
+# 1 "/sprite/lib/include/kernel/lfsDesc.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 22 "/sprite/lib/include/kernel/lfsDesc.h"
+
+
+# 1 "/sprite/lib/include/kernel/fsdm.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 481 "/sprite/lib/include/kernel/fsdm.h"
+
+# 24 "/sprite/lib/include/kernel/lfsDesc.h"
+
+
+
+
+
+
+
+typedef int LfsDiskAddr;
+
+
+
+
+
+
+
+# 39 "/sprite/lib/include/kernel/lfsDesc.h"
+
+
+
+# 42 "/sprite/lib/include/kernel/lfsDesc.h"
+
+
+# 63 "/sprite/lib/include/kernel/lfsDesc.h"
+
+
+
+
+typedef struct LfsFileDescriptor {
+    Fsdm_FileDescriptor	  common;
+    int	  fileNumber;	
+    LfsDiskAddr	  prevDiskAddr; 
+
+} LfsFileDescriptor;
+
+
+
+
+
+# 50 "lfsrebuild.c"
+
+# 1 "/sprite/lib/include/kernel/lfsDescMap.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 26 "/sprite/lib/include/kernel/lfsDescMap.h"
+
+
+# 1 "/sprite/lib/include/kernel/lfsStableMem.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct LfsStableMemCheckPoint {
+    int	numBlocks;	
+
+} LfsStableMemCheckPoint;
+
+
+
+
+
+typedef struct LfsStableMemParams {
+    int	memType;	
+    int blockSize;	
+
+    int entrySize;	
+    int	maxNumEntries;	
+    int	entriesPerBlock; 
+    int maxNumBlocks;	
+
+} LfsStableMemParams;
+
+
+
+
+
+typedef struct LfsStableMemBlockHdr {
+    int	magic;		
+    int	memType;	
+    int	blockNum;	
+    int	reserved;	
+} LfsStableMemBlockHdr;
+
+
+
+
+
+# 28 "/sprite/lib/include/kernel/lfsDescMap.h"
+
+
+
+
+
+
+
+
+
+typedef struct LfsDescMapParams {
+    unsigned int version;  	
+
+    int 	maxDesc;	
+
+    char     padding[64 - sizeof(LfsStableMemParams)-8];	
+				
+
+    LfsStableMemParams	 stableMem; 
+
+} LfsDescMapParams;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct LfsDescMapCheckPoint {
+    int numAllocDesc;	
+
+} LfsDescMapCheckPoint;
+
+
+
+
+
+
+typedef struct LfsDescMapEntry {
+    LfsDiskAddr  blockAddress;	    
+
+    unsigned short truncVersion;    
+
+
+
+    unsigned short  flags;  	    
+    int  accessTime;      	    
+
+} LfsDescMapEntry;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 51 "lfsrebuild.c"
+
+# 1 "/sprite/lib/include/kernel/lfsFileLayout.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct LfsFileLayoutSummary {
+    unsigned short	blockType;     
+    unsigned short	numBlocks;     
+
+    int	fileNumber;  		       
+    unsigned short 	truncVersion;  
+
+    unsigned short      numDataBlocks; 
+
+    
+
+
+
+} LfsFileLayoutSummary;
+
+
+
+
+
+typedef struct LfsFileLayoutLog {
+    unsigned short	blockType;     
+    unsigned short	numBlocks;     
+
+    unsigned short	numDataBlocks;     
+				      
+
+    unsigned short 	reserved;
+} LfsFileLayoutLog;
+
+
+
+
+typedef struct LfsFileLayoutDesc {
+    unsigned short	blockType;     
+    unsigned short	numBlocks;    
+
+} LfsFileLayoutDesc;
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct LfsFileLayoutParams {
+    int	 descPerBlock;	
+
+    char pad[32 - 4];
+
+} LfsFileLayoutParams;
+
+
+
+
+# 52 "lfsrebuild.c"
+
+# 1 "/sprite/lib/include/kernel/lfsDirOpLog.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct LfsDirOpLogBlockHdr {
+    int		magic;		
+    int		size;		
+    int		nextLogBlock;	
+
+    int		reserved;	
+} LfsDirOpLogBlockHdr;
+
+typedef struct LfsDirOpLogEntryHdr {
+    int		logSeqNum;	
+    int		opFlags;	
+    int		dirFileNumber;	
+    int		dirOffset;	
+
+    int		linkCount;	
+} LfsDirOpLogEntryHdr;
+
+typedef struct LfsDirOpLogEntry {
+    LfsDirOpLogEntryHdr	hdr;	  
+    Fslcl_DirEntry      dirEntry; 
+} LfsDirOpLogEntry;
+
+
+# 48 "/sprite/lib/include/kernel/lfsDirOpLog.h"
+
+
+
+
+
+
+
+
+# 53 "lfsrebuild.c"
+
+# 1 "/sprite/lib/include/kernel/lfsSegLayout.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct LfsSegSummary {
+    unsigned int  magic;	
+    unsigned int  timestamp;    
+    unsigned int  prevSeg;      
+    unsigned int  nextSeg;      
+    int  size;			
+
+    int nextSummaryBlock;	
+
+
+} LfsSegSummary;
+
+
+
+typedef struct LfsSegSummaryHdr {
+    unsigned short moduleType;	   
+    unsigned short lengthInBytes;  
+    int   numDataBlocks; 	  
+
+} LfsSegSummaryHdr;
+
+
+
+
+
+
+
+
+
+
+
+# 54 "lfsrebuild.c"
+
+# 1 "/sprite/lib/include/kernel/lfsStableMem.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 62 "/sprite/lib/include/kernel/lfsStableMem.h"
+
+
+# 55 "lfsrebuild.c"
+
+# 1 "/sprite/lib/include/kernel/lfsSuperBlock.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 32 "/sprite/lib/include/kernel/lfsSuperBlock.h"
+
+
+# 1 "/sprite/lib/include/kernel/lfsDescMap.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 102 "/sprite/lib/include/kernel/lfsDescMap.h"
+
+# 34 "/sprite/lib/include/kernel/lfsSuperBlock.h"
+
+# 1 "/sprite/lib/include/kernel/lfsUsageArray.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 27 "/sprite/lib/include/kernel/lfsUsageArray.h"
+
+
+# 1 "/sprite/lib/include/kernel/lfsStableMem.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 62 "/sprite/lib/include/kernel/lfsStableMem.h"
+
+
+# 29 "/sprite/lib/include/kernel/lfsUsageArray.h"
+
+
+
+
+
+
+
+
+typedef struct LfsSegUsageParams {
+    int segmentSize;  	   
+
+
+    int numberSegments;	  
+    int   minNumClean;    
+
+    int   minFreeBlocks;  
+
+    int	  wasteBlocks;	  
+
+    int	  numSegsToClean;  
+    char  padding[64 - sizeof(LfsStableMemParams)-6*4];
+    LfsStableMemParams	 stableMem; 
+} LfsSegUsageParams;
+
+
+
+
+
+
+
+typedef struct LfsSegUsageCheckPoint {
+    int	freeBlocks;	 
+    int numClean;	
+    int numDirty;	
+    int dirtyActiveBytes; 
+
+    int	currentSegment;	
+    int	currentBlockOffset; 
+
+    int curSegActiveBytes; 
+    int	previousSegment;   
+    int cleanSegList;	
+} LfsSegUsageCheckPoint;
+
+
+
+
+
+
+typedef struct LfsSegUsageEntry {
+    int  activeBytes;     	    
+
+
+
+
+    int	 timeOfLastWrite;	    
+
+    int  flags;     		    
+} LfsSegUsageEntry;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 35 "/sprite/lib/include/kernel/lfsSuperBlock.h"
+
+# 1 "/sprite/lib/include/kernel/lfsFileLayout.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 85 "/sprite/lib/include/kernel/lfsFileLayout.h"
+
+
+# 36 "/sprite/lib/include/kernel/lfsSuperBlock.h"
+
+
+
+
+
+
+typedef struct LfsSuperBlockHdr {
+    unsigned int magic;		
+    unsigned int version;  	
+
+    int blockSize;		
+
+	
+
+
+    int maxCheckPointBlocks;  
+    int checkPointOffset[2];
+
+
+
+    int logStartOffset;     
+    int	 checkpointInterval;	
+    int  maxNumCacheBlocks;     
+    int	 domainUID;		
+    int	 partition;		
+    char reserved[128-11*sizeof(int)];
+			    
+
+} LfsSuperBlockHdr;
+
+
+
+
+
+
+
+
+typedef struct LfsSuperBlock {
+    LfsSuperBlockHdr  hdr;	
+    int		reserved;	
+    LfsDescMapParams  descMap;	
+    LfsSegUsageParams usageArray; 
+    LfsFileLayoutParams fileLayout; 
+    char padding[	512-sizeof(LfsFileLayoutParams) - 
+		 sizeof(LfsSegUsageParams)-sizeof(LfsDescMapParams) -
+		 sizeof(int) - sizeof(LfsSuperBlockHdr)];	
+} LfsSuperBlock;
+
+
+
+
+
+
+
+
+
+typedef struct LfsCheckPointHdr {
+    unsigned int timestamp;	
+    int size;			
+    unsigned int version;	
+    char domainPrefix[64];	
+    int	 domainNumber;		
+    int	 attachSeconds;		
+    int	 detachSeconds;		
+    int	 serverID;		
+} LfsCheckPointHdr;
+
+typedef struct LfsCheckPointRegion {
+    unsigned int type;		
+
+    int size;			
+} LfsCheckPointRegion;
+
+typedef struct LfsCheckPointTrailer {
+    unsigned int timestamp;	
+
+    unsigned int checkSum;	
+
+} LfsCheckPointTrailer;
+
+
+
+
+
+
+
+# 122 "/sprite/lib/include/kernel/lfsSuperBlock.h"
+
+
+
+# 56 "lfsrebuild.c"
+
+# 1 "/sprite/lib/include/kernel/lfsUsageArray.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 103 "/sprite/lib/include/kernel/lfsUsageArray.h"
+
+
+# 57 "lfsrebuild.c"
+
+# 1 "/sprite/lib/include/kernel/lfsStats.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct LfsStatsCounter {
+	unsigned int high;	
+	unsigned int low;	
+} LfsStatsCounter; 
+
+
+
+# 37 "/sprite/lib/include/kernel/lfsStats.h"
+
+
+
+
+
+
+typedef struct Lfs_StatsVersion1 {
+    int	version;	
+    int	size;		
+    
+
+
+    struct LfsLogStats {
+	LfsStatsCounter segWrites;     
+	LfsStatsCounter partialWrites; 
+	LfsStatsCounter emptyWrites;   
+	LfsStatsCounter blocksWritten; 
+	LfsStatsCounter bytesWritten;   
+	LfsStatsCounter summaryBlocksWritten; 
+
+	LfsStatsCounter summaryBytesWritten; 
+	LfsStatsCounter wasteBlocks;      
+	LfsStatsCounter newSegments;      
+	LfsStatsCounter cleanSegWait;     
+	LfsStatsCounter useOldSegment;    
+
+	LfsStatsCounter locks;	      
+	LfsStatsCounter lockWaits;   
+
+	
+
+
+
+
+	LfsStatsCounter fsyncWrites;		
+	LfsStatsCounter fsyncPartialWrites;	
+	LfsStatsCounter fsyncBytes;		
+	LfsStatsCounter fsyncPartialBytes;	
+	LfsStatsCounter partialWriteBytes;	
+	LfsStatsCounter cleanPartialWriteBytes;
+	LfsStatsCounter fileBytesWritten;	
+	LfsStatsCounter cleanFileBytesWritten;	
+	LfsStatsCounter partialFileBytes;	
+
+	LfsStatsCounter padding[7];
+    } log;
+	
+
+
+    struct LfsCheckPointStats {
+	LfsStatsCounter count;	   
+	LfsStatsCounter segWrites;	 
+	LfsStatsCounter blocksWritten; 
+	LfsStatsCounter bytesWritten; 
+
+	LfsStatsCounter totalBlocks; 
+	LfsStatsCounter totalBytes;  
+	LfsStatsCounter samples;     
+	LfsStatsCounter padding[15];
+    } checkpoint;
+
+
+    struct LfsLogCleanStats {
+	LfsStatsCounter startRequests;	
+	LfsStatsCounter alreadyActive;	
+
+	LfsStatsCounter getSegsRequests; 
+	LfsStatsCounter segsToClean;		
+	LfsStatsCounter numSegsToClean;	
+	LfsStatsCounter segReads;		
+	LfsStatsCounter readErrors;	        
+	LfsStatsCounter readEmpty;		
+	LfsStatsCounter bytesCleaned;		
+	LfsStatsCounter cacheBlocksUsed;	
+	LfsStatsCounter segWrites;	   
+	LfsStatsCounter blocksWritten; 
+	LfsStatsCounter bytesWritten;      
+
+	LfsStatsCounter summaryBlocksRead;	
+
+	LfsStatsCounter padding[16];
+    } cleaning;
+
+    struct LfsBlockIOStats {
+	LfsStatsCounter reads;	
+	LfsStatsCounter bytesReads;	
+	LfsStatsCounter allocs;	    
+	LfsStatsCounter fastAllocs;	    
+	LfsStatsCounter slowAllocs;	    
+	LfsStatsCounter slowAllocFails; 
+	LfsStatsCounter totalBytesRead; 
+	LfsStatsCounter totalBytesWritten; 
+	LfsStatsCounter segCacheHits;	    
+	LfsStatsCounter padding[15];
+    } blockio;
+
+    struct LfsDescStats {
+	LfsStatsCounter fetches;	
+	LfsStatsCounter goodFetch;  
+	LfsStatsCounter fetchCacheMiss; 
+	LfsStatsCounter fetchSearched;  
+	LfsStatsCounter stores;	
+	LfsStatsCounter freeStores;	
+	LfsStatsCounter accessTimeUpdate; 
+	LfsStatsCounter dirtyList;	      
+	LfsStatsCounter truncs;	
+	LfsStatsCounter truncSizeZero;	
+	LfsStatsCounter delete;	
+	LfsStatsCounter inits;	
+	LfsStatsCounter getNewFileNumber; 
+	LfsStatsCounter scans;	      
+	LfsStatsCounter free;	      
+	LfsStatsCounter mapBlocksWritten; 
+	LfsStatsCounter mapBlockCleaned;  
+	LfsStatsCounter descMoved;	      
+	LfsStatsCounter descMapBlockAccess;  
+	LfsStatsCounter descMapBlockMiss;    
+	LfsStatsCounter residentCount;	      
+	LfsStatsCounter cleaningFetch;	      
+	LfsStatsCounter cleaningFetchMiss;   
+	LfsStatsCounter padding[11];
+    } desc;
+    struct LfsIndexStats {
+	LfsStatsCounter    get;	
+	LfsStatsCounter    set;    
+	LfsStatsCounter getFetchBlock; 
+	LfsStatsCounter setFetchBlock; 
+	LfsStatsCounter growFetchBlock; 
+	LfsStatsCounter getFetchHit; 
+
+	LfsStatsCounter setFetchHit; 
+
+	LfsStatsCounter truncs; 
+	LfsStatsCounter deleteFetchBlock; 
+	LfsStatsCounter deleteFetchBlockMiss; 
+	LfsStatsCounter getCleaningFetchBlock; 
+	LfsStatsCounter getCleaningFetchHit;   
+	LfsStatsCounter padding[14];
+    } index;
+
+    struct LfsFileLayoutStats {
+	LfsStatsCounter calls;	
+	LfsStatsCounter dirtyFiles; 
+	LfsStatsCounter dirtyBlocks; 
+	LfsStatsCounter dirtyBlocksReturned; 
+	LfsStatsCounter filledRegion; 
+	LfsStatsCounter segWrites;	  
+	LfsStatsCounter cacheBlocksWritten;	  
+	LfsStatsCounter descBlockWritten;    
+	LfsStatsCounter descWritten;	  
+	LfsStatsCounter filesWritten;	  
+	LfsStatsCounter cleanings;	  
+	LfsStatsCounter descBlocksCleaned; 
+
+	LfsStatsCounter descCleaned; 
+	LfsStatsCounter descCopied;	
+	LfsStatsCounter fileCleaned; 
+	LfsStatsCounter fileVersionOk; 
+
+	LfsStatsCounter blocksCleaned; 
+
+	LfsStatsCounter blocksCopied;  
+	LfsStatsCounter blocksCopiedHit; 
+
+	LfsStatsCounter cleanNoHandle;	
+	LfsStatsCounter cleanLockedHandle; 
+
+	
+
+
+
+	LfsStatsCounter descLayoutBytes;	
+
+	LfsStatsCounter padding[13];
+    } layout;
+
+    struct LfsSegUsageStats {
+	LfsStatsCounter blocksFreed; 
+	LfsStatsCounter bytesFreed;
+	LfsStatsCounter usageSet;
+	LfsStatsCounter blocksWritten;
+	LfsStatsCounter blocksCleaned;
+	LfsStatsCounter segUsageBlockAccess;  
+	LfsStatsCounter segUsageBlockMiss;    
+	LfsStatsCounter residentCount;	      
+	LfsStatsCounter padding[13];
+    } segusage;
+
+    struct LfsCacheBackendStats {
+	LfsStatsCounter startRequests;	
+	LfsStatsCounter alreadyActive;	
+
+	LfsStatsCounter padding[16];
+    } backend;
+
+    struct LfsDirLogStats {
+	LfsStatsCounter entryAllocNew;	  
+
+	LfsStatsCounter entryAllocOld;	  
+
+	LfsStatsCounter entryAllocFound; 
+
+	LfsStatsCounter entryAllocWaits; 
+	LfsStatsCounter newLogBlock; 
+	LfsStatsCounter fastFindFail; 
+	LfsStatsCounter findEntrySearch;
+	LfsStatsCounter dataBlockWritten;
+	LfsStatsCounter blockWritten;
+	LfsStatsCounter bytesWritten;
+				    
+
+	LfsStatsCounter cleaningBytesWritten;	
+	LfsStatsCounter padding[1];
+    } dirlog;
+    unsigned int cleaningDist[64];
+} Lfs_StatsVersion1;
+
+
+typedef Lfs_StatsVersion1 Lfs_Stats;
+
+
+
+# 58 "lfsrebuild.c"
+
+
+# 1 "./fscheck.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 17 "./fscheck.h"
+
+
+# 1 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 76 "/sprite/lib/include/cfuncproto.h"
+
+
+# 19 "./fscheck.h"
+
+# 1 "/sprite/lib/include/disk.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/sys/file.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 99 "/sprite/lib/include/sys/file.h"
+
+# 23 "/sprite/lib/include/disk.h"
+
+
+# 1 "/sprite/lib/include/kernel/fs.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 584 "/sprite/lib/include/kernel/fs.h"
+
+# 25 "/sprite/lib/include/disk.h"
+
+# 1 "/sprite/lib/include/kernel/dev.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 63 "/sprite/lib/include/kernel/dev.h"
+
+# 26 "/sprite/lib/include/disk.h"
+
+# 1 "/sprite/lib/include/kernel/fsdm.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 481 "/sprite/lib/include/kernel/fsdm.h"
+
+# 27 "/sprite/lib/include/disk.h"
+
+# 1 "/sprite/lib/include/kernel/ofs.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 23 "/sprite/lib/include/kernel/ofs.h"
+
+
+# 1 "/sprite/lib/include/kernel/dev.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 63 "/sprite/lib/include/kernel/dev.h"
+
+# 25 "/sprite/lib/include/kernel/ofs.h"
+
+# 1 "/sprite/lib/include/kernel/fslcl.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 71 "/sprite/lib/include/kernel/fslcl.h"
+
+# 26 "/sprite/lib/include/kernel/ofs.h"
+
+# 1 "/sprite/lib/include/kernel/fsdm.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 481 "/sprite/lib/include/kernel/fsdm.h"
+
+# 27 "/sprite/lib/include/kernel/ofs.h"
+
+# 1 "/sprite/lib/include/kernel/devBlockDevice.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/user/fs.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 619 "/sprite/lib/include/user/fs.h"
+
+# 41 "/sprite/lib/include/kernel/devBlockDevice.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct DevBlockDeviceRequest {
+    int			operation;	
+    unsigned int	startAddress;	
+
+    unsigned int	startAddrHigh;	
+
+    int			bufferLen;	
+
+    Address		buffer;		
+    void		(*doneProc) 
+
+
+	();
+                                        
+    ClientData		clientData;	
+
+				
+
+
+
+
+
+    int			ctrlData[(384/sizeof(int))];
+} DevBlockDeviceRequest;
+
+
+
+
+
+
+
+
+
+typedef struct DevBlockDeviceHandle {
+    ReturnStatus (*blockIOProc) 
+
+	();
+                                        
+
+
+    ReturnStatus (*IOControlProc) 
+
+
+	();
+				        
+
+
+    ReturnStatus (*releaseProc) 
+	();
+                                        
+
+
+    int	 	minTransferUnit;	
+
+
+
+    int		maxTransferSize;	
+
+    ClientData	clientData;		
+
+} DevBlockDeviceHandle;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern DevBlockDeviceHandle *Dev_BlockDeviceAttach 	();
+extern ReturnStatus Dev_BlockDeviceRelease 	();
+extern ReturnStatus Dev_BlockDeviceIOSync 	();
+
+# 204 "/sprite/lib/include/kernel/devBlockDevice.h"
+
+
+
+
+
+
+
+# 211 "/sprite/lib/include/kernel/devBlockDevice.h"
+
+
+
+# 214 "/sprite/lib/include/kernel/devBlockDevice.h"
+
+
+
+
+
+# 28 "/sprite/lib/include/kernel/ofs.h"
+
+
+
+
+
+
+
+
+typedef struct Ofs_SummaryInfo {
+    int		numFreeKbytes;		
+    int		numFreeFileDesc;	
+    int		state;			
+    char	domainPrefix[64];
+					
+    int		domainNumber;		
+
+
+    int		flags;			
+    int		attachSeconds;		
+    int		detachSeconds;		
+
+
+
+
+
+
+    int		fixCount;		
+
+
+
+
+
+    char pad[512 -
+	     (8 * sizeof(int) + 64)];
+} Ofs_SummaryInfo;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct OfsCylinder {
+    int	blocksFree;	
+} OfsCylinder;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct Ofs_Geometry {
+    
+
+
+    int		sectorsPerTrack;
+    int		numHeads;	
+    
+
+
+
+
+
+
+
+
+
+
+
+    int		blocksPerRotSet;	
+
+    int		tracksPerRotSet;	
+
+
+
+
+    int		rotSetsPerCyl;		
+
+
+    int		blocksPerCylinder;	
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    int		blockOffset[32];	
+
+
+
+
+    int		sortedOffsets[32];	
+
+    
+
+
+} Ofs_Geometry;
+
+
+
+
+
+
+
+
+typedef struct Ofs_DomainHeader {
+    unsigned int magic;		
+    int		firstCylinder;	
+
+
+
+    int		numCylinders;	
+
+    Fs_Device	device;		
+
+
+
+
+
+
+
+
+
+    
+
+
+
+    int		fdBitmapOffset;	
+
+    int		fdBitmapBlocks;	
+    int		fileDescOffset;	
+
+
+    int		numFileDesc;	
+
+ 
+    
+
+
+
+    int		bitmapOffset;	
+    int		bitmapBlocks;	
+    
+
+
+    int		dataOffset;	
+    int		dataBlocks;	
+    int		dataCylinders;	
+    
+
+
+
+    Ofs_Geometry	geometry;	
+
+} Ofs_DomainHeader;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 507 "/sprite/lib/include/kernel/ofs.h"
+
+
+
+# 28 "/sprite/lib/include/disk.h"
+
+# 1 "/sprite/lib/include/kernel/devDiskLabel.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 203 "/sprite/lib/include/kernel/devDiskLabel.h"
+
+# 29 "/sprite/lib/include/disk.h"
+
+
+
+
+
+# 1 "/sprite/lib/include/kernel/lfsDesc.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 76 "/sprite/lib/include/kernel/lfsDesc.h"
+
+
+# 34 "/sprite/lib/include/disk.h"
+
+# 1 "/sprite/lib/include/kernel/lfsDescMap.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 102 "/sprite/lib/include/kernel/lfsDescMap.h"
+
+# 35 "/sprite/lib/include/disk.h"
+
+# 1 "/sprite/lib/include/kernel/lfsFileLayout.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 85 "/sprite/lib/include/kernel/lfsFileLayout.h"
+
+
+# 36 "/sprite/lib/include/disk.h"
+
+# 1 "/sprite/lib/include/kernel/lfsSegLayout.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 60 "/sprite/lib/include/kernel/lfsSegLayout.h"
+
+
+# 37 "/sprite/lib/include/disk.h"
+
+# 1 "/sprite/lib/include/kernel/lfsStableMem.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 62 "/sprite/lib/include/kernel/lfsStableMem.h"
+
+
+# 38 "/sprite/lib/include/disk.h"
+
+# 1 "/sprite/lib/include/kernel/lfsSuperBlock.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 124 "/sprite/lib/include/kernel/lfsSuperBlock.h"
+
+# 39 "/sprite/lib/include/disk.h"
+
+# 1 "/sprite/lib/include/kernel/lfsUsageArray.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 103 "/sprite/lib/include/kernel/lfsUsageArray.h"
+
+
+# 40 "/sprite/lib/include/disk.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef int Disk_NativeLabelType;
+
+
+
+
+
+
+
+
+typedef struct Disk_Partition {
+    int		firstCylinder;		
+    int		numCylinders;		
+} Disk_Partition;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct Disk_Label {
+    int	numHeads;		
+    int	numSectors;		
+    int numCylinders;		
+    int numAltCylinders;	
+    char asciiLabel[256];	
+    Disk_Partition partitions[8]; 
+    Disk_NativeLabelType labelType; 
+    char *labelPtr;		
+    int	bootSector;		
+    int	numBootSectors; 	
+    int	summarySector;		
+    int	numSummarySectors; 	
+    int domainSector;		
+    int numDomainSectors;	
+    int numPartitions;		
+    int asciiLabelLen;		
+    int labelSector;		
+} Disk_Label;
+
+
+
+
+
+
+
+
+
+
+
+Disk_Label		*Disk_ReadLabel();
+int			Disk_WriteLabel();
+int			Disk_EraseLabel();
+Disk_Label		*Disk_NewLabel();
+Dec_DiskLabel		*Disk_ReadDecLabel();
+Sun_DiskLabel		*Disk_ReadSunLabel();
+Fsdm_DiskHeader		*Disk_ReadDiskHeader();
+Ofs_SummaryInfo		*Disk_ReadSummaryInfo();
+int			Disk_WriteSummaryInfo();
+Ofs_DomainHeader	*Disk_ReadDomainHeader();
+int			Disk_WriteDomainHeader();
+void			Disk_PrintDomainHeader();
+void			Disk_PrintSummaryInfo();
+int			Disk_BlockWrite();
+int			Disk_SectorWrite();
+int			Disk_BlockRead();
+int			Disk_SectorRead();
+int			Disk_BadBlockRead();
+void			Disk_PrintLabel();
+char			*Disk_GetLabelTypeName();
+void			Disk_PrintFileDescBitmap();
+void			Disk_PrintDataBlockBitmap();
+void			Disk_PrintDirEntry();
+
+
+int                     Disk_HasFilesystem();
+LfsSuperBlock*          Disk_ReadLfsSuperBlock();
+ReturnStatus            Disk_WriteLfsSuperBlock();
+LfsCheckPointHdr*       Disk_ReadLfsCheckPointHdr();
+ReturnStatus            Disk_WriteLfsCheckPointHdr();
+ReturnStatus            Disk_WriteLfsCheckPointArea();
+LfsCheckPointTrailer*   Disk_LfsCheckPointTrailer();
+ReturnStatus            Disk_ForEachCheckPointRegion();
+void                    Disk_PrintLfsSuperBlockHdr();
+void                    Disk_PrintLfsStableMemParams();
+void                    Disk_PrintLfsDescMapParams();
+void                    Disk_PrintLfsSegUsageParams();
+void                    Disk_PrintLfsFileLayoutParams();
+void                    Disk_PrintLfsSuperBlock();
+void                    Disk_PrintLfsCheckPointHdr();
+void                    Disk_PrintLfsCheckPointRegion();
+void                    Disk_PrintLfsCheckPointTrailer();
+
+
+
+
+# 20 "./fscheck.h"
+
+# 1 "/sprite/lib/include/sys/types.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 125 "/sprite/lib/include/sys/types.h"
+
+# 21 "./fscheck.h"
+
+# 1 "/sprite/lib/include/varargs.h"
+
+
+
+
+
+
+
+
+
+
+
+# 35 "/sprite/lib/include/varargs.h"
+
+# 22 "./fscheck.h"
+
+# 1 "/sprite/lib/include/stdio.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 379 "/sprite/lib/include/stdio.h"
+
+# 23 "./fscheck.h"
+
+# 1 "/sprite/lib/include/errno.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern int	errno;		
+
+extern int	sys_nerr;	
+extern char	*sys_errlist[];	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 24 "./fscheck.h"
+
+# 1 "/sprite/lib/include/stdlib.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 202 "/sprite/lib/include/stdlib.h"
+
+# 25 "./fscheck.h"
+
+# 1 "/sprite/lib/include/time.h"
+
+
+
+
+
+
+
+
+
+
+# 51 "/sprite/lib/include/time.h"
+
+# 26 "./fscheck.h"
+
+# 1 "/sprite/lib/include/sys/time.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 74 "/sprite/lib/include/sys/time.h"
+
+# 27 "./fscheck.h"
+
+# 1 "/sprite/lib/include/alloca.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 30 "/sprite/lib/include/alloca.h"
+
+
+# 28 "./fscheck.h"
+
+# 1 "/sprite/lib/include/bstring.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 28 "/sprite/lib/include/bstring.h"
+
+# 29 "./fscheck.h"
+
+
+# 1 "/sprite/lib/include/kernel/lfsDesc.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 76 "/sprite/lib/include/kernel/lfsDesc.h"
+
+
+# 31 "./fscheck.h"
+
+# 1 "/sprite/lib/include/kernel/lfsDescMap.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 102 "/sprite/lib/include/kernel/lfsDescMap.h"
+
+# 32 "./fscheck.h"
+
+# 1 "/sprite/lib/include/kernel/lfsFileLayout.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 85 "/sprite/lib/include/kernel/lfsFileLayout.h"
+
+
+# 33 "./fscheck.h"
+
+# 1 "/sprite/lib/include/kernel/lfsDirOpLog.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 54 "/sprite/lib/include/kernel/lfsDirOpLog.h"
+
+
+# 34 "./fscheck.h"
+
+# 1 "/sprite/lib/include/kernel/lfsSegLayout.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 60 "/sprite/lib/include/kernel/lfsSegLayout.h"
+
+
+# 35 "./fscheck.h"
+
+# 1 "/sprite/lib/include/kernel/lfsStableMem.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 62 "/sprite/lib/include/kernel/lfsStableMem.h"
+
+
+# 36 "./fscheck.h"
+
+# 1 "/sprite/lib/include/kernel/lfsSuperBlock.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 124 "/sprite/lib/include/kernel/lfsSuperBlock.h"
+
+# 37 "./fscheck.h"
+
+# 1 "/sprite/lib/include/kernel/lfsUsageArray.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 103 "/sprite/lib/include/kernel/lfsUsageArray.h"
+
+
+# 38 "./fscheck.h"
+
+# 1 "/sprite/lib/include/kernel/lfsStats.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 257 "/sprite/lib/include/kernel/lfsStats.h"
+
+
+# 39 "./fscheck.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct FdInfo {
+    int		addr;
+    int		timestamp;
+    unsigned short truncVersion; 
+    short	flags;		
+    short	origLinkCount;	
+    short	newLinkCount;	
+} FdInfo;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct ModListElement {
+    List_Links		links;
+    int			fdNum;
+    Fsdm_FileDescriptor	*fdPtr;
+} ModListElement;
+extern	List_Links	modListHdr;
+
+
+
+
+
+
+
+
+typedef struct RelocListElement {
+    List_Links		links;
+    int			newFdNum;
+    Fsdm_FileDescriptor	*fdPtr;
+    int			origFdNum;
+} RelocListElement;
+extern	List_Links	relocListHdr;
+
+
+typedef enum {
+    DIRECT, 
+    INDIRECT, 
+    DBL_INDIRECT
+} BlockIndexType;
+
+typedef enum {
+    FD, 
+    BLOCK, 
+} ParentType;
+
+
+
+
+
+typedef struct CopyListElement {
+    List_Links		links;
+    BlockIndexType	blockType;
+    short		fragments;
+    int			index;
+    ParentType		parentType;
+    int			parentNum;
+    Fsdm_FileDescriptor	*fdPtr;
+} CopyListElement;
+
+extern	List_Links	copyListHdr;
+
+
+
+
+
+
+
+
+typedef struct DirIndexInfo {
+    FdInfo	     *fdInfoPtr;	     
+
+    Fsdm_FileDescriptor *fdPtr;	     	     
+
+    BlockIndexType indexType;		     
+
+
+    int		 blockNum;		     
+
+    int		 blockAddr;		     
+
+    int		 dirOffset;		     
+
+
+    char	 dirBlock[	4096];    
+
+    int		 numFrags;		     
+
+    int		 firstIndex;		     
+
+
+    int		 secondIndex;		     
+
+    char 	 firstBlock[	4096];  
+    int		 firstBlockNil;		     
+
+    char 	 secondBlock[	4096]; 
+    int		 secondBlockNil;	     
+
+    int		 dirDirty;		     
+
+} DirIndexInfo;
+
+extern int	foundError;
+extern Boolean	tooBig;
+extern int	debug;
+extern int	writeDisk;
+extern int	verbose;
+extern	FdInfo		*descInfoArray;
+extern int DiskRead 
+	();
+extern int DiskWrite 
+	();
+extern char *GetStableMemEntry 	();
+
+extern int FetchFileDesc 	();
+extern void StoreFileDesc 	();
+extern void CheckDirTree 	();
+extern void CheckDirEntry 	();
+extern ReturnStatus MakeRoot 	();
+extern int strnlen 	();
+extern int MarkBitmap 	();
+extern int Output 	();
+extern void OutputPerror 	();
+extern void WriteOutputFile 	();
+extern int CloseOutputFile 	();
+extern void ExitHandler 	();
+extern void ClearFd 	();
+extern void AddToCopyList 	();
+extern int main 	();
+extern void CheckFilesystem 	();
+extern void CheckBlocks 	();
+extern int ProcessIndirectBlock 	();
+extern void RelocateFD 	();
+extern int CopyBlock 	();
+extern int FillNewBlock 	();
+extern Boolean LoadUsageArray 	();
+extern Boolean LoadDescMap 	();
+extern char *GetUsageState 	();
+extern int DiskRead 	();
+extern char *GetStableMemEntry 	();
+
+
+extern char *sbrk();
+
+
+
+
+
+# 233 "./fscheck.h"
+
+
+
+
+extern LfsSuperBlock	*superBlockPtr;
+extern int		currentTimestamp;
+extern ClientData descMapDataPtr;	    
+extern LfsDescMapCheckPoint *descMapCheckPointPtr; 
+
+
+ClientData   usageArrayDataPtr;	
+
+
+
+
+
+
+# 250 "./fscheck.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 60 "lfsrebuild.c"
+
+# 1 "./layout.h"
+
+
+
+
+typedef struct LfsSegElement {
+    Address  	 address;         
+    unsigned int lengthInBlocks;  
+
+    ClientData   clientData;	  
+
+} LfsSegElement;
+
+
+
+
+typedef struct LfsSegLogRange {
+    int		current;	
+    int		prevSeg;	
+
+    int		nextSeg;	
+
+} LfsSegLogRange;
+
+
+
+
+
+
+
+
+
+
+
+typedef struct LfsSeg {
+    LfsSegElement *segElementPtr; 
+
+    char	   *memPtr;	
+    LfsSegLogRange logRange;	
+    int	    numElements;      
+
+    int	    numBlocks;        
+    int	    startBlockOffset; 
+    int	    activeBytes;      
+	
+
+
+
+
+    LfsSegSummary	*curSegSummaryPtr; 
+
+    LfsSegSummaryHdr    *curSummaryHdrPtr; 
+				
+    int	     curElement;	
+    int	     curBlockOffset;    
+
+    int	     curDataBlockLimit;   
+
+    char     *curSummaryPtr;    
+    char     *curSummaryLimitPtr; 
+
+
+} LfsSeg;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 81 "./layout.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 99 "./layout.h"
+
+
+
+
+
+
+
+
+
+
+# 109 "./layout.h"
+
+
+
+
+
+
+
+
+
+# 118 "./layout.h"
+
+
+
+
+
+
+
+
+
+
+
+# 129 "./layout.h"
+
+
+
+
+
+
+
+
+
+
+
+
+# 141 "./layout.h"
+
+
+
+# 144 "./layout.h"
+
+
+# 146 "./layout.h"
+
+
+
+# 149 "./layout.h"
+
+
+
+
+# 153 "./layout.h"
+
+
+
+extern char *LfsSegSlowGrowSummary 
+
+	();
+extern LfsDiskAddr LfsSegSlowDiskAddress 
+	();
+extern LfsSegElement *LfsSegSlowAddDataBuffer 
+	();
+
+extern Boolean WriteSegCheckpoint 
+	();
+
+
+extern Boolean LfsSegUsageCheckpoint 
+	();
+extern Boolean LfsDescMapCheckpoint 
+	();
+
+extern void LfsSegUsageCheckpointUpdate 	();
+
+extern ReturnStatus LfsGetLogTail 
+	();
+
+extern void LfsSetLogTail 
+
+	();
+
+# 61 "lfsrebuild.c"
+
+
+
+
+LfsSuperBlock	*superBlockPtr;
+int		currentTimestamp;
+
+
+
+ClientData descMapDataPtr;	    
+LfsDescMapCheckPoint *descMapCheckPointPtr; 
+
+LfsSegUsageCheckPoint	*usageCheckPointPtr;
+FdInfo		*descInfoArray;
+
+ClientData   usageArrayDataPtr;	
+
+
+typedef struct Seg {
+    int	  segNo;	
+    int	  segSizeInBlocks;	
+    int   diskFd;		
+} Seg;
+
+
+
+
+
+
+typedef struct BlockInfo {
+    int     found:1;	
+    int	    type :4;	
+    int     tversion:7; 
+    int     blockNum:20; 
+    int     fileNum;	
+
+} BlockInfo;
+
+
+# 100 "lfsrebuild.c"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+char	*blockTypeNames[  8+1] = { 
+    "Unused", "File", "DescMap" , "UsageArray", "Summary", "Checkpoint",
+    "Descriptor", "DirLog", "Unknown" 
+};
+
+BlockInfo	*blockInfoArray;  
+int		*usageBitMap;	  
+
+int		*foundBitMap;	  
+
+int		*descBlockBitMap;	  
+int		numBlocks;	  
+
+int	*activeBytesArray;    
+
+static Boolean computeUsageArray;
+
+int	minorErrors;
+int	majorErrors;
+
+
+
+
+int	blockSize = 512;	
+int	superBlockOffset = 64;	
+Boolean dumpFlag = 0;	
+Boolean showDirLog = 0;	
+Boolean	verboseFlag = 0;	
+char	*deviceName;		
+Boolean	full = 0;
+Boolean oldcp = 0;
+Boolean shownew = 0;
+Boolean doWrites = 0;
+
+Option optionArray[] = {
+    {		-7, (char *)  	0,  (char *)  	0,
+	"Check a LFS file system and report problems.\n Synopsis: \"checkLfs [switches] deviceName\"\n Command-line switches are:"},
+    {		-1, "blockSize", (Address) &blockSize, 
+	"Block size of file system."},
+    {		-1, "superBlockOffset", (Address) &superBlockOffset, 
+	"Offset into device of the superBlock."},
+    {	1, "dump", (Address) &dumpFlag, 
+	"Print out a description of file system."},
+    {	1, "showDirLog", (Address) &showDirLog, 
+	"Print out the directory operation log."},
+    {	1, "full", (Address) &full, 
+	"Full a full error analysis."},
+    {	1, "verbose", (Address) &verboseFlag, 
+	"Output progress messages during execution."},
+    {	1, "oldcp", (Address) &oldcp, 
+	"Output progress messages during execution."},
+    {	1, "shownew", (Address) &shownew, 
+	"Print new metadata to standard out."},
+    {	1, "write", (Address) &doWrites, 
+	"Write new metadata to disk."},
+};
+
+
+
+extern Boolean AllocUsageArray 	();
+extern Boolean AllocDescMap 	();
+extern char *GetUsageState 	();
+static void FindAllFiles 	();
+static Boolean CheckFile 
+	();
+static Boolean CheckIndirectBlock 
+	();
+static Boolean CheckBlock 
+	();
+static void ComputeUsageArray 	();
+static void BuildUsageArray 	();
+static void CheckSummaryRegions 	();
+static void CheckSegUsageSummary 
+	();
+static void CheckDescMapSummary 
+	();
+static void CheckFileLayoutSummary 
+
+	();
+static char *GetOwner 	();
+static void PrintSuperBlock 	();
+static void PrintCheckPointHdr 	();
+static ClientData AllocStableMem 	();
+static void SetStableMemBlockIndex 	();
+static void ShowDirLogBlock 	();
+
+static char *FmtTime 	();
+static Seg *SegInit 	();
+static int SegStartAddr 	();
+static char *SegFetchBlock 	();
+static void SegReleaseBlock 	();
+static void SegRelease 	();
+static Boolean IsZero 	();
+
+extern int open();
+extern void panic();
+extern int gettimeofday 	();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int
+main(argc,argv)
+    int	argc;
+    char *argv[];
+{
+    int	   diskFd, maxCheckPointSize;
+    LfsCheckPointHdr	checkPointHdr[2];
+    LfsCheckPointHdr    *checkPointHdrPtr = (LfsCheckPointHdr *)  	0;
+    char		*checkPointPtr, *trailerPtr = (char *)  	0;
+    LfsCheckPointTrailer *trailPtr = (LfsCheckPointTrailer *)  	0;
+    Boolean		gotOne;
+    int			choosenOne, i, try;
+    int			checkPointSize;
+
+    argc = Opt_Parse(argc, argv, optionArray, 	(sizeof(optionArray)/sizeof((optionArray)[0])), 0);
+    if (argc != 2) { 
+         Opt_PrintUsage(argv[0], optionArray, 	(sizeof(optionArray)/sizeof((optionArray)[0])));
+	 exit(	(char) -4);
+    } else {
+	deviceName = argv[1];
+    }
+    diskFd = open(deviceName, doWrites ? 	002		 : 000		, 0);
+    if (diskFd < 0) {
+	fprintf((&stdioErrFile),"%s:", argv[0]);
+	perror(deviceName);
+	exit(	(char) -1);
+    }
+    
+
+
+    superBlockPtr = (LfsSuperBlock *) malloc(	512);
+    if (DiskRead(diskFd, superBlockOffset, sizeof(LfsSuperBlock), 
+		(char *)superBlockPtr) != sizeof(LfsSuperBlock)) {
+	fprintf((&stdioErrFile),"%s:Can't read superblock.\n", deviceName);
+	exit((char) -2);
+
+    }
+    if (superBlockPtr->hdr.magic != 	0x106d15c 	) {
+	fprintf((&stdioErrFile),"%s:Bad magic number for filesystem\n", deviceName);
+	exit((char) -2);
+    }
+    if (dumpFlag) {
+       PrintSuperBlock(superBlockPtr);
+    }
+
+    
+
+
+
+    if (DiskRead(diskFd, superBlockPtr->hdr.checkPointOffset[0],
+		sizeof(LfsCheckPointHdr), (char *) (checkPointHdr+0)) != 
+	sizeof(LfsCheckPointHdr)) {
+	fprintf((&stdioErrFile),"%s:Can't read checkPointHeader 0.\n", deviceName);
+	checkPointHdr[0].timestamp = 0;
+    }
+    if (dumpFlag) {
+	PrintCheckPointHdr(checkPointHdr, 0);
+    }
+    if (DiskRead(diskFd, superBlockPtr->hdr.checkPointOffset[1],
+		sizeof(LfsCheckPointHdr), (char *) (checkPointHdr+1))  != 
+	sizeof(LfsCheckPointHdr)) {
+	fprintf((&stdioErrFile),"%s:Can't read checkPointHeader 1.\n", deviceName);
+	checkPointHdr[1].timestamp = 0;
+    }
+    if (dumpFlag) {
+	PrintCheckPointHdr(checkPointHdr+1, 1);
+    }
+
+    maxCheckPointSize = superBlockPtr->hdr.maxCheckPointBlocks * 
+				blockSize;
+    checkPointPtr = malloc(maxCheckPointSize);
+    choosenOne = (checkPointHdr[0].timestamp<checkPointHdr[1].timestamp) ?
+				1 : 0;
+    currentTimestamp = checkPointHdr[choosenOne].timestamp+1;
+    numBlocks = superBlockPtr->usageArray.numberSegments * 
+		    (superBlockPtr->usageArray.segmentSize/blockSize) +
+		     superBlockPtr->hdr.logStartOffset;
+    
+
+
+
+    blockInfoArray = (BlockInfo *) calloc(numBlocks, sizeof(BlockInfo));
+    
+
+
+    for (i = 0; i < superBlockPtr->hdr.logStartOffset; i++) {
+	    blockInfoArray[i].type =  5;
+	    blockInfoArray[i].found = 1;
+    }
+    
+
+
+
+    descInfoArray = (FdInfo *) calloc(superBlockPtr->descMap.maxDesc, 
+					sizeof(FdInfo));
+
+    
+
+
+
+    activeBytesArray = (int *) calloc(superBlockPtr->usageArray.numberSegments,
+					sizeof(activeBytesArray[0]));
+    if (oldcp) {
+	choosenOne = !choosenOne;
+    }
+    gotOne = 0;
+    for (try = 0; (try <= 1) && !gotOne; try++) {
+	if (verboseFlag) {
+	    printf("%s:Read LFS checkpoint %d from %s\n", FmtTime(), choosenOne,
+		    deviceName);
+	}
+	if (DiskRead(diskFd, superBlockPtr->hdr.checkPointOffset[choosenOne],
+		    maxCheckPointSize, checkPointPtr) != maxCheckPointSize) {
+	    fprintf((&stdioErrFile),"%s:Can't read checkPoint %d\n", deviceName, choosenOne);
+	    continue;
+	}
+
+
+	checkPointHdrPtr = (LfsCheckPointHdr *) checkPointPtr;
+	trailerPtr = (checkPointPtr + checkPointHdrPtr->size - 
+				    sizeof(LfsCheckPointTrailer));
+	trailPtr = (LfsCheckPointTrailer *) trailerPtr;
+	if (trailPtr->timestamp != checkPointHdrPtr->timestamp) {
+	    fprintf((&stdioErrFile),"%s:Header timestamp %d doesn't match trailer timestamp %d on checkpoint %d\n", deviceName, checkPointHdrPtr->timestamp, 
+				trailPtr->timestamp, choosenOne);
+	    continue;
+	}
+	if (dumpFlag) {
+	    printf("Using checkpoint area %d with timestamp %d domain %d (%s)\n",
+		choosenOne, checkPointHdrPtr->timestamp, 
+		checkPointHdrPtr->domainNumber, checkPointHdrPtr->domainPrefix);
+	}
+
+	gotOne = 1;
+
+    }
+    if (!gotOne) {
+	fprintf((&stdioErrFile),"%s:Can't find good checkpoint region.\n");
+    }
+    AllocUsageArray();
+    AllocDescMap();
+    if (verboseFlag) {
+	printf("%s:Checking summary regions\n", FmtTime());
+    }
+    CheckSummaryRegions(diskFd);
+
+    FindAllFiles(diskFd);
+    if (verboseFlag) {
+	printf("%s:Checking usage array\n",FmtTime());
+    }
+    ComputeUsageArray(diskFd);
+    BuildUsageArray(diskFd);
+    if (verboseFlag) {
+	printf("%s:Checking directory tree\n",FmtTime());
+    }
+    CheckDirTree(diskFd);
+    WriteSegCheckpoint(diskFd, checkPointPtr + sizeof(LfsCheckPointHdr),
+		&checkPointSize);
+
+    checkPointHdrPtr->timestamp = ++currentTimestamp;
+    checkPointHdrPtr->size = checkPointSize + sizeof(LfsCheckPointHdr) + 
+			 sizeof(LfsCheckPointTrailer);
+    checkPointHdrPtr->version = 1;
+    checkPointHdrPtr->detachSeconds = 0;
+    trailPtr = (LfsCheckPointTrailer *) 
+		(checkPointPtr + checkPointHdrPtr->size - 
+				sizeof(LfsCheckPointTrailer));
+    trailPtr->timestamp = checkPointHdrPtr->timestamp;
+    trailPtr->checkSum = 0;
+
+    
+
+
+    bzero((char *) (trailPtr + 1), sizeof(Lfs_Stats));
+    if ( DiskWrite(diskFd, superBlockPtr->hdr.checkPointOffset[0], maxCheckPointSize, (char *) checkPointHdrPtr) != maxCheckPointSize) {
+	fprintf((&stdioErrFile),"Can't write checkpoint region\n");
+    }
+    exit(	(char) 0);
+    return 	(char) 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Boolean
+AllocUsageArray()
+{
+    LfsSegUsageParams	*usagePtr;
+    LfsStableMemParams  *smemParamsPtr;
+    Boolean ret = 1;
+
+    usagePtr = &(superBlockPtr->usageArray);
+    smemParamsPtr = &(superBlockPtr->usageArray.stableMem);
+
+    usageCheckPointPtr =  (LfsSegUsageCheckPoint *) 
+			calloc(1, sizeof(LfsSegUsageCheckPoint));
+
+
+   usageArrayDataPtr =  AllocStableMem(smemParamsPtr, 3);
+   return ret;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Boolean 
+AllocDescMap()
+{
+    LfsStableMemParams  *smemParamsPtr;
+    Boolean 		ret = 1;
+
+    smemParamsPtr = &(superBlockPtr->descMap.stableMem);
+
+    descMapCheckPointPtr =  (LfsDescMapCheckPoint *) 
+			    calloc(1, sizeof(LfsDescMapCheckPoint));
+
+    descMapDataPtr =  AllocStableMem(smemParamsPtr, 2);
+
+    return ret;
+
+}
+
+char *
+GetUsageState(entryPtr)
+    LfsSegUsageEntry *entryPtr;
+{
+    if (entryPtr->flags & 0x0002) 
+	return "Dirty";
+    if (entryPtr->flags & 0x0001) 
+	return "Clean";
+    return "Full";
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int
+DiskRead(diskFd, blockOffset, bufferSize, bufferPtr)
+    int	diskFd;		
+    int	blockOffset;	
+    char *bufferPtr;	
+    int	 bufferSize;	
+{
+    int	status;
+    int	blocks;
+    char *bufPtr;
+
+
+    
+
+
+    status = lseek(diskFd, blockOffset*blockSize, 	0	);
+    if (status < 0) {
+	fprintf((&stdioErrFile),"%s:", deviceName);
+	perror("lseek");
+	return status;
+    }
+    
+
+
+
+    blocks = (bufferSize + blockSize-1)/blockSize;
+    if (bufferSize != blocks * blockSize) { 
+	bufPtr = malloc(blocks*blockSize);
+    } else {
+	bufPtr = bufferPtr;
+    }
+    status = read(diskFd, bufPtr, blocks*blockSize);
+    if (status != blocks*blockSize) {
+	if (status < 0) {
+	    fprintf((&stdioErrFile),"%s:", deviceName);
+	    perror("read device");
+	    return status;
+	}
+	fprintf((&stdioErrFile),"%s:Short read on device %d != %d\n",deviceName,
+		status, blocks*blockSize);
+    } else {
+	status = bufferSize;
+    }
+    if (bufPtr != bufferPtr) { 
+	bcopy(bufPtr, bufferPtr, bufferSize);
+	free(bufPtr);
+    }
+    return status;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int
+DiskWrite(diskFd, blockOffset, bufferSize, bufferPtr)
+    int	diskFd;		
+    int	blockOffset;	
+    char *bufferPtr;	
+    int	 bufferSize;	
+{
+    int	status;
+
+    if (!doWrites) {
+	return bufferSize;
+    }
+    
+
+
+    status = lseek(diskFd, blockOffset*blockSize, 	0	);
+    if (status < 0) {
+	fprintf((&stdioErrFile),"%s:", deviceName);
+	perror("lseek");
+	return status;
+    }
+    
+
+
+    status = write(diskFd, bufferPtr, bufferSize);
+    if (status != bufferSize) {
+	if (status < 0) {
+	    fprintf((&stdioErrFile),"%s:", deviceName);
+	    perror("read device");
+	    return status;
+	}
+	fprintf((&stdioErrFile),"%s:Short read on device %d != %d\n",deviceName,
+		status, bufferSize);
+    } 
+    return status;
+}
+
+typedef struct StableMem {
+    LfsStableMemParams  *paramsPtr;  
+    LfsStableMemCheckPoint *checkpointPtr;  
+    int			*blockIndexPtr;	    
+    int			*dirtyBitMap;	    
+    char		*dataPtr;	    
+
+} StableMem;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static ClientData 
+AllocStableMem(smemParamsPtr, type)
+    LfsStableMemParams  *smemParamsPtr;  
+    int		type;
+{
+    int arraySize;
+    int *blockIndexPtr;
+    StableMem *stableMemPtr;
+
+    arraySize = smemParamsPtr->blockSize * smemParamsPtr->maxNumBlocks;
+    stableMemPtr = (StableMem *) malloc(sizeof(StableMem));
+    stableMemPtr->paramsPtr = smemParamsPtr;
+    stableMemPtr->checkpointPtr = 
+	(LfsStableMemCheckPoint *) calloc(1, sizeof(LfsStableMemCheckPoint));
+    blockIndexPtr = (int *) calloc(smemParamsPtr->maxNumBlocks, sizeof(int));
+    stableMemPtr->blockIndexPtr = blockIndexPtr;
+      	         stableMemPtr->dirtyBitMap = (int *) malloc((unsigned) 		(		(((smemParamsPtr->maxNumBlocks)+32 -1)/32) * sizeof(int)));          	bzero((char *) ( ( stableMemPtr->dirtyBitMap)), 		(		((((smemParamsPtr->maxNumBlocks))+32 -1)/32) * sizeof(int)));
+    stableMemPtr->dataPtr = calloc(1, arraySize);
+    return (ClientData) stableMemPtr;
+}
+char *
+GetStableMemEntry(clientData, entryNumber)
+    ClientData clientData;
+    int entryNumber;
+{
+    StableMem *stableMemPtr = (StableMem *) clientData;
+    int blockNum, offset;
+
+    if ((entryNumber < 0) || 
+	(entryNumber >= stableMemPtr->paramsPtr->maxNumEntries)) {
+	fprintf((&stdioErrFile),"Bad stable memory entry number %d\n", entryNumber);
+	entryNumber = 0;
+    }
+    blockNum = entryNumber / stableMemPtr->paramsPtr->entriesPerBlock;
+    offset = (entryNumber % stableMemPtr->paramsPtr->entriesPerBlock) * 
+		stableMemPtr->paramsPtr->entrySize + 
+		   sizeof(LfsStableMemBlockHdr);
+     	(( stableMemPtr->dirtyBitMap)[(blockNum)/32] |= 		(1 << ((blockNum) % 32)));
+    return stableMemPtr->dataPtr + 
+        blockNum * stableMemPtr->paramsPtr-> blockSize + offset;
+}
+static void
+SetStableMemBlockIndex(clientData, blockNum, address)
+    ClientData clientData;
+    int blockNum;
+    int address;
+{
+    StableMem *stableMemPtr = (StableMem *) clientData;
+
+    if ((blockNum < 0) || 
+	(blockNum >= stableMemPtr->paramsPtr->maxNumBlocks)) {
+	fprintf((&stdioErrFile),"Bad stable memory block num %d\n", blockNum);
+	return;
+    }
+    stableMemPtr->blockIndexPtr[blockNum] = address;
+    return;
+}
+Boolean
+StableMemCheckpoint(clientData, segPtr, checkPointPtr, checkPointSizePtr)
+    ClientData clientData;
+    LfsSeg	*segPtr;
+    char	*checkPointPtr;
+    int		*checkPointSizePtr;
+{
+    StableMem *stableMemPtr = (StableMem *) clientData;
+    LfsStableMemBlockHdr *hdrPtr;
+    LfsStableMemCheckPoint	checkPoint;
+    LfsSegElement	*bufferPtr;
+    int blockNum, offset, blockSize, fsBlocks;
+    char	*summaryPtr;
+
+    offset = 0;
+    blockSize = stableMemPtr->paramsPtr-> blockSize;
+    fsBlocks = blockSize/superBlockPtr->hdr.blockSize;
+
+    checkPoint.numBlocks = 0;
+    while ( (blockNum = Bit_FindFirstSet(
+			   stableMemPtr->paramsPtr->maxNumBlocks,
+			   stableMemPtr->dirtyBitMap)) != -1) {
+	char *dataPtr = stableMemPtr->dataPtr + blockNum * blockSize;
+	if (IsZero(dataPtr, blockSize)) {
+	    SetStableMemBlockIndex(clientData,blockNum, -1);
+	     	(( stableMemPtr->dirtyBitMap)[(blockNum)/32] &= 		~(1 << ((blockNum) % 32)));
+	    continue;
+	}
+	summaryPtr =  	LfsSegSlowGrowSummary((segPtr), ( fsBlocks), ( sizeof(int)), 0);
+	if (summaryPtr == (char *)		0xFFFFFFFF) {
+	    return 1;
+	}
+	hdrPtr = (LfsStableMemBlockHdr *) dataPtr;
+	hdrPtr->magic = 0x1f55da;
+	hdrPtr->memType = stableMemPtr->paramsPtr->memType;
+	hdrPtr->blockNum = blockNum;
+	hdrPtr->reserved = 0;
+
+	bufferPtr =  	LfsSegSlowAddDataBuffer((segPtr), ( fsBlocks), ( dataPtr), ( 
+				(ClientData)		0xFFFFFFFF));
+	*(int *)summaryPtr = blockNum;
+	  	((segPtr)->curSummaryPtr = (summaryPtr + sizeof(int)));
+	SetStableMemBlockIndex(clientData, blockNum, 
+				 		LfsSegSlowDiskAddress((segPtr), ( bufferPtr)));
+	segPtr->activeBytes += blockSize;
+	 	(( stableMemPtr->dirtyBitMap)[(blockNum)/32] &= 		~(1 << ((blockNum) % 32)));
+	if (blockNum >= checkPoint.numBlocks) {
+	    checkPoint.numBlocks = blockNum+1;
+	}
+    }
+    *(LfsStableMemCheckPoint *) checkPointPtr = checkPoint;
+    bcopy((char *) stableMemPtr->blockIndexPtr, 
+	    checkPointPtr + sizeof(LfsStableMemCheckPoint), 
+	    sizeof(int) * checkPoint.numBlocks);
+    *checkPointSizePtr = sizeof(int) * checkPoint.numBlocks + 
+			    sizeof(LfsStableMemCheckPoint);
+
+    return 0;
+}
+Boolean
+LfsSegUsageCheckpoint(segPtr, checkPointPtr, checkPointSizePtr)
+    LfsSeg *segPtr;		
+    char   *checkPointPtr;      
+    int	   *checkPointSizePtr;  
+{
+    LfsSegUsageCheckPoint *cp = (LfsSegUsageCheckPoint *) checkPointPtr;
+    int		size;
+    Boolean	full;
+
+    *cp = *usageCheckPointPtr;
+    size = sizeof(LfsSegUsageCheckPoint);
+
+    full = StableMemCheckpoint(usageArrayDataPtr, segPtr, checkPointPtr + size,
+		checkPointSizePtr);
+    if (!full) { 
+	*checkPointSizePtr = (*checkPointSizePtr) + size;
+    }
+    return full;
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Boolean
+LfsDescMapCheckpoint(segPtr, checkPointPtr, checkPointSizePtr)
+    LfsSeg *segPtr;		
+    char   *checkPointPtr;      
+    int	   *checkPointSizePtr;  
+{
+    LfsDescMapCheckPoint *cp = (LfsDescMapCheckPoint *) checkPointPtr;
+    int		size, dataSize;
+    Boolean	full;
+
+    *cp = *descMapCheckPointPtr;
+    size = sizeof(LfsDescMapCheckPoint);
+    dataSize = 0;
+    full = StableMemCheckpoint(descMapDataPtr, segPtr, checkPointPtr + size, 
+			&dataSize);
+    if (!full) { 
+	(*checkPointSizePtr) = dataSize + size;
+    }
+    return full;
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static void
+FindAllFiles(diskFd)
+    int diskFd;
+{
+    LfsFileDescriptor	*descPtr;
+    char *descBuf;
+    LfsDescMapEntry *descMapPtr;
+    int bufSize, i, j;
+
+    bufSize = superBlockPtr->fileLayout.descPerBlock * sizeof(*descPtr);
+
+    descBuf = alloca(bufSize);
+    descMapPtr =  ((LfsDescMapEntry *) GetStableMemEntry(descMapDataPtr, 0));
+    descMapPtr->flags = 0x0001;
+    descMapCheckPointPtr->numAllocDesc++;
+    descMapPtr =  ((LfsDescMapEntry *) GetStableMemEntry(descMapDataPtr, 1));
+    descMapPtr->flags = 0x0001;
+    descMapCheckPointPtr->numAllocDesc++;
+    descInfoArray[0].flags = descInfoArray[1].flags = 0x40;
+
+    for (i = 2; i < superBlockPtr->descMap.maxDesc; i++) {
+	if ((descInfoArray[i].flags & 0x10) == 0) {
+	    continue;
+	}
+	if (DiskRead(diskFd, descInfoArray[i].addr, bufSize, descBuf)
+			!= bufSize) {
+	    majorErrors++;
+	    fprintf((&stdioErrFile),"%s:FindAllFiles: Can't read desc for file %d\n",
+				deviceName,i);
+	}
+	descPtr = (LfsFileDescriptor *)descBuf;
+	for (j = 0; j < superBlockPtr->fileLayout.descPerBlock; j++) {
+	    if (!(descPtr->common.flags & 0x2)) {
+		break;
+	    }
+	    if (descPtr->common.magic != (unsigned short)0xF1D0) {
+		majorErrors++;
+		fprintf((&stdioErrFile),"%s:FindAllFiles: Corrupted descriptor block at %d, magic number 0x%x\n", deviceName, descMapPtr->blockAddress, descPtr->common.magic);
+	    }
+	    if (descPtr->fileNumber == i) {
+		break;
+	    }
+	    descPtr++;
+	}
+	if ((j >= superBlockPtr->fileLayout.descPerBlock) ||
+	    !(descPtr->common.flags & 0x2) ||
+	    (descPtr->fileNumber != i)) {
+	    majorErrors++;
+	    fprintf((&stdioErrFile),"%s:FindAllFiles: Can't desc for file %d at %d\n",
+			deviceName,i, descMapPtr->blockAddress);
+	    descInfoArray[i].flags = 0x40;
+	    continue;
+	} 
+	if (!CheckFile(diskFd, i, descPtr)) {
+	    descInfoArray[i].flags = 0x40;
+	    continue;
+	}
+	descMapPtr =  ((LfsDescMapEntry *) GetStableMemEntry(descMapDataPtr, i));
+	descMapPtr->blockAddress = descInfoArray[i].addr;
+	descMapPtr->flags = 0x0001;
+	descMapPtr->truncVersion = descInfoArray[i].truncVersion;
+	descMapCheckPointPtr->numAllocDesc++;
+	descInfoArray[i].origLinkCount = descPtr->common.numLinks;
+	if (shownew) {
+	    printf("Desc %d blockAddress %d\n", i , descMapPtr->blockAddress);
+	}
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static void
+ComputeUsageArray(diskFd)
+    int diskFd;
+{
+    LfsFileDescriptor	*descPtr;
+    char *descBuf;
+    LfsDescMapEntry *descMapPtr;
+    int bufSize, i, j;
+
+    computeUsageArray = 1;
+
+    bufSize = superBlockPtr->fileLayout.descPerBlock * sizeof(*descPtr);
+    descBuf = alloca(bufSize);
+
+    for (i = 2; i < superBlockPtr->descMap.maxDesc; i++) {
+	descMapPtr =  ((LfsDescMapEntry *) GetStableMemEntry(descMapDataPtr, i));
+	if (!(descMapPtr->flags & 0x0001)) {
+	    continue;
+	}
+	if (DiskRead(diskFd, descMapPtr->blockAddress, bufSize, descBuf)
+			!= bufSize) {
+	    majorErrors++;
+	    fprintf((&stdioErrFile),"%s:FindAllFiles: Can't read desc for file %d\n",
+				deviceName,i);
+	}
+	descPtr = (LfsFileDescriptor *)descBuf;
+	for (j = 0; j < superBlockPtr->fileLayout.descPerBlock; j++) {
+	    if (!(descPtr->common.flags & 0x2)) {
+		break;
+	    }
+	    if (descPtr->common.magic != (unsigned short)0xF1D0) {
+		majorErrors++;
+		fprintf((&stdioErrFile),"%s:FindAllFiles: Corrupted descriptor block at %d, magic number 0x%x\n", deviceName, descMapPtr->blockAddress, descPtr->common.magic);
+	    }
+	    if (descPtr->fileNumber == i) {
+		break;
+	    }
+	    descPtr++;
+	}
+	if ((j >= superBlockPtr->fileLayout.descPerBlock) ||
+	    !(descPtr->common.flags & 0x2) ||
+	    (descPtr->fileNumber != i)) {
+	    majorErrors++;
+	    fprintf((&stdioErrFile),"%s:FindAllFiles: Can't desc for file %d at %d\n",
+			deviceName,i, descMapPtr->blockAddress);
+	    continue;
+	} 
+	CheckFile(diskFd, i, descPtr);
+	activeBytesArray[ (((descMapPtr->blockAddress)-superBlockPtr->hdr.logStartOffset)/			(superBlockPtr->usageArray.segmentSize/blockSize))] +=
+				    sizeof(LfsFileDescriptor);
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static Boolean
+CheckFile(diskFd, fileNum, descPtr) 
+    int diskFd;
+    int fileNum;
+    LfsFileDescriptor *descPtr;
+{
+    int i;
+    Boolean good;
+
+    for (i = 0; i < 10; i++) {
+	if (descPtr->common.direct[i] != -1) {
+	    if (i * 	4096 > descPtr->common.lastByte + 1) {
+		majorErrors++;
+		fprintf((&stdioErrFile), 
+		"%s:CheckFile: File %d has a non-NIL block %d after lastByte %d.\n",
+		    deviceName,fileNum, i, descPtr->common.lastByte);
+		return 0;
+		 continue;
+	    }
+	    good = CheckBlock(diskFd, fileNum, descPtr, i, descPtr->common.direct[i]);
+	    if (!good) {
+		return 0;
+	    }
+	}
+    }
+    if (descPtr->common.indirect[0] != -1) { 
+	    if (10 * 	4096 > 
+			descPtr->common.lastByte + 1) {
+		majorErrors++;
+		fprintf((&stdioErrFile), 
+		"%s:CheckFile: File %d has a non-NIL block %d after lastByte %d.\n",
+		    deviceName,fileNum, -1, descPtr->common.lastByte);
+		return 0;
+	    }
+	    good = CheckIndirectBlock(diskFd, fileNum, descPtr, -1,
+				descPtr->common.indirect[0]);
+	    if (!good) {
+		return 0;
+	    }
+    }
+    if (descPtr->common.indirect[1] != -1) { 
+	    if (10 * 	4096 + 
+				4096 * 	4096/4 > 
+			descPtr->common.lastByte + 1) {
+		majorErrors++;
+		fprintf((&stdioErrFile), 
+	"%s:CheckFile: File %d has a non-NIL block %d after lastByte %d.\n",
+		    deviceName, fileNum, -2, descPtr->common.lastByte);
+		return 0;
+	    }
+	    good = CheckIndirectBlock(diskFd, fileNum, descPtr, -2, 
+				descPtr->common.indirect[1]);
+	    if (!good) {
+		return 0;
+	    }
+    }
+    if (descPtr->common.indirect[2] != -1) { 
+		majorErrors++;
+		fprintf((&stdioErrFile), 
+	"%s:CheckFile: File %d has a non-NIL block %d after lastByte %d.\n",
+		    deviceName, fileNum, -3, descPtr->common.lastByte);
+	return 0;
+    }
+    return 1;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static Boolean
+CheckIndirectBlock(diskFd, fileNum, descPtr, blockNum, blockAddress)
+    int diskFd;
+    int fileNum;
+    LfsFileDescriptor *descPtr;
+    int blockNum;
+    int	blockAddress;
+{
+    int  i;
+    int blockPtrs[	4096/4];
+    Boolean good;
+
+
+
+    good = CheckBlock(diskFd, fileNum, descPtr, blockNum, blockAddress);
+    if (!good) {
+	return 0;
+    }
+    if (DiskRead(diskFd, blockAddress, 	4096, (char *)blockPtrs)
+		!= 	4096) {
+	majorErrors++;
+	fprintf((&stdioErrFile),"%s:CheckIndirectBlock: Can't read block %d of file %d.\n",
+				deviceName, blockNum, fileNum);
+	return 0;
+
+    }
+    if ((blockNum == -1) || (blockNum < -3)) { 
+	int start;
+	if (blockNum == -1) {
+	    start = 10;
+	} else {
+	    start = 10 + (	4096/4) + 
+			     (	4096/4) * 
+			     (-blockNum - (3+1));
+	}
+	for (i = 0; i < 	4096/4; i++) {
+	    if (blockPtrs[i] != -1) { 
+		good = CheckBlock(diskFd, fileNum, descPtr,
+			   start + i,blockPtrs[i]);
+		if (!good) {
+		  return 0;
+		}
+	    }
+	}
+	return 1;
+    } 
+    if (blockNum == -2) {
+	for (i = 0; i < 	4096/4; i++) {
+	    if (blockPtrs[i] != -1) { 
+		good = CheckIndirectBlock(diskFd, fileNum, descPtr,
+			    - i  - (3+1),blockPtrs[i]);
+		if (!good) {
+		  return 0;
+		}
+	    }
+	}
+	return 1;
+    }
+    majorErrors++;
+    fprintf((&stdioErrFile),"%s:CheckIndirectBlock: Bad block number %d for file %d\n",
+			deviceName, blockNum, fileNum);
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static Boolean
+CheckBlock(diskFd, fileNum, descPtr, blockNum, blockAddress)
+    int diskFd;
+    int fileNum;
+    LfsFileDescriptor *descPtr;
+    int blockNum;
+    int	blockAddress;
+{
+    int j;
+    int sizeInBlocks;
+
+
+    sizeInBlocks = 	4096/blockSize;
+    if (blockNum >= 0) { 
+	if ((blockNum+1) * 	4096 > descPtr->common.lastByte + 1) {
+	    int size;
+	    size = descPtr->common.lastByte - 	4096*blockNum +  1;
+	     sizeInBlocks = (size + blockSize - 1)/blockSize;
+	 }
+    }
+
+    if ((blockAddress < 0) || 
+	(blockAddress+sizeInBlocks > numBlocks)) {
+	majorErrors++;
+	fprintf((&stdioErrFile), "%s:CheckFile: file %d block %d is out of range %d\n",
+		deviceName, fileNum, blockNum, blockAddress);
+	return 0;
+    }
+    for (j = 0; j < sizeInBlocks; j++) {
+	if ((blockInfoArray[blockAddress + j].type != 1) &&
+	    (blockInfoArray[blockAddress + j].fileNum != fileNum) &&
+	    (blockInfoArray[blockAddress + j].blockNum != blockNum) &&
+	    ! 		(((descInfoArray[fileNum].truncVersion) & 0x7f) == (( blockInfoArray[blockAddress + j]).tversion)&0x7f)) {
+	    majorErrors++;
+	    fprintf((&stdioErrFile), 
+	    "%s:CheckFile:file %d block %d duplicate usage of block %d ",
+		    deviceName,
+
+			fileNum, blockNum, blockAddress + j);
+	    fprintf((&stdioErrFile),"Previous use at %s\n", 
+				GetOwner(blockAddress + j));
+	    return 0;
+	} 
+    }
+    if (computeUsageArray) { 
+	activeBytesArray[ (((blockAddress)-superBlockPtr->hdr.logStartOffset)/			(superBlockPtr->usageArray.segmentSize/blockSize))] 
+			+= blockSize*sizeInBlocks;
+    }
+    return 1;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static void
+BuildUsageArray(diskFd)
+int diskFd;
+{
+    int segNo;
+    Boolean foundCurrent;
+    LfsSegUsageEntry *usageArrayPtr;
+
+    usageCheckPointPtr->freeBlocks = 0;  
+    usageCheckPointPtr->numClean = 0;
+    usageCheckPointPtr->numDirty = 0;
+    usageCheckPointPtr->dirtyActiveBytes = 
+			(int) (superBlockPtr->usageArray.segmentSize * .90);
+    usageCheckPointPtr->currentSegment = 0;
+    usageCheckPointPtr->currentBlockOffset = -1;
+    usageCheckPointPtr->curSegActiveBytes = 0;
+    usageCheckPointPtr->previousSegment = -1;
+    usageCheckPointPtr->cleanSegList = -1;
+    foundCurrent = 0;
+    for (segNo = 0; segNo < superBlockPtr->usageArray.numberSegments; 
+	segNo++) {
+	usageArrayPtr =  ((LfsSegUsageEntry *) GetStableMemEntry(usageArrayDataPtr, segNo));
+	if (activeBytesArray[segNo] == 0) {
+	    usageArrayPtr->flags = 0x0001;
+	    usageArrayPtr->activeBytes = usageCheckPointPtr->cleanSegList;
+	    usageCheckPointPtr->cleanSegList = segNo;
+	    usageCheckPointPtr->numClean++;
+	    usageCheckPointPtr->freeBlocks += 
+			superBlockPtr->usageArray.segmentSize/blockSize;
+	} else if (activeBytesArray[segNo] <
+				usageCheckPointPtr->dirtyActiveBytes) {
+	    if (!foundCurrent) { 
+		usageArrayPtr->activeBytes = 0;
+		usageArrayPtr->flags = 0;
+		usageCheckPointPtr->currentSegment = segNo;
+		usageCheckPointPtr->curSegActiveBytes = 
+				activeBytesArray[segNo];
+
+		usageArrayPtr->activeBytes  = 0;
+		foundCurrent = 1;
+	    } else { 
+		usageArrayPtr->activeBytes = activeBytesArray[segNo];
+		usageArrayPtr->flags = 0x0002;
+		usageCheckPointPtr->numDirty++;
+		usageCheckPointPtr->freeBlocks += 
+		    (superBlockPtr->usageArray.segmentSize - 
+			usageArrayPtr->activeBytes + blockSize - 1)/blockSize;
+	    }
+	} else {
+	    usageArrayPtr->flags = 0;
+	    if (!foundCurrent) { 
+		usageArrayPtr->activeBytes = 0;
+		usageCheckPointPtr->currentSegment = segNo;
+		usageCheckPointPtr->curSegActiveBytes = 
+				activeBytesArray[segNo];
+		foundCurrent = 1;
+	    } else {
+		usageArrayPtr->activeBytes = activeBytesArray[segNo];
+		usageCheckPointPtr->freeBlocks += 
+		    (superBlockPtr->usageArray.segmentSize - 
+			usageArrayPtr->activeBytes + blockSize - 1)/blockSize;
+	    }
+	}
+	if (shownew) {
+	    printf("Seg %d flag %d activeBytes %d\n", segNo,
+			usageArrayPtr->flags,
+			usageArrayPtr->activeBytes);
+	}
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ReturnStatus
+LfsGetLogTail(logRangePtr, startBlockPtr)
+    LfsSegLogRange *logRangePtr;  
+    int		   *startBlockPtr; 
+{
+    LfsSegUsageEntry *s;
+    int		segNumber;
+
+    if (usageCheckPointPtr->currentBlockOffset != -1) {
+	
+
+
+	logRangePtr->prevSeg = usageCheckPointPtr->previousSegment;
+	logRangePtr->current = usageCheckPointPtr->currentSegment;
+	logRangePtr->nextSeg =  usageCheckPointPtr->cleanSegList;
+	(*startBlockPtr) = usageCheckPointPtr->currentBlockOffset;
+	return 		0x00000000;
+    }
+    
+
+
+    if (usageCheckPointPtr->numClean == 0) {
+	fprintf((&stdioErrFile), "No clean segments to write\n");
+	return                  	0x00040008;
+    }
+    s =  ((LfsSegUsageEntry *) GetStableMemEntry(usageArrayDataPtr,  usageCheckPointPtr->currentSegment));
+    s->activeBytes = usageCheckPointPtr->curSegActiveBytes;
+    usageCheckPointPtr->freeBlocks += 
+		    (superBlockPtr->usageArray.segmentSize - 
+			s->activeBytes + blockSize - 1)/blockSize;
+    if (s->activeBytes <= usageCheckPointPtr->dirtyActiveBytes) {
+	s->flags |= 0x0002;
+	usageCheckPointPtr->numDirty++;
+    }
+    s->timeOfLastWrite = 2;
+    segNumber = usageCheckPointPtr->cleanSegList;
+    s =  ((LfsSegUsageEntry *) GetStableMemEntry(usageArrayDataPtr, segNumber));
+    usageCheckPointPtr->cleanSegList = s->activeBytes;
+
+    logRangePtr->prevSeg = usageCheckPointPtr->previousSegment = usageCheckPointPtr->currentSegment;
+    logRangePtr->current = usageCheckPointPtr->currentSegment = segNumber;
+    logRangePtr->nextSeg =  usageCheckPointPtr->cleanSegList;
+
+    usageCheckPointPtr->numClean--;
+    s->activeBytes = usageCheckPointPtr->curSegActiveBytes = 0;
+    s->flags  &= ~0x0001;
+    (*startBlockPtr) = 0;
+    return 		0x00000000;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void
+LfsSetLogTail( logRangePtr, startBlock, activeBytes)
+    LfsSegLogRange *logRangePtr;  
+    int	startBlock; 
+    int	activeBytes;	
+{
+    usageCheckPointPtr->currentBlockOffset = startBlock;
+    if (activeBytes > 0) {
+	usageCheckPointPtr->curSegActiveBytes += activeBytes;
+	usageCheckPointPtr->freeBlocks -= 
+		    (activeBytes + blockSize - 1)/blockSize;
+   }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void
+LfsSegUsageCheckpointUpdate(checkPointPtr, size)
+    char *checkPointPtr; 
+    int	 size;		 
+{
+
+    (*(LfsSegUsageCheckPoint *) checkPointPtr) = *usageCheckPointPtr;
+    return;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static void
+CheckSummaryRegions(diskFd)
+int diskFd;
+{
+    int segNo, startAddr, blockOffset;
+    char *summaryLimitPtr, *summaryPtr;
+    LfsSegSummary *segSummaryPtr;
+    LfsSegSummaryHdr *segSummaryHdrPtr;
+    Seg	*segPtr;
+
+    for (segNo = 0; segNo < superBlockPtr->usageArray.numberSegments; 
+	segNo++) {
+	segPtr = SegInit(diskFd, segNo);
+	startAddr = SegStartAddr(segPtr) + segPtr->segSizeInBlocks;
+	blockOffset = 1; 
+	do { 
+	    segSummaryPtr = (LfsSegSummary *) 
+			SegFetchBlock(segPtr, blockOffset-1, blockSize);
+	    if (segSummaryPtr->size == 0) {
+		SegReleaseBlock(segPtr, (char *) segSummaryPtr);
+		break;
+	    }
+	    if (segSummaryPtr->magic != 0x1065e6	) {
+		majorErrors++;
+		fprintf((&stdioErrFile),"%s: Bad magic number 0x%x for summary region of segment %d\n", deviceName, segSummaryPtr->magic, segNo);
+		SegReleaseBlock(segPtr, (char *) segSummaryPtr);
+		break;
+	    }
+	    if (segSummaryPtr->timestamp >= currentTimestamp) {
+		currentTimestamp = segSummaryPtr->timestamp + 1;
+	    }
+	    summaryLimitPtr = (char *) segSummaryPtr + segSummaryPtr->size;
+	    summaryPtr = (char *) (segSummaryPtr + 1);
+	    while (summaryPtr < summaryLimitPtr) {
+	       segSummaryHdrPtr = (LfsSegSummaryHdr *) summaryPtr;
+	       if (segSummaryHdrPtr->lengthInBytes == 0) {
+		    break;
+	       }
+	       switch (segSummaryHdrPtr->moduleType) { 
+	       case   2:
+		  CheckSegUsageSummary(diskFd, segPtr, 
+				segSummaryPtr->timestamp, 
+				startAddr - blockOffset, 
+				blockOffset, segSummaryHdrPtr);
+		   break;
+	       case    1:
+		  CheckDescMapSummary(diskFd, segPtr, 
+				segSummaryPtr->timestamp, 
+				startAddr - blockOffset, blockOffset, 
+				segSummaryHdrPtr);
+		   break;
+	       case 0:
+		  CheckFileLayoutSummary(diskFd, segPtr, 
+				segSummaryPtr->timestamp, 
+				startAddr - blockOffset, blockOffset, 
+				 segSummaryHdrPtr);
+		    break;
+	       default: {
+		    fprintf((&stdioErrFile),"%s:CheckSummary: Unknown module type %d at %d, Size %d Blocks %d\n",
+			    deviceName, segSummaryHdrPtr->moduleType,
+			    startAddr - blockOffset, 
+			    segSummaryHdrPtr->lengthInBytes
+			   , segSummaryHdrPtr->numDataBlocks);
+		    break;
+		    }
+	       }
+	       summaryPtr += segSummaryHdrPtr->lengthInBytes;
+	       blockOffset += segSummaryHdrPtr->numDataBlocks;
+	   }
+	   SegReleaseBlock(segPtr, (char *) segSummaryPtr);
+	   blockOffset = segSummaryPtr->nextSummaryBlock;
+	} while( blockOffset != -1);
+	SegRelease(segPtr);
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static void
+CheckSegUsageSummary(diskFd, segPtr, timestamp,startAddress, offset, segSummaryHdrPtr) 
+    int diskFd;
+    Seg *segPtr;
+    int timestamp;
+    int startAddress;
+    int offset;
+    LfsSegSummaryHdr *segSummaryHdrPtr;
+{
+    int blocks, *blockArray, i, startAddr, fsBlocks, j;
+
+    fsBlocks = superBlockPtr->usageArray.stableMem.blockSize/blockSize;
+    blocks = (segSummaryHdrPtr->lengthInBytes - sizeof(LfsSegSummaryHdr)) /
+				sizeof(int);
+    if (blocks * fsBlocks != segSummaryHdrPtr->numDataBlocks) {
+	majorErrors++;
+	fprintf((&stdioErrFile),"%s:CheckSegUsageSummary: Wrong block count; is %d should be %s\n", deviceName, blocks * fsBlocks, segSummaryHdrPtr->numDataBlocks);
+    }
+
+    blockArray = (int *) (segSummaryHdrPtr + 1);
+    for (i = 0; i < blocks; i++) {
+	startAddr = startAddress - i * fsBlocks - fsBlocks;
+	if ((blockArray[i] < 0) || 
+	    (blockArray[i] > superBlockPtr->usageArray.stableMem.maxNumBlocks)){
+	    majorErrors++;
+	   fprintf((&stdioErrFile),"%s:CheckSegUsageSummary: Bad block number %d at %d\n",
+			deviceName,blockArray[i], startAddr);
+	    continue;
+	}
+	for (j = 0; j < fsBlocks; j++) { 
+	    blockInfoArray[startAddr + j].type = 3;
+	    blockInfoArray[startAddr + j].blockNum = blockArray[i];
+	    blockInfoArray[startAddr + j].found = 1;
+	}
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static void
+CheckDescMapSummary(diskFd, segPtr, timestamp,startAddress, offset, segSummaryHdrPtr) 
+    int diskFd;
+    Seg *segPtr;
+    int timestamp;
+    int startAddress;
+    int offset;
+    LfsSegSummaryHdr *segSummaryHdrPtr;
+{
+    int blocks, *blockArray, i, startAddr, fsBlocks, j;
+
+    fsBlocks = superBlockPtr->descMap.stableMem.blockSize/blockSize;
+    blocks = (segSummaryHdrPtr->lengthInBytes - sizeof(LfsSegSummaryHdr)) /
+				sizeof(int);
+    if (blocks * fsBlocks != segSummaryHdrPtr->numDataBlocks) {
+	majorErrors++;
+	fprintf((&stdioErrFile),"%s:CheckDescMapSummary: Wrong block count; is %d should be %s\n", deviceName,blocks * fsBlocks, segSummaryHdrPtr->numDataBlocks);
+    }
+    blockArray = (int *) (segSummaryHdrPtr + 1);
+    for (i = 0; i < blocks; i++) {
+	startAddr = startAddress - i * fsBlocks - fsBlocks;
+	if ((blockArray[i] < 0) || 
+	    (blockArray[i] > superBlockPtr->descMap.stableMem.maxNumBlocks)){
+	    majorErrors++;
+	   fprintf((&stdioErrFile),"%s:CheckDescMapSummary: Bad block number %d at %d\n",
+			deviceName,blockArray[i], startAddr);
+	    continue;
+	}
+	for (j = 0; j < fsBlocks; j++) { 
+	    blockInfoArray[startAddr + j].type = 2;
+	    blockInfoArray[startAddr + j].blockNum = blockArray[i];
+	    blockInfoArray[startAddr + j].found = 1;
+	}
+    }
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static void
+CheckFileLayoutSummary(diskFd, segPtr, timestamp, startAddr, offset, segSummaryHdrPtr) 
+    int diskFd;
+    Seg  *segPtr;
+    int timestamp;
+    int startAddr;
+    int offset;
+    LfsSegSummaryHdr *segSummaryHdrPtr;
+{
+    char *summaryPtr, *limitPtr;
+    int descMapBlocks;
+    int startAddress, j, ssize;
+
+    ssize = superBlockPtr->usageArray.segmentSize;
+
+
+    startAddress = startAddr;
+    descMapBlocks = superBlockPtr->descMap.stableMem.blockSize/blockSize;
+    summaryPtr = (char *) (segSummaryHdrPtr + 1);
+    limitPtr = summaryPtr + segSummaryHdrPtr->lengthInBytes - 
+			sizeof(LfsSegSummaryHdr);
+    while (summaryPtr < limitPtr) {
+	switch (*(unsigned short *) summaryPtr) {
+	case      0x0   : {
+	    int		fileNumber;
+	    int		slot;
+	    LfsFileDescriptor	*descPtr;
+	    descPtr = (LfsFileDescriptor *) SegFetchBlock(segPtr, offset, 
+						descMapBlocks*blockSize);
+	    offset += descMapBlocks;
+	    startAddress -= descMapBlocks;
+	    for (slot = 0; slot < superBlockPtr->fileLayout.descPerBlock; 
+		slot++) {
+		int addr;
+		
+
+
+
+		if (!(descPtr[slot].common.flags & 0x2)) {
+		    break;
+		}
+		addr = startAddress + (slot * sizeof(LfsFileDescriptor))/
+						blockSize;
+		fileNumber = descPtr[slot].fileNumber;
+		if ((fileNumber < 0) || 
+		    (fileNumber >= superBlockPtr->descMap.maxDesc)) {
+		    majorErrors++;
+		   fprintf((&stdioErrFile),"%s:CheckFileLayoutSummary: bad file number %d in desc block at %d\n", deviceName, fileNumber, startAddress);
+		   continue;
+		}
+		blockInfoArray[addr].type =    6;
+		if (timestamp >= descInfoArray[fileNumber].timestamp) {
+		    descInfoArray[fileNumber].timestamp = timestamp;
+		    descInfoArray[fileNumber].flags = 0x10;
+		    if (descPtr[slot].common.fileType == 		1) {
+			descInfoArray[fileNumber].flags |= 0x01;
+		    }
+		    descInfoArray[fileNumber].addr = startAddress;
+		}
+	     }
+	    
+
+
+	    summaryPtr += sizeof(LfsFileLayoutDesc);
+	    SegReleaseBlock(segPtr, (char *) descPtr);
+	    break;
+	}
+	case      0x1   : {
+	    int	*blockArray;
+	    int			  i;
+	    LfsFileLayoutSummary *fileSumPtr;
+	    int firstBlock;
+	    
+
+
+
+	     fileSumPtr = (LfsFileLayoutSummary *) summaryPtr;
+	    if ((fileSumPtr->fileNumber < 0) || 
+		(fileSumPtr->fileNumber >= superBlockPtr->descMap.maxDesc)) {
+		majorErrors++;
+	       fprintf((&stdioErrFile),"%s:CheckFileLayoutSummary: bad file number %d at %d\n", deviceName, fileSumPtr->fileNumber, startAddress);
+	       goto out;
+	    }
+	    if (fileSumPtr->truncVersion > 
+			descInfoArray[fileSumPtr->fileNumber].truncVersion) {
+		descInfoArray[fileSumPtr->fileNumber].truncVersion = 
+				fileSumPtr->truncVersion;
+	    }
+	    
+
+
+	    blockArray = (int *)(summaryPtr + sizeof(LfsFileLayoutSummary));
+	    firstBlock = fileSumPtr->numBlocks -
+		 (fileSumPtr->numDataBlocks-1) * 	4096/blockSize;
+	    for (i = 0; i < fileSumPtr->numDataBlocks; i++) {
+		int addr, blocks;
+
+		addr = startAddress - i*	4096/blockSize - firstBlock;
+		blocks = (i == 0) ? firstBlock : (	4096/blockSize);
+		for (j = 0; j < blocks ; j++) { 
+		    blockInfoArray[addr+j].type = 1;
+		    blockInfoArray[addr+j].fileNum = fileSumPtr->fileNumber;
+		    blockInfoArray[addr+j].blockNum = blockArray[i];
+		    blockInfoArray[addr+j].found = 1;
+		    blockInfoArray[startAddr + j].tversion = 
+				fileSumPtr->truncVersion;
+		}
+	    }
+	    out:
+	    startAddress = startAddress - fileSumPtr->numBlocks;
+	    offset += fileSumPtr->numBlocks;
+	    summaryPtr += sizeof(LfsFileLayoutSummary) + 
+				fileSumPtr->numDataBlocks * sizeof(int); 
+	    break;
+	  }
+
+	case      0x4   : {
+	    LfsFileLayoutLog	*logSumPtr;
+	    int			numBlocks;
+	    int			i,j, addr, blocks;
+	    LfsDirOpLogBlockHdr *hdrPtr = (LfsDirOpLogBlockHdr *) 		0xFFFFFFFF;
+
+	    
+
+
+
+	     logSumPtr = (LfsFileLayoutLog *) summaryPtr;
+	     summaryPtr = summaryPtr + sizeof(LfsFileLayoutLog);
+	     numBlocks = logSumPtr->numBlocks;
+	     addr = startAddress;
+	     for (i = 0; i < logSumPtr->numDataBlocks; i++) {
+		if (numBlocks > 	4096/blockSize) {
+		    blocks = 	4096/blockSize;
+		} else {
+		    blocks = numBlocks;
+		}
+
+	        hdrPtr = (LfsDirOpLogBlockHdr *)
+		     SegFetchBlock(segPtr, offset, blocks*blockSize);
+		addr -= blocks;
+		offset += blocks;
+		if (hdrPtr->magic != 0x1f5d109) {
+		    fprintf((&stdioErrFile),"Bad dir op log magic number.\n");
+		}
+		if (showDirLog) { 
+		    ShowDirLogBlock(hdrPtr, addr);
+		}
+		for (j = 0; j < blocks; j++) {
+		    blockInfoArray[addr+j].type =     7;
+		    blockInfoArray[addr+j].found = 1;
+		}
+		numBlocks -= blocks;
+	     }
+	     startAddress = startAddress - logSumPtr->numBlocks;
+	     if ( hdrPtr != (LfsDirOpLogBlockHdr *) 		0xFFFFFFFF) { 
+		 SegReleaseBlock(segPtr, (char *) hdrPtr);
+	    }
+	     break;
+	}
+	case 0x3   : 
+	case     0x2   : 
+	default: {
+	    panic("Unknown type");
+	}
+      }
+    }
+
+}
+static char *
+GetOwner(blockNum)
+    int blockNum;
+{
+    static char buffer[128];
+
+    sprintf(buffer, "<%d,%d,%d>", blockInfoArray[blockNum].type,
+				blockInfoArray[blockNum].fileNum,
+				blockInfoArray[blockNum].blockNum);
+
+    return buffer;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static void
+PrintSuperBlock(superBlockPtr)
+    LfsSuperBlock *superBlockPtr;
+{
+    printf("SuperBlock.hdr.version: %d\n", superBlockPtr->hdr.version);
+    printf("SuperBlock.hdr.blockSize: %d\n", 
+			    superBlockPtr->hdr.blockSize);
+    printf("SuperBlock.hdr.maxCheckPointBlocks: %d\n", 
+			    superBlockPtr->hdr.maxCheckPointBlocks);
+    printf("SuperBlock.hdr.checkPointOffset[0]: %d\n", 
+		    superBlockPtr->hdr.checkPointOffset[0]);
+    printf("SuperBlock.hdr.checkPointOffset[1]: %d\n", 
+		    superBlockPtr->hdr.checkPointOffset[1]);
+    printf("SuperBlock.hdr.logStartOffset: %d\n", 
+		    superBlockPtr->hdr.logStartOffset);
+    printf("SuperBlock.hdr.maxNumCacheBlocks: %d\n", 
+		    superBlockPtr->hdr.maxNumCacheBlocks);
+    printf("SuperBlock.descMap.version: %d\n", superBlockPtr->descMap.version);
+    printf("SuperBlock.descMap.maxDesc: %d\n", superBlockPtr->descMap.maxDesc);
+    printf("SuperBlock.descMap.stableMem.blockSize: %d\n", 
+			superBlockPtr->descMap.stableMem.blockSize);
+    printf("SuperBlock.descMap.stableMem.maxNumBlocks: %d\n", 
+			superBlockPtr->descMap.stableMem.maxNumBlocks);
+    printf("SuperBlock.usageArray.segmentSize: %d\n", 
+				superBlockPtr->usageArray.segmentSize);
+    printf("SuperBlock.usageArray.numberSegments: %d\n", 
+				superBlockPtr->usageArray.numberSegments);
+    printf("SuperBlock.usageArray.minNumClean: %d\n", 
+				superBlockPtr->usageArray.minNumClean);
+    printf("SuperBlock.usageArray.minFreeBlocks: %d\n", 
+				superBlockPtr->usageArray.minFreeBlocks);
+    printf("SuperBlock.usageArray.stableMem.blockSize: %d\n", 
+			superBlockPtr->descMap.stableMem.blockSize);
+    printf("SuperBlock.usageArray.stableMem.maxNumBlocks: %d\n", 
+			superBlockPtr->descMap.stableMem.maxNumBlocks);
+    printf("SuperBlock.fileLayout.descPerBlock: %d\n", 
+				superBlockPtr->fileLayout.descPerBlock);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static void
+PrintCheckPointHdr(headerPtr, region)
+    LfsCheckPointHdr *headerPtr;
+    int region;
+{
+    printf("CheckPointHdr[%d].timestamp: %d\n", region, headerPtr->timestamp);
+    printf("CheckPointHdr[%d].size: %d\n", region, headerPtr->size);
+    printf("CheckPointHdr[%d].version: %d\n", region, headerPtr->version);
+    printf("CheckPointHdr[%d].domainPrefix: %s\n", region, 
+					headerPtr->domainPrefix);
+    printf("CheckPointHdr[%d].domainNumber: %d\n", region,
+				headerPtr->domainNumber);
+    printf("CheckPointHdr[%d].attachSeconds: %d\n", region, 
+			headerPtr->attachSeconds);
+    printf("CheckPointHdr[%d].detachSeconds: %d\n", region, 
+			headerPtr->detachSeconds);
+    printf("CheckPointHdr[%d].serverID: %d\n", region, 
+			headerPtr->serverID);
+}
+
+static void
+ShowDirLogBlock(hdrPtr, addr)
+    LfsDirOpLogBlockHdr *hdrPtr;
+    int addr;
+{
+    LfsDirOpLogEntry *entryPtr, *limitPtr;
+
+    printf("Dirlog block at %d, size %d\n", addr, hdrPtr->size);
+    limitPtr = (LfsDirOpLogEntry *) (((char *) hdrPtr) + hdrPtr->size);
+    entryPtr = (LfsDirOpLogEntry *) (hdrPtr+1);
+    while (entryPtr < limitPtr) {
+	printf("LogSeqNum %d opFlags 0x%x dirFile %d dirOffset %d linkCount %d\n",
+		entryPtr->hdr.logSeqNum, entryPtr->hdr.opFlags, 
+		entryPtr->hdr.dirFileNumber,
+		entryPtr->hdr.dirOffset, entryPtr->hdr.linkCount);
+	entryPtr->dirEntry.fileName[entryPtr->dirEntry.nameLength] = '\0';
+	printf("    File %d Name %s\n", entryPtr->dirEntry.fileNumber, 
+		entryPtr->dirEntry.fileName);
+	entryPtr = (LfsDirOpLogEntry *) 
+		     (((char *)entryPtr) +  	((entryPtr)->dirEntry.recordLength + sizeof(LfsDirOpLogEntryHdr)));
+    }
+
+}
+
+static char *
+FmtTime()
+{
+     struct timeval tim;
+     time_t  timeVal;
+     static char timeBuffer[128];
+
+     if (gettimeofday(&tim, (struct timezone *)  	0)) {
+	 perror("gettimeofday");
+	 return "Unknown";
+     }
+     timeVal = tim.tv_sec;
+     (void)strcpy(timeBuffer, ctime(&timeVal) + sizeof("Sun Sep 16 ")-1);
+
+     sprintf(timeBuffer+sizeof("01:03:52")-1,".%03d", tim.tv_usec/1000);
+     return timeBuffer;
+}
+
+static Seg *
+SegInit(diskFd, segNumber)
+    int	diskFd;
+    int	segNumber;	
+{
+    static Seg seg;
+    seg.segNo = segNumber;
+    seg.segSizeInBlocks = superBlockPtr->usageArray.segmentSize/blockSize;
+    seg.diskFd = diskFd;
+    return &seg;
+}
+
+static int
+SegStartAddr(segPtr)
+    Seg	*segPtr;
+{
+    return  segPtr->segNo * segPtr->segSizeInBlocks + 
+			superBlockPtr->hdr.logStartOffset;
+}
+static char *
+SegFetchBlock(segPtr, blockOffset, size)
+    Seg		*segPtr;
+    int		blockOffset;
+    int		size;
+{
+    char *buf;
+    int	  startAddr;
+
+    startAddr = SegStartAddr(segPtr) + segPtr->segSizeInBlocks - blockOffset -
+		size/blockSize;
+    buf = malloc(size);
+
+    if (DiskRead(segPtr->diskFd, startAddr , size, buf) != size) {
+	fprintf((&stdioErrFile),"%s:SegFetchBlock: Can't read seg %d offset %d.\n", deviceName, segPtr->segNo, blockOffset);
+    }
+    return buf;
+}
+static void
+SegReleaseBlock(segPtr, memPtr)
+    Seg		*segPtr;
+    char	*memPtr;
+{
+    free(memPtr);
+}
+static void
+SegRelease(segPtr)
+    Seg		*segPtr;
+{
+}
+
+static Boolean 
+IsZero(dataPtr, size)
+    register char *dataPtr;
+    register int	size;
+{
+    for (; size > 0; dataPtr++, size--) {
+	if (*dataPtr) {
+		return 0;
+	}
+    }
+    return 1;
+
+}
+

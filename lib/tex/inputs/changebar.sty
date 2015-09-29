@@ -1,0 +1,585 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%	CHANGEBAR STYLE
+%
+%	Written by:
+%		Michael Fine
+%		Distributed Systems Architecture.
+%		October, 1986.
+%
+%       Revisions:
+%	        Support for twosided.sty added.	January, 1987.
+%		
+%		Warning message added to indicate that another pass is
+%		required. May, 1987.
+%
+%
+% USAGE:
+% 
+%    \cbstart[dimension]
+%    \cbend
+%	All material between the two macros is barred.  Nested
+%	changebars are allowed.  The optional parameter specifies the
+%	width of the bar.  If no width is specified, the current value
+%	of the parameter \changebarwidth is used.  Note that \cbstart
+%	and \cbend can be used anywhere but must be correctly nested
+%	with floats and footnotes.  That is, you cannot have one end of
+%	the bar inside a floating insertion and the other outside, but
+%	that would be a meaningless thing to do anyhow.
+% 
+%     \setlength{\changebarwidth}{dimension}
+% 	Sets the default width of the bar. 
+% 
+%     \setlength{\changebarsep}{dimension}
+% 	Sets the separation between the bar and the left margin of the
+% 	text.
+% 
+% IMPORTANT NOTE: Just as with cross references and labels, you
+% usually need to process the document twice (and sometimes three
+% times) to ensure that the changebars come out correctly.  However, a
+% warning will be given if another pass is required.
+%
+%
+% PARAMETERS:
+%
+%    \changebarwidth
+%	A LaTeX length parameter that gives the bar width.  It can be
+%	changed with the \setlength command.  Changing its value affects
+%	all subsequent changebars subject to the scoping rules of
+%	\setlength.
+%
+%    \changebarsep
+%	A LaTeX length parameter that gives the separation of the bar
+%	from the left margin of the text.  It can be set with the
+%	\setlength command.
+%
+%
+% 
+% FEATURES:
+% 
+%	Changebars may be nested within each other.  Each level of
+%	nesting can be given a different thickness bar.
+% 
+% 	Changebars may be nested in other environments including floats
+% 	and footnotes.
+% 
+% 	Changebars are applied to all the material within the ``barred''
+% 	environment, including floating bodies regardless of where the
+% 	floats float to.  An exeception to this is margin floats.
+% 
+% 	Changebars may cross page boundaries.
+% 
+% 
+% DEFICIENCIES AND BUGS:
+% 
+%	The macros blindly use specials points \cb@minpoint through
+%	\cb@maxpoint.  If this conflicts with another set of macros, the
+%	results will be unpredictable.  (What is really needed is a
+%	\newspecialpoint, analogous to \newcount etc.)
+% 
+%	There is a limit of (\cb@maxpoint-\cb@minpoint+1)/4 bars per
+%	page (four special points per bar).  Using more than this number
+%	yeilds unpredictable results (but that could be called a feature
+%	for a page with so many bars).  This limitation could be
+%	increased if desired
+% 
+% 	Internal macro names are all of the form \@cbxxxx.  No checking
+% 	for conflicts with other macros is done.  
+% 
+%	This implementation has not been designed for two column
+%	printing.
+% 
+% 	The algorithms may fail if a floating insertion is split over
+% 	multiple pages.  In LaTeX floats are not split but footnotes may
+% 	be.  The simplest fix to this is to prevent footnotes from being
+% 	split but this may make TeX very unhappy.
+%
+%	The \cbend normally gets "attached" to the token after it rather
+%	than the one before it.  This may lead to a longer bar than
+%	intended.  For example, consider the sequence `word1 \cbend
+%	word2'.  If there is a line break between `word1' and `word2'
+%	the bar will incorrectly be extended an extra line.  This
+%	particular case can be fixed with the incantation `word1\cbend{}
+%	word2'.
+% 
+% 
+% BASIC ALGORITHM
+%
+%	The changebars are implemented using the \specials of the DVI to
+%	LN3 translator.  In essence, the start of changebar defines a
+%	\special point in the margin at the current vertical position on
+%	the page.  The end of a changebar defines another point and then
+%	joins the two using the "connect" \special.
+%
+%	This works fine as long as the two points being connected lie on
+%	the same page.  However, if they don't, the bar must be
+%	artificially terminated at the page break and restarted at the
+%	top of the next page.  The only way to do this (that I can think
+%	of) is to modify the output routine so that it checks if any bar
+%	is in progress when it ships out a page and, if so, adds the
+%	necessary artificial end and begin.
+%	
+%	The obvious way to indicate to the output routine that a bar is
+%	in progress is to set a flag when the bar is begun and to unset
+%	this flag when the bar is ended.  This works most of the time
+%	but, because of the asynchronous behavior of the output routine,
+%	errors occur if the bar begins or ends near a page break.  To
+%	illustrate, consider the following scenerio.
+%
+%	blah blah blah		% page n
+%	blah blah blah
+%	\cbstart		% this does its thing and set the flag
+%	more blah
+%		<-------------- pagebreak occurs here
+%	more blah
+%	\cbend			% does its thing and unsets flag
+%	blah blah
+%	
+%	Since TeX process ahead of the page break before invoking the
+%	output routine, it is possible that the \cbend is
+%	processed, and the flag unset, before the output routine is
+%	called.  If this happens, the necessary artificial end and begin
+%	will not be added to page n and n+1, respectively.  Thus, it is
+%	not possible to use a flag to signal the output routine that a
+%	bar crosses a page break, and some other mechanism is required.
+%	
+%	The method used with these macros is to create a list of the
+%	beginning and end points of each bar in the document together
+%	with the page number corresponding to each point.  Then, as a
+%	page is completed, a modified output routine checks the list to
+%	determine if any bars begun on or before the current page are
+%	terminated on subsequent pages, and handles those bars
+%	appropriately.  To build the list, information about each
+%	changebar is written to the .AUX file as bars are processed.
+%	This information is re-read when the document is next processed.
+%	Thus, to ensure that changebars are correct, the document must
+%	be processed twice, but this is required for LaTeX anyway.
+%
+%	This apprach is sufficiently general to allow nested bars, bars
+%	in floating insertions, and bars around floating insertions.
+%	Bars inside floats and footnotes are handled in the same way as
+%	bars in regular text.  Bars that encompass floats or footnotes
+%	are handled by creating an additional bar that floats with the
+%	floating material.  Modifications to the appropriate LaTeX
+%	macros check for this condition and add the extra bar.
+%
+%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%	User Level Commands And Parameters
+%
+%
+
+%
+% \cbstart	\cbend
+%
+% Start and end a changebar and save state on \cb@currentlist.  Width of
+% new bar is determined by adding \changebarwidth to width of current
+% bar.  Does not invoke a LaTeX environment.
+%
+\def\cbstart{\@ifnextchar [{\cb@xstart}{\cb@start\changebarwidth}}
+	\def\cb@xstart[#1]{\cb@start{#1}}
+
+\def\cbend{\if e\cb@currentlist
+	\message{Badly nested changebars.  Expect erroneous results.}\else
+	\cb@end\fi}
+
+%
+% \begin{changebar}  \end{changebar}
+%
+% Identical to \cbstart and \cbend but invokes a LaTeX environment to
+% enforce correct nesting.  Cannot be used in tabular and tabbing
+% environments.
+%
+%\newenvironment{changebar}{\@bsphack\cbstart\@esphack}{\@bsphack
+%	\cbend\@esphack}
+
+
+%
+% \changebarwidth
+%
+% A LaTeX length parameter that gives the bar width.  Width of bar is
+% given by \changebarwidth multiplied by nesting level.
+%
+\newlength{\changebarwidth}
+\setlength{\changebarwidth}{2pt}
+
+%
+% \changebarsep
+%
+% A LaTeX length parameter that gives the separation of the bar from the
+% left margin of the text.
+%
+\newlength{\changebarsep}
+\setlength{\changebarsep}{30pt}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%	Declarations And Initializations
+%
+%
+
+\let\cb@ig=\ignorespaces %useful abreviation
+
+\def\cb@maxpoint{80}		% max value of used special points
+\def\cb@minpoint{1}		% ditto for min;
+				% MUST BE ODD ****
+\def\cb@nil{0}			% a void value for points
+
+\newcount\cb@nextpoint		% next value of special point to use
+\newcount\cb@currentpoint	% current value in use
+\cb@nextpoint=\cb@minpoint	% intially = \cb@minpoint
+
+\newcount\cb@page		% count for page value from hist list
+\newcount\cb@pagecount		% our internal count of pages output
+\cb@pagecount=0			% initially 0 due to timing of increment
+
+\xdef\cb@history{e}		% the history list; initially empty
+\xdef\cb@spanlist{e}		% list of bars spanning current page
+\xdef\cb@currentlist{e}		% used to implement nesting without using
+				% TeX grouping
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%	Macros for beginning and ending bars
+%
+%
+
+%
+% \cb@start#1		#1 is the dimension of the bar
+%
+% This macro is used to start a change bar.  It assigns a new value to
+% the current point and advances the counter for the next point to be
+% assigned.  It pushes this info onto \cb@currentlist and then sets the
+% point by calling \cb@setBeginPoint with the point number.  Finally, it
+% writes the aux file.
+%
+\def\cb@start#1{\cb@currentpoint=\cb@nextpoint
+	\@tempdima=#1\cb@ig				% for \cb@push
+	\cb@push\cb@currentlist
+	\ifvmode \cb@setBeginPoint\cb@currentpoint
+	\else \vbox to 0pt{\vskip -\ht\strutbox		%jump up a line to
+	\cb@setBeginPoint\cb@currentpoint		%set point
+	\vskip \ht\strutbox}\fi
+	\cb@writeAux\cb@advancePoint}
+
+\def\cb@advancePoint{\global\advance\cb@nextpoint by 4\cb@ig
+	\ifnum\cb@nextpoint>\cb@maxpoint
+	\global\cb@nextpoint=\cb@minpoint\relax\fi}
+
+%
+% \cb@end
+%
+% This macro is used to end a changebar.  It pops the current point and
+% nesting level off \cb@currentlist and sets the end point by calling
+% \cb@setEndPoint with the parameter corresponding to the BEGINNING
+% point number.  It writes the aux file and joins the points.
+%
+\def\cb@end{\cb@pop\cb@currentlist
+	\cb@setEndPoint\cb@currentpoint
+	\advance\cb@currentpoint by1\cb@writeAux}
+
+
+%
+% \cb@setBeginPoint#1
+%
+% Assigns position to points #1 and #1+2.  First computes the position.
+%
+\def\cb@setBeginPoint#1{\@tempdimb=\hoffset
+	\advance\@tempdimb by\oddsidemargin
+	\advance\@tempdimb by -\changebarsep
+	\special{ln03:defpoint \the#1(\the\@tempdimb,)}\cb@ig
+	\@tempcnta#1\advance\@tempcnta by2\@tempdimb=\hoffset
+	\advance\@tempdimb by\evensidemargin
+	\advance\@tempdimb by\textwidth
+	\advance\@tempdimb by\changebarsep
+	\special{ln03:defpoint \the\@tempcnta(\the\@tempdimb,)}}
+
+%
+% \cb@setEndPoint#1
+%
+% Assigns position to point #1+1 and point #1+3.  Then does a connect
+% special to join #1 and #1+1 or to join #1+2 and #1+3.  Assumes that
+% width of bar is given in \@tempdima
+%
+\def\cb@setEndPoint#1{\@tempcnta=#1\advance\@tempcnta by1\cb@ig
+	\@tempdimb=\hoffset
+	\advance\@tempdimb by\oddsidemargin
+	\advance\@tempdimb by -\changebarsep
+	\special{ln03:defpoint \the\@tempcnta\space
+	\space(\the\@tempdimb,)}\if@twoside\@tempcntb=#1
+	\advance\@tempcntb by3\@tempdimb=\hoffset
+	\advance\@tempdimb by\evensidemargin
+	\advance\@tempdimb by\textwidth
+	\advance\@tempdimb by\changebarsep
+	\special{ln03:defpoint \the\@tempcntb\space
+	\space(\the\@tempdimb,)}\cb@ig
+	{\count9=#1\advance\count9 by2\cb@ig
+	\special{ln03:connect \the#1/\the\count9\space\space
+	\the\@tempcnta/\the\@tempcntb\space\space\the\@tempdima}}\else
+	\special{ln03:connect \the#1 \the\@tempcnta\space\space
+	\the\@tempdima}\fi}
+
+%
+% \cb@writeAux
+%
+% Writes the string
+% \cb@barpoint{\cb@currentpoint}{\thepage}{\cb@tempdima} to the aux
+% file.  Assumes that width of bar is in \@tempdima.
+%
+\def\cb@writeAux{\begingroup \edef\point{\the\cb@currentpoint}\cb@ig
+	\edef\level{\the\@tempdima}\cb@ig
+	\let\the=0\edef\cb@temp{\write\@auxout
+	{\string\cb@barpoint{\point}{\the\cb@pagecount}{\level}}}\cb@ig
+	\cb@temp\endgroup}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%	Macros for Making It Work Across Page Breaks
+%
+
+
+%
+% \@makecol
+%
+% Modifies the LaTex macros to end the changebars spanning the current
+% page (if any) and restart them on the next page.  Does the
+% following: It resets special points for this page.  Adds begin bars
+% to top of box255.  The bars to be begun are saved in \cb@beginSaves.
+% Increments the changebar-internal page counter so that the value
+% corresponds to the number of this page in strictly sequential order
+% (the LaTeX page number can be reset).  Then it builds the list
+% \cb@spanlist, then calls \cb@processActive to process the elements
+% on the list, then it executes the original \@makecol.
+%
+\let\cb@makecol=\@makecol
+\def\@makecol{\setbox255=\vbox{\special{ln03:resetpoints \cb@minpoint
+        \space\cb@maxpoint}\cb@beginSaves\unvbox255}\cb@ig
+	\gdef\cb@beginSaves{}\global\advance
+	\cb@pagecount by 1\cb@buildActive
+	\cb@processActive\cb@makecol}
+
+%
+% \cb@processActive
+%
+% Processes each element on span list.  Each element represents a bar
+% that crosses the page break.  There could be more than one if bars are
+% nested.  Works as folows:
+%
+%	pop top element of span list
+%	if point null (i.e., list empty) then done
+%	else
+%	    do an end bar on box255
+%	    save start for new bar at top of next page in \cb@startSaves
+%	    push active point back onto history list (need to reprocess
+%		on next page).
+%
+\def\cb@processActive{\cb@pop\cb@spanlist
+	\ifnum\cb@currentpoint=\cb@nil \else
+	\setbox255=\vbox{\unvbox255\cb@setEndPoint\cb@currentpoint}\cb@ig
+	\cb@saveBeginPoint\cb@currentpoint \cb@push\cb@history
+	\cb@processActive\fi}
+
+%
+% \cb@saveBeginPoint#1
+%
+% Saves a \special to begin a point in expanded macro \cb@beginSaves.
+% This is then used to start all spanning bars at the top of the next
+% page.  It is almost the same as \cb@setBeginPoint
+%
+\def\cb@saveBeginPoint#1{\@tempdimb=\hoffset
+	\advance\@tempdimb by\oddsidemargin
+	\advance\@tempdimb by -\changebarsep
+	\xdef\cb@beginSaves{\special{ln03:defpoint \the#1(\the
+	\@tempdimb,)}\cb@beginSaves}
+	\@tempcnta#1\advance\@tempcnta by2\@tempdimb=\hoffset
+	\advance\@tempdimb by\evensidemargin
+	\advance\@tempdimb by\textwidth
+	\advance\@tempdimb by\changebarsep
+	\xdef\cb@beginSaves{\special{ln03:defpoint \the\@tempcnta(\the
+	\@tempdimb,)}\cb@beginSaves}}
+
+\def\cb@beginSaves{}                % initially empty
+
+
+
+
+%
+% \cb@buildActive
+%
+% Initializes the spanlist to null.  Pops top of history list.  If point
+% is on future page, push back onto history list.  If point on current
+% or previous page and odd, add point to span list; if even, pop span
+% list since this bar has terminated on current page.
+%
+\def\cb@buildActive{\xdef\cb@spanlist{e}\cb@pushNextActive}
+
+\def\cb@pushNextActive{\cb@pop\cb@history
+	\ifnum\cb@currentpoint=\cb@nil \else
+	\ifnum\cb@page>\cb@pagecount \cb@push\cb@history \else
+	\ifodd\cb@currentpoint \cb@push\cb@spanlist
+	\else \cb@pop\cb@spanlist\fi
+	\cb@pushNextActive\fi\fi}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%	Macros For Managing The Lists of Bar points
+%
+% The macros make use of three lists corresponding to \special
+% defpoints.  Each list takes the form
+%	<element> . . . <element>e
+%
+% Each element is of the form xxxnyyypzzzl where xxx is the number of
+% the special point, yyy is the page on which this point is set, and zzz
+% is the dimension used when connecting this point.
+%
+% The list \cb@history is built from the log information and initially
+% lists all the points.  As pages are processed, points are popped off
+% the list and discarded.
+%
+% The list \cb@spanlist is a temporary list used by the output routine
+% and contains the list of all bars crossing the current page (there may
+% be more than one with nested bars).  It is built by popping elements
+% off the history list.
+%
+% The list \cb@currentlist contains all the current bars.  A \cb@start
+% pushes an element onto this list.  A \cb@end pops the top element off
+% the list and uses the info to terminate the bar.
+%
+
+%
+% \cb@pop#1		#1 is name of list (e.g., \cb@history)
+%
+% This pops the top element off the named list and puts the point value
+% into \cb@currentpoint, the page value into \cb@page and the bar width
+% into \@tempdima.  If the list is empty, returns a void value (\cb@nil)
+% in \cb@currentpoint and sets \cb@page=0
+%
+\def\cb@pop#1{\if e#1\cb@currentpoint=\cb@nil\cb@page=0\else
+	\expandafter\cb@carcdr#1#1\fi}
+
+\def\cb@carcdr#1n#2p#3l#4e#5{\cb@currentpoint=#1\cb@page=#2\@tempdima=#3\cb@ig
+	\xdef#5{#4e}}
+
+%
+% \cb@push#1
+%
+% Pushes \cb@currentpoint, \cb@page and \@tempdima onto the top of the
+% named list
+%
+\def\cb@push#1{\xdef#1{\the\cb@currentpoint n\the\cb@page p\the\@tempdima l#1}}
+
+%
+% \cb@backpush#1#2#3
+%
+% Pushes #1 #2 and #3 onto the BACK of the history list.  #1 is the
+% point value, #2 the page, and #3 the bar width.  This is used for
+% initializing the history list from the data in tha .AUX file.
+%
+\def\cb@backpush#1#2#3{\expandafter\cb@append\cb@history#1n#2p#3l}
+	\def\cb@append#1e#2n#3p#4l{\xdef\cb@history{#1#2n#3p#4le}}
+
+
+\let\cb@barpoint=\cb@backpush	% all we do is push aux entries onto back
+				% of history list
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%      Macros For Checking That The .AUX File Is Stable
+%
+
+%
+% \document
+%
+% This is a replacement for the LaTeX \document macro.  The
+% replacement makes a copy of the history list (which has just been
+% built from the .AUX file) which is used to compare with the new .AUX
+% file that will be created.  It also \lets
+% \cb@barpoint=\cb@checkHistory to  prepare for checking the new .AUX
+% file.
+%
+\let\cb@document=\document
+\def\document{\cb@document\xdef\cb@prevHistory{\cb@history}\cb@ig
+    \let\cb@barpoint=\cb@checkHistory}
+
+%
+% \cb@checkHistory
+%
+% Pops the top of the original history list (\cb@prevHistory) and
+% check to see if the point and page numbers are the same as the
+% arguements #1 and #2 respectively.  Prints a warning message if
+% different. 
+%
+\def\cb@checkHistory#1#2#3{\cb@pop\cb@prevHistory
+        \ifnum #1=\cb@currentpoint
+	    \ifnum #2=\cb@page        % do nothing
+	    \else \cb@error           % page numbers mismatched
+	    \fi
+	\else \cb@error               % point numbers mismatched
+	\fi}
+
+\def\cb@error{\message{Changebar Warning: Changebar info has changed. %
+Rerun to get right.}\gdef\cb@checkHistory##1##2##3{}%
+\let\cb@barpoint=\cb@checkHistory}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%	Macros For Making It Work With Nested Floats/Footnotes
+%		Works for LaTeX 2.09
+%
+
+%
+% \end@float
+%
+% This is a replacement for the Latex macro of the same name.  All it
+% does is check to see if changebars are active and, if so, it puts
+% changebars around the box containing the float.  Then it calls the
+% original LaTeX \end@float
+%
+\let\cb@endfloat=\end@float
+\def\end@float{\cb@pop\cb@currentlist\ifnum\cb@currentpoint=\cb@nil
+	\else \cb@push\cb@currentlist\global\@tempdima=\@tempdima 
+        \egroup \global\setbox
+	\@currbox=\vbox{\cb@start\@tempdima\unvbox\@currbox\cb@end}\bgroup\fi
+	\cb@endfloat}
+
+\let\endfigure=\end@float	% need to rebind these to new def
+\let\endtable=\end@float
+
+%
+% \@footnotetext#1
+%
+% Replacement for the LaTeX macro of the same name.  Simply checks to
+% see if changebars are active and if so wraps the macro arguement
+% (i.e., the footnote) in changebars.
+%
+\let\cb@footnote=\@footnotetext
+\long\def\@footnotetext#1{\cb@pop\cb@currentlist\ifnum\cb@currentpoint=\cb@nil
+	\cb@footnote{#1}\else \cb@push\cb@currentlist
+	\edef\cb@temp{\the\@tempdima}\cb@ig
+	\cb@footnote{\cb@start{\cb@temp}#1\cb@end}\fi}
+
+%
+% \@mpfootnotetext#1
+%
+% Replacement for the LaTeX macro of the same name.  Same thing as
+% \@footnotetext.
+%
+\let\cb@mpfootnote=\@mpfootnotetext
+\long\def\@mpfootnotetext#1{\cb@pop\cb@currentlist
+        \ifnum\cb@currentpoint=\cb@nil
+	\cb@mpfootnote{#1}\else \cb@push\cb@currentlist
+	\edef\cb@temp{\the\@tempdima}\cb@ig
+	\cb@mpfootnote{\cb@start{\cb@temp}#1\cb@end}\fi}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

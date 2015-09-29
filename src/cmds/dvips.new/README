@@ -1,0 +1,15 @@
+This is the latest and greatest version of dvips.  It supports:
+
+	- Automatic generation of fonts via MF whenever needed
+	- EPSF PostScript files complete with automatic determination
+		of graphics size (see epsf.tex)
+	- Literal PostScript includes complete with definitions
+	- Non-EPSF PostScript graphics with user-specified scaling
+	- TPIC specials
+	- Correct budgeting of printer memory
+	- Output at 300 or 400 DPI (or any other DPI)
+	- Use of PostScript fonts
+        - Use of virtual fonts
+	- Use of popen on output file.
+
+All real documentation is now in the file dvips.tex.

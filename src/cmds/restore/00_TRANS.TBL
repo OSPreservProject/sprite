@@ -1,0 +1,8 @@
+D DS3100_M                          	ds3100.md
+F LOCAL.MK;1                        	local.mk
+L MAIN.C;1                          	main.c	../dump/main.c
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+F RESTORE.MAN;1                     	restore.man
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md

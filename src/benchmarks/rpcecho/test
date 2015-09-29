@@ -1,0 +1,5 @@
+#!/bin/csh -f
+
+kprof start
+rpcecho -d 16384 -h piracy -n 1000 -s
+kprof end

@@ -1,0 +1,33 @@
+L BUFFER.C;1                        	buffer.c	sprite/buffer.c
+L COMPATIN.H;1                      	compatInt.h	/sprite/src/lib/c/unixSyscall/compatInt.h
+L CREATE.C;1                        	create.c	sprite/create.c
+L DIFFARCH.C;1                      	diffarch.c	sprite/diffarch.c
+D DS3100_M                          	ds3100.md
+L EXTRACT.C;1                       	extract.c	sprite/extract.c
+L GETOLDOP.C;1                      	getoldopt.c	tar-dist/getoldopt.c
+L GETOPT.C;1                        	getopt.c	tar-dist/getopt.c
+L GETOPT.H;1                        	getopt.h	tar-dist/getopt.h
+L GETOPT1.C;1                       	getopt1.c	tar-dist/getopt1.c
+L LIST.C;1                          	list.c	sprite/list.c
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+L NAMES.C;1                         	names.c	tar-dist/names.c
+L OPEN3.H;1                         	open3.h	tar-dist/open3.h
+L PORT.C;1                          	port.c	sprite/port.c
+L PORT.H;1                          	port.h	tar-dist/port.h
+D RCS                               	RCS
+L RMT.H;1                           	rmt.h	sprite/rmt.h
+L RTAPE_LI.C;1                      	rtape_lib.c	sprite/rtape_lib.c
+D SPRITE                            	sprite
+L SPRITE.C;1                        	sprite.c	sprite/sprite.c
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md
+D SYS                               	sys
+F TAGS0.;1                          	TAGS
+F TAGS1.;1                          	tags
+L TAR.C;1                           	tar.c	sprite/tar.c
+L TAR.H;1                           	tar.h	sprite/tar.h
+D TAR_DIST                          	tar-dist
+L UPDATE.C;1                        	update.c	sprite/update.c
+L VERSION.C;1                       	version.c	tar-dist/version.c
+L WILDMAT.C;1                       	wildmat.c	tar-dist/wildmat.c

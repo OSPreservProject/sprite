@@ -1,0 +1,80 @@
+\entry {editing-mode}{4}{editing-mode}
+\entry {horizontal-scroll-mode}{5}{horizontal-scroll-mode}
+\entry {mark-modified-lines}{5}{mark-modified-lines}
+\entry {prefer-visible-bell}{5}{prefer-visible-bell}
+\entry {beginning-of-line (C-a)}{6}{\code {beginning-of-line (C-a)}}
+\entry {end-of-line (C-e)}{6}{\code {end-of-line (C-e)}}
+\entry {forward-char (C-f)}{6}{\code {forward-char (C-f)}}
+\entry {backward-char (C-b)}{6}{\code {backward-char (C-b)}}
+\entry {forward-word (M-f)}{6}{\code {forward-word (M-f)}}
+\entry {backward-word (M-b)}{6}{\code {backward-word (M-b)}}
+\entry {clear-screen (C-l)}{6}{\code {clear-screen (C-l)}}
+\entry {accept-line (Newline, Return)}{6}{\code {accept-line (Newline, Return)}}
+\entry {previous-history (C-p)}{6}{\code {previous-history (C-p)}}
+\entry {next-history (C-n)}{6}{\code {next-history (C-n)}}
+\entry {beginning-of-history (M-{\tt\less})}{6}{\code {beginning-of-history (M-{\tt\less})}}
+\entry {end-of-history (M-{\tt\gtr})}{6}{\code {end-of-history (M-{\tt\gtr})}}
+\entry {reverse-search-history (C-r)}{7}{\code {reverse-search-history (C-r)}}
+\entry {forward-search-history (C-s)}{7}{\code {forward-search-history (C-s)}}
+\entry {delete-char (C-d)}{7}{\code {delete-char (C-d)}}
+\entry {backward-delete-char (Rubout)}{7}{\code {backward-delete-char (Rubout)}}
+\entry {quoted-insert (C-q, C-v)}{7}{\code {quoted-insert (C-q, C-v)}}
+\entry {tab-insert (M-TAB)}{7}{\code {tab-insert (M-TAB)}}
+\entry {self-insert (a, b, A, 1, !, ...)}{7}{\code {self-insert (a, b, A, 1, !, ...)}}
+\entry {transpose-chars (C-t)}{7}{\code {transpose-chars (C-t)}}
+\entry {transpose-words (M-t)}{7}{\code {transpose-words (M-t)}}
+\entry {upcase-word (M-u)}{7}{\code {upcase-word (M-u)}}
+\entry {downcase-word (M-l)}{7}{\code {downcase-word (M-l)}}
+\entry {capitalize-word (M-c)}{7}{\code {capitalize-word (M-c)}}
+\entry {kill-line (C-k)}{8}{\code {kill-line (C-k)}}
+\entry {backward-kill-line ()}{8}{\code {backward-kill-line ()}}
+\entry {kill-word (M-d)}{8}{\code {kill-word (M-d)}}
+\entry {backward-kill-word (M-DEL)}{8}{\code {backward-kill-word (M-DEL)}}
+\entry {unix-line-discard (C-u)}{8}{\code {unix-line-discard (C-u)}}
+\entry {unix-word-rubout (C-w)}{8}{\code {unix-word-rubout (C-w)}}
+\entry {yank (C-y)}{8}{\code {yank (C-y)}}
+\entry {yank-pop (M-y)}{8}{\code {yank-pop (M-y)}}
+\entry {digit-argument (M-0, M-1, ... M--)}{8}{\code {digit-argument (M-0, M-1, ... M--)}}
+\entry {universal-argument ()}{8}{\code {universal-argument ()}}
+\entry {complete (TAB)}{9}{\code {complete (TAB)}}
+\entry {possible-completions (M-?)}{9}{\code {possible-completions (M-?)}}
+\entry {re-read-init-file (C-x C-r)}{9}{\code {re-read-init-file (C-x C-r)}}
+\entry {abort (C-g)}{9}{\code {abort (C-g)}}
+\entry {do-uppercase-version (M-a, M-b, ...)}{9}{\code {do-uppercase-version (M-a, M-b, ...)}}
+\entry {prefix-meta (ESC)}{9}{\code {prefix-meta (ESC)}}
+\entry {undo (C-{\_})}{9}{\code {undo (C-{\_})}}
+\entry {revert-line (M-r)}{9}{\code {revert-line (M-r)}}
+\entry {readline ()}{11}{\code {readline ()}}
+\entry {rl{\_}bind{\_}key ()}{12}{\code {rl{\_}bind{\_}key ()}}
+\entry {rl{\_}add{\_}defun}{14}{\code {rl{\_}add{\_}defun}}
+\entry {Keymap rl{\_}make{\_}bare{\_}keymap}{14}{\code {Keymap rl{\_}make{\_}bare{\_}keymap}}
+\entry {Keymap rl{\_}copy{\_}keymap}{14}{\code {Keymap rl{\_}copy{\_}keymap}}
+\entry {Keymap rl{\_}make{\_}keymap}{14}{\code {Keymap rl{\_}make{\_}keymap}}
+\entry {int rl{\_}bind{\_}key}{15}{\code {int rl{\_}bind{\_}key}}
+\entry {int rl{\_}bind{\_}key{\_}in{\_}map}{15}{\code {int rl{\_}bind{\_}key{\_}in{\_}map}}
+\entry {int rl{\_}unbind{\_}key}{15}{\code {int rl{\_}unbind{\_}key}}
+\entry {int rl{\_}unbind{\_}key{\_}in{\_}map}{15}{\code {int rl{\_}unbind{\_}key{\_}in{\_}map}}
+\entry {rl{\_}generic{\_}bind}{15}{\code {rl{\_}generic{\_}bind}}
+\entry {char}{15}{\code {char}}
+\entry {int}{15}{\code {int}}
+\entry {int}{15}{\code {int}}
+\entry {rl{\_}begin{\_}undo{\_}group}{16}{\code {rl{\_}begin{\_}undo{\_}group}}
+\entry {rl{\_}end{\_}undo{\_}group}{16}{\code {rl{\_}end{\_}undo{\_}group}}
+\entry {rl{\_}modifying}{17}{\code {rl{\_}modifying}}
+\entry {rl{\_}complete}{19}{\code {rl{\_}complete}}
+\entry {Function}{19}{\code {Function}}
+\entry {rl{\_}complete{\_}internal}{19}{\code {rl{\_}complete{\_}internal}}
+\entry {rl{\_}complete}{20}{\code {rl{\_}complete}}
+\entry {rl{\_}possible{\_}completions}{20}{\code {rl{\_}possible{\_}completions}}
+\entry {char **completion{\_}matches}{20}{\code {char **completion{\_}matches}}
+\entry {char *filename{\_}completion{\_}function}{20}{\code {char *filename{\_}completion{\_}function}}
+\entry {char *username{\_}completion{\_}function}{20}{\code {char *username{\_}completion{\_}function}}
+\entry {Function}{20}{\code {Function}}
+\entry {Function}{21}{\code {Function}}
+\entry {int}{21}{\code {int}}
+\entry {char}{21}{\code {char}}
+\entry {char}{21}{\code {char}}
+\entry {char}{21}{\code {char}}
+\entry {int}{21}{\code {int}}
+\entry {int}{21}{\code {int}}
+\entry {Function}{21}{\code {Function}}

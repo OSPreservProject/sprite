@@ -1,0 +1,311 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.6
+date     89.10.25.17.22.02;  author tve;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.04.01.12.08.49;  author deboor;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.03.05.17.48.36;  author deboor;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     87.11.01.20.20.18;  author deboor;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     87.06.20.19.58.13;  author deboor;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     87.06.11.17.47.10;  author deboor;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Access list control
+@
+
+
+1.6
+log
+@minor fixes
+@
+text
+@/*-
+ * hosts.c --
+ *	Functions to pretend to have a host access list.
+ *
+ * Copyright (c) 1987 by the Regents of the University of California
+ *
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ */
+#ifndef lint
+static char rcsid[] =
+	"$Header: hosts.c,v 1.5 88/04/01 12:08:49 deboor Exp $ SPRITE (Berkeley)";
+#endif lint
+
+#include    "spriteos.h"
+
+#include    "Xproto.h"
+#include    "dixstruct.h"
+#include    "opaque.h"
+
+/*-
+ *-----------------------------------------------------------------------
+ * ResetHosts --
+ *	Reset the host list from the initialization file, or wherever.
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	None.
+ *
+ *-----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ResetHosts (display)
+    char    *display;	/* ASCII display number */
+{
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * AddHost --
+ *	Add a host to those allowed access
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	None.
+ *
+ *-----------------------------------------------------------------------
+ */
+int
+AddHost (client, family, length, pAddr)
+    ClientPtr  	  client;
+    int	    	  family;
+    unsigned   	  length;
+    pointer 	  pAddr;
+{
+    return (Success);
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * RemoveHost --
+ *	Remove a host from those allowed access.
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	None.
+ *
+ *-----------------------------------------------------------------------
+ */
+int
+RemoveHost (client, family, length, pAddr)
+    ClientPtr  	  client;
+    int	    	  family;
+    unsigned	  length;
+    pointer 	  pAddr;
+{
+    return (Success);
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * GetHosts --
+ *	Get all the hosts in the access control list.
+ *
+ * Results:
+ *	The number of hosts, size of the data buffer and whether the
+ *	mechanism is enabled.
+ *	Since there is no access control mechanism (short of chmod...)
+ *	this always returns 0 hosts, 0 bytes of data and access-control
+ *	disabled.
+ *
+ * Side Effects:
+ *	None.
+ *
+ *-----------------------------------------------------------------------
+ */
+int
+GetHosts (data, pNumHosts, pEnabled)
+    pointer 	  *data;
+    int	    	  *pNumHosts;
+    BOOL	  *pEnabled;
+{
+    *data = 0;
+    *pEnabled = DisableAccess;
+    *pNumHosts = 0;
+    return (0);
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * ChangeAccessControl --
+ *	Turn the access control mechanism on or off....Ha!
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	None.
+ *
+ *-----------------------------------------------------------------------
+ */
+int
+ChangeAccessControl (client, fEnabled)
+    ClientPtr	  client;
+    int		  fEnabled;
+{
+    return (BadImplementation);
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * InvalidHost --
+ *	Used by the connection managers to decide if a connection should
+ *	be allowed. First argument tells the type of connection and next
+ *	two are the parameters for the connection.
+ *
+ * Results:
+ *	TRUE if not ok. FALSE if ok.
+ *
+ * Side Effects:
+ *	None.
+ *
+ *-----------------------------------------------------------------------
+ */
+Bool
+InvalidHost (type, p1, p2)
+    int	    type; 	/* Connection type */
+    int	    p1;	  	/* UID for Pdev, family for TCP */
+    int	    p2;	  	/* HostID for Pdev, addr for TCP */
+{
+    return (FALSE);
+}
+@
+
+
+1.5
+log
+@Changed to set *data to NULL in GetHosts since ProcListHosts
+tries to free it...
+@
+text
+@d19 1
+a19 1
+	"$Header: hosts.c,v 1.4 88/03/05 17:48:36 deboor Exp $ SPRITE (Berkeley)";
+d60 1
+d67 1
+d83 1
+d90 1
+d114 1
+a114 1
+    int	    	  *pEnabled;
+@
+
+
+1.4
+log
+@Adapted to R2 interface specification.
+@
+text
+@d19 1
+a19 1
+	"$Header: hosts.c,v 1.3 87/11/01 20:20:18 deboor Exp $ SPRITE (Berkeley)";
+d112 1
+@
+
+
+1.3
+log
+@added skeleton InvalidHost function. Must still implement FamilyInternet
+and FamilySprite access lists
+@
+text
+@d19 1
+a19 1
+	"$Header: hosts.c,v 1.2 87/06/20 19:58:13 deboor Exp $ SPRITE (Berkeley)";
+d61 1
+a61 1
+    int	    	  client;
+d63 1
+a63 1
+    int	    	  length;
+d82 1
+a82 1
+    int	    	  client;
+d84 1
+a84 1
+    int	    	  length;
+d130 1
+d132 2
+a133 2
+    int	    client;
+    int	    fEnabled;
+d135 1
+@
+
+
+1.2
+log
+@adapted to Beta-0 and "debugged"
+@
+text
+@d19 1
+a19 1
+	"$Header: hosts.c,v 1.1 87/06/11 17:47:10 deboor Exp $ SPRITE (Berkeley)";
+d134 24
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d19 1
+a19 1
+	"$Header$ SPRITE (Berkeley)";
+d60 1
+a60 1
+AddHost (client, pHostEnt)
+d62 3
+a64 1
+    xHostEntry	  *pHostEnt;
+d81 1
+a81 1
+RemoveHost (client, pHostEnt)
+d83 3
+a85 1
+    xHostEntry	  *pHostEnt;
+@

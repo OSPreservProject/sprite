@@ -1,0 +1,200 @@
+
+
+
+Bit                   C Library Procedures                    Bit
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Bit_Set,  Bit_Clear,   Bit_IsSet,   Bit_IsClear,   Bit_Copy,
+     Bit_Zero,        Bit_FindFirstSet,       Bit_FindFirstClear,
+     Bit_Intersect, Bit_Union, Bit_AnySet, Bit_Expand, Bit_Alloc,
+     Bit_Free - bit operations
+
+SSYYNNOOPPSSIISS
+     #include <bit.h>
+
+     BBiitt__SSeett(_b_i_t_N_u_m, _a_r_r_a_y_P_t_r)
+
+     BBiitt__CClleeaarr(_b_i_t_N_u_m, _a_r_r_a_y_P_t_r)
+
+     BBiitt__IIssSSeett(_b_i_t_N_u_m, _a_r_r_a_y_P_t_r)
+
+     BBiitt__IIssCClleeaarr(_b_i_t_N_u_m, _a_r_r_a_y_P_t_r)
+
+     BBiitt__CCooppyy(_n_u_m_B_i_t_s, _s_r_c_A_r_r_a_y_P_t_r, _d_e_s_t_A_r_r_a_y_P_t_r)
+
+     BBiitt__ZZeerroo(_n_u_m_B_i_t_s, _a_r_r_a_y_P_t_r)
+
+     BBiitt__FFiinnddFFiirrssttSSeett(_n_u_m_B_i_t_s, _a_r_r_a_y_P_t_r)
+
+     BBiitt__FFiinnddFFiirrssttCClleeaarr(_n_u_m_B_i_t_s, _a_r_r_a_y_P_t_r)
+
+     Boolean
+     BBiitt__IInntteerrsseecctt(_n_u_m_B_i_t_s, _a_r_r_a_y_1_P_t_r, _a_r_r_a_y_2_P_t_r, _d_e_s_t_A_r_r_a_y_P_t_r)
+
+     Boolean
+     BBiitt__UUnniioonn(_n_u_m_B_i_t_s, _a_r_r_a_y_1_P_t_r, _a_r_r_a_y_2_P_t_r, _d_e_s_t_A_r_r_a_y_P_t_r)
+
+     Boolean
+     BBiitt__AAnnyySSeett(_n_u_m_B_i_t_s, _a_r_r_a_y_P_t_r)
+
+     int *
+     BBiitt__EExxppaanndd(_n_e_w_N_u_m_B_i_t_s, _o_l_d_N_u_m_B_i_t_s, _o_l_d_A_r_r_a_y_P_t_r)
+
+     BBiitt__AAlllloocc(_n_u_m_B_i_t_s, _a_r_r_a_y_P_t_r)
+
+     BBiitt__FFrreeee(_a_r_r_a_y_P_t_r)
+
+AARRGGUUMMEENNTTSS
+     int       _b_i_t_N_u_m         (in)      The number in  the  array
+                                        of the bit to manipulate.
+
+     int       _n_u_m_B_i_t_s        (in)      The number of bits in all
+                                        the  *_a_r_r_a_y_P_t_r  variables
+                                        passed.
+
+     int       *_a_r_r_a_y_P_t_r      (in,out)  The array of bits.
+
+
+
+Sprite v.1.0       Printed:  January 31, 1989                   1
+
+
+
+
+
+
+Bit                   C Library Procedures                    Bit
+
+
+
+     int       *_s_r_c_A_r_r_a_y_P_t_r   (in)      The array of bits  to  be
+                                        copied.
+
+     int       *_d_e_s_t_A_r_r_a_y_P_t_r  (out)     The array to  which  bits
+                                        are copied.
+
+     int       *_a_r_r_a_y_1_P_t_r     (in)      The first source array in
+                                        an  intersection or union
+                                        operation.
+
+     int       *_a_r_r_a_y_2_P_t_r     (in)      The second  source  array
+                                        in   an  intersection  or
+                                        union operation.
+
+     int       _n_e_w_N_u_m_B_i_t_s     (in)      The number  of  bits  the
+                                        expanded array must hold.
+
+     int       _o_l_d_N_u_m_B_i_t_s     (in)      The number of bits in the
+                                        old array.
+
+     int       *_o_l_d_A_r_r_a_y_P_t_r   (in)      The bit array that is now
+                                        too small.
+
+_________________________________________________________________
+
+DDEESSCCRRIIPPTTIIOONN
+     These procedures manipulate integer arrays of bits.  All the
+     procedures  operate on integer arrays and _n_u_m_B_i_t_s is used to
+     compute the size of *_a_r_r_a_y_P_t_r. If _n_u_m_B_i_t_s is not a  multiple
+     of the number of bits in an integer, it is rounded up to the
+     nearest multiple.
+
+     BBiitt__SSeett sets the _b_i_t_N_u_m bit in *_a_r_r_a_y_P_t_r.
+     BBiitt__CClleeaarr clears the _b_i_t_N_u_m bit in *_a_r_r_a_y_P_t_r.
+
+     The predicates BBiitt__IIssSSeett and BBiitt__IIssCClleeaarr test to see if  the
+     _b_i_t_N_u_m bit is set or cleared.
+
+     BBiitt__ZZeerroo clears all bits in *_a_r_r_a_y_P_t_r.
+     BBiitt__CCooppyy copies *_s_r_c_A_r_r_a_y_P_t_r to *_d_e_s_t_A_r_r_a_y_p_t_r.
+
+     BBiitt__FFiinnddFFiirrssttSSeett and BBiitt__FFiinnddFFiirrssttCClleeaarr return the index  of
+     the  rightmost  bit in *_a_r_r_a_y_P_t_r that is set or cleared. The
+     index begins at 0 and -1 is returned if no  set  or  cleared
+     bit is found.
+
+     BBiitt__IInntteerrsseecctt and BBiitt__UUnniioonn find the intersection and union,
+     respectively, of the two bit arrays and stores the result in
+     the third array. They return TRUE  if  the  intersection  or
+     union  is  non-empty. For both functions, if _d_e_s_t_A_r_r_a_y_P_t_r is
+     NULL, the result is not stored anywhere.
+
+     BBiitt__AAnnyySSeett examines the array to see if any of the  bits  is
+     on,  returning  TRUE  if  at  least  one  is  set  and FALSE
+
+
+
+Sprite v.1.0       Printed:  January 31, 1989                   2
+
+
+
+
+
+
+Bit                   C Library Procedures                    Bit
+
+
+
+     otherwise.
+
+     BBiitt__AAlllloocc and BBiitt__FFrreeee are used to  allocate  and  free  bit
+     arrays.  BBiitt__AAlllloocc creates an array to hold _n_u_m_B_i_t_s bits and
+     sets _a_r_r_a_y_P_t_r to point at it. The  array  initially  has  no
+     bits  set.  BBiitt__FFrreeee  deallocates a previously-allocated bit
+     array.
+
+     BBiitt__EExxppaanndd takes an existing,  dynamically-allocated  array,
+     _o_l_d_A_r_r_a_y_P_t_r,  along  with its width, _o_l_d_N_u_m_B_i_t_s, and expands
+     it to contain _n_e_w_N_u_m_B_i_t_s bits, returning a  pointer  to  the
+     expanded  array. The array may or may not have moved. If the
+     array was moved, the old array was deallocated at  the  same
+     time. The new bits are initially all 0.
+
+KKEEYYWWOORRDDSS
+     bit, set, clear, copy, zero
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  January 31, 1989                   3
+
+
+

@@ -1,0 +1,174 @@
+% Document Type: LaTeX
+% Master File: fonts.tex
+% fonts.tex --- documentation for the fonts used by PS-LaTeX
+\documentstyle{article}
+
+\newcommand{\cs}[1]{{\tt \string#1}}
+\newcommand{\pslatex}{PS-\LaTeX}
+\newcommand{\ps}{PostScript}
+\hyphenation{Post-Script}
+
+\title{Fonts used by \pslatex}
+
+\author{Mario Wolczko\\
+Dept.~of Computer Science\\
+The University\\
+Manchester M13 9PL\\
+U.K.\\
+{\tt mario@ux.cs.man.ac.uk, mcvax!ukc!man.cs.ux!mario}}
+
+\date{May 1988}
+
+\begin{document}
+\maketitle
+
+As distributed, \pslatex\ uses the ``standard'' Adobe fonts, namely,
+the Times\footnote{Times is a trademark of Allied Corporation} family,
+and the Helvetica\footnote{Helvetica is a registered trademark of Allied
+Corporation}, Courier and Symbol fonts.  The following table shows how
+\LaTeX\ font-setting commands relate to these fonts:
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+\LaTeX\ command & Adobe font\\
+\hline
+\cs\rm & Times-Roman\\
+\cs\bf & Times-Bold\\
+\cs\it & Times-Italic\\
+math   & Symbol\\
+\hline
+\end{tabular}
+\end{center}
+TFM files for these fonts are on the standard UNIX TeX distribution,
+and can also be found at some archive servers (such as the Aston
+server in the UK).
+
+Unfortunately, there is a mismatch between the standard Adobe font set
+and the range of fonts used by \LaTeX.  This is remedied by using
+``derived'' fonts, that is, fonts that are derived from standard ones
+by simple transformations:
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+\LaTeX\ command & derived font\\
+\hline
+\cs\sl & Times-Oblique\\
+\cs\tt & Courier-Condensed\\
+\cs\sc & Times-SmallCaps\\
+\cs\sf & Helvetica-Reduced\\
+math & Symbol-Oblique\\
+\hline
+\end{tabular}
+\end{center}
+
+The device driver must be capable of using these derived fonts.
+\ps\footnote{\ps\ is a trademark of Adobe Systems Incorporated}
+code to generate them has been included in a separate file, and TFM
+files are also provided for them (based on metrics obtained from a
+Version 42.2 \ps\ interpreter).  To use \pslatex\ you must be able to
+download the extra \ps\ code to create these fonts prior to printing your
+job, and your driver must be able to recognise them as device-resident
+(or, at least, must not look for PK files).
+
+\section{How the derived fonts are made}
+
+The oblique fonts are based on their non-oblique (upright) variants,
+and are simply slanted by a suitable transformation matrix.
+
+The condensed font is done similarly; the transformation matrix
+performs compression along the $x$-axis.  The reduced font has
+been scaled in both $x$- and $y$-axes.
+
+The small caps font is made by copying an existing font, and placing
+reduced copies of the uppercase glyphs in the lowercase positions
+(thanks to Bob Tinkelman for the code to do this).
+
+Here's how the metric information for the derived fonts was obtained:
+\begin{description}
+\item[Bounding Box Information]
+	(width, height, depth and italic correction) was obtained by
+	running a \ps\ program, {\tt getmetrics}, on a \ps\ device.
+\item[Kerning Information]
+	for the oblique fonts is copied from their upright versions;
+	this is not optimal, but should be pretty close.  Kerning data
+	for the condensed font is simply scaled from the original.
+	Kerning data for the small caps font is obtained in the
+	following way: for a pair of characters $x$ and $y$ in the
+	original AFM file:
+	\begin{enumerate}
+	\item	If neither $x$ nor $y$ is a lower-case letter, the
+		kerning is copied into the small caps font, otherwise
+		the kerning data is ignored.
+	\item	If both $x$ and $y$ are upper-case letters, then
+		three extra items of kerning data are added to the
+		font for the pairs $(\mbox{\it tolower\/}(x),y)$,
+		$(x,\mbox{\it tolower\/}(y))$ and $(\mbox{\it
+		tolower\/}(x), \mbox{\it tolower\/}(y))$, by copying the
+		datum for $(x,y)$.  Again, this is unlikely to be
+		optimal, but should be pretty close.
+	\end{enumerate}
+\end{description}
+
+\section{Math mode}
+
+Where appropriate, \pslatex\ uses characters from the Symbol font.  As
+the Symbol font is upright, Symbol-Oblique (a derived font) is used
+for Greek letters.
+
+There is no equivalent Adobe font to Knuth's ``math italic'', so
+Times-Italic is used.
+
+When a math character is not available in an Adobe font, the
+appropriate character from the {\sc cmsy}, {\sc cmmi} or {\sc cmex}
+font is used.  {\sc cmex} contains the delimiters; although some of
+these are in the Adobe Symbol font, the {\sc cmex} set is more
+extensive.  The {\sc cmsy} font is used for many symbols, and the
+calligraphic math letters.  Only a few of the {\sc cmmi} characters
+are used, e.g., triangles and music symbols.  
+
+The lack of a bold Symbol font has precluded the provision of \cs\boldmath.
+Other symbols missing from these fonts are: 
+\begin{itemize}
+\item	a dotless j and math j
+\item	``curly'' epsilon and rho
+\item	extensions for the \cs\Leftarrow\ and \cs\Rightarrow\ symbols.
+	\LaTeX\ uses the {\sc cmr} equals signs as an extension; it
+	was deemed too expensive to load {\sc cmr} at a variety of
+	sizes merely to support this feature.
+\end{itemize}
+
+\section{Miscellany}
+
+A reduced Helvetica font (at $\frac78$ normal size) has been used for
+\cs\sf; I have chosen to do this because of numerous complaints that
+the Helvetica ``looked too big'' when placed next to Times; the
+x-height of 10pt Helvetica is much bigger than the x-height of 10pt
+Times (5.25pt versus 4.48pt).  I do not know if I have committed some
+sort of typographer's cardinal sin; comments from the knowledgeable
+would be appreciated.  If you want to normalize things, substitute
+{\tt h-med} for {\tt h-red} in {\tt fntchoice.tex}.
+
+It is now possible to make ``sans-serif \LaTeX'' (based on Helvetica),
+``Palatino \LaTeX''\footnote{Palatino is a registered trademark of
+Allied Corporation}, etc., by simple changes to {\tt fntchoice.tex}.  The
+author is happy to provide software (under {\sc unix}\footnote{{\sc
+unix} is a trademark of AT\&T}) to create PL files for the derived
+fonts.  To do the job properly a format designer should be used to set
+new page sizes, line widths, etc.,\ldots, volunteers are welcome!
+
+\section{Acknowledgements}
+
+A number of people have contributed to the creation of these fonts,
+mostly by placing useful programs in the public domain.  These are:
+\begin{itemize}
+\item	Graeme McKinstry for supplying extra font dimensions for the
+	Symbol font
+\item	Greg Lee, for an AFM-to-PL converter
+\item	William Roberts, for {\tt getmetrics}
+\item	Bob Tinkelman, for providing the PostScript to generate
+	SmallCaps fonts.
+\end{itemize}
+Thanks also go to those who provided useful comments, namely Graham
+Gough and Michael Fisher.
+
+\end{document}

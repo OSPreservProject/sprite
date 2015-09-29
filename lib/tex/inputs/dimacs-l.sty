@@ -1,0 +1,339 @@
+%------------------------------------------------------------------------------
+% Beginning of dimacs-l.sty
+%------------------------------------------------------------------------------
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% This file is designed to work with AMSLaTeX version 1.1. It uses
+% amsart.sty as a base and modifies page size, top matter, section
+% headings, etc. to produce DIMACS style.  A logo and copyright line
+% like the ones that  will appear on the final published version are
+% also added.
+%
+% Instructions:
+%
+%  1. Create a file named  dimacs-l.sty ("-L" for LaTeX)
+%     containing the lines from 
+%      
+%             %%% dimacs-l.sty 
+%
+%     through 
+%
+%             \endinput
+%
+%     Install the file in the same directory as amsart.sty.
+%
+%  2. In a document file, use \documentstyle{dimacs-l}.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% dimacs-l.sty
+\input amsart.sty
+%
+\textheight=49pc  \textwidth=29pc
+\headsep=14pt
+%
+%      In AMS production, \parskip has no stretch component.
+\parskip=0pt
+%
+%      \Large is not defined in amsart[10].sty in order to
+%      conserve font memory. But we need it here for fourteen-point
+%      titles.
+\def\Large{\@setsize\Large{18\p@}\xivpt\@xivpt}
+%
+%      Change the baselineskip from 12pt to 13pt.
+\def\@normalsize{\@setsize\normalsize{13\p@}\xpt\@xpt
+  \abovedisplayskip 6\p@ \@plus 6\p@
+  \belowdisplayskip \abovedisplayskip
+  \abovedisplayshortskip \z@ \@plus 6\p@
+  \belowdisplayshortskip 3\p@ \@plus 6\p@
+  \let\@listi\@listI}
+%
+\normalsize
+%
+%      \footnotesize is changed only in order to change \@listi.
+%
+\def\footnotesize{\@setsize\footnotesize{10\p@}\viiipt\@viiipt%
+  \abovedisplayskip 5\p@ \@plus 2.5\p@ minus2.5\p@%
+  \belowdisplayskip \abovedisplayskip
+  \abovedisplayshortskip \z@ \@plus 2\p@%
+  \belowdisplayshortskip 4\p@ \@plus 2\p@ minus2\p@%
+  \def\@listi{\topsep \z@ \parsep \z@ \itemsep \z@}}
+%
+%      Sectioning commands
+\def\section{\@startsection{section}% counter name
+{1}% sectioning level
+{\z@}% indent to the left of the section title
+{12\p@\@plus3\p@}% vertical space above
+{5\p@}% vertical space below
+{\centering\bf}}% font of title
+%
+\def\subsection{\@startsection{subsection}% counter name
+{2}% sectioning level
+{\parindent}% indent to the left of the subsection title
+{6\p@\@plus2\p@}% vertical space above
+{-.5em}% following text is run in, after a horizontal space of this amount.
+% The minus sign is to get horizontal space instead of vertical space.
+{\bf}}% The font of the subsection title
+%
+\def\subsubsection{\@startsection {subsubsection}% counter number
+{3}% sectioning level
+{\parindent}% %% indent to the left of the subsubsection title
+{6\p@\@plus2\p@}%  vertical space above
+{-.5em}% horizontal space after (negative sign will be canceled)
+{\it}}% font of subsubsection title
+%
+% Levels below C-head (\subsubsection) are undefined in AMS
+% production documentstyles.
+%
+\def\paragraph{\@latexerr{\noexpand\paragraph not defined
+  in this \string\documentstyle}\@eha}
+\def\subparagraph{\@latexerr{\noexpand\subparagraph not defined
+  in this \string\documentstyle}\@eha}
+%
+%      Set \topsep to 0 in \@listI.
+\def\@listI{\leftmargin\leftmargini
+  \parsep\z@skip \topsep\z@skip \itemsep\z@skip}
+\let\@listi\@listI
+\@listi
+%
+%      Cites in AMS proceedings volumes are typically typeset
+%      in bold rather than roman.
+\def\@cite#1#2{\rom{\mediumseries[{\bf#1}\if@tempswa , #2\fi]}}
+%
+%      No extra space around definition-style enunciations.
+\def\th@definition{\theorempreskipamount\z@
+    \theorempostskipamount\theorempreskipamount
+    \normalshape}
+%
+%      Theorem Head font is small caps for proceedings volumes,
+%      instead of bold.
+\def\theorem@headerfont{\defaultfont\sc}
+%
+%      Indent instead of no indent at the beginning of a theorem:
+\let\theorem@indent\indent
+%
+%      Use small caps instead of italic for \proofname:
+\def\pf{%
+  \par\topsep6\p@\@plus6\p@
+  \trivlist \itemindent\normalparindent
+  \item[\hskip\labelsep\sc\proofname.]\ignorespaces}
+%
+%      Change the running head font to \scriptsize (7pt) instead of
+%      \small (8pt).
+\def\ps@headings{\let\@mkboth\@gobbletwo
+  \let\partmark\@gobble\let\sectionmark\@gobble
+  \let\subsectionmark\@gobble
+  \let\@oddfoot\@empty\let\@evenfoot\@empty%
+  \def\@evenhead{\defaultfont\scriptsize
+      \rlap{\thepage}\hfil
+      \expandafter\uppercasetext@\expandafter{\sh@rtauthor}\hfil}%
+  \def\@oddhead{\defaultfont\scriptsize \hfil
+      \expandafter\uppercasetext@\expandafter{\sh@rttitle}\hfil
+      \llap{\thepage}}%
+}
+%
+\def\ps@myheadings{\let\@mkboth\@gobbletwo
+  \let\@oddfoot\@empty\let\@evenfoot\@empty
+  \def\@oddhead{\null\defaultfont\scriptsize\rightmark \hfil\thepage}%
+  \def\@evenhead{\defaultfont\scriptsize \thepage\hfil\leftmark\null}%
+}
+%
+%       Some computations to make the \textheight come out
+%       to an even multiple of baselineskip (after taking
+%       \topskip etc. into account).
+\advance\textheight by -\headheight
+\advance\textheight by -\headsep
+\advance\textheight by -\normalbaselineskip
+\advance\textheight by \topskip
+%
+%       We now have the right value for \textheight except that
+%       we need to round it.
+\advance\textheight by.5\normalbaselineskip
+\divide\textheight by\normalbaselineskip
+\multiply\textheight by\normalbaselineskip
+%       One last note: if \baselinestretch is changed in an
+%       actual document, this \textheight will most likely be
+%       off and you'll get underfull vbox messages.
+%
+\advance\topmargin by -.25 true in
+%
+%      LIST ENVIRONMENTS
+%
+%      Change first-level `enumerate' numbering style from arabic
+%      to roman numeral.
+\renewcommand{\labelenumi}{(\roman{enumi})}
+%
+%      Change \enumerate and \itemize to increase \partopsep.
+\def\enumerate{\ifnum \@enumdepth >3 \@toodeep\else
+      \advance\@enumdepth \@ne
+      \edef\@enumctr{enum\romannumeral\the\@enumdepth}\list
+      {\csname label\@enumctr\endcsname}{\usecounter
+        {\@enumctr}\partopsep6\p@\def\makelabel##1{\hss\llap{\normalshape##1}}}\fi}
+%
+\def\itemize{\ifnum\@itemdepth>3 \@toodeep
+  \else \advance\@itemdepth\@ne
+  \edef\@itemitem{labelitem\romannumeral\the\@itemdepth}%
+  \list{\csname\@itemitem\endcsname}%
+  {\partopsep6\p@\def\makelabel##1{\hss\llap{\normalshape##1}}}\fi}
+%
+%      Change the font of `References' head.
+\def\thebibliography#1{\section*{\series m\sc\refname}%
+%      Now we need to reset the running heads because we don't
+%      wan't them to contain the font reference \series m\sc.
+%      We want them to be uppercase, which is a little tricky
+%      if we want to use \refname instead of an explicit value.
+  \edef\@tempa{\uppercase{\noexpand\@mkboth{\refname}{\refname}}}%
+  \@tempa
+  \defaultfont\small\labelsep .5em\relax
+  \list{\@arabic\c@enumi.}{\settowidth\labelwidth{#1.}%
+  \leftmargin\labelwidth \advance\leftmargin\labelsep
+  \usecounter{enumi}}%
+  \sloppy \clubpenalty4000\relax \widowpenalty\clubpenalty
+  \sfcode`\.\@m}
+%
+%      TOPMATTER 
+%
+%      In \@maketitle we make the following changes:
+%
+%      \topskip --> 10pc - headheight - headsep
+%      title --> \Large (14pt), not uppercased
+%      author --> aboveskip = 24pt, normalsize instead of small
+%      final space is 32pt plus14pt without subtracting baselineskip
+%
+\def\@maketitle{%
+  \defaultfont\normalsize
+  \let\@makefnmark\relax  \let\@thefnmark\relax
+  \ifx\@empty\@subjclass\else
+   \@footnotetext{1991 {\it Mathematics Subject
+     Classification}.\enspace
+        \@subjclass.}\fi
+  \ifx\@empty\@keywords\else
+   \@footnotetext{{\it Key words and phrases.}\enspace \@keywords.}\fi
+\ifx\@empty\@thanks\else
+   \@footnotetext{\@thanks}\fi
+  \topskip10pc % 10 pc from top of series logo to base of first title line
+  \advance\topskip-\headsep \advance\topskip-\headheight
+  \vtop{\centering{\Large\bf\@title\@@par}%
+   \global\dimen@i\prevdepth}%
+  \prevdepth\dimen@i
+  \ifx\@empty\@authors
+  \else
+    \baselineskip24\p@
+    \vtop{\@andify{ AND }\@authors
+      \centering{\expandafter\uppercasetext@\expandafter
+       {\@authors}\@@par}%
+         \global\dimen@i\prevdepth}\relax
+    \prevdepth\dimen@i
+  \fi
+  \ifx\@empty\@dedicatory
+  \else
+    \baselineskip18\p@
+  \vtop{\centering{\small\it\@dedicatory\@@par}%
+      \global\dimen@i\prevdepth}\prevdepth\dimen@i
+  \fi
+  \ifx\@empty\@date\else
+  \baselineskip24\p@
+    \vtop{\centering\@date\@@par
+      \global\dimen@i\prevdepth}\prevdepth\dimen@i
+  \fi
+  \normalsize
+  \vskip32\p@\@plus14\p@
+  } % end \@maketitle
+%
+%      Make a special page style for the first page of an article,
+%      to handle \serieslogo@.
+\def\ps@firstpage{\ps@plain \def\@oddhead{\serieslogo@\hss}%
+  \let\@evenhead\@oddhead % in case an article starts on a left-hand page
+}
+%
+%      The \kern-\headheight is needed to offset the \vbox to
+%      \headheight used in \@outputpage to typeset the running head.
+%      The depth of the \serieslogo@ will be offset by a \vss in
+%      that same part of \@outputage.
+\def\serieslogo@{\vbox{\kern-\headheight
+  \parindent\z@ \size{6}{6.5\p@}\selectfont
+        DIMACS Series in Discrete Mathematics\newline
+        and Theoretical Computer Science\newline
+	Volume {\bf\currentvolume}, \currentyear\endgraf}}
+%
+%      The only change in \maketitle is \thispagestyle{firstpage}
+%      instead of \thispagestyle{plain}
+\def\maketitle{\par
+  \@topnum\z@ % this prevents figures from falling at the top of page 1
+  \ifx\@empty\sh@rtauthor \let\sh@rtauthor\sh@rttitle\fi
+  \begingroup
+  \@maketitle
+  \endgroup
+  \@andify{ AND }\sh@rtauthor
+  \thispagestyle{firstpage}%
+  \c@footnote\z@
+  \def\do##1{\let##1\relax}%
+  \do\maketitle \do\@maketitle
+  \do\title \do\@xtitle \do\@title
+  \do\author \do\@xauthor \do\@authors
+  \do\address \do\@xaddress
+  \do\email \do\@xemail \do\curraddr \do\@xcurraddr
+  \do\dedicatory \do\@dedicatory
+  \do\thanks \do\@thanks
+  \do\keywords \do\@keywords
+  \do\subjclass \do\@subjclass
+  \do\@andify
+}
+%
+\def\copyrightyear{0000}
+\def\copyrightyearmodC{00}
+\def\ISSN{0000-0000}
+\def\copyrightprice{\$1.00\;+\;\$.25 per page}
+\def\currentvolume{00}
+\def\currentyear{0000}
+%
+%      Doing the copyright info on the first page is a little tricky. We
+%      want it to come at the bottom, after any footnotes and floating
+%      inserts, but before the page number.  If we put it into \@oddfoot
+%      (in \ps@plain) its height will not be subtracted from the height of
+%      the text and then the page number will be lower than we want.
+%      Instead we put the copyright info into \@textbottom, which is normally
+%      used by \raggedbottom and \flushbottom.
+%
+\def\raggedbottom{\typeout{\string\raggedbottom\space
+  disabled; see the \noexpand\documentstyle file for details.}}
+%
+%      \baselineskip and \lineskip are set to 0 in LaTeX output routine,
+%      so we don't need to worry about them in \@textbottom.  After the
+%      first use of \@textbottom \copyrightbox@ is void, but \@textbottom
+%      is still emptied out, to save a couple tokens of memory.
+%
+\def\@textbottom{\box\copyrightbox@ \global\let\@textbottom\@empty}
+%
+\newbox\copyrightbox@
+\newdimen\pagetocopyright@      \pagetocopyright@=1.5pc
+%
+%      We set the copyright info in a box in order to measure the
+%      height, because we want to subtract it from the vsize on the
+%      first page. This setbox operation has to be done here
+%      rather than earlier because it freezes information like ISSN
+%      number.
+\setbox\copyrightbox@=\vbox{\hsize\textwidth
+  \parfillskip\z@ \leftskip\z@\@plus.9\textwidth
+  \size{6}{6.5\p@}\selectfont
+%      The spacing between the preceding text and the copyright info is
+%      done with a strut of height \pagetocopyright@. (\lineskip and
+%      \baselineskip are 0 in the LaTeX output routine.) The \everypar{}
+%      turns off the LaTeX warning about setting text before
+%      \begin{document}.
+  \everypar{}\noindent\vrule\@width\z@\@height\pagetocopyright@
+  \copyright\copyrightyear\ American Mathematical Society\break
+  \ISSN/\copyrightyearmodC\ \copyrightprice\endgraf
+%      This kern of 0pt forces the depth of the last line (if any) to be
+%      added to the height of the box.
+  \kern\z@}
+%
+%      We subtract the height of the copyright box from the first
+%      page height, by way of \@preamblecmds.
+%
+\expandafter\def\expandafter\@preamblecmds\expandafter{%
+   \@preamblecmds\advance\vsize-\ht\copyrightbox@}
+%
+\endinput
+%------------------------------------------------------------------------------
+% End of dimacs-l.sty
+%------------------------------------------------------------------------------

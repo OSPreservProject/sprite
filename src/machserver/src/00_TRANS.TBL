@@ -1,0 +1,8 @@
+D BENCHMAR                          	benchmarks
+D CMDS                              	cmds
+D CMDS_NOT                          	cmds.notworking
+D DAEMONS                           	daemons
+D LIB                               	lib
+F MAKELINK.;1                       	makeLinks
+F README.;1                         	README
+D SPRITED                           	sprited

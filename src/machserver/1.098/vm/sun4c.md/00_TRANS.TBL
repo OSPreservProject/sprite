@@ -1,0 +1,9 @@
+F DEPENDEN.MK;1                     	dependencies.mk
+F MD.MK;1                           	md.mk
+F VMMACH.H;1                        	vmMach.h
+F VMMACHIN.H;1                      	vmMachInt.h
+F VMMACHST.H;1                      	vmMachStat.h
+F VMMACHTR.H;1                      	vmMachTrace.h
+F VMSUN.C;1                         	vmSun.c
+F VMSUNASM.S;1                      	vmSunAsm.s
+F VMSUNCON.H;1                      	vmSunConst.h

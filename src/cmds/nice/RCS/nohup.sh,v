@@ -1,0 +1,53 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @# @;
+
+
+1.2
+date     91.03.18.14.30.05;  author stolcke;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.03.18.14.02.30;  author stolcke;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@#!/sprite/cmds/sh
+#
+trap "" 1 15
+if test -t 2>&1  ; then
+	echo "Sending output to 'nohup.out'"
+	exec /sprite/cmds/nice -5 $* >>nohup.out 2>&1
+else
+	exec /sprite/cmds/nice -5 $* 2>&1
+fi
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 2
+d6 1
+a6 1
+	exec nice -5 $* >>nohup.out 2>&1
+d8 1
+a8 1
+	exec nice -5 $* 2>&1
+@

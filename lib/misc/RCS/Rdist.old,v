@@ -1,0 +1,49 @@
+head     1.1;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     88.04.12.22.44.49;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@obsolete version of Rdist that cd's into different directories and
+runs pmake Rdist.  checking it in to "hide" it but leave it around
+just in case we ever want it again.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#! /sprite/cmds/csh -fb
+# This file rdists the entire Sprite file system and is invoked
+# nightly by crontab.
+
+# Rdisting is divided in the following ways:
+#	per user	- (cd ~$USER; make Rdist)
+#	per source tree	- (cd $SRC;  make Rdist)
+#	misc. 		- rdist -f distfile.misc
+
+set users = (brent deboor douglis nelson ouster andrew sprite)
+set srcdirs = (/sprite/src /sprite/local/src /sprite/att/src)
+
+foreach user ($users)
+	(cd /sprite/users/$user; pmake Rdist)
+end
+
+foreach dir ($srcdirs)
+	(cd $dir; pmake Rdist)
+end
+
+rdist -f /sprite/lib/misc/distfile.misc
+
+@

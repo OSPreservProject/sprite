@@ -1,0 +1,68 @@
+
+
+
+Hash_DeleteEntry      C Library Procedures       Hash_DeleteEntry
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Hash_DeleteEntry - remove an  existing  entry  from  a  hash
+     table
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<hhaasshh..hh>>
+
+     HHaasshh__DDeelleetteeEEnnttrryy(_t_a_b_l_e_P_t_r, _e_n_t_r_y_P_t_r)
+
+AARRGGUUMMEENNTTSS
+     Hash_Table   *_t_a_b_l_e_P_t_r   (in)      Table in which to  delete
+                                        entry.
+
+     Hash_Entry   *_e_n_t_r_y_P_t_r   (in)      Address   of   entry   to
+                                        delete   (must  exist  in
+                                        table).   If  NULL,   the
+                                        procedure does nothing.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     HHaasshh__DDeelleetteeEEnnttrryy removes the  given  entry  from  the  given
+     table.
+
+
+KKEEYYWWOORRDDSS
+     delete, hash table
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  November 17, 1989                  1
+
+
+

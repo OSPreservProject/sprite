@@ -1,0 +1,37 @@
+' Copyright 1989 Regents of the University of California
+' Permission to use, copy, modify, and distribute this
+' documentation for any purpose and without fee is hereby
+' granted, provided that this notice appears in all copies.
+' The University of California makes no representations about
+' the suitability of this material for any purpose.  It is
+' provided "as is" without express or implied warranty.
+' 
+' $Header: /a/attcmds/expreserve/RCS/expreserve.man,v 1.1 89/01/18 13:07:53 ouster Exp $ SPRITE (Berkeley)
+' 
+.so \*(]ltmac.sprite
+.HS EXPRESERVE cmds
+.BS
+.SH NAME
+expreserve \- Used by ex/vi to save edits during crashes
+.SH SYNOPSIS
+.nf
+\fBexpreserve\fR [\fIarg\fR]
+.BE
+
+.SH DESCRIPTION
+.PP
+When a \fBvi\fR or \fBex\fR editing session is interrupted by a
+crash of the program or the system, \fBexpreserve\fR is invoked
+to save the edits that were in progress, so that they can be
+recovered by invoking \fBvi \-r\fR or \fBex \-r\fR later on.
+If \fBexpreserve\fR is invoked with no arguments, then it
+preserves the information that it reads from standard input.
+If any \fIarg\fR is specified, it preserves all of the edits recorded
+in files in \fB/tmp\fR.  For more information than this, read the
+\fBexpreserve\fR and/or \fBex\fR code.
+.PP
+This program should not normally be invoked directly by users;  it is run
+automatically by the system.
+
+.SH KEYWORDS
+crash, editor, recover

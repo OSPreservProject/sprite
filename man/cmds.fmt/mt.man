@@ -1,0 +1,132 @@
+
+
+
+MT                        User Commands                        MT
+
+
+
+NNAAMMEE
+     mt - magnetic tape control
+
+SSYYNNOOPPSSIISS
+     mmtt [ --ff _t_a_p_e_n_a_m_e ] _c_o_m_m_a_n_d [ _c_o_u_n_t ]
+
+DDEESSCCRRIIPPTTIIOONN
+     mmtt sends commands to a magnetic tape drive.  If _t_a_p_e_n_a_m_e is
+     not specified, the environment variable is used.  If does
+     not exist, mmtt uses the device //ddeevv//rrmmtt1122.  _t_a_p_e_n_a_m_e refers
+     to a raw tape device.  By default, mmtt performs the requested
+     operation once;  multiple operations may be performed by
+     specifying _c_o_u_n_t.
+
+     The available commands are listed below.  Only as many char-
+     acters as are required to uniquely identify a command need
+     be specified.
+
+     mmtt returns a 0 exit status when the operation(s) were suc-
+     cessful, 1 if the command was unrecognized or if mmtt was
+     unable to open the specified tape drive, and 2 if an opera-
+     tion failed.
+
+OOPPTTIIOONNSS
+     eeooff, wweeooff    Write _c_o_u_n_t EOF marks at the current position
+                  on the tape.
+
+     ffssff          Forward space over _c_o_u_n_t EOF marks. The tape is
+                  positioned on the first block of the file.
+
+     ffssrr          Forward space _c_o_u_n_t records.
+
+     bbssff          Back space over _c_o_u_n_t EOF marks.  The tape is
+                  positioned on the beginning-of-tape side of the
+                  EOF mark.
+
+     bbssrr          Back space _c_o_u_n_t records.
+
+     nnbbssff         Back space _c_o_u_n_t files.  The tape is positioned
+                  on the first block of the file.  This is
+                  equivalent to _c_o_u_n_t+_1 bbssff's followed by one
+                  ffssff.
+
+     aassff          Absolute space to _c_o_u_n_t file number.  This is
+                  equivalent to a rreewwiinndd followed by a ffssff _c_o_u_n_t.
+
+     For the following commands, _c_o_u_n_t is ignored:
+
+     eeoomm          Space to the end of recorded media on the tape.
+                  This is useful for appending files onto previ-
+                  ously written tapes.
+
+
+
+
+Sprite v1.0             19 December 1989                        1
+
+
+
+
+
+
+MT                        User Commands                        MT
+
+
+
+     rreewwiinndd       Rewind the tape.
+
+     oofffflliinnee, rreewwooffffll
+                  Rewind the tape and, if appropriate, take the
+                  drive unit off-line by unloading the tape.
+
+     ssttaattuuss       Print status information about the tape unit.
+
+     rreetteennssiioonn    Rewind the cartridge tape completely, then wind
+                  it forward to the end of the reel and back to
+                  beginning-of-tape to smooth out tape tension.
+
+     eerraassee        Erase the entire tape.
+
+FFIILLEESS
+     //ddeevv//rrmmtt**           magnetic tape interface
+     //ddeevv//rraarr**           Archive cartridge tape interface
+     //ddeevv//rrsstt**           SCSI tape interface
+
+SSEEEE AALLSSOO
+     aarr(4S), mmttiioo(4), sstt(4S), ttmm(4S), xxtt(4S) eennvviirroonn(5V)
+
+BBUUGGSS
+     Not all devices support all options.  Some options are
+     hardware-dependent.  Refer to the corresponding device
+     manual page.
+
+
+WWAARRNNIINNGGSS
+     The bbssff option for SCSI tape in SunOS 4.0.3 is incompatible
+     with this release and releases prior to 4.0.3.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0             19 December 1989                        2
+
+
+

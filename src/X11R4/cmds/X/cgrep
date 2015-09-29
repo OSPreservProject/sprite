@@ -1,0 +1,2 @@
+#! /bin/csh -f
+find . -name '*.[hcly]' -exec egrep "$1" "$2" /dev/null {} \;

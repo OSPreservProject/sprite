@@ -1,0 +1,141 @@
+\chapentry {Introduction}{1}{1}
+\secentry {History}{1}{1}{1}
+\secentry {How It Works}{1}{2}{1}
+\secentry {What BFD Version 1 Can Do}{1}{3}{2}
+\subsecentry {Information Loss}{1}{3}{1}{3}
+\subsecentry {Mechanism}{1}{3}{2}{3}
+\chapentry {BFD front end}{2}{6}
+\secentry {\code {typedef bfd}}{2}{1}{6}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}get\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}reloc\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}upper\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}bound}} {2}{1}{0}{1} {9}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}canonicalize\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}reloc}} {2}{1}{0}{2} {9}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}set\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}file\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}flags}} {2}{1}{0}{3} {9}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}set\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}reloc}} {2}{1}{0}{4} {10}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}set\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}start\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}address}} {2}{1}{0}{5} {10}
+\subsubsecentry {\code {The bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}get\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}mtime function}} {2}{1}{0}{6} {10}
+\subsubsecentry {\code {stuff}} {2}{1}{0}{7} {10}
+\secentry {Memory Usage}{2}{2}{12}
+\secentry {Initialization}{2}{3}{12}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}init}} {2}{3}{0}{1} {12}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}check\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}init}} {2}{3}{0}{2} {13}
+\secentry {Sections}{2}{4}{13}
+\subsecentry {Section Input}{2}{4}{1}{13}
+\subsecentry {Section Output}{2}{4}{2}{14}
+\subsecentry {Seglets}{2}{4}{3}{14}
+\subsecentry {typedef asection}{2}{4}{4}{14}
+\subsecentry {section prototypes}{2}{4}{5}{19}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}get\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}section\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}by\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}name}} {2}{4}{5}{1} {19}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}make\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}section\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}old\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}way}} {2}{4}{5}{2} {19}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}make\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}section}} {2}{4}{5}{3} {20}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}set\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}section\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}flags}} {2}{4}{5}{4} {20}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}map\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}over\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}sections}} {2}{4}{5}{5} {21}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}set\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}section\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}size}} {2}{4}{5}{6} {21}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}set\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}section\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}contents}} {2}{4}{5}{7} {21}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}get\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}section\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}contents}} {2}{4}{5}{8} {22}
+\secentry {Symbols}{2}{5}{22}
+\subsecentry {Reading Symbols}{2}{5}{1}{23}
+\subsecentry {Writing Symbols}{2}{5}{2}{23}
+\subsecentry {typedef asymbol}{2}{5}{3}{24}
+\subsecentry {Symbol Handling Functions}{2}{5}{4}{26}
+\subsubsecentry {\code {get\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}symtab\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}upper\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}bound}} {2}{5}{4}{1} {27}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}canonicalize\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}symtab}} {2}{5}{4}{2} {27}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}set\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}symtab}} {2}{5}{4}{3} {27}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}print\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}symbol\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}vandf}} {2}{5}{4}{4} {27}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}make\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}empty\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}symbol}} {2}{5}{4}{5} {28}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}decode\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}symclass}} {2}{5}{4}{6} {28}
+\secentry {Archives}{2}{6}{28}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}get\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}next\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}mapent}} {2}{6}{0}{1} {29}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}set\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}archive\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}head}} {2}{6}{0}{2} {29}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}get\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}elt\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}at\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}index}} {2}{6}{0}{3} {29}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}openr\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}next\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}archived\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}file}} {2}{6}{0}{4} {30}
+\secentry {File Formats}{2}{7}{30}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}check\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}format}} {2}{7}{0}{1} {30}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}set\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}format}} {2}{7}{0}{2} {31}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}format\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}string}} {2}{7}{0}{3} {31}
+\secentry {Relocations}{2}{8}{32}
+\subsecentry {typedef arelent}{2}{8}{1}{32}
+\subsubsecentry {\code {reloc\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}howto\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}type}} {2}{8}{1}{1} {35}
+\subsubsecentry {\code {the HOWTO macro}} {2}{8}{1}{2} {37}
+\subsubsecentry {\code {reloc\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}chain}} {2}{8}{1}{3} {37}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}perform\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}relocation}} {2}{8}{1}{4} {38}
+\secentry {The howto manager}{2}{9}{38}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}reloc\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}code\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}type}} {2}{9}{0}{1} {38}
+\secentry {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}reloc\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}type\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}lookup}{2}{10}{39}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}default\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}reloc\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}type\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}lookup}} {2}{10}{0}{1} {39}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}generic\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}relax\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}section}} {2}{10}{0}{2} {40}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}generic\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}get\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}relocated\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}section\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}contents}} {2}{10}{0}{3} {40}
+\secentry {Core files}{2}{11}{40}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}core\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}file\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}failing\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}command}} {2}{11}{0}{1} {40}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}core\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}file\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}failing\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}signal}} {2}{11}{0}{2} {41}
+\subsubsecentry {\code {core\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}file\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}matches\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}executable\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}p}} {2}{11}{0}{3} {41}
+\secentry {Targets}{2}{12}{41}
+\subsecentry {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}target}{2}{12}{1}{42}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}find\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}target}} {2}{12}{1}{1} {46}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}target\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}list}} {2}{12}{1}{2} {46}
+\secentry {Architectures}{2}{13}{47}
+\subsecentry {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}architecture}{2}{13}{1}{47}
+\subsecentry {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}arch\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}info}{2}{13}{2}{48}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}printable\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}name}} {2}{13}{2}{1} {49}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}scan\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}arch}} {2}{13}{2}{2} {49}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}arch\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}get\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}compatible}} {2}{13}{2}{3} {49}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}default\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}arch\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}struct}} {2}{13}{2}{4} {50}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}set\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}arch\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}info}} {2}{13}{2}{5} {50}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}default\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}set\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}arch\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}mach}} {2}{13}{2}{6} {50}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}get\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}arch}} {2}{13}{2}{7} {50}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}get\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}mach}} {2}{13}{2}{8} {51}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}arch\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}bits\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}per\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}byte}} {2}{13}{2}{9} {51}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}arch\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}bits\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}per\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}address}} {2}{13}{2}{10} {51}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}arch\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}init}} {2}{13}{2}{11} {51}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}arch\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}linkin}} {2}{13}{2}{12} {52}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}default\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}compatible}} {2}{13}{2}{13} {52}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}default\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}scan}} {2}{13}{2}{14} {52}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}get\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}arch\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}info}} {2}{13}{2}{15} {52}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}lookup\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}arch}} {2}{13}{2}{16} {52}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}printable\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}arch\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}mach}} {2}{13}{2}{17} {53}
+\secentry {Opening and Closing BFDs}{2}{14}{53}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}openr}} {2}{14}{0}{1} {53}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}fdopenr}} {2}{14}{0}{2} {53}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}openw}} {2}{14}{0}{3} {54}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}close}} {2}{14}{0}{4} {54}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}close\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}all\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}done}} {2}{14}{0}{5} {54}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}create}} {2}{14}{0}{6} {55}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}alloc\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}by\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}size\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}t}} {2}{14}{0}{7} {55}
+\secentry {Constructors}{2}{15}{55}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}constructor\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}entry }} {2}{15}{0}{1} {56}
+\secentry {libbfd}{2}{16}{57}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}xmalloc}} {2}{16}{0}{1} {57}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}write\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}bigendian\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}4byte\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}int}} {2}{16}{0}{2} {57}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}put\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}size}} {2}{16}{0}{3} {57}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}get\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}size}} {2}{16}{0}{4} {57}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}h\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}put\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}size}} {2}{16}{0}{5} {58}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}h\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}get\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}size}} {2}{16}{0}{6} {58}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}log2}} {2}{16}{0}{7} {59}
+\secentry {File Caching}{2}{17}{59}
+\subsubsecentry {\code {BFD\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}CACHE\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}MAX\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}OPEN macro}} {2}{17}{0}{1} {59}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}last\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}cache}} {2}{17}{0}{2} {59}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}cache\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}lookup}} {2}{17}{0}{3} {60}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}cache\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}init}} {2}{17}{0}{4} {60}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}cache\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}close}} {2}{17}{0}{5} {60}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}open\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}file}} {2}{17}{0}{6} {60}
+\subsubsecentry {\code {bfd\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}cache\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}lookup\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}worker}} {2}{17}{0}{7} {61}
+\chapentry {BFD back end}{3}{62}
+\secentry {a.out backends}{3}{1}{62}
+\subsecentry {relocations}{3}{1}{1}{63}
+\subsecentry {Internal Entry Points}{3}{1}{2}{63}
+\subsubsecentry {\code {aout\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}{\tt\less}size{\tt\gtr}\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}swap\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}exec\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}header\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}in}} {3}{1}{2}{1} {63}
+\subsubsecentry {\code {aout\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}{\tt\less}size{\tt\gtr}\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}swap\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}exec\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}header\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}out}} {3}{1}{2}{2} {64}
+\subsubsecentry {\code {aout\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}{\tt\less}size{\tt\gtr}\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}some\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}aout\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}object\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}p}} {3}{1}{2}{3} {64}
+\subsubsecentry {\code {aout\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}{\tt\less}size{\tt\gtr}\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}mkobject}} {3}{1}{2}{4} {64}
+\subsubsecentry {\code {aout\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}{\tt\less}size{\tt\gtr}\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}machine\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}type}} {3}{1}{2}{5} {64}
+\subsubsecentry {\code {aout\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}{\tt\less}size{\tt\gtr}\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}set\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}arch\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}mach}} {3}{1}{2}{6} {65}
+\subsubsecentry {\code {aout\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}{\tt\less}size{\tt\gtr}new\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}section\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}hook}} {3}{1}{2}{7} {65}
+\secentry {coff backends}{3}{2}{65}
+\subsecentry {Porting To A New Version of Coff}{3}{2}{1}{65}
+\subsecentry {How The Coff Backend Works}{3}{2}{2}{66}
+\subsubsecentry {Bit Twiddling} {3}{2}{2}{1} {66}
+\subsubsecentry {Symbol Reading} {3}{2}{2}{2} {67}
+\subsubsecentry {Symbol Writing} {3}{2}{2}{3} {67}
+\subsubsecentry {\code {coff\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}symbol\vbox to 0pt{}\kern .06em \vbox {\hrule width.3em height.1ex}type}} {3}{2}{2}{4} {68}
+\subsubsecentry {Writing Relocations} {3}{2}{2}{5} {69}
+\subsubsecentry {Reading Linenumbers} {3}{2}{2}{6} {69}
+\subsubsecentry {Reading Relocations} {3}{2}{2}{7} {70}
+\unnumbchapentry {Index}{71}

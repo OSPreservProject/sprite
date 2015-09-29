@@ -1,0 +1,11 @@
+%mfr.sty memo-for-record style option for memo.sty
+%redefines opening to use only subject field and print memo for record
+%Mark A. Roth, 30 April 87
+\def\opening{\thispagestyle{empty}
+ \hbox to \hsize{MEMO FOR RECORD\hfill \today}\par
+ \bigskip
+ SUBJECT:
+\begin{tabular}[t]{l}\ignorespaces\subj
+ \end{tabular} \par
+ \vspace{2\parskip}
+ \par\nobreak}

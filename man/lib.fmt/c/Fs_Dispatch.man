@@ -1,0 +1,266 @@
+
+
+
+Fs_Dispatch           C Library Procedures            Fs_Dispatch
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Fs_Dispatch, Fs_EventHandlerCreate,  Fs_EventHandlerDestroy,
+     Fs_EventHandlerData,              Fs_EventHandlerChangeData,
+     Fs_TimeoutHandlerCreate, Fs_TimeoutHandlerDestroy  -  stream
+     event and timeout dispatcher routines.
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ffss..hh>>
+
+     void
+     FFss__DDiissppaattcchh()
+
+     void
+     FFss__EEvveennttHHaannddlleerrCCrreeaattee(_s_t_r_e_a_m_I_D, _e_v_e_n_t_M_a_s_k, _p_r_o_c, _c_l_i_e_n_t_D_a_t_a)
+
+     void
+     FFss__EEvveennttHHaannddlleerrDDeessttrrooyy(_s_t_r_e_a_m_I_D)
+
+     void
+     FFss__EEvveennttHHaannddlleerrDDaattaa(_s_t_r_e_a_m_I_D)
+
+     ClientData
+     FFss__EEvveennttHHaannddlleerrCChhaannggeeDDaattaa(_s_t_r_e_a_m_I_D, _c_l_i_e_n_t_D_a_t_a)
+
+     ##iinncclluuddee <<ttiimmee..hh>>
+
+     Fs_TimeoutHandler
+     FFss__TTiimmeeoouuttHHaannddlleerrCCrreeaattee(_t_i_m_e, _r_e_l_a_t_i_v_e_T_i_m_e, _p_r_o_c, _c_l_i_e_n_t_D_a_t_a)
+
+     void
+     FFss__TTiimmeeoouuttHHaannddlleerrDDeessttrrooyy(ttookkeenn)
+
+
+AARRGGUUMMEENNTTSS
+     int                 _s_t_r_e_a_m_I_D       (in)      Specifies   the
+                                                  stream       to
+                                                  create an event
+                                                  handler for.
+
+     int                 _e_v_e_n_t_M_a_s_k      (in)      Mask indicating
+                                                  which events on
+                                                  _s_t_r_e_a_m_I_D are to
+                                                  be processed by
+                                                  _p_r_o_c.  Can   be
+                                                  the  bitwise OR
+                                                  of FFSS__RREEAADDAABBLLEE,
+                                                  FFSS__WWRRIITTAABBLLEE and
+                                                  FFSS__EEXXCCEEPPTTIIOONN.
+
+     void                (*_p_r_o_c)()      (in)      Procedure    to
+
+
+
+Sprite v.1.0         Printed:  April 5, 1989                    1
+
+
+
+
+
+
+Fs_Dispatch           C Library Procedures            Fs_Dispatch
+
+
+
+                                                  invoke when one
+                                                  of  the  events
+                                                  in    _e_v_e_n_t_M_a_s_k
+                                                  occurs   on   a
+                                                  stream  or when
+                                                  a       timeout
+                                                  period expires.
+
+     ClientData          _c_l_i_e_n_t_D_a_t_a     (in)      Uninterpreted
+                                                  value passed to
+                                                  _p_r_o_c when it is
+                                                  invoked.
+
+     Time                _t_i_m_e           (in)      The    absolute
+                                                  time  when _p_r_o_c
+                                                  should       be
+                                                  called  or  the
+                                                  time   interval
+                                                  between   calls
+                                                  to _p_r_o_c.
+
+     Boolean             _r_e_l_a_t_i_v_e_T_i_m_e   (in)      If  TTRRUUEE,  then
+                                                  _t_i_m_e  specifies
+                                                  a      interval
+                                                  between   calls
+                                                  to  _p_r_o_c.    If
+                                                  FFAALLSSEE,     then
+                                                  _t_i_m_e  specifies
+                                                  the    absolute
+                                                  time when  _p_r_o_c
+                                                  should       be
+                                                  called.
+
+     Fs_TimeoutHandler   _t_o_k_e_n          (in)      A   token    to
+                                                  identify a par-
+                                                  ticular timeout
+                                                  handler  so  it
+                                                  can   be   des-
+                                                  troyed.
+
+_________________________________________________________________
+
+DDEESSCCRRIIPPTTIIOONN
+     These routines implement a dispatcher for events on  streams
+     and  timeouts. An event occurs when the stream becomes read-
+     able, writable or has an exception  condition  pending.  The
+     dispatcher  handles  the  details  of  waiting for events to
+     occur on streams. When an event occurs, the dispatcher calls
+     a  routine  supplied  by the clients to deal with the event.
+     Also, timeout handlers can be  created  so  that  a  client-
+     supplied routine can be called at a specific time or at reg-
+     ular intervals.
+
+     The   dispatcher   must   be    initialized    by    calling
+
+
+
+Sprite v.1.0         Printed:  April 5, 1989                    2
+
+
+
+
+
+
+Fs_Dispatch           C Library Procedures            Fs_Dispatch
+
+
+
+     FFss__EEvveennttHHaannddlleerrCCrreeaattee  and/or FFss__TTiimmeeoouuttHHaannddlleerrCCrreeaattee before
+     FFss__DDiissppaattcchh is called.  FFss__DDiissppaattcchh causes  the  process  to
+     wait  until  an event occurs on a stream or until a time-out
+     occurs. At that point, it  calls  the  appropriate  handler.
+     Once  the  handler  completes,  FFss__DDiissppaattcchh  returns  to its
+     caller. To have the dispatcher remain in control, do
+
+              while (TRUE) {
+               Fs_Dispatch();
+              }
+
+     FFss__EEvveennttHHaannddlleerrCCrreeaattee is used to cause the procedure _p_r_o_c to
+     be  called when one or more of the events in _e_v_e_n_t_M_a_s_k occur
+     on _s_t_r_e_a_m_I_D. Only one procedure may be attached to a  stream
+     so  it  should  be able to deal with all of the event types.
+     _P_r_o_c should be declared as:
+
+          void
+          proc(clientData, streamID, eventMask)
+              ClientData clientData;
+              int        streamID;
+              int        eventMask;
+          {
+          }
+     FFss__EEvveennttHHaannddlleerrDDaattaa can be used to get the _c_l_i_e_n_t_D_a_t_a  asso-
+     ciated  with _s_t_r_e_a_m_I_D. FFss__EEvveennttHHaannddlleerrCChhaannggeeDDaattaa can be used
+     to change  the  _c_l_i_e_n_t_D_a_t_a  associated  with  _s_t_r_e_a_m_I_D.  The
+     handler can be destroyed with FFss__EEvveennttHHaannddlleerrDDeessttrrooyy.
+
+     In addition, a time-out routine can be setup  to  be  called
+     using FFss__TTiimmeeoouuttHHaannddlleerrCCrreeaattee. If _r_e_l_a_t_i_v_e_T_i_m_e is TTRRUUEE, then
+     _t_i_m_e specifies an interval (e.g. one hour) from the  current
+     time  that  _p_r_o_c  will  be called at.  When _p_r_o_c returns, it
+     will automatically be rescheduled to be called at  the  next
+     interval. If _p_r_o_c doesn't need to be called again, it should
+     call FFss__TTiimmeeoouuttHHaannddlleerrDDeessttrrooyy.  If  _r_e_l_a_t_i_v_e_T_i_m_e  is  FFAALLSSEE,
+     then  _t_i_m_e  specifies a specific time (e.g., 3:15pm 17 Sept.
+     1987) that _p_r_o_c will be called at. _P_r_o_c is called once -  it
+     is  not  automatically  rescheduled to be called again. How-
+     ever, it could call FFss__TTiimmeeoouuttHHaannddlleerrCCrreeaattee to cause  it  to
+     be called again.  _P_r_o_c should be declared as:
+
+          void
+          proc(clientData, time)
+              ClientData clientData;
+              Time  Time;
+          {
+          }
+     For example, to have EExxaammpplleeRRoouuttiinnee called in 1 minute  from
+     now and every minute after that, the call should be:
+
+            Fs_TimeoutHandlerCreate(time_OneMinute, TRUE, ExampleRoutine, clientData);
+
+
+
+Sprite v.1.0         Printed:  April 5, 1989                    3
+
+
+
+
+
+
+Fs_Dispatch           C Library Procedures            Fs_Dispatch
+
+
+
+     FFss__TTiimmeeoouuttHHaannddlleerrCCrreeaattee returns a token that must  be  saved
+     if FFss__TTiimmeeoouuttHHaannddlleerrDDeessttrrooyy is to be called.
+
+
+KKEEYYWWOORRDDSS
+     callback, client data, dispatcher, stream ID, time
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  April 5, 1989                    4
+
+
+

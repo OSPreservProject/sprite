@@ -1,0 +1,16 @@
+F DEPENDEN.MK;1                     	dependencies.mk
+F DEV.C;1                           	dev.c
+F DEVCONFI.C;1                      	devConfig.c
+F DEVCONFI.STR;1                    	devConfig.c.strip
+F DEVFSOPT.C;1                      	devFsOpTable.c
+F DEVSCSI0.C;1                      	devSCSI0.c
+F DEVSCSI3.C;1                      	devSCSI3.c
+L F.;1                              	f	/sprite/src/kernel/dev/sun3.md/devConfig.c
+L FOO.;1                            	foo	/sprite/src/kernel/dev/sun3.md/devSCSI3.c
+F MD.MK;1                           	md.mk
+D RCS                               	RCS
+F SCSIDISK.;1                       	scsiDiskBoot
+F SCSIDISK.NM;1                     	scsiDiskBoot.new.nm
+F SCSIDISK.SCS;1                    	scsiDiskBoot.scsi3_onboard
+F START.S;1                         	start.s
+F VMSUNASM.S;1                      	vmSunAsm.s

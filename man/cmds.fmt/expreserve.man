@@ -1,0 +1,68 @@
+
+
+
+EXPRESERVE                User Commands                EXPRESERVE
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     expreserve - Used by ex/vi to save edits during crashes
+
+SSYYNNOOPPSSIISS
+     eexxpprreesseerrvvee [_a_r_g]
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     When a vvii or eexx editing session is interrupted by a crash of
+     the program or the system, eexxpprreesseerrvvee is invoked to save the
+     edits that were in progress, so that they can  be  recovered
+     by  invoking  vvii  --rr  or  eexx  --rr later on.  If eexxpprreesseerrvvee is
+     invoked with no arguments, then it preserves the information
+     that it reads from standard input.  If any _a_r_g is specified,
+     it preserves all of the edits recorded  in  files  in  //ttmmpp.
+     For  more  information than this, read the eexxpprreesseerrvvee and/or
+     eexx code.
+
+     This program should not  normally  be  invoked  directly  by
+     users;  it is run automatically by the system.
+
+
+KKEEYYWWOORRDDSS
+     crash, editor, recover
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  April 11, 1989                    1
+
+
+

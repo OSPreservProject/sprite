@@ -1,0 +1,484 @@
+%% File: schedule.doc
+%% Author: Frank Pfenning (fp@cs.cmu.edu)
+%%
+%% Defines macros to draw a schedule.
+%%
+% 
+% The schedule file should have the following format
+%  (main style and other options depending on your use):
+% 
+% \documentstyle[...,schedule,...]{...}
+% 
+% \begin{document}
+% ...
+% 
+% \begin{schedule}
+% \c d h:mm-h:mm event, more;[righttop][rightbot]
+% ...
+% \end{schedule}
+% 
+% ...
+% \end{document}
+% 
+% where	d   is the day, one of M T W H F S U (upper case only!).
+% 	h   is the hour.  Everything < 8 is assumed to be pm, but you
+% 	    maybe explicit and use the 24 hour clock.
+% 	mm  are the minutes.
+% 	event  is what will be put into the box for the specified 
+% 	       time slot.  \\ starts a new line.
+% 	more  (optional) is another line in the box for the event.
+% 	      It will be separated from the event by some extra space.
+% 	righttop  (optional) is text which is placed in the
+% 		  top right corner of the box (in small type).
+%       rightbot  (optional) like righttop, put at the bottom
+% 		  right corner of the box.
+% 
+% NOTES: - The spaces after the day and the time as well as the semi-colon
+%          at the end of the line (before optional arguments) are necessary!
+% 
+%        - Do not use footnotes in schedule items - they wont appear
+%          on the page.
+% 
+%        - For events without duration (beginning time = end time) the `room'
+% 	 entry will appear below the line, the `event' entry above the line.
+% 
+%        - For short events the type may be too large.  Here you may leave out
+% 	 event and room and merely specify `[righttop]' and `[rightbot]',
+% 	 which will appear in small print.  For example:
+% 	 \c T 3:30-3:45 ;[See Rick][Short Meeting]
+% 
+%        - The events do not need to appear in chronological order.  This
+% 	 allows you to have a file with all regular events and include it in a
+% 	 schedule for a particular week with
+% 	 \input{filename}
+% 	 anywhere between \begin{schedule} and \end{schedule}.
+% 
+%        - Sometimes your will get spurious overfull \vbox or \hbox
+% 	 warning messages.  The schedule will often look acceptable anyway.
+% 
+% PostScript Notes (perhaps site dependent, works at CMU):
+%        - When using pslatex, you can shade the background of a class by
+%          using replacing \c by one of the following:
+% 	 \cw (white), \cL (very light gray), \cl (light gray),
+% 	 \cd (dark gray), \cD (very dark gray)
+%          \c is treated like \cl, but that can be changed through
+% 	 \def\backgrounddefault{<shade>}, where <shade> is one of
+% 	 \white, \Light, \light, \dark, \Dark.  When the file is run through
+% 	 latex instead of pslatex, those shadings are ignored.
+%        - When there are overlapping classes, the one later in the input file
+%          will shadow the earlier one.  When output is produced
+% 	 for non-PostScript devices, both will be visible.
+%        - When landscape format is desired (with or without the use of
+%          \landscape below), create the PostScript file from the dvi file with
+% 	 dvi-ps -o landscape file.dvi > file.ps
+% 
+% The variables and their defaults are
+% 
+% \schedunitlength 1.1pt - may be used to scale the schedule.
+% \daywidth 80 - width of one day column in multiples of unitlength.
+% \hourlength 60 - length of one hour in multiples of unitlength.
+% \startday 8 - time in hours for schedule to begin.
+% \endday 5 - time in hours for schedule to end.
+% \firstday 0 - 0 for Monday through 6 for Sunday
+% \lastday 4 - 0 for Monday through 6 for Sunday
+% 
+% \preamble {} - arbitrary LaTeX-format text to precede the schedule.
+% \schedtopsep 40 - distance between bottom of preamble and schedule box in
+% 		  multiples of unitlength.
+% \postamble {} - arbitrary LaTeX-format text to follow the schedule.
+% \schedbotsep 40 - distance between top of postamble and schedule box in
+% 		  multiple of unitlength.
+% 
+% \landscape and \portrait (default) - sets the \daywidth and \hourlength.
+% 	Defaults for portrait are \daywidth 80 and \hourlength 60,
+% 	defaults for landscape are \daywidth 120 and \hourlength 40.
+% 
+% \markhours and \nomarkhours (default) - forces a grid to be printed into
+% 	the schedule which makes it easier to write in new events by hand.
+% 
+% \showdates and \shownodates (default) - forces the dates of the week
+% 	to be printed ant the bottom of the schedule.  Set the date of
+% 	Monday using \beginweek.
+% \beginweek 0/1 - The date of the first day on the schedule (usually Monday)
+%         in the format month/day.  For example:
+% 	\beginweek 5/13
+% 	if the week on the schedule begins on May 13.  This only has
+% 	an effect if \showdates was set.
+% \firstdate 0/1 - synonym for \beginweek
+% 
+% \singlepagestyle (default inherited from the main document style): 
+% 	- use empty page style, no top margin.
+% 
+% These variables may be set BEFORE the 'schedule' environment is entered.
+% 
+% Known bugs:  Some lines do not match up exactly, I suspect due to the fact
+% 	     that a framed box contains the frame on its outside.  One
+% 	     has to come very close to see this, so I am not motivated
+% 	     to fix this.
+% 
+% 	     The \firstdate or \beginweek must appear before the
+%	     \begin{schedule}.  This is bothersome if one keeps updating
+%	     the events, but not the variables from week to week.
+% 
+% 	     The postscript gray-level options have not been tested
+% 	     outside CMU.
+% 
+% Two examples follow.
+% 
+% ---- An individual weekly schedule ----
+% \documentstyle[12pt,fullpage,schedule]{article}
+% \voffset -0.2in   %  may be useful if its a tight fit.
+% \singlepagestyle
+% 
+% \landscape        %  landscape for previewing.
+% \thicklines
+% \schedunitlength=1.1pt
+% \startday 9 \endday 5
+% \markhours
+% \preamble{\Large Schedule Spring '84}
+% \postamble{\small No classes during fall break Nov 3 -- Nov 10}
+% 
+% \begin{document}
+% \begin{schedule}
+% \c M 2:00-3:15 Applied Logic\\Seminar;[][SH 324]
+% \c T 1:30-3:30 Discrete Math;[Statman][WeH 6121]
+% \c T 3:30-5:00 TPS Meeting;[Andrews][TPS Group]
+% \c W 2:00-3:15 Applied Logic\\Seminar;[][DH 2105]
+% \c H 2:00-3:30 Logic Seminar;[][WeH 5427]
+% \end{schedule}
+% \end{document}
+% 
+% ---- The schedule of a two-day workshop ----
+% \documentstyle[12pt,fullpage,schedule]{article}
+% \singlepagestyle
+% 
+% \hourlength=58 \daywidth=200
+% \thicklines
+% \schedunitlength=1.1pt
+% \startday 9 \endday 7
+% \firstday 4 \lastday 5
+% \preamble{\large Meeting on Metalanguage and Tools for Mechanizing Formal
+% Deductive Theories}
+% \showdates
+% \firstdate 11/13
+% 
+% \begin{document}
+% \begin{schedule}
+% 
+% \c F 9:00-9:45 Using a Higher-Order\\Logic Programming Language\\
+%  to Implement Program Transformations;[D. Miller][UPenn]
+% \c F 9:45-10:30 Building Proof Systems in an Extended \\
+%   Logic Programming Language;[A. Felty][Upenn]
+% \cw F 10:30-10:45 Break;[][]
+% \c F 10:45-12:15 The Categorical Abstract Machine\\
+%   State of the Art;[P.-L. Curien][ENS]
+% \cw F 12:15-1:15 Lunch;[][]
+% \c F 1:15-1:45 A Very Brief Look at NuPRL;[J. Bates][CMU]
+% \c F 1:45-2:15 Reasoning about Programs\\
+%    that Construct Proofs;[R. Constable][Cornell]
+% \cw F 2:15-2:30 Break;[][]
+% \c F 2:30-3:15 Theorem Proving via Partial Reflection;[D. Howe][Cornell]
+% \c F 3:15-3:45 MetaPrl: A Framework for\\Knowledge Based Media;[J. Bates][CMU]
+% \cw F 3:45-4:00 Break;[][]
+% \cd F 4:00-5:00 Discussion:\\The Role of Formal Reasoning\\in Software
+%  Development;[][]
+% \cL F 5:00-6:30 Demos:\\
+%   PRL (WeH 4114)\\
+%   $\lambda$-Prolog (WeH 4623);[][]
+% 
+% 
+% \c S 9:00-9:45 A Framework for Defining Logics;[R. Harper][Edinburgh]
+% \c S 9:45-10:30 The Logician's Workbench\\
+%   in the Ergo Support System;[F. Pfenning][CMU]
+% \cw S 10:30-10:45 Break;[][]
+% \c S 10:45-11:30 A Tactical Approach\\
+%     to Algorithm Design;[D. Smith][Kestrel]
+% \c S 11:30-12:15 Reusing Data Structure Designs;[A. Goldberg][Kestrel]
+% \cw S 12:15-1:15 Lunch\\WeH 4605;[][]
+% \c S 1:15-2:00 Paddle: Popart's Development Language;[D. Wile][USC/ISI]
+% \c S 2:00-2:45 Mechanizing Construction and\\
+%     Modification of Specifications;[M. Feather][USC/ISI]
+% \cw S 2:45-3:00 Break;[][]
+% \c S 3:00-3:45 The TPS Theorem Proving System;[P. Andrews][CMU]
+% \c S 3:45-4:30 ONTIC: Knowledge Representation\\
+%    for Mathematics;[D. McAllester][Cornell]
+% \cL S 4:30-6:00 Demos\\
+%   Popart (WeH 4114)\\
+%   The LF Proof Editor (WeH 4623)\\
+%   TPS (WeH 7211);[][]
+% 
+% \put(0,-35){\makebox(\daywidth,20){Wherrett Room, Skibo}}
+% \put(\daywidth,-35){\makebox(\daywidth,20){Wean Hall 7500}}
+% 
+% \end{schedule}
+% \end{document}
+%======================================================================
+%
+% Here the definitions begin.
+%
+%
+% File: schedule.sty
+% Author: Frank Pfenning (fp@cs.cmu.edu)
+%
+% Defines macros to draw a schedule.
+% Documentation is in schedule.doc
+%
+% Use this as an option to another documentstyle.
+
+\def\singlepagestyle{\topmargin 0pt\pagestyle{empty}\thispagestyle{empty}}
+
+  % The indented stuff following allows gray levels on postscript devices.
+  % It may only work at this installation (CMU).
+  % Is there a reliable way to tell whether the output device is
+  % postscript?
+  \newif\ifPS
+  \expandafter\ifx\csname PostScript\endcsname\relax
+	\PSfalse
+      \else
+	\PStrue
+      \fi
+
+  \ifPS 
+      \def\setgray #1{\special{"#1 setgray"}}
+	% Changes the gray level of the "pen" on the PostScript device
+	%  #1 should be a number between 0 and 
+	%  0 is black         1 is white 
+	% NB Remember to reset the gray level to black.
+      \def\Dark{\def\backgroundgray{\setgray{0.8}}}
+      \def\dark{\def\backgroundgray{\setgray{0.9}}}
+      \def\light{\def\backgroundgray{\setgray{0.95}}}
+      \def\Light{\def\backgroundgray{\setgray{0.99}}}
+      \def\white{\def\backgroundgray{\setgray{1}}}
+  \else
+      \def\Dark{} \def\dark{} \def\light{} \def\Light{} \def\white{}
+  \fi
+
+\def\backgrounddefault{\light}
+
+\newdimen\schedunitlength \schedunitlength=1.1pt
+
+\newcount\hourlength
+\newcount\daywidth
+\def\portrait{\hourlength=60 \daywidth=80}
+\def\landscape{\hourlength=40 \daywidth=120}
+\portrait
+
+\newcount\startday \startday=8
+\newcount\endday \endday=5
+
+\newcount\firstday \firstday=0
+\newcount\lastday \lastday=4
+
+\newcount\schedtopsep \schedtopsep=40
+\newcount\schedbotsep \schedbotsep=40
+
+\newcount\dday \dday=1
+\newcount\mmonth \mmonth=0
+
+\newcount\ypos \newcount\xpos \newcount\ylength
+
+\newcount\tempa \newcount\tempb \newcount\tempc \newcount\tempd
+
+\newcount\schedtop
+
+\newcount\schedwidth \newcount\hschedwidth
+
+\newcount\firstdayoffset
+\newcount\numdays
+
+\def\preamble#1{\gdef\preambletext{#1}}
+\def\beginpreamble#1\endpreamble{\gdef\preambletext{#1}}
+
+\def\postamble#1{\gdef\postambletext{#1}}
+\def\beginpostamble#1\endpostamble{\gdef\postambletext{#1}}
+
+\def\markhours{\gdef\hourlengthmarks{T}}
+\def\nomarkhours{\gdef\hourlengthmarks{N}}
+
+\def\showdates{\gdef\showdatesflag{T}}
+\def\shownodates{\gdef\showdatesflag{N}}
+
+\def\beginweek#1/{\mmonth #1\dday }
+\def\firstdate{\beginweek}
+
+\preamble{}
+\postamble{}
+\nomarkhours
+\shownodates
+
+\def\initdimen{\unitlength=\schedunitlength
+\ypos=0 \xpos=0
+\ylength=0 \tempa=0 \tempb=0 \tempc=0 \tempd=0
+\ifnum \endday<8 \advance\endday by 12\fi
+\ifnum \startday<8 \advance\startday by 12\fi
+\schedtop=\endday \advance\schedtop by -\startday
+\multiply\schedtop by\hourlength
+\firstdayoffset=\firstday \multiply\firstdayoffset by\daywidth
+\numdays=\lastday \advance\numdays by -\firstday
+\schedwidth=\numdays \advance\schedwidth by 1
+  \multiply\schedwidth by\daywidth
+\hschedwidth=\schedwidth \divide\hschedwidth by 2
+}
+
+\def\class#1{\framebox(\daywidth,\ylength){\begin{tabular}{c}
+  \commaparse#1,,\end{tabular}}}
+
+\def\commaparse#1,{\@ifnextchar ,{#1\ignorechar}{#1\\[1.3em]\commaparse}}
+\def\ignorechar#1{}
+
+\def\timeclass#1#2{\put(\xpos,\ypos){\timeboxbegin{#1}}%
+  \put(\xpos,\ypos){\timeboxend{#2}}}
+
+\def\grayput{%
+   \put(\xpos,\ypos){\backgroundgray
+        \rule{\daywidth\unitlength}{\ylength\unitlength}%
+	\black}}
+
+\def\classput#1;{%
+   \put(\xpos,\ypos){\class{#1}}%
+   \@ifnextchar [{\optone}{\relax}%]
+   }
+
+\def\optone[#1]{\put(\xpos,\ypos){\righttopbox{#1}}%
+   \@ifnextchar [{\opttwo}{\relax}%]
+   }
+
+\def\opttwo[#1]{\put(\xpos,\ypos){\rightbotbox{#1}}}
+
+\def\timeboxbegin#1{\makebox(\daywidth,\ylength)[tl]{%
+   \scriptsize{\raisebox{0em}[0.85em]{\scriptsize{\hskip 0.2em #1}}}}}
+
+\def\righttopbox#1{\makebox(\daywidth,\ylength)[tr]{%
+   \scriptsize{\raisebox{0em}[0.85em]{\scriptsize{#1\hskip 0.2em}}}}}
+
+\def\timeboxend#1{\makebox(\daywidth,\ylength)[bl]{%
+   \scriptsize{\raisebox{0.2em}{\scriptsize{\hskip 0.2em #1}}}}}
+
+\def\rightbotbox#1{\makebox(\daywidth,\ylength)[br]{%
+   \scriptsize{\raisebox{0.2em}{\scriptsize{#1\hskip 0.2em}}}}}
+
+\def\daywidthxpos#1{%
+	\advance \xpos by -\firstdayoffset
+   \if M#1\else \advance\xpos by\daywidth
+   \if T#1\else \advance\xpos by\daywidth
+   \if W#1\else \advance\xpos by\daywidth
+   \if H#1\else \advance\xpos by\daywidth
+   \if F#1\else \advance\xpos by\daywidth
+   \if S#1\else \advance\xpos by\daywidth
+   \if U#1\else \advance\xpos by\daywidth\fi\fi\fi\fi\fi\fi\fi}
+
+\def\cD{\Dark\cdefault}
+\def\cd{\dark\cdefault}
+\def\cl{\light\cdefault}
+\def\cL{\Light\cdefault}
+\def\cw{\white\cdefault}
+\def\c{\backgrounddefault\cdefault}
+
+\def\cdefault#1 #2:#3-#4:#5 {%
+      %% First convert time to 24hour clock
+      \ypos=-#2 \ifnum \ypos>-8 \advance\ypos by -12\fi
+      \ylength=#4 \ifnum \ylength<8 \advance\ylength by 12\fi
+      %% Now calculate the length of the entry: hours
+      \advance\ylength by \ypos \multiply\ylength by\hourlength
+      %% Calculate the beginning of the entry in hours
+      \advance\ypos by\startday
+      \multiply\ypos by\hourlength
+      \advance\ypos by\schedtop
+      %% Add the minutes
+      \tempa=#3 \multiply\tempa by\hourlength \divide\tempa by 60
+      \advance\ypos by -\tempa
+      %% Add minutes to length.
+      \tempa=#5 \advance\tempa by -#3
+      \multiply\tempa by\hourlength \divide\tempa by 60
+      \advance\ylength by\tempa
+      %% The lower left corner is at beginning of entry - length of entry
+      \advance\ypos by -\ylength
+      \xpos=0 \daywidthxpos{#1}%
+      \ifPS \grayput\fi
+      \timeclass{#2:#3}{#4:#5}
+      \classput}
+
+
+\def\putday#1{\ifnum \firstday<\tempc \ifnum \tempc<\tempd
+	   \put(\tempa,\schedtop){\makebox(\daywidth,20){#1}}%
+	   \if T\showdatesflag
+	       \put(\tempa,-20){\makebox(\daywidth,20){\the\mmonth/\the\dday}}%
+	       \increaseday \fi
+           \advance\tempa by\daywidth \fi \fi
+	   \advance\tempc by 1}
+
+\def\nextmonth{\advance\mmonth by 1\dday 1}
+
+\def\increaseday{\advance\dday by 1
+  \ifnum \dday=29\ifnum \mmonth=2\nextmonth\fi\fi
+  \ifnum \dday=31\ifcase \mmonth \or \or \or \or \nextmonth
+				 \or \or \nextmonth \or \or
+				 \or \nextmonth \or \or \nextmonth
+				 \or \fi\fi
+  \ifnum \dday=32\ifcase \mmonth \or \nextmonth \or \or \nextmonth
+				 \or \or \nextmonth \or \or \nextmonth
+				 \or \nextmonth \or \or \nextmonth
+				 \or \or \mmonth 1\dday 1\fi\fi}
+
+\def\schedule{
+
+\initdimen
+
+\begin{center}
+
+\begin{picture}(\schedwidth,\schedtop)(0,0)
+\tempa=\schedtop \advance\tempa by\schedtopsep
+\put(\hschedwidth,\tempa){\makebox(0,0)[b]{\preambletext}}
+\put(0,0){\framebox(\schedwidth,\schedtop){}}
+
+%% One more time stamp than there are hours.
+\tempa=\startday \advance\tempa by -1
+
+\xpos=\startday \ypos=\schedtop
+\loop \ifnum \xpos>12 \advance\xpos by -12\fi
+      \put(0,\ypos){\makebox(0,0)[r]{\the\xpos :00\hskip 1.7em}}%
+      \advance\ypos by -\hourlength \advance\tempa by 1
+      \advance\xpos by 1
+      \ifnum \tempa<\endday \repeat
+
+\tempa=\endday \advance\tempa by -\startday \advance\tempa by 1
+\multiput(0,\schedtop)(0,-\hourlength){\tempa}{%
+   \makebox(0,0)[r]{\vrule height 0.4pt width 1.5em}}
+
+\if T\hourlengthmarks
+  \multiput(\daywidth,\schedtop)(\daywidth,0){\numdays}{%
+      \makebox(0,0)[t]{\vrule height 0.3em width 0.4pt}}
+  \multiput(\daywidth,0)(\daywidth,0){\numdays}{%
+      \makebox(0,0)[b]{\vrule height 0.3em width 0.4pt}}
+  \advance\tempa by -2
+  \tempd=\schedtop \advance\tempd by -\hourlength
+  \tempb=\daywidth \tempc=0
+  \multiput(0,\tempd)(0,-\hourlength){\tempa}{%
+      \makebox(0,0)[l]{\vrule height 0.4pt width 0.3em}}
+  \loop \multiput(\tempb,\tempd)(0,-\hourlength){\tempa}{%
+           \makebox(0,0)[c]{\vrule height 0.2pt depth 0.2pt width 0.3em 
+                            \vrule height 0.3em depth 0.3em width 0.4pt
+			    \vrule height 0.2pt depth 0.2pt width 0.3em}}
+        \advance\tempb by \daywidth	  
+        \advance\tempc by 1
+        \ifnum \tempc<\numdays \repeat
+  \multiput(\tempb,\tempd)(0,-\hourlength){\tempa}{%
+      \makebox(0,0)[r]{\vrule height 0.4pt width 0.3em}}
+  \fi
+
+\tempa=0 \tempc=1 \tempd=\lastday \advance\tempd by 2
+\putday{Monday}
+\putday{Tuesday}
+\putday{Wednesday}
+\putday{Thursday}
+\putday{Friday}
+\putday{Saturday}
+\putday{Sunday}
+\put(0,-\schedbotsep){\makebox(0,0)[tl]{\postambletext}}
+}
+
+\def\endschedule{
+\end{picture}
+
+\end{center}
+}

@@ -1,0 +1,52 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     90.02.16.17.40.25;  author tve;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Original X11R4 distribution
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@.\" $XConsortium: kbd_mode.man,v 1.6 89/12/21 10:05:42 rws Exp $
+.TH KBD_MODE 1 "Release 4" "X Version 11"
+.SH NAME
+kbd_mode \- recover the Sun console keyboard
+.SH SYNOPSIS
+.B kbd_mode
+[ -a -e -n -u ]
+.SH DESCRIPTION
+.I Kbd_mode
+resets the Sun console keyboard to a rational state.
+.SH OPTIONS
+The following options are supported, see \fIkb(4S)\fP for details:
+.TP 8
+.B \-a
+Causes ASCII to be reported.
+.TP 8
+.B \-e
+Causes \fIFirm_events\fP to be reported.
+.TP 8
+.B \-n
+Causes up/down key codes to be reported.
+.TP 8
+.B \-u
+Causes undecoded keyboard values to be reported.
+.SH SEE ALSO
+kb(4S)
+@

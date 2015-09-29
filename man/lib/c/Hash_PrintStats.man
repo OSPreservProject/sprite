@@ -1,0 +1,49 @@
+' $Header: /sprite/src/lib/c/hash/RCS/Hash_PrintStats.man,v 1.1 88/12/30 15:05:25 ouster Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS Hash_PrintStats lib
+.BS
+.SH NAME
+Hash_PrintStats \- print statistics about a hash table 
+.SH SYNOPSIS
+\fB#include <hash.h>\fR
+.sp
+\fBHash_PrintStats\fR(\fItablePtr, proc, clientData\fR)
+.AS ClientData clientData
+.SH ARGUMENTS
+.AP Hash_Table *tablePtr in
+Table about which to print information.
+.AP void (*proc)() in
+Procedure to call to actually print information.
+.AP ClientData clientData in
+Arbitrary additional argument to be passed to \fIproc\fP.
+.BE
+
+.SH DESCRIPTION
+.LP
+\fBHash_PrintStats\fR prints out statistical information about bucket
+usage in \fItablePtr\fP.  The information includes the total number
+of buckets and entries in the table, plus a histogram indicating
+how many buckets have each different number of entries in them.
+.LP
+\fBHash_PrintStats\fR does not output the statistics information directly.
+Instead, it invokes \fIproc\fP to do the output.  Proc must
+have the following calling sequence:
+.DS
+.ta 1c 2c 3c
+void
+proc(\fIclientData, string\fP)
+	ClientData \fIclientData\fP;
+	char *\fIstring\fP;
+{
+}
+.DE
+.LP
+The \fIclientData\fP parameter will be the same as the \fIclientData\fP
+to \fBHash_PrintStats\fR;  ostensibly it provides information to help \fIproc\fP
+perform the actual I/O, such as channel number.  \fIString\fP is
+a NULL-terminated string of characters containing the statistical
+information.  \fIProc\fP may be invoked many times during a single
+call to \fBHash_PrintStats\fR.
+
+.SH KEYWORDS
+hash table, print, statistics

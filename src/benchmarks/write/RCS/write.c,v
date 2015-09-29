@@ -1,0 +1,383 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    brent:1.5; strict;
+comment  @ * @;
+
+
+1.5
+date     89.09.13.20.48.26;  author ouster;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.03.10.16.09.57;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.03.02.08.42.57;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     87.12.17.21.35.41;  author nelson;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     87.12.17.21.24.52;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.5
+log
+@Switchover to version that will also run under UNIX.
+@
+text
+@/* 
+ * write.c --
+ *
+ *	This program is a stand-alone benchmark to measure
+ *	the speed of writing a file.  It should be invoked
+ *	as follows:
+ *
+ *	write numK count
+ *
+ *	The program will write numK bytes to its standard
+ *	output, seeking back to zero and repeating count
+ *	times.  Then it will print out the write bandwidth.
+ *	If omitted, count defaults to 1.
+ *
+ * Copyright 1989 Regents of the University of California.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: protoPub.c,v 1.3 87/01/04 17:28:56 andrew Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <stdio.h>
+#include <sys/time.h>
+#include <sys/resource.h>
+
+static char buffer[16384];
+
+main(argc, argv)
+int argc;
+char **argv;
+{
+    int total, repeats, numK, i;
+    double rate, micros;
+    struct rusage begin ,end;
+    struct timeval start, stop;
+    struct timezone tz;
+
+    numK = atoi(argv[1]);
+
+    if (argc == 2) {
+	repeats = 1;
+    } else {
+	repeats = atoi(argv[2]);
+    }
+    total = 0;
+
+#ifdef GETRUSAGE
+    getrusage(RUSAGE_SELF, &begin);
+#else
+    gettimeofday(&start, (struct timezone *) NULL);
+#endif
+
+    for ( ; repeats > 0; repeats--) {
+	lseek(1, 0, 0);
+	for (i = numK; i > 0; ) {
+	    if (i > 16) {
+		total += write(1, buffer, 16384);
+		i -= 16;
+	    } else {
+		total += write(1, buffer, 1024*i - 1);
+		i = 0;
+	    }
+	}
+    }
+#ifdef GETRUSAGE
+    getrusage(RUSAGE_SELF, &end);
+    micros = (end.ru_utime.tv_sec + end.ru_stime.tv_sec
+	    - begin.ru_utime.tv_sec - begin.ru_stime.tv_sec)*1000000
+	    + (end.ru_utime.tv_usec - begin.ru_utime.tv_usec)
+	    + (end.ru_stime.tv_usec - begin.ru_stime.tv_usec);
+#else
+    gettimeofday(&stop, (struct timezone *) NULL);
+    micros = 1000000*(stop.tv_sec - start.tv_sec)
+	    + stop.tv_usec - start.tv_usec;
+#endif
+    rate = total/(micros/1000000.0);
+    fprintf(stderr, "%d bytes written at %.0f bytes/sec.\n", total, rate);
+}
+@
+
+
+1.4
+log
+@Updated error testing suite
+@
+text
+@d1 31
+a31 24
+#include "sprite.h"
+#include "time.h"
+#include "fs.h"
+#include "io.h"
+#include "option.h"
+
+static char *buffer;
+
+int	blockSize = 16384;
+int	kbytes = 1024;
+char	*outFileName = (char *)NULL;
+Boolean errorTest = FALSE;
+
+Option optionArray[] = {
+    {OPT_INT, 'b', (Address) &blockSize, 
+     "\tBlock size to use for writing (Default 16384)."},
+    {OPT_INT, 'k', (Address) &kbytes,
+     "\tKbytes to write (Default 1024)."},
+    {OPT_STRING, 'o', (Address)&outFileName,
+     "\tName of file for output (Default write.out)."},
+    {OPT_TRUE, 'e', (Address)&errorTest,
+     "\tTest error cases. "},
+};
+int numOptions = sizeof(optionArray) / sizeof(Option);
+d33 1
+a33 2
+int Handler();
+int gotSig = FALSE;
+d39 5
+a43 18
+    int cnt, total;
+    double rate, tmp;
+    Time before, after;
+    ReturnStatus status;
+    int	bytesToWrite;
+    int	outFD;
+    Sig_Action		newAction, oldAction;
+
+    (void)Opt_Parse(&argc, argv, numOptions, optionArray);
+
+    /*
+     * Set up signal handling, trap interrupts in order to test
+     * the GEN_INTERRUPTED_BY_SIGNAL return code.
+     */
+    newAction.action = SIG_HANDLE_ACTION;
+    newAction.handler = Handler;
+    newAction.sigHoldMask = 0;
+    Sig_SetAction(SIG_INTERRUPT, &newAction, &oldAction);
+d45 7
+a51 1
+    buffer = (char *)Mem_Alloc(blockSize);
+a52 21
+    bytesToWrite = kbytes * 1024;
+    if (outFileName == (char *)NULL) {
+	outFileName = "write.out";
+    }
+    status = Fs_Open(outFileName, FS_WRITE | FS_CREATE | FS_TRUNC, 0666,&outFD);
+    if (status != SUCCESS) {
+	Io_PrintStream(io_StdErr, "Could not open %s for writing, status %x\n",
+		       outFileName, status);
+	Proc_Exit(status);
+    }
+    if (errorTest) {
+	int numErrors = 0;
+	Io_Print("Write Error Tests\n"); Io_Flush(io_StdOut);
+
+	status = Fs_Write(-2, 0, 0, &cnt);
+	if (status == SUCCESS) {
+	    Io_Print("ERROR: Fs_Write(-2) worked!\n");
+	    numErrors++;
+	} else {
+	    Stat_PrintMsg(status, "Fs_Write(-2)");
+	}
+d54 12
+a65 34
+	status = Fs_Write(outFD, 10, -1, &cnt);
+	if (status == SUCCESS) {
+	    Io_Print("ERROR: Fs_Write{buffer = -1} worked!\n");
+	    numErrors++;
+	} else {
+	    Stat_PrintMsg(status, "Fs_Write{buffer = -1}");
+	}
+
+	status = Fs_Write(outFD, -1, buffer, &cnt);
+	if (status == SUCCESS) {
+	    Io_Print("ERROR: Fs_Write{count < 0} worked!\n");
+	    numErrors++;
+	} else {
+	    Stat_PrintMsg(status, "Fs_Write{count < 0}");
+	}
+
+	/*
+	 * The following case uses Fs_RawWrite because the library
+	 * routine Fs_Write dies on a bad amountReadPtr.
+	 */
+	status = Fs_RawWrite(outFD, 10, buffer, 0);
+	if (status == SUCCESS) {
+	    Io_Print("ERROR: Fs_RawWrite{&cnt = 0} worked!\n");
+	    numErrors++;
+	} else {
+	    Stat_PrintMsg(status, "Fs_RawWrite{&cnt = 0}");
+	}
+
+	{
+	    int outFD2;
+	    status = Fs_Open("/dev/null", FS_READ, 0,&outFD2);
+	    if (status != SUCCESS) {
+		Io_PrintStream(io_StdErr, "Could not open %s for reading, status %x\n",
+			       "/dev/null", status);
+d67 2
+a68 7
+		status = Fs_Write(outFD2, 10, buffer, &cnt);
+		if (status == SUCCESS) {
+		    Io_Print("ERROR: Fs_Write{readonly stream} worked!\n");
+		    numErrors++;
+		} else {
+		    Stat_PrintMsg(status, "Fs_Write{readonly stream}");
+		}
+d71 14
+a84 53
+
+	{
+	    char *newBuf = (char *)Mem_Alloc(100 * 1024);
+	    Io_Print("Starting 100K write... "); Io_Flush(io_StdOut);
+	    status = Fs_RawWrite(outFD, 100 * 1024, newBuf, &cnt);
+	    if (gotSig) {
+		Io_Print("Got Signal, "); Io_Flush(io_StdOut);
+	    }
+	    if (status == SUCCESS) {
+		Io_Print("Wrote %d bytes\n", cnt);
+	    } else {
+		Stat_PrintMsg(status, "write");
+	    }
+	}
+
+	Fs_Close(outFD);
+	status = Fs_Write(outFD, sizeof("oops"), "oops", &cnt);
+	if (status == SUCCESS) {
+	    Io_Print("ERROR: Fs_Write{closed stream} worked!\n");
+	    numErrors++;
+	} else {
+	    Stat_PrintMsg(status, "Fs_Write{closed stream}");
+	}
+	if (numErrors) {
+	    Io_Print("Write Test had %d errors\n", numErrors);
+	} else {
+	    Io_Print("No errors\n");
+	}
+	Proc_Exit(numErrors);
+    } else {
+	Sys_GetTimeOfDay(&before, NULL, NULL);
+	while (total < bytesToWrite) {
+	    status = Fs_Write(outFD, blockSize, buffer, &cnt);
+	    total += cnt;
+	    if (status != SUCCESS) {
+		Io_PrintStream(io_StdErr, "Write failed status %x\n", status);
+		Proc_Exit(status);
+	    }
+	}
+	Fs_Close(outFD);
+	Sys_GetTimeOfDay(&after, NULL, NULL);
+	rate = after.seconds - before.seconds;
+	rate += (after.microseconds - before.microseconds)*.000001;
+	rate = total/rate;
+	Io_PrintStream(io_StdErr,
+		       "%d bytes written at %.0f bytes/sec.\n", total, rate);
+   }
+}
+
+int
+Handler()
+{
+    gotSig = TRUE;
+@
+
+
+1.3
+log
+@Added error case testing.
+@
+text
+@d65 1
+d71 1
+d79 1
+d87 1
+d99 1
+d104 15
+a118 5
+	status = Fs_Write(0, 10, buffer, &cnt);
+	if (status == SUCCESS) {
+	    Io_Print("ERROR: Fs_Write{stdIn} worked!\n");
+	} else {
+	    Stat_PrintMsg(status, "Fs_Write{stdIn}");
+d139 1
+d143 6
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d12 1
+d21 2
+d26 3
+d39 1
+d42 10
+d64 8
+a71 7
+    Sys_GetTimeOfDay(&before, NULL, NULL);
+    while (total < bytesToWrite) {
+	status = Fs_Write(outFD, blockSize, buffer, &cnt);
+	total += cnt;
+	if (status != SUCCESS) {
+	    Io_PrintStream(io_StdErr, "Write failed status %x\n", status);
+	    Proc_Exit(status);
+d73 72
+a144 8
+    }
+    Fs_Close(outFD);
+    Sys_GetTimeOfDay(&after, NULL, NULL);
+    rate = after.seconds - before.seconds;
+    rate += (after.microseconds - before.microseconds)*.000001;
+    rate = total/rate;
+    Io_PrintStream(io_StdErr,
+    		   "%d bytes written at %.0f bytes/sec.\n", total, rate);
+d147 5
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+d18 2
+d32 1
+d38 9
+d49 1
+a49 1
+	status = Fs_Write(1, blockSize, buffer, &cnt);
+d56 1
+@

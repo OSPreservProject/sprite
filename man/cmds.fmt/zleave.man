@@ -1,0 +1,132 @@
+
+
+
+ZLEAVE                    User Commands                    ZLEAVE
+
+
+
+NNAAMMEE
+     zleave - notify you via Zephyr when you have to leave
+
+SSYYNNOOPPSSIISS
+     zzlleeaavvee [ [+]_h_h_m_m [ -_m _R_e_m_i_n_d_e_r _M_e_s_s_a_g_e ] ]
+     zzlleeaavvee _c_a_n[_c_e_l]
+
+DDEESSCCRRIIPPTTIIOONN
+     _Z_l_e_a_v_e waits until the specified time, then reminds you that
+     you have to leave, using the _Z_e_p_h_y_r(_1) Notification Service.
+     You are reminded 5 minutes and 1 minute before the actual
+     time, at the time, and every minute thereafter.  When you
+     log off, _z_l_e_a_v_e exits just before it would have sent the
+     next message.
+
+     The time of day is in the form hhmm where hh is a time in
+     hours (on a 12 or 24 hour clock).  All times are converted
+     to a 12 hour clock, and assumed to be in the next 12 hours.
+
+     If the time is preceded by `+', the alarm will go off in
+     hours and minutes from the current time.
+
+     If no argument is given, _z_l_e_a_v_e prompts with "When do you
+     have to leave?". A reply of newline causes _z_l_e_a_v_e to exit,
+     otherwise the reply is assumed to be a time.  This form is
+     suitable for inclusion in a ._l_o_g_i_n or ._p_r_o_f_i_l_e.
+
+     The _c_a_n_c_e_l option cancels the currently running _z_l_e_a_v_e.  If
+     another _z_l_e_a_v_e is running, it is automatically killed when a
+     new time to leave is set.  The process id is stored in the
+     file /tmp/zleave._u_i_d, where _u_i_d is the user's UNIX uid.
+
+     If the -_m argument is specified, the next argument is
+     appended to the standard message (a sentence describing how
+     much time remains until the appointed hour) sent at
+     appropriate times.  If you want to append a multiple-word
+     message, you normally must quote it with double quotes (")
+     (This is necessary for users of _c_s_h(1) and _s_h(1).)
+
+     _Z_l_e_a_v_e automatically subscribes you to Zephyr class "MES-
+     SAGE", instance "LEAVE".  You do not have to add anything to
+     your default subscriptions file (see _z_c_t_l(1)).  The reminder
+     message is displayed by the WindowGram client (usually
+     _z_w_g_c(1)).
+
+     If Zephyr is unavailable, _z_l_e_a_v_e acts essentially like
+     _l_e_a_v_e(1).
+
+     Zleave ignores SIGINT, SIGQUIT, and SIGTERM.  To get rid of
+     it you should either log off or use the _c_a_n_c_e_l option.
+
+
+
+
+
+MIT Project Athena        July 1, 1988                          1
+
+
+
+
+
+
+ZLEAVE                    User Commands                    ZLEAVE
+
+
+
+FFIILLEESS
+     /tmp/zleave._u_i_d /tmp/wg.*
+
+SSEEEE AALLSSOO
+     calendar(1), zephyr(1), leave(1), zwgc(1), zctl(1), csh(1),
+     sh(1)
+     Project Athena Technical Plan Section E.4.1, `Zephyr Notifi-
+     cation Service'
+
+RREESSTTRRIICCTTIIOONNSS
+     Copyright (c) 1980,  Regents of the University of Califor-
+     nia.  All rights reserved.  Redistribution and use in source
+     and binary forms are permitted provided that this notice is
+     preserved and that due credit is given to the University of
+     California at Berkeley. The name of the University may not
+     be used to endorse or promote products derived from this
+     software without specific written prior permission. This
+     software is provided ``as is'' without express or implied
+     warranty.
+
+     Copyright (c) 1987,1988 by the Massachusetts Institute of
+     Technology.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+MIT Project Athena        July 1, 1988                          2
+
+
+

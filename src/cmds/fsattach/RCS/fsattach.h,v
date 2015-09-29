@@ -1,0 +1,435 @@
+head     1.7;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.7
+date     91.01.12.16.48.54;  author jhh;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     90.02.14.13.59.59;  author jhh;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.12.14.16.28.23;  author jhh;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.06.19.14.21.27;  author jhh;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.06.07.22.14.35;  author jhh;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.04.10.11.12.25;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.03.06.12.58.47;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.7
+log
+@new boot sequence
+@
+text
+@/*
+ * fsattach.h --
+ *
+ *	Declarations for fsattach.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/admin/fsattach/RCS/fsattach.h,v 1.6 90/02/14 13:59:59 jhh Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _FSATTACH
+#define _FSATTACH
+
+#include <assert.h>
+#include <errno.h>
+#include <fs.h>
+#include <fsCmd.h>
+#include <host.h>
+#include <list.h>
+#include <option.h>
+#include <stdio.h>
+#include <string.h>
+#include <status.h>
+#include <stdlib.h>
+#include <sysStats.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/file.h>
+#include <sys/wait.h>
+#include <disk.h>
+
+/* constants */
+
+/*
+ * Maximum limits on things.
+ */
+#define MAX_FIELD_LENGTH	256
+#define MAX_LINE_LENGTH		1024
+#define MAX_EXEC_ARGS		20
+#define MAX_PASS 		10
+
+/*
+ * Return codes from fscheck.
+ */
+#define FSCHECK_OK		(char) 0
+#define FSCHECK_SOFT_ERROR	(char) 1
+#define FSCHECK_OUT_OF_MEMORY	(char) 2
+#define FSCHECK_NOREBOOT	(char) 3
+#define FSCHECK_REBOOT		(char) 4
+
+#define FSCHECK_HARD_ERROR	(char) -1
+#define FSCHECK_READ_FAILURE	(char) -2
+#define FSCHECK_WRITE_FAILURE	(char) -3
+#define FSCHECK_BAD_ARG		(char) -4
+#define FSCHECK_MORE_MEMORY	(char) -5
+#define FSCHECK_DISK_FULL	(char) -6
+
+/*
+ * Return code from child process if the exec fails.
+ */
+#define EXEC_FAILED		(char) 32
+
+/* 
+ * Exit codes.
+ */
+#define OK 		0
+#define REBOOT		1
+#define HARDERROR 	2
+#define SOFTERROR	3
+#define NOREBOOT	4
+
+/* 
+ * Status of entry in mount table. Starts off as CHILD_OK, changes to 
+ * CHILD_RUNNING while fscheck is running. If fscheck completes ok, 
+ * then status changes back to CHILD_OK to indicate that the prefix should 
+ * be attached. Otherwise the status changes to CHILD_FAILURE.
+ */
+#define CHILD_OK	0
+#define CHILD_RUNNING	1
+#define CHILD_FAILURE	2
+
+
+/* data structures */
+
+
+/*
+ * Information stored about active child processes.
+ */
+typedef struct {
+    int		pid;		/* process id of child */
+    int		mountIndex;	/* index in mount table that child corresponds
+				 * to */
+} ChildInfo;
+
+/*
+ * Used to build a linked list of arguments.
+ */
+typedef struct {
+    List_Links	links;		/* Used to make a list */
+    char	*arg;		/* Ptr to argument string */
+} ArgHeader;
+
+
+/*
+ * Information about arguments to fscheck. We build up a table of these
+ * for devices we haven't seen yet in the mount table. This allows "Arg"
+ * commands for a device to precede the "Attach" or "Export" command.
+ * Also arguments for "all" devices are kept in the table until the
+ * entire mount file is parsed.
+ */
+typedef struct {
+    char	source[MAX_FIELD_LENGTH]; 	/* name of device arguments
+						 * are for */
+    int		line;				/* line number of "args" cmd */
+    ArgHeader	argList;			/* list of arguments */
+} ArgInfo;
+
+/* 
+ * Entry in the mount table.
+ */
+typedef struct {
+    char	source[MAX_FIELD_LENGTH];	/* name of source device or
+						 * prefix */
+    char 	dest[MAX_FIELD_LENGTH];		/* name of destination prefix */
+    int		group;				/* check group of device */
+    Boolean	device;				/* TRUE => source is a device */
+    Boolean	export;				/* TRUE => export prefix */
+    Boolean	readonly;			/* TRUE => prefix should be
+						 * mounted as read only */
+    Boolean	doCheck;			/* device should be checked */
+    int		status;				/* status of this entry */
+    ArgInfo	argInfo;			/* arguments to fscheck */
+    Boolean	checked;			/* TRUE => fscheck was run */
+} MountInfo;
+
+/*
+ * Used to store information about groups (disks that cannot be checked
+ * at the same time.
+ */
+
+typedef struct {
+    char	name[MAX_FIELD_LENGTH];		/* name of group */
+    Boolean	running;			/* is there an fscheck
+						 * running for a device in
+						 * in this group? */
+} GroupInfo;
+
+/*
+ * Used to allocate memory.
+ */
+#define Alloc(ptr,type, number, msg) { \
+	(ptr) = (type *) malloc((unsigned) (sizeof(type) * (number))); \
+	if ((ptr) == NULL) { \
+	    (void) fprintf(stderr, "Out of memory: %s.\n",msg); \
+	    (void) exit(HARDERROR); \
+	} \
+    }
+
+/* 
+ * Handy comparison macros.
+ */
+#define min(a,b) (((a) < (b)) ? (a) : (b) )
+#define max(a,b) (((a) > (b)) ? (a) : (b) )
+
+/*
+ * Global variables.
+ */
+extern char		*progName;
+extern int		mountTableSize;
+extern int		mountTableSizeIncrement;
+extern char		*tempOutputFile;
+extern char		*heapLimitString;
+extern int		tempOutputFileSize;
+extern char		*outputDir;
+extern Boolean		verbose;
+extern MountInfo	*mountTable;
+extern Boolean		printOnly;
+extern char		*fscheckPath;
+extern char		*bootPrefix;
+extern int		numGroups;
+extern GroupInfo	*groupInfo;
+extern int		groupInfoSize;
+extern int		groupInfoSizeIncrement;
+extern int		debug;
+
+/*
+ * Global functions.
+ */
+extern	void		GetRecoveryInfo();
+extern	ReturnStatus	ParseMount();
+extern	ReturnStatus	CheckDisks();
+extern	void		CacheWriteBack();
+extern	ReturnStatus	RunChild();
+extern	void		StartExec();
+extern	void		AddExecArgs();
+extern	int		DoExec();
+extern	void		MoveRootOutput();
+extern	ReturnStatus	ParseConfig();
+extern  void		Prefix();
+extern  void		PrintFscheckError();
+extern	void		AddList();
+extern	void		MergeList();
+extern	void		DeleteList();
+extern  void		PreloadPrefixTable();
+extern	char		*GetAttachName();
+extern void		bzero();
+extern int		exit();
+
+#endif /* _FSATTACH */
+
+@
+
+
+1.6
+log
+@Uses groups instead of passes
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/admin/fsattach/RCS/fsattach.h,v 1.5 89/12/14 16:28:23 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+d37 1
+a37 1
+#include <diskUtils.h>
+d56 1
+d140 1
+d178 1
+a178 1
+extern char		*rootTempOutputFile;
+d180 1
+a180 1
+extern int		rootTempOutputFileSize;
+d191 1
+d212 1
+a212 1
+
+@
+
+
+1.5
+log
+@was opening /.fscheck.out, which is the wrong file on fileservers
+that do not boot standalone.  Now opens /bootTmp/.fscheck.out
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/admin/fsattach/RCS/fsattach.h,v 1.4 89/06/19 14:21:27 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+d131 1
+a131 2
+    int		pass;				/* pass on which to check
+						 * device */
+d142 12
+a180 1
+extern int		maxPass;
+a181 1
+extern int		*partsToDo;
+d185 4
+@
+
+
+1.4
+log
+@Added stuff to preload prefix table
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/admin/fsattach/RCS/fsattach.h,v 1.3 89/06/07 22:14:35 jhh Exp $ SPRITE (Berkeley)
+d175 1
+@
+
+
+1.3
+log
+@Spring cleaning - new mount table format, bug fixes
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/admin/fsattach/RCS/fsattach.h,v 1.2 89/04/10 11:12:25 jhh Exp $ SPRITE (Berkeley)
+d194 1
+@
+
+
+1.2
+log
+@First working version
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/users/jhh/fsattach/RCS/fsattach.h,v 1.1 89/03/06 12:58:47 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+d26 1
+a49 10
+ * Default values for variables that can be modified in configuration file.
+ */
+#define DEFAULT_MAX_MOUNT_ENTRIES 	30
+#define DEFAULT_ROOT_TEMP_NAME 		".fscheck.out"
+#define DEFAULT_OUTPUT_DIR 		"/local"
+#define DEFAULT_HEAP_LIMIT		"1000000"
+#define DEFAULT_ROOT_TEMP_SIZE 		8192
+#define DEFAULT_FSCHECK_PATH		"fscheck"
+
+/*
+d91 33
+d139 1
+a142 10
+ * Information stored about active child processes.
+ */
+typedef struct {
+    int		pid;		/* process id of child */
+    int		mountIndex;	/* index in mount table that child corresponds
+				 * to */
+} ChildInfo;
+
+
+/*
+d164 1
+d191 3
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.2 89/01/07 04:12:44 rab Exp $ SPRITE (Berkeley)
+d40 3
+d48 3
+d56 9
+d66 6
+a71 3
+#define FSCHECK_OK		0
+#define FSCHECK_SOFT_ERROR	1
+#define FSCHECK_OUT_OF_MEMORY	2
+d73 4
+a76 6
+#define FSCHECK_HARD_ERROR	-1
+#define FSCHECK_READ_FAILURE	-2
+#define FSCHECK_WRITE_FAILURE	-3
+#define FSCHECK_BAD_ARG		-4
+#define FSCHECK_MORE_MEMORY	-5
+#define FSCHECK_DISK_FULL	-6
+d78 3
+d85 11
+d97 1
+d100 3
+d104 11
+a114 9
+    char	source[MAX_FIELD_LENGTH];
+    char 	dest[MAX_FIELD_LENGTH];
+    int		pass;
+    Boolean	device;
+    Boolean	export;
+    Boolean	root;
+    Boolean	readonly;
+    Boolean	doCheck;
+    int		status;
+d117 3
+d121 3
+a123 2
+    int		pid;
+    int		mountIndex;
+d127 3
+d138 3
+d144 3
+d158 1
+d160 3
+a162 1
+
+@

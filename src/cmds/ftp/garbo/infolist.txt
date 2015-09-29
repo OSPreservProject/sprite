@@ -1,0 +1,35 @@
+This information is above all directed to long-standing users of
+garbo.uwasa.fi, preferably with an upload record, or some other
+background of mutually useful communication with garbo moderators. 
+
+Tue 4-Feb-92: If you are interested in having your email address
+added to the garbo-infolist upload accouncement, download
+statistics, etc news list you are welcome to email me an
+"application".  Your application must include the following line
+  YourFirstName YourLastName = youruserid@machine.domain.country
+eg mine would be
+  Timo Salmi = ts@chyde.uwasa.fi 
+Be very careful to get this information right.  It is absolutely
+essential.  Unless we know each other well from earlier contacts on
+the net, you should also clearly state your status, affiliation, and
+reasons for wanting to be on this list, since I cannot make this a
+completely open offer.  Eg I would state
+  Professor of Accounting and Business Finance
+  School of Business Studies, University of Vaasa, Finland
+  I want to help in propagation of shareware and PD MsDos programs
+  and in order to do that I need information of the new uploads to
+  your anonymous ftp archives.  I would get selected files from your
+  list, and put them up for general download on my system.
+  (Then eg some information about my computer usage background,
+   etc).
+	
+Mon 24-Jun-91: Note that not all our new files are announced on
+garbo-infolist (nor the news) but only a select set of interesting
+files.  Thus you might also be interested in occasionally looking
+at the raw list /pc/_files.in at your own pace.
+
+..................................................................
+Prof. Timo Salmi
+Moderating at garbo.uwasa.fi anonymous FTP archives 128.214.87.1
+Faculty of Accounting & Industrial Management; University of Vaasa
+Internet: ts@uwasa.fi Bitnet: salmi@finfun   ; SF-65101, Finland

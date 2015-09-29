@@ -1,0 +1,180 @@
+Segment number 227
+Addr 233557 Summary Time 23717 PrevSeg 226 NextSeg 228 bytes 156 NextSum 221
+Addr 233345 File 12102 blocks 211 version 1 dataBlocks 27 alive
+Addr 233553 File 12102 block 201 alive
+Addr 233545 File 12102 block 200 alive
+Addr 233537 File 12102 block 199 alive
+Addr 233529 File 12102 block 198 alive
+Addr 233521 File 12102 block 197 alive
+Addr 233513 File 12102 block 196 alive
+Addr 233505 File 12102 block 195 alive
+Addr 233497 File 12102 block 194 alive
+Addr 233489 File 12102 block 193 alive
+Addr 233481 File 12102 block 192 alive
+Addr 233473 File 12102 block 191 alive
+Addr 233465 File 12102 block 190 alive
+Addr 233457 File 12102 block 189 alive
+Addr 233449 File 12102 block 188 alive
+Addr 233441 File 12102 block 187 alive
+Addr 233433 File 12102 block 186 alive
+Addr 233425 File 12102 block 185 alive
+Addr 233417 File 12102 block 184 alive
+Addr 233409 File 12102 block 183 alive
+Addr 233401 File 12102 block 182 alive
+Addr 233393 File 12102 block 181 alive
+Addr 233385 File 12102 block 180 alive
+Addr 233377 File 12102 block 179 alive
+Addr 233369 File 12102 block 178 alive
+Addr 233361 File 12102 block 177 alive
+Addr 233353 File 12102 block 49 alive
+Addr 233345 File 12102 block -1 alive
+Addr 233337 Descriptor File 12102 len 824744 alive
+Addr 233337 Summary Time 23719 PrevSeg 226 NextSeg 228 bytes 48 NextSum 238
+Addr 233328 DescMap Block 35 dead
+Addr 233321 UsageArray Block 0 dead
+Addr 233320 Summary Time 23920 PrevSeg 226 NextSeg 228 bytes 120 NextSum 275
+Addr 233318 LogSeqNum 24 CREATE-START-END 20568 "Aug.28.00" links 1 in 20558 at 204
+Addr 233318 LogSeqNum 25 CREATE-START-END 23693 "Aug.28.00" links 1 in 23680 at 264
+Addr 233317 File 20558 blocks 1 version 0 dataBlocks 1 alive
+Addr 233317 File 20558 block 0 dead
+Addr 233309 Descriptor Dir 20558 len 512 dead
+Addr 233309 Descriptor File 20568 len 0 dead
+Addr 233309 Descriptor Dir 23680 len 512 dead
+Addr 233309 Descriptor File 23693 len 48 dead
+Addr 233308 File 23680 blocks 1 version 0 dataBlocks 1 alive
+Addr 233308 File 23680 block 0 dead
+Addr 233307 File 23693 blocks 1 version 0 dataBlocks 1 alive
+Addr 233307 File 23693 block 0 dead
+Addr 233300 DescMap Block 60 dead
+Addr 233292 DescMap Block 69 dead
+Addr 233285 UsageArray Block 0 dead
+Addr 233283 Summary Time 23923 PrevSeg 226 NextSeg 228 bytes 52 NextSum 285
+Addr 233281 File 20568 blocks 1 version 0 dataBlocks 1 alive
+Addr 233281 File 20568 block 0 dead
+Addr 233273 Descriptor File 20568 len 53 dead
+Addr 233273 Summary Time 23925 PrevSeg 226 NextSeg 228 bytes 36 NextSum 294
+Addr 233264 DescMap Block 60 dead
+Addr 233264 Summary Time 23928 PrevSeg 226 NextSeg 228 bytes 116 NextSum 385
+Addr 233206 File 20568 blocks 57 version 0 dataBlocks 8 alive
+Addr 233262 File 20568 block 7 dead
+Addr 233254 File 20568 block 6 alive
+Addr 233246 File 20568 block 5 alive
+Addr 233238 File 20568 block 4 alive
+Addr 233230 File 20568 block 3 alive
+Addr 233222 File 20568 block 2 alive
+Addr 233214 File 20568 block 1 alive
+Addr 233206 File 20568 block 0 alive
+Addr 233198 Descriptor File 20568 len 28725 dead
+Addr 233198 Descriptor File 23693 len 4144 dead
+Addr 233189 File 23693 blocks 9 version 0 dataBlocks 2 alive
+Addr 233197 File 23693 block 1 dead
+Addr 233189 File 23693 block 0 alive
+Addr 233182 DescMap Block 60 dead
+Addr 233174 DescMap Block 69 dead
+Addr 233173 Summary Time 23931 PrevSeg 226 NextSeg 228 bytes 76 NextSum 412
+Addr 233163 File 20568 blocks 9 version 0 dataBlocks 2 alive
+Addr 233171 File 20568 block 8 dead
+Addr 233163 File 20568 block 7 alive
+Addr 233155 Descriptor File 20568 len 32821 dead
+Addr 233155 Descriptor File 23693 len 8240 dead
+Addr 233146 File 23693 blocks 9 version 0 dataBlocks 2 alive
+Addr 233154 File 23693 block 2 dead
+Addr 233146 File 23693 block 1 alive
+Addr 233146 Summary Time 23932 PrevSeg 226 NextSeg 228 bytes 24 NextSum -1
+Addr 233103 Summary Time 23937 PrevSeg 226 NextSeg 228 bytes 108 NextSum 517
+Addr 233059 File 20568 blocks 43 version 0 dataBlocks 6 alive
+Addr 233099 File 20568 block 12 alive
+Addr 233091 File 20568 block 11 alive
+Addr 233083 File 20568 block 10 alive
+Addr 233075 File 20568 block 9 alive
+Addr 233067 File 20568 block 8 alive
+Addr 233059 File 20568 block -1 alive
+Addr 233051 Descriptor File 20568 len 50671 alive
+Addr 233051 Descriptor File 23693 len 12336 dead
+Addr 233051 Descriptor File 15813 len 51 dead
+Addr 233042 File 23693 blocks 9 version 0 dataBlocks 2 alive
+Addr 233050 File 23693 block 3 dead
+Addr 233042 File 23693 block 2 alive
+Addr 233041 File 15813 blocks 1 version 0 dataBlocks 1 alive
+Addr 233041 File 15813 block 0 dead
+Addr 233041 Summary Time 23939 PrevSeg 226 NextSeg 228 bytes 44 NextSum 542
+Addr 233032 DescMap Block 60 dead
+Addr 233024 DescMap Block 69 dead
+Addr 233016 DescMap Block 46 dead
+Addr 233016 Summary Time 23942 PrevSeg 226 NextSeg 228 bytes 72 NextSum 576
+Addr 232998 File 23693 blocks 17 version 0 dataBlocks 3 alive
+Addr 233014 File 23693 block 5 dead
+Addr 233006 File 23693 block 4 alive
+Addr 232998 File 23693 block 3 alive
+Addr 232990 Descriptor File 23693 len 20528 dead
+Addr 232983 DescMap Block 69 dead
+Addr 232982 Summary Time 23946 PrevSeg 226 NextSeg 228 bytes 96 NextSum 599
+Addr 232980 LogSeqNum 27 CREATE-START-END 15289 "Aug.28.00" links 1 in 15277 at 244
+Addr 232969 File 23693 blocks 11 version 0 dataBlocks 2 alive
+Addr 232977 File 23693 block 6 alive
+Addr 232969 File 23693 block 5 alive
+Addr 232961 Descriptor File 23693 len 26102 alive
+Addr 232961 Descriptor Dir 15277 len 512 dead
+Addr 232961 Descriptor File 15289 len 48 dead
+Addr 232960 File 15277 blocks 1 version 0 dataBlocks 1 alive
+Addr 232960 File 15277 block 0 dead
+Addr 232959 File 15289 blocks 1 version 0 dataBlocks 1 alive
+Addr 232959 File 15289 block 0 dead
+Addr 232959 Summary Time 23948 PrevSeg 226 NextSeg 228 bytes 168 NextSum 809
+Addr 232789 File 15813 blocks 169 version 0 dataBlocks 22 alive
+Addr 232957 File 15813 block 20 dead
+Addr 232949 File 15813 block 19 alive
+Addr 232941 File 15813 block 18 alive
+Addr 232933 File 15813 block 17 alive
+Addr 232925 File 15813 block 16 alive
+Addr 232917 File 15813 block 15 alive
+Addr 232909 File 15813 block 14 alive
+Addr 232901 File 15813 block 13 alive
+Addr 232893 File 15813 block 12 alive
+Addr 232885 File 15813 block 11 alive
+Addr 232877 File 15813 block 10 alive
+Addr 232869 File 15813 block 9 alive
+Addr 232861 File 15813 block 8 alive
+Addr 232853 File 15813 block 7 alive
+Addr 232845 File 15813 block 6 alive
+Addr 232837 File 15813 block 5 alive
+Addr 232829 File 15813 block 4 alive
+Addr 232821 File 15813 block 3 alive
+Addr 232813 File 15813 block 2 alive
+Addr 232805 File 15813 block 1 alive
+Addr 232797 File 15813 block 0 alive
+Addr 232789 File 15813 block -1 dead
+Addr 232781 Descriptor File 15813 len 81971 dead
+Addr 232774 DescMap Block 44 dead
+Addr 232766 DescMap Block 69 dead
+Addr 232758 DescMap Block 46 dead
+Addr 232751 UsageArray Block 0 dead
+Addr 232749 Summary Time 23952 PrevSeg 226 NextSeg 228 bytes 156 NextSum -1
+Addr 232747 LogSeqNum 28 CREATE-START-END 7410 "Aug.28.00" links 1 in 7400 at 204
+Addr 232539 File 15813 blocks 208 version 0 dataBlocks 26 alive
+Addr 232739 File 15813 block 46 alive
+Addr 232731 File 15813 block 45 alive
+Addr 232723 File 15813 block 44 alive
+Addr 232715 File 15813 block 43 alive
+Addr 232707 File 15813 block 42 alive
+Addr 232699 File 15813 block 41 alive
+Addr 232691 File 15813 block 40 alive
+Addr 232683 File 15813 block 39 alive
+Addr 232675 File 15813 block 38 alive
+Addr 232667 File 15813 block 37 alive
+Addr 232659 File 15813 block 36 alive
+Addr 232651 File 15813 block 35 alive
+Addr 232643 File 15813 block 34 alive
+Addr 232635 File 15813 block 33 alive
+Addr 232627 File 15813 block 32 alive
+Addr 232619 File 15813 block 31 alive
+Addr 232611 File 15813 block 30 alive
+Addr 232603 File 15813 block 29 alive
+Addr 232595 File 15813 block 28 alive
+Addr 232587 File 15813 block 27 alive
+Addr 232579 File 15813 block 26 alive
+Addr 232571 File 15813 block 25 alive
+Addr 232563 File 15813 block 24 alive
+Addr 232555 File 15813 block 23 alive
+Addr 232547 File 15813 block 22 alive
+Addr 232539 File 15813 block 21 alive

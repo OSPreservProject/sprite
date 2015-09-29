@@ -1,0 +1,1 @@
+../../dist/t/op/array.t

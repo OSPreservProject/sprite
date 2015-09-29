@@ -1,0 +1,203 @@
+.\"
+.\" Startup.man
+.\"
+.\" Extended Tcl binary file search command.
+.\"----------------------------------------------------------------------------
+.\" Copyright 1992 Karl Lehenbauer and Mark Diekhans.
+.\"
+.\" Permission to use, copy, modify, and distribute this software and its
+.\" documentation for any purpose and without fee is hereby granted, provided
+.\" that the above copyright notice appear in all copies.  Karl Lehenbauer and
+.\" Mark Diekhans make no representations about the suitability of this
+.\" software for any purpose.  It is provided "as is" without express or
+.\" implied warranty.
+.\"----------------------------------------------------------------------------
+.\" $Id: Startup.man,v 2.0 1992/10/16 04:49:13 markd Rel $
+.\"----------------------------------------------------------------------------
+.\"
+.TH "Tcl_Startup" TCL "" "Tcl"
+.ad b
+.SH NAME
+Tcl_ShellEnvInit, Tcl_Startup, Tcl_CommandLoop, Tcl_ErrorAbort - Extended Tcl
+Shell startup facilities.
+'
+.SH SYNOPSIS
+.nf
+.ft CW
+#include "tclExtend.h"
+
+extern char *tclAppName;
+extern char *tclAppLongname;
+extern char *tclAppVersion;
+
+int
+Tcl_ShellEnvInit (Tcl_Interp  *interp,
+                  unsigned     options,
+                  const char  *programName,
+                  int          argc,
+                  const char **argv,
+                  int          interactive,
+                  const char  *defaultFile);
+
+void
+Tcl_Startup (Tcl_Interp  *interp,
+             int          argc,
+             const char **argv,
+             const char  *defaultFile,
+             unsigned     options);
+
+void
+Tcl_CommandLoop (Tcl_Interp *interp,
+                 FILE       *inFile,
+                 FILE       *outFile,
+                 int         (*evalProc) (),
+                 unsigned    options);
+
+void
+Tcl_ErrorAbort (Tcl_Interp  *interp,
+                int          exitCode);
+
+.ft R
+.fi
+.SH DESCRIPTION
+These commands control the startup of a Tcl shell and related functions.
+They allow any program to use Tcl shell functionality such as default
+and initialization files and Tcl package libraries.
+'
+.SS tclAppName
+The application name to be returned by the \fBinfox\fR
+command. This should be a short mnemonic.  If a special value is
+desired, it must be set before one of the startup procedures are called.
+'
+.SS tclAppLongname
+The application long name to be returned by the \fBinfox\fR command.
+This should be a natural language string.  If a special value is desired, it
+must be set before one of the startup procedures are called.
+'
+.SS tclAppVersion
+The application version string to be returned by the \fBinfox\fR command.  If
+a special value is desired, it must be set before one of the startup
+procedures are called.
+'
+.SS Tcl_ShellEnvInit
+.PP
+Setup the environment used by the Tcl shell.  Global variables used 
+by the shell are initialized and the TCLDEFAULT file is located and
+processed.  This is normally done as part of Tcl_Startup, however this
+interface is provided for application that want to use the Tcl features,
+such as libraries, without using the standard command loop.  Windowed
+applications require this, since input is done via an event loop.
+.PP
+Parameters:
+.RS 2
+\fBo \fIinterp\fR - A pointer to the interpreter.
+.br
+\fBo \fIoptions\fR - Flags to control the behavior of this routine, the
+following option is supported:
+.RE
+.br
+.RS 5
+\fB- TCLSH_QUICK_STARTUP\fR - Don't source the default file or Tcl init file.
+.br
+\fB- TCLSH_ABORT_STARTUP_ERR\fR - If set, abort the process if an error occurs.
+.br
+\fB- TCLSH_NO_INIT_FILE\fR - If set, process the default file, but not the
+init file.  This can be used to make the default file do all initialization.
+.RE
+.sp
+.RS 2
+o \fIprogramName\fR - The name of the program being executed, usually
+taken from the main argv [0].  Used to set the Tcl variable.  If NULL
+then the variable will not be set.
+.br
+o \fIargc, argv\fR - Arguments to pass to the program in a Tcl list variable
+`argv'.  Argv [0] should contain the first argument, not the program
+name. If argv is NULL, then the variable will not be set.
+.br
+o \fIinteractive\fR - The value to assign to the `interactiveSession' Tcl
+variable. TRUE if an interactive Tcl command loop will be entered,
+FALSE if a script will be executed .  The function does not enter the
+command loop, it just sets the variable.
+.br
+o \fIdefaultFile\fR - The file name of the default file to use.  If NULL,
+then the standard Tcl default file is used, which is formed from a
+location specified at compile time and the Extended Tcl version number.
+.RE
+.PP
+Notes:
+.RS 2
+The variables \fBtclAppName\fR, \fBtclAppLongname\fR, \fBtclAppVersion\fR 
+must be set before calling thus routine if special values are desired.
+.RE
+.PP
+Returns:
+.RS 2
+\fBTCL_OK\fR if all is ok, \fBTCL_ERROR\fR if an error occurred.
+.RE
+'
+.SS Tcl_Startup
+.PP
+Initializes the Tcl extended environment.  This function processes the
+standard command line arguments and locates the Tcl default file.  It then
+sources the default file and initialization file pointed to by the default
+file.  Either an interactive command loop is created or a Tcl script file
+is executed depending on the command line.  This functions calls
+Tcl_ShellEnvInit, so it should not be called separately.
+.PP
+Parameters
+.RS 2
+\fBo \fIinterp\fR - A pointer to the interpreter.
+.br
+\fBo \fIargc, argv\fR - Arguments passed to main for the command line.
+.br
+\fBo \fIdefaultFile\fR (I) - The file name of the default file to use.  If
+NULL, then the standard Tcl default file is used, which is formed from a
+location specified at compile time and the Extended Tcl version number.
+.br
+\fBo \fIoptions\fR - Options that control startup behavior.  None are currently
+defined.
+.RE
+.PP
+Notes:
+.RS 2
+The variables \fBtclAppName\fR, \fBtclAppLongname\fR, \fBtclAppVersion\fR
+must be set before calling thus routine if special values are desired.
+.RE
+'
+.SS Tcl_CommandLoop
+.PP
+Run a Tcl command loop.  The command loop interactively prompts for,
+reads and executes commands. Two entries in the global array TCLENV
+contain prompt hooks.  A prompt hook is Tcl code that is executed and
+its result is used as the prompt string.  The element `topLevelPromptHook'
+is the hook that generates the main prompt.  The element
+`downLevelPromptHook' is the hook to generate the prompt for reading
+continuation lines for incomplete commands.  If a signal occurs while
+in the command loop, it is reset and ignored.  EOF terminates the loop.
+.PP
+Parameters:
+.RS 2
+\fBo \fIinterp\fR - A pointer to the interpreter
+.br
+\fBo \fIinFile\fR - The file to read commands from.
+.br
+\fBo \fIoutFile\fR - The file to write the prompts to. 
+.br
+\fBo \fIevalProc\fR - The function to call to evaluate a command.
+Should be either Tcl_Eval or Tcl_RecordAndEval if history is desired.
+.br
+\fBo \fIoptions\fR - Currently unused.
+.RE
+'
+.SS Tcl_ErrorAbort
+.PP
+Display error information and abort when an error is returned in the
+\fIinterp->result\fR.
+.PP
+Parameters:
+.RS 2
+\fBo \fIinterp\fR - A pointer to the interpreter, should contain the
+error message in `result'.
+.br
+\fBo \fIexitCode\fR - The code to pass to exit.
+.RE

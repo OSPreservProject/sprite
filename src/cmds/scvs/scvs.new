@@ -1,0 +1,2364 @@
+#! /sprite/cmds/perl 
+#
+#   Scvs is the "Sprite Concurrent Version System", pronounced "skivies".
+#   It is a Perl script wrapper for cvs.  See the cvs man page for more
+#   details.
+#
+# $Header: /sprite/src/cmds/scvs/RCS/scvs,v 1.13 91/10/31 13:08:52 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+#
+# Copyright 1991 Regents of the University of California
+# Permission to use, copy, modify, and distribute this
+# software and its documentation for any purpose and without
+# fee is hereby granted, provided that this copyright
+# notice appears in all copies.  The University of California
+# makes no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without
+# express or implied warranty.
+#
+
+require "option.pl";
+require "pwd.pl";
+require "ctime.pl";
+require "stat.pl";
+
+$recurse = 1;
+$verbose = 0;
+$linkFile = "links";
+$debug = 0;
+$configFile = "SCVS.config";
+$argFile = "args";
+$modNameFile = "moduleName";
+$userFile = "SCVS/users";
+
+@options = (
+    $OPT_NIL, $OPT_DOC, $OPT_NIL, 
+	"Usage: scvs [scvs options] command [command options]",
+    "V", $OPT_TRUE, *verbose, "Verbose",
+    "D", $OPT_TRUE, *debug, "Debug",
+    "r", $OPT_FUNC, "CvsOpt1", "Check out files read-only",
+    "w", $OPT_FUNC, "CvsOpt1", "Check out files read-write (default)",
+    "v", $OPT_FUNC, "CvsOpt1", "Print cvs version info",
+    "d", $OPT_STRING, *cvsroot, "Specify cvs root directory",
+    "e", $OPT_FUNC, "CvsOpt1", "Specify editor to use",
+    "H", $OPT_FUNC, "CvsOpt1", "Print help information",
+);
+undef($cvsargs);
+&Opt_Parse(*ARGV, @options, $OPT_OPTIONS_FIRST);
+if ($debug) {
+    $verbose = 1;
+}
+$cvsCmdArgs = $cvsargs;
+
+@cvsCmds = ("join", "patch", "tag");
+
+#
+# Global variables.
+#
+#	%moduleToRepos  maps module name to its relative path within the
+#			repository
+#	%reposToModule	reverse mapping of moduleToRepos
+#	%cwdToMod	maps current working directory to module name
+#	%cwdToRoot	maps current working directory within a module copy
+#			to the root dir of the module copy
+#
+
+#
+# Config
+#
+# Find the configuration file and set up various configuration variables.
+#
+# Results: 0 if successful, 1 otherwise
+# 
+# Side effects: Some variables are set.
+#
+
+sub Config {
+    local($pwd) = $ENV{'PWD'};
+    local($stat, $lastStat) = (0, 0);
+    local($tmp);
+    local(@attempts);
+
+    #
+    # Work our way up the directory tree looking for the config file.
+    #
+    while(! -e $configFile) {
+	push(@attempts, $ENV{'PWD'});
+	&Chdir("..") == 0 || return 1;
+	&Stat(".");
+	$stat = $st_dev . $st_ino . $st_serverID;
+	last if ($stat eq $lastStat);
+	$lastStat = $stat;
+    }
+    if (! -e $configFile) {
+	printf("Couldn't find configuration file\n");
+	foreach $tmp (@attempts) {
+	    printf("Not in $tmp\n");
+	}
+	return 1;
+    }
+    open(CONFIG, "$configFile") || die("Can't open $configFile: $!\n");
+    while(<CONFIG>) {
+	next if (/^\s*#/);
+	if (/^cvsroot:\s+(\S+)\s*$/) {
+	    if (!defined($cvsroot)) {
+		$cvsroot = $1;
+	    }
+	} elsif(/^installdir:\s+(\S+)\s*$/) {
+	    $installdir = $1;
+	}
+    }
+    close(CONFIG);
+    if (!defined($cvsroot)) {
+	printf("cvsroot not set in config file\n");
+	return 1;
+    }
+    &Chdir("$pwd") == 0 || return 1;
+    return 0;
+}
+
+#
+# PackCmd($command, @dirs)
+#
+# Runs a Pack or Unpack command on each of the directories in the list.
+#
+# Results: 0 if successful, 1 otherwise
+#
+# Side effects:  The link file is modified.
+#
+
+sub PackCmd {
+    local($command) = shift;
+    local(@dirs) = @_;
+    local($status) = 0;
+    local($pwd) = $ENV{'PWD'};
+
+    if ($#dirs < $[) {
+	push(@dirs, '.');
+    }
+    foreach $dir (@dirs) {
+	&Chdir($dir) == 0 || return 1; 
+	if ($command eq "pack") {
+	    $status = &Pack($dir);
+	} else {
+	    $status = &Unpack($dir);
+	}
+	if ($status) {
+	    return $status;
+	}
+	&Chdir($pwd) == 0 || return 1; 
+    }
+}
+#
+# Pack($path)
+#
+# Finds all symbolic links in the current directory and puts them in the
+# link file.  The links are stored in alphabetical
+# order.  If $recurse is non-zero, Pack will call itself to recurse on
+# subdirectories.
+#
+# Results: 0 if successful, 1 otherwise
+#
+# Side effects: The link file is modified.
+#
+
+sub Pack {
+    local($path) = shift;
+    local($addDir) = 0;
+    local($addFile) = 0;
+    local(%links);
+    local($link);
+
+    #
+    # Don't pack SCVS subdirectories.
+    #
+    if ($path =~ m|.*/SCVS|) {
+	return 0;
+    }
+    printf(STDERR "Packing $path\n") if ($debug);
+    $addDir = (-d "SCVS") ? 0 : 1;
+    $addFile = (-f "SCVS/$linkFile") ? 0 : 1;
+    opendir(THISDIR, ".") || return &Error(1, "Opendir of $path failed: $!\n");
+    foreach $link (grep(-l, readdir(THISDIR))) {
+	printf(STDERR "$link\n") if ($debug);
+	$links{$link} = readlink($link);
+    }
+    close(THISDIR);
+    if (defined(%links) || (!$addFile)) {
+	if ($addDir) {
+	    mkdir("SCVS", 0770) ||
+		return &Error(1, "Mkdir of SCVS failed: $!\n");
+	}
+	if (open(PACK, ">SCVS/$linkFile") == 0) {
+	    printf("Can't open $linkFile: $!\n");
+	    $status = 1;
+	    last;
+	}
+	printf(PACK 
+	    "# This file is used by scvs and contains symbolic link\n");
+	printf(PACK 
+	    "# information.  Each line is of the form \"link target\"\n");
+	printf(PACK "# \$Header\n");
+	foreach $link (sort keys %links) {
+	    printf(PACK "%-24s %s\n", $link, $links{$link});
+	}
+	close(PACK);
+	if ($addFile && (-e "CVS.adm")) {
+	    if ($addDir) {
+		system("cvs -d $cvsroot add SCVS");
+	    }
+	    system("cvs -d $cvsroot add -m\"scvs links\" SCVS/$linkFile");
+	}
+    } 
+    if ($recurse) {
+	$status = &AllSubdirs($path, "Pack");
+    }
+    return $status;
+}
+
+#
+# Unpack($path)
+#
+# Reads the link file in the current directory and creates symbolic links
+# from its contents. If recurse is non-zero, Unpack will call itself to 
+# recurse on subdirectories.
+#
+# Results: 0 if successful, 1 otherwise
+#
+# Side effects: Symbolic links may be created in the current directory
+#
+sub Unpack {
+    local($path) = shift;
+    local($status) = 0;
+
+    printf(STDERR "Unpacking $path\n") if ($debug);
+    if (open(UNPACK, "SCVS/$linkFile")) {
+	while(<UNPACK>) {
+	    next if (/^#/);
+	    if (/(\S+)\s+(\S+)/) {
+		($link, $value) = ($1, $2);
+		if (-l $link) {
+		    $old = readlink($link);
+		    if ($old ne $value) {
+			printf(
+			"Changing $link -> $value, instead of -> $old\n");
+			unlink($link);
+		    } else {
+			next;
+		    }
+		} elsif (-e $link) {
+		    printf("File $link already exists.\n");
+		    $status = 1;
+		    next;
+		} elsif ($verbose) {
+		    printf("Creating: $link -> $value\n");
+		}
+		if (symlink($value, $link) == 0) { 
+		    printf("Can't create link from $link to $value: $!");
+		    $status = 1;
+		}
+	    }
+	}
+	close(UNPACK);
+    }
+    if ($recurse) {
+	$status = &AllSubdirs($path, "Unpack");
+    }
+    return $status;
+}
+
+#
+# Repository(module)
+#
+# Finds the pathname of the repository directory for the given module.
+#
+# Results: The pathname
+#
+# Side effects: 
+#
+
+sub Repository {
+    local($tmp);
+    $tmp = &ReadFile("$_[0]/CVS.adm/Repository", 1);
+    if (defined($tmp)) {
+	chop($tmp);
+	return "$cvsroot/$tmp"; 
+    }
+    return undef;
+}
+
+#
+# Prune($path)
+#
+# Removes the given directory if it is empty (no user files or subdirectories).
+# Recurses on subdirectories.
+#
+# Results: 0 if successful, 1 otherwise
+#
+# Side effects: The directory or its subdirectories may be removed.
+#
+
+sub Prune {
+    local($path) = shift;
+    local($i);
+    local($status) = 0;
+    local($empty) = 1;
+    local($tail) = substr($path, rindex($path, '/') + 1);
+
+    if ($tail eq "SCVS") {
+	return 0;
+    }
+    print "Pruning $path\n" if ($debug);
+    $status = &AllSubdirs($path, "Prune");
+    if ($status) {
+	return $status;
+    }
+    opendir(THISDIR, ".") || 
+	return &Error(1, "Opendir of $path failed: $!\n"); 
+    @contents = grep((-f) || ((!/\./) && ($_ ne 'CVS.adm') && ($_ ne 'SCVS')));
+    if ($#contents >= $[
+	print "Found @contents in $path\n" if ($debug);
+	$empty = 0;
+    }
+    close(THISDIR);
+    if ($empty) {
+	print "Prune: chdir to ..\n" if ($debug);
+	&Chdir("..") == 0 || return 1;
+	print "Prune: deleting $tail\n" if ($debug);
+	system("rm -rf $tail");
+    }
+    return 0;
+}
+
+#
+# CvsOpt1($optString, $nextArg)
+#
+# Appends $optString to $cvsargs.
+#
+# Results: 0 
+#
+# Side effects: None
+#
+sub CvsOpt1 {
+    printf("CvsOpt1 @_\n") if ($debug);
+    $cvsargs .= "$_[0] ";
+    return 0;
+}
+
+#
+# CvsOpt2($optString, $nextArg)
+#
+# Appends $optString and $nextArg to $cvsargs.
+#
+# Results: 1
+#
+# Side effects: None
+#
+sub CvsOpt2 {
+    printf("CvsOpt2 @_\n") if ($debug);
+    $cvsargs .= "$_[0] \"$_[1]\" ";
+    return 1;
+}
+
+
+#
+# Checkout(@modules)
+#
+# Checks out modules.  "cvs co" is used to make a copy of the module. 
+# Unpack is used to unpack symbolic links.  
+# The current user name is added to the SCVS.users
+# file and a list of any other users with a copy of the module are 
+# printed.  Any options passed to "cvs co" are stored in the SCVS/args
+# file to be used on subsequent updates.
+#
+# Results: 0 if successful, 1 otherwise
+#
+# Side effects: A subdirectory is created for each module.
+#
+
+sub Checkout {
+    local(@modules) = @_;
+    local($buffer, $i,$repos, $user, $date, %count, %dates);
+    local($found, $name);
+    local($prune) = 1;
+    local($personal) = 0;
+    local($args);
+    local(@options) = ( 
+	"l", $OPT_FALSE, *recurse, "Don't recurse.",
+	"P", $OPT_FALSE, *prune, "Don't prune empty directories.",
+	"i", $OPT_TRUE, *personal, "Deviation from standard source tree",
+	"f", $OPT_FUNC, "CvsOpt1", $OPT_NULL,
+	"c", $OPT_FUNC, "CvsOpt1", $OPT_NULL,
+	"Q", $OPT_FUNC, "CvsOpt1", $OPT_NULL,
+	"q", $OPT_FUNC, "CvsOpt1", $OPT_NULL,
+	"f", $OPT_FUNC, "CvsOpt1", $OPT_NULL,
+	"n", $OPT_FUNC, "CvsOpt1", $OPT_NULL,
+	"p", $OPT_FUNC, "CvsOpt1", $OPT_NULL,
+	"r", $OPT_FUNC, "CvsOpt2", $OPT_NULL,
+	"D", $OPT_FUNC, "CvsOpt2", $OPT_NULL,
+     );
+
+    undef($cvsargs);
+    &Opt_Parse(*modules, @options, $OPT_OPTIONS_FIRST | $OPT_NO_SPACE);
+    $args = $cvsargs;
+
+    # Put together the "cvs co" command.
+
+    $buffer = "cvs -d $cvsroot $cvsCmdArgs co $args";
+
+    if ($args =~ /-c/) {
+	system("$buffer");
+	return 0;
+    }
+   if (($args =~ /-r/) || ($args =~ /-D/)) {
+	$buffer .= "-f ";
+    }
+    $status = &Lock("r", @modules);
+    if ($status) {
+	return $status;
+    }
+    $user = getlogin;
+    print "@modules\n" if ($debug);
+
+module:
+    foreach $i (@modules) {
+	local($pwd) = $ENV{'PWD'};
+
+	printf("Checking out $i\n") if ($debug);
+	# Perform the "cvs co".
+
+	printf("$buffer $i \n") if ($debug);
+	system("$buffer $i");
+
+	# Store the "cvs co" arguments in the info file.
+
+	if (! -d "$i/SCVS") {
+	    if (!mkdir("$i/SCVS", 0770)) {
+		$status = &Error(1, "Mkdir of $i/SCVS failed: $!\n");
+		next module;
+	    }
+	}
+	if (!open(CO, ">$i/SCVS/$argFile")) {
+	    $status = &Error(1, "Open of $i/SCVS/$argFile failed: $!\n");
+	    next module;
+	}
+	print(CO "# This file contains the arguments given when this\n");
+	print(CO "# module was checked out.\n");
+	print(CO "$cvsCmdArgs\n");
+	printf(CO "$args %s\n", $prune ? "-p" : " ");
+	close(CO);
+
+	&Chdir($i) == 0 || return 1; 
+
+	# Unpack the module.
+	&Unpack($i) == 0 || return &Error("Unpack of $i failed\n");
+
+	# Prune any empty directories in the module.
+	if ($prune) {
+	    &Prune($i) == 0 || return &Error(1, "Prune of $i failed\n");
+	}
+
+	&Chdir($pwd) == 0 || return 1; 
+
+	# See if any other users have a copy of the module, and add our
+	# own entry.
+
+	$repos = &Repository($i);
+	next module if (!defined($repos));
+	$date = &ctime(time);
+	open(CO2, ">$repos/$tmpfile") ||
+	    return &Error(1, "Open of $repos/$tmpfile failed: $!\n");
+	if (-e "$repos/$userFile") {
+	    local($copy) = 0;
+	    open(CO1, "$repos/$userFile") ||
+		return &Error(1, "Open of $repos/$userFile failed: $!\n");
+	    while(<CO1>) {
+		$copy = 0;
+		next if (/^#/);
+		if (/^$user\s+([\w\/\.]+)\s+(.*)/) {
+		    if ($1 eq "$pwd/$i") {
+			$copy = 1;
+		    } else {
+			$found = 1;
+			push(@mine, $_);
+		    }
+		} elsif (/^(\S+)\s+([\w\/\.]+)\s+(.*)/) {
+		    $others{$1} = $3;
+		}
+	    }
+	    continue {
+		if (!$copy) {
+		    print CO2 $_;
+		}
+	    }
+	    close(CO1);
+	} else {
+	    printf(CO2 "# List of users with copies of this module.\n");
+	}
+	if ($#mine >= $[) {
+	    printf("\nYou also have these copies of the $i module:\n");
+	    print join("\n", @mine);
+	}
+	printf(CO2 "$user $pwd/$i %s", &ctime(time));
+	close(CO2);
+	if (!$personal) {
+	    if (!rename("$repos/$tmpfile", "$repos/$userFile")) {
+		printf(
+		  "Rename of $repos/$tmpfile to $repos/$userFile failed:$!\n");
+		unlink("$repos/$tmpfile");
+		next module;
+	    }
+	} else {
+	    unlink("$repos/$tmpfile");
+	}
+	if (defined(%others)) {
+	    printf("\nThe following users have copies of the $i module:\n"); 
+	    while(($name, $date) = each(%others)) {
+		printf("$name $date\n");
+	    }
+	}
+    }
+    return 0;
+}
+
+#
+# UnlockCmd(@ARGV)
+#
+# Parse arguements, then call Unlock to do the dirty work. 
+#
+# Results: 0 if successful, 1 otherwise
+#
+# Side effects: 
+#
+sub UnlockCmd {
+    local(@args) = @_;
+    local($all) = 0;
+    local($status) = 0;
+    local(@options) = (
+	"a", $OPT_TRUE, *all, "Remove everybody's locks",
+    );
+    &Opt_Parse(*args, @options, $OPT_OPTIONS_FIRST);
+    $status = &Unlock($all,@args);
+    return $status;
+}
+
+
+#
+# Unlock($allusers, @modules)
+#
+# Remove the locks for a list of modules.  
+#
+# Results: 0 if successful, 1 otherwise
+#
+# Side effects: 
+#
+
+sub Unlock {
+    local($allusers) = shift;
+    local(@modules) = @_;
+    local($cvsdir, $i, $lock);
+    local($status) = 0;
+    local($user) = getlogin;
+
+    print("Unlock $allusers @modules\n") if ($debug);
+    if (!defined(%moduleToRepos)) {
+	&ModMap;
+    }
+    if ($#modules < $[) {
+	push(@modules, ".");
+    }
+module:
+    foreach $i (@modules) {
+	if ($i eq ".") {
+	    $i = &GetModuleName;
+	    if (!defined($i)) {
+		$status = 1;
+		next module;
+	    }
+	}
+	if (!defined($moduleToRepos{$i})) {
+	    printf(STDERR "Module $i does not exist.\n");
+	    $status = 1;
+	    next module;
+	}
+	$cvsdir = "$cvsroot/$moduleToRepos{$i}/SCVS";
+	$lock = "$cvsdir/locks";
+	if (!-e $lock) {
+	    next module;
+	}
+	if ($allusers) {
+	    if (!unlink($lock)) {
+		printf("Can't remove lock file $lock: $!\n");
+	    }
+	    next module;
+	}
+	if (!open(UNLOCK1, "$lock")) {
+	    print("Open of $lock failed: $!\n");
+	    next module;
+	}
+	if (!open(UNLOCK2, ">$cvsdir/$tmpfile")) {
+	    print("Open of $cvsdir/$tmpfile failed: $!\n");
+	    next module;
+	}
+	flock(UNLOCK1, 2) || 
+	    return &Error(1, "Flock(2) of $lock failed: $!\n");
+
+	while(<UNLOCK1>) {
+	    ($type, $name) = split(' ');
+	    if ($name ne $user) {
+		print(UNLOCK2 $_);
+	    }
+	}
+	close(UNLOCK2);
+	if (!rename("$cvsdir/$tmpfile", "$lock")) {
+	    printf(
+	      "Rename of $cvsdir/$tmpfile to $lock failed:$!\n");
+	    unlink("$cvsdir/$tmpfile");
+	    next module;
+	}
+    }
+    return $status;
+}
+
+#
+# LockCmd(@ARGV)
+#
+# Parse any options then call Lock to do all the work.
+#
+# Results: 0 if successful, 1 otherwise
+#
+# Side effects: The lock files in the modules are updated.
+#
+
+sub LockCmd {
+    local(@args) = @_;
+    local($write) = 1;
+    local($status) = 0;
+    local(@options) = (
+	"w", $OPT_TRUE, *write, "Write (exclusive) lock",
+	"r", $OPT_FALSE, *write, "Read (shared) lock",
+    );
+    print("LockCmd @args\n") if ($debug);
+    &Opt_Parse(*args, @options, $OPT_OPTIONS_FIRST);
+    $status = &Lock($write ? "w" : "r", @args);
+    undef(@locks);
+    return $status;
+}
+
+
+#
+# Lock($type, @modules)
+#
+# Make sure the modules are unlocked, and lock them.  Any modules that
+# we lock are put in the @lock array.  
+#
+# Results: 0 if successful, 1 otherwise
+#
+# Side effects: Lock files are created in the modules.
+#
+
+sub Lock {
+    local($type) = shift;
+    local(@dirs) = @_;
+    local($cvsdir);
+    local($status) = 0;
+    local($i, $name);
+    local(@mylocks);
+    local($user) = getlogin;
+    local(@lockFiles);
+    local($prevType);
+    local($prevName);
+    local($prevDate);
+    local(@prevLocks);
+    local($lock);
+    local(@modules);
+
+    print("Lock $type @dirs\n") if ($debug);
+    if ($#dirs < $[) {
+	@dirs = (".");
+    }
+dir:
+    foreach $i (@dirs) {
+	#
+	# If the directory doesn't exist then assume we've been given
+	# a module name instead.
+	#
+	if (! -d $i) {
+	    $module = $i;
+	} else {
+	    $module = &GetModuleName;
+	    if (!defined($module)) {
+		printf("Can't find module name for dir $i\n"); 
+		$status = 1;
+		next dir;
+	    }
+	}
+	$repos = $moduleToRepos{$module};
+	if (!defined($repos)) {
+	    printf(STDERR "$i module does not exist.\n");
+	    $status = 1;
+	    next dir;
+	}
+	$cvsdir = "$cvsroot/$repos/SCVS";
+	$lock = "$cvsdir/locks";
+	print("Cvsdir = $cvsdir\n") if ($debug);
+	if (-f "$lock") {
+	    print("Opening $lock\n") if ($debug);
+	    open(LOCK1, "$lock") || 
+		return &Error(1, "Open of $lock failed: $!\n");
+	    flock(LOCK1, 2) || 
+		return &Error(1, "Flock(2) of $lock failed: $!\n");
+	    while(<LOCK1>) {
+		($prevType, $prevName) = split(' ');
+		if ($prevName eq $user) {
+		    if ($prevType ne $type) {
+			return &Error(1, "$i already locked:\n$_");
+		    } else {
+			close(LOCK1);
+			next module;
+		    }
+		} else {
+		    if (($prevType eq "r") && ($type eq "w")) {
+			return &Error(1, "$i already locked:\n$_");
+		    } elsif ($prevType eq "w") {
+			return &Error(1, "$i already locked:\n$_");
+		    }
+		}
+		push(@prevLocks, $_);
+	    }
+	}
+	open(LOCK2, ">$cvsdir/$tmpfile") ||
+	    return &Error(1, "Open of $cvsdir/$tmpfile failed: $!\n");
+	foreach $i (@prevLocks) {
+	    print(LOCK2 "$i");
+	}
+	printf(LOCK2 "$type $user %s", &ctime(time));
+	close(LOCK2);
+	if (!rename("$cvsdir/$tmpfile", "$lock")) {
+	    printf(
+	      "Rename of $cvsdir/$tmpfile to $lock failed:$!\n");
+	    unlink("$cvsdir/$tmpfile");
+	    return 1;
+	}
+	push(@mylocks, $i);
+	close(LOCK1);
+    }
+    if ($status) {
+	if (&Unlock(0, @mylocks)) {
+	    return &Error(1, "Can't clean up in LockCmd\n");
+	}
+    }
+    push(@locks, @mylocks);
+    return $status;
+}
+
+#
+# UpdateCmd($lock, @names)
+#
+# Update modules.  If the arguments are a list of subdirectories then
+# we chdir to each of them and run "cvs update".  If the arguments are
+# a list of files then we pass them to cvs.  If no files or directories
+# are specified then we update the current directory.  The arguments
+# for update are retrieved from the SCVS/args file.
+#
+# Results: 0 if successful, 1 otherwise
+#
+# Side effects: 
+#
+
+sub UpdateCmd {
+    local($lock) = shift;
+    local(@dirs) = @_;
+    local(%files);
+    local($buffer, $i);
+    local($found, $name);
+    local($module);
+    local($owd);
+    local($tmp);
+    local($prune);
+    local($buildDirs) = 1;
+    local($args);
+    local($module);
+    local(@options) = ( 
+	"B", $OPT_FALSE, *buildDirs, "Don't create new directories.",
+	"l", $OPT_FALSE, *recurse, "Don't recurse on subdirs",
+	"Q", $OPT_FUNC, "CvsOpt1", $OPT_NULL,
+	"q", $OPT_FUNC, "CvsOpt1", $OPT_NULL,
+	"f", $OPT_FUNC, "CvsOpt1", $OPT_NULL,
+	"n", $OPT_FUNC, "CvsOpt1", $OPT_NULL,
+	"p", $OPT_FUNC, "CvsOpt1", $OPT_NULL,
+	"d", $OPT_FUNC, "CvsOpt1", $OPT_NULL,
+	"r", $OPT_FUNC, "CvsOpt2", $OPT_NULL,
+	"D", $OPT_FUNC, "CvsOpt2", $OPT_NULL,
+    );
+    undef($cvsargs);
+    &Opt_Parse(*dirs, @options, $OPT_OPTIONS_FIRST | $OPT_NO_SPACE);
+    $args = $cvsargs;
+
+    print("UpdateCmd in $ENV{'PWD'}\n") if ($debug);
+
+    # Put together the "cvs update" command.
+
+    if ($buildDirs) {
+	$args .= "-d ";
+    }
+    if (! $recurse) {
+	$args .= "-l ";
+    }
+    $buffer = "cvs -d $cvsroot $cvsCmdArgs ";
+
+    if ($#dirs < $[) {
+	push(@dirs, ".");
+    }
+    if (! -d $dirs[0]) {
+	$files{"."} = @dirs;
+	@dirs = (".");
+    }
+
+    #
+    # Lock the modules.
+    #
+    if ($lock) {
+	$status = &Lock("r", @dirs); 
+	if ($status) {
+	    return $status;
+	}
+    }
+    $owd = $ENV{'PWD'};
+dir: 
+    foreach $i (@dirs) {
+	$prune = 0;
+	&Chdir($i) == 0 || return 1; 
+	if (-e "SCVS/$argFile") {
+	    local(@targs);
+	    @targs = &ReadFile("SCVS/$argFile", 1);
+	    print("targs = @targs\n") if ($debug);
+	    if ($targs[1] =~ /(.*)-p(.*)/) {
+		$targs[1] = "$1 $2";
+		print("Found -p in args file\n") if ($debug);
+		$prune = 1;
+	    }
+	    chop($targs[0]);
+	    chop($targs[1]);
+	}
+	$tmp = "$buffer $targs[0] update $args $targs[1] $files{$i}";
+	printf("$tmp\n") if ($debug);
+	system($tmp);
+	if (&Unpack($i)) {
+	    printf(STDERR "Unpack of $i failed.\n");
+	    $status = 1;
+	}
+	if ($prune) {
+	    if (&Prune($i)) {
+		printf(STDERR "Prune of $i failed.\n");
+		$status = 1;
+	    }
+	}
+	&Chdir($owd) == 0 || return 1; 
+    }
+}
+return $status;
+
+
+
+
+
+
+
+
+
+	if ($lock) {
+	    $status = &Lock("r","."); 
+	    if ($status) {
+		return $status;
+	    }
+	}
+	if (-e "SCVS/$argFile") {
+	    local(@targs);
+	    @targs = &ReadFile("SCVS/$argFile", 1);
+	    print("targs = @targs\n") if ($debug);
+	    if ($targs[1] =~ /(.*)-p(.*)/) {
+		$targs[1] = "$1 $2";
+		print("Found -p in args file\n") if ($debug);
+		$prune = 1;
+	    }
+	    chop($targs[0]);
+	    chop($targs[1]);
+	}
+	$tmp = "$buffer $targs[0] update $args $targs[1] @names";
+	printf("$tmp\n") if ($debug);
+	system($tmp);
+	$recurse = 0;
+	&Unpack(".") == 0 ||
+	    return &Error(1, "Unpack of current directory failed.\n");
+    } else {
+	#
+	# Lock the modules.
+	#
+	if ($lock) {
+	    $status = &Lock("r", @names); 
+	    if ($status) {
+		return $status;
+	    }
+	}
+	$pwd = $ENV{'PWD'};
+module: 
+	foreach $i (@names) {
+	    $prune = 0;
+	    &Chdir($i) == 0 || return 1; 
+	    if (-e "SCVS/$argFile") {
+		local(@targs);
+		@targs = &ReadFile("SCVS/$argFile", 1);
+		print("targs = @targs\n") if ($debug);
+		if ($targs[1] =~ /(.*)-p(.*)/) {
+		    $targs[1] = "$1 $2";
+		    print("Found -p in args file\n") if ($debug);
+		    $prune = 1;
+		}
+		chop($targs[0]);
+		chop($targs[1]);
+	    }
+	    $tmp = "$buffer $targs[0] update $args $targs[1]";
+	    printf("$tmp\n") if ($debug);
+	    system($tmp);
+	    if (&Unpack($i)) {
+		printf(STDERR "Unpack of $i failed.\n");
+		$status = 1;
+	    }
+	    if ($prune) {
+		if (&Prune($i)) {
+		    printf(STDERR "Prune of $i failed.\n");
+		    $status = 1;
+		}
+	    }
+
+	    &Chdir($pwd) == 0 || return 1; 
+	}
+    }
+    return $status;
+}
+
+#
+# Changed($path)
+#
+# Use the "cvs info" command to see if the contents of the current directory
+# or its subdirectories have been changed by the user.  The modified
+# parameter is set to 1 if they have been.
+#
+# Results: 0 if successful, 1 otherwise; 0 if not modified, 1 otherwise
+#
+# Side effects: 
+#
+sub Changed {
+    local($path) = shift;
+    local($modified) = 0;
+    local($status) = 0;
+    if (!-d "CVS.adm") {
+	return 0;
+    }
+    open(CHG, "cvs -d $cvsroot info |") ||
+	return &Error(1, "Can't do cvs info on $path: $!\n");
+    while (<CHG>) {
+	if (/^[MC]\s+(\S+)/) {
+	    printf("$path/$1 has been modified\n");
+	    $modified = 1;
+	} elsif(/^A\s+(\S+)/) {
+	    printf("$path/$1 has been added\n");
+	    $modified = 1;
+	} elsif(/^R\s+(\S+)/) {
+	    printf("$path/$1 has been deleted\n");
+	    $modified = 1;
+	}
+    }
+    close(CHG);
+    ($status, @results) = &AllSubdirs($path, "Changed");
+    if ($status) {
+	return $status;
+    }
+    while ($#results >= $[) {
+	local($substatus) = shift(@results);
+	local($submod) = shift(@results);
+	if ($substatus) {
+	    $status = 1;
+	}
+	if ($submod) {
+	    $modified = 1;
+	}
+    }
+    return ($status, $modified);
+}
+
+#
+# DoneCmd(@modules)
+#
+# Process the "done" command.  The user is deleted from the list of users
+# for each module.  If the -d flag is specified then the snapshot is
+# deleted as well.  If the user has made changes to the snapshot the user
+# is warned before the "done" command is completed.
+#
+# Results: 0 if successful, 1 otherwise
+#
+# Side effects: 
+#
+sub DoneCmd {
+    local(@modules) = @_;
+    local($status) = 0;
+    local($i);
+    local($me) = getlogin;
+    local($pwd) = $ENV{'PWD'};
+    local($repos, $found);
+    local($delete);
+    local($modified);
+    local(@options) = (
+	"d", $OPT_TRUE, *delete, "Delete module",
+    );
+
+    $recurse = 1;
+    undef($cvsargs);
+    &Opt_Parse(*modules, @options, $OPT_OPTIONS_FIRST); 
+    if ($#modules < $[) {
+	return &Error(1, "Done command requires a list of modules\n");
+    }
+    # Make sure all the modules are unlocked, then lock them.
+    $status = &Lock("r",@modules); 
+    if ($status) {
+	return $status;
+    }
+module:
+    foreach $i (@modules) {
+	$ok = 0;
+	if (! -d $i) {
+	    printf("Directory $i not found.\n");
+	    next module;
+	}
+	&Chdir($i) == 0 || return 1; 
+	($status, $modified) = &Changed($i);
+	if ($status) {
+	    printf(STDERR "Unable to determine if $i module has changed.\n");
+	    $modified = 1;
+	}
+	if ($modified == 1) {
+	    printf("Do you wish to continue? [y/n] ");
+prompt:
+	    while(1) {
+		$answer = <STDIN>;
+		chop($answer);
+		last prompt if ($answer eq "y");
+		next module if ($answer eq "n");
+		printf("Please answer with \"y\" or \"n\": ");
+	    }
+	} elsif ($modified == 1) {
+	    next module;
+	}
+
+	# Update the user file.
+	$repos = &Repository(".");
+	next module if (!defined($repos));
+	if (!open(DONE1, "$repos/$userFile")) {
+	    printf("Module $i is not checked out\n");
+	    next module;
+	}
+	if (!open(DONE2, ">$repos/$tmpfile")) {
+	    printf("Can't open $repos/$tmpfile: $!\n");
+	    $status = 1;
+	    next module;
+	}
+	$me = getlogin;
+	$found = 0;
+	while (<DONE1>) {
+	    if (/^$me\s+([\w\/\.]+)\s+(.*)/) {
+		if ($1 eq "$pwd/$i") {
+		    $found = 1;
+		    next;
+		}
+	    }
+	    print DONE2 $_;
+	}
+	close(DONE1);
+	close(DONE2);
+	if (!$found) {
+	    printf("Module $i is not checked out\n");
+	    next module;
+	}
+	if (!rename("$repos/$tmpfile", "$repos/$userFile")) {
+	    printf("Rename of $repos/$tmpfile to $repos/$userFile failed:$!\n");
+	    unlink("$repos/$tmpfile");
+	    next module;
+	}
+	$ok = 1;
+    }
+    continue {
+	&Chdir($pwd) == 0 || return 1; 
+	if ($ok && $delete) {
+	    system("rm -rf $i");
+	    if ($?) {
+		printf("Delete of $i failed: $?\n");
+	    }
+	}
+    }
+    return $status;
+}
+
+#
+# AllSubdirs(path, routine, args)
+#
+# Call a routine for each subdirectory of the current directory. The
+# current working directory is changed to the subdirectory before the 
+# routine is called, and the path is modified to reflect this change.
+# The path is passed to the routine when it is called. The routine is
+# called for all subdirectories even if one returns an non-zero status,
+# although this function will then return a non-zero status.
+# Any additional arguments for the routine are passed after the path
+# argument.
+#
+# Results: 0 if successful, 1 if the routine returned non-zero for any
+# 		of the subdirectories.
+#
+# Side effects: 
+#
+sub AllSubdirs {
+    local($path) = shift;
+    local($routine) = shift;
+    local($pwd) = $ENV{'PWD'};
+    local($substatus);
+    local($dir);
+    local(@results);
+    local(@status);
+    local(@subdirs);
+
+    printf(STDERR "AllSubdirs of $routine on $pwd\n") if ($debug);
+    opendir(THISDIR, ".") || 
+	return &Error(1, "Opendir of $path failed: $!\n"); 
+    @subdirs = grep((-d) && (!/^\./) && (! -l) && ($_ ne 'CVS.adm'), 
+		    readdir(THISDIR));
+    print("AllSubdirs: @subdirs\n") if ($debug);
+    close(THISDIR);
+    print "@subdirs\n****\n" if ($debug); 
+    foreach $dir (@subdirs) {
+	printf("\t$dir\n") if ($debug);
+	&Chdir($dir) == 0 || return 1; 
+	push(@results, &$routine($path . "/$dir", @_));
+	&Chdir($pwd) == 0 || ($status = 1); 
+    }
+    if (wantarray) {
+	return ($status, @results);
+    }
+    if ($status) {
+	return $status;
+    }
+    @status = grep("$_ != 0", @results);
+    if ($#status >= $[) {
+	return $status[0];
+    }
+    return 0;
+}
+
+
+#
+# VerifyCurrent($path, *stale, *modified)
+#
+# Check the status of the files in the current directory and its 
+# subdirectories to see if they are out of date.
+#
+# Results: 0 if successful, 1 otherwise;
+#
+# Side effects: 
+#
+sub VerifyCurrent {
+    local($path) = shift;
+    local(*stale) = shift;
+    local(*modified) = shift;
+    local($pwd) = $ENV{'PWD'};
+    local($status) = 0;
+    local($substatus) = 0;
+    local($current) = 1;
+    local($mod) = 0;
+
+    printf("Verifying that $path is current\n") if ($debug);
+    if (!-d "CVS.adm") {
+	return 0;
+    }
+    open(CHK, "cvs -d $cvsroot info |") ||
+	return &Error(1, "Can't get info for $path: $!\n");
+    while(<CHK>) {
+	if (/^U\s+(\S+)/) {
+	    printf("File $path/$1 is out of date or needs to be added.\n");
+	    $current = 0;
+	} elsif (/^D\s+(\S+)/) {
+	    printf("File $path/$1 has been removed from the repository.\n");
+	    $current = 0;
+	} elsif (/^C\s+(\S+)/) {
+	    printf("File $path/$1 is out of date.\n");
+	    $current = 0;
+	} elsif (/^[MARC]/) {
+	    $mod = 1;
+	} 
+    }
+    close(CHK);
+    if (!$current) {
+	printf("$path is not current\n") if ($debug);
+	push(@stale, $path);
+    }
+    if ($mod) {
+	printf("$path has been modified\n") if ($debug);
+	push(@modified, $path);
+    }
+    if ($recurse) {
+	$status = &AllSubdirs($path, "VerifyCurrent", *stale, *modified);
+    }
+    return $status;
+}
+
+#
+# UpdateInstalled(@files)
+#
+# Update the installed copy of the sources.  This is done on commit.
+# If @files is not specified then the entire directory and its subdirectories
+# are updated.
+#
+# Results: 0 if successful, 1 otherwise
+#
+# Side effects: The installed sources are updated.
+#
+sub UpdateInstalled {
+    local(@files) = @_;
+    local($dir);
+    local($pwd) = $ENV{'PWD'};
+    local($module);
+
+    printf(STDERR "UpdateInstalled\n") if ($debug);
+    $module = &GetModuleName;
+    if (!defined($module)) {
+	print("Can't file module name for dir $pwd\n");
+	return 1;
+    }
+    $dir = &ReadFile("$installdir/$module/SCVSCVS.adm/Repository", 1);
+    if (!defined($dir)) {
+	return 1;
+    }
+    chop($dir);
+    &Chdir("$installdir/$dir") == 0 || return 1;
+    &UpdateCmd(0, "-Q", @files) == 0 || return 1;
+    &Chdir("$pwd") == 0 || return 1;
+    return 0;
+}
+
+
+
+#
+# Commit
+#
+# Commit the current directory and its subdirectories.
+#
+# Results: 0 if successful, 1 otherwise
+#
+# Side effects: 
+#
+sub Commit {
+    local($path) = shift;
+    local($args) = shift;
+    local($pwd) = $ENV{'PWD'};
+    local($status) = 0;
+    local($output);
+    local($tail);
+
+
+    printf(STDERR "CommitDir $path\n") if ($debug);
+    if (!-d "CVS.adm") {
+	return 0;
+    }
+    printf("$path:\n");
+    $tail = substr($path, rindex($path, '/') + 1);
+    #
+    # Before we commit the SCVS links file we remove all the deleted links
+    # from it.
+    #
+    if ($tail eq "SCVS") {
+	if (open(CMTDIR1, "$linkFile")) {
+	    open(CMTDIR2, ">$tmpfile") ||
+		return &Error(1, "Open of $path/$tmpfile failed: $!\n");
+	    while(<CMTDIR1>) {
+		next if (/^[*]/);
+		print CMTDIR2 $_;
+	    }
+	    close(CMTDIR1);
+	    close(CMTDIR2);
+	    if (!rename("$tmpfile", "$linkFile")) {
+		printf("Rename of $tmpfile to $linkFile failed:$!\n");
+		unlink("$tmpfile");
+		return 1;
+	    }
+	    system("cvs -d $cvsroot $cvsCmdArgs ci -f -m scvs links");
+	}
+    }
+    system("cvs -d $cvsroot $cvsCmdArgs ci -f -a $args");
+    return $status;
+}
+
+#
+# CommitCmd(@names)
+#
+# Commit any changes to the modules or files. 
+# Otherwise all changed files in the current directory and any subdirectories
+# are committed.  Before anything is committed it is checked that all
+# files are up-to-date.  If they aren't, a message is printed and the
+# commit is not done.
+#
+# Results: 0 if successful, 1 otherwise
+#
+# Side effects: 
+#
+
+sub CommitCmd {
+    local(@names) = @_;
+    local($pwd, $i);
+    local($status) = 0;
+    local($path);
+    local(@stale, @modified);
+    local($tmp);
+    local($args);
+    local($quiet) = 0;
+    local(@options) = (
+	"l", $OPT_FALSE, *recurse, "Don't recurse on subdirs",
+	"f", $OPT_FUNC, "CvsOpt1", $OPT_NULL,
+	"n", $OPT_FUNC, "CvsOpt1", $OPT_NULL,
+	"m", $OPT_FUNC, "CvsOpt2", $OPT_NULL,
+	"r", $OPT_FUNC, "CvsOpt2", $OPT_NULL,
+	"q", $OPT_FUNC, "CvsOpt1", $OPT_NULL,
+	"Q", $OPT_FUNC, "CvsOpt1", $OPT_NULL,
+    );
+
+    $recurse = 1;
+    undef($cvsargs);
+    &Opt_Parse(*names, @options, $OPT_OPTIONS_FIRST | $OPT_NO_SPACE);
+    $args = $cvsargs;
+
+    if ($#names < $[) {
+	push(@names, ".");
+    }
+    if ($args =~ /-q|-Q/) {
+	$quiet = 1;
+    } else {
+	$args .= " -q";
+    }
+    if (! $quiet) {
+	print("Verifying that sources are up-to-date.\n");
+    }
+    if (! -d $names[0]) {
+	$status = &Lock("w","."); 
+	if ($status) {
+	    return $status;
+	}
+	$status = &VerifyCurrent(".", *stale, *modified);
+	if ($status) {
+	    return $status;
+	}
+	if ($#stale >= $[) {
+	    printf("Update your sources using \"scvs update\".\n");
+	    return $status;
+	}
+	$tmp = "cvs -d $cvsroot $cvsCmdArgs ci -f $args @names";
+	system($tmp);
+	$status = &UpdateInstalled(@names);
+    } else {
+	$status = &Lock("w",@names); 
+	if ($status) {
+	    return $status;
+	}
+	$pwd = $ENV{'PWD'};
+
+	#
+	# All the modules and their subdirectories must be up-to-date.
+	#
+module:
+	foreach $i (@names) {
+	    &Chdir($i) == 0 || return 1; 
+	    $status = &VerifyCurrent($i, *stale, *modified);
+	    if ($status) {
+		return $status;
+	    }
+	    &Chdir($pwd) == 0 || return 1; 
+	}
+    
+	if ($#stale >= $[) {
+	    printf("Update your sources using \"scvs update\".\n");
+	    return $status;
+	}
+    
+	if (! $quiet) {
+	    print("Committing modified directories.\n");
+	}
+	#
+	# Commit all directories that were modified.
+	#
+	foreach $i (@modified) {
+	    &Chdir($i) == 0 || return 1; 
+	    $status = &Commit($i, $args);
+	    &Chdir($pwd) == 0 || return 1; 
+	}
+	if (defined($installdir)) {
+	    # 
+	    # Update the installed copy of the sources.
+	    #
+	    if (! $quiet) {
+		print("Updating installed copies.\n");
+	    }
+	    foreach $i (@modified) {
+		&Chdir($i) == 0 || return 1; 
+		$status = &UpdateInstalled;
+		&Chdir($pwd) == 0 || return 1; 
+	    }
+	}
+    }
+    return $status;
+}
+
+
+#
+# WhoCmd(@modules)
+#
+# Print the names of users who have the modules checked out.
+#
+# Results: 0 if successful, 1 otherwise
+#
+# Side effects: 
+#
+
+sub WhoCmd {
+    local(@modules) = @_;
+    local($pwd, $i);
+    local($status) = 0;
+    local($cvsdir, @who, $user, %users, $line);
+
+    if (!defined(%moduleToRepos)) {
+	&ModMap;
+    }
+    if ($#modules < $[) {
+	push(@modules, ".");
+    }
+    $status = &Lock("r",@modules); 
+    if ($status) {
+	return $status;
+    }
+    $pwd = $ENV{'PWD'};
+
+module:
+    foreach $i (@modules) {
+	if ($i eq ".") {
+	    $i = &GetModuleName;
+	    if (!defined($i)) {
+		$status = 1;
+		next module;
+	    }
+	}
+	if (!defined($moduleToRepos{$i})) {
+	    printf(STDERR "$i module does not exist.\n");
+	    $status = 1;
+	    next module;
+	}
+	$cvsdir = $cvsroot . "/" . $moduleToRepos{$i};
+	@who = &ReadFile("$cvsdir/$userFile", 1);
+	foreach $line (@who) {
+	    ($user) = split(' ', $line);
+	    $users{$user} = 1;
+	}
+	foreach $user (keys %users) {
+	    printf("$user\n");
+	}
+    }
+    return $status;
+}
+
+#
+# AddCmd(@names)
+#
+# Add a file, directory, or symbolic link to a directory.
+#
+# Results: 0 if successful, 1 otherwise
+#
+# Side effects: 
+#
+
+sub AddCmd {
+    local(@names) = @_;
+    local($i);
+    local($status) = 0;
+    local(%links);
+    local($pwd) = $ENV{'PWD'};
+    local($module);
+    local($args);
+    local(@options) = (
+	"m", $OPT_FUNC, "CvsOpt2", $OPT_NULL,
+    );
+
+    undef($cvsargs);
+    &Opt_Parse(*names, @options, $OPT_OPTIONS_FIRST | $OPT_NO_SPACE);
+    $args = $cvsargs;
+
+    if ($#names < $[) {
+	return &Error(1, "Add command requires list of files\n");
+    }
+    $module = &GetModuleName;
+    if (!defined($module)) {
+	return 1;
+    }
+name:
+    foreach $i (@names) {
+	if (-l $i) {
+	    local($target) = readlink($i);
+	    if (!defined($target)) {
+		printf("$i does not exist\n");
+		$status = 1;
+		next name;
+	    }
+	    if (open(ADD, "SCVS/$linkFile")) {
+		while(<ADD>) {
+		    if (/^$i\s+(\S+)/) {
+			if ($target ne $1) {
+			    printf("Link $i already points to $1.\n");
+			} else {
+			    printf("Link $i already added.\n");
+			}
+			$status = 1;
+			close(ADD);
+			next name;
+		    }
+		}
+		close(ADD);
+	    } elsif (! -f "SCVS/$linkFile") {
+		open(ADD, ">SCVS/$linkFile") ||
+		    return &Error(1, "Can't open SCVS/$linkFile: $!\n");
+		printf(ADD 
+		"# This file is used by scvs and contains symbolic link\n");
+		printf(ADD 
+		"# information.  Each line is of the form \"link target\"\n");
+		printf(ADD "# \$Header\n");
+		close(ADD);
+		&Chdir("SCVS") == 0 || return 1; 
+		printf("Adding $linkFile directory\n") if ($debug);
+		system("cvs -d $cvsroot add -m \"sym links\" $linkFile");
+		&Chdir($pwd) == 0 || return 1; 
+	    } else {
+		return &Error(1, "Open of SCVS/$linkFile failed: $!\n");
+	    }
+	    $links{$i} = $target;
+	} else {
+	    system("cvs -d $cvsroot $cvsCmdArgs add $args $i");
+	    if (-d $i) {
+		# 
+		# If we are adding a directory then we should create an
+		# SCVS subdirectory in it.
+		#
+		if (! -d "$i/SCVS") {
+		    mkdir("$i/SCVS", 0770) ||
+			return &Error(1, "Mkdir of $i/SCVS failed: $!\n");
+		    &Chdir("$i/SCVS") == 0 || return 1; 
+		    open(ADD, ">module") ||
+			return &Error(1, "Open of $i/SCVS/module failed: $!\n");
+		    printf(ADD "$module\n");
+		    close(ADD);
+		    system("cvs -d $cvsroot add module");
+		    &Chdir($pwd) == 0 || return 1; 
+		}
+	    }
+	}
+	if (defined(%links)) {
+	    open(ADD, ">>SCVS/$linkFile") ||
+		return &Error(1, "Open of SCVS/$linkFile failed: $!\n");
+	    while (($i, $target) = each(%links)) {
+		printf("Adding link $i -> $target\n") if ($debug);
+		printf(ADD "%-24s %s\n", $i, $target);
+	    }
+	    close(ADD);
+	}
+    }
+    return $status;
+}
+#
+# RemoveCmd(@names)
+#
+# Removes a file, directory, or symbolic link from a directory.
+#
+# Results: 0 if successful, 1 otherwise
+#
+# Side effects: 
+#
+
+sub RemoveCmd {
+    local(@names) = @_;
+    local($i);
+    local($status, %links, @delete) = 0;
+
+    if ($#names < $[) {
+	return &Error(1, "Remove command requires list of files\n");
+    }
+    if (open(RM, "SCVS/$linkFile")) {
+	while(<RM>) {
+	    next if (/^#/);
+	    if (/^([^*]\S+)\s+(\S+)/) {
+		printf("Found link $1 -> $2\n") if ($debug);
+		$links{$1} = $2;
+	    }
+	}
+	close(RM);
+    }
+name:
+    foreach $i (@names) {
+	if (-e $i) {
+	    if (-d $i) {
+		print("Ignoring remove of directory $i\n");
+		next name;
+	    }
+	    printf("Deleting existing $i\n");
+	    if (!unlink("$i")) {
+		printf("Unlink failed: $!\n");
+		$status = 1;
+		next name;
+	    }
+	}
+	if (defined($links{$i})) {
+	    printf("Putting $i on delete list\n") if ($debug);
+	    push(@delete, $i);
+	} else {
+	    system("cvs -d $cvsroot $cvsCmdArgs remove $i");
+	}
+    }
+    if ($#delete >= $[) {
+	if (!open(RM1, "SCVS/$linkFile")) {
+	    printf("Can't open SCVS/$linkFile: $!\n");
+	    $status = 1;
+	    next name;
+	}
+	if (!open(RM2, ">$tmpfile")) {
+	    printf("Can't open $tmpfile: $!\n");
+	    $status = 1;
+	    next name;
+	}
+line:
+	while (<RM1>) {
+	    if (/^([^#*]\S+)\s+(\S+)/) {
+		for ($i = 0; $i <= $#delete; $i++) {
+		    if ($delete[$i] eq $1) {
+			splice(@delete, $i, 1);
+			print RM2 "*$_";
+			next line;
+		    }
+		}
+	    }
+	    print RM2 $_;
+	}
+	close(RM1);
+	close(RM2);
+	if (!rename("$tmpfile", "SCVS/$linkFile")) {
+	    printf("Rename of $tmpfile to SCVS/$linkFile failed:$!\n");
+	    unlink("$tmpfile");
+	    $status = 1;
+	}
+    }
+    return $status;
+}
+#
+# Info($path)
+#
+# Prints out status information for the current directory and recurses
+# on subdirectories.
+#
+# Results: 0 if successful, 1 otherwise
+#
+# Side effects: 
+#
+sub Info {
+    local($path) = shift;
+    local($tail);
+    local($diff) = 0;
+    local($cat) = 0;
+    local($i);
+    local($pwd) = $ENV{'PWD'};
+
+    if (!-d "CVS.adm") {
+	return 0;
+    }
+    print("$path\n");
+    $tail = substr($path, rindex($path, '/') + 1);
+    if ($tail eq "SCVS") {
+	return 0;
+    }
+    system("cvs -d $cvsroot $cvsCmdArgs info ");
+    if (-d "SCVS") {
+	&Chdir("SCVS") == 0 || return 1;
+	open(INFO, "cvs -d $cvsroot $cvsCmdArgs info |") ||
+	    return &Error(1, "Can't do cvs info on $path: $!\n");
+	while(<INFO>) {
+	    if (/^[UMC]\s+$linkFile/) {
+		$diff = 1;
+		last;
+	    } elsif (/^[AD]\s+$linkFile/) {
+		$cat = 1;
+		last;
+	    }
+	}
+	close(INFO);
+	if ($diff) {
+	    local(%updated);
+	    open(INFO, "cvs -d $cvsroot diff $linkFile |") ||
+		return &Error(1, "Can't do cvs diff on $path/$linkFile: $!\n");
+	    while(<INFO>) {
+		if (/^>\s+([^*]\S+)/) {
+		    printf("A %s\@\n", $1);
+		} elsif (/^>\s+[*](\S+)/) {
+		    printf("R %s\@\n", $1);
+		    delete $updated{$1};
+		} elsif (/^<\s+([^*]\S+)/) {
+		    $updated{$1} = 1;
+		} elsif (/^<\s+[*](\S+)/) {
+		    printf("D %s\@\n", $1);
+		}
+	    }
+	    close(INFO);
+	    foreach $i (keys %updated) {
+		printf("U %s\@\n", $i);
+	    }
+	}
+	if ($cat) {
+	    open(INFO, "$linkFile") ||
+		return &Error(1, "Open of $linkFile failed: $!\n");
+	    while(<INFO>) {
+		next if (/^#/);
+		if (/^([^*]\S+)/) {
+		    printf("A %s\@\n", $1);
+		} elsif (/^([*]\S+)/) {
+		    printf("R %s\@\n", $1);
+		}
+	    }
+	    close(INFO);
+	}
+	&Chdir($pwd) == 0 || return 1;
+    }
+    if (($recurse) && ($#files < $[)) {
+	$status = &AllSubdirs($path, "Info");
+    }
+}
+
+#
+# InfoCmd(@modules)
+#
+# Prints out status information for the given modules.
+#
+# Results: 0 if successful, 1 otherwise
+#
+# Side effects: 
+#
+
+sub InfoCmd {
+    local(@modules) = @_;
+    local($pwd, $i);
+    local($status) = 0;
+    local(@options) = ("l", $OPT_FALSE, *recurse, "Don't recurse on subdirs");
+    local(@targs);
+
+    $recurse = 1;
+    undef($cvsargs);
+    &Opt_Parse(*modules, @options, $OPT_OPTIONS_FIRST);
+    print "@modules\n" if ($debug);
+
+    if ($#modules < $[) {
+	push(@modules, ".");
+    }
+    if (-e "SCVS/$argFile") {
+	@targs = &ReadFile("SCVS/$argFile", 1);
+	if ($targs[1] =~ /(.*)-p(.*)/) {
+	    $targs[1] = "$1 $2";
+	}
+	chop($targs[0]);
+	$cvsCmdArgs .= $targs[0];
+    }
+    if (! -d $modules[0]) {
+	$status = &Lock("r","."); 
+	if ($status) {
+	    return $status;
+	}
+	system("cvs -d $cvsroot $cvsCmdArgs info @modules");
+    } else {
+	$status = &Lock("r",@modules);
+	if ($status) {
+	    return $status;
+	}
+	$pwd = $ENV{'PWD'};
+	foreach $i (@modules) {
+	    printf("InfoCmd %i\n") if ($debug);
+	    &Chdir($i) == 0 || return 1; 
+	    $status = &Info($i);
+	    if ($status) {
+		return $status;
+	    }
+	    &Chdir($pwd) == 0 || return 1; 
+	}
+    }
+    return $status;
+}
+
+#
+# DiffFile($path, $file, $args, $current)
+#
+# Prints out status information for the current directory and recurses
+# on subdirectories.
+#
+# Results: 0 if successful, 1 otherwise
+#
+# Side effects: 
+#
+sub DiffFile {
+    local($path) = shift;	# Current path.
+    local($file) = shift;	# File to diff.
+    local($args) = shift;	# args to cvs diff.
+    local($current) = shift;	# Should we diff with current version.
+    local($tail);
+    local($pwd) = $ENV{'PWD'};
+    local($status) = 0;
+    local($version) = "";
+    local($repository);
+
+    if (!-d "CVS.adm") {
+	return 0;
+    }
+    $repository = &Repository(".");
+    if (!defined($repository)) {
+	print("Repository not found\n") if ($debug);
+	return 0;
+    }
+    printf("Repository is $repository\n") if ($debug);
+    if (!-e "$repository/$file,v") {
+	return 0;
+    }
+    if ($current) {
+	open(DIFF, "cvs -d $cvsroot status $file |") ||
+	    return &Error(1, "Can't get status for $path/$file: $!\n");
+	while(<DIFF>) {
+	    if (/^RCS:\s+(\S+)/) {
+		$version = "-r $1";
+		last;
+	    }
+	}
+	close(DIFF);
+    }
+    system("cvs -d $cvsroot $cvsCmdArgs diff $version $args $file");
+}
+
+#
+# Diff($path, $args, $current)
+#
+# Prints out status information for the current directory and recurses
+# on subdirectories.
+#
+# Results: 0 if successful, 1 otherwise
+#
+# Side effects: 
+#
+sub Diff {
+    local($path) = shift;	# Current path.
+    local($args) = shift;	# args to cvs diff.
+    local($current) = shift;	# Should we diff with current version.
+    local($tail);
+    local($pwd) = $ENV{'PWD'};
+    local($file);
+    local($status) = 0;
+
+    if (!-d "CVS.adm") {
+	return 0;
+    }
+    $tail = substr($path, rindex($path, '/') + 1);
+    if ($tail eq "SCVS") {
+	return 0;
+    }
+    opendir(THISDIR, ".") || return &Error(1, "Opendir of $path failed: $!\n");
+    foreach $file (grep(-f, readdir(THISDIR))) {
+	printf(STDERR "$file\n") if ($debug);
+	$status = &DiffFile($path, $file, $args, $current);
+	if ($status) {
+	    return $status;
+	}
+    }
+    if ($recurse) {
+	$status = &AllSubdirs($path, "Diff", $args, $current);
+    }
+}
+
+
+
+#
+# DiffCmd(@modules)
+#
+# Does an rcsdiff on the modules or directories
+#
+# Results: 0 if successful, 1 otherwise
+#
+# Side effects: 
+#
+
+sub DiffCmd {
+    local(@modules) = @_;
+    local($pwd, $i);
+    local($status) = 0;
+    local($current) = 0;
+    local(@options) = (
+	"R", $OPT_TRUE, *current, "Diff with current version",
+	"l", $OPT_FALSE, *recurse, "Recurse on subdirectories",
+	"b", $OPT_FUNC, "CvsOpt1", $OPT_NULL,
+	"i", $OPT_FUNC, "CvsOpt1", $OPT_NULL,
+	"w", $OPT_FUNC, "CvsOpt1", $OPT_NULL,
+	"t", $OPT_FUNC, "CvsOpt1", $OPT_NULL,
+	"c", $OPT_FUNC, "CvsOpt1", $OPT_NULL,
+	"e", $OPT_FUNC, "CvsOpt1", $OPT_NULL,
+	"f", $OPT_FUNC, "CvsOpt1", $OPT_NULL,
+	"h", $OPT_FUNC, "CvsOpt1", $OPT_NULL,
+	"n", $OPT_FUNC, "CvsOpt1", $OPT_NULL,
+	"r", $OPT_FUNC, "CvsOpt2", $OPT_NULL,
+    );
+
+    $recurse = 1;
+    undef($cvsargs);
+    &Opt_Parse(*modules, @options, $OPT_OPTIONS_FIRST | $OPT_NO_SPACE);
+    print "@modules\n" if ($debug);
+    if ($#modules < $[) {
+	push(@modules, ".");
+    }
+    if (! -d $modules[0]) {
+	$status = &Lock("r","."); 
+	if ($status) {
+	    return $status;
+	}
+	foreach $i (@modules) {
+	    &DiffFile(".", $i, $cvsargs, $current);
+	}
+    } else {
+	$status = &Lock("r",@modules);
+	if ($status) {
+	    return $status;
+	}
+	$pwd = $ENV{'PWD'};
+
+	foreach $i (@modules) {
+	    printf("DiffCmd $i\n") if ($debug);
+	    &Chdir($i) == 0 || return 1; 
+	    $status = &Diff($i, $cvsargs, $current);
+	    if ($status) {
+		return $status;
+	    }
+	    &Chdir($pwd) == 0 || return 1; 
+	}
+    }
+    return $status;
+}
+
+#
+# Cvs($path, $command)
+#
+# Run a cvs command in the current directory and its subdirectories.
+# Any output from the command is printed.  The command is not executed
+# in any "SCVS" subdirectories.
+#
+# Results: 0 if successful, 1 otherwise
+#
+# Side effects: 
+#
+sub Cvs {
+    local($path) = shift;
+    local($command) = shift;
+    local($pwd) = $ENV{'PWD'};
+    local($status) = 0;
+    local($output, $tail);
+
+    if (!-d "CVS.adm") {
+	return 0;
+    }
+    $tail = substr($path, rindex($path, '/') + 1);
+    if ($tail eq "SCVS") {
+	return 0;
+    }
+    printf("%s\n", $path);
+    system("cvs -d $cvsroot $cvsCmdArgs $command");
+    if ($recurse) {
+	$status = &AllSubdirs($path, "Cvs", $command);
+    }
+    return $status;
+}
+
+
+#
+# CvsCmd($command, @modules)
+#
+# Runs a cvs command on each module and its subdirectories.
+# Any output from the command is printed.
+#
+# Results: 0 if successful, 1 otherwise
+#
+# Side effects: 
+#
+
+sub CvsCmd {
+    local($command) = shift;
+    local(@modules) = @_;
+    local($i, @args);
+    local($status) = 0;
+    local($path);
+    local($pwd) = $ENV{'PWD'};
+    local(@options) = (
+	"l", $OPT_FALSE, *recurse, "Don't recurse on subdirs",
+	"L", $OPT_FUNC, "CvsOpt1", $OPT_NULL,
+	"R", $OPT_FUNC, "CvsOpt1", $OPT_NULL,
+	"h", $OPT_FUNC, "CvsOpt1", $OPT_NULL,
+	"t", $OPT_FUNC, "CvsOpt1", $OPT_NULL,
+	"b", $OPT_FUNC, "CvsOpt1", $OPT_NULL,
+	"d", $OPT_FUNC, "CvsOpt2", $OPT_NULL,
+	"l", $OPT_FUNC, "CvsOpt2", $OPT_NULL,
+	"r", $OPT_FUNC, "CvsOpt2", $OPT_NULL,
+	"s", $OPT_FUNC, "CvsOpt2", $OPT_NULL,
+	"w", $OPT_FUNC, "CvsOpt2", $OPT_NULL,
+    );
+
+
+    $recurse = 1;
+    undef($cvsargs);
+    &Opt_Parse(*modules, @options, $OPT_OPTIONS_FIRST | $OPT_NO_SPACE);
+
+    if ($#modules < $[) {
+	push(@modules, ".");
+    }
+    if (! -d $modules[0]) {
+	$status = &Lock("r","."); 
+	if ($status) {
+	    return $status;
+	}
+	$tmp = "cvs -d $cvsroot $cvsCmdArgs $command $cvsargs @modules";
+	print "$tmp\n" if ($debug);
+	system($tmp);
+    } else {
+	$status = &Lock("r", @modules); 
+	if ($status) {
+	    return $status;
+	}
+module: 
+	foreach $i (@modules) {
+	    &Chdir($i) == 0 || return 1; 
+	    $status = &Cvs($i, $command);
+	    &Chdir($pwd) == 0 || return 1; 
+	}
+    }
+    return $status;
+}
+
+
+
+#
+# Exit
+#
+# Exit with a status of 1.
+#
+# Results: Doesn't return
+#
+# Side effects: The script exits.
+#
+
+
+sub Exit {
+    exit(1);
+}
+
+
+#
+# Usage(@optionArray)
+#
+# Print out help information.
+#
+# Results: None
+#
+# Side effects: Stuff is printed
+#
+sub Usage {
+    local(@options) = @_;
+    local(%info) = (("unpack", "Create symbolic links"),
+		    ("checkout", "Checkout a copy of a module"),
+		    ("unlock", "Unlock a module"),
+		    ("lock", "Lock a module"),
+		    ("update", "Update a copy of a module"),
+		    ("done", "User is done with a module"),
+		    ("commit", "Commit changes to a module"),
+		    ("who", "Print a list of users with copies of a module"),
+		    ("diff", "Do rcsdiff on files you have changed"),
+		    ("status", "Print out rcs status of files"),
+		    ("log", "Print rcs log of files"),
+		    ("join", "Merge in new vendor release"),
+		    ("patch", "Create a patch file"),
+		    ("tag", "Tag a version"));
+
+    &Opt_PrintUsage(@options);
+    printf("\nValid commands are:\n");
+    foreach $i sort ("unpack", "checkout", "unlock", "lock", "update", 
+			"done", "commit", "who", "diff", "status", "log",
+			@cvsCmds) {
+	printf("\t$i\t%s\n", $info{$i});
+    }
+}
+
+#
+# Error($status, @args)
+#
+# Prints @args to STDERR, and returns $status
+#
+# Results: $status
+#
+# Side effects: Stuff is printed
+#
+sub Error {
+    local($status) = shift;
+    if ($#_ >= $[) {
+	printf(STDERR @_);
+    }
+    return $status;
+}
+
+#
+# ReadFile($file, $ignoreComments)
+#
+# Reads the contents of the given file.  If $ignoreComments is non-zero
+# then any line beginning with '#' is ignored.  
+#
+# Results: An array containing each line of the file.  If a scalar is
+# 	wanted then only the first line is returned.
+#
+# Side effects: 
+#
+sub ReadFile {
+    local($file) = shift;
+    local($ignoreComments) = shift; 
+    local(@contents);
+    open(READ, "$file") ||
+	return &Error(undef, "Open of $file failed: $!\n");
+    if ($ignoreComments) {
+	@contents = grep(!/^#/, <READ>);
+    } else {
+	@contents = <READ>;
+    }
+    close(READ);
+    if ($#contents < $[) {
+	return undef;
+    }
+    if (wantarray) {
+	return @contents;
+    } 
+    return($contents[0]);
+}
+
+#
+# WriteFile($file, @args)
+#
+# Writes @args to $file.  The file is created if it doesn't exist.
+#
+# Results: 0 if successful, 1 otherwise
+#
+# Side effects:  $file may be created, and it is written.
+#
+sub WriteFile {
+    local($file) = shift;
+    open(WRITE, ">$file") ||
+	return &Error(1, "Open of $file failed: $!\n");
+    print WRITE @_;
+    close(WRITE);
+    return 0;
+}
+
+
+#
+# GetModuleName
+#
+# Gets the module name associated with a directory.
+# If no directory is specified then the current working directory is used.
+#
+# Results: The module name.
+#
+# Side effects:  The cwdToModule array is filled in.
+#
+sub GetModuleName {
+    local($dir) = shift;
+    local($reposDir);
+    local($index);
+    local(@path);
+    local($result) = undef; 
+    local($found) = 0;
+    local($i);
+    local($owd) = $ENV{'PWD'};
+    local($cwd);
+    local($name);
+
+    if (defined($dir)) {
+	&Chdir($dir) == 0 || return undef;
+    }
+    $cwd = $ENV{'PWD'};
+    $name = $cwdToModule{$cwd};
+    if (!defined($result)) {
+	if (!defined(%reposToModule)) {
+	    &ModMap;
+	}
+	$reposDir = &ReadFile("CVS.adm/Repository");
+	chop($reposDir);
+	printf("$reposDir\n") if ($debug);
+	if (defined($reposDir)) {
+	    while($reposDir ne "") {
+		$name = $reposToModule{$reposDir};
+		if (defined($name)) {
+		    printf("Module $name\n") if ($debug);
+		    $result = $name;
+		    last;
+		}
+		$index = rindex($reposDir, '/');
+		last if ($index < $[);
+		$dir = substr($reposDir, 0, $index);
+	    }
+	}
+    }
+    if (defined($result)) {
+	$cwdToModule{$cwd} = $name;
+    }
+    if (defined($dir)) {
+	&Chdir($owd) == 0 || return undef;
+    }
+    return $result;
+}
+
+#
+# GetRootDir
+#
+# Given the name of a directory within a module copy returns the name
+# of the root directory for that copy.  If a name is not given then
+# the current directory is used.
+#
+# Results: The module name, undef otherwise.
+#
+# Side effects:  The cwdToRoot array is filled in.
+#
+
+sub GetRootDir {
+    local($dir) = shift;
+    local($owd) = $ENV{'PWD'};
+    local($result) = undef;
+
+    if (defined($dir)) {
+	&Chdir($dir) == 0 || return undef;
+    }
+    $cwd = $ENV{'PWD'};
+    $result = $cwdToRoot{$cwd};
+    if (!defined($result)) {
+
+
+
+
+#
+# Chdir($dir)
+#
+# Changes the current working directory to $dir.  If the command fails
+# an error message is printed. 
+#
+# Results: 0 if successful, 1 otherwise
+#
+# Side effects:  The current working directory is changed, and $ENV{'PWD'}
+# 	set to the new working directory.
+#
+sub Chdir {
+    if (!&chdir($_[0])) {
+	($package, $file, $line) = caller;
+	return &Error(1, "Chdir to %s from %s failed: $!\nFile %s Line %s", 
+		$_[0], $ENV{'PWD'}, $file,$line);
+    }
+    return 0;
+}
+
+#
+# ModMap
+#
+# Creates a mapping of module name to its subdirectory in the repository,
+# and a mapping from the subdirectory to the module name.
+#
+# Results: 0 if successful, 1 otherwise
+#
+# Side effects:  The %moduleToRepos and %reposToModule are filled in.
+#
+
+sub ModMap {
+    local($module, $dir);
+    open(MOD, "cvs -d $cvsroot co -c |") ||
+	return &Error(1, "Can't do \"cvs co -c\"\n");
+    undef %moduleToRepos;
+    while(<MOD>) {
+	if (/^(\S+)\s+(\S+)/) {
+	    $moduleToRepos{$1} = $2;
+	    $reposToModule{$2} = $1;
+	}
+    }
+    close(MOD);
+}
+
+#
+# Main
+#
+#
+$SIG{'INT'} = Exit;
+&initpwd;
+$tmpfile = "#SCVS.$$";
+$status = 0;
+if (&Config) {
+    exit(1);
+}
+$command = shift;
+if (!defined($command)) {
+    &Usage(@options);
+    exit(1);
+}
+printf("$command: %s\n", join(' ', @ARGV)) if ($debug);
+
+if (($command eq "pack") || ($command eq "unpack")) {
+    local(@options) = ("l", $OPT_FALSE, *recurse, "Recurse on subdirectories");
+    &Opt_Parse(*ARGV, @options, 0);
+    $status = &PackCmd($command, @ARGV);
+} elsif (($command eq "checkout") || ($command eq "co")) {
+    $command = "checkout";
+    $status = &Checkout(@ARGV);
+} elsif ($command eq "unlock") {
+    $status = &UnlockCmd(@ARGV);
+} elsif ($command eq "lock") {
+    $status = &LockCmd(@ARGV);
+    undef(@locks);
+} elsif ($command eq "update") {
+    $status = &UpdateCmd(1, @ARGV);
+} elsif ($command eq "done") {
+    $status = &DoneCmd(@ARGV);
+} elsif (($command eq "commit") || ($command eq "ci")) {
+    $status = &CommitCmd(@ARGV);
+} elsif ($command eq "who") {
+    $status = &WhoCmd(@ARGV);
+} elsif ($command eq "add") {
+    $status = &AddCmd(@ARGV);
+} elsif ($command eq "remove") {
+    $status = &RemoveCmd(@ARGV);
+} elsif ($command eq "info") {
+    $status = &InfoCmd(@ARGV);
+} elsif ($command eq "diff") {
+    $status = &DiffCmd(@ARGV);
+} elsif (($command eq "status") || ($command eq "log")) {
+    $status = &CvsCmd($command, @ARGV);
+} elsif (grep($command eq $_, @cvsCmds)) {
+    system("cvs -d $cvsroot $cvsCmdArgs $command @ARGV");
+    $status = 0;
+} else {
+    printf("Bad command: $command\n");
+    &Usage(@options);
+    exit(1);
+}
+
+# Unlock any modules we may have locked.
+
+if ($#locks >= $[) {
+    &Unlock(0, @locks);
+}
+if ($status) {
+    printf("$command failed\n");
+}
+exit($status);

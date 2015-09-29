@@ -1,0 +1,16 @@
+D DS3100_M                          	ds3100.md
+L LOCAL.MK;1                        	local.mk	../main/local.mk
+F MAKEFILE.;1                       	Makefile
+F NET.H;1                           	net.h
+F NETARP.C;1                        	netArp.c
+F NETARP.H;1                        	netArp.h
+F NETCODE.C;1                       	netCode.c
+F NETETHER.C;1                      	netEther.c
+F NETINT.H;1                        	netInt.h
+F NETMACH.C;1                       	netMach.c
+F NETROUTE.C;1                      	netRoute.c
+F NETROUTE.H;1                      	netRoute.h
+F NETTYPES.H;1                      	netTypes.h
+F NETULTRA.H;1                      	netUltraInt.h
+D RCS                               	RCS
+D SUN3_MD                           	sun3.md

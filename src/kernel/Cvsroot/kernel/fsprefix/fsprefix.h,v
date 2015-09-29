@@ -1,0 +1,667 @@
+head     9.5;
+branch   ;
+access   ;
+symbols  ds3100:9.5 sun3:9.5 sprited:9.3.1 sun4nw:9.4 symm:9.4 spur:9.4 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.5
+date     92.07.14.15.36.17;  author jhh;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     91.09.10.18.39.28;  author rab;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     91.05.10.12.42.09;  author mgbaker;  state Exp;
+branches 9.3.1.1;
+next     9.2;
+
+9.2
+date     90.12.06.17.36.07;  author shirriff;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.10.08.13.03.09;  author mendel;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.09.12;  author douglis;  state Stable;
+branches ;
+next     8.6;
+
+8.6
+date     89.08.21.15.28.36;  author mendel;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.08.15.18.43.21;  author rab;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.08.12.10.36.15;  author brent;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.06.30.15.23.40;  author brent;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.06.14.22.50.35;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.06.11.15.25.22;  author jhh;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.21.25;  author douglis;  state Stable;
+branches ;
+next     7.0;
+
+7.0
+date     88.11.07.14.47.57;  author brent;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.10.20.15.38.01;  author brent;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.10.16.10.08.04;  author brent;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.09.29.16.35.47;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.17.05;  author brent;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     88.08.04.15.05.19;  author mlgray;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.04.10.39.06;  author brent;  state Exp;
+branches ;
+next     ;
+
+9.3.1.1
+date     91.11.15.16.37.58;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Definitions for the prefix table module
+@
+
+
+9.5
+log
+@Fsprefix_Clear didn't unlock the monitor on one error condition.
+I changed it so it only returns in one place. Also, Fsprefix_Clear
+returns a ReturnStatus, even though it previously was defined to
+return Boolean.
+
+@
+text
+@/*
+ * fsPrefix.h --
+ *
+ *	Definitions for the prefix table.  The prefix table is used to
+ *	map from a file name to a handle for the file's domain and the
+ *	relative name after the prefix.  The search key of the prefix table is,
+ *	of course, the prefix of the file name.  The relative name after the
+ *	prefix is also returned after searching the prefix table,  and the
+ *	server for a domain looks up this name relative to the root
+ *	of the domain.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/fsprefix/fsprefix.h,v 9.4 91/09/10 18:39:28 rab Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _FSPREFIX
+#define _FSPREFIX
+
+#include <list.h>
+#include <fs.h>
+#include <fsNameOps.h>
+
+/*
+ * Fsprefix defines an entry in the prefix table.  Now it is just a linked
+ * list of items with the prefix as the key and the client's token as the
+ * data.  This structure requires an O(number of entries in the table)
+ * search each time a complete path name is opened.  A trie structure
+ * would be better because the time for the search would then be
+ * 0(length of valid prefix).
+ */
+typedef struct Fsprefix {
+    List_Links	links;		/* The prefix table is kept in a list */
+    char 	*prefix;	/* The prefix is the key */
+    int		prefixLength;	/* It must match the file name this much */
+    Fs_HandleHeader *hdrPtr;	/* This data is the result of opening the
+				 * prefix (a directory) on the server */
+    int		domainType;	/* These are cached and used when trying to */
+    int		serverID;	/* re-establish a prefix table entry. */
+				/* serverID is also used to find a prefix.
+				 * It contains the server id if it is
+				 * known, otherwise it contains the 
+				 * broadcast id. */
+    int		flags;		/* One of the flags defined below. */
+    /*
+     * At recovery time things are simpler if there are no active opens
+     * or closes.  The following counters, flags and condition variables
+     * are used to arrange this.
+     */
+    int		activeOpens;	/* Count of active opens in the domain */
+    Boolean	delayOpens;	/* TRUE if opens are delayed pending recovery */
+    Sync_Condition okToOpen;	/* Notified when opens can proceed */
+    Sync_Condition okToRecover;	/* Notified when there are no active opens */
+
+    /*
+     * An export list can be kept for a prefix to control access.
+     * Support code is implemented but not tested, 9/87
+     */
+    List_Links	exportList;	/* List of remote hosts that this prefix
+				 * can be exported to.  If empty, all other
+				 * hosts have access. */
+} Fsprefix;
+
+/*
+ * Type of prefix.
+ *
+ *	FSPREFIX_EXPORTED		This prefix is exported.
+ *	FSPREFIX_IMPORTED		This prefix is imported.
+ *	FSPREFIX_LOCAL			This prefix is local and private.
+ *	FSPREFIX_EXACT			As an argument to Fsprefix_Lookup, this
+ *					constrains the lookup to succeed only
+ *					on exact matches.
+ *	FSPREFIX_OVERRIDE		This flag, when passed to PrefixLoad,
+ *					causes any existing flags to be
+ *					sub-sumed by the passed-in flags.
+ *	FSPREFIX_LINK_NOT_PREFIX		This indicates that the caller really
+ *					wants a handle on the link file, not
+ *					the file referenced by the link.  This
+ *					allows lstat() to get the remote link,
+ *					regardless if there is a corresponding
+ *					prefix installed.
+ *	FSPREFIX_LOCKED		The prefix cannot be deleted while
+ *					this flag is set.  The iteration
+ *					procedure uses this flag.
+ *	FSPREFIX_REMOTE		This is set when a prefix is loaded
+ *					under a specific serverID.  This
+ *					action ties the prefix to this server
+ *					forever and causes prefix requests
+ *					to be issued directly to the server
+ *					instead of using broadcast.
+ *	FSPREFIX_ANY			This is passed to Fsprefix_HandleClose
+ *					to indicate that any type of prefix
+ *					is ok to nuke.  Fsprefix_HandleClose
+ *					also takes FSPREFIX_LOCAL,
+ *					FSPREFIX_EXPORTED, FSPREFIX_IMPORTED
+ *					as types to remove.
+ *	FSPREFIX_FORCED		This prefix was forced to be loaded to avoid
+ *					broadcasting for the server.
+ */
+
+#define	FSPREFIX_EXPORTED		0x1
+#define	FSPREFIX_IMPORTED		0x2
+#define	FSPREFIX_LOCAL			0x4
+#define	FSPREFIX_EXACT			0x8
+#define	FSPREFIX_OVERRIDE		0x10
+#define FSPREFIX_LINK_NOT_PREFIX		0x20
+#define FSPREFIX_LOCKED		0x40
+#define FSPREFIX_REMOTE		0x80
+#define FSPREFIX_ANY			0x100
+#define FSPREFIX_FORCED			0x200
+
+
+/*
+ * Major prefix table entry points.
+ */
+extern void Fsprefix_Init _ARGS_((void));
+extern Fsprefix *Fsprefix_Install _ARGS_((char *prefix, 
+		Fs_HandleHeader *hdrPtr, int domainType, int flags));
+extern ReturnStatus Fsprefix_Lookup _ARGS_((char *fileName, int flags, 
+		int clientID, Fs_HandleHeader **hdrPtrPtr,
+		Fs_FileID *rootIDPtr, char **lookupNamePtr, int *serverIDPtr,
+		int *domainTypePtr, Fsprefix **prefixPtrPtr));
+extern void Fsprefix_Load _ARGS_((char *prefix, int serverID, int flags));
+/*
+ * Recovery related procedures
+ */
+extern void Fsprefix_Reopen _ARGS_((int serverID));
+extern void Fsprefix_AllowOpens _ARGS_((int serverID));
+extern void Fsprefix_RecoveryCheck _ARGS_((int serverID));
+extern ReturnStatus Fsprefix_OpenCheck _ARGS_((Fs_HandleHeader *prefixHdrPtr));
+extern int Fsprefix_OpenInProgress _ARGS_((Fs_FileID *fileIDPtr));
+extern void Fsprefix_OpenDone _ARGS_((Fs_HandleHeader *prefixHdrPtr));
+extern Fsprefix *Fsprefix_FromFileID _ARGS_((Fs_FileID *fileIDPtr));
+extern void Fsprefix_HandleClose _ARGS_((Fsprefix *prefixPtr, int flags));
+
+extern ReturnStatus Fsprefix_LookupOperation _ARGS_((char *fileName, 
+		int operation, Boolean follow, Address argsPtr,
+		Address resultsPtr, Fs_NameInfo *nameInfoPtr));
+extern ReturnStatus FsprefixLookupRedirect _ARGS_((
+		Fs_RedirectInfo *redirectInfoPtr, Fsprefix *prefixPtr,
+		char **fileNamePtr));
+extern ReturnStatus Fsprefix_TwoNameOperation _ARGS_((int operation, 
+		char *srcName, char *dstName, Fs_LookupArgs *lookupArgsPtr));
+
+extern ReturnStatus Fsprefix_Clear _ARGS_((char *prefix, int deleteFlag, 
+		Boolean forced));
+extern ReturnStatus Fsprefix_DumpExport _ARGS_((int size, Address buffer));
+extern ReturnStatus Fsprefix_Dump _ARGS_((int index, Address argPtr));
+extern void Fsprefix_Export _ARGS_((char *prefix, int clientID,Boolean delete));
+extern Boolean Fsprefix_WasForced _ARGS_((char *prefix));
+
+#endif _FSPREFIX
+@
+
+
+9.4
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@d21 1
+a21 1
+ * $Header: /sprite/src/kernel/fsprefix/RCS/fsprefix.h,v 9.3 91/05/10 12:42:09 mgbaker Exp Locker: rab $ SPRITE (Berkeley)
+d152 2
+a153 1
+extern Boolean Fsprefix_Clear _ARGS_((char *prefix, int deleteFlag, Boolean forced));
+@
+
+
+9.3
+log
+@Fixed infinite recovery loop due to stale prefixes.
+@
+text
+@d21 1
+a21 1
+ * $Header: /sprite/src/kernel/fsprefix/RCS/fsprefix.h,v 9.2 90/12/06 17:36:07 shirriff Exp $ SPRITE (Berkeley)
+a119 1
+extern Boolean fsprefix_FileNameTrace;
+@
+
+
+9.3.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d21 1
+a21 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/fsprefix/fsprefix.h,v 9.3 91/05/10 12:42:09 mgbaker Exp $ SPRITE (Berkeley)
+@
+
+
+9.2
+log
+@Added missing prototype.
+@
+text
+@d21 1
+a21 1
+ * $Header: /sprite/src/kernel/fsprefix/RCS/fsprefix.h,v 9.1 90/10/08 13:03:09 mendel Exp Locker: shirriff $ SPRITE (Berkeley)
+d104 2
+d117 1
+d119 1
+d153 1
+a153 1
+extern Boolean Fsprefix_Clear _ARGS_((char *prefix, int deleteFlag));
+d157 1
+@
+
+
+9.1
+log
+@Fixed include files to use <> rather than "". 
+Added function prototypes.
+@
+text
+@d21 1
+a21 1
+ * $Header: /sprite/src/kernel/fs.mendel/RCS/fsprefix.h,v 1.1 90/01/16 17:12:11 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d151 1
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d21 1
+a21 1
+ * $Header: /sprite/src/kernel/fsprefix/RCS/fsprefix.h,v 8.6 89/08/21 15:28:36 mendel Exp Locker: douglis $ SPRITE (Berkeley)
+d27 3
+a29 2
+#include "list.h"
+#include "fs.h"
+d120 8
+a127 4
+extern	void		Fsprefix_Init();
+extern	Fsprefix *	Fsprefix_Install();
+extern	ReturnStatus	Fsprefix_Lookup();
+extern	void		Fsprefix_Load();
+d131 17
+a147 12
+extern	void		Fsprefix_Reopen();
+extern	void		Fsprefix_AllowOpens();
+extern	void		Fsprefix_RecoveryCheck();
+extern	ReturnStatus	Fsprefix_OpenCheck();
+extern	int		Fsprefix_OpenInProgress();
+extern	void		Fsprefix_OpenDone();
+extern	Fsprefix *	Fsprefix_FromFileID();
+extern	void		Fsprefix_HandleClose();
+
+extern  ReturnStatus 	Fsprefix_LookupOperation();
+extern  ReturnStatus	FsprefixLookupRedirect();
+extern	ReturnStatus	Fsprefix_TwoNameOperation();
+d149 3
+a151 3
+extern  ReturnStatus	Fsprefix_Clear();
+extern  ReturnStatus	Fsprefix_DumpExport();
+extern  void	Fsprefix_Export();
+@
+
+
+8.6
+log
+@
+Break up fs into many modules.    
+@
+text
+@d21 1
+a21 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsPrefix.h,v 8.3 89/06/30 15:23:40 brent Exp Locker: brent $ SPRITE (Berkeley)
+@
+
+
+8.5
+log
+@Commented #endif labels.
+@
+text
+@d12 8
+a19 2
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+d21 1
+a21 2
+ *
+ * $Header: /sprite/src/kernel/fs/RCS/fsPrefix.h,v 8.4 89/08/12 10:36:15 brent Exp Locker: rab $ SPRITE (Berkeley)
+d31 1
+a31 1
+ * FsPrefix defines an entry in the prefix table.  Now it is just a linked
+d38 1
+a38 1
+typedef struct FsPrefix {
+d42 1
+a42 1
+    FsHandleHeader *hdrPtr;	/* This data is the result of opening the
+d48 1
+a48 1
+				 * known, otherwise it contains the
+d68 1
+a68 9
+} FsPrefix;
+
+/*
+ * A list of hosts that can use a domain is kept for exported prefixes.
+ */
+typedef struct FsPrefixExport {
+    List_Links	links;
+    int		spriteID;
+} FsPrefixExport;
+d73 4
+a76 4
+ *	FS_EXPORTED_PREFIX		This prefix is exported.
+ *	FS_IMPORTED_PREFIX		This prefix is imported.
+ *	FS_LOCAL_PREFIX			This prefix is local and private.
+ *	FS_EXACT_PREFIX			As an argument to FsPrefixLookup, this
+d79 1
+a79 1
+ *	FS_OVERRIDE_PREFIX		This flag, when passed to PrefixLoad,
+d82 1
+a82 1
+ *	FS_LINK_NOT_PREFIX		This indicates that the caller really
+d88 1
+a88 1
+ *	FS_PREFIX_LOCKED		The prefix cannot be deleted while
+d91 1
+a91 1
+ *	FS_REMOTE_PREFIX		This is set when a prefix is loaded
+d97 1
+a97 1
+ *	FS_ANY_PREFIX			This is passed to FsPrefixHandleClose
+d99 3
+a101 3
+ *					is ok to nuke.  FsPrefixHandleClose
+ *					also takes FS_LOCAL_PREFIX,
+ *					FS_EXPORTED_PREFIX, FS_IMPORTED_PREFIX
+d105 9
+a113 9
+#define	FS_EXPORTED_PREFIX		0x1
+#define	FS_IMPORTED_PREFIX		0x2
+#define	FS_LOCAL_PREFIX			0x4
+#define	FS_EXACT_PREFIX			0x8
+#define	FS_OVERRIDE_PREFIX		0x10
+#define FS_LINK_NOT_PREFIX		0x20
+#define FS_PREFIX_LOCKED		0x40
+#define FS_REMOTE_PREFIX		0x80
+#define FS_ANY_PREFIX			0x100
+d115 1
+d119 4
+a122 4
+extern	void		FsPrefixInit();
+extern	FsPrefix *	FsPrefixInstall();
+extern	ReturnStatus	FsPrefixLookup();
+
+d126 16
+a141 8
+extern	void		FsPrefixReopen();
+extern	void		FsPrefixAllowOpens();
+extern	void		FsPrefixRecoveryCheck();
+extern	ReturnStatus	FsPrefixOpenCheck();
+extern	int		FsPrefixOpenInProgress();
+extern	void		FsPrefixOpenDone();
+extern	FsPrefix *	FsPrefixFromFileID();
+extern	void		FsPrefixHandleClose();
+d143 1
+a143 1
+#endif /* _FSPREFIX */
+@
+
+
+8.4
+log
+@Added FS_ANY_PREFIX flag
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsPrefix.h,v 8.3 89/06/30 15:23:40 brent Exp Locker: brent $ SPRITE (Berkeley)
+d43 1
+a43 1
+				 * known, otherwise it contains the 
+d137 1
+a137 1
+#endif _FSPREFIX
+@
+
+
+8.3
+log
+@Added FS_REMOTE_PREFIX flag.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsPrefix.h,v 8.2 89/06/14 22:50:35 brent Exp $ SPRITE (Berkeley)
+d100 6
+a105 2
+ *	FS_PREFIX_OPEN_LOCK		Used to lock out a domain as part
+ *					of bringing it offline.
+d116 1
+a116 1
+#define FS_PREFIX_OPEN_LOCK		0x100
+@
+
+
+8.2
+log
+@Added FS_PREFIX_LOCKED so Fs_PrefixDump can interate through
+the prefix table and do things with it, like FsDomainInfo
+out from under the monitor lock.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsPrefix.h,v 7.0 88/11/07 14:47:57 brent Exp $ SPRITE (Berkeley)
+a90 2
+ *	FS_PREFIX_OPEN_LOCK		Used to lock out a domain as part
+ *					of bringing it offline.
+d94 8
+d111 1
+@
+
+
+8.1
+log
+@Updated a comment
+@
+text
+@d93 3
+d104 1
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsPrefix.h,v 7.0 88/11/07 14:47:57 brent Exp Locker: douglis $ SPRITE (Berkeley)
+d41 4
+@
+
+
+7.0
+log
+@New version for conversion to new C library
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsPrefix.h,v 6.3 88/10/20 15:38:01 brent Exp Locker: brent $ SPRITE (Berkeley)
+@
+
+
+6.3
+log
+@Moved extern from fsPrefix.c to fsPrefix.h
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsPrefix.h,v 6.2 88/10/16 10:08:04 brent Exp $ SPRITE (Berkeley)
+@
+
+
+6.2
+log
+@Changed FsPrefixInstall to return pointer to the prefix
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsPrefix.h,v 6.1 88/09/29 16:35:47 brent Exp Locker: brent $ SPRITE (Berkeley)
+d116 1
+@
+
+
+6.1
+log
+@Modified prefix table access to not redirect via the prefix table
+if the lookup wanted a link, and the link had a prefix installed
+for it.  This makes lstat() of remote links work consistently.
+@
+text
+@d16 1
+a16 1
+ * $Header: fsPrefix.h,v 6.0 88/08/11 12:17:05 brent Stable $ SPRITE (Berkeley)
+d103 1
+a103 1
+extern	void		FsPrefixInstall();
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+ * $Header: fsPrefix.h,v 1.2 88/08/04 15:05:19 mlgray Exp $ SPRITE (Berkeley)
+d81 6
+d96 1
+@
+
+
+1.2
+log
+@merging changes from fs into fs.new
+@
+text
+@d16 1
+a16 1
+ * $Header: fsPrefix.h,v 1.1 88/04/04 10:39:06 brent Exp $ SPRITE (Berkeley)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+ * $Header: fsPrefix.h,v 5.3 87/09/29 15:32:51 brent Exp $ SPRITE (Berkeley)
+a23 1
+#include "fsInt.h"
+@

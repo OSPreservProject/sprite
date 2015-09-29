@@ -1,0 +1,1152 @@
+head     9.12;
+branch   ;
+access   ;
+symbols  ds3100:9.12 sun3:9.12 sun4nw:9.12 symm:9.12 spur:9.12 sprited:9.11.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.12
+date     91.08.24.20.06.07;  author mottsmth;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     90.12.13.15.00.03;  author mendel;  state Exp;
+branches 9.11.1.1;
+next     9.10;
+
+9.10
+date     90.12.11.18.51.42;  author mgbaker;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     90.12.06.21.47.40;  author jhh;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     90.10.02.16.29.20;  author mgbaker;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.09.11.16.08.24;  author mendel;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.09.11.11.35.38;  author mgbaker;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.03.22.12.13.38;  author mgbaker;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.03.22.12.00.53;  author mgbaker;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     89.11.07.12.01.48;  author brent;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.30.11.16.36;  author shirriff;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.12.12.09.38;  author brent;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.18.08;  author douglis;  state Stable;
+branches ;
+next     8.3;
+
+8.3
+date     89.06.15.16.42.21;  author brent;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.02.15.08.19.33;  author jhh;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.22.19.35.10;  author jhh;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.35.33;  author douglis;  state Stable;
+branches ;
+next     6.3;
+
+6.3
+date     88.10.28.19.23.56;  author mlgray;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.29.14.29.41;  author mlgray;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.26.18.26.21;  author mlgray;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.25.19;  author brent;  state Stable;
+branches ;
+next     5.3;
+
+5.3
+date     88.05.16.10.04.38;  author brent;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     88.05.16.10.03.28;  author brent;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.09.09.10.48.27;  author brent;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.48.43;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.11.1.1
+date     91.10.27.22.37.33;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.12
+log
+@Add true vfork support
+@
+text
+@/*
+ * rpcDaemon.c --
+ *
+ *	The RPC daemon is in charge of reclaiming server processes,
+ *	and creating more if neccessary.  A server process is dedicated
+ *	to a particular client/channel for a series of RPCs.  After the
+ *	series (as determined by this daemon) the server is reclaimed
+ *	and made available to service RPC requests from other clients.
+ *
+ * Copyright (C) 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDaemon.c,v 9.11 90/12/13 15:00:03 mendel Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+
+#include <sprite.h>
+#include <stdio.h>
+#include <rpc.h>
+#include <rpcInt.h>
+#include <rpcServer.h>
+#include <sync.h>
+#include <proc.h>
+#include <recov.h>
+
+/*
+ * Server processes are dynamically created by the Rpc_Daemon process.
+ * Installation of new servers, their allocation, and control of the
+ * Rpc_Daemon process is all synchronized with the serverMutex master lock.
+ * rpcDaemon is the condition that is used to wakeup the Rpc_Deamon.
+ */
+static Sync_Semaphore serverMutex = Sync_SemInitStatic("Rpc:serverMutex");
+Sync_Condition rpcDaemon;
+
+/*
+ * The timeout queue is used to periodically wake up the Rpc_Daemon.
+ */
+static Timer_QueueElement queueEntry;
+/*
+ * The state of Rpc_Daemon is used to know when to remove things
+ * from the timeout queue, and to lock out attempts at server allocation
+ * until the daemon is alive and can create server processes.
+ *	DAEMON_DEAD	The initial state of Rpc_Daemon.  This causes
+ *		RpcServerAlloc to discard any incomming messages.
+ *	DAEMON_TIMEOUT	The daemon has an entry in the timeout queue.
+ *	DAEMON_POKED	Set when rpcDaemon condition is notified to
+ *		let the daemon know if it woke up spuriously or not.
+ */
+#define DAEMON_TIMEOUT	1
+#define DAEMON_POKED	2
+#define DAEMON_DEAD	4
+static int daemonState = DAEMON_DEAD;
+
+/*
+ * The server dispatcher signals its distress at not being able to dispatch
+ * a message because there are no server processes by incrementing this
+ * counter.  Rpc_Deamon notices this and creates more server processes.
+ * After max number of server processes have been created this is set
+ * to a negative number to prevent creating any more server processes.
+ */
+int		 rpcNoServers = 0;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_Daemon --
+ *
+ *	The main loop of the rpcDaemon process.  This process sleeps for
+ *	regular intervals and then pokes around looking for RPC server
+ *	processes that have been idle for a while.  Idle servers are
+ *	reclaimed by tidying up their connection with their old client
+ *	and making them available to handle RPC requests from other clients.
+ *	The other chore of the daemon is to create more RPC server processes
+ *	if the demand for them is high.  (Initially a few server processes
+ *	are created and the rest are created via this daemon.)
+ *
+ * Results:
+ *	This never returns.
+ *
+ * Side effects:
+ *	Evolves a server process's state from BUSY to AGING and back to FREE.
+ *	Creates new RPC server processes.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Rpc_Daemon()
+{
+    int pid;
+
+    queueEntry.routine = RpcDaemonWakeup;
+    queueEntry.interval = 2 * timer_IntOneSecond;
+    queueEntry.clientData = (ClientData)NIL;
+
+    Recov_CrashRegister(RpcCrashCallBack, (ClientData)NIL);
+
+    while (TRUE) {
+	RpcDaemonWait(&queueEntry);
+	if (rpcNoServers > 0) {
+	    /*
+	     * The dispatcher has received requests that it couldn't handle
+	     * because there were no available server processes.
+	     */
+	     if (Rpc_CreateServer(&pid) == SUCCESS) {
+		 printf("RPC srvr %x\n", pid);
+		 RpcResetNoServers(0);
+	     } else {
+		 printf("Warning: Rpc_Daemon: no more RPC servers\n");
+		 RpcResetNoServers(-1);
+		 queueEntry.interval = timer_IntOneSecond;
+	     }
+	}
+	/*
+	 * Reclaim servers from channels that have become idle.
+	 * We are more aggressive about this if we have maxed
+	 * out the number of server processes.
+	 */
+	RpcReclaimServers(rpcNoServers < 0);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_CreateServer(pidPtr) --
+ *
+ *      Create an RPC server process.  It won't be available to handle RPC
+ *      requests until it has run a bit and installed itself.  This
+ *      procedure is not monitored although it is called from the main program
+ *      and by the Rpc_Daemon process.  Currently the initialization done
+ *	in main is done before Rpc_Deamon begins running.
+ *
+ * Results:
+ *	A status from the process creating call.
+ *
+ * Side effects:
+ *	Create the server process, set up its state table entry, and
+ *	return the caller the process ID of the server.  The counter
+ *	rpcNumServers is incremented.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Rpc_CreateServer(pidPtr)
+    int *pidPtr;
+{
+    register ReturnStatus status;
+
+    if (rpcNumServers >= rpcMaxServers) {
+	return(FAILURE);
+    }
+    /*
+     * Initialize the next slot in the server state table and create a
+     * process that goes with it.
+     */
+    rpcServerPtrPtr[rpcNumServers] = RpcInitServerState(rpcNumServers);
+    rpcNumServers++;
+#ifndef lint
+    /* Won't lint due to cast of function pointer to address. */
+    status = Proc_NewProc((Address)Rpc_Server, PROC_KERNEL, FALSE,
+	    (Proc_PID *) pidPtr, "Rpc_Server", FALSE);
+#else	/* lint */
+    /*
+     * FOR LINTING ONLY!!!!  So that lint doesn't complain about status
+     * not being set, since I had to comment out the real setting due
+     * to function pointer cast.
+     */
+    status = SUCCESS;
+#endif /* lint */
+    if (status == SUCCESS) {
+	Proc_SetServerPriority(*((Proc_PID *) pidPtr));
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcServerAlloc --
+ *
+ *	Match up an incoming message to its server.  The clientID field
+ *	of the header is used to identify the client.  This ID has to
+ *	already have been validated by RpcValidateClient.
+ *
+ * Results:
+ *	A pointer to the state of a server process.  The server is either
+ *	currently involved in a transaction with the client, or it was
+ *	the server for the client on the client's last transaction,
+ *	or it is newly allocated to the client.
+ *
+ * Side effects:
+ *	If this message is from a different client than the server's
+ *	previous client, the server's state is updated to identify
+ *	the new client.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY RpcServerState *
+RpcServerAlloc(rpcHdrPtr)
+    RpcHdr *rpcHdrPtr;
+{
+    register int startIndex;
+    register int srvIndex;
+    register RpcServerState *srvPtr;
+    int	freeServer = -1;
+
+    MASTER_LOCK(&serverMutex);
+    Sync_SemRegister(&serverMutex);
+
+    if (daemonState == DAEMON_DEAD) {
+	/*
+	 * The RPC system isn't up enough to accept requests.
+	 */
+	srvPtr = (RpcServerState *)NIL;
+	goto unlock;
+    }
+    /*
+     * Start looking at the server indicated by the client's hint.
+     */
+    srvIndex = rpcHdrPtr->serverHint;
+    if (srvIndex < 0 || srvIndex >= rpcNumServers) {
+	srvIndex = 0;
+    }
+    startIndex = srvIndex;
+    do {
+	srvPtr = rpcServerPtrPtr[srvIndex];
+	if (srvPtr != (RpcServerState *)NIL) {
+	    if (srvPtr->state & SRV_STUCK) {
+		/* skip this process */;
+	    } else if (srvPtr->clientID == rpcHdrPtr->clientID &&
+		srvPtr->channel == rpcHdrPtr->channel) {
+		srvPtr->state &= ~SRV_FREE;
+#ifdef WOULD_LIKE
+		/* I would like this, but it's too much info. */
+		RpcAddServerTrace(srvPtr, NIL, FALSE, 12);
+#endif WOULD_LIKE
+		goto unlock;
+	    } else if ((freeServer == -1) && (srvPtr->state & SRV_FREE)) {
+		freeServer = srvIndex;
+	    }
+	}
+	srvIndex = (srvIndex + 1) % rpcNumServers;
+    } while (srvIndex != startIndex);
+
+    if (freeServer != -1) {
+	/*
+	 * Reassigning a free server to a new client.
+	 */
+	srvPtr = rpcServerPtrPtr[freeServer];
+	srvPtr->state &= ~SRV_FREE;
+	RpcAddServerTrace(srvPtr, (RpcHdr *) NIL, FALSE, 13);
+	srvPtr->clientID = rpcHdrPtr->clientID;
+	srvPtr->channel = rpcHdrPtr->channel;
+	RpcAddServerTrace(srvPtr, (RpcHdr *) NIL, FALSE, 14);
+    } else {
+	/*
+	 * No available server process yet.
+	 */
+	srvPtr = (RpcServerState *)NIL;
+	RpcAddServerTrace((RpcServerState *)NIL, (RpcHdr *) rpcHdrPtr, TRUE,15);
+	if (rpcNoServers >= 0) {
+#ifdef BAD
+	    /*
+	     * This is where I used to have it and this is bad.  It doesn't
+	     * catch requests after the number of server procs has maxed.
+	     */
+	    RpcAddServerTrace(NIL, rpcHdrPtr, TRUE, 15);
+#endif BAD
+	    /*
+	     * If rpcNoServers hasn't been set to -1 we can create more.
+	     * Poke the Rpc_Daemon process so it can create one.
+	     */
+	    rpcNoServers++;
+	    if (daemonState & DAEMON_TIMEOUT) {
+		(void)Timer_DescheduleRoutine(&queueEntry);
+		daemonState &= ~DAEMON_TIMEOUT;
+	    }
+	    daemonState |= DAEMON_POKED;
+	    Sync_MasterBroadcast(&rpcDaemon);
+	}
+    }
+unlock:
+    MASTER_UNLOCK(&serverMutex);
+    return(srvPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcServerInstall --
+ *
+ *	Assign a server process to an entry in the server table.
+ *	This would be trivial if the server process could be
+ *	passed an argument, ie, a pointer to it's state table entry.
+ *
+ * Results:
+ *	A pointer to the state table entry for the server.
+ *
+ * Side effects:
+ *	Change the state of the server from NOTREADY to FREE.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY RpcServerState *
+RpcServerInstall()
+{
+    RpcServerState *srvPtr;
+    register int i;
+    /*
+     * This synchronizes with RpcServerAlloc.  This will only be
+     * important if the server is getting requests as the machine boots.
+     */
+    MASTER_LOCK(&serverMutex);
+
+    for (i=0 ; i<rpcNumServers ; i++) {
+	srvPtr = rpcServerPtrPtr[i];
+	if (srvPtr->state == SRV_NOTREADY) {
+	    RpcAddServerTrace(srvPtr, (RpcHdr *) NIL, FALSE, 16);
+	    srvPtr->state = SRV_FREE;
+	    RpcAddServerTrace(srvPtr, (RpcHdr *) NIL, FALSE, 17);
+	    goto unlock;
+	}
+    }
+    srvPtr = (RpcServerState *)NIL;
+unlock:
+    MASTER_UNLOCK(&serverMutex);
+    return(srvPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcCrashCallBack --
+ *
+ *	This is called when a remote client has crashed or rebooted.
+ *	If we have any RPC servers assigned to channels from that client
+ *	we have to mark them as unusable so we don't erroneously discard
+ *	client requests.  Otherwise the server allocation routine will
+ *	see new requests directed to a busy server process and discard them.
+ *	This is only needed if Rpc_Server processes can hang up on something,
+ *	which does happen from time to time.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Marks any servers that are busy with this client as unusable
+ *	until their current RPC service procedure completes.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ENTRY void
+RpcCrashCallBack(clientID, data)
+    int clientID;		/* Host ID of crashed client */
+    ClientData data;		/* IGNORED */
+{
+    register RpcServerState *srvPtr;
+    register int i;
+
+    MASTER_LOCK(&serverMutex);
+
+    for (i=0 ; i<rpcNumServers ; i++) {
+	srvPtr = rpcServerPtrPtr[i];
+	if (srvPtr->state & SRV_BUSY) {
+	    /*
+	     * Mark the server as stuck if it is working for the dead client.
+	     * It becomes unstuck upon completion of its current RPC.
+	     */
+	    if (srvPtr->clientID == clientID) {
+		srvPtr->state |= SRV_STUCK;
+	    }
+	}
+    }
+    MASTER_UNLOCK(&serverMutex);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcResetNoServers --
+ *
+ *	A tiny routine to synchronize access to the rpcNoServers counter.
+ *	This counter is used by the server dispatcher to communicate out
+ *	to the Rpc_Deamon that there are not enough server processes.
+ *	This is checked (unsynchronizedly...) by Rpc_Deamon and then
+ *	reset (if non-zero) via this routine.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Reset the rpcNoServers counter to the indicated value.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+RpcResetNoServers(value)
+    int value;		/* New value for rpcNoServers */
+{
+    MASTER_LOCK(&serverMutex);
+    rpcNoServers = value;
+    MASTER_UNLOCK(&serverMutex);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcDaemonWait --
+ *
+ *	Make the Rpc_Daemon process wait.  This has to be synchronized with
+ *	the routines that wakeup the daemon.  The serverMutex is used as
+ *	the lock for these routines.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Puts the routine in the timeout queue under the protection of
+ *	the serverMutex master lock.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+RpcDaemonWait(queueEntryPtr)
+    Timer_QueueElement *queueEntryPtr;	/* Initialized timer queue item */
+{
+    MASTER_LOCK(&serverMutex);
+    if (daemonState & DAEMON_DEAD) {
+	daemonState &= ~DAEMON_DEAD;
+    }
+    if ((daemonState & DAEMON_TIMEOUT) == 0) {
+	daemonState |= DAEMON_TIMEOUT;
+	Timer_ScheduleRoutine(queueEntryPtr, TRUE);
+    }
+    while ((daemonState & DAEMON_POKED) == 0) {
+	Sync_MasterWait(&rpcDaemon, &serverMutex, FALSE);
+	if (sys_ShuttingDown) {
+	    printf("Rpc_Daemon exiting.\n");
+	    MASTER_UNLOCK(&serverMutex);
+	    Proc_Exit(0);
+	}
+    }
+    daemonState &= ~DAEMON_POKED;
+    MASTER_UNLOCK(&serverMutex);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcDaemonWakeup --
+ *
+ *	Called from the timeout queue to wakeup the Rpc_Daemon.  Grabs
+ *	the serverMutex lock and notifies rpcDaemon condition to
+ *	wakeup the Rpc_Daemon process.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Notifies the rpcDaemon condition.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ENTRY void
+RpcDaemonWakeup(time, data)
+    Timer_Ticks time;		/* Time we timed out at. */
+    ClientData data;		/* NIL */
+{
+    MASTER_LOCK(&serverMutex);
+    daemonState &= ~DAEMON_TIMEOUT;
+    daemonState |= DAEMON_POKED;
+    Sync_MasterBroadcast(&rpcDaemon);
+    MASTER_UNLOCK(&serverMutex);
+}
+@
+
+
+9.11
+log
+@Fixed the fix for the multiple timeout entry insert problem.
+Removed extra extern declarations of routines.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDaemon.c,v 9.10 90/12/11 18:51:42 mgbaker Exp Locker: mendel $ SPRITE (Berkeley)";
+d164 1
+a164 1
+	    (Proc_PID *) pidPtr, "Rpc_Server");
+@
+
+
+9.11.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDaemon.c,v 9.11 90/12/13 15:00:03 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+9.10
+log
+@Fixed timeout queue bug where we would reschedule an rpc daemon timeout
+even though one was already on the queue.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDaemon.c,v 9.9 90/12/06 21:47:40 jhh Exp Locker: mgbaker $ SPRITE (Berkeley)";
+a64 10
+/*
+ * Forward declarations.
+ */
+void RpcReclaimServers();
+void RpcReclaim();
+void RpcDaemonWakeup();
+void RpcDaemonWait();
+void RpcResetNoServers();
+void RpcCrashCallBack();
+
+d435 3
+a437 2
+    if (daemonState & DAEMON_TIMEOUT) {
+	panic("RpcDaemonWait: timeout element already on timer queue.\n");
+a438 2
+    daemonState |= DAEMON_TIMEOUT;
+    Timer_ScheduleRoutine(queueEntryPtr, TRUE);
+@
+
+
+9.9
+log
+@added a little trace buffer so we can figure out why the callback
+gets scheduled twice.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDaemon.c,v 9.8 90/10/02 16:29:20 mgbaker Exp $ SPRITE (Berkeley)";
+a74 16
+/*
+ * The debugging info is here to track down a bug in which queueEntry
+ * is inserted into the timer queue twice.  Once the bug is found feel
+ * free to get rid of this. JHH 12/5/90
+ */
+
+#define INFO_SIZE 500
+#define DEBUG(value) { 					\
+    if (curDebugPtr >= &debugInfo[INFO_SIZE]) {		\
+	curDebugPtr = debugInfo;			\
+    }							\
+    *curDebugPtr++ = (value);				\
+}
+
+static int debugInfo[INFO_SIZE];
+static int *curDebugPtr = debugInfo;
+a110 1
+	DEBUG(1);
+a287 1
+		DEBUG(2);
+a289 1
+		DEBUG(3);
+a291 1
+	    DEBUG(4);
+a441 1
+    DEBUG(6);
+a445 4
+	/*
+	 * If you're debugging this then look in the debugInfo array to
+	 * see what sequence of events lead us here. JHH 12/5/90
+	 */
+a447 1
+    DEBUG(7);
+d450 1
+a450 2
+    do {
+	DEBUG(8);
+d457 1
+a457 1
+    } while ((daemonState & DAEMON_POKED) == 0);
+a458 1
+    DEBUG(9);
+a485 1
+    DEBUG(10);
+a488 1
+    DEBUG(11);
+@
+
+
+9.8
+log
+@More prototyping garbage.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDaemon.c,v 9.7 90/09/11 16:08:24 mendel Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d75 16
+d127 1
+d305 1
+d308 1
+d311 1
+d462 1
+d466 8
+d477 1
+d486 1
+d514 1
+d518 1
+@
+
+
+9.7
+log
+@Cleaned up some lint from prototypes.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDaemon.c,v 9.6 90/09/11 11:35:38 mgbaker Exp $ SPRITE (Berkeley)";
+d19 8
+a26 6
+#include "sprite.h"
+#include "rpc.h"
+#include "rpcInt.h"
+#include "rpcServer.h"
+#include "sync.h"
+#include "proc.h"
+@
+
+
+9.6
+log
+@Added function prototypes (Mendel checking for mary)
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDaemon.c,v 9.5 90/03/22 12:13:38 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d271 1
+a271 1
+	RpcAddServerTrace(NIL, (RpcHdr *) rpcHdrPtr, TRUE, 15);
+@
+
+
+9.5
+log
+@After merge with rpc.mgb.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc.mgb/RCS/rpcDaemon.c,v 1.2 90/01/26 19:38:39 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d262 1
+a262 1
+	RpcAddServerTrace(srvPtr, NIL, FALSE, 13);
+d265 1
+a265 1
+	RpcAddServerTrace(srvPtr, NIL, FALSE, 14);
+d271 1
+a271 1
+	RpcAddServerTrace(NIL, rpcHdrPtr, TRUE, 15);
+d329 1
+a329 1
+	    RpcAddServerTrace(srvPtr, NIL, FALSE, 16);
+d331 1
+a331 1
+	    RpcAddServerTrace(srvPtr, NIL, FALSE, 17);
+@
+
+
+9.4
+log
+@Prepare for merge
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDaemon.c,v 9.3 89/11/07 12:01:48 brent Exp $ SPRITE (Berkeley)";
+d244 4
+d262 1
+d265 1
+d271 1
+d273 1
+d275 6
+d329 1
+d331 1
+@
+
+
+9.3
+log
+@Fixed bug in RpcServerAlloc.  If no more RPC servers could be
+created then it would erroneously allocate the last server
+process always.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDaemon.c,v 9.2 89/10/30 11:16:36 shirriff Exp $ SPRITE (Berkeley)";
+@
+
+
+9.2
+log
+@Lint fixes.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDaemon.c,v 9.1 89/10/12 12:09:38 brent Exp Locker: shirriff $ SPRITE (Berkeley)";
+d260 1
+a260 1
+    } else if (rpcNoServers >= 0) {
+d262 1
+a262 3
+	 * No available server process yet.  Poke the Rpc_Daemon process
+	 * so it will create us one.  The client's request gets discarded
+	 * and it has to re-try.
+d265 12
+a276 4
+	rpcNoServers++;
+	if (daemonState & DAEMON_TIMEOUT) {
+	    (void)Timer_DescheduleRoutine(&queueEntry);
+	    daemonState &= ~DAEMON_TIMEOUT;
+a277 2
+	daemonState |= DAEMON_POKED;
+	Sync_MasterBroadcast(&rpcDaemon);
+@
+
+
+9.1
+log
+@Changed Rpc_Daemon to tell RpcReclaimServers if there
+are no more server processes available.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDaemon.c,v 9.0 89/09/12 15:18:08 douglis Stable Locker: brent $ SPRITE (Berkeley)";
+d269 1
+a269 1
+	    Timer_DescheduleRoutine(&queueEntry);
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDaemon.c,v 8.3 89/06/15 16:42:21 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d121 1
+d124 6
+a129 1
+	RpcReclaimServers();
+@
+
+
+8.3
+log
+@Added RpcCrashCallback kso the RPC module can ignore
+RPC-Servers that are stuck on dead clients
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDaemon.c,v 8.2 89/02/15 08:19:33 jhh Exp $ SPRITE (Berkeley)";
+@
+
+
+8.2
+log
+@Updated Sync_Lock initialization
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDaemon.c,v 8.1 88/11/22 19:35:10 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d71 2
+d85 2
+a86 2
+ *	if the demand for them is high.  Initially a few server processes
+ *	are created and the rest are created via this daemon.
+d106 1
+a106 1
+    printf("Rpc_Daemon alive\n");
+d233 3
+a235 1
+	    if (srvPtr->clientID == rpcHdrPtr->clientID &&
+d313 48
+@
+
+
+8.1
+log
+@new semaphore definition
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDaemon.c,v 8.0 88/11/11 18:35:33 douglis Stable Locker: jhh $ SPRITE (Berkeley)";
+d32 1
+a32 1
+static Sync_Semaphore serverMutex = SYNC_SEM_INIT_STATIC("serverMutex");
+d211 1
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDaemon.c,v 6.3 88/10/28 19:23:56 mlgray Exp Locker: douglis $ SPRITE (Berkeley)";
+d32 1
+a32 1
+static int serverMutex;
+d210 1
+a210 1
+    MASTER_LOCK(serverMutex);
+d265 1
+a265 1
+    MASTER_UNLOCK(serverMutex);
+d295 1
+a295 1
+    MASTER_LOCK(serverMutex);
+d306 1
+a306 1
+    MASTER_UNLOCK(serverMutex);
+d333 1
+a333 1
+    MASTER_LOCK(serverMutex);
+d335 1
+a335 1
+    MASTER_UNLOCK(serverMutex);
+d360 1
+a360 1
+    MASTER_LOCK(serverMutex);
+d370 1
+a370 1
+	    MASTER_UNLOCK(serverMutex);
+d375 1
+a375 1
+    MASTER_UNLOCK(serverMutex);
+d401 1
+a401 1
+    MASTER_LOCK(serverMutex);
+d405 1
+a405 1
+    MASTER_UNLOCK(serverMutex);
+@
+
+
+6.3
+log
+@Conversion to new C library.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDaemon.c,v 6.2 88/08/29 14:29:41 mlgray Exp Locker: mlgray $ SPRITE (Berkeley)";
+@
+
+
+6.2
+log
+@lint
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: rpcDaemon.c,v 6.1 88/08/26 18:26:21 mlgray Exp $ SPRITE (Berkeley)";
+d104 1
+a104 1
+    Sys_Printf("Rpc_Daemon alive\n");
+d114 1
+a114 1
+		 Sys_Printf("RPC srvr %x\n", pid);
+d117 1
+a117 1
+		 Sys_Panic(SYS_WARNING, "Rpc_Daemon: no more RPC servers\n");
+d201 1
+a201 1
+RpcServerState *
+d369 1
+a369 1
+	    Sys_Printf("Rpc_Daemon exiting.\n");
+@
+
+
+6.1
+log
+@Fixed some lint errors.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: rpcDaemon.c,v 6.0 88/08/11 12:25:19 brent Stable $ SPRITE (Berkeley)";
+d161 1
+a161 1
+#ifndef LINT
+d165 8
+a172 1
+#endif /* LINT */
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d1 1
+a1 1
+/* 
+d15 2
+a16 2
+static char rcsid[] = "$Header: rpcDaemon.c,v 5.3 88/05/16 10:04:38 brent Exp $ SPRITE (Berkeley)";
+#endif not lint
+d161 5
+a165 2
+    status = Proc_NewProc((Address)Rpc_Server, PROC_KERNEL, FALSE, pidPtr,
+			  "Rpc_Server");
+d167 1
+a167 1
+	Proc_SetServerPriority(*pidPtr);
+@
+
+
+5.3
+log
+@Minor change to print statement
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: rpcDaemon.c,v 5.1 87/09/09 10:48:27 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+5.2
+log
+@Fixed handling of when no more RPC server process can be crated.
+@
+text
+@d114 1
+a114 1
+		 Sys_Printf("RPC srvr\n");
+@
+
+
+5.1
+log
+@Cleaned up some lint
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: rpcDaemon.c,v 5.0 87/08/11 10:48:43 sprite Exp $ SPRITE (Berkeley)";
+d55 9
+d113 7
+a119 3
+	     Rpc_CreateServer(&pid);
+	     Sys_Printf("RPC srvr\n");
+	     RpcResetNoServers(0);
+d239 1
+a239 1
+    } else {
+a245 1
+/*	Sys_Printf("No free servers! <%d>\n", daemonState);	*/
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: rpcDaemon.c,v 4.1 87/08/04 13:47:05 andrew Exp $ SPRITE (Berkeley)";
+d74 2
+a75 2
+ *	if the demand for them is high.  Initially a few server process
+ *	is created and the rest are created via this daemon.
+d92 1
+a92 1
+    queueEntry.interval = 5 * timer_IntOneSecond;
+d105 1
+a105 1
+	     Sys_Printf("Created RPC server %x\n", pid);
+@

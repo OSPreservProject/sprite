@@ -1,0 +1,7 @@
+
+
+          funlock handle [start] [length] [origin]
+               Remove a locked from a file that was previously placed
+               with the flock command.  The arguments are the same as
+               for the flock command, see that command for more
+               details.

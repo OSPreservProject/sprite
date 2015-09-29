@@ -1,0 +1,1 @@
+../../dist/libiberty/rindex.c

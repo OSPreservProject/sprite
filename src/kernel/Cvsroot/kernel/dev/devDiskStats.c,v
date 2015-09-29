@@ -1,0 +1,621 @@
+head     9.6;
+branch   ;
+access   ;
+symbols  ds3100:9.6 sun3:9.6 sun4nw:9.6 symm:9.6 spur:9.6 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.6
+date     91.09.10.18.19.34;  author rab;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     91.08.19.13.40.48;  author jhh;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.09.11.13.53.56;  author rab;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.09.11.12.19.13;  author rab;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.06.21.12.41.06;  author mgbaker;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.05.14.14.20.07;  author mgbaker;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.56.58;  author douglis;  state Stable;
+branches ;
+next     1.3;
+
+1.3
+date     89.06.24.12.19.49;  author mendel;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.05.23.10.24.56;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.05.18.17.59.08;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Disk statistics routines.
+@
+
+
+9.6
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@/* 
+ * devDiskStats.c --
+ *
+ *	Routines supporting statistics on Sprite Disk usage.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devDiskStats.c,v 9.5 91/08/19 13:40:48 jhh Exp Locker: rab $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <stdio.h>
+#include <sync.h>
+#include <sysStats.h>
+#include <devDiskStats.h>
+#include <user/fs.h>
+#include <stdlib.h>
+#include <list.h>
+#include <bstring.h>
+#include <string.h>
+
+/*
+ * The disk stats modules cleans a linked list of registers disk to implment
+ * the Idle counts of devices. This list is composed of devices.
+ */
+typedef struct Device {
+    List_Links	links;		  /* Used by the List_Links library routines.*/
+    Boolean (*idleCheck) _ARGS_ ((ClientData, DevDiskStats *));
+                                  /* Routine to check device's state. */
+    ClientData clientData; 	  /* ClientData argument to  idleCheck. */
+    int		type;		  /* Fs_Device type of this disk. */
+    int		unit;	    	  /* Fs_Device unit of this disk. */
+    DevDiskStats	devDiskStats;
+    int			refCount; /* # of times we've attached partition. */
+} Device;
+
+/*
+ * If idleCheck functions are kept in a list pointed to by deviceListHdr and
+ * protected by deviceListMutex. The variable initialized set to TRUE 
+ * indicates the list has been initialized.
+ */
+static Sync_Semaphore deviceListMutex = Sync_SemInitStatic("devDiskStatMutex");
+static List_Links	deviceListHdr;
+static Boolean		initialized = FALSE;
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_GatherDiskStats --
+ *
+ *	Determine which disks are idle. This routine should be called 
+ *	periodically to obtain an estimate of the idle percentage of 
+ *	a disk.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Dev_GatherDiskStats()
+{
+    register Device *devicePtr;
+
+    /*
+     * If any device has been registered do an idle check on all 
+     * registered devices. 
+     */
+    if (initialized) {
+	MASTER_LOCK(&deviceListMutex);
+
+	LIST_FORALL(&deviceListHdr, (List_Links *) devicePtr) {
+	    register Sys_DiskStats *stats =
+		    &(devicePtr->devDiskStats.diskStats);
+    
+	    stats->numSamples++;
+	    if (devicePtr->idleCheck == (Boolean((*) _ARGS_ ((ClientData,
+		DevDiskStats *)))) NIL) {
+		stats->idleCount++;	/* No disk anymore. */
+	    } else if ((devicePtr->idleCheck)(devicePtr->clientData,
+		    &(devicePtr->devDiskStats))) {
+		stats->idleCount++;
+	    }
+	}
+	MASTER_UNLOCK(&deviceListMutex);
+    }
+
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_GetDiskStats --
+ *
+ *	Return statistics about the different disks.
+ *
+ * Results:
+ *	Number of statistics entries returned.
+ *
+ * Side effects:
+ *	Entries in *diskStatPtr filled in.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Dev_GetDiskStats(diskStatArr, numEntries)
+    Sys_DiskStats *diskStatArr;	/* Where to store the disk  stats. */
+    int		   numEntries;	/* The number of elements in diskStatArr. */
+{
+    Device *devicePtr;
+    int	   index;
+
+    MASTER_LOCK(&deviceListMutex);
+
+    /*
+     * Return Sys_DiskStats for all registers devices being careful not to
+     * overrun the callers buffer.
+     */
+    index = 0;
+    if (initialized) {
+	LIST_FORALL(&deviceListHdr, (List_Links *) devicePtr) {
+	    if (index >= numEntries) {
+		break;
+	    }
+	    diskStatArr[index] = devicePtr->devDiskStats.diskStats;
+	    index += 1;
+	}
+    }
+    MASTER_UNLOCK(&deviceListMutex);
+    return index;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevRegisterDisk--
+ *
+ *	Register a disk with the disk stat module so that its idle 
+ * 	percentage can be computed from period sampling and its diskStats
+ *	structure may available to the Dev_GetDiskStats routine.
+ *
+ * Results:
+ *	The initialized DevDiskStats structure for the device.
+ *
+ * Side effects:
+ *	The idleCheck function will be called when periodcally and should
+ *	return TRUE if the disk is idle. It is should be declared as follows:
+ *
+ *		Boolean idleCheck(clientData, diskStatsPtr)
+ *			ClientData clientData  -- The clientData argument passed
+ *						  to DevRegisterDevice.
+ *			DevDiskStats	*diskStatsPtr -- Ptr to disk stats.
+ *
+ *----------------------------------------------------------------------
+ */
+
+DevDiskStats *
+DevRegisterDisk(devicePtr, deviceName, idleCheck, clientData)
+    Fs_Device	*devicePtr;	/* Fs_Device for disk. */
+    char	*deviceName;	/* Printable name for this device. */
+    Boolean	(*idleCheck) _ARGS_ ((ClientData, DevDiskStats *));
+                                /* Function returning TRUE if the device
+				 * is idle. */
+    ClientData	clientData;	/* ClientData argument passed to idleCheck
+				 * to indicate which device. */
+{
+    Device	*newDevice, *devPtr;
+    Boolean	found = FALSE;
+
+
+    /*
+     * Allocated, initialized, and add to the callback list a Device structure
+     * for this device.
+     */
+    newDevice = (Device *) malloc(sizeof(Device));
+    List_InitElement((List_Links *) newDevice);
+    newDevice->idleCheck = idleCheck;
+    newDevice->clientData = clientData;
+    newDevice->type = devicePtr->type;
+    newDevice->unit = devicePtr->unit;
+    bzero((char *) &(newDevice->devDiskStats), sizeof(DevDiskStats));
+    Sync_SemInitDynamic(&(newDevice->devDiskStats.mutex), "DevDiskStats");
+    (void) strncpy(newDevice->devDiskStats.diskStats.name, deviceName,
+	    SYS_DISK_NAME_LENGTH);
+    MASTER_LOCK(&deviceListMutex);
+    if (!initialized) {
+	List_Init(&deviceListHdr);
+	initialized = TRUE;
+    }
+    LIST_FORALL(&deviceListHdr, (List_Links *) devPtr) {
+	if ((devPtr->unit == devicePtr->unit) &&
+	    (devPtr->type == devicePtr->type)) {
+	   found = TRUE;
+	   break;
+	}
+    }
+    if (found) {
+	devPtr->idleCheck = idleCheck;
+	devPtr->clientData = clientData;
+    } else { 
+	List_Insert((List_Links *) newDevice, LIST_ATREAR(&deviceListHdr));
+	devPtr = newDevice;
+    }
+    devPtr->refCount++;
+    MASTER_UNLOCK(&deviceListMutex);
+    if (found) {
+	free((char *)newDevice);
+    }
+    return &(devPtr->devDiskStats);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevDiskUnregister--
+ *
+ *	Unregister a disk with the disk stat module.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The idleCheck function will cease calculating for this disk.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+DevDiskUnregister(diskStatsPtr)
+    DevDiskStats	*diskStatsPtr;
+{
+    Device		*devPtr;
+    Boolean		found = FALSE;
+
+
+    /*
+     * Allocated, initialized, and add to the callback list a Device structure
+     * for this device.
+     */
+    MASTER_LOCK(&deviceListMutex);
+    if (!initialized) {
+	MASTER_UNLOCK(&deviceListMutex);
+	return;
+    }
+    LIST_FORALL(&deviceListHdr, (List_Links *) devPtr) {
+	if (diskStatsPtr == &(devPtr->devDiskStats)) {
+	   found = TRUE;
+	   break;
+	}
+    }
+    if (found) {
+	/*
+	 * For stupid reasons to do with spritemon, we're not allowed to
+	 * free up this space.  Once a disk is noticed by the stat stuff, the
+	 * user interface doesn't want to see it go away.
+	 */
+	devPtr->refCount--;
+	if (devPtr->refCount == 0) {
+	    devPtr->idleCheck = (Boolean((*) _ARGS_ ((ClientData,
+		DevDiskStats *)))) NIL;
+	    devPtr->clientData = (ClientData) NIL;
+	}
+    }
+    MASTER_UNLOCK(&deviceListMutex);
+    return;
+}
+
+
+/*
+ * Temporary call-back for printing io statistics for recovery.
+ */
+Timer_QueueElement	ioStatElement;
+Boolean			getIOStats = FALSE;
+
+/*ARGSUSED*/
+void
+DevPrintIOStats(time, clientData)
+    Timer_Ticks	time;
+    ClientData	clientData;
+{
+    Sys_DiskStats	diskStats[10];
+    int			numStats;
+    int			i;
+
+    /* print stuff */
+    numStats = Dev_GetDiskStats(diskStats, 10 * sizeof (Sys_DiskStats));
+    printf("IO STATS:\n");
+    for (i = 0; i < numStats; i++) {
+	printf("name: %s\n", diskStats[i].name);
+	printf("controllerID: %d\n", diskStats[i].controllerID);
+	printf("numSamples: %d\n", diskStats[i].numSamples);
+	printf("idleCount: %d\n", diskStats[i].idleCount);
+	printf("diskReads: %d\n", diskStats[i].diskReads);
+	printf("diskWrites: %d\n", diskStats[i].diskWrites);
+    }
+    printf("\n");
+
+    if (getIOStats) {
+	Timer_ScheduleRoutine(&ioStatElement, TRUE);
+    }
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_StartIOStats --
+ *
+ *	Start up the kernel's periodic printing of io stats.
+ *	Temporary routine for recovery statistics.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Call-back routine scheduled.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Dev_StartIOStats()
+{
+    ioStatElement.routine = DevPrintIOStats;
+    ioStatElement.clientData = 0;
+    ioStatElement.interval = timer_IntOneSecond * 10;
+    getIOStats = TRUE;
+    Timer_ScheduleRoutine(&ioStatElement, TRUE);
+
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_StopIOStats --
+ *
+ *	Stop the kernel's periodic printing of io stats.
+ *	Temporary routine for recovery statistics.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Call-back routine descheduled.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Dev_StopIOStats()
+{
+    getIOStats = FALSE;
+    (void) Timer_DescheduleRoutine(&ioStatElement);
+
+    return;
+}
+@
+
+
+9.5
+log
+@fixed #includes
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev.jhh/RCS/devDiskStats.c,v 9.4 90/09/11 13:53:56 rab Exp Locker: jhh $ SPRITE (Berkeley)";
+d197 1
+a197 1
+    strncpy(newDevice->devDiskStats.diskStats.name, deviceName,
+@
+
+
+9.4
+log
+@ #include "stdio.h" for forward decl of printf.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devDiskStats.c,v 9.3 90/09/11 12:19:13 rab Exp Locker: rab $ SPRITE (Berkeley)";
+d20 10
+a29 10
+#include "sprite.h"
+#include "stdio.h"
+#include "sync.h"
+#include "sysStats.h"
+#include "devDiskStats.h"
+#include "user/fs.h"
+#include "stdlib.h"
+#include "list.h"
+#include "bstring.h"
+#include "string.h"
+@
+
+
+9.3
+log
+@Added prototypes.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devDiskStats.c,v 9.2 90/06/21 12:41:06 mgbaker Exp $ SPRITE (Berkeley)";
+d21 1
+@
+
+
+9.2
+log
+@Added stuff to stop and start taking disk I/O stats.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devDiskStats.c,v 9.1 90/05/14 14:20:07 mgbaker Exp $ SPRITE (Berkeley)";
+d27 2
+d36 2
+a37 1
+    Boolean	(*idleCheck)();	  /* Routine to check device's state. */
+d88 2
+a89 1
+	    if (devicePtr->idleCheck == (Boolean((*)())) NIL) {
+d174 2
+a175 1
+    Boolean	(*idleCheck)();	/* Function returning TRUE if the device
+d272 2
+a273 1
+	    devPtr->idleCheck = (Boolean((*)())) NIL;
+@
+
+
+9.1
+log
+@Fixed io stats testing to avoid accessing freed space.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devDiskStats.c,v 9.0 89/09/12 14:56:58 douglis Stable Locker: mgbaker $ SPRITE (Berkeley)";
+d272 91
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devDiskStats.c,v 1.3 89/06/24 12:19:49 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+a31 1
+
+d38 2
+a39 1
+    Sys_DiskStats diskStats;  	  /* Stat structure of device. */
+d81 2
+a82 1
+	    register Sys_DiskStats *stats = &(devicePtr->diskStats);
+d85 4
+a88 1
+	    if ((devicePtr->idleCheck)(devicePtr->clientData)) {
+d133 1
+a133 1
+	    diskStatArr[index] = devicePtr->diskStats;
+d152 1
+a152 1
+ *	The initialized Sys_DiskStats structure for the device.
+d158 1
+a158 1
+ *		Boolean idleCheck(clientData)
+d161 1
+d166 1
+a166 1
+Sys_DiskStats *
+d189 4
+a192 2
+    bzero((char *) &(newDevice->diskStats), sizeof(Sys_DiskStats));
+    strncpy(newDevice->diskStats.name, deviceName, SYS_DISK_NAME_LENGTH);
+d212 1
+d217 1
+a217 1
+    return &(devPtr->diskStats);
+d220 54
+@
+
+
+1.3
+log
+@Moved MASTER_LOCK/UNLOCK inside initialized check so that diskless machines
+do less work.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devDiskStats.c,v 1.2 89/05/23 10:24:56 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+@
+
+
+1.2
+log
+@Lint.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev.new/RCS/devDiskStats.c,v 1.1 89/05/18 17:59:08 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+a72 2
+    MASTER_LOCK(&deviceListMutex);
+
+d75 1
+a75 1
+     * registers devices. 
+d78 2
+d82 1
+a82 1
+
+d88 1
+a89 1
+    MASTER_UNLOCK(&deviceListMutex);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.2 89/01/07 04:12:18 rab Exp $ SPRITE (Berkeley)";
+d25 1
+d207 1
+a207 1
+	free(newDevice);
+@

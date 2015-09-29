@@ -1,0 +1,121 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  sprited:1.2.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     88.08.10.11.38.58;  author ouster;  state Exp;
+branches 1.2.1.1;
+next     1.1;
+
+1.1
+date     88.06.19.14.31.02;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.2.1.1
+date     91.11.27.13.12.08;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Forgot to pass 3rd parameter to Fs_CheckAccess to insist on using
+real uid, not effective.
+@
+text
+@/* 
+ * access.c --
+ *
+ *	Procedure to map from Unix access system call to Sprite.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: access.c,v 1.1 88/06/19 14:31:02 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+#include "fs.h"
+#include "proc.h"
+
+#include "compatInt.h"
+#include <errno.h>
+#include <sys/file.h>
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * access --
+ *
+ *	Procedure for Unix access call. 
+ *
+ * Results:
+ *	UNIX_SUCCESS if the access mode was valid.
+ *	UNIX_FAILURE if the access mode was not valid.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+access(pathName, mode)
+    char *pathName;		/* The name of the file to open */
+    int	 mode;			/* access mode to test for */
+{
+    int spriteMode;
+    ReturnStatus status;
+
+    if (mode == F_OK) {
+	spriteMode = FS_EXISTS;
+    } else {
+	spriteMode = ((mode&R_OK)?FS_READ:0) | ((mode&W_OK)?FS_WRITE:0) |
+	    ((mode&X_OK)?FS_EXECUTE:0);
+    }
+
+    status = Fs_CheckAccess(pathName, spriteMode, TRUE);
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}
+@
+
+
+1.2.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/unixSyscall/RCS/access.c,v 1.2 88/08/10 11:38:58 ouster Exp $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: access.c,v 1.5 87/08/21 17:31:57 deboor Exp $ SPRITE (Berkeley)";
+d54 1
+a54 1
+    status = Fs_CheckAccess(pathName, spriteMode);
+@

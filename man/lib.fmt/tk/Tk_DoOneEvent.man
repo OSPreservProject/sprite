@@ -1,0 +1,134 @@
+
+
+
+Tk_DoOneEvent         UNKNOWN SECTION (tk)          Tk_DoOneEvent
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tk_DoOneEvent, Tk_MainLoop, Tk_HandleEvent - wait for events
+     and invoke event handlers
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttkk..hh>>
+
+     int
+     TTkk__DDooOOnneeEEvveenntt(dontWait)
+
+     TTkk__MMaaiinnLLoooopp()
+
+     TTkk__HHaannddlleeEEvveenntt(_e_v_e_n_t_P_t_r)
+
+AARRGGUUMMEENNTTSS
+     int      _d_o_n_t_W_a_i_t    (in)      This  parameter  is  normally
+                                    zero.  A non-zero value means
+                                    that   TTkk__DDooOOnneeEEvveenntt   should
+                                    only  process events that are
+                                    immediately available.
+
+     XEvent   *_e_v_e_n_t_P_t_r   (in)      Pointer   to   X   event   to
+                                    dispatch      to     relevant
+                                    handler(s).
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     These three  procedures  are  responsible  for  waiting  for
+     events  and  dispatching  to event handlers created with the
+     procedures   TTkk__CCrreeaatteeEEvveennttHHaannddlleerr,    TTkk__CCrreeaatteeFFiilleeHHaannddlleerr,
+     TTkk__CCrreeaatteeTTiimmeerrHHaannddlleerr,  and TTkk__DDooWWhheennIIddllee.  TTkk__DDooOOnneeEEvveenntt is
+     the key procedure.  It waits for a single event of any  sort
+     to  occur,  invokes  the handler(s) for that event, and then
+     returns.  TTkk__DDooOOnneeEEvveenntt first checks for X events and  file-
+     related   events;   if  one  is  found  then  it  calls  the
+     handler(s) for the event and returns.  If there are no X  or
+     file  events  pending,  then  TTkk__DDooOOnneeEEvveenntt checks to see if
+     timer callbacks are ready;  if so, it makes a  single  call-
+     back   and  returns.   If  no  timer  callbacks  are  ready,
+     TTkk__DDooOOnneeEEvveenntt invokes any TTkk__DDooWWhheennIIddllee callbacks  and  then
+     sleeps  until  a  timer,  file,  or X event occurs.  When an
+     event occurs, TTkk__DDooOOnneeEEvveenntt processes the first event  found
+     (in  the order given above) and then returns.  TTkk__DDooOOnneeEEvveenntt
+     does not return after invoking DDoo__WWhheennIIddllee handlers, but  it
+     does  return  after  invoking  any  other  sort  of handler.
+     Applications should not depend on the exact order  in  which
+     events are processed.
+
+     If the _d_o_n_t_W_a_i_t argument to TTkk__DDooOOnneeEEvveenntt is non-zero,  then
+     the  procedure will not sleep;  if it cannot find any events
+
+
+
+Sprite v.1.0          Printed:  May 2, 1991                     1
+
+
+
+
+
+
+Tk_DoOneEvent         UNKNOWN SECTION (tk)          Tk_DoOneEvent
+
+
+
+     ready to process, then TTkk__DDooOOnneeEEvveenntt will return immediately
+     with  a  return  value of 0.  If TTkk__DDooOOnneeEEvveenntt can find some
+     work to do, then it returns 1 (this is always the case  when
+     _d_o_n_t_W_a_i_t is 0).
+
+     TTkk__MMaaiinnLLoooopp is a procedure  that  loops  repeatedly  calling
+     TTkk__DDooOOnneeEEvveenntt.   It  returns only when there are no applica-
+     tions left in this  process  (i.e.  no  main  windows  exist
+     anymore).   Most  X applications will call TTkk__MMaaiinnLLoooopp after
+     initialization;  the main execution of the application  will
+     consist entirely of callbacks invoked by TTkk__DDooOOnneeEEvveenntt.
+
+     TTkk__HHaannddlleeEEvveenntt  is  a  lower-level  procedure   invoked   by
+     TTkk__DDooOOnneeEEvveenntt.   It  makes  callbacks  to any event handlers
+     (created  by  calls  to  TTkk__CCrreeaatteeEEvveennttHHaannddlleerr)  that  match
+     _e_v_e_n_t_P_t_r  and  then returns.  In some cases it may be useful
+     for an application  to  read  events  directly  from  X  and
+     dispatch  them  by  calling  TTkk__HHaannddlleeEEvveenntt,  without  going
+     through the additional mechanism provided by TTkk__DDooOOnneeEEvveenntt.
+
+     These procedures may be invoked recursively.   For  example,
+     it  is  possible  to invoke TTkk__DDooOOnneeEEvveenntt recursively from a
+     handler called by TTkk__DDooOOnneeEEvveenntt.  This sort of operation  is
+     useful in some modal situations, such as when a notifier has
+     been popped up and an application wishes  to  wait  for  the
+     user to click a button in the notifier before doing anything
+     else.
+
+
+KKEEYYWWOORRDDSS
+     callback, event, handler, idle, timer
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0          Printed:  May 2, 1991                     2
+
+
+

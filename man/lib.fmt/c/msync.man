@@ -1,0 +1,66 @@
+
+
+
+MSYNC                 C Library Procedures                  MSYNC
+
+
+
+NNAAMMEE
+     msync - sync pages to disk.
+
+SSYYNNOOPPSSIISS
+     iinntt mmssyynncc((aaddddrr,, lleenn))
+     ccaaddddrr__tt aaddddrr;;
+     iinntt lleenn;;
+
+DDEESSCCRRIIPPTTIIOONN
+     _M_s_y_n_c takes an address range and forces the pages containing
+     the range to disk.  The call will return after the pages are
+     written to disk.  After the call, the pages will no longer
+     be valid in memory.
+
+     If the page is locked in memory it will be unlocked for the
+     _m_s_y_n_c call.  By using _m_s_y_n_c and _m_l_o_c_k it is possible for the
+     user to control the page-in/page-out process.
+
+RREETTUURRNN VVAALLUUEE
+     _M_s_y_n_c returns 0 if the call is successful.  Otherwise they
+     return -1 and an error code is returned in _e_r_r_n_o.
+
+SSEEEE AALLSSOO
+     mmap(2), mlock(2), munlock(2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0             November 19, 1989                       1
+
+
+

@@ -1,0 +1,238 @@
+' Copyright 1989 Regents of the University of California
+' Permission to use, copy, modify, and distribute this
+' documentation for any purpose and without fee is hereby
+' granted, provided that this notice appears in all copies.
+' The University of California makes no representations about
+' the suitability of this material for any purpose.  It is
+' provided "as is" without express or implied warranty.
+' 
+' $Header: /sprite/src/tests/fstrash/RCS/fstrash.man,v 1.1 90/07/09 21:45:39 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+' 
+.so \*(]ltmac.sprite
+.HS fstrash cmds
+.BS
+.SH NAME
+fstrash \- Produces a completely trashed filesystem.
+.SH SYNOPSIS
+.nf
+\fBfstrash -dev \fIdevice\fP -part \fIpartition\fP [\fIoptions\fR]
+.SH OPTIONS
+.IP "\fB\-dev\fI device\fR" 14
+\fIDevice\fP is the root name of a device, i.e. rxy0, rsd1, rsb0
+.IP "\fB\-part\fI partition\fR" 14
+\fIPartition\fP is a letter indicating a partition, i.e. a, b, c, d, e, f, g.
+.IP "\fB\-dir\fI devDir\fR" 14
+\fIDevDir\fR is an alternate directory in which to find the device file
+named by concatenating \fIdevice\fR and \fIpartition\fR.  The default 
+directory name is ``/dev/``.
+.IP "\fB\-initialPart\fI firstPartName\fR" 14
+\fIfirstPartName\fP is the name of the initial partition on the disk
+which contains basic disk geometry information.  The default is partition
+``a''.
+.IP "\fB\-write\fR" 14
+Write the disk.  The default is to
+not write the disk.
+.IP "\fB\-overlap\fR" 14
+Overlap filesystem blocks across track boundaries. The default is to not overlap
+blocks.
+.IP "\fB\-copySuper\fR" 14
+Copy the super block to the partition. The default is to not copy.
+.IP "\fB\-ratio\fR" 14
+Ratio of Kbytes to file descriptors. The default is 4.
+.IP "\fB\-test\fR" 14
+Don't write to the disk. This is the default.
+.IP "\fB\-freeRoot\fR" 14
+Set the flag field in the root file descriptor to indicate that it is free.
+The default is to mark the root file descriptor as allocated.
+.IP "\fB\-fileRoot\fR" 14
+Set the filetype field in the root file descriptor to indicate that it is a
+file. The default is to make the root a directory.
+.IP "\fB\-noRoot\fR" 14
+Zero out both the root file descriptor and data block 0. The default is
+to fill in the descriptor and to add files to the root.
+This option has precedence over both \fB\-freeRoot\fR and \fB\-fileRoot\fR.
+.BE
+
+.SH DESCRIPTION
+.PP
+This program produces a trashed file system. It is intended to be used to
+test the \fBfscheck\fR program. The above section illustrates the use of the
+options. This section outlines the errors that are built into the filesystem
+and the actions \fBfscheck\fR should take to correct those errors.
+.SS FILE DESCRIPTORS
+.LP
+The following is a list of the file descriptors, their status in the
+file descriptor bitmap, and the file they represent.
+.KS
+.DS L
+.nf
+File #		Name				Status
+.sp
+0		not used by filesystem		marked
+1		bad blocks			marked
+2		root				marked
+3		"lost+found"			marked
+4		"testFile"			marked
+5		unreferenced file		unmarked
+6		"tooBig"			marked
+7		"tooSmall"			marked
+8 		"holeFile"			marked
+9		"holeDir"			marked
+10		"badIndexFile"			marked
+11		"illegalFrag"			marked
+12		"copyBadFrag"			marked
+13		"copyBlock"			marked
+14		"copyIndBlock"			marked
+15		"copyBogusInd"			marked
+16		unreferenced file		unmarked
+17		unreferenced file		marked
+18		"output"			marked
+20		unused but marked		marked
+21		"badDotDot"			marked
+22		unallocated file (used by 21)	unmarked
+.fi
+.DE
+.KE
+.LP
+Fscheck should change the file descriptor bitmap to indicate that files 5 and
+16 are allocated and that file 20 is unallocated. 
+
+.SS DATA BLOCKS
+.LP
+The following is a list of the data blocks, their status in the data block
+bitmap and the number of the file that uses them. The block numbers are for
+1k blocks so they actually represent fragments. 
+
+.KS
+.DS L
+.nf
+Block #			File #			Status
+.sp
+0			2			marked
+1			not used		marked
+4 - 9			3			marked
+10			3			unmarked
+11			3			marked
+12 - 15			6			marked
+16 - 17			7			marked
+20 - 31			8			unmarked
+32 - 39			9			marked
+40 - 43			not used
+44 - 47			10			marked
+48 - 51			10,14			marked
+52 - 55			10,14			marked
+56 - 59			10,13,14,15		marked
+60 			12			unmarked
+61			11,12			marked
+62			11,12			marked
+63			12			unmarked
+64			17			marked
+68 - 75			18			marked
+76			21			marked
+.fi
+.DE
+.KE
+.LP
+The following blocks should be marked as in use by \fBfscheck\fR: 10, and 20-31.
+The following blocks should be marked as not in use: 1, 36-43, and 61.
+If the \fB\-delete\fR option of \fBfscheck\fR is not used, then \fBfscheck\fR 
+will 
+copy
+some of disk blocks. This will result in additional disk blocks being
+marked as in use. A total of 5 4k blocks are needed. There are two free 4k
+blocks in the range 36-43, so depending upon the \fBfscheck\fR implementation 
+these blocks may be reused. This would result in their status remaining
+unchanged, while 3 previously unused 4k blocks become used.
+
+.SS FILES
+.LP 
+This section contains a description of the problems with each of the files
+created by \fBfstrash\fR and the actions \fBfscheck\fR should take to 
+correct them.
+.IP "File 1 - bad block file descriptor"
+File 1 is for bad blocks on the disk. Fscheck should not modify this descriptor
+unless the -badBlock option is given, in which case it should reset the
+contents of the descriptor.
+.IP "File 2 - \fIRoot\fR"
+If none of the "*Root" options are given the root directory should not be
+affected by \fBfscheck\fR. 
+If the \fB\-fileRoot\fR option is given to \fBfstrash\fR,
+then \fBfscheck\fR should reconstruct the root directory by adding file 3 
+(lost+found) to the root and updating the link count for file 3.
+If the \fB\-freeRoot\fR option is used, then \fBfscheck\fR should mark 
+file 2 as
+in use in addition to adding file 3 to the root.
+The \fB\-noRoot\fR option forces \fBfscheck\fR to do a lot of work 
+to fix the root.
+First, file 2 has to be marked in use. Secondly, any file that is using block
+0 should either have this block deleted or a copy made. File 3 should be
+put in the root, and all other files should be put in file 3.
+.IP "File 3 - \fIlost+found\fR"
+The \fIlost+found\fR directory should be in the root and 
+should have its link count
+corrected when file 17 (an unreferenced directory) is added to it.
+.IP "File 4 - \fItestFile\fR"
+\fItestFile\fR is an empty file that is a child of the root. It should not be 
+modified by \fBfscheck\fR.
+.IP "File 5 - an unreferenced file"
+File 5 is an empty, unreferenced file that should be put into lost+found.
+.IP "File 6 - \fItooBig\fR"
+The size of the file \fItooBig\fR is greater than the amount of
+space in its data
+blocks. Its length should be truncated to the size of one direct block (4096
+bytes).
+.IP "File 7 - \fItooSmall\fR"
+The size of the file \fItooSmall\fR is smaller than the amount of space in its
+data blocks. Direct block 1 (17) should be deleted and its block count 
+corrected
+from 2 to 1.
+.IP "File 8 - \fIholeFile\fR"
+\fIholeFile\fR is a file with a hole in most of its direct blocks. 
+\fBfscheck\fR should not
+modify this file.
+.IP "File 9 - \fIholeDir\fR"
+Holes are not allowed in directories, so \fBfscheck\fR should 
+fill in the hole with empty entries. The hole is in the second direct block.
+.IP "File 10 - \fIbadIndexFile\fR"
+The \fIbadIndexFile\fR file has an invalid index in its first indirect block.
+This block (44) should be deleted so that the file has a hole, and the block
+count should be corrected from 1 to 4.
+The first direct block pointer is also invalid and should be made a hole.
+.IP "File 11 - \fIillegalFrag\fR"
+File 11 has a fragment that is not the last block in the file. This fragment
+(61)
+should be turned into a hole and the block count corrected from 2 to 1.
+.IP "File 12 - \fIcopyBadFrag\fR"
+The first direct block in file 12 shares one fragment with file 11. 
+It should be copied. The second direct block is a fragment that is also shared
+with file 11. Only one fragment's worth of data should be copied.
+.IP "File 13 - \fIcopyBlock\fR"
+This file contains 2 duplicate blocks. Block 0 is reserved for the root
+directory and should be either deleted or copied, even if the root directory
+doesn't exist. Block 56 is shared with file 10 and should be either copied
+or deleted.
+The doubly indirect block pointer is invalid (8). Indirect block pointers
+are physical block pointers, so the message about a bad pointer may display
+the wrong value. The block should be deleted and the size of the file 
+reduced to 8192 bytes.
+.IP "File 14 - \fIcopyIndBlock\fR"
+File 14 shares the doubly indirect block with file 10. New data blocks should
+be allocated for the doubly indirect block (48), the indirect block it contains
+(52),
+and the direct block it contains (56).
+.IP "File 15 - \fIcopyBogusIndBlock\fR"
+File 15 shares its doubly indirect block with file 10. Block 56 is not
+a valid indirect block and should be 
+deleted from file 15.
+This leaves file 15 with 0 blocks so it should be truncated to length
+0 and the block count corrected from 1 to 0.
+.IP "File 16 - bad magic number"
+File 16 has a bad magic number and should be marked as free.
+.IP "File 17 - unreferenced directory"
+File 17 is an unreferenced directory that should be put in lost+found.
+The link counts in lost+found and file 17 should be fixed accordingly.
+.IP "File 18 - \fIoutput\fR"
+File 18 is the output file for saving the results of running fscheck. It
+initially has two data blocks allocated to it.
+.SH KEYWORDS
+filesystem fscheck fsmake

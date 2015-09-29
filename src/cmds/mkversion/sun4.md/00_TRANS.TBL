@@ -1,0 +1,4 @@
+F DEPENDEN.MK;1                     	dependencies.mk
+F MD.MK;1                           	md.mk
+F MKVERSIO.;1                       	mkversion
+F MKVERSIO.O;1                      	mkversion.o

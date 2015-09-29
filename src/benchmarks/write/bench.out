@@ -1,0 +1,42 @@
+bench -f ds3100.md/write 1024 
+0.000u 0.210s 0.242
+Idle ticks 23028/423033 =   5.44% Idle, Context Sw. 28 inv 7 full 22, Elapsed time 0.242
+Cache blocks max 2032 min 32 number 1818/1818 free 1817/1557 limit 2032
+Bytes read 0+0 remote 16571 disk 0+0
+Bytes written 1048762+0 remote 1048575 disk 0+0
+Dev bytes read 174 written 132
+Zero Fills read 0 write1 1 write2 1 frag 0
+Appends 0 Overwrites 0 Failed Reads 0
+Cache reads 0 hits: dirty 0 clean 0 other 0
+Cache writes 257 hits 0 misses 1 thru 256
+Write thru 256 data 256 indirect 0 desc 0 dir 0
+Cache blocks created 0, alloc from free 261 part 0 lru 0
+Handles 447 created 1 installed 2 hits 1 old 0 version 0 flush 0
+	fetched 2 hits 1 released 9 locks 128/128 wait 0
+Segments fetched 1 hits 1
+Lookup relative 1 absolute 0 redirect 0 found 0 loops 0 timeouts 0 stale 0
+Kernel VM Pages: 262384 (Code+Data=262309 Stacks=75)
+User VM Pages:   3020 (Free=1992 Dirty=0 Res=3 Alloc-list=1025)
+Modified pages: Total=536 %Tot-dirty=17.77 %Inuse-dirty=52.29
+FS Pages: Current=1818 Max=1818 Min=1818
+Faults:       55 (Zero=21 FS=4 Swap=0 Quick=29 Coll=0)
+              55 (Code=12 Heap=38 Stack=5)
+Mod page stats:  Pot-mod=0 Not-mod=0 Not-hard-mod=0
+COW: Heap (0/16)=0% Stk (0/1)=0% Tot (0/17)=0%
+     Quick (0/0)=0%
+COR: Heap (1/16)=6% Stk (1/1)=100% Tot (2/17)=11%
+COR-mod: Heap(0/1)=0% Stk (1/1)=100% Tot (1/2)=50%
+Swap pages copied: 0
+Vm allocs: 30 (Free=30 From-FS=0 From-alloc-list=0)
+VM-FS stats: Asked=0 Free-pages=0 Allocs=0 Frees=0
+Alloc-list searches: 0 (Free=0 In-use=0)
+Extra-searches: 0 (Lock=0 Ref=0 Dirty=0)
+Pages written 0
+Network stats: Bytes received 41995 bytes sent 1131389
+U  0.000 S  0.265 Proc_ServerProc
+U  0.000 S  0.007 Proc_ServerProc
+U  0.007 S  0.007 /sprite/daemons/ipServer 
+U  0.000 S  0.007 rlogind 
+U  0.000 S  0.007 la -dv 
+U  0.000 S  0.257 bench -f -c ds3100.md/write 1024 
+Total User      0.007813 Total Kernel      0.554689

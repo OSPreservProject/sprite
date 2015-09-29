@@ -1,0 +1,264 @@
+
+
+
+place                     User Commands                     place
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     place - Geometry manager for fixed or rubber-sheet placement  |
+
+SSYYNNOOPPSSIISS                                                           |
+     ppllaaccee _w_i_n_d_o_w _o_p_t_i_o_n _v_a_l_u_e ?_o_p_t_i_o_n _v_a_l_u_e ...?                  |
+
+     ppllaaccee ccoonnffiigguurree _w_i_n_d_o_w _o_p_t_i_o_n _v_a_l_u_e ?_o_p_t_i_o_n _v_a_l_u_e ...?        |
+
+     ppllaaccee ddeeppeennddeennttss _w_i_n_d_o_w                                       |
+
+     ppllaaccee ffoorrggeett _w_i_n_d_o_w                                           |
+
+     ppllaaccee iinnffoo _w_i_n_d_o_w                                             |
+_________________________________________________________________  |
+
+
+DDEESSCCRRIIPPTTIIOONN                                                        |
+     The placer is a geometry manager for Tk.  It provides simple  |
+     fixed placement of windows, where you specify the exact size  |
+     and location of one window, called the _s_l_a_v_e, within another  |
+     window,   called  the  _m_a_s_t_e_r.   The  placer  also  provides  |
+     rubber-sheet placement, where you specify the size and loca-  |
+     tion  of the slave in terms of the dimensions of the master,  |
+     so that the slave changes size and location in  response  to  |
+     changes  in  the  size  of  the  master.  Lastly, the placer  |
+     allows you to mix these styles of  placement  so  that,  for  |
+     example,  the slave has a fixed width and height but is cen-  |
+     tered inside the master.                                      |
+
+     If the first argument to the ppllaaccee command is a window  path  |
+     name  or  ccoonnffiigguurree then the command arranges for the placer  |
+     to manage the geometry of a slave whose path name is _w_i_n_d_o_w.  |
+     The  remaining arguments consist of one or more _o_p_t_i_o_n-_v_a_l_u_e  |
+     pairs that specify the way in  which  _w_i_n_d_o_w's  geometry  is  |
+     managed.  If the placer is already managing _w_i_n_d_o_w, then the  |
+     _o_p_t_i_o_n-_v_a_l_u_e pairs modify the configuration for _w_i_n_d_o_w.   In  |
+     this  form  the  ppllaaccee  command  returns  an empty string as  |
+     result.  The following _o_p_t_i_o_n-_v_a_l_u_e pairs are supported:      |
+
+     --iinn _m_a_s_t_e_r                                                         ||
+          _M_a_s_t_e_r specifes the path name of the window relative to  |
+          which _w_i_n_d_o_w is to be placed.  _M_a_s_t_e_r  must  either  be  |
+          _w_i_n_d_o_w's parent or a descendant of _w_i_n_d_o_w's parent.  In  |
+          addition, _m_a_s_t_e_r and _w_i_n_d_o_w must both be descendants of  |
+          the  same  top-level  window.   These  restrictions are  |
+          necessary to guarantee that _w_i_n_d_o_w is visible  whenever  |
+          _m_a_s_t_e_r is visible.  If this option isn't specified then  |
+          the master defaults to _w_i_n_d_o_w's parent.                  |
+
+     --xx _l_o_c_a_t_i_o_n                                                        ||
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+place                     User Commands                     place
+
+
+
+          _L_o_c_a_t_i_o_n  specifies  the x-coordinate within the master  |
+          window of the anchor point for _w_i_n_d_o_w.  The location is  |
+          specified  in  screen  units  (i.e.  any  of  the forms  |
+          accepted by TTkk__GGeettPPiixxeellss) and need not lie  within  the  |
+          bounds of the master window.                             |
+
+     --rreellxx _l_o_c_a_t_i_o_n                                                     ||
+          _L_o_c_a_t_i_o_n  specifies  the x-coordinate within the master  |
+          window of the anchor point for _w_i_n_d_o_w.   In  this  case  |
+          the  location  is  specified in a relative fashion as a  |
+          floating-point number:  0.0  corresponds  to  the  left  |
+          edge  of  the  master  and 1.0 corresponds to the right  |
+          edge of the master.  _L_o_c_a_t_i_o_n need not be in the  range  |
+          0.0-1.0.                                                 |
+
+     --yy _l_o_c_a_t_i_o_n                                                        ||
+          _L_o_c_a_t_i_o_n  specifies  the y-coordinate within the master  |
+          window of the anchor point for _w_i_n_d_o_w.  The location is  |
+          specified  in  screen  units  (i.e.  any  of  the forms  |
+          accepted by TTkk__GGeettPPiixxeellss) and need not lie  within  the  |
+          bounds of the master window.                             |
+
+     --rreellyy _l_o_c_a_t_i_o_n                                                     ||
+          _L_o_c_a_t_i_o_n  specifies  the y-coordinate within the master  |
+          window of the anchor point for _w_i_n_d_o_w.   In  this  case  |
+          the  value  is  specified  in  a  relative fashion as a  |
+          floating-point number:  0.0 corresponds to the top edge  |
+          of the master and 1.0 corresponds to the bottom edge of  |
+          the master.  _L_o_c_a_t_i_o_n need not be in the range 0.0-1.0.  |
+
+     --aanncchhoorr _w_h_e_r_e                                                      ||
+          _W_h_e_r_e  specifies  which  point of _w_i_n_d_o_w is to be posi-  |
+          tioned at the (x,y) location selected by  the  --xx,  --yy,  |
+          --rreellxx, and --rreellyy options.  The anchor point is in terms  |
+          of the outer area of _w_i_n_d_o_w including  its  border,  if  |
+          any.   Thus  if _w_h_e_r_e is ssee then the lower-right corner  |
+          of _w_i_n_d_o_w's border will appear at the given (x,y) loca-  |
+          tion  in  the  master.  The anchor position defaults to  |
+          nnww.                                                      |
+
+     --wwiiddtthh _s_i_z_e                                                        ||
+          _S_i_z_e  specifies  the  width  for _w_i_n_d_o_w in screen units  |
+          (i.e. any of the forms accepted by TTkk__GGeettPPiixxeellss).   The  |
+          width  will  be the outer width of _w_i_n_d_o_w including its  |
+          border, if any.  If _s_i_z_e is an empty string, or  if  no  |
+          --wwiiddtthh or --rreellwwiiddtthh option is specified, then the width  |
+          requested internally by the window will be used.         |
+
+     --rreellwwiiddtthh _s_i_z_e                                                     ||
+          _S_i_z_e  specifies the width for _w_i_n_d_o_w.  In this case the  |
+          width is specified as a floating-point number  relative  |
+          to  the  width  of the master: 0.5 means _w_i_n_d_o_w will be  |
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+place                     User Commands                     place
+
+
+
+          half as wide as the master, 1.0 means _w_i_n_d_o_w will  have  |
+          the same width as the master, and so on.                 |
+
+     --hheeiigghhtt _s_i_z_e                                                       ||
+          _S_i_z_e  specifies  the  height for _w_i_n_d_o_w in screen units  |
+          (i.e. any of the forms accepted by TTkk__GGeettPPiixxeellss).   The  |
+          height  will be the outer dimension of _w_i_n_d_o_w including  |
+          its border, if any.  If _s_i_z_e is an empty string, or  if  |
+          no  --hheeiigghhtt or --rreellhheeiigghhtt option is specified, then the  |
+          height requested internally by the window will be used.  |
+
+     --rreellhheeiigghhtt _s_i_z_e                                                    ||
+          _S_i_z_e specifies the height for _w_i_n_d_o_w.  In this case the  |
+          height is specified as a floating-point number relative  |
+          to  the  height of the master: 0.5 means _w_i_n_d_o_w will be  |
+          half as high as the master, 1.0 means _w_i_n_d_o_w will  have  |
+          the same height as the master, and so on.                |
+
+     --bboorrddeerrmmooddee _m_o_d_e                                                   ||
+          _M_o_d_e  determines the degree to which borders within the  |
+          master are used in determining  the  placement  of  the  |
+          slave.   The  default  and most common value is iinnssiiddee.  |
+          In this case the placer considers the area of the  mas-  |
+          ter  to be the innermost area of the master, inside any  |
+          border:  an  option  of  --xx  00  corresponds  to  an  x-  |
+          coordinate  just  inside  the  border  and an option of  |
+          --rreellwwiiddtthh 11..00 means _w_i_n_d_o_w will fill  the  area  inside  |
+          the  master's  border.   If  _m_o_d_e  is  oouuttssiiddee then the  |
+          placer considers the area of the master to include  its  |
+          border; this mode is typically used when placing _w_i_n_d_o_w  |
+          outside its master, as with  the  options  --xx  00  --yy  00  |
+          --aanncchhoorr  nnee.   Lastly, _m_o_d_e may be specified as iiggnnoorree,  |
+          in which case borders are ignored:   the  area  of  the  |
+          master  is  considered to be its official X area, which  |
+          includes any internal border but no external border.  A  |
+          bordermode of iiggnnoorree is probably not very useful.        |
+
+     If the same value is specified separately with two different  |
+     options,  such  as --xx and --rreellxx, then the most recent option  |
+     is used and the older one is ignored.                         |
+
+     The ppllaaccee ddeeppeennddeennttss command returns a list of all the slave  |
+     windows  for  which  _w_i_n_d_o_w  is the master.  If there are no  |
+     slaves for _w_i_n_d_o_w then an empty string is returned.           |
+
+     The ppllaaccee ffoorrggeett command causes the placer to stop  managing  |
+     the  geometry  of  _w_i_n_d_o_w.  As a side effect of this command  |
+     _w_i_n_d_o_w will be unmapped so that it  doesn't  appear  on  the  |
+     screen.   If  _w_i_n_d_o_w  isn't  currently managed by the placer  |
+     then the command has no effect.   PPllaaccee  ffoorrggeett  returns  an  |
+     empty string as result.                                       |
+
+
+
+
+Sprite v1.0                                                     3
+
+
+
+
+
+
+place                     User Commands                     place
+
+
+
+     The ppllaaccee iinnffoo command returns a  list  giving  the  current  |
+     configuration  of _w_i_n_d_o_w.  The list consists of _o_p_t_i_o_n-_v_a_l_u_e  |
+     pairs in exactly the same form as might be specified to  the  |
+     ppllaaccee  ccoonnffiigguurree  command.  If the configuration of a window  |
+     has been retrieved with ppllaaccee iinnffoo, that  configuration  can  |
+     be  restored  later by first using ppllaaccee ffoorrggeett to erase any  |
+     existing information for the window and then invoking  ppllaaccee  |
+     ccoonnffiigguurree with the saved information.                         |
+
+
+FFIINNEE PPOOIINNTTSS                                                        |
+     It is not necessary for the master window to be  the  parent  |
+     of the slave window.  This feature is useful in at least two  |
+     situations.  First, for complex window layouts it means  you  |
+     can  create  a hierarchy of subwindows whose only purpose is  |
+     to assist in the layout of the  parent.   The  ``real  chil-  |
+     dren''  of the parent (i.e. the windows that are significant  |
+     for the application's user interface) can be children of the  |
+     parent  yet  be  placed  inside the windows of the geometry-  |
+     management hierarchy.  This means that the path names of the  |
+     ``real  children''  don't  reflect  the  geometry-management  |
+     hierarchy and users can specify options for the  real  chil-  |
+     dren  without  being aware of the structure of the geometry-  |
+     management hierarchy.                                         |
+
+     A second reason for  having  a  master  different  than  the  |
+     slave's  parent  is to tie two siblings together.  For exam-  |
+     ple, the placer can be used to force a window always  to  be  |
+     positioned centered just below one of its siblings by speci-  |
+     fying the configuration                                       |
+
+          --iinn _s_i_b_l_i_n_g --rreellxx 00..55 --rreellyy 11..00 --aanncchhoorr nn --bboorrddeerrmmooddee oouuttssiiddee|
+     Whenever the sibling is  repositioned  in  the  future,  the  |
+     slave will be repositioned as well.                           |
+
+     Unlike many other geometry managers (such as the packer) the  |
+     placer  does not make any attempt to manipulate the geometry  |
+     of the master windows or the parents of slave windows  (i.e.  |
+     it doesn't set their requested sizes).  To control the sizes  |
+     of these windows, make them windows like frames and canvases  |
+     that provide configuration options for this purpose.          |
+
+
+KKEEYYWWOORRDDSS                                                           |
+     geometry manager, height, location,  master,  place,  rubber  |
+     sheet, slave, width
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     4
+
+
+

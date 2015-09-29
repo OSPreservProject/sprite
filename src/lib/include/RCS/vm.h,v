@@ -1,0 +1,417 @@
+head     1.8;
+branch   ;
+access   ;
+symbols  sprited:1.8.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.8
+date     91.03.01.22.11.43;  author kupfer;  state Exp;
+branches 1.8.1.1;
+next     1.7;
+
+1.7
+date     90.10.19.15.41.11;  author shirriff;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.09.08.13.16.39;  author shirriff;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.06.23.11.30.10;  author rab;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.06.07.13.19.04;  author shirriff;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.03.27.22.24.03;  author jhh;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.09.22.20.04.10;  author nelson;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.21.09.37.02;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.8.1.1
+date     91.09.25.21.41.54;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.8
+log
+@Split out types and constants into vmTypes.h so that compiles with
+function prototypes will work.
+
+@
+text
+@/*
+ * vm.h --
+ *
+ *     User virtual memory structures.
+ *
+ * Copyright 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/lib/include/RCS/vm.h,v 1.7 90/10/19 15:41:11 shirriff Exp Locker: kupfer $ SPRITE (Berkeley)
+ */
+
+#ifndef _VMUSER
+#define _VMUSER
+
+#include <sprite.h>
+#include <vmStat.h>
+#ifdef KERNEL
+#include <user/vmTypes.h>
+#include <user/proc.h>
+#else
+#include <vmTypes.h>
+#include <proc.h>
+#endif
+
+/*
+ * System calls.
+ */
+extern	ReturnStatus	Vm_PageSize _ARGS_((int *pageSizePtr));
+extern	ReturnStatus	Vm_CreateVA _ARGS_((Address address, int size));
+extern	ReturnStatus	Vm_DestroyVA _ARGS_((Address address, int size));
+extern	ReturnStatus	Vm_Cmd _ARGS_((int command, int arg));
+extern	ReturnStatus	Vm_GetSegInfo _ARGS_((Proc_PCBInfo *infoPtr,
+	Vm_SegmentID segID, int infoSize, Address segBufPtr));
+
+#endif /* _VMUSER */
+@
+
+
+1.8.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/lib/include/RCS/vm.h,v 1.8 91/03/01 22:11:43 kupfer Exp $ SPRITE (Berkeley)
+@
+
+
+1.7
+log
+@Removed unneeded declaration.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/lib/include/RCS/vm.h,v 1.6 89/09/08 13:16:39 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+d16 9
+a24 2
+#include "sprite.h"
+#include "vmStat.h"
+a26 148
+ * The different commands to give to Vm_Cmd.  For more details on these
+ * options look at the man page for vmcmd.
+ *
+ *    VM_SET_CLOCK_PAGES		Set the number of pages to check on
+ *					each iteration of the clock algorithm
+ *    VM_SET_CLOCK_INTERVAL		Set how many seconds between iterations
+ *					of the clock algorithm.
+ *    VM_SET_MAX_DIRTY_PAGES		Set the maximum number of dirty pages
+ *					to check before waiting for clean 
+ *					memory.
+ *    VM_DO_COPY_IN			Time Vm_CopyIn.
+ *    VM_DO_COPY_OUT			Time Vm_CopyOut.
+ *    VM_DO_MAKE_ACCESS_IN		Time Vm_MakeAccessible.
+ *    VM_DO_MAKE_ACCESS_OUT		Time Vm_MakeAccessible.
+ *    VM_SET_COPY_SIZE			Set the number of bytes to move when
+ *					using the previous 4 commands.
+ *    VM_GET_STATS			Return vm stats.
+ *    VM_SET_PAGEOUT_PROCS		Set the number of processes used 
+ *					to clean memory.
+ *    VM_SET_COW			Set the flags which determines whether
+ *					to use copy-on-write or not.
+ *    VM_COUNT_DIRTY_PAGES		Determine how many pages in memory
+ *					are dirty.
+ *    VM_SET_FREE_WHEN_CLEAN		Set the flag which determines whether
+ *					to free memory after it is cleaned.
+ *    VM_FLUSH_SEGMENT			Flush a segment from memory.
+ *    VM_SET_FS_PENALTY			Set the file system penalty .
+ *    VM_SET_NUM_PAGE_GROUPS		Set the number of pages groups to 
+ *					divide memory into when calculating
+ *					the penalty.
+ *    VM_SET_ALWAYS_REFUSE		Always refuse file system requests for
+ *					memory.
+ *    VM_SET_ALWAYS_SAY_YES		Always satisfy file system request for
+ *					memory if possible.
+ *    VM_RESET_FS_STATS			Clear out the min and max size of
+ *					the file system cache kept in the
+ *					vm stat structure.
+ *    VM_SET_COR_READ_ONLY		Set the flag which determines if pages
+ *					that are copied because of copy-on-ref
+ *					faults are marked read-only.
+ *    VM_SET_PREFETCH			Turn prefetch on or off.
+ *    VM_SET_USE_FS_READ_AHEAD		Say whether to use the file systems
+ *					read-ahead to help out vm paging.
+ *    VM_START_TRACING			Start virtual memory tracing.
+ *    VM_END_TRACING			Stop virtual memory tracing.
+ *    VM_SET_WRITEABLE_PAGEOUT		Set flag which forces all writeable
+ *					pages to be written out to swap when
+ *					they are recycled whether they are
+ *					dirty or not.
+ *    VM_SET_WRITEABLE_REF_PAGEOUT	Set flag which forces all writeable
+ *					pages that have been referenced to be
+ *					written out to swap when they are 
+ *					recycled whether they are dirty or not.
+ */
+#define VM_SET_CLOCK_PAGES		0
+#define VM_SET_CLOCK_INTERVAL		1
+#define VM_SET_MAX_DIRTY_PAGES		4
+#define VM_DO_COPY_IN			5
+#define VM_DO_COPY_OUT			6
+#define VM_DO_MAKE_ACCESS_IN		7
+#define VM_DO_MAKE_ACCESS_OUT		8
+#define VM_SET_COPY_SIZE		9
+#define VM_GET_STATS			10
+#define VM_SET_PAGEOUT_PROCS		11
+#define VM_FORCE_SWAP			12
+#define VM_SET_COW			13
+#define VM_COUNT_DIRTY_PAGES		14
+#define VM_SET_FREE_WHEN_CLEAN		15
+#define VM_FLUSH_SEGMENT		16
+#define VM_SET_FS_PENALTY		17
+#define VM_SET_NUM_PAGE_GROUPS		18
+#define VM_SET_ALWAYS_REFUSE		19
+#define VM_SET_ALWAYS_SAY_YES		20
+#define VM_RESET_FS_STATS		21
+#define VM_SET_COR_READ_ONLY		22
+#define VM_SET_PREFETCH			23
+#define VM_SET_USE_FS_READ_AHEAD	24
+#define VM_START_TRACING		25
+#define VM_END_TRACING			26
+#define	VM_SET_WRITEABLE_PAGEOUT	27
+#define	VM_SET_WRITEABLE_REF_PAGEOUT	28
+
+/*
+ * The first allowable machine dependent command.
+ */
+#define	VM_FIRST_MACH_CMD		50
+
+/*
+ * Number of segments
+ */
+
+#define	VM_NUM_SEGMENTS		4
+
+/*
+ * Implementation independent definition of sement ids.
+ */
+
+typedef int Vm_SegmentID;
+
+/*
+ * The type of segment.
+ */
+#define VM_SYSTEM	0
+#define VM_CODE		1
+#define VM_HEAP		2
+#define VM_STACK	3
+#define VM_SHARED	4
+
+
+/*
+ * Length of the object file name that is embedded in each segment table
+ * entry.
+ */
+#define	VM_OBJ_FILE_NAME_LENGTH	50
+
+/*
+ * Segment information. Add any new fields to the end of the structure.
+ */
+
+typedef struct Vm_SegmentInfo {
+    int			segNum;		/* The number of this segment. */
+    int 		refCount;	/* Number of processes using this 
+					 * segment */
+				        /* Name of object file for code 
+					 * segments. */
+    char		objFileName[VM_OBJ_FILE_NAME_LENGTH];
+    int           	type;		/* CODE, STACK, HEAP, or SYSTEM */
+    int			numPages;	/* Explained in vmInt.h. */
+    int			ptSize;		/* Number of pages in the page table */
+    int			resPages;	/* Number of pages in physical memory
+					 * for this segment. */
+    int			flags;		/* Flags to give information about the
+					 * segment table entry. */
+    int			ptUserCount;	/* The number of current users of this
+					 * page table. */
+    int			numCOWPages;	/* Number of copy-on-write pages that
+					 * this segment references. */
+    int			numCORPages;	/* Number of copy-on-ref pages that
+					 * this segment references. */
+    Address		minAddr;	/* Minimum address that the segment
+					 * can ever have. */
+    Address		maxAddr;	/* Maximium address that the segment
+					 * can ever have. */
+    int			traceTime;	/* The last trace interval that this
+					 * segment was active. */
+} Vm_SegmentInfo;
+
+/*
+d29 6
+a34 5
+extern	ReturnStatus	Vm_PageSize();
+extern	ReturnStatus	Vm_CreateVA();
+extern	ReturnStatus	Vm_DestroyVA();
+extern	ReturnStatus	Vm_Cmd();
+extern	ReturnStatus	Vm_GetSegInfo();
+@
+
+
+1.6
+log
+@Added VM_SHARED definition.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/lib/include/RCS/vm.h,v 1.5 89/06/23 11:30:10 rab Exp Locker: shirriff $ SPRITE (Berkeley)
+a16 1
+#include "vmMach.h"
+@
+
+
+1.5
+log
+@*** empty log message ***
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/lib/include/RCS/vm.h,v 1.4 89/06/07 13:19:04 shirriff Exp Locker: rab $ SPRITE (Berkeley)
+d127 1
+@
+
+
+1.4
+log
+@Fixed typo in comments.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/lib/include/RCS/vm.h,v 1.3 89/03/27 22:24:03 jhh Exp Locker: shirriff $ SPRITE (Berkeley)
+d176 1
+a176 1
+#endif _VMUSER
+@
+
+
+1.3
+log
+@moved segment info stuff out of kernel vm.h file
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/lib/include/RCS/vm.h,v 1.2 88/09/22 20:04:10 nelson Exp Locker: jhh $ SPRITE (Berkeley)
+d21 1
+a21 1
+ * The different commands to give to Vm_Cmd.  For more details no these
+@
+
+
+1.2
+log
+@Changed from enum to #defines in order to allow machine dependent 
+vm commands.
+@
+text
+@d10 1
+a10 1
+ * $Header: vm.h,v 2.13 88/06/17 16:40:37 nelson Exp $ SPRITE (Berkeley)
+d18 1
+d108 67
+a174 3
+extern ReturnStatus Vm_CreateVA();
+extern ReturnStatus Vm_DestroyVA();
+extern ReturnStatus Vm_PageSize();
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d2 1
+a2 1
+ * vmUser.h --
+d4 1
+a4 2
+ *     Commands to give to the virtual memory command routine.
+ *     the virtual memory module.
+d6 2
+a7 8
+ * Copyright 1985, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+d9 1
+a15 1
+#ifndef _SPRITE
+d17 1
+a17 1
+#endif
+d19 87
+a105 29
+typedef enum {
+    VM_SET_CLOCK_PAGES,
+    VM_SET_CLOCK_INTERVAL,
+    VM_FORCE_REF,
+    VM_IGNORE_DIRT,
+    VM_SET_MAX_DIRTY_PAGES,
+    VM_DO_COPY_IN,
+    VM_DO_COPY_OUT,
+    VM_DO_MAKE_ACCESS_IN,
+    VM_DO_MAKE_ACCESS_OUT,
+    VM_SET_COPY_SIZE,
+    VM_GET_STATS,
+    VM_SET_PAGEOUT_PROCS,
+    VM_FORCE_SWAP,
+    VM_SET_COW,
+    VM_COUNT_DIRTY_PAGES,
+    VM_SET_FREE_WHEN_CLEAN,
+    VM_FLUSH_SEGMENT,
+    VM_SET_FS_PENALTY,
+    VM_SET_NUM_PAGE_GROUPS,
+    VM_SET_ALWAYS_REFUSE,
+    VM_SET_ALWAYS_SAY_YES,
+    VM_RESET_FS_STATS,
+    VM_SET_COR_READ_ONLY,
+    VM_SET_PREFETCH,
+    VM_SET_USE_FS_READ_AHEAD,
+    VM_START_TRACING,
+    VM_END_TRACING,
+} Vm_Command;
+@

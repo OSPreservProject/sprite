@@ -1,0 +1,132 @@
+
+
+
+SHMOP                 C Library Procedures                  SHMOP
+
+
+
+NNAAMMEE
+     shmop, shmat, shmdt - shared memory operations
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<ssyyss//iippcc..hh>>
+     ##iinncclluuddee <<ssyyss//sshhmm..hh>>
+
+     cchhaarr **sshhmmaatt((sshhmmiidd,, sshhmmaaddddrr,, sshhmmffllgg))
+     iinntt sshhmmiidd;;
+     cchhaarr **sshhmmaaddddrr;;
+     iinntt sshhmmffllgg;;
+
+     iinntt sshhmmddtt((sshhmmaaddddrr))
+     cchhaarr **sshhmmaaddddrr;;
+
+DDEESSCCRRIIPPTTIIOONN
+     sshhmmaatt(()) maps the shared memory segment associated with the
+     shared memory identifier specified by _s_h_m_i_d into the data
+     segment of the calling process.  Upon successful completion,
+     the address of the mapped segment is returned.
+
+     The shared memory segment is mapped at the address specified
+     by one of the following criteria:
+
+     o+    If _s_h_m_a_d_d_r is equal to zero, the segment is mapped at
+          an address selected by the system.  Ordinarily, appli-
+          cations should invoke sshhmmaatt(()) with _s_h_m_a_d_d_r equal to
+          zero so that the operating system may make the best use
+          of available resources.
+
+     o+    If _s_h_m_a_d_d_r is not equal to zero and (_s_h_m_f_l_g & SSHHMM__RRNNDD)
+          is ``true'', the segment is mapped at the address given
+          by (_s_h_m_a_d_d_r - (_s_h_m_a_d_d_r modulus SSHHMMLLBBAA)).
+
+     o+    If _s_h_m_a_d_d_r is not equal to zero and (_s_h_m_f_l_g & SSHHMM__RRNNDD)
+          is ``false'', the segment is mapped at the address
+          given by _s_h_m_a_d_d_r.
+
+     The segment is mapped for reading if (_s_h_m_f_l_g & SSHHMM__RRDDOONNLLYY)
+     is ``true'' {{RREEAADD}}, otherwise it is mapped for reading and
+     writing {{RREEAADD//WWRRIITTEE}}.
+
+     sshhmmddtt(()) unmaps from the calling process's address space the
+     shared memory segment that is mapped at the address speci-
+     fied by _s_h_m_a_d_d_r.  The shared memory segment must have been
+     mapped with a prior sshhmmaatt(()) function call.  The segment and
+     contents are retained until explicitly removed by means of
+     the function (see sshhmmccttll(2)).
+
+RREETTUURRNN VVAALLUUEESS
+     Upon successful completion, the return values are as
+
+
+
+Sprite v1.0             21 November 1987                        1
+
+
+
+
+
+
+SHMOP                 C Library Procedures                  SHMOP
+
+
+
+     follows:
+
+     o+    sshhmmaatt(()) returns the data segment start address of the
+          mapped shared memory segment.
+
+     o+    sshhmmddtt(()) returns a value of 0.
+
+     Otherwise, a value of -1 is returned and eerrrrnnoo is set to
+     indicate the error.
+
+EERRRROORRSS
+     sshhmmaatt(()) will fail and not map the shared memory segment if
+     one or more of the following are true:
+
+     EINVAL              _s_h_m_i_d is not a valid shared memory iden-
+                         tifier.
+
+     EACCES              Operation permission is denied to the
+                         calling process (see iinnttrroo(2)).
+
+     ENOMEM              The available data space is not large
+                         enough to accommodate the shared memory
+                         segment.
+
+     EINVAL              _s_h_m_a_d_d_r is not equal to zero, and the
+                         value of (_s_h_m_a_d_d_r - (_s_h_m_a_d_d_r modulus
+                         SSHHMMLLBBAA)) is an illegal address.
+
+     EINVAL              _s_h_m_a_d_d_r is not equal to zero, (_s_h_m_f_l_g &
+                         SSHHMM__RRNNDD) is ``false'', and the value of
+                         _s_h_m_a_d_d_r is an illegal address.
+
+     EMFILE              The number of shared memory segments
+                         mapped to the calling process would
+                         exceed the system-imposed limit.
+
+     sshhmmddtt(()) will fail and not unmap the shared memory segment
+     if:
+
+     EINVAL
+          _s_h_m_a_d_d_r is not the data segment start address of a
+          shared memory segment.
+
+SSEEEE AALLSSOO
+     eexxeeccvvee(2), eexxiitt(2), ffoorrkk(2), iinnttrroo(2), sshhmmccttll(2), sshhmmggeett(2)
+
+BBUUGGSS
+     The System V shared memory functions are implemented at user
+     level on top of the mmap(2) interface.  Not all the System V
+     functionality is implemented.
+
+
+
+
+
+Sprite v1.0             21 November 1987                        2
+
+
+

@@ -1,0 +1,132 @@
+
+
+
+SIGNAL                C Library Procedures                 SIGNAL
+
+
+
+NNAAMMEE
+     signal - simplified software signal facilities
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssiiggnnaall..hh>>
+
+     ((**ssiiggnnaall((ssiigg,, ffuunncc))))(())
+     iinntt ((**ffuunncc))(());;
+
+DDEESSCCRRIIPPTTIIOONN
+     _S_i_g_n_a_l is a simplified interface to the more general
+     _s_i_g_v_e_c(2) facility.  See the _s_i_g_v_e_c(_2) manual entry for com-
+     plete details on how signals are handled.
+
+     If _f_u_n_c is SIG_DFL, the default action for signal _s_i_g is
+     reinstated.  If _f_u_n_c is SIG_IGN the signal is subsequently
+     ignored and pending instances of the signal are discarded.
+     Otherwise, when the signal occurs further occurrences of the
+     signal are automatically blocked and _f_u_n_c is called.
+
+     A return from the function unblocks the handled signal and
+     continues the process at the point it was interrupted.
+     UUnnlliikkee pprreevviioouuss ssiiggnnaall ffaacciilliittiieess,, tthhee hhaannddlleerr _f_u_n_c rreemmaaiinnss
+     iinnssttaalllleedd aafftteerr aa ssiiggnnaall hhaass bbeeeenn ddeelliivveerreedd..
+
+     If a caught signal occurs during certain system calls, caus-
+     ing the call to terminate prematurely, the call is automati-
+     cally restarted.  In particular this can occur during a _r_e_a_d
+     or _w_r_i_t_e(2) on a slow device (such as a terminal; but not a
+     file) and during a _w_a_i_t(2).
+
+     The value of _s_i_g_n_a_l is the previous (or initial) value of
+     _f_u_n_c for the particular signal.
+
+     After a _f_o_r_k(2) or _v_f_o_r_k(2) the child inherits all signals.
+     _E_x_e_c_v_e(2) resets all caught signals to the default action;
+     ignored signals remain ignored.
+
+RREETTUURRNN VVAALLUUEE
+     The previous action is returned on a successful call.  Oth-
+     erwise, -1 is returned and _e_r_r_n_o is set to indicate the
+     error.
+
+EERRRROORRSS
+     _S_i_g_n_a_l will fail and no action will take place if one of the
+     following occur:
+
+     [EINVAL]       _S_i_g is not a valid signal number.
+
+     [EINVAL]       An attempt is made to ignore or supply a
+                    handler for SIGKILL or SIGSTOP.
+
+
+
+
+Sprite v1.0               May 20, 1986                          1
+
+
+
+
+
+
+SIGNAL                C Library Procedures                 SIGNAL
+
+
+
+     [EINVAL]       An attempt is made to ignore SIGCONT (by
+                    default SIGCONT is ignored).
+
+SSEEEE AALLSSOO
+     kill(1), ptrace(2), kill(2), sigvec(2), sigblock(2), sigset-
+     mask(2), sigpause(2), sigstack(2), setjmp(3), tty(4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0               May 20, 1986                          2
+
+
+

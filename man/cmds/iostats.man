@@ -1,0 +1,14 @@
+' $Header: /sprite/src/cmds/rpccmd/RCS/rpccmd.man,v 1.4 88/12/30 10:11:07 ouster Exp Locker: mgbaker $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS iostats cmds
+.BS
+.SH NAME
+iostats \- Show disk usage.
+.SH SYNOPSIS
+\fBiostats\fR
+.BE
+.SH INTRODUCTION
+For each disk on the system, show the number of samples, the number that were
+idle, the number of reads for that disk, and the number of writes.
+.SH KEYWORDS
+idle, io, disk, read, write

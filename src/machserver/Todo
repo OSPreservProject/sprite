@@ -1,0 +1,249 @@
+Figure out where the time is going when you run the Andrew benchmark.
+- Figure out where the "system call" overhead is coming from.  Hang a
+  struct off the PCB to record various time intervals between receipt
+  of message and start of processing?  (Plus something similar for
+  message return.)  Verify that gettimeofday() really involves a
+  server call for UX.
+  - Write some dummy Sprite calls that are special-cased (e.g., have
+    the input thread send the reply; have a server thread send the
+    reply w/o the usual Sprite call processing).
+    - verify things work as they're supposed to.  Take out debug printfs.
+    - get comparison perf numbers.
+    - check in changes, including new syscall benchmark program.
+  - Write some dummy Sprite calls with 0, 1, 2, and 3 int arguments.
+    The calls should immediately return (i.e., don't even go through
+    the standard syscall overhead).  What is the perf overhead of
+    the different numbers of arguments?  [probably minimal]
+  - Could solve the pcb reclamation problem by using no-senders
+    notification to tell when to reap a dead pcb?  This would
+    hopefully let you have a pool of syscall threads and get rid of a
+    context switch.
+- Where is the rest of the exec() time going?
+- Where is rest of fork() time going?
+
+Run the Andrew benchmark on native Sprite, on the Sprite server, and
+using the UX server.
+- rpc stats?
+- net stats:
+  - number of dropped broadcast packets that we sent
+  - bytes copied to make output packet contiguous for Mach's sake
+  - bytes sent?
+  - loopback packets
+- Make sure you haven't left junk lying around
+  /sprite/src/benchmarks/itc.
+
+Fix the sprited exec to reuse the heap and swap segments.  Check
+performance gain.
+
+Think about adding "inline" FS read/write stubs; have read() and
+write() use them (except maybe for whole-page page-aligned transfers).
+Check performance improvement.  Also hack stdio to page-align its
+buffers?  One problem: FS_USER is set at open time, not at I/O time.
+
+See if you get a noticeable performance improvement by dynamically
+allocating the page-in buffer and turning on the dealloc flag to
+memory_object_data_supply.
+
+Make sure the Sprite external pager does the right thing w.r.t.
+shadow pages.  (See the mail from Joe Barrera in +emacs ("Re:
+implementation of copy on write").)  This would probably only be an
+issue once you really wanted to do copy-on-write using an external
+pager.
+
+Get control programs working with sprited.
+- rpccmd (timing control)
+
+Hack the gdb "thread-list" command to include the MachID?
+
+Upgrade anarchy (running Mach) to the 2.1 compiler, so that it's
+running the same stuff that Sprite has?  Should get 2.1 copies of
+ccom, uopt, ugen, as0, as1, crt0 (?), ld, nm, strip, and size.  Need
+to set links for them and for ccom, ugen, and as1.
+
+Change sprited build environment to use "dsmach" machine type?
+- Convert your user-program build environment to use it.  
+  - Fix files in /sprite/lib/pmake.
+- Put the binaries in /sprite/cmds rather than in ~/cmds.sprited.  
+- Convert build environment for sprited.
+
+Try to get the IP server running with sprited?
+
+Think about fixing the Mach kernel so that emulate_fpa returns an
+exception code for unimplemeneted op codes, rather than calling
+kdb_trap directly.  Once you get this working, also think about
+plugging the Sprite ds3100 softfp.o into Mach.
+
+More FS tests:
+- verify that file inheritance across fork works.  See
+  /sprite/src/tests/syscalls/fork.
+- verify that close-on-exec files are in fact closed.
+- Any other interesting tests from /sprite/src/tests (e.g.,
+  syscalls/{exit,fork})?
+
+Make a list of unresolved design issues (and resolved issues that
+should still be reviewed in a Sprite meeting).
+- unresolved: some aspects of block devices (look for XXX in
+  callsDev); ScsiTape function pointers.
+- should review: net & dev modules; process destruction/message
+  handling synch.
+Let JO know when you'd like to make presentations on various subjects.
+
+Try to clean up sprited VM design so that there is only one segment
+type, with behavioral flags (e.g., read-only, map-file-backwards).
+You may want to introduce a copy-on-fork flag.  Make sure you update
+Vm_Fork.
+- Will you also need to clean up the FS code so that it doesn't know
+  about the different segment types?  (See, e.g., Fs_PageRead.)
+- Another thing to consider is error recovery.  For shared files, you
+  can just pass the error codes back up to the user program.  For swap
+  files, you probably want to try harder to hide errors.
+- Make the stack segment per-process instead of per-task.
+- Fix Vm_MappedSegment so that arbitrary pages of the file can be
+  mapped at arbitrary places?  Is there code that might free
+  pages it shouldn't because of the overly general information in
+  Vm_MappedSegment?  Maybe you should just fix it to use
+  vmOps.c:UnmapPages.
+- This might also be a good time to separate the VM request threads
+  from Proc_ServerProc's.
+- Maybe segment destruction should be changed so that when the
+  segment's reference count goes to 0, you just clean it.  If the
+  reference count is still 0 when you get the lock_completed call,
+  then you can destroy it.  The hoped-for advantage is to reduce the
+  number of times a process has to wait for a DYING segment to get
+  cleaned before the process can map a particular file.  See notes
+  from 3-Feb-1992.
+- Need change the way code segments are handled, so that a process can
+  write into a private copy (for breakpoints) without affecting other
+  processes.  Give each process its own code segment?  (This would
+  break the one segment <-> one swap file mapping.)  Use the object
+  file as the "init" file instead of the swap file?
+
+Review the callsVm, newVm, and changes lists (in machMerge).  
+Other possible cleanups:
+- Think about the following setup for making signal delivery more
+  reliable: Map a page for each process into the server's address
+  space; this yields cheaper communication with the emulation library.
+  Fix the emulation library to set a flag whenever it does a Mach call
+  (it might take some work to find all the instances).  Fix the server
+  so that it forces the user process to take delivery of the signal
+  except when that flag is set.  Add another flag to the mapped area
+  for the server to tell the emulation library that a signal is
+  pending.
+- Think about how to handle segments that aren't successfully mapped.
+  You'd like to distinguish the case where the segment is broken
+  (e.g., has a text length of 0, see 29-Nov-1991 notes) from the case
+  where a user specified bogus arguments.  Note that the current code
+  leaves the control port as null, which is bad because it leaves you
+  open to races with the kernel.  Maybe you could mark the control
+  port as dead and just leave it lying around until the kernel decides
+  to get rid of it?
+- Use Mach header files instead of local declarations (e.g., mach_msg,
+  timer stuff).
+- Is there a race in the exception handling code?  What happens if
+  Mach doesn't detect the exception (e.g., a floating point exception)
+  until after the process has made a Sprite request?
+- Look through the Sprite kernel log for fixes that you should take into
+  sprited (e.g., suspend/resume race?).
+- Fix catch_exception_raise to use SigMach_ExceptionString.
+- Fix mach_error_string (in libmach) to know about device error codes.
+  Send fixes back to CMU.  [Already done: MK73.]
+- Use MIG_DESTROY_REQUEST instead of MIG_NO_REPLY to indicate the the
+  sys module should eat the reply message?  (Requires MK73 or later.)
+- Remove "out of memory" panics in sprited?  Note that
+  maxBuffersAlloc is probably way too conservative; make it smaller.
+  numBuffersAlloc gets up to 40 with the processTree test.
+- Take Ken's fix to Compat_MapCode (see his bug report from
+  19-Dec-1991).
+- Think about calling Proc_Kill directly in some cases (rather than
+  doing a SIG_KILL), so that more specific information about the
+  failure (e.g., PROC_BAD_STACK) can be recorded.
+- Put the ckalloc stuff into /sprite/src/lib/c?  Probably want to
+  split Db routines from simple ck routines and then add a runtime
+  (or link time?) check to ensure that only one is used.
+- Figure out what to do about I/O errors in pager code.  For example,
+  can address fault in copyin/copyout if the file server returns an
+  error.  Should either (a) set the thread exception port to protect
+  code that accesses user space or (b) set the task exception port
+  (once) and set a flag in the PCB when accessing user addresses.
+  Need to do this in such a way that it won't interfere with using
+  gdb.  Also, still need some way to bail out--longjmp?
+- remove unused function declarations from fs header files & unixStubs
+  header files.
+- get rid of the asynch parameter to NetMachOutput, Net_Output, etc.
+- clean up error handling; just use ReturnStatus everywhere (or
+  reimplement ReturnStatus as a series of systems under Mach).
+- clean up error handling in memory_object_data_request: return
+  something more specific than just FAILURE or FS_INVALID_ARG.
+- Implement the Proc_SetPriority syscall, and re-enable the code in pmake
+  that uses it.
+- Are there any places left where Proc_MakeReady needs to wake up a
+  process that's waiting on an arbitrary condition variable?  (This
+  corresponds to native Sprite code that sticks the process into the
+  ready queue using some sync/sched back door.)
+- Fix naming conflicts with "mig".  Use "matchmaker" for things
+  related to Mach's MIG?
+- Try to fix the stdio package so that if the open in the init program
+  fails (somebody in libc wants to print a message), the system won't
+  just hang.
+- Fix sysPrintf.c so that server printf's go to the syslog device.
+  [already done?]
+- Figure out why if you start up a "cat /dev/syslog" and then kill it,
+  it doesn't die until it gets more syslog output.  Does this have
+  anything to do with the fact that server printf's don't currently go
+  to /dev/syslog?
+- put back the SetTimeOfDay call in Rpc_Start?
+- Once the packet filter has access to the correct header information,
+  fix it to not allow the host's own broadcast packets.
+- verify that umask works right.
+- Fix the user sleep() so that ps shows that the process is sleeping.
+- see why on a sun3, if DoExec aborts the client thread after calling
+  SetupVM, the server receives an EXC_EMULATION exception before the
+  client thread has even been resumed.  (See Richard Draves's and Dave
+  Black's messages "Re: suitability of thread_abort for exec" in
+  +mach.)  Note: this may be a kernel bug that's fixed in a more
+  recent kernel release (didn't they make a bunch of changes w.r.t.
+  AST's?)  At any rate, if you can't boot a recent kernel on Oregano
+  and the problem isn't reproducible on Anarchy, it's probably not
+  worth messing with.
+- use PROC_TERM_VANISHED as the termination reason when we find that a
+  process's task or thread has mysteriously disappeared.
+- decouple PROC_NO_MORE_REQUESTS from setting the termination
+  reason/status/code.
+- fix Compat_MapCode to understand the latest set of Sprite status
+  values. 
+- Be better about NULL versus NIL (to be more compatible with native
+  Sprite code).
+- use the Mach sys_errlist (for strerror).
+- Come up with some sort of registration scheme for "never-say-die"
+  server threads (e.g., network input, timer).  This way the shutdown
+  code doesn't have to wait quite so long before bailing out (compare
+  the number of remaining processes with the number of "never-say-die"
+  threads and exit if they're the same).
+- when setting up a network receive port, should also take inet packets.
+- rename Utils_MapMachStatus to Compat_MapMachStatus.
+- implement support for mmap().  Test Vm_CleanupSharedFile (open a
+  file, mmap it, make some changes, and close it.  Should be unable to
+  refer to the mapped memory any longer, and verify that the changes
+  made it out to the file server).
+- May want to hack DoWait to periodically wake up the parent, in case
+  a process gets blown away by Mach and we never find out.
+
+Think about changing spriteTypes.defs to use c_string (see "MK Version
+MK59" in +mach3).
+
+Investigate the version of gdb 4 that has Mach support.
+
+Fix mips gdb bugs, at least for version running on Mach.
+- does poor job of recognizing static symbols.  For example,
+  can't set breakpoint for static function until have gotten the
+  symbols for the function's file.
+- stack backtrace sometimes goes on forever past __start.  
+  - Compare PC with PC at previous level and stop if the same?
+- backtrace doesn't go past emulator (e.g., for abort()).
+- should "realclean" or "distclean" remove the machid files?
+- Any fixes to Makefile.dist needed for new files (e.g., list of files
+  to make tags for)?
+
+Fix /bin/passwd on Anarchy (running Mach).  ("passwd -l" drops core.)
+Try the 4.3 Reno passwd?
+

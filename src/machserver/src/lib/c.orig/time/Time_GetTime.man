@@ -1,0 +1,40 @@
+'\" Copyright 1991 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/lib/c/time/RCS/Time_GetTime.man,v 1.1 91/04/21 22:44:12 kupfer Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS Time lib
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+Time_GetTime \- Get the current time of day.
+.SH SYNOPSIS
+.nf
+\fB#include <spriteTime.h>\fR
+.sp
+void
+\fBTime_GetTime\fR(\fInowPtr\fP)
+.SH ARGUMENTS
+.AS Time *nowPtr
+.AP Time *nowPtr out
+The current time of day.
+.BE
+
+.SH DESCRIPTION
+.PP
+.B Time_GetTime
+is like the UNIX
+.BR gettimeofday ,
+except it is defined using the Sprite type
+.BR Time .
+It returns the current time in seconds and microseconds since the
+start of the epoch.
+
+.SH KEYWORDS
+time

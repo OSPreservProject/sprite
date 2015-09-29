@@ -1,0 +1,1 @@
+installboot -dev rsd03 -part a -noStrip diskBoot.OpenProm

@@ -1,0 +1,8 @@
+F FSUTIL.H_V;1                      	fsutil.h,v
+F FSUTILH0.C_V;1                    	fsutilHandle.c,v
+F FSUTILH1.C_V;1                    	fsutilHandleScavenge.c,v
+F FSUTILNO.C_V;1                    	fsutilNotify.c,v
+F FSUTILRE.C_V;1                    	fsutilRecovery.c,v
+F FSUTILSU.C_V;1                    	fsutilSubr.c,v
+F FSUTILSY.C_V;1                    	fsutilSync.c,v
+F FSUTILTR.C_V;1                    	fsutilTrace.c,v

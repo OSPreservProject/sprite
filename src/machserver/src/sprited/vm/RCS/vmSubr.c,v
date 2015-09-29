@@ -1,0 +1,3197 @@
+head     1.17;
+branch   ;
+access   ;
+symbols  srv030:1.17 srv028:1.17 srv027:1.16 srv026:1.16 srv024:1.16 srv022:1.16 srv021:1.16 srv019:1.16 srv018:1.16 srv016:1.16 srv015:1.16 srv014:1.16 srv012:1.15 srv011:1.14 srv010:1.14 srv008:1.13 srv007:1.13 srv006:1.13 srv005:1.13 srv004:1.13 srv003:1.12 srv002:1.12 srv001:1.11;
+locks    ; strict;
+comment  @ * @;
+
+
+1.17
+date     92.07.13.21.12.45;  author kupfer;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     92.06.08.16.12.05;  author kupfer;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     92.06.07.22.45.54;  author kupfer;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     92.06.04.21.45.15;  author kupfer;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     92.05.08.12.55.31;  author kupfer;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     92.04.23.23.48.02;  author kupfer;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     91.12.18.23.34.44;  author kupfer;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     91.12.18.17.23.47;  author kupfer;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     91.12.12.21.08.37;  author kupfer;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     91.12.09.15.12.15;  author kupfer;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     91.12.01.22.00.42;  author kupfer;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     91.11.14.10.03.26;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.10.18.18.30.06;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.10.04.11.37.59;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.09.24.16.35.24;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.09.23.14.20.15;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.09.17.17.30.49;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.17
+log
+@Instrument Vm_Copy{In,Out}, with times broken down according to Sprite
+call.
+@
+text
+@/* vmSubr.c -
+ *
+ *     This file contains miscellaneous virtual memory routines.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmSubr.c,v 1.16 92/06/08 16:12:05 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <bstring.h>
+#include <mach.h>
+#include <mach_error.h>
+#include <status.h>
+#include <string.h>
+
+#include <timer.h>
+#include <utils.h>
+#include <vm.h>
+#include <vmInt.h>
+
+static Boolean copyDebug = FALSE;
+
+/* Forward references: */
+static ReturnStatus VmCopy _ARGS_((vm_size_t requestedBytes,
+			mach_port_t fromTask, Address fromAddr,
+			mach_port_t toTask, Address toAddr));
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_CopyInProc --
+ *
+ *	Copy from another processes address space into the current address
+ *	space. It assumed that this routine is called with the source 
+ *	process locked such that its VM will not go away while we are doing
+ *	this copy.
+ *
+ * Results:
+ *	SUCCESS if the copy succeeded, SYS_ARG_NOACCESS if fromAddr is invalid.
+ *
+ * Side effects:
+ *	What toAddr points to is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Vm_CopyInProc(numBytes, fromProcPtr, fromAddr, toAddr, toKernel)
+    int			numBytes;	/* The maximum number of bytes
+					 * to copy in. */
+    Proc_LockedPCB	*fromProcPtr;	/* Which process to copy from.*/
+    Address		fromAddr;	/* The address to copy from */
+    Address		toAddr;		/* The address to copy to */
+    Boolean		toKernel;	/* This copy is happening to 
+					 * the kernel's address space.*/
+{
+    mach_port_t toTask;		/* Mach task to copy to */
+    mach_port_t fromTask;	/* Mach task to copy from */
+    Proc_ControlBlock *curProcPtr; /* current user process */
+
+    curProcPtr = Proc_GetCurrentProc();
+    if (copyDebug) {
+	printf("Vm_CopyInProc: from pid %x [%x + %x] -> %x",
+	       fromProcPtr->pcb.processID, fromAddr, numBytes, toAddr);
+	if (toKernel) {
+	    printf(" (sprited)\n");
+	} else {
+	    printf(" (pid %x)\n", curProcPtr->processID);
+	}
+    }
+
+    if (fromProcPtr->pcb.genFlags & PROC_KERNEL) {
+	panic("Vm_CopyInProc wants to copy in from kernel process.\n");
+    }
+    if (fromProcPtr->pcb.taskInfoPtr == NULL) {
+	fromTask = MACH_PORT_NULL;
+    } else {
+	fromTask = fromProcPtr->pcb.taskInfoPtr->task;
+    }
+    if (toKernel) {
+	toTask = mach_task_self();
+    } else if (curProcPtr->taskInfoPtr == NULL) {
+	toTask = MACH_PORT_NULL;
+    } else {
+	toTask = curProcPtr->taskInfoPtr->task;
+    }
+    if (toTask == MACH_PORT_NULL || fromTask == MACH_PORT_NULL) {
+	return SYS_ARG_NOACCESS;
+    }
+
+    return VmCopy((vm_size_t)numBytes, fromTask, fromAddr, toTask, toAddr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_CopyOutProc --
+ *
+ *	Copy from the current VAS to another processes VAS.  It assumed that
+ *	this routine is called with the dest process locked such that its 
+ *	VM will not go away while we are doing the copy.
+ *
+ * Results:
+ *	SUCCESS if the copy succeeded, SYS_ARG_NOACCESS if sourceAddr is 
+ *	invalid. 
+ *
+ * Side effects:
+ *	What toAddr points to is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Vm_CopyOutProc(numBytes, sourceAddr, fromKernel, toProcPtr, destAddr)
+    int			numBytes;	/* The number of bytes to copy out */
+    Address		sourceAddr;	/* The address to copy from */
+    Boolean		fromKernel;	/* This copy is happening from
+					 * the kernel's address space.*/
+    Proc_LockedPCB	*toProcPtr; 	/* Which process to copy to.*/
+    Address		destAddr; 	/* The address to copy to */
+{
+    mach_port_t toTask;		/* Mach task to copy to */
+    mach_port_t fromTask;	/* Mach task to copy from */
+    Proc_ControlBlock *curProcPtr; /* current user process */
+
+    curProcPtr = Proc_GetCurrentProc();
+    if (copyDebug) {
+	printf("Vm_CopyOutProc: ");
+	if (fromKernel) {
+	    printf("(sprited) ");
+	} else {
+	    printf("(pid %x) ", curProcPtr->processID);
+	}
+	printf("[%x + %x] -> %x (to pid %x)\n",
+	       sourceAddr, numBytes, destAddr, toProcPtr->pcb.processID);
+    }
+
+    if (toProcPtr->pcb.genFlags & PROC_KERNEL) {
+	panic("Vm_CopyOutProc wants to copy to kernel process.\n");
+    }
+    if (toProcPtr->pcb.taskInfoPtr == NULL) {
+	toTask = MACH_PORT_NULL;
+    } else {
+	toTask = toProcPtr->pcb.taskInfoPtr->task;
+    }
+    if (fromKernel) {
+	fromTask = mach_task_self();
+    } else if (curProcPtr->taskInfoPtr == NULL) {
+	fromTask = MACH_PORT_NULL;
+    } else {
+	fromTask = curProcPtr->taskInfoPtr->task;
+    }
+    if (toTask == MACH_PORT_NULL || fromTask == MACH_PORT_NULL) {
+	return SYS_ARG_NOACCESS;
+    }
+
+    return VmCopy((vm_size_t)numBytes, fromTask, sourceAddr, toTask,
+		  destAddr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_CopyIn --
+ *
+ *	Copy from current process's address space into the server's.  
+ *	In native Sprite, this routine can be called with the current 
+ *	process locked or unlocked.  This means that we can't lock the 
+ *	current process here.  We should be protected from nasty
+ *	changes to the PCB by the PROC_BEING_SERVED flag.
+ *
+ * Results:
+ *	SUCCESS if the copy went okay.  Returns SYS_ARG_NOACCESS if the 
+ *	requested region is inaccessible.
+ *
+ * Side effects:
+ *	Bytes are copied into the destination buffer.  Might update 
+ *	instrumentation in the current process's PCB.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Vm_CopyIn(numBytes, sourcePtr, destPtr)
+    int numBytes;		/* number of bytes to copy */
+    Address sourcePtr;		/* address in user process */
+    Address destPtr;		/* address in Sprite server */
+{
+    Time startTime;		/* instrumentation */
+    Time endTime;
+    ReturnStatus status;
+    Proc_ControlBlock *procPtr;
+
+    if (sys_CallProfiling) {
+	Timer_GetTimeOfDay(&startTime, (int *)NULL, (Boolean *)NULL);
+    } else {
+	startTime = time_ZeroSeconds;
+    }
+    /* 
+     * We don't know for sure that the current process is locked, but the 
+     * rest of the server knows not to disturb the VM of a process that's 
+     * having a request processed.
+     */
+    status = Vm_CopyInProc(numBytes, Proc_AssertLocked(Proc_GetCurrentProc()),
+			   sourcePtr, destPtr, TRUE);
+    if (sys_CallProfiling && !Time_EQ(startTime, time_ZeroSeconds)) {
+	Timer_GetTimeOfDay(&endTime, (int *)NULL, (Boolean *)NULL);
+	Time_Subtract(endTime, startTime, &endTime);
+	procPtr = Proc_GetCurrentProc();
+	Time_Add(endTime, procPtr->copyInTime, &procPtr->copyInTime);
+    }
+
+    return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_CopyOut --
+ *
+ *	Copy from the server's address space into a user process's address 
+ *	space.
+ *
+ * Results:
+ *	SUCCESS if the copy went okay.  Returns SYS_ARG_NOACCESS if the 
+ *	destination region is unwritable or non-existent.
+ *
+ * Side effects:
+ *	Bytes are copied into the user process's address space.  Might
+ *	update instrumentation in the current process's PCB.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Vm_CopyOut(numBytes, sourcePtr, destPtr)
+    int numBytes;		/* number of bytes to copy */
+    Address sourcePtr;		/* address in Sprite server */
+    Address destPtr;		/* address in user process */
+{
+    Time startTime;		/* instrumentation */
+    Time endTime;
+    ReturnStatus status;
+    Proc_ControlBlock *procPtr;
+
+    if (sys_CallProfiling) {
+	Timer_GetTimeOfDay(&startTime, (int *)NULL, (Boolean *)NULL);
+    } else {
+	startTime = time_ZeroSeconds;
+    }
+    /* 
+     * We don't know for sure that the current process is locked, but the 
+     * rest of the server knows not to disturb the VM of a process that's 
+     * having a request processed.
+     */
+    status = Vm_CopyOutProc(numBytes, sourcePtr, TRUE,
+			    Proc_AssertLocked(Proc_GetCurrentProc()),
+			    destPtr);
+    if (sys_CallProfiling && !Time_EQ(startTime, time_ZeroSeconds)) {
+	Timer_GetTimeOfDay(&endTime, (int *)NULL, (Boolean *)NULL);
+	Time_Subtract(endTime, startTime, &endTime);
+	procPtr = Proc_GetCurrentProc();
+	Time_Add(endTime, procPtr->copyOutTime, &procPtr->copyOutTime);
+    }
+
+    return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmCopy --
+ *
+ *	Copy bytes from one task to another.
+ *
+ * Results:
+ *	Returns SUCCESS if the copy went okay.  Returns SYS_ARG_NOACCESS if 
+ *	there were problems accessing either the source or destination 
+ *	regions.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+VmCopy(requestedBytes, fromTask, fromAddr, toTask, toAddr)
+    vm_size_t requestedBytes;	/* number of bytes to copy */
+    mach_port_t fromTask;	/* task to copy from */
+    Address fromAddr;		/* where to start copying from */
+    mach_port_t toTask;		/* task to copy to */
+    Address toAddr;		/* where to start copying into */
+{
+    Address startFromPage;	/* start addr of page-aligned "from" region */
+    Address endFromPage;	/* next page after "from" region */
+    Address startToPage;	/* start addr of page-aligned "to" region */
+    Address endToPage;		/* next page after "to" region */
+    Address fromBuffer = NULL;	/* bytes read from "from" task */
+    vm_size_t fromBufferSize;	/* number of bytes in fromBuffer */
+    Address toBuffer = NULL;	/* bytes read from "to" task */
+    vm_size_t toBufferSize;	/* number of bytes in toBuffer */
+    Address writeBuffer;	/* which buffer to actually write */
+    vm_size_t writeSize;	/* number of bytes in writeBuffer */
+    kern_return_t kernStatus;
+    ReturnStatus status = SUCCESS;
+
+    /* 
+     * If there's nothing to copy, quit now.  This isn't just a performance 
+     * optimization: in the MK63 kernel, vm_write apparently hangs if you
+     * do a vm_read from an externally managed object and then vm_write the
+     * same buffer back without first changing it.
+     */
+    if (requestedBytes == 0) {
+	return SUCCESS;
+    }
+
+    if (copyDebug) {
+	printf("VmCopy: want (%x+%x) -> %x\n", fromAddr, requestedBytes,
+	       toAddr);
+    }
+
+    /* 
+     * Assume that the amount to be copied is small enough that bcopy is 
+     * cheaper than vm_read/vm_write.  So, if we are copying from the 
+     * server, do nothing here.  Otherwise, read in the pages containing 
+     * the source bytes and update the "from" address.
+     */
+    
+    if (fromTask != mach_task_self()) {
+	startFromPage = Vm_TruncPage(fromAddr);
+	endFromPage = Vm_RoundPage(fromAddr + requestedBytes);
+	kernStatus = vm_read(fromTask, (vm_address_t)startFromPage,
+			     (vm_size_t)(endFromPage - startFromPage),
+			     (pointer_t *)&fromBuffer,
+			     (mach_msg_type_number_t *)&fromBufferSize);
+	if (kernStatus == KERN_PROTECTION_FAILURE ||
+	    kernStatus == KERN_INVALID_ADDRESS) {
+	    status = SYS_ARG_NOACCESS;
+	    goto bailOut;
+	} else if (kernStatus != KERN_SUCCESS) {
+	    panic("VmCopy read failed: %s\n", mach_error_string(kernStatus));
+	} else if (fromBufferSize != endFromPage - startFromPage) {
+	    printf("VmCopy: short read.\n");
+	    status = SYS_ARG_NOACCESS;
+	    goto bailOut;
+	}
+	if (copyDebug) {
+	    printf("VmCopy: `from' buffer at %x: ", fromBuffer);
+	}
+	fromAddr = fromBuffer + (fromAddr - startFromPage);
+    }
+
+    /* 
+     * fromAddr now points at a directly accessible copy of the "from"
+     * bytes.  If we are copying to the server, just do a bcopy.  (Not only
+     * is this faster, it is sometimes necessary to avoid clobbering
+     * variables used by VmCopy.)
+     * 
+     * Otherwise, we are writing into a user process.  If we are copying
+     * entire aligned pages, then a simple call to vm_write suffices.
+     * If the pages are unaligned, or we're not copying entire pages, then 
+     * we first have to read in the destination region, overwrite it with 
+     * the new bytes, then write the region back out again.
+     */
+    
+    if (toTask == mach_task_self()) {
+	if (copyDebug) {
+	    printf("VmCopy: bcopy (%x + %x) -> %x\n",
+		   fromAddr, requestedBytes, toAddr);
+	}
+	bcopy(fromAddr, toAddr, requestedBytes);
+    } else {
+	startToPage = Vm_TruncPage(toAddr);
+	endToPage = Vm_RoundPage(toAddr + requestedBytes);
+	if (fromAddr == Vm_TruncPage(fromAddr) && toAddr == startToPage &&
+	    requestedBytes == trunc_page(requestedBytes)) {
+	    writeBuffer = fromAddr;
+	    writeSize = requestedBytes;
+	} else {
+	    /* 
+	     * Unaligned case.
+	     */
+	    kernStatus = vm_read(toTask, (vm_address_t)startToPage,
+				 (vm_size_t)(endToPage - startToPage),
+				 (pointer_t *)&toBuffer,
+				 (mach_msg_type_number_t *)&toBufferSize);
+	    if (kernStatus == KERN_PROTECTION_FAILURE ||
+		kernStatus == KERN_INVALID_ADDRESS) {
+		status = SYS_ARG_NOACCESS;
+		goto bailOut;
+	    } else if (kernStatus != KERN_SUCCESS) {
+		panic("VmCopy second read failed: %s\n",
+		      mach_error_string(kernStatus));
+	    } else if (toBufferSize != endToPage - startToPage) {
+		printf("VmCopy: short second read.\n");
+		status = SYS_ARG_NOACCESS;
+		goto bailOut;
+	    }
+	    if (copyDebug) {
+		printf("VmCopy: `to' buffer at %x ", toBuffer);
+		printf("VmCopy: bcopy (%x + %x) -> %x\n",
+		       fromAddr, requestedBytes,
+		       toBuffer + (toAddr - startToPage));
+	    }
+	    bcopy(fromAddr, toBuffer + (toAddr - startToPage),
+		  requestedBytes);
+	    writeBuffer = toBuffer;
+	    writeSize = toBufferSize;
+	}
+	
+	/* 
+	 * Okay, now do the write.  writeBuffer has the address of the 
+	 * start of the region to write, and writeSize tells how big the 
+	 * region is.
+	 */
+	
+	if (copyDebug) {
+	    printf("VmCopy: write (%x + %x) -> %x",
+		   writeBuffer, writeSize, startToPage);
+	}
+	kernStatus = vm_write(toTask, (vm_address_t)startToPage,
+			      (pointer_t)writeBuffer, writeSize);
+	if (copyDebug) {
+	    printf(".\n");
+	}
+	if (kernStatus == KERN_PROTECTION_FAILURE ||
+	    kernStatus == KERN_INVALID_ADDRESS) {
+	    status = SYS_ARG_NOACCESS;
+	    goto bailOut;
+	} else if (kernStatus != KERN_SUCCESS) {
+	    panic("VmCopy write failed: %s\n", mach_error_string(kernStatus));
+	}
+    }
+
+ bailOut:
+    if (copyDebug) {
+	printf("\n");
+    }
+    if (fromBuffer != NULL) {
+	vm_deallocate(mach_task_self(), (vm_address_t)fromBuffer,
+		      fromBufferSize);
+    }
+    if (toBuffer != NULL) {
+	vm_deallocate(mach_task_self(), (vm_address_t)toBuffer,
+		      toBufferSize);
+    }
+    return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_MakeAccessible --
+ *
+ *	Map memory from the current user process into the server's address 
+ *	space.  As with Vm_Copy{In,Out}, we require that other parts of the 
+ *	server recognize that the current process has a pending request, so 
+ *	that they don't do anything bad to the process's VM.
+ *	
+ *	Do not call this routine with the current process locked, or you 
+ *	will deadlock yourself.
+ *
+ * Results:
+ *	Fills in the server address that corresponds to the requested user 
+ *	address.  Also fills in the actual number of bytes made accessible, 
+ *	which will never be greater than the number of requested bytes.
+ *	In case of problems, the server address is set to NULL, and the
+ *	byte count is set to 0.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Vm_MakeAccessible(accessType, numBytes, userAddr, retBytesPtr, retAddrPtr)
+    int			accessType;	/* One of VM_READONLY_ACCESS, 
+					 * VM_OVERWRITE_ACCESS, 
+					 * VM_READWRITE_ACCESS. */
+    int			numBytes;	/* The maximum number of bytes to make 
+					 * accessible. */
+    Address		userAddr;	/* The address in the user's address
+					 * space to start at. */
+    register	int	*retBytesPtr;	/* The actual number of bytes 
+					 * made accessible. */
+    register	Address	*retAddrPtr;	/* The server address that can be 
+					 * used  to access the bytes. */
+{
+    Proc_ControlBlock *procPtr = Proc_GetCurrentProc();
+    Vm_Segment *segPtr = NULL;	/* the segment for the given address range */
+    kern_return_t kernStatus;
+    Boolean suspended = FALSE;	/* was the task suspended? */
+    vm_offset_t offset;		/* segment offset for userAddr */
+    vm_offset_t mapOffset;	/* start of page for offset */
+    vm_size_t mapBytes;		/* number of bytes to actually map */
+    Address serverRegionAddr;	/* server address for start of mapped region */
+    ReturnStatus status;
+    vm_prot_t protectCode;	/* Mach protection code */
+
+    /* 
+     * Sanity checks.  Some routines (e.g., Test_Rpc) call with a byte
+     * count of 0 (don't ask me what this is supposed to mean).  This 
+     * causes problems when we go to compute the arguments to vm_map, so 
+     * insist on getting at least one byte.
+     */
+    if (procPtr->genFlags & PROC_KERNEL) {
+	panic("Vm_MakeAccessible called with kernel process.\n");
+    }
+    if (numBytes < 0) {
+	panic("Vm_MakeAccessible: negative byte count (%d)\n",
+	      numBytes);
+    }
+    if (numBytes == 0) {
+	numBytes = 1;
+    }
+
+    /* 
+     * Set up for an error return.
+     */
+    *retBytesPtr = 0;
+    *retAddrPtr = NULL;
+
+    protectCode = Utils_MapSpriteProtect(accessType);
+
+    /* 
+     * Make sure the process's task is suspended, so that VM can't change 
+     * while we're working.  (Maybe this is unnecessary?)
+     */
+    if (procPtr->taskInfoPtr == NULL) {
+	goto done;
+    }
+    kernStatus = task_suspend(procPtr->taskInfoPtr->task);
+    if (kernStatus != KERN_SUCCESS) {
+	goto done;
+    }
+    suspended = TRUE;
+
+    /* 
+     * Figure out which segment corresponds to the given address and where 
+     * in the segment the address starts.  If the requested range falls off 
+     * the end of the segment, numBytes might be reduced to the number of 
+     * available bytes.
+     * XXX if a non-Sprite memory object occupies some part of the range, 
+     * this routine will return a failure code, so we'll pretend that the 
+     * region is unreadable.
+     */
+    status = VmAddrParse(procPtr, userAddr, &numBytes, &segPtr, &offset);
+    if (status != SUCCESS) {
+	printf("Vm_MakeAccessible: couldn't get segment info: %s\n",
+	       Stat_GetMsg(status));
+	goto done;
+    }
+
+    /* 
+     * We want to map the segment on a page boundary, so figure out what 
+     * address and size to actually ask for.
+     */
+    mapOffset = trunc_page(offset);
+    mapBytes = round_page(offset + numBytes) - mapOffset;
+
+    /* 
+     * Map the segment into the server's address space, and mark the 
+     * segment so that we know it's in use.
+     */
+
+    serverRegionAddr = 0;
+    kernStatus = vm_map(mach_task_self(), (vm_address_t *)&serverRegionAddr,
+			mapBytes, 0, TRUE, segPtr->requestPort, mapOffset,
+			FALSE, protectCode, protectCode, VM_INHERIT_NONE);
+    if (kernStatus == KERN_SUCCESS) {
+	VmSegmentLock(segPtr);
+	if (segPtr->controlPort == MACH_PORT_NULL) {
+	    segPtr->controlPort = MACH_PORT_DEAD;
+	}
+	VmSegmentUnlock(segPtr);
+    }
+    Vm_SegmentRelease(segPtr);
+
+    if (kernStatus != KERN_SUCCESS) {
+	goto done;
+    }
+
+    /* 
+     * Success.  Return the address in the mapped region corresponding to 
+     * the requested address.  For the byte count, return the (possibly 
+     * truncated) requested number of bytes.
+     */
+    *retBytesPtr = numBytes;
+    *retAddrPtr = serverRegionAddr + (offset - mapOffset);
+
+ done:
+    if (suspended) {
+	(void)task_resume(procPtr->taskInfoPtr->task);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_MakeUnacessible --
+ *
+ *	Take the given server virtual address and make the range of pages
+ *	that it addresses unaccessible.  
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Vm_MakeUnaccessible(addr, numBytes)
+    Address		addr;
+    int		numBytes;
+{
+    kern_return_t kernStatus;
+
+    kernStatus = vm_deallocate(mach_task_self(), (vm_address_t)addr, 
+			       (vm_size_t)numBytes);
+    if (kernStatus != KERN_SUCCESS) {
+	printf("Vm_MakeUnaccessible not happy: %s\n",
+	       mach_error_string(kernStatus));
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_StringNCopy --
+ *
+ *	Copy a NULL terminated string in from a user process.
+ *
+ * Results:
+ *	Returns SUCCESS or SYS_ARG_NOACCESS.  Fills in the length of the 
+ *	resulting string.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Vm_StringNCopy(numBytes, sourcePtr, destPtr, stringLengthPtr)
+    int numBytes;		/* maximum number of bytes to copy */
+    Address sourcePtr;		/* where to copy from (user address) */
+    Address destPtr;		/* where to copy to (server address) */
+    int *stringLengthPtr;	/* OUT: length of copied string */
+{
+    Address mappedAddr;		/* sourcePtr, mapped into the server */
+    int bytesMapped;		/* number of bytes actually mapped */
+
+    *stringLengthPtr = 0;
+
+    /* 
+     * This can fail if sourcePtr refers to memory that isn't backed by 
+     * Sprite.  "Life is hard."
+     */
+    Vm_MakeAccessible(VM_READONLY_ACCESS, numBytes, sourcePtr,
+		      &bytesMapped, &mappedAddr);
+    if (mappedAddr == NULL) {
+	return SYS_ARG_NOACCESS;
+    } else {
+	register char *fromPtr, *toPtr;
+	/* 
+	 * We don't use strncpy for two reasons: (a) it zeros out the tail
+	 * of the destination buffer, which we don't need and don't want to
+	 * pay for; (b) our caller wants to know how many non-null bytes
+	 * were copied.
+	 */
+	for (fromPtr = mappedAddr, toPtr = destPtr;
+	     	fromPtr < mappedAddr + bytesMapped && *fromPtr != '\0';
+	     	fromPtr++, toPtr++) {
+	    *toPtr = *fromPtr;
+	}
+	if (fromPtr < mappedAddr + numBytes) {
+	    *toPtr = '\0';
+	}
+	*stringLengthPtr = fromPtr - mappedAddr;
+	Vm_MakeUnaccessible(mappedAddr, bytesMapped);
+    }
+
+    return SUCCESS;
+}
+@
+
+
+1.16
+log
+@Fix VmCopy to avoid unnecessary calls to vm_read or vm_write.
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmSubr.c,v 1.15 92/06/07 22:45:54 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d20 1
+d182 2
+a183 1
+ *	Bytes are copied into the destination buffer.
+d194 10
+d209 10
+a218 2
+    return Vm_CopyInProc(numBytes, Proc_AssertLocked(Proc_GetCurrentProc()),
+			 sourcePtr, destPtr, TRUE);
+d235 2
+a236 1
+ *	Bytes are copied into the user process's address space.
+d247 10
+d262 11
+a272 3
+    return Vm_CopyOutProc(numBytes, sourcePtr, TRUE,
+			  Proc_AssertLocked(Proc_GetCurrentProc()),
+			  destPtr);
+@
+
+
+1.15
+log
+@Fix bug in Vm_MakeAccessible.
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmSubr.c,v 1.14 92/06/04 21:45:15 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d292 4
+a295 2
+     * Read the bytes into a buffer.  Note that we have to read entire 
+     * pages. 
+d297 23
+a319 21
+
+    startFromPage = Vm_TruncPage(fromAddr);
+    endFromPage = Vm_RoundPage(fromAddr + requestedBytes);
+    kernStatus = vm_read(fromTask, (vm_address_t)startFromPage,
+			 (vm_size_t)(endFromPage - startFromPage),
+			 (pointer_t *)&fromBuffer,
+			 (mach_msg_type_number_t *)&fromBufferSize);
+    if (kernStatus == KERN_PROTECTION_FAILURE ||
+	kernStatus == KERN_INVALID_ADDRESS) {
+	status = SYS_ARG_NOACCESS;
+	goto bailOut;
+    } else if (kernStatus != KERN_SUCCESS) {
+	panic("VmCopy read failed: %s\n", mach_error_string(kernStatus));
+    } else if (fromBufferSize != endFromPage - startFromPage) {
+	printf("VmCopy: short read.\n");
+	status = SYS_ARG_NOACCESS;
+	goto bailOut;
+    }
+
+    if (copyDebug) {
+	printf("VmCopy: `from' buffer at %x: ", fromBuffer);
+d323 4
+a326 10
+     * If we are copying entire aligned pages, then there's nothing to do 
+     * except write the results.
+     * 
+     * Otherwise, if the destination is a user process, copy in the
+     * destination region, overwrite it with the copied bytes, then write
+     * the region back.
+     * 
+     * If the pages are unaligned and the destination is the server, then
+     * just do the bcopy.  This is not an optimization--it's needed to
+     * avoid potentially clobbering variables used by VmCopy.
+d328 5
+a332 3
+     * This next ugly hunk of code sets up the destination address and byte 
+     * count for vm_write.  For the (unaligned, server) case, the 
+     * destination address is set to NULL, signifying "no write".
+d335 6
+a340 6
+    startToPage = Vm_TruncPage(toAddr);
+    endToPage = Vm_RoundPage(toAddr + requestedBytes);
+    if (fromAddr == startFromPage && toAddr == startToPage &&
+		requestedBytes == trunc_page(requestedBytes)) {
+	writeBuffer = fromBuffer;
+	writeSize = fromBufferSize;
+d342 6
+a347 14
+	/* 
+	 * Unaligned case.
+	 */
+	if (toTask == mach_task_self()) {
+	    if (copyDebug) {
+		printf("VmCopy: bcopy (%x + %x) -> %x\n",
+		       fromBuffer + (fromAddr - startFromPage),
+		       requestedBytes,
+		       toAddr);
+	    }
+	    bcopy(fromBuffer + (fromAddr - startFromPage),
+		  toAddr, requestedBytes);
+	    writeBuffer = NULL;
+	    writeSize = 0;
+d349 3
+d371 1
+a371 2
+		       fromBuffer + (fromAddr - startFromPage),
+		       requestedBytes,
+d374 1
+a374 2
+	    bcopy(fromBuffer + (fromAddr - startFromPage),
+		  toBuffer + (toAddr - startToPage),
+d379 7
+a385 7
+    }
+
+    /* 
+     * Okay, now do the write.
+     */
+
+    if (writeBuffer != NULL) {
+@
+
+
+1.14
+log
+@Add some sanity checks to Vm_MakeAccessible, allow for byte count of
+zero.
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmSubr.c,v 1.13 92/05/08 12:55:31 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d480 3
+a482 2
+     * count of 0 (don't ask me what this is supposed to mean).  This seems 
+     * to make vm_map unhappy enough to cause a crash.
+d537 1
+a537 1
+    mapBytes = round_page(offset + numBytes - 1) - mapOffset;
+@
+
+
+1.13
+log
+@Add comment to Vm_MakeAccessible about not having the current process
+locked.
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmSubr.c,v 1.12 92/04/23 23:48:02 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d478 5
+d485 7
+@
+
+
+1.12
+log
+@Use Vm_TruncPage and Vm_RoundPage for addresses, instead of using
+trunc_page and round_page (for MK73 upgrade).
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmSubr.c,v 1.11 91/12/18 23:34:44 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d436 3
+@
+
+
+1.11
+log
+@Be careful not to clobber the server address space when doing a CopyIn.
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmSubr.c,v 1.10 91/12/18 17:23:47 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d296 2
+a297 2
+    startFromPage = (Address)trunc_page(fromAddr);
+    endFromPage = (Address)round_page(fromAddr + requestedBytes);
+d335 2
+a336 2
+    startToPage = (Address)trunc_page(toAddr);
+    endToPage = (Address)round_page(toAddr + requestedBytes);
+@
+
+
+1.10
+log
+@Additional debug printf's.  Fix VmCopy to not do anything if the given
+byte count is zero.
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmSubr.c,v 1.9 91/12/12 21:08:37 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d319 5
+a323 3
+     * If we are copying entire aligned pages, then we can just write the 
+     * results and be done with it.  Otherwise, we have to copy in the 
+     * destination region, overwrite it with the copied bytes, then write 
+d325 8
+d334 1
+a334 1
+
+d342 60
+a401 4
+	kernStatus = vm_read(toTask, (vm_address_t)startToPage,
+			     (vm_size_t)(endToPage - startToPage),
+			     (pointer_t *)&toBuffer,
+			     (mach_msg_type_number_t *)&toBufferSize);
+d407 1
+a407 6
+	    panic("VmCopy second read failed: %s\n",
+		  mach_error_string(kernStatus));
+	} else if (toBufferSize != endToPage - startToPage) {
+	    printf("VmCopy: short second read.\n");
+	    status = SYS_ARG_NOACCESS;
+	    goto bailOut;
+a408 29
+	if (copyDebug) {
+	    printf("VmCopy: `to' buffer at %x ", toBuffer);
+	    printf("VmCopy: bcopy (%x + %x) -> %x\n",
+		   fromBuffer + (fromAddr - startFromPage),
+		   requestedBytes,
+		   toBuffer + (toAddr - startToPage));
+	}
+	bcopy(fromBuffer + (fromAddr - startFromPage),
+	      toBuffer + (toAddr - startToPage),
+	      requestedBytes);
+	writeBuffer = toBuffer;
+	writeSize = toBufferSize;
+    }
+
+    if (copyDebug) {
+	printf("VmCopy: write (%x + %x) -> %x",
+	       writeBuffer, writeSize, startToPage);
+    }
+    kernStatus = vm_write(toTask, (vm_address_t)startToPage,
+			      (pointer_t)writeBuffer, writeSize);
+    if (copyDebug) {
+	printf(".\n");
+    }
+    if (kernStatus == KERN_PROTECTION_FAILURE ||
+	kernStatus == KERN_INVALID_ADDRESS) {
+	status = SYS_ARG_NOACCESS;
+	goto bailOut;
+    } else if (kernStatus != KERN_SUCCESS) {
+	panic("VmCopy write failed: %s\n", mach_error_string(kernStatus));
+@
+
+
+1.9
+log
+@Rewrite VmCopy: vm_write currently requires that the out-of-line
+("from") data be page-aligned.
+
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmSubr.c,v 1.8 91/12/09 15:12:15 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d65 10
+d130 11
+d276 10
+d363 1
+a363 1
+	printf("VmCopy: write (%x + %x) -> %x\n",
+d368 3
+@
+
+
+1.8
+log
+@Add debug printf's and almost deal with the fact that vm_write
+sometimes fails quietly if the "from" address isn't page aligned.
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmSubr.c,v 1.7 91/12/01 22:00:42 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a29 3
+static ReturnStatus CopyPartial _ARGS_((vm_size_t numBytes,
+			Address inAddr, mach_port_t destTask,
+			Address destAddr));
+d242 10
+a251 6
+    Address startPageAddr;	/* start addr of page-aligned region */
+    Address endPageAddr;	/* last addr + 1 */
+    Address inBuffer = NULL;	/* bytes read from "from" task */
+    vm_size_t inBufferSize;	/* number of bytes in inBuffer */
+    Address bufAddr;		/* pointer into inBuffer */
+    vm_size_t chunkBytes;	/* number of bytes to write in chunk */
+d256 1
+a256 1
+	printf("VmCopy: (%x+%x) -> %x\n", fromAddr, requestedBytes,
+d264 7
+a270 6
+    startPageAddr = (Address)trunc_page(fromAddr);
+    endPageAddr = (Address)round_page(fromAddr + requestedBytes);
+    kernStatus = vm_read(fromTask, (vm_address_t)startPageAddr,
+			 (vm_size_t)(endPageAddr - startPageAddr),
+			 (pointer_t *)&inBuffer,
+			 (mach_msg_type_number_t *)&inBufferSize);
+d277 1
+a277 1
+    } else if (inBufferSize != endPageAddr - startPageAddr) {
+d284 1
+a284 1
+	printf("VmCopy: buffer at %x: ", inBuffer);
+d288 27
+a314 13
+     * Now write the buffer into the target task's address space.  This is 
+     * done in up to 3 stages: any partial page at the start of the
+     * destination, any entire pages, then any partial page at the end.
+     */
+
+    bufAddr = inBuffer + (fromAddr - startPageAddr);
+    if (toAddr != (Address)trunc_page(toAddr)) {
+	chunkBytes = (Address)round_page(toAddr) - toAddr;
+	if (chunkBytes > requestedBytes) {
+	    chunkBytes = requestedBytes;
+	}
+	status = CopyPartial(chunkBytes, bufAddr, toTask, toAddr);
+	if (status != SUCCESS) {
+a316 6
+	bufAddr += chunkBytes;
+	toAddr += chunkBytes;
+	requestedBytes -= chunkBytes;
+    }
+    if (requestedBytes >= vm_page_size) {
+	chunkBytes = requestedBytes / vm_page_size * vm_page_size;
+d318 5
+a322 1
+	    printf("(%x+%x) => %x ", bufAddr, chunkBytes, toAddr);
+d324 5
+a328 32
+	/* 
+	 * XXX You can't reliably vm_write if the "from" address is not
+	 * page-aligned.  This is an implementation restriction, but who
+	 * knows when it'll get fixed.  This code deals with the case of
+	 * vm_writing into the server (e.g., for copy in), but isn't
+	 * general enough. 9-Dec-1991.
+	 */
+	if (toTask == mach_task_self()) {
+	    bcopy(bufAddr, toAddr, chunkBytes);
+	} else {
+	    kernStatus = vm_write(toTask, (vm_address_t)toAddr,
+				  (pointer_t)bufAddr, chunkBytes);
+	    if (kernStatus == KERN_PROTECTION_FAILURE ||
+		kernStatus == KERN_INVALID_ADDRESS) {
+		status = SYS_ARG_NOACCESS;
+		goto bailOut;
+	    } else if (kernStatus != KERN_SUCCESS) {
+		panic("VmCopy write failed: %s\n", mach_error_string(kernStatus));
+	    }
+	}
+	/* end XXX */
+	bufAddr += chunkBytes;
+	toAddr += chunkBytes;
+	requestedBytes -= chunkBytes;
+    }
+    if (requestedBytes != 0) {
+	status = CopyPartial(requestedBytes, bufAddr, toTask, toAddr);
+    }
+
+ bailOut:
+    if (copyDebug) {
+	printf("\n");
+a329 35
+    if (inBuffer != NULL) {
+	vm_deallocate(mach_task_self(), (vm_address_t)inBuffer,
+		      inBufferSize);
+    }
+    return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CopyPartial --
+ *
+ *	Copy a partial page into a target address space.
+ *
+ * Results:
+ *	Returns SUCCESS or SYS_ARG_NOACCESS.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+CopyPartial(numBytes, inAddr, destTask, destAddr)
+    vm_size_t numBytes;		/* number of bytes to copy */
+    Address inAddr;		/* address to copy from */
+    mach_port_t destTask;	/* destination task */
+    Address destAddr;		/* destination address */
+{
+    Address destBuffer = NULL;	/* one page buffer */
+    vm_size_t destBufferSize;	/* number of bytes in buffer */
+    kern_return_t kernStatus;
+    ReturnStatus status = SUCCESS;
+a330 3
+    if (numBytes >= vm_page_size) {
+	panic("CopyPartial: copying at least a page\n");
+    }
+d332 2
+a333 29
+	printf("(%x+%x) -> %x ", inAddr, numBytes, destAddr);
+    }
+    
+    /* 
+     * Quick optimization.  If we are the destination task, just do the
+     * bcopy.
+     */
+    if (destTask == mach_task_self()) {
+	bcopy(inAddr, destAddr, numBytes);
+	return SUCCESS;
+    }
+
+    /* 
+     * Read in the destination page, overwrite the destination bytes, then 
+     * write the page back.
+     */
+    kernStatus = vm_read(destTask, trunc_page(destAddr), vm_page_size,
+			 (pointer_t *)&destBuffer,
+			 (mach_msg_type_number_t *)&destBufferSize);
+    if (kernStatus == KERN_PROTECTION_FAILURE ||
+	kernStatus == KERN_INVALID_ADDRESS) {
+	status = SYS_ARG_NOACCESS;
+	goto bailOut;
+    } else if (kernStatus != KERN_SUCCESS) {
+	panic("CopyPartial read failed: %s\n", mach_error_string(kernStatus));
+    } else if (destBufferSize != vm_page_size) {
+	printf("CopyPartial: short read.\n");
+	status = SYS_ARG_NOACCESS;
+	goto bailOut;
+d335 2
+a336 4
+    bcopy(inAddr, destBuffer + (destAddr - (Address)trunc_page(destAddr)),
+	  numBytes);
+    kernStatus = vm_write(destTask, trunc_page(destAddr),
+			  (pointer_t)destBuffer, destBufferSize);
+d342 1
+a342 1
+	panic("CopyPartial write failed: %s\n", mach_error_string(kernStatus));
+d346 10
+a355 3
+    if (destBuffer != NULL) {
+	vm_deallocate(mach_task_self(), (vm_address_t)destBuffer,
+		      destBufferSize);
+@
+
+
+1.7
+log
+@Snapshot.  FS appears to work.
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmSubr.c,v 1.6 91/11/14 10:03:26 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d24 2
+d254 5
+d281 4
+d307 22
+a328 8
+	kernStatus = vm_write(toTask, (vm_address_t)toAddr,
+			      (pointer_t)bufAddr, chunkBytes);
+	if (kernStatus == KERN_PROTECTION_FAILURE ||
+	    kernStatus == KERN_INVALID_ADDRESS) {
+	    status = SYS_ARG_NOACCESS;
+	    goto bailOut;
+	} else if (kernStatus != KERN_SUCCESS) {
+	    panic("VmCopy write failed: %s\n", mach_error_string(kernStatus));
+d330 1
+d340 3
+d381 3
+@
+
+
+1.6
+log
+@Snapshot. net, rpc, recov modules added.
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmSubr.c,v 1.5 91/10/18 18:30:06 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d14 1
+a14 2
+#include <status.h>
+#include <libc.h>
+d17 2
+d24 8
+a32 1
+#if 0
+d53 34
+a86 10
+    int				numBytes;	/* The maximum number of bytes
+						 * to copy in. */
+    register Proc_ControlBlock	*fromProcPtr;	/* Which process to copy from.*/
+    Address			fromAddr;	/* The address to copy from */
+    Address			toAddr;		/* The address to copy to */
+    Boolean			toKernel;	/* This copy is happening to 
+						 * the kernel's address space.*/
+{
+}
+#endif /* 0 */
+d114 1
+a114 1
+    Address		destAddr; /* The address to copy to */
+d116 3
+a118 7
+    kern_return_t kernStatus;
+    Address destPageAddr;	/* start of page for destAddr */
+    vm_size_t bytesToWrite;	/* integral number of pages */
+    Address outBuffer = NULL;	/* buffer for partial page */
+    vm_size_t bufferBytes;	/* number of bytes in the temporary buffer */
+    ReturnStatus status = SUCCESS;
+    Address inBuffer = NULL;	/* buffer for reading from user process */
+d120 1
+d122 1
+a122 1
+	panic("Vm_CopyOutProc called with kernel process.\n");
+d124 4
+a127 4
+    if (toProcPtr->pcb.taskInfoPtr == NULL ||
+		toProcPtr->pcb.taskInfoPtr->task == MACH_PORT_NULL) {
+	status = SYS_ARG_NOACCESS;
+	goto bailOut;
+d129 4
+a132 45
+
+    /* 
+     * Mach only lets us write whole pages, so there are four cases to 
+     * consider, depending on (a) whether the transfers are whole-page and 
+     * page-aligned and (b) whether the transfer is from the server or from 
+     * the current user process.
+     */
+    
+    destPageAddr = (Address)trunc_page(destAddr);
+    bytesToWrite = (Address)round_page(destAddr + numBytes - 1) - destPageAddr;
+
+    /* 
+     * Handle each of the four cases, setting sourceAddr to the actual bits 
+     * that we'll vm_write out.
+     */
+    if (destPageAddr != destAddr || bytesToWrite != numBytes) {
+	/* 
+	 * The request is either not whole-page or is not page-aligned.  
+	 * Read in the surrounding pages, then overwrite with the new bits, 
+	 * then write it all back.
+	 */
+	kernStatus = vm_read(toProcPtr->pcb.taskInfoPtr->task,
+			     (vm_address_t)destPageAddr, bytesToWrite,
+			     (pointer_t *)&outBuffer,
+			     (mach_msg_type_number_t *)&bufferBytes);
+	if (kernStatus == KERN_PROTECTION_FAILURE ||
+	    kernStatus == KERN_INVALID_ADDRESS) {
+	    status = SYS_ARG_NOACCESS;
+	    goto bailOut;
+	}
+	if (kernStatus != KERN_SUCCESS) {
+	    panic("Vm_CopyOutProc read failed: %s\n",
+		  mach_error_string(kernStatus));
+	}
+	if (fromKernel) {
+	    bcopy(sourceAddr, outBuffer + (destAddr - destPageAddr), 
+		  (size_t)numBytes);
+	} else {
+	    status = Vm_CopyIn(numBytes, sourceAddr,
+			       outBuffer + (destAddr - destPageAddr));
+	    if (status != SUCCESS) {
+		goto bailOut;
+	    }
+	}
+	sourceAddr = outBuffer;
+d134 1
+a134 18
+	if (!fromKernel) {
+	    inBuffer = 0;
+	    kernStatus = vm_allocate(mach_task_self(),
+				     (vm_address_t *)&inBuffer,
+				     (vm_size_t)numBytes, TRUE);
+	    if (kernStatus != KERN_SUCCESS) {
+		panic("Vm_CopyOutProc: can't allocate buffer: %s\n",
+		      mach_error_string(kernStatus));
+	    }
+	    status = Vm_CopyIn(numBytes, sourceAddr, inBuffer);
+	    if (status != SUCCESS) {
+		goto bailOut;
+	    }
+	    sourceAddr = inBuffer;
+	}
+	/* 
+	 * (else the fourth case, where sourceAddr doesn't change)
+	 */
+d136 2
+a137 9
+
+    kernStatus = vm_write(toProcPtr->pcb.taskInfoPtr->task,
+			  (vm_address_t)destPageAddr, (pointer_t)sourceAddr,
+			  bytesToWrite);
+    if (kernStatus == KERN_PROTECTION_FAILURE ||
+	    kernStatus == KERN_INVALID_ADDRESS) {
+	status = SYS_ARG_NOACCESS;
+    } else if (kernStatus != KERN_SUCCESS) {
+	panic("Vm_CopyOut failed: %s\n", mach_error_string(kernStatus));
+d140 2
+a141 9
+ bailOut:
+    if (outBuffer != NULL) {
+	vm_deallocate(mach_task_self(), (vm_address_t)outBuffer, bufferBytes);
+    }
+    if (inBuffer != NULL) {
+	(void)vm_deallocate(mach_task_self(), (vm_address_t)inBuffer,
+			    (vm_size_t)numBytes);
+    }
+    return status;
+a171 15
+    kern_return_t kernStatus;
+    Proc_ControlBlock *curProcPtr = Proc_GetCurrentProc();
+    Address sourcePagePtr;	/* start of page for sourcePtr */
+    vm_size_t bytesToRead;	/* integral number of pages */
+    vm_size_t bytesRead;	/* num bytes actually read */
+    Address bufferPtr;		/* buffer returned by Mach */
+
+    if (curProcPtr->genFlags & PROC_KERNEL) {
+	panic("Vm_CopyIn called with kernel process.\n");
+    }
+    if (curProcPtr->taskInfoPtr == NULL ||
+		curProcPtr->taskInfoPtr->task == MACH_PORT_NULL) {
+	return SYS_ARG_NOACCESS;
+    }
+
+d173 3
+a175 23
+     * Mach only lets us read whole pages, so figure out what page to start 
+     * at and how many bytes to read.  
+     */
+
+    sourcePagePtr = (Address)trunc_page(sourcePtr);
+    bytesToRead = (Address)round_page(sourcePtr + numBytes - 1) -
+	sourcePagePtr;
+
+    kernStatus = vm_read(curProcPtr->taskInfoPtr->task,
+			 (vm_address_t)sourcePagePtr, bytesToRead,
+			 (pointer_t *)&bufferPtr,
+			 (mach_msg_type_number_t *)&bytesRead);
+    if (kernStatus == KERN_PROTECTION_FAILURE ||
+	    kernStatus == KERN_INVALID_ADDRESS) {
+	return SYS_ARG_NOACCESS;
+    }
+    if (kernStatus != KERN_SUCCESS) {
+	panic("Vm_CopyIn failed: %s\n", mach_error_string(kernStatus));
+    }
+
+    /* 
+     * Copy from the returned buffer to the destination address, and free
+     * the buffer.
+d177 2
+a178 4
+    bcopy(bufferPtr + (sourcePtr - sourcePagePtr), destPtr, (size_t)numBytes);
+    vm_deallocate(mach_task_self(), (vm_address_t)bufferPtr, bytesRead);
+
+    return SUCCESS;
+d220 185
+d414 4
+a417 2
+ *	address, and fills in the actual number of bytes made accessible 
+ *	(possibly zero).
+d502 1
+d565 61
+@
+
+
+1.5
+log
+@Don't use valloc.
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmSubr.c,v 1.4 91/10/04 11:37:59 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d86 1
+a86 1
+    int bytesToWrite;		/* integral number of pages */
+d88 1
+a88 1
+    int bufferBytes;		/* number of bytes in the temporary buffer */
+d135 2
+a136 1
+	    bcopy(sourceAddr, outBuffer + (destAddr - destPageAddr), numBytes);
+d149 2
+a150 2
+				     (vm_address_t *)&inBuffer, numBytes,
+				     TRUE);
+d182 1
+a182 1
+			    numBytes);
+d218 2
+a219 2
+    int bytesToRead;		/* integral number of pages */
+    int bytesRead;		/* num bytes actually read */
+d255 1
+a255 1
+    bcopy(bufferPtr + (sourcePtr - sourcePagePtr), destPtr, numBytes);
+d338 1
+a338 1
+    int mapBytes;		/* number of bytes to actually map */
+d447 1
+a447 1
+    int			numBytes;
+d451 2
+a452 1
+    kernStatus = vm_deallocate(mach_task_self(), (vm_address_t)addr, numBytes);
+@
+
+
+1.4
+log
+@Snapshot.  fork/exec work.
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmSubr.c,v 1.3 91/09/24 16:35:24 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d146 7
+a152 3
+	    inBuffer = valloc(numBytes);
+	    if (inBuffer == NULL) {
+		panic("Vm_CopyOutProc: out of memory.\n");
+d180 2
+a181 1
+	free(inBuffer);
+@
+
+
+1.3
+log
+@Add Vm_MakeAccessible and Vm_MakeUnaccessible.
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmSubr.c,v 1.2 91/09/23 14:20:15 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a370 1
+    printf("VmAddrParse: 0x%x + 0x%x\n", userAddr, numBytes); /* DEBUG */
+a376 1
+    printf("result: segment 0x%x, offset 0x%x\n", segPtr, offset); /* DEBUG */
+d413 1
+a413 1
+ 
+@
+
+
+1.2
+log
+@Snapshot.  Server is multithreaded internally.
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmSubr.c,v 1.1 91/09/17 17:30:49 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d21 1
+d288 164
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmSubr.c,v 9.15 91/07/26 17:05:01 shirriff Exp $ SPRITE (Berkeley)";
+d14 6
+a20 752
+#include <vmInt.h>
+#include <vmTrace.h>
+#include <lock.h>
+#include <sync.h>
+#include <sys.h>
+#include <list.h>
+#include <dbg.h>
+#include <stdlib.h>
+#include <fs.h>
+#include <fsio.h>
+#include <stdio.h>
+#include <bstring.h>
+#include <assert.h>
+#include <vmHack.h>
+#ifdef sun4
+#include <machMon.h>
+#endif
+/*
+ * Declarations of external variables
+ */
+
+Vm_Stat		vmStat;
+int             vmFirstFreePage;  
+Address		vmMemEnd;
+Sync_Lock 	vmMonitorLock;
+Sync_Lock 	vmShmLock;
+int		vmShmLockCnt = 0;
+int		vm_PageSize;
+int		vmPageShift;
+int		vmPageTableInc;
+int		vmKernMemSize;
+int		vmMaxProcesses = 80;
+Address		vmBlockCacheBaseAddr;
+Address 	vmBlockCacheEndAddr;
+int		vmMaxMachSegs;
+extern Vm_SharedSegTable	sharedSegTable;
+
+Boolean		vmDebugLargeAllocs = FALSE;
+
+extern int debugVmStubs;	/* Unix compatibility flag. */
+
+/*
+ * The maximum amount that a stack is allowed to grow.  We have to make it
+ * real big because of the current configuration of SPUR.  This can be made
+ * smaller once the exec stuff has changed.  Things are worse for the sun4
+ * due to the order in which user processes try to flush their register
+ * windows to a stack which hasn't been validated yet.
+ */
+#ifndef sun4
+#define	MAX_STACK_GROWTH_SIZE	(1024 * 1024 * 2)
+#else
+#define	MAX_STACK_GROWTH_SIZE	(1024 * 1024 * 8)
+#endif /* not sun4 */
+int		vmMaxStackPagesGrowth;
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Vm_Init --
+ *
+ *     Initialize all virtual memory data structures.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     All virtual memory linked lists and arrays are initialized.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+Vm_Init()
+{
+    register	Vm_PTE	*ptePtr;
+    int			i;
+#ifdef notdef
+    unsigned int	virtPage;
+#endif
+
+    Sync_LockInitDynamic(&vmMonitorLock, "Vm:vmMonitorLock");
+    Sync_LockInitDynamic(&vmShmLock, "Vm:vmShmLock");
+
+    /*
+     * Set up the maximum number of pages that a stack can grow.
+     */
+    vmMaxStackPagesGrowth = MAX_STACK_GROWTH_SIZE / vm_PageSize;
+    /*
+     * Partition up the kernel virtual address space.
+     */
+    vmStackBaseAddr = (Address) (mach_KernStart + vmKernMemSize);
+    vmStackEndAddr = vmStackBaseAddr + mach_KernStackSize * vmMaxProcesses;
+    vmMapBaseAddr = vmStackEndAddr;
+    vmMapBasePage = (unsigned int)vmMapBaseAddr / vm_PageSize;
+    vmMapEndAddr = vmMapBaseAddr + vmNumMappedPages * vm_PageSize;
+    vmMapEndPage = vmMapBasePage + vmNumMappedPages;
+    vmBlockCacheBaseAddr = VmMach_AllocKernSpace(vmMapEndAddr);
+    vmBlockCacheEndAddr = (Address)mach_KernEnd;
+    /*
+     * Allocate the segment table and core map.
+     */
+    VmSegTableAlloc();
+    VmCoreMapAlloc();
+    /*
+     * Initialize the structure for kernel stacks.
+     */
+    VmStackInit();
+    /*
+     * Allocate and initialize the kernel page table.
+     */
+    vm_SysSegPtr->ptSize = (mach_KernEnd - mach_KernStart) / vm_PageSize;
+    vm_SysSegPtr->ptPtr =
+		(Vm_PTE *)Vm_BootAlloc(sizeof(Vm_PTE) * vm_SysSegPtr->ptSize);
+
+    bzero((Address)vm_SysSegPtr->ptPtr, sizeof(Vm_PTE) * vm_SysSegPtr->ptSize);
+
+    /*
+     * Can no longer use Vm_BootAlloc
+     */
+    vmNoBootAlloc = TRUE;
+    /* 
+     * Determine how many physical pages that we have used.
+     */
+    vmFirstFreePage = 
+	(unsigned int)(vmMemEnd - mach_KernStart - 1) / vm_PageSize + 1;
+
+    for (i = 0, ptePtr = vm_SysSegPtr->ptPtr;
+	 i < vmFirstFreePage;
+	 i++, ptePtr++) {
+	*ptePtr = VM_VIRT_RES_BIT | VM_PHYS_RES_BIT | i;
+    }
+    /*
+     * Initialize the segment table and core map.
+     */
+    VmSegTableInit();
+    VmCoreMapInit();
+#ifdef notdef
+    /*
+     * Take away the page at the bottom of the kernel stack.
+     */
+    virtPage = (mach_StackBottom - mach_KernStart) >> vmPageShift;
+    vm_SysSegPtr->ptPtr[virtPage] = 0;
+    VmPutOnFreePageList(virtPage);
+#endif
+    /*
+     * Now call the hardware dependent initialization routine.
+     */
+    VmMach_Init(vmFirstFreePage);
+
+#ifdef VM_CHECK_BSTRING_ACCESS
+    /* 
+     * Initialize the debugging structures in vmMap.c
+     */
+    VmMapInit();
+#endif
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Vm_ProcInit --
+ *
+ *     Initialize VM info for this process.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     Virtual memory information for the given process is initialized.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+Vm_ProcInit(procPtr)
+    Proc_ControlBlock	*procPtr;
+{
+    int				i;
+    register	Vm_ProcInfo	*vmPtr;
+
+    if (procPtr->vmPtr == (Vm_ProcInfo *)NIL) {
+	vmPtr = (Vm_ProcInfo *)malloc(sizeof(Vm_ProcInfo));
+	vmPtr->machPtr = (VmMach_ProcData *)NIL;
+	procPtr->vmPtr = vmPtr;
+    } else {
+	vmPtr = procPtr->vmPtr;
+    }
+    for (i = 0; i < VM_NUM_SEGMENTS; i++) {
+	vmPtr->segPtrArray[i] = (Vm_Segment *)NIL;
+    }
+    vmPtr->vmFlags = 0;
+    vmPtr->numMakeAcc = 0;
+    vmPtr->sharedSegs = (List_Links *)NIL;
+    VmMach_ProcInit(vmPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_RawAlloc --
+ *
+ *	Allocate bytes of memory.
+ *
+ * Results:
+ *	Pointer to beginning of memory allocated..
+ *
+ * Side effects:
+ *	Variable that indicates the end of kernel memory is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY Address
+Vm_RawAlloc(numBytes)
+int numBytes;
+{
+    Address 		retAddr;
+    Address 		maxAddr;
+    int 		lastPage;
+    Vm_PTE		*ptePtr;
+    Vm_VirtAddr		virtAddr;
+    register Vm_Segment	*segPtr;
+
+    LOCK_MONITOR;
+
+    /*
+     * We return the current end of memory as our new address.
+     */
+    if (numBytes > 100 * 1024) {
+	printf("\nvmMemEnd = 0x%x - ", vmMemEnd);
+	printf("Warning: VmRawAlloc asked for >100K\n");
+	if (vmDebugLargeAllocs) {
+	    Sig_SendProc(Proc_GetEffectiveProc(), SIG_DEBUG, 0, (Address)0);
+	}
+    }
+    retAddr = vmMemEnd;
+
+    /*
+     * Bump the end of memory by the number of bytes that we just
+     * allocated making sure that it is four byte aligned.
+     */
+#if defined(spur) || defined(sun4)
+    retAddr = (Address) (((unsigned)retAddr + 7) & ~7);
+    vmMemEnd += (numBytes + 7) & ~7;	/* eight byte aligned for SPUR. */
+#else
+#ifdef sequent
+    /*
+     * Need 16-byte alignment on Sequent Symmetry.  See comments in
+     * mem/memory.c for details.
+     */
+    retAddr = (Address) (((unsigned)retAddr + 0xf) & ~0xf);
+    vmMemEnd += (numBytes + 0xf) & ~0xf;
+#else
+    vmMemEnd += (numBytes + 3) & ~3;
+#endif    
+#endif
+
+    /*
+     * Panic if we just ran off the end of memory.
+     */
+    if (vmMemEnd > (Address) ( mach_KernStart + vmKernMemSize)) {
+	printf("vmMemEnd = 0x%x - ", vmMemEnd);
+	panic("Vm_RawAlloc: Out of memory.\n");
+    }
+
+    segPtr = vm_SysSegPtr;
+    virtAddr.segPtr = segPtr;
+    virtAddr.sharedPtr = (Vm_SegProcList *)NIL;
+    virtAddr.flags = 0;
+    lastPage = segPtr->numPages + segPtr->offset - 1;
+    maxAddr = (Address) ((lastPage + 1) * vm_PageSize - 1);
+    ptePtr = VmGetPTEPtr(segPtr, lastPage);
+
+    /*
+     * Add new pages to the virtual address space until we have added
+     * enough to handle this memory request.  Note that we don't allow
+     * VmPageAllocateInt to block if it encounters lots of dirty pages.
+     */
+    while (vmMemEnd - 1 > maxAddr) {
+	int	page;
+
+	maxAddr += vm_PageSize;
+	lastPage++;
+	VmIncPTEPtr(ptePtr, 1);
+	virtAddr.page = lastPage;
+	virtAddr.offset = 0;
+	page = VmPageAllocateInt(&virtAddr, 0);
+	if (page == VM_NO_MEM_VAL) {
+	    /*
+	     * The normal page allocation mechanism failed so go to the
+	     * list of pages that are held in reserve for just such an
+	     * occasion.
+	     */
+	    page = VmGetReservePage(&virtAddr);
+	    if (page == VM_NO_MEM_VAL) {
+		panic("VmRawAlloc: No memory available\n");
+	    }
+	}
+	*ptePtr |= page;
+	VmPageValidateInt(&virtAddr, ptePtr);
+	segPtr->numPages++;
+    }
+
+    UNLOCK_MONITOR;
+
+    return(retAddr);
+}
+
+void ChangeCodeProt();
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_ChangeCodeProt --
+ *
+ *	Change the protection of the code segment for the given process.  If
+ *	the process still has the shared code segment then make a new 
+ *	copy.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Vm_ChangeCodeProt(procPtr, startAddr, numBytes, makeWriteable)
+    Proc_ControlBlock		*procPtr;	/* Process to change code
+						 * protection for. */
+    Address		       	startAddr;	/* Beginning address of range
+						 * of bytes to change
+						 * protection.*/
+    int			       	numBytes;	/* Number of bytes to change
+						 * protection for. */
+    Boolean			makeWriteable;	/* TRUE => make the pages 
+					         *	 writable.
+					         * FALSE => make readable only*/
+{
+    register	Vm_Segment	*segPtr;
+    Vm_Segment	*newSegPtr;
+    Fs_Stream			*codeFilePtr;
+
+    segPtr = procPtr->vmPtr->segPtrArray[VM_CODE];
+    if (!(segPtr->flags & VM_DEBUGGED_SEG)) {
+	/*
+	 * This process still has a hold of the original shared code 
+	 * segment.  Make a new segment for the process.
+	 */
+	Fsio_StreamCopy(segPtr->filePtr, &codeFilePtr);
+	newSegPtr = Vm_SegmentNew(VM_CODE, codeFilePtr, segPtr->fileAddr, 
+				  segPtr->numPages, segPtr->offset, procPtr);
+	Vm_ValidatePages(newSegPtr, newSegPtr->offset, 
+			 newSegPtr->offset + newSegPtr->numPages - 1,
+			 FALSE, TRUE);
+    } else {
+	newSegPtr = (Vm_Segment *)NIL;
+    }
+    ChangeCodeProt(procPtr, &newSegPtr, startAddr, numBytes, makeWriteable);
+    if (newSegPtr != (Vm_Segment *)NIL) {
+	Vm_SegmentDelete(newSegPtr, procPtr);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ChangeCodeProt --
+ *
+ *	Change the protection of the code segment for the given process.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+ChangeCodeProt(procPtr, segPtrPtr, startAddr, numBytes, makeWriteable)
+    Proc_ControlBlock		*procPtr;	/* Process to change protection
+						 * for. */
+    Vm_Segment			**segPtrPtr;	/* IN:  New duplicated segment
+						 * OUT: Segment to free if 
+						 *      non-NIL. */
+    Address		       	startAddr;	/* Beginning address of range
+						 * of bytes to change
+						 * protection.*/
+    int			       	numBytes;	/* Number of bytes to change
+						 * protection for. */
+    Boolean			makeWriteable;	/* TRUE => make the pages 
+					         *	 writable.
+					         * FALSE => make readable only*/
+{
+    int				firstPage;
+    int				lastPage;
+    int				i;
+    register	Vm_PTE		*ptePtr;
+    register	Vm_Segment	*segPtr;
+
+    LOCK_MONITOR;
+
+    segPtr = procPtr->vmPtr->segPtrArray[VM_CODE];
+    if (!(segPtr->flags & VM_DEBUGGED_SEG)) {
+	/*
+	 * This process is currently using the shared code segment.  Use the
+	 * private copy that our caller allocated for us and return the 
+	 * original segment so our caller can release its reference to it.
+	 */
+	segPtr = *segPtrPtr;
+	segPtr->flags |= VM_DEBUGGED_SEG;
+	*segPtrPtr = procPtr->vmPtr->segPtrArray[VM_CODE];
+	procPtr->vmPtr->segPtrArray[VM_CODE] = segPtr;
+	/*
+	 * Free up the hardware context for this process.  When it starts
+	 * running again new context will be setup which will have
+	 * the new code segment in it.
+	 */
+	VmMach_FreeContext(procPtr);
+    }
+
+    firstPage = (unsigned int) startAddr >> vmPageShift;
+    lastPage = ((unsigned int) (startAddr) + numBytes - 1) >> vmPageShift;
+    /* 
+     * Make sure that the range of addresses falls into the code segment's 
+     * page table.  If not don't do anything.
+     */
+    if (firstPage >= segPtr->offset &&
+	lastPage < segPtr->offset + segPtr->ptSize) {
+	for (i = lastPage - firstPage, ptePtr = VmGetPTEPtr(segPtr, firstPage);
+	     i >= 0;
+	     i--, VmIncPTEPtr(ptePtr, 1)) {
+	    if (makeWriteable) {
+		*ptePtr &= ~VM_READ_ONLY_PROT;
+	    } else {
+		*ptePtr |= VM_READ_ONLY_PROT;
+	    }
+	}
+	VmMach_SetSegProt(segPtr, firstPage, lastPage, makeWriteable);
+    }
+
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_ValidatePages --
+ *
+ *	Initialize the page table for the given segment.  This involves
+ *	going through the software page table in the range of pages given.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Page table modified for the given segment.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+Vm_ValidatePages(segPtr, firstPage, lastPage, zeroFill, clobber)
+    Vm_Segment 	*segPtr;	/* The segment whose pages are being 
+				 * made valid. */
+    int		firstPage;	/* The first page to mark valid. */
+    int		lastPage;	/* The last page to mark valid. */
+    Boolean	zeroFill;	/* Should mark pages zero fill. */
+    Boolean	clobber;	/* TRUE -> overwrite the pte no matter what.
+				 * FALSE -> only overwrite if the pte is not
+				 *	    marked as valid in this segment's
+				 *	    virtual address space. */
+{
+    LOCK_MONITOR;
+
+    VmValidatePagesInt(segPtr, firstPage, lastPage, zeroFill, clobber);
+
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmValidatePagesInt --
+ *
+ *	Mark as virtually resident the range of pages in the page table.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Page table modified for the given segment.
+ *
+ *----------------------------------------------------------------------
+ */
+INTERNAL void
+VmValidatePagesInt(segPtr,  firstPage, lastPage, zeroFill, clobber)
+    Vm_Segment 	*segPtr;	/* The segment whose page table is being 
+				 * initialized. */
+    int		firstPage;	/* The first pte to be initialized */
+    int		lastPage;	/* The last pte to be initialized */
+    Boolean	zeroFill;	/* TRUE => Mark the page as zero fill. */
+    Boolean	clobber;	/* TRUE -> overwrite the pte no matter what.
+				 * FALSE -> only overwrite if the pte is not
+				 *	    marked as valid in this segment's
+				 *	    virtual address space. */
+{
+    register	int	i;
+    register	Vm_PTE	pte;
+    register	Vm_PTE	*ptePtr;
+
+    if (vm_Tracing && !(segPtr->flags & VM_SEG_CREATE_TRACED)) {
+	Vm_TraceSegCreate	segCreate;
+
+	segCreate.segNum = segPtr->segNum;
+	segCreate.parSegNum = -1;
+	segCreate.segType = segPtr->type;
+	segCreate.cor = FALSE;
+	VmStoreTraceRec(VM_TRACE_SEG_CREATE_REC, sizeof(segCreate),
+			(Address)&segCreate, TRUE);
+	segPtr->flags |= VM_SEG_CREATE_TRACED;
+    }
+
+    pte = VM_VIRT_RES_BIT;
+    if (segPtr->type == VM_CODE) {
+	pte |= VM_READ_ONLY_PROT;
+    } else if (segPtr->type == VM_SHARED) {
+	if (segPtr->filePtr == (Fs_Stream *)NIL) {
+	    pte |= VM_ON_SWAP_BIT;
+	}
+    } else if (zeroFill) {
+	pte |= VM_ZERO_FILL_BIT;
+    }
+    for (i = firstPage, ptePtr = VmGetPTEPtr(segPtr, firstPage);
+	 i <= lastPage;
+	 i++, ptePtr++) {
+	if (clobber || !(*ptePtr & VM_VIRT_RES_BIT)) {
+	    *ptePtr = pte;
+	}
+    }
+}
+
+#ifndef symm
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmZeroPage --
+ *
+ *	External routine to fill the entire given page frame with zeroes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The page is filled with zeroes.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+VmZeroPage(pfNum)
+    unsigned int	pfNum;
+{
+    register	int	mappedAddr;
+
+
+    mappedAddr = (int) VmMapPage(pfNum);
+    bzero((Address) mappedAddr, vm_PageSize);
+    VmUnmapPage((Address) mappedAddr);
+}
+#endif /* !symm */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmVirtAddrParse --
+ *
+ *	Take the given virtual address and fill in a virtual address struct
+ *	with the segment, page, and offset for this address.  If it is 
+ *	determined in this routine that the address does not fall in any 
+ *	segment then the segment that is returned is NIL.
+ *
+ * Results:
+ *	The translated virtual address.
+ *
+ * Side effects:
+ *	If the virtual address falls into a stack or heap segment then the
+ *	heap segment for the process is prevented from being expanded.  This
+ *	is to prevent another process that is sharing the heap segment from
+ *	changing its size and making the parsed virtual address wrong.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+VmVirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)
+    Proc_ControlBlock		*procPtr;
+    Address			virtAddr;
+    register	Vm_VirtAddr	*transVirtAddrPtr;
+{
+    register	Vm_Segment		*seg1Ptr;
+    register	Vm_Segment		*seg2Ptr;
+    Vm_SegProcList			*segProcPtr;
+    register	int			page;
+
+    LOCK_SHM_MONITOR;
+    LOCK_MONITOR;
+
+    assert(transVirtAddrPtr != (Vm_VirtAddr *) NIL && transVirtAddrPtr != 0);
+#ifdef sun4
+    if (!VMMACH_ADDR_CHECK(virtAddr)) {
+	transVirtAddrPtr->segPtr = (Vm_Segment *) NIL;
+	UNLOCK_MONITOR;
+	UNLOCK_SHM_MONITOR;
+	return;
+    }
+#endif
+    transVirtAddrPtr->flags = 0;
+    transVirtAddrPtr->sharedPtr = (Vm_SegProcList *) NIL;
+    if (VmMach_VirtAddrParse(procPtr, virtAddr, transVirtAddrPtr)) {
+	/*
+	 * The hardware routine was able to translate it for us.
+	 */
+	UNLOCK_MONITOR;
+	UNLOCK_SHM_MONITOR;
+	return;
+    }
+
+    seg1Ptr = procPtr->vmPtr->segPtrArray[VM_HEAP];
+    assert(seg1Ptr != (Vm_Segment *) NIL);
+    assert(seg1Ptr != 0);
+
+    while (seg1Ptr->flags & VM_PT_EXCL_ACC) {
+	Vm_Segment	*tSegPtr;
+	/*
+	 * Wait while someone has exclusive access to the page tables.
+	 */
+	tSegPtr = seg1Ptr;
+	(void)Sync_Wait(&tSegPtr->condition, FALSE);
+    }
+    transVirtAddrPtr->offset = (unsigned int)virtAddr & (vm_PageSize - 1);
+
+    page = (unsigned int) (virtAddr) >> vmPageShift;
+    transVirtAddrPtr->page = page;
+    assert(procPtr != (Proc_ControlBlock *) NIL && procPtr != 0);
+    if (procPtr->vmPtr->sharedSegs != (List_Links *)NIL &&
+	    virtAddr >= procPtr->vmPtr->sharedStart &&
+	    virtAddr < procPtr->vmPtr->sharedEnd) {
+	dprintf("VmVirtAddrParse: Checking for address %x\n",virtAddr);
+	segProcPtr = VmFindSharedSegment(procPtr->vmPtr->sharedSegs,virtAddr);
+	if (segProcPtr != (Vm_SegProcList *)NIL) {
+	    dprintf("VmVirtAddrParse: found address in seg %x\n",
+		    segProcPtr->segTabPtr->segPtr->segNum);
+	    transVirtAddrPtr->segPtr = segProcPtr->segTabPtr->segPtr;
+	    transVirtAddrPtr->flags |= (segProcPtr->prot & VM_READONLY_SEG);
+	    transVirtAddrPtr->sharedPtr = segProcPtr;
+	    if (transVirtAddrPtr->flags & VM_READONLY_SEG) {
+		dprintf("VmVirtAddrParse: (segment is readonly)\n");
+	    }
+	    UNLOCK_MONITOR;
+	    UNLOCK_SHM_MONITOR;
+	    return;
+	}
+    }
+
+    /*
+     * See if the address is too large to fit into the user's virtual
+     * address space.
+     */
+    if (page > mach_LastUserStackPage) {
+	transVirtAddrPtr->segPtr = (Vm_Segment *) NIL;
+	UNLOCK_MONITOR;
+	UNLOCK_SHM_MONITOR;
+	return;
+    }
+    seg2Ptr = procPtr->vmPtr->segPtrArray[VM_STACK];
+    /*
+     * Check the stack segment.  Anything past the end of the heap segment 
+     * falls into the stack segment.  Since page tables are not allowed to
+     * overlap, the end of the heap segment is defined to be the end of
+     * the heap page table.  If it falls in the stack segment then prevent
+     * this process's heap segment from being expanded by incrementing the
+     * in use count on the page table.
+     */
+    if (page > seg1Ptr->ptSize + seg1Ptr->offset) {
+	assert(seg2Ptr != (Vm_Segment *) NIL && seg2Ptr != 0);
+	if (page < seg2Ptr->offset) {
+	    int	newPTSize;
+	    newPTSize = ((mach_LastUserStackPage - page)/vmPageTableInc + 1) * 
+							    vmPageTableInc;
+	    /* 
+	     * We are going to have to grow the stack to cover this so
+	     * make sure that the heap and stack segments don't overlap and
+	     * we aren't trying to grow too much.
+	     */
+	    if ((Address) (page << vmPageShift) < seg2Ptr->minAddr ||
+	        seg2Ptr->offset - page > vmMaxStackPagesGrowth ||
+	        seg1Ptr->offset + seg1Ptr->ptSize >=
+		     mach_LastUserStackPage - newPTSize + 1) {
+		transVirtAddrPtr->segPtr = (Vm_Segment *) NIL;
+		UNLOCK_MONITOR;
+		UNLOCK_SHM_MONITOR;
+		return;
+	    }
+	}
+	transVirtAddrPtr->segPtr = seg2Ptr;
+	transVirtAddrPtr->flags = VM_HEAP_PT_IN_USE;
+	seg1Ptr->ptUserCount++;
+	UNLOCK_MONITOR;
+	UNLOCK_SHM_MONITOR;
+	return;
+    }
+    /* 
+     * Check the heap segment.  If it falls in the heap segment then prevent
+     * the segment from being expanded.
+     */
+    if (page >= seg1Ptr->offset && 
+	    page < (seg1Ptr->offset + seg1Ptr->numPages)) {
+
+	transVirtAddrPtr->segPtr = seg1Ptr;
+	transVirtAddrPtr->flags = VM_HEAP_PT_IN_USE;
+	seg1Ptr->ptUserCount++;
+	UNLOCK_MONITOR;
+	UNLOCK_SHM_MONITOR;
+	return;
+    }
+
+    /*
+     * Check the code segment.
+     */
+    seg1Ptr = procPtr->vmPtr->segPtrArray[VM_CODE];
+    if (page >= seg1Ptr->offset &&
+	    page < (seg1Ptr->offset + seg1Ptr->numPages)) {
+	transVirtAddrPtr->segPtr = seg1Ptr;
+	UNLOCK_MONITOR;
+	UNLOCK_SHM_MONITOR;
+	return;
+    }
+
+    /*
+     * Doesn't fall in any segment so return NIL.
+     */
+    transVirtAddrPtr->segPtr = (Vm_Segment *) NIL;
+    UNLOCK_MONITOR;
+    UNLOCK_SHM_MONITOR;
+    return;
+}
+a22 38
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmCheckBounds --
+ *
+ *	See if the given virtual address falls within the bounds of the
+ *	segment.  It is assumed that this segment is prevented from being
+ *	expanded.
+ *
+ * Results:
+ *	TRUE if the virtual address is in bounds.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+Boolean
+VmCheckBounds(virtAddrPtr)
+    register	Vm_VirtAddr	*virtAddrPtr;
+{
+    register	Vm_Segment	*segPtr;
+
+    segPtr = virtAddrPtr->segPtr;
+    if (segPtr == (Vm_Segment *) NIL) {
+	dprintf("VmCheckBounds: NIL failure\n");
+	return(FALSE);
+    }
+    if (segPtr->type == VM_STACK) {
+	return(virtAddrPtr->page > mach_LastUserStackPage - segPtr->numPages);
+    } else {
+	if (virtAddrPtr->page - segOffset(virtAddrPtr) < 0 ||
+		virtAddrPtr->page - segOffset(virtAddrPtr) >
+		virtAddrPtr->segPtr->ptSize) {
+	    printf("VmCheckBounds: out of bounds: page %x offset %x\n",
+		    virtAddrPtr->page, segOffset(virtAddrPtr));
+	    return(FALSE);
+	}
+a23 10
+	if (!((*VmGetAddrPTEPtr(virtAddrPtr,virtAddrPtr->page)) &
+		VM_VIRT_RES_BIT)) {
+	    dprintf("VmCheckBounds: page absent failure\n");
+	}
+#endif
+	return ((*VmGetAddrPTEPtr(virtAddrPtr,virtAddrPtr->page)) &
+		VM_VIRT_RES_BIT);
+    }
+}
+
+a51 103
+    ReturnStatus		status = SUCCESS;
+    Vm_VirtAddr			transVirtAddr;
+    int				lastPage;
+    register Proc_ControlBlock	*toProcPtr;
+    register Vm_Segment		**toSegPtrArr;
+    register int		genFlags;
+
+    if (fromProcPtr->genFlags & PROC_NO_VM) {
+	/*
+	 * The process that we are copying from has already deleted its VM.
+	 */
+	return(SYS_ARG_NOACCESS);
+    }
+    toProcPtr = Proc_GetCurrentProc();
+    if (toProcPtr->genFlags & PROC_KERNEL) {
+#ifdef notdef
+	if (!toKernel) {
+	    panic("Vm_CopyInProc: Kernel process not copying to kernel\n");
+	}
+#endif
+
+	/*
+	 * We are copying to a kernel process (an rpc server process
+	 * hopefully).  Since we know that the process that we are copying
+	 * from can't exit until we finish this copy we can borrow
+	 * its address space and then just do a normal copy in.
+	 */
+	toSegPtrArr = toProcPtr->vmPtr->segPtrArray;
+	toSegPtrArr[VM_CODE] = fromProcPtr->vmPtr->segPtrArray[VM_CODE];
+	toSegPtrArr[VM_HEAP] = fromProcPtr->vmPtr->segPtrArray[VM_HEAP];
+	toSegPtrArr[VM_STACK] = fromProcPtr->vmPtr->segPtrArray[VM_STACK];
+	Proc_Lock(toProcPtr);
+	genFlags = toProcPtr->genFlags;
+	genFlags &= ~PROC_KERNEL;
+	genFlags |= PROC_USER;
+	toProcPtr->genFlags = genFlags;
+	Proc_Unlock(toProcPtr);
+	VmMach_ReinitContext(toProcPtr);
+	status = Vm_CopyIn(numBytes, fromAddr, toAddr);
+	/*
+	 * Change back into a kernel process.
+	 */
+	Proc_Lock(toProcPtr);
+	genFlags = toProcPtr->genFlags;
+	genFlags &= ~PROC_USER;
+	genFlags |= PROC_KERNEL;
+	toProcPtr->genFlags = genFlags;
+	Proc_Unlock(toProcPtr);
+	toSegPtrArr[VM_CODE] = (Vm_Segment *)NIL;
+	toSegPtrArr[VM_HEAP] = (Vm_Segment *)NIL;
+	toSegPtrArr[VM_STACK] = (Vm_Segment *)NIL;
+	VmMach_ReinitContext(toProcPtr);
+	return(status);
+    }
+
+    if (!toKernel && (toAddr < mach_FirstUserAddr ||
+                      toAddr > mach_LastUserAddr ||
+		      toAddr + numBytes - 1 > mach_LastUserAddr)) {
+	/*
+	 * The dest address is definitely not in this user process's address
+	 * space.
+	 */
+	return(SYS_ARG_NOACCESS);
+    }
+    /*
+     * Determine which segment the address falls into.
+     */
+    VmVirtAddrParse(fromProcPtr, fromAddr, &transVirtAddr);
+    if (transVirtAddr.segPtr == (Vm_Segment *)NIL) {
+	return(SYS_ARG_NOACCESS);
+    }
+    /*
+     * We now have the segment that the first address falls into, now make
+     * sure that the end address falls in there as well.
+     */
+    lastPage = ((unsigned int)fromAddr + numBytes - 1) / vm_PageSize;
+    if (transVirtAddr.segPtr->type == VM_STACK) {
+	if (lastPage > mach_LastUserStackPage) {
+	    status = SYS_ARG_NOACCESS;
+	    goto exit;
+	}
+    } else {
+	if (lastPage >= 
+		segOffset(&transVirtAddr) + transVirtAddr.segPtr->numPages) {
+	    status = SYS_ARG_NOACCESS;
+	    goto exit;
+	}
+    }
+    /*
+     * Call the hardware dependent routine to do the copy.
+     */
+    status = VmMach_CopyInProc(numBytes, fromProcPtr, fromAddr,
+                               &transVirtAddr, toAddr, toKernel);
+
+exit:
+    /*
+     * If the source segment was a stack or heap segment then the heap
+     * segment was prevented from being expanded.  Let it be expanded now.
+     */
+    if (transVirtAddr.flags & VM_HEAP_PT_IN_USE) {
+	VmDecPTUserCount(fromProcPtr->vmPtr->segPtrArray[VM_HEAP]);
+    }
+    return(status);
+d53 1
+d66 2
+a67 1
+ *	SUCCESS if the copy succeeded, SYS_ARG_NOACCESS if fromAddr is invalid.
+d75 23
+a97 22
+Vm_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, toAddr)
+    int				numBytes;	/* The maximum number of bytes
+						 * to copy in. */
+    Address			fromAddr;	/* The address to copy from */
+    Boolean			fromKernel;	/* This copy is happening to
+						 * the kernel's address space.*/
+    register Proc_ControlBlock	*toProcPtr;	/* Which process to copy from.*/
+    Address			toAddr;		/* The address to copy to */
+{
+    ReturnStatus		status = SUCCESS;
+    Vm_VirtAddr			transVirtAddr;
+    int				lastPage;
+    register Vm_Segment		*segPtr;
+    register Proc_ControlBlock	*fromProcPtr;
+    register Vm_Segment		**fromSegPtrArr;
+    register int		genFlags;
+
+    if (toProcPtr->genFlags & PROC_NO_VM) {
+	/*
+	 * The process that we are copying to has already deleted its VM.
+	 */
+	return(SYS_ARG_NOACCESS);
+a98 1
+    fromProcPtr = Proc_GetCurrentProc();
+d100 9
+a108 6
+    if (fromProcPtr->genFlags & PROC_KERNEL) {
+#ifdef notdef
+	if (!fromKernel) {
+	    panic("Vm_CopyOutProc: Kernel process not copying from kernel\n");
+	}
+#endif
+d110 3
+a112 53
+	/*
+	 * We are copying to a kernel process (an rpc server process
+	 * hopefully).  Since we know that the process that we are copying
+	 * from can't exit until we finish this copy we can borrow
+	 * its address space and then just do a normal copy in.
+	 */
+	fromSegPtrArr = fromProcPtr->vmPtr->segPtrArray;
+	fromSegPtrArr[VM_CODE] = toProcPtr->vmPtr->segPtrArray[VM_CODE];
+	fromSegPtrArr[VM_HEAP] = toProcPtr->vmPtr->segPtrArray[VM_HEAP];
+	fromSegPtrArr[VM_STACK] = toProcPtr->vmPtr->segPtrArray[VM_STACK];
+	Proc_Lock(fromProcPtr);
+	genFlags = fromProcPtr->genFlags;
+	genFlags &= ~PROC_KERNEL;
+	genFlags |= PROC_USER;
+	fromProcPtr->genFlags = genFlags;
+	Proc_Unlock(fromProcPtr);
+	VmMach_ReinitContext(fromProcPtr);
+	status = Vm_CopyOut(numBytes, fromAddr, toAddr);
+	/*
+	 * Change back into a kernel process.
+	 */
+	Proc_Lock(fromProcPtr);
+	genFlags = fromProcPtr->genFlags;
+	genFlags &= ~PROC_USER;
+	genFlags |= PROC_KERNEL;
+	fromProcPtr->genFlags = genFlags;
+	Proc_Unlock(fromProcPtr);
+	fromSegPtrArr[VM_CODE] = (Vm_Segment *)NIL;
+	fromSegPtrArr[VM_HEAP] = (Vm_Segment *)NIL;
+	fromSegPtrArr[VM_STACK] = (Vm_Segment *)NIL;
+	VmMach_ReinitContext(fromProcPtr);
+	return(status);
+    }
+
+    if (fromProcPtr->genFlags & PROC_NO_VM) {
+	/*
+	 * The process that we are copying from has already deleted its VM.
+	 */
+	if (!fromKernel) {
+	    return(SYS_ARG_NOACCESS);
+	}
+    }
+    /*
+     * Determine which segment the address falls into.
+     */
+    VmVirtAddrParse(toProcPtr, toAddr, &transVirtAddr);
+    if (transVirtAddr.segPtr == (Vm_Segment *)NIL) {
+	return(SYS_ARG_NOACCESS);
+    }
+    segPtr = transVirtAddr.segPtr;
+    /*
+     * We now have the segment that the first address falls into, now make
+     * sure that the end address falls in there as well.
+d114 12
+a125 3
+    lastPage = ((unsigned int)toAddr + numBytes - 1) / vm_PageSize;
+    if (segPtr->type == VM_STACK) {
+	if (lastPage > mach_LastUserStackPage) {
+d127 1
+a127 1
+	    goto exit;
+d129 3
+a131 4
+    } else {
+	if (lastPage >= segOffset(&transVirtAddr) + segPtr->numPages) {
+	    status = SYS_ARG_NOACCESS;
+	    goto exit;
+d133 7
+a139 135
+    }
+    status = VmMach_CopyOutProc(numBytes, fromAddr, fromKernel, toProcPtr, 
+				toAddr, &transVirtAddr);
+
+exit:
+    /*
+     * If the dest segment was a stack or heap segment then the heap
+     * segment was prevented from being expanded.  Let it be expanded now.
+     */
+    if (transVirtAddr.flags & VM_HEAP_PT_IN_USE) {
+	VmDecPTUserCount(toProcPtr->vmPtr->segPtrArray[VM_HEAP]);
+    }
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_GetKernPageFrame --
+ *
+ *	Return the kernel virtual page frame that is valid at the given virtual
+ *	page number.  Intended to be used by the hardware specific module.
+ *
+ * Results:
+ *	Kernel page from the page table entry.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+unsigned int
+Vm_GetKernPageFrame(pageFrame)
+    int	pageFrame;
+{
+    Vm_PTE	*ptePtr;
+    ptePtr = VmGetPTEPtr(vm_SysSegPtr, pageFrame);
+    return(Vm_GetPageFrame(*ptePtr));
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_KernPageAllocate --
+ *
+ *	Return a physical page frame.  Intended to be used by the hardware
+ *	specific module.
+ *
+ * Results:
+ *	Virtual page frame.
+ *
+ * Side effects:
+ *	Page is taken out of the page pool.
+ *
+ *----------------------------------------------------------------------
+ */
+unsigned int
+Vm_KernPageAllocate()
+{
+    Vm_VirtAddr	virtAddr;
+
+    virtAddr.segPtr = vm_SysSegPtr;
+    virtAddr.page = 0;
+    return(VmPageAllocate(&virtAddr, VM_CAN_BLOCK));
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_KernPageFree --
+ *
+ *	Free the page frame that was returned from Vm_KernPageAlloc.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Page freed.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Vm_KernPageFree(pfNum)
+    unsigned	int	pfNum;
+{
+    VmPageFree(pfNum);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_FlushCode --
+ *
+ *	Flush the code at the given address from the code cache.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+Vm_FlushCode(procPtr, addr, numBytes)
+    Proc_ControlBlock	*procPtr;
+    Address		addr;
+    int			numBytes;
+{
+    Vm_VirtAddr	virtAddr;
+    Vm_PTE	*ptePtr;
+    int		lastPage;
+    int		toFlush;
+
+    LOCK_MONITOR;
+
+    virtAddr.segPtr = procPtr->vmPtr->segPtrArray[VM_CODE];
+    virtAddr.sharedPtr = (Vm_SegProcList *)NIL;
+    virtAddr.page = (unsigned)addr >> vmPageShift;
+    virtAddr.offset = (unsigned)addr & (vm_PageSize - 1);
+    virtAddr.flags = 0;
+    lastPage = ((unsigned)addr + numBytes - 1) >> vmPageShift;
+    if (virtAddr.page >= virtAddr.segPtr->offset && 
+        lastPage < virtAddr.segPtr->offset + virtAddr.segPtr->numPages) {
+
+	for (ptePtr = VmGetPTEPtr(virtAddr.segPtr, virtAddr.page);
+	     virtAddr.page <= lastPage;
+	     virtAddr.page++, VmIncPTEPtr(ptePtr, 1)) {
+	    toFlush = vm_PageSize - virtAddr.offset;
+	    if (toFlush > numBytes) {
+		toFlush = numBytes;
+d141 7
+a147 3
+	    if (*ptePtr & VM_PHYS_RES_BIT) {
+		VmMach_FlushCode(procPtr, &virtAddr, 
+			(unsigned)(*ptePtr & VM_PAGE_FRAME_FIELD), toFlush);
+d149 49
+a197 21
+	    numBytes -= toFlush;
+	    virtAddr.offset = 0;
+	}
+    }
+
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmFindSharedSegment --
+ *
+ *	Take the given virtual address and find which shared segment
+ *	the address falls into.  If the address does not fall in any 
+ *	shared segment then the segment that is returned is NIL.
+ *
+ * Results:
+ *	The pointer to the shared segment list entry is returned,
+ *	or NIL if none found.
+a198 3
+ * Side effects:
+ *	None.
+ *
+a200 6
+Vm_SegProcList *
+VmFindSharedSegment(sharedSegs, virtAddr)
+    List_Links	 		*sharedSegs;
+    Address			virtAddr;
+{
+    Vm_SegProcList	*segLinkPtr;
+d202 5
+a206 46
+    int i=0;
+
+    /*
+     * Check the shared segment list.
+     */
+    CHECK_SHM_MONITOR;
+    VmCheckListIntegrity(sharedSegs);
+    LIST_FORALL(sharedSegs, (List_Links *) segLinkPtr) {
+	i++;
+	if (i>20) {
+	    dprintf("VmFindSharedSegment: loop!\n");
+	    break;
+	}
+	if (segLinkPtr->mappedStart <= virtAddr &&
+		virtAddr <= segLinkPtr->mappedEnd) {
+	    dprintf("VmFindSharedSegment: Address is in shared segment range\n");
+	    return segLinkPtr;
+	} else {
+	    dprintf("VmFindSharedSegment: Address %x outside %x %x\n",
+		    (int)virtAddr, (int)segLinkPtr->mappedStart,
+		    (int)segLinkPtr->mappedEnd);
+	}
+    }
+    return (Vm_SegProcList *)NIL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_CleanupSharedProc --
+ *
+ *	Remove a process's shared memory structures, for when the
+ *	process exits.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Shared memory structures associated with the process are deleted.
+ *	
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Vm_CleanupSharedProc(procPtr)
+    Proc_ControlBlock	*procPtr;	/* Process that is exiting. */
+d208 13
+a220 29
+    int i=0;
+    List_Links	*sharedSegs;	/* Process's shared segments. */
+
+    LOCK_SHM_MONITOR;
+    sharedSegs = procPtr->vmPtr->sharedSegs;
+    while (sharedSegs != (List_Links *)NIL) {
+	if (sharedSegs == (List_Links *)NULL) {
+	    dprintf("Vm_CleanupSharedProc: warning: sharedSegs == NULL\n");
+	    break;
+	}
+	i++;
+	if (i>20) {
+	    dprintf("Vm_CleanupSharedProc: procExit: segment loop!\n");
+	    break;
+	}
+	if (sharedSegs==(List_Links *)NULL) {
+	    printf("Vm_CleanupSharedProc: Danger: null sharedSegs list\n");
+	    break;
+	}
+	if (List_IsEmpty(sharedSegs)) {
+	    printf("Vm_CleanupSharedProc: Danger: empty sharedSegs list\n");
+	    break;
+	}
+	if (List_First(sharedSegs)==
+		(List_Links *)NULL) {
+	    break;
+	}
+	Vm_DeleteSharedSegment(procPtr,
+		(Vm_SegProcList *)List_First(sharedSegs));
+a221 36
+    UNLOCK_SHM_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_DeleteSharedSegment --
+ *
+ *	Remove a process's mapping of a shared segment.
+ *
+ *      This routine removes segProcPtr from the list of shared segment
+ *      mappings and frees the structure.
+ *	If the process has no more references to the segment,
+ *	Vm_SegmentDelete is called on the segment.  If there are no more
+ *	references to the segment, it is removed from the list of shared
+ *	segments.  If the process has no more shared segments, its shared
+ *	segment list is freed.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	References to the segment mapping are removed.  Any unneeded data
+ *	structures are unlinked and freed.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Vm_DeleteSharedSegment(procPtr,segProcPtr)
+    Proc_ControlBlock	*procPtr;	/* Process with mapping. */
+    Vm_SegProcList		*segProcPtr;	/* Pointer to segment mapping. */
+{
+    Vm_SharedSegTable	*segTabPtr = segProcPtr->segTabPtr;
+    Vm_Segment		*segPtr;
+    Vm_VirtAddr		virtAddr;
+    int			done = 0;
+d223 3
+a225 20
+    CHECK_SHM_MONITOR;
+    VmCheckListIntegrity(procPtr->vmPtr->sharedSegs);
+
+    LOCK_MONITOR;
+    virtAddr.page = ((int)segProcPtr->mappedStart) >> vmPageShift;
+    virtAddr.segPtr = segTabPtr->segPtr;
+    virtAddr.sharedPtr = segProcPtr;
+    UNLOCK_MONITOR;
+
+    (void) VmPageFlush(&virtAddr, segProcPtr->mappedEnd -
+	    segProcPtr->mappedStart + 1, FALSE, FALSE);
+    List_Remove((List_Links *)segProcPtr);
+    VmMach_SharedSegFinish(procPtr,segProcPtr->addr);
+    if (debugVmStubs) {
+	printf("Vm_DeleteSharedSegment: freeing segProcPtr %x\n", segProcPtr);
+    }
+    free((Address)segProcPtr);
+    VmCheckListIntegrity((List_Links *)&sharedSegTable);
+    /*
+     * Check if this is the process's last reference to the segment.
+d227 12
+a238 4
+    segPtr = segTabPtr->segPtr;
+    segTabPtr->refCount--;
+    if (segTabPtr->refCount == 0) {
+	done = 1;
+d240 2
+a241 18
+    if (!VmCheckSharedSegment(procPtr,segPtr)){
+	dprintf("Vm_DeleteSharedSegment: Process has no more references to segment\n");
+	if (List_IsEmpty(procPtr->vmPtr->sharedSegs)) {
+	    dprintf("Vm_DeleteSharedSegment: Process has no more shared segments\n");
+	    VmMach_SharedProcFinish(procPtr);
+	    free((Address)procPtr->vmPtr->sharedSegs);
+	    procPtr->vmPtr->sharedSegs = (List_Links *)NIL;
+	}
+	/*
+	 * Don't want Vm_SegmentDelete to destroy swap file unless we're
+	 * through with it.
+	 */
+	segPtr->flags &= ~VM_SWAP_FILE_OPENED;
+	Vm_SegmentDelete(segPtr,procPtr);
+	if (!done) {
+	    dprintf("Vm_DeleteSharedSegment: Restoring VM_SWAP_FILE_OPENED\n");
+	    segPtr->flags |= VM_SWAP_FILE_OPENED;
+	}
+a242 2
+    VmPrintSharedSegs(procPtr);
+    dprintf("Vm_DeleteSharedSegment: done\n");
+d244 3
+a246 27
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmCheckSharedSegment --
+ *
+ *	See if a process has the shared segment mapped.
+ *
+ * Results:
+ *	TRUE if the shared segment is mapped by the process.
+ *	FALSE otherwise.
+ *
+ * Side effects:
+ *	Reads the shared memory data, so the SHM lock must be held.
+ *
+ *----------------------------------------------------------------------
+ */
+Boolean
+VmCheckSharedSegment(procPtr,segPtr)
+    Proc_ControlBlock	*procPtr;	/* Process to check. */
+    Vm_Segment		*segPtr;	/* Pointer to shared segment. */
+{
+    Vm_SegProcList	*sharedSeg;
+    Boolean 	found=FALSE;
+    /*
+     * Check if segment is already on the process's list.
+d248 2
+a249 15
+    CHECK_SHM_MONITOR;
+    dprintf("VmCheckSharedSegment: Checking if segment attached to process\n");
+    VmCheckListIntegrity(procPtr->vmPtr->sharedSegs);
+    LIST_FORALL(procPtr->vmPtr->sharedSegs,
+	    (List_Links *)sharedSeg) {
+	if (sharedSeg->segTabPtr->segPtr == segPtr) {
+	    found = TRUE;
+	    break;
+        }
+    }
+    if (found) {
+	dprintf("it is\n");
+    } else  {
+	dprintf("it isn't\n");
+    }
+d251 1
+a251 1
+    return found;
+a252 24
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmCheckListIntegrity --
+ *
+ *	See if a linked list is okay.
+ *
+ * Results:
+ *	TRUE if the list is okay.
+ *	FALSE otherwise.
+ *
+ * Side effects:
+ *	Reads the shared memory data, so the SHM lock must be held.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+VmCheckListIntegrity(listHdr)
+    List_Links	*listHdr;	/* Header of linked list. */
+{
+    int i=0;
+    List_Links	*list1;
+
+a253 32
+    /*
+    CHECK_SHM_MONITOR;
+    */
+    if (List_Prev(listHdr) == (List_Links *)NULL) {
+	panic("List_Prev is NULL!\n");
+    }
+    if (List_Prev(listHdr) == (List_Links *)NIL) {
+	panic("List_Prev is NIL!\n");
+    }
+    if (List_Next(listHdr) == (List_Links *)NULL) {
+	panic("List_Next is NULL!\n");
+    }
+    if (List_Next(listHdr) == (List_Links *)NIL) {
+	panic("List_Next is NIL!\n");
+    }
+    if (List_IsEmpty(listHdr)) {
+	return;
+    }
+
+    LIST_FORALL(listHdr,list1) {
+	i++;
+	if (i>10000) {
+	    panic("VmCheckListIntegrity: too long\n");
+	}
+	if (List_Next(List_Prev(list1))!=list1) {
+	    panic("VmCheckListIntegrity: error\n");
+	}
+	if (List_Prev(List_Next(list1))!=list1) {
+	    panic("VmCheckListIntegrity: error\n");
+	}
+    }
+}
+d258 1
+a258 1
+ * VmPrintSharedSegs --
+d260 2
+a261 1
+ *	Print info on the shared segments for a proc.
+d264 2
+a265 1
+ *	None.
+d268 1
+a268 1
+ *	Reads the shared memory data, so the SHM lock must be held.
+a271 6
+void
+VmPrintSharedSegs(procPtr)
+    Proc_ControlBlock	*procPtr;	/* Process to check. */
+{
+    Vm_SegProcList		*procListPtr;
+    Vm_SharedSegTable	*segTabPtr;
+d273 5
+a277 45
+    CHECK_SHM_MONITOR;
+    dprintf("VmPrintSharedSegs: info for %x (%x)\n",(int)procPtr,
+	    (int)procPtr->processID);
+    dprintf("  Shared Segment Table:\n");
+    LIST_FORALL((List_Links *)&sharedSegTable,(List_Links *)segTabPtr) {
+	dprintf("  entry: %x fileNumber: %d refcount: %d segPtr: %x segNum: %d\n",
+		(int)segTabPtr,segTabPtr->fileNumber, segTabPtr->refCount,
+		(int)segTabPtr->segPtr,segTabPtr->segPtr->segNum);
+    }
+    if (procPtr->vmPtr->sharedSegs == (List_Links *)NIL) {
+	dprintf("  Process list: NIL\n");
+    } else {
+	dprintf("  Proc: %x (%x):\n",(int)procPtr,procPtr->processID);
+	LIST_FORALL(procPtr->vmPtr->sharedSegs,(List_Links *)procListPtr) {
+	    dprintf("  fd: %d table: %x address: %x start: %x end: %x\n",
+		    (int)procListPtr->fd, procListPtr->segTabPtr,
+		    (int)procListPtr->addr, (int)procListPtr->mappedStart,
+		    (int)procListPtr->mappedEnd);
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_CleanupSharedFile --
+ *
+ *	Delete segments associated with a file stream.
+ *	This routine calls Vm_DeleteSharedSegment on the segments
+ *	associated with the file stream.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Shared segments are deleted.
+ *	Uses the SHM lock.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+void
+Vm_CleanupSharedFile(procPtr,streamPtr)
+    Proc_ControlBlock	*procPtr;	/* Process with file. */
+    Fs_Stream		*streamPtr;	/* Stream to remove. */
+d279 8
+a286 72
+    Vm_SegProcList		*segPtr;
+    Vm_SegProcList		*nextPtr;
+    List_Links			*sharedSegs = procPtr->vmPtr->sharedSegs;
+
+    LOCK_SHM_MONITOR;
+    if (procPtr->vmPtr->sharedSegs != (List_Links *)NIL) {
+	for (segPtr=(Vm_SegProcList *)List_First(sharedSegs);
+		!List_IsAtEnd(sharedSegs,(List_Links *)segPtr);
+		segPtr=nextPtr) {
+	    nextPtr = (Vm_SegProcList *)List_Next((List_Links *)segPtr);
+	    if (segPtr->stream==streamPtr) {
+		dprintf("sharedSegment being deleted in Vm_CleanupSharedFile\n");
+#if 0
+		Vm_DeleteSharedSegment(procPtr,segPtr);
+#else
+		if (debugVmStubs) {
+		    printf("Vm_CleanupSharedFile: skipping segment delete\n");
+		}
+#endif
+		if (sharedSegs == (List_Links *)NIL) {
+		    break;
+		}
+	    }
+	}
+    }
+    UNLOCK_SHM_MONITOR;
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Vm_CopySharedMem --
+ *
+ *     Copies shared memory data structures to handle a fork.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     The new process gets a copy of the shared memory structures.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+Vm_CopySharedMem(parentProcPtr, childProcPtr)
+    Proc_ControlBlock	*parentProcPtr;	/* Parent process. */
+    Proc_ControlBlock	*childProcPtr;	/* Child process. */
+{
+    Vm_Segment *segPtr;
+    Vm_SegProcList *sharedSeg;
+    Vm_SegProcList *parentSeg;
+    LOCK_SHM_MONITOR;
+    if (parentProcPtr->vmPtr->sharedSegs != (List_Links *)NIL) {
+	childProcPtr->vmPtr->sharedSegs = (List_Links *)
+		malloc(sizeof(Vm_SegProcList));
+	List_Init((List_Links *)childProcPtr->vmPtr->sharedSegs);
+	LIST_FORALL(parentProcPtr->vmPtr->sharedSegs,
+		(List_Links *)parentSeg) {
+	    sharedSeg = (Vm_SegProcList *)malloc(sizeof(Vm_SegProcList));
+	    bcopy((Address)parentSeg, (Address)sharedSeg,
+		    sizeof(Vm_SegProcList));
+	    segPtr = sharedSeg->segTabPtr->segPtr;
+	    if(!VmCheckSharedSegment(childProcPtr, segPtr)) {
+		Vm_SegmentIncRef(segPtr, childProcPtr);
+	    }
+	    segPtr->refCount++;
+	    List_Insert((List_Links *)sharedSeg,
+		    LIST_ATREAR((List_Links *)childProcPtr->vmPtr->sharedSegs));
+	}
+	VmMach_CopySharedMem(parentProcPtr, childProcPtr);
+    }
+    UNLOCK_SHM_MONITOR;
+@

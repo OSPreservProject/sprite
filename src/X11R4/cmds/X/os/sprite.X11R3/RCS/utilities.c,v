@@ -1,0 +1,1034 @@
+head     1.18;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.18
+date     89.11.23.00.17.00;  author tve;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     89.10.24.21.19.51;  author tve;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     89.10.23.18.10.51;  author tve;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     89.10.08.16.46.57;  author tve;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     89.10.04.19.50.48;  author tve;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     88.09.11.13.01.26;  author ouster;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     88.09.09.09.00.21;  author ouster;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     88.09.08.18.16.13;  author ouster;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     88.08.26.16.12.56;  author brent;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     88.08.26.16.04.18;  author deboor;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     87.11.29.19.51.34;  author deboor;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     87.11.01.20.23.24;  author deboor;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     87.08.21.20.31.59;  author deboor;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     87.08.04.17.28.24;  author deboor;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     87.08.03.11.54.12;  author deboor;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     87.07.07.18.16.44;  author deboor;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     87.06.20.19.58.22;  author deboor;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     87.06.11.17.47.26;  author deboor;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@utility functions to hide the real operating system functions
+@
+
+
+1.18
+log
+@commented out the "Aborting... see /tmp/..." message onto stdout.
+is was corrupting the rgb database
+@
+text
+@/*-
+ * utilities.c --
+ *	Various allocation and output utilities required by the
+ *	server.
+ *
+ * Copyright (c) 1987 by the Regents of the University of California
+ *
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * TODO:
+ *	- Snarf stuff for compressed fonts from 4.2bsd/utils.c
+ *	- Add in support for !NOLOGOHACK
+ *
+ */
+#ifndef lint
+static char rcsid[] =
+"$Header: /mic/X11R3/src/cmds/Xsp/os/sprite/RCS/utilities.c,v 1.17 89/10/24 21:19:51 tve Exp Locker: tve $ SPRITE (Berkeley)";
+#endif lint
+
+/*
+ * The following include file must be first, or this won't compile.
+ */
+
+#include    <stdlib.h>
+
+#include    "spriteos.h"
+#include    "opaque.h"
+#include    "input.h"
+#include    "site.h"
+
+#include    <errno.h>
+#include    <status.h>
+#include    <stdio.h>
+#include    <string.h>
+#include    <sys/time.h>
+#include    <varargs.h>
+
+extern long defaultScreenSaverInterval;
+extern long defaultScreenSaverTime;
+extern int defaultScreenSaverBlanking;
+
+Bool	clientsDoomed = 0;
+int	debug = 0;
+
+extern void KillServerResources();
+
+/*-
+ *-----------------------------------------------------------------------
+ * AbortServer --
+ *	Abort the server...
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	The server dies in a Big Way.
+ *
+ *-----------------------------------------------------------------------
+ */
+void
+AbortServer()
+{
+/*
+    fprintf(stdout,
+	"Aborting... see /tmp/<hostname>:<display>.X11R3 for details\n");
+    fflush(stdout);
+*/
+    panic ("Aborting...\n");
+}
+/*-
+ *-----------------------------------------------------------------------
+ * HangUp --
+ *	The server has been interrupted. Close everything down...
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	The process exits.
+ *
+ *-----------------------------------------------------------------------
+ */
+void
+HangUp ()
+{
+    KillServerResources();
+    exit (0);
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * FatalError --
+ *	An error has occurred that does not allow the server to continue.
+ *	Print the given message and abort.
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	The server aborts/exits/dies/suicides/etc.
+ *
+ *-----------------------------------------------------------------------
+ */
+void
+FatalError (va_alist)
+    va_dcl
+{
+    va_list	ap;
+    va_start(ap);
+    ErrorF("\nFatal server bug!\n");
+    vErrorF(&ap);
+    ErrorF("\n");
+    AbortServer();
+    /*NOTREACHED*/
+    va_end(ap);
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * Reset --
+ *	Tell DIX to reset itself when SIG_TERM is received.
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	clientsDoomed is set 1 and the dispatched is told to yield...
+ *
+ *-----------------------------------------------------------------------
+ */
+int
+Reset()
+{
+    clientsDoomed = 1;
+    SchedYield();
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * GetTimeInMillis --
+ *	Return the current time in milliseconds. This really should be
+ *	the time since boot, since that's what's passed in the events,
+ *	but unfortunately, there's no way to get at that...
+ *
+ * Results:
+ *	The time since Jan 1, 1970 in milliseconds.
+ *
+ * Side Effects:
+ *	None.
+ *
+ *-----------------------------------------------------------------------
+ */
+long
+GetTimeInMillis()
+{
+    struct timeval tp;
+    struct timezone tzp;
+
+    if (gettimeofday(&tp, &tzp) != 0) {
+	return 0;
+    }
+    return (tp.tv_sec*1000) + (tp.tv_usec/1000);
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * ErrorF --
+ *	Print a formatted string on the error output.
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	Well...
+ *
+ *-----------------------------------------------------------------------
+ */
+void
+ErrorF(va_alist)
+	va_dcl
+{
+    va_list	ap;
+    char	*fmt;
+    va_start(ap);
+    fmt = va_arg(ap, char*);
+    vfprintf(stderr, fmt, ap);
+    fflush(stderr);
+    va_end(ap);
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * vErrorF --
+ *	Same as ErrorF, but with varargs parameter.
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	Well...
+ *
+ *-----------------------------------------------------------------------
+ */
+void
+vErrorF(ap)
+    va_list	*ap;
+{
+    char	*fmt;
+    fmt = va_arg(*ap, char*);
+    vfprintf(stderr, fmt, *ap);
+    fflush(stderr);
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * Error --
+ *	Report the status of the most recent operation.
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	A message is printed.
+ *
+ *-----------------------------------------------------------------------
+ */
+void
+Error (str)
+    char    *str;
+{
+    fprintf(stderr, "%s: %s\n", str, strerror(errno));
+    fflush(stderr);
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * Notice --
+ *	Print something which should be noticed...
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	>...<
+ *
+ *-----------------------------------------------------------------------
+ */
+Notice()
+{
+    fprintf (stderr, "NOTE!\n");
+    fflush (stderr);
+}
+
+UseMsg()
+{
+    ErrorF("use: X <display> [option] <tty>\n");
+    ErrorF("-a #                   mouse acceleration (pixels)\n");
+    ErrorF("-bp<:screen> color     BlackPixel for screen\n");
+    ErrorF("-c                     turns off key-click\n");
+    ErrorF("c #                    key-click volume (0-8)\n");
+    ErrorF("-co string             color database file\n");
+    ErrorF("-fc string             cursor font\n");
+    ErrorF("-fn string             default text font name\n");
+    ErrorF("-fp string             default text font path\n");
+    ErrorF("-p #                   screen-saver pattern duration (seconds)\n");
+    ErrorF("-r                     turns off auto-repeat\n");
+    ErrorF("r                      turns on auto-repeat \n");
+    ErrorF("-f #                   bell base (0-100)\n");
+    ErrorF("-x string              loads named extension at init time \n");
+    ErrorF("-help                  prints message with these options\n");
+    ErrorF("-s #                   screen-saver timeout (seconds)\n");
+    ErrorF("-t #                   mouse threshold (pixels)\n");
+    ErrorF("-to #                  connection time out\n");
+    ErrorF("v                      video blanking for screen-saver\n");
+    ErrorF("-v                     screen-saver without video blanking\n");
+    ErrorF("-wp<:screen> color     WhitePixel for screen\n");
+    ErrorF("There may be other device-dependent options as well\n");
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * ProcessCommandLine --
+ *	Process the arguments the server was given and do something with
+ *	them.
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	Things may be set...
+ *
+ *-----------------------------------------------------------------------
+ */
+void
+ProcessCommandLine ( argc, argv )
+    int	    argc;
+    char    *argv[];
+    
+{
+    int	    i;
+    
+    for ( i = 1; i < argc; i++ )
+    {
+	/* initialize display */
+	if(argv[i][0] ==  ':')  
+	{
+	    display = argv[i];
+	    display++;
+	}
+	else if ( strcmp( argv[i], "-a") == 0)
+	{
+	    if(++i < argc)
+	        defaultPointerControl.num = atoi(argv[i]);
+	    else
+		UseMsg();
+	}
+	else if ( strcmp( argv[i], "c") == 0)
+	{
+	    if(++i < argc)
+	        defaultKeyboardControl.click = atoi(argv[i]);
+	    else
+		UseMsg();
+	}
+	else if ( strcmp( argv[i], "-c") == 0)
+	{
+	    defaultKeyboardControl.click = 0;
+	}
+	else if ( strcmp( argv[i], "-co") == 0)
+	{
+	    if(++i < argc)
+	        rgbPath = argv[i];
+	    else
+		UseMsg();
+	}
+	else if ( strcmp( argv[i], "-f") == 0)
+	{
+	    if(++i < argc)
+	        defaultKeyboardControl.bell = atoi(argv[i]);
+	    else
+		UseMsg();
+	}
+	else if ( strcmp( argv[i], "-fc") == 0)
+	{
+	    if(++i < argc)
+	        defaultCursorFont = argv[i];
+	    else
+		UseMsg();
+	}
+	else if ( strcmp( argv[i], "-fn") == 0)
+	{
+	    if(++i < argc)
+	        defaultTextFont = argv[i];
+	    else
+		UseMsg();
+	}
+	else if ( strcmp( argv[i], "-fp") == 0)
+	{
+	    if(++i < argc)
+	        defaultFontPath = argv[i];
+	    else
+		UseMsg();
+	}
+	else if ( strcmp( argv[i], "-help") == 0)
+	{
+	    UseMsg();
+	    exit(0);
+	}
+	else if ( strcmp( argv[i], "-p") == 0)
+	{
+	    if(++i < argc)
+	        defaultScreenSaverInterval = atoi(argv[i]) * MILLI_PER_MIN;
+	    else
+		UseMsg();
+	}
+	else if ( strcmp( argv[i], "r") == 0)
+	    defaultKeyboardControl.autoRepeat = 1;
+	else if ( strcmp( argv[i], "-r") == 0)
+	    defaultKeyboardControl.autoRepeat = 0;
+	else if ( strcmp( argv[i], "-s") == 0)
+	{
+	    if(++i < argc)
+	        defaultScreenSaverTime = atoi(argv[i]) * MILLI_PER_MIN;
+	    else
+		UseMsg();
+	}
+	else if ( strcmp( argv[i], "-t") == 0)
+	{
+	    if(++i < argc)
+	        defaultPointerControl.threshold = atoi(argv[i]);
+	    else
+		UseMsg();
+	}
+	else if ( strcmp( argv[i], "-to") == 0)
+	{
+	    if(++i < argc)
+	    {
+	        if((TimeOutValue = atoi(argv[i])) < 0)
+		    TimeOutValue = DEFAULT_TIMEOUT;
+	    }
+	    else
+		UseMsg();
+	}
+	else if ( strcmp( argv[i], "v") == 0)
+	    defaultScreenSaverBlanking = PreferBlanking;
+	else if ( strcmp( argv[i], "-v") == 0)
+	    defaultScreenSaverBlanking = DontPreferBlanking;
+	else if ( strcmp( argv[i], "-x") == 0)
+	{
+	    if(++i >= argc)
+		UseMsg();
+	    /* For U**x, which doesn't support dynamic loading, there's nothing
+	     * to do when we see a -x.  Either the extension is linked in or
+	     * it isn't */
+	} else if ( strcmp( argv[i], "-d") == 0)
+	{
+	    i += 1;
+	    if (i >= argc) {
+		UseMsg();
+	    } else {
+		char *opt;
+
+		for (opt = argv[i]; *opt != '\0'; opt++) {
+		    switch (*opt) {
+			case 's': debug |= DEBUG_SCHED; break;
+			case 'c': debug |= DEBUG_CONN; break;
+			case 'p': debug |= DEBUG_PDEV; break;
+			case 't': debug |= DEBUG_TCP; break;
+			case 'a': debug = ~0; break;
+		    }
+		}
+	    }
+	}
+    }
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * Xalloc --
+ *	Allocate a chunk of memory.
+ *
+ * Results:
+ *	Pointer to the properly-aligned memory.
+ *
+ * Side Effects:
+ *	The program will exit if the allocator gets excited.
+ *
+ *-----------------------------------------------------------------------
+ */
+unsigned long *
+Xalloc (amount)
+    int	    amount;	    /* Amount of space required */
+{
+    return ((unsigned long *) malloc ((unsigned) amount));
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * Xrealloc --
+ *	Enlarge a chunk of memory. The data will be copied if the
+ *	allocated block is too small to contain the new size.
+ *
+ * Results:
+ *	A pointer to the enlarged (and possibly moved) block.
+ *
+ * Side Effects:
+ *	The old block is freed.
+ *
+ *-----------------------------------------------------------------------
+ */
+unsigned long *
+Xrealloc (oldPtr, amount)
+    pointer oldPtr;
+    int	    amount;
+{
+    return (unsigned long *) realloc((char *) oldPtr, (unsigned) amount);
+}
+
+/*-
+ *-----------------------------------------------------------------------
+ * Xfree --
+ *	Free a block of storage.
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	The program will die if the block is already freed or is not
+ *	on the heap.
+ *
+ *-----------------------------------------------------------------------
+ */
+void
+Xfree (ptr)
+    pointer ptr;
+{
+    if (ptr != (pointer)NULL) {
+	free((char *) ptr);
+    } else {
+	ErrorF ("Freeing NULL pointer\n");
+    }
+}
+@
+
+
+1.17
+log
+@fixed varargs stuff
+@
+text
+@d23 1
+a23 1
+"$Header: /mic/X11R3/src/cmds/Xsp/os/sprite/RCS/utilities.c,v 1.15 89/10/08 16:46:57 tve Exp Locker: tve $ SPRITE (Berkeley)";
+d69 1
+d73 1
+@
+
+
+1.16
+log
+@fixed variable argument functions: use varargs.h
+@
+text
+@d69 4
+a72 1
+    panic ("Aborting...");
+d190 1
+a190 1
+    vfprintf(stderr, fmt, &ap);
+d214 1
+a214 1
+    vfprintf(stderr, fmt, ap);
+@
+
+
+1.15
+log
+@cosmetics
+@
+text
+@d23 1
+a23 1
+"$Header: /mic/X11R3/src/cmds/Xsprite/os/sprite/RCS/utilities.c,v 1.14 89/10/04 19:50:48 tve Exp Locker: tve $ SPRITE (Berkeley)";
+d42 1
+a104 1
+/*VARARGS1*/
+d106 2
+a107 3
+FatalError (msg, v0, v1, v2, v3, v4, v5, v6, v7, v8)
+    char *msg;
+    char *v0, *v1, *v2, *v3, *v4, *v5, *v6, *v7, *v8;
+d109 2
+d112 1
+a112 1
+    ErrorF(msg, v0, v1, v2, v3, v4, v5, v6, v7, v8);
+d116 1
+d180 2
+a181 11
+ErrorF (fmt, a1, a2, a3, a4, a5, a6, a7, a8, a9)
+    char    *fmt;
+    int	    a1,
+	    a2,
+	    a3,
+	    a4,
+	    a5,
+	    a6,
+	    a7,
+	    a8,
+	    a9;
+d183 30
+a212 2
+    fprintf (stderr, fmt, a1, a2, a3, a4, a5, a6, a7, a8, a9);
+    fflush (stderr);
+@
+
+
+1.14
+log
+@fixed a few types
+@
+text
+@d23 1
+a23 1
+"$Header: utilities.c,v 1.13 88/09/11 13:01:26 ouster Exp $ SPRITE (Berkeley)";
+d83 1
+@
+
+
+1.13
+log
+@Switch to use errno for errors.
+@
+text
+@d23 1
+a23 1
+"$Header: utilities.c,v 1.12 88/09/09 09:00:21 ouster Exp $ SPRITE (Berkeley)";
+d104 1
+d151 1
+a151 1
+int
+d206 1
+d273 1
+@
+
+
+1.12
+log
+@Changes to compile with new C library.
+@
+text
+@d23 1
+a23 1
+"$Header: utilities.c,v 1.11 88/09/08 18:16:13 ouster Exp $ SPRITE (Berkeley)";
+d37 1
+d40 1
+d208 2
+a209 2
+    Stat_PrintMsg (stat_LastError, str);
+    fflush (stderr);
+@
+
+
+1.11
+log
+@Intermediate check-in while converting to new C library.
+@
+text
+@d23 1
+a23 1
+"$Header: utilities.c,v 1.10 88/08/26 16:12:56 brent Exp $ SPRITE (Berkeley)";
+d26 6
+d37 2
+a38 1
+#include    <stdlib.h>
+d449 1
+a449 1
+    return (long *) realloc((char *) oldPtr, (unsigned) amount);
+@
+
+
+1.10
+log
+@Nuked reference to DEBUG_NEWPDEV
+@
+text
+@d23 1
+a23 1
+"$Header: utilities.c,v 1.9 88/08/26 16:04:18 deboor Exp $ SPRITE (Berkeley)";
+d31 2
+a32 1
+#include    <sys.h>
+d38 1
+a38 1
+Bool	clientsDoomed = FALSE;
+d59 1
+a59 1
+    Sys_Panic (SYS_FATAL, "Aborting...");
+d77 1
+a77 1
+    Proc_Exit (0);
+d115 1
+a115 1
+ *	clientsDoomed is set TRUE and the dispatched is told to yield...
+d122 1
+a122 1
+    clientsDoomed = TRUE;
+d144 2
+a145 1
+    SpriteTime	  now;
+d147 4
+a150 3
+    Sys_GetTimeOfDay (&now, (int *)NULL, (Boolean *)NULL);
+
+    return (now.seconds * 1000 + now.microseconds / 1000);
+d179 2
+a180 2
+    Io_PrintStream (io_StdErr, fmt, a1, a2, a3, a4, a5, a6, a7, a8, a9);
+    Io_Flush (io_StdErr);
+d200 1
+a200 1
+    Io_Flush (io_StdErr);
+d218 2
+a219 2
+    Io_PrintStream (io_StdErr, "NOTE!\n");
+    Io_Flush (io_StdErr);
+d343 1
+a343 1
+	    defaultKeyboardControl.autoRepeat = TRUE;
+d345 1
+a345 1
+	    defaultKeyboardControl.autoRepeat = FALSE;
+d420 1
+a420 1
+    return ((unsigned long *)Mem_Alloc (amount));
+d442 1
+a442 19
+    pointer newPtr;
+    extern char end[];
+    
+    if (oldPtr != (pointer) NULL) {
+	if (oldPtr < (pointer)end || oldPtr > (pointer)&newPtr) {
+	    FatalError ("Trying to Xrealloc non-dynamic storage");
+	}
+	
+    	if (Mem_Size (oldPtr) >= amount) {
+	    return ((unsigned long *)oldPtr);
+	} else {
+	    newPtr = (pointer)Mem_Alloc (amount);
+	    Byte_Copy (Mem_Size (oldPtr), oldPtr, newPtr);
+	    Mem_Free (oldPtr);
+	}
+    } else {
+	newPtr = (pointer)Mem_Alloc (amount);
+    }
+    return ((unsigned long *)newPtr);
+d464 1
+a464 1
+	Mem_Free (ptr);
+@
+
+
+1.9
+log
+@Added FatalError
+@
+text
+@d23 1
+a23 1
+"$Header: utilities.c,v 1.8 87/11/29 19:51:34 deboor Exp $ SPRITE (Berkeley)";
+a390 1
+			case 'n': debug |= DEBUG_NEWPDEV; break;
+@
+
+
+1.8
+log
+@Added setting of debug flags from command-line
+@
+text
+@d16 3
+d23 1
+a23 1
+"$Header: utilities.c,v 1.7 87/11/01 20:23:24 deboor Exp $ SPRITE (Berkeley)";
+d40 1
+a40 1
+extern void KilServerResources();
+d77 26
+@
+
+
+1.7
+log
+@adapted to full release
+@
+text
+@d20 1
+a20 1
+"$Header: utilities.c,v 1.6 87/08/21 20:31:59 deboor Exp $ SPRITE (Berkeley)";
+d35 2
+d349 19
+@
+
+
+1.6
+log
+@Added Reset function to kill all clients and loop on SIG_TERM
+@
+text
+@d20 1
+a20 1
+"$Header: utilities.c,v 1.5 87/08/04 17:28:24 deboor Exp $ SPRITE (Berkeley)";
+d26 1
+d28 6
+d35 1
+d39 18
+d70 1
+a70 2
+    clientsDoomed = TRUE;
+    CloseDownDevices();
+d188 26
+d235 5
+a239 5
+    for ( i = 1; i < argc; i++ ) {
+	if(argv[i][0] ==  ':')  {
+	    /*
+	     * Display number
+	     */
+d242 17
+a258 35
+	} else if ( strcmp( argv[i], "-fp") == 0) {
+	    /*
+	     * Font path (single directory ending with '/'!)
+	     */
+	    defaultFontPath = argv[++i];
+	} else if ( strcmp( argv[i], "-fn") == 0) {
+	    /*
+	     * Default font
+	     */
+	    defaultTextFont = argv[++i];
+	} else if ( strcmp( argv[i], "-fc") == 0) {
+	    /*
+	     * Cursor font
+	     */
+	    defaultCursorFont = argv[++i];
+	} else if ( strcmp( argv[i], "-a") == 0) {
+	    /*
+	     * Pointer acceleration (whole units only)
+	     */
+	    defaultPointerControl.num = atoi(argv[++i]);
+	    defaultPointerControl.den = 1;
+	} else if ( strcmp( argv[i], "-t") == 0) {
+	    /*
+	     * Pointer acceleration threshold
+	     */
+	    defaultPointerControl.threshold = atoi(argv[++i]);
+	} else if ( strcmp( argv[i], "-f") == 0) {
+	    /*
+	     * "Feep" volume
+	     */
+	    defaultKeyboardControl.bell = atoi(argv[++i]);
+	} else if ( strcmp( argv[i], "-c") == 0) {
+	    /*
+	     * Keyclick off
+	     */
+d260 87
+a346 5
+	} else if ( strcmp( argv[i], "c") == 0) {
+	    /*
+	     * Keyclick on and volume
+	     */
+	    defaultKeyboardControl.click = atoi(argv[++i]);
+@
+
+
+1.5
+log
+@Added protection against freeing NULL pointers
+@
+text
+@d20 1
+a20 1
+"$Header: utilities.c,v 1.4 87/08/03 11:54:12 deboor Exp $ SPRITE (Berkeley)";
+d47 20
+@
+
+
+1.4
+log
+@adapted to new X*alloc declarations
+@
+text
+@d20 1
+a20 1
+"$Header: utilities.c,v 1.3 87/07/07 18:16:44 deboor Exp $ SPRITE (Berkeley)";
+d294 5
+a298 1
+    Mem_Free (ptr);
+@
+
+
+1.3
+log
+@???
+@
+text
+@d20 1
+a20 1
+"$Header: utilities.c,v 1.2 87/06/20 19:58:22 deboor Exp $ SPRITE (Berkeley)";
+d229 1
+a229 1
+pointer
+d233 1
+a233 1
+    return ((pointer)Mem_Alloc (amount));
+d250 1
+a250 1
+pointer
+d264 1
+a264 1
+	    return (oldPtr);
+d273 1
+a273 1
+    return (newPtr);
+@
+
+
+1.2
+log
+@adapted to Beta-0 and "debugged"
+@
+text
+@d20 1
+a20 1
+"$Header: utilities.c,v 1.1 87/06/11 17:47:26 deboor Exp $ SPRITE (Berkeley)";
+d120 1
+a120 1
+    Stat_PrintMsg (stat_LastStatus, str);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d20 1
+a20 1
+"$Header$ SPRITE (Berkeley)";
+d27 2
+d44 1
+d49 19
+d69 5
+d101 1
+d120 2
+a121 1
+    Io_PrintStream (io_StdErr, "%s: system error...\n", str);
+d140 1
+d273 1
+@

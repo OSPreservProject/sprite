@@ -1,0 +1,50 @@
+<ks violence 2:12> !!
+telnet agate 119
+Trying...
+Connected to agate.Berkeley.EDU.
+Escape character is '^]'.
+200 agate.berkeley.edu InterNetNews NNRP server $Revision: 1.2 $ ready (posting ok).
+help
+100 Legal commands
+  authinfo user Name|pass Password
+  article [MessageID|Number]
+  body [MessageID|Number]
+  group newsgroup
+  head [MessageID|Number]
+  help
+  last
+  list [active|newsgroups|distributions]
+  newgroups yymmdd hhmmss ["GMT"] [<distributions>]
+  newnews newsgroups yymmdd hhmmss ["GMT"] [<distributions>]
+  next
+  post
+  stat [MessageID|Number]
+  xhdr header [range|MessageID]
+  xpat header range|MessageID pat [morepat...]
+  xthread [dbinit|thread]
+Report problems to <usenet@agate.berkeley.edu>
+.
+group ucb.general
+211 56 11167 11222 ucb.general
+article 11167
+220 11167 <kjeb0mINNjfa@agate.berkeley.edu> article ok
+Path: agate!garnet.berkeley.edu!bmyers
+From: bmyers@garnet.berkeley.edu (Brian Myers)
+Newsgroups: ucb.general
+Subject: 1 or 2 Bedroom Apt Wanted
+Date: 30 Nov 1991 06:13:42 GMT
+Organization: University of California, Berkeley
+Lines: 7
+Message-ID: <kjeb0mINNjfa@agate.berkeley.edu>
+NNTP-Posting-Host: garnet.berkeley.edu
+
+Graduate student seeks 1 or 2 bedroom apartment near campus--the Searle
+raises are forcing me out of my old place.
+
+Respond by email or call 843-1985.
+-- 
+---------------------------------------------------------------------------
+Brian Myers					 bmyers@garnet.berkeley.edu
+.
+next
+223 11168 <kjgpg0INNhrn@agate.berkeley.edu> Article retrieved; request text separately.

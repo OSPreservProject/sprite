@@ -1,0 +1,51 @@
+I'm giving out the following version of btxbst.doc, the master file
+for Bibtex bibliography styles.  I have added a number of useful
+styles: a "long" style where the full last name of the 1st author is
+used as the label, "alpha3" where the label is the 1st 3 characters of
+the first author's first name.  These styles are mandatory for some
+publications.  Furthermore, the "key" and "skey" styles are useful if
+you want to print out the database itself; both use the bibtex key as
+the label; the former doesn't sort and the latter does.
+
+The standard styles are unchanged.
+
+I have added a "FRENCH" option, to print dates, etc., in French.
+There are also a couple of minor additions ('tsi' and 'deathesis'),
+useful mostly for the French-speaking part of the world.
+
+It's been in use for some time; it's debugged enough for my puposes
+although there are a few rough edges.  Not all of the comments have
+been updated.
+
+Example bibtex entries:
+    @InProceedings (sos:sigops86,
+            key = "Shapiro 86c",
+            author = "Shapiro, Marc",
+            title = "{SOS}: a distributed Object-Oriented Operating System",
+            booktitle = "2nd {ACM SIGOPS} European Workshop, on ``Making
+                         Distributed Systems Work{''}",
+            address = "Amsterdam (the Netherlands)",
+            year = 1986, month = sep,
+            note = "(Position paper)"
+            )
+
+    @InProceedings{cplus:dynalink:inner,
+      author = 	"Philippe Gautron and Marc Shapiro",
+      title = 	"Two extensions to {C++}: a dynamic link editor, and
+                     inner data",
+      booktitle = 	"Proc. C++ Workshop",
+      year = 	1987,
+      organization = 	"USENIX",
+      address = 	"Santa Fe NM (USA)",
+      month = 	nov
+    }
+A \cite{sos:sigops86}, \cite{cplus:dynalink:inner} will come out like this:
+alpha style:    [Sha86], [GS87]
+alpha3 style:   [Sha86], [Gau87]
+long style:     [Shapiro 86], [Gautron 87]
+key style:      [sos:sigops86], [cplus:dynalink:inner]
+
+[PS: I also have a bibtex mode for GNU Emacs, for those interested]
+
+[I have renamed the file shapiro-btxbst-0.98.doc because of the
+stipulation that the file be renamed if any edits are made. - Ken.]

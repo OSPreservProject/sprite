@@ -1,0 +1,330 @@
+
+
+
+listbox                   User Commands                   listbox
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     listbox - Create and manipulate listbox widgets
+
+SSYYNNOOPPSSIISS
+     lliissttbbooxx _p_a_t_h_N_a_m_e ?_o_p_t_i_o_n_s?
+
+SSTTAANNDDAARRDD OOPPTTIIOONNSS
+     bbaacckkggrroouunndd      ffoorreeggrroouunndd     sseelleeccttBBaacckkggrroouunnddyySSccrroollllCCoommmmaanndd |
+     bboorrddeerrWWiiddtthh     ffoonntt           sseelleeccttBBoorrddeerrWWiiddtthh              |
+     ccuurrssoorr          ggeeoommeettrryy       sseelleeccttFFoorreeggrroouunndd               |
+     eexxppoorrttSSeelleeccttiioonn rreelliieeff         xxSSccrroollllCCoommmmaanndd                 |
+
+     See the ``options'' manual entry for details on the standard
+     options.
+
+WWIIDDGGEETT--SSPPEECCIIFFIICC OOPPTTIIOONNSS
+     None.
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The lliissttbbooxx command creates a new window (given by the _p_a_t_h_-
+     _N_a_m_e  argument)  and  makes it into a listbox widget.  Addi-
+     tional options, described above, may  be  specified  on  the
+     command  line or in the option database to configure aspects
+     of the listbox such as its colors, font, text,  and  relief.
+     The  lliissttbbooxx  command returns its _p_a_t_h_N_a_m_e argument.  At the
+     time this command is invoked, there must not exist a  window
+     named _p_a_t_h_N_a_m_e, but _p_a_t_h_N_a_m_e's parent must exist.
+
+     A listbox is a widget that displays a list of  strings,  one
+     per line.  When first created, a new listbox has no elements
+     in its list.  Elements may be added or deleted using  widget
+     commands described below.  In addition, one or more elements
+     may be selected as described below.  If a listbox is export-  |
+     ing its selection (see eexxppoorrttSSeelleeccttiioonn option), then it will  |
+     observe the standard X11 protocols for handling  the  selec-
+     tion;  listbox selections are available as type SSTTRRIINNGG, con-
+     sisting of a Tcl list with one entry for each selected  ele-
+     ment.
+
+     For large lists only a subset of the list elements  will  be
+     displayed in the listbox window at once;  commands described
+     below may be used to change the view in the  window.   List-
+     boxes  allow scrolling in both directions using the standard  |
+     xxSSccrroollllCCoommmmaanndd and yySSccrroollllCCoommmmaanndd options.  They  also  sup-
+     port scanning, as described below.
+
+
+
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+listbox                   User Commands                   listbox
+
+
+
+WWIIDDGGEETT CCOOMMMMAANNDD
+     The lliissttbbooxx command creates a new Tcl command whose name  is
+     _p_a_t_h_N_a_m_e.  This command may be used to invoke various opera-
+     tions on the widget.  It has the following general form:
+
+          _p_a_t_h_N_a_m_e _o_p_t_i_o_n ?_a_r_g _a_r_g ...?
+     _O_p_t_i_o_n and the _a_r_gs determine the exact behavior of the com-
+     mand.  The following commands are possible for listbox widg-
+     ets:
+
+     _p_a_t_h_N_a_m_e ccoonnffiigguurree ?_o_p_t_i_o_n? ?_v_a_l_u_e _o_p_t_i_o_n _v_a_l_u_e ...?
+          Query  or  modify  the  configuration  options  of  the
+          widget.   If  no  _o_p_t_i_o_n  is  specified, returns a list
+          describing all of the available  options  for  _p_a_t_h_N_a_m_e
+          (see  TTkk__CCoonnffiigguurreeIInnffoo for information on the format of
+          this list).  If _o_p_t_i_o_n is specified with no _v_a_l_u_e, then
+          the  command  returns  a  list describing the one named
+          option (this list will be identical to the  correspond-
+          ing  sublist  of  the  value  returned  if no _o_p_t_i_o_n is
+          specified).  If one  or  more  _o_p_t_i_o_n-_v_a_l_u_e  pairs  are
+          specified,  then  the command modifies the given widget
+          option(s) to have the given value(s);  in this case the
+          command  returns  an empty string.  _O_p_t_i_o_n may have any
+          of the values accepted by the lliissttbbooxx command.
+
+     _p_a_t_h_N_a_m_e ccuurrsseelleeccttiioonn
+          Returns a list containing the indices  of  all  of  the  |
+          elements  in  the  listbox that are currently selected.  |
+          If there are no elements selected in the  listbox  then  |
+          an empty string is returned.
+
+     _p_a_t_h_N_a_m_e ddeelleettee _f_i_r_s_t ?_l_a_s_t?
+          Delete one or more elements of the listbox.  _F_i_r_s_t  and
+          _l_a_s_t  give  the  integer  indices of the first and last
+          elements in the range to be  deleted.   If  _l_a_s_t  isn't
+          specified  it  defaults to _f_i_r_s_t, i.e. a single element
+          is deleted.  An index of 00  corresponds  to  the  first
+          element  in  the  listbox.  Either _f_i_r_s_t or _l_a_s_t may be
+          specified as eenndd, in which case it refers to  the  last
+          element  of the listbox.  This command returns an empty
+          string
+
+     _p_a_t_h_N_a_m_e ggeett _i_n_d_e_x
+          Return the contents of the listbox element indicated by
+          _i_n_d_e_x.    _I_n_d_e_x  must  be  a  non-negative  integer  (0
+          corresponds to the first element in the listbox), or it
+          may  also be specified as eenndd to indicate the last ele-
+          ment in the listbox.
+
+     _p_a_t_h_N_a_m_e iinnsseerrtt _i_n_d_e_x ?_e_l_e_m_e_n_t _e_l_e_m_e_n_t ...?
+          Insert zero or more  new  elements  in  the  list  just
+          before  the  element  given  by  _i_n_d_e_x.   If  _i_n_d_e_x  is
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+listbox                   User Commands                   listbox
+
+
+
+          specified as eenndd then the new elements are added to the
+          end of the list.  Returns an empty string.
+
+     _p_a_t_h_N_a_m_e nneeaarreesstt _y
+          Given a y-coordinate within the  listbox  window,  this
+          command returns the index of the (visible) listbox ele-
+          ment nearest to that y-coordinate.
+
+     _p_a_t_h_N_a_m_e ssccaann _o_p_t_i_o_n _a_r_g_s
+          This command is used to  implement  scanning  on  list-
+          boxes.  It has two forms, depending on _o_p_t_i_o_n:
+
+          _p_a_t_h_N_a_m_e ssccaann mmaarrkk _x _y
+               Records _x and _y and the current view in the  list-  |
+               box  window;   used in conjunction with later ssccaann  |
+               ddrraaggttoo commands.  Typically this command is  asso-  |
+               ciated  with  a  mouse button press in the widget.  |
+               It returns an empty string.                         |
+
+          _p_a_t_h_N_a_m_e ssccaann ddrraaggttoo _x _y.                                     ||
+               This command computes the difference between its _x  |
+               and _y arguments and the _x and _y arguments  to  the  |
+               last  ssccaann  mmaarrkk  command for the widget.  It then  |
+               adjusts the view by 10  times  the  difference  in  |
+               coordinates.  This command is typically associated
+               with mouse motion events in the widget, to produce
+               the  effect  of  dragging  the  list at high speed
+               through the window.  The return value is an  empty
+               string.
+
+     _p_a_t_h_N_a_m_e sseelleecctt _o_p_t_i_o_n _a_r_g
+          This command is used to adjust the selection  within  a
+          listbox.   It  has  several forms, depending on _o_p_t_i_o_n.
+          In all of the forms the index eenndd refers  to  the  last
+          element in the listbox.
+
+          _p_a_t_h_N_a_m_e sseelleecctt aaddjjuusstt _i_n_d_e_x
+               Locate the end of the  selection  nearest  to  the
+               element given by _i_n_d_e_x, and adjust that end of the
+               selection to be at _i_n_d_e_x (i.e  including  but  not
+               going  beyond _i_n_d_e_x).  The other end of the selec-
+               tion is made the anchor point for future sseelleecctt ttoo
+               commands.  If the selection isn't currently in the
+               listbox, then this command  is  identical  to  the
+               sseelleecctt  ffrroomm  widget  command.   Returns  an empty
+               string.
+
+          _p_a_t_h_N_a_m_e sseelleecctt cclleeaarr
+               If the selection is in this  listbox  then  it  is  |
+               cleared so that none of the listbox's elements are  |
+               selected anymore.
+
+
+
+
+Sprite v1.0                                                     3
+
+
+
+
+
+
+listbox                   User Commands                   listbox
+
+
+
+          _p_a_t_h_N_a_m_e sseelleecctt ffrroomm _i_n_d_e_x
+               Set the selection to consist of element _i_n_d_e_x, and
+               make  _i_n_d_e_x  the anchor point for future sseelleecctt ttoo
+               widget commands.  Returns an empty string.
+
+          _p_a_t_h_N_a_m_e sseelleecctt ttoo _i_n_d_e_x
+               Set the selection to consist of the elements  from
+               the anchor point to element _i_n_d_e_x, inclusive.  The
+               anchor point is  determined  by  the  most  recent
+               sseelleecctt  ffrroomm  or  sseelleecctt  aaddjjuusstt  command  in this
+               widget.  If the selection isn't  in  this  widget,
+               this command is identical to sseelleecctt ffrroomm.  Returns
+               an empty string.
+
+     _p_a_t_h_N_a_m_e ssiizzee
+          Returns a decimal string indicating the total number of
+          elements in the listbox.  Returns an empty string.
+
+     _p_a_t_h_N_a_m_e xxvviieeww _i_n_d_e_x
+          Adjust the view in the listbox so that character  posi-  |
+          tion _i_n_d_e_x is displayed at the left edge of the widget.  |
+          Returns an empty string.                                 |
+
+     _p_a_t_h_N_a_m_e yyvviieeww _i_n_d_e_x                                               ||
+          Adjust the view in the listbox so that element _i_n_d_e_x is  |
+          displayed at the top of the widget.  If _i_n_d_e_x is speci-  |
+          fied  as eenndd it indicates the last element of the list-  |
+          box.  Returns an empty string.
+
+
+DDEEFFAAUULLTT BBIINNDDIINNGGSS
+     Tk automatically creates class bindings for  listboxes  that  |
+     give them the following default behavior:                     |
+
+     [1]                                                                ||
+          When  button  1  is pressed over a listbox, the element  |
+          underneath the mouse cursor is selected.  The mouse can  |
+          be dragged to select a range of elements.                |
+
+     [2]                                                                ||
+          The  ends  of the selection can be adjusted by dragging  |
+          with mouse button 1 while the shift key is down;   this  |
+          will  adjust  the end of the selection that was nearest  |
+          to the mouse cursor when button 1 was pressed.           |
+
+     [3]                                                                ||
+          The  view  in  the  listbox can be adjusted by dragging  |
+          with mouse button 2.                                     |
+
+     The behavior of listboxes can be  changed  by  defining  new  |
+     bindings  for  individual widgets or by redefining the class  |
+     bindings.
+
+
+
+Sprite v1.0                                                     4
+
+
+
+
+
+
+listbox                   User Commands                   listbox
+
+
+
+KKEEYYWWOORRDDSS
+     listbox, widget
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     5
+
+
+

@@ -1,0 +1,379 @@
+head     9.5;
+branch   ;
+access   ;
+symbols  ds3100:9.5 sun3:9.5 sun4nw:9.5 symm:9.5 spur:9.5 sprited:9.4.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.5
+date     91.09.10.18.42.51;  author rab;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     91.02.12.14.15.42;  author jhh;  state Exp;
+branches 9.4.1.1;
+next     9.3;
+
+9.3
+date     90.10.02.16.29.43;  author mgbaker;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.09.20.15.17.23;  author mgbaker;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.09.11.11.35.22;  author mgbaker;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.17.28;  author douglis;  state Stable;
+branches ;
+next     8.1;
+
+8.1
+date     89.06.02.12.57.35;  author mendel;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.34.33;  author douglis;  state Stable;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.26.18.27.40;  author mlgray;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.24.26;  author brent;  state Stable;
+branches ;
+next     5.2;
+
+5.2
+date     88.08.01.17.12.10;  author mlgray;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.09.29.09.49.41;  author brent;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.48.23;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.4.1.1
+date     91.10.21.20.58.56;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.5
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@/*
+ * rpcInt.h --
+ *
+ *	Internal declarations for the RPC module.  This has data
+ *	structures that are common to both the client and server
+ *	parts of the RPC system.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/rpc/RCS/rpcInt.h,v 9.4 91/02/12 14:15:42 jhh Exp Locker: rab $ SPRITE (Berkeley)
+ */
+
+#ifndef _RPCINT
+#define _RPCINT
+
+#ifdef KERNEL
+#include <rpc.h>
+#include <rpcPacket.h>
+#include <rpcTypes.h>
+#else
+#include <kernel/rpc.h>
+#include <kernel/rpcPacket.h>
+#include <kernel/rpcTypes.h>
+#endif /* KERNEL */
+
+/*
+ * A general On/Off switch set via the Sys_Stats SYS_RPC_ENABLE_SERVICE command.
+ */
+extern Boolean rpcServiceEnabled;
+
+/*
+ * A boot ID for this host.  This is initialized one time when we boot.
+ * It is included in the header of out-going messages, and
+ * other machines detect that we have re-booted when this changes.
+ */
+extern unsigned int rpcBootID;
+
+/*
+ * A set of masks used by the client and server dispatcher to see
+ * if a fragmented message is complete.
+ */
+extern unsigned int rpcCompleteMask[];
+
+extern void RpcScatter _ARGS_((register RpcHdr *rpcHdrPtr, RpcBufferSet *bufferPtr));
+
+/*
+ * Byte-swap routines and variables.
+ */
+extern	Boolean	rpcTestByteSwap;
+
+extern Boolean RpcByteSwapInComing _ARGS_((RpcHdr *rpcHdrPtr, 
+    int packetLength));
+extern int RpcSetTestByteSwap _ARGS_((void));
+extern int RpcUnsetTestByteSwap _ARGS_((void));
+extern void RpcPrintHdr _ARGS_((RpcHdr *rpcHdrPtr));
+extern void RpcByteSwapBuffer _ARGS_((register int *bufferPtr, register int numInts));
+extern void RpcCrashCallBack _ARGS_((int clientID, ClientData data));
+extern void RpcResetNoServers _ARGS_((int value)); 
+extern void RpcDaemonWait _ARGS_((Timer_QueueElement *queueEntryPtr)); 
+extern void RpcDaemonWakeup _ARGS_((Timer_Ticks time, ClientData data));
+extern void RpcBufferInit _ARGS_((RpcHdr *rpcHdrPtr, RpcBufferSet *bufferSetPtr, int channel, int serverHint));
+
+
+#endif /* _RPCINT */
+@
+
+
+9.4
+log
+@Added RPC sanity checking
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/rpc/RCS/rpcInt.h,v 9.3 90/10/02 16:29:43 mgbaker Exp $ SPRITE (Berkeley)
+a46 3
+extern ReturnStatus RpcSanityCheck _ARGS_((int length, 
+		    Net_ScatterGather *scatterPtr, int packetLength));
+
+@
+
+
+9.4.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/rpc/RCS/rpcInt.h,v 9.4 91/02/12 14:15:42 jhh Exp $ SPRITE (Berkeley)
+@
+
+
+9.3
+log
+@More prototyping garbage.
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/rpc/RCS/rpcInt.h,v 9.2 90/09/20 15:17:23 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d47 2
+d56 2
+a57 1
+extern Boolean RpcByteSwapInComing _ARGS_((RpcHdr *rpcHdrPtr));
+@
+
+
+9.2
+log
+@Fixed some prototyping.
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/rpc/RCS/rpcInt.h,v 9.1 90/09/11 11:35:22 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d18 9
+a26 17
+#include "rpc.h"
+/*
+ * An RPC message is composed of three parts:  the RPC control information,
+ * the first data area, ``parameters'', and the second data area, ``data''.
+ * A set of three buffer scatter/gather elements is used to specify
+ * a complete message. A fourth part of the message is the transport 
+ * protocol header buffer that proceed any message.
+ */
+typedef struct RpcBufferSet {
+    Net_ScatterGather	protoHdrBuffer;
+    Net_ScatterGather	rpcHdrBuffer;
+    Net_ScatterGather	paramBuffer;
+    Net_ScatterGather	dataBuffer;
+} RpcBufferSet;
+
+
+#include "rpcPacket.h"
+a38 7
+
+/*
+ * The servers keep preallocated buffer space for client requests.
+ * These constants define how large these buffers are.
+ */
+#define RPC_MAX_PARAM_SIZE	 1024
+#define RPC_MAX_DATA_SIZE	16384
+@
+
+
+9.1
+log
+@Added function prototypes (Mendel checking for mary)
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/rpc/RCS/rpcInt.h,v 9.0 89/09/12 15:17:28 douglis Stable Locker: mgbaker $ SPRITE (Berkeley)
+d75 2
+a76 2
+extern void RpcnesetNoServers _ARGS_((int value)); 
+extern void RpcDnemonWait _ARGS_((Timer_QueueElement *queueEntryPtr)); 
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/rpc/RCS/rpcInt.h,v 8.1 89/06/02 12:57:35 mendel Exp Locker: douglis $ SPRITE (Berkeley)
+d18 16
+a48 14
+ * An RPC message is composed of three parts:  the RPC control information,
+ * the first data area, ``parameters'', and the second data area, ``data''.
+ * A set of three buffer scatter/gather elements is used to specify
+ * a complete message. A fourth part of the message is the transport 
+ * protocol header buffer that proceed any message.
+ */
+typedef struct RpcBufferSet {
+    Net_ScatterGather	protoHdrBuffer;
+    Net_ScatterGather	rpcHdrBuffer;
+    Net_ScatterGather	paramBuffer;
+    Net_ScatterGather	dataBuffer;
+} RpcBufferSet;
+
+/*
+d61 1
+a61 1
+extern	void	RpcScatter();
+d63 1
+d65 1
+a65 1
+ * Byte-swap routines.
+d68 13
+a80 3
+extern	Boolean	RpcByteSwapInComing();
+extern	void	RpcPrintHdr();
+extern	void	RpcByteSwapBuffer();
+@
+
+
+8.1
+log
+@Changes for RPC on IP. 
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/rpc/RCS/rpcInt.h,v 8.0 88/11/11 18:34:33 douglis Stable Locker: mendel $ SPRITE (Berkeley)
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/rpc/RCS/rpcInt.h,v 6.1 88/08/26 18:27:40 mlgray Exp Locker: douglis $ SPRITE (Berkeley)
+d36 2
+a37 1
+ * a complete message.
+d40 1
+@
+
+
+6.1
+log
+@Fixed some lint errors.
+@
+text
+@d12 1
+a12 1
+ * $Header: rpcInt.h,v 6.0 88/08/11 12:24:26 brent Stable $ SPRITE (Berkeley)
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d12 1
+a12 1
+ * $Header: rpcInt.h,v 5.2 88/08/01 17:12:10 mlgray Exp $ SPRITE (Berkeley)
+d66 1
+a66 1
+#endif _RPCINT
+@
+
+
+5.2
+log
+@Doing byte-swapping.
+@
+text
+@d12 1
+a12 1
+ * $Header: rpcInt.h,v 5.1 87/09/29 09:49:41 brent Exp $ SPRITE (Berkeley)
+@
+
+
+5.1
+log
+@Added rpcEnableService boolean.
+@
+text
+@d12 1
+a12 1
+ * $Header: rpcInt.h,v 5.0 87/08/11 10:48:23 sprite Exp $ SPRITE (Berkeley)
+d58 8
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d12 1
+a12 1
+ * $Header: rpcInt.h,v 3.0 86/09/17 22:48:35 douglis Stable $ SPRITE (Berkeley)
+d21 1
+a21 1
+ * The sprite id of this hosts as maintained by the Rpc system.
+d23 1
+a23 1
+extern int rpcSpriteID;
+@

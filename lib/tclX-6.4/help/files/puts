@@ -1,0 +1,11 @@
+          puts fileId string ?nonewline?
+               Writes the characters given by string to the file given
+               by  fileId.   Puts normally outputs a newline character
+               after string, but this feature  may  be  suppressed  by
+               specifying  the nonewline argument.  Output to files is
+               buffered internally by Tcl; the flush  command  may  be
+               used to force buffered characters to be output.  FileId
+               must have been the return value from a previous call to
+               open,  or it may be stdout or stderr to refer to one of
+               the standard I/O channels; it must refer to a file that
+               was opened for writing.

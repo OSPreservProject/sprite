@@ -1,0 +1,91 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  sprited:1.2.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     90.06.21.14.55.51;  author shirriff;  state Exp;
+branches 1.2.1.1;
+next     1.1;
+
+1.1
+date     90.02.20.12.08.02;  author jhh;  state Exp;
+branches ;
+next     ;
+
+1.2.1.1
+date     91.09.09.22.11.36;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Added #include <sys/types.h>
+@
+text
+@
+/* 	@@(#)ipc.h	4.1.1.1	(ULTRIX)	8/12/88 	*/
+
+#include <sys/types.h>
+
+/*
+ *
+ *   Modification history:
+ *
+ * 01 Mar 85 -- depp
+ *	New file derived from System V IPC
+ *
+ */
+
+/* Common IPC Access Structure */
+struct ipc_perm {
+	ushort	uid;	/* owner's user id */
+	ushort	gid;	/* owner's group id */
+	ushort	cuid;	/* creator's user id */
+	ushort	cgid;	/* creator's group id */
+	ushort	mode;	/* access modes */
+	ushort	seq;	/* slot usage sequence number */
+	long	key;	/* key */
+};
+
+/* Common IPC Definitions. */
+/* Mode bits. */
+#define	IPC_ALLOC	0100000		/* entry currently allocated */
+#define	IPC_CREAT	0001000		/* create entry if key doesn't exist */
+#define	IPC_EXCL	0002000		/* fail if key exists */
+#define	IPC_NOWAIT	0004000		/* error if request must wait */
+#define IPC_SYSTEM      0040000         /* share memory between kern/user */
+
+/* Keys. */
+#define	IPC_PRIVATE	(long)0	/* private key */
+
+/* Control Commands. */
+#define	IPC_RMID	0	/* remove identifier */
+#define	IPC_SET		1	/* set options */
+#define	IPC_STAT	2	/* get options */
+@
+
+
+1.2.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d4 2
+@

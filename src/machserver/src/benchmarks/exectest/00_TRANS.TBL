@@ -1,0 +1,6 @@
+D DS3100_M                          	ds3100.md
+F EXECTEST.C;1                      	exectest.c
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+F TIME.FIL;1                        	time.file

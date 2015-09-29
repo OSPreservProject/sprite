@@ -1,0 +1,132 @@
+% letter.tex  3 December 1984
+\documentstyle{article}
+
+
+\newcommand\bs{\char '134 }  % A backslash character for \tt font
+\newcommand\lb{\char '173 }  % A left brace character for \tt font
+\newcommand\rb{\char '175 }  % A right brace character for \tt font
+
+
+\begin{document}
+
+\begin{center}
+\Large Making Letters With \LaTeX
+\end{center}
+
+You can now use \LaTeX{} to typeset letters---both personal and
+bus\-i\-ness---and their mailing labels.  The standard page layout and
+document style to use are both called \hbox{\tt letter}, though there
+may be additional page layouts and document styles available at your
+location.  Your {\tt .TEX} file starts with the usual commands and
+ends with the usual \hbox{\verb"\end{document}"}.
+
+The {\tt letter} document style is designed to make a number of
+letters at once.  Consequently, the standard parts of a letter, which
+are likely to be the same in all your letters, are defined with
+declarations.  The following commands are declarations; they take a
+single argument.
+
+\begin{description}
+\item[{\tt \bs name}:] Your name, as it should appear in the
+   return address on the envelope.  For example,
+\begin{verbatim}
+       \name{Leslie Lamport}
+\end{verbatim}
+
+
+\item[{\tt \bs address}] The return address, as it should appear
+    on the letter and the envelope.  Separate lines of the address
+    should be separated by \verb"\\" commands.  For example,
+\begin{verbatim}
+    \address{2345 Sunnyside Lane \\
+             San Francisco, CA 94123}
+\end{verbatim}
+    If you do not make an
+    \hbox{\verb"\address"} declaration, then the letter will
+    be formatted for copying onto your organization's standard
+    letterhead.  If you give an \hbox{\verb"\address"} declaration,
+    then the letter will be formatted as a personal letter.
+
+\item[{\tt \bs signature}:] Your name, as it should appear at the
+   end of the letter underneath the space for your signature.
+   Items that should go on separate lines should be separated
+   by \verb"\\" commands, as in
+\begin{verbatim}
+    \signature{ Robert Smith \\ Director of 
+                Research}
+\end{verbatim}
+
+
+\item[{\tt \bs location}:] This modifies your organization's standard
+    address.  For example, it might be a room number.
+
+\item[{\tt \bs telephone}:]  Your telephone number.
+\end{description}
+
+These declarations have the usual scoping rules.  Hence, you would
+probably make the ``standard'' declarations at the beginning of your
+file, with local modifications for the individual letters.  Or, you
+could have all your business letters first, then give an
+\hbox{\verb"\address"} declaration, followed by your personal letters.
+Some of these declarations may be ignored by the document style.
+
+Each letter is a {\tt letter} environment, whose argument
+is the name and address of the recipient.  For example, 
+you might have
+\begin{verbatim}
+       \begin{letter}{Mr. John Doe \\ 2345 Jones St. 
+           \\ Oakland, CA 91123}
+         ...
+       \end{letter}
+\end{verbatim}
+
+Following the \verb"\begin{letter}" comes any declarations
+local to the letter---for example, if you are using a
+nonstandard \hbox{\verb"\signature"} for this letter.
+
+The letter itself begins with an \hbox{\verb"\opening"}
+command, such as
+\begin{verbatim}
+       \opening{Dear John,}
+\end{verbatim}
+The text of the letter follows.  It is typed as ordinary
+\LaTeX{} input.  (Commands that make no sense in a letter,
+like \hbox{\verb"\chapter"}, don't work.)  The letter
+closes with a \hbox{\verb"\closing"} command, like
+\begin{verbatim}
+       \closing{Best regards,}
+\end{verbatim}
+which generates the ``Best regards,'' together with the ``signature''.
+
+After the closing, you can have additional material.  This is typed as
+usual, except that paragraphs are not indented, regardless of whether
+or not they are indented in the main body of the letter.  The 
+\hbox{\verb"\cc"} command produces the usual \hbox{``cc: $\ldots$''},
+as in:
+\begin{verbatim}
+      \cc{J. Tinkers \\ R. Evers \\ C. Chance}
+\end{verbatim}
+There's also a similar \hbox{\verb"\encl"} command for a list of
+enclosures.  \LaTeX{} just puts ordinary interparagraph vertical space
+between all this end matter, which is usually not enough.  Use the
+\hbox{\verb"\smallskip"}, \hbox{\verb"\medskip"}, and
+\hbox{\verb"\bigskip"} commands to put in the right amount of space.
+
+The \verb"\ps" command resumes normal formatting in case you want to
+add a postscript.  The \verb"\ps" command does not generate any text;
+you have to type the ``P.S.'' yourself.  Page breaking, which is
+inhibited after the \hbox{\verb"\closing"}, is allowed after the
+first line of output following the \verb"\ps" command.
+
+You can get \LaTeX{} to produce mailing labels by typing a 
+\hbox{\verb"\makelabels"} command before the \hbox{\verb"\begin{document}"}
+command.  \LaTeX{} prints the labels after all the letters, in a
+format suitable for xerographic copying onto ``peel-off'' labels.
+(The exact format will depend upon the labels available at your
+institution.)  A null \hbox{\tt letter} environment---i.e., one
+with nothing between the \hbox{\verb|\begin|} and
+\hbox{\verb|\end|} commands---will produce nothing but a mailing
+label.  Use such null environments to produce the mailing labels
+for copies of the letter.
+
+\end{document}

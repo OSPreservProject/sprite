@@ -1,0 +1,653 @@
+head     1.12;
+branch   ;
+access   ;
+symbols  sprited:1.10.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.12
+date     92.08.05.16.33.46;  author jhh;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     92.01.10.14.29.42;  author voelker;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     90.10.19.15.50.56;  author jhh;  state Exp;
+branches 1.10.1.1;
+next     1.9;
+
+1.9
+date     90.09.11.14.40.13;  author kupfer;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     90.06.21.12.48.49;  author jhh;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     90.05.14.14.47.06;  author jhh;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.08.07.17.48.22;  author mendel;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.08.01.15.01.14;  author mendel;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.07.25.20.25.20;  author mendel;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.07.20.19.49.49;  author mendel;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.06.21.13.09.28;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.21.13.04.39;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.10.1.1
+date     91.10.21.22.08.00;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.12
+log
+@added fddi, conversion to new net module
+@
+text
+@/*
+ * net.h --
+ *
+ *	Declarations of the network library code.
+ *
+ * Copyright 1987 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/lib/include/RCS/net.h,v 1.11 92/01/10 14:29:42 voelker Exp Locker: jhh $ SPRITE (Berkeley)
+ */
+
+#ifndef _NET_USER
+#define _NET_USER
+
+#include "machparam.h"
+#include "netEther.h"
+#include "netInet.h"
+#include "netUltra.h"
+#include "netFDDI.h"
+#include "sprite.h"
+
+/*
+ * Types of addresses.
+ */
+
+typedef int Net_AddressType;
+
+#define NET_ADDRESS_NONE	((Net_AddressType) 0)	/* Invalid */
+#define NET_ADDRESS_ETHER	((Net_AddressType) 1)	/* Ethernet. */
+#define NET_ADDRESS_ULTRA	((Net_AddressType) 2)	/* UltraNet. */
+#define NET_ADDRESS_FDDI	((Net_AddressType) 3)	/* FDDI. */
+#define NET_ADDRESS_INET	((Net_AddressType) 4)	/* IP. */
+
+
+
+/*
+ * A network address.  The "generic" field must be at least as large as
+ * any of the other fields.
+ */
+
+typedef struct Net_Address {
+    Net_AddressType		type;
+    union {
+	Net_EtherAddress	ether;
+	Net_UltraAddress	ultra;
+	Net_FDDIAddress		fddi;
+	Net_InetAddress		inet;
+    } address;
+} Net_Address;
+
+/*
+ * Maximum number of network protocols.  Right now we support two,
+ * raw (ethernet for example) and inet
+ */
+
+#define NET_MAX_PROTOCOLS 2
+
+/*
+ * The different protocols.
+ */
+
+#define NET_PROTO_RAW	0
+#define NET_PROTO_INET	1
+
+
+/* 
+ * This is the version number stored in the route.  Set this before
+ * installing a route and check it when looking at one.
+ */
+#define NET_ROUTE_VERSION 0x70500
+
+/*
+ * Number of different types of networks. 
+ */
+
+#define NET_NUM_NETWORK_TYPES 3
+
+/*
+ * Type of network.  See below.
+ */
+
+typedef int Net_NetworkType;
+
+/*
+ * Types of network (values for Net_NetworkType).
+ */
+
+#define NET_NETWORK_ETHER	((Net_NetworkType) 0)	/* Ethernet. */
+#define NET_NETWORK_ULTRA	((Net_NetworkType) 1)	/* Ultranet. */
+#define NET_NETWORK_FDDI        ((Net_NetworkType) 2)	/* FDDI. */
+
+/*
+ * This structure defines the packet headers.
+ */
+typedef union Net_Header {
+    Net_EtherHdr	etherHdr;	/* Raw ethernet packet. */
+    struct {				/* An IP packet on the ethernet. */
+	Net_EtherHdr	etherHdr;
+	Net_IPHeader	ipHdr;
+    } inetHdr;		
+} Net_Header;
+
+/*
+ * The user-level view of a route. This structure is used to both install
+ * routes and to get their contents.  The fields are marked 'in' if they
+ * must be set to install a route, and 'out' if they are set when 
+ * getting a route's contents.
+ */
+
+typedef struct Net_UserRoute {
+    int			version;	/* Version number. (in/out)*/
+    int			spriteID;	/* Sprite ID of route target. (in/out)*/
+    Net_Address		interAddress;	/* Address of interface for route. 
+					 * (in/out) */
+    int			protocol;	/* Route protocol. (in/out) */
+    int			flags;		/* Flags. See below. (in/out) */
+    int			refCount;	/* Number of references to route. 
+					 * (out). */
+    int			routeID;	/* Unique route ID. (out)*/
+    int			minPacket;	/* Minimum packet size for route. 
+					 * This does not include any headers.
+					 * (out) */
+    int			maxPacket;	/* Maximum packet size for route. 
+					 * This does not include any headers.
+					 * (out) */
+    int			minRpc;		/* Minimum RPC to send over route.
+					 * (in/out) */
+    int			maxRpc;		/* Maximum RPC to send over route.
+					 * (in/out) */
+    Net_NetworkType	netType;	/* Type of network. See above. (out) */
+    Net_Address		netAddress[NET_MAX_PROTOCOLS];	/* Address of target
+							 * for each protocol.
+							   (in/out) */
+    char		desc[64];	/* Route description for debugging.
+					 * (out) */
+    char		hostname[20];	/* Host name. (in/out) */
+    char		machType[12];	/* Host machine type. (in/out) */
+    ClientData		userData;	/* Data that is uninterpreted by 
+					 * kernel. (in/out) */
+} Net_UserRoute;
+
+#ifndef KERNEL
+typedef Net_UserRoute Net_Route;	/* User's see this structure as a
+					 * Net_Route. */
+#endif
+
+#ifdef KERNEL
+/*
+ * These are the backwards compatible versions of Net_RouteInfo. 
+ * and Net_Address. Don't use this in new programs. These definitions
+ * can be removed once they are no longer used by the kernel.
+ */
+typedef union Net_AddressOld {
+    Net_EtherAddress		ether;
+    Net_InetAddress		inet;
+    Net_UltraAddress		ultra;
+    Net_FDDIAddress		fddi;
+    struct { char data[8]; } 	generic;
+} Net_AddressOld;
+
+typedef struct Net_RouteInfoOld {
+    int			version;	/* Version number. (in/out)*/
+    int			spriteID;	/* Sprite ID of route target. (in/out)*/
+    int			interface;	/* The interface number to use. 
+					 * (in/out) */
+    int			protocol;	/* Route protocol. (in/out) */
+    int			flags;		/* Flags. See below. (in/out) */
+    int			refCount;	/* Number of references to route. 
+					 * (out). */
+    int			routeID;	/* Unique route ID. (in/out)*/
+    int			maxBytes;	/* Maximum transfer unit for route. 
+					 * This does not include any headers.
+					 * (out) */
+    int			minBytes;	/* Minimum transfer unit for route. 
+					 * This does not include any headers.
+					 * (out) */
+    Net_NetworkType	netType;	/* Type of network. See above. (out) */
+    Net_AddressOld	netAddress[NET_MAX_PROTOCOLS];	/* Address of target
+							 * for each protocol.
+							   (in/out) */
+    char		desc[64];	/* Route description for debugging.
+					 * (out) */
+    char		hostname[20];	/* Host name. (in/out) */
+    char		machType[12];	/* Host machine type. (in/out) */
+    ClientData		userData;	/* Data that is uninterpreted by 
+					 * kernel. (in/out) */
+    Net_Header		header;		/* The packet header. (out) */
+} Net_RouteInfoOld;
+
+#endif
+/*
+ * Define the flags field.
+ */
+
+#define NET_FLAGS_VALID 0x1
+
+/*
+ * Define the special Sprite ID used for broadcasting.
+ */
+#define		NET_BROADCAST_HOSTID	0
+
+
+/* 
+ * If we're building a kernel, don't include this declaration.  It 
+ * clashes with the declaration for the real kernel routine.
+ */
+
+#ifndef KERNEL
+
+extern ReturnStatus Net_InstallRoute _ARGS_((int spriteID, int flags,
+					     int type, ClientData clientData,
+					     char *hostname, char
+					     *machType));
+
+#endif /* KERNEL */
+
+
+/*
+ * Declarations for -lnet library.
+ */
+
+extern Net_InetAddress	Net_StringToInetAddr _ARGS_((char *cp));
+extern ReturnStatus	Net_StringToAddr _ARGS_((char *buffer, 
+				Net_AddressType type, Net_Address *addressPtr));
+extern char		*Net_InetAddrToString _ARGS_((Net_InetAddress address,
+						      char *buffer));
+extern char		*Net_AddrToString _ARGS_((Net_Address *netAddressPtr,
+						char *buffer));
+extern unsigned int	Net_StringToNetNum _ARGS_((char *cp));
+extern unsigned int	Net_InetAddrHostNum _ARGS_((Net_InetAddress inetAddr));
+extern unsigned int	Net_InetAddrNetNum _ARGS_((Net_InetAddress addr));
+extern unsigned int	Net_InetAddrNetMask _ARGS_((Net_InetAddress addr));
+extern Net_InetAddress	Net_MakeInetAddr _ARGS_((unsigned int net,
+						 unsigned int host));
+extern char		*Net_EtherAddrToString _ARGS_((
+				Net_EtherAddress *etherAddrPtr,
+				char buffer[18]));
+extern void		Net_StringToEtherAddr _ARGS_((char *buffer,
+					   Net_EtherAddress *etherAddressPtr));
+extern 	char		*Net_UltraAddrToString _ARGS_((
+				Net_UltraAddress *ultraAddrPtr, char *buffer));
+extern void		Net_StringToUltraAddr _ARGS_((char *buffer,
+					   Net_UltraAddress *ultraAddressPtr));
+extern 	char		*Net_FDDIAddrToString _ARGS_((
+				Net_FDDIAddress *fddiAddrPtr, char *buffer));
+extern void		Net_StringToFDDIAddr _ARGS_((char *buffer,
+					   Net_FDDIAddress *fddiAddressPtr));
+extern unsigned short	Net_InetChecksum _ARGS_((int len, Address bufPtr));
+extern unsigned short	Net_InetChecksum2 _ARGS_((int len, Address bufPtr,
+					       Net_IPPseudoHdr *pseudoHdrPtr));
+extern int		Net_AddrCmp _ARGS_((Net_Address *aPtr, 
+				Net_Address *bPtr));
+extern ReturnStatus	Net_SetAddress _ARGS_((Net_AddressType type,
+				Address specificPtr, Net_Address *addrPtr));
+extern ReturnStatus	Net_GetAddress _ARGS_((Net_Address *addrPtr, 
+			    Address specificPtr));
+
+#if BYTE_ORDER == LITTLE_ENDIAN
+extern unsigned int	Net_NetToHostInt _ARGS_((unsigned int longInt));
+extern unsigned int	Net_HostToNetInt _ARGS_((unsigned int longInt));
+
+extern unsigned short	Net_NetToHostShort _ARGS_((unsigned short shortInt));
+extern unsigned short	Net_HostToNetShort _ARGS_((unsigned short shortInt));
+#else 
+#define Net_NetToHostInt(arg)	(arg)
+#define Net_HostToNetInt(arg)	(arg)
+
+#define Net_NetToHostShort(arg)	(arg)
+#define Net_HostToNetShort(arg)	(arg)
+#endif
+
+#endif _NET_USER
+@
+
+
+1.11
+log
+@unlocking net.h
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/net.h,v 1.10 90/10/19 15:50:56 jhh Exp Locker: voelker $ SPRITE (Berkeley)
+d29 14
+d46 9
+a54 6
+typedef union Net_Address {
+    Net_EtherAddress		ether;
+    Net_InetAddress		inet;
+    Net_UltraAddress		ultra;
+    Net_FDDIAddress             fddi;
+    struct { char data[8]; } 	generic;
+a57 6
+ * Macro to compare two Net_Address objects.
+ */
+#define NET_ADDRESS_COMPARE(a,b) \
+    (bcmp((char *) &(a), (char *) &(b), sizeof(Net_Address)))
+
+/*
+d82 1
+a82 1
+#define NET_NUM_NETWORK_TYPES 2
+d116 52
+a167 1
+typedef struct Net_RouteInfo {
+d184 1
+a184 1
+    Net_Address		netAddress[NET_MAX_PROTOCOLS];	/* Address of target
+d194 1
+a194 1
+} Net_RouteInfo;
+d196 1
+a196 1
+
+a222 30
+/* 
+ * The structures defined below here are obsolete and should not be used
+ * in new programs.
+ */
+
+/*
+ * A Generic network address...
+ */
+typedef struct {
+    char    data[14];
+} Net_GenericAddress;
+
+/*
+ * Definition of user visible Route structure that is returned
+ * via the Test_Stats system call with the NET_GET_ROUTE command.
+ */
+typedef struct Net_SpriteRoute {
+    int		flags;		/* Flags defined in kernel/net.h */
+    int		spriteID;	/* Universal Sprite Host ID */
+    int		type;		/* Types defined in kernel/net.h */
+    union {
+	Net_EtherHdr	etherHdr;	/* type == NET_ROUTE_ETHER */
+	char		data[14];	/* type == NET_ROUTE_GENERIC */
+	struct {
+	    Net_EtherHdr	etherHdr;
+	    Net_IPHeader	ipHdr;
+	} inetHdr;			/* type == NET_ROUTE_INET */
+    } route;
+} Net_SpriteRoute;
+
+d229 2
+a230 3
+extern ReturnStatus	Net_StringToAddr _ARGS_((char *buffer, int protocol,
+						 Net_NetworkType netType,
+						 Net_Address *addressPtr));
+d234 1
+a234 3
+						  int protocol,
+						  Net_NetworkType netType,
+						  char *buffer));
+d241 4
+a244 3
+extern char	*Net_EtherAddrToString _ARGS_((Net_EtherAddress *etherAddrPtr,
+					       char buffer[18]));
+extern void	Net_StringToEtherAddr _ARGS_((char *buffer,
+d246 8
+d257 6
+a276 1
+
+@
+
+
+1.10
+log
+@changed the format of the route information
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/net.h,v 1.9 90/09/11 14:40:13 kupfer Exp Locker: jhh $ SPRITE (Berkeley)
+d25 1
+d36 1
+d85 1
+@
+
+
+1.10.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/net.h,v 1.10 90/10/19 15:50:56 jhh Exp $ SPRITE (Berkeley)
+@
+
+
+1.9
+log
+@Use function prototypes.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/net.h,v 1.8 90/06/21 12:48:49 jhh Exp Locker: kupfer $ SPRITE (Berkeley)
+d122 6
+a127 3
+    char		name[100];	/* Name of route (for debugging). */
+    char		hostname[100];	/* Host name. (in/out) */
+    char		machType[100];	/* Host machine type. (in/out) */
+@
+
+
+1.8
+log
+@initial ultra support
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/net.h,v 1.7 90/05/14 14:47:06 jhh Exp $ SPRITE (Berkeley)
+d141 13
+a153 1
+extern ReturnStatus Net_InstallRoute();
+d187 1
+a187 1
+ * Declarations for library routines in net.c.
+d190 23
+a212 12
+extern Net_InetAddress	Net_StringToInetAddr();
+extern ReturnStatus	Net_StringToAddr();
+extern char 		*Net_InetAddrToString();
+extern unsigned int	Net_StringToNetNum();
+extern unsigned int	Net_InetAddrHostNum();
+extern unsigned int	Net_InetAddrNetNum();
+extern unsigned int	Net_InetAddrNetMask();
+extern Net_InetAddress	Net_MakeInetAddr();
+extern char 		*Net_EtherAddrToString();
+extern void		Net_StringToEtherAddr();
+extern unsigned short	Net_InetChecksum();
+extern unsigned short	Net_InetChecksum2();
+d215 2
+a216 2
+extern unsigned int Net_NetToHostInt();
+extern unsigned int Net_HostToNetInt();
+d218 2
+a219 2
+extern unsigned short Net_NetToHostShort();
+extern unsigned short Net_HostToNetShort();
+@
+
+
+1.7
+log
+@added support for multiple network interfaces
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/net.h,v 1.6 89/08/07 17:48:22 mendel Exp Locker: jhh $ SPRITE (Berkeley)
+d24 2
+d34 1
+d66 1
+a66 1
+ * Number of different types of networks.  Just ethernet for now.
+d69 1
+a69 1
+#define NET_NUM_NETWORK_TYPES 1
+d81 2
+a82 1
+#define NET_NETWORK_ETHER	((Net_NetworkType) 1)	/* Ethernet. */
+a104 1
+    int			serial;		/* Route serial number. (in/out)*/
+d111 2
+a112 1
+    int			MTU;		/* Maximum transfer unit for route.
+d115 3
+d122 1
+d179 1
+@
+
+
+1.6
+log
+@Added NET_ROUTE_INET route.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/net.h,v 1.5 88/08/01 15:01:14 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d24 115
+@
+
+
+1.5
+log
+@Modified to use the new BYTE_ORDER conventions.
+@
+text
+@d15 1
+a15 1
+ * $Header: net.h,v 1.3 88/07/20 19:49:49 mendel Exp $ SPRITE (Berkeley)
+d43 4
+@
+
+
+1.4
+log
+@Modified Net_StringToEtherAddr to reflect its new implentation.
+@
+text
+@d18 2
+a19 2
+#ifndef _NET
+#define _NET
+d21 1
+d63 1
+a63 1
+#ifdef LITTLE_ENDIAN
+d67 2
+a68 2
+extern unsigned int Net_NetToHostShort();
+extern unsigned int Net_HostToNetShort();
+d78 1
+a78 1
+#endif _NET
+@
+
+
+1.3
+log
+@Added declartions for LITTLE_ENDIAN machines byte swapping.
+@
+text
+@d15 1
+a15 1
+ * $Header: net.h,v 1.2 88/06/21 13:09:28 ouster Exp $ SPRITE (Berkeley)
+d58 1
+a58 1
+extern Net_EtherAddress	Net_StringToEtherAddr();
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d15 1
+a15 1
+ * $Header: net.h,v 1.1 88/06/21 13:04:39 ouster Exp $ SPRITE (Berkeley)
+d62 7
+d74 2
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d7 7
+a13 1
+ * All rights reserved.
+d15 1
+a15 2
+ *
+ * $Header: net.h,v 2.1 87/09/30 21:31:04 deboor Exp $ SPRITE (Berkeley)
+@

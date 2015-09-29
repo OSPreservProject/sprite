@@ -1,0 +1,537 @@
+head     1.15;
+branch   ;
+access   ;
+symbols  sprited:1.13.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.15
+date     92.08.05.16.34.40;  author jhh;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     91.11.18.14.41.13;  author kupfer;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     91.03.30.17.23.01;  author jhh;  state Exp;
+branches 1.13.1.1;
+next     1.12;
+
+1.12
+date     90.12.06.22.11.08;  author shirriff;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     90.05.14.14.47.35;  author jhh;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     89.07.31.17.41.49;  author mgbaker;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     89.06.23.11.30.17;  author rab;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     89.06.05.13.31.12;  author mendel;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     89.05.31.12.33.29;  author jhh;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.03.01.20.18.55;  author mendel;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.11.21.09.27.40;  author mendel;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.08.01.17.06.45;  author mendel;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.08.01.15.02.01;  author mendel;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.06.21.13.09.37;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.21.13.04.44;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.13.1.1
+date     91.10.21.22.14.22;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.15
+log
+@added compare and copy routines
+@
+text
+@/*
+ * netEther.h --
+ *
+ *	This defines the format of an ethernet packet.
+ *
+ *	
+ * 	The symbol NET_ETHER_BAD_ALIGNMENT must defined for machines that
+ *	pad or otherwise mess up the layout of the Net_EtherHdr structure.
+ *	This must be defined for machines such as the SPUR where structures
+ *	are padded to 4 byte boundries.  To test a machine to see if 
+ *	NET_ETHER_BAD_ALIGNMENT is needed, check sizeof(Net_EtherHdr).  If
+ *	this number is anything other than the size of an ethernet header 
+ *	(14 bytes), NET_ETHER_BAD_ALIGNMENT must be defined in the 
+ *	machparam.h file for the machine.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ *
+ * $Header: /sprite/src/lib/include/RCS/netEther.h,v 1.14 91/11/18 14:41:13 kupfer Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _NETETHER
+#define _NETETHER
+
+
+#include "machparam.h"
+
+/*
+ * Compare two ethernet addresses.
+ */
+
+#ifndef NET_ETHER_BAD_ALIGNMENT
+
+#define	Net_EtherAddrCmp(e1,e2) Net_EtherAddrCmpPtr(&e1,&e2)
+
+/*
+ * Compare bytes backward because ethernet address tend to start with the
+ * same few bytes.
+ */
+
+#define	Net_EtherAddrCmpPtr(e1,e2) \
+   (!(((e1)->byte6 == (e2)->byte6) && ((e1)->byte5 == (e2)->byte5) && \
+    ((e1)->byte4 == (e2)->byte4) && ((e1)->byte3 == (e2)->byte3) && \
+    ((e1)->byte2 == (e2)->byte2) && ((e1)->byte1 == (e2)->byte1)))
+
+#else 	/* NET_ETHER_BAD_ALIGNMENT */
+
+
+#define	Net_EtherAddrCmp(e1,e2) (bcmp((e1),(e2), sizeof(Net_EtherAddress)))
+
+#define	Net_EtherAddrCmpPtr(e1Ptr,e2Ptr) Net_EtherAddrCmp(*(e1Ptr),*(e2Ptr))
+
+#endif /* NET_ETHER_BAD_ALIGNMENT */
+
+
+/*
+ * Ethernet Address - 6 bytes
+ */
+#ifndef NET_ETHER_BAD_ALIGNMENT
+
+typedef struct {
+    unsigned char byte1;
+    unsigned char byte2;
+    unsigned char byte3;
+    unsigned char byte4;
+    unsigned char byte5;
+    unsigned char byte6;
+} Net_EtherAddress;
+
+#define	NET_ETHER_ADDR_BYTE1(e)	((e).byte1)
+#define	NET_ETHER_ADDR_BYTE2(e)	((e).byte2)
+#define	NET_ETHER_ADDR_BYTE3(e)	((e).byte3)
+#define	NET_ETHER_ADDR_BYTE4(e)	((e).byte4)
+#define	NET_ETHER_ADDR_BYTE5(e)	((e).byte5)
+#define	NET_ETHER_ADDR_BYTE6(e)	((e).byte6)
+
+#ifdef sun4
+#define	NET_ETHER_ADDR_COPY(src,dst)	\
+	((dst).byte1 = (src).byte1);	\
+	((dst).byte2 = (src).byte2);	\
+	((dst).byte3 = (src).byte3);	\
+	((dst).byte4 = (src).byte4);	\
+	((dst).byte5 = (src).byte5);	\
+	((dst).byte6 = (src).byte6)
+#else
+#define	NET_ETHER_ADDR_COPY(src,dst) ((dst) = (src))
+#endif
+
+#else 
+
+typedef unsigned char Net_EtherAddress[6];
+
+#define	NET_ETHER_ADDR_BYTE1(e)	((e)[0])
+#define	NET_ETHER_ADDR_BYTE2(e)	((e)[1])
+#define	NET_ETHER_ADDR_BYTE3(e)	((e)[2])
+#define	NET_ETHER_ADDR_BYTE4(e)	((e)[3])
+#define	NET_ETHER_ADDR_BYTE5(e)	((e)[4])
+#define	NET_ETHER_ADDR_BYTE6(e)	((e)[5])
+
+#define	NET_ETHER_ADDR_COPY(src,dst) \
+			(bcopy((src),(dst),sizeof(Net_EtherAddress)))
+
+#endif /* NET_ETHER_BAD_ALIGNMENT */
+
+/*
+ * Ethernet Header.- 14 bytes 
+ */
+
+#ifndef NET_ETHER_BAD_ALIGNMENT
+
+typedef struct {
+	Net_EtherAddress destination;
+	Net_EtherAddress source;
+	unsigned short   type;		/* valid types defined below */
+} Net_EtherHdr;
+
+#define	NET_ETHER_HDR_DESTINATION(e)	((e).destination)
+#define	NET_ETHER_HDR_SOURCE(e)		((e).source)
+#define	NET_ETHER_HDR_TYPE(e)		((e).type)
+
+#define	NET_ETHER_HDR_DESTINATION_PTR(e)	&((e).destination)
+#define	NET_ETHER_HDR_SOURCE_PTR(e)		&((e).source)
+#define	NET_ETHER_HDR_TYPE_PTR(e)		&((e).type)
+
+#define	NET_ETHER_HDR_COPY(src, dst) ((dst) = (src))
+
+#else 
+
+typedef unsigned char Net_EtherHdr[14];
+
+#define	NET_ETHER_HDR_DESTINATION(e)	((unsigned char *) (e))
+#define	NET_ETHER_HDR_SOURCE(e)		((unsigned char *) (e+6))
+#define	NET_ETHER_HDR_TYPE(e)		(*((unsigned short *) (e+12)))
+
+#define	NET_ETHER_HDR_DESTINATION_PTR(e)	((unsigned char *) (e))
+#define	NET_ETHER_HDR_SOURCE_PTR(e)		((unsigned char *) (e+6))
+#define	NET_ETHER_HDR_TYPE_PTR(e)		(*((unsigned short *) (e+12)))
+
+#define	NET_ETHER_HDR_COPY(src, dst) (bcopy(src,dst,sizeof(Net_EtherHdr)))
+
+#endif /* NET_ETHER_BAD_ALIGNMENT */
+
+/*
+ * Minimum and maximum packet sizes. The maximum is actually 1518, but
+ * for some reason it is set here to 1514.  I wouldn't change it unless
+ * you're sure you won't break something in the kernel. JHH
+ */
+
+#define	NET_ETHER_MIN_BYTES	64
+#define	NET_ETHER_MAX_BYTES	1514
+
+/*
+ * Definitions of known ethernet packet types (from rfc990, except for SPRITE
+ * and TRAIL).
+ */
+#define NET_ETHER_PUP			0x0200
+#define NET_ETHER_PUP_ADDR_TRANS	0x0201
+#define NET_ETHER_XNS_IDP		0x0600
+#define NET_ETHER_IP			0x0800
+#define NET_ETHER_ARP			0x0806
+#define NET_ETHER_XNS_COMPAT		0x0807
+#define NET_ETHER_SPRITE		0x0500
+#define NET_ETHER_SPRITE_ARP		0x0502 /* deprecated */
+#define NET_ETHER_SPRITE_DEBUG		0x0504
+#define NET_ETHER_TRAIL			0x1000
+#define NET_ETHER_REVARP		0x8035
+#define NET_ETHER_MOP			0x6001
+
+#endif /* _NETETHER */
+@
+
+
+1.14
+log
+@Comment NET_ETHER_SPRITE_ARP as deprecated.
+@
+text
+@d27 1
+a27 1
+ * $Header: /sprite/src/lib/include/RCS/netEther.h,v 1.13 91/03/30 17:23:01 jhh Exp Locker: kupfer $ SPRITE (Berkeley)
+d35 1
+d42 1
+a42 1
+#define	NET_ETHER_COMPARE(e1,e2) NET_ETHER_COMPARE_PTR(&e1,&e2)
+d49 2
+a50 2
+#define	NET_ETHER_COMPARE_PTR(e1,e2) \
+   (((e1)->byte6 == (e2)->byte6) && ((e1)->byte5 == (e2)->byte5) && \
+d52 1
+a52 1
+    ((e1)->byte2 == (e2)->byte2) && ((e1)->byte1 == (e2)->byte1))
+d57 1
+a57 1
+#define	NET_ETHER_COMPARE(e1,e2) (bcmp((e1),(e2), sizeof(Net_EtherAddress))==0)
+d59 1
+a59 1
+#define	NET_ETHER_COMPARE_PTR(e1Ptr,e2Ptr) NET_ETHER_COMPARE(*(e1Ptr),*(e2Ptr))
+a61 1
+
+@
+
+
+1.13
+log
+@Mary checking this in for John H.  It now has a minimum packet size too.
+@
+text
+@d27 1
+a27 1
+ * $Header: /sprite/src/lib/include/RCS/netEther.h,v 1.12 90/12/06 22:11:08 shirriff Exp Locker: jhh $ SPRITE (Berkeley)
+d171 1
+a171 1
+#define NET_ETHER_SPRITE_ARP		0x0502
+@
+
+
+1.13.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d27 1
+a27 1
+ * $Header: /sprite/src/lib/include/RCS/netEther.h,v 1.13 91/03/30 17:23:01 jhh Exp $ SPRITE (Berkeley)
+@
+
+
+1.12
+log
+@Added mop packet type.
+@
+text
+@d27 1
+a27 1
+ * $Header: /sprite/src/lib/include/RCS/netEther.h,v 1.11 90/05/14 14:47:35 jhh Exp $ SPRITE (Berkeley)
+d152 3
+a154 1
+ * Mininnum and maximum packet sizes.
+d157 1
+a157 1
+#define	NET_ETHER_MIN_BYTES	60
+@
+
+
+1.11
+log
+@changed an ether address to a structure of unsigned bytes.
+@
+text
+@d27 1
+a27 1
+ * $Header: /sprite/src/lib/include/RCS/netEther.h,v 1.10 89/07/31 17:41:49 mgbaker Exp Locker: jhh $ SPRITE (Berkeley)
+d173 1
+@
+
+
+1.10
+log
+@Structure assignment still doesn't work in gcc for the sun4.  This
+file needed a hack to get around this.
+@
+text
+@d27 1
+a27 1
+ * $Header: /sprite/src/lib/include/RCS/netEther.h,v 1.9 89/06/23 11:30:17 rab Exp Locker: mgbaker $ SPRITE (Berkeley)
+d70 6
+a75 6
+    char byte1;
+    char byte2;
+    char byte3;
+    char byte4;
+    char byte5;
+    char byte6;
+@
+
+
+1.9
+log
+@*** empty log message ***
+@
+text
+@d27 1
+a27 1
+ * $Header: /sprite/src/lib/include/RCS/netEther.h,v 1.8 89/06/05 13:31:12 mendel Exp Locker: rab $ SPRITE (Berkeley)
+d85 9
+d95 1
+@
+
+
+1.8
+log
+@Fixed NET_ETHER_COMPARE() macro for NET_ETHER_BAD_ALIGNMENT case.
+@
+text
+@d27 1
+a27 1
+ * $Header: /sprite/src/lib/include/RCS/netEther.h,v 1.7 89/05/31 12:33:29 jhh Exp Locker: mendel $ SPRITE (Berkeley)
+d60 1
+a60 1
+#endif NET_ETHER_BAD_ALIGNMENT
+d101 1
+a101 1
+#endif NET_ETHER_BAD_ALIGNMENT
+d139 1
+a139 1
+#endif NET_ETHER_BAD_ALIGNMENT
+d164 1
+a164 1
+#endif _NETETHER
+@
+
+
+1.7
+log
+@added macros for getting pointers to fields of ether header
+@
+text
+@d27 1
+a27 1
+ * $Header: /sprite/src/lib/include/RCS/netEther.h,v 1.6 89/03/01 20:18:55 mendel Exp $ SPRITE (Berkeley)
+d56 1
+a56 1
+#define	NET_ETHER_COMPARE(e1,e2) (bcmp((e1),(e2), sizeof(Net_EtherHdr)) == 0)
+@
+
+
+1.6
+log
+@Make packet type in ethernet header unsigned.
+@
+text
+@d27 1
+a27 1
+ * $Header: /sprite/src/lib/include/RCS/netEther.h,v 1.5 88/11/21 09:27:40 mendel Exp $ SPRITE (Berkeley)
+d119 4
+d132 4
+@
+
+
+1.5
+log
+@Added a few more lines of explaination of NET_ETHER_BAD_ALIGNMENT.
+@
+text
+@d27 1
+a27 1
+ * $Header: /sprite/src/lib/include/RCS/netEther.h,v 1.4 88/08/01 17:06:45 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d112 1
+a112 1
+	short	     	 type;		/* valid types defined below */
+@
+
+
+1.4
+log
+@Modified to include machparam.h
+@
+text
+@d7 1
+a7 1
+ * 	The symbol NET_ETHER_BAD_ALIGNMENT maybe defined for machines that
+d9 6
+d27 1
+a27 1
+ * $Header: netEther.h,v 1.3 88/08/01 15:02:01 mendel Exp $ SPRITE (Berkeley)
+@
+
+
+1.3
+log
+@Added declarations for machines that can't handle ethernet headers in 
+structures because of alignment or padding problems.
+@
+text
+@d21 1
+a21 1
+ * $Header: netEther.h,v 2.0 87/08/11 09:32:25 brent Exp $ SPRITE (Berkeley)
+d27 2
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@a4 3
+ *	It is usually the responsibility of the device driver
+ *	to format is packet in this way before copying the packet
+ *	into the controller's buffers.
+d6 5
+a10 1
+ * Copyright 1985, 1988 Regents of the University of California
+d19 3
+a21 1
+ * $Header: netEther.h,v 1.1 88/06/21 13:04:44 ouster Exp $ SPRITE (Berkeley)
+d31 1
+a31 3
+#define	NET_ETHER_COMPARE(e1, e2) \
+    (*(int *) &(e1) == *(int *) &(e2) && \
+     *(short *) &((e1).byte5) == *(short *) &((e2).byte5))
+d33 1
+a33 3
+#define	NET_ETHER_COMPARE_PTR(e1Ptr, e2Ptr) \
+    (*(int *)(e1Ptr) == *(int *)(e2Ptr) && \
+     *(short *)&((e1Ptr)->byte5) == *(short *)&((e2Ptr)->byte5))
+d36 21
+d59 2
+d70 25
+d96 1
+a96 1
+ * Ethernet Header.
+d99 2
+d106 18
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d9 8
+a16 2
+ * Copyright 1985 Regents of the University of California
+ * All rights reserved.
+d18 1
+a18 2
+ *
+ * $Header: netEther.h,v 2.0 87/08/11 09:32:25 brent Exp $ SPRITE (Berkeley)
+@

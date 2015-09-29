@@ -1,0 +1,98 @@
+head     9.0;
+branch   ;
+access   ;
+symbols  ds3100:9.0 sun3:9.0 sun4nw:9.0 symm:9.0 spur:9.0 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.0
+date     89.09.12.15.18.54;  author douglis;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     89.06.05.10.35.01;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Routine to return inter-packet delays.
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@/* 
+ * rpcDelay.c --
+ *
+ *	Get perferred machine dependent inter-packet delays for rpcs.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/sun4.md/RCS/rpcDelays.c,v 1.1 89/06/05 10:35:01 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include "sprite.h"
+#include "mach.h"
+#include "sys.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcGetMachineDelay --
+ *
+ *	Get preferred inter-fragment delay for input and output packets.
+ *	This is approximately a microsecond value for how long this
+ *	machine-type takes to turn a packet around.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+RpcGetMachineDelay(myDelayPtr, outputRatePtr)
+	unsigned short	*myDelayPtr;	/* Preferred delay in microseconds
+					 * between successive input packets.
+					 */
+	unsigned short	*outputRatePtr;	/* Delay in microseconds between
+					 * successive output packets.
+					 */
+{
+    *myDelayPtr = 500;			/* Same as sun3 value */
+    *outputRatePtr = 500;
+    return;
+}
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: rpcDelays.c,v 1.1 88/06/22 11:42:12 mendel Exp $ SPRITE (Berkeley)";
+@

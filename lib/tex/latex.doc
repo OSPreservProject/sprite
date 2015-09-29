@@ -1,0 +1,54 @@
+The LATEX EMACS library contains two macros:  LATEX CHECK to check
+that LaTeX delimiters are properly nested, and COLOR to add the
+color-list arguments to SLiTeX slide and overlay environments.  To
+load the library when in EMACS, you type:
+
+   <meta-X> LOAD <escape> <TEX82>LATEX <carriage return>
+
+After the library is loaded, you call the LATEX CHECK macro by typing:
+
+   <meta-X> LATEX CHECK <carriage return>
+
+This macro checks the contents of your buffer, starting at the current
+pointer position, for the proper nesting of delimiters.  The following
+are all the matching LaTeX delimiters checked by this macro:
+
+          Opening      Closing
+          -------      -------
+          {            }
+          \begin{...}  \end{...}  [the environment names must match]
+          \[           \]
+          \(           \)
+          $            $
+          $$           $$
+
+The macro also checks that an opening math mode delimiter doesn't
+appear in math mode.  For example, it allows \[ { $ $ } \] but not 
+\[ $ $ \] .  Note the following limitations to this macro:
+
+   * The argument must immediately follow a \begin or \end command,
+     with no intervening spaces.
+
+   * The macro recognizes that \{, \$ and \\[ are not delimiters.  However,
+     it gets confused if you have \\ right before one of the delimiters --
+     for example, if you type  \\\$ or \\\[ .  You should therefore type
+     \\ \$  or  \\ \[  instead.
+
+
+The COLOR macro inserts the arguments to the SLiTeX \begin{slide} and
+\begin{overlay} commands.  You must give the command the list of
+colors as its argument.  Thus, if the colors used are red, black and
+blue, you would call the macro by typing
+
+        <meta-X> COLOR <escape>red,black,blue<carriage return>
+
+It doesn't matter whether or not a \begin{slide} or \begin{overlay}
+command already has an argument; the current argument will be ignored
+if it exists. 
+
+This macro assumes that any color declaration outside a slide or
+overlay environment is global (it ignores braces and \begin ... \end
+pairs other than those delimiting slides and overlays), and that the
+color in effect at the \begin{slide} or \begin{overlay} will actually
+appear on that slide.  You should run LATEX CHECK to check the nesting
+of delimiters before running the COLOR macro.

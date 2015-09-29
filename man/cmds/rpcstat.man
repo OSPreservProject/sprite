@@ -1,0 +1,121 @@
+' $Header: /sprite/src/cmds/rpcstat/RCS/rpcstat.man,v 1.8 92/07/10 15:26:27 kupfer Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS RPCSTAT cmds
+.BS
+.SH NAME
+rpcstat \- Print out statistics about the RPC system
+.SH SYNOPSIS
+\fBrpcstat\fR  [\fIoptions\fR]
+.SH OPTIONS
+.IP "\fB\-trace\fR" 14
+Print out the RPC trace.
+.IP "\fB\-cinfo\fR"
+Print client-side RPC system statistics.
+.IP "\fB\-sinfo\fP"
+Print server-side RPC system statistics.
+.IP "\fB\-chan\fP"
+Print the state of the client RPC channels.
+.IP "\fB\-srvr\fP"
+Print the state of the RPC server processees.
+.IP "\fB\-calls\fP"
+Print the number of RPC calls made.
+.IP "\fB\-rpcs\fP"
+Print the number of RPC calls serviced.
+.IP "\fB\-chist\fP"
+Display the client-side RPC histograms.
+.IP "\fB\-shist\fP"
+Display the server-side RPC histograms.
+.IP "\fB\-zero\fP"
+Print the zero valued counts.
+.IP "\fB\-nohostdb\fP"
+Do not search the host database file.
+.BE
+.SH INTRODUCTION
+This command is used to get statistics and trace information about the
+Sprite kernel-to-kernel RPC system.
+.SH "RPC TRACE"
+.PP
+The RPC trace has a record for the
+last 100 packets sent or received in the RPC network protocol.  The trace
+has the following fields:
+.DS
+\fBID code time flag commnd client server psize dsize doff fragment\fR
+.DE
+.IP \fBID\fR 10
+The RPC sequence number.  A new ID is generated for each RPC, and
+all packets involved with an RPC contain this ID.
+.IP \fBcode\fR 10
+Either "in" or "out" to mean the packet was transmitted or received.
+.IP \fBtime\fR 10
+Seconds since last packet.  Sun3 clock granularity is too low (10 msec) for this
+to be meaningful.
+.IP \fBflag\fR 10
+.DS
+\fBQ\fP reQuest packet.
+\fBQp\fP reQuest with please acknowledge bit set.
+\fBA\fP Acknowledgment packet.
+\fBR\fP Reply packet.
+\fBRe\fP Error reply; command field contains error code.
+\fBAc\fP Close acknowledgment sent to close client/server binding.
+.DE
+.IP \fBcommand\fR 10
+The RPC name.  If this is a number and the flag field is "Re",
+then this is the returned error code.
+.IP \fBclient\fR 10
+Two numbers identify the client host and the client channel number.
+.IP \fBserver\fR 10
+Two numbers identify the server host and the server process number.
+.IP \fBpsize\fR 10
+The size of the parameter area of the packet.
+.IP \fBdsize\fR 10
+The size of the data area of the packet
+.IP \fBdoff\fR 10
+The offset of the data area.  Used when fragmenting large data blocks.
+.IP \fBfragment\fR 10
+Two numbers are the number of fragments and the fragment bitmask.
+.SH "CLIENT RPC"
+.PP
+The client half of the RPC system maintains statistics about the
+number of timeouts, retransmissions, etc.  The output of the \fB\-cinfo\fP
+option is (nearly) self-explanatory.  There are also a set of
+\fIchannels\fP used by the client side of RPC.  Each channel is
+dynamically bound to a particular server host/process pair, and
+the kernel attempts to reuse the channel for successive RPCs to that server.
+The \fB\-chan\fP option prints out the state of the client channels,
+what they are bound to, what RPC is in progress, etc.
+The binding is not hard, but is used to optimize away explicit
+acknowledgment packets.
+.SH "SERVER RPC"
+.PP
+The server half of the RPC system maintains statistics about the
+number of requests it has received, the number of requests that
+implicitly acknowledged a previous reply, etc.  The output of
+the \fB\-sinfo\fP option is (nearly) self-explanatory.  There are also
+a pool of kernel RPC server processes.  The \fB\-srvr\fP option
+prints out the state of each, their current client, the current RPC, etc.
+.SH HISTOGRAMS
+.PP
+The kernel can keep track of how long RPCs take.  For each RPC number
+the kernel keeps the total time spent processing that RPC command, as
+well as a histogram showing the distribution of times.  The
+.B \-chist
+option displays the client-side timings, whereas
+.B \-shist
+displays the server-side timings.  These options display the following
+information for each RPC command: the command name, the number of
+calls, the average time per call, the overhead for collecting the
+timing information, and the timing distribution for the command.  The
+timing distribution is a series of double lines.  The top line gives
+the minimum times for a series of buckets, in microseconds, and the
+bottom line gives the number of RPCs that fell into that bucket.
+.PP
+Use
+.B rpccmd
+to enable, disable, or reset these timings.
+.SH BUGS
+On current Sprite systems, the histogram resolution is finer than the
+clock resolution, so many buckets will always have a count of 0.
+.SH "SEE ALSO"
+rpccmd
+.SH KEYWORDS
+rpc, server, client, channel

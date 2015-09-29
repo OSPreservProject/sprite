@@ -1,0 +1,198 @@
+% This is the file imapptdoc.tex.  Typeset with plain TeX.
+\magnification=\magstephalf
+\def\beginverbatim{\par\begingroup\setupverbatim\doverbatim}
+{\catcode`\|=0 \catcode`\\=12 % | is temporary escape character
+  |obeylines|gdef|doverbatim^^M#1\endverbatim{#1|endgroup}}
+\def\setupverbatim{\tentt \obeylines \uncatcodespecials \obeyspaces}
+{\obeyspaces\global\let =\ } % let active space = control space
+\def\uncatcodespecials{\def\do##1{\catcode`##1=12}\dospecials}
+{\catcode`\^^M=13 \gdef\gobblecr{\ifnextchar
+{\gobble}{\ignorespaces}}}
+{\catcode`\ =\active\gdef\vobeyspaces{\catcode`\ \active \let \xobeysp}}
+ \def\xobeysp{\leavevmode{} }
+\begingroup \catcode `|=0 \catcode `[= 1
+\catcode`]=2 \catcode `\{=12 \catcode `\}=12
+\catcode`\\=12 |gdef|@xverbatim#1\end{verbatim}[#1|end[verbatim]]
+|gdef|@sxverbatim#1\end{verbatim*}[#1|end[verbatim*]]
+|endgroup
+\def\makeother#1{\catcode`#112\relax}
+\def\verb{\begingroup \tt \uncatcodespecials
+\averb}
+\def\sverb#1{\def\tempa ##1#1{##1\endgroup}\tempa}
+\def\averb{\obeyspaces \frenchspacing \sverb}
+\font\textfontii = cmsy10
+\font\eightpt = cmr8
+\def\heading#1{\medskip\noindent{\bf #1.\ }}
+\def\AmSTeX{{\textfontii A}\kern-.1667em\lower.5ex\hbox
+ {\textfontii M}\kern-.125em{\textfontii S}-\TeX}
+\def\qed{\ifhmode\unskip\nobreak\fi\ifmmode\ifinner\else\hskip5pt\fi\fi
+ \hbox{\hskip5 pt \lower 1.5 pt\hbox{\vrule width .2 pt 
+ \vbox{\hrule width 4 pt height .2 pt \vskip 7.1 pt
+ \hrule width 4 pt height .2 pt }\unskip\vrule width .2 pt}}}
+\centerline{\bf USING  THE IMA PREPRINT STYLE FILE}
+\medskip
+{\eightpt\centerline{DOUGLAS N. ARNOLD and BRADLEY J. LUCIER}}
+\bigskip
+This document explains the use of the IMA preprint style file
+to typeset preprints and reports with 
+\AmSTeX. The IMA preprint style file, which is a
+modification of the amsppt style of Michael Spivak, is
+intended as a general purpose preprint style for mathematical papers.
+It has been used by the Institute
+for Mathematics and its Applications since 1987 for its preprint series.
+In these instructions we assume familiarity with \AmSTeX\ and amsppt,
+as documented in
+{\it The Joy of \TeX\ }
+by Michael Spivak.
+
+Most of the points introduced below are illustrated in
+the nonsense paper {\it A sample paper to illustrate the
+IMA preprint style}.
+
+\heading{Document style}  Include the commands \verb"\input amstex"
+and \verb"\documentstyle{imappt}" near the top of your document.
+
+\heading{Magnification} To obtain reasonable results, you {\it must} set
+\verb"\magnification=\magstep 1" {\it before} the command \verb"\input
+amstex".
+
+\heading{Title} Use \verb"\title" and \verb"\endtitle".
+Type the title in all caps.
+Attach any footnotes (see below) that apply to the paper
+as a whole to the title.
+
+\heading{Author} Use \verb"\author" and \verb"\endauthor".
+Type the author's name in all caps.  For multiple authors type the word
+``and'' in lowercase.
+
+\heading{Author's affiliation}  Give the  affiliation of each author
+in a footnote (see below) attached to each author's name.  Statements
+acknowledging support should be contained in the same footnote.
+Do {\it not} use the \verb"\affil" or \verb"\address" macros.
+
+\heading{Abstract} If there is an abstract, use \verb"\abstract".
+
+\heading{Keywords} If there are keywords,
+use \verb"\keywords" with commas between keywords
+but without ending punctuation.
+
+\heading{Subject classifications} If there are AMS
+subject classifications, use \verb"\subjclass"
+with commas between classifications
+but without ending punctuation.
+
+\heading{Footnotes} Use \verb"\footnote".
+For the topmatter, use footnote symbols.
+In the rest of the paper
+use numbered footnotes. 
+The order of footnote symbols is star (*\thinspace=\thinspace\verb"*"),
+dagger (\dag\thinspace=\thinspace\verb"\dag"), double-dagger
+(\ddag\thinspace=\thinspace\verb"\ddag"),
+section-marker (\S\thinspace=\thinspace\verb"\S").
+
+\heading{Headings} Use \verb"\heading" without ending punctuation.
+The argument consists of the section number followed by a period
+and then the section name with only the first word capitalized.
+Very long papers could use \verb"\heading" and \verb"\endheading"
+for major headings and \verb"\heading" for minor headings.  If
+\verb"\heading" is used start heading name with a section mark
+(\S\thinspace=\thinspace\verb"\S") and the section number followed by a period and the
+section title with the first letter of each major word capitalized.
+
+\heading{Equation numbers}  Use \verb"\tag".
+
+\heading{Theorems, etc} Use \verb"\proclaim" and \verb"\endproclaim"
+for theorems, lemmas, corollaries, claims, propositions, etc.  The
+argument to \verb"\proclaim" takes no ending punctuation.
+
+\heading{Definitions} Use \verb"\proclaim" and \verb"\endproclaim",
+but use \verb"\rm" to set the body of the definition in roman.
+
+\heading{Proofs, etc} Use \verb"\demo" and \verb"\enddemo"
+for proofs, examples, remarks, cases, etc.  The
+argument to \verb"\demo" takes no ending punctuation.  The
+end-of-proof mark is an open box (\qed\ =\thinspace\verb"\qed").
+
+\heading{Lists and sublists}  Use \verb"\roster" and \verb"\endroster".
+Rosters use default labels of the form (1), (2), etc.
+Subrosters are permitted.  Each subroster {\it must} be enclosed
+in a separate pair of braces. Note that subrosters are {\it not}
+standard \AmSTeX.
+ 
+\heading{References} These can be done exactly as in {\it The Joy
+of \TeX} using \verb"\Refs" and \verb"\ref".
+
+\heading{Table of contents} There are no special macros provided to set
+a table of contents.  If a table of contents is desired, follow these
+guidelines.  Switch to eight point type (\verb"\eightpoint").
+Center the word ``CONTENTS'' in caps.  Capitalize only the first word
+of entries.  Runover lines align with the start of entries.
+Place the section number flush left with one em to section title,
+spaced dots from end of entry to page number, and two ems between the
+dots and page number.  Leave 18--20 points 
+of vertical space, (baseline
+to baseline, before magnification) to the text above and below.
+
+\heading{Tables} There are no special macros provided to set
+tables.  Follow these guidelines.
+Switch to eight point type (\verb"\eightpoint").
+Center the table on the page width.  Put a minimum
+of  18 points
+space (baseline to baseline, before magnification) above and/or below the table.
+Center the label over the table.  The label
+should be of the form \verb"{\smc Table~1.}"  The title of the table should
+be in slanted roman centered over the table with only the first word capitalized.
+Column headings may be in set in six point type if necessary to fit properly
+over the columns.  Place  standard \TeX\ rules (0.4 point thick, before
+magnification)
+above and below the column headings, and at the end of the table.
+
+\heading{Figure legends} Use \verb"\topspace" or \verb"\midspace".
+Set the caption as, for example,
+\verb"\topspace{3 in}\caption{\eightpoint{\smc Fig\. 1.\enspace}\it Type caption here.}".
+
+\heading{New control sequences available in the IMA preprint style}
+The amount that each roster is indented is controlled by the value of
+\verb"\rosterindent".  For most lists the default value need not
+be changed.
+To get a footer that indicates
+that the paper is a draft, give the command \verb"\draft" immediately
+after the \verb"\documentstyle" command.  This will also print the
+date and the file name in the footer.
+Should you ever want to set the footer text explicitly,
+you may redefine  \verb"\footertext".
+
+\heading{Control sequences available
+in the amsppt style but not the IMA preprint style}
+Do not use the commands
+\verb"\affil", \verb"\endaffil", \verb"\address", \verb"\date", and
+\verb"\thanks".  They have been redefined in the IMA preprint style file
+to give error messages when used, because
+their function has been taken over by other constructions, mainly footnotes
+to the title of the paper and the authors' names.
+
+\heading{Fonts} The font \verb"cmcsc10" is
+used at 8 point (\verb"cmcsc10 at 8 pt") so there is a
+caps-and-small-caps font for use in references, etc.  You must
+have the appropriate \verb"pxl", \verb"pk" or \verb"gf" file for
+your printer driver. (See your local \TeX\ guru.  He or she may
+be able to generate the font in the right size using Metafont.) 
+Alternatively, you can redefine the font \verb"\eightsmc"
+to be another font which you have available.
+If you have no eight point caps-and-small-caps font, then
+give the command \verb"\font\eightsmc=cmr8" to substitute
+eight point roman.
+
+The file uses the newer \verb"cm" (computer modern) family of fonts
+(\verb"cmr9", \verb"cmr8", \verb"cmr6", \verb"cmmi9", \verb"cmmi8",
+\verb"cmmi6", \verb"cmsy9", \verb"cmsy8", \verb"cmsy6", \verb"cmbx9",
+\verb"cmbx8", \verb"cmbx6", \verb"cmti9", \verb"cmti8", \verb"cmsl9",
+\verb"cmsl8", \verb"cmcsc10", and \verb"cmcsc10 at 8 pt"), so you will
+have to change these references to the appropriate \verb"am" (almost
+modern) fonts if that is all you have available at your site.  The
+style file also assumes the existence of the American Mathematical
+Society fonts \verb"msxm9", \verb"msxm8", \verb"msxm6", \verb"msym9",
+\verb"msym8", and \verb"msym6".  If you do not have these fonts, then
+comment out the lines in imappt.sty that reference them.
+
+\bye

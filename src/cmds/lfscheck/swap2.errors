@@ -1,0 +1,756 @@
+/dev/rvj00c:Bad stable mem header for memType 1 blockNum 1
+/dev/rvj00c:Bad stable mem header for memType 1 blockNum 68
+/dev/rvj00c:Unknowned desc map flags (0xf542) for file 342
+/dev/rvj00c:Unknowned desc map flags (0x16b7) for file 343
+/dev/rvj00c:Unknowned desc map flags (0x61ef) for file 344
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 345
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 346
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 347
+/dev/rvj00c:Unknowned desc map flags (0x4b28) for file 348
+/dev/rvj00c:Unknowned desc map flags (0x2) for file 349
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 351
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 352
+/dev/rvj00c:Unknowned desc map flags (0x9191) for file 353
+/dev/rvj00c:Unknowned desc map flags (0xfc5f) for file 354
+/dev/rvj00c:Unknowned desc map flags (0xfc57) for file 355
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 356
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 357
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 358
+/dev/rvj00c:Unknowned desc map flags (0x1ab3) for file 359
+/dev/rvj00c:Unknowned desc map flags (0x1a0) for file 360
+/dev/rvj00c:Unknowned desc map flags (0x6fff) for file 361
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 363
+/dev/rvj00c:Unknowned desc map flags (0xe3a8) for file 364
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 365
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 366
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 367
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 368
+/dev/rvj00c:Unknowned desc map flags (0x9192) for file 374
+/dev/rvj00c:Unknowned desc map flags (0x9192) for file 375
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 376
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 377
+/dev/rvj00c:Unknowned desc map flags (0x46f8) for file 378
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 379
+/dev/rvj00c:Unknowned desc map flags (0x40bf) for file 380
+/dev/rvj00c:Unknowned desc map flags (0x2) for file 381
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 383
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 384
+/dev/rvj00c:Unknowned desc map flags (0x8d4e) for file 385
+/dev/rvj00c:Unknowned desc map flags (0x2ec1) for file 386
+/dev/rvj00c:Unknowned desc map flags (0xb2bc) for file 387
+/dev/rvj00c:Unknowned desc map flags (0xb2c4) for file 388
+/dev/rvj00c:Unknowned desc map flags (0x2ed1) for file 389
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 390
+/dev/rvj00c:Unknowned desc map flags (0x2253) for file 391
+/dev/rvj00c:Unknowned desc map flags (0x1a0) for file 392
+/dev/rvj00c:Unknowned desc map flags (0x1fff) for file 393
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 395
+/dev/rvj00c:Unknowned desc map flags (0xecba) for file 396
+/dev/rvj00c:Unknowned desc map flags (0xb2b4) for file 397
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 398
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 399
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 400
+/dev/rvj00c:Unknowned desc map flags (0x8d4f) for file 406
+/dev/rvj00c:Unknowned desc map flags (0x8d4f) for file 407
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 408
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 409
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 410
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 411
+/dev/rvj00c:Unknowned desc map flags (0x83b0) for file 412
+/dev/rvj00c:Unknowned desc map flags (0x2) for file 413
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 415
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 416
+/dev/rvj00c:Unknowned desc map flags (0x8d4f) for file 417
+/dev/rvj00c:Unknowned desc map flags (0xb254) for file 418
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 419
+/dev/rvj00c:Unknowned desc map flags (0xb28c) for file 420
+/dev/rvj00c:Unknowned desc map flags (0xb264) for file 421
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 422
+/dev/rvj00c:Unknowned desc map flags (0x2256) for file 423
+/dev/rvj00c:Unknowned desc map flags (0x1a0) for file 424
+/dev/rvj00c:Unknowned desc map flags (0x5fff) for file 425
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 427
+/dev/rvj00c:Unknowned desc map flags (0xecba) for file 428
+/dev/rvj00c:Unknowned desc map flags (0xb244) for file 429
+/dev/rvj00c:Unknowned desc map flags (0xb234) for file 430
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 431
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 432
+/dev/rvj00c:Unknowned desc map flags (0x8d4f) for file 438
+/dev/rvj00c:Unknowned desc map flags (0xecba) for file 439
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 440
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 441
+/dev/rvj00c:Unknowned desc map flags (0x2e61) for file 442
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 443
+/dev/rvj00c:Unknowned desc map flags (0x83b3) for file 444
+/dev/rvj00c:Unknowned desc map flags (0x2) for file 445
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 447
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 448
+/dev/rvj00c:Unknowned desc map flags (0x8d48) for file 449
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 450
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 451
+/dev/rvj00c:Unknowned desc map flags (0xafbe) for file 452
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 453
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 454
+/dev/rvj00c:Unknowned desc map flags (0x2241) for file 455
+/dev/rvj00c:Unknowned desc map flags (0x1a0) for file 456
+/dev/rvj00c:Unknowned desc map flags (0xfff) for file 457
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 459
+/dev/rvj00c:Unknowned desc map flags (0xecbb) for file 460
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 461
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 462
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 463
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 464
+/dev/rvj00c:Unknowned desc map flags (0x8d48) for file 470
+/dev/rvj00c:Unknowned desc map flags (0x8d51) for file 471
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 472
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 473
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 474
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 475
+/dev/rvj00c:Unknowned desc map flags (0x839a) for file 476
+/dev/rvj00c:Unknowned desc map flags (0x2) for file 477
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 479
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 480
+/dev/rvj00c:Unknowned desc map flags (0x2a02) for file 481
+/dev/rvj00c:Unknowned desc map flags (0x3404) for file 482
+/dev/rvj00c:Unknowned desc map flags (0x341c) for file 483
+/dev/rvj00c:Unknowned desc map flags (0x342c) for file 484
+/dev/rvj00c:Unknowned desc map flags (0x340c) for file 485
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 486
+/dev/rvj00c:Unknowned desc map flags (0x2243) for file 487
+/dev/rvj00c:Unknowned desc map flags (0x1a0) for file 488
+/dev/rvj00c:Unknowned desc map flags (0x1fff) for file 489
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 491
+/dev/rvj00c:Unknowned desc map flags (0x8d4a) for file 492
+/dev/rvj00c:Unknowned desc map flags (0xaea9) for file 493
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 494
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 495
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 496
+/dev/rvj00c:Unknowned desc map flags (0x8d4a) for file 502
+/dev/rvj00c:Unknowned desc map flags (0x8d4a) for file 503
+/dev/rvj00c:Unknowned desc map flags (0xae99) for file 504
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 505
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 506
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 507
+/dev/rvj00c:Unknowned desc map flags (0x83a0) for file 508
+/dev/rvj00c:Unknowned desc map flags (0x2) for file 509
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 511
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 512
+/dev/rvj00c:Unknowned desc map flags (0x8d4b) for file 513
+/dev/rvj00c:Unknowned desc map flags (0xae89) for file 514
+/dev/rvj00c:Unknowned desc map flags (0xae71) for file 515
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 516
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 517
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 518
+/dev/rvj00c:Unknowned desc map flags (0x2246) for file 519
+/dev/rvj00c:Unknowned desc map flags (0x1a0) for file 520
+/dev/rvj00c:Unknowned desc map flags (0x4fff) for file 521
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 523
+/dev/rvj00c:Unknowned desc map flags (0x8d4c) for file 524
+/dev/rvj00c:Unknowned desc map flags (0xad71) for file 525
+/dev/rvj00c:Unknowned desc map flags (0xad81) for file 526
+/dev/rvj00c:Unknowned desc map flags (0xad99) for file 527
+/dev/rvj00c:Unknowned desc map flags (0xad61) for file 528
+/dev/rvj00c:Unknowned desc map flags (0x8d4c) for file 534
+/dev/rvj00c:Unknowned desc map flags (0x8d4c) for file 535
+/dev/rvj00c:Unknowned desc map flags (0xad41) for file 536
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 537
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 538
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 539
+/dev/rvj00c:Unknowned desc map flags (0x83a3) for file 540
+/dev/rvj00c:Unknowned desc map flags (0x2) for file 541
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 543
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 544
+/dev/rvj00c:Unknowned desc map flags (0x8d4c) for file 545
+/dev/rvj00c:Unknowned desc map flags (0xad29) for file 546
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 547
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 548
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 549
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 550
+/dev/rvj00c:Unknowned desc map flags (0x2249) for file 551
+/dev/rvj00c:Unknowned desc map flags (0x1a0) for file 552
+/dev/rvj00c:Unknowned desc map flags (0x1fff) for file 553
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 555
+/dev/rvj00c:Unknowned desc map flags (0x8d4d) for file 556
+/dev/rvj00c:Unknowned desc map flags (0xacb0) for file 557
+/dev/rvj00c:Unknowned desc map flags (0xacb8) for file 558
+/dev/rvj00c:Unknowned desc map flags (0xad01) for file 559
+/dev/rvj00c:Unknowned desc map flags (0xaca0) for file 560
+/dev/rvj00c:Unknowned desc map flags (0x8d4d) for file 566
+/dev/rvj00c:Unknowned desc map flags (0x8d4d) for file 567
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 568
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 569
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 570
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 571
+/dev/rvj00c:Unknowned desc map flags (0x83a6) for file 572
+/dev/rvj00c:Unknowned desc map flags (0x2) for file 573
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 575
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 576
+/dev/rvj00c:Unknowned desc map flags (0x8d4d) for file 577
+/dev/rvj00c:Unknowned desc map flags (0xb0eb) for file 578
+/dev/rvj00c:Unknowned desc map flags (0xac50) for file 579
+/dev/rvj00c:Unknowned desc map flags (0xac68) for file 580
+/dev/rvj00c:Unknowned desc map flags (0xac70) for file 581
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 582
+/dev/rvj00c:Unknowned desc map flags (0x224c) for file 583
+/dev/rvj00c:Unknowned desc map flags (0x436d) for file 23122
+/dev/rvj00c:Unknowned desc map flags (0x436e) for file 23123
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23124
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23125
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23126
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23127
+/dev/rvj00c:Unknowned desc map flags (0x78b5) for file 23128
+/dev/rvj00c:Unknowned desc map flags (0x2) for file 23129
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23131
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23132
+/dev/rvj00c:Unknowned desc map flags (0xf540) for file 23133
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23134
+/dev/rvj00c:Unknowned desc map flags (0x5e39) for file 23135
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23136
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23137
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23138
+/dev/rvj00c:Unknowned desc map flags (0x1ac0) for file 23139
+/dev/rvj00c:Unknowned desc map flags (0x1a0) for file 23140
+/dev/rvj00c:Unknowned desc map flags (0x1fff) for file 23141
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23143
+/dev/rvj00c:Unknowned desc map flags (0x436d) for file 23144
+/dev/rvj00c:Unknowned desc map flags (0x1443) for file 23145
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23146
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23147
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23148
+/dev/rvj00c:Unknowned desc map flags (0xf540) for file 23154
+/dev/rvj00c:Unknowned desc map flags (0xe3a7) for file 23155
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23156
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23157
+/dev/rvj00c:Unknowned desc map flags (0x637a) for file 23158
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23159
+/dev/rvj00c:Unknowned desc map flags (0x4b0e) for file 23160
+/dev/rvj00c:Unknowned desc map flags (0x2) for file 23161
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23163
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23164
+/dev/rvj00c:Unknowned desc map flags (0x436d) for file 23165
+/dev/rvj00c:Unknowned desc map flags (0x1403) for file 23166
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23167
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23168
+/dev/rvj00c:Unknowned desc map flags (0x141b) for file 23169
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23170
+/dev/rvj00c:Unknowned desc map flags (0x1ae6) for file 23171
+/dev/rvj00c:Unknowned desc map flags (0x1a0) for file 23172
+/dev/rvj00c:Unknowned desc map flags (0x3fff) for file 23173
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23175
+/dev/rvj00c:Unknowned desc map flags (0x436a) for file 23176
+/dev/rvj00c:Unknowned desc map flags (0xdb4) for file 23177
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23178
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23179
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23180
+/dev/rvj00c:Unknowned desc map flags (0x436d) for file 23186
+/dev/rvj00c:Unknowned desc map flags (0x436e) for file 23187
+/dev/rvj00c:Unknowned desc map flags (0x13e3) for file 23188
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23189
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23190
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23191
+/dev/rvj00c:Unknowned desc map flags (0x78b8) for file 23192
+/dev/rvj00c:Unknowned desc map flags (0x2) for file 23193
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23195
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23196
+/dev/rvj00c:Unknowned desc map flags (0xf540) for file 23197
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23198
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23199
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23200
+/dev/rvj00c:Unknowned desc map flags (0x6207) for file 23201
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23202
+/dev/rvj00c:Unknowned desc map flags (0x1ac3) for file 23203
+/dev/rvj00c:Unknowned desc map flags (0x1a0) for file 23204
+/dev/rvj00c:Unknowned desc map flags (0xfff) for file 23205
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23207
+/dev/rvj00c:Unknowned desc map flags (0x436e) for file 23208
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23209
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23210
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23211
+/dev/rvj00c:Unknowned desc map flags (0x139b) for file 23212
+/dev/rvj00c:Unknowned desc map flags (0xf540) for file 23218
+/dev/rvj00c:Unknowned desc map flags (0xf541) for file 23219
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23220
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23221
+/dev/rvj00c:Unknowned desc map flags (0x5d91) for file 23222
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23223
+/dev/rvj00c:Unknowned desc map flags (0x4b11) for file 23224
+/dev/rvj00c:Unknowned desc map flags (0x2) for file 23225
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23227
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23228
+/dev/rvj00c:Unknowned desc map flags (0xf540) for file 23229
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23230
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23231
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23232
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23233
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23234
+/dev/rvj00c:Unknowned desc map flags (0x1ac5) for file 23235
+/dev/rvj00c:Unknowned desc map flags (0x1a0) for file 23236
+/dev/rvj00c:Unknowned desc map flags (0x2fff) for file 23237
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23239
+/dev/rvj00c:Unknowned desc map flags (0xf542) for file 23240
+/dev/rvj00c:Unknowned desc map flags (0x61f7) for file 23241
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23242
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23243
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23244
+/dev/rvj00c:Unknowned desc map flags (0xf540) for file 23250
+/dev/rvj00c:Unknowned desc map flags (0x16b8) for file 23251
+/dev/rvj00c:Unknowned desc map flags (0xc7e) for file 23252
+/dev/rvj00c:Unknowned desc map flags (0x5202) for file 23253
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23254
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23255
+/dev/rvj00c:Unknowned desc map flags (0x4b14) for file 23256
+/dev/rvj00c:Unknowned desc map flags (0x2) for file 23257
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23259
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23260
+/dev/rvj00c:Unknowned desc map flags (0xf540) for file 23261
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23262
+/dev/rvj00c:Unknowned desc map flags (0x5d21) for file 23263
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23264
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23265
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23266
+/dev/rvj00c:Unknowned desc map flags (0x1ac8) for file 23267
+/dev/rvj00c:Unknowned desc map flags (0x1a0) for file 23268
+/dev/rvj00c:Unknowned desc map flags (0x1fff) for file 23269
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23271
+/dev/rvj00c:Unknowned desc map flags (0x436c) for file 23272
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23273
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23274
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23275
+/dev/rvj00c:Unknowned desc map flags (0xd84) for file 23276
+/dev/rvj00c:Unknowned desc map flags (0xf540) for file 23282
+/dev/rvj00c:Unknowned desc map flags (0x16b9) for file 23283
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23284
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23285
+/dev/rvj00c:Unknowned desc map flags (0x5cf0) for file 23286
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23287
+/dev/rvj00c:Unknowned desc map flags (0x4b17) for file 23288
+/dev/rvj00c:Unknowned desc map flags (0x2) for file 23289
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23291
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23292
+/dev/rvj00c:Unknowned desc map flags (0xf541) for file 23293
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23294
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23295
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23296
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23297
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23298
+/dev/rvj00c:Unknowned desc map flags (0x1acb) for file 23299
+/dev/rvj00c:Unknowned desc map flags (0x1a0) for file 23300
+/dev/rvj00c:Unknowned desc map flags (0x1fff) for file 23301
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23303
+/dev/rvj00c:Unknowned desc map flags (0x16b9) for file 23304
+/dev/rvj00c:Unknowned desc map flags (0x52bc) for file 23305
+/dev/rvj00c:Unknowned desc map flags (0xedf) for file 23306
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23307
+/dev/rvj00c:Unknowned desc map flags (0xec7) for file 23308
+/dev/rvj00c:Unknowned desc map flags (0xf541) for file 23314
+/dev/rvj00c:Unknowned desc map flags (0x16b9) for file 23315
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23316
+/dev/rvj00c:Unknowned desc map flags (0xf9f) for file 23317
+/dev/rvj00c:Unknowned desc map flags (0x4d76) for file 23318
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23319
+/dev/rvj00c:Unknowned desc map flags (0x4b1a) for file 23320
+/dev/rvj00c:Unknowned desc map flags (0x2) for file 23321
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23323
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23324
+/dev/rvj00c:Unknowned desc map flags (0xf541) for file 23325
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23326
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23327
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23328
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23329
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23330
+/dev/rvj00c:Unknowned desc map flags (0x1ace) for file 23331
+/dev/rvj00c:Unknowned desc map flags (0x1a0) for file 23332
+/dev/rvj00c:Unknowned desc map flags (0x4fff) for file 23333
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23335
+/dev/rvj00c:Unknowned desc map flags (0x16b9) for file 23336
+/dev/rvj00c:Unknowned desc map flags (0xdff) for file 23337
+/dev/rvj00c:Unknowned desc map flags (0x5c50) for file 23338
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23339
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23340
+/dev/rvj00c:Unknowned desc map flags (0xf541) for file 23346
+/dev/rvj00c:Unknowned desc map flags (0x16b8) for file 23347
+/dev/rvj00c:Unknowned desc map flags (0xeaf) for file 23348
+/dev/rvj00c:Unknowned desc map flags (0x6342) for file 23349
+/dev/rvj00c:Unknowned desc map flags (0x53a4) for file 23350
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23351
+/dev/rvj00c:Unknowned desc map flags (0x4b1d) for file 23352
+/dev/rvj00c:Unknowned desc map flags (0x2) for file 23353
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23355
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23356
+/dev/rvj00c:Unknowned desc map flags (0xf541) for file 23357
+/dev/rvj00c:Unknowned desc map flags (0x4cee) for file 23358
+/dev/rvj00c:Unknowned desc map flags (0x6442) for file 23359
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23360
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23361
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23362
+/dev/rvj00c:Unknowned desc map flags (0x1ad1) for file 23363
+/dev/rvj00c:Unknowned desc map flags (0x1a0) for file 23364
+/dev/rvj00c:Unknowned desc map flags (0xdfff) for file 23365
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23367
+/dev/rvj00c:Unknowned desc map flags (0x436b) for file 23368
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23369
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23370
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23371
+/dev/rvj00c:Unknowned desc map flags (0xd74) for file 23372
+/dev/rvj00c:Unknowned desc map flags (0x9190) for file 23378
+/dev/rvj00c:Unknowned desc map flags (0x9190) for file 23379
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23380
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23381
+/dev/rvj00c:Unknowned desc map flags (0xfe77) for file 23382
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23383
+/dev/rvj00c:Unknowned desc map flags (0x40b9) for file 23384
+/dev/rvj00c:Unknowned desc map flags (0x2) for file 23385
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23387
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23388
+/dev/rvj00c:Unknowned desc map flags (0xf542) for file 23389
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23390
+/dev/rvj00c:Unknowned desc map flags (0x6308) for file 23391
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23392
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23393
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23394
+/dev/rvj00c:Unknowned desc map flags (0x1ad3) for file 23395
+/dev/rvj00c:Unknowned desc map flags (0x1a0) for file 23396
+/dev/rvj00c:Unknowned desc map flags (0xbfff) for file 23397
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23399
+/dev/rvj00c:Unknowned desc map flags (0x6564) for file 23400
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23401
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23402
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23403
+/dev/rvj00c:Unknowned desc map flags (0x1ea0) for file 23404
+/dev/rvj00c:Unknowned desc map flags (0xf542) for file 23410
+/dev/rvj00c:Unknowned desc map flags (0x16b8) for file 23411
+/dev/rvj00c:Unknowned desc map flags (0xc86) for file 23412
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23413
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23414
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23415
+/dev/rvj00c:Unknowned desc map flags (0x4b25) for file 23416
+/dev/rvj00c:Unknowned desc map flags (0x2) for file 23417
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23419
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23420
+/dev/rvj00c:Unknowned desc map flags (0x9190) for file 23421
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23422
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23423
+/dev/rvj00c:Unknowned desc map flags (0x1383) for file 23424
+/dev/rvj00c:Unknowned desc map flags (0xfd8f) for file 23425
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23426
+/dev/rvj00c:Unknowned desc map flags (0x1ab0) for file 23427
+/dev/rvj00c:Unknowned desc map flags (0x1a0) for file 23428
+/dev/rvj00c:Unknowned desc map flags (0x2fff) for file 23429
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23431
+/dev/rvj00c:Unknowned desc map flags (0xe3d6) for file 23432
+/dev/rvj00c:Unknowned desc map flags (0x6228) for file 23433
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23434
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23435
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23436
+/dev/rvj00c:Unknowned desc map flags (0xf542) for file 23442
+/dev/rvj00c:Unknowned desc map flags (0x436c) for file 23443
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23444
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23445
+/dev/rvj00c:Unknowned desc map flags (0xcfc) for file 23446
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23447
+/dev/rvj00c:Unknowned desc map flags (0x4b27) for file 23448
+/dev/rvj00c:Unknowned desc map flags (0x2) for file 23449
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23451
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23452
+/dev/rvj00c:Unknowned desc map flags (0x9191) for file 23453
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23454
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23455
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23456
+/dev/rvj00c:Unknowned desc map flags (0xfc6f) for file 23457
+/dev/rvj00c:Unknowned desc map flags (0xffff) for file 23458
+/dev/rvj00c:Unknowned desc map flags (0x1ab2) for file 23459
+/dev/rvj00c:DescMap: Bad alloc count; is 335 should be 457
+/dev/rvj00c:UsageArray: FreeBlocks wrong; is 580925 should be 580937
+/dev/rvj00c:CheckAllFiles:Desc block for 341 duplicate usage of block 0 Previous use at <5,0,0>
+/dev/rvj00c:CheckAllFiles: Can't desc for file 341 at 0
+/dev/rvj00c:CheckAllFiles:Desc block for 373 duplicate usage of block 0 Previous use at <5,0,0>
+/dev/rvj00c:CheckAllFiles: Can't desc for file 373 at 0
+/dev/rvj00c:CheckAllFiles:Desc block for 405 duplicate usage of block 0 Previous use at <5,0,0>
+/dev/rvj00c:CheckAllFiles: Can't desc for file 405 at 0
+/dev/rvj00c:CheckAllFiles:Desc block for 437 duplicate usage of block 0 Previous use at <5,0,0>
+/dev/rvj00c:CheckAllFiles: Can't desc for file 437 at 0
+/dev/rvj00c:CheckAllFiles:Desc block for 469 duplicate usage of block 0 Previous use at <5,0,0>
+/dev/rvj00c:CheckAllFiles: Can't desc for file 469 at 0
+/dev/rvj00c:CheckAllFiles:Desc block for 501 duplicate usage of block 0 Previous use at <5,0,0>
+/dev/rvj00c:CheckAllFiles: Can't desc for file 501 at 0
+/dev/rvj00c:CheckAllFiles:Desc block for 533 duplicate usage of block 0 Previous use at <5,0,0>
+/dev/rvj00c:CheckAllFiles: Can't desc for file 533 at 0
+/dev/rvj00c:CheckAllFiles:Desc block for 565 duplicate usage of block 0 Previous use at <5,0,0>
+/dev/rvj00c:CheckAllFiles: Can't desc for file 565 at 0
+/dev/rvj00c:CheckAllFiles:Desc block for 6830 duplicate usage of block 352611 Previous use at <2,0,68>
+/dev/rvj00c:CheckAllFiles:Desc block for 6831 duplicate usage of block 352611 Previous use at <2,0,68>
+/dev/rvj00c:CheckAllFiles:Desc block for 6832 duplicate usage of block 352611 Previous use at <2,0,68>
+/dev/rvj00c:CheckAllFiles:Desc block for 6834 duplicate usage of block 352611 Previous use at <2,0,68>
+/dev/rvj00c:CheckAllFiles:Desc block for 6835 duplicate usage of block 352603 Previous use at <2,0,1>
+/dev/rvj00c:CheckAllFiles:Desc block for 6836 duplicate usage of block 352603 Previous use at <2,0,1>
+/dev/rvj00c:CheckAllFiles:Desc block for 6848 duplicate usage of block 352611 Previous use at <2,0,68>
+/dev/rvj00c:CheckAllFiles:Desc block for 6849 duplicate usage of block 352611 Previous use at <2,0,68>
+/dev/rvj00c:CheckAllFiles:Desc block for 6850 duplicate usage of block 352611 Previous use at <2,0,68>
+/dev/rvj00c:CheckAllFiles:Desc block for 6851 duplicate usage of block 352611 Previous use at <2,0,68>
+/dev/rvj00c:CheckAllFiles:Desc block for 6852 duplicate usage of block 352611 Previous use at <2,0,68>
+/dev/rvj00c:CheckAllFiles:Desc block for 6853 duplicate usage of block 352611 Previous use at <2,0,68>
+/dev/rvj00c:CheckAllFiles:Desc block for 6854 duplicate usage of block 352611 Previous use at <2,0,68>
+/dev/rvj00c:CheckAllFiles:Desc block for 6855 duplicate usage of block 352611 Previous use at <2,0,68>
+/dev/rvj00c:CheckAllFiles:Desc block for 6856 duplicate usage of block 352611 Previous use at <2,0,68>
+/dev/rvj00c:CheckAllFiles:Desc block for 6857 duplicate usage of block 352611 Previous use at <2,0,68>
+/dev/rvj00c:CheckAllFiles:Desc block for 6858 duplicate usage of block 352611 Previous use at <2,0,68>
+/dev/rvj00c:CheckAllFiles:Desc block for 6859 duplicate usage of block 352611 Previous use at <2,0,68>
+/dev/rvj00c:CheckAllFiles:Desc block for 6860 duplicate usage of block 352611 Previous use at <2,0,68>
+/dev/rvj00c:CheckAllFiles:Desc block for 6861 duplicate usage of block 352611 Previous use at <2,0,68>
+/dev/rvj00c:CheckAllFiles:Desc block for 6862 duplicate usage of block 352611 Previous use at <2,0,68>
+/dev/rvj00c:CheckAllFiles:Desc block for 6863 duplicate usage of block 352611 Previous use at <2,0,68>
+/dev/rvj00c:CheckAllFiles:Desc block for 6864 duplicate usage of block 352611 Previous use at <2,0,68>
+/dev/rvj00c:CheckAllFiles:Desc block for 6865 duplicate usage of block 352611 Previous use at <2,0,68>
+/dev/rvj00c:CheckAllFiles:Desc block for 6866 duplicate usage of block 352611 Previous use at <2,0,68>
+/dev/rvj00c:CheckAllFiles:Desc block for 6867 duplicate usage of block 352611 Previous use at <2,0,68>
+/dev/rvj00c:CheckAllFiles:Desc block for 6868 duplicate usage of block 352611 Previous use at <2,0,68>
+/dev/rvj00c:CheckAllFiles:Desc block for 6869 duplicate usage of block 352611 Previous use at <2,0,68>
+/dev/rvj00c:CheckAllFiles:Desc block for 6870 duplicate usage of block 352611 Previous use at <2,0,68>
+/dev/rvj00c:CheckAllFiles:Desc block for 6871 duplicate usage of block 352603 Previous use at <2,0,1>
+/dev/rvj00c:CheckAllFiles:Desc block for 6872 duplicate usage of block 352603 Previous use at <2,0,1>
+/dev/rvj00c:CheckAllFiles:Desc block for 6884 duplicate usage of block 352611 Previous use at <2,0,68>
+/dev/rvj00c:CheckAllFiles:Desc block for 6885 duplicate usage of block 352611 Previous use at <2,0,68>
+/dev/rvj00c:CheckAllFiles:Desc block for 6886 duplicate usage of block 352611 Previous use at <2,0,68>
+/dev/rvj00c:CheckAllFiles:Desc block for 6887 duplicate usage of block 352611 Previous use at <2,0,68>
+/dev/rvj00c:CheckAllFiles:Desc block for 6888 duplicate usage of block 352611 Previous use at <2,0,68>
+/dev/rvj00c:CheckAllFiles:Desc block for 8769 duplicate usage of block 352603 Previous use at <2,0,1>
+/dev/rvj00c:CheckAllFiles:Desc block for 8770 duplicate usage of block 352603 Previous use at <2,0,1>
+/dev/rvj00c:CheckAllFiles:Desc block for 8771 duplicate usage of block 352603 Previous use at <2,0,1>
+/dev/rvj00c:CheckAllFiles:Desc block for 8772 duplicate usage of block 352603 Previous use at <2,0,1>
+/dev/rvj00c:CheckAllFiles:Desc block for 8773 duplicate usage of block 352603 Previous use at <2,0,1>
+/dev/rvj00c:CheckAllFiles:Desc block for 8774 duplicate usage of block 352603 Previous use at <2,0,1>
+/dev/rvj00c:CheckAllFiles:Desc block for 8775 duplicate usage of block 352603 Previous use at <2,0,1>
+/dev/rvj00c:CheckAllFiles:Desc block for 8776 duplicate usage of block 352603 Previous use at <2,0,1>
+/dev/rvj00c:CheckAllFiles:Desc block for 8777 duplicate usage of block 352603 Previous use at <2,0,1>
+/dev/rvj00c:CheckAllFiles:Desc block for 8778 duplicate usage of block 352603 Previous use at <2,0,1>
+/dev/rvj00c:CheckAllFiles:Desc block for 8779 duplicate usage of block 352603 Previous use at <2,0,1>
+/dev/rvj00c:CheckAllFiles:Desc block for 8780 duplicate usage of block 352603 Previous use at <2,0,1>
+/dev/rvj00c:CheckAllFiles:Desc block for 8787 duplicate usage of block 352603 Previous use at <2,0,1>
+/dev/rvj00c:CheckAllFiles:Desc block for 8788 duplicate usage of block 352603 Previous use at <2,0,1>
+/dev/rvj00c:CheckAllFiles:Desc block for 8789 duplicate usage of block 352603 Previous use at <2,0,1>
+/dev/rvj00c:CheckAllFiles:Desc block for 8790 duplicate usage of block 352603 Previous use at <2,0,1>
+/dev/rvj00c:CheckAllFiles:Desc block for 8791 duplicate usage of block 352603 Previous use at <2,0,1>
+/dev/rvj00c:CheckAllFiles:Desc block for 8792 duplicate usage of block 352603 Previous use at <2,0,1>
+/dev/rvj00c:CheckAllFiles:Desc block for 8806 duplicate usage of block 352603 Previous use at <2,0,1>
+/dev/rvj00c:CheckAllFiles:Desc block for 23121 duplicate usage of block 0 Previous use at <5,0,0>
+/dev/rvj00c:CheckAllFiles: Can't desc for file 23121 at 0
+/dev/rvj00c:CheckAllFiles:Desc block for 23153 duplicate usage of block 0 Previous use at <5,0,0>
+/dev/rvj00c:CheckAllFiles: Can't desc for file 23153 at 0
+/dev/rvj00c:CheckAllFiles:Desc block for 23185 duplicate usage of block 0 Previous use at <5,0,0>
+/dev/rvj00c:CheckAllFiles: Can't desc for file 23185 at 0
+/dev/rvj00c:CheckAllFiles:Desc block for 23217 duplicate usage of block 0 Previous use at <5,0,0>
+/dev/rvj00c:CheckAllFiles: Can't desc for file 23217 at 0
+/dev/rvj00c:CheckAllFiles:Desc block for 23249 duplicate usage of block 0 Previous use at <5,0,0>
+/dev/rvj00c:CheckAllFiles: Can't desc for file 23249 at 0
+/dev/rvj00c:CheckAllFiles:Desc block for 23281 duplicate usage of block 0 Previous use at <5,0,0>
+/dev/rvj00c:CheckAllFiles: Can't desc for file 23281 at 0
+/dev/rvj00c:CheckAllFiles:Desc block for 23313 duplicate usage of block 0 Previous use at <5,0,0>
+/dev/rvj00c:CheckAllFiles: Can't desc for file 23313 at 0
+/dev/rvj00c:CheckAllFiles:Desc block for 23345 duplicate usage of block 0 Previous use at <5,0,0>
+/dev/rvj00c:CheckAllFiles: Can't desc for file 23345 at 0
+/dev/rvj00c:CheckAllFiles:Desc block for 23377 duplicate usage of block 0 Previous use at <5,0,0>
+/dev/rvj00c:CheckAllFiles: Can't desc for file 23377 at 0
+/dev/rvj00c:CheckAllFiles:Desc block for 23409 duplicate usage of block 0 Previous use at <5,0,0>
+/dev/rvj00c:CheckAllFiles: Can't desc for file 23409 at 0
+/dev/rvj00c:CheckAllFiles:Desc block for 23441 duplicate usage of block 0 Previous use at <5,0,0>
+/dev/rvj00c:CheckAllFiles: Can't desc for file 23441 at 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 8 is wrong; is 360448 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 9 is wrong; is 61440 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 10 is wrong; is 61440 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 13 is wrong; is 106496 should be 12288
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 14 is wrong; is 278528 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 16 is wrong; is 90112 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 23 is wrong; is 147456 should be 106496
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 24 is wrong; is 8192 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 26 is wrong; is 221312 should be 49280
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 27 is wrong; is 109056 should be 105216
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 33 is wrong; is 12288 should be 8192
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 34 is wrong; is 16384 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 35 is wrong; is 8192 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 46 is wrong; is 20480 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 50 is wrong; is 479232 should be 475136
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 53 is wrong; is 4096 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 69 is wrong; is 40960 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 70 is wrong; is 94208 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 71 is wrong; is 200704 should be 143360
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 131 is wrong; is 49152 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 132 is wrong; is 4096 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 133 is wrong; is 16384 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 134 is wrong; is 28672 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 140 is wrong; is 8192 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 141 is wrong; is 32768 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 142 is wrong; is 12288 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 148 is wrong; is 4096 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 170 is wrong; is 57344 should be 4096
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 173 is wrong; is 155648 should be 8192
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 174 is wrong; is 77824 should be 20480
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 178 is wrong; is 176128 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 179 is wrong; is 294912 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 180 is wrong; is 139264 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 181 is wrong; is 397312 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 182 is wrong; is 356352 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 183 is wrong; is 110592 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 184 is wrong; is 344064 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 185 is wrong; is 98304 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 186 is wrong; is 319488 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 187 is wrong; is 110592 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 188 is wrong; is 57344 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 191 is wrong; is 40960 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 193 is wrong; is 49152 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 194 is wrong; is 28672 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 196 is wrong; is 4096 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 262 is wrong; is 77824 should be 73728
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 264 is wrong; is 8192 should be 4096
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 266 is wrong; is 258048 should be 114688
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 278 is wrong; is 122880 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 279 is wrong; is 323584 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 280 is wrong; is 311296 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 281 is wrong; is 253952 should be 8192
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 283 is wrong; is 73728 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 284 is wrong; is 73728 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 286 is wrong; is 4096 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 289 is wrong; is 102400 should be 8192
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 292 is wrong; is 40960 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 294 is wrong; is 20480 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 296 is wrong; is 290816 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 297 is wrong; is 16384 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 314 is wrong; is 102400 should be 69632
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 315 is wrong; is 61440 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 316 is wrong; is 24576 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 319 is wrong; is 36864 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 328 is wrong; is 192512 should be 86016
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 329 is wrong; is 483328 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 330 is wrong; is 483328 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 331 is wrong; is 397312 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 332 is wrong; is 499712 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 333 is wrong; is 499712 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 334 is wrong; is 512000 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 335 is wrong; is 487424 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 336 is wrong; is 442368 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 337 is wrong; is 495616 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 338 is wrong; is 495616 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 339 is wrong; is 491520 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 340 is wrong; is 454656 should be 299008
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 343 is wrong; is 32640 should be 2304
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 344 is wrong; is 63616 should be 63104
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 462 is wrong; is 405504 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 466 is wrong; is 200704 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 468 is wrong; is 73728 should be 0
+/dev/rvj00c:CheckUsageArray: Active bytes for seg 469 is wrong; is 24576 should be 0
+File /33 references non-allocated descriptor 490. File Deleted.
+Entry 33 (7) now has nameLength 2, recordLength 12, fileNumber 0.
+File /17 references non-allocated descriptor 23193. File Deleted.
+Entry 17 (17) now has nameLength 2, recordLength 12, fileNumber 0.
+File /20 references non-allocated descriptor 371. File Deleted.
+Entry 20 (19) now has nameLength 2, recordLength 12, fileNumber 0.
+File /42 references non-allocated descriptor 23358. File Deleted.
+Entry 42 (42) now has nameLength 2, recordLength 12, fileNumber 0.
+File /44 references non-allocated descriptor 536. File Deleted.
+Entry 44 (44) now has nameLength 2, recordLength 12, fileNumber 0.
+File /55 references non-allocated descriptor 23239. File Deleted.
+Entry 55 (55) now has nameLength 2, recordLength 12, fileNumber 0.
+File /57 references non-allocated descriptor 417. File Deleted.
+Entry 57 (57) now has nameLength 2, recordLength 12, fileNumber 0.
+File /67 references non-allocated descriptor 23120. File Deleted.
+Entry 67 (68) now has nameLength 2, recordLength 12, fileNumber 0.
+File 33 references non-allocated descriptor 490. File Deleted.
+Entry 33 (7) now has nameLength 2, recordLength 12, fileNumber 0.
+File 17 references non-allocated descriptor 23193. File Deleted.
+Entry 17 (17) now has nameLength 2, recordLength 12, fileNumber 0.
+File 20 references non-allocated descriptor 371. File Deleted.
+Entry 20 (19) now has nameLength 2, recordLength 12, fileNumber 0.
+File 42 references non-allocated descriptor 23358. File Deleted.
+Entry 42 (42) now has nameLength 2, recordLength 12, fileNumber 0.
+File 44 references non-allocated descriptor 536. File Deleted.
+Entry 44 (44) now has nameLength 2, recordLength 12, fileNumber 0.
+File 55 references non-allocated descriptor 23239. File Deleted.
+Entry 55 (55) now has nameLength 2, recordLength 12, fileNumber 0.
+File 57 references non-allocated descriptor 417. File Deleted.
+Entry 57 (57) now has nameLength 2, recordLength 12, fileNumber 0.
+File 67 references non-allocated descriptor 23120. File Deleted.
+Entry 67 (68) now has nameLength 2, recordLength 12, fileNumber 0.
+Link count corrected for file 2.  Is 104 should be 96.
+1 links counts corrected
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352611 overlaps <2,0,68>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352611 overlaps <2,0,68>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352611 overlaps <2,0,68>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352611 overlaps <2,0,68>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352612 overlaps <2,0,68>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352612 overlaps <2,0,68>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352612 overlaps <2,0,68>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352612 overlaps <2,0,68>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352613 overlaps <2,0,68>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352613 overlaps <2,0,68>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352613 overlaps <2,0,68>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352613 overlaps <2,0,68>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352614 overlaps <2,0,68>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352614 overlaps <2,0,68>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352614 overlaps <2,0,68>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352614 overlaps <2,0,68>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352615 overlaps <2,0,68>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352615 overlaps <2,0,68>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352615 overlaps <2,0,68>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352615 overlaps <2,0,68>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352616 overlaps <2,0,68>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352616 overlaps <2,0,68>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352616 overlaps <2,0,68>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352616 overlaps <2,0,68>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352617 overlaps <2,0,68>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352617 overlaps <2,0,68>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352617 overlaps <2,0,68>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352617 overlaps <2,0,68>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352618 overlaps <2,0,68>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352618 overlaps <2,0,68>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352618 overlaps <2,0,68>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352618 overlaps <2,0,68>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352603 overlaps <2,0,1>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352603 overlaps <2,0,1>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352603 overlaps <2,0,1>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352603 overlaps <2,0,1>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352604 overlaps <2,0,1>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352604 overlaps <2,0,1>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352604 overlaps <2,0,1>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352604 overlaps <2,0,1>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352605 overlaps <2,0,1>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352605 overlaps <2,0,1>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352605 overlaps <2,0,1>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352605 overlaps <2,0,1>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352606 overlaps <2,0,1>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352606 overlaps <2,0,1>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352606 overlaps <2,0,1>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352606 overlaps <2,0,1>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352607 overlaps <2,0,1>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352607 overlaps <2,0,1>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352607 overlaps <2,0,1>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352607 overlaps <2,0,1>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352608 overlaps <2,0,1>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352608 overlaps <2,0,1>
+/dev/rvj00c:CheckFileLayoutSummary: Desc block at 352608 overlaps <2,0,1>
+/dev/rvj00c:No summary region for block at 352609 own by <2,0,1>
+/dev/rvj00c:No summary region for block at 352610 own by <2,0,1>
+/dev/rvj00c:No summary region for desc 341; should be a 0
+/dev/rvj00c:No summary region for desc 373; should be a 0
+/dev/rvj00c:No summary region for desc 405; should be a 0
+/dev/rvj00c:No summary region for desc 437; should be a 0
+/dev/rvj00c:No summary region for desc 469; should be a 0
+/dev/rvj00c:No summary region for desc 501; should be a 0
+/dev/rvj00c:No summary region for desc 533; should be a 0
+/dev/rvj00c:No summary region for desc 565; should be a 0
+/dev/rvj00c:No summary region for desc 23121; should be a 0
+/dev/rvj00c:No summary region for desc 23153; should be a 0
+/dev/rvj00c:No summary region for desc 23185; should be a 0
+/dev/rvj00c:No summary region for desc 23217; should be a 0
+/dev/rvj00c:No summary region for desc 23249; should be a 0
+/dev/rvj00c:No summary region for desc 23281; should be a 0
+/dev/rvj00c:No summary region for desc 23313; should be a 0
+/dev/rvj00c:No summary region for desc 23345; should be a 0
+/dev/rvj00c:No summary region for desc 23377; should be a 0
+/dev/rvj00c:No summary region for desc 23409; should be a 0
+/dev/rvj00c:No summary region for desc 23441; should be a 0
+11:20:23.310:Read LFS checkpoint from /dev/rvj00c
+11:20:27.460:Checking files
+11:20:41.570:Checking usage array
+11:20:41.640:Checking directory tree
+11:20:45.500:Checking summary regions
+11:23:52.710:Reporting errors
+/dev/rvj00c: 172 major errors 543 minor errors

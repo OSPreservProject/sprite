@@ -1,0 +1,66 @@
+
+
+
+Tcl_Concat            C Library Procedures             Tcl_Concat
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tcl_Concat - concatenate a collection of strings
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttccll..hh>>
+
+     char *
+     TTccll__CCoonnccaatt(_a_r_g_c, _a_r_g_v)
+
+AARRGGUUMMEENNTTSS
+     int_a_r_g_c(in)
+     Number of strings.
+
+     char*_a_r_g_v[](in)
+     Array of strings to concatenate.  Must have _a_r_g_c entries.
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     TTccll__CCoonnccaatt is a utility procedure used by several of the Tcl
+     commands.   Given  a  collection of strings, it concatenates
+     them together  into  a  single  string,  with  the  original
+     strings  separated  by  spaces.  This procedure behaves dif-
+     ferently than TTccll__MMeerrggee, in that the  arguments  are  simply
+     concatenated: no effort is made to ensure proper list struc-
+     ture.  However, in most common usage the arguments will  all  |
+     be  proper  lists  themselves;   if  this  is true, then the  |
+     result will also have proper list structure.                  |
+
+     TTccll__CCoonnccaatt eliminates leading and trailing white space as it  |
+     copies  strings  from  aarrggvv to the result.  If an element of  |
+     aarrggvv consists of nothing but white space, then  that  string  |
+     is  ignored entirely.  This white-space removal was added to  |
+     make the output of the ccoonnccaatt command cleaner-looking.
+
+     The result string is dynamically allocated  using  mmaalllloocc(());
+     the  caller  must  eventually  release  the space by calling
+     ffrreeee(()).
+
+
+KKEEYYWWOORRDDSS
+     concatenate, strings
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     1
+
+
+

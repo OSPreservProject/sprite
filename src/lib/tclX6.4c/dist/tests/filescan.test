@@ -1,0 +1,233 @@
+#
+# filescan.test
+#
+# Tests for the scancontext and scanfile commands.
+#---------------------------------------------------------------------------
+# Copyright 1992 Karl Lehenbauer and Mark Diekhans.
+#
+# Permission to use, copy, modify, and distribute this software and its
+# documentation for any purpose and without fee is hereby granted, provided
+# that the above copyright notice appear in all copies.  Karl Lehenbauer and
+# Mark Diekhans make no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without express or
+# implied warranty.
+#------------------------------------------------------------------------------
+# $Id: filescan.test,v 2.0 1992/10/16 04:49:47 markd Rel $
+#------------------------------------------------------------------------------
+#
+
+if {[info procs test] != "test"} then {source testlib.tcl}
+
+# Increment a name.  This takes a name and "adds one" to it, that is advancing
+# each digit lexically through "0"..."9" -> "A"-"Z" -> "a"..."z".  When one
+# digit wraps, the next one is advanced.  Optional arg forces upper case only
+# if true and start with all upper case or digits.
+
+proc IncrName {Name args} {
+    set Upper [expr {([llength $args] == 1) && [lindex $args 0]}]
+    set Last  [expr [clength $Name]-1]
+    set Begin [csubstr $Name 0 $Last]
+    set Digit [cindex $Name $Last]
+    set Recurse 0
+    case $Digit in {
+        {9}     {set Digit A}
+        {Z}     {if {$Upper} {set Recurse 1} else {set Digit a}}
+        {z}     {set Recurse 1}
+        default {set Digit [ctype char [expr [ctype ord $Digit]+1]]}
+    }
+    if {$Recurse} {
+        if {$Last == 0} then {
+            return 0 ;# Wrap around
+        } else {
+            return "[IncrName $Begin]0"
+        }
+    }
+    return "$Begin$Digit"
+}
+
+# Proc to generate record that can be validated.  The record has 
+# grows quite large to test the dynamic buffering in the file I/O.
+
+proc GenScanRec {Key LineNum} {
+  set extra [replicate :@@@@@@@@: $LineNum]
+  return  "$Key This is a test record ($extra) index is $Key"
+}
+
+# Proc to validate a matched record.
+
+proc ValMatch {scanInfo errId} {
+    global testFH matchInfo
+
+    test filescan-${errId}.1 {filescan tests} {
+         set matchInfo(line)
+    } [GenScanRec [lindex $scanInfo 0] [lindex $scanInfo 2]]
+    test filescan-${errId}.2 {filescan tests} {
+         set matchInfo(offset)
+    } [lindex $scanInfo 1]
+    test filescan-${errId}.3 {filescan tests} {
+         set matchInfo(linenum)
+    } [lindex $scanInfo 2]
+    test filescan-${errId}.4 {filescan tests} {
+         set matchInfo(handle)
+    } $testFH
+    set matchType [lindex $scanInfo 3] 
+    global matchCnt.$matchType
+    incr matchCnt.$matchType
+}
+
+global matchInfo
+global matchCnt.0    matchCnt.1    matchCnt.2    matchCnt.3    DefaultCnt 
+global chkMatchCnt.0 chkMatchCnt.1 chkMatchCnt.2 chkMatchCnt.3 chkDefaultCnt
+global testFH
+
+set matchCnt.0      0
+set matchCnt.1      0
+set matchCnt.2      0
+set matchCnt.3      0
+set defaultCnt      0
+set chkMatchCnt.0   0
+set chkMatchCnt.1   0
+set chkMatchCnt.2   0
+set chkMatchCnt.3   0
+set chkDefaultCnt   0
+set scanList       {}
+set maxRec        200
+
+catch {unlink TEST.TMP}
+set testFH [open TEST.TMP w]
+
+# Build a test file and a list of records to scan for.  Each element in the 
+# list will have the following info:
+#   {key fileOffset fileLineNumber matchType}
+
+set key FatHeadAAAA
+for {set cnt 0} {$cnt < $maxRec} {incr cnt} {
+    if {($cnt % 10) == 0} {
+        set matchType [random 4]
+        incr chkMatchCnt.$matchType
+        set scanInfo [list "$key [tell $testFH] [expr $cnt+1] $matchType"]
+        if {[random 2]} {
+            set scanList [concat $scanList $scanInfo]
+        } else {
+            set scanList [concat $scanInfo $scanList]}
+    } else {
+        incr chkDefaultCnt}
+    if {$cnt == [expr $maxRec/2]} {
+        set midKey $key
+        }
+    puts $testFH [GenScanRec $key [expr $cnt+1]]
+    set key [IncrName $key 1]  ;# Upper case only
+}
+
+close $testFH
+
+# Build up the scan context.
+
+set testCH [scancontext create]
+
+foreach scanInfo $scanList {
+    set key [lindex $scanInfo 0]
+    set matchType [lindex $scanInfo 3]
+    set cmd "global matchInfo; ValMatch \{$scanInfo\} 1.1" 
+    case $matchType in {
+      {0} {scanmatch -nocase $testCH [string toupper $key] $cmd}
+      {1} {scanmatch $testCH ^$key  $cmd}
+      {2} {scanmatch $testCH $key\$ $cmd}
+      {3} {scanmatch $testCH $key   $cmd}
+    }
+}
+
+scanmatch $testCH {
+    global defaultCnt testFH matchInfo
+
+    incr defaultCnt
+
+    test filescan-1.2 {filescan tests} {
+        set matchInfo(handle)
+    } $testFH
+}
+
+set testFH [open TEST.TMP r]
+scanfile $testCH $testFH
+
+test filescan-1.3 {filescan tests} {
+    set {matchCnt.0}
+} ${chkMatchCnt.0}
+test filescan-1.4 {filescan tests} {
+    set {matchCnt.1}
+} ${chkMatchCnt.1}
+test filescan-1.5 {filescan tests} {
+    set {matchCnt.2}
+} ${chkMatchCnt.2}
+test filescan-1.6 {filescan tests} {
+   set {matchCnt.3}
+} ${chkMatchCnt.3}
+test filescan-1.7 {filescan tests} {
+    set defaultCnt
+} $chkDefaultCnt
+
+scancontext delete $testCH
+
+# Test return and continue from within match commands
+
+set testCH [scancontext create]
+seek $testFH 0
+global matchCnt
+set matchCnt 0
+
+scanmatch $testCH $midKey {
+    global matchCnt
+    incr matchCnt
+    continue;
+}
+
+scanmatch $testCH ^$midKey {
+    error "This should not ever get executed  2.1"
+}
+
+scanmatch $testCH [IncrName $midKey] {
+    return "FudPucker"
+}
+
+test filescan-2.2 {filescan tests} {
+    scanfile $testCH $testFH
+} "FudPucker"
+
+scancontext delete $testCH
+
+
+# Test argument checking and error handling.
+
+test filescan-3.1 {filescan tests} {
+    list [catch {scancontext foomuch} msg] $msg
+} {1 {invalid argument, expected one of: create or delete}}
+
+test filescan-3.2 {filescan tests} {
+    list [catch {scanmatch $testCH} msg] $msg
+} {1 {wrong # args: scanmatch [-nocase] contexthandle [regexp] command}}
+
+test filescan-3.3 {filescan tests} {
+    list [catch {scanmatch} msg] $msg
+} {1 {wrong # args: scanmatch [-nocase] contexthandle [regexp] command}}
+
+test filescan-3.4 {filescan tests} {
+    list [catch {scanfile} msg] $msg
+} {1 {wrong # args: scanfile contexthandle filehandle}}
+
+test filescan-3.5 {filescan tests} {
+    set testCH [scancontext create]
+    set msg [list [catch {scanfile $testCH $testFH} msg] $msg]
+    scancontext delete $testCH
+    set msg
+} {1 {no patterns in current scan context}}
+
+close $testFH
+unlink TEST.TMP
+
+rename GenScanRec {}
+rename ValMatch {}
+
+unset matchCnt matchInfo
+unset matchCnt.0    matchCnt.1    matchCnt.2    matchCnt.3    defaultCnt 
+unset chkMatchCnt.0 chkMatchCnt.1 chkMatchCnt.2 chkMatchCnt.3 chkDefaultCnt
+unset testFH

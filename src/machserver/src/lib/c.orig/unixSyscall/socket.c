@@ -1,0 +1,1145 @@
+/* 
+ * socket.c --
+ *
+ *	Routines to emulate 4.3 BSD socket-related system calls for IPC
+ *	using the Internet protocol suite. The routines make calls to 
+ *	the Sprite Internet Server using Sprite system calls.
+ *
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/unixSyscall/RCS/socket.c,v 1.13 91/08/12 17:06:47 mottsmth Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <bit.h>
+#include <dev/net.h>
+#include <fs.h>
+#include <inet.h>
+#include <status.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/uio.h>
+#include <netinet/in.h>
+#include <errno.h>
+
+#include "compatInt.h"
+
+static ReturnStatus Wait();
+
+#ifdef DEBUG
+#  define	DebugMsg(status, string) 	Stat_PrintMsg(status, string)
+#else
+#  define	DebugMsg(status, string)	;
+#endif
+
+static Boolean	gotHostName = FALSE;
+static char 	myHostName[100];
+static char 	streamDevice[100];
+static char 	dgramDevice[100];
+static char 	rawDevice[100];
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * accept --
+ *
+ *	Accept a stream connection request. This call will create a new
+ *	connection to the Inet server upon notification that a remote
+ *	connection request is pending.
+ *
+ *	If the socket is non-blocking and no remote connection requests are
+ *	pending, EWOULDBLOCK is returned. If the socket is blockable,
+ *	this routine will wait until a remote connection request arrives.
+ *
+ * Results:
+ *	If > 0, the stream ID of the new connection.
+ *	If UNIX_ERROR, errno = 
+ *	EINVAL		- Bad size for *namePtr.
+ *	EWOULDBLOCK	- Non pending requests.
+ *
+ * Side effects:
+ *	A new stream is created.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+accept(socketID, addrPtr, addrLenPtr)
+    int			socketID;	/* Socket to listen on. */
+    struct sockaddr_in	*addrPtr;	/* Address of newly-accepted 
+					 * connection. (out) */
+    int			*addrLenPtr;	/* Size of *addrPtr. (in/out) */
+{
+    ReturnStatus	status;
+    int			newSocket;
+    ClientData		acceptToken;
+    int			addrLen;
+
+    if (addrLenPtr == (int *) NULL) {
+	addrLen = 0;
+	addrPtr = (struct sockaddr_in *) NULL;
+    } else {
+	/*
+	 * We deal with just Internet sockets.
+	 */
+
+	addrLen = *addrLenPtr;
+	if (addrLen < sizeof(struct sockaddr_in)) {
+	    errno = EINVAL;
+	    return(UNIX_ERROR);
+	}
+    }
+
+
+    /*
+     * Tell the Inet server to accept connections on the socket.  If a
+     * connection is made, a token is returned that is used to convert the
+     * connection into a new socket.  If no connections are currently
+     * available and the socket is non-blocking, FS_WOULD_BLOCK is
+     * returned. If the socket is blockable, the ioctl returns
+     * NET_NO_CONNECTS so and Wait() must be used to wait for a
+     * connection.
+     */
+
+    status = Fs_IOControl(socketID, IOC_NET_ACCEPT_CONN_1, 
+			0, (Address) NULL, 
+			sizeof(acceptToken), (Address) &acceptToken);
+
+    switch (status) {
+	case SUCCESS:
+	    break;
+
+	case FS_WOULD_BLOCK:
+	    errno = EWOULDBLOCK;
+	    return(UNIX_ERROR);
+	    break;
+
+        case NET_NO_CONNECTS:
+	    /*
+	     * Wait for the server to tell us that a request has arrived.
+	     */
+	    (void) Wait(socketID, TRUE, (Time *) NULL);
+
+	    /*
+	     * There's a pending connection so retry the ioctl.
+	     */
+	    status = Fs_IOControl(socketID, IOC_NET_ACCEPT_CONN_1, 
+				0, (Address) NULL, 
+				sizeof(acceptToken), (Address) &acceptToken);
+	    if (status != SUCCESS) {
+		DebugMsg(status, "accept (ioctl 1b)");
+		errno = Compat_MapCode(status);
+		return(UNIX_ERROR);
+	    }
+	    break;
+
+	default:
+	    DebugMsg(status, "accept (ioctl 1a)");
+	    errno = Compat_MapCode(status);
+	    return(UNIX_ERROR);
+	    break;
+    } 
+
+
+    /*
+     * Create the new socket. This socket will be converted into the new
+     * connection.
+     */
+
+    status = Fs_Open(streamDevice, FS_READ|FS_WRITE, 0666, &newSocket);
+    if (status != SUCCESS) {
+
+	DebugMsg(status, "accept (open)");
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    }
+
+    /*
+     * Make the new socket have the same characteristics as the
+     * connection socket. Also, find out who we are connected to.
+     */
+    status = Fs_IOControl(newSocket, IOC_NET_ACCEPT_CONN_2, 
+		    sizeof(acceptToken), (Address) &acceptToken, 
+		    addrLen, (Address) addrPtr);
+
+    if (status != SUCCESS) {
+	DebugMsg(status, "accept (ioctl 2)");
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    }
+    if (addrLen > 0) {
+	addrPtr->sin_family = AF_INET;
+    }
+
+    return(newSocket);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * bind --
+ *
+ *	Assigns a local <address,port> tuple to a socket that does 
+ *	not have one.
+ *
+ * Results:
+ *	If 0		- Successful.
+ *	If UNIX_ERROR, then errno = 
+ *	EINVAL		- Bad size for *namePtr, already bound to an address.
+ *	EADDRINUSE	- The address is already in use.
+ *	EADDRNOTAVAIL	- The address is not valid for this host.
+ *
+ * Side effects:
+ *	The socket local address is set.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+bind(socketID, namePtr, nameLen)
+    int			socketID;	/* Stream ID of unnamed socket. */
+    struct sockaddr	*namePtr;	/* Local address,port for this socket.*/
+    int			nameLen;	/* Size of *namePtr. */
+{
+    ReturnStatus	status;
+
+    if (nameLen != sizeof(struct sockaddr_in)) {
+	errno = EINVAL;
+	return(UNIX_ERROR);
+    }
+
+    status = Fs_IOControl(socketID, IOC_NET_SET_LOCAL_ADDR, 
+			nameLen, (Address) namePtr, 
+			0, (Address) NULL);
+
+    if (status != SUCCESS) {
+	DebugMsg(status, "bind");
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    }
+    return(UNIX_SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * connect --
+ *
+ *	For a stream socket, create a connection to a remote host.
+ *	For a datagram socket, only receive datagrams from this remote 
+ *	address.
+ *
+ * Results:
+ *	If 0		- Successful.
+ *	If UNIX_ERROR, then errno = 
+ *	EINVAL		- Bad size for *namePtr,
+ *	EADDRINUSE	- The address is already in use.
+ *	EADDRNOTAVAIL	- The address is not valid for this host.
+ *	EISCONN		- The socket is already connected.
+ *	ETIMEDOUT	- The connection request timed-out.
+ *	ECONNREFUSED	- The remote host refused the connection.
+ *	ENETUNREACH	- The network isn't reachable from this host.
+ *	EWOULDBLOCK	- If non-blocking, the connection can't be completed
+ *				immediately.
+ *	EFAULT		- Invalid argument to the ioctl.
+ *
+ * Side effects:
+ *	A local address for the socket is given if it did not have one 
+ *	already.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+connect(socketID, namePtr, nameLen)
+    int			socketID;	/* Stream ID of socket. */
+    struct sockaddr	*namePtr;	/* Remote address,port to connect to.*/
+    int			nameLen;	/* Size of *namePtr. */
+{
+    ReturnStatus	status;
+    Time		oneMin;
+
+    if (nameLen != sizeof(struct sockaddr_in)) {
+	errno = EINVAL;
+	return(UNIX_ERROR);
+    }
+
+    status = Fs_IOControl(socketID, IOC_NET_CONNECT,
+			nameLen, (Address) namePtr, 
+			0, (Address) NULL);
+
+    if (status == FS_WOULD_BLOCK) {
+	int flags = 0;
+	int statLen = sizeof(status);
+
+	/*
+	 * The connection didn't immeadiately complete, so wait if
+	 * we're blocking or return EWOULDBLOCK if we're non-blocking.
+	 */
+	status = Fs_IOControl(socketID, IOC_GET_FLAGS, 
+			0, (Address) NULL,
+			sizeof(flags), (Address) &flags);
+
+	if (status != SUCCESS) {
+	    DebugMsg(status, "connect (ioctl)");
+	    panic("connect: GET_FLAGS failed.\n");
+	}
+
+	if (flags & IOC_NON_BLOCKING) {
+	    errno = EWOULDBLOCK;
+	    return(UNIX_ERROR);
+	} 
+
+	oneMin = time_OneMinute;
+	status = Wait(socketID, FALSE, &oneMin);
+
+	if (status == FS_TIMEOUT) {
+	    DebugMsg(status, "connect (select)");
+	    errno = ETIMEDOUT;
+	    return(UNIX_ERROR);
+	}
+
+	/*
+	 * See if the connection successfully completed. getsockopt converts
+	 * the status to its Unix equivalent.
+	 */
+	if (getsockopt(socketID, SOL_SOCKET, SO_ERROR, (char *) &status,
+		&statLen) < 0) {
+	    return(UNIX_ERROR);
+	}
+	if (status != UNIX_SUCCESS) {
+	    errno = status;
+	    return(UNIX_ERROR);
+	}
+	return(UNIX_SUCCESS);
+
+    } else if (status != SUCCESS) {
+	DebugMsg(status, "connect");
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    }
+    return(UNIX_SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * getpeername --
+ *
+ *	Find out the remote address that this socket is connected to.
+ *
+ * Results:
+ *	If 0		- Successful.
+ *	If UNIX_ERROR, then errno = 
+ *	EINVAL		- Bad size for *namePtr.
+ *	ENOTCONN	- The socket is not connected.
+ *	EFAULT		- Invalid argument to the ioctl.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+getpeername(socketID, namePtr, nameLenPtr)
+    int			socketID;	/* Stream ID of socket connected to 
+					 * remote peer. */
+    struct sockaddr	*namePtr;	/* Upon return, <addr,port> for 
+    					 * remote peer. */
+    int			*nameLenPtr;	/* Size of *namePtr. (in/out) */
+{
+    ReturnStatus	status;
+
+    /*
+     * Make sure the struct is at least as big as an internet address.
+     * It can be bigger because of unions with dec net structures.
+     */
+    if (nameLenPtr == (int *) NULL ||
+	*nameLenPtr < sizeof(struct sockaddr_in)) {
+	errno = EINVAL;
+	return(UNIX_ERROR);
+    }
+    *nameLenPtr = sizeof(struct sockaddr_in);
+
+    status = Fs_IOControl(socketID, IOC_NET_GET_REMOTE_ADDR, 
+			0, (Address) NULL, 
+			*nameLenPtr, (Address) namePtr);
+
+    if (status != SUCCESS) {
+	DebugMsg(status, "getpeername");
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    }
+    return(UNIX_SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * getsockname --
+ *
+ *	Find out the local address for this socket, which was
+ *	set with the bind routine or by the connect routine.
+ *
+ * Results:
+ *	If 0		- Successful.
+ *	If UNIX_ERROR, then errno = 
+ *	EINVAL		- Bad size for *namePtr.
+ *	EFAULT		- Invalid argument to the ioctl.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+getsockname(socketID, namePtr, nameLenPtr)
+    int			socketID;	/* Stream ID of socket to get name of.*/
+    struct sockaddr	*namePtr;	/* Upon return, current <addr,port> for
+					 * this socket. */
+    int			*nameLenPtr;	/* Size of *namePtr. (in/out) */
+{
+    ReturnStatus	status;
+
+    if (nameLenPtr == (int *) NULL ||
+	*nameLenPtr != sizeof(struct sockaddr_in)) {
+	errno = EINVAL;
+	return(UNIX_ERROR);
+    }
+
+    status = Fs_IOControl(socketID, IOC_NET_GET_LOCAL_ADDR, 
+			0, (Address) NULL, 
+			*nameLenPtr, (Address) namePtr);
+
+    if (status != SUCCESS) {
+	DebugMsg(status, "getsockname");
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    }
+    return(UNIX_SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * getsockopt --
+ *
+ *	Get the value for a socket option.
+ *
+ * Results:
+ *	If 0		- Successful.
+ *	If UNIX_ERROR, then errno = 
+ *	EFAULT		- Invalid argument to the ioctl.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+getsockopt(socketID, level, optName, optVal, optLenPtr)
+    int		socketID;	/* Stream ID of socket to get options on. */
+    int		level;		/* Socket or protocol level to get the option.*/
+    int		optName;	/* Type of option to get. */
+    char	*optVal;	/* Address of buffer to store the result. */
+    int		*optLenPtr;	/* In: Size of *optVal, out: # of bytes stored
+				 * in *optVal. */
+{
+    ReturnStatus	status;
+    int			optionsArray[2];
+
+    /*
+     * OptionsArray is used to give the server the values of "level"
+     * and "optName". A buffer ("newBufPtr") is needed to get the option
+     * value and the length of the value.
+     */
+    optionsArray[0] = level;
+    optionsArray[1] = optName;
+
+    status = Fs_IOControl(socketID, IOC_NET_GET_OPTION,
+			sizeof(optionsArray), (Address) optionsArray, 
+			*optLenPtr, (Address) optVal);
+
+    if (status != SUCCESS) {
+	DebugMsg(status, "getsockopt");
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    }
+
+    if (optName == SO_ERROR) {
+	/*
+	 * The error value is a Sprite ReturnStatus so we must convert it
+	 * to the equivalent Unix value.
+	 */
+
+	*(int *)optVal = Compat_MapCode(*(int *)optVal);
+    }
+
+    return(UNIX_SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * setsockopt --
+ *
+ *	Set the value for a socket option.
+ *
+ * Results:
+ *	If 0		- Successful.
+ *	If UNIX_ERROR, then errno = 
+ *	EFAULT		- Invalid argument to the ioctl.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*VARARGS  (makes lint happy) */
+int
+setsockopt(socketID, level, optName, optVal, optLen)
+    int		socketID;	/* Stream ID of socket to set options on. */
+    int		level;		/* Socket or protocol level to get the option.*/
+    int		optName;	/* Type of option to get. */
+    char	*optVal;	/* Address of buffer to store the result. */
+    int		optLen;		/* Size of *optVal. */
+{
+    ReturnStatus	status;
+    int			*newBufPtr;
+
+    /*
+     * To pass the level, the type of option and the option value to the
+     * server, we allocate a new buffer and put the level and type in the
+     * first 2 slots and then copy the value to the rest of the buffer.
+     */
+    newBufPtr = (int *) malloc((unsigned) (2 * sizeof(int) + optLen));
+    newBufPtr[0] = level;
+    newBufPtr[1] = optName;
+    bcopy(optVal, (char *) &newBufPtr[2], optLen);
+
+    status = Fs_IOControl(socketID, IOC_NET_SET_OPTION,
+			2 * sizeof(int) + optLen, (Address) newBufPtr,
+			0, (Address) NULL);
+
+    free((char *) newBufPtr);
+
+    if (status != SUCCESS) {
+	DebugMsg(status, "getsockopt");
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    }
+    return(UNIX_SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * listen --
+ *
+ *	Allows a stream socket to accept remote connection requests and to
+ *	specify how many such requests will be queued up before they 
+ *	are refused.
+ *
+ * Results:
+ *	If 0		- Successful.
+ *	If UNIX_ERROR, then errno = 
+ *	EOPNOTSUPP	- The socket type doesn't allow a listen operation.
+ *	EFAULT		- Invalid argument to the ioctl.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+listen(socketID, backlog)
+    int	socketID;	/* Stream ID of socket to be put in listen mode. */
+    int	backlog;	/* How many connection requests to queue. */
+{
+    ReturnStatus	status;
+
+    status = Fs_IOControl(socketID, IOC_NET_LISTEN,
+			sizeof(backlog), (Address) &backlog, 
+			0, (Address) NULL);
+
+    if (status != SUCCESS) {
+	DebugMsg(status, "listen");
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    }
+    return(UNIX_SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * recv --
+ *
+ *	Read data from a connected socket. 
+ *
+ * Results:
+ *	See recvfrom().
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+recv(socketID, bufPtr, bufSize, flags)
+    int		socketID;
+    char	*bufPtr;	/* Address of buffer to place the data in. */
+    int		bufSize;	/* Size of *bufPtr. */
+    int		flags;		/* Type of operatrion: OR of MSG_OOB, MSG_PEEK*/
+{
+    return(recvfrom(socketID, bufPtr, bufSize, flags, 
+		(struct sockaddr *) NULL, (int *) NULL));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * recvfrom --
+ *
+ *	Read data from a socket.
+ *
+ * Results:
+ *	If 0		- Successful.
+ *	If UNIX_ERROR, then errno = 
+ *	EINVAL		- Bad size or address for senderPtr, senderLenPtr.
+ *	EWOULDBLOCK	- If non-blocking, no data are available.
+ *	EFAULT		- Invalid argument to the ioctl.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+recvfrom(socketID, bufPtr, bufSize, flags, senderPtr, senderLenPtr)
+    int			socketID;	/* Socket to read. */
+    char		*bufPtr;	/* Buffer to place the data in. */
+    int			bufSize;	/* Size of *bufPtr. */
+    int			flags;		/* Type of operatrion: OR of 
+					 *  MSG_OOB, MSG_PEEK*/
+    struct sockaddr	*senderPtr;	/* Address of sender of the data. */
+    int			*senderLenPtr;	/* Size of *senderPtr. (in/out) */
+{
+    ReturnStatus	status;
+    int			amountRead;
+
+    if (senderPtr != (struct sockaddr *) NULL) {
+	if ((senderLenPtr == (int *) NULL) ||
+	    (*senderLenPtr != sizeof(struct sockaddr_in))) {
+	    errno = EINVAL;
+	    return(UNIX_ERROR);
+	}
+    }
+
+    /*
+     * If there are flags, ship them to the server.
+     */
+    if (flags != 0) {
+	status = Fs_IOControl(socketID, IOC_NET_RECV_FLAGS,
+			    sizeof(flags), (Address) &flags, 
+			    0, (Address) NULL);
+	if (status != SUCCESS) {
+	    DebugMsg(status, "recvfrom (ioctl recv_flags)");
+	    errno = Compat_MapCode(status);
+	    return(UNIX_ERROR);
+	}
+    }
+
+    status = Fs_Read(socketID, bufSize, bufPtr, &amountRead);
+    if (status != SUCCESS) {
+	DebugMsg(status, "recvfrom (read)");
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    }
+
+    /*
+     * If the caller wants the address of the sender, ask the server for it.
+     */
+    if (senderPtr != (struct sockaddr *) NULL) {
+	status = Fs_IOControl(socketID, IOC_NET_RECV_FROM,
+			    0, (Address) NULL,
+			    *senderLenPtr, (Address) senderPtr);
+	if (status != SUCCESS) {
+	    DebugMsg(status, "recvfrom (ioctl get_remote)");
+	    errno = Compat_MapCode(status);
+	    return(UNIX_ERROR);
+	}
+    }
+    return(amountRead);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * recvmsg --
+ *
+ *	Read data from a socket using multiple buffers.
+ *
+ * Results:
+ *	If 0		- Successful.
+ *	If UNIX_ERROR, then errno = 
+ *	EINVAL		- Bad size or address for msg_name, msg_namelen;
+ *			    I/O vector length too big.
+ *	EWOULDBLOCK	- If non-blocking, no data are available.
+ *	EFAULT		- Invalid argument to the ioctl, null address 
+ *			   for msgPtr.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+recvmsg(socketID, msgPtr, flags)
+    int			socketID;	/* Sokect to read data from. */
+    struct msghdr	*msgPtr;	/* I/O vector of buffers to store the
+					 * data. */
+    int			flags;		/* Type of operatrion: OR of 
+					 *  MSG_OOB, MSG_PEEK*/
+{
+    ReturnStatus	status;
+    int			amountRead;
+
+
+    if (msgPtr == (struct msghdr *) NULL) {
+	errno = EFAULT;
+	return(UNIX_ERROR);
+    }
+
+    if (msgPtr->msg_name != (Address) NULL) {
+	if (msgPtr->msg_namelen != sizeof(struct sockaddr_in)) {
+	    errno = EINVAL;
+	    return(UNIX_ERROR);
+	}
+    }
+
+    if (msgPtr->msg_iovlen > MSG_MAXIOVLEN) {
+	errno = EINVAL;
+	return(UNIX_ERROR);
+    }
+
+    /*
+     * If there are flags, ship them to the server.
+     */
+    if (flags != 0) {
+	status = Fs_IOControl(socketID, IOC_NET_RECV_FLAGS,
+			    sizeof(flags), (Address) &flags, 
+			    0, (Address) NULL);
+	if (status != SUCCESS) {
+	    DebugMsg(status, "recvmsg (ioctl recv_flags)");
+	    errno = Compat_MapCode(status);
+	    return(UNIX_ERROR);
+	}
+    }
+
+    amountRead = readv(socketID, msgPtr->msg_iov, msgPtr->msg_iovlen);
+    if (amountRead < 0) {
+	DebugMsg(errno, "recvmsg (readv)");
+    }
+    
+    /*
+     * If the caller wants the address of the sender, ask the server for it.
+     */
+    if (msgPtr->msg_name != (Address) NULL) {
+	status = Fs_IOControl(socketID, IOC_NET_RECV_FROM,
+			0, (Address) NULL,
+			msgPtr->msg_namelen, (Address) msgPtr->msg_name);
+	if (status != SUCCESS) {
+	    DebugMsg(status, "recvmsg (ioctl recv_from)");
+	    errno = Compat_MapCode(status);
+	    return(UNIX_ERROR);
+	}
+    }
+
+    return(amountRead);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * send --
+ *
+ *	Write data to a connected socket.
+ *
+ * Results:
+ *	See sendto().
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+send(socketID, bufPtr, bufSize, flags)
+    int		socketID;	/* Socket to send data on. */
+    char	*bufPtr;	/* Address of buffer to send. */
+    int		bufSize;	/* Size of *bufPtr. */
+    int		flags;		/* Type of operatrion: OR of 
+				 *  MSG_OOB, MSG_PEEK, MSG_DONTROUTE. */
+{
+    return(sendto(socketID, bufPtr, bufSize, flags,(struct sockaddr *)NULL, 0));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * sendto --
+ *
+ *	Send a message from a socket.
+ *
+ * Results:
+ *	If 0		- Successful.
+ *	If UNIX_ERROR, then errno = 
+ *	EINVAL		- Bad size or address for destPtr, destLen..
+ *	EWOULDBLOCK	- If non-blocking, the server buffers are too
+ *			  full to accept the data.
+ *	EMSGSIZE	- The buffer is too large to be sent in 1 packet.
+ *	EFAULT		- Invalid argument to the ioctl.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+sendto(socketID, bufPtr, bufSize, flags, destPtr, destLen)
+    int		socketID;	/* Socket to send data on. */
+    char	*bufPtr;	/* Address of buffer to send. */
+    int		bufSize;	/* Size of *bufPtr. */
+    int		flags;		/* Type of operatrion: OR of 
+				 *  MSG_OOB, MSG_PEEK, MSG_DONTROUTE. */
+    struct sockaddr	*destPtr;	/* Destination to send the data to. */
+    int			destLen;	/* Size of *destPtr.  */
+{
+    ReturnStatus	status;
+    int			numWritten;
+
+    /*
+     * If either the flags or a destination are given, send them to the server.
+     */
+    if ((flags != 0) || (destPtr != (struct sockaddr *) NULL)) {
+	Net_SendInfo	sendInfo;
+
+	if (destPtr != (struct sockaddr *) NULL) {
+	    if (destLen != sizeof(struct sockaddr_in)) {
+		errno = EINVAL;
+		return(UNIX_ERROR);
+	    }
+	    sendInfo.addressValid = TRUE;
+	    sendInfo.address.inet = *(Net_InetSocketAddr *) destPtr;
+	} else {
+	    sendInfo.addressValid = FALSE;
+	}
+	sendInfo.flags = flags;
+
+	status = Fs_IOControl(socketID, IOC_NET_SEND_INFO,
+			sizeof(sendInfo), (Address) &sendInfo, 
+			0, (Address) NULL);
+	if (status != SUCCESS) {
+	    DebugMsg(status, "sendto (ioctl)");
+	    errno = Compat_MapCode(status);
+	    return(UNIX_ERROR);
+	}
+    }
+
+    status = Fs_Write(socketID, bufSize, bufPtr, &numWritten);
+    if (status != SUCCESS) {
+	DebugMsg(status, "sendto (write)");
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    }
+    return(numWritten);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * sendmsg --
+ *
+ *	Send a message from a socket.
+ *
+ * Results:
+ *	If 0		- Successful.
+ *	If UNIX_ERROR, then errno = 
+ *	EINVAL		- Bad size or address for msg_name, msg_namelen;
+ *			    I/O vector length too big.
+ *	EWOULDBLOCK	- If non-blocking, the server buffers are too full 
+ *			  accept the data.
+ *	EFAULT		- Invalid argument to the ioctl, null address 
+ *			   for msgPtr.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+sendmsg(socketID, msgPtr, flags)
+    int			socketID;	/* Socket to send data on. */
+    struct msghdr	*msgPtr;	/* I/O vector of buffers containing
+					 * data to send. */
+    int			flags;		/* Type of operatrion: OR of 
+					 *  MSG_OOB, MSG_PEEK, MSG_DONTROUTE. */
+{
+    ReturnStatus	status;
+    int			numWritten;
+
+    if (msgPtr == (struct msghdr *) NULL) {
+	errno = EFAULT;
+	return(UNIX_ERROR);
+    }
+
+    if (msgPtr->msg_iovlen > MSG_MAXIOVLEN) {
+	errno = EINVAL;
+	return(UNIX_ERROR);
+    }
+	
+    if ((flags != 0) || (msgPtr->msg_name != (Address) NULL)) {
+	Net_SendInfo	sendInfo;
+
+	if (msgPtr->msg_name != (Address) NULL) {
+	    if (msgPtr->msg_namelen != sizeof(struct sockaddr_in)) {
+		errno = EINVAL;
+		return(UNIX_ERROR);
+	    }
+	    sendInfo.addressValid = TRUE;
+	    sendInfo.address.inet = *(Net_InetSocketAddr *)msgPtr->msg_name;
+	} else {
+	    sendInfo.addressValid = FALSE;
+	}
+	sendInfo.flags = flags;
+
+	status = Fs_IOControl(socketID, IOC_NET_SEND_INFO,
+			    sizeof(sendInfo), (Address) &sendInfo, 
+			    0, (Address) NULL);
+
+	if (status != SUCCESS) {
+	    DebugMsg(status, "sendmsg (ioctl)");
+	    errno = Compat_MapCode(status);
+	    return(UNIX_ERROR);
+	}
+    }
+
+    numWritten = writev(socketID, msgPtr->msg_iov, msgPtr->msg_iovlen);
+    if (numWritten < 0) {
+	DebugMsg(errno, "sendmsg (writev)");
+    }
+    return(numWritten);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * socket --
+ *
+ *	Create a socket in the Internet domain.
+ *
+ * Results:
+ *	If > 0, the stream ID of the new socket.
+ *	If UNIX_ERROR, then errno = 
+ *	EINVAL		- "domain" did not specify the Internet domain.
+ *	?		- Error from Fs_Open, Fs_IOControl.
+ *
+ * Side effects:
+ *	A new stream is created.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+socket(domain, type, protocol)
+    int	domain;		/* Type of communications domain */
+    int	type;		/* Type of socket: SOCK_STREAM, SOCK_DGRAM, SOCK_RAW. */
+    int	protocol;	/* Specific protocol to use. */
+{
+    ReturnStatus	status;
+    int			streamID;
+
+    if (domain != PF_INET) {
+	errno = EINVAL;
+	return(UNIX_ERROR);
+    }
+
+    if (!gotHostName) {
+	gotHostName = TRUE;
+	if (gethostname(myHostName, sizeof(myHostName)) != 0) {
+	    panic("socket: Can't find my hostname\n");
+	}
+	sprintf(streamDevice, INET_STREAM_NAME_FORMAT, myHostName);
+	sprintf(dgramDevice, INET_DGRAM_NAME_FORMAT, myHostName);
+	sprintf(rawDevice, INET_RAW_NAME_FORMAT, myHostName);
+    }
+
+    if (type == SOCK_STREAM) {
+	status = Fs_Open(streamDevice, FS_READ|FS_WRITE, 0666, &streamID);
+	if (status != SUCCESS) {
+	    DebugMsg(status, "socket (stream)");
+	    errno = Compat_MapCode(status);
+	    return(UNIX_ERROR);
+	}
+    } else if (type == SOCK_DGRAM) {
+	status = Fs_Open(dgramDevice, FS_READ|FS_WRITE, 0666, &streamID);
+	if (status != SUCCESS) {
+	    DebugMsg(status, "socket (datagram)");
+	    errno = Compat_MapCode(status);
+	    return(UNIX_ERROR);
+	}
+    } else if (type == SOCK_RAW) {
+	status = Fs_Open(rawDevice, FS_READ|FS_WRITE, 0666, &streamID);
+	if (status != SUCCESS) {
+	    DebugMsg(status, "socket (raw)");
+	    errno = Compat_MapCode(status);
+	    return(UNIX_ERROR);
+	}
+    } else {
+	errno = EINVAL;
+	return(UNIX_ERROR);
+    }
+
+    if (protocol != 0) {
+	status = Fs_IOControl(streamID, IOC_NET_SET_PROTOCOL,
+			    sizeof(protocol), (Address) &protocol, 
+			    0, (Address) NULL);
+	if (status != SUCCESS) {
+	    DebugMsg(status, "socket (ioctl)");
+	    errno = Compat_MapCode(status);
+	    return(UNIX_ERROR);
+	}
+    }
+
+    return(streamID);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * shutdown --
+ *
+ *	Shut down part of a full-duplex connection.
+ *
+ * Results:
+ *	0		- The action was successful.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+shutdown(socketID, action)
+    int		socketID;	/* Socket to shut down. */
+    int		action;		/* 0 -> disallow further recvs, 
+				 * 1 -> disallow further sends,
+				 * 2 -> combination of above. */
+{
+    ReturnStatus	status;
+
+    status = Fs_IOControl(socketID, IOC_NET_SHUTDOWN, 
+			sizeof(action), (Address) &action, 
+			0, (Address) NULL);
+
+    if (status != SUCCESS) {
+	DebugMsg(status, "shutdown");
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    }
+    return(UNIX_SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Wait --
+ *
+ *	Wait for the Inet server to indicate that a socket is ready
+ *	for some action.
+ *
+ * Results:
+ *	SUCCESS, or FS_TIMEOUT if a timeout occurred.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+Wait(socketID, readSelect, timeOutPtr)
+    int 	socketID;	/* Socket to wait on. */
+    Boolean	readSelect;	/* If TRUE, select for reading, else select for
+				 *  writing. */
+    Time	*timeOutPtr;	/* Timeout to use for select. */
+{
+    ReturnStatus	status;
+    int			numReady;
+
+    /*
+     * Wait until the Inet server indicates the socket is ready.
+     */
+
+    if (socketID < 32) {
+	int	mask;
+
+	mask = 1 << socketID;
+	if (readSelect) {
+	    status = Fs_Select(socketID, timeOutPtr, &mask, 
+		    		(int *) NULL, (int *) NULL, &numReady);
+	} else {
+	    status = Fs_Select(socketID, timeOutPtr, (int *) NULL, 
+		    		&mask, (int *) NULL, &numReady);
+	}
+    } else {
+	int	*maskPtr;
+
+	Bit_Alloc(socketID, maskPtr);
+	Bit_Set(socketID, maskPtr);
+
+	if (readSelect) {
+	    status = Fs_Select(socketID, timeOutPtr, maskPtr, 
+		    		(int *) NULL, (int *) NULL, &numReady);
+	} else {
+	    status = Fs_Select(socketID, timeOutPtr, (int *) NULL,
+		    		maskPtr, (int *) NULL, &numReady);
+	}
+	free((char *) maskPtr);
+    }
+
+    if (status == FS_TIMEOUT) {
+	return(status);
+    } else if (status != SUCCESS) {
+	Stat_PrintMsg(status, "Wait (socket.c)");
+	panic("Wait (socket.c): Fs_Select failed.\n");
+    }
+
+    if (numReady != 1) {
+	panic("Wait (socket.c): Fs_Select returned %d ready\n",
+			    numReady);
+    }
+
+    return(SUCCESS);
+}

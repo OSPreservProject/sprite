@@ -1,0 +1,150 @@
+
+
+It is a good idea to periodically update gcc to the latest release,
+so that you get all the bug fixes and new features.
+
+1.  Save the old version of the compiler.  The new version might
+    be flaky, so you want to be able to back out to the previous
+    version easily.
+
+    The sources of the current distribution are kept in
+    /sprite/src/cmds/gcc/dist.  Move it to /sprite/src/cmds/gcc/dist-XXX
+    where `XXX' is the version number.  Create a new `dist' directory
+    to put the new stuff.
+
+    IMPORTANT --> Make sure you also save a copy of the binaries.
+    This should include a copy of the frontends, and the backends for
+    each machine.  If you lose all working copies, then you cannot
+    generate a new compiler!  (However if this should accidently happen,
+    you can restore them from a dump tape.)
+
+
+2.  Get the latest version of gcc.  To do this type
+
+        ftp prep.ai.mit.edu
+
+    When you are prompted for an id  Type `anonymous'.  When
+    it asks for a password, you can type anything because it
+    will just ignore it.
+
+    Once you are logged in, type
+
+    ftp> cd /u2/emacs
+    ftp> ls
+
+    This will list the contents of the directory.  Look for a file
+    named something like `gcc-1.36.tar.Z'.  Make sure you get the
+    latest version.
+
+    To download, type
+
+    ftp> get gcc-1.36.tar.Z
+
+    Since it is a big file, it will take a while to down load.  This
+    is a good opportunity to go eat lunch or something.
+
+    One it is downloaded, type
+
+    ftp> quit
+
+    to disconnect.
+
+
+3.  Uncompress the tar file.  To do this type
+
+        uncompress gcc-1.36.tar.Z
+
+
+4.  Un-tar the files by typing:
+
+	tar xvf gcc-1.36.tar
+
+
+5.  In the file /sprite/src/cmds/gcc/sprite there are a bunch
+    of files that have special modifications for sprite.  You
+    need to run rlog to find out what has been changed in these
+    files and then integrate those changes into the distribution.
+
+    All changed files should be placed in gcc/sprite.  gcc/dist should
+    only contain the unadulturated distribution.
+
+    See the end of this file for a list of special modifications of gcc
+    for sprite.
+
+
+6.  Recompile the front end:
+
+        cd /sprite/src/cmds/gcc
+	make clean
+	make mkmf
+	make
+
+
+7.  Recompile the back ends for each machine type.  You need
+    to double check all the symbolic links.  Most of them should
+    point to /sprite/src/cmds/gcc/dist, but some of them will point
+    to the files in /sprite/src/cmds/gcc/sprite.
+
+	cd /sprite/src/cmds/cc1.68k
+	make clean
+	make mkmf
+	make
+
+
+8.  Test the compiler to make sure it works.  You can do this by
+    using the -B option to specify a different search path to find
+    the backends.  For instance
+
+    sun3.md/gcc -B/sprite/src/cmds/cc1.68k/sun3.md foo.c
+
+    will cause the compiler to use the new back end, rather than
+    the one in /sprite/lib/gcc/sun3.md.
+
+    One very important test is to make sure the new compiler can
+    regenerate itself from scratch.
+
+
+9.  Send mail to `sprite-users' so that everyone knows the compiler
+    is about to change.
+
+
+10.  Install the new compiler.  Run `make install' in /sprite/src/cmds/gcc
+     and in /sprite/src/cmds/cc1.$MACHINE for each machine.
+
+
+11. Make sure that everything still works.  Try compiling several different
+    commands.  Run them to make sure that they still work.  Try compiling,
+    and booting a new kernel.
+
+
+
+-----------------------------------------------------------------------------
+
+Here is a list of special compiler hacks to customize gcc for Sprite.
+This list is probably not up to date, so check in /sprite/src/gcc/sprite
+and look at the sources to be sure.
+
+    Front end
+    ---------
+    The front end uses a file called `specs.h' that has specifications
+    for multiple machine types.  To specify a particular machine type,
+    use the -m flag.
+
+    The front end invokes the preprocessor with both `sprite' and 
+    `unix' predefined.
+
+
+    Preprocessor
+    ------------
+    The preprocessor has been modified to search for include files in
+    machine dependent directories first.  
+
+    __STDC__ can be undefined, so that lint can use the gnu preprocessor.
+
+
+    cc1 backend
+    -------
+    cc1 has been modified to recognize any static variable named `rcsid'.
+    If this variable is unused it will not complain.  This is so we can
+    use RCS without seeing zillions of warnings.
+

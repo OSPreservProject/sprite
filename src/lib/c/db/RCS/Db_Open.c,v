@@ -1,0 +1,224 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.6
+date     89.06.15.22.45.11;  author douglis;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.01.13.11.44.27;  author douglis;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.01.02.13.42.12;  author douglis;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.09.22.22.11.59;  author douglis;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.09.15.10.15.27;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.08.14.15.08.28;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Procedure to open a 'database' file.
+@
+
+
+1.6
+log
+@create database file if not already there
+@
+text
+@/* 
+ * Db_Open.c --
+ *
+ *	Source code for the Db_Open procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/db/RCS/Db_Open.c,v 1.5 89/01/13 11:44:27 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <db.h>
+#include <errno.h>
+#include "dbInt.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Db_Open --
+ *
+ *	Open a system data file and return a handle to it.
+ *
+ * Results:
+ *	The handle is returned in *handlePtr.
+ *	On error, -1 is returned, otherwise 0 is returned.
+ *
+ * Side effects:
+ *	The file is opened and (optionally) locked.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Db_Open(file, size, handlePtr, writing, lockWhen, lockHow, numBuf)
+    char *file;
+    int size;
+    Db_Handle *handlePtr;
+    int writing;	 	/* 1 if opening for writing */
+    Db_LockWhen lockWhen;
+    Db_LockHow lockHow;
+    int numBuf;			/* number of records to buffer */
+{
+    int streamID;
+    
+    streamID = open(file, (writing ? O_RDWR : O_RDONLY) | O_CREAT, FILE_MODE);
+    if (streamID == -1) {
+	syslog(LOG_ERR, "Db_Open: error opening file %s: %s.\n", file,
+	       strerror(errno));
+	return(-1);
+    }
+
+    /*
+     * Don't allow buffering for files locked a record at a time.
+     */
+    if (numBuf > 0 &&
+	(lockWhen == DB_LOCK_ACCESS || lockWhen == DB_LOCK_READ_MOD_WRITE)) {
+	errno = EINVAL;
+	return(-1);
+    }
+    
+    handlePtr->index = 0;
+    handlePtr->structSize = size;
+    handlePtr->lockType = writing ? LOCK_EX : LOCK_SH;
+    handlePtr->lockWhen = lockWhen;
+    handlePtr->lockHow = lockHow;
+    handlePtr->streamID = streamID;
+    handlePtr->firstRec = -1;
+    handlePtr->numBuf = numBuf;
+    if (numBuf > 0) {
+	handlePtr->buffer = malloc((unsigned) numBuf * size);
+    } else {
+	handlePtr->buffer = (char *) NULL;
+    }
+#ifndef CLEAN
+    handlePtr->fileName = malloc((unsigned) strlen(file) + 1);
+    (void) strcpy(handlePtr->fileName, file);
+#endif /* CLEAN */
+    
+
+    if (lockWhen == DB_LOCK_OPEN) {
+	return(DbLockDesc(handlePtr));
+    }
+    return(0);
+}
+@
+
+
+1.5
+log
+@changed for buffering and for new arg passing to lock routine.
+[generic checkin msg].
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/db/RCS/Db_Open.c,v 1.4 89/01/02 13:42:12 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d22 1
+d55 1
+a55 1
+    streamID = open(file, writing ? O_RDWR : O_RDONLY, FILE_MODE);
+@
+
+
+1.4
+log
+@open in RDWR mode rather than WRONLY mode if we're writing, 'cause
+we might also be reading.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/db/RCS/Db_Open.c,v 1.3 88/09/22 22:11:59 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d43 1
+a43 1
+Db_Open(file, size, handlePtr, writing, lockWhen, lockHow)
+d50 1
+d61 9
+d76 12
+d90 1
+a90 1
+	return(DbLockDesc(streamID, handlePtr->lockType, lockHow));
+@
+
+
+1.3
+log
+@Changed some arg. orders, var. names, and Db_LockDesc to DbLockDesc.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: Db_Open.c,v 1.2 88/09/15 10:15:27 douglis Exp $ SPRITE (Berkeley)";
+d53 1
+a53 1
+    streamID = open(file, writing ? O_WRONLY : O_RDONLY, FILE_MODE);
+@
+
+
+1.2
+log
+@when printing syslog message about error opening file, print the strerror
+corresponding to it.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: Db_Open.c,v 1.1 88/08/14 15:08:28 douglis Exp $ SPRITE (Berkeley)";
+d68 1
+a68 1
+	return(Db_LockDesc(streamID, handlePtr->lockType, lockHow));
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: proto.c,v 1.2 88/03/11 08:39:08 ouster Exp $ SPRITE (Berkeley)";
+d55 2
+a56 1
+	syslog(LOG_ERR, "Db_Open: error opening file %s.\n", file);
+@

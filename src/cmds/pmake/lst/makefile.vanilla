@@ -1,0 +1,135 @@
+#
+# Standard Makefile for libraries
+# LNAME is the name of the library.
+#
+LNAME		= lst
+LIBRARY		= lib$(LNAME).a
+PLIBRARY	= lib$(LNAME)_p.a
+LLIBRARY	= llib-l$(LNAME)
+
+#
+# Transformation rules for creating profiled object files with the .po suffix.
+#
+
+.SUFFIXES	: .po
+
+.c.po		:
+		$(CC) $(PCFLAGS) $(CFLAGS) -S -pg $<
+		$(AS) $(AFLAGS) -o $@ $*.s
+		rm -f $*.s
+
+HDRS		= lst.h lstInt.h
+OBJS		= lstAppend.o lstAtEnd.o lstAtFront.o lstConcat.o \
+                  lstClose.o lstCur.o lstDatum.o lstDeQueue.o \
+                  lstDestroy.o lstDupl.o lstEnQueue.o lstFake.o lstFind.o \
+                  lstFindFrom.o lstFirst.o lstForEach.o lstForEachFrom.o \
+                  lstIndex.o lstInit.o lstInsert.o lstIsAtEnd.o lstIsEmpty.o \
+                  lstLast.o lstLength.o lstMember.o lstMove.o lstNext.o \
+                  lstOpen.o lstPred.o lstPrev.o lstRemove.o lstReplace.o \
+                  lstSetCirc.o lstSucc.o
+
+POBJS		= lstAppend.po lstAtEnd.po lstAtFront.po lstConcat.po \
+                  lstClose.po lstCur.po lstDatum.po lstDeQueue.po \
+                  lstDestroy.po lstDupl.po lstEnQueue.po lstFake.po lstFind.po\
+                  lstFindFrom.po lstFirst.po lstForEach.po lstForEachFrom.po \
+                  lstIndex.po lstInit.po lstInsert.po lstIsAtEnd.po \
+                  lstIsEmpty.po \
+                  lstLast.po lstLength.po lstMember.po lstMove.po lstNext.po \
+                  lstOpen.po lstPred.po lstPrev.po lstRemove.po lstReplace.po \
+                  lstSetCirc.po lstSucc.po
+
+SRCS		= lstAppend.c lstAtEnd.c lstAtFront.c lstConcat.c \
+                  lstClose.c lstCur.c lstDatum.c lstDeQueue.c \
+                  lstDestroy.c lstDupl.c lstEnQueue.c lstFake.c lstFind.c \
+                  lstFindFrom.c lstFirst.c lstForEach.c lstForEachFrom.c \
+                  lstIndex.c lstInit.c lstInsert.c lstIsAtEnd.c lstIsEmpty.c \
+                  lstLast.c lstLength.c lstMember.c lstMove.c lstNext.c \
+                  lstOpen.c lstPred.c lstPrev.c lstRemove.c lstReplace.c \
+                  lstSetCirc.c lstSucc.c
+
+MACHFLAGS	=
+INCLUDES	= -I../includes
+
+CFLAGS		= -g $(MACHFLAGS) $(INCLUDES)
+AFLAGS		= $(MACHFLAGS)
+LNFLAGS		= -bzh $(INCLUDES)
+COFLAGS 	=
+
+PRINT		= pr
+LINT		= lint
+
+.DEFAULT	:
+	co $(COFLAGS) $<
+
+all		: library lint 
+
+$(LIBRARY)	: $(OBJS)
+	rm -f $@
+	ar crl $@ $(OBJS)
+	ranlib $@
+
+$(PLIBRARY)	: $(POBJS)
+	rm -f $@
+	ar crl $@ $(POBJS)
+	ranlib $@
+
+
+$(LLIBRARY).ln	: $(SRCS) $(HDRS)
+	@echo "Creating $(LLIBRARY).ln..."
+	@$(LINT) -C$(LNAME) $(LNFLAGS) $(SRCS)
+
+install		: all
+
+library		: $(LIBRARY)
+
+lint		: $(LLIBRARY).ln
+
+tags		: $(HDRS) $(SRCS)
+	@ctags $(HDRS) $(SRCS)
+
+clean		::
+	rm -f *.o *.po liblst.a liblst_p.a
+
+package		:
+	-mkdir $(PKGDIR)
+	cp $(SRCS) $(HDRS) Makefile makefile $(PKGDIR)
+
+depend		: $(SRCS) 
+	makedepend -p -s"### DO NOT DELETE THIS LINE" $(INCLUDES) \
+		-f makefile $(SRCS)
+	
+### DO NOT DELETE THIS LINE
+
+lstAppend.o: lstInt.h lst.h ../include/sprite.h
+lstAtEnd.o: lstInt.h lst.h ../include/sprite.h
+lstAtFront.o: lstInt.h lst.h ../include/sprite.h
+lstConcat.o: lstInt.h lst.h ../include/sprite.h
+lstClose.o: lstInt.h lst.h ../include/sprite.h
+lstCur.o: lstInt.h lst.h ../include/sprite.h
+lstDatum.o: lstInt.h lst.h ../include/sprite.h
+lstDeQueue.o: lstInt.h lst.h ../include/sprite.h
+lstDestroy.o: lstInt.h lst.h ../include/sprite.h
+lstDupl.o: lstInt.h lst.h ../include/sprite.h
+lstEnQueue.o: lstInt.h lst.h ../include/sprite.h
+lstFind.o: lstInt.h lst.h ../include/sprite.h
+lstFindFrom.o: lstInt.h lst.h ../include/sprite.h
+lstFirst.o: lstInt.h lst.h ../include/sprite.h
+lstForEach.o: lstInt.h lst.h ../include/sprite.h
+lstForEachFrom.o: lstInt.h lst.h ../include/sprite.h
+lstIndex.o: lstInt.h lst.h ../include/sprite.h
+lstInit.o: lstInt.h lst.h ../include/sprite.h
+lstInsert.o: lstInt.h lst.h ../include/sprite.h
+lstIsAtEnd.o: lstInt.h lst.h ../include/sprite.h
+lstIsEmpty.o: lstInt.h lst.h ../include/sprite.h
+lstLast.o: lstInt.h lst.h ../include/sprite.h
+lstLength.o: lstInt.h lst.h ../include/sprite.h
+lstMember.o: lstInt.h lst.h ../include/sprite.h
+lstMove.o: lstInt.h lst.h ../include/sprite.h
+lstNext.o: lstInt.h lst.h ../include/sprite.h
+lstOpen.o: lstInt.h lst.h ../include/sprite.h
+lstPred.o: lstInt.h lst.h ../include/sprite.h
+lstPrev.o: lstInt.h lst.h ../include/sprite.h
+lstRemove.o: lstInt.h lst.h ../include/sprite.h
+lstReplace.o: lstInt.h lst.h ../include/sprite.h
+lstSetCirc.o: lstInt.h lst.h ../include/sprite.h
+lstSucc.o: lstInt.h lst.h ../include/sprite.h

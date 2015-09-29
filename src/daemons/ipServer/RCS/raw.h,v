@@ -1,0 +1,140 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     89.08.15.19.55.34;  author rab;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.03.23.09.08.01;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.02.21.10.05.16;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.08.16.11.22.03;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.27.09.01.25;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Raw IP defs
+@
+
+
+1.5
+log
+@Commented #endif labels.
+@
+text
+@/*
+ * raw.h --
+ *
+ *	External declarations of the raw IP socket routines.
+ *
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ * $Header: /sprite/src/daemons/ipServer/RCS/raw.h,v 1.4 89/03/23 09:08:01 brent Exp Locker: rab $ SPRITE (Berkeley)
+ */
+
+#ifndef _IPS_RAW
+#define _IPS_RAW
+
+#include "sprite.h"
+
+/*
+ * RAW_REQUEST_BUF_SIZE defines the size of the pseudo-device request
+ * buffer used to handle requests on raw sockets.   This limits the size
+ * of the datagram that can be written to the raw socket to 2048 bytes.
+ */
+#define RAW_REQUEST_BUF_SIZE	(2048)
+
+extern ReturnStatus	Raw_SocketOpen();
+extern ReturnStatus	Raw_SocketClose();
+extern ReturnStatus	Raw_SocketRead();
+extern ReturnStatus	Raw_SocketWrite();
+extern int		Raw_SocketSelect();
+extern ReturnStatus	Raw_SocketBind();
+extern ReturnStatus	Raw_SocketConnect();
+extern ReturnStatus	Raw_SocketShutdown();
+extern void		Raw_Input();
+
+#endif /* _IPS_RAW */
+@
+
+
+1.4
+log
+@Eliminated sizeof(Pdev_Request) from buffer sizes.  That extra
+amount is handled in main.c so these are not so knowledgable
+about the pseudo-device interface.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/daemons/ipServer/RCS/raw.h,v 1.3 89/02/21 10:05:16 brent Exp $ SPRITE (Berkeley)
+d42 1
+a42 1
+#endif _IPS_RAW
+@
+
+
+1.3
+log
+@Added constants used for the pseudo-device request buffer
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/daemons/ipServer/RCS/raw.h,v 1.2 88/08/16 11:22:03 mendel Exp Locker: brent $ SPRITE (Berkeley)
+d30 1
+a30 1
+#define RAW_REQUEST_BUF_SIZE	(2048 + sizeof(Pdev_Request))
+@
+
+
+1.2
+log
+@Converted to new lib.a.
+@
+text
+@d17 1
+a17 1
+ * $Header: raw.h,v 1.1 88/04/27 09:01:25 brent Exp $ SPRITE (Berkeley)
+d25 6
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+ * $Header: raw.h,v 6.0 87/09/08 15:57:36 andrew Stable $ SPRITE (Berkeley)
+@

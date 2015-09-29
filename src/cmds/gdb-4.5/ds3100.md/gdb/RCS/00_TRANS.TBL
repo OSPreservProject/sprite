@@ -1,0 +1,13 @@
+F BLOCKFRA.C_V;1                    	blockframe.c,v
+F COREDEP.C_V;1                     	coredep.c,v
+F DEFS.H_V;1                        	defs.h,v
+F INFPTRAC.C_V;1                    	infptrace.c,v
+F INFRUN.C_V;1                      	infrun.c,v
+F MIPS_TDE.C_V;1                    	mips-tdep.c,v
+F MIPS_XDE.C_V;1                    	mips-xdep.c,v
+F SOLIB.C_V;1                       	solib.c,v
+F TM_MIPS.H_V;1                     	tm-mips.h,v
+F UTILS.C_V;1                       	utils.c,v
+F VALOPS.C_V;1                      	valops.c,v
+F VALUES.C_V;1                      	values.c,v
+F XM_MIPS.H_V;1                     	xm-mips.h,v

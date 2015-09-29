@@ -1,0 +1,66 @@
+Keith's rdate
+
+Copyright (c) 1990, W. Keith Pyle, Austin, Texas
+
+Description
+-----------
+
+rdate is functionally similar to the rdate command found in SunOS 4.1.
+It is not based on or written with knowledge of source code from
+SunOS.  rdate provides a means for setting the date of the local
+machine from another machine through use of the TCP time protocol
+defined in RFC868.  Extensions are provided over the SunOS rdate: (1)
+to allow specification of multiple time servers, (2) to simply display
+the server(s) time and not set the local machine's date, and (3) to
+optionally use the adjtime system call, if available, to gradually
+adjust the local time.
+
+rdate has been ported to:
+
+HP 9000/825, HP/UX A.B7.00
+Sun 3, SunOS 4.1
+Sequent Symmetry, DYNIX 3.0.17
+VAX 3602, Ultrix 3.1
+PS/2, AIX
+Unisys U6000/51, System Vr3
+Interactive 386/ix
+
+See the man page for more information on the command.
+See the file INSTALL for installation instructions.
+See the file PORTING for porting comments.
+
+Qualifications
+--------------
+
+This program may be copied, transferred, or used in any manner subject
+to the following conditions:
+
+1) The original README and MANIFEST files must be retained
+   in any subsequent source distributions, whether unaltered or not.
+
+2) Neither the author nor his employer make any express or implied
+   warranties as to the fitness of this program for any particular
+   purpose.  The user assumes full responsible for the use of this
+   program and any consequences of its use whether due to defect,
+   misuse, abuse, etc.
+        
+3) The origin of this program must not be misrepresented, either
+   by explicit claim or omission.
+        
+4) Altered versions of this program must be clearly identified as
+   such and may not be represented as the original.
+        
+5) This program may not be sold in any form without the express
+   written consent of the author.
+
+6) Should any of the above be held unenforceable, the remainder shall
+   remain in force.
+
+Contacting the Author
+---------------------
+ 
+Reports of bugs, requests for enhancements, comments, compliments, and
+flames may be sent to the author at the following address.
+
+Keith Pyle                                UUCP: ...!uunet!execu!keith
+Execucom Systems Corp., Austin, Texas     Internet: keith@execu.com

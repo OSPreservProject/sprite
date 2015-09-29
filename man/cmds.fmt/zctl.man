@@ -1,0 +1,396 @@
+
+
+
+ZCTL                      User Commands                      ZCTL
+
+
+
+NNAAMMEE
+     zctl - zephyr control program
+
+SSYYNNOOPPSSIISS
+     zzccttll [ _o_p_t_i_o_n_s ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _Z_c_t_l is a general purpose control program for the _Z_e_p_h_y_r(_1)
+     Notification Service.  It allows the user to subscribe to
+     specific notice types, to save the subscriptions in a file
+     (default $HOME/.zephyr.subs), to change his location infor-
+     mation, and to send control messages to the HostManager,
+     _z_h_m(_8), and the WindowGram client, _z_w_g_c(_1).
+
+     The commands may be typed on the command line, or may be
+     entered interactively by just typing _z_c_t_l and then typing
+     commands to the prompt.
+     NNOOTTEE:: For all commands accepting an optional _r_e_c_i_p_i_e_n_t argu-
+     ment, the _r_e_c_i_p_i_e_n_t defaults to your Kerberos principal.
+     You may also subscribe to recipient ``*''.  If you specify a
+     recipient, it is silently converted to ``*''.
+     The commands are as follows:
+
+     aadddd _c_l_a_s_s _i_n_s_t_a_n_c_e [ _r_e_c_i_p_i_e_n_t ]
+                    Subscribe to _c_l_a_s_s, _i_n_s_t_a_n_c_e, _r_e_c_i_p_i_e_n_t, and
+                    add this triplet to the subscriptions file.
+
+     aadddd__uunnssuubbssccrriippttiioonn _c_l_a_s_s _i_n_s_t_a_n_c_e [ _r_e_c_i_p_i_e_n_t ]
+                    Unsubscribe to _c_l_a_s_s, _i_n_s_t_a_n_c_e, _r_e_c_i_p_i_e_n_t,
+                    and add this triplet to the subscriptions
+                    file as an un-subscription.  For an explana-
+                    tion of un-subscriptions, see below.
+
+     ccaanncceell         Cancel all subscriptions.
+
+     ddeeffaauullttss       Retrieve the default subscription list from
+                    the Zephyr server.
+
+     ddeelleettee _c_l_a_s_s _i_n_s_t_a_n_c_e [ _r_e_c_i_p_i_e_n_t ]
+                    Unsubscribe to _c_l_a_s_s, _i_n_s_t_a_n_c_e, _r_e_c_i_p_i_e_n_t,
+                    and remove this triplet from the subscrip-
+                    tions file.
+
+     ddeelleettee__uunnssuubbssccrriippttiioonn _c_l_a_s_s _i_n_s_t_a_n_c_e [ _r_e_c_i_p_i_e_n_t ]
+                    Unsubscribe to _c_l_a_s_s, _i_n_s_t_a_n_c_e, _r_e_c_i_p_i_e_n_t,
+                    and remove this triplet from the subscrip-
+                    tions file as an un-subscription.
+
+     ffiillee [ _f_i_l_e ]  Set default subscriptions file to _f_i_l_e.  If
+                    _f_i_l_e isn't specified, show what the current
+                    subscriptions file is.
+
+
+
+
+MIT Project Athena        July 1, 1988                          1
+
+
+
+
+
+
+ZCTL                      User Commands                      ZCTL
+
+
+
+     fflluusshh__llooccss     Tell the Zephyr servers to flush all location
+                    information associated with the user.  This
+                    should only be used to remove any incorrect
+                    data that may have been left after a system
+                    crash.
+
+     hhiiddee           Hide your location as maintained by the
+                    Zephyr server.  This does not affect the
+                    value of the exposure variable (see below,
+                    under sseett))..
+
+     hhmm__fflluusshh       Tell the HostManager, _z_h_m(_8), to ask the
+                    server to flush all state associated with the
+                    current host.
+
+     lliisstt [ _f_i_l_e ]  List contents of current subscriptions file
+                    or _f_i_l_e. Any macros in the file (see below)
+                    are displayed verbatim and not expanded.
+
+     lliisstt__rreeqquueessttss  List all available commands.  May be abbrevi-
+                    ated by '?'.
+
+     llooaadd [ _f_i_l_e ]  Subscribe to all subscription triplets and
+                    unsubscribe to all un-subscription triplets
+                    in current subscriptions file or _f_i_l_e.
+
+     nneeww__sseerrvveerr     Tell the HostManager, _z_h_m(_8), to find a new
+                    Zephyr server.
+
+     qquuiitt           Exit from _z_c_t_l.
+
+     rreettrriieevvee       Retrieve all current subscriptions from the
+                    Zephyr server.  These include subscriptions
+                    that might have been made by other programs,
+                    such as _z_n_o_l(_1).
+
+     ssaavvee [ _f_i_l_e ]  Save all current subscriptions (as returned
+                    by the Zephyr server) into current subscrip-
+                    tions file or _f_i_l_e.  The file will be
+                    replaced.
+
+     sseett _v_a_r [ _v_a_l_u_e ]
+                    Set the value of Zephyr variable _v_a_r to
+                    _v_a_l_u_e, or null if no _v_a_l_u_e is specified.  The
+                    variable eexxppoossuurree has special significance,
+                    and can only be set to the values none,
+                    opstaff, realm-visible, realm-announced,
+                    net-visible, and net-announced.  Setting this
+                    variable immediately updates the information
+                    in the Zephyr servers (see below for an
+                    explanation of the exposure levels).  In
+                    addition, setting this variable to none
+
+
+
+MIT Project Athena        July 1, 1988                          2
+
+
+
+
+
+
+ZCTL                      User Commands                      ZCTL
+
+
+
+                    automatically performs the equivalent of a
+                    wwgg__sshhuuttddoowwnn command, and setting it to one of
+                    the other values automatically performs the
+                    equivalent of a wwgg__ssttaarrttuupp command.
+                    Any variable settings you make will be stored
+                    in $_H_O_M_E/._z_e_p_h_y_r._v_a_r_s
+
+     sshhooww _v_a_r [ _v_a_r  ... ]
+                    Show the value of the specified Zephyr vari-
+                    ables.  If a variable is not defined in the
+                    user's own variables file, the system vari-
+                    ables file (/_u_s_r/_s_w_w/_l_i_b/_z_e_p_h_y_r/_z_e_p_h_y_r._v_a_r_s)
+                    is searched for a default value.
+
+     ssuubbssccrriibbee _c_l_a_s_s _i_n_s_t_a_n_c_e [ _r_e_c_i_p_i_e_n_t ]
+                    Subscribe to _c_l_a_s_s, _i_n_s_t_a_n_c_e, _r_e_c_i_p_i_e_n_t, but
+                    don't add this triplet to the subscriptions
+                    file.
+
+     uunnhhiiddee         Make your location as maintained by the
+                    Zephyr server visible.  This does not affect
+                    the value of the exposure variable.
+
+     uunnllooaadd [ _f_i_l_e ]
+                    Unsubscribe to all subscription triplets in
+                    current subscriptions file or _f_i_l_e.  Un-
+                    subscriptions in the file are ignored.
+
+     uunnsseett _v_a_r [ _v_a_r  ... ]
+                    Delete the definitions of the specified
+                    Zephyr variables.
+
+     uunnssuubbssccrriibbee _c_l_a_s_s _i_n_s_t_a_n_c_e [ _r_e_c_i_p_i_e_n_t ]
+                    Unsubscribe to _c_l_a_s_s, _i_n_s_t_a_n_c_e, _r_e_c_i_p_i_e_n_t,
+                    but don't remove this triplet from the sub-
+                    scriptions file.
+
+     wwgg__rreeaadd        Tell the WindowGram client, _z_w_g_c(_1), to
+                    reread its description file.
+
+     wwgg__sshhuuttddoowwnn    Tell the WindowGram client to shutdown; this
+                    causes it to ignore all notices until a
+                    wg_startup command is issued.
+
+     wwgg__ssttaarrttuupp     Tell the WindowGram client to start accepting
+                    notices again; useful after a wg_shutdown
+                    command has been issued.
+
+MMAACCRROOSS aanndd SSUUBBSSCCRRIIPPTTIIOONN FFIILLEESS
+     There are three macros, %_h_o_s_t%, %_c_a_n_o_n%, and %_m_e%. %_h_o_s_t% is
+     converted to the current hostname, %_c_a_n_o_n% is converted to
+     the official hostname as returned by _g_e_t_h_o_s_t_b_y_n_a_m_e(_3), and
+
+
+
+MIT Project Athena        July 1, 1988                          3
+
+
+
+
+
+
+ZCTL                      User Commands                      ZCTL
+
+
+
+     %_m_e% is converted to your Kerberos principal.  These macros
+     can be used in your $_H_O_M_E/._z_e_p_h_y_r._s_u_b_s file or as arguments
+     to commands to specify the _c_l_a_s_s or _i_n_s_t_a_n_c_e fields.  A sam-
+     ple $_H_O_M_E/._z_e_p_h_y_r._s_u_b_s file might contain the following:
+
+          message,urgent,%me%
+          syslog,%host%,*
+          mail,pop,%me%
+
+     _Z_c_t_l reads the environment variable WWGGFFIILLEE, to find the name
+     of the file where the windowgram port resides.  If WWGGFFIILLEE is
+     not set, the file name defaults to /tmp/wg._u_i_d, where _u_i_d is
+     the user's UNIX uid.
+
+UUNN--SSUUBBSSCCRRIIPPTTIIOONNSS
+     The zephyr server, _z_e_p_h_y_r_d(_8), maintains default subscrip-
+     tions which are automatically added to all users' subscrip-
+     tions at the time of their first subscription during a login
+     session.  If you wish to automatically remove some of these
+     default subscriptions, you use uunn--ssuubbssccrriippttiioonnss.. When you
+     llooaadd a subscription file containing un-subscriptions, the
+     un-subscriptions are automatically sent to the server as if
+     you had used the uunnssuubbssccrriibbee command.
+
+EEXXPPOOSSUURREE LLEEVVEELLSS
+     The different exposure levels affect the operation of zephyr
+     and its interaction with the user, as follows:
+
+     _n_o_n_e      This completely disables Zephyr for the user. The
+               user is not registered with Zephyr.  No user loca-
+               tion information is retained by Zephyr.  No login
+               or logout announcements will be sent.  No sub-
+               scriptions will be entered for the user, and no
+               notices will be displayed by _z_w_g_c(_1).
+
+     _o_p_s_t_a_f_f   The user is registered with Zephyr.  No login or
+               logout announcements will be sent, and location
+               information will only be visible to Operations
+               staff.  Default subscriptions and any additional
+               personal subscriptions will be entered for the
+               user.
+
+     _r_e_a_l_m-_v_i_s_i_b_l_e
+               The user is registered with Zephyr.  User location
+               information is retained by Zephyr and made avail-
+               able only to users within the user's Kerberos
+               realm.  No login or logout announcements will be
+               sent.  This is the system default.  Default sub-
+               scriptions and any additional personal subscrip-
+               tions will be entered for the user.
+
+     _r_e_a_l_m-_a_n_n_o_u_n_c_e_d
+
+
+
+MIT Project Athena        July 1, 1988                          4
+
+
+
+
+
+
+ZCTL                      User Commands                      ZCTL
+
+
+
+               The user is registered with Zephyr.  User location
+               information is retained by Zephyr and made avail-
+               able only to users authenticated within the user's
+               Kerberos realm.  Login and logout announcements
+               will be sent, but only to users within the user's
+               Kerberos realm who have explicitly requested such
+               via subscriptions.  Default subscriptions and any
+               additional personal subscriptions will be entered
+               for the user.
+
+     _n_e_t-_v_i_s_i_b_l_e
+               The user is registered with Zephyr.  User location
+               information is retained by Zephyr and made avail-
+               able to any authenticated user who requests such.
+               Login and logout announcements will be sent only
+               to users within the user's Kerberos realm who have
+               explicitly requested such via subscriptions.
+               Default subscriptions and any additional personal
+               subscriptions will be entered for the user.
+
+     _n_e_t-_a_n_n_o_u_n_c_e_d
+               The user is registered with Zephyr. User location
+               information is retained by Zephyr and made avail-
+               able to any authenticated user who requests such.
+               Login and logout announcements will be sent to any
+               user has requested such.  Default subscriptions
+               and any additional personal subscriptions will be
+               entered for the user.
+
+EEXXAAMMPPLLEESS
+     zzccttll                     Runs _z_c_t_l in interactive mode.
+
+     zzccttll llooaadd                Load subscriptions and un-
+                              subscriptions from
+                              $_H_O_M_E/._z_e_p_h_y_r._s_u_b_s file.
+
+     zzccttll ssuubb mmeessssaaggee ppeerrssoonnaall
+                              Subscribe to personal messages, but
+                              don't add this to the subscriptions
+                              file.
+
+     zzccttll ssaavvee                Save all current subscriptions to
+                              the default subscriptions file.
+
+     zzccttll sseett eexxppoossuurree nnoonnee   Set your exposure level to `none',
+                              effectively turning off Zephyr.
+
+BBUUGGSS
+     The current implementation of the Zephyr server (_z_e_p_h_y_r_d(_8))
+     makes no distinction between realm-announced, net-visible
+     and net-announced exposure levels.
+
+
+
+
+MIT Project Athena        July 1, 1988                          5
+
+
+
+
+
+
+ZCTL                      User Commands                      ZCTL
+
+
+
+SSEEEE AALLSSOO
+     zephyr(1), zwgc(1), zhm(8), zephyrd(8) gethostbyname(3)
+     Project Athena Technical Plan Section E.4.1, `Zephyr Notifi-
+     cation Service'
+
+FFIILLEESS
+     /tmp/wg.*
+     $HOME/.zephyr.subs
+     $HOME/.zephyr.vars
+     /etc/athena/zephyr.vars
+
+AAUUTTHHOORR
+     Robert S. French (MIT-Project Athena)
+
+
+RREESSTTRRIICCTTIIOONNSS
+     Copyright (c) 1987,1988 by the Massachusetts Institute of
+     Technology.  All Rights Reserved.
+     _z_e_p_h_y_r(_1) specifies the terms and conditions for redistribu-
+     tion.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+MIT Project Athena        July 1, 1988                          6
+
+
+

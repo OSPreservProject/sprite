@@ -1,0 +1,997 @@
+head     1.13;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.13
+date     91.09.10.19.24.27;  author mottsmth;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     90.02.06.17.50.00;  author brent;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     89.10.10.13.15.23;  author brent;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     89.09.20.17.42.14;  author douglis;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     89.06.30.10.29.17;  author brent;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     89.06.02.13.55.23;  author brent;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     89.05.31.15.21.30;  author brent;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.02.02.16.35.23;  author brent;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.02.02.15.04.59;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.01.13.10.48.24;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.11.14.15.14.49;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.11.11.11.33.06;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.11.02.12.44.11;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@NFS I/O routines
+@
+
+
+1.13
+log
+@Cleanup memory leaks.
+@
+text
+@/*
+ * nfsIO.c --
+ * 
+ *	I/O procedures for NFS files.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/cmds/nfsmount/RCS/nfsIO.c,v 1.12 90/02/06 17:50:00 brent Exp Locker: mottsmth $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "stdio.h"
+
+#include "nfs.h"
+#include "sys/stat.h"
+#include "kernel/fsdm.h"
+#include "sig.h"
+
+
+/*
+ * Service switch that the pdev library will use for the pseudo-device
+ * connections to each NFS file.
+ */
+Pdev_CallBacks nfsFileService = {
+    NULL, 			/* PDEV_OPEN - only for pseudo-devices */
+    NfsRead,			/* PDEV_READ */
+    NfsWrite,			/* PDEV_WRITE */
+    NfsIoctl,			/* PDEV_IOCTL */
+    NfsClose, 			/* PDEV_CLOSE */
+    NfsGetAttrStream,		/* PDEV_GET_ATTR - called on open pfs streams */
+    NfsSetAttrStream,		/* PDEV_SET_ATTR - called on open pfs streams */
+};
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NfsClose --
+ *
+ *	Default procedure is called when an PDEV_CLOSE request is
+ *	received over an service stream.
+ *
+ * Results:
+ *	Returns SUCCESS and the select state of the pseudo-device.
+ *
+ * Side effects:
+ *	Free's up the handle slot used to remember the open file.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+int
+NfsClose(streamPtr)
+    Pdev_Stream *streamPtr;
+{
+    register Fs_FileID *fileIDPtr = (Fs_FileID *)streamPtr->clientData;
+    register nfs_fh *handlePtr;
+    register int status = SUCCESS;
+
+    if (fileIDPtr->minor >= 0 && fileIDPtr->minor < nfsFileTableSize) {
+	if (nfsFileTable[fileIDPtr->minor] != (NfsOpenFile *)NULL) {
+	    free((char *)nfsFileTable[fileIDPtr->minor]->handlePtr);
+	    AUTH_DESTROY(nfsFileTable[fileIDPtr->minor]->authPtr);
+	    free((char *)nfsFileTable[fileIDPtr->minor]);
+	    nfsFileTable[fileIDPtr->minor] = (NfsOpenFile *)NULL;
+	} else {
+	    printf("NfsClose: no open file for file ID <%d,%d,%d,%d>\n",
+		fileIDPtr->type,
+		fileIDPtr->serverID, fileIDPtr->major, fileIDPtr->minor);
+	    status = EINVAL;
+	}
+	free((char *)fileIDPtr);
+    } else {
+	printf("NfsClose: bad fileID <%d,%d,%d,%d>\n", fileIDPtr->type,
+		fileIDPtr->serverID, fileIDPtr->major, fileIDPtr->minor);
+	status = EINVAL;
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NfsRead --
+ *
+ *	Read from an NFS file.
+ *
+ * Results:
+ *	The number of bytes read.
+ *
+ * Side effects:
+ *	Do the read.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+int
+NfsRead(streamPtr, readPtr, freeItPtr, selectBitsPtr, sigPtr)
+    Pdev_Stream *streamPtr;	/* Private data */
+    Pdev_RWParam *readPtr;	/* Return - how much data was generated */
+    Boolean *freeItPtr;		/* In/Out indicates if *bufferPtr is malloc'd */
+    int *selectBitsPtr;		/* Return - the select state of the pdev */
+    Pdev_Signal *sigPtr;	/* Return - signal to return, if any */
+{
+    register Fs_FileID *fileIDPtr = (Fs_FileID *)streamPtr->clientData;
+    register nfs_fh *handlePtr;
+    register int status = NFS_OK;
+    register int bytesToRead = readPtr->length;
+    register int toRead;
+    register Address buffer = readPtr->buffer;
+    NfsState *nfsPtr;
+    readargs readArgs;
+    readres readResult;
+
+    if (fileIDPtr->minor >= 0 && fileIDPtr->minor < nfsFileTableSize) {
+	handlePtr = nfsFileTable[fileIDPtr->minor]->handlePtr;
+	nfsPtr = (NfsState *)fileIDPtr->serverID;
+	nfsPtr->nfsClnt->cl_auth = nfsFileTable[fileIDPtr->minor]->authPtr;
+	if (fileIDPtr->type == TYPE_FILE) {
+	    /*
+	     * Reading from a regular file.  Use standard read RPC.
+	     * Tell the XDR routines about our pre-allocated buffer.
+	     */
+	    readPtr->length = 0;
+	    readArgs.totalcount = 0;	/* unused by protocol */
+	    bcopy((char *)handlePtr, (char *)&readArgs.file, sizeof(nfs_fh));
+	    while (bytesToRead > 0 && status == NFS_OK) {
+		toRead = (bytesToRead > NFS_MAXDATA) ? NFS_MAXDATA :
+							bytesToRead;
+		readResult.readres_u.reply.data.data_len = toRead;
+		readResult.readres_u.reply.data.data_val = buffer;
+	
+		readArgs.offset = readPtr->offset;
+		readArgs.count = toRead;
+	
+		if (clnt_call(nfsPtr->nfsClnt, NFSPROC_READ, xdr_readargs,
+			&readArgs, xdr_readres, &readResult, nfsTimeout)
+			    != RPC_SUCCESS) {
+		    clnt_perror(nfsPtr->nfsClnt, "NFSPROC_READ");
+		    status = EINVAL;
+		} else {
+		    status = readResult.status;
+		    if (status == NFS_OK) {
+			if (toRead > readResult.readres_u.reply.data.data_len) {
+			    /*
+			     * Short read.
+			     */
+			    readPtr->length +=
+				readResult.readres_u.reply.data.data_len;
+			    break;
+			} else {
+			    toRead = readResult.readres_u.reply.data.data_len;
+			    readPtr->length += toRead;
+			    readPtr->offset += toRead;
+			    buffer += toRead;
+			    bytesToRead -= toRead;
+			}
+		    } else {
+			status = NfsStatusMap(status);
+		    }
+		}
+	    }
+	} else if (fileIDPtr->type == TYPE_SYMLINK) {
+	    /*
+	     * Use the NFS READLINK procedure to read the link value.
+	     */
+	    readlinkres		readLinkResult;
+
+	    readLinkResult.readlinkres_u.data = buffer;
+	    if (clnt_call(nfsPtr->nfsClnt, NFSPROC_READLINK, xdr_nfs_fh,
+			handlePtr, xdr_readlinkres,
+			&readLinkResult, nfsTimeout) != RPC_SUCCESS) {
+		clnt_perror(nfsPtr->nfsClnt, "NFSPROC_READLINK");
+		status = EINVAL;
+	    } else {
+		status = readLinkResult.status;
+		if (status == NFS_OK) {
+		    readPtr->length = strlen(readLinkResult.readlinkres_u.data);
+		} else {
+		    status = NfsStatusMap(status);
+		}
+	    }
+	} else {
+	    /*
+	     * We have to use the NFS READDIR procedure to read a directory.
+	     * There are two tricks required.  First we have to
+	     * save the nfscookie that is returned by the READDIR so we can
+	     * use it again on the next call to read from the directory.  This
+	     * trick only works with sequential reading of directories.  The
+	     * second trick is no biggie, we just have to convert from the
+	     * linked list returned by the XDR routines to a Sprite format
+	     * directory.
+	     */
+	    readdirargs readDirArgs;
+	    readdirres readDirResult;
+
+	    bcopy((char *)handlePtr, (char *)&readDirArgs.dir, sizeof(nfs_fh));
+	    if (readPtr->offset == 0) {
+		bzero((char *)&readDirArgs.cookie, sizeof(nfscookie));
+	    } else {
+		NfsFindCookie(fileIDPtr, readPtr->offset, &readDirArgs.cookie);
+	    }
+	    readDirArgs.count = readPtr->length;
+	    bzero((char *)&readDirResult, sizeof(readdirres));
+	    if (clnt_call(nfsPtr->nfsClnt, NFSPROC_READDIR, xdr_readdirargs,
+		    &readDirArgs, xdr_readdirres, &readDirResult, nfsTimeout)
+				!= RPC_SUCCESS) {
+		clnt_perror(nfsPtr->nfsClnt, "NFSPROC_READDIR");
+		status = EINVAL;
+		readPtr->length = 0;
+	    } else {
+		status = readDirResult.status;
+		if (status != NFS_OK) {
+		    status = NfsStatusMap(status);
+		    readPtr->length = 0;
+		} else {
+		    NfsToSpriteDirectory(&readDirResult.readdirres_u.reply,
+			readPtr->offset, &readPtr->length, buffer, fileIDPtr);
+		}
+	    }
+	}
+    } else {
+	printf("NfsRead: bad fileID <%d,%d,%d,%d>\n", fileIDPtr->type,
+		fileIDPtr->serverID, fileIDPtr->major, fileIDPtr->minor);
+	readPtr->length = 0;
+	status = EINVAL;
+    }
+    *selectBitsPtr = FS_READABLE | FS_WRITABLE;
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NfsWrite --
+ *
+ *	Write to an NFS file.  This is a thin layer on top of the
+ *	basic RPC.  This could be enhanced to pass the data block
+ *	off to a subordinate writing process.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*ARGSUSED*/
+int
+NfsWrite(streamPtr, async, writePtr, selectBitsPtr, sigPtr)
+    Pdev_Stream *streamPtr;	/* Private data */
+    int async;			/* ought not to be TRUE in NFS! */
+    Pdev_RWParam *writePtr;	/* Information about the write and writer */
+    int *selectBitsPtr;		/* Result - select state of the pseudo-device */
+    Pdev_Signal *sigPtr;	/* Result - signal to return, if any */
+{
+    register Fs_FileID *fileIDPtr = (Fs_FileID *)streamPtr->clientData;
+    register nfs_fh *handlePtr;
+    NfsState *nfsPtr;
+    register int status = NFS_OK;
+    register int bytesToWrite;
+    register int toWrite;
+    int openFlags;
+    writeargs writeArgs;
+    attrstat attrStat;
+
+    if (fileIDPtr->minor >= 0 && fileIDPtr->minor < nfsFileTableSize) {
+	handlePtr = nfsFileTable[fileIDPtr->minor]->handlePtr;
+	openFlags = nfsFileTable[fileIDPtr->minor]->openFlags;
+	nfsPtr = (NfsState *)fileIDPtr->serverID;
+	nfsPtr->nfsClnt->cl_auth = nfsFileTable[fileIDPtr->minor]->authPtr;
+
+	if (openFlags & FS_APPEND) {
+	    /*
+	     * Find out how big the file in order to approximate
+	     * append-mode writing.
+	     */
+	    if (clnt_call(nfsPtr->nfsClnt, NFSPROC_GETATTR, xdr_nfs_fh,
+			handlePtr, xdr_attrstat, &attrStat, nfsTimeout)
+			    != RPC_SUCCESS) {
+		clnt_perror(nfsPtr->nfsClnt, "NFSPROC_GETATTR");
+		status = FAILURE;
+		goto exit;
+	    } else {
+		status = attrStat.status;
+		if (status == NFS_OK) {
+		    writePtr->offset = attrStat.attrstat_u.attributes.size;
+		} else {
+		    status = NfsStatusMap(status);
+		    goto exit;
+		}
+	    }
+	}
+	bcopy((char *)handlePtr, (char *)&writeArgs.file, sizeof(nfs_fh));
+	bytesToWrite = writePtr->length;
+	writePtr->length = 0;
+	writeArgs.beginoffset = 0;	/* unused by NFS protocol */
+	writeArgs.totalcount = 0;	/* unused by NFS protocol */
+	while (bytesToWrite > 0 && status == NFS_OK) {
+	    writeArgs.offset = writePtr->offset;
+	    toWrite = (bytesToWrite > NFS_MAXDATA) ? NFS_MAXDATA : bytesToWrite;
+	    writeArgs.data.data_len = toWrite;
+	    writeArgs.data.data_val = writePtr->buffer;
+    
+	    if (clnt_call(nfsPtr->nfsClnt, NFSPROC_WRITE, xdr_writeargs,
+		    &writeArgs, xdr_attrstat, &attrStat, nfsTimeout)
+			!= RPC_SUCCESS) {
+		clnt_perror(nfsPtr->nfsClnt, "NFSPROC_WRITE");
+		status = EINVAL;
+	    } else {
+		status = attrStat.status;
+		if (status != NFS_OK) {
+		    status = NfsStatusMap(status);
+		} else {
+		    NfsCacheAttributes(fileIDPtr,
+					&attrStat.attrstat_u.attributes);
+		    bytesToWrite -= toWrite;
+		    writePtr->buffer += toWrite;
+		    writePtr->length += toWrite;
+		    writePtr->offset += toWrite;
+		}
+	    }
+	}
+	if (async && (bytesToWrite > 0)) {
+	    fprintf(stderr, "Warning: short async NFS write\n");
+	}
+    } else {
+	printf("NfsWrite: bad fileID <%d,%d,%d,%d>\n", fileIDPtr->type,
+		fileIDPtr->serverID, fileIDPtr->major, fileIDPtr->minor);
+	writePtr->length = 0;
+	status = EINVAL;
+    }
+exit:
+    *selectBitsPtr = FS_READABLE | FS_WRITABLE;
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NfsIoctl --
+ *
+ *	Take special actions on an NFS file.  This handles truncation,
+ *	and could be modified to handle locking, some day, some how.
+ *
+ * Results:
+ *	IOC_TRUNCATE maps to a SetAttributes with a short size.
+ *
+ * Side effects
+ *	None to internal data structure.  The I/O controls have various
+ *	effects on NFS files.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+int
+NfsIoctl(streamPtr, ioctlPtr, selectBitsPtr, sigPtr)
+    Pdev_Stream *streamPtr;
+    Pdev_IOCParam *ioctlPtr;
+    int *selectBitsPtr;
+    Pdev_Signal *sigPtr;
+{
+    register Fs_FileID *fileIDPtr = (Fs_FileID *)streamPtr->clientData;
+    register nfs_fh *handlePtr;
+    NfsState *nfsPtr;
+    attrstat attrStat;
+    int status;
+
+    if (fileIDPtr->minor >= 0 && fileIDPtr->minor < nfsFileTableSize) {
+	handlePtr = nfsFileTable[fileIDPtr->minor]->handlePtr;
+	nfsPtr = (NfsState *)fileIDPtr->serverID;
+	nfsPtr->nfsClnt->cl_auth = nfsFileTable[fileIDPtr->minor]->authPtr;
+
+	switch (ioctlPtr->command) {
+	    case IOC_PDEV_SIGNAL_OWNER: {
+		/*
+		 * Special test of IOC_PDEV_SIGNAL_REPLY.
+		 * We have the user program ask for it!
+		 */
+		sigPtr->signal = SIG_SUSPEND;
+		sigPtr->code = SIG_NO_CODE;
+		status = SUCCESS;
+		break;
+	    }
+	    case IOC_TRUNCATE: {
+		sattrargs sattrArgs;
+
+		if (ioctlPtr->inBufSize < sizeof(int) ||
+		    ioctlPtr->inBuffer == NULL) {
+		    status = GEN_INVALID_ARG;
+		    break;
+		}
+		bcopy((char *)handlePtr, (char *)&sattrArgs.file,
+			sizeof(nfs_fh));
+		sattrArgs.attributes.mode = -1;
+		sattrArgs.attributes.uid = -1;
+		sattrArgs.attributes.gid = -1;
+		sattrArgs.attributes.size = *(int *)ioctlPtr->inBuffer;
+		sattrArgs.attributes.atime.seconds = -1;
+		sattrArgs.attributes.atime.useconds = -1;
+		sattrArgs.attributes.mtime.seconds = -1;
+		sattrArgs.attributes.mtime.useconds = -1;
+		if (clnt_call(nfsPtr->nfsClnt, NFSPROC_SETATTR, xdr_sattrargs,
+			    &sattrArgs, xdr_attrstat, &attrStat, nfsTimeout)
+				!= RPC_SUCCESS) {
+		    clnt_perror(nfsPtr->nfsClnt, "NFSPROC_SETATTR");
+		    status = EINVAL;
+		} else {
+		    status = NfsStatusMap((int) attrStat.status);
+		}
+		break;
+	    }
+	    case IOC_GET_FLAGS:
+	    case IOC_SET_FLAGS:
+	    case IOC_SET_BITS:
+	    case IOC_CLEAR_BITS:
+	    case IOC_REPOSITION:
+	    case IOC_GET_OWNER:
+	    case IOC_SET_OWNER:
+	    case IOC_WRITE_BACK:
+		status = SUCCESS;
+		break;
+	    case IOC_LOCK:
+	    case IOC_UNLOCK:
+	    case IOC_MAP:
+	    case IOC_NUM_READABLE:
+	    default:
+		status = GEN_NOT_IMPLEMENTED;
+		break;
+	}
+    } else {
+	printf("NfsIoctl: bad fileID <%d,%d,%d,%d>\n", fileIDPtr->type,
+		fileIDPtr->serverID, fileIDPtr->major, fileIDPtr->minor);
+    }
+    ioctlPtr->outBufSize = 0;
+    *selectBitsPtr = FS_READABLE | FS_WRITABLE;
+    return(status);
+}
+@
+
+
+1.12
+log
+@Added support for IOC_WRITE_BACK
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /a/newcmds/nfsmount/RCS/nfsIO.c,v 1.11 89/10/10 13:15:23 brent Exp $ SPRITE (Berkeley)";
+d71 1
+a71 1
+	    free((char *)nfsFileTable[fileIDPtr->minor]->authPtr);
+@
+
+
+1.11
+log
+@Fixed include
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /a/newcmds/nfsmount/RCS/nfsIO.c,v 1.10 89/09/20 17:42:14 douglis Exp Locker: brent $ SPRITE (Berkeley)";
+d430 1
+@
+
+
+1.10
+log
+@Removed lint
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /a/newcmds/nfsmount/RCS/nfsIO.c,v 1.9 89/06/30 10:29:17 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d23 1
+a23 1
+#include "kernel/fsDisk.h"
+@
+
+
+1.9
+log
+@Implemented append-mode writes
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /a/newcmds/nfsmount/RCS/nfsIO.c,v 1.8 89/06/02 13:55:23 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d419 1
+a419 1
+		    status = NfsStatusMap(attrStat.status);
+@
+
+
+1.8
+log
+@Updated for new pseudo-device interface
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /a/newcmds/nfsmount/RCS/nfsIO.c,v 1.7 89/05/31 15:21:30 brent Exp $ SPRITE (Berkeley)";
+d273 1
+d279 1
+d283 21
+d343 1
+@
+
+
+1.7
+log
+@Fixed a core leak with the SUN-RPC authentication information
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /a/newcmds/nfsmount/RCS/nfsIO.c,v 1.6 89/02/02 16:35:23 brent Exp $ SPRITE (Berkeley)";
+d106 3
+a108 8
+NfsRead(streamPtr, offset, procID, familyID, amountReadPtr, bufferPtr, freeItPtr,
+		selectBitsPtr)
+    Pdev_Stream *streamPtr;		/* Private data */
+    int offset;			/* Byte offset at which to read */
+    int procID;			/* Family ID of calling process */
+    int familyID;		/* Family ID of calling process */
+    int *amountReadPtr;		/* Return - how much data was generated */
+    Address *bufferPtr;		/* Ref. to buffer we fill in with data bytes */
+d111 1
+d116 1
+a116 1
+    register int bytesToRead = *amountReadPtr;
+d118 1
+a118 1
+    register Address buffer = *bufferPtr;
+d132 1
+a132 1
+	    *amountReadPtr = 0;
+d141 1
+a141 1
+		readArgs.offset = offset;
+d156 1
+a156 1
+			    *amountReadPtr +=
+d161 2
+a162 1
+			    *amountReadPtr += toRead;
+a163 1
+			    offset += toRead;
+d186 1
+a186 1
+		    *amountReadPtr = strlen(readLinkResult.readlinkres_u.data);
+d206 1
+a206 1
+	    if (offset == 0) {
+d209 1
+a209 1
+		NfsFindCookie(fileIDPtr, offset, &readDirArgs.cookie);
+d211 1
+a211 1
+	    readDirArgs.count = *amountReadPtr;
+d218 1
+a218 1
+		*amountReadPtr = 0;
+d223 1
+a223 1
+		    *amountReadPtr = 0;
+d226 1
+a226 1
+				offset, amountReadPtr, *bufferPtr, fileIDPtr);
+d233 1
+a233 1
+	*amountReadPtr = 0;
+d260 1
+a260 1
+NfsWrite(streamPtr, async, offset, procID, familyID, numBytesPtr, buffer, selectBitsPtr)
+d262 2
+a263 6
+    int async;			/* ought not to be TRUE */
+    int offset;			/* Offset at which to write */
+    int procID;			/* Process ID of caller */
+    int familyID;		/* Calling process's family ID */
+    int *numBytesPtr;		/* In/Out byte count */
+    Address buffer;		/* Buffer containing bytes */
+d265 1
+d282 4
+a285 4
+	bytesToWrite = *numBytesPtr;
+	*numBytesPtr = 0;
+	writeArgs.beginoffset = 0;	/* unused by protocol */
+	writeArgs.totalcount = 0;	/* unused by protocol */
+d287 1
+a287 1
+	    writeArgs.offset = offset;
+d290 1
+a290 1
+	    writeArgs.data.data_val = buffer;
+a303 1
+		    *numBytesPtr += toWrite;
+d305 3
+a307 2
+		    offset += toWrite;
+		    buffer += toWrite;
+d317 1
+a317 1
+	*numBytesPtr = 0;
+d343 1
+a343 1
+NfsIoctl(streamPtr, command, procID, familyID, byteOrder, inSize, inData, outSizePtr, outData, selectBitsPtr)
+d345 1
+a345 8
+    int command;
+    int procID;
+    int familyID;
+    int byteOrder;
+    int inSize;
+    Address inData;
+    int *outSizePtr;
+    Address outData;
+d347 1
+d360 1
+a360 1
+	switch (command) {
+d363 1
+a363 1
+		 * Special test of IOC_PDEV_SIGNAL.
+d366 3
+a368 5
+		Pdev_Signal signal;
+		signal.signal = SIG_SUSPEND;
+		signal.code = SIG_NO_CODE;
+		status = Fs_IOControl(streamPtr->streamID,IOC_PDEV_SIGNAL_OWNER,
+			sizeof(Pdev_Signal), &signal, 0, NULL);
+d374 2
+a375 1
+		if (inSize < sizeof(int) || inData == NULL) {
+d384 1
+a384 1
+		sattrArgs.attributes.size = *(int *)inData;
+d420 1
+a420 1
+    *outSizePtr = 0;
+@
+
+
+1.6
+log
+@Fixed readlink()
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /a/newcmds/nfsmount/RCS/nfsIO.c,v 1.5 89/02/02 15:04:59 brent Exp $ SPRITE (Berkeley)";
+d71 1
+@
+
+
+1.5
+log
+@Updated to new pfs package.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /a/newcmds/nfsmount/RCS/nfsIO.c,v 1.4 89/01/13 10:48:24 brent Exp $ SPRITE (Berkeley)";
+d174 20
+d197 1
+a197 1
+	     * There are two tricks required.  The first is that we have to
+@
+
+
+1.4
+log
+@Implemented truncation
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /a/newcmds/nfssrv/RCS/nfsIO.c,v 1.3 88/11/14 15:14:49 brent Exp $ SPRITE (Berkeley)";
+d24 1
+d31 1
+a31 2
+IntProc nfsFileService[] = {
+    NULL, 			/* PDEV_INVALID */
+a32 2
+    NULL,			/* PDEV_DUP  - obsolete */
+    NfsClose, 			/* PDEV_CLOSE */
+d36 1
+a38 9
+    BadProc,			/* PFS_OPEN */
+    BadProc,			/* PFS_GET_ATTR */
+    BadProc,			/* PFS_SET_ATTR */
+    BadProc,			/* PFS_MAKE_DEVICE */
+    BadProc,			/* PFS_MAKE_DIR */
+    BadProc,			/* PFS_REMOVE */
+    BadProc,			/* PFS_REMOVE_DIR */
+    BadProc,			/* PFS_RENAME */
+    BadProc,			/* PFS_HARD_LINK */
+d60 3
+a62 3
+ReturnStatus
+NfsClose(private)
+    ClientData private;
+d64 1
+a64 1
+    register Fs_FileID *fileIDPtr = (Fs_FileID *)private;
+d77 1
+a77 1
+	    status = FAILURE;
+d83 1
+a83 1
+	status = FAILURE;
+d104 2
+a105 2
+ReturnStatus
+NfsRead(private, offset, familyID, amountReadPtr, bufferPtr, freeItPtr,
+d107 1
+a107 1
+    ClientData private;		/* Private data */
+d109 1
+d116 1
+a116 1
+    register Fs_FileID *fileIDPtr = (Fs_FileID *)private;
+d151 1
+a151 1
+		    status = FAILURE;
+d200 1
+a200 1
+		status = FAILURE;
+d217 1
+a217 1
+	status = FAILURE;
+d242 4
+a245 3
+ReturnStatus
+NfsWrite(private, offset, familyID, numBytesPtr, buffer, selectBitsPtr)
+    ClientData private;		/* Private data */
+d247 1
+d253 1
+a253 1
+    register Fs_FileID *fileIDPtr = (Fs_FileID *)private;
+d282 1
+a282 1
+		status = FAILURE;
+d297 3
+d304 1
+a304 1
+	status = FAILURE;
+d328 3
+a330 3
+ReturnStatus
+NfsIoctl(private, command, familyID, inSize, inData, outSizePtr, outData, selectBitsPtr)
+    ClientData private;
+d332 1
+d334 1
+d341 1
+a341 1
+    register Fs_FileID *fileIDPtr = (Fs_FileID *)private;
+d345 1
+a345 1
+    ReturnStatus status;
+d353 12
+d386 1
+a386 1
+		    status = FAILURE;
+d397 2
+a402 2
+	    case IOC_GET_OWNER:
+	    case IOC_SET_OWNER:
+@
+
+
+1.3
+log
+@Added user authentication
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /a/newcmds/nfssrv/RCS/nfsIO.c,v 1.2 88/11/11 11:33:06 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d345 3
+d351 48
+d405 1
+a405 1
+    return(SUCCESS);
+@
+
+
+1.2
+log
+@Stable complete version
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /sprite/users/brent/nfstest/RCS/nfsIO.c,v 1.1 88/11/02 12:44:11 brent Exp $ SPRITE (Berkeley)";
+d78 5
+a82 6
+    if (fileIDPtr->minor >= 0 && fileIDPtr->minor < nfsHandleTableSize) {
+	handlePtr = nfsHandleTable[fileIDPtr->minor];
+	nfsHandleTable[fileIDPtr->minor] = (nfs_fh *)NULL;
+	free((char *)fileIDPtr);
+	if (handlePtr != (nfs_fh *)NULL) {
+	    free((char *)handlePtr);
+d84 1
+a84 1
+	    printf("NfsClose: no handle for file ID <%d,%d,%d,%d>\n",
+d89 1
+d135 2
+a136 2
+    if (fileIDPtr->minor >= 0 && fileIDPtr->minor < nfsHandleTableSize) {
+	handlePtr = nfsHandleTable[fileIDPtr->minor];
+d138 1
+d261 1
+a261 1
+    register nfs_fh *handlePtr = nfsHandleTable[fileIDPtr->minor];
+d269 5
+a273 3
+    if (fileIDPtr->minor >= 0 && fileIDPtr->minor < nfsHandleTableSize) {
+	handlePtr = nfsHandleTable[fileIDPtr->minor];
+	nfsPtr = (NfsState *)fileIDPtr->serverID;    
+d344 1
+a344 1
+    register nfs_fh *handlePtr = nfsHandleTable[fileIDPtr->minor];
+d346 2
+a347 2
+    if (fileIDPtr->minor >= 0 && fileIDPtr->minor < nfsHandleTableSize) {
+	handlePtr = nfsHandleTable[fileIDPtr->minor];
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: fsPfs.c,v 6.0 88/10/11 15:52:49 brent Exp $ SPRITE (Berkeley)";
+d127 4
+a130 1
+    register int status;
+d132 2
+d143 2
+a144 5
+	    readargs readArgs;
+	    readres readResult;
+	    readResult.readres_u.reply.data.data_len = *amountReadPtr;
+	    readResult.readres_u.reply.data.data_val = *bufferPtr;
+    
+d146 14
+a159 13
+	    readArgs.offset = offset;
+	    readArgs.count = *amountReadPtr;
+	    readArgs.totalcount = 0;	/* unused by protocol */
+    
+	    if (clnt_call(nfsPtr->nfsClnt, NFSPROC_READ, xdr_readargs,&readArgs,
+		    xdr_readres, &readResult, nfsTimeout) != RPC_SUCCESS) {
+		clnt_perror(nfsPtr->nfsClnt, "NFSPROC_READ");
+		*amountReadPtr = 0;
+		status = FAILURE;
+	    } else {
+		status = readResult.status;
+		if (status == NFS_OK) {
+		    *amountReadPtr = readResult.readres_u.reply.data.data_len;
+d161 19
+a179 2
+		    *amountReadPtr = 0;
+		    status = NfsStatusMap(status);
+d209 1
+d214 1
+d262 3
+a264 1
+    int status;
+d272 2
+a273 3
+	writeArgs.offset = offset;
+	writeArgs.data.data_len = *numBytesPtr;
+	writeArgs.data.data_val = buffer;
+d276 11
+a286 12
+
+	if (clnt_call(nfsPtr->nfsClnt, NFSPROC_WRITE, xdr_writeargs,
+		&writeArgs, xdr_attrstat, &attrStat, nfsTimeout)
+		    != RPC_SUCCESS) {
+	    clnt_perror(nfsPtr->nfsClnt, "NFSPROC_WRITE");
+	    *numBytesPtr = 0;
+	    status = FAILURE;
+	} else {
+	    status = attrStat.status;
+	    if (status != NFS_OK) {
+		*numBytesPtr = 0;
+		status = NfsStatusMap(status);
+d288 12
+a299 6
+		/*
+		 * It appears that NFS always write all the data, so
+		 * we leave *numBytesPtr alone.
+		 */
+		NfsCacheAttributes(fileIDPtr, &attrStat.attrstat_u.attributes);
+	     }
+@

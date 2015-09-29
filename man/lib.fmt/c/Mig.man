@@ -1,0 +1,398 @@
+
+
+
+Mig                   C Library Procedures                    Mig
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Mig - obtain or update information in the migration informa-
+     tion database.
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee  <<mmiigg..hh>>
+
+     Mig_Info *
+     MMiigg__GGeettIInnffoo(_s_p_r_i_t_e_I_D)
+
+     int
+     MMiigg__GGeettAAllllIInnffoo(_i_n_f_o_A_r_r_a_y, _n_u_m_H_o_s_t_s)
+
+     int
+     MMiigg__RReeqquueessttIIddlleeHHoossttss(_n_u_m_H_o_s_t_s, _p_r_i_o_r_i_t_y, _f_l_a_g_s, _c_a_l_l_B_a_c_k_P_t_r, _h_o_s_t_A_r_r_a_y)
+
+     int
+     MMiigg__CCoonnffiirrmmIIddllee(_s_p_r_i_t_e_I_D)
+
+     int
+     MMiigg__RReettuurrnnHHoossttss(_n_u_m_H_o_s_t_s, _h_o_s_t_A_r_r_a_y)
+
+     int
+     MMiigg__DDeelleetteeHHoosstt(_s_p_r_i_t_e_I_D)
+
+     int
+     MMiigg__EEvviicctt()
+
+     char *
+     MMiigg__GGeettPPddeevvNNaammee(_g_l_o_b_a_l)
+
+     int
+     MMiigg__GGeettIIddlleeNNooddee()
+
+     int
+     MMiigg__DDoonnee(_s_p_r_i_t_e_I_D)
+
+
+AARRGGUUMMEENNTTSS
+     int    _s_p_r_i_t_e_I_D           (in)      The  Sprite  ID  of  the
+                                         host  for which informa-
+                                         tion should be  obtained
+                                         or updated.
+
+     Mig_Info                  _i_n_f_o_A_r_r_a_y[](out)
+                                         A   buffer    to    hold
+                                         Mig_Info         entries
+                                         returned     by      the
+                                         Mig_GetAllInfo  routine.
+                                         The size of  the  buffer
+
+
+
+Sprite v.1.0         Printed:  April 5, 1990                    1
+
+
+
+
+
+
+Mig                   C Library Procedures                    Mig
+
+
+
+                                         is   specified   in  the
+                                         _n_u_m_H_o_s_t_s variable.
+
+     int    _n_u_m_H_o_s_t_s           (in)      The number  of  Mig_Info
+                                         structures  contained in
+                                         _i_n_f_o_A_r_r_a_y.    Or,    the
+                                         number      of     hosts
+                                         requested           from
+                                         MMiigg__RReeqquueessttIIddlleeHHoossttss and
+                                         the  number   of   hosts
+                                         returned              to
+                                         MMiigg__RReettuurrnnIIddllee.
+
+     int    _p_r_i_o_r_i_t_y           (in)      Priority of processes to
+                                         be   migrated   to  idle
+                                         hosts (see below).
+
+     int    _f_l_a_g_s              (in)      Flags to  be  passed  to
+                                         the   migration   daemon
+                                         (see below).
+
+     void   (*_c_a_l_l_B_a_c_k_P_t_r)()   (in)      Routine to call  if  not
+                                         enough  hosts are avail-
+                                         able   and    additional
+                                         hosts  are  later avail-
+                                         able.
+
+     int    _g_l_o_b_a_l             (in)      Whether  to  return  the
+                                         name   of   the  pseudo-
+                                         device  for  the  global
+                                         daemon  or host-specific
+                                         daemon.
+
+_________________________________________________________________
+
+DDEESSCCRRIIPPTTIIOONN
+     These functions are used to obtain (or  update)  information
+     about  hosts  on  the Sprite network.  There are routines to
+     get information about specific hosts or all the hosts on the
+     network, to select one or more idle hosts for process migra-
+     tion, to cause processes to be evicted, or to  remove  hosts
+     that are down from the list of hosts on the network.
+
+     Most of the routines interact  with  a  single  network-wide
+     daemon, known as the _g_l_o_b_a_l _d_a_e_m_o_n, to obtain information or
+     make requests.  This mmiiggdd daemon maintains state  about  all
+     hosts  on  the  network, including their load averages, idle
+     time, and availability for use with  migration.    In  addi-
+     tion,  each  host runs a per-host instance of mmiiggdd that sam-
+     ples load and evicts processes automatically when it detects
+     user input.    The MMiigg library opens a pseudo-device to com-
+     municate with the appropriate mmiiggdd daemon (global or  local)
+     depending  on  the  operation  being performed.  Also, if an
+     error occurs communicating with a daemon,  the  MMiigg  library
+
+
+
+Sprite v.1.0         Printed:  April 5, 1990                    2
+
+
+
+
+
+
+Mig                   C Library Procedures                    Mig
+
+
+
+     reestablishes communication.
+
+GGEETTTTIINNGG HHOOSSTT IINNFFOORRMMAATTIIOONN
+     The migration daemon, and the migration library, communicate
+     using  a  structure  defined  in mig.h, known  as a Mig_Info
+     structure. Each host has  a  Mig_Info  structure  associated
+     with  it.   The  structure  has  another  structure included
+     within it; the Mig_LoadVector is updated periodically by the
+     mmiiggdd  process  on  each  host.   The  rest  of the data in a
+     Mig_Info structure are established at boot-time or are main-
+     tained by the global daemon.
+
+     The global daemon maintains the state  of  each  host.   The
+     states  are  defined  in mig.h.  The most important ones are
+     MIG_HOST_DOWN, which indicates that the rest of the Mig_Info
+     structure    is    irrelevant    with   the   exception   of
+     loadVec.timestamp, which indicates when the  host  was  last
+     up;  MIG_HOST_IDLE,  indicating that a host is available for
+     migration; MIG_HOST_FULL,  which  shows  that  the  host  is
+     accepting  migration  but already has foreign processes; and
+     MIG_HOST_ACTIVE, which indicates that  a  user  is  actively
+     using  the machine or the machine's load is too high to per-
+     mit foreign processes.
+
+     The load vector includes weighted average  CPU  utilizations
+     and ready-queue lengths, as well as the time since input was
+     last received from users directly logged into  the  machine.
+     (Remote  logins  do  not  affect  idle time.)  Finally, each
+     entry indicates  whether  the  host  is  willing  to  accept
+     processes for migration.   mmiiggdd is responsible for determin-
+     ing whether migration is allowed, based on factors  such  as
+     load and idle time.
+
+     MMiigg__GGeettIInnffoo(()) returns a  pointer  to  a  Mig_Info  structure
+     based  on  the  sprite ID of a host. The structure is stati-
+     cally allocated by Mig_GetInfo,  and  the  contents  of  the
+     structure may change on subsequent calls to Mig_GetInfo.  On
+     error, a NULL pointer is returned.
+
+     MMiigg__GGeettAAllllIInnffoo(()) returns an array  of  Mig_Info  structures.
+     The  array must be allocated by the caller, and a pointer to
+     the array must be passed to MMiigg__GGeettAAllllIInnffoo(()), along with the
+     size  of the array.  The number of entries filled in infoAr-
+     ray iiss rreettuurrnneedd..  OOnn eerrrroorr,, --11 iiss rreettuurrnneedd  aanndd  tthhee  gglloobbaall
+     vvaarriiaabbllee _e_r_r_n_o iinnddiiccaatteess tthhee nnaattuurree ooff tthhee eerrrroorr..
+
+GGEETTTTIINNGG IIDDLLEE HHOOSSTTSS
+     The global daemon maintains open connections  to  both  per-
+     host  mmiiggdd  daemons  and  user processes that are using idle
+     hosts.  User processes can request idle hosts using  any  of
+     three priorities, MIG_LOW_PRIORITY, MIG_NORMAL_PRIORITY, and
+     MIG_HIGH_PRIORITY.   MIG_LOW_PRIORITY  is  for  long-running
+
+
+
+Sprite v.1.0         Printed:  April 5, 1990                    3
+
+
+
+
+
+
+Mig                   C Library Procedures                    Mig
+
+
+
+     background  processes  that  are  to be run at low execution
+     priority.  MIG_NORMAL_PRIORITY  is  for  normal,  relatively
+     short-lived  processes  such as compiles.  MIG_HIGH_PRIORITY
+     is not yet in general use.  Hosts with foreign processes  of
+     one  priority  can  still  accept  more  processes of higher
+     priority, so simulations won't interfere with compiles.
+
+     Processes communicate with the global daemon  using  ioctls,
+     and  normally,  those  streams  are not readable. The global
+     daemon makes the streams readable to indicate that a  change
+     of  state  has occurred.  The MMiigg library relies on sseelleecctt(())
+     to determine whether the global daemon has information about
+     changes.   In this way, communication with the daemon may be
+     minimized, since applications can check for new  idle  hosts
+     or evictions on hosts they were using, without ever communi-
+     cating with the daemon.
+
+     MMiigg__RReeqquueessttIIddlleeHHoossttss(()) requests one or more idle hosts  from
+     the  global  daemon.    The  number  of  hosts  available is
+     returned.  The _p_r_i_o_r_i_t_y must be  specified  as  one  of  the
+     priorities   listed   above.    The   _f_l_a_g_s   may  be  0  or
+     MIG_PROC_AGENT, which indicates that the process  requesting
+     the host will not indicate when the processes being migrated
+     are through, and instead the hosts to  which  the  processes
+     are  migrated should monitor foreign processes and note when
+     they are no longer in use for migration.    The  _c_a_l_l_B_a_c_k_P_t_r
+     may  be  NULL  or  a pointer to a void function that will be
+     invoked when additional hosts are available, if an  insuffi-
+     cient  number  of  hosts are granted by the global daemon at
+     the time of the call.  _h_o_s_t_A_r_r_a_y points to an area that  can
+     hold up to _n_u_m_H_o_s_t_s host identifiers.
+
+     MMiigg__CCoonnffiirrmmIIddllee((_h_o_s_t_I_D)) verifies that a host is still avail-
+     able.  If the host is available, MMiigg__CCoonnffiirrmmIIddllee(()) returns 1
+     (TRUE).  If the host is not available, or an  error  occurs,
+     MMiigg__CCoonnffiirrmmIIddllee(())  returns  0  (FALSE).   In  this case, the
+     caller may request a new idle host.
+
+     MMiigg__RReettuurrnnHHoossttss(()) returns one or  more  idle  hosts  to  the
+     pool.   Note:  all hosts requested by a process are returned
+     to the pool of idle hosts when the stream that connects  the
+     process  to the global daemon is closed (i.e., when the pro-
+     cess and all its children that may have inherited the stream
+     have exited).
+
+BBAACCKKWWAARRDD CCOOMMPPAATTIIBBIILLIITTYY
+     Two functions are implemented to provide a backward compati-
+     ble interface for users of the original MMiigg library.
+
+     MMiigg__GGeettIIddlleeNNooddee(()) returns the number of an idle node.  If no
+     host  is  available,  then  0  is returned.  On error, -1 is
+     returned and the global variable _e_r_r_n_o indicates the  nature
+
+
+
+Sprite v.1.0         Printed:  April 5, 1990                    4
+
+
+
+
+
+
+Mig                   C Library Procedures                    Mig
+
+
+
+     of the error.
+
+     MMiigg__DDoonnee(()) returns a single host to the pool of idle hosts.
+
+MMIISSCCEELLLLAANNEEOOUUSS
+     MMiigg__DDeelleetteeHHoosstt(()) removes a host from the database maintained
+     by  the  global  daemon.  The host must be down at the time.
+     This may be used if a host is removed from  the  network  or
+     renamed.
+
+     MMiigg__EEvviicctt(()) performs an _i_o_c_t_l  to  the  local  mmiiggdd  daemon,
+     requesting  that  it evict any foreign processes.  Normally,
+     eviction is automatic when a host becomes active after being
+     idle.   This  routine  provides the llooaaddaavvgg program with the
+     ability to request evictions at other  times  (for  example,
+     from a remote login).
+
+     MMiigg__GGeettPPddeevvNNaammee(()) is used by the migration  library  and  by
+     mmiiggdd  to  get  the name of pseudo-devices to open.  It would
+     not normally be used by other programs.
+
+DDIIAAGGNNOOSSTTIICCSS
+     Most MMiigg routines return zero if all went  well.   Otherwise
+     they  return  -1  and the _e_r_r_n_o variable contains additional
+     information about what  error  occurred.   MMiigg__GGeettIIddlleeNNooddee(())
+     and  MMiigg__RReeqquueessttIIddlleeHHoossttss(())    similarly return -1 on error,
+     but  they  return  0  if  no   idle   host   is   available.
+     MMiigg__GGeettIInnffoo(()) returns NULL on error.
+
+FFIILLEESS
+     /sprite/admin/migd.log
+          The global migration daemon error log.
+
+     /hosts/$HOST/migd.log
+          The error log used by host $HOST.
+
+     /sprite/admin/migInfo.pdev
+          The pseudo-device used to communicate with  the  global
+          daemon.
+
+     /hosts/$HOST/migInfo.pdev
+          The pseudo-device used to communicate  with  the  local
+          daemon.
+
+     /sprite/admin/migd.check
+          The file used to  store  the  most  recent  information
+          about host uptimes.
+
+KKEEYYWWOORRDDSS
+     migration, load average, idle time, pseudo-device, eviction
+
+
+
+
+
+Sprite v.1.0         Printed:  April 5, 1990                    5
+
+
+
+
+
+
+Mig                   C Library Procedures                    Mig
+
+
+
+SSEEEE AALLSSOO
+     migd, loadavg, pmake, pdev
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  April 5, 1990                    6
+
+
+

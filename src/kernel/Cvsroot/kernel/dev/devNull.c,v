@@ -1,0 +1,301 @@
+head     9.1;
+branch   ;
+access   ;
+symbols  ds3100:9.1 sun3:9.1 sprited:9.1.1 sun4nw:9.1 symm:9.1 spur:9.1 Summer89:9.0 newlib:8.0 Summer88:6.0 sbc:5.1;
+locks    ; strict;
+comment  @ * @;
+
+
+9.1
+date     90.01.05.13.16.58;  author ouster;  state Exp;
+branches 9.1.1.1;
+next     9.0;
+
+9.0
+date     89.09.12.14.57.10;  author douglis;  state Stable;
+branches ;
+next     8.1;
+
+8.1
+date     89.06.15.08.45.47;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.10.44;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.26.54;  author douglis;  state Stable;
+branches ;
+next     5.1;
+
+5.1
+date     88.05.10.14.49.27;  author brent;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.39.58;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.1.1.1
+date     92.03.17.16.57.29;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.1
+log
+@Ioctls weren't handled right for /dev/null (always used to return OK).
+@
+text
+@/* 
+ * devNull.c --
+ *
+ *	Stubs to implement /dev/null.  (For a while NullProc would do!)
+ *	These routines make sure that they drop all data headed
+ *	for the void, and that they never return any data from the void.
+ *
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devNull.c,v 8.1 89/06/15 08:45:47 brent Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include "sprite.h"
+#include "fs.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  Dev_NullRead --
+ *
+ *	Return zero bytes read and SUCCESS.
+ *
+ * Results:
+ *	A standard Sprite return status.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+Dev_NullRead(devicePtr, readPtr, replyPtr)
+    Fs_Device *devicePtr;
+    Fs_IOParam	*readPtr;	/* Read parameter block */
+    Fs_IOReply	*replyPtr;	/* Return length and signal */ 
+{
+    replyPtr->length = 0;
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  Dev_NullWrite --
+ *
+ *	Claim that the bytes have been written and return SUCCESS.
+ *
+ * Results:
+ *	A standard Sprite return status.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+Dev_NullWrite(devicePtr, writePtr, replyPtr)
+    Fs_Device *devicePtr;
+    Fs_IOParam	*writePtr;	/* Standard write parameter block */
+    Fs_IOReply	*replyPtr;	/* Return length and signal */
+{
+    replyPtr->length = writePtr->length;
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_NullIOControl --
+ *
+ *	This procedure handles IOControls for /dev/null and other
+ *	devices.  It refuses all IOControls except for a few of
+ *	the generic ones, for which it does nothing.
+ *
+ * Results:
+ *	A standard Sprite return status.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+ReturnStatus
+Dev_NullIOControl(devicePtr, ioctlPtr, replyPtr)
+    Fs_Device	        *devicePtr;
+    Fs_IOCParam		*ioctlPtr;
+    Fs_IOReply		*replyPtr;
+{
+    if ((ioctlPtr->command == IOC_GET_FLAGS)
+	    || (ioctlPtr->command == IOC_SET_FLAGS)
+	    || (ioctlPtr->command == IOC_SET_BITS)
+	    || (ioctlPtr->command == IOC_CLEAR_BITS)) {
+	return SUCCESS;
+    }
+    return GEN_NOT_IMPLEMENTED;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_NullSelect --
+ *
+ *	This procedure handles selects for /dev/null and other
+ *	devices that are always ready.
+ *
+ * Results:
+ *	The device is indicated to be readable and writable.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+ReturnStatus
+Dev_NullSelect(devicePtr, readPtr, writePtr, exceptPtr)
+    Fs_Device	*devicePtr;	/* Ignored. */
+    int	*readPtr;		/* Read bit to clear if not readable */
+    int	*writePtr;		/* Write bit to clear if not readable */
+    int	*exceptPtr;		/* Except bit to clear if not readable */
+{
+    *exceptPtr = 0;
+    return(SUCCESS);
+}
+@
+
+
+9.1.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d13 1
+a13 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/dev/devNull.c,v 9.1 90/01/05 13:16:58 ouster Exp $ SPRITE (Berkeley)";
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d13 1
+a13 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devNull.c,v 8.1 89/06/15 08:45:47 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d29 1
+a29 1
+ *	None.
+d55 1
+a55 1
+ *	None.
+d70 63
+@
+
+
+8.1
+log
+@Updated to new DEV / FS interface
+@
+text
+@d13 1
+a13 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devNull.c,v 8.0 88/11/11 18:10:44 douglis Stable Locker: brent $ SPRITE (Berkeley)";
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d13 1
+a13 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devNull.c,v 6.0 88/08/11 12:26:54 douglis Stable Locker: douglis $ SPRITE (Berkeley)";
+d38 1
+a38 1
+Dev_NullRead(devicePtr, offset, bufSize, buffer, lenPtr)
+d40 2
+a41 4
+    int offset;
+    int bufSize;
+    char *buffer;
+    int *lenPtr;
+d43 1
+a43 1
+    *lenPtr = 0;
+d64 1
+a64 1
+Dev_NullWrite(devicePtr, offset, bufSize, buffer, lenPtr)
+d66 2
+a67 4
+    int offset;
+    int bufSize;
+    char *buffer;
+    int *lenPtr;
+d69 1
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d13 1
+a13 1
+static char rcsid[] = "$Header: devNull.c,v 5.1 88/05/10 14:49:27 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+5.1
+log
+@Removed include of fsInt.h
+@
+text
+@d13 1
+a13 1
+static char rcsid[] = "$Header: devNull.c,v 5.0 87/08/11 10:39:58 sprite Exp $ SPRITE (Berkeley)";
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d13 1
+a13 1
+static char rcsid[] = "$Header: devNull.c,v 1.1 87/05/29 10:43:35 brent Exp $ SPRITE (Berkeley)";
+a18 1
+#include "fsInt.h"
+@

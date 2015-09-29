@@ -1,0 +1,148 @@
+\documentstyle[epic,eepic,eclbip]{article}
+
+
+\title{A bipartite graph macro}
+
+\author{Hideki ISOZAKI\\NTT Basic Research Labs \& Stanford Univ.}
+
+\date{Nov. 30, 1990}
+
+\begin{document}
+
+\maketitle
+
+\section{Setup}
+
+Include epic.sty and eclbip.sty\footnote{Electrical
+Communications Labs}
+in your \verb|\documentstyle|
+option as below.
+\begin{verbatim}
+\documentstyle[epic,eclbip]{article}
+\end{verbatim}
+If your printer driver accepts tpic commands,
+you should specify eepic.sty after epic.sty.
+\begin{verbatim}
+\documentstyle[epic,eepic,eclbip]{article}
+\end{verbatim}
+As eepic.sty redefines some macros defined in epic.sty,
+Do not reverse this order.
+
+\section{bipartite environment}
+
+A bipartite graph is drawn by {\it bipartite} environment.
+The {\it bipartite} environment has five arguments.
+They represent the following parameters.
+\begin{enumerate}
+\item Maximum width of labels in the left node group.
+\item Width of gap between the left node group and the right node group.
+\item Maximum width of labels in the right node group.
+\item Minimum height of vertical gaps between node labels.
+\item Width between a node (bullet) and its label.
+\end{enumerate}
+Labels in the left node group 
+should be specified by \verb|\leftnode| in this environment.
+Labels in the right node group 
+should be specified by \verb|\rightnode| in this environment.
+
+An edge between a left node and a right node can be drawn
+by \verb|\match| command.
+
+If you write
+\begin{verbatim}
+\begin{bipartite}{2cm}{1.5cm}{2cm}{3mm}{2mm}
+\leftnode{xxx}
+\leftnode{yyy}
+\leftnode{zzz}
+\rightnode{aaa}
+\rightnode{bbb}
+\rightnode{ccc}
+\match{xxx}{ccc}
+\end{bipartite}
+\end{verbatim}
+you get
+\begin{bipartite}{2cm}{1.5cm}{2cm}{3mm}{2mm}
+\leftnode{xxx}
+\leftnode{yyy}
+\leftnode{zzz}
+\rightnode{aaa}
+\rightnode{bbb}
+\rightnode{ccc}
+\match{xxx}{ccc}
+\end{bipartite}.
+
+Even if labels are long,
+you don't have to type them many times as arguments of \verb|\match|.
+You can give short names for
+\verb|\leftnode| and \verb|\rightnode| as options,
+and you can use them as arguments of \verb|\match|.
+
+If you write
+\begin{verbatim}
+\begin{bipartite}{2cm}{1.5cm}{2cm}{3mm}{2mm}
+\leftnode[x]{xxx is very long}
+\leftnode{yyy}
+\leftnode{zzz}
+\rightnode{aaa}
+\rightnode[b]{bbb is very long}
+\rightnode{ccc}
+\match{x}{ccc}
+\match{yyy}{b}
+\end{bipartite}
+\end{verbatim}
+you get
+\begin{bipartite}{2cm}{1.5cm}{2cm}{3mm}{2mm}
+\leftnode[x]{xxx is very long} 
+\leftnode{yyy}
+\leftnode{zzz}
+\rightnode{aaa}
+\rightnode[b]{bbb is very long}
+\rightnode{ccc}
+\match{x}{ccc}
+\match{yyy}{b}
+\end{bipartite}.
+
+
+\section{Line attribute}
+You can draw not only solid lines but also
+dotted lines and dash lines.
+epic.sty and eepic.sty define several commands for them.
+If you want to use
+\begin{verbatim}
+\dashline[65]{3}(x1,y1)(x2,y2)
+\end{verbatim}
+to draw lines, use \verb|\brush| command
+before corresponding \verb|\match| command.
+\begin{verbatim}
+\brush{\dashline[65]{3}}
+\end{verbatim}
+
+If you write
+\begin{verbatim}
+\begin{bipartite}{2cm}{1.5cm}{2cm}{3mm}{2mm}
+\leftnode{xxx}
+\leftnode{yyy}
+\leftnode{zzz}
+\rightnode{aaa}
+\rightnode{bbb}
+\rightnode{ccc}
+\match{xxx}{ccc}
+\brush{\dottedline{3}}
+\match{zzz}{bbb}
+\end{bipartite}
+\end{verbatim}
+you get
+\begin{bipartite}{2cm}{1.5cm}{2cm}{3mm}{2mm}
+\leftnode{xxx}
+\leftnode{yyy}
+\leftnode{zzz}
+\rightnode{aaa}
+\rightnode{bbb}
+\rightnode{ccc}
+\match{xxx}{ccc}
+\brush{\dottedline{3}}
+\match{zzz}{bbb}
+\end{bipartite}.
+
+\end{document}
+

@@ -1,0 +1,181 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  ds3100:1.6 sun3:1.6 sun4nw:1.6 symm:1.6 spur:1.6;
+locks    ; strict;
+comment  @ * @;
+
+
+1.6
+date     90.11.09.13.15.54;  author eklee;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     90.10.12.14.01.21;  author eklee;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.09.19.14.54.16;  author eklee;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.09.05.12.36.16;  author eklee;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.06.22.13.39.03;  author eklee;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.05.15.18.52.25;  author eklee;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@RaidDisk module.
+@
+
+
+1.6
+log
+@Moved semaphore routies to semaphore.c.
+@
+text
+@/*
+ * devRaidDisk.h --
+ *
+ *	Declarations of ...
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/raid/RCS/devRaidDisk.h,v 1.5 90/10/12 14:01:21 eklee Exp Locker: eklee $ SPRITE (Berkeley)
+ */
+
+#ifndef _DEVRAIDDISK
+#define _DEVRAIDDISK
+
+#include "devRaid.h"
+#include "semaphore.h"
+
+/*
+ * Data structure for each disk used by raid device.
+ *
+ * RAID_DISK_INVALID	==> could not attach device
+ * RAID_DISK_READY	==> device operational
+ * RAID_DISK_FAILED	==> device considered failed (a write error occured)
+ * RAID_DISK_REPLACED	==> the device is nolonger a part of the array
+ * RAID_DISK_RECONSTRUCT==> the device is currently being reonstructed
+ *				(IO's to the reconstructed part of the device
+ *				 are allowed)
+ */
+typedef enum {
+    RAID_DISK_INVALID, RAID_DISK_READY, RAID_DISK_FAILED, RAID_DISK_REPLACED,
+} RaidDiskState;
+
+typedef struct RaidDisk {
+    Sema	 	  lock;
+    RaidDiskState	  state;
+    unsigned		  numValidSector; /* Used during reconstruction. */
+    int			  row;
+    int			  col;
+    int			  version;
+    Fs_Device	          device;
+    DevBlockDeviceHandle *handlePtr;
+} RaidDisk;
+
+/*
+ * Is specified range of disk sectors "valid" on specified disk? 
+ */
+#define IsValid(diskPtr, startSector, numSector) 	\
+    ((startSector) + (numSector) <= (diskPtr)->numValidSector)
+
+#endif _DEVRAIDDISK
+@
+
+
+1.5
+log
+@Added Raid_ prefix to external names and cleaned up warning messages.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/raid/RCS/devRaidDisk.h,v 1.4 90/09/19 14:54:16 eklee Exp Locker: eklee $ SPRITE (Berkeley)
+d22 1
+a22 1
+#include "devRaidLock.h"
+@
+
+
+1.4
+log
+@Added prototypes.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/raid/RCS/devRaidDisk.h,v 1.3 90/09/05 12:36:16 eklee Exp $ SPRITE (Berkeley)
+@
+
+
+1.3
+log
+@Added semaphore based synchonization (used to be spin locks).
+Deleted useCount field (was never used).
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/raid/RCS/devRaidDisk.h,v 1.2 90/06/22 13:39:03 eklee Exp Locker: eklee $ SPRITE (Berkeley)
+@
+
+
+1.2
+log
+@Added support for logging RAID state changes.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/raid/RCS/devRaidDisk.h,v 1.1 90/05/15 18:52:25 eklee Exp Locker: eklee $ SPRITE (Berkeley)
+d21 3
+a36 1
+    RAID_DISK_RECONSTRUCT
+d40 1
+a40 1
+    Sync_Semaphore	  mutex;
+a45 1
+    int			  useCount;
+a54 5
+
+extern RaidDisk *MakeRaidDisk();
+extern void ReportRaidDiskAttachError();
+extern void FailRaidDisk();
+extern void ReplaceRaidDisk();
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+ * $Header: /user4/eklee/raidlib/RCS/devRaidDisk.h,v 1.1 90/03/05 11:39:03 eklee Exp Locker: eklee $ SPRITE (Berkeley)
+d41 2
+d55 1
+@

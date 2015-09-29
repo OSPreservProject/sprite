@@ -1,0 +1,156 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     90.01.11.15.10.03;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.10.03.17.30.15;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@cleaned up man page, added new options
+@
+text
+@'\" Copyright 1989 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /a/newcmds/mkscsidev/RCS/mkscsidev.man,v 1.1 89/10/03 17:30:15 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS MKSCSIDEV cmds
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+mkscsidev \- Create scsi devices.
+.SH SYNOPSIS
+\fBmkscsidev\fR [\fIoptions\fR] \fIdeviceName\fR
+.SH OPTIONS
+.IP "\fB\-server \fIserverID\fR" 15
+\fIServerID\fR is the Sprite ID of the server for the device.
+The default is to set up the device to use the local host.
+
+.IP "\fB\-hbaType \fIhbaType\fR" 15
+\fIHbaType\fR is the numeric identifier for the type of HBA associated
+with the device. The default is 0. 
+The following are valid hba types: SCSI3 = 0; DecStation 3100 = 0; SCSI0 = 1;
+JAGUAR = 2.
+
+.IP "\fB\-devType \fIdeviceType\fR" 15
+\fIDevType\fR is the numeric identifier for the type of device.
+The default is 4 (SCSI disk).
+
+.IP "\fB\-hba \fIhba\fR" 15
+\fIHba\fR is the id of the hba controller that the scsi device is connected to.
+The default is 0.
+
+.IP "\fB\-target \fItarget\fR" 15
+\fITarget\fR is the scsi target id of the scsi device.
+The default is 0.
+
+.IP "\fB\-lun \fIlun\fR" 15
+\fILun\fR is the scsi logical unit number of the scsi device.
+The default is 0.
+
+.IP "\fB\-disk\fR" 15
+The \fB\-disk\fR option is used to create all the partitions for a scsi
+disk.  In this case the \fIdeviceName\fR is treated as a prefix, and
+8 devices are made by appending the letters 'a' through 'h' to the prefix.
+
+.IP "\fB\-rawDisk\fR" 15
+The \fB\-rawDisk\fR option is used to create all the partitions for a raw scsi
+disk.  
+A raw disk is accessed without referencing the disk label.
+In this case the \fIdeviceName\fR is treated as a prefix, and
+8 devices are made by appending the letters 'a' through 'h' to the prefix.
+.IP "\fB\-tape\fR" 15
+The \fB\-tape\fR option is used to create a device file for a SCSI tape.
+.IP "\fB\-rawScsi\fR" 15
+The \fB\-rawScsi\fR option is used to create a device file for a raw 
+SCSI device.
+.IP "\fB\-specific \fIvalue\fR" 15
+4 bits of the device unit number are device specific. 
+The \fB\-specific\fR option can be used to set those bits.
+option.
+.IP "\fB\-help\fR" 15
+Print a summary of the command-line options.
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBMkscsidev\fR is used to create SCSI devices.
+It is a user-friendly front end for the \fBfsmakedev\fR
+program.
+The \fB\-disk\fR option is probably the most useful. 
+It treats the \fIdeviceName\fR as a prefix and creates devices for all
+partitions of the disk.
+.SH EXAMPLES
+\fBmkscsidev \-hba 2 \-target 1 \-disk /dev/rsd21\fR creates the devices:
+.br
+/dev/rsd21a, /dev/rsd21b, /dev/rsd21c, /dev/rsd21d, /dev/rsd21e, /dev/rsd21f,
+/dev/rsd21g, and /dev/rsd21h,
+.br
+using the following calls to \fBfsmakedev\fR:
+.br
+fsmakedev -d 4 -u 2064 /dev/rsd21a
+.br
+fsmakedev -d 4 -u 2065 /dev/rsd21b
+.br
+fsmakedev -d 4 -u 2066 /dev/rsd21c
+.br
+fsmakedev -d 4 -u 2067 /dev/rsd21d
+.br
+fsmakedev -d 4 -u 2068 /dev/rsd21e
+.br
+fsmakedev -d 4 -u 2069 /dev/rsd21f
+.br
+fsmakedev -d 4 -u 2070 /dev/rsd21g
+.br
+fsmakedev -d 4 -u 2071 /dev/rsd21h
+.sp
+\fBmkscsidev \-server 10 \-devType 5 \-lun 1 \-specific 10 /dev/foo\fR produces the device /dev/foo using the following call to \fBfsmakedev\fR:
+.br
+fsmakedev -s 10 -d 5 -u 138 /dev/foo
+.SH KEYWORDS
+scsi, disk, partitions, fsmakedev, device
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d9 1
+a9 1
+'\" $Header: /sprite/lib/forms/RCS/cmd.man,v 1.1 89/02/23 13:08:24 ouster Exp $ SPRITE (Berkeley)
+d26 3
+a28 1
+with the device. The default is 0.
+a49 1
+The \fB\-disk\fR option cannot be used with the \fB\-specific\fR option.
+d51 11
+d65 1
+a65 1
+The \fB\-specific\fR option cannot be used with the \fB\-disk\fR option.
+@

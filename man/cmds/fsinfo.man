@@ -1,0 +1,48 @@
+' $Header: /sprite/src/cmds/fsinfo/RCS/fsinfo.man,v 1.3 92/02/06 12:08:04 voelker Exp Locker: voelker $ 
+.so \*(]ltmac.sprite
+.HS FSINFO cmds
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+fsinfo \- prints file system info found on disk partitions
+.SH SYNOPSIS
+\fBfsinfo\fR
+[\fI-verbose\fR]
+\fIdevice\fR
+[\fIdevice ...\fR]
+.SH OPTIONS
+.IP \fB\-verbose\fR 15
+Allow fsinfo to complain.
+.IP "\fIdevice\fR" 15
+The device specifying the disk partition, e.g., /dev/rsd00a.  
+.IP "\fB\-help\fR" 15
+Print a summary of the command-line options and exits.
+.BE
+
+.SH DESCRIPTION
+.PP
+fsinfo tries to read partition and file system information from the
+devices specified on the command line.  It first determines the 
+type of the file system, if any, found on the device.  If a file system
+is found, fsinfo reports the type of file system,
+the last domain prefix that the device was mounted as, the domain
+number of the file system, the Sprite ID of the machine it was
+last mounted on, and the start cylinder and the number of cylinders
+of the partition on which the file system resides.
+.PP
+Since disk partitions can overlap, fsinfo may find the same file system
+on two different devices even though the file system was created on only one.
+If the user sets the \fI\-verbose\fR option, fsinfo reports an error
+if a file system is found on a different partition than the one it was
+created on.  
+If no file system is found on a device, a message is printed to that
+effect.  Note also that fsinfo prints an error message if the device
+specifies the entire disk, e.g., /dev/rsd00, since file systems are
+not created on disks, but rather on partitions.
+.PP
+
+.SH SEE ALSO
+fsmake, mklfs, labeldisk
+
+.SH KEYWORDS
+disk, partition, filesystem

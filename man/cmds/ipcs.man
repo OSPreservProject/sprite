@@ -1,0 +1,24 @@
+.\" Copyright (c) 1990 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH IPCS 1 "April 25, 1990"
+.UC 4
+.SH NAME
+ipcs, ipcrm \- report status of System V semaphores.
+.SH SYNOPSIS
+.B ipcs
+[
+.I key
+]
+.SH DESCRIPTION
+.B ipcs
+prints information about System V semaphores in the
+system.  It will delete a semaphore if the key is given as an argument.
+This program is a simplified version of the System V
+.B ipcs
+and
+.B ipcrm
+programs.
+.SH "SEE ALSO"
+shmctl(2), shmop(2), shmget(2)

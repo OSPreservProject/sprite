@@ -1,0 +1,20 @@
+Rpc Client Calls
+echo                137
+get time              1
+prefix                6
+open              13202
+read               3952
+write              1709
+close              8697
+remove              723
+mkdir               105
+rmdir               105
+get attrID         6871
+set attrID          302
+get attr           4168
+set attr              1
+dev open             10
+select               39
+ioctl               704
+cnsst rply          454
+domain info           7

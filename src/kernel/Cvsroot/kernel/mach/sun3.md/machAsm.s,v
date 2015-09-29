@@ -1,0 +1,1255 @@
+head     9.1;
+branch   ;
+access   ;
+symbols  ds3100:9.1 sun3:9.1 sun4nw:9.1 symm:9.1 spur:9.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @# @;
+
+
+9.1
+date     91.03.29.17.53.38;  author shirriff;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.51.31;  author douglis;  state Stable;
+branches ;
+next     8.7;
+
+8.7
+date     89.09.11.23.43.27;  author rab;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.07.20.07.06.46;  author rab;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.07.09.04.20.13;  author rab;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.06.16.13.06.15;  author rab;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.05.24.02.03.44;  author rab;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.05.23.08.43.44;  author mendel;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.18.11.22.33;  author rab;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.04.00;  author douglis;  state Stable;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.24.17.51.40;  author nelson;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.09.29;  author brent;  state Stable;
+branches ;
+next     5.7;
+
+5.7
+date     88.06.25.18.43.17;  author ouster;  state Exp;
+branches ;
+next     5.6;
+
+5.6
+date     88.05.05.17.54.35;  author nelson;  state Exp;
+branches ;
+next     5.5;
+
+5.5
+date     88.05.04.16.39.59;  author nelson;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     88.05.04.15.53.01;  author nelson;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     88.04.13.11.25.03;  author ouster;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     88.03.18.14.54.05;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.12.11.14.17.04;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.31.19.03.13;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.1
+log
+@Added Mach_Return2.
+@
+text
+@|* machAsm.s --
+|*
+|*     Contains misc. assembler routines for the SUN.
+|*
+|* Copyright (C) 1985 Regents of the University of California
+|* All rights reserved.
+|*
+|* rcs = $Header: /sprite/src/kernel/mach/sun3.md/RCS/machAsm.s,v 9.0 89/09/12 14:51:31 douglis Stable Locker: shirriff $ SPRITE (Berkeley)
+|*
+
+#include "machConst.h"
+#include "machAsmDefs.h"
+
+|*----------------------------------------------------------------------------
+|*
+|* MachRunUserProc -
+|*
+|*	void	MachRunUserProc()
+|*
+|* Results:
+|*     	Restore registers and return to user space.  Our caller has set
+|*	up our exception stack for us.
+|*
+|* Side effects:
+|*	Registers restored.
+|*
+|*----------------------------------------------------------------------------
+
+    .text
+    .globl	_MachRunUserProc
+_MachRunUserProc:
+    RestoreUserFpuState()
+    RestoreUserRegs()
+    rte							| Return to user space
+
+|*---------------------------------------------------------------------
+|*
+|* Mach_GetEtherAddress -
+|*
+|*	Copies the ethernet address from the id prom into the
+|*	argument structure.  The prom is mapped funny, so the
+|*	loop increments the pointer into the prom as specified in
+|*	the sun-2 architecture manual, section 4.8
+|*
+|*	Mach_GetEtherAddress(etherAddressPtr)
+|*	    EtherAddress *etherAddressPtr;	destination of copy
+|*
+|* Results:
+|*     The argument struct has the prom's ethernet address.
+|*
+|* Side effects:
+|*	None.
+|*
+|*---------------------------------------------------------------------
+
+    .text
+    .globl	_Mach_GetEtherAddress
+_Mach_GetEtherAddress:
+    movl	sp@@(4),a0		| Get pointer to target ethernet address
+    movl	#(6 - 1),d0		| loop counter
+    movl	#VMMACH_ETHER_ADDR,a1	| The Prom address of the ethernet addr
+etherloop:
+    movsb	a1@@,d1			| Copy one byte of the ethernet address
+    movb	d1,a0@@			|   from prom to the target address.
+    addql	#1,a0			| bump target pointer
+    addl	#VMMACH_IDPROM_INC,a1	| bump prom address, as per sec 4.8
+    dbra        d0, etherloop		| loop 6 times
+    rts					| Return
+
+|*---------------------------------------------------------------------
+|*
+|* Mach_ContextSwitch -
+|*
+|*	Mach_ContextSwitch(fromProcPtr, toProcPtr)
+|*
+|*	Switch the thread of execution to a new processes.  This routine
+|*	is passed a pointer to the process to switch from and a pointer to
+|*	the process to switch to.  It goes through the following steps:
+|*
+|*	1) Change to the new context.
+|*	2) Push the status register and the
+|*	   user stack pointer onto the stack.
+|*	3) Push the source and destination function codes onto the stack.
+|*	4) Push a magic number onto the stack to see if it gets trashed.
+|*	5) Save all of the registers d0-d7, a0-a7 for the process being
+|*	   switched from.
+|*	6) Restore general registers and the status register of the process 
+|*	   being switched to.
+|*	7) Verify the magic number.
+|*	8) Return in the new process.
+|*	
+|*	The kernel stack is changed implicitly when the registers are restored.
+|*
+|* Results:
+|*     None.
+|*
+|* Side effects:
+|*	The kernel stack, all general purpose registers and the status register
+|*	are all changed.
+|*
+|*---------------------------------------------------------------------
+
+    .globl _Mach_ContextSwitch
+_Mach_ContextSwitch:
+|*
+|* Setup up the hardware context register for the destination process.
+|* VmMach_SetupContext(toProcPtr) returns the context register value.
+|*
+    movl	sp@@(8), sp@@-
+    jsr		_VmMach_SetupContext
+    addql	#4, sp
+#ifdef sun3
+    movsb	d0, VMMACH_CONTEXT_OFF
+#else 
+    movsb	d0,VMMACH_USER_CONTEXT_OFF:w 
+    movsb	d0,VMMACH_KERN_CONTEXT_OFF:w
+#endif
+    movl	sp, a1			| Save the stack pointer value in a1
+    movw	sr, sp@@-		| Save the current value of the status
+					|     register on the stack.
+    movw	#MACH_SR_HIGHPRIO, sr	| Lock out interrupts.
+    movl	usp, a0  		| Push the user stack pointer onto 
+    movl	a0, sp@@-		|     the stack.
+    movl	#MAGIC, sp@@-		| Put the magic number on the stack.
+
+    movl	a1@@(4), a0		| d0 = fromProcPtr
+    addl	_machStatePtrOffset, a0	| a0 = pointer to mach struct
+    movl	a0@@, a0
+
+#if 0
+                                        | Save the floating point state.
+    tstl        _mach68881Present
+    beq         1f
+    fsave       a0@@(MACH_SWITCH_FP_STATE_OFFSET)
+    tstb        a0@@(MACH_SWITCH_FP_STATE_OFFSET)
+    beq         1f
+    fmovem      #0xff, a0@@(MACH_SWITCH_FP_REGS_OFFSET)
+    fmovem      fpc/fps/fpi, a0@@(MACH_SWITCH_FP_CTRL_REGS_OFFSET)
+    frestore    _mach68881NullState
+1:
+#endif
+					| Save registers for process being
+					|     switched from
+    moveml	#0xffff, a0@@(MACH_SWITCH_REGS_OFFSET)
+
+    movl	a1@@(8), a0		| a0 = toProcPtr
+    addl	_machStatePtrOffset, a0 | a0 = pointer to mach struct
+    movl	a0@@, a0
+
+#if 0
+                                        | Restore the floating point state.
+        tstl        _mach68881Present
+	beq         2f
+	tstb        a0@@(MACH_SWITCH_FP_STATE_OFFSET)
+	beq         1f
+	fmovem      a0@@(MACH_SWITCH_FP_REGS_OFFSET), #0xff
+	fmovem      a0@@(MACH_SWITCH_FP_CTRL_REGS_OFFSET), fpc/fps/fpi
+1:
+	frestore    a0@@(MACH_SWITCH_FP_STATE_OFFSET)
+2:
+#endif
+					| Restore registers for process being
+					|     switched to
+    moveml	a0@@(MACH_SWITCH_REGS_OFFSET), #0xffff
+
+    movl	#MAGIC, d0		| Check against the magic number
+    cmpl	sp@@, d0			|
+    beq		3f			|
+    trap	#15			|
+
+3:
+    addql	#4, sp			| Pop the magic number.
+    movl	sp@@+, a0		| Restore the user stack pointer.
+    movl	a0, usp
+    movw	sp@@+, sr		| Restore the status register.
+
+|*
+|* Get a pointer to the current machine state struct.
+|*
+    .globl	_proc_RunningProcesses, _machCurStatePtr, _machStatePtrOffset
+    movl	_proc_RunningProcesses, a0
+    movl	a0@@, a0
+    addl	_machStatePtrOffset, a0
+    movl	a0@@, a0
+    movl	a0, _machCurStatePtr
+|*
+|* Set the end of the kernel stack marker for kdbx.
+|*
+    .globl	_dbgMaxStackAddr
+    movl	a0@@(MACH_KERN_STACK_START_OFFSET), d0
+    addl	#MACH_KERN_STACK_SIZE, d0
+    movl	d0, _dbgMaxStackAddr
+
+    rts
+
+|*---------------------------------------------------------------------
+|*
+|* Mach_TestAndSet --
+|*
+|*	int Mach_TestAndSet(intPtr)
+|*	    int *intPtr;
+|*
+|*     	Test and set an operand.
+|*
+|* Results:
+|*     	Returns 0 if *intPtr was zero and 1 if *intPtr was non-zero.  Also
+|*	in all cases *intPtr is set to a non-zero value.
+|*
+|* Side effects:
+|*     None.
+|*
+|*---------------------------------------------------------------------
+
+    .globl _Mach_TestAndSet
+_Mach_TestAndSet:
+    clrl	d0		| Set the return register to 0.
+    movl	sp@@(4), a0	| Move the address of the operand to a0.
+    tas		a0@@		| Test and set the operand.
+    beq		1f		| If it wasn't set then just return 0.
+    moveq	#1, d0		| Otherwise return 1.
+1:
+    rts
+
+|*---------------------------------------------------------------------
+|*
+|* Mach_GetMachineType -
+|*
+|*	Returns the type of machine that is stored in the id prom.
+|*
+|*	int	Mach_GetMachineType()
+|*
+|* Results:
+|*     The type of machine (1 or 2).
+|*
+|* Side effects:
+|*	None.
+|*
+|*---------------------------------------------------------------------
+
+    .text
+    .globl	_Mach_GetMachineType
+_Mach_GetMachineType:
+    clrl    d0			        | Clear the return register
+    movl    #VMMACH_MACH_TYPE_ADDR, a0  | Get the address of the machine type
+					|     in a register.
+    movsb   a0@@,d0			| Store the machine type in the return
+					|     register.
+    rts
+
+
+|*
+|* ----------------------------------------------------------------------
+|*
+|* MachMonNmiNop --
+|*
+|*       The code which is executed when we redirect non-maskable
+|*       interrupts on the Sun-2.  When the AMD chip timer #1 interrupts,
+|*       it causes a level 7 interrupt which is nonmaskable. The timer
+|*       output has to be cleared to clear the interrupt condition. The
+|*       timer is setup to repeatedly interrupt every 25ms.
+|*
+|*	NOTE: This is code taken from locore.s.
+|*
+|* Results:
+|*	None.
+|*
+|* Side effects:
+|*	The AMD chip's timer #1 output is cleared.
+|*
+|* ----------------------------------------------------------------------
+|*
+
+#define	AMD9513_CSR	0xee0002
+
+    .globl _MachMonNmiNop
+_MachMonNmiNop:
+#ifdef sun2
+        moveml  #0xC0C0,sp@@-            | Save d0,d1,a0,a1
+        movw    #0xFFE1, AMD9513_CSR	| Clear the output of timer #1 
+					| on the AMD timer chip to clear
+					| the current interrupt.
+| 
+| Move the upper half of the status register to the leds.
+|
+        movb    sp@@(16),d0		| Move the upper half of the sr to d0
+        eorb    #0xFF,d0		| Exclusive or the bits.
+        movsb   d0,0xB                  | Move it to the leds.
+	moveml  sp@@+,#0x0303            | restore regs
+#endif /* sun2 */
+        rte
+
+
+|*
+|* ----------------------------------------------------------------------
+|*
+|* Mach_MonTrap --
+|*
+|*	Trap to the monitor.  This involves dummying up a trap stack for the
+|*	monitor, allowing non-maskable interrupts and then jumping to the
+|*	monitor trap routine.  When it returns, non-maskable interrupts are
+|*	enabled and we return.
+|*
+|* Results:
+|*	None.
+|*
+|* Side effects:
+|*	None.
+|*
+|* ----------------------------------------------------------------------
+|*
+
+	.globl	_Mach_MonTrap
+_Mach_MonTrap:
+	jsr	_Mach_MonStartNmi	| Restart non-maskable interrupts.
+	movl	sp@@(4), a0		| Address to trap to.
+	clrw	sp@@-			| Put on a dummy vector offset register.
+	movl	#1f, sp@@-		| Put the return address onto the stack.
+	movw	sr, sp@@-		| Push the current status register.
+	jra	a0@@			| Trap
+1:	jsr	_Mach_MonStopNmi	| Stop non-maskable interrupts.
+	rts
+
+|*
+|* ----------------------------------------------------------------------
+|*
+|* MachSetVBR --
+|*
+|*	Set the value of the vector base register to that value that is 
+|*	passed in on the stack.
+|*
+|*	MachSetVBR(vectorBaseAddr)
+|*	    Address	vectorBaseAddr;
+|*	
+|* Results:
+|*	None.
+|*
+|* Side effects:
+|*	Vector base register is changed.
+|*
+|* ----------------------------------------------------------------------
+|*
+
+	.globl	_MachSetVBR
+_MachSetVBR:
+	movl	sp@@(4),d0		| Get vector base address.
+	movc	d0, vbr			| Load vector base register.
+	rts	
+
+|*
+|* ----------------------------------------------------------------------
+|*
+|* MachGetVBR --
+|*
+|*	Get the value of the vector base register.
+|*
+|*	int	MachGetVBR()
+|*	
+|* Results:
+|*	The value of the vector base register.
+|*
+|* Side effects:
+|*	None.
+|*
+|* ----------------------------------------------------------------------
+|*
+
+	.globl	_MachGetVBR
+_MachGetVBR:
+	movc	vbr, d0			| Get vector base register.
+	rts
+
+|*
+|* ----------------------------------------------------------------------
+|*
+|* Mach_GetStackPointer --
+|*
+|*	Return the value of the user's stack pointer.
+|*
+|* Results:
+|*	Returns the user stack pointer value.
+|*
+|* Side effects:
+|*	None.
+|*
+|* ----------------------------------------------------------------------
+|*
+	.globl _Mach_GetStackPointer
+_Mach_GetStackPointer:
+	movc usp, d0
+	rts
+/*
+ * Routines between MachProbeStart() and MachProbeEnd() will return
+ * FAILURE if a bus error occurs in them.
+ */
+	.even
+	.globl _MachProbeStart
+_MachProbeStart:
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_Probe --
+ *
+ *	Copy a block of memory from one virtual address to another handling
+ *	bus errors that may occur. This	routine is intended to be used to 
+ *	probe for memory mapped devices.
+ *
+ * NOTE: This trap handlers force this routine to return SYS_NO_ACCESS if an
+ *	 bus error occurs.
+ *
+ * Calling sequences:
+ *
+ * ReturnStatus
+ * Mach_Probe(size, srcAddress, destAddress)
+ *    int		size;	 Size in bytes of the read to do. Must
+ *				  1, 2, 4, or 8  
+ *  Address	srcAddress;	 Address to read from. 
+ *  Address	destAddress;	 Address to store the read value. 
+ *	
+ *
+ * Results:
+ *	SUCCESS if the copy worked and  SYS_NO_ACCESS otherwise
+ *
+ * Side effects:
+ *	None.
+ *----------------------------------------------------------------------
+ */
+	.globl _Mach_Probe
+_Mach_Probe:
+	/*
+	 * Move arguments into registers d0 gets size, a1 gets src address
+	 * and a0 gets destAddress.
+	 */
+	movel sp@@(12),a0
+	movel sp@@(8), a1
+	movel sp@@(4),d0
+	/*
+	 * Index based on the size argument to the correct moveb, movew, 
+	 * movel or (simulated moved) instruction. Values other than 1,2,4, or
+	 * 8 
+	 */
+	subql #1,d0
+	moveq #7,d1
+	cmpl d1,d0
+	jhi bad
+	asll #1,d0
+1:
+	movew pc@@(2f-1b-2:b,d0:l),d1
+	clrl d0
+	jmp pc@@(2,d1:w)
+2:
+	.word oneByte-2b
+	.word twoByte-2b
+	.word bad-2b
+	.word fourByte-2b
+	.word bad-2b
+	.word bad-2b
+	.word bad-2b
+	.word eightByte-2b
+oneByte:
+	moveb a1@@,a0@@
+	rts
+twoByte:
+	movew a1@@,a0@@
+	rts
+fourByte:
+	movel a1@@,a0@@
+	rts
+eightByte:
+	movel a1@@,a0@@
+	movel a1@@(4),a0@@(4)
+	rts
+bad:
+	moveq #1,d0
+	rts
+	.globl _MachProbeEnd
+	.even
+_MachProbeEnd:
+|*----------------------------------------------------------------------------
+|*
+|* Mach_Return2 -
+|*
+|*	void	MachReturn2(int val)
+|*
+|* Results:
+|*     	Sets the second return value to val.  This is used for Unix
+|*	compatibility for system calls that return two values.
+|*
+|* Side effects:
+|*	d1 <- val
+|*
+|*----------------------------------------------------------------------------
+
+    .text
+    .globl	_Mach_Return2
+_Mach_Return2:
+    movl	sp@@(4),d1
+    rts
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d8 1
+a8 1
+|* rcs = $Header: /sprite/src/kernel/mach/sun3.md/RCS/machAsm.s,v 8.7 89/09/11 23:43:27 rab Exp Locker: douglis $ SPRITE (Berkeley)
+d479 20
+@
+
+
+8.7
+log
+@Changes to fix floating point migration.
+@
+text
+@d8 1
+a8 1
+|* rcs = $Header: /sprite/src/kernel/mach/sun3.md/RCS/machAsm.s,v 8.6 89/07/20 07:06:46 rab Exp Locker: rab $ SPRITE (Berkeley)
+@
+
+
+8.6
+log
+@Fixed support for mc68881
+@
+text
+@d8 1
+a8 1
+|* rcs = $Header: /sprite/src/kernel/mach/sun3.md/RCS/machAsm.s,v 8.5 89/07/09 04:20:13 rab Exp $ SPRITE (Berkeley)
+d130 1
+a130 1
+#ifdef sun3
+d132 1
+a132 1
+    tstw        fpu_present
+d139 1
+d150 1
+a150 1
+#ifdef sun3
+d152 1
+a152 1
+        tstw        fpu_present
+a153 1
+	frestore    a0@@(MACH_SWITCH_FP_STATE_OFFSET)
+d155 1
+a155 1
+	beq         2f
+d158 2
+@
+
+
+8.5
+log
+@*** empty log message ***
+@
+text
+@d8 1
+a8 1
+|* rcs = $Header: /sprite/src/kernel/mach/sun3.md/RCS/machAsm.s,v 8.4 89/06/16 13:06:15 rab Exp Locker: rab $ SPRITE (Berkeley)
+d32 2
+a33 5
+    movl	_machCurStatePtr, a0			| a0 = ptr to user 
+							|      state struct
+    movl	a0@@(MACH_USER_SP_OFFSET), a1		| Restore user stack
+    movc	a1, usp					|      pointer
+    moveml	a0@@(MACH_TRAP_REGS_OFFSET), #0xffff	| Restore all regs
+d130 1
+d132 9
+a140 3
+    SAVE_FP_STATE(MACH_SWITCH_FP_STATE_OFFSET, \
+	MACH_SWITCH_FP_REGS_OFFSET, MACH_SWITCH_FP_CTRL_REGS_OFFSET)
+
+d149 1
+d151 9
+a159 3
+    RESTORE_FP_STATE(MACH_SWITCH_FP_STATE_OFFSET, \
+	MACH_SWITCH_FP_REGS_OFFSET, MACH_SWITCH_FP_CTRL_REGS_OFFSET)
+
+@
+
+
+8.4
+log
+@*** empty log message ***
+@
+text
+@d8 1
+a8 1
+|* rcs = $Header: /sprite/src/kernel/mach/sun3.md/RCS/machAsm.s,v 8.3 89/05/24 02:03:44 rab Exp $ SPRITE (Berkeley)
+d63 1
+a63 1
+    movl	#6,d0			| loop counter
+d70 1
+a70 3
+    subl	#1,d0			| decrement loop counter
+    bne		etherloop		| loop 6 times
+
+d129 2
+a130 3
+    movl	a1@@(4), d0		| d0 = fromProcPtr
+    addl	_machStatePtrOffset, d0 
+    movl	d0, a0			| a0 = pointer to mach struct
+d141 2
+a142 3
+    movl	a1@@(8), d0		| d0 = toProcPtr
+    addl	_machStatePtrOffset, d0 
+    movl	d0, a0			| a0 = pointer to mach struct
+d169 2
+a170 3
+    movl	a0@@, d0
+    addl	_machStatePtrOffset, d0
+    movl	d0, a0
+a203 1
+
+d206 1
+a206 3
+
+    beq		1$		| If it wasn't set then just return 0.
+
+d208 2
+a210 2
+1$: rts
+
+d230 2
+a231 2
+    clrl	d0			| Clear the return register
+    movl	#VMMACH_MACH_TYPE_ADDR, a0 | Get the address of the machine type
+d233 1
+a233 1
+    movsb	a0@@,d0			| Store the machine type in the return
+d264 1
+a265 2
+
+#ifdef sun2
+d275 1
+a275 1
+
+a276 1
+        moveml  sp@@+,#0x0303            | restore regs
+d304 1
+a304 1
+	movl	#1$, sp@@-		| Put the return address onto the stack.
+d307 1
+a307 1
+1$:	jsr	_Mach_MonStopNmi	| Stop non-maskable interrupts.
+d434 2
+a435 2
+1$:
+	movew pc@@(2$-1$-2:b,d0:l),d1
+d438 9
+a446 9
+2$:
+	.word oneByte-2$
+	.word twoByte-2$
+	.word bad-2$
+	.word fourByte-2$
+	.word bad-2$
+	.word bad-2$
+	.word bad-2$
+	.word eightByte-2$
+@
+
+
+8.3
+log
+@Changes to support floating point.
+@
+text
+@d8 1
+a8 1
+|* rcs = $Header: /sprite/src/kernel/mach/sun3.md/RCS/machAsm.s,v 8.2 89/05/23 08:43:44 mendel Exp Locker: rab $ SPRITE (Berkeley)
+d136 4
+a139 15
+#ifdef sun3
+    tstw        fpu_present             | See if the fpu is installed.
+    beq         1f                      |
+                                        | Save the internal state of the fpu.
+    fsave       a0@@(MACH_FP_STATE_OFFSET)
+	                                | If the state is null the registers
+					|  don't need to be saved.
+    tstb        a0@@(MACH_FP_STATE_OFFSET)
+    beq         1f
+                                        | Save the floating point registers
+    fmovem      #0xff, a0@@(MACH_SWITCH_FP_REGS_OFFSET)
+	                                | Save the fpu control registers
+    fmovem      fpc/fps/fpi, a0@@(MACH_SWITCH_FP_CTRL_REGS_OFFSET)
+1:
+#endif
+d149 4
+a152 15
+#ifdef sun3
+    tstw        fpu_present             | See if the fpu is installed.
+    beq         2f
+                                        | Restore the internal state of the fpu.
+    frestore    a0@@(MACH_FP_STATE_OFFSET)
+	                                | If the state is null the registers
+					|  don't need to be restored.
+    tstb        a0@@(MACH_FP_STATE_OFFSET)
+    beq         2f
+                                        | Restore the floating point registers.
+    fmovem      a0@@(MACH_SWITCH_FP_REGS_OFFSET), #0xff
+	                                | Restore the fpu control registers.
+    fmovem      a0@@(MACH_SWITCH_FP_CTRL_REGS_OFFSET), fpc/fps/fpi
+2:
+#endif
+@
+
+
+8.2
+log
+@*** empty log message ***
+@
+text
+@d8 1
+a8 1
+|* rcs = $Header: /sprite/src/kernel/mach/sun3.md/RCS/machAsm.s,v 8.1 88/11/18 11:22:33 rab Exp $ SPRITE (Berkeley)
+d135 16
+d159 16
+d181 1
+a181 1
+    beq		1$			|
+d184 1
+a184 1
+1$:
+@
+
+
+8.1
+log
+@changed SUN to sun
+@
+text
+@d8 1
+a8 1
+|* rcs = $Header: /sprite/src/kernel/mach/sun2.md/RCS/machAsm.s,v 8.0 88/11/11 18:04:00 douglis Stable Locker: rab $ SPRITE (Berkeley)
+d378 88
+a465 65
+
+
+#define	SAVED_REGS 	0xFCFC
+
+|*
+|* ----------------------------------------------------------------------
+|*
+|* Mach_SetJump --
+|*
+|*	Prepare for a non-local goto (i.e. Mach_LongJump).  This saves the
+|*	program counter and all local registers in the given Mach_SetJumpState
+|*	struct.
+|*	
+|*	MachSetJump(setJumpStatePtr)
+|*	    Mach_SetJumpState	*setJumpStatePtr;
+|*
+|* Results:
+|*	None.
+|*
+|* Side effects:
+|*	None.
+|*
+|* ----------------------------------------------------------------------
+|*
+
+	.globl	_Mach_SetJump
+_Mach_SetJump:
+	movl	sp@@(4),a0		| Get the address of where to store the 
+					|     registers in a register.
+	movl	_machCurStatePtr, a1	| Get pointer to mach struct in a1 and
+					|     and then store the set jump ptr.
+	movl	a0, a1@@(MACH_SET_JUMP_STATE_PTR_OFFSET)
+	moveml	#SAVED_REGS,a0@@(4)	| Save registers.
+	movl	sp@@,a0@@			| Save program counter of caller.
+	clrl	d0			| Return zero
+	rts
+
+|*
+|* ----------------------------------------------------------------------
+|*
+|* Mach_LongJump --
+|*
+|*	Prepare for a non-local goto (i.e. Sys_LongJump).  This saves the
+|*	program counter and all local registers in the given Sys_SetJumpState
+|*	struct.
+|*	
+|* Results:
+|*	None.
+|*
+|* Side effects:
+|*	None.
+|*
+|* ----------------------------------------------------------------------
+|*
+
+	.globl	_Mach_LongJump
+_Mach_LongJump:
+	movl	sp@@(4),a0		| Get address of saved state.
+	moveml	a0@@(4),#SAVED_REGS	| Restore registers (this causes the 
+					|     stack to be changed).
+	movl	a0@@,sp@@			| Push the program counter onto the 
+					|     stack.
+	movl	#1,d0			| Return FAILURE.
+	rts	
+
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d8 1
+a8 1
+|* rcs = $Header: /sprite/src/kernel/mach/sun2.md/RCS/machAsm.s,v 6.1 88/08/24 17:51:40 nelson Exp Locker: douglis $ SPRITE (Berkeley)
+d117 1
+a117 1
+#ifdef SUN3
+d264 1
+a264 1
+#ifdef SUN2
+d275 1
+a275 1
+#endif SUN2
+@
+
+
+6.1
+log
+@Renamed MachSetJump to be Mach_SetJump and added the extra code required
+to implement the full set jump.
+@
+text
+@d8 1
+a8 1
+|* rcs = $Header: machAsm.s,v 6.0 88/08/11 12:09:29 brent Stable $ SPRITE (Berkeley)
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d8 1
+a8 1
+|* rcs = $Header: machAsm.s,v 5.7 88/06/25 18:43:17 ouster Exp $ SPRITE (Berkeley)
+d385 1
+a385 1
+|* MachSetJump --
+d388 1
+a388 1
+|*	program counter and all local registers in the given Sys_SetJumpState
+d403 2
+a404 2
+	.globl	_MachSetJump
+_MachSetJump:
+d407 3
+@
+
+
+5.7
+log
+@Stop using asmDefs.h.
+@
+text
+@d8 1
+a8 1
+|* rcs = $Header: machAsm.s,v 5.6 88/05/05 17:54:35 nelson Exp $ SPRITE (Berkeley)
+@
+
+
+5.6
+log
+@Handles move of functionality from sys to mach.
+@
+text
+@d8 1
+a8 1
+|* rcs = $Header: machAsm.s,v 5.5 88/05/04 16:39:59 nelson Exp $ SPRITE (Berkeley)
+d12 1
+a12 1
+#include "asmDefs.h"
+@
+
+
+5.5
+log
+@Comments.
+@
+text
+@d8 1
+a8 1
+|* rcs = $Header: machAsm.s,v 5.4 88/05/04 15:53:01 nelson Exp $ SPRITE (Berkeley)
+d239 1
+a239 1
+|* MonNmiNop --
+d260 2
+a261 2
+    .globl _MonNmiNop
+_MonNmiNop:
+d283 1
+a283 1
+|* Mon_Trap --
+d299 3
+a301 3
+	.globl	_Mon_Trap
+_Mon_Trap:
+	jsr	_Mon_StartNmi		| Restart non-maskable interrupts.
+d307 1
+a307 1
+1$:	jsr	_Mon_StopNmi		| Stop non-maskable interrupts.
+d378 62
+@
+
+
+5.4
+log
+@New trap handling code with machine state struct per proc.
+@
+text
+@d8 1
+a8 1
+|* rcs = $Header: sunSubr.s,v 5.3 88/04/13 11:25:03 ouster Exp $ SPRITE (Berkeley)
+a373 1
+
+@
+
+
+5.3
+log
+@Changes to make system calls much faster.
+@
+text
+@d1 1
+a1 1
+|* sunSubr.s --
+d8 1
+a8 1
+|* rcs = $Header: sunSubr.s,v 5.2 88/03/18 14:54:05 nelson Exp $ SPRITE (Berkeley)
+d11 1
+a11 3
+#include "sunSR.h"
+#include "vmSunConst.h"
+#include "machineConst.h"
+d14 25
+d77 1
+a77 1
+|* MachContextSwitch -
+d79 1
+a79 1
+|*	Mach_ContextSwitch(switchToRegs, switchFromRegs)
+d82 2
+a83 3
+|*	is passed a pointer to the saved registers of the process that is
+|*      begin switched to and a pointer to the saved registers of the process
+|*      that is being switched from.  It goes through the following steps:
+d108 2
+a109 3
+    .globl _MachContextSwitch
+_MachContextSwitch:
+    movl	sp, a1
+d111 2
+a112 1
+|* Set the hardware context register for the destination process.
+d114 3
+a116 2
+    movl	a1@@(12),d0		| Get context value to set into a 
+					|     register
+d123 1
+a123 1
+
+d126 1
+a126 1
+    movw	#SUN_SR_HIGHPRIO, sr	| Lock out interrupts.
+d130 17
+a146 4
+    movl	a1@@(4), a0		| Save all of the registers for the 
+    moveml	#0xffff, a0@@		|    process being switched from.
+    movl	a1@@(8), a0		| Restore all of the registers for the
+    moveml	a0@@, #0xffff		|    process being switched to.
+d158 18
+d313 1
+a313 1
+|* ExcSetVBR --
+d318 1
+a318 1
+|*	ExcSetVBR(vectorBaseAddr)
+d330 2
+a331 2
+	.globl	_ExcSetVBR
+_ExcSetVBR:
+d339 1
+a339 1
+|* ExcGetVBR --
+d343 1
+a343 1
+|*	int	ExcGetVBR()
+d354 2
+a355 2
+	.globl	_ExcGetVBR
+_ExcGetVBR:
+@
+
+
+5.2
+log
+@Set the user context register during a hardware context swithc.
+@
+text
+@d8 1
+a8 1
+|* rcs = $Header: sunSubr.s,v 5.1 87/12/11 14:17:04 nelson Exp $ SPRITE (Berkeley)
+d303 22
+a324 1
+	rts	
+@
+
+
+5.1
+log
+@Elminated extraneous instructions.
+@
+text
+@d8 1
+a8 1
+|* rcs = $Header: sunSubr.s,v 5.0 87/08/31 19:03:13 nelson Exp $ SPRITE (Berkeley)
+d54 1
+a54 1
+|* Mach_ContextSwitch -
+d63 2
+a64 1
+|*	1) Push the status register and the
+d66 3
+a68 3
+|*	2) Push the source and destination function codes onto the stack.
+|*	2) Push a magic number onto the stack to see if it gets trashed.
+|*	3) Save all of the registers d0-d7, a0-a7 for the process being
+d70 1
+a70 1
+|*	4) Restore general registers and the status register of the process 
+d72 2
+a73 2
+|*	5) Verify the magic number.
+|*	6) Return in the new process.
+d86 15
+a100 2
+ENTRY(Mach_ContextSwitch, 0, 0)
+    
+a103 1
+
+a105 1
+
+d107 1
+a107 2
+
+    movl	a6@@(12), a0		| Save all of the registers for the 
+d109 1
+a109 2
+
+    movl	a6@@(8), a0		| Restore all of the registers for the
+a110 1
+
+a117 1
+
+a119 1
+
+d122 1
+a122 1
+RETURN
+@
+
+
+5.0
+log
+@*** empty log message ***
+@
+text
+@d8 1
+a8 1
+|* rcs = $Header: sunSubr.s,v 5.0 87/08/11 10:50:11 sprite Exp $ SPRITE (Berkeley)
+a38 4
+    movc	sfc,d1			| Save source function code
+    movl	#VM_MMU_SPACE,d0	| Get function code in a reg
+    movc	d0,sfc			| Set source function code
+
+a39 2
+    movl	d2,sp@@-			| save d2
+
+d41 1
+a41 1
+    movl	#VM_ETHER_ADDR,a1	| The Prom address of the ethernet addr
+d43 2
+a44 2
+    movsb	a1@@,d2			| Copy one byte of the ethernet address
+    movb	d2,a0@@			|   from prom to the target address.
+d46 1
+a46 1
+    addl	#VM_IDPROM_INC,a1	| bump prom address, as per sec 4.8
+a49 3
+    movc	d1,sfc			| Restore source function code
+    movl	sp@@+,d2			| Restore d2
+
+a93 5
+    movc	sfc, d0			| Push source and dest function codes 
+    movl	d0, sp@@-		|     onto the stack.
+    movc	dfc, d0
+    movl	d0, sp@@-
+
+a109 5
+    movl	sp@@+, d0		| Restore the dest and source
+    movc	d0, dfc			|     function codes.
+    movl	sp@@+, d0
+    movc	d0, sfc
+
+a166 4
+    movc	sfc,d1			| Save source function code
+    movl	#VM_MMU_SPACE,d0	| Get function code in a reg
+    movc	d0,sfc			| Set source function code
+
+d168 1
+a168 2
+
+    movl	#VM_MACH_TYPE_ADDR, a0	| Get the address of the machine type
+a171 3
+
+    movc	d1,sfc			| Restore source function code
+
+a209 4
+
+        movc    dfc,a0			| Change to MMU space
+        moveq   #VM_MMU_SPACE,d1	|
+        movc    d1,dfc			|
+a212 1
+        movc    a0,dfc			| Change back to normal space.
+@

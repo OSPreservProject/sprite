@@ -1,0 +1,80 @@
+     BASIC COMMAND SYNTAX
+          The Tcl language has syntactic similarities to both the Unix
+          shells and Lisp.  However, the interpretation of commands is
+          different in Tcl than in either of those other two  systems.
+          A  Tcl  command  string  consists  of  one  or more commands
+          separated  by  newline  characters  or  semi-colons.    Each
+          command  consists  of  a  collection  of fields separated by
+          white space (spaces or tabs).  The first field must  be  the
+          name  of  a  command, and the additional fields, if any, are
+          arguments that will be passed to that command.  For example,
+          the command
+
+               set a 22
+
+          has three fields:  the first, set, is  the  name  of  a  Tcl
+          command,  and  the  last  two,  a  and 22, will be passed as
+          arguments to the set command.  The command  name  may  refer
+          either  to  a  built-in Tcl command, an application-specific
+          command   bound    in    with    the    library    procedure
+          Tcl_CreateCommand,  or  a command procedure defined with the
+          proc built-in command.  Arguments are  passed  literally  as
+          text  strings.   Individual  commands  may  interpret  those
+          strings in any fashion they  wish.   The  set  command,  for
+          example,  will  treat  its  first  argument as the name of a
+          variable and its second argument as a string value to assign
+          to  that  variable.   For  other  commands  arguments may be
+          interpreted as integers, lists, file names, or Tcl commands.
+
+          Command names should normally be typed completely  (e.g.  no
+          abbreviations).   However,  if  the  Tcl  interpreter cannot
+          locate a command it invokes a special command named  unknown
+          which  attempts to find or create the command.  For example,
+          at  many  sites  unknown   will   search   through   library
+          directories  for  the desired command and create it as a Tcl
+          procedure  if  it  is  found.   The  unknown  command  often
+          provides  automatic  completion of abbreviated commands, but
+          usually only for commands  that  were  typed  interactively.
+          It's  probably  a  bad  idea to use abbreviations in command
+          scripts and other forms that  will  be  re-used  over  time:
+          changes to the command set may cause abbreviations to become
+          ambiguous, resulting in scripts that no longer work.
+
+
+     COMMAND SUMMARY
+          [1]  A command is just a string.
+
+          [2]  Within a string commands are separated by  newlines  or
+               semi-colons (unless the newline or semi-colon is within
+               braces or brackets or is backslashed).
+
+          [3]  A command consists of fields.  The first field  is  the
+               name of the command.  The other fields are strings that
+               are passed to that command as arguments.
+
+          [4]  Fields are normally separated by white space.
+
+          [5]  Double-quotes allow  white  space  and  semi-colons  to
+               appear within a single argument.  Command substitution,
+               variable substitution, and backslash substitution still
+               occur inside quotes.
+
+          [6]  Braces defer interpretation of special characters.   If
+               a  field  begins with a left brace, then it consists of
+               everything between the  left  brace  and  the  matching
+               right  brace. The braces themselves are not included in
+               the argument.  No further processing  is  done  on  the
+               information  between  the braces except that backslash-
+               newline sequences are eliminated.
+
+          [7]  If a field doesn't begin with a brace  then  backslash,
+               variable,  and  command  substitution  are  done on the
+               field.  Only a single level of processing is done:  the
+               results  of  one substitution are not scanned again for
+               further substitutions or any other  special  treatment.
+               Substitution  can  occur  on  any  field  of a command,
+               including the command name as well as the arguments.
+
+          [8]  If the first non-blank character of a command is  a  #,
+               everything  from  the  # up through the next newline is
+               treated as a comment and ignored.

@@ -1,0 +1,59 @@
+srcname="GDB"
+srctrigger=main.c
+
+# per-host:
+
+if [ ! -f xconfig/${host} ]; then
+	echo "No such host ${host}"
+	exit 1
+fi
+
+#  We really shouldn't depend on there being a space after XM_FILE= ...
+hostfile=`awk '$1 == "XM_FILE=" { print $2 }' <xconfig/$host`
+
+# per-target:
+
+if [ ! -f tconfig/${target} ]; then
+	echo "No such target ${target}"
+	exit 1
+fi
+
+if [ -z "${removing}" ] ; then
+	cat xconfig/${host} tconfig/${target} | awk '$1 == "#msg" {
+		print substr($0,6)}'
+fi
+
+#  We really shouldn't depend on there being a space after TM_FILE= ...
+targetfile=`awk '$1 == "TM_FILE=" { print $2 }' <tconfig/$target`
+
+host_makefile_frag=xconfig/${host}
+target_makefile_frag=tconfig/${target}
+
+# If hostfile (XM_FILE) and/or targetfile (TM_FILE) is not set in the
+# ?config/* file, we don't make the corresponding links.  But we have
+# to remove the xm.h files and tm.h files anyway, e.g. when switching
+# from "configure host" to "configure none".
+files=
+links=
+rm -f xm.h
+if [ "${hostfile}" != "" ]; then
+	files="${files} ${hostfile}"
+	links="${links} xm.h"
+fi
+rm -f tm.h
+if [ "${targetfile}" != "" ]; then
+	files="${files} ${targetfile}"
+	links="${links} tm.h"
+fi
+
+# post-target:
+
+case ${srcdir} in
+  .)
+    ;;
+  *)
+    grep -s "source ${srcdir}/.gdbinit" .gdbinit 2>/dev/null || \
+      echo "source ${srcdir}/.gdbinit" >> .gdbinit
+esac
+
+cat ${srcdir}/alldeps.mak ${srcdir}/depend >>Makefile

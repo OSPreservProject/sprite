@@ -1,0 +1,549 @@
+# mxedit.bindings
+
+# Default bindings for the mxedit widget.  This imports the names
+# of various menus in order to establish keyboard bindings and menu
+# accelerators in a consistent manner via the mxMenuBind procedure.
+#
+# This also includes bindings for the search/replace and command entries
+#
+# Copyright (c) 1992 Xerox Corporation.
+# Use and copying of this software and preparation of derivative works based
+# upon this software are permitted. Any distribution of this software or
+# derivative works must comply with all applicable United States export
+# control laws. This software is made available AS IS, and Xerox Corporation
+# makes no warranty about the software, its performance or its conformity to
+# any specification.
+#
+
+# showBindings --
+#	Pop up a new window to display key bindings.
+#	Note that we seem to get them back in reverse order
+#	to which they were defined, so mxBindings should
+#	define boring ones first.
+
+proc showBindings { args } {
+    global mxedit
+    set newWindow [mxopen {}]
+    send $newWindow {insert Keystroke\ Bindings:\n}
+    send $newWindow {insert ---------\ --------\n}
+    if {[llength $args] == 0} {set args [bind $mxedit]}
+    foreach binding $args {
+	send $newWindow [list insert [format {\n%-20s => "%s"} 			$binding [bind $mxedit $binding]]]
+    }
+    send $newWindow clean
+    send $newWindow {see 0.0}
+
+}
+
+# basicBindings --
+#	Set up ASCII input and a couple other bindings for an mxedit widget
+#	that probably don't need to be changed on a per-user basis
+
+proc basicBindings { widget } {
+
+    # Set up ascii input
+    bindLatin1 $widget
+    bind $widget <Return> "newline ; see caret"
+    bind $widget <Tab> "$widget ! insert %A"
+    bind $widget <BackSpace> "deleteBackChar"
+
+    # clicking on edit window grabs focus.
+    # The history ignore prevents double clicks from forgetting history
+    # because ordinarily a mouse click does reset history, except when
+    # nothing new has happened since the last click.
+
+    bind $widget <1> "history ignore \"focus $widget\""
+}
+
+# mxBindings --
+# This sets up the keystroke bindings for an mxedit widget.
+# This procedure uses mxMenuBind to set up keyboard accelerators.
+# mxMenuBind keeps the menu display up-to-date with the keyboard bindings.
+#
+
+proc mxBindings { widget } {
+
+    # Set up ASCII input
+    basicBindings $widget
+
+    # Mark-related bindings
+    bindMarks $widget
+
+    ### FILE OPERATIONS
+    mxMenuBind <Control-s> File "Save"
+    mxMenuBind <Control-q> File "Quit"
+    mxMenuBind <Control-o> File "Open new window"
+    mxMenuBind <Mod1-o>	   File "Open file SEL"
+    mxMenuBind <Mod1-s>	   File "Switch to file SEL"
+    mxMenuBind <Escape><s> File "Switch to previous file"
+    mxMenuBind <Control-t> File "Switch to tag SEL"
+    mxMenuBind <Mod1-t>    File "Open on tag SEL"
+    mxMenuBind <Control-g> File "Go to line SEL"
+
+    # Open a new window, using the current word as the tag
+    bind $widget <Escape><t> {
+	set _t [mark [mark caret forw 1 word] back 1 char]
+	mxselection set [mark $_t back 1 word] $_t
+	applyToSelection tagOpen
+    }
+
+    ### EDITING OPERATIONS
+
+    mxMenuBind <Control-u> Edit "Undo"
+    mxMenuBind <Control-a> Edit "Do Again"
+    mxMenuBind <Control-d> Edit "Delete SEL"
+    mxMenuBind <Control-v> Edit "Paste"
+    mxMenuBind <Mod1-v>    Edit "Move SEL"
+
+    # Delete selection and save it
+    bind $widget <Escape><d> { deleteSave }
+    # Paste saved selection
+    bind $widget <Escape><v> { pasteSave }
+
+    ### INDENTATION
+
+    # Indent the line at the insertion point
+    global indent
+    if {![info exists indent]} {
+	set indent 4
+    }
+    mxMenuBind <Control-p>  Edit "Indent line"
+    mxMenuBind <Control-y>  Edit "Outdent line"
+    mxMenuBind <Mod1-p>     Edit "Indent SEL"
+    mxMenuBind <Mod1-y>     Edit "Outdent SEL"
+
+    ### SEARCH/REPLACE OPERATIONS
+
+    mxMenuBind <Control-f> Search "Forward"
+    mxMenuBind <Mod1-f>    Search "Forward for SEL"
+    mxMenuBind <Control-b> Search "Backward"
+    mxMenuBind <Mod1-b>    Search "Backward for SEL"
+    mxMenuBind <Control-r> Search "Replace"
+    mxMenuBind <Mod1-r>    Search "Replace in SEL"
+
+    # Clear and focus on the replace window
+    bind $widget <Escape><r>	{ replaceClear }
+    # Make sure the find window is visible
+    bind $widget <Escape><f>	{ findClear }
+
+    # Search Forward and don't change selection (BROKEN)
+    bind $widget <Escape><Control-f> {history next history {
+	set _l [mark sel.left]
+	set _r [mark sel.right]
+	mxselection set caret
+	applyToSelection {search forward}
+	mxselection set $_l $_r
+    }}
+    # Search Backward and don't change selection (BROKEN)
+    bind $widget <Escape><Control-b> {history next history {
+	set _l [mark sel.left]
+	set _r [mark sel.right]
+	selection set caret
+	applyToSelection {search backward}
+	selection set $_l $_r
+    }}
+
+    ### KEYBOARD EDITTING
+
+    # Delete forward character
+    bind $widget <Control-l> { deleteForwChar }
+
+    # Delete backward character
+    bind $widget <Control-h> { deleteBackChar }
+
+    bind $widget <Delete> { deleteBackChar }
+
+    # Delete backward word
+    bind $widget <Control-w> { deleteBackWord }
+
+    # Delete forward word
+    bind $widget <Control-n> { deleteForwWord }
+
+    # Delete to end of line
+    bind $widget <Control-e> { deleteEndOfLine }
+
+    # Delete the current line
+    bind $widget <Control-x> { deleteLine }
+
+    # Open a line below this one
+    bind $widget <Control-j> { openLineBelow }
+
+    # Open a line above this one
+    bind $widget <Control-k> { openLineAbove }
+
+    ### KEYBOARD MOTION
+
+    # Backward one character
+    bind $widget <Mod1-h> { back1char }
+
+    # Forward one character
+    bind $widget <Mod1-l> { forw1char }
+
+    # Down one line
+    bind $widget <Mod1-j> { down1line }
+    bind $widget <Mod1-Return> { nextline }
+
+    # Up one line
+    bind $widget <Mod1-k> { up1line }
+
+    # Backward one word
+    bind $widget <Mod1-w> { back1word }
+
+    # Forward one word
+    bind $widget <Mod1-n> { forw1word }
+
+    # To end-of-line
+    bind $widget <Mod1-e> { endOfLine }
+
+    # Miscellany
+
+    # Change focus to the command entry widget
+    bind $widget <Control-c> { mxCommandFocus }
+
+    bind $widget <Control-question> { caretInfo }
+
+}
+
+#####################################################################
+# These are additions to the entry widget bindings that rightfully
+# belong in tk.tcl, but I don't want folks to have to modify that.
+# These add mxedit-like bindings to entry widgets.
+
+bind Entry <Control-l> {tk_entryDelRight %W}
+bind Entry <Mod1-h> { tk_entryBack1char %W }
+bind Entry <Mod1-l> { tk_entryForw1char %W }
+bind Entry <Mod1-e> { tk_entryEndOfLine %W }
+
+# Make the third button extend the selection
+bind Entry <3> { %W select adjust @%x }
+
+#####################################################################
+# mxCommandBindings --
+
+proc mxCommandBindings { entry } {
+    bind $entry <Return>		{ mxDoCmd }
+    bind $entry <Control-Return>	{ mxeditFocus }
+    bind $entry <Control-q>		{ mxCommandHide ; mxeditFocus }
+    bind $entry <Control-f>		{ searchFocus }
+    bind $entry <Control-r>		{ replaceFocus }
+}
+
+# searchBindings --
+#	Extra bindings for the search entry widget
+
+proc searchBindings { entry } {
+    bind $entry <Return>	{ findInner forward }
+    bind $entry <Control-f>	{ findInner forward }
+    bind $entry <Control-f>	{ findInner forward }
+    bind $entry <Control-Return> { findInner backward }
+    bind $entry <Control-r>	{ replaceFocus }
+    bind $entry <Control-q>	{ hideFind ; mxeditFocus }
+    bind $entry <Control-c>	{ mxeditFocus }
+}
+
+# replaceBindings --
+#	Extra bindings for the replace entry widget
+
+proc replaceBindings { entry } {
+    bind $entry <Return>	{ findInner replace }
+    bind $entry <Control-r>	{ findInner replace }
+    bind $entry <Mod1-r>	{ findInner replaceSel }
+    bind $entry <Escape><r>	{ findInner replaceEverywhere }
+    bind $entry <Control-f>	{ searchFocus }
+    bind $entry <Control-q>	{ hideFind ; mxeditFocus }
+    bind $entry <Control-c>	{ mxeditFocus }
+}
+
+# emacsBindings --
+# This sets up emacs-like keystroke bindings for an mxedit widget.
+# This procedure uses mxMenuBind to set up keyboard accelerators.
+# mxMenuBind keeps the menu display up-to-date with the keyboard bindings.
+#
+
+proc emacsBindings { } {
+    global mxedit
+    set widget $mxedit
+
+    # Set up ASCII input
+    basicBindings $widget
+
+    # Nuked the mark-related bindings
+
+    ### FILE OPERATIONS
+    mxMenuBind <Control-x><Control-s> File "Save"
+    mxMenuBind <Control-x><Control-q> File "Quit"
+    mxMenuUnBind File "Open new window"
+    mxMenuUnBind File "Open file SEL"
+    mxMenuUnBind File "Switch to file SEL"
+    mxMenuUnBind File "Switch to previous file"
+    mxMenuUnBind File "Switch to tag SEL"
+    mxMenuUnBind File "Open on tag SEL"
+    mxMenuUnBind File "Go to line SEL"
+
+    # Open a new window, using the current word as the tag
+    bind $widget <Escape><t> {}
+#    bind $widget <Escape><t> {
+#	set _t [mark [mark caret forw 1 word] back 1 char]
+#	mxselection set [mark $_t back 1 word] $_t
+#	applyToSelection tagOpen
+#   }
+
+    ### EDITING OPERATIONS
+
+    mxMenuBind <Control-x>u Edit "Undo"
+    mxMenuBind <Control-u> Edit "Do Again"
+    mxMenuBind <Control-w> Edit "Delete SEL"
+    mxMenuBind <Control-y> Edit "Paste"
+    mxMenuUnBind Edit "Move SEL"
+
+    # Delete selection and save it
+    bind $widget <Escape><d> {}
+    # Paste saved selection
+    bind $widget <Escape><v> {}
+
+    ### INDENTATION
+
+    # Indent the line at the insertion point
+    global indent
+    set indent 2
+    mxMenuUnBind Edit "Indent line"
+    mxMenuUnBind Edit "Outdent line"
+    mxMenuUnBind Edit "Indent SEL"
+    mxMenuUnBind Edit "Outdent SEL"
+
+    ### SEARCH/REPLACE OPERATIONS
+
+    mxMenuBind <Control-s> Search "Forward"
+    mxMenuBind <Mod1-s>    Search "Forward for SEL"
+    mxMenuUnBind  	Search "Backward"
+    mxMenuUnBind     	Search "Backward for SEL"
+    mxMenuBind <Control-r> Search "Replace"
+    mxMenuBind <Mod1-r>    Search "Replace in SEL"
+
+    # Clear and focus on the replace window
+    bind $widget <Escape><r>	{ replaceClear }
+    # Make sure the find window is visible
+    bind $widget <Escape><s>	{ findClear }
+
+    ### KEYBOARD EDITTING
+
+    # Delete forward character
+    bind $widget <Control-d> { deleteForwChar }
+
+    # Delete backward character
+    bind $widget <Delete> { deleteBackChar }
+
+    # Delete backward word
+    bind $widget <Escape><Delete> { deleteBackWord }
+
+    # Delete forward word
+    bind $widget <Escape><d> { deleteForwWord }
+
+    # Delete to end of line
+    bind $widget <Control-k> { deleteEndOfLine }
+
+    # Open a line below this one
+#    bind $widget <Control-j> { openLineBelow }
+
+    # Open a line above this one
+#    bind $widget <Control-k> { openLineAbove }
+
+    ### KEYBOARD MOTION
+
+    # Backward one character
+    bind $widget <Control-b> { back1char }
+
+    # Forward one character
+    bind $widget <Control-f> { forw1char }
+
+    # Down one line
+    bind $widget <Control-n> { down1line }
+
+    # Up one line
+    bind $widget <Control-p> { up1line }
+
+    # Backward one word
+    bind $widget <Escape><b> { back1word }
+
+    # Forward one word
+    bind $widget <Escape><f> { forw1word }
+
+    # To end-of-line
+    bind $widget <Control-e> { endOfLine }
+
+    # To beginning of line
+    bind $widget <Control-a> { beginOfLine }
+
+    # Page up
+    bind $widget <Escape><v> { pageUp }
+    bind $widget <Mod1-v> { pageUp }
+
+    # Page down
+    bind $widget <Control-v> { pageDown }
+
+    # Miscellany
+
+    # Change focus to the command entry widget
+    bind $widget <Escape><x> { mxCommandFocus }
+
+#    bind $widget <Control-question> { caretInfo }
+
+}
+
+# emacsCommandBindings --
+
+proc emacsCommandBindings { entry } {
+    bind $entry <Return>		{ mxDoCmd }
+    bind $entry <Control-Return>	{ mxeditFocus }
+    bind $entry <Control-q>		{ mxCommandHide ; mxeditFocus }
+}
+
+# emacsSearchBindings --
+#	Extra bindings for the search entry widget
+
+proc emacsSearchBindings { entry } {
+    bind $entry <Return>	{ findInner forward }
+    bind $entry <Control-f>	{ findInner forward }
+    bind $entry <Control-f>	{ findInner forward }
+    bind $entry <Control-Return> { findInner backward }
+    bind $entry <Control-r>	{ replaceFocus }
+    bind $entry <Control-q>	{ hideFind ; mxeditFocus }
+    bind $entry <Control-c>	{ mxeditFocus }
+}
+
+# emacsReplaceBindings --
+#	Extra bindings for the replace entry widget
+
+proc emacsReplaceBindings { entry } {
+    bind $entry <Return>	{ findInner replace }
+    bind $entry <Control-r>	{ findInner replace }
+    bind $entry <Mod1-r>	{ findInner replaceSel }
+    bind $entry <Escape><r>	{ findInner replaceEverywhere }
+    bind $entry <Control-f>	{ searchFocus }
+    bind $entry <Control-q>	{ hideFind ; mxeditFocus }
+    bind $entry <Control-c>	{ mxeditFocus }
+}
+
+
+# bindLatin1 --
+# Bind the Latin 1 characters to insert themselves.
+# This is not simply
+# bind $widget <Key> "$widget insert %A"
+# because that sucks in too many strays,
+# plus I'm not sure that unbinding would work.
+
+# The ! in the command string is important.  It affects the way
+# history operations are logged, effectively batching lots of keystroke
+# inserts into a single history entry.
+
+proc bindLatin1 { widget } {
+    bind $widget <space> "$widget ! insert %A"
+    bind $widget <exclam> "$widget ! insert %A"
+    bind $widget <quotedbl> "$widget ! insert %A"
+    bind $widget <numbersign> "$widget ! insert %A"
+    bind $widget <dollar> "$widget ! insert %A"
+    bind $widget <percent> "$widget ! insert %A"
+    bind $widget <ampersand> "$widget ! insert %A"
+#    bind $widget <apostrophe> "$widget ! insert %A"
+    bind $widget <quoteright> "$widget ! insert %A"
+    bind $widget <parenleft> "$widget ! insert %A"
+    bind $widget <parenright> "$widget ! insert %A"
+    bind $widget <asterisk> "$widget ! insert %A"
+    bind $widget <plus> "$widget ! insert %A"
+    bind $widget <comma> "$widget ! insert %A"
+    bind $widget <minus> "$widget ! insert %A"
+    bind $widget <period> "$widget ! insert %A"
+    bind $widget <slash> "$widget ! insert %A"
+    # 0 though 9
+    for {set i 48} {$i < 58} {set i [expr $i+1]} {
+	eval [format "bind $widget %c \"$widget ! insert %%A\"" $i]
+    }
+    bind $widget <colon> "$widget ! insert %A"
+    bind $widget <semicolon> "$widget ! insert %A"
+    bind $widget <less> "$widget ! insert %A"
+    bind $widget <equal> "$widget ! insert %A"
+    bind $widget <greater> "$widget ! insert %A"
+    bind $widget <question> "$widget ! insert %A"
+    bind $widget <at> "$widget ! insert %A"
+    # A through Z
+    for {set i 65} {$i < 91} {set i [expr $i+1]} {
+	eval [format "bind $widget %c \"$widget ! insert %%A\"" $i]
+    }
+    bind $widget <bracketleft> "$widget ! insert %A"
+    bind $widget <backslash> "$widget ! insert %A"
+    bind $widget <bracketright> "$widget ! insert %A"
+    bind $widget <asciicircum> "$widget ! insert %A"
+    bind $widget <underscore> "$widget ! insert %A"
+#    bind $widget <grave> "$widget ! insert %A"
+    bind $widget <quoteleft> "$widget ! insert %A"
+    # a through z
+    for {set i 97} {$i < 123} {set i [expr $i+1]} {
+	eval [format "bind $widget %c \"$widget ! insert %%A\"" $i]
+    }
+    bind $widget <braceleft> "$widget ! insert %A"
+    bind $widget <bar> "$widget ! insert %A"
+    bind $widget <braceright> "$widget ! insert %A"
+    bind $widget <asciitilde> "$widget ! insert %A"
+}
+
+# bindMarks --
+#	Set up bindings to make and move to marks.
+#	STILL BROKEN.  <Escape><m><a> does set a mark,
+#	but it also inserts "m".
+
+proc bindMarks { widget } {
+    bind $widget <Escape><m><a> {set _marka [mark caret]}
+    bind $widget <Mod1-m><a> {see $_marka; caret $_marka}
+    bind $widget <Escape><m><b> {set _markb [mark caret]}
+    bind $widget <Mod1-m><b> {see $_markb; caret $_markb}
+    bind $widget <Escape><m><c> {set _markc [mark caret]}
+    bind $widget <Mod1-m><c> {see $_markc; caret $_markc}
+    bind $widget <Escape><m><d> {set _markd [mark caret]}
+    bind $widget <Mod1-m><d> {see $_markd; caret $_markd}
+    bind $widget <Escape><m><e> {set _marke [mark caret]}
+    bind $widget <Mod1-m><e> {see $_marke; caret $_marke}
+    bind $widget <Escape><m><f> {set _markf [mark caret]}
+    bind $widget <Mod1-m><f> {see $_markf; caret $_markf}
+    bind $widget <Escape><m><g> {set _markg [mark caret]}
+    bind $widget <Mod1-m><g> {see $_markg; caret $_markg}
+    bind $widget <Escape><m><h> {set _markh [mark caret]}
+    bind $widget <Mod1-m><h> {see $_markh; caret $_markh}
+    bind $widget <Escape><m><i> {set _marki [mark caret]}
+    bind $widget <Mod1-m><i> {see $_marki; caret $_marki}
+    bind $widget <Escape><m><j> {set _markj [mark caret]}
+    bind $widget <Mod1-m><j> {see $_markj; caret $_markj}
+    bind $widget <Escape><m><k> {set _markk [mark caret]}
+    bind $widget <Mod1-m><k> {see $_markk; caret $_markk}
+    bind $widget <Escape><m><l> {set _markl [mark caret]}
+    bind $widget <Mod1-m><l> {see $_markl; caret $_markl}
+    bind $widget <Escape><m><m> {set _markm [mark caret]}
+    bind $widget <Mod1-m><m> {see $_markm; caret $_markm}
+    bind $widget <Escape><m><n> {set _markn [mark caret]}
+    bind $widget <Mod1-m><n> {see $_markn; caret $_markn}
+    bind $widget <Escape><m><o> {set _marko [mark caret]}
+    bind $widget <Mod1-m><o> {see $_marko; caret $_marko}
+    bind $widget <Escape><m><p> {set _markp [mark caret]}
+    bind $widget <Mod1-m><p> {see $_markp; caret $_markp}
+    bind $widget <Escape><m><q> {set _markq [mark caret]}
+    bind $widget <Mod1-m><q> {see $_markq; caret $_markq}
+    bind $widget <Escape><m><r> {set _markr [mark caret]}
+    bind $widget <Mod1-m><r> {see $_markr; caret $_markr}
+    bind $widget <Escape><m><s> {set _marks [mark caret]}
+    bind $widget <Mod1-m><s> {see $_marks; caret $_marks}
+    bind $widget <Escape><m><t> {set _markt [mark caret]}
+    bind $widget <Mod1-m><t> {see $_markt; caret $_markt}
+    bind $widget <Escape><m><u> {set _marku [mark caret]}
+    bind $widget <Mod1-m><u> {see $_marku; caret $_marku}
+    bind $widget <Escape><m><v> {set _markv [mark caret]}
+    bind $widget <Mod1-m><v> {see $_markv; caret $_markv}
+    bind $widget <Escape><m><w> {set _markw [mark caret]}
+    bind $widget <Mod1-m><w> {see $_markw; caret $_markw}
+    bind $widget <Escape><m><x> {set _markx [mark caret]}
+    bind $widget <Mod1-m><x> {see $_markx; caret $_markx}
+    bind $widget <Escape><m><y> {set _marky [mark caret]}
+    bind $widget <Mod1-m><y> {see $_marky; caret $_marky}
+    bind $widget <Escape><m><z> {set _markz [mark caret]}
+    bind $widget <Mod1-m><z> {see $_markz; caret $_markz}
+}
+
+

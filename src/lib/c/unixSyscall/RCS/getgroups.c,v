@@ -1,0 +1,81 @@
+head     1.1;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     88.06.19.14.31.23;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/* 
+ * getgroups.c --
+ *
+ *	Procedure to map from Unix getgroups system call to Sprite.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: getgroups.c,v 1.2 86/10/14 14:33:27 nelson Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+#include "proc.h"
+
+#include "compatInt.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * getgroups --
+ *
+ *	Procedure to map from Unix getgroups system call to 
+ *	Sprite Proc_GetGroupIDs.
+ *
+ * Results:
+ *      UNIX_SUCCESS    - the call was successful.
+ *      UNIX_ERROR      - the call was not successful.
+ *                        The actual error code stored in errno.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+getgroups(gidsetlen, gidset)
+    int gidsetlen;
+    int *gidset;
+{
+    ReturnStatus status;	/* result returned by Proc_GetGroupIDs */
+    int	numGids;
+
+    status = Proc_GetGroupIDs(gidsetlen, gidset, &numGids);
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	if (numGids > gidsetlen) {
+	    numGids = gidsetlen;
+	}
+	return(numGids);
+    }
+}
+@

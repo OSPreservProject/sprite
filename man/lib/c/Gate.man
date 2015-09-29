@@ -1,0 +1,106 @@
+'\" Copyright 1992 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/lib/forms/RCS/lib.man,v 1.4 92/03/02 15:25:36 bmiller Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS Gate lib
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+Gate_ByDesc, Gate_ByInetAddr, Gate_ByNetAddr, Gate_End, Gate_Next, Gate_SetFile,
+Gate_Start \- return information about network gateways.
+.SH SYNOPSIS
+.nf
+\fB#include <gate.h>\fR
+.sp
+Gate_Entry *
+\fBGate_ByDesc\fR(\fIdesc\fP)
+.sp
+Gate_Entry *
+\fBGate_ByInetAddr\fR(\fIinetAddr\fP)
+.sp
+Gate_Entry *
+\fBGate_ByNetAddr\fR(\fIaddrPtr\fP)
+.sp
+int
+\fBGate_SetFile\fR(\fIfileName\fP)
+.sp
+int
+\fBGate_Start\fR()
+.sp
+Gate_Entry *
+\fBGate_Next\fR()
+.sp
+void
+\fBGate_End\fR()
+.SH ARGUMENTS
+.AS Net_InetAddress inetAddr
+.AP char *desc in
+Description of the gateway for which information is desired.
+.AP Net_Address *addrPtr in
+The local network address of the gateway for which
+information is desired. 
+.AP Net_InetAddress inetAddr in
+The internet address of the gateway for which information is desired.
+.AP char *fileName in
+The name of a gateway description file.
+.BE
+
+.SH DESCRIPTION
+.PP
+These functions are used to access the database of network gateways.
+.PP
+A Gate_Entry structure is defined as follows:
+.DS
+.ta 1c 2c 3c 4c 5c 6c 7c 8c 9c 10c
+typedef struct Gate_Entry {
+	char			*desc;		/* Description of gateway */
+	Net_Address		netAddr;	/* Physical address. */
+	Net_InetAddress	inetAddr;	/* Internet address. */
+} Gate_Entry;
+.DE
+The Gate_Entry structures returned by the routines are statically allocated
+and may change on the next call to any \fBGate_\fR procedure.  Be sure to copy
+out any information you need before calling a \fBGate_\fR procedure again.
+.PP
+\fBGate_ByDesc()\fR returns a Gate_Entry based on the description (name) of
+the gateway. 
+.PP
+\fBGate_ByNetAddr()\fR returns the Gate_Entry for the gateway with the given
+local-area-network address. 
+.PP
+\fBGate_ByInetAddr()\fR returns the Gate_Entry for the gateway with the given internet
+address.
+.PP
+\fBGate_SetFile()\fR specifies a different gateway information
+file to use (the file normally used
+is \fB/etc/gateway\fR).
+.PP
+\fBGate_Start()\fR opens the current gateway-description file (if it isn't
+already open), while \fBGate_End()\fR closes
+it.  The \fBGate_By\fR... procedures automatically call \fBGate_Start\fR.
+.PP
+\fBGate_Next()\fR may be used to step through the current 
+gateway-description file.
+The gateway-description file must have been opened 
+using \fBGate_Start()\fR or one of the
+\fBGate_By\fR functions.
+.PP
+.SH DIAGNOSTICS
+\fBGate_SetFile()\fR and \fBGate_Start()\fR 
+return zero if all went well.  Otherwise
+they return -1 and the \fBerrno\fR variable contains additional information
+about what error occurred.
+\fBGate_Next()\fR returns NULL on end-of-file. \fBGate_ByDesc()\fR,
+\fBGate_ByNetAddr()\fR and \fBGate_ByInetAddr()\fR return NULL if
+the given gateway could not be found.
+.SH FILES
+/etc/gateway	The default gateway-description file.
+.SH KEYWORDS
+internet, local net, gateway

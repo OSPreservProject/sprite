@@ -1,0 +1,132 @@
+
+
+
+TRCHANGES                 User Commands                 TRCHANGES
+
+
+
+CCOOMMMMAANNDD LLIINNEE AARRGGUUMMEENNTTSS
+     The argument --PP_x_x_x loads parameters and character defini-
+     tions for typesetter _x_x_x, which at the moment is typically
+     one of _p_s_c (PostScript), _i_p (imagen), _v_a (varian), _v_p (ver-
+     satec) or _t_e_r (terminal or printer).
+
+     --FF_y_y_y causes font information to be loaded from directory
+     _y_y_y instead of the default //sspprriittee//lliibb//ddiittrrooffff//ddeevv_x_x_x.
+
+GGRRAAPPHHIICCSS CCOOMMMMAANNDDSS
+     The most significant new facility is the ability to draw
+     simple graphical objects - diagonal lines, circles,
+     ellipses, arcs, splines, and filled polygons - in TROFF .
+
+     The new graphical commands are
+
+     \D'l _d_h _d_v'
+               draw line from current position by _d_h, _d_v
+     \D'c _d'
+               draw circle of diameter _d with left side at current position
+     \D'e _d_1 _d_2'
+               draw ellipse of diameters _d_1 _d_2
+     \D'a _d_h_1 _d_v_1 _d_h_2 _d_v_2'
+               draw arc counter-clockwise from current position to _d_h_1+_d_h_2
+               _d_v_1+_d_v_2, with center at _d_h_1 _d_v_1 from current position
+     \D'~ _d_h_1 _d_v_1 _d_h_2 _d_v_2 ...'
+               draw B-spline from current position by _d_h_1 _d_v_1
+               then by _d_h_2, _d_v_2, then by _d_h_3, _d_v_3, then ...
+     \D'g _d_h_1 _d_v_1 _d_h_2 _d_v_2 ...'
+               same as \D'~ _d_h_1 ...' except the gremlin spline
+               algorithm is used.
+     \D'p _n _d_h_1 _d_v_1 _d_h_2 _d_v_2 ...'
+               draw polygon using stipple _n from current stipple font
+               starting at current position by _d_h_1 _d_v_1 then by _d_h_2, _d_v_2,
+               then by _d_h_3, _d_v_3, then ...
+     \D'P _n _d_h_1 _d_v_1 _d_h_2 _d_v_2 ...'
+               same as \D'p _n _d_h_1 ...' except no border is printed.
+     \D't _d'
+               set line thickness to _d (set to 3 units at startup).
+               The default units are ems, so _d must be given in _u
+               units if a number of pixels is needed.
+     \D's _d'
+               set line style to _d (set to -1 at startup).  The value is
+               taken as a coordinate mask on the individual bits of the line.
+               The default units are ems, so _d must be given in _u units.
+
+     The position after a graphical object has been drawn is at
+     its ``end'', where for circles and ellipses, the end is at
+     the right side.  As with other commands, default units are
+     ems horizontally and line spaces vertically.
+
+     Realistically, these commands are not intended for direct
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+TRCHANGES                 User Commands                 TRCHANGES
+
+
+
+     use, but for preprocessors like PIC, IDEAL, and GRN.
+
+OOtthheerr nneeww ccoommmmaannddss
+     ..ssyy _c_o_m_m_a_n_d_l_i_n_e executes the command, then returns.  Output
+     is not captured anyplace.
+
+     ..ccff _f_i_l_e copies _f_i_l_e into the TROFF output file at this
+     point, uninterpreted.  Havoc ensues unless the motions in
+     the file restore current horizontal and vertical position.
+     This command hasn't been used much, and is probably a bad
+     idea anyway.
+
+     ..ppii _p_r_o_g_r_a_m (pipe the output into _p_r_o_g_r_a_m) now works in
+     TROFF as well as NROFF, since it makes somewhat more sense
+     to allow it.
+
+     ..sstt _s_t_i_p_p_l_e__f_o_n_t loads _s_t_i_p_p_l_e__f_o_n_t as the current font used
+     to fill polygons, with each polygon command selecting one
+     pattern number from the font.  The available stipple fonts
+     are listed in the "font" manual page.
+
+     The number register $$$$ contains the process id of the TROFF
+     process.
+
+     The string ..TT contains the name of the current typesetter
+     (e.g., _p_s_c, _v_a, _v_p, _i_p).
+
+     The ..fftt command causes the named font to be loaded on font
+     position 0 (which is in all other ways inaccessible) if the
+     font exists and is not currently mounted by default or by a
+     ..ffpp command.  The font must be still or again in position 0
+     when the line is printed.
+
+     Transparent mode (\!) has been fixed so that transparent
+     output actually appears in the output; thus special commands
+     can be passed through to postprocessors by witchcraft like
+
+     .if "\*(.T"psc" \!x ...
+
+     (If this makes no sense to you, you shouldn't be using it
+     anyway.)
+
+DDeelleettiioonnss
+     The ..ffzz and ..llii commands are no more.  The --pp, --gg and ++nn
+     command line arguments have also been eliminated, as has the
+     hhpp number register.
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     2
+
+
+

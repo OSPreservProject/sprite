@@ -1,0 +1,54 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    shirriff:1.1; strict;
+comment  @# @;
+
+
+1.1
+date     90.12.18.16.49.12;  author shirriff;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#
+# Prototype Makefile for shell scripts.  
+#
+# This Makefile is automatically generated.
+# DO NOT EDIT IT OR YOU MAY LOSE YOUR CHANGES.
+#
+# Generated from /sprite/lib/mkmf/Makefile.script
+# Sun Oct  1 18:43:34 PDT 1989
+#
+# For more information, refer to the mkmf manual page.
+#
+# $Header: /sprite/lib/mkmf/RCS/Makefile.script,v 1.6 89/08/18 11:21:51 douglis Exp Locker: rab $ SPRITE (Berkeley)
+#
+# Allow mkmf
+
+MACHINES	= sun3 spur sun4 ds3100
+MAKEFILE	= Makefile
+MANPAGES	= 
+NAME		= pmake
+SYSMAKEFILE	= script.mk
+TM		= ds3100
+TYPE		= personal
+DISTDIR        ?= 
+
+#if exists(local.mk)
+#include	"local.mk"
+#else
+#include	<$(SYSMAKEFILE)>
+#endif
+@

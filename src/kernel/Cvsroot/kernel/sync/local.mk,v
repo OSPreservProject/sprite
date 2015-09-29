@@ -1,0 +1,45 @@
+head     9.1;
+branch   ;
+access   ;
+symbols  ds3100:9.1 sun3:9.1;
+locks    ; strict;
+comment  @@;
+
+
+9.1
+date     91.12.18.13.53.57;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@
+Add local.mk lost in move to scvs
+@
+
+
+9.1
+log
+@Added local.mk lost in move to scvs
+@
+text
+@#
+# This file is included by Makefile.  Makefile is generated automatically
+# by mkmf, and this file provides additional local personalization.  The
+# variable SYSMAKEFILE is provided by Makefile;  it's a system Makefile
+# that must be included to set up various compilation stuff.
+#
+
+
+#
+# Optimization is turned off because the current compiler (1.37.1)
+# for the sun3 does not produce correct code for Mach_GetCallerPC().
+# The register that the pc was stored into, and the one which it was
+
+#if !empty(TM:Msun3) 
+NOOPTIMIZATION = yes		
+#endif
+
+#include	<$(SYSMAKEFILE)>
+
+@

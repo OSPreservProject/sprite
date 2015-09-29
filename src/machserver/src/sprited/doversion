@@ -1,0 +1,68 @@
+#! /sprite/cmds/csh -f
+#
+#	Usage: doversion versionInfo
+#	versionInfo controls the minor number of the version. If it is
+#	TRUE then the version is incremented from the last build, if
+#	it is FALSE it is not incremented, and any other value is taken
+#	to be the version number to use.
+#
+# $Header: /user5/kupfer/spriteserver/src/sprited/RCS/doversion,v 1.2 92/04/07 13:30:59 kupfer Exp $ SPRITE (Berkeley)
+#
+# Copyright 1989 Regents of the University of California
+# Permission to use, copy, modify, and distribute this
+# software and its documentation for any purpose and without
+# fee is hereby granted, provided that the above copyright
+# notice appear in all copies.  The University of California
+# makes no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without
+# express or implied warranty.
+#
+
+onintr bailout
+
+set log = "no"
+
+if ($#argv >= 1) then
+    set versionInfo = $1
+else
+    set versionInfo = "TRUE"
+endif
+
+if (-e version) then
+    set version = `cat version`
+else
+    set version = 0
+    set log = "yes"
+endif
+
+switch ($versionInfo)
+    case "TRUE":
+	@ version++
+	echo $version > version
+	set log = "yes"
+	breaksw
+    case "FALSE":
+	breaksw
+    default:
+	set version = $versionInfo
+	set log = "yes"
+	breaksw
+endsw
+
+echo $version >! version
+if ($version < 10 ) then
+    set version = "00"$version
+else if ($version < 100) then
+    set version = "0"$version
+endif
+
+if ($log == "yes") then
+    echo "" >> versionLog
+    echo "srv.$version" >> versionLog
+    echo "Remember to log message for version srv.$version in versionLog"
+endif
+mkversion -p "SPRITE VERSION srv.$version (MACHINE)" > version.h.template
+exit 0
+
+bailout:
+exit 1

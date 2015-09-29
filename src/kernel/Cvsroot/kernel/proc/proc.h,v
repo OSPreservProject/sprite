@@ -1,0 +1,2451 @@
+head     9.26;
+branch   ;
+access   ;
+symbols  ds3100:9.26 sun3:9.26 sun4nw:9.25 symm:9.25 spur:9.25 sprited:9.23.1 Summer89:9.0 newlib:8.0 Summer88:6.0 argString:5.5;
+locks    ; strict;
+comment  @ * @;
+
+
+9.26
+date     92.01.06.15.03.43;  author kupfer;  state Exp;
+branches ;
+next     9.25;
+
+9.25
+date     91.08.24.19.55.34;  author mottsmth;  state Exp;
+branches ;
+next     9.24;
+
+9.24
+date     91.08.22.12.59.28;  author mendel;  state Exp;
+branches ;
+next     9.23;
+
+9.23
+date     91.05.30.15.05.48;  author kupfer;  state Exp;
+branches 9.23.1.1;
+next     9.22;
+
+9.22
+date     91.05.17.18.26.53;  author kupfer;  state Exp;
+branches ;
+next     9.21;
+
+9.21
+date     91.05.17.17.29.36;  author kupfer;  state Exp;
+branches ;
+next     9.20;
+
+9.20
+date     90.10.10.16.58.31;  author kupfer;  state Exp;
+branches ;
+next     9.19;
+
+9.19
+date     90.10.09.11.52.01;  author jhh;  state Exp;
+branches ;
+next     9.18;
+
+9.18
+date     90.10.08.16.21.24;  author mendel;  state Exp;
+branches ;
+next     9.17;
+
+9.17
+date     90.10.01.18.55.06;  author mendel;  state Exp;
+branches ;
+next     9.16;
+
+9.16
+date     90.09.12.13.57.55;  author jhh;  state Exp;
+branches ;
+next     9.15;
+
+9.15
+date     90.09.12.13.54.48;  author jhh;  state Exp;
+branches ;
+next     9.14;
+
+9.14
+date     90.09.11.12.17.12;  author jhh;  state Exp;
+branches ;
+next     9.13;
+
+9.13
+date     90.09.06.17.56.47;  author jhh;  state Exp;
+branches ;
+next     9.12;
+
+9.12
+date     90.08.30.18.55.13;  author mgbaker;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     90.07.30.16.18.56;  author rab;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     90.07.30.15.59.33;  author shirriff;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     90.07.30.15.45.51;  author douglis;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     90.07.16.16.17.48;  author shirriff;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.07.15.13.28.23;  author shirriff;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.06.22.00.06.48;  author douglis;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.01.05.10.55.29;  author douglis;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     89.12.18.17.36.54;  author douglis;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     89.11.27.09.49.50;  author douglis;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.26.15.21.58;  author douglis;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.12.11.12.19;  author douglis;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.14.29;  author douglis;  state Stable;
+branches ;
+next     8.10;
+
+8.10
+date     89.08.22.14.56.35;  author douglis;  state Exp;
+branches ;
+next     8.9;
+
+8.9
+date     89.07.31.17.56.55;  author douglis;  state Exp;
+branches ;
+next     8.8;
+
+8.8
+date     89.07.28.17.12.59;  author douglis;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.06.09.17.47.50;  author douglis;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.05.28.01.18.47;  author rab;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.04.06.12.07.41;  author jhh;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.02.28.12.06.21;  author jhh;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.02.19.22.06.45;  author jhh;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.02.09.17.37.59;  author douglis;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.12.21.13.56.24;  author douglis;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.29.04;  author douglis;  state Stable;
+branches ;
+next     6.5;
+
+6.5
+date     88.11.04.12.21.30;  author douglis;  state Exp;
+branches ;
+next     6.4;
+
+6.4
+date     88.10.28.12.56.02;  author douglis;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.10.28.12.55.31;  author douglis;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.31.17.54.48;  author douglis;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.25.12.07.23;  author nelson;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.21.32;  author brent;  state Stable;
+branches ;
+next     5.20;
+
+5.20
+date     88.08.01.16.36.36;  author ouster;  state Exp;
+branches ;
+next     5.19;
+
+5.19
+date     88.07.12.13.47.39;  author douglis;  state Exp;
+branches ;
+next     5.18;
+
+5.18
+date     88.06.30.17.32.09;  author douglis;  state Exp;
+branches ;
+next     5.17;
+
+5.17
+date     88.06.27.13.44.57;  author ouster;  state Exp;
+branches ;
+next     5.16;
+
+5.16
+date     88.05.05.18.17.13;  author brent;  state Exp;
+branches ;
+next     5.15;
+
+5.15
+date     88.05.05.17.55.30;  author nelson;  state Exp;
+branches ;
+next     5.14;
+
+5.14
+date     88.05.05.16.28.03;  author nelson;  state Exp;
+branches ;
+next     5.13;
+
+5.13
+date     88.05.04.16.44.47;  author nelson;  state Exp;
+branches ;
+next     5.12;
+
+5.12
+date     88.04.27.18.54.58;  author nelson;  state Exp;
+branches ;
+next     5.11;
+
+5.11
+date     88.04.27.18.52.54;  author nelson;  state Exp;
+branches ;
+next     5.10;
+
+5.10
+date     88.04.22.14.20.21;  author nelson;  state Exp;
+branches ;
+next     5.9;
+
+5.9
+date     88.04.18.09.07.00;  author ouster;  state Exp;
+branches ;
+next     5.8;
+
+5.8
+date     88.04.13.11.27.02;  author ouster;  state Exp;
+branches ;
+next     5.7;
+
+5.7
+date     88.03.24.11.44.10;  author douglis;  state Exp;
+branches ;
+next     5.6;
+
+5.6
+date     88.03.15.09.34.40;  author brent;  state Exp;
+branches ;
+next     5.5;
+
+5.5
+date     88.03.02.11.32.42;  author douglis;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     87.12.15.15.19.02;  author nelson;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     87.11.17.14.49.01;  author nelson;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.10.22.14.56.29;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.10.09.09.43.02;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.46.38;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.23.1.1
+date     91.08.15.20.12.55;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.26
+log
+@Add Proc_UnlockAndSwitch.
+@
+text
+@/*
+ * proc.h --
+ *
+ *	External declarations of routines 
+ *	for managing processes.
+ *
+ * Copyright 1986, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ * rcsid $Header: /sprite/src/kernel/Cvsroot/kernel/proc/proc.h,v 9.25 91/08/24 19:55:34 mottsmth Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _PROC
+#define _PROC
+
+#ifdef KERNEL
+#include <procTypes.h>
+#include <user/sync.h>
+#include <syncLock.h>
+#include <list.h>
+#include <timer.h>
+#include <sig.h>
+#include <mach.h>
+#include <sysSysCallParam.h>
+#include <rpc.h>
+#else
+#include <kernel/procTypes.h>
+#include <sync.h>
+#include <kernel/syncLock.h>
+#include <list.h>
+#include <kernel/timer.h>
+#include <kernel/sig.h>
+#include <kernel/mach.h>
+#include <kernel/sysSysCallParam.h>
+#include <kernel/rpc.h>
+#endif /* */
+
+/*
+ *  proc_RunningProcesses points to an array of pointers to
+ *  Proc_ControlBlock structures of processes currently running on each
+ *  CPU.  It is initialized by Proc_Init at boot time to the appropriate
+ *  size, which depends on the workstation configuration.
+ */
+
+extern Proc_ControlBlock  **proc_RunningProcesses;
+
+
+/*
+ *  proc_PCBTable is the array of all valid PCB's in the system.
+ *  It is initialized by Proc_Init at boot time to the appropriate size,
+ *  which depends on the workstation configuration.
+ */
+
+extern Proc_ControlBlock **proc_PCBTable;
+
+
+/*
+ *   Keep track of the maximum number of processes at any given time.
+ */
+
+extern int proc_MaxNumProcesses;
+
+/*
+ * set to TRUE to disallow all migrations to this machine.
+ */
+extern Boolean proc_RefuseMigrations;
+
+/*
+ *  Macros to manipulate process IDs.
+ */
+
+#define Proc_ComparePIDs(p1, p2) ((p1) == (p2))
+
+#define Proc_GetPCB(pid) (proc_PCBTable[(pid) & PROC_INDEX_MASK])
+
+#define Proc_ValidatePID(pid) \
+    ((((pid) & PROC_INDEX_MASK) < proc_MaxNumProcesses) && \
+     (((pid) == proc_PCBTable[(pid) & PROC_INDEX_MASK]->processID)))
+
+#define PROC_GET_VALID_PCB(pid, procPtr) \
+    if (((pid) & PROC_INDEX_MASK) >= proc_MaxNumProcesses) { \
+	procPtr = (Proc_ControlBlock *) NIL; \
+    } else { \
+	procPtr = proc_PCBTable[(pid) & PROC_INDEX_MASK]; \
+	if ((pid) != (procPtr)->processID) { \
+	    procPtr = (Proc_ControlBlock *) NIL; \
+	} \
+    }
+
+#define	Proc_GetHostID(pid) (((pid) & PROC_ID_NUM_MASK) >> PROC_ID_NUM_SHIFT)
+
+/*
+ * Macros to determine and set the "actual" currently running process.
+ */
+
+#define	Proc_GetActualProc() \
+	proc_RunningProcesses[Mach_GetProcessorNumber()]
+#define Proc_SetActualProc(processPtr) \
+	proc_RunningProcesses[Mach_GetProcessorNumber()] = (processPtr)
+
+#define Proc_GetCurrentProc() Proc_GetActualProc()
+#define Proc_SetCurrentProc(processPtr)	Proc_SetActualProc(processPtr)
+
+/*
+ * Various routines use Proc_UseRpcBuffer to decide whether to copy 
+ * to/from user address space or kernel address space.  A common 
+ * example of using a kernel (RPC) buffer is when a migrated process 
+ * invokes a system call that is forwarded home.
+ * This macro bypasses Proc_GetEffectiveProc, since
+ * proc_RunningProcesses[processor] must be non-NIL.
+ */
+
+#define	Proc_UseRpcBuffer() \
+    (proc_RunningProcesses[Mach_GetProcessorNumber()]->rpcClientProcess != \
+		((Proc_ControlBlock *) NIL))
+
+/*
+ * Used to get the lock at the top of the lock stack without popping it off.
+ */
+#define Proc_GetCurrentLock(pcbPtr, typePtr, lockPtrPtr) \
+    { \
+	if ((pcbPtr)->lockStackSize <= 0) { \
+	    *(typePtr) = -1; \
+	    *(lockPtrPtr) = (Address) NIL; \
+	} else { \
+	    *(typePtr) = (pcbPtr)->lockStack[(pcbPtr)->lockStackSize-1].type; \
+	    *(lockPtrPtr) = \
+		(pcbPtr)->lockStack[(pcbPtr)->lockStackSize-1].lockPtr; \
+	} \
+    }
+/* 
+ * External procedures.
+ */
+
+extern ReturnStatus 	Proc_ByteCopy _ARGS_((Boolean copyIn, int numBytes,
+				Address sourcePtr, Address destPtr));
+extern void		Proc_CallFunc _ARGS_((void (*func)(
+						   ClientData clientData, 
+						   Proc_CallInfo *callInfoPtr), 
+				ClientData clientData, unsigned int interval));
+extern ClientData 	Proc_CallFuncAbsTime _ARGS_((void (*func)(
+						   ClientData clientData, 
+						   Proc_CallInfo *callInfoPtr), 
+				ClientData clientData, Timer_Ticks time));
+extern void 		Proc_CancelCallFunc _ARGS_((ClientData token));
+extern	ReturnStatus	Proc_Debug _ARGS_((Proc_PID pid, 
+				Proc_DebugReq request, int numBytes,
+				Address srcAddr, Address destAddr));
+extern	void		Proc_DestroyMigratedProc _ARGS_((ClientData pidData,
+				Proc_CallInfo *callInfoPtr));
+extern ReturnStatus 	Proc_Detach _ARGS_((int status));
+extern void 		Proc_DetachInt _ARGS_((register 
+				Proc_ControlBlock *procPtr));
+extern	ReturnStatus	Proc_DoForEveryProc _ARGS_((Boolean (*booleanFuncPtr)
+						(Proc_ControlBlock *pcbPtr),
+				ReturnStatus (*actionFuncPtr)(Proc_PID pid), 
+				Boolean ignoreStatus, int *numMatchedPtr));
+extern ReturnStatus 	Proc_DoRemoteCall _ARGS_((int callNumber, int numWords,
+				ClientData *argsPtr, Sys_CallParam *specsPtr));
+extern	ReturnStatus	Proc_Dump _ARGS_((void));
+extern	void		Proc_DumpPCB _ARGS_((Proc_ControlBlock *procPtr));
+extern	ReturnStatus	Proc_EvictForeignProcs _ARGS_((void));
+extern	ReturnStatus	Proc_EvictProc _ARGS_((Proc_PID pid));
+extern	int		Proc_Exec _ARGS_((char *fileName, 
+				char **argsPtrArray, char **envPtrArray,
+				Boolean debugMe, int host));
+extern int 		Proc_ExecEnv _ARGS_((char *fileName, 
+				char **argPtrArray, char **envPtrArray, 
+				Boolean debugMe));
+extern void 		Proc_Exit _ARGS_((int status));
+extern void 		Proc_ExitInt _ARGS_((int reason, int status, int code));
+extern	void		Proc_FlagMigration _ARGS_((Proc_ControlBlock *procPtr,
+				int hostID, Boolean exec));
+extern	int		Proc_Fork _ARGS_((Boolean shareHeap, Proc_PID *pidPtr));
+extern	void		Proc_VforkWakeup _ARGS_((Proc_ControlBlock *procPtr));
+extern	int		Proc_Vfork _ARGS_(());
+extern	Proc_ControlBlock *Proc_GetEffectiveProc _ARGS_((void));
+extern	ReturnStatus	Proc_GetFamilyID _ARGS_((Proc_PID pid,
+				Proc_PID *familyIDPtr));
+extern	ReturnStatus	Proc_GetGroupIDs _ARGS_((int numGIDs, int *gidArrayPtr,
+				int *trueNumGIDsPtr));
+extern	ReturnStatus	Proc_GetHostIDs _ARGS_((int *virtualHostPtr, 
+				int *physicalHostPtr));
+extern	ReturnStatus	Proc_GetIDs _ARGS_((Proc_PID *procIDPtr,
+				Proc_PID *parentIDPtr, int *userIDPtr,
+				int *effUserIDPtr));
+extern	ReturnStatus	Proc_GetIntervalTimer _ARGS_((int timerType,
+				Proc_TimerInterval *userTimerPtr));
+extern	ReturnStatus	Proc_GetPCBInfo _ARGS_((Proc_PID firstPid,
+				Proc_PID lastPid, int hostID, int infoSize,
+				Address bufferPtr, Proc_PCBArgString *argsPtr,
+				int *trueNumBuffersPtr));
+extern	ReturnStatus	Proc_GetPriority _ARGS_((Proc_PID pid, 
+				int *priorityPtr));
+extern	ReturnStatus	Proc_GetRemoteSegInfo _ARGS_((int hostID, int segNum,
+				Vm_SegmentInfo *segInfoPtr));
+extern	ReturnStatus	Proc_GetResUsage _ARGS_((Proc_PID pid, 
+				Proc_ResUsage *bufferPtr));
+extern	Boolean		Proc_HasPermission _ARGS_((int userID));
+extern void 		Proc_InformParent _ARGS_((register 
+				Proc_ControlBlock *procPtr, int childStatus));
+extern void 		Proc_Init _ARGS_((void));
+extern	void		Proc_InitMainEnviron _ARGS_((
+				Proc_ControlBlock *procPtr));
+extern void 		Proc_InitMainProc _ARGS_((void));
+extern	Boolean		Proc_IsEvictable _ARGS_((Proc_ControlBlock *procPtr));
+extern	int		Proc_KillAllProcesses _ARGS_((Boolean userProcsOnly));
+extern	void		Proc_KDump _ARGS_((ClientData dummy));
+extern	void		Proc_Lock _ARGS_((Proc_ControlBlock *procPtr));
+extern ReturnStatus 	Proc_LockFamily _ARGS_((int familyID, 
+				List_Links **familyListPtr, int *userIDPtr));
+extern	Proc_ControlBlock *Proc_LockPID _ARGS_((Proc_PID pid));
+extern ReturnStatus 	Proc_MakeStringAccessible _ARGS_((int maxLength,
+				char **stringPtrPtr, int *accessLengthPtr,
+				int *newLengthPtr));
+extern void 		Proc_MakeUnaccessible _ARGS_((Address addr, 
+				int numBytes));
+extern	void		Proc_MigAddToCounter _ARGS_((int value, 
+				unsigned int *intPtr, 
+				unsigned int *squaredPtr));
+extern	ReturnStatus	Proc_MigGetStats _ARGS_((Address addr));
+extern	void		Proc_MigInit _ARGS_((void));
+extern	ReturnStatus	Proc_Migrate _ARGS_((Proc_PID pid, int hostID));
+extern	void		Proc_MigrateStartTracing _ARGS_((void));
+extern	void		Proc_MigrateTrap _ARGS_((Proc_ControlBlock *procPtr));
+extern	ReturnStatus	Proc_MigResetStats _ARGS_((void));
+extern ReturnStatus	Proc_MigUpdateInfo _ARGS_((Proc_ControlBlock *procPtr));
+extern	void		Proc_NeverMigrate _ARGS_((Proc_ControlBlock *procPtr));
+extern ReturnStatus	Proc_NewProc _ARGS_((Address PC, int procType,
+				Boolean shareHeap, Proc_PID *pidPtr,
+				char *procName, Boolean shareAllSegs));
+extern	void		Proc_NotifyMigratedWaiters _ARGS_((ClientData data,
+				Proc_CallInfo *callInfoPtr));
+extern	ReturnStatus	Proc_Profile _ARGS_((int shiftSize, int lowPC,
+				int highPC, Time interval, int counterArray[]));
+extern	void		Proc_PushLockStack _ARGS_((Proc_ControlBlock *pcbPtr,
+				int type, Address lockPtr));
+extern void 		Proc_Reaper _ARGS_((ClientData data,
+				Proc_CallInfo *callInfoPtr));
+extern void		Proc_ResumeProcess _ARGS_((Proc_ControlBlock *procPtr,
+				Boolean killingProc));
+extern	ReturnStatus	Proc_RemoteDummy _ARGS_((int callNumber, 
+				int numWords, Sys_ArgArray *argsPtr,
+				Sys_CallParam *specsPtr));
+extern int 		Proc_RemoteExec _ARGS_((char *fileName, 
+				char **argPtrArray,char **envPtrArray, 
+				int host));
+extern	void		Proc_RemoveFromLockStack _ARGS_((
+				Proc_ControlBlock *pcbPtr, Address lockPtr));
+extern	void		Proc_ResumeMigProc _ARGS_((int pc));
+extern	ReturnStatus	Proc_RpcGetPCB _ARGS_((ClientData srvToken,
+				int clientID, int command,
+				Rpc_Storage *storagePtr));
+extern	ReturnStatus	Proc_RpcMigCommand _ARGS_((ClientData srvToken,
+				int hostID, int command, 
+				Rpc_Storage *storagePtr));
+extern	ReturnStatus	Proc_RpcRemoteCall _ARGS_((ClientData srvToken,
+				int clientID, int command, 
+				Rpc_Storage *storagePtr));
+extern ReturnStatus 	Proc_RpcRemoteWait _ARGS_((ClientData srvToken,
+				int clientID, int command, 
+				Rpc_Storage *storagePtr));
+extern void		Proc_UnlockAndSwitch _ARGS_((
+				Proc_ControlBlock *procPtr,
+				Proc_State state));
+extern void 		Proc_UnlockFamily _ARGS_((int familyID));
+extern void 		Proc_ServerInit _ARGS_((void));
+extern void 		Proc_ServerProc _ARGS_((void));
+extern	void		Proc_SetEffectiveProc _ARGS_((
+				Proc_ControlBlock *procPtr));
+extern	ReturnStatus	Proc_SetFamilyID _ARGS_((Proc_PID pid, 
+				Proc_PID familyID));
+extern	ReturnStatus	Proc_SetGroupIDs _ARGS_((int numGIDs, 
+				int *gidArrayPtr));
+extern	ReturnStatus	Proc_SetIDs _ARGS_((int userID, int effUserID));
+extern	ReturnStatus	Proc_SetIntervalTimer _ARGS_((int timerType,
+				Proc_TimerInterval *newTimerPtr,
+				Proc_TimerInterval *oldTimerPtr));
+extern	ReturnStatus	Proc_SetPriority _ARGS_((Proc_PID pid, int priority,
+				Boolean useFamily));
+extern	void		Proc_SetServerPriority _ARGS_((Proc_PID pid));
+extern	void		Proc_SetupEnviron _ARGS_((Proc_ControlBlock *procPtr));
+extern	ReturnStatus	Proc_StringNCopy _ARGS_((int numBytes, char *srcStr,
+				char *destStr, int *strLengthPtr));
+extern	void		Proc_SuspendProcess _ARGS_((
+				Proc_ControlBlock *procPtr, Boolean debug,
+				int termReason, int termStatus, 
+				int termCode));
+extern	void		Proc_Unlock _ARGS_((Proc_ControlBlock *procPtr));
+extern	ReturnStatus	Proc_Wait _ARGS_((int numPids, Proc_PID pidArray[],
+				int flags, Proc_PID *procIDPtr, 
+				int *reasonPtr, int *statusPtr, 
+				int *subStatusPtr, Proc_ResUsage *usagePtr));
+extern	ReturnStatus	Proc_WaitForHost _ARGS_((int hostID));
+extern	ReturnStatus	Proc_WaitForMigration _ARGS_((Proc_PID processID));
+extern	void		Proc_WakeupAllProcesses _ARGS_((void));
+extern	int		Proc_ServerProcCreate _ARGS_((int numToCreate));
+extern	int		proc_NumServers;
+/*
+ * The following are kernel stubs corresponding to system calls.  They
+ * used to be known by the same name as the system call, but the C library
+ * has replaced them at user level in order to use the stack environments.
+ * The "Stub" suffix therefore avoids naming conflicts with the library.
+ */
+
+extern	ReturnStatus	Proc_SetEnvironStub _ARGS_((
+				Proc_EnvironVar environVar));
+extern	ReturnStatus	Proc_UnsetEnvironStub _ARGS_((
+				Proc_EnvironVar environVar));
+extern	ReturnStatus	Proc_GetEnvironVarStub _ARGS_((
+				Proc_EnvironVar environVar));
+extern	ReturnStatus	Proc_GetEnvironRangeStub _ARGS_((int first, int last,
+				Proc_EnvironVar *envArray, 
+				int *numActualVarsPtr));
+extern	ReturnStatus	Proc_CopyEnvironStub _ARGS_((void));
+extern	ReturnStatus	Proc_InstallEnvironRangeStub _ARGS_((
+				Proc_EnvironVar environVar, int numVars));
+extern 	int 		Proc_KernExec _ARGS_((char *fileName, 
+				char **argPtrArray));
+
+#endif /* _PROC */
+@
+
+
+9.25
+log
+@Add true vfork support
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 9.23 91/05/30 15:05:48 kupfer Exp $ SPRITE (Berkeley)
+d270 3
+@
+
+
+9.24
+log
+@Added Proc_ServerProcCreate.
+@
+text
+@d182 2
+d238 1
+a238 1
+				char *procName));
+@
+
+
+9.23
+log
+@Proc_IsMigratedProcess renamed to Proc_UseRpcBuffer.
+Proc_IsMigratedProc renamed to Proc_IsEvictable.  Some tweaks to the
+comments.
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 9.22 91/05/17 18:26:53 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d299 1
+@
+
+
+9.23.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 9.23 91/05/30 15:05:48 kupfer Exp $ SPRITE (Berkeley)
+@
+
+
+9.22
+log
+@Also need sysSysCallParam.h for user programs.
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 9.21 91/05/17 17:29:36 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d112 5
+a116 3
+ * Various routines use Proc_IsMigratedProcess to decide whether the
+ * effective process is different from the actual process (i.e.,
+ * migrated).  This macro bypasses the procedure call, since
+d120 1
+a120 1
+#define	Proc_IsMigratedProcess() \
+d211 1
+a211 2
+extern	Boolean		Proc_IsMigratedProc _ARGS_((
+				Proc_ControlBlock *procPtr));
+@
+
+
+9.21
+log
+@Make sure macro definitions put parentheses around their arguments.
+(Minor exception for PROC_GET_VALID_PCB; I didn't parenthesize
+assignments to a macro argument.)
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 9.20 90/10/10 16:58:31 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d41 1
+@
+
+
+9.20
+log
+@Proc_KDump should take a ClientData
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 9.19 90/10/09 11:52:01 jhh Exp Locker: kupfer $ SPRITE (Berkeley)
+d78 1
+a78 1
+#define Proc_ComparePIDs(p1, p2) (p1 == p2)
+d80 1
+a80 1
+#define Proc_GetPCB(pid) (proc_PCBTable[pid & PROC_INDEX_MASK])
+d83 2
+a84 2
+    (((pid & PROC_INDEX_MASK) < proc_MaxNumProcesses) && \
+     ((pid == proc_PCBTable[pid & PROC_INDEX_MASK]->processID)))
+d87 1
+a87 1
+    if ((pid & PROC_INDEX_MASK) >= proc_MaxNumProcesses) { \
+d90 2
+a91 2
+	procPtr = proc_PCBTable[pid & PROC_INDEX_MASK]; \
+	if (pid != procPtr->processID) { \
+d96 1
+a96 1
+#define	Proc_GetHostID(pid) ((pid & PROC_ID_NUM_MASK) >> PROC_ID_NUM_SHIFT)
+d105 1
+a105 1
+	proc_RunningProcesses[Mach_GetProcessorNumber()] = processPtr
+@
+
+
+9.19
+log
+@function prototypes
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 9.18 90/10/08 16:21:24 mendel Exp $ SPRITE (Berkeley)
+d211 1
+a211 1
+extern	void		Proc_KDump _ARGS_((void));
+@
+
+
+9.18
+log
+@Fixed calling sequence to Proc_DestroyMigratedProc().
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 9.17 90/10/01 18:55:06 mendel Exp $ SPRITE (Berkeley)
+d235 1
+a235 1
+extern	void		Proc_NotifyMigratedWaiters _ARGS_((Proc_PID pid,
+d241 1
+a241 2
+extern void 		Proc_Reaper _ARGS_((register 
+				Proc_ControlBlock *procPtr, 
+@
+
+
+9.17
+log
+@Added function prototypes for CallFunc routines and data structures.
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 9.16 90/09/12 13:57:55 jhh Exp Locker: mendel $ SPRITE (Berkeley)
+d153 2
+a154 1
+extern	void		Proc_DestroyMigratedProc _ARGS_((ClientData pidData));
+@
+
+
+9.16
+log
+@changed format of #includes to use <>
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 9.15 90/09/12 13:54:48 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+d141 3
+a143 1
+extern void		Proc_CallFunc _ARGS_((void (*func)(), 
+d145 3
+a147 1
+extern ClientData 	Proc_CallFuncAbsTime _ARGS_((void (*func)(), 
+d157 3
+a159 2
+extern	ReturnStatus	Proc_DoForEveryProc _ARGS_((Boolean (*booleanFuncPtr)(),
+				ReturnStatus (*actionFuncPtr)(), 
+@
+
+
+9.15
+log
+@fixed problems with Rpc_Storage
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 9.14 90/09/11 12:17:12 jhh Exp $ SPRITE (Berkeley)
+d24 9
+a32 9
+#include "procTypes.h"
+#include "user/sync.h"
+#include "syncLock.h"
+#include "list.h"
+#include "timer.h"
+#include "sig.h"
+#include "mach.h"
+#include "sysSysCallParam.h"
+#include "rpc.h"
+@
+
+
+9.14
+log
+@more prototyping stuff
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 9.13 90/09/06 17:56:47 jhh Exp $ SPRITE (Berkeley)
+d251 1
+a251 1
+				struct Rpc_Storage *storagePtr));
+d254 1
+a254 1
+				struct Rpc_Storage *storagePtr));
+d257 1
+a257 1
+				struct Rpc_Storage *storagePtr));
+d260 1
+a260 2
+				struct Rpc_Storage *storagePtr));
+
+@
+
+
+9.13
+log
+@First pass at function prototypes
+@
+text
+@d4 1
+a4 1
+ *	External declarations of data structures and routines 
+d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 9.12 90/08/30 18:55:13 mgbaker Exp Locker: jhh $ SPRITE (Berkeley)
+d24 1
+a24 1
+#include "user/proc.h"
+d31 1
+a32 1
+#include "sysSysCallParam.h"
+d34 1
+a34 1
+#include <proc.h>
+d41 1
+a44 441
+ * Constants for Proc_Exec().  
+ *
+ * PROC_MAX_EXEC_ARG_LENGTH	The maximum length of all arguments that are
+ *				passed to exec.  Also used to bound any
+ *				individual argument.
+ * PROC_MAX_EXEC_ARGS		The maximum number of arguments that can be
+ *				passed to an exec'd process.  By making it
+ *				the same, each argument could conceivably be
+ *				a single byte.
+ */
+
+#define	PROC_MAX_EXEC_ARG_LENGTH	20480
+#define	PROC_MAX_EXEC_ARGS		20480
+
+/*
+ * Masks to extract the proc table index and the generation number from
+ * a process id.  Process IDs need to be unique across reuses of the same
+ * procTable slot, and they need to be unique from host to host.
+ */
+
+/*
+ * PROC_INDEX_MASK is defined in user/proc.h.
+ * #define	PROC_INDEX_MASK		0x000000FF
+ */
+#define	PROC_ID_NUM_MASK	0x0000FF00
+#define PROC_ID_NUM_SHIFT	8
+#define	PROC_GEN_NUM_MASK	0x000F0000
+#define PROC_GEN_NUM_SHIFT	16
+
+
+/*
+ * Number of locks that can be pushed on the lock stack for a process. The
+ * stack is used in the sync module to determine the locking structure of the
+ * system.
+ */
+#define PROC_LOCKSTACK_SIZE 10
+
+
+/* DATA STRUCTURES */
+
+/*
+ * Structure passed to the function called by Proc_CallFunc.
+ */
+typedef struct {
+    unsigned int	interval;	/* Set by func to cause it to be 
+					 * rescheduled. */
+    ClientData		clientData;	/* Data given to Proc_CallFunc*(). */
+    ClientData		token;		/* Unique token to identify this call.*/
+} Proc_CallInfo;
+
+/*
+ * Structure to describe an environment.
+ */
+
+typedef struct {
+    int			refCount;	/* Number of processes using this 
+					   environment. */
+    int			size;		/* Number of elements in environment. */
+    struct ProcEnvironVar *varArray;	/* The environment itself. */
+} Proc_EnvironInfo;
+
+/*
+ * >>> Process state flags have been moved to user/proc.h <<<
+ */
+
+/*
+ *  Proc_PCBLinks is used to link the PCB entry into various doubly-linked
+ *  lists. For example, processes waiting on an event are linked togther.
+ */
+
+typedef struct {
+    List_Links links;			/* Linked list for the hash chain. */
+    struct Proc_ControlBlock *procPtr;	/* Back pointer to this structure. */
+} Proc_PCBLink;
+
+
+/*
+ * Proc_Time is used to represent time such that it can be understood
+ * by users through Proc_GetPCBInfo in a machine independent format and
+ * by the kernel in a machine dependent ticks format.  Thus all users of
+ * Proc_Time in the kernel should always use the ticks field and user
+ * programs that call Proc_GetPCBInfo should use the time field.
+ */
+typedef union {
+    Timer_Ticks	ticks;	/* The kernel's notion of time. */
+    Time	time;	/* The user's notion of time. */
+} Proc_Time;
+
+typedef struct {
+    int		type;		/* type of lock */
+    Address	lockPtr;	/* Ptr to lock */
+} Proc_LockStackElement;
+
+/*
+ *  The Proc_ControlBlock structure:
+ *   It contains information to manage the process such as virtual 
+ *   memory usage, cpu usage, scheduling info, process state, 
+ *   which processor the process is executing on, etc.
+ */
+
+typedef struct Proc_ControlBlock {
+    List_Links	links;		/* Used to link processes together. */
+
+    int		processor;	/* Processor number the process is running on
+				 * or wants to run on if the processor is
+				 * available.  */
+
+    Proc_State	state;		/* Describes a process's current running state.
+				 * >>> See Proc_State definitions in
+				 * >>> user/proc.h. */ 
+
+    int		genFlags;	/* Flags to describe a processes overall state.
+				 * >>> See definitions in user/proc.h. */ 
+    int		syncFlags;	/* Flags used by the sync module. */
+    int		schedFlags;	/* Flags used by the sched module. */
+    int		exitFlags;	/* Flags used by the exit-detach-
+			 	 * wait monitor. */
+
+    List_Links		childListHdr;	/* Header for list of children. */
+    List_Links		*childList;	/* Pointer to header of list. */
+    Proc_PCBLink	siblingElement;	/* Element in list of sibling 
+					 * processes. */
+    Proc_PCBLink	familyElement;	/* Element in a list of family
+					   members. */
+
+    /*
+     *-----------------------------------------------------------------
+     *
+     *   Various Process Identifiers.
+     *	
+     *	Note that the user and effectiveUser ID are kept here because
+     *	they are used for permission checking in various places.  There
+     *	is also a list of group IDs which is kept in the filesystem state.
+     *
+     *-----------------------------------------------------------------
+     */
+
+    Proc_PID	processID;		/* Actual process ID of this
+					 * process (for migrated processes
+					 * this is different than the PID
+					 * that the user sees). */
+    Proc_PID	parentID;		/* The process ID of the parent 
+					 * of this process. */
+    int		familyID;		/* The id of the process family that 
+					 * this process belongs to. */
+    int		userID;			/* The user id is used to check access
+					 * rights to files and check ability
+					 * to signal other processes. */
+    int		effectiveUserID;	/* The effective user id is used
+					 * for setuid access. */
+
+    /*
+     *-----------------------------------------------------------------
+     *
+     *    Synchronization fields.
+     *
+     * Synchronization state includes an event the process is waiting on.
+     * PCB's are linked into a hash chain keyed on this event.
+     *
+     *-----------------------------------------------------------------
+     */
+
+    int		 event;		 /* Event # the process is waiting for. */
+    Proc_PCBLink eventHashChain; /* Hash chain this PCB is linked to */
+
+    /*
+     * Monitor conditions for locking this PCB entry.
+     */
+
+    Sync_Condition	waitCondition;
+    Sync_Condition	lockedCondition;
+
+    /*
+     * Fields for remote waiting.  A token is kept to guard against the
+     * race between the wakeup message and the process's decision to sleep.
+     */
+
+    int			waitToken;
+
+    /*
+     *-----------------------------------------------------------------
+     *
+     *    Scheduling fields.
+     *
+     *-----------------------------------------------------------------
+     */
+
+
+    int 	 billingRate;	/* Modifies the scheduler's calculation of
+				 * the processes priority.  */
+    unsigned int recentUsage;	/* Amount of CPU time used recently */
+    unsigned int weightedUsage;	/* Smoothed avg. of CPU usage, weighted by
+				 * billing rate. */
+    unsigned int unweightedUsage; /* Smoothed avg. of CPU usage, not weighted by
+				   * billing rate. */
+
+    /*
+     *-----------------------------------------------------------------
+     *
+     *    Accounting and Resource Usage fields.
+     *
+     *-----------------------------------------------------------------
+     */
+
+    Proc_Time kernelCpuUsage;	/* How much time has been spent in kernel mode*/
+    Proc_Time userCpuUsage;	/* How much time has been spent in user mode. */
+
+    Proc_Time childKernelCpuUsage;	/* Sum of time spent in kernel mode for 
+				 	 * all terminated children. */
+    Proc_Time childUserCpuUsage;	/* Sum of time spent in user mode for
+				 	 * all terminated children. */
+    int 	numQuantumEnds;		/* number of times the process was 
+				 	 * context switched due to a quantum 
+					 * end. */
+    int		numWaitEvents;		/* number of times the process was
+					 * context switched due to its waiting 
+					 * for an event. */
+    unsigned int schedQuantumTicks;	/* Number of clock ticks until this 
+					 * process is due to be switched out. */
+
+
+    /*
+     *-----------------------------------------------------------------
+     *
+     *   Machine-Dependent fields.
+     *
+     *	General processor registers, stack information.
+     *
+     *-----------------------------------------------------------------
+     */ 
+    struct	Mach_State	*machStatePtr;
+
+
+    /*
+     *-----------------------------------------------------------------
+     *
+     *   Virtual Memory fields.
+     *
+     *-----------------------------------------------------------------
+     */
+    struct	Vm_ProcInfo	*vmPtr;
+
+    /*
+     *-----------------------------------------------------------------
+     *
+     *   I/O and File System fields.
+     *
+     *-----------------------------------------------------------------
+     */
+
+    struct Fs_ProcessState	*fsPtr;
+
+    /*
+     *-----------------------------------------------------------------
+     *
+     *   Termination Reason, Status and Status Subcode Information.
+     *
+     *-----------------------------------------------------------------
+     */
+
+    int	termReason;		/* Reason why process has died or
+				 * it has been detached. */
+				/* >>> See definitions in procUser.h */
+    int	termStatus;		/* Exit/detach status or signal number
+				 * that caused the process to die. */
+				/* >>> See definitions in procUser.h */
+    int	termCode;		/* The code for the signal. */
+				/* >>> See definitions in procUser.h */
+
+
+    /*
+     *-----------------------------------------------------------------
+     *
+     *	Signals
+     *
+     *-----------------------------------------------------------------
+     */
+
+    int		sigHoldMask;		/* Mask of signals to be held. */
+    int		sigPendingMask;		/* Mask of pending signals. */
+    					/* Array of the different types
+					   of actions for signals. */
+    int		sigActions[SIG_NUM_SIGNALS];
+    					/* Array of signal hold masks for 
+					   signal handlers. */
+    int		sigMasks[SIG_NUM_SIGNALS];
+					/* Array of signal handlers for 
+					   signals. */
+    int		sigCodes[SIG_NUM_SIGNALS];
+    int		sigFlags;		/* Flags to indicate the signal 
+					   state. */
+    int		oldSigHoldMask;		/* Mask of held signals when a
+					   Sig_Pause call starts. */
+    int		sigAddr;		/* Address of the fault. */
+
+    /*
+     * Info for interval timers. The timer info is not put directly in
+     * this struct so additional timers can be added without extending
+     * the struct. This information is used to deliver the SIG_TIMER signal
+     * to the process.
+     */
+    struct ProcIntTimerInfo	*timerArray;
+
+    /*
+     *---------------------------------------------------------------------
+     *
+     * Data for process migration.
+     *
+     *---------------------------------------------------------------------
+     */
+    int			peerHostID;	/* If on home node, ID of remote node.
+					 * If on remote node, ID of home node.
+					 * If not migrated, undefined. */
+    Proc_PID		peerProcessID; 	/* If on remote note, process ID on
+					 * home node, and vice-versa. */
+    struct Proc_ControlBlock
+	             *rpcClientProcess;	/* procPtr for migrated process
+					 * performing system call, if
+					 * applicable. */
+
+    /*
+     *---------------------------------------------------------------------
+     *
+     *  Miscellaneous items:
+     *
+     *---------------------------------------------------------------------
+     */
+
+    /*
+     * Info that describes the process's environment variable table.
+     */
+    Proc_EnvironInfo	*environPtr;
+
+    /*
+     * Arguments for the process, taken from Proc_Exec.
+     */
+    char	*argString;
+
+#ifdef LOCKDEP
+    /*
+     * Stack of locks that process has grabbed.
+     */
+     Proc_LockStackElement	lockStack[PROC_LOCKSTACK_SIZE];
+     int			lockStackSize;
+#endif
+
+#ifndef CLEAN_LOCK
+    /*
+     * Information on contention for PCB locks. PCB locks are implemented
+     * as a bit in the genflag field and don't use the standard locking
+     * stuff. The following field is used to keep lock information. 
+     * Its type is Sync_Semaphore, but it is not used as such.
+     */
+     Sync_Semaphore		lockInfo;
+#endif
+
+    /*
+     * Used to speed up basic kernel-call processing.  These two fields
+     * must be next to each other in the table, and in the order below.
+     * If you change this, you'll have to change the assembler code that
+     * takes kernel-call traps.
+     */
+
+    ReturnStatus (**kcallTable)();	/* Pointer to array of addresses,
+					 * which are procedures to handle
+					 * the various kernel calls.  Points
+					 * to a different place for migrated
+					 * processes than for processes running
+					 * at home. */
+    int specialHandling;		/* If non-zero, means the process
+					 * requires special (slower) handling
+					 * (deliver signal, switch contexts,
+					 * ect.) on return from the next kernel
+					 * call. */
+
+    /*
+     *---------------------------------------------------------------------
+     *
+     *  User level profiling information
+     *
+     *---------------------------------------------------------------------
+     */
+
+     short *Prof_Buffer;    /* Pointer to an array of profiling information
+                             * in the process's address space. */
+     int Prof_BufferSize;   /* The size of Prof_Buffer. */
+     int Prof_Offset;       /* Value subtracted from the program counter */
+     int Prof_Scale;        /* 16 bit fixed point fraction.  Scales the PC
+                             * to fit in the Prof_Buffer */
+     int Prof_PC;           /* Program counter recorded during the last
+                             * timer tick. */
+
+    /*
+     * This needs to go with the other migration stuff but can't without
+     * a world recompile.
+     */
+    Address	remoteExecBuffer;	 /* Buffer to store info for remote
+					  * exec prior to migration. */
+    Address	migCmdBuffer;		 /* Buffer to store multi-part
+					  * migration command. */
+    int		migCmdBufSize;		 /* Size of migCmdBuffer, for
+					  * sanity checks. */
+    int		migFlags;		 /* Flags used for migration. (Needs
+					  * to be reorganized to include things
+					  * currently in genFlags but that will
+					  * also require a world recompile.) */
+    Proc_Time   preEvictionUsage; 	 /* CPU usage (user + kernel)
+					  * as of the start of eviction. */
+    int         unixErrno;               /* Errno for unix system call. */
+    int         unixProgress;            /* Progress indicator for restarting
+                                            unix system calls. */
+    int		extraField[10];		/* Extra fields for later use. */
+
+} Proc_ControlBlock;
+
+/*
+ * Exit-detach-wait monitor flags:
+ *
+ *  PROC_DETACHED		- This process is detached from its parent.
+ *				  When this process exits, it won't go on the
+ *				  exiting processes list.
+ *  PROC_WAITED_ON		- This process is detached and the parent has 
+ *				  already done a Proc_Wait on it.
+ *  PROC_SUSPEND_STATUS		- The process went into the suspended state
+ *				  and it hasn't been waited on yet.
+ *  PROC_RESUME_STATUS		- The process was resumed and it hasn't been 
+ *				  waited on yet.
+ *  PROC_STATUSES		- The union of the two above statuses.
+ */
+
+#define PROC_DETACHED		0x01
+#define PROC_WAITED_ON		0x02
+#define	PROC_SUSPEND_STATUS	0x04
+#define	PROC_RESUME_STATUS	0x08
+#define	PROC_STATUSES		(PROC_SUSPEND_STATUS | PROC_RESUME_STATUS)
+
+
+
+
+
+/*
+d251 1
+a251 1
+				Rpc_Storage *storagePtr));
+d254 1
+a254 1
+				Rpc_Storage *storagePtr));
+d257 1
+a257 1
+				Rpc_Storage *storagePtr));
+d260 2
+a261 1
+				Rpc_Storage *storagePtr));
+@
+
+
+9.12
+log
+@Added 2 extern decl's.
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 9.11 90/07/30 16:18:56 rab Exp Locker: mgbaker $ SPRITE (Berkeley)
+d31 2
+d579 154
+a732 72
+extern void		  	Proc_Init();
+extern void		  	Proc_InitMainProc();
+extern ReturnStatus		Proc_NewProc();
+extern void			ProcStartUserProc();
+extern void			Proc_ExitInt();
+extern void			Proc_Exit();
+extern void			Proc_DetachInt();
+extern ReturnStatus		Proc_Detach();
+extern void			Proc_InformParent();	
+extern void			Proc_Reaper();
+extern void			Proc_NotifyMigratedWaiters();
+extern void			Proc_PutOnDebugList();
+extern void			Proc_SuspendProcess();
+extern void			Proc_ResumeProcess();
+extern int			Proc_ExecEnv();
+extern int			Proc_RemoteExec();
+extern ReturnStatus 		Proc_GetHostIDs();
+extern ReturnStatus		Proc_RpcRemoteWait();
+extern ReturnStatus		Proc_RpcGetPCB();
+
+
+extern ReturnStatus		Proc_EvictForeignProcs();
+extern ReturnStatus		Proc_EvictProc();
+extern Boolean			Proc_IsMigratedProc();
+extern void			Proc_FlagMigration();
+extern void			Proc_MigrateTrap();
+extern void			Proc_OkayToMigrate();
+extern ReturnStatus		Proc_MigSendUserInfo();
+extern ReturnStatus		Proc_DoRemoteCall();
+extern void			Proc_SetEffectiveProc();
+extern Proc_ControlBlock *	Proc_GetEffectiveProc();
+extern ReturnStatus		Proc_ByteCopy();
+extern ReturnStatus		Proc_MakeStringAccessible();
+extern void			Proc_MakeUnaccessible();
+extern void			Proc_MigrateStartTracing();
+extern void			Proc_DestroyMigratedProc();
+extern void			Proc_NeverMigrate();
+extern ReturnStatus		Proc_MigGetStats();
+extern ReturnStatus		Proc_MigZeroStats();
+extern ENTRY void	        Proc_MigAddToCounter();
+
+extern void			ProcInitMainEnviron();
+extern void			ProcSetupEnviron();
+extern void			ProcDecEnvironRefCount();
+
+extern void			Proc_SetServerPriority();
+
+extern	int			Proc_KillAllProcesses();
+extern	void			Proc_WakeupAllProcesses();
+
+extern	void			Proc_Unlock();
+extern	void			Proc_Lock();
+extern	Proc_ControlBlock	*Proc_LockPID();
+extern	ReturnStatus		Proc_LockFamily();
+extern	void			Proc_UnlockFamily();
+extern	void			Proc_TakeOffDebugList();
+extern	Boolean			Proc_HasPermission();
+
+extern	void			Proc_ServerInit();
+extern	void			Proc_CallFunc();
+extern	void			Proc_CancelCallFunc();
+extern	ClientData		Proc_CallFuncAbsTime();
+extern	void			Proc_ServerProc();
+extern	int			proc_NumServers;
+
+extern  ReturnStatus		Proc_Dump();
+extern  ReturnStatus		Proc_KDump();
+extern  void			Proc_DumpPCB();
+
+extern  void			Proc_RemoveFromLockStack();
+extern  void			Proc_PushLockStack();
+
+d740 14
+a753 7
+extern ReturnStatus		Proc_SetEnvironStub();
+extern ReturnStatus		Proc_UnsetEnvironStub();
+extern ReturnStatus		Proc_GetEnvironVarStub();
+extern ReturnStatus		Proc_GetEnvironRangeStub();
+extern ReturnStatus		Proc_InstallEnvironStub();
+extern ReturnStatus		Proc_CopyEnvironStub();
+extern int                      Proc_KernExec();
+@
+
+
+9.11
+log
+@Added a couple fields to PCB for unix system calls.
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 9.10 90/07/30 15:59:33 shirriff Exp Locker: rab $ SPRITE (Berkeley)
+d594 2
+@
+
+
+9.10
+log
+@Added extra fields for later use in Proc_ControlBlock.
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 9.9 90/07/30 15:45:51 douglis Exp Locker: shirriff $ SPRITE (Berkeley)
+d450 3
+a452 1
+
+@
+
+
+9.9
+log
+@added migration fields to PCB.
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/fd.proc/RCS/proc.h,v 9.9 90/07/30 11:30:41 douglis Exp $ SPRITE (Berkeley)
+d450 2
+@
+
+
+9.8
+log
+@Added Proc_KDump.
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 9.7 90/07/15 13:28:23 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+d444 6
+@
+
+
+9.7
+log
+@Added sigAddr field to proc.h to pass address to signal handler.
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 9.6 90/06/22 00:06:48 douglis Exp Locker: shirriff $ SPRITE (Berkeley)
+d631 1
+@
+
+
+9.6
+log
+@changes for large-RPC migration calls
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/fd.proc/RCS/proc.h,v 9.5 90/01/05 10:55:29 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+d335 1
+@
+
+
+9.5
+log
+@increased the maximum number of arguments and the max arg 
+length to be roughly compatible with bsd 4.3
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 9.4 89/12/18 17:36:54 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+d438 5
+a442 1
+					  * exec prior to migration */
+@
+
+
+9.4
+log
+@changed documentation for some flags to point to user/proc.h
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 9.3 89/11/27 09:49:50 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+d48 3
+a50 1
+ *				passed to an exec'd process.
+d53 2
+a54 2
+#define	PROC_MAX_EXEC_ARG_LENGTH	4096
+#define	PROC_MAX_EXEC_ARGS		1024
+@
+
+
+9.3
+log
+@increased PROC_MAX_EXEC_ARG_LENGTH and PROC_MAX_EXEC_ARGS to accept
+anything unix will accept.
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 9.2 89/10/26 15:21:58 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+d148 2
+a149 1
+				 * >>> See Proc_State definitions above. */ 
+d152 1
+a152 1
+				 * >>> See definitions below */ 
+@
+
+
+9.2
+log
+@changed type of Proc_DumpPCB
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 9.1 89/10/12 11:12:19 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+d44 3
+a46 2
+ * PROC_MAX_EXEC_ARG_LENGTH	The maximum length of any argument that is
+ *				passed to exec.
+d51 2
+a52 2
+#define	PROC_MAX_EXEC_ARG_LENGTH	1024
+#define	PROC_MAX_EXEC_ARGS		512
+@
+
+
+9.1
+log
+@added procedure declaration.
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 9.0 89/09/12 15:14:29 douglis Stable Locker: douglis $ SPRITE (Berkeley)
+d622 1
+a622 1
+extern  ReturnStatus		Proc_DumpPCB();
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 8.10 89/08/22 14:56:35 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+d595 1
+@
+
+
+8.10
+log
+@added Proc_CancelCallFunc() decl.
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 8.9 89/07/31 17:56:55 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+@
+
+
+8.9
+log
+@> changes for statistics gathering, plus an attempt at fixing non-ready 
+proc on ready queue. [this is a recording]
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 8.8 89/07/28 17:12:59 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+d615 1
+@
+
+
+8.8
+log
+@CLEAN_LOCK stuff done by jhh
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 8.5 89/04/06 12:07:41 jhh Exp $ SPRITE (Berkeley)
+d593 2
+@
+
+
+8.7
+log
+@added remoteExecBuffer to store exec info between the call to exec
+and the migration.  however, it should be put with the other migration-
+related stuff next time we recompile the world.
+@
+text
+@d26 1
+d34 1
+d375 1
+d381 11
+@
+
+
+8.6
+log
+@*** empty log message ***
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 8.5 89/04/06 12:07:41 jhh Exp Locker: rab $ SPRITE (Berkeley)
+d415 7
+d559 1
+@
+
+
+8.5
+log
+@fixed lock stack bug
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 8.4 89/02/28 12:06:21 jhh Exp $ SPRITE (Berkeley)
+d614 1
+@
+
+
+8.4
+log
+@New interface for Proc_GetPCBInfo and Vm_GetSegInfo
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 8.3 89/02/19 22:06:45 jhh Exp $ SPRITE (Berkeley)
+d524 1
+a524 1
+	if ((pcbPtr)->lockStackSize == 0) { \
+@
+
+
+8.3
+log
+@Changes due to lock registration
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 8.2 89/02/09 17:37:59 douglis Exp $ SPRITE (Berkeley)
+d57 4
+a60 1
+#define	PROC_INDEX_MASK		0x000000FF
+a65 3
+/* 
+ * Size of the buffer containing arguments, to be passed back to users.  
+ */
+a66 2
+#define PROC_PCB_ARG_LENGTH 256
+
+d99 1
+a99 1
+ *  Process state flags:
+a100 13
+typedef enum {
+    PROC_UNUSED,	/* The process doesn't exist yet. */
+    PROC_RUNNING,	/* The process is executing on a processor. */
+    PROC_READY,		/* The process is ready to execute. */
+    PROC_WAITING,	/* The process is waiting for an event to occur such
+			 * as I/O completion or a mutex lock released. */
+    PROC_EXITING,	/* The process has terminated and is on the 
+			 * exiting list. */
+    PROC_DEAD,		/* The process has been terminated is on the dead list*/
+    PROC_MIGRATED,	/* The process is running on a remote machine. */
+    PROC_NEW,		/* The process was just created. */
+    PROC_SUSPENDED	/* The process is suspended. */
+} Proc_State;
+d112 1
+a416 1
+
+a417 49
+ * Process attributes flags:
+ *
+ *  PROC_KERNEL   	        - The process is a kernel process.
+ *  PROC_USER     	        - The process is a user process.
+ *  PROC_DEBUGGED		- The process is being debugged by the system
+ *				  debugger.
+ *  PROC_DEBUG_ON_EXEC		- The process will start in debugged mode.
+ *  PROC_DEBUG_WAIT		- A debugger is waiting for this process to go
+ *				  onto the debug list.
+ *  PROC_SINGLE_STEP_FLAG	- The process will have the trace bit set
+ *				  before it runs.
+ *  PROC_MIG_PENDING		- The process will be migrated when it
+ *				  completes its next trap.
+ *  PROC_DONT_MIGRATE		- The process should not be migrated yet, even
+ *				  when it traps.
+ *  PROC_FOREIGN		- The process has been migrated from another
+ *				  workstation to this one.
+ *  PROC_DIEING			- The process is comitting hari-kari.
+ *  PROC_LOCKED			- This process is locked.
+ *  PROC_NO_VM			- The virtual memory resources have been
+ *				  freed up for this user process.
+ *  PROC_MIGRATING		- The process is in the middle of migrating
+ *				  to another workstation.  This happens after
+ *				  PROC_MIG_PENDING is set but before the
+ *				  process's state becomes PROC_MIGRATED and
+ *				  its PROC_MIGRATION_DONE flag is set.
+ *  PROC_MIGRATION_DONE		- indicates successful completion of a
+ *				  migration trap.
+ *  PROC_ON_DEBUG_LIST		- the process is on the debug list.
+ */
+
+#define PROC_KERNEL			0x00001
+#define PROC_USER			0x00002
+#define PROC_DEBUGGED			0x00004
+#define PROC_DEBUG_ON_EXEC		0x00008
+#define PROC_SINGLE_STEP_FLAG		0x00010
+#define PROC_DEBUG_WAIT			0x00020
+#define PROC_MIG_PENDING		0x00040
+#define PROC_DONT_MIGRATE		0x00080
+#define PROC_FOREIGN			0x00100
+#define PROC_DIEING			0x00200
+#define PROC_LOCKED			0x00400
+#define PROC_NO_VM			0x00800
+#define PROC_MIGRATING			0x01000
+#define PROC_MIGRATION_DONE		0x02000
+#define PROC_ON_DEBUG_LIST		0x04000
+
+
+/*
+a439 12
+/*
+ * The following structure is used to transfer fixed-length argument strings
+ * from the kernel back to user space.  A typedef simplifies later
+ * declarations (and may be the only way to do it?), since 
+ *	char *argPtr[PROC_PCB_ARG_LENGTH]
+ * would be an array of pointers to strings rather than an array of strings.
+ */
+
+typedef struct {
+    char argString[PROC_PCB_ARG_LENGTH];
+} Proc_PCBArgString;
+
+a478 2
+
+#define	Proc_PIDToIndex(pid) (pid & PROC_INDEX_MASK)
+@
+
+
+8.2
+log
+@some changes made by JHH for lock stacks.
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 8.1 88/12/21 13:56:24 douglis Exp Locker: jhh $ SPRITE (Berkeley)
+d411 18
+d604 1
+a604 1
+	    *(lockPtrPtr) = NULL; \
+d606 1
+a606 1
+	    *(typePtr) = (pcbPtr)->lockStack[(pcbPtr)->lockStackSize].type; \
+d608 1
+a608 1
+		(pcbPtr)->lockStack[(pcbPtr)->lockStackSize].lockPtr; \
+@
+
+
+8.1
+log
+@Added extern for Proc_NeverMigrate
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 8.0 88/11/11 18:29:04 douglis Stable Locker: douglis $ SPRITE (Berkeley)
+d69 7
+d139 5
+d388 6
+d579 14
+d597 1
+a597 1
+extern void		  	Proc_InitTable();
+d657 3
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 6.5 88/11/04 12:21:30 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+d598 1
+@
+
+
+6.5
+log
+@added Proc_GetHostIDs call.
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 6.4 88/10/28 12:56:02 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+@
+
+
+6.4
+log
+@added declaration for Proc_DumpPCB.
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 6.3 88/10/28 12:55:31 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+d580 1
+@
+
+
+6.3
+log
+@added declaration for Proc_Dump.
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: /sprite/src/kernel/proc/RCS/proc.h,v 6.2 88/08/31 17:54:48 douglis Exp Locker: jhh $ SPRITE (Berkeley)
+d622 1
+@
+
+
+6.2
+log
+@de-linted and endif-fix'ed.
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: proc.h,v 6.1 88/08/25 12:07:23 nelson Exp $ SPRITE (Berkeley)
+d620 2
+@
+
+
+6.1
+log
+@Changed to make time be a union that is useable by both user and kernel
+program.
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: proc.h,v 6.0 88/08/11 12:21:32 brent Stable $ SPRITE (Berkeley)
+d37 1
+a37 1
+#endif
+d635 1
+a635 1
+#endif _PROC
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: proc.h,v 5.20 88/08/01 16:36:36 ouster Exp $ SPRITE (Berkeley)
+d120 11
+d242 2
+a243 2
+    Timer_Ticks kernelCpuUsage;	/* How much time has been spent in kernel mode*/
+    Timer_Ticks userCpuUsage;	/* How much time has been spent in user mode. */
+d245 1
+a245 1
+    Timer_Ticks childKernelCpuUsage;	/* Sum of time spent in kernel mode for 
+d247 1
+a247 1
+    Timer_Ticks childUserCpuUsage;	/* Sum of time spent in user mode for
+@
+
+
+5.20
+log
+@Change includes to work from user programs with new library.
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: proc.h,v 5.19 88/07/12 13:47:39 douglis Exp $ SPRITE (Berkeley)
+@
+
+
+5.19
+log
+@added proc_RefuseMigrations declaration.
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: proc.h,v 5.18 88/06/30 17:32:09 douglis Exp $ SPRITE (Berkeley)
+d23 1
+d30 8
+@
+
+
+5.18
+log
+@Removed a declaration that should have been in ProcInt.h
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: proc.h,v 5.17 88/06/27 13:44:57 ouster Exp $ SPRITE (Berkeley)
+d486 5
+@
+
+
+5.17
+log
+@Merge syncMonitor.h into user/sync.h.
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: proc.h,v 5.16 88/05/05 18:17:13 brent Exp $ SPRITE (Berkeley)
+a563 1
+extern void			ProcResumeMigProc();
+@
+
+
+5.16
+log
+@Changed so fs state is refererence through a pointer
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: proc.h,v 5.14 88/05/05 16:28:03 nelson Exp $ SPRITE (Berkeley)
+d24 1
+a24 1
+#include "syncMonitor.h"
+@
+
+
+5.15
+log
+@Removed old machine dependent fields.
+@
+text
+@d147 4
+a167 3
+    int		numGroupIDs;		/* The length of the groupIDs array */
+    int		*groupIDs;		/* An array of group IDs.  Group IDs
+					 * are used similarly to the User ID. */
+d268 1
+a268 10
+    struct Fs_Stream	  *cwdPtr;	/* The current working directory. */
+    unsigned int   filePermissions;	/* The bits in this mask correspond
+					 * to the permissions mask of a file.
+					 * If one of these bits is set it
+					 * TURNS OFF the corresponding
+					 * permission when a file is created. */
+    int		   numStreams;		/* Size of streamList array. */
+    struct Fs_Stream   **streamList;	/* Array of pointers to open files.
+					 * This list is indexed by an integer
+					 * known as a streamID. */
+@
+
+
+5.14
+log
+@Fixed regarding use of Mach_ module
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: proc.h,v 5.13 88/05/04 16:44:47 nelson Exp $ SPRITE (Berkeley)
+a95 1
+    PROC_NO_STATE,	/* Remove this field. */
+d246 2
+a247 1
+     */
+a248 13
+    int	zsaveRegs[16];			/* The general registers used by
+					   the process when it was context
+					   switched. */
+    int	zstackStart;			/* Start of the kernel stack for this
+					   process. */
+    /*
+     * The state of a user process when it traps into the kernel.  
+     *
+     * NOTE: The registers and program counter are not automatically saved
+     * 	     when a user process traps into the kernel.  These fields provide
+     *	     a place to store the information but it is up to individual trap
+     *	     handling routines to save the registers and pc.
+     */
+a249 6
+    int		zgenRegs[16];			/* All of the general purpose 
+					 	 * registers.  */
+    int		zprogCounter;			/* The program counter when the 
+					   	 * system call occured. */
+    short	zstatusReg;			/* Status register */
+
+a339 2
+    struct Mach_ExcStack *trapStackPtr;	/* Contents of trap stack on home node,
+					 * saved in PCB on remote node. */
+a355 1
+
+a358 7
+     * Set-jump structure (NIL if no state saved).
+     */
+
+    struct	Mach_SetJumpState	*setJumpStatePtr;
+
+
+    /*
+a380 5
+
+    /*
+     * Pointer to machine dependent state.
+     */
+    struct Mach_State	*machStatePtr;
+@
+
+
+5.13
+log
+@Added machine dependent state ptr.
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: proc.h,v 5.12 88/04/27 18:54:58 nelson Exp $ SPRITE (Berkeley)
+d28 1
+a28 1
+#include "sys.h"
+d384 1
+a384 1
+    Sys_SetJumpState	*setJumpStatePtr;
+d559 4
+a562 3
+#define	Proc_GetActualProc(processor) proc_RunningProcesses[processor]
+#define Proc_SetActualProc(processor, processPtr) \
+		proc_RunningProcesses[processor] = processPtr
+d564 2
+a565 3
+#define Proc_GetCurrentProc(processor) Proc_GetActualProc(processor)
+#define Proc_SetCurrentProc(process, processPtr) \
+		Proc_SetActualProc (process, processPtr)
+d574 2
+a575 2
+#define	Proc_IsMigratedProcess(processor) \
+		(proc_RunningProcesses[processor]->rpcClientProcess != \
+@
+
+
+5.12
+log
+@Added procedure headers
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: proc.h,v 5.11 88/04/27 18:52:54 nelson Exp $ SPRITE (Berkeley)
+a26 1
+#include "machine.h"
+a28 1
+#include "exc.h"
+d233 1
+a233 1
+				 	 * context switched due to its waiting 
+d249 1
+a249 1
+    int	saveRegs[MACH_NUM_GENERAL_REGS];/* The general registers used by
+d252 1
+a252 1
+    int	stackStart;			/* Start of the kernel stack for this
+d263 1
+a263 1
+    int		genRegs[MACH_NUM_GENERAL_REGS];	/* All of the general purpose 
+d265 1
+a265 1
+    int		progCounter;			/* The program counter when the 
+d267 1
+a267 1
+    short	statusReg;			/* Status register */
+d359 1
+a359 1
+    Exc_TrapStack	*trapStackPtr;	/* Contents of trap stack on home node,
+d410 5
+@
+
+
+5.11
+log
+@Combined debug and suspended states and added flags for transitions to
+the suspended and runnable states.
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: proc.h,v 5.10 88/04/22 14:20:21 nelson Exp $ SPRITE (Berkeley)
+d587 1
+a587 1
+extern void			ProcInformParent();	
+d591 2
+a592 2
+extern void			Proc_Suspend();
+extern void			Proc_Resume();
+@
+
+
+5.10
+log
+@Added new flag indicating that a process is on the debug list.
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: proc.h,v 5.9 88/04/18 09:07:00 ouster Exp $ SPRITE (Berkeley)
+d98 1
+a98 1
+    PROC_DEBUGABLE,	/* The process is eligible for debugging. */
+d472 5
+a476 3
+ *  PROC_SUSPENDED_AND_WAITED_ON - This process is suspended and it has been
+ *				   waited on.  This only gets used if 
+ *				   PROC_WAITED_ON isn't set.
+d479 7
+a485 3
+#define PROC_DETACHED			0x01
+#define PROC_WAITED_ON			0x02
+#define	PROC_SUSPENDED_AND_WAITED_ON	0x04
+@
+
+
+5.9
+log
+@Lint cleanup, change copyright notices.
+@
+text
+@d17 1
+a17 1
+ * rcsid $Header: proc.h,v 5.8 88/04/13 11:27:02 ouster Exp $ SPRITE (Berkeley)
+d444 1
+d461 1
+@
+
+
+5.8
+log
+@Changes to make kernel calls much faster.
+@
+text
+@d7 8
+a14 2
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+d17 1
+a17 1
+ * rcsid $Header: proc.h,v 5.7 88/03/24 11:44:10 douglis Exp $ SPRITE (Berkeley)
+@
+
+
+5.7
+log
+@Changed PROC_SINGLE_STEP to PROC_SINGLE_STEP_FLAG to avoid conflict
+with user proc.h enumerated type.
+@
+text
+@d11 1
+a11 1
+ * rcsid $Header: proc.h,v 5.6 88/03/15 09:34:40 brent Exp $ SPRITE (Berkeley)
+d148 4
+a151 3
+    Proc_PID	processID;		/* Index into process table for 
+					 * this process. */
+    
+d387 19
+@
+
+
+5.6
+log
+@Had to take out include of "fs.h" to avoid circularities.
+@
+text
+@d11 1
+a11 1
+ * rcsid $Header: proc.h,v 5.5 88/03/02 11:32:42 douglis Exp $ SPRITE (Berkeley)
+d399 1
+a399 1
+ *  PROC_SINGLE_STEP		- The process will have the trace bit set
+d424 1
+a424 1
+#define PROC_SINGLE_STEP		0x00010
+@
+
+
+5.5
+log
+@Changed control block to contain a pointer to a string rather than
+the entire 1KB buffer itself. 
+Changed the names of the environment system calls not to conflict
+with the C library. 
+@
+text
+@d11 1
+a11 1
+ * rcsid $Header: proc.h,v 5.4 87/12/15 15:19:02 nelson Exp $ SPRITE (Berkeley)
+d23 1
+a23 1
+#include "fs.h"
+d281 1
+a281 1
+    Fs_Stream	  *cwdPtr;		/* The current working directory. */
+d288 1
+a288 1
+    Fs_Stream	   **streamList;	/* Array of pointers to open files.
+@
+
+
+5.4
+log
+@Fixed lint errors.
+@
+text
+@d11 1
+a11 1
+ * rcsid $Header: proc.h,v 5.3 87/11/17 14:49:01 nelson Exp $ SPRITE (Berkeley)
+d26 31
+d383 1
+a383 1
+     * Name of the exec'd file. At end because is so big.
+d385 1
+a385 1
+    char		codeFileName[FS_MAX_NAME_LENGTH];
+d453 12
+a492 24
+ * Constants for Proc_Exec().
+ *
+ * PROC_MAX_EXEC_ARG_LENGTH	The maximum length of any argument that is
+ *				passed to exec.
+ * PROC_MAX_EXEC_ARGS		The maximum number of arguments that can be
+ *				passed to an exec'd process.
+ */
+
+#define	PROC_MAX_EXEC_ARG_LENGTH	1024
+#define	PROC_MAX_EXEC_ARGS		512
+
+/*
+ * Masks to extract the proc table index and the generation number from
+ * a process id.  Process IDs need to be unique across reuses of the same
+ * procTable slot, and they need to be unique from host to host.
+ */
+
+#define	PROC_INDEX_MASK		0x000000FF
+#define	PROC_ID_NUM_MASK	0x0000FF00
+#define PROC_ID_NUM_SHIFT	8
+#define	PROC_GEN_NUM_MASK	0x000F0000
+#define PROC_GEN_NUM_SHIFT	16
+
+/*
+d559 1
+d601 14
+@
+
+
+5.3
+log
+@Changed to use a struct pointer to the Vm_ProcInfo struct because of
+ugly header file dependencies.
+@
+text
+@d11 1
+a11 1
+ * rcsid $Header: proc.h,v 5.2 87/10/22 14:56:29 nelson Exp $ SPRITE (Berkeley)
+d556 1
+a556 1
+extern void			Proc_MigrationStartTracing();
+@
+
+
+5.2
+log
+@Changed VM to only contain a single pointer.
+@
+text
+@d11 1
+a11 1
+ * rcsid $Header: proc.h,v 5.1 87/10/09 09:43:02 nelson Exp $ SPRITE (Berkeley)
+a18 1
+#include "vm.h"
+d240 1
+a240 1
+    Vm_ProcInfo	*vmPtr;
+@
+
+
+5.1
+log
+@Added extern
+@
+text
+@d11 1
+a11 1
+ * rcsid $Header: proc.h,v 5.0 87/08/11 10:46:38 sprite Exp $ SPRITE (Berkeley)
+d241 1
+a242 8
+    Vm_Segment	*segPtrArray[4];	/* The four segments for this process.*/
+    int		context;		/* Which context this process is
+					   executing in. */
+    int		contextReg;		/* The value of the context register
+					   when this process was context 
+					   switched. */
+    int		vmFlags;		/* Flags used by VM module (see vm.h) */
+
+a309 1
+
+a318 1
+
+a354 1
+
+a355 1
+
+a358 1
+
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d11 1
+a11 1
+ * rcsid $Header: proc.h,v 4.7 87/08/04 12:24:18 andrew Exp $ SPRITE (Berkeley)
+a575 1
+extern void			Proc_WakeupIfSignal();
+d579 1
+@

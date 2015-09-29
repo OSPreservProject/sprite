@@ -1,0 +1,15 @@
+F CHANGELO.;1                       	ChangeLog
+F MH_AIX.;1                         	mh-aix
+F MH_APOLL.;1                       	mh-apollo68
+F MH_DECST.;1                       	mh-decstation
+F MH_DELTA.;1                       	mh-delta88
+F MH_DGUX.;1                        	mh-dgux
+F MH_IRIX4.;1                       	mh-irix4
+F MH_SCO.;1                         	mh-sco
+F MH_SYSV.;1                        	mh-sysv
+F MH_SYSV4.;1                       	mh-sysv4
+F MT_A29K.;1                        	mt-a29k
+F MT_EBMON.;1                       	mt-ebmon29k
+F MT_OS68K.;1                       	mt-os68k
+F MT_VXWO0.;1                       	mt-vxworks68
+F MT_VXWO1.;1                       	mt-vxworks960

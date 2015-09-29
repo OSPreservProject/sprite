@@ -1,0 +1,2280 @@
+%!
+%%BoundingBox: (atend)
+%%Pages: (atend)
+%%DocumentFonts: (atend)
+%%EndComments
+%
+% FrameMaker PostScript Prolog 3.0, for use with FrameMaker 3.0
+% Copyright (c) 1986,87,89,90,91 by Frame Technology Corporation.
+% All rights reserved.
+%
+% Known Problems:
+%	Due to bugs in Transcript, the 'PS-Adobe-' is omitted from line 1
+/FMversion (3.0) def 
+% Set up Color vs. Black-and-White
+	/FMPrintInColor systemdict /colorimage known
+		systemdict /currentcolortransfer known or def
+% Uncomment this line to force b&w on color printer
+%   /FMPrintInColor false def
+/FrameDict 195 dict def 
+systemdict /errordict known not {/errordict 10 dict def
+		errordict /rangecheck {stop} put} if
+% The readline in 23.0 doesn't recognize cr's as nl's on AppleTalk
+FrameDict /tmprangecheck errordict /rangecheck get put 
+errordict /rangecheck {FrameDict /bug true put} put 
+FrameDict /bug false put 
+mark 
+% Some PS machines read past the CR, so keep the following 3 lines together!
+currentfile 5 string readline
+00
+0000000000
+cleartomark 
+errordict /rangecheck FrameDict /tmprangecheck get put 
+FrameDict /bug get { 
+	/readline {
+		/gstring exch def
+		/gfile exch def
+		/gindex 0 def
+		{
+			gfile read pop 
+			dup 10 eq {exit} if 
+			dup 13 eq {exit} if 
+			gstring exch gindex exch put 
+			/gindex gindex 1 add def 
+		} loop
+		pop 
+		gstring 0 gindex getinterval true 
+		} def
+	} if
+/FMVERSION {
+	FMversion ne {
+		/Times-Roman findfont 18 scalefont setfont
+		100 100 moveto
+		(FrameMaker version does not match postscript_prolog!)
+		dup =
+		show showpage
+		} if
+	} def 
+/FMLOCAL {
+	FrameDict begin
+	0 def 
+	end 
+	} def 
+	/gstring FMLOCAL
+	/gfile FMLOCAL
+	/gindex FMLOCAL
+	/orgxfer FMLOCAL
+	/orgproc FMLOCAL
+	/organgle FMLOCAL
+	/orgfreq FMLOCAL
+	/yscale FMLOCAL
+	/xscale FMLOCAL
+	/manualfeed FMLOCAL
+	/paperheight FMLOCAL
+	/paperwidth FMLOCAL
+/FMDOCUMENT { 
+	array /FMfonts exch def 
+	/#copies exch def
+	FrameDict begin
+	0 ne dup {setmanualfeed} if
+	/manualfeed exch def
+	/paperheight exch def
+	/paperwidth exch def
+	/yscale exch def
+	/xscale exch def
+	currenttransfer cvlit /orgxfer exch def
+	currentscreen cvlit /orgproc exch def
+	/organgle exch def /orgfreq exch def
+	setpapername 
+	manualfeed {true} {papersize} ifelse 
+	{manualpapersize} {false} ifelse 
+	{desperatepapersize} if
+	end 
+	} def 
+	/pagesave FMLOCAL
+	/orgmatrix FMLOCAL
+	/landscape FMLOCAL
+/FMBEGINPAGE { 
+	FrameDict begin 
+	/pagesave save def
+	3.86 setmiterlimit
+	/landscape exch 0 ne def
+	landscape { 
+		90 rotate 0 exch neg translate pop 
+		}
+		{pop pop}
+		ifelse
+	xscale yscale scale
+	/orgmatrix matrix def
+	gsave 
+	} def 
+/FMENDPAGE {
+	grestore 
+	pagesave restore
+	end 
+	showpage
+	} def 
+/FMFONTDEFINE { 
+	FrameDict begin
+	findfont 
+	ReEncode 
+	1 index exch 
+	definefont 
+	FMfonts 3 1 roll 
+	put
+	end 
+	} def 
+/FMFILLS {
+	FrameDict begin
+	array /fillvals exch def
+	end 
+	} def 
+/FMFILL {
+	FrameDict begin
+	 fillvals 3 1 roll put
+	end 
+	} def 
+/FMNORMALIZEGRAPHICS { 
+	newpath
+	0.0 0.0 moveto
+	1 setlinewidth
+	0 setlinecap
+	0 0 0 sethsbcolor
+	0 setgray 
+	} bind def
+	/fx FMLOCAL
+	/fy FMLOCAL
+	/fh FMLOCAL
+	/fw FMLOCAL
+	/llx FMLOCAL
+	/lly FMLOCAL
+	/urx FMLOCAL
+	/ury FMLOCAL
+/FMBEGINEPSF { 
+	end 
+	/FMEPSF save def 
+	/showpage {} def 
+	FMNORMALIZEGRAPHICS 
+	[/fy /fx /fh /fw /ury /urx /lly /llx] {exch def} forall 
+	fx fy translate 
+	rotate
+	fw urx llx sub div fh ury lly sub div scale 
+	llx neg lly neg translate 
+	} bind def
+/FMENDEPSF {
+	FMEPSF restore
+	FrameDict begin 
+	} bind def
+FrameDict begin 
+/setmanualfeed {
+%%BeginFeature *ManualFeed True
+	 statusdict /manualfeed true put
+%%EndFeature
+	} def
+/max {2 copy lt {exch} if pop} bind def
+/min {2 copy gt {exch} if pop} bind def
+/inch {72 mul} def
+/pagedimen { 
+	paperheight sub abs 16 lt exch 
+	paperwidth sub abs 16 lt and
+	{/papername exch def} {pop} ifelse
+	} def
+	/papersizedict FMLOCAL
+/setpapername { 
+	/papersizedict 14 dict def 
+	papersizedict begin
+	/papername /unknown def 
+		/Letter 8.5 inch 11.0 inch pagedimen
+		/LetterSmall 7.68 inch 10.16 inch pagedimen
+		/Tabloid 11.0 inch 17.0 inch pagedimen
+		/Ledger 17.0 inch 11.0 inch pagedimen
+		/Legal 8.5 inch 14.0 inch pagedimen
+		/Statement 5.5 inch 8.5 inch pagedimen
+		/Executive 7.5 inch 10.0 inch pagedimen
+		/A3 11.69 inch 16.5 inch pagedimen
+		/A4 8.26 inch 11.69 inch pagedimen
+		/A4Small 7.47 inch 10.85 inch pagedimen
+		/B4 10.125 inch 14.33 inch pagedimen
+		/B5 7.16 inch 10.125 inch pagedimen
+	end
+	} def
+/papersize {
+	papersizedict begin
+		/Letter {lettertray letter} def
+		/LetterSmall {lettertray lettersmall} def
+		/Tabloid {11x17tray 11x17} def
+		/Ledger {ledgertray ledger} def
+		/Legal {legaltray legal} def
+		/Statement {statementtray statement} def
+		/Executive {executivetray executive} def
+		/A3 {a3tray a3} def
+		/A4 {a4tray a4} def
+		/A4Small {a4tray a4small} def
+		/B4 {b4tray b4} def
+		/B5 {b5tray b5} def
+		/unknown {unknown} def
+	papersizedict dup papername known {papername} {/unknown} ifelse get
+	end
+	/FMdicttop countdictstack 1 add def 
+	statusdict begin stopped end 
+	countdictstack -1 FMdicttop {pop end} for 
+	} def
+/manualpapersize {
+	papersizedict begin
+		/Letter {letter} def
+		/LetterSmall {lettersmall} def
+		/Tabloid {11x17} def
+		/Ledger {ledger} def
+		/Legal {legal} def
+		/Statement {statement} def
+		/Executive {executive} def
+		/A3 {a3} def
+		/A4 {a4} def
+		/A4Small {a4small} def
+		/B4 {b4} def
+		/B5 {b5} def
+		/unknown {unknown} def
+	papersizedict dup papername known {papername} {/unknown} ifelse get
+	end
+	stopped 
+	} def
+/desperatepapersize {
+	statusdict /setpageparams known
+		{
+		paperwidth paperheight 0 1 
+		statusdict begin
+		{setpageparams} stopped pop 
+		end
+		} if
+	} def
+/savematrix {
+	orgmatrix currentmatrix pop
+	} bind def
+/restorematrix {
+	orgmatrix setmatrix
+	} bind def
+/dmatrix matrix def
+/dpi    72 0 dmatrix defaultmatrix dtransform
+    dup mul exch   dup mul add   sqrt def
+/freq dpi 18.75 div 8 div round dup 0 eq {pop 1} if 8 mul dpi exch div def
+/sangle 1 0 dmatrix defaultmatrix dtransform exch atan def
+/DiacriticEncoding [
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef /space /exclam /quotedbl
+/numbersign /dollar /percent /ampersand /quotesingle /parenleft
+/parenright /asterisk /plus /comma /hyphen /period /slash /zero /one
+/two /three /four /five /six /seven /eight /nine /colon /semicolon
+/less /equal /greater /question /at /A /B /C /D /E /F /G /H /I /J /K
+/L /M /N /O /P /Q /R /S /T /U /V /W /X /Y /Z /bracketleft /backslash
+/bracketright /asciicircum /underscore /grave /a /b /c /d /e /f /g /h
+/i /j /k /l /m /n /o /p /q /r /s /t /u /v /w /x /y /z /braceleft /bar
+/braceright /asciitilde /.notdef /Adieresis /Aring /Ccedilla /Eacute
+/Ntilde /Odieresis /Udieresis /aacute /agrave /acircumflex /adieresis
+/atilde /aring /ccedilla /eacute /egrave /ecircumflex /edieresis
+/iacute /igrave /icircumflex /idieresis /ntilde /oacute /ograve
+/ocircumflex /odieresis /otilde /uacute /ugrave /ucircumflex
+/udieresis /dagger /.notdef /cent /sterling /section /bullet
+/paragraph /germandbls /registered /copyright /trademark /acute
+/dieresis /.notdef /AE /Oslash /.notdef /.notdef /.notdef /.notdef
+/yen /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/ordfeminine /ordmasculine /.notdef /ae /oslash /questiondown
+/exclamdown /logicalnot /.notdef /florin /.notdef /.notdef
+/guillemotleft /guillemotright /ellipsis /.notdef /Agrave /Atilde
+/Otilde /OE /oe /endash /emdash /quotedblleft /quotedblright
+/quoteleft /quoteright /.notdef /.notdef /ydieresis /Ydieresis
+/fraction /currency /guilsinglleft /guilsinglright /fi /fl /daggerdbl
+/periodcentered /quotesinglbase /quotedblbase /perthousand
+/Acircumflex /Ecircumflex /Aacute /Edieresis /Egrave /Iacute
+/Icircumflex /Idieresis /Igrave /Oacute /Ocircumflex /.notdef /Ograve
+/Uacute /Ucircumflex /Ugrave /dotlessi /circumflex /tilde /macron
+/breve /dotaccent /ring /cedilla /hungarumlaut /ogonek /caron
+] def
+/ReEncode { 
+	dup 
+	length 
+	dict begin 
+	{
+	1 index /FID ne 
+		{def} 
+		{pop pop} ifelse 
+	} forall 
+	0 eq {/Encoding DiacriticEncoding def} if 
+	currentdict 
+	end 
+	} bind def
+/graymode true def
+	/bwidth FMLOCAL
+	/bpside FMLOCAL
+	/bstring FMLOCAL
+	/onbits FMLOCAL
+	/offbits FMLOCAL
+	/xindex FMLOCAL
+	/yindex FMLOCAL
+	/x FMLOCAL
+	/y FMLOCAL
+/setpattern {
+	 /bwidth  exch def
+	 /bpside  exch def
+	 /bstring exch def
+	 /onbits 0 def  /offbits 0 def
+	 freq sangle landscape {90 add} if 
+		{/y exch def
+		 /x exch def
+		 /xindex x 1 add 2 div bpside mul cvi def
+		 /yindex y 1 add 2 div bpside mul cvi def
+		 bstring yindex bwidth mul xindex 8 idiv add get
+		 1 7 xindex 8 mod sub bitshift and 0 ne
+		 {/onbits  onbits  1 add def 1}
+		 {/offbits offbits 1 add def 0}
+		 ifelse
+		}
+		setscreen
+	 {} settransfer
+	 offbits offbits onbits add div FMsetgray
+	/graymode false def
+	} bind def
+/grayness {
+	FMsetgray
+	graymode not {
+		/graymode true def
+		orgxfer cvx settransfer
+		orgfreq organgle orgproc cvx setscreen
+		} if
+	} bind def
+	/HUE FMLOCAL
+	/SAT FMLOCAL
+	/BRIGHT FMLOCAL
+	/Colors FMLOCAL
+FMPrintInColor 
+	
+	{
+	/HUE 0 def
+	/SAT 0 def
+	/BRIGHT 0 def
+	% array of arrays Hue and Sat values for the separations [HUE BRIGHT]
+	/Colors   
+	[[0    0  ]    % black
+	 [0    0  ]    % white
+	 [0.00 1.0]    % red
+	 [0.37 1.0]    % green
+	 [0.60 1.0]    % blue
+	 [0.50 1.0]    % cyan
+	 [0.83 1.0]    % magenta
+	 [0.16 1.0]    % comment / yellow
+	 ] def
+      
+	/BEGINBITMAPCOLOR { 
+		BITMAPCOLOR} def
+	/BEGINBITMAPCOLORc { 
+		BITMAPCOLORc} def
+	/BEGINBITMAPTRUECOLOR { 
+		BITMAPTRUECOLOR } def
+	/BEGINBITMAPCOLORc { 
+		BITMAPTRUECOLORc } def
+	/K { 
+		Colors exch get dup
+		0 get /HUE exch store 
+		1 get /BRIGHT exch store
+		  HUE 0 eq BRIGHT 0 eq and
+			{1.0 SAT sub setgray}
+			{HUE SAT BRIGHT sethsbcolor} 
+		  ifelse
+		} def
+	/FMsetgray { 
+		/SAT exch 1.0 exch sub store 
+		  HUE 0 eq BRIGHT 0 eq and
+			{1.0 SAT sub setgray}
+			{HUE SAT BRIGHT sethsbcolor} 
+		  ifelse
+		} bind def
+	}
+	
+	{
+	/BEGINBITMAPCOLOR { 
+		BITMAPGRAY} def
+	/BEGINBITMAPCOLORc { 
+		BITMAPGRAYc} def
+	/BEGINBITMAPTRUECOLOR { 
+		BITMAPTRUEGRAY } def
+	/BEGINBITMAPTRUECOLORc { 
+		BITMAPTRUEGRAYc } def
+	/FMsetgray {setgray} bind def
+	/K { 
+		pop
+		} def
+	}
+ifelse
+/normalize {
+	transform round exch round exch itransform
+	} bind def
+/dnormalize {
+	dtransform round exch round exch idtransform
+	} bind def
+/lnormalize { 
+	0 dtransform exch cvi 2 idiv 2 mul 1 add exch idtransform pop
+	} bind def
+/H { 
+	lnormalize setlinewidth
+	} bind def
+/Z {
+	setlinecap
+	} bind def
+	/fillvals FMLOCAL
+/X { 
+	fillvals exch get
+	dup type /stringtype eq
+	{8 1 setpattern} 
+	{grayness}
+	ifelse
+	} bind def
+/V { 
+	gsave eofill grestore
+	} bind def
+/N { 
+	stroke
+	} bind def
+/M {newpath moveto} bind def
+/E {lineto} bind def
+/D {curveto} bind def
+/O {closepath} bind def
+	/n FMLOCAL
+/L { 
+ 	/n exch def
+	newpath
+	normalize
+	moveto 
+	2 1 n {pop normalize lineto} for
+	} bind def
+/Y { 
+	L 
+	closepath
+	} bind def
+	/x1 FMLOCAL
+	/x2 FMLOCAL
+	/y1 FMLOCAL
+	/y2 FMLOCAL
+	/rad FMLOCAL
+/R { 
+	/y2 exch def
+	/x2 exch def
+	/y1 exch def
+	/x1 exch def
+	x1 y1
+	x2 y1
+	x2 y2
+	x1 y2
+	4 Y 
+	} bind def
+/RR { 
+	/rad exch def
+	normalize
+	/y2 exch def
+	/x2 exch def
+	normalize
+	/y1 exch def
+	/x1 exch def
+	newpath
+	x1 y1 rad add moveto
+	x1 y2 x2 y2 rad arcto
+	x2 y2 x2 y1 rad arcto
+	x2 y1 x1 y1 rad arcto
+	x1 y1 x1 y2 rad arcto
+	closepath
+	16 {pop} repeat
+	} bind def
+/C { 
+	grestore
+	gsave
+	R 
+	clip
+	} bind def
+	/FMpointsize FMLOCAL
+/F { 
+	FMfonts exch get
+	FMpointsize scalefont
+	setfont
+	} bind def
+/Q { 
+	/FMpointsize exch def
+	F 
+	} bind def
+/T { 
+	moveto show
+	} bind def
+/RF { 
+	rotate
+	0 ne {-1 1 scale} if
+	} bind def
+/TF { 
+	gsave
+	moveto 
+	RF
+	show
+	grestore
+	} bind def
+/P { 
+	moveto
+	0 32 3 2 roll widthshow
+	} bind def
+/PF { 
+	gsave
+	moveto 
+	RF
+	0 32 3 2 roll widthshow
+	grestore
+	} bind def
+/S { 
+	moveto
+	0 exch ashow
+	} bind def
+/SF { 
+	gsave
+	moveto
+	RF
+	0 exch ashow
+	grestore
+	} bind def
+/B { 
+	moveto
+	0 32 4 2 roll 0 exch awidthshow
+	} bind def
+/BF { 
+	gsave
+	moveto
+	RF
+	0 32 4 2 roll 0 exch awidthshow
+	grestore
+	} bind def
+/G { 
+	gsave
+	newpath
+	normalize translate 0.0 0.0 moveto 
+	dnormalize scale 
+	0.0 0.0 1.0 5 3 roll arc 
+	closepath fill
+	grestore
+	} bind def
+/A { 
+	gsave
+	savematrix
+	newpath
+	2 index 2 div add exch 3 index 2 div sub exch 
+	normalize 2 index 2 div sub exch 3 index 2 div add exch 
+	translate 
+	scale 
+	0.0 0.0 1.0 5 3 roll arc 
+	restorematrix
+	stroke
+	grestore
+	} bind def
+	/x FMLOCAL
+	/y FMLOCAL
+	/w FMLOCAL
+	/h FMLOCAL
+	/xx FMLOCAL
+	/yy FMLOCAL
+	/ww FMLOCAL
+	/hh FMLOCAL
+	/FMsaveobject FMLOCAL
+	/FMoptop FMLOCAL
+	/FMdicttop FMLOCAL
+/BEGINPRINTCODE { 
+	/FMdicttop countdictstack 1 add def 
+	/FMoptop count 4 sub def 
+	/FMsaveobject save def
+	userdict begin 
+	/showpage {} def 
+	FMNORMALIZEGRAPHICS 
+	3 index neg 3 index neg translate
+	} bind def
+/ENDPRINTCODE {
+	count -1 FMoptop {pop pop} for 
+	countdictstack -1 FMdicttop {pop end} for 
+	FMsaveobject restore 
+	} bind def
+/gn { 
+	0 
+	{	46 mul 
+		cf read pop 
+		32 sub 
+		dup 46 lt {exit} if 
+		46 sub add 
+		} loop
+	add 
+	} bind def
+	/str FMLOCAL
+/cfs { 
+	/str sl string def 
+	0 1 sl 1 sub {str exch val put} for 
+	str def 
+	} bind def
+/ic [ 
+	0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0223
+	0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0223
+	0
+	{0 hx} {1 hx} {2 hx} {3 hx} {4 hx} {5 hx} {6 hx} {7 hx} {8 hx} {9 hx}
+	{10 hx} {11 hx} {12 hx} {13 hx} {14 hx} {15 hx} {16 hx} {17 hx} {18 hx}
+	{19 hx} {gn hx} {0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11} {12}
+	{13} {14} {15} {16} {17} {18} {19} {gn} {0 wh} {1 wh} {2 wh} {3 wh}
+	{4 wh} {5 wh} {6 wh} {7 wh} {8 wh} {9 wh} {10 wh} {11 wh} {12 wh}
+	{13 wh} {14 wh} {gn wh} {0 bl} {1 bl} {2 bl} {3 bl} {4 bl} {5 bl} {6 bl}
+	{7 bl} {8 bl} {9 bl} {10 bl} {11 bl} {12 bl} {13 bl} {14 bl} {gn bl}
+	{0 fl} {1 fl} {2 fl} {3 fl} {4 fl} {5 fl} {6 fl} {7 fl} {8 fl} {9 fl}
+	{10 fl} {11 fl} {12 fl} {13 fl} {14 fl} {gn fl}
+	] def
+	/sl FMLOCAL
+	/val FMLOCAL
+	/ws FMLOCAL
+	/im FMLOCAL
+	/bs FMLOCAL
+	/cs FMLOCAL
+	/len FMLOCAL
+	/pos FMLOCAL
+/ms { 
+	/sl exch def 
+	/val 255 def 
+	/ws cfs 
+	/im cfs 
+	/val 0 def 
+	/bs cfs 
+	/cs cfs 
+	} bind def
+400 ms 
+/ip { 
+	is 
+	0 
+	cf cs readline pop 
+	{	ic exch get exec 
+		add 
+		} forall 
+	pop 
+	
+	} bind def
+/wh { 
+	/len exch def 
+	/pos exch def 
+	ws 0 len getinterval im pos len getinterval copy pop
+	pos len 
+	} bind def
+/bl { 
+	/len exch def 
+	/pos exch def 
+	bs 0 len getinterval im pos len getinterval copy pop
+	pos len 
+	} bind def
+/s1 1 string def
+/fl { 
+	/len exch def 
+	/pos exch def 
+	/val cf s1 readhexstring pop 0 get def
+	pos 1 pos len add 1 sub {im exch val put} for
+	pos len 
+	} bind def
+/hx { 
+	3 copy getinterval 
+	cf exch readhexstring pop pop 
+	} bind def
+	/h FMLOCAL
+	/w FMLOCAL
+	/d FMLOCAL
+	/lb FMLOCAL
+	/bitmapsave FMLOCAL
+	/is FMLOCAL
+	/cf FMLOCAL
+/wbytes { 
+	dup 
+	8 eq {pop} {1 eq {7 add 8 idiv} {3 add 4 idiv} ifelse} ifelse
+	} bind def
+/BEGINBITMAPBWc { 
+	1 {} COMMONBITMAPc
+	} bind def
+/BEGINBITMAPGRAYc { 
+	8 {} COMMONBITMAPc
+	} bind def
+/BEGINBITMAP2BITc { 
+	2 {} COMMONBITMAPc
+	} bind def
+/COMMONBITMAPc { 
+	/r exch def
+	/d exch def
+	gsave
+	translate rotate scale /h exch def /w exch def
+	/lb w d wbytes def 
+	sl lb lt {lb ms} if 
+	/bitmapsave save def 
+	r                    
+	/is im 0 lb getinterval def 
+	ws 0 lb getinterval is copy pop 
+	/cf currentfile def 
+	w h d [w 0 0 h neg 0 h] 
+	{ip} image 
+	bitmapsave restore 
+	grestore
+	} bind def
+/BEGINBITMAPBW { 
+	1 {} COMMONBITMAP
+	} bind def
+/BEGINBITMAPGRAY { 
+	8 {} COMMONBITMAP
+	} bind def
+/BEGINBITMAP2BIT { 
+	2 {} COMMONBITMAP
+	} bind def
+/COMMONBITMAP { 
+	/r exch def
+	/d exch def
+	gsave
+	translate rotate scale /h exch def /w exch def
+	/bitmapsave save def 
+	r                    
+	/is w d wbytes string def
+	/cf currentfile def 
+	w h d [w 0 0 h neg 0 h] 
+	{cf is readhexstring pop} image
+	bitmapsave restore 
+	grestore
+	} bind def
+	/proc1 FMLOCAL
+	/proc2 FMLOCAL
+	/newproc FMLOCAL
+/Fmcc {
+    /proc2 exch cvlit def
+    /proc1 exch cvlit def
+    /newproc proc1 length proc2 length add array def
+    newproc 0 proc1 putinterval
+    newproc proc1 length proc2 putinterval
+    newproc cvx
+} bind def
+/ngrayt 256 array def
+/nredt 256 array def
+/nbluet 256 array def
+/ngreent 256 array def
+	/gryt FMLOCAL
+	/blut FMLOCAL
+	/grnt FMLOCAL
+	/redt FMLOCAL
+	/indx FMLOCAL
+	/cynu FMLOCAL
+	/magu FMLOCAL
+	/yelu FMLOCAL
+	/k FMLOCAL
+	/u FMLOCAL
+/colorsetup {
+	currentcolortransfer
+	/gryt exch def
+	/blut exch def
+	/grnt exch def
+	/redt exch def
+	0 1 255 {
+		/indx exch def
+		/cynu 1 red indx get 255 div sub def
+		/magu 1 green indx get 255 div sub def
+		/yelu 1 blue indx get 255 div sub def
+		/k cynu magu min yelu min def
+		/u k currentundercolorremoval exec def
+		nredt indx 1 0 cynu u sub max sub redt exec put
+		ngreent indx 1 0 magu u sub max sub grnt exec put
+		nbluet indx 1 0 yelu u sub max sub blut exec put
+		ngrayt indx 1 k currentblackgeneration exec sub gryt exec put
+	} for
+	{255 mul cvi nredt exch get}
+	{255 mul cvi ngreent exch get}
+	{255 mul cvi nbluet exch get}
+	{255 mul cvi ngrayt exch get}
+	setcolortransfer
+	{pop 0} setundercolorremoval
+	{} setblackgeneration
+	} bind def
+	/tran FMLOCAL
+/fakecolorsetup {
+	/tran 256 string def
+	0 1 255 {/indx exch def 
+		tran indx
+		red indx get 77 mul
+		green indx get 151 mul
+		blue indx get 28 mul
+		add add 256 idiv put} for
+	currenttransfer
+	{255 mul cvi tran exch get 255.0 div}
+	exch Fmcc settransfer
+} bind def
+/BITMAPCOLOR { 
+	/d 8 def
+	gsave
+	translate rotate scale /h exch def /w exch def
+	/bitmapsave save def 
+	colorsetup
+	/is w d wbytes string def
+	/cf currentfile def 
+	w h d [w 0 0 h neg 0 h] 
+	{cf is readhexstring pop} {is} {is} true 3 colorimage 
+	bitmapsave restore 
+	grestore
+	} bind def
+/BITMAPCOLORc { 
+	/d 8 def
+	gsave
+	translate rotate scale /h exch def /w exch def
+	/lb w d wbytes def 
+	sl lb lt {lb ms} if 
+	/bitmapsave save def 
+	colorsetup
+	/is im 0 lb getinterval def 
+	ws 0 lb getinterval is copy pop 
+	/cf currentfile def 
+	w h d [w 0 0 h neg 0 h] 
+	{ip} {is} {is} true 3 colorimage
+	bitmapsave restore 
+	grestore
+	} bind def
+/BITMAPTRUECOLORc { 
+        gsave
+        translate rotate scale /h exch def /w exch def
+        /bitmapsave save def 
+        
+        /is w string def
+        
+        ws 0 w getinterval is copy pop 
+        /cf currentfile def 
+        w h 8 [w 0 0 h neg 0 h] 
+        {ip} {gip} {bip} true 3 colorimage
+        bitmapsave restore 
+        grestore
+        } bind def
+/BITMAPTRUECOLOR { 
+        gsave
+        translate rotate scale /h exch def /w exch def
+        /bitmapsave save def 
+        /is w string def
+        /gis w string def
+        /bis w string def
+        /cf currentfile def 
+        w h 8 [w 0 0 h neg 0 h] 
+        { cf is readhexstring pop } 
+        { cf gis readhexstring pop } 
+        { cf bis readhexstring pop } 
+        true 3 colorimage 
+        bitmapsave restore 
+        grestore
+        } bind def
+/BITMAPTRUEGRAYc { 
+        gsave
+        translate rotate scale /h exch def /w exch def
+        /bitmapsave save def 
+        
+        /is w string def
+        
+        ws 0 w getinterval is copy pop 
+        /cf currentfile def 
+        w h 8 [w 0 0 h neg 0 h] 
+        {ip gip bip w gray} image
+        bitmapsave restore 
+        grestore
+        } bind def
+/ww FMLOCAL
+/r FMLOCAL
+/g FMLOCAL
+/b FMLOCAL
+/i FMLOCAL
+/gray { 
+        /ww exch def
+        /b exch def
+        /g exch def
+        /r exch def
+        0 1 ww 1 sub { /i exch def r i get .299 mul g i get .587 mul
+			b i get .114 mul add add r i 3 -1 roll floor cvi put } for
+        r
+        } bind def
+/BITMAPTRUEGRAY { 
+        gsave
+        translate rotate scale /h exch def /w exch def
+        /bitmapsave save def 
+        /is w string def
+        /gis w string def
+        /bis w string def
+        /cf currentfile def 
+        w h 8 [w 0 0 h neg 0 h] 
+        { cf is readhexstring pop 
+          cf gis readhexstring pop 
+          cf bis readhexstring pop w gray}  image
+        bitmapsave restore 
+        grestore
+        } bind def
+/BITMAPGRAY { 
+	8 {fakecolorsetup} COMMONBITMAP
+	} bind def
+/BITMAPGRAYc { 
+	8 {fakecolorsetup} COMMONBITMAPc
+	} bind def
+/ENDBITMAP {
+	} bind def
+end 
+	/ALDsave FMLOCAL
+	/ALDmatrix matrix def ALDmatrix currentmatrix pop
+/StartALD {
+	/ALDsave save def
+	 savematrix
+	 ALDmatrix setmatrix
+	} bind def
+/InALD {
+	 restorematrix
+	} bind def
+/DoneALD {
+	 ALDsave restore
+	} bind def
+%%EndProlog
+%%BeginSetup
+(3.0) FMVERSION
+1 1 612 792 0 1 10 FMDOCUMENT
+0 0 /Times-Bold FMFONTDEFINE
+1 0 /Times-Italic FMFONTDEFINE
+2 0 /Times-Roman FMFONTDEFINE
+32 FMFILLS
+0 0 FMFILL
+1 .1 FMFILL
+2 .3 FMFILL
+3 .5 FMFILL
+4 .7 FMFILL
+5 .9 FMFILL
+6 .97 FMFILL
+7 1 FMFILL
+8 <0f1e3c78f0e1c387> FMFILL
+9 <0f87c3e1f0783c1e> FMFILL
+10 <cccccccccccccccc> FMFILL
+11 <ffff0000ffff0000> FMFILL
+12 <8142241818244281> FMFILL
+13 <03060c183060c081> FMFILL
+14 <8040201008040201> FMFILL
+16 1 FMFILL
+17 .9 FMFILL
+18 .7 FMFILL
+19 .5 FMFILL
+20 .3 FMFILL
+21 .1 FMFILL
+22 0.03 FMFILL
+23 0 FMFILL
+24 <f0e1c3870f1e3c78> FMFILL
+25 <f0783c1e0f87c3e1> FMFILL
+26 <3333333333333333> FMFILL
+27 <0000ffff0000ffff> FMFILL
+28 <7ebddbe7e7dbbd7e> FMFILL
+29 <fcf9f3e7cf9f3f7e> FMFILL
+30 <7fbfdfeff7fbfdfe> FMFILL
+%%EndSetup
+%%Page: "0" 1
+%%BeginPaperSize: Letter
+%%EndPaperSize
+612 792 0 FMBEGINPAGE
+0 16 Q
+0 X
+0 K
+(Zebra: A Striped Network File System) 174.31 673.33 T
+1 12 Q
+(John H. Hartman) 263.86 614 T
+(John K. Ouster) 258.97 600 T
+(hout) 331.71 600 T
+2 F
+(Computer Science Division) 239.71 572 T
+(Electrical Engineering and Computer Sciences) 194.08 558 T
+(University of California) 248.37 544 T
+(Berkeley) 256.92 530 T
+(, CA 94720) 299.44 530 T
+0 14 Q
+(Abstract) 279.97 458.67 T
+2 12 Q
+0.54 (This paper presents the design of Zebra, a striped network \336le system.) 144 438 P
+3.54 (Zebra applies ideas from log-structured \336le system \050LFS\051 and RAID) 126 424 P
+0.05 (research to network \336le systems, resulting in a network \336le system that has) 126 410 P
+-0.17 (scalable performance, uses its servers ef) 126 396 P
+-0.17 (\336ciently even when its applications) 317.44 396 P
+0.61 (are using small \336les, and provides high availability) 126 382 P
+0.61 (. Zebra stripes \336le data) 373.99 382 P
+1.3 (across multiple servers, so that the \336le transfer rate is not limited by the) 126 368 P
+0.73 (performance of a single server) 126 354 P
+0.73 (. High availability is achieved by maintain-) 274.11 354 P
+0.74 (ing parity information for the \336le system. If a server fails its contents can) 126 340 P
+0.3 (be reconstructed using the contents of the remaining servers and the parity) 126 326 P
+0.95 (information. Zebra dif) 126 312 P
+0.95 (fers from existing striped \336le systems in the way it) 234.6 312 P
+0.63 (stripes \336le data: Zebra does not stripe on a per) 126 298 P
+0.63 (-\336le basis; instead it stripes) 352.9 298 P
+1.2 (the stream of bytes written by each client. Clients write to the servers in) 126 284 P
+0.54 (units called) 126 270 P
+1 F
+0.54 (stripe fragments) 185.03 270 P
+2 F
+0.54 (, which are analogous to segments in an LFS.) 263.86 270 P
+2.41 (Stripe fragments contain \336le blocks that were written recently) 126 256 P
+2.41 (, without) 440.94 256 P
+1.72 (regard to which \336le they belong. This method of striping has numerous) 126 242 P
+-0.2 (advantages over per) 126 228 P
+-0.2 (-\336le striping, including increased server ef) 221.27 228 P
+-0.2 (\336ciency) 423.24 228 P
+-0.2 (, ef) 460.44 228 P
+-0.2 (\336-) 475.34 228 P
+(cient parity computation, and elimination of parity update.) 126 214 T
+-0.1 (This paper will appear in the proceedings of the USENIX W) 144 174 P
+-0.1 (orkshop on) 432.47 174 P
+(File Systems, May 1992.) 126 160 T
+90 113 522 128 C
+99 126 243 126 2 L
+0.5 H
+2 Z
+0 X
+0 K
+N
+0 0 612 792 C
+2 10 Q
+0 X
+0 K
+(This work was supported in part by the National Science Foundation under grant CCR-8900029,) 108 106.33 T
+(the National Aeronautics and Space Administration and the Defense Advanced Research Projects) 108 94.33 T
+(Agency under contract NAG2-591.) 108 82.33 T
+FMENDPAGE
+%%EndPage: "0" 2
+%%Page: "1" 2
+612 792 0 FMBEGINPAGE
+0 10 Q
+0 X
+0 K
+(Zebra) 72 749.33 T
+(April 28, 1992) 479.75 749.33 T
+(1) 303.5 36 T
+0 14 Q
+(1) 90 710.67 T
+(Intr) 117 710.67 T
+(oduction) 140.84 710.67 T
+2 12 Q
+0.03 (Zebra is a network \336le system architecture designed to provide both high performance) 108 688 P
+0.16 (and high availability) 90 674 P
+0.16 (. This is accomplished by incorporating ideas from log-structured \336le) 188.14 674 P
+1.15 (systems, such as Sprite LFS [Rosenblum91], and redundant arrays of inexpensive disks) 90 660 P
+0.69 (\050RAID\051 [Patterson88] into a network \336le system. From log-structured \336le systems Zebra) 90 646 P
+0.79 (borrows the idea that small, independent writes to the storage subsystem can be batched) 90 632 P
+0.11 (together into lar) 90 618 P
+0.11 (ge sequential writes, thus improving the storage subsystem\325) 166.61 618 P
+0.11 (s write perfor-) 453.18 618 P
+1.72 (mance. RAID research has focused on using striping and parity to obtain high perfor-) 90 604 P
+0.76 (mance and high availability from arrays of relatively low-performance disks. Zebra uses) 90 590 P
+-0.12 (striping and parity as well, resulting in a network \336le system that stripes data across multi-) 90 576 P
+0.06 (ple storage servers, uses parity to provide high availability) 90 562 P
+0.06 (, and transfers \336le data between) 369.83 562 P
+-0.28 (the clients and the storage servers in lar) 90 548 P
+-0.28 (ge units. The notable features of Zebra can be char-) 277.37 548 P
+(acterized as follows:) 90 534 T
+1 F
+0.92 (Scalable performanc) 108 514 P
+2 F
+0.92 (e. A \336le in Zebra may be striped across several storage servers,) 209.18 514 P
+-0.28 (allowing its contents to be transferred in parallel. Thus the aggregate \336le transfer band-) 108 500 P
+(width can exceed the bandwidth capabilities of a single server) 108 486 T
+(.) 404.78 486 T
+1 F
+0.44 (High server ef\336ciency) 108 466 P
+2 F
+0.44 (. Storage servers are most ef) 213.35 466 P
+0.44 (\336cient handling lar) 351.24 466 P
+0.44 (ge data transfers) 442.52 466 P
+0.9 (because small transfers have high overheads. Lar) 108 452 P
+0.9 (ge transfers are relatively simple to) 348.64 452 P
+-0.11 (achieve for lar) 108 438 P
+-0.11 (ge \336les, but small \336les pose a problem. Client \336le caches are ef) 176.84 438 P
+-0.11 (fective at) 477.81 438 P
+-0.06 (reducing server accesses for small \336le reads, but they aren\325) 108 424 P
+-0.06 (t as ef) 390.3 424 P
+-0.06 (fective at \336ltering out) 418.59 424 P
+0.18 (small \336le writes [Baker91]. Zebra clients use the storage servers ef) 108 410 P
+0.18 (\336ciently by writing) 429.68 410 P
+(to them in lar) 108 396 T
+(ge transfers, even if their applications are writing small \336les.) 172.08 396 T
+1 F
+1.35 (High) 108 376 P
+1.35 (availability) 136.34 376 P
+2 10 Q
+1.13 (1) 190.98 380.8 P
+2 12 Q
+1.35 (. Zebra can tolerate the loss of any single machine in the system,) 195.98 376 P
+0.77 (including a storage server) 108 362 P
+0.77 (. Zebra makes \336le data highly available by maintaining the) 233.23 362 P
+0.43 (parity of the \336le system contents. If a server crashes its contents can be reconstructed) 108 348 P
+0.02 (using the parity information. The use of parity allows Zebra to provide the availability) 108 334 P
+0.31 (of a system that maintains redundant copies of its \336les while requiring only a fraction) 108 320 P
+(of the storage overhead.) 108 306 T
+1 F
+-0.19 (Uniform server loads.) 108 286 P
+2 F
+-0.19 (File striping causes the load incurred by a heavily used \050) 216.02 286 P
+1 F
+-0.19 (hot) 484.55 286 P
+2 F
+-0.19 (\051 \336le) 499.87 286 P
+0.02 (to be shared by all of the storage servers that store the \336le. In a traditional network \336le) 108 272 P
+-0.01 (system a hot \336le only af) 108 258 P
+-0.01 (fects the performance of the server that stores it, requiring that) 222.67 258 P
+(hot \336les be carefully distributed among all of the servers to balance the load.) 108 244 T
+0.64 (Zebra is currently only a paper design, although a prototype is being implemented in) 108 224 P
+0.25 (the Sprite operating system [Ousterhout88]. This paper describes the design of Zebra, not) 90 210 P
+-0.2 (the prototype implementation. The rest of this paper is or) 90 196 P
+-0.2 (ganized as follows. Section 2 dis-) 361.78 196 P
+0.33 (cusses striping and its application to a network \336le system, Section 3 discusses the use of) 90 182 P
+0.47 (parity to provide high availability) 90 168 P
+0.47 (, Section 4 gives an overview of the Zebra architecture,) 252.33 168 P
+0.86 (and Section 5 describes the Zebra design in more detail. Section 6 covers Zebra\325) 90 154 P
+0.86 (s status) 486.16 154 P
+(and future work, and Section 7 is a conclusion.) 90 140 T
+90 108 522 123 C
+99 121 243 121 2 L
+0.5 H
+2 Z
+0 X
+0 K
+N
+0 0 612 792 C
+2 10 Q
+0 X
+0 K
+(1. The distinction between availability and reliability) 108 101.33 T
+(, while it is important, is not particularly rele-) 319.16 101.33 T
+(vant to this paper) 108 89.33 T
+(. The ar) 176.57 89.33 T
+(guments made here regarding the availability of Zebra also apply to its) 207.2 89.33 T
+(reliability) 108 77.33 T
+(.) 146.22 77.33 T
+FMENDPAGE
+%%EndPage: "1" 3
+%%Page: "2" 3
+612 792 0 FMBEGINPAGE
+0 10 Q
+0 X
+0 K
+(Zebra) 72 749.33 T
+(April 28, 1992) 479.75 749.33 T
+(2) 303.5 36 T
+0 14 Q
+(2) 90 710.67 T
+(Why Stripe?) 117 710.67 T
+2 12 Q
+0.2 (T) 108 688 P
+0.2 (raditional network \336le systems con\336ne each \336le to a single \336le server) 114.91 688 P
+0.2 (. Unfortunately) 448.52 688 P
+-0.02 (this means that the rate at which a \336le can be transferred between the server and a client is) 90 674 P
+0.9 (limited by the performance characteristics of that one server) 90 660 P
+0.9 (, such as its CPU power) 385.15 660 P
+0.9 (, its) 503.77 660 P
+0.96 (memory bandwidth and the performance of its I/O controllers. This makes it dif) 90 646 P
+0.96 (\336cult to) 484.05 646 P
+1.02 (improve the performance of the network \336le system without improving or replacing the) 90 632 P
+0.2 (server) 90 618 P
+0.2 (. Striping a \336le over several servers allows those servers to transfer the \336le in paral-) 118.64 618 P
+0.16 (lel, so that the aggregate transfer rate can be much higher than that of any one server) 90 604 P
+0.16 (. The) 497.2 604 P
+0.31 (\336le transfer performance of the \336le system can be improved simply by adding more serv-) 90 590 P
+(ers.) 90 576 T
+0.36 (A striped network \336le system has several economic advantages over a traditional net-) 108 556 P
+1.28 (work \336le system. First, the storage servers do not need to be high-performance, nor do) 90 542 P
+0.54 (they need to be constructed out of special-purpose hardware. Servers in a traditional net-) 90 528 P
+0.47 (work \336le system are often among the more expensive and high-performance machines in) 90 514 P
+0.78 (the system. In contrast, storage servers in a striped network \336le system can be relatively) 90 500 P
+0.67 (modest machines, thereby improving their cost/performance and reducing the fraction of) 90 486 P
+0.31 (the total system cost that they represent. Second, a striped network \336le system allows cli-) 90 472 P
+-0.18 (ents to be upgraded without requiring server upgrades as well. The increased client perfor-) 90 458 P
+1.03 (mance can be matched by increasing the number of servers, rather than replacing them.) 90 444 P
+0.86 (Both of these considerations make a striped network \336le system an economically attrac-) 90 430 P
+(tive alternative to a traditional network \336le system.) 90 416 T
+1.13 (The idea of using striping to improve data transfer bandwidth is not a new one. It\325) 108 396 P
+1.13 (s) 517.33 396 P
+-0.11 (often used to improve the performance of disk subsystems by striping data across multiple) 90 382 P
+0.88 (disks attached to the same computer) 90 368 P
+0.88 (. Mainframes and supercomputers have used striped) 267.27 368 P
+0.06 (disks for quite a while [Johnson84]. The term) 90 354 P
+1 F
+0.06 (disk striping) 312.02 354 P
+2 F
+0.06 ( was \336rst de\336ned by Salem and) 371.72 354 P
+0.59 (Garcia-Molina in 1986 [Salem86]. More recently there has been lots of interest in arrays) 90 340 P
+0.47 (of many small disks, originating with the paper by Patterson et al. in 1988 [Patterson88].) 90 326 P
+-0.18 (All of this work focuses on aggregating several relatively slow disks to create a single log-) 90 312 P
+(ical disk with a much higher data rate.) 90 298 T
+0.7 (In recent years striping has been applied to \336le systems as a whole. In these \336le sys-) 108 278 P
+1.77 (tems the blocks of each \336le are striped across multiple storage devices. These storage) 90 264 P
+0.11 (devices may be disks, as in HPFS [Poston88], I/O nodes in a parallel computer) 90 250 P
+0.11 (, as in CFS) 469.02 250 P
+3.15 ([Pierce89] and Bridge [Dibble90], or they may be network \336le servers as in Swift) 90 236 P
+0.56 ([Cabrera91]. It is important to note that these systems stripe on a per) 90 222 P
+0.56 (-\336le basis, therefore) 425.29 222 P
+0.01 (they work best with lar) 90 208 P
+0.01 (ge \336les. Small \336les are a kind of Catch-22: if they span all the stor-) 200.41 208 P
+-0.08 (age devices then the amount stored on each device will be small, causing the devices to be) 90 194 P
+0.27 (used inef) 90 180 P
+0.27 (\336ciently) 133.69 180 P
+0.27 (, but if small \336les aren\325) 172.22 180 P
+0.27 (t striped then the system performance when writ-) 284.62 180 P
+0.51 (ing small \336les will be no better than that of a non-striped system. Applications that write) 90 166 P
+(many small \336les will not see a performance improvement.) 90 152 T
+-0.11 (Striping also serves as a load-balancing mechanism for the storage devices. Ideally the) 108 132 P
+0.09 (storage devices would have identical loads, so that no one device saturates and becomes a) 90 118 P
+1.09 (bottleneck. If \336les are constrained to a single storage device then care must be taken to) 90 104 P
+0.12 (ensure that hot \336les are evenly distributed across the devices. Striping eliminates the need) 90 90 P
+0.09 (for careful \336le placement by distributing \336les over multiple devices. The load caused by a) 90 76 P
+FMENDPAGE
+%%EndPage: "2" 4
+%%Page: "3" 4
+612 792 0 FMBEGINPAGE
+0 10 Q
+0 X
+0 K
+(Zebra) 72 749.33 T
+(April 28, 1992) 479.75 749.33 T
+(3) 303.5 36 T
+2 12 Q
+1.25 (heavily used \336le is shared by all the devices that store it, thus reducing the variance in) 90 712 P
+(device loads.) 90 698 T
+0 14 Q
+(3) 90 667.67 T
+(A) 117 667.67 T
+(vailability) 126.07 667.67 T
+2 12 Q
+-0.03 (Striping can potentially reduce the availability of a network \336le system, since each \336le) 108 645 P
+-0 (in the system is distributed over several storage servers. The loss of any one of these serv-) 90 631 P
+1.93 (ers will cause the \336le to be unavailable. If a striped \336le system with multiple servers) 90 617 P
+1.96 (replaces a \336le system with a single server) 90 603 P
+1.96 (, then the availability of the system will be) 302.1 603 P
+(reduced \050assuming the servers in both systems have the same failure rate\051.) 90 589 T
+1.23 (Network \336le systems often improve availability by maintaining redundant copies of) 108 569 P
+0.33 (each \336le. Redundant copies are advantageous because they allow the system to withstand) 90 555 P
+0.24 (server failures \050provided at least one copy remains available\051, and they can allow the sys-) 90 541 P
+1.3 (tem to tolerate network partitions. If each section of the partitioned network contains a) 90 527 P
+1 (copy of each \336le then \336les can continue to be accessed without interruption. Redundant) 90 513 P
+0.22 (copies do have disadvantages, however) 90 499 P
+0.22 (. Additional storage is needed for the extra copies,) 279.08 499 P
+(and there are complexities and overheads involved in keeping the copies up-to-date.) 90 485 T
+0.79 (An alternative approach is to maintain error) 108 465 P
+0.79 (-correcting information that allows miss-) 322.32 465 P
+0.05 (ing data to be reconstructed. RAID systems favor this scheme. For example, a simple par-) 90 451 P
+0.49 (ity scheme will allow the system to tolerate the loss of a single server) 90 437 P
+0.49 (. One block of data) 428.46 437 P
+0.77 (from all but one server is XOR\325ed together to produce a parity block which is stored on) 90 423 P
+-0.02 (the remaining server) 90 409 P
+-0.02 (. Should one of the blocks of data become unavailable it can easily be) 187.88 409 P
+1.81 (recomputed from the other blocks of data and the parity block. The advantage of this) 90 395 P
+0.48 (approach is that the storage required for the parity blocks is much less than is needed for) 90 381 P
+0.62 (redundant copies. Swift proposes to use parity to tolerate server failures for just this rea-) 90 367 P
+(son.) 90 353 T
+-0.06 (It is easier to implement a parity mechanism for a RAID storage system than for a net-) 108 333 P
+1.85 (work \336le system, however) 90 319 P
+1.85 (. A RAID is usually connected to a host computer) 221.48 319 P
+1.85 (, through) 476.84 319 P
+0.04 (which all data transfers to and from the array must pass. This makes the host a convenient) 90 305 P
+0.69 (location to compute parity) 90 291 P
+0.69 (. A network \336le system doesn\325) 217.55 291 P
+0.69 (t have a comparable centralized) 367.37 291 P
+0.54 (location, however) 90 277 P
+0.54 (. This makes it more dif) 175.82 277 P
+0.54 (\336cult to compute parity across physical storage) 292.9 277 P
+0.55 (blocks or \336le blocks. If \336les are written randomly) 90 263 P
+0.55 (, or written by multiple clients simulta-) 331.13 263 P
+0.69 (neously) 90 249 P
+0.69 (, then no single location may contain all of the data needed to perform the parity) 126.53 249 P
+-0.05 (calculation. File updates are also problematic, since they require updating the parity of the) 90 235 P
+0.02 (modi\336ed blocks as well. The new parity must be computed from the old and new contents) 90 221 P
+-0.18 (of the block, potentially causing several server accesses per update. In addition, the update) 90 207 P
+-0.26 (of a block and its parity must be an atomic operation, since data could be lost if the two get) 90 193 P
+1.22 (out of sync. Ensuring that two writes to two dif) 90 179 P
+1.22 (ferent servers are atomic is likely to be) 327.28 179 P
+(complex and expensive.) 90 165 T
+0 14 Q
+(4) 90 134.67 T
+(Zebra Stripes) 117 134.67 T
+2 12 Q
+0.54 (Zebra dif) 108 112 P
+0.54 (fers from existing striped network \336le systems in that it does not stripe on a) 152.62 112 P
+-0.23 (per) 90 98 P
+-0.23 (-\336le basis. Instead it stripes on a per) 105.08 98 P
+-0.23 (-client basis: all of the new data from a single client) 275.79 98 P
+0.71 (is formed into a single logical stream, regardless of which \336les the data belongs to. This) 90 84 P
+FMENDPAGE
+%%EndPage: "3" 5
+%%Page: "4" 5
+612 792 0 FMBEGINPAGE
+0 10 Q
+0 X
+0 K
+(Zebra) 72 749.33 T
+(April 28, 1992) 479.75 749.33 T
+(4) 303.5 36 T
+2 12 Q
+0.04 (stream is then striped across the storage servers. The data written to the servers in a single) 90 406 P
+1.44 (pass by a single client is called a) 90 392 P
+1 F
+1.44 (stripe) 260.75 392 P
+2 F
+1.44 (. The portion of a stripe that is written to each) 288.07 392 P
+1.28 (server is called a) 90 378 P
+1 F
+1.28 (stripe fragment.) 178.39 378 P
+2 F
+1.28 ( Clients compute the parity of the stripe fragments as) 256.3 378 P
+0.75 (they are written. At the end of a stripe the client writes out the resulting parity fragment) 90 364 P
+0.97 (and begins a new parity computation. Note that each stripe is written by a single client.) 90 350 P
+-0.19 (Multiple clients may be writing to the storage servers simultaneously) 90 336 P
+-0.19 (, but they are all writ-) 419.01 336 P
+(ing to distinct stripes. Figure 1 illustrates the Zebra striping mechanism.) 90 322 T
+0.69 (Zebra, like all \336le systems, must maintain) 108 302 P
+1 F
+0.69 (metadata) 316.37 302 P
+2 F
+0.69 ( that records the physical storage) 361.01 302 P
+1.12 (location for each \336le block. When a \336le block is accessed the \336le\325) 90 288 P
+1.12 (s metadata is used to) 418.24 288 P
+-0 (determine which storage location to use. In Zebra the) 90 274 P
+1 F
+-0 (\336le manager) 348.46 274 P
+2 F
+-0 ( is responsible for man-) 408.75 274 P
+0.14 (aging the metadata \050See Section 5.2 for details\051. Once a client has written a stripe it sends) 90 260 P
+-0.05 (a summary of the stripe\325) 90 246 P
+-0.05 (s contents to the \336le manager) 206.37 246 P
+-0.05 (, so that the metadata can be updated) 345.85 246 P
+(accordingly) 90 232 T
+(.) 145.84 232 T
+0.26 (Clients are responsible for reconstructing \336les from their constituent stripe fragments.) 108 212 P
+1.06 (Upon opening a \336le for reading the client obtains the metadata for the \336le from the \336le) 90 198 P
+0.15 (manager) 90 184 P
+0.15 (. T) 130.63 184 P
+0.15 (o read the \336le the client uses the metadata to determine which stripe fragments) 143.27 184 P
+0.74 (to access, then retrieves the desired portions of those fragments from the storage servers) 90 170 P
+(and reassembles them into the \336le.) 90 156 T
+1.1 (Stripes in Zebra are analogous to segments in a log-structured \336le system. They are) 108 136 P
+0.65 (lar) 90 122 P
+0.65 (ge conglomerations of \336le data that can be ef) 102.44 122 P
+0.65 (\336ciently transferred. The data stored in a) 323.25 122 P
+1.21 (stripe exhibits temporal locality) 90 108 P
+1.21 (, rather than spatial locality) 245.09 108 P
+1.21 (, i.e. a stripe contains blocks) 380.05 108 P
+1.22 (that were written during the same period of time rather than blocks from the same \336le.) 90 94 P
+90 72 522 720 C
+90 414 522 720 C
+223.47 639.68 259.47 657.68 R
+3 X
+0 K
+V
+0.5 H
+0 Z
+0 X
+N
+150.87 639.68 178.7 657.68 R
+13 X
+V
+0 X
+N
+104.08 423 509.08 504 R
+7 X
+V
+0 9 Q
+0 X
+0.54 (Figur) 122.08 497.33 P
+0.54 (e 1) 143.38 497.33 P
+2 10 Q
+0.6 (:) 154.66 497.33 P
+0 F
+0.6 (Zebra striping vs. per) 160.54 497.33 P
+0.6 (-\336le striping.) 254.7 497.33 P
+2 F
+0.6 (This \336gure shows the same sequence of \336le) 312.82 497.33 P
+1.13 (data being written in both Zebra and in per) 122.08 487.33 P
+1.13 (-\336le striping. Each shaded region represents a) 301.92 487.33 P
+0.2 (piece of data written to a single \336le. Regions with the same shading belong to the same \336le.) 122.08 477.33 P
+-0.17 (Zebra clients pack together \336le blocks and write them to the storage servers in lar) 122.08 467.33 P
+-0.17 (ge transfers) 444.9 467.33 P
+0.2 (called) 122.08 457.33 P
+1 F
+0.2 (stripe fragments.) 148.64 457.33 P
+2 F
+0.2 ( Per) 216.57 457.33 P
+0.2 (-\336le striping requires more transfers, because small writes aren\325) 232.39 457.33 P
+0.2 (t) 488.3 457.33 P
+0.5 (batched. In this example the striping unit \050the maximum amount of data written to a single) 122.08 447.33 P
+0.13 (server\051 in the per) 122.08 437.33 P
+0.13 (-\336le system is the same size as a stripe fragment in Zebra. Parity writes are) 190.27 437.33 P
+(not shown.) 122.08 427.33 T
+124.42 565.18 142.42 583.18 R
+12 X
+V
+0 X
+N
+160.42 565.18 178.42 583.18 R
+12 X
+V
+0 X
+N
+196.42 565.18 214.42 583.18 R
+12 X
+V
+0 X
+N
+232.42 565.18 250.42 583.18 R
+12 X
+V
+0 X
+N
+115.42 639.68 128.25 657.68 R
+6 X
+V
+0 X
+N
+128.25 639.68 137.25 657.68 R
+14 X
+V
+0 X
+N
+137.25 639.68 151.09 657.68 R
+6 X
+V
+0 X
+N
+179.47 639.68 223.47 657.68 R
+3 X
+V
+0 X
+N
+151.92 657.68 151.92 639.68 2 L
+3 X
+V
+2 H
+0 X
+N
+223.47 657.68 223.47 639.68 2 L
+3 X
+V
+0 X
+N
+187.92 657.18 187.92 639.18 2 L
+3 X
+V
+0 X
+N
+2 9 Q
+(Storage Servers) 282.1 537.5 T
+309.95 693 309.95 558 2 L
+3 X
+V
+2 Z
+0 X
+N
+0 10 Q
+(Zebra Striping) 161.64 695.3 T
+(Per) 402.13 695.3 T
+(-\336le Striping) 416.74 695.3 T
+236.37 552.92 228.94 558.01 237.94 557.63 3 L
+0.5 H
+0 Z
+N
+274.12 543.04 229.19 557.92 2 L
+3 X
+V
+2 Z
+0 X
+N
+390.95 557.57 399.94 558.01 392.55 552.87 3 L
+0 Z
+N
+353.29 542.21 399.71 557.92 2 L
+3 X
+V
+2 Z
+0 X
+N
+149.03 669.68 154.23 666.68 149.03 663.68 149.03 666.68 4 Y
+V
+118.23 666.68 149.03 666.68 2 L
+3 X
+V
+0 X
+N
+2 9 Q
+(T) 115.47 668.86 T
+(ime) 120.65 668.86 T
+(Stripe Fragment) 215.72 677.86 T
+187.42 666.68 222.92 666.68 2 L
+3 X
+V
+0 X
+N
+187.42 669.12 187.42 664.24 2 L
+3 X
+V
+0 X
+N
+222.92 669.12 222.92 664.24 2 L
+3 X
+V
+0 X
+N
+212.98 673.14 206.42 668.56 209.55 675.92 3 L
+0 Z
+N
+212.72 676.36 206.58 668.75 2 L
+3 X
+V
+2 Z
+0 X
+N
+2 36 Q
+({) 0 -270 142.55 619.89 TF
+136.68 594.38 133.68 589.18 130.68 594.38 133.68 594.38 4 Y
+V
+133.68 594.38 133.68 619.39 2 L
+3 X
+V
+1 H
+0 X
+N
+({) 0 -270 178.05 619.89 TF
+172.18 594.38 169.18 589.18 166.18 594.38 169.18 594.38 4 Y
+V
+169.18 594.38 169.18 619.39 2 L
+3 X
+V
+0 X
+N
+({) 0 -270 214.05 619.89 TF
+208.18 594.38 205.18 589.18 202.18 594.38 205.18 594.38 4 Y
+V
+205.18 594.38 205.18 619.39 2 L
+3 X
+V
+0 X
+N
+({) 0 -270 250.05 619.89 TF
+244.18 594.38 241.18 589.18 238.18 594.38 241.18 594.38 4 Y
+V
+241.18 594.38 241.18 619.39 2 L
+3 X
+V
+0 X
+N
+400.17 639.68 428 657.68 R
+13 X
+V
+0.5 H
+0 Z
+0 X
+N
+364.5 639.68 377.34 657.68 R
+6 X
+V
+0 X
+N
+377.34 639.68 386.34 657.68 R
+14 X
+V
+0 X
+N
+386.34 639.68 400.17 657.68 R
+6 X
+V
+0 X
+N
+426.95 639.68 507.95 657.68 R
+3 X
+V
+0 X
+N
+398.11 669.68 403.31 666.68 398.11 663.68 398.11 666.68 4 Y
+V
+367.31 666.68 398.11 666.68 2 L
+3 X
+V
+2 Z
+0 X
+N
+2 9 Q
+(T) 364.56 668.86 T
+(ime) 369.73 668.86 T
+373.5 567 391.5 585 R
+12 X
+V
+0 Z
+0 X
+N
+409.5 567 427.5 585 R
+12 X
+V
+0 X
+N
+445.5 567 463.5 585 R
+12 X
+V
+0 X
+N
+481.5 567 499.5 585 R
+12 X
+V
+0 X
+N
+382.6 596.17 380.74 590.46 376.73 594.93 379.67 595.55 4 Y
+V
+379.68 595.54 371.26 636.21 2 L
+12 X
+V
+1 H
+2 Z
+0 X
+N
+414.16 596.68 414.77 590.71 409.29 593.17 411.73 594.93 4 Y
+V
+411.74 594.92 382.26 636.21 2 L
+12 X
+V
+0 X
+N
+415.16 597.2 414.77 591.21 409.78 594.54 412.47 595.87 4 Y
+V
+412.48 595.87 392.76 636.21 2 L
+12 X
+V
+0 X
+N
+449.98 597.63 450.99 591.71 445.36 593.79 447.67 595.71 4 Y
+V
+447.68 595.71 414.26 636.21 2 L
+12 X
+V
+0 X
+N
+484.82 596.6 485.99 590.71 480.31 592.65 482.57 594.62 4 Y
+V
+482.58 594.62 446.26 636.21 2 L
+12 X
+V
+0 X
+N
+392.98 589.35 386.99 589.71 390.3 594.72 391.64 592.04 4 Y
+V
+391.65 592.03 480.76 636.21 2 L
+12 X
+V
+0 X
+N
+427.74 590.62 421.74 590.71 424.82 595.86 426.28 593.24 4 Y
+V
+426.29 593.24 504.26 636.21 2 L
+12 X
+V
+0 X
+N
+463.5 657.68 463.5 639.68 2 L
+12 X
+V
+0.5 H
+0 X
+N
+499.5 657.68 499.5 639.68 2 L
+12 X
+V
+0 X
+N
+(Striping Unit) 455.25 677.86 T
+426.95 666.68 462.45 666.68 2 L
+12 X
+V
+0 X
+N
+426.95 669.12 426.95 664.24 2 L
+12 X
+V
+0 X
+N
+462.45 669.12 462.45 664.24 2 L
+12 X
+V
+0 X
+N
+452.5 673.14 445.94 668.56 449.08 675.92 3 L
+0 Z
+N
+452.25 676.36 446.11 668.75 2 L
+12 X
+V
+2 Z
+0 X
+N
+90 72 522 720 C
+0 0 612 792 C
+FMENDPAGE
+%%EndPage: "4" 6
+%%Page: "5" 6
+612 792 0 FMBEGINPAGE
+0 10 Q
+0 X
+0 K
+(Zebra) 72 749.33 T
+(April 28, 1992) 479.75 749.33 T
+(5) 303.5 36 T
+2 12 Q
+0.15 (Like segments, stripes are immutable objects. Once they are written they cannot be modi-) 90 712 P
+(\336ed. Free space is reclaimed from stripes by) 90 698 T
+1 F
+(cleaning) 304.84 698 T
+2 F
+( them \050see Section 5.3\051.) 346.14 698 T
+2.2 (Zebra\325) 108 678 P
+2.2 (s method of striping has several advantages over per) 139.3 678 P
+2.2 (-\336le striping. First, the) 407.79 678 P
+1.42 (striping algorithm is relatively simple. No special mechanisms are needed for handling) 90 664 P
+0.65 (small \336les, randomly written \336les, or \336le updates; their bytes are simply mer) 90 650 P
+0.65 (ged into the) 464.06 650 P
+-0.23 (client\325) 90 636 P
+-0.23 (s stream of bytes. Lar) 119.98 636 P
+-0.23 (ge \336les that are sequentially written will be striped in a manner) 222.43 636 P
+1.29 (similar to per) 90 622 P
+1.29 (-\336le striping, however) 156.31 622 P
+1.29 (. Each \336le will be divided into stripe fragments and) 264.5 622 P
+0.09 (striped across the servers. Second, parity computation and management is simpli\336ed. Par-) 90 608 P
+0.71 (ity is easily computed because each client computes the parity of the stripes it produces.) 90 594 P
+1.62 (The parity computation doesn\325) 90 580 P
+1.62 (t require any coordination between clients, or additional) 242.2 580 P
+-0.24 (data transfers between the servers and the clients. Since stripes are immutable and parity is) 90 566 P
+-0.26 (never updated, Zebra also avoids having to atomically update a \336le and its parity) 90 552 P
+-0.26 (. A simple) 472.88 552 P
+-0.18 (timestamp mechanism is suf) 90 538 P
+-0.18 (\336cient for ensuring that a stripe and its parity are consistent. If) 225.51 538 P
+1.02 (a client should crash while in the process of writing a stripe the timestamps are used to) 90 524 P
+1 (determine how many of the stripe fragments were actually written prior to the crash, so) 90 510 P
+(that the stripe\325) 90 496 T
+(s parity can be updated accordingly) 158.63 496 T
+(.) 328.05 496 T
+1.23 (Striping the logical stream of bytes from each client, rather than \336les, improves the) 108 476 P
+1.08 (performance of writing small \336les. Clients write stripe fragments to the storage servers,) 90 462 P
+0.54 (not \336les or \336le blocks. This decouples the size of the \336les used by the client applications) 90 448 P
+1.14 (from the size of the accesses made to the storage servers. Applications that write many) 90 434 P
+2.36 (small \336les will see a performance improvement over traditional network \336le systems) 90 420 P
+(because the \336les will be batched together and written to the server in lar) 90 406 T
+(ge transfers.) 434.52 406 T
+0 14 Q
+(5) 90 375.67 T
+(Zebra Design) 117 375.67 T
+2 12 Q
+0.12 (Figure 2 illustrates the components of Zebra. The storage servers store \336le data, in the) 108 353 P
+-0.16 (form of stripe fragments. The \336le manager manages the \336le name space and keeps track of) 90 339 P
+-0.22 (where \336les are located. The stripe manager handles storage management by reclaiming the) 90 325 P
+-0.17 (space occupied by data that is no longer used. The rest of this section describes these com-) 90 311 P
+(ponents in more detail.) 90 297 T
+90 72 522 720 C
+126 72 486 270 C
+0 X
+0 K
+90 450 20.52 20.52 415.27 218.73 G
+0.5 H
+0 Z
+90 450 20.52 20.52 415.27 218.73 A
+182.5 202.25 218.5 238.25 R
+V
+N
+182 133 218 169 R
+V
+N
+180 204.75 216 240.75 R
+6 X
+V
+0 X
+N
+0 10 Q
+(Client) 184.95 219.4 T
+180 134.95 216 170.95 R
+7 X
+V
+0 X
+N
+(Storage) 181.62 155.66 T
+(Server) 183.85 145.66 T
+1 F
+(Network) 296 192.81 T
+125.25 80.62 479.62 122.5 R
+7 X
+V
+0 9 Q
+0 X
+2.2 (Figur) 143.24 115.83 P
+2.2 (e 2) 164.55 115.83 P
+0 10 Q
+2.44 (: Zebra schematic) 177.48 115.83 P
+2 F
+2.44 (. Squares represent individual machines; circles) 258.98 115.83 P
+0.83 (represent logical entities. The \336le manager and the stripe manager can run on) 143.24 105.83 P
+2.24 (any machine in the system, although it is likely that one machine will be) 143.24 95.83 P
+(designated to run both of them.) 143.24 85.83 T
+5 X
+90 450 20.52 20.52 413.76 220.23 G
+0 X
+90 450 20.52 20.52 413.76 220.23 A
+0 F
+(Stripe) 400.72 221.8 T
+(Manager) 394.34 214.06 T
+198 170.95 198 189 2 L
+5 X
+V
+2 H
+11 X
+N
+236.25 133 272.25 169 R
+0 X
+V
+0.5 H
+N
+234.25 134.95 270.25 170.95 R
+7 X
+V
+0 X
+N
+(Storage) 235.87 155.66 T
+(Server) 238.1 145.66 T
+290 132.75 326 168.75 R
+V
+N
+288 134.7 324 170.7 R
+7 X
+V
+0 X
+N
+(Storage) 289.62 155.41 T
+(Server) 291.85 145.41 T
+306 170.7 306 188.75 2 L
+7 X
+V
+2 H
+11 X
+N
+344 133.25 380 169.25 R
+0 X
+V
+0.5 H
+N
+342 135.2 378 171.2 R
+7 X
+V
+0 X
+N
+(Storage) 343.62 155.9 T
+(Server) 345.85 145.9 T
+398 133.5 434 169.5 R
+V
+N
+396 135.45 432 171.45 R
+7 X
+V
+0 X
+N
+(Storage) 397.62 156.15 T
+(Server) 399.85 146.15 T
+198 186.75 198 204.75 2 L
+7 X
+V
+2 H
+11 X
+N
+236.75 202 272.75 238 R
+0 X
+V
+0.5 H
+N
+234.25 204.5 270.25 240.5 R
+6 X
+V
+0 X
+N
+(Client) 239.2 219.15 T
+90 450 20.52 20.52 361.52 218.73 G
+90 450 20.52 20.52 361.52 218.73 A
+5 X
+90 450 20.52 20.52 360.01 220.23 G
+0 X
+90 450 20.52 20.52 360.01 220.23 A
+(File) 351.96 221.8 T
+(Manager) 340.59 214.06 T
+252.25 204.5 252 171.25 2 L
+5 X
+V
+2 H
+11 X
+N
+360.02 199.71 360.02 171.75 2 L
+5 X
+V
+11 X
+N
+413.77 199.71 413.77 171.5 2 L
+5 X
+V
+11 X
+N
+198.5 188.75 414.27 188.75 2 L
+5 X
+V
+10 X
+N
+90 72 522 720 C
+0 0 612 792 C
+FMENDPAGE
+%%EndPage: "5" 7
+%%Page: "6" 7
+612 792 0 FMBEGINPAGE
+0 10 Q
+0 X
+0 K
+(Zebra) 72 749.33 T
+(April 28, 1992) 479.75 749.33 T
+(6) 303.5 36 T
+0 14 Q
+(5.1) 90 710.67 T
+(Zebra Storage Servers) 117 710.67 T
+2 12 Q
+1.55 (The Zebra storage servers are merely repositories for stripe fragments. They create) 108 688 P
+-0.26 (new fragments in response to client requests and retain the fragments until they are deleted) 90 674 P
+-0.11 (by the stripe manager) 90 660 P
+-0.11 (. The fragments are opaque to the storage servers -- the servers know) 192.6 660 P
+1.94 (nothing about the \336les or blocks that the fragments contain. This simple functionality) 90 646 P
+1.97 (makes it possible to implement the storage server in a variety of dif) 90 632 P
+1.97 (ferent ways. One) 436.48 632 P
+1.84 (option is to build a special-purpose storage server that has been optimized for storing) 90 618 P
+0.93 (stripe fragments. Another is to store stripe fragments as \336les in a local \336le system. This) 90 604 P
+0.68 (approach is not only easy to implement but it also allows the storage servers to be tradi-) 90 590 P
+(tional network \336le servers, some of whose \336les happen to be Zebra stripe fragments.) 90 576 T
+0.25 (The simple functionality of the storage servers is well-suited to machines that empha-) 108 556 P
+(size I/O capabilities rather than CPU speed. For example, the RAID-II project at Berkeley) 90 542 T
+1.47 ([Lee92] is building a storage system that has a high-bandwidth connection between its) 90 528 P
+0.89 (disk array and the network. Unfortunately) 90 514 P
+0.89 (, it is relatively expensive for the host CPU to) 294.83 514 P
+-0.25 (access the data that passes over that connection. T) 90 500 P
+-0.25 (raditional network \336le systems are likely) 327.71 500 P
+0.17 (to run slowly on such an architecture since the host must process each \336le block. A Zebra) 90 486 P
+-0.15 (storage server) 90 472 P
+-0.15 (, on the other hand, only performs per) 156.31 472 P
+-0.15 (-fragment processing and is better able) 336.56 472 P
+(to take advantage of this type of architecture.) 90 458 T
+0 14 Q
+(5.2) 90 432.67 T
+(Zebra File Manager) 117 432.67 T
+2 12 Q
+1.25 (The Zebra \336le manager manages the \336le system metadata, i.e. the \336le system name) 108 410 P
+0.71 (space and the mapping of logical \336le blocks into stripe fragments. Clients send all name) 90 396 P
+2.07 (space modi\336cations, such as \336le creation and deletion, as well as \336le open and close) 90 382 P
+0.91 (events to the \336le manager) 90 368 P
+0.91 (. This allows the \336le manager to ensure the consistency of the) 216.22 368 P
+2.49 (metadata even if clients are modifying it concurrently) 90 354 P
+2.49 (. The \336le manager is a critical) 364.15 354 P
+0.28 (resource; the \336le system cannot be accessed if its metadata is unavailable. Zebra employs) 90 340 P
+0.6 (a backup \336le manager that can take the place of the primary \336le manager should the pri-) 90 326 P
+0.14 (mary fail. During normal operation the primary \336le manager logs all changes in the meta-) 90 312 P
+3.33 (data to the backup. If the primary should fail the backup uses this information to) 90 298 P
+(reconstruct the current state of the metadata.) 90 284 T
+0.04 (The modi\336cation rate of the metadata in Zebra is likely to be higher than in traditional) 108 264 P
+-0.17 (\336le systems. This is because the mapping of a \336le block to a stripe fragment changes when) 90 250 P
+-0.29 (the \336le block is modi\336ed. Clients determine the storage location for a \336le block by packing) 90 236 P
+0.18 (it into a stripe fragment and writing the fragment to the next server in its rotation. If a cli-) 90 222 P
+1.06 (ent overwrites an existing \336le block then the new version of the block will probably be) 90 208 P
+0.89 (stored in a dif) 90 194 P
+0.89 (ferent fragment. When a client writes a stripe it must tell the \336le manager) 158.73 194 P
+(which \336le blocks it contains so the \336le manager can update its metadata.) 90 180 T
+-0.1 (The centralization of name service and \336le mapping information on the \336le manager is) 108 160 P
+1.66 (a potential performance bottleneck. One technique for eliminating this bottleneck is to) 90 146 P
+-0.03 (have the clients cache both name and mapping information. Client name caching has been) 90 132 P
+1.24 (shown to be ef) 90 118 P
+1.24 (fective at reducing the load on the name server in a network \336le system) 163.79 118 P
+-0.15 ([Shirrif) 90 104 P
+-0.15 (f92]. By caching whole directories of \336le names and their mapping information the) 125.09 104 P
+-0.12 (Zebra clients can eliminate the need for contacting the \336le manager each time they modify) 90 90 P
+(the name space or access a \336le.) 90 76 T
+FMENDPAGE
+%%EndPage: "6" 8
+%%Page: "7" 8
+612 792 0 FMBEGINPAGE
+0 10 Q
+0 X
+0 K
+(Zebra) 72 749.33 T
+(April 28, 1992) 479.75 749.33 T
+(7) 303.5 36 T
+0 14 Q
+(5.3) 90 710.67 T
+(Stripe Manager) 117 710.67 T
+2 12 Q
+-0.05 (The Zebra stripe manager is responsible for managing the storage space on the storage) 108 688 P
+1.04 (servers by reclaiming free space from existing stripes. Its function is similar to the) 90 674 P
+1 F
+1.04 (seg-) 502.02 674 P
+0.41 (ment cleaner) 90 660 P
+2 F
+0.41 ( in a log-structured \336le system. The manager keeps a list of all stripes in the) 152.7 660 P
+0.13 (system, and which \336le blocks they contain. As blocks are deleted or overwritten the list is) 90 646 P
+-0.15 (updated accordingly) 90 632 P
+-0.15 (. When free space is needed a stripe is) 186.66 632 P
+1 F
+-0.15 (cleaned) 371.18 632 P
+2 10 Q
+-0.12 (2) 408.48 636.8 P
+2 12 Q
+-0.15 (, a process in which its) 413.48 632 P
+0.06 (live data is read and then written to a new stripe. The storage servers are then noti\336ed that) 90 618 P
+-0.19 (the space currently allocated to the cleaned stripe can be reused. The stripe manager repre-) 90 604 P
+1.55 (sents a centralized location in which the live data from stripes that are cleaned can be) 90 590 P
+0.59 (formed into stripe fragments and their parity computed. Zebra uses a backup stripe man-) 90 576 P
+(ager to ensure that the stripe manager is always available.) 90 562 T
+-0.17 ( Cleaning\325) 108 542 P
+-0.17 (s impact on system performance is proportional to the amount of live data in) 157.47 542 P
+1.31 (the stripes that are chosen to be cleaned. Ideally the stripes would not contain any live) 90 528 P
+1.13 (data, so that cleaning them would not cause any data transfers. Measurements of Sprite) 90 514 P
+0.32 (LFS show that the write traf) 90 500 P
+0.32 (\336c to the disk due to cleaning is relatively low \050for non-swap) 226.31 500 P
+1.86 (\336le systems it is between 2% and 7% of the overall write traf) 90 486 P
+1.86 (\336c to the disk\051 [Rosen-) 404.61 486 P
+(blum91]. Further research is required to determine if Zebra exhibits the same behavior) 90 472 T
+(.) 504.02 472 T
+0 14 Q
+(6) 90 441.67 T
+(Status and Futur) 117 441.67 T
+(e W) 218.6 441.67 T
+(ork) 241.53 441.67 T
+2 12 Q
+-0.24 (Zebra is currently a paper design. Implementation of a prototype began in the spring of) 108 419 P
+0.84 (1992, and should be completed by late 1992. Once the prototype is completed it will be) 90 405 P
+(measured and compared to existing network \336le systems in the following ways:) 90 391 T
+-0.13 (\245 Performance under a variety of workloads, each of which has a dif) 126 371 P
+-0.13 (ferent distribu-) 450.51 371 P
+0.12 (tion of \336le sizes and read/write ratios. The emphasis will be on Zebra\325) 144 357 P
+0.12 (s perfor-) 480.92 357 P
+1.39 (mance running workloads with lots of lar) 144 343 P
+1.39 (ge \336les \050supercomputer workload\051,) 349.97 343 P
+0.87 (and workloads with lots of small \336les \050UNIX workload\051. The workloads will) 144 329 P
+(probably be synthetic.) 144 315 T
+1.7 (\245 Parity\325) 126 289 P
+1.7 (s cost, in terms of CPU cycles, network bandwidth, and storage server) 166.88 289 P
+(resources.) 144 275 T
+(\245 Stripe cleaning\325) 126 249 T
+(s impact on performance.) 208.81 249 T
+0.35 (\245 T) 126 223 P
+0.35 (olerance of failures of the storage servers, the \336le manager) 140.04 223 P
+0.35 (, the stripe manager) 423.83 223 P
+0.35 (,) 519 223 P
+(and the clients.) 144 209 T
+0 14 Q
+(7) 90 178.67 T
+(Conclusion) 117 178.67 T
+2 12 Q
+-0.19 (Zebra applies ideas from log-structured \336le system research and RAID research to net-) 108 156 P
+1.1 (work \336le systems, resulting in a system that has the following advantages over existing) 90 142 P
+(network \336le systems:) 90 128 T
+1 F
+0.38 (Scalable performance) 108 108 P
+2 F
+0.38 (. The transfer rate for a single \336le is proportional to the number) 213.97 108 P
+90 84 522 99 C
+99 97 243 97 2 L
+0.5 H
+2 Z
+0 X
+0 K
+N
+0 0 612 792 C
+2 10 Q
+0 X
+0 K
+(2. The algorithm for choosing which stripe to clean is beyond the scope of this paper) 108 77.33 T
+(.) 446.1 77.33 T
+FMENDPAGE
+%%EndPage: "7" 9
+%%Page: "8" 9
+612 792 0 FMBEGINPAGE
+0 10 Q
+0 X
+0 K
+(Zebra) 72 749.33 T
+(April 28, 1992) 479.75 749.33 T
+(8) 303.5 36 T
+2 12 Q
+(of servers in the system.) 108 712 T
+1 F
+0.39 (Cost effective servers) 108 692 P
+2 F
+0.39 (. Zebra servers do not need to be high-performance machines or) 211.37 692 P
+0.88 (have special-purpose hardware. The performance of the \336le system can be increased) 108 678 P
+(by adding more servers, rather than replacing the existing ones.) 108 664 T
+1 F
+0.23 (High server ef\336ciency) 108 644 P
+2 F
+0.23 (. Server overhead is reduced because clients write to the storage) 212.93 644 P
+1.49 (servers in lar) 108 630 P
+1.49 (ge transfers, and the servers do not interpret the contents of the stripe) 172.71 630 P
+1.29 (fragments they store. There are no per) 108 616 P
+1.29 (-\336le or per) 298.33 616 P
+1.29 (-block server overheads associated) 351.28 616 P
+(with writing a stripe fragment to a storage server) 108 602 T
+(.) 341.16 602 T
+1 F
+1.35 (Simple parity mechanism) 108 582 P
+2 F
+1.35 (. Parity is computed by the clients as they write out stripe) 231.96 582 P
+2.83 (fragments. Parity is never updated, so expensive parity update computations and) 108 568 P
+(atomic operations are not needed.) 108 554 T
+1 F
+0.11 (Uniform server loads) 108 534 P
+2 F
+0.11 (. Striping reduces the variance of the server loads by distributing) 210.82 534 P
+(hot \336les across multiple storage servers.) 108 520 T
+0.2 (The Zebra architecture promises to provide high-performance \336le access to both lar) 108 500 P
+0.2 (ge) 510.68 500 P
+0.75 (and small \336les. Lar) 90 486 P
+0.75 (ge \336les are striped to improve their transfer rate; small \336le writes are) 183.96 486 P
+2.9 (batched together to reduce server overheads. The result is a cost-ef) 90 472 P
+2.9 (fective, scalable,) 438.84 472 P
+1.14 (highly-available network \336le system that can provide \336le service to a supercomputer as) 90 458 P
+(easily as to a workstation.) 90 444 T
+0 14 Q
+(8) 90 413.67 T
+(Acknowledgments) 117 413.67 T
+2 12 Q
+1.28 (T) 108 391 P
+1.28 (om Anderson provided helpful comments on drafts of this paper) 114.49 391 P
+1.28 (. Alan Smith sug-) 433.52 391 P
+(gested the name \322Zebra\323.) 90 377 T
+0 14 Q
+(9) 90 346.67 T
+(Refer) 117 346.67 T
+(ences) 150.15 346.67 T
+2 12 Q
+([Baker91]) 90 324 T
+0.47 (Mary G. Baker) 180 324 P
+0.47 (, John H. Hartman, Michael D. Kupfer) 252.74 324 P
+0.47 (, Ken W) 440.29 324 P
+0.47 (. Shirrif) 480.44 324 P
+0.47 (f) 518.01 324 P
+0.03 (and John K. Ousterhout, \322Measurements of a Distributed File System\323,) 180 310 P
+1 F
+1.25 (Pr) 180 296 P
+1.25 (oceedings of the 13th Symposium on Operating Systems Principles) 191.55 296 P
+(\050SOSP\051) 180 282 T
+2 F
+(, Asilomar) 215.97 282 T
+(, CA, October 1991, 198-212.) 266.12 282 T
+([Cabrera91]) 90 262 T
+0.32 (Luis-Felipe Cabrera and Darrell D. E. Long, \322Swift: Using Distributed) 180 262 P
+-0.25 (Disk Striping to Provide High I/O Data Rates\323,) 180 248 P
+1 F
+-0.25 (Computing Systems 4) 407.49 248 P
+2 F
+-0.25 (, 4) 510.26 248 P
+(\050Fall 1991\051, 405-436.) 180 234 T
+([Dibble90]) 90 214 T
+1.69 (Peter C. Dibble, \322A Parallel Interleaved File System\323, Ph.D. Thesis,) 180 214 P
+(University of Rochester) 180 200 T
+(, 1990.) 294.11 200 T
+([Johnson84]) 90 180 T
+2.32 (O. G. Johnson, \322Three-dimensional wave equation computations on) 180 180 P
+(vector computers\323,) 180 166 T
+1 F
+(Pr) 274.26 166 T
+(oceedings of the IEEE 72) 285.81 166 T
+2 F
+( \050January 1984\051.) 407.72 166 T
+([Lee92]) 90 146 T
+0.93 (Edward K. Lee, Peter M. Chen, John H. Hartman, Ann L. Chervenak) 180 146 P
+0.52 (Drapeau, Ethan L. Miller) 180 132 P
+0.52 (, Randy H. Katz, Garth A. Gibson and David) 301.99 132 P
+3.12 (A. Patterson, \322RAID-II: A Scalable Storage Architecture for High) 180 118 P
+2.53 (Bandwidth Network File Service\323, T) 180 104 P
+2.53 (echnical Report UCB/CSD 92/) 366.16 104 P
+0.08 (672, Computer Science Division, Electrical Engineering and Computer) 180 90 P
+(Sciences, University of California, Berkeley) 180 76 T
+(, CA, February 1992.) 391.73 76 T
+FMENDPAGE
+%%EndPage: "8" 10
+%%Page: "9" 10
+612 792 0 FMBEGINPAGE
+0 10 Q
+0 X
+0 K
+(Zebra) 72 749.33 T
+(April 28, 1992) 479.75 749.33 T
+(9) 303.5 36 T
+2 12 Q
+([Ousterhout88]) 90 712 T
+5.65 (John K. Ousterhout, Andrew R. Cherenson, Frederick Douglis,) 180 712 P
+0.46 (Michael N. Nelson, and Brent B. W) 180 698 P
+0.46 (elch, \322The Sprite Network Operat-) 353.99 698 P
+(ing System\323,) 180 684 T
+1 F
+(IEEE Computer 21,) 244.97 684 T
+2 F
+(2 \050February 1988\051, 23-36.) 342.91 684 T
+([Patterson88]) 90 664 T
+1.93 (David A. Patterson, Garth Gibson and Randy H. Katz, \322A Case for) 180 664 P
+1.13 (Redundant Arrays of Inexpensive Disks \050RAID\051\323,) 180 650 P
+1 F
+1.13 (Pr) 430.25 650 P
+1.13 (oceedings of the) 441.8 650 P
+0.75 (1988 ACM Confer) 180 636 P
+0.75 (ence on Management of Data \050SIGMOD\051) 269.68 636 P
+2 F
+0.75 (, Chicago,) 472.28 636 P
+(IL, June 1988, 109-1) 180 622 T
+(16.) 279.82 622 T
+([Pierce89]) 90 602 T
+2.12 (Paul Pierce, \322A Concurrent File System for a Highly Parallel Mass) 180 602 P
+0.43 (Storage Subsystem\323,) 180 588 P
+1 F
+0.43 (Pr) 283.8 588 P
+0.43 (oceedings of the Fourth Confer) 295.35 588 P
+0.43 (ence on Hyper-) 447.21 588 P
+(cubes) 180 574 T
+2 F
+(, Monterey CA, March 1989.) 207.31 574 T
+([Poston88]) 90 554 T
+2.32 (Alan Poston \322A High Performance File System for UNIX\323, NASA) 180 554 P
+(NAS document, June 1988.) 180 540 T
+([Rosenblum91]) 90 520 T
+0.95 (Mendel Rosenblum and John K. Ousterhout, \322The Design and Imple-) 180 520 P
+1.26 (mentation of a Log-Structured File System\323,) 180 506 P
+1 F
+1.26 (Pr) 404.41 506 P
+1.26 (oceedings of the 13th) 415.96 506 P
+1.72 (Symposium on Operating Systems Principles \050SOSP\051) 180 492 P
+2 F
+1.72 (, Asilomar) 442.75 492 P
+1.72 (, CA,) 494.63 492 P
+(October 1991, 1-15.) 180 478 T
+([Salem86]) 90 458 T
+1.2 (Kenneth Salem and Hector Garcia-Molina, \322Disk Striping\323,) 180 458 P
+1 F
+1.2 (Pr) 478.49 458 P
+1.2 (oceed-) 490.04 458 P
+0.52 (ings of the 2nd International Confer) 180 444 P
+0.52 (ence on Data Engineering) 355.72 444 P
+2 F
+0.52 (, Febru-) 483.51 444 P
+(ary 1986, 336-342.) 180 430 T
+([Shirrif) 90 410 T
+(f92]) 125.09 410 T
+0.84 (Ken Shirrif) 180 410 P
+0.84 (f and John Ousterhout, \322A T) 234.92 410 P
+0.84 (race-driven Analysis of Name) 375.27 410 P
+1.63 (and Attribute Caching in a Distributed File System\323,) 180 396 P
+1 F
+1.63 (Pr) 448.53 396 P
+1.63 (oceedings of) 460.08 396 P
+2.96 (the W) 180 382 P
+2.96 (inter 1992 USENIX Confer) 209.94 382 P
+2.96 (ence) 348.63 382 P
+2 F
+2.96 (, San Francisco, CA, January) 370.6 382 P
+(1992, 315- 331.) 180 368 T
+FMENDPAGE
+%%EndPage: "9" 11
+%%Trailer
+%%BoundingBox: 0 0 612 792
+%%Pages: 10 1
+%%DocumentFonts: Times-Bold
+%%+ Times-Italic
+%%+ Times-Roman

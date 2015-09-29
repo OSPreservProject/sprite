@@ -1,0 +1,97 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  sprited:1.1.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     88.06.13.10.00.29;  author ouster;  state Exp;
+branches 1.1.1.1;
+next     ;
+
+1.1.1.1
+date     91.12.02.20.00.49;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/* 
+ * getw.c --
+ *
+ *	Source code for the "getw" library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: atoi.c,v 1.1 88/04/28 17:20:23 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "stdio.h"
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * getw --
+ *
+ *	Read an integer word from a stream, in order of increasing
+ *	byte number.  This procedure should be avoided like the
+ *	plague, since it's byte-order sensitive.
+ *
+ * Results:
+ *	The return value is the word read, or EOF if there was an
+ *	error (unfortunately, EOF looks just like an integer, so
+ *	the caller really has to call ferror).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+getw(stream)
+    register FILE *stream;		/* Stream from which to read. */
+{
+    int result, i;
+    register char *p;
+
+    for (i = 0, p = (char *) &result; i < sizeof(int); i++, p++) {
+	*p = getc(stream);
+    }
+    if (feof(stream)) {
+	return EOF;
+    }
+    return result;
+}
+@
+
+
+1.1.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdio/RCS/getw.c,v 1.1 88/06/13 10:00:29 ouster Exp $ SPRITE (Berkeley)";
+@

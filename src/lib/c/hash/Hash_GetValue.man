@@ -1,0 +1,31 @@
+' $Header: /sprite/src/lib/c/hash/RCS/Hash_GetValue.man,v 1.1 88/12/30 15:05:22 ouster Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS Hash_GetValue lib
+.BS
+.SH NAME
+Hash_GetValue, Hash_SetValue \- read or write value associated with key 
+.SH SYNOPSIS
+.nf
+\fB#include <hash.h>\fR
+
+ClientData
+\fBHash_GetValue\fR(\fIentryPtr\fR)
+
+\fBHash_SetValue\fR(\fIentryPtr, value\fP)
+.AS Hash_Entry *entryPtr
+.SH ARGUMENTS
+.AP Hash_Entry *entryPtr in
+Address of entry whose value is to be queried or modified.
+.AP ClientData value in
+New value to be stored in entry.
+.BE
+
+.SH DESCRIPTION
+.LP
+Each hash table entry consists of a key and an associated value.
+\fBHash_GetValue\fR returns the value associated with an entry, and
+\fBHash_SetValue\fR changes the value to \fIvalue\fP.  \fBHash_GetValue\fR
+and \fBHash_SetValue\fR are both macros.
+
+.SH KEYWORDS
+entry, hash table, value

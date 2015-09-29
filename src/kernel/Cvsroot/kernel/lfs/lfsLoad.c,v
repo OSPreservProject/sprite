@@ -1,0 +1,689 @@
+head     1.10;
+branch   ;
+access   ;
+symbols  ds3100:1.10 sun3:1.10 sun4nw:1.9 symm:1.9 spur:1.9;
+locks    ; strict;
+comment  @ * @;
+
+
+1.10
+date     91.12.17.17.33.48;  author jhh;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     91.08.22.13.18.21;  author mendel;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     91.05.29.14.12.37;  author mendel;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     91.05.26.15.33.31;  author mendel;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     90.12.07.10.07.42;  author mendel;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     90.10.19.17.22.52;  author mendel;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.08.02.16.19.33;  author mendel;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.05.30.10.30.52;  author mendel;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.05.25.15.33.05;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.01.16.17.12.26;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.10
+log
+@Added the domainUID and partition fields to the super block. The partition
+is checked during attach to make sure the file system is being attached
+under the same partition as it was built. Also, the domainPrefix in the
+checkpoint is no longer set during the attach. Domain prefixes are only
+set by the fsdomain program.
+@
+text
+@/* 
+ * lfsLoad.c --
+ *
+ *	Code to handle the loading, checkpoint, and detaching of LFS file
+ *	system.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/lfs/lfsLoad.c,v 1.9 91/08/22 13:18:21 mendel Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <lfsInt.h>
+#include <stdlib.h>
+#include <rpc.h>
+
+#include <string.h>
+#include <lfs.h>
+
+static Fsdm_DomainOps lfsDomainOps = {
+	Lfs_AttachDisk,
+	Lfs_DetachDisk,
+	Lfs_DomainWriteBack,
+	Lfs_RereadSummaryInfo,
+	Lfs_DomainInfo,
+	Lfs_BlockAllocate,
+	Lfs_GetNewFileNumber,
+	Lfs_FreeFileNumber,
+	Lfs_FileDescInit,
+	Lfs_FileDescFetch,
+	Lfs_FileDescStore,
+	Lfs_FileBlockRead,
+	Lfs_FileBlockWrite,
+	Lfs_FileTrunc,
+	Lfs_DirOpStart,
+	Lfs_DirOpEnd
+};
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LfsLoadFileSystem --
+ *
+ *	Load the checkpointed state of a file system and call the LFS
+ *	module attach routines to initialize a file system.
+ *
+ * Results:
+ *	SUCCESS if the file system was successfully loaded. 
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+LfsLoadFileSystem(lfsPtr, flags)
+    Lfs		*lfsPtr;	/* File system to load checkpoint state. */
+    int  	flags;	
+{
+    ReturnStatus	status;
+    LfsCheckPointHdr	checkPointHdr[2], *checkPointHdrPtr;
+    LfsCheckPointTrailer *trailerPtr;
+    LfsDiskAddr		diskAddr;
+    int			choosenOne, maxSize;
+    char		*checkPointPtr;
+    int			checkPointSize;
+
+    Sync_LockInitDynamic(&(lfsPtr->checkPointLock), "LfsCheckpointLock");
+    /*
+     * Examine the two checkpoint areas to locate the checkpoint area with the
+     * newest timestamp.
+     */
+    LfsOffsetToDiskAddr(lfsPtr->superBlock.hdr.checkPointOffset[0],
+		&diskAddr);
+    status = LfsReadBytes(lfsPtr, diskAddr, sizeof(LfsCheckPointHdr),
+			 (char *) (checkPointHdr+0));
+    if (status != SUCCESS) {
+	LfsError(lfsPtr, status, "Can't read checkpoint header #0");
+	return status;
+    }
+    LfsOffsetToDiskAddr(lfsPtr->superBlock.hdr.checkPointOffset[1],
+		&diskAddr);
+    status = LfsReadBytes(lfsPtr, diskAddr, sizeof(LfsCheckPointHdr), 
+		(char *) (checkPointHdr+1));
+    if (status != SUCCESS) {
+	LfsError(lfsPtr, status, "Can't read checkpoint header #1");
+	return status;
+    }
+    choosenOne = (checkPointHdr[0].timestamp<checkPointHdr[1].timestamp) ? 1 : 0;
+
+    /*
+     * Read in the entire checkpoint region into a buffer.
+     */
+    maxSize = LfsBlocksToBytes(lfsPtr, 
+				(lfsPtr->superBlock.hdr.maxCheckPointBlocks));
+    checkPointPtr = malloc(maxSize);
+
+again:
+    LfsOffsetToDiskAddr(lfsPtr->superBlock.hdr.checkPointOffset[choosenOne],
+		&diskAddr);
+    status = LfsReadBytes(lfsPtr, diskAddr,  maxSize, checkPointPtr);
+    if (status != SUCCESS) {
+	free((char *) checkPointPtr);
+	LfsError(lfsPtr, status, "Can't read checkpoint region");
+	return status;
+    }
+    /*
+     * Verify checksum checkpoint region here.
+     */
+    checkPointHdrPtr = (LfsCheckPointHdr *) checkPointPtr;
+    trailerPtr = (LfsCheckPointTrailer *) 
+		(checkPointPtr + checkPointHdrPtr->size - 
+				sizeof(LfsCheckPointTrailer));
+
+    if (checkPointHdrPtr->timestamp != trailerPtr->timestamp) {
+	LfsError(lfsPtr, SUCCESS, "Bad checkpoint timestamps");
+	choosenOne = !choosenOne;
+	goto again;
+    }
+
+    /*
+     * Install the domain if we can. 
+     */
+    status = Fsdm_InstallDomain(checkPointHdrPtr->domainNumber, 
+				checkPointHdrPtr->serverID, lfsPtr->name, 
+				flags, &(lfsPtr->domainPtr));
+    if (status != SUCCESS) {
+	free((char *) checkPointHdrPtr);
+	return (status);
+    }
+    lfsPtr->domainPtr->backendPtr = LfsCacheBackendInit(lfsPtr);
+    lfsPtr->domainPtr->domainOpsPtr = &lfsDomainOps;
+    lfsPtr->domainPtr->clientData = (ClientData) lfsPtr;
+
+    /*
+     * Read in the current stats structure.
+     */
+    { 
+	Lfs_StatsVersion1 *statsPtr = (Lfs_StatsVersion1 *)(trailerPtr + 1);
+	if (statsPtr->version != 1) {
+	    printf("LfsLoad: Bad stats version number %d\n", statsPtr->version);
+	}
+	bcopy ((char *) statsPtr, (char *) &lfsPtr->stats, 
+		sizeof(lfsPtr->stats));
+    }
+    checkPointPtr = checkPointPtr + sizeof(LfsCheckPointHdr);
+    checkPointSize =  ((char *)trailerPtr) - checkPointPtr;
+    /*
+     * Process the checkpoint for each region by  calling segment attach
+     * procedures for the modules doing segment I/O.
+     */
+
+    status = LfsSegAttach(lfsPtr, checkPointPtr, checkPointSize);
+
+    if (status != SUCCESS) {
+	free((char *) checkPointHdrPtr);
+	return status;
+    }
+
+    /*
+     * Setup checkPoint data structure for next checkpoint operation. We use
+     * the buffer we allocated and set the nextRegion to be the one we
+     * didn't load from. Also set the timestamp into the future.
+     */
+    lfsPtr->checkPoint.timestamp = checkPointHdrPtr->timestamp+1;
+    lfsPtr->checkPoint.nextArea = !choosenOne;
+    lfsPtr->checkPoint.buffer = (char *) checkPointHdrPtr;
+    lfsPtr->checkPoint.maxSize = maxSize;
+
+    /*
+     * Fill in the checkPointHdrPtr will the fields that don't change
+     * between checkpoints.
+     */
+    checkPointHdrPtr->timestamp = lfsPtr->checkPoint.timestamp;
+    checkPointHdrPtr->size = 0;
+    checkPointHdrPtr->version = 1;
+    checkPointHdrPtr->domainNumber = lfsPtr->domainPtr->domainNumber;
+    checkPointHdrPtr->attachSeconds = Fsutil_TimeInSeconds();
+    checkPointHdrPtr->detachSeconds = checkPointHdrPtr->attachSeconds;
+    checkPointHdrPtr->serverID = rpc_SpriteID;
+
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LfsDetachFileSystem --
+ *
+ *	Detach a file system.
+ *
+ * Results:
+ *	SUCCESS if the file system was successfully detach. 
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+LfsDetachFileSystem(lfsPtr)
+    Lfs		*lfsPtr;	/* File system to load checkpoint state. */
+{
+    ReturnStatus	status;
+
+
+    (*lfsPtr->checkpointIntervalPtr) = 0;  /* Stop the timer checkpointer. */
+
+    status = LfsCheckPointFileSystem(lfsPtr, LFS_CHECKPOINT_DETACH);
+
+    status = LfsSegDetach(lfsPtr);
+
+    free(lfsPtr->checkPoint.buffer);
+    return status;
+}
+#define	LOCKPTR &lfsPtr->checkPointLock
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LfsCheckPointFileSystem --
+ *
+ *	Checkpoint the state of a file system by calling the LFS
+ *	module attach routines.
+ *
+ * Results:
+ *	SUCCESS if the file system was successfully checkpointed. 
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+LfsCheckPointFileSystem(lfsPtr, flags)
+    Lfs		*lfsPtr;	/* File system to be checkpointed. */
+    int flags;		/* Flags for checkpoint. */
+{
+    LfsCheckPointHdr	*checkPointHdrPtr;
+    int			size, blocks, bytes;
+    LfsCheckPointTrailer *trailerPtr;
+    LfsDiskAddr		diskAddr;
+    ReturnStatus	status;
+    char		*bufferPtr;
+
+    bufferPtr = lfsPtr->checkPoint.buffer;
+    checkPointHdrPtr = (LfsCheckPointHdr *) bufferPtr;
+    if (flags & LFS_CHECKPOINT_CLEANER) { 
+	/* 
+	 * The cleaner uses it own checkpoint buffer. Allocate it 
+	 * and initialized the LfsCheckPointHdr with the values that
+	 * don't change. 
+	 */
+	bufferPtr = malloc(lfsPtr->checkPoint.maxSize);
+	bcopy((char *) checkPointHdrPtr, bufferPtr, 
+		sizeof(LfsCheckPointHdr));
+	checkPointHdrPtr = (LfsCheckPointHdr *) bufferPtr;
+
+    }  
+
+
+    status = LfsSegCheckPoint(lfsPtr, flags, (char *)(checkPointHdrPtr+1),
+				&size);
+    if ((status != SUCCESS) || (size < 0)) {
+	if (bufferPtr != lfsPtr->checkPoint.buffer) {
+	    free(bufferPtr);
+	}
+	return status;
+    }
+    LOCK_MONITOR;
+    /*
+     * Fill in check point header and trailer.
+     */
+    checkPointHdrPtr->timestamp = LfsGetCurrentTimestamp(lfsPtr);
+    checkPointHdrPtr->size = size + sizeof(LfsCheckPointHdr) + 
+			 sizeof(LfsCheckPointTrailer);
+    checkPointHdrPtr->version = 1;
+    checkPointHdrPtr->detachSeconds = Fsutil_TimeInSeconds();
+    trailerPtr = (LfsCheckPointTrailer *) 
+		(bufferPtr + size + sizeof(LfsCheckPointHdr));
+    trailerPtr->timestamp = checkPointHdrPtr->timestamp;
+    trailerPtr->checkSum = 0;
+
+    /*
+     * Append the stats to the checkpoint regions.
+     */
+    bytes = checkPointHdrPtr->size + sizeof(Lfs_Stats);
+    blocks = LfsBytesToBlocks(lfsPtr, bytes);
+    LFS_STATS_ADD(lfsPtr->stats.checkpoint.totalBlocks, blocks);
+    LFS_STATS_ADD(lfsPtr->stats.checkpoint.totalBytes, bytes);
+    bcopy ((char *) &lfsPtr->stats, (char *) (trailerPtr + 1), 
+		sizeof(lfsPtr->stats));
+    LfsOffsetToDiskAddr(
+	lfsPtr->superBlock.hdr.checkPointOffset[lfsPtr->checkPoint.nextArea],
+		&diskAddr);
+    status = LfsWriteBytes(lfsPtr, diskAddr, 
+	LfsBlocksToBytes(lfsPtr, blocks), (char *) checkPointHdrPtr);
+    if (status == SUCCESS) {
+	/*
+	 * Set the file system up to use the other checkpoint buffer next time.
+	 */
+	lfsPtr->checkPoint.nextArea = !lfsPtr->checkPoint.nextArea;
+    } else {
+	UNLOCK_MONITOR;
+	LfsError(lfsPtr, status, "Can't write checkpoint region\n");
+	LOCK_MONITOR;
+    }
+    UNLOCK_MONITOR;
+    LfsSegCheckPointDone(lfsPtr, flags);
+    if (bufferPtr != lfsPtr->checkPoint.buffer) {
+	free(bufferPtr);
+    }
+    return status;
+}
+
+@
+
+
+1.9
+log
+@Removed info printf.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/lfs/RCS/lfsLoad.c,v 1.8 91/05/29 14:12:37 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+a188 4
+    bzero(checkPointHdrPtr->domainPrefix,
+		sizeof(checkPointHdrPtr->domainPrefix));
+    (void)strncpy(checkPointHdrPtr->domainPrefix, lfsPtr->name, 
+			sizeof(checkPointHdrPtr->domainPrefix)-1);
+@
+
+
+1.8
+log
+@SegCheckPoint now returns a negative size if no checkpoint should be done.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/lfs/RCS/lfsLoad.c,v 1.7 91/05/26 15:33:31 mendel Exp $ SPRITE (Berkeley)";
+a131 2
+    printf("LfsLoad using checkpoint area %d with timestamp %d\n",
+	choosenOne, checkPointHdrPtr->timestamp);
+@
+
+
+1.7
+log
+@Write only as much LfsStats as is valid (not the MAX possible size).
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/lfs/RCS/lfsLoad.c,v 1.6 90/12/07 10:07:42 mendel Exp $ SPRITE (Berkeley)";
+d285 1
+a285 1
+    if (status != SUCCESS) {
+@
+
+
+1.6
+log
+@Redid checkpoint sync to remove races.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/lfs/RCS/lfsLoad.c,v 1.5 90/10/19 17:22:52 mendel Exp $ SPRITE (Berkeley)";
+d110 1
+d129 2
+d261 1
+a261 1
+    int			size, blocks;
+d308 2
+a309 2
+    blocks = LfsBytesToBlocks(lfsPtr, checkPointHdrPtr->size + 
+					LFS_STATS_MAX_SIZE);
+d311 1
+a311 2
+    LFS_STATS_ADD(lfsPtr->stats.checkpoint.totalBytes,
+				checkPointHdrPtr->size+LFS_STATS_MAX_SIZE);
+@
+
+
+1.5
+log
+@Many bug fixed. First installed LFS.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/lfs/RCS/lfsLoad.c,v 1.4 90/08/02 16:19:33 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d179 1
+d232 1
+a233 1
+#define	LOCKPTR &lfsPtr->checkPointLock
+d262 1
+a262 2
+
+    checkPointHdrPtr = (LfsCheckPointHdr *) lfsPtr->checkPoint.buffer;
+d264 18
+a281 2
+    status = LfsSegCheckPoint(lfsPtr, flags, 
+			(char *)(checkPointHdrPtr+1), &size);
+d283 2
+a284 3
+	if ((flags & (LFS_CHECKPOINT_WRITEBACK|LFS_CHECKPOINT_TIMER)) && 
+	    (status == GEN_EINTR)) {
+	    status = SUCCESS;
+d298 1
+a298 1
+		(lfsPtr->checkPoint.buffer + size + sizeof(LfsCheckPointHdr));
+d317 6
+a322 1
+    if (status != SUCCESS) {
+d324 2
+a325 1
+	return status;
+a326 4
+    /*
+     * Set the file system up to use the other checkpoint buffer next time.
+     */
+    lfsPtr->checkPoint.nextArea = !lfsPtr->checkPoint.nextArea;
+d328 5
+a332 5
+#ifdef notdef
+    printf("Lfs %s checkpointed at %d\n", lfsPtr->name, 
+		    checkPointHdrPtr->detachSeconds);
+#endif
+    return SUCCESS;
+d334 1
+@
+
+
+1.4
+log
+@Checkin before adding recovery
+./
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/lfs/RCS/lfsLoad.c,v 1.3 90/05/30 10:30:52 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d21 4
+a24 4
+#include "sprite.h"
+#include "lfsInt.h"
+#include "stdlib.h"
+#include "rpc.h"	/* For rpc_SpriteID. */
+d26 2
+a27 2
+#include "string.h"
+#include "lfs.h"
+d43 3
+a45 2
+	Lfs_FileTrunc
+
+a48 9
+static Fscache_BackendRoutines  lfsBackendRoutines = {
+	    Fsdm_BlockAllocate,
+	    Fsdm_FileBlockRead,
+	    Fsdm_FileBlockWrite,
+	    Lfs_ReallocBlock,
+	    Lfs_StartWriteBack,
+
+};
+
+d75 1
+d80 1
+d85 4
+a88 2
+    status = LfsReadBytes(lfsPtr, lfsPtr->superBlock.hdr.checkPointOffset[0],
+			sizeof(LfsCheckPointHdr), (char *) (checkPointHdr+0));
+d93 4
+a96 2
+    status = LfsReadBytes(lfsPtr, lfsPtr->superBlock.hdr.checkPointOffset[1],
+			sizeof(LfsCheckPointHdr), (char *) (checkPointHdr+1));
+d110 3
+a112 3
+    status = LfsReadBytes(lfsPtr,
+			lfsPtr->superBlock.hdr.checkPointOffset[choosenOne],
+			 maxSize, checkPointPtr);
+d142 1
+a142 2
+    lfsPtr->domainPtr->backendPtr = 
+	Fscache_RegisterBackend(&lfsBackendRoutines,(ClientData) lfsPtr, 0);
+d177 1
+a178 1
+    lfsPtr->checkPoint.nextArea = !choosenOne;
+d192 2
+a193 2
+    checkPointHdrPtr->attachSeconds = fsutil_TimeInSeconds;
+    checkPointHdrPtr->detachSeconds = fsutil_TimeInSeconds;
+d222 3
+a224 1
+    status = LfsCheckPointFileSystem(lfsPtr, LFS_DETACH);
+d232 1
+a232 1
+
+d259 1
+d267 4
+d273 1
+d281 1
+a281 1
+    checkPointHdrPtr->detachSeconds = fsutil_TimeInSeconds;
+d297 1
+a297 1
+    status = LfsWriteBytes(lfsPtr,
+d299 2
+d303 1
+d310 5
+@
+
+
+1.3
+log
+@Check in with no small writes.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/lfs/RCS/lfsLoad.c,v 1.2 90/05/25 15:33:05 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d76 1
+a76 1
+LfsLoadFileSystem(lfsPtr)
+d78 1
+d116 1
+d139 1
+a139 1
+				&(lfsPtr->domainPtr));
+d149 11
+d205 33
+d274 1
+a274 1
+			     sizeof(LfsCheckPointTrailer);
+d282 10
+a291 1
+    blocks = LfsBytesToBlocks(lfsPtr, checkPointHdrPtr->size);
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs.mendel/RCS/lfsLoad.c,v 1.1 90/01/16 17:12:26 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d236 1
+a236 2
+    blocks = LfsBytesToBlocks(lfsPtr, (checkPointHdrPtr->size+
+			lfsPtr->superBlock.hdr.blockSize-1));
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.2 89/01/07 04:12:18 rab Exp $ SPRITE (Berkeley)";
+d24 1
+d26 31
+a84 1
+    LfsCheckPointRegion *regionPtr;
+d135 4
+a138 3
+     lfsPtr->domainNumber = FsdmInstallLocalDomain(lfsPtr->domainPtr, 
+					   checkPointHdrPtr->domainNumber);
+     if (lfsPtr->domainNumber == -1) {
+d140 1
+a140 8
+	printf("LfsLoadFileSystem: domain %d already attached?\n",
+			checkPointHdrPtr->domainNumber);
+	return (FS_DOMAIN_UNAVAILABLE);
+     }
+    if ((checkPointHdrPtr->domainNumber != -1) &&
+	(strcmp(lfsPtr->name, checkPointHdrPtr->domainPrefix) != 0)) {
+	printf("LfsLoadFileSystem: Warning prefix %s being mounted on %s.\n",
+		checkPointHdrPtr->domainPrefix, lfsPtr->name);
+d142 5
+d166 2
+a167 1
+    lfsPtr->checkPoint.buffer = checkPointPtr;
+a168 1
+    lfsPtr->checkPoint.timestamp = checkPointHdrPtr->timestamp+1;
+d179 3
+a181 2
+    strcpy(checkPointHdrPtr->domainPrefix, lfsPtr->name);
+    checkPointHdrPtr->domainNumber = lfsPtr->domainNumber;
+d184 1
+a184 1
+    checkPointHdrPtr->version = 1;
+d209 1
+a209 1
+    unsigned int flags;		/* Flags for checkpoint. */
+@

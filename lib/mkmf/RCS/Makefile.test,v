@@ -1,0 +1,306 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.6
+date     89.10.09.21.27.56;  author rab;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.05.12.18.01.01;  author nelson;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.04.28.17.40.54;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.04.25.13.20.36;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.04.25.09.26.37;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.03.18.15.05.36;  author deboor;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Makefile template for test program source directories
+@
+
+
+1.6
+log
+@Modifications for distribution.
+@
+text
+@#
+# Prototype Makefile for cmds/* directories.
+#
+# This Makefile is automatically generated.
+# DO NOT EDIT IT OR YOU MAY LOSE YOUR CHANGES.
+#
+# Generated from @@(TEMPLATE)
+# @@(DATE)
+#
+# For more information, refer to the mkmf manual page.
+#
+# $Header: /sprite/lib/mkmf/RCS/Makefile.test,v 1.5 88/05/12 18:01:01 nelson Exp Locker: rab $ SPRITE (Berkeley)
+#
+# Allow mkmf
+
+PROGRAM		= @@(PROGRAM)
+OBJS		= @@(OBJS)
+CLEANOBJS	= @@(CLEANOBJS)
+SRCS		= @@(SRCS)
+CSRCS		= $(SRCS:M*.c)
+YSRCS		= $(SRCS:M*.y)
+LSRCS		= $(SRCS:M*.l)
+HDRS		= @@(HDRS)
+LIBS		=
+MAKEFILE	= @@(MAKEFILE)
+DISTDIR        ?= @@(DISTDIR)
+
+LINTFLAGS	= -u
+CFLAGS		= -g
+CTFLAGS		= -wt
+INSTALLFLAGS	= 
+INSTALLDIR	= @@(INSTALLDIR)
+
+# Don't define "define_targets", to keep "install" target from being defined.
+# define_targets	=
+
+DEPFILE		= dependencies.mk
+SYSMAKEFILE	= command.mk
+
+#if exists(local.mk)
+#include 	"local.mk"
+#else
+#include	<$(SYSMAKEFILE)>
+#endif
+
+$(PROGRAM)	: $(OBJS) $(LIBS) MAKECMDNOVERS
+lint		: $(SRCS) MAKELINT
+
+tags		: $(SRCS) $(HDRS)
+	$(CTAGS) $(CTFLAGS) $(.ALLSRC)
+
+#include	"dependencies.mk"
+@
+
+
+1.5
+log
+@fixed include of $SYSMAKEFILE to be <$(SYSMAKEFILE)>
+@
+text
+@d12 1
+a12 1
+# $Header: Makefile.test,v 1.4 88/04/28 17:40:54 ouster Exp $ SPRITE (Berkeley)
+d26 1
+@
+
+
+1.4
+log
+@Use new "if exists" mechanism, along with local.mk.
+@
+text
+@d12 1
+a12 1
+# $Header: Makefile.test,v 1.3 88/04/25 13:20:36 ouster Exp $ SPRITE (Berkeley)
+d42 1
+a42 1
+#include	$SYSMAKEFILE
+@
+
+
+1.3
+log
+@Don't use version.h junk.
+@
+text
+@d12 1
+a12 1
+# $Header: Makefile.test,v 1.2 88/04/25 09:26:37 ouster Exp $ SPRITE (Berkeley)
+a35 4
+# The label below is used as a special trigger for Makefile.sed scripts
+# to use to add extra stuff to the Makefile:
+# @@(SPECIALS)
+
+d37 1
+a37 1
+#include	<command.mk>
+d39 5
+a43 3
+# Another label, for triggering Makefile.sed commands AFTER command.mk
+# is included:
+# @@(POSTINCLUDE)
+@
+
+
+1.2
+log
+@Revised to make look like Makefile.command, except no install.
+@
+text
+@d12 1
+a12 1
+# $Header: Makefile.command,v 1.2 88/04/01 18:33:47 deboor Exp $ SPRITE (Berkeley)
+d47 1
+a47 1
+$(PROGRAM)	: $(OBJS) $(LIBS) MAKECMD
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d2 1
+a2 1
+# Prototype Makefile for src/test/* directories.
+d7 2
+a8 1
+# It was generated from @@(TEMPLATE) on @@(DATE)
+d12 1
+a12 1
+# $Header: Makefile.test,v 2.2 87/10/16 10:43:18 brent Exp $ SPRITE (Berkeley)
+d16 10
+a25 11
+LIBDIR = /sprite/lib
+INCLDIR = /sprite/lib/include
+MISCLIB = /sprite/src/lib/misc
+ATTLIB = /sprite/att/lib
+# UNIXLIB, ATTINCL, and ATTLINT are to be set for Makefiles in /sprite/att/...
+# However, ATTLINT is still blank because no lint library exists.
+UNIXLIB = 
+ATTINCL =
+ATTLINT =
+LIBS = ${UNIXLIB} ${LIBDIR}/libc.a
+LINTDIR = ${LIBDIR}/lint
+d27 5
+a31 1
+SPRITEHOME = /sprite
+d33 2
+a34 1
+DIRECTORY = dir-name
+d36 3
+a38 1
+INSTALLDIR = /sprite/test/${DIRECTORY}
+d40 2
+a41 6
+IFLAGS = -I. -I${ATTINCL} -I${INCLDIR}
+DBX = 	  -g
+PROFILE =
+DFLAGS =
+CFLAGS =  ${DBX} ${IFLAGS} ${DFLAGS}
+PCFLAGS = ${DBX} ${IFLAGS} ${DFLAGS} ${PROFILE} 
+d43 3
+a45 1
+CTFLAGS = -t
+d47 2
+a48 3
+# Define a bunch of commands in /bin because we might be compiling sprite
+# versions of one of them in this directory, and we don't want to get
+# the wrong one.
+d50 2
+d53 1
+a53 82
+LINT = ${SPRITEHOME}/bin/lint
+BIN = /bin
+CC = ${BIN}/cc -m68010
+AS = ${BIN}/as -m68010
+LD = ${BIN}/ld
+CP = ${BIN}/cp
+RM = ${BIN}/rm
+MV = ${BIN}/mv
+CP = ${BIN}/cp
+ECHO = ${BIN}/echo
+CTAGS = ${BIN}/ctags
+MKVERSION = ${SPRITEHOME}/bin/mkversion
+
+
+OBJS =	Cfile.o
+RMOBJS = Cfile.o
+
+CSRCS = Cfile.c
+
+SRCS = ${CSRCS}
+
+HDRS = header-file.h
+
+PROG = program
+
+LINTFLAGS = ${IFLAGS} -u 
+LINTLIBS = ${ATTLINT} ${LINTDIR}/libc.ln
+
+ALLSRCS = ${SRCS} ${HDRS} Makefile
+
+.c.o: .EXPORT
+	${RM} -f $*.o
+	${CC} ${CFLAGS} -c ${I} $*.c
+
+all: ${PROG} 
+
+${PROG}: ${OBJS} ${LIBS}
+	@@${ECHO} "Generating date stamp"
+	@@${MKVERSION} > version.h
+	${RM} -f $@@ version.o
+	${CC} -c ${CFLAGS} ${MISCLIB}/version.c
+	${LD} -e start ${OBJS} version.o ${LIBS} -o $@@
+
+# By default, without any subdirectories, "make makemake" will do nothing.
+# If there are any further subdirectories, it should recursively makemake 
+# them.  By using "ignore-me", I avoid the "makemake is up to date"
+# diagnostic.
+
+makemake: ignore-me
+
+ignore-me:
+
+install! ${INSTALLDIR}/${PROG}
+
+# In normal operation, move the binary to the installed directory.  For
+# now, rdist it and then delete it.  In any case, there's no point in leaving 
+# the binary around after it is installed.
+
+${INSTALLDIR}/${PROG}: ${PROG}
+	${SPRITEHOME}/bin/update ${PROG} ${SPRITEHOME}/bin/${PROG}
+	${RDIST} -c -w ${SRCS} lust:/usr/sprite/src/${PROG}
+#	${RM} -f ${INSTALLDIR}/${PROG}
+#	${MV}  ${PROG} ${INSTALLDIR}
+	${RM} ${PROG}
+	
+lint:	${CSRCS} ${HDRS} ${LINTLIBS}
+	${RM} -f lint
+	${LINT} ${LINTFLAGS} ${CSRCS} ${LINTLIBS} > lint
+
+clean:
+	${RM} -f lint ${RMOBJS} version.h version.o
+
+DEPFLAGS = -p
+DEPFILE = Makefile
+#include <makedepend.mk>
+
+tags: ${HDRS} ${CSRCS}
+	${RM} -f tags
+	${CTAGS} ${CTFLAGS} ${HDRS} ${CSRCS}
+
+# below is automatically generated
+# DO NOT DELETE THIS LINE -- make depend depends on it.
+@

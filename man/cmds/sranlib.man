@@ -1,0 +1,41 @@
+' Copyright 1989 Regents of the University of California
+' Permission to use, copy, modify, and distribute this
+' documentation for any purpose and without fee is hereby
+' granted, provided that this notice appears in all copies.
+' The University of California makes no representations about
+' the suitability of this material for any purpose.  It is
+' provided "as is" without express or implied warranty.
+' 
+' $Header: /a/newcmds/sranlib/RCS/sranlib.man,v 1.2 89/03/11 12:42:22 brent Exp $ SPRITE (Berkeley)
+' 
+.so \*(]ltmac.sprite
+.HS SRANLIB cmds
+.BS
+.SH NAME
+sranlib \- Version of ranlib for SPUR libraries
+.SH SYNOPSIS
+.nf
+\fBsranlib\fR [\fB\-t\fR] [\fB\-L\fR] \fIfile file ...\fR
+.SH OPTIONS
+.IP "\fB\-t\fR" 14
+Simply ``touch'' the archive, so that the symbol table will be
+considered up-to-date.  Useful after copying an archive.
+.IP "\fB\-L\fR" 14
+Disable locking.  Ordinarily sranlib and ar use flock() to
+synchronize access to files.  This option turns locking off.
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBSranlib\fR is similar to \fBranlib\fR except that it operates on
+libraries containing SPUR binaries.  See the manual entry for
+\fBranlib\fR for details on what it does.
+
+.SH BUGS
+.PP
+The existence of this program at all is a bug.  There should not be
+different versions of \fBranlib\fR for different instruction sets,
+but rather a single version that can handle all binary formats.
+
+.SH KEYWORDS
+library, random access, table of contents

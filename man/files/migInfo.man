@@ -1,0 +1,56 @@
+' Copyright 1989 Regents of the University of California
+' Permission to use, copy, modify, and distribute this
+' documentation for any purpose and without fee is hereby
+' granted, provided that this notice appears in all copies.
+' The University of California makes no representations about
+' the suitability of this material for any purpose.  It is
+' provided "as is" without express or implied warranty.
+' 
+' $Header: /sprite/src/man/files/RCS/migInfo.man,v 1.1 89/02/16 10:04:19 ouster Exp $ SPRITE (Berkeley)
+' 
+.so \*(]ltmac.sprite
+.HS migInfo files
+.BS
+.SH NAME
+/sprite/admin/migInfo \- file containing the migration status of all Sprite hosts 
+.SH DESCRIPTION
+.PP
+The migration status of all Sprite hosts is stored in ASCII format in
+a shared file, \fB/sprite/admin/migInfo\fP.  
+Each host runs a daemon that is responsible for
+updating the information for its host.  Each record is fixed length,
+to permit the daemons to update individual records without first
+parsing the entire file. 
+.PP
+Each record contains the following information, separated by white
+space:
+.IP hostID 14
+numeric identifier of host.
+.IP utilizations 14
+3 weighted CPU utilizations, as percentages, separated by slashes.
+.IP "ready queues" 14
+3 weighted queue lengths, as floating-point, separated by slashes.
+.IP boottime 14
+time at which host last rebooted (seconds since 1/1/70).
+.IP timestamp 14
+time when record last updated, (seconds since 1/1/70).
+.IP noInput 14
+number of seconds since keyboard or mouse input.
+.IP allowMigration 14
+whether process migration to this host is allowed .
+.IP foreignProcs 14
+number of migrated processes running on this host.
+.IP migVersion 14
+version number of migration running on this host.
+.IP pad 14
+Reserved for future expansion.
+.PP
+Although the information is stored in ASCII format, to make it
+sharable by machines with different byte orderings, internally the
+migration database is accessed via routines that convert between ASCII
+and an internal C structure.  Refer to the documentation for the
+\fBmig\fP library for information about this structure.
+.SH "SEE ALSO"
+mig, db, loadavg
+.SH KEYWORDS
+process migration, load average, idle time, database

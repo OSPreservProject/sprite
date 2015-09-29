@@ -1,0 +1,33 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @# @;
+
+
+1.1
+date     88.12.06.09.57.11;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@script to generate summary information for sprite clients
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#!/sprite/cmds/csh -f
+date
+echo " "
+cat /sprite/admin/fsstats/{paprika,fenugreek,murder,thyme,sage,mace}/[0-9]* | \
+	awk -f fsstats.awk
+   
+
+@

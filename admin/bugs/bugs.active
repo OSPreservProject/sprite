@@ -1,0 +1,255 @@
+Log-Number: 30635
+Date: Sat, 19 Jan 91 03:07:17 PST
+From: dlong (Dean Long)
+Subject: kernel memory leaks
+
+I went through most of the filesytem directories, looking for
+possible memory leaks, since prolonged disk activity causes
+our kernel to eat up all of memory (and crash).  Here is what
+I found:
+
+	file		line allocated		line lost
+
+fs/fsSysCall.c
+			71			74
+			80			86
+			762			765
+
+fsconsist/fsconsistCache.c
+			2016			2074
+
+fsprefix/fsprefixOps.c
+			2211			2221
+
+"line allocated" is the line number where the memory was allocated,
+and "line lost" is line number of the (return) statement that
+causes the non-freed memory to be lost, usually because of some
+sort of failure.
+
+dl
+
+[16-Apr-92: JHH volunteered to take care of these. -mdk]
+
+ 
+Log-Number: 31045
+Date: Sun, 12 May 91 18:56:32 PDT
+From: mendel (Mendel Rosenblum)
+Subject: Re: Lfs killed allspice
+
+> Allspice died with:
+> SCSI #3 DMA bus error
+> Lfs error on /sprite/src/kernel status 0x1 bad lfsStable MemBlockHdr
+> I took a core: vmcore.lfs
+
+The problem here is not in LFS but in the SCSI HBA hardware or driver.
+The HBA is aborting the LFS read operation with a DMA bus error 
+operation.  This appears to happen when the system is doing much
+I/O such as during fscheck the disk.  It appears that LFS can
+also trigger the condition.  We need to either fix this or 
+put in a patch to retry the operation that gets aborted. 
+
+	Mendel
+
+ 
+ 
+Log-Number: 31086
+From: mendel (Mendel Rosenblum)
+Subject: Allspice ipServer dies / sendmail problem
+Date: Thu, 23 May 91 11:18:14 PDT
+
+
+Sendmail on allspice was comatose this morning.  I suspect it went comatose
+about the time the following messages appeared in allspice's syslog:
+
+<18>May 23 07:51:55 sendmail[40e38]: NOQUEUE: SYSERR: getrequests: accept: invalid argument
+
+I did a kill -KILL on the sendmail process and the ipServer on allspice
+died. 
+
+	Mendel
+ 
+ 
+Log-Number: 31156
+From: mendel (Mendel Rosenblum)
+Subject: Deadlock with migration and recovery
+Date: Mon, 10 Jun 91 15:22:50 PDT
+
+Terrorism was hanging migrations to it because of the following deadlock.
+
+Process 0x20 - A pmake from tyranny was being migrated off terrorism. The
+call stack looked like:
+
+(gdb) where
+#0  0xf600c6d0 in Mach_ContextSwitch ()
+#1  0xf60ad180 in SyncEventWaitInt (...) (...)
+#2  0xf60abe64 in Sync_SlowWait (...) (...)
+#3  0xf60bdfb8 in VmPageFreeInt (...) (...)
+#4  0xf60be018 in VmPageFree (...) (...)
+#5  0xf60bca10 in FreePages (...) (...)
+#6  0xf60bbd0c in Vm_EncapState (...) (...)
+#7  0xf608bc6c in Proc_MigrateTrap (...) (...)
+#8  0xf60ab390 in Sig_Handle (procPtr=(struct Proc_ControlBlock *) 0xf63bb4d0, sigStackPtr=(Sig_Stack *) 0xf63be540, pcPtr=(char **) 0xf805fe3c) (signals.c line 1223)
+#9  0xf600ea7c in MachUserAction (...) (...)
+#10 0xf6010978 in MachReturnFromTrap ()
+
+The routine Proc_MigrateTrap() locks the process table entry for the current
+process before calling Vm_EncapState().  The routine VmPageFreeInt()
+is waiting for recovery on allspice so it can write out a dirty page
+of the data segment.  This wakeup never happens because 
+the Proc_ServerProc doing the recovery with allspice has a stack that
+looks like:
+
+#0  0xf600c6d0 in Mach_ContextSwitch ()
+#1  0xf60ad180 in SyncEventWaitInt (event=4131108156, wakeIfSignal=0) (syncLock.c line 655)
+#2  0xf60abe64 in Sync_SlowWait (conditionPtr=(struct Sync_Condition *) 0xf63bb53c, lockPtr=(struct Sync_KernelLock *) 0xf6160bd8, wakeIfSignal=0) (syncLock.c line 298)
+#3  0xf6095bc0 in Proc_Lock (procPtr=(struct Proc_ControlBlock *) 0xf63bb4d0) (procTable.c line 416)
+#4  0xf608f8fc in Proc_WakeupAllProcesses () (procMisc.c line 988)
+#5  0xf605c53c in Fsutil_Reopen (...) (...)
+#6  0xf609aa30 in RecovRebootCallBacks (data=(ClientData) 0xe) (recovery.c line 1153)
+#7  0xf6094e8c in Proc_ServerProc (...) (...)
+#8  0xf60a83e8 in Sched_StartKernProc (...) (...)
+
+While trying to do a Proc_WakeupAllProcesses(), it hit the locked 
+process table entry from the migrate and hung. This left terrorism
+hung in recovery with allspice.  I rebooted terrorism.
+
+	Mendel
+ 
+ 
+Log-Number: 31191
+From: mendel (Mendel Rosenblum)
+Subject: Problem with SparcStation and sun4 running out of PMEGs
+Date: Sat, 29 Jun 91 14:54:43 PDT
+
+While doing some stress testing of some changes I made to LFS I ran into 
+the following problem with the Sprite kernel memory management on the
+sparcStation1 and sun4.
+
+Remember that the SparcStation MMU has hardware page mapping tables 
+called PMEGs that are used to map virtual addresses into physical
+addresses.  The way the Sprite kernel is coded it must wire down the
+PMEGs used to map the Sprite kernel.  Awhile back I changed the code
+not to wire down the PMEGs used to map the kernel's file cache. 
+(This was limiting the size of the file caches on the sun4).  On
+the SparcStation1, there are 128 PMEGs available.  Each PMEG map
+64 4K pages (256 Kbytes of mapping). 5 of them are allocated to the 
+PROM so are unavailable for Sprite.  This leaves 123 PMEGs or around 30
+megabytes of mapping available for Sprite, the file cache, and all
+user level processes.  The size of the Sprite kernel code and
+static data is is around 1428.8 kilobytes which uses 6 PMEGs
+to map.  The malloc()'ed data size of the Sprite kernel is around
+5.3 megabytes which requires around 23 PMEGs wired.  Next
+comes the kernel stacks. There are 3 megabytes allowed for
+kernel stacks. These PMEGs only need to be wired if a process
+has allowed a stack on the PMEG.  Since there is no code trying to
+allocated kernel stacks on the same PMEGs, it tends to allocate
+stacks on most of the PMEGs. This accounts for around 10 wired PMEGs.
+Another 5 PMEGS are wired for devices and DMA mapping.  Together this
+accounts for close to 50/128 (40%) of the PMEGs.   The rest (78 PMEGs)
+are available to user programs and the file cache.  
+
+The file cache on a SparcStation with 28 megabytes of memory is allocated
+21 megabytes of virtual addresses. To totally map this would take 87
+PMEGs which is more that we have.  Fortunately, the file cache only
+wires a PMEG when a cache block is being accessed, read, or, written.
+This is typically only a few blocks at a time.  The problem occurs
+during a LFS segment write.  Assume a segment size 512*1024. This means that
+the write back code may try to write 128 4096-byte blocks at once. If 
+the cache blocks are spread out in the cache, it could cause the entire 
+file cache to become wired.  This happened on larceny. The segment being 
+written contained 132 blocks which happened to reside on 78 different
+PMEGs.  Larceny panic'ed because it ran out of PMEGs.
+
+Allspice is in slightly better shape because it has 512 pmegs.  With
+a kernel image of 32 megabytes wiring 128 pmegs, it has 380 some PMEGs
+for the file cache and user processes.   Still, if someone were to
+write 1024 files of size less than 512 bytes and these files that happen 
+to reside on over 380 different PMEGs and LFS tried to write them all
+into the same segment; the same sort of thing that crashed larceny
+will happen on allspice.
+
+
+	Mendel
+ 
+ 
+Log-Number: 32734
+Date: Tue, 3 Nov 92 17:24:13 PST
+From: shirriff (Ken Shirriff)
+Subject: Allspice reboot
+
+Processes started hanging on allspice.  I took a core; apparently
+pseudodevices were hanging up.  The only explanation I can think of is an
+ipServer problem.
+
+More importantly, when I rebooted with new, allspice couldn't find the
+root directory and started broadcasting for "/".  I tried this a couple times
+with the same results.  Booting with sprite worked.  Apparently the new
+kernel has a serious problem.
+
+Ken
+ 
+ 
+Log-Number: 32735
+Date: Tue, 3 Nov 92 23:39:59 PST
+From: mgbaker (Mary Gray Baker)
+Subject: Re: Allspice reboot
+
+Argh.  I will get rid of the new kernel on allspice, so that it is only
+possible to boot the old one.  This is particularly annoying, because I
+*did* test the new kernel on servers, but of course not on a root server since
+there's only allspice for that.  I will try to find what's the problem for
+the root server.
+
+Sorry for all the trouble,
+Mary
+ 
+Log-Number: 32737
+From: jhh@sprite.Berkeley.EDU (John H. Hartman)
+Date: Wed, 4 Nov 1992 23:32:20 PST
+Subject: allspice crashed due to invalid segNum
+
+
+Allspice paniced running the 1.115 kernel due to an invalid segNum.
+This happened while cleaning /user1 so I was worried that lfs had
+a problem again but after greping through the code I discovered
+that the message was coming from the vm module. I took a core,
+vmcore.invalid.segnum, and rebooted it. This time it cleaned the
+disk ok. I'll look at the core tomorrow.
+
+John
+ 
+Log-Number: 32741
+Date: Sun, 8 Nov 92 17:11:55 PST
+From: shirriff (Ken Shirriff)
+Subject: ipServer out of control on clove
+
+Clove's ip.out file was 61MB long, full of:
+Sock_NotifyWaiter: PDEV_READY ioctl: bad argument to a filesystem routine
+
+Ken
+ 
+Log-Number: 32742
+Date: Mon, 9 Nov 92 09:30:44 PST
+From: mottsmth (Jim Mott-Smith)
+Subject: Recoverable error on /user5
+
+
+Lust reported:
+	Target 6 LUN 0 recoverable error
+	Info bytes 0x0 0x19 0xd4 0x5e
+
+-- Jim M-S
+
+
+Log-Number: 32743
+From: jhh@sprite.Berkeley.EDU (John H. Hartman)
+Date: Mon, 9 Nov 1992 21:56:46 PST
+Subject: tar.gnu (dumps) die on /X11/R5
+
+
+Tar.gnu dies dumping /X11/R5. I'm skipping this file system so I can
+get the full dumps done and restart our daily dumps.  I'll try to figure
+out what's wrong and get it dumped as soon as possible, but I don't
+think there is much important on there anyway (or much that's changed).
+
+John

@@ -1,0 +1,13 @@
+D ADMIN                             	admin
+D ADMIN_FM                          	admin.fmt
+D CATLIB                            	catlib
+D CMDS                              	cmds
+D CMDS_FMT                          	cmds.fmt
+D DAEMONS                           	daemons
+D DEV                               	dev
+D DEV_FMT                           	dev.fmt
+D FILES                             	files
+D FILES_FM                          	files.fmt
+D LIB                               	lib
+D LIB_FMT                           	lib.fmt
+D MANLIB                            	manlib

@@ -1,0 +1,103 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.4
+date     89.07.19.11.16.14;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.11.21.17.00.19;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.09.23.17.52.49;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.08.20.14.38.17;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.4
+log
+@Modified for new boot structure.
+@
+text
+@#
+# This file is included by Makefile.  Makefile is generated automatically
+# by mkmf, and this file provides additional local personalization.  The
+# variable SYSMAKEFILE is provdied by Makefile;  it's a system Makefile
+# that must be included to set up various compilation stuff.
+#
+
+#
+# Don't install into a normal commands directory.  Instead, put
+# in the booting area.
+#
+
+NOBACKUP	= true, no backup directory for booting commands
+INSTALLDIR	= /boot/cmds
+
+#include	<$(SYSMAKEFILE)>
+@
+
+
+1.3
+log
+@Change PROGRAM to NAME.
+@
+text
+@d13 2
+a14 1
+no_install	= true
+a16 11
+
+#
+# As part of installing, move the binary to the root directory.
+# But right now this only works for the sun2 version.  Leave
+# others alone.
+#
+install		: $(TM).md/$(NAME)
+#if !empty(TM:Msun2)
+	$(UPDATE) -o root -s -m 775 $(INSTALLFLAGS) \
+		$(TM).md/$(NAME) /$(NAME)
+#endif
+@
+
+
+1.2
+log
+@Only do installs for Sun2 version, to avoid trashing the program.
+@
+text
+@d22 1
+a22 1
+install		: $(TM).md/$(PROGRAM)
+d25 1
+a25 1
+		$(TM).md/$(PROGRAM) /$(PROGRAM)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d19 2
+d23 1
+d26 1
+@

@@ -1,0 +1,135 @@
+% mitthesis-sample.tex  12 Sep 89
+% by Stephen Gildea <gildea@erl.mit.edu>
+\documentstyle[11pt,mitthesis]{report}
+\begin{document}
+
+\title{Mixed Mode Oblique Ionograms in Transverse Shear Deformations
+of Epitaxial Laminar Turbulent Circular Cylindrical Shells}
+
+\author{J. Casey Salas}
+\prevdegrees{B.S., University of California (1978) \\
+  S.M., Massachusetts Institute of Technology (1981)}
+\department{Department of Electrical Engineering and Computer Science}
+
+% If the thesis is for two degrees simultaneously, list them both
+% separated by \and like this:
+% \degree{Doctor of Philosophy \and Master of Science}
+\degree{Doctor of Philosophy}
+
+\degreemonth{February}
+\degreeyear{1987}
+\thesisdate{December 10, 1986}
+
+% If the thesis is copyright by the Institute, leave this line out and
+% the standard copyright line will be used instead.
+\copyrightnotice{J. Casey Salas, 1986}
+
+% If there is more than one supervisor, use the \supervisor command
+% once for each.
+\supervisor{John D. Galli}{Director, Sound Instrument Laboratory}
+
+% The \supervisor command takes an optional argument in case you
+% want to label a person other than "Thesis Supervisor".  For example,
+% \supervisor[Thesis Co-supervisor]{Michael Prange}{Senior Research Scientist}
+
+% this is the department committee chairman, not the thesis committee chairman
+\chairman{Arthur C. Smith}
+  {Chairman, Departmental Committee on Graduate Students}
+
+% Make the titlepage based on the above information.  If you need
+% something special and can't use the standard form, you can specify
+% the exact text of the titlepage yourself.  Put it in a titlepage
+% environment and leave blank lines where you want vertical space.
+% The spaces will be adjusted to fill the entire page.  The dotted
+% lines for the signatures are made with the \signature command.
+\maketitle
+
+% The abstractpage environment sets up everything on the page except
+% the text itself.  The title and other header material are put at the
+% top of the page, and the supervisors are listed at the bottom.  A
+% new page is begun both before and after.  Of course, an abstract may
+% be more than one page itself.  If you need more control over the
+% format of the page, you can use the abstract environment, which puts
+% the word "Abstract" at the beginning and single spaces its text.
+
+\begin{abstractpage}
+Recursive lattice least squares (RLLS) was selected as the baseline
+algorithm for the identification.  Simulation results on a
+one-dimensional LSS demonstrated that it provided good estimates, was
+not ill-conditioned in the presence of under-excited modes, allowed
+activity by a supervisory control system which prevented damage to the
+LSS or excessive drift, and was capable of real-time processing for
+typical LSS models.
+
+The editor generates data files
+representing this model that can be used as input to a ray-tracing
+program.  The description of the file format is
+written in a high-level declarative language, so that the editor can
+be easily modified to support other formats.
+\end{abstractpage}
+
+% The text of the thesis itself begins here.
+
+% You may want to put a \tableofcontents command here.
+
+% An acknowledgments section (probably begun with
+% \section*{Acknowledgments}) might go here.
+
+\chapter{Introduction}
+
+\section{Background}
+Observed elevation changes near the 1979 hypocenter 
+(on the southern end of Imperial fault) and in the Brawley Seismic Zone show
+significant deviations from those predicted by models of fault slip
+inferred from strong ground motion measurements.  Specifically, the
+geodetic data suggest that 
+slip on the Imperial fault is significantly lower in the
+vicinity of the earthquake hypocenter
+than along the central and northern sections of the
+fault.  In addition, 
+there is marginal evidence that the dip of the Imperial fault
+changes along strike from approximately vertical
+just north of the US-Mexico border to between $70^\circ$ and $80^\circ$ near
+the northernmost extent of the 1979 surface break. This change in dip
+may be related to a change in local strike along the fault.  Large
+elevation changes ($>15$ cm) also occur within the Brawley Seismic
+Zone well north of the primary surface faulting. 
+
+While these 
+movements are consistent with a number of possible fault
+models, our prefered interpretation based on geodetic and seismic
+observations (aftershock locations and focal mechanisms) 
+involves right lateral, aseismic slip on a northwest 
+striking fault along the east side of the Brawley Seismic Zone and
+conjugate left lateral faulting on a northeast striking fault
+(possibly associated with a M=5.8 aftershock).\footnote{Buried creep on this 
+same right lateral fault in the Brawley Seismic Zone can also 
+account for vertical deformation during the postseismic period of the
+1940, M=7.1 Imperial Valley earthquake as well as deformation during the
+interseismic period between the 1940 and 1979 events.}
+
+Substantial
+right lateral slip in the Brawley Seismic Zone suggests that a
+significant part of the shear strain released during and following the
+1940 and 1979 earthquakes on the Imperial fault is transferred through
+the Brawley Seismic Zone to the southern end of the San Andreas
+fault.
+
+Elevation changes in the Imperial Valley, California derived from
+repeated leveling surveys for the time period including the 1979,
+M=6.6 earthquake, provide some constraints on fault geometry and slip
+distribution associated with this event.  Many of the first order
+features of the observed vertical movements are well matched by simple
+models consisting of variable slip on planar faults in an elastic
+half-space using fault offsets
+inferred from strong ground motion observations (Archuleta, 1984) and measured
+after-slip.  The geodetic and seismic observations suggest that 
+significant slip is confined to depths above
+13 km with maximum right lateral offset reaching about 1.5 m on the
+Imperial fault.  Dip slip occurs predominantly in
+the sediments on the upper 5 km of the Imperial fault  and on the
+Brawley fault.  Right lateral after-slip is confined to the upper 5 km
+of the Imperial fault and reaches about 30 cm for the period 1979 to
+1981.
+
+\end{document}

@@ -1,0 +1,334 @@
+head     8.1;
+branch   ;
+access   ;
+symbols  sun4nw:8.1 symm:8.1 spur:8.1 newlib:8.0;
+locks    ; strict;
+comment  @ * @;
+
+
+8.1
+date     89.07.15.14.49.52;  author ouster;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.14.59;  author douglis;  state Stable;
+branches ;
+next     1.3;
+
+1.3
+date     88.10.30.21.42.11;  author jhh;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.07.20.22.06.18;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.07.20.15.34.47;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Driver for the SPUR Uart.
+@
+
+
+8.1
+log
+@Conversion to new tty driver.
+@
+text
+@/* devUart.c -
+ *
+ *     This file contains routines that read, write, and initialize 
+ *     the SPUR Signetics SCN68681 Dual Universal Asynchronous
+ *     Receiver/Transmitter (DUART) chip.
+ *
+ *     For an explanation of the use of the chip see the "SPUR Memory
+ *     System Architecture", Report. UCB/CSD 87/394.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/dev.jo/spur.md/RCS/devUart.c,v 8.0 88/11/11 18:14:59 douglis Stable Locker: ouster $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+#include "mach.h"
+#include "dev.h"
+#include "uartConst.h"
+#include "sys.h"
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Dev_UartInit --
+ *
+ *     Initialize the given channel of the Uart chip.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+void
+Dev_UartInit(uartAddr, channel, baudRate)
+    Address uartAddr;			/* address of uart registers (phys.) */
+    register Dev_UartChannel channel;   /* which channel (A,B) to initialize */
+    int baudRate;			/* speed to which to initialize
+					   channel */
+{
+    Address uartChanAddr;
+    int speed;
+
+    if (channel == DEV_UART_CHANNEL_A) {
+	uartChanAddr = ADDR_OFFSET(uartAddr, CHANNEL_A_OFFSET);
+    } else if (channel == DEV_UART_CHANNEL_B) {
+	uartChanAddr = ADDR_OFFSET(uartAddr, CHANNEL_B_OFFSET);
+    } else {
+	panic("Dev_UartInit: illegal UART Channel");
+	return;
+    }
+    /*
+     * Reset channel.
+     */
+    Dev_UartWriteReg(uartChanAddr, COMMAND, TX_OFF|RX_OFF|RESET_MR1);
+    Dev_UartWriteReg(uartChanAddr, COMMAND, TX_OFF|RX_OFF|RESET_RX);
+    Dev_UartWriteReg(uartChanAddr, COMMAND, TX_OFF|RX_OFF|RESET_TX);
+    Dev_UartWriteReg(uartChanAddr, COMMAND, TX_OFF|RX_OFF|EXIT_TX_BREAK);
+    
+    /*
+     * Set up default values, to ignore counter and to have 1 stop
+     * bit, have no flow control from other end, and have the
+     * appropriate baud rate . Note that writing the mode register
+     * after resetting it causes the MODE1 register to be written, and
+     * subsequent writes go to MODE2.  For the baud rate, we map from
+     * integers into the particular constants the uart expects.
+     */
+    Dev_UartWriteReg(uartAddr, AUX_CTL, AUX_CMD_VAL);
+    Dev_UartWriteReg(uartChanAddr, MODE, MODE1_VAL);
+    Dev_UartWriteReg(uartChanAddr, MODE, MODE2_VAL);
+    switch (baudRate) {
+	case 9600: {
+	    speed = BAUD_9600;
+	    break;
+	}
+	case 2400: {
+	    speed = BAUD_2400;
+	    break;
+	}
+	case 1200: {
+	    speed = BAUD_1200;
+	    break;
+	}
+	case 110: {
+	    speed = BAUD_110;
+	    break;
+	}
+	case 19200: {
+	    speed = BAUD_19200;
+	    break;
+	}
+	default: {
+	    panic("Dev_UartInit: illegal baud rate");
+	    return;
+	}
+    }
+
+    Dev_UartWriteReg(uartChanAddr, BAUD, speed);
+
+    /*
+     * Disable all interrupts and clear status bits.
+     */
+    Dev_UartWriteReg(uartAddr, INTR_MASK, 0);
+    Dev_UartWriteReg(uartChanAddr, COMMAND, TX_OFF|RX_OFF|CLR_ERR_STATUS);
+    Dev_UartWriteReg(uartChanAddr, COMMAND, TX_OFF|RX_OFF|CLR_BRK_STATUS);
+
+    /*
+     * Reset the uart's bit in the CC's Istatus register. 
+     */
+    Mach_Write32bitCCReg(MACH_INTR_STATUS_0, MACH_UART_INTR);
+    /*
+     * Register the routine to call on this interrupt.
+     * Temporarily remove:  interrupt routine must be rewritten for
+     * new tty driver (JO, 7/15/89).
+     */
+/*    Mach_SetHandler(MACH_UART_INTR, Dev_KbdServiceInterrupt); */
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_UartStartTx --
+ *
+ *	Causes the uart to start printing characters, starting
+ *	with the character specified.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	A "Transmit Buffer Empty" interrupt is enabled. A character
+ *	is printed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Dev_UartStartTx(uartPtr, ch)
+    ClientData uartPtr;
+    char ch;
+{
+    Dev_UartInfo *infoPtr;
+    Address uartAddr;
+    Address uartChanAddr;
+    Dev_UartChannel channel;
+    int status;
+
+    infoPtr = (Dev_UartInfo *) uartPtr;
+    uartAddr = infoPtr->uartAddress;
+    channel = infoPtr->channel;
+
+    if (channel == DEV_UART_CHANNEL_A) {
+	uartChanAddr = ADDR_OFFSET(uartAddr, CHANNEL_A_OFFSET);
+    } else if (channel == DEV_UART_CHANNEL_B) {
+	uartChanAddr = ADDR_OFFSET(uartAddr, CHANNEL_B_OFFSET);
+    } else {
+	panic("Dev_UartStartTx: illegal UART Channel");
+	return;
+    }
+    status = Dev_UartReadReg(uartChanAddr, XFER_STATUS);
+    if (status & TX_NOT_FULL) {
+	Dev_UartWriteReg(uartChanAddr, COMMAND, RX_ON | TX_ON);
+	Dev_UartWriteReg(uartChanAddr, XFER_REG, ch);
+    }
+}
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/spur.md/RCS/devUart.c,v 1.3 88/10/30 21:42:11 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d126 2
+d129 1
+a129 1
+    Mach_SetHandler(MACH_UART_INTR, Dev_KbdServiceInterrupt);
+@
+
+
+1.3
+log
+@multiprocessor port, change to new C lib
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/spur.md/RCS/devUart.c,v 1.2 88/07/20 22:06:18 douglis Exp Locker: jhh $ SPRITE (Berkeley)";
+@
+
+
+1.2
+log
+@Do things in physical mode by indirecting through a macro (Dev_Uart*Reg)
+and procedure (Mach_*PhysicalWord).
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: devUart.c,v 1.1 88/07/20 15:34:47 douglis Exp $ SPRITE (Berkeley)";
+d62 1
+a62 1
+	Sys_Panic(SYS_FATAL, "Dev_UartInit: illegal UART Channel");
+d106 1
+a106 1
+	    Sys_Panic(SYS_FATAL, "Dev_UartInit: illegal baud rate");
+d169 1
+a169 1
+	Sys_Panic(SYS_FATAL, "Dev_UartStartTx: illegal UART Channel");
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: devZilog.c,v 5.2 88/05/04 17:05:44 nelson Exp $ SPRITE (Berkeley)";
+d27 1
+d48 2
+a49 3
+Dev_UartInit(uartPtr, channel, baudRate)
+    register Dev_UartDevice *uartPtr;   /* pointer to the interface
+					   registers */
+d54 1
+d56 1
+a56 2
+    Dev_UartWriteChannel *chanPtr;	/* pointer to channel-dependent
+					   part of structure */
+d58 1
+a58 1
+	chanPtr = &uartPtr->channelA.write;
+d60 1
+a60 1
+	chanPtr = &uartPtr->channelB.write;
+d66 1
+a66 1
+     * Reset both channels.
+d68 4
+a71 4
+    chanPtr->command = TX_OFF|RX_OFF|RESET_MR1;
+    chanPtr->command = TX_OFF|RX_OFF|RESET_RX;
+    chanPtr->command = TX_OFF|RX_OFF|RESET_TX;
+    chanPtr->command = TX_OFF|RX_OFF|EXIT_TX_BREAK;
+d81 3
+a83 3
+    uartPtr->misc.write.auxCtl = AUX_CMD_VAL;
+    chanPtr->mode = MODE1_VAL;
+    chanPtr->mode = MODE2_VAL;
+d111 1
+a111 1
+    chanPtr->baudRate = speed;
+d116 3
+a118 3
+    uartPtr->misc.write.intrMask = 0;
+    chanPtr->command = TX_OFF|RX_OFF|CLR_ERR_STATUS;
+    chanPtr->command = TX_OFF|RX_OFF|CLR_BRK_STATUS;
+d155 4
+a158 3
+    Dev_UartDevice *uartAddr;
+    Dev_UartWriteChannel *writePtr;
+    Dev_UartReadChannel *readPtr;
+d162 14
+a175 6
+    
+    readPtr = &uartAddr->channelA.read;
+    if (readPtr->status & TX_NOT_FULL) {
+	writePtr = (Dev_UartWriteChannel *) readPtr;
+	writePtr->command = RX_ON | TX_ON;
+	writePtr->transmit = ch;
+@

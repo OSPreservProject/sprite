@@ -1,0 +1,15 @@
+This quick throw-off is a public-domain implementation of the USG
+getopt program.  Not to be confused with the library routine, this
+program helps scripts parse their options/flags/arguments.
+
+After unpacking, tweak the Makefile as appropriate and run make.  Copy
+the examples from the manpage into separate files as verify that they
+work ok.  Do a "make install".  For your final examination, convert
+lint to use this program.  I write more Makefiles for mod.sources
+submissions than I care to, and sometimes I get tired of it; I
+apologize for the terseness of the one here.
+
+If you don't have getopt(3) in your C run-time library, snip it off
+the tail of the source file, and add it, or make it easily, publicly,
+available in some other way.
+	/Rich $alz

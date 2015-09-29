@@ -1,0 +1,132 @@
+
+
+
+option                    User Commands                    option
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     option - Add/retrieve  window  options  to/from  the  option
+     database
+
+SSYYNNOOPPSSIISS
+     ooppttiioonn aadddd _p_a_t_t_e_r_n _v_a_l_u_e ?_p_r_i_o_r_i_t_y?
+
+     ooppttiioonn cclleeaarr
+
+     ooppttiioonn ggeett _w_i_n_d_o_w _n_a_m_e _c_l_a_s_s
+
+     ooppttiioonn rreeaaddffiillee _f_i_l_e_N_a_m_e ?_p_r_i_o_r_i_t_y?
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The ooppttiioonn command allows you  to  add  entries  to  the  Tk
+     option  database  or  to retrieve options from the database.
+     The aadddd form of the command adds a new option to  the  data-
+     base.  _P_a_t_t_e_r_n contains the option being specified, and con-
+     sists of names and/or  classes  separated  by  asterisks  or
+     dots,  in  the usual X format.  _V_a_l_u_e contains a text string
+     to associate with _p_a_t_t_e_r_n;  this is the value that  will  be
+     returned  in  calls to TTkk__GGeettOOppttiioonn or by invocations of the
+     ooppttiioonn ggeett command.  If _p_r_i_o_r_i_t_y is specified, it  indicates
+     the  priority  level  for  this  option (see below for legal
+     values);  it defaults to iinntteerraaccttiivvee.  This  command  always
+     returns an empty string.
+
+     The  ooppttiioonn  cclleeaarr  command  clears  the  option   database.
+     Default  options  (from the RREESSOOUURRCCEE__MMAANNAAGGEERR property or the
+     ..XXddeeffaauullttss file) will be  reloaded  automatically  the  next
+     time  an option is added to the database or removed from it.
+     This command always returns an empty string.
+
+     The ooppttiioonn ggeett command  returns  the  value  of  the  option
+     specified  for  _w_i_n_d_o_w  under  _n_a_m_e  and  _c_l_a_s_s.  If several
+     entries in the  option  database  match  _w_i_n_d_o_w,  _n_a_m_e,  and
+     _c_l_a_s_s,  then  the command returns whichever was created with
+     highest _p_r_i_o_r_i_t_y  level.   If  there  are  several  matching
+     entries  at  the same priority level, then it returns which-
+     ever entry was most recently entered into the  option  data-
+     base.   If  there  are  no  matching entries, then the empty
+     string is returned.
+
+     The rreeaaddffiillee form  of  the  command  reads  _f_i_l_e_N_a_m_e,  which
+     should  have  the standard format for an X resource database
+     such as ..XXddeeffaauullttss, and adds all the  options  specified  in
+     that file to the option database.  If _p_r_i_o_r_i_t_y is specified,
+     it indicates the  priority  level  at  which  to  enter  the
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+option                    User Commands                    option
+
+
+
+     options;  _p_r_i_o_r_i_t_y defaults to iinntteerraaccttiivvee.
+
+     The _p_r_i_o_r_i_t_y arguments to the ooppttiioonn  command  are  normally
+     specified symbolically using one of the following values:
+
+     wwiiddggeettDDeeffaauulltt
+          Level 20.  Used  for  default  values  hard-coded  into
+          widgets.
+
+     ssttaarrttuuppFFiillee
+          Level 40.  Used for options specified  in  application-
+          specific startup files.
+
+     uusseerrDDeeffaauulltt
+          Level 60.  Used for options specified in  user-specific
+          defaults  files, such as ..XXddeeffaauullttss, resource databases
+          loaded into the  X  server,  or  user-specific  startup
+          files.
+
+     iinntteerraaccttiivvee
+          Level 80.  Used  for  options  specified  interactively
+          after  the  application  starts  running.   If _p_r_i_o_r_i_t_y
+          isn't specified, it defaults to this level.
+
+     Any of the above keywords may be abbreviated.  In  addition,
+     priorities  may  be  specified  numerically  using  integers
+     between 0 and 100, inclusive.  The numeric form is  probably
+     a  bad  idea  except  for new priority levels other than the
+     ones given above.
+
+
+KKEEYYWWOORRDDSS
+     database, option, priority, retrieve
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     2
+
+
+

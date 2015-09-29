@@ -1,0 +1,346 @@
+\documentstyle[12pt,jeep]{article}
+\renewcommand{\baselinestretch}{.95}
+\headheight 14pt
+\lhead{\large\tt jeep.sty}\rhead{\sc February  3, 1989}
+\cfoot{\thepage}
+\underhead
+\tighttoc
+\thispagestyle{plain}
+\numberbysection
+\begin{document}
+\begin{center}
+\large\sc {\tt JEEP}\smallskip\\
+A Customization of the \LaTeX\\
+Article and Report Styles
+\smallskip\\
+G.  W.  Stewart\symbolnote{1}{Department of Computer Science and
+Institute for Advanced Computer Studies, University of Maryland,
+College Part, MD 20742 (stewart@thales.cs.umd.edu).}
+\bigskip
+\end{center}
+
+\tableofcontents
+
+\section{Introduction}
+
+This note describes a style file to accompany the \LaTeX\ document
+styles article and report.  It is not a systematic revision of these
+styles; rather it consists of modifications I found necessary or
+desirable in the course of my work.  Although I have used the
+modifications for about a year in a variety of applications,
+they no doubt still contain some bugs.  Please send any comments
+to the address below.
+
+The name \verb|jeep| is a continuation of Leslie Lamport's analogy,
+in which he compares \TeX\ to a racing car and \LaTeX\ to a family
+sedan.  The modifications here convert the sedan to a general purpose
+vehicle\,---\,a jeep.  The modifications, like a jeep, are not pretty,
+but the casual \LaTeX er user can cover a lot of territory
+with them.
+
+It should go without saying that I would not have bothered to modify
+\LaTeX\ if it had not become indispensable to me.  I have heard a
+number of criticisms of \LaTeX, some of which I share.  But when the
+carping is done, \LaTeX\ remains one of the best document processing
+systems around.  The fact that \verb|jeep| exists is a testimony to
+Lamport's craftsmanship.
+
+\section{Page Size}
+
+The most frequent use of \LaTeX\ is to generate text that is
+reproduced on $8.5\times 11$ inch pages (in the USA at least).  The
+default page boundaries have been expanded to reflect this fact.  It
+looks OK in eleven or twelve point type.  In twelve point type I set
+\verb|\baselinestretch| to .95 to increase the ratio of black to
+white.  But I am into heavy mathematics with a lot of displays;
+people typing straight text will probably want to leave
+\verb|\baselinestretch| as it is, or even increase it a little.
+I find no virtues in ten point type on pages of this size.
+
+\section{Chapter, Section, and Theorem Heads}
+
+Even among well printed books, there is great variation in the format
+of section heads.  The font may be bold, sans serif, or small caps,
+in sizes ranging from normal to rather large.  If a section number is
+present, it may be followed by a period or by a long space.  The
+changes here give the casual \LaTeX er more control over the style of
+his headings.
+
+\subsection{Chapter heads}
+
+The format of chapter heads may be controlled by the command
+\begin{quote}
+\begin{verbatim}
+\mychapter{<head1>}{<head2>}
+\end{verbatim}
+\end{quote}
+Here \verb|<head1>| is the chapter heading to use when the chapter is
+numbered and \verb|<head2>| is the heading to use with the
+\verb|\chapter*| command.  The text of the \verb|\chapter| command is
+referenced in \verb|<head1>| and \verb|<head2>| by writing \verb|#1|.
+For example, the default chapter head is defined by
+\begin{quote}
+\begin{verbatim}
+\mychapter{\LARGE \sc \thechapter. #1}{\LARGE \sc #1}
+\end{verbatim}
+\end{quote}
+
+Chapters always begin on a new page.  The style parameter
+\verb|\chaptopsep| is the amount of blank space placed at the top of
+the page before the chapter head, and \verb|\chapaftersep| is
+the amount of blank space placed between the chapter head and
+the text.  They are initially \verb|.5in|.  They may be changed
+by the \verb|\setlength| command.
+
+The default head does not have the word ``Chapter'' preceding
+the chapter number, which is fine with me, but may not please you.
+To get back something approximating the original \LaTeX\ heads
+try
+\begin{quote}
+\begin{verbatim}
+\mychapter{\huge \bf \chapapp\ \thechapter\\[20pt]\Huge\bf #1}
+{\Huge \bf #1}
+\end{verbatim}
+\end{quote}
+The command \verb|\chapapp| is ordinarily defined to be
+``Chapter'' but the \LaTeX\ command \verb|\appendix| changes it
+to ``Appendix''.  If you want more flexibility in your appendix
+heads, use \verb|\mychapter| to define them anew.
+
+
+\subsection{Section heads}
+The format of section heads may be controlled by the command
+\begin{quote}
+\begin{verbatim}
+\mysection{<sec>}{<style>}{<preface>}
+\end{verbatim}
+\end{quote}
+Here {\tt <sec>} is the section level\,---\,{\tt section}, {\tt
+subsection}, etc.  The style in which the section is to be set is
+specified by \verb|<style>|; e.g., \verb|\large\sf|.  The argument
+{\tt <preface>} is the text to be set before the text of the section
+head\,---\,usually \verb|\thesection| and some punctuation.  For example
+the section heads in this document were produced by the commands.
+\begin{quote}
+\begin{verbatim}
+\mysection{section}{\large\bf}{\thesection.~}
+\mysection{subsection}{\normalsize\bf}{\thesubsection.~}
+\mysection{subsubsection}{\normalsize\bf}{\thesubsubsection.~}
+\mysection{paragraph}{\normalsize\bf}{\theparagraph.}
+\mysection{subparagraph}{\normalsize\bf}{\thesubparagraph.}
+\end{verbatim}
+\end{quote}
+These are the default for {\tt jeep.sty}.
+
+
+\subsection{Theorem heads}
+One already has considerable flexibility in controlling the
+theorem environment.  For example, the definition
+\begin{quote}
+\begin{verbatim}
+\newtheorem{theorem}{\sf Theorem}
+\end{verbatim}
+\end{quote}
+will cause theorem headings to be printed in sans serif type.
+However, it is not easy to slip a punctuation mark after
+the theorem number.  This can now be done by the statement
+\begin{quote}
+\begin{verbatim}
+\renewcommand{\thmcounterend}{<punctuation>}
+\end{verbatim}
+\end{quote}
+where {\tt <punctuation>} is the desired punctuation.  The
+default is a period.  This command affects all user defined
+theorem environments.
+
+The default typestyle within the theorem environment has been
+changed to \verb|\sl|.  This can easily be overridden.
+
+\section{Numbering}
+
+A new command, \verb|\numberbysection|, which should appear only in
+the preamble, places the equation, figure, table, and theorem counters
+within the section counter and redefines \verb|\the<counter>| to be
+\verb|\thesection.\arabic{<counter>}|.  The change is inherited by all
+theorem environments that are defined to be numbered with
+\verb|theorem| (however, be sure to create the \verb|theorem|
+environments {\it before} invoking \verb|\numberbysection|).
+
+In article style, \verb|\numberbysection| is the natural way to
+write a paper.  In the report style, the user of
+\verb|\numberbysection| must provide explicit chapter numbers
+when referencing equations, theorems, etc.  This is no hardship
+if you adopt the convention that references without chapter
+numbers refer to the current chapter, since in most works
+references tend to be to nearby items.  If you do this you may
+want to redefine \verb|\thechapter| to be
+\verb|\Roman{chapter}|.  Then (2.5.2) can refer to the second
+item of equation (2.5) in the current chapter, while (II.5.2)
+refers equation (5.2) in Chapter~II.
+
+An analogous command, \verb|\numberbysubsection|, causes the
+counters to be reset when subsections change.  This option is
+especially useful for a style of writing in which the work is
+broken up into short subsections of one or two paragraphs, each
+with its own heading.  Try writing this way if you have
+temporary writer's block.  At its best the technique produces a
+lively work that moves quickly from topic to topic.  At its
+worst it produces a rambling, ill-organized mish-mash.
+
+\section{Headers}
+
+\subsection{Three part headers and footers}
+
+A finished article or report should have a limited number of simple,
+informative headers and footers\,---\,perhaps a title or section head
+and a page number.  Work in progress requires additional information;
+e.g., the author's name or initials, the date, and a statement that
+this is a draft.  To help with this, I have made Lance
+Berc's\footnote{Ollivetti Research Center, 2882 Sand Hill Road,
+Menlo Park, CA 94025} three part headers and footers the default page
+style.  The commands
+\begin{quote}
+\begin{verbatim}
+\lhead{<item>}
+\chead{<item>}
+\rhead{<item>}
+\end{verbatim}
+\end{quote}
+sets the left, center, and right parts of the headers.  The
+corresponding commands for footers are
+\begin{quote}
+\begin{verbatim}
+\lfoot{<item>}
+\cfoot{<item>}
+\rfoot{<item>}
+\end{verbatim}
+\end{quote}
+In the {\tt twoside} document style, the macros switch the right and
+left items on even numbered pages.  The \verb|\pagestyle| command
+overrides the three part option.
+
+\subsection{Underlined headers}
+
+The preamble command \verb|\underhead| places a
+rule of length \verb|\textwidth| a distance of
+\verb|\underheadsep| under the header text.  The value
+of \verb|\underheadsep| can be changed in the preamble by
+\verb|\settolength|.  This length is added
+to the style parameter \verb|\headhight|, so that the top of the text
+is moved down by \verb|\underheadsep|.  To keep the top of the text
+in the original position execute the command
+\verb|\addtolength{\headsep}{-\underheadsep}|.
+
+In preparing assignments and classroom notes, I find it convenient to
+use the header line as a title, in which case I do not want it
+underlined on the first page.  Underlining on the current page can be
+suppressed by the command \verb|\nounderhead|.
+
+\section{Enumerated Lists}
+
+\subsection{The {\tt enumerate} environment}
+
+As a matter of personal taste, I prefer my lists enumerated by simple
+arabic numbers.  Consequently, I have changed the numbering
+conventions on the {\tt enumerate} environment to use arabic numbers
+at all levels.
+
+\subsection{The {\tt outline} environment}
+
+Most people who use the {\tt enumerate} environment to produce a
+syllabus or other long nested lists of short items are dismayed
+by the amount of space between the items.  The {\tt outline}
+environment, which is essentially the same as {\tt enumerate},
+suppresses some of this space.  It leaves space, however, at the
+beginning and end of a list, but not a sublist.  For example
+\begin{outline}
+\item Rome and Carthage
+   \begin{outline}
+   \item The first Punic war
+   \item The second Punic war
+      \begin{outline}
+      \item Hannibal in Spain
+      \item Hannibal in Italy
+      \item Hannibal in flight
+      \end{outline}
+   \item {\it Carthago delenda est}
+   \end{outline}
+\item Rome in the Adriatic
+\end{outline}
+You should use the {\tt outline} environment sparingly.  For
+most purposes, even for a list of a few short items, the {\tt
+enumerate} environment produces more pleasing results.
+
+\section{Table of Contents}
+
+In technical articles it is sometimes convenient to place a
+table of contents on the first page, right after the title and
+abstract.  I find the section entries in the default table of
+contents for the article style to be too assertive and too
+widely spaced for this purpose.  The command
+\begin{quote}
+\begin{verbatim}
+\tighttoc
+\end{verbatim}
+\end{quote}
+produces a tighter table of contents.  It was used to generate
+the table of contents on the first page.
+
+You will probably not want to use \verb|\tighttoc| in the report
+style.
+
+\section{Miscellaneous}
+
+\subsection{Symbolic footnote marks}
+Since there is no standard place to cut windows in technical
+report covers, most people are reduced to hacking their own
+title pages.  This creates the problem of producing footnotes
+using the symbols $*$, \dag, \ddag, etc.  The command
+\begin{quote}
+\begin{verbatim}
+\symbolnote{<num>}{<text>}
+\end{verbatim}
+\end{quote}
+produces a footnote with footnote symbol \verb|<num>|, where
+\verb|<num>| is a number between 1 and 9 (for a list of the
+symbols see \S C.7.4 in the \LaTeX\ manual).  This command does
+not alter the usual sequencing of numbered footnotes, so that it
+can be used to produce auxiliary footnotes anywhere in the
+manuscript.  The following sequence generated the footnote at
+the beginning of this note.
+\begin{quote}
+\begin{verbatim}
+G. W. Stewart\symbolnote{1}{Department of ... }
+\end{verbatim}
+\end{quote}
+
+The commands \verb|\symbolmark{<num>}| and
+\verb|\symboltext{<num>}{<text>}| are analogues of
+\verb|\footnotemark[<num>]| and \verb|\footnotetext[<num>]{<text>}|.
+Observe that the argument \verb|<num>|, which is optional in the
+\LaTeX\ commands, is mandatory in the \verb|jeep| commands.
+
+\subsection{Symbolic equation labels} In short notes, classroom
+assignment, and tests it is often convenient to label an
+equation by a symbol; e.g.
+\begin{symboleqn}{(*)}
+x^n + y^n = z^n.
+\end{symboleqn}
+This can be accomplished by the sequence
+\begin{quote}
+\begin{verbatim}
+\begin{symboleqn}{(*)}
+x^n + y^n = z^n.
+\end{symboleqn}
+\end{verbatim}
+\end{quote}
+Any text can replace the $(*)$, but keep in mind that it will be set in
+math mode.  Equations generated by \verb|symboleqn| cannot be labeled;
+any references must be constructed explicitly.
+
+Since asterisks are a favorite symbol in this connection, let me note
+some of the pitfalls.  Always set $(*)$ in math mode thus:
+\verb|$(*)$|.  If you enter \verb|(*)|, you will get (*), with the
+asterisk too high.  To get $(*{*}*)$ enter \verb|$(*{*}*)$|.  The
+braces keep \TeX\ from treating the inner asterisk as an operator.
+\end{document}

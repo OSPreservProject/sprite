@@ -1,0 +1,7 @@
+F CLIENT.C;1                        	client.c
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+L SPRITESR.C;1                      	spriteSrvUser.c	/users/kupfer/spriteserver/src/printfd/user/spriteSrvUser.c
+L SPRITESR.H;1                      	spriteSrv.h	/users/kupfer/spriteserver/src/printfd/spriteSrv.h
+L STATUS.C;1                        	status.c	../lib/c/etc/status.c

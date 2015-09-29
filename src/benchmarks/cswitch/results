@@ -1,0 +1,29 @@
+Results of running the "cswitch" benchmark on different
+configurations.  This benchmark forks a child process and
+repeatedly passes one byte back and forth between parent
+and child using pipes.  The times reported below are the
+average time for a round-trip (2 context switches).
+
+Configuration				Time per context switch (ms)
+-------------				----------------------------
+
+DS5000 Ultrix 3.1D 3/20/90		 .18
+M2000 RISC/os 4.0 10/3/89		 .30
+DS3100 Ultrix 3.1 10/25/89		 .34
+DS3100 Mach 2.5 4/3/90			 .50
+DS3100 Sprite FD.035 9/29/89 (opt.)	 .51
+VAX 8800 Ultrix 3.0 9/19/89		 .70
+DS3100 Ultrix 3.0 9/20/89		 .72
+Sun-4 Mach 2.5 4/4/90			 .82
+DS3100 Sprite 1.022 9/19/89 (no opt.)	 .89
+Sun-4 SunOS 4.0.3 3/25/90		1.04
+SS1 SunOS 4.0.3c 3/25/90		1.06
+HP835 HP-UX 4/13/90			1.12
+Sun-4 Sprite 1.022 9/19/89		1.17
+SS1 Sprite 1.061 3/25/90		1.19
+RS/6000-320 AIX 3.1 5/9/90		1.44
+Sun-3 SunOS 3.5 9/19/89			2.36
+Sun-3 Sprite 1.016 9/19/89		2.41
+RT-APC Mach 2.5 11/8/89			3.52
+MVAX2 Ultrix 3.0 9/27/89		3.66
+SPUR 4 cpu Sprite JHH.287 11/3/89	7.87

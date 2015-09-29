@@ -1,0 +1,6 @@
+D DEBUGGER                          	debugger
+L GETKEY.C;1                        	getkey.c	../../dist/experimental/getkey.c
+L README.;1                         	README	../../dist/experimental/README
+L TCLDBM.C;1                        	tcldbm.c	../../dist/experimental/tcldbm.c
+L TCLSOCKE.C;1                      	tclSocket.c	../../dist/experimental/tclSocket.c
+L TCLSOCKE.H;1                      	tclSocket.h	../../dist/experimental/tclSocket.h

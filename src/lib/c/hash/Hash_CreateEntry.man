@@ -1,0 +1,40 @@
+' $Header: /sprite/src/lib/c/hash/RCS/Hash_CreateEntry.man,v 1.2 92/03/27 12:27:46 shirriff Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS Hash_CreateEntry lib
+.BS
+.SH NAME
+Hash_CreateEntry, Hash_FindEntry \- keyed search in hash table 
+.SH SYNOPSIS
+.nf
+\fB#include <hash.h>\fR
+
+Hash_Entry *
+\fBHash_CreateEntry\fR(\fItablePtr, key, newPtr\fR)
+
+Hash_Entry *
+\fBHash_FindEntry\fR(\fItablePtr, key\fP)
+.AS Hash_Table *tablePtr
+.SH ARGUMENTS
+.AP Hash_Table *tablePtr in
+Table in which to search for entry or create new one.
+.AP Address key in
+Key value that identifies entry.  Exact nature depends on \fIkeyType\fP
+parameter passed to Hash_InitTable.
+.AP Boolean *newPtr in
+If non-NULL, then \fI*newPtr\fP is filled in with TRUE if a new entry
+was created, or FALSE if there was already an entry with the given
+key.
+.BE
+
+.SH DESCRIPTION
+.LP
+Both \fBHash_FindEntry\fR and \fBHash_CreateEntry\fR search the hash table for
+an entry with the same key as \fIkey\fP.  If a matching entry is
+found, both return the address of that entry, which can then be used
+in \fBHash_GetValue\fR, \fBHash_SetValue\fR, and \fBHash_DeleteEntry\fR calls.  If
+no matching entry is found then \fBHash_FindEntry\fR returns NULL;
+in contrast, \fBHash_CreateEntry\fR will create a new entry with the given
+key and an initial value of NULL.
+
+.SH KEYWORDS
+hash table, key, search

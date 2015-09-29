@@ -1,0 +1,4 @@
+F INSTALLB.C_V;1                    	installboot.c,v
+F INSTALLD.C_V;1                    	installdec.c,v
+F INSTALLS.C_V;1                    	installsun.c,v
+F LOCAL.MK_;1                       	local.mk,v

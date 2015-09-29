@@ -1,0 +1,93 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     89.03.22.16.06.35;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.25.13.25.41;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@/* 
+ * strcat.c --
+ *
+ *	Source code for the "strcat" library routine.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/string/RCS/strcat.c,v 1.1 88/04/25 13:25:41 ouster Exp Locker: rab $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <string.h>
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * strcat --
+ *
+ *	Copy one string (src) onto the end of another (dst).
+ *
+ * Results:
+ *	The return value is a pointer to the destination string, dst.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+strcat(dst, src)
+    register char *src;		/* Place from which to copy. */
+    char *dst;			/* Destination string:  *srcPtr gets added
+				 * onto the end of this. */
+{
+    register char *copy = dst;
+
+    do {
+    } while (*copy++ != 0);
+    copy -= 1;
+    do {
+    } while ((*copy++ = *src++) != 0);
+    return dst;
+}
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: proto.c,v 1.2 88/03/11 08:39:08 ouster Exp $ SPRITE (Berkeley)";
+d19 2
+@

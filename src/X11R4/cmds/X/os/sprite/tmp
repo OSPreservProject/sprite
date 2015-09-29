@@ -1,0 +1,6295 @@
+# 1 "access.c"
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+# 1 "/X11/R4/lib/include/X11/Xos.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+ 
+
+
+
+# 42 "/X11/R4/lib/include/X11/Xos.h"
+
+# 1 "/sprite/lib/include/sys/types.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+ 
+
+
+
+
+ 
+
+
+typedef	unsigned char	u_char;
+typedef	unsigned short	u_short;
+typedef	unsigned int	u_int;
+typedef	unsigned long	u_long;
+typedef	unsigned short	ushort;		 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+typedef struct _quad {long val[2]; } quad;
+typedef	struct	_uquad {unsigned long val[2]; } u_quad;
+
+typedef	long	daddr_t;
+typedef	char *	caddr_t;
+typedef	long *	qaddr_t;	 
+typedef	u_long	ino_t;
+typedef	long	swblk_t;
+
+
+typedef	int	size_t;
+
+
+
+typedef	long	time_t;
+
+
+
+typedef	long	clock_t;
+
+typedef	short	dev_t;
+typedef	long	off_t;
+typedef	short	uid_t;
+typedef	short	gid_t;
+ 
+
+
+
+
+
+
+typedef int	pid_t;
+
+typedef long	key_t;		 
+
+
+ 
+
+
+
+
+
+
+
+
+
+typedef long	fd_mask;
+
+
+
+
+
+typedef	struct fd_set {
+	fd_mask	fds_bits[(((256 )+(( (sizeof(fd_mask) * 8		)	)-1))/( (sizeof(fd_mask) * 8		)	)) ];
+} fd_set;
+
+
+
+
+
+
+
+# 43 "/X11/R4/lib/include/X11/Xos.h" 2
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/strings.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+char	*strcat();
+char	*strncat();
+int	strcmp();
+int	strncmp();
+int	strcasecmp();
+int	strncasecmp();
+char	*strcpy();
+char	*strncpy();
+int	strlen();
+char	*index();
+char	*rindex();
+
+ 
+char	*memccpy();
+char	*memchr();
+int	memcmp();
+char	*memcpy();
+char	*memset();
+char	*strchr();
+char	*strdup();
+char	*strrchr();
+char	*strpbrk();
+char	*strsep();
+int	strspn();
+int	strcspn();
+char	*strtok();
+
+ 
+char	*strerror();
+
+
+# 69 "/X11/R4/lib/include/X11/Xos.h" 2
+
+
+
+
+ 
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/sys/file.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+ 
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+# 81 "/X11/R4/lib/include/X11/Xos.h" 2
+
+
+
+
+
+
+ 
+
+
+
+# 120 "/X11/R4/lib/include/X11/Xos.h"
+
+# 1 "/sprite/lib/include/sys/time.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/cfuncproto.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef char *_VoidPtr;
+
+
+
+
+
+# 13 "/sprite/lib/include/sys/time.h" 2
+
+
+ 
+
+
+
+struct timeval {
+	long	tv_sec;		 
+	long	tv_usec;	 
+};
+
+struct timezone {
+	int	tz_minuteswest;	 
+	int	tz_dsttime;	 
+};
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+struct	itimerval {
+	struct	timeval it_interval;	 
+	struct	timeval it_value;	 
+};
+
+
+# 1 "/sprite/lib/include/time.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/cfuncproto.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 76 "/sprite/lib/include/cfuncproto.h"
+
+
+# 12 "/sprite/lib/include/time.h" 2
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+struct tm {
+	int	tm_sec;
+	int	tm_min;
+	int	tm_hour;
+	int	tm_mday;
+	int	tm_mon;
+	int	tm_year;
+	int	tm_wday;
+	int	tm_yday;
+	int	tm_isdst;
+	long	tm_gmtoff;
+	char	*tm_zone;
+};
+
+        extern  clock_t clock () ;
+        extern  time_t time () ;
+        extern  time_t mktime () ;
+        extern  double difftime () ;
+        extern  struct tm *gmtime () ;
+        extern  struct tm *localtime () ;
+        extern  char *asctime () ;
+        extern  char *ctime () ;
+        extern  int strftime () ;
+
+
+
+# 61 "/sprite/lib/include/sys/time.h" 2
+
+
+
+        extern  int	getitimer () ;
+        extern  int	gettimeofday () ;
+
+        extern  int	settimeofday () ;
+
+        extern  int	setitimer () ;
+
+        extern  int	utimes () ;
+
+
+
+# 121 "/X11/R4/lib/include/X11/Xos.h" 2
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+# 27 "access.c" 2
+
+# 1 "/X11/R4/lib/include/X11/X.h" 1
+ 
+
+
+
+ 
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+typedef unsigned long XID;
+
+typedef XID Window;
+typedef XID Drawable;
+typedef XID Font;
+typedef XID Pixmap;
+typedef XID Cursor;
+typedef XID Colormap;
+typedef XID GContext;
+typedef XID KeySym;
+
+typedef unsigned long Mask;
+
+typedef unsigned long Atom;
+
+typedef unsigned long VisualID;
+
+typedef unsigned long Time;
+
+typedef unsigned char KeyCode;
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+		       
+ 
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+ 
+
+
+
+
+ 
+
+
+
+
+
+ 
+
+
+
+
+ 
+
+
+
+
+ 
+
+
+
+
+ 
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 311 "/X11/R4/lib/include/X11/X.h"
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+ 
+ 
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+ 
+
+
+
+
+
+ 
+
+
+
+
+
+ 
+
+
+
+
+ 
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+ 
+
+
+
+
+ 
+
+
+
+
+
+ 
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+ 
+
+
+
+
+
+
+ 
+
+
+
+
+
+ 
+
+
+
+
+
+
+ 
+
+
+
+
+ 
+
+
+
+
+ 
+
+
+
+
+
+
+ 
+
+
+
+
+ 
+
+
+
+
+
+ 
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+ 
+
+
+
+
+
+
+ 
+
+
+
+ 
+
+
+
+
+
+ 
+
+
+
+ 
+
+
+
+
+
+ 
+
+
+
+
+
+ 
+
+
+
+ 
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+ 
+
+
+
+ 
+
+
+
+
+ 
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+# 28 "access.c" 2
+
+# 1 "/X11/R4/lib/include/X11/Xproto.h" 1
+ 
+
+
+
+ 
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/X11/R4/lib/include/X11/Xmd.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+ 
+
+
+
+ 
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+typedef long           INT32;
+typedef short          INT16;
+typedef char           INT8;
+
+typedef unsigned long CARD32;
+typedef unsigned short CARD16;
+typedef unsigned char  CARD8;
+
+typedef unsigned long		BITS32;
+typedef unsigned short		BITS16;
+typedef unsigned char		BYTE;
+
+typedef unsigned char            BOOL;
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+  
+
+
+
+
+# 53 "/X11/R4/lib/include/X11/Xproto.h" 2
+
+# 1 "/X11/R4/lib/include/X11/Xprotostr.h" 1
+ 
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/X11/R4/lib/include/X11/Xmd.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 139 "/X11/R4/lib/include/X11/Xmd.h"
+
+# 28 "/X11/R4/lib/include/X11/Xprotostr.h" 2
+
+
+ 
+
+typedef struct _xSegment {
+    INT16 x1  , y1  , x2  , y2  ;
+} xSegment;
+
+ 
+
+typedef struct _xPoint {
+	INT16		x  , y  ;
+} xPoint;
+
+typedef struct _xRectangle {
+    INT16 x  , y  ;
+    CARD16  width  , height  ;
+} xRectangle;
+
+ 
+
+typedef struct _xArc {
+    INT16 x  , y  ;
+    CARD16   width  , height  ;
+    INT16   angle1  , angle2  ;
+} xArc;
+
+
+# 54 "/X11/R4/lib/include/X11/Xproto.h" 2
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef CARD16 KeyButMask;
+
+ 
+
+
+
+
+typedef struct {
+    CARD8	byteOrder;
+    BYTE	pad;
+    CARD16	majorVersion  , minorVersion  ;
+    CARD16	nbytesAuthProto  ;	 
+    CARD16	nbytesAuthString  ;	 
+    CARD16	pad2;
+} xConnClientPrefix;
+
+typedef struct {
+    BOOL           success;
+    BYTE           lengthReason;  
+    CARD16         majorVersion  , 
+                   minorVersion  ;
+    CARD16         length  ;   
+} xConnSetupPrefix;
+
+
+typedef struct {
+    CARD32         release  ;
+    CARD32         ridBase  , 
+                   ridMask  ;
+    CARD32         motionBufferSize  ;
+    CARD16         nbytesVendor  ;   
+    CARD16         maxRequestSize  ;
+    CARD8          numRoots;           
+    CARD8          numFormats;         
+    CARD8          imageByteOrder;         
+    CARD8          bitmapBitOrder;         
+    CARD8          bitmapScanlineUnit,      
+                   bitmapScanlinePad;      
+    CARD8 	   minKeyCode, maxKeyCode;
+    CARD32	   pad2  ;
+} xConnSetup;
+
+typedef struct {
+    CARD8          depth;
+    CARD8          bitsPerPixel;
+    CARD8          scanLinePad;
+    CARD8          pad1;
+    CARD32	   pad2  ;
+} xPixmapFormat;
+
+ 
+
+typedef struct {
+    CARD8 	depth;
+    CARD8 	pad1;
+    CARD16	nVisuals  ;   
+    CARD32	pad2  ;
+    } xDepth;
+
+typedef struct {
+    CARD32  visualID  ;
+
+
+
+    CARD8 class;
+
+    CARD8 bitsPerRGB;
+    CARD16 colormapEntries  ;
+    CARD32 redMask  , greenMask  , blueMask  ;
+    CARD32 pad  ;
+    } xVisualType;
+
+typedef struct {
+    CARD32          windowId  ;
+    CARD32        defaultColormap  ;
+    CARD32         whitePixel  , blackPixel  ;
+    CARD32         currentInputMask  ;   
+    CARD16         pixWidth  , pixHeight  ;
+    CARD16         mmWidth  , mmHeight  ;
+    CARD16         minInstalledMaps  , maxInstalledMaps  ;
+    CARD32        rootVisualID  ;
+    CARD8          backingStore;
+    BOOL           saveUnders;
+    CARD8          rootDepth;
+    CARD8          nDepths;   
+} xWindowRoot;
+
+
+ 
+
+
+
+
+ 
+
+typedef struct {
+    CARD32 time  ;
+    INT16 x  , y  ;
+} xTimecoord;
+
+typedef struct {
+    CARD8 family;
+    BYTE pad;
+    CARD16 length  ;
+} xHostEntry;
+
+typedef struct {
+    INT16 leftSideBearing  ,
+	  rightSideBearing  ,
+	  characterWidth  ,
+	  ascent  ,
+	  descent  ;
+    CARD16 attributes  ;
+} xCharInfo;
+
+typedef struct {
+    CARD32  name  ;
+    CARD32 value  ;
+} xFontProp;
+
+ 
+
+
+typedef struct {            
+    CARD8 len;	 
+
+    INT8 delta;
+} xTextElt;
+
+
+typedef struct {        
+    CARD32 pixel  ;
+    CARD16 red  , green  , blue  ;
+    CARD8 flags;   
+    CARD8 pad;
+} xColorItem;
+
+
+typedef struct {
+    CARD16 red  , green  , blue  , pad  ;
+} xrgb;
+
+typedef CARD8 KEYCODE;
+
+
+ 
+
+
+
+
+# 945 "/X11/R4/lib/include/X11/Xproto.h"
+
+
+
+
+
+ 
+
+
+
+
+typedef struct {
+    BYTE type;                   
+    BYTE errorCode;
+    CARD16 sequenceNumber  ;        
+    CARD32 resourceID  ;
+    CARD16 minorCode  ;
+    CARD8 majorCode;
+    BYTE pad1;
+    CARD32 pad3  ;
+    CARD32 pad4  ;
+    CARD32 pad5  ;
+    CARD32 pad6  ;
+    CARD32 pad7  ;
+} xError;
+
+ 
+
+
+
+
+# 1208 "/X11/R4/lib/include/X11/Xproto.h"
+
+
+
+
+ 
+
+
+
+
+# 1262 "/X11/R4/lib/include/X11/Xproto.h"
+
+
+
+
+ 
+
+
+
+
+ 
+
+typedef struct {
+	CARD8 reqType;
+	CARD8 data;             
+	CARD16 length  ;          
+
+} xReq;
+
+ 
+
+
+
+ 
+
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD32 id  ;   
+    } xResourceReq;
+
+typedef struct {
+    CARD8 reqType;
+    CARD8 depth;
+    CARD16 length  ;
+    CARD32  wid  , parent  ;
+    INT16 x  , y  ;
+    CARD16 width  , height  , borderWidth  ;  
+
+
+
+    CARD16 class  ;
+
+    CARD32  visual  ;
+    CARD32 mask  ;
+} xCreateWindowReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD32  window  ;
+    CARD32 valueMask  ; 
+} xChangeWindowAttributesReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE mode;
+    CARD16 length  ;
+    CARD32  window  ;
+} xChangeSaveSetReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD32  window  , parent  ;
+    INT16 x  , y  ;
+} xReparentWindowReq;
+
+typedef struct {
+    CARD8 reqType;
+    CARD8 pad;
+    CARD16 length  ;
+    CARD32  window  ;
+    CARD16 mask  ;
+    CARD16 pad2  ;
+} xConfigureWindowReq;
+
+typedef struct {
+    CARD8 reqType;
+    CARD8 direction;
+    CARD16 length  ;
+    CARD32  window  ;
+} xCirculateWindowReq;
+
+typedef struct {     
+    CARD8 reqType;
+    BOOL onlyIfExists;
+    CARD16 length  ;
+    CARD16 nbytes   ;     
+    CARD16 pad  ;
+} xInternAtomReq;
+
+typedef struct {
+    CARD8 reqType;
+    CARD8 mode;
+    CARD16 length  ;
+    CARD32  window  ;
+    CARD32  property  , type  ;
+    CARD8 format;
+    BYTE pad[3];
+    CARD32 nUnits  ;      
+} xChangePropertyReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD32  window  ;
+    CARD32  property  ;
+} xDeletePropertyReq;
+
+typedef struct {
+    CARD8 reqType;
+
+
+
+    BOOL delete;
+
+    CARD16 length  ;
+    CARD32  window  ;
+    CARD32  property  , type  ;
+    CARD32 longOffset  ;
+    CARD32 longLength  ;
+} xGetPropertyReq;
+ 
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD32  window  ;
+    CARD32  selection  ;
+    CARD32  time  ;
+} xSetSelectionOwnerReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD32  requestor  ;
+    CARD32  selection  , target  , property  ;
+    CARD32  time  ;
+    } xConvertSelectionReq;
+
+# 1424 "/X11/R4/lib/include/X11/Xproto.h"
+
+
+typedef struct {
+    CARD8 reqType;
+    BOOL ownerEvents;
+    CARD16 length  ;
+    CARD32  grabWindow  ;
+    CARD16 eventMask  ;
+    BYTE pointerMode, keyboardMode;
+    CARD32  confineTo  ;
+    CARD32  cursor  ;
+    CARD32  time  ;
+} xGrabPointerReq;
+
+typedef struct {
+    CARD8 reqType;
+    BOOL ownerEvents;
+    CARD16 length  ;
+    CARD32  grabWindow  ;
+    CARD16 eventMask  ;
+    BYTE pointerMode, keyboardMode;
+    CARD32  confineTo  ;
+    CARD32  cursor  ;
+    CARD8 button;
+    BYTE pad;
+    CARD16 modifiers  ;
+} xGrabButtonReq;
+
+typedef struct {
+    CARD8 reqType;
+    CARD8 button;
+    CARD16 length  ;
+    CARD32  grabWindow  ;
+    CARD16 modifiers  ;
+    CARD16 pad  ;
+} xUngrabButtonReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD32  cursor  ;
+    CARD32  time  ;
+    CARD16 eventMask  ;
+    CARD16 pad2  ;
+} xChangeActivePointerGrabReq;
+
+typedef struct {
+    CARD8 reqType;
+    BOOL ownerEvents;
+    CARD16 length  ;
+    CARD32  grabWindow  ;
+    CARD32  time  ;
+    BYTE pointerMode, keyboardMode;  
+    CARD16 pad  ;
+} xGrabKeyboardReq;
+
+typedef struct {
+    CARD8 reqType;
+    BOOL ownerEvents;
+    CARD16 length  ;
+    CARD32  grabWindow  ;
+    CARD16 modifiers  ;
+    CARD8 key;
+    BYTE pointerMode, keyboardMode;  
+    BYTE pad1, pad2, pad3;
+} xGrabKeyReq;
+
+typedef struct {
+    CARD8 reqType;
+    CARD8 key;
+    CARD16 length  ;
+    CARD32  grabWindow  ;
+    CARD16 modifiers  ;
+    CARD16 pad  ;
+} xUngrabKeyReq;
+
+typedef struct {
+    CARD8 reqType;
+    CARD8 mode;
+    CARD16 length  ;
+    CARD32  time  ;
+} xAllowEventsReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD32  window  ;
+    CARD32  start  , stop  ;
+} xGetMotionEventsReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD32  srcWid  , dstWid  ;
+    INT16 srcX  , srcY  ;
+} xTranslateCoordsReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD32  srcWid  , dstWid  ;
+    INT16 srcX  , srcY  ;
+    CARD16 srcWidth  , srcHeight  ;
+    INT16 dstX  , dstY  ;
+} xWarpPointerReq;
+
+typedef struct {
+    CARD8 reqType;
+    CARD8 revertTo;
+    CARD16 length  ;
+    CARD32  focus  ;
+    CARD32  time  ;
+} xSetInputFocusReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD32  fid  ;
+    CARD16 nbytes  ;
+    BYTE pad1, pad2;	 
+} xOpenFontReq;
+
+typedef struct {
+    CARD8 reqType;
+    BOOL oddLength;
+    CARD16 length  ;
+    CARD32  fid  ;
+    } xQueryTextExtentsReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD16 maxNames  ;
+    CARD16 nbytes  ;   
+} xListFontsReq;
+
+typedef xListFontsReq xListFontsWithInfoReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD16 nFonts  ;
+    BYTE pad1, pad2;	 
+} xSetFontPathReq;
+
+typedef struct {
+    CARD8 reqType;
+    CARD8 depth;
+    CARD16 length  ;
+    CARD32  pid  ;
+    CARD32  drawable  ;
+    CARD16 width  , height  ;
+} xCreatePixmapReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD32  gc  ;
+    CARD32  drawable  ;
+    CARD32 mask  ;
+} xCreateGCReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD32  gc  ;
+    CARD32 mask  ;
+} xChangeGCReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD32  srcGC  , dstGC  ;
+    CARD32 mask  ;
+} xCopyGCReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD32  gc  ;
+    CARD16 dashOffset  ;
+    CARD16 nDashes  ;         
+} xSetDashesReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE ordering;
+    CARD16 length  ;
+    CARD32  gc  ;
+    INT16 xOrigin  , yOrigin  ;
+} xSetClipRectanglesReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BOOL exposures;
+    CARD16 length  ;
+    CARD32  window  ;
+    INT16 x  , y  ;
+    CARD16 width  , height  ;
+} xClearAreaReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD32  srcDrawable  , dstDrawable  ;
+    CARD32  gc  ;
+    INT16 srcX  , srcY  , dstX  , dstY  ;
+    CARD16 width  , height  ;
+} xCopyAreaReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD32  srcDrawable  , dstDrawable  ;
+    CARD32  gc  ;
+    INT16 srcX  , srcY  , dstX  , dstY  ;
+    CARD16 width  , height  ;
+    CARD32 bitPlane  ;
+} xCopyPlaneReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE coordMode;
+    CARD16 length  ;
+    CARD32  drawable  ;
+    CARD32  gc  ;
+} xPolyPointReq;    
+
+typedef xPolyPointReq xPolyLineReq;   
+
+ 
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD32  drawable  ;
+    CARD32  gc  ;
+} xPolySegmentReq;    
+
+typedef xPolySegmentReq xPolyArcReq;
+typedef xPolySegmentReq xPolyRectangleReq;
+typedef xPolySegmentReq xPolyFillRectangleReq;
+typedef xPolySegmentReq xPolyFillArcReq;
+
+typedef struct _FillPolyReq {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD32  drawable  ;
+    CARD32  gc  ;
+    BYTE shape;
+    BYTE coordMode;
+    CARD16 pad1  ;
+} xFillPolyReq;    
+
+
+typedef struct _PutImageReq {
+    CARD8 reqType;
+    CARD8 format;
+    CARD16 length  ;
+    CARD32  drawable  ;
+    CARD32  gc  ;
+    CARD16 width  , height  ;
+    INT16 dstX  , dstY  ;
+    CARD8 leftPad;
+    CARD8 depth;
+    CARD16 pad  ;
+} xPutImageReq;    
+
+typedef struct {
+    CARD8 reqType;
+    CARD8 format;
+    CARD16 length  ;
+    CARD32  drawable  ;
+    INT16 x  , y  ;
+    CARD16 width  , height  ;
+    CARD32 planeMask  ;
+} xGetImageReq;    
+
+ 
+
+typedef struct {
+    CARD8 reqType;
+    CARD8 pad;
+    CARD16 length  ;
+    CARD32  drawable  ;
+    CARD32  gc  ;
+    INT16 x  , y  ;		 
+} xPolyTextReq;    
+
+typedef xPolyTextReq xPolyText8Req;
+typedef xPolyTextReq xPolyText16Req;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE nChars;
+    CARD16 length  ;
+    CARD32  drawable  ;
+    CARD32  gc  ;
+    INT16 x  , y  ;
+} xImageTextReq;    
+
+typedef xImageTextReq xImageText8Req;
+typedef xImageTextReq xImageText16Req;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE alloc;
+    CARD16 length  ;
+    CARD32  mid  ;
+    CARD32  window  ;
+    CARD32  visual  ;
+} xCreateColormapReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD32  mid  ;
+    CARD32  srcCmap  ;
+} xCopyColormapAndFreeReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD32  cmap  ;
+    CARD16 red  , green  , blue  ;
+    CARD16 pad2  ;
+} xAllocColorReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD32  cmap  ;
+    CARD16 nbytes  ;   
+    BYTE pad1, pad2;
+} xAllocNamedColorReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BOOL contiguous;
+    CARD16 length  ;
+    CARD32  cmap  ;
+    CARD16 colors  , planes  ;
+} xAllocColorCellsReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BOOL contiguous;
+    CARD16 length  ;
+    CARD32  cmap  ;
+    CARD16 colors  , red  , green  , blue  ;
+} xAllocColorPlanesReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD32  cmap  ;
+    CARD32 planeMask  ;
+} xFreeColorsReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD32  cmap  ;
+} xStoreColorsReq;    
+
+typedef struct {
+    CARD8 reqType;
+    CARD8 flags;    
+    CARD16 length  ;
+    CARD32  cmap  ;
+    CARD32 pixel  ;
+    CARD16 nbytes  ;   
+    BYTE pad1, pad2;
+    } xStoreNamedColorReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD32  cmap  ;
+} xQueryColorsReq;    
+
+typedef struct {     
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD32  cmap  ;
+    CARD16 nbytes  ;   
+    BYTE pad1, pad2;
+} xLookupColorReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD32  cid  ;
+    CARD32  source  , mask  ;
+    CARD16 foreRed  , foreGreen  , foreBlue  ;
+    CARD16 backRed  , backGreen  , backBlue  ;
+    CARD16 x  , y  ;
+} xCreateCursorReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD32  cid  ;
+    CARD32  source  , mask  ;
+    CARD16 sourceChar  , maskChar  ;
+    CARD16 foreRed  , foreGreen  , foreBlue  ;
+    CARD16 backRed  , backGreen  , backBlue  ;
+} xCreateGlyphCursorReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD32  cursor  ;
+    CARD16 foreRed  , foreGreen  , foreBlue  ;
+    CARD16 backRed  , backGreen  , backBlue  ;
+} xRecolorCursorReq;    
+
+typedef struct {
+    CARD8 reqType;
+
+
+
+    CARD8 class;
+
+    CARD16 length  ;
+    CARD32  drawable  ;
+    CARD16 width  , height  ;
+} xQueryBestSizeReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD16 nbytes  ;   
+    BYTE pad1, pad2;
+} xQueryExtensionReq;
+
+typedef struct {
+    CARD8   reqType;
+    CARD8   numKeyPerModifier;
+    CARD16  length  ;
+} xSetModifierMappingReq;
+
+typedef struct {
+    CARD8 reqType;
+    CARD8 nElts;   
+    CARD16 length  ;
+} xSetPointerMappingReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD8  firstKeyCode;
+    CARD8 count;
+    CARD16 pad1  ;
+} xGetKeyboardMappingReq;    
+
+typedef struct {
+    CARD8 reqType;
+    CARD8 keyCodes;
+    CARD16 length  ;
+    CARD8  firstKeyCode;
+    CARD8 keySymsPerKeyCode;
+    CARD16 pad1  ;
+} xChangeKeyboardMappingReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD32 mask  ;
+} xChangeKeyboardControlReq;    
+
+typedef struct {
+    CARD8 reqType;
+    INT8 percent;   
+    CARD16 length  ;
+} xBellReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    INT16 accelNum  , accelDenum  ;
+    INT16 threshold  ;             
+    BOOL doAccel, doThresh;
+} xChangePointerControlReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    INT16 timeout  , interval  ;
+    BYTE preferBlank, allowExpose;  
+    CARD16 pad2  ;
+} xSetScreenSaverReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE mode;
+    CARD16 length  ;
+    CARD8 hostFamily;
+    BYTE pad;
+    CARD16 hostLength  ;
+} xChangeHostsReq;    
+
+typedef struct {
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    } xListHostsReq;
+
+typedef struct {
+    CARD8 reqType;
+    BYTE mode;
+    CARD16 length  ;
+    } xChangeModeReq;
+
+typedef xChangeModeReq xSetAccessControlReq;
+typedef xChangeModeReq xSetCloseDownModeReq;
+typedef xChangeModeReq xForceScreenSaverReq;
+
+typedef struct {  
+    CARD8 reqType;
+    BYTE pad;
+    CARD16 length  ;
+    CARD32  window  ;
+    CARD16 nAtoms  ;
+    INT16 nPositions  ;
+    } xRotatePropertiesReq;
+    
+
+
+ 
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 29 "access.c" 2
+
+# 1 "/X11/R4/src/cmds/X/include/misc.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+ 
+
+
+
+
+
+extern unsigned long globalSerialNumber;
+extern unsigned long serverGeneration;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef unsigned char *pointer;
+typedef int Bool;
+typedef unsigned long PIXEL;
+typedef unsigned long ATOM;
+
+
+
+
+
+
+# 1 "/X11/R4/src/cmds/X/include/os.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+# 1 "/X11/R4/src/cmds/X/include/misc.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+# 148 "/X11/R4/src/cmds/X/include/misc.h"
+
+# 29 "/X11/R4/src/cmds/X/include/os.h" 2
+
+
+
+# 1 "/sprite/lib/include/sun4.md/alloca.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 32 "/X11/R4/src/cmds/X/include/os.h" 2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef pointer	FID;
+typedef struct _FontPathRec *FontPathPtr;
+typedef struct _NewClientRec *NewClientPtr;
+
+
+ 
+
+
+
+
+# 70 "/X11/R4/src/cmds/X/include/os.h"
+
+
+
+
+ 
+
+
+# 91 "/X11/R4/src/cmds/X/include/os.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int		ReadRequestFromClient();
+char		*strcat();
+char		*strncat();
+char		*strcpy();
+char		*strncpy();
+Bool		CloseDownConnection();
+FontPathPtr	GetFontPath();
+FontPathPtr	ExpandFontNamePattern();
+FID		FiOpenForRead();
+void		CreateWellKnownSockets();
+int		SetDefaultFontPath();
+void		FreeFontRecord();
+int		SetFontPath();
+void		ErrorF();
+void		Error();
+void		FatalError();
+void		ProcessCommandLine();
+void		Xfree();
+void		FlushAllOutput();
+void		FlushIfCriticalOutputPending();
+unsigned long	*Xalloc();
+unsigned long	*Xrealloc();
+long		GetTimeInMillis();
+
+
+# 59 "/X11/R4/src/cmds/X/include/misc.h" 2
+
+
+
+
+
+
+     
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+ 
+
+
+
+
+ 
+
+
+
+
+
+
+ 
+
+
+
+
+extern void SwapLongs();
+extern void SwapShorts();
+
+typedef struct _DDXPoint *DDXPointPtr;
+typedef struct _Box *BoxPtr;
+
+
+# 30 "access.c" 2
+
+# 1 "/X11/R4/src/cmds/X/include/site.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 31 "access.c" 2
+
+# 1 "/sprite/lib/include/errno.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern int	errno;		 
+
+extern int	sys_nerr;	 
+extern char	*sys_errlist[];	 
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 32 "access.c" 2
+
+# 1 "/sprite/lib/include/sys/socket.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+ 
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+struct	linger {
+	int	l_onoff;		 
+	int	l_linger;		 
+};
+
+ 
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+struct sockaddr {
+	u_short	sa_family;		 
+	char	sa_data[14];		 
+};
+
+ 
+
+
+
+struct sockproto {
+	u_short	sp_family;		 
+	u_short	sp_protocol;		 
+};
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+ 
+
+
+struct msghdr {
+	caddr_t	msg_name;		 
+	int	msg_namelen;		 
+	struct	iovec *msg_iov;		 
+	int	msg_iovlen;		 
+	caddr_t	msg_accrights;		 
+	int	msg_accrightslen;
+};
+
+
+
+
+
+
+
+
+# 33 "access.c" 2
+
+# 1 "/sprite/lib/include/sys/ioctl.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/sys/ttychars.h" 1
+ 
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+struct ttychars {
+	char	tc_erase;	 
+	char	tc_kill;	 
+	char	tc_intrc;	 
+	char	tc_quitc;	 
+	char	tc_startc;	 
+	char	tc_stopc;	 
+	char	tc_eofc;	 
+	char	tc_brkc;	 
+	char	tc_suspc;	 
+	char	tc_dsuspc;	 
+	char	tc_rprntc;	 
+	char	tc_flushc;	 
+	char	tc_werasc;	 
+	char	tc_lnextc;	 
+};
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 14 "/sprite/lib/include/sys/ioctl.h" 2
+
+
+
+# 1 "/sprite/lib/include/sys/ttydev.h" 1
+ 
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 17 "/sprite/lib/include/sys/ioctl.h" 2
+
+
+
+
+# 1 "/sprite/lib/include/sys/fb.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+ 
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+ 
+
+
+
+typedef struct	fbtype {
+	int	fb_type;	 
+	int	fb_height;	 
+	int	fb_width;	 
+	int	fb_depth;	 
+	int	fb_cmsize;	 
+	int	fb_size;	 
+} fbtype;
+
+
+ 
+
+
+
+typedef struct	fbinfo {
+	int		fb_physaddr;	 
+	int		fb_hwwidth;	 
+	int		fb_hwheight;	 
+	int		fb_addrdelta;	 
+	unsigned char	*fb_ropaddr;	 
+	int		fb_unit;	 
+} fbinfo;
+
+
+
+ 
+
+
+typedef struct	fbcmap {
+	int		index;		 
+	int		count;		 
+	unsigned char	*red;		 
+	unsigned char	*green;		 
+	unsigned char	*blue;		 
+} fbcmap;
+
+
+typedef struct fbsattr {
+	int	flags;			 
+
+
+	int	emu_type;		 
+	int	dev_specific[8	];	 
+} fbsattr;
+
+
+typedef struct fbgattr {
+	int	real_type;		 
+	int	owner;			 
+	struct	fbtype fbtype;		 
+	struct	fbsattr sattr;		 
+	int	emu_types[4	];	 
+						 
+} fbgattr;
+
+struct	fbpixrect {
+    struct pixrect	*fbpr_pixrect;	 
+};
+
+
+
+
+# 21 "/sprite/lib/include/sys/ioctl.h" 2
+
+
+
+# 1 "/sprite/lib/include/cfuncproto.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 76 "/sprite/lib/include/cfuncproto.h"
+
+
+# 24 "/sprite/lib/include/sys/ioctl.h" 2
+
+
+ 
+
+
+
+struct tchars {
+	char	t_intrc;	 
+	char	t_quitc;	 
+	char	t_startc;	 
+	char	t_stopc;	 
+	char	t_eofc;		 
+	char	t_brkc;		 
+};
+struct ltchars {
+	char	t_suspc;	 
+	char	t_dsuspc;	 
+	char	t_rprntc;	 
+	char	t_flushc;	 
+	char	t_werasc;	 
+	char	t_lnextc;	 
+};
+
+ 
+
+
+
+
+
+struct sgttyb {
+	char	sg_ispeed;		 
+	char	sg_ospeed;		 
+	char	sg_erase;		 
+	char	sg_kill;		 
+	short	sg_flags;		 
+};
+
+
+ 
+
+
+
+
+
+
+
+struct winsize {
+	unsigned short	ws_row;			 
+	unsigned short	ws_col;			 
+	unsigned short	ws_xpixel;		 
+	unsigned short	ws_ypixel;		 
+};
+
+ 
+
+
+struct ttysize {
+	unsigned short	ts_lines;
+	unsigned short	ts_cols;
+	unsigned short	ts_xxx;
+	unsigned short	ts_yyy;
+};
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+ 
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+extern int ioctl () ;
+
+
+# 34 "access.c" 2
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/net/if.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+struct ifnet {
+	char	*if_name;		 
+	short	if_unit;		 
+	short	if_mtu;			 
+	short	if_flags;		 
+	short	if_timer;		 
+	int	if_metric;		 
+	struct	ifaddr *if_addrlist;	 
+	struct	ifqueue {
+		struct	mbuf *ifq_head;
+		struct	mbuf *ifq_tail;
+		int	ifq_len;
+		int	ifq_maxlen;
+		int	ifq_drops;
+	} if_snd;			 
+ 
+	int	(*if_init)();		 
+	int	(*if_output)();		 
+	int	(*if_ioctl)();		 
+	int	(*if_reset)();		 
+	int	(*if_watchdog)();	 
+ 
+	int	if_ipackets;		 
+	int	if_ierrors;		 
+	int	if_opackets;		 
+	int	if_oerrors;		 
+	int	if_collisions;		 
+ 
+	struct	ifnet *if_next;
+};
+
+
+
+
+
+
+
+
+
+ 
+
+
+ 
+
+
+ 
+
+
+
+
+
+
+
+
+# 110 "/sprite/lib/include/net/if.h"
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+# 132 "/sprite/lib/include/net/if.h"
+
+# 143 "/sprite/lib/include/net/if.h"
+
+# 152 "/sprite/lib/include/net/if.h"
+
+
+
+
+ 
+
+
+
+
+
+struct ifaddr {
+	struct	sockaddr ifa_addr;	 
+	union {
+		struct	sockaddr ifu_broadaddr;
+		struct	sockaddr ifu_dstaddr;
+	} ifa_ifu;
+
+
+	struct	ifnet *ifa_ifp;		 
+	struct	ifaddr *ifa_next;	 
+};
+
+ 
+
+
+
+
+
+struct	ifreq {
+
+	char	ifr_name[16 ];		 
+	union {
+		struct	sockaddr ifru_addr;
+		struct	sockaddr ifru_dstaddr;
+		struct	sockaddr ifru_broadaddr;
+		short	ifru_flags;
+		int	ifru_metric;
+		caddr_t	ifru_data;
+	} ifr_ifru;
+
+
+
+
+
+
+};
+
+struct ifdevea {
+        char    ifr_name[16 ];
+        u_char default_pa[6];
+        u_char current_pa[6];
+}; 
+
+ 
+
+
+
+
+
+struct	ifconf {
+	int	ifc_len;		 
+	union {
+		caddr_t	ifcu_buf;
+		struct	ifreq *ifcu_req;
+	} ifc_ifcu;
+
+
+};
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/net/if_arp.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/sys/socket.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 156 "/sprite/lib/include/sys/socket.h"
+
+# 19 "/sprite/lib/include/net/if_arp.h" 2
+
+
+ 
+
+
+
+
+
+
+
+
+
+struct	arphdr {
+	u_short	ar_hrd;		 
+
+	u_short	ar_pro;		 
+	u_char	ar_hln;		 
+	u_char	ar_pln;		 
+	u_short	ar_op;		 
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+};
+
+ 
+
+
+struct arpreq {
+	struct	sockaddr arp_pa;		 
+	struct	sockaddr arp_ha;		 
+	int	arp_flags;			 
+};
+ 
+
+
+
+
+
+
+
+# 228 "/sprite/lib/include/net/if.h" 2
+
+
+
+
+# 42 "access.c" 2
+
+
+
+# 1 "/sprite/lib/include/netdb.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+struct	hostent {
+	char	*h_name;	 
+	char	**h_aliases;	 
+	int	h_addrtype;	 
+	int	h_length;	 
+	char	**h_addr_list;	 
+
+};
+
+ 
+
+
+
+struct	netent {
+	char		*n_name;	 
+	char		**n_aliases;	 
+	int		n_addrtype;	 
+	unsigned long	n_net;		 
+};
+
+struct	servent {
+	char	*s_name;	 
+	char	**s_aliases;	 
+	int	s_port;		 
+	char	*s_proto;	 
+};
+
+struct	protoent {
+	char	*p_name;	 
+	char	**p_aliases;	 
+	int	p_proto;	 
+};
+
+struct hostent	*gethostbyname(), *gethostbyaddr(), *gethostent();
+struct netent	*getnetbyname(), *getnetbyaddr(), *getnetent();
+struct servent	*getservbyname(), *getservbyport(), *getservent();
+struct protoent	*getprotobyname(), *getprotobynumber(), *getprotoent();
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+# 45 "access.c" 2
+
+
+# 1 "/sprite/lib/include/netinet/in.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/sun4.md/machparam.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/sun4.md/limits.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+ 
+
+
+
+
+
+ 
+
+
+
+
+ 
+
+
+
+
+
+ 
+
+
+
+
+
+ 
+
+
+
+
+ 
+
+
+
+
+
+ 
+
+
+
+
+ 
+
+
+
+
+
+ 
+
+
+
+
+
+# 27 "/sprite/lib/include/sun4.md/machparam.h" 2
+
+
+
+ 
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+# 19 "/sprite/lib/include/netinet/in.h" 2
+
+
+
+ 
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+ 
+
+
+struct in_addr {
+	u_long s_addr;
+};
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+struct sockaddr_in {
+	short	sin_family;
+	u_short	sin_port;
+	struct	in_addr sin_addr;
+	char	sin_zero[8];
+};
+
+ 
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 47 "access.c" 2
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/stdio.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+# 1 "/sprite/lib/include/cfuncproto.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 76 "/sprite/lib/include/cfuncproto.h"
+
+
+# 30 "/sprite/lib/include/stdio.h" 2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef int *ClientData;
+
+
+
+
+
+typedef char *va_list;
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct _file {
+    unsigned char *lastAccess;	 
+
+
+    int readCount;		 
+
+
+    int writeCount;		 
+
+
+
+
+
+    unsigned char *buffer;	 
+
+    int bufSize;		 
+
+
+    void (*readProc)() ;
+				 
+    void (*writeProc)() ;
+				 
+    int (*closeProc)() ;
+				 
+
+    ClientData clientData;	 
+
+
+    int status;			 
+
+
+    int flags;			 
+
+    struct _file *nextPtr;	 
+
+
+
+
+} FILE;
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+ 
+
+
+
+extern FILE stdioInFile, stdioOutFile, stdioErrFile;
+
+
+
+
+ 
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+        extern  void	clearerr () ;
+        extern  int	fclose () ;
+        extern  FILE *	fdopen () ;
+        extern  int	fflush () ;
+        extern  int	fgetc () ;
+        extern  char *	fgets () ;
+        extern  int	fileno () ;
+        extern  FILE *	fopen () ;
+        extern  int	fputc () ;
+        extern  int	fputs () ;
+        extern  int	fread () ;
+
+        extern  FILE *	freopen () ;
+
+        extern  long	fseek () ;
+        extern  long	ftell () ;
+        extern  int	fwrite () ;
+
+        extern  char *	gets () ;
+        extern  int	getw () ;
+        extern  void	perror () ;
+        extern  FILE *	popen () ;
+        extern  int	pclose () ;
+        extern  int      remove () ;
+        extern  int      rename () ;
+
+# 336 "/sprite/lib/include/stdio.h"
+
+ 
+
+
+
+
+
+
+        extern  int	printf () ;
+        extern  int	fprintf () ;
+        extern  int	scanf () ;
+        extern  char *	sprintf () ;
+        extern  int	sscanf () ;
+        extern  int	fscanf () ;
+        extern  int	vfprintf () ;
+
+        extern  int	vfscanf () ;
+
+        extern  int	vprintf () ;
+        extern  char *	vsprintf () ;
+
+
+
+        extern  int	puts () ;
+        extern  int	putw () ;
+        extern  void	rewind () ;
+        extern  void	setbuf () ;
+        extern  void	setbuffer () ;
+        extern  void	setlinebuf () ;
+        extern  int	setvbuf () ;
+        extern  FILE *	tmpfile () ;
+        extern  char *	tmpnam () ;
+        extern  char *	tempnam () ;
+        extern  int	ungetc () ;
+        extern  void	_cleanup () ;
+
+        extern  void	Stdio_Setup () ;
+
+
+
+
+
+
+
+# 54 "access.c" 2
+
+# 1 "/X11/R4/src/cmds/X/include/dixstruct.h" 1
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+# 1 "/X11/R4/src/cmds/X/include/dix.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+# 1 "/X11/R4/src/cmds/X/include/gc.h" 1
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct _GCInterest *GCInterestPtr;
+typedef struct _GC    *GCPtr;
+extern void  ValidateGC();
+extern int ChangeGC();
+extern GCPtr CreateGC();
+extern int CopyGC();
+extern int FreeGC();
+extern void SetGCMask();
+extern GCPtr GetScratchGC();
+extern void  FreeScratchGC();
+
+# 29 "/X11/R4/src/cmds/X/include/dix.h" 2
+
+# 1 "/X11/R4/src/cmds/X/include/window.h" 1
+ 
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+typedef struct _BackingStore *BackingStorePtr;
+typedef struct _Window *WindowPtr;
+
+
+# 30 "/X11/R4/src/cmds/X/include/dix.h" 2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 75 "/X11/R4/src/cmds/X/include/dix.h"
+
+
+# 116 "/X11/R4/src/cmds/X/include/dix.h"
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct _TimeStamp *TimeStampPtr;
+typedef struct _Client *ClientPtr;
+extern ClientPtr requestingClient;
+extern ClientPtr *clients;
+extern ClientPtr serverClient;
+extern int currentMaxClients;
+
+extern int ProcAllowEvents();
+extern int ProcBell();
+extern int ProcChangeActivePointerGrab();
+extern int ProcChangeKeyboardControl();
+extern int ProcChangePointerControl();
+extern int ProcGetKeyboardMapping();
+extern int ProcGetPointerMapping();
+extern int ProcGetInputFocus();
+extern int ProcGetKeyboardControl();
+extern int ProcGetMotionEvents();
+extern int ProcGetPointerControl();
+extern int ProcGrabButton();
+extern int ProcGrabKey();
+extern int ProcGrabKeyboard();
+extern int ProcGrabPointer();
+extern int ProcQueryKeymap();
+extern int ProcQueryPointer();
+extern int ProcSetInputFocus();
+extern int ProcSetKeyboardMapping();
+extern int ProcSetPointerMapping();
+extern int ProcSendEvent();
+extern int ProcUngrabButton();
+extern int ProcUngrabKey();
+extern int ProcUngrabKeyboard();
+extern int ProcUngrabPointer();
+extern int ProcWarpPointer();
+extern int ProcRecolorCursor();
+
+extern WindowPtr LookupWindow();
+extern pointer LookupDrawable();
+
+extern void NoopDDA();
+
+
+# 29 "/X11/R4/src/cmds/X/include/dixstruct.h" 2
+
+# 1 "/X11/R4/src/cmds/X/include/resource.h" 1
+ 
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/X11/R4/src/cmds/X/include/misc.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+# 148 "/X11/R4/src/cmds/X/include/misc.h"
+
+# 27 "/X11/R4/src/cmds/X/include/resource.h" 2
+
+
+ 
+
+
+
+ 
+
+typedef unsigned long RESTYPE;
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+ 
+
+
+
+
+RESTYPE CreateNewResourceType();
+RESTYPE CreateNewResourceClass();
+unsigned long FakeClientID();
+Bool AddResource();
+void FreeResource();
+void FreeClientResources();
+Bool LegalNewID();
+pointer LookupIDByType();
+pointer LookupIDByClass();
+
+
+# 30 "/X11/R4/src/cmds/X/include/dixstruct.h" 2
+
+# 1 "/X11/R4/src/cmds/X/include/cursor.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+typedef struct _Cursor *CursorPtr;
+typedef struct _CursorMetric *CursorMetricPtr;
+
+extern CursorPtr rootCursor;
+
+# 31 "/X11/R4/src/cmds/X/include/dixstruct.h" 2
+
+# 1 "/X11/R4/src/cmds/X/include/gc.h" 1
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+# 65 "/X11/R4/src/cmds/X/include/gc.h"
+
+# 32 "/X11/R4/src/cmds/X/include/dixstruct.h" 2
+
+# 1 "/X11/R4/src/cmds/X/include/pixmap.h" 1
+ 
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+ 
+
+
+
+
+
+typedef struct _Drawable *DrawablePtr;	
+typedef struct _Pixmap *PixmapPtr;
+
+typedef union _PixUnion {
+    PixmapPtr		pixmap;
+    unsigned long	pixel;
+} PixUnion;
+
+
+
+
+
+
+
+
+# 33 "/X11/R4/src/cmds/X/include/dixstruct.h" 2
+
+
+ 
+
+
+
+
+typedef struct _TimeStamp {
+    unsigned long	months;			 
+    unsigned long	milliseconds;
+} TimeStamp;
+
+
+
+
+
+typedef struct _Client {
+    int index;
+    Mask clientAsMask;
+    pointer requestBuffer;
+    pointer osPrivate;			 
+    Bool swapped;
+    void (* pSwapReplyFunc)();		
+    XID	errorValue;
+    int sequence;
+    int closeDownMode;
+    int clientGone;
+    int noClientException;        
+    DrawablePtr lastDrawable;
+    Drawable lastDrawableID;
+    GCPtr lastGC;
+    GContext lastGCID;    
+    pointer *saveSet;
+    int numSaved;
+    pointer screenPrivate[3 ];
+    int (**requestVector)();
+
+
+
+
+} ClientRec;
+
+extern TimeStamp currentTime;
+extern void CloseDownClient();
+
+extern TimeStamp ClientTimeToServerTime();
+extern void UpdateCurrentTime();
+extern void UpdateCurrentTimeIf();
+
+
+# 55 "access.c" 2
+
+# 1 "osdep.h" 1
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 76 "osdep.h"
+
+# 93 "osdep.h"
+
+# 114 "osdep.h"
+
+
+# 137 "osdep.h"
+
+
+typedef struct _connectionInput {
+    struct _connectionInput *next;
+    char *buffer;                
+    char *bufptr;                
+    int  bufcnt;                 
+    int lenLastReq;
+    int size;
+} ConnectionInput, *ConnectionInputPtr;
+
+typedef struct _connectionOutput {
+    struct _connectionOutput *next;
+    int size;
+    unsigned char *buf;
+    int count;
+} ConnectionOutput, *ConnectionOutputPtr;
+
+typedef struct _osComm {
+    int fd;
+    ConnectionInputPtr input;
+    ConnectionOutputPtr output;
+    XID	auth_id;		 
+    long conn_time;		 
+} OsCommRec, *OsCommPtr;
+# 56 "access.c" 2
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern char	*index();
+
+static int XFamily(), UnixFamily();
+static int ConvertAddr(), CheckAddr();
+static void NewHost();
+
+typedef struct _host {
+	short		family;
+	short		len;
+
+
+
+	unsigned char	addr[4];	 
+
+	struct _host *next;
+} HOST;
+
+static HOST *selfhosts = 0 ;
+static HOST *validhosts = 0 ;
+static int AccessEnabled = 0  ;
+static int LocalHostEnabled = 0 ;
+static int UsingXdmcp = 0 ;
+
+typedef struct {
+    int af, xf;
+} FamilyMap;
+
+static FamilyMap familyMap[] = {
+
+
+
+
+
+
+
+
+
+
+
+
+    {	2		, 	0 }
+
+
+};
+
+ 
+
+
+
+
+EnableLocalHost ()
+{
+    if (!UsingXdmcp)
+    {
+	LocalHostEnabled = 1 ;
+	AddLocalHosts ();
+    }
+}
+
+ 
+
+
+
+
+AccessUsingXdmcp ()
+{
+    UsingXdmcp = 1 ;
+    LocalHostEnabled = 0 ;
+}
+
+
+
+# 201 "access.c"
+
+ 
+
+
+DefineSelf (fd)
+    int fd;
+{
+    char		buf[2048];
+    struct ifconf	ifc;
+    register int	n;
+    int 		len;
+    pointer 		addr;
+    int 		family;
+    register HOST 	*host;
+    register struct ifreq *ifr;
+    
+# 245 "access.c"
+
+    ifc.ifc_len = sizeof (buf);
+    ifc.ifc_ifcu.ifcu_buf	 = buf;
+    if (ioctl (fd, (int) ((int) ((	0x80000000	|	0x40000000	) |((sizeof( struct ifconf)&0x1fff		)<<16)|('i'<<8)|20)) 	, (pointer) &ifc) < 0)
+        Error ("Getting interface configuration");
+    for (ifr = ifc.ifc_ifcu.ifcu_req	, n = ifc.ifc_len / sizeof (struct ifreq); --n >= 0;
+     ifr++)
+    {
+	len = sizeof(ifr->ifr_ifru.ifru_addr	);
+
+
+
+
+
+
+
+        if ((family = ConvertAddr (&ifr->ifr_ifru.ifru_addr	, &len, &addr)) <= 0)
+	    continue;
+        for (host = selfhosts;
+ 	     host && !((family) == ( host)->family &&	( len) == ( host)->len &&	!bcmp((char *)( addr), (char *)( ( host)->addr),   len) ) ;
+	     host = host->next)
+	    ;
+        if (host)
+	    continue;
+        host = (HOST *) Xalloc((unsigned long)(sizeof (HOST))) ;
+	if (host)
+	{
+	    host->family = family;
+	    host->len = len;
+	    bcopy((char *)(addr), (char *)( host->addr),  len) ;
+	    host->next = selfhosts;
+	    selfhosts = host;
+	}
+# 314 "access.c"
+
+    }
+}
+
+
+# 350 "access.c"
+
+
+AddLocalHosts ()
+{
+    HOST    *self;
+
+    for (self = selfhosts; self; self = self->next)
+	NewHost (self->family, self->addr, self->len);
+}
+
+ 
+ResetHosts (display)
+    char *display;
+{
+    register HOST	*host;
+    char 		hostname[120];
+    char		fname[32];
+    FILE		*fd;
+    char		*ptr;
+    union {
+        struct sockaddr	sa;
+
+        struct sockaddr_in in;
+
+
+
+
+    } 			saddr;
+
+
+
+
+    int			family;
+    int			len;
+    pointer		addr;
+    register struct hostent *hp;
+
+    AccessEnabled = 0  ;
+    LocalHostEnabled = 0 ;
+    while (host = validhosts)
+    {
+        validhosts = host->next;
+        Xfree((pointer)(host)) ;
+    }
+    strcpy (fname, "/etc/X");
+    strcat (fname, display);
+    strcat (fname, ".hosts");
+    if (fd = fopen (fname, "r")) 
+    {
+        while (fgets (hostname, sizeof (hostname), fd))
+	{
+    	if (ptr = index (hostname, '\n'))
+    	    *ptr = 0;
+# 428 "access.c"
+
+
+    	     
+    	    if (hp = gethostbyname (hostname))
+	    {
+    		saddr.sa.sa_family = hp->h_addrtype;
+		len = sizeof(saddr.sa);
+    		if ((family = ConvertAddr (&saddr.sa, &len, &addr)) > 0)
+
+		{
+		    char **list;
+
+		     
+		    for (list = hp->h_addr_list; *list; list++)
+			NewHost (family, (pointer)*list, len);
+		}
+
+
+
+
+    	    }
+
+
+
+
+        }
+        fclose (fd);
+    }
+}
+
+static Bool
+AuthorizedClient(client)
+    ClientPtr client;
+{
+    int    		alen, family;
+    struct sockaddr	from;
+    pointer		addr;
+    register HOST	*host;
+
+    alen = sizeof (from);
+    if (!getpeername (((OsCommPtr)client->osPrivate)->fd, &from, &alen))
+    {
+        if ((family = ConvertAddr (&from, &alen, &addr)) >= 0)
+	{
+	    if (family == 0)
+		return 1 ;
+	    for (host = selfhosts; host; host = host->next)
+	    {
+		if (((family) == ( host)->family &&	( alen) == ( host)->len &&	!bcmp((char *)( addr), (char *)( ( host)->addr),   alen) ) )
+		    return 1 ;
+	    }
+	}
+    }
+    return 0 ;
+}
+
+ 
+
+
+int
+AddHost (client, family, length, pAddr)
+    ClientPtr		client;
+    int                 family;
+    unsigned            length;         
+    pointer             pAddr;
+{
+    int			len;
+    register HOST	*host;
+    int                 unixFamily;
+
+    if (!AuthorizedClient(client))
+	return(  10	);
+    unixFamily = UnixFamily(family);
+    if (unixFamily < 0)
+    {
+	client->errorValue = family;
+	return (   2	);
+    }
+    if ((len = CheckAddr (unixFamily, pAddr, length)) < 0)
+    {
+	client->errorValue = length;
+        return (   2	);
+    }
+    for (host = validhosts; host; host = host->next)
+    {
+        if (((unixFamily) == ( host)->family &&	( len) == ( host)->len &&	!bcmp((char *)( pAddr), (char *)( ( host)->addr),   len) ) )
+    	    return (	   0	);
+    }
+    host = (HOST *) Xalloc((unsigned long)(sizeof (HOST))) ;
+    if (!host)
+	return(  11	);
+    host->family = unixFamily;
+    host->len = len;
+    bcopy((char *)(pAddr), (char *)( host->addr),  len) ;
+    host->next = validhosts;
+    validhosts = host;
+    return (	   0	);
+}
+
+ 
+
+static void
+NewHost (family, addr, len)
+    short	family;
+    pointer	addr;
+    int		len;
+{
+    register HOST *host;
+
+    for (host = validhosts; host; host = host->next)
+    {
+        if (((family) == ( host)->family &&	( len) == ( host)->len &&	!bcmp((char *)( addr), (char *)( ( host)->addr),   len) ) )
+	    return;
+    }
+    host = (HOST *) Xalloc((unsigned long)(sizeof (HOST))) ;
+    if (host)
+    {
+	host->family = family;
+	host->len = len;
+	bcopy((char *)(addr), (char *)( host->addr),  len) ;
+	host->next = validhosts;
+	validhosts = host;
+    }
+}
+
+ 
+
+int
+RemoveHost (client, family, length, pAddr)
+    ClientPtr		client;
+    int                 family;
+    unsigned            length;         
+    pointer             pAddr;
+{
+    int			len,
+                        unixFamily;
+    register HOST	*host, **prev;
+
+    if (!AuthorizedClient(client))
+	return(  10	);
+    unixFamily = UnixFamily(family);
+    if (unixFamily < 0)
+    {
+	client->errorValue = family;
+        return(   2	);
+    }
+    if ((len = CheckAddr (unixFamily, pAddr, length)) < 0)
+    {
+	client->errorValue = length;
+        return(   2	);
+    }
+    for (prev = &validhosts;
+         (host = *prev) && (!((unixFamily) == ( host)->family &&	( len) == ( host)->len &&	!bcmp((char *)( pAddr), (char *)( ( host)->addr),   len) ) );
+         prev = &host->next)
+        ;
+    if (host)
+    {
+        *prev = host->next;
+        Xfree((pointer)(host)) ;
+    }
+    return (	   0	);
+}
+
+ 
+int
+GetHosts (data, pnHosts, pLen, pEnabled)
+    pointer		*data;
+    int			*pnHosts;
+    int			*pLen;
+    BOOL		*pEnabled;
+{
+    int			len;
+    register int 	n = 0;
+    register pointer	ptr;
+    register HOST	*host;
+    int			nHosts = 0;
+    int			*lengths = (int *) 0 ;
+    int			*newlens;
+
+    *pEnabled = AccessEnabled ? 	1       : 	0 ;
+    for (host = validhosts; host; host = host->next)
+    {
+	newlens = (int *) Xrealloc((pointer)(lengths), (unsigned long)( (nHosts + 1) * sizeof(int))) ;
+	if (!newlens)
+	{
+	    Xfree((pointer)(lengths)) ;
+	    return(  11	);
+	}
+	lengths = newlens;
+	lengths[nHosts++] = host->len;
+	n += (((host->len + 3) >> 2) << 2) + sizeof(xHostEntry);
+    }
+    if (n)
+    {
+        *data = ptr = (pointer) Xalloc((unsigned long)(n)) ;
+	if (!ptr)
+	{
+	    Xfree((pointer)(lengths)) ;
+	    return(  11	);
+	}
+	nHosts = 0;
+        for (host = validhosts; host; host = host->next)
+	{
+
+	    len = lengths[nHosts++];
+	    ((xHostEntry *)ptr)->family = XFamily(host->family);
+	    ((xHostEntry *)ptr)->length = len;
+	    ptr += sizeof(xHostEntry);
+	    bcopy((char *)(host->addr), (char *)( ptr),  len) ;
+	    ptr += ((len + 3) >> 2) << 2;
+        }
+    } else {
+	*data = 0 ;
+    }
+    *pnHosts = nHosts;
+    *pLen = n;
+    Xfree((pointer)(lengths)) ;
+    return(	   0	);
+}
+
+ 
+
+ 
+static int
+CheckAddr (family, pAddr, length)
+    int			family;
+    pointer		pAddr;
+    unsigned		length;
+{
+    int	len;
+
+    switch (family)
+    {
+
+      case 	2		:
+	if (length == sizeof (struct in_addr))
+	    len = length;
+	else
+	    len = -1;
+        break;
+
+# 683 "access.c"
+
+      default:
+        len = -1;
+    }
+    return (len);
+}
+
+ 
+
+
+InvalidHost (saddr, len)
+    register struct sockaddr	*saddr;
+    int				len;
+{
+    int 			family;
+    pointer			addr;
+    register HOST 		*selfhost, *host;
+
+    if (!AccessEnabled)    
+        return(0);    
+    if ((family = ConvertAddr (saddr, &len, &addr)) < 0)
+        return (1);
+    if (family == 0)
+    {
+	if (!LocalHostEnabled)
+ 	{
+	     
+
+
+
+	    for (selfhost = selfhosts; selfhost; selfhost=selfhost->next)
+ 	    {
+		for (host = validhosts; host; host=host->next)
+		{
+		    if (((selfhost->family) == ( host)->family &&	(
+				   selfhost->len) == ( host)->len &&	!bcmp((char *)( selfhost->addr), (char *)( ( host)->addr),  
+				   selfhost->len) ) )
+# 719 "access.c"
+			return 0;
+		}
+	    }
+	    return 1;
+	} else
+	    return (0);
+    }
+    for (host = validhosts; host; host = host->next)
+    {
+        if (((family) == ( host)->family &&	( len) == ( host)->len &&	!bcmp((char *)( addr), (char *)( ( host)->addr),   len) ) )
+    	    return (0);
+    }
+    return (1);
+}
+
+static int
+ConvertAddr (saddr, len, addr)
+    register struct sockaddr	*saddr;
+    int				*len;
+    pointer			*addr;
+{
+    if (*len == 0)
+        return (0);
+    switch (saddr->sa_family)
+    {
+      case 0		:
+
+
+
+        return (0);
+
+
+      case 	2		:
+        *len = sizeof (struct in_addr);
+        *addr = (pointer) &(((struct sockaddr_in *) saddr)->sin_addr);
+        return (	2		);
+
+
+# 765 "access.c"
+
+
+      default:
+        break;
+    }
+    return (-1);
+}
+
+int
+ChangeAccessControl(client, fEnabled)
+    ClientPtr client;
+    int fEnabled;
+{
+    if (!AuthorizedClient(client))
+	return   10	;
+    AccessEnabled = fEnabled;
+    return 	   0	;
+}
+
+static int XFamily(af)
+    int af;
+{
+    int i;
+    for (i = 0; i < ((sizeof familyMap)/(sizeof familyMap[0])) ; i++)
+        if (familyMap[i].af == af)
+            return familyMap[i].xf;
+    return -1;
+}
+
+static int UnixFamily(xf)
+    int xf;
+{
+    int i;
+    for (i = 0; i < ((sizeof familyMap)/(sizeof familyMap[0])) ; i++)
+        if (familyMap[i].xf == xf)
+            return familyMap[i].af;
+    return -1;
+}
+

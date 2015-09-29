@@ -1,0 +1,322 @@
+DISABLE_INTR			# delete.
+	dev/ds5000.md/devGraphics.c
+	dev/sun3.md/devTMR.c
+	dev/sun3.md/devTMR.h
+	dev/sun4.md/devTMR.c
+	dev/sun4.md/devTMR.h
+	dev/ds3100.md/devGraphics.c
+	net/sun3.md/netIE.c
+	net/sun3.md/netIEXmit.c
+	net/sun4.md/netIE.c
+	net/sun4.md/netIEXmit.c
+	net/ds3100.md/netLE.c
+	net/ds3100.md/netLEXmit.c
+	net/symm.md/netSE.c
+	proc/procMisc.c
+	sync/sync.h
+	timer/sun3.md/timerIntersil.c
+	timer/sun4.md/timerIntersil.c
+	timer/ds3100.md/timerMC.c
+	timer/ds5000.md/timerMC.c
+	vm/sun4.md/vmSun.c
+	vm/ds3100.md/vmPmax.c
+	vm/ds5000.md/vm3max.c
+MACH_BRKPT_TRAP			# delete.
+  	dbg/sun3.md/dbgMain.c
+  	sys/sysCalls.c
+MACH_DELAY			# change to loop that checks timer
+  	dev/sun3.md/{devSCSI3,devTMR,devZ8530}.c
+  	dev/sun3.md/devTMR.h
+  	dev/sun3.md/{devSCSI0,devJaguarHBA,devXylogics450}.c
+  	dev/sun4.md/{devJaguarHBA,devSCSI0,devSCSI3,devXylogics450,devZ8530,devTMR}.c
+  	dev/sun4.md/devTMR.h
+  	dev/ds3100.md/{devDC7085,devSII,devGraphics}.c
+  	net/sun3.md/{netIE,netLE}.c
+  	net/sun4.md/netIE.c
+  	rpc/rpcOutput.c
+MACH_FIRST_USER_ADDR		# (currently symm only) get from Mach if
+				# really needed.
+  	vm/symm.md/vmSym.c
+MACH_KERNEL			# delete.
+  	sched/schedule.c
+MACH_KERN_STACK_SIZE		# (symm only)
+  	vm/symm.md/vmSym.c
+MACH_LAST_USER_ADDR		# see MACH_FIRST_USER_ADDR
+  	vm/symm.md/vmSym.c
+  	vm/symm.md/vmSymAsm.s
+MACH_MAX_NUM_PROCESSORS		# (multiprocessor support) ignore for now.
+  	net/netCode.c
+  	proc/procTable.c
+  	prof/sun3.md/timer.h
+  	rpc/rpcClient.c
+  	sched/sched.h
+  	sched/schedule.c
+  	sched/schedInt.h
+  	sched/schedQueue.c
+  	sync/syncLock.c
+  	sync/sync.h
+  	sys/sysCalls.c
+  	timer/timer.h
+  	vm/sun4.md/vmSun.c
+  	vm/ds3100.md/vmPmax.c
+MACH_MAX_USER_STACK_ADDR	# (symm only)
+  	vm/symm.md/vmSym.c
+MachFetchArgs
+  	dev/symm.md/machInt.h
+MachFetchArgsEnd
+  	dev/symm.md/machInt.h
+MachTrap			# (called via CallTrapHandler)
+				# Convert this to the routine that catches
+				# exceptions and converts them to signals.
+				# See UX code in server/uxkern/ux_exception.c.
+				# Be sure to send signals using the Sprite
+				# interface (e.g., SIG_CHK).  Also, must do
+				# the right thing w.r.t. migration.  Also,
+				# should do a paranoia check to verify there
+				# isn't a Sprite request that is being
+				# processed.  Use Sys_NewServiceThread to
+				# get a service thread.
+MachUserAction			# (sun4)
+MachUserReturn			# "Take the proper action to return from a
+				# user exception." (sun3, ds3100)
+				# Make list of things this proc should do, for
+				# all architectures (e.g., check for pending
+				# signals, call the user's signal handler if
+				# necessary, setup for single-step if
+				# requested). 
+				# I think this includes system call
+				# returns (since system calls are via traps in
+				# native Sprite).
+Mach_AtInterruptLevel		# delete.
+  	rpc/rpcOutput.c
+  	sync/sync.h
+Mach_CanMigrate			# initially always false.
+  	sig/signals.c
+Mach_CheckSpecialHandling	# (multiprocessor support)
+  	sched/schedule.c
+  	sync/syncLock.c
+Mach_ContextSwitch		# delete.
+  	dbg/sun4.md/dbgMain.c
+  	dbg/sun3.md/dbgMain.c
+  	sched/schedule.c
+Mach_CopyState			# XXX
+Mach_DeencapState		# initially panic.
+  	proc/procMigrate.c
+Mach_DisableIntr		# delete.
+  	dbg/ds3100.md/dbgMain.c
+Mach_EnableIntr			# delete.
+  	dbg/ds3100.md/dbgMain.c
+  	proc/procServer.c
+  	sched/schedule.c
+  	sync/sync.h
+Mach_EncapState			# initially panic
+  	proc/procMigrate.c
+Mach_ExecUserProc		# delete (replaced by Mach_SetRegisters).
+  	proc/procExec.c
+Mach_FlushWindowsToStack	# (sun4 only?) delete.
+Mach_FreeState			# delete.
+  	proc/{procExit,procFork}.c
+Mach_GetBootArgs		# delete.
+  	fs/fsInit.c
+  	main/sun3.md/mainInit.c
+  	main/sun4.md/mainInit.c
+  	main/ds3100.md/mainInit.c
+  	main/symm.md/mainInit.c
+Mach_GetCallerPC		# keep.
+	sync/sync.h
+Mach_GetDebugState		# call thread_get_state (user processes only).
+  	proc/procDebug.c
+Mach_GetEncapSize		# panic initially
+  	proc/procMigrate.c
+Mach_GetEtherAddress		# keep.
+  	net/netRoute.c
+  	net/sun3.md/{netIE,netLE}.c
+  	net/sun4.md/netIE.c
+  	net/symm.md/{netSE,netScedEther}.c
+  	rpc/rpcInit.c
+  	utils/symm.md/dumpEvents.c
+Mach_GetLastSyscall		# keep (but get directly from
+				# Proc_ControlBlock).
+  	sys/sysSysCall.c
+Mach_GetMachineArch		# rename to Sys_GetMachineArch.  Query Mach.
+  	dev/sun3.md/devGraphics.c
+  	dev/sun4.md/devGraphics.c
+  	sys/sysCalls.c
+Mach_GetMachineType		# rename to Sys_GetMachineType.  Query Mach.
+  	dbg/sun3.md/dbgMain.c
+  	dev/sun3.md/{devInit,devGraphics}.c
+  	dev/sun4.md/{devInit,devGraphics}.c
+  	rpc/sun3.md/rpcDelays.c
+  	sys/sysCalls.c
+  	vm/sun3.md/vmSun.c
+  	vm/sun4.md/vmSun.c
+Mach_GetNumProcessors		# (multiprocessor support) initially return 0.
+  	sys/{sysCalls,sysSysCall}.c
+Mach_GetPC			# keep.
+  	sync/sync.h
+Mach_GetProcessorNumber		# (multiprocessor support) initially return 0;
+				# maybe able to delete.
+  	main/symm.md/mainInit.c
+  	proc/proc.h
+  	proc/{procTable,procMigrate}.c
+  	rpc/{rpcClient,rpcCall}.c
+  	sched/schedule.c
+  	sync/{syncSleep,syncLock}.c
+  	sync/sync.h
+  	vm/vmSeg.c
+  	vm/symm.md/vmSym.c
+Mach_GetStackPointer		# delete.
+  	main/sun4.md/stub.c
+Mach_GetUserStackPtr		# XXX
+Mach_Init			# initialize exported variables; delete
+				# everything else (assuming that the other
+				# variables are deleted).
+  	main/sun3.md/mainInit.c
+  	main/sun4.md/mainInit.c
+  	main/ds3100.md/mainInit.c
+  	main/symm.md/mainInit.c
+Mach_InitFirstProc		# delete.
+  	proc/procTable.c
+Mach_InitSyscall		# initially no-op; may want to keep around to
+				# somehow help deal with process migration.
+  	sys/sysSysCall.c
+Mach_InterruptReg		# (addr of interrupt register on suns) delete.
+	timer/sun3.md/timerIntersil.c
+	timer/sun4.md/timerIntersil.c
+	timer/sun4c.md/timerSun4c.c
+Mach_IntrNesting		# delete.
+  	sched/schedule.c
+Mach_MonAbort			# delete.
+  	dbg/sun3.md/dbgMain.c
+  	dev/devConsoleCmd.c
+  	sys/sysCalls.c
+Mach_MonPrintf			# #define to printf
+  	dbg/sun4.md/dbgMain.c
+  	dbg/sun3.md/dbgMain.c
+  	dbg/ds3100.md/dbgMain.c
+  	dbg/symm.md/dbgStub.c
+  	dev/symm.md/devStub.c
+  	dev/ds3100.md/devGraphics.c
+  	dev/devSyslog.c
+  	main/sun3.md/mainInit.c
+  	main/sun4.md/mainInit.c
+  	main/ds3100.md/mainInit.c
+  	main/symm.md/mainInit.c
+  	net/netCode.c
+  	prof/symm.md/profStub.c
+  	sys/sysPrintf.c
+  	timer/ds3100.md/timerMC.c
+  	vm/symm.md/vmSym.c
+Mach_MonPutChar			# just call putchar
+  	dev/devSyslog.c
+Mach_MonReboot			# initially just exit.
+  	dbg/sun4.md/dbgMain.c
+  	dbg/sun3.md/dbgMain.c
+  	sys/sysCalls.c
+Mach_ProcessorState		# delete.
+  	sched/schedule.c
+Mach_RegState			# keep.
+  	dbg/sun4.md/dbg.h
+  	dbg/sun4.md/dbgMain.c
+Mach_SetDebugState		# call thread_set_state (user processes only).
+  	proc/procDebug.c
+Mach_SetReturnVal		# call thread_set_state.
+  	proc/procFork.c
+Mach_SetupNewState		# no-op; probably just delete.
+  	proc/procFork.c
+Mach_SigContext			# keep in some form.
+  	sig/sigTypes.h
+Mach_SigreturnStub		# XXX
+Mach_StartUserProc		# delete.
+  	proc/procRemote.c
+  	sched/schedule.c
+Mach_State			# delete.
+  	dbg/sun4.md/dbgMain.c
+  	dbg/sun3.md/dbgMain.c
+  	dbg/ds3100.md/dbgMain.c
+  	proc/{procExit,procTable,procFork}.c
+  	proc/procTypes.h
+Mach_TestAndSet			# delete.
+  	sync/syncLock.c
+  	sync/sync.h
+  	sync/syncUser.c
+Mach_UserState			# keep, for use with signal handlers.
+				# Define to be same as thread state array.
+ReturnFromSigHandler		# (sun3, ds3100, ds5000)
+				# (do the ds3100 and ds5000 do a bogus bcopy?)
+				# rename to ??? (will be called via MiG stub);
+				# call Sig_Return and restore user registers.
+MachCallSigReturn		# (sun4)
+MachSigReturn			# (symm)
+MachUserReturn			# delete.
+SetupSigHandler			# rename to SigMach_SetupHandler.  Change to
+				# track SigMach_Context and use of sigtramp
+				# routine; the sigtramp routine will call
+				# Sig_ReturnStub, which should do the stuff in
+				# ReturnFromSigHandler.
+mach_AtInterruptLevel		# delete.
+  	dbg/sun4.md/dbgMain.c
+  	dbg/sun3.md/dbgMain.c
+  	dbg/ds3100.md/dbgMain.c
+  	sys/sysCalls.c
+mach_FirstUserAddr		# delete.
+  	vm/sun3.md/vmSunAsm.s
+  	vm/sun4.md/vmSunAsm.s
+  	vm/vmSubr.c
+mach_Format			# keep.
+  	fs/{fsNameOps,fsSysCall,fsStreamOps}.c
+  	fscache/fsCacheOps.c
+  	fsio/{fsPipe,fsLock,fsFile}.c
+  	fspdev/{fsPdev,fsPdevControl}.c
+  	fsrmt/fsSpriteIO.c
+mach_KernEnd			# delete.
+  	vm/vmSubr.c
+  	vm/ds3100.md/vmPmax.c
+mach_KernStackSize		# delete
+  	dbg/sun3.md/dbgMain.c
+  	dbg/ds3100.md/dbgMain.c
+  	vm/{vmStack,vmSubr}.c
+mach_KernStart			# delete.
+  	dbg/sun3.md/dbgMain.c
+  	main/sun3.md/mainInit.c
+  	main/sun4.md/mainInit.c
+  	main/ds3100.md/mainInit.c
+  	main/symm.md/mainInit.c
+  	vm/{vmSeg,vmPage,vmSysCall}.c
+  	vm/sun3.md/vmSun.c
+  	vm/sun4.md/vmSun.c
+  	vm/vmSubr.c
+mach_KernelMode			# delete.
+  	prof/profProfil.c
+mach_LastUserAddr		# delete.
+  	vm/sun3.md/vmSunAsm.s
+  	vm/sun4.md/vmSunAsm.s
+  	vm/vmSubr.c
+mach_LastUserStackPage		# keep (get from Mach; fix printf server to
+				# use this name).
+  	proc/procExec.c
+  	vm/{vmCOW,vmSeg,vmPage,vmSysCall}.c
+  	vm/symm.md/vmSym.c
+  	vm/{vmMap,vmMigrate,vmServer,vmSubr,vmPrefetch}.c
+mach_MachineType		# keep.
+  	fslcl/fsLocalLookup.c
+  	proc/{procExec,procRemote}.c
+mach_MaxUserStackAddr		# see mach_LastUserStackPage.
+  	proc/procExec.c
+  	vm/vmMap.c
+mach_MigratedHandlers		# keep (but don't need initially).
+  	proc/{procRemote,procMigrate}.c
+mach_NormalHandlers		# keep (but don't need to call out as "normal"
+				# initially).
+  	proc/{procTable,procFork,procMigrate}.c
+mach_NumDisableIntrsPtr		# delete.
+  	dbg/ds3100.md/dbgMain.c
+  	sched/schedule.c
+  	sync/sync.h
+mach_NumProcessors		# delete.
+  	sched/{schedule,schedQueue}.c
+
+Local Variables:
+mode: xref
+fill-column: 78
+End:

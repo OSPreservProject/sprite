@@ -1,0 +1,127 @@
+arch.c:
+compat.c:
+cond.c:
+dir.c:
+job.c:
+main.c:
+make.c:
+buf.c:
+parse.c:
+str.c:
+suff.c:
+suff.c(415): warning: single may be used before set
+targ.c:
+targ.c(319): warning: argument ppath unused in function TargPrintName
+var.c:
+rmt.c:
+rmt.c(389): warning: argument pid unused in function Rmt_LastID
+bcopy value declared inconsistently	llib-lc:bcopy.c 2(65)  ::  arch.c(494)
+Rmt_LastID, arg. 1 used inconsistently	rmt.c(390)  ::  compat.c(263)
+Lst_Member, arg. 2 used inconsistently	llib-llst:lstMember.c 2(29)  ::  compat.c(359)
+Lst_Member, arg. 2 used inconsistently	llib-llst:lstMember.c 2(29)  ::  compat.c(506)
+signal, arg. 2 used inconsistently	llib-lc:signal.c 2(20)  ::  compat.c(554)
+signal, arg. 2 used inconsistently	llib-lc:signal.c 2(20)  ::  compat.c(557)
+signal, arg. 2 used inconsistently	llib-lc:signal.c 2(20)  ::  compat.c(560)
+signal, arg. 2 used inconsistently	llib-lc:signal.c 2(20)  ::  compat.c(563)
+Lst_AtEnd, arg. 2 used inconsistently	llib-llst:lstAtEnd.c 2(40)  ::  dir.c(302)
+Lst_AtEnd, arg. 2 used inconsistently	llib-llst:lstAtEnd.c 2(40)  ::  dir.c(410)
+Targ_FmtTime, arg. 1 used inconsistently	targ.c(361)  ::  dir.c(802)
+Hash_CreateEntry, arg. 2 used inconsistently	llib-lc:Hash_CreateEntry.c 2(124)  ::  dir.c(805)
+Targ_FmtTime, arg. 1 used inconsistently	targ.c(361)  ::  dir.c(884)
+Targ_FmtTime, arg. 1 used inconsistently	targ.c(361)  ::  dir.c(942)
+Finish: variable # of args.	main.c(1149)  ::  job.c(371)
+lseek, arg. 2 used inconsistently	llib-lc:lseek.c 2(43)  ::  job.c(1191)
+Stat_GetMsg value used inconsistently	llib-lc:status.c 2(229)  ::  job.c(1237)
+Rmt_LastID, arg. 1 used inconsistently	rmt.c(390)  ::  job.c(1281)
+Rmt_ReExport, arg. 1 used inconsistently	rmt.c(301)  ::  job.c(1390)
+select, arg. 2 used inconsistently	llib-lc:select.c 2(43)  ::  job.c(2325)
+free, arg. 1 used inconsistently	llib-lc:free.c 2(62)  ::  job.c(2756)
+wait3, arg. 1 used inconsistently	llib-lc:wait.c 2(113)  ::  job.c(3059)
+Stat_GetMsg value used inconsistently	llib-lc:status.c 2(229)  ::  job.c(3150)
+sleep, arg. 1 used inconsistently	llib-lc:sleep.c 2(48)  ::  job.c(3181)
+Stat_GetMsg value used inconsistently	llib-lc:status.c 2(229)  ::  job.c(3193)
+lseek value declared inconsistently	llib-lc:lseek.c 2(43)  ::  job.c(1191)
+Stat_GetMsg value declared inconsistently	llib-lc:status.c 2(229)  ::  job.c(3193)
+bcopy value declared inconsistently	llib-lc:bcopy.c 2(65)  ::  job.c(2081)
+bzero value declared inconsistently	llib-lc:bzero.c 2(55)  ::  job.c(2654)
+signal, arg. 2 used inconsistently	llib-lc:signal.c 2(20)  ::  main.c(641)
+time, arg. 1 used inconsistently	llib-lc:time.c 2(20)  ::  main.c(662)
+time value used inconsistently	llib-lc:time.c 2(20)  ::  main.c(662)
+Stat_GetMsg value used inconsistently	llib-lc:status.c 2(229)  ::  main.c(672)
+time value declared inconsistently	llib-lc:time.c 2(20)  ::  main.c(662)
+Stat_GetMsg value declared inconsistently	llib-lc:status.c 2(229)  ::  main.c(672)
+setenv value declared inconsistently	llib-lc:setenv.c 2(50)  ::  main.c(849)
+Lst_Member, arg. 2 used inconsistently	llib-llst:lstMember.c 2(29)  ::  make.c(294)
+Lst_AtEnd, arg. 2 used inconsistently	llib-llst:lstAtEnd.c 2(40)  ::  make.c(295)
+Lst_AtEnd, arg. 2 used inconsistently	llib-llst:lstAtEnd.c 2(40)  ::  make.c(296)
+Job_RestartJobs value declared inconsistently	job.c(3249)  ::  make.c(844)
+realloc, arg. 1 used inconsistently	llib-lc:realloc.c 2(48)  ::  buf.c(78)
+realloc, arg. 2 used inconsistently	llib-lc:realloc.c 2(48)  ::  buf.c(78)
+realloc value used inconsistently	llib-lc:realloc.c 2(48)  ::  buf.c(78)
+realloc, arg. 1 used inconsistently	llib-lc:realloc.c 2(48)  ::  buf.c(110)
+realloc, arg. 2 used inconsistently	llib-lc:realloc.c 2(48)  ::  buf.c(110)
+realloc value used inconsistently	llib-lc:realloc.c 2(48)  ::  buf.c(110)
+bcopy, arg. 1 used inconsistently	llib-lc:bcopy.c 2(65)  ::  buf.c(112)
+bcopy, arg. 2 used inconsistently	llib-lc:bcopy.c 2(65)  ::  buf.c(112)
+malloc value used inconsistently	llib-lc:malloc.c 2(49)  ::  buf.c(158)
+bcopy, arg. 1 used inconsistently	llib-lc:bcopy.c 2(65)  ::  buf.c(194)
+bcopy, arg. 2 used inconsistently	llib-lc:bcopy.c 2(65)  ::  buf.c(194)
+malloc value used inconsistently	llib-lc:malloc.c 2(49)  ::  buf.c(202)
+bcopy, arg. 1 used inconsistently	llib-lc:bcopy.c 2(65)  ::  buf.c(273)
+bcopy, arg. 2 used inconsistently	llib-lc:bcopy.c 2(65)  ::  buf.c(273)
+malloc value used inconsistently	llib-lc:malloc.c 2(49)  ::  buf.c(380)
+malloc value used inconsistently	llib-lc:malloc.c 2(49)  ::  buf.c(386)
+realloc value declared inconsistently	llib-lc:realloc.c 2(48)  ::  buf.c(110)
+bcopy value declared inconsistently	llib-lc:bcopy.c 2(65)  ::  buf.c(273)
+malloc value declared inconsistently	llib-lc:malloc.c 2(49)  ::  buf.c(386)
+wait, arg. 1 used inconsistently	llib-lc:wait.c 2(52)  ::  parse.c(1372)
+Lst_Destroy, arg. 2 used inconsistently	llib-llst:lstDestroy.c 2(41)  ::  parse.c(2014)
+Cond_End value declared inconsistently	cond.c(1193)  ::  parse.c(2186)
+bcopy, arg. 1 used inconsistently	llib-lc:bcopy.c 2(65)  ::  str.c(198)
+bcopy, arg. 2 used inconsistently	llib-lc:bcopy.c 2(65)  ::  str.c(198)
+realloc, arg. 1 used inconsistently	llib-lc:realloc.c 2(48)  ::  str.c(201)
+realloc, arg. 2 used inconsistently	llib-lc:realloc.c 2(48)  ::  str.c(201)
+realloc, arg. 1 used inconsistently	llib-lc:realloc.c 2(48)  ::  str.c(265)
+realloc, arg. 2 used inconsistently	llib-lc:realloc.c 2(48)  ::  str.c(265)
+free, arg. 1 used inconsistently	llib-lc:free.c 2(62)  ::  str.c(293)
+bcopy value declared inconsistently	llib-lc:bcopy.c 2(65)  ::  str.c(260)
+Lst_Find, arg. 2 used inconsistently	llib-llst:lstFind.c 2(41)  ::  suff.c(1578)
+Lst_FindFrom, arg. 3 used inconsistently	llib-llst:lstFindFrom.c 2(43)  ::  suff.c(1695)
+localtime, arg. 1 used inconsistently	llib-lc:ctime.c 2(287)  ::  targ.c(369)
+setenv value declared inconsistently	llib-lc:setenv.c 2(50)  ::  var.c(411)
+kill, arg. 1 used inconsistently	llib-lc:kill.c 2(46)  ::  rmt.c(351)
+sigsetmask returns value which is sometimes ignored
+kill returns value which is sometimes ignored
+fprintf returns value which is always ignored
+close returns value which is always ignored
+job.c(1607):JobStart returns value which is sometimes ignored
+lseek returns value which is always ignored
+dup2 returns value which is always ignored
+fcntl returns value which is always ignored
+execv returns value which is always ignored
+_exit returns value which is always ignored
+Lst_AtFront returns value which is always ignored
+pipe returns value which is always ignored
+atexit returns value which is always ignored
+fputs returns value which is always ignored
+Lst_Concat returns value which is always ignored
+ungetc returns value which is always ignored
+printf returns value which is always ignored
+sprintf returns value which is always ignored
+Lst_AtEnd returns value which is always ignored
+strncpy returns value which is always ignored
+fclose returns value which is always ignored
+suff.c(1380):SuffApplyTransform returns value which is sometimes ignored
+fseek returns value which is always ignored
+utimes returns value which is sometimes ignored
+fflush returns value which is always ignored
+Lst_Replace returns value which is always ignored
+execvp returns value which is always ignored
+write returns value which is always ignored
+compat.c(337):CompatMake returns value which is always ignored
+Make_HandleUse returns value which is always ignored
+Make_TimeStamp returns value which is always ignored
+signal returns value which is sometimes ignored
+dir.c(278):DirMatchFiles returns value which is always ignored
+strcpy returns value which is always ignored
+Lst_Remove returns value which is always ignored

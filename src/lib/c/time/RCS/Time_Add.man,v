@@ -1,0 +1,83 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     90.11.27.16.03.29;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.12.30.16.20.39;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@time.h -> spriteTime.h
+@
+text
+@' $Header: /sprite/src/lib/c/time/RCS/Time_Add.man,v 1.1 88/12/30 16:20:39 ouster Exp Locker: kupfer $ SPRITE (Berkeley)
+'
+'  ROUGH DRAFT!!!
+'
+.so \*(]ltmac.sprite
+.HS Time_Add lib
+.BS
+.SH NAME
+Time_Add, Time_Subtract, Time_Multiply, Time_Divide \- time arithmetic operations
+.SH SYNOPSIS
+.nf
+\fB#include <spriteTime.h>\fR
+
+\fBTime_Add\fR(\fIa, b, resultPtr\fR)
+
+\fBTime_Subtract\fR(\fIa, b, resultPtr\fR)
+
+\fBTime_Multiply\fR(\fIa, c, resultPtr\fR)
+
+\fBTime_Divide\fR(\fIa, c, resultPtr\fR)
+.SH ARGUMENTS
+.AP Time a in
+.AP Time b in
+Time values to be operated on.
+.AP int c in
+An integer factor used to modify a time.
+.AP Time *resultPtr out
+The result of the operation.
+.BE
+.SH DESCRIPTION
+These procedures perform the following arithmetic operations on Time values.
+.nf
+Add:		*resultPtr = a + b;
+Subtract:	*resultPtr = a - b;
+Multiply:	*resultPtr = a X c;
+Divide:		*resultPtr = a / c;
+.fi
+An in parameter can be specified as the the out parameter.
+.SH KEYWORDS
+time
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+' $Header: Time_Add,v 1.2 86/07/03 14:06:36 andrew Exp $ SPRITE (Berkeley)
+d12 1
+a12 1
+\fB#include <time.h>\fR
+@

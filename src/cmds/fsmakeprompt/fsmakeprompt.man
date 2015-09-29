@@ -1,0 +1,35 @@
+'\" Copyright 1990 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/admin/fsmakeprompt/RCS/fsmakeprompt.man,v 1.1 90/07/02 22:28:01 jhh Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS FSMAKEPROMPT cmds
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+fsmakeprompt \- Interactive front-end for \fBfsmake\fR.
+.SH SYNOPSIS
+\fsmakeprompt\fR 
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBFsmakeprompt\fR is used to create Sprite filesystems on disk partitions.
+It is an interactive front-end for the \fBfsmake\fR
+program.
+\fBFsmakeprompt\fR prompts the user for information on how to build the
+filesystem(s), then invokes \fBfsmake\fR to actually build them.
+All of the questions have basically the same format.  
+Items in square brackets '[]'  are a list of legal answers to the question.
+An item in parenthesis '()' is the default answer.  
+Simply pressing <return> in response to a question will cause the 
+default answer to be used.
+.SH KEYWORDS
+filesystem, disk, fsmake
+

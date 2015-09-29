@@ -1,0 +1,86 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.4
+date     92.12.13.18.24.32;  author mgbaker;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     92.12.13.15.43.21;  author mgbaker;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     92.11.12.11.44.07;  author mgbaker;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     92.10.26.13.43.13;  author mgbaker;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@For network monitoring device and program.
+@
+
+
+1.4
+log
+@*** empty log message ***
+@
+text
+@#ifndef _HOSTD
+#define _HOSTD
+
+typedef struct Dev_ClientInfo {
+    int		hostNumber;
+    int		hostState;
+} Dev_ClientInfo;
+
+#define	DEV_CLIENT_STATE_NEW_HOST	0x1
+#define	DEV_CLIENT_STATE_DEAD_HOST	0x2
+#define	DEV_CLIENT_START_LIST		0xF004	/* Unlikely to be ioctl # */
+#define	DEV_CLIENT_END_LIST		0xF008	/* Unlikely to be ioctl # */
+
+#endif /* _HOSTD */
+@
+
+
+1.3
+log
+@*** empty log message ***
+@
+text
+@d1 3
+d13 2
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+typedef struct ClientInfo {
+d4 1
+a4 1
+} ClientInfo;
+@

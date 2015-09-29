@@ -1,0 +1,38 @@
+compatMapCode.c:
+compatSig.c:
+errno.c:
+flock.c:
+ftruncate.c:
+getdirentries.c:
+getdtablesize.c:
+kill.c:
+lseek.c:
+read.c:
+readv.c:
+sigblock.c:
+sigpause.c:
+sigsetmask.c:
+sigvec.c:
+tell.c:
+truncate.c:
+wait.c:
+write.c:
+writev.c:
+execve.c:
+getgid.c:
+gethostname.c:
+getpagesize.c:
+getrlimit.c:
+gettimeofday.c:
+killpg.c:
+setpriority.c:
+setrlimit.c:
+settimeofday.c:
+Sig_Send, arg. 2 used inconsistently	llib-lc:syscalls.c(335)  ::  kill.c(58)
+lseek value used inconsistently	llib-lc:lseek.c 2(44)  ::  tell.c(42)
+lseek value declared inconsistently	llib-lc:lseek.c 2(44)  ::  tell.c(42)
+Sig_Send, arg. 2 used inconsistently	llib-lc:syscalls.c(335)  ::  killpg.c(54)
+Sys_SetTimeOfDay, arg. 1 used inconsistently	llib-lc:syscalls.c(433)  ::  settimeofday.c(58)
+Sys_SetTimeOfDay, arg. 1 used inconsistently	llib-lc:syscalls.c(433)  ::  settimeofday.c(67)
+strncpy returns value which is always ignored
+fprintf returns value which is always ignored

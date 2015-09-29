@@ -1,0 +1,37 @@
+' Copyright 1989 Regents of the University of California
+' Permission to use, copy, modify, and distribute this
+' documentation for any purpose and without fee is hereby
+' granted, provided that this notice appears in all copies.
+' The University of California makes no representations about
+' the suitability of this material for any purpose.  It is
+' provided "as is" without express or implied warranty.
+' 
+' $Header: /a/newcmds/xld/RCS/xld.man,v 1.1 89/01/18 10:38:14 mendel Exp $ SPRITE (Berkeley)
+' 
+.so \*(]ltmac.sprite
+.HS XLD cmds
+.BS
+.SH NAME
+xld \- Convert load files into SPUR format
+.SH SYNOPSIS
+.nf
+\fBxld\fR [\fI-s\fR] \fIin-file-name [out-file-name]\fR
+.SH OPTIONS
+.IP "\fB\-s\fR" 14
+Strip load file's symbol table after conversion.
+.BE
+
+.SH DESCRIPTION
+.PP
+This program converts SPUR load files produced by sas, the SPUR assembler,
+and sld, the SPUR linker/loader, running on
+a machine other than SPUR into SPUR form.  This program is needed because the
+sas and sld generate binary using the byte order of the
+current machine which may differ from that of SPUR.
+If the -s option is specified
+then the binary is striped. If specified, the modified
+binary is placed in out-file-name. Otherwise the conversion is place in
+in-file-name.
+
+.SH KEYWORDS
+SPUR, sld, sas

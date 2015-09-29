@@ -1,0 +1,73 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     90.12.17.18.46.35;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Man page for dumpsize.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@'\" Copyright 1990 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/lib/forms/RCS/cmd.man,v 1.2 90/02/20 17:11:01 douglis Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS DUMPSIZE cmds
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+dumpsize \- Calculate size of dumps on a tape
+.SH SYNOPSIS
+\fBdumpsize\fR \fItapeNum\fR \fIdatesFile\fR
+.SH OPTIONS
+.IP "\fItapeNum\fR" 15
+The number of the tape in question.
+.IP "\fIdatesFile\fR" 15
+The path of the 
+.B dumpdates
+file.
+.BE
+
+.SH DESCRIPTION
+.PP
+This script grovels over the
+.B dumpdates
+file and calculates how much space on the tape is taken by the dumps,
+file marks, etc.  The tape number is the first argument.  (Each dump
+tape has a number, which is written on the tape and its case.)  The
+second argument is the path of the
+.B dumpdates
+file, usually
+.BR /sprite/admin/dump/dumpdates .
+.PP
+The output from the script gives how much space is taken for each
+day's dumps (including a guess at how much is needed for file marks)
+and the total space taken on the tape.  This lets you guess how much
+space will be needed for another day's dumps and whether it will fit
+on the given tape.  (Allow 2 gigabytes for an Exabyte cassette.)
+
+.SH KEYWORDS
+dump, tape, backup, restore
+@

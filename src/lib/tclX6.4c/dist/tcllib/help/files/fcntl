@@ -1,0 +1,49 @@
+
+
+          fcntl handle attribute [value]
+               This command either sets or clears a file option or
+               returns its current value.  If value are not specified,
+               then the current value of attribute is returned. The
+               following attributes may be specified:
+
+               RDONLY - The file is opened for reading only. (Get
+               only)
+
+               WRONLY - The file is opened for writing only.  (Get
+               only)
+
+               RDWR - The file is opened for reading and writing.
+               (Get only)
+
+               READ - If the file is readable. (Get only).
+
+               WRITE - If the file is writable. (Get only).
+
+               APPEND - The file is opened for append-only writes.
+               All writes will be forced to the end of the file.
+
+               NONBLOCK - The file is to be accessed with non-blocking
+               I/O.  See the read system call for a description of how
+               it affects the behavior of file reads.
+
+               CLOEXEC - Close the file on an process exec.  If the
+               execl command or some other mechanism causes the
+               process to do an exec, the file will be closed if this
+               option is set.
+
+               NOBUF - The file is not buffered. If set, then there no
+               stdio buffering for the file.
+
+               LINEBUF - Output the file will be line buffered. The
+               buffer will be flushed when a newline is written, when
+               the buffer is full, or when input is requested.
+
+               The APPEND, NONBLOCK, and CLOEXEC attributes may be set
+               or cleared by specifying the attribute name and a value
+               1 to set the attribute and 0 to clear it.
+
+               The NOBUF and LINEBUF attributes may only be set (a
+               value of 1) and only one of the options may be
+               selected.  Once set, it may not be changed.  These
+               options should be set before any I/O operations have
+               been done on the file or data may be lost.

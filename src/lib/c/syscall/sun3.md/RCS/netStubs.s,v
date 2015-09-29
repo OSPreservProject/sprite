@@ -1,0 +1,95 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @# @;
+
+
+1.3
+date     92.06.16.11.54.19;  author jhh;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.07.14.17.38.21;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.19.14.30.01;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@added SYS_NET_GET_ROUTES and SYS_NET_DELETE_ROUTE
+@
+text
+@/*
+ *
+ * netStubs.s --
+ *
+ *     Stubs for the Net_ system calls.
+ *
+ * Copyright 1966, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * rcs = $Header: netStubs.s,v 1.2 88/07/14 17:38:21 mendel Exp $ SPRITE (Berkeley)
+ *
+ */
+
+#include "userSysCallInt.h"
+SYS_CALL(Net_InstallRoute, SYS_NET_INSTALL_ROUTE)
+SYS_CALL(Net_GetRoutes, SYS_NET_GET_ROUTES)
+SYS_CALL(Net_DeleteRoute, SYS_NET_DELETE_ROUTE)
+@
+
+
+1.2
+log
+@Changed comment characters from |* to /* */.
+@
+text
+@d16 1
+a16 1
+ * rcs = $Header: netStubs.s,v 1.1 88/06/19 14:30:01 ouster Exp $ SPRITE (Berkeley)
+d22 2
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 18
+a18 16
+|*
+|* netStubs.s --
+|*
+|*     Stubs for the Net_ system calls.
+|*
+|* Copyright 1966, 1988 Regents of the University of California
+|* Permission to use, copy, modify, and distribute this
+|* software and its documentation for any purpose and without
+|* fee is hereby granted, provided that the above copyright
+|* notice appear in all copies.  The University of California
+|* makes no representations about the suitability of this
+|* software for any purpose.  It is provided "as is" without
+|* express or implied warranty.
+|*
+|* rcs = $Header: netStubs.s,v 2.0 87/08/11 09:31:08 brent Exp $ SPRITE (Berkeley)
+|*
+@

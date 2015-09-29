@@ -1,0 +1,4 @@
+D BDFTOPCF                          	bdftopcf
+F IMAKEFIL.;1                       	Imakefile
+D MKFONTDI                          	mkfontdir
+D SHOWPCF                           	showpcf

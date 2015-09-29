@@ -1,0 +1,97 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  srv030:1.1 srv028:1.1 srv027:1.1 srv026:1.1 srv024:1.1 srv022:1.1 srv021:1.1 srv019:1.1 srv018:1.1 srv016:1.1 srv014:1.1 srv010:1.1 srv008:1.1 srv007:1.1 srv006:1.1 srv005:1.1 srv004:1.1 srv003:1.1 srv002:1.1 srv001:1.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     92.03.13.20.37.51;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@UNIX access() call.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/* 
+ * access.c --
+ *
+ *	UNIX access() for the Sprite server.
+ *
+ * Copyright 1992 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.6 92/03/02 15:29:56 bmiller Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <mach.h>
+#include <mach/message.h>
+#include <sprite.h>
+#include <compatInt.h>
+#include <spriteEmuInt.h>
+#include <spriteSrv.h>
+#include <string.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * access --
+ *
+ *	Procedure for Unix access call. 
+ *
+ * Results:
+ *	UNIX_SUCCESS if the access mode was valid.
+ *	UNIX_FAILURE if the access mode was not valid.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+access(pathName, mode)
+    char *pathName;		/* name of file to check */
+    int mode;			/* access mode to check for */
+{
+    ReturnStatus status;
+    kern_return_t kernStatus;
+    mach_msg_type_number_t pathNameLength = strlen(pathName) + 1;
+    Boolean sigPending;
+
+    kernStatus = Fs_AccessStub(SpriteEmu_ServerPort(), pathName,
+			       pathNameLength, mode, &status, &sigPending);
+    if (kernStatus != KERN_SUCCESS) {
+	status = Utils_MapMachStatus(kernStatus);
+    }
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return UNIX_ERROR;
+    } else {
+	return UNIX_SUCCESS;
+    }
+}
+
+@

@@ -1,0 +1,112 @@
+head     9.1;
+branch   ;
+access   ;
+symbols  ds3100:9.1 sun3:9.1 sun4nw:9.1 symm:9.1 spur:9.1 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.1
+date     89.10.26.11.30.01;  author mgbaker;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.00.52;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     89.08.15.19.51.14;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.15.11.56.42;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.1
+log
+@Adding frame buffer support.
+@
+text
+@/*
+ * devAddrs.h --
+ *
+ *     Device and interrupt vector addresses for Sun-4's.
+ *
+ * Copyright 1985, 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/dev/sun4.md/RCS/devAddrs.h,v 9.0 89/09/12 15:00:52 douglis Stable Locker: mgbaker $ SPRITE (Berkeley)
+ */
+
+#ifndef _DEVADDRS
+#define _DEVADDRS
+
+#define	DEV_KBD_ADDR			0xffd00004
+#define	DEV_MOUSE_ADDR			0xffd00000
+#define	DEV_SERIALA_ADDR		0xffd02004
+#define	DEV_SERIALB_ADDR		0xffd02000
+#define	DEV_TIMER_ADDR			0xffd06000
+#define	DEV_INTERRUPT_REG_ADDR		0xffd0a000
+#define	DEV_EE_PROM_ADDR		0xffd04000
+#define	DEV_FRAME_BUF_ADDR		0xffd40000
+
+/*
+ * Interrupt vector assignments:
+ */
+
+#define DEV_UART_VECTOR			30
+
+#endif /* _DEVADDRS */
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/dev/sun4.md/RCS/devAddrs.h,v 1.2 89/08/15 19:51:14 rab Exp Locker: douglis $ SPRITE (Berkeley)
+d28 1
+@
+
+
+1.2
+log
+@Commented #endif labels.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/dev/sun4.md/RCS/devAddrs.h,v 1.1 89/07/15 11:56:42 ouster Exp Locker: rab $ SPRITE (Berkeley)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/dev/sun4.md/RCS/devAddrs.h,v 1.3 89/04/25 15:25:50 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d35 1
+a35 1
+#endif _DEVADDRS
+@

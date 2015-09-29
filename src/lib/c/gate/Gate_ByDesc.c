@@ -1,0 +1,66 @@
+/* 
+ * Gate_ByDesc.c --
+ *
+ *	Source code for the Gate_ByDesc library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/gate/RCS/Gate_ByDesc.c,v 1.1 92/06/04 22:03:19 jhh Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <stdio.h>
+#include <gate.h>
+#include <gateInt.h>
+#include <string.h>
+
+
+/*
+ *-----------------------------------------------------------------------
+ *
+ * Gate_ByDesc --
+ *
+ *	Return information about a gateway based on its description.
+ *
+ * Results:
+ *	A Gate_Entry pointer describing the gateway, or NULL if no such gateway
+ *	exists in the current database.  The Gate_Entry is statically
+ *	allocated, and may be modified on the next call to any Gate_
+ *	procedure.
+ *
+ * Side Effects:
+ *	The gateway file is opened if it wasn't already.
+ *
+ *-----------------------------------------------------------------------
+ */
+
+Gate_Entry *
+Gate_ByDesc(desc)
+    register char 	*desc;      /* Name of gateway to find */
+{
+    register Gate_Entry	*entry;	    /* Current entry */
+    register char 	**cpp;	    /* Pointer to alias table */
+
+    if (Gate_Start() != 0) {
+	return ((Gate_Entry *)NULL);
+    }
+    
+    while (1) {
+	entry = Gate_Next();
+	if (entry != (Gate_Entry *)NULL) {
+	    if (strcmp(entry->desc, desc) == 0) {
+		return (entry);
+	    }
+	} else {
+	    return (Gate_Entry *) NULL;
+	}
+    }
+}

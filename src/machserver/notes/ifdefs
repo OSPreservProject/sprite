@@ -1,0 +1,67 @@
+ifdefs for various disabled Sprite features:
+
+SPRITED_ACCOUNTING: keeping track of per-process CPU usage, etc.
+
+SPRITED_DEVICES: general support for access to devices.  Also used in
+libc sources.
+
+SPRITED_DEVNET: support for the "network device" (e.g., for IP server).
+
+SPRITED_DEVTIMER: support for /dev/timer.
+
+SPRITED_FLOAT: real floating-point support (e.g., for MIPS).  Also
+used in test programs and maybe libc.
+
+SPRITED_GRAPHICS: support for X, local frame buffer, graphics
+operations, etc.
+
+SPRITED_L1_COMMANDS: support for L1 debugging from the console.
+
+SPRITED_LOCALDISK: support for direct access to local disks.
+
+SPRITED_LOCALTAPE: support for access to local tape.
+
+SPRITED_MIGRATION: support for process migration.
+
+SPRITED_NATIVE_MALLOC: support for the binned malloc used by native
+Sprite.
+
+SPRITED_PROFILING: support for profiling user processes.
+
+SPRITED_REALFS: Sprite remote file system
+
+SPRITED_SETTIME: Enables setting the time-of-day clock from the time
+that the RPC startup code gets.  Should this get ripped out permanently?
+
+SPRITED_SIGNALS: support for sending, catching signals.  Also used
+within libc.
+
+SPRITED_STICKY_SEGMENTS: support for caching unused text segments.
+
+SPRITED_SYSLOG: support for /dev/syslog.
+
+SPRITED_TIMER: user process interval timers.
+
+SPRITED_REMOTE_DEBUG: support for remote debugging of the server (dbg
+module, etc.).
+
+SPRITED_UNIX_COMPAT: Unix binary compatibility support.
+
+SPRITED_USERDEBUG: support for suspending, resuming, debugging user
+processes.
+
+SPRITED_USERPRIORITY: support for user "Proc_SetPriority" calls.
+
+SPRITED_VAR_FS_CACHE: support for the variable-size FS cache.
+
+LIBC_MALLOC: malloc support for client programs (in C library)
+
+LIBC_PRINTF: stdio support for client programs (used in C library)
+
+LIBC_TCP: support for TCP/IP protocols, BSD user programs that use them.
+
+LIBC_USECONSOLE: stdio routines can access /dev/console.  Also used in
+test code.
+
+LIBC_USERLOCK: support for user-level monitor locks & condition
+variables (in C library).

@@ -1,0 +1,68 @@
+
+
+
+Quad                  C Library Procedures                   Quad
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Quad_PutUns, Quad_UnsToDouble -  Formatting  and  conversion
+     for 64-bit integers
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<qquuaadd..hh>>
+
+     void
+     QQuuaadd__PPuuttUUnnss(_s_t_r_e_a_m, _u_Q_u_a_d)
+
+     double
+     QQuuaadd__UUnnssTTooDDoouubbllee(_u_Q_u_a_d)
+
+AARRGGUUMMEENNTTSS
+     FILE     *_s_t_r_e_a_m (in)      I/O stream to write to.
+
+     u_quad   _u_Q_u_a_d   (in)      Unsigned   64-bit   integer    to
+                                operate on.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     QQuuaadd__PPuuttUUnnss formats an unsigned quad value and writes it  to
+     the  given  _s_t_r_e_a_m.   If  the  value is larger than a single
+     integer,  it  is  written  as  a  floating   point   number.
+     QQuuaadd__UUnnssTTooDDoouubbllee converts an unsigned quad to a C double.
+
+
+KKEEYYWWOORRDDSS
+     quad, I/O, conversion
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  June 24, 1991                    1
+
+
+

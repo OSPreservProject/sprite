@@ -1,0 +1,282 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.4
+date     90.02.16.14.07.56;  author rab;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.10.12.13.10.19;  author douglis;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.07.31.14.26.06;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.19.16.32.45;  author rab;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.4
+log
+@Fixed include path so this file can be used by cross-compilers.
+@
+text
+@/* 	@@(#)exec.h	4.1.1.2	(ULTRIX)	7/7/88 	*/
+
+/************************************************************************
+ *									*
+ *			Copyright (c) 1986 by				*
+ *		Digital Equipment Corporation, Maynard, MA		*
+ *			All rights reserved.				*
+ *									*
+ *   This software is furnished under a license and may be used and	*
+ *   copied  only  in accordance with the terms of such license and	*
+ *   with the  inclusion  of  the  above  copyright  notice.   This	*
+ *   software  or  any  other copies thereof may not be provided or	*
+ *   otherwise made available to any other person.  No title to and	*
+ *   ownership of the software is hereby transferred.			*
+ *									*
+ *   This software is  derived  from  software  received  from  the	*
+ *   University    of   California,   Berkeley,   and   from   Bell	*
+ *   Laboratories.  Use, duplication, or disclosure is  subject  to	*
+ *   restrictions  under  license  agreements  with  University  of	*
+ *   California and with AT&T.						*
+ *									*
+ *   The information in this software is subject to change  without	*
+ *   notice  and should not be construed as a commitment by Digital	*
+ *   Equipment Corporation.						*
+ *									*
+ *   Digital assumes no responsibility for the use  or  reliability	*
+ *   of its software on equipment which is not supplied by Digital.	*
+ *									*
+ ************************************************************************/
+/*
+ *
+ *   Modification History:
+ *
+ * 03 Nov 87 -- map
+ *	Change magic number definition for compatibility modes.
+ * 02 Apr 86 -- depp
+ *	New file
+ *
+ */
+
+/*
+ *	@@(#)exec.h	1.2 (Berkeley) 6/8/85
+ */
+
+#ifndef _EXEC
+#define _EXEC
+
+#if 0
+ /* these are defined in <aouthdr.h> */
+#define	OMAGIC	0407		/* old impure format */
+#define	NMAGIC	0410		/* read-only text */
+#define	ZMAGIC	0413		/* demand load format */
+#endif
+
+/*
+ *	Compatibility modes
+ */
+#define	A_BSD	0		/* All pre V2.4 a.outs and BSD */
+#define	A_SYSV	1		/* SVID compliant process */
+#define	A_POSIX 2		/* IEEE P1003.1 compliant process */
+
+#include <ds3100.md/filehdr.h>
+#include <ds3100.md/aouthdr.h>
+#include <ds3100.md/scnhdr.h>
+
+#ifdef notdef
+struct filehdr {
+	unsigned short	f_magic;	/* magic number */
+	unsigned short	f_nscns;	/* number of sections */
+	long		f_timdat;	/* time & date stamp */
+	long		f_symptr;	/* file pointer to symbolic header */
+	long		f_nsyms;	/* sizeof(symbolic hdr) */
+	unsigned short	f_opthdr;	/* sizeof(optional hdr) */
+	unsigned short	f_flags;	/* flags */
+};
+
+struct aouthdr {
+	short	magic;		/* see magic.h				*/
+	short	vstamp;		/* version stamp			*/
+	long	tsize;		/* text size in bytes, padded to FW
+				   bdry					*/
+	long	dsize;		/* initialized data "  "		*/
+	long	bsize;		/* uninitialized data "   "		*/
+	long	entry;		/* entry pt.				*/
+	long	text_start;	/* base of text used for this file	*/
+	long	data_start;	/* base of data used for this file	*/
+	long	bss_start;	/* base of bss used for this file	*/
+	long	gprmask;	/* general purpose register mask	*/
+	long	cprmask[4];	/* co-processor register masks		*/
+	long	gp_value;	/* the gp value used for this object    */
+};
+
+struct scnhdr {
+	char		s_name[8];	/* section name */
+	long		s_paddr;	/* physical address */
+	long		s_vaddr;	/* virtual address */
+	long		s_size;		/* section size */
+	long		s_scnptr;	/* file ptr to raw data for section */
+	long		s_relptr;	/* file ptr to relocation */
+	long		s_lnnoptr;	/* file ptr to line numbers (not used)*/
+	unsigned short	s_nreloc;	/* number of relocation entries */
+	unsigned short	s_nlnno;	/* number of line numbers (not used) */
+	long		s_flags;	/* flags */
+};
+#endif /* notdef */
+
+struct exec {
+	struct filehdr	ex_f;
+	struct aouthdr	ex_o;
+};
+
+/*
+ * Coff files produced by the mips loader are guaranteed to have the raw data
+ * for the sections follow the headers in this order: .text, .rdata, .data and
+ * .sdata the sum of the sizes of last three is the value in dsize in the
+ * optional header.  This is all done for the benefit of the programs that
+ * have to load these objects so only the file header and optional header
+ * have to be inspected.  The macro N_TXTOFF() takes pointers to file header
+ * and optional header and returns the file offset to the start of the raw
+ * data for the .text section.  The raw data for the three data sections
+ * follows the start of the .text section by the value of tsize in the optional
+ * header.
+ */
+#if 0
+ /* these are already defined in aouthdr.h and filhdr.h */
+#define	FILHDR	struct filehdr
+#define	FILHSZ	sizeof(FILHDR)
+#define	AOUTHSZ	sizeof(struct aouthdr)
+#define	SCNHSZ	sizeof(struct scnhdr)
+#endif
+/* SCNROUND is the size that sections are rounded off to */
+#define SCNROUND ((long)16)
+
+#define N_TXTOFF(f, a) \
+ ((a).magic == ZMAGIC ? 0 : \
+  ((a).vstamp < 23 ? \
+   ((FILHSZ + AOUTHSZ + (f).f_nscns * SCNHSZ + 7) & 0xfffffff8) : \
+   ((FILHSZ + AOUTHSZ + (f).f_nscns * SCNHSZ + SCNROUND-1) & ~(SCNROUND-1)) ) )
+
+/*
+ * for vax compatibility
+ */
+#define a_data	ex_o.dsize
+#define a_text	ex_o.tsize
+#define a_bss	ex_o.bsize
+#define a_entry	ex_o.entry
+#define a_magic	ex_o.magic
+
+#ifdef LANGUAGE_C
+#define  MIPSEBMAGIC	0x0160
+#define  MIPSELMAGIC	0x0162
+#endif
+
+#ifdef LANGUAGE_PASCAL
+#define  MIPSEBMAGIC	16#0160
+#define  MIPSELMAGIC	16#0162
+#endif
+
+#ifdef MIPSEL
+#define OBJMAGIC	MIPSELMAGIC
+#endif
+#ifdef MIPSEB
+#define OBJMAGIC	MIPSEBMAGIC
+#endif
+
+#endif /* _EXEC */
+@
+
+
+1.3
+log
+@an attempt at fixing vax-isms.  doesn't seem to work yet but i'm checking it
+in to give rab a crack.
+@
+text
+@d48 2
+d53 1
+d62 4
+a65 3
+#include <filehdr.h>
+#include <aouthdr.h>
+#include <scnhdr.h>
+d124 2
+d130 1
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@a46 16
+#ifdef vax
+/*
+ * Header prepended to each a.out file.
+ */
+struct exec {
+unsigned short	a_magic;	/* magic number */
+unsigned short	a_mode;		/* mode parameter */
+unsigned long	a_text;		/* size of text segment */
+unsigned long	a_data;		/* size of initialized data */
+unsigned long	a_bss;		/* size of uninitialized data */
+unsigned long	a_syms;		/* size of symbol table */
+unsigned long	a_entry;	/* entry point */
+unsigned long	a_trsize;	/* size of text relocation */
+unsigned long	a_drsize;	/* size of data relocation */
+};
+#endif /* vax */
+d59 4
+a62 2
+#ifdef mips
+
+d101 1
+a158 1
+#endif /* mips */
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d45 2
+d62 1
+a62 1
+#endif vax
+d158 2
+a159 1
+#endif LANGUAGE_C
+d163 1
+a163 1
+#endif LANGUAGE_PASCAL
+d167 1
+a167 1
+#endif MIPSEL
+d170 1
+a170 1
+#endif MIPSEB
+d172 2
+a173 1
+#endif mips
+@

@@ -1,0 +1,33 @@
+file		comments
+-----		-----
+attachRelease	call tree for block device attach/release calls.
+
+calledByVm.mach	Attempt to list what interface the Mach VM code
+		expects (what does it call, etc.).
+
+moduleSizes.old	Sizes of the different modules, for comparing native
+		Sprite with sprited.  Old version, using bytes of
+		source instead of lines of source.
+
+modules		Overview of changes that I expected to make going from
+		native Sprite to sprited, per module.
+
+newVm		Overview of planned VM changes going from native
+		Sprite to sprited.
+
+procOptions	Options for how to map Sprite processes to Mach tasks
+		and threads.
+
+questions	Random questions that came up during the port.  Some
+		of these may have actually been answered.
+
+soFar		Overview of how I spent my time during the 1st part of
+		the port.
+
+timeline*	Planning timelines.
+
+uniSprite	Overview of (planned) steps to make Sprite
+		single-server.
+
+vmReplacement	Overview of steps to replace Sprite VM with Mach VM.
+

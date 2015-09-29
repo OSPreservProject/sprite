@@ -1,0 +1,140 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  srv030:1.4 srv027:1.4 srv026:1.4 srv024:1.4 srv021:1.4 srv019:1.4 srv018:1.4 srv016:1.4 srv014:1.4 srv010:1.4 srv008:1.4 srv007:1.4 srv006:1.4 srv005:1.4 srv004:1.4 srv003:1.4 srv002:1.4 srv001:1.4;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     92.07.17.16.32.34;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.12.01.22.30.37;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.10.18.18.34.50;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.10.04.11.56.41;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.10.02.23.30.13;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@User declarations for debugging request calls.
+@
+
+
+1.5
+log
+@Add Test_Return1, Test_Return2.
+@
+text
+@/*
+ * test.h --
+ *
+ *	User declarations for test system calls.
+ *
+ * Copyright 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /user5/kupfer/spriteserver/include/user/RCS/test.h,v 1.4 91/12/01 22:30:37 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+ */
+
+#ifndef _TESTUSER
+#define _TESTUSER
+
+#define TEST_BUFFER_SIZE	1024
+
+#ifndef _MiG
+
+#include <sprite.h>
+
+/* 
+ * Definitions for MIG-generated stubs.
+ */
+typedef char Test_MessageBuffer[TEST_BUFFER_SIZE];
+
+extern void	Test_PutDecimal();
+extern void	Test_PutHex();
+extern void	Test_PutOctal();
+extern void	Test_PutMessage();
+extern void	Test_PutTime();
+extern void	Test_PutString();
+extern void	Test_GetString();
+
+extern void	Test_MemCheck();
+extern void	Test_Return1();
+extern void	Test_Return2();
+
+#endif /* _MiG */
+#endif /* _TESTUSER */
+@
+
+
+1.4
+log
+@Add support for inclusion by MIG defs files.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/include/user/RCS/test.h,v 1.3 91/10/18 18:34:50 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d41 2
+@
+
+
+1.3
+log
+@Add Test_MemCheck.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/include/user/RCS/test.h,v 1.2 91/10/04 11:56:41 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d21 4
+d27 5
+d42 1
+@
+
+
+1.2
+log
+@Add Test_PutTime.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/include/user/RCS/test.h,v 1.1 91/10/02 23:30:13 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d30 2
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.7 91/02/09 13:24:52 ouster Exp $ SPRITE (Berkeley)
+d27 1
+@

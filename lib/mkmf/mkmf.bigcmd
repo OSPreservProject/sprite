@@ -1,0 +1,96 @@
+#!/sprite/cmds/csh -f
+#
+# A script to generate (or regenerate) a Makefile for one subdirectory
+# of a command whose sources are spread across many subdirectories.
+#
+# This script is invoked from mkmf.  See the mkmf manual page for
+# details on how mkmf works.
+#
+# Parameters passed in from mkmf as environment variables:
+#	DOMACHINES	names of machines we are supposed to run mkmf on
+#	MKMFDIR		directory containing prototype makefiles
+#	MKMFFLAGS	arguments to all mkmfs run recursively
+#	MACHINES	list of machine names (e.g. "sun2 sun3"), for
+#			which there are machine-specific subdirectories
+#			(sun2.md, sun3.md) to hold the object files and
+#			any machine-specific source files to use when
+#			compiling for that machine
+#	MAKEFILE	name of makefile to create
+#	SUBTYPE		information about the type makefile
+#
+# Several of these environment variables must be copied to local shell
+# variables before use, because shell variables can be used in some places
+# where environment variables can't.
+#			
+# $Header: /sprite/lib/mkmf/RCS/mkmf.bigcmd,v 1.9 92/06/10 13:04:45 jhh Exp $ (SPRITE) Berkeley
+#
+
+#
+# Argument processing.  (Generalized form, even though just one flag so far.)
+#
+while ($#argv >= 1)
+    if ("$1" == '-x') then
+	set echo
+    endif
+    shift
+end
+
+set subtype=$SUBTYPE
+set module=$cwd:t
+set pref='[a-z_A-Z]'
+set machines=($MACHINES)
+set domachines = ($DOMACHINES)
+set makefile=$MAKEFILE
+set distdir=($DISTDIR)
+if (-e $makefile.proto) then
+	set proto=$makefile.proto
+else
+	set proto="${MKMFDIR}/Makefile.bigcmd"
+endif
+
+echo "Generating $makefile for module $module from $proto"
+
+set nonomatch
+set allSrcs =( ${pref}*.[cylsp] )
+#
+# Check to see if there were any sources.  The first check (size == 1)
+# is only necessary because the second check will cause an error if
+# allSrcs contains more than 1024 bytes.
+#
+if ($#allSrcs == 1) then
+    if ("$allSrcs" == "${pref}*.[cylsp]") set allSrcs=()
+endif
+set mdsrcs =( *.md/${pref}*.[cylsp] )
+if ($#mdsrcs == 1) then
+    if ("$mdsrcs" == "*.md/${pref}*.[cylsp]") set mdsrcs=()
+endif
+set allSrcs=($allSrcs $mdsrcs)
+unset nonomatch
+
+#
+# Use sed to substitute various interesting things into the prototype
+# makefile. The code below is a bit tricky because some of the variables
+# being substituted in can be very long:  if the substitution is passed
+# to sed with "-e", the entire variable must fit in a single shell argument,
+# with a limit of 1024 characters.  By generating a separate script file
+# for the very long variables, the variables get passed through (to the
+# script file) as many arguments, which gets around the length problem.
+#
+
+rm -f mkmf.tmp.sed
+echo s,"@(ALLSRCS)",$allSrcs,g > mkmf.tmp.sed
+cat $proto | sed -f mkmf.tmp.sed \
+	-e "s,@(DATE),`date`,g" \
+	-e "s,@(MACHINES),$machines,g" \
+	-e "s,@(MAKEFILE),$makefile,g" \
+	-e "s,@(NAME),$module,g" \
+	-e "s,@(TEMPLATE),$proto,g" \
+	-e "s,@(DISTDIR),$distdir,g" \
+	-e "s,@(TYPE),$subtype,g" \
+	> $makefile
+rm -f mkmf.tmp.sed
+
+setenv PARENTDIR $cwd
+foreach i ($domachines)
+	(cd $i.md; mkmf $MKMFFLAGS -f md.mk; mv md.mk md.mk.tmp; sed -e "s| $i\.md/linked\.o||g" md.mk.tmp > md.mk; rm -f md.mk.tmp)
+end

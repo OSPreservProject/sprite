@@ -1,0 +1,474 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.6
+date     92.03.27.12.25.31;  author shirriff;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     90.06.27.11.17.58;  author shirriff;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.05.21.17.00.51;  author shirriff;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.03.19.13.32.36;  author jhh;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.02.20.12.21.17;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.02.20.12.14.35;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.6
+log
+@Modified temp. shared file so different machines won't conflict.
+@
+text
+@/* 
+ * shm.c --
+ *
+ *	These routines map system V shared memory calls into 4.3 BSD
+ *	calls.
+ *
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+/*
+From dillon@@postgres.Berkeley.EDU Fri Jun 23 17:17:30 1989
+	Here is the support file I wrote for the postgres that implements
+most of the shared memory calls through mmap().  The line used to compile
+the module is:
+
+	cc -I/usr/include -I/usr/att/usr/include -c port.c
+
+	The module is not 100% transparent but works well enough that most
+programs which use the shared memory calls don't know the difference.
+
+	From working with both the shared memory calls and the mmap() calls
+It is clear that the mmap() calls are not only superior, but integrate well
+into the system whereas the shared memory calls are really nothing more than
+a huge hack.  For example, on SUNs one must compile in the exact amount of
+memory to reserved for shared memory and this memory cannot be used by the
+VM.  What a waste!  The sequent's Dynix OS, on the otherhand, and the mmap()
+call in general has no such restrictions.
+
+	I'm going blind into this.  Hopefully you have access to both the
+mmap includes and the AT&T shared memory includes.
+
+				Luck,
+
+
+					-Matt
+*/
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/etc/RCS/shm.c,v 1.5 90/06/27 11:17:58 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+#endif /* not lint */
+#include <stdio.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>	/* att-include file	*/
+#include <sys/mman.h>
+#include <assert.h>
+
+#ifndef __STDC__
+#define void char
+#endif
+
+#define LEN 64
+#define PRIV "/tmp/post.phm.%d"
+#define SHARED "/tmp/post.shm.%d.%d"
+
+extern int errno;
+
+typedef struct {
+    void  *base;
+    long  size;
+    short exists;
+    int key;
+    char name[LEN];
+} SHMIDS;
+
+int _shmTrace = 0;
+
+/*
+ * In sprite there is no limit on the number of file descriptors.
+ * Set this to 64 because that is how many ultrix allows.
+ */
+
+#ifndef _NFILE
+#define _NFILE 64
+#endif
+
+static SHMIDS ShmIds[_NFILE];
+
+/*
+ *  shmget(key, size, shmflg)
+ *
+ *  key might be IPC_PRIVATE in which case a 'private' segment is created
+ *  shmflg = file permissions
+ *  size = size of shared memory segment
+ */
+
+shmget(key, size, shmflg)
+key_t key;
+int size, shmflg;
+{
+    int fd;
+    char buf[LEN];
+    int fileflags = O_RDWR;
+    extern int errno;
+    int i;
+
+    if (_shmTrace) {
+	printf("call: shmget(%d, %d, %d)\n", key, size, shmflg);
+    }
+    if ((shmflg & IPC_CREAT) || (shmflg & IPC_PRIVATE))
+	fileflags |= O_CREAT;
+    if (shmflg & IPC_NOWAIT)
+	fileflags |= O_NDELAY;
+    if (shmflg & IPC_EXCL)
+	fileflags |= O_EXCL;
+    if (shmflg & IPC_ALLOC) {
+	fprintf(stderr, "shmget: IPC_ALLOC flag not implemented\n");
+	exit(1);
+    }
+
+    if (key == IPC_PRIVATE)
+	sprintf(buf, PRIV, getpid());
+    else
+	sprintf(buf, SHARED, gethostid(), key);
+    fd = open(buf, fileflags, (shmflg & 0777) | 0600);
+    if (fd < 0) {
+	return -1;
+    }
+    if ((fileflags & O_CREAT) || key == IPC_PRIVATE) {
+	lseek(fd,(long)size-1,0);
+	read(fd,buf,1);
+	lseek(fd,(long)size-1,0);
+	write(fd,buf,1);
+    } else {
+	size = lseek(fd,0L,2);
+	lseek(fd,0L,0);	/* not really needed, in for conformity */
+	if (_shmTrace) {
+	    printf("Segment already has length %d\n", size);
+	}
+    }
+    if (key == IPC_PRIVATE) {
+	unlink(buf);
+    } else {
+	/*
+	 * See if we already have an entry in the table.
+	 */
+	for (i=0; i< _NFILE; i++) {
+	    if (key == ShmIds[i].key && ShmIds[i].exists) {
+		close(fd);
+		if (_shmTrace) {
+		    printf("Segment already exists as %d\n", i);
+		}
+		return i;
+	    }
+	}
+    }
+    ShmIds[fd].size = size;
+    ShmIds[fd].base = (void *)0L;
+    ShmIds[fd].exists = 1;
+    ShmIds[fd].key = key;
+    strncpy(ShmIds[fd].name, buf, LEN);
+    if (_shmTrace) {
+	printf("shmget returning %d\n", fd);
+    }
+    return(fd);
+}
+
+shmop()
+{
+    assert(0);
+}
+
+shmctl(shmid, cmd, buf)
+int shmid, cmd;
+struct shmid_ds *buf;	/* sys/shm.h att-includes */
+{
+    struct stat stat;
+    int result = 0;
+
+    if (_shmTrace) {
+	printf("call: shmctl(%d, %d, %d)\n", shmid, cmd, buf);
+    }
+    assert(shmid >= 0 && shmid < _NFILE);
+    assert(ShmIds[shmid].exists);
+
+    fstat(shmid, &stat);
+
+    switch(cmd) {
+    case IPC_STAT:
+	buf->shm_perm.mode= stat.st_mode;
+	buf->shm_perm.uid = stat.st_uid;
+	buf->shm_perm.gid= stat.st_gid;
+	buf->shm_perm.cuid = stat.st_uid;
+	buf->shm_perm.cgid= stat.st_gid;
+	buf->shm_perm.key = shmid;
+	buf->shm_atime = stat.st_atime;
+	buf->shm_ctime = stat.st_ctime;
+	/* fill in more??? */
+	break;
+    case IPC_SET:	/* set only uid, guid, and low 9 bits of mode   */
+	fchmod(shmid, (stat.st_mode & ~0777) | (buf->shm_perm.mode & 0777));
+	fchown(shmid, buf->shm_perm.uid, buf->shm_perm.gid);
+	break;
+    case IPC_RMID:   /* delete the shared memory identifier		*/
+	if (ShmIds[shmid].key != IPC_PRIVATE) {
+	    unlink(ShmIds[shmid].name);
+	}
+	close(shmid);
+	ShmIds[shmid].exists = 0;
+	ShmIds[shmid].key = -1;
+	break;
+    }
+    return(result);
+}
+
+char *
+shmat(shmid, shmaddr, shmflg)
+int shmid;
+int shmaddr;
+int shmflg;
+{
+    void *base;
+    long size;
+    long pgmask = getpagesize() - 1;
+
+    if (_shmTrace) {
+	printf("call: shmat(%d, %d, %d)\n", shmid, shmaddr, shmflg);
+    }
+    assert(!shmaddr);
+    assert(!shmflg);
+
+    assert(shmid >= 0 && shmid < _NFILE);
+    assert(ShmIds[shmid].exists);
+
+    if (ShmIds[shmid].base)		/* already mapped! */
+	return((char *)ShmIds[shmid].base);
+    base = (void *)(((int)sbrk(0) + pgmask) & ~pgmask);
+    size = (ShmIds[shmid].size + pgmask) & ~pgmask;
+    if (_shmTrace) {
+	printf("Mapping: length = %d\n", size);
+    }
+    if (_shmTrace) {
+	printf("shmat: calling mmap(%x, %d, %d, %d, %d, %d)\n", base, size,
+		PROT_READ|PROT_WRITE, MAP_SHARED, shmid, 0);
+    }
+    base = (void *)mmap(base, size, PROT_READ|PROT_WRITE, MAP_SHARED,
+	    shmid, 0);
+    if (base < 0) {
+	if (_shmTrace) {
+	    printf("mmap failed: base = %d, errno = %d\n", base, errno);
+	}
+	return((char *)-1);
+    }
+    ShmIds[shmid].base = base;
+    if (_shmTrace) {
+	printf("shmat returning 0x%x\n", base);
+    }
+    return((char *)base);
+}
+
+int
+shmdt(shmaddr)
+void *shmaddr;
+{
+    short i;
+
+    if (_shmTrace) {
+	printf("call: shmdt(%d)\n", shmaddr);
+    }
+    assert(shmaddr);
+
+    for (i = 0; i < _NFILE; ++i) {
+	if (ShmIds[i].exists && ShmIds[i].base == shmaddr) {
+	    if (munmap(ShmIds[i].base, ShmIds[i].size) < 0) {
+		fprintf(stderr, "munmap failed!\n");
+		exit(1);
+	    }
+	    ShmIds[i].base = 0;
+	    break;
+	}
+    }
+    return(0);
+}
+
+
+
+@
+
+
+1.5
+log
+@Fixed a bunch of bugs.  Added tracing.
+@
+text
+@d46 1
+a46 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/etc/RCS/shm.c,v 1.4 90/05/21 17:00:51 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d62 2
+d121 1
+a121 1
+	sprintf(buf, "/tmp/post.phm.%d", getpid());
+d123 1
+a123 1
+	sprintf(buf, "/tmp/post.shm.%d", key);
+@
+
+
+1.4
+log
+@Removed some debugging statements.  Fixed error return.
+@
+text
+@d46 1
+a46 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/etc/RCS/shm.c,v 1.2 90/02/20 12:21:17 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d61 4
+d69 2
+d73 2
+d99 1
+a99 1
+    char buf[64];
+d102 1
+a102 1
+    void *base;
+d104 4
+a107 1
+    if (shmflg & IPC_CREAT)
+d123 9
+a131 1
+    if (!(fileflags & O_CREAT) && fd >= 0) {
+d134 19
+d154 7
+a160 7
+    if (fd >= 0) {
+	if (key == IPC_PRIVATE)
+	    unlink(buf);
+	assert(fd < _NFILE);
+	ShmIds[fd].size = size;
+	ShmIds[fd].base = (void *)0L;
+	ShmIds[fd].exists = 1;
+d177 3
+d202 3
+d207 1
+a221 1
+    int result;
+d223 3
+d236 9
+a244 1
+    base = (void *)mmap(base, size, PROT_RDWR, MAP_SHARED, shmid, 0);
+d246 3
+a250 4
+    if (result < 0)
+	perror(result);
+    if (result < 0)
+	return((char *)-1);
+d252 3
+d264 3
+@
+
+
+1.3
+log
+@changed Assert to assert
+@
+text
+@a114 1
+	printf("Autosize %d\n", size);
+a115 1
+    printf("%d = open(%s, 0%o, 0%o)\n", fd, buf, fileflags, (shmflg&0777)|0600);
+a123 1
+    printf("shared memory (fd %d size %d) %s\n", fd, size, buf);
+d189 2
+a190 1
+    if (mmap(base, size, PROT_RDWR, MAP_SHARED, shmid, 0) < 0) {
+a192 4
+    printf("mmap base = %08lx, size = %ld, prot = 0%o, shared = %d, fd = %d\n",
+	base, size, PROT_RDWR, MAP_SHARED, shmid
+    );
+    printf("result %d\n", result);
+@
+
+
+1.2
+log
+@ported to sprite
+@
+text
+@d46 1
+a46 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.3 90/01/12 12:03:36 douglis Exp $ SPRITE (Berkeley)";
+d55 1
+d121 1
+a121 1
+	Assert(fd < _NFILE);
+d132 1
+a132 1
+    Assert(0);
+d142 2
+a143 2
+    Assert(shmid >= 0 && shmid < _NFILE);
+    Assert(ShmIds[shmid].exists);
+d182 2
+a183 2
+    Assert(!shmaddr);
+    Assert(!shmflg);
+d185 2
+a186 2
+    Assert(shmid >= 0 && shmid < _NFILE);
+    Assert(ShmIds[shmid].exists);
+d213 1
+a213 1
+    Assert(shmaddr);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d5 1
+a5 1
+ *	calls..
+d17 28
+d56 4
+d65 9
+@

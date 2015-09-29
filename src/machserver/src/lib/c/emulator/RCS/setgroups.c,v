@@ -1,0 +1,118 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  srv030:1.2 srv028:1.2 srv027:1.2 srv026:1.2 srv024:1.2 srv022:1.2 srv021:1.2 srv019:1.2 srv018:1.2 srv016:1.2 srv014:1.2 srv010:1.2 srv008:1.2 srv007:1.2 srv006:1.2 srv005:1.2 srv004:1.2 srv003:1.2 srv002:1.2 srv001:1.2;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     92.04.02.21.43.00;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     92.03.27.19.07.11;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Fix include's.  Changes for sprited.
+@
+text
+@/* 
+ * setgroups.c --
+ *
+ *	Procedure to map from Unix setgroups system call to Sprite.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/lib/c/emulator/RCS/setgroups.c,v 1.1 92/03/27 19:07:11 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <mach.h>
+#include <sprite.h>
+#include <proc.h>
+#include <compatInt.h>
+#include <spriteEmuInt.h>
+#include <spriteSrv.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * setgroups --
+ *
+ *	Procedure to map from Unix setgroups system call to 
+ *	Sprite Proc_SetGroupIDs.
+ *
+ * Results:
+ *      UNIX_SUCCESS    - the call was successful.
+ *      UNIX_ERROR      - the call was not successful.
+ *                        The actual error code stored in errno.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+setgroups(ngroups, gidset)
+    int ngroups;
+    int *gidset;
+{
+    ReturnStatus status;	/* Sprite status code from Proc_SetGroupIDs */
+    kern_return_t kernStatus;	/* Mach status code */
+    Boolean sigPending;
+
+    kernStatus = Proc_SetGroupIDsStub(SpriteEmu_ServerPort(), ngroups,
+				      (vm_address_t)gidset, &status,
+				      &sigPending);
+    if (kernStatus != KERN_SUCCESS) {
+	status = Utils_MapMachStatus(kernStatus);
+    }
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: setgroups.c,v 1.1 88/06/19 14:31:56 ouster Exp $ SPRITE (Berkeley)";
+d14 6
+a19 2
+#include "sprite.h"
+#include "proc.h"
+a20 2
+#include "compatInt.h"
+
+d46 3
+a48 1
+    ReturnStatus status;	/* result returned by Proc_SetGroupIDs */
+d50 9
+a58 1
+    status = Proc_SetGroupIDs(ngroups, gidset);
+@

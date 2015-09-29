@@ -1,0 +1,231 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     89.06.15.22.45.33;  author douglis;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.01.13.11.44.35;  author douglis;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.09.22.22.12.15;  author douglis;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.09.13.16.49.39;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.08.14.15.09.14;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Procedure to open and lock a database file, write a record, and close it
+again.
+@
+
+
+1.5
+log
+@create database file if not already there
+@
+text
+@/* 
+ * Db_WriteEntry.c --
+ *
+ *	Source code for the Db_WriteEntry procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/db/RCS/Db_WriteEntry.c,v 1.4 89/01/13 11:44:35 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <db.h>
+#include "dbInt.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Db_WriteEntry --
+ *
+ *	Write a buffer into a specified location in the shared database.
+ *	This opens and locks the file, writes the data, and closes the
+ *	file.  The lock is polled if necessary.  The file is opened with
+ *	the default mode as defined above.  
+ *
+ * Results:
+ *	-1 indicates an error, in which case errno indicates more details.
+ *	0 indicates success.
+ *
+ * Side effects:
+ *	The global database is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Db_WriteEntry(file, buffer, index, size, lockHow)
+    char *file;
+    char *buffer;
+    int index;
+    int size;
+    Db_LockHow lockHow;
+{
+    int status;
+    int offset;
+    int streamID;
+    int bytesWritten;
+    Db_Handle handle;
+    
+#ifdef DEBUG_DB
+    syslog(LOG_INFO, "Debug msg: Db_WriteEntry(%s) called.", file);
+#endif    
+    streamID = open(file, O_WRONLY | O_CREAT, FILE_MODE);
+    if (streamID == -1) {
+	syslog(LOG_ERR, "Db_WriteEntry: error opening file %s: %s.\n", file,
+	       strerror(errno));
+	return(streamID);
+    }
+
+    offset = index * size;
+    status = lseek(streamID, (long) offset, L_SET);
+    if (status == -1) {
+	return(status);
+    }
+    /*
+     * Fake a Db_Handle for DbLockDesc.
+     */
+    handle.streamID = streamID;
+    handle.lockHow = lockHow;
+    handle.lockType = LOCK_EX;
+#ifndef CLEAN
+    handle.fileName = file;
+#endif /* CLEAN */
+    status = DbLockDesc(&handle);
+    if (status == -1) {
+#ifdef DEBUG_DB
+	syslog(LOG_INFO, "Debug msg: Db_WriteEntry(%s) returning %x.", file, status);
+#endif    
+	return(status);
+    }
+    
+    bytesWritten = write(streamID, buffer, size);
+    if (bytesWritten == -1) {
+	status = -1;
+    } else if (bytesWritten != size) {
+	status = -1;
+	errno = 0;
+    } else {
+	status = 0;
+    }
+    (void) flock(streamID, LOCK_EX | LOCK_UN);
+    (void) close(streamID);
+
+#ifdef DEBUG_DB
+    syslog(LOG_INFO, "Debug msg: Db_WriteEntry(%s) returning %x.", file, status);
+#endif    
+    return(status);
+}
+@
+
+
+1.4
+log
+@changed for buffering and for new arg passing to lock routine.
+[generic checkin msg].
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/db/RCS/Db_WriteEntry.c,v 1.3 88/09/22 22:12:15 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d59 4
+a62 1
+    streamID = open(file, O_WRONLY, FILE_MODE);
+d64 2
+d85 3
+d103 3
+@
+
+
+1.3
+log
+@Changed some arg. orders, var. names, and Db_LockDesc to DbLockDesc.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: Db_WriteEntry.c,v 1.2 88/09/13 16:49:39 douglis Exp $ SPRITE (Berkeley)";
+d57 1
+d69 10
+a78 1
+    status = DbLockDesc(streamID, LOCK_EX, lockHow);
+@
+
+
+1.2
+log
+@fixed some lint.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: Db_WriteEntry.c,v 1.1 88/08/14 15:09:14 douglis Exp $ SPRITE (Berkeley)";
+d46 1
+a46 1
+Db_WriteEntry(file, index, bufSize, buf, lockHow)
+d48 1
+d50 1
+a50 2
+    int bufSize;
+    char *buf;
+d63 1
+a63 1
+    offset = index * bufSize;
+d68 1
+a68 1
+    status = Db_LockDesc(streamID, LOCK_EX, lockHow);
+d73 1
+a73 1
+    bytesWritten = write(streamID, buf, bufSize);
+d76 1
+a76 1
+    } else if (bytesWritten != bufSize) {
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: proto.c,v 1.2 88/03/11 08:39:08 ouster Exp $ SPRITE (Berkeley)";
+d64 1
+a64 1
+    status = lseek(streamID, offset, L_SET);
+@

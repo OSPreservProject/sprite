@@ -1,0 +1,17 @@
+F DBG.H;1                           	dbg.h
+F DEVDEPEN.H;1                      	devDependent.h
+F DEVSCSI0.H;1                      	devSCSIC90.h
+F DEVSCSI1.H;1                      	devSCSIC90Mach.h
+F DEVSMEM.H;1                       	devSmem.h
+F MACH.H;1                          	mach.h
+F MACHADDR.H;1                      	machAddrs.h
+F MACHASMD.H;1                      	machAsmDefs.h
+F MACHCONS.H;1                      	machConst.h
+F MACHMON.H;1                       	machMon.h
+F MACHTYPE.H;1                      	machTypes.h
+F PROCMACH.H;1                      	procMach.h
+F TIMERMAC.H;1                      	timerMach.h
+F TIMERTIC.H;1                      	timerTick.h
+F VM3MAXCO.H;1                      	vm3maxConst.h
+F VMMACH.H;1                        	vmMach.h
+F VMMACHST.H;1                      	vmMachStat.h

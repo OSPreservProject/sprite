@@ -1,0 +1,97 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  srv030:1.2 srv028:1.2 srv027:1.2 srv026:1.2 srv024:1.2 srv022:1.2 srv021:1.2 srv019:1.2 srv018:1.2 srv016:1.2 srv015:1.2 srv014:1.2 srv012:1.2 srv011:1.2 srv010:1.2 srv008:1.2 srv007:1.2 srv006:1.2 srv005:1.2 srv004:1.2 srv003:1.2 srv002:1.2 srv001:1.2;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     91.12.01.21.58.24;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.11.15.15.20.32;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Snapshot.  FS appears to work.
+@
+text
+@/*
+ * fscacheBlocks.h --
+ *
+ *	Declarations for the file systems block cache.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header$ SPRITE (Berkeley)
+ *
+ */
+
+#ifndef _FSBLOCKCACHE
+#define _FSBLOCKCACHE
+
+#include <fscache.h>
+#include <fsio.h>
+#include <fslcl.h>
+#include <fsrmt.h>
+
+/*
+ * Minimum number of cache blocks required.  The theoretical limit
+ * is about 3, enough for indirect blocks and data blocks, but
+ * that is a bit extreme.  The maximum number of cache blocks is
+ * a function of the physical memory size and is computed at boot time.
+ */
+#define FSCACHE_MIN_BLOCKS	32
+
+/*
+ * Macros to get from the links of a cache block to the cache block itself.
+ */
+
+#define DIRTY_LINKS_TO_BLOCK(ptr) ((Fscache_Block *) ((ptr)))
+
+#define USE_LINKS_TO_BLOCK(ptr) \
+		((Fscache_Block *) ((int) (ptr) - sizeof(List_Links)))
+
+#define FILE_LINKS_TO_BLOCK(ptr) \
+		((Fscache_Block *) ((int) (ptr) - 2 * sizeof(List_Links)))
+
+/*
+ * routines.
+ */
+extern void FscacheBlocksUnneeded _ARGS_((Fscache_FileInfo *cacheInfoPtr,
+		int offset, int numBytes));
+extern Boolean FscacheAllBlocksInCache _ARGS_((Fscache_FileInfo *cacheInfoPtr));
+extern int FscacheBlockOkToScavenge _ARGS_((Fscache_FileInfo *cacheInfoPtr));
+
+#endif _FSBLOCKCACHE
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 2
+a25 3
+
+#include <stdio.h>
+#include <bstring.h>
+@

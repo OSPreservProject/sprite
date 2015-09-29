@@ -1,0 +1,281 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.6
+date     89.10.09.21.27.44;  author rab;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.04.29.18.30.57;  author deboor;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.04.25.09.33.18;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.03.28.13.34.27;  author deboor;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.03.24.20.22.51;  author deboor;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.03.18.15.05.09;  author deboor;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Makefile template for machine-dependent kernel object directories
+@
+
+
+1.6
+log
+@Modifications for distribution.
+@
+text
+@#
+# This is the prototype Makefile for kernel module machine-dependent 
+# Object subdirectories.
+#
+# This Makefile is automatically generated.
+# DO NOT EDIT IT OR YOU MAY LOSE YOUR CHANGES.
+#
+# Generated from @@(TEMPLATE)
+# @@(DATE)
+#
+# For more information, refer to the mkmf manual page.
+#
+# $Header: /sprite/lib/mkmf/RCS/Makefile.kernelObj,v 1.5 88/04/29 18:30:57 deboor Exp Locker: rab $ SPRITE (Berkeley)
+#
+# Allow mkmf
+
+MACHDIR		= @@(MACHDIR)
+MACH 		= @@(MACH)
+CFLAGS		+= @@(MACHFLAG)
+AFLAGS		+= @@(MACHFLAG)
+
+#
+# Fetch source and header definitions from the parent makefile
+#
+IS_OBJECT	= True
+#include	"../Makefile"
+
+#
+# Include any machine-specific sources and objects.
+#
+MDCSRCS		= @@(CSRCS)
+MDSSRCS		= @@(SSRCS)
+MDHDRS		= @@(HDRS)
+MDPUBHDRS	= @@(PUBHDRS)
+CSRCS		+= $(MDCSRCS)
+SSRCS		+= $(MDSSRCS)
+HDRS		+= $(MDHDRS)
+PUBHDRS		+= $(MDPUBHDRS)
+
+# The label below is used as a special trigger for Makefile.sed scripts
+# to use to add extra stuff to the Makefile:
+# @@(SPECIALS)
+
+#include	<kernelObj.mk>
+
+# Another label, for triggering Makefile.sed commands AFTER kernelObj.mk
+# is included:
+# @@(POSTINCLUDE)
+
+#include	"dependencies.mk"
+@
+
+
+1.5
+log
+@shifted machine-dependent sources to separate variables so they could be
+installed easily by kernelObj.mk
+@
+text
+@d13 1
+a13 1
+# $Header: Makefile.kernelObj,v 1.4 88/04/25 09:33:18 ouster Exp $ SPRITE (Berkeley)
+@
+
+
+1.4
+log
+@Better comments for @@(SPECIALS) and @@(POSTINCLUDE)
+@
+text
+@d13 1
+a13 1
+# $Header: Makefile.kernelObj,v 1.3 88/03/28 13:34:27 deboor Exp $ SPRITE (Berkeley)
+d31 8
+a38 4
+CSRCS		+= @@(CSRCS)
+SSRCS		+= @@(SSRCS)
+HDRS		+= @@(HDRS)
+PUBHDRS		+= @@(PUBHDRS)
+@
+
+
+1.3
+log
+@Added @@(SPECIALS) label
+@
+text
+@d13 1
+a13 1
+# $Header: Makefile.kernelObj,v 1.2 88/03/24 20:22:51 deboor Exp $ SPRITE (Berkeley)
+d36 3
+a38 1
+#@@(SPECIALS) label for adding special things
+d41 4
+@
+
+
+1.2
+log
+@Adapted to mkmf
+@
+text
+@d13 1
+a13 1
+# $Header: Makefile.kernelObj,v 1.1 88/03/18 15:05:09 deboor Exp $ SPRITE (Berkeley)
+d35 2
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d8 2
+a9 1
+# It was generated from @@(TEMPLATE) on @@(DATE)
+d13 1
+a13 1
+# $Header: Makefile.kernelObj,v 2.5 87/10/16 10:45:28 brent Exp $ SPRITE (Berkeley)
+d17 4
+a20 23
+MODULE = module-name
+MACHDIR = machine-dir
+MACH = machine-type
+ROOT = /sprite
+SPRITESRC = ../..
+H =	  ${SPRITESRC}/Include
+LIB =	  ${SPRITESRC}/Object/${MACHDIR}
+LINT =	  ${SPRITESRC}/Lint/${MACHDIR}
+USERLINT =${ROOT}/lib/lint
+#USERINCLUDE=${ROOT}/lib/include
+PROFDIR=  ${SPRITESRC}/Profiled/${MACHDIR}
+IFLAGS =  -I.. -I${H} 
+DBX = 	  -g
+PROFILE = -p -DPROFILE
+DFLAGS = -D${MACH}
+CFLAGS =  ${DBX} ${IFLAGS} ${DFLAGS}
+PCFLAGS = ${DBX} ${IFLAGS} ${DFLAGS} ${PROFILE} 
+CTFLAGS = -t
+PPFLAGS = -E ${IFLAGS} ${DFLAGS}
+BIN = ${ROOT}/cmds
+CC = cc -m68010
+AS = as -m68010
+LD = ld
+d22 5
+a26 2
+.SUFFIXES: .po
+.PATH:..
+d28 7
+a34 2
+UPDATE    = update
+MKVERSION = mkversion
+d36 1
+a36 3
+COBJS = Cfile.o
+POBJS = Cfile.po
+SOBJS = assembler-file.o
+d38 1
+a38 71
+CSRCS = Cfile.c
+ASMSRCS = assembler-file.s
+
+SRCS = ${CSRCS} ${ASMSRCS}
+
+OBJS =	${COBJS} ${SOBJS}
+
+HDRS = header-file.h
+
+LINTFLAGS = ${IFLAGS} ${DFLAGS} -u
+# Make sure to remove the current module from this list.
+LINTLIBS = ${LINT}/dbg.ln ${LINT}/dev.ln ${LINT}/fs.ln ${LINT}/main.ln \
+	   ${LINT}/mem.ln ${LINT}/net.ln ${LINT}/proc.ln ${LINT}/prof.ln \
+	   ${LINT}/rpc.ln ${LINT}/sched.ln ${LINT}/sun.ln ${LINT}/sys.ln \
+	   ${LINT}/sync.ln ${LINT}/timer.ln \
+	   ${LINT}/vm.ln ${LINT}/libc.ln
+
+ALLSRCS = ${SRCS} ${HDRS} Makefile
+
+${MODULE}.o: ${OBJS}
+	rm -f ${MODULE}.o
+	${LD} -r ${OBJS} -o ${MODULE}.o
+
+profile: ${PROFDIR}/${MODULE}.o .PRECIOUS
+
+${PROFDIR}/${MODULE}.o : ${POBJS} ${SOBJS}
+	rm -f ${PROFDIR}/${MODULE}.o
+	${LD} -r ${POBJ} ${SOBJ} -o ${PROFDIR}/${MODULE}.o
+
+.c.po: .EXPORT
+	$(CC) -S $(PCFLAGS) $(.IMPSRC)
+	$(AS) -o $(.TARGET) $(.PREFIX).s
+	-rm -f $(.PREFIX).s
+
+.c.o: .EXPORT
+	$(CC) $(CFLAGS) -c $(.IMPSRC)
+
+.s.o: .EXPORT
+	${ROOT}/lib/cpp $(PPFLAGS) $(.IMPSRC) > $(.PREFIX).pp
+	$(AS) -o $(.TARGET) $(.PREFIX).pp
+	-rm -f $(.PREFIX).pp
+
+install: installobj  instlint .PRECIOUS
+
+instlint: ${LINT}/${MODULE}.ln
+
+${LINT}/${MODULE}.ln: ${CSRCS}
+	lint ${LINTFLAGS} -C${MODULE} ${CSRCS}
+	rm -f ${LINT}/${MODULE}.ln
+	mv llib-l${MODULE}.ln ${LINT}/${MODULE}.ln
+
+installobj: ${LIB}/${MODULE}.o .PRECIOUS
+
+${LIB}/${MODULE}.o: ${MODULE}.o
+	${UPDATE} ${MODULE}.o ${LIB}
+	
+
+lint:	${CSRCS} ${HDRS} ${LINTLIBS}
+	rm -f lint
+	lint ${LINTFLAGS} ${CSRCS} ${LINTLIBS} > lint
+
+clean: .PRECIOUS
+	rm -f lint *.o *.po
+
+DEPFLAGS=-p
+DEPFILE=Makefile
+#include <makedepend.mk>
+
+# below is automatically generated
+# DO NOT DELETE THIS LINE -- make depend depends on it.
+
+@

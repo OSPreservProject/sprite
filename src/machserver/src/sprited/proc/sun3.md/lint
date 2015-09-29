@@ -1,0 +1,18 @@
+sun3.md/procMach.c:
+procDebug.c:
+procExec.c:
+procExit.c:
+procFork.c:
+procMisc.c:
+procTable.c:
+procTaskThread.c:
+procID.c:
+procEnviron.c:
+procFamily.c:
+procServer.c:
+printf value declared inconsistently	llib-lsys:sysPrintf.c(126)  ::  sun3.md/procMach.c(243)
+printf value declared inconsistently	llib-lsys:sysPrintf.c(126)  ::  procFork.c 2(414)
+printf value declared inconsistently	llib-lsys:sysPrintf.c(126)  ::  procTaskThread.c 2(444)
+printf value declared inconsistently	llib-lsys:sysPrintf.c(126)  ::  procServer.c 2(262)
+TempFs_Close returns value which is always ignored
+Sync_SlowWait returns value which is sometimes ignored

@@ -1,0 +1,342 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     91.08.19.13.03.36;  author mendel;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.06.21.08.20.00;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.09.23.17.50.38;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.08.07.17.45.10;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.08.07.17.37.01;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.5
+log
+@Allow for host names upto 10 characters before display get ragged.
+/
+@
+text
+@/* 
+ * prefix.c --
+ *
+ *	Program to manipulate the prefix table.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /a/newcmds/df/RCS/df.c,v 1.4 89/06/21 08:20:00 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <errno.h>
+#include <fs.h>
+#include <fsCmd.h>
+#include <host.h>
+#include <stdio.h>
+#include <string.h>
+#include <status.h>
+#include <sysStats.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	Main program for "df":  print disk free space info.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+main(argc, argv)
+    int argc;
+    char *argv[];
+{
+    register ReturnStatus status = SUCCESS;	/* status of system calls */
+#define MAX_PREFIXES 100
+    Fs_Prefix prefixes[MAX_PREFIXES];
+    struct stat buf;
+    int i, numDomains, maxLength;
+
+    /*
+     * For each argument, stat the argument in order to make sure that
+     * there's a prefix table entry loaded for it.  If the file can't
+     * be found, then mark the entry so we don't try to print it later.
+     */
+
+    for (i = 1; i < argc; i++) {
+	if (stat(argv[i], &buf) < 0) {
+	    fprintf(stderr, "%s couldn't find \"%s\": %s.\n", argv[0],
+		    argv[i], strerror(errno));
+	}
+    }
+
+    /*
+     * Collect information for all known domains.
+     */
+
+    maxLength = 0;
+    for (numDomains = 0; ; numDomains++) {
+	bzero((char *) &prefixes[numDomains], sizeof(Fs_Prefix));
+	status = Sys_Stats(SYS_FS_PREFIX_STATS, numDomains,
+		(Address) &prefixes[numDomains]);
+	if (status != SUCCESS) {
+	    break;
+	}
+	i = strlen(prefixes[numDomains].prefix);
+	if (i > maxLength) {
+	    maxLength = i;
+	}
+    }
+
+    /*
+     * If no args were given, then print all domains.  Otherwise just
+     * find the ones matching the names given.
+     */
+
+    if (argc == 1) {
+	for (i = numDomains-1; i >= 0; i--) {
+	    PrintDiskInfo(&prefixes[i], maxLength);
+	}
+    } else {
+	for (i = 1; i < argc; i++) {
+	    int j;
+
+	    /*
+	     * For each of the names given, find the domain that
+	     * contains the file, by comparing server and domain ids
+	     * between the file and the prefix table entries.
+	     */
+
+	    if (stat(argv[i], &buf) < 0) {
+		continue;
+	    }
+	    for (j = numDomains-1; j >= 0; j--) {
+		if ((prefixes[j].serverID == buf.st_serverID)
+			&& (prefixes[j].domain == ((int) buf.st_dev))) {
+		    PrintDiskInfo(&prefixes[j], maxLength);
+		    break;
+		}
+	    }
+	}
+    }
+    exit(0);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintDiskInfo --
+ *
+ *	Given an Fs_Prefix entry, print disk utilization info for
+ *	the prefix.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Stuff gets printed on stdout.
+ *
+ *----------------------------------------------------------------------
+ */
+
+PrintDiskInfo(prefixPtr, nameSpace)
+    register Fs_Prefix *prefixPtr;	/* Information about prefix. */
+    int nameSpace;			/* Leave at least this much space
+					 * in the "prefix name" column. */
+{
+    static char serverName[32];
+    static int  prevServerID = -1;
+    static int  firstTime = 1;
+    int		inUse;
+    int		free;
+    int		avail;
+    Host_Entry  *host;
+
+    if (firstTime) {
+	printf("%-*s  %-10s %10s %10s %10s %9s\n", nameSpace,
+		"Prefix", "Server", "KBytes", "Used", "Avail", "% Used");
+	firstTime = 0;
+    }
+    printf("%-*s", nameSpace, prefixPtr->prefix);
+
+    if (prefixPtr->serverID > 0) {
+
+	/*
+	 * If the server ID is the same as the previous entry's ID, then
+	 * we can reuse serverName and save a call to Host_ByID.
+	 */
+	if (prefixPtr->serverID == prevServerID) {
+	    printf("  %-10s", serverName);
+	} else {
+	    host = Host_ByID(prefixPtr->serverID);
+	    if (host != (Host_Entry *)NULL) {
+		register int charCnt;
+		for (charCnt = 0 ; charCnt < sizeof(serverName) ; charCnt++) {
+		    if (host->name[charCnt] == '.' ||
+			host->name[charCnt] == '\0') {
+			serverName[charCnt] = '\0';
+			break;
+		    } else {
+			serverName[charCnt] = host->name[charCnt];
+		    }
+		}
+		serverName[sizeof(serverName)-1] = '\0';
+		printf("  %-10s", serverName);
+		prevServerID = prefixPtr->serverID;
+	    } else {
+		printf(" (%d)", prefixPtr->serverID);
+	    }
+	}
+    } else {
+	printf("  %-10s", "(none)");
+    }
+    if (prefixPtr->domainInfo.maxKbytes <= 0) {
+	printf("\n");
+	return;
+    }
+
+    free = prefixPtr->domainInfo.freeKbytes - 
+				(0.1 * prefixPtr->domainInfo.maxKbytes);
+    avail = 0.9 * prefixPtr->domainInfo.maxKbytes;
+    inUse = avail - free;
+
+    printf(" %10d %10d %10d %7d%%\n", 
+	prefixPtr->domainInfo.maxKbytes, inUse,	free >= 0 ? free : 0,
+	(int) (100.0 * (inUse / (float) avail)));
+}
+@
+
+
+1.4
+log
+@Allow arbitrary-length prefix names, and compute column width
+dynamically.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /a/newcmds/df/RCS/df.c,v 1.3 88/09/23 17:50:38 ouster Exp Locker: ouster $ SPRITE (Berkeley)";
+d153 1
+a153 1
+	printf("%-*s  %-8s %10s %10s %10s %9s\n", nameSpace,
+d166 1
+a166 1
+	    printf("  %-8s", serverName);
+d181 1
+a181 1
+		printf("  %-8s", serverName);
+d188 1
+a188 1
+	printf("  %-8s", "(none)");
+@
+
+
+1.3
+log
+@Bad termination condition for loop.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: df.c,v 1.2 88/08/07 17:45:10 ouster Exp $ SPRITE (Berkeley)";
+d55 1
+a55 1
+    int i, numDomains;
+d74 1
+d82 4
+d95 1
+a95 1
+	    PrintDiskInfo(&prefixes[i]);
+d113 1
+a113 1
+		    PrintDiskInfo(&prefixes[j]);
+d139 4
+a142 2
+PrintDiskInfo(prefixPtr)
+    register Fs_Prefix *prefixPtr;
+d153 1
+a153 1
+	printf("%-12s %-8s %10s %10s %10s %9s\n",
+d157 1
+a157 1
+    printf("%-12s", prefixPtr->prefix);
+d166 1
+a166 1
+	    printf(" %-8s", serverName);
+d181 1
+a181 1
+		printf(" %-8s", serverName);
+d188 1
+a188 1
+	printf(" %-8s", "(none)");
+@
+
+
+1.2
+log
+@Changed "Capacity" to "% Used".
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: df.c,v 1.1 88/08/07 17:37:01 ouster Exp $ SPRITE (Berkeley)";
+d105 1
+a105 1
+	    for (j = numDomains-1; j > 0; j--) {
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: prefix.c,v 1.1 88/08/07 14:43:03 ouster Exp $ SPRITE (Berkeley)";
+d146 2
+a147 2
+	printf("%-12s %-8s %10s %10s %10s %10s\n",
+		"Prefix", "Server", "KBytes", "Used", "Avail", "Capacity");
+@

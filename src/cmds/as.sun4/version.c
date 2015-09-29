@@ -1,0 +1,1 @@
+../as/dist/version.c

@@ -1,0 +1,426 @@
+
+@STRING{IEEETCOS = "IEEE Computer Society Technical Committee on Operating Systems Newsletter"}
+@STRING{SOSP10= "Proceedings of the 10th {S}ymposium on {O}perating {S}ystem
+		 {P}rinciples"}
+@STRING{SOSP13= "Proceedings of the 13th {S}ymposium on {O}perating {S}ystem
+		 {P}rinciples"}
+@STRING{SIGOPS = "ACM Operating Systems Review"}
+@STRING{ASPLOS5 = "Proceedings of the Fifth International Conference on Architectural Support for Programming Languages and Operating Systems"}
+
+@ARTICLE{ousterhout:sprite,
+	AUTHOR = {J. Ousterhout and A. Cherenson and F. Douglis and M. Nelson and B. Welch },
+	TITLE = {The {S}prite Network Operating System},
+	JOURNAL = {IEEE Computer},
+	YEAR = {1988},
+	VOLUME = {21},
+	NUMBER = {2},
+	PAGES = {23--36},
+	MONTH = FEB
+}
+
+@ARTICLE{nelson:caching,
+	AUTHOR =	"M. Nelson and B. Welch and J. Ousterhout",
+	YEAR = {1988}, 
+	MONTH = FEB,
+	JOURNAL = TOCS,
+	VOLUME = {6}, 
+	NUMBER = {1}, 
+	PAGES = {134--154},
+	TITLE =		"Caching in the {S}prite Network File System"
+}
+
+@INPROCEEDINGS{douglis:process-migration,
+	AUTHOR = {F. Douglis and J. Ousterhout},
+	TITLE = {Process Migration in the {S}prite Operating System},
+	BOOKTITLE = {Proceedings of the 7th International Conference on Distributed Computing Systems},
+	YEAR = {1987},
+	PAGES = {18-25},
+	ORGANIZATION = {IEEE},
+	ADDRESS = {Berlin, West Germany},
+	MONTH = SEP
+}
+
+@ARTICLE{douglis:sprite-mig-status,
+	AUTHOR = {F. Douglis and J. Ousterhout},
+	TITLE = {Process Migration in {S}prite: A Status Report},
+	JOURNAL = IEEETCOS,
+	YEAR = {1989},
+	VOLUME = {3},
+	NUMBER = {1},
+	PAGES = {8--10},
+	MONTH = {Winter}
+}
+
+
+@INPROCEEDINGS{welch:prefix-tables,
+	AUTHOR = {B. B. Welch and J. K. Ousterhout},
+	TITLE = {Prefix Tables: A Simple Mechanism for Locating Files in a Distributed Filesystem},
+	BOOKTITLE = {Proc. of the 6th International Conference on Distributed Computing Systems},
+	YEAR = {1986},
+	PAGES = {184--189},
+	ORGANIZATION = {IEEE},
+	ADDRESS = {Boston, Mass.},
+	MONTH = MAY,
+}
+
+@INPROCEEDINGS{ouster:bsd,
+  AUTHOR =	"J. Ousterhout and others",
+  TITLE =	"A Trace-Driven Analysis of the {U}nix 4.2 {BSD} File System",
+  BOOKTITLE =	SOSP10,
+  ADDRESS =	"Orcas Island, WA",
+  YEAR =	1985,
+  MONTH =	DEC,
+  ORGANIZATION= "ACM",
+  PAGES =	"15--24"
+}
+
+
+
+
+@INPROCEEDINGS{welch:pdev,
+	AUTHOR = {B. B. Welch and J. K. Ousterhout},
+	TITLE = {Pseudo Devices: User-Level Extensions to the {S}prite File System},
+	BOOKTITLE = {Summer USENIX '88},
+	YEAR = {1988},
+	PAGES = {37--49},
+	ADDRESS = {San Francisco, CA},
+	MONTH = JUN
+}
+
+@INPROCEEDINGS{ouster:os,
+	AUTHOR = {John K. Ousterhout},
+	TITLE = {Why Aren't Operating Systems Getting Faster As Fast As Hardware?},
+	BOOKTITLE = {Summer USENIX '90},
+	YEAR = {1990},
+	PAGES = {247--256},
+	ADDRESS = {Anaheim, CA},
+	MONTH = JUN
+}
+
+@INPROCEEDINGS{nelson:cow,
+	AUTHOR = {M. Nelson and J. Ousterhout},
+	TITLE = {Copy-on-Write For {S}prite},
+	BOOKTITLE = {Summer USENIX '88},
+	YEAR = {1988},
+	PAGES = {187--201},
+	ADDRESS = {San Francisco, CA},
+	MONTH = JUN
+}
+
+@TECHREPORT{welch:sprite-rpc,
+	AUTHOR = {B. B. Welch},
+	TITLE = {The {S}prite Remote Procedure Call System},
+	INSTITUTION = {Computer Science Division, EECS Department, 
+			University of California, Berkeley},
+	YEAR = {1986},
+	NUMBER = {UCB/CSD 86/302},
+	MONTH = JUN
+}
+
+@TECHREPORT{mott-smith:jaquith,
+	AUTHOR = {James W. Mott-Smith},
+	TITLE = {The Jaquith Archive Server},
+	INSTITUTION = {Computer Science Division, EECS Department, 
+			University of California, Berkeley},
+	YEAR = {1992},
+	NUMBER = {UCB/CSD 92/???},
+	MONTH = ?
+}
+
+@TECHREPORT{nelson:sprite-vm,
+	AUTHOR = {M. N. Nelson},
+	TITLE = {Virtual Memory for the {S}prite Operating System},
+	INSTITUTION = {Computer Science Division, EECS Department, 
+			University of California, Berkeley},
+	YEAR = {1986},
+	NUMBER = {UCB/CSD 86/301},
+	MONTH = JUN
+}
+
+@ARTICLE{ousterhout:logfs,
+	AUTHOR = {J. Ousterhout and F. Douglis},
+	TITLE = {Beating the {I/O} Bottleneck: A Case for Log-Structured File Systems },
+	JOURNAL = SIGOPS,
+	YEAR = {1989},
+	VOLUME = {23},
+	NUMBER = {1},
+	PAGES = {11-28},
+	MONTH = JAN,
+	NOTE = {Also appears as University of California, Berkeley, Technical Report UCB/CSD 88/467}
+}
+
+@INPROCEEDINGS{douglis:logfs,
+	AUTHOR = {F. Douglis and J. Ousterhout},
+	TITLE = {Log-Structured File Systems},
+	BOOKTITLE = {Digest of Papers, Spring Compcon '89},
+	YEAR = {1989},
+	PAGES = {124--129},
+	ORGANIZATION = {IEEE},
+	ADDRESS = {San Francisco, CA},
+	MONTH = FEB
+}
+
+@TECHREPORT{welch:pseudofs,
+	AUTHOR = {B. B. Welch and J. K. Ousterhout},
+	TITLE = {Pseudo-File-Systems},
+	INSTITUTION = {Computer Science Division (EECS), University of California},
+	YEAR = {1989},
+	NUMBER = {UCB/CSD 89/499},
+	ADDRESS = {Berkeley, CA 94720},
+	MONTH = APR
+}
+
+@TECHREPORT{douglis:transparent-migration,
+	AUTHOR = {F. Douglis and J. Ousterhout},
+	TITLE = {Transparent Process Migration for Personal Workstations},
+	INSTITUTION = {Computer Science Division (EECS), University of California},
+	YEAR = {1989},
+	NUMBER = {UCB/CSD 89/540},
+	ADDRESS = {Berkeley, CA 94720},
+	MONTH = NOV
+}
+
+@TECHREPORT{nelson:sprite-vm,
+	AUTHOR = {M. N. Nelson},
+	TITLE = {Virtual Memory vs. the File System},
+	INSTITUTION = {Computer Science Division, EECS Department, 
+			University of California, Berkeley},
+	YEAR = {1989},
+}
+
+@PHDTHESIS{nelson:phd,
+	AUTHOR = {M. N. Nelson},
+	TITLE = {Physical Memory Management in a Network Operating System},
+	SCHOOL = {University of California},
+	YEAR = {1988},
+	ADDRESS = {Berkeley, CA 94720},
+	MONTH = NOV,
+	NOTE = {Technical Report UCB/CSD 88/471}
+}
+
+@PHDTHESIS{welch:phd,
+	AUTHOR = {B. B. Welch},
+	TITLE = {Naming, State Management, and User-Level Extensions in the Sprite Distributed File System},
+	SCHOOL = {University of California},
+	YEAR = {1990},
+	ADDRESS = {Berkeley, CA 94720},
+	MONTH = FEB,
+	NOTE = {Technical Report UCB/CSD 90/567}
+}
+
+@ARTICLE{douglis:mig-experience,
+	AUTHOR = {F. Douglis},
+	TITLE = {Experience with Process Migration in {S}prite},
+	JOURNAL = {Workshop on Experience with Building Distributed (and Multiprocessor) Systems},
+	PAGES = {59--72},
+	YEAR = {1989},
+	MONTH = OCT,
+}
+
+@INPROCEEDINGS{Hartman90Performance, 
+  AUTHOR =	{John H. Hartman
+		and John K. Ousterhout}, 
+  TITLE =	{Performance Measurements of a Multiprocessor {S}prite Kernel}, 
+  YEAR =	1990, 
+  MONTH =	jun, 
+  BOOKTITLE =	{Usenix Conference Proceedings},
+  PAGES =	{279-287}
+}
+
+@MASTERSTHESIS{cherenson:ipserver,
+	AUTHOR = {A. R. Cherenson},
+	TITLE = {The Sprite Internet Protocol Server},
+	SCHOOL = {Computer Science Division, Dept. of Electrical Engineering and Computer Sciences, University of California},
+	MONTH = DEC,
+	YEAR = {1987},
+	ADDRESS = {Berkeley, CA}
+}
+
+@MASTERSTHESIS{shirriff:memory,
+	AUTHOR = {Ken Shirriff},
+	TITLE = {An Implementation of Memory Sharing and File Mapping},
+	SCHOOL = {Computer Science Division, Dept. of Electrical Engineering and Computer Sciences, University of California},
+	MONTH = {MAY},
+	YEAR = {1990},
+	ADDRESS = {Berkeley, CA}
+}
+
+@PHDTHESIS{douglis:phd,
+	AUTHOR = {Frederick Douglis},
+	TITLE = {Transparent Process Migration in the Sprite Operating System},
+	SCHOOL = {U.C.~Berkeley},
+	YEAR = {1990},
+	MONTH = SEP,
+	NOTE = {Report UCB/CSD 90/598}
+}
+
+@PHDTHESIS{rosenblum:phd,
+	AUTHOR = {Mendel Rosenblum},
+	TITLE = {The Design and Implementation of a Log-structured File System},
+	SCHOOL = {U.C.~Berkeley},
+	YEAR = {1992},
+	MONTH = JUN,
+	NOTE = {Report UCB/CSD 92/696}
+}
+
+@INPROCEEDINGS{mr:lfs,
+	AUTHOR = "Mendel Rosenblum and John Ousterhout",
+	TITLE =	"The {LFS} Storage Manager",
+	BOOKTITLE = "Proceedings of the Summer 1990 USENIX Conference",
+	YEAR = 1990,
+	OPTeditor = {},
+	OPTpages = {},
+	OPTorganization = {},
+	OPTpublisher = {},
+	OPTaddress = {},
+	month = "June",
+	OPTnote = {},
+	OPTwhere = proceedings
+}
+
+@INPROCEEDINGS{baker:availability,
+	TITLE = {Availability in the {S}prite Distributed File System},
+	AUTHOR = {Mary Baker and John Ousterhout},
+	JOURNAL = SIGOPS,
+	MONTH = APR,
+	YEAR = {1991},
+	VOLUME = {25},
+	NUMBER = {2},
+	PAGES = {95-98},
+	NOTE = {Also appeared in the Fourth ACM SIGOPS European Workshop -- Fault Tolerance Support in Distributed Systems},
+}
+
+@ARTICLE{douglis:migration-alternatives,
+	AUTHOR = {F. Douglis and J. Ousterhout},
+	TITLE = {Transparent Process Migration: Design Alternatives and the {S}prite Implementation},
+	JOURNAL = {Software--Practice \& Experience},
+	YEAR = {1991},
+	VOLUME = {21},
+	NUMBER = {7},
+	MONTH = jul
+}
+
+@INPROCEEDINGS{welch:recovery,
+	TITLE = {Sprite Position Statement: Use Distributed State for Failure Recovery},
+	AUTHOR = {B. Welch et al.},
+	BOOKTITLE = {Workstation Operating Systems: Proceedings of the Second Workshop on Workstation Operating Systems (WWOS-II)},
+	YEAR = {1989},
+	MONTH = SEP,
+	DATE = {27-29},
+	PAGES = {130--133}
+}
+
+@INPROCEEDINGS{baker:measurements,
+  AUTHOR =	"Mary G. Baker and John H. Hartman and Michael D. Kupfer and Ken W. Shirriff and John K. Ousterhout",
+  TITLE =	"Measurements of a Distributed File System",
+  BOOKTITLE =	SOSP13,
+  ADDRESS =	"Pacific Grove, CA",
+  YEAR =	1991,
+  MONTH =	Oct,
+  PAGES = "198-212"
+}
+
+@INPROCEEDINGS{rosenblum:sosplfs,
+  AUTHOR =	"M. Rosenblum and J. Ousterhout",
+  TITLE =	"The Design and Implementation of a Log-Structured File System",
+  BOOKTITLE =	SOSP13,
+  ADDRESS =	"Pacific Grove, CA",
+  YEAR =	1991,
+  MONTH =	Oct,
+  ORGANIZATION= "ACM",
+  PAGES = "1-15"
+}
+
+@INPROCEEDINGS{baker:nvram,
+  AUTHOR =	"Mary Baker and Satoshi Asami and Etienne Deprit and John Ousterhout and Margo Seltzer",
+  TITLE =	"Non-Volatile Memory for Fast, Reliable File Systems",
+  BOOKTITLE =	ASPLOS5,
+  ADDRESS =	"Boston, MA",
+  YEAR =	1992,
+  MONTH =	Oct,
+}
+
+@INPROCEEDINGS{shirriff:name,
+	AUTHOR = "Ken Shirriff and John Ousterhout",
+	TITLE =	"A Trace-driven Analysis of Name and Attribute
+	Caching in a Distributed File System",
+	BOOKTITLE = "Proceedings of the Winter 1992 USENIX Conference",
+	YEAR = 1992,
+	PAGES = {315--331}
+	OPTeditor = {},
+	OPTorganization = {},
+	OPTpublisher = {},
+	OPTaddress = {},
+	MONTH = Jan,
+	OPTnote = {},
+	OPTwhere = proceedings
+}
+
+@INPROCEEDINGS{baker:recovery,
+	AUTHOR = "Mary Baker and Mark Sullivan",
+	TITLE =	"The Recovery Box: Using Fast Recovery to Provide High Availability in the UNIX Environment",
+	BOOKTITLE = "Proceedings of the Summer 1992 USENIX Conference",
+	YEAR = 1992,
+	OPTeditor = {},
+	OPTorganization = {},
+	OPTpublisher = {},
+	OPTaddress = {},
+	MONTH = "June",
+	OPTnote = {},
+	OPTwhere = proceedings
+}
+@INPROCEEDINGS{hartman:zebra,
+	AUTHOR = "John H. Hartman and John K. Ousterhout",
+	TITLE =	"Zebra: A Striped Network File System",
+	BOOKTITLE = "Proceedings of the USENIX File Systems Workshop",
+	YEAR = 1992,
+	MONTH = "May",
+	ADDRESS = "Ann Arbor, Michigan", 
+	ORGANIZATION = "USENIX"
+	PAGES = {71-78},
+}
+
+@ARTICLE{douglis:amoeba-sprite,
+	AUTHOR = {F. Douglis and  J. K. Ousterhout and M. F. Kaashoek and A. S. Tanenbaum},
+	TITLE = {A Comparison of Two Distributed Systems: {A}moeba and {S}prite},
+	YEAR = {1991},
+	JOURNAL = {Computing Systems},
+	PAGES = {353-384},
+	NUMBER={4},
+	VOLUME={4}
+}
+
+@ARTICLE{welch:caching-performance,
+	AUTHOR = {Brent Welch},
+	TITLE = {Measured Performance of Caching in the Sprite Network File System},
+	YEAR = {Summer 1991},
+	JOURNAL = {Computing Systems},
+	PAGES = {315-342},
+	NUMBER={4},
+	VOLUME={3}
+	NOTE = {Also appears in the 3rd USENIX Symposium on Experiences with Distributed and Multiprocessor Systems}
+}
+@INPROCEEDINGS{welch:fskernel,
+    AUTHOR = {Brent Welch}
+    TITLE = {The File System Belongs in the Kernel},
+    BOOKTITLE = {USENIX Mach Symposium},
+    YEAR = {1991},
+    PAGES = {233--250},
+    MONTH = NOV,
+}
+@ARTICLE{welch:sprite-vnode,
+    AUTHOR = {Brent Welch},
+    TITLE = {A Comparison of the Sprite and Vnode File System Architectures},
+    JOURNAL = {Computing Systems},
+    NOTE = {To appear in Computing Systems.  Also appeared in the USENIX File System Workshop, 1992}
+}
+
+@ARTICLE{ouster:state-role,
+    AUTHOR = {John K. Ousterhout},
+    TITLE = {The Role of Distributed State},
+    BOOKTITLE = {CMU Computer Science:  A 25th Anniversary Perspective},
+    EDITOR = {R. Rashid},
+    PUBLISHER = {ACM Press},
+    YEAR = {1991},
+    PAGES = {199-217}
+}

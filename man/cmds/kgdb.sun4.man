@@ -1,0 +1,20 @@
+' $Header: /a/newcmds/cc1.68k/RCS/cc1.68k.man,v 1.3 88/12/30 09:20:41 ouster Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS KGDB.SUN4 cmds
+.BS
+.SH NAME
+kgdb.sun4 \- Kgdb for the Sprite sun4 kernel.
+.SH SYNOPSIS
+\fBkgdb.sun3\fR [\fIoption\fR]
+.SH OPTIONS
+See the \fBkgdb\fR manual page for information about options.
+.BE
+
+.SH INTRODUCTION
+.PP
+\fBKgdb.sun4\fR is a version of Sprite \fBkgdb\fR used to debug Sprite 
+running of the Sun Microsystems,Inc sun4 family of computers. Documentation
+for this command can be in the manual page for \fBkgdb\fR.
+
+.SH KEYWORDS
+kgdb, gdb, sun4 debugger

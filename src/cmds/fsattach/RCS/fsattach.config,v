@@ -1,0 +1,55 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     89.06.07.22.13.07;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@# This is the configuration file for fsattach. It contains configuration
+# commands that can be used to modify the behavior of fsattach. These 
+# modifications are not used often enough to warrent command line options.
+
+# Size of the mount table
+
+# mountTableSize		30
+
+# Name of the temporary file in which fscheck stores the output from checking
+# the root partition. This file has to exist before fscheck is run and 
+# has to have blocks allocated to it.
+
+# rootTempOutputFile		.fscheck.out
+
+# Size of the temporary output file.
+
+# rootTempOutputFileSize	8192
+
+# Heap limit parameter that is passed to fscheck
+
+#heapLimit			1000000
+
+# Directory where output files from fscheck are kept.
+
+#outputDir			/local
+
+# Which fscheck to use
+
+#fscheck			/local/bootBin/fscheck
+
+@

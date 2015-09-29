@@ -1,0 +1,145 @@
+.uh "How to Boot Mint"
+.pp
+I am ``Mint'', Sprite's root file server.  To boot after a power-up try
+.(l
+>b
+.)l
+To boot from disk.  If this hangs after printing the three numbers
+giving the size of the kernel then you have to power-cycle the machine.
+After a power-cycle Mint checks its memory for a while, and then
+goes into autoboot.  You have to jump on the break key immediately
+after it prints a message about passing self test
+to prevent it from booting from disk and hanging again.
+You may have to resort to a network boot from ginger:
+.(l
+>b ie(0,961c,43)sun3.new
+.)l
+To reboot when running Sprite, use the shutdown command:
+.(l
+% sync
+% shutdown -r
+.)l
+The 'sync' command writes out the cache, is isn't required unless
+you are paranoid.  Shutdown will sync the disks as the last thing before
+rebooting.
+shutdown -r reboots from disk, and seems to work reliably (no hangs.)
+To boot a kernel from ginger's /sprite3 file system:
+.(l
+% shutdown -R 'ie(0,961c,43)sun3.new'
+.)l
+.uh "Debugging Tips"
+.pp
+If Mint acts up then you might try the following things.
+If you aren't logged in, log in as root.
+Useful commands are:
+.(l
+mint # rpcstat -srvr
+.)l
+Which dumps out the status of all the RPC server processes.  If a bunch
+are ``busy'', and they remain busy with the same RPC ID and client, then
+there may be a deadlock.
+If they are all in the ``wait'' state it means that the Rpc_Daemon process
+is not doing rebinding for some reason.
+.(l
+mint # ps -a
+.)l
+This will tell you if any important daemons have died.
+If the ipServer is in the DEBUG state you can kill it and
+the daemons that depend on it with /hosts/mint/fixIPServer.
+This should also restart these daemons, but if it doesn't you
+can use /hosts/mint/restartservers.
+.(l
+% rpcecho -h \fIhostname\fP -n 1000
+.)l
+This program, which is found in /sprite/src/benchmarks/rpcecho,
+and may or may not be installed in /sprite/cmds,
+will tell you if there timeouts when using the RPC protocol to
+talk to another host.  If you suspect that a host with an Intel
+ethernet interface is flaking out, you can try this command.
+Lot's of timeouts indicate trouble.
+You can reset a host's network interface from its console with
+either of these keystrokes.
+.(l
+break-N
+Ll-N
+.)l
+On a regular Sun keyboard you use the L1 key like a shift key.
+On a regular ascii terminal, like Mint's console, you use the
+break key like escape - break then N.
+.uh "Kernel Debugging"
+.pp
+If Mint is so hung you can't explore with user commands,
+then the best you can do is sync the disks with:
+.(l
+break-W
+.)l
+This should print a message about queuing a call to sync the disks,
+and when it is done it should print a '.' and a newline.
+If you don't get the newline then Mint is deadlocked inside the
+file system cache, sigh.  Throw Mint into the debugger with:
+.(l
+break-D
+.)l
+If this drops you into the monitor (the '>' prompt), you can
+still get into the debugger by typing 'c' to the monitor.
+You may have to do this twice.  You should eventually get
+a message about ``Entering the debugger...''.
+.pp
+You have to run the debugger from Rosemary, unless there is a stand-alone
+Sprite machine available.  You can use Ginger's console to access rosemary.
+This is behind you, on top of Ginger, next to Allspice's monitor.
+You should verify that Mint is accessible by running
+.(l
+ginger% kmsg -v mint
+.)l
+This should return the kernel version that Mint is running.
+If this times-out then either Mint isn't in the debugger,
+or more likely, no one is responding to ARP requests for Mint's
+IP address.  Run the setup-arp script that is in ~sprite bin:
+.(l
+ginger% setup-arp
+.)l
+Now rlogin to Rosemary and run the Sprite kernel debugger.
+The kernel images should be copied to rosemary:/tmp/sprite
+or rosemary:/tmp/brent, and their version number should be
+evident in their name, e.g. sun3.1.065.  If not, you can run
+strings on the kernel images and grep for ``VERSION''.
+.(l
+rosemary% strings /tmp/sprite/sun3.sprite | egrep VERSION
+.)l
+To run the kernel debugger:
+.(l
+rosemary% cd /tmp/sprite
+rosemary% Gdb sun3.\fIversion\fP
+.)l
+If the RPC system seems to be the problem, you can dump the
+trace of recent RPCs by calling Rpc_PrintTrace(numRecs)
+.(l
+(kgdb) print Rpc_PrintTrace(50)
+.)l
+If there is a deadlock you can dump the process table:
+.(l
+(kgdb) print Proc_Dump()
+.)l
+You can switch from process to process and to stack backtraces
+by using the 'pid' command.  You only need to specify the last
+two hex digits of the process ID.  If you only have a decimal ID,
+then you have to type the whole thing.
+File system deadlocks center around locked handles, usually.
+When you find a process stuck in Fsutil_HandleFetch of Fsutil_HandleLock
+you can try to find the culprit by looking at the *hdrPtr these
+guys are waiting on.  There is a 'lockProcessID' in the hdrPtr that
+is really the address of a Proc_ControlBlock.  You can print this out
+with something like:
+.(l
+(kgdb) print *(Proc_ControlBlock *)(hdrPtr->lockProcessID)
+.)l
+You can reboot Mint from within kgdb with the reboot command.  With
+no arguments Mint will reboot from disk.
+.(l
+(kgdb) reboot
+(kgdb) reboot ie(0,961c,43)sun3.new
+.)l
+.uh "Modify date"
+.pp
+These notes were last updated by Fred Douglis on \*(td.

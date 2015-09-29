@@ -1,0 +1,133 @@
+'\" Copyright 1989 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/cmds/addhost/RCS/addhost.man,v 1.4 90/02/13 15:40:57 jhh Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS ADDHOST cmds
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+addhost \- Add a new host to the system
+.SH SYNOPSIS
+\fBaddhost\fR [\fIoptions\fR] [\fB\-n \fIname\fR \fB\-i \fIinternet\fR \fB\-a \fInetAddress\fR \fB\-m \fImachineType\fR \fB\-s\fR \fIswapDir\fR]
+.SH OPTIONS
+
+.IP "\fB\-a \fIaddress\fR" 15
+The \fB\-a\fR flag is required, and is used to set the local network
+address of the host.
+Usually \fIaddress\fR is an Ethernet address, and is of the form
+"a:b:c:d:e:f".
+
+.IP "\fB\-d \fIdomain\fR" 15
+Used to set the local domain.  
+The \fIdomain\fR string is appended to the name provided by the \fB\-n\fR
+flag to produce the full name of the machine.
+The default is to parse the domain name from the \fIspritehosts\fR file.
+If the file is empty then the \fB\-d\fR flag must be given.
+
+.IP "\fB\-h\fR, \fB\-help\fR, \fB\-?\fR" 15
+These options cause a help listing to be printed.
+
+.IP "\fB\-i \fIinternet\fR" 15
+\fIInternet\fR is the internet address of the host. 
+The address is in the form "a.b.c.d".
+This flag is required.
+
+.IP "\fB\-I \fIspriteID\fR" 15
+The \fB\-I\fR flag is used to assign a Sprite ID to the host.
+Care must be taken that \fIspriteID\fR does not conflict with the id
+of an existing host.
+If the \fB\-I\fR flag is omitted \fBaddhost\fR will use a Sprite ID
+that is one greater than the largest id found in the \fIspritehosts\fR file.
+
+.IP "\fB\-m \fImachineType\fR" 15
+This flag sets the machine type of the host to be added. 
+This flag must be used.
+Supported machine types are \fIsun3\fR, \fIsun4\fR, \fIsun4c\fR, and 
+\fIds3100\fR.
+
+.IP "\fB\-n \fIname\fR" 15
+\fIName\fR is the name of the host. 
+This flag is required.
+
+.IP "\fB\-s \fIswapDir\fR" 15
+The \fB\-s\fR defines \fIswapDir\fR to be the directory in which to 
+create the swap directory for the new host.
+The default is /swap.
+If a different directory is specified then a link will be make in /swap.
+
+.IP "\fB\-t \fInetType\fR" 15
+The \fB\-t\fR flag is used to set the type of the network associated with
+the host.
+The default is \fIether\fR, indicating that the host is connected to the
+system via an Ethernet, and the the argument to the \fB\-a\fR flag is 
+the Ethernet address of the host.
+The only other supported value for the \fInetType\fR argument
+is \fIinet\fR,
+indicating that a gateway exists between the host and the root file server.
+In this case the argument to the \fB\-a\fR flag is the Ethernet address
+of the gateway machine.
+
+.IP "\fB\-R\fR" 15
+\fBAddhost\fR will not allow a host to be added if the name of the
+new host conflicts with the name of an existing host.
+If the \fB\-R\fR flag is specified than the existing host information
+is replaced with the information for the new host.
+If you are upgrading a machine from one machine type to another but
+retaining the name then the \fB\-R\fR flag should be used.
+
+.IP "\fB\-r \fIroot\fR" 15
+The \fB\-r\fR flag is used to specify that the root of the Sprite
+filesystem is something other than "/".  
+.BE
+
+.IP "\fB\-o \fIowner\fR" 15
+Used to specify the owner or primary user of the machine.
+This information is added to /sprite/admin/hosts.
+
+.IP "\fB\-l \fIlocation\fR" 15
+Used to specify the location of the machine.
+This information is added to /sprite/admin/hosts.
+
+.IP "\fB\-T \fImachine description\fR" 15
+The \fB\-T\fR
+flag is used to specify the full machine description.
+Examples might be "sun3/75" or "sun4/260".
+This information is added to /sprite/admin/hosts.
+
+
+
+.SH DESCRIPTION
+.PP
+The \fBaddhost\fR command is used to add a new host to the system.
+It should only be run by the super-user (root).
+Invoking \fBaddhost\fR without any options will cause it to run in
+an interactive mode where you will be prompted for the host name,
+type, etc.
+These parameters can also be set via options on the command line.
+The use of any options causes \fBaddhost\fR to not run interactively.
+In this case a minimum set of options must be used.
+The \fB\-a\fR, \fB\-i\fR, \fB\-n\fR, \fB\-m\fR, and \fB\-s\fR flags
+must be used to
+indicate the local address, Internet address, host name, host machine
+type, and swap directory, respectively.
+The options are described in more detail in the section above.
+.PP
+As the \fBaddhost\fR script runs it will print out information on the actions
+it is taking.
+Once the script is complete you should look in /sprite/admin/howto/addNewHost
+for any remaining steps in the installation procedure.
+
+.SH FILES
+The following files are edited by \fBaddhost\fR:
+/etc/spritehosts, /etc/hosts.equiv, /sprite/admin/hosts
+
+.SH KEYWORDS
+spritehosts, new, host, hosts, hosts.equiv
+

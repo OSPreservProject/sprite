@@ -1,0 +1,450 @@
+head     1.9;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.9
+date     92.03.27.13.36.57;  author rab;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     90.08.06.23.38.22;  author jhh;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     89.07.31.17.40.32;  author jhh;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.05.18.17.11.54;  author rab;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.02.27.16.36.57;  author mgbaker;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.02.26.16.20.13;  author mgbaker;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.07.28.17.47.38;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.07.25.10.45.53;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.27.15.35.44;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.9
+log
+@Fixed some lint errors.
+@
+text
+@/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@@(#)getwd.c	5.2 (Berkeley) 3/9/86";
+#endif LIBC_SCCS and not lint
+
+/*
+ * getwd() returns the pathname of the current working directory. On error
+ * an error message is copied to pathname and null pointer is returned.
+ */
+
+#include <stdio.h>
+#include <sys/param.h>
+#include <sys/stat.h>
+#include <sys/dir.h>
+#include <sys/file.h>
+
+#include <sprite.h>
+#include <fs.h>
+#include <sysStats.h>
+
+#define GETWDERR(s)	(void) strcpy(pathname, (s));
+
+static char *prepend();
+
+extern char *strcpy();
+static int pathsize;			/* pathname length */
+
+static char *oldGetwd();
+
+char *
+getwd(pathname)
+	char *pathname;
+{
+    char pathbuf[MAXPATHLEN];		/* temporary pathname buffer */
+    char *pnptr = &pathbuf[(sizeof pathbuf)-1]; /* pathname pointer */
+    char curdir[MAXPATHLEN];		/* current directory buffer */
+    char *dptr = curdir;		/* directory pointer */
+    char *prepend();			/* prepend dirname to pathname */
+    int cdev;				/* current & root device number */
+    int cino;				/* current & root inode number */
+    int curServer;			/* current and root server ID */
+    DIR *dirp;				/* directory stream */
+    struct direct *dir;			/* directory entry struct */
+    Fs_Attributes d;			/* file status struct */
+    int fd;				/* Handle on current directory */
+    Ioc_PrefixArgs iocPrefix;		/* Returned by ioctl. */
+    ReturnStatus status;
+
+    pathsize = 0;
+    *pnptr = '\0';
+    fd = open(".", O_RDONLY);
+    if (fd < 0) {
+	GETWDERR("getwd: can't open .");
+    }
+    status = Fs_IOControl(fd, IOC_PREFIX, 0, NULL, sizeof(Ioc_PrefixArgs), 
+	    &iocPrefix);
+
+    if (status != SUCCESS) {
+	/*
+	 * If the ioctl fails assume we are on an old kernel and do it the
+	 * old way.
+	 */
+#if 0
+	printf("Using old getwd -- \"%s\".\n", Stat_GetMsg(status));
+#endif
+	return oldGetwd(pathname);
+    }
+    close(fd);
+    (void) strcpy(dptr, "./");
+    dptr += 2;
+    if (Fs_GetAttributes(curdir, FS_ATTRIB_FILE, &d) != SUCCESS) {
+	    GETWDERR("getwd: can't stat .");
+	    return (NULL);
+    }
+    for (;;) {
+	cino = d.fileNumber;
+	cdev = d.domain;
+	curServer = d.serverID;
+	(void) strcpy(dptr, "../");
+	dptr += 3;
+	if ((dirp = opendir(curdir)) == NULL) {
+		GETWDERR("getwd: can't open ..");
+		return (NULL);
+	}
+	Fs_GetAttributesID(dirp->dd_fd, &d);
+	if (curServer == d.serverID && cdev == d.domain) {
+	    /*
+	     * Parent directory is in the same domain as the current point.
+	     * Check against root loop and then scan parent looking for match.
+	     */
+	    if (cino == d.fileNumber) {
+		/* reached root directory */
+		closedir(dirp);
+		break;
+	    }
+	    do {
+		if ((dir = readdir(dirp)) == NULL) {
+		    closedir(dirp);
+		    GETWDERR("getwd: read error in ..");
+		    return (NULL);
+		}
+	    } while (dir->d_ino != cino);
+	    closedir(dirp);
+	    pnptr = prepend("/", prepend(dir->d_name, pnptr));
+	} else {
+	    /*
+	     * The parent directory is in a different domain.  This means that
+	     * the current point should be the root of a domain and this
+	     * host should have a prefix that corresponds to it. 
+	     * We already have the prefix from the ioctl, so just break.
+	     */
+	    closedir(dirp);
+	    break;
+	}
+    }
+    if ((strcmp(iocPrefix.prefix, "/") != 0) || (*pnptr == 0)) {
+	pnptr = prepend(iocPrefix.prefix, pnptr);
+    }
+    (void) strcpy(pathname, pnptr);
+    return (pathname);
+}
+
+/*
+ * prepend() tacks a directory name onto the front of a pathname.
+ */
+static char *
+prepend(dirname, pathname)
+	register char *dirname;
+	register char *pathname;
+{
+	register int i;			/* directory name size counter */
+
+	for (i = 0; *dirname != '\0'; i++, dirname++)
+		continue;
+	if ((pathsize += i) < MAXPATHLEN)
+		while (i-- > 0)
+			*--pathname = *--dirname;
+	return (pathname);
+}
+
+static char *
+oldGetwd(pathname)
+	char *pathname;
+{
+    char pathbuf[MAXPATHLEN];		/* temporary pathname buffer */
+    char *pnptr = &pathbuf[(sizeof pathbuf)-1]; /* pathname pointer */
+    char curdir[MAXPATHLEN];		/* current directory buffer */
+    char *dptr = curdir;		/* directory pointer */
+    char *prepend();			/* prepend dirname to pathname */
+    int cdev, rdev;			/* current & root device number */
+    int cino, rino;			/* current & root inode number */
+    int curServer, rootServer;		/* current and root server ID */
+    DIR *dirp;				/* directory stream */
+    struct direct *dir;			/* directory entry struct */
+    Fs_Attributes d;			/* file status struct */
+
+    pathsize = 0;
+    *pnptr = '\0';
+    if (Fs_GetAttributes("/", FS_ATTRIB_FILE, &d) != SUCCESS) {
+	    GETWDERR("getwd: can't stat /");
+	    return (NULL);
+    }
+    rdev = d.domain;
+    rino = d.fileNumber;
+    rootServer = d.serverID;
+    (void) strcpy(dptr, "./");
+    dptr += 2;
+    if (Fs_GetAttributes(curdir, FS_ATTRIB_FILE, &d) != SUCCESS) {
+	    GETWDERR("getwd: can't stat .");
+	    return (NULL);
+    }
+    for (;;) {
+	if (d.fileNumber == rino && d.domain == rdev
+		&& d.serverID == rootServer)
+		break;		/* reached root directory */
+	cino = d.fileNumber;
+	cdev = d.domain;
+	curServer = d.serverID;
+	(void) strcpy(dptr, "../");
+	dptr += 3;
+	if ((dirp = opendir(curdir)) == NULL) {
+		GETWDERR("getwd: can't open ..");
+		return (NULL);
+	}
+	Fs_GetAttributesID(dirp->dd_fd, &d);
+	if (curServer == d.serverID && cdev == d.domain) {
+	    /*
+	     * Parent directory is in the same domain as the current point.
+	     * Check against root loop and then scan parent looking for match.
+	     */
+	    if (cino == d.fileNumber) {
+		/* reached root directory */
+		closedir(dirp);
+		break;
+	    }
+	    do {
+		if ((dir = readdir(dirp)) == NULL) {
+		    closedir(dirp);
+		    GETWDERR("getwd: read error in ..");
+		    return (NULL);
+		}
+	    } while (dir->d_ino != cino);
+	    closedir(dirp);
+	    pnptr = prepend("/", prepend(dir->d_name, pnptr));
+	} else {
+	    /*
+	     * The parent directory is in a different domain.  This means that
+	     * the current point should be the root of a domain and this
+	     * host should have a prefix that corresponds to it.  Scan the
+	     * prefix table looking for a match.
+	     */
+	    register int index;
+	    Fs_Prefix prefix;
+	    closedir(dirp);
+	    for (index=0 ; ; index++) {
+		bzero((char *) &prefix, sizeof(Fs_Prefix));
+		if (Sys_Stats(SYS_FS_PREFIX_STATS, index, (Address) &prefix)
+			!= SUCCESS) {
+		    sprintf(pathname,
+			"getwd: missing prefix %s", pnptr);
+		    return(NULL);
+		}
+		if (prefix.serverID == curServer &&
+		    prefix.domain == cdev &&
+		    prefix.fileNumber == cino) {
+		    pnptr = prepend(prefix.prefix, pnptr);
+		    goto done;
+		}
+	    }
+	}
+    }
+done:
+    if (*pnptr == '\0')	{	/* current dir == root dir */
+        (void) strcpy(pathname, "/");
+    } else {
+	strcpy(pathname, pnptr);
+    }
+    return (pathname);
+}
+@
+
+
+1.8
+log
+@didn't close directory properly.
+@
+text
+@d26 1
+a26 1
+#define GETWDERR(s)	strcpy(pathname, (s));
+d30 1
+a30 1
+char *strcpy();
+d74 1
+a74 1
+    strcpy(dptr, "./");
+d84 1
+a84 1
+	strcpy(dptr, "../");
+d124 1
+a124 1
+    strcpy(pathname, pnptr);
+d171 1
+a171 1
+    strcpy(dptr, "./");
+d184 1
+a184 1
+	strcpy(dptr, "../");
+d238 5
+a242 4
+    if (*pnptr == '\0')		/* current dir == root dir */
+	    strcpy(pathname, "/");
+    else
+	    strcpy(pathname, pnptr);
+@
+
+
+1.7
+log
+@now understands synonymous prefixes and will chose correct one.
+@
+text
+@d117 1
+@
+
+
+1.6
+log
+@Added forward declarations for static functions.
+@
+text
+@d20 1
+d33 2
+d44 110
+a241 18
+}
+
+/*
+ * prepend() tacks a directory name onto the front of a pathname.
+ */
+static char *
+prepend(dirname, pathname)
+	register char *dirname;
+	register char *pathname;
+{
+	register int i;			/* directory name size counter */
+
+	for (i = 0; *dirname != '\0'; i++, dirname++)
+		continue;
+	if ((pathsize += i) < MAXPATHLEN)
+		while (i-- > 0)
+			*--pathname = *--dirname;
+	return (pathname);
+@
+
+
+1.5
+log
+@Removed sun4 cpp hack.  I put it in fs.h instead.
+@
+text
+@d26 2
+@
+
+
+1.4
+log
+@Added fix due to sun4 cpp problem with expanding macros inside structure
+definitions.
+@
+text
+@a21 12
+
+/*
+ * The macros major and minor are defined in sys/types.h.  They are also
+ * the names of fields in a structure defined in fs.h.  Unfortunately, cpp
+ * on the sun4 expands the macros inside the structure field names, so I
+ * undefine and redefine them here around the inclusion of fs.h.
+ */
+#ifdef sun4
+#undef major
+#undef minor
+#endif sun4
+
+a22 6
+
+#ifdef sun4
+#define major(x)        ((int)(((unsigned)(x)>>8)&0377))
+#define minor(x)        ((int)((x)&0377))
+#endif sun4
+
+@
+
+
+1.3
+log
+@Lint.
+@
+text
+@d22 12
+d35 6
+@
+
+
+1.2
+log
+@Lint.
+@
+text
+@d115 1
+a115 1
+		    pnptr = prepend(prefix.prefix, pnptr, &pathsize);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+@

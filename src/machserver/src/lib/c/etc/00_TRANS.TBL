@@ -1,0 +1,54 @@
+L ALARM.C;1                         	alarm.c	../../c.orig/etc/alarm.c
+L CRYPT.C;1                         	crypt.c	../../c.orig/etc/crypt.c
+D DS3100_M                          	ds3100.md
+L ECVT.C;1                          	ecvt.c	../../c.orig/etc/ecvt.c
+F FMT.C;1                           	fmt.c
+L FREXP.C;1                         	frexp.c	../../c.orig/etc/frexp.c
+L FSDISPAT.C;1                      	fsDispatch.c	../../c.orig/etc/fsDispatch.c
+L FTIME.C;1                         	ftime.c	../../c.orig/etc/ftime.c
+L GCVT.C;1                          	gcvt.c	../../c.orig/etc/gcvt.c
+L GETGRENT.C;1                      	getgrent.c	../../c.orig/etc/getgrent.c
+L GETGRGID.C;1                      	getgrgid.c	../../c.orig/etc/getgrgid.c
+L GETGRNAM.C;1                      	getgrnam.c	../../c.orig/etc/getgrnam.c
+L GETLOGIN.C;1                      	getlogin.c	../../c.orig/etc/getlogin.c
+L GETOPT.C;1                        	getopt.c	../../c.orig/etc/getopt.c
+L GETPASS.C;1                       	getpass.c	../../c.orig/etc/getpass.c
+L GETPWENT.C;1                      	getpwent.c	../../c.orig/etc/getpwent.c
+L GETWD.C;1                         	getwd.c	../../c.orig/etc/getwd.c
+L GTTY.C;1                          	gtty.c	../../c.orig/etc/gtty.c
+L INITGROU.C;1                      	initgroups.c	../../c.orig/etc/initgroups.c
+L INSQUE.C;1                        	insque.c	../../c.orig/etc/insque.c
+F ISATTY.C;1                        	isatty.c
+F ISINF.C;1                         	isinf.c
+F ISNAN.C;1                         	isnan.c
+F ISZERO.C;1                        	iszero.c
+F LDEXP.C;1                         	ldexp.c
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+L MKTEMP.C;1                        	mktemp.c	../../c.orig/etc/mktemp.c
+L NDBM.C;1                          	ndbm.c	../../c.orig/etc/ndbm.c
+L OPTION.C;1                        	option.c	../../c.orig/etc/option.c
+F PANIC.C;1                         	panic.c
+L PAUSE.C;1                         	pause.c	../../c.orig/etc/pause.c
+L PDEV.C;1                          	pdev.c	../../c.orig/etc/pdev.c
+F PFS.C;1                           	pfs.c
+L POPEN.C;1                         	popen.c	../../c.orig/etc/popen.c
+D RCS                               	RCS
+L REGEX.C;1                         	regex.c	../../c.orig/etc/regex.c
+F RPC_GETN.C;1                      	Rpc_GetName.c
+L SETEGID.C;1                       	setegid.c	../../c.orig/etc/setegid.c
+L SETEUID.C;1                       	seteuid.c	../../c.orig/etc/seteuid.c
+L SETGID.C;1                        	setgid.c	../../c.orig/etc/setgid.c
+L SETRUID.C;1                       	setruid.c	../../c.orig/etc/setruid.c
+L SETUID.C;1                        	setuid.c	../../c.orig/etc/setuid.c
+L SIGNAL.C;1                        	signal.c	../../c.orig/etc/signal.c
+F STATUS.C;1                        	status.c
+L STATUSPR.C;1                      	statusPrint.c	../../c.orig/etc/statusPrint.c
+L STTY.C;1                          	stty.c	../../c.orig/etc/stty.c
+D SUN3_MD                           	sun3.md
+L SWAPBUFF.C;1                      	swapBuffer.c	../../c.orig/etc/swapBuffer.c
+L SYSLOG.C;1                        	syslog.c	../../c.orig/etc/syslog.c
+F TTYDRIVE.C;1                      	ttyDriver.c
+L TTYNAME.C;1                       	ttyname.c	../../c.orig/etc/ttyname.c
+L UTIME.C;1                         	utime.c	../../c.orig/etc/utime.c
+F VALLOC.C;1                        	valloc.c

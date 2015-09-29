@@ -1,0 +1,113 @@
+% Met ========== onderstreept nederlandse teksten
+\@ifundefined{chapter}
+{%%%%%%%%%%%%%%% dit is voor article style %%%%%%%%%%%%%%%%%%%%%
+\def\@part[#1]#2{\ifnum \c@secnumdepth >\m@ne \refstepcounter{part}
+\addcontentsline{toc}{part}{\thepart \hspace{1em}#1}\else
+\addcontentsline{toc}{part}{#1}\fi { \parindent 0pt \raggedright 
+ \ifnum \c@secnumdepth >\m@ne \Large \bf Deel \thepart \par \nobreak \fi \huge
+%                                        ====
+\bf #2\markboth{}{}\par } \nobreak \vskip 3ex \@afterheading } 
+\def\tableofcontents{\section*{Inhoud\markboth{INHOUD}{INHOUD}}
+%                              ======          ======  ======
+ \@starttoc{toc}}
+\def\listoffigures{\section*{Lijst van figuren\markboth
+%                           ==================
+ {LIJST VAN FIGUREN}{LIJST VAN FIGUREN}}\@starttoc{lof}}
+% =================  =================
+\def\listoftables{\section*{Lijst van tabellen\markboth
+%                           ==================
+ {LIJST VAN TABELLEN}{LIJST VAN TABELLEN}}\@starttoc{lot}}
+% ==================  ==================
+\def\thebibliography#1{\section*{Referenties\markboth
+%                                ===========
+ {REFERENTIES}{REFERENTIES}}\list
+% ===========  ===========
+ {[\arabic{enumi}]}{\settowidth\labelwidth{[#1]}\leftmargin\labelwidth
+ \advance\leftmargin\labelsep
+ \usecounter{enumi}}
+ \def\newblock{\hskip .11em plus .33em minus -.07em}
+ \sloppy
+ \sfcode`\.=1000\relax}
+\def\theindex{\@restonecoltrue\if@twocolumn\@restonecolfalse\fi
+\columnseprule \z@
+\columnsep 35pt\twocolumn[\section*{Index}]
+%                                   =====
+ \markboth{INDEX}{INDEX}\thispagestyle{plain}\parindent\z@
+%          =====  =====
+ \parskip\z@ plus .3pt\relax\let\item\@idxitem}
+\def\abstract{\if@twocolumn
+\section*{Samenvatting}
+%         ============
+\else \small 
+\begin{center}
+{\bf Samenvatting\vspace{-.5em}\vspace{0pt}} 
+%    ============
+\end{center}
+\quotation 
+\fi}}
+{%%%%%%%%%%%%%% Dit is voor report en book style %%%%%%%%%%%%%%%
+\def\@part[#1]#2{\ifnum \c@secnumdepth >-2\relax \refstepcounter{part}
+\addcontentsline{toc}{part}{\thepart \hspace{1em}#1}\else
+\addcontentsline{toc}{part}{#1}\fi \markboth{}{}
+ \ifnum \c@secnumdepth >-2\relax \huge\bf Deel \thepart \par \vskip 20pt \fi
+%                                         ====
+\Huge \bf #1\@endpart} 
+\def\@chapapp{Hoofdstuk}
+%             =========
+\def\appendix{\par
+ \setcounter{chapter}{0}
+ \setcounter{section}{0}
+ \def\@chapapp{Appendix}
+%              ========
+ \def\thechapter{\Alph{chapter}}}
+\def\tableofcontents{\@restonecolfalse\if@twocolumn\@restonecoltrue\onecolumn
+ \fi\chapter*{Inhoud\@mkboth{INHOUD}{INHOUD}}
+%             ======         ======  ======
+ \@starttoc{toc}\if@restonecol\twocolumn\fi}
+\def\listoffigures{\@restonecolfalse\if@twocolumn\@restonecoltrue\onecolumn
+ \fi\chapter*{Lijst van figuren\@mkboth
+%             =================
+ {LIJST VAN FIGUREN}{LIJST VAN FIGUREN}}\@starttoc{lof}\if@restonecol\twocolumn
+% =================  =================
+ \fi}
+\def\listoftables{\@restonecolfalse\if@twocolumn\@restonecoltrue\onecolumn
+ \fi\chapter*{Lijst van tabellen\@mkboth
+%             ==================
+ {LIJST VAN TABELLEN}{LIJST VAN TABELLEN}}\@starttoc{lot}\if@restonecol
+% ==================  ==================
+ \twocolumn\fi}
+\def\thebibliography#1{\chapter*{Referenties\@mkboth
+%                                ===========
+ {REFERENTIES}{REFERENTIES}}\list
+% ============  ============
+ {[\arabic{enumi}]}{\settowidth\labelwidth{[#1]}\leftmargin\labelwidth
+ \advance\leftmargin\labelsep
+ \usecounter{enumi}}
+ \def\newblock{\hskip .11em plus .33em minus -.07em}
+ \sloppy
+ \sfcode`\.=1000\relax}
+\def\theindex{\@restonecoltrue\if@twocolumn\@restonecolfalse\fi
+\columnseprule \z@
+\columnsep 35pt\twocolumn[\@makeschapterhead{Index}]
+%                                            =====
+ \@mkboth{INDEX}{INDEX}\thispagestyle{plain}\parindent\z@
+%         =====  =====
+ \parskip\z@ plus .3pt\relax\let\item\@idxitem}
+\def\abstract{\titlepage
+\null\vfil
+\begin{center}
+{\bf Samenvatting}
+%    ============
+\end{center}}
+}
+%%%%%%%%%%%%%%%%%%% dit is voor allebei %%%%%%%%%%%%%%%%%%%%%%%%%%
+\def\today{\number\day\space\ifcase\month%
+\or jan\or feb\or maart\or apr\or mei\or juni%
+%   ===    ===    =====    ===    ===    ====
+\or juli\or aug\or sept\or okt\or nov\or dec\fi
+%   ====    ===    ====    ===    ===    ===
+\space\number\year}
+\def\fnum@figure{Figuur \thefigure}
+%                ======
+\def\fnum@table{Tabel \thetable}
+%               =====

@@ -1,0 +1,17 @@
+F CRUNCH.;1                         	crunch
+F DEPENDEN.MK;1                     	dependencies.mk
+F ETHER.SUM;1                       	ether.summary
+F ETHER0.OUT;1                      	ether.out1
+F ETHER1.OUT;1                      	ether.out2
+F ETHER2.OUT;1                      	ether.out3
+F FDDI.SUM;1                        	fddi.summary
+F FDDI0.OUT;1                       	fddi.out1
+F FDDI1.OUT;1                       	fddi.out2
+F FDDI_MAR.1;1                      	fddi.mar17.1
+F FDDI_MAR.2;1                      	fddi.mar17.2
+F FDDI_MAR.3;1                      	fddi.mar17.3
+F FDDI_MAR.4;1                      	fddi.mar17.4
+F FDDI_OUT.1;1                      	fddi.out.may27.1
+F GEOFF.OUT;1                       	geoff.out
+F HUH.OUT;1                         	huh.out
+F MD.MK;1                           	md.mk

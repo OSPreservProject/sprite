@@ -1,0 +1,1028 @@
+head     9.8;
+branch   ;
+access   ;
+symbols  ds3100:9.8 sun3:9.8 sun4nw:9.7 symm:9.7 spur:9.7 sprited:9.6.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.8
+date     92.06.01.14.48.03;  author kupfer;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     91.10.18.01.15.52;  author dlong;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.10.09.12.01.27;  author jhh;  state Exp;
+branches 9.6.1.1;
+next     9.5;
+
+9.5
+date     90.10.05.16.35.52;  author shirriff;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.09.26.12.35.52;  author jhh;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.09.11.16.31.05;  author jhh;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.09.06.18.17.28;  author jhh;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.01.05.12.06.39;  author mgbaker;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.21.02;  author douglis;  state Stable;
+branches ;
+next     8.6;
+
+8.6
+date     89.09.12.14.39.51;  author jhh;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.08.17.17.32.21;  author jhh;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.06.30.15.15.32;  author douglis;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.04.14.02.56.18;  author rab;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.02.19.22.12.12;  author jhh;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.01.05.15.34.13;  author mendel;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.39.26;  author douglis;  state Stable;
+branches ;
+next     6.3;
+
+6.3
+date     88.11.11.14.43.02;  author jhh;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.10.11.16.32.21;  author mendel;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.10.07.10.51.51;  author mendel;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.28.02;  author brent;  state Stable;
+branches ;
+next     5.6;
+
+5.6
+date     88.08.01.17.02.32;  author ouster;  state Exp;
+branches ;
+next     5.5;
+
+5.5
+date     88.08.01.16.57.11;  author ouster;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     88.08.01.16.36.21;  author ouster;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     88.06.27.10.30.09;  author mendel;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     88.06.06.11.36.00;  author mendel;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     88.05.27.16.23.10;  author mendel;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.51.37;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.6.1.1
+date     91.09.15.18.04.51;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.8
+log
+@Add Timer_OkToWhine.
+@
+text
+@/*
+ * timer.h --
+ *
+ *     External definitions for the clock timer routines.
+ *
+ * Copyright 1985, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * rcsid: $Header: /sprite/src/kernel/Cvsroot/kernel/timer/timer.h,v 9.7 91/10/18 01:15:52 dlong Exp $ SPRITE (Berkeley) 
+ */
+
+#ifndef _TIMER
+#define _TIMER
+
+#include <list.h>
+
+#ifdef KERNEL
+#include <spriteTime.h>
+#include <timerTick.h>
+#include <timerMach.h>
+#include <syncLock.h>
+#else
+#include <spriteTime.h>
+#include <kernel/timerTick.h>
+#include <kernel/timerMach.h>
+#include <kernel/syncLock.h>
+#endif
+
+
+/*
+ * Interval Timers:
+ *  The systems should provide two interval timers capable of interrupting 
+ *  the CPU after a specified interval, calling the correct routine, and
+ *  reseting themselves to interrupt again. 
+ * The timers are:
+ *  TIMER_CALLBACK_TIMER is the timer used to determine when
+ *  	the first routine on the timer queue should be called.
+ *  TIMER_PROFILE_TIMER is the timer used to determine when
+ *  	the profile routine should be called.
+ */
+
+#define TIMER_CALLBACK_TIMER	2
+#define	TIMER_CALLBACK_ROUTINE	Timer_CallBack
+
+#define TIMER_PROFILE_TIMER	3
+#define	TIMER_PROFILE_ROUTINE	Prof_CollectInfo
+
+/*
+ * timerTick.h should define the following types/structures/routine/macros for 
+ * the desired architecture:
+ *
+ *   typedef	Timer_Ticks -	The typedef of the object that can 
+ *				hold the value of the machine's timers.
+ *				This is should be in a format that
+ *				can be quickly generated from the 
+ *				timer values provided by the hardware.
+ *				The idea here is to leave the timer
+ *				values in these "natural" units to
+ *				avoid expensive conversions on the
+ *				frequent timer interrupts.
+ *
+ *	Tick arithmetic and conversion routines. May be macros.
+ *----------------------------------------------------------------------
+ *
+ *  Timer_AddTicks --
+ *
+ * 	Adds two tick values together.
+ *
+ *  void
+ *  Timer_AddTicks(a, b, resultPtr)
+ *	Timer_Ticks		a;		Addend 1 
+ *	Timer_Ticks		b;		Addend 2 
+ *	Timer_Ticks		*resultPtr;	Sum 
+ *----------------------------------------------------------------------
+ *
+ *  Timer_SubtractTicks --
+ *
+ * 	Subtracts the second parameter from the first parameter. 
+ *	The second parameter must be less than the first, otherwise 
+ *	a zero tick value is returned.
+ *
+ *  void
+ *  Timer_SubtractTicks(a, b, resultPtr)
+ *	Timer_Ticks		a;		Minuhend 
+ *	Timer_Ticks		b;		Subtrahend 
+ *	Timer_Ticks		*resultPtr;	Difference 
+ *    
+ *----------------------------------------------------------------------
+ *
+ *  Timer_AddIntervalToTicks --
+ *
+ * 	Adds an interval (32-bit value) to an absolute time (64-bit value).
+ *
+ *    void
+ *    Timer_AddIntervalToTicks(absolute, interval, resultPtr)
+ *	Timer_Ticks		absolute;	Addend 1 
+ *	unsigned int     	interval;	Addend 2
+ *	Timer_Ticks		*resultPtr;	Sum 
+ *----------------------------------------------------------------------
+ *
+ *  Timer_GetCurrentTicks --
+ *
+ *  	Computes the number of ticks since the system was booted.
+ *
+ *    void
+ *    Timer_GetCurrentTicks(ticksPtr)
+ *	Timer_Ticks	*ticksPtr;	Buffer to place current time. 
+ *----------------------------------------------------------------------
+ *
+ *  Timer_TicksToTime --
+ *
+ *  	Converts a Timer_Ticks value into a Time value.
+ *    void
+ *    Timer_TicksToTime(tick, timePtr)
+ *	Timer_Ticks	tick;	Value to be converted. 
+ *	Time	*timePtr;	Buffer to hold converted value. 
+ *----------------------------------------------------------------------
+ *
+ *  Timer_TimeToTicks --
+ *
+ *  	Converts a Time value into a Timer_Ticks value.
+ *   void
+ *    Timer_TimeToTicks(time, ticksPtr)
+ *	Time	time;		        Value to be converted. 
+ *	Timer_Ticks	*ticksPtr;	Buffer to hold converted value.
+ *----------------------------------------------------------------------
+ *
+ * TimerTicksInit --
+ *
+ *	Initializes the various tick and interval values.
+ *
+ * void
+ * TimerTicksInit()
+ *----------------------------------------------------------------------
+ * Tick Comparisons --
+ *
+ *	Timer_TickLT(tick1,tick2):	tick1  <   tick2
+ *	Timer_TickLE(tick1,tick2):	tick1  <=  tick2
+ *	Timer_TickEQ(tick1,tick2):	tick1  ==  tick2
+ *	Timer_TickGE(tick1,tick2):	tick1  >=  tick2
+ *	Timer_TickGT(tick1,tick2):	tick1  >   tick2
+ *
+ *----------------------------------------------------------------------
+ * Additionally, timerTick.h should provide the following frequently used
+ * tick and intervals values. These values should be initialized by the 
+ * machine dependent routine TimerTicksInit().  
+ * 
+ * extern unsigned int 	timer_IntZeroSeconds; - Zero seconds worth of ticks.
+ * extern unsigned int 	timer_IntOneMillisecond; - One milliseconds of ticks.  
+ * extern unsigned int 	timer_IntOneSecond; - One second of ticks.
+ * extern unsigned int 	timer_IntOneMinute; - One minute of ticks.
+ * extern unsigned int 	timer_IntOneHour;  - One hour of ticks.
+ * extern Timer_Ticks	timer_TicksZeroSeconds; - Zero seconds worth of ticks.
+ * extern Time 		timer_MaxIntervalTime; 
+ *      - Maximum time for a unsigned 32-bit interger worth of ticks. This
+ * is the longest possible interval value.
+ */
+
+
+ /* DATA STRUCTURES: */
+
+
+/*
+ *  TimerQueueElement defines the structure to store info about a
+ *  routine so it can be called at its scheduled time.
+ *
+ *  Only three fields need to be filled in by the client before passing 
+ *  the element's address to Timer_ScheduleRoutine:
+ *	a) The address of the routine,
+ *	b) The time when the routine should be called. 
+ *	   If the time value is an "absolute" time and not a time 
+ *	   relative to the current time, use the time field.
+ *	   If the time value is relative to the current time, use 
+ *	   the interval field.
+ *	c) Client-specific data to be passed to the routine when it is 
+ *	   called.
+ *
+ *  Since the client controls the storage of the timer queue element, it
+ *  could modify fields of the structure while it is on the timer queue.
+ *  Once the element is scheduled, it must be treated as read-only!!
+ *  Only when the scheduled routine is called or descheduled can the element 
+ *  be modified by the client.
+ *
+ *  Note:  Do not access any part of the structure that is 
+ *  	   labeled "private". These fields can be accessed only by 
+ *	   the Timer module routines.
+ *
+ *	   Public fields marked "readonly" must not be modified by 
+ *	   the client.
+ *
+ */
+
+
+typedef struct {
+    List_Links	links;		/* private: */
+
+    void	(*routine) _ARGS_((Timer_Ticks timeTicks, 
+				  ClientData  clientData));	
+			        /* public:  address of the routine */
+    Timer_Ticks	time;		/* public:  time when the routine should be
+				 * 	    called. interval field is ignored*/ 
+    ClientData	clientData;	/* public:  data passed to the routine when
+				 *	    called. */
+
+    Boolean	processed;	/* public, readonly:  TRUE if routine has
+				 * 	    been called (at its scheduled time),
+				 *	    FALSE if not called yet. */
+    unsigned int interval;	/* public:  interval relative from now when 
+				 * 	    the routine should be called.
+				 *	    The time field becomes private. */
+} Timer_QueueElement;
+
+/*
+ *  The statistics counts used by the dump routines.
+ */
+
+typedef struct {
+    int		callback;	/* count of callback timer interrupts */
+    int		profile;	/* count of profile timer interrupts */
+    int		spurious;	/* count of spurious timer interrupts */
+    int		schedule;	/* count of Timer_ScheduleRoutine calls */
+    int		resched;	/* count of Timer_RescheduleRoutine calls */
+    int		desched;	/* count of Timer_DescheduleRoutine calls */
+} Timer_Statistics;
+
+extern Timer_Statistics	timer_Statistics;
+extern Time		timer_UniversalApprox;
+extern Sync_Semaphore 	timer_ClockMutex;
+
+#ifdef ADJTIME
+extern Time		timer_AdjustDelta;
+extern unsigned		timer_TickAdjust;
+extern int		timer_TickDelta;
+#endif
+
+/*
+ * Used to get the current seconds value of the universal time. This is
+ * the quickest way to get a timestamp and is used in the filesystem.
+ */
+
+#define Timer_GetUniversalTimeInSeconds()  (timer_UniversalApprox.seconds)
+
+extern void Timer_Init _ARGS_((void));
+extern void Timer_ScheduleRoutine _ARGS_((register 
+			Timer_QueueElement *newElementPtr, Boolean interval));
+extern Boolean Timer_DescheduleRoutine _ARGS_((register 
+			Timer_QueueElement *elementPtr));
+extern void Timer_GetTimeOfDay _ARGS_((Time *timePtr, int *timerLocalOffsetPtr,
+			Boolean *DSTPtr));
+extern void Timer_GetRealTimeOfDay _ARGS_((Time *timePtr, 
+			int *timerLocalOffsetPtr, Boolean *DSTPtr));
+extern void Timer_GetRealTimeFromTicks _ARGS_((Timer_Ticks ticks, 
+			Time *timePtr, int *timerLocalOffsetPtr, 
+			Boolean *DSTPtr));
+extern Boolean Timer_OkToWhine _ARGS_((char *msg));
+extern void Timer_SetTimeOfDay _ARGS_((Time newUniversal, int newLocalOffset, 
+			Boolean newDSTAllowed));
+#ifdef ADJTIME
+extern ReturnStatus Timer_AdjustTime _ARGS_((Time *newDelta, Time *oldDelta));
+extern ReturnStatus Timer_GetParams _ARGS_((unsigned *tickadj));
+extern ReturnStatus Timer_SetParams _ARGS_((unsigned tickadj));
+#endif
+
+
+/*
+ * Exported procedures. The arguments and function of this interface are be
+ * found in any of the machine dependent implementations.
+ */
+
+extern void Timer_TimerInit _ARGS_((int timer));
+extern void Timer_TimerStart _ARGS_((int timer));
+extern void Timer_TimerInactivate _ARGS_((int timer));
+
+
+/*
+ * Used by the dump routines in the utils module for debugging.
+ */
+extern void Timer_TimerGetInfo _ARGS_((ClientData data));
+extern void Timer_DumpQueue _ARGS_((ClientData data));
+extern void Timer_DumpStats _ARGS_((ClientData arg));
+
+#endif /* _TIMER */
+@
+
+
+9.7
+log
+@added adjust time support
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: /sprite/src/kernel/timer/RCS/timer.h,v 9.6 90/10/09 12:01:27 jhh Exp $ SPRITE (Berkeley) 
+d261 1
+@
+
+
+9.6
+log
+@cleaned up Timer_GetUniversalTimeInSeconds macro
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: /sprite/src/kernel/timer/RCS/timer.h,v 9.5 90/10/05 16:35:52 shirriff Exp Locker: jhh $ SPRITE (Berkeley) 
+d233 1
+a233 1
+extern	Time		timer_UniversalApprox;
+d236 6
+d263 5
+@
+
+
+9.6.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: /sprite/src/kernel/timer/RCS/timer.h,v 9.6 90/10/09 12:01:27 jhh Exp $ SPRITE (Berkeley) 
+@
+
+
+9.5
+log
+@Added Timer_Init declaration.
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: /sprite/src/kernel/timer/RCS/timer.h,v 9.4 90/09/26 12:35:52 jhh Exp Locker: shirriff $ SPRITE (Berkeley) 
+d203 3
+a205 1
+    void	(*routine)();	/* public:  address of the routine */
+a238 2
+ * The universal time is only updated at interrupt level, so we don't
+ * need to syncronize reads on a uniprocessor.
+d241 1
+a241 12
+#if MACH_MAX_NUM_PROCESSORS == 1
+#define Timer_GetUniversalTimeInSeconds(a) { \
+    (a) = (timer_UniversalApprox.seconds); \
+}
+#else
+#define Timer_GetUniversalTimeInSeconds(a) { \
+    MASTER_LOCK(&timer_ClockMutex); \
+    (a) = (timer_UniversalApprox.seconds); \
+    MASTER_UNLOCK(&timer_ClockMutex); \
+}
+#endif
+
+@
+
+
+9.4
+log
+@fixed #include's
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: /sprite/src/kernel/timer/RCS/timer.h,v 9.3 90/09/11 16:31:05 jhh Exp Locker: jhh $ SPRITE (Berkeley) 
+d254 1
+@
+
+
+9.3
+log
+@Fixed error with prototypes.
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: /sprite/src/kernel/timer/RCS/timer.h,v 9.2 90/09/06 18:17:28 jhh Exp Locker: jhh $ SPRITE (Berkeley) 
+d21 1
+a21 1
+#include "list.h"
+d24 4
+a27 4
+#include "spriteTime.h"
+#include "timerTick.h"
+#include "timerMach.h"
+#include "syncLock.h"
+@
+
+
+9.2
+log
+@First pass at function prototypes
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: /sprite/src/kernel/timer/RCS/timer.h,v 9.1 90/01/05 12:06:39 mgbaker Exp Locker: jhh $ SPRITE (Berkeley) 
+d274 3
+a276 3
+extern void Timer_TimerInit _ARGS_((unsigned short timer));
+extern void Timer_TimerStart _ARGS_((register unsigned short timer));
+extern void Timer_TimerInactivate _ARGS_((register unsigned short timer));
+d282 2
+a283 2
+extern void Timer_TimerGetInfo _ARGS_((void));
+extern void Timer_DumpQueue _ARGS_((void));
+@
+
+
+9.1
+log
+@Added new call to get real time from ticks.
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: /sprite/src/kernel/timer/RCS/timer.h,v 9.0 89/09/12 15:21:02 douglis Stable Locker: mgbaker $ SPRITE (Berkeley) 
+d254 13
+a266 2
+extern void	Timer_ScheduleRoutine();
+extern Boolean  Timer_DescheduleRoutine();
+a267 4
+extern void Timer_GetTimeOfDay();
+extern void Timer_GetRealTimeOfDay();
+extern void Timer_GetRealTimeFromTicks();
+extern void Timer_SetTimeOfDay();
+a268 3
+extern void Timer_LockRegister();
+
+
+d274 3
+a276 3
+extern void 	Timer_TimerInit();
+extern void 	Timer_TimerStart();
+extern void	Timer_TimerInactivate();
+a277 5
+/*
+ * This routine should only be called by the mach module and then only
+ * at interrupt level. 
+ */
+extern	void	Timer_TimerServiceInterrupts();
+d282 3
+a284 3
+extern void 	Timer_TimerGetInfo();
+extern void	Timer_DumpQueue();
+extern void	Timer_DumpStats();
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: /sprite/src/kernel/timer/RCS/timer.h,v 8.6 89/09/12 14:39:51 jhh Exp Locker: douglis $ SPRITE (Berkeley) 
+d259 1
+@
+
+
+8.6
+log
+@added Timer_GetUniversalTimeInSeconds macro
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: /c/src/kernel/timer.jhh/RCS/timer.h,v 8.5 89/08/17 17:32:21 jhh Exp Locker: jhh $ SPRITE (Berkeley) 
+@
+
+
+8.5
+log
+@New timer interface
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: /c/src/kernel/timer.jhh/RCS/timer.h,v 8.4 89/06/30 15:15:32 douglis Exp Locker: jhh $ SPRITE (Berkeley) 
+d27 1
+d32 1
+d231 22
+@
+
+
+8.4
+log
+@changed Timer_DescheduleRoutine to return whether or not it was descheduled.
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: /sprite/src/kernel/timer/RCS/timer.h,v 8.3 89/04/14 02:56:18 rab Exp Locker: douglis $ SPRITE (Berkeley) 
+d26 1
+d30 1
+a50 10
+
+/*
+ * The number of milliseconds between interrupts from the timers. This probably
+ * should be moved into the device dependent headers because longer or 
+ * shorter intervals may be necessary or desirable on different speed machines.
+ */
+
+#define TIMER_CALLBACK_INTERVAL	20
+#define TIMER_PROFILE_INTERVAL	10
+
+@
+
+
+8.3
+log
+@*** empty log message ***
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: /sprite/src/kernel/timer/RCS/timer.h,v 8.2 89/02/19 22:12:12 jhh Exp Locker: rab $ SPRITE (Berkeley) 
+d238 2
+a239 2
+extern void Timer_ScheduleRoutine();
+extern void Timer_DescheduleRoutine();
+@
+
+
+8.2
+log
+@Changes due to lock registration
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: /sprite/src/kernel/timer/RCS/timer.h,v 8.1 89/01/05 15:34:13 mendel Exp $ SPRITE (Berkeley) 
+d83 3
+a85 3
+ *	Timer_Ticks		a;		/* Addend 1 
+ *	Timer_Ticks		b;		/* Addend 2 
+ *	Timer_Ticks		*resultPtr;	/* Sum 
+d96 3
+a98 3
+ *	Timer_Ticks		a;		/* Minuhend 
+ *	Timer_Ticks		b;		/* Subtrahend 
+ *	Timer_Ticks		*resultPtr;	/* Difference 
+d108 3
+a110 3
+ *	Timer_Ticks		absolute;	/* Addend 1 
+ *	unsigned int     	interval;	/* Addend 2
+ *	Timer_Ticks		*resultPtr;	/* Sum 
+d119 1
+a119 1
+ *	Timer_Ticks	*ticksPtr;	/* Buffer to place current time. 
+d127 2
+a128 2
+ *	Timer_Ticks	tick;		/* Value to be converted. 
+ *	Time	*timePtr;	/* Buffer to hold converted value. 
+d136 2
+a137 2
+ *	Time	time;		/* Value to be converted. 
+ *	Timer_Ticks	*ticksPtr;	/* Buffer to hold converted value.
+d270 1
+a270 1
+#endif _TIMER
+@
+
+
+8.1
+log
+@Perform timer call back without the timerMutex held to prevent deadlocks
+on multiprocessors.
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: /sprite/src/kernel/timer/RCS/timer.h,v 6.3 88/11/11 14:43:02 jhh Exp $ SPRITE (Berkeley) 
+d244 2
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: /sprite/src/kernel/timer/RCS/timer.h,v 6.3 88/11/11 14:43:02 jhh Exp Locker: douglis $ SPRITE (Berkeley) 
+a238 1
+extern void Timer_RescheduleRoutine();
+@
+
+
+6.3
+log
+@multiprocessor port
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: /sprite/src/kernel/timer/RCS/timer.h,v 6.2 88/10/11 16:32:21 mendel Exp Locker: jhh $ SPRITE (Berkeley) 
+@
+
+
+6.2
+log
+@Multiprocessor port.
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: timer.h,v 6.1 88/10/07 10:51:51 mendel Exp $ SPRITE (Berkeley) 
+d266 2
+@
+
+
+6.1
+log
+@Moved the devTimer routines into the timer module.
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: timer.h,v 5.6 88/08/01 17:02:32 ouster Exp $ SPRITE (Berkeley) 
+a23 1
+#ifdef NEWLIB
+a24 3
+#else
+#include "time.h"
+#endif
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d24 3
+d28 1
+d35 1
+d37 28
+a241 1
+extern void Timer_CallBack();
+d249 21
+@
+
+
+5.6
+log
+@Didn't make last change right.
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: timer.h,v 5.5 88/08/01 16:57:11 ouster Exp $ SPRITE (Berkeley) 
+@
+
+
+5.5
+log
+@Switch to use spriteTime.h.
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: timer.h,v 5.4 88/08/01 16:36:21 ouster Exp $ SPRITE (Berkeley) 
+d27 1
+a27 1
+#include <user/spriteTime.h>
+@
+
+
+5.4
+log
+@Change includes to work from user programs with new library.
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: timer.h,v 5.3 88/06/27 10:30:09 mendel Exp $ SPRITE (Berkeley) 
+a21 1
+#include "time.h"
+d24 1
+d27 1
+@
+
+
+5.3
+log
+@Updated Copyright notice.
+@
+text
+@d15 1
+a15 1
+ * rcsid: $Header: timer.h,v 5.2 88/06/06 11:36:00 mendel Exp $ SPRITE (Berkeley) 
+d24 1
+d26 4
+@
+
+
+5.2
+log
+@Changed Timer_ServiceInterrupt() declaration to Timer_CallBack() to 
+reflect its change in status from an interrupt handler to a procedure.
+@
+text
+@d6 8
+a13 2
+ * Copyright 1985 Regents of the University of California
+ * All rights reserved.
+d15 1
+a15 1
+ * rcsid: $Header: timer.h,v 5.1 88/05/27 16:23:10 mendel Exp $ SPRITE (Berkeley) 
+@
+
+
+5.1
+log
+@Removed machine dependent declarations and macros
+@
+text
+@d9 1
+a9 1
+ * rcsid: $Header: timer.h,v 5.0 87/08/11 10:51:37 sprite Exp $ SPRITE (Berkeley) 
+d197 1
+a197 1
+extern void Timer_ServiceInterrupt();
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d9 1
+a9 1
+ * rcsid: $Header: timer.h,v 3.3 86/11/09 17:22:29 andrew Exp $ SPRITE (Berkeley) 
+d18 1
+a18 4
+
+/* DATA STRUCTURES: */
+
+#ifdef SUN2
+d20 2
+a21 2
+ *  Definition of Timer_Ticks: a hardware-dependent 64-bit time value 
+ *  	whose format is based on the free-running counter: 
+d23 105
+a127 5
+ *  The low field corresponds to the value of the free-running counter. 
+ *  If the counter has wrapped around since the last reading, the high field
+ *  is incremented.  The maximum value this format can represent is about 
+ *  1 million years using a counter frequency of 307200 Hz. This range 
+ *  should be sufficient for the near future.
+a129 4
+typedef struct {
+    unsigned int	low;
+    unsigned int	high;
+} Timer_Ticks;
+d131 1
+a131 1
+#else
+a132 5
+/*
+ * On the Sun-3, Timer_Ticks is just a Time value because the free-running
+ * counter keeps track of time.
+ */
+typedef Time Timer_Ticks;
+a133 2
+#endif SUN2
+
+d161 1
+d164 1
+a196 16
+
+/*
+ * Definitions of some frequently used tick and interval values.
+ */
+
+extern unsigned int 	timer_IntZeroSeconds;
+extern unsigned int 	timer_IntOneMillisecond;
+extern unsigned int 	timer_IntOneSecond;
+extern unsigned int 	timer_IntOneMinute;
+extern unsigned int 	timer_IntOneHour;
+extern Time 		timer_MaxTimeForTicks;
+extern Timer_Ticks	timer_TicksZeroSeconds;
+
+/* PROCEDURES */
+
+extern void Timer_Init();
+a201 16
+#ifdef SUN2
+extern void Timer_AddTicks();
+extern void Timer_SubtractTicks();
+extern void Timer_TicksToTime();
+extern void Timer_TimeToTicks();
+#endif SUN2
+
+#ifdef SUN3
+#define Timer_AddTicks(a,b,c)		Time_Add(a,b,c)
+#define Timer_SubtractTicks(a,b,c)	Time_Subtract(a,b,c)
+#define Timer_TicksToTime(a,b)		*(b) = a;
+#define Timer_TimeToTicks(a,b)		*(b) = a;
+#endif SUN3
+
+extern void Timer_AddIntervalToTicks();
+extern void Timer_GetCurrentTicks();
+a204 57
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tick Comparisons --
+ *
+ *	Timer_TickLT:	tick1  <   tick2
+ *	Timer_TickLE:	tick1  <=  tick2
+ *	Timer_TickEQ:	tick1  ==  tick2
+ *	Timer_TickGE:	tick1  >=  tick2
+ *	Timer_TickGT:	tick1  >   tick2
+ *
+ * Results:
+ *     TRUE	- the relation holds for the 2 values.
+ *     FALSE	- the relation does not hold.
+ *
+ * Side effects:
+ *     None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#ifdef SUN3
+#define Timer_TickLT(a,b)	Time_LT(a,b)
+#define Timer_TickLE(a,b)	Time_LE(a,b)
+#define Timer_TickEQ(a,b)	Time_EQ(a,b)
+#define Timer_TickGE(a,b)	Time_GE(a,b)
+#define Timer_TickGT(a,b)	Time_GT(a,b)
+#endif SUN3
+
+#ifdef SUN2
+
+#define Timer_TickLT(tick1, tick2) \
+		(((tick1).high     <  (tick2).high) ||  \
+		 (((tick1).high    == (tick2).high) &&  \
+		  ((tick1).low <  (tick2).low)))
+
+#define Timer_TickLE(tick1, tick2) \
+		(((tick1).high     <  (tick2).high) ||  \
+		 (((tick1).high    == (tick2).high) &&  \
+		  ((tick1).low <= (tick2).low)))
+
+#define Timer_TickEQ(tick1, tick2) \
+		(((tick1).high == (tick2).high) &&  \
+		 ((tick1).low == (tick2).low))
+
+#define Timer_TickGE(tick1, tick2) \
+		(((tick1).high     >  (tick2).high) ||  \
+		 (((tick1).high    == (tick2).high) &&  \
+		  ((tick1).low >= (tick2).low)))
+
+#define Timer_TickGT(tick1, tick2) \
+		(((tick1).high     >  (tick2).high) ||  \
+		 (((tick1).high    == (tick2).high) &&  \
+		 ((tick1).low >  (tick2).low)))
+#endif SUN2
+@

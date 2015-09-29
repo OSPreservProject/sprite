@@ -1,0 +1,134 @@
+
+
+
+Hash                  C Library Procedures                   Hash
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Hash - overview of routines to manipulate hash tables
+
+_________________________________________________________________
+
+
+     The Hash_ routines provide mechanisms for manipulating  hash
+     tables.   A  hash  table is a data structure that stores any
+     number of entries, each of which is  a  <key,  value>  pair.
+     Given the key for a particular entry, the Hash_ routines can
+     very quickly  find  the  entry  (and  hence  the  associated
+     value).   There can be at most one entry with a given key in
+     a hash table at a time, but many entries may have  the  same
+     value.
+
+     This library provides two  unusual  features.   First,  hash
+     tables  can grow gracefully.  In most hash table implementa-
+     tions the  number of buckets in the table is fixed;  if  the
+     number  of entries in the table becomes substantially larger
+     than the number of buckets, the  performance  of  the  table
+     degrades.   In  contrast,  this implementation automatically
+     re-allocates the bucket memory as the  table  grows.   As  a
+     result,  hash  tables  can  become arbitrarily large without
+     overloading the buckets.  An initial number of  buckets  may
+     be  provided when tables are initialized, but it will change
+     later (automatically) if necessary  to  guarantee  efficient
+     operation.
+
+     The second unusual feature of the  Hash_  routines  is  that
+     they  allow keys to be expressed in several forms.  Keys may
+     either  be  variable-length  NULL-terminated   strings,   or
+     single-word  values, or multi-word records of any length (in
+     the latter case, all keys in the  table  must  be  the  same
+     length).   See  Hash_InitTable  for deatils on the different
+     key types.
+
+     Hash tables are initialized by calling HHaasshh__IInniittTTaabbllee.   New
+     entries   are  added  with  HHaasshh__CCrreeaatteeEEnnttrryy,  and  existing
+     entries may  be  located  with  either  HHaasshh__CCrreeaatteeEEnnttrryy  or
+     HHaasshh__FFiinnddEEnnttrryy.   The  values  stored in entries are manipu-
+     lated with HHaasshh__GGeettVVaalluuee and Hash_SetValue  (values  may  be
+     arbitrary  one-word  values;  they are stored in entries and
+     retrieved from them  using  the  type  ``ClientData'').   An
+     entry   can   be   deleted   from   the   table  by  calling
+     HHaasshh__DDeelleetteeEEnnttrryy;  the entire table can be released by  cal-
+     ling  HHaasshh__DDeelleetteeTTaabbllee.   HHaasshh__EEnnuummFFiirrsstt  and  HHaasshh__EEnnuummNNeexxtt
+     provide a facility for stepping through all the entries in a
+     table.  Finally, HHaasshh__PPrriinnttSSttaattss can be invoked to print out
+     some usage information about a hash table.
+
+
+
+
+
+
+Sprite v.1.0       Printed:  February 13, 1989                  1
+
+
+
+
+
+
+Hash                  C Library Procedures                   Hash
+
+
+
+KKEEYYWWOORRDDSS
+     hash table, key, value
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  February 13, 1989                  2
+
+
+

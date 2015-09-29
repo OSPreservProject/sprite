@@ -1,0 +1,84 @@
+This is Common TeX, Version 2.9 (preloaded format=plain 89.9.18) 29 MAY 1991 20:48
+**&plain tar.texinfo 
+(./tar.texinfo (/sprite/lib/tex/texinfo.tex
+Loading texinfo package [Version 1.23]:  Basics,
+\bindingoffset=\dimen16
+\normaloffset=\dimen17
+\pagewidth=\dimen18
+\pageheight=\dimen19
+\cornerlong=\dimen20
+\cornerthick=\dimen21
+\topandbottommargin=\dimen22
+\outerhsize=\dimen23
+\outervsize=\dimen24
+\EMsimple=\toks12
+\singlespaceskip=\skip18
+ fonts,
+\fontdepth=\count25
+ page headings,
+\evenheadline=\toks13
+\oddheadline=\toks14
+\evenfootline=\toks15
+\oddfootline=\toks16
+
+tables,
+\tableindent=\dimen25
+\itemindent=\dimen26
+\itemmargin=\dimen27
+\itemmax=\dimen28
+\itemno=\count26
+ indexing,
+\initialskipamount=\skip19
+\secondaryindent=\skip20
+\partialpage=\box16
+\doublecolumnhsize=\dimen29
+\doublecolumnvsize=\dimen30
+ sectioning,
+\chapno=\count27
+\secno=\count28
+\subsecno=\count29
+\subsubsecno=\count30
+\appendixno=\count31
+\contentsfile=\write0
+\chapheadingskip=\skip21
+\subsecheadingskip=\skip22
+\secheadingskip=\skip23
+ toc printing, environments,
+\lispnarrowing=\skip24
+\aboveenvskipamount=\skip25
+ defuns,
+\defbodyindent=\skip26
+\defargsindent=\skip27
+\deftypemargin=\skip28
+\deflastargmargin=\skip29
+\parencount=\count32
+
+cross reference,
+\auxfile=\write1
+ (./tar.aux)
+\footnoteno=\count33
+ and turning on texinfo input format.
+\cpindfile=\write2
+\fnindfile=\write3
+\vrindfile=\write4
+\tpindfile=\write5
+\kyindfile=\write6
+\pgindfile=\write7
+)
+[1] [2] (Preface) Chapter 1 [1] Chapter 2 [2] [3] Chapter 3 [4] [5]
+[6] [7] [8] [9] [10] [11] Chapter 4 [12] Chapter 5 [13] [14] Chapter 6
+[15] Chapter 7 [16] Chapter 8 [17] [18] [19] [20] [21]
+Overfull \hbox (18.72537pt too wide) in paragraph at lines 1131--1135
+\tentt isextended[] \tenrm flag that the header had. There can be an in-
+de-ter-mi-nate num-ber of such \tentt extended_header[]\tenrm s
+
+\hbox(7.60416+2.12917)x469.75499, glue set - 1.0
+.\tentt i
+.\tentt s
+.\tentt e
+.\tentt x
+.\tentt t
+.etc.
+
+[22] [23] (Concept Index) [24] (./tar.toc) [-1] [-2]
+Output written on tar.dvi (28 pages, 67792 bytes).

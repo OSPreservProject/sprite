@@ -1,0 +1,198 @@
+
+
+
+jls                       User Commands                       jls
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     jls - list contents of a Jaquith archive directory.
+
+SSYYNNOOPPSSIISS
+     jjllss   [--aarrcchh  _a_r_c_h_i_v_e]  [--sseerrvveerr  _h_o_s_t_n_a_m_e]   [--ppoorrtt   _p_o_r_t]
+     [--rraannggee  ((_d_a_t_e_1,_d_a_t_e_2)]  [--oowwnneerr  _n_a_m_e]  [--ggrroouupp _n_a_m_e] [--aabbss
+     _r_e_g_e_x_p] [--uu]] [[--aassooff _d_a_t_e] [--ssiinnccee _d_a_t_e] [--ffiirrsstt _n] [--llaasstt _n]
+     [--aallll]  [--mmooddddaattee]  [_f_i_l_e_l_i_s_t] [--ll] [--ii] [--uu] [--aa] [--ss] [--gg]
+     [--dd] [--RR] [--rraaww]
+
+OOPPTTIIOONNSS
+     --aarrcchh _a_r_c_h_i_v_e Name of logical archive.  If  none  is  speci-
+                   fied,  the  environment  variable  JARCHIVE is
+                   used, if defined, else the default archive  is
+                   used.
+
+     --sseerrvveerr _h_o_s_t_n_a_m_e
+                   Specifies host where Jaquith  server  is  run-
+                   ning.  Defaults  to  the  environment variable
+                   JSERVER.
+
+     --ppoorrtt _p_o_r_t    Specifies port number where Jaquith server  is
+                   running.  Defaults to the environment variable
+                   JPORT.
+
+     --rraannggee _d_a_t_e_1,_d_a_t_e_2
+                   List files with date in specified range.
+
+     --oowwnneerr _n_a_m_e   List only files with specified owner name.
+
+     --ggrroouupp _n_a_m_e   List only files with specified group name.
+
+     --aabbss _r_e_g_e_x_p   List  files  which  match  _r_e_g_e_x_p   in   their
+                   abstract lines.
+
+     --aassooff _d_a_t_e    List version which was current as of specified
+                   date. Equivalent to: -range(1-jan-1970,_d_a_t_e)
+
+     --ssiinnccee _d_a_t_e   List versions between _d_a_t_e and  present  date.
+                   Equivalent to: -range(_d_a_t_e,_p_r_e_s_e_n_t-_d_a_t_e)
+
+     --ffiirrsstt _n      List from the nth version in the date range.
+
+     --llaasstt         List to the nth version in the date range.
+
+     --aallll          List  all  the  versions   in   the   archive.
+                   Equivalent to: -first 1 -last -1
+
+     --mmooddddaattee      Use the  file's  modification  date,  not  its
+                   archive date for all date comparisons.
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+jls                       User Commands                       jls
+
+
+
+     --ll            Display using long format (see below).
+
+     --ii            Display buffer number where file lives, volume
+                   id  where buffer lives, and position on volume
+                   of buffer.
+
+     --uu            Display  archive   date   instead   of   last-
+                   modification date (with -l option).
+
+     --aa            Display abstract.
+
+     --ss            Display file size in 1024 byte units.
+
+     --gg            Display group name.
+
+     --dd            Display directory name only.
+
+     --RR            Display directory tree recursively.
+
+     --rraaww          Display output in raw mode.  This  feature  is
+                   undocumented,  (you  are NOT presently reading
+                   this) and is subject to change/removal.
+_________________________________________________________________
+
+DDEESSCCRRIIPPTTIIOONN
+     JJllss provides a simple directory  listing  mechanism  for  an
+     archive tape system controlled by the Jaquith program.
+
+     The primary argument _f_i_l_e_l_i_s_t is a   file  expression  which
+     specifies  the  files  to be listed.  Shell-like globbing is
+     supported. '*' matches any number of characters. '?' matches
+     a  single  character. Additionally, curly braces can be used
+     to enclose alternatives.  For  example  foo.{bak,?}  matches
+     foo.bak, foo.c and foo.h.
+
+     Note that any metacharacters which are not protected with  a
+     backslash  or  quotes  will be expanded by the shell, not by
+     the Jaquith system.
+
+     The default action is to list the simple  filenames  of  the
+     most  recent  versions  of  matching  filenames.  The set of
+     files listed can be controlled by the use  of  one  or  more
+     options.  The options are all logically ANDed together; only
+     files matching all criteria are listed.
+
+     The -range,  -first  and  -last  options  work  together  to
+     specify  a subset of the archived versions.  First, the date
+     range is applied, resulting in a list of candidates numbered
+     logically  from 1 to _n.  Then the first and last options are
+     applied to this list. First and last  can  be  positive  and
+     retrieve  the  specified  filenames from restricted list, or
+     they can be negative in which case they count from  the  end
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+jls                       User Commands                       jls
+
+
+
+     of  the list. Thus, the most recent version of a file can be
+     retrieved with 'first -1 last -1' without having to know how
+     many versions currently exist.
+
+     _d_a_t_e is of the form _D_a_t_e_S_p_e_c[:_T_i_m_e_S_p_e_c]. _T_i_m_e_S_p_e_c is of  the
+     form   [hh[:mm[:ss]]],   and   _D_a_t_e_S_p_e_c   is   of  the  form
+     dd-month[-yyyy]. Month is the first 3 letters of the  month;
+     all  others  are  numbers. The '/' character is a substitute
+     for '-' and '.' may be used instead of ':'.
+
+     By default jls simply lists the matching  filenames,  1  per
+     line.  In long form jls generates:
+
+          _m_o_d_e _o_w_n_e_r_I_D _s_i_z_e _d_a_t_e _f_i_l_e_n_a_m_e
+
+     With the --ii option the "inode" information is included:
+
+          _t_B_u_f_I_d _v_o_l_I_d _f_i_l_e_m_a_r_k _m_o_d_e _o_w_n_e_r_I_D _s_i_z_e _d_a_t_e _f_i_l_e_n_a_m_e
+
+     _d_a_t_e is the archive date if the -_u  option  is  given,  else
+     it's the file's last modification date.
+
+BBUUGGSS
+     The option flags have little relation  to  the  standard  ls
+     options.
+
+     No multicolumn formatting is provided.
+
+     A file which matches more than one regular  expression  will
+     be listed multiple times.
+
+     Only one archive can be specified at a time.
+
+     Unlike the shell, the Jaquith globbing  characters  '*'  and
+     '?' match a '.' in the first position.
+
+
+SSEEEE AALLSSOO
+     jaquith jmgr jstat jput jget jctrl jcopy jclean jbuild
+
+
+KKEEYYWWOORRDDSS
+     jaquith archive
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     3
+
+
+

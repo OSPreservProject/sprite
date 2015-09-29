@@ -1,0 +1,42 @@
+crh did:
+	goto specific line number?
+	abort all the way back?
+	toggle full/split screen modes?
+	re-read directory?
+
+bug: empty dirs that are'nt owned by user and not 777 will not be rm -rf'ed.
+	must go back to rmdir.
+MOSTLY DONE?. pass last command down via -I flag
+MOSTLY DONE. finish symlink support
+PARTIAL DONE. split off subrs not using globals
+ifdef in a news interface?
+instead of forking, send signal to parent to tell it to continue.
+^C to interrupt sort query..
+fix single non-dir arg
+put some % indication in mode line
+need cmd to move current file to top of screen
+should not clear screen at exit
+print command needs to be interruptible
+avoid most commands on sockets
+make inititialization dynamic so can just fork a recursive dired w/o an exec.
+make downline() use \n
+need to put out more terminal initization and termination strings
+'t/T' command has nothing to do with waiting anymore.  clean up code,
+	maybe doc?
+rmrf needs to shift status code over to make return code
+	rm/rmrf distinction is hazy
+	check on what systems -r option to rm exists
+	needs cleanup-- the 02 accesses check is garbage
+parameterize getname() table sizes from makefile
+remember to add -O to Makefile
+
+DONE. need reverse regexp search
+DONE. deal with #'s in filenames passwd to sh somehow
+DONE. implement DFLTEDITOR
+DONE. fix up ^Z during type
+FIXED. ^Z'ing a recursive ded leaves messed up tty modes.
+FIXED. typefiles puits one too many when have 4 digit number files
+FIXED. nblocks() fxn is probably wrong. check nblk field in dinode
+DONE. c-v and m-v work.
+DONE. sort numerically
+DONE. may need bcopy on other systems

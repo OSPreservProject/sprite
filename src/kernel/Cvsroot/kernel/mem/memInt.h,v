@@ -1,0 +1,150 @@
+head     9.2;
+branch   ;
+access   ;
+symbols  ds3100:9.2 sun3:9.2 sun4nw:9.2 symm:9.2 spur:9.2 Summer89:9.0 newlib:8.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.2
+date     90.09.12.13.42.46;  author shirriff;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.09.11.10.43.34;  author shirriff;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.12.24;  author douglis;  state Stable;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.26.04;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     88.11.11.15.27.34;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.08.26.17.35.49;  author mlgray;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Checking this in for someone, it's never been checked in before.
+@
+
+
+9.2
+log
+@Changed includes to angle brackets.
+@
+text
+@/*
+ * memInt.h --
+ *
+ *	Internal declarations of procedures for the memory module.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/mem/RCS/memInt.h,v 9.1 90/09/11 10:43:34 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+ */
+
+#ifndef _MEMINT
+#define _MEMINT
+
+#include <sprite.h>
+
+extern void Mem_DumpTrace _ARGS_((int blockSize));
+extern void MemPanic _ARGS_((char *message));
+extern int MemChunkAlloc _ARGS_((int size, Address *addressPtr));
+extern void MemPrintInit _ARGS_((void));
+extern Address Mem_CallerPC _ARGS_((void));
+
+extern void	(*memPrintProc) _ARGS_(());
+extern ClientData	memPrintData;
+extern Boolean		memAllowFreeingFree;
+
+#endif /* _MEMINT */
+@
+
+
+9.1
+log
+@Added function prototyping.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mem/RCS/memInt.h,v 1.2 88/11/11 15:27:34 mendel Exp $ SPRITE (Berkeley)
+d16 1
+a16 1
+#include "sprite.h"
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mem/RCS/memInt.h,v 8.0 88/11/11 18:26:04 douglis Stable Locker: douglis $ SPRITE (Berkeley)
+d18 5
+a22 4
+extern void	MemPanic();
+extern int	MemChunkAlloc();
+extern void	MemAdjustHeap();
+extern void	MemPrintInit();
+d24 1
+a24 1
+extern void		(*memPrintProc)();
+a26 3
+
+extern int	mem_NumAllocs;
+extern int	mem_NumFrees;
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mem/RCS/memInt.h,v 1.2 88/11/11 15:27:34 mendel Exp Locker: douglis $ SPRITE (Berkeley)
+@
+
+
+1.2
+log
+@Ported to use new libc.a
+@
+text
+@d10 1
+a10 1
+ * $Header: memInt.h,v 1.1 88/08/26 17:35:49 mlgray Exp $ SPRITE (Berkeley)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d10 1
+a10 1
+ * $Header: memInt.h,v 2.2 87/11/15 20:03:47 douglis Exp $ SPRITE (Berkeley)
+d26 3
+@

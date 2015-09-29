@@ -1,0 +1,134 @@
+
+
+
+MKTTY                     User Commands                     MKTTY
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     mktty - Create pseudo-terminal with 4.3 BSD line discipline
+
+SSYYNNOOPPSSIISS
+     mmkkttttyy _r_a_w_T_t_y _p_d_e_v_N_a_m_e [_c_o_m_m_a_n_d _a_r_g _a_r_g ...]
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     Given a raw serial line device, mmkkttttyy  generates  a  pseudo-
+     device that behaves like a terminal under 4.3 BSD UNIX, with
+     most of the features of the 4.3 BSD terminal driver.  _R_a_w_T_t_y
+     is  the  name  of a device file for a serial line.  TTttyy will
+     read keyboard input from this file in  raw  mode  and  write
+     screen  output  to  the  file,  also  in raw mode.  TTttyy will
+     create a pseudo-device at _p_d_e_v_N_a_m_e;  input from _r_a_w_T_t_y  will
+     appear  as  input  on  _p_d_e_v_N_a_m_e after line-editing and other
+     input-related features of the 4.3 BSD terminal driver.  Out-
+     put  to _p_d_e_v_N_a_m_e will eventually appear as output on _r_a_w_T_t_y,
+     after processing that simulates the features of the 4.3  BSD
+     terminal  driver.  All of the 4.3 BSD I/O-control operations
+     may be performed on  _p_d_e_v_N_a_m_e,  except  for  the  exceptions
+     listed  below.   Thus  if  a user's terminal is connected to
+     _r_a_w_T_t_y and if the user's applications all talk to  _p_d_e_v_N_a_m_e,
+     everything will behave as it did under 4.3 BSD UNIX.
+
+     If _c_o_m_m_a_n_d is given as an argument to  mmkkttttyy,  it  (and  the
+     following  arguments) are executed with _p_d_e_v_N_a_m_e as standard
+     input, standard output, and standard error.
+
+     TTttyy also supports a special mode of operation where it  uses
+     a  network  connection  instead of a raw serial line device.
+     If _r_a_w_T_t_y contains a colon character, then it is assumed  to
+     have the form _h_o_s_t::_p_o_r_t_N_u_m, where _h_o_s_t is the name of a host
+     and _p_o_r_t_N_u_m is a decimal port number within that  host.   In
+     this  case,  mmkkttttyy  will  open a TCP connection to the given
+     port and will use it for reading and writing  characters  to
+     the  supposed  terminal.   This  feature is designed for use
+     with the rrttttyy program, which is capable  of  supporting  the
+     other end of the TCP connection.
+
+
+UUNNIIMMPPLLEEMMEENNTTEEDD FFEEAATTUURREESS
+     For details on the features implemented by  mmkkttttyy,  see  the
+     4.3  BSD  man  page TTY(4).  TTttyy implements all of the func-
+     tionality of the 4.3 BSD ``new'' line discipline except  for
+     the following:
+
+     o+    Control terminal:  there is no ``/dev/tty'' device  yet
+          in Sprite.
+
+
+
+
+Sprite v.1.0         Printed:  April 7, 1989                    1
+
+
+
+
+
+
+MKTTY                     User Commands                     MKTTY
+
+
+
+     o+    Output delays, such as BS0  and  TAB0  are  not  imple-
+          mented;   the delay-related flags in sgttyb structs are
+          ignored, except for  XTABS,  which  doesn't  specify  a
+          delay and is implemented.
+
+     o+    Parity is not generated or checked.
+
+     o+    The LTILDE, LTOSTOP, LETXACK, and  LINTRUP  local  mode
+          flags are ignored.
+
+     TTttyy  only  implements  the  ``new''  line  discipline:   the
+     ``old'' and ``net'' disciplines are not implemented.
+
+
+KKEEYYWWOORRDDSS
+     line discipline, pseudo-device, terminal driver
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  April 7, 1989                    2
+
+
+

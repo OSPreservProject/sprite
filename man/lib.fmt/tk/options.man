@@ -1,0 +1,660 @@
+
+
+
+options                   User Commands                   options
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     options - Standard options supported by widgets
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This manual entry describes the common configuration options
+     supported  by  widgets in the Tk toolkit.  Every widget does
+     not necessarily support every option (see the manual entries
+     for  individual  widgets  for a list of the standard options
+     supported by that widget), but if a widget does  support  an
+     option  with  one of the names listed below, then the option
+     has exactly the effect described below.
+
+     In the descriptions below, ``Name'' refers to  the  option's
+     name  in  the  option  database (e.g.  in .Xdefaults files).
+     ``Class'' refers to the option's class value in  the  option
+     database.  ``Command-Line Switch'' refers to the switch used
+     in widget-creation and ccoonnffiigguurree widget commands to set this
+     value.   For  example, if an option's command-line switch is
+     --ffoorreeggrroouunndd and there exists a widget ..aa..bb..cc, then the  com-
+     mand
+
+          ..aa..bb..cc  ccoonnffiigguurree  --ffoorreeggrroouunndd bbllaacckk
+     may be used to specify the value bbllaacckk for the option in the
+     the  widget  ..aa..bb..cc.   Command-line switches may be abbrevi-
+     ated, as long as the abbreviation is unambiguous.
+
+     Name:           aaccttiivveeBBaacckkggrroouunndd
+     Class:          FFoorreeggrroouunndd
+     Command-Line Switch:--aaccttiivveebbaacckkggrroouunndd
+
+          Specifies background color to use when  drawing  active
+          elements.  An element (a widget or portion of a widget)
+          is active if the mouse cursor is  positioned  over  the
+          element  and  pressing  a  mouse button will cause some
+          action to occur.
+
+     Name:           aaccttiivveeBBoorrddeerrWWiiddtthh
+     Class:          BBoorrddeerrWWiiddtthh
+     Command-Line Switch:--aaccttiivveebboorrddeerrwwiiddtthh
+
+          Specifies a non-negative value indicating the width  of
+          the 3-D border drawn around active elements.  See above
+          for definition of active elements.  The value may  have  |
+          any  of  the  forms  acceptable  to TTkk__GGeettPPiixxeellss.  This
+          option is typically only available in widgets  display-
+          ing more than one element at a time (e.g. menus but not
+          buttons).
+
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+options                   User Commands                   options
+
+
+
+     Name:           aaccttiivveeFFoorreeggrroouunndd
+     Class:          BBaacckkggrroouunndd
+     Command-Line Switch:--aaccttiivveeffoorreeggrroouunndd
+
+          Specifies foreground color to use when  drawing  active
+          elements.  See above for definition of active elements.
+
+     Name:           aanncchhoorr                                        |
+     Class:          AAnncchhoorr                                        |
+     Command-Line Switch:--aanncchhoorr                                   |
+
+                                                                        ||
+          Specifies how the information in a widget (e.g. text or  |
+          a bitmap) is to be displayed in the  widget.   Must  be  |
+          one  of  the  values  nn,  nnee,  ee,  ssee, ss, ssww, ww, nnww, or  |
+          cceenntteerr.  For example, nnww means display the  information  |
+          such that its top-left corner is at the top-left corner  |
+          of the widget.
+
+     Name:           bbaacckkggrroouunndd
+     Class:          BBaacckkggrroouunndd
+     Command-Line Switch:--bbaacckkggrroouunndd oorr --bbgg
+
+          Specifies the  normal  background  color  to  use  when
+          displaying the widget.
+
+     Name:           bbiittmmaapp
+     Class:          BBiittmmaapp                                        |
+     Command-Line Switch:--bbiittmmaapp                                   |
+
+                                                                        ||
+          Specifies  a bitmap to display in the widget, in any of  |
+          the forms acceptable to TTkk__GGeettBBiittmmaapp.  The exact way in  |
+          which  the bitmap is displayed may be affected by other  |
+          options such as aanncchhoorr or jjuussttiiffyy.  Typically, if  this  |
+          option  is  specified  then  it overrides other options  |
+          that specify a textual value to display in the  widget;  |
+          the  bbiittmmaapp  option  may be reset to an empty string to  |
+          re-enable a text display.
+
+     Name:           bboorrddeerrWWiiddtthh
+     Class:          BBoorrddeerrWWiiddtthh
+     Command-Line Switch:--bboorrddeerrwwiiddtthh oorr --bbdd
+
+          Specifies a non-negative value indicating the width  of
+          the 3-D border to draw around the outside of the widget
+          (if such a border is being drawn;   the  rreelliieeff  option
+          typically determines this).  The value may also be used
+          when drawing 3-D effects in the interior of the widget.  |
+          The  value  may  have  any  of  the forms acceptable to  |
+          TTkk__GGeettPPiixxeellss.
+
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+options                   User Commands                   options
+
+
+
+     Name:           ccuurrssoorr
+     Class:          CCuurrssoorr
+     Command-Line Switch:--ccuurrssoorr
+
+          Specifies the mouse cursor to be used for  the  widget.
+          The  value  may  have  any  of  the forms acceptable to
+          TTkk__GGeettCCuurrssoorr.
+
+     Name:           ccuurrssoorrBBaacckkggrroouunndd
+     Class:          FFoorreeggrroouunndd
+     Command-Line Switch:--ccuurrssoorrbbaacckkggrroouunndd
+
+          Specifies the color to use as background  in  the  area
+          covered  by the insertion cursor.  This color will nor-
+          mally override either the  normal  background  for  the
+          widget  (or  the  selection background if the insertion
+          cursor happens to fall in the selection).  _T_h_i_s  _o_p_t_i_o_n  |
+          _i_s  _o_b_s_o_l_e_t_e  _a_n_d  _i_s  _g_r_a_d_u_a_l_l_y  _b_e_i_n_g _r_e_p_l_a_c_e_d _b_y _t_h_e  |
+          iinnsseerrttBBaacckkggrroouunndd option.
+
+     Name:           ccuurrssoorrBBoorrddeerrWWiiddtthh
+     Class:          BBoorrddeerrWWiiddtthh
+     Command-Line Switch:--ccuurrssoorrbboorrddeerrwwiiddtthh
+
+          Specifies a non-negative value indicating the width  of
+          the  3-D  border  to  draw around the insertion cursor.  |
+          The value may have  any  of  the  forms  acceptable  to  |
+          TTkk__GGeettPPiixxeellss.  _T_h_i_s _o_p_t_i_o_n _i_s _o_b_s_o_l_e_t_e _a_n_d _i_s _g_r_a_d_u_a_l_l_y  |
+          _b_e_i_n_g _r_e_p_l_a_c_e_d _b_y _t_h_e iinnsseerrttBBoorrddeerrWWiiddtthh option.
+
+     Name:           ccuurrssoorrOOffffTTiimmee
+     Class:          OOffffTTiimmee
+     Command-Line Switch:--ccuurrssoorrooffffttiimmee
+
+          Specifies a non-negative integer value  indicating  the
+          number of milliseconds the cursor should remain ``off''
+          in each blink cycle.  If this option is zero  then  the
+          cursor  doesn't  blink:   it  is on all the time.  _T_h_i_s  |
+          _o_p_t_i_o_n _i_s _o_b_s_o_l_e_t_e _a_n_d _i_s _g_r_a_d_u_a_l_l_y _b_e_i_n_g  _r_e_p_l_a_c_e_d  _b_y  |
+          _t_h_e iinnsseerrttOOffffTTiimmee option.
+
+     Name:           ccuurrssoorrOOnnTTiimmee
+     Class:          OOnnTTiimmee
+     Command-Line Switch:--ccuurrssoorroonnttiimmee
+
+          Specifies a non-negative integer value  indicating  the
+          number  of milliseconds the cursor should remain ``on''
+          in each blink cycle.  _T_h_i_s _o_p_t_i_o_n _i_s  _o_b_s_o_l_e_t_e  _a_n_d  _i_s  |
+          _g_r_a_d_u_a_l_l_y _b_e_i_n_g _r_e_p_l_a_c_e_d _b_y _t_h_e iinnsseerrttOOnnTTiimmee option.
+
+     Name:           ccuurrssoorrWWiiddtthh
+     Class:          CCuurrssoorrWWiiddtthh
+
+
+
+Sprite v1.0                                                     3
+
+
+
+
+
+
+options                   User Commands                   options
+
+
+
+     Command-Line Switch:--ccuurrssoorrwwiiddtthh
+
+          Specifies a  value indicating the total  width  of  the
+          insertion  cursor.  The value may have any of the forms  |
+          acceptable to  TTkk__GGeettPPiixxeellss.   If  a  border  has  been
+          specified  for  the cursor (using the ccuurrssoorrBBoorrddeerrWWiiddtthh
+          option), the border will  be  drawn  inside  the  width
+          specified  by  the  ccuurrssoorrWWiiddtthh option.  _T_h_i_s _o_p_t_i_o_n _i_s  |
+          _o_b_s_o_l_e_t_e  _a_n_d  _i_s  _g_r_a_d_u_a_l_l_y  _b_e_i_n_g  _r_e_p_l_a_c_e_d  _b_y   _t_h_e  |
+          iinnsseerrttWWiiddtthh option.
+
+     Name:           ddiissaabblleeddFFoorreeggrroouunndd                            |
+     Class:          DDiissaabblleeddFFoorreeggrroouunndd                            |
+     Command-Line Switch:--ddiissaabblleeddffoorreeggrroouunndd                       |
+
+                                                                        ||
+          Specifies  foreground  color to use when drawing a dis-  |
+          abled element.  If the option is specified as an  empty  |
+          string  (which  is  typically  the  case  on monochrome  |
+          displays), disabled elements are drawn with the  normal  |
+          fooreground  color  but they are dimmed by drawing them  |
+          with a stippled fill pattern.
+
+     Name:           eexxppoorrttSSeelleeccttiioonn                               |
+     Class:          EExxppoorrttSSeelleeccttiioonn                               |
+     Command-Line Switch:--eexxppoorrttsseelleeccttiioonn                          |
+
+                                                                        ||
+          Specifies  whether  or  not  a  selection in the widget  |
+          should also be the X selection.  The value may have any  |
+          of  the forms accepted by TTccll__GGeettBBoooolleeaann, such as ttrruuee,  |
+          ffaallssee, 00, 11, yyeess, or nnoo.  If the selection is exported,  |
+          then  selecting  in  the widget deselects the current X  |
+          selection, selecting outside the widget  deselects  any  |
+          widget selection, and the widget will respond to selec-  |
+          tion retrieval requests when it has a  selection.   The  |
+          default is usually for widgets to export selections.
+
+     Name:           ffoonntt
+     Class:          FFoonntt
+     Command-Line Switch:--ffoonntt
+
+          Specifies the font to use when drawing text inside  the
+          widget.
+
+     Name:           ffoorreeggrroouunndd
+     Class:          FFoorreeggrroouunndd
+     Command-Line Switch:--ffoorreeggrroouunndd oorr --ffgg
+
+          Specifies the  normal  foreground  color  to  use  when
+          displaying the widget.
+
+
+
+
+Sprite v1.0                                                     4
+
+
+
+
+
+
+options                   User Commands                   options
+
+
+
+     Name:           ggeeoommeettrryy
+     Class:          GGeeoommeettrryy
+     Command-Line Switch:--ggeeoommeettrryy
+
+          Specifies the desired geometry for the widget's window,
+          in  the  form  _w_i_d_t_hxx_h_e_i_g_h_t, where _w_i_d_t_h is the desired
+          width of the window and _h_e_i_g_h_t is the  desired  height.
+          The units for _w_i_d_t_h and _h_e_i_g_h_t depend on the particular
+          widget.  For widgets displaying text the units are usu-
+          ally  the  size  of  the  characters  in the font being
+          displayed;  for other widgets  the  units  are  usually
+          pixels.
+
+     Name:           iinnsseerrttBBaacckkggrroouunndd                              |
+     Class:          FFoorreeggrroouunndd                                    |
+     Command-Line Switch:--iinnsseerrttbbaacckkggrroouunndd                         |
+
+                                                                        ||
+          Specifies  the  color  to use as background in the area  |
+          covered by the insertion cursor.  This color will  nor-  |
+          mally  override  either  the  normal background for the  |
+          widget (or the selection background  if  the  insertion  |
+          cursor happens to fall in the selection).                |
+
+     Name:           iinnsseerrttBBoorrddeerrWWiiddtthh                             |
+     Class:          BBoorrddeerrWWiiddtthh                                   |
+     Command-Line Switch:--iinnsseerrttbboorrddeerrwwiiddtthh                        |
+
+                                                                        ||
+          Specifies  a non-negative value indicating the width of  |
+          the 3-D border to draw  around  the  insertion  cursor.  |
+          The  value  may  have  any  of  the forms acceptable to  |
+          TTkk__GGeettPPiixxeellss.                                            |
+
+     Name:           iinnsseerrttOOffffTTiimmee                                 |
+     Class:          OOffffTTiimmee                                       |
+     Command-Line Switch:--iinnsseerrttooffffttiimmee                            |
+
+                                                                        ||
+          Specifies  a  non-negative integer value indicating the  |
+          number of  milliseconds  the  insertion  cursor  should  |
+          remain  ``off'' in each blink cycle.  If this option is  |
+          zero then the cursor doesn't blink:  it is on  all  the  |
+          time.                                                    |
+
+     Name:           iinnsseerrttOOnnTTiimmee                                  |
+     Class:          OOnnTTiimmee                                        |
+     Command-Line Switch:--iinnsseerrttoonnttiimmee                             |
+
+                                                                        ||
+          Specifies  a  non-negative integer value indicating the  |
+          number of  milliseconds  the  insertion  cursor  should  |
+
+
+
+Sprite v1.0                                                     5
+
+
+
+
+
+
+options                   User Commands                   options
+
+
+
+          remain ``on'' in each blink cycle.                       |
+
+     Name:           iinnsseerrttWWiiddtthh                                   |
+     Class:          IInnsseerrttWWiiddtthh                                   |
+     Command-Line Switch:--iinnsseerrttwwiiddtthh                              |
+
+                                                                        ||
+          Specifies  a   value  indicating the total width of the  |
+          insertion cursor.  The value may have any of the  forms  |
+          acceptable  to  TTkk__GGeettPPiixxeellss.   If  a  border  has been  |
+          specified for the insertion cursor (using  the  iinnsseerrtt--  |
+          BBoorrddeerrWWiiddtthh  option),  the  border will be drawn inside  |
+          the width specified by the iinnsseerrttWWiiddtthh option.
+
+     Name:           oorriieenntt
+     Class:          OOrriieenntt
+     Command-Line Switch:--oorriieenntt
+
+          For widgets that can lay themselves out with  either  a
+          horizontal or vertical orientation, such as scrollbars,
+          this option specifies which orientation should be used.
+          Must  be  either hhoorriizzoonnttaall or vveerrttiiccaall or an abbrevia-
+          tion of one of these.
+
+     Name:           ppaaddXX
+     Class:          PPaadd
+     Command-Line Switch:--ppaaddxx
+
+          Specifies a  non-negative  value  indicating  how  much
+          extra  space  to  request  for  the  widget  in  the X-
+          direction.  The value may have any of the forms accept-  |
+          able  to TTkk__GGeettPPiixxeellss.  When computing how large a win-
+          dow it needs, the widget will add this  amount  to  the
+          width  it  would  normally  need  (as determined by the
+          width of the things displayed in the widget);   if  the
+          geometry  manager  can satisfy this request, the widget
+          will end up with  extra  internal  space  to  the  left
+          and/or right of what it displays inside.
+
+     Name:           ppaaddYY
+     Class:          PPaadd
+     Command-Line Switch:--ppaaddyy
+
+          Specifies a  non-negative  value  indicating  how  much
+          extra  space  to  request  for  the  widget  in  the Y-
+          direction.  The value may have any of the forms accept-  |
+          able  to TTkk__GGeettPPiixxeellss.  When computing how large a win-
+          dow it needs, the widget will add this  amount  to  the
+          height  it  would  normally  need (as determined by the
+          height of the things displayed in the widget);  if  the
+          geometry  manager  can satisfy this request, the widget
+          will end up with  extra  internal  space  above  and/or
+
+
+
+Sprite v1.0                                                     6
+
+
+
+
+
+
+options                   User Commands                   options
+
+
+
+          below what it displays inside.
+
+     Name:           rreelliieeff
+     Class:          RReelliieeff
+     Command-Line Switch:--rreelliieeff
+
+          Specifies  the  3-D  effect  desired  for  the  widget.
+          Acceptable  values  are  rraaiisseedd, ssuunnkkeenn, and ffllaatt.  The
+          value indicates how the interior of the  widget  should
+          appear  relative  to its exterior;  for example, rraaiisseedd
+          means the interior of the widget should appear to  pro-
+          trude  from the screen, relative to the exterior of the
+          widget.
+
+     Name:           rreeppeeaattDDeellaayy
+     Class:          RReeppeeaattDDeellaayy
+     Command-Line Switch:--rreeppeeaattddeellaayy
+
+          Specifies the number of milliseconds a  button  or  key
+          must  be  held  down  before  it begins to auto-repeat.
+          Used, for  example,  on  the  up-  and  down-arrows  in
+          scrollbars.
+
+     Name:           rreeppeeaattIInntteerrvvaall
+     Class:          RReeppeeaattIInntteerrvvaall
+     Command-Line Switch:--rreeppeeaattiinntteerrvvaall
+
+          Used in conjunction with rreeppeeaattDDeellaayy:  once auto-repeat
+          begins,  this  option  determines  the  number  of mil-
+          liseconds between auto-repeats.
+
+     Name:           ssccrroollllCCoommmmaanndd
+     Class:          SSccrroollllCCoommmmaanndd
+     Command-Line Switch:--ssccrroollllccoommmmaanndd
+
+          Specifies the prefix for a command used to  communicate
+          with  scrollbar widgets.  When the view in the widget's
+          window changes (or whenever anything else  occurs  that
+          could  change  the  display  in  a scrollbar, such as a
+          change in the total size of the widget's contents), the
+          widget will generate a Tcl command by concatenating the
+          scroll command and four numbers.  The four numbers are,
+          in  order:  the total size of the widget's contents, in
+          unspecified units (``unit'' is a widget-specific  term;
+          for  widgets displaying text, the unit is a line);  the
+          maximum number of units that may be displayed  at  once
+          in  the  widget's  window, given its current size;  the
+          index of the top-most or left-most unit currently visi-
+          ble  in  the  window  (index 0 corresponds to the first
+          unit); and the index of the bottom-most  or  right-most
+          unit  currently visible in the window.  This command is
+          then passed  to  the  Tcl  interpreter  for  execution.
+
+
+
+Sprite v1.0                                                     7
+
+
+
+
+
+
+options                   User Commands                   options
+
+
+
+          Typically the ssccrroollllCCoommmmaanndd option consists of the path
+          name of a scrollbar widget followed  by  ``set'',  e.g.
+          ``.x.scrollbar set'':  this will cause the scrollbar to
+          be updated whenever the view in the window changes.  If
+          this  option  is not specified, then no command will be
+          executed.
+
+          The ssccrroollllCCoommmmaanndd option is used for widgets that  sup-  |
+          port scrolling in only one direction.  For widgets that  |
+          support scrolling in both directions,  this  option  is  |
+          replaced  with  the  xxSSccrroollllCCoommmmaanndd  and yySSccrroollllCCoommmmaanndd  |
+          options.
+
+     Name:           sseelleeccttBBaacckkggrroouunndd
+     Class:          FFoorreeggrroouunndd
+     Command-Line Switch:--sseelleeccttbbaacckkggrroouunndd
+
+          Specifies the background color to use  when  displaying
+          selected items.
+
+     Name:           sseelleeccttBBoorrddeerrWWiiddtthh
+     Class:          BBoorrddeerrWWiiddtthh
+     Command-Line Switch:--sseelleeccttbboorrddeerrwwiiddtthh
+
+          Specifies a non-negative value indicating the width  of
+          the  3-D  border  to  draw  around selected items.  The  |
+          value  may  have  any  of  the  forms   acceptable   to  |
+          TTkk__GGeettPPiixxeellss.
+
+     Name:           sseelleeccttFFoorreeggrroouunndd
+     Class:          BBaacckkggrroouunndd
+     Command-Line Switch:--sseelleeccttffoorreeggrroouunndd
+
+          Specifies the foreground color to use  when  displaying
+          selected items.
+
+     Name:           sseettGGrriidd                                       |
+     Class:          SSeettGGrriidd                                       |
+     Command-Line Switch:--sseettggrriidd                                  |
+
+                                                                        ||
+          Specifies  a boolean value that determines whether this  |
+          widget controls the resizing  grid  for  its  top-level  |
+          window.  This option is typically used in text widgets,  |
+          where the information in the widget has a natural  size  |
+          (the  size  of  a character) and it makes sense for the  |
+          window's dimensions to be  integral  numbers  of  these  |
+          units.  These natural window sizes form a grid.  If the  |
+          sseettGGrriidd option is set to true then the widget will com-  |
+          municate  with the window manager so that when the user  |
+          interactively resizes the top-level  window  that  con-  |
+          tains  the widget, the dimensions of the window will be  |
+
+
+
+Sprite v1.0                                                     8
+
+
+
+
+
+
+options                   User Commands                   options
+
+
+
+          displayed to the user in grid units and the window size  |
+          will  be constrained to integral numbers of grid units.  |
+          See the section GRIDDED GEOMETRY MANAGEMENT in  the  wwmm  |
+          manual entry for more details.
+
+     Name:           tteexxtt
+     Class:          TTeexxtt
+     Command-Line Switch:--tteexxtt
+
+          Specifies a string to be displayed inside  the  widget.
+          The way in which the string is displayed depends on the
+          particular  widget  and  may  be  determined  by  other
+          options, such as aanncchhoorr or jjuussttiiffyy.
+
+     Name:           tteexxttVVaarriiaabbllee                                  |
+     Class:          VVaarriiaabbllee                                      |
+     Command-Line Switch:--tteexxttvvaarriiaabbllee                             |
+
+                                                                        ||
+          Specifies  the  name  of  a variable.  The value of the  |
+          variable is a text string to be  displayed  inside  the  |
+          widget;   if the variable value changes then the widget  |
+          will automatically update itself  to  reflect  the  new  |
+          value.  The way in which the string is displayed in the  |
+          widget depends on the  particular  widget  and  may  be  |
+          determined by other options, such as aanncchhoorr or jjuussttiiffyy.  |
+
+     Name:           uunnddeerrlliinnee                                     |
+     Class:          UUnnddeerrlliinnee                                     |
+     Command-Line Switch:--uunnddeerrlliinnee                                |
+
+                                                                        ||
+          Specifies the integer index of a character to underline  |
+          in the widget.  This option is typically used to  indi-  |
+          cate  keyboard traversal characters in menu buttons and  |
+          menu entries.  0 corresponds to the first character  of  |
+          the text displayed in the widget, 1 to the next charac-  |
+          ter, and so on.                                          |
+
+     Name:           xxSSccrroollllCCoommmmaanndd                                |
+     Class:          SSccrroollllCCoommmmaanndd                                 |
+     Command-Line Switch:--xxssccrroollllccoommmmaanndd                           |
+
+                                                                        ||
+          Specifies  the prefix for a command used to communicate  |
+          with horizontal scrollbars.  This option is treated  in  |
+          the  same  way as the ssccrroollllCCoommmmaanndd option, except that  |
+          it is used for horizontal  scrollbars  associated  with  |
+          widgets  that  support  both  horizontal  and  vertical  |
+          scrolling.  See the description  of  ssccrroollllCCoommmmaanndd  for  |
+          complete details on how this option is used.             |
+
+
+
+
+Sprite v1.0                                                     9
+
+
+
+
+
+
+options                   User Commands                   options
+
+
+
+     Name:           yySSccrroollllCCoommmmaanndd                                |
+     Class:          SSccrroollllCCoommmmaanndd                                 |
+     Command-Line Switch:--yyssccrroollllccoommmmaanndd                           |
+
+                                                                        ||
+          Specifies  the prefix for a command used to communicate  |
+          with vertical scrollbars.  This option  is  treated  in  |
+          the  same  way as the ssccrroollllCCoommmmaanndd option, except that  |
+          it is used  for  vertical  scrollbars  associated  with  |
+          widgets  that  support  both  horizontal  and  vertical  |
+          scrolling.  See the description  of  ssccrroollllCCoommmmaanndd  for  |
+          complete details on how this option is used.
+
+
+KKEEYYWWOORRDDSS
+     class, name, standard option, switch
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                    10
+
+
+

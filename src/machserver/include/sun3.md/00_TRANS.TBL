@@ -1,0 +1,7 @@
+L FSMACH.H;1                        	fsMach.h	../../src/sprited/fs/sun3.md/fsMach.h
+L PROCMACH.H;1                      	procMach.h	../../src/sprited/proc/sun3.md/procMach.h
+L SIGMACH.H;1                       	sigMach.h	../../src/sprited/sig/sun3.md/sigMach.h
+L SIGTYPES.H;1                      	sigTypesMach.h	../../src/sprited/sig/sun3.md/sigTypesMach.h
+L USER.;1                           	user	../user/sun3.md/
+L UTILSMAC.H;1                      	utilsMach.h	../../src/sprited/utils/sun3.md/utilsMach.h
+L VMMACHST.H;1                      	vmMachStat.h	../../src/sprited/vm/sun3.md/vmMachStat.h

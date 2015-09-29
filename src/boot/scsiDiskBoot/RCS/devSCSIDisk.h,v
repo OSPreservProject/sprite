@@ -1,0 +1,50 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    mendel:1.1; strict;
+comment  @ * @;
+
+
+1.1
+date     86.08.11.12.07.34;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@external defs for the SCSI disk driver.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/*
+ * devSCSIDisk.h --
+ *
+ *	External definitions for the SCSI Disk.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: devSCSIDisk.h,v 1.2 86/06/19 17:57:58 brent Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _DEVSCSIDISK
+#define _DEVSCSIDISK
+
+/*
+ * Forward Declarations.
+ */
+ReturnStatus Dev_SCSIDiskIO();
+
+ReturnStatus Dev_SCSIDiskBlockIOInit();
+ReturnStatus Dev_SCSIDiskBlockIO();
+
+#endif _DEVSCSIDISK
+@

@@ -1,0 +1,3 @@
+sub MAX_MACHINE_NAME {255;}
+sub NGRPS {8;}
+1;

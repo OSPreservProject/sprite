@@ -1,0 +1,859 @@
+head     9.2;
+branch   ;
+access   ;
+symbols  ds3100:9.2 sun3:9.2 sun4nw:9.2 symm:9.2 spur:9.2 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.2
+date     91.08.19.13.41.14;  author jhh;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.09.11.12.19.28;  author rab;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.57.17;  author douglis;  state Stable;
+branches ;
+next     1.3;
+
+1.3
+date     89.05.23.10.20.41;  author mendel;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.05.01.15.44.36;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.04.12.11.52.11;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Device queue module.
+@
+
+
+9.2
+log
+@fixed #includes
+@
+text
+@/* 
+ * devQueue.c --
+ *
+ *	Routines to implement the DevQueue data type. 
+ *	Device queues define a queuing mechanism designed for implementing
+ *	queuing in low level device drivers.  The module interface provided is 
+ *	very simple.  Each controller in the system keeps one queue per
+ *	device attached to it. Requests are sent to a device by inserting 
+ *	the request into the queue for that device.  When a request becomes 
+ *	available in the queue for a device, the queue module notifies the
+ *	controller using a callback. The controller then has the option
+ *	of processing the request or informing the queue module to
+ *	enqueue it.  
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/dev.jhh/RCS/devQueue.c,v 9.1 90/09/11 12:19:28 rab Exp Locker: jhh $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <list.h>
+#include <bit.h>
+#include <devQueue.h>
+#include <proc.h>
+#include <sync.h>
+#include <stdlib.h>
+#include <bstring.h>
+
+/*
+ *	Design rationale
+ *
+ *	A queue per device is desirable for higher level software because
+ *	it allows the software to view each device as an individual entity
+ *	regardless of how the device is attached to the system.
+ *	It also allows simple implementation of queue reordering (such as for 
+ *	minimizing disk seek time).  Unfortunately, a queue per device 
+ *	may be inappropriate for controllers that are single-threaded. 
+ *	Each controller would have to implement collapsing these multiple 
+ *	device queues into a single queue for the controller.
+ *	The device queue module handles this complexity
+ *	by allowing the controller to specify a set of queues to the
+ *	dequeue operation and the queue module will handle the fair
+ *	scheduling of these requests to the controller.
+ *	When the controller looks for the next request
+ *	to handle it can specify a bit mask indicating which queues it would
+ *	be willing to take entries for.	The queue module will return a request
+ *	from one of these queues using round-robin scheduling to decide which
+ *	queue the request comes from.
+ *
+ *	How to use device queues.
+ *
+ *	1) Each controller that wishes to maintain device queues should 
+ *	   call Dev_CtrlQueuesCreate() to get a DevCtrlQueues on to
+ *	   which the device queues can be added. An argument to this
+ *	   call is the procedure to call when an entry becomes available on a
+ *	   queue attached to the controller.
+ *	2) For each device attached to this controller, the driver should 
+ *	   create a queue with the Dev_QueueCreate() call. The arguments
+ *	   allow specification of the queue insert procedure (see below)
+ *	   and the queue bit.  The queue bit must have at most one bit
+ *	   set in it. Dev_QueueCreate() also lets the caller specify a
+ *	   word of clientData passed to the controller's entryAvailProc when
+ *	   an entry appears on the queue.
+ *	3) Once the queue is created, entries can be inserted with the
+ *	   Dev_QueueInsert() routine.
+ *	4) To get the next entry off a queue the controller calls the
+ *	   routine Dev_QueueGetNext(). The controller may also call
+ *	   Dev_QueueGetNextFromSet() that takes the next entry from a 
+ *	   set of queues represented in a bit mask.
+ *
+ * 	Other features available in Device Queues:
+ *
+ *	1) Data structures are locked with MASTER_LOCKS() using the 
+ *	   Sync_Semaphore specified by the controller. This allows the
+ *	   QueueGetNext routines can be called at interrupt time.
+ *	2) The predefined insert "function" DEV_QUEUE_FIFO_INSERT can
+ *	   be specified to the Dev_QueueCreate call to get first in
+ *	   first out queuing.
+ *
+ * Data structures used to implement device queues.
+ *
+ * CtrlQueues - Contains per controller list of device queues.  This structure
+ * is returned by CtrlQueuesCreate and passed to QueueCreate to link
+ * device queues of a controller. It contains the lock for the queues and 
+ * information about ready queues.  When an entry is taken from a queue, 
+ * the queue is moved to the rear of the ready list.  This implements the 
+ * round-robin scheduling of combined queues.  
+ * 
+ */
+
+typedef struct CtrlQueues {
+    Sync_Semaphore *mutexPtr; 	/* Lock use to protect this data structures
+				 * and all device queues attached to this
+				 * structure. This is specified by the 
+				 * Controller when it creates the the
+				 * DevCtrlQueues structure. */
+    Boolean  (*entryAvailProc)();/* Procedure to call when an entry becomes
+				 * available in a queue. Its calling sequence
+				 * is defined in Dev_CtrlQueuesCreate. */
+    List_Links readyListHdr;    /* A list of device queues with entries in
+				 * them. This list is used to do the 
+				 * round-robin scheduling. */
+} CtrlQueues;
+
+/*
+ * Queue - The data structure for a device queue.  This structure contains
+ * per queue information about a DevQueue.
+ */
+
+typedef struct Queue {
+    List_Links	links;	/* Used to link the queue into ready and empty lists
+			 * in the CtrlQueues structure. */
+    CtrlQueues	*ctrlPtr;   /* Controller for this device queue. */
+    ClientData	clientData; /* The ClientData to use on entryAvail callbacks
+			     * for this queue.   */
+    void   (*insertProc)(); /* Insert procedure to use from this queue. */
+    unsigned int  queueBit; /* Bit used to specify this queue to the
+			     * GetNextFromSet() routine. */
+    List_Links elementListHdr; /* List of elements on this queue. */
+
+} Queue;
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  Dev_CtrlQueuesCreate --
+ *
+ *	Allocate the data structures necessary to maintain queues for a
+ *	device controller with multiple devices.  Memory for the 
+ *	DevCtrlQueue data structure is malloc-ed and initialized.
+ *
+ * Results:
+ *	The DevCtrlQueue for this controller.
+ *
+ * Side effects:
+ *	Memory for the DevCtrlQueue data structure is malloc-ed and
+ *	initialized. The entryAvalProc may be called at a latter time
+ *	with the following arguments:
+ *
+ *	Boolean entryAvailProc(clientData, newRequestPtr)
+ *		ClientData clientData;	-- clientData specified for queue 
+ *					   this entry was for.
+ *		List_Links *newRequestPtr; -- New queue entry 
+ *	The entryAvailProc should return TRUE if the newRequest was
+ *	processed. If the FALSE is return the queue module will enqeue
+ *	the newRequest.
+ *
+ *----------------------------------------------------------------------
+ */
+
+DevCtrlQueues
+Dev_CtrlQueuesCreate(mutexPtr, entryAvailProc)
+    Sync_Semaphore *mutexPtr;	/* Semaphore used to protect this data 
+				 * structure. */
+    Boolean (*entryAvailProc)();/* Procedure to call when a queue for a device
+				 * on this controller moves from empty to
+				 * having an entry present. */
+{
+    CtrlQueues	 *ctrlPtr;
+
+    ctrlPtr = (CtrlQueues *) malloc(sizeof(CtrlQueues));
+    bzero((char *) ctrlPtr, sizeof(CtrlQueues));
+    /*
+     * Initialize the lock used to protect queues under the control
+     * of this controller.
+     */
+    ctrlPtr->mutexPtr = mutexPtr;
+    /*
+     * Initialize the envtyAvailProc and the ready mask.
+     */
+    ctrlPtr->entryAvailProc = entryAvailProc;
+    /*
+     * Initialize the list headers for the ready list for
+     * the device queues attached to this controller.
+     */
+    List_Init(&(ctrlPtr->readyListHdr));
+    return (DevCtrlQueues) ctrlPtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_QueueCreate --
+ *
+ *	Allocate and initialize the data structures for a device queue.
+ *	The queue will come up empty. The queueBit is used to group the 
+ *	newly created queue with the other queues using the same queueBit bit.
+ *
+ * Results:
+ *	The allocated DevQueue structure.
+ *
+ * Side effects:
+ *	Memory allocated and the newly created queue is added to the 
+ *	empty queue list of the controller. The insertProc procedure
+ *	may be called when elements become available.
+ *	The queue insert routine is responsible
+ *	for inserting the new entry in the linked list for the device. The
+ *	entries in the list are given to the device in the list order.
+ * 	It should be declared:
+ *
+ *	void insertProc(elementPtr,listHeaderPtr)
+ *		List_Links  *elementPtr;    -- Element to add.
+ *		List_Links  *listHeaderPtr; -- Header of list to add to.
+ *
+ *	See the List man page for a description on how list work.
+ *
+ *----------------------------------------------------------------------
+ */
+
+DevQueue
+Dev_QueueCreate(ctrlQueue, queueBit, insertProc, clientData)
+    DevCtrlQueues ctrlQueue;    /* Pointer to the controller to which this
+				 * queue belongs. Must be a pointer returned
+				 * from Dev_CtrlQueuesCreate.*/
+    void (*insertProc)();	/* Queue insert routine.  */
+    unsigned int queueBit;	/* Bit value used to identify queue in 
+				 * select mask for the GetNextFromSet() call. 
+				 * Only zero or one bit should be set in this
+				 * integer.  A zero value means the queue
+				 * is not in a set. */
+    ClientData	clientData;	/* Field passed to the entryAvailProc for the
+				 * controller when an entry because available
+				 * in this DevQueue. */
+{
+    CtrlQueues	 *ctrlPtr = (CtrlQueues *) ctrlQueue;
+    Queue	 *queuePtr;
+    /*
+     * Allocated and initialize the DevQueue structure for this queue. 
+     */
+    queuePtr = (Queue *) malloc(sizeof(Queue));
+    bzero((char *)queuePtr, sizeof(Queue));
+    queuePtr->ctrlPtr = ctrlPtr;
+    queuePtr->clientData = clientData;
+    queuePtr->insertProc = insertProc;
+    queuePtr->queueBit = queueBit;
+    List_Init(&(queuePtr->elementListHdr));
+    return (DevQueue) queuePtr;
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_QueueDestroy --
+ *
+ *	Release the resources held by a queue.
+ *
+ * Results:
+ *	TRUE if the queue is was destroyed. FALSE if the queue could not
+ * 	be freed because it was not empty.
+ *
+ * Side effects:
+ *	Memory may be free'ed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Boolean
+Dev_QueueDestroy(devQueue)
+    DevQueue	devQueue;	/* Queue to destory. */
+{
+    Queue	 *queuePtr = (Queue *) devQueue;
+
+    /*
+     * Don't try to delete empty queue.
+     */
+    if (!List_IsEmpty(&(queuePtr->elementListHdr))) {
+	return FALSE;
+    }
+    /*
+     * Release the lock on the queue entry.  There is an inherent race 
+     * condition with the freeing of a queue if someone else is still
+     * trying to add entries to the queue. The user of the queue must 
+     * make sure this doesn't happen.
+     *
+     */
+    free((char *) queuePtr);
+    return TRUE;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_QueueInsert --
+ *	
+ *	Insert an entry into the specified device queue.  If the device
+ *	queue is not on the ready list it is added to the ready list.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The queue controller's entryAvailProc maybe called. The queue may
+ *	be moved from the controller's emptyList to the readyList of its
+ *	combine tag.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Dev_QueueInsert(devQueue, elementPtr)
+    DevQueue	devQueue;	/* Queue to insert into. */
+    List_Links  *elementPtr;	/* Entry to insert. */
+{
+    register Queue	 *queuePtr = (Queue *) devQueue;
+    register CtrlQueues  *ctrlPtr = queuePtr->ctrlPtr;
+    register Boolean	 wasEmpty;
+
+    MASTER_LOCK(ctrlPtr->mutexPtr);
+    wasEmpty = List_IsEmpty(&(queuePtr->elementListHdr));
+    /*
+     * Insert the elment in the queue's list of elements if the entry
+     * avail procedure doesn't take it.
+     */
+    if (wasEmpty) {
+	Boolean	taken;
+	taken = (ctrlPtr->entryAvailProc)(queuePtr->clientData,elementPtr);
+	if (taken) {
+	    MASTER_UNLOCK(ctrlPtr->mutexPtr);
+	    return;
+	}
+    }
+    if (queuePtr->insertProc != DEV_QUEUE_FIFO_INSERT) { 
+	(queuePtr->insertProc)(elementPtr,&(queuePtr->elementListHdr));
+    } else {
+	List_Insert(elementPtr, LIST_ATREAR(&(queuePtr->elementListHdr)));
+    }
+    /*
+     * If the queue moved from empty to available, move this queue 
+     * to the ready list.  This need only be done if the queue is in
+     * a set.
+     */
+    if (wasEmpty && (queuePtr->queueBit != 0)) {
+	register List_Links *readyList;
+	readyList = &(ctrlPtr->readyListHdr);
+	wasEmpty = List_IsEmpty(readyList);
+	List_Insert((List_Links *) queuePtr, LIST_ATREAR(readyList));
+    }
+    MASTER_UNLOCK(ctrlPtr->mutexPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_QueueGetNext --
+ *	
+ *	Remove the element from a device queue.
+ *
+ *	NOTE: This routine assumes that the caller as the ctrlPtr->mutexPtr
+ *	held.
+ *
+ * Results:
+ *	The element removed.  NIL if queue was empty.
+ *
+ * Side effects:
+ *	Entry removed from a queue and the queue may be moved from the
+ *	ready list to empty list.
+ *----------------------------------------------------------------------
+ */
+
+List_Links  *
+Dev_QueueGetNext(devQueue)
+    DevQueue	devQueue;		/* Queue remove element from. */
+{
+    register Queue	 *queuePtr = (Queue *) devQueue;
+    register CtrlQueues  *ctrlPtr = queuePtr->ctrlPtr;
+    List_Links	*returnValue;
+
+    /*
+     * If the queue is empty just return.
+     */
+    if (List_IsEmpty(&(queuePtr->elementListHdr))) {
+	return (List_Links *) NIL;
+    } 
+    /*
+     * Take the first entry of the queue. If the queue is now empty 
+     * remove it from the readyList. Otherwise move it to the end 
+     * of the ready list to implement round-robining in the
+     * Dev_QueueGetNextFromSet routine. 
+     */
+    returnValue = List_First(&(queuePtr->elementListHdr));
+    List_Remove(returnValue);
+    if (queuePtr->queueBit != 0) {
+	if (List_IsEmpty(&(queuePtr->elementListHdr))) {
+	    List_Remove((List_Links *) queuePtr);
+	 } else {
+	    List_Move((List_Links *) queuePtr, 
+			LIST_ATREAR(&(ctrlPtr->readyListHdr)));
+	}
+    }
+    return returnValue;
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_QueueGetNextFromSet --
+ *	
+ *	Remove next the element from a set of queues using LRU scheduling.
+ *
+ *	NOTE: This routine assumes that the caller as the ctrlPtr->mutexPtr
+ *	held.
+ *
+ * Results:
+ *	The element removed.  NIL if all queues in the mask were empty.
+ *
+ * Side effects:
+ *	Entry removed from a queue and the queue may be moved from the
+ *	ready list to empty list.
+ *----------------------------------------------------------------------
+ */
+
+List_Links  *
+Dev_QueueGetNextFromSet(ctrl, queueMask, clientDataPtr)
+    DevCtrlQueues ctrl;		/* Controller to examine queues of. */
+    unsigned int queueMask;		/* Mask of queues to examine. */
+    ClientData	*clientDataPtr;		/* Filled in the with clientdata
+					 * for the queue of the entry 
+					 * returned. */
+{
+    register Queue	 *queuePtr;
+    register List_Links *itemPtr;
+    CtrlQueues  *ctrlPtr = (CtrlQueues *) ctrl;
+
+    /*
+     * Scan down the ready list for the first queue that has the queue bit 
+     * set in the mask.
+     */
+    LIST_FORALL(&(ctrlPtr->readyListHdr), itemPtr) {
+	queuePtr = (Queue *) itemPtr;
+	if (queueMask & (queuePtr->queueBit)) {
+		*clientDataPtr = queuePtr->clientData;
+		return Dev_QueueGetNext((DevQueue) queuePtr);
+	}
+    }
+    return (List_Links *) NIL;
+}
+
+
+@
+
+
+9.1
+log
+@#include proc.h and bstring.h for forward declarations.
+@
+text
+@d26 1
+a26 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devQueue.c,v 9.0 89/09/12 14:57:17 douglis Stable Locker: rab $ SPRITE (Berkeley)";
+d29 8
+a36 8
+#include "sprite.h"
+#include "list.h"
+#include "bit.h"
+#include "devQueue.h"
+#include "proc.h"
+#include "sync.h"
+#include "stdlib.h"
+#include "bstring.h"
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d26 1
+a26 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devQueue.c,v 1.3 89/05/23 10:20:41 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d33 1
+d36 1
+@
+
+
+1.3
+log
+@Lint errors.
+@
+text
+@d26 1
+a26 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev.new/RCS/devQueue.c,v 1.2 89/05/01 15:44:36 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+@
+
+
+1.2
+log
+@Redesigned the dev queue module to allow removable of a request from a
+set of queues.
+@
+text
+@d26 1
+a26 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev.new/RCS/devQueue.c,v 1.1 89/04/12 11:52:11 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d34 1
+a196 3
+ *	NOTE: This routine assumes that the caller as the ctrlPtr->mutexPtr
+ *	held.
+ *
+a254 3
+ *
+ *	NOTE: This routine assumes that the caller as the ctrlPtr->mutexPtr
+ *	held.
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d5 9
+d26 1
+a26 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.2 89/01/07 04:12:18 rab Exp $ SPRITE (Berkeley)";
+d36 50
+d91 3
+a93 6
+ * information about combined queues.  Each combine queue has a ready
+ * list that contains all the queues of a combined queue
+ * that have entries in them.  When an entry is taken from a queue, the queue
+ * is moved to the rear of the ready list.  This implements the round-
+ * robin scheduling of combined queues. Another list, the empty list
+ * contains all device queues of the controller that have no elements.
+d95 1
+a95 15
+ * NUM_COMBINED_QUEUES - The number of combined queues per controller.
+ *			 Since we use an integer to specify the tag
+ *			 this is the number of bits in an int.
+ * TAG_TO_INDEX	       - Convert a combined queue tag into an index into 
+ *			 the ready list array of the CtrlQueues data structure.
+ *			 Index zero is the non-combined queues and index
+ *			 1 thru 32 is the bit number of first bit set in 
+ *			 in the tag.
+ * NONCOMBINDED_INDEX  - Index into readyList array of the noncombined queue's
+ *			 ready list.
+ */
+
+#define	NUM_COMBINED_QUEUES	BIT_NUM_BITS_PER_INT 
+#define	TAG_TO_INDEX(tag)	(Bit_FindFirstSet(NUM_COMBINED_QUEUES,&(tag))+1)
+#define	NONCOMBINDED_INDEX	0
+d98 1
+a98 1
+    Sync_Semaphore	mutex; 	/* Lock use to protect this data structures
+d100 9
+a108 16
+				 * structures. 
+				 */
+    void  (*entryAvailProc)();  /* Procedure to call when an entry becomes
+				 * available in a combined queue.
+				 */
+    List_Links emptyListHdr;	/* A list of all the empty queues attached to 
+				 * the controller. This is a list of Queue's.
+				 */
+    List_Links readyListHdr[NUM_COMBINED_QUEUES+1];
+			        /* For each possible combined tag
+				 * we keep a list of the device queues 
+				 * that have elements.
+				 * This array is index by 
+				 * TAG_TO_INDEX(combineTag) and is a list
+				 * of Queue's.
+			         */
+d118 1
+a118 2
+			 * in the CtrlQueues structure.
+			 */
+d121 1
+a121 2
+			     * for this queue. 
+			     */
+d123 2
+a124 3
+    int	   queueIndex;	    /* Index in the controller's readyList array that
+			     * this Queue belongs.
+			     */
+d142 3
+a144 1
+ *	Memory is malloc-ed.
+d146 16
+a161 6
+ *----------------------------------------------------------------------
+ */
+
+DevCtrlQueuesPtr
+Dev_CtrlQueuesCreate(entryAvailProc)
+    void (*entryAvailProc)();	/* Procedure to call when a queue for a device
+d163 1
+a163 3
+				 * having an entry present. See devQueue.h
+				 * for the calling sequence.
+				 */
+a165 1
+    int		 queueIndex;
+d170 6
+a175 2
+     * Initialize the list headers for the empty and ready list for
+     * all the device queue list possibly attached to this controller.
+a176 4
+    List_Init(&(ctrlPtr->emptyListHdr));
+    for (queueIndex = 0; queueIndex < NUM_COMBINED_QUEUES+1; queueIndex++) {
+	List_Init(&(ctrlPtr->readyListHdr[queueIndex]));
+    }
+d179 2
+a180 2
+     * Initialize the lock used to protect queues under the control
+     * of this controller.
+d182 2
+a183 2
+    Sync_SemInitDynamic(&(ctrlPtr->mutex), "DevCtrlQueuesMutex");
+    return (DevCtrlQueuesPtr) ctrlPtr;
+d193 2
+a194 2
+ *	The queue will come up empty. The combineTag is used to group the 
+ *	newly created queue with the other queues with the same combineTag bit.
+d196 3
+d200 1
+a200 1
+ *	The allocated DevQueuePtr structure.
+d204 14
+a217 3
+ *	empty queue list of the controller.
+ *
+ *----------------------------------------------------------------------
+d220 3
+a222 3
+DevQueuePtr
+Dev_QueueCreate(ctrlQueuePtr, combineTag, insertProc, clientData)
+    DevCtrlQueuesPtr ctrlQueuePtr;/* Pointer to the controller to which this
+d224 4
+a227 6
+				 * from Dev_CtrlQueuesCreate.
+			         */
+    void (*insertProc)();	/* Queue insert routine. See devQueue.h for
+				 * its calling sequence. 
+				 */
+    unsigned int combineTag;	/* Bit value used to group queue together. 
+d229 2
+a230 2
+				 * integer. 
+				 */
+d233 1
+a233 2
+				 * in this DevQueue.
+				 */
+d235 1
+a235 1
+    CtrlQueues	 *ctrlPtr = (CtrlQueues *) ctrlQueuePtr;
+d238 1
+a238 3
+     * Allocated and initialize the DevQueue structure for this queue. The
+     * queue starts out empty so it is put on the controller's empty queue
+     * list. 
+d242 1
+d245 1
+a245 1
+    queuePtr->ctrlPtr = ctrlPtr;
+d247 4
+a250 13
+    queuePtr->queueIndex = TAG_TO_INDEX(combineTag);
+    /*
+     * Link this queue into the empty queue list for the
+     * controller.  
+     */
+    List_InitElement((List_Links *) queuePtr)
+    MASTER_LOCK(&(ctrlPtr->mutex));
+    List_Insert((List_Links *) queuePtr,LIST_ATREAR(&(ctrlPtr->emptyListHdr)));
+    MASTER_UNLOCK(&(ctrlPtr->mutex));
+    return (DevQueuePtr) queuePtr;
+
+}
+
+d254 1
+a254 1
+ * Dev_QueueDestory --
+d258 3
+d272 2
+a273 2
+Dev_QueueDestory(devQueuePtr)
+    DevQueuePtr	devQueuePtr;	/* Queue to destory. */
+d275 1
+a275 1
+    Queue	 *queuePtr = (Queue *) devQueuePtr;
+a276 1
+    MASTER_LOCK(&(queuePtr->ctrlPtr->mutex));
+a280 1
+	MASTER_UNLOCK(&(queuePtr->ctrlPtr->mutex));
+a288 1
+     * Remove the queue from the controller's list and free the element.
+a289 2
+    List_Remove((List_Links *) queuePtr);
+    MASTER_UNLOCK(&(queuePtr->ctrlPtr->mutex));
+d301 1
+a301 2
+ *	queue is on the empty list it is moved to the end of the ready
+ *	list for its combinded tag.
+d315 2
+a316 2
+Dev_QueueInsert(devQueuePtr, elementPtr)
+    DevQueuePtr	devQueuePtr;	/* Queue to insert into. */
+d319 1
+a319 1
+    register Queue	 *queuePtr = (Queue *) devQueuePtr;
+d323 1
+a323 1
+    MASTER_LOCK(&(ctrlPtr->mutex));
+d326 2
+a327 2
+     * Insert the elment in the queue's list of elements using if
+     * user specified insertProc if defined.
+d329 8
+d343 3
+a345 3
+     * If the queue moved from empty to available, move this queue from
+     * the empty list to ready list.  wasEmpty is modified to mean
+     * "was the combined queue empty?".
+d347 1
+a347 1
+    if (wasEmpty) {
+d349 1
+a349 1
+	readyList = &(ctrlPtr->readyListHdr[queuePtr->queueIndex]);
+d351 1
+a351 9
+	List_Move((List_Links *) queuePtr, LIST_ATREAR(readyList));
+    }
+    /*
+     * Release the lock and call the entryAvailProc if this element caused
+     * a combined queue to move from empty to ready.
+     */
+    MASTER_UNLOCK(&(ctrlPtr->mutex));
+    if (wasEmpty) {
+	(ctrlPtr->entryAvailProc)(queuePtr->clientData);
+d353 1
+d362 1
+a362 1
+ *	Remove the element from the combined queue of a device. 
+d364 3
+d377 2
+a378 2
+Dev_QueueGetNext(devQueuePtr)
+    DevQueuePtr	devQueuePtr;		/* Queue remove element from. */
+d380 1
+a380 1
+    register Queue	 *queuePtr = (Queue *) devQueuePtr;
+a381 2
+    register List_Links *readyList;
+    Boolean  nonCombinedQueue;
+a383 1
+    MASTER_LOCK(&(ctrlPtr->mutex));
+d385 1
+a385 2
+     * If the ready list is empty for the device's combine queue we
+     * know there can't be any elements on the device's queue.
+d387 1
+a387 16
+    readyList = &(ctrlPtr->readyListHdr[queuePtr->queueIndex]);
+    if (List_IsEmpty(readyList)) {
+	MASTER_UNLOCK(&(ctrlPtr->mutex));
+	return (List_Links *) NIL;
+    }
+    /*
+     * We need to treat combined queue and noncombined queues a
+     * little differently.  With combine queues we use the
+     * first queue on the ready list of queues with a common
+     * tag bit. Non combine queue always use the device queue specified.
+     * Since there is no ready list of non-combined queue we must 
+     * check to see if the element list is empty.
+     */
+    nonCombinedQueue = (queuePtr->queueIndex == NONCOMBINDED_INDEX);
+    if (nonCombinedQueue && List_IsEmpty(&(queuePtr->elementListHdr))) {
+	MASTER_UNLOCK(&(ctrlPtr->mutex));
+d389 1
+a389 3
+    } else {
+	queuePtr = (Queue *) List_First(readyList);
+    }
+d391 4
+a394 5
+     * Take the first entry of the queue. If the queue is now empty move
+     * it to the empty list. Otherwise move the queue 
+     * to the rear of the readyList so the other device queues with this
+     * tag can get their fair share. This reordering of the ready list
+     * is not needed for noncombined queues.
+d398 7
+a404 6
+
+    if (List_IsEmpty(&(queuePtr->elementListHdr))) {
+	List_Move((List_Links *) queuePtr,
+				LIST_ATREAR(&(ctrlPtr->emptyListHdr)));
+    } else if (!nonCombinedQueue) {
+	List_Move((List_Links *) queuePtr, LIST_ATREAR(readyList));
+a405 1
+    MASTER_UNLOCK(&(ctrlPtr->mutex));
+d409 46
+@

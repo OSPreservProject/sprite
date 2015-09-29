@@ -1,0 +1,198 @@
+
+
+
+SEMCTL                C Library Procedures                 SEMCTL
+
+
+
+NNAAMMEE
+     semctl - semaphore control operations
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<ssyyss//iippcc..hh>>
+     ##iinncclluuddee <<ssyyss//sseemm..hh>>
+
+     iinntt sseemmccttll ((sseemmiidd,, sseemmnnuumm,, ccmmdd,, aarrgg))
+     iinntt sseemmiidd,, ccmmdd;;
+     iinntt sseemmnnuumm;;
+     uunniioonn sseemmuunn {{
+          vvaall;;
+          ssttrruucctt sseemmiidd__ddss **bbuuff;;
+          uusshhoorrtt **aarrrraayy;;
+     }} aarrgg;;
+
+DDEESSCCRRIIPPTTIIOONN
+     sseemmccttll(()) provides a variety of semaphore control operations
+     as specified by _c_m_d.
+
+     The following _c_m_ds are executed with respect to the sema-
+     phore specified by _s_e_m_i_d and _s_e_m_n_u_m:
+
+          GGEETTVVAALL              Return the value of _s_e_m_v_a_l (see
+                              iinnttrroo(2)).  {{RREEAADD}}
+
+          SSEETTVVAALL              Set the value of _s_e_m_v_a_l to _a_r_g._v_a_l.
+                              {{AALLTTEERR}}
+
+          GGEETTPPIIDD              Return the value of _s_e_m_p_i_d.  {{RREEAADD}}
+
+          GGEETTNNCCNNTT             Return the value of _s_e_m_n_c_n_t.
+                              {{RREEAADD}}
+
+          GGEETTZZCCNNTT             Return the value of _s_e_m_z_c_n_t.
+                              {{RREEAADD}}
+
+     The following _c_m_ds return and set, respectively, every _s_e_m_-
+     _v_a_l in the set of semaphores.
+
+          GGEETTKKEEYYSS
+               Place the partial contents of all semaphore
+               entries into the array pointed to by _a_r_g._b_u_f .
+
+          GGEETTAALLLL
+               Place _s_e_m_v_a_l_s into the array pointed to by
+               _a_r_g._a_r_r_a_y.  {{RREEAADD}}
+
+          SSEETTAALLLL
+               Set _s_e_m_v_a_l_s according to the array pointed to by
+               _a_r_g._a_r_r_a_y.  {{AALLTTEERR}}
+
+
+
+Sprite v1.0             21 November 1987                        1
+
+
+
+
+
+
+SEMCTL                C Library Procedures                 SEMCTL
+
+
+
+     The following _c_m_ds are also available:
+
+          IIPPCC__SSTTAATT            Place the current value of each
+                              member of the data structure asso-
+                              ciated with _s_e_m_i_d into the struc-
+                              ture pointed to by _a_r_g._b_u_f.  The
+                              contents of this structure are
+                              defined in iinnttrroo(2).  {{RREEAADD}}
+
+          IIPPCC__SSEETT             Set the value of the following
+                              members of the data structure asso-
+                              ciated with _s_e_m_i_d to the
+                              corresponding value found in the
+                              structure pointed to by _a_r_g._b_u_f:
+
+
+                              sseemm__ppeerrmm..uuiidd
+                              sseemm__ppeerrmm..ggiidd
+                              sseemm__ppeerrmm..mmooddee //** oonnllyy llooww 99 bbiittss **//
+
+                              This _c_m_d can only be executed by a
+                              process that has an effective user
+                              ID equal to either that of super-
+                              user, or to the value of
+                              sseemm__ppeerrmm..ccuuiidd or sseemm__ppeerrmm..uuiidd in
+                              the data structure associated with
+                              _s_e_m_i_d.
+
+          IIPPCC__RRMMIIDD            Remove the semaphore identifier
+                              specified by _s_e_m_i_d from the system
+                              and destroy the set of semaphores
+                              and data structure associated with
+                              it.  This cmd can only be executed
+                              by a process that has an effective
+                              user ID equal to either that of
+                              super-user, or to the value of
+                              sseemm__ppeerrmm..ccuuiidd or sseemm__ppeerrmm..uuiidd in
+                              the data structure associated with
+                              _s_e_m_i_d.
+
+RREETTUURRNN VVAALLUUEE
+     Upon successful completion, the value returned depends on
+     _c_m_d as follows:
+          GGEETTVVAALL              The value of _s_e_m_v_a_l.
+          GGEETTPPIIDD              The value of _s_e_m_p_i_d.
+          GGEETTNNCCNNTT             The value of _s_e_m_n_c_n_t.
+          GGEETTZZCCNNTT             The value of _s_e_m_z_c_n_t.
+          All others          A value of 0.
+     Otherwise, a value of -1 is returned and eerrrrnnoo is set to
+     indicate the error.
+
+
+
+
+
+Sprite v1.0             21 November 1987                        2
+
+
+
+
+
+
+SEMCTL                C Library Procedures                 SEMCTL
+
+
+
+EERRRROORRSS
+     sseemmccttll(()) will fail if one or more of the following are true:
+
+     EINVAL              _s_e_m_i_d is not a valid semaphore identif-
+                         ier.
+
+     EINVAL              _s_e_m_n_u_m is less than zero or greater than
+                         sseemm__nnsseemmss.
+
+     EINVAL              _c_m_d is not a valid command.
+
+     EACCES              Operation permission is denied to the
+                         calling process (see iinnttrroo(2)).
+
+     ERANGE              _c_m_d is SSEETTVVAALL or SSEETTAALLLL and the value to
+                         which _s_e_m_v_a_l is to be set is greater
+                         than the system imposed maximum.
+
+     EPERM               _c_m_d is equal to IIPPCC__RRMMIIDD or IIPPCC__SSEETT and
+                         the effective user ID of the calling
+                         process is not equal to that of super-
+                         user, or to the value of sseemm__ppeerrmm..ccuuiidd
+                         or sseemm__ppeerrmm..uuiidd in the data structure
+                         associated with _s_e_m_i_d.
+
+     EFAULT              _a_r_g._b_u_f points to an illegal address.
+
+SSEEEE AALLSSOO
+     iinnttrroo(2), sseemmggeett(2), sseemmoopp(2).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0             21 November 1987                        3
+
+
+

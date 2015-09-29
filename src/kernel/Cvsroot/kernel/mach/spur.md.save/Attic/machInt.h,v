@@ -1,0 +1,215 @@
+head     8.1;
+branch   ;
+access   ;
+symbols  symm:8.1 spur:8.1 newlib:8.0;
+locks    ; strict;
+comment  @ * @;
+
+
+8.1
+date     89.01.11.09.42.40;  author mendel;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.06.01;  author douglis;  state Stable;
+branches ;
+next     1.3;
+
+1.3
+date     88.11.11.15.36.12;  author mendel;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.07.23.12.51.05;  author nelson;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.05.23.22.48.54;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+8.1
+log
+@Exported CPC stuff to rest of mach module.
+@
+text
+@/*
+ * machInt.h --
+ *
+ *	This file defines things that are shared between the "mach" modules
+ *	but aren't used by the rest of Sprite.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/mach/spur.md/RCS/machInt.h,v 1.3 88/11/11 15:36:12 mendel Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _MACHINT
+#define _MACHINT
+
+/*
+ * The bounds of the code that copies arguments from the user stack to
+ * the kernel stack.
+ */
+extern int MachFetchArgs();
+extern int MachFetchArgsEnd();
+
+
+/*
+ * The interrupt mask registers.
+ */
+extern	unsigned int	machNonmaskableIntrMask;
+extern	unsigned int	machIntrMask;
+extern  unsigned int	machDbgInterruptMask;
+/*
+ * Interrupt number for cross processor signal.
+ */
+extern 	unsigned int    mach_CpcInterruptNumber; 
+
+/*
+ * Slotid <-> processor number mappings. 
+ */
+extern int	machMapSlotIdToPnum[];
+extern int	machMapPnumToSlotId[];
+
+/*
+ * Mach_MapPnumToSlotId(pnum) - Map a processor number to the slot Id of that's
+ * processor's CPU board.
+ */
+
+#define Mach_MapPnumToSlotId(pnum)      (machMapPnumToSlotId[pnum])
+
+/*
+ * Refresh the CPU's dynamic registers.
+ */
+
+#define	REFRESH_CPU()	asm("cmp_trap	always,r0,r0,$3");
+/*
+ * Internal functions.
+ */
+extern	void	MachUserReturn();
+extern 	void	Mach_CPC_Init();
+extern	void	Mach_RefreshStart();
+extern	void	Mach_RefreshInterrupt();
+extern  void  	machExecuteCall();
+#endif _MACHINT
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/mach/spur.md/RCS/machInt.h,v 1.3 88/11/11 15:36:12 mendel Exp Locker: douglis $ SPRITE (Berkeley)
+d36 4
+d66 1
+a66 1
+
+@
+
+
+1.3
+log
+@Changes for multiprocessor, ibuffer, and new libc.a.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/mach/spur.md/RCS/machInt.h,v 1.2 88/07/23 12:51:05 nelson Exp Locker: mendel $ SPRITE (Berkeley)
+@
+
+
+1.2
+log
+@Successfully use non-maskable timer to refresh wells.
+@
+text
+@d16 1
+a16 1
+ * $Header: machInt.h,v 1.1 88/05/23 22:48:54 nelson Exp $ SPRITE (Berkeley)
+a28 4
+/*
+ * The number of different exceptions.
+ */
+#define	MACH_NUM_EXCEPTIONS	64
+d31 1
+a31 1
+ * Structure which contains the different functions called for exceptions.
+d33 3
+a36 24
+typedef struct {
+	int	initSupStackPtr;	/* 00 - initial SSP on reset*/
+	int	(*initPC)();		/* 04 - initial PC on reset*/
+	int	(*busError)();		/* 08 - bus error */
+	int	(*addressError)();	/* 0c - address error */
+	int	(*illegalInst)();	/* 10 - illegal instruction */
+	int	(*zeroDiv)();		/* 14 - zero divide */
+	int	(*chk)();		/* 18 - CHK instruction */
+	int	(*trapv)();		/* 1c - TRAPV instruction */
+	int	(*privViol)();		/* 20 - privilege violation */
+	int	(*traceTrap)();		/* 24 - trace trap */
+	int	(*emu1010)();		/* 28 - line 1010 emulator */
+	int	(*emu1111)();		/* 2c - line 1111 emulator */
+	int	(*res30)();		/* 30 - reserved */
+	int	(*res34)();		/* 34 - reserved */
+	int	(*stackFmtError)();	/* 38 - RTE format error */
+	int	(*unInitIntr)();	/* 3c - unitialized interrupt */
+	int	(*res1[8])();		/* 40-5c - reserved */
+	int	(*spuriousInt)();	/* 60 - spurious interrupt */
+	int	(*autoVec[7])();	/* 64-7c - level 1-7 autovectors */
+	int	(*trap[16])();		/* 80-bc - trap instruction vectors */
+	int	(*res2[16])();		/* c0-fc - reserved */
+} MachVectorTable;
+
+d38 1
+a38 1
+ * The actual table of vectors.
+d40 2
+a41 1
+extern	MachVectorTable		*machVectorTablePtr;
+d44 2
+a45 2
+ * The prototype table which contains the vectors which are to be copied into
+ * the vector table.
+a46 1
+extern	MachVectorTable 	machProtoVectorTable;
+d48 2
+d51 1
+a51 1
+ * The interrupt mask registers.
+a52 2
+extern	unsigned int	machNonmaskableIntrMask;
+extern	unsigned int	machIntrMask;
+d54 1
+d59 3
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+ * $Header: machInt.h,v 1.2 88/05/04 16:40:42 nelson Exp $ SPRITE (Berkeley)
+d72 6
+@

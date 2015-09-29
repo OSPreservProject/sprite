@@ -1,0 +1,198 @@
+
+
+
+MKID                      User Commands                      MKID
+
+
+
+NNAAMMEE
+     mkid - make an id database
+
+SSYYNNOOPPSSIISS
+     mmkkiidd [--vv] [--ffout-file] [--ssdirectory] [--rrdirectory]
+     [--SSscanarg] [--aaarg-file] [--] [--uu] [ffiilleess......]
+
+DDEESSCCRRIIPPTTIIOONN
+     _M_k_i_d builds a database that stores numbers and identifier
+     names, as well as the names of the files in which they
+     occur.  _M_k_i_d is particularly useful with large programs
+     spread out across multiple source files.  It serves as an
+     aid for program maintenance and as a _g_u_i_d_e for perusing a
+     program.
+
+     The following options are recognized:
+
+     --vv        Verbose.  Report _m_k_i_d's progress in building the
+               database.  The output comes on standard error.
+
+     --ff_o_u_t-_f_i_l_e
+               Write the finished database into _o_u_t-_f_i_l_e.  IIDD is
+               the default.
+
+     --ss_d_i_r_e_c_t_o_r_y
+
+     --rr_d_i_r_e_c_t_o_r_y
+               If _m_k_i_d's attempt to open a source-file fails, it
+               will try to checkout the corresponding SCCS or RCS
+               file if present.  The --ss option tells _m_k_i_d which
+               directory holds the SCCS file.  Similarly, the --rr
+               option tells _m_k_i_d which directory holds the RCS
+               file.  If neither the RCS or SCCS directories are
+               specified, _m_k_i_d will first look for an SCCS file
+               in the current directory, then in ssccccss, and
+               finally in SSCCCCSS.  It will then look for an RCS
+               file in the current directory, and finally in RRCCSS.
+
+     --aa_a_r_g-_f_i_l_e
+               Open and read _a_r_g-_f_i_l_e in order to obtain a list
+               of source file arguments.  Source file names must
+               appear one to a line.  --SS, --rr, and --ss arguments
+               may also be placed one per line in _f_i_l_e.  They are
+               distinguished from source file names by their
+               leading `-'.  If a file name begins with `-', it
+               can be distinguished from an argument by expli-
+               citly prepending the current directory string:
+               `./'.
+
+     --         This operates in the same manner as the --aa option
+               described above, but reads from the standard input
+               instead of a file.
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+MKID                      User Commands                      MKID
+
+
+
+     --uu        Update an existing database.  Only those files
+               that have been modified since the database was
+               built will be rescanned.  This is a significant
+               time-saver for updating large databases where few
+               sources have changed.
+
+     ffiilleess......  If neither the --aa, --, nor --uu, arguments have been
+               specified, take file names from the command line.
+
+     --SS_s_c_a_n_a_r_g _M_k_i_d scans source files in order to obtain numbers
+               and identifier names.  Since the lexical rules of
+               languages differ, _m_k_i_d applies a different scan-
+               ning function to each language in order to conform
+               to that language's lexical rules.  _M_k_i_d determines
+               the source file's language by examining its
+               filename suffix which commonly occurs after a dot
+               (`.').  The --SS argument is a way of passing
+               language specific arguments to the scanner for
+               that language.  This argument takes a number of
+               forms:
+               -S<suffix>=<language>
+               -S<language>-<arg>
+               +S-<arg>
+               The first form associates a suffix with a
+               language.  You may find out which suffixes are
+               defined for which languages with the following
+               options: `-S<suffix>=?' tells which language is
+               bound to <_s_u_f_f_i_x>, `-S?=<language>' tells which
+               suffixes are bound to <_l_a_n_g_u_a_g_e>, and `-S?=?'
+               reports all bindings between suffixes and
+               languages.
+
+     The second form passes an argument for processing by the
+     scanner for a specific language.  The third form passes an
+     argument to all scanners.
+
+     You may get a brief summary of the scanner-specific options
+     for a language by supplying the following option: `-
+     S<language>?'.
+
+     Here is a brief summary of the options for the `_a_s_m' (assem-
+     bler) language.
+
+     The --uu option controls whether or not the assembler scanner
+     should strip off a leading _u_n_d_e_r_s_c_o_r_e (`_') character.  If
+     your assembler prepends an _u_n_d_e_r_s_c_o_r_e to external symbols,
+     then you should tell the scanner to strip it off, so that
+     references to the same symbol from assembly and from a
+     high-level language will look the same.
+
+     The --cc<<cccc>> option supplies the character(s) used to begin a
+     comment that extends to the end of the line.
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+MKID                      User Commands                      MKID
+
+
+
+     The --aa<<cccc>> option indicates character(s) that are legal in
+     names, in addition to the alpha-numeric characters.  If the
+     option appears as `-a', names that contain these characters
+     are ignored.  If it appears as `+a', these names are added
+     to the database.
+
+BBUUGGSS
+     This manual page needs to be more complete about the
+     scanner-specific arguments.
+
+     At the moment, the only scanners implemented are for C and
+     assembly language.  There ought to be scanners for Ada, Pas-
+     cal, Fortran, Lisp, nroff/troff, and TeX.
+
+SSEEEE AALLSSOO
+     lid(1).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     3
+
+
+

@@ -1,0 +1,18 @@
+(Message server:127)
+Return-Path: erik@wsl.dec.com
+Received: from decwrl.dec.com by expo.lcs.mit.edu; Sat, 23 Sep 89 15:36:32 EDT
+Received: by decwrl.dec.com; id AA22676; Sat, 23 Sep 89 12:36:29 -0700
+Received: by westworld.pa.dec.com (5.57/4.7.34)
+	id AA13386; Sat, 23 Sep 89 12:37:50 PDT
+Message-Id: <8909231937.AA13386@westworld.pa.dec.com>
+To: keith@expo.lcs.mit.edu
+Subject: extdiffs
+Date: Sat, 23 Sep 89 12:37:49 PDT
+From: erik@wsl.dec.com
+
+extensions/server/Imakefile
+10c10
+<    INCLUDES = -I../include -I$(INCLUDESRC) -I$(SERVERSRC)/include
+---
+>    INCLUDES = -I../include -I$(INCLUDESRC) -I$(SERVERSRC)/include
+-I$(FONTSRC)/include

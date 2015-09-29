@@ -1,0 +1,6 @@
+
+
+          lempty list
+               Determine if the specified list is empty.  If empty, 1
+               is returned, otherwise, 0 is returned.  This command is
+               an alternative to comparing a list to an empty string.

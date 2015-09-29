@@ -1,0 +1,54 @@
+%     D R A F T C I T E . S T Y 
+%
+%     Copyright (C) 1989 by Donald Arseneau
+%     These macros may be freely transmitted, reproduced, or modified for
+%     non-commercial purposes provided that this notice is left intact.
+%     
+%  Use the label instead of the number for citations, as if
+%  \bibitem[name]{name}{....}, but write the proper citation number to
+%  the aux file. Ignore spaces before the \cite, inserting an ordinary
+%  interword space. 
+%
+%  Pull out the code that writes the aux file citation and gives the name.
+%  \citen can be used by itself to give citation name without the other 
+%  formatting; e.g., "See also ref.~\citen{junk}" gives "See also ref. junk".
+%
+\def\citen#1{%
+\if@filesw \immediate \write \@auxout {\string \citation {#1}}\fi 
+\def\@citea{}%
+\@for \@citeb:=#1\do {\@citea
+  \@ifundefined {b@\@citeb}%
+    {{\bf \expandafter\@citeverb\expandafter{\@citeb}?}%
+    \@warning {Citation `\@citeb ' on page \thepage \space undefined}}%
+% else, defined
+    {\expandafter\@citeverb\expandafter{\@citeb}}%
+  \def\@citea{, }%
+}}
+% 
+%     Replacement for \@citex:
+% 
+\def\@citex[#1]#2{\leavevmode\unskip
+   \ \@cite{\citen{#2}}{#1}\spacefactor\@m}%
+%
+%  Give the citation tag as the label (even if another label is specified)
+%
+\def\@lbibitem[#1]#2{\item[\@biblabel{\@citeverb{#2}}]\if@filesw
+      {\def\protect##1{\string ##1\space}%
+      \immediate\write\@auxout{\string\bibcite{#2}{#1}}\fi\ignorespaces}}
+
+\def\@bibitem#1{\item[\@biblabel{\@citeverb{#1}}]\stepcounter{\@listctr}%
+       \if@filesw \immediate\write\@auxout
+       {\string\bibcite{#1}{\the\c@enumi}}\fi\ignorespaces}
+
+\def\@citeverb#1{%
+   \expandafter \expandafter \expandafter \@gobble  %  do \csname, \string, ...
+   \expandafter \string\csname#1\endcsname}         %  \@gobble, in that order.
+
+\endinput
+%
+%  Send problem reports to asnd@triumfcl.bitnet or Arseneau@mtsg.ubc.ca
+%
+%  Test integrity of file:
+%  brackets: round, square, curly, angle:   () [] {} <>
+%  backslash, slash, vertical, at, dollar, and: \ / | @ $ &
+%  hat, grave, acute (apostrophe), quote, tilde:   ^ ` ' " ~

@@ -1,0 +1,486 @@
+head     8.2;
+branch   ;
+access   ;
+symbols  sun4nw:8.2 symm:8.2 spur:8.2 newlib:8.0;
+locks    ; strict;
+comment  @# @;
+
+
+8.2
+date     89.07.24.21.09.08;  author jhh;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.06.19.13.18.41;  author jhh;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.45.44;  author douglis;  state Stable;
+branches ;
+next     1.7;
+
+1.7
+date     88.09.09.08.49.50;  author mendel;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.09.07.15.04.38;  author mendel;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.08.23.10.15.09;  author nelson;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.08.17.11.54.36;  author nelson;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.08.01.16.35.34;  author mendel;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.07.31.22.08.58;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.07.29.11.29.57;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+8.2
+log
+@converted to use VMMACH_CACHE_LINE_SIZE
+@
+text
+@/* vmSpurAsm.s -
+ *
+ *	Subroutines to access the SPUR virtual memory system.
+ *
+ * Copyright (C) 1988 Regents of the University of California
+ * All rights reserved.
+ */
+
+#include "reg.h"
+#include "vmSpurConst.h"
+#include "machAsmDefs.h"
+#include "machConst.h"
+
+    .data
+    .asciz "$Header: /sprite/src/kernel/vm/spur.md/RCS/vmSpurAsm.s,v 8.1 89/06/19 13:18:41 jhh Exp Locker: jhh $ SPRITE (Berkeley)"
+    .text
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmMachReadAnyways --
+ *
+ *	void VmMachReadAnyways(addr)
+
+ *	Perform the "read anyways" instruction to get exclusive access of
+ *	the cache block at the given address.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Gets exclusive access of the cache block.
+ *
+ *----------------------------------------------------------------------
+ */
+	.globl _VmMachReadAnyways
+_VmMachReadAnyways:
+	ld_32_ri	VOL_TEMP1, INPUT_REG1, $0
+	Nop
+	invalidate_ib
+	return		RETURN_ADDR_REG, $8
+	Nop
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmMachFlushBlock --
+ *
+ *	void VmMachFlushBlock(addr)
+ *
+ *	Flush the block from the cache at the given address.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Flushes the block at the given address from the cache.
+ *
+ *----------------------------------------------------------------------
+ */
+	.globl _VmMachFlushBlock
+_VmMachFlushBlock:
+	rd_kpsw		SAFE_TEMP1
+	and		VOL_TEMP2, SAFE_TEMP1, $~(MACH_KPSW_INTR_TRAP_ENA);
+	wr_kpsw		VOL_TEMP2, $0
+	st_external	VOL_TEMP1, INPUT_REG1, $MACH_CO_FLUSH
+	wr_kpsw		SAFE_TEMP1, $0
+	invalidate_ib
+	return		RETURN_ADDR_REG, $8
+	Nop
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmMachFlushCache --
+ *
+ *	void VmMachFlushCache()
+ *
+ *	Flush the entire cache.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The entire cache is flushed.
+ *
+ *----------------------------------------------------------------------
+ */
+	.globl _VmMachFlushCache
+_VmMachFlushCache:
+	add_nt		SAFE_TEMP1, r0, $0
+	LD_CONSTANT(SAFE_TEMP2, VMMACH_CACHE_SIZE)
+1:	st_external	r0, SAFE_TEMP1, $MACH_CO_FLUSH
+	add_nt		SAFE_TEMP1, SAFE_TEMP1, $VMMACH_CACHE_LINE_SIZE
+	cmp_br_delayed	lt, SAFE_TEMP1, SAFE_TEMP2, 1b
+	Nop
+	invalidate_ib
+	return		RETURN_ADDR_REG, $8
+	Nop
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmMachSetSegRegisters --
+ *
+ *	void VmMachSetSegRegisters(segNums, RPTPMs)
+ *	    int	segNums[4];
+ *	    int RPTMs[4];
+ *
+ *	Set the 4 global segment and RPTPM registers.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	4 global segment and RPTPM registers set.
+ *
+ *----------------------------------------------------------------------
+ */
+	.globl _VmMachSetSegRegisters
+_VmMachSetSegRegisters:
+	rd_kpsw		SAFE_TEMP3
+	and		VOL_TEMP2, SAFE_TEMP3, $~(MACH_KPSW_INTR_TRAP_ENA);
+	wr_kpsw		VOL_TEMP2, $0
+#ifdef set_kern_rptm
+	ld_32		SAFE_TEMP1, INPUT_REG1, $0
+	ld_32		SAFE_TEMP2, INPUT_REG2, $0
+	ST_GSN(SAFE_TEMP1, MACH_GSN_0)
+	ST_RPTM_PAGE(SAFE_TEMP2, MACH_RPTM_0)
+#endif
+	ld_32		SAFE_TEMP1, INPUT_REG1, $4
+	ld_32		SAFE_TEMP2, INPUT_REG2, $4
+	ST_GSN(SAFE_TEMP1, MACH_GSN_1)
+	ST_RPTM_PAGE(SAFE_TEMP2, MACH_RPTM_1)
+	ld_32		SAFE_TEMP1, INPUT_REG1, $8
+	ld_32		SAFE_TEMP2, INPUT_REG2, $8
+	ST_GSN(SAFE_TEMP1, MACH_GSN_2)
+	ST_RPTM_PAGE(SAFE_TEMP2, MACH_RPTM_2)
+	ld_32		SAFE_TEMP1, INPUT_REG1, $12
+	ld_32		SAFE_TEMP2, INPUT_REG2, $12
+	ST_GSN(SAFE_TEMP1, MACH_GSN_3)
+	ST_RPTM_PAGE(SAFE_TEMP2, MACH_RPTM_3)
+
+	wr_kpsw		SAFE_TEMP3, $0
+	invalidate_ib
+	return		RETURN_ADDR_REG, $8
+	Nop
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmMachSetSegReg1 --
+ *
+ *	unsigned VmMachSetSegReg1(segNum, RPTPM)
+ *	    int	segNum;
+ *	    int RPTM;
+ *
+ *	Set the global segment register 1.
+ *
+ * Results:
+ *	The previous GSN1.
+ *
+ * Side effects:
+ *	Set segment register 1.
+ *
+ *----------------------------------------------------------------------
+ */
+	.globl _VmMachSetSegReg1
+_VmMachSetSegReg1:
+	rd_kpsw		SAFE_TEMP3
+	and		VOL_TEMP2, SAFE_TEMP3, $~(MACH_KPSW_INTR_TRAP_ENA)
+	wr_kpsw		VOL_TEMP2, $0
+	LD_GSN(SAFE_TEMP1, MACH_GSN_1)
+	ST_GSN(INPUT_REG1, MACH_GSN_1)
+	ST_RPTM_PAGE(INPUT_REG2, MACH_RPTM_1)
+	add_nt		RETURN_VAL_REG_CHILD, SAFE_TEMP1, $0
+	wr_kpsw		SAFE_TEMP3, $0
+	invalidate_ib
+	return		RETURN_ADDR_REG, $8
+	Nop
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmMachSetSegReg2 --
+ *
+ *	unsigned  VmMachSetSegReg2(segNum, RPTPM)
+ *	    int	segNum;
+ *	    int RPTM;
+ *
+ *	Set the global segment register 1.
+ *
+ * Results:
+ *	The previous GSN2.
+ *
+ * Side effects:
+ *	Set segment register 1.
+ *
+ *----------------------------------------------------------------------
+ */
+	.globl _VmMachSetSegReg2
+_VmMachSetSegReg2:
+	rd_kpsw		SAFE_TEMP3
+	and		VOL_TEMP2, SAFE_TEMP3, $~(MACH_KPSW_INTR_TRAP_ENA)
+	wr_kpsw		VOL_TEMP2, $0
+	LD_GSN(SAFE_TEMP1, MACH_GSN_2)
+	ST_GSN(INPUT_REG1, MACH_GSN_2)
+	ST_RPTM_PAGE(INPUT_REG2, MACH_RPTM_2)
+	add_nt		RETURN_VAL_REG_CHILD, SAFE_TEMP1, $0
+	wr_kpsw		SAFE_TEMP3, $0
+	invalidate_ib
+	return		RETURN_ADDR_REG, $8
+	Nop
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmMachSetSegReg3 --
+ *
+ *	unsigned VmMachSetSegReg3(segNum, RPTPM)
+ *	    int	segNum;
+ *	    int RPTM;
+ *
+ *	Set the global segment register 1.
+ *
+ * Results:
+ *	The previous GSN3.
+ *
+ * Side effects:
+ *	Set segment register 1.
+ *
+ *----------------------------------------------------------------------
+ */
+	.globl _VmMachSetSegReg3
+_VmMachSetSegReg3:
+	rd_kpsw		SAFE_TEMP3
+	and		VOL_TEMP2, SAFE_TEMP3, $~(MACH_KPSW_INTR_TRAP_ENA)
+	wr_kpsw		VOL_TEMP2, $0
+	LD_GSN(SAFE_TEMP1, MACH_GSN_3)
+	ST_GSN(INPUT_REG1, MACH_GSN_3)
+	ST_RPTM_PAGE(INPUT_REG2, MACH_RPTM_3)
+	add_nt		RETURN_VAL_REG_CHILD, SAFE_TEMP1, $0
+	wr_kpsw		SAFE_TEMP3, $0
+	invalidate_ib
+	return		RETURN_ADDR_REG, $8
+	Nop
+
+
+@
+
+
+8.1
+log
+@Cleaning up locked files
+@
+text
+@d15 1
+a15 1
+    .asciz "$Header: /sprite/src/kernel/vm/spur.md/RCS/vmSpurAsm.s,v 8.0 88/11/11 18:45:44 douglis Stable Locker: jhh $ SPRITE (Berkeley)"
+d97 1
+a97 1
+	add_nt		SAFE_TEMP1, SAFE_TEMP1, $VMMACH_CACHE_BLOCK_SIZE
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d15 1
+a15 1
+    .asciz "$Header: /sprite/src/kernel/vm/spur.md/RCS/vmSpurAsm.s,v 1.7 88/09/09 08:49:50 mendel Exp Locker: douglis $ SPRITE (Berkeley)"
+d41 1
+d70 1
+d100 1
+d149 1
+d183 1
+d217 1
+d251 1
+@
+
+
+1.7
+log
+@Fixed comments.
+@
+text
+@d15 1
+a15 1
+    .asciz "$Header: vmSpurAsm.s,v 1.6 88/09/07 15:04:38 mendel Exp $ SPRITE (Berkeley)"
+@
+
+
+1.6
+log
+@Modifed to disable interrupts around st_exteral's.
+@
+text
+@d15 1
+a15 1
+    .asciz "$Header: vmSpurAsm.s,v 1.5 88/08/23 10:15:09 nelson Exp $ SPRITE (Berkeley)"
+d155 1
+a155 1
+ *	void VmMachSetSegReg1(segNum, RPTPM)
+d162 1
+a162 1
+ *	None.
+d172 1
+a172 1
+	and		VOL_TEMP2, SAFE_TEMP3, $~(MACH_KPSW_INTR_TRAP_ENA);
+d188 1
+a188 1
+ *	void VmMachSetSegReg2(segNum, RPTPM)
+d195 1
+a195 1
+ *	None.
+d205 1
+a205 1
+	and		VOL_TEMP2, SAFE_TEMP3, $~(MACH_KPSW_INTR_TRAP_ENA);
+d221 1
+a221 1
+ *	void VmMachSetSegReg3(segNum, RPTPM)
+d228 1
+a228 1
+ *	None.
+d238 1
+a238 1
+	and		VOL_TEMP2, SAFE_TEMP3, $~(MACH_KPSW_INTR_TRAP_ENA);
+@
+
+
+1.5
+log
+@Works well enough to allow commands to run on SPUR.
+@
+text
+@d15 1
+a15 1
+    .asciz "$Header: vmSpurAsm.s,v 1.4 88/08/17 11:54:36 nelson Exp $ SPRITE (Berkeley)"
+d64 3
+d68 1
+d98 2
+d123 3
+d145 1
+d171 3
+d178 1
+d204 3
+d211 1
+d237 3
+d244 1
+@
+
+
+1.4
+log
+@Added flush entire cache option.
+@
+text
+@d15 1
+a15 1
+    .asciz "$Header: vmSpurAsm.s,v 1.3 88/08/01 16:35:34 mendel Exp $ SPRITE (Berkeley)"
+d138 88
+@
+
+
+1.3
+log
+@Fixed bug in VmMachSetSegRegs.
+@
+text
+@d15 1
+a15 1
+    .asciz "$Header: vmSpurAsm.s,v 1.2 88/07/31 22:08:58 mendel Exp $ SPRITE (Berkeley)"
+d66 27
+@
+
+
+1.2
+log
+@Added .text so routines will be put in text segment.
+@
+text
+@d15 1
+a15 1
+    .asciz "$Header: vmSpurAsm.s,v 1.1 88/07/29 11:29:57 nelson Exp $ SPRITE (Berkeley)"
+d90 1
+d94 2
+a95 1
+	ST_RPTM(SAFE_TEMP2, MACH_RPTM_0)
+d99 1
+a99 1
+	ST_RPTM(SAFE_TEMP2, MACH_RPTM_1)
+d103 1
+a103 1
+	ST_RPTM(SAFE_TEMP2, MACH_RPTM_2)
+d107 1
+a107 1
+	ST_RPTM(SAFE_TEMP2, MACH_RPTM_3)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 2
+a16 1
+    .asciz "$Header: vmSunAsm.s,v 1.5 88/05/05 18:04:02 nelson Exp $ SPRITE (Berkeley)"
+@

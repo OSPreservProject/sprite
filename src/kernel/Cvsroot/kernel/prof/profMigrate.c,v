@@ -1,0 +1,227 @@
+head     9.1;
+branch   ;
+access   ;
+symbols  ds3100:9.1 sun3:9.1 sun4nw:9.1 symm:9.1 spur:9.1 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.1
+date     90.09.11.12.05.07;  author rab;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.16.40;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     89.09.08.11.29.53;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.04.06.11.49.03;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@routines for support of process migration.
+@
+
+
+9.1
+log
+@Added include of "stdio.h" for declaration of printf.
+@
+text
+@/* 
+ * profMigrate.c --
+ *
+ *	Routines to handle profiling for migrated procedures.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/prof/RCS/profMigrate.c,v 9.0 89/09/12 15:16:40 douglis Stable Locker: rab $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+
+#include "sprite.h"
+#include "stdio.h"
+#include "proc.h"
+#include "procMigrate.h"
+#include "status.h"
+#include "prof.h"
+
+/* 
+ * Information sent for profiling.
+ */
+
+typedef struct {
+    short *Prof_Buffer;
+    int Prof_BufferSize;
+    int Prof_Offset;
+    int Prof_Scale;
+} EncapState;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Prof_GetEncapSize --
+ *
+ *	Returns the size of the storage area used to record profiling
+ *      information that is sent with a migrated process.
+ *
+ * Results:
+ *	SUCCESS is returned directly; the size of the encapsulated state
+ *	is returned in infoPtr->size.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+ReturnStatus
+Prof_GetEncapSize(procPtr, hostID, infoPtr)
+    Proc_ControlBlock *procPtr;			/* process being migrated */
+    int hostID;					/* host to which it migrates */
+    Proc_EncapInfo *infoPtr;			/* area w/ information about
+						 * encapsulated state */
+{
+    infoPtr->size = sizeof(EncapState);
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Prof_EncapState --
+ *
+ *	Encapsulate the profiling information to be sent with
+ *      a migrated process.  If the processes is being profiled,
+ *      then turn if off.
+ *
+ * Results:
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	Disables profiling of the process.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+ReturnStatus
+Prof_EncapState(procPtr, hostID, infoPtr, ptr)
+    register Proc_ControlBlock 	*procPtr;  /* The process being migrated */
+    int hostID;				   /* host to which it migrates */
+    Proc_EncapInfo *infoPtr;		   /* area w/ information about
+					    * encapsulated state */
+    Address ptr;			   /* Pointer to allocated buffer */
+{
+    EncapState *encapPtr;
+
+    encapPtr = (EncapState *) ptr;
+    encapPtr->Prof_Buffer = procPtr->Prof_Buffer;
+    encapPtr->Prof_BufferSize = procPtr->Prof_BufferSize;
+    encapPtr->Prof_Offset = procPtr->Prof_Offset;
+    encapPtr->Prof_Scale = procPtr->Prof_Scale;
+    if (procPtr->Prof_Scale) {
+	Prof_Disable(procPtr);
+    }
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Prof_DeencapState
+ *
+ *	De-encapsulate information that arrived with a migrated process.
+ *      If the process was being profiled at home, then turn profiling
+ *      on here.
+ *
+ * Results:
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	May enable profiling of the process.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+ReturnStatus
+Prof_DeencapState(procPtr, infoPtr, ptr)
+    register Proc_ControlBlock 	*procPtr; /* The process being migrated */
+    Proc_EncapInfo *infoPtr;		  /* information about the buffer */
+    Address ptr;			  /* buffer containing data */
+{
+    EncapState *encapPtr;
+
+    encapPtr = (EncapState *) ptr;
+    if (infoPtr->size != sizeof(EncapState)) {
+	if (proc_MigDebugLevel > 0) {
+	    printf("Prof_DeencapState: warning: host %d tried to migrate onto this host with wrong structure size.  Ours is %d, theirs is %d.\n",
+		   procPtr->peerHostID, sizeof(EncapState),
+		   infoPtr->size);
+	}
+	return(PROC_MIGRATION_REFUSED);
+    }
+    procPtr->Prof_Scale = 0;
+    Prof_Enable(procPtr, encapPtr->Prof_Buffer, encapPtr->Prof_BufferSize,
+	encapPtr->Prof_Offset, encapPtr->Prof_Scale);
+    return SUCCESS;
+}
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/prof/RCS/profMigrate.c,v 1.2 89/09/08 11:29:53 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d22 1
+@
+
+
+1.2
+log
+@added check for bogus encap structure size.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/prof/RCS/profMigrate.c,v 1.1 89/04/06 11:49:03 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.2 89/01/07 04:12:18 rab Exp $ SPRITE (Berkeley)";
+d139 8
+@

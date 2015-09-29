@@ -1,0 +1,20 @@
+          split string ?splitChars?
+               Returns a list created  by  splitting  string  at  each
+               character  that  is  in  the splitChars argument.  Each
+               element  of  the  result  list  will  consist  of   the
+               characters   from   string  between  instances  of  the
+               characters in splitChars.  Empty list elements will  be
+               generated  if  string  contains  adjacent characters in
+               splitChars, or if the first or last character of string
+               is  in  splitChars.   If  splitChars is an empty string
+               then  each  character  of  string  becomes  a  separate
+               element of the result list.  SplitChars defaults to the
+               standard white-space characters.  For example,
+
+                    split "comp.unix.misc" .
+
+               returns "comp unix misc" and
+
+                    split "Hello world" {}
+
+               returns "H e l l o { } w o r l d".

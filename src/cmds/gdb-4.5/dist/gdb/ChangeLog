@@ -1,0 +1,1861 @@
+Fri Apr 10 08:30:58 1992  Stu Grossman  (grossman at cygnus.com)
+
+	GDB-4.5 release!
+
+	* README:  Update for release.
+	* Makefile.in:  Update version to 4.5.
+	* WHATS.NEW:  The obvious.
+
+	* depend:  Generate new depend file for this release.
+
+	* Makefile.in (depend):  Fix dependancy generation so that it does
+	not include gcc 'fixincluded' files, which are usually in a system
+	specific location.
+
+Thu Apr  9 13:35:00 1992  Per Bothner  (bothner@rtl.cygnus.com)
+
+	Changes from metin@ibmpa.awdpa.ibm.com (Metin G. Ozisik).
+	* buildsym.c  (#ifdef RS6000_TARGET):  Don't create unnecessary
+	symbols for nameless types.  And, handle `R' (register parameter
+	type) for AIX.  (an extension to existing stabstring grammar).
+	* rs6000-xdep.c:  Fix typo (= should have been ==).
+
+Thu Apr  9 12:10:06 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* Makefile.in:  version=4.4.88, add xm-vax.h to HFILES.
+
+Thu Apr  9 02:29:03 1992  John Gilmore  (gnu at cygnus.com)
+
+	* xm-sun4os5.h (DO_DEFERRED_STORES, CLEAR_DEFERRED_STORES):  Zap.
+	* signame.c (SIGWAITING, SIGLWP):  Add.
+
+Tue Apr  7 16:34:07 1992  Per Bothner  (bothner@cygnus.com)
+
+	* xm-i386mach.h:  add decls for errno and strdup().
+
+	* breakpoint.c (breakpoint_1):  Add (int) casts for enums
+	used in array index context (otherwise, some compilers barf).	
+
+Tue Apr  7 08:45:46 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* m68k-tdep.c, tm-sun3.h:  #ifdef around get_longjmp_target().
+	Change def of SAVED_PC_AFTER_CALL to call routine to see if we are
+	in a system call, and provide better backtrace if so.
+
+	* Makefile.in (HFILES):  Add xcoffsolib.h.
+	* rs6k-opcode.h:  Move to ../include/opcode/rs6k.h.
+	* rs6000-pinsn.c:  #include "opcode/rs6k.h"
+
+	* mipsread.c (read_mips_symtab, read_the_mips_symtab,
+	mipscoff_symfile_read):  Convert to BFD to do file I/O.
+
+	* symfile.c:  #include <ctype.h> to get proper def if isspace().
+
+	* i386-tdep.c (get_longjmp_target):  #ifdef GET_LONGJMP_TARGET.
+
+Mon Apr  6 17:25:45 1992  Per Bothner  (bothner@cygnus.com)
+
+	* mipsread.c: Create a .gdbinfo pseudo-symbol for each
+	function also when parsing embedded stabs.
+
+Mon Apr  6 15:25:03 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* mipsread.c:  Fix more declarations.
+
+	* mipsread.c:  Fix many invocations of complain.  Use enum
+	type_code where appropriate.
+
+	* xm-vaxult.h:  Add decl for strdup().
+
+	* Makefile.in: Add dependancies for xm-vaxbsd.h and xm-vaxult.h
+	for xm-vax.h.
+
+Fri Apr  3 17:41:29 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* buildsym.h, dbxread.c, mipsread.c:  Add objfile arg to
+	process_one_symbol.
+
+Fri Apr  3 12:17:14 1992  Per Bothner  (bothner@cygnus.com)
+
+	* munch: Must pre-pend "_" to "initialize" for SYSV style nm.
+	* tm-rs6000.h, xcoffexec.c, xcoffread.c, xm-rs6000.h:
+	Merge in more patches for rs6000 from Metin Ozisik.
+	* utils.c:  Fix typo in comment.
+
+Fri Apr  3 11:23:03 1992  Fred Fish  (fnf@cygnus.com)
+
+	* procfs.c (procinfo struct):  Add nopass_next_sigstop member.
+	* procfs.c (attach):  Set nopass_next_sigstop if attached 
+	process is forcibly stopped.
+	* procfs.c (child_resume):  Use nopass_next_sigstop to suppress
+	resending SIGSTOP to attached process on first resume.
+
+Fri Apr  3 01:37:26 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* Makefile.in (SFILES_MAINDIR):  add mipsread.c
+
+Thu Apr  2 20:20:54 1992  John Gilmore  (gnu at cygnus.com)
+
+	* Makefile.in (OBS):  Compile mipsread.c for all targets now.
+	(VERSION):  Bump to 4.4.85.
+	* mipsread.c:  Update for new include files.  Lint.
+	* tm-irix3.h, tm-mips.h:  Use new include files for ECOFF symtab.
+	* config/{bigmips.mt, littlemips.mt, irix3.mt, decstation.mt}:
+	Don't need to bring in mipsread.o specially any more.
+
+Thu Apr  2 19:38:31 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* mipsread.c (fixup_sigtramp):  Also look for _sigtramp as a real
+	routine (for Irix-4.x).  Make many funcs static and void.
+	* mips-tdep.c (mips-frame-chain):  Clean up, simplify.
+	* (init_extra_frame_info):  Don't trash cached value of frame
+	pointer register.  This fixes backtracing through routines that use
+	alloca().  Generally clean up declarations of functions, and use
+	typedefs and macros to reference data structures as appropriate.
+	* tm-irix3.h, tm-mips.h (EXTRA_FRAME_INFO):  use proper type for
+	proc_desc element.
+
+Thu Apr  2 09:47:11 1992  Fred Fish  (fnf@cygnus.com)
+
+	* values.c (unpack_long):  Fix unpacking error for signed chars
+	on hosts where the default character type is unsigned.
+	* procfs.c (pr_flag_table, pr_why_table):  Add some entries
+	for newer SVR4 variants.
+	* procfs.c (proc_set_exec_trap):  Reorder tests for ioctl's that
+	turn off trace inherit-on-fork flag to favor latest SVR4 method.
+	* procfs.c (mappingflags):  Add support for MA_PHYS
+
+Thu Apr  2 00:55:56 1992  John Gilmore  (gnu at cygnus.com)
+
+	* buildsym.c (read_struct_type):  Avoid coredump when C++
+	abbreviated type name is messed up.  Reported by Joe Buck.
+	FIXME, we need to determine whether GDB or GCC needs to be
+	smarter to correctly locate this type name.
+
+	* c-exp.y, coffread.c, command.c, command.h, copying.awk,
+	dbxread.c, gdbtypes.c, infcmd.c, inferior.h, infrun.c,
+	m2-exp.y, printcmd.c, remote.c, solib.c, source.c, stack.c,
+	symtab.c, tm-sun4os4.h, tm-sun4os5.h, values.c:  Lint.
+	* symfile.c (add_symbol_file_command):  Initialize mapped/readnow.
+
+Wed Apr  1 11:39:52 1992  Fred Fish  (fnf@cygnus.com)
+
+	* breakpoint.h (bpdisp, bptype):  Remove trailing comma.
+	* symtab.h (current_source_symtab):  Make extern
+	* symtab.h (current_source_line): Make extern
+	* inferior.h:  Move all procfs.c prototypes to one place, add
+	prototype for proc_signal_handling_change.  Add prototypes for
+	signal_stop_state, signal_print_state, and signal_pass_state.
+	* inferior.h (stop_soon_quietly):  Make extern
+	* inferior.h (attach_flag):  Make extern
+	* infrun.c (NOTICE_SIGNAL_HANDLING_CHANGE):  Default is null.
+	* infrun.c (signal_stop_state, signal_print_state,
+	signal_pass_state):  New functions to query specific signal
+	handling flags.
+	* infrun.c (handle_command):  Minor error message change, add
+	NOTICE_SIGNAL_HANDLING_CHANGE.
+	* procfs.c (open_proc_file):  Remove iris specific reset of
+	inherit-on-fork flag, moved to proc_set_exec_trap().
+	* procfs.c (proc_set_exec_trap):  Add SVR4 and iris code
+	to reset inherit-on-fork flag, bash comment to GNU form.
+	* procfs.c (proc_base_address, set_proc_siginfo,
+	fetch_core_registers):  Conform to code style.
+	* procfs.c (signame.h):  Include.
+	* procfs.c (MAX_SYSCALLS, syscall_table[], init_syscalltable(),
+	syscallname(), info_proc_syscalls()):  New macros, tables, and
+	functions to organize and report system call information.
+	* procfs.c (saved_fltset, saved_trace, saved_sighold,
+	saved_exitset, saved_entryset):  Add to procinfo struct.
+	* procfs.c (struct trans):  Add.
+	* procfs.c (pr_flag_table, pr_why_table, faults_table,
+	siginfo_table, errno_table):  Tables to translate numeric values
+	to symbolic names and short descriptions.
+	* procfs.c (signalname, info_proc_signals):  Add function and
+	prototype.
+	* procfs.c (proc_info):  Now info_proc.
+	* procfs.c (proc_info_address_map):  Now info_proc_mappings.
+	* procfs.c (info_proc_flags, info_proc_stop, info_proc_siginfo,
+	info_proc_faults, lookupname, lookupdesc, sigcodename,
+	sigcodedesc):  New functions.
+	* procfs.c (proc_signal_handling_change):  New function to set
+	the trace flags based on the state of gdb's signal handling flags.
+	* procfs.c (inferior_proc_init):  Call proc_signal_handling_change
+	and remove code to do PIOCSTRACE ioctl.
+	* procfs.c (attach, detach):  Preserve and restore process flags
+	using saved_* fields in procinfo struct.
+	* procfs.c (attach):  Call proc_signal_handling_change.
+	* procfs.c (info_proc):  Major rework to expand "info proc" cmd.
+	* procfs.c (proc_desc):  Update for latest changes.
+	* xm-irix4.h (CREATE_INFERIOR_HOOK):  Protect by USE_PROC_FS.
+	* xm-irix4.h (NOTICE_SIGNAL_HANDLING_CHANGE):  Add definition.
+	* xm-sysv4.h (NOTICE_SIGNAL_HANDLING_CHANGE):  Add definition.
+
+Tue Mar 31 18:38:28 1992  Fred Fish  (fnf@cygnus.com)
+
+	* procfs.c (set_proc_siginfo):  Add prototype and new function.
+	* procfs.c (detach, child_resume):  Call set_proc_siginfo to set
+	up inferior siginfo struct.
+	* elfread.c (elf_symfile_read):  Compute the relocation amount
+	by subtracting off the address of the ".text" section.
+	* solib.c:  Add pointer to ".text" section to so_list struct.
+	* solib.c (solib_map_sections):  Initialize pointer to ".text"
+	section in so_list struct.
+	* solib.c (symbol_add_stub):  Pass base address of ".text"
+	section to symbol_file_add, rather than the load address of
+	the shared library.  On SunOS they are the same.  On SVR4 they
+	are not.
+
+Tue Mar 31 17:48:15 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* mipsread.c (parse_procedure):  PDR.isym should get pointer to
+	function name, not .gdbinfo. symbol.
+
+Tue Mar 31 17:05:04 1992  John Gilmore  (gnu at cygnus.com)
+
+	* breakpoint.c (breakpoint_1):  Fix prototype, this time for sure!
+
+Tue Mar 31 11:01:06 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* Makefile.in (VERSION):  4.4.8
+
+	* procfs.c (open_proc_file):  Disable inherit-on-fork flag so that
+	commands in .cshrc/.profile won't get traced.
+
+Tue Mar 31 08:11:58 1992  John Gilmore  (gnu at cygnus.com)
+
+	* elfread.c (elf_symtab_read):  Use xmalloc, not bfd_xmalloc.
+	* exec.c (build_section_table):  Don't abort if no sections.
+	* sparc-tdep.c (single_step):  Lint.
+	* utils.c (mrealloc):  Handle realloc (0, size) case here.
+
+Mon Mar 30 16:50:43 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* Makefile.in (alldeps.mak):  Config files are now *.m[ht] as
+	opposed to m[ht]-*!
+
+	* config/irix4.mh:  Don't use coredep.o.  It doesn't work with procfs.
+
+	* mipsread.c (parse_symbol, parse_procedure):  Re-do the way that
+	.gdbinfo. symbols are created.  Move creation from parse_procedure
+	to parse_symbol, where it is fairly easy to grow the symtab.  This
+	also fixes a symtab trashing bug on all mips-based systems.
+	* (got_numargs, lookup_numargs, free_numargs):  Delete.  Not
+	needed anymore.
+	* tm-mips.h, tm-iris3.h, mips-tdep.c, mipsread.c:  Re-do struct
+	mips_extra_func_info, and all the PROC_xxx macros that look at it.
+
+Mon Mar 30 14:17:53 1992  Per Bothner  (bothner@cygnus.com)
+
+	* c-exp.y:  Add missing return type to yyparse() prototype.
+
+Sat Mar 28 22:22:06 1992  John Gilmore  (gnu at cygnus.com)
+
+	Create and use macros for iterating on symtabs, psymtabs, msymbols.
+
+	* minsyms.c (iterate_over_msymbols):  Remove; clunky and slow.
+	* symfile.h, symtab.h (iterate_over_msymbols):  Remove prototype
+	* coffread.c (coff_symfile_read):  iterate_over_symtabs => ALL_SYMTABS.
+	(patch_opaque_types):  Avoid dummy args and result.
+	* objfiles.c (have_partial_symbols, have_full_symbols,
+	have_minimal_symbols):  explicit iteration => ALL_OBJFILES; simplify.
+	(iterate_over_objfiles, iterate_over_symtabs,
+	iterate_over_psymtabs):  Remove, clunky and slow.
+	* objfiles.h:  Replace iterate_over_* prototypes with ALL_SYMTABS,
+	ALL_PSYMTABS, and ALL_MSYMBOLS macros.
+	* symmisc.c (dump_symtab, dump_psymtab, dump_msymbols,
+	dump_objfile):  Remove dummy args and results.  Move filename
+	comparisons to callers.
+	(printsyms_command, printpsyms_command, printmsyms_command,
+	printobjfiles_command):  iterate_over_* => ALL_*.  Compare filenames.
+	* symtab.c (lookup_symtab_1, lookup_symtab, lookup_partial_symtab,
+	lookup_symbol, find_main_psymtab, find_pc_symtab, sources_info,
+	list_symbols, make_symbol_completion_list):  Replace explicit
+	iteration with ALL_SYMTABS, ALL_PSYMTABS, or ALL_MSYMBOLS.
+	Eliminate Dijkstra flag crap, break out of loops with gotos.
+	(lookup_symtab_1):  Protect '/' tests from short filenames.
+	(cplus_mangled_symbol):  Move inline into lookup_symbol.
+	* xcoffexec.c (relocate_objfile_msymbols):  Remove poor hack.
+	(relocate_minimal_symbol):  Move inline to vmap_symtab.
+	(vmap_symtab):  Replace iteration with ALL_OBJFILES,
+	iterate_over_msymbols with ALL_MSYMBOLS.
+
+	Misc cleanup prior to release.
+
+	* Makefile.in (VERSION):  Roll to 4.4.7.
+	(HFILES):  Add call-cmds.h.
+	* call-cmds.h:  New header for command fns called by other files.
+	* breakpoint.c (watchpoints_info):  Remove, same as breakpoints_info.
+	(breakpoint_1):  Remove unused type arg.  Change callers.
+
+	* dwarfread.c (dwarf_build_psymtabs):  Remove mainline test.
+	* mipsread.c (compare_symtabs, compare_psymtabs):  Remove, unused.
+	* mipsread.c:  Add prototypes for all static functions.
+
+	* symmisc.c (dump_symtab_lines, dump_symtabs, dump_last_symtab,
+	dump_blockvector, dump_block, dump_addrchass, dump_namespace,
+	dump_symbol, dump_type, dump_linetable, dump_strtbl):  Remove, unused.
+	* xcoffread.c (dump_symtab_lines, dump_symtabs, dump_last_symtab,
+	dump_blockvector, dump_block, dump_addrchass, dump_namespace,
+	dump_symbol, dump_type, dump_linetable, dump_strtbl):  Remove 2nd
+	unused copy!
+
+	* buildsym.c (define_symbol):  Handle global register variables
+	(from Pierre Willard).  Complain if register numbers are too large.
+	* target.c (nomemory):  Now that higher levels examine errno, give EIO.
+	* tm-sparc.h:  Don't #include <sun4/reg.h>.
+	* sparc-tdep.c (sparc_frame_chain, frame_saved_pc):  Remove
+	dependency on <sun4/reg.h>.  Start to handle cross-byte-order.
+
+	* language.h:  Avoid forward enum declaration.
+	* configure.in, tm-sun4os5.h, xm-sun4os5.h, config/sun4os5.mh,
+	config/sun4os5.mt:  New host and target.
+	* defs.h (errno): #include <errno.h> rather than assuming int.
+	From Pierre Willard.
+
+	* breakpoint.c, breakpoint.h, buildsym.c, coffread.c, cplus-dem.c,
+	dbxread.c, dwarfread.c, elfread.c, infcmd.c, infrun.c, inftarg.c,
+	language.c, main.c, mem-break.c, mips-tdep.c, mipsread.c,
+	partial-stab.h, remote.c, saber.suppress, symfile.c, symtab.c,
+	valops.c, valprint.c, xcoffread.c, c-exp.y, m2-exp.y, blockframe.c,
+	command.c, core.c, exec.c, gdbtypes.h, parse.c, printcmd.c, solib.c,
+	sparc-xdep.c, utils.c, value.h, values.c:  Lint.
+
+Sat Mar 28 02:43:26 1992  John Gilmore  (gnu at cygnus.com)
+
+	* buildsym.c (read_range_type):  Avoid int overflow by using unsigned.
+	* dbxread.c (dbx_symfile_init):  Remove bogus `lvalue cast'.
+	* language.h (enum exp_opcode):  Avoid forward enum def.
+	* main.c (define_command, user_defined_command):  Lint.
+	* mem-break.c, xcoffread.c:  Lint.
+	* solib.c:  Only #include <a.out.h> on SunOS, not SVR4.
+
+Sun Mar 29 14:16:22 1992  Per Bothner  (bothner@cygnus.com)
+
+	* Merged in latest RS6000 diffs from Metin G. Ozisik.
+	* xcoffsolib.c, xcoffsolib.h:  New files, from Metin.
+	* Various files: Changed #ifdef IBM6000 to IBM6000_HOST
+	or IBM6000_TARGET as (approximately) appropriate.
+
+Sat Mar 28 13:00:10 1992  Fred Fish  (fnf@cygnus.com)
+
+	* objfiles.h (OBJF_SYMS):  Define flag bit for objfile flags.
+	* symfile.c (symbol_file_add):  Use OBJF_SYMS to decide  whether
+	or not to try reading symbols from a mapped objfile.  Plugs memory
+	leak due to shared libraries generating no psymtabs or symtabs.
+
+Fri Mar 27 15:44:55 1992  John Gilmore  (gnu at cygnus.com)
+
+	* buildsym.c (MAX_OF_C_TYPE, MIN_OF_C_TYPE):  Unused, remove.
+	* copying.awk:  Lint.  Make stronger warning at top of copying.c.
+	* elfread.c (elf_symtab_read):  Eliminate check of mainline.
+	* gdbtypes.c (smash_to_*):  Remove FIXME comments.
+	(lookup_pointer_type):  Add FIXME comment.
+	* main.c (set_history_size_command):  Disallow negative size.
+	* partial-stab.h:  Update copyright.
+	* rs6000-tdep.c (skip_trampoline_code):  Better comments.
+
+Wed Mar 25 10:45:38 1992  John Gilmore  (gnu at cygnus.com)
+
+	* main.c (set_history_size_command):  Negative size is error.
+	(Reported by Peggy Fieland.)
+
+Thu Mar 26 17:01:18 1992  Fred Fish  (fnf@cygnus.com)
+
+	* coffread.c (coff_symfile_init):  Update comment.
+	* dbxread.c (DBX_SYMFILE_INFO, DBX_TEXT_SECT, DBX_SYMCOUNT,
+	DBX_STRINGTAB, DBX_STRINGTAB_SIZE, DBX_SYMTAB_OFFSET):  Define
+	macros to access the dbx specific objfile information.
+	* dbxread.c (symfile_string_table, symfile_string_table_size):
+	Remove these local variables.
+	* dbxread.c (read_ofile_symtab, psymtab_to_symtab_1,
+	read_dbx_symtab):  Remove the stringtab and stringtab_size params
+	from the function prototypes, the function definition, and the
+	function calls.  These are now available via DBX_STRINGTAB and
+	DBX_STRINGTAB_SIZE using the objfile pointer.
+	* dbxread.c (dbx_symfile_read):  Relocate addr before using as
+	an arg to read_dbx_symtab.
+	* dbxread.c (dbx_symfile_read):  Remove code that free'd the
+	stringtab and the dbx specific per-objfile private info.
+	* dbxread.c (init_psymbol_list):  Remove symbol count from passed
+	args in prototype, function definition, and function calls.  It is
+	now available via the DBX_SYMCOUNT macro using the objfile
+	pointer.
+	* dbxread.c (dbx_symfile_read, dbx_symfile_init):  Remove the
+	local instance of struct dbx_symfile_info and replace with DBX_*
+	macros.
+	* dbxread.c (dbx_symfile_read):  Remove init's of now deleted
+	symfile_string_table and symfile_string_table_size.
+	* dbxread.c (dbx_symfile_finish):  Remove now obsolete free of
+	symfile_string_table.
+	* dbxread.c (init_psymbol_list):  Use DBX_SYMCOUNT.
+	* dbxread.c (dbx_psymtab_to_symtab):  Remove local stringtab and
+	stringtab size variables.  Remove all code that used to reread
+	the stringtab.
+	* objfiles.c (allocate_objfile):  Move calls to init_malloc()
+	to prior to any calls to mmalloc for the objfile specific heap.
+	* utils.c (init_malloc):  Document the requirement that for each
+	heap for which corruption checking is desired, that init_mmalloc
+	must be called prior to any mmalloc calls on the heap.
+
+Thu Mar 26 13:20:06 1992  Per Bothner  (bothner@cygnus.com)
+
+	* rs6000-pinsn.c:  Make dis-assembly output more like
+	other targets:  Don't print instruction in hex before
+	the assembly;  use print_address to print out jump
+	destinations.
+
+Wed Mar 25 16:52:35 1992  Per Bothner  (bothner@cygnus.com)
+
+	* c-exp.y, gdbtypes.h:  Add builtin_type_signed_char.
+	* cplus-dem.c:  Support "Sc" meaning "signed char".
+
+Wed Mar 25 15:21:44 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* configure.in:  fix iris/iris3.
+
+Wed Mar 25 14:55:48 1992  Per Bothner  (bothner@cygnus.com)
+
+	* command.c, main.c (various places):  Use ctype.h macros
+	(such as isupper(x)),  instead of hard-wiring in ASCII-isms
+	(such as (x >= 'A' && x <= 'Z')).
+	(There are still more of these in other files.)
+	* main.c (defined_command):  Lower-case the user's
+	new command before entering it.  Needed because
+	command lookup is case-insensitive (and also lower-cases).
+	(Based on Metin's earlier patch.)
+
+Tue Mar 24 23:27:01 1992  K. Richard Pixley  (rich@cygnus.com)
+
+	* config/irix4.mh: new file.
+
+Tue Mar 24 14:17:48 1992  Stu Grossman  (grossman@cygnus.com)
+
+	* infcmd.c (step_1):  Call disable_longjmp_breakpoint at the right
+	time.
+
+	* xm-mips.h:  Declare strdup for ultrix.
+
+	* mipsread.c (fixup_sigtramp):  Make sure that current_objfile is setup
+	when calling new_symbol.
+	* mips-tdep.c (mips_frame_chain):  Use symfile_objfile instead of
+	current_objfile.
+
+Tue Mar 24 13:26:25 1992  Per Bothner  (bothner@rtl.cygnus.com)
+
+	* config/rs6000.mh:  Update (for Fred's new mmalloc)
+	flags to disable use of GNU malloc/mmalloc.
+	* munch:  Change SYSV rule to allow .text before the label,
+	as well as after, to work for AIX.
+	* gdbtypes.h:  Minor clarifiction.
+
+Tue Mar 24 07:26:19 1992  Michael Tiemann  (tiemann@cygnus.com)
+
+	* buildsym.c (read_struct_type): Handle cretinous dbx symbol name
+	continuation in yet another place (between method declarations).
+
+Mon Mar 23 23:01:41 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* mips-tdep.c:  include symfile.h and objfiles.h to fix
+	compilation errors.
+
+Mon Mar 23 15:49:14 1992  Per Bothner  (bothner@cygnus.com)
+
+	* valops.c (value_struct_elt_for_reference):  Added 'offset'
+	parameter to handle multiple inheritance.
+	* eval.c, value.h:  Update accordingly.
+
+Fri Mar 20 17:43:27 1992  Fred Fish  (fnf@cygnus.com)
+
+	* objfiles.h: New file
+	* Makefile.in (HFILES):  Add objfiles.h
+	* blockframe.c:  Remove entry_scope_lowpc, entry_scope_highpc,
+	main_scope_lowpc, main_scope_highpc.
+	* blockframe.c, buildsym.c, coffread.c, dbxread.c, dwarfread.c,
+	elfread.c, gdbtypes.h, minsyms.c, mipsread.c, objfiles.c, solib.c,
+	source.c, symfile.c, symmisc.c, symtab.c, target.c, xcoffexec.c,
+	xcoffread.c, :  Include objfiles.h.
+	* tm-29k.h, tm-i386v.h, tm-merlin.h, tm-rs6000.h, tm-sun386.h,
+	tm-symmetry.h, tm-tahoe.h, tm-umax.h, tm-vax.h, m88k-tdep.c,
+	mips-tdep.c (FRAME_CHAIN): Renamed outside_startup_file to
+	inside_entry_file() and logic changed appropriately.
+	* blockframe.c (outside_startup_file):  Renamed to
+	inside_entry_file() and logic changed appropriately.
+	* blockframe.c (inside_main_scope):  Renamed to inside_main_func()
+	and logic changed to use per-objfile specific fields.
+	* blockframe.c (inside_entry_scope):  Renamed to
+	inside_entry_func() and logic changed to use per-objfile specific
+	fields.
+	* blockframe.c, buildsym.h, coffread.c, dwarfread.c, mipsread.c,
+	symfile.c, mips-tdep.c (startup_file_start, startup_file_end):
+	Remove extern decls.
+	* symfile.c, symfile.h (entry_point):  Remove extern decl.	
+	* coffread.c (coff_symfile_init):  Common entry point init code
+	moved to symfiles.c, call init_entry_point_info().
+	* coffread.c (complete_symtab):  Use new per-objfile entry info.
+	* mip-tdep.c (mips_frame_chain):  Use new per-objfile entry info.
+	* mipsread.c (parse_partial_symbols):  Use new per-objfile entry
+	info.
+	* dbxread.c (read_dbx_symtab):  Use new per-objfile entry info.
+	* defs.h (inside_entry_scope, outside_startup_file,
+	inside_main_scope):  Prototypes changed for renames to
+	inside_entry_func, inside_entry_file, inside_main_func,
+	respectively.
+	* symfile.c (syms_from_objfile):  Common entry point init code
+	moved to init_entry_point_info() and call init_entry_point_info().
+	* symfile.h (init_entry_point_info):  Include prototype.
+	* xcoffread.c (aixcoff_symfile_init):  Common entry point init code
+	moved to symfiles.c and call init_entry_point_info().
+	* dwarfread.c (entry_scope_lowpc, entry_scope_highpc,
+	main_scope_lowpc, main_scope_highpc):  Remove extern decls.
+	* dwarfread.c (read_func_scope, read_file_scope):  Use new per-
+	objfile entry info.
+	* frame.h (FRAME_CHAIN_VALID):  Provide default definition that
+	works for the majority of targets.
+	* tm-68k.h, tm-convex.h, tm-h8300.h, tm-i386v.h, tm-irix3.h,
+	tm-merlin.h, tm-mips.h, tm-pyr.h, tm-rs6000.h, tm-sparc.h,
+	tm-sun386.h, tm-tahoe.h, tm-umax.h, tm-vax.h (FRAME_CHAIN_VALID):
+	Use default definition in frame.h.
+	* frame.h (selected_frame_level):  Make decl extern.
+	* objfiles.c, symfile.c (current_objfile):  Moved to objfiles.c
+	* objfiles.c, symfile.c (symfile_objfile):  Moved to objfiles.c
+	* partial-stab.h:  Use new per-objfile entry info.
+	* symfile.h (struct objfile):  Removed, moved to objfiles.h.
+	* symfile.h, objfiles.h (allocate_objfile, free_objfile,
+	free_all_objfiles, iterate_over_objfiles, iterate_over_symtabs,
+	iterate_over_psymtabs, have_partial_symbols, have_full_symbols,
+	have_minimal_symbols):  Prototypes moved to objfiles.h.
+	* symfile.h, objfiles.h (ALL_OBJFILES, ALL_OBJFILES_SAFE):
+	Macros moved to objfiles.h.
+	* tm-h8300.h, tm-i386v4.h (FRAME_CHAIN_VALID_ALTERNATE): Define.
+
+Thu Mar 19 18:49:45 1992  Per Bothner  (bothner@cygnus.com)
+
+	More C++ improvements (pointers to members, qualified names).
+	* c-exp.y:  Support exp.type::name and exp->type::name
+	syntaxes.  (Unfortunately, doesn't work for static members.)
+	* c-exp.y, eval.c:   Make type::~type work better.
+	* eval.c (evaluate_subexp: OP_SCOPE):  Replace use of
+	value_static_field by value_struct_elt_for_reference.
+	* eval.c (evaluate_subexp):  Merge code for STRUCTOP_MEMBER
+	and STRUCTOP_MPTR; cast arg1 to domain-type of arg2.
+	* eval.c (evaluate_subexp):  Remove special case for UNOP_ADDR
+	for OP_SCOPE operand; no point in it now that we use lazy
+	reading of values, and use "reference to member" objects.
+	* gdbtypes.h:  Clarify comment.
+	* valops.c:  Change value_struct_elt_for_address to return
+	a reference (or variable), rather than a pointer.  Change
+	the name to value_struct_elt_for_reference to reflect this.
+	Returning a reference instead of a address provides a
+	generalization, since we can use the routine for both
+	class::name as well as &class::name.
+	Also, recurse to handle multiple inheritance properly.
+	* valprint.c:  Moved code to print pointer-to-members
+	to new function point_class_member.  This allows a
+	"reference-to-member" to be printed using the same code.
+	* valprint.c (type_print_varspec_prefix):  Avoid printing
+	"struct " for domains of class-member types.
+	* valops.c (search_struct_field):  Inline code for simplified
+	version of value_static_field (which can then be deleted).
+	* value.h:  Rename value_struct_elt_for_address to
+	value_struct_elt_for_reference.  Delete value_static_field.
+	* values.c:  Remove no longer used function value_static_field.
+
+Thu Mar 19 13:54:11 1992  Fred Fish  (fnf@cygnus.com)
+
+	* coffread.c, mipsread.c, xcoffread.c, coffread.c, dbxread.c,
+	elfread.c (coff_symfile_finish):  Add function, prototype, and
+	add to the xxxx_sym_fns struct for each file type.  Also reformat
+	the xxxx_sym_fns vector to a standard format and add comments.
+	* coffread.c, mipsread.c, xcoffread.c, coffread.c, dbxread.c,
+	elfread.c (xxx_symfile_new_init, xxx_symfile_init, xxx_symfile_read):  
+	Pass pointer to struct objfile rather than pointer to sym_fns.
+	Change references inside each function accordingly.  Allocate any
+	symbol file specific info in the per-objfile memory region.
+	* dbxread.c (free_and_init_header_files):  Break function into
+	free_header_files(), called from dbx_symfile_finish(), and
+	init_header_files(), called from dbx_new_init().
+	* dbxread.c (dbx_new_init):  Move deallocation things to new
+	dbx_symfile_finish function.
+	* elfread.c (elf_new_init):  Call buildsym_new_init().
+	* objfiles.c (free_objfile): Call the appropriate symfile_finish()
+	routine for the objfile before deallocating other stuff.
+	* sparc-tdep.c (get_longjmp_target):  Cast target_read_memory arg.
+	* symfile.h:  Move struct sym_fns to before struct objfile def.
+	Add sym_finish function pointer and change prototypes of other
+	function pointers to reflect passing struct objfile pointer rather
+	than struct sym_fns pointer.
+	* symfile.c:  Remove now obsolete symtab_fns pointer.
+	* symfile.c (symfile_init):  Renamed to find_sym_fns, and now only
+	locates the correct sym_fns struct for the given objfile.
+	* symfile.c (syms_from_objfile, symbol_file_add):  Restructured
+	for better support of mapped symbol tables.
+	* symfile.c (symbol_file_command):  Remove obsolete code using
+	symfile_fns.
+	* symfile.h:  Remove duplicate declarations for symfile_objfile,
+	entry_point, and object_files.
+	* target.c (target_info):  Compare symfile_objfile to NULL.
+	* xcoffread.c (aixcoff_new_init):  Move deallocation stuff to
+	aixcoff_symfile_finish().
+
+Wed Mar 18 18:22:46 1992  Fred Fish  (fnf@cygnus.com)
+
+	* infrun.c (IN_SOLIB_TRAMPOLINE):  Add default definition.
+	* infrun.c (wait_for_inferior):  Use IN_SOLIB_TRAMPOLINE.
+	* tm-sysv4.h (IN_SOLIB_TRAMPOLINE): Add SVR4 definition.
+
+Wed Mar 18 15:51:15 1992  Per Bothner  (bothner@cygnus.com)
+
+	Some improvements to g++ debugging.
+	* symtab.c (list_symbols): demangle before pattern matching.
+	* symtab.c:  Other fixes to improve handing of operators.
+	* valprint.c (type_print_base):  Fix test for constructor.
+	* values.c (value_static_field):  Allow evaluation of
+	CLASS::METHOD, returning a function pointer.
+
+Wed Mar 18 08:39:52 1992  Fred Fish  (fnf@cygnus.com)
+
+	* Makefile.in (VERSION):  Roll  4.4.6.
+	* exec.c (exec_file_command):  Add code to ignore optional args
+	passed in by file_command() for use in symbol_file_command().
+	* main.c (main):  Document -mapped and -readnow in help summary.
+	* objfiles.c (open_mapped_file):  Cosmetic change, arg renamed.
+	* objfiles.c (allocate_objfile):  Filename arg removed.  Changes
+	to get filename from bfd with bfd_get_filename().  Test mapto
+	against 0, not NULL.  Use mstrsave() to make copy of filename.
+	* remote-mm.c (mm_load):  Symbol_file_add() takes an additional
+	arg.
+	* remote-vx.c (vx_load_command, add_symbol_stub):
+	Symbol_file_add() takes an additional arg.
+	* solib.c (symbol_add_stub):  Symbol_file_add() takes an
+	additional arg.
+	* symfile.c (symfile_open):  Renamed to symfile_bfd_open and
+	changed to return a bfd not an objfile pointer.
+	* symfile.c (syms_from_objfile): Eliminate local copy of bfd.
+	* symfile.c (symbol_file_add):  Takes an additional arg (readnow).
+	Change to eliminate local bfd and use symfile_bfd_open() plus
+	allocate_objfile().  Add code to implement readnow option.
+	* symfile.c (symbol_file_command): Changes to option handling,
+	readnow functionality moved to symbol_file_add().
+	* symfile.c (symfile_init):  Eliminate local copy of bfd.
+	* symfile.c (add_symbol_file_command):  Changes to parse mapped
+	and readnow options.
+	* symfile.h (allocate_objfile):  Arg removed from prototype.
+	* symtab.h (symbol_file_add):  Arg added to prototype.
+	* xcoffexec.c (map_vmap):  Allocate_objfile() takes an additional
+	arg.
+
+Sat Mar 14 16:38:47 1992  Fred Fish  (fnf@cygnus.com)
+
+	* gmalloc.c, gmalloc.h mcheck.c mmap-alloc.c mmap-sbrk.c mtrace.c,
+	mtrace.awk, state.c, state.h:  Removed.
+	* .gdbinit: Add ../malloc, ../libiberty, and ../bfd to list of
+	directories searched for source files.
+	* Makefile.in (GNU_MALLOC, MALLOC_CFLAGS, MALLOCSRC): Removed
+	* Makefile.in (MMALLOC_DIR, MMALLOC_DEP, MMALLOC_LIB,
+	MMALLOC_DISABLE, MMALLOC_CHECK, MMALLOC_CFLAGS): Add
+	* Makefile.in (CFLAGS):  Replace MALLOC_CFLAGS with MMALLOC_CFLAGS.
+	* Makefile.in (CLIBS, CDEPS):  Add MMALLOC_LIB
+	* Makefile.in (ADD_FILES, ADD_DEPS):  Remove GNU_MALLOC.
+	* Makefile.in (SFILES_MAINDIR): Remove stat.c mmap-alloc.c, mmap-
+	sbrk.c
+	* Makefile.in (HFILES): Remove state.h
+	* Makefile.in (POSSLIBS_MAINDIR): Remove MALLOCSRC.
+	* Makefile.in (OBS): Remove state.o mmap-alloc.o mmap-sbrk.o
+	* Makefile.in (saber_gdb): Remove mcheck, mtrace.  Add MMALLOC_DIR.
+	* Makefile.in (clean): Remove all object files.
+	* c-exp.y:  Define malloc to xmalloc and realloc to xrealloc.
+	* cplus-dem.c: Remove prototypes definitions that are now done in
+	def.h.
+	* dbxread.c (throughout):  Change from using per-objfile
+	xmalloc/xrealloc/free functions to xmmalloc/xmrealloc/mfree.
+	* defs.h: Remove prototypes for mmap_* functions.  Add prototypes
+	for xmmalloc, xmrealloc, mfree, mmcheck, mmtrace, mmalloc_attach, 
+	mmalloc_detach, mmalloc_setkey, msavestring, and mstrsave, nomem.
+	* depend:  Remove dependencies for state.o, state.h.
+	* dwarfread.c: Add declaration for warning_pre_print.
+	* dwarfread.c (dwarfwarn):  Use warning_pre_print.
+	* dwarfread.c (throughout):  Change from using per-objfile
+	xmalloc/xrealloc/free functions to xmmalloc/xmrealloc/mfree.
+	* gdbtypes.c (lookup_fundamental_type):  Fix init_type calls to
+	use supplied objfile.
+	* i386-xdep.c (print_387_status): Change to use warning() rather
+	than printfs.
+	* i387-tdep.c (print_387_control_word):  Change to use warning()
+	rather than printfs.
+	* infrun.c (wait_for_inferior):  Remove unreachable abort() call
+	that some compilers grumble about.		
+	* language.c (throughout):  Add declaration for warning_pre_print
+	and using warning() instead of printfs.
+	* m2-exp.y:  Define malloc to xmalloc and realloc to xrealloc.
+	* main.c (main):  Add declaration for warning_pre_print and set it
+	similarly to error_pre_print.  Add declarations for
+	mapped_symbol_files and readnow_symbol_files.  Add appropriate
+	definitions to long_options[].
+	* minsyms.c:  Trivial fix to comment.
+	* objfiles.c (allocate_objfile):  Substantially rewritten for
+	using mapped symbol files.
+	* objfiles.c (throughout):  Change from using per-objfile
+	xmalloc/xrealloc/free functions to xmmalloc/xmrealloc/mfree.
+	* objfiles.c (open_mapped_file, mapped_to_address):  Add functions.
+	* source.c (throughout):  Change from using per-objfile
+	xmalloc/xrealloc/free functions to xmmalloc/xmrealloc/mfree.
+	* source.c (open_source_file):  Use mstrsave to save file name in
+	mapped symbol region for objfile.
+	* symfile.c:  Remove include for state.h.
+	include to local form.
+	* symfile.c (symbol_file_add_digested):  Remove.
+	* symfile.c (symbol_file_add):  Substantially rewritten for mapped
+	symbol files.
+	* symfile.h:  Remove malloc/xrealloc/xmalloc/xrealloc/free members
+	from objfile structure.  Add malloc descriptor pointer (md).
+	* symfile.h (OBJF_DUMPABLE):  Changed name to OBJF_MAPPED.
+	* symm-xdep.c (print_fpu_status):  Use warning() rather than
+	printfs.
+	* symmisc.c (free_symtab_block):  Now takes and uses current
+	objfile pointer.
+	* symmisc.c (throughout):  Change from using per-objfile
+	xmalloc/xrealloc/free functions to xmmalloc/xmrealloc/mfree.
+	* symtab.c (cplus_mangled_symbol):  Cast return value to avoid
+	Sun compiler grumblings when PTR is char *.
+	* symtab.c (lookup_symbol):  Cast return value of iterate_over_
+	msymbols() to correct pointer type.
+	* utils.c (warning_pre_print):  Initialize to "\nwarning: ".
+	* utils.c (fatal, fatal_dump_core):  Ensure that the fatal
+	error always starts on a line of it's own.
+	* utils.c (init_malloc, malloc_botch, xmalloc, xrealloc):
+	Rewrite for new mapped malloc package use.
+	* utils.c (mmalloc, mrealloc, mfree):  Stubs for configurations
+	that don't want to use the mapped malloc package; pass arguments
+	on to traditional malloc package functions.
+	* utils.c (nomem):  Add for fatal virtual memory exhausted aborts.
+	* utils.c (xmmalloc, xmrealloc, xmalloc, xrealloc):  Like mmalloc,
+	mrealloc, malloc, and realloc but get fatal error if runs out
+	of memory.
+	* utils.c (msavestring, mstrsave):  Save a string in a specific
+	mapped malloc region.
+	* utils.c (print_spaces):  Use xmalloc to get the buffer.
+	* xm-amix.h, xm-i386v4.h, xm-sun3os4.h, xm-sun4os4.h:  Add defines
+	for MMAP_BASE_ADDRESS and MMAP_INCREMENT.
+	* config/i386v4.mh:  Insignificant reorganization.
+
+Sat Mar 14 11:44:47 1992  Fred Fish  (fnf@cygnus.com)
+
+	* xcoffread.c:  Only enable compilation of debugging functions
+	if IBM6000 is defined.  Fails to compile otherwise.
+
+Fri Mar 13 15:51:11 1992  K. Richard Pixley  (rich@cygnus.com)
+
+	* Makefile.in: pass MAKEINFO down on info.
+
+Fri Mar 13 12:56:36 1992  John Gilmore  (gnu at cygnus.com)
+
+	* mipsread.c (mipscoff_symfile_read):  Eliminate a lot of
+	useless code, including an lseek to an uninitialized variable.
+	Reported by Jim Williams <jimbo@wrs.com>.
+
+Thu Mar 12 11:56:46 1992  Per Bothner  (bothner@cygnus.com)
+
+	Merged in patches from metin@ibmpa.awdpa.ibm.com (Metin G.
+	Ozisik) (dated Fri, 6 Mar 92 17:51) for the rs6000.
+	* minsyms.c, symfile.c:  Changes that may be generally
+	applicable, but are #ifdef IBM6000 for now.
+	* rs6000-xdep.c:  Fixed typo in comment.
+	* rs6000-tdep.c:  Non-substatial changes.
+	* xoffread.c:  The main change here is addition of some
+	debugging functions.
+	* xoffexec.c: More changes.
+
+	* xcoffread.c:  Fixed two too-few-parameters bugs.
+
+	* solib.h, infrun.c, tm-rs6000.h:  Add a PID parameter
+	to SOLIB_CREATE_INFERIOR_HOOK macro.
+
+Sun Mar  8 21:17:48 1992  Fred Fish  (fnf@cygnus.com)
+
+	* symfile.h:  Add prototype for iterate_over_msymbols().
+	* symtab.c (cplus_mangled_symbol):  Add function.
+	* symtab.c (lookup_symbol):  Call cplus_mangled_symbol via
+	iterate_over_msymbols to find demangled C++ symbol.
+	* xcoffexec.c (relocate_minimal_symbol): Return meaningful
+	value to iterate_over_msymbols().
+	* xcoffexec.c (vmap_symtab):  Ignore return from iterate_over_
+	msymbols().
+
+Fri Mar  6 21:59:34 1992  K. Richard Pixley  (rich@cygnus.com)
+
+	* Makefile.in: added check target.
+
+Thu Mar  5 23:56:01 1992  John Gilmore  (gnu at cygnus.com)
+
+	* ecoff.c:  Move to ../bfd/coff-msym.c.
+	* config/mt-*mips:  Remove ecoff.o from the configuration.
+	* remote.c ():  Add newline to initial +.
+	(remote_resume):  Mention how to cope with signals.
+	(remote_interrupt):  Add debug msg.
+	(remote-wait):  Implement new 'T' reply, which includes
+	status, PC, and FP all in a single short message.
+	(putpkt):  Add further debugging of packet acks.
+	* mipsread.c (fixup_symtab):  Also swap RFD's.
+	(parse_partial_symbols):  Avoid bug on unknown symbol types.
+	* Makefile.in (VERSION):  Roll to 4.4.5.
+	* mips-tdep.c (heuristic_proc_start):  Avoid long delays
+	for remote MIPS by limiting heuristic to 200 byte search.
+	(heuristic_proc_desc):  Byte-swapping.
+	(mips_print_register):  Cope with failure of
+	read_relative_register_raw_bytes.  Byte-swap integers for
+	printing.
+	* mips-pinsn.c (print_insn):  Byte-swap instruction.
+
+Thu Mar  5 12:32:09 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* config.sub configure.in config/.Sanitize config/mh-irix4
+	gdb/.Sanitize gdb/configure.in gdb/mips-tdep.c gdb/mipsread.c
+	gdb/procfs.c gdb/signame.h gdb/tm-irix3.h gdb/tm-mips.h
+	gdb/xm-irix4.h gdb/config/.Sanitize gdb/config/mt-irix3
+	gdb/config/mh-irix4 texinfo/configure.in:  Port to SGI Irix-4.x.
+
+Wed Mar  4 11:56:42 1992  Fred Fish  (fnf@cygnus.com)
+
+	* defs.h, utils.c:  xrealloc takes PTR as first arg.
+	* defs.h:  Reword confusing comment about ANSI prototypes.
+	* defs.h:  Some minor whitespace changes.
+	* infrun.c (wait_for_inferior):  Compare int tmp to int 0,
+	not NULL, which can be (void *).
+	* tm-amix.h, tm-i386v4.h:  Add defines for setjmp/longjmp handling.
+	* tm-i386v.h (SP_ARG0):  Define
+	* xm-sysv4.h:  Back out of change for missing prototypes.
+	* i386-tdep.c (get_longjmp_target):  Add function.
+
+Wed Mar  4 05:46:11 1992  K. Richard Pixley  (rich@rtl.cygnus.com)
+
+	* Makefile.in: install man page too.
+
+Tue Mar  3 15:11:52 1992  Michael Tiemann  (tiemann@cygnus.com)
+
+	* All GDB files that #include defs.h: Removed stdio.h.
+	(defs.h): #include stdio.h.
+
+Mon Mar  2 23:00:12 1992  Steve Chamberlain  (sac@thepub.cygnus.com)
+
+	* gdbtypes.c (lookup_pointer_type): initialize the TYPE_LENGTH of
+	a ptype to reflect the setting of TARGET_PTR_BIT.  Set the
+	TYPE_FLAGS of a ptype to TYPE_FLAG_UNSIGNED.
+	* tm-h8300.h, h8300-tdep.c, remote-hms.c: personal checkpoint
+	* printcmd.c (print_address): if ADDR_BITS_REMOVE is defined, use
+	it before printing out the hex shape of an address.
+
+Sun Mar  1 17:41:09 1992  Per Bothner  (bothner@cygnus.com)
+
+	* rs6000-xdep.c (frame_initial_stack_address):  Move
+	code to set frame->cache_fsr into new separate function
+	frame_get_cacahe_fsr.  This allows fixing a fatal error.
+	* xcoffexec.c:  Turn previously suppressed error
+	message back on, after cleaning up BFD.
+
+	* breakpoint.c (breakpoint_re_set):  Removed (at least for now)
+	printing of blank line, since it cases printing of an
+	extra blank line.  Is this intended?  It does mess up
+	gdb test suite.
+	* defs.h:  Put back declarations of malloc and realloc,
+	but protected by #ifndef MALLOC_INCOMPATIBLE.
+	* objfiles.c:  Undo previous change:  Use malloc/realloc
+	for objfile malloc/realloc fields (but add a cast).
+	* xcoffexec.c:  Suppress an error message (for now).
+
+Sat Feb 29 14:43:02 1992  Per Bothner  (bothner@cygnus.com)
+
+	Changes from metin@ibmpa.awdpa.ibm.com (Metin G. Ozisik)
+	[Mail dated Fri, 21 Feb 92 13:14:54 -0800]
+	* buildsym.c: Use smash_to_pointer_type() to handle forward type
+	references.
+	* xcoffread.c: Modifications to C_DECL storage class handling, and
+	introduction of an old smash_to_pointer_type() routine.
+
+	Changes from metin@ibmpa.awdpa.ibm.com (Metin G. Ozisik)
+	[Mail dated Thu, 20 Feb 92 13:57:16 -0800]
+	* rs6000-xdep.c, rs6000-tdep.c, tm-rs6000.h: function_frame_info()
+	parameters have been modified.
+
+	Changes from metin@ibmpa.awdpa.ibm.com (Metin G. Ozisik)
+	[Mail dated Thu, 20 Feb 92 10:10:05 -0800]
+	* rs6000-tdep.c: Before Feb 5 92, register_valid[] array was not used,
+	and fetch_inferior_registers() always fetched all the registers
+	resulting valid register values at hand all the time. Pushing a dummy
+	frame did not require validating all register values first. After
+	putting the above mechanism into action, we didn't have valid registers
+	values always ready. Thus, all registers need to be fetched before
+	pushing a dummy frame now.
+
+	Changes from metin@ibmpa.awdpa.ibm.com (Metin G. Ozisik)
+	[Mail dated Thu, 13 Feb 92 16:22:44 -0800]
+	* rs6000-xdep.c: frame_initial_stack_address() function to calculate
+	the starting address (actual frame address) of a frame.
+	* rs6000-tdep.c: modifications to function_frame_info() to see if
+	function reserves a frame pointer register (alloca register)
+	* tm-rs6000.h: EXTRA_FRAME_INFO, FRAME_ARGS_ADDRESS and
+	FRAME_LOCALS_ADDRESS has been updated to support debugging of
+	functions with alloca() calls.
+
+Sun Mar  1 13:13:39 1992  Fred Fish  (fnf@cygnus.com)
+
+	* xm-sysv4.h:  Provide definitions/prototypes for host environment
+	functions for which no definitions or prototypes are provided in
+	any currently included gdb or host environment header files.
+	For SVR4, this currently includes malloc and realloc, which cannot
+	be portably prototyped in any gdb include file.
+
+Sat Feb 29 14:43:02 1992  Per Bothner  (bothner@cygnus.com)
+
+	* buildsym.h:  Remove obsolete variable file_stabs.
+
+	* Makefile.in:  Move place where configure merges in host-
+	and target-dependent fragments later, so the latter
+	can override (say) GNU_MALLOC.
+	* config/mh-rs6000:  Use system malloc.  Otherwise, I
+	ended up with *two* incompatible versions of malloc
+	(functions in libc would call the malloc in libc).
+	I assume this is a shared library problem.
+
+	* remote.c:  Fix (presumed) typo.
+	* objfiles.c:  Use xmalloc/xrealloc instead of
+	malloc/realloc (since the latter are no longer declared).
+
+	Changes from metin@ibmpa.awdpa.ibm.com (Metin G. Ozisik)
+	[Mail dated Thu, 6 Feb 1992 10:22:02 -0800]
+	* rs6000-xdep.c: Improvements to fetch_inferior_registers() to
+	handle individual registers.
+	* tm-rs6000.h: Fix SAVED_PC_AFTER_CALL macro to handle pc value
+	correctly in case it wasn't cached yet. (A problem showed up
+	after fetching individual registers.)
+	* buildsym.c: Disable type_synonym_name's type name overwriting
+	in cases it is unnecesary. rs6000 portation doesn't use
+	type_synonym_name, and it used to nullify type names
+	* xcoffread.c: to handle g++'s typename abbreviation, fill in a
+	type's name as soon as space for that type is allocated.
+	* xcoffread.c: ignore a section's lineno information if it is
+	not `.text'. (In rs6000 bfd portation integration, skipping over
+	`.pad' sections are ignored since it was in machine independent
+	part of the code. Thus, a problem of fake sections with invalid
+	lineno information arised.)
+
+	Changes from metin@ibmpa.awdpa.ibm.com (Metin G. Ozisik)
+	[Mail dated Thu, 6 Feb 1992 13:26:22 -0800]
+	* rs6000-tdep.c: make function_frame_info() work whether or not
+	reading from a core file.
+	* tm-rs6000.h: Implementation of FRAME_FIND_SAVED_REGS macro.
+
+	* infrun.c. main.c, printcmd.c. symtab.c:
+	More changes from IBM for rs6000.
+
+
+Thu Feb 27 22:57:19 1992  Per Bothner  (bothner@cygnus.com)
+
+	* rs6k-opcode.h, tm-rs6000.h, xm-rs6000.h, rs6000-tdep.c,
+	rs6000-xdep.c, xcoffexec.c, xcoffread.c:
+	Merge in changes (mostly from IBM) for RS6000.
+	* breakpoint.c, buildsym.c, infptrace.c, stack.c, symtab.c:
+	More changes from IBM for RS6000.  These are in machine-
+	independent code, and probably could do with some cleaning
+	up.  The most questionable of these are #ifdef IBM6000.
+	* infrun.c, sparc-tdep.c: Pass a parameter (signal number)
+	to single_step() (for consistency with rs6000 and i860).
+	* utils.c:  Allow the 1st arg to xrealloc to be NULL
+	(in which case do malloc).  This removes the need for
+	some tests in xcoff code (and perhaps other places?).
+	* coffread.c: Removed variables last_source_file,
+	type_vector, and type_vector_length as these are now
+	defined by buildsym.[ch].
+	* defs.h:  Remove prototypes for malloc and realloc, since
+	these should only be used to implement xmalloc and xrealloc,
+	and they conflict with <stdlib.h> in AIX - where they
+	return void* even when __STDC__ isn't defined.  Sigh.
+	* munch:  Recognize *initialize* in data as well as text
+	(AIX uses data).  Also, incorporate a patch from Garrett
+	Wollman <wollman@uvm-gen.uvm.edu> to make the sed script
+	much more sensible, by only trying to match the name of
+	the initialize_foo function, and not the junk before it.
+	
+Thu Feb 27 20:07:43 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* breakpoint.c (breakpoint_re_set_one):  Don't reset breakpoint
+	unless symbol table indicates that something has changed.
+
+Thu Feb 27 11:48:47 1992  John Gilmore  (gnu at cygnus.com)
+
+	* remote.c:  Make it work for embedded MIPS.  Increase buffer
+	size, and use throughout.  Round buffer size up if too many regs.
+	Support baud rate setting and try for an 8-bit path.  If
+	interrupted while waiting for target, send a ^C down the wire.
+	Avoid single-byte reads.
+	* tm-mips.h:  Add more embedded-system registers to REGISTER_NAMES
+	and NUM_REGS.
+	* mips-xdep.h:  Avoid the embedded regs when on Unix.
+
+	* mipsread.c:  Byte-swap the symbol table structures, using
+	routines from ecoff.c, to read a symbol table written in any
+	of the four possible byte orders.
+	* configure.in (mips-big-* target):  Same as Sony News.
+	* config/mt-bigmips, config/mt-littlemips:  Add ecoff.o.
+	* ecoff.c:  New file for symbol swapping routines.
+
+Thu Feb 27 09:26:38 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* breakpoint.c (all_breakpoints_info, breakpoint_1):  Add 'info
+	all-breakpoints' command.
+	* (get_number):  Allow users to enter negative breakpoint numbers.
+	* (breakpoint_1):  Reformat display of 'info break' to show new
+	fields.
+	* (create_longjmp_breakpoint, breakpoint_re_set,
+	breakpoint_re_set_one, enable/disable_longjmp_breakpoint),
+	symfile.c  (syms_from_objfile):  Re-do
+	insertion of longjmp breakpoints.  Move all code into
+	breakpoint_re_set, and call that instead of
+	create_longjmp_breakpoint in symfile.c.
+
+Thu Feb 27 06:11:05 1992  John Gilmore  (gnu at cygnus.com)
+
+	* breakpoint.h (ALL_BREAKPOINTS_SAFE):  Add.
+	* breakpoint.c (breakpoint_re_set):  Use ALL_BREAKPOINTS_SAFE.
+	* symtab.c (find_pc_symtab):  Handle having no objfiles.
+	* infcmd.c:  Fix comment.
+	* objfiles.c (free_all_objfiles):  Add.
+	* symfile.h (ALL_OBJFILES, ALL_OBJFILES_SAFE):  Add.
+	* symfile.c (symbol_file_command):  free all objfiles when
+	specifying a new symbol file.
+	(reread_symbols):  Stat the file name, don't fstat the descriptor.
+
+Wed Feb 26 18:04:40 1992  K. Richard Pixley  (rich@cygnus.com)
+
+	* Makefile.in, configure.in: removed traces of namesubdir,
+	  -subdirs, $(subdir), $(unsubdir), some rcs triggers.  Forced
+	  copyrights to '92, changed some from Cygnus to FSF.
+
+Tue Feb 25 19:31:19 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* dbxread.c (end_psymtab):  Delete empty psymtabs.
+	* symfile.c (allocate_psymtab):  Recycle empty psymtabs.
+	* symfile.h (struct objfile):  Add free_psymtabs.
+
+Sat Feb 22 02:00:32 1992  John Gilmore  (gnu at cygnus.com)
+
+	* Makefile.in (VERSION):  Roll to gdb-4.4.4.
+
+	* symfile.c (symbol_file_command):  strcmp => !strcmp.
+	* breakpoint.h:  Move prototypes to follow enum definition they need.
+	* breakpoint.c, infrun.c:  Lint.
+	* printcmd.c:  Use `enum enable' rather than `enum
+	display_status'.
+	* mipsread.c:  First pass at making it compile with the new
+	objfile changes.  Probably seriously broken still, but it
+	compiles.  FIXME.
+
+Sat Feb 22 00:56:39 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* infrun.c, infcmd.c, breakpoint.c, main.c, symfile.c,
+	breakpoint.h, tm-sun4os4.h, tm-sparc.h, sparc-tdep.c, tm-mips.h,
+	mips-tdep.h, tm-sun3.h, tm-68k.h, m68k-tdep.h:  Add support for
+	stepping (and nexting) through longjmp().  Also, cleanup
+	breakpoint handling quite a bit by creating explicit breakpoint
+	types instead of using magic breakpoint numbers.
+	Makefile.in:  Update version to 4.4.3
+
+Sat Feb 22 00:08:50 1992  John Gilmore  (gnu at cygnus.com)
+
+	* buildsym.c, dwarfread.c, gdbtypes.c, inflow.c, main.c,
+	minsyms.c, printcmd.c, remote.c, saber.suppress:  Saberlint.
+	* symmisc.c, xcoffread.c:  Move debug functions to symmisc.c.
+
+	* xm-sun3os4.h, xm-sun4os4.h:  Enable HAVE_MMAP.
+
+	* minsyms.c (install_minimal_symbols):  Add bunches to any
+	existing minsyms in the objfile.  Avoid extra mallocation
+	by working directly in the obstack.  Remove ignored `mainline' parm.
+	* coffread.c, dbxread.c, elfread.c, mipsread.c, solib.c, symtab.h,
+	xcoffread.c:  Change all callers.
+	* FIXME:  We should be able to eliminate MAINLINE from all the
+	symbol readers now, with a small bit of work.
+
+	* valops.c, value.h:  Lint.
+	* remote-vx.c:  Add missing break; statement.  Bugfix by
+	Michael Sclafani, <sclafani@src.dec.com>.
+
+Fri Feb 21 17:29:54 1992  Fred Fish  (fnf at cygnus.com)
+
+	* Makefile.in (VERSION):  Update version to 4.4.2
+	* Makefile.in (SFILES_MAINDIR):  Add gdbtypes.c, state.c, objfiles.c,
+	minsyms.c, mmap-alloc.c, mmap-sbrk.c
+	* Makefile.in (HFILES):  Add gdbtypes.h, state.h, solib.h
+	* Makefile.in (OBS):  Add gdbtypes.o, state.o, objfiles.o, minsyms.o,
+	mmap-alloc.o, mmap-sbrk.o
+
+	* altos-xdep.c:  Minor whitespace change.
+	* am29k-tdep.c (examine_prologue):  Convert from misc function vector
+	use to new minimal symbol table use.
+	* arm-xdep.c (fetch_inferior_registers):  Document unused argument.
+	* arm-xdep.c (store_inferior_registers):  Returns void.
+	* blockframe.c (get_pc_function_start, find_pc_partial_function):
+	Convert from misc function vector use to new minimal symbol table use.
+	Remove find_pc_misc_function().  Ifdef out block_innermost_frame().
+	* breakpoint.c:  Add prototypes for local functions.
+	* breakpoint.c (catch_command_1):  Change to static and remove unused
+	local "pc".
+	* breakpoint.c (map_breakpoint_numbers):  Prototype arg "function".
+	* breakpoint.h:  Change function decls to prototype form.
+	* buildsym.c:  Add prototypes for local functions.
+	* buildsym.c:  Moved hashname() function here from dbxread.c.
+	* buildsym.c (dbx_lookup_type):  Cast args to xrealloc().
+	* buildsym.c:  Remove dbx_create_type(), uses changed to alloc_type().
+	* buildsym.c (dbx_alloc_type):  Change to static.
+	* buildsym.c (finish_block): Add objfile parameter.
+	* buildsym.c (misc):  Change symbol_obstack to objfile version.
+	* buildsym.c (make_blockvector): Change to static.
+	* buildsym.c (start_subfile):  Use strdup instead of obsavestring.
+	* buildsym.c (compare_line_numbers): Change to static, args are const,
+	cast args when used.
+	* buildsym.c (start_symtab):  Inline new_object_header_files() call.
+	* buildsym.c (patch_block_stabs):  Moved to this file from xcoffread
+	and made static.  Add objfile parameter.
+	* buildsym.c (end_symtab): Simplify code using line table size.
+	Realloc the linetable on the objfile symbol_obstack and copy there.
+	* buildsym.c (scan_file_globals):  Convert from misc function vector
+	use to new minimal symbol use.
+	* buildsym.c (define_symbol):  Add objfile parameter.  Make sure
+	strings get allocated in objfile's symbol_obstack.  Convert references
+	to builtin types to lookup_fundamental_type().
+	* buildsym.c (read_type):  Make static, add objfile parameter, convert
+	references to buildin types to lookup_fundamental_type().
+	* buildsym.c (read_struct_type):  Add objfile parameter.
+	* buildsym.c (read_array_type):  Make static, add objfile parameter.
+	* buildsym.c (read_enum_type):  Make static, add objfile parameter.
+	* buildsym.c (read_huge_number): Make static.
+	* buildsym.c (read_range_type): Make static, add objfile parameter,
+	convert references to buildin types to lookup_fundamental_type ().
+	* buildsym.c (read_args):  Make static, add objfile parameter.
+	* buildsym.h:  Convert function decl's to prototype form.
+	* c-exp.y:  Add prototypes for local functions, convert uses of misc
+	function vector to minimal symbol table.  Reformat all builtin type
+	initializations and pass a NULL objfile to init_type() for them.
+	* coffread.c:  Change context_stack ref's to coff_context_stack,
+	add local function prototypes.  Cast uses of xrealloc arg 1.
+	* coffread.c (coff_alloc_type):  Call alloc_type instead of  hand-
+	crafting a new type.
+	* coffread.c (add_symbol_to_list):  Change to coff_add_symbol_to_list.
+	* coffread.c (finish_block):  Change name to coff_finish_block.
+	* coffread.c (make_blockvector):  Add and use objfile parameter.
+	* coffread.c (record_line):  Change name to coff_record_line.
+	* coffread.c (start_symtab):  Change name to coff_start_symtab.
+	* coffread.c (end_symtab):  Change name to coff_end_symtab.
+	* coffread.c (record_misc_function):  Change name to record_minimal_
+	symbol and change to minimal symbol table use from misc func tbl.
+	* coffread.c (coff_symfile_read):  Convert from misc function vector
+	use to minimal symbol table use.
+	* coffread.c (hashname):  Remove; use common version in buildsym.c.
+	* coffread.c (decode_base_type):  Change references to builtin types
+	to calls to lookup_fundamental_type().
+	* coffread.c (read_struct_type):  Change name to coff_read_struct_type.
+	* coffread.c (read_enum_type):  Change name to coff_read_enum_type.
+	* command.c: Add prototypes for local functions.
+	* command.c (add_cmd):  Prototype the 'fun' parameter and use the
+	appropriate member of the function union for that type.
+	* command.c (add_abbrev_cmd):  Prototype the 'fun' parameter and
+	ifdef out the function since it isn't currently used.
+	* command.c (add_alias_cmd):  Pass correct function type to add_cmd.
+	* command.c (add_prefix_cmd):  Prototype the 'fun' parameter.
+	* command.c (add_abbrev_prefix_cmd):  Prototype the 'fun' parameter.
+	* command.c (help_cmd):  Compare function pointer to NULL.
+	* command.c (help_cmd_list):  Compare function pointer to NULL.
+	* command.c (lookup_cmd_1):  Use correct member of function union.
+	* command.c (undef_cmd_error):  Make static.
+	* command.c (complete_on_cmdlist):  Use correct member of func union.
+	* command.c (do_setshow_command):  Use correct member of func union.
+	* command.c (shell_escape):  Convert rindex use to strrchr.
+	* command.h (COMMAND_H):  Define if already included.
+	* command.h (cmd_list_element struct):  Change 'function' to a union
+	and prototype args.  Prototype completer function.
+	* command.h:  Convert decl's to prototype form.
+	* convex-xdep.c (store_inferior_registers):  Returns void.
+	* copying.c:  Prototype local functions.
+	* coredep.c:  Minor whitespace change.
+	* cplus-dem.c:  Remove hack to use BSD equivalents of mem* and str*.
+	* cplus-dem.c:  Prototype local functions.
+	* dbxread.c (hashname):  Remove; moved to buildsym.c.
+	* dbxread.c (free_and_init_header_files):  Make static.
+	* dbxread.c:  Add prototypes for local functions.
+	* dbxread.c (new_object_header_files):  Remove; inlined usages.
+	* dbxread.c (xrealloc usages):  Cast args.
+	* dbxread.c (record_misc_function):  Change to record_minimal_symbol
+	and change usages accordingly.
+	* dbxread.c (static_psymbols usages):  Change to use per-objfile copy.
+	* dbxread.c (xmalloc usages):  Use per-objfile copy when appropriate.
+	* dbxread.c (dbx_next_symbol_text):  Make static.
+	* dbxread.c (init_psymbol_list):  Convert to use per-objfile data.
+	* dbxread.c (init_bincl_list):  Add and use objfile parameter.
+	* dbxread.c (free_bincl_list):  Add and use objfile parameter.
+	* dbxread.c (compare_psymbols):  Remove; use common symfile.c version.
+	* dbxread.c (end_psymtab):  Convert to use per-objfile data.
+	* dwarfread.c (DEFUN/EXFUN):  Remove all usages.  Use PARAMS for
+	prototypes.
+	* dwarfread.c (record_misc_function):  Change name to record_minimal_
+	symbol and use minimal symbol table throughout.
+	* dwarfread.c (compare_psymbols):  Remove; use common symtab.c version.
+	* dwarfread.c:  Convert all references to builtin types to use the new
+	lookup_fundamental_type function.
+	* dwarfread.c (read_enumeration):  Add and use objfile parameter.
+	* elfread.c (DEFUN/EXFUN):  Remove all usages.  Use PARAMS for proto-
+	types.
+	* elfread.c (record_misc_function):  Convert to use record_minimal_
+	symbol.
+	* elfread.c (elf_symtab_read):  Add objfile parameter.
+	* eval.c:  Add prototypes for local functions and move some decls
+	around to accomodate prototypes.
+	* expprint.c:  Add prototypes for local functions.  Change references
+	to misc function vector to minimal symbol table.
+	* findvar.c (read_memory usages):  Cast args.
+	* gdbtypes.h:  New file, type info from symfile.h and symtab.h.
+	* gmalloc.c:  Use NOARGS where prototypes used hardwired void.
+	* gmalloc.c (BLOCKSIZE):  Constant to be shifted is unsigned.
+	* gmalloc.h:  Use NOARGS where prototypes used hardwired void.
+	* gould-xdep.c:  Minor whitespace change.
+	* hp300ux-xdep.c (fetch_inferior_registers):  Remove unused regno var.
+	* hp300ux-xdep.c (store_inferior_registers):  Returns void.
+	* hp300ux-xdep.c (fetch_core_registers):  Takes unused arg reg_addr.
+	* i386-stub.c: Add prototypes, change "volatile" to NORETURN.
+	* i386-tdep.c: Add prototypes for local functions.
+	* i386-tdep.c (codestream_fill, codestream_seek, codestream_read,
+	i386_get_frame_setup, i386_skip_prologue): Explicitly declare params
+	that defaulted to int.
+	* i386-tdep.c (i386_follow_jump, i386_frame_find_saved_regs,
+	i386_push_dummy_frame):	Returns void.
+	* i386-xdep.c (i386_register_u_addr):  Declare params that default to
+	int and explicitly declare return type as int.
+	* i387-tdep.c:  Minor formatting changes.
+	* i960-tdep.c (leafproc_return):  Convert from misc function vector
+	use to minimal symbol table use.
+	* infcmd.c:  Add prototypes for local functions.
+	* infcmd.c (continue_command, until_next_command, until_command,
+	path_info, path_command):  Make static.
+	* infcmd.c (step_1, until_next_command):  Convert from misc func
+	vector to minimal symbol table use.
+	* inflow.c:  Add prototypes for local functions.
+	* infptrace.c (store_inferior_registers):  Returns void, not int.
+	* language.c (_initialize_language):  Use proper member of function
+	union.
+	* m2-exp.y:  Add prototypes for local functions, convert misc function
+	vector uses to minimal symbol table uses.
+	* m2-exp.y (make_qualname, yyerror):  Make static.
+	* m2-exp.y (_initialize_m2_exp):  Call init_types with NULL objfile.
+	* m68k-pinsn.c:  Add prototypes for local functions.
+	* m68k-pinsn.c (print_insn):  Cast args to read_memory.
+	* m68k-pinsn.c (fetch_arg):  Make parameter 'code' and int.
+	* m68k-stub.c:  Add prototypes.
+	* m88k-pinsn.c (sprint_address):  Convert from misc function vector
+	use to minimal symbol table use.
+	* m88k-xdep.c (fetch_inferior_registers):  Takes an unused parameter.
+	* m88k-xdep.c (store_inferior_registers):  Returns void.
+	* mach386-xdep.c (fetch_inferior_registers):  Takes an unused param.
+	* mach386-xdep.c (store_inferior_registers):  Returns void.
+	* mach386-xdep.c (fetch_core_registers):  Takes an unused parameter.
+	* main.c:  Add prototypes for local functions.
+	* main.c (return_to_top_level):  Is type NORETURN (volatile).  Cast
+	longjmp() result to (NORETURN void).
+	* main.c (catch_errors):  Prototype the 'func' parameter.
+	* main.c (disconnect, stop_sig, do_nothin, float_handler):
+	Takes an unused arg.
+	* main.c (execute_command):  Call the right member of the func union.
+	* main.c (command_loop_marker, symbol_completion_function,
+	command_loop):  Make static.
+	* main.c (command_line_input):  Make linelength unsigned, cast arg
+	to command_line_input().
+	* main.c (add_info, add_com):  Prototype the 'fun' parameter.
+	* main.c (initialize_main):  Call right member of function union.
+	* mcheck.c (NOARGS):  Change hardwired void in prototypes to NOARGS.
+	* mem-break.c:  Include symtab.h
+	* mips-xdep.c (fetch_inferior_registers):  Takes unused param.
+	* mips-xdep.c (store_inferior_registers):  Returns void.
+	* mipsread.c (mipscoff_symfile_read):  Change from misc function vector
+	use to minimal symbol table use.
+	* mipsread.c (symbol_obstack usages):  Convert all to use per-objfile
+	version.
+	* mipsread.c (make_type):  Remove, convert usages to init_type.
+	* mipsread.c (_initialize_mipsread):  Call init_type with NULL objfile.
+	* nindy-tdep.c (nindy_frame_chain_valid):  Convert from misc function
+	vector use to minimal symbol table use.
+	* parse.c:  Add prototypes for local functions.
+	* parse.c (xrealloc usages):  Cast args.
+	* parse.c (prefixify_expression, length_of_subexp):  Make static.
+	* parser-defs.h (PARSER_DEFS_H):  Define when first included.
+	* parser-defs.h:  Convert function decls to prototype form.
+	* partial-stab.h:  Convert from misc function vector use to new minimal
+	symbol table use.
+	* partial-stab.h (global_psymbols, static_psymbols usages):  Reference
+	the per-objfile copies.
+	* printcmd.c:  Add prototypes for local functions.  Move some struct
+	definitions around to accomodate prototypes.
+	* printcmd.c (decode_format):  Make static, change args oformat and
+	osize to int from char.
+	* printcmd.c (print_formatted):  Change 'format' and 'size' to int.
+	* printcmd.c (print_scalar_formatted):  Change arg 'format' to int.
+	* printcmd.c (print_address_symbolic):  Convert from misc function
+	vector use to minimal symbol table use.
+	* printcmd.c (address_info):  Convert from misc function vector use
+	to minimal symbol table use.
+	* printcmd.c (delete_display, enable_display, disable_display_command):
+	Make static.
+	* procfs.c (EXFUN/DEFUN):  Remove all usages, convert to PARAM.
+	* procfs.c (fetch_core_registers):  Add unused param reg_addr.
+	* pyr-xdep.c (fetch_inferior_registers):  Add unused param regno.
+	* pyr-xdep.c (store_inferior_registers):  Returns void.
+	* remote-mm.c (mm_load):  symbol_file_add return value unused.
+	* remote-nindy.c:  Minor format change.
+	* remote-vx.c (vx_load_command):  symbol_file_add result unused.
+	* rs6000-xdep.c (fetch_inferior_registers):  Add unused param regno.
+	* rs6000-xdep.c (store_inferior_registers):  Returns void.
+	* rs6000-xdep.c (fetch_core_registers):  add unused param reg_addr
+	* rs6000-xdep.c (aixcoff_relocate_symtab):  Convert from misc function
+	vector use to minimal symbol table use.
+	* solib.c:  Add prototypes for local functions.
+	* solib.c (solib_add_common_symbols, locate_base):  Convert from misc
+	function vector use to minimal symbol table use.
+	* solib.c (EXFUN/DEFUN):  Remove all usages, convert to PARAM.
+	* solib.c (find_solib, shared_library_command):  Make static
+	* solib.c (read_memory, write_memory usages):  Cast args.
+	* solib.c (special_symbol_handling):  Add function
+	* source.c:  Add prototypes for local functions.
+	* source.c (select_source_symtab):  Convert to scan objfiles.
+	* source.c (open_source_file):  Make static.
+	* source.c (xrealloc usages):  Cast args.
+	* source.c (source_line_charpos):  ifdef out, unused.
+	* source.c (get_filename_and_charpos):  Make static.
+	* stack.c:  Add prototypes for local functions.
+	* stack.c (print_frame_info, frame_info):  Convert from misc function
+	vector use to minimal symbol table use.
+	* symfile.c:  Add prototypes for local functions.
+	* symfile.c (compare_symbols):  Make args const PTR's.
+	* symfile.c (compare_psymbols, sort_pst_symbols) add.
+	* symfile.c (sort_all_symtab_syms):  Scan objfile list.
+	* symfile.c (obsavestring):  Add objfile parameter.
+	* symfile.c (init_misc_bunches, prim_record_misc_function,
+	compare_misc_functions, discard_misc_bunches, condense_misc_bunches,
+	sort_misc_function_vector, compact_misc_function_vector): Remove
+	* symfile.c (symbol_file_add_digested):  Add function.
+	* symfile.c (symbol_file_add):  Returns struct objfile *.
+	* symfile.c (symbol_file_command):  Modify for state file use.
+	* symfile.c (symfile_open):  Add parameter "dumpable".
+	* symfile.c (allocate_objfile, free_objfile):  Moved to objfiles.c
+	* symfile.c (load_command, add_symbol_file_command):  Make static.
+	* symfile.c (fill_in_vptr_fieldno):  Moved to gdbtypes.c
+	* symfile.c (rindex usages):  Converted to strrchr.
+	* symfile.c (allocate_psymtab):  New
+	* symfile.c (free_named_symtabs):  Ifdef out code that needs to be
+	converted to minimal symbol table usage, but no obvious conversion.
+	* symfile.c (free_all_symtabs):  Remove.
+	* symfile.c (_initialize_symfile):  Use per-objfile info.
+	* symfile.h:  Rework the objfile structure to add per-objfile data
+	objects (psymbol_obstack, symbol_obstack, type_obstack,
+	global_psymbols, static_psymbols, msymbols, minimal_symbol_count,
+	fundamental_types, malloc, realloc, free, xmalloc, xrealloc, etc).
+	Add prototypes to function declarations.
+	* symm-tdep.c (symmetry_extract_return_value):  Convert from misc
+	function vector usage to minimal symbol table usage.
+	* symmisc.c (DEV_TTY):  Define if not defined.
+	* symmisc.c:  Add local function prototypes.
+	* symmisc.c (dump_objfile, dump_msymbols, dump-symtab, print_syms,
+	printpsyms_command, print_objfiles, print_objfiles_command):
+	Rework to use iterate_over_*
+	* symtab.c:  Add prototypes for local functions.
+	* symtab.c (lookup_symtab_1):  Convert to look through objfiles.
+	* symtab.c (lookup_partial_symtab):  Scan through objfiles.
+	* symtab.c (lookup_primitive_typename, lookup_typename, lookup_
+	unsigned_typename, lookup_struct, lookup_union, lookup_enum,
+	lookup_template_type, lookup_struct_elt_type, lookup_pointer_type,
+	lookup_reference_type, lookup_member_type, allocate_stub_method,
+	check_stub_method, create_array_type, smash_to_member_type,):
+	Moved to gdbtypes.c
+	* symtab.c (lookup_symbol):  Some args are const.
+	* symtab.h: All type related defs and structs moved to gdbtypes.h
+	* symtab.h: Convert decls to prototypes.
+	* target.c (noprocess):  Make static.
+	* target.h:  Change decl's to prototypes.
+	* tm-sunos.h: (CLEAR_SOLIB, SOLIB_ADD, SOLIB_CREATE_INFERIOR_HOOK,
+	DISABLE_UNSETTABLE_BREAK) Moved to solib.h.
+	* utils.c (_initialize_utils):  Use correct member of function union.
+	* valarith.c:  include gdbtypes.h
+	* valops.c: include gdbtypes.h, add prototypes for local functions.
+	* valops.c (value_push, value_arg_push, find_function_addr):
+	Make static.
+	* valops.c (value_string):  Convert from misc function vector use
+	to minimal symbol table use.
+	* valops.c (check_field_in):  Make arg const.
+	* valprint.c:  Add prototypes for local functions.
+	* valprint.c (print_string):  Make static
+	* valprint.c (value_print, val_print_fields, val_print): Make arg int.
+	* values.c:  Add prototypes for local functions.
+	* values.c (value_headof):  Convert from misc function vector to
+	minimal symbol table.
+	* xcoffexec.c:  Add prototypes for local functions.
+	* xcoffexec.c (exec_close, file_command, add_to_section_table):
+	Make static.
+	* xcoffexec.c (relocate_minimal_symbol):  Add.
+	* xcoffread.c (patch_block_stabs):  Moved to buildsyms.c.
+	* xcoffread.c: Add prototypes for local functions.
+	* xcoffread.c (sort_syms):  Convert to scan objfiles.
+	* xcoffread.c (read_xcoff_symtab):  Make static.
+	* xcoffread.c (various):  Replace references to builtin types with
+	calls to lookup_fundamental_type.  Replace references to symbol_obstack
+	and psymbol_obstack with pointers to the per-objfile copies.
+	* xcoffread.c (dump_linetable, dump_type, dump_symbol, dump_namespace,
+	dump_block, dump_blockvector, dump_last_symtab, dump_symtabs):
+	Make static.
+	* xcoffread.c (init_stringtab):  Add objfile parameter.
+	* gdbtypes.c: New file
+	* minsyms.c: New file
+	* mmap-alloc.c: New file
+	* mmap-sbrk.c: New file
+	* objfiles.c: New file
+	* state.c: New file
+	* state.h: New file
+
+Fri Feb 21 17:29:54 1992  John Gilmore  (gnu at cygnus.com)
+
+	* Check in Fred Fish's changes in these modules.  Fred
+	will make ChangeLog entries for all of them.  Update VERSION
+	to 4.4.2.
+
+Thu Feb 20 18:10:17 1992  Fred Fish  (fnf at cygnus.com)
+
+	* tm-sparc.h, tm-sysv4.h, solib.h:  Move shared lib definitions
+	into solib.h.
+	* sparc-pinsn.c, sparc-tdep.c, standalonec, sun3-xdep.c,
+	sun386-xdep.c, symm-xdep.c, target.c, ultra3-xdep.c, utils.c,
+	value.h: Prototypes for static functions; lint.
+	* gdbtypes.h:  Empty file to ease transition.
+
+Thu Feb 20 16:43:13 1992  Fred Fish  (fnf at cygnus.com)
+
+	* environ.h, expression.h, frame.h, gdbcmd.h, gdbcore.h,
+	inferior.h, language.h, signame.h, target.h, terminal.h, 
+	tm-68k.h, tm-i386v.h, tm-sparc.h, tm-sun386.h, tm-symmetry.h,
+	xm-i386v.h, xm-sparc.h: Prototypes for all external functions.
+	Lint.
+	* core.c, exec.c, infrun.c, inftarg.c, language.c, remote.c,
+	signame.c, sparc-xdep.c: Prototypes for all static functions.
+	Lint.
+	* core.c, eval.c, exec.c, inftarg.c, remote-adapt.c, remote-eb.c,
+	remote-hms.c, remote-mm.c, remote-nindy.c, remote-vx.c, remote.c,
+	target.c, target.h, valarith.c, valops.c, value.h, xcoffexec.c:
+	Remove to_call_function and target_call_function, since it
+	always calls the same thing (call_function_by_hand).
+	* core.c, exec.c, solib.c:  Rename target_ops sections =>
+	to_sections, etc.
+	* infcmd.c, inflow.c, infptrace.c, infrun.c, main.c, target.c,
+	target.h:  target_kill takes no args.
+	* language.c (language_info):  Scaffolding to allow briefer
+	messages when the current language changes.  FIXME.
+	* xm-amix.h, xm-i386v4.h, xm-stratus.h: Define NORETURN to avoid
+	complaints about volatile functions.
+	* xm-sysv4.h (HAVE_MMAP):  Define.
+
+Thu Feb 20 09:04:18 1992  Fred Fish  (fnf at cygnus.com)
+
+	* defs.h:  Include ansidecl.h and PARAMS macro.  Use PARAMS
+	to make prototypes for all functions declared here.
+	* cplus-dem.c:  Avoid declaring xmalloc and xrealloc.
+	* c-exp.y:  Rename SIGNED, OR, and AND to avoid conflict.
+	* environ.c:  Include <stdio.h> before defs.h.  Minor cleanup.
+	* ieee-float.h:  Use PARAMS for prototypes; make some params const.
+	* ieee-float.c, valarith.c:  Include <stdio.h>.  Lint.  b*=>mem*.
+	* m2-exp.y:  Remove unused CONST; Rename OR and AND.
+	* utils.c:  Avoid declaring malloc and realloc.  Lint.
+	(request_quit):  Accept signal-number parameter.
+
+Mon Feb 17 07:13:27 1992  Fred Fish  (fnf at cygnus.com)
+
+	* dwarfread.c (process_dies):  Add case to handle TAG_pointer_type
+	DIE's.  Add new function read_tag_pointer_type() to read them.
+
+	* dwarfread.c (dwarf_read_array_type, read_subroutine_type):
+	When creating a new user defined type, check to see if a partial
+	type already exists, and if so, bash it to fit.
+
+Fri Feb 14 19:00:17 1992  John Gilmore  (gnu at cygnus.com)
+
+	* coffread.c (decode_base_type):  Pass long, not union.
+	Fix by Eric Valette, ev@chorus.fr.
+
+Thu Feb 13 17:14:28 1992  Fred Fish  (fnf at cygnus.com)
+
+	* elfread.c (elf_symtab_read):  Fix code to correctly track
+	changes in bfd for absolute symbols.
+
+Thu Feb 13 12:43:29 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* xm-vaxbsd.h:  Close off comment.
+
+Thu Feb 13 07:45:19 1992  Fred Fish  (fnf at cygnus.com)
+
+	* xm-sysv4.h:  Define NEED_POSIX_SETPGID.
+
+Fri Feb  7 11:51:12 1992  Per Bothner  (bothner at cygnus.com)
+
+	* mips-tdep.c (mips_print_registers):  Print correct register
+	number for double pseudo-registers.
+
+Fri Feb  7 07:56:05 1992  John Gilmore  (gnu at cygnus.com)
+
+	* buildsym.c (read_struct_type):  Avoid double-bump of parse ptr
+	in the op$::OPERATOR. case.  From Steven McCanne,
+	<mccanne@horse.ee.lbl.gov>.
+
+	* exec.c (set_section_name):  Pass arg to exec_files_info;
+	only call it if interactive.  From Francis Kauth <fk@tv.tv.tek.com>.
+
+Thu Feb  6 17:41:32 1992  John Gilmore  (gnu at cygnus.com)
+
+	* main.c (print_gdb_version):  Copyright msg: only this year.
+	(cd_command):  Avoid changing current_directory on error.
+
+Thu Feb  6 15:14:01 1992  Per Bothner  (bothner at cygnus.com)
+
+	* mipsread.c (parse_partial_symbols):  Handle dependencies
+	between partial symbol tables (when not doing stabs-in-ecoff).
+	(This used to be handled by parse_fdr, but parse_fdr was
+	incompatible with handling stabs-in-ecoff, so the code
+	was re-written to not use parse_fdr.  Unfortunately,
+	the logic to handle dependencies was overlooked.)
+
+Thu Feb  6 11:51:39 1992  Steve Chamberlain  (sac at rtl.cygnus.com)
+
+	* coffread.c (read_enum_type): Use the size of a target int when
+	describing enum.
+	* defs.h: added new #define for TARGET_PTR_BIT, defaults to size
+	of target int.
+	* h8300-tdep.c, remote-hms.c, tm-h8300.h: too many changes to count
+	* symtab.c (lookup_reference_type, lookup_ptr_type): use
+	TARGET_PTR_BIT to determine size of a pointer
+	* values.c (unpack_long): when unpacking a REF or a PTR don't
+	assume the size of the type.
+
+Wed Feb  5 22:29:59 1992  John Gilmore  (gnu at cygnus.com)
+
+	* mipsread.c (parse_symbol):  Avoid clobbering enum pointer when
+	looking at its members.  Improve guess between struct and union,
+	only assuming union if multiple members have offsets of zero.
+
+Tue Feb  4 18:05:44 1992  Per Bothner  (bothner at cygnus.com)
+
+	* mipsread.c:  Use (FP0_REGNUM-32) instead of magic number 6.
+	(This is just for clarity - and one day permitting us to
+	 change FP0_REGNUM from 38 to 32, which would make more sense.)
+	* tm-mips.h:  Added STAB_REG_TO_REGNUM macro, so that
+	register numbers in stabs-in-ecoff get handled correctly.
+
+Sat Feb  1 04:45:10 1992  Stu Grossman  (grossman at cygnus.com)
+
+ 	* xm-vax.h, xm-vaxult.h, xm-vaxbsd.h, config/mh-vaxult,
+	config/mh-vaxbsd, configure.in:  Split up config stuff for Vaxen
+	into BSD and Ultrix.
+
+Sat Feb  1 04:39:41 1992  John Gilmore  (gnu at cygnus.com)
+
+	* dbxread.c (dbx_symfile_init):  Call malloc, not xmalloc.
+
+Sat Feb  1 04:15:41 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* Makefile.in:  Increment version to 4.4.1.
+	* main.c (print_gdb_version):  Update copyright notice.
+
+Sat Feb  1 01:43:11 1992  Per Bothner  (bothner at cygnus.com)
+
+	* mipsread.c:  Prepend "struct " to the names of structure
+	types, and similarly for enums and unions.  (This used
+	to be done, but got lost in the re-write to "guess" the
+	difference between enum/struct/union.)
+	Also, guess that a tag is an enum if the first member
+	has type btNil.
+
+Fri Jan 31 21:45:51 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* xm-vax.h:  #ifndef ultrix around #include of endian.h and
+	limits.h (sigh).
+
+Fri Jan 31 00:05:01 1992  John Gilmore  (gnu at cygnus.com)
+
+	* Projects:  Patching executables is done.
+	* Makefile.in (VERSION):  Roll to gdb-4.4.
+	* README, WHATS.NEW:  Update for gdb-4.4.
+
+	* symfile.c (reread_symbols):  Whenever we reread one object
+	file's symbols, we must restart the scan, because the object_files
+	chain has been permuted.
+
+	* exec.c (exec_files_info):  Split out into print_section_info.
+	Print BFD filename of each section if it's not the default one.
+	* core.c (core_files_info):  Call print_section_info.
+
+	* xm-vax.h:  Include a few system header files whose definitions
+	must precede defs.h.
+	* language.c, language.h:  Make some things const.
+	* expression.h, main.c:  const spreads like ooze.
+
+	* mem-break.c (break_insn, break_insn_size):  Use unsigned chars,
+	since BREAKPOINT values can be >0x80.
+
+Thu Jan 30 17:21:14 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* infrun.c, xm-i386sco.h:  SCO needs to use setpgid().
+
+Thu Jan 30 01:04:23 1992  John Gilmore  (gnu at cygnus.com)
+
+	* sparc-pinsn.c:  Remove kludge for preferring architectures.
+	Remove #ifdef's for SORT_NEEDED.  We need to sort the table, now
+	and forever.  Add `add' instruction to the set that get checked
+	for a preceding `sethi' in order to print an absolute address.
+	Corresponding changes in ../include/opcode/sparc.h needed
+	to eliminate garbage instructions.
+
+Wed Jan 29 19:24:34 1992  Per Bothner  (bothner at cygnus.com)
+
+	* mipsread.c (parse_partial_symbols):  Make sure partial
+	symbols are created for external symbols (as used to be
+	the case).  This is a bit of a pain with the mips-coff.
+	It uses a table which points to all of the external
+	symbols belonging to a particular FDR or psymtab.
+	Once we've generated this table, we might as well save
+	it, and then use it in psymtab_to_symtab_1 to find
+	the symbols to pass to parse_external().
+	* symfile.c,  symfile.c:  New function start_psymtab_common
+	to share the common parts of allocating a new psymtab
+	for dbxread, mipsread (and later dwarfread).  Its code
+	was pulled out from start_psymtab in dbxread.c.
+	* dbxread.c (start_psymtab):  Use start_psymtab_common().
+
+	* valprint.c (val_print):  If there is an error when trying
+	to print a string, check to see if there really is a problem
+	by reading just one character.  If that works, assume
+	things are ok.
+
+Wed Jan 29 18:58:43 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* sparc-pinsn.c (compare_opcodes):  Make it prefer v6, v7,
+	cypress, v8 mnemonics in that order.
+
+Tue Jan 28 17:32:13 1992  Per Bothner  (bothner at cygnus.com)
+
+	* sparc-pinsn.c:  Put the qsort() back in.
+
+Mon Jan 27 18:51:03 1992  John Gilmore  (gnu at cygnus.com)
+
+	* findvar.c (read_register, write_register):  Handle machines
+	where REGISTER_TYPE is not the same size as "int".
+
+	Handle debug symbols in dynamically loaded (relocated) code:
+
+	* dbxread.c (read_ofile_symtab):  Fix up N_CATCH better.  Pass
+	offset to process_one_symbol.
+	(process_one_symbol):  Take new offset parameter.  Add it into
+	appropriate symbol types to relocate symbols to loaded addresses.
+	Handle all possible symbol types, and complain() about types that
+	we don't expect to see.
+	* mipsread.c (psymtab_to_symtab_1):  Pass offset of zero to
+	process_one_symbol (FIXME, should pass real offset).
+
+	Misc bugfixes:
+
+	* breakpoint.c (resolve_sal_pc):  Split out code to resolve a
+	sal's PC value.
+	(set_breakpoint, break_command_1, until_break_command,
+	catch_command_1, breakpoint_re_set_one):  Use it.
+	* symtab.h (resolve_sal_pc):  Declare.
+	* infcmd.c (jump_command):  Use resolve_sal_pc.
+
+	* source.c (list_command):  Shorten "FILE, line N" to "FILE:N".
+
+	* putenv.c (putenv):  Avoid unportably casting pointers to unsigneds.
+
+	* c-exp.y (yylex):  `this' and `template' are only tokens in C++.
+
+	* xm-convex.h, xm-hp300bsd.h, xm-isi.h, xm-merlin.h, xm-news.h,
+	xm-np1.h, xm-pn.h, xm-pyr.h, xm-rtbsd.h, xm-symmetry.h, xm-umax.h:
+	Remove MISSING_VPRINTF declaration, and superfluous "kgdb" defines.
+
+Mon Jan 27 15:46:21 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* dbxread.c (process_one_symbol):  Make a first cut at handling
+	symbol tables generated by Sun's acc.  (#ifdef'd out, FIXME.)
+
+	* symtab.c (find_pc_line):  Fix stepping into and out of #included
+	files.
+
+Mon Jan 27 13:00:55 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* Makefile.in (OPCODES):  Remove OPCODES defs and refs.  There is
+	no longer any need to copy ../include/opcode/* into gdb.
+
+Mon Jan 27 12:30:38 1992  John Gilmore  (gnu at cygnus.com)
+
+	* ChangeLog, ChangeLog-9091:  Split ChangeLog at 1992.
+
+Sun Jan 26 19:05:40 1992  Per Bothner  (bothner at cygnus.com)
+
+	* valprint.c (type_print_base, type_print_method_args):
+	Print C++ constructor methods without bogus "return type."
+
+Sat Jan 25 15:57:59 1992  Fred Fish  (fnf at cygnus.com)
+
+	* infptrace.c (child_xfer_memory):  Parameter "target" should
+	be a pointer to a structure, not the entire structure.
+
+Fri Jan 24 01:30:27 1992  Fred Fish  (fnf at cygnus.com)
+
+	* depend:  Convert the couple of references to ansidecl.h that
+	used the local gdb version to use the ../include version.
+
+Thu Jan 23 22:24:43 1992  Fred Fish  (fnf at cygnus.com)
+
+	* procfs.c
+	(child_xfer_memory): Takes pointer to a struct, not entire struct.
+	(inferior_proc_init):  Fix non-ANSI version of args.
+	(attach):  Call print_sys_errmsg with correct number of args.
+	(mappingflags):  Make static, does not need to be global.
+
+	* i386-tdep.c (i386_frame_num_args):  Takes a pointer to a struct
+	not the entire struct itself.
+
+	* valops.c (value_assign):  Cast some args to modify_field() and
+	{read,write}_register_bytes() correctly.
+
+	* ansidecl.h:  Removed, is duplicate of ../include/ansidecl.h
+
+	* Makefile.in (MALLOCSRC):  Removed reference to removed local
+	copy of ansidecl.h.
+
+	* dwarfread.c (list_in_scope):  Needs an initial value, use file
+	scope.
+
+Mon Jan 20 19:06:28 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* main.c (main):  Make option_index local to keep new getopt happy.
+	main.c, solib.c, Makefile.in:  Update copyright notices.
+
+Mon Jan 20 08:54:00 1992  Michael Tiemann  (tiemann at cygnus.com)
+
+	* cplus-dem.c (cplus_demangle): Correctly demangle destructors.
+
+Sat Jan 18 17:17:45 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* Makefile.in (HFILES):  Add partial-stab.h.
+
+Sat Jan 18 16:45:01 1992  Fred Fish  (fnf at cygnus.com)
+
+	* config/mh-stratus, config/mt-stratus, tm-stratus.h, xm-stratus.h:
+	New files for stratus.  Not complete enough to actually build
+	on the Stratus machine; that awaits copyright assignment for
+	i860 changes.
+
+	* Makefile.in (USER_CFLAGS):  Add macro specifically reserved
+	for getting custom flags into CFLAGS when doing makes.
+
+	* configure.in:  Add config information for stratus.
+
+Thu Jan 16 00:51:46 1992  Fred Fish  (fnf at cygnus.com)
+
+	* dbxread.c (process_one_symbol):  Pass address of structure
+	to complain(), rather than the whole structure.
+
+Wed Jan 15 09:56:16 1992  Fred Fish  (fnf at cygnus.com)
+
+	* solib.c (solib_add_common_symbols):  Only compile in when not
+	using SVR4 style shared libraries.
+
+Tue Jan 14 22:34:00 1992  Fred Fish  (fnf at cygnus.com)
+
+	* dwarfread.c (locval):  Add offreg flag to indicate location
+	values that are computed off a base register.
+
+	* dwarfread.c (new_symbol):  Rework TAG_global_variable and
+	TAG_local_variable cases to account for static variables
+	within function scopes.
+
+Tue Jan 14 12:28:52 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* inflow.c:  remove #include <sys/dir.h>.  Not necessary, and
+	doesn't exist on some systems.
+
+	* infrun.c (wait_for_inferior!!!!):  Prevent gdb from hanging when
+	nexting over recursive function calls.
+
+	* target.c (target_read_string):  Create this routine to read null
+	terminated strings from the target.  It deals with running off the
+	end of memory elegantly as well.  solib.c (find_solib):  Use
+	target_read_string() to avoid problems with running off the end of
+	memory.
+
+	* inflow.c (child_terminal_info):  #ifdef TIOCPGRP around lines
+	that reference pgrp_inferior.
+
+Mon Jan 13 14:57:11 1992  Per Bothner  (bothner at cygnus.com)
+
+	* tm-mips.h:  Removed BLOCK_ADDRESS_ABSOLUTE, now that
+	mips-tfile has been hacked to act more "traditionally."
+	* dbxread.c:  Fixed typo in comment.
+
+Sun Jan 12 13:08:36 1992  Per Bothner  (bothner at cygnus.com)
+
+	* mips-tdep.c (mips_skip_prologue):  Add some number of
+	'sw' instructions before 'addiu' adjusts the stack.
+
+Fri Jan 10 13:47:06 1992  Fred Fish  (fnf at cygnus.com)
+
+	* dwarfread.c (start_symtab, end_symtab, scopecount, openscope,
+	freescope, buildblock closescope, record_line, add_symbol_to_list,
+	gatherblocks, make_blockvector):  Extensive changes to switch
+	to generic symbol table building code in buildsym.c.  Remove
+	scope tree structures and functions, symbol table building
+	functions, and lots of other small changes.
+
+	* dwarfread.c:  Add new macros GCC_PRODUCER and STREQN.  Remove
+	GCC_COMPILED_FLAG_SYMBOL and GCC2_COMPILED_FLAG_SYMBOL.
+
+Tue Jan  7 13:09:57 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* buildsym.c (cleanup_undefined_types):  Add support for enums.
+	This fixes the 'GDB internal error.  cleanup_undefined_types with
+	bad type' problem.
+
+Sun Jan  5 09:47:50 1992  Stu Grossman  (grossman at cygnus.com)
+
+	* dbxread.c:  detect gcc2 compilations.
+
+Thu Jan  2 15:07:41 1992  John Gilmore  (gnu at cygnus.com)
+
+	* sparc-pinsn.c:  Rename bitfields that overlap with macro names
+	in ../include/opcode/sparc.h.
+
+Wed Jan  1 04:29:00 1992  Fred Fish  (fnf at cygnus.com)
+
+	* Makefile.in:  Change tm-svr4.h to tm-sysv4.h.  Change xm-svr4.h
+	to xm-sysv4.h.  Split OPCODE_DIR into OPCODE_DIR1 and OPCODE_DIR2
+	to reflect actual locations of opcode files, so TAGS target will
+	be buildable.
+
+	* i386-tdep.c:  Change an erroneous 'm68k' reference to 'i386'.
+
+	* i386-tdep.c (supply_fpregset, fill_fpregset):  Remove m68k
+	code.
+
+	* m68k-tdep.c (supply_fpregset, fill_fpregset):  Fix array
+	dereferencing to access the correct elements.
+
+	* valops.c (value_addr):  Declare return type of external func
+	value_copy().
+
+	* xcoffread.c:  Undefine next_symbol_text before redefining it.
+
+For older changes see ChangeLog-9091
+
+Local Variables:
+mode: indented-text
+left-margin: 8
+fill-column: 74
+version-control: never
+End:

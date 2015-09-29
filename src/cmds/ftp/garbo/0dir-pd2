@@ -1,0 +1,39 @@
+Updated Wed 19-Feb-92
+
+Directory of selected news and reviews of MsDos files on garbo
+==============================================================
+
+Earlier this /pc/pd2 directory at garbo.uwasa.fi contained a
+selected set of public domain and shareware programs.  Most of the
+programs were obtained from bulletin boards (BBSes) in Finland.
+
+With the changes in 1990 in our archive maintenance the purpose of
+this directory was altered.  It is now geared to giving selected
+reviews about new acquisitions to our MsDos archives, and answers to
+frequently asked questions about garbo archives, and other such
+information.  All program packages were deleted in 1990 from /pc/pd2
+and were moved to the other directories. 
+
+No liability is accepted for the consequences of using, or the
+inability to use, any of the files at the Vaasa University archives.
+No absolute guarantees are given that these programs are clean from
+nasties, although none have been in evidence.  Please duly observe
+shareware rules wherever indicated.
+
+To unpak the packages at our archives use PKUNPAK.EXE, PAK.EXE,
+PKUNZIP.EXE, LHA.EXE, ARJ.EXE or ZOO.EXE as indicated by the
+extension of each package.  These can be found in the /pc/arcers
+directory.  See /pc/pd2/pd2ans###.txt (where ### means a growing
+version number) and/or /pc/HELP for additional information. 
+
+Advanced users can find Unix archivers to test or to unpack the
+files on their unix hosts from our /unix/arcers directory.
+
+For the descriptions of the files in the /pc/pd2 directory please
+see the common MsDos file index, that is /pc/INDEX or /pc/INDEX.ZIP. 
+
+..................................................................
+Prof. Timo Salmi
+Moderating at garbo.uwasa.fi anonymous ftp archives 128.214.87.1
+School of Business Studies, University of Vaasa, SF-65101, Finland
+Internet: ts@chyde.uwasa.fi Funet: gado::salmi Bitnet: salmi@finfun

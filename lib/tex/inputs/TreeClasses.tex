@@ -1,0 +1,101 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Complete binary trees                                                  %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% The macro \b@nary{<number>} expands to the description of a complete
+% binary tree with <number> many internal nodes, where each level is filled with
+% the maximal number of internal nodes, and the last level of internal nodes
+% is filled from left to right.
+
+\newcount\b@nno % number of nodes
+\newcount\b@nlv % number of complete levels
+\newcount\b@ndl % number of nodes on incomplete level
+
+\def\ld(#1,#2,#3){% #1, #2, and #3 must be counter registers.
+                  % #1 is the input, #1 must be >= 1.
+                  % \ld makes the following assignments:
+                  % #2:=|_log_2(#1)_|, #3:=2^#2.
+                  % The contents of #1 is destroyed during the computation.
+     #2=0 #3=1
+       \loop\ifnum #1>\@ne\relax
+            \divide #1 by\tw@ % this is integer division
+            \advance #2 by\@ne
+            \multiply #3 by\tw@
+     \repeat}
+
+\def\b@nary#1{% draws a complete binary tree with #1 internal nodes,
+           % a complete binary tree with N internal nodes has 
+           % lv:=|_log_2(N+1)_| many
+           % complete level of binary nodes and dl:=N-2^{lv}+1 many internal
+           % nodes on an incomplete level.
+     \b@nno=#1\relax\advance\b@nno by \@ne
+     \ld(\b@nno,\b@nlv,\b@ndl)%
+     \b@ndl=-\b@ndl\advance\b@ndl by #1\advance\b@ndl by\@ne
+     \b@n}
+
+\def\b@n{%
+     \ifnum\b@nlv>\@ne
+           \advance\b@nlv by-\@ne
+           \b@n
+           \b@n
+           \advance\b@nlv by\@ne
+           \node{}
+      \else\ifnum\b@ndl>\@ne
+                 \advance\b@ndl by-\tw@
+                 \node{\le@f\external}\node{\le@f\external}\node{}%
+                 \node{\le@f\external}\node{\le@f\external}\node{}%
+                 \node{}%
+            \else\ifnum\b@ndl=\@ne
+                       \advance\b@ndl by-\@ne
+                       \node{\le@f\external}\node{\le@f\external}\node{}%
+                       \node{\le@f\external}%
+                       \node{}%
+                  \else\node{\le@f\external}\node{\le@f\external}\node{}%
+                    \fi
+              \fi
+        \fi}
+
+\def\circleleaves{\def\le@f{\type{circle}}}
+\def\squareleaves{\def\le@f{\type{square}}}
+
+\newcount\no@
+\def\no#1{\no@=#1\relax}
+
+\def\binary#1{%
+     \no{1}\circleleaves
+     #1%
+     \b@nary{\no@}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Fibonacci trees                                                        %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% \f@b expands to the description of a Fibonacci tree
+% of height \f@bht.
+
+\newcount\f@bht
+
+\def\f@b{% draws a Fibonacci tree of depth #1
+     \ifnum\f@bht>1
+           \advance\f@bht by-\@ne\f@b\advance\f@bht by\@ne
+           \advance\f@bht by-\tw@\f@b\advance\f@bht by\tw@
+           \ifunn@des\node{\unary}
+                  \fi
+           \node{\lefttop}
+      \else\ifnum\f@bht=1
+                 \node{\external\le@f}
+                 \node{\external\le@f}
+                 \node{}
+            \else\node{\external\le@f}
+              \fi
+        \fi}
+
+\newif\ifunn@des
+
+\let\unarynodes\unn@destrue
+\def\hght#1{\f@bht=#1\relax}
+
+\def\fibonacci#1{%
+     \hght{0}\unn@desfalse\circleleaves
+     #1%
+     \f@b}

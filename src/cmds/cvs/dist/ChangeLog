@@ -1,0 +1,89 @@
+Wed Feb  6 10:10:58 1991  Brian Berliner  (berliner at sun.com)
+
+	* Changes from CVS 1.0 Patchlevel 1 to CVS 1.0 Patchlevel 2; also
+	known as "Changes from CVS 1.1 to CVS 1.2".
+
+	* Major new support with this release is the ability to use the
+	recently-posted RCS 5.5 distribution with CVS 1.2.  See below for
+	other assorted bug-fixes that have been thrown in.
+
+	* ChangeLog (new): Added Emacs-style change-log file to CVS 1.2
+	release.  Chronological description of changes between release.
+
+	* README: Small fixes to installation instructions.  My email
+	address is now "berliner@sun.com".
+
+	* src/Makefile: Removed "rcstime.h".  Removed "depend" rule.
+
+	* src/partime.c:  Updated to RCS 5.5 version with hooks for CVS.
+	* src/maketime.c: Updated to RCS 5.5 version with hooks for CVS.
+	* src/rcstime.h:  Removed from the CVS 1.2 distribution.
+	Thanks to Paul Eggert <eggert@twinsun.com> for these changes.
+
+	* src/checkin.csh: Support for RCS 5.5 parsing.
+	Thanks to Paul Eggert <eggert@twinsun.com> for this change.
+
+	* src/collect_sets.c (Collect_Sets): Be quieter if "-f" option is
+	specified.  When checking out files on-top-of other files that CVS
+	doesn't know about, run a diff in the hopes that they are really
+	the same file before aborting.
+
+	* src/commit.c (branch_number): Fix for RCS 5.5 parsing.
+	Thanks to Paul Eggert <eggert@twinsun.com> for this change.
+
+	* src/commit.c (do_editor): Bug fix - fprintf missing argument
+	which sometimes caused core dumps.
+
+	* src/modules.c (process_module): Properly NULL-terminate
+	update_dir[] in all cases.
+
+	* src/no_difference.c (No_Difference): The wrong RCS revision was
+	being registered in certain (strange) cases.
+
+	* src/patch.c (get_rcsdate): New algorithm.  No need to call
+	maketime() any longer.
+	Thanks to Paul Eggert <eggert@twinsun.com> for this change.
+
+	* src/patchlevel.h: Increased patch level to "2".
+
+	* src/subr.c (isdir, islink): Changed to compare stat mode bits
+	correctly.
+
+	* src/tag.c (tag_file): Added support for following symbolic links
+	that are in the master source repository when tagging.  Made tag
+	somewhat quieter in certain cases.
+
+	* src/update.c (update_process_lists): Unlink the user's file if it
+	was put on the Wlist, meaning that the user's file is not modified
+	and its RCS file has been removed by someone else.
+
+	* src/update.c (update): Support for "cvs update dir" to correctly
+	just update the argument directory "dir".
+
+	* src/cvs.h: Fixes for RCS 5.5 parsing.
+	* src/version_number.c (Version_Number): Fixes for parsing RCS 5.5
+	and older RCS-format files.
+	Thanks to Paul Eggert <eggert@twinsun.com> for these changes.
+
+	* src/version_number.c (Version_Number): Bug fixes for "-f" option.
+	Bug fixes for parsing with certain branch numbers.  RCS
+	revision/symbol parsing is much more solid now.
+
+Wed Feb 14 10:01:33 1990  Brian Berliner  (berliner at sun.com)
+
+	* Changes from CVS 1.0 Patchlevel 0 to CVS 1.0 Patchlevel 1; also
+	known as "Changes from CVS 1.0 to CVS 1.1".
+
+	* src/patch.c (get_rcsdate): Portability fix.  Replaced call to
+	timelocal() with call to maketime().
+
+Mon Nov 19 23:15:11 1990  Brian Berliner  (berliner at prisma.com)
+
+	* Sent CVS 1.0 release to comp.sources.unix moderator and FSF.
+
+	* Special thanks to Dick Grune <dick@cs.vu.nl> for his work on the
+	1986 version of CVS and making it available to the world.  Dick's
+	version is available on uunet.uu.net in the
+	comp.sources.unix/volume6/cvs directory.
+
+$Id: ChangeLog,v 1.1 91/02/06 18:29:01 berliner Exp $

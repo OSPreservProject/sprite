@@ -1,0 +1,21 @@
+' $Header: /a/newcmds/cc1.spur/RCS/cc1.spur.man,v 1.2 88/12/30 09:21:28 ouster Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS CC1.SPUR cmds
+.BS
+.SH NAME
+cc1.spur \- Internal program used by GNU C compiler
+.SH SYNOPSIS
+\fBcc1.spur\fR [\fIoption\fR]
+.SH OPTIONS
+See the GNU C Compiler documentation for information about options.
+.BE
+
+.SH INTRODUCTION
+.PP
+\fBCc1.spur\fR is a program used internally by the GNU C Compiler to compile
+programs for machines in the Motorola 68000 class.  This program should
+not normally be invoked by users.  For more information about this
+program, see the documentation for GNU \fBcc\fR.
+
+.SH KEYWORDS
+compiler, GNU 

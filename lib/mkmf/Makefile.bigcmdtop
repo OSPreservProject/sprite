@@ -1,0 +1,35 @@
+#
+# Prototype Makefile for the topmost directory of a command that is
+# divided into multiple subdirectories.  When makes are invoked here,
+# this Makefile arranges for most of them to be passed on to each
+# of its subdirectories.
+#
+# This Makefile is automatically generated.
+# DO NOT EDIT IT OR YOU MAY LOSE YOUR CHANGES.
+#
+# Generated from @(TEMPLATE)
+# @(DATE)
+#
+# For more information, refer to the mkmf manual page.
+#
+# $Header: /sprite/lib/mkmf/RCS/Makefile.bigcmdtop,v 1.9 92/06/10 13:04:47 jhh Exp $ SPRITE (Berkeley)
+#
+# Allow mkmf
+
+MACHINES	= @(MACHINES)
+MANPAGES	= @(MANPAGES)
+NAME		= @(NAME)
+SUBDIRS		= @(SUBDIRS)
+SYSMAKEFILE	= bigcmdtop.mk
+TYPE		= @(TYPE)
+DISTDIR        ?= @(DISTDIR)
+#include	<settm.mk>
+
+
+#if exists(local.mk)
+#include	"local.mk"
+#else
+#include	<$(SYSMAKEFILE)>
+#endif
+
+# Any dependencies for subdirectory linked.o files go here.

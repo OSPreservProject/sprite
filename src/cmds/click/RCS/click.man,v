@@ -1,0 +1,59 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     88.12.23.11.49.28;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.12.21.10.29.03;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Capitalize command names in page headers.
+@
+text
+@' $Header: /a/newcmds/click/RCS/click.man,v 1.1 88/12/21 10:29:03 ouster Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS CLICK cmds
+.BS
+.SH NAME
+click \- turn key click on or off
+.SH SYNOPSIS
+\fBclick \fR[\fBon\fR] [\fBoff\fR]
+.BE
+
+.SH DESCRIPTION
+.LP
+This command turns the keyboard key click on or off.
+
+.SH KEYWORDS
+keyboard, key, click
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+' $Header: ps,v 1.2 88/08/05 18:13:54 ouster Exp $ SPRITE (Berkeley)
+d3 1
+a3 1
+.HS click cmds
+@

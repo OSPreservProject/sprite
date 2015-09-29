@@ -1,0 +1,41 @@
+BOOT_SECTOR	diskHeader.c	/^#define	BOOT_SECTOR		1$/
+CheckSunCheckSum	diskHeader.c	/^CheckSunCheckSum(sunLabelPtr)$/
+ConvertFromDecLabel	diskHeader.c	/^ConvertFromDecLabel(fileID, decLabelPtr)$/
+ConvertFromSunLabel	diskHeader.c	/^ConvertFromSunLabel(fileID, sunLabelPtr)$/
+ConvertToDecLabel	diskHeader.c	/^ConvertToDecLabel(labelPtr)$/
+ConvertToSunLabel	diskHeader.c	/^ConvertToSunLabel(labelPtr)$/
+Disk_BadBlockRead	diskIO.c	/^Disk_BadBlockRead(openFileID, headerPtr, blockNumb/
+Disk_BlockRead	diskIO.c	/^Disk_BlockRead(openFileID, headerPtr, firstBlock, /
+Disk_BlockWrite	diskIO.c	/^Disk_BlockWrite(openFileID, headerPtr, firstBlock,/
+Disk_EraseLabel	diskHeader.c	/^Disk_EraseLabel(fileID, labelType)$/
+Disk_ForEachCheckPointRegion	diskHeader.c	/^Disk_ForEachCheckPointRegion(checkPointPtr, region/
+Disk_HasFilesystem	diskHeader.c	/^Disk_HasFilesystem(fileID, diskLabelPtr)$/
+Disk_LfsCheckPointTrailer	diskHeader.c	/^Disk_LfsCheckPointTrailer(checkPointPtr)$/
+Disk_NewLabel	diskHeader.c	/^Disk_NewLabel(labelType) $/
+Disk_ReadDecLabel	diskHeader.c	/^Disk_ReadDecLabel(fileID)$/
+Disk_ReadDiskHeader	diskHeader.c	/^Disk_ReadDiskHeader(openFileID)$/
+Disk_ReadDomainHeader	diskHeader.c	/^Disk_ReadDomainHeader(fileID, diskLabelPtr)$/
+Disk_ReadLabel	diskHeader.c	/^Disk_ReadLabel(fileID)$/
+Disk_ReadLfsCheckPointHdr	diskHeader.c	/^Disk_ReadLfsCheckPointHdr(fileID, labelPtr, areaPt/
+Disk_ReadLfsSuperBlock	diskHeader.c	/^Disk_ReadLfsSuperBlock(fileID, diskLabelPtr)$/
+Disk_ReadSummaryInfo	diskHeader.c	/^Disk_ReadSummaryInfo(fileID, diskLabelPtr)$/
+Disk_ReadSunLabel	diskHeader.c	/^Disk_ReadSunLabel(fileID)$/
+Disk_SectorRead	diskIO.c	/^Disk_SectorRead(openFileID, firstSector, numSector/
+Disk_SectorWrite	diskIO.c	/^Disk_SectorWrite(openFileID, firstSector, numSecto/
+Disk_WriteDecLabel	diskHeader.c	/^Disk_WriteDecLabel(fileID, labelPtr)$/
+Disk_WriteDomainHeader	diskHeader.c	/^Disk_WriteDomainHeader(fileID, diskLabelPtr, heade/
+Disk_WriteLabel	diskHeader.c	/^Disk_WriteLabel(fileID, labelPtr)$/
+Disk_WriteLfsCheckPointArea	diskHeader.c	/^Disk_WriteLfsCheckPointArea(fileID, areaPtr, area,/
+Disk_WriteLfsCheckPointHdr	diskHeader.c	/^Disk_WriteLfsCheckPointHdr(fileID, headerPtr, area/
+Disk_WriteLfsSuperBlock	diskHeader.c	/^Disk_WriteLfsSuperBlock(fileID, superPtr)$/
+Disk_WriteSummaryInfo	diskHeader.c	/^Disk_WriteSummaryInfo(fileID, diskLabelPtr, summar/
+Disk_WriteSunLabel	diskHeader.c	/^Disk_WriteSunLabel(fileID, labelPtr)$/
+EditLabel	labeldisk.c	/^EditLabel(streamID, labelPtr)$/
+InputNumber	labeldisk.c	/^InputNumber(number)$/
+IsYes	labeldisk.c	/^IsYes()$/
+LabelDisk	labeldisk.c	/^LabelDisk(fromStreamID, toStreamID)$/
+MakeSunCheckSum	diskHeader.c	/^MakeSunCheckSum(sunLabelPtr)$/
+Min	labeldisk.c	/^#define Min(a,b) (((a) < (b)) ? (a) : (b))$/
+Mlabeldisk	labeldisk.c	/^main(argc, argv)$/
+NUM_BOOT_SECTORS	diskHeader.c	/^#define NUM_BOOT_SECTORS	15$/
+SeeSunCheckSum	diskHeader.c	/^SeeSunCheckSum(sunLabelPtr)$/

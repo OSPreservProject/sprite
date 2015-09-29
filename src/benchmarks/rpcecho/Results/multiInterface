@@ -1,0 +1,250 @@
+These results compare the performance of the system before and after
+the multiple-interface functionality was added.  Three machines were
+used:  raid1 is a sun4 using the single-interface (old) system;
+fenugreek is a sun3 using the old system; and catnip is a sun3
+using the multiple-interface (new) system.  The tests consist of
+doing an rpcecho of 0 bytes 10 times from the sun4 to each of the
+sun3's, and from each of the sun3's to the sun4.  Both the raw
+Sprite RPC and the IP protocols were tested.
+
+
+Test 1a:
+From raid1 (old) to fenugreek (old), Sprite
+
+raid1<jhh 66> !fo
+foreach i ( 1 2 3 4 5 6 7 8 9 10 )
+? rpcecho -h fenugreek -d 0 -c
+? end
+Rpc Send Test: N = 100, Host = fenugreek (8), size = 0
+N = 100 Size = 0	0.002000 
+Rpc Send Test: N = 100, Host = fenugreek (8), size = 0
+N = 100 Size = 0	0.002100 
+Rpc Send Test: N = 100, Host = fenugreek (8), size = 0
+N = 100 Size = 0	0.002100 
+Rpc Send Test: N = 100, Host = fenugreek (8), size = 0
+N = 100 Size = 0	0.002200 
+Rpc Send Test: N = 100, Host = fenugreek (8), size = 0
+N = 100 Size = 0	0.002200 
+Rpc Send Test: N = 100, Host = fenugreek (8), size = 0
+N = 100 Size = 0	0.002100 
+Rpc Send Test: N = 100, Host = fenugreek (8), size = 0
+N = 100 Size = 0	0.002100 
+Rpc Send Test: N = 100, Host = fenugreek (8), size = 0
+N = 100 Size = 0	0.002200 
+Rpc Send Test: N = 100, Host = fenugreek (8), size = 0
+N = 100 Size = 0	0.002200 
+Rpc Send Test: N = 100, Host = fenugreek (8), size = 0
+N = 100 Size = 0	0.002500 
+
+Average:	0.002170
+Minimum:	0.002000
+Maximum:	0.002500
+
+Test 1b:
+From raid1 (old) to catnip (new), Sprite
+
+foreach i ( 1 2 3 4 5 6 7 8 9 10 )
+? rpcecho -h catnip -d 0 -c
+? end
+Rpc Send Test: N = 100, Host = catnip (48), size = 0
+N = 100 Size = 0	0.002100 
+Rpc Send Test: N = 100, Host = catnip (48), size = 0
+N = 100 Size = 0	0.002100 
+Rpc Send Test: N = 100, Host = catnip (48), size = 0
+N = 100 Size = 0	0.002100 
+Rpc Send Test: N = 100, Host = catnip (48), size = 0
+N = 100 Size = 0	0.002100 
+Rpc Send Test: N = 100, Host = catnip (48), size = 0
+N = 100 Size = 0	0.002200 
+Rpc Send Test: N = 100, Host = catnip (48), size = 0
+N = 100 Size = 0	0.002100 
+Rpc Send Test: N = 100, Host = catnip (48), size = 0
+N = 100 Size = 0	0.002100 
+Rpc Send Test: N = 100, Host = catnip (48), size = 0
+N = 100 Size = 0	0.002200 
+Rpc Send Test: N = 100, Host = catnip (48), size = 0
+N = 100 Size = 0	0.002100 
+Rpc Send Test: N = 100, Host = catnip (48), size = 0
+N = 100 Size = 0	0.002200 
+
+Average:	0.002130
+Minimum:	0.002100
+Maximum:	0.002200
+
+Test 2a:
+From fenugreek (old) to raid1 (old), Sprite
+
+fenugreek<jhh 2> foreach i ( 1 2 3 4 5 6 7 8 9 10 )
+? rpcecho -h raid1 -d 0 -c
+? end
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.003000 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.002800 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.002700 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.002700 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.002700 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.003200 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.002700 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.002700 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.002800 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.002700 
+
+Average:	0.002800
+Minimum:	0.002700
+Maximum:	0.003200
+
+Test 2b:
+From catnip (new) to raid1 (old), Sprite
+
+catnip<jhh 2> foreach i ( 1 2 3 4 5 6 7 8 9 10 )
+? rpcecho -h raid1 -d 0 -c
+? end
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.002700 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.002800 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.002800 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.002700 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.002800 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.002800 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.002800 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.002800 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.002800 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.002700 
+
+Average:	0.002770
+Minimum:	0.002700
+Maximum:	0.002800
+
+Test 3a:
+From raid1 (old) to fenugreek (old), IP
+
+foreach i ( 1 2 3 4 5 6 7 8 9 10 )
+? rpcecho -h fenugreek -d 0 -c
+? end
+Rpc Send Test: N = 100, Host = fenugreek (8), size = 0
+N = 100 Size = 0	0.002400 
+Rpc Send Test: N = 100, Host = fenugreek (8), size = 0
+N = 100 Size = 0	0.002400 
+Rpc Send Test: N = 100, Host = fenugreek (8), size = 0
+N = 100 Size = 0	0.002400 
+Rpc Send Test: N = 100, Host = fenugreek (8), size = 0
+N = 100 Size = 0	0.002500 
+Rpc Send Test: N = 100, Host = fenugreek (8), size = 0
+N = 100 Size = 0	0.003100 
+Rpc Send Test: N = 100, Host = fenugreek (8), size = 0
+N = 100 Size = 0	0.002800 
+Rpc Send Test: N = 100, Host = fenugreek (8), size = 0
+N = 100 Size = 0	0.002700 
+Rpc Send Test: N = 100, Host = fenugreek (8), size = 0
+N = 100 Size = 0	0.002700 
+Rpc Send Test: N = 100, Host = fenugreek (8), size = 0
+N = 100 Size = 0	0.002400 
+Rpc Send Test: N = 100, Host = fenugreek (8), size = 0
+N = 100 Size = 0	0.002600 
+
+Average:	0.002600
+Minimum:	0.002400
+Maximum:	0.003100
+
+Test 3b:
+From raid1 (old) to catnip (new), IP
+
+Rpc Send Test: N = 100, Host = catnip (48), size = 0
+N = 100 Size = 0	0.002800 
+Rpc Send Test: N = 100, Host = catnip (48), size = 0
+N = 100 Size = 0	0.002500 
+Rpc Send Test: N = 100, Host = catnip (48), size = 0
+N = 100 Size = 0	0.002400 
+Rpc Send Test: N = 100, Host = catnip (48), size = 0
+N = 100 Size = 0	0.002400 
+Rpc Send Test: N = 100, Host = catnip (48), size = 0
+N = 100 Size = 0	0.002500 
+Rpc Send Test: N = 100, Host = catnip (48), size = 0
+N = 100 Size = 0	0.002500 
+Rpc Send Test: N = 100, Host = catnip (48), size = 0
+N = 100 Size = 0	0.002400 
+Rpc Send Test: N = 100, Host = catnip (48), size = 0
+N = 100 Size = 0	0.002500 
+Rpc Send Test: N = 100, Host = catnip (48), size = 0
+N = 100 Size = 0	0.002400 
+Rpc Send Test: N = 100, Host = catnip (48), size = 0
+N = 100 Size = 0	0.002400 
+
+Average:	0.002480
+Minimum:	0.002400
+Maximum:	0.002800
+
+Test 4a:
+From fenugreek (old) to raid1 (old), IP
+
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.002900 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.002900 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.002900 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.002900 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.003000 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.003000 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.002900 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.002900 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.002800 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.002900 
+
+Average:	0.002910
+Minimum:	0.002800
+Maximum:	0.003000
+
+Test 4b:
+From catnip (new) to raid1 (old), IP
+
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.002900 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.002900 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.002900 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.003000 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.003000 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.002900 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.003000 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.002900 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.002800 
+Rpc Send Test: N = 100, Host = raid1 (77), size = 0
+N = 100 Size = 0	0.003000 
+
+Average:	0.002930
+Minimum:	0.002800
+Maximum:	0.003000
+

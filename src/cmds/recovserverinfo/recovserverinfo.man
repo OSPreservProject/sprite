@@ -1,0 +1,28 @@
+' $Header: /sprite/src/cmds/recovinfo/RCS/recovinfo.man,v 1.1 89/12/12 17:54:14 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS RECOVSERVERINFO cmds
+.BS
+.SH NAME
+recovserverinfo \- Print out information about the number of times clients attmepted recovery with a server
+.SH SYNOPSIS
+\fBrecovserverinfo\fR -[\fIoptions\fR]
+.SH OPTIONS
+.IP "\fB-duration\fR" 14
+Print out only the start and finish times of all recovery per host.  Do not
+print out the start and finish times for each attempt of a host, if there's
+more than one attempt.
+.IP "\fB-noHandles\fR" 14
+Do not include the default information about the number of handles requested to be reopened.
+.IP "\fB-success\fR" 14
+Specify the number of reopens that returned success, as well as the number merely requested.
+.BE
+.SH INTRODUCTION
+This command prints out information about what clients attempted recovery
+with a server, how many times they attempted it, and how long it took to
+recover.  For now, the command must be executed on the server in question.
+The first line, per host, gives the duration of recovery for that host, while
+further lines per host (if -duration is not specified) give the start and
+finish times of each recovery attempt, including the first.  The first line
+is included simply for convenience of interpretation.
+.SH KEYWORDS
+recovery, server

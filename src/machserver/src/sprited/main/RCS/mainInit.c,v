@@ -1,0 +1,1527 @@
+head     1.21;
+branch   ;
+access   ;
+symbols  srv030:1.21 srv028:1.21 srv027:1.21 srv026:1.21 srv024:1.21 srv022:1.21 srv021:1.21 srv019:1.21 srv018:1.21 srv016:1.21 srv015:1.21 srv014:1.21 srv012:1.21 srv011:1.21 srv010:1.21 srv008:1.21 srv007:1.21 srv006:1.21 srv005:1.21 srv004:1.21 srv003:1.21 srv002:1.21 srv001:1.20;
+locks    ; strict;
+comment  @ * @;
+
+
+1.21
+date     92.04.23.23.50.20;  author kupfer;  state Exp;
+branches ;
+next     1.20;
+
+1.20
+date     92.04.16.11.33.55;  author kupfer;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     92.04.07.13.33.56;  author kupfer;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     92.04.02.21.07.41;  author kupfer;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     92.03.23.14.30.08;  author kupfer;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     92.02.27.16.10.05;  author kupfer;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     92.01.21.15.51.21;  author kupfer;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     91.12.01.21.59.17;  author kupfer;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     91.11.14.10.02.10;  author kupfer;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     91.10.18.17.51.09;  author kupfer;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     91.10.08.17.26.49;  author kupfer;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     91.10.07.14.06.49;  author kupfer;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     91.10.04.11.37.23;  author kupfer;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     91.09.26.12.10.39;  author kupfer;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     91.09.23.14.21.04;  author kupfer;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     91.09.02.22.53.51;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.09.01.21.02.50;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.08.19.12.17.03;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.08.15.14.24.12;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.07.22.11.36.28;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.07.19.15.25.17;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Startup code.
+@
+
+
+1.21
+log
+@Add -help and -p options.
+@
+text
+@/* 
+ * mainInit.c --
+ *
+ *	Startup code for Sprite server.
+ *
+ * Copyright 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/main/RCS/mainInit.c,v 1.20 92/04/16 11:33:55 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <cthreads.h>
+#include <status.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
+#include <dev.h>
+#include <fsutil.h>
+#include <main.h>
+#include <net.h>
+#include <proc.h>
+#include <user/proc.h>
+#include <recov.h>
+#include <rpc.h>
+#include <sig.h>
+#include <sync.h>
+#include <sys.h>
+#include <user/sys.h>
+#include <timer.h>
+#include <vm.h>
+#include <vmSwapDir.h>
+
+extern char *Version();
+
+/* 
+ * This is defined in the Mach libc.h, but there are too many type clashes 
+ * between libc.h and Sprite header files.
+ */
+extern int getopt _ARGS_((int, const char **, const char *));
+#ifndef EOF
+#define EOF	(-1)
+#endif
+
+
+#define DEFAULT_INIT	"cmds.sprited/initsprite" /* default initial user 
+						   * program */ 
+char *main_InitPath;		/* path to the first user program */
+
+/* 
+ * This holds the array of arguments that are passed to the init program.
+ */
+char *main_InitArgArray[MAIN_MAX_INIT_ARGS + 1];
+
+Boolean main_DebugFlag = FALSE; /* enables various debug checks */
+
+/* 
+ * This flag lets some low-level routines avoid locks, getting the current 
+ * process handle, etc. during initialization.  If the flag is false, code 
+ * can assume there is only one thread running.  Otherwise, code should 
+ * assume that there are multiple threads running.
+ */
+Boolean main_MultiThreaded = FALSE;
+
+
+/* 
+ * Forward references
+ */
+
+static void CheckArguments _ARGS_((int argc, char *argv[]));
+static void StartInit _ARGS_((void));
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	Startup and server loop.
+ *	XXX - should eventually take Sprite main (e.g., call Main_InitVars).
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+main(argc, argv)
+    int argc;
+    char *argv[];
+{
+    Proc_PID	pid;
+    int		i;
+    ReturnStatus status;
+
+    CheckArguments(argc, argv);
+
+    Sync_Init();
+    Proc_Init();
+
+    Dev_Init();
+
+    /* 
+     * This might be able to go before Dev_Init, but it should probably 
+     * come after Sync_Init and Proc_Init.
+     */
+    printf("Sprite server: %s\n", Version());
+
+    Vm_Init();
+
+    Sys_Init();
+
+    Sig_Init();
+
+    /*
+     * Initialize the main process. Must be called before any new 
+     * processes are created.
+     * Dependencies: Proc_Init, Sync_Init (for malloc, from cthread_init), 
+     * Sig_Init (to get the default signal actions).
+     */
+    Proc_InitMainProc();
+    main_MultiThreaded = TRUE;
+
+    Timer_Init();
+
+    /*
+     * Initialize the network and the routes.  Creates new processes, so 
+     * must come after Proc_InitMainProc.
+     */
+    Net_Init();
+    Net_RouteInit();
+
+    /*
+     * Enable server process manager.
+     */
+    Proc_ServerInit();
+
+    /*
+     * Initialize the recovery module.  Do before Rpc and after Vm_Init.
+     */
+#ifndef NO_RECOVERY
+    Recov_Init();
+#endif
+
+    /*
+     * Initialize the data structures for the Rpc system.
+     * Dependencies: Timer_Init, Net_Init, Recov_Init, Sys_Init (to get 
+     * current machine type).
+     */
+    Rpc_Init();
+
+    /*
+     * Do an initial RPC to get a boot timestamp.  This allows
+     * servers to detect when we crash and reboot.  This will set the
+     * system clock too, although rdate is usually done from user level later.
+     */
+    Rpc_Start();
+
+    /*
+     * Initialize the file system. 
+     */
+    Fs_Init();
+
+    /*
+     * Before starting up any more processes get a current directory
+     * for the main process.  Subsequent new procs will inherit it.
+     */
+    Fs_ProcInit();
+    /*
+     * Start the routine that opens up the swap directory.
+     */
+    Proc_CallFunc(Vm_OpenSwapDirectory, (ClientData) NIL, time_ZeroSeconds);
+
+    /*
+     * Start the process that synchronizes the filesystem caches
+     * with the data kept on disk.
+     */
+    Proc_CallFunc(Fsutil_SyncProc, (ClientData) NIL, time_ZeroSeconds);
+
+    /*
+     * Create a few RPC server processes and the Rpc_Daemon process which
+     * will create more server processes if needed.
+     */
+    if (main_NumRpcServers > 0) {
+	for (i=0 ; i<main_NumRpcServers ; i++) {
+	    (void) Rpc_CreateServer((int *) &pid);
+	}
+    }
+    (void) Proc_NewProc((Address) Rpc_Daemon, (Address)0, PROC_KERNEL,
+			FALSE, &pid, "Rpc_Daemon");
+
+    /*
+     * Create processes  to execute functions.
+     */
+    for (i = 0; i < proc_NumServers; i++) {
+	(void) Proc_NewProc((Address)Proc_ServerProc, (Address)0,
+			    PROC_KERNEL, FALSE, &pid, "Proc_ServerProc");
+    }
+
+    /*
+     * Create a recovery process to monitor other hosts.  Can't use
+     * Proc_CallFunc's to do this because they can be used up servicing 
+     * memory requests against down servers.
+     */
+#ifndef NO_RECOVERY
+    (void) Proc_NewProc((Address) Recov_Proc, (Address)0, PROC_KERNEL,
+			FALSE, &pid, "Recov_Proc");
+#endif
+
+    /* 
+     * Start the first user process.  Do it in a separate process so that 
+     * we can service any VM requests that might get generated.  Fork off a 
+     * new process, rather than using a Proc_ServerProc, because 
+     * Proc_ServerProcs don't have FS state.
+     */
+    status = Proc_NewProc((Address) UTILSMACH_MAGIC_CAST StartInit, 
+			  (Address)0, PROC_KERNEL, FALSE, &pid,
+			  "Start Init"); 
+    if (status != SUCCESS) {
+	panic("Can't start up thread to start init: %s\n",
+	      Stat_GetMsg(status));
+    }
+
+    Sys_ServerLoop();
+    return 0;			/* lint */
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CheckArguments --
+ *
+ *	Set flags according to the arguments the user gave.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	May set main_DebugFlag.  Sets up the arguments array to pass to the 
+ *	init program.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+CheckArguments(argc, argv)
+    int argc;
+    char **argv;
+{
+    int argChar;		/* argument character */
+    Boolean error = FALSE;
+    extern int optind;		/* part of getopt package */
+    extern char *optarg;	/* part of getopt package */
+    int initArg;		/* index for setting up init argument array */
+
+    main_InitPath = DEFAULT_INIT;
+
+    if (argc == 2 && strcmp(argv[1], "-help") == 0) {
+	printf("options:\n");
+	printf("-d\tEnable debugging.\n");
+	printf("-i init\tStart ``init'' instead of %s.\n",
+	       DEFAULT_INIT);
+	printf("-p\tTurn on system call profiling.\n");
+	printf("-v maxPending\tSet the limit on pending requests for a\n");
+	printf("\t\tsingle segment.\n");
+	exit(0);
+    }
+
+    while ((argChar = getopt(argc, argv, "di:pv:")) != EOF) {
+	switch (argChar) {
+	case 'd':
+	    main_DebugFlag = TRUE;
+	    break;
+	case 'i':
+	    main_InitPath = optarg;
+	    break;
+	case 'p':
+	    sys_CallProfiling = TRUE;
+	    break;
+	case 'v':
+	    vm_MaxPendingRequests = atoi(optarg);
+	    break;
+	default:
+	    error = TRUE;
+	    break;
+	}
+    }
+
+    main_InitArgArray[0] = main_InitPath;
+    for (initArg = 1; optind < argc; optind++, initArg++) {
+	if (initArg >= MAIN_MAX_INIT_ARGS) {
+	    break;
+	}
+	main_InitArgArray[initArg] = argv[optind];
+    }	
+    main_InitArgArray[initArg] = (char *)NIL;
+
+    if (error) {
+	printf("Use -help to get a list of command-line arguments.\n");
+	exit(1);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StartInit --
+ *
+ *	Start up the first user program.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Start up a user process running the usual initial program.  Causes 
+ *	the server to exit if there was a problem.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+StartInit()
+{
+    ReturnStatus status;
+
+    status = Proc_NewProc((Address)0, (Address)0, PROC_USER, FALSE, 
+			  (Proc_PID *)0, "Init");
+    if (status != SUCCESS) {
+	printf("Couldn't start %s: %s\n", main_InitPath,
+	       Stat_GetMsg(status));
+	Sys_Shutdown(SYS_KILL_PROCESSES | SYS_WRITE_BACK | SYS_HALT);
+    }
+}
+
+@
+
+
+1.20
+log
+@Update comments about what Rpc_Init depends on.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/main/RCS/mainInit.c,v 1.19 92/04/07 13:33:56 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d24 1
+a24 2
+#include <user/proc.h>
+#include <user/sys.h>
+d32 1
+d38 1
+d272 12
+a283 1
+    while ((argChar = getopt(argc, argv, "di:v:")) != EOF) {
+d291 3
+d313 1
+a313 1
+	printf("usage: sprited [-d] [-i initProg] [initArgs]\n");
+@
+
+
+1.19
+log
+@Print version number at startup, but don't bother printing the time.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/main/RCS/mainInit.c,v 1.18 92/04/02 21:07:41 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d159 2
+a160 1
+     * Dependencies: Timer_Init, Net_Init, Recov_Init.
+@
+
+
+1.18
+log
+@Make the default init program be initsprite, not testinit.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/main/RCS/mainInit.c,v 1.17 92/03/23 14:30:08 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d42 2
+a105 1
+    Time	now;
+d115 6
+a136 2
+    Timer_GetTimeOfDay(&now, (int *)NULL, (Boolean *)NULL);
+    printf("Sprite Server starting at %s", ctime((time_t *)&now.seconds));
+@
+
+
+1.17
+log
+@Be sure to halt if we couldn't start up the init program.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/main/RCS/mainInit.c,v 1.16 92/02/27 16:10:05 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d52 2
+a53 2
+#define DEFAULT_INIT	"cmds.sprited/testinit" /* default initial user 
+						 * program */ 
+@
+
+
+1.16
+log
+@Snapshot.  Can kill, suspend, and resume processes.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/main/RCS/mainInit.c,v 1.15 92/01/21 15:51:21 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d325 1
+a325 1
+	Sys_Shutdown(SYS_KILL_PROCESSES | SYS_WRITE_BACK);
+@
+
+
+1.15
+log
+@Change VM code to use Sprite FS instead of UNIX.  Add command-line
+argument to set vm_MaxPendingRequests.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/main/RCS/mainInit.c,v 1.14 91/12/01 21:59:17 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d35 1
+d118 2
+d123 2
+a124 1
+     * Dependencies: Proc_Init, Sync_Init (for malloc, from cthread_init)
+@
+
+
+1.14
+log
+@Snapshot.  FS appears to work.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/main/RCS/mainInit.c,v 1.13 91/11/14 10:02:10 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d51 2
+a52 1
+#define DEFAULT_INIT	"testinit" /* default initial user program */
+a112 1
+    TempFs_Init();
+d261 1
+a261 1
+    while ((argChar = getopt(argc, argv, "di:")) != EOF) {
+d268 3
+@
+
+
+1.13
+log
+@Snapshot. net, rpc, recov modules added.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/main/RCS/mainInit.c,v 1.12 91/10/18 17:51:09 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d29 1
+d75 1
+a75 1
+static void StartInit _ARGS_((ClientData data, Proc_CallInfo *callInfoPtr));
+d103 1
+a163 1
+#ifdef SPRITED_REALFS
+a164 1
+#endif
+a169 1
+#ifdef SPRITED_REALFS
+a170 1
+#endif
+d180 1
+a180 3
+#ifdef SPRITED_REALFS
+    Proc_CallFunc(Fsutil_SyncProc, (ClientData) NIL, 0);
+#endif
+d214 3
+a216 1
+     * we can service any VM requests that might get generated.
+d218 7
+a224 1
+    Proc_CallFunc(StartInit, (ClientData)0, time_ZeroSeconds);
+a307 1
+/* ARGSUSED */
+d309 1
+a309 3
+StartInit(data, callInfoPtr)
+    ClientData	data;		/* ignored */
+    Proc_CallInfo *callInfoPtr; /* ignored */
+@
+
+
+1.12
+log
+@More commenting for main_MultiThreaded.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/main/RCS/mainInit.c,v 1.11 91/10/08 17:26:49 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a21 1
+#include <libc.h>
+d23 1
+d26 1
+d30 1
+d32 2
+d38 1
+d40 10
+a108 3
+    Timer_Init();
+    Timer_GetTimeOfDay(&now, (int *)NULL, (Boolean *)NULL);
+    printf("Sprite Server starting at %s", ctime(&now.seconds));
+d123 11
+d140 59
+d206 10
+d220 1
+a220 1
+    Proc_CallFunc(StartInit, (ClientData)0, 0);
+d281 1
+a281 2
+	fputs("usage: sprited [-d] [-i initProg] [initArgs]\n",
+	      stderr);
+d304 1
+@
+
+
+1.11
+log
+@Commenting tweak.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/main/RCS/mainInit.c,v 1.10 91/10/07 14:06:49 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d47 3
+a49 1
+ * process handle, etc. during initialization.
+a89 4
+    /* 
+     * These need to happen early on.  The Proc initialization is needed so 
+     * that Proc_GetCurrentProc works.
+     */
+@
+
+
+1.10
+log
+@Add dev and timer support.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/main/RCS/mainInit.c,v 1.9 91/10/04 11:37:23 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d66 1
+a66 2
+ *	XXX - should eventually take Sprite main (debugging support, 
+ *	      etc.).
+@
+
+
+1.9
+log
+@Snapshot.  fork/exec work.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/main/RCS/mainInit.c,v 1.8 91/09/26 12:10:39 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d27 1
+d89 4
+d96 2
+@
+
+
+1.8
+log
+@Sys_Shutdown renamed to Sys_ShutdownStub.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/main/RCS/mainInit.c,v 1.7 91/09/23 14:21:04 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d31 1
+d34 1
+a34 1
+#define DEFAULT_INIT	"emulator" /* default initial user program */
+d38 1
+a38 1
+ * Local variables
+d40 1
+d44 6
+d84 1
+d89 4
+a93 1
+    Proc_Init();
+d105 1
+d116 2
+a117 2
+	(void) Proc_NewProc(Proc_ServerProc, PROC_KERNEL, FALSE, 
+			&pid, "Proc_ServerProc");
+d142 2
+a143 1
+ *	May set main_DebugFlag.
+d155 3
+a157 1
+    extern int optind;
+d161 1
+a161 1
+    while ((argChar = getopt(argc, argv, "d")) != EOF) {
+d166 3
+d175 8
+a182 3
+    if (optind < argc) {
+	main_InitPath = argv[optind];
+    }
+d185 2
+a186 1
+	printf("usage: printfd [-d]\n");
+d216 2
+a217 1
+    status = Proc_NewProc(0, PROC_USER, FALSE, (Proc_PID *)0, "Init");
+d219 3
+a221 2
+	printf("Couldn't start up client: %s\n", Stat_GetMsg(status));
+	Sys_ShutdownStub(0, SYS_KILL_PROCESSES | SYS_WRITE_BACK);
+@
+
+
+1.7
+log
+@Snapshot.  Server is multithreaded internally.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/sprited/main/RCS/mainInit.c,v 1.6 91/09/02 22:53:51 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d194 1
+a194 1
+	Sys_Shutdown(0, SYS_KILL_PROCESSES | SYS_WRITE_BACK);
+@
+
+
+1.6
+log
+@Changes for module-based source organization.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/sprited/main/RCS/mainInit.c,v 1.5 91/09/01 21:02:50 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a22 2
+#include <mach.h>
+#include <mach_error.h>
+d24 2
+d29 2
+a30 2
+#include <spriteSrv.h>
+#include <user/proc.h>
+d33 2
+a34 9
+/* 
+ * External declarations that should be in a .h file somewhere (XXX).
+ */
+
+extern boolean_t spriteSrv_server();
+extern boolean_t exc_server();
+extern boolean_t memory_object_server();
+extern mach_msg_return_t mach_msg_server();
+
+a35 3
+#define DEFAULT_CLIENT	"emulator" /* default initial user program */
+static char *clientProgram;	/* initial client to execute */
+
+a39 11
+/* 
+ * There is a single port set through which all requests come.  The 
+ * ports that belong to the set are system call request ports, 
+ * exception ports, and VM segment (memory object) requests.  Note 
+ * that all of these ports are named to correspond to data structures, 
+ * for fast lookup when a request comes in.
+ */
+mach_port_t main_RequestPort;
+
+Boolean main_shuttingDown = FALSE; /* is the system being shut down? */
+
+a41 2
+static Proc_ControlBlock *initialProcPtr; /* XXX */
+
+d48 1
+a48 5
+static boolean_t DemuxRequest _ARGS_((mach_msg_header_t * requestPtr,
+				      mach_msg_header_t *replyPtr));
+static void InitPorts _ARGS_((void));
+static any_t MonitorSharedRegion _ARGS_((any_t unused));
+static ReturnStatus StartClient _ARGS_((void));
+d74 2
+a75 2
+    kern_return_t kernStatus;
+    ReturnStatus status;
+d79 1
+a79 1
+    cthread_init();
+d85 1
+a85 1
+    InitPorts();
+d87 6
+a92 5
+    status = StartClient();
+    if (status != SUCCESS) {
+	printf("Couldn't start up client: %s\n", Stat_GetMsg(status));
+	exit(1);
+    }
+d94 2
+a95 4
+    /* 
+     * Fork off a thread to monitor messages via the shared memory region. 
+     * XXX add locking (or use smarter stdio) to avoid problems with 
+     * multiple threads in server.
+d97 1
+a97 3
+    if (main_DebugFlag) {
+	cthread_detach(cthread_fork(MonitorSharedRegion, (any_t)0));
+    }
+d99 6
+a104 51
+    /* XXX - get rid of magic 8192 (maximum message size) */
+    kernStatus = mach_msg_server(DemuxRequest, 8192, main_RequestPort);
+    if (kernStatus != KERN_SUCCESS) {
+	printf("Couldn't enter server loop: %s\n",
+	       mach_error_string(kernStatus));
+	exit(1);
+    }
+
+    return 0;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StartClient --
+ *
+ *	Start the printf client.
+ *	XXX - fix to do the right thing in multithreaded world.
+ *
+ * Results:
+ *	SUCCESS or an error code..
+ *
+ * Side effects:
+ *	Creates a child task, sets it up to run the client, and starts 
+ *	it. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+StartClient()
+{
+    ReturnStatus status = SUCCESS;
+    char *initArgs[10];		/* arguments to pass to user program */
+    Proc_ControlBlock *procPtr;
+
+    status = Proc_NewProc(0, PROC_USER, FALSE, &procPtr, "Init");
+    initialProcPtr = procPtr;
+    if (status != SUCCESS) {
+	printf("Couldn't create user process\n");
+	return status;
+    }
+	
+    initArgs[0] = clientProgram;
+    initArgs[1] = (char *)NIL;
+    status = Proc_Load(procPtr, clientProgram, initArgs);
+    if (status != SUCCESS) {
+	printf("Couldn't load user process\n");
+	Proc_Kill(procPtr);
+	goto done;
+a105 38
+    
+    status = Proc_Start(procPtr);
+    if (status != SUCCESS) {
+	printf("Couldn't start user process\n");
+	Proc_Kill(procPtr);
+	goto done;
+    }
+
+ done:
+    Proc_Unlock(procPtr);
+    return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MonitorSharedRegion --
+ *
+ *	Check for requests sent via the shared memory region.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static any_t
+MonitorSharedRegion(arg)
+    any_t arg;			/* unused */
+{
+    int newValue;
+    Address buffer;
+    kern_return_t kernStatus;
+    int bytesRead;
+d108 2
+a109 8
+     * Check the first word of the region.  If it's non-zero, print
+     * out the value, then reset it to 0 to ack the request.
+     */
+    /* 
+     * XXX do some sort of pause (will this make shutdown more
+     * difficult?).  Also, it probably makes better sense to create
+     * the region in the server, then have the child inherit it,
+     * rather than constantly reading it like this.
+d111 1
+a111 65
+    for (;;) {
+	if (main_shuttingDown) {
+	    cthread_exit(0);
+	}
+	kernStatus = vm_read(initialProcPtr->taskInfoPtr->task,
+			     PROC_SHARED_REGION_START, vm_page_size,
+			     (pointer_t *)&buffer,
+			     (mach_msg_type_number_t *)&bytesRead);
+	if (kernStatus != KERN_SUCCESS) {
+	    fprintf(stderr, "Can't read shared memory region: %s\n",
+		    mach_error_string(kernStatus));
+	    cthread_exit((any_t)1);
+	}
+	if (bytesRead != vm_page_size) {
+	    fprintf(stderr, "MonitorSharedRegion: short read\n");
+	}
+
+	newValue = *(int *)buffer;
+	if (newValue != 0) {
+	    fprintf(stderr, "Message from client: 0x%x\n", newValue);
+	    *(int *)buffer = 0;
+	    kernStatus = vm_write(initialProcPtr->taskInfoPtr->task,
+				  PROC_SHARED_REGION_START,
+				  (pointer_t)buffer, bytesRead);
+	    if (kernStatus != KERN_SUCCESS) {
+		fprintf(stderr, "Can't ack request in shared memory: %s\n",
+			mach_error_string(kernStatus));
+		cthread_exit((any_t)1);
+	    }
+	}
+	vm_deallocate(mach_task_self(), (vm_address_t)buffer, bytesRead);
+	
+	cthread_yield();
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sys_Shutdown --
+ *
+ *	Shut down the system and exit.
+ *	XXX Should probably be made into a full-fledged system call.  
+ *	Also, should probably check the permissions of the calling 
+ *	process. 
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Kills all user processes, etc.
+ *
+ *----------------------------------------------------------------------
+ */
+
+kern_return_t
+Sys_Shutdown(port)
+    mach_port_t	port;		/* request port */
+{
+    printf("Shutting down...");
+    main_shuttingDown = TRUE;
+    Proc_Lock(initialProcPtr);
+    Proc_Kill(initialProcPtr);
+    Proc_Unlock(initialProcPtr);
+d113 2
+a114 9
+    /* 
+     * XXX need better checking to make sure that pending operations 
+     * are finished.
+     */
+    if (vm_numSegments == 0) {
+	printf("bye\n");
+	exit(0);
+    }
+    return KERN_SUCCESS;	/* lint */
+d143 1
+a143 1
+    clientProgram = DEFAULT_CLIENT;
+d157 1
+a157 1
+	clientProgram = argv[optind];
+d170 1
+a170 1
+ * InitPorts --
+d172 1
+a172 1
+ *	Set up Mach port set for getting requests.
+d178 2
+a179 1
+ *	Creates the port set that all requests come through. 
+d185 3
+a187 1
+InitPorts()
+d189 1
+a189 1
+    kern_return_t kernStatus;
+d191 4
+a194 7
+    kernStatus = mach_port_allocate(mach_task_self(),
+				    MACH_PORT_RIGHT_PORT_SET,
+				    &main_RequestPort);
+    if (kernStatus != KERN_SUCCESS) {
+	printf("Couldn't allocate request port set: %s\n",
+	       mach_error_string(kernStatus));
+	exit(1);
+a197 38
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DemuxRequest --
+ *
+ *	Figure out which module should handle a given request and pass 
+ *	the request off to that module.
+ *
+ * Results:
+ *	Returns TRUE if the request can be handled by a Sprite module.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static boolean_t
+DemuxRequest(requestPtr, replyPtr)
+    mach_msg_header_t *requestPtr; /* set up by MIG */
+    mach_msg_header_t *replyPtr; /* ditto */
+{
+    Vm_Segment *segPtr;
+
+    if (Proc_ExceptionToPCB(requestPtr->msgh_local_port) != NULL) {
+	return exc_server(requestPtr, replyPtr);
+    } else if (Proc_SyscallToPCB(requestPtr->msgh_local_port) != NULL) {
+	return spriteSrv_server(requestPtr, replyPtr);
+    } else if ((segPtr = Vm_PortToSegment(requestPtr->msgh_local_port))
+	       != NULL) {
+	Vm_SegmentRelease(segPtr);
+	return memory_object_server(requestPtr, replyPtr);
+    } else {
+	printf("DemuxRequest: unclaimed request port.\n");
+	return FALSE;
+    }
+}
+@
+
+
+1.5
+log
+@Snapshot.  Full VM support.
+@
+text
+@d2 1
+a2 1
+ * main.c --
+d4 1
+a4 1
+ *	Startup code for printf server.
+d17 1
+a17 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/printfd/RCS/main.c,v 1.4 91/08/19 12:17:03 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d20 1
+a24 1
+#include <sprite.h>
+d26 4
+d31 1
+a31 5
+#include "spriteSrv.h"
+#include "main.h"
+#include "md.h"
+#include "proc.h"
+#include "vm.h"
+d43 1
+a43 1
+#define DEFAULT_CLIENT	"client" /* default initial user program */
+a107 1
+    Mach_Init();
+@
+
+
+1.4
+log
+@Snapshot: Code reorg. and locking for processes & segments.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/printfd/RCS/main.c,v 1.3 91/08/15 14:24:12 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d43 2
+a44 2
+#define CLIENT_EXEC_PATH	"client" /* path to initial user
+					  * program */
+d61 1
+a61 1
+static Boolean debugFlag = FALSE; /* enables various debug checks */
+d74 1
+d110 1
+a111 1
+    TempFs_Init();
+d121 9
+d174 1
+a174 1
+    initArgs[0] = CLIENT_EXEC_PATH;
+d176 1
+a176 1
+    status = Proc_Load(procPtr, CLIENT_EXEC_PATH, initArgs);
+d199 72
+d320 1
+a320 1
+ *	May set debugFlag.
+d332 3
+d339 1
+a339 1
+	    debugFlag = TRUE;
+d347 4
+d423 1
+a423 1
+	printf("DemuxRequest: unclaimed request port.");
+@
+
+
+1.3
+log
+@Snapshot.  Read-write mapped files work.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/printfd/RCS/main.c,v 1.2 91/07/22 11:36:28 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a25 1
+#include <stdio.h>
+d50 8
+a57 5
+mach_port_t main_ExceptionPort;	/* exception port for all clients */
+mach_port_t main_SyscallPort;	/* service port for all clients */
+mach_port_t main_RequestPort;	/* port set for all requests */
+
+Proc_ControlBlock initialProc;	/* initial user process info */
+d63 1
+d65 1
+d74 1
+a74 2
+static any_t MonitorSharedRegion _ARGS_((any_t unused));
+static ReturnStatus StartClient _ARGS_((char *path));
+d108 1
+d114 1
+a114 1
+    status = StartClient(CLIENT_EXEC_PATH);
+a119 9
+    /* 
+     * Fork off a thread to monitor messages via the shared memory region. 
+     * XXX add locking (or use smarter stdio) to avoid problems with 
+     * multiple threads in server.
+     */
+    if (debugFlag) {
+	cthread_detach(cthread_fork(MonitorSharedRegion, (any_t)0));
+    }
+
+d138 1
+a138 1
+ *	XXX - should take the Sprite kernel Init routine?
+d151 1
+a151 2
+StartClient(execPath)
+    char *execPath;		/* path for the client binary */
+d155 1
+d157 2
+a158 1
+    status = Proc_NewProc(0, PROC_USER, FALSE, &initialProc, "Init");
+d164 1
+a164 1
+    initArgs[0] = execPath;
+d166 1
+a166 1
+    status = Proc_Load(&initialProc, execPath, initArgs);
+d169 1
+a169 1
+	Proc_Kill(&initialProc);
+d173 1
+a173 1
+    status = Proc_Start(&initialProc);
+d176 1
+a176 1
+	Proc_Kill(&initialProc);
+d181 1
+a181 1
+    Proc_Unlock(&initialProc);
+a188 72
+ * MonitorSharedRegion --
+ *
+ *	Check for requests sent via the shared memory region.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static any_t
+MonitorSharedRegion(arg)
+    any_t arg;			/* unused */
+{
+    int newValue;
+    Address buffer;
+    kern_return_t kernStatus;
+    int bytesRead;
+
+    /* 
+     * Check the first word of the region.  If it's non-zero, print
+     * out the value, then reset it to 0 to ack the request.
+     */
+    /* 
+     * XXX do some sort of pause (will this make shutdown more
+     * difficult?).  Also, it probably makes better sense to create
+     * the region in the server, then have the child inherit it,
+     * rather than constantly reading it like this.
+     */
+    for (;;) {
+	if (main_shuttingDown) {
+	    cthread_exit(0);
+	}
+	kernStatus = vm_read(initialProc.taskInfoPtr->task,
+			     PROC_SHARED_REGION_START, vm_page_size,
+			     (pointer_t *)&buffer,
+			     (mach_msg_type_number_t *)&bytesRead);
+	if (kernStatus != KERN_SUCCESS) {
+	    fprintf(stderr, "Can't read shared memory region: %s\n",
+		    mach_error_string(kernStatus));
+	    cthread_exit((any_t)1);
+	}
+	if (bytesRead != vm_page_size) {
+	    fprintf(stderr, "MonitorSharedRegion: short read\n");
+	}
+
+	newValue = *(int *)buffer;
+	if (newValue != 0) {
+	    fprintf(stderr, "Message from client: 0x%x\n", newValue);
+	    *(int *)buffer = 0;
+	    kernStatus = vm_write(initialProc.taskInfoPtr->task,
+				  PROC_SHARED_REGION_START,
+				  (pointer_t)buffer, bytesRead);
+	    if (kernStatus != KERN_SUCCESS) {
+		fprintf(stderr, "Can't ack request in shared memory: %s\n",
+			mach_error_string(kernStatus));
+		cthread_exit((any_t)1);
+	    }
+	}
+	vm_deallocate(mach_task_self(), (vm_address_t)buffer, bytesRead);
+	
+	cthread_yield();
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+d192 3
+a209 1
+    fflush(stdout);
+d211 3
+a213 3
+    Proc_Lock(&initialProc);
+    Proc_Kill(&initialProc);
+    Proc_Unlock(&initialProc);
+d274 1
+a274 1
+ *	Set up Mach ports and port sets for talking to clients.
+d280 1
+a280 3
+ *	Creates the port set that all requests come through.  Creates 
+ *	the main system call port and the exception port used by all 
+ *	client processes.  Makes these ports belong to the port set.
+a289 8
+    kernStatus = mach_port_allocate(mach_task_self(), MACH_PORT_RIGHT_RECEIVE,
+				&main_SyscallPort);
+    if (kernStatus != KERN_SUCCESS) {
+	printf("Couldn't allocate syscall port: %s\n",
+	       mach_error_string(kernStatus));
+	exit(1);
+    }
+
+a297 23
+
+    kernStatus = mach_port_allocate(mach_task_self(), MACH_PORT_RIGHT_RECEIVE,
+				&main_ExceptionPort);
+    if (kernStatus != KERN_SUCCESS) {
+	printf("Couldn't allocate exception port: %s\n",
+	       mach_error_string(kernStatus));
+	exit(1);
+    }
+
+    kernStatus = mach_port_move_member(mach_task_self(), main_SyscallPort,
+				       main_RequestPort);
+    if (kernStatus != KERN_SUCCESS) {
+	printf("Can't move syscall port into request set: %s\n",
+	       mach_error_string(kernStatus));
+	exit(1);
+    }
+    kernStatus = mach_port_move_member(mach_task_self(), main_ExceptionPort,
+				       main_RequestPort);
+    if (kernStatus != KERN_SUCCESS) {
+	printf("Can't move exception port into request set: %s\n",
+	       mach_error_string(kernStatus));
+	exit(1);
+    }
+d323 5
+a327 9
+    /* 
+     * Currently assume it's either a system call or a pager request.
+     * Will eventually check for exception port & server notification 
+     * port here.
+     * XXX when rewriting this to use magic number tests, be sure to 
+     * check for the other possible ports before looking at the magic 
+     * number ports.
+     */
+    if (requestPtr->msgh_local_port == main_SyscallPort) {
+d329 4
+a332 2
+    } else if (requestPtr->msgh_local_port == main_ExceptionPort) {
+	return exc_server(requestPtr, replyPtr);
+d334 2
+a335 1
+	return memory_object_server(requestPtr, replyPtr);
+@
+
+
+1.2
+log
+@Add -d flag.  Add shutdown system call.  Minor cleanups.
+
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/printfd/RCS/main.c,v 1.1 91/07/19 15:25:17 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d25 1
+d27 1
+a27 1
+#include <userProc.h>
+d32 1
+d34 8
+a41 1
+extern boolean_t spriteSrv_server(); /* XXX should be in .h file */
+d43 3
+a45 2
+#define CLIENT_EXEC_PATH	"client" /* path to initial user */
+					 /* program */
+d47 3
+a49 1
+/* Local variables */
+d51 3
+a53 1
+mach_port_t main_ServicePort;	/* service port for all clients */
+d55 1
+a55 1
+static Proc_ControlBlock initialProc;	/* initial user process info */
+a60 1
+/* Forward references */
+d62 4
+d67 3
+d105 2
+d108 1
+a108 6
+    kernStatus = mach_port_allocate(mach_task_self(), MACH_PORT_RIGHT_RECEIVE,
+				&main_ServicePort);
+    if (kernStatus != KERN_SUCCESS) {
+	printf("Couldn't allocate port: %s\n", mach_error_string(kernStatus));
+	exit(1);
+    }
+d112 1
+a112 2
+	printf("Couldn't start up client: 0x%x\n", status);
+				/* XXX - should give string, not number */
+d126 1
+a126 1
+    kernStatus = mach_msg_server(spriteSrv_server, 8192, main_ServicePort);
+d159 1
+a159 1
+    ReturnStatus status;
+d174 1
+a174 1
+	return status;
+d176 1
+a176 1
+
+d181 1
+a181 1
+	return status;
+d184 2
+d229 3
+a231 2
+	kernStatus = vm_read(initialProc.task, SHARED_REGION_START,
+			     vm_page_size, (pointer_t *)&buffer,
+d246 2
+a247 2
+	    kernStatus = vm_write(initialProc.task,
+				  SHARED_REGION_START,
+d283 1
+d285 1
+d287 10
+a296 2
+    printf("bye\n");
+    exit(0);
+d320 1
+a320 1
+    char *argv[];
+d339 105
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.5 91/02/09 13:24:44 ouster Exp $ SPRITE (Berkeley)";
+d32 4
+a35 1
+#define CLIENT_EXEC_PATH	"client" /* path to initial user program */
+d37 1
+a37 1
+extern boolean_t spriteSrv_server(); /* XXX should be in .h file */
+d43 4
+d48 2
+d73 3
+a75 1
+main()
+d80 2
+d105 3
+a107 1
+    cthread_detach(cthread_fork(MonitorSharedRegion, (any_t)0));
+a145 1
+    printf("Creating new process\n");
+a151 1
+    printf("Loading...");
+a160 1
+    printf("Starting\n");
+d202 4
+a205 3
+     * XXX do some sort of pause.  Also, it probably makes better 
+     * sense to create the region in the server, then have the child 
+     * inherit it, rather than constantly reading it like this.
+d208 3
+d239 71
+@

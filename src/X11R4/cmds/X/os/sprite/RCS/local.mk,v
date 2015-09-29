@@ -1,0 +1,51 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     91.10.19.13.29.31;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.05.21.14.20.26;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@#
+# special local.mk for server
+#
+
+CFLAGS	+= -DADMPATH=\"/dev/syslog\"
+#include <../../common.mk>
+
+# Additional include file paths
+.PATH.h: $(X)/src/lib/Xau
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@a3 3
+# $Source: /mic/X11R4/src/cmds/X/os/sprite/RCS/local.mk,v $
+# $Date: 90/02/14 20:05:22 $
+# $Revision: 1.1 $ $Author: tve $
+d5 1
+@

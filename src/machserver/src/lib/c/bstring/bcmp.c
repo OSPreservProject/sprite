@@ -1,0 +1,1 @@
+../../c.orig/bstring/bcmp.c

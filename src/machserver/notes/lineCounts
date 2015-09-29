@@ -1,0 +1,25 @@
+Estimates of what was done to sources lines of the "reduced
+functionality" native Sprite kernel.
+
+   		kept		thrown out		rewritten
+   FS		44339 (31%)
+   dev		2696 (2%)	12068 (8%)		581 (0%)
+   proc		9126 (6%)				4152 (3%)
+   vm		 716 (1%)	9286 (6%)		6867 (5%)
+   net		4163 (3%)	1163 (1%)		 952 (1%)
+   rpc		9016 (6%)
+   libc		9787 (7%)	 775 (1%)
+   sys		1659 (1%)				1206 (1%)
+   sync		1954 (1%)	 893 (1%)
+   mach				6067 (4%)
+   timer	 765 (1%)	 901 (1%)		 700 (0%)
+   utils	1895 (1%)
+   prof				1295 (1%)
+   sig		 819 (1%)				 650 (0%)
+   recov	2604 (2%)
+   dbg				2873 (2%)
+   sched			2006 (1%)
+   mem				1899 (1%)
+   main				 168 (0%)		 387 (0%)
+
+totals:		89539 (63%)	39394 (28%)		15495 (11%)

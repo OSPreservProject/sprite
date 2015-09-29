@@ -1,0 +1,353 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.3
+date     90.05.07.11.58.35;  author jhh;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.06.19.14.16.57;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.06.05.12.35.01;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@added mention of FMT_MY_FORMAT constant
+@
+text
+@'\" Copyright 1989 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/lib/c/etc/RCS/Fmt.man,v 1.2 89/06/19 14:16:57 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS Fmt lib
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+Fmt_Convert \- Package for converting data from one byte-order/alignment
+format to another. 
+.SH SYNOPSIS
+.nf
+\fB#include <fmt.h>\fR
+.sp
+int
+.br
+\fBFmt_Convert\fR(\fIcontents, inFormat, inSizePtr, inBuffer, outFormat, outSizePtr, outBuffer\fP)
+.sp
+int
+.br
+\fBFmt_Size\fR(\fIcontents, inFormat, inSizePtr, outFormat, outSizePtr\fR)
+.SH ARGUMENTS
+.AS Fmt_Format outSizePtr
+.AP char *contents in
+String describing contents of \fIinBuffer\fR (see below).
+.AP Fmt_Format inFormat in
+Byte-order/alignment format of data in \fIinBuffer\fR.
+.AP int *inSizePtr in/out
+Points to size of \fIinBuffer\fR.  Upon return \fI*inSizePtr\fR is
+the number of
+bytes actually used.
+.AP char *inBuffer in
+Data to be converted.
+.AP Fmt_Format outFormat in
+Byte-order/alignment format of data in \fIoutBuffer\fR.
+.AP int *outSizePtr in/out
+Points to size of \fIoutBuffer\fR.  Upon return \fI*outSizePtr\fR contains 
+the number of
+bytes actually used. For \fBFmt_Size\fR this is strictly an out parameter.
+.AP char *outBuffer in
+Converted data.
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBFmt_Convert\fR converts data between different 
+byte-order/alignment formats. Typically this is done between different
+machine types, but it can be used to convert between two compilers that
+align data differently.
+\fIInFormat\fR specifies the byte-order/alignment format of the 
+data in \fIinBuffer\fR,
+and \fIoutFormat\fR specifies the byte-order/alignment format of the data 
+in \fIoutBuffer\fR after the conversion.
+The data to be converted is read from \fIinBuffer\fR and the converted data is
+written to \fIoutBuffer\fR.
+The parameter \fIinSizePtr\fR points to the size of the input buffer. 
+When \fBFmt_Convert\fR returns
+\fI*inSizePtr\fR contains the number of bytes that were actually used.
+It is possible for less than the entire buffer to be converted depending
+upon the \fIcontents\fR string. 
+See below for more details on \fIcontents\fR.
+The parameter \fIoutSizePtr\fR points to the size of the output buffer. 
+When \fBFmt_Convert\fR returns \fI*outSizePtr\fR contains the
+number of bytes actually used. 
+.PP
+\fBFmt_Size\fR computes the minimum size output buffer needed converting
+the data at described by the \fIcontents\fR string
+The result is returned in \fI*outSizePtr\fR.
+This size can then be passed to \fBFmt_Convert\fR (assuming that the format
+and contents parameters remain the same).
+
+The legal values for the format parameters are defined in fmt.h.
+They are as follows:
+.IP "\fBFMT_68K_FORMAT\fR"
+The byte-order/alignment format of code compiled by Gcc for 
+Motorola 680x0 machines.
+Treating an integer as an array of 4 bytes (char buf[4]), buf[0] contains
+the most significant byte.  
+Halfwords, words and doublewords are aligned on even 
+boundaries.  
+The alignment of structures and unions equals the most restrictive alignment
+of one of their members, such that they are at least aligned on 
+an even
+boundary.
+The size of structures and unions is a multiple of their alignment.
+.IP "\fBFMT_VAX_FORMAT\fR"
+The byte-order/alignment format of the Vax.
+Treating an integer as an array of 4 bytes (char buf[4]), buf[0] contains
+the least significant byte.  
+Halfwords are aligned on even boundaries. 
+Words and doublewords are aligned on word 
+boundaries.  
+The alignment of structures and unions equals the most restrictive alignment
+of one of their members.
+The size of structures and unions is a multiple of their alignment.
+.IP "\fBFMT_SPUR_FORMAT\fR"
+The byte-order/alignment format of code compiled by Gcc for the Spur.
+Treating an integer as an array of 4 bytes (char buf[4]), buf[0] contains
+the least significant byte.
+Halfwords are aligned on even boundaries, words are aligned on quad boundaries,
+and doublewords are aligned on oct boundaries.
+The alignment of structures and unions equals the most restrictive alignment
+of one of their members, such that they are at least aligned on 
+a quad
+boundary.
+The size of structures and unions is a multiple of their alignment.
+.IP "\fBFMT_SPARC_FORMAT\fR"
+The byte-order/alignment format of code compiled by the SunOS compiler
+for the Sparc architecture.
+Treating an integer as an array of 4 bytes (char buf[4]), buf[0] contains
+the 
+most
+significant byte.
+Halfwords are aligned on even boundaries, words are aligned on quad boundaries,
+and doublewords are aligned on oct boundaries.
+The alignment of structures and unions equals the most restrictive alignment
+of one of their members.
+The size of structures and unions is a multiple of their alignment.
+.IP "\fBFMT_MIPS_FORMAT\fR"
+The byte-order/alignment format of code compiled by the Ultrix compiler
+for the Mips (DecStation3100) architecture.
+Treating an integer as an array of 4 bytes (char buf[4]), buf[0] contains
+the 
+least
+significant byte.
+Halfwords are aligned on even boundaries, words are aligned on quad boundaries,
+and doublewords are aligned on oct boundaries.
+The alignment of structures and unions equals the most restrictive alignment
+of one of their members.
+The size of structures and unions is a multiple of their alignment.
+.VS
+.IP "\fBFMT_MY_FORMAT\fR"
+This format is set to the
+format of the machine on which the code is running.
+This relieves the program that is using the \fBFmt\fR package
+from having to
+decide with format is appropriate for a particular machine.
+.VE
+.PP
+The \fIcontents\fR parameter is used to describe the data types that comprise
+the input buffer. The buffer can contain bytes, halfwords (2 bytes),
+words (4 bytes), doublewords (8 bytes), structures, and unions.
+These data types are represented in the contents string using the 
+following characters.
+.IP \fBb\fR
+One byte.
+.IP \fBh\fR
+One halfword (2 bytes).
+.IP \fBw\fR
+One word (4 bytes).
+.IP \fBd\fR
+One double word (8 bytes).
+.IP \fB{\fR
+The start of a structure.
+.IP \fB}\fR
+The end of a structure.
+.IP \fB(\fR
+The start of a union. The '\fB(\fR' must be followed by a discriminant that 
+indicates which of the components of the union is to be converted.
+The discriminant is a decimal number that gives the index of the component,
+starting at 0.
+.IP \fB)\fR
+The end of a union.
+.IP \fB0\fR-\fB9\fR*
+A decimal number following a data type (byte, halfword, word, doubleword,
+structure, or union) indicates that the data type is repeated the
+given number of times. For instance, the string "w5" means that the 
+input contains 5 consecutive words. There is an ambiguity that arises
+when describing the contents of a union. "w5" can either refer to one
+component of 5 words, or to 5 components of one word each. 
+The abiguity is resolved by having "w5" refer to one component of 5 words,
+and "wwwww" refer to 5 components of one word. 
+Similarly, "w*" refers to one component (see next paragraph for description
+of the '*' character).
+.IP \fB*\fR
+A '\fB*\fR' means 1 or more repetitions of the previous data type. The number of
+repetitions is determined by the amount of data remaining in the input
+buffer. Care must be taken if the '\fB*\fR' character is anything but the
+last character in the string. Certain formats place constraints on the
+sizes of unions and structures that may cause the '\fB*\fR' character to
+give unwanted results. For example, consider a structure
+consisting of a word followed by a byte that is defined as "{wb*}".
+In the Spur format "b*" will refer to 4 bytes, while in the 68K format
+it will refer to 2 bytes.
+
+.PP
+The following are examples of input data types and content strings.
+.sp
+\fIData\fR:
+.sp
+	int	foo[5];
+.sp
+\fIContent string\fR:
+.sp
+	"w5" or "w*" or "wwwww" 
+.sp
+\fIData\fR:
+.sp
+.DS
+.ta 1c 2c 4c 5c 6c
+	struct	flea	{
+		char		mite;
+		int		spider;
+		int		worm;
+		short		moth;
+		short		mosquito;
+		short		beetle;
+		int		fly[5];
+		char		gnat[50];
+	};
+.DE
+.sp
+\fIContent string\fR:
+.sp
+"{bwwh3w5b*}" 
+.sp
+\fIData\fR:
+.sp
+.DS
+.ta 1c 2c 5c 7c 9c
+	struct  foo	{
+		char	bar;
+		int	baz;
+		union {
+			short	quux;
+			double 	cow;
+		} dog[6];
+	};
+.DE
+.sp
+\fIContent string\fR:
+.sp
+	"{bw(0hd)6}" or "{bw(0hd)*}"  if "quux" is the component of "dog" to be 
+converted, 
+.br
+or,
+.br
+	"{bw(1hd)6}" or "{bw(1hd)*}" if "cow" is the component of "dog" to be
+converted.
+
+.SH "RETURN VALUES"
+.PP
+The following return codes are defined in fmt.h:
+.IP "\fBFMT_OK\fR (0)"
+Procedure completed properly
+.IP "\fBFMT_CONTENT_ERROR\fR"
+The \fIcontents\fR parameter contained an error.
+.IP "\fBFMT_INPUT_TOO_SMALL\fR"
+The input buffer was smaller than indicated by \fIcontents\fR.
+.IP "\fBFMT_OUTPUT_TOO_SMALL\fR"
+The output buffer was too small to hold the converted data. This is only
+returned by \fBFmt_Convert\fR.
+.IP "\fBFMT_ILLEGAL_FORMAT\fR"
+One of the format parameters was illegal.
+.SH KEYWORDS
+byte-order, byte-swap, alignment, data conversion
+
+@
+
+
+1.2
+log
+@added mips format
+@
+text
+@d9 1
+a9 1
+'\" $Header: /sprite/src/lib/c/etc/RCS/Fmt.man,v 1.1 89/06/05 12:35:01 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+d138 8
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d9 1
+a9 1
+'\" $Header: /sprite/lib/forms/RCS/proto.man,v 1.5 89/01/27 08:36:02 ouster Exp $ SPRITE (Berkeley)
+d127 11
+a137 2
+.PP
+Not implemented yet.
+d157 1
+a157 1
+The start of a union. The \fB(\fR must be followed by a discriminant that 
+d166 1
+a166 1
+given number of times. For instance, the string \fIw5\fR means that the 
+d168 1
+a168 1
+when describing the contents of a union. \fIw5\fR can either refer to one
+d170 4
+a173 4
+The abiguity is resolved by having \fIw5\fR refer to one component of 5 words,
+and \fIwwwww\fR refer to 5 components of one word. 
+Similarly, \fIw*\fR refers to one component (see next paragraph for description
+of the \fI*\fR character).
+d175 1
+a175 1
+A \fB*\fR means 1 or more repetitions of the previous data type. The number of
+d177 1
+a177 1
+buffer. Care must be taken if the \fB*\fR character is anything but the
+d179 1
+a179 1
+sizes of unions and structures that may cause the \fB*\fR character to
+d181 2
+a182 2
+consisting of a word followed by a byte that is defined as \fI{wb*}\fR.
+In the Spur format \fIb*\fR will refer to 4 bytes, while in the 68K format
+@

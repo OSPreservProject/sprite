@@ -1,0 +1,21 @@
+% Master File: ind.tex
+% Document preamble for ind.tex
+
+\documentstyle[11pt,doublespace,regmar]{article}
+\input{logo}
+\input{psfig}
+\nofiles
+\begin{document}
+\pagestyle{phcheadings}		% defined in undhead.tex
+\def\s{\thinspace}
+\newcommand{\sitem}{\hspace*{20pt}}
+\newcommand{\ssitem}{\hspace*{30pt}}
+\newenvironment{iexample}{\begin{center}
+   \begin{tabular}[t]{@{}ll|@{\hspace{.2em}}}}{\end{tabbing}\end{minipage}
+   \end{center}}
+\newcommand{\sindex}{\end{tabular}\hspace{.3em}\begin{minipage}[t]{\textwidth}
+   \begin{tabbing}}
+\newcommand{\tindex}{\end{tabular}\hspace{1em}\begin{minipage}[t]{\textwidth}
+   \begin{tabbing}}
+\newcommand{\hd}[1]{\multicolumn{1}{c|}{\sl #1\/}}
+\newcommand{\hdr}[1]{\multicolumn{1}{c}{\sl #1\/}}

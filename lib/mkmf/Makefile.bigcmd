@@ -1,0 +1,38 @@
+#
+# Prototype Makefile for a subdirectory that forms part of a command.
+#
+# This Makefile is automatically generated.
+# DO NOT EDIT IT OR YOU MAY LOSE YOUR CHANGES.
+#
+# Generated from @(TEMPLATE)
+# @(DATE)
+#
+# For more information, refer to the mkmf manual page.
+#
+# $Header: /sprite/lib/mkmf/RCS/Makefile.bigcmd,v 1.7 92/06/10 13:04:46 jhh Exp $ SPRITE (Berkeley)
+#
+# Allow mkmf
+
+ALLSRCS		= @(ALLSRCS)
+MACHINES	= @(MACHINES)
+MAKEFILE	= @(MAKEFILE)
+NAME		= @(NAME)
+SYSMAKEFILE	= bigcmd.mk
+TYPE		= @(TYPE)
+DISTDIR        ?= @(DISTDIR)
+#include	<settm.mk>
+
+
+#if exists($(TM).md/md.mk)
+#include	"$(TM).md/md.mk"
+#endif
+
+#if exists(local.mk)
+#include 	"local.mk"
+#else
+#include	<$(SYSMAKEFILE)>
+#endif
+
+#if exists($(DEPFILE))
+#include	"$(DEPFILE)"
+#endif

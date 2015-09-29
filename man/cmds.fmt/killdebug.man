@@ -1,0 +1,68 @@
+
+
+
+KILLDEBUG                 User Commands                 KILLDEBUG
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     killdebug - Kills any processes in the debugger.
+
+SSYYNNOOPPSSIISS
+     kkiillllddeebbuugg [[aallll]]
+
+_________________________________________________________________
+
+DDEESSCCRRIIPPTTIIOONN
+     kkiillllddeebbuugg kills any processes belonging to the user that are
+     in  the  debugger.   It performs a kkiillll --KKIILLLL on the list of
+     processes returned by ppss --dd.  A list of processes killed  is
+     printed.   If the aallll argument is given, kkiillllddeebbuugg does a ppss
+     --aadd and will attempt to kill all processes in  the  debugger
+     on the local machine.
+
+KKEEYYWWOORRDDSS
+     kill, debug
+
+SSEEEE AALLSSOO
+     kill, ps
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  May 13, 1992                     1
+
+
+

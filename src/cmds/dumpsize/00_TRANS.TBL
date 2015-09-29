@@ -1,0 +1,4 @@
+F DUMPSIZE.;1                       	dumpsize
+F DUMPSIZE.MAN;1                    	dumpsize.man
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS

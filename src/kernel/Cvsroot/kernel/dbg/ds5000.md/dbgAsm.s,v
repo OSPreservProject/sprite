@@ -1,0 +1,81 @@
+head     9.0;
+branch   ;
+access   ;
+symbols  ds3100:9.0 sun3:9.0 sun4nw:9.0 symm:9.0 spur:9.0 Summer89:9.0;
+locks    ; strict;
+comment  @| @;
+
+
+9.0
+date     89.09.12.14.56.12;  author douglis;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.10.19.51.06;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@First code from DECWRL.
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@/*
+ * dbgAsm.s --
+ *
+ *	Contains misc. assembler routines for the PMAX.
+ *
+ *	Copyright (C) 1989 Digital Equipment Corporation.
+ *	Permission to use, copy, modify, and distribute this software and
+ *	its documentation for any purpose and without fee is hereby granted,
+ *	provided that the above copyright notice appears in all copies.  
+ *	Digital Equipment Corporation makes no representations about the
+ *	suitability of this software for any purpose.  It is provided "as is"
+ *	without express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/dbg/ds3100.md/RCS/dbgAsm.s,v 1.1 89/07/10 19:51:06 nelson Exp Locker: douglis $ SPRITE (DECWRL)
+ */
+
+#include <regdef.h>
+
+/*----------------------------------------------------------------------------
+ *
+ * Dbg_Call --
+ *
+ *	Trap to the debugger.
+ *
+ * Results:
+ *     	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------------
+ */
+    .globl Dbg_Call
+    .ent Dbg_Call, 0
+Dbg_Call:
+    .frame	sp, 0, ra
+    break	0
+    j		ra
+    .end	Dbg_Call
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d14 1
+a14 1
+ * $Header: dbgAsm.s,v 1.3 89/06/29 09:38:10 mnelson Exp $ SPRITE (DECWRL)
+@

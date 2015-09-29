@@ -1,0 +1,427 @@
+head     9.5;
+branch   ;
+access   ;
+symbols  ds3100:9.5 sun3:9.5 sprited:9.4.1 sun4nw:9.4 symm:9.4 spur:9.4 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.5
+date     92.10.26.14.09.59;  author mgbaker;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.10.08.15.07.26;  author mendel;  state Exp;
+branches 9.4.1.1;
+next     9.3;
+
+9.3
+date     89.12.12.18.03.12;  author mgbaker;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.11.29.14.51.29;  author brent;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.11.27.14.28.03;  author mgbaker;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.10.49;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     89.08.21.15.29.38;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.08.21.11.13.28;  author mendel;  state Exp;
+branches ;
+next     ;
+
+9.4.1.1
+date     91.11.15.16.56.19;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Remote naming and io tables.
+@
+
+
+9.5
+log
+@Support for bulk reopen rpcs.
+@
+text
+@/* 
+ * fsRmtOps.c --
+ *
+ *	Routine for initializing the fsOpTable switch entries for remote
+ *	domain naming and remote file/pipe/device access.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fsrmt/fsrmtOps.c,v 9.4 90/10/08 15:07:26 mendel Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <fs.h>
+#include <fsconsist.h>
+#include <fsio.h>
+#include <fsrmt.h>
+#include <fsioFile.h>
+#include <fsioDevice.h>
+#include <fsioPipe.h>
+#include <fsNameOps.h>
+#include <fsrmtInt.h>
+
+/*
+ * fs_DomainLookup for FS_REMOTE_SPRITE_DOMAIN type.
+ */
+
+static Fs_DomainLookupOps rmtDomainLookup = {
+     FsrmtImport, Fsio_NoProc, FsrmtOpen, FsrmtGetAttrPath,
+     FsrmtSetAttrPath, FsrmtMakeDevice, FsrmtMakeDir, 
+     FsrmtRemove, FsrmtRemoveDir, FsrmtRename, FsrmtHardLink
+};
+
+/*
+ * Domain specific get/set attributes table.  These routines are used
+ * to get/set attributes on the name server given a fileID (not a pathname).
+ */
+static Fs_AttrOps rmtAttrOpTable =   { FsrmtGetAttr, FsrmtSetAttr };
+
+
+/*
+ * File stream type ops for FSIO_RMT_FILE_STREAM, FSIO_RMT_DEVICE_STREAM,
+ * and FSIO_RMT_PIPE_STREAM;
+ */
+
+static Fsio_StreamTypeOps rmtFileStreamOps[] = {
+/*
+ * Remote file stream.  The file is at a remote server but blocks might 
+ * be cached in the block cache.
+ */
+    { FSIO_RMT_FILE_STREAM, FsrmtFileIoOpen, FsrmtFileRead, FsrmtFileWrite,
+		FsrmtFilePageRead, FsrmtFilePageWrite,
+		Fsrmt_BlockCopy,
+		FsrmtFileIOControl, Fsio_FileSelect,
+		FsrmtFileGetIOAttr, FsrmtFileSetIOAttr,
+		FsrmtFileVerify, FsrmtFileMigClose, FsrmtFileMigOpen,
+		FsrmtFileMigrate, FsrmtFileReopen,
+		FsrmtFileScavenge,
+		Fsio_NullClientKill, FsrmtFileClose},
+/*
+ * Remote device stream.  Forward the operations to the remote I/O server.
+ */
+    { FSIO_RMT_DEVICE_STREAM, FsrmtDeviceIoOpen, Fsrmt_Read, Fsrmt_Write,
+		Fsio_NoProc, Fsio_NoProc, Fsio_NoProc, 	/* Paging routines */
+		Fsrmt_IOControl, Fsrmt_Select,
+		Fsrmt_GetIOAttr, Fsrmt_SetIOAttr,
+		FsrmtDeviceVerify, Fsrmt_IOMigClose, Fsrmt_IOMigOpen,
+		FsrmtDeviceMigrate, FsrmtDeviceReopen,
+		Fsutil_RemoteHandleScavenge, Fsio_NullClientKill, Fsrmt_IOClose},
+ /*
+  * Remote anonymous pipe stream.  These arise because of migration.
+  */
+    { FSIO_RMT_PIPE_STREAM, Fsio_NoProc, Fsrmt_Read, Fsrmt_Write,
+		Fsio_NoProc, Fsio_NoProc, Fsio_NoProc, 	/* Paging routines */
+		Fsrmt_IOControl, Fsrmt_Select,
+		Fsrmt_GetIOAttr, Fsrmt_SetIOAttr,
+		FsrmtPipeVerify, Fsrmt_IOMigClose, Fsrmt_IOMigOpen,
+		FsrmtPipeMigrate, FsrmtPipeReopen,
+		Fsutil_RemoteHandleScavenge, Fsio_NullClientKill, Fsrmt_IOClose},
+};
+
+static int numRmtFileStreamOps = sizeof(rmtFileStreamOps)/
+				 sizeof(rmtFileStreamOps[0]);
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsrmt_InitializeOps --
+ *
+ *	Initialize the fsOpTable switch for the remote domain naming 
+ *	and remote domain streams.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Fsrmt_InitializeOps()
+{
+    int	i;
+    Fsutil_BulkReopenOps	reopenOps;
+
+    Fs_InstallDomainLookupOps(FS_REMOTE_SPRITE_DOMAIN, &rmtDomainLookup, 
+				&rmtAttrOpTable );
+    for (i = 0; i < numRmtFileStreamOps; i++)  { 
+	Fsio_InstallStreamOps(rmtFileStreamOps[i].type, &(rmtFileStreamOps[i]));
+    }
+    reopenOps.setup = FsrmtSetupFileReopen;
+    reopenOps.finish = FsrmtFinishFileReopen;
+    Fsutil_InitBulkReopenOps(FSIO_RMT_FILE_STREAM, &reopenOps);
+    reopenOps.setup = FsrmtSetupDeviceReopen;
+    reopenOps.finish = FsrmtFinishDeviceReopen;
+    Fsutil_InitBulkReopenOps(FSIO_RMT_DEVICE_STREAM, &reopenOps);
+    reopenOps.setup = FsrmtSetupPipeReopen;
+    reopenOps.finish = FsrmtFinishPipeReopen;
+    Fsutil_InitBulkReopenOps(FSIO_RMT_PIPE_STREAM, &reopenOps);
+
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsrmt_Bin() --
+ *
+ *	Setup objects to be binned.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Fsrmt_Bin()
+{
+    Mem_Bin(sizeof(Fsrmt_FileIOHandle));
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsio_FileRecovTestUseCount --
+ *
+ *      For recovery testing, return the use count on the file's io handle.
+ *
+ * Results:
+ *      Use count.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Fsrmt_FileRecovTestUseCount(handlePtr)
+    Fsrmt_FileIOHandle   *handlePtr;
+{
+    return handlePtr->rmt.recovery.use.ref;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsio_FileRecovTestNumCacheBlocks --
+ *
+ *      For recovery testing, return the number of blocks in the cache
+ *      for this file.
+ *
+ * Results:
+ *      Number of blocks.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Fsrmt_FileRecovTestNumCacheBlocks(handlePtr)
+    Fsrmt_FileIOHandle   *handlePtr;
+{
+    return handlePtr->cacheInfo.blocksInCache;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsio_FileRecovTestNumDirtyCacheBlocks --
+ *
+ *      For recovery testing, return the number of dirty blocks in the cache
+ *      for this file.
+ *
+ * Results:
+ *      Number of dirty blocks.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Fsrmt_FileRecovTestNumDirtyCacheBlocks(handlePtr)
+    Fsrmt_FileIOHandle   *handlePtr;
+{
+    return handlePtr->cacheInfo.numDirtyBlocks;
+}
+
+
+@
+
+
+9.4
+log
+@Changed file name to fsrmtOps.c
+Fixed includes to use <> rather than "", added functions prototypes, and
+removed lint.
+Modified to use new Fs_InstallDomainLookupOps calling sequence.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs.mendel/RCS/fsRmtOps.c,v 1.1 90/01/16 17:11:34 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d114 1
+d121 9
+d131 1
+@
+
+
+9.4.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fsrmt/fsrmtOps.c,v 9.4 90/10/08 15:07:26 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+9.3
+log
+@Added more stuff for my recovinfo program.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsrmt/RCS/fsRmtOps.c,v 9.2 89/11/29 14:51:29 brent Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d21 10
+a30 9
+#include "sprite.h"
+#include "fs.h"
+#include "fsio.h"
+#include "fsrmt.h"
+#include "fsioFile.h"
+#include "fsioDevice.h"
+#include "fsioPipe.h"
+#include "fsNameOps.h"
+#include "fsrmtInt.h"
+d36 1
+a36 1
+static ReturnStatus (*rmtDomainLookup[FS_NUM_NAME_OPS])() = {
+d61 1
+d72 1
+a72 1
+		Fsio_NoProc, Fsio_NoProc,	/* Paging routines */
+d82 1
+a82 1
+		Fsio_NoProc, Fsio_NoProc,	/* Paging routines */
+d115 1
+a115 1
+    Fs_InstallDomainLookupOps(FS_REMOTE_SPRITE_DOMAIN, rmtDomainLookup, 
+@
+
+
+9.2
+log
+@Added PageRead and PageWrite routines.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsrmt/RCS/fsRmtOps.c,v 9.1 89/11/27 14:28:03 mgbaker Exp Locker: brent $ SPRITE (Berkeley)";
+a142 1
+#ifdef NOTDEF
+d163 1
+a163 1
+    return handlePtr->use.ref;
+a164 1
+#endif NOTDEF
+@
+
+
+9.1
+log
+@Adding new stats syscall command.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsrmt/RCS/fsRmtOps.c,v 9.0 89/09/12 15:10:49 douglis Stable Locker: mgbaker $ SPRITE (Berkeley)";
+d23 1
+a24 1
+#include "fsio.h"
+d59 1
+d70 1
+d80 1
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsrmt/RCS/fsRmtOps.c,v 1.2 89/08/21 15:29:38 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d138 73
+@
+
+
+1.2
+log
+@Break up fs into many modules.    
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsrmt/RCS/fsRmtOps.c,v 1.1 89/08/21 11:13:28 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.2 89/01/07 04:12:18 rab Exp $ SPRITE (Berkeley)";
+d110 1
+a110 1
+    Fs_InstallDomainLookupOps(FS_REMOTE_SPRITE_DOMAIN, &rmtDomainLookup, 
+@

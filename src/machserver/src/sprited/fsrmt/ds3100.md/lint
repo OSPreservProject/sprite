@@ -1,0 +1,18 @@
+fsrmtDomain.c:
+fsrmtFile.c:
+fsrmtIO.c:
+fsrmtOps.c:
+fsrmtPipe.c:
+fsrmtAttributes.c:
+fsrmtDevice.c:
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(452)  ::  fsrmtDomain.c 2(330)
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(452)  ::  fsrmtDomain.c(452)
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(452)  ::  fsrmtIO.c 2(126)
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(452)  ::  fsrmtIO.c(347)
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(452)  ::  fsrmtIO.c(480)
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(452)  ::  fsrmtIO.c(935)
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(452)  ::  fsrmtAttributes.c 2(228)
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(452)  ::  fsrmtAttributes.c 2(390)
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(452)  ::  fsrmtDevice.c 2(269)
+Recov_SetClientState returns value which is always ignored
+Fscache_Trunc returns value which is always ignored

@@ -1,0 +1,1691 @@
+head     1.19;
+branch   ;
+access   ;
+symbols  srv030:1.18 srv028:1.17 srv027:1.17 srv026:1.17 srv024:1.17 srv022:1.17 srv021:1.17 srv019:1.17 srv018:1.17 srv016:1.17 srv015:1.17 srv014:1.17 srv012:1.16 srv011:1.16 srv010:1.16 srv008:1.16 srv007:1.16 srv006:1.16 srv005:1.16 srv004:1.16 srv003:1.16 srv002:1.16 srv001:1.16;
+locks    ; strict;
+comment  @@;
+
+
+1.19
+date     92.07.17.16.34.49;  author kupfer;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     92.07.16.18.07.17;  author kupfer;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     92.06.10.15.23.38;  author kupfer;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     92.04.16.11.33.08;  author kupfer;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     92.04.02.21.01.36;  author kupfer;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     92.03.12.17.27.03;  author kupfer;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     92.02.27.16.01.18;  author kupfer;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     92.01.21.14.49.01;  author kupfer;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     91.12.18.23.25.54;  author kupfer;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     91.12.12.21.11.11;  author kupfer;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     91.12.01.21.58.00;  author kupfer;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     91.11.14.10.02.03;  author kupfer;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     91.10.18.18.07.32;  author kupfer;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     91.10.04.11.37.45;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.09.26.12.13.01;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.09.23.14.20.03;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.08.15.14.23.36;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.07.22.11.35.18;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.07.17.11.15.10;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Interface definition for simple printf server.
+@
+
+
+1.19
+log
+@Add Test_Return1Stub, Test_Return2Stub.
+@
+text
+@/* 
+ * spriteSrv.defs --
+ *
+ *	MIG interface to the Sprite server.
+ *	
+ *	If you add, delete, or move around routines, you should also edit 
+ *	sysNumCalls.h and lib/c/emulator/Sys_CallName.c.
+ *	
+ *	Try to avoid changes that are incompatible with existing binaries.
+ *
+ * Copyright 1991, 1992 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+rcsid "$Header: /user5/kupfer/spriteserver/src/sprited/sys/RCS/spriteSrv.defs,v 1.18 92/07/16 18:07:17 kupfer Exp Locker: kupfer $";
+
+#include <sysCallNums.h>
+
+subsystem spriteSrv SYS_CALL_BASE;	/* Pick official number someday? */
+/* 
+ * Would like to call the subsystem "sprite", but that would generate 
+ * "sprite.h", and getting all the special-case pmake stuff to rename 
+ * the header file doesn't seem worth the pain.
+ */
+
+#include <mach/mach_types.defs>
+#include <mach/std_types.defs>
+#include "spriteTypes.defs"
+
+/* 			       *** TEST ***		*/
+
+/* Debug print routines. */
+
+/* 0 */
+routine Test_PutDecimalStub(
+	server	: mach_port_t;
+	value	: int);
+
+/* 1 */
+routine Test_PutHexStub(
+	server	: mach_port_t;
+	value	: int);
+
+/* 2 */
+routine Test_PutOctalStub(
+	server	: mach_port_t;
+	value	: int);
+
+/* 3 */
+routine Test_PutMessageStub(
+	server	: mach_port_t;
+	value	: Test_MessageBuffer);
+
+/* 4 */
+routine	Test_PutStringStub(
+	server	: mach_port_t;
+	buffer	: vm_address_t;
+	bufLength : int);
+
+/* 5 */
+routine Test_GetStringStub(
+	server	: mach_port_t;
+	buffer	: vm_address_t;	/* out array */
+	bufLength : int);
+
+
+/* 			       *** SYS ***		*/
+
+/* 
+ * This routines is used for more than just shutting down the system, so we 
+ * should check for pending signals after calling it.
+ */
+/* 6 */
+routine Sys_ShutdownStub(
+	server	: mach_port_t;
+	flags	: int;
+  out	pendingSig : boolean_t);
+
+/* 
+ * Get time of day, offset from Universal Time, and flag telling whether 
+ * Daylight Savings Time is followed.
+ */
+/* 7 */
+routine Sys_GetTimeOfDayStub(
+	server	: mach_port_t;
+  out	time	: Time;
+  out	localOffset : int;
+  out	dstOk	: boolean_t;
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+
+/* 
+ * General ioctl-like call for the system.  Let's hear it for kitchen 
+ * sinks.
+ */
+/* 8 */
+routine Sys_StatsStub(
+	server	: mach_port_t;
+	command	: int;
+	option	: int;
+	argPtr	: vm_address_t;	/* in/out array */
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+
+/* 9 */
+routine Sys_GetMachineInfoStub(
+	server	: mach_port_t;
+	size	: int;
+	buffer	: vm_address_t;	/* out array */
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+
+/* 10 */
+routine Sys_SetTimeOfDayStub(
+	server	: mach_port_t;
+	time	: Time;
+	localOffset : int;
+	dstOk	: boolean_t;
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+
+/* 
+ * Allocate a bunch of dummy procedure numbers, so that we can add VM 
+ * procedures later and keep them all together, without relinking every 
+ * application program.
+ */
+/* 11 */
+skip;
+/* 12 */
+skip;
+/* 13 */
+skip;
+/* 14 */
+skip;
+
+/* 			       *** VM ***		*/
+
+/* 
+ * Map "length" bytes of the file, starting at position "offset".  
+ * "length" is rounded up to the nearest page boundary; "offset" is 
+ * truncated. 
+ */
+
+/* 15 */
+routine Vm_MapFileStub(
+	server	: mach_port_t;
+	fileName : Fs_PathName;
+	readOnly : boolean_t;
+	offset	: off_t;
+  	length	: vm_size_t;
+  out	status	: ReturnStatus;
+  out	buffer	: vm_address_t;
+  out	pendingSig : boolean_t);
+
+/* 16 */
+routine Vm_CreateVAStub(
+	server	: mach_port_t;
+	address	: vm_address_t;
+	bytes	: vm_size_t;
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+
+/* 17 */
+routine Vm_CmdStub(
+	server	: mach_port_t;
+	command : int;
+	length	: vm_size_t;	/* if arg points to a buffer */
+	arg	: vm_address_t;
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+
+/* 
+ * This stub is theoretically equivalent to Vm_Cmd, except that argument
+ * passing is done entirely through the MIG stub, rather than using
+ * copyin/copyout.  Whether the stub is actually used that way is a
+ * different story.  The "in" buffer, if small, will be passed inband.  The
+ * "out" buffer is always passed out of line to simplify memory management
+ * inside the server.  The option parameter is used for things like a 
+ * user-specified length.  The lengths associated with the in and out 
+ * buffers might be different, in order to get memory management right.
+ */
+/* 18 */
+routine Vm_CmdInbandStub(
+	server	: mach_port_t;
+	command	: int;
+	option	: int;
+	inBuf	: Sys_CharArray;
+  out	outBuf	: pointer_t, Dealloc[];
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+
+/* Dummy entries for forward compatibility */
+/* 19 */
+skip;
+/* 20 */
+skip;
+/* 21 */
+skip;
+/* 22 */
+skip;
+/* 23 */
+skip;
+/* 24 */
+skip;
+/* 25 */
+skip;
+/* 26 */
+skip;
+/* 27 */
+skip;
+
+
+/* 			       *** FS ***		*/
+
+/* 28 */
+skip;				/* old TempFs_LengthStub */
+
+/* 29 */
+routine Fs_AccessStub(
+	server	: mach_port_t;
+	pathName : Fs_PathName;
+	mode : int;		/* UNIX mode flags */
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+	
+/* 30 */
+routine Fs_AttachDiskStub(
+	server	: mach_port_t;
+	devName	: Fs_PathName;
+	localName : Fs_PathName;
+	flags	: int;
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+
+/* 31 */
+routine Fs_ChangeDirStub(
+	server	: mach_port_t;
+	newDir	: Fs_PathName;
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+
+/* 32 */
+routine Fs_GetAttributesStub(
+	server	: mach_port_t;
+	pathName : Fs_PathName;
+	fileOrLink : int;
+  out	status	: ReturnStatus;
+  out	attributes : Fs_Attributes;
+  out	pendingSig : boolean_t);
+
+/* 33 */
+routine Fs_HardLinkStub(
+	server	: mach_port_t;
+	fileName : Fs_PathName;
+	newName	: Fs_PathName;
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+
+/* 34 */
+routine Fs_MakeDeviceStub(
+	server	: mach_port_t;
+	pathName : Fs_PathName;
+	devAttr	: Fs_Device;
+	permissions : int;
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+
+/* 35 */
+routine Fs_MakeDirStub(
+	server	: mach_port_t;
+	pathName : Fs_PathName;
+	permissions : int;
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+
+/* 36 */
+routine Fs_OpenStub(
+	server	: mach_port_t;
+	pathName : Fs_PathName;
+	usageFlags : int;
+	permissions : int;
+  out	status	: ReturnStatus;
+  out	streamID : int;
+  out	pendingSig : boolean_t);
+
+/* 37 */
+routine Fs_ReadLinkStub(
+	server	: mach_port_t;
+	linkName : Fs_PathName;
+	bufSize	: int;
+	buffer	: vm_address_t;	/* out array */
+  out	status	: ReturnStatus;
+  out	linkLength : int;
+  out	pendingSig : boolean_t);
+
+/* 38 */
+routine Fs_RemoveDirStub(
+	server	: mach_port_t;
+	pathName : Fs_PathName;
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+
+/* 39 */
+routine Fs_RemoveStub(
+	server	: mach_port_t;
+	pathName : Fs_PathName;
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+
+/* 40 */
+routine Fs_RenameStub(
+	server	: mach_port_t;
+	pathName : Fs_PathName;
+	newName	: Fs_PathName;
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+
+/* 41 */
+routine Fs_SetAttrStub(
+	server	: mach_port_t;
+	pathName : Fs_PathName;
+	fileOrLink : int;
+	newAttr	: Fs_Attributes;
+	flags	: int;
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+
+/* 42 */
+routine Fs_SymLinkStub(
+	server	: mach_port_t;
+	targetName : Fs_PathName;
+	linkName : Fs_PathName;
+	remote	: boolean_t;
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+
+/* 43 */
+routine Fs_CloseStub(
+	server	: mach_port_t;
+	streamID : int;
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+
+/* 44 */
+routine Fs_CreatePipeStub(
+	server	: mach_port_t;
+  out	status	: ReturnStatus;
+  out	inStream : int;
+  out	outStream : int;
+  out	pendingSig : boolean_t);
+
+/* 45 */
+routine Fs_GetAttributesIDStub(
+	server	: mach_port_t;
+	stream	: int;
+  out	status	: ReturnStatus;
+  out	attr	: Fs_Attributes;
+  out	pendingSig : boolean_t);
+
+/* 46 */
+routine Fs_GetNewIDStub(
+	server	: mach_port_t;
+	stream	: int;
+ inout	newStream : int;
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+
+/* 47 */
+routine Fs_IOControlStub(
+	server	: mach_port_t;
+	stream	: int;
+	command	: int;
+	inBufSize : int;
+	inBuf	: vm_address_t;	/* in array */
+	outBufSize : int;
+	outBuf	: vm_address_t;	/* out array */
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+
+/* 48 */
+routine Fs_ReadStub(
+	server	: mach_port_t;
+	stream	: int;
+	bufSize	: int;
+	buffer	: vm_address_t;	/* out array */
+  out	status	: ReturnStatus;
+  out	bytesRead : int;
+  out	pendingSig : boolean_t);
+
+/* 49 */
+routine Fs_SetAttrIDStub(
+	server	: mach_port_t;
+	stream	: int;
+	newAttr : Fs_Attributes;
+	flags	: int;
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+
+/* 50 */
+routine Fs_WriteStub(
+	server	: mach_port_t;
+	stream	: int;
+	bufSize	: int;
+	buffer	: vm_address_t;	/* in array */
+  out	status	: ReturnStatus;
+  out	bytesWritten : int;
+  out	pendingSig : boolean_t);
+
+/* 51 */
+routine Fs_CommandStub(
+	server	: mach_port_t;
+	command	: int;
+	bufSize	: vm_size_t;
+	buffer	: vm_address_t;	/* in/out array */
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+
+/* 52 */
+routine Fs_SetDefPermStub(
+	server	: mach_port_t;
+	permissions : int;
+  out	oldPermissions : int;
+  out	pendingSig : boolean_t);
+
+/* 
+ * MIG-generated stubs don't like null pointers, so "timeout" must always 
+ * point to something.  Set useTimeout to FALSE if no timeout is desired.
+ */
+/* 53 */
+routine Fs_SelectStub(
+	server	: mach_port_t;
+	numStreams : int;
+	useTimeout : boolean_t;
+ inout	timeout	: Time;
+	readMask : vm_address_t; /* in/out array */
+	writeMask: vm_address_t; /* in/out array */
+	exceptMask : vm_address_t; /* in/out array */
+  out	status	: ReturnStatus;
+  out	numReady : int;
+  out	pendingSig : boolean_t);
+
+/* 54 */
+routine Fs_FileWriteBackStub(
+	server	: mach_port_t;
+	stream	: int;
+	firstByte : int;
+	lastByte : int;
+	shouldBlock : boolean_t;
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+
+/* Dummy entries for forward compatibility. */
+/* 55 */
+skip;
+/* 56 */
+skip;
+/* 57 */
+skip;
+/* 58 */
+skip;
+
+
+/* 			       *** NET ***		*/
+
+/* 59 */
+routine Net_InstallRouteStub(
+	server	: mach_port_t;
+	size	: int;
+	routeInfo : vm_address_t; /* in array */
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+	
+/* 60 */
+skip;
+
+
+/* 			       *** PROC ***		*/
+
+/* 
+ * Create a child process with a starting PC of "childStart".  The child 
+ * will find state information stashed at "childStateAddr".  "processID" is 
+ * the child's process ID, if created.
+ */
+/* 61 */
+routine Proc_ForkStub(
+	server	: mach_port_t;
+	childStart : vm_address_t;
+	childStateAddr : vm_address_t;
+  out	status	: ReturnStatus;
+  out	processID : Proc_PID;
+  out	pendingSig : boolean_t);
+
+/* 
+ * Get the process ID, parent's process ID, user ID, and effective user ID, 
+ * all for the current process.
+ */
+/* 62 */
+routine Proc_GetIDsStub(
+	server	: mach_port_t;
+  out	pid	: Proc_PID;
+  out	parentPid : Proc_PID;
+  out	userID	: int;
+  out	effUserID : int;
+  out	pendingSig : boolean_t);
+
+/* 
+ * Old exec stub.  "argArray" is the address of an array of pointers to
+ * argument strings.  "envArray" is the address of an array of pointers to
+ * environment strings.  The server has to manually pull all the strings 
+ * in.  If successful, the return message is not generated.  Instead, the
+ * process is reset to start executing the program.
+ */
+
+/* 63 */
+routine Proc_OldExecEnvStub(
+	server	: mach_port_t;
+	name	: Fs_PathName;
+	argArray : vm_address_t; /* in array */
+	envArray : vm_address_t; /* in array */
+	debugMe	: boolean_t;
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+
+/* 
+ * The process voluntarily exits, with a status code of "status".
+ */
+
+/* 64 */
+routine Proc_RawExitStub(
+	server	: mach_port_t;
+	status	: int);
+
+/* 
+ * Wait for a child process to terminate.  "pidArray" is an array of 
+ * "numPids" process IDs; it is a list of child processes that the caller 
+ * is interested in.  If the array is empty (numPids is 0), any child is 
+ * considered.  If "usage" is non-null, it should point to a Proc_ResUsage 
+ * structure (to get resource usage information for the terminated 
+ * process). 
+ */
+/* 65 */
+routine Proc_WaitStub(
+	server	: mach_port_t;
+	numPids	: int;
+	pidArray : vm_address_t; /* in array */
+	flags	: int;
+  out	procID	: Proc_PID;
+  out	reason : int;
+  out	procStatus : int;
+  out	subStatus : int;
+  	usage	: vm_address_t;	/* out array */
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+
+/* 
+ * No Sprite return status, because this call should always succeed.
+ */
+/* 66 */
+routine Proc_DetachStub(
+	server	: mach_port_t;
+	detachStatus : int;
+  out	pendingSig : boolean_t);
+
+/* 67 */
+routine Proc_GetFamilyIDStub(
+	server	: mach_port_t;
+	pid	: Proc_PID;
+  out	status	: ReturnStatus;
+  out	family	: Proc_PID;
+  out	pendingSig : boolean_t);
+
+/* 68 */
+routine Proc_GetGroupIDsStub(
+	server	: mach_port_t;
+ inout	numGIDs	: int;
+	gidArray : vm_address_t; /* out array */
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+
+/* 69 */
+routine Proc_GetPCBInfoStub(
+	server	: mach_port_t;
+	firstPid : Proc_PID;
+	lastPid	: Proc_PID;
+	hostID	: int;
+	infoSize : int;		/* size of structure (1 buffer) */
+	buffers	: vm_address_t;
+	argStrings : vm_address_t;
+  out	status	: ReturnStatus;
+  out	buffersUsed : int;
+  out	pendingSig : boolean_t);
+
+/* 70 */
+routine Proc_SetFamilyIDStub(
+	server	: mach_port_t;
+	pid	: Proc_PID;
+	family	: Proc_PID;
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+
+/* 71 */
+routine Proc_SetGroupIDsStub(
+	server	: mach_port_t;
+	numGIDs	: int;
+	gidArray : vm_address_t; /* in array */
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+
+/* 72 */
+routine Proc_SetIDsStub(
+	server	: mach_port_t;
+	userID	: int;
+	effUserID : int;
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+
+/* 73 */
+routine Proc_GetIntervalTimerStub(
+	server	: mach_port_t;
+	timerType : int;
+  out	status	: ReturnStatus;
+  out	timer	: Proc_TimerInterval;
+  out	pendingSig : boolean_t);
+
+
+/* 74 */
+routine Proc_SetIntervalTimerStub(
+	server	: mach_port_t;
+	timerType : int;
+	newTimer : Proc_TimerInterval;
+  out	status	: ReturnStatus;
+  out	oldTimer : Proc_TimerInterval;
+  out	pendingSig : boolean_t);
+
+/* 75 */
+routine Proc_GetHostIDsStub(
+	server	: mach_port_t;
+  out	virtHost : int;
+  out	physHost : int;
+  out	pendingSig : boolean_t);
+
+/* 
+ * New exec stub.  The strings are passed in via MIG.
+ */
+
+/* 76 */
+routine Proc_ExecEnvStub(
+	server	: mach_port_t;
+	name	: Fs_PathName;
+	argTable : Proc_OffsetTable;
+	argStrings : Proc_Strings;
+	envTable : Proc_OffsetTable;
+	envStrings : Proc_Strings;
+	debugMe	: boolean_t;
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+
+/* Dummy entries for forward compatibility. */
+/* 77 */
+skip;
+/* 78 */
+skip;
+/* 79 */
+skip;
+/* 80 */
+skip;
+/* 81 */
+skip;
+/* 82 */
+skip;
+/* 83 */
+skip;
+/* 84 */
+skip;
+
+
+/* 				*** SIG ***  		*/
+
+/* 85 */
+routine Sig_PauseStub(
+	server	: mach_port_t;
+	holdMask : int;
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+
+/* 86 */
+routine Sig_SendStub(
+	server	: mach_port_t;
+	sigNum	: int;
+	id	: Proc_PID;	/* process or family ID */
+	isFamily : boolean_t;
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+
+/* 87 */
+routine Sig_SetActionStub(
+	server	: mach_port_t;
+	sigNum	: int;
+	newAction : Sig_Action;
+	sigtramp : vm_address_t; /* address of trampoline routine */
+  out	status	: ReturnStatus;
+  out	oldAction : Sig_Action;
+  out	pendingSig : boolean_t);
+
+/* 88 */
+routine Sig_SetHoldMaskStub(
+	server	: mach_port_t;
+	newMask	: int;
+  out	oldMask	: int;
+  out	pendingSig : boolean_t);
+
+/* 
+ * Sig_Context has a machine-dependent length, so we'll just use an address 
+ * in the MIG interface.  To avoid problems with disposal of the reply
+ * port, make this a SimpleRoutine.
+ */
+
+/* 89 */
+simpleroutine Sig_ReturnStub(
+	server	: mach_port_t;
+	sigContext : vm_address_t);
+
+/* 90 */
+routine Sig_GetSignalStub(
+	server	: mach_port_t;
+  out	status	: ReturnStatus;
+  out	handler	: vm_address_t;	/* address of user signal handler */
+  out	sigNum	: int;
+  out	sigCode	: int;
+	sigContext : vm_address_t; /* out array */
+  out	sigAddr	: vm_address_t); /* address of the fault */
+
+
+/* More debugging routines */
+
+/* 91 */
+routine Test_PutTimeStub(
+	server	: mach_port_t;
+	time	: int;		/* seconds past the epoch */
+	overwrite : boolean_t);	/* overwrite previous string */
+
+/* 
+ * Assuming that malloc debugging is turned on, print the debugging 
+ * information on the console.
+ */
+/* 92 */
+routine Test_MemCheckStub(
+	server	: mach_port_t);
+
+/* 
+ * Bypass almost all the usual Sprite call processing (for performance 
+ * tuning).
+ */
+/* 93 */
+routine Test_Return1Stub(
+	server	: mach_port_t);
+
+/* 
+ * Bypass some Sprite call bookkeeping.
+ */
+/* 94 */
+routine Test_Return2Stub(
+	server	: mach_port_t);
+
+/* dummy routines for forward compatibility */
+/* 95 */
+skip;
+
+/* 			       *** RPC ***		*/
+
+/* 96 */
+routine Test_RpcStub(
+	server	: mach_port_t;
+	command	: int;
+	args	: vm_address_t;	/* in/out array */
+  out	status	: ReturnStatus;
+  out	pendingSig : boolean_t);
+
+/* dummy routines for forward compatibility */
+/* 97 */
+skip;
+/* 98 */
+skip;
+/* 99 */
+skip;
+
+/* 
+ * NOTE: You can't add any more entries after this, because of the MIG 
+ * implementation restriction on the number of routines in a module.  If 
+ * you need more routines, you should probably split the Test routines into 
+ * their own module.
+ */
+@
+
+
+1.18
+log
+@Add Vm_CmdInbandStub.
+@
+text
+@d21 1
+a21 1
+rcsid "$Header: /user5/kupfer/spriteserver/src/sprited/sys/RCS/spriteSrv.defs,v 1.17 92/06/10 15:23:38 kupfer Exp Locker: kupfer $";
+d756 4
+a759 1
+/* dummy routines for forward compatibility */
+d761 6
+a766 1
+skip;
+d768 4
+a771 1
+skip;
+@
+
+
+1.17
+log
+@New Proc_ExecEnv stub (env. and arg strings are passed in with the RPC).
+@
+text
+@d21 1
+a21 1
+rcsid "$Header: /user5/kupfer/spriteserver/src/sprited/sys/RCS/spriteSrv.defs,v 1.16 92/04/16 11:33:08 kupfer Exp Locker: kupfer $";
+d178 20
+a198 2
+/* 18 */
+skip;
+@
+
+
+1.16
+log
+@Get subsystem number from a header file.  Add comments about dependent files.
+Add length parameter to Vm_CmdStub.
+@
+text
+@d21 1
+a21 1
+rcsid "$Header: /user5/kupfer/spriteserver/src/sprited/sys/RCS/spriteSrv.defs,v 1.15 92/04/02 21:01:36 kupfer Exp Locker: kupfer $";
+d495 5
+a499 5
+ * Replace the process's address space with the named program.  "argArray" 
+ * is the address of an array of pointers to argument strings.  "envArray" 
+ * is the address of an array of pointers to environment strings.  If 
+ * successful, the return message is not generated.  Instead, the process 
+ * is reset to start executing the program.
+d503 1
+a503 1
+routine Proc_ExecEnvStub(
+d630 16
+a646 2
+/* 76 */
+skip;
+@
+
+
+1.15
+log
+@Add Sys_GetMachineInfoStub, Sys_SetTimeOfDayStub,
+Net_InstallRouteStub, Proc_GetHostIDsStub.  Add pendingSig flag to
+Sig_PauseStub.
+@
+text
+@d5 5
+d21 1
+a21 1
+rcsid "$Header: /user5/kupfer/spriteserver/src/sprited/sys/RCS/spriteSrv.defs,v 1.14 92/03/12 17:27:03 kupfer Exp Locker: kupfer $";
+d23 3
+a25 1
+subsystem spriteSrv 37000;	/* Pick official number someday? */
+d173 1
+@
+
+
+1.14
+log
+@Add Proc_GetIntervalTimerStub, Proc_SetIntervalTimerStub.  Make
+Sig_ReturnStub a SimpleRoutine.
+@
+text
+@d16 1
+a16 1
+rcsid "$Header: /user5/kupfer/spriteserver/src/sprited/sys/RCS/spriteSrv.defs,v 1.13 92/02/27 16:01:18 kupfer Exp Locker: kupfer $";
+d104 17
+a125 4
+/* 9 */
+skip;
+/* 10 */
+skip;
+d441 4
+d446 7
+a452 1
+skip;
+d615 7
+a622 2
+/* 75 */
+skip;
+d649 2
+a650 1
+  out	status	: ReturnStatus);
+@
+
+
+1.13
+log
+@Signals support, add comments about use of pointers.  Add Vm_CmdStub.
+@
+text
+@d6 1
+a6 1
+ * Copyright 1991 Regents of the University of California
+d16 1
+a16 1
+rcsid "$Header: /user5/kupfer/spriteserver/src/sprited/sys/RCS/spriteSrv.defs,v 1.12 92/01/21 14:49:01 kupfer Exp Locker: kupfer $";
+a573 1
+/* Dummy entries for forward compatibility. */
+d575 8
+a582 1
+skip;
+d584 9
+a592 1
+skip;
+d651 2
+a652 1
+ * in the MIG interface.
+d656 1
+a656 1
+routine Sig_ReturnStub(
+d658 1
+a658 3
+	sigContext : vm_address_t;
+	restoreState : boolean_t;
+  out	pendingSig : boolean_t);
+@
+
+
+1.12
+log
+@Flush tempFs references.
+@
+text
+@d16 1
+a16 1
+rcsid "$Header: /r3/kupfer/spriteserver/src/sprited/sys/RCS/spriteSrv.defs,v 1.11 91/12/18 23:25:54 kupfer Exp Locker: kupfer $";
+d62 1
+a62 1
+	buffer	: vm_address_t;
+d68 4
+d75 2
+a76 1
+	flags	: int);
+d88 2
+a89 1
+  out	status	: ReturnStatus);
+d100 3
+a102 1
+	argPtr	: vm_address_t);
+d138 2
+a139 1
+  out	buffer	: vm_address_t);
+d146 10
+a155 1
+  out	status	: ReturnStatus);
+a157 2
+/* 17 */
+skip;
+d190 2
+a191 1
+  out	status	: ReturnStatus);
+d199 2
+a200 1
+  out	status	: ReturnStatus);
+d206 2
+a207 1
+  out	status	: ReturnStatus);
+d215 2
+a216 1
+  out	attributes : Fs_Attributes);
+d223 2
+a224 1
+  out	status	: ReturnStatus);
+d232 2
+a233 1
+  out	status	: ReturnStatus);
+d240 2
+a241 1
+  out	status	: ReturnStatus);
+d250 2
+a251 1
+  out	streamID : int);
+d258 1
+a258 1
+	buffer	: vm_address_t;
+d260 2
+a261 1
+  out	linkLength : int);
+d267 2
+a268 1
+  out	status	: ReturnStatus);
+d274 2
+a275 1
+  out	status	: ReturnStatus);
+d282 2
+a283 1
+  out	status	: ReturnStatus);
+d292 2
+a293 1
+  out	status	: ReturnStatus);
+d301 2
+a302 1
+  out	status	: ReturnStatus);
+d308 2
+a309 1
+  out	status	: ReturnStatus);
+d316 2
+a317 1
+  out	outStream : int);
+d324 2
+a325 1
+  out	attr	: Fs_Attributes);
+d332 2
+a333 1
+  out	status	: ReturnStatus);
+d341 1
+a341 1
+	inBuf	: vm_address_t;
+d343 3
+a345 2
+	outBuf	: vm_address_t;
+  out	status	: ReturnStatus);
+d352 1
+a352 1
+	buffer	: vm_address_t;
+d354 2
+a355 1
+  out	bytesRead : int);
+d363 2
+a364 1
+  out	status	: ReturnStatus);
+d371 1
+a371 1
+	buffer	: vm_address_t;
+d373 2
+a374 1
+  out	bytesWritten : int);
+d381 3
+a383 2
+	buffer	: vm_address_t;
+  out	status	: ReturnStatus);
+d389 2
+a390 1
+  out	oldPermissions : int);
+d402 3
+a404 3
+	readMask : vm_address_t;
+	writeMask: vm_address_t;
+	exceptMask : vm_address_t;
+d406 2
+a407 1
+  out	numReady : int);
+d416 2
+a417 1
+  out	status	: ReturnStatus);
+d447 2
+a448 1
+  out	processID : Proc_PID);
+d460 2
+a461 1
+  out	effUserID : int);
+d475 2
+a476 2
+	argArray : vm_address_t;
+	envArray : vm_address_t;
+d478 2
+a479 1
+  out	status	: ReturnStatus);
+d502 1
+a502 1
+	pidArray : vm_address_t;
+d508 3
+a510 2
+  	usage	: vm_address_t;
+  out	status	: ReturnStatus);
+d518 2
+a519 1
+	detachStatus : int);
+d526 2
+a527 1
+  out	family	: Proc_PID);
+d533 3
+a535 2
+	gidArray : vm_address_t;
+  out	status	: ReturnStatus);
+d547 2
+a548 1
+  out	buffersUsed : int);
+d555 2
+a556 1
+  out	status	: ReturnStatus);
+d562 3
+a564 2
+	gidArray : vm_address_t;
+  out	status	: ReturnStatus);
+d571 2
+a572 1
+  out	status	: ReturnStatus);
+d599 4
+d604 5
+a608 1
+skip;
+d610 8
+a617 1
+skip;
+d619 9
+a627 1
+skip;
+d629 11
+a639 1
+skip;
+d641 6
+a646 1
+skip;
+d648 8
+a655 1
+skip;
+d688 3
+a690 2
+	args	: vm_address_t;
+  out	status	: ReturnStatus);
+@
+
+
+1.11
+log
+@Add Proc_DetachStub, Proc_GetFamilyIDStub, Proc_GetGroupIDsStub,
+Proc_GetPCBInfoStub, Proc_SetFamilyIDStub, Proc_SetGroupIDsStub,
+Proc_SetIDsStub.
+@
+text
+@d16 1
+a16 1
+rcsid "$Header: /r3/kupfer/spriteserver/src/sprited/sys/RCS/spriteSrv.defs,v 1.10 91/12/12 21:11:11 kupfer Exp Locker: kupfer $";
+a165 5
+/* 
+ * XXX this should eventually be replaced by the more general 
+ * GetAttributes stub, but for right now I don't want to worry about 
+ * either CopyOut or describing the attributes struct for MIG.
+ */
+d167 1
+a167 5
+routine TempFs_LengthStub(
+	server	: mach_port_t;
+	fileName : Fs_PathName;
+  out	status	: ReturnStatus;
+  out	length	: int);
+@
+
+
+1.10
+log
+@Add Vm_CreateVAStub & comment about Fs_SelectStub arguments.
+@
+text
+@d16 1
+a16 1
+rcsid "$Header: /r3/kupfer/spriteserver/src/sprited/sys/RCS/spriteSrv.defs,v 1.9 91/12/01 21:58:00 kupfer Exp Locker: kupfer $";
+d475 3
+a477 1
+/* Dummy entries for forward compatibility. */
+d479 4
+a482 1
+skip;
+d484 6
+a489 1
+skip;
+d491 6
+a496 1
+skip;
+d498 11
+a508 1
+skip;
+d510 6
+a515 1
+skip;
+d517 6
+a522 1
+skip;
+d524 7
+a530 1
+skip;
+@
+
+
+1.9
+log
+@Snapshot.  FS appears to work.
+@
+text
+@d16 1
+a16 1
+rcsid "$Header: /r3/kupfer/spriteserver/src/sprited/sys/RCS/spriteSrv.defs,v 1.8 91/11/14 10:02:03 kupfer Exp Locker: kupfer $";
+d132 7
+a139 2
+/* 16 */
+skip;
+d361 4
+@
+
+
+1.8
+log
+@Snapshot. net, rpc, recov modules added.
+@
+text
+@d16 1
+a16 1
+rcsid "$Header: /r3/kupfer/spriteserver/src/sprited/sys/RCS/spriteSrv.defs,v 1.7 91/10/18 18:07:32 kupfer Exp Locker: kupfer $";
+a165 1
+
+a172 2
+
+/* Dummy entries for forward compatibility. */
+d174 6
+a179 1
+skip;
+d181 7
+a187 1
+skip;
+d189 5
+a193 1
+skip;
+d195 7
+a201 1
+skip;
+d203 6
+a208 1
+skip;
+d210 7
+a216 1
+skip;
+d218 6
+a223 1
+skip;
+d225 8
+a232 1
+skip;
+d234 8
+a241 1
+skip;
+d243 5
+a247 1
+skip;
+d249 5
+a253 1
+skip;
+d255 6
+a260 1
+skip;
+d262 8
+a269 1
+skip;
+d271 7
+a277 1
+skip;
+d279 5
+a283 1
+skip;
+d285 6
+a290 1
+skip;
+d292 6
+a297 1
+skip;
+d299 6
+a304 1
+skip;
+d306 10
+a315 1
+skip;
+d317 8
+a324 1
+skip;
+d326 7
+a332 1
+skip;
+d334 8
+a341 1
+skip;
+d343 7
+a349 1
+skip;
+d351 5
+a355 1
+skip;
+d357 11
+a367 1
+skip;
+d369 9
+a377 1
+skip;
+@
+
+
+1.7
+log
+@Add Test_MemCheckStub.
+@
+text
+@d16 1
+a16 1
+rcsid "$Header: /r3/kupfer/spriteserver/src/sprited/sys/RCS/spriteSrv.defs,v 1.6 91/10/04 11:37:45 kupfer Exp Locker: kupfer $";
+d29 3
+a31 3
+/* 
+ * Debug print routines
+ */
+d33 1
+d38 1
+d43 1
+d48 1
+d53 1
+d59 1
+d66 1
+a66 1
+/* Sys */
+d68 1
+d77 1
+d86 11
+d101 1
+a101 4
+skip;
+skip;
+skip;
+skip;
+d103 1
+d105 7
+d114 1
+a114 3
+/* 
+ * VM
+ */
+d122 1
+d127 2
+a128 2
+	offset	: int;
+  	length	: int;
+d133 1
+d135 1
+d137 1
+d139 1
+d141 1
+d143 1
+d145 1
+d147 1
+d149 1
+d151 1
+d153 1
+d155 1
+d159 1
+a159 3
+/* 
+ * FS
+ */
+d167 1
+d176 1
+d178 1
+d180 1
+d182 1
+d184 1
+d186 1
+d188 1
+d190 1
+d192 1
+d194 1
+d196 1
+d198 1
+d200 1
+d202 1
+d204 1
+d206 1
+d208 1
+d210 1
+d212 1
+d214 1
+d216 1
+d218 1
+d220 1
+d222 1
+d224 1
+d226 1
+d228 1
+d230 1
+d232 1
+d234 1
+d236 1
+d238 1
+d242 1
+a242 1
+/* Proc */
+d249 1
+d261 1
+d277 1
+d290 1
+d303 1
+d317 1
+a317 6
+skip;
+skip;
+skip;
+skip;
+skip;
+skip;
+d319 1
+d321 43
+d365 1
+a366 15
+skip;
+skip;
+skip;
+skip;
+skip;
+skip;
+skip;
+skip;
+skip;
+skip;
+skip;
+skip;
+skip;
+skip;
+skip;
+d371 1
+d381 1
+d386 1
+d388 1
+d390 14
+d405 1
+d407 9
+@
+
+
+1.6
+log
+@Snapshot.  fork/exec work.
+@
+text
+@d16 1
+a16 1
+rcsid "$Header: /r3/kupfer/spriteserver/src/sprited/sys/RCS/spriteSrv.defs,v 1.5 91/09/26 12:13:01 kupfer Exp Locker: kupfer $";
+d273 1
+a273 1
+/* More debug print routines */
+d280 7
+a287 1
+skip;
+@
+
+
+1.5
+log
+@Append "Stub" to procedure names, so that user code can call routines
+with the clean names and not know anything about Mach.
+@
+text
+@d16 1
+a16 1
+rcsid "$Header: /r3/kupfer/spriteserver/src/sprited/sys/RCS/spriteSrv.defs,v 1.4 91/09/23 14:20:03 kupfer Exp Locker: kupfer $";
+d29 3
+a31 1
+/* Debug print routines */
+d60 1
+a60 1
+/* System control */
+d66 23
+d90 3
+a92 1
+/* VM */
+d109 14
+a122 1
+/* FS */
+d125 4
+d139 147
+@
+
+
+1.4
+log
+@Snapshot.  Server is multithreaded internally.
+@
+text
+@d16 1
+a16 1
+rcsid "$Header: /r3/kupfer/spriteserver/src/sprited/sys/RCS/spriteSrv.defs,v 1.3 91/08/15 14:23:36 kupfer Exp Locker: kupfer $";
+d31 1
+a31 1
+routine Test_PutDecimal(
+d35 1
+a35 1
+routine Test_PutHex(
+d39 1
+a39 1
+routine Test_PutOctal(
+d43 1
+a43 1
+routine Test_PutMessage(
+d47 1
+a47 1
+routine	Test_PutString(
+d52 1
+a52 1
+routine Test_GetString(
+d60 1
+a60 1
+routine Sys_Shutdown(
+@
+
+
+1.3
+log
+@Snapshot.  Read-write mapped files work.
+@
+text
+@d16 1
+a16 1
+rcsid "$Header: /user6/kupfer/spriteserver/src/printfd/RCS/spriteSrv.defs,v 1.2 91/07/22 11:35:18 kupfer Exp Locker: kupfer $";
+d47 9
+d57 1
+d61 2
+a62 1
+	server	: mach_port_t);
+@
+
+
+1.2
+log
+@Add Sys_Shutdown.
+@
+text
+@d16 1
+a16 1
+rcsid "$Header: /user6/kupfer/spriteserver/src/printfd/RCS/spriteSrv.defs,v 1.1 91/07/17 11:15:10 kupfer Exp Locker: kupfer $";
+d31 1
+a31 1
+routine Sys_PutDecimal(
+d35 1
+a35 1
+routine Sys_PutHex(
+d39 1
+a39 1
+routine Sys_PutOctal(
+d43 1
+a43 1
+routine Sys_PutMessage(
+d45 1
+a45 1
+	value	: MessageBuffer);
+d52 32
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+rcsid "$Header$";
+d29 2
+d47 5
+@

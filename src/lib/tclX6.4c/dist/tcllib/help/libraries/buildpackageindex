@@ -1,0 +1,4 @@
+
+          buildpackageindex libfile
+          Build an index for a package library.  The the libfile name
+          must end with the suffix .tlib.

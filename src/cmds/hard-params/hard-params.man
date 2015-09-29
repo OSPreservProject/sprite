@@ -1,0 +1,48 @@
+'\" Copyright 1990 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/cmds/hard-params/RCS/hard-params.man,v 1.1 90/08/09 16:39:38 kupfer Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS PROGNAME cmds
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+hard-params \- Describe the hardware being run on
+.SH SYNOPSIS
+\fBhard-params \fR [\fIoptions\fR] 
+.SH OPTIONS
+.IP "\fB\-l" 15
+Print a series of #define's for
+the ANSI standard 
+.B limits.h 
+include file, excluding \fBMB_MAX_CHAR\fR.
+.IP "\fB\-f" 15
+Print a series of #define's for the ANSI standard
+.B float.h 
+include file.  
+.IP "\fB\-v" 15
+Print a verbose prose description of the machine.  When combined with
+either of the other two options, the prose is embedded in C comments.
+.BE
+
+.SH DESCRIPTION
+.PP
+.B hard-params
+determines characteristics about the machine it is run on, such as the
+number of bytes in an \fBint\fR, the byte order, and the floating point
+format.  It displays them either as English text or as C code.
+.PP
+.B hard-params
+also checks for bugs in 
+.B printf
+and \fBscanf\fR,
+and it checks for compiler bugs like botched casts.
+
+.SH KEYWORDS
+characteristics, hardware, header, ANSI, tests

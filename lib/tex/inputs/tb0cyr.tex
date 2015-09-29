@@ -1,0 +1,580 @@
+%		tb12cyr.tex
+
+\font\tencyr=mcyr10
+\input cyracc.def
+%\input xfont.chart
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%		*****	XFONT.CHART	*****		15 Aug 85
+%
+%	These macros were extracted from Knuth's WEBMAC.TeX.
+
+\catcode`\@=11
+
+\def\oct#1{\hbox{\rm\'{}\kern-.2em\it#1\/\kern.05em}} % octal constant
+\def\hex#1{\hbox{\rm\H{}\tt#1}} % hexadecimal constant
+
+% macros for font tables
+\def\oddline#1{\cr
+  \noalign{\nointerlineskip}
+  \multispan{19}\hrulefill&
+  \setbox0=\hbox{\lower 2.3pt\hbox{\hex{#1x}}}\smash{\box0}\cr
+  \noalign{\nointerlineskip}}
+\def\evenline{\cr\noalign{\hrule}}
+\def\chartstrut{\lower4.5pt\vbox to14pt{}}
+%	In the TeXbook, each chart drops to the bottom of the page;
+%	suppress this and the ensuing page break.
+%\def\beginchart#1{$$\postdisplaypenalty=-10000 \global\count@=0 #1
+\def\beginchart#1{$$\global\count@=0 #1
+  \halign to\hsize\bgroup
+    \chartstrut##\tabskip0pt plus10pt&
+    &\hfil##\hfil&\vrule##\cr
+    \lower6.5pt\null
+    &&&\oct0&&\oct1&&\oct2&&\oct3&&\oct4&&\oct5&&\oct6&&\oct7&\evenline}
+\def\endchart{\raise11.5pt\null&&&\hex 8&&\hex 9&&\hex A&&\hex B&
+  &\hex C&&\hex D&&\hex E&&\hex F&\cr\egroup$$}
+\def\:{\setbox0=\hbox{\char\count@}%
+  \ifdim\ht0>7.5pt\reposition
+  \else\ifdim\dp0>2.5pt\reposition\fi\fi
+  \box0\global\advance\count@ by1 }
+\def\reposition{\setbox0=\hbox{$\vcenter{\kern2pt\box0\kern2pt}$}}
+\def\normalchart{%
+  &\oct{00x}&&\:&&\:&&\:&&\:&&\:&&\:&&\:&&\:&&\oddline0
+  &\oct{01x}&&\:&&\:&&\:&&\:&&\:&&\:&&\:&&\:&\evenline
+  &\oct{02x}&&\:&&\:&&\:&&\:&&\:&&\:&&\:&&\:&&\oddline1
+  &\oct{03x}&&\:&&\:&&\:&&\:&&\:&&\:&&\:&&\:&\evenline
+  &\oct{04x}&&\:&&\:&&\:&&\:&&\:&&\:&&\:&&\:&&\oddline2
+  &\oct{05x}&&\:&&\:&&\:&&\:&&\:&&\:&&\:&&\:&\evenline
+  &\oct{06x}&&\:&&\:&&\:&&\:&&\:&&\:&&\:&&\:&&\oddline3
+  &\oct{07x}&&\:&&\:&&\:&&\:&&\:&&\:&&\:&&\:&\evenline
+  &\oct{10x}&&\:&&\:&&\:&&\:&&\:&&\:&&\:&&\:&&\oddline4
+  &\oct{11x}&&\:&&\:&&\:&&\:&&\:&&\:&&\:&&\:&\evenline
+  &\oct{12x}&&\:&&\:&&\:&&\:&&\:&&\:&&\:&&\:&&\oddline5
+  &\oct{13x}&&\:&&\:&&\:&&\:&&\:&&\:&&\:&&\:&\evenline
+  &\oct{14x}&&\:&&\:&&\:&&\:&&\:&&\:&&\:&&\:&&\oddline6
+  &\oct{15x}&&\:&&\:&&\:&&\:&&\:&&\:&&\:&&\:&\evenline
+  &\oct{16x}&&\:&&\:&&\:&&\:&&\:&&\:&&\:&&\:&&\oddline7
+  &\oct{17x}&&\:&&\:&&\:&&\:&&\:&&\:&&\:&&\:&\evenline}
+
+\catcode`\@=12
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\def\cyr{\tencyr\cyracc}
+
+\setfirstfoot
+	\centerline{\vbox{\hsize=\onenarrowcolwd
+	\vskip 1pc
+	\beginchart\tencyr
+	\normalchart
+	\endchart
+	\smallskip
+	\centerline{The AMS cyrillic font -- |MCYR10|}
+	\medskip
+	{\cyr Meshchanski\u\i\ universitet, nakhodyashchi\u\i sya
+	na puti k Neskuchnomu, prazdnoval na dnyakh svo\u\i\ %
+	pyatidesyatiletni\u\i\ yublie\u\i.  Kogo vozili v Tity ili
+	gorodskuyu bol\cprime nitsu, tot, konechno, pomnit
+	zdorovenne\u\i shi\u\i, tr\"ekh\`etazhny\u\i\ domishche po
+	pravuyu ruku s vyvesko\u\i\ <Bogadel\cprime naya i Meshchanskie
+	uchilishcha> i tomu navernoe vstrechalis\cprime\ na puti verenitsy
+	uchenicheskikh par, solidno progulivaemykh nadziratelyami.}\endgraf
+	\vskip-.5pc
+	}}
+\endset
+
+\sectitle Fonts<
+
+\Title	Mathematical Symbols\cr
+	and Cyrillic Fonts\cr
+	Ready for Distribution
+\\Barbara Beeton\cr
+	American Mathematical Society
+\endx
+
+\pagexref{cyril}
+
+%	The text of this article has been changed from what was published
+%	in TUGboat vol 6 #2, owing to a change in the names of the fonts
+%	involved.
+
+The first general release of fonts created at the American Mathematical
+Society will be made in August, at about the time of the TUG meeting.
+This first release will consist of cyrillic and two 128-character fonts of
+mathematical symbols, all in various sizes and weights.  It is our
+intention that these fonts be added to the standard distribution, and
+we will make an effort to provide the necessary files to all sites from
+which the \TeX\ package is being distributed.  It will not be possible to
+provide this material directly to users, since the Society's DEC~20
+computer has proved singularly unsuitable for making tapes that can be
+read by any other kind of machine.
+
+A master tape will be delivered to Stanford by one of the AMS
+attendees at the TUG meeting.  This tape will contain the \MF78 sources
+necessary to generate the fonts in distribution format, along with
+several files of macros, documentation and user instructions.  Actual
+addition of this material to distribution tapes (and PC diskettes) has
+not yet been fully arranged, but it should be possible to announce
+these arrangements at the TUG meeting.
+
+\section {} Cyrillic
+
+The cyrillic font contains all letters found in the modern
+(post-revolutionary) cyrillic alphabet, as well as others found by
+Mathematical Reviews to be necessary for rendering bibliographic
+information in Russian, Ukrainian, Serbian, Georgian, and other Slavic
+and non-Slavic languages ordinarily published in cyrillic.  Accents
+which normally occur in these languages, as well as in such words as
+names of mathematicians whose work is regularly translated into
+Russian or one of the other languages covered by MR, are included in
+the font, as are all the digits and ordinary punctuation.  Several
+cells are still empty: the number of such cells is not sufficient to
+hold all the additional pre-revolutionary Russian letters, and there
+is not yet enough experience to indicate what else might most usefully
+(for MR) be included.
+
+The ``basic'' cyrillic font is |MCYR10|.  Names have been assigned to
+a number of variations, not all of which exist yet.  (In particular,
+there are no plans yet to create the \MF\ descriptions of the true
+``italic'' letters.)
+$$\vbox{\halign{#\quad&&{\tt#\unskip}\hfil\enspace&#\hfil\quad\cr
+	&MCYR &	lightface &		MCSL &	slanted\cr
+	&MCB &	bold &			MCBSL &	bold slanted\cr
+	&MCBX &	bold extended & 	MCSS &	sans serif\cr
+	&MCI &	italic &		MCSSB &	bold sans serif\cr
+	&MCBI &	bold italic\cr
+}}$$
+Font names have been assigned so that compression
+to 6~characters, using the first~3 and last~3 letters of longer names
+(a standard built into most implementations of \TeX\ for operating systems
+having such a limit, and announced through \TeX hax by David Fuchs),
+will always be unique.
+
+Keying of cyrillic to be rendered with this font is in accord with the
+current MR transliteration scheme, e.g.
+{\obeylines
+	Khrushch\"ev (|Khrushch\"ev|)${}\to{}${\cyr Khrushch\"ev}
+	Zhurnal (|Zhurnal|)${}\to{}${\cyr Zhurnal}
+	Ki{\"\i}v (|Ki{\"\i}v|)${}\to{}${\cyr Ki{\"\i}v}
+}		% end \obeylines
+
+\NoBlackBoxes
+\noindent
+|\font\tencyr=mcyr10 \def\cyr{\tencyr\cyracc} {\cyr ...}|\ sets the
+stage for proper transition to and from cyrillic.
+Most of the translation from keyed input to cyrillic is implemented by
+ligature instructions in the font itself.  A few letters require a
+``chain'' of ligatures: sh${}\to{}${\cyr sh}, shc${}\to{}${\cyr shc}
+(an obvious absurdity, but the roman combination never occurs legitimately),
+shch${}\to{}${\cyr shch}.  Letters rendered with accents in transliteration
+are trapped by macros defined in the file |CYRACC.DEF|\null:\hskip0pt plus 3em
+\u\i\ (|\u\i|)${}\to{}${\cyr\u\i},\penalty-2000\ %
+\=\i\ (|\=\i|)${}\to{}${\cyr\=\i},
+\"\i\ (|\"\i|)${}\to{}${\cyr\"\i}.  Both the macro accent traps and
+ligatures do the right thing in ordinary roman text and in |{\cyr ...}|;
+however, cyrillic items in tables cannot reliably be specified in the
+preamble, and in individual cells |\cyr| should be preceded by |\relax|
+to prevent premature expansion, and thus loss, of the macro instructions.
+
+\BlackBoxes
+
+Hyphenation is not automatically suppressed, but the patterns used will
+be those for English in the absence of a local override.  (We do not know
+whether any Russian patterns exist.)  For short passages, as the above
+sample, or isolated words, good luck may prevail.
+
+Documentation accompanying this font will include full keying instructions,
+the ligature specifications, and, of course, |CYRACC.DEF|\null.  Should the
+transliteration scheme in local use be different from the MR scheme
+(for example, an earlier MR scheme rendered {\cyr shch} as \v s\v c),
+it should be quite easy to modify |CYRACC.DEF| to accommodate it, and,
+if ligature changes are absolutely necessary, they may be implemented
+using the \TeX ware programs |TFtoPL| and |PLtoTF|.
+
+\section {} Mathematical symbols
+
+Mathematicians expanding the boundaries of their chosen areas often
+find that no suitably unambiguous notation exists with which to express
+new concepts.  First attempts usually consist in seeking out ever more
+exotic alphabets, but this fount is rather rapidly exhausted.
+Non-alphabetic symbols modeled after, or constructed from combinations
+of, existing ones is probably the next most profitable approach.  And
+failure in either of those attempts may yield something truly new.
+In any event, the net result is proliferation of symbols beyond
+what is available to most ordinary typesetting systems.
+
+The original symbol fonts, |CMSY| and |CMEX| (currently |AMSY| and
+|AMEX|), contain the most frequently used mathematical symbols, plus
+whatever else was needed for {\sl The Art of Computer Programming},
+volume 2, and other projects that Don Knuth was working on at the
+time.  Many other symbols are in common use in other subfields of
+mathematics, and the AMS and MR found it necessary to construct them.
+We have now filled one entire ``extra symbols'' font and most of a
+second.
+
+\NoBlackBoxes
+
+The naming scheme devised for these ``extra symbols'' fonts also
+leaves room for a third.  ``Medium'' and ``bold'' refer to the weight,
+medium being matched to the weight of the ``basic'' Computer Modern
+symbols in the |CMSY| font.
+$$\vbox{\halign{#\quad&&{\tt#\unskip}\hfil\enspace&#\hfil\quad\cr
+	&MSXM &	symbols 1 medium &	MSXB &	symbols 1 bold\cr
+	&MSYM &	symbols 2 medium &	MSYB &	symbols 2 bold\cr
+	&MSZM &	symbols 3 medium &	MSZB &	symbols 3 bold\cr
+}}$$
+
+\BlackBoxes
+
+Following the charts of the two symbol fonts, the symbols are listed
+by type, corresponding to the conventions of {\sl The \TeX book},
+Appendix F.  For each symbol is shown the font (1 or 2) and hex location,
+the symbol itself, and the symbol name.  Symbol names have been
+assigned in accordance with Don Knuth's principles, and reviewed by
+him, but all responsibility for errors and misinterpretations of
+his comments resides with the AMS and MR staff members who worked
+on the font development.
+
+\newpage
+\onenarrow
+\collgt=56pc
+\resetpagelgt
+
+%	Box the charts; otherwise the end display is too attractive
+%	as a break point, and this becomes 3 pages.
+
+\font\tenxsy=msxm10
+
+\vbox{\beginchart\tenxsy
+	\normalchart
+	\endchart
+	\medskip
+	\centerline{Extra symbols, font 1 -- |MSXM10|}
+}		% end box
+
+\vfil
+
+\font\tenxxsy=msym10
+
+\vbox{\beginchart\tenxxsy
+	\normalchart
+	\endchart
+	\medskip
+	\centerline{Extra symbols, font 2 -- |MSYM10|}
+}		% end box
+
+\unskip
+\eject
+\onemedium
+\collgt=\normalcollgt
+\resetpagelgt
+
+%	Definitions adapted from TeXbook, Appendix F, and from MANMAC.
+\def\beginsymbols{$$			% \displayindent=16pt
+  \halign\bgroup
+  &\qquad\hbox to6pt{\hss##\hss}\kern.2em&\hbox to20pt{##\hss}\enspace
+  &\hbox to10pt{\hss##\hss}\enspace&\hbox to80pt{##\hss}\cr}
+\outer\def\endsymbols{\crcr\egroup$$}
+
+\noindent
+{\it Lowercase Greek letters.}
+\beginsymbols
+2&\hex{7A}&\tenxxsy\char"7A&|\digamma|&
+	2&\hex{7B}&\tenxxsy\char"7B&|\varkappa|\cr
+\endsymbols
+
+\medbreak
+
+\noindent
+{\it Uppercase blackboard bold letters.}
+\beginsymbols
+2&\hex{41}&\tenxxsy\char"41&|\Bbb A|&
+	& & &|...|&
+	2&\hex{5A}&\tenxxsy\char"5A&|\Bbb Z|\cr
+\endsymbols
+
+\medbreak
+
+\noindent
+{\it Hebrew letters.}
+\beginsymbols
+2&\hex{69}&\tenxxsy\char"69&|\beth|&
+	2&\hex{6A}&\tenxxsy\char"6A&|\gimel|&
+	2&\hex{6B}&\tenxxsy\char"6B&|\daleth|\cr
+\endsymbols
+
+\medbreak
+
+\noindent
+{\it Miscellaneous symbols of type Ord.}
+\beginsymbols
+2&\hex{7E}&\tenxxsy\char"7E&|\hbar|&
+	1&\hex{38}&\tenxsy\char"38&|\backprime|&
+	1&\hex{39}&\tenxsy\char"39&|\varprime|\cr
+2&\hex{7D}&\tenxxsy\char"7D&|\hslash|&
+	1&\hex{03}&\tenxsy\char"03&|\square|&
+	1&\hex{04}&\tenxsy\char"04&|\blacksquare|\cr
+2&\hex{3F}&\tenxxsy\char"3F&|\varnothing|&
+	1&\hex{46}&\tenxsy\char"46&|\bigstar|&
+	1&\hex{4E}&\tenxsy\char"4E&|\blacktriangle|\cr
+1&\hex{73}&\tenxsy\char"73&|\circledS|&
+	1&\hex{4F}&\tenxsy\char"4F&|\triangledown|&
+	1&\hex{48}&\tenxsy\char"48&|\blacktriangledown|\cr
+2&\hex{40}&\tenxxsy\char"40&|\nexists|&
+	1&\hex{06}&\tenxsy\char"06&|\lozenge|&
+	1&\hex{07}&\tenxsy\char"07&|\blacklozenge|\cr
+1&\hex{7B}&\tenxsy\char"7B&|\complement|&
+	1&\hex{5D}&\tenxsy\char"5D&|\measuredangle|&
+	1&\hex{5E}&\tenxsy\char"5E&|\sphericalangle|\cr
+\endsymbols
+
+\medbreak
+
+\noindent
+{\it Binary operations.}
+\beginsymbols
+1&\hex{75}&\tenxsy\char"75&|\dotplus|&
+	1&\hex{65}&\tenxsy\char"65&|\Cap|&
+	1&\hex{7D}&\tenxsy\char"7D&|\circledcirc|\cr
+2&\hex{72}&\tenxxsy\char"72&|\smallsetminus|&
+	1&\hex{64}&\tenxsy\char"64&|\Cup|&
+	1&\hex{7E}&\tenxsy\char"7E&|\circledast|\cr
+2&\hex{6E}&\tenxxsy\char"6E&|\ltimes|&
+	1&\hex{66}&\tenxsy\char"66&|\curlywedge|&
+	1&\hex{7F}&\tenxsy\char"7F&|\circleddash|\cr
+2&\hex{6F}&\tenxxsy\char"6F&|\rtimes|&
+	1&\hex{67}&\tenxsy\char"67&|\curlyvee|&
+	1&\hex{01}&\tenxsy\char"01&|\boxplus|\cr
+1&\hex{68}&\tenxsy\char"68&|\leftthreetimes|&
+	1&\hex{5A}&\tenxsy\char"5A&|\barwedge|&
+	1&\hex{0C}&\tenxsy\char"0C&|\boxminus|\cr
+1&\hex{69}&\tenxsy\char"69&|\rightthreetimes|&
+	1&\hex{59}&\tenxsy\char"59&|\veebar|&
+	1&\hex{02}&\tenxsy\char"02&|\boxtimes|\cr
+2&\hex{3E}&\tenxxsy\char"3E&|\divideontimes|&
+	1&\hex{5B}&\tenxsy\char"5B&|\doublebarwedge|&
+	1&\hex{00}&\tenxsy\char"00&|\boxdot|\cr
+1&\hex{7C}&\tenxsy\char"7C&|\intercal|&
+	1&\hex{05}&\tenxsy\char"05&|\centerdot|\cr
+\endsymbols
+
+\medbreak
+
+\noindent
+{\it Relations.}
+\beginsymbols
+1&\hex{35}&\tenxsy\char"35&|\leqq|&
+	1&\hex{3D}&\tenxsy\char"3D&|\geqq|&
+	1&\hex{2B}&\tenxsy\char"2B&|\doteqdot|\cr
+1&\hex{36}&\tenxsy\char"36&|\leqslant|&
+	1&\hex{3E}&\tenxsy\char"3E&|\geqslant|&
+	1&\hex{24}&\tenxsy\char"24&|\circeq|\cr
+1&\hex{30}&\tenxsy\char"30&|\eqslantless|&
+	1&\hex{31}&\tenxsy\char"31&|\eqslantgtr|&
+	1&\hex{50}&\tenxsy\char"50&|\eqcirc|\cr
+1&\hex{2E}&\tenxsy\char"2E&|\lesssim|&
+	1&\hex{26}&\tenxsy\char"26&|\gtrsim|&
+	1&\hex{2C}&\tenxsy\char"2C&|\triangleq|\cr
+1&\hex{2F}&\tenxsy\char"2F&|\lessapprox|&
+	1&\hex{27}&\tenxsy\char"27&|\gtrapprox|&
+	1&\hex{3A}&\tenxsy\char"3A&|\risingdotseq|\cr
+2&\hex{6C}&\tenxxsy\char"6C&|\lessdot|&
+	2&\hex{6D}&\tenxxsy\char"6D&|\gtrdot|&
+	1&\hex{3B}&\tenxsy\char"3B&|\fallingdotseq|\cr
+1&\hex{6E}&\tenxsy\char"6E&|\lll|&
+	1&\hex{6F}&\tenxsy\char"6F&|\ggg|&
+	1&\hex{76}&\tenxsy\char"76&|\backsim|\cr
+1&\hex{37}&\tenxsy\char"37&|\lessgtr|&
+	1&\hex{3F}&\tenxsy\char"3F&|\gtrless|&
+	1&\hex{77}&\tenxsy\char"77&|\backsimeq|\cr
+\noalign{\vskip 1pt}
+1&\hex{51}&\tenxsy\char"51&|\lesseqgtr|&
+	1&\hex{52}&\tenxsy\char"52&|\gtreqless|&
+	2&\hex{73}&\tenxxsy\char"73&|\thicksim|\cr
+\noalign{\vskip 2pt}
+1&\hex{53}&\tenxsy\char"53&|\lesseqqgtr|&
+	1&\hex{54}&\tenxsy\char"54&|\gtreqqless|&
+	2&\hex{74}&\tenxxsy\char"74&|\thickapprox|\cr
+\noalign{\vskip 1pt}
+1&\hex{6A}&\tenxsy\char"6A&|\subseteqq|&
+	1&\hex{6B}&\tenxsy\char"6B&|\supseteqq|&
+	2&\hex{75}&\tenxxsy\char"75&|\approxeq|\cr
+1&\hex{62}&\tenxsy\char"62&|\Subset|&
+	1&\hex{63}&\tenxsy\char"63&|\Supset|&
+	1&\hex{6C}&\tenxsy\char"6C&|\bumpeq|\cr
+1&\hex{40}&\tenxsy\char"40&|\sqsubset|&
+	1&\hex{41}&\tenxsy\char"41&|\sqsupset|&
+	1&\hex{6D}&\tenxsy\char"6D&|\Bumpeq|\cr
+1&\hex{34}&\tenxsy\char"34&|\preccurlyeq|&
+	1&\hex{3C}&\tenxsy\char"3C&|\succcurlyeq|&
+	1&\hex{47}&\tenxsy\char"47&|\between|\cr
+1&\hex{32}&\tenxsy\char"32&|\curlyeqprec|&
+	1&\hex{33}&\tenxsy\char"33&|\curlyeqsucc|&
+	1&\hex{74}&\tenxsy\char"74&|\pitchfork|\cr
+1&\hex{2D}&\tenxsy\char"2D&|\precsim|&
+	1&\hex{25}&\tenxsy\char"25&|\succsim|&
+	1&\hex{5F}&\tenxsy\char"5F&|\varpropto|\cr
+2&\hex{77}&\tenxxsy\char"77&|\precapprox|&
+	2&\hex{76}&\tenxxsy\char"76&|\succapprox|&
+	1&\hex{74}&\tenxsy\char"74&|\smallamalg|\cr
+1&\hex{43}&\tenxsy\char"43&var.\ |\triangleleft|&
+	1&\hex{42}&\tenxsy\char"42&var.\ |\triangleright|&
+	1&\hex{4A}&\tenxsy\char"4A&|\blacktriangleleft|\cr
+1&\hex{45}&\tenxsy\char"45&|\trianglelefteq|&
+	1&\hex{44}&\tenxsy\char"44&|\trianglerighteq|&
+	1&\hex{49}&\tenxsy\char"49&|\blacktriangleright|\cr
+1&\hex{0F}&\tenxsy\char"0F&|\vDash|&
+	1&\hex{0D}&\tenxsy\char"0D&|\Vdash|&
+	1&\hex{0E}&\tenxsy\char"0E&|\Vvdash|\cr
+1&\hex{60}&\tenxsy\char"60&|\smallsmile|&
+	2&\hex{70}&\tenxxsy\char"70&|\shortmid|&
+	1&\hex{29}&\tenxsy\char"29&|\therefore|\cr
+1&\hex{61}&\tenxsy\char"61&|\smallfrown|&
+	2&\hex{71}&\tenxxsy\char"71&|\shortparallel|&
+	1&\hex{2A}&\tenxsy\char"2A&|\because|\cr
+2&\hex{7F}&\tenxxsy\char"7F&|\backepsilon|\cr
+\endsymbols
+
+\medbreak
+
+\noindent
+{\it Negated relations.}
+\beginsymbols
+2&\hex{04}&\tenxxsy\char"04&|\nless|&
+	2&\hex{05}&\tenxxsy\char"05&|\ngtr|&
+	2&\hex{1C}&\tenxxsy\char"1C&|\nsim|\cr
+2&\hex{02}&\tenxxsy\char"02&|\nleq|&
+	2&\hex{03}&\tenxxsy\char"03&|\ngeq|&
+	2&\hex{1D}&\tenxxsy\char"1D&|\napprox|\cr
+2&\hex{0A}&\tenxxsy\char"0A&|\nleqslant|&
+	2&\hex{0B}&\tenxxsy\char"0B&|\ngeqslant|&
+	2&\hex{2E}&\tenxxsy\char"2E&|\nshortmid|\cr
+2&\hex{14}&\tenxxsy\char"14&|\nleqq|&
+	2&\hex{15}&\tenxxsy\char"15&|\ngeqq|&
+	2&\hex{2F}&\tenxxsy\char"2F&|\nshortparallel|\cr
+2&\hex{0C}&\tenxxsy\char"0C&|\lneq|&
+	2&\hex{0D}&\tenxxsy\char"0D&|\gneq|&
+	2&\hex{2D}&\tenxxsy\char"2D&|\nmid|\cr
+2&\hex{08}&\tenxxsy\char"08&|\lneqq|&
+	2&\hex{09}&\tenxxsy\char"09&|\gneqq|&
+	2&\hex{2C}&\tenxxsy\char"2C&|\nparallel|\cr
+2&\hex{00}&\tenxxsy\char"00&|\lvertneqq|&
+	2&\hex{01}&\tenxxsy\char"01&|\gvertneqq|&
+	2&\hex{30}&\tenxxsy\char"30&|\nvdash|\cr
+2&\hex{12}&\tenxxsy\char"12&|\lnsim|&
+	2&\hex{13}&\tenxxsy\char"13&|\gnsim|&
+	2&\hex{32}&\tenxxsy\char"32&|\nvDash|\cr
+2&\hex{1A}&\tenxxsy\char"1A&|\lnapprox|&
+	2&\hex{1B}&\tenxxsy\char"1B&|\gnapprox|&
+	2&\hex{31}&\tenxxsy\char"31&|\nVdash|\cr
+2&\hex{06}&\tenxxsy\char"06&|\nprec|&
+	2&\hex{07}&\tenxxsy\char"07&|\nsucc|&
+	2&\hex{33}&\tenxxsy\char"33&|\nVDash|\cr
+2&\hex{0E}&\tenxxsy\char"0E&|\npreceq|&
+	2&\hex{0F}&\tenxxsy\char"0F&|\nsucceq|&
+	2&\hex{36}&\tenxxsy\char"36&|\ntriangleleft|\cr
+2&\hex{16}&\tenxxsy\char"16&|\precneqq|&
+	2&\hex{17}&\tenxxsy\char"17&|\succneqq|&
+	2&\hex{37}&\tenxxsy\char"37&|\ntriangleright|\cr
+2&\hex{10}&\tenxxsy\char"10&|\precnsim|&
+	2&\hex{11}&\tenxxsy\char"11&|\succnsim|&
+	2&\hex{35}&\tenxxsy\char"35&|\ntrianglelefteq|\cr
+2&\hex{18}&\tenxxsy\char"18&|\precnapprox|&
+	2&\hex{19}&\tenxxsy\char"19&|\succnapprox|&
+	2&\hex{34}&\tenxxsy\char"34&|\ntrianglerighteq|\cr
+2&\hex{2A}&\tenxxsy\char"2A&|\nsubseteq|&
+	2&\hex{2B}&\tenxxsy\char"2B&|\nsupseteq|\cr
+2&\hex{22}&\tenxxsy\char"22&|\nsubseteqq|&
+	2&\hex{23}&\tenxxsy\char"23&|\nsupseteqq|\cr
+2&\hex{28}&\tenxxsy\char"28&|\subsetneq|&
+	2&\hex{29}&\tenxxsy\char"29&|\supsetneq|\cr
+2&\hex{20}&\tenxxsy\char"20&var.\ |\subsetneq|&
+	2&\hex{21}&\tenxxsy\char"21&var.\ |\supsetneq|\cr
+2&\hex{24}&\tenxxsy\char"24&|\subsetneqq|&
+	2&\hex{25}&\tenxxsy\char"25&|\supsetneqq|\cr
+2&\hex{26}&\tenxxsy\char"26&var.\ |\subsetneqq|&
+	2&\hex{27}&\tenxxsy\char"27&var.\ |\subsetneqq|\cr
+
+\endsymbols
+
+\medbreak
+
+\noindent
+{\it Arrows.}
+\beginsymbols
+1&\hex{12}&\tenxsy\char"12&|\leftleftarrows|&
+	1&\hex{13}&\tenxsy\char"13&|\rightrightarrows|&
+	1&\hex{14}&\tenxsy\char"14&|\upuparrows|\cr
+1&\hex{1C}&\tenxsy\char"1C&|\leftrightarrows|&
+	1&\hex{1D}&\tenxsy\char"1D&|\rightleftarrows|&
+	1&\hex{15}&\tenxsy\char"15&|\downdownarrows|\cr
+1&\hex{57}&\tenxsy\char"57&|\Lleftarrow|&
+	1&\hex{56}&\tenxsy\char"56&|\Rrightarrow|&
+	1&\hex{0A}&\tenxsy\char"0A&|\updownarrow|\cr
+1&\hex{11}&\tenxsy\char"11&|\twoheadleftarrow|&
+	1&\hex{10}&\tenxsy\char"10&|\twoheadrightarrow|&
+	1&\hex{18}&\tenxsy\char"18&|\upharpoonleft|\cr
+1&\hex{1B}&\tenxsy\char"1B&|\leftarrowtail|&
+	1&\hex{1A}&\tenxsy\char"1A&|\rightarrowtail|&
+	1&\hex{19}&\tenxsy\char"19&|\downharpoonleft|\cr
+1&\hex{22}&\tenxsy\char"22&|\looparrowleft|&
+	1&\hex{23}&\tenxsy\char"23&|\looparrowright|&
+	1&\hex{16}&\tenxsy\char"16&|\upharpoonright|\cr
+2&\hex{78}&\tenxxsy\char"78&|\curvearrowleft|&
+	2&\hex{79}&\tenxxsy\char"79&|\curvearrowright|&
+	1&\hex{17}&\tenxsy\char"17&|\downharpoonright|\cr
+1&\hex{09}&\tenxsy\char"09&|\circlearrowleft|&
+	1&\hex{08}&\tenxsy\char"08&|\circlearrowright|&
+	1&\hex{0B}&\tenxsy\char"0B&|\leftrightharpoons|\cr
+1&\hex{1E}&\tenxsy\char"1E&|\Lsh|&
+	1&\hex{1F}&\tenxsy\char"1F&|\Rsh|&
+	1&\hex{28}&\tenxsy\char"28&|\multimap|\cr
+	1&\hex{20}&\tenxsy\char"20&|\rightsquigarrow|&
+	1&\hex{21}&\tenxsy\char"21&|\leftrightsquigarrow|\cr
+\endsymbols
+
+\medbreak
+
+\noindent
+{\it ``Negated'' arrows.}
+\beginsymbols
+2&\hex{38}&\tenxxsy\char"38&|\nleftarrow|&
+	2&\hex{39}&\tenxxsy\char"39&|\nrightarrow|&
+	2&\hex{3D}&\tenxxsy\char"3D&|\nleftrightarrow|\cr
+2&\hex{3A}&\tenxxsy\char"3A&|\nLeftarrow|&
+	2&\hex{3B}&\tenxxsy\char"3B&|\nRightarrow|&
+	2&\hex{3C}&\tenxxsy\char"3C&|\nLeftrightarrow|\cr
+\endsymbols
+
+\medbreak
+
+\noindent
+{\it Delimiters.}
+\beginsymbols
+1&\hex{70}&\tenxsy\char"70&|\ulcorner|&
+	1&\hex{71}&\tenxsy\char"71&|\urcorner|\cr
+1&\hex{78}&\tenxsy\char"78&|\llcorner|&
+	1&\hex{79}&\tenxsy\char"79&|\lrcorner|\cr
+\endsymbols
+
+\medbreak
+
+\noindent
+{\it Non-math symbols.}
+\beginsymbols
+1&\hex{58}&\tenxsy\char"58&|\checkmark|&
+	1&\hex{72}&\tenxsy\char"72&|\circledR|\cr
+1&\hex{7A}&\tenxsy\char"7A&|\maltese|&
+	1&\hex{55}&\tenxsy\char"55&|\yen|\cr
+\endsymbols
+
+\medbreak
+
+\noindent
+{\it Alternate names.}
+\beginsymbols
+1&\hex{6E}&\tenxsy\char"6E&|\llless|&
+	1&\hex{6F}&\tenxsy\char"6F&|\gggtr|&
+	1&\hex{2B}&\tenxsy\char"2B&|\Doteq|\cr
+1&\hex{65}&\tenxsy\char"65&|\doublecap|&
+	1&\hex{64}&\tenxsy\char"64&|\doublecup|&
+	1&\hex{16}&\tenxsy\char"16&|\restriction|\cr
+\endsymbols

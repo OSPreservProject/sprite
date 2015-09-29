@@ -1,0 +1,771 @@
+head     1.16;
+branch   ;
+access   ;
+symbols  ds3100:1.15 sun3:1.15 sprited:1.14.1 sun4nw:1.14 symm:1.14 spur:1.14;
+locks    ; strict;
+comment  @ * @;
+
+
+1.16
+date     92.12.13.18.20.13;  author mgbaker;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     92.04.22.15.20.33;  author mgbaker;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     91.03.20.11.27.32;  author kupfer;  state Exp;
+branches 1.14.1.1;
+next     1.13;
+
+1.13
+date     90.10.09.18.32.07;  author mendel;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     90.08.29.18.00.59;  author mgbaker;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     90.07.18.18.20.25;  author mgbaker;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     90.06.06.19.32.05;  author mgbaker;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     90.06.06.19.30.23;  author mgbaker;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     90.04.30.19.59.15;  author mgbaker;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     90.04.18.17.28.36;  author mgbaker;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     90.03.26.12.15.29;  author mgbaker;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     90.03.15.12.54.29;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.02.20.17.43.52;  author mgbaker;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.10.13.11.52.30;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.10.12.14.59.16;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.10.12.11.54.50;  author brent;  state Exp;
+branches ;
+next     ;
+
+1.14.1.1
+date     91.11.13.20.22.35;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Process to periodically ping other hosts to determine their status.
+Proc_CallFunc cannot reliably be used because in some cases the
+Proc_ServerProc's are all waiting for recovery.
+@
+
+
+1.16
+log
+@Code for server-driven recovery.
+@
+text
+@/* 
+ * recovProc.c --
+ *
+ *	Recov_Proc is the process that periodically checks the status
+ *	of other hosts.  It is pretty simple, but its in its own file
+ *	because of the monitor lock needed to synchronize access to
+ *	its list of interesting hosts.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/recov/recovProc.c,v 1.15 92/04/22 15:20:33 mgbaker Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <recov.h>
+#include <sync.h>
+#include <rpc.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+/*
+ * A host is "pinged" (to see when it reboots) at an interval determined by
+ * rpcPingSeconds.
+ */
+int recovPingSeconds = 30;
+/*
+ * Whether or not to ping at absolute intervals instead of 30 after the last
+ * ping finished.  This is used for testing the affects of the synchronization
+ * of client pinging on the servers.  The condition variable gets its 
+ * own lock because that seemed cleaner than using the monitor lock 
+ * (the condition variable has nothing to do with the data protected 
+ * by the monitor lock).  The condition variable is an extern so that it 
+ * can be referenced by Proc_Dump().
+ */
+Boolean			recov_AbsoluteIntervals = TRUE;
+Timer_QueueElement	recovIntervalElement;
+Sync_Condition		recovPingCondition;
+static Sync_Lock	recovPingConditionLock;
+/*
+ * A list of hosts to ping is used by Recov_Proc.
+ */
+typedef struct RecovPing {
+    List_Links links;
+    int spriteID;	/* The host we are interested in */
+    Boolean active;	/* TRUE if we are really interested in it */
+} RecovPing;
+
+List_Links recovPingListHdr;
+List_Links *recovPingList = &recovPingListHdr;
+/*
+ * Access to the ping list is monitored
+ */
+static Sync_Lock pingListLock;
+#define LOCKPTR (&pingListLock)
+
+static RecovPing *FirstHostToCheck _ARGS_((void));
+static RecovPing *NextHostToCheck _ARGS_((RecovPing *pingPtr));
+static void Deactivate _ARGS_((RecovPing *pingPtr));
+static void PingInterval _ARGS_((Timer_Ticks time, ClientData clientData));
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PingInterval --
+ *
+ *	Set up the callback routine used for recov pinging.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static void
+PingInterval(time, clientData)
+    Timer_Ticks	time;
+    ClientData	clientData;
+{
+    (void)Sync_GetLock(&recovPingConditionLock);
+    Sync_Broadcast(&recovPingCondition);
+    (void)Sync_Unlock(&recovPingConditionLock);
+    Timer_ScheduleRoutine(&recovIntervalElement, TRUE);
+
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RecovPingInit --
+ *
+ *	Set up the data structures used by the recovery ping process.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+RecovPingInit()
+{
+    Sync_LockInitDynamic(&pingListLock, "Recov:pingListLock");
+    Sync_LockInitDynamic(&recovPingConditionLock,
+			 "Recov:recovPingConditionLock");
+    List_Init(recovPingList);
+    if (recov_AbsoluteIntervals) {
+	recovIntervalElement.routine = PingInterval;
+	recovIntervalElement.clientData = 0;
+	recovIntervalElement.interval =
+		timer_IntOneSecond * recovPingSeconds;
+	Timer_ScheduleRoutine(&recovIntervalElement, TRUE);
+    }
+    return;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_Proc --
+ *
+ *	Recovery process that periodically pings other hosts to verify
+ *	that they are still and if they have rebooted since we last
+ *	heard from them.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Recov_Proc()
+{
+    RecovPing *pingPtr;
+    Time wait;
+    int check;
+
+    while (TRUE) {
+	/*
+	 * Calculate wait period inside loop so we can change it
+	 * on the fly.
+	 */
+	if (!recov_AbsoluteIntervals) {
+	    Time_Multiply(time_OneSecond, recovPingSeconds, &wait);
+	    Sync_WaitTime(wait);
+	} else {
+	    (void) Sync_GetLock(&recovPingConditionLock);
+	    (void) Sync_SlowWait(&recovPingCondition, &recovPingConditionLock,
+				 FALSE);
+	    (void) Sync_Unlock(&recovPingConditionLock);
+	}
+	if (sys_ShuttingDown) {
+	    printf("Recov_Proc exiting.\n");
+	    break;
+	}
+	/*
+	 * Scan the ping list looking for hosts we should check.
+	 * We'll ping them if there hasn't been recent message traffic,
+	 * and we'll deactivate our interest if there is no set
+	 * of reboot call backs associated with the host.
+	 */
+	if (recov_BlockingRpcs) {
+	    continue;
+	}
+	pingPtr = FirstHostToCheck();
+	while (pingPtr != (RecovPing *)NIL) {
+	    check = RecovCheckHost(pingPtr->spriteID);
+	    if (check > 0) {
+		int	oldState;
+		int	newState;
+		/*
+		 * Only put in ping event if the host wasn't alive last
+		 * time and it is this time, or the state otherwise changed.
+		 * Otherwise, all we see are ping events.
+		 */
+		newState = Recov_GetHostState(pingPtr->spriteID);
+		oldState = Recov_GetHostOldState(pingPtr->spriteID);
+		if (newState != oldState) {
+		    RECOV_TRACE(pingPtr->spriteID,
+			RecovGetLastHostState(pingPtr->spriteID),
+			RECOV_CUZ_PING_CHK);
+		    Recov_SetHostOldState(pingPtr->spriteID, newState);
+		}
+		recov_Stats.pings++;
+		Rpc_Ping(pingPtr->spriteID);
+	    } else if (check == 0) {
+		recov_Stats.pingsSuppressed++;
+	    } else {
+		Deactivate(pingPtr);
+	    }
+	    pingPtr = NextHostToCheck(pingPtr);
+	}
+    }
+    Proc_Exit(0);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FirstHostToCheck --
+ *
+ *	This pulls the first host to check off the ping list.
+ *
+ * Results:
+ *	A pingPtr.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static RecovPing *
+FirstHostToCheck()
+{
+    RecovPing *pingPtr;
+
+    LOCK_MONITOR;
+
+    if (List_IsEmpty(recovPingList)) {
+	pingPtr = (RecovPing *)NIL;
+    } else {
+	pingPtr = (RecovPing *)List_First(recovPingList);
+    }
+
+    UNLOCK_MONITOR;
+    return(pingPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NextHostToCheck --
+ *
+ *	This pulls the next host to check off the ping list.
+ *
+ * Results:
+ *	A pingPtr.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static RecovPing *
+NextHostToCheck(pingPtr)
+    RecovPing *pingPtr;
+{
+    LOCK_MONITOR;
+
+    pingPtr = (RecovPing *)List_Next((List_Links *)pingPtr);
+    if (List_IsAtEnd(recovPingList, (List_Links *)pingPtr)) {
+	pingPtr = (RecovPing *)NIL;
+    }
+
+    UNLOCK_MONITOR;
+    return(pingPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RecovAddHostToPing --
+ *
+ *	Add an entry to the ping list.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	List_Insert.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+RecovAddHostToPing(spriteID)
+    int spriteID;
+{
+    RecovPing *pingPtr;
+    LOCK_MONITOR;
+
+    LIST_FORALL(recovPingList, (List_Links *)pingPtr) {
+	if (pingPtr->spriteID == spriteID) {
+	    if (!pingPtr->active) {
+		recov_Stats.numHostsPinged++;
+		pingPtr->active = TRUE;
+	    }
+	    UNLOCK_MONITOR;
+	    return;
+	}
+    }
+    pingPtr = (RecovPing *)malloc(sizeof(RecovPing));
+    recov_Stats.numHostsPinged++;
+    pingPtr->active = TRUE;
+    pingPtr->spriteID = spriteID;
+    List_InitElement((List_Links *)pingPtr);
+    List_Insert((List_Links *)pingPtr, LIST_ATREAR(recovPingList));
+
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Deactivate --
+ *
+ *	Deactivate an entry on the ping list.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	List_Insert.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+Deactivate(pingPtr)
+    RecovPing *pingPtr;
+{
+    LOCK_MONITOR;
+
+    if (pingPtr->active) {
+	recov_Stats.numHostsPinged--;
+	pingPtr->active = FALSE;
+    }
+
+    UNLOCK_MONITOR;
+
+}
+
+ENTRY void
+RecovPrintPingList()
+{
+    RecovPing *pingPtr;
+
+    LOCK_MONITOR;
+
+    if (List_IsEmpty(recovPingList)) {
+	return;
+    } 
+    printf("\nPING_LIST\n");
+    for (pingPtr = (RecovPing *)List_First(recovPingList);
+	    !List_IsAtEnd(recovPingList, (List_Links *)pingPtr);
+	    pingPtr = (RecovPing *)List_Next((List_Links *)pingPtr)) {
+	printf("host %d is %s\n", pingPtr->spriteID,
+		pingPtr->active ? "active" : "inactive");
+    }
+	 
+    UNLOCK_MONITOR;
+
+    return;
+}
+@
+
+
+1.15
+log
+@Added more logging of recovery events and removed "DYING" state.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/recov/recovProc.c,v 1.14 91/03/20 11:27:32 kupfer Exp $ SPRITE (Berkeley)";
+d185 3
+@
+
+
+1.14
+log
+@Wait on a condition variable instead of an event.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovProc.c,v 1.13 90/10/09 18:32:07 mendel Exp Locker: kupfer $ SPRITE (Berkeley)";
+d189 15
+a203 3
+		RECOV_TRACE(pingPtr->spriteID,
+		    RecovGetLastHostState(pingPtr->spriteID),
+		    RECOV_CUZ_PING_CHK);
+@
+
+
+1.14.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/recov/recovProc.c,v 1.14 91/03/20 11:27:32 kupfer Exp $ SPRITE (Berkeley)";
+@
+
+
+1.13
+log
+@Fixed include to use <> rather than "".
+Removed lint.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovProc.c,v 1.12 90/08/29 18:00:59 mgbaker Exp Locker: mendel $ SPRITE (Berkeley)";
+d38 5
+a42 1
+ * of client pinging on the servers.
+d46 2
+a47 1
+unsigned int		recovPingEvent;
+d62 2
+a63 2
+static Sync_Lock recovPingLock;
+#define LOCKPTR (&recovPingLock)
+d92 3
+a94 1
+    Sync_EventWakeup((unsigned int) &recovPingEvent);
+d120 3
+a122 1
+    Sync_LockInitDynamic(&recovPingLock, "Recov:pingListLock");
+d170 4
+a173 1
+	    (void) Sync_EventWait((unsigned int) &recovPingEvent, FALSE);
+@
+
+
+1.12
+log
+@Done 1st pass of prototyping.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovProc.c,v 1.11 90/07/18 18:20:25 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d23 6
+a28 5
+#include "sprite.h"
+#include "recov.h"
+#include "sync.h"
+#include "rpc.h"
+#include "stdlib.h"
+@
+
+
+1.11
+log
+@Fixed pointer bug.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovProc.c,v 1.10 90/06/06 19:32:05 mgbaker Exp $ SPRITE (Berkeley)";
+d59 4
+a62 3
+static RecovPing *FirstHostToCheck();
+static RecovPing *NextHostToCheck();
+static void Deactivate();
+d68 1
+a68 1
+ * RecovPingInterval --
+d81 2
+a82 2
+void
+RecovPingInterval(time, clientData)
+d115 1
+a115 1
+	recovIntervalElement.routine = RecovPingInterval;
+@
+
+
+1.10
+log
+@typo.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovProc.c,v 1.9 90/06/06 19:30:23 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d85 1
+a85 1
+    Sync_EventWakeup(recovPingEvent);
+d159 1
+a159 1
+	    (void) Sync_EventWait(recovPingEvent, FALSE);
+@
+
+
+1.9
+log
+@Fixed missing parameters to call-back routine.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovProc.c,v 1.8 90/04/30 19:59:15 mgbaker Exp $ SPRITE (Berkeley)";
+d81 1
+a81 1
+RecovPingInterval(timer, clientData)
+@
+
+
+1.8
+log
+@More recovery info-gathering.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovProc.c,v 1.7 90/04/18 17:28:36 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d79 1
+d81 3
+a83 1
+RecovPingInterval()
+@
+
+
+1.7
+log
+@Added hooks for printing recovery state.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovProc.c,v 1.6 90/03/26 12:15:29 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d326 19
+d346 2
+@
+
+
+1.6
+log
+@Code to keep clients from synchronizing their pings to servers.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovProc.c,v 1.5 90/03/15 12:54:29 brent Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d172 3
+a174 2
+		RECOV_TRACE(pingPtr->spriteID, RECOV_STATE_UNKNOWN,
+				      RECOV_CUZ_PING_CHK);
+@
+
+
+1.5
+log
+@Fixed call to Timer_ScheduleRoutine
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovProc.c,v 1.4 90/02/20 17:43:52 mgbaker Exp $ SPRITE (Berkeley)";
+d39 1
+a39 1
+Boolean			recov_AbsoluteIntervals = FALSE;
+@
+
+
+1.4
+log
+@Added absolute time ping intervals.  This is turned off by default, though.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovProc.c,v 1.3 89/10/13 11:52:30 brent Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d83 1
+a83 1
+    Timer_ScheduleRoutine(&recovIntervalElement);
+@
+
+
+1.3
+log
+@Fixed stupid use of the ping list
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovProc.c,v 1.2 89/10/12 14:59:16 brent Exp $ SPRITE (Berkeley)";
+d35 8
+d62 26
+d110 7
+d120 1
+d152 6
+a157 2
+	Time_Multiply(time_OneSecond, recovPingSeconds, &wait);
+	Sync_WaitTime(wait);
+@
+
+
+1.2
+log
+@Fixed Deactivate
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovProc.c,v 1.1 89/10/12 11:54:50 brent Exp $ SPRITE (Berkeley)";
+d160 1
+a160 1
+    RecovPing *pingPtr = (RecovPing *)NIL;
+d164 5
+a168 1
+    pingPtr = (RecovPing *)List_First(recovPingList);
+d196 1
+a198 2
+    } else {
+	pingPtr = (RecovPing *)List_Next((List_Links *)pingPtr);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.2 89/01/07 04:12:18 rab Exp $ SPRITE (Berkeley)";
+d262 2
+a263 2
+Deactivate(spriteID)
+    int spriteID;
+a264 1
+    RecovPing *pingPtr;
+d267 3
+a269 9
+    LIST_FORALL(recovPingList, (List_Links *)pingPtr) {
+	if (pingPtr->spriteID == spriteID) {
+	    if (pingPtr->active) {
+		recov_Stats.numHostsPinged--;
+		pingPtr->active = FALSE;
+	    }
+	    UNLOCK_MONITOR;
+	    return;
+	}
+d273 1
+@

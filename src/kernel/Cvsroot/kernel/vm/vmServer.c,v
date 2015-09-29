@@ -1,0 +1,1611 @@
+head     9.8;
+branch   ;
+access   ;
+symbols  ds3100:9.8 sun3:9.8 sun4nw:9.7 symm:9.7 spur:9.7 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.8
+date     92.04.10.16.46.08;  author kupfer;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     91.07.26.17.05.16;  author shirriff;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.09.12.13.36.39;  author shirriff;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.09.11.10.44.59;  author shirriff;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.05.18.12.06.21;  author shirriff;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     89.12.11.17.58.20;  author brent;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.30.20.11.11;  author mgbaker;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.09.18.17.27.53;  author shirriff;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.23.30;  author douglis;  state Stable;
+branches ;
+next     8.8;
+
+8.8
+date     89.09.07.14.25.20;  author shirriff;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.04.11.16.24.30;  author douglis;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.03.20.10.04.21;  author mendel;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.03.15.17.32.53;  author mendel;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.01.11.14.11.35;  author nelson;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     88.12.23.11.42.38;  author douglis;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.12.23.11.26.30;  author douglis;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.12.04.15.51.33;  author ouster;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.43.36;  author douglis;  state Stable;
+branches ;
+next     6.3;
+
+6.3
+date     88.10.28.18.20.02;  author mlgray;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.27.19.44.08;  author nelson;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.23.10.08.34;  author nelson;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.30.34;  author brent;  state Stable;
+branches ;
+next     5.11;
+
+5.11
+date     88.05.10.14.07.55;  author brent;  state Exp;
+branches ;
+next     5.10;
+
+5.10
+date     88.05.05.18.03.22;  author nelson;  state Exp;
+branches ;
+next     5.9;
+
+5.9
+date     88.03.30.11.12.56;  author brent;  state Exp;
+branches ;
+next     5.8;
+
+5.8
+date     88.01.08.15.54.16;  author nelson;  state Exp;
+branches ;
+next     5.7;
+
+5.7
+date     87.12.15.15.21.38;  author nelson;  state Exp;
+branches ;
+next     5.6;
+
+5.6
+date     87.12.11.13.29.42;  author nelson;  state Exp;
+branches ;
+next     5.5;
+
+5.5
+date     87.11.20.18.28.15;  author nelson;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     87.11.18.21.51.52;  author nelson;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     87.10.15.13.08.55;  author nelson;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.10.14.15.49.40;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.10.14.15.42.40;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.53.08;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.8
+log
+@Fix VmPageServerRead to return an error instead of panicking if the
+swap file disappeared.  Remove VmSegCantCOW.
+@
+text
+@/* vmServer.c -
+ *
+ *     	This file contains routines that read and write pages to/from the page
+ *	server and file server.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/vm/vmServer.c,v 9.7 91/07/26 17:05:16 shirriff Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <vm.h>
+#include <vmInt.h>
+#include <vmSwapDir.h>
+#include <lock.h>
+#include <status.h>
+#include <sched.h>
+#include <sync.h>
+#include <dbg.h>
+#include <list.h>
+#include <string.h>
+#include <stdlib.h>
+#include <proc.h>
+#include <stdio.h>
+
+Boolean	vmUseFSReadAhead = TRUE;
+extern	Boolean	vm_NoStickySegments;
+char		*sprintf();
+
+/*
+ * Condition to wait on when want to do a swap file operation but someone
+ * is already doing one.  This is used for synchronization of opening
+ * of swap files.  It is possible that the open of the swap file could
+ * happen more than once if the open is not synchronized.
+ */
+Sync_Condition	swapFileCondition;
+
+void	Fscache_BlocksUnneeded();
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmSwapFileLock --
+ *
+ *	Set a lock on the swap file for the given segment.  If the lock
+ *	is already set then wait.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Flags field in segment table entry is modified to make the segment
+ *	locked.
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+VmSwapFileLock(segPtr)
+    register	Vm_Segment	*segPtr;
+{
+    LOCK_MONITOR;
+
+    while (segPtr->flags & VM_SWAP_FILE_LOCKED) {
+	(void) Sync_Wait(&swapFileCondition, FALSE);
+    }
+    segPtr->flags |= VM_SWAP_FILE_LOCKED;
+
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmSwapFileUnlock --
+ *
+ *	Clear the lock on the swap file for the given segment.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Flags field in segment table entry is modified to make the segment
+ *	unlocked and anyone waiting for the segment is awakened.
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+VmSwapFileUnlock(segPtr)
+    register	Vm_Segment	*segPtr;
+{
+    LOCK_MONITOR;
+
+    segPtr->flags &= ~VM_SWAP_FILE_LOCKED;
+    Sync_Broadcast(&swapFileCondition);
+
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmPageServerRead --
+ *
+ *	Read the given page from the swap file into the given page frame.
+ *	This routine will panic if the swap file does not exist.
+ *
+ *	NOTE: It is assumed that the page frame that is to be written into
+ *	      cannot be given to another segment.
+ *
+ * Results:
+ *	SUCCESS if the page server could be read from or an error if either
+ *	a swap file could not be opened or the page server could not be
+ *	read from the swap file.
+ *
+ * Side effects:
+ *	The hardware page is written into.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+VmPageServerRead(virtAddrPtr, pageFrame)
+    Vm_VirtAddr			*virtAddrPtr;
+    unsigned	int		pageFrame;
+{
+    register	int		mappedAddr;
+    register	Vm_Segment	*segPtr;
+    int				status;
+    int				pageToRead;
+
+    segPtr = virtAddrPtr->segPtr;
+    if (!(segPtr->flags & VM_SWAP_FILE_OPENED)) {
+	printf("VmPageServerRead: swap file %s doesn't exist.\n",
+	       (segPtr->swapFileName != (char *)NIL
+		? segPtr->swapFileName : "???"));
+	return(VM_SWAP_ERROR);
+    }
+
+    if (segPtr->type == VM_STACK) {
+	pageToRead = mach_LastUserStackPage - virtAddrPtr->page;
+    } else if (segPtr->type == VM_SHARED) {
+	pageToRead= virtAddrPtr->page - segOffset(virtAddrPtr) +
+		(virtAddrPtr->sharedPtr->fileAddr>>vmPageShift);
+    } else {
+	pageToRead = virtAddrPtr->page - segPtr->offset;
+    }
+
+    /*
+     * Map the page into the kernel's address space and fill it from the
+     * file server.
+     */
+    mappedAddr = (int) VmMapPage(pageFrame);
+    status = Fs_PageRead(segPtr->swapFilePtr, (Address) mappedAddr,
+			 pageToRead << vmPageShift, vm_PageSize, FS_SWAP_PAGE);
+    VmUnmapPage((Address) mappedAddr);
+
+    return(status);
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmPageServerWrite --
+ *
+ *	Write the given page frame to the swap file.  If the swap file is
+ *	not open yet then it will be open.
+ *
+ *	NOTE: It is assumed that the page frame that is to be read from
+ *	      cannot be given to another segment.
+ *
+ * Results:
+ *	SUCCESS if the page server could be written to or an error if either
+ *	a swap file could not be opened or the page server could not be
+ *	written to.
+ *
+ * Side effects:
+ *	If no swap file exists, then one is created.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+VmPageServerWrite(virtAddrPtr, pageFrame, toDisk)
+    Vm_VirtAddr		*virtAddrPtr;
+    unsigned int	pageFrame;
+    Boolean		toDisk;
+{
+    register	int		mappedAddr;
+    register	Vm_Segment	*segPtr;
+    ReturnStatus		status;
+    int				pageToWrite;
+
+    vmStat.pagesWritten++;
+
+    segPtr = virtAddrPtr->segPtr;
+
+    /*
+     * Lock the swap file while opening it so that we don't have more than
+     * one swap file open at a time.
+     */
+    VmSwapFileLock(segPtr);
+    if (!(segPtr->flags & VM_SWAP_FILE_OPENED)) {
+	status = VmOpenSwapFile(segPtr);
+	if (status != SUCCESS) {
+	    VmSwapFileUnlock(segPtr);
+	    return(status);
+	}
+    }
+    VmSwapFileUnlock(segPtr);
+
+    if (segPtr->type == VM_STACK) {
+	pageToWrite = mach_LastUserStackPage - virtAddrPtr->page;
+    } else {
+	pageToWrite = virtAddrPtr->page - segOffset(virtAddrPtr);
+    }
+
+    /*
+     * Map the page into the kernel's address space and write it out.
+     */
+    VmMach_FlushPage(virtAddrPtr, FALSE);
+    mappedAddr = (int) VmMapPage(pageFrame);
+    status = Fs_PageWrite(segPtr->swapFilePtr, (Address) mappedAddr,
+			  pageToWrite << vmPageShift, vm_PageSize, toDisk);
+    VmUnmapPage((Address) mappedAddr);
+
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmCopySwapSpace --
+ *
+ *	Copy the swap space for all pages that have been written out to swap
+ *	space for the source segment into the destination segments swap space.
+ *
+ * Results:
+ *	Error if swap file could not be opened, read or written.  Otherwise
+ *	SUCCESS is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+VmCopySwapSpace(srcSegPtr, destSegPtr)
+    register	Vm_Segment	*srcSegPtr;
+    register	Vm_Segment	*destSegPtr;
+{
+    register	int	page;
+    register	Vm_PTE	*ptePtr;
+    ReturnStatus	status = SUCCESS;
+    register	int	i;
+
+    VmSwapFileLock(srcSegPtr);
+    if (!(srcSegPtr->flags & VM_SWAP_FILE_OPENED)) {
+	VmSwapFileUnlock(srcSegPtr);
+	return(SUCCESS);
+    }
+    VmSwapFileUnlock(srcSegPtr);
+
+    VmSwapFileLock(destSegPtr);
+    if (!(destSegPtr->flags & VM_SWAP_FILE_OPENED)) {
+	status = VmOpenSwapFile(destSegPtr);
+	if (status != SUCCESS) {
+	    VmSwapFileUnlock(destSegPtr);
+	    return(status);
+	}
+    }
+    VmSwapFileUnlock(destSegPtr);
+
+    if (destSegPtr->type == VM_STACK) {
+	page = destSegPtr->numPages - 1;
+	ptePtr = VmGetPTEPtr(destSegPtr, mach_LastUserStackPage - 
+			                 destSegPtr->numPages + 1);
+    } else {
+	page = 0;
+    	ptePtr = destSegPtr->ptPtr;
+    }
+
+    for (i = 0; i < destSegPtr->numPages; i++, VmIncPTEPtr(ptePtr, 1)) {
+
+	if (*ptePtr & VM_IN_PROGRESS_BIT) {
+	    *ptePtr &= ~VM_IN_PROGRESS_BIT;
+	    /*
+	     * The page is on the swap file and not in memory.  Need to copy
+	     * the page in the file.
+	     */
+	    vmStat.swapPagesCopied++;
+	    status = Fs_PageCopy(srcSegPtr->swapFilePtr, 
+				destSegPtr->swapFilePtr, 
+				page << vmPageShift, vm_PageSize);
+	    if (status != SUCCESS) {
+		break;
+	    }
+	}
+	if (destSegPtr->type == VM_STACK) {
+	    page--;
+	} else {
+	    page++;
+	}
+    }
+
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmFileServerRead --
+ *
+ *	Read the given page from the file server into the given page frame.
+ *
+ *	NOTE: It is assumed that the page frame that is to be written into
+ *	      cannot be given to another segment.
+ *
+ * Results:
+ *	Error if file server could not be read from, SUCCESS otherwise.
+ *
+ * Side effects:
+ *	The hardware page is written into.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+VmFileServerRead(virtAddrPtr, pageFrame)
+    Vm_VirtAddr		*virtAddrPtr;
+    unsigned int	pageFrame;
+{
+    register	int		mappedAddr;
+    register	Vm_Segment	*segPtr;
+    int				length;
+    int				status;
+    int				offset;
+
+    segPtr = virtAddrPtr->segPtr;
+
+    /*
+     * Map the page frame into the kernel's address space.
+     */
+    mappedAddr = (int) VmMapPage(pageFrame);
+    /*
+     * The address to read is just the page offset into the segment
+     * ((page - offset) << vmPageShift) plus the offset of this segment into
+     * the file (fileAddr).
+     * (We have to use the right offset for shared memory.
+     */
+    length = vm_PageSize;
+    if (segPtr->type == VM_SHARED) {
+	if (virtAddrPtr->sharedPtr == (Vm_SegProcList *)NIL) {
+	    printf("*** NIL sharedPtr in VmFileServerRead\n");
+	    return FAILURE;
+	}
+	offset = ((virtAddrPtr->page - segOffset(virtAddrPtr)) << vmPageShift)
+		+ virtAddrPtr->sharedPtr->fileAddr;
+    } else {
+	offset = ((virtAddrPtr->page - segOffset(virtAddrPtr)) << vmPageShift)
+		+ segPtr->fileAddr;
+    }
+    if (vmPrefetch || !vmUseFSReadAhead) {
+	/*
+	 * If we are using prefetch then do the reads ourselves.
+	 */
+	if (segPtr->type == VM_CODE && !vm_NoStickySegments) {
+	    status = Fs_PageRead(segPtr->filePtr, (Address)mappedAddr, offset,
+				 length, FS_CODE_PAGE);
+	} else {
+	    status = Fs_PageRead(segPtr->filePtr, (Address)mappedAddr, offset,
+				 length, FS_HEAP_PAGE);
+	}
+    } else {
+	/*
+	 * No prefetch so use the file system full blown mechanism so
+	 * that we can take advantage of its read ahead.
+	 */
+	status = Fs_Read(segPtr->filePtr, (Address) mappedAddr, offset,
+			 &length);
+	if (status == SUCCESS && !vm_NoStickySegments && 
+	    segPtr->type == VM_CODE) {
+	    /*
+	     * Tell the file system that we just read some file system blocks
+	     * into virtual memory.
+	     */
+	    Fscache_BlocksUnneeded(segPtr->filePtr, offset, vm_PageSize, TRUE);
+	}
+    }
+    VmUnmapPage((Address) mappedAddr);
+    if (status != SUCCESS) {
+	printf("%s VmFileServerRead: Error %x from Fs_Read or Fs_PageRead\n",
+		"Warning:", status);
+	return(status);
+    }
+
+    return(SUCCESS);
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmCopySwapPage --
+ *
+ *	Copy the swap page from the source segment's swap file to the
+ *	destination.
+ *
+ * Results:
+ *	Error if swap file could not be opened, read or written.  Otherwise
+ *	SUCCESS is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+VmCopySwapPage(srcSegPtr, virtPage, destSegPtr)
+    register	Vm_Segment	*srcSegPtr;	/* Source for swap file. */
+    int				virtPage;	/* Virtual page to copy. */
+    register	Vm_Segment	*destSegPtr;	/* Destination swap file. */
+{
+    int			pageToCopy;
+    ReturnStatus	status;
+
+    /*
+     * Lock the swap file while opening it so that we don't have more than
+     * one swap file open at a time.
+     */
+    VmSwapFileLock(destSegPtr);
+    if (!(destSegPtr->flags & VM_SWAP_FILE_OPENED)) {
+	status = VmOpenSwapFile(destSegPtr);
+	if (status != SUCCESS) {
+	    VmSwapFileUnlock(destSegPtr);
+	    return(status);
+	}
+    }
+    VmSwapFileUnlock(destSegPtr);
+
+    vmStat.swapPagesCopied++;
+    if (destSegPtr->type == VM_STACK) {
+	pageToCopy = mach_LastUserStackPage - virtPage;
+    } else {
+	pageToCopy = virtPage - destSegPtr->offset;
+    }
+
+    status = Fs_PageCopy(srcSegPtr->swapFilePtr, 
+			 destSegPtr->swapFilePtr, 
+			 pageToCopy << vmPageShift, vm_PageSize);
+
+    return(status);
+}
+@
+
+
+9.7
+log
+@Large install for unix compatibility
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmServer.c,v 9.6 90/09/12 13:36:39 shirriff Exp $ SPRITE (Berkeley)";
+d137 4
+a140 1
+	panic("VmPageServerRead: Trying to read from non-existent swap file.\n");
+@
+
+
+9.6
+log
+@Changed includes from quotes to angles.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmServer.c,v 9.5 90/09/11 10:44:59 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d353 1
+d356 11
+a366 2
+    offset = ((virtAddrPtr->page - segPtr->offset) << vmPageShift) + 
+	    segPtr->fileAddr;
+@
+
+
+9.5
+log
+@Added function prototyping.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm.ken/RCS/vmServer.c,v 9.5 90/08/31 16:00:29 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d14 14
+a27 14
+#include "sprite.h"
+#include "vm.h"
+#include "vmInt.h"
+#include "vmSwapDir.h"
+#include "lock.h"
+#include "status.h"
+#include "sched.h"
+#include "sync.h"
+#include "dbg.h"
+#include "list.h"
+#include "string.h"
+#include "stdlib.h"
+#include "proc.h"
+#include "stdio.h"
+@
+
+
+9.4
+log
+@Added force to disk for pageout.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm.ken/RCS/vmServer.c,v 1.2 90/05/15 14:49:04 shirriff Exp $ SPRITE (Berkeley)";
+d27 1
+d257 1
+a257 1
+    ReturnStatus	status;
+@
+
+
+9.3
+log
+@Added a monitored set of procedures to synchronize use of
+the VM swap directory.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmServer.c,v 9.2 89/10/30 20:11:11 mgbaker Exp $ SPRITE (Berkeley)";
+d184 1
+a184 1
+VmPageServerWrite(virtAddrPtr, pageFrame)
+d187 1
+d224 1
+a224 1
+			  pageToWrite << vmPageShift, vm_PageSize);
+@
+
+
+9.2
+log
+@The changes in this file appear to be Ken's even though I seem to own it.
+I think the changes are for linting.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmServer.c,v 9.1 89/09/18 17:27:53 shirriff Exp $ SPRITE (Berkeley)";
+d17 1
+a29 1
+Fs_Stream	*vmSwapStreamPtr = (Fs_Stream *)NIL;
+a31 2
+Boolean vmSwapFileDebug = FALSE;
+
+a45 64
+ * VmSwapFileRemove --
+ *
+ *	Remove the swap file for the given segment.
+ *
+ *	NOTE: This does not have to be synchronized because it is assumed
+ *	      that it is called after the memory for the process has already
+ *	      been freed thus the swap file can't be messed with.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The swap file is removed.
+ *----------------------------------------------------------------------
+ */
+VmSwapFileRemove(swapStreamPtr, swapFileName)
+    Fs_Stream	*swapStreamPtr;
+    char	*swapFileName;
+{
+    Proc_ControlBlock	*procPtr;
+    int			origID = NIL;
+    ReturnStatus	status;
+
+    (void)Fs_Close(swapStreamPtr);
+    procPtr = Proc_GetEffectiveProc();
+    if (procPtr->effectiveUserID != PROC_SUPER_USER_ID) {
+	origID = procPtr->effectiveUserID;
+	procPtr->effectiveUserID = PROC_SUPER_USER_ID;
+    }
+    if (swapFileName != (char *) NIL) {
+	if (vmSwapFileDebug) {
+	    status = SUCCESS;
+	    printf("VmSwapFileRemove: not removing swap file %s.\n",
+		       swapFileName);
+	} else {
+	    status = Fs_Remove(swapFileName);
+	}
+	if (status != SUCCESS) {
+	    printf("Warning: VmSwapFileRemove: Fs_Remove(%s) returned %x.\n",
+		      swapFileName, status);
+	    if (status == FS_FILE_NOT_FOUND &&
+		vmSwapStreamPtr != (Fs_Stream *) NIL) {
+		/*
+		 * This can happen if the swap file itself is removed,
+		 * or if the directory gets changed.  Reopen the directory
+		 * to make sure.
+		 */
+		(void) Fs_Close(vmSwapStreamPtr);
+		vmSwapStreamPtr = (Fs_Stream *) NIL;
+		printf("Reopening swap directory.\n");
+		Proc_CallFunc(Vm_OpenSwapDirectory, (ClientData) NIL, 0);
+	    }
+	}
+	free(swapFileName);
+    }
+    if (origID != NIL) {
+	procPtr->effectiveUserID = origID;
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+a159 151
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmOpenSwapDirectory --
+ *
+ *	Open the swap directory for this machine.  This is needed for 
+ *	recovery.  This is called periodically until it successfully opens
+ *	the swap directory.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Swap directory stream pointer is set.
+ *
+ *----------------------------------------------------------------------
+ */
+/* ARGSUSED */
+void
+Vm_OpenSwapDirectory(data, callInfoPtr)
+    ClientData		data;	
+    Proc_CallInfo	*callInfoPtr;
+{
+    char		number[34];
+    char		fileName[FS_MAX_PATH_NAME_LENGTH];
+    ReturnStatus	status;
+
+    (void)strcpy(fileName, VM_SWAP_DIR_NAME);
+    (void)sprintf(number, "%u", (unsigned) Sys_GetHostId());
+    (void)strcat(fileName, number);
+    status = Fs_Open(fileName, FS_FOLLOW, FS_DIRECTORY, 0, &vmSwapStreamPtr);
+    if (status != SUCCESS) {
+	/*
+	 * It didn't work, retry in 20 seconds.
+	 */
+	callInfoPtr->interval = 20 * timer_IntOneSecond;
+	vmSwapStreamPtr = (Fs_Stream *)NIL;
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmOpenSwapFile --
+ *
+ *	Open a swap file for this segment.  Store the name of the swap
+ *	file with the segment.
+ *
+ * Results:
+ *	SUCCESS unless swap file could not be opened.
+ *
+ * Side effects:
+ *	Swap file pointer is set in the segment's data struct.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+VmOpenSwapFile(segPtr)
+    register	Vm_Segment	*segPtr;
+{
+    int				status;
+    Proc_ControlBlock		*procPtr;
+    int				origID = NIL;
+    char			fileName[FS_MAX_PATH_NAME_LENGTH];
+    char			*swapFileNamePtr;
+    Fs_Stream			*origCwdPtr;
+
+    if (segPtr->swapFileName == (char *) NIL) {
+	/*
+	 * There is no swap file yet so open one.  This may entail assembling 
+	 * the file name first.  The file name is the segment number.
+	 */
+	VmMakeSwapName(segPtr->segNum, fileName);
+	segPtr->swapFileName = (char *) malloc(strlen(fileName) + 1);
+	(void) strcpy(segPtr->swapFileName, fileName);
+    }
+#ifdef SWAP_FILE_DEBUG
+    printf("Opening swap file %s.\n", segPtr->swapFileName);
+#endif /* SWAP_FILE_DEBUG */
+    procPtr = Proc_GetEffectiveProc();
+    if (procPtr->effectiveUserID != PROC_SUPER_USER_ID) {
+	origID = procPtr->effectiveUserID;
+	procPtr->effectiveUserID = PROC_SUPER_USER_ID;
+    }
+    /*
+     * We want the swap file open to happen relative to the swap directory
+     * for this machine if possible.  This is so that if the swap directory
+     * is a symbolic link and the swap open fails we know that it failed
+     * because the swap server is down, not the server of the symbolic link.
+     */
+    origCwdPtr = procPtr->fsPtr->cwdPtr;
+    if (vmSwapStreamPtr != (Fs_Stream *)NIL) {
+	procPtr->fsPtr->cwdPtr = vmSwapStreamPtr;
+	(void)sprintf(fileName, "%u", (unsigned) segPtr->segNum);
+	swapFileNamePtr = fileName;
+    } else {
+	swapFileNamePtr = segPtr->swapFileName;
+    }
+    status = Fs_Open(swapFileNamePtr, 
+		     FS_READ | FS_WRITE | FS_CREATE | FS_TRUNC | FS_SWAP,
+		     FS_FILE, 0660, &segPtr->swapFilePtr);
+    if (origID != NIL) {
+	procPtr->effectiveUserID = origID;
+    }
+    procPtr->fsPtr->cwdPtr = origCwdPtr;
+    if (status != SUCCESS) {
+	segPtr->swapFilePtr = (Fs_Stream *)NIL;
+	printf("%s VmOpenSwapFile: Could not open swap file %s, reason 0x%x\n", 
+		"Warning:", segPtr->swapFileName, status);
+	return(status);
+    }
+
+    segPtr->flags |= VM_SWAP_FILE_OPENED;
+
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmMakeSwapName --
+ *
+ *	Given a buffer to hold the name of the swap file, return the
+ *	name corresponding to the given segment.  FileName is assumed to
+ *	hold a string long enough for the maximum swap file name.
+ *
+ * Results:
+ *	The pathname is returned in fileName.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+VmMakeSwapName(segNum, fileName)
+    int  segNum;		/* segment for which to create name */ 
+    char *fileName;		/* pointer to area to hold name */
+{
+    char number[34];
+
+    (void)strcpy(fileName, VM_SWAP_DIR_NAME);
+    (void)sprintf(number, "%u", (unsigned) Sys_GetHostId());
+    (void)strcat(fileName, number);
+    (void)strcat(fileName, "/");
+    (void)sprintf(number, "%u", (unsigned) (segNum));
+    (void)strcat(fileName, number);
+}
+@
+
+
+9.1
+log
+@Added file offset code for shared memory.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /c/src/kernel/vm.ken/RCS/vmServer.c,v 1.5 89/09/12 17:02:13 shirriff Exp $ SPRITE (Berkeley)";
+d30 1
+d42 1
+a42 1
+void	Fs_CacheBlocksUnneeded();
+d596 1
+a596 1
+	    Fs_CacheBlocksUnneeded(segPtr->filePtr, offset, vm_PageSize, TRUE);
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmServer.c,v 8.8 89/09/07 14:25:20 shirriff Exp Locker: douglis $ SPRITE (Berkeley)";
+d41 2
+d206 3
+d210 1
+a210 1
+	pageToRead = virtAddrPtr->page - segOffset(virtAddrPtr);
+d570 1
+a570 1
+		segPtr->fileAddr;
+@
+
+
+8.8
+log
+@Changes for shared memory.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /c/src/kernel/vm.ken/RCS/vmServer.c,v 1.3 89/08/15 12:01:45 shirriff Exp $ SPRITE (Berkeley)";
+@
+
+
+8.7
+log
+@reopen swap directory on error.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmServer.c,v 8.6 89/03/20 10:04:21 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d205 1
+a205 1
+	pageToRead = virtAddrPtr->page - segPtr->offset;
+d425 1
+a425 1
+	pageToWrite = virtAddrPtr->page - segPtr->offset;
+@
+
+
+8.6
+log
+@Moved free() to after printf() in vmServer.c
+				     ^^^^^^^^ I mean VmSwapFileRemove
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmServer.c,v 8.5 89/03/15 17:32:53 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d85 12
+d298 1
+a298 1
+#ifdef DEBUG
+d300 1
+a300 1
+#endif DEBUG
+@
+
+
+8.5
+log
+@*** empty log message ***
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmServer.c,v 8.4 89/01/11 14:11:35 nelson Exp Locker: mendel $ SPRITE (Berkeley)";
+a81 1
+	free(swapFileName);
+d86 1
+@
+
+
+8.4
+log
+@Changed to fix bugs in page flushing and checking reference and modify
+bits.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmServer.c,v 8.3 88/12/23 11:42:38 douglis Exp Locker: nelson $ SPRITE (Berkeley)";
+@
+
+
+8.3
+log
+@removed an old check against removing swap files of foreign procs.
+a proc that was migrated onto us won't have the swap file name set
+anyway, and other procs will have valid swap files that must be
+removed when deleting the segment.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmServer.c,v 8.2 88/12/23 11:26:30 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d419 1
+a419 1
+    VmMach_FlushPage(virtAddrPtr);
+@
+
+
+8.2
+log
+@checking in for MR... changed CVT_INT_BUF_SIZE to a hard-coded value (34).
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmServer.c,v 8.1 88/12/04 15:51:33 ouster Exp Locker: mendel $ SPRITE (Berkeley)";
+a69 3
+    if (procPtr->genFlags & PROC_FOREIGN) {
+	return;
+    }
+@
+
+
+8.1
+log
+@Stop using obsolete header files.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmServer.c,v 8.0 88/11/11 18:43:36 douglis Stable Locker: ouster $ SPRITE (Berkeley)";
+d235 1
+a235 1
+    char		number[CVT_INT_BUF_SIZE];
+d353 1
+a353 1
+    char number[CVT_INT_BUF_SIZE];
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmServer.c,v 6.3 88/10/28 18:20:02 mlgray Exp Locker: douglis $ SPRITE (Berkeley)";
+a22 2
+#include "cvt.h"
+#include "byte.h"
+d24 1
+a24 1
+#include "mem.h"
+@
+
+
+6.3
+log
+@Converted to new C library.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmServer.c,v 6.2 88/08/27 19:44:08 nelson Exp Locker: mlgray $ SPRITE (Berkeley)";
+@
+
+
+6.2
+log
+@Fixed lint errors.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmServer.c,v 6.1 88/08/23 10:08:34 nelson Exp $ SPRITE (Berkeley)";
+d82 1
+a82 1
+	    Sys_Printf("VmSwapFileRemove: not removing swap file %s.\n",
+d87 1
+a87 1
+	Mem_Free(swapFileName);
+d89 1
+a89 1
+	    Sys_Panic(SYS_WARNING, "VmSwapFileRemove: Fs_Remove(%s) returned %x.\n",
+d192 1
+a192 2
+	Sys_Panic(SYS_FATAL, 
+	   "VmPageServerRead: Trying to read from non-existent swap file.\n");
+d241 3
+a243 3
+    (void)String_Copy(VM_SWAP_DIR_NAME, fileName);
+    (void)Cvt_UtoA((unsigned) Sys_GetHostId(), 10, number);
+    (void)String_Cat(number, fileName);
+d288 2
+a289 2
+	segPtr->swapFileName = (char *) Mem_Alloc(String_Length(fileName) + 1);
+	(void) String_Copy(fileName, segPtr->swapFileName);
+d292 1
+a292 1
+    Sys_Printf("Opening swap file %s.\n", segPtr->swapFileName);
+d308 1
+a308 1
+	(void)Cvt_UtoA((unsigned) segPtr->segNum, 10, fileName);
+d322 2
+a323 3
+	Sys_Panic(SYS_WARNING, 
+	    "VmOpenSwapFile: Could not open swap file %s, reason 0x%x\n", 
+		segPtr->swapFileName, status);
+d357 6
+a362 6
+    (void)String_Copy(VM_SWAP_DIR_NAME, fileName);
+    (void)Cvt_UtoA((unsigned) Sys_GetHostId(), 10, number);
+    (void)String_Cat(number, fileName);
+    (void)String_Cat("/", fileName);
+    (void)Cvt_UtoA((unsigned) (segNum), 10, number);
+    (void)String_Cat(number, fileName);
+d588 2
+a589 2
+	Sys_Panic(SYS_WARNING, 
+	  "VmFileServerRead: Error %x from Fs_Read or Fs_PageRead\n", status);
+@
+
+
+6.1
+log
+@Added appropriate cache flushes when mapping in user pages.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmServer.c,v 5.11 88/05/10 14:07:55 brent Exp $ SPRITE (Berkeley)";
+d70 1
+a70 1
+    Fs_Close(swapStreamPtr);
+d242 3
+a244 3
+    String_Copy(VM_SWAP_DIR_NAME, fileName);
+    Cvt_UtoA((unsigned) Sys_GetHostId(), 10, number);
+    String_Cat(number, fileName);
+d309 1
+a309 1
+	Cvt_UtoA((unsigned) segPtr->segNum, 10, fileName);
+d359 6
+a364 6
+    String_Copy(VM_SWAP_DIR_NAME, fileName);
+    Cvt_UtoA((unsigned) Sys_GetHostId(), 10, number);
+    String_Cat(number, fileName);
+    String_Cat("/", fileName);
+    Cvt_UtoA((unsigned) (segNum), 10, number);
+    String_Cat(number, fileName);
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d426 1
+@
+
+
+5.11
+log
+@Fixed process table interface to the file system
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmServer.c,v 5.10 88/05/05 18:03:22 nelson Exp $ SPRITE (Berkeley)";
+@
+
+
+5.10
+log
+@Handles move of stuff from sys to mach.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmServer.c,v 5.9 88/03/30 11:12:56 brent Exp $ SPRITE (Berkeley)";
+d248 1
+a248 1
+	 * It didn't work, retry in 10 seconds.
+d250 1
+a250 1
+	callInfoPtr->interval = 10 * timer_IntOneSecond;
+d306 1
+a306 1
+    origCwdPtr = procPtr->cwdPtr;
+d308 1
+a308 1
+	procPtr->cwdPtr = vmSwapStreamPtr;
+d320 1
+a320 1
+    procPtr->cwdPtr = origCwdPtr;
+@
+
+
+5.9
+log
+@Added FS_SWAP flag to Fs_Open call
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmServer.c,v 5.8 88/01/08 15:54:16 nelson Exp $ SPRITE (Berkeley)";
+d71 1
+a71 1
+    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+d295 1
+a295 1
+    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+@
+
+
+5.8
+log
+@Added prefetch.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmServer.c,v 5.7 87/12/15 15:21:38 nelson Exp $ SPRITE (Berkeley)";
+d315 2
+a316 2
+		     FS_READ | FS_WRITE | FS_CREATE | FS_TRUNC, FS_FILE,
+		     0660, &segPtr->swapFilePtr);
+@
+
+
+5.7
+log
+@Comments.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmServer.c,v 5.6 87/12/11 13:29:42 nelson Exp $ SPRITE (Berkeley)";
+d29 1
+d208 1
+a208 2
+			 pageToRead << vmPageShift,
+			 vm_PageSize);
+a551 1
+
+d553 3
+a555 3
+     * Read the page from the file server.  The address to read is just the
+     * page offset into the segment ((page - offset) << vmPageShift) plus
+     * the offset of this segment into the file (fileAddr).
+d560 7
+a566 7
+    status = Fs_Read(segPtr->filePtr, (Address) mappedAddr, offset, &length);
+    VmUnmapPage((Address) mappedAddr);
+    if (status != SUCCESS || length != vm_PageSize) {
+	if (status != SUCCESS) {
+	    Sys_Panic(SYS_WARNING, 
+		      "VmFileServerRead: Error %x from Fs_Read\n", status);
+	    return(status);
+d568 2
+a569 3
+	    Sys_Panic(SYS_WARNING, 
+		      "VmFileServerRead: Short read of length %d\n", length);
+	    return(VM_SHORT_READ);
+d571 1
+a571 1
+    } else if (!vm_NoStickySegments && segPtr->type == VM_CODE) {
+d573 2
+a574 2
+	 * Tell the file system that we just read some file system blocks
+	 * into virtual memory.
+d576 16
+a591 1
+	Fs_CacheBlocksUnneeded(segPtr->filePtr, offset, vm_PageSize, TRUE);
+@
+
+
+5.6
+log
+@New VM system where put machine dependent VM stuff into the SUN module.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmServer.c,v 5.5 87/11/20 18:28:15 nelson Exp $ SPRITE (Berkeley)";
+a39 1
+
+d167 1
+a167 1
+ *	      cannot be given to another process.
+d172 1
+a172 1
+ *	read from.
+a178 1
+
+a246 5
+/*
+	Sys_Panic(SYS_WARNING,
+		  "VmOpenSwapDirectory: Open of swap dir %s failed status %x\n",
+		  fileName, status);
+*/
+a351 1
+
+d371 1
+a371 1
+ * VmPageServer --
+d373 1
+a373 1
+ *	Write the given page frame to the swap file.  If the swap file it
+d377 1
+a377 1
+ *	      cannot be given to another process.
+a388 1
+
+a430 3
+#ifdef notdef
+    VmSwapFileUnlock(segPtr);
+#endif
+a488 6
+#ifdef COMMENT
+    Sys_Printf("Copying %d pages from seg %d to seg %d starting page %d\n", 
+		destSegPtr->numPages, srcSegPtr->segNum, destSegPtr->segNum,
+		page);
+#endif
+
+a511 4
+#ifdef COMMENT
+    Sys_Printf("Finished Copying\n");
+#endif COMMENT
+
+d524 1
+a524 1
+ *	      cannot be given to another process.
+a550 1
+
+a557 1
+
+d605 3
+a607 3
+    register	Vm_Segment	*srcSegPtr;
+    int				virtPage;
+    register	Vm_Segment	*destSegPtr;
+a638 1
+
+@
+
+
+5.5
+log
+@More copy-on-write stuff.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmServer.c,v 5.4 87/11/18 21:51:52 nelson Exp $ SPRITE (Berkeley)";
+a22 1
+#include "machine.h"
+d183 2
+a184 2
+    VmVirtAddr	*virtAddrPtr;
+    int		pageFrame;
+d198 1
+a198 1
+	pageToRead = MACH_LAST_USER_STACK_PAGE - virtAddrPtr->page;
+d209 2
+a210 2
+			 pageToRead << VM_PAGE_SHIFT,
+			 VM_PAGE_SIZE);
+d234 1
+d400 2
+a401 2
+    VmVirtAddr	*virtAddrPtr;
+    int		pageFrame;
+d427 1
+a427 1
+	pageToWrite = MACH_LAST_USER_STACK_PAGE - virtAddrPtr->page;
+d437 1
+a437 1
+			  pageToWrite << VM_PAGE_SHIFT, VM_PAGE_SIZE);
+d494 1
+a494 1
+    	ptePtr = VmGetPTEPtr(destSegPtr, MACH_LAST_USER_STACK_PAGE - 
+d509 2
+a510 2
+	if (ptePtr->inProgress) {
+	    ptePtr->inProgress = 0;
+d518 1
+a518 1
+				page << VM_PAGE_SHIFT, VM_PAGE_SIZE);
+d559 2
+a560 2
+    VmVirtAddr	*virtAddrPtr;
+    int		pageFrame;
+d578 1
+a578 1
+     * page offset into the segment ((page - offset) << VM_PAGE_SHIFT) plus
+d582 2
+a583 2
+    length = VM_PAGE_SIZE;
+    offset = ((virtAddrPtr->page - segPtr->offset) << VM_PAGE_SHIFT) + 
+d587 1
+a587 1
+    if (status != SUCCESS || length != VM_PAGE_SIZE) {
+d602 1
+a602 1
+	Fs_CacheBlocksUnneeded(segPtr->filePtr, offset, VM_PAGE_SIZE, TRUE);
+d652 1
+a652 1
+	pageToCopy = MACH_LAST_USER_STACK_PAGE - virtPage;
+d659 1
+a659 1
+			 pageToCopy << VM_PAGE_SHIFT, VM_PAGE_SIZE);
+@
+
+
+5.4
+log
+@Copy-on-write
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmServer.c,v 5.3 87/10/15 13:08:55 nelson Exp $ SPRITE (Berkeley)";
+d515 1
+d650 1
+@
+
+
+5.3
+log
+@More recovery stuff.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmServer.c,v 5.2 87/10/14 15:49:40 nelson Exp $ SPRITE (Berkeley)";
+d606 56
+@
+
+
+5.2
+log
+@Commented out a print statement.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmServer.c,v 5.1 87/10/14 15:42:40 nelson Exp $ SPRITE (Berkeley)";
+d258 1
+d287 1
+a287 1
+    char			*swapFileName;
+d316 2
+a317 2
+	Cvt_UtoA((unsigned) segPtr->segNum, fileName);
+	swapFileName = fileName;
+d319 1
+a319 1
+	swapFileName = segPtr->swapFileName;
+d321 1
+a321 1
+    status = Fs_Open(swapFileName, 
+d329 1
+@
+
+
+5.1
+log
+@VM recovery.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmServer.c,v 5.0 87/08/11 10:53:08 sprite Exp $ SPRITE (Berkeley)";
+d249 1
+d253 1
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: vmServer.c,v 4.6 87/08/09 19:30:01 andrew Exp $ SPRITE (Berkeley)";
+d31 1
+a34 2
+#define	SWAP_DIR_NAME	"/swap/"
+
+d221 42
+a275 1
+
+a280 1
+    char			fileName[FS_MAX_PATH_NAME_LENGTH];
+d283 3
+a286 4
+    /*
+     * There is no swap file yet so open one.  This may entail assembling the
+     * file name first.  The file name is the segment number in hex.
+     */
+d288 4
+d304 15
+a318 1
+    status = Fs_Open(segPtr->swapFileName, 
+d324 1
+d363 1
+a363 1
+    String_Copy(SWAP_DIR_NAME, fileName);
+@

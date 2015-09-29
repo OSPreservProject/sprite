@@ -1,0 +1,139 @@
+% tape document style  for LaTeX 2.09
+% podar@sbcs (Sunil Podar) June 20,1986
+% Dept. of Applied Math., SUNY at Stony Brook
+% You may use this file for whatever purpose you wish. Please leave this
+% notice, identifying original author, intact.
+
+\typeout{Document Style 'tape'. Released 20 June 1986}
+
+% This documentstyle is for making casette tape labels. Two labels can be
+% fit on a page with a \newpage command after every two labels.
+% It should be invoked with \documentstyle[tape]{article}.
+% --- should have made a standalone documentstyle, but was lazy; would
+%     involve unnecessary dirty work.
+% If more stuff needs to be fit on a label, reduce the \baselinestretch in
+% the document and/or use smaller fonts.
+% Two commands are implemented:
+% \album{album-id}{stuff for the side}{title}{addendum that goes on backflap}
+% \maketape[tape-id]{album-id}{album-id}[optional explicit title]
+%---------------------------------------------------------------------------
+\makeatletter
+\textwidth 5in
+\textheight 9in
+\pagestyle{empty}
+\renewcommand{\baselinestretch}{0.85}
+\parskip 0pt plus 1pt
+%\parindent=0pt %% done inside \maketape
+\hbadness=3000% will not complain about every little underfull hbox.
+%
+\leftmargini 12pt
+\leftmarginii 10pt % more than two level deep not expected!
+\labelsep 3pt
+\leftmargin\leftmargini
+\labelwidth\leftmargini\advance\labelwidth-\labelsep
+\topsep 2pt plus 1pt minus 1pt
+\partopsep 2pt plus 1pt minus 1pt
+\parsep 1pt
+\itemsep 1pt
+
+%% many paragraphing environments use list's and fiddle with the parameter
+%% values, thus need to include them in the \def of \@listi.
+\def\@listi{\leftmargin\leftmargini
+   \labelwidth\leftmargini\advance\labelwidth-\labelsep
+   \topsep 2pt plus 1pt minus 1pt
+   \partopsep 2pt plus 1pt minus 1pt
+   \parsep 1pt
+   \itemsep 1pt}
+
+%%removed the \def of \@listi from \small and \footnotesize
+%% --- causes problems when used in center environment.
+\def\small{\@setsize\small{11pt}\ixpt\@ixpt
+\abovedisplayskip 8.5pt plus 3pt minus 4pt%
+\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip \z@ plus2pt%
+\belowdisplayshortskip 4pt plus2pt minus 2pt}
+
+\def\footnotesize{\@setsize\footnotesize{9.5pt}\viiipt\@viiipt%------
+\abovedisplayskip 6pt plus 2pt minus 4pt%
+\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip \z@ plus 1pt%
+\belowdisplayshortskip 3pt plus 1pt minus 2pt}
+%
+%% following two redefined to get the label flushleft.
+\def\enumerate{\ifnum \@enumdepth >3 \@toodeep\else
+      \advance\@enumdepth \@ne
+            \edef\@enumctr{enum\romannumeral\the\@enumdepth}\list
+	          {\csname label\@enumctr\endcsname}{\usecounter
+		          {\@enumctr}\def\makelabel##1{\rlap{##1}\hss}}\fi}
+
+\def\itemize{\ifnum \@itemdepth >3 \@toodeep\else \advance\@itemdepth \@ne
+\edef\@itemitem{labelitem\romannumeral\the\@itemdepth}%
+\list{\csname\@itemitem\endcsname}{\def\makelabel##1{\rlap{##1}\hss}}\fi}
+
+%----------------
+\setlength{\doublerulesep}{1mm}
+\setlength{\arrayrulewidth}{0.8pt}
+\newdimen\tapeidwidth
+\newdimen\@titlewidth
+%------------------------------------------------------------------------
+% Here are the user controllable parameters, specific to \makelabel:
+% \globaltapeid goes on the little box on the left side of title. Typical
+% thing to put there would be name. e.g.
+% \renewcommand{\globaltapeid}{\footnotesize\sf Sunil\\Podar}
+\def\globaltapeid{} %changed via a \renewcommand
+\def\tapeidmarker{\vline} %changed via a \renewcommand
+\tapeidwidth=0.35in %changed via a \setlength{\tapeidwidth}{..} command
+% We put a \rule of 0in width and appropriate height along with the
+% \tapeidmarker for the \vline to work since it is in a makebox[0in].
+%-----------------------------------------------------------------------
+% \album{5}{side}{title}{addendum} => defines \album@v@s = side and
+% \album@v@t = title and \album@v@a = addendum
+% the title is the one used by \maketape as default.
+%
+\long\def\album#1#2#3#4{%
+\@namedef{album.#1.s}{#2}% side
+\@namedef{album.#1.t}{#3}% title
+\@namedef{album.#1.a}{#4}}% addendum
+%------------------------------------------------------------------
+%\maketape[tape-id]{album-id1}{album-id2}[explicit title 
+% formatted as a centered one entry]
+% -- makes a tape label of albums identified by album-id1 andalbum-id2. The
+% titles are picked up from the \album definition; if an explicit centered
+% label is desired then specify it as the third (optional) argument.
+%
+\def\maketape{\@ifnextchar[{\@maketape}{\@maketape[]}}
+\def\@maketape[#1]#2#3{\@ifnextchar[%
+{\@imaketape[#1]{#2}{#3}}{\@imaketape[#1]{#2}{#3}[@]}}
+%
+\def\@imaketape[#1]#2#3[#4]{{\parindent=0pt
+\tabcolsep=1pt %want explicit control on spacing
+\begin{tabular}{|l@{\hspace{0.1in}}|@{\hspace{0.1in}}l|}
+\hline
+\makebox[0in][l]{\hskip-2mm\rule[-2.32in]{0.4mm}{2.5in}}%
+\ \minipage[t]{1.84in}\@nameuse{album.#2.s}\endminipage &%
+\minipage[t]{1.84in}\@nameuse{album.#3.s}\endminipage\ \\
+\hline\hline
+%
+\multicolumn{2}{|@{}l@{}|}{%
+\makebox[0in][l]{\hskip-1.8mm\rule[-0.2in]{0.4mm}{0.46in}}%
+\,\parbox{\tapeidwidth}{\raggedright\globaltapeid\ }%
+\makebox[0in]{\tapeidmarker\rule[-0.2in]{0in}{0.46in}}%
+\@titlewidth=1.97in \advance\@titlewidth by-\tapeidwidth%
+\ifx#4@%
+\parbox{\@titlewidth}{\centering \@nameuse{album.#2.t}\ }%
+\parbox{\@titlewidth}{\centering \@nameuse{album.#3.t}\ }%
+\else\@titlewidth=2\@titlewidth\parbox{\@titlewidth}{\centering #4\ }%
+\fi%
+\makebox[0in]{\tapeidmarker\rule[-0.2in]{0in}{0.46in}}%
+\parbox{\tapeidwidth}{\raggedleft #1\ }\,}\\
+%
+\hline\hline
+\makebox[0in][l]{\hskip-2mm\rule[-0.72in]{0.4mm}{0.9in}}%
+\ \minipage[t]{1.84in}\@nameuse{album.#2.a}\ \endminipage &%
+% need \ in minipage to enforce size in case any of the minipage args are null
+\minipage[t]{1.84in}\@nameuse{album.#3.a}\endminipage\ \\
+\hline
+\end{tabular}%
+\par\vspace*{0.2in}}}
+%------------------------------------------------------------------
+\makeatother

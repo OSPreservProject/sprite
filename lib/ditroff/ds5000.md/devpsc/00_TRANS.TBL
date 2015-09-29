@@ -1,0 +1,124 @@
+L A.AUX;1                           	A.aux	../../sun3.md/devpsc/A.aux
+L A.MAP;1                           	A.map	../../sun3.md/devpsc/A.map
+F A.OUT;1                           	A.out
+L AB.AUX;1                          	AB.aux	../../sun3.md/devpsc/AB.aux
+L AB.MAP;1                          	AB.map	../../sun3.md/devpsc/AB.map
+F AB0.OUT;1                         	AB.out
+F AB1.OUT;1                         	Ab.out
+L AD.AUX;1                          	AD.aux	../../sun3.md/devpsc/AD.aux
+L AD.MAP;1                          	AD.map	../../sun3.md/devpsc/AD.map
+F AD0.OUT;1                         	AD.out
+F AD1.OUT;1                         	Ad.out
+L AO.AUX;1                          	AO.aux	../../sun3.md/devpsc/AO.aux
+L AO.MAP;1                          	AO.map	../../sun3.md/devpsc/AO.map
+F AO0.OUT;1                         	AO.out
+F AO1.OUT;1                         	Ao.out
+F AQ.OUT;1                          	Aq.out
+L B.AUX;1                           	B.aux	../../sun3.md/devpsc/B.aux
+L B.MAP;1                           	B.map	../../sun3.md/devpsc/B.map
+F B.OUT;1                           	B.out
+L BI.AUX;1                          	BI.aux	../../sun3.md/devpsc/BI.aux
+L BI.MAP;1                          	BI.map	../../sun3.md/devpsc/BI.map
+F BI.OUT;1                          	BI.out
+L C.AUX;1                           	C.aux	../../sun3.md/devpsc/C.aux
+L C.MAP;1                           	C.map	../../sun3.md/devpsc/C.map
+F C.OUT;1                           	C.out
+L CB.AUX;1                          	CB.aux	../../sun3.md/devpsc/CB.aux
+L CB.MAP;1                          	CB.map	../../sun3.md/devpsc/CB.map
+F CB.OUT;1                          	CB.out
+L CD.AUX;1                          	CD.aux	../../sun3.md/devpsc/CD.aux
+L CD.MAP;1                          	CD.map	../../sun3.md/devpsc/CD.map
+F CD.OUT;1                          	CD.out
+L CO.AUX;1                          	CO.aux	../../sun3.md/devpsc/CO.aux
+L CO.MAP;1                          	CO.map	../../sun3.md/devpsc/CO.map
+F CO.OUT;1                          	CO.out
+L CW.AUX;1                          	CW.aux	../../sun3.md/devpsc/CW.aux
+L CW.MAP;1                          	CW.map	../../sun3.md/devpsc/CW.map
+F CW.OUT;1                          	CW.out
+L C_AUX.BAD;1                       	C.aux.BAD	../../sun3.md/devpsc/C.aux.BAD
+L DESC.;1                           	DESC	../../sun3.md/devpsc/DESC
+F DESC.OUT;1                        	DESC.out
+L H.AUX;1                           	H.aux	../../sun3.md/devpsc/H.aux
+L H.MAP;1                           	H.map	../../sun3.md/devpsc/H.map
+F H.OUT;1                           	H.out
+L HB.AUX;1                          	HB.aux	../../sun3.md/devpsc/HB.aux
+L HB.MAP;1                          	HB.map	../../sun3.md/devpsc/HB.map
+F HB.OUT;1                          	HB.out
+L HD.AUX;1                          	HD.aux	../../sun3.md/devpsc/HD.aux
+L HD.MAP;1                          	HD.map	../../sun3.md/devpsc/HD.map
+F HD.OUT;1                          	HD.out
+F HI.OUT;1                          	HI.out
+L HO.AUX;1                          	HO.aux	../../sun3.md/devpsc/HO.aux
+L HO.MAP;1                          	HO.map	../../sun3.md/devpsc/HO.map
+F HO.OUT;1                          	HO.out
+L H_AUX.TRA;1                       	H.aux.trashed	../../sun3.md/devpsc/H.aux.trashed
+L I.AUX;1                           	I.aux	../../sun3.md/devpsc/I.aux
+L I.MAP;1                           	I.map	../../sun3.md/devpsc/I.map
+F I.OUT;1                           	I.out
+L K.AUX;1                           	K.aux	../../sun3.md/devpsc/K.aux
+L K.MAP;1                           	K.map	../../sun3.md/devpsc/K.map
+F K.OUT;1                           	K.out
+L KB.AUX;1                          	KB.aux	../../sun3.md/devpsc/KB.aux
+L KB.MAP;1                          	KB.map	../../sun3.md/devpsc/KB.map
+F KB.OUT;1                          	KB.out
+L KD.AUX;1                          	KD.aux	../../sun3.md/devpsc/KD.aux
+L KD.MAP;1                          	KD.map	../../sun3.md/devpsc/KD.map
+F KD0.OUT;1                         	KD.out
+F KD1.OUT;1                         	Kd.out
+L KI.AUX;1                          	KI.aux	../../sun3.md/devpsc/KI.aux
+L KI.MAP;1                          	KI.map	../../sun3.md/devpsc/KI.map
+F KI0.OUT;1                         	KI.out
+F KI1.OUT;1                         	Ki.out
+F KL0.OUT;1                         	KL.out
+F KL1.OUT;1                         	Kl.out
+L NB.AUX;1                          	NB.aux	../../sun3.md/devpsc/NB.aux
+L NB.MAP;1                          	NB.map	../../sun3.md/devpsc/NB.map
+F NB.OUT;1                          	NB.out
+L ND.AUX;1                          	ND.aux	../../sun3.md/devpsc/ND.aux
+L ND.MAP;1                          	ND.map	../../sun3.md/devpsc/ND.map
+F ND.OUT;1                          	ND.out
+L NI.AUX;1                          	NI.aux	../../sun3.md/devpsc/NI.aux
+L NI.MAP;1                          	NI.map	../../sun3.md/devpsc/NI.map
+F NI.OUT;1                          	NI.out
+L NR.AUX;1                          	NR.aux	../../sun3.md/devpsc/NR.aux
+L NR.MAP;1                          	NR.map	../../sun3.md/devpsc/NR.map
+F NR.OUT;1                          	NR.out
+L PB.AUX;1                          	PB.aux	../../sun3.md/devpsc/PB.aux
+L PB.MAP;1                          	PB.map	../../sun3.md/devpsc/PB.map
+F PB.OUT;1                          	PB.out
+L PD.AUX;1                          	PD.aux	../../sun3.md/devpsc/PD.aux
+L PD.MAP;1                          	PD.map	../../sun3.md/devpsc/PD.map
+F PD.OUT;1                          	PD.out
+L PI.AUX;1                          	PI.aux	../../sun3.md/devpsc/PI.aux
+L PI.MAP;1                          	PI.map	../../sun3.md/devpsc/PI.map
+F PI.OUT;1                          	PI.out
+L PR.AUX;1                          	PR.aux	../../sun3.md/devpsc/PR.aux
+L PR.MAP;1                          	PR.map	../../sun3.md/devpsc/PR.map
+F PR.OUT;1                          	PR.out
+L R.AUX;1                           	R.aux	../../sun3.md/devpsc/R.aux
+L R.MAP;1                           	R.map	../../sun3.md/devpsc/R.map
+F R.OUT;1                           	R.out
+L S.AUX;1                           	S.aux	../../sun3.md/devpsc/S.aux
+L S.MAP;1                           	S.map	../../sun3.md/devpsc/S.map
+F S.OUT;1                           	S.out
+L SS.AUX;1                          	SS.aux	../../sun3.md/devpsc/SS.aux
+L SS.MAP;1                          	SS.map	../../sun3.md/devpsc/SS.map
+F SS.OUT;1                          	SS.out
+L V.AUX;1                           	V.aux	../../sun3.md/devpsc/V.aux
+L V.MAP;1                           	V.map	../../sun3.md/devpsc/V.map
+F V.OUT;1                           	V.out
+L VB.AUX;1                          	VB.aux	../../sun3.md/devpsc/VB.aux
+L VB.MAP;1                          	VB.map	../../sun3.md/devpsc/VB.map
+F VB.OUT;1                          	VB.out
+L VD.AUX;1                          	VD.aux	../../sun3.md/devpsc/VD.aux
+L VD.MAP;1                          	VD.map	../../sun3.md/devpsc/VD.map
+F VD.OUT;1                          	VD.out
+L VO.AUX;1                          	VO.aux	../../sun3.md/devpsc/VO.aux
+L VO.MAP;1                          	VO.map	../../sun3.md/devpsc/VO.map
+F VO.OUT;1                          	VO.out
+L ZC.AUX;1                          	ZC.aux	../../sun3.md/devpsc/ZC.aux
+L ZC.MAP;1                          	ZC.map	../../sun3.md/devpsc/ZC.map
+F ZC.OUT;1                          	ZC.out
+L ZD.AUX;1                          	ZD.aux	../../sun3.md/devpsc/ZD.aux
+L ZD.MAP;1                          	ZD.map	../../sun3.md/devpsc/ZD.map
+F ZD.OUT;1                          	ZD.out

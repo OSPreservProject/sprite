@@ -1,0 +1,20 @@
+F DESCMAP.C;1                       	descMap.c
+D DS3100_M                          	ds3100.md
+F FILEACCE.C;1                      	fileAccess.c
+D INSTALL0                          	installed
+D INSTALL1                          	installed.ds3100
+D INSTALL2                          	installed.sun3
+D INSTALL3                          	installed.sun4
+F LFS.C;1                           	lfs.c
+F LFSLIB.H;1                        	lfslib.h
+F LFSLIBIN.H;1                      	lfslibInt.h
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+L MKMF.LOC;1                        	mkmf.local	/sprite/lib/mkmf/mkmf.library
+D RCS                               	RCS
+F SEG.C;1                           	seg.c
+F SEGUSAGE.C;1                      	segUsage.c
+F STABLEME.C;1                      	stableMem.c
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md
+F TAGS.;1                           	tags

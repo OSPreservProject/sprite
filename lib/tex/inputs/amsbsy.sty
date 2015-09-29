@@ -1,0 +1,106 @@
+%% This is file `amsbsy.sty' generated from `amsbsy.doc'
+%% on 21-JUN-1991 by the docstrip.ams utility (1.0). 
+%% 
+%%@texfile{
+%% filename="amsbsy.sty",
+%% version="1.1",
+%% date="21-JUN-1991",
+%% filetype="AMS-LaTeX: option",
+%% copyright="Copyright (C) American Mathematical Society, all rights
+%%   reserved.  Copying of this file is authorized only if either:
+%%   (1) you make absolutely no changes to your copy, including name;
+%%   OR (2) if you do make changes, you first rename it to some other
+%%   name.",
+%% author="American Mathematical Society",
+%% address="American Mathematical Society,
+%%   Technical Support Group,
+%%   P. O. Box 6248,
+%%   Providence, RI 02940,
+%%   USA",
+%% telephone="401-455-4080 or (in the USA) 800-321-4AMS",
+%% email="Internet: Tech-Support@Math.AMS.com",
+%% checksumtype="line count",
+%% checksum="106",
+%% codetable="ISO/ASCII",
+%% keywords="latex, amslatex, ams-latex, bold symbol, math symbol",
+%% abstract="This file is part of the AMS-\LaTeX{} package, ver. 1.1.
+%%   It is a \LaTeX{} option that provides a a command for producing
+%%   bold math symbols when appropriate fonts exist, and a `poor man's
+%%   bold' command that can be applied when an appropriate bold font
+%%   doesn't exist."
+%%}
+\expandafter\ifx\csname amsbsy.sty\endcsname\relax
+\expandafter\def\csname amsbsy.sty\endcsname{}
+\else\message{---already loaded}\endinput\fi
+\def\filename{amsbsy.sty}
+\def\fileversion{1.1} \def\filedate{21-JUN-1991}
+\immediate\write16{%
+AMS-LaTeX option `\filename' (\fileversion, \filedate)}
+%%% end of file header
+\@ifundefined{extract@font}
+     {\errmessage{The style option `amsbsy' does not make sense if you
+               do not use a format with the new font selection scheme.}
+      \endinput}
+     {}
+\def\boldsymbol{\protect\p@boldsymbol}
+\def\p@boldsymbol#1{%
+  \begingroup
+  \let\@nomath\@gobble \mathversion{bold}%
+  \math@atom{#1}{%
+  \mathchoice%
+    {\hbox{$\m@th\displaystyle#1$}}%
+    {\hbox{$\m@th\textstyle#1$}}%
+    {\hbox{$\m@th\scriptstyle#1$}}%
+    {\hbox{$\m@th\scriptscriptstyle#1$}}}%
+  \endgroup}
+\@ifundefined{amstext.sty}{\input{amstext.sty}}{}
+\def\setboxz@h{\setbox\z@\hbox}
+\def\wdz@{\wd\z@}
+\def\boxz@{\box\z@}
+\def\setbox@ne{\setbox\@ne}
+\def\wd@ne{\wd\@ne}
+\def\math@atom#1#2{%
+   \binrel@{#1}\binrel@@{#2}}
+\def\binrel@#1{\setboxz@h{\thinmuskip0mu
+  \medmuskip\m@ne mu\thickmuskip\@ne mu$#1\m@th$}%
+ \setbox@ne\hbox{\thinmuskip0mu\medmuskip\m@ne mu\thickmuskip
+  \@ne mu${}#1{}\m@th$}%
+ \setbox\tw@\hbox{\hskip\wd@ne\hskip-\wdz@}}
+\def\pmb{\RIfM@\expandafter\mathpalette\expandafter\pmb@\else
+ \expandafter\pmb@@\fi}
+\def\pmb@@#1{\leavevmode\setboxz@h{#1}%
+   \dimen@-\wdz@
+   \kern-.5\ex@\copy\z@
+   \kern\dimen@\kern.25\ex@\raise.4\ex@\copy\z@
+   \kern\dimen@\kern.25\ex@\box\z@
+}
+\def\binrel@@#1{\ifdim\wd2<\z@\mathbin{#1}\else\ifdim\wd\tw@>\z@
+ \mathrel{#1}\else{#1}\fi\fi}
+\newdimen\pmbraise@
+\def\pmb@#1#2{\setbox\thr@@\hbox{$\m@th#1{#2}$}%
+ \setbox4\hbox{$\m@th#1\mkern.5mu$}\pmbraise@\wd4\relax
+ \binrel@{#2}%
+ \dimen@-\wd\thr@@
+   \binrel@@{%
+   \mkern-.8mu\copy\thr@@
+   \kern\dimen@\mkern.4mu\raise\pmbraise@\copy\thr@@
+   \kern\dimen@\mkern.4mu\box\thr@@
+}}
+%% \CharacterTable
+%%  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
+%%   Lower-case    \a\b\c\d\e\f\g\h\i\j\k\l\m\n\o\p\q\r\s\t\u\v\w\x\y\z
+%%   Digits        \0\1\2\3\4\5\6\7\8\9
+%%   Exclamation   \!     Double quote  \"     Hash (number) \#
+%%   Dollar        \$     Percent       \%     Ampersand     \&
+%%   Acute accent  \'     Left paren    \(     Right paren   \)
+%%   Asterisk      \*     Plus          \+     Comma         \,
+%%   Minus         \-     Point         \.     Solidus       \/
+%%   Colon         \:     Semicolon     \;     Less than     \<
+%%   Equals        \=     Greater than  \>     Question mark \?
+%%   Commercial at \@     Left bracket  \[     Backslash     \\
+%%   Right bracket \]     Circumflex    \^     Underscore    \_
+%%   Grave accent  \`     Left brace    \{     Vertical bar  \|
+%%   Right brace   \}     Tilde         \~}
+\endinput
+%% 
+%% End of file `amsbsy.sty'.

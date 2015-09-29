@@ -1,0 +1,8 @@
+D DS3100_M                          	ds3100.md
+F FOO.;1                            	foo
+F KPROF.MAN;1                       	kprof.man
+F MAKEFILE.;1                       	Makefile
+F PROF.C;1                          	prof.c
+D RCS                               	RCS
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md

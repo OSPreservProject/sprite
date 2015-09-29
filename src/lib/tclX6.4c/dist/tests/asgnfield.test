@@ -1,0 +1,30 @@
+#
+# asgnfield.test
+#
+# Tests for tcl.tlib field assignment routines.
+#---------------------------------------------------------------------------
+# Copyright 1992 Karl Lehenbauer and Mark Diekhans.
+#
+# Permission to use, copy, modify, and distribute this software and its
+# documentation for any purpose and without fee is hereby granted, provided
+# that the above copyright notice appear in all copies.  Karl Lehenbauer and
+# Mark Diekhans make no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without express or
+# implied warranty.
+#------------------------------------------------------------------------------
+# $Id: asgnfield.test,v 2.0 1992/10/16 04:49:29 markd Rel $
+#------------------------------------------------------------------------------
+#
+
+if {[info procs test] == ""} then {source testlib.tcl}
+rename SAVED_UNKNOWN unknown
+
+Test assign_fields-1.1 {assign_fields command} {
+    assign_fields "a b {c d} e" alpha beta gamma delta epsilon
+    return [list $alpha $beta $gamma $delta $epsilon]
+} 2 "a b {c d} e {}"
+
+catch {unset alpha beta gamma delta epsilon}
+rename unknown SAVED_UNKNOWN
+
+

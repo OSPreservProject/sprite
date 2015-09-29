@@ -1,0 +1,7 @@
+L MAIN.CDI;1                        	main.cdiff	../../dist/tkucbsrc/main.cdiff
+L MAIN.SED;1                        	main.sed	../../dist/tkucbsrc/main.sed
+L MAKEFILE.;1                       	Makefile	../../dist/tkucbsrc/Makefile
+F MAKEFILE.SPR;1                    	Makefile.sprite
+L TKEVENT.CDI;1                     	tkEvent.cdiff	../../dist/tkucbsrc/tkEvent.cdiff
+L TKEVENT.SED;1                     	tkEvent.sed	../../dist/tkucbsrc/tkEvent.sed
+L WISHX.SED;1                       	wishx.sed	../../dist/tkucbsrc/wishx.sed

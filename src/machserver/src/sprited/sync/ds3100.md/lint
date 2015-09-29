@@ -1,0 +1,4 @@
+syncLock.c:
+syncSleep.c:
+Sync_SlowWait returns value which is sometimes ignored
+sprintf returns value which is always ignored

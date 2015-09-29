@@ -1,0 +1,18 @@
+F ACKSEND.C;1                       	acksend.c
+F BYTEORDE.C;1                      	byteorder.c
+F CANDIDAT.C;1                      	candidate.c
+F CORRECT.C;1                       	correct.c
+F GLOBALS.H;1                       	globals.h
+F MAKEFILE.;1                       	Makefile
+F MAKEFILE.BSD;1                    	Makefile.bsd
+F MASTER.C;1                        	master.c
+F MEASURE.C;1                       	measure.c
+F NETWORKD.C;1                      	networkdelta.c
+L PROTOCOL.;1                       	protocols	.
+D RCS                               	RCS
+F README.;1                         	README
+F READMSG.C;1                       	readmsg.c
+F SLAVE.C;1                         	slave.c
+D SUN3_MD                           	sun3.md
+F TIMED.C;1                         	timed.c
+F TIMED.H;1                         	timed.h

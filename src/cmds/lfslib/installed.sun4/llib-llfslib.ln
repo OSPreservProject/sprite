@@ -1,0 +1,397 @@
+512
+llib-llfslib:fileAccess.c 2
+2
+3 66 36 0 0
+LfsFileOpenDesc
+24 23392 5795
+24 1024 6184
+88 1248 23770
+16
+0 95 4 0 0
+LfsFileOpenDesc
+2
+3 118 36 0 0
+LfsFileOpen
+24 23392 5795
+4 0 0
+88 1248 23770
+512
+llib-llfslib:fileAccess.c
+16
+0 165 4 0 0
+LfsFileOpen
+2
+1 187 32 0 0
+LfsFileClose
+24 1248 23770
+2
+3 239 36 0 0
+LfsFileBlockFetch
+24 1248 23770
+4 0 0
+88 -32544 29735
+16
+0 277 4 0 0
+LfsFileBlockFetch
+2
+4 302 36 0 0
+LfsFileBlockAlloc
+24 1248 23770
+4 0 0
+4 0 0
+88 -32544 29735
+16
+0 331 4 0 0
+LfsFileBlockAlloc
+2
+3 354 36 0 0
+LfsFileBlockAddr
+24 1248 23770
+4 0 0
+20 0 0
+16
+0 364 4 0 0
+LfsFileBlockAddr
+2
+3 387 36 0 0
+LfsFileSetBlockAddr
+24 1248 23770
+4 0 0
+4 0 0
+16
+0 397 4 0 0
+LfsFileSetBlockAddr
+2
+1 566 36 0 0
+LfsFileStoreDesc
+24 1248 23770
+16
+0 569 4 0 0
+LfsFileStoreDesc
+2
+2 590 36 0 0
+LfsFileStoreBlock
+24 -32544 29735
+4 0 0
+16
+0 596 4 0 0
+LfsFileStoreBlock
+2
+4 604 36 0 0
+LfsFileNameLookup
+24 1248 23770
+18 0 0
+20 0 0
+20 0 0
+16
+0 648 4 0 0
+LfsFileNameLookup
+2
+3 777 36 0 0
+LfsFileLayoutCheckpoint
+24 576 24233
+18 0 0
+20 0 0
+16
+0 824 4 0 0
+LfsFileLayoutCheckpoint
+2
+2 1141 32 0 0
+LfsFileLayoutWriteDone
+24 576 24233
+4 0 0
+512
+llib-llfslib:lfs.c 2
+2
+5 61 104 23392 5795
+LfsLoadFileSystem
+18 0 0
+18 0 0
+4 0 0
+4 0 0
+4 0 0
+16
+0 211 24 23392 5795
+LfsLoadFileSystem
+2
+2 234 36 0 0
+LfsCheckPointFileSystem
+24 23392 5795
+4 0 0
+16
+0 285 4 0 0
+LfsCheckPointFileSystem
+2
+2 326 32 0 0
+LfsDiskCache
+24 23392 5795
+4 0 0
+2
+3 392 32 0 0
+LfsDiskCacheInvalidate
+24 23392 5795
+4 0 0
+4 0 0
+2
+4 442 36 0 0
+LfsDiskRead
+24 23392 5795
+4 0 0
+4 0 0
+18 0 0
+16
+0 540 4 0 0
+LfsDiskRead
+2
+4 564 36 0 0
+LfsDiskWrite
+24 23392 5795
+4 0 0
+4 0 0
+18 0 0
+16
+0 592 4 0 0
+LfsDiskWrite
+512
+llib-llfslib:stableMem.c 2
+2
+3 62 100 0 0
+LfsLoadStableMem
+24 23392 5795
+24 192 24986
+24 32 13089
+16
+0 87 20 0 0
+LfsLoadStableMem
+2
+2 110 98 0 0
+LfsGetStableMemEntry
+20 0 0
+4 0 0
+16
+0 146 18 0 0
+LfsGetStableMemEntry
+2
+2 168 36 0 0
+LfsGetStableMemBlockIndex
+20 0 0
+4 0 0
+16
+0 179 4 0 0
+LfsGetStableMemBlockIndex
+2
+2 202 32 0 0
+LfsMarkStableMemEntryDirty
+20 0 0
+4 0 0
+512
+llib-llfslib:stableMem.c
+2
+3 243 32 0 0
+LfsSetStableMemBlockIndex
+20 0 0
+4 0 0
+4 0 0
+2
+4 346 36 0 0
+LfsStableMemCheckpoint
+24 576 24233
+18 0 0
+20 0 0
+20 0 0
+16
+0 389 4 0 0
+LfsStableMemCheckpoint
+2
+3 414 32 0 0
+LfsStableMemWriteDone
+24 576 24233
+4 0 0
+20 0 0
+512
+llib-llfslib:descMap.c 2
+2
+3 61 36 0 0
+LfsGetNewFileNumber
+24 23392 5795
+4 0 0
+20 0 0
+16
+0 105 4 0 0
+LfsGetNewFileNumber
+2
+3 128 36 0 0
+LfsLoadDescMap
+24 23392 5795
+4 0 0
+18 0 0
+16
+0 152 4 0 0
+LfsLoadDescMap
+2
+3 177 36 0 0
+LfsDescMapCheckpoint
+24 576 24233
+18 0 0
+20 0 0
+16
+0 195 4 0 0
+LfsDescMapCheckpoint
+2
+2 217 32 0 0
+LfsDescMapWriteDone
+24 576 24233
+4 0 0
+2
+3 250 36 0 0
+LfsDescMapGetVersion
+24 23392 5795
+4 0 0
+29 0 0
+16
+0 263 4 0 0
+LfsDescMapGetVersion
+2
+3 289 36 0 0
+LfsDescMapGetDiskAddr
+24 23392 5795
+4 0 0
+20 0 0
+16
+0 302 4 0 0
+LfsDescMapGetDiskAddr
+2
+3 326 36 0 0
+LfsDescMapSetDiskAddr
+24 23392 5795
+4 0 0
+4 0 0
+16
+0 340 4 0 0
+LfsDescMapSetDiskAddr
+512
+llib-llfslib:seg.c 2
+2
+2 54 104 576 24233
+LfsSegInit
+24 23392 5795
+4 0 0
+16
+0 63 24 576 24233
+LfsSegInit
+2
+1 85 36 0 0
+LfsSegStartAddr
+24 576 24233
+16
+0 88 4 0 0
+LfsSegStartAddr
+2
+3 112 98 0 0
+LfsSegFetchBlock
+24 576 24233
+4 0 0
+4 0 0
+16
+0 127 18 0 0
+LfsSegFetchBlock
+2
+2 150 32 0 0
+LfsSegReleaseBlock
+24 576 24233
+18 0 0
+2
+1 174 32 0 0
+LfsSegRelease
+24 576 24233
+2
+4 227 98 0 0
+LfsSegSlowGrowSummary
+24 576 24233
+4 0 0
+4 0 0
+4 0 0
+16
+0 254 18 0 0
+LfsSegSlowGrowSummary
+2
+2 277 36 0 0
+LfsSegSlowDiskAddress
+24 576 24233
+24 96 29749
+16
+0 300 4 0 0
+LfsSegSlowDiskAddress
+2
+4 325 104 96 29749
+LfsSegSlowAddDataBuffer
+24 576 24233
+4 0 0
+18 0 0
+20 0 0
+16
+0 341 24 96 29749
+LfsSegSlowAddDataBuffer
+2
+3 837 36 0 0
+LfsSegCheckPoint
+24 23392 5795
+18 0 0
+20 0 0
+16
+0 857 4 0 0
+LfsSegCheckPoint
+512
+llib-llfslib:segUsage.c 2
+2
+3 56 36 0 0
+LfsLoadUsageArray
+24 23392 5795
+4 0 0
+18 0 0
+16
+0 93 4 0 0
+LfsLoadUsageArray
+2
+3 117 32 0 0
+LfsSegUsageAdjustBytes
+24 23392 5795
+4 0 0
+4 0 0
+2
+3 177 36 0 0
+LfsUsageCheckpoint
+24 576 24233
+18 0 0
+20 0 0
+16
+0 192 4 0 0
+LfsUsageCheckpoint
+2
+2 214 32 0 0
+LfsSegUsageWriteDone
+24 576 24233
+4 0 0
+2
+3 248 32 0 0
+LfsSegUsageCheckpointUpdate
+24 23392 5795
+18 0 0
+4 0 0
+2
+4 282 36 0 0
+LfsGetLogTail
+24 23392 5795
+4 0 0
+24 96 27522
+20 0 0
+16
+0 335 4 0 0
+LfsGetLogTail
+2
+4 359 32 0 0
+LfsSetLogTail
+24 23392 5795
+24 96 27522
+4 0 0
+4 0 0

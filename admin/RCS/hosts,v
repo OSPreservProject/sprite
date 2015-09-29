@@ -1,0 +1,1799 @@
+head     1.83;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @# @;
+
+
+1.83
+date     92.11.20.12.53.32;  author shirriff;  state Exp;
+branches ;
+next     1.82;
+
+1.82
+date     92.11.06.15.42.45;  author shirriff;  state Exp;
+branches ;
+next     1.81;
+
+1.81
+date     92.08.14.17.11.42;  author secor;  state Exp;
+branches ;
+next     1.80;
+
+1.80
+date     92.08.14.13.04.56;  author secor;  state Exp;
+branches ;
+next     1.79;
+
+1.79
+date     92.06.09.16.06.25;  author jhh;  state Exp;
+branches ;
+next     1.78;
+
+1.78
+date     92.04.29.16.40.56;  author kupfer;  state Exp;
+branches ;
+next     1.77;
+
+1.77
+date     92.04.08.15.05.31;  author kupfer;  state Exp;
+branches ;
+next     1.76;
+
+1.76
+date     92.03.20.12.21.43;  author shirriff;  state Exp;
+branches ;
+next     1.75;
+
+1.75
+date     92.03.09.13.49.27;  author shirriff;  state Exp;
+branches ;
+next     1.74;
+
+1.74
+date     92.03.09.11.54.47;  author kupfer;  state Exp;
+branches ;
+next     1.73;
+
+1.73
+date     92.03.02.15.06.52;  author voelker;  state Exp;
+branches ;
+next     1.72;
+
+1.72
+date     92.02.28.14.34.02;  author pmchen;  state Exp;
+branches ;
+next     1.71;
+
+1.71
+date     91.11.03.13.42.14;  author mendel;  state Exp;
+branches ;
+next     1.70;
+
+1.70
+date     91.11.03.13.39.52;  author mottsmth;  state Exp;
+branches ;
+next     1.69;
+
+1.69
+date     91.10.01.16.47.16;  author mottsmth;  state Exp;
+branches ;
+next     1.68;
+
+1.68
+date     91.09.17.15.54.54;  author shirriff;  state Exp;
+branches ;
+next     1.67;
+
+1.67
+date     91.09.04.17.11.46;  author jhh;  state Exp;
+branches ;
+next     1.66;
+
+1.66
+date     91.08.18.20.40.00;  author kupfer;  state Exp;
+branches ;
+next     1.65;
+
+1.65
+date     91.08.12.12.00.01;  author pmchen;  state Exp;
+branches ;
+next     1.64;
+
+1.64
+date     91.08.11.14.19.00;  author shirriff;  state Exp;
+branches ;
+next     1.63;
+
+1.63
+date     91.08.10.20.03.31;  author mendel;  state Exp;
+branches ;
+next     1.62;
+
+1.62
+date     91.08.10.16.52.55;  author shirriff;  state Exp;
+branches ;
+next     1.61;
+
+1.61
+date     91.08.06.12.07.18;  author mottsmth;  state Exp;
+branches ;
+next     1.60;
+
+1.60
+date     91.06.14.15.20.06;  author mendel;  state Exp;
+branches ;
+next     1.59;
+
+1.59
+date     91.06.06.10.51.32;  author shirriff;  state Exp;
+branches ;
+next     1.58;
+
+1.58
+date     91.06.03.13.14.45;  author shirriff;  state Exp;
+branches ;
+next     1.57;
+
+1.57
+date     91.06.03.12.56.46;  author jhh;  state Exp;
+branches ;
+next     1.56;
+
+1.56
+date     91.06.03.12.52.58;  author shirriff;  state Exp;
+branches ;
+next     1.55;
+
+1.55
+date     91.05.29.17.38.17;  author jhh;  state Exp;
+branches ;
+next     1.54;
+
+1.54
+date     91.05.29.17.35.23;  author jhh;  state Exp;
+branches ;
+next     1.53;
+
+1.53
+date     91.05.26.15.21.35;  author jhh;  state Exp;
+branches ;
+next     1.52;
+
+1.52
+date     91.05.14.14.59.12;  author jhh;  state Exp;
+branches ;
+next     1.51;
+
+1.51
+date     91.05.13.13.41.17;  author shirriff;  state Exp;
+branches ;
+next     1.50;
+
+1.50
+date     91.04.03.16.32.01;  author kupfer;  state Exp;
+branches ;
+next     1.49;
+
+1.49
+date     91.03.22.11.57.54;  author jhh;  state Exp;
+branches ;
+next     1.48;
+
+1.48
+date     91.02.25.23.00.43;  author jhh;  state Exp;
+branches ;
+next     1.47;
+
+1.47
+date     91.02.20.17.43.05;  author kupfer;  state Exp;
+branches ;
+next     1.46;
+
+1.46
+date     91.02.12.16.33.17;  author kupfer;  state Exp;
+branches ;
+next     1.45;
+
+1.45
+date     91.01.25.11.46.39;  author jhh;  state Exp;
+branches ;
+next     1.44;
+
+1.44
+date     91.01.25.11.42.22;  author shirriff;  state Exp;
+branches ;
+next     1.43;
+
+1.43
+date     91.01.12.17.50.41;  author jhh;  state Exp;
+branches ;
+next     1.42;
+
+1.42
+date     90.12.18.12.30.35;  author mgbaker;  state Exp;
+branches ;
+next     1.41;
+
+1.41
+date     90.12.08.17.12.57;  author pmchen;  state Exp;
+branches ;
+next     1.40;
+
+1.40
+date     90.12.07.12.46.29;  author rab;  state Exp;
+branches ;
+next     1.39;
+
+1.39
+date     90.12.07.12.39.35;  author shirriff;  state Exp;
+branches ;
+next     1.38;
+
+1.38
+date     90.11.21.12.36.48;  author jhh;  state Exp;
+branches ;
+next     1.37;
+
+1.37
+date     90.11.06.16.22.02;  author jhh;  state Exp;
+branches ;
+next     1.36;
+
+1.36
+date     90.10.29.12.11.01;  author kupfer;  state Exp;
+branches ;
+next     1.35;
+
+1.35
+date     90.10.25.18.40.11;  author rab;  state Exp;
+branches ;
+next     1.34;
+
+1.34
+date     90.10.16.16.54.33;  author kupfer;  state Exp;
+branches ;
+next     1.33;
+
+1.33
+date     90.09.13.12.47.24;  author rab;  state Exp;
+branches ;
+next     1.32;
+
+1.32
+date     90.09.04.16.12.26;  author rab;  state Exp;
+branches ;
+next     1.31;
+
+1.31
+date     90.08.22.12.38.35;  author rab;  state Exp;
+branches ;
+next     1.30;
+
+1.30
+date     90.08.22.12.35.50;  author rab;  state Exp;
+branches ;
+next     1.29;
+
+1.29
+date     90.08.15.15.49.52;  author rab;  state Exp;
+branches ;
+next     1.28;
+
+1.28
+date     90.07.25.11.57.08;  author rab;  state Exp;
+branches ;
+next     1.27;
+
+1.27
+date     90.07.24.15.35.18;  author rab;  state Exp;
+branches ;
+next     1.26;
+
+1.26
+date     90.07.23.16.33.19;  author jhh;  state Exp;
+branches ;
+next     1.25;
+
+1.25
+date     90.07.23.12.01.03;  author root;  state Exp;
+branches ;
+next     1.24;
+
+1.24
+date     90.07.23.11.38.45;  author jhh;  state Exp;
+branches ;
+next     1.23;
+
+1.23
+date     90.04.19.16.19.15;  author mgbaker;  state Exp;
+branches ;
+next     1.22;
+
+1.22
+date     90.04.06.12.25.01;  author jhh;  state Exp;
+branches ;
+next     1.21;
+
+1.21
+date     90.04.03.11.47.05;  author rab;  state Exp;
+branches ;
+next     1.20;
+
+1.20
+date     90.03.18.22.55.38;  author jhh;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     90.03.18.22.49.52;  author jhh;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     90.03.07.15.57.53;  author rab;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     90.03.07.10.58.48;  author jhh;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     90.02.26.13.06.22;  author douglis;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     90.02.14.19.05.44;  author rab;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     90.02.14.18.59.39;  author rab;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     90.02.14.18.55.12;  author rab;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     90.02.14.17.21.54;  author rab;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     90.02.12.20.46.00;  author jhh;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     90.02.12.20.45.14;  author mgbaker;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     90.02.12.20.40.35;  author jhh;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     90.02.09.11.39.49;  author jhh;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     90.02.06.12.15.03;  author rab;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     90.01.30.16.56.23;  author mendel;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     90.01.30.10.22.15;  author rab;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.12.11.18.24.06;  author douglis;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.12.11.18.22.58;  author douglis;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.11.15.19.04.27;  author tve;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.11.06.11.55.18;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@This is a list of machines currently running sprite.
+
+@
+
+
+1.83
+log
+@*** empty log message ***
+@
+text
+@#
+#   /sprite/admin/hosts
+#
+#   This is a list of machines currently running sprite.  This list is
+#   here so system administrators can quickly get the information.
+#   This file is currently used by nrup, which expects data to be in the
+#   proper columns.  The fields are separated by spaces, _not_ by tabs.
+#
+
+# Which        What           Where           Who
+aix            ds5000         484 Cory        Rob Pfile
+allspice       sun4/280       Evans 608-11    File Server
+anarchy        ds5000         Evans 608-2     Testing
+#anarchy        dsmach         Evans 608-2     Mach Testing
+anise          sun4/260       Cory            Raid
+apathy         sun4/60        Evans 508-5     Garth Gibson
+arson          ds5000         Evans 608-2     Matt Secor
+assault        ds3100         Evans 608-4     File Server
+babylon        ds3100         Evans 608-4     Postgres
+basil          sun4/75        Evans 508-5     Ed Lee
+blackmail      Sequent-s27    Evans 608-11    John Hartman
+boing          sun4/65        Evans 442       Klaus Schauser
+bribery        ds3100         Evans 508-14    Mike Hohmeyer
+burble         sun4/60        Evans 444       Paul de Dood
+buzz           sun3/60        Evans 444       John Wawrzynek
+cardamom       ds3100         Evans 529B      Dave Culler
+catnip         sun3/140       Evans 608-4     Shut Down
+chenonceau     sun4/60        Cory 484        Ken Lutz
+chisum         ds3100         Cory 524        Ken Lutz
+clove          ds5000         Evans 508-5     Ann L. Chervenak
+coons          ds5000         Evans 608-4     (Gone)
+covet          ds5000         Evans 608-11    Tape jukebox server
+crackle        sun4/60        Evans 444       Thorsten von Eicken
+espionage      sun4/60        Evans 508-5     Ed Lee
+fenugreek      sun3/140       Evans 608-4     Shut Down
+forgery        ds5000         Evans 508-5     Ed Lee
+garlic         ds5000         Evans 608-11    Pete Chen
+gluttony       ds3100         Evans 523       John Wawrzynek
+greed          ds3100         Evans 508-7     Mike Hohmeyer
+heresy         ds3100         Evans 608-8     Tzl-cker Chiueh
+hijack         ds5000         Evans 477       Ken Shirriff
+hoot           sun3/75        Evans 444       John W.
+jaywalk        sun4/75        Evans 477       Caroline Paxson
+jealousy       sun3           Evans 444       K. Yelick
+joyride        sun4/60        Evans 608-8     Peter Leong
+king           ds3100         Cory 524        Ken Lutz
+kvetching      ds3100         Evans 608-4     to be donated
+larceny        sun4/60        Evans 608-2     Testing
+loiter         ds5000         Evans 477       John Hartman
+lsisim         ds3100         Evans 475       Vojin Oklobdzija
+lust           ds5000         Evans 608-11    FileServer
+mayhem         ds5000         Evans 507       Randy Katz
+mercenary      sun4/60        Evans 531       Randy Katz
+murder         sun3/60        Evans 608-2     Shut Down
+mustard        ds5000         Evans 508-5     Pete Chen
+nutmeg         sun3/75        Evans 608-4     Shut Down
+oregano        sun3/140       Evans 608-4     Shut Down
+paprika        sun3/75        Evans 442       Anurag Sah
+parsley        ds3100         Evans 531       Randy Katz
+pepper         ds5000         Evans 527       Dave Patterson
+piquante       ds3100         Evans 477       Testing
+piracy         ds5000         Evans 477       Testing
+pride          ds3100         Evans 527       Dave Patterson
+raid           sun4/280       Cory 524        Raid
+raid1          sun4/280       Evans 608-11    File Server
+raid2          sun4           Cory 524        Ken Lutz
+roar           ds3100         Evans 442       Seth Copen Goldstein
+sabotage       sun4/75        Evans 608-2     Jim Mott-Smith
+saffron        sun4/60        Evans 508-5     Joel A. Fine
+sage           sun4/75        Evans 608-2     Mike Kupfer
+sassafras      sun4/60        Evans 608-2     Dump tape machine
+sedition       sun4/60        Evans 608-8     Tzl-cker Chiueh
+sioux          ds3100         Cory 524        Ken Lutz
+subversion     ds5000         Evans 533       Bob Miller
+terrorism      sun4/75        Evans 608-8     Ethan Miller
+thyme          sun4/60        Evans 608-11    Pete Chen
+tonkawa        sun3/160       Cory 524        Raid
+treason        sun4/75        Evans 477       Mary Baker
+tyranny        sun4/60        Evans 525       John Ousterhout
+vagrancy       ds3100         Evans 608-4     Testing
+violence       ds3100         Evans 47?       Thorsten von Eicken
+@
+
+
+1.82
+log
+@Adjusted machines for my move to 477.
+
+@
+text
+@d81 1
+a81 1
+violence       ds3100         Evans 608-4     Shut Down
+@
+
+
+1.81
+log
+@Changed stuff that is different now with the 608-2 - 608-4 switcheroo.
+@
+text
+@d41 1
+a41 1
+hijack         ds5000         Evans 608-2     Ken Shirriff
+d71 1
+a71 1
+sassafras      sun4/60        Evans 608-2     Ken Shirriff
+@
+
+
+1.80
+log
+@Changed anarchy from dsmach to ds5000 for now
+@
+text
+@d13 1
+a13 1
+anarchy        ds5000         Evans 608-2     Mach Testing
+d15 1
+a15 1
+anise          sun4/260       Evans 477       Mary Baker
+d17 2
+a18 2
+arson          ds5000         Evans 608-4     Testing
+assault        ds3100         Evans 608-4     FileServer
+d27 1
+a27 1
+catnip         sun3/140       Evans 608-4     Testing
+d35 1
+a35 1
+fenugreek      sun3/140       Evans 608-4     Testing
+d48 1
+a48 1
+larceny        sun4/60        Evans 477       Ari Juels
+d54 1
+a54 1
+murder         sun3/60        Evans 608-2     Testing
+d56 2
+a57 2
+nutmeg         sun3/75        Evans 608-4     Testing
+oregano        sun3/140       Evans 608-2     Mach Testing
+d81 1
+a81 1
+violence       ds3100         Evans 608-4     Testing
+@
+
+
+1.79
+log
+@moved violence and piracy
+@
+text
+@d13 2
+a14 2
+#anarchy        ds5000         Evans 608-2     Mach Testing
+anarchy        dsmach         Evans 608-2     Mach Testing
+@
+
+
+1.78
+log
+@Change anarchy's type from ds5000 to dsmach.
+@
+text
+@d62 1
+a62 1
+piracy         ds5000         Evans 608-4     Testing
+d81 1
+a81 1
+violence       ds3100         Evans 477       Testing
+@
+
+
+1.77
+log
+@Covet moved from 608-2 to the machine room.
+@
+text
+@d13 2
+a14 1
+anarchy        ds5000         Evans 608-2     Mach Testing
+@
+
+
+1.76
+log
+@Updates
+@
+text
+@d31 1
+a31 1
+covet          ds5000         Evans 608-2     Jim Mott-Smith
+@
+
+
+1.75
+log
+@Made some updates.
+@
+text
+@d40 1
+a40 1
+hijack         ds5000         Evans 477       Testing
+d80 1
+a80 1
+violence       ds3100         Evans 608-2     Ken Shirriff
+@
+
+
+1.74
+log
+@Fill in info about babylon.
+@
+text
+@d12 1
+a12 1
+allspice       sun4/280       Evans 608-11    FileServer
+d30 1
+a30 1
+coons          ds5000         Evans 608-4     John Hartman
+d42 1
+a42 1
+jaywalk        sun4/75        Evans 477       Mendel Rosenblum
+d75 1
+a75 1
+thyme          sun4/60        Evans 508-5     Pete Chen
+@
+
+
+1.73
+log
+@babylon added by addhost
+@
+text
+@d18 1
+a18 1
+babylon        ds3100         UNKNOWN         JOE NOBODY
+@
+
+
+1.72
+log
+@garlic
+@
+text
+@d18 1
+a18 1
+babylon        ds3100         Evans 608-3     Ron Choi
+@
+
+
+1.71
+log
+@Update sage to be a sparc2, Changed larceny to be owned by  Ari Juels
+@
+text
+@d36 1
+a36 1
+garlic         ds5000         Evans 508-5     Pete Chen
+@
+
+
+1.70
+log
+@Fixed jealousy
+@
+text
+@d47 1
+a47 1
+larceny        sun4/60        Evans 477       Abhijit Sahay
+d69 1
+a69 1
+sage           sun4/60        Evans 608-2     Mike Kupfer
+@
+
+
+1.69
+log
+@jealousy added by addhost
+@
+text
+@d43 1
+a43 1
+jealousy       sun3           UNKNOWN         JOE NOBODY
+@
+
+
+1.68
+log
+@Changed clove to a 5000.
+@
+text
+@d43 1
+@
+
+
+1.67
+log
+@updated a few things
+@
+text
+@d29 1
+a29 1
+clove          ds3100         Evans 508-5     Ann L. Chervenak
+@
+
+
+1.66
+log
+@Anarchy will be used for Mach work.
+@
+text
+@d16 1
+a16 1
+arson          ds5000         Evans 477       Testing
+d40 1
+a40 1
+hijack         ds5000         Evans 477       John Hartman
+d60 1
+a60 1
+piracy         ds5000         Evans 525       John Ousterhout
+@
+
+
+1.65
+log
+@updated thyme, clove, saffron
+@
+text
+@d13 1
+a13 1
+anarchy        ds5000         Evans 608-4     Test
+@
+
+
+1.64
+log
+@Fixed incorrect machine types.
+@
+text
+@d29 1
+a29 1
+clove          ds3100         Evans 608-8     Ethan Miller
+d67 1
+a67 1
+saffron        sun4/60        Evans 508-5     Ann L. Chervenak
+d74 1
+a74 1
+thyme          sun4/?         Evans 477       John Hartman
+@
+
+
+1.63
+log
+@Corrected random things.
+@
+text
+@d53 1
+a53 1
+mustard        ds3100         Evans 508-5     Pete Chen
+d60 1
+a60 1
+piracy         ds3100         Evans 525       John Ousterhout
+d72 1
+a72 1
+subversion     ds3100         Evans 533       Bob Miller
+d74 1
+a74 1
+thyme          sun3/75        Evans 477       John Hartman
+@
+
+
+1.62
+log
+@Updated listing of sun4c2's.
+@
+text
+@d15 2
+a16 2
+apathy         sun4c          Evans 508-5     Garth Gibson
+arson          ds5000         Evans 608-4     Testing
+d19 1
+a19 1
+basil          sun3/75        Evans 508-5     Garth Gibson
+d21 1
+a21 1
+boing          sun4c+         Evans 442       Klaus Schauser
+d23 2
+a24 2
+burble         sun4c          Evans 444       Paul de Dood
+buzz           sun3/60C       Evans 444       John Wawrzynek
+d27 1
+a27 1
+chenonceau     sun4c          Cory 484        Ken Lutz
+d32 2
+a33 2
+crackle        sun4c          Evans 444       Thorsten von Eicken
+espionage      sun4c          Evans 508-5     Ed Lee
+d42 2
+a43 2
+jaywalk        sun4c2         Evans 477       Mendel Rosenblum
+joyride        sun4c          Evans 608-8     Peter Leong
+d46 1
+a46 1
+larceny        sun4c2         Evans 477       Abhijit Sahay
+d51 1
+a51 1
+mercenary      sun4c          Evans 531       Randy Katz
+d66 5
+a70 5
+sabotage       sun4c2         Evans 608-2     Jim Mott-Smith
+saffron        sun4c          Evans 508-5     Ann L. Chervenak
+sage           sun4c          Evans 608-2     Mike Kupfer
+sassafras      sun4c          Evans 608-2     Ken Shirriff
+sedition       sun4c          Evans 608-8     Tzl-cker Chiueh
+d73 1
+a73 1
+terrorism      sun4c          Evans 608-8     Ethan Miller
+d76 2
+a77 2
+treason        sun4c2         Evans 477       Mary Baker
+tyranny        sun4c2         Evans 525       John Ousterhout
+@
+
+
+1.61
+log
+@Move coons from 477 to 608-4
+@
+text
+@d10 1
+a10 1
+# Which     What        Where               Who
+d12 1
+a12 1
+allspice       sun4/280       Evans 608-11    FileServer    
+d14 1
+a14 1
+anise          sun4/260       Evans 477       Mary Baker   
+d16 4
+a19 4
+arson          ds5000         Evans 608-4     Testing    
+assault        ds3100         Evans 608-4     FileServer    
+babylon        ds3100         Evans 608-3     Ron Choi   
+basil          sun3/75        Evans 508-5     Garth Gibson   
+d23 3
+a25 3
+burble         sun4c          Evans 444       Paul de Dood  
+buzz           sun3/60C       Evans 444       John Wawrzynek   
+cardamom       ds3100         Evans 529B      Dave Culler   
+d28 2
+a29 2
+chisum         ds3100         Cory 524        Ken Lutz   
+clove          ds3100         Evans 608-8     Ethan Miller   
+d32 2
+a33 2
+crackle        sun4c          Evans 444       Thorsten von Eicken  
+espionage      sun4c          Evans 508-5     Ed Lee   
+d35 1
+a35 1
+forgery        ds5000         Evans 508-5     Ed Lee   
+d37 1
+a37 1
+gluttony       ds3100         Evans 523       John Wawrzynek   
+d42 1
+a42 1
+jaywalk        sun4c          Evans 477       Mendel Rosenblum   
+d44 1
+a44 1
+king           ds3100         Cory 524        Ken Lutz   
+d46 1
+a46 1
+larceny        sun4c          Evans 477       Abhijit Sahay
+d48 2
+a49 2
+lsisim         ds3100         Evans 475       Vojin Oklobdzija   
+lust           ds5000         Evans 608-11   FileServer
+d56 3
+a58 3
+paprika        sun3/75        Evans 442       Anurag Sah   
+parsley        ds3100         Evans 531       Randy Katz   
+pepper         ds5000         Evans 527       Dave Patterson   
+d60 3
+a62 3
+piracy         ds3100         Evans 525       John Ousterhout   
+pride          ds3100         Evans 527       Dave Patterson 
+raid           sun4/280       Cory 524        Raid    
+d66 1
+a66 1
+sabotage       sun4c          Evans 608-2     Jim Mott-Smith
+d71 3
+a73 3
+sioux          ds3100         Cory 524        Ken Lutz   
+subversion     ds3100         Evans 533	      Bob Miller
+terrorism      sun4c          Evans 608-8     Ethan Miller   
+d75 3
+a77 3
+tonkawa        sun3/160       Cory 524        Raid    
+treason        sun4c          Evans 477       Mary Baker   
+tyranny        sun4c          Evans 525       John Ousterhout
+@
+
+
+1.60
+log
+@aix added by addhost
+@
+text
+@d30 1
+a30 1
+coons          ds5000         Evans 477       John Hartman
+@
+
+
+1.59
+log
+@Tidied up office list.
+@
+text
+@d11 1
+@
+
+
+1.58
+log
+@Undid last change
+@
+text
+@d12 1
+a12 1
+anarchy        ds5000         608-4 Evans     Test
+d26 1
+a26 1
+chenonceau     sun4c          484 Cory        Ken Lutz
+d30 1
+a30 1
+covet          ds5000         608-2 Evans     Jim Mott-Smith
+d39 1
+a39 1
+hijack         ds5000         477 Evans       John Hartman
+d48 2
+a49 2
+lust           ds5000         608-11 Evans    FileServer
+mayhem         ds5000         507 Evans       Randy Katz
+@
+
+
+1.57
+log
+@chenonceau added by addhost
+@
+text
+@d16 1
+a16 1
+assault        ds3100         Evans 608-4     Testing    
+@
+
+
+1.56
+log
+@updated assault
+@
+text
+@d26 1
+@
+
+
+1.55
+log
+@lust added by addhost
+@
+text
+@d16 1
+a16 1
+assault        ds3100         Evans 608-11    FileServer    
+d43 1
+a43 1
+kvetching      ds3100         Evans 608-2     to be donated
+@
+
+
+1.54
+log
+@lust added by addhost
+@
+text
+@d47 1
+a47 1
+lust           ds5000         608-11 Evans    Sprite God
+@
+
+
+1.53
+log
+@hijack added by addhost
+@
+text
+@d47 1
+@
+
+
+1.52
+log
+@anarchy added by addhost
+@
+text
+@d38 1
+a38 1
+hijack         ds3100         Evans 477       John Hartman   
+@
+
+
+1.51
+log
+@Swapped nutmeg and sassafras.
+@
+text
+@d12 1
+@
+
+
+1.50
+log
+@Pepper is now a ds5000.
+@
+text
+@d50 1
+a50 1
+nutmeg         sun3/75        Evans 608-2     Ken Shirriff   
+d65 1
+a65 1
+sassafras      sun4c          Evans 608-4     Testing 
+@
+
+
+1.49
+log
+@arson is now a ds5000
+@
+text
+@d54 1
+a54 1
+pepper         sun4c          Evans 527       Dave Patterson   
+@
+
+
+1.48
+log
+@covet added by addhost
+@
+text
+@d14 1
+a14 1
+arson          ds3100         Evans 608-4     Testing    
+@
+
+
+1.47
+log
+@Update entry for subversion.
+@
+text
+@d28 1
+@
+
+
+1.46
+log
+@We're giving kvetching to somebody else, so Jim gets sabotage.
+@
+text
+@d67 1
+a67 1
+subversion     ds3100         Evans 608-8     Ann Chervenak   
+@
+
+
+1.45
+log
+@mayhem added by addhost
+@
+text
+@d41 1
+a41 1
+kvetching      ds3100         Evans 608-2     Jim Mott-Smith
+d61 1
+a61 1
+sabotage       sun4c          Evans 608-2     Testing
+@
+
+
+1.44
+log
+@Updated machine locations.
+@
+text
+@d45 1
+a45 1
+mayhem         sun4/60        Evans 477       darrell
+@
+
+
+1.43
+log
+@raid2 added by addhost
+@
+text
+@d27 1
+a27 1
+coons          ds5000         Evans 608-2     John Hartman
+d36 1
+a36 1
+hijack         ds3100         Evans 608-2     John Hartman   
+d41 1
+a41 1
+kvetching      ds3100         Evans 477       Testing
+d43 1
+a43 1
+loiter         ds5000         Evans 608-2     John Hartman
+d45 1
+a45 1
+mayhem         sun4/60        477Evans        darrell
+d47 1
+a47 1
+murder         sun3/60        Evans 608-2     Bob Bruce 
+d61 1
+a61 1
+sabotage       sun4c          Evans 608-2     Bob Bruce   
+d69 1
+a69 1
+thyme          sun3/75        Evans 608-2     John Hartman
+@
+
+
+1.42
+log
+@mayhem added by addhost
+@
+text
+@d59 1
+@
+
+
+1.41
+log
+@changed garlic, mustard, vagrancy around
+@
+text
+@d45 1
+@
+
+
+1.40
+log
+@roar added by addhost
+@
+text
+@d32 1
+a32 1
+garlic         ds3100         Evans 508-5     Pete Chen
+d47 1
+a47 1
+mustard        ds3100         Evans 608-4     Testing
+d71 1
+a71 1
+vagrancy       ds3100         Evans 508-5     pmchen
+@
+
+
+1.39
+log
+@Reorganized everything.
+@
+text
+@d58 1
+@
+
+
+1.38
+log
+@loiter added by addhost
+@
+text
+@d6 2
+a7 3
+#   It isn't currently used by any programs, but it should be kept in a
+#   standard format so if someone wants to extract information
+#   with an awk script or something like that, they can do so.
+d13 1
+a13 1
+apathy         sun4c          508-5           Garth Gibson
+d15 1
+a15 1
+assault        ds3100         Evans 608-4     FileServer    
+d18 3
+a20 3
+blackmail      Sequent-s27    608-11          John Hartman
+boing          sun4c+         442 Evans       Klaus Schauser
+bribery        ds3100	      Evans 508-14    Mike Hohmeyer
+d24 1
+a24 1
+catnip         sun3/140       608-2 Evans     John Hartman
+d27 1
+a27 1
+coons          ds5000         608-2 Evans     John Hartman
+d30 2
+a31 2
+fenugreek      sun3/140       608-2           John Hartman   
+forgery        ds3100         Evans 508-5     Ed Lee   
+d41 3
+a43 3
+kvetching      ds3100         Evans 477       Fred Douglis   
+larceny        sun4c          477 Evans       Abhijit Sahay
+loiter         ds5000         608-2 Evans     John Hartman
+d45 1
+a45 1
+mercenary      sun4c          531 Evans       Randy Katz
+d49 1
+a49 1
+oregano        sun3/140       Evans 608-2     FileServer    
+d53 1
+a53 1
+piquante       ds3100         Evans 477	      Fred Douglis
+d57 1
+a57 1
+raid1          sun4/280       608-11          File Server
+d59 1
+a59 1
+saffron        sun4c          508-5           Ann L. Chervenak
+@
+
+
+1.37
+log
+@coons added by addhost
+@
+text
+@d44 1
+@
+
+
+1.36
+log
+@Sassafras and Espionage were swapped.
+@
+text
+@d28 1
+@
+
+
+1.35
+log
+@hoot added by addhost
+@
+text
+@d29 1
+a29 1
+espionage      sun4c          Evans 608-4     Testing 
+d60 1
+a60 1
+sassafras      sun4c          Evans 508-5     Ed Lee   
+@
+
+
+1.34
+log
+@Fix entries for sage, pride, fenugree, mustard, and violence.
+@
+text
+@d37 1
+@
+
+
+1.33
+log
+@Deleted old entries.
+@
+text
+@d30 1
+a30 1
+fenugreek      sun3/140       Machine Room    John Hartman   
+d45 1
+a45 1
+mustard        ds3100         Evans 508-5     Pete Chen
+d53 1
+a53 1
+pride          ds3100         Evans 608-2     Ken Shirriff   
+d58 1
+a58 1
+sage           sun4c          Evans 608-2     Brent Welch   
+d69 1
+a69 1
+violence       ds3100         Evans 533       Bob Miller   
+@
+
+
+1.32
+log
+@saffron added by addhost
+@
+text
+@a27 1
+covet          sun4c          Evans 477       Mary Baker   
+a42 1
+lust           spur           Evans 608-2     John Hartman   
+a43 1
+mint           sun3/180       Evans 608-10    FileServer    
+a58 1
+salt           ds3100         Evans 508-5     pmchen
+a61 1
+spur1          spur           Cory 524        David Wood   
+@
+
+
+1.31
+log
+@Deleted poltroonery.
+@
+text
+@d60 1
+@
+
+
+1.30
+log
+@Fixed boing's entry.
+@
+text
+@d20 1
+a20 1
+boing          sun4c+         442 Evans       Erik Schauser
+a55 1
+poltroonery    sun3/50        Evans 508-4     Testing
+@
+
+
+1.29
+log
+@boing added by addhost
+@
+text
+@d20 1
+a20 1
+boing          sun4c          442 Evans       Schauser
+@
+
+
+1.28
+log
+@vagrancy added by addhost
+@
+text
+@d20 1
+@
+
+
+1.27
+log
+@salt added by addhost
+@
+text
+@d72 1
+@
+
+
+1.26
+log
+@blackmail added by addhost
+@
+text
+@d61 1
+@
+
+
+1.25
+log
+@blackmail added by addhost
+@
+text
+@d19 1
+a19 1
+blackmail      sym-s27        608-11          JHH
+@
+
+
+1.24
+log
+@blackmail added by addhost
+@
+text
+@d19 1
+a19 1
+blackmail      symmetry-s27   608-11          John Hartman
+@
+
+
+1.23
+log
+@update
+@
+text
+@d19 1
+@
+
+
+1.22
+log
+@raid1 added by addhost
+@
+text
+@d29 1
+a29 1
+fenugreek      sun3/140       Evans 477       Mary Baker   
+@
+
+
+1.21
+log
+@catnip added by addhost
+@
+text
+@d57 1
+@
+
+
+1.20
+log
+@added thyme
+@
+text
+@d23 1
+@
+
+
+1.19
+log
+@brought it up-to-date
+@
+text
+@d64 1
+@
+
+
+1.18
+log
+@Changed pepper from a ds3100 to a sun4c.
+@
+text
+@d19 1
+d27 1
+a27 1
+espionage      sun4c          Evans 608-2     John Hartman   
+d32 2
+a41 1
+mace           sun3/75        Evans 525       John Ousterhout   
+d44 1
+a44 1
+murder         sun3/60        Evans 477       Mendel Rosenblum   
+d48 1
+a48 1
+paprika        sun3/75        Evans 477       Fred Douglis   
+d53 1
+d57 1
+a57 1
+sage           sun3/160       Evans 608-2     Brent Welch   
+d59 1
+d66 1
+@
+
+
+1.17
+log
+@mercenary added by addhost
+@
+text
+@d48 1
+a48 1
+pepper         ds3100         Evans 527       Dave Patterson   
+@
+
+
+1.16
+log
+@moved piquante
+@
+text
+@d40 1
+@
+
+
+1.15
+log
+@garlic added by addhost
+@
+text
+@d48 1
+a48 1
+piquante       ds3100         Evans 608-4     Dave Culler   
+@
+
+
+1.14
+log
+@mustard added by addhost
+@
+text
+@d29 1
+a29 1
+garlic         sun3/75        Evans 508-5     Pete Chen   
+@
+
+
+1.13
+log
+@apathy added by addhost
+@
+text
+@d42 1
+a42 1
+mustard        ds3100         Evans 508-5     Pete Chen   
+@
+
+
+1.12
+log
+@joyride added by addhost
+@
+text
+@d14 1
+a14 1
+apathy         ds3100         Evans 508-5     Garth Gibson   
+@
+
+
+1.11
+log
+@larceny added by addhost
+@
+text
+@d33 1
+@
+
+
+1.10
+log
+@bug in addhosts
+@
+text
+@d35 1
+@
+
+
+1.9
+log
+@larceny added by addhost
+@
+text
+@a11 1
+                              477             
+@
+
+
+1.8
+log
+@formatted differently
+@
+text
+@d12 1
+@
+
+
+1.7
+log
+@Added lsisim.
+@
+text
+@d12 48
+a59 49
+
+allspice    sun4/280    Evans 608-11        FileServer
+anise       sun4/260    Evans 477           Mary Baker
+apathy      ds3100      Evans 508-5         Garth Gibson
+arson       ds3100      Evans 608-4	    Testing
+assault     ds3100      Evans 608-4         FileServer
+babylon     ds3100      Evans 608-3         Ron Choi
+basil       sun3/75     Evans 508-5         Garth Gibson
+burble      sun4c       Evans 444           Paul de Dood
+buzz        sun3/60C    Evans 444           John Wawrzynek
+cardamom    ds3100      Evans 529B          Dave Culler
+chisum      ds3100      Cory  524           Ken Lutz
+clove       ds3100      Evans 608-8         Ethan Miller
+covet       sun4c       Evans 477           Mary Baker
+crackle     sun4c       Evans 444           Thorsten von Eicken
+espionage   sun4c       Evans 608-2         John Hartman
+fenugreek   sun3/140    Evans 477           Mary Baker
+forgery     ds3100      Evans 508-5         Ed Lee
+garlic      sun3/75     Evans 508-5         Pete Chen
+gluttony    ds3100      Evans 523           John Wawrzynek
+hijack      ds3100      Evans 608-2         John Hartman
+jaywalk     sun4c       Evans 477           Mendel Rosenblum
+king        ds3100      Cory  524           Ken Lutz
+kvetching   ds3100      Evans 477           Fred Douglis
+lsisim	    ds3100	Evans 475	    Vojin Oklobdzija
+lust        spur        Evans 608-2         John Hartman
+mace        sun3/75     Evans 525           John Ousterhout
+mint        sun3/180    Evans 608-10        FileServer
+murder      sun3/60     Evans 477           Mendel Rosenblum
+mustard     ds3100      Evans 508-5         Pete Chen
+nutmeg      sun3/75     Evans 608-2         Ken Shirriff
+oregano     sun3/140    Evans 608-2         FileServer
+paprika     sun3/75     Evans 477           Fred Douglis
+parsley     ds3100      Evans 531           Randy Katz
+pepper      ds3100      Evans 527           Dave Patterson
+piquante    ds3100      Evans 608-4         Dave Culler
+piracy      ds3100      Evans 525           John Ousterhout
+pride       ds3100      Evans 608-2         Ken Shirriff
+raid        sun4/280    Cory  524           Raid
+sabotage    sun4c       Evans 608-2         Bob Bruce
+sage        sun3/160    Evans 608-2         Brent Welch
+sassafras   sun4c       Evans 508-5         Ed Lee
+sioux       ds3100      Cory  524           Ken Lutz
+spur1       spur        Cory  524           David Wood
+subversion  ds3100      Evans 608-8         Ann Chervenak
+terrorism   sun4c       Evans 608-8         Ethan Miller
+tonkawa     sun3/160    Cory  524           Raid
+treason     sun4c       Evans 477           Mary Baker
+violence    ds3100      Evans 533           Bob Miller
+@
+
+
+1.6
+log
+@Corrected some of the sun3 types.
+@
+text
+@d36 1
+@
+
+
+1.5
+log
+@Added new ds3100's.
+@
+text
+@d28 1
+a28 1
+fenugreek   sun3/75     Evans 477           Mary Baker
+d38 1
+a38 1
+mint        sun3/75     Evans 608-10        FileServer
+d49 1
+a49 1
+raid        sun4        Cory  524           Raid
+d51 1
+a51 1
+sage        sun3/75     Evans 608-2         Brent Welch
+d57 1
+a57 1
+tonkawa     sun3/75     Cory  524           Raid
+a59 1
+
+@
+
+
+1.4
+log
+@sassafras -> sun4c
+@
+text
+@d1 9
+d11 1
+a12 5
+This is a list of machines currently running sprite.
+
+Which       What        Where               Who
+
+#adultery    ds3100      Evans 513           Jay Vosburgh
+d16 1
+a16 1
+arson       ds3100      Evans 608-4	    Public
+d18 1
+d23 1
+d27 1
+d34 1
+d49 2
+a50 1
+raid        sun4        Cory Spurlab        Raid
+d53 2
+a54 2
+sloth       sun3/75     Evans 608-2         Bob Bruce
+spur1       spur        Cory Spurlab        David Wood
+d57 1
+a57 2
+thyme       sun3/75     Evans 608-2         John Hartman
+tonkawa     sun3/75     Cory Spurlab        Raid
+a59 6
+
+spur:        2
+sun4:       10
+sun3:       13
+ds3100:     15
+total:      40
+@
+
+
+1.3
+log
+@added terrorism and reassigned some others
+@
+text
+@d42 1
+a42 1
+sassafrass  sun3/75     Evans 508-5         Ed Lee
+d53 2
+a54 2
+sun4:        9
+sun3:       14
+@
+
+
+1.2
+log
+@added crackle and buzz
+@
+text
+@d7 1
+a7 1
+adultery    ds3100      Evans 513           Jay Vosburgh
+d11 1
+a11 1
+arson       ds3100      Evans 513           Bob Beck
+d25 1
+a25 1
+jaywalk     sun4c       Evans 477           Mary Baker
+d46 1
+d49 1
+d53 1
+a53 1
+sun4:        7
+d55 2
+a56 2
+ds3100:     16
+total:      39
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+d19 1
+d23 1
+a23 1
+gluttony    ds3100      Evans 444           Thorsten Von Eicken
+d51 2
+a52 2
+sun4:        6
+sun3:       13
+d54 1
+a54 1
+total:      37
+@

@@ -1,0 +1,68 @@
+
+
+
+KGDB.SUN3                 User Commands                 KGDB.SUN3
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     kgdb.sun3 - Kgdb for the Sprite sun3 kernel.
+
+SSYYNNOOPPSSIISS
+     kkggddbb..ssuunn33 [_o_p_t_i_o_n]
+
+OOPPTTIIOONNSS
+     See the kkggddbb manual page for information about options.
+
+_________________________________________________________________
+
+
+IINNTTRROODDUUCCTTIIOONN
+     KKggddbb..ssuunn33 is a version of Sprite kkggddbb used to  debug  Sprite
+     running  of  the Sun Microsystems,Inc sun3 family of comput-
+     ers. Documentation for this command can  be  in  the  manual
+     page for kkggddbb.
+
+
+KKEEYYWWOORRDDSS
+     kgdb, gdb, sun3 debugger
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  September 5, 1990                  1
+
+
+

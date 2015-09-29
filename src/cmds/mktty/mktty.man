@@ -1,0 +1,64 @@
+' $Header: /a/newcmds/mktty/RCS/mktty.man,v 1.1 89/04/06 15:11:35 ouster Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS MKTTY cmds
+.BS
+.SH NAME
+mktty \- Create pseudo-terminal with 4.3 BSD line discipline
+.SH SYNOPSIS
+\fBmktty \fIrawTty\fR \fIpdevName\fR [\fIcommand arg arg ...\fR]
+.BE
+
+.SH DESCRIPTION
+.LP
+Given a raw serial line device, \fBmktty\fR generates a pseudo-device that
+behaves like a terminal under 4.3 BSD UNIX, with most of the
+features of the 4.3 BSD terminal driver.
+\fIRawTty\fR is the name of a device file for a serial line.  \fBTty\fR will
+read keyboard input from this file in raw mode and write screen output
+to the file, also in raw mode.  \fBTty\fR will create a pseudo-device
+at \fIpdevName\fR;  input from \fIrawTty\fR will appear as input on
+\fIpdevName\fR after line-editing and other input-related features of
+the 4.3 BSD terminal driver.  Output to \fIpdevName\fR will eventually
+appear as output on \fIrawTty\fR, after processing that simulates
+the features of the 4.3 BSD terminal driver.  All of the 4.3 BSD
+I/O-control operations may be performed on \fIpdevName\fR, except
+for the exceptions listed below.  Thus if a user's terminal is connected
+to \fIrawTty\fR and if the user's applications all talk to \fIpdevName\fR,
+everything will behave as it did under 4.3 BSD UNIX.
+.LP
+If \fIcommand\fR is given as an argument to \fBmktty\fR, it (and the following
+arguments) are executed with \fIpdevName\fR as standard input, standard
+output, and standard error.
+.LP
+\fBTty\fR also supports a special mode of operation where it uses a network
+connection instead of a raw serial line device.  If \fIrawTty\fR contains
+a colon character, then it is assumed to have the form \fIhost\fB:\fIportNum\fR,
+where \fIhost\fR is the name of a host and \fIportNum\fR is a decimal
+port number within that host.  In this case, \fBmktty\fR will open a TCP connection
+to the given port and will use it for reading and writing characters
+to the supposed terminal.  This feature is designed for use with the
+\fBrtty\fR program, which is capable of supporting the other end of the TCP
+connection.
+
+.SH "UNIMPLEMENTED FEATURES"
+.LP
+For details on the features implemented by \fBmktty\fR, see the 4.3 BSD
+man page TTY(4).
+\fBTty\fR implements all of the functionality of the 4.3 BSD
+``new'' line discipline except for the following:
+.IP \(bu
+Control terminal:  there is no ``/dev/tty'' device yet in Sprite.
+.IP \(bu
+Output delays, such as BS0 and TAB0 are not implemented;  the
+delay-related flags in sgttyb structs are ignored, except for
+XTABS, which doesn't specify a delay and is implemented.
+.IP \(bu
+Parity is not generated or checked.
+.IP \(bu
+The LTILDE, LTOSTOP, LETXACK, and LINTRUP local mode flags are ignored.
+.LP
+\fBTty\fR only implements the ``new'' line discipline:  the ``old'' and
+``net'' disciplines are not implemented.
+
+.SH KEYWORDS
+line discipline, pseudo-device, terminal driver

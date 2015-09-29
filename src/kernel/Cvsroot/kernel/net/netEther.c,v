@@ -1,0 +1,131 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ds3100:1.3 sun3:1.3 sun4nw:1.1 symm:1.1 spur:1.1 sprited:1.1.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     92.06.03.22.47.54;  author voelker;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     92.04.14.16.57.05;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.10.02.12.02.55;  author jhh;  state Exp;
+branches 1.1.1.1;
+next     ;
+
+1.1.1.1
+date     91.10.23.18.43.59;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@FDDI implementation
+@
+text
+@/* 
+ * netEther.c --
+ *
+ *	Contains ethernet specific definitions.
+ *
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/voelker/net/RCS/netEther.c,v 1.1 92/05/28 17:58:13 voelker Exp Locker: voelker $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <netInt.h>
+
+
+Net_Address	netEtherBroadcastAddress;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetEtherInit --
+ *
+ *	Initializes stuff for the ethernet.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NetEtherInit()
+{
+    static Net_EtherAddress	tmp = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+    ReturnStatus status;
+
+    status = Net_SetAddress(NET_ADDRESS_ETHER, (Address) &tmp, 
+	&netEtherBroadcastAddress);
+    if (status != SUCCESS) {
+	panic("NetEtherInit: Net_SetAddress failed\n");
+    }
+}
+
+@
+
+
+1.2
+log
+@Changed definition of Net_Address and added Net_UserRoute.  
+Added Net_DeleteRoute and Net_GetRoute system calls.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/net/netEther.c,v 1.1 90/10/02 12:02:55 jhh Exp $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net.jhh/RCS/netEther.c,v 1.1 90/05/24 21:47:20 jhh Exp $ SPRITE (Berkeley)";
+d46 1
+d48 5
+a52 1
+    NET_ETHER_ADDR_COPY(tmp, netEtherBroadcastAddress.ether);
+@
+
+
+1.1.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netEther.c,v 1.1 90/10/02 12:02:55 jhh Exp $ SPRITE (Berkeley)";
+@

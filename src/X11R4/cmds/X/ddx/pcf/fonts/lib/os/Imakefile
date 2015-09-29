@@ -1,0 +1,21 @@
+#
+# Make file for operating system dependencies library
+#
+
+     CDEBUGFLAGS = -g
+        INCLUDES = -I. -I$(FONTSRC)/include -I$(TOP)/X11 -I$(TOP)
+         HEADERS = 
+            SRCS = fontOS.c fontAtom.c initatoms.c fontdir.c fontpath.c \
+		   fonttype.c fontfile.c psfontdir.c fosfile.c
+            OBJS = fontOS.o fontAtom.o initatoms.o fontdir.o fontpath.o \
+		   fonttype.o fontfile.o psfontdir.o fosfile.o
+   FONT_DEFINES = FontDefines FontFilters
+
+NormalLibraryObjectRule()
+NormalLibraryTarget(fontos,$(OBJS))
+
+SpecialObjectRule(fonttype.o,$(ICONFIGFILES),$(FONT_DEFINES))
+NormalLintTarget($(SRCS))
+
+DependTarget()
+

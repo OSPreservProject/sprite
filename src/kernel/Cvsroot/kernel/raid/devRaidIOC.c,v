@@ -1,0 +1,410 @@
+head     1.8;
+branch   ;
+access   ;
+symbols  ds3100:1.8 sun3:1.8 sun4nw:1.8 symm:1.8 spur:1.8;
+locks    ; strict;
+comment  @ * @;
+
+
+1.8
+date     90.10.12.14.00.59;  author eklee;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     90.09.28.18.47.25;  author eklee;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     90.09.19.14.54.05;  author eklee;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     90.08.27.13.43.05;  author eklee;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.05.15.18.58.56;  author eklee;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.08.30.11.30.23;  author eklee;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.08.30.11.09.01;  author eklee;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.27.13.00.38;  author eklee;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@routines for supporting RAID ioc's
+@
+
+
+1.8
+log
+@Added Raid_ prefix to external names and cleaned up warning messages.
+@
+text
+@/* 
+ * devRaidIOC.c --
+ *
+ *	Declarations for RAID device drivers.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaidIOC.c,v 1.7 90/09/28 18:47:25 eklee Exp Locker: eklee $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include "sync.h"
+#include <stdio.h>
+#include "devRaid.h"
+#include "devRaidUtil.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_ReportRequestError --
+ *
+ *	This procedure is called when an IO request issued by the RAID
+ *	device driver failes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints an error message.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Raid_ReportRequestError(reqPtr)
+    RaidBlockRequest	*reqPtr;
+{
+    printf("RAID:REQ_ERR:raid %d %d:pos %d %d %d:op %d:status %d:dev %d %d:req %d %d\n",
+	    reqPtr->raidPtr->devicePtr->type, reqPtr->raidPtr->devicePtr->unit,
+	    reqPtr->row, reqPtr->col, reqPtr->version,
+	    reqPtr->devReq.operation, reqPtr->status,
+	    reqPtr->diskPtr->device.type, reqPtr->diskPtr->device.unit,
+	    reqPtr->devReq.startAddress, reqPtr->devReq.bufferLen);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_ReportHardInitFailure --
+ *
+ *	This procedure is called when a hard initialization failes on a stripe.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints an error message.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Raid_ReportHardInitFailure(stripeID)
+    int		stripeID;
+{
+    printf("RAID:HARD_INIT_ERR:stripe %d\n", stripeID);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_ReportParityCheckFailure --
+ *
+ *	This procedure is called when a parity check failes on a stripe.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints an error message.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Raid_ReportParityCheckFailure(stripeID)
+    int		stripeID;
+{
+    printf("RAID:PARITY_CHECK_ERR:stripe %d\n", stripeID);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_ReportReconstructionFailure --
+ *
+ *	This procedure is called when a reconstruction failes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints an error message.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Raid_ReportReconstructionFailure(col, row)
+    int		col, row;
+{
+    printf("RAID:RECONST_ERR:pos %d %d\n", row, col);
+}
+
+@
+
+
+1.7
+log
+@Added #include "sync.h".
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaidIOC.c,v 1.6 90/09/19 14:54:05 eklee Exp Locker: eklee $ SPRITE (Berkeley)";
+d22 1
+d30 1
+a30 1
+ * ReportRequestError --
+d45 1
+a45 1
+ReportRequestError(reqPtr)
+d60 1
+a60 1
+ * ReportHardInitFailure --
+d74 1
+a74 1
+ReportHardInitFailure(stripeID)
+d84 1
+a84 1
+ * ReportParityCheckFailure --
+d98 1
+a98 1
+ReportParityCheckFailure(stripeID)
+d108 1
+a108 1
+ * ReportReconstructionFailure --
+d122 1
+a122 1
+ReportReconstructionFailure(col, row)
+@
+
+
+1.6
+log
+@Added prototypes.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaidIOC.c,v 1.5 90/08/27 13:43:05 eklee Exp $ SPRITE (Berkeley)";
+d21 1
+@
+
+
+1.5
+log
+@Added paritycheck IOC.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaidIOC.c,v 1.4 90/05/15 18:58:56 eklee Exp Locker: eklee $ SPRITE (Berkeley)";
+@
+
+
+1.4
+log
+@Moved Raid Disk related code to separate module (devRaidDisk.c).
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /user4/eklee/raidlib/RCS/devRaidIOC.c,v 1.1 90/03/05 11:38:49 eklee Exp Locker: eklee $ SPRITE (Berkeley)";
+d76 24
+@
+
+
+1.3
+log
+@*** empty log message ***
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.2 89/01/07 04:12:18 rab Exp $ SPRITE (Berkeley)";
+a57 25
+ * ReportRaidDiskAtachError --
+ *
+ *	This procedure is called when a device specified in a RAID
+ *	configuration file can not be attached.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints an error message.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+ReportRaidDiskAttachError(type, unit)
+    int		type, unit;
+{
+    printf("RAID:ATTACH_ERR:dev %d %d:Could not attach device.\n", type, unit);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+a101 94
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FailRaidDisk --
+ *
+ *	Mark specified disk as failed.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Marks specified disk as failed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+FailRaidDisk(raidPtr, col, row, version)
+    Raid	*raidPtr;
+    int		 col, row;
+    int		 version;
+{
+    RaidDisk	*diskPtr = raidPtr->disk[col][row];
+
+    MASTER_LOCK(&diskPtr->mutex);
+    if (version == diskPtr->version &&
+	    (diskPtr->state == RAID_DISK_READY || 
+		    diskPtr->state == RAID_DISK_RECONSTRUCT) ){
+	diskPtr->state = RAID_DISK_FAILED;
+	diskPtr->numValidSector = 0;
+        MASTER_UNLOCK(&diskPtr->mutex);
+	printf("RAID:DISK_FAILED:raid %d %d:pos %d %d %d:dev %d %d\n",
+	        raidPtr->devicePtr->type, raidPtr->devicePtr->unit,
+		row, col, version,
+		diskPtr->device.type, diskPtr->device.unit);
+    } else {
+        MASTER_UNLOCK(&diskPtr->mutex);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ReplaceRaidDisk --
+ *
+ *	Replace specified disk with new disk.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Replaces specified disk.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+ReplaceRaidDisk(raidPtr, col, row, version, type, unit, numValidSector)
+    Raid	*raidPtr;
+    int		 col, row;
+    int		 version;
+    int		 type, unit;
+    int		 numValidSector;
+{
+    RaidDisk	*diskPtr    = raidPtr->disk[col][row];
+    RaidDisk	*newDiskPtr = MakeRaidDisk(type, unit, numValidSector);
+
+    diskPtr = raidPtr->disk[col][row];
+    MASTER_LOCK(&diskPtr->mutex);
+    if (diskPtr->version == version) {
+	/*
+	 * Currently, the useCount is not updated, therefore we do not know
+	 * whether the old disk structure is still in use, therfore, we
+	 * can not deallocate it.  (i.e. it will stay around forever)
+	 */
+	diskPtr->state = RAID_DISK_REPLACED;
+	diskPtr->version = -version;
+	newDiskPtr->version = version + 1;
+	raidPtr->disk[col][row] = newDiskPtr;
+        MASTER_UNLOCK(&diskPtr->mutex);
+	printf("RAID:DISK_REPLACED:raid %d %d:pos %d %d %d:oldDev %d %d:newDev %d %d\n",
+	        raidPtr->devicePtr->type, raidPtr->devicePtr->unit,
+		row, col, version,
+		diskPtr->device.type, diskPtr->device.unit,
+		newDiskPtr->device.type, newDiskPtr->device.unit);
+    } else {
+        MASTER_UNLOCK(&diskPtr->mutex);
+	FreeRaidDisk(newDiskPtr);
+	printf("RAID:VERSION_MISMATCH:curVersion %d:spcifiedVersion %d\n",
+		diskPtr->version, version);
+    }
+}
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@a155 1
+#ifndef TESTING
+a157 1
+#endif TESTING
+@

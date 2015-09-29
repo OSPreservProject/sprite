@@ -1,0 +1,1296 @@
+head     1.17;
+branch   ;
+access   ;
+symbols  ds3100:1.17 sun3:1.17 sun4nw:1.16 symm:1.16 spur:1.16;
+locks    ; strict;
+comment  @ * @;
+
+
+1.17
+date     92.06.25.17.20.52;  author eklee;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     91.06.27.12.07.14;  author eklee;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     90.11.09.13.15.25;  author eklee;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     90.10.12.14.00.52;  author eklee;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     90.09.28.18.46.11;  author eklee;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     90.09.19.14.54.02;  author eklee;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     90.09.05.12.32.15;  author eklee;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     90.08.29.13.51.23;  author eklee;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     90.08.27.13.40.16;  author eklee;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     90.06.22.13.33.41;  author eklee;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     90.05.15.18.56.08;  author eklee;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.10.31.19.56.12;  author eklee;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.10.31.18.44.11;  author eklee;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.10.12.12.12.51;  author eklee;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.08.30.11.29.01;  author eklee;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.08.30.11.13.57;  author eklee;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.27.13.00.12;  author eklee;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@block device interface for RAID's
+@
+
+
+1.17
+log
+@Fixed bug where data was sometimes trashed during writes with a failed disk.
+Fixed up consistency problems while a disk is failed.
+Redid logging.
+@
+text
+@/* 
+ * devRaid.c --
+ *
+ *	This module implements the BlockDevice interface for
+ *	RAID level 5 disk arrays.
+ *	Assuming a minimum sector size of 512 bytes, RAID devices with an
+ *	address space of upto 2^40 bytes (~1 terra byte) are supported by
+ *	this driver.
+ *
+ * Copyright 1989 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/raid/devRaid.c,v 1.16 91/06/27 12:07:14 eklee Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include "sync.h"
+#include <sprite.h>
+#include <stdio.h>
+#include <string.h>
+#include <dev/raid.h>
+#include "fs.h"
+#include "dev.h"
+/*
+#include "devDiskLabel.h"
+#include "devDiskStats.h"
+*/
+#include "devBlockDevice.h"
+#include "devRaid.h"
+#include "devRaidUtil.h"
+#include "semaphore.h"
+#include "devRaidLog.h"
+#include "stdlib.h"
+#include "dbg.h"
+#include "devRaidProto.h"
+
+static ReturnStatus StripeBlockIOProc();
+static ReturnStatus RaidBlockIOProc();
+static ReturnStatus ReleaseProc();
+static ReturnStatus IOControlProc();
+
+/*
+ * A RAID device must have a minor number between 0 and 31 inclusive.
+ */
+Raid raidArray[] = {
+    {RAID_INVALID, Sync_SemInitStatic("devRaid.c: RAID unit 0")},
+    {RAID_INVALID, Sync_SemInitStatic("devRaid.c: RAID unit 1")},
+    {RAID_INVALID, Sync_SemInitStatic("devRaid.c: RAID unit 2")},
+    {RAID_INVALID, Sync_SemInitStatic("devRaid.c: RAID unit 3")},
+    {RAID_INVALID, Sync_SemInitStatic("devRaid.c: RAID unit 4")},
+    {RAID_INVALID, Sync_SemInitStatic("devRaid.c: RAID unit 5")},
+    {RAID_INVALID, Sync_SemInitStatic("devRaid.c: RAID unit 6")},
+    {RAID_INVALID, Sync_SemInitStatic("devRaid.c: RAID unit 7")},
+    {RAID_INVALID, Sync_SemInitStatic("devRaid.c: RAID unit 8")},
+    {RAID_INVALID, Sync_SemInitStatic("devRaid.c: RAID unit 9")},
+    {RAID_INVALID, Sync_SemInitStatic("devRaid.c: RAID unit 10")},
+    {RAID_INVALID, Sync_SemInitStatic("devRaid.c: RAID unit 11")},
+    {RAID_INVALID, Sync_SemInitStatic("devRaid.c: RAID unit 12")},
+    {RAID_INVALID, Sync_SemInitStatic("devRaid.c: RAID unit 13")},
+    {RAID_INVALID, Sync_SemInitStatic("devRaid.c: RAID unit 14")},
+    {RAID_INVALID, Sync_SemInitStatic("devRaid.c: RAID unit 15")},
+    {RAID_INVALID, Sync_SemInitStatic("devRaid.c: RAID unit 16")},
+    {RAID_INVALID, Sync_SemInitStatic("devRaid.c: RAID unit 17")},
+    {RAID_INVALID, Sync_SemInitStatic("devRaid.c: RAID unit 18")},
+    {RAID_INVALID, Sync_SemInitStatic("devRaid.c: RAID unit 19")},
+    {RAID_INVALID, Sync_SemInitStatic("devRaid.c: RAID unit 20")},
+    {RAID_INVALID, Sync_SemInitStatic("devRaid.c: RAID unit 21")},
+    {RAID_INVALID, Sync_SemInitStatic("devRaid.c: RAID unit 22")},
+    {RAID_INVALID, Sync_SemInitStatic("devRaid.c: RAID unit 23")},
+    {RAID_INVALID, Sync_SemInitStatic("devRaid.c: RAID unit 24")},
+    {RAID_INVALID, Sync_SemInitStatic("devRaid.c: RAID unit 25")},
+    {RAID_INVALID, Sync_SemInitStatic("devRaid.c: RAID unit 26")},
+    {RAID_INVALID, Sync_SemInitStatic("devRaid.c: RAID unit 27")},
+    {RAID_INVALID, Sync_SemInitStatic("devRaid.c: RAID unit 28")},
+    {RAID_INVALID, Sync_SemInitStatic("devRaid.c: RAID unit 29")},
+    {RAID_INVALID, Sync_SemInitStatic("devRaid.c: RAID unit 30")},
+    {RAID_INVALID, Sync_SemInitStatic("devRaid.c: RAID unit 31")},
+};
+int numRaid = sizeof(raidArray)/sizeof(Raid);
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevRaidAttach --
+ *
+ *	Attach a RAID logical device.
+ *
+ * Results:
+ *	The DevBlockDeviceHandle of the device.
+ *
+ * Side effects:
+ *	Modifies raidArray data structure.
+ *
+ *----------------------------------------------------------------------
+ */
+
+DevBlockDeviceHandle *
+DevRaidAttach(devicePtr)
+    Fs_Device	*devicePtr;	/* The device to attach. */
+{
+    RaidHandle	*handlePtr;
+    Raid	*raidPtr;
+    int		raidIndex;
+
+    raidIndex = devicePtr->unit >> 4;
+    if ( raidIndex >= numRaid ) {
+        return (DevBlockDeviceHandle *) NIL;
+    }
+    raidPtr = &raidArray[raidIndex];
+    MASTER_LOCK(&raidPtr->mutex);
+    if ( raidPtr->state == RAID_INVALID ) {
+	raidPtr->state = RAID_ATTACHED;
+	MASTER_UNLOCK(&raidPtr->mutex);
+#ifdef TESTING
+	Sync_CondInit(&raidPtr->waitExclusive);
+	Sync_CondInit(&raidPtr->waitNonExclusive);
+#endif TESTING
+	Raid_InitStripeLocks();
+	InitDebugMem();
+	raidPtr->devicePtr = devicePtr;
+	Raid_Lock(raidPtr);
+    } else {
+	MASTER_UNLOCK(&raidPtr->mutex);
+    }
+
+    handlePtr = (RaidHandle *) malloc(sizeof(RaidHandle));
+    /*
+     * 'S' means data striping only, no parity.
+     * We use a different blockIOproc to support this function.
+     */
+    handlePtr->blockHandle.blockIOProc = RaidBlockIOProc;
+    handlePtr->blockHandle.releaseProc = ReleaseProc;
+    handlePtr->blockHandle.IOControlProc = IOControlProc;
+    /*
+     * The problem is that we don't know the actual minTransferUnit when the
+     * RAID device is attached but only when the RAID_CONFIGURE IOC is
+     * performed after it's attached.
+     */
+/*
+    handlePtr->blockHandle.minTransferUnit = 1 << raidPtr->logBytesPerSector;
+*/
+#ifdef TESTING
+    handlePtr->blockHandle.minTransferUnit = 4;
+#else
+    handlePtr->blockHandle.minTransferUnit = 512;
+#endif /* TESTING */
+    handlePtr->blockHandle.maxTransferSize = RAID_MAX_XFER_SIZE;
+    handlePtr->devPtr = devicePtr;
+    handlePtr->raidPtr = raidPtr;
+
+    return (DevBlockDeviceHandle *) handlePtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ReleaseProc --
+ *
+ *	Block device release proc.
+ *
+ * Results:
+ *	Return status.
+ *
+ * Side effects:
+ *	Frees device handle.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+ReleaseProc(handlePtr)
+    RaidHandle	*handlePtr; /* Handle pointer of device. */
+{
+    /*
+     * Note:  Only the handle is deallocated.
+     * The Raid data structures are never deallocated and stay around forever.
+     */
+    free((char *) handlePtr);
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * IOControlProc --
+ *
+ *      Do a special operation on a RAID device.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Depends on operation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+typedef struct {
+    Sema	 sema;
+    ReturnStatus status;
+} IOCControl;
+
+static void
+iocDoneProc(iocCtrlPtr, status)
+    IOCControl	*iocCtrlPtr;
+    ReturnStatus status;
+{
+    printf("RAID:MSG:IOC completed.\n");
+    if (status != SUCCESS) {
+	printf("RAID:ERR:IOC failed.\n");
+    }
+    iocCtrlPtr->status = status;
+    UpSema(&iocCtrlPtr->sema);
+}
+
+static ReturnStatus
+IOControlProc(handlePtr, ioctlPtr, replyPtr) 
+    DevBlockDeviceHandle	*handlePtr;
+    Fs_IOCParam			*ioctlPtr;
+    Fs_IOReply			*replyPtr;
+{
+    static char  *IObuf;
+    RaidHandle	 *raidHandlePtr   = (RaidHandle *) handlePtr;
+    Raid         *raidPtr         = raidHandlePtr->raidPtr;
+    RaidIOCParam *raidIOCParamPtr = (RaidIOCParam *) ioctlPtr->inBuffer;
+    DevBlockDeviceRequest *requestPtr =
+	    (DevBlockDeviceRequest *) ioctlPtr->inBuffer;
+    int		  col;
+    int		  row;
+    ReturnStatus  status;
+    IOCControl	  iocCtrl;
+
+    if (raidIOCParamPtr == (RaidIOCParam *) NIL) {
+	printf("RAID:MSG:IOControlProc IOC == NIL\n");
+	return FAILURE;
+    }
+    col = raidIOCParamPtr->col;
+    row = raidIOCParamPtr->row;
+
+    bzero((char *) replyPtr, sizeof(Fs_IOReply));
+
+    switch(ioctlPtr->command) {
+    case IOC_DEV_RAID_PRINT:
+	if (raidPtr->state != RAID_VALID) {
+	    return SUCCESS;
+	}
+	PrintRaid(raidPtr);
+	return SUCCESS;
+    case IOC_DEV_RAID_RECONFIG:
+	status = Raid_Configure(raidPtr, raidIOCParamPtr->buf);
+	return status;
+    case IOC_DEV_RAID_FAIL:
+	if (raidPtr->state != RAID_VALID) {
+	    return FAILURE;
+	}
+	if (row < 0 || row >= raidPtr->numRow) {
+	    printf("RAID:MSG:row=%d out of range on ioctl call", row);
+	    return FAILURE;
+	}
+	if (col < 0 || col >= raidPtr->numCol) {
+	    printf("RAID:MSG:col=%d out of range on ioctl call", col);
+	    return FAILURE;
+	}
+	Raid_FailDisk(raidPtr, col, row, raidPtr->disk[col][row]->version);
+	return SUCCESS;
+    case IOC_DEV_RAID_REPLACE:
+	if (raidPtr->state != RAID_VALID) {
+	    return FAILURE;
+	}
+	if (row < 0 || row >= raidPtr->numRow) {
+	    printf("RAID:MSG:row=%d out of range on ioctl call", row);
+	    return FAILURE;
+	}
+	if (col < 0 || col >= raidPtr->numCol) {
+	    printf("RAID:MSG:col=%d out of range on ioctl call", col);
+	    return FAILURE;
+	}
+	Raid_ReplaceDisk(raidPtr, col, row, raidPtr->disk[col][row]->version,
+		raidIOCParamPtr->type, raidIOCParamPtr->unit, 0);
+	return SUCCESS;
+    case IOC_DEV_RAID_HARDINIT:
+	if (raidPtr->state != RAID_VALID) {
+	    return FAILURE;
+	}
+	InitSema(&iocCtrl.sema, "Raid HardInit", 0);
+	Raid_InitiateHardInit(raidPtr,
+		raidIOCParamPtr->startStripe, raidIOCParamPtr->numStripe,
+		iocDoneProc, (ClientData) &iocCtrl,
+		raidIOCParamPtr->ctrlData);
+	DownSema(&iocCtrl.sema);
+	return iocCtrl.status;
+    case IOC_DEV_RAID_PARITYCHECK:
+	if (raidPtr->state != RAID_VALID) {
+	    return FAILURE;
+	}
+	InitSema(&iocCtrl.sema, "Raid ParityCheck", 0);
+	Raid_InitiateParityCheck(raidPtr,
+		raidIOCParamPtr->startStripe, raidIOCParamPtr->numStripe,
+		iocDoneProc, (ClientData) &iocCtrl,
+		raidIOCParamPtr->ctrlData);
+	DownSema(&iocCtrl.sema);
+	return iocCtrl.status;
+    case IOC_DEV_RAID_RECONSTRUCT:
+	if (raidPtr->state != RAID_VALID) {
+	    return FAILURE;
+	}
+	InitSema(&iocCtrl.sema, "Raid Reconstruct", 0);
+	Raid_InitiateReconstruction(raidPtr, col, row,
+		raidPtr->disk[col][row]->version,
+		raidIOCParamPtr->numStripe, raidIOCParamPtr->uSec,
+		iocDoneProc, (ClientData) &iocCtrl,
+		raidIOCParamPtr->ctrlData);
+	DownSema(&iocCtrl.sema);
+	return iocCtrl.status;
+    case IOC_DEV_RAID_IO:
+	if (raidPtr->state != RAID_VALID) {
+	    return FAILURE;
+	}
+	if (!IObuf) {
+	    IObuf = (char *) malloc(1024*1024);
+	}
+	requestPtr->buffer = IObuf;
+	return Dev_BlockDeviceIOSync(handlePtr, requestPtr,
+		(int *)ioctlPtr->outBuffer);
+    case IOC_DEV_RAID_LOCK:
+	Raid_Lock(raidPtr);
+	return SUCCESS;
+    case IOC_DEV_RAID_UNLOCK:
+	Raid_Unlock(raidPtr);
+	return SUCCESS;
+    case IOC_DEV_RAID_SAVE_STATE:
+	if (raidPtr->state != RAID_VALID) {
+	    return FAILURE;
+	}
+	status = Raid_SaveState(raidPtr);
+	if (status != SUCCESS) {
+	    printf("RAID:MSG:Could not save state.\n");
+	}
+	return status;
+    case IOC_DEV_RAID_ENABLE_LOG:
+	Raid_EnableLog(raidPtr);
+	return SUCCESS;
+    case IOC_DEV_RAID_DISABLE_LOG:
+	Raid_DisableLog(raidPtr);
+	return SUCCESS;
+    case IOC_DEV_RAID_RESTORE_STATE:
+	status = Raid_RestoreState(raidPtr, raidIOCParamPtr->type,
+		raidIOCParamPtr->unit, raidIOCParamPtr->startStripe);
+	if (status != SUCCESS) {
+	    printf("RAID:MSG:Could not restore state.\n");
+	}
+	return status;
+    case IOC_DEV_RAID_DISABLE:
+	Raid_Disable(raidPtr);
+	return SUCCESS;
+    case IOC_DEV_RAID_ENABLE:
+	Raid_Enable(raidPtr);
+	return SUCCESS;
+    default:
+	return SUCCESS;
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StripeBlockIOProc --
+ *    Perform block IO w/o parity, i.e. data striping only,
+ *    on specified RAID device.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The disk write, if operation == FS_WRITE.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+StripeBlockIOProc(handlePtr, requestPtr) 
+    DevBlockDeviceHandle  *handlePtr;
+    DevBlockDeviceRequest *requestPtr;
+{
+    RaidHandle	   *raidHandlePtr;
+    Raid 	   *raidPtr;
+    unsigned 	    firstSector;
+    unsigned	    nthSector;
+    unsigned	    numSector;
+
+    raidHandlePtr = (RaidHandle *) handlePtr;
+    raidPtr	  = raidHandlePtr->raidPtr;
+
+    /*
+     * Check if operation valid.
+     */
+    if (!((requestPtr->operation == FS_READ) ||
+          (requestPtr->operation == FS_WRITE))) {
+	panic("Unknown operation %d in RAID blockIOProc.\n", 
+		requestPtr->operation);
+	return DEV_INVALID_ARG;
+    }
+
+    /*
+     * Convert byte addresses to sector addresses.
+     */
+    firstSector = (requestPtr->startAddress >> raidPtr->logBytesPerSector) |
+        (requestPtr->startAddrHigh<<(BITS_PER_ADDR-raidPtr->logBytesPerSector));
+    numSector = requestPtr->bufferLen >> raidPtr->logBytesPerSector;
+    nthSector = firstSector + numSector;
+
+    /*
+     * Check that addresses are within the range supported by the device.
+     */
+    if ( firstSector >= raidPtr->numSector ) {
+	requestPtr->doneProc(requestPtr, FAILURE, 0);
+	return SUCCESS;
+    } 
+
+    /*
+     * Prevent overruns.
+     */
+    if ( nthSector > raidPtr->numSector ) {
+        nthSector = raidPtr->numSector;
+    } 
+
+    Raid_InitiateSimpleStripeIOs(raidPtr, requestPtr->operation,
+            firstSector, nthSector, requestPtr->buffer,
+            requestPtr->doneProc, (ClientData) requestPtr,
+            requestPtr->ctrlData[0]);
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RaidBlockIOProc --
+ *
+ *	Perform block IO (w/ parity) on specified RAID device.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The disk write, if operation == FS_WRITE.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+RaidBlockIOProc(handlePtr, requestPtr) 
+    DevBlockDeviceHandle  *handlePtr;
+    DevBlockDeviceRequest *requestPtr;
+{
+    RaidHandle	   *raidHandlePtr;
+    Raid 	   *raidPtr;
+    unsigned 	    firstSector;
+    unsigned	    nthSector;
+    unsigned	    numSector;
+
+    raidHandlePtr = (RaidHandle *) handlePtr;
+    raidPtr	  = raidHandlePtr->raidPtr;
+
+    /*
+     * If striping only (no parity) use the the simpler routine.
+     */
+    if (raidPtr->parityConfig == 'S') {
+	return StripeBlockIOProc(handlePtr, requestPtr);
+    }
+    /*
+     * Check if operation valid.
+     */
+    if (!((requestPtr->operation == FS_READ) ||
+          (requestPtr->operation == FS_WRITE))) {
+	panic("Unknown operation %d in RAID blockIOProc.\n", 
+		requestPtr->operation);
+	return DEV_INVALID_ARG;
+    }
+
+    /*
+     * Convert byte addresses to sector addresses.
+     */
+    firstSector = (requestPtr->startAddress >> raidPtr->logBytesPerSector) |
+        (requestPtr->startAddrHigh<<(BITS_PER_ADDR-raidPtr->logBytesPerSector));
+    numSector = requestPtr->bufferLen >> raidPtr->logBytesPerSector;
+    nthSector = firstSector + numSector;
+
+    /*
+     * Check that addresses are within the range supported by the device.
+     */
+    if ( firstSector >= raidPtr->numSector ) {
+	requestPtr->doneProc(requestPtr, FAILURE, 0);
+	return SUCCESS;
+    } 
+
+    /*
+     * Prevent overruns.
+     */
+    if ( nthSector > raidPtr->numSector ) {
+        nthSector = raidPtr->numSector;
+    } 
+
+    Raid_InitiateStripeIOs(raidPtr, requestPtr->operation,
+            firstSector, nthSector, requestPtr->buffer,
+            requestPtr->doneProc, (ClientData) requestPtr,
+            requestPtr->ctrlData[0]);
+    return SUCCESS;
+}
+@
+
+
+1.16
+log
+@Added checks to make sure raid device is valid before performing IOC's.
+@
+text
+@d22 1
+a22 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaid.c,v 1.15 90/11/09 13:15:25 eklee Exp $ SPRITE (Berkeley)";
+d29 1
+a38 1
+#include "dev/raid.h"
+d112 1
+d114 2
+a115 1
+    if ( devicePtr->unit >= numRaid ) {
+d118 1
+a118 1
+    raidPtr = &raidArray[devicePtr->unit];
+d140 1
+a140 5
+    if (raidPtr->parityConfig == 'S') {
+	handlePtr->blockHandle.blockIOProc = StripeBlockIOProc;
+    } else {
+	handlePtr->blockHandle.blockIOProc = RaidBlockIOProc;
+    }
+d143 6
+d150 6
+d158 1
+a158 1
+    handlePtr->raidPtr = &raidArray[devicePtr->unit];
+d348 1
+a348 1
+	    printf("RAID:MSG:Could not checkpoint state.\n");
+d358 2
+a359 13
+	raidPtr->logDev.type = raidIOCParamPtr->type;
+	raidPtr->logDev.unit = raidIOCParamPtr->unit;
+	raidPtr->logDevOffset = raidIOCParamPtr->startStripe;
+	/*
+	 * Attach log device.
+	 */
+	raidPtr->logHandlePtr = Dev_BlockDeviceAttach(&raidPtr->logDev);
+	if (raidPtr->logHandlePtr == (DevBlockDeviceHandle *) NIL) {
+	    printf("RAID:ERR:Could not attach log device %d %d\n",
+		    raidPtr->logDev.type, raidPtr->logDev.unit);
+	    return FAILURE;
+	}
+	status = Raid_RestoreState(raidPtr);
+d364 6
+d476 6
+@
+
+
+1.15
+log
+@Moved semaphore routies to semaphore.c.
+@
+text
+@d22 1
+a22 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaid.c,v 1.14 90/10/12 14:00:52 eklee Exp $ SPRITE (Berkeley)";
+d245 3
+d254 3
+d268 3
+d283 3
+d294 3
+d305 3
+d317 3
+d333 3
+d362 1
+a362 1
+	    printf("RAID:MSG:Could not checkpoint state.\n");
+@
+
+
+1.14
+log
+@Added Raid_ prefix to external names and cleaned up warning messages.
+@
+text
+@d22 1
+a22 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaid.c,v 1.13 90/09/28 18:46:11 eklee Exp Locker: eklee $ SPRITE (Berkeley)";
+d39 1
+a39 1
+#include "devRaidLock.h"
+@
+
+
+1.13
+log
+@Made most IOC's synchronous.
+@
+text
+@d22 1
+a22 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaid.c,v 1.12 90/09/19 14:54:02 eklee Exp Locker: eklee $ SPRITE (Berkeley)";
+d26 2
+a28 1
+#include "sprite.h"
+d125 1
+a125 1
+	InitStripeLocks();
+d128 1
+a128 1
+	LockRaid(raidPtr);
+a230 1
+    char	  fileName[80];
+d248 1
+a248 1
+	status = RaidConfigure(raidPtr, raidIOCParamPtr->buf);
+d259 1
+a259 1
+	FailRaidDisk(raidPtr, col, row, raidPtr->disk[col][row]->version);
+d270 1
+a270 1
+	ReplaceRaidDisk(raidPtr, col, row, raidPtr->disk[col][row]->version,
+d275 1
+a275 1
+	InitiateHardInit(raidPtr,
+d283 1
+a283 1
+	InitiateParityCheck(raidPtr,
+d291 1
+a291 1
+	InitiateReconstruction(raidPtr, col, row,
+d306 1
+a306 1
+	LockRaid(raidPtr);
+d309 1
+a309 1
+	UnlockRaid(raidPtr);
+d312 1
+a312 1
+	status = SaveRaidState(raidPtr);
+d318 1
+a318 1
+	EnableLog(raidPtr);
+d321 1
+a321 1
+	DisableLog(raidPtr);
+d336 1
+a336 1
+	status = RestoreRaidState(raidPtr);
+d409 1
+a409 1
+    InitiateSimpleStripeIOs(raidPtr, requestPtr->operation,
+d480 1
+a480 1
+    InitiateStripeIOs(raidPtr, requestPtr->operation,
+@
+
+
+1.12
+log
+@Added prototypes.
+@
+text
+@d22 1
+a22 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaid.c,v 1.11 90/09/05 12:32:15 eklee Exp $ SPRITE (Berkeley)";
+d25 1
+a26 1
+#include "sync.h"
+d198 4
+a201 5
+static void
+initHardDoneProc()
+{
+    printf("RAID:MSG:Initialization completed.\n");
+}
+d204 3
+a206 1
+initParityCheckDoneProc()
+d208 6
+a213 1
+    printf("RAID:MSG:Paritycheck completed.\n");
+d232 1
+a249 11
+    case IOC_DEV_RAID_HARDINIT:
+	InitiateHardInit(raidPtr,
+		raidIOCParamPtr->startStripe, raidIOCParamPtr->numStripe,
+		initHardDoneProc, (ClientData) NIL, raidIOCParamPtr->ctrlData);
+	return SUCCESS;
+    case IOC_DEV_RAID_PARITYCHECK:
+	InitiateParityCheck(raidPtr,
+		raidIOCParamPtr->startStripe, raidIOCParamPtr->numStripe,
+		initParityCheckDoneProc, (ClientData) NIL,
+		raidIOCParamPtr->ctrlData);
+	return SUCCESS;
+d273 16
+d290 1
+d294 1
+d296 2
+a297 1
+	return SUCCESS;
+@
+
+
+1.11
+log
+@Logs to raw disk instead of file.
+@
+text
+@d22 1
+a22 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaid.c,v 1.10 90/08/29 13:51:23 eklee Exp Locker: eklee $ SPRITE (Berkeley)";
+@
+
+
+1.10
+log
+@Deleted LogEntry(raidPtr, "# Raid Device Attached\n");
+@
+text
+@d22 1
+a22 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaid.c,v 1.9 90/08/27 13:40:16 eklee Exp Locker: eklee $ SPRITE (Berkeley)";
+a24 1
+#include <stdio.h>
+a36 4
+#include "devRaidInitiate.h"
+#include "devRaidReconstruct.h"
+#include "devRaidHardInit.h"
+#include "devRaidParityCheck.h"
+a37 1
+#include "devRaidIOC.h"
+d42 1
+a42 2
+#include "strUtil.h"
+#include "debugMem.h"
+a111 3
+    raidPtr = &raidArray[devicePtr->unit];
+    InitStripeLocks();
+    InitDebugMem();
+d115 2
+a116 1
+    raidPtr->devicePtr = devicePtr;
+d118 12
+a129 3
+	if (RestoreRaidState(raidPtr) != SUCCESS) {
+        	return (DevBlockDeviceHandle *) NIL;
+	}
+a132 1
+
+d198 2
+a199 1
+void initHardDoneProc()
+d204 2
+a205 1
+void initParityCheckDoneProc()
+d241 1
+a241 9
+	sprintf(fileName, "%s%d%s", RAID_ROOT_CONFIG_FILE_NAME,
+		raidPtr->devicePtr->unit, ".config");
+	status = RaidConfigure(raidPtr, fileName);
+	sprintf(fileName, "%s%d%s", RAID_ROOT_CONFIG_FILE_NAME,
+		raidPtr->devicePtr->unit, ".state");
+	unlink(fileName);
+	sprintf(fileName, "%s%d%s", RAID_ROOT_CONFIG_FILE_NAME,
+		raidPtr->devicePtr->unit, ".log");
+	unlink(fileName);
+d298 1
+a298 1
+	if (status == FAILURE) {
+d308 18
+@
+
+
+1.9
+log
+@Added paritycheck IOC.
+@
+text
+@d22 1
+a22 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaid.c,v 1.8 90/06/22 13:33:41 eklee Exp Locker: eklee $ SPRITE (Berkeley)";
+a149 1
+    LogEntry(raidPtr, "# Raid Device Attached\n");
+@
+
+
+1.8
+log
+@Added support for logging RAID state changes.
+@
+text
+@d22 1
+a22 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaid.c,v 1.7 90/05/15 18:56:08 eklee Exp Locker: eklee $ SPRITE (Berkeley)";
+d40 2
+d119 1
+a124 1
+    raidPtr = &raidArray[devicePtr->unit];
+d149 2
+d205 5
+d255 6
+@
+
+
+1.7
+log
+@Added support for 'X', 'x' and 'f' mappings.
+Added new ioctl's (IOC_DEV_RAID_IO, IOC_DEV_RAID_LOCK, IOC_DEV_RAID_UNLOCK).
+@
+text
+@d22 1
+a22 1
+static char rcsid[] = "$Header: /user4/eklee/raidlib/RCS/devRaid.c,v 1.2 90/04/06 18:14:00 eklee Exp Locker: eklee $ SPRITE (Berkeley)";
+d39 1
+d43 1
+a48 9
+#define BITS_PER_ADDR			32
+#define RAID_MAX_XFER_SIZE		(1<<30)
+#ifdef TESTING
+#define RAID_ROOT_CONFIG_FILE_NAME	"RAID"
+#else
+#define RAID_ROOT_CONFIG_FILE_NAME	"/sprite/users/eklee/RAIDconfig/RAID"
+#endif TESTING
+#define RAID_CONFIG_FILE_SUFFIX		".config"
+
+a96 225
+ * RaidDeallocate --
+ *
+ *	Deallocate data structures associated with the specified raid device.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Deallocates data structures.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+RaidDeallocate(raidPtr)
+    Raid	*raidPtr;
+{
+    int		 col, row;
+
+    MASTER_LOCK(&raidPtr->mutex);
+    if (raidPtr->state != RAID_VALID) {
+        MASTER_UNLOCK(&raidPtr->mutex);
+	return;
+    } else {
+        raidPtr->state = RAID_BUSY;
+        MASTER_UNLOCK(&raidPtr->mutex);
+    }
+    for ( col = 0; col < raidPtr->numCol; col++ ) {
+        for ( row = 0; row < raidPtr->numRow; row++ ) {
+	    if (raidPtr->disk[col][row] != NULL) {
+		FreeRaidDisk(raidPtr->disk[col][row]);
+	    }
+	}
+    }
+    for ( col = 0; col < raidPtr->numCol; col++ ) {
+	free((char *) raidPtr->disk[col]);
+    }
+    free((char *) raidPtr->disk);
+    raidPtr->state = RAID_INVALID;
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RaidConfigure --
+ *
+ *	Configure raid device by reading the appropriate configuration file.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Allocates and initializes data structures for raid device.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* static */ ReturnStatus
+RaidConfigure(raidPtr, devicePtr)
+    Raid	*raidPtr;
+    Fs_Device   *devicePtr;
+{
+#   define 	 CHAR_BUF_LEN	80
+#   define 	 FILE_BUF_LEN	2000
+    char	 fileName[CHAR_BUF_LEN], charBuf[CHAR_BUF_LEN];
+    char	 fileBuf[FILE_BUF_LEN];
+    char        *fileBufPtr;
+    int		 col, row;
+    int		 type, unit;
+    int		 numScanned;
+    RaidDisk    *raidDiskPtr;
+    ReturnStatus status;
+
+    InitStripeLocks();
+    InitDebugMem();
+
+    /*
+     * If RAID device is already configured, deallocate it first.
+     */
+    RaidDeallocate(raidPtr);
+
+    MASTER_LOCK(&raidPtr->mutex);
+    if (raidPtr->state != RAID_INVALID) {
+        MASTER_UNLOCK(&raidPtr->mutex);
+	return FAILURE;
+    } else {
+        raidPtr->state = RAID_BUSY;
+        MASTER_UNLOCK(&raidPtr->mutex);
+    }
+
+    raidPtr->numReqInSys = 0;
+#ifdef TESTING
+    Sync_CondInit(&raidPtr->waitExclusive);
+    Sync_CondInit(&raidPtr->waitNonExclusive);
+#endif TESTING
+
+    /*
+     * Create name of RAID configuration file.
+     */
+    sprintf(charBuf, "%d", devicePtr->unit);
+    strcpy(fileName, RAID_ROOT_CONFIG_FILE_NAME);
+    strcat(fileName, charBuf);
+    strcat(fileName, RAID_CONFIG_FILE_SUFFIX);
+
+    /*
+     * Open and read configuration file into buffer.
+     */
+    status = ReadFile(fileName, FILE_BUF_LEN, fileBuf);
+    if (status != SUCCESS) {
+        raidPtr->state = RAID_INVALID;
+	return status;
+    }
+
+    /*
+     * Skip comments.
+     */
+    fileBufPtr = fileBuf;
+    for (;;) {
+        if (ScanLine(&fileBufPtr, charBuf) == (char *) NIL) {
+    	    raidPtr->state = RAID_INVALID;
+            return FAILURE;
+        }
+        if (charBuf[0] != '#') {
+            break;
+        }
+    }
+
+    /*
+     * Read dimensions of raid device.
+     */
+    numScanned = sscanf(charBuf, "%d %d %d %d %d %d %c",
+ 			&raidPtr->numRow,
+			&raidPtr->numCol,
+			&raidPtr->logBytesPerSector,
+			&raidPtr->sectorsPerStripeUnit,
+			&raidPtr->stripeUnitsPerDisk,
+			&raidPtr->rowsPerGroup,
+			&raidPtr->parityConfig);
+    if (numScanned != 7) {
+    	raidPtr->state = RAID_INVALID;
+	return FAILURE;
+    }
+
+    /*
+     * Redundant but useful information.
+     */
+    if (raidPtr->parityConfig == 'S') {
+	raidPtr->numDataCol = raidPtr->numCol;
+    } else {
+	raidPtr->numDataCol = raidPtr->numCol - 1;
+    }
+    switch (raidPtr->parityConfig) {
+    case 'X': case 'x': case 'f':
+	raidPtr->stripeUnitsPerDisk -=
+		raidPtr->stripeUnitsPerDisk % raidPtr->numCol;
+        raidPtr->dataStripeUnitsPerDisk =
+                (raidPtr->stripeUnitsPerDisk * raidPtr->numDataCol) /
+		raidPtr->numCol;
+	break;
+    default:
+	raidPtr->dataStripeUnitsPerDisk = raidPtr->stripeUnitsPerDisk;
+	break;
+    }
+    raidPtr->groupsPerArray = raidPtr->numRow / raidPtr->rowsPerGroup;
+    raidPtr->numSector  = (unsigned) raidPtr->numRow * raidPtr->numDataCol
+	    * raidPtr->sectorsPerStripeUnit * raidPtr->stripeUnitsPerDisk;
+    raidPtr->numStripe  = raidPtr->stripeUnitsPerDisk * raidPtr->numRow;
+    raidPtr->dataSectorsPerStripe =
+	    raidPtr->numDataCol * raidPtr->sectorsPerStripeUnit;
+    raidPtr->sectorsPerDisk =
+	    raidPtr->stripeUnitsPerDisk * raidPtr->sectorsPerStripeUnit;
+    raidPtr->bytesPerStripeUnit = raidPtr->sectorsPerStripeUnit <<
+	    raidPtr->logBytesPerSector;
+    raidPtr->dataBytesPerStripe = raidPtr->dataSectorsPerStripe <<
+	    raidPtr->logBytesPerSector;
+
+    /*
+     * Allocate RaidDisk structures; one for each logical disk.
+     */
+    raidPtr->disk = (RaidDisk ***)
+		malloc((unsigned)raidPtr->numCol * sizeof(RaidDisk **));
+    for ( col = 0; col < raidPtr->numCol; col++ ) {
+	raidPtr->disk[col] = (RaidDisk **)
+		malloc((unsigned)raidPtr->numRow * sizeof(RaidDisk *));
+	bzero((char*)raidPtr->disk[col],raidPtr->numRow*sizeof(RaidDisk *));
+    }
+
+    /*
+     * Initialize RaidDisk structures.
+     */
+    for ( row = 0; row < raidPtr->numRow; row++ ) {
+        for ( col = 0; col < raidPtr->numCol; col++ ) {
+	    if (ScanWord(&fileBufPtr, charBuf) == (char *)NIL) {
+    		raidPtr->state = RAID_VALID;
+		RaidDeallocate(raidPtr);
+		return FAILURE;
+	    }
+	    type = atoi(charBuf);
+	    if (ScanWord(&fileBufPtr, charBuf) == (char *)NIL) {
+    		raidPtr->state = RAID_VALID;
+		RaidDeallocate(raidPtr);
+		return FAILURE;
+	    }
+	    unit = atoi(charBuf);
+
+	    raidDiskPtr = MakeRaidDisk(type, unit, raidPtr->sectorsPerDisk);
+	    if (raidDiskPtr == (RaidDisk *) NIL) {
+    		raidPtr->state = RAID_VALID;
+		RaidDeallocate(raidPtr);
+		return FAILURE;
+	    }
+	    raidPtr->disk[col][row] = raidDiskPtr;
+	}
+    }
+    raidPtr->devicePtr = devicePtr;
+    raidPtr->state = RAID_VALID;
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+d117 2
+d123 1
+d125 1
+a125 1
+	if (RaidConfigure(raidPtr, devicePtr) != SUCCESS) {
+d196 5
+d215 2
+d219 1
+a219 1
+	printf("Error:Raid:IOControlProc IOC == NIL\n");
+d232 10
+a241 1
+	return RaidConfigure(raidPtr, raidPtr->devicePtr);
+d245 1
+a245 1
+		raidIOCParamPtr->ctrlData);
+d249 1
+a249 1
+	    printf("RAID:ERRMSG:row=%d out of range on ioctl call", row);
+d253 1
+a253 1
+	    printf("RAID:ERRMSG:col=%d out of range on ioctl call", col);
+d260 1
+a260 1
+	    printf("RAID:ERRMSG:row=%d out of range on ioctl call", row);
+d264 1
+a264 1
+	    printf("RAID:ERRMSG:col=%d out of range on ioctl call", col);
+d281 2
+a282 1
+	return Dev_BlockDeviceIOSync(handlePtr, requestPtr,ioctlPtr->outBuffer);
+d288 12
+@
+
+
+1.6
+log
+@Changed comment.
+@
+text
+@d22 1
+a22 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaid.c,v 1.5 89/10/31 18:44:11 eklee Exp $ SPRITE (Berkeley)";
+d163 1
+a163 1
+static ReturnStatus
+d196 6
+d257 12
+d431 1
+d435 2
+d489 12
+d511 2
+a512 3
+ *
+ *	Perform block IO w/o parity, i.e. data striping only,
+ *	on specified RAID device.
+@
+
+
+1.5
+log
+@Corrected bug where RaidDisk instead of RaidDisk * was being allocated.
+@
+text
+@d22 1
+a22 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaid.c,v 1.4 89/10/12 12:12:51 eklee Exp Locker: eklee $ SPRITE (Berkeley)";
+d479 2
+a480 1
+ *	Perform block IO (w/ parity) on specified RAID device.
+@
+
+
+1.4
+log
+@Added comments.
+@
+text
+@d22 1
+a22 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.2 89/01/07 04:12:18 rab Exp $ SPRITE (Berkeley)";
+d268 1
+a268 1
+		malloc((unsigned)raidPtr->numCol * sizeof(RaidDisk *));
+d271 2
+a272 2
+		malloc((unsigned)raidPtr->numRow * sizeof(RaidDisk));
+	bzero((char*)raidPtr->disk[col],raidPtr->numRow*sizeof(RaidDisk));
+@
+
+
+1.3
+log
+@*** empty log message ***
+@
+text
+@d342 5
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d22 1
+a22 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaid.c,v 1.1 89/07/27 13:00:12 eklee Exp Locker: eklee $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d22 1
+a22 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.2 89/01/07 04:12:18 rab Exp $ SPRITE (Berkeley)";
+@

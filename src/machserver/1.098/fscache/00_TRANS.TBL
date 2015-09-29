@@ -1,0 +1,6 @@
+F FSCACHE.H;1                       	fscache.h
+F FSCACHEB.C;1                      	fscacheBlocks.c
+F FSCACHEB.H;1                      	fscacheBlocks.h
+F FSCACHEO.C;1                      	fscacheOps.c
+F FSCACHER.C;1                      	fscacheReadAhead.c
+F MAKEFILE.;1                       	Makefile

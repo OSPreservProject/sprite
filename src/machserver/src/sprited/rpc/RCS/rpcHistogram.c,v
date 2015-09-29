@@ -1,0 +1,382 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  srv030:1.3 srv028:1.3 srv027:1.3 srv026:1.2 srv024:1.2 srv022:1.2 srv021:1.2 srv019:1.2 srv018:1.2 srv016:1.2 srv015:1.2 srv014:1.2 srv012:1.2 srv011:1.2 srv010:1.2 srv008:1.2 srv007:1.2 srv006:1.2 srv005:1.2 srv004:1.2 srv003:1.2 srv002:1.2 srv001:1.2;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     92.07.12.23.29.53;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.11.14.10.02.55;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.10.25.20.17.43;  author kupfer;  state Exp;
+branches 1.1.1.1;
+next     ;
+
+1.1.1.1
+date     92.07.10.16.18.16;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@One million microseconds in a second, not one thousand.  Do more
+iterations at startup to get a more accurate idea of the overhead.
+@
+text
+@/*
+ * rpcHistogram.c --
+ *
+ *      Simple histograms of event durations are maintained by the
+ *      routines in this module.  The data recorded includes an average of
+ *      time samples, and a histogram at some granularity of time
+ *      intervals.
+ *
+ * Copyright (C) 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/rpc/RCS/rpcHistogram.c,v 1.2 91/11/14 10:02:55 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+
+#include <sprite.h>
+#include <bstring.h>
+#include <ckalloc.h>
+#include <status.h>
+#include <sync.h>
+#include <timer.h>
+#include <rpcHistogram.h>
+#include <stdlib.h>
+#include <vm.h>
+
+#define LOCKPTR (&histPtr->lock)
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_HistInit --
+ *
+ *	Initialize the data structure used to keep an empirical time
+ *	distribution, or histogram.
+ *
+ * Results:
+ *	A pointer to the data structure, suitable for passing to
+ *	Rpc_HistStart and Rpc_HistStop.
+ *
+ * Side effects:
+ *	Allocates memory for the structure.
+ *
+ *----------------------------------------------------------------------
+ */
+Rpc_Histogram *
+Rpc_HistInit(numBuckets, usecPerBucket)
+    int numBuckets;	/* The number of columns in the histogram */
+    int usecPerBucket;	/* The time step between columns in the histogram */
+{
+    register Rpc_Histogram *histPtr;
+    register int bound;
+    Timer_Ticks startTicks, endTicks;
+    int numTrials = 1000;	/* to determine measurement overhead */
+
+    histPtr = (Rpc_Histogram *)ckalloc(sizeof(Rpc_Histogram));
+    histPtr->numBuckets = numBuckets;
+    histPtr->bucket = (int *)ckalloc((unsigned)numBuckets * sizeof(int));
+    Sync_LockInitDynamic(&histPtr->lock, "Rpc:histPtr->lock");
+    histPtr->aveTimePerCall.seconds = 0;
+    histPtr->aveTimePerCall.microseconds = 0;
+    bzero((Address)&histPtr->totalTime, sizeof(Time));
+    histPtr->numCalls = 0;
+    /*
+     * Truncate the usecPerBucket to a power of two.  This lets the sampling
+     * routines use shifts instead of modulo.
+     */
+    if (usecPerBucket < 2) {
+	usecPerBucket = 2;
+    }
+    histPtr->bucketShift = 0;
+    for (bound = 2 ; bound <= usecPerBucket ; bound <<= 1) {
+	histPtr->bucketShift++;
+    }
+    
+    histPtr->usecPerBucket = bound >> 1;
+
+    /*
+     * Time the cost of calling the histogram sampling routines.
+     */
+    Timer_GetCurrentTicks(&startTicks);
+    for (bound=0; bound<numTrials; bound++) {
+	Time time;
+	Rpc_HistStart(histPtr, &time);
+	Rpc_HistEnd(histPtr, &time);
+    }
+    Timer_GetCurrentTicks(&endTicks);
+    Timer_SubtractTicks(endTicks, startTicks, &endTicks);
+    Timer_TicksToTime(endTicks, &histPtr->overheadTime);
+    Time_Divide(histPtr->overheadTime, numTrials, &histPtr->overheadTime);
+
+    Rpc_HistReset(histPtr);
+    return(histPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_HistReset --
+ *
+ *	Reset the histograms, so they start fresh for another benchmark.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The counters and average are reset.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+Rpc_HistReset(histPtr)
+    register Rpc_Histogram *histPtr;
+{
+    register int i;
+
+    LOCK_MONITOR;
+
+    histPtr->numCalls = 0;
+    bzero((Address)&histPtr->totalTime, sizeof(Timer_Ticks));
+    histPtr->aveTimePerCall.seconds = 0;
+    histPtr->aveTimePerCall.microseconds = 0;
+    histPtr->numHighValues = 0;
+    for (i=0 ; i<histPtr->numBuckets ; i++) {
+	histPtr->bucket[i] = 0;
+    }
+
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_HistStart --
+ *
+ *	Take a time sample to start a measured interval and update
+ *	the number of calls.  On a Sun-2 this costs about 650 microseconds.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Take a time sample and count calls.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+Rpc_HistStart(histPtr, timePtr)
+    register Rpc_Histogram *histPtr;	/* The histogram */
+    register Time *timePtr;		/* Client storage area fro the time
+					 * sample */
+{
+    LOCK_MONITOR;
+    Timer_GetRealTimeOfDay(timePtr, (int *)NIL, (Boolean *)NIL);
+    histPtr->numCalls++;
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_HistEnd --
+ *
+ *	Called at the end of an interval, this determines the length of
+ *	the interval, keeps a running sum, and updates a counter
+ *	in the histogram corresponding to the interval length.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Increment a counter in the histogram.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+Rpc_HistEnd(histPtr, timePtr)
+    register Rpc_Histogram *histPtr;	/* The histogram */
+    register Time *timePtr;		/* Result from Rpc_HistStart */
+{
+    Time endTime;
+    register int index;
+    LOCK_MONITOR;
+    Timer_GetRealTimeOfDay(&endTime, (int *)NIL, (Boolean *)NIL);
+    Time_Subtract(endTime, *timePtr, timePtr);
+    /* 
+     * If the command took more than about a half hour, we run into the 
+     * risk of overflow when we convert seconds to microseconds.  So, treat 
+     * anything greater than 2000 seconds as 2000 seconds.
+     */
+    if (timePtr->seconds > 2000) {
+	timePtr->seconds = 2000;
+    }
+    index = (timePtr->seconds * 1000000 + timePtr->microseconds) >>
+		histPtr->bucketShift;
+    if (index >= histPtr->numBuckets) {
+	histPtr->numHighValues++;
+    } else {
+	histPtr->bucket[index]++;
+    }
+    Time_Add(histPtr->totalTime, *timePtr, &histPtr->totalTime);
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_HistDump --
+ *
+ *	Copy the histogram data structure to the callers buffer.
+ *	It is assumed that it is a user space buffer, and that it
+ *	is large enough (a lame assumption).
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The copy.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY ReturnStatus
+Rpc_HistDump(histPtr, buffer)
+    register Rpc_Histogram *histPtr;
+    register Address buffer;
+{
+    register ReturnStatus status;
+    
+    LOCK_MONITOR;
+    status = Vm_CopyOut(sizeof(Rpc_Histogram), (Address)histPtr, buffer);
+    if (status == SUCCESS) {
+	buffer += sizeof(Rpc_Histogram);
+	status = Vm_CopyOut(histPtr->numBuckets * sizeof(int),
+			    (Address)histPtr->bucket, buffer);
+    }
+    UNLOCK_MONITOR;
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_HistPrint --
+ *
+ *	Print the histogram data structure to the console.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The copy.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+Rpc_HistPrint(histPtr)
+    register Rpc_Histogram *histPtr;
+{
+    register int i;
+    LOCK_MONITOR;
+    Time_Divide(histPtr->totalTime, histPtr->numCalls,
+				    &histPtr->aveTimePerCall);
+    printf("%d Calls,  ave %d.%06d secs each\n",
+		   histPtr->numCalls, histPtr->aveTimePerCall.seconds,
+		   histPtr->aveTimePerCall.microseconds);
+    for (i=0 ; i<histPtr->numBuckets ; i++) {
+	printf("%8d ", i * histPtr->usecPerBucket);
+    }
+    printf("Overflow\n");
+    for (i=0 ; i<histPtr->numBuckets ; i++) {
+	printf("%7d  ", histPtr->bucket[i]);
+    }
+    printf("%d\n", histPtr->numHighValues);
+    printf("\n");
+    UNLOCK_MONITOR;
+}
+@
+
+
+1.2
+log
+@Snapshot. net, rpc, recov modules added.
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/rpc/RCS/rpcHistogram.c,v 1.1 91/10/25 20:17:43 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d56 1
+d79 1
+d84 1
+a84 1
+    for (bound=0 ; bound<10 ; bound++) {
+d92 2
+a93 1
+    Time_Divide(histPtr->overheadTime, 10, &histPtr->overheadTime);
+d188 9
+a196 1
+    index = (timePtr->seconds * 1000 + timePtr->microseconds) >>
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcHistogram.c,v 9.1 90/10/02 16:29:31 mgbaker Exp $ SPRITE (Berkeley)";
+a18 1
+#include <stdio.h>
+d20 1
+d57 1
+a57 1
+    histPtr = (Rpc_Histogram *)malloc(sizeof(Rpc_Histogram));
+d59 1
+a59 1
+    histPtr->bucket = (int *)malloc(numBuckets * sizeof(int));
+@
+
+
+1.1.1.1
+log
+@rev 9.2 from the kernel sources (1000000 usec in a second, not 1000).
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/rpc/rpcHistogram.c,v 9.2 92/07/10 14:42:24 kupfer Exp $ SPRITE (Berkeley)";
+d185 1
+a185 9
+    /* 
+     * If the command took more than about a half hour, we run into the 
+     * risk of overflow when we convert seconds to microseconds.  So, treat 
+     * anything greater than 2000 seconds as 2000 seconds.
+     */
+    if (timePtr->seconds > 2000) {
+	timePtr->seconds = 2000;
+    }
+    index = (timePtr->seconds * 1000000 + timePtr->microseconds) >>
+@

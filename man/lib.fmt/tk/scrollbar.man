@@ -1,0 +1,264 @@
+
+
+
+scrollbar                 User Commands                 scrollbar
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     scrollbar - Create and manipulate scrollbar widgets
+
+SSYYNNOOPPSSIISS
+     ssccrroollllbbaarr _p_a_t_h_N_a_m_e ?_o_p_t_i_o_n_s?
+
+SSTTAANNDDAARRDD OOPPTTIIOONNSS
+     aaccttiivveeFFoorreeggrroouunndd               ccuurrssoorr          rreelliieeff         |
+     bbaacckkggrroouunndd      ffoorreeggrroouunndd     rreeppeeaattDDeellaayy
+     bboorrddeerrWWiiddtthh     oorriieenntt         rreeppeeaattIInntteerrvvaall
+
+     See the ``options'' manual entry for details on the standard
+     options.
+
+WWIIDDGGEETT--SSPPEECCIIFFIICC OOPPTTIIOONNSS
+     Name:           ccoommmmaanndd
+     Class:          CCoommmmaanndd
+     Command-Line Switch:--ccoommmmaanndd
+
+          Specifies the prefix of a  Tcl  command  to  invoke  to
+          change  the  view  in  the  widget  associated with the
+          scrollbar.  When a user requests a view change by mani-
+          pulating  the scrollbar, a Tcl command is invoked.  The
+          actual command consists of this option  followed  by  a
+          space  and  a number.  The number indicates the logical
+          unit that should appear at the top  of  the  associated
+          window.
+
+     Name:           wwiiddtthh
+     Class:          WWiiddtthh
+     Command-Line Switch:--wwiiddtthh
+
+          Specifies the desired narrow dimension of the scrollbar
+          window, not including 3-D border, if any.  For vertical
+          scrollbars this will be the width  and  for  horizontal
+          scrollbars this will be the height.  The value may have  |
+          any of the forms acceptable to TTkk__GGeettPPiixxeellss.
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The ssccrroollllbbaarr command creates a new  window  (given  by  the
+     _p_a_t_h_N_a_m_e  argument)  and  makes  it into a scrollbar widget.
+     Additional options, described above, may be specified on the
+     command  line or in the option database to configure aspects
+     of the  scrollbar  such  as  its  colors,  orientation,  and
+     relief.   The  ssccrroollllbbaarr  command returns its _p_a_t_h_N_a_m_e argu-
+     ment.  At the time this command is invoked, there  must  not
+     exist  a  window  named _p_a_t_h_N_a_m_e, but _p_a_t_h_N_a_m_e's parent must
+     exist.
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+scrollbar                 User Commands                 scrollbar
+
+
+
+     A scrollbar is a widget that displays  two  arrows,  one  at
+     each  end  of the scrollbar, and a _s_l_i_d_e_r in the middle por-
+     tion of the scrollbar.   A  scrollbar  is  used  to  provide
+     information  about  what  is visible in an _a_s_s_o_c_i_a_t_e_d _w_i_n_d_o_w
+     that displays an object of some sort (such as a  file  being
+     edited  or  a drawing).  The position and size of the slider
+     indicate which portion of the object is visible in the asso-
+     ciated  window.   For  example,  if the slider in a vertical
+     scrollbar covers the top third of the area between  the  two
+     arrows, it means that the associated window displays the top
+     third of its object.
+
+     Scrollbars can be used to adjust the view in the  associated
+     window  by  clicking  or  dragging  with the mouse.  See the
+     BINDINGS section below for details.
+
+
+WWIIDDGGEETT CCOOMMMMAANNDD
+     The ssccrroollllbbaarr command creates a new Tcl command  whose  name
+     is  _p_a_t_h_N_a_m_e.   This  command  may be used to invoke various
+     operations on the widget.   It  has  the  following  general
+     form:
+
+          _p_a_t_h_N_a_m_e _o_p_t_i_o_n ?_a_r_g _a_r_g ...?
+     _O_p_t_i_o_n and the _a_r_gs determine the exact behavior of the com-
+     mand.   The  following  commands  are possible for scrollbar
+     widgets:
+
+     _p_a_t_h_N_a_m_e ccoonnffiigguurree ?_o_p_t_i_o_n? ?_v_a_l_u_e _o_p_t_i_o_n _v_a_l_u_e ...?
+          Query  or  modify  the  configuration  options  of  the
+          widget.   If  no  _o_p_t_i_o_n  is  specified, returns a list
+          describing all of the available  options  for  _p_a_t_h_N_a_m_e
+          (see  TTkk__CCoonnffiigguurreeIInnffoo for information on the format of
+          this list).  If _o_p_t_i_o_n is specified with no _v_a_l_u_e, then
+          the  command  returns  a  list describing the one named
+          option (this list will be identical to the  correspond-
+          ing  sublist  of  the  value  returned  if no _o_p_t_i_o_n is
+          specified).  If one  or  more  _o_p_t_i_o_n-_v_a_l_u_e  pairs  are
+          specified,  then  the command modifies the given widget
+          option(s) to have the given value(s);  in this case the
+          command  returns  an empty string.  _O_p_t_i_o_n may have any
+          of the values accepted by the ssccrroollllbbaarr command.
+
+     _p_a_t_h_N_a_m_e ggeett
+          Returns a Tcl  list  containing  four  decimal  values,
+          which  are  the  current  _t_o_t_a_l_U_n_i_t_s, _w_i_d_n_o_w_U_n_i_t_s, _f_i_r_-
+          _s_t_U_n_i_t, and _l_a_s_t_U_n_i_t values for the  scrollbar.   These
+          are  the values from the most recent sseett widget command
+          on the scrollbar.
+
+     _p_a_t_h_N_a_m_e sseett _t_o_t_a_l_U_n_i_t_s _w_i_n_d_o_w_U_n_i_t_s _f_i_r_s_t_U_n_i_t _l_a_s_t_U_n_i_t
+          This  command  is  invoked  to   give   the   scrollbar
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+scrollbar                 User Commands                 scrollbar
+
+
+
+          information   about  the  widget  associated  with  the
+          scrollbar.  _T_o_t_a_l_U_n_i_t_s is an integer value  giving  the
+          total size of the object being displayed in the associ-
+          ated widget.  The meaning of one unit  depends  on  the
+          associated  widget;   for  example,  in  a  text editor
+          widget units might correspond to lines of  text.   _W_i_n_-
+          _d_o_w_U_n_i_t_s  indicates  the total number of units that can
+          fit in the associated window at  one  time.   _F_i_r_s_t_U_n_i_t
+          and  _l_a_s_t_U_n_i_t  give  the  indices of the first and last
+          units currently visible in the associated window  (zero
+          corresponds  to  the  first  unit of the object).  This
+          command should be  invoked  by  the  associated  widget
+          whenever its object or window changes size and whenever
+          it changes the view in its window.
+
+
+BBIINNDDIINNGGSS
+     The  description   below   assumes   a   vertically-oriented
+     scrollbar.   For  a  horizontally-oriented scrollbar replace
+     the words ``up'', ``down'',  ``top'',  and  ``bottom''  with
+     ``left'', ``right'', ``left'', and ``right'', respectively
+
+     A scrollbar widget is  divided  into  five  distinct  areas.
+     From  top  to  bottom, they are:  the top arrow, the top gap
+     (the empty space between the  arrow  and  the  slider),  the
+     slider,  the  bottom  gap,  and  the bottom arrow.  Pressing
+     mouse button 1 in each area has a different effect:
+
+     ttoopp aarrrrooww           Causes the view in the associated window
+                         to shift up by one unit (i.e. the object
+                         appears to move down  one  unit  in  its
+                         window).  If the button is held down the
+                         action will auto-repeat.
+
+     ttoopp ggaapp             Causes the view in the associated window
+                         to  shift up by one less than the number
+                         of units in the window (i.e. the portion
+                         of the object that used to appear at the
+                         very top of the window will  now  appear
+                         at  the  very bottom).  If the button is
+                         held down the action will auto-repeat.
+
+     sslliiddeerr              Pressing button 1 in this  area  has  no
+                         immediate  effect  except  to  cause the
+                         slider  to  appear  sunken  rather  than
+                         raised.   However, if the mouse is moved
+                         with the button  down  then  the  slider
+                         will  be  dragged, adjusting the view as
+                         the mouse is moved.
+
+     bboottttoomm ggaapp          Causes the view in the associated window
+                         to  shift  down  by  one  less  than the
+
+
+
+Sprite v1.0                                                     3
+
+
+
+
+
+
+scrollbar                 User Commands                 scrollbar
+
+
+
+                         number of units in the window (i.e.  the
+                         portion  of  the  object  that  used  to
+                         appear at the very bottom of the  window
+                         will  now  appear  at the very top).  If
+                         the button is held down the action  will
+                         auto-repeat.
+
+     bboottttoomm aarrrrooww        Causes the view in the associated window
+                         to  shift  down  by  one  unit (i.e. the
+                         object appears to move up  one  unit  in
+                         its window).  If the button is held down
+                         the action will auto-repeat.
+
+     Note:  none of the actions described above has an  immediate
+     impact  on  the position of the slider in the scrollbar.  It
+     simply invokes the command specified in the  ccoommmmaanndd  option
+     to  notify  the  associated  widget that a change in view is
+     desired.  If the view is actually changed then  the  associ-
+     ated  widget  must invoke the scrollbar's sseett widget command
+     to change what is displayed in the scrollbar.
+
+
+KKEEYYWWOORRDDSS
+     scrollbar, widget
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     4
+
+
+

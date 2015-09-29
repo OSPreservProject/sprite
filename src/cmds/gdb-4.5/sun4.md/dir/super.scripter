@@ -1,0 +1,34 @@
+foreach i (bfd gdb glob libiberty mmalloc readline include)
+   echo $i
+   mv ../$i ../$i.old
+   mkdir ../$i
+   ln -s ../../dist/$i/* ../$i
+   ls ../$i.old > $i.old.dir
+   ls ../$i > $i.dir
+   tr -d '@*/' < $i.dir > $i.dir.temp
+   tr -d '@*/' < $i.old.dir > $i.old.dir.temp
+   sed -f script $i.old.dir.temp > $i.old.dir.new
+   diff $i.dir.temp $i.old.dir.new > $i.diff
+   awk -f script.awk $i.diff > $i.diff.new
+   mkdir $i.temp
+   cd $i.temp
+   gawk -f ../script2.awk ../$i.diff.new
+   foreach j (*)
+      echo $i':' $j
+      cp -r ../../$i.old/$j ../../$i
+      if (-e ../../$i.old/doc)
+         rm ../../$i/doc
+         mkdir ../../$i/doc
+         cp -r ../../$i.old/doc/* ../../$i/doc	
+   end
+   cd ..
+   cd ../$i
+   if (-e RCS) then
+      foreach k (RCS/*)
+         co $k
+      end
+   endif
+   cd ../dir
+end
+cd ..
+

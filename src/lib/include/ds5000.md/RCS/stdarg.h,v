@@ -1,0 +1,98 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     92.02.05.15.16.24;  author mottsmth;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     92.02.05.15.00.44;  author mottsmth;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Original ansi stdarg.h file from Ultrix
+@
+
+
+1.2
+log
+@Change _VA_LIST_ to _VA_LIST to agree with Sprite's stdio.h
+@
+text
+@/*	@@(#)stdarg.h	4.3	(ULTRIX)	9/4/90	*/
+/* ------------------------------------------------------------------ */
+/* | Copyright Unpublished, MIPS Computer Systems, Inc.  All Rights | */
+/* | Reserved.  This software contains proprietary and confidential | */
+/* | information of MIPS and its suppliers.  Use, disclosure or     | */
+/* | reproduction is prohibited without the prior express written   | */
+/* | consent of MIPS.                                               | */
+/* ------------------------------------------------------------------ */
+/* $Header: /sprite/src/lib/include/ds3100.md/RCS/stdarg.h,v 1.1 92/02/05 15:00:44 mottsmth Exp Locker: mottsmth $ */
+/*	@@(#)stdarg.h	1.1	*/
+
+/* 4.8 Variable arguments */
+
+#include <ansi_compat.h>
+#ifndef __STDARG_H
+#define __STDARG_H
+ 
+#ifndef _VA_LIST /* Was _VA_LIST_. Changed to agree with Sprite's stdio.h */
+#define _VA_LIST
+typedef char *va_list;
+#endif /* _VA_LIST */
+
+#define va_end(list)
+
+#ifdef __host_mips
+
+	/* va_start makes list point past the parmN */
+#define va_start(list, parmN) (list = ((va_list)&parmN + sizeof(parmN)))
+
+        /* va_arg aligns list and points past data */
+#define va_arg(list, mode) ((mode *)(list =\
+ (va_list) ((((int)list + (__builtin_alignof(mode)<=4?3:7)) &\
+ (__builtin_alignof(mode)<=4?-4:-8))+sizeof(mode))))[-1]
+
+/*  +++++++++++++++++++++++++++++++++++++++++++
+    Because of parameter passing conventions in C:
+    use mode=int for char, and short types
+    use mode=double for float types
+    use a pointer for array types
+    +++++++++++++++++++++++++++++++++++++++++++ */
+
+#else /* vax */
+
+#define va_start(list, parmN) list = (va_list)((int)&parmN + sizeof(parmN))
+#define va_arg(list, mode) ((mode *)(list += sizeof(mode)))[-1]
+
+#endif
+
+#endif
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d9 1
+a9 1
+/* $Header: stdarg.h,v 2010.6.1.5 89/11/29 22:41:27 bettina Exp $ */
+d18 2
+a19 2
+#ifndef _VA_LIST_
+#define _VA_LIST_
+d21 1
+a21 1
+#endif /* _VA_LIST_ */
+@

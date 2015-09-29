@@ -1,0 +1,89 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    mendel:1.1; strict;
+comment  @ * @;
+
+
+1.1
+date     86.07.18.11.51.25;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/* mem.c -
+ *
+ *	This file contains a simple memory allocator.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: bootVm.c,v 1.1 86/07/16 17:12:02 brent Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+#include "vmSunConst.h"
+
+extern int endBss;	/* Defined in end.s */
+
+/*
+ * Private storage for Mem_Alloc
+ */
+static Address	memEnd;
+static Boolean	memInitialized = FALSE;
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mem_Alloc --
+ *
+ *     Allocate a block of memory of the given size starting at the
+ *     current end of kernel memory.
+ *
+ * Results:
+ *     A pointer to the allocated memory.
+ *
+ * Side effects:
+ *     memEnd is incremented.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+Address
+Mem_Alloc(numBytes)
+{
+    Address	addr;
+
+    if (!memInitialized) {
+	memEnd = (Address) (((int) &endBss + 3) & ~3);
+	memInitialized = TRUE;
+    }
+
+    addr =  memEnd;
+
+    memEnd += (numBytes + 3) & ~3;
+
+    return(addr);
+}
+
+void
+Mem_Free(address)
+    Address address;
+{
+    return;
+}
+@

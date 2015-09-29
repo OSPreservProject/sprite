@@ -1,0 +1,1 @@
+s/^LIBS.*/LIBS = -lsys/

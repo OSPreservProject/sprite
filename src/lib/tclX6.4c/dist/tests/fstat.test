@@ -1,0 +1,138 @@
+#
+# fstat.test
+#
+# Tests for the fstat command.
+#---------------------------------------------------------------------------
+# Copyright 1992 Karl Lehenbauer and Mark Diekhans.
+#
+# Permission to use, copy, modify, and distribute this software and its
+# documentation for any purpose and without fee is hereby granted, provided
+# that the above copyright notice appear in all copies.  Karl Lehenbauer and
+# Mark Diekhans make no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without express or
+# implied warranty.
+#------------------------------------------------------------------------------
+# $Id: fstat.test,v 2.0 1992/10/16 04:49:50 markd Rel $
+#------------------------------------------------------------------------------
+#
+
+if {[info procs test] != "test"} then {source testlib.tcl}
+
+unlink -nocomplain gorp.file
+set gorpFH [open gorp.file w]
+puts $gorpFH "Test string"
+close $gorpFH
+chmod 0765 gorp.file
+
+set gorpFH [open gorp.file r+]
+
+Test fstat-1.1 {array return} {
+    catch {unset stat}
+    fstat $gorpFH stat stat
+    lsort [array names stat]
+} 0 {atime ctime dev gid ino mode mtime nlink size tty type uid}
+
+Test fstat-1.2 {array return} {
+    catch {unset stat}
+    fstat $gorpFH stat stat
+    list $stat(nlink) $stat(size) [expr $stat(mode)&0777] $stat(type) \
+         $stat(tty)
+} 0 {1 12 501 file 0}
+
+Test fstat-1.3 {array return} {
+    catch {unset stat}
+    fstat $gorpFH stat stat
+    list [expr {[file mtime gorp.file] == $stat(mtime)}] \
+	    [expr {[file atime gorp.file] == $stat(atime)}] $stat(size)
+} 0 {1 1 12}
+
+Test fstat-2.1 {keyed list returns} {
+    catch {unset stat}
+    set stat [fstat $gorpFH]
+    lsort [keylkeys stat]
+} 0 {atime ctime dev gid ino mode mtime nlink size tty type uid}
+
+Test fstat-2.2 {keyed list returns} {
+    set stat [fstat $gorpFH]
+    list [keylget stat nlink] [keylget stat size] \
+         [expr [keylget stat mode ]&0777] [keylget stat type]
+} 0 {1 12 501 file}
+
+Test fstat-2.3 {keyed list returns} {
+    set stat [fstat $gorpFH]
+    list [expr {[file mtime gorp.file] == [keylget stat mtime]}] \
+	    [expr {[file atime gorp.file] == [keylget stat atime]}] \
+            [keylget stat size]
+} 0 {1 1 12}
+
+
+Test fstat-3.1 {individual item returns} {
+    set old [fstat $gorpFH mtime]
+    exec sleep 2
+    puts $gorpFH "More text"
+    flush $gorpFH
+    set new [fstat $gorpFH mtime]
+    expr {($new > $old) && ($new <= ($old+5))}
+} 0 {1}
+
+Test fstat-3.2 {individual item returns} {
+    set oldsize [fstat $gorpFH size]
+    puts $gorpFH "More text"
+    flush $gorpFH
+    expr {[fstat $gorpFH size] - $oldsize}
+} 0 {8}
+
+Test fstat-4.1 {type return} {
+    set fh [open .]
+    set type [fstat $fh type]
+    close $fh
+    set type
+} 0 directory
+
+Test fstat-4.2 {type return} {
+    fstat $gorpFH type
+} 0 file
+
+#
+# Check to see that the values that are returned are at least numeric where
+# expected
+#
+Test fstat-4.3 {type return} {
+    set dataList {}
+    foreach type {dev ino mode nlink uid gid size atime mtime ctime tty
+                  type} {
+        set data [fstat $gorpFH $type]
+        if [string match "-*" $data] {
+            set data [csubstr $data 1 end]
+        }
+        lappend dataList [ctype digit $data]
+    }
+    set dataList
+} 0 {1 1 1 1 1 1 1 1 1 1 1 0}
+
+
+Test fstat-5.1 {error handling} {
+    fstat
+} 1 {wrong # args: fstat handle [item]|[stat arrayVar]}
+
+Test fstat-5.2 {error handling} {
+    fstat foo
+} 1 {bad file identifier "foo"}
+
+Test fstat-5.3 {error handling} {
+    fstat $gorpFH foo
+} 1 {Got "foo", expected one of "atime", "ctime", "dev", "gid", "ino", "mode", "mtime", "nlink", "size", "tty", "type", "uid"}
+
+Test fstat-5.4 {error handling} {
+    catch {unset foo}
+    fstat $gorpFH foo foo
+} 1 {expected item name of "stat" when using array name}
+
+Test fstat-5.5 {error handling} {
+    catch {unset foo}
+    fstat $gorpFH stat foo baz
+} 1 {wrong # args: fstat handle [item]|[stat arrayVar]}
+
+
+catch {close $gorpFH}
+unlink -nocomplain gorp.file

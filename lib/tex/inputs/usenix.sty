@@ -1,0 +1,105 @@
+% usenix.sty
+% For Usenix conference proceedings -- released 1 June 1989
+%
+% This style option is designed to work with the article document
+%   style of LaTeX version 2.09.  Use
+%         \documentstyle[usenix]{article}
+%
+% The rules here are from "Instructions for Usenix Authors and
+%  Speakers" in the INSTRUCTIONS from Usenix.
+% I've followed these rules as close as possible but there are a
+%  number of "gaps" that I had questions about.  I waited several
+%  months for a response from Usenix but never got one.  If you find
+%  any problems with submitting proceedings with this style, please
+%  let me know.
+
+
+% Copyright (c) 1989 by David K. Steiner
+% Permission to copy all or part of this work is granted, provided
+% that the copies are not made or distributed for resale, and that
+% the copyright notice and this notice are retained.
+% 
+% THIS WORK IS PROVIDED ON AN "AS IS" BASIS.  THE AUTHOR PROVIDES NO
+% WARRANTY WHATSOEVER, EITHER EXPRESS OR IMPLIED, REGARDING THE WORK,
+% INCLUDING WARRANTIES WITH RESPECT TO ITS MERCHANTABILITY OR FITNESS
+% FOR ANY PARTICULAR PURPOSE.
+
+% If you make any improvements, I'd like to hear about them.
+
+% Dave Steiner
+% Rutgers University
+% CCIS, Busch Campus
+% PO Box 879
+% Piscataway, NJ 08855-0879
+% steiner@topaz.rutgers.edu
+% ..!rutgers!topaz.rutgers.edu!steiner
+
+\typeout{Document Style Option 'Usenix' -- version 0.9, released 1 June 1989}
+
+% All comments assume basic font is 10pt rm but code should 
+%  handle any font size changes
+
+% 6x9in centered in a 8.5x11in page
+\oddsidemargin=.25in
+\evensidemargin=.25in
+\marginparwidth=0pt
+\marginparsep=0pt
+\textwidth=6in
+
+\topmargin=0in
+\textheight=9in
+\headheight=0pt
+\headsep=0pt
+
+\parskip=\baselineskip \divide\parskip \tw@
+\parindent=\baselineskip \multiply\parindent \tw@
+
+%Title should be 14pt bold, attribution info should be 12pt italic.  
+% Don't include date.  Abstract should be 12pt with a 12pt bold title.
+
+\def\maketitle{\par
+ \begingroup
+ \parskip=0pt
+ \def\thefootnote{\fnsymbol{footnote}}
+ \def\@makefnmark{\hbox 
+ to 0pt{$^{\@thefnmark}$\hss}} 
+ \if@twocolumn 
+ \twocolumn[\@maketitle] 
+ \else \newpage
+ \global\@topnum\z@ \@maketitle \fi\thispagestyle{plain}\@thanks
+ \endgroup
+ \setcounter{footnote}{0}
+ \let\maketitle\relax
+ \let\@maketitle\relax
+ \gdef\@thanks{}\gdef\@author{}\gdef\@title{}\let\thanks\relax}
+\def\@maketitle{\newpage
+ \null
+ \vskip 2em \begin{center}
+ {\LARGE\bf \@title \par} \vskip 1.5em {\large\it \lineskip .5em
+\begin{tabular}[t]{c}\@author 
+ \end{tabular}\par} 
+ \end{center}
+ \par
+ \vskip 1.5em} 
+\def\abstract{\if@twocolumn
+\section*{Abstract}
+\else \large
+\begin{center}
+{\bf ABSTRACT\vspace{-.5em}\vspace{0pt}\vskip\baselineskip} 
+\end{center}
+\quotation 
+\fi}
+\def\endabstract{\if@twocolumn\else\endquotation\fi}
+
+\def\section{\@startsection {section}{1}{\z@}
+  {\parskip}{.1pt plus .2pt}{\normalsize\bf}}
+\def\subsection{\@startsection{subsection}{2}{\z@}
+  {\parskip}{.1pt plus .2pt}{\normalsize\bf}}
+\def\subsubsection{\@startsection{subsubsection}{3}{\z@}
+  {\parskip}{.1pt plus .2pt}{\normalsize\bf}}
+\def\paragraph{\@startsection
+  {paragraph}{4}{\z@}{\parskip}{-1em}{\normalsize\bf}}
+\def\subparagraph{\@startsection
+  {subparagraph}{4}{\parindent}{\parskip}{-1em}{\normalsize\bf}}
+
+% End of usenix.sty

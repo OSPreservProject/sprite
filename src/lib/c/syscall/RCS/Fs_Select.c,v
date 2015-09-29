@@ -1,0 +1,123 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  sprited:1.2.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     88.06.21.11.17.08;  author ouster;  state Exp;
+branches 1.2.1.1;
+next     1.1;
+
+1.1
+date     88.06.19.14.29.12;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.2.1.1
+date     91.12.08.17.05.16;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Must include status.h.
+@
+text
+@/* 
+ * Fs_Select.c --
+ *
+ *	Source code for the Fs_Select library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: Fs_Select.c,v 1.1 88/06/19 14:29:12 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <fs.h>
+#include <status.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_Select --
+ *
+ *      The "normal" Fs_Select interface for user code.  Waits a period of
+ *      time  indicated  by  *timeoutPtr for  I/O  to become possible on
+ *      any of the streams indicated by *readMaskPtr,  *writeMaskPtr and
+ *      *exceptMaskPtr.
+ *
+ * Results:
+ *	The result from Fs_RawSelect.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Fs_Select(numStreams, timeoutPtr, readMaskPtr, writeMaskPtr,
+	       exceptMaskPtr, numReadyPtr)
+
+    int		numStreams;	/* # of bits in the read and write masks. */
+    Time	*timeoutPtr;	/* Timeout period or NULL. */
+    int		*readMaskPtr;	/* A bitmask indicating stream ID's to check
+				 * for readability. */
+    int		*writeMaskPtr;	/* A bitmask indicating stream ID's to check
+				 * for writability. */
+    int		*exceptMaskPtr;	/* A bitmask indicating stream ID's to check
+				 * for exception conditions. */
+    int		*numReadyPtr;	/* On return indicates the number of streams
+				 * ready for I/O. */
+{
+    ReturnStatus	status;
+
+    do {
+	status = Fs_RawSelect(numStreams, timeoutPtr, readMaskPtr, writeMaskPtr,
+		       exceptMaskPtr, numReadyPtr);
+    } while (status == GEN_ABORTED_BY_SIGNAL);
+    return(status);
+}
+@
+
+
+1.2.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/syscall/RCS/Fs_Select.c,v 1.2 88/06/21 11:17:08 ouster Exp $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: proto.c,v 1.2 88/03/11 08:39:08 ouster Exp $ SPRITE (Berkeley)";
+d22 1
+@

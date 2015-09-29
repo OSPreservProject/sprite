@@ -1,0 +1,20 @@
+% This was sort of cribbed from lfonts.tex.
+% I have no idea how close to correctness it is.
+% However, it has worked on some files at 10pt.
+%
+% Unfortunately, I think that there is some kind of rounding
+% problem in dvidoc itself.
+%
+% John Pavel, March 1987
+%
+\makeatletter
+\def\rm{\protect\pdoc}
+\def\it{\protect\pdoc}
+\def\bf{\protect\pdoc}
+\def\sl{\protect\pdoc}
+\def\sf{\protect\pdoc}
+\def\sc{\protect\pdoc}
+\def\tt{\protect\pdoc}
+\newfam\docfam
+\def\pdoc{\@getfont\pdoc\docfam\@xiipt{doc}}
+\makeatother

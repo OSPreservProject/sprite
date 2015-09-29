@@ -1,0 +1,160 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  sprited:1.3.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     88.07.25.11.10.55;  author ouster;  state Exp;
+branches 1.3.1.1;
+next     1.2;
+
+1.2
+date     88.06.18.17.17.33;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.05.20.15.49.27;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.3.1.1
+date     91.12.02.20.38.38;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@Lint.
+@
+text
+@/* 
+ * Mem_Size.c --
+ *
+ *	Source code for the "Mem_Size" library procedure.  See memInt.h
+ *	for overall information about how the allocator works.
+ *
+ * Copyright 1985, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: Mem_Size.c,v 1.2 88/06/18 17:17:33 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <stdio.h>
+#include "memInt.h"
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mem_Size --
+ *
+ *      Return the size of a previously-allocated storage block.
+ *
+ * Results:
+ *      The return value is the size of *blockPtr, in bytes.  This is
+ *	the total usable size of the block.  It may be slightly greater
+ *	than the size actually requested from malloc, since the size
+ *	might have been rounded up to a convenient boundary.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+ENTRY int
+Mem_Size(blockPtr)
+    Address blockPtr;	/* Pointer to storage block.  Must have been the
+			 * return value from malloc at some previous time. */
+{
+    int admin;
+
+    LOCK_MONITOR;
+
+    if (!memInitialized) {
+        panic("Mem_Size: allocator not initialized!\n");
+	UNLOCK_MONITOR;
+	return(0);			/* should never get here */
+    }
+
+    /* 
+     *  Make sure that this block bears some resemblance to a
+     *  well-formed storage block.
+     */
+    
+    blockPtr -= sizeof(AdminInfo);
+    admin = GET_ADMIN(blockPtr);
+    if (!IS_IN_USE(admin)) {
+	if (IS_DUMMY(admin)) {
+	    panic("Mem_Size: storage block is corrupted\n");
+	} else {
+	    panic("Mem_Size: storage block is free\n");
+	}
+	UNLOCK_MONITOR;
+	return(0);			/* (should never get here) */
+    }
+
+    UNLOCK_MONITOR;
+    return(SIZE(admin) - sizeof(AdminInfo));
+}
+@
+
+
+1.3.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdlib/RCS/Mem_Size.c,v 1.3 88/07/25 11:10:55 ouster Exp $ SPRITE (Berkeley)";
+@
+
+
+1.2
+log
+@Use panic instead of Sys_Panic.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: Mem_Size.c,v 1.1 88/05/20 15:49:27 ouster Exp $ SPRITE (Berkeley)";
+d21 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: proto.c,v 1.2 88/03/11 08:39:08 ouster Exp $ SPRITE (Berkeley)";
+d53 1
+a53 1
+        MemPanic("Mem_Size: allocator not initialized!\n");
+d67 1
+a67 1
+	    MemPanic("Mem_Size: storage block is corrupted\n");
+d69 1
+a69 1
+	    MemPanic("Mem_Size: storage block is free\n");
+@

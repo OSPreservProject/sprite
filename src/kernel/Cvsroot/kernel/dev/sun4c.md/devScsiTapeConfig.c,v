@@ -1,0 +1,80 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ds3100:1.2 sun3:1.2 sun4nw:1.2 symm:1.2 spur:1.2;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     91.06.06.11.19.23;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.08.09.12.49.54;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Stable kernel now.
+@
+
+
+1.2
+log
+@Added DevExabyteAttach and DevEmulexAttach.
+@
+text
+@/* 
+ * devScsiTapeConfig.c --
+ *
+ *	Configuration file for SCSI tape drives. This file initializes the
+ *	data structure containing the list of available SCSI Tape drive 
+ *	drivers available in the system.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devScsiTapeConfig.c,v 1.2 89/05/24 07:51:43 rab Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include "sprite.h"
+#include  "scsiTape.h"
+#include "exabyteTape.h"
+#include "emulexTape.h"
+
+ReturnStatus ((*devSCSITapeAttachProcs[])()) = {
+    DevExabyteAttach,
+    DevEmulexAttach,
+ };
+
+int devNumSCSITapeTypes = sizeof(devSCSITapeAttachProcs) / 
+				sizeof(devSCSITapeAttachProcs[0]);
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d24 2
+d28 2
+a30 1
+#ifdef notdef
+d34 1
+a34 2
+#endif
+int devNumSCSITapeTypes = 0;
+@

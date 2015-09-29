@@ -1,0 +1,9 @@
+F DEPENDEN.MK;1                     	dependencies.mk
+F MD.MK;1                           	md.mk
+F VMMACH.H;1                        	vmMach.h
+F VMMACHIN.H;1                      	vmMachInt.h
+F VMMACHST.H;1                      	vmMachStat.h
+F VMMACHTR.H;1                      	vmMachTrace.h
+F VMPMAX.C;1                        	vmPmax.c
+F VMPMAXAS.S;1                      	vmPmaxAsm.s
+F VMPMAXCO.H;1                      	vmPmaxConst.h

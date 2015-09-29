@@ -1,0 +1,12 @@
+F ALLOCA.H_V;1                      	alloca.h,v
+F A_OUT.H_V;1                       	a.out.h,v
+F LIMITS.H_V;1                      	limits.h,v
+F MACHPARA.H_V;1                    	machparam.h,v
+F MATH_688.H_V;1                    	math-68881.h,v
+F REG.H_V;1                         	reg.h,v
+F SETJMP.H_V;1                      	setjmp.h,v
+F SIGMACH.H_V;1                     	sigMach.h,v
+F STDARG.H_V;1                      	stdarg.h,v
+F VARARGS.H_V;1                     	varargs.h,v
+F VMMACH.H_V;1                      	vmMach.h,v
+F VMPARAM.H_V;1                     	vmparam.h,v

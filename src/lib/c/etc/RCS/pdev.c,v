@@ -1,0 +1,3210 @@
+head     1.15;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.15
+date     90.06.27.11.17.12;  author shirriff;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     90.06.25.17.44.47;  author douglis;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     90.05.01.10.19.26;  author brent;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     90.02.19.14.44.37;  author douglis;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     90.01.31.08.23.53;  author ouster;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     89.09.12.14.42.55;  author brent;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     89.06.02.13.38.23;  author brent;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     89.04.12.13.33.01;  author ouster;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     89.03.20.15.52.26;  author ouster;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.01.26.10.12.54;  author brent;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.01.06.07.59.52;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.11.11.11.30.10;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.10.18.13.35.23;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.08.29.13.00.07;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.08.26.16.12.17;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Library for pseudo-device servers
+@
+
+
+1.15
+log
+@Fixed inconsistencies in default handlers.
+@
+text
+@/* 
+ * pdev.c --
+ *
+ *	The routines in this module set up a call-back interface for
+ *	a pseudo-device server.  Pdev_Open creates a pseudo-device and
+ *	installs service procedures.  These service procedures are called
+ *	when client processes use the pseudo-device.  The harness procedure
+ *	which invokes the call-backs takes care of the kernel interface.
+ *	There are also default service procedures so the user of Pdev_Open
+ *	need only provide service procedures for the operations of interest.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/etc/RCS/pdev.c,v 1.14 90/06/25 17:44:47 douglis Exp Locker: shirriff $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <stdio.h>
+#include <sprite.h>
+#include <ctype.h>
+#include <errno.h>
+#include <pdev.h>
+#include <list.h>
+#include <status.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/file.h>
+
+/*
+ * The string below holds an error message if Pdev_Open fails.
+ */
+
+char pdev_ErrorMsg[150];
+
+/*
+ * Boolean that can be toggled by applications to get tracing.
+ */
+int pdev_Trace;
+
+/*
+ * The Pdev structure is the top-level state for the pseudo-device
+ * or pseudo-filelsystem server.  The state for each pseudo-device connection
+ * is hung in a list off of this.  This also has a set of default service
+ * procedures for the various pseudo-device operations.  Two
+ * fields of the Pdev struct are made available to the client of the
+ * Pdev package so it can do IOControls on the service stream and
+ * set a private data pointer.
+ */
+
+typedef struct Pdev {
+    Pdev_Stream stream;		/* Type PDEV_MAGIC */
+    List_Links connectList;	/* List of all service streams for this
+				 * pseudo-device (pseudo-filesystem). */
+    int requestBufSize;		/* Default request buffer size */
+    int readBufSize;		/* Size for optional read buffer */
+    Pdev_CallBacks *defaultService;/* Default handlers for pdev operations */
+} Pdev;
+
+/*
+ * The structure below corresponds to a pseudo-device connection between
+ * a client and the server.
+ */
+
+typedef struct ServiceStream {
+    Pdev_Stream stream;		/* Type PDEV_STREAM_MAGIC */
+    List_Links links;		/* pdev streams are linked into a
+				 * list of all streams for the same
+				 * pseudo-device (pseudo-file-system). */
+    Address parent;		/* Pdev state with which this stream is
+				 * associated. */
+    int streamID;		/* Sprite identifier for request stream. */
+    Address requestBuf;		/* A buffer for requests and data from the
+				 * client */
+    Address readBuf;		/* A buffer for data to be read over the
+				 * pseudo-device by the application. This
+				 * is allocated by us and passed to the
+				 * read call-back. If read buffering is set
+				 * then we allocate this at open-time and
+				 * pass it off to the open call-back. */
+    int readBufSize;		/* Size of the readBuf. */
+    Address ioctlOutBuf;	/* Buffer for results of ioctl */
+    int ioctlBufSize;		/* Size of ioctlOutBut */
+    Pdev_CallBacks *service;	/* Set of procedures to handle the various
+				 * pseudo-device operations. */
+} ServiceStream;
+
+#define LIST_TO_SRVPTR(listPtr) \
+	(ServiceStream *)((int)(listPtr) - sizeof(Pdev_Stream))
+
+static int	PdevDefaultOpen();
+static int	PdevDefaultRead();
+static int	PdevDefaultWrite();
+static int	PdevDefaultIoctl();
+static int	PdevDefaultClose();
+static int	PdevDefaultGetAttr();
+static int	PdevDefaultSetAttr();
+
+static Pdev_CallBacks pdevDefaultCallBacks = {
+     PdevDefaultOpen,
+     PdevDefaultRead,
+     PdevDefaultWrite,
+     PdevDefaultIoctl,
+     PdevDefaultClose,
+     PdevDefaultGetAttr,
+     PdevDefaultSetAttr,
+};
+
+/*
+ * PDEV_MIN_BYTES		Minimum number of data bytes in request buffer.
+ * PFS_REQUEST_BUF_SIZE 	Size of the request buffer for naming stream.
+ */
+
+#define PDEV_MIN_BYTES	1024
+#define PDEV_REQUEST_BUF_SIZE	(sizeof(Pdev_Request) + PDEV_MIN_BYTES)
+
+/*
+ * Forward references to procedures in this file:
+ */
+
+static void	PdevControlRequest();
+static void	PdevServiceRequest();
+static int	PdevCleanup();
+static void	ReplyNoData();
+static void	ReplyWithData();
+static int    (*SetHandler())();
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Pdev_Open --
+ *
+ *	Arrange to be the server for a pseudo-device.  This creates the
+ *	pseudo-device file, choosing a unique name if needed (see below).
+ *	The set of service call-backs are installed and will be called
+ *	when regular processes operate on the pseudo-device.  See the
+ *	man page for Pdev for details of the call-back interface.
+ *
+ * Results:
+ *	The return value is a token for the pseudo-device, which gets
+ *	passed to Pdev_Close.  A NULL return value
+ *	means that the pseudo-device could not be opened.  If realNamePtr
+ *	is non-NULL, *realNamePtr is filled in with a dynamically-
+ *	allocated string giving the actual name of the pseudo-device
+ *	file.
+ *
+ * Side effects:
+ *	A pseudo-device is opened in master mode.  If realNamePtr is
+ *	NULL then name is the complete name of the pseudo device;  if
+ *	realNamePtr is not NULL, then this procedure generates a
+ *	pseudo-device name of the form hostDir/nameXX, where "hostDir"
+ *	is the name of a standard host-specific directory for holding
+ *	terminal pseudo-devices and XX is an integer id appended to
+ *	"name" in order to find a device that isn't already in use.
+ *	Once this procedure returns, this module manages the pseudo
+ *	device to provide a simple call-back interface to service procedures.
+ *	I,e, for each operation on the pseudo-device by a another process,
+ *	a call-back for that operation is made to one of the supplied
+ *	service procedures.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Pdev_Token
+Pdev_Open(name, realNamePtr, requestBufSize, readBufSize, service, clientData)
+    char *name;			/* Name of pseudo-device file to use for
+				 * application interface, or key for generating
+				 * name (if realNamePtr != NULL).  If no
+				 * pseudo-device by that name exists, one
+				 * will be created. */
+    char **realNamePtr;		/* If not NULL, then use "name" as a key for
+				 * a name (see above) and store actual name of
+				 * pseudo-device here.  The memory for the
+				 * string is dynamically allocated. */
+    int requestBufSize;		/* Preferred size for the request buffer.
+				 * Can be <= 0 for a default size */
+    int readBufSize;		/* Size for optional read buffer.  Zero means
+				 * no buffering and we use the read call-back*/
+    Pdev_CallBacks *service;	/* A set of service procedures.
+				 * This can be NULL (or any element can be
+				 * NULL) in order to get a default handler
+				 * for all (some) operations.  The callbacks
+				 * can be changed with Pdev_SetupHandler */
+    ClientData clientData;	/* Client data associated with pseudo-device */
+{
+    int streamID;
+    register Pdev *pdevPtr;
+    int pdevOpenFlags;
+
+    /*
+     * Pick a file name to use for the pseudo-device, if the caller didn't
+     * give us one, then open the pseudo-device as the controlling process.
+     */
+
+    pdevOpenFlags = O_MASTER|O_RDWR|O_CREAT;
+    if (realNamePtr != NULL) {
+	char hostName[50];
+	int i;
+	char *actualName;
+
+	if (gethostname(hostName, 20) != 0) {
+	    sprintf(pdev_ErrorMsg, "couldn't get host name (%s)",
+		    strerror(errno));
+	    return (Pdev_Token) NULL;
+	} else {
+	    /*
+	     * Trim off domain name, if any
+	     */
+	    char *cp;
+
+	    cp = index(hostName, '.');
+	    if (cp != (char *)NULL) {
+		*cp = '\0';
+	    }
+	}
+	actualName = (char *) malloc((unsigned) (12 + strlen(hostName)
+		+ strlen(name)));
+	for (i = 1; i < 100; i++) {
+	    sprintf(actualName, "/hosts/%s/%s%d", hostName,
+		    name, i);
+
+	    /*
+	     * Because of umask, the file's mode may not actually get set
+	     * to 0666.  Once the file is open, change the mode explicitly
+	     * to force it.
+	     */
+
+	    streamID = open(actualName, pdevOpenFlags, 0666);
+	    if (streamID >= 0) {
+		fchmod(streamID, 0666);
+		*realNamePtr = actualName;
+		goto gotStream;
+	    }
+	}
+	free((char *) actualName);
+	sprintf(pdev_ErrorMsg, 
+		"couldn't open a pseudo-device in \"/hosts/%s\"", hostName);
+	return (Pdev_Token) NULL;
+    } else {
+	streamID = open(name, pdevOpenFlags, 0666);
+	if (streamID < 0) {
+	    sprintf(pdev_ErrorMsg, "couldn't open \"%s\" (%s)",
+		    name, strerror(errno));
+	    return (Pdev_Token) NULL;
+	} else {
+	    fchmod(streamID, 0666);
+	}
+    }
+
+gotStream:
+    pdevPtr = (Pdev *) malloc(sizeof(Pdev));
+    pdevPtr->stream.magic = PDEV_MAGIC;
+    pdevPtr->stream.streamID = streamID;
+    pdevPtr->stream.clientData = clientData;
+    pdevPtr->requestBufSize = requestBufSize;
+    pdevPtr->readBufSize = readBufSize;
+    List_Init(&pdevPtr->connectList);
+    pdevPtr->defaultService = (Pdev_CallBacks *)malloc(sizeof(Pdev_CallBacks));
+    if (service == (Pdev_CallBacks *)NULL) {
+	bzero((Address) pdevPtr->defaultService, sizeof(Pdev_CallBacks));
+    } else {
+	bcopy((Address) service, (Address) pdevPtr->defaultService,
+		    sizeof(Pdev_CallBacks));
+    }
+    Fs_EventHandlerCreate(streamID, FS_READABLE, PdevControlRequest,
+	    (ClientData) pdevPtr);
+
+    return (Pdev_Token) pdevPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Pdev_Close --
+ *
+ *	Close down a pseudo-device and release all of the
+ *	state associated with it.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Memory gets recycled, and clients on the other end of the
+ *	pseudo-device will probably terminate.  After this call,
+ *	the caller should never again use the pseudo-device.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Pdev_Close(pdevToken)
+    Pdev_Token pdevToken;	/* Token identifying the pseudo-device.
+				 * This is returned from Pdev_Open. */
+{
+    register Pdev *pdevPtr = (Pdev *) pdevToken;
+    List_Links *listPtr;
+    register ServiceStream *srvPtr;
+
+    while (!List_IsEmpty(&pdevPtr->connectList)) {
+	listPtr = List_First(&pdevPtr->connectList);
+	srvPtr = LIST_TO_SRVPTR(listPtr);
+	(void)PdevCleanup(srvPtr, FALSE);
+    }
+    Fs_EventHandlerDestroy(pdevPtr->stream.streamID);
+    close(pdevPtr->stream.streamID);
+    free((Address)pdevToken);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Pdev_GetStreamID --
+ *
+ *	Return the descriptor associated with a master's pdev.  
+ *
+ * Results:
+ *	The streamID is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Pdev_GetStreamID(pdevToken)
+    Pdev_Token pdevToken;	/* Token identifying the pseudo-device.
+				 * This is returned from Pdev_Open. */
+{
+    register Pdev *pdevPtr = (Pdev *) pdevToken;
+    return(pdevPtr->stream.streamID);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PdevCleanup --
+ *
+ *	Called when a client has closed in order to
+ *	clean up any associated state.
+ *
+ * Results:
+ *	Returns the status from the close call-back.
+ *
+ * Side effects:
+ *	Calls the close-call back, then cleans up all state associated
+ *	with the pseudo-device.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+PdevCleanup(srvPtr, sendReply)
+    register ServiceStream *srvPtr;	/* Service stream info. */
+    Boolean sendReply;			/* TRUE if we should reply to the
+					 * close request.  This is done in
+					 * normal termination.  FALSE means
+					 * no reply needed, used to close
+					 * pending connections when the
+					 * server is bailing out */
+{
+    int status;
+
+    status = (*srvPtr->service->close)(&srvPtr->stream);
+#ifdef lint
+    status = PdevDefaultClose(&srvPtr->stream);
+#endif /* lint */
+
+    if (sendReply) {
+	ReplyNoData(srvPtr, status, 0);
+    }
+    List_Remove(&srvPtr->links);
+    Fs_EventHandlerDestroy(srvPtr->stream.streamID);
+    close(srvPtr->stream.streamID);
+    free((char *) srvPtr->requestBuf);
+    if (srvPtr->service != (Pdev_CallBacks *)NULL) {
+	free((char *) srvPtr->service);
+    }
+    if (srvPtr->readBuf != NULL) {
+	free(srvPtr->readBuf);
+    }
+    if (srvPtr->ioctlOutBuf != NULL) {
+	free(srvPtr->ioctlOutBuf);
+    }
+    free((char *) srvPtr);
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PdevControlRequest --
+ *
+ *	This procedure is invoked by Fs_Dispatcher when the control
+ *	stream for a pseudo-device is readable.  This means that
+ *	a new stream is being opened on the pdev.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Add a new service stream to the pdev.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+PdevControlRequest(pdevPtr)
+    register Pdev *pdevPtr;	/* Pdev whose control stream is ready. */
+{
+    Pdev_Notify notify;
+    int numBytes;
+
+    /*
+     * Read the control stream for a message containing a new streamID.
+     */
+
+    numBytes = read(pdevPtr->stream.streamID, (char *) &notify, sizeof(notify));
+    if (numBytes != sizeof(notify)) {
+	panic("%s; status \"%s\", count %d\n",
+		"PdevControlRequest couldn't read control stream",
+		strerror(errno), numBytes);
+    }
+    if (notify.magic != PDEV_NOTIFY_MAGIC) {
+	panic("%s: %d\n", "PdevControlRequest got bad notify magic number",
+		notify.magic);
+    }
+    (void) PdevSetup(notify.newStreamID, (Address)pdevPtr,
+		&pdevPtr->connectList, pdevPtr->requestBufSize,
+		pdevPtr->readBufSize, (char *)0, pdevPtr->defaultService, 0);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PdevSetup --
+ *
+ *	Set up state for a pseudo-device connection. This includes a request
+ *	buffer used by the kernel to pass client requests to us and a set
+ *	of service call-back procedures.
+ *	
+ * Results:
+ *	A pointer to the user's handle on the service stream.
+ *
+ * Side effects:
+ *	Allocates and initializes state.  Makes IOControls to set
+ *	attributes of the pdev connection.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Pdev_Stream *
+PdevSetup(streamID, backPointer, streamList, reqBufSize, readBufSize, readBuf, service, selectBits)
+    int streamID;		/* Service stream */
+    Address backPointer;	/* Pointer to global state */
+    List_Links *streamList;	/* List of pseudo-device streams */
+    int reqBufSize;		/* Size for the request buffer */
+    int readBufSize;		/* Size for the read buffer, if any */
+    char *readBuf;		/* The read buffer itself, NULL if it should
+				 * be allocated here */
+    Pdev_CallBacks *service;	/* Set of service call-backs */
+    int selectBits;		/* Initial select state of the connection */
+{
+    register ServiceStream *srvPtr;
+    Pdev_SetBufArgs setBuf;
+    int false = 0;
+
+    srvPtr = (ServiceStream *) malloc(sizeof(ServiceStream));
+    List_InitElement(&srvPtr->links);
+    List_Insert(&srvPtr->links, LIST_ATFRONT(streamList));
+    srvPtr->stream.magic = PDEV_STREAM_MAGIC;
+    srvPtr->stream.streamID = streamID;
+    srvPtr->stream.clientData = 0;
+    srvPtr->parent = backPointer;
+    srvPtr->service = (Pdev_CallBacks *)malloc(sizeof(Pdev_CallBacks));
+    bcopy((Address) service, (Address) srvPtr->service,
+	    sizeof(Pdev_CallBacks));
+    if (srvPtr->service->open == (int (*)())NULL) {
+	srvPtr->service->open = pdevDefaultCallBacks.open;
+    }
+    if (srvPtr->service->read == (int (*)())NULL) {
+	srvPtr->service->read = pdevDefaultCallBacks.read;
+    }
+    if (srvPtr->service->write == (int (*)())NULL) {
+	srvPtr->service->write = pdevDefaultCallBacks.write;
+    }
+    if (srvPtr->service->ioctl == (int (*)())NULL) {
+	srvPtr->service->ioctl = pdevDefaultCallBacks.ioctl;
+    }
+    if (srvPtr->service->close == (int (*)())NULL) {
+	srvPtr->service->close = pdevDefaultCallBacks.close;
+    }
+    if (srvPtr->service->getAttr == (int (*)())NULL) {
+	srvPtr->service->getAttr = pdevDefaultCallBacks.getAttr;
+    }
+    if (srvPtr->service->setAttr == (int (*)())NULL) {
+	srvPtr->service->setAttr = pdevDefaultCallBacks.setAttr;
+    }
+    if (readBufSize > 0) {
+	/*
+	 * Server wants a read buffer.  We allocate it now and declare
+	 * it to the kernel with the IOC_PDEV_SET_BUFS call below.
+	 */
+	if (readBuf == NULL) {
+	    srvPtr->readBuf = malloc(readBufSize);
+	} else {
+	    srvPtr->readBuf = readBuf;
+	}
+	srvPtr->readBufSize = readBufSize;
+    } else {
+	/*
+	 * No read buffering, but we will allocate a buffer for passing
+	 * to the read service call-back later.
+	 */
+	srvPtr->readBuf = NULL;
+	srvPtr->readBufSize = 0;
+    }
+    srvPtr->ioctlOutBuf = NULL;
+    srvPtr->ioctlBufSize = 0;
+
+    reqBufSize = max(PDEV_REQUEST_BUF_SIZE, reqBufSize);
+    srvPtr->requestBuf = (Address) malloc(reqBufSize);
+    setBuf.requestBufAddr = srvPtr->requestBuf;
+    setBuf.requestBufSize = reqBufSize;
+    setBuf.readBufAddr = srvPtr->readBuf;
+    setBuf.readBufSize = srvPtr->readBufSize;
+    Fs_IOControl(streamID, IOC_PDEV_WRITE_BEHIND,
+		    sizeof(int), (Address)&false, 0, (Address) NULL);
+    Fs_IOControl(streamID, IOC_PDEV_SET_BUF,
+		    sizeof(Pdev_SetBufArgs), (Address)&setBuf,
+		    0, (Address) NULL);
+    Fs_IOControl(streamID, IOC_PDEV_READY,
+		    sizeof(int), (Address)&selectBits, 0, (Address) NULL);
+
+    Fs_EventHandlerCreate(streamID, FS_READABLE, PdevServiceRequest,
+	    (ClientData) srvPtr);
+
+    return ((Pdev_Stream *)srvPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PdevServiceRequest --
+ *
+ *	This procedure is invoked by Fs_Dispatch when a request appears
+ *	for an service stream.   This procedure reads the request and
+ *	dispatches to a routine to handle the request.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Makes the call-backs to the service procedures passed to Pdev_Open.
+ *	Generates pseudo-device replies to complete the protocol with
+ *	the kernel.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+PdevServiceRequest(srvPtr)
+    register ServiceStream *srvPtr;	/* Application stream that has a
+					 * request ready for processing. */
+{
+    Pdev_BufPtrs bufPtrs;
+    Pdev_Signal signalInfo;
+    Pdev_Request *requestPtr;
+    Address dataPtr;		/* pointer to data following header */
+    Pdev_Reply reply;
+    int numBytes;
+    int status;
+    int selectBits;
+    int savedFirstByte;
+
+    /*
+     * Read the current pointers for the request buffer.
+     */
+
+    numBytes = read(srvPtr->stream.streamID, (char *) &bufPtrs,
+	    sizeof(Pdev_BufPtrs));
+    if (numBytes != sizeof(Pdev_BufPtrs)) {
+	panic("%s; status \"%s\", count %d\n",
+	    "PdevServiceRequest had trouble reading request buffer pointers",
+	    strerror(errno), numBytes);
+    }
+    if (bufPtrs.magic != PDEV_BUF_PTR_MAGIC) {
+	panic("%s: %d\n", "PdevServiceRequest got bad pointer magic number",
+		bufPtrs.magic);
+    }
+    savedFirstByte = bufPtrs.requestFirstByte;
+    /*
+     * While there are still requests in the buffer, service them.
+     */
+    while (bufPtrs.requestFirstByte < bufPtrs.requestLastByte) {
+	requestPtr =
+	    (Pdev_Request *)&srvPtr->requestBuf[bufPtrs.requestFirstByte];
+	if (requestPtr->hdr.magic != PDEV_REQUEST_MAGIC) {
+	    printf("PdevServiceRequest, alignment error: firstByte %d currentByte %d lastByte %d magic %x\n",
+		  savedFirstByte,
+		  bufPtrs.requestFirstByte, bufPtrs.requestLastByte,
+		  requestPtr->hdr.magic);
+	    /*
+	     * Ignore bogus request.
+	     */
+	    bufPtrs.requestFirstByte = bufPtrs.requestLastByte + 1;
+	    break;
+	}
+	dataPtr = (Address)((int)requestPtr + sizeof(Pdev_Request));
+	signalInfo.signal = 0;
+	signalInfo.code = 0;
+
+	switch (requestPtr->hdr.operation) {
+	    case PDEV_OPEN: {
+		/*
+		 * This is the first operation on a pseudo-device.  The
+		 * server can set srvPtr->private here, which will be
+		 * passed into the other handlers.
+		 */
+		Pdev *pdevPtr;
+		if (pdev_Trace) {
+		    fprintf(stderr, "OPEN %d: uid %d use %x",
+			    srvPtr->stream.streamID,
+			    requestPtr->param.open.uid,
+			    requestPtr->param.open.flags);
+		}
+		pdevPtr = (Pdev *)srvPtr->parent;
+		status = (*srvPtr->service->open)
+			    (pdevPtr->stream.clientData, &srvPtr->stream,
+				srvPtr->readBuf,
+				requestPtr->param.open.flags,
+				requestPtr->param.open.pid,
+				requestPtr->param.open.hostID,
+				requestPtr->param.open.uid,
+				&selectBits);
+#ifdef lint
+		status = PdevDefaultOpen(pdevPtr->stream.clientData, &srvPtr->stream,
+				srvPtr->readBuf,
+				requestPtr->param.open.flags,
+				requestPtr->param.open.pid,
+				requestPtr->param.open.hostID,
+				requestPtr->param.open.uid,
+				&selectBits);
+#endif /* lint */
+		ReplyNoData(srvPtr, status, selectBits);
+		break;
+	    }
+	    case PDEV_CLOSE:
+		if (pdev_Trace) {
+		    fprintf(stderr, "CLOSE %d", srvPtr->stream.streamID);
+		}
+		status = PdevCleanup(srvPtr, TRUE);
+		break;
+	    case PDEV_READ: {
+		/*
+		 * For reading we pass in a pre-allocated buffer, but also
+		 * allow the read procedure to use a different buffer.  If it
+		 * does change the buffer it also indicates if we should
+		 * free the new buffer after we reply.  We hold onto our
+		 * own srvPtr->readBuf until the connection is closed.
+		 */
+		Boolean freeIt = FALSE;
+
+		if (pdev_Trace) {
+		    fprintf(stderr, "READ %d bytes at offset %d\n",
+			requestPtr->hdr.replySize,
+			requestPtr->param.read.offset);
+		}
+
+		reply.replySize = requestPtr->hdr.replySize;
+		if (reply.replySize > srvPtr->readBufSize) {
+		    /*
+		     * Increase the read buffer size.
+		     */
+		    if (srvPtr->readBuf != NULL) {
+			free(srvPtr->readBuf);
+		    }
+		    srvPtr->readBuf = malloc(reply.replySize);
+		    srvPtr->readBufSize = reply.replySize;
+		}
+		requestPtr->param.read.buffer = srvPtr->readBuf;
+		status = (*srvPtr->service->read)(&srvPtr->stream,
+				&requestPtr->param.read, &freeIt,
+				&reply.selectBits,
+				&signalInfo);
+#ifdef lint
+		status = PdevDefaultRead(&srvPtr->stream,
+				&requestPtr->param.read, &freeIt,
+				&reply.selectBits,
+				&signalInfo);
+#endif /* lint */
+
+		reply.replySize = requestPtr->param.read.length;
+		reply.replyBuf = requestPtr->param.read.buffer;
+		ReplyWithData(srvPtr, status, &reply, &signalInfo);
+		if (freeIt &&
+		    (requestPtr->param.read.buffer != srvPtr->readBuf)) {
+		    free(requestPtr->param.read.buffer);
+		}
+		break;
+	    }
+	    case PDEV_WRITE_ASYNC:
+	    case PDEV_WRITE: {
+		if (pdev_Trace) {
+		    fprintf(stderr, "WRITE %d bytes at offset %d",
+			requestPtr->hdr.requestSize,
+			requestPtr->param.read.offset);
+		}
+		requestPtr->param.write.buffer = dataPtr;
+		status = (*srvPtr->service->write)(&srvPtr->stream,
+				(requestPtr->hdr.operation == PDEV_WRITE_ASYNC),
+				&requestPtr->param.write,
+				&reply.selectBits,
+				&signalInfo);
+#ifdef lint
+		status = PdevDefaultWrite(&srvPtr->stream,
+				(requestPtr->hdr.operation == PDEV_WRITE_ASYNC),
+				&requestPtr->param.write,
+				&reply.selectBits,
+				&signalInfo);
+#endif /* lint */
+		if (requestPtr->hdr.operation == PDEV_WRITE) {
+		    reply.replySize = sizeof(int);
+		    reply.replyBuf = (Address)&requestPtr->param.write.length;
+		    ReplyWithData(srvPtr, status, &reply, &signalInfo);
+		}
+		break;
+	    }
+	    case PDEV_IOCTL: {
+		if (pdev_Trace) {
+		    fprintf(stderr, "IOCTL %d", requestPtr->param.ioctl.command);
+		}
+		/*
+		 * The kernel sets up the sizes of the two buffers,
+		 * but we have our own notion of where they are.
+		 * We grow the out buffer if needed, for example,
+		 * and the inBuffer is sitting in the request buffer at dataPtr.
+		 */
+		reply.replySize = requestPtr->hdr.replySize;
+		if (reply.replySize > srvPtr->ioctlBufSize) {
+		    if (srvPtr->ioctlOutBuf != NULL) {
+			free(srvPtr->ioctlOutBuf);
+		    }
+		    srvPtr->ioctlOutBuf = malloc(reply.replySize);
+		    srvPtr->ioctlBufSize = reply.replySize;
+		}
+		requestPtr->param.ioctl.inBuffer = dataPtr;
+		requestPtr->param.ioctl.outBuffer = srvPtr->ioctlOutBuf;
+		status = (*srvPtr->service->ioctl)(&srvPtr->stream,
+				 &requestPtr->param.ioctl,
+				 &reply.selectBits,
+				 &signalInfo);
+#ifdef lint
+		status = PdevDefaultIoctl(&srvPtr->stream,
+				 &requestPtr->param.ioctl,
+				 &reply.selectBits,
+				 &signalInfo);
+#endif /* lint */
+		reply.replyBuf = srvPtr->ioctlOutBuf;
+		reply.replySize = requestPtr->param.ioctl.outBufSize;
+		ReplyWithData(srvPtr, status, &reply, &signalInfo);
+		break;
+	    }
+	    case PDEV_GET_ATTR: {
+		Fs_Attributes attr;
+
+		if (pdev_Trace) {
+		    fprintf(stderr, "GET ATTR");
+		}
+		status = (*srvPtr->service->getAttr)(&srvPtr->stream,
+				&attr, &reply.selectBits);
+#ifdef lint
+		status = PdevDefaultGetAttr(&srvPtr->stream,
+				&attr, &reply.selectBits);
+#endif /* lint */
+		if (status == SUCCESS) {
+		    reply.replyBuf = (Address)&attr;
+		    reply.replySize = sizeof(Fs_Attributes);
+		    ReplyWithData(srvPtr, status, &reply, (Pdev_Signal *)NIL);
+		} else {
+		    ReplyNoData(srvPtr, status, reply.selectBits);
+		}
+		break;
+	    }
+	    case PDEV_SET_ATTR: {
+		if (pdev_Trace) {
+		    fprintf(stderr, "SET ATTR %x", requestPtr->param.setAttr.flags);
+		}
+		status = (*srvPtr->service->setAttr)(&srvPtr->stream,
+				requestPtr->param.setAttr.flags,
+				requestPtr->param.setAttr.uid,
+				requestPtr->param.setAttr.gid,
+				(Fs_Attributes *)dataPtr, &reply.selectBits);
+#ifdef lint
+		status = PdevDefaultSetAttr(&srvPtr->stream,
+				requestPtr->param.setAttr.flags,
+				requestPtr->param.setAttr.uid,
+				requestPtr->param.setAttr.gid,
+				(Fs_Attributes *)dataPtr, &reply.selectBits);
+#endif /* lint */
+		ReplyNoData(srvPtr, status, reply.selectBits);
+		break;
+	    }
+	    default:
+		panic("PdevServiceRequest: bad request on request stream: %d\n",
+			requestPtr->hdr.operation);
+	}
+	if (pdev_Trace) {
+	    fprintf(stderr, " Returns %x\n", status);
+	}
+	/*
+	 * Move to the next request message.
+	 */
+	bufPtrs.requestFirstByte += requestPtr->hdr.messageSize;
+    }
+    /*
+     * Tell the kernel we processed the requests.
+     */
+    Fs_IOControl(srvPtr->stream.streamID, IOC_PDEV_SET_PTRS,
+		    sizeof(Pdev_BufPtrs), (Address)&bufPtrs,
+		    0, (Address) NULL);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ReplyNoData --
+ *
+ *	Send a reply back with no data;  just a return status.  This
+ *	procedure is most often used for error returns.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The application will receive status as the return from the
+ *	system call it invoked.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ReplyNoData(srvPtr, status, selectBits)
+    ServiceStream *srvPtr;	/* Application stream info. */
+    int status;	/* Error code to send to application. */
+    int selectBits;		/* Current select state for the stream */
+{
+    Pdev_Reply reply;
+
+    reply.magic = PDEV_REPLY_MAGIC;
+    reply.selectBits = selectBits;
+    if (status == EWOULDBLOCK) {
+	status = FS_WOULD_BLOCK;
+    } else {
+	status = Compat_MapToSprite(status);
+    }
+    reply.status = status;
+    reply.replySize = 0;
+    reply.replyBuf = NULL;
+    reply.signal = 0;
+    reply.code = 0;
+    status = Fs_IOControl(srvPtr->stream.streamID, IOC_PDEV_REPLY,
+		sizeof(Pdev_Reply), (Address) &reply, 0, (Address) NULL);
+    if (status != SUCCESS) {
+	panic("%s; status \"%s\"\n", "Reply couldn't send pdev reply",
+		Stat_GetMsg(status));
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ReplyWithData --
+ *
+ *	Send a reply back along with some data.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The application will receive status as the return from the
+ *	system call it invoked.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ReplyWithData(srvPtr, status, replyPtr, sigPtr)
+    ServiceStream *srvPtr;	/* Application stream info. */
+    int status;			/* Error code to send to application. */
+    Pdev_Reply *replyPtr;	/* Partially completed reply.  The replySize,
+				 * data area, and selectBits should be set. */
+    Pdev_Signal *sigPtr;	/* Signal to return, if any */
+{
+    if (status == EWOULDBLOCK) {
+	status = FS_WOULD_BLOCK;
+    } else {
+	status = Compat_MapToSprite(status);
+    }
+    if (sigPtr != (Pdev_Signal *)NIL) {
+	replyPtr->signal = sigPtr->signal;
+	replyPtr->code = sigPtr->code;
+    } else {
+	replyPtr->signal = 0;
+	replyPtr->code = 0;
+    }
+    if (replyPtr->replySize <= PDEV_SMALL_DATA_LIMIT) {
+	Pdev_ReplyData replyData;
+
+	replyData.magic = PDEV_REPLY_DATA_MAGIC;
+	replyData.status = status;
+	replyData.selectBits = replyPtr->selectBits;
+	replyData.replySize = replyPtr->replySize;
+	replyData.signal = replyPtr->signal;
+	replyData.code = replyPtr->code;
+	bcopy(replyPtr->replyBuf, replyData.data, replyPtr->replySize);
+	status = Fs_IOControl(srvPtr->stream.streamID, IOC_PDEV_SMALL_REPLY,
+		sizeof(Pdev_ReplyData), (Address)&replyData, 0, (Address) NULL);
+    } else {
+	replyPtr->magic = PDEV_REPLY_MAGIC;
+	replyPtr->status = status;
+	status = Fs_IOControl(srvPtr->stream.streamID, IOC_PDEV_REPLY,
+		    sizeof(Pdev_Reply), (Address) replyPtr, 0, (Address) NULL);
+    }
+    if (status != SUCCESS) {
+	panic("%s; status \"%s\"\n", "ReplyWithData couldn't send pdev reply",
+		Stat_GetMsg(status));
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Pdev_EnumStreams --
+ *
+ *	Apply a function to all service streams associated with a pdev.
+ *
+ * Results:
+ *	0 means all the applications of the function returned 0 as well.
+ *	If the function returns non-zero when applied to a stream then
+ *	the enumeration is stopped and that value is returned.
+ *
+ * Side effects:
+ *	None here.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Pdev_EnumStreams(pdevToken, func, clientData)
+    Pdev_Token pdevToken;
+    int (*func)();
+    ClientData clientData;
+{
+    register Pdev *pdevPtr = (Pdev *)pdevToken;
+    register List_Links *listPtr;
+    register ServiceStream *srvPtr;
+    register int status;
+
+    if (pdevPtr->stream.magic != (unsigned int)PDEV_MAGIC) {
+	fprintf(stderr, "Pdev_EnumStreams passed bad pdevToken\n");
+	return -1;
+    }
+    LIST_FORALL(&pdevPtr->connectList, listPtr) {
+	srvPtr = LIST_TO_SRVPTR(listPtr);
+	status = (*func)((Pdev_Stream *)srvPtr, clientData);
+	if (status != 0) {
+	    return(status);
+	}
+    }
+    return(0);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Pfs_SetDefaultHandler --
+ *
+ *	Set a default handler for a particular PDEV request.  If the handler is
+ *	NULL then a default procedure replaces the existing handler.
+ *	The default handlers are used when new connections are established
+ *	to the pseudo-device.
+ * 
+ * Results:
+ *	The old handler.
+ *
+ * Side effects:
+ *	Updates the call-back list.
+ *
+ *----------------------------------------------------------------------
+ */
+int (*
+Pdev_SetDefaultHandler(token, operation, handler))()
+    Pdev_Token token;		/* Returned from Pdev_Open */
+    int operation;		/* Which operation to set the handler for */
+    int (*handler)();		/* The callback procedure */
+{
+    register Pdev		*pdevPtr = (Pdev *)token;
+    register int		(*oldHandler)();
+
+    if (pdevPtr->stream.magic != (unsigned int)PDEV_MAGIC) {
+	fprintf(stderr, "Bad token passed to Pdev_SetHandler\n");
+	return (int (*)())NULL;
+    }
+
+    oldHandler = SetHandler(pdevPtr->defaultService, operation, handler);
+    return oldHandler;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Pfs_SetStreamHandler --
+ *
+ *	Set a handler for a particular stream and PDEV request.  If the handler
+ *	is NULL then a default procedure replaces the existing handler.
+ *	This call only affects the handler for the given stream to the
+ *	pseudo-device.
+ * 
+ * Results:
+ *	The old handler.
+ *
+ * Side effects:
+ *	Updates the call-back list.
+ *
+ *----------------------------------------------------------------------
+ */
+int (*
+Pdev_SetStreamHandler(streamPtr, operation, handler))()
+    Pdev_Stream *streamPtr;/* Handler for stream to pseudo-device */
+    int operation;		/* Which operation to set the handler for */
+    int (*handler)();		/* The callback procedure */
+{
+    register ServiceStream	*srvPtr = (ServiceStream *)streamPtr;
+    register int		(*oldHandler)();
+
+    if (srvPtr->stream.magic != (unsigned int)PDEV_STREAM_MAGIC) {
+	fprintf(stderr, "Bad token passed to Pdev_SetHandler\n");
+	return (int (*)())NULL;
+    }
+
+    oldHandler = SetHandler(srvPtr->service, operation, handler);
+    return oldHandler;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetHandler --
+ *
+ *	Set the handler for a pseudo-device operation and return the
+ *	old handler.
+ *
+ * Results:
+ *	The old handler.
+ *
+ * Side effects:
+ *	Change the handler.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int (*
+SetHandler(service, operation, handler))()
+    Pdev_CallBacks *service;
+    int operation;
+    int (*handler)();
+{
+    int (*oldHandler)();
+
+    switch (operation) {
+	case PDEV_OPEN:
+	    oldHandler = service->open;
+	    if (handler == (int (*)())NULL) {
+		service->open = pdevDefaultCallBacks.open;
+	    } else {
+		service->open = handler;
+	    }
+	    break;
+	case PDEV_CLOSE:
+	    oldHandler = service->close;
+	    if (handler == (int (*)())NULL) {
+		service->close = pdevDefaultCallBacks.close;
+	    } else {
+		service->close = handler;
+	    }
+	    break;
+	case PDEV_READ:
+	    oldHandler = service->read;
+	    if (handler == (int (*)())NULL) {
+		service->read = pdevDefaultCallBacks.read;
+	    } else {
+		service->read = handler;
+	    }
+	    break;
+	case PDEV_WRITE:
+	    oldHandler = service->write;
+	    if (handler == (int (*)())NULL) {
+		service->write = pdevDefaultCallBacks.write;
+	    } else {
+		service->write = handler;
+	    }
+	    break;
+	case PDEV_IOCTL:
+	    oldHandler = service->ioctl;
+	    if (handler == (int (*)())NULL) {
+		service->ioctl = pdevDefaultCallBacks.ioctl;
+	    } else {
+		service->ioctl = handler;
+	    }
+	    break;
+	case PDEV_GET_ATTR:
+	    oldHandler = service->getAttr;
+	    if (handler == (int (*)())NULL) {
+		service->getAttr = pdevDefaultCallBacks.getAttr;
+	    } else {
+		service->getAttr = handler;
+	    }
+	    break;
+	case PDEV_SET_ATTR:
+	    oldHandler = service->setAttr;
+	    if (handler == (int (*)())NULL) {
+		service->setAttr = pdevDefaultCallBacks.setAttr;
+	    } else {
+		service->setAttr = handler;
+	    }
+	    break;
+	default:
+	    fprintf(stderr, "Bad operation passed to Pdev_SetHandler");
+	    oldHandler = (int (*)())NULL;
+	    break;
+    }
+    return oldHandler;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PdevDefaultOpen --
+ *
+ *	Default procedure is called when an PDEV_OPEN request is
+ *	received over an service stream.
+ *
+ * Results:
+ *	Returns SUCCESS and the select state of the pseudo-device.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static int
+PdevDefaultOpen(clientData, streamPtr, readBuf, flags, procID, hostID,
+	uid, selectBitsPtr)
+    ClientData clientData;	/* Client data associated with pseudo-device */
+    Pdev_Stream *streamPtr;	/* Identifies open stream */
+    char *readBuf;		/* Optional read buffer */
+    int flags;			/* Flags passed to open system call */
+    int procID;			/* Process ID doing the open */
+    int hostID;			/* Host on which process is executing */
+    int uid;			/* User id of process */
+    int *selectBitsPtr;		/* Return - select state of pseudo-device */
+{
+    *selectBitsPtr = FS_READABLE | FS_WRITABLE;
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PdevDefaultClose --
+ *
+ *	Default procedure is called when an PDEV_CLOSE request is
+ *	received over an service stream.
+ *
+ * Results:
+ *	Returns SUCCESS and the select state of the pseudo-device.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static int
+PdevDefaultClose(streamPtr)
+    Pdev_Stream *streamPtr;
+{
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PdevDefaultRead --
+ *
+ *	The default read procedure.  This simulates EOF by returning
+ *	SUCCESS but no characters.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static int
+PdevDefaultRead(streamPtr, readPtr, freeItPtr, selectBitsPtr, sigPtr)
+    Pdev_Stream *streamPtr;	/* Service stream. */
+    Pdev_RWParam *readPtr;	/* Read parameter block. */
+    Boolean *freeItPtr;		/* Return indicates if *bufferPtr is malloc'd */
+    int *selectBitsPtr;		/* Return - the select state of the pdev */
+    Pdev_Signal *sigPtr;	/* Return - signal to generate. */
+{
+    *freeItPtr = FALSE;
+    readPtr->length = 0;
+    *selectBitsPtr = FS_READABLE | FS_WRITABLE;
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PdevDefaultWrite --
+ *
+ *	The default write procedure.  This accepts and discards all data.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*ARGSUSED*/
+static int
+PdevDefaultWrite(streamPtr, async, writePtr, selectBitsPtr, sigPtr)
+    Pdev_Stream *streamPtr;	/* Private data */
+    int async;			/* TRUE if asynchronous and no reply needed */
+    Pdev_RWParam *writePtr;	/* Write parameter block. */
+    int *selectBitsPtr;		/* Result - select state of the pseudo-device */
+    Pdev_Signal *sigPtr;	/* Return - signal to generate. */
+{
+    *selectBitsPtr = FS_READABLE | FS_WRITABLE;
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PdevDefaultIoctl --
+ *
+ *	The default IOControl handling procedure called when an
+ *	PDEV_IOCONTROL request is received over a request stream.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static int
+PdevDefaultIoctl(streamPtr, ioctlPtr, selectBitsPtr, sigPtr)
+    Pdev_Stream *streamPtr;	/* Stream to service. */
+    Pdev_IOCParam *ioctlPtr;	/* ioctl parameter block. */
+    int *selectBitsPtr;		/* Return - select state of pdev. */
+    Pdev_Signal *sigPtr;	/* Return - signal to generate. */
+{
+    ioctlPtr->outBufSize = 0;
+    *selectBitsPtr = FS_READABLE | FS_WRITABLE;
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PdevDefaultGetAttr --
+ *
+ *	The default GetAttributes handling procedure called when an
+ *	PDEV_GET_ATTR request is received over a request stream.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static int
+PdevDefaultGetAttr(streamPtr, attrPtr, selectBitsPtr)
+    Pdev_Stream *streamPtr;
+    Fs_Attributes *attrPtr;
+    int *selectBitsPtr;
+{
+    bzero((Address)attrPtr, sizeof(Fs_Attributes));
+    attrPtr->fileNumber = (int)streamPtr->clientData;
+    attrPtr->permissions = 0644;
+    attrPtr->type = FS_FILE;
+    *selectBitsPtr = FS_READABLE | FS_WRITABLE;
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PdevDefaultSetAttr --
+ *
+ *	The default GetAttributes handling procedure called when an
+ *	PDEV_SET_ATTR request is received over a request stream.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static int
+PdevDefaultSetAttr(streamPtr, flags, uid, gid, attrPtr, selectBitsPtr)
+    Pdev_Stream *streamPtr;
+    int flags;
+    int uid;
+    int gid;
+    Fs_Attributes *attrPtr;
+    int *selectBitsPtr;
+{
+    *selectBitsPtr = FS_READABLE | FS_WRITABLE;
+    return(SUCCESS);
+}
+@
+
+
+1.14
+log
+@free buffers when done with them.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/etc/RCS/pdev.c,v 1.13 90/05/01 10:19:26 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d438 1
+a438 1
+		pdevPtr->readBufSize, 0, pdevPtr->defaultService, 0);
+d1163 3
+a1165 2
+PdevDefaultOpen(pdevToken, streamPtr, readBuf, flags, procID, hostID, uid, selectBitsPtr)
+    Pdev_Token pdevToken;	/* Identifies pseudo-device */
+d1220 3
+a1222 8
+PdevDefaultRead(streamPtr, offset, procID, familyID, amountReadPtr, bufferPtr,
+	freeItPtr, selectBitsPtr)
+    Pdev_Stream *streamPtr;		/* Private data */
+    int offset;			/* Byte offset at which to read */
+    int procID;			/* Process ID of calling process */
+    int familyID;		/* Family ID of calling process */
+    int *amountReadPtr;		/* Return - how much data was generated */
+    Address *bufferPtr;		/* Ref. to buffer we fill in with data bytes */
+d1225 1
+d1228 1
+a1228 1
+    *amountReadPtr = 0;
+d1251 2
+a1252 2
+PdevDefaultWrite(streamPtr, async, offset, procID, familyID, numBytesPtr, buffer, selectBitsPtr)
+    Pdev_Stream *streamPtr;		/* Private data */
+d1254 1
+a1254 5
+    int offset;			/* Offset at which to write */
+    int procID;			/* Calling process's ID */
+    int familyID;		/* Calling process's family ID */
+    int *numBytesPtr;		/* In/Out byte count */
+    Address buffer;		/* Buffer containing bytes */
+d1256 1
+d1280 5
+a1284 12
+PdevDefaultIoctl(streamPtr, command, procID, familyID, byteOrder,
+	inSize, inData, outSizePtr, outData, selectBitsPtr)
+    Pdev_Stream *streamPtr;
+    int command;
+    int procID;
+    int familyID;
+    int byteOrder;
+    int inSize;
+    Address inData;
+    int *outSizePtr;
+    Address outData;
+    int *selectBitsPtr;
+d1286 1
+a1286 1
+    *outSizePtr = 0;
+@
+
+
+1.13
+log
+@Fixed selectBits bug.  A GET_ATTR on an open stream that returned
+an error would reset the selectBits to zero.   A SET_ATTR would
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/etc/RCS/pdev.c,v 1.12 90/02/19 14:44:37 douglis Exp Locker: brent $ SPRITE (Berkeley)";
+d386 6
+@
+
+
+1.12
+log
+@added Pdev_GetStreamID, which returns the descriptor hidden behind a 
+Pdev_Token.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/etc/RCS/pdev.c,v 1.11 90/01/31 08:23:53 ouster Exp Locker: douglis $ SPRITE (Berkeley)";
+d718 1
+a718 1
+		status = PdevDefaultRead(&srvPtr->stream,
+d783 1
+a783 1
+		    ReplyNoData(srvPtr, status, 0);
+d803 1
+a803 1
+		ReplyNoData(srvPtr, status, 0);
+@
+
+
+1.11
+log
+@Increase limit on max # of pdevs with same base name from 20 to 100.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/etc/RCS/pdev.c,v 1.10 89/09/12 14:42:55 brent Exp $ SPRITE (Berkeley)";
+d315 26
+@
+
+
+1.10
+log
+@Removed lint
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/etc/RCS/pdev.c,v 1.9 89/06/02 13:38:23 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d225 1
+a225 1
+	for (i = 1; i < 20; i++) {
+@
+
+
+1.9
+log
+@Updated to new pseudo-device interface with signals
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/etc/RCS/pdev.c,v 1.8 89/04/12 13:33:01 ouster Exp $ SPRITE (Berkeley)";
+a195 1
+    register int op;
+d347 4
+a387 1
+    register ServiceStream *srvPtr;
+d550 1
+d567 1
+d575 9
+a583 2
+	    panic("PdevServiceRequest, bad request magic # 0x%x\n",
+			    requestPtr->hdr.magic);
+d612 9
+d662 7
+d691 7
+d729 6
+d748 4
+d770 7
+d936 1
+a936 1
+    if (pdevPtr->stream.magic != PDEV_MAGIC) {
+d978 1
+a978 1
+    if (pdevPtr->stream.magic != PDEV_MAGIC) {
+d1014 1
+a1014 1
+    if (srvPtr->stream.magic != PDEV_STREAM_MAGIC) {
+@
+
+
+1.8
+log
+@Output newline after panic messages.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/etc/RCS/pdev.c,v 1.7 89/03/20 15:52:26 ouster Exp Locker: ouster $ SPRITE (Berkeley)";
+d541 1
+d575 2
+d578 1
+a578 1
+		switch (requestPtr->hdr.operation) {
+d613 1
+a613 1
+		 * allow the read procedure to change this buffer.  If it
+d615 2
+a616 1
+		 * free the buffer after we reply.
+a617 1
+		char *buffer;
+d637 1
+a637 1
+		buffer = srvPtr->readBuf;
+d639 9
+a647 10
+				requestPtr->param.read.offset,
+				requestPtr->param.read.procID,
+				requestPtr->param.read.familyID,
+				&reply.replySize,
+				&buffer, &freeIt,
+				&reply.selectBits);
+		reply.replyBuf = buffer;
+		ReplyWithData(srvPtr, status, &reply);
+		if (freeIt) {
+		    free(buffer);
+a652 2
+		int amountWritten;
+
+d658 1
+a658 3
+		reply.replySize = sizeof(int);
+		reply.replyBuf = (Address)&amountWritten;
+		amountWritten = requestPtr->hdr.requestSize;
+d661 3
+a663 5
+				requestPtr->param.read.offset,
+				requestPtr->param.read.procID,
+				requestPtr->param.read.familyID,
+				&amountWritten,	dataPtr,
+				&reply.selectBits);
+d665 3
+a667 1
+		    ReplyWithData(srvPtr, status, &reply);
+d675 6
+d689 6
+d696 2
+a697 9
+		status = (*srvPtr->service->ioctl)(&srvPtr->stream,
+				 requestPtr->param.ioctl.command,
+				 requestPtr->param.ioctl.procID,
+				 requestPtr->param.ioctl.familyID,
+				 requestPtr->param.ioctl.byteOrder,
+				 requestPtr->hdr.requestSize, dataPtr,
+				 &reply.replySize, srvPtr->ioctlOutBuf,
+				 &reply.selectBits);
+		ReplyWithData(srvPtr, status, &reply);
+d711 1
+a711 1
+		    ReplyWithData(srvPtr, status, &reply);
+d785 2
+d813 1
+a813 1
+ReplyWithData(srvPtr, status, replyPtr)
+d818 1
+a819 1
+    replyPtr->magic = PDEV_REPLY_MAGIC;
+d825 25
+a849 3
+    replyPtr->status = status;
+    status = Fs_IOControl(srvPtr->stream.streamID, IOC_PDEV_REPLY,
+		sizeof(Pdev_Reply), (Address) replyPtr, 0, (Address) NULL);
+@
+
+
+1.7
+log
+@Wasn't deleting Fs_Dispatch info for control stream.  This delta
+also includes changes made by Brent to make forward references
+"static" instead of "extern".
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/etc/RCS/pdev.c,v 1.6 89/01/26 10:12:54 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d394 1
+a394 1
+	panic("%s; status \"%s\", count %d",
+d399 1
+a399 1
+	panic("%s: %d", "PdevControlRequest got bad notify magic number",
+d555 1
+a555 1
+	panic("%s; status \"%s\", count %d",
+d560 1
+a560 1
+	panic("%s: %d", "PdevServiceRequest got bad pointer magic number",
+d727 1
+a727 1
+		panic("PdevServiceRequest: bad request on request stream: %d",
+d785 1
+a785 1
+	panic("%s; status \"%s\"", "Reply couldn't send pdev reply",
+d824 1
+a824 1
+	panic("%s; status \"%s\"", "ReplyWithData couldn't send pdev reply",
+@
+
+
+1.6
+log
+@Cleaned up the interface and moved Pfs procedures to their own file
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/etc/RCS/pdev.c,v 1.5 89/01/06 07:59:52 brent Exp $ SPRITE (Berkeley)";
+d98 7
+a104 7
+extern int	PdevDefaultOpen();
+extern int	PdevDefaultRead();
+extern int	PdevDefaultWrite();
+extern int	PdevDefaultIoctl();
+extern int	PdevDefaultClose();
+extern int	PdevDefaultGetAttr();
+extern int	PdevDefaultSetAttr();
+d128 5
+a132 5
+extern void	PdevControlRequest();
+extern void	PdevServiceRequest();
+extern int	PdevCleanup();
+extern void	ReplyNoData();
+extern void	ReplyWithData();
+d312 1
+d380 1
+a380 1
+void
+d535 1
+a535 1
+void
+@
+
+
+1.5
+log
+@Added casts for lint
+@
+text
+@d12 1
+a12 1
+ * Copyright 1987 Regents of the University of California
+d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/etc/RCS/pdev.c,v 1.4 88/11/11 11:30:10 brent Exp $ SPRITE (Berkeley)";
+d44 1
+a44 1
+ * Boolean that can be toggled by applications command line arguments.
+d46 1
+a46 1
+int pdevTrace;
+d49 1
+a49 1
+ * The Server structure is the top-level state for the pseudo-device
+d52 4
+a55 1
+ * procedures for the various pseudo-device operations.
+d58 2
+a59 5
+typedef struct Server {
+    int streamID;		/* Sprite stream identifier for control
+				 * stream for a pseudo-device, or naming
+				 * request-response stream for a
+				 * pseudo-filesystem server. */
+d62 5
+a66 8
+    IntProc *defaultService;	/* Default handlers for pdev operations */
+    /*
+     * The following fields apply only to pseudo-filesystem servers.
+     */
+    ClientData private;		/* Private data passed to callbacks */
+    char *prefix;		/* Pseudo-filesystem prefix */
+    Address requestBuf;		/* Naming connection request buffer */
+} Server;
+d73 2
+a74 1
+    List_Links links;		/* Application streams are linked into a
+d76 2
+a77 2
+				 * terminal. */
+    struct Server *pdevPtr;	/* Server with which this stream is
+d83 10
+a92 8
+				 * pseudo-device by the application.  This
+				 * is optionally used by the server. */
+    IntProc *service;		/* Set of procedures to handle the various
+				 * pseudo-device operations.  If any are
+				 * undefined then the defaults in the
+				 * top-level Server struct are used. */
+    ClientData private;		/* Private to the service procedures.  This
+				 * is set by the service openProc. */
+d95 2
+d98 7
+a104 8
+extern ReturnStatus	PdevDefaultOpen();
+extern ReturnStatus	PdevDefaultRead();
+extern ReturnStatus	PdevDefaultWrite();
+extern ReturnStatus	PdevDefaultIoctl();
+extern ReturnStatus	PdevDefaultClose();
+extern ReturnStatus	PdevDefaultGetAttr();
+extern ReturnStatus	PdevDefaultSetAttr();
+extern ReturnStatus	PfsNullProc();
+d106 8
+a113 19
+static IntProc pdevDefaultProcList[] = {
+    (IntProc)NULL,	/* PDEV_INVALID */
+    PdevDefaultOpen,	/* PDEV_OPEN */
+    (IntProc)NULL,	/* PDEV_DUP */
+    PdevDefaultClose,	/* PDEV_CLOSE */
+    PdevDefaultRead,	/* PDEV_READ */
+    PdevDefaultWrite,	/* PDEV_WRITE */
+    PdevDefaultIoctl,	/* PDEV_IOCTL */
+    PdevDefaultGetAttr,	/* PDEV_GET_ATTR */
+    PdevDefaultSetAttr,	/* PDEV_SET_ATTR */
+    PfsNullProc,	/* PFS_OPEN */
+    PfsNullProc,	/* PFS_GET_ATTR */
+    PfsNullProc,	/* PFS_SET_ATTR */
+    PfsNullProc,	/* PFS_MAKE_DEVICE */
+    PfsNullProc,	/* PFS_MAKE_DIR */
+    PfsNullProc,	/* PFS_REMOVE */
+    PfsNullProc,	/* PFS_REMOVE_DIR */
+    PfsNullProc,	/* PFS_RENAME */
+    PfsNullProc,	/* PFS_HARD_LINK */
+d117 1
+a117 14
+ * There is a default array of handlers associated with the pseudo-device
+ * or the pseudo-filesystem.  Then there is an array of handlers for
+ * each pseudo-device connection.  This macro is used to get a valid
+ * handler for the given operation.
+ */
+#define HANDLER(srvPtr, pdevOp) \
+    ( (srvPtr->service == NULL || srvPtr->service[(int)pdevOp] == NULL) ? \
+	    *srvPtr->pdevPtr->defaultService[(int)pdevOp] :		  \
+	    *srvPtr->service[(int)pdevOp] )
+
+
+
+/*
+ * PDEV_REQUEST_BUF_SIZE 	Pseudo-device request buffer size
+d121 2
+a122 3
+#define PDEV_MAX_BYTES	9000
+#define PDEV_REQUEST_BUF_SIZE	(sizeof(Pdev_Request) + PDEV_MAX_BYTES)
+#define PFS_REQUEST_BUF_SIZE	(sizeof(Pfs_Request) + sizeof(Fs2PathData))
+d130 1
+a130 2
+extern void	PfsNamingRequest();
+extern void	PdevCleanup();
+d133 1
+d142 3
+a144 3
+ *	A set of handler procedures for each of the pseudo-device
+ *	operations can be passed in.  If not, then default handlers are
+ *	used.  The set of handlers can be changed with Pdev_SetupHandler.
+d147 2
+a148 2
+ *	The return value is a token for the pseudo-device, which may be
+ *	used in later calls to Pdev_ procedures.  A NULL return value
+d171 2
+a172 2
+ClientData
+Pdev_Open(name, realNamePtr, service)
+d182 5
+a186 7
+    IntProc *service;		/* An array of service procedures that is
+				 * indexed by the Pdev_Op of the request.
+				 * This supplies call-backs for all pdev
+				 * operations that arrive on any pdev
+				 * connection to the pfs server.  This includes
+				 * naming operations on the naming stream,
+				 * and regular operations on other pdev streams.
+d191 1
+d194 1
+a194 1
+    register Server *pdevPtr;
+d212 1
+a212 1
+	    return (ClientData) NULL;
+d246 1
+a246 1
+	return (ClientData) NULL;
+d252 1
+a252 1
+	    return (ClientData) NULL;
+d259 6
+a264 2
+    pdevPtr = (Server *) malloc(sizeof(Server));
+    pdevPtr->streamID = streamID;
+d266 6
+a271 7
+    pdevPtr->defaultService = (IntProc *)malloc(PDEV_NUM_OPS * sizeof(IntProc));
+    for (op = 0 ; op < PDEV_NUM_OPS ; op++) {
+	if (service == (IntProc *)NULL || service[op] == (IntProc)NULL) {
+	    pdevPtr->defaultService[op] = pdevDefaultProcList[op];
+	} else {
+	    pdevPtr->defaultService[op] = service[op];
+	}
+a272 1
+
+d276 1
+a276 1
+    return (ClientData) pdevPtr;
+d299 2
+a300 2
+Pdev_Close(pdev)
+    ClientData	pdev;		/* Token identifying the pseudo-device.
+d303 2
+a304 1
+    register Server *pdevPtr = (Server *) pdev;
+d308 3
+a310 2
+	srvPtr = (ServiceStream *) List_First(&pdevPtr->connectList);
+	PdevCleanup(srvPtr, 0, FALSE);
+d312 2
+a313 2
+    close(pdevPtr->streamID);
+    free((Address)pdev);
+d325 1
+a325 1
+ *	None.
+d328 2
+a329 1
+ *	.
+d334 2
+a335 2
+static void
+PdevCleanup(srvPtr, status, sendReply)
+a336 1
+    ReturnStatus status;		/* Return status from server */
+d340 3
+a342 2
+					 * no reply needed, used in error
+					 * recovery */
+d344 3
+d351 2
+a352 2
+    Fs_EventHandlerDestroy(srvPtr->streamID);
+    close(srvPtr->streamID);
+d354 1
+a354 1
+    if (srvPtr->service != (IntProc *)NULL) {
+d358 1
+a363 26
+ * Pdev_Ready --
+ *
+ *	Indicate that the pseudo-device  is ready for I/O.
+ *
+ * Results:
+ *	The return value of the Fs_IOControl call.
+ *
+ * Side effects:
+ *	Makes an IOC_PDEV_READY IOControl.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Pdev_Ready(token, selectBits)
+    ClientData	token;		/* Token identifying a stream to the pdev.
+				 * This is passed into the openProc. */
+    int selectBits;		/* FS_READABLE | FS_WRITABLE | FS_EXCEPTION */
+{
+    return(Fs_IOControl((int)token, IOC_PDEV_READY, sizeof(int), &selectBits,
+		0, NULL));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+d368 1
+a368 2
+ *	a new stream is being opened on the pdev;  PdevControlRequest
+ *	handles this.
+d381 1
+a381 1
+    register Server *pdevPtr;	/* Server whose control stream is ready. */
+a385 2
+    Pdev_SetBufArgs setBuf;
+    int false = 0;
+d391 1
+a391 1
+    numBytes = read(pdevPtr->streamID, (char *) &notify, sizeof(notify));
+d401 23
+d425 15
+a439 7
+    /*
+     * Set up the service state.  This includes a request buffer used
+     * by the kernel to pass client requests to us.  The procedure list
+     * is set to NULL so we just use the top-level default procedures
+     * for all connections.  A pseudo-filesystem server has more control
+     * than this, see Pfs_Open and Pfs_SetupHandler.
+     */
+d443 53
+a495 5
+    List_Insert(&srvPtr->links, LIST_ATFRONT(&pdevPtr->connectList));
+    srvPtr->streamID = notify.newStreamID;
+    srvPtr->pdevPtr = pdevPtr;
+    srvPtr->service = (IntProc *)NULL;
+    srvPtr->requestBuf = (Address) malloc(PDEV_REQUEST_BUF_SIZE);
+d497 4
+a500 4
+    setBuf.requestBufSize = PDEV_REQUEST_BUF_SIZE;
+    setBuf.readBufAddr = NULL;
+    setBuf.readBufSize = 0;
+    Fs_IOControl(srvPtr->streamID, IOC_PDEV_WRITE_BEHIND,
+d502 1
+a502 1
+    Fs_IOControl(srvPtr->streamID, IOC_PDEV_SET_BUF,
+d505 4
+a508 1
+    Fs_EventHandlerCreate(notify.newStreamID, FS_READABLE, PdevServiceRequest,
+d510 2
+d544 1
+a544 1
+    ReturnStatus status;
+d551 2
+a552 1
+    numBytes = read(srvPtr->streamID, (char *) &bufPtrs, sizeof(Pdev_BufPtrs));
+d574 2
+a575 2
+	switch (requestPtr->hdr.operation) {
+	    case PDEV_OPEN:
+d581 4
+a584 2
+		if (pdevTrace) {
+		    printf("OPEN %d: uid %d use %x", srvPtr->streamID,
+d588 4
+a591 2
+		status = (HANDLER(srvPtr, PDEV_OPEN))
+			    ((ClientData)srvPtr->streamID,
+d596 1
+a596 1
+				&srvPtr->private, &selectBits);
+d599 1
+d601 2
+a602 2
+		if (pdevTrace) {
+		    printf("CLOSE %d", srvPtr->streamID);
+d604 1
+a604 2
+		status = (HANDLER(srvPtr, PDEV_CLOSE))(srvPtr->private);
+		PdevCleanup(srvPtr, status, TRUE);
+a612 1
+		char readBuf[FS_BLOCK_SIZE];
+d616 2
+a617 2
+		if (pdevTrace) {
+		    printf("READ %d bytes at offset %d\n",
+d623 9
+a631 5
+		if (reply.replySize > FS_BLOCK_SIZE) {
+		    buffer = malloc(reply.replySize);
+		    freeIt = TRUE;
+		} else {
+		    buffer = readBuf;
+d633 2
+a634 1
+		status = (HANDLER(srvPtr, PDEV_READ))(srvPtr->private,
+d636 1
+d648 1
+d652 2
+a653 2
+		if (pdevTrace) {
+		    printf("WRITE %d bytes at offset %d",
+d660 2
+a661 1
+		status = (HANDLER(srvPtr, PDEV_WRITE))(srvPtr->private,
+d663 1
+d667 3
+a669 1
+		ReplyWithData(srvPtr, status, &reply);
+d673 2
+a674 5
+		char outBuf[FS_BLOCK_SIZE];
+		char *buffer;
+
+		if (pdevTrace) {
+		    printf("IOCTL %d", requestPtr->param.ioctl.command);
+d677 6
+a682 4
+		if (reply.replySize > FS_BLOCK_SIZE) {
+		    buffer = malloc(reply.replySize);
+		} else {
+		    buffer = outBuf;
+d684 2
+a685 2
+		reply.replyBuf = buffer;
+		status = (HANDLER(srvPtr, PDEV_IOCTL))(srvPtr->private,
+d687 1
+a688 1
+#ifdef ok_to_compile
+a689 1
+#endif ok_to_compile
+d691 1
+a691 1
+				 &reply.replySize, buffer,
+a693 3
+		if (buffer != outBuf) {
+		    free(buffer);
+		}
+d699 2
+a700 2
+		if (pdevTrace) {
+		    printf("GET ATTR");
+d702 1
+a702 1
+		status = (HANDLER(srvPtr, PDEV_GET_ATTR))(srvPtr->private,
+d714 2
+a715 2
+		if (pdevTrace) {
+		    printf("SET ATTR %x", requestPtr->param.setAttr.flags);
+d717 1
+a717 1
+		status = (HANDLER(srvPtr, PDEV_SET_ATTR))(srvPtr->private,
+d729 2
+a730 2
+	if (pdevTrace) {
+	    printf(" Returns %x\n", status);
+d733 1
+a733 1
+	 * Tell the kernel we removed a request and see if there are any more.
+a735 3
+	Fs_IOControl(srvPtr->streamID, IOC_PDEV_SET_PTRS,
+			sizeof(Pdev_BufPtrs), (Address)&bufPtrs,
+			0, (Address) NULL);
+d737 6
+d748 1
+a748 1
+ * Pfs_Open --
+d750 3
+a752 5
+ *	Establish a pseudo-filesystem server with a given set of handler
+ *	procedures both for the naming operations to the pseudo-filesystem,
+ *	and for the I/O operations on pseudo-device connections established
+ *	inside the pseudo-filesystem.
+ * 
+d754 1
+a754 2
+ *	An opaque pointer to some state so the handlers for
+ *	various pseudo-device operations can be re-defined.
+d757 2
+a758 1
+ *	Opens the pseudo-filesystem.  Sets up a call-back.
+d762 6
+a767 7
+ClientData
+Pfs_Open(prefix, private, service)
+    char *prefix;		/* Prefix of the pseudo-filesystem */
+    ClientData private;		/* Private data passed to callbacks */
+    IntProc *service;		/* Array of callback procedures.  Can be NULL,
+				 * or individual elements can be NULL, to
+				 * get default callbacks. */
+d769 1
+a769 5
+    int namingFD;
+    register Server *pfsPtr;
+    register int op;
+    Pdev_SetBufArgs setBuf;
+    ReturnStatus status;
+d771 6
+a776 5
+    namingFD = open(prefix, O_PFS_MASTER|O_RDONLY, 0);
+    if (namingFD < 0) {
+	fprintf(stderr, "Pfs_Open: ");
+	perror(prefix);
+	return((ClientData)NULL);
+d778 5
+a782 22
+
+    pfsPtr = (Server *)malloc(sizeof(Server));
+    pfsPtr->streamID = namingFD;
+    List_Init(&pfsPtr->connectList);
+    pfsPtr->defaultService = (IntProc *)malloc(PDEV_NUM_OPS * sizeof(IntProc));
+    for (op = 0 ; op < PDEV_NUM_OPS ; op++) {
+	if (service == (IntProc *)NULL || service[op] == (IntProc)NULL) {
+	    pfsPtr->defaultService[op] = pdevDefaultProcList[op];
+	} else {
+	    pfsPtr->defaultService[op] = service[op];
+	}
+    }
+
+    pfsPtr->prefix = prefix;
+    pfsPtr->private = private;
+    pfsPtr->requestBuf = (Address)malloc(PFS_REQUEST_BUF_SIZE);
+    setBuf.requestBufAddr = pfsPtr->requestBuf;
+    setBuf.requestBufSize = PFS_REQUEST_BUF_SIZE;
+    setBuf.readBufAddr = NULL;
+    setBuf.readBufSize = 0;
+    status = Fs_IOControl(namingFD, IOC_PDEV_SET_BUF, sizeof(Pdev_SetBufArgs),
+		(Address)&setBuf, 0, (Address) NULL);
+d784 2
+a785 3
+	printf("IOC_PDEV_SET_BUF failed <%x>\n", status);
+	close(namingFD);
+	return((ClientData)NULL);
+a786 5
+
+    Fs_EventHandlerCreate(namingFD, FS_READABLE, PfsNamingRequest,
+			    (ClientData)pfsPtr);
+
+    return((ClientData)pfsPtr);
+d792 1
+a792 1
+ * Pfs_SetHandler --
+d794 2
+a795 3
+ *	Set a handler for a particular PFS request.  If the handler is
+ *	NULL then a default procedure replaces the existing handler.
+ * 
+d800 2
+a801 1
+ *	Updates the top-level callback list, the one used for naming requests.
+d805 7
+a811 5
+void
+Pfs_SetHandler(pfsToken, operation, handler)
+    ClientData pfsToken;	/* Return value from Pfs_Open */
+    Pdev_Op operation;		/* Which operation to set the handler for */
+    IntProc handler;		/* The callback procedure */
+d813 3
+a815 8
+    register Server *pfsPtr = (Server *)pfsToken;
+
+    if ((int)operation < 0 || (int)operation > PDEV_NUM_OPS) {
+	return;
+    }
+    if (handler == (IntProc)NULL) {
+	pfsPtr->defaultService[(int)operation] =
+	    pdevDefaultProcList[(int)operation];
+d817 1
+a817 1
+	pfsPtr->defaultService[(int)operation] = handler;
+d819 7
+d831 1
+a831 1
+ * PfsNamingRequest --
+d833 2
+a834 4
+ *	Called when the naming request-response stream has a new request.
+ *	This makes a call-back to the corresponding procedure in the
+ *	defaultService list kept state for the pseudo-filesystem.
+ * 
+d836 3
+a838 1
+ *	None.
+d841 1
+a841 1
+ *	Calls the users handler for the naming operation.
+d845 5
+a849 3
+/*ARGSUSED*/
+void
+PfsNamingRequest(clientData, streamID, eventMask)
+a850 2
+    int streamID;
+    int eventMask;
+d852 4
+a855 11
+    register Server *pfsPtr = (Server *)clientData;
+    Pdev_BufPtrs bufPtrs;
+    Pfs_Request *requestPtr;
+    Pdev_Reply reply;
+    int numBytes;
+    Address dataPtr;
+    ReturnStatus status;
+    int replySize;
+    Address replyBuf;
+    FsRedirectInfo redirectInfo;
+    Fs2PathRedirectInfo redirect2Info;
+d857 3
+a859 2
+    if (pdevTrace) {
+	printf("<%s> ", pfsPtr->prefix);
+d861 6
+a866 10
+
+    /*
+     * Read the current pointers for the request buffer.
+     */
+
+    numBytes = read(streamID, (char *) &bufPtrs, sizeof(Pdev_BufPtrs));
+    if (numBytes != sizeof(Pdev_BufPtrs)) {
+	panic("%s; status \"%s\", count %d",
+	    "PfsNamingRequest had trouble reading request buffer pointers",
+	    strerror(errno), numBytes);
+d868 2
+a869 15
+    if (bufPtrs.magic != PDEV_BUF_PTR_MAGIC) {
+	panic("%s: %d", "PfsNamingRequest got bad pointer magic number",
+		bufPtrs.magic);
+    }
+    /*
+     * While there are still requests in the buffer, service them.
+     */
+    while (bufPtrs.requestFirstByte < bufPtrs.requestLastByte) {
+	requestPtr =
+	    (Pfs_Request *)&pfsPtr->requestBuf[bufPtrs.requestFirstByte];
+	if (requestPtr->hdr.magic != PFS_REQUEST_MAGIC) {
+	    panic("PfsNamingRequest, bad request magic # 0x%x\n",
+			    requestPtr->hdr.magic);
+	}
+	dataPtr = (Address)((int)requestPtr + sizeof(Pfs_Request));
+d871 27
+a897 7
+	status = FS_FILE_NOT_FOUND;
+	replySize = 0;
+	replyBuf = NULL;
+	switch (requestPtr->hdr.operation) {
+	    case PFS_OPEN: {
+		register char *name;
+		FsOpenArgs *openArgsPtr;
+d899 3
+a901 181
+		name = (char *)dataPtr;
+		openArgsPtr = &requestPtr->param.open;
+		if (pdevTrace) {
+		    printf("OPEN %s: uid %d gid %d use %x cwd <%d,%d,%x,%x>",
+			name, openArgsPtr->id.user, openArgsPtr->id.group[0],
+			openArgsPtr->useFlags,
+			openArgsPtr->prefixID.serverID,
+			openArgsPtr->prefixID.type, openArgsPtr->prefixID.major,
+			openArgsPtr->prefixID.minor);
+		}
+		status = (*pfsPtr->defaultService[(int)PFS_OPEN])(pfsPtr->private,
+				name, openArgsPtr, (ClientData)pfsPtr,
+				&redirectInfo);
+		if (status == SUCCESS) {
+		    /*
+		     * The openProc has already replied.
+		     */
+		    if (pdevTrace) {
+			printf(" Returns OK\n");
+		    }
+		    goto nextMsg;
+		}
+		break;
+	    }
+	    case PFS_GET_ATTR: {
+		register char *name;
+		Fs_Attributes attr;
+
+		name = (char *)dataPtr;
+
+		if (pdevTrace) {
+		    printf("GET_ATTR %s", name);
+		}
+		status = (*pfsPtr->defaultService[(int)PFS_GET_ATTR])
+			(pfsPtr->private, name, &requestPtr->param.open, &attr,
+			&redirectInfo);
+		if (status == SUCCESS) {
+		    replyBuf = (Address)&attr;
+		    replySize = sizeof(Fs_Attributes);
+		}
+		break;
+	    }
+	    case PFS_SET_ATTR: {
+		register Pfs_SetAttrData *setAttrPtr =
+			(Pfs_SetAttrData *)dataPtr;
+
+		if (pdevTrace) {
+		    printf("SET_ATTR %s: ", setAttrPtr->name);
+		    printf("client %d uid %d gid %d: ",
+			requestPtr->param.open.clientID,
+			requestPtr->param.open.id.user,
+			requestPtr->param.open.id.group[0]);
+		    if (setAttrPtr->flags & FS_SET_TIMES) {
+			printf("(access = %d) (modify = %d) ",
+				setAttrPtr->attr.accessTime.seconds,
+				setAttrPtr->attr.dataModifyTime.seconds);
+		    }
+		    if (setAttrPtr->flags & FS_SET_MODE) {
+			printf("(mode = 0%o) ", setAttrPtr->attr.permissions);
+		    }
+		    if (setAttrPtr->flags & FS_SET_OWNER) {
+			printf("(uid = %d) (gid = %d) ", setAttrPtr->attr.uid,
+				    setAttrPtr->attr.gid);
+		    }
+		    if (setAttrPtr->flags & FS_SET_FILE_TYPE) {
+			printf("(userType = %d) ", setAttrPtr->attr.userType);
+		    }
+		    if (setAttrPtr->flags & FS_SET_DEVICE) {
+			printf("(device = <%d,%d,%d>) ",
+			    setAttrPtr->attr.devServerID,
+			    setAttrPtr->attr.devType,
+			    setAttrPtr->attr.devUnit);
+		    }
+		}
+		status = (*pfsPtr->defaultService[(int)PFS_SET_ATTR])
+			(pfsPtr->private, setAttrPtr->name,
+			 &requestPtr->param.open, setAttrPtr->flags,
+			 &setAttrPtr->attr, &redirectInfo);
+		break;
+	    }
+	    case PFS_MAKE_DEVICE: {
+		register char *name;
+
+		name = (char *)dataPtr;
+		if (pdevTrace) {
+		    printf("MAKE_DEVICE %s: <%d,%d,%d>", name,
+			requestPtr->param.makeDevice.device.serverID,
+			requestPtr->param.makeDevice.device.type,
+			requestPtr->param.makeDevice.device.unit);
+		}
+		status = (*pfsPtr->defaultService[(int)PFS_MAKE_DEVICE])
+			(pfsPtr->private, name, &requestPtr->param.makeDevice,
+			&redirectInfo);
+		break;
+	    }
+	    case PFS_MAKE_DIR: {
+		register char *name;
+
+		name = (char *)dataPtr; 
+		if (pdevTrace) {
+		    printf("MAKE_DIR %s", name);
+		}
+		status = (*pfsPtr->defaultService[(int)PFS_MAKE_DIR])
+			(pfsPtr->private, name, &requestPtr->param.open,
+			&redirectInfo);
+		break;
+	    }
+	    case PFS_REMOVE: {
+		register char *name;
+
+		name = (char *)dataPtr;
+		if (pdevTrace) {
+		    printf("REMOVE %s", name);
+		}
+		status = (*pfsPtr->defaultService[(int)PFS_REMOVE])
+			    (pfsPtr->private, name, &requestPtr->param.lookup,
+			    &redirectInfo);
+		break;
+	    }
+	    case PFS_REMOVE_DIR: {
+		register char *name;
+
+		name = (char *)dataPtr;
+		if (pdevTrace) {
+		    printf("REMOVE %s", name);
+		}
+		status = (*pfsPtr->defaultService[(int)PFS_REMOVE_DIR])
+			(pfsPtr->private, name, &requestPtr->param.lookup,
+			&redirectInfo);
+		break;
+	    }
+	    case PFS_HARD_LINK:
+	    case PFS_RENAME: {
+		register Fs2PathData *pathsPtr;
+
+		pathsPtr = (Fs2PathData *)dataPtr;
+		if (pdevTrace) {
+		    printf("%s %s %s", 
+			(requestPtr->hdr.operation == PFS_RENAME) ? "RENAME" :
+			"HARD LINK", pathsPtr->path1, pathsPtr->path2);
+		}
+		status = (*pfsPtr->defaultService[(int)requestPtr->hdr.operation])
+			(pfsPtr->private, pathsPtr->path1, pathsPtr->path2,
+			&requestPtr->param.rename, &redirect2Info);
+		break;
+	    }
+	    default:
+		panic("PfsNamingRequest: bad request on request stream: %d",
+			requestPtr->hdr.operation);
+	}
+	if (status == FS_LOOKUP_REDIRECT) {
+	    if (requestPtr->hdr.operation == PFS_RENAME ||
+		requestPtr->hdr.operation == PFS_HARD_LINK) {
+		replyBuf = (Address)&redirect2Info;
+		replySize = sizeof(Fs2PathRedirectInfo);
+	    } else {
+		replyBuf = (Address)&redirectInfo;
+		replySize = sizeof(FsRedirectInfo);
+	    }
+	}
+	if (pdevTrace) {
+	    printf(" Returns %x\n", status);
+	}
+	reply.magic = PDEV_REPLY_MAGIC;
+	reply.status = status;
+	reply.replyBuf = replyBuf;
+	reply.replySize = replySize;
+	reply.selectBits = 0;
+	status = Fs_IOControl(streamID, IOC_PDEV_REPLY,
+		sizeof(Pdev_Reply), (Address) &reply, 0, (Address) NULL);
+	if (status != SUCCESS) {
+	    fprintf(stderr, "IOC_PDEV_REPLY status 0x%x\n", status);
+	}
+	/*
+	 * Tell the kernel we removed a request and see if there are any more.
+	 */
+nextMsg:
+	bufPtrs.requestFirstByte += requestPtr->hdr.messageSize;
+	(void)Fs_IOControl(streamID, IOC_PDEV_SET_PTRS,
+			sizeof(Pdev_BufPtrs), (Address)&bufPtrs,
+			0, (Address) NULL);
+d904 2
+d911 1
+a911 1
+ * Pfs_OpenConnection --
+d913 4
+a916 5
+ *	Called to open a new pdev connection in response to an PFS_OPEN
+ *	request.  This does an IOC_PFS_OPEN to set up the connection, and
+ *	the sets up a call-back to PdevServiceRequest to handle the subsequent
+ *	operations on the new connection.  The pdev handlers are the
+ *	default ones until updated with Pdev_SetupHandler.
+d919 1
+a919 1
+ *	None.
+d922 1
+a922 1
+ *	Turns off tracing, etc.
+d926 5
+a930 6
+ReturnStatus
+Pfs_OpenConnection(token, fileIDPtr, service, private)
+    ClientData token;		/* Ref. to Server state */
+    Fs_FileID *fileIDPtr;	/* Server's name for this connection */
+    IntProc *service;		/* Set of handlers for this pdev connection */
+    ClientData private;		/* Private data passed to pdev call-backs */
+d932 2
+a933 6
+    int newStreamID;
+    register Server *pfsPtr = (Server *)token;
+    register ServiceStream *srvPtr;
+    Pdev_SetBufArgs setBuf;
+    int selectBits;
+    ReturnStatus status;
+d935 3
+a937 5
+    status = Fs_IOControl(pfsPtr->streamID, IOC_PFS_OPEN, sizeof(Fs_FileID),
+		(Address)fileIDPtr, sizeof(int), (Address)&newStreamID);
+    if (status != SUCCESS) {
+	fprintf(stderr, "IOC_PFS_OPEN failed <%x>\n", status);
+	return(status);
+a938 10
+    /*
+     * Allocate state for the new pseudo-device connection
+     */
+    srvPtr = (ServiceStream *)malloc(sizeof(ServiceStream));
+    List_InitElement(&srvPtr->links);
+    List_Insert(&srvPtr->links, LIST_ATFRONT(&pfsPtr->connectList));
+    srvPtr->pdevPtr = pfsPtr;
+    srvPtr->streamID = newStreamID;
+    srvPtr->requestBuf = (Address)malloc(PDEV_REQUEST_BUF_SIZE);
+    srvPtr->readBuf = NULL;
+d940 2
+a941 35
+    if (service == (IntProc *)NULL) {
+	srvPtr->service = NULL;
+    } else {
+	register int op;
+	srvPtr->service = (IntProc *)malloc(PDEV_NUM_OPS * sizeof(IntProc));
+	for (op = 0 ; op < PDEV_NUM_OPS ; op++) {
+	    srvPtr->service[op] = service[op];
+	}
+    }
+    srvPtr->private = private;
+
+    /*
+     * Allocate request buffer and tell the kernel about it.
+     */
+    setBuf.requestBufAddr = srvPtr->requestBuf;
+    setBuf.requestBufSize = PDEV_REQUEST_BUF_SIZE;
+    setBuf.readBufAddr = NULL;
+    setBuf.readBufSize = 0;
+    status = Fs_IOControl(newStreamID, IOC_PDEV_SET_BUF,
+		sizeof(Pdev_SetBufArgs), (Address)&setBuf, 0, (Address) NULL);
+    if (status != SUCCESS) {
+	printf("IOC_PDEV_SET_BUF failed <%x>\n", status);
+	close(newStreamID);
+    }
+    selectBits = FS_READABLE|FS_WRITABLE;
+    status = Fs_IOControl(newStreamID, IOC_PDEV_READY,
+		sizeof(int), (Address)&selectBits, 0, (Address) NULL);
+    if (status != SUCCESS) {
+	printf("IOC_PDEV_READY failed <%x>\n", status);
+	close(newStreamID);
+    }
+
+    Fs_EventHandlerCreate(newStreamID, FS_READABLE, PdevServiceRequest,
+			    (ClientData)srvPtr);
+    return(SUCCESS);
+d947 1
+a947 1
+ * PfsNullProc --
+d949 2
+a950 1
+ *	Do-nothing callback.
+d953 1
+a953 1
+ *	Returns FS_FILE_NOT_FOUND.
+d956 1
+a956 1
+ *	None.
+d960 6
+a965 2
+static ReturnStatus
+PfsNullProc()
+d967 65
+a1031 1
+    return(FS_FILE_NOT_FOUND);
+d1051 5
+a1055 3
+static ReturnStatus
+PdevDefaultOpen(token, flags, pid, hostID, uid, privatePtr, selectBitsPtr)
+    ClientData token;		/* Identifies open stream */
+d1057 1
+a1057 1
+    int pid;			/* Process ID doing the open */
+a1059 1
+    ClientData *privatePtr;	/* Return - private data (not used) */
+a1061 1
+    *privatePtr = (ClientData)NULL;
+d1083 3
+a1085 3
+static ReturnStatus
+PdevDefaultClose(private)
+    ClientData private;
+d1107 4
+a1110 4
+static ReturnStatus
+PdevDefaultRead(private, offset, familyID, amountReadPtr, bufferPtr, freeItPtr,
+		selectBitsPtr)
+    ClientData private;		/* Private data */
+d1112 1
+d1116 1
+a1116 1
+    Boolean *freeItPtr;		/* In/Out indicates if *bufferPtr is malloc'd */
+d1119 1
+d1142 4
+a1145 3
+static ReturnStatus
+PdevDefaultWrite(private, offset, familyID, numBytesPtr, buffer, selectBitsPtr)
+    ClientData private;		/* Private data */
+d1147 1
+d1174 4
+a1177 3
+static ReturnStatus
+PdevDefaultIoctl(private, command, familyID, inSize, inData, outSizePtr, outData, selectBitsPtr)
+    ClientData private;
+d1179 1
+d1181 1
+d1210 3
+a1212 3
+static ReturnStatus
+PdevDefaultGetAttr(private, attrPtr, selectBitsPtr)
+    ClientData private;
+d1217 1
+a1217 1
+    attrPtr->fileNumber = (int)private;
+d1241 3
+a1243 3
+static ReturnStatus
+PdevDefaultSetAttr(private, flags, uid, gid, attrPtr, selectBitsPtr)
+    ClientData private;
+a1251 73
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ReplyNoData --
+ *
+ *	Send a reply back with no data;  just a return status.  This
+ *	procedure is most often used for error returns.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The application will receive status as the return from the
+ *	system call it invoked.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ReplyNoData(srvPtr, status, selectBits)
+    ServiceStream *srvPtr;	/* Application stream info. */
+    ReturnStatus status;	/* Error code to send to application. */
+    int selectBits;		/* Current select state for the stream */
+{
+    Pdev_Reply reply;
+
+    reply.magic = PDEV_REPLY_MAGIC;
+    reply.selectBits = selectBits;
+    reply.status = status;
+    reply.replySize = 0;
+    reply.replyBuf = NULL;
+    status = Fs_IOControl(srvPtr->streamID, IOC_PDEV_REPLY,
+		sizeof(Pdev_Reply), (Address) &reply, 0, (Address) NULL);
+    if (status != SUCCESS) {
+	panic("%s; status \"%s\"", "Reply couldn't send pdev reply",
+		Stat_GetMsg(status));
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ReplyWithData --
+ *
+ *	Send a reply back along with some data.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The application will receive status as the return from the
+ *	system call it invoked.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ReplyWithData(srvPtr, status, replyPtr)
+    ServiceStream *srvPtr;	/* Application stream info. */
+    ReturnStatus status;	/* Error code to send to application. */
+    Pdev_Reply *replyPtr;	/* Partially completed reply.  The replySize,
+				 * data area, and selectBits should be set. */
+{
+    replyPtr->magic = PDEV_REPLY_MAGIC;
+    replyPtr->status = status;
+    status = Fs_IOControl(srvPtr->streamID, IOC_PDEV_REPLY,
+		sizeof(Pdev_Reply), (Address) replyPtr, 0, (Address) NULL);
+    if (status != SUCCESS) {
+	panic("%s; status \"%s\"", "ReplyWithData couldn't send pdev reply",
+		Stat_GetMsg(status));
+    }
+@
+
+
+1.4
+log
+@Added pseudo-filesystem support
+Extensively changed the call-back setup.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: pdev.c,v 1.2 88/08/29 13:00:07 brent Exp $ SPRITE (Berkeley)";
+a102 1
+extern ReturnStatus	PdevNullProc();
+d133 3
+a135 3
+    ( (srvPtr->service == NULL || srvPtr->service[pdevOp] == NULL) ?	\
+	    *srvPtr->pdevPtr->defaultService[pdevOp] :			\
+	    *srvPtr->service[pdevOp] )
+a499 1
+    register Server *pdevPtr = srvPtr->pdevPtr;
+d635 3
+d790 1
+a790 1
+    if (operation < 0 || operation > PDEV_NUM_OPS) {
+d794 2
+a795 1
+	pfsPtr->defaultService[operation] = pdevDefaultProcList[operation];
+d797 1
+a797 1
+	pfsPtr->defaultService[operation] = handler;
+a833 1
+    Fs_Attributes attr;
+d885 1
+a885 1
+		status = (*pfsPtr->defaultService[PFS_OPEN])(pfsPtr->private,
+d908 1
+a908 1
+		status = (*pfsPtr->defaultService[PFS_GET_ATTR])
+d949 1
+a949 1
+		status = (*pfsPtr->defaultService[PFS_SET_ATTR])
+d965 1
+a965 1
+		status = (*pfsPtr->defaultService[PFS_MAKE_DEVICE])
+d977 1
+a977 1
+		status = (*pfsPtr->defaultService[PFS_MAKE_DIR])
+d989 1
+a989 1
+		status = (*pfsPtr->defaultService[PFS_REMOVE])
+d1001 1
+a1001 1
+		status = (*pfsPtr->defaultService[PFS_REMOVE_DIR])
+d1016 1
+a1016 1
+		status = (*pfsPtr->defaultService[requestPtr->hdr.operation])
+a1143 21
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PdevNullProc --
+ *
+ *	Do-nothing callback.
+ *
+ * Results:
+ *	Returns SUCCESS.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+PdevNullProc()
+{
+@
+
+
+1.3
+log
+@Updated to new pseudo-device declarations
+@
+text
+@d30 1
+a30 1
+#include <dev/pdev.h>
+d44 1
+a44 3
+ * The structure below corresponds to an application's stream.  There's
+ * one of these for each open that involves a pseudo-device for which
+ * this module is the server.
+d46 1
+d48 27
+d87 4
+a94 5
+/*
+ * The structure below corresponds to one terminal (one call to Pdev_Open).
+ * It maintains our state about the terminal, including stuff like the
+ * input buffer and pointers to each of the open streams on the terminal.
+ */
+d96 9
+a104 11
+typedef struct Server {
+    int streamID;		/* Sprite stream identifier for control
+				 * stream for pseudo-device. */
+    List_Links serviceList;	/* List of all service streams for this
+				 * pseudo-device. */
+    int (*openProc)();		/* Open service procedure */
+    int (*readProc)();		/* Read service procedure */
+    int (*writeProc)();		/* Write service procedure */
+    int (*ioctlProc)();		/* Ioctl service procedure */
+    int (*closeProc)();		/* Close service procedure */
+} Server;
+d106 21
+d128 4
+a131 9
+ * The structure below describes the format of requests in the write
+ * buffer of an ServiceStream.  The kernel queues up requests for us by
+ * appending them to this buffer.  In order to simplify the handling
+ * of requests with a large amount of data, the kernel may break a
+ * (write) request into smaller requests that each fit entirely in
+ * the write buffer.  The MAX_BYTES constant defines this upper limit
+ * on the request data size.  Also remember that writes are asynchronous
+ * so this request buffer size limits the number of writes that can
+ * be done before a context switch to the tty server process is required.
+d133 4
+a137 1
+#define MAX_BYTES	2048
+a138 7
+typedef struct {
+    Pdev_Request hdr;
+    union {
+	int		i;
+	char		chars[MAX_BYTES];
+    } data;
+} Request;
+d141 2
+a142 1
+ * REQUEST_BUF_SIZE 	The size of the buffer containing requests
+d145 3
+a147 1
+#define REQUEST_BUF_SIZE	sizeof(Request)
+a149 13
+ * The structure below describes the format of reply messages returned
+ * to the client.
+ */
+
+typedef struct {
+    Pdev_Reply hdr;
+    union {
+	int		i;
+	char		chars[MAX_BYTES];
+    } data;
+} Reply;
+
+/*
+d153 1
+d155 1
+a155 6
+extern void	PdevControlRequest();
+extern ReturnStatus	PdevDefaultOpen();
+extern ReturnStatus	PdevDefaultRead();
+extern ReturnStatus	PdevDefaultWrite();
+extern ReturnStatus	PdevDefaultIoctl();
+extern ReturnStatus	PdevDefaultClose();
+d167 3
+a169 10
+ *	The service procedures passed in have the following calling sequence:
+ *	(*openProc)(token, flags, pid, hostID, uid, privatePtr, selectBitsPtr)
+ *		ClientData token;	(Identfies open stream)
+ *		int flags;		(flags to open system call)
+ *		int pid;		(process ID of opening "client" process)
+ *		int hostID;		(Sprite hostID of the client)
+ *		int uid;		(User ID of client process)
+ *		ClientData *privatePtr;	(Settable by open service procedure)
+ *		int *selectBitsPtr;	(Return - initial select state of pdev)
+ *				(FS_READABLE | FS_WRITABLE | FS_EXCEPTION)
+a170 30
+ *	(*closeProc)(private)
+ *		ClientData private;	(Set by open service procedure)
+ *
+ *	(*readProc)(private, offset, familyID, numBytesPtr, buffer, selectBitsPtr)
+ *		ClientData private;	(Set by open service procedure)
+ *		int offset;		(Bytes offset at which to read)
+ *		int familyID;		(Family ID of calling process)
+ *		int *numBytesPtr;	(In/Out - how much to read/was read)
+ *		Address buffer;		(Buffer to fill in with data)
+ *		int *selectBitsPtr;	(Return - select state of pdev)
+ *
+ *	(*writeProc)(private, offset, familyID, numBytesPtr, buffer, selectBitsPtr)
+ *		ClientData private;	(Set by open service procedure)
+ *		int offset;		(Bytes offset at which to read)
+ *		int familyID;		(Family ID of calling process)
+ *		int *numBytesPtr;	(In/Out - how much to write/was written)
+ *		Address buffer;		(Buffer containing data)
+ *		int *selectBitsPtr;	(Return - select state of pdev)
+ *
+ *	(*ioctlProc)(private, command, familyID, inSize, inBuffer, outSizePtr,
+ *			outBuffer, selectBitsPtr)
+ *		ClientData private;	(Set by open service procedure)
+ *		int command;		(IOControl command)
+ *		int familyID;		(Family ID of calling process)
+ *		int inSize;		(Size of inBuffer)
+ *		Address inBuffer;	(Buffer containing input data)
+ *		int *outSizePtr;	(Resutl - size of outBuffer)
+ *		Address outBuffer;	(Buffer containing result data)
+ *		int *selectBitsPtr;	(Return - select state of pdev)
+ *
+d197 1
+a197 1
+Pdev_Open(name, realNamePtr, openProc, closeProc, readProc, writeProc, ioctlProc)
+d207 11
+a217 7
+	 /* Any of the service procs can be NULL.  In this case a default
+	  * service procedure that ignores the operation will be used */
+    int (*openProc)();		/* Procedure called when client opens pdev */
+    int (*closeProc)();		/* Procedure called when client closes pdev */
+    int (*readProc)();		/* Procedure called when client reads pdev */
+    int (*writeProc)();		/* Procedure called when client writes pdev */
+    int (*ioctlProc)();		/* Procedure called when client ioctls pdev */
+d222 1
+d284 1
+a284 1
+    gotStream:
+d287 8
+a294 6
+    List_Init(&pdevPtr->serviceList);
+
+    if ((Address)openProc == (Address)NULL) {
+	pdevPtr->openProc = PdevDefaultOpen;
+    } else {
+	pdevPtr->openProc = openProc;
+a295 20
+    if ((Address)closeProc == (Address)NULL) {
+	pdevPtr->closeProc = PdevDefaultClose;
+    } else {
+	pdevPtr->closeProc = closeProc;
+    }
+    if ((Address)readProc == (Address)NULL) {
+	pdevPtr->readProc = PdevDefaultRead;
+    } else {
+	pdevPtr->readProc = readProc;
+    }
+    if ((Address)writeProc == (Address)NULL) {
+	pdevPtr->writeProc = PdevDefaultWrite;
+    } else {
+	pdevPtr->writeProc = writeProc;
+    }
+    if ((Address)ioctlProc == (Address)NULL) {
+	pdevPtr->ioctlProc = PdevDefaultIoctl;
+    } else {
+	pdevPtr->ioctlProc = ioctlProc;
+    }
+d330 2
+a331 2
+    while (!List_IsEmpty(&pdevPtr->serviceList)) {
+	srvPtr = (ServiceStream *) List_First(&pdevPtr->serviceList);
+d341 40
+d450 4
+a453 1
+     * by the kernel to pass client requests to us.
+d458 1
+a458 1
+    List_Insert(&srvPtr->links, LIST_ATFRONT(&pdevPtr->serviceList));
+d461 2
+a462 1
+    srvPtr->requestBuf = (Address) malloc(REQUEST_BUF_SIZE);
+d464 1
+a464 1
+    setBuf.requestBufSize = REQUEST_BUF_SIZE;
+d503 3
+a505 2
+    Request *requestPtr;
+    Reply reply;
+d529 2
+a530 2
+	    (Request *)&srvPtr->requestBuf[bufPtrs.requestFirstByte];
+	if (requestPtr->hdr.hdr.magic != PDEV_REQUEST_MAGIC) {
+d532 1
+a532 1
+			    requestPtr->hdr.hdr.magic);
+d534 1
+d536 1
+a536 1
+	switch (requestPtr->hdr.hdr.operation) {
+d538 16
+a553 5
+		status = (*pdevPtr->openProc)(srvPtr->streamID,
+				requestPtr->hdr.param.open.flags,
+				requestPtr->hdr.param.open.pid,
+				requestPtr->hdr.param.open.hostID,
+				requestPtr->hdr.param.open.uid,
+d558 4
+a561 1
+		status = (*pdevPtr->closeProc)(srvPtr->private);
+d564 31
+a594 8
+	    case PDEV_READ:
+		reply.hdr.replySize = requestPtr->hdr.hdr.replySize;
+		status = (*pdevPtr->readProc)(srvPtr->private,
+				requestPtr->hdr.param.read.offset,
+				requestPtr->hdr.param.read.familyID,
+				&reply.hdr.replySize,
+				&reply.data.chars[0],
+				&reply.hdr.selectBits);
+d596 3
+d600 17
+a616 9
+	    case PDEV_WRITE:
+		reply.hdr.replySize = sizeof(int);
+		reply.data.i = requestPtr->hdr.hdr.requestSize;
+		status = (*pdevPtr->writeProc)(srvPtr->private,
+				requestPtr->hdr.param.read.offset,
+				requestPtr->hdr.param.read.familyID,
+				&reply.data.i,
+				&requestPtr->data.chars[0],
+				&reply.hdr.selectBits);
+d619 21
+a639 9
+	    case PDEV_IOCTL:
+		status = (*pdevPtr->ioctlProc)(srvPtr->private,
+				 requestPtr->hdr.param.ioctl.command,
+				 requestPtr->hdr.param.ioctl.familyID,
+				 requestPtr->hdr.hdr.requestSize,
+				 &requestPtr->data.chars[0],
+				 &reply.hdr.replySize,
+				 &reply.data.chars[0],
+				 &reply.hdr.selectBits);
+d641 3
+d645 30
+d677 1
+a677 1
+			requestPtr->hdr.hdr.operation);
+d679 3
+d685 1
+a685 1
+	bufPtrs.requestFirstByte += requestPtr->hdr.hdr.messageSize;
+d695 1
+a695 1
+ * PdevCleanup --
+d697 8
+a704 2
+ *	Called when a client has closed in order to
+ *	clean up any associated state.
+d706 67
+d777 1
+a777 1
+ *	.
+d781 7
+d789 33
+a821 9
+static void
+PdevCleanup(srvPtr, status, sendReply)
+    register ServiceStream *srvPtr;	/* Service stream info. */
+    ReturnStatus status;		/* Return status from server */
+    Boolean sendReply;			/* TRUE if we should reply to the
+					 * close request.  This is done in
+					 * normal termination.  FALSE means
+					 * no reply needed, used in error
+					 * recovery */
+d823 15
+a837 2
+    if (sendReply) {
+	ReplyNoData(srvPtr, status, 0);
+d839 218
+a1056 5
+    List_Remove(&srvPtr->links);
+    Fs_EventHandlerDestroy(srvPtr->streamID);
+    close(srvPtr->streamID);
+    free((char *) srvPtr->requestBuf);
+    free((char *) srvPtr);
+d1062 129
+d1262 2
+a1263 1
+PdevDefaultRead(private, offset, familyID, amountReadPtr, buffer, selectBitsPtr)
+d1268 2
+a1269 1
+    Address buffer;		/* Buffer we fill in with data bytes */
+d1343 61
+d1461 1
+a1461 1
+    Reply *replyPtr;		/* Partially completed reply.  The replySize,
+d1464 2
+a1465 3
+    replyPtr->hdr.magic = PDEV_REPLY_MAGIC;
+    replyPtr->hdr.status = status;
+    replyPtr->hdr.replyBuf = &replyPtr->data.chars[0];
+@
+
+
+1.2
+log
+@Updated to new pseudo-device interface
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: pdev.c,v 1.1 88/08/26 16:12:17 brent Exp $ SPRITE (Berkeley)";
+d29 1
+a30 2
+#include <errno.h>
+#include <fs.h>
+d514 1
+a514 1
+	if (requestPtr->hdr.magic != PDEV_REQUEST_MAGIC) {
+d516 1
+a516 1
+			    requestPtr->hdr.magic);
+d519 1
+a519 1
+	switch (requestPtr->hdr.operation) {
+d534 1
+a534 1
+		reply.hdr.replySize = requestPtr->hdr.replySize;
+d545 1
+a545 1
+		reply.data.i = requestPtr->hdr.requestSize;
+d558 1
+a558 1
+				 requestPtr->hdr.requestSize,
+d567 1
+a567 1
+			requestPtr->hdr.operation);
+d572 1
+a572 1
+	bufPtrs.requestFirstByte += requestPtr->hdr.messageSize;
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: ttyDriver.c,v 1.3 88/07/28 17:47:40 ouster Exp $ SPRITE (Berkeley)";
+d99 1
+a99 1
+    Pdev_NewRequest hdr;
+d118 1
+a118 1
+    Pdev_NewReply hdr;
+d791 1
+a791 1
+    Pdev_NewReply reply;
+d799 1
+a799 1
+		sizeof(Pdev_NewReply), (Address) &reply, 0, (Address) NULL);
+d834 1
+a834 1
+		sizeof(Pdev_NewReply), (Address) replyPtr, 0, (Address) NULL);
+@

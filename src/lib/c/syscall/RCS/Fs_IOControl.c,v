@@ -1,0 +1,138 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  sprited:1.2.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     89.09.27.16.52.47;  author douglis;  state Exp;
+branches 1.2.1.1;
+next     1.1;
+
+1.1
+date     89.09.27.16.52.05;  author douglis;  state Exp;
+branches ;
+next     ;
+
+1.2.1.1
+date     91.12.08.15.05.06;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@ioctl stub to retry upon signals when appropriate
+@
+
+
+1.2
+log
+@don't retry IOC_LOCK -- too dangerous
+@
+text
+@/* 
+ * Fs_IOControl.c --
+ *
+ *	Source code for the Fs_IOControl library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: Fs_IOControl.c,v 1.2 88/06/21 11:14:55 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <status.h>
+#include <fs.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_IOControl --
+ *
+ *      The "normal" Fs_IOControl interface for user code.
+ *	Retries some operations when GEN_ABORTED_BY_SIGNAL is
+ *	returned from the kernel.  The list of operations is not
+ *	yet inclusive.  
+ *
+ * Results:
+ *	An error code.
+ *
+ * Side effects:
+ *	Variable.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Fs_IOControl(streamID, command, inBufSize, inBuffer, outBufSize, outBuffer)
+    int 	streamID;	/* User's handle on the stream */
+    int 	command;	/* IOControl command */
+    int 	inBufSize;	/* Size of inBuffer */
+    Address 	inBuffer;	/* Command specific input parameters */
+    int 	outBufSize;	/* Size of outBuffer */
+    Address 	outBuffer;	/* Command specific output parameters */
+{
+    ReturnStatus status;
+    do {
+	status = Fs_RawIOControl(streamID, command, inBufSize, inBuffer,
+				 outBufSize, outBuffer);
+	if (status == GEN_ABORTED_BY_SIGNAL) {
+	    switch(command) {
+#ifdef notdef
+/*
+ * IOC_LOCK can block forever unexpectedly if a signal is suppressed.
+ */
+		case IOC_LOCK:
+#endif
+		case IOC_UNLOCK:
+		case IOC_NUM_READABLE:
+		case IOC_TRUNCATE:
+		case IOC_GET_OWNER:
+		case IOC_SET_OWNER:
+		case IOC_MAP:
+		case IOC_REPOSITION:
+		case IOC_SET_FLAGS: 
+		case IOC_CLEAR_BITS:
+		break;
+
+		default:
+		return(status);
+	    }
+	}
+    } while (status == GEN_ABORTED_BY_SIGNAL);
+    return(status);
+}
+@
+
+
+1.2.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/syscall/RCS/Fs_IOControl.c,v 1.2 89/09/27 16:52:47 douglis Exp $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d59 4
+d64 1
+@

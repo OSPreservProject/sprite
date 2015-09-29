@@ -1,0 +1,1168 @@
+ABOUT_TO_RETURN	m-altos.h	/^#define ABOUT_TO_RETURN(pc) (read_memory_integer (/
+ADD_PSYMBOL_TO_LIST	dbxread.c	/^#define	ADD_PSYMBOL_TO_LIST(NAME, NAMELENGTH, NAME/
+ALL_BREAKPOINTS	breakpoint.c	/^#define ALL_BREAKPOINTS(b)  for (b = breakpoint_ch/
+ASSERT	malloc.c	/^#define ASSERT(p) if (!(p)) botch("p"); else$/
+Adrmod_is_index	ns32k-pinsn.c	/^#define Adrmod_is_index(mode) \\$/
+BIT_FIELDS_2	mips-opcode.h	/^#define BIT_FIELDS_2(a,b) a;b;$/
+BIT_FIELDS_4	mips-opcode.h	/^#define BIT_FIELDS_4(a,b,c,d) a;b;c;d;$/
+BIT_FIELDS_6	mips-opcode.h	/^#define BIT_FIELDS_6(a,b,c,d,e,f) a;b;c;d;e;f;$/
+BLOCKLIST	symtab.h	/^#define BLOCKLIST(symtab) (symtab)->blockvector$/
+BLOCKLIST_BLOCK	symtab.h	/^#define BLOCKLIST_BLOCK(blocklist,n) (blocklist)->/
+BLOCKLIST_NBLOCKS	symtab.h	/^#define BLOCKLIST_NBLOCKS(blocklist) (blocklist)->/
+BLOCKVECTOR	symtab.h	/^#define BLOCKVECTOR(symtab) (symtab)->blockvector$/
+BLOCKVECTOR_BLOCK	symtab.h	/^#define BLOCKVECTOR_BLOCK(blocklist,n) (blocklist)/
+BLOCKVECTOR_NBLOCKS	symtab.h	/^#define BLOCKVECTOR_NBLOCKS(blocklist) (blocklist)/
+BLOCK_END	symtab.h	/^#define BLOCK_END(bl) (bl)->endaddr$/
+BLOCK_FUNCTION	symtab.h	/^#define BLOCK_FUNCTION(bl) (bl)->function$/
+BLOCK_GCC_COMPILED	symtab.h	/^#define BLOCK_GCC_COMPILED(bl) (bl)->gcc_compile_f/
+BLOCK_NSYMS	symtab.h	/^#define BLOCK_NSYMS(bl) (bl)->nsyms$/
+BLOCK_SHOULD_SORT	symtab.h	/^#define BLOCK_SHOULD_SORT(bl) ((bl)->nsyms >= 40)$/
+BLOCK_START	symtab.h	/^#define BLOCK_START(bl) (bl)->startaddr$/
+BLOCK_SUPERBLOCK	symtab.h	/^#define BLOCK_SUPERBLOCK(bl) (bl)->superblock$/
+BLOCK_SYM	symtab.h	/^#define BLOCK_SYM(bl, n) (bl)->sym[n]$/
+B_CLR	symtab.h	/^#define B_CLR(a,x) (a[x>>5] &= ~(1 << (x&31)))$/
+B_SET	symtab.h	/^#define B_SET(a,x) (a[x>>5] |= (1 << (x&31)))$/
+B_TST	symtab.h	/^#define B_TST(a,x) (a[x>>5] & (1 << (x&31)))$/
+CHAIN	malloc.c	/^#define CHAIN(a) \\$/
+COERCE_ARRAY	value.h	/^#define COERCE_ARRAY(arg)    \\$/
+COERCE_ENUM	value.h	/^#define COERCE_ENUM(arg)    \\$/
+CORE_RELOCATE	symmisc.c	/^#define CORE_RELOCATE(slot) \\$/
+DO_REGISTERS_INFO	m-mips.h	/^#define DO_REGISTERS_INFO(_regnum) mips_do_registe/
+EXTRACT_RETURN_VALUE	m-altos.h	/^#define EXTRACT_RETURN_VALUE(TYPE,REGBUF,VALBUF) /
+EXTRACT_STRUCT_VALUE_ADDRESS	m-altos.h	/^#define EXTRACT_STRUCT_VALUE_ADDRESS(REGBUF) (*(in/
+FIX_CALL_DUMMY	m-altos.h	/^#define FIX_CALL_DUMMY(dummyname, pc, fun, nargs, /
+FP_REGISTER_ADDR	m-altos.h	/^#define FP_REGISTER_ADDR(u, regno)					\\$/
+FRAMELESS_FUNCTION_INVOCATION	m-altos.h	/^#define FRAMELESS_FUNCTION_INVOCATION(FI, FRAMELES/
+FRAMELESS_LOOK_FOR_PROLOGUE	blockframe.c	/^#define FRAMELESS_LOOK_FOR_PROLOGUE(FI, FRAMELESS)/
+FRAME_ARGS_ADDRESS	m-altos.h	/^#define FRAME_ARGS_ADDRESS(fi) ((fi)->frame)$/
+FRAME_ARGS_ADDRESS_CORRECT	m-vax.h	/^#define FRAME_ARGS_ADDRESS_CORRECT(fi) \\$/
+FRAME_CHAIN	m-altos.h	/^#define FRAME_CHAIN(thisframe)  \\$/
+FRAME_CHAIN_COMBINE	m-altos.h	/^#define FRAME_CHAIN_COMBINE(chain, thisframe) (cha/
+FRAME_CHAIN_VALID	m-altos.h	/^#define FRAME_CHAIN_VALID(chain, thisframe) \\$/
+FRAME_FIND_SAVED_REGS	m-altos.h	/^#define FRAME_FIND_SAVED_REGS(frame_info, frame_sa/
+FRAME_FP	frame.h	/^#define FRAME_FP(fr)	((fr)->frame)$/
+FRAME_INFO_ID	frame.h	/^#define FRAME_INFO_ID(f)	(f)$/
+FRAME_LOCALS_ADDRESS	m-altos.h	/^#define FRAME_LOCALS_ADDRESS(fi) ((fi)->frame)$/
+FRAME_NUM_ARGS	m-altos.h	/^#define FRAME_NUM_ARGS(val, fi) (val = -1)$/
+FRAME_SAVED_PC	m-altos.h	/^#define FRAME_SAVED_PC(FRAME) (read_memory_integer/
+FRAME_STRUCT_ARGS_ADDRESS	m-sparc.h	/^#define FRAME_STRUCT_ARGS_ADDRESS(fi) ((fi)->frame/
+GET_RWINDOW_REG	m-sparc.h	/^#define GET_RWINDOW_REG(FRAME, REG) \\$/
+HEADER_OFFSET	a.out.encap.h	/^#define HEADER_OFFSET(f) \\$/
+HEADER_OFFSET_FD	a.out.encap.h	/^#define HEADER_OFFSET_FD(fd) \\$/
+HEADER_SEEK	a.out.encap.h	/^#define HEADER_SEEK(f) (fseek ((f), HEADER_OFFSET(/
+HEADER_SEEK_FD	a.out.encap.h	/^#define HEADER_SEEK_FD(fd) (lseek ((fd), HEADER_OF/
+I386_REGNO_TO_SYMMETRY	symmetry-dep.c	/^#define I386_REGNO_TO_SYMMETRY(n) \\$/
+IGNORE_SYMBOL	m-convex.h	/^#define IGNORE_SYMBOL(TYPE) \\$/
+INFERIOR_AR0	hp9k320-dep.c	/^#define INFERIOR_AR0(u)							\\$/
+INIT_EXTRA_FRAME_INFO	m-mips.h	/^#define INIT_EXTRA_FRAME_INFO(fci) init_extra_fram/
+INIT_STACK	m-altos.h	/^#define INIT_STACK(beg, end)  \\$/
+INVALID_FLOAT	m-altos.h	/^#define INVALID_FLOAT(p, len) (*((int *) (p)) == -/
+IN_SIGTRAMP	m-hp300bsd.h	/^#define IN_SIGTRAMP(pc, name) \\$/
+ISATTY	m-news.h	/^#define ISATTY(FP)	((FP) == stdin || (FP) == stdou/
+IS_OBJECT_FILE	sparc-dep.c	/^#define IS_OBJECT_FILE(hdr) (hdr.a_trsize != 0)$/
+Is_gen	ns32k-pinsn.c	/^#define Is_gen(c) \\$/
+LINELIST	symtab.h	/^#define LINELIST(symtab) (symtab)->linetable$/
+LINETABLE	symtab.h	/^#define LINETABLE(symtab) (symtab)->linetable$/
+MASK	mips-dep.c	/^#define MASK(i,j) ((1 << (j)+1)-1 ^ (1 << (i))-1)$/
+MAX_OF_TYPE	dbxread.c	/^#define	MAX_OF_TYPE(t)	((1 << (sizeof (t) - 1)) - /
+MIN_OF_TYPE	dbxread.c	/^#define MIN_OF_TYPE(t)	(-(1 << (sizeof (t) - 1)))$/
+MKLONG	mips-pinsn.c	/^#define MKLONG(p)  *(unsigned long*)p$/
+MK_OP	m-mips.h	/^#define MK_OP(op,rs,rt,offset) (((op)<<26)|((rs)<</
+Mmain	main.c	/^main (argc, argv, envp)$/
+Mregex	regex.c	/^main (argc, argv)$/
+Mstuff	stuff.c	/^main (argc, argv)$/
+NEXTBYTE	m68k-pinsn.c	/^#define NEXTBYTE(p)  (p += 2, ((char *)p)[-1])$/
+NEXTDOUBLE	m68k-pinsn.c	/^#define NEXTDOUBLE(p) \\$/
+NEXTEXTEND	m68k-pinsn.c	/^#define NEXTEXTEND(p) \\$/
+NEXTLONG	m68k-pinsn.c	/^#define NEXTLONG(p)  \\$/
+NEXTPACKED	m68k-pinsn.c	/^#define NEXTPACKED(p) \\$/
+NEXTSINGLE	m68k-pinsn.c	/^#define NEXTSINGLE(p) \\$/
+NEXTWORD	m68k-pinsn.c	/^#define NEXTWORD(p)  \\$/
+N_BADMAG	a.out.gnu.h	/^#define N_BADMAG(x)					\\$/
+N_BSSADDR	a.out.gnu.h	/^#define N_BSSADDR(x) (N_DATADDR(x) + (x).a_data)$/
+N_DATADDR	a.out.encap.h	/^#define N_DATADDR(x) \\$/
+N_DATOFF	a.out.gnu.h	/^#define N_DATOFF(x) (N_TXTOFF(x) + (x).a_text)$/
+N_DRELOFF	a.out.gnu.h	/^#define N_DRELOFF(x) (N_TRELOFF(x) + (x).a_trsize)/
+N_FLAGS	a.out.gnu.h	/^#define N_FLAGS(exec) (((exec).a_info >> 24) & 0xf/
+N_MACHTYPE	a.out.gnu.h	/^#define N_MACHTYPE(exec) ((enum machine_type)(((ex/
+N_MAGIC	a.out.gnu.h	/^#define N_MAGIC(exec) ((exec).a_info & 0xffff)$/
+N_SET_FLAGS	a.out.gnu.h	/^#define N_SET_FLAGS(exec, flags) \\$/
+N_SET_INFO	a.out.gnu.h	/^#define N_SET_INFO(exec, magic, type, flags) \\$/
+N_SET_MACHTYPE	a.out.gnu.h	/^#define N_SET_MACHTYPE(exec, machtype) \\$/
+N_SET_MAGIC	a.out.gnu.h	/^#define N_SET_MAGIC(exec, magic) \\$/
+N_STROFF	a.out.gnu.h	/^#define N_STROFF(x) (N_SYMOFF(x) + (x).a_syms)$/
+N_SYMOFF	a.out.gnu.h	/^#define N_SYMOFF(x) (N_DRELOFF(x) + (x).a_drsize)$/
+N_TRELOFF	a.out.gnu.h	/^#define N_TRELOFF(x) (N_DATOFF(x) + (x).a_data)$/
+N_TXTADDR	a.out.encap.h	/^#define N_TXTADDR(x) \\$/
+N_TXTOFF	a.out.gnu.h	/^#define N_TXTOFF(x) \\$/
+OP_C	i386-pinsn.c	/^OP_C (dummy)$/
+OP_D	i386-pinsn.c	/^OP_D (dummy)$/
+OP_DIR	i386-pinsn.c	/^OP_DIR (size)$/
+OP_DSSI	i386-pinsn.c	/^OP_DSSI (dummy)$/
+OP_E	i386-pinsn.c	/^OP_E (bytemode)$/
+OP_ESDI	i386-pinsn.c	/^OP_ESDI (dummy)$/
+OP_G	i386-pinsn.c	/^OP_G (bytemode)$/
+OP_I	i386-pinsn.c	/^OP_I (bytemode)$/
+OP_J	i386-pinsn.c	/^OP_J (bytemode)$/
+OP_OFF	i386-pinsn.c	/^OP_OFF (bytemode)$/
+OP_ONE	i386-pinsn.c	/^OP_ONE (dummy)$/
+OP_REG	i386-pinsn.c	/^OP_REG (code)$/
+OP_SEG	i386-pinsn.c	/^OP_SEG (dummy)$/
+OP_ST	i386-pinsn.c	/^OP_ST (ignore)$/
+OP_STi	i386-pinsn.c	/^OP_STi (ignore)$/
+OP_T	i386-pinsn.c	/^OP_T (dummy)$/
+OP_indirE	i386-pinsn.c	/^OP_indirE (bytemode)$/
+OP_rm	i386-pinsn.c	/^OP_rm (bytemode)$/
+OP_sI	i386-pinsn.c	/^OP_sI (bytemode)$/
+PATFETCH	regex.c	/^#define PATFETCH(c) \\$/
+PATFETCH_RAW	regex.c	/^#define PATFETCH_RAW(c) \\$/
+PATPUSH	regex.c	/^#define PATPUSH(ch) (*b++ = (char) (ch))$/
+PCB_OFFSET	mips-dep.c	/^#define PCB_OFFSET(FIELD) ((int)&((struct user*)0)/
+PC_ADJUST	m-sparc.h	/^#define PC_ADJUST(pc) ((read_memory_integer (pc + /
+PROC_DESC_IS_DUMMY	m-mips.h	/^#define PROC_DESC_IS_DUMMY(proc) ((proc)->isym == /
+PROC_FRAME_OFFSET	m-mips.h	/^#define PROC_FRAME_OFFSET(proc) ((proc)->frameoffs/
+PROC_FRAME_REG	m-mips.h	/^#define PROC_FRAME_REG(proc) ((proc)->framereg)$/
+PROC_FREG_MASK	m-mips.h	/^#define PROC_FREG_MASK(proc) ((proc)->fregmask)$/
+PROC_FREG_OFFSET	m-mips.h	/^#define PROC_FREG_OFFSET(proc) ((proc)->fregoffset/
+PROC_HIGH_ADDR	m-mips.h	/^#define PROC_HIGH_ADDR(proc) ((proc)->lnHigh) \/* /
+PROC_LOW_ADDR	m-mips.h	/^#define PROC_LOW_ADDR(proc) ((proc)->lnLow) \/* le/
+PROC_PC_REG	m-mips.h	/^#define PROC_PC_REG(proc) ((proc)->pcreg)$/
+PROC_REG_MASK	m-mips.h	/^#define PROC_REG_MASK(proc) ((proc)->regmask)$/
+PROC_REG_OFFSET	m-mips.h	/^#define PROC_REG_OFFSET(proc) ((proc)->regoffset)$/
+PROC_SYMBOL	m-mips.h	/^#define PROC_SYMBOL(proc) (*(struct symbol**)&(pro/
+PUSH_ARGUMENTS	m-mips.h	/^#define PUSH_ARGUMENTS(nargs, args, sp, struct_ret/
+READ_FILE_HEADERS	m-convex.h	/^#define READ_FILE_HEADERS(DESC,NAME) \\$/
+READ_FRAME_REG	mips-dep.c	/^#define READ_FRAME_REG(fi, regno) read_next_frame_/
+READ_STRING_TABLE_SIZE	m-convex.h	/^#define READ_STRING_TABLE_SIZE(BUFFER) \\$/
+REGISTER_ADDR	m-altos.h	/^#define REGISTER_ADDR(u_ar0, regno)					\\$/
+REGISTER_BYTE	m-altos.h	/^#define REGISTER_BYTE(N)  \\$/
+REGISTER_CONVERTIBLE	m-altos.h	/^#define REGISTER_CONVERTIBLE(N) (((unsigned)(N) - /
+REGISTER_CONVERT_TO_RAW	m-altos.h	/^#define REGISTER_CONVERT_TO_RAW(REGNUM,FROM,TO)	\\/
+REGISTER_CONVERT_TO_VIRTUAL	m-altos.h	/^#define REGISTER_CONVERT_TO_VIRTUAL(REGNUM,FROM,TO/
+REGISTER_IN_WINDOW_P	m-pyr.h	/^#define REGISTER_IN_WINDOW_P(regnum)	\\$/
+REGISTER_RAW_SIZE	m-altos.h	/^#define REGISTER_RAW_SIZE(N) (((unsigned)(N) - FP0/
+REGISTER_U_ADDR	m-altos.h	/^#define REGISTER_U_ADDR(addr, blockend, regno)		\\/
+REGISTER_VIRTUAL_SIZE	m-altos.h	/^#define REGISTER_VIRTUAL_SIZE(N) (((unsigned)(N) -/
+REGISTER_VIRTUAL_TYPE	m-altos.h	/^#define REGISTER_VIRTUAL_TYPE(N) \\$/
+REG_STRUCT_HAS_ADDR	m-sparc.h	/^#define REG_STRUCT_HAS_ADDR(gcc_p) (!gcc_p)$/
+RELOCATE	symmisc.c	/^#define RELOCATE(slot) (slot ? (* (char **) &slot /
+SAVED_PC_AFTER_CALL	m-altos.h	/^#define SAVED_PC_AFTER_CALL(frame) \\$/
+SET_ELEMENT_P	dbxread.c	/^#define	SET_ELEMENT_P(x)	((x)>=N_SETA&&(x)<=(N_SET/
+SET_NAMESTRING	dbxread.c	/^#define SET_NAMESTRING()\\$/
+SET_PROC_DESC_IS_DUMMY	m-mips.h	/^#define SET_PROC_DESC_IS_DUMMY(proc) ((proc)->isym/
+SET_TYPE_FIELD_PRIVATE	symtab.h	/^#define SET_TYPE_FIELD_PRIVATE(thistype, n) B_SET /
+SET_TYPE_FIELD_PROTECTED	symtab.h	/^#define SET_TYPE_FIELD_PROTECTED(thistype, n) B_SE/
+SET_TYPE_FN_PRIVATE	symtab.h	/^#define SET_TYPE_FN_PRIVATE(thistype, n) B_SET ((t/
+SET_TYPE_FN_PROTECTED	symtab.h	/^#define SET_TYPE_FN_PROTECTED(thistype, n) B_SET (/
+SIGN_EXTEND_CHAR	regex.c	/^#define SIGN_EXTEND_CHAR(x) (x)$/
+SKIP_PROLOGUE	m-altos.h	/^#define SKIP_PROLOGUE(pc)   \\$/
+STAB_REG_TO_REGNUM	m-convex.h	/^#define STAB_REG_TO_REGNUM(value) \\$/
+STACK_ALIGN	m-pyr.h	/^#define STACK_ALIGN(ADDR) (((ADDR)+3)&-4)$/
+STORE_RETURN_VALUE	m-altos.h	/^#define STORE_RETURN_VALUE(TYPE,VALBUF) \\$/
+STORE_STRUCT_RETURN	m-altos.h	/^#define STORE_STRUCT_RETURN(ADDR, SP) \\$/
+STRUCT_ARG_SYM_GARBAGE	m-sparc.h	/^#define STRUCT_ARG_SYM_GARBAGE(gcc_p) (!gcc_p)$/
+SYMBOL_BLOCK_VALUE	symtab.h	/^#define SYMBOL_BLOCK_VALUE(symbol) (symbol)->value/
+SYMBOL_CLASS	symtab.h	/^#define SYMBOL_CLASS(symbol) (symbol)->class$/
+SYMBOL_NAME	symtab.h	/^#define SYMBOL_NAME(symbol) (symbol)->name$/
+SYMBOL_NAMESPACE	symtab.h	/^#define SYMBOL_NAMESPACE(symbol) (symbol)->namespa/
+SYMBOL_TYPE	symtab.h	/^#define SYMBOL_TYPE(symbol) (symbol)->type$/
+SYMBOL_VALUE	symtab.h	/^#define SYMBOL_VALUE(symbol) (symbol)->value.value/
+SYMBOL_VALUE_BYTES	symtab.h	/^#define SYMBOL_VALUE_BYTES(symbol) (symbol)->value/
+SYNTAX	regex.c	/^#define SYNTAX(c) re_syntax_table[c]$/
+TEXT_RELOCATE	symmisc.c	/^#define TEXT_RELOCATE(slot)  ((slot) += text_reloc/
+TYPEVECTOR	symtab.h	/^#define TYPEVECTOR(symtab) (symtab)->typevector$/
+TYPEVECTOR_NTYPES	symtab.h	/^#define TYPEVECTOR_NTYPES(typelist) (typelist)->le/
+TYPEVECTOR_TYPE	symtab.h	/^#define TYPEVECTOR_TYPE(typelist,n) (typelist)->ty/
+TYPE_ARG_TYPES	symtab.h	/^#define TYPE_ARG_TYPES(thistype) (thistype)->arg_t/
+TYPE_BASECLASS	symtab.h	/^#define TYPE_BASECLASS(thistype,index) (thistype)-/
+TYPE_BASECLASSES	symtab.h	/^#define TYPE_BASECLASSES(thistype) (thistype)->bas/
+TYPE_CODE	symtab.h	/^#define TYPE_CODE(thistype) (thistype)->code$/
+TYPE_DOMAIN_TYPE	symtab.h	/^#define TYPE_DOMAIN_TYPE(thistype) (thistype)->vpt/
+TYPE_FIELD	symtab.h	/^#define TYPE_FIELD(thistype, n) (thistype)->fields/
+TYPE_FIELDS	symtab.h	/^#define TYPE_FIELDS(thistype) (thistype)->fields$/
+TYPE_FIELD_BITPOS	symtab.h	/^#define TYPE_FIELD_BITPOS(thistype, n) (thistype)-/
+TYPE_FIELD_BITSIZE	symtab.h	/^#define TYPE_FIELD_BITSIZE(thistype, n) (thistype)/
+TYPE_FIELD_NAME	symtab.h	/^#define TYPE_FIELD_NAME(thistype, n) (thistype)->f/
+TYPE_FIELD_PACKED	symtab.h	/^#define TYPE_FIELD_PACKED(thistype, n) (thistype)-/
+TYPE_FIELD_PRIVATE	symtab.h	/^#define TYPE_FIELD_PRIVATE(thistype, n) B_TST((thi/
+TYPE_FIELD_PRIVATE_BITS	symtab.h	/^#define TYPE_FIELD_PRIVATE_BITS(thistype) (thistyp/
+TYPE_FIELD_PROTECTED	symtab.h	/^#define TYPE_FIELD_PROTECTED(thistype, n) B_TST((t/
+TYPE_FIELD_PROTECTED_BITS	symtab.h	/^#define TYPE_FIELD_PROTECTED_BITS(thistype) (thist/
+TYPE_FIELD_STATIC	symtab.h	/^#define TYPE_FIELD_STATIC(thistype, n) ((thistype)/
+TYPE_FIELD_STATIC_PHYSNAME	symtab.h	/^#define TYPE_FIELD_STATIC_PHYSNAME(thistype, n) ((/
+TYPE_FIELD_TYPE	symtab.h	/^#define TYPE_FIELD_TYPE(thistype, n) (thistype)->f/
+TYPE_FIELD_VALUE	symtab.h	/^#define TYPE_FIELD_VALUE(thistype, n) (* (int*) &(/
+TYPE_FLAGS	symtab.h	/^#define TYPE_FLAGS(thistype) (thistype)->flags$/
+TYPE_FN_FIELD	symtab.h	/^#define TYPE_FN_FIELD(thistype, n) (thistype)[n]$/
+TYPE_FN_FIELDLIST	symtab.h	/^#define TYPE_FN_FIELDLIST(thistype, n) (thistype)-/
+TYPE_FN_FIELDLIST1	symtab.h	/^#define TYPE_FN_FIELDLIST1(thistype, n) (thistype)/
+TYPE_FN_FIELDLISTS	symtab.h	/^#define TYPE_FN_FIELDLISTS(thistype) (thistype)->f/
+TYPE_FN_FIELDLIST_LENGTH	symtab.h	/^#define TYPE_FN_FIELDLIST_LENGTH(thistype, n) (thi/
+TYPE_FN_FIELDLIST_NAME	symtab.h	/^#define TYPE_FN_FIELDLIST_NAME(thistype, n) (thist/
+TYPE_FN_FIELDS	symtab.h	/^#define TYPE_FN_FIELDS(thistype) (thistype)->fn_fi/
+TYPE_FN_FIELD_ARGS	symtab.h	/^#define TYPE_FN_FIELD_ARGS(thistype, n) (thistype)/
+TYPE_FN_FIELD_NAME	symtab.h	/^#define TYPE_FN_FIELD_NAME(thistype, n) (thistype)/
+TYPE_FN_FIELD_PHYSNAME	symtab.h	/^#define TYPE_FN_FIELD_PHYSNAME(thistype, n) (thist/
+TYPE_FN_FIELD_STATIC_P	symtab.h	/^#define TYPE_FN_FIELD_STATIC_P(thistype, n) ((this/
+TYPE_FN_FIELD_TYPE	symtab.h	/^#define TYPE_FN_FIELD_TYPE(thistype, n) (thistype)/
+TYPE_FN_FIELD_VIRTUAL_P	symtab.h	/^#define TYPE_FN_FIELD_VIRTUAL_P(thistype, n) ((thi/
+TYPE_FN_FIELD_VOFFSET	symtab.h	/^#define TYPE_FN_FIELD_VOFFSET(thistype, n) ((thist/
+TYPE_FN_PRIVATE	symtab.h	/^#define TYPE_FN_PRIVATE(thistype, n) B_TST ((thist/
+TYPE_FN_PRIVATE_BITS	symtab.h	/^#define TYPE_FN_PRIVATE_BITS(thistype) (thistype)./
+TYPE_FN_PROTECTED	symtab.h	/^#define TYPE_FN_PROTECTED(thistype, n) B_TST ((thi/
+TYPE_FN_PROTECTED_BITS	symtab.h	/^#define TYPE_FN_PROTECTED_BITS(thistype) (thistype/
+TYPE_FUNCTION_TYPE	symtab.h	/^#define TYPE_FUNCTION_TYPE(thistype) (thistype)->f/
+TYPE_HAS_CONSTRUCTOR	symtab.h	/^#define TYPE_HAS_CONSTRUCTOR(thistype) ((thistype)/
+TYPE_HAS_DESTRUCTOR	symtab.h	/^#define TYPE_HAS_DESTRUCTOR(thistype) ((thistype)-/
+TYPE_LENGTH	symtab.h	/^#define TYPE_LENGTH(thistype) (thistype)->length$/
+TYPE_MAIN_VARIANT	symtab.h	/^#define TYPE_MAIN_VARIANT(thistype) (thistype)->ma/
+TYPE_NAME	symtab.h	/^#define TYPE_NAME(thistype) (thistype)->name$/
+TYPE_NEXT_VARIANT	symtab.h	/^#define TYPE_NEXT_VARIANT(thistype) (thistype)->ne/
+TYPE_NFIELDS	symtab.h	/^#define TYPE_NFIELDS(thistype) (thistype)->nfields/
+TYPE_NFN_FIELDS	symtab.h	/^#define TYPE_NFN_FIELDS(thistype) (thistype)->nfn_/
+TYPE_NFN_FIELDS_TOTAL	symtab.h	/^#define TYPE_NFN_FIELDS_TOTAL(thistype) (thistype)/
+TYPE_N_BASECLASSES	symtab.h	/^#define TYPE_N_BASECLASSES(thistype) (thistype)->n/
+TYPE_OF_SET_ELEMENT	dbxread.c	/^#define TYPE_OF_SET_ELEMENT(x)	((x)-N_SETA+N_ABS)$/
+TYPE_POINTER_TYPE	symtab.h	/^#define TYPE_POINTER_TYPE(thistype) (thistype)->po/
+TYPE_REFERENCE_TYPE	symtab.h	/^#define TYPE_REFERENCE_TYPE(thistype) (thistype)->/
+TYPE_TARGET_TYPE	symtab.h	/^#define TYPE_TARGET_TYPE(thistype) (thistype)->tar/
+TYPE_UNSIGNED	symtab.h	/^#define TYPE_UNSIGNED(thistype) ((thistype)->flags/
+TYPE_VIA_PUBLIC	symtab.h	/^#define TYPE_VIA_PUBLIC(thistype) ((thistype)->fla/
+TYPE_VIA_VIRTUAL	symtab.h	/^#define TYPE_VIA_VIRTUAL(thistype) ((thistype)->fl/
+TYPE_VPTR_BASETYPE	symtab.h	/^#define TYPE_VPTR_BASETYPE(thistype) (thistype)->v/
+TYPE_VPTR_FIELDNO	symtab.h	/^#define TYPE_VPTR_FIELDNO(thistype) (thistype)->vp/
+UNRELOCATE	symmisc.c	/^#define UNRELOCATE(slot) (slot ? (* (char **) &slo/
+U_FPSTATE	m-i386-sv32.h	/^#define U_FPSTATE(u) u.u_fps.u_fpstate$/
+VALUE_ADDRESS	value.h	/^#define VALUE_ADDRESS(val) (val)->location.address/
+VALUE_BITPOS	value.h	/^#define VALUE_BITPOS(val) (val)->bitpos$/
+VALUE_BITSIZE	value.h	/^#define VALUE_BITSIZE(val) (val)->bitsize$/
+VALUE_CONTENTS	value.h	/^#define VALUE_CONTENTS(val) ((char *) (val)->conte/
+VALUE_FRAME	value.h	/^#define VALUE_FRAME(val) ((val)->frame_addr)$/
+VALUE_FRAME_REGNUM	value.h	/^#define VALUE_FRAME_REGNUM(val) ((val)->location.r/
+VALUE_INTERNALVAR	value.h	/^#define VALUE_INTERNALVAR(val) (val)->location.int/
+VALUE_LVAL	value.h	/^#define VALUE_LVAL(val) (val)->lval$/
+VALUE_NEXT	value.h	/^#define VALUE_NEXT(val) (val)->next$/
+VALUE_OFFSET	value.h	/^#define VALUE_OFFSET(val) (val)->offset$/
+VALUE_REGNO	value.h	/^#define VALUE_REGNO(val) (val)->regno$/
+VALUE_REPEATED	value.h	/^#define VALUE_REPEATED(val) (val)->repeated$/
+VALUE_REPETITIONS	value.h	/^#define VALUE_REPETITIONS(val) (val)->repetitions$/
+VALUE_TYPE	value.h	/^#define VALUE_TYPE(val) (val)->type$/
+VARIABLES_INSIDE_BLOCK	m-convex.h	/^#define VARIABLES_INSIDE_BLOCK(desc) (desc != 0)$/
+WCOREDUMP	wait.h	/^#define WCOREDUMP(w) (((w)&0200) != 0)$/
+WIFEXITED	wait.h	/^#define WIFEXITED(w) (((w)&0377) == 0)$/
+WIFSIGNALED	wait.h	/^#define WIFSIGNALED(w) (((w)&0377) != 0177 && ((w)/
+WIFSTOPPED	wait.h	/^#define WIFSTOPPED(w) (((w)&0377) == 0177)$/
+WRETCODE	wait.h	/^#define WRETCODE(w) ((w) >> 8)$/
+WSETEXIT	wait.h	/^#define WSETEXIT(w, status) ((w) = (status))$/
+WSETSTOP	wait.h	/^#define WSETSTOP(w,sig)  ((w) = (0177 | ((sig) << /
+WSTOPSIG	wait.h	/^#define WSTOPSIG(w) ((w) >> 8)$/
+WTERMSIG	wait.h	/^#define WTERMSIG(w) ((w) & 0177)$/
+YYTRANSLATE	expread.tab.c	/^#define YYTRANSLATE(x) ((unsigned)(x) <= 293 ? yyt/
+_N_BADMAG	a.out.gnu.h	/^#define _N_BADMAG(x)					\\$/
+_N_HDROFF	a.out.encap.h	/^#define _N_HDROFF(x) ((N_FLAGS(x) & N_FLAGS_COFF_E/
+__INT_TO_PTR	obstack.h	/^#define __INT_TO_PTR(P) ((P) + (char *)0)$/
+__PTR_TO_INT	obstack.h	/^#define __PTR_TO_INT(P) ((P) - (char *)0)$/
+__define_stab	stab.gnu.h	/^#define __define_stab(NAME, CODE, STRING) NAME=COD/
+_exit	standalone.c	/^_exit ()$/
+_flsbuf	standalone.c	/^_flsbuf ()$/
+_initialize_blockframe	blockframe.c	/^_initialize_blockframe ()$/
+_initialize_breakpoint	breakpoint.c	/^_initialize_breakpoint ()$/
+_initialize_coff	coffread.c	/^_initialize_coff ()$/
+_initialize_command	command.c	/^_initialize_command ()$/
+_initialize_convex_dep	convex-dep.c	/^_initialize_convex_dep ()$/
+_initialize_copying	copying.c	/^_initialize_copying ()$/
+_initialize_core	core.c	/^_initialize_core()$/
+_initialize_dbxread	dbxread.c	/^_initialize_dbxread ()$/
+_initialize_expread	expread.tab.c	/^_initialize_expread ()$/
+_initialize_hp300bsd_dep	hp300bsd-dep.c	/^_initialize_hp300bsd_dep ()$/
+_initialize_infcmd	infcmd.c	/^_initialize_infcmd ()$/
+_initialize_inflow	inflow.c	/^_initialize_inflow ()$/
+_initialize_infrun	infrun.c	/^_initialize_infrun ()$/
+_initialize_pinsn	m68k-pinsn.c	/^_initialize_pinsn()$/
+_initialize_printcmd	printcmd.c	/^_initialize_printcmd ()$/
+_initialize_source	source.c	/^_initialize_source ()$/
+_initialize_stack	stack.c	/^_initialize_stack ()$/
+_initialize_standalone	standalone.c	/^_initialize_standalone ()$/
+_initialize_symmisc	symmisc.c	/^_initialize_symmisc ()$/
+_initialize_symtab	symtab.c	/^_initialize_symtab ()$/
+_initialize_utils	utils.c	/^_initialize_utils ()$/
+_initialize_valprint	valprint.c	/^_initialize_valprint ()$/
+_initialize_values	values.c	/^_initialize_values ()$/
+_initialize_xgdb	xgdb.c	/^_initialize_xgdb ()$/
+_obstack_allocated_p	obstack.c	/^_obstack_allocated_p (h, obj)$/
+_obstack_begin	obstack.c	/^_obstack_begin (h, size, alignment, chunkfun, free/
+_obstack_free	obstack.c	/^_obstack_free (h, obj)$/
+_obstack_newchunk	obstack.c	/^_obstack_newchunk (h, length)$/
+access	standalone.c	/^access ()$/
+access_value_history	values.c	/^access_value_history (num)$/
+add_abbrev_cmd	command.c	/^add_abbrev_cmd (name, class, fun, doc, list)$/
+add_abbrev_prefix_cmd	command.c	/^add_abbrev_prefix_cmd (name, class, fun, doc, pref/
+add_alias_cmd	command.c	/^add_alias_cmd (name, oldname, class, abbrev_flag, /
+add_bincl_to_list	dbxread.c	/^add_bincl_to_list (pst, name, instance)$/
+add_cmd	command.c	/^add_cmd (name, class, fun, doc, list)$/
+add_com	main.c	/^add_com (name, class, fun, doc)$/
+add_com_alias	main.c	/^add_com_alias (name, oldname, class, abbrev_flag)$/
+add_file_command	dbxread.c	/^add_file_command (arg_string)$/
+add_info	main.c	/^add_info (name, fun, doc)$/
+add_info_alias	main.c	/^add_info_alias (name, oldname, abbrev_flag)$/
+add_new_header_file	dbxread.c	/^add_new_header_file (name, instance)$/
+add_old_header_file	dbxread.c	/^add_old_header_file (name, instance)$/
+add_prefix_cmd	command.c	/^add_prefix_cmd (name, class, fun, doc, prefixlist,/
+add_symbol_to_list	coffread.c	/^add_symbol_to_list (symbol, listhead)$/
+add_this_object_header_file	dbxread.c	/^add_this_object_header_file (i)$/
+add_undefined_type	dbxread.c	/^add_undefined_type (type)$/
+addbutton	xgdb.c	/^addbutton (parent, name, function, closure)$/
+address_info	printcmd.c	/^address_info (exp)$/
+alias_command	convex-dep.c	/^alias_command (arg)$/
+alloc_symbol	mipscoff.c	/^alloc_symbol(name, value)$/
+alloca	alloca.c	/^alloca (size)			\/* returns pointer to storage *\//
+allocate_repeat_value	values.c	/^allocate_repeat_value (type, count)$/
+allocate_value	values.c	/^allocate_value (type)$/
+ambiguous_line_spec	source.c	/^ambiguous_line_spec (sals)$/
+append_prefix	i386-pinsn.c	/^append_prefix ()$/
+apply_type_modifiers	mipscoff.c	/^apply_type_modifiers(type, tip, auxp)$/
+args_info	stack.c	/^args_info ()$/
+attach	convex-dep.c	/^attach (pid)$/
+attach_command	infcmd.c	/^attach_command (args, from_tty)$/
+attach_program	infrun.c	/^attach_program (pid)$/
+backtrace_command	stack.c	/^backtrace_command (count_exp)$/
+backtrace_limit_info	stack.c	/^backtrace_limit_info (arg, from_tty)$/
+bcmp	regex.c	/^#define bcmp(s1,s2,n)	memcmp((s1),(s2),(n))$/
+bcmp_translate	regex.c	/^bcmp_translate (s1, s2, len, translate)$/
+bcopy	regex.c	/^#define bcopy(s,d,n)	memcpy((d),(s),(n))$/
+binop_user_defined_p	valarith.c	/^binop_user_defined_p (op, arg1, arg2)$/
+bit_extract	ns32k-pinsn.c	/^bit_extract (buffer, offset, count)$/
+block_depth	symmisc.c	/^block_depth (block)$/
+block_for_pc	blockframe.c	/^block_for_pc (pc)$/
+block_function	symtab.c	/^block_function (bl)$/
+block_innermost_frame	blockframe.c	/^block_innermost_frame (block)$/
+break_command	breakpoint.c	/^break_command (arg, from_tty)$/
+break_command_1	breakpoint.c	/^break_command_1 (arg, tempflag, from_tty)$/
+breakpoint_1	breakpoint.c	/^breakpoint_1 (bnum)$/
+breakpoint_auto_delete	breakpoint.c	/^breakpoint_auto_delete (bnum)$/
+breakpoint_button	xgdb.c	/^breakpoint_button(w, runflag, call_data)$/
+breakpoint_clear_ignore_counts	breakpoint.c	/^breakpoint_clear_ignore_counts ()$/
+breakpoint_cond_eval	breakpoint.c	/^breakpoint_cond_eval (exp)$/
+breakpoint_here_p	breakpoint.c	/^breakpoint_here_p (pc)$/
+breakpoint_stop_status	breakpoint.c	/^breakpoint_stop_status (pc, frame_address)$/
+breakpoints_info	breakpoint.c	/^breakpoints_info (bnum_exp)$/
+bzero	regex.c	/^#define bzero(s,n)	memset((s),0,(n))$/
+call_function	valops.c	/^call_function (function, nargs, args)$/
+call_ptrace	altos-dep.c	/^call_ptrace (request, pid, arg3, arg4)$/
+catch_errors	main.c	/^catch_errors (func, arg, errstring)$/
+catch_termination	main.c	/^catch_termination (sig)$/
+cd_command	main.c	/^cd_command (dir, from_tty)$/
+chdir	standalone.c	/^chdir ()$/
+check_duplicates	breakpoint.c	/^check_duplicates (address)$/
+check_field	valops.c	/^check_field (arg1, name)$/
+ckprefix	i386-pinsn.c	/^ckprefix ()$/
+cleanup_undefined_types	dbxread.c	/^cleanup_undefined_types ()$/
+clear_breakpoint_commands	breakpoint.c	/^clear_breakpoint_commands ()$/
+clear_breakpoints	breakpoint.c	/^clear_breakpoints ()$/
+clear_command	breakpoint.c	/^clear_command (arg, from_tty)$/
+clear_displays	printcmd.c	/^clear_displays ()$/
+clear_internalvars	values.c	/^clear_internalvars ()$/
+clear_momentary_breakpoints	breakpoint.c	/^clear_momentary_breakpoints ()$/
+clear_proceed_status	infrun.c	/^clear_proceed_status ()$/
+clear_value_history	values.c	/^clear_value_history ()$/
+close	standalone.c	/^close (desc)$/
+close_exec_file	core.c	/^close_exec_file ()$/
+codestream_fill	i386-dep.c	/^codestream_fill (peek_flag)$/
+codestream_get	i386-dep.c	/^#define codestream_get() (codestream_cnt-- == 0 ? /
+codestream_peek	i386-dep.c	/^#define codestream_peek() (codestream_cnt == 0 ? /
+codestream_read	i386-dep.c	/^codestream_read (buf, count)$/
+codestream_seek	i386-dep.c	/^codestream_seek (place)$/
+codestream_tell	i386-dep.c	/^#define codestream_tell() (codestream_addr + codes/
+coff_alloc_type	coffread.c	/^coff_alloc_type (index)$/
+coff_lookup_type	coffread.c	/^coff_lookup_type (index)$/
+comm_registers_info	convex-dep.c	/^comm_registers_info (arg)$/
+command_line_input	main.c	/^command_line_input (prompt, repeat)$/
+command_loop	main.c	/^command_loop ()$/
+commands_command	breakpoint.c	/^commands_command (arg)$/
+compare_ints	printcmd.c	/^compare_ints (i, j)$/
+compare_misc_functions	coffread.c	/^compare_misc_functions (fn1, fn2)$/
+compare_opcodes	sparc-pinsn.c	/^compare_opcodes (a, b)$/
+compare_proc_descs	mipscoff.c	/^compare_proc_descs (p1, p2)$/
+compare_psymbols	dbxread.c	/^compare_psymbols (s1, s2)$/
+compare_symbols	coffread.c	/^compare_symbols (s1, s2)$/
+complete_on_cmdlist	command.c	/^complete_on_cmdlist (list, text)$/
+complete_symtab	coffread.c	/^complete_symtab (name, start_addr, size)$/
+completion_list_add_symbol	symtab.c	/^completion_list_add_symbol (symname)$/
+concat	utils.c	/^concat (s1, s2, s3)$/
+condense_addl_misc_bunches	dbxread.c	/^condense_addl_misc_bunches ()$/
+condense_misc_bunches	coffread.c	/^condense_misc_bunches ()$/
+condition_command	breakpoint.c	/^condition_command (arg, from_tty)$/
+cont_command	infcmd.c	/^cont_command (proc_count_exp, from_tty)$/
+contained_in	symtab.c	/^contained_in (a, b)$/
+containing_function_bounds	printcmd.c	/^containing_function_bounds (pc, low, high)$/
+convenience_info	values.c	/^convenience_info ()$/
+convert_from_68881	m68k-pinsn.c	/^convert_from_68881 (from, to)$/
+convert_to_68881	m68k-pinsn.c	/^convert_to_68881 (from, to)$/
+convex_cont_command	convex-dep.c	/^convex_cont_command (proc_count_exp, from_tty)$/
+copy_name	expread.tab.c	/^copy_name (token)$/
+copy_pending	dbxread.c	/^copy_pending (beg, begi, end)$/
+copying_info	copying.c	/^copying_info ()$/
+core_file_command	altos-dep.c	/^core_file_command (filename, from_tty)$/
+create_array_type	symtab.c	/^create_array_type (element_type, number)$/
+create_buttons	xgdb.c	/^create_buttons (parent)$/
+create_inferior	inflow.c	/^create_inferior (allargs, env)$/
+create_inferior_hook	convex-dep.c	/^create_inferior_hook (pid)$/
+create_label	xgdb.c	/^create_label (name, label)$/
+create_new_frame	blockframe.c	/^create_new_frame (addr, pc)$/
+create_text_widget	xgdb.c	/^create_text_widget (parent, filename)$/
+creg	sparc-pinsn.c	/^#define	creg(n)	fprintf_filtered (stream, "%%c%u",/
+dbit_extract	ns32k-pinsn.c	/^dbit_extract (buffer, offset, count)$/
+dbx_alloc_type	dbxread.c	/^dbx_alloc_type (typenums)$/
+dbx_create_type	dbxread.c	/^dbx_create_type ()$/
+dbx_lookup_type	dbxread.c	/^dbx_lookup_type (typenums)$/
+dcache_alloc	remote.c	/^dcache_alloc ()$/
+dcache_fetch	remote.c	/^dcache_fetch (addr)$/
+dcache_flush	remote.c	/^dcache_flush ()$/
+dcache_hit	remote.c	/^dcache_hit (addr)$/
+dcache_init	remote.c	/^dcache_init ()$/
+dcache_poke	remote.c	/^dcache_poke (addr, data)$/
+dcache_value	remote.c	/^dcache_value (db, addr)$/
+decode_base_type	coffread.c	/^decode_base_type (cs, c_type, aux)$/
+decode_format	printcmd.c	/^decode_format (string_ptr, oformat, osize)$/
+decode_function_type	coffread.c	/^decode_function_type (cs, c_type, aux)$/
+decode_line_1	symtab.c	/^decode_line_1 (argptr, funfirstline, default_symta/
+decode_line_2	symtab.c	/^decode_line_2 (argptr, sym_arr, physnames, nelts, /
+decode_line_spec	symtab.c	/^decode_line_spec (string, funfirstline)$/
+decode_line_spec_1	breakpoint.c	/^decode_line_spec_1 (string, funfirstline)$/
+decode_type	coffread.c	/^decode_type (cs, c_type, aux)$/
+decout	convex-dep.c	/^decout (stream, type, val)$/
+define_command	main.c	/^define_command (comname, from_tty)$/
+define_symbol	dbxread.c	/^define_symbol (value, string, desc)$/
+delete_breakpoint	breakpoint.c	/^delete_breakpoint (bpt)$/
+delete_cmd	command.c	/^delete_cmd (name, list)$/
+delete_command	breakpoint.c	/^delete_command (arg, from_tty)$/
+delete_display	printcmd.c	/^delete_display (num)$/
+describe_other_breakpoints	breakpoint.c	/^describe_other_breakpoints (pc)$/
+destructor_name_p	valops.c	/^destructor_name_p (name, type)$/
+detach	convex-dep.c	/^detach (signal)$/
+detach_command	infcmd.c	/^detach_command (args, from_tty)$/
+directories_info	source.c	/^directories_info ()$/
+directory_command	source.c	/^directory_command (dirname, from_tty)$/
+disable_breakpoint	breakpoint.c	/^disable_breakpoint (bpt)$/
+disable_command	breakpoint.c	/^disable_command (args)$/
+disable_current_display	printcmd.c	/^disable_current_display ()$/
+disable_display	printcmd.c	/^disable_display (num)$/
+disable_display_command	printcmd.c	/^disable_display_command (args, from_tty)$/
+disassemble_command	printcmd.c	/^disassemble_command (arg, from_tty)$/
+discard_cleanups	utils.c	/^discard_cleanups (old_chain)$/
+discard_misc_bunches	coffread.c	/^discard_misc_bunches ()$/
+disconnect	main.c	/^disconnect ()$/
+display_command	printcmd.c	/^display_command (exp, from_tty)$/
+display_info	printcmd.c	/^display_info ()$/
+do_breakpoint_commands	breakpoint.c	/^do_breakpoint_commands ()$/
+do_cleanups	utils.c	/^do_cleanups (old_chain)$/
+do_command	xgdb.c	/^do_command(w, command, call_data)$/
+do_displays	printcmd.c	/^do_displays ()$/
+do_examine	printcmd.c	/^do_examine (fmt, addr)$/
+do_nothing	main.c	/^do_nothing ()$/
+do_one_display	printcmd.c	/^do_one_display (d)$/
+do_registers_info	infcmd.c	/^static void do_registers_info (regnum)$/
+do_restore_insn	sparc-dep.c	/^do_restore_insn (pc)$/
+do_save_insn	sparc-dep.c	/^do_save_insn (size)$/
+document_command	main.c	/^document_command (comname, from_tty)$/
+dofloat	i386-pinsn.c	/^dofloat ()$/
+dont_repeat	main.c	/^dont_repeat ()$/
+double_to_i387	i386-dep.c	/^double_to_i387 (from, to)$/
+down_command	stack.c	/^down_command (count_exp)$/
+dump_me_command	main.c	/^dump_me_command ()$/
+echo_command	main.c	/^echo_command (text)$/
+editing_info	main.c	/^editing_info (arg, from_tty)$/
+enable_breakpoint	breakpoint.c	/^enable_breakpoint (bpt)$/
+enable_command	breakpoint.c	/^enable_command (args)$/
+enable_delete_breakpoint	breakpoint.c	/^enable_delete_breakpoint (bpt)$/
+enable_delete_command	breakpoint.c	/^enable_delete_command (args)$/
+enable_display	printcmd.c	/^enable_display (args)$/
+enable_once_breakpoint	breakpoint.c	/^enable_once_breakpoint (bpt)$/
+enable_once_command	breakpoint.c	/^enable_once_command (args)$/
+end_arglist	expread.tab.c	/^end_arglist ()$/
+end_psymtab	dbxread.c	/^end_psymtab (pst, include_list, num_includes, capp/
+end_symtab	coffread.c	/^end_symtab ()$/
+enter_linenos	coffread.c	/^enter_linenos (file_offset, first_line, last_line)/
+environ_vector	environ.c	/^environ_vector (e)$/
+environment_info	infcmd.c	/^environment_info (var)$/
+err	stuff.c	/^err (msg, a1, a2, a3)$/
+error	regex.c	/^error (string)$/
+error_no_arg	main.c	/^error_no_arg (why)$/
+evaluate_expression	eval.c	/^evaluate_expression (exp)$/
+evaluate_subexp	eval.c	/^evaluate_subexp (expect_type, exp, pos, noside)$/
+evaluate_subexp_for_address	eval.c	/^evaluate_subexp_for_address (exp, pos, noside)$/
+evaluate_subexp_for_sizeof	eval.c	/^evaluate_subexp_for_sizeof (exp, pos)$/
+evaluate_subexp_with_coercion	eval.c	/^evaluate_subexp_with_coercion (exp, pos, noside)$/
+evaluate_type	eval.c	/^evaluate_type (exp)$/
+exec_file_command	altos-dep.c	/^exec_file_command (filename, from_tty)$/
+execle	convex-dep.c	/^execle (name, argv)$/
+execute_command	main.c	/^execute_command (p, from_tty)$/
+exit	standalone.c	/^exit ()$/
+explicit_breakpoint_button	xgdb.c	/^explicit_breakpoint_button ()$/
+explicit_lookup_type	dbxread.c	/^explicit_lookup_type (real_filenum, index)$/
+fatal	utils.c	/^fatal (string, arg)$/
+fatal_dump_core	utils.c	/^fatal_dump_core (string, arg)$/
+fault	standalone.c	/^fault ()$/
+fbit_extract	ns32k-pinsn.c	/^fbit_extract (buffer, offset, count)$/
+fclose	standalone.c	/^fclose (desc)$/
+fdopen	standalone.c	/^fdopen (desc)$/
+fetch_arg	m68k-pinsn.c	/^fetch_arg (buffer, code, bits)$/
+fetch_inferior_register	hp9k320-dep.c	/^  fetch_inferior_register (regno, regaddr)$/
+fetch_inferior_registers	altos-dep.c	/^fetch_inferior_registers ()$/
+fflush	standalone.c	/^fflush (ign)$/
+fgetc	standalone.c	/^fgetc (desc)$/
+files_info	core.c	/^files_info ()$/
+fill_in_vptr_fieldno	coffread.c	/^fill_in_vptr_fieldno (type)$/
+fill_symbuf	dbxread.c	/^fill_symbuf ()$/
+find_corresponding_bincl_psymtab	dbxread.c	/^find_corresponding_bincl_psymtab (name, instance)$/
+find_line_common	symtab.c	/^find_line_common (l, lineno, exact_match)$/
+find_line_pc	symtab.c	/^find_line_pc (symtab, line)$/
+find_line_pc_range	symtab.c	/^find_line_pc_range (symtab, thisline, startptr, en/
+find_pc_function	blockframe.c	/^find_pc_function (pc)$/
+find_pc_line	symtab.c	/^find_pc_line (pc, notcurrent)$/
+find_pc_line_pc_range	symtab.c	/^find_pc_line_pc_range (pc, startptr, endptr)$/
+find_pc_misc_function	blockframe.c	/^find_pc_misc_function (pc)$/
+find_pc_partial_function	blockframe.c	/^find_pc_partial_function (pc, name, address)$/
+find_pc_psymbol	symtab.c	/^find_pc_psymbol (psymtab, pc)$/
+find_pc_psymtab	symtab.c	/^find_pc_psymtab (pc)$/
+find_pc_symtab	symtab.c	/^find_pc_symtab (pc)$/
+find_relative_frame	stack.c	/^find_relative_frame (frame, level_offset_ptr)$/
+find_saved_register	findvar.c	/^find_saved_register (frame, regnum)$/
+find_source_lines	source.c	/^find_source_lines (s, desc)$/
+find_stack_direction	alloca.c	/^find_stack_direction (\/* void *\/)$/
+find_symbol	stuff.c	/^find_symbol (sym_name, symbol_table, length, strin/
+findarg	gld-pinsn.c	/^findarg(frame)$/
+findframe	gld-pinsn.c	/^findframe(thisframe)$/
+finish_block	coffread.c	/^finish_block (symbol, listhead, old_blocks, start,/
+finish_command	infcmd.c	/^finish_command (arg, from_tty)$/
+fix_common_block	dbxread.c	/^fix_common_block (sym, value)$/
+flip_bytes	ns32k-pinsn.c	/^flip_bytes (ptr, count)$/
+float_handler	main.c	/^float_handler ()$/
+float_info	infcmd.c	/^float_info (addr_exp)$/
+flush_cached_frames	blockframe.c	/^flush_cached_frames ()$/
+fopen	standalone.c	/^fopen (filename, modes)$/
+for	m68k-pinsn.c	/^	  for (d = m68k_opcodes[i].args; *d; d += 2)$/
+format_info	valprint.c	/^format_info (arg, from_tty)$/
+forward_search_command	source.c	/^forward_search_command (regex, from_tty)$/
+fprintf	standalone.c	/^fprintf (ign, a1, a2, a3, a4, a5, a6, a7, a8, a9)$/
+fprintf_filtered	utils.c	/^fprintf_filtered (stream, format, arg1, arg2, arg3/
+fputc	standalone.c	/^fputc (c, ign)$/
+fputs_filtered	utils.c	/^fputs_filtered (linebuffer, stream)$/
+frame_args_addr	pyr-dep.c	/^CORE_ADDR frame_args_addr (frame)$/
+frame_command	stack.c	/^frame_command (level_exp, from_tty)$/
+frame_info	stack.c	/^frame_info (addr_exp)$/
+frame_locals_address	pyr-dep.c	/^CORE_ADDR frame_locals_address (frame)$/
+frame_saved_pc	sparc-dep.c	/^frame_saved_pc (frame)$/
+framechain	gld-pinsn.c	/^framechain(frame)$/
+fread	standalone.c	/^fread (bufp, numelts, eltsize, stream)$/
+free	malloc.c	/^free (mem)$/
+free_all_psymtabs	symmisc.c	/^free_all_psymtabs()$/
+free_all_symtabs	symmisc.c	/^free_all_symtabs ()$/
+free_all_values	values.c	/^free_all_values ()$/
+free_bincl_list	dbxread.c	/^free_bincl_list ()$/
+free_command_lines	main.c	/^free_command_lines (lptr)$/
+free_current_contents	utils.c	/^free_current_contents (location)$/
+free_display	printcmd.c	/^free_display (d)$/
+free_environ	environ.c	/^free_environ (e)$/
+free_funcalls	expread.tab.c	/^free_funcalls ()$/
+free_header_files	dbxread.c	/^free_header_files ()$/
+free_proc_descs	mipscoff.c	/^static void free_proc_descs ()$/
+free_stringtab	coffread.c	/^free_stringtab ()$/
+free_symtab	symmisc.c	/^free_symtab (s)$/
+free_symtab_block	symmisc.c	/^free_symtab_block (b)$/
+freg	sparc-pinsn.c	/^#define	freg(n)	fprintf_filtered (stream, "%%%s", /
+fromhex	remote.c	/^fromhex (a)$/
+fstat	standalone.c	/^fstat (desc, statbuf)$/
+functions_info	symtab.c	/^functions_info (regexp)$/
+fwrite	standalone.c	/^fwrite (buf, numelts, size, stream)$/
+garbage	xgdb.c	/^garbage (c)$/
+gdb_readline	main.c	/^gdb_readline (prompt, return_result)$/
+get16	i386-pinsn.c	/^get16 ()$/
+get32	i386-pinsn.c	/^get32 ()$/
+get_breakpoint_commands	breakpoint.c	/^get_breakpoint_commands ()$/
+get_current_block	blockframe.c	/^get_current_block ()$/
+get_current_frame	blockframe.c	/^get_current_frame ()$/
+get_displacement	ns32k-pinsn.c	/^get_displacement (buffer, aoffsetp)$/
+get_enum_type	mipscoff.c	/^get_enum_type(sym)$/
+get_exec_file	core.c	/^get_exec_file (err)$/
+get_filename_and_charpos	source.c	/^get_filename_and_charpos (s, line, fullname)$/
+get_frame_block	blockframe.c	/^get_frame_block (frame)$/
+get_frame_function	blockframe.c	/^get_frame_function (frame)$/
+get_frame_info	blockframe.c	/^get_frame_info (frame)$/
+get_frame_pc	blockframe.c	/^get_frame_pc (frame)$/
+get_frame_saved_regs	blockframe.c	/^get_frame_saved_regs (frame_info_addr, saved_regs_/
+get_in_environ	environ.c	/^get_in_environ (e, var)$/
+get_lim_data	malloc.c	/^get_lim_data ()$/
+get_next_frame	blockframe.c	/^get_next_frame (frame)$/
+get_offset	stuff.c	/^get_offset (file, sym_name)$/
+get_pc_function_start	blockframe.c	/^get_pc_function_start (pc)$/
+get_prev_frame	blockframe.c	/^get_prev_frame (frame)$/
+get_prev_frame_info	blockframe.c	/^get_prev_frame_info (next_frame)$/
+get_selected_block	stack.c	/^get_selected_block ()$/
+get_struct_type	mipscoff.c	/^get_struct_type(sym, kind)$/
+get_sym_file	coffread.c	/^get_sym_file ()$/
+get_type_context	mipscoff.c	/^get_type_context(auxp)$/
+getfilename	coffread.c	/^getfilename (aux_entry)$/
+getpagesize	getpagesize.h	/^#define getpagesize() EXEC_PAGESIZE$/
+getpid	standalone.c	/^getpid ()$/
+getpkt	remote.c	/^getpkt (buf)$/
+getpool	malloc.c	/^getpool ()$/
+getrlimit	standalone.c	/^getrlimit (addr)$/
+getsymname	coffread.c	/^getsymname (symbol_entry)$/
+getwd	standalone.c	/^getwd (buf)$/
+handle_command	infrun.c	/^handle_command (args, from_tty)$/
+hash_symsegs	dbxread.c	/^hash_symsegs ()$/
+hashname	coffread.c	/^hashname (name)$/
+have_core_file_p	core.c	/^have_core_file_p ()$/
+have_inferior_p	infcmd.c	/^have_inferior_p ()$/
+help_cmd	command.c	/^help_cmd (command, stream)$/
+help_cmd_list	command.c	/^help_cmd_list (list, class, prefix, recurse, strea/
+help_command	main.c	/^help_command (command, from_tty)$/
+help_list	command.c	/^help_list (list, cmdtype, class, stream)$/
+i386_float_info	i386-dep.c	/^i386_float_info ()$/
+i386_follow_jump	i386-dep.c	/^i386_follow_jump ()$/
+i386_frame_find_saved_regs	i386-dep.c	/^i386_frame_find_saved_regs (fip, fsrp)$/
+i386_frame_num_args	i386-dep.c	/^i386_frame_num_args (fi)$/
+i386_get_frame_setup	i386-dep.c	/^i386_get_frame_setup (pc)$/
+i386_pop_frame	i386-dep.c	/^i386_pop_frame ()$/
+i386_push_dummy_frame	i386-dep.c	/^i386_push_dummy_frame ()$/
+i386_register_u_addr	i386-dep.c	/^i386_register_u_addr (blockend, regnum)$/
+i386_skip_prologue	i386-dep.c	/^i386_skip_prologue (pc)$/
+i386dis	i386-pinsn.c	/^i386dis (pc, inbuf, outbuf)$/
+i387_to_double	i386-dep.c	/^i387_to_double (from, to)$/
+identify_source_line	source.c	/^identify_source_line (s, line, mid_statement)$/
+if	m68k-pinsn.c	/^  if (best < 0)$/
+ignore_command	breakpoint.c	/^ignore_command (args, from_tty)$/
+index	utils.c	/^index (s, c)$/
+inferior_died	inflow.c	/^inferior_died ()$/
+info_command	main.c	/^info_command ()$/
+init_bincl_list	dbxread.c	/^init_bincl_list (number)$/
+init_environ	environ.c	/^init_environ (e)$/
+init_header_files	dbxread.c	/^init_header_files ()$/
+init_lineno	coffread.c	/^init_lineno (chan, offset, count)$/
+init_misc_functions	coffread.c	/^init_misc_functions ()$/
+init_psymbol_list	dbxread.c	/^init_psymbol_list (total_symbols)$/
+init_source_path	source.c	/^init_source_path ()$/
+init_stringtab	coffread.c	/^init_stringtab (chan, offset)$/
+init_syntax_once	regex.c	/^init_syntax_once ()$/
+init_type	symtab.c	/^init_type (code, length, uns, name)$/
+initialize_cmd_lists	main.c	/^initialize_cmd_lists ()$/
+initialize_main	main.c	/^initialize_main ()$/
+initialize_signals	main.c	/^initialize_signals ()$/
+input_from_terminal_p	main.c	/^input_from_terminal_p ()$/
+insert_breakpoints	breakpoint.c	/^insert_breakpoints ()$/
+insert_jump	regex.c	/^insert_jump (op, from, to, current_end)$/
+insert_step_breakpoint	infrun.c	/^insert_step_breakpoint ()$/
+insque	utils.c	/^insque (item, after)$/
+internalvar_name	values.c	/^internalvar_name (var)$/
+ioctl	standalone.c	/^ioctl (desc, code, arg)$/
+is_arith_pc	m-convex.h	/^#define is_arith_pc(pc)  ((unsigned) ((pc) - (*(in/
+is_break_pc	m-convex.h	/^#define is_break_pc(pc)  ((unsigned) ((pc) - (*(in/
+is_delayed_branch	sparc-pinsn.c	/^is_delayed_branch (insn)$/
+is_nan	valprint.c	/^is_nan (fp, len)$/
+is_trace_pc	m-convex.h	/^#define is_trace_pc(pc)  ((unsigned) ((pc) - (*(in/
+is_trapped_internalvar	convex-dep.c	/^is_trapped_internalvar (name)$/
+isannulled	sparc-dep.c	/^isannulled (addr,  target)$/
+jump_command	infcmd.c	/^jump_command (arg, from_tty)$/
+kill	standalone.c	/^kill ()$/
+kill_command	inflow.c	/^kill_command ()$/
+kill_inferior	altos-dep.c	/^kill_inferior ()$/
+kill_inferior_fast	altos-dep.c	/^kill_inferior_fast ()$/
+length_of_subexp	expread.tab.c	/^length_of_subexp (expr, endpos)$/
+line_info	source.c	/^line_info (arg, from_tty)$/
+list_command	source.c	/^list_command (arg, from_tty)$/
+list_symbols	symtab.c	/^list_symbols (regexp, class)$/
+lit	convex-pinsn.c	/^#define lit(i) op[fmt->i]$/
+locals_info	stack.c	/^locals_info ()$/
+locate_var_value	findvar.c	/^locate_var_value (var, frame)$/
+lookup_basetype_type	symtab.c	/^lookup_basetype_type (type, offset, via_virtual, v/
+lookup_block_symbol	symtab.c	/^lookup_block_symbol (block, name, namespace)$/
+lookup_cmd	command.c	/^lookup_cmd (line, list, cmdtype, allow_unknown, ig/
+lookup_cmd_1	command.c	/^lookup_cmd_1 (text, clist, result_list, ignore_hel/
+lookup_enum	symtab.c	/^lookup_enum (name, block)$/
+lookup_function_type	symtab.c	/^lookup_function_type (type)$/
+lookup_internalvar	values.c	/^lookup_internalvar (name)$/
+lookup_member_type	symtab.c	/^lookup_member_type (type, domain)$/
+lookup_method_type	symtab.c	/^lookup_method_type (type, domain, args)$/
+lookup_misc_func	symtab.c	/^lookup_misc_func (name)$/
+lookup_partial_symbol	symtab.c	/^lookup_partial_symbol (pst, name, global, namespac/
+lookup_partial_symtab	symtab.c	/^lookup_partial_symtab (name)$/
+lookup_pointer_type	symtab.c	/^lookup_pointer_type (type)$/
+lookup_reference_type	symtab.c	/^lookup_reference_type (type)$/
+lookup_struct	symtab.c	/^lookup_struct (name, block)$/
+lookup_struct_elt_type	symtab.c	/^lookup_struct_elt_type (type, name)$/
+lookup_symbol	symtab.c	/^lookup_symbol (name, block, namespace, is_a_field_/
+lookup_symtab	symtab.c	/^lookup_symtab (name)$/
+lookup_symtab_1	symtab.c	/^lookup_symtab_1 (name)$/
+lookup_typename	symtab.c	/^lookup_typename (name, block, noerr)$/
+lookup_union	symtab.c	/^lookup_union (name, block)$/
+lookup_unsigned_typename	symtab.c	/^lookup_unsigned_typename (name)$/
+lseek	standalone.c	/^lseek (desc, pos)$/
+make_blockvector	coffread.c	/^make_blockvector ()$/
+make_cleanup	utils.c	/^make_cleanup (function, arg)$/
+make_environ	environ.c	/^make_environ ()$/
+make_symbol_completion_list	symtab.c	/^make_symbol_completion_list (text)$/
+malloc	malloc.c	/^malloc (n)		\/* get a block *\/$/
+malloc_init	malloc.c	/^malloc_init (start, warnfun)$/
+malloc_mem_free	malloc.c	/^malloc_mem_free ()$/
+malloc_mem_used	malloc.c	/^malloc_mem_used ()$/
+malloc_stats	malloc.c	/^malloc_stats (size)$/
+malloc_usable_size	malloc.c	/^malloc_usable_size (mem)$/
+malloc_warning	standalone.c	/^malloc_warning (str)$/
+map_breakpoint_numbers	breakpoint.c	/^map_breakpoint_numbers (args, function)$/
+mark_breakpoints_out	breakpoint.c	/^mark_breakpoints_out ()$/
+max	defs.h	/^#define max(a, b) ((a) > (b) ? (a) : (b))$/
+memalign	malloc.c	/^memalign (alignment, size)$/
+methods_info	symtab.c	/^methods_info (regexp)$/
+min	defs.h	/^#define min(a, b) ((a) < (b) ? (a) : (b))$/
+modify_field	values.c	/^modify_field (addr, fieldval, bitpos, bitsize)$/
+modify_type	mipscoff.c	/^modify_type(type, qualifier, auxp)$/
+morecore	malloc.c	/^morecore (nu)			\/* ask system for more memory *\//
+my_offsetof	m-hp300bsd.h	/^#define my_offsetof(TYPE, MEMBER) ((unsigned long)/
+myread	core.c	/^myread (desc, addr, len)$/
+new_object_header_files	dbxread.c	/^new_object_header_files ()$/
+new_tty	inflow.c	/^new_tty (ttyname)$/
+next_command	infcmd.c	/^next_command (count_string)$/
+next_symbol_text	dbxread.c	/^next_symbol_text ()$/
+nexti_command	infcmd.c	/^nexti_command (count_string)$/
+normal_stop	infrun.c	/^normal_stop ()$/
+ns32k_get_enter_addr	ns32k-pinsn.c	/^ns32k_get_enter_addr (pc)$/
+ns32k_localcount	ns32k-pinsn.c	/^ns32k_localcount (enter_pc)$/
+oappend	i386-pinsn.c	/^oappend (s)$/
+obconcat	dbxread.c	/^obconcat (s1, s2, s3)$/
+obsavestring	dbxread.c	/^obsavestring (ptr, size)$/
+obstack_1grow	obstack.h	/^#define obstack_1grow(OBSTACK,datum)					\\$/
+obstack_1grow_fast	obstack.h	/^#define obstack_1grow_fast(h,achar) (*((h)->next_f/
+obstack_alignment_mask	obstack.h	/^#define obstack_alignment_mask(h) ((h)->alignment_/
+obstack_alloc	obstack.h	/^#define obstack_alloc(OBSTACK,length)					\\$/
+obstack_base	obstack.h	/^#define obstack_base(h) ((h)->object_base)$/
+obstack_begin	obstack.h	/^#define obstack_begin(h, size) \\$/
+obstack_blank	obstack.h	/^#define obstack_blank(OBSTACK,length)					\\$/
+obstack_blank_fast	obstack.h	/^#define obstack_blank_fast(h,n) ((h)->next_free +=/
+obstack_chunk_size	obstack.h	/^#define obstack_chunk_size(h) ((h)->chunk_size)$/
+obstack_copy	obstack.h	/^#define obstack_copy(OBSTACK,where,length)				\\$/
+obstack_copy0	obstack.h	/^#define obstack_copy0(OBSTACK,where,length)				\\$/
+obstack_finish	obstack.h	/^#define obstack_finish(OBSTACK)  					\\$/
+obstack_free	obstack.h	/^#define obstack_free(OBSTACK, OBJ)					\\$/
+obstack_grow	obstack.h	/^#define obstack_grow(OBSTACK,where,length)				\\$/
+obstack_grow0	obstack.h	/^#define obstack_grow0(OBSTACK,where,length)				\\$/
+obstack_init	obstack.h	/^#define obstack_init(h) \\$/
+obstack_next_free	obstack.h	/^#define obstack_next_free(h)	((h)->next_free)$/
+obstack_object_size	obstack.h	/^#define obstack_object_size(OBSTACK)					\\$/
+obstack_room	obstack.h	/^#define obstack_room(OBSTACK)						\\$/
+one	m68k-opcode.h	/^#define one(x) ((x) << 16)$/
+one_cont_command	convex-dep.c	/^one_cont_command (proc_count_exp, from_tty)$/
+op_bc	mips-opcode.h	/^#define op_bc(x, y, z) ((x << 26) | (y << 21) | (z/
+op_cond	mips-opcode.h	/^#define op_cond(x, y) ((x << 26) | (y << 16))$/
+op_func	mips-opcode.h	/^#define op_func(x, y) ((x << 26) | y)$/
+op_o16	mips-opcode.h	/^#define op_o16(x, y) ((x << 26) | (y << 16))$/
+op_rs_b11	mips-opcode.h	/^#define op_rs_b11(x, y, z) ((x << 26) | (y << 21) /
+op_rs_func	mips-opcode.h	/^#define op_rs_func(x, y, z) ((x << 26) | (y << 21)/
+open	standalone.c	/^open (filename, modes)$/
+openp	source.c	/^openp (path, try_cwd_first, string, mode, prot, fi/
+output_command	printcmd.c	/^output_command (exp)$/
+output_source_filename	symtab.c	/^output_source_filename (name, next)$/
+outside_startup_file	blockframe.c	/^outside_startup_file (addr)$/
+parse_and_eval	eval.c	/^parse_and_eval (exp)$/
+parse_and_eval_address	eval.c	/^parse_and_eval_address (exp)$/
+parse_and_eval_address_1	eval.c	/^parse_and_eval_address_1 (expptr)$/
+parse_binary_operation	main.c	/^parse_binary_operation (caller, arg)$/
+parse_c_1	expread.tab.c	/^parse_c_1 (stringptr, block, comma)$/
+parse_c_expression	expread.tab.c	/^parse_c_expression (string)$/
+parse_escape	utils.c	/^parse_escape (string_ptr)$/
+parse_frame_specification	stack.c	/^parse_frame_specification (frame_exp)$/
+parse_number	expread.tab.c	/^parse_number (olen)$/
+parse_to_comma_and_eval	eval.c	/^parse_to_comma_and_eval (expp)$/
+patch_opaque_types	coffread.c	/^patch_opaque_types ()$/
+patch_type	coffread.c	/^patch_type (type, real_type)$/
+perror_with_name	utils.c	/^perror_with_name (string)$/
+pop_subfile	dbxread.c	/^pop_subfile ()$/
+pop_type	expread.tab.c	/^pop_type ()$/
+prefixify_expression	expread.tab.c	/^prefixify_expression (expr)$/
+prefixify_subexp	expread.tab.c	/^prefixify_subexp (inexpr, outexpr, inend, outbeg)$/
+print_1167_control_word	symmetry-dep.c	/^print_1167_control_word(pcr)$/
+print_1167_regs	symmetry-dep.c	/^print_1167_regs(regs)$/
+print_387_control_word	i386-dep.c	/^print_387_control_word (control)$/
+print_387_status	i386-dep.c	/^print_387_status (status, ep)$/
+print_387_status_word	i386-dep.c	/^print_387_status_word (status)$/
+print_address	printcmd.c	/^print_address (addr, stream)$/
+print_base	m68k-pinsn.c	/^print_base (regno, disp, stream)$/
+print_block_frame_locals	stack.c	/^print_block_frame_locals (b, frame, stream)$/
+print_buf	regex.c	/^print_buf (bufp)$/
+print_button	xgdb.c	/^print_button(w, starflag, call_data)$/
+print_command	printcmd.c	/^print_command (exp)$/
+print_effa	convex-pinsn.c	/^int print_effa (inst, stream)$/
+print_expression	expprint.c	/^print_expression (exp, stream)$/
+print_formatted	printcmd.c	/^print_formatted (val, format, size)$/
+print_fpa_status	symmetry-dep.c	/^print_fpa_status(ep)$/
+print_fpu_status	symmetry-dep.c	/^print_fpu_status(ep)$/
+print_frame_arg_vars	stack.c	/^print_frame_arg_vars (frame, stream)$/
+print_frame_args	printcmd.c	/^print_frame_args (func, fi, num, stream)$/
+print_frame_info	stack.c	/^print_frame_info (fi, level, source, args)$/
+print_frame_local_vars	stack.c	/^print_frame_local_vars (frame, stream)$/
+print_frame_nameless_args	printcmd.c	/^print_frame_nameless_args (argsaddr, start, end, s/
+print_gdb_version	main.c	/^print_gdb_version ()$/
+print_indexed	m68k-pinsn.c	/^print_indexed (basereg, p, addr, stream)$/
+print_insn	convex-pinsn.c	/^print_insn (memaddr, stream)$/
+print_insn_arg	m68k-pinsn.c	/^print_insn_arg (d, buffer, p, addr, stream)$/
+print_maps	convex-dep.c	/^print_maps ()$/
+print_prompt	main.c	/^print_prompt ()$/
+print_scalar_formatted	printcmd.c	/^print_scalar_formatted (valaddr, type, format, siz/
+print_sel_frame	stack.c	/^print_sel_frame (just_source)$/
+print_selected_frame	stack.c	/^print_selected_frame ()$/
+print_source_lines	source.c	/^print_source_lines (s, line, stopline, noerror)$/
+print_spaces	utils.c	/^print_spaces (n, file)$/
+print_spaces_filtered	utils.c	/^print_spaces_filtered (n, stream)$/
+print_stack_frame	stack.c	/^print_stack_frame (frame, level, source)$/
+print_string	valprint.c	/^print_string (stream, string, length, force_ellips/
+print_subexp	expprint.c	/^print_subexp (exp, pos, stream, prec)$/
+print_symbol	symmisc.c	/^print_symbol (symbol, depth, outfile)$/
+print_symtabs	symmisc.c	/^print_symtabs (filename)$/
+print_sys_errmsg	utils.c	/^print_sys_errmsg (string, errcode)$/
+print_variable_value	printcmd.c	/^print_variable_value (var, frame, stream)$/
+printchar	regex.c	/^printchar (c)$/
+printf	standalone.c	/^printf (a1, a2, a3, a4, a5, a6, a7, a8, a9)$/
+printf_command	printcmd.c	/^printf_command (arg)$/
+printf_filtered	utils.c	/^printf_filtered (format, arg1, arg2, arg3, arg4, a/
+proceed	infrun.c	/^proceed (addr, signal, step)$/
+process_coff_symbol	coffread.c	/^process_coff_symbol (cs, aux)$/
+process_one_symbol	dbxread.c	/^process_one_symbol (type, desc, value, name)$/
+program_info	infcmd.c	/^program_info ()$/
+prompt_for_continue	utils.c	/^prompt_for_continue ()$/
+psw_info	convex-dep.c	/^psw_info (arg)$/
+psymtab_to_symtab	coffread.c	/^psymtab_to_symtab ()$/
+psymtab_to_symtab_1	dbxread.c	/^psymtab_to_symtab_1 (pst, desc, stringtab, stringt/
+ptr_cmp	convex-dep.c	/^static ptr_cmp (a, b)$/
+ptrace	standalone.c	/^ptrace ()$/
+ptype_command	printcmd.c	/^ptype_command (typename)$/
+push_bytes	valops.c	/^push_bytes (sp, buffer, len)$/
+push_subfile	dbxread.c	/^push_subfile ()$/
+push_type	expread.tab.c	/^push_type (tp)$/
+push_word	valops.c	/^push_word (sp, buffer)$/
+putop	i386-pinsn.c	/^putop (template)$/
+putpkt	remote.c	/^putpkt (buf)$/
+pwd_command	main.c	/^pwd_command (arg, from_tty)$/
+pyr_do_registers_info	pyr-dep.c	/^pyr_do_registers_info (regnum)$/
+pyr_frame_chain	pyr-pinsn.c	/^CORE_ADDR pyr_frame_chain(frame)$/
+pyr_print_registers	pyr-dep.c	/^pyr_print_registers(reg_buf, regnum)$/
+pyr_saved_pc	pyr-pinsn.c	/^CORE_ADDR pyr_saved_pc(frame)$/
+query	utils.c	/^query (ctlstr, arg1, arg2)$/
+quit	utils.c	/^quit ()$/
+quit_command	main.c	/^quit_command ()$/
+re_comp	regex.c	/^re_comp (s)$/
+re_compile_fastmap	regex.c	/^re_compile_fastmap (bufp)$/
+re_compile_pattern	regex.c	/^re_compile_pattern (pattern, size, bufp)$/
+re_exec	regex.c	/^re_exec (s)$/
+re_match	regex.c	/^re_match (pbufp, string, size, pos, regs)$/
+re_match_2	regex.c	/^re_match_2 (pbufp, string1, size1, string2, size2,/
+re_search	regex.c	/^re_search (pbufp, string, size, startpos, range, r/
+re_search_2	regex.c	/^re_search_2 (pbufp, string1, size1, string2, size2/
+re_set_syntax	regex.c	/^re_set_syntax (syntax)$/
+read_addl_syms	dbxread.c	/^read_addl_syms (desc, stringtab, nlistlen, text_ad/
+read_aout_hdr	coffread.c	/^read_aout_hdr (chan, aout_hdr, size)$/
+read_args	dbxread.c	/^read_args (pp, end)$/
+read_array_type	dbxread.c	/^read_array_type (pp, type)$/
+read_coff_symtab	coffread.c	/^read_coff_symtab (desc, nsyms)$/
+read_comm_register	convex-dep.c	/^read_comm_register (num)$/
+read_command_lines	main.c	/^read_command_lines ()$/
+read_dbx_symtab	dbxread.c	/^read_dbx_symtab (desc, stringtab, stringtab_size, /
+read_enum_type	coffread.c	/^read_enum_type (index, length, lastsym)$/
+read_file_hdr	coffread.c	/^read_file_hdr (chan, file_hdr)$/
+read_inferior_memory	altos-dep.c	/^read_inferior_memory (memaddr, myaddr, len)$/
+read_inferior_register	standalone.c	/^read_inferior_register ()$/
+read_memory	core.c	/^read_memory (memaddr, myaddr, len)$/
+read_memory_integer	infcmd.c	/^read_memory_integer (memaddr, len)$/
+read_number	dbxread.c	/^read_number (pp, end)$/
+read_ofile_symtab	dbxread.c	/^read_ofile_symtab (desc, stringtab, stringtab_size/
+read_one_sym	coffread.c	/^read_one_sym (cs, sym, aux)$/
+read_pc	infcmd.c	/^read_pc ()$/
+read_range_type	dbxread.c	/^read_range_type (pp, typenums)$/
+read_register	findvar.c	/^read_register (regno)$/
+read_register_bytes	findvar.c	/^read_register_bytes (regbyte, myaddr, len)$/
+read_relative_register_raw_bytes	findvar.c	/^read_relative_register_raw_bytes (regnum, myaddr)$/
+read_section_hdr	coffread.c	/^read_section_hdr (chan, section_name, section_hdr,/
+read_struct_type	coffread.c	/^read_struct_type (index, length, lastsym)$/
+read_symbol	mipscoff.c	/^read_symbol(csym, name)$/
+read_symbols	mipscoff.c	/^read_symbols(index)$/
+read_symsegs	symmisc.c	/^read_symsegs (desc, name)$/
+read_table	mipscoff.c	/^read_table(desc, size, offset)$/
+read_tagged_block	mipscoff.c	/^read_tagged_block (index)$/
+read_type	dbxread.c	/^read_type (pp)$/
+read_type_number	dbxread.c	/^read_type_number (pp, typenums)$/
+read_var_value	findvar.c	/^read_var_value (var, frame)$/
+read_vector_register	convex-dep.c	/^read_vector_register (reg)$/
+read_vector_register_1	convex-dep.c	/^read_vector_register_1 (reg) $/
+readchar	remote.c	/^readchar ()$/
+realloc	malloc.c	/^realloc (mem, n)$/
+really_free_pendings	dbxread.c	/^really_free_pendings ()$/
+record_latest_value	values.c	/^record_latest_value (val)$/
+record_line	coffread.c	/^record_line (line, pc)$/
+record_misc_function	coffread.c	/^record_misc_function (name, address)$/
+record_selected_frame	stack.c	/^record_selected_frame (frameaddrp, levelp)$/
+redisplay_button	xgdb.c	/^redisplay_button()$/
+reg	convex-pinsn.c	/^#define reg(a,b) ((char (*)[3])(op[fmt->a]))[inst./
+register_addr	core.c	/^register_addr (regno, blockend)$/
+registers_info	infcmd.c	/^registers_info (addr_exp)$/
+reinitialize_more_filter	utils.c	/^reinitialize_more_filter ()$/
+release_value	values.c	/^release_value (val)$/
+relocate_block	symmisc.c	/^relocate_block (bp)$/
+relocate_blockvector	symmisc.c	/^relocate_blockvector (blp)$/
+relocate_source	symmisc.c	/^relocate_source (sp)$/
+relocate_sourcevector	symmisc.c	/^relocate_sourcevector (svp)$/
+relocate_symbol	symmisc.c	/^relocate_symbol (sp)$/
+relocate_symtab	symmisc.c	/^relocate_symtab (root)$/
+relocate_type	symmisc.c	/^relocate_type (tp)$/
+relocate_typevector	symmisc.c	/^relocate_typevector (tv)$/
+remote_close	remote.c	/^remote_close (from_tty)$/
+remote_fetch_registers	remote.c	/^remote_fetch_registers (regs)$/
+remote_fetch_word	remote.c	/^remote_fetch_word (addr)$/
+remote_open	remote.c	/^remote_open (name, from_tty)$/
+remote_read_bytes	remote.c	/^remote_read_bytes (memaddr, myaddr, len)$/
+remote_read_inferior_memory	remote.c	/^remote_read_inferior_memory(memaddr, myaddr, len)$/
+remote_resume	remote.c	/^remote_resume (step, signal)$/
+remote_send	remote.c	/^remote_send (buf)$/
+remote_store_registers	remote.c	/^remote_store_registers (regs)$/
+remote_store_word	remote.c	/^remote_store_word (addr, word)$/
+remote_timer	remote.c	/^remote_timer ()$/
+remote_wait	remote.c	/^remote_wait (status)$/
+remote_write_bytes	remote.c	/^remote_write_bytes (memaddr, myaddr, len)$/
+remote_write_inferior_memory	remote.c	/^remote_write_inferior_memory (memaddr, myaddr, len/
+remove_breakpoints	breakpoint.c	/^remove_breakpoints ()$/
+remove_step_breakpoint	infrun.c	/^remove_step_breakpoint ()$/
+remque	utils.c	/^remque (item)$/
+reopen_exec_file	core.c	/^reopen_exec_file ()$/
+request_quit	utils.c	/^request_quit ()$/
+restore_cleanups	utils.c	/^restore_cleanups (chain)$/
+restore_gdb	standalone.c	/^restore_gdb ()$/
+restore_inferior_status	infrun.c	/^restore_inferior_status (inf_status)$/
+resume	altos-dep.c	/^resume (step, signal)$/
+return_command	stack.c	/^return_command (retval_exp, from_tty)$/
+return_to_top_level	main.c	/^return_to_top_level ()$/
+reverse_search_command	source.c	/^reverse_search_command (regex, from_tty)$/
+rindex	utils.c	/^rindex (s, c)$/
+round	symmetry-dep.c	/^round(one,two)$/
+run_command	infcmd.c	/^run_command (args, from_tty)$/
+run_stack_dummy	infcmd.c	/^run_stack_dummy (addr, buffer)$/
+save_cleanups	utils.c	/^save_cleanups ()$/
+save_frame_pointer	standalone.c	/^save_frame_pointer (val)$/
+save_inferior_status	infrun.c	/^save_inferior_status (inf_status, restore_stack_in/
+save_registers	standalone.c	/^save_registers (firstreg)$/
+savestring	utils.c	/^savestring (ptr, size)$/
+sbrk	standalone.c	/^sbrk (amount)$/
+scan_file_globals	dbxread.c	/^scan_file_globals ()$/
+scan_stack	convex-dep.c	/^scan_stack (bit, val)$/
+screensize_info	utils.c	/^screensize_info (arg, from_tty)$/
+select_file	mipscoff.c	/^select_file(i)$/
+select_frame	stack.c	/^select_frame (frame, level)$/
+select_source_symtab	source.c	/^select_source_symtab (s)$/
+select_thread	convex-dep.c	/^select_thread (thread)$/
+set_args_command	infcmd.c	/^set_args_command (args)$/
+set_backtrace_limit_command	stack.c	/^set_backtrace_limit_command (count_exp, from_tty)$/
+set_base_command	convex-dep.c	/^set_base_command (arg)$/
+set_breakpoint	breakpoint.c	/^set_breakpoint (s, line, tempflag)$/
+set_breakpoint_commands	breakpoint.c	/^set_breakpoint_commands (cmds)$/
+set_command	printcmd.c	/^set_command (exp)$/
+set_current_frame	blockframe.c	/^set_current_frame (frame)$/
+set_default_breakpoint	breakpoint.c	/^set_default_breakpoint (valid, addr, symtab, line)/
+set_editing	main.c	/^set_editing (arg, from_tty)$/
+set_environment_command	infcmd.c	/^set_environment_command (arg)$/
+set_fixed_scheduling	convex-dep.c	/^set_fixed_scheduling (pid, arg)$/
+set_history	main.c	/^set_history (arg, from_tty)$/
+set_history_expansion	main.c	/^set_history_expansion (arg, from_tty)$/
+set_history_filename	main.c	/^set_history_filename (arg, from_tty)$/
+set_history_size	main.c	/^set_history_size (arg, from_tty)$/
+set_history_write	main.c	/^set_history_write (arg, from_tty)$/
+set_ignore_count	breakpoint.c	/^set_ignore_count (bptnum, count, from_tty)$/
+set_in_environ	environ.c	/^set_in_environ (e, var, value)$/
+set_internalvar	values.c	/^set_internalvar (var, val)$/
+set_internalvar_component	values.c	/^set_internalvar_component (var, offset, bitpos, bi/
+set_maximum_command	valprint.c	/^set_maximum_command (arg)$/
+set_momentary_breakpoint	breakpoint.c	/^set_momentary_breakpoint (sal, frame)$/
+set_next_address	printcmd.c	/^set_next_address (addr)$/
+set_parallel_command	convex-dep.c	/^set_parallel_command (arg)$/
+set_pipelining_command	convex-dep.c	/^set_pipelining_command (arg)$/
+set_prettyprint_command	valprint.c	/^set_prettyprint_command (arg, from_tty)$/
+set_prompt_command	main.c	/^set_prompt_command (text)$/
+set_raw_breakpoint	breakpoint.c	/^set_raw_breakpoint (sal)$/
+set_return_value	values.c	/^set_return_value (val)$/
+set_screensize_command	utils.c	/^set_screensize_command (arg, from_tty)$/
+set_thread_command	convex-dep.c	/^set_thread_command (arg)$/
+set_trapped_internalvar	convex-dep.c	/^set_trapped_internalvar (var, val, bitpos, bitsize/
+set_unionprint_command	valprint.c	/^set_unionprint_command (arg, from_tty)$/
+set_verbose_command	main.c	/^set_verbose_command (arg, from_tty)$/
+setpgrp	standalone.c	/^setpgrp ()$/
+setup_arbitrary_frame	sparc-dep.c	/^setup_arbitrary_frame (frame, stack)$/
+shell_escape	command.c	/^shell_escape (arg, from_tty)$/
+sig_noop	convex-dep.c	/^static sig_noop () $/
+sigemt	m68k-pinsn.c	/^sigemt()$/
+sign_extend	ns32k-pinsn.c	/^sign_extend (value, bits)$/
+signal_command	infcmd.c	/^signal_command (signum_exp, from_tty)$/
+signal_stack_is_empty	convex-dep.c	/^#define signal_stack_is_empty() (signal_stack->pid/
+signals_info	infrun.c	/^signals_info (signum_exp)$/
+sigsetmask	standalone.c	/^sigsetmask ()$/
+single_step	sparc-dep.c	/^single_step (signal)$/
+skip_prologue	sparc-dep.c	/^skip_prologue (pc)$/
+smash_to_function_type	symtab.c	/^smash_to_function_type (type, to_type)$/
+smash_to_member_type	symtab.c	/^smash_to_member_type (type, domain, to_type)$/
+smash_to_method_type	symtab.c	/^smash_to_method_type (type, domain, to_type, args)/
+smash_to_pointer_type	symtab.c	/^smash_to_pointer_type (type, to_type)$/
+smash_to_reference_type	symtab.c	/^smash_to_reference_type (type, to_type)$/
+sort_block_syms	symtab.c	/^sort_block_syms (b)$/
+sort_proc_descs	mipscoff.c	/^sort_proc_descs ()$/
+sort_syms	coffread.c	/^sort_syms ()$/
+sort_symtab_syms	dbxread.c	/^sort_symtab_syms (s)$/
+source_charpos_line	source.c	/^source_charpos_line (s, chr)$/
+source_cleanup	main.c	/^source_cleanup (stream)$/
+source_command	main.c	/^source_command (arg, from_tty)$/
+source_line_charpos	source.c	/^source_line_charpos (s, line)$/
+sources_info	symtab.c	/^sources_info ()$/
+specify_exec_file_hook	core.c	/^specify_exec_file_hook (hook)$/
+start	kdb-start.c	/^start ()$/
+start_arglist	expread.tab.c	/^start_arglist ()$/
+start_inferior	infrun.c	/^start_inferior ()$/
+start_of_data	malloc.c	/^#define start_of_data() &etext$/
+start_psymtab	dbxread.c	/^start_psymtab (filename, textlow, ldsymoff, global/
+start_remote	infrun.c	/^start_remote ()$/
+start_subfile	dbxread.c	/^start_subfile (name)$/
+start_symtab	coffread.c	/^start_symtab ()$/
+step_1	infcmd.c	/^step_1 (skip_subroutines, single_inst, count_strin/
+step_command	infcmd.c	/^step_command (count_string)$/
+stepi_command	infcmd.c	/^stepi_command (count_string)$/
+stop_sig	main.c	/^stop_sig ()$/
+store_inferior_register	hp9k320-dep.c	/^  store_inferior_register (regno, regaddr)$/
+store_inferior_register_1	hp9k320-dep.c	/^  store_inferior_register_1 (regno, regaddr, value/
+store_inferior_registers	altos-dep.c	/^store_inferior_registers (regno)$/
+store_jump	regex.c	/^store_jump (from, opcode, to)$/
+subsig_name	convex-dep.c	/^subsig_name (signo, subcode)$/
+supply_register	findvar.c	/^supply_register (regno, val)$/
+symbol_completion_function	main.c	/^symbol_completion_function (text, state)$/
+symbol_file_command	coffread.c	/^symbol_file_command (name)$/
+symmetry_extract_return_value	symmetry-dep.c	/^symmetry_extract_return_value(type, regbuf, valbuf/
+sys_sbrk	malloc.c	/^sys_sbrk (incr)$/
+tbreak_command	breakpoint.c	/^tbreak_command (arg, from_tty)$/
+term_status_command	inflow.c	/^term_status_command ()$/
+terminal_inferior	inflow.c	/^terminal_inferior ()$/
+terminal_init_inferior	inflow.c	/^terminal_init_inferior ()$/
+terminal_ours	inflow.c	/^terminal_ours ()$/
+terminal_ours_1	inflow.c	/^terminal_ours_1 (output_only)$/
+terminal_ours_for_output	inflow.c	/^terminal_ours_for_output ()$/
+thread_continue	convex-dep.c	/^thread_continue (thread, step, signal)$/
+thread_info	convex-dep.c	/^thread_info ()$/
+threadstat	convex-dep.c	/^threadstat ()$/
+tohex	remote.c	/^tohex (nib)$/
+try_writing_regs_command	inflow.c	/^try_writing_regs_command ()$/
+tty_command	infcmd.c	/^tty_command (file, from_tty)$/
+two	m68k-opcode.h	/^#define two(x, y) (((x) << 16) + y)$/
+type_print	valprint.c	/^type_print (type, varstring, stream, show)$/
+type_print_1	valprint.c	/^type_print_1 (type, varstring, stream, show, level/
+type_print_base	valprint.c	/^type_print_base (type, stream, show, level)$/
+type_print_derivation_info	valprint.c	/^type_print_derivation_info (stream, type)$/
+type_print_method_args	valprint.c	/^type_print_method_args (args, prefix, varstring, s/
+type_print_varspec_prefix	valprint.c	/^type_print_varspec_prefix (type, stream, show, pas/
+type_print_varspec_suffix	valprint.c	/^type_print_varspec_suffix (type, stream, show, pas/
+typecmp	valops.c	/^typecmp (staticp, t1, t2)$/
+types_info	symtab.c	/^types_info (regexp)$/
+ulimit	standalone.c	/^ulimit ()$/
+undisplay_command	printcmd.c	/^undisplay_command (args)$/
+unop_user_defined_p	valarith.c	/^int unop_user_defined_p (op, arg1)$/
+unpack_double	values.c	/^unpack_double (type, valaddr, invp)$/
+unpack_field_as_long	values.c	/^unpack_field_as_long (type, valaddr, fieldno)$/
+unpack_long	values.c	/^unpack_long (type, valaddr)$/
+unrecord_misc_function	coffread.c	/^unrecord_misc_function ()$/
+unset_environment_command	infcmd.c	/^unset_environment_command (var, from_tty)$/
+unset_in_environ	environ.c	/^unset_in_environ (e, var)$/
+until_break_command	breakpoint.c	/^until_break_command (arg, from_tty)$/
+until_command	infcmd.c	/^until_command (arg, from_tty)$/
+until_next_command	infcmd.c	/^until_next_command (arg, from_tty)$/
+up_command	stack.c	/^up_command (count_exp)$/
+using_struct_return	values.c	/^using_struct_return (function, funcaddr, value_typ/
+val_print	valprint.c	/^val_print (type, valaddr, address, stream, format,/
+validate_comname	main.c	/^validate_comname (comname)$/
+validate_files	core.c	/^validate_files ()$/
+validate_format	printcmd.c	/^validate_format (fmt, cmdname)$/
+valloc	malloc.c	/^valloc (size)$/
+value_add	valarith.c	/^value_add (arg1, arg2)$/
+value_addr	valops.c	/^value_addr (arg1)$/
+value_arg_coerce	valops.c	/^value_arg_coerce (arg)$/
+value_arg_push	valops.c	/^value_arg_push (sp, arg)$/
+value_as_double	values.c	/^value_as_double (val)$/
+value_as_long	values.c	/^value_as_long (val)$/
+value_assign	valops.c	/^value_assign (toval, fromval)$/
+value_at	valops.c	/^value_at (type, addr)$/
+value_being_returned	values.c	/^value_being_returned (valtype, retbuf, struct_retu/
+value_binop	valarith.c	/^value_binop (arg1, arg2, op)$/
+value_cast	valops.c	/^value_cast (type, arg2)$/
+value_coerce_array	valops.c	/^value_coerce_array (arg1)$/
+value_copy	values.c	/^value_copy (arg)$/
+value_equal	valarith.c	/^value_equal (arg1, arg2)$/
+value_field	values.c	/^value_field (arg1, fieldno)$/
+value_fn_field	values.c	/^value_fn_field (arg1, fieldno, subfieldno)$/
+value_from_double	values.c	/^value_from_double (type, num)$/
+value_from_long	values.c	/^value_from_long (type, num)$/
+value_from_register	findvar.c	/^value_from_register (type, regnum, frame)$/
+value_history_info	values.c	/^value_history_info (num_exp, from_tty)$/
+value_ind	valops.c	/^value_ind (arg1)$/
+value_less	valarith.c	/^value_less (arg1, arg2)$/
+value_lognot	valarith.c	/^value_lognot (arg1)$/
+value_neg	valarith.c	/^value_neg (arg1)$/
+value_of_internalvar	values.c	/^value_of_internalvar (var)$/
+value_of_register	findvar.c	/^value_of_register (regnum)$/
+value_of_this	valops.c	/^value_of_this (complain)$/
+value_of_trapped_internalvar	convex-dep.c	/^value_of_trapped_internalvar (var)$/
+value_of_variable	valops.c	/^value_of_variable (var)$/
+value_print	valprint.c	/^value_print (val, stream, format, pretty)$/
+value_push	valops.c	/^value_push (sp, arg)$/
+value_repeat	valops.c	/^value_repeat (arg1, count)$/
+value_static_field	values.c	/^value_static_field (type, fieldname, fieldno)$/
+value_string	valops.c	/^value_string (ptr, len)$/
+value_struct_elt	valops.c	/^value_struct_elt (arg1, args, name, static_memfunc/
+value_struct_elt_for_address	valops.c	/^value_struct_elt_for_address (domain, intype, name/
+value_sub	valarith.c	/^value_sub (arg1, arg2)$/
+value_subscript	valarith.c	/^value_subscript (array, idx)$/
+value_subscripted_rvalue	valarith.c	/^value_subscripted_rvalue (array, idx)$/
+value_virtual_fn_field	values.c	/^value_virtual_fn_field (arg1, f, j, type)$/
+value_x_binop	valarith.c	/^value_x_binop (arg1, arg2, op, otherop)$/
+value_x_unop	valarith.c	/^value_x_unop (arg1, op)$/
+value_zero	valops.c	/^value_zero (type, lv)$/
+value_zerop	valarith.c	/^value_zerop (arg1)$/
+variables_info	symtab.c	/^variables_info (regexp)$/
+vector_type	convex-dep.c	/^vector_type (element_type, length)$/
+verbose_info	main.c	/^verbose_info (arg, from_tty)$/
+version_info	main.c	/^version_info ()$/
+vfork	m-i386.h	/^#define vfork() fork()$/
+vlimit	standalone.c	/^vlimit ()$/
+vprintf	m-convex.h	/^#define vprintf(format, ap) _doprnt (format, ap, s/
+wait	convex-dep.c	/^wait (w)$/
+wait_for_inferior	infrun.c	/^wait_for_inferior ()$/
+warranty_info	copying.c	/^warranty_info ()$/
+whatis_command	printcmd.c	/^whatis_command (exp)$/
+write_comm_register	convex-dep.c	/^write_comm_register (num, val)$/
+write_exp_elt	expread.tab.c	/^write_exp_elt (expelt)$/
+write_exp_elt_dblcst	expread.tab.c	/^write_exp_elt_dblcst (expelt)$/
+write_exp_elt_intern	expread.tab.c	/^write_exp_elt_intern (expelt)$/
+write_exp_elt_longcst	expread.tab.c	/^write_exp_elt_longcst (expelt)$/
+write_exp_elt_opcode	expread.tab.c	/^write_exp_elt_opcode (expelt)$/
+write_exp_elt_sym	expread.tab.c	/^write_exp_elt_sym (expelt)$/
+write_exp_elt_type	expread.tab.c	/^write_exp_elt_type (expelt)$/
+write_exp_string	expread.tab.c	/^write_exp_string (str)$/
+write_inferior_memory	altos-dep.c	/^write_inferior_memory (memaddr, myaddr, len)$/
+write_inferior_register	standalone.c	/^write_inferior_register ()$/
+write_memory	core.c	/^write_memory (memaddr, myaddr, len)$/
+write_pc	infcmd.c	/^write_pc (val)$/
+write_register	findvar.c	/^write_register (regno, val)$/
+write_register_bytes	findvar.c	/^write_register_bytes (regbyte, myaddr, len)$/
+write_vector_register	convex-dep.c	/^write_vector_register (reg, element, val)$/
+writing_pc	infrun.c	/^writing_pc (val)$/
+x_command	printcmd.c	/^x_command (exp, from_tty)$/
+xfer_core_file	convex-dep.c	/^xfer_core_file (memaddr, myaddr, len)$/
+xgdb_create_window	xgdb.c	/^xgdb_create_window ()$/
+xgdb_dispatch	xgdb.c	/^xgdb_dispatch (fp)$/
+xgdb_display_exec_file	xgdb.c	/^xgdb_display_exec_file (filename)$/
+xgdb_display_source	xgdb.c	/^xgdb_display_source ()$/
+xgdb_window_hook	xgdb.c	/^xgdb_window_hook (infile, prompt)$/
+xmalloc	utils.c	/^xmalloc (size)$/
+xrealloc	utils.c	/^xrealloc (ptr, size)$/
+xxmalloc	dbxread.c	/^xxmalloc (n)$/
+yyerror	expread.tab.c	/^yyerror ()$/
+yylex	expread.tab.c	/^yylex ()$/
+yyparse	expread.tab.c	/^yyparse()$/

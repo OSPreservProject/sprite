@@ -1,0 +1,209 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.6
+date     90.02.20.11.50.10;  author douglis;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.11.30.13.56.41;  author rab;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.10.09.06.55.48;  author rab;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.10.02.10.05.16;  author rab;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.02.09.11.50.08;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.01.09.10.55.39;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.6
+log
+@tried to add some consistency to ::/: operators, and fixed tve's TYPE==personal complaint
+@
+text
+@#
+# Included makefile for managing a directory containing only public
+# header file sources.
+#
+# $Header: /sprite/lib/pmake/RCS/man.mk,v 1.5 89/11/30 13:56:41 rab Exp $ SPRITE (Berkeley)
+#
+# The makefile that includes this one should already have defined the
+# following variables:
+#	INCLUDEDIR	place to install public header files
+#	MANPAGES	list of all manual pages in this directory.
+#	NAME		name of this subdirectory within the manual area.
+#	TYPE		a keyword identifying which portion of the
+#			system these man pages belong to ("sprite" for
+#			the Sprite system code, "x" for X-related
+#			programs, etc.).
+#
+# Optional variables that may be defined by the invoker:
+#	INSTALLFLAGS	additional flags to pass to install scripts.
+#
+
+#
+# System programs -- assign conditionally so they may be redefined in
+# including makefile
+#
+BINDIR		= /sprite/cmds.$(MACHINE)
+
+CHGRP		?= $(BINDIR)/chgrp
+CHMOD		?= $(BINDIR)/chmod
+CHOWN		?= $(BINDIR)/chown
+CP		?= $(BINDIR)/cp
+ECHO		?= $(BINDIR)/echo
+MV		?= $(BINDIR)/mv
+RM		?= $(BINDIR)/rm
+TEST            ?= $(BINDIR)/test
+UPDATE		?= $(BINDIR)/update
+
+#
+# Some variables (such as where to install) are set based on the
+# TYPE variable.  Of course, any of these variables can be overridden
+# by explicit assignments.
+#
+TYPE		?= unknown
+#if !empty(TYPE:Msprite)
+INSTALLMAN	?= /sprite/man/$(NAME)
+#elif !empty(TYPE:Mx)
+INSTALLMAN	?= /X/man/$(NAME)
+#endif
+
+INSTALLFLAGS	?=
+INSTALLMANFLAGS	?=
+
+.MAKEFLAGS	: -C
+
+#ifndef no_targets
+
+default			: # Says nothing, does nothing.
+
+clean			!
+	$(RM) -f *~
+
+install			:: installman
+#if empty(MANPAGES)
+installman		:: .SILENT
+	echo "There are no man pages for $(NAME).  Please write some."
+#elif defined(INSTALLMAN)
+installman		:: .SILENT $(MANPAGES)
+	$(UPDATE) -m 444 -l $(INSTALLMANFLAGS) $(MANPAGES) $(INSTALLMAN)
+#else
+installman		:: .SILENT
+	echo "Can't install man page(s): no install directory defined"
+#endif
+
+mkmf			:: .SILENT
+	mkmf
+
+newtm		 	: # Says nothing, does nothing.
+
+dist        !
+#if defined(DISTDIR) && !empty(DISTDIR)
+	for i in Makefile local.mk $(MANPAGES)
+	do
+	if $(TEST) -e $${i}; then
+	    $(UPDATE)  $${i} $(DISTDIR)/$${i} ;else true; fi
+	done
+#endif
+
+#endif no_targets
+@
+
+
+1.5
+log
+@Changed dist: to dist!,
+@
+text
+@d5 1
+a5 1
+# $Header: /sprite/lib/pmake/RCS/man.mk,v 1.4 89/10/09 06:55:48 rab Exp Locker: rab $ SPRITE (Berkeley)
+d63 1
+a63 1
+installman		: .SILENT
+d66 1
+a66 1
+installman		: .SILENT $(MANPAGES)
+d69 1
+a69 1
+installman		: .SILENT
+@
+
+
+1.4
+log
+@Fixed distribution stuff.
+@
+text
+@d5 1
+a5 1
+# $Header: /sprite/lib/pmake/RCS/man.mk,v 1.3 89/10/02 10:05:16 rab Exp Locker: rab $ SPRITE (Berkeley)
+d78 1
+a78 1
+dist:
+@
+
+
+1.3
+log
+@Added Distribution stuff.
+@
+text
+@d5 1
+a5 1
+# $Header: /sprite/lib/pmake/RCS/man.mk,v 1.2 89/02/09 11:50:08 douglis Exp Locker: rab $ SPRITE (Berkeley)
+d34 1
+d77 9
+@
+
+
+1.2
+log
+@make installman depend on manpages in case
+local.mk defines extra dependencies to recreate manpages.
+@
+text
+@d5 1
+a5 1
+# $Header: /sprite/lib/pmake/RCS/man.mk,v 1.1 89/01/09 10:55:39 ouster Exp Locker: douglis $ SPRITE (Berkeley)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d5 1
+a5 1
+# $Header: /sprite/lib/pmake/RCS/hdrs.mk,v 1.8 88/11/23 17:28:13 ouster Exp $ SPRITE (Berkeley)
+d65 1
+a65 1
+installman		: .SILENT
+@

@@ -1,0 +1,27 @@
+DBCreateElt	hdb.c	/^DBCreateElt(type, pointlist, brush, size, text, db/
+DBGetType	hdb.c	/^DBGetType(s)$/
+DBInit	hdb.c	/^DBInit()$/
+DBRead	hdb.c	/^DBRead(file)$/
+HGPrintElt	hgraph.c	/^HGPrintElt(element)$/
+HGPutText	hgraph.c	/^HGPutText(justify,pnt,string)$/
+HGSetBrush	hgraph.c	/^HGSetBrush(mode)$/
+HGSetFont	hgraph.c	/^HGSetFont(font, size)$/
+Mmain	main.c	/^main(argc, argv)$/
+PTInit	hpoint.c	/^PTInit()$/
+PTMakePoint	hpoint.c	/^PTMakePoint(x, y, pplist)$/
+conv	main.c	/^conv(fp)$/
+cr	hgraph.c	/^cr()$/
+doarc	hgraph.c	/^doarc (cp, sp, angle)$/
+doinput	main.c	/^char *doinput(fp)$/
+dx	hgraph.c	/^dx(x)$/
+dy	hgraph.c	/^dy(y)$/
+error	main.c	/^error(s, a1, a2, a3, a4)$/
+getres	main.c	/^getres(name)$/
+has_polygon	main.c	/^has_polygon(elist)$/
+initpic	main.c	/^initpic()$/
+interpret	main.c	/^interpret (line)$/
+len	hgraph.c	/^#define  len(a, b)	sqrt((b.x-a.x) * (b.x-a.x) + (b/
+operand	main.c	/^char *operand(argcp, argvp)$/
+savebounds	main.c	/^savebounds(x, y)$/
+savestate	main.c	/^savestate()$/
+tmove	hgraph.c	/^tmove(ptr)$/

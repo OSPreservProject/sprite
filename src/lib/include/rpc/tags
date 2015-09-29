@@ -1,0 +1,66 @@
+AUTH_DESTROY	auth.h	/^#define AUTH_DESTROY(auth)		\\$/
+AUTH_MARSHALL	auth.h	/^#define AUTH_MARSHALL(auth, xdrs)	\\$/
+AUTH_NEXTVERF	auth.h	/^#define AUTH_NEXTVERF(auth)		\\$/
+AUTH_REFRESH	auth.h	/^#define AUTH_REFRESH(auth)		\\$/
+AUTH_VALIDATE	auth.h	/^#define AUTH_VALIDATE(auth, verfp)	\\$/
+CLNT_ABORT	clnt.h	/^#define	CLNT_ABORT(rh)	((*(rh)->cl_ops->cl_abort)(/
+CLNT_CALL	clnt.h	/^#define	CLNT_CALL(rh, proc, xargs, argsp, xres, re/
+CLNT_CONTROL	clnt.h	/^#define	CLNT_CONTROL(cl,rq,in) ((*(cl)->cl_ops->cl/
+CLNT_DESTROY	clnt.h	/^#define	CLNT_DESTROY(rh)	((*(rh)->cl_ops->cl_destr/
+CLNT_FREERES	clnt.h	/^#define	CLNT_FREERES(rh,xres,resp) ((*(rh)->cl_ops/
+CLNT_GETERR	clnt.h	/^#define	CLNT_GETERR(rh,errp)	((*(rh)->cl_ops->cl_g/
+IXDR_GET_BOOL	xdr.h	/^#define IXDR_GET_BOOL(buf)		((bool_t)IXDR_GET_LONG/
+IXDR_GET_ENUM	xdr.h	/^#define IXDR_GET_ENUM(buf, t)		((t)IXDR_GET_LONG(b/
+IXDR_GET_LONG	xdr.h	/^#define IXDR_GET_LONG(buf)		((long)ntohl((u_long)*/
+IXDR_GET_SHORT	xdr.h	/^#define IXDR_GET_SHORT(buf)		((short)IXDR_GET_LONG/
+IXDR_GET_U_LONG	xdr.h	/^#define IXDR_GET_U_LONG(buf)		((u_long)IXDR_GET_LO/
+IXDR_GET_U_SHORT	xdr.h	/^#define IXDR_GET_U_SHORT(buf)		((u_short)IXDR_GET_/
+IXDR_PUT_BOOL	xdr.h	/^#define IXDR_PUT_BOOL(buf, v)		IXDR_PUT_LONG((buf)/
+IXDR_PUT_ENUM	xdr.h	/^#define IXDR_PUT_ENUM(buf, v)		IXDR_PUT_LONG((buf)/
+IXDR_PUT_LONG	xdr.h	/^#define IXDR_PUT_LONG(buf, v)		(*(buf)++ = (long)h/
+IXDR_PUT_SHORT	xdr.h	/^#define IXDR_PUT_SHORT(buf, v)		IXDR_PUT_LONG((buf/
+IXDR_PUT_U_LONG	xdr.h	/^#define IXDR_PUT_U_LONG(buf, v)		IXDR_PUT_LONG((bu/
+IXDR_PUT_U_SHORT	xdr.h	/^#define IXDR_PUT_U_SHORT(buf, v)	IXDR_PUT_LONG((bu/
+RNDUP	xdr.h	/^#define RNDUP(x)  ((((x) + BYTES_PER_XDR_UNIT - 1)/
+SVC_DESTROY	svc.h	/^#define SVC_DESTROY(xprt)				\\$/
+SVC_FREEARGS	svc.h	/^#define SVC_FREEARGS(xprt, xargs, argsp)		\\$/
+SVC_GETARGS	svc.h	/^#define SVC_GETARGS(xprt, xargs, argsp)			\\$/
+SVC_RECV	svc.h	/^#define SVC_RECV(xprt, msg)				\\$/
+SVC_REPLY	svc.h	/^#define SVC_REPLY(xprt, msg)				\\$/
+SVC_STAT	svc.h	/^#define SVC_STAT(xprt)					\\$/
+XDR_DESTROY	xdr.h	/^#define	XDR_DESTROY(xdrs)				\\$/
+XDR_GETBYTES	xdr.h	/^#define XDR_GETBYTES(xdrs, addr, len)			\\$/
+XDR_GETLONG	xdr.h	/^#define XDR_GETLONG(xdrs, longp)			\\$/
+XDR_GETPOS	xdr.h	/^#define XDR_GETPOS(xdrs)				\\$/
+XDR_INLINE	xdr.h	/^#define	XDR_INLINE(xdrs, len)				\\$/
+XDR_PUTBYTES	xdr.h	/^#define XDR_PUTBYTES(xdrs, addr, len)			\\$/
+XDR_PUTLONG	xdr.h	/^#define XDR_PUTLONG(xdrs, longp)			\\$/
+XDR_SETPOS	xdr.h	/^#define XDR_SETPOS(xdrs, pos)				\\$/
+auth_destroy	auth.h	/^#define auth_destroy(auth)		\\$/
+auth_marshall	auth.h	/^#define auth_marshall(auth, xdrs)	\\$/
+auth_nextverf	auth.h	/^#define auth_nextverf(auth)		\\$/
+auth_refresh	auth.h	/^#define auth_refresh(auth)		\\$/
+auth_validate	auth.h	/^#define auth_validate(auth, verfp)	\\$/
+clnt_abort	clnt.h	/^#define	clnt_abort(rh)	((*(rh)->cl_ops->cl_abort)(/
+clnt_call	clnt.h	/^#define	clnt_call(rh, proc, xargs, argsp, xres, re/
+clnt_control	clnt.h	/^#define	clnt_control(cl,rq,in) ((*(cl)->cl_ops->cl/
+clnt_destroy	clnt.h	/^#define	clnt_destroy(rh)	((*(rh)->cl_ops->cl_destr/
+clnt_freeres	clnt.h	/^#define	clnt_freeres(rh,xres,resp) ((*(rh)->cl_ops/
+clnt_geterr	clnt.h	/^#define	clnt_geterr(rh,errp)	((*(rh)->cl_ops->cl_g/
+mem_alloc	types.h	/^#define mem_alloc(bsize)	malloc(bsize)$/
+mem_free	types.h	/^#define mem_free(ptr, bsize)	free(ptr)$/
+svc_destroy	svc.h	/^#define svc_destroy(xprt)				\\$/
+svc_freeargs	svc.h	/^#define svc_freeargs(xprt, xargs, argsp)		\\$/
+svc_getargs	svc.h	/^#define svc_getargs(xprt, xargs, argsp)			\\$/
+svc_getcaller	svc.h	/^#define svc_getcaller(x) (&(x)->xp_raddr)$/
+svc_recv	svc.h	/^#define svc_recv(xprt, msg)				\\$/
+svc_reply	svc.h	/^#define svc_reply(xprt, msg)				\\$/
+svc_stat	svc.h	/^#define svc_stat(xprt)					\\$/
+xdr_destroy	xdr.h	/^#define	xdr_destroy(xdrs)				\\$/
+xdr_getbytes	xdr.h	/^#define xdr_getbytes(xdrs, addr, len)			\\$/
+xdr_getlong	xdr.h	/^#define xdr_getlong(xdrs, longp)			\\$/
+xdr_getpos	xdr.h	/^#define xdr_getpos(xdrs)				\\$/
+xdr_inline	xdr.h	/^#define	xdr_inline(xdrs, len)				\\$/
+xdr_putbytes	xdr.h	/^#define xdr_putbytes(xdrs, addr, len)			\\$/
+xdr_putlong	xdr.h	/^#define xdr_putlong(xdrs, longp)			\\$/
+xdr_setpos	xdr.h	/^#define xdr_setpos(xdrs, pos)				\\$/

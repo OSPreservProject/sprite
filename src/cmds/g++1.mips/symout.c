@@ -1,0 +1,1 @@
+../cc/g++-dist/symout.c

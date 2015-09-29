@@ -1,0 +1,21 @@
+%BIIHEAD.STY  If this is included after \documentstyle{report}, it adds
+% an underlined heading style to the LaTeX report style.
+% \pagestyle{biiheadings} will put underlined headings at the top
+% of each page. The right page headings are the Chapter titles and
+% the left page titles are supplied by \def\lefthead{text}.
+
+% Ted Shapin, Dec. 17, 1986
+
+\makeatletter
+\def\ps@biiheadings{\let\@mkboth\markboth
+\def\@oddhead{\protect\makebox[0pt][l]{\protect\underline
+             {\protect\makebox[\textwidth][l]{\sl\rightmark\hfill\rm\thepage}}}}
+\def\@oddfoot{}
+\def\@evenhead{\protect\makebox[0pt][l]{\protect\underline
+              {\protect\makebox[\textwidth][l]
+              {\rm\thepage\hfill\sl\lefthead}}}}
+\def\lefthead{}
+\def\chaptermark##1{\markright {\uppercase{%
+\@chapapp\ \thechapter.\ ##1}}}
+\def\@evenfoot{}\def\sectionmark##1{}\def\subsectionmark##1{}}
+\makeatother

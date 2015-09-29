@@ -1,0 +1,5 @@
+F DEPENDEN.MK;1                     	dependencies.mk
+F MD.MK;1                           	md.mk
+F MKTTY.;1                          	mktty
+F MKTTY.O;1                         	mktty.o
+F PDEV.O;1                          	pdev.o

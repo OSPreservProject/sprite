@@ -1,0 +1,104 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     89.07.14.09.15.39;  author rab;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.06.29.14.48.26;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.21.16.12.57;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@*** empty log message ***
+@
+text
+@/*
+ * Copyright (c) 1982, 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@@(#)ttydev.h	7.2 (Berkeley) 10/13/86
+ */
+
+/*
+ * Terminal definitions related to underlying hardware.
+ */
+#ifndef _TTYDEV
+#define	_TTYDEV
+
+/*
+ * Speeds
+ */
+#define B0	0
+#define B50	1
+#define B75	2
+#define B110	3
+#define B134	4
+#define B150	5
+#define B200	6
+#define B300	7
+#define B600	8
+#define B1200	9
+#define	B1800	10
+#define B2400	11
+#define B4800	12
+#define B9600	13
+#define EXTA	14
+#define EXTB	15
+
+#endif /* _TTYDEV */
+@
+
+
+1.2
+log
+@Add ifdefs to prevent files from being included multiple times.
+@
+text
+@d35 1
+a35 1
+#endif _TTYDEV
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d12 2
+a13 2
+#ifndef _TTYDEV_
+#define	_TTYDEV_
+d35 1
+a35 10
+#ifdef KERNEL
+/*
+ * Modem control commands.
+ */
+#define	DMSET		0
+#define	DMBIS		1
+#define	DMBIC		2
+#define	DMGET		3
+#endif
+#endif
+@

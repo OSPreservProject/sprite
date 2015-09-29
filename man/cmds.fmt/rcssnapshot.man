@@ -1,0 +1,68 @@
+
+
+
+<RCSSNAPSHOT>             User Commands             <RCSSNAPSHOT>
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     rcssnapshot - Move all RCS'ed files to a new version number
+
+SSYYNNOOPPSSIISS
+     rrccssssnnaappsshhoott [_o_p_t_i_o_n_s] _c_h_e_c_k_p_o_i_n_t-_n_a_m_e
+
+OOPPTTIIOONNSS
+     --rr_r_e_v         Check in all  files  as  the  revision  number
+                   specified by _r_e_v.
+
+_________________________________________________________________
+
+DDEESSCCRRIIPPTTIIOONN
+     This program assigns a symbolic name to all files controlled
+     by  RCS  in the current directory.  If the "--rr_r_e_v" option is
+     given, it checks  in  each  file   as  revision  _r_e_v  before
+     assigning  the  symbolic name. No files in the directory may
+     be checked out at the time rrccssssnnaappsshhoott is run.
+
+     As an example, consider a directory with three files:
+
+          File      Version
+          file1          2.3
+          file2          2.2
+          file3          2.2
+     If the command rrccssssnnaappsshhoott --rr33..00 wwiinntteerr8899  is  issued,  then
+     all  three  files  will have RCS version number 3.0, and may
+     also be referenced  in  the  future  by  the  symbolic  name
+     _w_i_n_t_e_r_8_9.
+
+KKEEYYWWOORRDDSS
+     RCS, version
+
+SSEEEE AALLSSOO
+     rcs
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  January 24, 1990                   1
+
+
+

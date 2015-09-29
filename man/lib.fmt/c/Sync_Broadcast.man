@@ -1,0 +1,68 @@
+
+
+
+Sync_Broadcast        C Library Procedures         Sync_Broadcast
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Sync_Broadcast - awaken all processes waiting on a condition
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyynncc..hh>>
+     SSyynncc__BBrrooaaddccaasstt(_c_o_n_d_i_t_i_o_n_P_t_r)
+
+AARRGGUUMMEENNTTSS
+     Sync_Condition   *_c_o_n_d_i_t_i_o_n_P_t_r   (in)      Condition   vari-
+                                                able   for  which
+                                                processes may  be
+                                                awaiting  notifi-
+                                                cation.
+
+_________________________________________________________________
+
+DDEESSCCRRIIPPTTIIOONN
+     SSyynncc__BBrrooaaddccaasstt notifies other processes that a condition has
+     been  met.   If  no process is awaiting this condition, then
+     the call has no effect.  If more than one process  is  wait-
+     ing,  all  of  them  will be awakened simultaneously and may
+     execute in any order.  This routine needs to be called  with
+     the monitor lock held.
+
+SSEEEE AALLSSOO
+     Sync, Sync_Wait
+
+KKEEYYWWOORRDDSS
+     synchronization, wait, block,  process,  monitor,  condition
+     variable, wakeup, broadcast
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  February 28, 1991                  1
+
+
+

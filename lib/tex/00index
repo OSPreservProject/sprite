@@ -1,0 +1,164 @@
+Last modified April 13th, 1988.
+
+Note: I use the shorthand notation [1-9] to mean any character from 1
+to 9, and * to mean any string. The archive server does not understand
+wildcards of these forms, please explicitly name all files.
+
+The convention is that a .doc file contains both documentation and what
+goes in the .sty file. So if the .sty file is inaccesible, try asking
+for the .doc file.
+
+File			Description
+
+doublespace.sty		Double spacing in text
+drafthead.sty		Prints DRAFT in heading
+
+siam10.doc		SIAM LaTeX style and BibTeX style
+siam10.sty
+siam11.sty
+siam12.sty
+siam.doc
+siam.sty
+siam.bst		***** Needs BibTeX 0.99b *****
+siam.tex
+siam.bib
+
+ieeetr.bst		IEEE Transactions BibTeX style
+acm.bst			ACM BibTeX style
+			***** Need BibTeX 0.99b *****
+
+vdm.tex			Vienna Development Method LaTeX style
+vdm.doc
+vdm.sty
+
+suthesis.doc		Stanford U thesis style
+suthesis.sty
+
+deproc.sty		DECUS proceedings style
+deprocldc.tex		Paper that describes the above
+
+docsty.shar		Program to convert .doc to .sty by stripping comments
+
+fullpage.doc		Get more out of a page
+slem.doc		Change \sl to \em
+nopagenumbers.doc	Remove page numbers
+texnames.doc		Define a couple more TeX names
+newalpha.bst		Modified alphabetic BibTeX style
+spacecites.doc		Modified to give spacing between citations
+
+wsltex.shar		Wordstar to LaTeX filter, C and Pascal versions
+
+layout.tex		Prints nice diagram showing page parameters
+layout.readme
+
+ucthesis.readme		U of California thesis style
+ucthesis.doc
+uct10.doc
+uct11.doc
+uct12.doc
+
+lfonts_ams.readme	Use AMS symbols in LaTeX
+lfonts_ams.tex
+
+a4.sty			Set page size to A4
+a4wide.sty		Adjusts width too to suit A4
+biihead.sty		Underlined heading
+
+epic.shar1		Sh archive of extended picture environment
+epic.shar2
+lgraph.shar		Sh archive of data to graph command filter in Pascal
+
+dvidoc.shar1		Sh archive of DVIDOC, DVI to character device filter
+dvidoc.shar2		for Unix BSD systems
+
+threepart.sty		Three part page headers
+
+format.sty		Print FP numbers in fixed format
+texindex.shar		Style file and processor for index entries for VMS
+
+amssymbols.sty		Load AMS font
+cyrillic.sty		Load Cyrillic font
+
+agugrl.sty		AGU Geophysical Research Letters style
+agujgr.sty		AGU Journal of Geophysical Research style
+agugrl-sample.tex	Sample files
+agujgr-sample.tex
+geophysics.sty		Geophysics journal style
+natsci.bst		natural sciences generic BibTeX style
+natsci.sty		formats citations created with natsci.bst
+mitthesis.sty		Massachusetts Institute of Technology thesis format
+resume.sty		a format for doing resumes
+mitthesis-sample.tex	Sample files
+resume-sample.tex
+
+aaai.sty		Style file for AAAI conference 1988
+aaai-named-0.98.bst	BibTeX style for version 0.98
+aaai-named-0.99.bst	BibTeX style for version 0.99
+aaai-instructions.tex	Instructions to authors
+
+dayofweek.tex		Macros to compute day of week and phase of moon
+			Examples of how to use TeX arithmetic capabilities
+
+lcustom.tex		Useful macros and definitions for LaTeX
+sfwmac.sty		Useful macros for Unix documentation
+tgrind.sty		Tgrind macros for LaTeX instead of TeX
+trademark.sty		Definitions of common trademarks
+xxxcustom.tex		Supplementary macros for xxx-tex, for some xxx
+xxxslides.sty		Supplementary macros for SliTeX, includes slides.sty
+captcont.sty		Auxiliary file needed
+
+local-suppl.tex		Supplement to local guide that describes last 6 files
+
+remark.sty		Like newtheorem but no \it
+
+sc21.sty
+sc21-wg1.sty		ISO/TC97/SC21 document style option for cover page
+
+ist21.sty		IST21 document style option for cover page
+
+memo.sty		Memo style option
+mfr.sty			Modifier to above
+
+german.sty		Style file for German
+
+titlepage.txt		Standard style files in text format, with places to
+article.txt		make language specific changes indicated
+art10.txt
+art11.txt
+art12.txt
+
+showlabels.sty		Shows labels and references to them
+
+draft.sty		Draft option for documents for "debugging"
+
+nl.sty			Style file customized for Dutch
+
+espo.sty		Style file for Esperanto
+
+shapiro-btxbst-0.98.doc
+shapiro-btxbst-0.98.readme
+shapiro-makebst.sh
+			A master file for BibTeX styles with standard
+			styles and some new ones. Also a Unix sh script
+			to generate the styles
+
+alltt.sty		Like verbatim, but permits other commands inside
+
+apalike.doc		LaTeX and BibTeX style files for a APA-like
+apalike.sty		style (APA = Amer. Psychological Association)
+apalike.bst		***** Needs BibTeX 0.99b *****
+
+drop.doc		Style for making large dropped initials for
+drop.sty		starting paragraphs
+
+bsf.doc			Provide access to bold san serif fonts in LaTeX
+bsf.sty
+
+schedule.doc		Style for generating schedule sheets
+schedule.sty
+
+manual.readme		Like ``book'' but for manuals
+manual.sty		Need to look at ``book'' for documentation
+man10.sty
+man11.sty
+man12.sty

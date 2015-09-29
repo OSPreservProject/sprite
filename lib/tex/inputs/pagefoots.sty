@@ -1,0 +1,182 @@
+% A footnote-numbering style from Brian T. Schellenberger.  v1.0.
+% This is redistributable by anybody to anybody for any price.
+% I only ask that you credit me for it, and that if you make any
+% changes and distribute them to anybody else at all, you (1) send
+% them back to me, and (2) note who made them so that any different
+% versions of this floating around may be distinguished.
+
+% The first think here is my begin definitions environment.  It is
+% an environment for programming, and is seperate from the footnote-
+% related stuff.  I find it convenient, and it is needed for my other
+% code to work.  I also use symbolic names for all catcodes in my 
+% programming, but I've gotten that out of this code for greater ease
+% of use by the great wide world out there.
+
+% The footnote code itself.
+% 1. This code resets foot notes on each page.  It needs two passes
+%    to do this correctly, although it comes as close as possible on
+%    the first pass.  You generally make two passes with LaTeX anyway,
+%    to get cross-references right, so this shouldn't be a problem.
+%    It uses the aux file like everything else.
+% 2. It also uses the \fnsymbol to "number" the footnotes.  This is
+%    controlled by the first line of \newfoots.
+% 3. It gets rid of the usual footnote rule, and inserts more vertical
+%    space for footnotes.  This is also easy to see/control in the
+%    \newfoots command.
+% 4. Most of this code simply makes the "new" footnotes stuff available;
+%    you can include all of this except the last line in a style file
+%    and only say \newfoots if you want them, or you include it all
+%    and say \restorefoots for the files where you don't want it.
+% 5. \restorefoots and/or \newfoots are only guarenteed to work right
+%    in the preamble.
+% 6. I don't think I depend on anything funny in LaTeX, but in case
+%    this falls apart totally, I am running the 29-Apr-87 LaTeX.
+
+
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+%----definitions: within \begin{definitions} (which does not really define
+%    a group), spacing means nothing.  Use \space for a space character
+%    and \par for a blank line, for those rare instances where they are
+%    really desired.  Also, @ is seen as a letter.  All these are reversed
+%    and \end{definitions}---\E{even if} they had the same catagories before!
+%    These should not be nested but, unfortunately, there is no way to tell.
+
+
+\newif\ifatletter
+
+\newenvironment {definitions}
+  {
+  \endgroup     % doesn't really nest
+  \ifcat @a \atlettertrue \else \atletterfalse \fi
+                % \catcode`\ =\ignoreC \catcode`\^^M=\ignoreC
+  \makeatletter   \catcode`\ =9        \catcode`\^^M=9        
+  }%
+  {
+               % \catcode`\ =\spaceC \catcode`\^^M=\nlC
+  \makeatother   \catcode`\ =10      \catcode`\^^M=5   
+  \ifatletter \makeatletter \fi
+  \def \@currenvir {definitions}
+  \begingroup   % doesn't really nest
+  }
+
+%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+\begin{definitions}
+
+%-----\my@footnote: stuff for handling my footnote stuff
+
+% NOTE: This corrects it on the second pass, based on the page numbers
+%       on the first pass.  Both this and other cross-reference stuff
+%       will need to be run TWICE again if tables of contents, lists of
+%       figures, &c. are paginated with the main material.
+
+\def \my@footnote
+  {
+  \if@minipage\else    % In a minipage, we can't cross a page.
+     \edef \tmp@name {ft@\thepage-\the\c@footnote}
+     \expandafter\expandafter\expandafter\ifx
+        \expandafter\csname\tmp@name\endcsname \relax
+     \else
+        % DEFINED:  replace footnote marker
+        \edef\tmp@b{\expandafter\csname\tmp@name\endcsname}
+        \begingroup
+           \c@footnote = \tmp@b
+           \xdef \@thefnmark {\thefootnote}
+        \endgroup
+     \fi % end \ifx ... \else DEFINED
+
+     \if@filesw
+        \edef \fttmp@
+           {
+           \write\@auxout
+              {
+              \string\newfoot@mark{\thepage}
+                 {\the\c@footnote}{\noexpand\thepage}
+              }
+           }
+        \fttmp@
+     \fi % end \if@filesw
+  \fi % end \if@minipage
+  }
+
+% \newfoot@mark:
+% #1:  nominal page it occurs on, as by \thepage.
+% #2:  nominal footnote number on that page.
+% #3:  actual page it occurs on, as by \thepage.
+
+\newcount\ft@page    \ft@page = 0
+\newcount\ft@foot    \ft@foot = 0
+
+\def \newfoot@mark #1#2#3
+  {
+  \ifdigit{#3}
+     \ifnum #3 < \ft@page \ft@page=0
+     \else\ifnum #3 > \ft@page \ft@page=#3 \ft@foot=0
+     \fi\fi
+  \else \ft@page=0
+  \fi
+
+  \addtolength\ft@foot{1}
+  \def\tmp@a{#2}
+  \edef\tmp@b{\the\ft@foot}
+  \ifx \tmp@a\tmp@b \else
+     \expandafter \xdef \csname ft@#1-#2\endcsname {\the\ft@foot}
+  \fi
+  }
+
+\newif\ifisdigit
+\def \ifdigit #1 {\digithelp #1 \digithelpend}
+\def \digithelp#1#2\digithelpend
+  {
+  \isdigitfalse
+  \if0#1\isdigittrue\fi \if1#1\isdigittrue\fi \if2#1\isdigittrue\fi
+  \if3#1\isdigittrue\fi \if4#1\isdigittrue\fi \if5#1\isdigittrue\fi
+  \if4#1\isdigittrue\fi \if5#1\isdigittrue\fi \if6#1\isdigittrue\fi
+  \if7#1\isdigittrue\fi \if8#1\isdigittrue\fi \if9#1\isdigittrue\fi
+  \ifisdigit
+  }
+
+
+\def \newfoots
+  {
+  \renewcommand \thefootnote   {\fnsymbol{footnote}}  %only if you want!
+  \renewcommand \thempfootnote {\arabic{footnote}}
+  \renewcommand \footnoterule {}
+  \skip\footins = 16pt plus 6pt minus 4pt
+  \@addtoreset{footnote}{page}
+  \let \cur@footnote = \my@footnote
+  }
+
+% NOTE: \restorefoots MUST be called before anything else is added to
+%       \cl@page => do NOT move the \@@cl@page into the .static. file,
+%       and do it at the very end of mytex.sty.  Also, if \stdfoots
+%       are desired, they should be the first thing restored---and
+%       \E{definately} in the preamble.
+
+\def \restorefoots
+  {
+  \renewcommand \thefootnote   {\arabic{footnote}}
+  \renewcommand \thempfootnote {\alph{mpfootnote}}
+  \let \footnoterule = \@@footnoterule
+  \skip\footins = \bigskipamount
+  \let \cl@page = \@@cl@page
+  \let \cur@footnote = \relax
+  }
+
+\def \footnote
+  {
+  \@ifnextchar [
+     {\@xfootnote}  %else, no optional argument:
+     {
+     \stepcounter{\@mpfn}
+     \xdef\@thefnmark{\thempfn}
+     \cur@footnote
+     \@footnotemark\@footnotetext
+     }
+  }
+
+\end{definitions}
+
+
+\newfoots

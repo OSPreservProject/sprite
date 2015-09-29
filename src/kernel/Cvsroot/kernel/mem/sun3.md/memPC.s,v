@@ -1,0 +1,186 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  ds3100:1.4 sun3:1.4 sun4nw:1.4 symm:1.4 spur:1.4;
+locks    ; strict;
+comment  @| @;
+
+
+1.4
+date     91.10.30.12.57.27;  author mgbaker;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.02.24.22.00.08;  author mgbaker;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.02.14.10.33.11;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.02.14.10.32.32;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Mem_CallerPC assembly stub
+@
+
+
+1.4
+log
+@*** empty log message ***
+@
+text
+@/* 
+ * memPC.s --
+ *
+ * 	Procedures for obtain the PC of the caller of a routine.
+ *
+ *  $Header: /sprite/src/kernel/mem/sun2.md/RCS/memPC.s,v 1.3 89/02/24 22:00:08 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+ *
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+ */
+
+
+#if	defined(VAX) || defined(vax) || defined(uvax)
+
+/*
+ * The stack layout on a VAX when Mem_CallerPC is called. The calls instruction
+ * on the VAX updates the frame pointer, so we have to go back two levels
+ * on the stack to get the PC of the call to Mem_Alloc/Free.
+ *
+ *   Foo calls Mem_Alloc (or Mem_Free):
+ *
+ * Top of the stack (it grows down from here)
+ *    +----------------------------+
+ *    | ... (Foo's frame)          |
+ *    |----------------------------|
+ *    | Arg. to Mem_Alloc          |
+ *    |----------------------------|
+ *    | # of args to Mem_Alloc     |
+ *    |----------------------------|
+ * 16 | PC of "calls Mem_Alloc"    |	2) left in r0
+ *    |----------------------------|
+ * 12 | Foo's FP                   |
+ *    |----------------------------|
+ *  8 | Foo's AP                   |
+ *    |----------------------------|
+ *  4 | mask/PSW                   |
+ *    |----------------------------|
+ *  0 | condition handler          | :Mem_Alloc's FP
+ *    |----------------------------|
+ *    | local variables            |
+ *    |----------------------------|
+ * 16 | PC of "calls Mem_CallerPC" |
+ *    |----------------------------|
+ * 12 | Mem_Alloc's FP             |	1) copy to r0
+ *    |----------------------------|
+ *  8 | Mem_Alloc's AP             |
+ *    |----------------------------|
+ *  4 | mask/PSW                   |
+ *    |----------------------------|
+ *  0 | condition handler          | :Mem_CallerPC's FP
+ *    +----------------------------+
+ */
+
+	.globl	_Mem_CallerPC
+_Mem_CallerPC:
+	.word 0
+	movl	12(fp),r0	/* 1) r0 = fp of caller */
+	movl	16(r0),r0	/* 2) r0 = pc with fp */
+	ret
+
+#endif	defined(VAX) || defined(vax) || defined(uvax)
+
+
+#if	defined(mc68000) || defined(sun2) || defined(sun3)
+/*
+ * The stack layout on a MC680?? when Mem_CallerPC is called. The routine 
+ * doesn't use a link instruction so it is still using Mem_Alloc/Free's 
+ * frame pointer (reg. a6).
+ *
+ *   Foo calls Mem_Alloc (or Mem_Free):
+ *
+ * Top of the stack (it grows down from here)
+ *   +----------------------------+
+ *   | ....                       |
+ *   |----------------------------|
+ *   | Saved Foo's caller FP      |
+ *   |----------------------------|
+ *   | Saved registers, local var |
+ *   |----------------------------|
+ * 4 | PC of "jsr Mem_Alloc"      |
+ *   |----------------------------|
+ * 0 | Saved Foo's FP             | :A6 (Mem_Alloc's FP)
+ *   |----------------------------|
+ *   | Saved registers, local var |
+ *   |----------------------------|
+ *   | PC of "jsr Mem_CallerPC"   |
+ *   |----------------------------|
+ *   | ....                       | :SP
+ *   +----------------------------+
+ */
+
+	.globl	_Mem_CallerPC
+_Mem_CallerPC:
+	movl	a6@@(4),d0	/* PC of the caller of Mem_Alloc. */
+	rts
+
+#endif	defined(mc68000) || defined(SUN2) || defined(SUN3)
+
+#ifdef sun4
+#include "machConst.h"
+.globl	_Mem_CallerPC
+_Mem_CallerPC:
+	/* the pc of the caller of the routine that called us is in i7. */
+	mov	%RETURN_ADDR_REG_CHILD, %RETURN_VAL_REG
+	retl	/* return from leaf routine */
+	nop
+#endif /* sun4 */
+@
+
+
+1.3
+log
+@Fourteenth Kernel for sun4.  Added mem module, so the assembler
+routine was needed for the sun4 as well.
+@
+text
+@d6 1
+a6 1
+ *  $Header: /sprite/src/kernel/mem/sun2.md/RCS/memPC.s,v 1.2 89/02/14 10:33:11 brent Exp Locker: mgbaker $ SPRITE (Berkeley)
+d101 1
+@
+
+
+1.2
+log
+@Fixed SUN2 SUN3 to be sun2 sun3
+@
+text
+@d6 1
+a6 1
+ *  $Header: /sprite/src/kernel/mem/sun2.md/RCS/memPC.s,v 1.1 89/02/14 10:32:32 brent Exp Locker: brent $ SPRITE (Berkeley)
+d98 9
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d6 1
+a6 1
+ *  $Header: memPC.s,v 2.0 87/09/03 19:00:38 andrew Exp $ SPRITE (Berkeley)
+d64 1
+a64 1
+#if	defined(mc68000) || defined(SUN2) || defined(SUN3)
+@

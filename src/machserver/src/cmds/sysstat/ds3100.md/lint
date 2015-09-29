@@ -1,0 +1,10 @@
+sysstat.c:
+Sys_GetMachineInfo, arg. 2 used inconsistently	llib-lc:syscalls.c(376)  ::  sysstat.c(183)
+seminfo defined( /users/kupfer/spriteserver/include/user/sys/sem.h(125) ), but never used
+sema defined( /users/kupfer/spriteserver/include/user/sys/sem.h(164) ), but never used
+sem defined( /users/kupfer/spriteserver/include/user/sys/sem.h(165) ), but never used
+semmap defined( /users/kupfer/spriteserver/include/user/sys/sem.h(166) ), but never used
+sem_undo defined( /users/kupfer/spriteserver/include/user/sys/sem.h(167) ), but never used
+semu defined( /users/kupfer/spriteserver/include/user/sys/sem.h(168) ), but never used
+fprintf returns value which is always ignored
+printf returns value which is always ignored

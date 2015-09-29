@@ -1,0 +1,6 @@
+This directory contains header files corresponding to those that would
+be in /usr/include/sys under a UNIX system.  In several places headers
+have been abbreviated to leave out information that appears to be used
+only in the UNIX kernel.  As more and more programs get compiled using
+this library, it will undoubtedly become necessary to add more information
+to these header files.

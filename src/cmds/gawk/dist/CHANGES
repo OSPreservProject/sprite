@@ -1,0 +1,197 @@
+Changes from 2.11beta to 2.11.1 (production)
+--------------------------------------------
+
+Went from "beta" to production status!!!
+
+Now flushes stdout before closing pipes or redirected files to
+synchonize output.
+
+MS-DOS changes added in.
+
+Signal handler return type parameterized in Makefile and awk.h and
+some lint removed.  debug.c cleaned up.
+
+Fixed FS splitting to never match null strings, per book.
+
+Correction to the manual's description of FS.
+
+Some compilers break on char *foo = "string" + 4 so fixed version.sh and
+main.c.
+
+Changes from 2.10beta to 2.11beta
+---------------------------------
+
+This release fixes all reported bugs that we could reproduce.  Probably
+some of the changes are not documented here.
+
+The next release will probably not be a beta release!
+
+The most important change is the addition of the -nostalgia option. :-)
+
+The documentation has been improved and brought up-to-date.
+
+There has been a lot of general cleaning up of the code that is not otherwise
+documented here.  There has been a movement toward using standard-conforming
+library routines and providing them (in missing.d) for systems lacking them.
+Improved (hopefully) configuration through Makfile modifications and missing.c.
+In particular, straightened out confusion over vprintf #defines, declarations
+etc.
+
+Deleted RCS log comments from source, to reduce source size by about one third.
+Most of them were horribly out-of-date, anyway.
+
+Renamed source files to reflect (for the most part) their contents.
+
+More and improved error messages.  Cleanup and fixes to yyerror().
+String constants are not altered in input buffer, so error messages come out 
+better.  Fixed usage message.  Make use of ANSI C strerror() function
+(provided).
+
+Plugged many more memory leaks.  The memory consumption is now quite
+reasonable over a wide range of programs.
+
+Uses volatile declaration if STDC > 0 to avoid problems due to longjmp.
+
+New -a and -e options to use awk or egrep style regexps, respectively,
+since POSIX says awk should use egrep regexps.  Default is -a.
+
+Added -v option for setting variables before the first file is encountered.
+Version information now uses -V and copyleft uses -C.
+
+Added a patchlevel.h file and its use for -V and -C.
+
+Append_right() optimized for major improvement to programs with a *lot*
+of statements.
+
+Operator precedence has been corrected to match draft Posix.
+
+Tightened up grammar for builtin functions so that only length
+may be called without arguments or parentheses.
+
+/regex/ is now a normal expression that can appear in any expression
+context.
+
+Allow /= to begin a regexp.  Allow ..[../..].. in a regexp.
+
+Allow empty compound statements ({}).
+
+Made return and next illegal outside a function and in BEGIN/END respectively.
+
+Division by zero is now illegal and causes a fatal error.
+
+Fixed exponentiation so that x ^ 0 and x ^= 0 both return 1.
+
+Fixed do_sqrt, do_log, and do_exp to do argument/return checking and
+print an error message, per the manual.
+
+Fixed main to catch SIGSEGV to get source and data file line numbers.
+
+Fixed yyerror to print the ^ at the beginning of the bad token, not the end.
+
+Fix to substr() builtin:  it was failing if the arguments
+weren't already strings.
+
+Added new node value flag NUMERIC to indicate that a variable is
+purely a number as opposed to type NUM which indicates that
+the node's numeric value is valid.  This is set in make_number(),
+tmp_number and r_force_number() when appropriate and used in
+cmp_nodes().  This fixed a bug in comparison of variables that had
+numeric prefixes.  The new code uses strtod() and eliminates is_a_number().
+A simple strtod() is provided for systems lacking one.  It does no
+overflow checking, so could be improved.
+
+Simplification and efficiency improvement in force_string.
+
+Added performance tweak in r_force_number().
+
+Fixed a bug with nested loops and break/continue in functions.
+
+Fixed inconsistency in handling of empty fields when $0 has to be rebuilt.
+Happens to simplify rebuild_record().
+
+Cleaned up the code associated with opening a pipe for reading.  Gawk
+now has its own popen routine (gawk_popen) that allocates an IOBUF
+and keeps track of the pid of the child process.  gawk_pclose
+marks the appropriate child as defunct in the right struct redirect.
+
+Cleaned up and fixed close_redir().
+
+Fixed an obscure bug to do with redirection.  Intermingled ">" and ">>"
+redirects did not output in a predictable order.
+
+Improved handling of output bufferring:  now all print[f]s redirected to a tty
+or pipe are flushed immediately and non-redirected output to a tty is flushed
+before the next input record is read.
+
+Fixed a bug in get_a_record() where bcopy() could have copied over
+a random pointer.
+
+Fixed a bug when RS="" and records separated by multiple blank lines.
+
+Got rid of SLOWIO code which was out-of-date anyway.
+
+Fix in get_field() for case where $0 is changed and then $(n) are
+changed and then $0 is used.
+
+Fixed infinite loop on failure to open file for reading from getline.
+Now handles redirect file open failures properly.
+
+Filenames such as /dev/stdin now allowed on the command line as well as
+in redirects.
+
+Fixed so that gawk '$1' where $1 is a zero tests false.
+
+Fixed parsing so that `RLENGTH -1' parses the same as `RLENGTH - 1',
+for example.
+
+The return from a user-defined function now defaults to the Null node.
+This fixes a core-dump-causing bug when the return value  of a function
+is used and that function returns no value.
+
+Now catches floating point exceptions to avoid core dumps.
+
+Bug fix for deleting elements of an array -- under some conditions, it was
+deleting more than one element at a time.
+
+Fix in AWKPATH code for running off the end of the string.
+
+Fixed handling of precision in *printf calls.  %0.2d now works properly,
+as does %c.  [s]printf now recognizes %i and %X.
+
+Fixed a bug in printing of very large (>240) strings.
+
+Cleaned up erroneous behaviour for RS == "".
+
+Added IGNORECASE support to index().
+
+Simplified and fixed newnode/freenode.
+
+Fixed reference to $(anything) in a BEGIN block.
+
+Eliminated use of USG rand48().
+
+Bug fix in force_string for machines with 16-bit ints.
+
+Replaced use of mktemp() with tmpnam() and provided a partial implementation of
+the latter for systems that don't have it.
+
+Added a portability check for includes in io.c.
+
+Minor portability fix in alloc.c plus addition of xmalloc().
+
+Portability fix:  on UMAX4.2, st_blksize is zero for a pipe, thus breaking
+iop_alloc() -- fixed.
+
+Workaround for compiler bug on Sun386i in do_sprintf.
+
+More and improved prototypes in awk.h.
+
+Consolidated C escape parsing code into one place.
+
+strict flag is now turned on only when invoked with compatability option.
+It now applies to fewer things.
+
+Changed cast of f._ptr in vprintf.c from (unsigned char *) to (char *).
+Hopefully this is right for the systems that use this code (I don't).
+
+Support for pipes under MSDOS added.

@@ -1,0 +1,1229 @@
+head     8.10;
+branch   ;
+access   ;
+symbols  sun4nw:8.10 symm:8.10 spur:8.10 newlib:8.0;
+locks    ; strict;
+comment  @ * @;
+
+
+8.10
+date     89.11.27.14.44.53;  author jhh;  state Exp;
+branches ;
+next     8.9;
+
+8.9
+date     89.10.12.11.53.15;  author brent;  state Exp;
+branches ;
+next     8.8;
+
+8.8
+date     89.08.11.11.57.09;  author jhh;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.08.01.20.41.29;  author jhh;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.07.12.11.57.13;  author nelson;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.06.19.14.00.20;  author jhh;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.03.15.17.42.10;  author mendel;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.02.01.13.18.27;  author brent;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.01.11.10.09.33;  author mendel;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.30.10.44.24;  author mendel;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.25.47;  author douglis;  state Stable;
+branches ;
+next     1.4;
+
+1.4
+date     88.11.11.15.42.17;  author david;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.10.21.14.08.54;  author mendel;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.08.20.11.07.24;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.08.16.14.24.17;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+8.10
+log
+@added an abortive attempt to do idle ticks counting better, converted
+to new file system naming.
+@
+text
+@/* 
+ *  main.c --
+ *
+ *	The main program for Sprite: initializes modules and creates
+ *	system processes. Also creates a process to run the Init program.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/main/spur.md/RCS/mainInit.c,v 8.9 89/10/12 11:53:15 brent Exp Locker: jhh $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+#include "dbg.h"
+#include "dev.h"
+#include "net.h"
+#include "mach.h"
+#include "fsutil.h"
+#include "proc.h"
+#include "prof.h"
+#include "recov.h"
+#include "rpc.h"
+#include "sched.h"
+#include "sig.h"
+#include "sync.h"
+#include "sys.h"
+#include "timer.h"
+#include "vm.h"
+#include "machMon.h"
+#include "devAddrs.h"
+#include "user/sysStats.h"
+#include "mach.h"
+
+extern void Fs_WakeupProc();
+extern void Fs_HandleScavenge();
+
+static void StartSlaveProcessors();
+
+/*
+ *  Pathname of the Init program.
+ */
+#define INIT	 	"cmds/initsprite"
+
+/*
+ * Flags defined in individual's mainHook.c to modify the startup behavior. 
+ */
+
+extern Boolean main_Debug;	/* If TRUE then enter the debugger */
+extern Boolean main_DoProf;	/* If TRUE then start profiling */
+extern Boolean main_DoDumpInit;	/* If TRUE then initialize dump routines */
+extern Boolean main_AllowNMI;	/* If TRUE then allow non-maskable interrupts.*/
+extern char   *main_AltInit;	/* If non-null, then it gives name of
+				 * alternate init program. */
+
+extern int main_NumRpcServers;	/* # of rpc servers to spawn off */
+extern void Main_HookRoutine();	/* routine to allow custom initialization */
+extern void Main_InitVars();
+
+int main_PrintInitRoutines = FALSE;
+				/* print out each routine as it's called? */
+
+extern	Address	vmMemEnd;	/* The end of allocated kernel memory. */
+
+static void	Init();
+static void	Init2();
+
+int	bootProgress = 0;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	All kernel modules are initialized by calling their *_Init()
+ *	routines. In addition, kernel processes are created to
+ *	handle virtual memory and rpc-specific stuff. The last process
+ *	created runs the `init' program.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The whole system is initialized.
+ *
+ *----------------------------------------------------------------------
+ */
+
+main()
+{
+    int		pid;
+    int		i;
+    char	*SpriteVersion();
+
+    bootProgress = 1; 
+    led_display(bootProgress,0,0);
+    /*
+     * Initialize variables specific to a given kernel.  
+     * IMPORTANT: Only variable assignments and nothing else can be
+     *		  done in this routine.
+     */
+    Main_InitVars();
+
+    /*
+     * Initialize machine dependent info.  MUST BE CALLED HERE!!!.
+     */
+    bootProgress = 2;
+    led_display(bootProgress,0,0);
+    Mach_Init();
+    Sync_Init();
+
+    bootProgress = 3;
+    led_display(bootProgress,0,0);
+    /*
+     * Initialize the debugger.
+     */
+    Dbg_Init();
+
+    /*
+     * Initialize the system module, particularly the fact that there is an
+     * implicit DISABLE_INTR on every processor.
+     */
+
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Sys_Init().\n");
+    }
+    bootProgress = 4;
+    led_display(bootProgress,0,0);
+    Sys_Init();
+
+    /*
+     * Now allow memory to be allocated by the "Vm_BootAlloc" call.  Memory
+     * can be allocated by this method until "Vm_Init" is called.  After this
+     * then the normal memory allocator must be used.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Vm_BootInit().\n");
+    }
+    bootProgress = 5;
+    led_display(bootProgress,0,0);
+    Vm_BootInit();
+
+    /*
+     * Initialize all devices.
+     */
+
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Dev_Init().\n");
+    }
+    bootProgress = 6;
+    led_display(bootProgress,0,0);
+    Dev_Init();
+
+    /*
+     * Initialize the timer, signal, process, scheduling and synchronization
+     * modules' data structures.
+     */
+    Proc_Init();
+    Sync_LockStatInit();
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Timer_Init().\n");
+    }
+    bootProgress = 7;
+    led_display(bootProgress,0,0);
+    Timer_Init();
+
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Sig_Init().\n");
+    }
+    bootProgress = 8;
+    led_display(bootProgress,0,0);
+    Sig_Init();
+
+
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Sched_Init().\n");
+    }
+    bootProgress = 10;
+    led_display(bootProgress,0,0);
+    Sched_Init();
+
+    bootProgress = 11;
+    led_display(bootProgress,0,0);
+
+    /*
+     * printfs are not allowed before this point.
+     */  
+
+    printf("Sprite kernel: %s\n", SpriteVersion());
+
+    /*
+     * Set up bins for the memory allocator.
+     */
+    Fs_Bin();
+    Net_Bin();
+
+    /*
+     * Initialize virtual memory.  After this point must use the normal
+     * memory allocator to allocate memory.  If you use Vm_BootAlloc then
+     * will get a panic into the debugger.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Vm_Init\n");
+    }
+    bootProgress = 12;
+    led_display(bootProgress,0,0);
+    Vm_Init();
+
+    /*
+     * Mem_Alloc can be called from this point on.
+     */
+
+    /*
+     * Initialize the main process. Must be called before any new 
+     * processes are created.
+     * Dependencies: Proc_InitTable, Sched_Init, Vm_Init, Mem_Init
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Proc_InitMainProc\n");
+    }
+    bootProgress = 13;
+    led_display(bootProgress,0,0);
+    Proc_InitMainProc();
+
+    /*
+     * Enable server process manager.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Proc_ServerInit\n");
+    }
+    bootProgress = 14;
+    led_display(bootProgress,0,0);
+    Proc_ServerInit();
+
+    /*
+     * Initialize the ethernet drivers.
+     * Dependencies: Vm_Init
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Net_Init\n");
+    }
+    bootProgress = 15;
+    led_display(bootProgress,0,0);
+    Net_Init();
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Net_RouteInit\n");
+    }
+    Net_RouteInit();
+
+    /*
+     * Initialize the recovery module.  Do before Rpc and after Vm_Init.
+     */
+
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Recov_Init\n");
+    }
+    bootProgress = 16;
+    led_display(bootProgress,0,0);
+    Recov_Init();
+
+    /*
+     * Initialize the data structures for the Rpc system.  This uses
+     * Vm_RawAlloc to so it must be called after Vm_Init.
+     * Dependencies: Timer_Init, Vm_Init, Net_Init, Recov_Init
+     */
+
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Rpc_Init\n");
+    }
+    led_display(bootProgress,0,0);
+    bootProgress = 17;
+    Rpc_Init();
+
+    /*
+     * Configure devices that may or may not exist.  This needs to be
+     * done after Proc_InitMainProc because the initialization routines
+     * use SetJump which uses the proc table entry for the main process.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Dev_Config\n");
+    }
+    bootProgress = 18;
+    led_display(bootProgress,0,0);
+    Dev_Config();
+
+    /*
+     * Initialize profiling after the timer and vm stuff is set up.
+     * Dependencies: Timer_Init, Vm_Init
+     */
+
+    if (main_DoProf) {
+	Prof_Init();
+    }
+
+    /*
+     *  Allow interrupts from now on.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Enabling interrupts\n");
+    }
+    bootProgress =  19;
+    led_display(bootProgress,0,0);
+    if (main_Debug) {
+	ENABLE_INTR();
+	DBG_CALL;
+    }
+    /*
+     * Sleep for a few seconds to calibrate the idle time ticks.
+     */
+    bootProgress =  20;
+    led_display(bootProgress,0,0);
+    ENABLE_TIMER_INTR();
+    Sched_TimeTicks();
+    DISABLE_INTR();
+    ENABLE_INTR();
+
+    /*
+     * Start profiling, if desired.
+     */
+
+    if (main_DoProf) {
+        Prof_Start();
+    }
+
+    /*
+     * Do an initial RPC to get a boot timestamp.  This allows
+     * servers to detect when we crash and reboot.  This will set the
+     * system clock too, although rdate is usually done from user level later.
+     */
+
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Call Rpc_Start\n");
+    }
+    bootProgress = 21;
+    led_display(bootProgress,0,0);
+    Rpc_Start();
+
+    /*
+     * Initialize the file system. 
+     */
+
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Call Fs_Init\n");
+    }
+    bootProgress = 22;
+    led_display(bootProgress,0,0);
+    Fs_Init();
+
+    /*
+     * Before starting up any more processes get a current directory
+     * for the main process.  Subsequent new procs will inherit it.
+     */ 
+
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Call Fs_ProcInit\n");
+    }
+    bootProgress = 23;
+    led_display(bootProgress,0,0);
+    Fs_ProcInit();
+
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Bunch of call funcs\n");
+    }
+    bootProgress = 24;
+    led_display(bootProgress,0,0);
+    /*
+     * Start the clock daemon and the routine that opens up the swap directory.
+     */
+
+    Proc_CallFunc(Vm_Clock, (ClientData) NIL, 0);
+
+    Proc_CallFunc(Vm_OpenSwapDirectory, (ClientData) NIL, 0);
+
+    /*
+     * Start the process that synchronizes the filesystem caches
+     * with the data kept on disk.
+     */
+    Proc_CallFunc(Fsutil_SyncProc, (ClientData) NIL, 0);
+    /*
+     * Create a few RPC server processes and the Rpc_Daemon process which
+     * will create more server processes if needed.
+     */
+
+    if (main_NumRpcServers > 0) {
+	for (i=0 ; i<main_NumRpcServers ; i++) {
+	    Rpc_CreateServer(&pid);
+	}
+    }
+    Proc_NewProc((Address) Rpc_Daemon, PROC_KERNEL, FALSE, &pid, "Rpc_Daemon");
+
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Creating Proc server procs\n");
+    }
+    /*
+     * Create processes  to execute functions.
+     */
+    for (i = 0; i < proc_NumServers; i++) {
+	Proc_NewProc((Address) Proc_ServerProc, PROC_KERNEL, FALSE, 
+			&pid, "Proc_ServerProc");
+    }
+
+    /*
+     * Create a recovery process to monitor other hosts.  Can't use
+     * Proc_CallFunc's to do this because they can be used up waiting
+     * for page faults against down servers.  (Alternatively the VM
+     * code could be fixed up to retry page faults later instead of
+     * letting the Proc_ServerProc wait for recovery.)
+     */
+    (void) Proc_NewProc((Address) Recov_Proc, PROC_KERNEL, FALSE, &pid,
+			"Recov_Proc");
+
+    /*
+     * Call the routine to start test kernel processes.
+     */
+
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Main_HookRoutine\n");
+    }
+    Main_HookRoutine();
+
+    /*
+     * Print out the amount of memory used.
+     */
+    printf("MEMORY %d bytes allocated for kernel\n", 
+		vmMemEnd - mach_KernStart);
+
+    bootProgress = 26;
+    led_display(bootProgress,0,0);
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Creating Init\n");
+    }
+    /*
+     * Start up the first user process.
+     */
+    Proc_NewProc((Address) Init, PROC_KERNEL, FALSE, &pid, "Init");
+
+    (void) Sync_WaitTime(time_OneYear);
+    printf("Main exiting\n");
+    Proc_Exit(0);
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Init --
+ *
+ *	This routine execs the init program.
+ *
+ * Results:
+ *	This routine only returns an error if the exec failed.
+ *
+ * Side effects:
+ *	The current process image is overlayed by the init process.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+Init()
+{
+    char		*initArgs[10];
+    ReturnStatus	status;
+    char		argBuffer[100];
+    int			argc;
+    Fs_Stream		*dummy;
+    char		bootCommand[103];
+    char		*ptr;
+    int			i;
+    int			argLength;
+
+
+     bootProgress = 20;
+    /*
+     * Indicate that we are alive.
+     */
+    led_display(0x00, 0, 0);
+
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("In Init\n");
+    }
+    Rpc_GetStats(SYS_RPC_ENABLE_SERVICE,1,0);
+    initArgs[1] = "-b";
+    argc = Mach_GetBootArgs(8, 100, &(initArgs[2]), argBuffer);
+    if (argc > 0) {
+	argLength = (((int) initArgs[argc+1]) + strlen(initArgs[argc+1]) +
+			1 - ((int) argBuffer));
+    } else {
+	argLength = 0;
+    }
+    bzero(bootCommand, 103);
+    ptr = bootCommand;
+    for (i = 0; i < argLength; i++) {
+	if (argBuffer[i] == '\0') {
+	    *ptr++ = ' ';
+	} else {
+	    *ptr++ = argBuffer[i];
+	}
+    }
+    bootCommand[argLength] = '\0';
+    initArgs[2] = bootCommand;
+    initArgs[argc + 2] = (char *) NIL;
+    led_display(0x50,0,0);
+    if (main_AltInit != 0) {
+	initArgs[0] = main_AltInit;
+	printf("Execing \"%s\"\n", initArgs[0]);
+	status = Proc_KernExec(initArgs[0], initArgs);
+	printf( "Init: Could not exec %s status %x.\n",
+			initArgs[0], status);
+    }
+    printf("Trying to open %s.\n",INIT);
+    status = Fs_Open(INIT,FS_EXECUTE | FS_FOLLOW, FS_FILE, 0, &dummy);
+    if (status != SUCCESS) {
+	printf("Can't open %s <0x%x>\n", INIT,status);
+    }
+    initArgs[0] = INIT;
+    status = Proc_KernExec(initArgs[0], initArgs);
+    printf( "Init: Could not exec %s status %x.\n",
+			initArgs[0], status);
+    Proc_Exit(1);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  mainSlaveStart --
+ *
+ *	This routine is called when a slave processor first starts.
+ *
+ * Results:
+ *	None.
+
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+void
+mainSlaveStart()
+{
+
+    Proc_ControlBlock *procPtr;
+    /*
+     * Initialize the machine state of the processor. 
+     */
+    Mach_InitSlaveProcessor();
+
+    printf("Slave processor %d started\n",Mach_GetProcessorNumber());
+    led_display(0x50 + Mach_GetProcessorNumber(),1,0);
+    procPtr = Proc_GetCurrentProc();
+    procPtr->schedFlags |= SCHED_STACK_IN_USE; 
+    procPtr->processor = Mach_GetProcessorNumber(); 
+    ENABLE_INTR();
+    Sched_TimeTicks();
+    /*
+     * Enter the scheduler by calling Proc_Exit.
+     */
+    Proc_Exit(0);	
+}
+@
+
+
+8.9
+log
+@Added call to create Recov_Proc
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/spur.md/RCS/mainInit.c,v 8.8 89/08/11 11:57:09 jhh Exp Locker: brent $ SPRITE (Berkeley)";
+d20 1
+a304 1
+    ENABLE_INTR();
+d306 1
+d314 1
+d316 2
+d380 1
+a380 1
+    Proc_CallFunc(Fs_SyncProc, (ClientData) NIL, 0);
+a554 3
+    /* 
+     * Enable interrupts.
+     */
+@
+
+
+8.8
+log
+@removed include of mem.h
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/spur.md/RCS/mainInit.c,v 8.7 89/08/01 20:41:29 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d22 1
+d399 10
+@
+
+
+8.7
+log
+@moved up call to Sync_Init
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/spur.md/RCS/mainInit.c,v 8.6 89/07/12 11:57:13 nelson Exp $ SPRITE (Berkeley)";
+a17 1
+#include "mem.h"
+@
+
+
+8.6
+log
+@Moved Net_RouteInit to here.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/spur.md/RCS/mainInit.c,v 8.5 89/06/19 14:00:20 jhh Exp $ SPRITE (Berkeley)";
+d111 1
+a182 3
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Sync_Init().\n");
+    }
+a184 1
+    Sync_Init();
+@
+
+
+8.5
+log
+@new boot sequence
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/spur.md/RCS/mainInit.c,v 8.4 89/03/15 17:42:10 mendel Exp $ SPRITE (Berkeley)";
+d249 4
+@
+
+
+8.4
+log
+@Added new lock init routines.
+Must to slave processor Sched_TimeTicks() with interrupt enabled.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/spur.md/RCS/mainInit.c,v 8.3 89/02/01 13:18:27 brent Exp $ SPRITE (Berkeley)";
+d43 1
+a43 1
+#define INIT	 	"/initsprite.spur"
+d53 2
+d449 10
+a458 6
+    int		status;
+    static char	*initArgs[] = { INIT, (char *) NIL };
+    static char	*altInitArgs[] = { 0, (char *) NIL };
+    static int	initLoop = 0;
+    int		pid;
+    int		i;
+d460 1
+a460 1
+    bootProgress = 20;
+d470 20
+d491 13
+d505 2
+a506 2
+    printf("Warning: Init: Could not exec %s.\n", initArgs[0]);
+
+@
+
+
+8.3
+log
+@Nuked Fs_Scavenge process.  Also trimmed out some print statements.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/spur.md/RCS/mainInit.c,v 8.2 89/01/11 10:09:33 mendel Exp Locker: brent $ SPRITE (Berkeley)";
+d156 2
+a157 1
+
+a171 6
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Proc_InitTable().\n");
+    }
+    bootProgress = 9;
+    led_display(bootProgress,0,0);
+    Proc_InitTable();
+a301 1
+
+a500 1
+    Sched_TimeTicks();
+d505 1
+@
+
+
+8.2
+log
+@Added slave processor startup.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/spur.md/RCS/mainInit.c,v 8.1 88/11/30 10:44:24 mendel Exp $ SPRITE (Berkeley)";
+d202 1
+a379 1
+
+a380 5
+     * Start the process that scavenges handles.
+     */
+    Proc_CallFunc(Fs_HandleScavenge, (ClientData)TRUE, 0);
+
+    /*
+a385 1
+        printf("Creating %d RPC servers", main_NumRpcServers);
+a388 3
+        printf(" and Rpc_Daemon\n");
+    } else {
+	printf("Creating Rpc_Daemon\n");
+d415 1
+a415 1
+    printf("%d bytes of memory allocated for kernel\n", 
+@
+
+
+8.1
+log
+@Added slave processor start up code. General clean up.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/spur.md/RCS/mainInit.c,v 8.0 88/11/11 18:25:47 douglis Stable Locker: mendel $ SPRITE (Berkeley)";
+a426 11
+    /*
+     * Start up the slave processors.
+     */
+
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Starting slave processors.\n");
+    }
+    bootProgress = 25;
+    led_display(bootProgress,0,0);
+    StartSlaveProcessors();
+
+d479 1
+a485 3
+
+static Proc_ControlBlock *startupProcess; /* Used in RecordProcessAndWait. */
+
+a489 69
+ *  RecordProcessAndWait --
+ *
+ *	This routine records the current process and exits.
+ *
+ * Results:
+ *	None.
+ * Side effects:
+ *	startupProcess is set to point at the current process. 
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+RecordProcessAndWait() 
+{
+	startupProcess = Proc_GetCurrentProc();
+	Sched_ContextSwitch(PROC_WAITING);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  StartSlaveProcessors --
+ *
+ *	This routine starts all the configured slave processors.
+ *
+ * Results:
+ *	None.
+ * Side effects:
+ *	Initial processes for each slave processors are started and the
+ *	processors Spun Up.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+StartSlaveProcessors()
+{
+
+    int		pnum;
+    Proc_PID	pid;
+    char	procName[128];
+    ReturnStatus status;
+
+    for (pnum = 1; pnum < MACH_MAX_NUM_PROCESSORS; pnum++) {
+	/*
+	 * Fork a new process process and wait for it notify us. 
+	 * This new process will be the first process of the
+	 * processor pnum.
+         */
+	sprintf(procName,"Processor%d",pid);
+	startupProcess = (Proc_ControlBlock *) NIL;
+	Proc_NewProc((Address)RecordProcessAndWait, PROC_KERNEL, FALSE, &pid,
+					procName);
+	while (startupProcess == (Proc_ControlBlock *) NIL) {
+	    (void) Sync_WaitTimeInterval(10 * timer_IntOneMillisecond);
+	}
+
+	printf("Starting processor %d with pid 0x%x\n",pnum,pid);
+	status = Mach_SpinUpProcessor(pnum,startupProcess);
+	if (status != SUCCESS) { 
+	    printf("Warning: Processor %d not started.\n");
+	}
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+d505 1
+d512 9
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/spur.md/RCS/mainInit.c,v 1.4 88/11/11 15:42:17 david Exp Locker: douglis $ SPRITE (Berkeley)";
+d38 2
+d193 1
+a193 1
+     * Sys_Printfs are not allowed before this point.
+d196 1
+a196 1
+    Sys_Printf("Sprite kernel: %s\n", SpriteVersion());
+d391 1
+a391 1
+        Sys_Printf("Creating %d RPC servers", main_NumRpcServers);
+d395 1
+a395 1
+        Sys_Printf(" and Rpc_Daemon\n");
+d397 1
+a397 1
+	Sys_Printf("Creating Rpc_Daemon\n");
+d424 1
+a424 1
+    Sys_Printf("%d bytes of memory allocated for kernel\n", 
+d428 1
+a428 1
+     * Start up the first user process.
+d432 1
+a432 1
+	Mach_MonPrintf("Creating Init\n");
+d436 1
+a436 4
+/*
+    Init_ProcFsState();
+*/
+    Proc_NewProc((Address) Init, PROC_KERNEL, FALSE, &pid, "Init");
+d440 7
+a447 23
+#ifdef notdef
+    {
+	Fs_Stream	*filePtr;
+	ReturnStatus	status;
+	static char	maryBuf[128];
+	int		len;
+
+	status = Fs_Open("/etc/spritehosts", FS_READ, FS_FILE, 0, &filePtr);
+	if (status != SUCCESS) {
+	    Sys_Panic(SYS_FATAL, "Can't open file\n");
+	}
+	
+	len = 127;
+	status = Fs_Read(filePtr, maryBuf, 0, &len);
+	if (status != SUCCESS || len != 127) {
+	    Sys_Panic(SYS_FATAL, "Read returned %x %d\n", status, len);
+	}
+	status = Fs_Close(filePtr);
+	if (status != SUCCESS) {
+	    Sys_Panic(SYS_FATAL, "Close returned %x\n", status);
+	}
+    }
+#endif
+d449 1
+a449 1
+    Sys_Printf("Main exiting\n");
+a452 5
+static void	t1();
+static void	t2();
+Sync_Lock	tagLock = {0, 0};
+Sync_Condition	t1Cond;
+Sync_Condition	t2Cond;
+a453 2
+#define	LOCKPTR &tagLock
+
+a484 13
+#ifdef notdef
+    for (i = 0; i <= 5; i += 3) {
+	Sync_WaitTime(time_OneSecond);
+	led_display(0xe0 | i, 0, 0);
+    }
+#endif
+#ifdef notdef
+    /*
+     * Fork a new process and then play tag with it.
+     */
+    Proc_NewProc((Address) t2, PROC_KERNEL, FALSE, &pid, "t2");
+    t1();
+#endif
+a488 8
+#ifdef notdef
+    if (main_AltInit != 0) {
+	altInitArgs[0] = main_AltInit;
+	Sys_Printf("Execing \"%s\"\n", altInitArgs[0]);
+	status = Proc_KernExec(altInitArgs[0], initArgs);
+	Sys_Panic(SYS_WARNING, "Init: Could not exec %s.\n", altInitArgs[0]);
+    }
+#endif
+d491 1
+a491 1
+    Sys_Panic(SYS_WARNING, "Init: Could not exec %s.\n", initArgs[0]);
+a495 4
+void t1()
+{
+    int	i;
+    LOCK_MONITOR;
+d497 1
+a497 8
+    i = 0;
+    while (TRUE) {
+	Sync_WaitTime(time_OneSecond);
+	led_display(0xa0 | (i & 0xf), 0, 0);
+	i++;
+	Sync_Broadcast(&t2Cond);
+	(void)Sync_Wait(&t1Cond, TRUE);
+    }
+d499 20
+a518 1
+    UNLOCK_MONITOR;
+d521 18
+a538 4
+
+static unsigned int lockVal;
+
+void t2()
+a539 1
+    int	i;
+d541 4
+a544 1
+    lockVal = tagLock.inUse;
+d546 13
+a558 1
+    LOCK_MONITOR;
+d560 5
+a564 7
+    i = 0;
+    while (TRUE) {
+	Sync_WaitTime(time_OneSecond);
+	led_display(0xb0 | (i & 0xf), 0, 0);
+	i++;
+	Sync_Broadcast(&t1Cond);
+	(void)Sync_Wait(&t2Cond, TRUE);
+a565 2
+
+    UNLOCK_MONITOR;
+d568 10
+d579 6
+a584 4
+
+
+
+Init_ProcFsState()
+a585 4
+    Proc_ControlBlock   *procPtr;       /* Main process's proc table entry */
+    ReturnStatus        status;         /* General status code return */
+    register Fs_ProcessState    *fsPtr; /* FS state ref'ed from proc table */
+    static Fs_ProcessState fsState;
+d587 4
+a590 2
+    procPtr = Proc_GetCurrentProc();
+    procPtr->fsPtr = fsPtr =  &fsState;
+d592 5
+a596 9
+    fsPtr->numGroupIDs  = 0;
+    fsPtr->groupIDs     =  (int *) NIL;
+
+    fsPtr->cwdPtr = (Fs_Stream *) NIL;
+
+    fsPtr->numStreams = 0;
+    fsPtr->streamList = (Fs_Stream **)NIL;
+ 
+    return;
+a597 1
+	
+@
+
+
+1.4
+log
+@Hasn't changed, but 'rcs -u' fails. 
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/spur.md/RCS/mainInit.c,v 1.3 88/10/21 14:08:54 mendel Exp Locker: david $ SPRITE (Berkeley)";
+@
+
+
+1.3
+log
+@Display boot status on LEDs.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: mainInit.c,v 1.2 88/08/20 11:07:24 ouster Exp $ SPRITE (Berkeley)";
+@
+
+
+1.2
+log
+@Eliminate use of anything on Lust, change main_UseAltInit to
+main_AltInit, change "initSprite" to "initsprite".
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: mainInit.c,v 1.1 88/08/16 14:24:17 nelson Exp $ SPRITE (Berkeley)";
+d20 1
+d32 1
+d41 1
+a41 1
+#define INIT	 	"/tmp/spurt"
+a49 1
+extern Boolean main_UseAltInit;	/* IF TRUE then try to use /initSprite.new */
+d92 2
+a93 1
+    bootProgress = 1;
+d105 1
+d109 1
+d124 1
+d136 1
+d147 1
+d159 1
+d166 1
+d173 1
+d180 1
+d187 1
+d210 1
+d226 1
+d236 1
+d247 1
+d258 1
+d270 1
+d283 1
+d302 1
+d312 1
+d333 1
+d344 1
+d350 1
+a350 1
+     */
+d356 1
+d363 1
+d367 1
+a367 1
+/*
+d369 1
+a369 1
+*/
+d433 1
+d440 1
+d442 1
+d464 1
+d508 2
+a509 2
+    led_display(0xc1, 0, 0);
+
+d514 1
+d526 1
+d533 2
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: mainInit.c,v 5.9 88/05/16 14:49:59 nelson Exp $ SPRITE (Berkeley)";
+d39 1
+a39 3
+#define INIT	 	"/initSprite"
+#define LUST_INIT	"/usr/sprite/bin/initSprite"
+#define NEW_INIT	"/initSprite.new"
+d342 1
+d344 1
+d470 1
+a470 2
+    static char	*init2Args[] = { LUST_INIT, (char *) NIL };
+    static char	*init3Args[] = { NEW_INIT, (char *) NIL };
+d480 2
+a481 1
+    for (i = 0; i <= 15; i += 3) {
+d485 1
+d491 1
+a492 1
+#ifdef notdef
+d496 5
+a500 4
+    if (main_UseAltInit) {
+	Sys_Printf("Execing \"%s\"\n", init3Args[0]);
+	status = Proc_KernExec(init3Args[0], initArgs);
+	Sys_Panic(SYS_WARNING, "Init: Could not exec %s.\n", init3Args[0]);
+a503 4
+
+    status = Proc_KernExec(init2Args[0], init2Args);
+    Sys_Panic(SYS_WARNING, "Init: Could not exec %s.\n", init2Args[0]);
+#endif
+@

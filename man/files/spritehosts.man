@@ -1,0 +1,48 @@
+'\" Copyright 1989 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/man/files/RCS/spritehosts.man,v 1.1 89/02/16 10:04:20 ouster Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS spritehosts files
+.BS
+.SH NAME
+/etc/spritehosts \- file containing Sprite host information
+.SH DESCRIPTION
+.PP
+The file \fB/etc/spritehosts\fP is used to keep host information for
+hosts in the Sprite network.  It contains the following fields:
+.IP spriteID 14
+A small integer used to identify the host internally.
+.IP netType 14
+The type of the physical network for the following \fBnetAddr\fP field.
+.IP netAddr 14
+The physical network address of the host.
+.IP inetAddr 14
+The Internet address of the host.
+.IP machType 14
+The machine type of the host.  This string will be substituted for
+occurrences of \fB$MACHINE\fP that occur in pathnames opened by
+this host.
+.IP name 14
+The official Internet name of this host.
+.IP aliases 14
+Zero or more aliases, typically shorter than the official Internet name.
+.PP
+This file is read during startup by the \fBnetroute\fP program
+to initialize the kernel's internal route table.  Actually, routing
+will be done successfully without this initialization.  However,
+the initialization is needed on servers so they know the machine
+type of their clients.  Also, error messages from the kernel will
+use the host name instead of the spriteID if the initialization
+has been done.
+.SH SEE ALSO
+netroute
+.SH KEYWORDS
+host, spriteID
+

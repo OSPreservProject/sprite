@@ -1,0 +1,9 @@
+D ATTIC                             	Attic
+F DBG.H_V;1                         	dbg.h,v
+F DBGASM.H_V;1                      	dbgAsm.h,v
+F DBGINT.H_V;1                      	dbgInt.h,v
+F DBGIP.C_V;1                       	dbgIP.c,v
+F DBGMAIN.C_V;1                     	dbgMain.c,v
+F DBGTRAP.S_V;1                     	dbgTrap.s,v
+D SCVS                              	SCVS
+F TAGS_V.;1                         	TAGS,v

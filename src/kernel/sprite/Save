@@ -1,0 +1,9 @@
+#!/bin/csh -f 
+if (! -e $1) then
+    echo $1 not found
+    exit
+endif
+set version = `Version $1`
+set base = $1:r
+echo "$base.$version"
+mv $1 $base.$version

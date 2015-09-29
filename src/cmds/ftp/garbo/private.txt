@@ -1,0 +1,53 @@
+From ts@uwasa.fi Tue 9 Jun 18:05:00 1992
+Subject: The public nature of garbo.uwasa.fi questions and answers 
+
+This file is garbo.uwasa.fi:/pc/pd2/private.txt
+
+Dear Fellow Computer Users,
+
+I feel it advisable to inform the gentle garbo.uwasa.fi users of the
+following matter concerning privacy / publicity.  I get very much
+email concerning garbo.uwasa.fi files and problems and UseNet news. 
+As an FTP archive site moderator I have to answer countless
+questions and views from the users practically every day.  Quite
+often these questions or views are of general interest or
+applicability, and I often make selected questions and my answers
+public in the /pc/pd2/post*.txt information files, and sometimes
+even on the UseNet news.  The same goes for useful user feedback on
+the programs on garbo.  Furthermore I may have to converse about
+some users' questions with my fellow moderators at garbo.uwasa.fi
+and other FTP sites. 
+
+This means that unless prominently and unambiguously stated
+otherwise by the sender (at the very beginning of the message,
+please), or very obvious from the context or the contents, I
+consider all email, all text in the upload announcements, and all
+file uploads publicly available and publicly publishable material. 
+I simply cannot and will not take the time to ask for the sender's
+confirmation.  I hope you understand, and if you find this
+unacceptable, then there is unfortunately no other possibility than
+not to send email to me. 
+
+Please particularly note that if you have kindly uploaded programs
+to garbo.uwasa.fi, you should never put anything confidential in
+your upload announcements to the garbo moderators.  If you have
+something confidential to say about your upload, please use separate
+email for that, and mark very, very clearly that you message is not
+for public distribution. 
+
+The reason for these practices is that we get so much email,
+uploads, announcements, questions and views, that if we conversed
+back and forth with each and everyone about their material and
+messages, we would be totally swamped because we already are
+stretched as we are.  I have to organize matters in a rational way
+to be able to perform the moderator's functions, and making public
+the interesting questions from users and the answers to their
+queries is part of this. 
+
+   All the best, Timo
+
+..................................................................
+Prof. Timo Salmi
+Moderating at garbo.uwasa.fi anonymous FTP archives 128.214.87.1
+Faculty of Accounting & Industrial Management; University of Vaasa
+Internet: ts@uwasa.fi Bitnet: salmi@finfun   ; SF-65101, Finland

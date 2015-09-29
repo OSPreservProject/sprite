@@ -1,0 +1,39 @@
+/dev/rsd04c:UsageArray: FreeBlocks wrong; is 52721 should be 52749
+/dev/rsd04c:CheckAllFiles:Desc block for 3666 duplicate usage of block 1088 Previous use at <1,3,0>
+/dev/rsd04c:CheckAllFiles:Desc block for 3707 duplicate usage of block 1088 Previous use at <1,3,0>
+/dev/rsd04c:CheckAllFiles:Desc block for 3708 duplicate usage of block 1088 Previous use at <1,3,0>
+/dev/rsd04c:CheckAllFiles:Desc block for 4224 duplicate usage of block 1088 Previous use at <1,3,0>
+/dev/rsd04c:CheckAllFiles:Desc block for 4225 duplicate usage of block 1088 Previous use at <1,3,0>
+/dev/rsd04c:CheckAllFiles:Desc block for 4226 duplicate usage of block 1088 Previous use at <1,3,0>
+/dev/rsd04c:CheckAllFiles:Desc block for 4227 duplicate usage of block 1088 Previous use at <1,3,0>
+/dev/rsd04c:CheckAllFiles:Desc block for 4228 duplicate usage of block 1088 Previous use at <1,3,0>
+/dev/rsd04c:CheckAllFiles:Desc block for 4229 duplicate usage of block 1088 Previous use at <1,3,0>
+/dev/rsd04c:CheckAllFiles:Desc block for 4230 duplicate usage of block 1088 Previous use at <1,3,0>
+/dev/rsd04c:CheckAllFiles:Desc block for 4231 duplicate usage of block 1088 Previous use at <1,3,0>
+/dev/rsd04c:CheckAllFiles:Desc block for 4232 duplicate usage of block 1088 Previous use at <1,3,0>
+/dev/rsd04c:CheckAllFiles:Desc block for 4233 duplicate usage of block 1088 Previous use at <1,3,0>
+/dev/rsd04c:CheckAllFiles:Desc block for 4234 duplicate usage of block 1088 Previous use at <1,3,0>
+/dev/rsd04c:CheckAllFiles:Desc block for 4235 duplicate usage of block 1088 Previous use at <1,3,0>
+/dev/rsd04c:CheckAllFiles:Desc block for 4236 duplicate usage of block 1088 Previous use at <1,3,0>
+/dev/rsd04c:CheckAllFiles:Desc block for 4237 duplicate usage of block 1088 Previous use at <1,3,0>
+/dev/rsd04c:CheckAllFiles:Desc block for 4238 duplicate usage of block 1088 Previous use at <1,3,0>
+/dev/rsd04c:CheckAllFiles:Desc block for 4239 duplicate usage of block 1088 Previous use at <1,3,0>
+/dev/rsd04c:CheckAllFiles:Desc block for 4240 duplicate usage of block 1088 Previous use at <1,3,0>
+/dev/rsd04c:CheckAllFiles:Desc block for 4241 duplicate usage of block 1088 Previous use at <1,3,0>
+/dev/rsd04c:CheckUsageArray: Active bytes for seg 0 is wrong; is 515712 should be 513536
+Bad record length in directory.  Directory entry deleted from /lost+found/
+. missing in directory 3 /lost+found/.  Changed to a file.
+Link count corrected for file 2.  Is 12 should be 11.
+Link count corrected for file 3.  Is 2 should be 1.
+2 links counts corrected
+/dev/rsd04c:CheckFileLayoutSummary: Desc block at 1088 overlaps <1,3,0>
+/dev/rsd04c:CheckFileLayoutSummary: Desc block at 1088 overlaps <1,3,0>
+/dev/rsd04c:CheckFileLayoutSummary: Desc block at 1088 overlaps <1,3,0>
+/dev/rsd04c:CheckFileLayoutSummary: Desc block at 1088 overlaps <1,3,0>
+12:52:44.300:Read LFS checkpoint from /dev/rsd04c
+12:52:45.040:Checking files
+12:52:53.800:Checking usage array
+12:52:53.800:Checking directory tree
+12:52:54.660:Checking summary regions
+12:53:06.940:Reporting errors
+/dev/rsd04c: 25 major errors 2 minor errors

@@ -1,0 +1,31 @@
+#
+# Make file for new font handling routines
+#
+
+     CDEBUGFLAGS = -g
+        INCLUDES = -I. -I../../include -I$(TOP)
+         HEADERS = 
+            SRCS = pcfwaccel.c pcfwbitmaps.c pcfwencoding.c \
+                   pcfwglyphnms.c pcfwmetrics.c pcfwprops.c \
+                   pcfwswidths.c \
+                   pcfraccel.c pcfrbitmaps.c pcfrencoding.c \
+                   pcfrglyphnms.c pcfwmetrics.c pcfrprops.c \
+                   pcfrswidths.c \
+		   pcfwfont.c pcfrfont.c pcfrtoc.c \
+		   pcfutil.c 
+            OBJS = pcfwaccel.o pcfwbitmaps.o pcfwencoding.o \
+                   pcfwglyphnms.o pcfwmetrics.o pcfwprops.o \
+                   pcfwswidths.o \
+                   pcfraccel.o pcfrbitmaps.o pcfrencoding.o \
+                   pcfrglyphnms.o pcfrmetrics.o pcfrprops.o \
+                   pcfrswidths.o \
+		   pcfwfont.o pcfrfont.o pcfrtoc.o \
+		   pcfutil.o
+
+NormalLibraryObjectRule()
+NormalLibraryTarget(pcf,$(OBJS))
+
+NormalLintTarget($(SRCS))
+
+DependTarget()
+

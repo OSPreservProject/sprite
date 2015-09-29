@@ -1,0 +1,325 @@
+# When entering a "system call", suspend the caller (so that it can't cause an
+# exception or make a second request).  (Given that there's a potentially
+# large delay between the time the client sends a message and we start
+# processing it, we should also be sure to check for multiple requests and do
+# something like block or do an error return.  XXX Identify the specific
+# routines that need to implement these checks.)  Use Sys_NewServiceThread to
+# allocate a thread to handle the request.
+
+LOST_TYPE			# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_DEV_CHANGE_SCSI_DEBUG	# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_DISK_NAME_LENGTH		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_DISK_STATS			# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_END_STATS			# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_FSCACHE_EXTRA_STATS		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_FS_PREFIX_EXPORT		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_FS_PREFIX_STATS		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_FS_RECOV_INFO		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_FS_SOSP_MIG_STATS		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_FS_SOSP_NAME_STATS		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_GET_VERSION_STRING		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_INST_COUNTS			# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_LOCK_RESET_STATS		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_LOCK_STATS			# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_NET_ETHER_STATS		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_NET_GET_ROUTE		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_PROC_MIGRATION		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_PROC_MIG_ALLOW		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_PROC_MIG_GET_STATE		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_PROC_MIG_GET_STATS		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_PROC_MIG_GET_STATUS		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_PROC_MIG_GET_VERSION	# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_PROC_MIG_REFUSE		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_PROC_MIG_RESET_STATS	# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_PROC_MIG_SET_DEBUG		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_PROC_MIG_SET_STATE		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_PROC_MIG_SET_VERSION	# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_PROC_TRACE_STATS		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_PROC_TRACING_OFF		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_PROC_TRACING_ON		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_PROC_TRACING_PRINT		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_RECOV_ABS_PINGS		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_RECOV_CLIENT_INFO		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_RECOV_PRINT			# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_RECOV_STATS			# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_RESET_INST_COUNTS		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_RPC_CALL_COUNTS		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_RPC_CHANNEL_NEG_ACKS	# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_RPC_CLIENT_HIST		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_RPC_CLT_STATE		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_RPC_CLT_STATS		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_RPC_ENABLE_SERVICE		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_RPC_EXTRA_SRV_STATS		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_RPC_NEG_ACKS		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_RPC_NUM_NACK_BUFS		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_RPC_SANITY_CHECK		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_RPC_SERVER_FREE		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_RPC_SERVER_HIST		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_RPC_SERVER_INFO		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_RPC_SERVER_TRACE		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_RPC_SET_MAX			# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_RPC_SET_NUM			# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_RPC_SRV_COUNTS		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_RPC_SRV_STATE		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_RPC_SRV_STATS		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_RPC_TRACE_STATS		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_RPC_TRACING_OFF		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_RPC_TRACING_ON		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_RPC_TRACING_PRINT		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_SCHED_MORE_STATS		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_SCHED_STATS			# (Sys_Stats request)  Get numbers from Mach
+	Include/user/sysStats.h
+SYS_START_STATS			# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_SYNC_STATS			# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_SYS_CALL_STATS		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_TRACELOG_DUMP		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_TRACELOG_KERNELLEN		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_TRACELOG_OFF		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_TRACELOG_ON			# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_TRACELOG_RESET		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_TRACELOG_STATS		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_TRACELOG_TYPELEN		# (Sys_Stats request)
+	Include/user/sysStats.h
+SYS_VM_STATS			# (Sys_Stats request)
+	Include/user/sysStats.h
+Sys_DiskStats			# (Sys_Stats type) keep (may have to hack the
+				# Mach drivers).
+	Include/user/sysStats.h
+Sys_NewServiceThread		# (new) Fork off a new C thread, starting the
+				# thread with Sys_StartService.  Set C Thread
+				# name to something like "srv <pid>".
+Sys_SchedOverallTimes		# (Sys_Stats request)
+	Include/user/sysStats.h
+Sys_SospNameStats		# (Sys_Stats request)
+	Include/user/sysStats.h
+Sys_StartService		# Set pcb to given user process.
+				# Verify that the process's state is READY.
+				# Set flag in pcb so that only one thread at a
+				# time can act for the process.  Make sure
+				# that threads use some new exit proc (to
+				# clear the flag) rather than calling
+				# cthread_exit directly.
+Sys_Stats			# (kitchen-sink stats call) see
+				# individual requests
+	Include/user/sysStats.h
+Sys_TracelogHeader		# (Sys_Stats request)
+	Include/user/sysStats.h
+Sys_TracelogHeaderKern		# (Sys_Stats request)
+	Include/user/sysStats.h
+Sys_TracelogRecord		# (Sys_Stats request)
+	Include/user/sysStats.h
+TRACELOG_BYTEMASK		# (Sys_Stats request)
+	Include/user/sysStats.h
+TRACELOG_FLAGMASK		# (Sys_Stats request)
+	Include/user/sysStats.h
+TRACELOG_MAGIC			# (Sys_Stats request)
+	Include/user/sysStats.h
+TRACELOG_MAGIC2			# (Sys_Stats request)
+	Include/user/sysStats.h
+TRACELOG_TYPEMASK		# (Sys_Stats request)
+	Include/user/sysStats.h
+
+SYS_DEBUG			# (system call stuff)
+	Include/user/sys.h
+	sys/sysCalls.c
+SYS_DS3100			# (system call stuff)
+	Include/user/sys.h
+	mach/ds3100.md/machCode.c
+	dev/sun3.md/devGraphics.c
+	dev/sun4.md/devGraphics.c
+	dev/sun4c.md/devGraphics.c
+SYS_DS5000			# (system call stuff)
+	Include/user/sys.h
+	mach/ds5000.md/machCode.c
+SYS_HALT			# (system call stuff)
+	Include/user/sys.h
+	sys/sysCalls.c
+SYS_KILL_PROCESSES		# (system call stuff)
+	Include/user/sys.h
+	sys/sysCalls.c
+SYS_MICROVAX_2			# (system call stuff)
+	Include/user/sys.h
+SYS_REBOOT			# (system call stuff)
+	Include/user/sys.h
+	sys/sysCalls.c
+SYS_SPUR			# (system call stuff)
+	Include/user/sys.h
+SYS_SUN2			# (system call stuff)
+	Include/user/sys.h
+	mach/sun3.md/machCode.c
+	mach/sun4.md/machCode.c
+	mach/sun4c.md/machCode.c
+SYS_SUN3			# (system call stuff)
+	Include/user/sys.h
+	mach/sun3.md/machCode.c
+	mach/sun4.md/machCode.c
+	mach/sun4c.md/machCode.c
+	dev/sun3.md/devGraphics.c
+	dev/sun4.md/devGraphics.c
+	dev/sun4c.md/devGraphics.c
+SYS_SUN4			# (system call stuff)
+	Include/user/sys.h
+	mach/sun4.md/machCode.c
+	mach/sun4c.md/machCode.c
+	dev/sun3.md/devGraphics.c
+	dev/sun4.md/devGraphics.c
+	dev/sun4c.md/devGraphics.c
+SYS_SUN_2			# (system call stuff)
+	Include/user/sys.h
+SYS_SUN_2_120			# (system call stuff)
+	Include/user/sys.h
+	dev/sun3.md/devInit.c
+	dev/sun4.md/devInit.c
+	dev/sun4c.md/devInit.c
+	rpc/sun3.md/rpcDelays.c
+SYS_SUN_2_160			# (system call stuff)
+	Include/user/sys.h
+SYS_SUN_2_50			# (system call stuff)
+	Include/user/sys.h
+	dev/sun3.md/devInit.c
+	dev/sun4.md/devInit.c
+	dev/sun4c.md/devInit.c
+	rpc/sun3.md/rpcDelays.c
+SYS_SUN_3			# (system call stuff)
+	Include/user/sys.h
+SYS_SUN_3_160			# (system call stuff)
+	Include/user/sys.h
+SYS_SUN_3_50			# (system call stuff)
+	Include/user/sys.h
+	vm/sun3.md/vmSun.c
+	vm/sun4.md/vmSun.c
+	vm/sun4c.md/vmSun.c
+SYS_SUN_3_60			# (system call stuff)
+	Include/user/sys.h
+	mach/sun3.md/machEeprom.c
+	rpc/sun3.md/rpcDelays.c
+SYS_SUN_3_75			# (system call stuff)
+	Include/user/sys.h
+	rpc/sun3.md/rpcDelays.c
+SYS_SUN_4			# (system call stuff)
+	Include/user/sys.h
+SYS_SUN_4_200			# (system call stuff)
+	Include/user/sys.h
+SYS_SUN_4_C			# (system call stuff)
+	Include/user/sys.h
+	dev/sun3.md/devGraphics.c
+	dev/sun4.md/devGraphics.c
+	dev/sun4c.md/devGraphics.c
+SYS_SUN_4_C_60			# (system call stuff)
+	Include/user/sys.h
+SYS_SUN_4_C_65			# (system call stuff)
+	Include/user/sys.h
+SYS_SUN_ARCH_MASK		# (system call stuff)
+	Include/user/sys.h
+	dev/sun3.md/devGraphics.c
+	dev/sun4.md/devGraphics.c
+	dev/sun4c.md/devGraphics.c
+SYS_SUN_IMPL_MASK		# (system call stuff)
+	Include/user/sys.h
+SYS_SYM				# (system call stuff)
+	Include/user/sys.h
+	mach/symm.md/machCode.c
+SYS_WRITE_BACK			# (system call stuff)
+	Include/user/sys.h
+	sys/sysCalls.c
+Sys_GetMachineInfo		# (return machine architecture & type) keep.
+	Include/user/sys.h
+	mach/symm.md/machSyscallTrace.c
+	sys/sysCalls.c
+	sys/sys.h
+	sys/sysInt.h
+	sys/sysSysCall.c
+Sys_MachineInfo			# (type for Sys_GetMachineInfo) keep.
+	Include/user/sys.h
+	sys/sysCalls.c
+Sys_PanicLevel			# (system call stuff)
+	Include/user/sys.h
+sys_ShuttingDown		# keep.
+	fs/fsStreamOps.c
+	fscache/fscacheBlocks.c
+	fsprefix/fsprefixOps.c
+	fsutil/fsutilHandle.c
+	proc/procServer.c
+	recov/recovery.c
+	recov/recovProc.c
+	rpc/rpcDaemon.c
+	rpc/rpcServer.c
+	sig/signals.c
+	sys/sysCalls.c
+	sys/sys.h
+
+
+Local Variables:
+mode: xref
+fill-column: 78
+End:

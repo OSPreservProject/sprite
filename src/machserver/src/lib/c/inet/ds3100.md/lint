@@ -1,0 +1,7 @@
+inet_addr.c:
+inet_lnaof.c:
+inet_makeaddr.c:
+inet_netof.c:
+inet_network.c:
+inet_ntoa.c:
+sprintf returns value which is always ignored

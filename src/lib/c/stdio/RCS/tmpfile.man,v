@@ -1,0 +1,58 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     89.01.05.17.00.14;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@' Copyright 1989 Regents of the University of California
+' Permission to use, copy, modify, and distribute this
+' documentation for any purpose and without fee is hereby
+' granted, provided that this notice appears in all copies.
+' The University of California makes no representations about
+' the suitability of this material for any purpose.  It is
+' provided "as is" without express or implied warranty.
+' 
+' $Header: /sprite/lib/forms/RCS/proto.man,v 1.1 88/12/29 17:09:50 ouster Exp $ SPRITE (Berkeley)
+' 
+.so \*(]ltmac.sprite
+.HS tmpfile lib
+.BS
+.SH NAME
+tmpfile \- Create a temporary file
+.SH SYNOPSIS
+.nf
+\fBinclude <stdio.h>
+
+\fBFILE *
+tmpfile()
+.BE
+
+.SH DESCRIPTION
+.PP
+This procedure creates and opens a temporary file.  The file will
+be removed when it is closed or when the process exits.  The return
+value from \fBtmpfile\fR is a pointer to the opened stream, which
+may be used for performing I/O to and from the file.  If an error
+occurred in opening the file, \fBNULL\fR is returned.
+.DE
+.SH KEYWORDS
+file, open, temporary
+@

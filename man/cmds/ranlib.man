@@ -1,0 +1,51 @@
+'\" Copyright 1990 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/cmds/ranlib/RCS/ranlib.man,v 1.1 90/11/12 11:56:43 kupfer Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS RANLIB cmds
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+ranlib \- make symbol table for object library
+.SH SYNOPSIS
+\fBranlib\fR [\fB\-f\fR] \fIarchive ...\fR
+.SH OPTIONS
+.IP "\fB\-f\fR" 15
+Force the symbol table to be regenerated.
+.BE
+
+.SH DESCRIPTION
+.PP
+.B Ranlib
+generates a file called __.SYMDEF with a table of external symbols for
+an archive.  It puts it in the archive for use by
+.BR ld .
+.PP
+The current version of 
+.B ranlib
+is actually a wrapper over
+.BR ar ,
+which maintains the symbol table in-place, as the archive is updated.
+Any arguments that the old
+.B ranlib
+took are ignored by this version.
+.PP
+If the symbol table already exists, 
+.B ranlib
+is normally a no-op.  If the symbol table has somehow become
+corrupted, use the 
+.B \-f
+flag to force it to be regenerated from scratch.
+
+.SH "SEE ALSO"
+ld, ar
+
+.SH KEYWORDS
+library, archive

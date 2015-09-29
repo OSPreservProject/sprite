@@ -1,0 +1,28 @@
+1. Asynchronicity.
+- pager design: 
+  - reference counting the segment data structures
+  - no way to report errors, so server has to be able to catch address
+    faults (e.g., file server eats a backing file, so data_request
+    fails; server doing bcopy from mapped or vm_read user memory gets
+    address fault) 
+  - Have to force out dirty pages, e.g., if you want to avoid copying
+    heap initialization files during fork().  (But the reason for
+    going to vm_read/vm_write in the first place was to avoid calls to
+    a file server!)
+- race between Vm_MakeAccessible (trying to do lookup using segment
+  name port and having name registered by memory_object_init [did we
+  fix this?]) 
+- system calls (sysSysCall.c): trying to maintain the fiction that the
+  user process is the same as the thread in the server(e.g., sigreturn).
+
+2. Understanding Mach IPC: rights versus names, reference counting,
+mach_port_deallocate versus mach_port_mod_refs, send-once notification
+(sigreturn).
+
+3. Resource management ("thrash" can hang the system for an extended
+time).
+
+4. Facilities for reliable timeouts (timer queue often not handled on
+time due to delays from mach_msg timeout).
+
+5. memory_object_lock_request performance.

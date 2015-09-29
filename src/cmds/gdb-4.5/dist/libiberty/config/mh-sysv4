@@ -1,0 +1,5 @@
+HDEFINES = -DUSG -DUSGr4
+RANLIB=echo >/dev/null
+
+# The l flag generates a warning from the SVR4 archiver, remove it.
+AR_FLAGS = cq

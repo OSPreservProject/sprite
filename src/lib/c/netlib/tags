@@ -1,0 +1,28 @@
+Net_AddrCmp	Net_AddrCmp.c	/^Net_AddrCmp(aPtr, bPtr)$/
+Net_AddrToString	Net_AddrToString.c	/^Net_AddrToString(netAddressPtr, protocol, netType,/
+Net_AddrToStringNew	Net_AddrToString.c	/^Net_AddrToStringNew(netAddressPtr, buffer)$/
+Net_EtherAddrToString	Net_EtherAddrToString.c	/^Net_EtherAddrToString(etherAddrPtr, buffer)$/
+Net_FDDIAddrToString	Net_FDDIAddrToString.c	/^Net_FDDIAddrToString(fddiAddrPtr, buffer)$/
+Net_GetAddress	Net_SetAddress.c	/^Net_GetAddress(addrPtr, specificPtr)$/
+Net_HostToNetInt	Net_HostToNetInt.c	/^Net_HostToNetInt(longInt)$/
+Net_HostToNetShort	Net_HostToNetShort.c	/^Net_HostToNetShort(shortInt)$/
+Net_InetAddrHostNum	Net_InetAddrHostNum.c	/^Net_InetAddrHostNum(inetAddr)$/
+Net_InetAddrNetMask	Net_AddrNetMask.c	/^Net_InetAddrNetMask(addr)$/
+Net_InetAddrNetNum	Net_AddrNetNum.c	/^Net_InetAddrNetNum(addr)$/
+Net_InetAddrToString	Net_InetAddrToString.c	/^Net_InetAddrToString(address, buffer)$/
+Net_InetChecksum	Net_InetChecksum.c	/^Net_InetChecksum(len, bufPtr)$/
+Net_InetChecksum2	Net_InetHdrChecksum.c	/^Net_InetChecksum2(len, bufPtr, pseudoHdrPtr)$/
+Net_MakeInetAddr	Net_MakeInetAddr.c	/^Net_MakeInetAddr(net, host)$/
+Net_NetToHostInt	Net_NetToHostInt.c	/^Net_NetToHostInt(longInt)$/
+Net_NetToHostShort	Net_NetToHostShort.c	/^Net_NetToHostShort(shortInt)$/
+Net_SetAddress	Net_SetAddress.c	/^Net_SetAddress(type, specificPtr, addrPtr)$/
+Net_StringToAddr	Net_StringToAddr.c	/^Net_StringToAddr(buffer, protocol, netType, addres/
+Net_StringToAddrNew	Net_StringToAddr.c	/^Net_StringToAddrNew(buffer, type, addressPtr)$/
+Net_StringToEtherAddr	Net_StringToEtherAddr.c	/^Net_StringToEtherAddr(buffer, etherAddressPtr)$/
+Net_StringToFDDIAddr	Net_StringToFDDIAddr.c	/^Net_StringToFDDIAddr(buffer, fddiAddressPtr)$/
+Net_StringToInetAddr	Net_StringToInetAddr.c	/^Net_StringToInetAddr(cp)$/
+Net_StringToNetNum	Net_StringToNetNum.c	/^Net_StringToNetNum(cp)$/
+Net_StringToUltraAddr	Net_StringToUltraAddr.c	/^Net_StringToUltraAddr(buffer, ultraAddressPtr)$/
+Net_UltraAddrToString	Net_UltraAddrToString.c	/^Net_UltraAddrToString(ultraAddrPtr, buffer)$/
+UC	Net_InetAddrToString.c	/^#define	UC(b)	(((int)b)&0xff)$/
+swab	Net_HostToNetShort.c	/^	union swab {$/

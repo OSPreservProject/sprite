@@ -1,0 +1,140 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     90.05.03.16.45.54;  author rab;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/* 
+ * mktime.c --
+ *
+ *	Source code for the "mktime" library routine.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header$";
+#endif
+
+#include <time.h>
+
+#ifdef __STDC__
+static int comparTime(struct tm *t1, struct tm *t2);
+#else
+static int comparTime();
+#endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * mktime --
+ *
+ *      Convert a local time, contained in a `struct *tp' into a
+ *      calander time in the same representation used by time(2).
+ *
+ * Results:
+ *      Returns the calander time, or -1 if it cannot be represented.
+ *
+ * Side effects:
+ *      Trashes localtime's internal buffer.
+ *
+ *----------------------------------------------------------------------
+ */
+
+time_t
+mktime(tp)
+    struct tm *tp;
+{
+    register int i, r;
+    time_t t = 0;
+    struct tm temp;
+
+    /* Make a local copy just in case tp points to localtime's buffer */
+    temp = *tp;
+    /* Check for zero */
+    if (comparTime(&temp, localtime(&t)) == 0) {
+	return 0;
+    }
+    /* Do a binary search, until the right time is found */
+    for (i = 31; --i >= 0;) {   /* start with high bit, work toward zero */
+	t |= 1L << i;           /* set bit, then compare times */
+	if ((r = comparTime(&temp, localtime(&t))) < 0) {
+	    t &= ~(1L << i);    /* t is later, so clear the bit */
+	} else if (r == 0) {
+	    return t;    /* times match, so return */
+	}
+    }
+    /* If we get here, then tp didn't point to valid data. */
+    return -1;
+}
+
+/*
+ *------------------------------------------------------------------
+ * comparTime --
+ *
+ *      Compare two `struct tm's.
+ *
+ * Results:
+ *      0 if the times are the same.
+ *      Positive if t1 is later than t2.
+ *      Negative if t1 is earlier than t2.
+ *
+ * Side effects:
+ *      None.
+ *
+ *-----------------------------------------------------------------
+ */
+
+static int
+comparTime(t1, t2)
+    struct tm *t1, *t2;
+{
+    int diff;
+
+    if ((diff = t1->tm_year - t2->tm_year) != 0) {
+	return diff;
+    }
+    if ((diff = t1->tm_mon - t2->tm_mon) != 0) {
+	return diff;
+    }
+    if ((diff = t1->tm_mday - t2->tm_mday) != 0) {
+	return diff;
+    }
+    if ((diff = t1->tm_hour - t2->tm_hour) != 0) {
+	return diff;
+    }
+    if ((diff = t1->tm_min - t2->tm_min) != 0) {
+	return diff;
+    }
+    if ((diff = t1->tm_sec - t2->tm_sec) != 0) {
+	return diff;
+    }
+    return 0;
+}
+
+@

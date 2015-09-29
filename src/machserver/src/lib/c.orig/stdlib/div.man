@@ -1,0 +1,46 @@
+' Copyright 1989 Regents of the University of California
+' Permission to use, copy, modify, and distribute this
+' documentation for any purpose and without fee is hereby
+' granted, provided that this notice appears in all copies.
+' The University of California makes no representations about
+' the suitability of this material for any purpose.  It is
+' provided "as is" without express or implied warranty.
+' 
+' $Header: /sprite/src/lib/c/stdlib/RCS/div.man,v 1.1 89/01/05 18:00:18 ouster Exp $ SPRITE (Berkeley)
+' 
+.so \*(]ltmac.sprite
+.HS div cmds
+.BS
+.SH NAME
+div, ldiv \- Return quotient and remainder from division
+.SH SYNOPSIS
+.nf
+\fB#include <stdlib.h>
+
+\fBdiv_t
+div(\fInumer, denom\fB)\fR
+
+\fBldiv_t
+ldiv(\fInumer, denom\fB)\fR
+.SH ARGUMENTS
+.AP int numer in
+Numerator for division.
+.AP int denom in
+Denominator for division.
+.BE
+
+.SH DESCRIPTION
+.PP
+The \fBdiv\fR and \fBldiv\fR procedures divide \fInumer\fR by \fIdenom\fR
+and return both the quotient and remainder, in the \fBquot\fR and
+\fBrem\fR fields of the result structure.  If the division is inexact,
+the sign of the resulting quotient is that of the algebraic quotient, and
+the magnitude of the resulting quotient is the largest integer less than
+the magnitude of the algebraic quotient.
+.PP
+\fBDiv\fR takes \fBint\fR
+arguments and produces \fBint\fR results, while \fBldiv\fR works with
+\fBlong int\fR arguments and results.
+
+.SH KEYWORDS
+divide, quotient, remainder

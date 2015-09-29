@@ -1,0 +1,203 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.6
+date     89.07.14.09.10.11;  author rab;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.11.23.14.04.53;  author douglis;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.09.23.09.11.46;  author douglis;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.09.13.17.21.18;  author douglis;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.09.13.16.51.52;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.08.14.14.48.24;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@declarations for the user log (utmp equivalent).
+@
+
+
+1.6
+log
+@*** empty log message ***
+@
+text
+@/*
+ * ulog.h --
+ *
+ *	Declarations of structures, constants, and procedures to manage
+ *	the global database of user login/logouts.
+ *
+ * Copyright 1987, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/lib/include/RCS/ulog.h,v 1.5 88/11/23 14:04:53 douglis Exp Locker: rab $ SPRITE (Berkeley)
+ */
+
+#ifndef _ULOG
+#define _ULOG
+
+/*
+ * It's not clear how to handle ports.  We could use a shared file with indexes
+ * corresponding to "ttys", but there are other issues (like the fact that
+ * the kernel only maintains idle time measurements for the console, not
+ * for rlogins).  Therefore, define ULOG_LOC_CONSOLE as a single index
+ * that distinguishes local logins from remote, and use the rloginN numbers
+ * as non-zero indexes for the remote logins.
+ */
+
+#define ULOG_LOC_CONSOLE 0
+
+
+/*
+ * Since each host has a region in the userLog file allocated to it,
+ * the number of entries for each host is (unfortunately) fixed.  This is
+ * done for simplicity.  The routines may later be changed to lock the
+ * file and find a free entry at any location rather than basing the location
+ * on hostID and portID.
+ */
+
+#define ULOG_MAX_PORTS 10
+
+/*
+ * Define the maximum length of a location entry.
+ */
+#define ULOG_LOC_LENGTH 33
+
+/*
+ * Define the database files used for storing the per-user and per-host/port
+ * logs.
+ */
+
+#define LASTLOG_FILE_NAME "/sprite/admin/lastLog"
+#define ULOG_FILE_NAME "/sprite/admin/userLog"
+
+/*
+ * Define the structure used internally by user programs.
+ */
+typedef struct {
+    int	uid;		/* user identifier */
+    int hostID;		/* host for which data is valid */
+    int portID;		/* port within host */
+    int updated;	/* time updated (in seconds since 1/1/70); 0 if
+			   invalid */
+    char location[ULOG_LOC_LENGTH];	/* location of user */
+} Ulog_Data;
+
+extern int		Ulog_RecordLogin();
+extern int		Ulog_RecordLogout();
+extern Ulog_Data *	Ulog_LastLogin();
+extern int		Ulog_ClearLogins();
+#endif /* _ULOG */
+@
+
+
+1.5
+log
+@removed "data" from pathnames.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/lib/include/RCS/ulog.h,v 1.4 88/09/23 09:11:46 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+d45 1
+a45 1
+ * Define the maximum length of a location entry.  
+d73 1
+a73 1
+#endif _ULOG
+@
+
+
+1.4
+log
+@changed back to data from data.new.  changed return value of
+Ulog_LastLogin and added a new routine.
+@
+text
+@d16 1
+a16 1
+ * $Header: ulog.h,v 1.3 88/09/13 17:21:18 douglis Exp $ SPRITE (Berkeley)
+d54 2
+a55 2
+#define LASTLOG_FILE_NAME "/sprite/admin/data/lastLog"
+#define ULOG_FILE_NAME "/sprite/admin/data/userLog"
+@
+
+
+1.3
+log
+@moved *_FILE_NAME declarations into this so user programs
+could get at them if needed.
+@
+text
+@d16 1
+a16 1
+ * $Header: ulog.h,v 1.2 88/09/13 16:51:52 douglis Exp $ SPRITE (Berkeley)
+d54 2
+a55 2
+#define LASTLOG_FILE_NAME "/sprite/admin/data.new/lastLog"
+#define ULOG_FILE_NAME "/sprite/admin/data.new/userLog"
+d69 4
+a72 3
+extern int	Ulog_RecordLogin();
+extern int	Ulog_RecordLogout();
+extern int	Ulog_LastLogin();
+@
+
+
+1.2
+log
+@just changed a comment
+@
+text
+@d16 1
+a16 1
+ * $Header: ulog.h,v 1.1 88/08/14 14:48:24 douglis Exp $ SPRITE (Berkeley)
+d49 11
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+ * $Header: ulog.h,v 1.1 88/07/14 17:23:53 ouster Exp $ SPRITE (Berkeley)
+d50 1
+a50 1
+    int	uid;		/* unique identifier */
+@

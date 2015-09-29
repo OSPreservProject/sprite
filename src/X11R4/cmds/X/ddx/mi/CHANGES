@@ -1,0 +1,9 @@
+The following changes have been made to this directory since R3:
+
+     o  New: mostly integer wide line code.
+
+     o  New: integer filled arc, zero-width arc code.
+
+     o  New: software cursor support.
+
+     o  Region optimizations, both in miregion.c and mivaltree.c

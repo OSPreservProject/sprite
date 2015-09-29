@@ -1,0 +1,764 @@
+head     1.9;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.9
+date     91.01.28.16.44.36;  author kupfer;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     91.01.28.12.33.44;  author kupfer;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     89.01.02.13.55.49;  author douglis;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.09.13.10.23.05;  author douglis;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.08.05.15.47.19;  author ouster;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.08.05.15.38.24;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.08.04.08.35.52;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.08.01.13.28.34;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.08.01.10.42.22;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.9
+log
+@Don't return a time if there is an error.
+@
+text
+@/*
+ * option.c --
+ *
+ *	Routines to do command line option processing.
+ *
+ * Copyright 1986, 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/etc/RCS/option.c,v 1.8 91/01/28 12:33:44 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <option.h>
+#include <cfuncproto.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <strings.h>
+#include <time.h>
+
+#define OptNoArg(progName, opt) fprintf(stderr, \
+		      "Warning: %s option \"-%s\" needs an argument\n", \
+		      (progName), (opt))
+
+/* Forward references: */
+
+static void ParseTime _ARGS_ ((char *progName, char *str,
+				 time_t *resultPtr));
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Opt_Parse --
+ *
+ *	Process a command line according to a template of accepted
+ *	options.  See the manual page and header file for more details.
+ *
+ * Results:
+ *	The number of options that weren't processed by this procedure
+ *	is returned, and argv points to an array of unprocessed
+ *	options.  (This is all of the options that didn't start with
+ *	"-", except for those used as arguments to the options
+ *	processed here; it's also anything after an OPT_REST option.)
+ *
+ * Side effects:
+ *	The variables referenced from the option array get modified
+ *	if their option was present on the command line.  Can clobber 
+ *	the global buffer used by localtime(3).
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Opt_Parse(argc, argv, optionArray, numOptions, flags)
+    register int  argc; 	    /* Number of arguments in argv. */
+    char    	  **argv;   	    /* Array of arguments */
+    Option  	  optionArray[];    /* Array of option descriptions */
+    int	    	  numOptions;	    /* Size of optionArray */
+    int		  flags;	    /* Or'ed combination of various flag bits:
+				     * see option.h for definitions. */
+{
+    register Option 	*optionPtr; /* pointer to the current option in the
+				     * array of option specifications */
+    register char 	*curOpt;    /* Current flag argument */
+    register char 	**curArg;   /* Current argument */
+    register int  	argIndex;   /* Index into argv to which next unused
+				     * argument should be copied */
+    int 	  	stop=0;	    /* Set non-zero to stop processing
+				     * arguments when an OPT_REST flag is
+				     * encountered */
+    int			length;	    /* Number of characters in current
+				     * option. */
+
+    argIndex = 1;
+    argc -= 1;
+    curArg = &argv[1];
+
+    while (argc && !stop) {
+	if (**curArg == '-') {
+	    curOpt = &curArg[0][1];
+	    curArg += 1;
+	    argc -= 1;
+
+	    /*
+	     * Check for the special options "?" and "help".  If found,
+	     * print documentation and exit.
+	     */
+
+	    if ((strcmp(curOpt, "?") == 0) || (strcmp(curOpt, "help") == 0)) {
+		Opt_PrintUsage (argv[0], optionArray, numOptions);
+		exit(0);
+	    }
+
+	    /*
+	     * Loop over all the options specified in a single argument
+	     * (must be 1 unless OPT_ALLOW_CLUSTERING was specified).
+	     */
+
+	    while (1) {
+		/*
+		 * Loop over the array of options searching for one with the
+		 * matching key string.  If found, it is left pointed to by
+		 * optionPtr.
+		 */
+		for (optionPtr = &optionArray[numOptions - 1];
+			optionPtr >= optionArray;
+			optionPtr -= 1) {
+		     if (optionPtr->key == NULL) {
+			 continue;
+		     }
+		     if (*optionPtr->key == *curOpt) {
+			 if (flags & OPT_ALLOW_CLUSTERING) {
+			     length = strlen(optionPtr->key);
+			     if (strncmp(optionPtr->key, curOpt, length) == 0) {
+				 break;
+			     }
+			 } else {
+			     if (strcmp(optionPtr->key, curOpt) == 0) {
+				 break;
+			     }
+			 }
+		     }
+		}
+
+		if (optionPtr < optionArray) {
+		    /*
+		     * No match.  Print error message and skip option.
+		     */
+
+		    fprintf(stderr, "Unknown option \"-%s\";", curOpt);
+		    fprintf(stderr, "  type \"%s -help\" for information\n",
+			    argv[0]);
+		    break;
+		}
+
+		/*
+		 * Take the appropriate action based on the option type
+		 */
+
+		if (optionPtr->type >= 0) {
+		    *((int *) optionPtr->address) = optionPtr->type;
+		} else {
+		    switch (optionPtr->type) {
+			case OPT_REST:
+			    stop = 1;
+			    *((int *) optionPtr->address) = argIndex;
+			    break;
+			case OPT_STRING:
+			    if (argc == 0) {
+				OptNoArg(argv[0], optionPtr->key);
+			    } else {
+				*((char **)optionPtr->address) = *curArg;
+				curArg++;
+				argc--;
+			    }
+			    break;
+			case OPT_INT:
+			    if (argc == 0) {
+				OptNoArg(argv[0], optionPtr->key);
+			    } else {
+				char *endPtr;
+
+				*((int *) optionPtr->address) =
+					strtol(*curArg, &endPtr, 0);
+				if (endPtr == *curArg) {
+				    fprintf(stderr,
+      "Warning: option \"-%s\" got a non-numeric argument \"%s\".  Setting to 0.\n",
+					    optionPtr->key, *curArg);
+				}
+				curArg++;
+				argc--;
+			    }
+			    break;
+			case OPT_TIME:
+			    if (argc == 0) {
+				OptNoArg(argv[0], optionPtr->key);
+			    } else {
+				ParseTime(argv[0], *curArg, 
+					  (time_t *)optionPtr->address);
+				curArg++;
+				argc--;
+			    }
+			    break;
+			case OPT_FLOAT:
+			    if (argc == 0) {
+				OptNoArg(argv[0], optionPtr->key);
+			    } else {
+				char *endPtr;
+
+				*((double *) optionPtr->address) =
+					strtod(*curArg, &endPtr);
+				if (endPtr == *curArg) {
+				    fprintf(stderr,
+      "Warning: option \"-%s\" got non-floating-point argument \"%s\".  Setting to 0.\n",
+					    optionPtr->key, *curArg);
+				}
+				curArg++;
+				argc--;
+			    }
+			    break;
+			case OPT_GENFUNC: {
+			    int	    (*handlerProc)();
+
+			    handlerProc = (int (*)())optionPtr->address;
+
+			    argc = (* handlerProc) (optionPtr->key, argc,
+				    curArg);
+			    break;
+			}
+			case OPT_FUNC: {
+			    int (*handlerProc)();
+
+			    handlerProc = (int (*)())optionPtr->address;
+			    
+			    if ((* handlerProc) (optionPtr->key, *curArg)) {
+				curArg += 1;
+				argc -= 1;
+			    }
+			    break;
+			}
+			case OPT_DOC:
+			    Opt_PrintUsage (argv[0], optionArray, numOptions);
+			    exit(0);
+			    /*NOTREACHED*/
+		    }
+		}
+		/*
+		 * Advance to next option
+		 */
+
+		if (flags & OPT_ALLOW_CLUSTERING) {
+		    curOpt += length;
+		    if (*curOpt == 0) {
+			break;
+		    }
+		} else {
+		    break;
+		}
+	    }
+	} else {
+	    /*
+	     * *curArg is an argument for which we have no use, so copy it
+	     * down.
+	     */
+	    argv[argIndex] = *curArg;
+	    argIndex += 1;
+	    curArg += 1;
+	    argc -= 1;
+
+	    /*
+	     * If this wasn't an option, and we're supposed to stop parsing
+	     * the first time we see something other than "-", quit.
+	     */
+	    if (flags & OPT_OPTIONS_FIRST) {
+		stop = 1;
+	    }
+	}
+    }
+
+    /*
+     * If we broke out of the loop because of an OPT_REST argument, we want
+     * to copy the rest of the arguments down, so we do.
+     */
+    while (argc) {
+	argv[argIndex] = *curArg;
+	argIndex += 1;
+	curArg += 1;
+	argc -= 1;
+    }
+    argv[argIndex] = (char *)NULL;
+    return argIndex;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Opt_PrintUsage --
+ *
+ *	Print out a usage message for a command.  This prints out the
+ *	documentation strings associated with each option.
+ *
+ * Results:
+ *	none.
+ *
+ * Side effects:
+ *	Messages printed onto the console.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Opt_PrintUsage(commandName, optionArray, numOptions)
+    char *commandName;
+    Option optionArray[];
+    int numOptions;
+{
+    register int i;
+    int width;
+
+    /*
+     * First, compute the width of the widest option key, so that we
+     * can make everything line up.
+     */
+
+    width = 4;
+    for (i=0; i<numOptions; i++) {
+	int length;
+	if (optionArray[i].key == NULL) {
+	    continue;
+	}
+	length = strlen(optionArray[i].key);
+	if (length > width) {
+	    width = length;
+	}
+    }
+
+    fprintf(stderr, "Usage of command \"%s\"\n", commandName);
+    for (i=0; i<numOptions; i++) {
+	if (optionArray[i].type != OPT_DOC) {
+	    fprintf(stderr, " -%s%-*s %s\n", optionArray[i].key,
+		    width+1-strlen(optionArray[i].key), ":",
+		    optionArray[i].docMsg);
+	    switch (optionArray[i].type) {
+		case OPT_INT: {
+		    fprintf(stderr, "\t\tDefault value: %d\n",
+			    *((int *) optionArray[i].address));
+		    break;
+		}
+		case OPT_FLOAT: {
+		    fprintf(stderr, "\t\tDefault value: %lg\n",
+			    *((double *) optionArray[i].address));
+		    break;
+		}
+		case OPT_STRING: {
+		    if (*(char **)optionArray[i].address != (char *) NULL) {
+			    fprintf(stderr, "\t\tDefault value: \"%s\"\n",
+				    *(char **) optionArray[i].address);
+			    break;
+		    }
+		}
+		default: {
+		    break;
+		}
+	    }
+	} else {
+	    fprintf(stderr, " %s\n", optionArray[i].docMsg);
+	}
+    }
+    fprintf(stderr, " -help%-*s Print this message\n", width-3, ":");
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ParseTime --
+ *
+ *	Convert a date and time from some string representation to 
+ *	something we can compute with.
+ *
+ * Results:
+ *	If str points to a parsable time, the corresponding UNIX time 
+ *	value (seconds past the epoch) is returned through resultPtr.
+ *
+ * Side effects:
+ *	Can clobber the global buffer used by localtime(3).
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ParseTime(progName, str, resultPtr)
+    char	*progName;	/* name that the program was called as */
+    char	*str;		/* the string to parse */
+    time_t	*resultPtr;	/* pointer to result time value */
+{
+    long result;		/* the answer */
+    char *endPtr;		/* pointer into str, for parsing */
+    struct tm pieces;		/* year, month, etc. as integers */
+
+    /* 
+     * We currently accept the following formats:
+     * 
+     * (1) an integer number of seconds past the epoch.
+     * (2) a string of the form "yy.mm.dd.hh.mm.ss"
+     */
+    
+    result = strtol(str, &endPtr, 0);
+    if (endPtr == str) {
+	goto parseError;
+    }
+    if (*endPtr == '\0') {
+	*resultPtr = result;
+	return;
+    }
+
+    /* 
+     * Not a simple integer, so try form 2. 
+     */
+    if (*endPtr != '.') {
+	goto parseError;
+    }
+    pieces.tm_year = result;
+    if (pieces.tm_year > 1900) {
+	pieces.tm_year -= 1900;
+    }
+    pieces.tm_mon = strtol(endPtr+1, &endPtr, 0) - 1;
+    if (endPtr == str || *endPtr != '.') {
+	goto parseError;
+    }
+    pieces.tm_mday = strtol(endPtr+1, &endPtr, 0);
+    if (endPtr == str || *endPtr != '.') {
+	goto parseError;
+    }
+    pieces.tm_hour = strtol(endPtr+1, &endPtr, 0);
+    if (endPtr == str || *endPtr != '.') {
+	goto parseError;
+    }
+    pieces.tm_min = strtol(endPtr+1, &endPtr, 0);
+    if (endPtr == str || *endPtr != '.') {
+	goto parseError;
+    }
+    pieces.tm_sec = strtol(endPtr+1, &endPtr, 0);
+    if (endPtr == str || *endPtr != '\0') {
+	goto parseError;
+    }
+
+    result = mktime(&pieces);
+    if (result == -1) {
+	fprintf(stderr, "%s: can't represent the time \"%s\".\n",
+		progName, str);
+    } else {
+	*resultPtr = result;
+    }
+    return;
+
+ parseError:
+    fprintf(stderr, "%s: can't parse \"%s\" as a time.\n", progName, str);
+    return;
+}
+@
+
+
+1.8
+log
+@Add OPT_TIME flavor.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/etc/RCS/option.c,v 1.7 89/01/02 13:55:49 douglis Exp Locker: kupfer $ SPRITE (Berkeley)";
+d33 2
+a34 1
+static time_t ParseTime _ARGS_ ((char *progName, char *str));
+d185 2
+a186 2
+				*((time_t *) optionPtr->address) =
+					ParseTime(argv[0], *curArg);
+d370 2
+a371 1
+ *	Returns the UNIX time value (seconds past the epoch).
+d379 5
+a383 4
+static time_t
+ParseTime(progName, str)
+    char *progName;		/* name that the program was called as */
+    char *str;			/* the string to parse */
+d401 2
+a402 1
+	return (time_t)result;
+d405 3
+a407 1
+    /* Try form 2. */
+d440 2
+a441 1
+	result = 0;
+d443 1
+a443 2
+
+    return (time_t)result;
+d447 1
+a447 1
+    return (time_t)0;
+@
+
+
+1.7
+log
+@if OPT_OPTIONS_FIRST option specified, and we hit something other than
+"-", stop parsing.
+@
+text
+@d6 1
+a6 1
+ * Copyright 1986 Regents of the University of California
+d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/etc/RCS/option.c,v 1.6 88/09/13 10:23:05 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d21 1
+d25 1
+d30 5
+d53 2
+a54 1
+ *	if their option was present on the command line.
+d180 10
+d279 1
+d357 85
+@
+
+
+1.6
+log
+@changed header for Opt_Parse to reflect real return value.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: option.c,v 1.5 88/08/05 15:47:19 ouster Exp $ SPRITE (Berkeley)";
+d58 1
+a58 2
+				     * only OPT_ALLOW_CLUSTERING is currently
+				     * defined. */
+d237 8
+@
+
+
+1.5
+log
+@Better help information.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: option.c,v 1.4 88/08/05 15:38:24 ouster Exp $ SPRITE (Berkeley)";
+d38 5
+a42 5
+ *	There is no return result.  However, argv and *argcPtr are
+ *	modified to describe just the options that weren't processed by
+ *	this procedure (this is all of the options that didn't start
+ *	with "-", except for those used as arguments to the options
+ *	processed here;  it's also anything after an OPT_REST option).
+@
+
+
+1.4
+log
+@Be careful to use correct option name in error messages and other things.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: option.c,v 1.3 88/08/04 08:35:52 ouster Exp $ SPRITE (Berkeley)";
+d129 3
+a131 1
+		    fprintf(stderr, "Unknown option \"-%s\"\n", curOpt);
+d286 1
+a286 1
+    width = 0;
+d330 1
+@
+
+
+1.3
+log
+@Added "-help" option, changed allowClustering to flags.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: option.c,v 1.2 88/08/01 13:28:34 ouster Exp $ SPRITE (Berkeley)";
+d147 1
+a147 1
+				OptNoArg(argv[0], curOpt);
+d156 1
+a156 1
+				OptNoArg(argv[0], curOpt);
+d165 1
+a165 1
+					    curOpt, *curArg);
+d173 1
+a173 1
+				OptNoArg(argv[0], curOpt);
+d182 1
+a182 1
+					    curOpt, *curArg);
+d193 2
+a194 1
+			    argc = (* handlerProc) (curOpt, argc, curArg);
+d202 1
+a202 1
+			    if ((* handlerProc) (curOpt, *curArg)) {
+@
+
+
+1.2
+log
+@Handle NULL keys.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: option.c,v 1.1 88/08/01 10:42:22 ouster Exp $ SPRITE (Berkeley)";
+d25 3
+a27 3
+#define OptNoArg(chr) fprintf(stderr, \
+		      "Warning: option \"-%s\" needs an argument\n", \
+		      (chr))
+d52 2
+a53 2
+Opt_Parse(argc, argv, optionArray, numOptions, allowClustering)
+    int     	  argc; 	    /* Number of arguments in argv. */
+d57 3
+a59 5
+    int		  allowClustering;  /* Non-zero means several options may
+				     * be grouped together with a single "-",
+				     * e.g. "foo -abc" instead of
+				     * "foo -a -b -c".  This only makes sense
+				     * if all options are single letters. */
+a64 1
+    register int  	argc;	    /* Count of remaining arguments */
+d84 10
+d95 1
+a95 1
+	     * (must be 1 unless allowClustering is TRUE).
+d111 1
+a111 1
+			 if (allowClustering) {
+d126 1
+a126 3
+		     * No match.  Check for "?".  If found, print documentation
+		     * and exit.  Otherwise print error message and skip
+		     * option.
+a128 4
+		    if (strcmp(curOpt, "?") == 0) {
+			Opt_PrintUsage (argv[0], optionArray, numOptions);
+			exit(0);
+		    }
+d147 1
+a147 1
+				OptNoArg(curOpt);
+d156 1
+a156 1
+				OptNoArg(curOpt);
+d173 1
+a173 1
+				OptNoArg(curOpt);
+d217 1
+a217 1
+		if (allowClustering) {
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: option.c,v 2.4 88/07/11 13:27:47 douglis Exp $ SPRITE (Berkeley)";
+d51 3
+a53 4
+void
+Opt_Parse(argcPtr, argv, numOptions, optionArray, allowClustering)
+    int     	  *argcPtr; 	    /* Pointer to number of arguments
+				     * in argv */
+d55 1
+a56 1
+    Option  	  optionArray[];    /* Array of option descriptions */
+d77 1
+a77 1
+    argc = *argcPtr - 1;
+d100 3
+d125 1
+a125 1
+			Opt_PrintUsage (argv[0], numOptions, optionArray);
+d207 1
+a207 1
+			    Opt_PrintUsage (argv[0], numOptions, optionArray);
+d248 1
+a248 1
+    *argcPtr = argIndex;
+d269 1
+a269 1
+Opt_PrintUsage(commandName, numOptions, optionArray)
+d271 1
+a272 1
+    Option optionArray[];
+d285 3
+d307 1
+a307 1
+		    fprintf(stderr, "\t\tDefault value: %lf\n",
+@

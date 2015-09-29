@@ -1,0 +1,198 @@
+
+
+
+DVI2PS                    User Commands                    DVI2PS
+
+
+
+NNAAMMEE
+     dvi2ps  - convert a DVI file to PostScript
+
+SSYYNNOOPPSSIISS
+     dvi2ps [ -p ] [ -s ] [ -r ] [ -a pxldir ]  [-f n]  [-t n]
+     [-m n] dvifile[.dvi]
+
+DDEESSCCRRIIPPTTIIOONN
+     This program converts a DVI file to PostScript, and writes
+     the result to standard output.  The result requires a small
+     amount of PostScript source to precede it to the printer,
+     before it can be successfully printed.
+
+AARRGGUUMMEENNTTSS
+     --pp          - _d_o _n_o_t _p_r_e_l_o_a_d _f_o_n_t _i_n_f_o_r_m_a_t_i_o_n.  Occasionally
+                 there may be insufficent memory to hold the
+                 information about all of the fonts in the sys-
+                 tem.  Portions of the document may be converted
+                 by including the -p option on the command line.
+                 This will prevent the preloading of all fonts
+                 into the system and instead use demand loading
+                 of the font tables.
+
+     --ss          - _t_u_r_n _o_n _p_r_i_n_t_i_n_g _o_f _s_t_a_t_i_s_t_i_c_s.  Some versions
+                 of dvi2ps will optionally print statistics about
+                 font usage and some other information that is
+                 generally only interesting to developers.  On
+                 these systems, -s turns on the statistics print-
+                 ing.
+
+     --rr          - _s_t_a_c_k _p_a_g_e_s _i_n _r_e_v_e_r_s_e _o_r_d_e_r.  Normally, the
+                 DVI pages are processed in reverse order, with
+                 the result that they are stacked in the correct
+                 order in the output tray.  This option reverses
+                 that.
+
+     --aa _p_x_l_d_i_r   - _s_p_e_c_i_f_y _d_i_f_f_e_r_e_n_t _a_r_e_a _f_o_r _P_X_L _f_i_l_e_s.  Speci-
+                 fying ``--aa _p_x_l_d_i_r'' causes directory _p_x_l_d_i_r'' to
+                 be searched for all PPXXLL files, instead of the
+                 default directory.
+
+     --ff _n        Specify a starting page number (this is a TeX
+                 page number,
+
+     --tt _n        Specify an ending page number.
+
+     --mm[_0_h_1_2_3_4]  Specify a magstep to use to print the document.
+                 This overrides whatever might be in the DVI
+                 file.
+
+     --mm _n        Specify a magnification to use to print the
+                 document.  This should probably be one of the
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+DVI2PS                    User Commands                    DVI2PS
+
+
+
+                 magic numbers 1000, 1095, 1200, 1440, 1728, but
+                 no checking is done.  Note: if your site does
+                 not have the complete set of 300 dpi fonts, this
+                 option might be disabled.
+
+NNOOTTEESS
+     TeX output (.dvi files) can be printed directly to most
+     printers using the standard _l_p_r(_1) interface, with the --dd
+     option to inform it that you are printing a .dvi file.
+     _D_v_i_2_p_s is the converter used for PostScript printers inter-
+     nally by the line printer daemon, so it (along with the pro-
+     logue file) must be installed on the host which spools for
+     the printer.
+
+     Not all fonts are available in the resolution needed to
+     display on the laser printer;  when a missing font is
+     encountered, _d_v_i_2_p_s will continue to process your dvi file,
+     and and will log a warning message.  Gaps will appear in the
+     document where the missing characters should have been.
+
+     It can take up to 60 seconds for the first page to be out-
+     put.  After a head of steam has been built up, it can roll
+     along at 5-10 seconds per page.
+
+     PostScript and TranScript are trademarks of Adobe Systems,
+     Inc.
+
+FFIILLEESS
+     *.dvi                         TeX DeVice Independent output
+                                   file
+
+     /usr/local/fonts/pixel        TeX default font rasters
+                                   directory
+
+     /usr/local/lib/ps/psdvi.pro   PostScript header for the con-
+                                   verted code.
+
+SSEEEE AALLSSOO
+     tex(l) lpr(1)
+
+BBUUGGSS
+     Probably too numerous to mention.
+
+     There is likely a limit to the size of documents that can be
+     printed (at least, on the Apple LaserWriter).  If you get
+     VMerrors reported when printing, use the `-f' and `-t'
+     options, to select a range of pages.  The exact limit is
+     unknown, but is probably well in excess of 50 pages for
+     ``normal'' documents, decreasing with number of different
+     fonts used, size of fonts, etc.
+
+
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+DVI2PS                    User Commands                    DVI2PS
+
+
+
+AAUUTTHHOORR((ss))
+     Mark Senn wrote the early versions of this program for the
+     BBN BitGraph.  Stephan Bechtolsheim, Bob Brown, Richard
+     Furuta, James Schaad and Robert Wells improved it.  Norm
+     Hutchinson ported the program to the Sun.  Neal Holtz ported
+     it to the Apollo, and then to produce PostScript.  Local
+     modifications were done by Van Jacobson of Lawerence Berke-
+     ley Laboratory.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     3
+
+
+

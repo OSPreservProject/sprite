@@ -1,0 +1,12 @@
+*** /tmp/,RCSt1790843	Mon Nov  4 17:41:30 1991
+--- sunUtils.c	Fri Feb 16 17:43:48 1990
+***************
+*** 28,33 ****
+--- 28,34 ----
+  
+  #ifndef	lint
+  static char sccsid[] = "%W %G Copyright 1987 Sun Micro";
++ static char rcsid[] = "$Header: /mic/X11R4/src/cmds/X/ddx/sprite/RCS/sunUtils.c,v 1.2 90/02/16 17:43:09 tve Exp $";
+  #endif
+  
+  #include "sun.h"

@@ -1,0 +1,16 @@
+D DS3100_M                          	ds3100.md
+D DS5000_M                          	ds5000.md
+F LOCAL.MK_;1                       	local.mk,v
+F MEM.H_V;1                         	mem.h,v
+F MEMINT.H_V;1                      	memInt.h,v
+F MEMORY.C_V;1                      	memory.c,v
+F MEMSUBR.C_V;1                     	memSubr.c,v
+D OLD                               	OLD
+D PROC4                             	proc4
+D SCVS                              	SCVS
+D SPUR_MD                           	spur.md
+D SPUR_MD_                          	spur.md.save
+D SUN3_MD                           	sun3.md
+D SUN4C_MD                          	sun4c.md
+D SUN4NW_M                          	sun4nw.md
+D SUN4_MD                           	sun4.md

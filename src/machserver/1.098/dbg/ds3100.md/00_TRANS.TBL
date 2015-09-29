@@ -1,0 +1,10 @@
+F DBG.H;1                           	dbg.h
+F DBGASM.S;1                        	dbgAsm.s
+F DBGDBXIN.H;1                      	dbgDbxInt.h
+F DBGDIS.C;1                        	dbgDis.c
+F DBGINT.H;1                        	dbgInt.h
+F DBGIP.C;1                         	dbgIP.c
+F DBGMAIN.C;1                       	dbgMain.c
+F DBGMAIND.C;1                      	dbgMainDbx.c
+F DEPENDEN.MK;1                     	dependencies.mk
+F MD.MK;1                           	md.mk

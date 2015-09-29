@@ -1,0 +1,68 @@
+
+
+
+DELETEUSER           Administrative Commands           DELETEUSER
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     deleteuser - Delete Sprite user accounts
+
+SSYYNNOOPPSSIISS
+     ddeelleetteeuusseerr _n_a_m_e _n_a_m_e ...
+
+OOPPTTIIOONNSS
+     _n_a_m_e           the name of an account to be deleted.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     DDeelleetteeuusseerr takes a list of account names  and  removes  them
+     from  the  system.  The  user's  account is removed from the
+     password file and the user's home directory is flushed.   In
+     addition,  an  editor is invoked on the system aliases file,
+     so that the user can be removed from any mailing  lists  she
+     might belong to.
+
+     DDeelleetteeuusseerr can also remove partially  created  or  partially
+     deleted accounts, though it squawks a bit.
+
+
+KKEEYYWWOORRDDSS
+     user, account
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  September 4, 1991                  1
+
+
+

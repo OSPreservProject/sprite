@@ -1,0 +1,68 @@
+
+
+
+DISKWARN             Administrative Commands             DISKWARN
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     diskwarn - send mail if a disk partition gets low on space
+
+SSYYNNOOPPSSIISS
+     ddiisskkwwaarrnn _d_o_m_a_i_n _m_i_n_f_r_e_e _u_s_e_r [ _u_s_e_r ...]
+
+OOPPTTIIOONNSS
+     _d_o_m_a_i_n         The name of the filesystem domain to check.
+
+     _m_i_n_f_r_e_e        The minimum acceptable number of  free  kilo-
+                    bytes.
+
+     _u_s_e_r           The name of a user who should be notified  if
+                    there is a problem.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This program verifies that _d_o_m_a_i_n has at least _m_i_n_f_r_e_e kilo-
+     bytes  of  free  space.   If it doesn't, or if there is some
+     problem checking _d_o_m_a_i_n, it sends mail to the  users  listed
+     on  the  command  line  to notify them of the problem.  This
+     program was designed to be run from ccrroonn.
+
+
+KKEEYYWWOORRDDSS
+     disk, mail, free space, utilization
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  June 4, 1991                     1
+
+
+

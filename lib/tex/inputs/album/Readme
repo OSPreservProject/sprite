@@ -1,0 +1,41 @@
+This file is a "Readme" for the "tape" documentstyle option that implements
+commands to maintain a primitive database of albums from which subsequently
+casette tape labels can be printed with minimal effort. A significant
+attraction is the fact that the album database can be shared among users. 
+
+The author hopes that from time to time netters  make their databases
+available to general public.
+
+Installation:
+In order for the 'tape' style option to be loaded, one of the two things 
+will have to be done:
+
+1. A copy of the macro file 'tape.sty' be put in the standard place for
+such macros (typically /usr/lib/tex/macros), or
+
+2. If you do not wish to install it as in step 1. or if you do not have
+such priviledges, then a copy of 'tape.sty' may be put in some other
+directory, and the path declared in the environment variable TEXINPUTS;
+e.g. for C-shell on unix systems, put a command similar to the following in
+the .cshrc file: 
+
+setenv TEXINPUTS .:/usr/lib/tex/macros:/users/podar/texlib}
+
+Caveat: I should really have made "tape" a standalone document style, but
+was lazy. I suggest that the following command be used for its invocation:
+\documentstyle[tape]{article}
+without any other options. Also some of the list making environments, etc.
+are redefined, hence if you try printing some regular text besides the
+tape label, things may not come out right.
+
+As always, comments, suggestions, bugs etc., are welcome. Also, please let me
+know if any worthwhile modifications are made.
+
+enjoy.
+
+Sunil Podar
+SUNY at Stony Brook
+
+CSNET: podar@sbcs.csnet
+ARPA: podar%suny-sb.csnet@csnet-relay.arpa
+UUCP: {allegra, hocsd, philabs, ogcvax}!sbcs!podar

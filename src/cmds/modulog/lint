@@ -1,0 +1,4 @@
+clearULog.c:
+clearULog.c(59): warning: handle unused in function main
+String_NCopy value declared inconsistently	llib-lc:string.c(97)  ::  clearULog.c(128)
+String_NCopy returns value which is always ignored

@@ -1,0 +1,10 @@
+D DS3100_M                          	ds3100.md
+F FILE.C;1                          	file.c
+F FILE.H;1                          	file.h
+F LOCAL.MK;1                        	local.mk
+F MACHTYP0.C;1                      	machType68k.c
+F MACHTYP1.C;1                      	machTypeMips.c
+F MACHTYP2.C;1                      	machTypeSparc.c
+F MACHTYP3.C;1                      	machTypeSymm.c
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS

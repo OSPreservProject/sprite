@@ -1,0 +1,40 @@
+.\"
+.\" CreateExte.man
+.\"
+.\" Extended Tcl binary file search command.
+.\"----------------------------------------------------------------------------
+.\" Copyright 1992 Karl Lehenbauer and Mark Diekhans.
+.\"
+.\" Permission to use, copy, modify, and distribute this software and its
+.\" documentation for any purpose and without fee is hereby granted, provided
+.\" that the above copyright notice appear in all copies.  Karl Lehenbauer and
+.\" Mark Diekhans make no representations about the suitability of this
+.\" software for any purpose.  It is provided "as is" without express or
+.\" implied warranty.
+.\"----------------------------------------------------------------------------
+.\" $Id: CreateExte.man,v 2.0 1992/10/16 04:49:07 markd Rel $
+.\"----------------------------------------------------------------------------
+.\"
+.TH Tcl_CreateExtendedInterp TCL "" "tcl"
+.ad b
+.BS
+.SH NAME
+Tcl_CreateExtendedInterp \- set up a new Tcl command interpreter and 
+initialized all Extended Tcl commands.
+'
+.SH SYNOPSIS
+.nf
+.ft CW
+#include <tclExtend.h>
+
+Tcl_Interp *
+Tcl_CreateExtendedInterp ();
+.ft R
+.fi
+.BE
+'
+.SH DESCRIPTION
+.PP
+\fBTcl_CreateExtendedInterp\fR creates a new interpreter structure and returns
+a pointer to the interpreter data stucture, as with \fBTcl_CreateInterp\fR.
+In addition, all Extended Tcl commands will be added to the interpreter.

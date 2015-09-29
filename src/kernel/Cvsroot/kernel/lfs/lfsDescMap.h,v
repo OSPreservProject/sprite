@@ -1,0 +1,232 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ds3100:1.5 sun3:1.5 sun4nw:1.5 symm:1.5 spur:1.5;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     90.10.19.17.22.40;  author mendel;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.08.02.16.19.22;  author mendel;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.05.30.10.30.22;  author mendel;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.05.25.15.32.53;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.01.16.17.12.19;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.5
+log
+@Many bug fixed. First installed LFS.
+@
+text
+@/*
+ * lfsDescMap.h --
+ *
+ *	Declarations defining the disk resident format of the LFS 
+ *	descriptor map. The main purpose of the descriptor map is 
+ *	to provide a fast lookup of a file descriptor address given
+ *	the file descriptor number.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/lfs/RCS/lfsDescMap.h,v 1.4 90/08/02 16:19:22 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+ */
+
+#ifndef _LFSDESCMAP
+#define _LFSDESCMAP
+
+#ifdef KERNEL
+#include <lfsStableMem.h>
+#else
+#include <kernel/lfsStableMem.h>
+#endif
+
+/*
+ * The descriptor map layout on disk is described by the following 
+ * super block resident structure. 
+ * It must be LFS_DESC_MAP_PARAM_SIZE (currently 64 bytes) in size. 
+ */
+#define	LFS_DESC_MAP_PARAM_SIZE	64
+
+typedef struct LfsDescMapParams {
+    unsigned int version;  	/* Version number describing the format of
+				 * this structure and the descriptor map. */
+    int 	maxDesc;	/* The maximum size in descriptor map in 
+				 * descriptor. */
+    char     padding[LFS_DESC_MAP_PARAM_SIZE - sizeof(LfsStableMemParams)-8];	
+				/* Enought padding to make this structure 32
+				 * bytes. */
+    LfsStableMemParams	 stableMem; /* Index parameters. */
+
+} LfsDescMapParams;
+
+#define LFS_DESC_MAP_VERSION 1
+
+/*
+ * Following this structure describes the disk format of LFS descriptor map
+ * checkpoint.
+ * The total size
+ * of the checkpoint should be 
+ * sizeof(LfsDescMapCheckPointHdr) + 
+ * 		Sizeof(LfsStableMemCheckPoint)
+ * The maximum size should be:
+ *
+ */
+
+#define	LFS_DESC_MAP_MIN_BLOCKS	1
+
+typedef struct LfsDescMapCheckPoint {
+    int numAllocDesc;	/* The number of allocated descriptors at this 
+			 * checkpoint.  */
+} LfsDescMapCheckPoint;
+
+/*
+ * For each allocate file number in a LFS, the descriptor map keeps an 
+ * entry of type LfsDescMapEntry. LfsDescMapEntry are packed into blocks
+ * with 
+ */
+typedef struct LfsDescMapEntry {
+    LfsDiskAddr  blockAddress;	    /* The disk block address of the most
+				     * current version of the descriptor. */
+    unsigned short truncVersion;    /* A version number increamented each 
+				     * time a descriptor is truncated to 
+				     * length zero.  See the cleaning code
+				     * for its use. */
+    unsigned short  flags;  	    /* See flags definition below. */
+    int  accessTime;      	    /* The access time of the file as 
+				     * return by the stat() system call. */
+} LfsDescMapEntry;
+
+/*
+ * The following definitions define the uses of the descriptor flags field of
+ * the LfsDescMapEntry structure.
+ *	
+ * LFS_DESC_MAP_ALLOCED	 	- The descriptor map entry has been alloced
+ *				  by the file system.
+ * LFS_DESC_MAP_UNLINKED	- The file represented by this descMap entry
+ *				  has no references to it from directories 
+ *				  but has not been freed. This can happen when
+ *				  a file is unlinked while open.  
+ */
+
+#define	LFS_DESC_MAP_ALLOCED	0x0001
+#define	LFS_DESC_MAP_UNLINKED	0x0002
+
+
+#endif /* _LFSDESCMAP */
+@
+
+
+1.4
+log
+@Checkin before adding recovery
+./
+@
+text
+@d6 2
+a7 2
+ *	to provide a fast lookup a file descriptor address given the
+ *	file descriptor number.
+d18 1
+a18 1
+ * $Header: /sprite/src/kernel/lfs/RCS/lfsDescMap.h,v 1.3 90/05/30 10:30:22 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d24 5
+a28 1
+#include "lfsStableMem.h"
+d33 1
+a33 1
+ * It must be LFS_DESC_MAP_PARAM_SIZE (currently 32 bytes) in size. 
+d35 1
+a35 1
+#define	LFS_DESC_MAP_PARAM_SIZE	32
+d40 2
+a41 1
+    int maxDesc;	/* The maximum size in descriptor map in descriptor. */
+d52 1
+a52 1
+/* Following this structure describes the disk format of LFS descriptor map
+d75 1
+a75 1
+    int  blockAddress;		    /* The disk block address of the most
+a101 5
+extern ReturnStatus LfsDescMapAttach();
+extern Boolean	    LfsDescMapClean();
+extern Boolean 	    LfsDescMapCheckpoint();
+extern void	    LfsDescMapWriteDone();
+
+a102 1
+
+@
+
+
+1.3
+log
+@Check in with no small writes.
+@
+text
+@d18 1
+a18 1
+ * $Header: /sprite/src/kernel/lfs/RCS/lfsDescMap.h,v 1.2 90/05/25 15:32:53 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d70 1
+a70 1
+    unsigned int  blockAddress;	    /* The disk block address of the most
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d18 1
+a18 1
+ * $Header: /sprite/src/kernel/fs.mendel/RCS/lfsDescMap.h,v 1.1 90/01/16 17:12:19 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d18 1
+a18 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.4 89/10/28 15:57:26 rab Exp $ SPRITE (Berkeley)
+d36 1
+a36 2
+    unsigned int maxDesc;	/* The maximum size in descriptor map in
+				 * descriptor. */
+d77 1
+a77 1
+    unsigned int  accessTime;       /* The access time of the file as 
+d96 5
+@

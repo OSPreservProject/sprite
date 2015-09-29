@@ -1,0 +1,5 @@
+fsdm.h
+fsdmDisk.c
+fsdmFileDesc.c
+fsdmInt.h
+local.mk

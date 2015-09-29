@@ -1,0 +1,2021 @@
+head     9.21;
+branch   ;
+access   ;
+symbols  ds3100:9.20 sun3:9.20 sun4nw:9.18 symm:9.18 spur:9.18 sprited:9.17.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.21
+date     92.12.13.18.21.32;  author mgbaker;  state Exp;
+branches ;
+next     9.20;
+
+9.20
+date     92.06.03.17.27.52;  author jhh;  state Exp;
+branches ;
+next     9.19;
+
+9.19
+date     92.04.14.17.04.22;  author jhh;  state Exp;
+branches ;
+next     9.18;
+
+9.18
+date     91.09.10.18.42.55;  author rab;  state Exp;
+branches ;
+next     9.17;
+
+9.17
+date     91.02.12.14.15.44;  author jhh;  state Exp;
+branches 9.17.1.1;
+next     9.16;
+
+9.16
+date     90.11.29.21.02.25;  author kupfer;  state Exp;
+branches ;
+next     9.15;
+
+9.15
+date     90.10.19.16.08.47;  author jhh;  state Exp;
+branches ;
+next     9.14;
+
+9.14
+date     90.10.09.11.59.21;  author jhh;  state Exp;
+branches ;
+next     9.13;
+
+9.13
+date     90.10.02.16.29.28;  author mgbaker;  state Exp;
+branches ;
+next     9.12;
+
+9.12
+date     90.09.11.11.35.39;  author mgbaker;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     90.04.03.14.41.42;  author mgbaker;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     90.03.29.12.46.24;  author mgbaker;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     90.03.22.12.13.41;  author mgbaker;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     90.03.22.12.02.05;  author mgbaker;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     89.11.27.10.01.01;  author brent;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     89.11.07.12.01.02;  author brent;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     89.11.07.10.53.24;  author brent;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     89.11.01.20.23.21;  author brent;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     89.10.30.11.05.05;  author brent;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.27.10.23.04;  author brent;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.26.14.29.22;  author shirriff;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.18.16;  author douglis;  state Stable;
+branches ;
+next     8.4;
+
+8.4
+date     89.08.17.17.29.59;  author jhh;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.08.03.23.15.02;  author rab;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.06.02.12.57.48;  author mendel;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.12.04.15.29.36;  author ouster;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.35.43;  author douglis;  state Stable;
+branches ;
+next     6.4;
+
+6.4
+date     88.10.28.19.24.03;  author mlgray;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.10.14.11.57.47;  author mlgray;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.09.06.08.25.40;  author brent;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.26.18.26.28;  author mlgray;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.25.26;  author brent;  state Stable;
+branches ;
+next     5.12;
+
+5.12
+date     88.08.05.18.50.08;  author mlgray;  state Exp;
+branches ;
+next     5.11;
+
+5.11
+date     88.08.05.15.14.58;  author brent;  state Exp;
+branches ;
+next     5.10;
+
+5.10
+date     88.08.04.17.51.55;  author mlgray;  state Exp;
+branches ;
+next     5.9;
+
+5.9
+date     88.08.01.17.11.16;  author mlgray;  state Exp;
+branches ;
+next     5.8;
+
+5.8
+date     88.06.16.20.50.23;  author brent;  state Exp;
+branches ;
+next     5.7;
+
+5.7
+date     87.12.10.12.30.54;  author brent;  state Exp;
+branches ;
+next     5.6;
+
+5.6
+date     87.10.26.11.25.55;  author brent;  state Exp;
+branches ;
+next     5.5;
+
+5.5
+date     87.10.04.15.57.27;  author brent;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     87.10.01.13.42.34;  author brent;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     87.09.29.14.23.56;  author brent;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.09.16.12.26.20;  author brent;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.09.11.09.47.51;  author brent;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.48.48;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.17.1.1
+date     91.10.22.15.52.27;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.21
+log
+@Code for server-driven recovery.
+@
+text
+@/*
+ * rpcDispatch.c --
+ *
+ * The top level rpc dispatch routine.  The dispatcher is responsible for
+ * taking a packet from the packet transport level and passing it to the
+ * delivery level of the correct process involved in the RPC.  The
+ * top-level dispatcher finds the protocol state for the client or server
+ * receiving the message and calls the client or server specific dispatch
+ * routine.  This file also has the utility routine to copy a message from
+ * the network module's buffers into the stub's buffers.
+ *
+ * Copyright 1985 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/rpc/rpcDispatch.c,v 9.20 92/06/03 17:27:52 jhh Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <stdio.h>
+#include <bstring.h>
+#include <string.h>
+#include <dbg.h>
+#include <vm.h>
+
+#include <rpc.h>
+#include <rpcClient.h>
+#include <rpcServer.h>
+#include <rpcTrace.h>
+#include <rpcInt.h>
+#include <net.h>
+
+#include <recov.h>
+
+int ultra;
+
+/*
+ * Our sprite ID.  It is exported for general use by other modules.
+ * This is set by a reverse arp transaction at boot time (see Rpc_Start),
+ * or if that fails, by the rpc dispatcher who monitors the clientID field of
+ * rpc reply messages (see RpcClientDispatch).  Finally, if neither of
+ * those hooks work, a diskfull node will set its address by looking at
+ * the disk header (see FsAttachDisk).
+ *
+ * Important: servers won't respond to requests until their rpc_SpriteID is set.
+ */
+int	rpc_SpriteID = 0;
+
+/*
+ * We stop handlling requests during a bad trap that causes us
+ * to sync our disks.  If that deadlocks we want to be sure that
+ * the RPC system is off so we can't hang other machines.
+ */
+extern int sys_ErrorSync;
+
+/*
+ * While testing there may be many version mismatch errors.  If
+ * rpc_PrintMismatch is FALSE, then we only report a few of these errors
+ * every once in a while.
+ */
+int mismatchErrors = 0;
+
+/*
+ * An array of bitmasks is kept for faster comparisions by the dispatcher.
+ * Indexed by the total number of fragments in the packet, the array
+ * contains a complete bitmask for that many fragments.
+ */
+unsigned int rpcCompleteMask[17] = {
+	0x0000, 0x0001, 0x0003, 0x0007, 0x000F,
+		0x001F, 0x003F, 0x007F, 0x00FF,
+		0x01FF, 0x03FF, 0x07FF, 0x0FFF,
+		0x1FFF, 0x3FFF, 0x7FFF, 0xFFFF };
+/*
+ * Forward declarations.
+ */
+static Boolean ValidateClient _ARGS_((Net_Interface *interPtr, int protocol,
+		Address headerPtr, RpcHdr *rpcHdrPtr));
+static void VersionMismatch _ARGS_((Net_Interface *interPtr, int protocol,
+		Address headerPtr, RpcHdr *rpcHdrPtr, int packetLength));
+
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Rpc_Dispatch --
+ *
+ *      This does some consistency checks on an incoming packet, finds the
+ *      protocol state for the packet (either client or server) and then
+ *      calls either the server or client dispatch routine.
+ *
+ *	This still has a few ethernet specfich things that should be fixed.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	This may drop a packet if various consistency checks fail.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Rpc_Dispatch(interPtr, protocol, headerPtr, rpcHdrAddr, packetLength)
+    Net_Interface *interPtr;	/* Network interface where we got the packet. */
+    int		protocol;	/* Network protocol of packet. */
+    Address	headerPtr;	/* Pointer to transport header. */
+    Address 	rpcHdrAddr;    /* RPC header of packet. */
+    int		packetLength;	    /* Size of RPC packet. */
+{
+    register RpcHdr	*rpcHdrPtr; /* RPC header of packet. */
+    register int expectedLength;
+    extern int ultra;
+
+
+    if (ultra) {
+	printf("In Rpc_Dispatch\n");
+    }
+    rpcHdrPtr = (RpcHdr *) rpcHdrAddr;
+    if (packetLength < sizeof(RpcHdr)) {
+	rpcCltStat.shorts++;
+	printf("Rpc_Dispatch: SHORT packet, (%d) less than RpcHdr\n",
+				  packetLength, sizeof(RpcHdr));
+	printf("Resetting network interface %s\n",
+	    interPtr->name);
+	Net_Reset(interPtr);
+	return;
+    }
+    if (rpcHdrPtr->version == rpc_SwappedVersion) {
+	/*
+	 * Byte swap the packet header and the parameter block.
+	 */
+	if (!RpcByteSwapInComing(rpcHdrPtr, packetLength)) {
+	    printf("Warning: Rpc_Dispatch failed byte-swap.\n");
+	    return;
+	}
+    } else if (rpcHdrPtr->version != rpc_NativeVersion) {
+	/*
+	 * Keep a short list of hosts that aren't talking the
+	 * right version of RPC.  Attempt to print out one message
+	 * about this per host, and then keep quiet.
+	 */
+	VersionMismatch(interPtr, protocol, headerPtr, rpcHdrPtr, packetLength);
+	return;
+    }
+    expectedLength =  sizeof(RpcHdr) +
+		     rpcHdrPtr->paramSize +
+		     rpcHdrPtr->dataSize;
+    if (packetLength < expectedLength) {
+	rpcCltStat.shorts++;
+	printf("Rpc_Dispatch: SHORT packet, (%d) not (%d), ",
+				  packetLength, expectedLength);
+	printf("srv %d clt %d rpc %d\n", rpcHdrPtr->serverID,
+		    rpcHdrPtr->clientID, rpcHdrPtr->command);
+	printf("Resetting network interface %s\n",
+	    interPtr->name);
+	Net_Reset(interPtr);
+	return;
+    } else if (packetLength > expectedLength &&
+	       packetLength > interPtr->minBytes) {
+	/*
+	 * Short messages (like acks and null replies)
+	 * get padded to minimum  packet length.  Other messages
+	 * get padded to 4 byte alignments.
+	 */
+	rpcCltStat.longs++;
+	if (packetLength > interPtr->maxBytes) {
+	    printf("Received oversized packet\n");
+	    printf("Resetting network interface\n");
+	    Net_Reset(interPtr);
+	    return;
+	}
+    }
+
+    RPC_TRACE(rpcHdrPtr, RPC_INPUT, "Input");
+
+    if (rpcHdrPtr->flags & RPC_SERVER) {
+	register RpcServerState *srvPtr = (RpcServerState *) NIL;
+	/*
+	 * Don't do anything if we don't know who we are.  This occurs
+	 * at boot time if we get a request before doing reverse ARP.
+	 * Also, don't do anything in the middle of a panic.  If a host
+	 * deadlocks trying to enter the debugger, then callback RPCs
+	 * from file servers should not also hang.
+	 */
+	if (rpc_SpriteID == 0 || sys_ErrorSync) {
+	    return;
+	}
+	if (rpcHdrPtr->serverID != RPC_BROADCAST_SERVER_ID &&
+	    rpcHdrPtr->serverID != rpc_SpriteID) {
+	    /*
+	     * A bug, or the Intel chip is wack-o.
+	     */
+	    if (rpcHdrPtr->serverID > 0 &&
+		rpcHdrPtr->serverID < NET_NUM_SPRITE_HOSTS) {
+		char	addrBuffer[128];
+		Net_HdrDestString(interPtr->netType, protocol,headerPtr, 128, 
+			addrBuffer);
+		printf("Warning: Rpc_Dispatch, wrong server ID %d\n",
+			rpcHdrPtr->serverID);
+		printf("\tRPC %d flags %x Client %d at address: %s\n",
+		       rpcHdrPtr->command, rpcHdrPtr->flags,
+		       rpcHdrPtr->clientID, addrBuffer);
+
+	    } else {
+		printf("Rpc_Dispatch: junk serverID %d from client %d\n",
+			    rpcHdrPtr->serverID,
+			    rpcHdrPtr->clientID);
+	    }
+	    return;
+	}
+
+	rpcSrvStat.toServer++;
+
+	/*
+	 * Verify or initialize the sprite host id for the client
+	 * (clientID) from the transport level source address.
+	 * This doesn't usually kick in unless the client can't do reverse arp.
+	 */
+	if ( ! ValidateClient(interPtr, protocol, headerPtr, rpcHdrPtr)) {
+	    rpcSrvStat.invClient++;
+	    return;
+	}
+
+	/*
+	 * Save sender's requested interfragment delay.
+	 */
+	rpcDelay[rpcHdrPtr->clientID] = rpcHdrPtr->delay;
+	/*
+	 * Match the input message to a server process.
+	 */
+	if (Recov_HoldForRecovery(rpcHdrPtr->clientID, rpcHdrPtr->command)) {
+	    srvPtr = (RpcServerState *) NIL;
+	} else {
+	    srvPtr = RpcServerAlloc(rpcHdrPtr);
+	}
+#ifdef NOTDEF
+	srvPtr = RpcServerAlloc(rpcHdrPtr);
+#endif /* NOTDEF */
+	
+	if (srvPtr == (RpcServerState *)NIL) {
+	    /*
+	     * Is it okay to check this here?
+	     */
+	    if (rpcServiceEnabled) {
+		rpcSrvStat.noAlloc++;
+		if (rpcSendNegAcks) {
+		    RpcServerDispatch(srvPtr, rpcHdrPtr);
+		}
+	    }
+	} else {
+	    RpcServerDispatch(srvPtr, rpcHdrPtr);
+	}
+    } else {
+	/*
+	 * Get the channel for the packet.
+	 */
+	register RpcClientChannel *chanPtr;
+
+	rpcCltStat.toClient++;
+	if (rpcHdrPtr->channel < 0 ||
+	    rpcHdrPtr->channel >= rpcNumChannels) {
+	    rpcCltStat.badChannel++;
+	    printf("Rpc_Dispatch: bad channel %d from clt %d rpc %d",
+	       rpcHdrPtr->channel, rpcHdrPtr->clientID, rpcHdrPtr->command);
+	    printf("Resetting network interface %s\n", interPtr->name);
+	    Net_Reset(interPtr);
+	} else {
+	    /*
+	     * Save sender's requested interfragment delay,
+	     * then dispatch to client process.
+	     */
+	    if (rpcHdrPtr->serverID < NET_NUM_SPRITE_HOSTS &&
+		rpcHdrPtr->serverID > 0) {
+		rpcDelay[rpcHdrPtr->serverID] = rpcHdrPtr->delay;
+	    }
+	    chanPtr = rpcChannelPtrPtr[rpcHdrPtr->channel];
+	    if (ultra) {
+		printf("Calling RpcClientDispatch\n");
+	    }
+	    RpcClientDispatch(chanPtr, rpcHdrPtr);
+	}
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcScatter --
+ *
+ *	Copy the data in the network buffers into the buffers
+ *	specified by the scatter vector.  This routine only works
+ *	on RPC messages.  It knows the RPC packet format:
+ *	  The Rpc header, which includes the sizes of the next two parts.
+ *	  The parameter area.
+ *	  The data area.
+ *	The scatter vector lengths of the last two parts are used
+ *	as maximum buffer sizes.  The actual sizes of the parts is
+ *	taken from the rpc header.  This is done because the RPC system
+ *	preallocates buffers which are large enough to handle any message.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The copy.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+RpcScatter(rpcHdrPtr, bufferPtr)
+    register RpcHdr *rpcHdrPtr;		/* The Rpc Header as it sits in the
+					 * network's buffer.  The data follows
+					 * the header directly. */
+    RpcBufferSet *bufferPtr;		/* Specification of the buffers to
+					 * copy the message to. */
+{
+    register Address netBufPtr;		/* A pointer in to network buffer */
+    register int length;		/* Copying length */
+    int destLength;			/* length of destination buffers */
+
+    netBufPtr = (Address)rpcHdrPtr;
+
+    /*
+     * Copy the RPC header.
+     */
+    length = bufferPtr->rpcHdrBuffer.length;
+    bcopy(netBufPtr, bufferPtr->rpcHdrBuffer.bufAddr, length);
+    netBufPtr += length;
+    /*
+     * Copy the parameter and data areas.  Their sizes are in
+     * the RPC header.  Complain if either area is too large.
+     */
+    length = rpcHdrPtr->paramSize;
+    if (length != 0) {
+	destLength = bufferPtr->paramBuffer.length;
+	if (length + rpcHdrPtr->paramOffset > destLength) {
+	    rpcCltStat.paramOverrun++;
+	    printf("RpcScatter: rpc %d param size + off (%d + %d) > (%d)\n",
+			   rpcHdrPtr->command, length, rpcHdrPtr->paramOffset,
+			   destLength);
+	    if (rpcHdrPtr->paramOffset < destLength) {
+		length = destLength - rpcHdrPtr->paramOffset;
+	    } else {
+		length = 0;
+	    }
+	}
+	bcopy(netBufPtr, bufferPtr->paramBuffer.bufAddr +
+				     rpcHdrPtr->paramOffset, length);
+	netBufPtr += rpcHdrPtr->paramSize;
+    }
+    length = rpcHdrPtr->dataSize;
+    if (length != 0) {
+	destLength = bufferPtr->dataBuffer.length;
+	if (length + rpcHdrPtr->dataOffset > destLength) {
+	/*
+	 * The returned data is more than we expect.  One reason for
+	 * this is that the Intel driver limits the size of the data area and
+	 * parameter area to be 0, or to be greater than 12 bytes because
+	 * of the Intel DMA hardware.
+	 */
+	    rpcCltStat.dataOverrun++;
+	    if (rpcHdrPtr->dataOffset < destLength) {
+		length = destLength - rpcHdrPtr->dataOffset;
+	    } else {
+		length = 0;
+	    }
+	}
+	bcopy(netBufPtr, bufferPtr->dataBuffer.bufAddr + rpcHdrPtr->dataOffset,
+		length);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ValidateClient --
+ *
+ *      Check the clientID field of an incoming Rpc request.  Invalid ID's
+ *      are screened out, and the special clientID of zero is overwritten
+ *      with the client's true sprite ID.  This is done by looking the
+ *      client's physical address up in a table with Net_AddrToID.  This
+ *      true sprite ID is propogated back to clients so they can determine
+ *      their own sprite ID.  This should be replaced by the use of
+ *	Reverse Arp on clients at boot time.
+ *
+ * Results:
+ *      FALSE if clientID is invalid or the physical address of the client
+ *      isn't in the table.  TRUE otherwise - this gurantees a valid
+ *      clientID in the RpcHdr.
+ *
+ * Side effects:
+ *      Muck with the header so that subsequent users of the RpcHdr see a
+ *      valid clientID field.
+ *
+ *----------------------------------------------------------------------
+ */
+static Boolean
+ValidateClient(interPtr, protocol, headerPtr, rpcHdrPtr)
+    Net_Interface *interPtr;	/* Network interface. */
+    int		protocol;	/* Network protocol of packet. */
+    Address	headerPtr;	/* Transport header. */
+    RpcHdr 	 *rpcHdrPtr;
+{
+    register int		clientID;
+    register Boolean		result = FALSE;
+
+    clientID = rpcHdrPtr->clientID;
+
+    if (clientID > 0 && clientID < NET_NUM_SPRITE_HOSTS) {
+	/*
+	 * A potentially valid clientID.  We don't need to
+	 * save the client's transport address because the
+	 * we can get that from the saved request message.
+	 */
+	result = TRUE;
+    } else if (clientID == 0) {
+	/*
+	 * Look client's transport address up in our in core host table.
+	 */
+	clientID = Net_HdrToID(interPtr->netType, protocol, headerPtr);
+        printf("Warning: RpcValidateClient had to set clientID %d\n", clientID);
+	if (clientID < 0) {
+	    char	addrBuffer[128];
+	    /*
+	     * Should invoke Reverse ARP to find out the Sprite ID.
+	     */
+	    Net_HdrDestString(interPtr->netType, protocol, headerPtr, 128, 
+		addrBuffer);
+	    printf("Client at unknown address: %s\n", addrBuffer);
+	    result = FALSE;
+	} else {
+	    rpcHdrPtr->clientID = clientID;
+	    result = TRUE;
+	}
+    } else {
+	result = FALSE;
+	printf("Invalid Client Sprite ID (%d)\n", clientID);
+    }
+    return(result);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VersionMismatch --
+ *
+ *	This is called upon reciept of a packet with a bad RPC version
+ *	number.  This routine keeps a short list of offending hosts,
+ *	and will print out a warning about each one it encounters.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	This adds items to its versionList.
+ *
+ *----------------------------------------------------------------------
+ */
+static int numVersions = 0;
+
+#define ADDR_LEN	40
+typedef struct {
+    Net_Interface	*interPtr;	/* Network interface. */
+    int protocol;			/* The packet protocol. */
+    int count;				/* Count of mismatches */
+    char sourceAddr[ADDR_LEN];		/* Storage for source addr string */
+} VersionRecord;
+
+#define NUM_VERSIONS	4
+static VersionRecord versionList[NUM_VERSIONS];
+
+static void
+VersionMismatch(interPtr, protocol, headerPtr, rpcHdrPtr, packetLength)
+    Net_Interface *interPtr;	/* Network interface. */
+    int		protocol;	/* Network protocol of packet. */
+    Address	headerPtr;	/* Pointer to transport header. */
+    RpcHdr	*rpcHdrPtr;	/* RPC header of packet. */
+    int		packetLength;	/* Size of RPC packet. */
+{
+    char addrBuffer[ADDR_LEN];
+    int i;
+    char *type;
+    char *proto;
+
+    /*
+     * Get a string value for the sender of the packet and see if
+     * we've already gotten a bad packet from this host.
+     */
+    Net_HdrDestString(interPtr->netType, protocol, headerPtr, ADDR_LEN, 
+	    addrBuffer);
+
+    for (i=0 ; i<numVersions ; i++) {
+	if (strcmp(versionList[i].sourceAddr, addrBuffer) == 0) {
+	    versionList[i].count++;
+	    return;
+	}
+    }
+    if (numVersions >= NUM_VERSIONS) {
+	/*
+	 * Bail out if we don't have room in the versionList.
+	 * Alternatively we could replace an entry in the versionList.
+	 */
+	return;
+    }
+
+    switch(interPtr->netType) {
+	case NET_NETWORK_ETHER: 
+	    type = "ether";
+	    break;
+	default:
+	    type = "unknown network type";
+	    break;
+    }
+    switch(protocol) {
+	case NET_PROTO_RAW:
+	    proto = "raw";
+	    break;
+	case NET_PROTO_INET:
+	    proto = "inet";
+	    break;
+	default:
+	    proto = "unknown network protocol";
+	    break;
+    }
+    printf("RPC Version mismatch: %x not %x from %s %s %s",
+	rpcHdrPtr->version, rpc_NativeVersion, type, proto, addrBuffer);
+    if (rpcHdrPtr->clientID > 0 && rpcHdrPtr->clientID < NET_NUM_SPRITE_HOSTS) {
+	printf(" clientID %d\n", rpcHdrPtr->clientID);
+    } else {
+	printf("\n");
+    }
+    versionList[numVersions].count = 1;
+    versionList[numVersions].protocol = protocol;
+    versionList[numVersions].interPtr = interPtr;
+    (void) strncpy(versionList[numVersions].sourceAddr, addrBuffer, ADDR_LEN);
+    numVersions++;
+
+    return;
+}
+@
+
+
+9.20
+log
+@Don't reset the network interface if an rpc shows up for a different client.
+The wrong index parameter was passed to Net_IDToRoute.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/rpc/rpcDispatch.c,v 9.19 92/04/14 17:04:22 jhh Exp $ SPRITE (Berkeley)";
+d34 2
+d179 1
+a179 1
+	register RpcServerState *srvPtr;
+d233 6
+d240 2
+@
+
+
+9.19
+log
+@Uses new net definitions.
+Net_IDToRoute interface changed slightly.
+Got rid of bogus "new" rpc format. It was for the UltraNet and it didn't
+make much difference anyway.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/rpc/rpcDispatch.c,v 9.18 91/09/10 18:42:55 rab Exp $ SPRITE (Berkeley)";
+a208 2
+	    printf("Resetting network interface %s\n", interPtr->name);
+	    Net_Reset(interPtr);
+@
+
+
+9.18
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDispatch.c,v 9.17 91/02/12 14:15:44 jhh Exp Locker: rab $ SPRITE (Berkeley)";
+d128 1
+a128 2
+    if (rpcHdrPtr->version == rpc_SwappedVersion ||
+	rpcHdrPtr->version == rpc_SwappedVersionNew) {
+d136 1
+a136 2
+    } else if (rpcHdrPtr->version != rpc_NativeVersion &&
+		rpcHdrPtr->version != rpc_NativeVersionNew) {
+a314 2
+    Boolean	newVersion = FALSE;
+    RpcHdrNew	*newHdrPtr = (RpcHdrNew *) rpcHdrPtr;
+a315 3
+    if (rpcHdrPtr->version == rpc_NativeVersionNew) {
+	newVersion = TRUE;
+    }
+d323 1
+a323 5
+    if (newVersion) {
+	netBufPtr = ((Address) rpcHdrPtr) + newHdrPtr->paramStart;
+    } else {
+	netBufPtr += length;
+    }
+d344 1
+a344 6
+	if (!newVersion) {
+	    netBufPtr += rpcHdrPtr->paramSize;
+	}
+    }
+    if (newVersion) {
+	netBufPtr = ((Address) rpcHdrPtr) + newHdrPtr->dataStart;
+@
+
+
+9.17
+log
+@Added RPC sanity checking
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDispatch.c,v 9.16 90/11/29 21:02:25 kupfer Exp $ SPRITE (Berkeley)";
+d34 2
+a146 10
+    if (rpc_SanityCheck) {
+	Net_ScatterGather	scatter;
+	ReturnStatus		status;
+	scatter.bufAddr = (Address) rpcHdrAddr;
+	scatter.length = packetLength;
+	status = Rpc_SanityCheck(1, &scatter, packetLength);
+	if (status != SUCCESS) {
+	    return;
+	}
+    }
+d546 1
+a546 1
+    strncpy(versionList[numVersions].sourceAddr, addrBuffer, ADDR_LEN);
+@
+
+
+9.17.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDispatch.c,v 9.17 91/02/12 14:15:44 jhh Exp $ SPRITE (Berkeley)";
+@
+
+
+9.16
+log
+@Can't use expectedLength before computing it.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDispatch.c,v 9.15 90/10/19 16:08:47 jhh Exp Locker: kupfer $ SPRITE (Berkeley)";
+d119 1
+a119 1
+	printf("Rpc_Dispatch: SHORT packet, (%d) not (%d) ",
+a120 2
+	printf("srv %d clt %d rpc %d\n", rpcHdrPtr->serverID,
+		    rpcHdrPtr->clientID, rpcHdrPtr->command);
+d131 2
+a132 2
+	if (!RpcByteSwapInComing(rpcHdrPtr)) {
+	    printf("Warning: Rpc_Dispatch failed byte-swap.");
+d145 10
+d160 1
+a160 1
+	printf("Rpc_Dispatch: SHORT packet, (%d) not (%d) ",
+@
+
+
+9.15
+log
+@checks that packet size is greater than an RpcHdr before accessing
+contents
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDispatch.c,v 9.14 90/10/09 11:59:21 jhh Exp $ SPRITE (Berkeley)";
+d120 1
+a120 1
+				  packetLength, expectedLength);
+d217 1
+d227 1
+@
+
+
+9.14
+log
+@new net module
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDispatch.c,v 9.13 90/10/02 16:29:28 mgbaker Exp Locker: jhh $ SPRITE (Berkeley)";
+d117 11
+@
+
+
+9.13
+log
+@More prototyping garbage.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDispatch.c,v 9.12 90/09/11 11:35:39 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d73 4
+a76 3
+void RpcScatter();
+static Boolean ValidateClient _ARGS_((int headerType, Address headerPtr, RpcHdr *rpcHdrPtr));
+static void VersionMismatch _ARGS_((int headerType, Address headerPtr, RpcHdr *rpcHdrPtr, int packetLength));
+d90 2
+d101 3
+a103 2
+Rpc_Dispatch(headerType, headerPtr, rpcHdrAddr, packetLength)
+    int		headerType;	/* Type of transport header. */
+d110 2
+d113 3
+d117 2
+a118 1
+    if (rpcHdrPtr->version == rpc_SwappedVersion) {
+d126 2
+a127 1
+    } else if (rpcHdrPtr->version != rpc_NativeVersion) {
+d133 1
+a133 1
+	VersionMismatch(headerType, headerPtr, rpcHdrPtr, packetLength);
+d145 3
+a147 2
+	printf("Resetting network interface\n");
+	Net_Reset();
+d150 1
+a150 1
+	       packetLength > (NET_ETHER_MIN_BYTES)) {
+d153 1
+a153 1
+	 * get padded to minimum ethernet length.  Other messages
+d157 1
+a157 1
+	if (packetLength > NET_ETHER_MAX_BYTES) {
+d160 1
+a160 1
+	    Net_Reset();
+d182 1
+a182 1
+	     * A bug, or the Intel chip is wack-o
+d187 2
+a188 1
+		Net_HdrDestString(headerType, headerPtr, 128, addrBuffer);
+d200 2
+a201 2
+	    printf("Resetting network interface\n");
+	    Net_Reset();
+d211 1
+a211 1
+	if ( ! ValidateClient(headerType, headerPtr, rpcHdrPtr)) {
+d248 2
+a249 2
+	    printf("Resetting network interface\n");
+	    Net_Reset();
+d260 3
+d304 2
+d307 3
+d317 5
+a321 2
+    netBufPtr += length;
+
+d342 3
+a344 1
+	netBufPtr += rpcHdrPtr->paramSize;
+d346 3
+a348 1
+
+d396 3
+a398 2
+ValidateClient(headerType, headerPtr, rpcHdrPtr)
+    int		headerType;	/* Type of transport header. */
+d418 2
+a419 2
+	clientID = Net_HdrToID(headerType, headerPtr);
+        printf("Warning: ValidateClient had to set clientID %d\n", clientID);
+d425 2
+a426 1
+	    Net_HdrDestString(headerType, headerPtr, 128, addrBuffer);
+d461 2
+a462 1
+    int headerType;			/* Type of transport header. */
+d471 3
+a473 2
+VersionMismatch(headerType, headerPtr, rpcHdrPtr, packetLength)
+    int		headerType;	/* Type of transport header. */
+d481 1
+d487 2
+a488 1
+    Net_HdrDestString(headerType, headerPtr, ADDR_LEN, addrBuffer);
+d504 18
+a521 6
+    if (headerType == NET_ROUTE_ETHER) {
+	type = "ether";
+    } else if (headerType == NET_ROUTE_INET) {
+	type = "inet";
+    } else {
+	type = "unknown addr type";
+d523 2
+a524 2
+    printf("RPC Version mismatch: %x not %x from %s %s",
+	rpcHdrPtr->version, rpc_NativeVersion, type, addrBuffer);
+d531 2
+a532 1
+    versionList[numVersions].headerType = headerType;
+@
+
+
+9.12
+log
+@Added function prototypes (Mendel checking for mary)
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDispatch.c,v 9.11 90/04/03 14:41:42 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d20 13
+a32 3
+#include "sprite.h"
+#include "dbg.h"
+#include "vm.h"
+a33 6
+#include "rpc.h"
+#include "rpcClient.h"
+#include "rpcServer.h"
+#include "rpcTrace.h"
+#include "net.h"
+
+d97 1
+a97 1
+
+@
+
+
+9.11
+log
+@Fixed synchronization problem on servers with negative acknowledgement
+buffers.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDispatch.c,v 9.10 90/03/29 12:46:24 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d70 2
+a71 2
+int  RpcValidateClient();
+void VersionMismatch();
+d74 1
+d194 1
+a194 1
+	if ( ! RpcValidateClient(headerType, headerPtr, rpcHdrPtr)) {
+d342 1
+a342 1
+ * RpcValidateClient --
+d363 2
+a364 2
+Boolean
+RpcValidateClient(headerType, headerPtr, rpcHdrPtr)
+d386 1
+a386 1
+        printf("Warning: RpcValidateClient had to set clientID %d\n", clientID);
+d435 1
+a435 1
+void
+@
+
+
+9.10
+log
+@New negative ack stuff.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDispatch.c,v 9.9 90/03/22 12:13:41 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d206 8
+a213 3
+	    rpcSrvStat.noAlloc++;
+	    if (rpcSendNegAcks) {
+		RpcServerDispatch(srvPtr, rpcHdrPtr);
+@
+
+
+9.9
+log
+@After merge with rpc.mgb.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDispatch.c,v 9.7 89/11/27 10:01:01 brent Exp $ SPRITE (Berkeley)";
+d207 3
+a209 3
+#ifdef NEG_ACK
+	    RpcServerDispatch(srvPtr, rpcHdrPtr);
+#endif NEG_ACK
+@
+
+
+9.8
+log
+@Prepare for merge
+@
+text
+@d207 3
+@
+
+
+9.7
+log
+@Added VersionMismatch, which remembers the address of host's
+with a version mis-match in order to filter print statements.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDispatch.c,v 9.6 89/11/07 12:01:02 brent Exp Locker: brent $ SPRITE (Berkeley)";
+@
+
+
+9.6
+log
+@Took out sanity checks against RpcScatter because the
+bug was in RpcServerAlloc
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDispatch.c,v 9.5 89/11/07 10:53:24 brent Exp Locker: brent $ SPRITE (Berkeley)";
+a49 6
+ * Set to FALSE for debugging a few isolated machines without tons of msgs.
+ * Since a few of the errors are printed out every once in a while anyway,
+ * we may want to leave this FALSE.
+ */
+Boolean	rpc_PrintMismatch = FALSE;
+/*
+d71 1
+d112 6
+a117 27
+	if (rpc_PrintMismatch) {
+	    printf(
+	    "Warning: Rpc_Dispatch version mismatch: %x not %x from client(?) %d\n",
+		rpcHdrPtr->version, rpc_NativeVersion, rpcHdrPtr->clientID);
+	} else {
+	    if (mismatchErrors < 5) {
+		printf("Warning: %s %x not %x from client(?) %d\n",
+		    "Rpc_Dispatch version mismatch:",
+		    rpcHdrPtr->version, rpc_NativeVersion,
+		    rpcHdrPtr->clientID);
+		mismatchErrors++;
+	    } else if (mismatchErrors == 5) {
+		printf("Warning: %s %x not %x from client(?) %d\n%s\n",
+		    "Rpc_Dispatch version mismatch:",
+		    rpcHdrPtr->version, rpc_NativeVersion,
+		    rpcHdrPtr->clientID,
+		    "I'll report no more version mismatches for a while.");
+		mismatchErrors++;
+		printf("Resetting network interface\n");
+		Net_Reset();
+	    } else {
+		mismatchErrors++;
+		if (mismatchErrors > 100) {
+		    mismatchErrors = 0;
+		}
+	    }
+	}
+d173 3
+a175 2
+		printf("\tClient %d rpc %d at address: %s\n",
+		       rpcHdrPtr->clientID, rpcHdrPtr->command, addrBuffer);
+d395 82
+@
+
+
+9.5
+log
+@Added sanity checks to RpcScatter
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDispatch.c,v 9.4 89/11/01 20:23:21 brent Exp $ SPRITE (Berkeley)";
+a306 5
+    if (length != sizeof(RpcHdr)) {
+	printf("RpcScatter: rpcHdrBuffer.length %d != sizeof(RpcHdr) %d\n",
+	    length, sizeof(RpcHdr));
+	length = sizeof(RpcHdr);
+    }
+@
+
+
+9.4
+log
+@Fixed previous change.  We have to check sys_ErrorSync
+instead of sysPanicing
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDispatch.c,v 9.3 89/10/30 11:05:05 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d307 5
+@
+
+
+9.3
+log
+@Changed dispatcher to ignore server-bound packets if the
+maching is panicing.  This prevents hung RPCs if the host
+deadlocks trying to enter the debugger.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDispatch.c,v 9.2 89/10/27 10:23:04 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d43 3
+a45 1
+ * We stop handlling requests during a panic().
+d47 1
+a47 1
+extern int sysPanicing;
+d185 1
+a185 1
+	if (rpc_SpriteID == 0 || sysPanicing) {
+@
+
+
+9.2
+log
+@Added more Net_Resets() to handle flakey Intel chip
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDispatch.c,v 9.1 89/10/26 14:29:22 shirriff Exp Locker: brent $ SPRITE (Berkeley)";
+a41 1
+
+d43 1
+a43 2
+ * Occasionally the Intel ethernet interface wacks out and passes us garbage.
+ * We count garbage packets and reset the interface after a series of junk.
+d45 1
+a45 1
+int badErrors = 0;
+d179 3
+d183 1
+a183 1
+	if (rpc_SpriteID == 0) {
+@
+
+
+9.1
+log
+@Lint changes.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDispatch.c,v 9.0 89/09/12 15:18:16 douglis Stable Locker: shirriff $ SPRITE (Berkeley)";
+d135 2
+d139 1
+a139 1
+		if (mismatchErrors > 5000) {
+d155 2
+a156 6
+	badErrors++;
+	if (badErrors > 4) {
+	    printf("Resetting network interface\n");
+	    badErrors = 0;
+	    Net_Reset();
+	}
+d162 2
+a163 1
+	 * get padded to minimum ethernet length.
+d166 6
+a202 6
+		badErrors++;
+		if (badErrors > 4) {
+		    printf("Resetting network interface\n");
+		    badErrors = 0;
+		    Net_Reset();
+		}
+d204 2
+d244 2
+a245 6
+	    badErrors++;
+	    if (badErrors > 4) {
+		printf("Resetting network interface\n");
+		badErrors = 0;
+		Net_Reset();
+	    }
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDispatch.c,v 8.4 89/08/17 17:29:59 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d28 1
+a29 1
+
+d98 1
+a98 1
+Rpc_Dispatch(headerType, headerPtr, rpcHdrPtr, packetLength)
+d101 1
+a101 1
+    register RpcHdr	*rpcHdrPtr; /* RPC header of packet. */
+d104 1
+d107 1
+@
+
+
+8.4
+log
+@made version number a variable
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDispatch.c,v 8.3 89/08/03 23:15:02 rab Exp $ SPRITE (Berkeley)";
+@
+
+
+8.3
+log
+@Deleted include of "lib.h", which no longer exists.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDispatch.c,v 8.2 89/06/02 12:57:48 mendel Exp Locker: rab $ SPRITE (Berkeley)";
+d106 1
+a106 1
+    if (rpcHdrPtr->version == RPC_SWAPPED_VERSION) {
+d114 1
+a114 1
+    } else if (rpcHdrPtr->version != RPC_NATIVE_VERSION) {
+d118 1
+a118 1
+		rpcHdrPtr->version, RPC_NATIVE_VERSION, rpcHdrPtr->clientID);
+d123 1
+a123 1
+		    rpcHdrPtr->version, RPC_NATIVE_VERSION,
+d129 1
+a129 1
+		    rpcHdrPtr->version, RPC_NATIVE_VERSION,
+@
+
+
+8.2
+log
+@Changes for RPC on IP. 
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDispatch.c,v 8.1 88/12/04 15:29:36 ouster Exp $ SPRITE (Berkeley)";
+a22 1
+#include "lib.h"
+@
+
+
+8.1
+log
+@Stop using obsolete header files.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDispatch.c,v 8.0 88/11/11 18:35:43 douglis Stable Locker: ouster $ SPRITE (Berkeley)";
+a42 10
+/*
+ * The packet as it looks sitting in the ethernet buffers.
+ */
+typedef struct RpcRawPacket {
+    Net_EtherHdr	etherHdr;
+    RpcHdr		rpcHdr;
+    /*
+     * data follows
+     */
+} RpcRawPacket;
+d99 5
+a103 4
+Rpc_Dispatch(packetPtr, packetLength)
+    Address	packetPtr;	/* pointer to the packet in the hardware
+				 * receive buffers */
+    int		packetLength;	/* its size */
+a104 1
+    register RpcHdr	*rpcHdrPtr;
+a105 4
+    Net_EtherHdr	*etherHdrPtr;
+
+    etherHdrPtr = (Net_EtherHdr *)packetPtr;
+    rpcHdrPtr = (RpcHdr *) (packetPtr + sizeof(Net_EtherHdr));
+d143 1
+a143 2
+    expectedLength = sizeof(Net_EtherHdr) +
+		     sizeof(RpcHdr) +
+d186 6
+a191 12
+		Net_EtherAddress	dest;
+		NET_ETHER_ADDR_COPY(NET_ETHER_HDR_DESTINATION(*etherHdrPtr),
+				    dest);
+		printf("Warning: Rpc_Dispatch, wrong server ID %d\n");
+		printf("\tClient %d rpc %d ether dest %x:%x:%x:%x:%x:%x\n",
+		       rpcHdrPtr->clientID, rpcHdrPtr->command,
+		       NET_ETHER_ADDR_BYTE1(dest) & 0xff,
+		       NET_ETHER_ADDR_BYTE2(dest) & 0xff,
+		       NET_ETHER_ADDR_BYTE3(dest) & 0xff,
+		       NET_ETHER_ADDR_BYTE4(dest) & 0xff,
+		       NET_ETHER_ADDR_BYTE5(dest) & 0xff,
+		       NET_ETHER_ADDR_BYTE6(dest) & 0xff);
+d213 1
+a213 1
+	if ( ! RpcValidateClient(etherHdrPtr, rpcHdrPtr)) {
+d379 3
+a381 2
+RpcValidateClient(etherHdrPtr, rpcHdrPtr)
+    Net_EtherHdr *etherHdrPtr;
+a396 1
+	Net_EtherAddress	source;
+d400 1
+a400 2
+	NET_ETHER_ADDR_COPY(NET_ETHER_HDR_SOURCE(*etherHdrPtr), source);
+	clientID = Net_AddrToID(0, NET_ROUTE_ETHER, (ClientData) &source);
+d403 1
+d407 2
+a408 7
+	    printf("Client at unknown ethernet address %x:%x:%x:%x:%x:%x\n",
+		       NET_ETHER_ADDR_BYTE1(source) & 0xff,
+		       NET_ETHER_ADDR_BYTE2(source) & 0xff,
+		       NET_ETHER_ADDR_BYTE3(source) & 0xff,
+		       NET_ETHER_ADDR_BYTE4(source) & 0xff,
+		       NET_ETHER_ADDR_BYTE5(source) & 0xff,
+		       NET_ETHER_ADDR_BYTE6(source) & 0xff);
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDispatch.c,v 6.4 88/10/28 19:24:03 mlgray Exp Locker: douglis $ SPRITE (Berkeley)";
+a22 1
+#include "byte.h"
+@
+
+
+6.4
+log
+@Conversion to new C library.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/RCS/rpcDispatch.c,v 6.3 88/10/14 11:57:47 mlgray Exp Locker: mlgray $ SPRITE (Berkeley)";
+@
+
+
+6.3
+log
+@mary checking this in for mendel.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: rpcDispatch.c,v 6.2 88/09/06 08:25:40 brent Exp $ SPRITE (Berkeley)";
+d127 1
+a127 1
+	    Sys_Panic(SYS_WARNING, "Rpc_Dispatch failed byte-swap.");
+d132 2
+a133 2
+	    Sys_Panic(SYS_WARNING,
+		"Rpc_Dispatch version mismatch: %x not %x from client(?) %d\n",
+d137 1
+a137 1
+		Sys_Panic(SYS_WARNING, "%s %x not %x from client(?) %d\n",
+d143 1
+a143 1
+		Sys_Panic(SYS_WARNING, "%s %x not %x from client(?) %d\n%s\n",
+d164 1
+a164 1
+	Sys_Printf("Rpc_Dispatch: SHORT packet, (%d) not (%d) ",
+d166 1
+a166 1
+	Sys_Printf("srv %d clt %d rpc %d\n", rpcHdrPtr->serverID,
+d170 1
+a170 1
+	    Sys_Printf("Resetting network interface\n");
+d205 2
+a206 2
+		Sys_Panic(SYS_WARNING, "Rpc_Dispatch, wrong server ID %d\n");
+		Sys_Printf("\tClient %d rpc %d ether dest %x:%x:%x:%x:%x:%x\n",
+d216 1
+a216 1
+		Sys_Printf("Rpc_Dispatch: junk serverID %d from client %d\n",
+d221 1
+a221 1
+		    Sys_Printf("Resetting network interface\n");
+d262 1
+a262 1
+	    Sys_Printf("Rpc_Dispatch: bad channel %d from clt %d rpc %d",
+d266 1
+a266 1
+		Sys_Printf("Resetting network interface\n");
+d328 1
+a328 1
+    Byte_Copy(length, netBufPtr, bufferPtr->rpcHdrBuffer.bufAddr);
+d340 1
+a340 1
+	    Sys_Printf("RpcScatter: rpc %d param size + off (%d + %d) > (%d)\n",
+d349 2
+a350 2
+	Byte_Copy(length, netBufPtr, bufferPtr->paramBuffer.bufAddr +
+				     rpcHdrPtr->paramOffset);
+d371 2
+a372 2
+	Byte_Copy(length, netBufPtr, bufferPtr->dataBuffer.bufAddr +
+				     rpcHdrPtr->dataOffset);
+d424 1
+a424 2
+        Sys_Panic(SYS_WARNING, "RpcValidateClient had to set clientID %d\n",
+				clientID);
+d429 1
+a429 1
+	    Sys_Printf("Client at unknown ethernet address %x:%x:%x:%x:%x:%x\n",
+d443 1
+a443 1
+	Sys_Printf("Invalid Client Sprite ID (%d)\n", clientID);
+@
+
+
+6.2
+log
+@Fixed call to Net_AddrToID, it needs the ADDRESS of an ethernet
+address.  This bug crashed the whole Sprite network when a
+XNS broadcast packet made it this far through the dispatchers
+consistency checks.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: rpcDispatch.c,v 6.1 88/08/26 18:26:28 mlgray Exp $ SPRITE (Berkeley)";
+a20 1
+#include "devTimer.h"
+d418 1
+d422 2
+a423 2
+	clientID = Net_AddrToID(0, NET_ROUTE_ETHER,
+		 (ClientData)&(NET_ETHER_HDR_SOURCE(*etherHdrPtr)));
+a429 2
+	    Net_EtherAddress	source;
+	    NET_ETHER_ADDR_COPY(NET_ETHER_HDR_SOURCE(*etherHdrPtr),source);
+@
+
+
+6.1
+log
+@Fixed some lint errors.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: rpcDispatch.c,v 6.0 88/08/11 12:25:26 brent Stable $ SPRITE (Berkeley)";
+d423 1
+a423 1
+		 (ClientData)(NET_ETHER_HDR_SOURCE(*etherHdrPtr)));
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d1 1
+a1 1
+/* 
+d17 2
+a18 2
+static char rcsid[] = "$Header: rpcDispatch.c,v 5.12 88/08/05 18:50:08 mlgray Exp $ SPRITE (Berkeley)";
+#endif not lint
+d76 3
+a78 3
+ * An array of bitmasks is kept for faster comparisions by the dispatcher. 
+ * Indexed by the total number of fragments in the packet, the array   
+ * contains a complete bitmask for that many fragments. 
+d217 1
+a217 1
+		Sys_Printf("Rpc_Dispatch: junk serverID %d from client %d\n", 
+d232 1
+a232 1
+	 * Verify or initialize the sprite host id for the client 
+d429 1
+a429 1
+	     */ 
+@
+
+
+5.12
+log
+@Changed version mismatch reporting so it won't overwhelm people with
+messages while we're testing.
+
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: rpcDispatch.c,v 5.11 88/08/05 15:14:58 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+5.11
+log
+@Updated warning statement to include RPC number
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: rpcDispatch.c,v 5.10 88/08/04 17:51:55 mlgray Exp $ SPRITE (Berkeley)";
+a43 4
+/*
+ * Set to FALSE for debugging a few isolated machines without tons of msgs.
+ */
+Boolean	rpc_PrintMismatch = TRUE;
+d63 13
+d131 26
+a156 4
+    } else if (rpcHdrPtr->version != RPC_NATIVE_VERSION && rpc_PrintMismatch) {
+	Sys_Panic(SYS_WARNING,
+	    "Rpc_Dispatch version mismatch: %x not %x from client(?) %d\n",
+	    rpcHdrPtr->version, RPC_NATIVE_VERSION, rpcHdrPtr->clientID);
+@
+
+
+5.10
+log
+@In preparation for installing.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: rpcDispatch.c,v 5.8 88/06/16 20:50:23 brent Exp $ SPRITE (Berkeley)";
+d310 3
+a312 2
+	    Sys_Printf("RpcScatter: parameter size + off (%d + %d) > (%d)\n",
+			   length, rpcHdrPtr->paramOffset, destLength);
+@
+
+
+5.9
+log
+@Doing byte-swapping.
+@
+text
+@d32 1
+d47 1
+a47 1
+Boolean	rpc_PrintMismatch = FALSE;
+a81 4
+/*
+ * Rpc debug variable.
+ */
+Boolean rpcPrintDebug = FALSE;
+a106 1
+    register RpcRawPacket *rawPacketPtr;
+d109 1
+d111 2
+a112 2
+    rawPacketPtr = (RpcRawPacket *)packetPtr;
+    rpcHdrPtr = &rawPacketPtr->rpcHdr;
+a114 7
+	if (rpcTestByteSwap) {
+	    if (rpcPrintDebug) {
+		Sys_Printf("%s %s\n", "Rpc_Dispatch - hdr coming in",
+			"needs byte-swapping:");
+		RpcPrintHdr(rpcHdrPtr);
+	    }
+	}
+a121 7
+	if (rpcTestByteSwap) {
+	    if (rpcPrintDebug) {
+		Sys_Printf("Rpc_Dispatch - after byte-swapping:\n");
+		RpcPrintHdr(rpcHdrPtr);
+	    }
+	}
+#ifdef NOTDEF
+a127 13
+#else NOTDEF
+    } else if (rpcTestByteSwap && rpcPrintDebug &&
+	    rpcHdrPtr->version != RPC_NATIVE_VERSION &&
+	    rpcHdrPtr->version != RPC_NATIVE_VERSION - 1) {
+	Sys_Printf(
+		"Rpc_Dispatch - hdr coming in is bad, can't byte-swap:\n");
+	RpcPrintHdr(rpcHdrPtr);
+    } else if (rpcTestByteSwap && rpcPrintDebug &&
+	    rpcHdrPtr->version != RPC_NATIVE_VERSION - 1) {
+	Sys_Printf("Rpc_Dispatch - hdr coming in is ok - no byte-swapping:\n");
+	RpcPrintHdr(rpcHdrPtr);
+    }
+#endif NOTDEF
+d172 3
+d178 6
+a183 6
+		       rawPacketPtr->etherHdr.destination.byte1 & 0xff,
+		       rawPacketPtr->etherHdr.destination.byte2 & 0xff,
+		       rawPacketPtr->etherHdr.destination.byte3 & 0xff,
+		       rawPacketPtr->etherHdr.destination.byte4 & 0xff,
+		       rawPacketPtr->etherHdr.destination.byte5 & 0xff,
+		       rawPacketPtr->etherHdr.destination.byte6 & 0xff);
+d205 1
+a205 1
+	if ( ! RpcValidateClient(rawPacketPtr)) {
+d370 3
+a372 2
+RpcValidateClient(rawPacketPtr)
+    RpcRawPacket *rawPacketPtr;
+a373 1
+    register RpcHdr 		*rpcHdrPtr;
+a376 1
+    rpcHdrPtr = &rawPacketPtr->rpcHdr;
+d391 1
+a391 1
+				   (ClientData)&rawPacketPtr->etherHdr.source);
+d397 3
+a399 1
+	     */
+d401 6
+a406 6
+			       rawPacketPtr->etherHdr.source.byte1 & 0xff,
+			       rawPacketPtr->etherHdr.source.byte2 & 0xff,
+			       rawPacketPtr->etherHdr.source.byte3 & 0xff,
+			       rawPacketPtr->etherHdr.source.byte4 & 0xff,
+			       rawPacketPtr->etherHdr.source.byte5 & 0xff,
+			       rawPacketPtr->etherHdr.source.byte6 & 0xff);
+@
+
+
+5.8
+log
+@After new version number was added.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: rpcDispatch.c,v 5.7 87/12/10 12:30:54 brent Exp $ SPRITE (Berkeley)";
+d42 5
+a46 1
+int rpc_SpriteID = 0;
+d81 5
+d118 7
+d128 2
+a129 1
+	if (!RpcByteSwap(rpcHdrPtr)) {
+d132 8
+a139 1
+    } else if (rpcHdrPtr->version != RPC_NATIVE_VERSION) {
+d145 13
+d281 1
+a281 28
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcByteSwap --
+ *
+ *	Byte swap the rpc packet header and the following parameter block.
+ *	The data block is not byte swapped.  It knows the RPC packet format:
+ *	  The Rpc header, which includes the sizes of the next two parts.
+ *	  The parameter area.
+ *	  The data area.
+ *
+ * Results:
+ *	FALSE if it could not byte swap.
+ *
+ * Side effects:
+ *	The byte swapping.
+ *
+ *----------------------------------------------------------------------
+ */
+Boolean
+RpcByteSwap(rpcHdrPtr)
+    register RpcHdr *rpcHdrPtr;		/* The Rpc Header as it sits in the
+					 * network's buffer.  The data follows
+					 * the header directly. */
+{
+    return(FALSE);
+}
+@
+
+
+5.7
+log
+@Put in code to trace why client's are sending packets to
+the wrong server
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: rpcDispatch.c,v 5.6 87/10/26 11:25:55 brent Exp $ SPRITE (Berkeley)";
+d108 13
+d193 1
+a193 2
+	 * THIS IS OLD and should be already be replaced by the
+	 * clients responsible use of reverse arp.
+d243 28
+@
+
+
+5.6
+log
+@Added consistency checks and a call to Net_Reset to handle
+the Intel chip going flakey.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: rpcDispatch.c,v 5.5 87/10/04 15:57:27 brent Exp $ SPRITE (Berkeley)";
+d148 1
+a148 1
+	     * Perhaps the Intel chip is wack-o
+d150 22
+a171 6
+	    Sys_Printf("Rpc_Dispatch: junk serverID %d\n", rpcHdrPtr->serverID);
+	    badErrors++;
+	    if (badErrors > 4) {
+		Sys_Printf("Resetting network interface\n");
+		badErrors = 0;
+		Net_Reset();
+@
+
+
+5.5
+log
+@Moved rpcServiceEnabled check to Rpc_Server process level
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: rpcDispatch.c,v 5.4 87/10/01 13:42:34 brent Exp $ SPRITE (Berkeley)";
+d37 2
+a38 2
+ * those hooks work, a diskfull node will set its address when installing
+ * addresses and spriteIDs from a file (see Net_InstallRoute).
+a42 1
+static int lastIgnoredClient = 0;
+d56 6
+d118 6
+d145 15
+d196 6
+@
+
+
+5.4
+log
+@Allow echo servicing in spite of rpcServiceEnabled flag so that
+other hosts don't think we are down erroneously.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: rpcDispatch.c,v 5.3 87/09/29 14:23:56 brent Exp $ SPRITE (Berkeley)";
+d128 2
+a129 2
+	 * Only respond if the RPC system is "on".  We allow echoes to
+	 * come in, however, so that other hosts know we are up.
+d131 1
+a131 1
+	if (!rpcServiceEnabled && rpcHdrPtr->command != RPC_ECHO_2) {
+d138 2
+d322 2
+@
+
+
+5.3
+log
+@Added rpcServiceEnabled hook so that servers can turn on
+the RPC deluge when they are ready.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: rpcDispatch.c,v 5.2 87/09/16 12:26:20 brent Exp $ SPRITE (Berkeley)";
+d128 2
+a129 1
+	 * Only respond if the RPC system is "on".
+d131 1
+a131 1
+	if (!rpcServiceEnabled) {
+@
+
+
+5.2
+log
+@Removed a warning about dropping requests during the boot sequence
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: rpcDispatch.c,v 5.1 87/09/11 09:47:51 brent Exp $ SPRITE (Berkeley)";
+d128 1
+a128 1
+	 * Only respond if we know who we are.
+d130 1
+a130 7
+	if (rpc_SpriteID == 0) {
+	    if (rpcHdrPtr->clientID != lastIgnoredClient) {
+/*		Sys_Panic(SYS_WARNING,
+	    "RpcDispatch: dropping request from client %d\n",
+			rpcHdrPtr->clientID); */
+		lastIgnoredClient = rpcHdrPtr->clientID;
+	    }
+@
+
+
+5.1
+log
+@Updated some warning printfs
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: rpcDispatch.c,v 5.0 87/08/11 10:48:48 sprite Exp $ SPRITE (Berkeley)";
+d132 3
+a134 3
+		Sys_Panic(SYS_WARNING,
+	    "RpcDispatch: My ID is zero, dropping request from client %d\n",
+			rpcHdrPtr->clientID);
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: rpcDispatch.c,v 4.3 87/08/10 15:27:50 nelson Exp $ SPRITE (Berkeley)";
+d109 1
+a109 1
+	Sys_Printf("Rpc_Dispatch: SHORT packet, (%d) not (%d)\n",
+d111 2
+d171 2
+a172 2
+	    Sys_Printf("RpcClientDispatch: bad channel (%d)\n",
+					   rpcHdrPtr->channel);
+@

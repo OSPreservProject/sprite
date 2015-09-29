@@ -1,0 +1,79 @@
+anise% sun4.md/lfscheck -verbose /dev/rsd01c
+17:16:57.070:Read LFS checkpoint from /dev/rsd01c
+/dev/rsd01c:UsageArray: Dirty count wrong; is 161 should be 160
+/dev/rsd01c:UsageArray: FreeBlocks wrong; is 670105 should be 668103
+17:17:09.570:Checking files
+/dev/rsd01c:CheckAllFiles: Desc 11082 address out of range -1
+17:23:33.700:Checking usage array
+/dev/rsd01c:CheckUsageArray: Active bytes for seg 69 is wrong; is 7424 should be 3328
+/dev/rsd01c:CheckUsageArray: Active bytes for seg 142 is wrong; is 4608 should be 512
+/dev/rsd01c:CheckUsageArray: Active bytes for seg 158 is wrong; is 8192 should be 4096
+/dev/rsd01c:CheckUsageArray: Active bytes for seg 168 is wrong; is 13056 should be 8960
+/dev/rsd01c:CheckUsageArray: Active bytes for seg 183 is wrong; is 4352 should be 3840
+/dev/rsd01c:CheckUsageArray: Active bytes for seg 208 is wrong; is 12288 should be 8192
+/dev/rsd01c:CheckUsageArray: Active bytes for seg 240 is wrong; is 307200 should be 303104
+/dev/rsd01c:CheckUsageArray: Active bytes for seg 347 is wrong; is 446464 should be 442368
+/dev/rsd01c:CheckUsageArray: Active bytes for seg 444 is wrong; is 65024 should be 60928
+/dev/rsd01c:CheckUsageArray: Active bytes for seg 484 is wrong; is 12416 should be 8320
+/dev/rsd01c:CheckUsageArray: Active bytes for seg 537 is wrong; is 27008 should be 22912
+/dev/rsd01c:CheckUsageArray: Active bytes for seg 583 is wrong; is 302592 should be 301568
+/dev/rsd01c:CheckUsageArray: Active bytes for seg 639 is wrong; is 221312 should be 217216
+/dev/rsd01c:CheckUsageArray: Active bytes for seg 746 is wrong; is 27776 should be 27264
+/dev/rsd01c:CheckUsageArray: Active bytes for seg 772 is wrong; is 4096 should be 0
+/dev/rsd01c:CheckUsageArray: Active bytes for seg 822 is wrong; is 1664 should be 1152
+/dev/rsd01c:CheckUsageArray: Active bytes for seg 853 is wrong; is 15360 should be 13312
+/dev/rsd01c:CheckUsageArray: Active bytes for seg 899 is wrong; is 524288 should be 0
+/dev/rsd01c:CheckUsageArray: Active bytes for seg 1026 is wrong; is 4096 should be 0
+/dev/rsd01c:CheckUsageArray: Active bytes for seg 1090 is wrong; is 53760 should be 49664
+/dev/rsd01c:CheckUsageArray: Active bytes for seg 1093 is wrong; is 55168 should be 51072
+/dev/rsd01c:CheckUsageArray: Active bytes for seg 1115 is wrong; is 24064 should be 19968
+/dev/rsd01c:CheckUsageArray: Active bytes for seg 1133 is wrong; is 27776 should be 23680
+17:23:33.960:Checking directory tree
+File 5142 is unreferenced
+File 10900 is unreferenced
+File 10957 is unreferenced
+File 10966 is unreferenced
+File 10969 is unreferenced
+File 10991 is unreferenced
+File 10992 is unreferenced
+File 11000 is unreferenced
+File 11003 is unreferenced
+File 11005 is unreferenced
+File 11010 is unreferenced
+File 11011 is unreferenced
+File 11041 is unreferenced
+File 11047 is unreferenced
+File 11048 is unreferenced
+File 11051 is unreferenced
+File 11052 is unreferenced
+File 11069 is unreferenced
+File 11070 is unreferenced
+File 11081 is unreferenced
+File 11083 is unreferenced
+File 11084 is unreferenced
+File 11085 is unreferenced
+File 11090 is unreferenced
+File 11093 is unreferenced
+File 11101 is unreferenced
+File 11104 is unreferenced
+File 11109 is unreferenced
+File 11211 is unreferenced
+File 11219 is unreferenced
+File 11221 is unreferenced
+File 11240 is unreferenced
+File 11261 is unreferenced
+File 11264 is unreferenced
+File 42256 is unreferenced
+File 47047 is unreferenced
+File 47074 is unreferenced
+File 47078 is unreferenced
+File 47431 is unreferenced
+File 79294 is unreferenced
+40 unreferenced files
+17:24:27.810:Checking summary regions
+/dev/rsd01c: Bad magic number 0x273b0bdb for summary region of segment 899
+17:28:05.500:Reporting errors
+/dev/rsd01c:No summary region for desc 11082; should be a -1
+/dev/rsd01c: 3 major errors 25 minor errors
+anise% select > user5.errors
+

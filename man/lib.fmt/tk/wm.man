@@ -1,0 +1,594 @@
+
+
+
+wm                        User Commands                        wm
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     wm - Communicate with window manager
+
+SSYYNNOOPPSSIISS
+     wwmm _o_p_t_i_o_n _w_i_n_d_o_w ?_a_r_g_s?
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The wwmm command is used to interact with window  managers  in
+     order  to control such things as the title for a window, its
+     geometry, or the increments in terms  of  which  it  may  be
+     resized.   The  wwmm  command can take any of a number of dif-
+     ferent forms, depending on the _o_p_t_i_o_n argument.  All of  the
+     forms expect at least one additional argument, _w_i_n_d_o_w, which
+     must be the path name of a top-level window.
+
+     The legal forms for the wwmm command are:
+
+     wwmm aassppeecctt _w_i_n_d_o_w ?_m_i_n_N_u_m_e_r _m_i_n_D_e_n_o_m _m_a_x_N_u_m_e_r _m_a_x_D_e_n_o_m?
+          If _m_i_n_N_u_m_e_r, _m_i_n_D_e_n_o_m, _m_a_x_N_u_m_e_r, and _m_a_x_D_e_n_o_m  are  all
+          specified,  then  they  will  be  passed  to the window
+          manager and the  window  manager  should  use  them  to
+          enforce a range of acceptable aspect ratios for _w_i_n_d_o_w.
+          The aspect ratio of _w_i_n_d_o_w (width/length) will be  con-
+          strained   to   lie   between   _m_i_n_N_u_m_e_r/_m_i_n_D_e_n_o_m   and
+          _m_a_x_N_u_m_e_r/_m_a_x_D_e_n_o_m.  If _m_i_n_N_u_m_e_r etc. are all  specified
+          as  empty  strings, then any existing aspect ratio res-
+          trictions are removed.  If _n_i_m_N_u_m_e_r etc. are specified,
+          then  the  command returns an empty string.  Otherwise,
+          it returns a Tcl list containing four  elements,  which
+          are the current values of _m_i_n_N_u_m_e_r, _m_i_n_D_e_n_o_m, _m_a_x_N_u_m_e_r,
+          and _m_a_x_D_e_n_o_m (if no aspect restrictions are in  effect,
+          then an empty string is returned).
+
+     wwmm ddeeiiccoonniiffyy _w_i_n_d_o_w
+          Arrange for _w_i_n_d_o_w to  be  displayed  in  normal  (non-
+          iconified)  form.   This is done by mapping the window.
+          If the window has never been mapped then  this  command
+          will  not  map the window, but it will ensure that when
+          the window is first mapped it will be displayed in  de-
+          iconified form.  Returns an empty string.
+
+     wwmm ffooccuussmmooddeell _w_i_n_d_o_w ?aaccttiivvee|ppaassssiivvee?
+          If aaccttiivvee or ppaassssiivvee is supplied as an  optional  argu-
+          ment  to the command, then it specifies the focus model
+          for _w_i_n_d_o_w.  In this case the command returns an  empty
+          string.   If  no  additional argument is supplied, then
+          the command returns the current focus model for _w_i_n_d_o_w.
+          An  aaccttiivvee focus model means that _w_i_n_d_o_w will claim the
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+wm                        User Commands                        wm
+
+
+
+          input focus for itself  or  its  descendants,  even  at
+          times  when the focus is currently in some other appli-
+          cation.  PPaassssiivvee means that _w_i_n_d_o_w will never claim the
+          focus  for  itself:  the window manager should give the
+          focus to _w_i_n_d_o_w at appropriate  times.   However,  once
+          the  focus  has been given to _w_i_n_d_o_w or one of its des-
+          cendants, the application may re-assign the focus among
+          _w_i_n_d_o_w's descendants.  The focus model defaults to ppaass--
+          ssiivvee, and Tk's ffooccuuss command assumes a passive model of
+          focussing.
+
+     wwmm ggeeoommeettrryy _w_i_n_d_o_w ?_n_e_w_G_e_o_m_e_t_r_y?
+          If _n_e_w_G_e_o_m_e_t_r_y is specified, then the geometry of  _w_i_n_-
+          _d_o_w is changed and an empty string is returned.  Other-
+          wise the current geometry for _w_i_n_d_o_w is returned  (this
+          is  the most recent geometry specified either by manual
+          resizing or in a wwmm ggeeoommeettrryy command).  _N_e_w_G_e_o_m_e_t_r_y has
+          the  form  ==_w_i_d_t_hxx_h_e_i_g_h_t++___x++___y,  where  any of ==, _w_i_d_t_hxx--
+          _h_e_i_g_h_t, or ++___x++___y may be omitted.  _W_i_d_t_h and  _h_e_i_g_h_t  are
+          positive  integers specifying the desired dimensions of
+          _w_i_n_d_o_w.  If _w_i_n_d_o_w is  gridded  (see  GRIDDED  GEOMETRY
+          MANAGEMENT  below) then the dimensions are specified in
+          grid units;  otherwise  they  are  specified  in  pixel
+          units.   _X and _y specify the desired location of _w_i_n_d_o_w
+          on the screen, in pixels.  If _x is preceded  by  ++,  it
+          specifies the number of pixels between the left edge of
+          the screen and the left edge of  _w_i_n_d_o_w's  border;   if
+          preceded  by  --  then  _x specifies the number of pixels
+          between the right edge of the screen and the right edge
+          of  _w_i_n_d_o_w's  border.   If  _y  is preceded by ++ then it
+          specifies the number of pixels between the top  of  the
+          screen  and  the  top of _w_i_n_d_o_w's border;  if _y is pre-
+          ceded by -- then  it  specifies  the  number  of  pixels
+          between the bottom of _w_i_n_d_o_w's border and the bottom of
+          the screen.  If _n_e_w_G_e_o_m_e_t_r_y is specified  as  an  empty
+          string  then  any  existing user-specified geometry for
+          _w_i_n_d_o_w is cancelled, and the window will revert to  the
+          size requested internally by its widgets.
+
+     wwmm ggrriidd _w_i_n_d_o_w ?_b_a_s_e_W_i_d_t_h _b_a_s_e_H_e_i_g_h_t _w_i_d_t_h_I_n_c _h_e_i_g_h_t_I_n_c?
+          This command indicates that _w_i_n_d_o_w is to be managed  as
+          a  gridded  window.  It also specifies the relationship
+          between grid units  and  pixel  units.   _B_a_s_e_W_i_d_t_h  and
+          _b_a_s_e_H_e_i_g_h_t specify the number of grid units correspond-
+          ing to the pixel  dimensions  requested  internally  by
+          _w_i_n_d_o_w    using   TTkk__GGeeoommeettrryyRReeqquueesstt.    _W_i_d_t_h_I_n_c   and
+          _h_e_i_g_h_t_I_n_c specify the number of pixels in each horizon-
+          tal  and  vertical grid unit.  These four values deter-
+          mine  a  range  of   acceptable   sizes   for   _w_i_n_d_o_w,
+          corresponding to grid-based widths and heights that are
+          non-negative integers.  Tk will pass  this  information
+          to  the  window  manager;   during manual resizing, the
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+wm                        User Commands                        wm
+
+
+
+          window manager will restrict the window's size  to  one
+          of  these acceptable sizes.  Furthermore, during manual
+          resizing the window manager will display  the  window's
+          current size in terms of grid units rather than pixels.
+          If _b_a_s_e_W_i_d_t_h etc. are all specified as  empty  strings,
+          then _w_i_n_d_o_w will no longer be managed as a gridded win-
+          dow.  If _b_a_s_e_W_i_d_t_h etc. are specified then  the  return
+          value  is  an empty string.  Otherwise the return value
+          is a Tcl list containing four elements corresponding to
+          the   current   _b_a_s_e_W_i_d_t_h,  _b_a_s_e_H_e_i_g_h_t,  _w_i_d_t_h_I_n_c,  and
+          _h_e_i_g_h_t_I_n_c;  if _w_i_n_d_o_w is not currently gridded, then an
+          empty  string  is  returned.  Note: this command should
+          not be needed very often, since the TTkk__SSeettGGrriidd  library
+          procedure  and the sseettGGrriidd option provide easier access
+          to the same functionality.
+
+     wwmm ggrroouupp _w_i_n_d_o_w ?_p_a_t_h_N_a_m_e?
+          If _p_a_t_h_N_a_m_e is specified, it gives the  path  name  for
+          the  leader  of a group of related windows.  The window
+          manager may use this information, for example, to unmap
+          all  of  the windows in a group when the group's leader
+          is iconified.  _P_a_t_h_N_a_m_e may be specified  as  an  empty
+          string  to remove _w_i_n_d_o_w from any group assocation.  If
+          _p_a_t_h_N_a_m_e is specified then the command returns an empty
+          string;  otherwise it returns the path name of _w_i_n_d_o_w's
+          current group leader, or  an  empty  string  if  _w_i_n_d_o_w
+          isn't part of any group.
+
+     wwmm iiccoonnbbiittmmaapp _w_i_n_d_o_w ?_b_i_t_m_a_p?
+          If _b_i_t_m_a_p is specified, then it names a bitmap  in  the
+          standard  forms  accepted  by  Tk (see the TTkk__GGeettBBiittmmaapp
+          manual entry for details).  This bitmap  is  passed  to
+          the  window  manager  to be displayed in _w_i_n_d_o_w's icon,
+          and the command returns an empty string.  If  an  empty
+          string  is  specified for _b_i_t_m_a_p, then any current icon
+          bitmap is cancelled for _w_i_n_d_o_w.  If _b_i_t_m_a_p is specified
+          then the command returns an empty string.  Otherwise it
+          returns the name of the current icon bitmap  associated
+          with  _w_i_n_d_o_w,  or an empty string if _w_i_n_d_o_w has no icon
+          bitmap.
+
+     wwmm iiccoonniiffyy _w_i_n_d_o_w
+          Arrange for _w_i_n_d_o_w to be iconified.  It  _w_i_n_d_o_w  hasn't
+          yet  been  mapped for the first time, this command will
+          arrange for it to appear in the iconified state when it
+          is eventually mapped.
+
+     wwmm iiccoonnmmaasskk _w_i_n_d_o_w ?_b_i_t_m_a_p?
+          If _b_i_t_m_a_p is specified, then it names a bitmap  in  the
+          standard  forms  accepted  by  Tk (see the TTkk__GGeettBBiittmmaapp
+          manual entry for details).  This bitmap  is  passed  to
+          the  window manager to be used as a mask in conjunction
+
+
+
+Sprite v1.0                                                     3
+
+
+
+
+
+
+wm                        User Commands                        wm
+
+
+
+          with the iiccoonnbbiittmmaapp option:  where the mask has  zeroes
+          no icon will be displayed;  where it has ones, the bits
+          from the icon bitmap will be displayed.   If  an  empty
+          string  is  specified  for _b_i_t_m_a_p then any current icon
+          mask is cancelled for _w_i_n_d_o_w  (this  is  equivalent  to
+          specifying  a bitmap of all ones).  If _b_i_t_m_a_p is speci-
+          fied then the command returns an empty string.   Other-
+          wise it returns the name of the current icon mask asso-
+          ciated with _w_i_n_d_o_w, or an empty string if no mask is in
+          effect.
+
+     wwmm iiccoonnnnaammee _w_i_n_d_o_w ?_n_e_w_N_a_m_e?
+          If _n_e_w_N_a_m_e is specified, then it is passed to the  win-
+          dow manager;  the window manager should display _n_e_w_N_a_m_e
+          inside the icon associated with _w_i_n_d_o_w.  In  this  case
+          an  empty  string  is  returned  as result.  If _n_e_w_N_a_m_e
+          isn't specified then the command  returns  the  current
+          icon  name  for  _w_i_n_d_o_w,  or an empty string if no icon
+          name has  been  specified  (in  this  case  the  window
+          manager  will  normally  display the window's title, as
+          specified with the wwmm ttiittllee command).
+
+     wwmm iiccoonnppoossiittiioonn _w_i_n_d_o_w ?_x _y?
+          If _x and _y are specified, they are passed to the window
+          manager  as a hint about where to position the icon for
+          _w_i_n_d_o_w.  In this case an empty string is returned.   If
+          _x  and _y are specified as empty strings then any exist-
+          ing icon position hint is cancelled.  If neither _x  nor
+          _y  is  specified,  then  the command returns a Tcl list
+          containing two values, which are the current icon posi-
+          tion  hints  (if  no  hints are in effect then an empty
+          string is returned).
+
+     wwmm iiccoonnwwiinnddooww _w_i_n_d_o_w ?_p_a_t_h_N_a_m_e?
+          If _p_a_t_h_N_a_m_e is specified, it is the  path  name  for  a
+          window to use as icon for _w_i_n_d_o_w: when _w_i_n_d_o_w is iconi-
+          fied then _p_a_t_h_N_a_m_e should be mapped to serve  as  icon,
+          and  when  _w_i_n_d_o_w is de-iconified then _p_a_t_h_N_a_m_e will be
+          unmapped again.  If _p_a_t_h_N_a_m_e is specified as  an  empty
+          string  then  any  existing icon window association for
+          _w_i_n_d_o_w will be cancelled.  If the _p_a_t_h_N_a_m_e argument  is
+          specified  then an empty string is returned.  Otherwise
+          the command returns the path name of the  current  icon
+          window  for  _w_i_n_d_o_w,  or an empty string if there is no
+          icon window currently specified for _w_i_n_d_o_w.  Note:  not
+          all  window managers support the notion of an icon win-
+          dow.
+
+     wwmm mmaaxxssiizzee _w_i_n_d_o_w ?_w_i_d_t_h _h_e_i_g_h_t?
+          If _w_i_d_t_h and _h_e_i_g_h_t are specified, then _w_i_n_d_o_w  becomes
+          resizable and _w_i_d_t_h and _h_e_i_g_h_t give its maximum permis-
+          sible dimensions.  For gridded windows  the  dimensions
+
+
+
+Sprite v1.0                                                     4
+
+
+
+
+
+
+wm                        User Commands                        wm
+
+
+
+          are specified in grid units;  otherwise they are speci-
+          fied in pixel units.  During manual sizing, the  window
+          manager  should  restrict the window's dimensions to be
+          less than or equal to _w_i_d_t_h and _h_e_i_g_h_t.  If  _w_i_d_t_h  and
+          _h_e_i_g_h_t are specified as empty strings, then the maximum
+          size option is cancelled  for  _w_i_n_d_o_w.   If  _w_i_d_t_h  and
+          _h_e_i_g_h_t are specified, then the command returns an empty
+          string.  Otherwise it returns a Tcl list with two  ele-
+          ments, which are the maximum width and height currently
+          in effect;  if no maximum dimensions are in effect  for
+          _w_i_n_d_o_w  then an empty string is returned.  See the sec-
+          tions on geometry management below  for  more  informa-
+          tion.
+
+     wwmm mmiinnssiizzee _w_i_n_d_o_w ?_w_i_d_t_h _h_e_i_g_h_t?
+          If _w_i_d_t_h and _h_e_i_g_h_t are specified, then _w_i_n_d_o_w  becomes
+          resizable and _w_i_d_t_h and _h_e_i_g_h_t give its minimum permis-
+          sible dimensions.  For gridded windows  the  dimensions
+          are specified in grid units;  otherwise they are speci-
+          fied in pixel units.  During manual sizing, the  window
+          manager  should  restrict the window's dimensions to be
+          greater than or equal to _w_i_d_t_h and  _h_e_i_g_h_t.   If  _w_i_d_t_h
+          and  _h_e_i_g_h_t  are  specified  as empty strings, then the
+          minimum size option is cancelled for _w_i_n_d_o_w.  If  _w_i_d_t_h
+          and  _h_e_i_g_h_t  are specified, then the command returns an
+          empty string.  Otherwise it returns a Tcl list with two
+          elements,  which  are  the  minimum  width  and  height
+          currently in effect;  if no minimum dimensions  are  in
+          effect  for  _w_i_n_d_o_w  then  an empty string is returned.
+          See the sections on geometry management below for  more
+          information.
+
+     wwmm ppoossiittiioonnffrroomm _w_i_n_d_o_w ?_w_h_o?
+          If _w_h_o is specified, it must be either pprrooggrraamm or uusseerr,
+          or  an  abbreviation of one of these two.  It indicates
+          whether _w_i_n_d_o_w's current position was requested by  the
+          program  or  by  the user.  Many window managers ignore
+          program-requested initial positions and ask the user to
+          manually  position  the  window;   if uusseerr is specified
+          then the window manager should position the  window  at
+          the given place without asking the user for assistance.
+          If _w_h_o is  specified  as  an  empty  string,  then  the
+          current position source is cancelled.  If _w_h_o is speci-
+          fied, then the command returns an empty string.  Other-
+          wise  it  returns uusseerr or wwiinnddooww to indicate the source
+          of the window's current position, or an empty string if
+          no source has been specified yet.  Most window managers
+          interpret ``no source'' as equivalent to  pprrooggrraamm.   Tk  |
+          will automatically set the position source to uusseerr when  |
+          a wwmm ggeeoommeettrryy command is invoked, unless the source has  |
+          been set explicitly to pprrooggrraamm.
+
+
+
+
+Sprite v1.0                                                     5
+
+
+
+
+
+
+wm                        User Commands                        wm
+
+
+
+     wwmm ssiizzeeffrroomm _w_i_n_d_o_w ?_w_h_o?
+          If _w_h_o is specified, it must be either pprrooggrraamm or uusseerr,
+          or  an  abbreviation of one of these two.  It indicates
+          whether _w_i_n_d_o_w's current size was requested by the pro-
+          gram  or  by  the  user.   Some  window managers ignore
+          program-requested sizes and ask the  user  to  manually
+          size  the window;  if uusseerr is specified then the window
+          manager should  give  the  window  its  specified  size
+          without  asking  the  user  for  assistance.  If _w_h_o is
+          specified as an empty string,  then  the  current  size
+          source  is  cancelled.   If  _w_h_o is specified, then the
+          command returns an empty string.  Otherwise it  returns
+          uusseerr  or  wwiinnddooww to indicate the source of the window's
+          current size, or an empty string if no source has  been
+          specified  yet.   Most  window  managers interpret ``no
+          source'' as equivalent to pprrooggrraamm.
+
+     wwmm ttiittllee _w_i_n_d_o_w ?_s_t_r_i_n_g?
+          If _s_t_r_i_n_g is specified, then it will be passed  to  the
+          window  manager  for  use  as the title for _w_i_n_d_o_w (the
+          window manager should display this string  in  _w_i_n_d_o_w's
+          title  bar).  In this case the command returns an empty
+          string.  If _s_t_r_i_n_g isn't  specified  then  the  command
+          returns  the  current  title for the _w_i_n_d_o_w.  The title
+          for a window defaults to its name.
+
+     wwmm ttrraannssiieenntt _w_i_n_d_o_w ?_m_a_s_t_e_r?
+          If _l_e_a_d_e_r is specified,  then  the  window  manager  is
+          informed  that _w_i_n_d_o_w is a transient window (e.g. pull-
+          down menu) working on behalf of _m_a_s_t_e_r (where _m_a_s_t_e_r is
+          the  path  name  for  a top-level window).  Some window
+          managers will use this  information  to  manage  _w_i_n_d_o_w
+          specially.   If  _m_a_s_t_e_r is specified as an empty string
+          then _w_i_n_d_o_w is marked as not being a  transient  window
+          any  more.   If  _m_a_s_t_e_r  is specified, then the command
+          returns an empty string.  Otherwise the command returns
+          the  path  name of _w_i_n_d_o_w's current master, or an empty
+          string if _w_i_n_d_o_w isn't currently a transient window.
+
+     wwmm wwiitthhddrraaww _w_i_n_d_o_w
+          Arranges for _w_i_n_d_o_w to be withdrawn  from  the  screen.
+          This  causes  the  window  to be unmapped and forgotten
+          about by the window manager.  If the window  has  never  |
+          been  mapped, then this command causes the window to be  |
+          mapped in the withdrawn state.  Not all window managers  |
+          appear to know how to handle windows that are mapped in  |
+          the withdrawn state.  Note: it sometimes  seems  to  be
+          necessary to withdraw a window and then re-map it (e.g.
+          with wwmm ddeeiiccoonniiffyy) to get some window managers  to  pay
+          attention  to  changes  in  window  attributes  such as
+          group.
+
+
+
+
+Sprite v1.0                                                     6
+
+
+
+
+
+
+wm                        User Commands                        wm
+
+
+
+SSOOUURRCCEESS OOFF GGEEOOMMEETTRRYY IINNFFOORRMMAATTIIOONN
+     Size-related information for top-level windows can come from
+     three sources.  First, geometry requests come from the widg-
+     ets that are descendants of a top-level window.  Each widget
+     requests   a   particular   size   for   itself  by  calling
+     TTkk__GGeeoommeettrryyRReeqquueesstt.  This information is passed to  geometry
+     managers,  which  then request large enough sizes for parent
+     windows so that  they  can  layout  the  children  properly.
+     Geometry  information  passes  upwards  through  the  window
+     hierarchy until eventually a particular  size  is  requested
+     for each top-level window.  These requests are called _i_n_t_e_r_-
+     _n_a_l _r_e_q_u_e_s_t_s in the discussion below.  The second source  of
+     width and height information is through the wwmm ggeeoommeettrryy com-
+     mand.  Third, the user can request a particular size  for  a
+     window  using  the  interactive  facilities  of  the  window
+     manager.  The second and third types  of  geometry  requests
+     are  called  _e_x_t_e_r_n_a_l  _r_e_q_u_e_s_t_s in the discussion below;  Tk
+     treats these two kinds of requests identically.
+
+
+UUNNGGRRIIDDDDEEDD GGEEOOMMEETTRRYY MMAANNAAGGEEMMEENNTT
+     Tk allows the geometry of a top-level window to  be  managed
+     in  either  of  two general ways: ungridded or gridded.  The
+     ungridded form occurs if no wwmm ggrriidd command has been  issued
+     for  a  top-level  window.  Ungridded management has several
+     variants.  In the simplest variant of ungridded windows,  no
+     wwmm  ggeeoommeettrryy,  wwmm  mmiinnssiizzee, or wwmm mmaaxxssiizzee commands have been
+     invoked either.  In this case, the window's size  is  deter-
+     mined  totally  by  the internal requests emanating from the
+     widgets inside the window:  Tk will ask the  window  manager
+     not to permit the user to resize the window interactively.
+
+     If a wwmm ggeeoommeettrryy command is invoked on an ungridded  window,
+     then  the  size in that command overrides any size requested
+     by the window's widgets;  from now  on,  the  window's  size
+     will  be  determined entirely by the most recent information
+     from wwmm ggeeoommeettrryy commands.  To go back  to  using  the  size
+     requested  by the window's widgets, issue a wwmm ggeeoommeettrryy com-
+     mand with an empty _g_e_o_m_e_t_r_y string.
+
+     To enable interactive resizing of an ungridded  window,  one
+     or  both  of  the wwmm mmaaxxssiizzee and wwmm mmiinnssiizzee commands must be
+     issued.  The information from these commands will be  passed
+     to the window manager, and size changes within the specified
+     range will be permitted.  For ungridded windows  the  limits
+     refer  to  the  top-level window's dimensions in pixels.  If
+     only a wwmm mmaaxxssiizzee command is issued then the minimum  dimen-
+     sions  default to 1;  if only a wwmm mmiinnssiizzee command is issued
+     then there will be no limit on the maximum  dimensions.   If
+     the  size  of  a window is changed interactively, it has the
+     same effect as if wwmm ggeeoommeettrryy had been  invoked:   from  now
+     on,  internal  geometry requests will be ignored.  To return
+
+
+
+Sprite v1.0                                                     7
+
+
+
+
+
+
+wm                        User Commands                        wm
+
+
+
+     to internal control over  the  window's  size,  issue  a  wwmm
+     ggeeoommeettrryy command with an empty _g_e_o_m_e_t_r_y argument.  If a win-
+     dow has been manually resized or moved, the wwmm ggeeoommeettrryy com-
+     mand  will  return  the geometry that was requested interac-
+     tively.
+
+
+GGRRIIDDDDEEDD GGEEOOMMEETTRRYY MMAANNAAGGEEMMEENNTT
+     The second style of geometry management is  called  _g_r_i_d_d_e_d.
+     This  approach occurs when one of the widgets of an applica-
+     tion supports a range of useful  sizes.   This  occurs,  for
+     example,  in  a text editor where the scrollbars, menus, and
+     other adornments are fixed in size but the edit  widget  can
+     support  any number of lines of text or characters per line.
+     In this case, it  is  usually  desirable  to  let  the  user
+     specify  the  number of lines or characters-per-line, either
+     with the wwmm ggeeoommeettrryy command or  by  interactively  resizing
+     the  window.   In the case of text, and in other interesting
+     cases also, only discrete sizes of the  window  make  sense,
+     such  as  integral numbers of lines and characters-per-line;
+     arbitrary pixel sizes are not useful.
+
+     Gridded geometry management provides support for  this  kind
+     of  application.   Tk  (and  the window manager) assume that
+     there is a grid of some sort within the application and that
+     the  application  should  be  resized in terms of _g_r_i_d _u_n_i_t_s
+     rather than pixels.  Gridded geometry  management  is  typi-
+     cally invoked by turning on the sseettGGrriidd option for a widget;
+     it can also be invoked with the wwmm ggrriidd command or  by  cal-
+     ling TTkk__SSeettGGrriidd.  In each of these approaches the particular
+     widget (or sometimes code in the  application  as  a  whole)
+     specifies  the  relationship between integral grid sizes for
+     the window  and  pixel  sizes.   To  return  to  non-gridded
+     geometry  management,  invoke  wwmm  ggrriidd  with empty argument
+     strings.
+
+     When gridded geometry management is  enabled  then  all  the
+     dimensions  specified  in  wwmm  mmiinnssiizzee,  wwmm  mmaaxxssiizzee, and wwmm
+     ggeeoommeettrryy commands are treated  as  grid  units  rather  than
+     pixel units.  Interactive resizing is automatically enabled,
+     and it will be carried out in even  numbers  of  grid  units
+     rather  than  pixels.  By default there are no limits on the
+     minimum or maximum dimensions of a gridded window.  As  with
+     ungridded windows, interactive resizing has exactly the same
+     effect as invoking the wwmm  ggeeoommeettrryy  command.   For  gridded
+     windows,  internally-  and  externally-requested  dimensions
+     work together: the  externally-specified  width  and  height
+     determine  the  size  of  the  window in grid units, and the
+     information from the last wwmm ggrriidd  command  maps  from  grid
+     units to pixel units.
+
+
+
+
+
+Sprite v1.0                                                     8
+
+
+
+
+
+
+wm                        User Commands                        wm
+
+
+
+BBUUGGSS
+     The window manager interactions seem too complicated,  espe-
+     cially  for  managing  geometry.  Suggestions on how to sim-
+     plify this would be greatly appreciated.
+
+     Most existing window  managers  appear  to  have  bugs  that
+     affect  the  operation of the wwmm command.  For example, some
+     changes won't take effect if the window is  already  active:
+     the  window  will  have  to be withdrawn and de-iconified in
+     order to make the change happen.
+
+
+KKEEYYWWOORRDDSS
+     aspect ratio, deiconify, focus model, geometry, grid, group,
+     icon,  iconify, increments, position, size, title, top-level
+     window, units, window manager
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     9
+
+
+

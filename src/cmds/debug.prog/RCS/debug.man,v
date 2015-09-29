@@ -1,0 +1,63 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     88.12.30.09.24.32;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.12.21.10.53.29;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@More format upgrades.
+@
+text
+@' $Header: /a/newcmds/debug.prog/RCS/debug.man,v 1.1 88/12/21 10:53:29 ouster Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS DEBUG cmds
+.BS
+.SH NAME
+debug \- Start a command and put it immediately into the debugger
+.SH SYNOPSIS
+\fBdebug\fR \fIcommand\fR [\fIoptions\fR]
+.BE
+
+.SH INTRODUCTION
+.PP
+The \fBdebug\fR command is used to initiate a process but force the process
+into the debugger before it executes any instructions, in order to
+facilitate debugging.  \fICommand\fR is the name of the command;
+if \fIoptions\fR are present, they will be passed to \fIcommand\fR
+as options.
+
+.SH KEYWORDS
+debug
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+' $Header: /sprite/doc/ref/cmds/RCS/debug,v 1.1 88/10/28 09:00:05 ouster Exp $ SPRITE (Berkeley)
+d13 1
+a13 1
+The Debug command is used to initiate a process but force the process
+@

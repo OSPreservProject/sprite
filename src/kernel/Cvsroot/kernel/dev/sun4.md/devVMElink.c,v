@@ -1,0 +1,2553 @@
+head     1.7;
+branch   ;
+access   ;
+symbols  ds3100:1.7 sun3:1.7 sun4nw:1.2 symm:1.2 spur:1.2;
+locks    ; strict;
+comment  @ * @;
+
+
+1.7
+date     92.10.23.15.04.40;  author elm;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     92.08.27.10.18.57;  author elm;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     92.08.17.14.21.26;  author elm;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     92.07.09.18.55.44;  author elm;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     92.06.29.12.33.45;  author elm;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.09.18.13.47.02;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.09.18.12.39.52;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.7
+log
+@
+Updated version of RAID/xbus device modules.  These versions have all
+been tested and work as far as we know.
+@
+text
+@/* 
+ * devVMElink.c --
+ *
+ *	Routines used for running the Bit-3 VME-VME card cage link
+ *	board set.  These routines are to set up and handle a master
+ *	board; a slave interface should require no (software) setup.
+ *
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/dev/sun4.md/devVMElink.c,v 1.6 92/08/27 10:18:57 elm Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include "sprite.h"
+#include "stdio.h"
+#include "mach.h"
+#include "dev.h"
+#include "devInt.h"
+#include "stdlib.h"
+#include "sync.h"
+#include "vmMach.h"
+#include "devVMElink.h"
+#include "string.h"
+
+#include "dbg.h"
+
+/*
+ * Uncomment the following line of code to use the kernel call
+ * VmMach_MapInBigDevice.  Currently, this call doesn't work.
+ */
+
+#define MAP_IN_BIG_DEVICE
+
+
+static VMELinkInfo *VMEInfo[DEV_VMELINK_MAX_BOARDS];
+static Boolean devVMElinkInitted = FALSE;
+
+static int devVMElinkDebug = FALSE;
+
+typedef void (*VoidFunc)();
+typedef unsigned short uint16;
+
+void	DevVMElinkDmaDone	_ARGS_((VMELinkInfo* linkInfo));
+Boolean DevVMElinkXferData	_ARGS_((VMELinkInfo* linkInfo));
+
+/*
+ * These are the addresses for each card's "window" register access.
+ */
+unsigned int windowPhysAddr[] = {0xd0010000, 0xd0030000, 0xff810000,
+#if 0
+				 0xd0050000, 0xd0070000, 0xd0090000,
+				 0xd00b0000, 0xd00d0000, 0xd00f0000,
+				 0xd0110000, 0xd0130000, 0xd0150000,
+#else
+				 0, 0, 0,
+				 0, 0, 0,
+				 0, 0, 0,
+#endif
+};
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevVMElinkReset
+ *
+ *	Reset the VME link board.  Also set up any necessary registers
+ *	with the proper values.  If a hard reset is requested, or if
+ *	the remote board is wedged, the remote card cage will be
+ *	reset (VME SYSRESET).
+ *
+ * Returns:
+ *	SUCCESS if reset worked, error code otherwise.
+ *
+ * Side effects:
+ *	Resets the VME link board.  Any currently-running operation is
+ *	aborted.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+DevVMElinkReset (linkInfo, hardReset)
+VMELinkInfo *linkInfo;
+int hardReset;
+{
+    unsigned char curStatus = DEV_VMELINK_REMOTE_DOWN;
+    unsigned char remoteStatus;
+    ReturnStatus status = SUCCESS;
+    CtrlRegs *regPtr = linkInfo->regArea;
+
+    MASTER_LOCK (&linkInfo->mutex);
+
+    if (devVMElinkDebug) {
+	printf ("DevVMElinkReset: starting reset.\n");
+    }
+
+    /*
+     * Clear all state except vme address space state bit and whether or
+     * not the link has memory mapped in.
+     */
+    linkInfo->state &= (DEV_VMELINK_STATE_VME_A32 | DEV_VMELINK_STATE_NO_MAP);
+    linkInfo->position = 0;
+    status = Mach_Probe (sizeof (curStatus), (char *)&(regPtr->LocalStatus),
+			 (char *)&curStatus);
+    if (devVMElinkDebug) {
+	printf ("DevVMElinkReset: Status was 0x%x\n", curStatus);
+    }
+    if (status != SUCCESS) {
+	printf("DevVMElinkReset: local board not responding.\n");
+	goto resetExit;
+    }
+
+    if (!(curStatus & DEV_VMELINK_REMOTE_DOWN)) {
+	/*
+	 * Try to read the remote status register.  If we can't do it,
+	 * reset the remote card cage whether or not it was requested.
+	 */
+	if (Mach_Probe (sizeof (remoteStatus), (char *)&(regPtr->RemoteCmd1),
+			(char *)&remoteStatus) != SUCCESS) {
+	    hardReset = TRUE;
+	}
+	/*
+	 * Reset the remote card cage if requested or needed.
+	 */
+	if (hardReset) {
+	    printf ("DevVMElinkReset: Resetting remote VME link card...\n");
+	    regPtr->RemoteCmd1 = DEV_VMELINK_REMOTE_RESET;
+	    if (devVMElinkDebug) {
+		printf ("DevVMElinkReset: Just reset remote board.\n");
+	    }
+	    MACH_DELAY(1000000);
+	}
+	remoteStatus = regPtr->RemoteCmd1;
+    } else {
+	printf ("DevVMElinkReset: Remote VME link down; can't access.\n");
+    }
+
+    regPtr->LocalCmd = DEV_VMELINK_CLEAR_LOCAL_ERRS;
+
+    curStatus = regPtr->LocalStatus;
+    if (devVMElinkDebug) {
+	printf ("DevVMElinkReset: Status is now 0x%x (after errs cleared)\n",
+		curStatus);
+    }
+    regPtr->LocalIntrVec = (unsigned char)linkInfo->vectorNumber;
+
+  resetExit:
+    if (devVMElinkDebug) {
+	printf ("Just before putting in local flags, status is 0x%x\n",
+		regPtr->LocalStatus);
+    }
+    linkInfo->LocalFlags = 0;
+    regPtr->LocalCmd = linkInfo->LocalFlags;
+    linkInfo->RemoteFlags1 = 0;
+    linkInfo->RemoteFlags2 = 0 /*DEV_VMELINK_REMOTE_PAUSE_16*/;
+    if (!(curStatus & DEV_VMELINK_REMOTE_DOWN)) {
+	if (devVMElinkDebug) {
+	    printf ("Just before putting in remote flags, status is 0x%x\n",
+		    regPtr->LocalStatus);
+	}
+	regPtr->RemoteCmd1 = linkInfo->RemoteFlags1;
+	regPtr->RemoteCmd2 = linkInfo->RemoteFlags2;
+    } else {
+	if (devVMElinkDebug) {
+	    printf ("DevVMElinkReset: remote down; not initted cmd regs\n");
+	}
+    }
+    MASTER_UNLOCK (&linkInfo->mutex);
+    return(status);
+}
+
+/***********************************************************************
+ *
+ * DevVMElinkAttach
+ *
+ *	Attach a VME link board as a block device.
+ *
+ * Returns: block device handle
+ *
+ ***********************************************************************
+ */
+DevBlockDeviceHandle *
+DevVMElinkAttach (devPtr)
+Fs_Device *devPtr;
+{
+    DevVMElinkHandle *handlePtr;
+    VMELinkInfo *linkInfo;
+
+    if (devPtr->unit >= DEV_VMELINK_MAX_BOARDS ||
+	((devPtr->data = (ClientData)(VMEInfo[devPtr->unit])) == NULL)) {
+	return ((DevBlockDeviceHandle *)NIL);
+    }
+
+    linkInfo = (VMELinkInfo *)(devPtr->data);
+    handlePtr = (DevVMElinkHandle *) malloc (sizeof (DevVMElinkHandle));
+    if (handlePtr == NULL) {
+	return ((DevBlockDeviceHandle *)NIL);
+    }
+    handlePtr->blockHandle.blockIOProc = DevVMElinkBlockIO;
+    handlePtr->blockHandle.IOControlProc = DevVMElinkBlockIOControl;
+    handlePtr->blockHandle.releaseProc = DevVMElinkRelease;
+    handlePtr->blockHandle.minTransferUnit = sizeof (int);
+    handlePtr->blockHandle.maxTransferSize = DEV_VMELINK_MAX_TRANSFER_SIZE;
+    handlePtr->linkInfo = linkInfo;
+    handlePtr->magic = DEV_VMELINK_HANDLE_MAGIC;
+    MASTER_LOCK (&(linkInfo->mutex));
+    linkInfo->numAttached += 1;
+    MASTER_UNLOCK (&(linkInfo->mutex));
+    return ((DevBlockDeviceHandle *)handlePtr);
+}
+
+/***********************************************************************
+ *
+ * DevVMElinkRelease
+ *
+ *	Release the resources used by an attach().  Currently, this
+ *	means decrementing the count of attachers.
+ *
+ ***********************************************************************
+ */
+ReturnStatus
+DevVMElinkRelease (devHandle)
+DevVMElinkHandle *devHandle;
+{
+    VMELinkInfo *linkInfo;
+
+    if (devHandle->magic != DEV_VMELINK_HANDLE_MAGIC) {
+	printf ("DevVMElinkRelease: bad handle magic #: 0x%x\n",
+		devHandle->magic);
+	return (FAILURE);
+    }
+    linkInfo = devHandle->linkInfo;
+    MASTER_LOCK (&(linkInfo->mutex));
+    linkInfo->numAttached -= 1;
+    MASTER_UNLOCK (&(linkInfo->mutex));
+    free ((char *)devHandle);
+
+    return (SUCCESS);
+}
+
+/***********************************************************************
+ *
+ * DevVMElinkBlockIO
+ *
+ *	This routine copies all the information into a VME transfer
+ *	request block.  It then queues up the I/O by calling DevQueue.
+ *
+ * Returns: standard Sprite return status
+ *
+ * Side effects: Queues up a request for a VME transfer
+ *
+ ***********************************************************************
+ */
+ReturnStatus
+DevVMElinkBlockIO (devHandle, devReqPtr)
+DevVMElinkHandle *devHandle;
+DevBlockDeviceRequest *devReqPtr;
+{
+    DevVMElinkReq	*req;
+    VMELinkInfo*	linkInfo;
+
+    req = (DevVMElinkReq *)devReqPtr->ctrlData;
+    linkInfo = req->linkInfo = devHandle->linkInfo;
+    if (linkInfo->state & DEV_VMELINK_STATE_NO_MAP) {
+	return (FAILURE);
+    }
+    List_InitElement ((List_Links *)&(req->links));
+    req->origReq = devReqPtr;
+    req->startAddress = devReqPtr->startAddress;
+    req->length = devReqPtr->bufferLen;
+    req->buffer = devReqPtr->buffer;
+    req->operation = devReqPtr->operation;
+    req->status = SUCCESS;
+
+    MASTER_LOCK (&linkInfo->mutex);
+    List_Insert ((List_Links*)req, LIST_ATREAR (&linkInfo->reqHdr));
+    if (!(linkInfo->state & DEV_VMELINK_STATE_DMA_IN_USE)) {
+	DevVMElinkXferData (linkInfo);
+    }
+    MASTER_UNLOCK (&linkInfo->mutex);
+    return (SUCCESS);
+}
+
+/***********************************************************************
+ *
+ * DevVMElinkDmaDone
+ *
+ * Side effects:
+ *	Copies data over the VME link.  May affect the device queues by
+ *	servicing the next request.
+ *
+ ***********************************************************************
+ */
+void
+DevVMElinkDmaDone (linkInfo)
+VMELinkInfo*	linkInfo;
+{
+    register DevVMElinkReq*	reqPtr;
+
+    MASTER_LOCK (&linkInfo->mutex);
+    reqPtr = (DevVMElinkReq*)List_First (&linkInfo->reqHdr);
+    List_Remove ((List_Links*)reqPtr);
+    if (reqPtr->dmaSize > 0) {
+	VmMach_DMAFree (reqPtr->dmaSize, (Address)(reqPtr->dmaSpace));
+    }
+    linkInfo->regArea->RemoteCmd2 = linkInfo->RemoteFlags2;
+    linkInfo->state &= ~DEV_VMELINK_STATE_DMA_IN_USE;
+    /*
+     * Check to see if there's another request outstanding.  If there
+     * is, start it up.
+     */
+    if (!List_IsEmpty ((List_Links*)&linkInfo->reqHdr)) {
+	DevVMElinkXferData (linkInfo);
+    }
+    MASTER_UNLOCK (&linkInfo->mutex);
+
+    (reqPtr->origReq->doneProc)(reqPtr->origReq, reqPtr->status,
+				reqPtr->length);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevVMElinkXferData
+ *
+ *	Transfer data over the VME link.  If there is a small amount
+ *	of data, just copy it over word by word.  If the amount is
+ *	larger than 256, copy most of it by DMA and the remainder
+ *	word by word.  NOTE: the transfer must be word-aligned on
+ *	both sides.  If not, the routine returns an error.
+ *
+ *	Since the link can't be multiplexed, transfers queue up
+ *	at the start of this routine.
+ *
+ *	The master lock for this interface must be held *before* this
+ *	routine is called.
+ *	
+ * Returns:
+ *	TRUE if the request was processed; FALSE otherwise.
+ *
+ * Side effects:
+ *	Data is transferred over the VME link boards.
+ *
+ *----------------------------------------------------------------------
+ */
+static
+Boolean
+DevVMElinkXferData (linkInfo)
+VMELinkInfo*	linkInfo;
+{
+    DevVMElinkReq* reqPtr = (DevVMElinkReq*)List_First (&(linkInfo->reqHdr));
+    int bufSize;
+    unsigned long remoteAddr;
+    unsigned long bufAddr;
+    unsigned long dmaAddr;
+    int dmaSize = 0;
+    int copySize;
+    unsigned char dmaCmd;
+    DmaRegs *dmaPtr = linkInfo->dmaRegs;
+    register CtrlRegs*	regPtr = linkInfo->regArea;
+
+    linkInfo->curReq = reqPtr;
+    bufSize = reqPtr->length;
+    if (devVMElinkDebug) {
+	printf ("VMElink:  Trying I/O at 0x%x for 0x%x bytes.\n",
+		linkInfo->position, bufSize);
+    }
+    /*
+     * First, copy the data that won't be DMAed.
+     */
+    linkInfo->state |= DEV_VMELINK_STATE_DMA_IN_USE;
+    if (bufSize >= linkInfo->minDmaSize) {
+	dmaSize = bufSize & DEV_VMELINK_DMA_BUFSIZE_MASK;
+    } else {
+	dmaSize = 0;
+    }	
+    copySize = bufSize - dmaSize;
+    if (devVMElinkDebug) {
+	printf("DevVMElinkXferData: bufsize=0x%x dmaSize=0x%x copySize=0x%x\n",
+	       bufSize, dmaSize, copySize);
+    }
+    remoteAddr = (unsigned int)linkInfo->position + dmaSize;
+    bufAddr = (unsigned int)(reqPtr->buffer + dmaSize);
+    dmaAddr = (unsigned int)(linkInfo->smallMap + (remoteAddr & 0xffff));
+    regPtr->RemoteCmd1 = linkInfo->RemoteFlags1 | DEV_VMELINK_USE_PAGE_REG;
+    regPtr->RemotePageAddrHigh = ((unsigned int)remoteAddr >> 24) & 0xff;
+    regPtr->RemotePageAddrLow =  ((unsigned int)remoteAddr >> 16) & 0xff;
+    if (reqPtr->operation == FS_READ) {
+	while (copySize > 0) {
+	    *(int *)bufAddr = *(int *)dmaAddr;
+	    dmaAddr += 4;
+	    bufAddr += 4;
+	    copySize -= 4;
+	    remoteAddr += 4;
+	    if (((unsigned int)remoteAddr & 0xffff) == 0) {
+		regPtr->RemotePageAddrHigh =
+		    ((unsigned int)remoteAddr >> 24) & 0xff;
+		regPtr->RemotePageAddrLow =
+		    ((unsigned int)remoteAddr >> 16) & 0xff;
+	    }
+	}
+    } else {
+	while (copySize > 0) {
+	    *(int *)dmaAddr = *(int *)bufAddr;
+	    dmaAddr += 4;
+	    bufAddr += 4;
+	    copySize -= 4;
+	    remoteAddr += 4;
+	    if (((unsigned int)remoteAddr & 0xffff) == 0) {
+		regPtr->RemotePageAddrHigh =
+		    ((unsigned int)remoteAddr >> 24) & 0xff;
+		regPtr->RemotePageAddrLow =
+		    ((unsigned int)remoteAddr >> 16) & 0xff;
+	    }
+	}
+    }
+    regPtr->RemoteCmd1 = linkInfo->RemoteFlags1;
+
+    if (bufSize >= linkInfo->minDmaSize) {
+	/*
+	 * Map in buffer for DMA, and copy in/out a multiple of
+	 * 256 bytes.  The remainder will be copied over later.
+	 */
+	bufAddr = (unsigned int)reqPtr->buffer;
+	remoteAddr = linkInfo->position;
+	dmaAddr = (unsigned int)VmMach_DMAAlloc(dmaSize,(Address)bufAddr);
+	if (dmaAddr == 0) {
+	    panic ("DevVMElinkXferData: couldn't allocate DMA space.\n");
+	}
+	if (devVMElinkDebug) {
+	    printf ("DevVMElinkXferData: DMA mapped to 0x%x\n", dmaAddr);
+	}
+	reqPtr->dmaSpace = (Address)dmaAddr;
+	reqPtr->dmaSize = dmaSize;
+
+	/*
+	 * gets user address modifier.
+	 * requires addr mod 0x3d (for A24) or 0x0d (for A32) on link board
+	 * Convert dmaAddr to a VME address.
+	 */
+	dmaAddr &= 0x000fffff;
+	if (linkInfo->state & DEV_VMELINK_STATE_VME_A32) {
+	    regPtr->LocalAddrMod = 0x0d;
+	    if (linkInfo->RemoteFlags2 & DEV_VMELINK_REMOTE_DMA_BLOCK_MODE) {
+		regPtr->RemoteAddrMod = 0x0f;
+	    } else {
+		regPtr->RemoteAddrMod = 0x0d;
+	    }
+	} else {
+	    regPtr->LocalAddrMod = 0x3d;
+	    if (linkInfo->RemoteFlags2 & DEV_VMELINK_REMOTE_DMA_BLOCK_MODE) {
+		regPtr->RemoteAddrMod = 0x3f;
+	    } else {
+		regPtr->RemoteAddrMod = 0x3d;
+	    }
+	}
+#if 1
+	dmaPtr->localDmaAddr3 = (dmaAddr >> 24) & 0xff;
+	dmaPtr->localDmaAddr2 = (dmaAddr >> 16) & 0xff;
+	dmaPtr->localDmaAddr1 = (dmaAddr >>  8) & 0xff;
+	dmaPtr->localDmaAddr0 = (dmaAddr      ) & 0xff;
+	dmaPtr->remoteDmaAddr3 = (remoteAddr >> 24) & 0xff;
+	dmaPtr->remoteDmaAddr2 = (remoteAddr >> 16) & 0xff;
+	dmaPtr->remoteDmaAddr1 = (remoteAddr >>  8) & 0xff;
+	dmaPtr->remoteDmaAddr0 = (remoteAddr      ) & 0xff;
+	dmaPtr->dmaLength2 = (dmaSize >> 16) & 0xff;
+	dmaPtr->dmaLength1 = (dmaSize >>  8) & 0xff;
+#else
+	*(uint16*)dmaPtr->localDmaAddr3 = (uint16)((dmaAddr >> 16) & 0xffff);
+	*(uint16*)dmaPtr->localDmaAddr1 = (uint16)(dmaAddr & 0xffff);
+	*(uint16*)dmaPtr->remoteDmaAddr3 = (uint16)((remoteAddr>>16) & 0xffff);
+	*(uint16*)dmaPtr->remoteDmaAddr1 = (uint16)(remoteAddr & 0xffff);
+	*(uint16*)dmaPtr->dmaLength2 = (uint16)((dmaSize >> 8) & 0xffff);
+#endif
+	    
+	regPtr->LocalCmd = linkInfo->LocalFlags |
+	    DEV_VMELINK_LOCAL_DISABLE_INT;
+	regPtr->RemoteCmd2 = linkInfo->RemoteFlags2 |
+	    DEV_VMELINK_REMOTE_DISABLE_INT;
+	dmaCmd = DEV_VMELINK_DMA_START | DEV_VMELINK_DMA_LONGWORD |
+	    DEV_VMELINK_DMA_LOCAL_PAUSE | DEV_VMELINK_DMA_ENABLE_INTR
+	/* | DEV_VMELINK_DMA_BLOCK_MODE */  ;
+	dmaCmd |= (reqPtr->operation == FS_WRITE) ?
+	    DEV_VMELINK_DMA_LOCAL_TO_REMOTE : DEV_VMELINK_DMA_REMOTE_TO_LOCAL;
+	if (devVMElinkDebug) {
+	    printf ("DevVMElinkXferData: Setting dma cmd for %s to 0x%x\n",
+		    linkInfo->name, dmaCmd);
+	}
+	dmaPtr->localDmaCmdReg = dmaCmd;
+	/*
+	 * DevVMElinkDmaDone will be called after the interrupt is taken.
+	 * It will also check to see if there are more entries waiting in
+	 * the device queue.
+	 */
+    } else {
+	reqPtr->dmaSpace = (Address)NIL;
+	reqPtr->dmaSize = 0;
+	Proc_CallFunc ((VoidFunc)DevVMElinkDmaDone, (ClientData)linkInfo, 0);
+    }
+	
+    return (TRUE);
+}
+
+/*----------------------------------------------------------------------
+ *
+ * DevVMElinkIntr
+ *
+ *	Called when an interrupt from the link card is received.  This
+ *	should only happen when a DMA operation finishes.  Interrupts
+ *	from a remote card cage should be handled in the (separate)
+ *	device driver for the remote device.
+ *
+ * Results:
+ *	TRUE if this link card caused the interrupt.
+ *
+ * Side effects:
+ *	Notifies any waiting processes, and clears the interrupt bits
+ *	on the link card.
+ *
+ *----------------------------------------------------------------------
+ */
+Boolean
+DevVMElinkIntr (data)
+ClientData data;
+{
+    VMELinkInfo *linkInfo = (VMELinkInfo *)data;
+    DmaRegs *dmaRegs;
+    CtrlRegs *regPtr;
+    Boolean retVal = FALSE;
+    unsigned char tmpReg;
+
+    dmaRegs = linkInfo->dmaRegs;
+    regPtr = linkInfo->regArea;
+    MASTER_LOCK (&linkInfo->mutex);
+    tmpReg = dmaRegs->localDmaCmdReg;
+    if (devVMElinkDebug) {
+	printf ("Got intr for %s (dmareg = 0x%x)\n", linkInfo->name, tmpReg);
+    }
+    if (tmpReg & DEV_VMELINK_DMA_DONE) {
+	tmpReg &= ~(DEV_VMELINK_DMA_DONE | DEV_VMELINK_DMA_START);
+	dmaRegs->localDmaCmdReg = tmpReg;
+	/*
+	 * Re-enable interrupts.
+	 */
+	regPtr->LocalCmd = linkInfo->LocalFlags;
+	regPtr->RemoteCmd2 = linkInfo->RemoteFlags2;
+	if (!(linkInfo->state & DEV_VMELINK_STATE_DMA_IN_USE)) {
+	    if (devVMElinkDebug) {
+		printf ("DevVMElinkIntr: DMA finished but shouldn't have\n");
+	    }
+	    if (linkInfo->curReq != NULL) {
+		linkInfo->curReq->status = FAILURE;
+	    }
+	}
+	if (List_IsEmpty (&linkInfo->reqHdr)) {
+	    panic ("DevVMElinkFinishCopy: no current I/O\n");
+	}
+	/*
+	 * Callback DevVMElinkDmaDone to finish the copy and schedule the
+	 * next one if necessary.
+	 */
+	Proc_CallFunc ((VoidFunc)DevVMElinkDmaDone, (ClientData)linkInfo, 0);
+	retVal = TRUE;
+    } else if (devVMElinkDebug) {
+	printf ("DevVMElinkIntr: bogus interrupt?\n");
+    }
+    MASTER_UNLOCK (&linkInfo->mutex);
+    return (retVal);
+}
+
+/***********************************************************************
+ *
+ * setRemotePage
+ *
+ *	Set the bits which supply the remote page address to those
+ *	passed.  Turn on the flag which tells the link board to use
+ *	those bits.
+ *
+ ***********************************************************************
+ */
+static
+void
+setRemotePage (linkInfo, pageNum)
+register VMELinkInfo	*linkInfo;
+unsigned int		pageNum;
+{
+    register CtrlRegs	*regPtr = linkInfo->regArea;
+
+    if (devVMElinkDebug) {
+	printf ("Setting remote VME page to 0x%04x\n", pageNum);
+    }
+    MASTER_LOCK (&linkInfo->mutex);
+    linkInfo->RemoteFlags1 |= DEV_VMELINK_USE_PAGE_REG;
+    regPtr->RemoteCmd1 = linkInfo->RemoteFlags1;
+    regPtr->RemotePageAddrHigh = (unsigned char)((pageNum >> 8) & 0xff);
+    regPtr->RemotePageAddrLow = (unsigned char)(pageNum & 0xff);
+    linkInfo->state |= DEV_VMELINK_STATE_PAGE_MODE;
+    if (devVMElinkDebug) {
+	printf ("Page set to 0x%02x%02x; flags are 0x%x\n",
+		regPtr->RemotePageAddrHigh, regPtr->RemotePageAddrLow,
+		linkInfo->RemoteFlags1);
+    }
+    MASTER_UNLOCK (&linkInfo->mutex);
+}
+
+/***********************************************************************
+ *
+ * turnOffPageMode
+ *
+ *	Turn off page mode as established using setRemotePage.
+ *
+ ***********************************************************************
+ */
+static
+void
+turnOffPageMode (linkInfo)
+register VMELinkInfo	*linkInfo;
+{
+    MASTER_LOCK (&linkInfo->mutex);
+    linkInfo->RemoteFlags1 &= ~DEV_VMELINK_USE_PAGE_REG;
+    linkInfo->regArea->RemoteCmd1 = linkInfo->RemoteFlags1;
+    linkInfo->state &= ~DEV_VMELINK_STATE_PAGE_MODE;
+    MASTER_UNLOCK (&linkInfo->mutex);
+}
+
+/***********************************************************************
+ *
+ * setAddrModifier --
+ *
+ *	Set the address modifier to whatever's passed, and enable its
+ *	use on the board.
+ *
+ * Returns:
+ *	none
+ * Side effects:
+ *	Future VME accesses will use this address modifier.
+ *
+ ***********************************************************************
+ */
+static
+void
+setAddrModifier (linkInfo, mod)
+register VMELinkInfo*	linkInfo;
+unsigned int		mod;
+{
+    linkInfo->RemoteFlags2 |= DEV_VMELINK_REMOTE_USE_ADDRMOD;
+    linkInfo->regArea->RemoteAddrMod = (unsigned char) mod;
+    linkInfo->regArea->RemoteCmd2 = linkInfo->RemoteFlags2;
+    if (devVMElinkDebug) {
+	printf ("VME address modifier set to 0x%02x\n", mod);
+    }
+}
+
+/***********************************************************************
+ *
+ * turnOffAddrModifier --
+ *
+ *	Turn off the remote address modifier.
+ *
+ * Returns:
+ *	none
+ * Side Effects:
+ *	The address modifier register is no longer used for remote
+ *	accesses.
+ *
+ ***********************************************************************
+ */
+static
+void
+turnOffAddrModifier (linkInfo)
+register VMELinkInfo*	linkInfo;
+{
+    linkInfo->RemoteFlags2 &= ~DEV_VMELINK_REMOTE_USE_ADDRMOD;
+    linkInfo->regArea->RemoteCmd2 = linkInfo->RemoteFlags2;
+}
+
+/***********************************************************************
+ *
+ * DevVMElinkAccessRemoteMemory --
+ *
+ *	Access memory across the link board.  The accesses are limited
+ *	to 4000 bytes, since that's all an ioctl will copy in or out
+ *	(with the necessary header).  The bytes must all be consecutive,
+ *	and must be long-word sized and aligned.
+ *
+ ***********************************************************************
+ */
+ReturnStatus
+DevVMElinkAccessRemoteMemory (ioctlPtr, linkInfo)
+register Fs_IOCParam *ioctlPtr;
+register VMELinkInfo *linkInfo;
+{
+    int			inSize, outSize;
+    int			fmtStatus;
+    ReturnStatus	status = SUCCESS;
+    DevVMElinkAccessMem	memAccess;
+    unsigned int	buf[1000];
+    unsigned int	*remote, *local;
+    unsigned int	remotePage, remoteOffsetInPage;
+    int			nbytes;
+
+
+    if (linkInfo->state & DEV_VMELINK_STATE_NO_MAP) {
+	status = FAILURE;
+	goto accessExit;
+    }
+    inSize = ioctlPtr->inBufSize;
+    outSize = sizeof (memAccess) - sizeof (memAccess.data);
+    fmtStatus = Fmt_Convert ("www", ioctlPtr->format, &inSize,
+			     ioctlPtr->inBuffer, mach_Format, &outSize,
+			     (Address)&memAccess);
+    if (fmtStatus != FMT_OK) {
+	printf ("DevVMElinkAccessRemoteMemory:cmd format failed, 0x%x\n",
+		fmtStatus);
+	status = GEN_INVALID_ARG;
+	goto accessExit;
+    }
+    if (memAccess.size > sizeof (buf)) {
+	printf ("DevVMElinkAccessRemoteMemory: too much data (0x%x bytes)\n",
+		memAccess.size);
+	goto accessExit;
+    }
+
+    if (devVMElinkDebug) {
+	printf ("DevVMElinkAccessRemoteMemory: trying 0x%x\n",
+		memAccess.destAddress);
+	printf ("DevVMElinkAccessRemoteMemory: map at virtual 0x%x\n",
+		linkInfo->smallMap);
+    }
+    remoteOffsetInPage = (((unsigned int)memAccess.destAddress) & 0xffff);
+    if ((remoteOffsetInPage & 0x3) != 0) {
+	printf ("DevVMElinkAccessRemoteMemory: remote addr (0x%x) unaligned\n",
+		memAccess.destAddress);
+	goto accessExit;
+    }
+    remotePage = ((unsigned int)memAccess.destAddress >> 16) & 0xffff;
+    remote = (unsigned int *)(linkInfo->smallMap + remoteOffsetInPage);
+    setRemotePage (linkInfo, remotePage);
+    setAddrModifier (linkInfo, linkInfo->curAddrModifier);
+    local = buf;
+    if (devVMElinkDebug) {
+	printf ("DevVMELinkAccessRemoteMemory: local 0x%x, remote 0x%x\n",
+		local, remote);
+	printf ("DevVMELinkAccessRemoteMemory: page offset 0x%x\n",
+		remoteOffsetInPage);
+    }
+
+    if (memAccess.direction == DEV_VMELINK_TO_REMOTE) {
+	inSize = memAccess.size;
+	outSize = sizeof (buf);
+	fmtStatus = Fmt_Convert
+	    ("w*", ioctlPtr->format, &inSize,
+	     (Address)(((DevVMElinkAccessMem*)(ioctlPtr->inBuffer))->data),
+	     mach_Format, &outSize, (Address)buf);
+	if (fmtStatus != FMT_OK) {
+	    printf ("DevVMElinkAccessRemoteMemory:data format failed, 0x%x\n",
+		    fmtStatus);
+	    status = GEN_INVALID_ARG;
+	    goto accessExit;
+	}
+	for (nbytes = 0; nbytes < memAccess.size; nbytes += sizeof (int)) {
+	    if (linkInfo->state & DEV_VMELINK_STATE_SAFE_COPY) {
+		status = Mach_Probe (sizeof (int), (Address)(local++),
+				     (Address)(remote++));
+		if (status != SUCCESS) {
+		    if (devVMElinkDebug) {
+			printf ("%s: Writing to VME addr 0x%x failed.\n",
+				linkInfo->name, --remote);
+		    }
+		    goto accessExit;
+		}
+	    } else {
+		*(remote++) = *(local++);
+	    }
+	    remoteOffsetInPage += sizeof (int);
+	    if ((remoteOffsetInPage & 0xffff) == 0) {
+		remote = (unsigned int *)linkInfo->smallMap;
+		remotePage += 1;
+		setRemotePage (linkInfo, remotePage);
+	    }
+	}
+    } else if (memAccess.direction == DEV_VMELINK_TO_LOCAL) {
+	for (nbytes = 0; nbytes < memAccess.size; nbytes += sizeof (int)) {
+	    if (linkInfo->state & DEV_VMELINK_STATE_SAFE_COPY) {
+		status = Mach_Probe (sizeof (int), (Address)(remote++),
+				     (Address)(local++));
+		if (status != SUCCESS) {
+		    if (devVMElinkDebug) {
+			printf ("%s: Reading from VME addr 0x%x failed.\n",
+				linkInfo->name, --remote);
+		    }
+		    goto accessExit;
+		}
+	    } else {
+		*(local++) = *(remote++);
+	    }
+	    remoteOffsetInPage += sizeof (int);
+	    if ((remoteOffsetInPage & 0xffff) == 0) {
+		remote = (unsigned int *)linkInfo->smallMap;
+		remotePage += 1;
+		setRemotePage (linkInfo, remotePage);
+	    }
+	}
+	inSize = memAccess.size;
+	outSize = ioctlPtr->outBufSize + sizeof (memAccess.data) -
+	    sizeof (memAccess);
+	fmtStatus = Fmt_Convert
+	    ("w*", mach_Format, &inSize,(Address)buf,ioctlPtr->format,&outSize,
+	     (Address)(((DevVMElinkAccessMem*)(ioctlPtr->outBuffer))->data));
+	if (fmtStatus != FMT_OK) {
+	    printf ("DevVMElinkAccessRemoteMemory:data format failed, 0x%x\n",
+		    fmtStatus);
+	    status = GEN_INVALID_ARG;
+	    goto accessExit;
+	}
+    } else {
+	printf ("DevVMElinkAccessRemoteMemory: illegal direction 0x%x\n",
+		memAccess.direction);
+	status = GEN_INVALID_ARG;
+	goto accessExit;
+    }
+
+  accessExit:
+    turnOffPageMode (linkInfo);
+    turnOffAddrModifier (linkInfo);
+
+    return (status);
+}
+
+/***********************************************************************
+ *
+ * DevVMElinkBlockIOControl
+ *
+ *	This is the main IOControl routine for the VMElink driver.
+ *	It's easier to fake a "standard" IOControl using the block
+ *	driver than vice versa, since the standard IOControl has an
+ *	easy way of getting a real handle, but the BlockIOControl
+ *	has no way of getting an Fs_Device.
+ *
+ * Returns: standard Sprite return status
+ *
+ * Side effects: depends on IOControl
+ *
+ ***********************************************************************
+ */
+ENTRY ReturnStatus
+DevVMElinkBlockIOControl (handlePtr, ioctlPtr, replyPtr)
+DevVMElinkHandle *handlePtr;
+register Fs_IOCParam *ioctlPtr;
+register Fs_IOReply *replyPtr;
+
+/* ARGSUSED */
+{
+    ReturnStatus status = SUCCESS;
+    register volatile CtrlRegs *regPtr;
+    register VMELinkInfo *linkData;
+    unsigned int passedData;
+    DevVMElinkStatus *boardStatus;
+    int inSize, outSize;
+    int fmtStatus;
+
+    if (devVMElinkDebug) {
+	printf ("VMElink: doing IOControl 0x%x\n", ioctlPtr->command);
+    }
+
+    linkData = handlePtr->linkInfo;
+    regPtr = linkData->regArea;
+
+    /*
+     * If the remote board isn't working, don't even bother with the
+     * IOcontrol call and just return failure.
+     */
+    if ((ioctlPtr->command != IOC_VMELINK_DEBUG_ON) &&
+	(ioctlPtr->command != IOC_VMELINK_DEBUG_OFF) &&
+	(regPtr->RemoteCmd1 & DEV_VMELINK_REMOTE_DOWN)) {
+	return (DEV_OFFLINE);
+    }
+
+    switch (ioctlPtr->command) {
+      case IOC_VMELINK_STATUS:
+	boardStatus  =(DevVMElinkStatus *)ioctlPtr->inBuffer;
+	boardStatus->LocalStatus = (int)regPtr->LocalStatus;
+	boardStatus->RemoteStatus = (int)regPtr->RemoteCmd1;
+	break;
+      case IOC_VMELINK_SET_ADDRMOD:
+	passedData = *(unsigned int *)ioctlPtr->inBuffer;
+	linkData->curAddrModifier = (unsigned char)passedData;
+	break;
+      case IOC_VMELINK_SET_MIN_DMA_SIZE:
+	outSize = sizeof (linkData->minDmaSize);
+	inSize = ioctlPtr->inBufSize;
+	fmtStatus = Fmt_Convert ("w", ioctlPtr->format, &inSize,
+				 (Address)ioctlPtr->inBuffer, mach_Format,
+				 &outSize, (Address)&(linkData->minDmaSize));
+	if (fmtStatus != FMT_OK) {
+	    printf ("Format of VMELINK_SET_MIN_DMA_SIZE failed, 0x%x\n",
+		    fmtStatus);
+	    return GEN_INVALID_ARG;
+	}
+	if (devVMElinkDebug) {
+	    printf ("VMELINK_SET_MIN_DMA_SIZE: min DMA size set to 0x%x\n",
+		    linkData->minDmaSize);
+	}
+	break;
+#if 0
+      case IOC_VMELINK_NO_ADDRMOD:
+	linkData->RemoteFlags2 &= ~DEV_VMELINK_REMOTE_USE_ADDRMOD;
+	regPtr->RemoteCmd2 = linkData->RemoteFlags2;
+	break;
+      case IOC_VMELINK_LOW_VME:
+	linkData->addrMsb = 0x00000000;
+	break;
+      case IOC_VMELINK_HIGH_VME:
+	linkData->addrMsb = 0x80000000;
+	break;
+#endif
+
+      case IOC_VMELINK_DEBUG_ON:
+	devVMElinkDebug = TRUE;
+	break;
+      case IOC_VMELINK_DEBUG_OFF:
+	devVMElinkDebug = FALSE;
+	break;
+      case IOC_VMELINK_RESET:
+	status = DevVMElinkReset (linkData, TRUE);
+	break;
+      case IOC_VMELINK_SAFE_COPY_ON:
+	linkData->state |= DEV_VMELINK_STATE_SAFE_COPY;
+	break;
+      case IOC_VMELINK_SAFE_COPY_OFF:
+	linkData->state &= ~DEV_VMELINK_STATE_SAFE_COPY;
+	break;
+      case IOC_VMELINK_REMOTE_BLOCK_MODE_ON:
+	linkData->RemoteFlags2 |= DEV_VMELINK_REMOTE_DMA_BLOCK_MODE;
+	break;
+      case IOC_VMELINK_REMOTE_BLOCK_MODE_OFF:
+	linkData->RemoteFlags2 &= ~DEV_VMELINK_REMOTE_DMA_BLOCK_MODE;
+	break;
+      case IOC_VMELINK_READ_BOARD_STATUS:
+	{
+	    unsigned char	regs[0x20];
+	    
+	    regs[0x1] = regPtr->LocalCmd;
+	    regs[0x3] = regPtr->LocalStatus;
+	    regs[0x9] = regPtr->RemoteCmd1;
+	    regs[0x8] = regPtr->RemoteCmd2;
+	    regs[0x10] = linkData->dmaRegs->localDmaCmdReg;
+	    
+	    inSize = sizeof (regs);
+	    outSize = ioctlPtr->outBufSize;
+	    fmtStatus = Fmt_Convert ("b32", mach_Format, &inSize,
+				     (Address)regs, ioctlPtr->format, &outSize,
+				     (Address)ioctlPtr->outBuffer);
+	    if (fmtStatus != FMT_OK) {
+		printf ("Format of VMELINK_READ_BOARD_STATUS failed, 0x%x\n",
+			fmtStatus);
+		return GEN_INVALID_ARG;
+	    }
+	}
+	break;
+      case IOC_VMELINK_ACCESS_REMOTE_MEMORY:
+	status = DevVMElinkAccessRemoteMemory (ioctlPtr, linkData);
+	break;
+
+      case IOC_VMELINK_WRITE_REG:
+	{
+	    unsigned char stuff[2];
+
+	    inSize = ioctlPtr->inBufSize;
+	    outSize = sizeof (stuff);
+	    fmtStatus = Fmt_Convert ("b2", ioctlPtr->format, &inSize,
+				     (Address)ioctlPtr->inBuffer, mach_Format,
+				     &outSize, (Address)stuff);
+	    if (fmtStatus != FMT_OK) {
+		printf ("Format of VMELINK_WRITE_REG failed, 0x%x\n",
+			fmtStatus);
+		return GEN_INVALID_ARG;
+	    }
+	    status = Mach_Probe (sizeof (stuff[1]), (Address)&(stuff[1]),
+				 (Address)regPtr + stuff[0]);
+	}
+	break;
+      case IOC_VMELINK_READ_REG:
+	{
+	    unsigned char stuff[2];
+
+	    inSize = ioctlPtr->inBufSize;
+	    outSize = sizeof (stuff);
+	    fmtStatus = Fmt_Convert ("b2", ioctlPtr->format, &inSize,
+				     (Address)ioctlPtr->inBuffer, mach_Format,
+				     &outSize, (Address)stuff);
+	    if (fmtStatus != FMT_OK) {
+		printf ("Format of VMELINK_READ_REG failed, 0x%x\n",fmtStatus);
+		return GEN_INVALID_ARG;
+	    }
+	    status = Mach_Probe (sizeof (stuff[1]), (Address)regPtr + stuff[0],
+				 (Address)&(stuff[1]));
+	    inSize = sizeof (stuff);
+	    outSize = ioctlPtr->outBufSize;
+	    fmtStatus = Fmt_Convert ("b2", mach_Format, &inSize,(Address)stuff,
+				     ioctlPtr->format, &outSize,
+				     (Address)ioctlPtr->outBuffer);
+	    if (fmtStatus != FMT_OK) {
+		printf ("Format of VMELINK_READ_REG failed, 0x%x\n",fmtStatus);
+		return GEN_INVALID_ARG;
+	    }
+	}
+	break;
+
+      case IOC_VMELINK_PING_REMOTE:
+	/*
+	 * Do nothing here; the null call will tell whether the remote
+	 * board has been turned on or not.
+	 */
+	break;
+      case IOC_LOCK:
+      case IOC_UNLOCK:
+	return (GEN_NOT_IMPLEMENTED);
+	break;
+      case IOC_REPOSITION:
+	{
+	    Ioc_RepositionArgs pos;
+	    unsigned int curAddr;
+	    inSize = ioctlPtr->inBufSize;
+	    outSize = sizeof (pos);
+	    fmtStatus = Fmt_Convert ("ww", ioctlPtr->format, &inSize,
+				     ioctlPtr->inBuffer, mach_Format,
+				     &outSize, (Address)&pos);
+	    if (fmtStatus != FMT_OK) {
+		printf ("DevVMElinkIOControl: IOC 0x%x error 0x%x\n",	
+			ioctlPtr->command, fmtStatus);
+		return (GEN_INVALID_ARG);
+	    }
+	    switch (pos.base) {
+	      case IOC_BASE_ZERO:
+		curAddr = 0x0;
+		break;
+	      case IOC_BASE_CURRENT:
+		curAddr = linkData->position;
+		break;
+	      case IOC_BASE_EOF:
+		curAddr = 0x0;
+		break;
+	      default:
+		return (GEN_INVALID_ARG);
+		break;
+	    }
+	    if (pos.offset < 0) {
+		linkData->position = curAddr - (unsigned int)(-pos.offset);
+	    } else {
+		linkData->position = curAddr + (unsigned int)pos.offset;
+	    }
+	    if (devVMElinkDebug) {
+		printf ("VMElink: new position is 0x%x\n", linkData->position);
+	    }
+	}
+	break;
+      case IOC_GET_FLAGS:
+      case IOC_SET_FLAGS:
+      case IOC_SET_BITS:
+      case IOC_CLEAR_BITS:
+	break;
+      default:
+	return (GEN_NOT_IMPLEMENTED);
+	break;
+    }
+
+    return (status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevVMElinkIOControl
+ *
+ *	Perform an IO control on the VME link card set.  These can
+ *	range from a simple remote ping to playing with the card's
+ *	registers such as address modifiers or window selection.
+ *	No attempt is made to coordinate between two processes that
+ *	mess up the same VME link; that may come in a future version.
+ *
+ * Results:
+ *	
+ *
+ * Side effects:
+ *	May map additional VME address space into the kernel.
+ *	Other side effects depending on the ioctl call requested.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY ReturnStatus
+DevVMElinkIOControl (devicePtr, ioctlPtr, replyPtr)
+Fs_Device *devicePtr;	/* Information about device. */
+Fs_IOCParam *ioctlPtr;	/* Parameter information (buffer sizes etc.). */
+Fs_IOReply *replyPtr;	/* Place to store result information.*/
+{
+    VMELinkInfo *linkInfo;
+
+    if (devVMElinkDebug) {
+	printf ("DevVMElinkIOControl: called for unit %d\n", devicePtr->unit);
+    }
+    if ((devicePtr->unit >= DEV_VMELINK_MAX_BOARDS) ||
+	((linkInfo = VMEInfo[devicePtr->unit]) == NULL)) {
+	return (DEV_INVALID_UNIT);
+    }
+    return (DevVMElinkBlockIOControl(&(linkInfo->handle), ioctlPtr, replyPtr));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevVMElinkInit
+ *
+ *	Initialize the VME link board (assuming that there is one
+ *	installed).
+ *	
+ *
+ * Results:
+ *	Returns the "device number" of the VME link.
+ *
+ * Side effects:
+ *	May map additional VME address space into the kernel.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY
+ClientData
+DevVMElinkInit(cntrlPtr)
+    DevConfigController *cntrlPtr;
+{
+    CtrlRegs *regPtr = (CtrlRegs *)cntrlPtr->address;
+    register VMELinkInfo *linkInfo;
+    char semName[40];
+    int linkNum;
+    ReturnStatus status;
+    DevBlockDeviceHandle *blockHandle;
+
+    if (!devVMElinkInitted) {
+	int i;
+	for (i = 0; i < DEV_VMELINK_MAX_BOARDS; i++) {
+	    VMEInfo[i] = NULL;
+	}
+	devVMElinkInitted = TRUE;
+    }
+
+    /*
+     * If the VME link board isn't installed or there are too many boards,
+     * just return.
+     */
+    linkNum = cntrlPtr->controllerID;
+    if (linkNum >= DEV_VMELINK_MAX_BOARDS ||
+	(Mach_Probe(sizeof(regPtr->LocalStatus), (char*)&(regPtr->LocalStatus),
+		    (char *)&status) != SUCCESS)) {
+	printf ("%s (VMElink #%d) not found.\n", cntrlPtr->name, linkNum);
+	return (DEV_NO_CONTROLLER);
+    }
+    printf ("%s (VMElink #%d) found.\n", cntrlPtr->name, linkNum);
+    linkInfo = VMEInfo[linkNum] = (VMELinkInfo *)malloc (sizeof (VMELinkInfo));
+    linkInfo->unit = linkNum;
+    linkInfo->LocalFlags = 0;
+    linkInfo->RemoteFlags1 = 0;
+    linkInfo->RemoteFlags2 = 0 /*DEV_VMELINK_REMOTE_PAUSE_16*/;
+    linkInfo->regArea = regPtr;
+    linkInfo->dmaRegs = (DmaRegs *)((char *)regPtr + sizeof (CtrlRegs));
+    linkInfo->addrMsb = 0x80000000;
+    linkInfo->state = 0;
+    linkInfo->vectorNumber = cntrlPtr->vectorNumber;
+    linkInfo->minDmaSize = DEV_VMELINK_MIN_DMA_SIZE;
+    linkInfo->position = 0;
+
+    sprintf (linkInfo->semName, "VME link 0x%x", linkNum);
+    Sync_SemInitDynamic (&(linkInfo->mutex), semName);
+
+    List_Init (&(linkInfo->reqHdr));
+    linkInfo->numAttached = 0;
+    linkInfo->curReq = NULL;
+    blockHandle = &(linkInfo->handle.blockHandle);
+    linkInfo->handle.linkInfo = linkInfo;
+    linkInfo->handle.magic = 0xfaced;
+    strcpy (linkInfo->name, cntrlPtr->name);
+    blockHandle->blockIOProc = DevVMElinkBlockIO;
+    blockHandle->IOControlProc = DevVMElinkBlockIOControl;
+    blockHandle->releaseProc = DevVMElinkRelease;
+    blockHandle->minTransferUnit = sizeof (int);
+    blockHandle->maxTransferSize = DEV_VMELINK_MAX_TRANSFER_SIZE;
+
+    /*
+     * Map in a 64K window so we can use the page register to read or
+     * write from any VME address in the remote cage.
+     */
+    if (windowPhysAddr[linkNum] != 0) {
+	linkInfo->smallMap = (Address)VmMach_MapInBigDevice
+	    ((void*)windowPhysAddr[linkNum], 0x10000, VMMACH_TYPE_VME32DATA);
+	if (linkInfo->smallMap == NULL) {
+	    printf ("DevVMElinkInit: couldn't map window.\n");
+	    linkInfo->state |= DEV_VMELINK_STATE_NO_MAP;
+	} else if (((unsigned)windowPhysAddr[linkNum] & 0xff000000) !=
+		   0xff000000) {
+	    linkInfo->state |= DEV_VMELINK_STATE_VME_A32;
+	    linkInfo->curAddrModifier = 0x0d;
+	    printf ("%s is A32D32 with window at 0x%x mapped into 0x%x\n",
+		    linkInfo->name,windowPhysAddr[linkNum],linkInfo->smallMap);
+	} else {
+	    linkInfo->curAddrModifier = 0x3d;
+	    printf ("%s is A32D24 with window at 0x%x mapped into 0x%x\n",
+		    linkInfo->name,windowPhysAddr[linkNum],linkInfo->smallMap);
+	}
+    } else {
+	linkInfo->state |= DEV_VMELINK_STATE_NO_MAP;
+    }
+
+    status = DevVMElinkReset (linkInfo, FALSE);
+
+    return ((ClientData)(linkInfo));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevVMElinkOpen
+ *
+ *	Open the VME link device.  Since there isn't much to keep
+ *	track of, just return a handle for future operations.  The
+ *	handle is merely the unit number.
+ *	
+ * Results:
+ *	Standard Sprite ReturnStatus.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY ReturnStatus
+DevVMElinkOpen (devicePtr, useFlags, notifyToken)
+    Fs_Device *devicePtr;
+    int useFlags;
+    Fs_NotifyToken notifyToken;
+{
+    if (devVMElinkDebug) {
+	printf ("DevVMElinkOpen: Trying to open unit %d\n", devicePtr->unit);
+    }
+    
+    if (devicePtr->unit >= DEV_VMELINK_MAX_BOARDS) {
+	return (DEV_INVALID_UNIT);
+    }
+
+    devicePtr->data = (ClientData)(VMEInfo[devicePtr->unit]);
+
+    if (devicePtr->data == NULL) {
+	return (DEV_INVALID_UNIT);
+    }
+    if (devVMElinkDebug) {
+	printf ("VMElink: Opened device successfully (unit %d).\n",
+		devicePtr->unit);
+    }
+
+    return (SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevVMElinkRead
+ *
+ *	Read some bytes from the remote VME into a buffer provided.
+ *	Since this may require playing with the virtual->physical
+ *	mapping, the virtual memory may get rearranged.
+ *	
+ * Results:
+ *	SUCCESS if read went OK.
+ *
+ * Side effects:
+ *	May change mapping registers used by the VME driver.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY ReturnStatus
+DevVMElinkRead (devicePtr, readPtr, replyPtr)
+Fs_Device *devicePtr;
+Fs_IOParam *readPtr;
+Fs_IOReply *replyPtr;
+{
+    DevBlockDeviceRequest blockReq;
+    ReturnStatus retval;
+    VMELinkInfo *linkInfo = (VMELinkInfo *)devicePtr->data;
+    int xferred;
+
+    if (devVMElinkDebug) {
+	printf ("DevVMElinkRead: reading 0x%x bytes at offset 0x%x\n",
+		readPtr->length, readPtr->offset);
+    }
+    blockReq.operation = FS_READ;
+    blockReq.startAddress = readPtr->offset;
+    blockReq.bufferLen = readPtr->length;
+    blockReq.buffer = readPtr->buffer;
+
+    retval = Dev_BlockDeviceIOSync
+	((DevBlockDeviceHandle *)&(linkInfo->handle), &blockReq, &xferred);
+    replyPtr->flags = FS_READABLE | FS_WRITABLE;
+    replyPtr->length = xferred;
+    return (retval);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevVMElinkWrite
+ *
+ *	Write some bytes from a buffer to the remote VME.
+ *	Since this may require playing with the virtual->physical
+ *	mapping, the virtual memory may get rearranged.
+ *	
+ * Results:
+ *	SUCCESS if write went OK.
+ *
+ * Side effects:
+ *	May change mapping registers used by the VME driver.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY ReturnStatus
+DevVMElinkWrite (devicePtr, writePtr, replyPtr)
+Fs_Device *devicePtr;
+Fs_IOParam *writePtr;
+Fs_IOReply *replyPtr;
+{
+    DevBlockDeviceRequest blockReq;
+    ReturnStatus retval;
+    VMELinkInfo *linkInfo = (VMELinkInfo *)devicePtr->data;
+    int xferred;
+
+    if (devVMElinkDebug) {
+	printf ("DevVMElinkWrite: writing 0x%x bytes at offset 0x%x\n",
+		writePtr->length, writePtr->offset);
+    }
+    blockReq.operation = FS_WRITE;
+    blockReq.startAddress = writePtr->offset;
+    blockReq.bufferLen = writePtr->length;
+    blockReq.buffer = writePtr->buffer;
+
+    retval = Dev_BlockDeviceIOSync
+	((DevBlockDeviceHandle *)&(linkInfo->handle), &blockReq, &xferred);
+    replyPtr->flags = FS_READABLE | FS_WRITABLE;
+    replyPtr->length = xferred;
+    return (retval);
+}
+@
+
+
+1.6
+log
+@
+Latest version of VME link software.  DMA transfers work (though not to
+the xbus board yet).  Config file includes entries for two VME links.
+
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/dev/sun4.md/devVMElink.c,v 1.5 92/08/17 14:21:26 elm Exp $ SPRITE (Berkeley)";
+d57 11
+a67 1
+unsigned int windowPhysAddr[] = {0xf0010000,0xff8e0000};
+a68 40
+    
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProbeVMEBoard
+ *
+ *	See if the VME link board is actually installed by trying to
+ *	read the local status register.
+ *
+ * Results:
+ *	TRUE if the local VME link board was found.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static Boolean
+ProbeVMEBoard(address)
+int address;			/* Alleged controller address */
+{
+    ReturnStatus isPresent;
+    unsigned char status;
+    register volatile CtrlRegs *regsPtr = (volatile CtrlRegs *)address;
+
+    /*
+     * Get the local status
+     */
+    
+    isPresent = Mach_Probe(sizeof(regsPtr->LocalStatus),
+			   (char *)&(regsPtr->LocalStatus), (char *)&status);
+    if (isPresent != SUCCESS) {
+	printf ("No VME link board found at 0x%x\n", address);
+        return (FALSE);
+    } else {
+	printf ("VME link board found at 0x%x\n", address);
+    }
+    return(TRUE);
+}
+d76 3
+a78 1
+ *	with the proper values.
+d90 1
+a90 1
+DevVMElinkReset (linkInfo)
+d92 1
+d95 1
+d106 2
+a107 1
+     * Clear all state except vme address space state bit.
+d109 1
+a109 1
+    linkInfo->state &= DEV_VMELINK_STATE_VME_A32;
+d111 2
+a112 1
+    curStatus = regPtr->LocalStatus;
+d121 25
+d147 1
+a147 1
+    MACH_DELAY (100000);
+a148 1
+
+d153 2
+a154 18
+    /*
+     *	Reset the remote card if it's powered on.
+     */
+    if (!(curStatus & DEV_VMELINK_REMOTE_DOWN)) {
+	printf ("DevVMElinkReset: Resetting remote VME link card...\n");
+	regPtr->RemoteCmd1 = DEV_VMELINK_REMOTE_RESET;
+	if (devVMElinkDebug) {
+	    printf ("DevVMElinkReset: Just reset remote board.\n");
+	}
+	MACH_DELAY(1000000);
+	if (devVMElinkDebug) {
+	    printf ("After resetting remote, status is 0x%x\n",
+		    regPtr->LocalStatus);
+	}
+	regPtr->LocalIntrVec = (unsigned char)linkInfo->vectorNumber;
+    } else {
+	printf ("DevVMElinkReset: Remote VME link down; can't reset.\n");
+    }
+d271 4
+a275 1
+    linkInfo = req->linkInfo = devHandle->linkInfo;
+d373 1
+a373 1
+	printf ("VMElink:  Trying I/O at 0x%x for %x bytes.\n",
+d438 3
+d450 15
+a482 15
+	if (linkInfo->state & DEV_VMELINK_STATE_VME_A32) {
+	    regPtr->LocalAddrMod = 0x0d;
+	    if (linkInfo->RemoteFlags2 & DEV_VMELINK_REMOTE_DMA_BLOCK_MODE) {
+		regPtr->RemoteAddrMod = 0x0f;
+	    } else {
+		regPtr->RemoteAddrMod = 0x0d;
+	    }
+	} else {
+	    regPtr->LocalAddrMod = 0x3d;
+	    if (linkInfo->RemoteFlags2 & DEV_VMELINK_REMOTE_DMA_BLOCK_MODE) {
+		regPtr->RemoteAddrMod = 0x3f;
+	    } else {
+		regPtr->RemoteAddrMod = 0x3d;
+	    }
+	}
+d493 4
+d536 1
+d541 3
+d545 1
+a545 2
+	printf ("DevVMElinkIntr: got VME interrupt for %s\n",
+		linkInfo->name);
+a546 2
+    MASTER_LOCK (&linkInfo->mutex);
+    tmpReg = dmaRegs->localDmaCmdReg;
+d548 1
+a548 1
+	tmpReg &= ~(DEV_VMELINK_DMA_DONE & DEV_VMELINK_DMA_START);
+d550 5
+d711 4
+d933 1
+a933 1
+	status = DevVMElinkReset (linkData);
+d1107 3
+a1144 5
+#ifndef MAP_IN_BIG_DEVICE
+    Address	lastAddr;
+    Address	curMapAddr, newAddr;
+    int		i;
+#endif
+d1159 4
+a1162 1
+    if (linkNum >= DEV_VMELINK_MAX_BOARDS || (ProbeVMEBoard(regPtr)== FALSE)) {
+d1165 1
+d1199 17
+a1215 11
+#ifdef MAP_IN_BIG_DEVICE
+    linkInfo->smallMap = (Address)VmMach_MapInBigDevice
+	((void*)windowPhysAddr[linkNum], 0x10000, VMMACH_TYPE_VME32DATA);
+    if (linkInfo->smallMap == NULL) {
+	printf ("DevVMElinkInit: couldn't map window.\n");
+    } else if (((unsigned)windowPhysAddr[linkNum] & 0xff000000) !=
+	       0xff000000) {
+	linkInfo->state |= DEV_VMELINK_STATE_VME_A32;
+	linkInfo->curAddrModifier = 0x0d;
+	printf ("%s is A32D32 with window at 0x%x mapped into 0x%x\n",
+		linkInfo->name,	windowPhysAddr[linkNum], linkInfo->smallMap);
+d1217 1
+a1217 3
+	linkInfo->curAddrModifier = 0x3d;
+	printf ("%s is A32D24 with window at 0x%x mapped into 0x%x\n",
+		linkInfo->name,	windowPhysAddr[linkNum], linkInfo->smallMap);
+a1218 18
+#else
+    curMapAddr = (Address)windowPhysAddr[linkNum];
+    linkInfo->smallMap =(Address)VmMach_MapInDevice(curMapAddr,DEV_VME_D32A24);
+    lastAddr = linkInfo->smallMap;
+    for (i = 0; i < 7; i++) {
+	curMapAddr += 0x2000;
+	lastAddr += 0x2000;
+	newAddr = (Address)VmMach_MapInDevice (curMapAddr, DEV_VME_D32A24);
+	if (devVMElinkDebug) {
+	    printf ("DevVMElinkInit: mapped VME 0x%x to virtual 0x%x\n",
+		    curMapAddr, newAddr);
+	}
+	if (newAddr != lastAddr) {
+	    printf ("DevVMElinkInit: couldn't get enough map space.\n");
+	    return (DEV_NO_CONTROLLER);
+	}
+    }
+#endif
+d1220 1
+a1220 1
+    status = DevVMElinkReset (linkInfo);
+@
+
+
+1.5
+log
+@
+VME link driver now supports block device-type reads and writes.  The
+Xbus driver is *always* installed, but only installs an interrupt
+handler (which should never be used except when the xbus board is
+present).
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/dev/sun4.md/devVMElink.c,v 1.4 92/07/09 18:55:44 elm Exp $ SPRITE (Berkeley)";
+d31 1
+d57 1
+a57 1
+unsigned int windowPhysAddr[] = {0xff8e0000,};
+d131 4
+a134 1
+    linkInfo->state = 0;
+d179 1
+a179 1
+    linkInfo->RemoteFlags2 = 0 /*DEV_VMELINK_REMOTE_BLKMODE_DMA*/;
+d327 1
+d378 1
+a378 1
+    int size;
+d393 6
+a398 1
+    dmaSize = bufSize & DEV_VMELINK_DMA_BUFSIZE_MASK;
+d400 2
+a401 1
+	printf("DevVMElinkXferData: size=0x%x dmaSize=0x%x\n",bufSize,dmaSize);
+a402 1
+    size = bufSize - dmaSize;
+d410 1
+a410 1
+	while (size > 0) {
+d414 1
+a414 1
+	    size -= 4;
+d424 1
+a424 1
+	while (size > 0) {
+d428 1
+a428 1
+	    size -= 4;
+d456 1
+a456 1
+	 * requires addr mod 0x3d on link board
+d478 16
+a493 2
+	regPtr->LocalAddrMod = 0x3d;
+	regPtr->RemoteAddrMod = 0x3d;
+d495 3
+a497 4
+	    DEV_VMELINK_DISABLE_LOCAL_INT;
+	regPtr->RemoteCmd2 = (linkInfo->RemoteFlags2 &
+			      ~DEV_VMELINK_REMOTE_BLKMODE_DMA) |
+				  DEV_VMELINK_DISABLE_REMOTE_INT;
+a545 1
+    MASTER_LOCK (&linkInfo->mutex);
+d547 2
+a548 1
+	printf ("DevVMElinkIntr: got VME interrupt.\n");
+d550 1
+d658 1
+a658 1
+	printf ("VME address modifier set to 0x%x\n", mod);
+d743 1
+a743 1
+    setAddrModifier (linkInfo, 0x0d);
+d770 4
+d792 4
+d891 17
+a907 3
+	regPtr->RemoteAddrMod = (unsigned char)passedData;
+	linkData->RemoteFlags2 |= DEV_VMELINK_REMOTE_USE_ADDRMOD;
+	regPtr->RemoteCmd2 = linkData->RemoteFlags2;
+d909 1
+d920 2
+d937 6
+d1157 1
+a1157 2
+    if (linkNum >= DEV_VMELINK_MAX_BOARDS ||
+	ProbeVMEBoard (regPtr) == FALSE) {
+d1164 1
+a1164 1
+    linkInfo->RemoteFlags2 = 0 /*DEV_VMELINK_REMOTE_BLKMODE_DMA*/;
+d1173 1
+a1173 1
+    sprintf (semName, "VME link 0x%x", linkNum);
+d1181 2
+d1195 1
+a1195 1
+	(windowPhysAddr[linkNum], 0x10000, 3);
+d1198 10
+a1226 1
+    printf ("DevVMElinkInit: window mapped into 0x%x\n", linkInfo->smallMap);
+@
+
+
+1.4
+log
+@
+Moved vmelink.h to /sprite/src/lib/include/dev.
+
+The VME link board driver can now talk to any location in the remote
+card cage, albeit slowly.  This currently works *only* for A24D32,
+though it should be relatively easy to modify it to work for A32D32.
+DMA is still written but not debugged.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/dev/sun4.md/devVMElink.c,v 1.3 92/06/29 12:33:45 elm Exp $ SPRITE (Berkeley)";
+d33 9
+a44 3
+#ifdef VMELINK_DEBUG
+static int devVMElinkDebug = TRUE;
+#else
+a45 1
+#endif
+d48 1
+d50 2
+d279 2
+a280 1
+    DevVMElinkReq *req;
+d284 1
+a284 1
+    req->linkInfo = devHandle->linkInfo;
+d292 6
+a297 2
+    Dev_QueueInsert (req->linkInfo->reqQueue,(List_Links *)req);
+
+d303 1
+a303 8
+ * DevVMElinkFinishCopy
+ *
+ *	This procedure will finish a copy operation started by
+ * DevVMElinkXferData.  For large requests, it will be a callback
+ * routine from the interrupt handler.  For smaller requests which
+ * do not use DMA, it will simply copy the requested data over the
+ * link board word by word.  In either case, it will look for pending
+ * requests before it exits.  If one is found, it will be started up.
+d312 2
+a313 2
+DevVMElinkFinishCopy (reqPtr)
+DevVMElinkReq	*reqPtr;
+d315 1
+a315 7
+    int		size;
+    unsigned int remoteAddr;
+    Address	localAddr;
+    Address	dmaAddr;
+    CtrlRegs	*regPtr;
+    VMELinkInfo *linkInfo;
+    DevVMElinkReq *nextReq;
+d317 3
+a319 5
+    if (reqPtr == NULL) {
+	panic ("DevVMElinkFinishCopy: no current I/O\n");
+    }
+    linkInfo = reqPtr->linkInfo;
+    regPtr = linkInfo->regArea;
+d321 1
+a321 44
+	VmMach_32BitDMAFree (reqPtr->dmaSize, (Address)(reqPtr->dmaSpace));
+    }
+
+    size = reqPtr->length - reqPtr->dmaSize;
+    remoteAddr = (unsigned int)reqPtr->startAddress + reqPtr->dmaSize;
+    localAddr = reqPtr->buffer + reqPtr->dmaSize;
+
+    /*
+     * Copy the rest of the data.  Use the remote page register to
+     * supply the upper 16 bits, and the 64K map space for the
+     * rest.
+     */
+    dmaAddr = (Address)linkInfo->smallMap + (remoteAddr & 0xffff);
+    regPtr->RemoteCmd1 = linkInfo->RemoteFlags1 | DEV_VMELINK_USE_PAGE_REG;
+    regPtr->RemotePageAddrHigh = ((unsigned int)remoteAddr >> 24) & 0xff;
+    regPtr->RemotePageAddrLow =  ((unsigned int)remoteAddr >> 16) & 0xff;
+    if (reqPtr->operation == FS_READ) {
+	while (size > 0) {
+	    *(int *)localAddr = *(int *)dmaAddr;
+	    dmaAddr += 4;
+	    localAddr += 4;
+	    size -= 4;
+	    remoteAddr += 4;
+	    if (((unsigned int)remoteAddr & 0xffff) == 0) {
+		regPtr->RemotePageAddrHigh =
+		    ((unsigned int)remoteAddr >> 24) & 0xff;
+		regPtr->RemotePageAddrLow =
+		    ((unsigned int)remoteAddr >> 16) & 0xff;
+	    }
+	}
+    } else {
+	while (size > 0) {
+	    *(int *)dmaAddr = *(int *)localAddr;
+	    dmaAddr += 4;
+	    localAddr += 4;
+	    size -= 4;
+	    remoteAddr += 4;
+	    if (((unsigned int)remoteAddr & 0xffff) == 0) {
+		regPtr->RemotePageAddrHigh =
+		    ((unsigned int)remoteAddr >> 24) & 0xff;
+		regPtr->RemotePageAddrLow =
+		    ((unsigned int)remoteAddr >> 16) & 0xff;
+	    }
+	}
+a322 2
+
+    regPtr->RemoteCmd1 = linkInfo->RemoteFlags1;
+a323 2
+    linkInfo->curReq = NULL;
+
+d328 2
+a329 7
+
+    MASTER_LOCK (&linkInfo->queueMutex);
+    nextReq = (DevVMElinkReq *)Dev_QueueGetNext (linkInfo->reqQueue);
+    if (nextReq != (DevVMElinkReq *)NIL) {
+
+	linkInfo->state |= DEV_VMELINK_STATE_DMA_IN_USE;
+	Proc_CallFunc ((VoidFunc)DevVMElinkXferData, (ClientData)nextReq, 0);
+a330 25
+    MASTER_UNLOCK (&linkInfo->queueMutex);
+
+    (reqPtr->doneProc)(reqPtr->origReq, reqPtr->status, reqPtr->length);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * entryAvailProc
+ *
+ *	Call DevVMElinkXferData when an element is inserted.
+ *
+ *----------------------------------------------------------------------
+ */
+static
+Boolean
+entryAvailProc (clientData, req)
+ClientData clientData;
+DevVMElinkReq *req;
+{
+    VMELinkInfo *linkInfo = req->linkInfo;
+    int isBusy;
+
+    MASTER_LOCK (&linkInfo->mutex);
+    isBusy = linkInfo->state & DEV_VMELINK_STATE_DMA_IN_USE;
+d333 2
+a334 5
+    if (isBusy) {
+	return (FALSE);
+    }
+
+    return (DevVMElinkXferData (req));
+d350 3
+d362 1
+d364 2
+a365 2
+DevVMElinkXferData (reqPtr)
+DevVMElinkReq	*reqPtr;
+d367 1
+a367 1
+    register VMELinkInfo *linkData = reqPtr->linkInfo;
+d369 3
+a371 2
+    unsigned int remoteAddr = reqPtr->startAddress;
+    unsigned int bufAddr = (unsigned int)reqPtr->buffer;
+d373 1
+a373 1
+    unsigned long dmaAddr;
+d375 2
+a376 1
+    DmaRegs *dmaPtr = linkData->dmaRegs;
+d378 1
+a378 1
+    linkData->curReq = reqPtr;
+d382 1
+a382 1
+		remoteAddr, bufSize);
+d384 45
+d430 1
+a430 1
+    if (bufSize >= linkData->minDmaSize) {
+d435 3
+a437 2
+	dmaSize = bufSize & DEV_VMELINK_DMA_BUFSIZE_MASK;
+	dmaAddr = (unsigned int)VmMach_32BitDMAAlloc(dmaSize,(Address)bufAddr);
+d446 1
+a446 1
+	 * requires addr mod 0x0d on link board
+d449 26
+a474 11
+	dmaPtr->localDmaAddr3 = (dmaAddr & 0xff000000) >> 24;
+	dmaPtr->localDmaAddr2 = (dmaAddr & 0x00ff0000) >> 16;
+	dmaPtr->localDmaAddr1 = (dmaAddr & 0x0000ff00) >> 8;
+	dmaPtr->localDmaAddr0 = (dmaAddr & 0x000000ff);
+	dmaPtr->dmaLength2 = (dmaSize & 0x00ff0000) >> 16;
+	dmaPtr->dmaLength1 = (dmaSize & 0x0000ff00) >> 8;
+	dmaPtr->remoteDmaAddr3 = (remoteAddr & 0xff000000) >> 24;
+	dmaPtr->remoteDmaAddr2 = (remoteAddr & 0x00ff0000) >> 16;
+	dmaPtr->remoteDmaAddr1 = (remoteAddr & 0x0000ff00) >> 8;
+	dmaPtr->remoteDmaAddr0 = (remoteAddr & 0x000000ff);
+	linkData->state |= DEV_VMELINK_STATE_DMA_IN_USE;
+d476 2
+a477 2
+	    DEV_VMELINK_DMA_LOCAL_PAUSE | DEV_VMELINK_DMA_ENABLE_INTR |
+		DEV_VMELINK_DMA_BLOCK_MODE;
+d482 1
+a482 1
+	 * DevVMElinkFinishCopy will be called after the interrupt is taken.
+d489 1
+a489 1
+	DevVMElinkFinishCopy (reqPtr);
+d491 1
+d524 3
+d539 3
+d543 2
+a544 2
+	 * Callback DevVMElinkFinishCopy to copy the remainder of
+	 * the data.
+d546 1
+a546 2
+	Proc_CallFunc ((VoidFunc)DevVMElinkFinishCopy,
+		       (ClientData)linkInfo->curReq, 0);
+d548 2
+a550 1
+
+d612 51
+d719 1
+d797 1
+a968 1
+#if 0
+d974 1
+a974 1
+	    outsize = sizeof (pos);
+d977 1
+a977 1
+				     &outSize, &pos);
+d985 1
+a985 1
+		curAddr = 0;
+d991 1
+a991 1
+		curAddr = 0xffffffff;
+d1002 3
+a1006 1
+#endif
+d1083 1
+d1087 1
+d1122 1
+a1122 7
+    sprintf (semName, "VME link queues 0x%x", linkNum);
+    Sync_SemInitDynamic (&(linkInfo->queueMutex), semName);
+    linkInfo->ctrlQueues =
+	Dev_CtrlQueuesCreate (&(linkInfo->queueMutex), entryAvailProc);
+    linkInfo->reqQueue =
+	Dev_QueueCreate (linkInfo->ctrlQueues, DEV_QUEUE_FIFO_INSERT, 0, 0);
+
+d1137 3
+a1139 3
+#if 0
+    linkInfo->smallMap = (Address)VmMach_MapInDevicePages
+	(windowPhysAddr[linkNum],0x10000,DEV_VME_D32A24);
+d1141 1
+a1141 1
+	return (DEV_NO_CONTROLLER);
+d1241 4
+d1285 4
+@
+
+
+1.3
+log
+@
+These files are an update to the VME link board device driver.  They enable
+the driver to access any location in A24D32 across the link.  The driver
+still needs modifications for DMA to work.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun4.md/RCS/devVMElink.c,v 1.2 91/09/18 13:47:02 jhh Exp Locker: elm $ SPRITE (Berkeley)";
+d698 9
+a706 1
+	    *(remote++) = *(local++);
+d716 9
+a724 1
+	    *(local++) = *(remote++);
+d836 6
+@
+
+
+1.2
+log
+@fixed a couple of compiler warnings
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun4.md/RCS/devVMElink.c,v 1.1 91/09/18 12:39:52 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d28 2
+d33 2
+d36 7
+a42 2
+#define XFER_TO_REMOTE		1
+#define XFER_FROM_REMOTE	0
+d44 1
+d46 3
+a48 39
+ *	This is the control register structure for the VME link
+ *	boards.  All of the rsvX fields are listed as reserved in
+ *	the manual.
+ *
+ */
+typedef struct CtrlRegs {
+    unsigned char rsv0;
+    unsigned char LocalCmd;		/* local command register */
+    unsigned char rsv1;
+    unsigned char LocalStatus;		/* local status register */
+    unsigned char LocalAddrMod;		/* local address modifier register */
+    unsigned char rsv3;
+    unsigned char rsv4;
+    unsigned char LocalIntrVec;		/* local interrupt vector register */
+    unsigned char RemoteCmd2;		/* remote command register #2 */
+    unsigned char RemoteCmd1;		/* remote command register #1 */
+    unsigned char RemotePageAddrHigh;	/* high 8 bits of remote page addr */
+    unsigned char RemotePageAddrLow;	/* low 8 bits of remote page addr */
+    unsigned char RemoteAddrMod;	/* remote address modifier */
+    unsigned char rsv5;
+    unsigned char RemoteIackReadHigh;	/* interrupt acknowledge read hi */
+    unsigned char RemoteIackReadLow;	/* interrupt acknowledge read low */
+} CtrlRegs;
+
+/*
+ *	This is the info stored for each VME link board.
+ */
+typedef struct VMELinkInfo {
+    volatile CtrlRegs *regArea;
+    Address remoteVMEvirtual[VMELINK_NUM_PAGES];
+    unsigned int addrMsb;	/* MSbit of VME addresses, since offsets */
+    				/* into a file can only be 31 bits long */
+    unsigned char LocalFlags;	/* flags used to set the local and remote */
+    unsigned char RemoteFlags1;	/* command registers.  They are kept here */
+    unsigned char RemoteFlags2;	/* so the driver can fool with the link. */
+} VMELinkInfo;
+
+static VMELinkInfo VMEInfo[8];
+static int numVMElinks = 0;
+a49 5
+#ifdef VMELINK_DEBUG
+static int debug = TRUE;
+#else
+static int debug = FALSE;
+#endif
+d70 1
+a70 1
+    int address;			/* Alleged controller address */
+d80 2
+a81 2
+    isPresent = Mach_Probe(sizeof(regsPtr->LocalStatus), (char *)&status,
+			   (char *)&(regsPtr->LocalStatus));
+d94 1
+a94 5
+ * DevVMElinkInit
+ *
+ *	Initialize the VME link board (assuming that there is one
+ *	installed).
+ *	
+d96 2
+a97 2
+ * Results:
+ *	
+d99 6
+a104 2
+ * Side effects:
+ *	May map additional VME address space into the kernel.
+d108 3
+a110 4
+
+ClientData
+DevVMElinkInit(cntrlPtr)
+    DevConfigController *cntrlPtr;
+d112 28
+a139 11
+    unsigned int curStatus;
+    volatile CtrlRegs *regPtr = (volatile CtrlRegs *)cntrlPtr->address;
+    register VMELinkInfo *linkInfo;
+
+    /*
+     * If the VME link board isn't installed or there are too many boards,
+     * just return.
+     */
+    if (numVMElinks >= VMELINK_MAX_BOARDS ||
+	ProbeVMEBoard (regPtr) == FALSE) {
+	return (DEV_NO_CONTROLLER);
+a140 2
+    linkInfo = &(VMEInfo[numVMElinks]);
+
+d144 6
+a149 4
+    curStatus = (unsigned int)regPtr->LocalStatus;
+    if (!(curStatus & VMELINK_REMOTE_DOWN)) {
+	printf ("Resetting remote VME link card...\n");
+	regPtr->RemoteCmd1 = 0x80;
+d151 5
+a155 1
+	regPtr->RemoteCmd1 = 0x00;
+d157 1
+a157 1
+	printf ("Remote VME link card down; can't reset.\n");
+d159 19
+a177 17
+
+#if 0
+    /*
+     * Attempt to map in part of the address space which corresponds
+     * to the VME memory that exists on the remote system.
+     */
+    if (debug) {
+	printf ("VMElink: mapping in 0x%x pages.\n", VMELINK_NUM_PAGES);
+    }
+    for (i = 0; i < VMELINK_NUM_PAGES; i++) {
+	linkInfo->remoteVMEvirtual[i] =
+	    (Address)VmMach_MapInDevice ((Address)(VMELINK_VME_START_ADDR +
+					 i * PAGSIZ), VMELINK_ADDR_SPACE);
+	if (debug) {
+	    printf ("VMElink: Mapped 0x%x to 0x%x\n",
+		    VMELINK_VME_START_ADDR + i * PAGSIZ,
+		    linkInfo->remoteVMEvirtual[i]);
+d180 69
+a248 1
+#endif
+d250 1
+a250 7
+    linkInfo->LocalFlags = 0;
+    linkInfo->RemoteFlags1 = 0;
+    linkInfo->RemoteFlags2 = 0;
+    linkInfo->regArea = regPtr;
+    linkInfo->addrMsb = 0x80000000;
+    numVMElinks += 1;
+    return ((ClientData)(numVMElinks - 1));
+a251 1
+
+d253 1
+a253 2
+/*
+ *----------------------------------------------------------------------
+d255 1
+a255 1
+ * DevVMElinkOpen
+d257 4
+a260 6
+ *	Open the VME link device.  Since there isn't much to keep
+ *	track of, just return a handle for future operations.  The
+ *	handle is merely the unit number.
+ *	
+ * Results:
+ *	Standard Sprite ReturnStatus.
+d262 1
+a262 2
+ * Side effects:
+ *	None.
+d264 1
+a264 1
+ *----------------------------------------------------------------------
+d266 4
+a269 6
+
+ENTRY ReturnStatus
+DevVMElinkOpen (devicePtr, useFlags, notifyToken)
+    Fs_Device *devicePtr;
+    int useFlags;
+    Fs_NotifyToken notifyToken;
+d271 11
+a281 3
+    if (devicePtr->unit >= numVMElinks) {
+	return (DEV_INVALID_UNIT);
+    }
+d283 1
+a283 5
+    devicePtr->data = (ClientData)devicePtr->unit;
+    if (debug) {
+	printf ("VMElink: Opened device successfully (unit %d).\n",
+		devicePtr->unit);
+    }
+d288 1
+a288 2
+/*
+ *----------------------------------------------------------------------
+d290 1
+a290 1
+ * shortBcopy
+d292 10
+a301 2
+ *	Copy data from one location to another using only short (16 bit)
+ *	accesses.
+d303 91
+a393 2
+ * Results:
+ *	none
+d395 1
+a395 2
+ * Side effects:
+ *	Data is copied.
+d400 4
+a403 5
+void
+shortBcopy (from, to, num)
+    char *from;
+    char *to;
+    unsigned int num;
+d405 27
+a431 38
+    if (debug) {
+	printf ("VMElink: Copying from 0x%x bytes from 0x%x to 0x%x\n",
+		num, from, to);
+    }
+    /*
+     * If pointers aren't aligned, byte by byte is the best we can do.
+     */
+    if (num == 0) {
+	return;
+    }
+
+    if (((unsigned int)from & 1) != ((unsigned int)to & 1)) {
+	while (num-- > 0) {
+	    *(to++) = *(from++);
+	}
+    } else {
+	if (((unsigned int)from & 1) == 1) {
+	    *(to++) = *(from++);
+	    num--;
+	}
+	while (num > 1) {
+	    *(((short *)to)++) = *(((short *)from)++);
+	    num -= 2;
+	}
+	if (num > 0) {
+	    *to = *from;
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * xferDataViaVME
+ *
+ *	Transfer data over the VME link using the statically set up
+ *	pages.  Later on, this should be modified to use the page
+ *	register (and possibly the address modifier register).
+d433 2
+a434 2
+ * Results:
+ *	Standard Sprite ReturnStatus.
+d441 5
+a445 4
+static
+ReturnStatus
+xferDataViaVME (linkData, bufSize, bufLoc, bufAddr, direction)
+    register VMELinkInfo *linkData;
+d447 10
+a456 20
+    unsigned int bufLoc;
+    char *bufAddr;
+    int direction;
+{
+    char *xferPage;
+    int xferOffsetInPage;
+    int xferSize;
+    unsigned int offsetInVME;
+    volatile CtrlRegs *regPtr = linkData->regArea;
+
+    /*
+     * Correct for inability of Sprite to seek beyond 2^31 bits
+     */
+    bufLoc |= linkData->addrMsb;
+    if ((bufLoc < VMELINK_VME_START_ADDR) ||
+	(bufLoc > (VMELINK_VME_ADDR_SIZE + VMELINK_VME_START_ADDR))) {
+	return (GEN_INVALID_ARG);
+    }
+    offsetInVME = (bufLoc - VMELINK_VME_START_ADDR);
+    if (debug) {
+d458 1
+a458 1
+		bufLoc, bufSize);
+d461 12
+a472 23
+    /*
+     * Set up the VME link correctly.  The settings will be restored
+     * later.
+     */
+    regPtr->LocalCmd = 0x00;
+    regPtr->RemoteCmd1 = 0x00;
+    regPtr->RemoteCmd2 = 0x00;
+
+    while (bufSize > 0) {
+	xferPage = linkData->remoteVMEvirtual[offsetInVME / PAGSIZ];
+	xferOffsetInPage = offsetInVME % PAGSIZ;
+	xferSize = ((bufSize > PAGSIZ) ? PAGSIZ : bufSize);
+	xferSize = ((xferSize > (PAGSIZ - xferOffsetInPage)) ?
+		    (PAGSIZ - xferOffsetInPage) : xferSize);
+	if (direction == XFER_TO_REMOTE) {
+	    shortBcopy (bufAddr, xferPage + xferOffsetInPage, xferSize);
+	} else {
+	    shortBcopy (xferPage + xferOffsetInPage, bufAddr, xferSize);
+	}	    
+	bufSize -= xferSize;
+	offsetInVME += xferSize;
+	bufAddr += xferSize;
+    }
+d474 84
+a557 3
+    regPtr->LocalCmd = linkData->LocalFlags;
+    regPtr->RemoteCmd1 = linkData->RemoteFlags1;
+    regPtr->RemoteCmd2 = linkData->RemoteFlags2;
+d559 11
+a569 17
+    return (SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevVMElinkRead
+ *
+ *	Read some bytes from the remote VME into a buffer provided.
+ *	Since this may require playing with the virtual->physical
+ *	mapping, the virtual memory may get rearranged.
+ *	
+ * Results:
+ *	SUCCESS if read went OK.
+ *
+ * Side effects:
+ *	May change mapping registers used by the VME driver.
+d571 1
+a571 1
+ *----------------------------------------------------------------------
+d573 5
+a577 6
+
+ENTRY ReturnStatus
+DevVMElinkRead (devicePtr, readPtr, replyPtr)
+    Fs_Device *devicePtr;
+    Fs_IOParam *readPtr;
+    Fs_IOReply *replyPtr;
+d579 22
+a600 18
+    ReturnStatus retval;
+
+    retval = xferDataViaVME (&VMEInfo[(int)devicePtr->data], readPtr->length,
+			     readPtr->offset, readPtr->buffer,
+			     XFER_FROM_REMOTE);
+    replyPtr->flags = FS_READABLE | FS_WRITABLE;
+    if (retval == SUCCESS) {
+	replyPtr->length = readPtr->length;
+    } else {
+	replyPtr->length = 0;
+    }
+    return (retval);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevVMElinkWrite
+d602 1
+a602 9
+ *	Write some bytes from a buffer to the remote VME.
+ *	Since this may require playing with the virtual->physical
+ *	mapping, the virtual memory may get rearranged.
+ *	
+ * Results:
+ *	SUCCESS if write went OK.
+ *
+ * Side effects:
+ *	May change mapping registers used by the VME driver.
+d604 1
+a604 1
+ *----------------------------------------------------------------------
+d606 4
+a609 6
+
+ENTRY ReturnStatus
+DevVMElinkWrite (devicePtr, writePtr, replyPtr)
+    Fs_Device *devicePtr;
+    Fs_IOParam *writePtr;
+    Fs_IOReply *replyPtr;
+d611 15
+a625 22
+    ReturnStatus retval;
+
+    retval = xferDataViaVME (&VMEInfo[(int)devicePtr->data], writePtr->length,
+			     writePtr->offset, writePtr->buffer,
+			     XFER_TO_REMOTE);
+    replyPtr->flags = FS_READABLE | FS_WRITABLE;
+    if (retval == SUCCESS) {
+	replyPtr->length = writePtr->length;
+    } else {
+	replyPtr->length = 0;
+    }
+    return (retval);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * mapInMemory
+ *
+ * Results:
+ *
+ * Side effects:
+d627 1
+a627 1
+ *----------------------------------------------------------------------
+a628 2
+
+static
+d630 3
+a632 4
+mapInMemory(inReq, outReq, linkData)
+    register VMElinkMapRequest *inReq;
+    register VMElinkMapRequest *outReq;
+    register VMELinkInfo *linkData;
+d634 118
+a751 16
+    return (GEN_NOT_IMPLEMENTED);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevVMElinkIOControl
+ *
+ *	Perform an IO control on the VME link card set.  These can
+ *	range from a simple remote ping to playing with the card's
+ *	registers such as address modifiers or window selection.
+ *	No attempt is made to coordinate between two processes that
+ *	mess up the same VME link; that may come in a future version.
+ *
+ * Results:
+ *	
+d753 1
+a753 3
+ * Side effects:
+ *	May map additional VME address space into the kernel.
+ *	Other side effects depending on the ioctl call requested.
+d755 1
+a755 1
+ *----------------------------------------------------------------------
+d757 5
+a763 6
+ENTRY ReturnStatus
+DevVMElinkIOControl (devicePtr, ioctlPtr, replyPtr)
+    Fs_Device *devicePtr;		/* Information about device. */
+    register Fs_IOCParam *ioctlPtr;	/* Parameter information (buffer sizes
+					 * etc.). */
+    register Fs_IOReply *replyPtr;	/* Place to store result information.*/
+d765 1
+d769 3
+a771 2
+    ReturnStatus probeResult;
+    VMElinkStatus *boardStatus;
+d773 1
+a773 1
+    if (debug) {
+d777 1
+a777 4
+    if ((int)devicePtr->data >= numVMElinks) {
+	return (DEV_INVALID_UNIT);
+    }
+    linkData = &VMEInfo[(int)devicePtr->data];
+d784 3
+a786 1
+    if (regPtr->RemoteCmd1 & VMELINK_REMOTE_DOWN) {
+d792 1
+a792 1
+	boardStatus = (VMElinkStatus *)ioctlPtr->inBuffer;
+d799 1
+a799 1
+	linkData->RemoteFlags2 |= VMELINK_REMOTE_USE_ADDRMOD;
+d803 1
+a803 1
+	linkData->RemoteFlags2 &= ~VMELINK_REMOTE_USE_ADDRMOD;
+a805 28
+      case IOC_VMELINK_NO_WINDOW:
+	linkData->RemoteFlags1 &= ~VMELINK_USE_PAGE_REG;
+	regPtr->RemoteCmd1 = linkData->RemoteFlags1;
+	break;
+      case IOC_VMELINK_SET_WINDOW:
+	passedData = *(unsigned int *)ioctlPtr->inBuffer;
+	linkData->RemoteFlags1 |= VMELINK_USE_PAGE_REG;
+	regPtr->RemotePageAddrLow =
+	    (unsigned char)((passedData & 0x00ff0000) >> 16);
+	regPtr->RemotePageAddrHigh =
+	    (unsigned char)((passedData & 0xff000000) >> 24);
+	regPtr->RemoteCmd1 = linkData->RemoteFlags1;
+	break;
+      case IOC_VMELINK_SET_WINDOW_SIZE:
+	passedData = *(unsigned int *)ioctlPtr->inBuffer;
+	linkData->RemoteFlags2 &= ~VMELINK_WINDOW_SIZE_1M;
+	linkData->RemoteFlags2 |= (unsigned char) passedData;
+	regPtr->RemoteCmd2 = linkData->RemoteFlags2;
+	break;
+      case IOC_VMELINK_MAP_MEMORY:
+	probeResult = mapInMemory ((VMElinkMapRequest *)ioctlPtr->inBuffer,
+				   (VMElinkMapRequest *)ioctlPtr->outBuffer,
+				   linkData);
+	if (probeResult != SUCCESS) {
+	    replyPtr->length = ioctlPtr->outBufSize = 0;
+	    return (probeResult);
+	}
+	break;
+d813 1
+a813 1
+	debug = TRUE;
+d816 4
+a819 1
+	debug = FALSE;
+d821 71
+d902 1
+d904 33
+d938 1
+d949 196
+d1147 74
+d1222 6
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/jhh/dev/sun4.md/RCS/devVMElink.c,v 1.1 91/08/29 10:40:00 jhh Exp $ SPRITE (Berkeley)";
+d23 1
+a145 1
+    int i;
+@

@@ -1,0 +1,215 @@
+head     9.1;
+branch   ;
+access   ;
+symbols  ds3100:9.1 sun3:9.1 sun4nw:9.1 symm:9.1 spur:9.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.1
+date     90.09.11.12.08.22;  author rab;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.16.46;  author douglis;  state Stable;
+branches ;
+next     8.1;
+
+8.1
+date     89.08.15.21.24.20;  author rab;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.33.27;  author douglis;  state Stable;
+branches ;
+next     6.1;
+
+6.1
+date     88.09.26.10.22.12;  author nelson;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.23.40;  author brent;  state Stable;
+branches ;
+next     5.0;
+
+5.0
+date     87.09.10.11.14.14;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.1
+log
+@Added prototypes.
+@
+text
+@/*
+ * profInt.h --
+ *
+ *	Internal declarations of the profile module.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/prof/sun3.md/RCS/profInt.h,v 9.0 89/09/12 15:16:46 douglis Stable Locker: rab $ SPRITE (Berkeley)
+ */
+
+#ifndef _PROFINT
+#define _PROFINT
+
+/*
+ * Forward declarations
+ */
+
+extern void mcount _ARGS_((void)); 
+extern unsigned int Prof_ThisFP _ARGS_ ((void));
+extern unsigned int Prof_CallerFP _ARGS_ ((void));
+extern unsigned int Prof_NextFP _ARGS_ ((void));
+extern unsigned int Prof_ThisPC _ARGS_ ((unsigned int fp));
+
+/*
+ * A histogram of PC samples is kept for use by gprof.
+ * Each sample is a counter that gets incremented when
+ * the PC is in the range for the counter.  The PC's are
+ * clustered in groups of 1, 2, 4, 8... values and there
+ * is a counter for each group.  A groupsize of 1 means there
+ * is a counter for every possible PC value.  The even sizes of
+ * the groups lets us generate the index into the array of counters
+ * by shifting.  (The about to shift also takes into account the
+ * size of an instruction, it averages that to two bytes!)
+ */
+
+#define PROF_PC_GROUP_SIZE	2
+#define PROF_GROUP_SHIFT	1
+#define PROF_ARC_GROUP_SHIFT	2
+#define PROF_INSTR_SIZE_SHIFT	1
+#define PROF_PC_SHIFT		(PROF_GROUP_SHIFT + PROF_INSTR_SIZE_SHIFT)
+
+/*
+ * Storage is set aside to hold call graph arc execution counts.
+ * The number of arcs stored is the number of instruction in the
+ * kernel divided by CALL_RATIO. ie. This represents the proportion
+ * of the instructions that are calls.
+ */
+
+#define PROF_CALL_RATIO 	8
+
+/*
+ * A raw call graph arc just includes the callee's PC and the number of
+ * times the arc was executed.  The caller of the arc is the index of the
+ * arcIndex index shifted by PROF_ARC_SHIFT.
+ */
+#define PROF_ARC_GROUP_SHIFT	2
+#define PROF_ARC_SHIFT		(PROF_ARC_GROUP_SHIFT + PROF_INSTR_SIZE_SHIFT)
+typedef struct ProfRawArc {
+	int	calleePC;
+	int	count;
+	struct ProfRawArc *link;
+} ProfRawArc;
+
+typedef struct ProfArc {
+	int	callerPC;
+	int	calleePC;
+	int	count;
+} ProfArc;
+
+extern int		profArcListSize;
+extern ProfRawArc	*profArcList;
+extern ProfRawArc	*profArcListFreePtr;
+extern ProfRawArc	*profArcListEndPtr;
+
+extern int		profArcIndexSize;
+extern ProfRawArc	**profArcIndex;
+
+/*
+ * An of/off switch for profiling.
+ */
+
+extern Boolean profEnabled;
+
+#endif /* _PROFINT */
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/prof/sun3.md/RCS/profInt.h,v 8.1 89/08/15 21:24:20 rab Exp Locker: douglis $ SPRITE (Berkeley)
+d16 9
+@
+
+
+8.1
+log
+@Commented #endif labels.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/prof/sun3.md/RCS/profInt.h,v 8.0 88/11/11 18:33:27 douglis Stable Locker: rab $ SPRITE (Berkeley)
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/prof/sun3.md/RCS/profInt.h,v 6.1 88/09/26 10:22:12 nelson Exp Locker: douglis $ SPRITE (Berkeley)
+d77 1
+a77 1
+#endif _PROFINT
+@
+
+
+6.1
+log
+@Reduced the size of arrays that have to be kept for profiling.
+@
+text
+@d10 1
+a10 1
+ * $Header: profInt.h,v 5.0 87/09/10 11:14:14 nelson Exp $ SPRITE (Berkeley)
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d31 1
+d46 2
+a47 2
+ * times the arc was executed.  The caller of the arc is implied (one-for-one)
+ * by the index of the arcIndex index. (index of the index...)
+d49 2
+a50 1
+
+@
+
+
+5.0
+log
+@*** empty log message ***
+@
+text
+@d10 1
+a10 1
+ * $Header: profInt.h,v 5.0 87/08/11 10:48:04 sprite Exp $ SPRITE (Berkeley)
+@

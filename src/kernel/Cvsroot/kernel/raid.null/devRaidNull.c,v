@@ -1,0 +1,63 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ds3100:1.1 sun3:1.1 sun4nw:1.1 symm:1.1 spur:1.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     91.10.30.11.16.04;  author mgbaker;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/* 
+ * devRaidNull.c --
+ *
+ *	Stub module to be used when it is not desireable to link the RAID
+ *	driver into the kernel.
+ *
+ * Copyright 1989 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.2 89/01/07 04:12:18 rab Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include "sprite.h"
+#include "fs.h"
+#include "devBlockDevice.h"
+
+DevBlockDeviceHandle *
+DevRaidAttach(devicePtr)
+    Fs_Device	*devicePtr;	/* The device to attach. */
+{
+    return (DevBlockDeviceHandle *) NIL;
+}
+
+DevBlockDeviceHandle *
+DevDebugAttach(devicePtr)
+    Fs_Device	*devicePtr;	/* The device to attach. */
+{
+    return (DevBlockDeviceHandle *) NIL;
+}
+@

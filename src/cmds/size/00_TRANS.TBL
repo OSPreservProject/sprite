@@ -1,0 +1,12 @@
+D DS3100_M                          	ds3100.md
+F MAKEFILE.;1                       	Makefile
+F PRINT68K.C;1                      	print68k.c
+F PRINTMIP.C;1                      	printMips.c
+F PRINTSPU.C;1                      	printSpur.c
+D RCS                               	RCS
+F SIZE.C;1                          	size.c
+F SIZE.H;1                          	size.h
+F SIZE.MAN;1                        	size.man
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md
+D SYMM_MD                           	symm.md

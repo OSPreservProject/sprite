@@ -1,0 +1,559 @@
+head     9.8;
+branch   ;
+access   ;
+symbols  ds3100:9.8 sun3:9.8 sun4nw:9.4 symm:9.4 spur:9.4 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.8
+date     92.06.15.22.29.29;  author jhh;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     92.06.03.12.37.09;  author jhh;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     92.04.17.17.30.39;  author jhh;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     92.04.14.17.08.22;  author jhh;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     91.08.24.20.01.44;  author mottsmth;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.07.30.11.40.50;  author shirriff;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.03.22.12.19.38;  author shirriff;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.11.07.14.46.34;  author shirriff;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.20.25;  author douglis;  state Stable;
+branches ;
+next     8.5;
+
+8.5
+date     89.08.31.12.58.49;  author shirriff;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.08.17.17.35.29;  author jhh;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.06.08.17.21.53;  author douglis;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.01.26.08.41.52;  author rab;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.01.12.07.57.35;  author douglis;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.38.33;  author douglis;  state Stable;
+branches ;
+next     6.2;
+
+6.2
+date     88.11.04.19.01.02;  author douglis;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.12.15.54.20;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.27.29;  author brent;  state Stable;
+branches ;
+next     5.2;
+
+5.2
+date     87.12.24.16.37.44;  author douglis;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.09.21.10.26.49;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.51.14;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.8
+log
+@Added Sys_GetHostName and Sys_SetHostName system calls.
+@
+text
+@/*
+ * sysSysCall.h --
+ *
+ *     	The constants for the system calls.
+ *
+ *	N.B.: This file is included in assembler sources, so no C code may
+ *	appear here.
+ *
+ * Copyright 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/sys/sysSysCall.h,v 9.7 92/06/03 12:37:09 jhh Exp $ SPRITE (Berkeley)
+ *
+ */
+
+#ifndef _SYSSYSCALL
+#define _SYSSYSCALL
+
+#define	SYS_PROC_FORK		0
+#define	SYS_PROC_EXEC		1
+#define	SYS_PROC_EXIT		2
+#define	SYS_SYNC_WAITTIME	3
+#define	SYS_TEST_PRINTOUT	4
+#define	SYS_TEST_GETLINE 	5
+#define	SYS_TEST_GETCHAR 	6
+#define SYS_FS_OPEN		7
+#define SYS_FS_READ		8
+#define SYS_FS_WRITE		9
+#define SYS_FS_CLOSE		10
+#define SYS_FS_REMOVE		11
+#define SYS_FS_REMOVE_DIR	12
+#define SYS_FS_MAKE_DIR		13
+#define SYS_FS_CHANGE_DIR	14
+#define SYS_PROC_WAIT 		15
+#define SYS_PROC_DETACH 	16
+#define SYS_PROC_GETIDS      	17
+#define SYS_PROC_SETIDS      	18
+#define SYS_PROC_GETGROUPIDS	19
+#define SYS_PROC_SETGROUPIDS	20
+#define SYS_PROC_GETFAMILYID 	21
+#define SYS_PROC_SETFAMILYID 	22
+#define SYS_TEST_RPC		23
+#define SYS_SYS_STATS		24
+#define SYS_VM_CREATEVA		25
+#define SYS_VM_DESTROYVA	26
+#define	SYS_SIG_SEND		27
+#define	SYS_SIG_PAUSE    	28
+#define	SYS_SIG_SETHOLDMASK     29
+#define	SYS_SIG_SETACTION       30
+#define	SYS_PROF_START		31
+#define	SYS_PROF_END		32
+#define	SYS_PROF_DUMP		33
+#define	SYS_VM_CMD		34
+#define	SYS_SYS_GETTIMEOFDAY	35
+#define	SYS_SYS_SETTIMEOFDAY	36
+#define	SYS_SYS_DONOTHING	37
+#define	SYS_PROC_GETPCBINFO	38
+#define	SYS_VM_GETSEGINFO	39
+#define	SYS_PROC_GETRESUSAGE	40
+#define SYS_PROC_GETPRIORITY  	41
+#define SYS_PROC_SETPRIORITY  	42
+#define SYS_PROC_DEBUG  	43
+#define SYS_PROC_PROFILE  	44
+#define SYS_FS_TRUNC		45
+#define SYS_FS_TRUNC_ID		46
+#define SYS_FS_GET_NEW_ID	47
+#define SYS_FS_GET_ATTRIBUTES	48
+#define SYS_FS_GET_ATTR_ID	49
+#define SYS_FS_SET_ATTRIBUTES	50
+#define SYS_FS_SET_ATTR_ID	51
+#define SYS_FS_SET_DEF_PERM	52
+#define SYS_FS_IO_CONTROL	53
+#define SYS_SYS_ENABLEDISPLAY	54
+#define	SYS_PROC_SET_ENVIRON	55
+#define	SYS_PROC_UNSET_ENVIRON	56
+#define	SYS_PROC_GET_ENVIRON_VAR   57
+#define	SYS_PROC_GET_ENVIRON_RANGE 58
+#define	SYS_PROC_INSTALL_ENVIRON   59
+#define	SYS_PROC_COPY_ENVIRON	60
+#define SYS_SYNC_SLOWLOCK 	61
+#define SYS_SYNC_SLOWWAIT 	62
+#define SYS_SYNC_SLOWBROADCAST	63
+#define SYS_VM_PAGESIZE 	64
+#define SYS_FS_HARDLINK		65
+#define SYS_FS_RENAME		66
+#define SYS_FS_SYMLINK		67
+#define SYS_FS_READLINK		68
+#define SYS_FS_CREATEPIPE	69
+#define	SYS_VM_MAPKERNELINTOUSER 70
+#define	SYS_FS_ATTACH_DISK	 71
+#define	SYS_FS_SELECT	 	72
+#define SYS_SYS_SHUTDOWN	73
+#define	SYS_PROC_MIGRATE 	74
+#define	SYS_FS_MAKE_DEVICE 	75
+#define	SYS_FS_COMMAND	 	76
+#define	SYS_FS_LOCK	 	77
+#define	SYS_SYS_GETMACHINEINFO	78
+#define SYS_NET_INSTALL_ROUTE	79
+#define SYS_FS_READVECTOR	80
+#define SYS_FS_WRITEVECTOR	81
+#define	SYS_FS_CHECKACCESS	82
+#define SYS_PROC_GETINTERVALTIMER	83
+#define SYS_PROC_SETINTERVALTIMER	84
+#define SYS_FS_WRITEBACKID	85
+#define	SYS_PROC_EXEC_ENV	86
+#define SYS_FS_SET_ATTR_NEW	87
+#define SYS_FS_SET_ATTR_ID_NEW	88
+#define	SYS_PROC_GETHOSTIDS	89
+#define	SYS_SCHED_IDLE_PROCESSOR	90
+#define	SYS_SCHED_START_PROCESSOR	91
+#define	SYS_MACH_NUM_PROCESSORS	92
+#define SYS_PROF_PROFIL         93
+#define SYS_PROC_REMOTE_EXEC    94
+#define SYS_SYS_GETMACHINEINFO_NEW	95
+#define SYS_VM_MMAP		96
+#define SYS_VM_MUNMAP		97
+#define SYS_VM_MSYNC		98
+#define SYS_VM_MLOCK		99
+#define SYS_VM_MUNLOCK		100
+#define SYS_VM_MINCORE		101
+#define SYS_SYNC_SEMCTL		102
+#define SYS_SYNC_SEMGET		103
+#define SYS_SYNC_SEMOP		104
+#define SYS_VM_MPROTECT		105
+#define SYS_PROC_VFORK  	106
+#define SYS_NET_GET_ROUTES 	107
+#define SYS_NET_DELETE_ROUTE 	108
+#define SYS_ZSS_CMD 		109
+#define SYS_ZEBRA_CMD 		110
+#define SYS_SYS_GET_HOSTNAME	111
+#define SYS_SYS_SET_HOSTNAME	112
+
+#define SYS_NUM_SYSCALLS	113
+
+#endif /* _SYSSYSCALL */
+@
+
+
+9.7
+log
+@Added a new system call for Zebra_Cmd.
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/sys/sysSysCall.h,v 9.6 92/04/17 17:30:39 jhh Exp $ SPRITE (Berkeley)
+d130 2
+d133 1
+a133 1
+#define SYS_NUM_SYSCALLS	111
+@
+
+
+9.6
+log
+@Added a placeholder for a Zebra system call (Zss_Cmd).
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/sys/sysSysCall.h,v 9.5 92/04/14 17:08:22 jhh Exp $ SPRITE (Berkeley)
+d129 1
+d131 1
+a131 1
+#define SYS_NUM_SYSCALLS	110
+@
+
+
+9.5
+log
+@Added Net_GetRoutes and Net_DeleteRoute.
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/sys/sysSysCall.h,v 9.4 91/08/24 20:01:44 mottsmth Exp $ SPRITE (Berkeley)
+d128 1
+d130 1
+a130 1
+#define SYS_NUM_SYSCALLS	109
+@
+
+
+9.4
+log
+@Add true vfork support
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/sys/RCS/sysSysCall.h,v 9.3 90/07/30 11:40:50 shirriff Exp $ SPRITE (Berkeley)
+d115 13
+a127 11
+#define SYS_VM_MMAP	96
+#define SYS_VM_MUNMAP	97
+#define SYS_VM_MSYNC	98
+#define SYS_VM_MLOCK	99
+#define SYS_VM_MUNLOCK	100
+#define SYS_VM_MINCORE	101
+#define SYS_SYNC_SEMCTL	102
+#define SYS_SYNC_SEMGET	103
+#define SYS_SYNC_SEMOP	104
+#define SYS_VM_MPROTECT	105
+#define	SYS_PROC_VFORK  106
+d129 1
+a129 1
+#define SYS_NUM_SYSCALLS	107
+@
+
+
+9.3
+log
+@Added mprotect syscall.
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/sys/RCS/sysSysCall.h,v 9.2 90/03/22 12:19:38 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+d125 1
+d127 1
+a127 1
+#define SYS_NUM_SYSCALLS	106
+@
+
+
+9.2
+log
+@Added system calls for semaphore functions (SEMCTL, SEMGET, SEMOP)
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/sys/RCS/sysSysCall.h,v 9.1 89/11/07 14:46:34 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+d124 1
+d126 1
+a126 1
+#define SYS_NUM_SYSCALLS	105
+@
+
+
+9.1
+log
+@Added SYS constants for MSYNC, MLOCK, MUNLOCK, MINCORE.
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/sys/RCS/sysSysCall.h,v 9.0 89/09/12 15:20:25 douglis Stable Locker: shirriff $ SPRITE (Berkeley)
+d121 3
+d125 1
+a125 1
+#define SYS_NUM_SYSCALLS	102
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/sys/RCS/sysSysCall.h,v 8.5 89/08/31 12:58:49 shirriff Exp Locker: douglis $ SPRITE (Berkeley)
+d117 4
+d122 1
+a122 1
+#define SYS_NUM_SYSCALLS	98
+@
+
+
+8.5
+log
+@Mary checking this in for Ken.  He apparently added 2 new vm sys calls.
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/sys/RCS/sysSysCall.h,v 8.4 89/08/17 17:35:29 jhh Exp Locker: shirriff $ SPRITE (Berkeley)
+@
+
+
+8.4
+log
+@Changed arguments to Sys_GetMachineInfo
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/sys/RCS/sysSysCall.h,v 8.3 89/06/08 17:21:53 douglis Exp Locker: jhh $ SPRITE (Berkeley)
+d115 2
+d118 1
+a118 1
+#define SYS_NUM_SYSCALLS	96
+@
+
+
+8.3
+log
+@added RemoteExec system call.
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/sys/RCS/sysSysCall.h,v 8.2 89/01/26 08:41:52 rab Exp Locker: douglis $ SPRITE (Berkeley)
+d114 1
+d116 1
+a116 1
+#define SYS_NUM_SYSCALLS	95
+@
+
+
+8.2
+log
+@Added SYS_PROF_PROFIL system call number
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/sys/RCS/sysSysCall.h,v 8.1 89/01/12 07:57:35 douglis Exp Locker: rab $ SPRITE (Berkeley)
+d113 1
+d115 1
+a115 1
+#define SYS_NUM_SYSCALLS	94
+@
+
+
+8.1
+log
+@*** empty log message ***
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/sys/RCS/sysSysCall.h,v 8.0 88/11/11 18:38:33 douglis Stable Locker: douglis $ SPRITE (Berkeley)
+d112 1
+d114 1
+d116 1
+a116 3
+#define SYS_NUM_SYSCALLS	93
+
+#endif _SYSSYSCALL
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/sys/RCS/sysSysCall.h,v 6.2 88/11/04 19:01:02 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+d109 3
+d114 1
+a114 1
+#define SYS_NUM_SYSCALLS	90
+@
+
+
+6.2
+log
+@added SYS_PROC_GETHOSTIDS
+@
+text
+@d12 1
+a12 1
+ * $Header: /sprite/src/kernel/sys/RCS/sysSysCall.h,v 6.1 88/08/12 15:54:20 brent Exp Locker: douglis $ SPRITE (Berkeley)
+@
+
+
+6.1
+log
+@Added new variants of Fs_SetAttributes system calls
+@
+text
+@d12 1
+a12 1
+ * $Header: sysSysCall.h,v 5.2 87/12/24 16:37:44 douglis Exp $ SPRITE (Berkeley)
+d108 1
+d110 2
+a111 1
+#define SYS_NUM_SYSCALLS	89
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d106 2
+d109 1
+a109 1
+#define SYS_NUM_SYSCALLS	87
+@
+
+
+5.2
+log
+@Added Proc_ExecEnv system call.
+@
+text
+@d12 1
+a12 1
+ * $Header: sysSysCall.h,v 5.1 87/09/21 10:26:49 nelson Exp $ SPRITE (Berkeley)
+@
+
+
+5.1
+log
+@Added write back ID system call.
+@
+text
+@d12 1
+a12 1
+ * $Header: sysSysCall.h,v 5.0 87/08/11 10:51:14 sprite Exp $ SPRITE (Berkeley)
+d105 1
+d107 1
+a107 1
+#define SYS_NUM_SYSCALLS	86
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d12 1
+a12 1
+ * $Header: sysSysCall.h,v 4.5 87/08/04 13:48:24 nelson Exp $ SPRITE (Berkeley)
+d104 1
+d106 1
+a106 1
+#define SYS_NUM_SYSCALLS	85
+@

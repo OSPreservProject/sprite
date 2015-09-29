@@ -1,0 +1,182 @@
+/*
+ * flockTest.c
+ *
+ * Test to make sure that the flock system call is working properly.
+ * If it works properly, this program will exit silently.  If an error
+ * occurs, a diagnostic will be printed to stderr.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/tests/syscalls/flock/RCS/flockTest.c,v 1.1 90/05/24 10:31:26 rab Exp $";
+#endif
+
+#include <stdio.h>
+#include <sys/file.h>
+#include <sys/wait.h>
+#include <signal.h>
+#include <string.h>
+
+#define SHOULD_SUCCEED  0
+#define SHOULD_FAIL     1
+#define LOCKFILE        "LOCK"
+#ifndef __STDC__
+#define const
+#define volatile
+#endif
+
+extern int errno;
+static const char *programName;
+static int errorFlag;
+static volatile int continueSignalFlag;
+
+#ifdef __STDC__
+void main(int argc, const char **argv);
+void doLock(int mode);
+void gotContinueSignal(void);
+#else
+void main();
+void doLock();
+int gotContinueSignal();
+#endif
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * main--
+ *
+ *      Forks off a child.  The child waits for the parent to send a signal
+ *      to proceed.  After the parent locks a file, it forks another child
+ *      which immediately exits.  This should not release the lock.  The
+ *      parent then signals the first child to proceed.  The first child
+ *      attempts to lock the file.  This should fail, since the parent should
+ *      still have it locked.
+ *
+ *  Results:
+ *      Zero exit code if no errors.  Non-zero otherwise.
+ *
+ *  Side effects:
+ *      If the program exits abnormally, it may leave the lock file
+ *      lying around.
+ *
+ *---------------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+void
+main(argc, argv)
+    int argc;
+    const char **argv;
+{
+    union wait waitStatus;
+    int childPid;
+
+    programName = *argv;
+    if ((childPid = fork()) == 0) {
+	(void) signal(SIGUSR1, gotContinueSignal);
+	while (continueSignalFlag == 0)    /* wait for parent to continue */
+	    (void) pause();
+	doLock(SHOULD_FAIL);
+	exit(errorFlag);
+    } else {
+	doLock(SHOULD_SUCCEED);
+	if (fork() == 0)    /* create a second child that immediately dies */
+	    exit(0);
+	(void) wait((union wait *) NULL);   /* wait for 2nd child to die */
+	(void) kill(childPid, SIGUSR1);     /* signal 1st child to continue */
+	while (wait(&waitStatus) > 0) {     /* wait for first child to die */
+	    if (waitStatus.w_retcode)       /* check child's exit code */
+	        ++errorFlag;
+	}
+	(void) unlink(LOCKFILE);
+	exit(errorFlag);
+    }
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ *  doLock --
+ *
+ *      Opens a file called `LOCK' in the current directory, and then
+ *      attempts to lock it.  The input parameter indicates whether the
+ *      lock should succeed or fail.
+ *
+ *  Results:
+ *      none.
+ *
+ *  Side effects:
+ *      If the result was other than what was expected a diagnostic is
+ *      printed to stderr, and `errorFlag' is set.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+void
+doLock(mode)
+    int mode;
+{
+    int fd;
+
+    if ((fd = open(LOCKFILE, O_RDWR|O_CREAT, 0666)) < 0) {
+	(void) fprintf(stderr, "%s: open failed: %s\n",
+	    programName, strerror(errno));
+	++errorFlag;
+	return;
+    }
+    if (flock(fd, LOCK_EX|LOCK_NB) < 0) {
+	if (mode == SHOULD_SUCCEED) {
+	    (void) fprintf(stderr, "%s: flock failed: %s\n",
+		programName, strerror(errno));
+	    ++errorFlag;
+	    return;
+	}
+    } else {
+	if (mode == SHOULD_FAIL) {
+	    (void) fprintf(stderr,
+		"%s: flock successful, should have failed.\n", programName);
+	    ++errorFlag;
+	    return;
+	}
+    }
+    return;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * gotSignal --
+ *      
+ *      Called when the child gets a signal.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *
+ *      Set a flag that indicates that a signal has been received.
+ *
+ *
+ *---------------------------------------------------------------------------
+ */
+
+#ifdef __STDC__
+void 
+#else
+int
+#endif
+gotContinueSignal()
+{
+    continueSignalFlag = 1;
+#ifndef __STDC__
+    return 0;
+#endif
+}
+

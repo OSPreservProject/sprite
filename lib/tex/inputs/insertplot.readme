@@ -1,0 +1,37 @@
+For users of Arbortext's DVIPS PostScript driver, heres a macro to enable
+   (1)  the inclusion of straight PostScript files or
+   (2)  graphics output from the DI-3000/PICSURE PostScript driver
+directly into TeX/LaTeX files. It may be nested within LaTeX floating
+bodies, or used directly.
+Our DI-3000/PICSURE runs on VMS VAXs. Our lasers are QMS800/PS.
+
+\documentstyle [...,insertplot,....] {any style}
+  ..
+\begin{figure}
+\insertplot{8mm}{fig1.pst}{50mm}{0.25}{0.25}{0}
+\insertplot{8mm}{fig2.pst}{50mm}{0.25}{0.25}{0}
+\vspace*{-100mm}
+\insertplot{8mm}{fig3.pst}{50mm}{0.25}{0.25}{0}
+\insertplot{8mm}{fig4.pst}{50mm}{0.25}{0.25}{0}
+\caption{\label{land}Four landscapes}
+\end{figure}
+
+produces:
+
+ +---------------------+      +---------------------+
+ |                     |      |                     |
+ |                     |      |                     |
+ |      fig1.pst       |      |      fig3.pst       |
+ |                     |      |                     |
+ |                     |      |                     |
+ +---------------------+      +---------------------+
+
+ +---------------------+      +---------------------+
+ |                     |      |                     |
+ |                     |      |                     |
+ |      fig2.pst       |      |      fig4.pst       |
+ |                     |      |                     |
+ |                     |      |                     |
+ +---------------------+      +---------------------+
+
+             Figure 1: Four landscapes

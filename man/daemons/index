@@ -1,0 +1,52 @@
+arpd
+arpd, 
+Respond to ARP and RARP requests
+arp, daemon, protocol, rarp, /etc/spritehosts, 
+cron
+cron, 
+clock daemon
+
+ftpd
+ftpd, 
+DARPA Internet File Transfer Protocol server
+
+inetd
+inetd, 
+internet ``super\-server''
+
+lpd
+lpd, 
+line printer daemon
+
+migd
+migd, 
+Manage the migration load average and idle time database
+database, eviction, foreign, idle time, load average, process migration, uptime, 
+mopd
+mopd, 
+Maintenance Operation Protocal boot daemon
+
+ntalkd
+talkd, 
+remote user communication server
+
+printcap
+printcap, 
+printer capability data base
+
+rlogind
+rlogind, 
+remote login server
+
+tftpd
+tftpd, 
+DARPA Trivial File Transfer Protocol server
+
+xgoned
+xgoned, 
+Daemon to start a screen saver on an idle machine
+xgone, idle machine, screen saver, 
+zhm
+zhm, 
+Zephyr HostManager
+

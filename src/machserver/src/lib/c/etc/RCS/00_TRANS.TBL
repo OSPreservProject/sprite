@@ -1,0 +1,9 @@
+F ISATTY.C_V;1                      	isatty.c,v
+F ISINF.C_V;1                       	isinf.c,v
+F ISNAN.C_V;1                       	isnan.c,v
+F ISZERO.C_V;1                      	iszero.c,v
+F LDEXP.C_V;1                       	ldexp.c,v
+F PFS.C_V;1                         	pfs.c,v
+F RPC_GETN.C_V;1                    	Rpc_GetName.c,v
+F STATUS.C_V;1                      	status.c,v
+F TTYDRIVE.C_V;1                    	ttyDriver.c,v

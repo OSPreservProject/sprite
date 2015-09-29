@@ -1,0 +1,51 @@
+This CD-ROM includes two images of Sprite boot disks that can be
+used to boot Sprite on your workstation. To do this you will need
+two things:
+
+	1) A DECstation 5000/200 or a SparcStation 2.
+	2) A SCSI disk of at least 100 MB in size which does not contain
+	   any information you wish to keep in any of its partitions.
+
+The DECstation boot image is in the file ds5000.bt and the SparcStation
+is in sun4.bt.  Hook your disk up to a convenient machine and put
+the boot image onto the disk, starting at the beginning of the
+disk. On a Unix system you can use the "dd" program, e.g. :
+
+    dd if=sun4.bt of=/dev/rsd00c    (or whatever device is appropriate)
+
+Make sure you dd to the beginning of the disk. If you try to put
+it into a partition that doesn't start at the beginning of the disk
+you won't be able to boot from it. You may also want to specify a
+large block size for the dd so it runs quicker.
+
+Once the boot image has been written to the disk attach the disk
+to your intended Sprite workstation. The disk must be SCSI target #0. 
+Once the disk is attached reboot your machine. Read the rest of
+this file before you do so, however, since you need to have the
+answers to several questions handy.
+On a DECstation boot using: boot 5/rz0/vmsprite
+On a SparcStation 2 boot using: boot /sbus/esp/sd@0,0 vmsprite
+
+Sprite should begin booting. As part of the boot a configuration
+script will be run that asks you a bunch of questions about your
+particular machine and environment:
+
+    Host name (required)
+    Host ethernet address (required)
+    Host internet address (required)
+    Host internet domain (required)
+    Internet subnet mask (optional)
+    Internet name of a gateway on the same network (optional)
+    Gateway's ethernet address (optional)
+    Gateway's internet address (optional)
+    Internet address of a nameserver (optional)
+
+Sprite will then initialize various configuration files and continue
+booting.  You can log in to Sprite as root, with no password.  You
+can then start up X windows with "xinit", or run other Unix commands.
+
+The bootable Sprite image is meant to be a demonstration of Sprite, not
+a robust Sprite system.  There are several missing things, such as floating
+point and network support.
+
+If vi complains about "redraw", you may have to do "unsetenv EXINIT".

@@ -1,0 +1,3965 @@
+
+
+
+
+
+
+
+
+                       |
+                       |       Computing and Communications Division
+     CIC#919           |
+     March 1990        |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |                     LaTeX Memo
+                       |                     Reference
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |       ---------------------------------------------
+                       |       NOTICE TO USERS OF ONLINE DOCUMENTATION:
+                       |
+                       |       This document may not include some tables,
+                       |       graphics, and other features that you will
+                       |       find in the printed version.  To order the
+                       |       hardcopy, contact the CIC at (505) 667-6992.
+                       |       ---------------------------------------------
+                       |
+                       |
+     Los Alamos        |                     Los Alamos National Laboratory
+                       |                     Los Alamos, New Mexico   87545
+                       |
+
+
+
+
+
+
+
+
+
+
+
+
+
+     Who to Contact                  - ii -                      March 1990
+
+
+
+     WHO TO CONTACT
+     ______________________________________________________________________
+
+     =================================================================
+     CONTACT                                     PHONE          FTS
+     -----------------------------------------------------------------
+                                   CONSULTING
+     ICN Consulting Office (C-10)............(505)667-5745    843-5745
+      Closed from 1 p.m. to 2 p.m. MT on Mondays
+      electronic mail address:  consult@lanl.gov
+     CCF Dispatcher/CFS/PAGES (C-1)..........(505)667-4584    843-4584
+
+                            COMMUNICATIONS PROBLEMS
+     ICN Communications Problems.............(505)667-7423    843-7423
+      (C-4 Trouble Desk)
+
+                          EDUCATION and DOCUMENTATION
+     Computing Information Center - CIC .....(505)667-6992    843-6992
+      (C-2 publication distribution)
+      electronic mail address:  cic@lanl.gov
+
+                                STATUS MESSAGES
+     CCF Status Recording....................(505)667-5588    843-5588
+     FOCUS - Machine Status..................(505)667-2852    843-2852
+
+                                    SECURITY
+     Computer and Information Security.......(505)665-1805    855-1805
+      (OS-4 passwords and blacklisting)
+     =================================================================
+                                Revision History
+
+                     Document written by Margot Casey, C-2,
+                 with technical input from Steve Sydoriak, C-2.
+               Writing assistance provided by Cheryl Ramsey, C-2.
+
+                                  January 1987
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     March 1990                     - iii -                        Contents
+
+
+
+     CONTENTS
+     ______________________________________________________________________
+
+
+     1. INTRODUCING THE LATEX MEMO COMMANDS  .........................    3
+          1.1. What You Need Before You Can Use the Memo Commands
+               .......................................................    3
+          1.2. Finding More Information  .............................    3
+          1.3. Taking a LaTeX Video Course  ..........................    4
+     2. GETTING STARTED  .............................................    5
+     3. PREPARING THE PREAMBLE SECTION FOR OPENING AND CLOSING OF
+        MEMO  ........................................................    6
+          3.1. Document Style  .......................................    7
+          3.2. To and From  ..........................................    8
+          3.3. Thru  .................................................    8
+          3.4. Symbol and Serial Number  .............................    9
+          3.5. Subject Line  .........................................   10
+          3.6. Date  .................................................   10
+          3.7. Mail Stop and Telephone Number  .......................   11
+          3.8. Reference Line  .......................................   11
+          3.9. Signature  ............................................   12
+          3.10. Initial Line-Signer, Originator, and Typist  .........   12
+          3.11. Approval Line  .......................................   13
+          3.12. Enclosures  ..........................................   14
+          3.13. Attachments  .........................................   15
+          3.14. Copy List  ...........................................   16
+          3.15. Distribution List  ...................................   16
+     4. PREPARING THE DOCUMENT SECTION  ..............................   18
+     5. PRINTING YOUR MEMO  ..........................................   20
+     6. CONTROLLING THE STYLE OF YOUR MEMO  ..........................   22
+          6.1. Choosing a Header Style  ..............................   22
+          6.2. Choosing a Body Style  ................................   23
+           6.2.1. Selecting a Type Style  ............................   23
+           6.2.2. Selecting Fonts  ...................................   23
+          6.3. Marking Your Memos for Classification  ................   24
+          6.4. Controlling Page Breaks  ..............................   25
+           6.4.1. Breaking Pages Before a List  ......................   25
+           6.4.2. Breaking Pages at Other Places in Your Memo  .......   25
+          6.5. Printing Short Memos  .................................   26
+          6.6. Using Preprinted Memo Paper  ..........................   26
+     APPENDIX A: SUMMARIZING THE LATEX MEMO COMMANDS .................   28
+     APPENDIX B: SYNTAX RULES ........................................   30
+     APPENDIX C: EXAMPLE MEMOS .......................................   32
+     APPENDIX D: INSTALLING THE LATEX MEMO STYLE FILE ................   41
+      D.1.  On the IBM PC ............................................   42
+      D.2.  On the Sun Workstation ...................................   42
+      D.3.  On the Apollo Workstation ................................   43
+      D.4.  On VAX/VMS ...............................................   43
+      D.5.  On VAX/UNIX ..............................................   43
+     APPENDIX E.  WARNING AND ERROR MESSAGES .........................   45
+      E.1.  Warning Messages .........................................   45
+       E.1.1.  Leaving Out Information ...............................   45
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     Contents                        - iv -                      March 1990
+
+
+
+       E.1.2.  Memo Too Long for \shortmemostyle .....................   46
+       E.1.3.  Printing Too Many Lines in Headers ....................   46
+       E.1.4.  Contradictory Information .............................   47
+      E.2.  Fatal Errors .............................................   47
+       E.2.1.  Invalid Classification Label ..........................   47
+       E.2.2.  Duplicating \classlabel Commands ......................   48
+       E.2.3.  Specifying an Invalid Typeface ........................   48
+       E.2.4.  Specifying an Invalid Font for Memo Body ..............   48
+       E.2.5.  Specifying an Invalid Font for Memo Header ............   49
+     READER COMMENTS FORM ............................................   51
+     DOCUMENTATION REQUEST FORM ......................................   53
+     INDEX ...........................................................   55
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     March 1990                      - i -              Using This Document
+
+
+
+     USING THIS DOCUMENT
+     ______________________________________________________________________
+
+     LaTeX Memo Reference explains how to use LaTeX to produce memos that
+     conform to the Los Alamos National Laboratory standards.
+
+     This document is divided into the following chapters:
+
+        o Chapter 1 explains what the LaTeX memo commands do, what systems
+          these commands are available for, what you need before you can
+          use these commands, and where to find more information.
+
+        o Chapter 2 gives the general format for a LaTeX memo file and
+          explains the major sections of the file.
+
+        o Chapter 3 explains commands that you will need in the preamble
+          section of the file.  This chapter only covers the basic memo
+          commands needed for a typical memo; it does not explain about the
+          commands for changing fonts or about the commands that give other
+          special instructions.  See Chapter 6 for these special memo
+          commands.
+
+        o Chapter 4 describes the section of the file containing the body
+          of the document.
+
+        o Chapter 5 explains how to print a memo.  The instructions in this
+          chapter are very general and are the same as the instructions for
+          printing any LaTeX file.
+
+        o Chapter 6 gives details about the special memo commands that go
+          into the preamble section of your file to control the fonts for
+          the header of a memo, the fonts and typeface for the body of a
+          memo, pagebreaks, classification labeling, and special formatting
+          for short memos.
+
+        o Appendix A is a summary table for the memo commands.  It gives a
+          brief description of each command and a list of its options and
+          defaults where applicable.
+
+        o Appendix B contains a list of syntax rules for the memo commands.
+
+        o Appendix C gives examples of memo files and their resulting
+          memos.
+
+        o Appendix D explains how to install the memo style file on your
+          system.
+
+        o Appendix E contains a listing of all the error messages that are
+          possible from using the memo commands.
+
+
+     In this document, double lines delimit the examples.  These examples
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     Using This Document             - ii -                      March 1990
+
+
+
+     show what you put into your file and, in most cases, what the result
+     would be from that part of the file.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     March 1990                      - 3 -                     Introduction
+
+
+
+     1.  INTRODUCING THE LATEX MEMO COMMANDS
+     ______________________________________________________________________
+
+     The LaTeX memo commands are commands you can use with LaTeX to produce
+     a standard Los Alamos National Laboratory memo.  These commands go
+     into a LaTeX file and are executed when you run LaTeX.  LaTeX is a
+     macro package that supplements the TeX document preparation system and
+     streamlines the production of many types of documents.  The memo
+     commands work with LaTeX to streamline the production of Laboratory
+     memos.
+
+
+     1.1.  What You Need Before You Can Use the Memo Commands
+
+     You can use the LaTeX memo commands in the following environments:
+
+        o On UNIX worker computers;
+
+        o On Sun and Apollo workstations;
+
+        o On IBM PCs; and
+
+        o On VAX/VMS distributed processors.
+
+
+     With each of these environments, you also need to have the following:
+
+        o TeX and LaTeX installed;
+
+        o The LaTeX memo style file installed; and
+
+        o Access to a printer that has the necessary software to print TeX
+          output.
+
+
+
+            _____________________________________________________
+
+              See Appendix D for information about installing
+              the memo style file.
+            _____________________________________________________
+
+
+
+
+
+     1.2.  Finding More Information
+
+     This document assumes that you know how to use LaTeX.  If you are not
+     already familiar with LaTeX, you can refer to the following
+     publications:
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     Introduction                    - 4 -                       March 1990
+
+
+
+        o An Introduction to LaTeX, by Michael Urban.  An introductory
+          document that will help you start working with LaTeX quickly.
+
+        o LaTeX:  A Document Preparation System, by Leslie Lamport.  A
+          complete reference manual written by LaTeX's designer.
+
+
+     You can order these publications from the Computing Information Center
+     (CIC) by filling out the Documentation Request Form in the back of
+     this document.  Please note that you will be charged for these
+     publications.
+
+
+     If you would like more information about the Laboratory's memo
+     standards, see the Office Procedures Manual, OPM-1-3 for unclassified
+     memos, and OPM-2-4, OPM-2-5, and OPM-2-6 for classified memos.  To
+     order a copy of the Office Procedures Manual, call the IS-11
+     Distribution Center at (505) 667-3872, FTS 843-3872.  Most group
+     offices have one of these manuals available for reference.
+
+
+
+     1.3.  Taking a LaTeX Video Course
+
+     The Computing Learning Center (CLC) offers an introductory video
+     course entitled "Introduction to LaTeX" presented by Cris Barnes,
+     CTR-5.  This course takes approximately two hours to complete and is
+     available for viewing in the CLC at Pueblo Complex or for short-term
+     loan on 1/2-inch VHS tapes.  LABNET also broadcasts this course.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     March 1990                      - 5 -                  Getting Started
+
+
+
+     2.  GETTING STARTED
+     ______________________________________________________________________
+
+     To prepare a memo with LaTeX, you first create a file with a ".tex"
+     extension at the end of its name (e.g., test.tex).  We will call this
+     file your LaTeX memo file.
+
+     Each LaTeX memo file has two sections:  the preamble section and the
+     document section.  The preamble section contains the memo commands
+     that set up the information for the opening and closing of the memo
+     and that describe the style of the memo.  The document section
+     contains the text of the memo and starts with a \begin{document}
+     command and ends with an \end{document} command.
+
+     The general format of a LaTeX memo file is
+
+     \documentstyle{memo}
+
+       Memo commands, such as
+          \to
+          \from                 Preamble Section
+          .
+          .
+          .
+
+     \begin{document}
+     \opening
+
+       Body of memo             Document Section
+
+     \closing
+     \end{document}
+
+
+     The preamble section is described in detail in Chapters 3 and 6, and
+     the document section is described in Chapter 4.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     Preparing the Preamble Section  - 6 -                       March 1990
+
+
+
+     3.  PREPARING THE PREAMBLE SECTION FOR OPENING AND CLOSING OF MEMO
+     ______________________________________________________________________
+
+     The preamble section is described in two chapters:  this chapter and
+     Chapter 6.  This chapter describes the memo commands that affect the
+     opening and closing of your memo.  These commands are the ones you
+     will need for a typical memo.  Chapter 6 describes the special memo
+     commands that affect the style of your memo.  These special commands
+     control the header and body fonts, the typeface of the body, and page
+     breaks.
+
+     You can print a memo using just the preamble commands covered in this
+     chapter.  In this case, the defaults for the commands described in
+     Chapter 6 will determine the style of your memo.  If you dislike the
+     results, use some of the special commands described in Chapter 6 to
+     change the defaults.
+
+     The following commands can be arranged in any order within the
+     preamble section of your LaTeX memo file.  The only exception to this
+     rule is the \documentstyle command;  it must be the first line in your
+     file.
+
+     The \documentstyle command is also the only command that is required
+     in the preamble.  The other commands are optional, and if you leave
+     them out of your file, one of two things will happen.
+
+        o The label in the header will be left blank. This happens with the
+          commands that have labels printed with the header of the memo-
+          \to, \from, \symbol, \subject, \mailstop, and \telephone
+          commands.  The \thru and \date commands are special cases and
+          will be described in the following sections.
+
+        o Nothing will be printed.  This happens with the commands that
+          were not mentioned above; for example, if you leave out the
+          \attachments command, LaTeX will not print an attachments list or
+          the label "Attachments:" because this label is not printed with
+          the header of the memo.
+
+
+
+            _____________________________________________________
+
+              The backslashes () and the braces ({ }) in the
+              following commands are a part of these commands
+              and must be included with the command.  They do
+              not denote optional parameters.
+            _____________________________________________________
+
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     March 1990                      - 7 -   Preparing the Preamble Section
+
+
+
+     The commands are listed here in the order in which the Office
+     Procedures Manual describes them, and they are grouped by their
+     related functions.
+
+
+     3.1.  Document Style
+
+     \documentstyle{memo}
+
+     This command tells LaTeX that your document is a memo.  It must be the
+     first line in your file because LaTeX sets up the margins and other
+     values based on the style you specify inside the braces (in this case,
+     a memo style).
+
+     This command also sets the point size for the body of your memo.  The
+     default is a point size of 10.  You can get a point size of 10 if you
+     use the command as it is shown above (but the text of your memo will
+     be small).  See Example #3 in
+     Appendix C for an example of text with a point size of 10.
+
+     You can get a point size of 11 or 12 by putting an [11pt] or [12pt]
+     option (including the square brackets [ ] ) before the {memo}
+     parameter.  The following example shows what the command looks like
+     for getting a point size of 12 for the body of your memo.  This is the
+     point size that we recommend.
+
+
+       ==============================================================
+
+       \documentstyle[12pt]{memo}
+
+       ==============================================================
+
+
+     LaTeX will only use a point size of 10, 11, or 12, and a point size of
+     10 is the default for all LaTeX documents.
+
+     The \documentstyle command is a LaTeX command, and it follows the
+     syntax rules for standard LaTeX commands.  See one of the LaTeX
+     reference books listed in Chapter 1 for these syntax rules.
+
+
+            _____________________________________________________
+
+              Warning:  LaTeX will NOT allow you to use
+              \documentstyle[10pt]{memo} to specify a point
+              size of 10.  You must leave out the point size
+              completely if you want the default point size of
+              10.
+            _____________________________________________________
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     Preparing the Preamble Section  - 8 -                       March 1990
+
+
+
+
+
+     3.2.  To and From
+
+     \to{namelist}
+     \from{namelist}
+
+     These commands give the name or names of the recipient and originator
+     of the memo, filling in the "TO:" and "FROM:" sections of the memo
+     header.  The {namelist} should be one or two names, and each name
+     should include name, group, and mailstop, with commas separating these
+     parts.  The {namelist} can include more than two names, but the memo
+     header leaves room for only two names.
+
+     If you use two names, you can either repeat the command twice, with
+     different names in the braces, or you can separate the names with \\
+     inside the braces, as the following example indicates.
+
+
+       ==============================================================
+
+       \to{A. B. Carroway, Z-1, MS B234 \\ D. E. Fritz, Y-2, MS B345}
+
+               or
+
+       \to{A. B. Carroway, Z-1, MS B234}
+       \to{D. E. Fritz, Y-2, MS B345}
+
+               prints
+
+       TO:  A. B. Carroway, Z-1, MS B234
+            D. E. Fritz, Y-2, MS B345
+
+       ==============================================================
+
+
+
+
+     3.3.  Thru
+
+     \thru{namelist}
+
+     This command supplies the name or list of names of the people that
+     your memo will go through.  It also causes the header of your memo to
+     include the "THRU:" label-even if you do not put a name inside the
+     braces.  The "THRU:" label that is generated by this command leaves
+     room for a maximum of four names.
+
+     If you leave the command out of your file, you will get the memopaper
+     header without the "THRU:" label.
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     March 1990                      - 9 -   Preparing the Preamble Section
+
+
+
+
+       ==============================================================
+
+       \thru{L. S. Steele, X-5, MS B567}
+
+            prints
+
+       THRU:  L. S. Steele, X-5, MS B567
+
+       ==============================================================
+
+
+
+
+     3.4.  Symbol and Serial Number
+
+     \symbol{group}
+     \serialnumber{id}
+
+     These commands fill in the portion of the header marked "SYMBOL:".
+     The {group} is usually your group name.  The \serialnumber command is
+     not usually needed, but some group and division offices use a serial
+     number to number all of their correspondence.  When needed, the {id}
+     should be the serial number that identifies the memo.  It will be
+     appended to the symbol with a hyphen (-), as the following example
+     shows.
+
+
+       ==============================================================
+
+       \symbol{C-2}
+       \serialnumber{25}
+
+            prints
+
+       SYMBOL:  C-2-25
+
+       ==============================================================
+
+
+     If you use a serial number as the above example does, you will also
+     get this symbol-serial number on the headings of each page after the
+     first page.
+
+     If you leave out the \serialnumber command, the serial number will not
+     be appended.  The group name will be the only information on the
+     symbol line.
+
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     Preparing the Preamble Section  - 10 -                      March 1990
+
+
+
+     3.5.  Subject Line
+
+     \subject{text}
+
+     This command prints out your subject.  The {text} should be the
+     subject line of your memo.  It will print in uppercase regardless of
+     how you type it inside the braces.
+
+
+       ==============================================================
+
+       \subject{Interruption of Building Schedule}
+
+            prints
+
+       SUBJECT:  INTERRUPTION OF BUILDING SCHEDULE
+
+       ==============================================================
+
+
+     Note that you can use LaTeX commands such as \bf (for boldface) inside
+     the
+     braces { }.
+
+
+     3.6.  Date
+
+     \date{text}
+
+     This command inserts the date into your memo.  The {text} is the date
+     you want to appear on your memo.  If you omit this command, the
+     default will give you the date at the time you run LaTeX.  This
+     default date will appear in the following form:  December 1, 1986.
+
+     Include this command only if you have a specific date that needs to
+     appear on your memo.
+
+
+       ==============================================================
+
+       \date{October 15, 1986}
+
+            prints
+
+       DATE:  October 15, 1986
+
+       ==============================================================
+
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     March 1990                      - 11 -  Preparing the Preamble Section
+
+
+
+     3.7.  Mail Stop and Telephone Number
+
+     \mailstop{text}
+     \telephone{number}
+
+     These commands work together to produce the "MAIL STOP/TELEPHONE:"
+     line.  The {text} should be your mail stop, and {number} should be
+     your telephone number in the form n-nnnn (the third number in the
+     prefix and the last four digits of the number).  The commands put
+     these two numbers together as they should appear on the memo.
+
+
+       ==============================================================
+
+       \mailstop{M995}
+       \telephone{5-0817}
+
+            prints
+
+       MAIL STOP/TELEPHONE:  M995/5-0817
+
+       ==============================================================
+
+
+
+
+     3.8.  Reference Line
+
+     \reference{text}
+
+     This command prints the reference line of your memo.  The {text}
+     should be your reference; it will be printed in uppercase in the
+     opening of the memo, directly below the subject line.  If you include
+     more than one reference, the references will automatically be
+     numbered.
+
+     Note that when you have several references, you may separate them with
+     \\ inside the braces, or you may use each reference in a separate
+     command line.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     Preparing the Preamble Section  - 12 -                      March 1990
+
+
+
+
+       ==============================================================
+
+       \reference{Office Procedures Manual \\ LaTeX Memo Reference}
+
+            prints
+
+       REFERENCE:  1. OFFICE PROCEDURES MANUAL
+                   2. LATEX MEMO REFERENCE
+
+       ==============================================================
+
+
+
+
+     3.9.  Signature
+
+     \signature{name}
+
+     The \signature command leaves room for a signature (four blank lines)
+     and prints the signer's name under this area flush with the left
+     margin.  This is the area that the author signs to certify the memo as
+     you would do with a letter; most writers, however, omit this part and
+     prefer to certify the memo by initialing next to their typed names on
+     the From line on the first page of the memo.  The {name} may include a
+     title by separating it from the name with \\  as the following example
+     illustrates.
+
+
+       ==============================================================
+
+       \signature{T. F. Wise \\ Special Projects Group Leader}
+
+            prints
+
+       T. F. Wise
+       Special Projects Group Leader
+
+       ==============================================================
+
+
+
+
+
+     3.10.  Initial Line-Signer, Originator, and Typist
+
+     \signer{initials}
+     \originator{initials}
+     \typist{initials}
+
+     These commands produce the identification initials.  You may leave out
+     any of them that do not apply to your situation.  The \signer command
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     March 1990                      - 13 -  Preparing the Preamble Section
+
+
+
+     is for the initials of the signer and is used only if you use the
+     \signature command.  The \originator command is for the author's
+     initials, and the \typist command is for the typist of the memo.
+
+     If you leave out the \originator command, you will get a warning
+     message, but this does not affect the printing of your memo.  The memo
+     will print without the originator's initials.
+
+
+       ==============================================================
+
+       \originator{ak}
+       \typist{cd}
+
+            prints
+
+       AK:cd
+
+       ==============================================================
+
+
+     If you include all three sets of initials, they will be arranged on
+     the initial line as the following example indicates.
+
+
+       ==============================================================
+
+       \signer{jm}
+       \originator{bf}
+       \typist{ar}
+
+            prints
+
+       JM-BF:ar
+
+       ==============================================================
+
+
+
+
+     3.11.  Approval Line
+
+     \approval{name}
+
+     This command prints the approval lines.  The {name} should be the name
+     and title of the person approving the memo.  The title of the person
+     is optional, and if it is included, it must be separated from the name
+     with \\ .
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     Preparing the Preamble Section  - 14 -                      March 1990
+
+
+
+
+       ==============================================================
+
+       \approval{Charles S. Smith \\ ST Division Leader}
+
+            prints
+
+       APPROVED BY: _______________________________________
+                    Charles S. Smith                   date
+                    ST Division Leader
+
+       ==============================================================
+
+
+
+
+     3.12.  Enclosures
+
+     \enc{list}
+     \encas
+
+     Either one of these commands prints the enclosure line.  The first
+     command is used when you have several enclosures with your memo that
+     you have not specifically referred to in the body of the memo.  The
+     {list} is the list of your enclosures, and a \\ separates the
+     enclosures.
+
+
+       ==============================================================
+
+       \enc{Photograph, Neg. No. 72-4304 \\
+                 Slide and Vu-graph Nos. 8755 and 3908 \\
+                 Drawing No. 3988-R}
+
+            prints
+
+       Enc. 1. Photograph, Neg. No. 72-4304
+            2. Slide and Vu-graph Nos. 8755 and 3908
+            3. Drawing No. 3988-R
+
+       ==============================================================
+
+
+     Use the \encas command if each individual enclosure is completely
+     identified within the body of the memo.  This line says that the
+     enclosures have been enclosed as stated in the text.  Use the \enc
+     command if you have only vaguely referred to the enclosed material.
+
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     March 1990                      - 15 -  Preparing the Preamble Section
+
+
+
+
+       ==============================================================
+
+       \encas
+
+            prints
+
+       Enc. a/s
+
+       ==============================================================
+
+
+
+
+     3.13.  Attachments
+
+     \attachments{list}
+
+     This command prints the list of attachments for your memo.  The {list}
+     is the list of attachments.  The attachments will automatically be
+     numbered and should be separated with \\ inside the braces.
+
+
+       ==============================================================
+
+       \attachments{Memo, Gredin to Platz, March 12, 1982 \\
+                 Memo, Rivera to Tines, January 14, 1983}
+
+            prints
+
+       Attachments:
+       1.  Memo, Gredin to Platz, March 12, 1982
+       2.  Memo, Rivera to Tines, January 14, 1983
+
+       ==============================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     Preparing the Preamble Section  - 16 -                      March 1990
+
+
+
+     \attachmentas
+     \attachmentsas
+
+     Use the command \attachmentas to specify the singular attachment as
+     stated for an item completely identified in the text of the memo.  The
+     command \attachmentsas is used for a number of specified attachments.
+     The following example shows the singular \attachmentas command.
+
+
+       ==============================================================
+
+       \attachmentas
+
+            prints
+
+       Attachment a/s
+
+       ==============================================================
+
+
+
+
+     3.14.  Copy List
+
+     \cy{list}
+
+     This command gives a copy list.  The {list} is the list of people to
+     whom copies should be sent.  The names are separated with \\ .
+
+
+       ==============================================================
+
+       \cy{R. T. Smith, C-2, MS B263 \\ M. K. Terry, C-10, MS B296 \\ File}
+
+            prints
+
+       Cy:  R. T. Smith, C-2, MS B263
+            M. K. Terry, C-10, MS B296
+            File
+
+       ==============================================================
+
+
+
+
+
+     3.15.  Distribution List
+
+     \distribution{list}
+
+     This command prints the distribution list for your memo.  If your memo
+     is addressed as "TO:  Distribution," use this command to specify the
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     March 1990                      - 17 -  Preparing the Preamble Section
+
+
+
+     distribution list.  The {list} is the list of people for your
+     distribution.  The names are to be separated with \\ .
+
+
+       ==============================================================
+
+       \distribution{T. S. Solomon, TP-1, MS B233 \\
+                 A. J. Gomez, TP-2, MS B234}
+
+            prints
+
+       Distribution:
+       T. S. Solomon, TP-1, MS B233
+       A. J. Gomez, TP-2, MS B234
+
+       ==============================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     Preparing the Document Section  - 18 -                      March 1990
+
+
+
+     4.  PREPARING THE DOCUMENT SECTION
+     ______________________________________________________________________
+
+     This chapter describes the commands that go into the document section
+     of your memo.  The document section is the second main section in your
+     LaTeX memo file.  It starts with a \begin{document} command, ends with
+     an \end{document} command, and contains the commands and text that
+     produce the actual memo.
+
+
+            _____________________________________________________
+
+              The following memo commands must be in every
+              memo file.
+            _____________________________________________________
+
+
+
+     \begin{document}
+
+     This command signals the beginning of your document.  All of the
+     preamble commands should be placed before this command in your file.
+
+     \opening
+
+     This command uses the information from the preamble commands to print
+     the opening of your memo.  All of the preamble commands that supply
+     information for the opening of your memo must appear before this
+     command.  LaTeX will ignore or give an error message for those opening
+     preamble commands that are encountered after the \opening command.
+
+     Body of Memo
+
+     The body of your memo comes after the \opening command.  You can use
+     any of the standard LaTeX commands inside the body to describe the
+     contents of your memo.
+
+     \closing
+
+     The \closing command comes after the body of your memo and tells LaTeX
+     to print out the closing information for your memo.  It uses the
+     information in the preamble section of your file; therefore, all of
+     the preamble commands that supply information for the closing of your
+     memo must be placed before the \closing command.  You do not have to
+     include this command if your preamble does not contain any commands
+     that affect the closing of your memo, but it will not create problems
+     if it is included in this situation.
+
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     March 1990                      - 19 -  Preparing the Document Section
+
+
+
+     \end{document}
+
+     The last line of your file must be the \end{document} command.  This
+     line tells LaTeX that you are finished with your document, and LaTeX
+     will ignore anything after this command.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     Printing Your Memo              - 20 -                      March 1990
+
+
+
+     5.  PRINTING YOUR MEMO
+     ______________________________________________________________________
+
+     Once you have finished creating your memo file with the memo commands
+     in it, follow these steps to print your memo.
+
+
+            _____________________________________________________
+
+              These steps are the same steps you use to print
+              any LaTeX file.
+            _____________________________________________________
+
+
+
+
+     (1)  Run your file through LaTeX by typing
+
+            latex filename.tex
+
+          where filename.tex is the name of your memo file.  If you do not
+          include the .tex filename extension, LaTeX will append it for
+          you.
+
+          If you have any error messages, they will appear on the screen
+          during execution.  These error messages are interactive and will
+          wait for you to respond to the ? prompt.  You can type a question
+          mark (?) at this prompt to display a list of your options at that
+          point.  You will also get a file called filename.log that
+          contains the error messages that were produced.
+
+          When LaTeX ends execution successfully, you will receive a
+          message that the filename.dvi file was created.  If LaTeX does
+          not execute successfully, you will not receive this message, and
+          a filename.dvi file will not be created.  If this happens, you
+          must correct your errors and run LaTeX again before you can print
+          your memo.  If you do get a filename.dvi file, you can proceed to
+          the next step in printing your memo.
+
+          If you have trouble running LaTeX, call the consulting office or
+          see one of the LaTeX publications mentioned in Chapter 1.
+
+
+     (2)  If your computer has a program that will allow it to preview .dvi
+          files, you should preview your filename.dvi file now and make any
+          necessary corrections.  If your computer cannot preview .dvi
+          files, go on to the next step.
+
+
+     (3)  Print out your filename.dvi file by using a device driver that
+          your computer uses.  There are too many types of device drivers
+          to mention them all.  If you do not know how to use a device
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     March 1990                      - 21 -              Printing Your Memo
+
+
+
+          driver for your computer, you should contact your local system
+          manager if you are using a workstation or distributed processor
+          or the consulting office if you are using a worker computer.
+
+          If you want to send your output to one of the PAGES raster
+          printer-plotter devices, you can use a utility called DVIPAGES.
+          This utility is currently available only on the UNIX worker
+          computers, but it is being developed for the VAX/VMS distributed
+          processors.  For more information about this utility, refer to
+          DVIPAGES: TEX DVI to PAGES Quick Steps.  You can order this
+          document from the CIC by using the Documentation Request Form in
+          the back of this manual.
+
+
+            _____________________________________________________
+
+              At the present time, DVIPAGES cannot handle
+              secret or confidential memos.
+            _____________________________________________________
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     Controlling the Style of Memo   - 22 -                      March 1990
+
+
+
+     6.  CONTROLLING THE STYLE OF YOUR MEMO
+     ______________________________________________________________________
+
+     This chapter describes special memo commands that you can put into the
+     preamble section of your file to control the style of your memo.
+     These commands must be placed BEFORE the \begin{document} command in
+     your file.
+
+
+     6.1.  Choosing a Header Style
+
+     You can choose from four header styles.  Three of these header styles
+     use fonts that will print a header on plain typing paper, and the
+     other header style allows you to use the preprinted memo paper
+     provided by the Laboratory.  The following table lists the commands
+     you need to get these header styles.
+
+
+               COMMAND                           RESULTS
+       ________________________   ______________________________________
+
+       \headerfonts{texfonts}     This is the DEFAULT header style
+                                  because these fonts are available on
+                                  all computers with LaTeX and TeX.
+                                  It gives a header similar to the
+                                  standard memo header.
+
+       \headerfonts{lafonts}      This command gives the Laboratory's
+                                  standard memo header, but these fonts
+                                  are not installed on all computers.
+
+       \headerfonts{postscript}   This command gives a header similar to
+                                  the standard memo header.  These can
+                                  only be used with PostScript printers.
+
+       \headerfonts{memopaper}    This command allows you to use
+                                  preprinted memo paper.  It suppresses
+                                  the printing of the header.
+
+
+
+            _____________________________________________________
+
+              The examples in Appendix C show what each of
+              these header styles produces.
+            _____________________________________________________
+
+
+
+     If you want to use the lafonts, you need four special fonts named
+     book6, la28, memo28, and spec12.  You can purchase these fonts through
+     Materials Management Division (MAT-6) from Metafoundry.  The current
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     March 1990                      - 23 -   Controlling the Style of Memo
+
+
+
+     price for them is $300.  The Laboratory is in the process of
+     purchasing a site license for these fonts.  If you have other
+     questions about the lafonts, call the consulting office.
+
+     The texfonts use the fonts that come with TeX; therefore, they are on
+     all systems that have TeX and LaTeX installed.
+
+     The postscript fonts are available for PostScript printers.  If you
+     plan to use a PostScript printer, you need to purchase a program
+     called DVIPS.  It is available through the CIC for all systems except
+     VAX/VMS.  The VAX/VMS version is available on CFS as
+     /TEX/DEVICE_DRIVERS/DVIPSCM.BCK
+
+
+     6.2.  Choosing a Body Style
+
+
+
+     6.2.1.  Selecting a Type Style
+
+     The body of your memo can be printed in typewriter type or
+     proportionally-spaced Roman type.  You can specify which one to use by
+     putting one of the following commands in your preamble section:
+
+
+             COMMAND                        RESULTS
+          _____________   ____________________________________________
+
+          \typeface{tt}   gives typewriter type (This is the DEFAULT.)
+
+          \typeface{rm}   gives proportionally-spaced Roman type.
+
+
+     The typeface defaults to typewriter type because most memos are typed
+     with typewriters.  See Appendix C for examples of these typefaces.
+
+
+     6.2.2.  Selecting Fonts
+
+     You can also pick different fonts for the body of your memo.  The
+     following table contains the choices for the body fonts.
+
+
+             COMMAND                            RESULTS
+      ______________________   __________________________________________
+
+      \bodyfonts{texfonts}     This is the DEFAULT body font because
+                               these fonts are available on all computers
+                               with LaTeX and TeX.
+
+      \bodyfonts{postscript}   These fonts can be used only with
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     Controlling the Style of Memo   - 24 -                      March 1990
+
+
+
+                               PostScript printers.
+
+
+
+     The texfonts are the fonts that come with TeX; therefore, they are on
+     all systems that have TeX and LaTeX installed.
+
+     The postscript fonts are available for PostScript printers.  If you
+     plan to use a PostScript printer, you need to purchase a program
+     called DVIPS.  It is available through the CIC for all systems except
+     VAX/VMS.  The VAX/VMS version is available on CFS as
+     /TEX/DEVICE_DRIVERS/DVIPSCM.BCK
+
+     See Appendix C for examples of these body fonts.
+
+
+     6.3.  Marking Your Memos for Classification
+
+     If you need to include a secret, confidential, or unclassified label
+     with the header of your memo, you can use one of the following
+     commands:
+
+
+             COMMAND                         RESULTS
+          ______________   ___________________________________________
+
+          \classlabel{ }   This is the DEFAULT.  It does NOT
+                           print a label on the memo.
+
+          \classlabel{u}   This prints a label that says UNCLASSIFIED.
+
+          \classlabel{c}   This prints a label that says CONFIDENTIAL.
+
+          \classlabel{s}   This prints the SECRET label.
+
+
+     These commands print the appropriate label at the top and bottom of
+     the memo in heavy black print.  You can use them for labeling a
+     classified memo, but we suggest that you use the red-stamped
+     classification labeling on the front and back of the paper instead of
+     using these commands.
+
+
+            _____________________________________________________
+
+              The LaTeX memo commands will not print a red
+              label and will not print any label on the back
+              of the paper.
+            _____________________________________________________
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     March 1990                      - 25 -   Controlling the Style of Memo
+
+
+
+
+
+
+     6.4.  Controlling Page Breaks
+
+
+
+     6.4.1.  Breaking Pages Before a List
+
+     If, after printing your memo, you find that some of the lists in the
+     closing section are broken between pages, you can use the following
+     commands to start the list at the top of the next page.  You can put
+     these commands anywhere in the preamble section of your file.
+
+            COMMAND                               RESULTS
+     ______________________   ________________________________________________
+
+     \cypagebreak             starts the copy list at the top of the next page
+
+     \attachmentspagebreak    starts the list of attachments at the top of
+                              the next page
+
+     \distributionpagebreak   starts the distribution list at the top of the
+                              next page
+
+     \encpagebreak            starts the list of enclosures at the top of
+                              the next page
+
+
+
+     6.4.2.  Breaking Pages at Other Places in Your Memo
+
+     You may also need to break a page at places other than at the first of
+     a list.  The LaTeX command \newpage will break for a new page at the
+     place where you use this command.  You can put this command in the
+     body of your memo or inside the braces of a memo command.
+
+     The following example divides the list between the second and third
+     name, with the first two names appearing on the current page of the
+     memo and the third name appearing on the next page.
+
+
+       ==============================================================
+
+       \cy{A. B. Cog \\ C. D. Man
+               \newpage \\ E. F. Barr}
+
+       ==============================================================
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     Controlling the Style of Memo   - 26 -                      March 1990
+
+
+
+
+     6.5.  Printing Short Memos
+
+     If the body of your memo is ten lines or less, you may wish to use the
+     standard short form memo that is described in the Office Procedures
+     Manual.  The standard short form memo is double spaced, and the
+     paragraphs are indented.
+
+     To produce this type of memo, add the following command to the
+     preamble section of your file.
+
+          \shortmemostyle
+
+     If you use this short memo style and the body of your memo is over one
+     page long, you will get a warning message when you run LaTeX.
+
+
+     6.6.  Using Preprinted Memo Paper
+
+     You can use Laboratory memo paper with the preprinted header on it by
+     including the following command in the preamble section of your file:
+
+       \headerfonts{memopaper}
+
+     This command prints your header information next to the preprinted
+     labels, but the information may not line up with the memo paper's
+     labels correctly.  This happens because of the different types of
+     printers.  If your printer is not lining up the memo paper correctly,
+     put the following commands in the preamble section of your file to
+     shift your printed information and correct this problem.
+
+       \memopaperhcorr{distance}
+       \memopapervcorr{distance}
+
+     The \memopaperhcorr command corrects the horizontal positioning, and
+     the \memopapervcorr command corrects the vertical positioning.  The
+     {distance} parameter is the vertical or horizontal distance to move
+     the text and can be an integer or decimal number.  This distance can
+     be expressed in inches (in), centimeters (cm), points (pt), picas
+     (pc), or millimeters (mm) and can be positive or negative.  When you
+     need to adjust the paper horizontally (using \memopaperhcorr), a
+     positive distance moves the printed material to the right, and a
+     negative distance moves the print to the left.  When you want to
+     adjust the paper vertically (using \memopapervcorr), a positive
+     distance moves the printed material down on the paper, and a negative
+     distance moves the print up the page.
+
+
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     March 1990                      - 27 -   Controlling the Style of Memo
+
+
+
+     The following table shows the effect of each command on the movement
+     of the memo paper.  The n's indicate a number, and the u's indicate
+     the abbreviation for the unit of measure (e.g., in for inches).
+
+
+                      COMMAND                   RESULTS
+                ____________________   _________________________
+
+                \memopaperhcorr{+nu}   moves text to the right
+                \memopaperhcorr{-nu}   moves text to the left
+
+                \memopapervcorr{+nu}   moves text down the paper
+                \memopapervcorr{-nu}   moves text up the paper
+
+
+     The following example will move the printed material of the memo to
+     the right 1 inch and up 2 inches.
+
+
+       ==============================================================
+
+       memopaperhcorr{1in}
+       memopapervcorr{-2in}
+
+       ==============================================================
+
+
+
+
+            _____________________________________________________
+
+              If you use the same printer to print memos
+              routinely, you can figure out which distances
+              line up the text properly for your printer and
+              use those distances for each memo.  You must
+              include these commands in each memo file if the
+              text of your memo needs some adjustment.
+            _____________________________________________________
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     Summarizing the Memo Commands   - 28 -                      March 1990
+
+
+
+     APPENDIX A: SUMMARIZING THE LATEX MEMO COMMANDS
+     ______________________________________________________________________
+
+
+                                 Summary of Memo Commands
+
+     Command                       Description
+     ___________________________   _____________________________________________
+     ___________________________   _____________________________________________
+
+     Described in Chapter 3
+                    11pt
+     \documentstyle|     |{memo}  sets up memo style (The DEFAULT is 10pt if the
+                   |12pt |         point size and [ ] are left out.)
+
+     \to{namelist}                 memo recipient(s)
+
+     \thru{namelist}               person(s) to send memo through
+
+     \from{namelist}               memo originator(s)
+
+     \symbol{group}                group identification
+
+     \serialnumber{id}             correspondence identification number
+
+     \subject{text}                subject line
+
+     \date{text}               date on memo (DEFAULT is the date you run LaTeX.)
+
+     \mailstop{text}               originator's laboratory mail stop
+
+     \telephone{text}          last five digits of originator's telephone number
+
+     \reference{text}        supplies the reference lines under the subject line
+
+     \signature{name}              leaves room for originator's signature
+
+     \signer{initials}             initials of signer (Use with  \signature.)
+
+     \originator{initials}         initials of originator for initial line
+
+     \typist{initials}             initials of typist for initial line
+
+     \approval{name}               prints a line for approval signature
+
+     \enc{list}                    list of enclosures
+
+     \encas                       gives the line:  Enc. a/s (enclosed as stated)
+
+     \attachments{list}            list of attachments
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     March 1990                      - 29 -   Summarizing the Memo Commands
+
+
+
+     \cy{list}                     copy list
+
+     \distribution{list}         distribution list (Use with \to{Distribution}.)
+
+     Described in Chapter 6
+
+     \cypagebreak                  breaks page before copy list
+
+     \attachmentspagebreak         breaks page before list of attachments
+
+     \distributionpagebreak        breaks page before distribution list
+
+     \encpagebreak                 breaks page before list of enclosures
+
+     \shortmemostyle               format for short memos (double-spacing and
+                                   indented paragraphs)
+
+     \headerfonts{font_type}       determines font for header of memo
+       texfonts  (DEFAULT)
+       lafonts
+       postscript
+       memopaper
+
+     \bodyfonts{font_type}         determines font for body of memo
+       texfonts  (DEFAULT)
+       postscript
+
+     \typeface{type}               sets typeface for body of memo
+       tt  (DEFAULT)
+       rm
+
+     \classlabel{label}            prints classification labels
+       u                             (No label is the DEFAULT.)
+       s
+       c
+
+     \memopaperhcorr{distance}     corrects horizontal alignment of memo paper
+
+     \memopapervcorr{distance}     corrects vertical alignment of memo paper
+
+     Described in Chapter 4
+
+     \begin{document}              begins memo
+
+     \opening                      prints opening of memo
+
+     \closing                      prints closing of memo
+
+     \end{document}                ends memo
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     Syntax Rules                    - 30 -                      March 1990
+
+
+
+     APPENDIX B: SYNTAX RULES
+     ______________________________________________________________________
+
+     The following syntax rules apply to the LaTeX memo commands:
+
+        o Commands in the preamble are not order dependent.  That is, you
+          can specify them in any order.
+
+        o Spaces before and after { } are ignored.
+
+        o You can continue a command over multiple lines.  However, you
+          should split the line at a space.
+
+        o You can specify only one preamble command per line.
+
+        o You can separate fields inside { } by \\ , or you can repeat the
+          command with new information inside { }.
+
+
+     Note that these rules do not apply to the standard LaTeX commands (for
+     example, \documentstyle, \begin{document}, and \end{document}).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     March 1990                      - 31 -                    Syntax Rules
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     Syntax Rules                    - 32 -                      March 1990
+
+
+
+     APPENDIX C: EXAMPLE MEMOS
+     ______________________________________________________________________
+
+     This appendix contains examples of memos that have been created with
+     the LaTeX memo commands.  These four examples show the four types of
+     headers that are available for memos.  They also show some of the
+     various combinations of body fonts and typefaces.  The body of each
+     memo explains what features to notice about that particular memo.  For
+     each example, we have given the LaTeX source file that produced the
+     memo, followed by the resulting memo.
+
+     We have reduced the size of the actual example memos for display
+     purposes.
+
+     Example #1
+
+     \documentstyle[12pt]{memo}
+       \to{A. S. Harris, X-7, MS B257}
+       \from{S. R. Groves, X-7, MS B257}
+       \symbol{X-7}
+       \subject{This Is a Test Memo}
+       \mailstop{B257}
+       \telephone{7-4555}
+       \originator{srg}
+       \typist{jak}
+       \cy{T. J. Benton, WX-5, MS G780 \\ A. L. Salazar, X-7, MS B257}
+       \headerfonts{texfonts}
+       \typeface{tt}
+       \bodyfonts{texfonts}
+
+     \begin{document}
+     \opening
+
+     This memo shows what a typical memo might look like.  It uses the
+     texfonts option for the header and the body of the memo.  Most
+     computers are already set up to use these fonts.  It also has the
+     typewriter typeface for the body of the memo with a point size of 12.
+
+     Remember that \LaTeX\ interprets a blank line as the start of a new
+     paragraph.  Also remember that any of the special characters \#,
+     \$, \%, \&, \{, and \} must be preceded by a backslash.  To
+     produce double quotes in typewriter typeface, use the " key on your
+     keyboard.
+
+     Notice that since no \verb"\thru" command is included in the
+     preamble section, the header does not contain that category line.
+     The \verb"\date" command is also left out of the preamble, so the
+     date of the memo defaults to the date at the time that \LaTeX\ was
+     run.
+
+     Also notice the order of the memo commands in this memo.  The
+     \verb"\documentstyle" command begins the preamble section, and the
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     March 1990                      - 33 -                   Example Memos
+
+
+
+     \verb"\bodyfonts" command ends the preamble section.  After the
+     preamble section, you start the document section with
+     \verb"\begin{document}" and \verb"\opening" commands.  The
+     \verb"\opening" command causes \LaTeX\ to print the opening of
+     your memo.
+
+     \closing
+     \end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     Example Memos                   - 34 -                      March 1990
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     March 1990                      - 35 -                   Example Memos
+
+
+
+     Example #2
+
+     \documentstyle[12pt]{memo}
+       \to{Distribution}
+       \thru{G. P. Tucker}
+       \from{E. R. Randolph}
+       \symbol{C--3}
+       \subject{Using Lists in Memos}
+       \mailstop{B265}
+       \telephone{7--7028}
+       \originator{err}
+       \distribution{H. P. Phillips, C--2, MS B263 \\ R. J. Bales,
+         C--3, MS B265}
+       \headerfonts{lafonts}
+       \typeface{rm}
+
+     \begin{document}
+     \opening
+
+     This memo has a header that was created by lafonts.  As you can see,
+     these fonts produce a header that is almost identical to the
+     preprinted memo paper header.  The header includes the THRU category
+     because the \verb"\thru" command is in the preamble section.
+
+     This memo uses the following defaults:
+     \begin{itemize}
+       \item texfonts for the body
+       \item the date that the memo was run through \LaTeX
+     \end{itemize}
+
+     Hopefully this sample memo helps you remember how to use bulleted
+     lists with \LaTeX.
+
+     Also notice the use of two hyphens between the numbers in the
+     opening of the memo.  You can use this feature of \LaTeX\ with
+     Roman type to produce a longer dash between numbers.
+
+     \closing
+     \end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     Example Memos                   - 36 -                      March 1990
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     March 1990                      - 37 -                   Example Memos
+
+
+
+     Example #3
+
+     \documentstyle{memo}
+       \to{S. D. Thompson}
+       \from{M. B. Thomas}
+       \symbol{C-10}
+       \serialnumber{344}
+       \subject{PostScript Printing of Memos}
+       \date{January 1, 1987}
+       \mailstop{B296}
+       \telephone{7-7877}
+       \reference{Your Memo No.\ 298}
+       \originator{mbt}
+       \typist{hjt}
+       \approval{T. J. Dawkins \\ Team Leader}
+       \shortmemostyle
+       \headerfonts{postscript}
+       \bodyfonts{postscript}
+
+     \begin{document}
+     \opening
+
+     This memo is in the short memo format.  It was printed with a
+     PostScript printer using PostScript fonts.  The header fonts are
+     also printed with the PostScript fonts.  The print defaulted to a
+     point size of 10.
+
+     Notice how to input a sentence that ends in an uppercase letter,
+     such as a sentence about CFS\@.  This makes the space after the
+     period the correct amount of space.  Also notice the date is
+     included so that the date will appear as January 1, 1987, even
+     though that date is not the date at the time of printing.
+
+     \closing
+     \end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     Example Memos                   - 38 -                      March 1990
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     March 1990                      - 39 -                   Example Memos
+
+
+
+     Examples #4
+
+     \documentstyle[11pt]{memo}
+       \to{R. K. Thome, IS-11, MS D418}
+       \from{L. G. Gordon, M-4, MS P940}
+       \symbol{M-4}
+       \subject{Memo Printed on Memo Paper}
+       \mailstop{P940}
+       \telephone{7-0923}
+       \signature{L. G. Gordon \\ Section Leader}
+       \signer{lgg}
+       \typist{lbm}
+       \headerfonts{memopaper}
+       \bodyfonts{postscript}
+       \typeface{rm}
+       \memopaperhcorr{.1in}
+       \memopapervcorr{.05in}
+
+     \begin{document}
+     \opening
+
+     This memo was printed on preprinted memo paper.  Notice how the TO
+     and FROM headers line up with the names.  The body fonts are the
+     postscript fonts, and the typeface is in Roman type.
+
+     Emphasized text (like {\em this}) is printed as italics.
+
+     Notice that you can use the equation formatting that TeX and LaTeX
+     are known for inside your memo.  This feature is useful if your
+     memos contain equations like
+     \[ x = \frac{-b \pm \sqrt{b^{2}-4ac} } {2a} \]
+
+     You can also use tables like the following:
+
+     \begin{tabular}{c c c c c}
+     \sl Year & \sl Simple Interest & \sl Annual Comp. & \sl Daily Comp. &
+     \sl Continuous\\
+     0 & 5000.00 & 5000.00 & 5000.00 & 5000.00\\
+     1 & 5400.00 & 5400.00 & 5416.37 & 5416.44\\
+     2 & 5800.00 & 5832.00 & 5867.42 & 5867.55
+     \end{tabular}
+
+     \closing
+     \end{document}
+
+
+
+
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     Installing the Style File       - 40 -                      March 1990
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     March 1990                      - 41 -       Installing the Style File
+
+
+
+     APPENDIX D: INSTALLING THE LATEX MEMO STYLE FILE
+     ______________________________________________________________________
+
+     The LaTeX memo style file must be installed on your computer before
+     you can use the LaTeX memo commands.  If you are not sure if the style
+     file has been installed, check with your system manager.  If you are
+     responsible for installing the style file, then this appendix is for
+     you.
+
+
+            _____________________________________________________
+
+              This appendix assumes you already have TeX and
+              LaTeX running on your system.
+            _____________________________________________________
+
+
+
+     This appendix describes the procedures for finding the instructions
+     for installing the LaTeX memo style file on these computers:
+
+        o IBM PC
+
+        o Sun workstation
+
+        o Apollo workstation
+
+        o VAX/VMS
+
+        o VAX/UNIX
+
+
+     To install the memo style file, you need to be a validated user of the
+     Los Alamos Integrated Computing Network (ICN).  You must also be
+     familiar with the GET command of the MASS utility and with the NTEXT
+     utility.
+
+
+            _____________________________________________________
+
+              For more information about the MASS utility, see
+              the MASS Interface to the Common File System
+              reference manual.  For more information about
+              the NTEXT utility, see the NTEXT Reference
+              (VMS-7).
+            _____________________________________________________
+
+
+
+     You will be using the following files in the installation procedures;
+     they are stored on the Common File System (CFS) and are in standard
+     text format.
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     Installing the Style File       - 42 -                      March 1990
+
+
+
+        o readme.std-tells you where to find the memo style file and
+          includes installation instructions.  For VMS, this file is named
+          latexmemo.std.
+
+        o memo.sty-the style file that is used when you run LaTeX on your
+          memo input file.
+
+        o memotest.tex-a test memo that you can use to see if you've
+          installed the memo style file correctly.
+
+     A commented version of the memo.sty file, memo.doc, is available.  If
+     you want to make your own changes to the memo.sty file, you will find
+     this commented version useful.  Check the readme.std file for the CFS
+     pathname for memo.doc.
+
+
+     D.1.  ON THE IBM PC
+
+
+     Following are the steps you need to follow to find out how to install
+     the memo style file on your IBM PC:
+
+       1.   From your PC, sign on to the ICN computer of your choice by
+            using VTERM or some other communications software.
+
+       2.   While on the ICN computer,
+
+              Use the MASS utility GET command to retrieve the following
+              file from CFS:
+
+                /tex/macros/c-2/latexmemo/ibmpc/readme.std
+
+              Use the NTEXT utility to convert readme.std to native text
+              format.
+
+              Look in the NTEXTed readme.std file to find the complete
+              installation instructions.
+
+
+
+     D.2.  ON THE SUN WORKSTATION
+
+
+     Following are the steps you need to follow to find out how to install
+     the LaTeX memo style file on the Sun workstation:
+
+       1.   Use the MASS utility GET command to retrieve the following file
+            from CFS:
+
+              /tex/macros/c-2/latexmemo/sununix/readme.std
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     March 1990                      - 43 -       Installing the Style File
+
+
+
+       2.   Use the NTEXT utility to convert the file from standard text
+            format to native text format.
+
+       3.   Look in the NTEXTed readme.std for the complete installation
+            instructions.
+
+
+
+     D.3.  ON THE APOLLO WORKSTATION
+
+
+     Following are the steps you need to follow to find out how to install
+     the LaTeX memo style file on the Apollo workstation:
+
+       1.   Use the MASS utility GET command to retrieve the following file
+            from CFS:
+
+              /tex/macros/c-2/latexmemo/apollo/readme.std
+
+       2.   Use the NTEXT utility to convert the file from standard text
+            format to native text format.
+
+       3.   Look in the NTEXTed readme.std file for the complete
+            installation instructions.
+
+
+
+     D.4.  ON VAX/VMS
+
+
+     Following are the steps you need to follow to find out how to install
+     the LaTeX memo style file on VAX/VMS:
+
+       1.   Use the MASS utility GET command to retrieve the following file
+            from CFS:
+
+              /utility/vax/latexmemo.std
+
+       2.   Use the NTEXT utility to convert the file from standard text
+            format to native text format.
+
+       3.   Look in the NTEXTed latexmemo.sty for the complete installation
+            instructions.
+
+
+
+     D.5.  ON VAX/UNIX
+
+
+     Following are the steps you need to follow to find out how to install
+     the LaTeX memo style file on VAX/UNIX:
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     Installing the Style File       - 44 -                      March 1990
+
+
+
+       1.   Use the MASS utility GET command to retrieve the following file
+            from CFS:
+
+              /tex/macros/c-2/latexmemo/unix/readme.std
+
+       2.   Use the NTEXT utility to convert the file from standard text
+            format to native text format.
+
+       3.   Look in the NTEXTed readme.std file for the complete
+            installation instructions.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     March 1990                      - 45 -      Warning and Error Messages
+
+
+
+     APPENDIX E.  WARNING AND ERROR MESSAGES
+     ______________________________________________________________________
+
+     You can receive two types of error messages when running your memo
+     file through LaTeX-error messages from doing something wrong with the
+     memo commands and error messages from doing something wrong with the
+     standard LaTeX commands.  The error messages that come from standard
+     LaTeX commands are interactive and are explained in the chapter titled
+     "LaTeX Errors" in An Introduction to LaTeX by Michael Urban.  The
+     error messages that come from the memo commands are not interactive,
+     and the fatal error messages will cause LaTeX to abort.  The memo
+     command error messages are listed below.
+
+
+     E.1.  WARNING MESSAGES
+
+
+     The following are warning messages that you might receive when using
+     the LaTeX memo commands.  These messages remind you that you might be
+     leaving something important out of your memo; they do not affect the
+     printing of your memo.
+
+
+     E.1.1.  Leaving Out Information
+
+
+     These messages occur if you have left out one of these necessary memo
+     commands.  Omitting the \originator command just leaves the
+     originator's initials out of the initial line; leaving out the other
+     commands mentioned in these warning messages causes one of the
+     categories at the top of the memo to be left unfilled.
+
+
+       Warning: you have not called \to before calling \opening.
+
+                For example, use
+
+                \to{George Benford, EX-4, MS M775}
+
+       Warning: you have not called \from before calling \opening.
+
+                For example, use
+
+                \from{Ann Turner, AB-DO, MS D405}
+
+
+       Warning: you have not called \symbol before calling \opening.
+
+                For example, use
+
+                \symbol{C-2}
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     Warning and Error Messages      - 46 -                      March 1990
+
+
+
+       Warning: you have not called \subject before calling \opening.
+
+                For example, use
+
+                \subject{Building Schedule}
+
+
+       Warning: you have not called \originator before calling \opening.
+
+                For example, use
+
+                \originator{BJD}
+
+       Warning: you have not called \mailstop before calling \opening.
+
+                For example, use
+
+                \mailstop{B233}
+
+
+       Warning: you have not called \telephone before calling \opening.
+
+                For example, use
+
+                \telephone{7-1102}
+
+
+     E.1.2.  Memo Too Long for \shortmemostyle
+
+
+       Warning: Use of the \shortmemostyle macro is intended
+                for use with memos of ten lines or less.
+
+
+     E.1.3.  Printing Too Many Lines in Headers
+
+
+
+       Warning: You have printed more than 2 lines in the TO portion
+                of the memo header.
+
+       Warning: You have printed more than 4 lines in the THRU portion
+                of the memo header.
+
+       Warning: You have printed more than 2 lines in the FROM portion
+                of the memo header.
+
+
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     March 1990                      - 47 -      Warning and Error Messages
+
+
+
+     E.1.4.  Contradictory Information
+
+
+     There are pairs of commands that cannot both be specified within the
+     same memo.
+
+       Warning: You have used both \enc and \encas.
+                Use one or the other but not both.
+                "Enc. a/s" will not be printed on this memo.
+
+       Warning: You have used both \attachments and \attachmentas.
+                Use one or the other but not both.
+                "Attachment a/s" will not be printed on this memo.
+
+       Warning: You have used both \attachments and \attachmentsas.
+                Use one or the other but not both.
+                "Attachments a/s" will not be printed on this memo.
+
+       Warning: You have used both \attachmentas and \attachmentsas.
+                Use one or the other but not both.
+                "Attachment a/s" will not be printed on this memo.
+
+
+
+     E.2.  FATAL ERRORS
+
+
+     The following errors will cause your memo to not be printed.  If you
+     receive one of these error messages, you must go back to your
+     filename.tex file to correct the error and then rerun the file through
+     LaTeX.
+
+
+     E.2.1.  Invalid Classification Label
+
+
+     Note that x in the following error message is replaced with the actual
+     invalid classification label you specified in your memo file.
+
+
+       Fatal error: \classlabel{x} calls for an invalid classification label.
+
+         To print CONFIDENTIAL on the top and bottom of your memo,
+         use \classlabel{c}
+
+         To print SECRET on the top and bottom of your memo,
+         use \classlabel{s}
+
+         To print UNCLASSIFIED on the top and bottom of your memo,
+         use \classlabel{u}
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     Warning and Error Messages      - 48 -                      March 1990
+
+
+
+         If you do not want a classification label on your memo,
+         use \classlabel{}
+         or do not use the \classlabel command.
+
+         Change your file, and rerun LaTeX.
+
+
+     E.2.2.  Duplicating \classlabel Commands
+
+
+       Fatal error: you have called \classlabel more than once.
+
+         You are only allowed to declare one classification label per memo.
+
+         To print CONFIDENTIAL on the top and bottom of your memo,
+         use \classlabel{c}
+
+         To print SECRET on the top and bottom of your memo,
+         use \classlabel{s}
+
+         To print UNCLASSIFIED on the top and bottom of your memo,
+         use \classlabel{u}
+
+         If you do not want a classification label on your memo,
+         use \classlabel{}
+         or do not use the \classlabel command.
+
+         Change your file, and rerun LaTeX.
+
+
+     E.2.3.  Specifying an Invalid Typeface
+
+
+     Note that typename in the following error message is replaced with the
+     actual invalid typeface you specified in your memo file.
+
+
+       Fatal error: \typeface{typename} calls for an invalid typeface.
+
+         Use \typeface{tt} or \typeface{rm}
+
+         Change your file, and rerun LaTeX.
+
+
+     E.2.4.  Specifying an Invalid Font for Memo Body
+
+
+     Note that fontname in the following error message is replaced with the
+     actual invalid font you specified in your memo file.
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     March 1990                      - 49 -      Warning and Error Messages
+
+
+
+       Fatal error: \bodyfonts{fontname} calls for an invalid font.
+
+         Use \bodyfonts{texfonts} or \bodyfonts{postscript}
+         depending on what fonts are available on your machine.
+
+         Using \bodyfonts{} will give you the default fonts.
+
+         Change your file, and rerun LaTeX.
+
+
+     E.2.5.  Specifying an Invalid Font for Memo Header
+
+
+     Note that fontname in the following error message is replaced with the
+     actual invalid font you specified in your memo file.
+
+
+       Fatal error: \headerfonts{fontname} calls for an invalid font.
+
+         Use \headerfonts{lafonts}, \headerfonts{texfonts},
+         or \headerfonts{postscript} depending on what fonts
+         are available on your machine.
+
+         Using \headerfonts{} will give you the default fonts.
+
+         Use \headerfonts{memopaper} if you wish to print your memo
+         on pre-printed memo paper.
+
+         Change your file, and rerun LaTeX.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+     March 1990                      - 51 -            Reader Comments Form
+
+
+
+     READER COMMENTS FORM
+     ______________________________________________________________________
+
+
+     Date_______________       Name________________________________________
+
+     Group_________________    Mail Stop____________   Phone_______________
+
+     Organization*  _______________________________________________________
+
+     Street*  _____________________________________________________________
+
+     City/State/Zip*   ____________________________________________________
+     *PLEASE COMPLETE IF YOU ARE NOT AT LOS ALAMOS.
+
+     PLEASE ANSWER THE FOLLOWING QUESTIONS.  Your comments help us improve
+     the quality and usefulness of this documentation.
+
+     Are you an experienced computer user?               yes _____ no _____
+
+     Is the information in this document easy to find?   yes _____ no _____
+
+     Are the purpose and function of each chapter clear? yes _____ no _____
+
+     Does this document provide correct information?     yes _____ no _____
+
+     Does this document fully explain the subject?       yes _____ no _____
+
+     Are there enough examples in this document?         yes _____ no _____
+
+     Did this document meet your expectations?           yes _____ no _____
+
+     Do you think you will use this document again
+     when your needs change?                             yes _____ no _____
+
+     Please use the space below (and additional pages if needed) for
+     questions not addressed above or for expansion of responses.  In
+     particular, please explain responses marked "no."  When possible,
+     please give specific page references.
+     ______________________________________________________________________
+
+     ______________________________________________________________________
+
+     ______________________________________________________________________
+
+     Thank you for your help.
+
+
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                      fold
+
+     ______________________________________________________________________
+
+
+
+
+
+
+
+
+                    LOS ALAMOS NATIONAL LABORATORY
+                    COMPUTER DOCUMENTATION
+                    MAIL STOP B253
+                    LOS ALAMOS, NEW MEXICO 87545
+
+
+
+
+
+
+
+     ______________________________________________________________________
+
+                                fold and staple
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+     March 1990                      - 53 -      Documentation Request Form
+
+
+
+     DOCUMENTATION REQUEST FORM
+     ______________________________________________________________________
+
+
+     Z-Number__________    Name_______________________    Date_____________
+
+     Group_________________     Mail Stop____________    Phone_____________
+
+     Cost Code__________________________   Program Code____________________
+
+     Organization* ________________________________________________________
+
+     Street* ______________________________________________________________
+
+     City/State/Zip* ______________________________________________________
+     *PLEASE COMPLETE IF YOU ARE NOT AT LOS ALAMOS.
+
+     DOCUMENT ORDER**
+
+     Send me the following documents:
+
+     [  ] An Introduction to LaTeX, by Michael Urban. (cic#913)
+
+     [  ] LaTeX:  A Document Preparation System, by Leslie Lamport.
+          (cic#560)
+
+     [  ] The MASS Interface to the Common File System. (cic#388)
+
+     [  ] NTEXT (VMS-7). (cic#418)
+
+     [  ] DVIPAGES: TEX DVI to PAGES Quick Steps. (cic#939)
+
+     [  ] _________________________________________________________________
+     **Documents can also be ordered by using ECCOS, the Electronic Card
+     Catalog and Ordering System.  Access ECCOS by following these
+     directions.
+       - Choose CCVAX from the port selector menu or from the menu
+         on Machine G.
+       - When CCVAX prompts for Username, type CICUSR.
+       - At the prompts, type your Z-number and ICN password.
+       - Wait for the menu to appear on the screen and follow its
+         directions.
+
+     Monthly Computing Publications Subcription Requests
+
+     o    Computing and Communications Division News   [] Start   [] Cancel
+
+     o    ICN Change Bulletin                          [] Start   [] Cancel
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                      fold
+
+     ______________________________________________________________________
+
+
+
+
+
+
+
+
+                    LOS ALAMOS NATIONAL LABORATORY
+                    COMPUTING INFORMATION CENTER
+                    MAIL STOP M996
+                    LOS ALAMOS, NEW MEXICO 87545
+
+
+
+
+
+
+
+     ______________________________________________________________________
+
+                                fold and staple
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+     March 1990                      - 55 -                           Index
+
+
+
+     INDEX
+     ______________________________________________________________________
+
+     Body of memo, 18                      fatal errors, 49
+                                            duplicating classification, 48
+     Classification labeling, 24-25         invalid classification, 47-48
+     Commands                               invalid font, 48-49
+      \approval, 13-14                      invalid typeface, 48
+      \attachments, 15-16                  warnings, 45-47
+      \attachmentsas, 16                    contradictory information, 47
+      \attachmentspagebreak, 25             leaving out information, 45-46
+      \begin{document}, 18                  memo too long, 46
+      \bodyfonts, 23-24                     printing too many lines, 46
+      \classlabel, 24-25                  Error Messages, 44
+      \closing, 18                        Examples, 32-41
+      \cy, 16                              lafonts header, 35-37
+      \cypagebreak, 25                     memo paper, 39-41
+      \date, 10                            postscript fonts header, 37-39
+      \distribution, 16-17                 short memo format, 37-39
+      \distributionpagebreak, 25           texfonts header, 32-35
+      \documentstyle                       typical memo, 32-35
+       explanation of, 7-8
+       point sizes, selecting, 7-8        Fonts
+      \enc, 14-15                          body of memo, 23-24
+      \encas, 14-15                        header of memo, 22-23
+      \enclosurespagebreak, 25             lafonts, 22-23
+      \end{document}, 18-19                postscript fonts, 22-24
+      \from, 8                             texfonts, 22-24
+      \headerfonts, 22-23
+      \mailstop, 10-11                    General format of a memo, 5
+      \memopaperhcorr, 26-27
+      \memopapervcorr, 26-27              Installing the memo style file,
+      \newpage, 25                          41-44
+      \opening, 18                         Apollo workstation, 43
+      \originator, 12-13                   IBM PC, 42
+      \reference, 11-12                    Sun workstation, 42-43
+      \serialnumber, 9                     VAX/UNIX, 43-44
+      \shortmemostyle, 25-26               VAX/VMS, 43
+      \signature, 12
+      \signer, 12-13                      LaTeX video course, 4
+      \subject, 9-10
+      \symbol, 9                          Memo paper, 22-23
+      \telephone, 10-11                    lining up, 26-27
+      \thru, 8-9
+      \to, 8                              Office Procedures Manual, 4
+      \typeface, 23
+      \typist, 12-13                      Page breaks, controlling, 25
+      \}attachmentas, 16                  Point sizes, changing, 7-8
+                                          Preamble, 5-17
+     Error messages, 49                   Printing your memo, 19-21
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+     Index                           - 56 -                      March 1990
+
+
+
+     Short memo form, 25-26
+     Syntax rules, 30
+     Systems that can use memo
+       commands, 3
+
+     Typefaces
+      Roman, 23
+      typewriter, 23
+
+     Warning Messages, 44
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                              LaTeX Memo Reference
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+     ______________________________________________________________________
+
+     Copyright, 1990, The Regents of the University of California.  This
+     document was produced under a U.S. Government contract (W-7405-ENG-36)
+     by the Los Alamos National Laboratory, which is operated by the
+     University of California for the U.S. Department of Energy.  The U.S.
+     Government is licensed to use, reproduce, and distribute this
+     document.  Permission is granted to the public to copy and use this
+     document without charge, provided that this notice and any statement
+     of authorship are reproduced on all copies.  Neither the Government
+     nor the University makes any warranty, express or implied, or assumes
+     any liability or responsibility for the use of this document.
+
+     All Los Alamos computers, computing systems, and their associated
+     communications systems are to be used only for official business.  The
+     Computing and Communications Division and the Operational
+     Security/Safeguards Division have the responsibility and the authority
+     to periodically audit users' files.
+
+
+
+
+
+
+
+
+

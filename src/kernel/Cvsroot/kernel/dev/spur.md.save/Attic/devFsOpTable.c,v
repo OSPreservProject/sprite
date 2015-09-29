@@ -1,0 +1,380 @@
+head     8.5;
+branch   ;
+access   ;
+symbols  sun4nw:8.5 symm:8.5 spur:8.5 newlib:8.0;
+locks    ; strict;
+comment  @ * @;
+
+
+8.5
+date     90.01.05.13.18.02;  author ouster;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.07.15.14.49.43;  author ouster;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.07.15.12.24.16;  author brent;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.06.16.09.02.39;  author mendel;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.02.08.13.47.12;  author mendel;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.16.19;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     88.11.11.15.29.17;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.09.16.11.21.05;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+8.5
+log
+@Use new NULL procedures from /dev/null.
+
+@
+text
+@/* 
+ * devFsOpTable.c --
+ *
+ *	Initialization of the operation switch tables used for
+ *	the FS => DEV interface on Sun3 hosts.
+ *
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/spur.md/RCS/devFsOpTable.c,v 8.4 89/07/15 14:49:43 ouster Exp Locker: ouster $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include "sprite.h"
+#include "dev.h"
+#include "fs.h"
+#include "rawBlockDev.h"
+#include "devFsOpTable.h"
+#include "devTypes.h"
+
+/*
+ * Device specific include files.
+ */
+
+#include "devNull.h"
+#include "devSyslog.h"
+#include "devNet.h"
+#include "devCC.h"
+#include "devBlockDevice.h"
+
+static ReturnStatus NoDevice();
+static ReturnStatus NullProc();
+
+/*
+ * Device type specific routine table:
+ *	This is for the file-like operations as they apply to devices.
+ *	DeviceOpen
+ *	DeviceRead
+ *	DeviceWrite
+ *	DeviceIOControl
+ *	DeviceClose
+ *	DeviceSelect
+ *	BlockDeviceAttach
+ *	DeviceReopen
+ *
+ * Since the table is indexed into the type must be at the right position in 
+ * the array.  The FILLER macro is used to fill in the gaps.
+ */
+
+#define	FILLER(num)	{num,NoDevice,NullProc,NullProc,Dev_NullIOControl,NullProc,Dev_NullSelect, DEV_NO_ATTACH_PROC, NoDevice},
+
+DevFsTypeOps devFsOpTable[] = {
+    /*
+     * Serial lines:  not currently supported for SPUR.
+     */
+    FILLER(DEV_TERM)
+    /*
+     * The system error log.  If this is not open then error messages go
+     * to the console.
+     */
+    {DEV_SYSLOG,    Dev_SyslogOpen, Dev_SyslogRead, Dev_SyslogWrite,
+		    Dev_SyslogIOControl, Dev_SyslogClose, Dev_SyslogSelect,
+		    DEV_NO_ATTACH_PROC, Dev_SyslogReopen},
+    FILLER(2)
+    FILLER(3)
+    FILLER(4)
+    FILLER(5)
+    /*
+     * /dev/null
+     */
+    {DEV_MEMORY,    NullProc, Dev_NullRead, Dev_NullWrite,
+		    Dev_NullIOControl, NullProc, Dev_NullSelect,
+		    DEV_NO_ATTACH_PROC,
+		    NullProc},
+    FILLER(7)
+    /*
+     * Network devices.  The unit number specifies the ethernet protocol number.
+     */
+    {DEV_NET,      DevNet_FsOpen, DevNet_FsRead, DevNet_FsWrite, 
+		   DevNet_FsIOControl, DevNet_FsClose, DevNet_FsSelect,
+		   DEV_NO_ATTACH_PROC, DevNet_FsReopen},
+    /*
+     * Cache controler device.
+     */
+    {DEV_CC,   	 Dev_CCOpen, Dev_CCRead, Dev_CCWrite,
+		     Dev_CCIOControl, Dev_CCClose, Dev_CCSelect,
+		     DEV_NO_ATTACH_PROC, Dev_CCReopen},
+    /*
+     * processed cache controler device.
+     */
+    {DEV_PCC,       Dev_PCCOpen, Dev_PCCRead, Dev_PCCWrite,
+		    Dev_PCCIOControl, Dev_PCCClose, Dev_PCCSelect,
+		    DEV_NO_ATTACH_PROC, Dev_PCCReopen},
+};
+
+int devNumDevices = sizeof(devFsOpTable) / sizeof(DevFsTypeOps);
+
+/*
+ * A list of disk device types that is used when probing for a disk.
+ */
+int devFsDefaultDiskTypes[] = { 0 };
+int devNumDiskTypes = 0;
+
+
+static ReturnStatus
+NullProc()
+{
+    return(SUCCESS);
+}
+
+
+static ReturnStatus
+NoDevice()
+{
+    return(FS_INVALID_ARG);
+}
+@
+
+
+8.4
+log
+@Conversion to new tty driver.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev.jo/spur.md/RCS/devFsOpTable.c,v 8.3 89/07/15 12:24:16 brent Exp $ SPRITE (Berkeley)";
+a39 2
+
+static ReturnStatus NullSelectProc();
+d59 1
+a59 1
+#define	FILLER(num)	{num,NoDevice,NullProc,NullProc,NullProc,NullProc,NullProc, DEV_NO_ATTACH_PROC, NoDevice},
+d81 2
+a82 1
+		    NullProc, NullProc, NullSelectProc, DEV_NO_ATTACH_PROC,
+a124 13
+}
+
+
+/*ARGSUSED*/
+static ReturnStatus
+NullSelectProc(devicePtr, readPtr, writePtr, exceptPtr)
+    Fs_Device	*devicePtr;	/* Ignored. */
+    int	*readPtr;		/* Read bit to clear if not readable */
+    int	*writePtr;		/* Write bit to clear if not readable */
+    int	*exceptPtr;		/* Except bit to clear if not readable */
+{
+    *exceptPtr = 0;
+    return(SUCCESS);
+@
+
+
+8.3
+log
+@Who knows?  JO checking in for brent.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/spur.md/RCS/devFsOpTable.c,v 8.2 89/06/16 09:02:39 mendel Exp Locker: brent $ SPRITE (Berkeley)";
+d28 1
+a28 1
+#include "devTypesInt.h"
+a33 1
+#include "devConsole.h"
+a56 1
+ *
+a62 1
+
+d65 1
+a65 1
+     * The console.  The workstation's display and keyboard.
+d67 1
+a67 3
+    {DEV_CONSOLE,    Dev_ConsoleOpen, Dev_ConsoleRead, Dev_ConsoleWrite,
+		     Dev_ConsoleIOControl, Dev_ConsoleClose, Dev_ConsoleSelect,
+		     DEV_NO_ATTACH_PROC, Dev_ConsoleReopen},
+a139 1
+
+@
+
+
+8.2
+log
+@Added new block device interface to spur's devFsOpTable.c
+@
+text
+@d4 2
+a5 1
+ *	The operation tables for the file system devices.  
+d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/spur.md/RCS/devFsOpTable.c,v 8.1 89/02/08 13:47:12 mendel Exp $ SPRITE (Berkeley)";
+d55 2
+d63 1
+a63 1
+#define	FILLER(num)	{num,NoDevice,NullProc,NullProc,NullProc,NullProc,NullProc, DEV_NO_ATTACH_PROC},
+d72 1
+a72 1
+		     DEV_NO_ATTACH_PROC},
+d79 1
+a79 1
+		    DEV_NO_ATTACH_PROC},
+d88 2
+a89 1
+		    NullProc, NullProc, NullSelectProc, DEV_NO_ATTACH_PROC},
+d96 1
+a96 1
+		   DEV_NO_ATTACH_PROC},
+d102 1
+a102 1
+		     DEV_NO_ATTACH_PROC},
+d108 1
+a108 1
+		    DEV_NO_ATTACH_PROC},
+d136 1
+a136 1
+NullSelectProc(devicePtr, inFlags, outFlagsPtr)
+d138 3
+a140 2
+    int		inFlags;	/* FS_READBLE, FS_WRITABLE, FS_EXCEPTION. */
+    int		*outFlagsPtr;	/* Copy of inFlags. */
+d142 1
+a142 1
+    *outFlagsPtr = inFlags;
+@
+
+
+8.1
+log
+@Added pcc device.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/spur.md/RCS/devFsOpTable.c,v 8.0 88/11/11 18:16:19 douglis Stable Locker: mendel $ SPRITE (Berkeley)";
+d25 1
+d38 1
+d60 1
+a60 1
+#define	FILLER(num)	{num,NoDevice,NullProc,NullProc,NullProc,NullProc,NullProc},
+d68 2
+a69 1
+		     Dev_ConsoleIOControl, Dev_ConsoleClose, Dev_ConsoleSelect},
+d75 2
+a76 1
+		    Dev_SyslogIOControl, Dev_SyslogClose, Dev_SyslogSelect},
+d85 1
+a85 1
+		    NullProc, NullProc, NullSelectProc},
+d91 2
+a92 1
+		   DevNet_FsIOControl, DevNet_FsClose, DevNet_FsSelect},
+d97 2
+a98 1
+		     Dev_CCIOControl, Dev_CCClose, Dev_CCSelect},
+d103 2
+a104 1
+		    Dev_PCCIOControl, Dev_PCCClose, Dev_PCCSelect},
+a107 14
+
+
+/*
+ * Device Block I/O operation table.  This table is sparse because not
+ * all devices support block I/O.
+ *	FsBlockIOInit
+ *	FsBlockIO
+ */
+DevFsBlockOps devFsBlockOpTable[] = {
+    { DEV_CONSOLE, 0 },
+    { DEV_SYSLOG, 0 },
+    { DEV_MEMORY, 0 },
+    { DEV_NET, 0 },
+};
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/spur.md/RCS/devFsOpTable.c,v 1.2 88/11/11 15:29:17 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d93 5
+@
+
+
+1.2
+log
+@Modified for new libc.a.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: devFsOpTable.c,v 1.1 88/09/16 11:21:05 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: fsOpTable.c,v 1.8 88/06/15 17:14:13 brent Exp $ SPRITE (Berkeley)";
+d36 1
+d88 5
+@

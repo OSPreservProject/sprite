@@ -1,0 +1,122 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     90.11.13.10.24.15;  author tve;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@original
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@% PostScript prolog for using resident fonts.
+% No change is made to the encoding scheme, since `virtual fonts' do that
+% better. All we do is change the widths so that PostScript positioning
+% matches the assumptions of dvips.
+
+% The calling sequence defining font foo to be resident font Bar is
+%           /foo [wd0 wd1 ... wd255] /Bar mag atsize rf
+% where each character width wdi is in pixels,
+% mag is the magnification per thousand,
+% and atsize is the desired font size in TeX scaled points (sp).
+
+%
+TeXDict begin
+%
+/rf {
+655360 div mul Resolution mul 7227 div /PixPerEm exch def % compute pixels/em
+% We copy everything but the FID entry of the resident font
+% (just as in section 5.7 of the Red Book)
+findfont
+dup length 1 add dict /newfont exch def
+   {1 index /FID ne
+      {newfont 3 1 roll put}
+      {pop pop}
+      ifelse
+   } forall
+% Now the top entry on the stack is the array of pixel widths.
+% We convert them to PostScript's milli-em units, and put them
+% in a Metrics dictionary.
+  256 dict begin
+     newfont /Encoding get
+     0 1 255 {
+       2 copy get
+       3 index 2 index get 
+       1000 mul PixPerEm div def pop
+     } for
+  pop pop
+  newfont /Metrics currentdict put end
+% Finally we associate the new font with a name like ZZfoo@@,
+% using conventions identical to those of downloaded bitmap fonts.
+   /fontname exch def
+   dmystr 2 fontname cvx (@@@@@@@@) cvs putinterval  % put name in template
+   newname dup newfont definefont
+   [PixPerEm 0 0 PixPerEm neg 0 0] makefont def
+   fontname { /foo setfont }       %  dummy macro to be filled in
+      2 array copy cvx def         %  have to allocate a new one
+   fontname load                   %  now we change it
+      0 dmystr 6 string copy       %  get a copy of the font name
+      cvn cvx put                  %  and stick it in the dummy macro
+} bdf
+
+%
+%   Now here's some oblique hackery... an example of making
+%   variants of a resident font look like it is resident.
+%   Say, e.g., /Times-Slanted /Times-Roman .167 SlantFont
+%   to make /Times-Slanted a font with slant of 1/6;
+%   or /Times-Extended /Times-Roman 1.05 ExtendFont
+%   to make a font that's 5% wider.
+%   Optionally replace the `slant' by `angle ObliqueSlant';
+%   note that the ObliqueSlant of Times-Italic is -15.5 (negative).
+%
+/ObliqueSlant {   % angle ObliqueSlant slant
+    dup sin exch cos div neg
+    } bdf
+
+/SlantFont {      % fontname basefontname slant SlantFont pseudoresfontname
+    /foo exch def
+    [1 0 foo 1 0 0] TransFont
+    } bdf
+
+/ExtendFont {     % widtharray fontname basefontname factor ExtendFont
+                  %     widtharray' pseudoresfontname
+    /foo exch def
+    3 2 roll [ exch {foo div} forall ] % divide each width entry by the factor
+    3 1 roll [foo 0 0 1 0 0] TransFont
+    } bdf
+
+% Note: After Times-Slanted is declared once as a SlantFont, you can
+% use it again without redeclaring its relation to Times-Roman.
+% But this doesn't work with Times-Extended, because you have to
+% recompute the widths for each incarnation of Times-Extended.
+% In fact, strictly speaking, it doesn't work even with Times-Slanted,
+% because the widths are rounded differently at different sizes.
+% Therefore dvips repeats the special instructions each time.
+
+/TransFont {      % fontname basefontname matrix TransFont pseudoresfontname
+    exch findfont exch makefont
+    dup length dict /newfont exch def
+       {1 index /FID ne
+          {newfont 3 1 roll put}
+          {pop pop}
+       ifelse
+       } forall
+    dup newfont definefont pop
+    } bdf
+%
+end
+@

@@ -1,0 +1,1 @@
+../../src/sprited/vm/ds3100.md/vmMachStat.h

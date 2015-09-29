@@ -1,0 +1,269 @@
+head     9.6;
+branch   ;
+access   ;
+symbols  ds3100:9.6 sun3:9.6 sun4nw:9.6 symm:9.6 spur:9.6 sprited:9.6.1 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.6
+date     91.07.31.18.20.17;  author shirriff;  state Exp;
+branches 9.6.1.1;
+next     9.5;
+
+9.5
+date     91.07.31.16.12.05;  author shirriff;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     91.07.26.17.10.12;  author shirriff;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     91.03.29.17.59.57;  author shirriff;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.12.07.23.45.50;  author rab;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.09.12.16.49.43;  author jhh;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.16.16;  author douglis;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.10.19.47.52;  author nelson;  state Exp;
+branches ;
+next     ;
+
+9.6.1.1
+date     91.08.15.21.28.44;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Translates a.out format into machine independent format.
+@
+
+
+9.6
+log
+@Maybe this time I got the segment sizes right.
+@
+text
+@/*
+ * procMach.h --
+ *
+ *	The a.out format for an object file.
+ *
+ * Copyright (C) 1985, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ * $Header: /sprite/src/kernel/proc/sun3.md/RCS/procMach.h,v 9.5 91/07/31 16:12:05 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+ */
+
+#ifndef _PROCMACH
+#define _PROCMACH
+
+#include <sprite.h>
+
+#define	NEW_PAGE_SIZE		0x2000
+#ifdef sun4
+#define	NEW_SEG_SIZE		0x40000
+#define SUN_SEG_SIZE		NEW_PAGE_SIZE
+#else
+#define	NEW_SEG_SIZE		0x20000
+#define SUN_SEG_SIZE		NEW_SEG_SIZE
+#endif
+
+/*
+ * Header prepended to each a.out file.
+ */
+
+typedef struct {
+    unsigned int	dynamic:1;	/* indicated dynamically-loaded */
+    unsigned int	toolversion:7;	/* tool version */
+    unsigned char 	machineType;	/* machine type */
+    unsigned short 	magic;		/* magic number */
+    unsigned long	code;		/* Size of code segment */
+    unsigned long	data;		/* Size of initialized data */
+    unsigned long	bss;		/* Size of uninitialized data */
+    unsigned long	syms;		/* Size of symbol table */
+    unsigned long	entry;		/* Entry point */
+    unsigned long	trsize;		/* Size of text relocation */
+    unsigned long	drsize;		/* Size of data relocation */
+} ProcExecHeader;
+
+#define	PROC_OMAGIC	0407		/* Old impure format */
+#define	PROC_NMAGIC	0410		/* Read-only text */
+#define	PROC_ZMAGIC	0413		/* Demand load format */
+#define	SPRITE_ZMAGIC	0414		/* Demand load format */
+#define	UNIX_ZMAGIC	0415		/* Demand load format */
+#define PROC_MC68010	1		/* runs on '10 or '20 */
+#define PROC_MC68020	2		/* runs on '20 only */
+#define	PROC_SPARC	3		/* runs on SPARC only */
+
+/*
+ * Macros which take exec structures as arguments and tell whether
+ * the file has a reasonable magic number or offsets to text|symbols|strings.
+ */
+#define	PROC_BAD_MAGIC_NUMBER(x) \
+    ((x).magic!=PROC_ZMAGIC || (x).magic!=UNIX_ZMAGIC)
+
+#define	PROC_CODE_FILE_OFFSET(x) \
+	(((x).magic==PROC_ZMAGIC || (x).magic==UNIX_ZMAGIC) \
+	    ? 0 : sizeof (ProcExecHeader))
+
+#define	PROC_DATA_FILE_OFFSET(x) \
+	(PROC_CODE_FILE_OFFSET(x) + (x).code)
+
+#define PROC_BASEADDR(x) \
+	(((x).magic==PROC_ZMAGIC) && ((x).entry < NEW_PAGE_SIZE) ?\
+	0 : NEW_PAGE_SIZE)
+
+/*
+ * Macros which take exec structures as arguments and tell where the
+ * various pieces will be loaded.
+ */
+#define PROC_CODE_LOAD_ADDR(x) NEW_PAGE_SIZE
+#define PROC_DATA_LOAD_ADDR(x) \
+	(((x).magic==PROC_OMAGIC)? (PROC_CODE_LOAD_ADDR(x)+(x).code) \
+	: (NEW_SEG_SIZE+((PROC_CODE_LOAD_ADDR(x)+(x).code-1) & ~(NEW_SEG_SIZE-1))))
+#define PROC_BSS_LOAD_ADDR(x)  (PROC_DATA_LOAD_ADDR(x)+(x).data)
+
+#define PROC_SUN_DATA_LOAD_ADDR(x) \
+	(((x).magic==PROC_OMAGIC)? (PROC_CODE_LOAD_ADDR(x)+(x).code) \
+	: (SUN_SEG_SIZE+((PROC_CODE_LOAD_ADDR(x)+(x).code-1) & ~(SUN_SEG_SIZE-1))))
+
+
+#endif /* _PROCMACH */
+@
+
+
+9.6.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/proc/sun3.md/RCS/procMach.h,v 9.6 91/07/31 18:20:17 shirriff Exp $ SPRITE (Berkeley)
+@
+
+
+9.5
+log
+@Fixed segment size
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/proc/sun3.md/RCS/procMach.h,v 9.4 91/07/26 17:10:12 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+d27 1
+d30 1
+a31 1
+#define SUN_SEG_SIZE		NEW_SEG_SIZE
+@
+
+
+9.4
+log
+@Large install for unix compatibility
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/proc/sun3.md/RCS/procMach.h,v 9.3 91/03/29 17:59:57 shirriff Exp $ SPRITE (Berkeley)
+a24 1
+#define SUN_SEG_SIZE		NEW_PAGE_SIZE
+d30 1
+@
+
+
+9.3
+log
+@Changed the definition of machine type to add dynamic linking flag.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/proc/sun3.md/RCS/procMach.h,v 9.2 90/12/07 23:45:50 rab Exp Locker: shirriff $ SPRITE (Berkeley)
+d25 1
+d73 4
+d86 4
+@
+
+
+9.2
+log
+@Unix compatibility.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/proc/sun3.md/RCS/procMach.h,v 9.1 90/09/12 16:49:43 jhh Exp Locker: rab $ SPRITE (Berkeley)
+d36 3
+a38 1
+    unsigned short 	machineType;	/* machine type */
+@
+
+
+9.1
+log
+@fixed include statements
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/proc/sun3.md/RCS/procMach.h,v 9.0 89/09/12 15:16:16 douglis Stable Locker: jhh $ SPRITE (Berkeley)
+d50 2
+d61 1
+a61 1
+    (((x).magic)!=PROC_ZMAGIC)
+d64 3
+a66 1
+	((x).magic==PROC_ZMAGIC ? 0 : sizeof (ProcExecHeader))
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/proc/sun3.md/RCS/procMach.h,v 1.1 89/07/10 19:47:52 nelson Exp Locker: douglis $ SPRITE (Berkeley)
+d22 1
+a22 1
+#include "sprite.h"
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/proc/sun3.md/RCS/procAOUT.h,v 8.3 89/06/15 16:49:10 mgbaker Exp $ SPRITE (Berkeley)
+@

@@ -1,0 +1,66 @@
+
+
+
+RENICE                    User Commands                    RENICE
+
+
+
+NNAAMMEE
+     renice - alter priority of running processes
+
+SSYYNNOOPPSSIISS
+     rreenniiccee priority [ [ --pp ] pid ... ] [ [ --gg ] pgrp ... ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _R_e_n_i_c_e alters the scheduling priority of one or more running
+     processes.  The _w_h_o parameters are interpreted as process
+     ID's, process group ID's, or user names.  _R_e_n_i_c_e'ing a pro-
+     cess group causes all processes in the process group to have
+     their scheduling priority altered. By default, the processes
+     to be affected are specified by their process ID's.  To
+     force _w_h_o parameters to be interpreted as process group
+     ID's, a --gg may be specified.  Supplying --pp will reset _w_h_o
+     interpretation to be (the default) process ID's.
+
+     Users other than the super-user may only alter the priority
+     of processes they own, and can only monotonically increase
+     their ``nice value'' within the range 0 to PRIO_MAX (20).
+     (This prevents overriding administrative fiats.) The super-
+     user may alter the priority of any process and set the
+     priority to any value in the range PRIO_MIN (-20) to
+     PRIO_MAX.  Useful priorities are: 20 (the affected processes
+     will run only when nothing else in the system wants to), 0
+     (the ``base'' scheduling priority), anything negative (to
+     make things go very fast).
+
+FFIILLEESS
+     /etc/passwd    to map user names to user ID's
+
+SSEEEE AALLSSOO
+     getpriority(2), setpriority(2)
+
+BBUUGGSS
+     Non super-users can not increase scheduling priorities of
+     their own processes, even if they were the ones that
+     decreased the priorities in the first place.
+
+SSPPRRIITTEE
+     Renice on Sprite must map Unix priorities in the range -20
+     to 20 into one of the five Sprite priorities. The mapping is
+     done as follows:
+     -20 - -20 -> -20
+     -19 - -10 -> -10
+      -9 -   9 ->  0
+      10 -  19 -> 10
+      20 -  20 -> 20
+     For example, renice'ing a process to priority 9 will cause
+     it to run at the same priority as processes reniced to -9
+     through 9.
+
+
+
+
+Sprite v1.0               June 24, 1990                         1
+
+
+

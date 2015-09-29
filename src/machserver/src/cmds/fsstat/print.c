@@ -1,0 +1,412 @@
+/*
+ * print.c --
+ *	Routines to print out program execution times, and filesystem 
+ *	stats. 
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/cmds/fsstat/RCS/print.c,v 1.3 92/07/13 12:57:00 kupfer Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <bstring.h>
+#include <status.h>
+#include <stdio.h>
+#include <proc.h>
+#include <spriteTime.h>
+#include <sys.h>
+#include <sysStats.h>
+#include <kernel/fs.h>
+#include <kernel/fsStat.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintTimes --
+ *
+ *	Print the resource usage (user and kernel CPU time) and elapsed time.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints to the specified stream
+ *
+ *----------------------------------------------------------------------
+ */
+void
+PrintTimes(stream, usagePtr, timePtr)
+    FILE *stream;
+    Proc_ResUsage *usagePtr;
+    Time *timePtr;
+{
+    Time delta;
+    if (usagePtr != NULL) {
+	Time_Add(usagePtr->userCpuUsage, usagePtr->childUserCpuUsage,
+					 &delta);
+	fprintf(stream, "%d.%03du ", delta.seconds,
+			       delta.microseconds / 1000);
+	Time_Add(usagePtr->kernelCpuUsage, usagePtr->childKernelCpuUsage,
+					 &delta);
+	fprintf(stream, "%d.%03ds ", delta.seconds,
+			       delta.microseconds / 1000);
+    }
+    if (timePtr != NULL) {
+	int seconds = timePtr->seconds;
+	if (seconds >= 3600) {
+	    fprintf(stream, "%d:", seconds / 3600);
+	    seconds = seconds % 3600;
+	}
+	if (seconds >= 60) {
+	    fprintf(stream, "%d:", seconds / 60);
+	    seconds = seconds % 60;
+	}
+	fprintf(stream, "%d.%03d", seconds,
+			       timePtr->microseconds / 1000);
+    }
+    fprintf(stream, "\n");
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintFs_Stats --
+ *
+ *	Print out the filesystem statistics.  If both a start and end
+ *	sample of the statistics are given then the differences between
+ *	the two are printed.  To just print the total cumulative statistics
+ *	from one sample, specify a single Fs_Stats buffer with the 'end'
+ *	parameter.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints to the specified stream
+ *
+ *----------------------------------------------------------------------
+ */
+void
+PrintFs_Stats(stream, start, end, verbose)
+    FILE *stream;	/* Output stream */
+    Fs_Stats *start;	/* 0, or address of "before run" statistics */
+    Fs_Stats *end;	/* End of run statistics */
+    int verbose;	/* If true, everything is dumped */
+{
+    register int t1, t2, t3, t4, t5;
+    Fs_Stats zeroStats;
+
+    if (start == (Fs_Stats *)0) {
+	bzero(&zeroStats, sizeof(Fs_Stats));
+	start = &zeroStats;
+    }
+    /*
+     * Print cache size
+     */
+    fprintf(stream, "Cache blocks max %d min %d number %d/%d free %d/%d limit %d\n",
+			   end->blockCache.maxCacheBlocks,
+			   end->blockCache.minCacheBlocks,
+			   start->blockCache.numCacheBlocks,
+			   end->blockCache.numCacheBlocks,
+			   start->blockCache.numFreeBlocks,
+			   end->blockCache.numFreeBlocks,
+			   end->blockCache.maxNumBlocks);
+
+    /*
+     * Print bytes read traffic ratio
+     */
+    t1 = end->blockCache.bytesRead - start->blockCache.bytesRead;
+    t2 = end->blockCache.dirBytesRead - start->blockCache.dirBytesRead;
+    t3 = end->gen.remoteBytesRead - start->gen.remoteBytesRead;
+    t4 = end->gen.fileBytesRead - start->gen.fileBytesRead;
+    t5 = end->gen.physBytesRead - start->gen.physBytesRead;
+    fprintf(stream, "Bytes read %d+%d remote %d disk %d+%d",
+		       t1, t2, t3, t4, t5);
+    if (t1 + t2 > 0) {
+	fprintf(stream, "\ttraffic ratio %%%d\n",
+		       (int)((double)(t3+t4+t5)/(double)(t1+t2) * 100.));
+    } else {
+	fprintf(stream, "\n");
+    }
+
+    /*
+     * Print bytes written traffic ratio
+     */
+    t1 = end->blockCache.bytesWritten - start->blockCache.bytesWritten +
+	(end->blockCache.fileDescWrites - start->blockCache.fileDescWrites +
+	 end->blockCache.indBlockWrites - start->blockCache.indBlockWrites) *
+	FS_BLOCK_SIZE;
+    t2 = end->blockCache.dirBytesWritten - start->blockCache.dirBytesWritten;
+    t3 = end->gen.remoteBytesWritten - start->gen.remoteBytesWritten;
+    t4 = end->gen.fileBytesWritten - start->gen.fileBytesWritten;
+    t5 = end->gen.physBytesWritten - start->gen.physBytesWritten;
+    fprintf(stream, "Bytes written %d+%d remote %d disk %d+%d",
+			   t1, t2, t3, t4, t5);
+    if (t1 + t2 > 0) {
+	fprintf(stream, "\ttraffic ratio %%%d",
+			   (int)((double)(t3+t4+t5)/(double)(t1+t2) * 100.));
+    }
+    fprintf(stream, "\n");
+
+    if (verbose) {
+	/*
+	 * Print device bytes and zero fills
+	 */
+	t1 = end->gen.deviceBytesWritten - start->gen.deviceBytesWritten;
+	t2 = end->gen.deviceBytesRead - start->gen.deviceBytesRead;
+	fprintf(stream, "Dev bytes read %d written %d\n", t1, t2);
+	t1 = end->blockCache.readZeroFills - start->blockCache.readZeroFills;
+	t2 = end->blockCache.writeZeroFills1 -
+	    start->blockCache.writeZeroFills1;
+	t3 = end->blockCache.writeZeroFills2 -
+	    start->blockCache.writeZeroFills2;
+	t4 = end->blockCache.fragZeroFills - start->blockCache.fragZeroFills;
+	fprintf(stream, "Zero Fills read %d write1 %d write2 %d frag %d\n",
+			       t1, t2, t3, t4);
+	t1 = end->blockCache.appendWrites - start->blockCache.appendWrites;
+	t2 = end->blockCache.overWrites - start->blockCache.overWrites;
+	t3 = end->blockCache.domainReadFails -
+	    start->blockCache.domainReadFails;
+	fprintf(stream, "Appends %d Overwrites %d Failed Reads %d\n",
+			       t1, t2, t3);
+    }
+    t1 = end->blockCache.readAccesses - start->blockCache.readAccesses +
+	 end->blockCache.fragAccesses - start->blockCache.fragAccesses +
+	 end->blockCache.fileDescReads - start->blockCache.fileDescReads +
+	 end->blockCache.indBlockAccesses - start->blockCache.indBlockAccesses +
+	 end->blockCache.dirBlockAccesses - start->blockCache.dirBlockAccesses;
+    t2 = end->blockCache.readHitsOnDirtyBlock -
+	start->blockCache.readHitsOnDirtyBlock;
+    t3 = end->blockCache.readHitsOnCleanBlock -
+	start->blockCache.readHitsOnCleanBlock;
+    t4 = end->blockCache.fragHits - start->blockCache.fragHits +
+	 end->blockCache.fileDescReadHits - start->blockCache.fileDescReadHits +
+	 end->blockCache.indBlockHits - start->blockCache.indBlockHits +
+	 end->blockCache.dirBlockHits - start->blockCache.dirBlockHits;
+    fprintf(stream, "Cache reads %d hits: dirty %d clean %d other %d",
+			   t1, t2, t3, t4);
+    if (t1 != 0) {
+	fprintf(stream, "\thit ratio %%%d",
+		       (int)((double)(t2+t3+t4)/(double)t1 * 100.));
+    }
+    fprintf(stream, "\n");
+
+    t1 = end->blockCache.readAheads - start->blockCache.readAheads;
+    t2 = end->blockCache.readAheadHits - start->blockCache.readAheadHits;
+    t3 = end->blockCache.allInCacheCalls - start->blockCache.allInCacheCalls;
+    t4 = end->blockCache.allInCacheTrue - start->blockCache.allInCacheTrue;
+    if (t1 > 0) {
+	fprintf(stream, "Read Ahead: hits %d/%d all-in-cache %d/%d\n",
+			t2, t1, t4, t3);
+    }
+
+    t1 = end->blockCache.writeAccesses - start->blockCache.writeAccesses +
+	 end->blockCache.fileDescWrites - start->blockCache.fileDescWrites +
+	 end->blockCache.indBlockWrites - start->blockCache.indBlockWrites +
+	 end->blockCache.dirBlockWrites - start->blockCache.dirBlockWrites;
+    t2 = end->blockCache.partialWriteHits - start->blockCache.partialWriteHits +
+	end->blockCache.fileDescWriteHits - start->blockCache.fileDescWriteHits;
+    t3 = end->blockCache.partialWriteMisses -
+	start->blockCache.partialWriteMisses;
+    t4 = end->blockCache.blocksWrittenThru -
+	start->blockCache.blocksWrittenThru;
+    fprintf(stream, "Cache writes %d hits %d misses %d thru %d",
+			   t1, t2, t3, t4);
+    if (t1 != 0) {
+	fprintf(stream, "\ttraffic ratio %%%d",
+			   (int)((double)(t3+t4)/(double)t1 * 100.));
+    }
+    fprintf(stream, "\n");
+    
+    fprintf(stream, "Write thru %d data %d indirect %d desc %d dir %d\n",
+			   t4,
+			   end->blockCache.dataBlocksWrittenThru -
+			   start->blockCache.dataBlocksWrittenThru,
+			   end->blockCache.indBlocksWrittenThru -
+			   start->blockCache.indBlocksWrittenThru,
+			   end->blockCache.descBlocksWrittenThru -
+			   start->blockCache.descBlocksWrittenThru,
+			   end->blockCache.dirBlocksWrittenThru -
+			   start->blockCache.dirBlocksWrittenThru);
+    if (end->blockCache.fileDescReads > 0) {
+	fprintf(stream, "File descriptor reads %d hits %d writes %d hits %d\n",
+			       end->blockCache.fileDescReads -
+			       start->blockCache.fileDescReads,
+			       end->blockCache.fileDescReadHits -
+			       start->blockCache.fileDescReadHits,
+			       end->blockCache.fileDescWrites -
+			       start->blockCache.fileDescWrites,
+			       end->blockCache.fileDescWriteHits -
+			       start->blockCache.fileDescWriteHits);
+    }
+    if (end->blockCache.indBlockAccesses > 0) {
+	fprintf(stream, "Indirect block reads %d hits %d writes %d\n",
+			   end->blockCache.indBlockAccesses -
+			   start->blockCache.indBlockAccesses,
+			   end->blockCache.indBlockHits -
+			   start->blockCache.indBlockHits,
+			   end->blockCache.indBlockWrites -
+			   start->blockCache.indBlockWrites);
+    }
+    if (end->blockCache.dirBlockAccesses > 0) {
+	fprintf(stream, "Directory block reads %d hits %d writes %d\n",
+			       end->blockCache.dirBlockAccesses -
+			       start->blockCache.dirBlockAccesses,
+			       end->blockCache.dirBlockHits -
+			       start->blockCache.dirBlockHits,
+			       end->blockCache.dirBlockWrites -
+			       start->blockCache.dirBlockWrites);
+    }
+    if (end->blockCache.vmRequests > 0) {
+	fprintf(stream, "VM requests %d tried %d gave %d\n",
+			       end->blockCache.vmRequests -
+			       start->blockCache.vmRequests,
+			       end->blockCache.triedToGiveToVM -
+			       start->blockCache.triedToGiveToVM,
+			       end->blockCache.vmGotPage -
+			       start->blockCache.vmGotPage);
+    }
+    fprintf(stream, "Cache blocks created %d, alloc from free %d part %d lru %d\n",
+			       end->blockCache.unmapped -
+			       start->blockCache.unmapped,
+			       end->blockCache.totFree -
+			       start->blockCache.totFree,
+			       end->blockCache.partFree -
+			       start->blockCache.partFree,
+			       end->blockCache.lru -
+			       start->blockCache.lru);
+    if (end->alloc.blocksAllocated > 0) {
+	fprintf(stream, "Disk blocks alloc %d free %d search %d/%d hash %d\n",
+			       end->alloc.blocksAllocated -
+			       start->alloc.blocksAllocated,
+			       end->alloc.blocksFreed -
+			       start->alloc.blocksFreed,
+			       end->alloc.cylsSearched -
+			       start->alloc.cylsSearched,
+			       end->alloc.cylBitmapSearches -
+			       start->alloc.cylBitmapSearches,
+			       end->alloc.cylHashes -
+			       start->alloc.cylHashes);
+	fprintf(stream, "Fragments alloc %d free %d upgrade %d blocks made %d used %d, bad hints %d\n",
+			       end->alloc.fragsAllocated -
+			       start->alloc.fragsAllocated,
+			       end->alloc.fragsFreed -
+			       start->alloc.fragsFreed,
+			       end->alloc.fragUpgrades -
+			       start->alloc.fragUpgrades,
+			       end->alloc.fragToBlock -
+			       start->alloc.fragToBlock,
+			       end->alloc.fullBlockFrags -
+			       start->alloc.fullBlockFrags,
+			       end->alloc.badFragList -
+			       start->alloc.badFragList);
+    }
+    if (end->nameCache.accesses > 0) {
+	fprintf(stream, "Name cache entries %d accesses %d hits %d replaced %d\n",
+			   end->nameCache.size,
+			   end->nameCache.accesses -
+			   start->nameCache.accesses,
+			   end->nameCache.hits -
+			   start->nameCache.hits,
+			   end->nameCache.replacements -
+			   start->nameCache.replacements);
+    }
+    fprintf(stream, "Handles %d created %d installed %d hits %d old %d version %d flush %d\n",
+			   end->handle.exists,
+			   end->handle.created -
+			   start->handle.created,
+			   end->handle.installCalls -
+			   start->handle.installCalls,
+			   end->handle.installHits -
+			   start->handle.installHits,
+			   0,
+			   end->handle.versionMismatch -
+			   start->handle.versionMismatch,
+			   end->handle.cacheFlushes -
+			   start->handle.cacheFlushes);
+    fprintf(stream, "\tfetched %d hits %d released %d locks %d/%d wait %d\n",
+			   end->handle.fetchCalls -
+			   start->handle.fetchCalls,
+			   end->handle.fetchHits -
+			   start->handle.fetchHits,
+			   end->handle.release -
+			   start->handle.release,
+			   end->handle.locks -
+			   start->handle.locks,
+			   end->handle.locks -
+			   start->handle.locks,
+			   end->handle.lockWaits -
+			   start->handle.lockWaits);
+    fprintf(stream, "Segments fetched %d hits %d\n",
+			   end->handle.segmentFetches -
+			   start->handle.segmentFetches,
+			   end->handle.segmentHits -
+			   start->handle.segmentHits);
+    fprintf(stream, "Lookup relative %d absolute %d redirect %d found %d loops %d timeouts %d stale %d\n",
+			   end->prefix.relative -
+			   start->prefix.relative,
+			   end->prefix.absolute -
+			   start->prefix.absolute,
+			   end->prefix.redirects -
+			   start->prefix.redirects,
+			   end->prefix.found -
+			   start->prefix.found,
+			   end->prefix.loops -
+			   start->prefix.loops,
+			   end->prefix.timeouts -
+			   start->prefix.timeouts,
+			   end->prefix.stale -
+			   start->prefix.stale);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintDiskStats --
+ *
+ *	Print out statistics for the disks.  If both a start and end
+ *	sample of the statistics are given then the differences between
+ *	the two are printed.  To just print the total cumulative statistics
+ *	from one sample, specify a single VmStats buffer with the 'end'
+ *	parameter.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints to the specified stream
+ *
+ *----------------------------------------------------------------------
+ */
+void
+PrintDiskStats(stream, start, end)
+    FILE 		*stream;/* Output stream */
+    Sys_DiskStats	*start;	/* 0, or address of "before run" statistics */
+    Sys_DiskStats	*end;	/* End of run statistics */
+{
+    int	i = 0;
+    while (1) {
+	if (end[i].name[0] == 0) {
+	    return;
+	}
+	if (start == 0) {
+	    fprintf(stream, "Disk (%s, %d): %0.2f%% Idle Reads %d Writes %d\n",
+		    end[i].name, end[i].controllerID,
+		    100 * ((float)end[i].idleCount / (float)end[i].numSamples),
+		    end[i].diskReads, end[i].diskWrites);
+	} else {
+	    fprintf(stream, "Disk (%s, %d) %0.0f%% Idle Reads %d Writes %d\n",
+		    end[i].name, end[i].controllerID,
+		    100 * ((float)(end[i].idleCount - start[i].idleCount) /
+		           (float)(end[i].numSamples - start[i].numSamples)),
+		    end[i].diskReads - start[i].diskReads,
+		    end[i].diskWrites - start[i].diskWrites);
+	}
+	i++;
+    }
+}
+
+

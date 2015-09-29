@@ -1,0 +1,168 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     90.07.17.15.42.30;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.07.18.11.51.25;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@/* 
+ * mem.c --
+ *
+ *	A simple (and small) memory allocator for the SCSI disk bootstrap
+ *	program.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifdef notdef
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.2 89/01/07 04:12:18 rab Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include "sprite.h"
+    extern int end;
+
+static char *memEnd = (char *) &end;
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * malloc --
+ *
+ *     Allocate a block of memory of the given size starting at the
+ *     current end of kernel memory.
+ *
+ * Results:
+ *	A pointer to the allocated memory
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+
+
+char *
+malloc(numBytes)
+{
+    char	*addr;
+
+    addr =  memEnd;
+
+    memEnd += (numBytes + 3) & ~3;
+    bzero(addr, numBytes);
+    return(addr);
+}
+
+void
+free(address)
+    char *address;
+{
+    return;
+}
+void
+_free(address)
+    char *address;
+{
+    return;
+}
+
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 2
+a2 1
+/* mem.c -
+d4 11
+a14 4
+ *	This file contains a simple memory allocator.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+d17 3
+a19 3
+#ifndef lint
+static char rcsid[] = "$Header: bootVm.c,v 1.1 86/07/16 17:12:02 brent Exp $ SPRITE (Berkeley)";
+#endif not lint
+d22 1
+a22 9
+#include "vmSunConst.h"
+
+extern int endBss;	/* Defined in end.s */
+
+/*
+ * Private storage for Mem_Alloc
+ */
+static Address	memEnd;
+static Boolean	memInitialized = FALSE;
+d24 1
+d27 1
+a27 1
+ * ----------------------------------------------------------------------------
+d29 1
+a29 1
+ * Mem_Alloc --
+d35 1
+a35 1
+ *     A pointer to the allocated memory.
+d38 1
+a38 1
+ *     memEnd is incremented.
+d40 1
+a40 1
+ * ----------------------------------------------------------------------------
+d43 4
+a46 2
+Address
+Mem_Alloc(numBytes)
+d48 1
+a48 6
+    Address	addr;
+
+    if (!memInitialized) {
+	memEnd = (Address) (((int) &endBss + 3) & ~3);
+	memInitialized = TRUE;
+    }
+d53 1
+a53 1
+
+d58 8
+a65 2
+Mem_Free(address)
+    Address address;
+d69 2
+@

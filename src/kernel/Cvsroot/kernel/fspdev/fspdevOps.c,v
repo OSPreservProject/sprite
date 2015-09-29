@@ -1,0 +1,640 @@
+head     9.5;
+branch   ;
+access   ;
+symbols  ds3100:9.5 sun3:9.5 sprited:9.3.1 sun4nw:9.4 symm:9.4 spur:9.4 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.5
+date     92.10.26.14.05.49;  author mgbaker;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     91.09.06.15.58.05;  author mottsmth;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     91.06.26.01.01.34;  author mottsmth;  state Exp;
+branches 9.3.1.1;
+next     9.2;
+
+9.2
+date     90.10.08.12.40.18;  author mendel;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.11.29.14.49.09;  author brent;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.08.49;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     89.08.21.15.28.18;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.08.21.11.09.50;  author mendel;  state Exp;
+branches ;
+next     ;
+
+9.3.1.1
+date     91.11.15.16.30.15;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Pseudo-device/filesystem naming and io tables.
+@
+
+
+9.5
+log
+@Support for bulk reopen rpcs.
+@
+text
+@/* 
+ * fsPdevOps.c --
+ *
+ *	Routine for initializing the fsOpTable switch entries for 
+ *	pseudo-devices and pseudo-filesystems.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fspdev/fspdevOps.c,v 9.4 91/09/06 15:58:05 mottsmth Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <fs.h>
+#include <fsconsist.h>
+#include <fsio.h>
+#include <fsNameOps.h>
+#include <fspdev.h>
+#include <fspdevInt.h>
+#include <fsrmt.h>
+#include <fsioFile.h>
+/*
+ * fs_DomainLookup for FS_REMOTE_SPRITE_DOMAIN type.
+ */
+
+static Fs_DomainLookupOps pdevDomainLookup =  {
+     Fsio_NoProc, FspdevPfsExport, FspdevPfsOpen, FspdevPfsGetAttrPath, 
+     FspdevPfsSetAttrPath,
+     FspdevPfsMakeDevice, FspdevPfsMakeDir, FspdevPfsRemove, FspdevPfsRemoveDir,
+     FspdevPfsRename, FspdevPfsHardLink
+};
+
+static Fs_AttrOps pdevAttrOpTable = { FspdevPseudoGetAttr, FspdevPseudoSetAttr };
+
+static Fsio_OpenOps pdevOpenOps[] = { 
+    /*
+     * Pseudo devices.
+     */
+    {FS_PSEUDO_DEV, FspdevNameOpen},
+    { FS_PSEUDO_FS, Fsio_NoProc},
+    /*
+     * A remote link can either be treated like a regular file,
+     * or opened by a pseudo-filesystem server.
+     */
+    { FS_REMOTE_LINK, FspdevRmtLinkNameOpen },
+};
+static int numPdevOpenOps = sizeof(pdevOpenOps)/
+				 sizeof(pdevOpenOps[0]);
+/*
+ * File stream type ops for FSIO_CONTROL_STREAM, FSIO_SERVER_STREAM,
+ * and FSIO_LCL_PSEUDO_STREAM FSIO_RMT_PSEUDO_STREAM FSIO_PFS_CONTROL_STREAM
+ * FSIO_PFS_NAMING_STREAM FSIO_LCL_PFS_STREAM FSIO_RMT_CONTROL_STREAM 
+ * FSIO_PASSING_STREAM
+ */
+
+static Fsio_StreamTypeOps pdevFileStreamOps[] = {
+    /*
+     * A control stream is what a pdev server process gets when it opens a
+     * pseudo device file.  This stream is used to notify the server
+     * of new clients; the ID of the server stream set up for each
+     * new client is passed over this control stream.
+     */
+    { FSIO_CONTROL_STREAM, FspdevControlIoOpen,
+		FspdevControlRead, Fsio_NoProc,
+		Fsio_NoProc, Fsio_NoProc, Fsio_NoProc, 	/* Paging routines */
+		FspdevControlIOControl, FspdevControlSelect,
+		FspdevControlGetIOAttr, FspdevControlSetIOAttr,
+		FspdevControlVerify,
+		Fsio_NoProc, Fsio_NoProc,		/* migStart, migEnd */
+		Fsio_NoProc, FspdevControlReopen,	/* migrate, reopen */
+		FspdevControlScavenge, FspdevControlClientKill,
+		FspdevControlClose },
+    /*
+     * A server stream gets set up for the server whenever a client opens
+     * a pseudo device.  The server reads the stream the learn about new
+     * requests from the client.  IOControls on the stream are used
+     * to control the connection to the client.
+     */
+    { FSIO_SERVER_STREAM, Fsio_NoProc,
+		FspdevServerStreamRead, Fsio_NoProc,
+		Fsio_NoProc, Fsio_NoProc, Fsio_NoProc, 	/* Paging routines */
+		FspdevServerStreamIOControl, FspdevServerStreamSelect,
+		Fsio_NullProc, Fsio_NullProc,		/* Get/Set IO Attr */
+		Fsio_NoHandle,				/* verify */
+		Fsio_NoProc, Fsio_NoProc,		/* migStart, migEnd */
+		Fsio_NoProc, Fsio_NoProc,		/* migrate, reopen */
+		(Boolean (*)())NIL,			/* scavenge */
+		Fsio_NullClientKill, FspdevServerStreamClose },
+    /*
+     * A pseudo stream with the server process running locally.  
+     */
+    { FSIO_LCL_PSEUDO_STREAM, FspdevPseudoStreamIoOpen,
+		FspdevPseudoStreamRead,	FspdevPseudoStreamWrite,
+		FspdevPseudoStreamRead,	FspdevPseudoStreamWrite, /* Paging */
+		Fsio_NoProc, 	/* Paging routines */
+		FspdevPseudoStreamIOControl,
+		FspdevPseudoStreamSelect,
+		FspdevPseudoStreamGetIOAttr, FspdevPseudoStreamSetIOAttr,
+		Fsio_NoHandle,				/* verify */
+		FspdevPseudoStreamMigClose, FspdevPseudoStreamMigOpen,
+		FspdevPseudoStreamMigrate,
+		Fsio_NoProc,				/* reopen */
+		(Boolean (*)())NIL,			/* scavenge */
+		Fsio_NullClientKill, FspdevPseudoStreamClose },
+    /*
+     * A pseudo stream with a remote server.  
+     */
+    { FSIO_RMT_PSEUDO_STREAM, FspdevRmtPseudoStreamIoOpen,
+		Fsrmt_Read, Fsrmt_Write,
+		Fsrmt_Read, Fsrmt_Write,		/* Paging I/O */
+		Fsio_NoProc, 	/* Paging routines */
+		Fsrmt_IOControl, Fsrmt_Select,
+		Fsrmt_GetIOAttr, Fsrmt_SetIOAttr,
+		FspdevRmtPseudoStreamVerify,
+		Fsrmt_IOMigClose, Fsrmt_IOMigOpen,
+		FspdevRmtPseudoStreamMigrate,
+		Fsio_NoProc,				/* reopen */
+		Fsutil_RemoteHandleScavenge, Fsio_NullClientKill,
+		FspdevRmtPseudoStreamClose },
+    /*
+     * A control stream used to mark the existence of a pseudo-filesystem.
+     * The server doesn't do I/O to this stream; it is only used at
+     * open and close time.
+     */
+    { FSIO_PFS_CONTROL_STREAM, FspdevPfsIoOpen,
+		Fsio_NoProc, Fsio_NoProc,		/* read, write */
+		Fsio_NoProc, Fsio_NoProc, Fsio_NoProc, 	/* Paging I/O */
+		Fsio_NoProc, Fsio_NoProc,		/* IOControl, select */
+		Fsio_NullProc, Fsio_NullProc,		/* Get/Set IO Attr */
+		FspdevControlVerify,
+		Fsio_NoProc, Fsio_NoProc,		/* migStart, migEnd */
+		Fsio_NoProc, FspdevControlReopen,	/* migrate, reopen */
+		FspdevControlScavenge, FspdevControlClientKill,
+		FspdevControlClose },
+    /*
+     * The 'naming stream' for a pseudo-filesystem is used to forward lookup
+     * operations from the kernel up to the user-level server.  It is like
+     * a regular pdev request-response stream, except that extra connections
+     * to it are established via the prefix table when remote Sprite hosts
+     * import a pseudo-filesystem.  The routines here are used to set this up.
+     * This stream is only accessed locally.  To remote hosts the domain is
+     * a regular remote sprite domain, and the RPC stubs on the server then
+     * switch out to either local-domain or pseudo-domain routines.
+     */
+    { FSIO_PFS_NAMING_STREAM, FspdevPfsNamingIoOpen,
+		Fsio_NoProc, Fsio_NoProc,		/* read, write */
+		Fsio_NoProc, Fsio_NoProc, Fsio_NoProc, 	/* Paging I/O */
+		Fsio_NoProc, Fsio_NoProc,		/* IOControl, select */
+		Fsio_NullProc, Fsio_NullProc,		/* Get/Set IO Attr */
+		FspdevRmtPseudoStreamVerify,
+		Fsio_NoProc, Fsio_NoProc,		/* migStart, migEnd */
+		Fsio_NoProc, Fsio_NoProc,		/* migrate, reopen */
+		Fsutil_RemoteHandleScavenge, Fsio_NullClientKill,
+		Fsrmt_IOClose },
+    /*
+     * A pseudo stream to a pseudo-filesystem server.  This is just like
+     * a pseudo stream to a pseudo-device server, except for the CltOpen
+     * routine because setup is different.  
+     */
+    { FSIO_LCL_PFS_STREAM, FspdevPfsStreamIoOpen,
+		FspdevPseudoStreamRead,	FspdevPseudoStreamWrite,
+		FspdevPseudoStreamRead,	FspdevPseudoStreamWrite, /* Paging */
+		Fsio_NoProc, 	/* Paging I/O */
+		FspdevPseudoStreamIOControl,
+		FspdevPseudoStreamSelect,
+		FspdevPseudoStreamGetIOAttr, FspdevPseudoStreamSetIOAttr,
+		Fsio_NoHandle,					/* verify */
+		FspdevPseudoStreamMigClose, FspdevPseudoStreamMigOpen,
+		FspdevPseudoStreamMigrate,
+		Fsio_NoProc,					/* reopen */
+		(Boolean (*)())NIL,				/* scavenge */
+		Fsio_NullClientKill, FspdevPseudoStreamClose },
+    /*
+     * A pseudo stream to a remote pseudo-filesystem server.  This is
+     * like the remote pseudo-device stream, except for setup because the
+     * pseudo-device connection is already set up by the time the
+     * CltOpen routine is called.
+     */
+    { FSIO_RMT_PFS_STREAM, FspdevRmtPfsStreamIoOpen,
+		Fsrmt_Read, Fsrmt_Write,
+		Fsrmt_Read, Fsrmt_Write,			/* Paging */
+		Fsio_NoProc, 	
+		Fsrmt_IOControl, Fsrmt_Select,
+		Fsrmt_GetIOAttr, Fsrmt_SetIOAttr,
+		FspdevRmtPseudoStreamVerify,
+		Fsrmt_IOMigClose, Fsrmt_IOMigOpen,
+		FspdevRmtPseudoStreamMigrate,
+		Fsio_NoProc,					/* reopen */
+		Fsutil_RemoteHandleScavenge, Fsio_NullClientKill,
+		FspdevRmtPseudoStreamClose },
+    /*
+     * This stream type is only used during get/set I/O attributes when
+     * the pseudo-device server is remote.  No handles of this type are
+     * actually created, only fileIDs that map to FSIO_CONTROL_STREAM.  
+     */
+    { FSIO_RMT_CONTROL_STREAM, Fsio_NoProc,		/* ioOpen */
+		Fsio_NoProc, Fsio_NoProc,		/* read, write */
+		Fsio_NoProc, Fsio_NoProc, Fsio_NoProc, 	/* Paging */
+		Fsio_NoProc, Fsio_NoProc,		/* ioctl, select */
+		Fsrmt_GetIOAttr, Fsrmt_SetIOAttr,
+		(Fs_HandleHeader *(*)())Fsio_NoProc,	/* verify */
+		Fsio_NoProc, Fsio_NoProc,		/* release, migend */
+		Fsio_NoProc, Fsio_NoProc,		/* migrate, reopen */
+		(Boolean (*)())NIL,			/* scavenge */
+		(void (*)())Fsio_NoProc, Fsio_NoProc },	/* kill, close */
+    /*
+     * Stream used to pass streams from a pseudo-device server to
+     * a client in response to an open request.
+     */
+    { FSIO_PASSING_STREAM, FspdevPassStream,
+		Fsio_NoProc, Fsio_NoProc,		/* read, write */
+		Fsio_NoProc, Fsio_NoProc, Fsio_NoProc, 	/* Paging */
+		Fsio_NoProc, Fsio_NoProc,		/* ioctl, select */
+		Fsio_NoProc, Fsio_NoProc,		/* get/set attr */
+		(Fs_HandleHeader *(*)())Fsio_NoProc,	/* verify */
+		Fsio_NoProc, Fsio_NoProc,		/* release, migend */
+		Fsio_NoProc, Fsio_NoProc,		/* migrate, reopen */
+		(Boolean (*)())NIL,			/* scavenge */
+		(void (*)())Fsio_NoProc, Fsio_NoProc },	/* kill, close */
+
+
+};
+
+static int numPdevFileStreamOps = sizeof(pdevFileStreamOps)/
+				 sizeof(pdevFileStreamOps[0]);
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsdPdevRmtInitializeOps --
+ *
+ *	Initialize the fsOpTable switch for the remote domain naming 
+ *	and remote domain streams.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Fspdev_InitializeOps()
+{
+    int	i;
+    Fsutil_BulkReopenOps	reopenOps;
+
+    Fs_InstallDomainLookupOps(FS_PSEUDO_DOMAIN, &pdevDomainLookup, 
+			&pdevAttrOpTable);
+    for (i = 0; i < numPdevFileStreamOps; i++)  { 
+	Fsio_InstallStreamOps(pdevFileStreamOps[i].type, &(pdevFileStreamOps[i]));
+    }
+    for (i = 0; i < numPdevOpenOps; i++)  { 
+	Fsio_InstallSrvOpenOp(pdevOpenOps[i].type, &(pdevOpenOps[i]));
+    }
+    reopenOps.setup = FspdevSetupControlReopen;
+    reopenOps.finish = FspdevFinishControlReopen;
+    Fsutil_InitBulkReopenOps(FSIO_CONTROL_STREAM, &reopenOps);
+
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fspdev_Bin() --
+ *
+ *	Setup objects to be binned.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Fspdev_Bin()
+{
+    Mem_Bin(sizeof(Fspdev_ServerIOHandle));
+    Mem_Bin(sizeof(Fspdev_ControlIOHandle));
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * FspdevPassStream --
+ *
+ *	This is called from Fs_Open as a ioOpen routine.  It's job is
+ *	to take an encapsulated stream from a pseudo-device server and
+ *	unencapsulate it so the Fs_Open returns the stream that the
+ *	pseudo-device server had.
+ *
+ * Results:
+ *	A return status.
+ *
+ * Side effects:
+ *	Deencapsulates a stream.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+
+/* ARGSUSED */
+ReturnStatus
+FspdevPassStream(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtrPtr)
+    Fs_FileID		*ioFileIDPtr;	/* I/O fileID from the name server */
+    int			*flagsPtr;	/* Return only.  The server returns
+					 * a modified useFlags in Fsio_FileState */
+    int			clientID;	/* IGNORED */
+    ClientData		streamData;	/* Pointer to encapsulated stream. */
+    char		*name;		/* File name for error msgs */
+    Fs_HandleHeader	**ioHandlePtrPtr;/* Return - a handle set up for
+					 * I/O to a file, NIL if failure. */
+{
+    return(FAILURE);
+}
+
+@
+
+
+9.4
+log
+@Fix sticky segment handling for pseudo file system execution
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fspdev/RCS/fspdevOps.c,v 9.3 91/06/26 01:01:34 mottsmth Exp $ SPRITE (Berkeley)";
+d256 1
+d266 3
+d270 1
+@
+
+
+9.3
+log
+@Allow execution of PFS files
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fspdev/RCS/fspdevOps.c,v 9.2 90/10/08 12:40:18 mendel Exp $ SPRITE (Berkeley)";
+d127 1
+a127 1
+		Fsrmt_IOClose },
+d198 1
+a198 1
+		Fsrmt_IOClose },
+@
+
+
+9.3.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fspdev/fspdevOps.c,v 9.3 91/06/26 01:01:34 mottsmth Exp $ SPRITE (Berkeley)";
+@
+
+
+9.2
+log
+@Changed file name to fspdevOps.c.
+Added Fs_DomainLookupOps data structure for extra typechecking.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs.mendel/RCS/fsPdevOps.c,v 1.1 90/01/16 17:11:13 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d287 2
+a288 2
+    Mem_Bin(sizeof(FspdevServerIOHandle));
+    Mem_Bin(sizeof(FspdevControlIOHandle));
+@
+
+
+9.1
+log
+@Added PageRead and PageWrite routines.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fspdev/RCS/fsPdevOps.c,v 9.0 89/09/12 15:08:49 douglis Stable Locker: brent $ SPRITE (Berkeley)";
+d21 9
+a29 8
+#include "sprite.h"
+#include "fs.h"
+#include "fsio.h"
+#include "fsNameOps.h"
+#include "fspdev.h"
+#include "fspdevInt.h"
+#include "fsrmt.h"
+
+d34 3
+a36 2
+static ReturnStatus (*pdevDomainLookup[FS_NUM_NAME_OPS])() = {
+     Fsio_NoProc, FspdevPfsExport, FspdevPfsOpen, FspdevPfsGetAttrPath, FspdevPfsSetAttrPath,
+d73 1
+a73 1
+		Fsio_NoProc, Fsio_NoProc,		/* Paging routines */
+d89 1
+a89 1
+		Fsio_NoProc, Fsio_NoProc,		/* Paging I/O */
+d103 1
+d119 1
+d135 1
+a135 1
+		Fsio_NoProc, Fsio_NoProc,		/* Paging I/O */
+d155 1
+a155 1
+		Fsio_NoProc, Fsio_NoProc,		/* Paging I/O */
+d171 1
+d190 1
+d206 1
+a206 1
+		Fsio_NoProc, Fsio_NoProc,		/* Paging */
+d220 1
+a220 1
+		Fsio_NoProc, Fsio_NoProc,		/* Paging */
+d257 1
+a257 1
+    Fs_InstallDomainLookupOps(FS_PSEUDO_DOMAIN, pdevDomainLookup, 
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fspdev/RCS/fsPdevOps.c,v 1.2 89/08/21 15:28:18 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d23 1
+a26 1
+#include "fsio.h"
+d64 1
+a64 1
+     * A control stream is what a server program gets when it opens a
+d69 3
+a71 1
+    { FSIO_CONTROL_STREAM, FspdevControlIoOpen, FspdevControlRead, Fsio_NoProc,
+d75 4
+a78 3
+		Fsio_NoProc, Fsio_NoProc,				/* migStart, migEnd */
+		Fsio_NoProc, FspdevControlReopen,		/* migrate, reopen */
+		FspdevControlScavenge, FspdevControlClientKill, FspdevControlClose },
+d85 3
+a87 1
+    { FSIO_SERVER_STREAM, Fsio_NoProc, FspdevServerStreamRead, Fsio_NoProc,
+d90 1
+a90 1
+		Fsio_NoHandle,			/* verify */
+d92 3
+a94 1
+		Fsio_NoProc, Fsio_NoProc,				/* migrate, reopen */		(Boolean (*)())NIL, Fsio_NullClientKill, FspdevServerStreamClose },
+d98 4
+a101 2
+    { FSIO_LCL_PSEUDO_STREAM, FspdevPseudoStreamIoOpen, FspdevPseudoStreamRead,
+		FspdevPseudoStreamWrite, FspdevPseudoStreamIOControl,
+d104 6
+a109 3
+		Fsio_NoHandle, FspdevPseudoStreamMigClose, FspdevPseudoStreamMigOpen,
+		FspdevPseudoStreamMigrate, Fsio_NoProc,		/* migrate, reopen */
+		(Boolean (*)())NIL, Fsio_NullClientKill, FspdevPseudoStreamClose },
+d113 3
+a115 2
+    { FSIO_RMT_PSEUDO_STREAM, FspdevRmtPseudoStreamIoOpen, Fsrmt_Read,
+		Fsrmt_Write,
+d120 4
+a123 2
+		FspdevRmtPseudoStreamMigrate, Fsio_NoProc,	/* migrate, reopen */
+		Fsutil_RemoteHandleScavenge, Fsio_NullClientKill, Fsrmt_IOClose },
+d130 4
+a133 3
+		Fsio_NoProc, Fsio_NoProc,				/* read, write */
+		Fsio_NoProc, Fsio_NoProc,				/* IOControl, select */
+		Fsio_NullProc, Fsio_NullProc,			/* Get/Set IO Attr */
+d135 2
+a136 2
+		Fsio_NoProc, Fsio_NoProc,				/* migStart, migEnd */
+		Fsio_NoProc, FspdevControlReopen,		/* migrate, reopen */
+d150 4
+a153 3
+		Fsio_NoProc, Fsio_NoProc,				/* read, write */
+		Fsio_NoProc, Fsio_NoProc,				/* IOControl, select */
+		Fsio_NullProc, Fsio_NullProc,			/* Get/Set IO Attr */
+d155 2
+a156 2
+		Fsio_NoProc, Fsio_NoProc,				/* migStart, migEnd */
+		Fsio_NoProc, Fsio_NoProc,				/* migrate, reopen */
+d164 4
+a167 2
+    { FSIO_LCL_PFS_STREAM, FspdevPfsStreamIoOpen, FspdevPseudoStreamRead,
+		FspdevPseudoStreamWrite, FspdevPseudoStreamIOControl,
+d170 6
+a175 3
+		Fsio_NoHandle, FspdevPseudoStreamMigClose, FspdevPseudoStreamMigOpen,
+		FspdevPseudoStreamMigrate, Fsio_NoProc,		/* migrate, reopen */
+		(Boolean (*)())NIL, Fsio_NullClientKill, FspdevPseudoStreamClose },
+d182 3
+a184 2
+    { FSIO_RMT_PFS_STREAM, FspdevRmtPfsStreamIoOpen, Fsrmt_Read,
+		Fsrmt_Write,
+d189 4
+a192 2
+		FspdevRmtPseudoStreamMigrate, Fsio_NoProc,	/* migrate, reopen */
+		Fsutil_RemoteHandleScavenge, Fsio_NullClientKill, Fsrmt_IOClose },
+d198 4
+a201 3
+    { FSIO_RMT_CONTROL_STREAM, Fsio_NoProc, Fsio_NoProc,	/* cltOpen, read */
+		Fsio_NoProc,				/* write */
+		Fsio_NoProc, Fsio_NoProc,			/* ioctl, select */
+d204 3
+a206 3
+		Fsio_NoProc, Fsio_NoProc,			/* release, migend */
+		Fsio_NoProc, Fsio_NoProc,			/* migrate, reopen */
+		(Boolean (*)())NIL,		/* scavenge */
+d213 4
+a216 2
+		Fsio_NoProc, Fsio_NoProc, Fsio_NoProc, Fsio_NoProc,	/* read, write, ioctl, select */
+		Fsio_NoProc, Fsio_NoProc,			/* get/set attr */
+d218 3
+a220 3
+		Fsio_NoProc, Fsio_NoProc,			/* release, migend */
+		Fsio_NoProc, Fsio_NoProc,			/* migrate, reopen */
+		(Boolean (*)())NIL,		/* scavenge */
+d291 1
+a291 1
+ *	This is called from Fs_Open as a cltOpen routine.  It's job is
+@
+
+
+1.2
+log
+@Break up fs into many modules.    
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fspdev/RCS/fsPdevOps.c,v 1.1 89/08/21 11:09:50 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.2 89/01/07 04:12:18 rab Exp $ SPRITE (Berkeley)";
+d23 1
+a26 1
+#include "fsNameOps.h"
+d223 1
+a223 1
+    Fs_InstallDomainLookupOps(FS_PSEUDO_DOMAIN, &pdevDomainLookup, 
+@

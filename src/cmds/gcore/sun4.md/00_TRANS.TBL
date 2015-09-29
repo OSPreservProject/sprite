@@ -1,0 +1,5 @@
+F DEPENDEN.MK;1                     	dependencies.mk
+F GCORE.C;1                         	gcore.c
+F GCORE.H;1                         	gcore.h
+F MD.MK;1                           	md.mk
+F PROCESS.C;1                       	process.c

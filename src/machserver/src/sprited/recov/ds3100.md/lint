@@ -1,0 +1,3 @@
+recovProc.c:
+recovery.c:
+Rpc_Ping returns value which is sometimes ignored

@@ -1,0 +1,12 @@
+F FOOBAR.;1                         	foobar
+F IMAKE.RUL;1                       	Imake.rules
+F IMAKE.TMP;1                       	Imake.tmpl
+F LIBRARY.TMP;1                     	Library.tmpl
+F MIPS.CF;1                         	Mips.cf
+F PROJECT.TMP;1                     	Project.tmpl
+D RCS                               	RCS
+F SITE.DEF;1                        	site.def
+F SUN.CF;1                          	sun.cf
+F SUNLIB.RUL;1                      	sunLib.rules
+F SUNLIB.TMP;1                      	sunLib.tmpl
+F ULTRIX.CF;1                       	ultrix.cf

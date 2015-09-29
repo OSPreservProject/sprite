@@ -1,0 +1,163 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  sprited:1.3.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     88.12.29.01.02.47;  author rab;  state Exp;
+branches 1.3.1.1;
+next     1.2;
+
+1.2
+date     88.12.15.09.50.20;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.10.16.24.02;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.3.1.1
+date     91.12.02.20.04.23;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@Changed return value from zero to c.
+@
+text
+@/* 
+ * ungetc.c --
+ *
+ *	Source code for the "ungetc" library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdio/RCS/ungetc.c,v 1.2 88/12/15 09:50:20 ouster Exp Locker: rab $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "stdio.h"
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ungetc --
+ *
+ *	This procedure adds a single character back to the front of a
+ *	stream, so that it will be the next character read from the
+ *	stream.  This procedure is only guaranteed to work once in a
+ *	row for any stream until getc is called again.  Successive
+ *	calls may eventually back up to the beginning of the stream's
+ *	buffer, in which case future attempts to put characters back will
+ *	be ignored.
+ *
+ * Results:
+ *	EOF is returned if there was insufficient space left in the
+ *	buffer to push c back.  Otherwise c is returned.
+ *
+ * Side effects:
+ *	The stream is modified so that the next getc call for the
+ *	stream will return c.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+ungetc(c, stream)
+    int c;				/* Character to put back. */
+    register FILE *stream;		/* Stream in which to put c back. */
+{
+    if ((stream->writeCount > 0) ||
+	    !(stream->flags & STDIO_READ) || (c == EOF) ||
+	    (stream->status != 0)) {
+	return EOF;
+    }
+    if (stream->lastAccess < stream->buffer) {
+	if (stream->readCount != 0) {
+	    return EOF;
+	}
+	stream->lastAccess = stream->buffer + stream->bufSize - 1;
+    }
+    if (stream->lastAccess < stream->buffer) {
+	stream->lastAccess = stream->buffer + stream->bufSize - 1;
+	stream->readCount = 0;
+    }
+
+    /*
+     * Special case:  don't overwrite the character if it's already
+     * got the correct value.  This is needed during sscanf, if the
+     * string being scanned is read-only:  sscanf calls ungetc, but
+     * always puts back the same value that was already there.
+     */
+
+    if (*(stream->lastAccess) != c) {
+	*(stream->lastAccess) = c;
+    }
+    stream->lastAccess--;
+    stream->readCount++;
+    stream->flags &= ~STDIO_EOF;
+    return c;
+}
+@
+
+
+1.3.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdio/RCS/ungetc.c,v 1.3 88/12/29 01:02:47 rab Exp $ SPRITE (Berkeley)";
+@
+
+
+1.2
+log
+@Don't modify the buffer during ungetc unless absolutely necessary:
+needed to support read-only string buffers.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: ungetc.c,v 1.1 88/06/10 16:24:02 ouster Exp $ SPRITE (Berkeley)";
+d37 1
+a37 1
+ *	buffer to push c back.
+d80 1
+a80 1
+    return 0;
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: atoi.c,v 1.1 88/04/28 17:20:23 ouster Exp $ SPRITE (Berkeley)";
+d66 11
+a76 1
+    *(stream->lastAccess) = c;
+@

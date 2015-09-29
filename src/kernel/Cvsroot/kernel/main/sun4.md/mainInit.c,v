@@ -1,0 +1,1456 @@
+head     9.12;
+branch   ;
+access   ;
+symbols  ds3100:9.12 sun3:9.12 sun4nw:9.11 symm:9.11 spur:9.11 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.12
+date     92.08.10.20.44.18;  author mgbaker;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     91.08.30.16.49.27;  author mgbaker;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     91.08.30.15.09.28;  author mottsmth;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     91.08.18.18.56.55;  author mendel;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     91.08.18.18.52.24;  author mendel;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.10.19.15.39.17;  author shirriff;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.09.12.13.39.40;  author shirriff;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.09.11.10.49.51;  author shirriff;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.07.31.13.35.44;  author shirriff;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     89.10.27.09.07.22;  author brent;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.27.08.58.18;  author brent;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.12.11.53.05;  author brent;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.12.00;  author douglis;  state Stable;
+branches ;
+next     1.20;
+
+1.20
+date     89.08.30.13.06.49;  author mgbaker;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     89.07.10.19.50.02;  author nelson;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     89.06.16.09.03.25;  author mendel;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     89.05.24.18.52.23;  author mgbaker;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     89.03.31.12.05.30;  author mgbaker;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     89.03.26.20.26.57;  author mgbaker;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     89.03.06.12.04.25;  author mgbaker;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     89.03.03.15.49.24;  author mgbaker;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     89.02.28.12.53.48;  author mgbaker;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     89.02.24.21.55.53;  author mgbaker;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     89.02.24.15.07.37;  author mgbaker;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     89.02.05.17.33.36;  author mgbaker;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     89.01.31.14.04.27;  author mgbaker;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     89.01.29.17.22.11;  author mgbaker;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.01.29.13.21.14;  author mgbaker;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.01.25.22.53.39;  author mgbaker;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.01.23.00.04.05;  author mgbaker;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.01.22.23.45.34;  author mgbaker;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.01.22.20.30.48;  author mgbaker;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.01.11.19.09.37;  author mlgray;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@First Kernel!
+@
+
+
+9.12
+log
+@Changes for transparent server recovery.
+@
+text
+@/* 
+ *  main.c --
+ *
+ *	The main program for Sprite: initializes modules and creates
+ *	system processes. Also creates a process to run the Init program.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/mgbaker/main/sun4.md/mainInit.c,v 1.1 92/04/30 12:45:43 mgbaker Exp $ SPRITE (Berkeley)";
+#endif /* !lint */
+
+#include <sprite.h>
+#include <dbg.h>
+#include <dev.h>
+#include <net.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <proc.h>
+#include <prof.h>
+#include <recov.h>
+#include <rpc.h>
+#include <sched.h>
+#include <sig.h>
+#include <sync.h>
+#include <sys.h>
+#include <timer.h>
+#include <vm.h>
+#include <machMon.h>
+#include <devAddrs.h>
+#include <mach.h>
+#include <stdlib.h>
+#include <main.h>
+#include <stdio.h>
+#include <bstring.h>
+#include <string.h>
+#include <dump.h>
+#include <fsrecov.h>
+
+static void Init _ARGS_((void));
+
+/*
+ *  Pathname of the Init program.
+ */
+#define INIT	 	"cmds/initsprite"
+
+int main_PrintInitRoutines = FALSE;/* print out each routine as it's called. */
+
+int main_PanicOK = 0;	/* Set to 1 if it's OK to panic. */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	All kernel modules are initialized by calling their *_Init()
+ *	routines. In addition, kernel processes are created to
+ *	handle virtual memory and rpc-specific stuff. The last process
+ *	created runs the `init' program.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The whole system is initialized.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+main()
+{
+    Proc_PID	pid;
+    int		i;
+
+    /*
+     * Initialize variables specific to a given kernel.  
+     * IMPORTANT: Only variable assignments and nothing else can be
+     *		  done in this routine.
+     */
+    Main_InitVars();
+
+    /*
+     * Initialize machine dependent info.  MUST BE CALLED HERE!!!.
+     */
+    Mach_Init();
+    Sync_Init();
+
+    /*
+     * Initialize the debugger.
+     */
+    Dbg_Init();
+
+    /*
+     * Initialize the system module, particularly the fact that there is an
+     * implicit DISABLE_INTR on every processor.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Sys_Init().\n");
+    }
+    Sys_Init();
+
+    /*
+     * Now allow memory to be allocated by the "Vm_BootAlloc" call.  Memory
+     * can be allocated by this method until "Vm_Init" is called.  After this
+     * then the normal memory allocator must be used.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Vm_BootInit().\n");
+    }
+    Vm_BootInit();
+
+    /*
+     * Initialize all devices.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Dev_Init().\n");
+    }
+    Dev_Init();
+
+    /*
+     *  Initialize the mappings of keys to call dump routines.
+     *  Must be after Dev_Init. 
+     */
+    if (main_DoDumpInit) {
+	if (main_PrintInitRoutines) {
+	    Mach_MonPrintf("Calling Dump_Init().\n");
+	}
+	Dump_Init();
+    }
+
+    /*
+     * Initialize the timer, signal, process, scheduling and synchronization
+     * modules' data structures.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Proc_Init().\n");
+    }
+    Proc_Init();
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Sync_LockStatInit().\n");
+    }
+    Sync_LockStatInit();
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Timer_Init().\n");
+    }
+    Timer_Init();
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Sig_Init().\n");
+    }
+    Sig_Init();
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Sched_Init().\n");
+    }
+    Sched_Init();
+
+    /*
+     * Sys_Printfs are not allowed before this point.
+     */  
+    main_PanicOK++;
+    printf("Sprite kernel: %s\n", SpriteVersion());
+
+    /*
+     * Set up bins for the memory allocator.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Fs_Bin\n");
+    }
+    Fs_Bin();
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Net_Bin\n");
+    }
+    Net_Bin();
+
+    /*
+     * Initialize virtual memory.  After this point must use the normal
+     * memory allocator to allocate memory.  If you use Vm_BootAlloc then
+     * will get a panic into the debugger.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Vm_Init\n");
+    }
+    Vm_Init();
+
+    /*
+     * malloc can be called from this point on.
+     */
+
+    /*
+     * Initialize the main process. Must be called before any new 
+     * processes are created.
+     * Dependencies: Proc_InitTable, Sched_Init, Vm_Init, Mem_Init
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Proc_InitMainProc\n");
+    }
+    Proc_InitMainProc();
+
+    /*
+     * Initialize the network and the routes.  It would be nice if we
+     * could call Net_Init earlier so that we can use the debugger earlier
+     * but we must call Vm_Init first.  VM could be changed so that we
+     * could move the call earlier however.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Net_Init\n");
+    }
+    Net_Init();
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Net_RouteInit\n");
+    }
+    Net_RouteInit();
+
+    /*
+     * Enable server process manager.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Proc_ServerInit\n");
+    }
+    Proc_ServerInit();
+
+    /*
+     * Initialize the recovery module.  Do before Rpc and after Vm_Init.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Recov_Init\n");
+    }
+    Recov_Init();
+
+    /*
+     * Initialize the data structures for the Rpc system.  This uses
+     * Vm_RawAlloc to so it must be called after Vm_Init.
+     * Dependencies: Timer_Init, Vm_Init, Net_Init, Recov_Init
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Rpc_Init\n");
+    }
+    Rpc_Init();
+
+    /*
+     * Configure devices that may or may not exist.  This needs to be
+     * done after Proc_InitMainProc because the initialization routines
+     * use SetJump which uses the proc table entry for the main process.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Dev_Config\n");
+    }
+    Dev_Config();
+
+    /*
+     * Initialize profiling after the timer and vm stuff is set up.
+     * Dependencies: Timer_Init, Vm_Init
+     */
+    if (main_DoProf) {
+	Prof_Init();
+    }
+    /*
+     *  Allow interrupts from now on.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Enabling interrupts\n");
+    }
+    Mach_MonStartNmi();
+    ENABLE_INTR();
+
+    if (main_Debug) {
+	DBG_CALL;
+    }
+
+    /*
+     * Initialize the fs recovery stuff.
+     */
+    if (main_PrintInitRoutines && recov_Transparent) {
+        Mach_MonPrintf("Calling Fsrecov_InitState.\n");
+    }
+    if (recov_Transparent) {
+	Fsrecov_InitState();
+    }
+
+    /*
+     * Initialize dir op log recovery stuff.
+     */
+    if (main_PrintInitRoutines && recov_Transparent) {
+        Mach_MonPrintf("Calling Fsrecov_DirOpInit.\n");
+    }
+    if (recov_Transparent) {
+	Fsrecov_DirOpInit();
+    }
+
+
+    /*
+     * Sleep for a few seconds to calibrate the idle time ticks.
+     */
+    Sched_TimeTicks();
+
+    /*
+     * Start profiling, if desired.
+     */
+    if (main_DoProf) {
+        (void) Prof_Start();
+    }
+
+    /*
+     * Do an initial RPC to get a boot timestamp.  This allows
+     * servers to detect when we crash and reboot.  This will set the
+     * system clock too, although rdate is usually done from user level later.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Call Rpc_Start\n");
+    }
+    Rpc_Start();
+
+    /*
+     * Initialize the file system. 
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Call Fs_Init\n");
+    }
+    Fs_Init();
+
+    /*
+     * Before starting up any more processes get a current directory
+     * for the main process.  Subsequent new procs will inherit it.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Call Fs_ProcInit\n");
+    }
+    Fs_ProcInit();
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Bunch of call funcs\n");
+    }
+    /*
+     * Start the clock daemon and the routine that opens up the swap directory.
+     */
+    Proc_CallFunc(Vm_Clock, (ClientData) NIL, 0);
+    Proc_CallFunc(Vm_OpenSwapDirectory, (ClientData) NIL, 0);
+
+    /*
+     * Start the process that synchronizes the filesystem caches
+     * with the data kept on disk.
+     */
+    Proc_CallFunc(Fsutil_SyncProc, (ClientData) NIL, 0);
+
+    /*
+     * Create a few RPC server processes and the Rpc_Daemon process which
+     * will create more server processes if needed.
+     */
+    if (main_NumRpcServers > 0) {
+	for (i=0 ; i<main_NumRpcServers ; i++) {
+	    (void) Rpc_CreateServer((int *) &pid);
+	}
+    }
+    (void) Proc_NewProc((Address) Rpc_Daemon, PROC_KERNEL, FALSE, &pid,
+	"Rpc_Daemon", FALSE);
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Creating Proc server procs\n");
+    }
+
+    /*
+     * Create processes  to execute functions.
+     */
+    (void) Proc_ServerProcCreate(FSCACHE_MAX_CLEANER_PROCS + 
+					VM_MAX_PAGE_OUT_PROCS);
+
+    /*
+     * Create a recovery process to monitor other hosts.  Can't use
+     * Proc_CallFunc's to do this because they can be used up waiting
+     * for page faults against down servers.  (Alternatively the VM
+     * code could be fixed up to retry page faults later instead of
+     * letting the Proc_ServerProc wait for recovery.)
+     */
+    (void) Proc_NewProc((Address) Recov_Proc, PROC_KERNEL, FALSE, &pid,
+			"Recov_Proc", FALSE);
+    /*
+     * Set up process migration recovery management.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Proc_MigInit\n");
+    }
+    Proc_MigInit();
+
+    /*
+     * Call the routine to start test kernel processes.
+     */
+
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Main_HookRoutine\n");
+    }
+    Main_HookRoutine();
+
+    /*
+     * Print out the amount of memory used.
+     */
+    printf("MEMORY %d bytes allocated for kernel\n", 
+		vmMemEnd - mach_KernStart);
+    /*
+     * Start up the first user process.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Creating Init\n");
+    }
+    (void) Proc_NewProc((Address) Init, PROC_KERNEL, FALSE, &pid, "Init",
+			FALSE);
+
+    (void) Sync_WaitTime(time_OneYear);
+    printf("Main exiting\n");
+    Proc_Exit(0);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Init --
+ *
+ *	This routine execs the init program.
+ *
+ * Results:
+ *	This routine only returns an error if the exec failed.
+ *
+ * Side effects:
+ *	The current process image is overlayed by the init process.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+Init()
+{
+    char		*initArgs[10];
+    ReturnStatus	status;
+    char		argBuffer[100];
+    int			argc;
+    Fs_Stream		*dummy;
+    char		bootCommand[103];
+    char		*ptr;
+    int			i;
+    int			argLength;
+
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("In Init\n");
+    }
+    bzero(bootCommand, 103);
+    argc = Mach_GetBootArgs(8, 100, &(initArgs[2]), argBuffer);
+    if (argc > 0) {
+	argLength = (((int) initArgs[argc+1]) + strlen(initArgs[argc+1]) +
+			1 - ((int) argBuffer));
+    } else {
+	argLength = 0;
+    }
+    if (argLength > 0) {
+	initArgs[1] = "-b";
+	ptr = bootCommand;
+	for (i = 0; i < argLength; i++) {
+	    if (argBuffer[i] == '\0') {
+		*ptr++ = ' ';
+	    } else {
+		*ptr++ = argBuffer[i];
+	    }
+	}
+	bootCommand[argLength] = '\0';
+	initArgs[2] = bootCommand;
+	initArgs[argc + 2] = (char *) NIL;
+    } else {
+	initArgs[1] = (char *) NIL;
+    }
+    if (main_AltInit != 0) {
+	initArgs[0] = main_AltInit;
+	printf("Execing \"%s\"\n", initArgs[0]);
+	status = Proc_KernExec(initArgs[0], initArgs);
+	printf( "Init: Could not exec %s status %x.\n",
+			initArgs[0], status);
+    }
+    status = Fs_Open(INIT,FS_EXECUTE | FS_FOLLOW, FS_FILE, 0, &dummy);
+    if (status != SUCCESS) {
+	printf("Can't open %s <0x%x>\n", INIT,status);
+    }
+    initArgs[0] = INIT;
+    status = Proc_KernExec(initArgs[0], initArgs);
+    printf( "Init: Could not exec %s status %x.\n",
+			initArgs[0], status);
+    Proc_Exit(1);
+}
+
+@
+
+
+9.11
+log
+@Moved Sync_Init to be called earlier, since various modules were
+making use of it (doing MASTER_UNLOCK's) before it was initialized.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/sun4.md/RCS/mainInit.c,v 9.10 91/08/30 15:09:28 mottsmth Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d40 1
+d271 21
+@
+
+
+9.10
+log
+@Mary checking this in for Jim
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/sun4.md/RCS/mainInit.c,v 9.9 91/08/18 18:56:55 mendel Exp $ SPRITE (Berkeley)";
+d88 1
+a156 4
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Sync_Init().\n");
+    }
+    Sync_Init();
+@
+
+
+9.9
+log
+@Changed PROC_NUM_SERVER_PROCS to be FSCACHE_MAX_CLEANER_PROCS+VM_MAX_PAGE_OUT_PROCS.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/sun4.md/RCS/mainInit.c,v 9.8 91/08/18 18:52:24 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d337 1
+a337 1
+	"Rpc_Daemon");
+d356 1
+a356 1
+			"Recov_Proc");
+d385 2
+a386 1
+    (void) Proc_NewProc((Address) Init, PROC_KERNEL, FALSE, &pid, "Init");
+@
+
+
+9.8
+log
+@Added call to Proc_ServerProcCreate().
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/sun4.md/RCS/mainInit.c,v 9.7 90/10/19 15:39:17 shirriff Exp Locker: mendel $ SPRITE (Berkeley)";
+d345 2
+a346 1
+    (void) Proc_ServerProcCreate(PROC_NUM_SERVER_PROCS);
+@
+
+
+9.7
+log
+@Added declarations for prototyping.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/sun4.md/RCS/mainInit.c,v 9.6 90/09/12 13:39:40 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d345 1
+a345 4
+    for (i = 0; i < proc_NumServers; i++) {
+	(void) Proc_NewProc((Address) Proc_ServerProc, PROC_KERNEL, FALSE, 
+			&pid, "Proc_ServerProc");
+    }
+@
+
+
+9.6
+log
+@Changed includes to angle brackets.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/sun4.md/RCS/mainInit.c,v 9.5 90/09/11 10:49:51 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d19 1
+d37 3
+@
+
+
+9.5
+log
+@Added function prototyping.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main.ken/sun4.md/RCS/mainInit.c,v 9.4 90/07/31 13:35:44 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d15 21
+a35 21
+#include "sprite.h"
+#include "dbg.h"
+#include "dev.h"
+#include "net.h"
+#include "fsutil.h"
+#include "proc.h"
+#include "prof.h"
+#include "recov.h"
+#include "rpc.h"
+#include "sched.h"
+#include "sig.h"
+#include "sync.h"
+#include "sys.h"
+#include "timer.h"
+#include "vm.h"
+#include "machMon.h"
+#include "devAddrs.h"
+#include "mach.h"
+#include "stdlib.h"
+#include "main.h"
+#include "stdio.h"
+@
+
+
+9.4
+log
+@Added initialize of panic ok flag.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/sun4.md/RCS/mainInit.c,v 9.3 89/10/27 09:07:22 brent Exp Locker: shirriff $ SPRITE (Berkeley)";
+d34 2
+d37 1
+a37 9
+void main();
+static void Init();
+extern char *SpriteVersion();
+extern void Main_HookRoutine();	/* routine to allow custom initialization */
+extern void Main_InitVars();
+extern void Dump_Init();
+extern void Timer_Init();
+extern void Fs_Bin();
+extern void Proc_MigInit();
+a43 12
+/*
+ * Flags defined in individual's mainHook.c to modify the startup behavior. 
+ */
+extern Boolean main_Debug;	/* If TRUE then enter the debugger */
+extern Boolean main_DoProf;	/* If TRUE then start profiling */
+extern Boolean main_DoDumpInit;	/* If TRUE then initialize dump routines */
+extern char   *main_AltInit;	/* If non-null, then it gives name of
+				 * alternate init program. */
+extern Boolean main_AllowNMI;	/* If TRUE then allow non-maskable interrupts.*/
+
+extern int main_NumRpcServers;	/* # of rpc servers to spawn off */
+
+d46 1
+a46 4
+extern	Address	vmMemEnd;	/* The end of allocated kernel memory. */
+
+extern int	sysPanicOK;	/* 1 if OK to do printf for panic. */
+
+d160 1
+a160 1
+    sysPanicOK++;
+@
+
+
+9.3
+log
+@Added extern
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/sun4.md/RCS/mainInit.c,v 9.2 89/10/27 08:58:18 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d66 2
+d181 1
+@
+
+
+9.2
+log
+@Fixed FS procedure name
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/sun4.md/RCS/mainInit.c,v 9.1 89/10/12 11:53:05 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d19 1
+@
+
+
+9.1
+log
+@Added call to create Recov_Proc
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/sun4.md/RCS/mainInit.c,v 9.0 89/09/12 15:12:00 douglis Stable Locker: brent $ SPRITE (Berkeley)";
+d338 1
+a338 1
+    Proc_CallFunc(Fs_SyncProc, (ClientData) NIL, 0);
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/sun4.md/RCS/mainInit.c,v 1.20 89/08/30 13:06:49 mgbaker Exp Locker: douglis $ SPRITE (Berkeley)";
+d21 1
+d42 1
+a42 1
+extern void Proc_RecovInit();
+d364 9
+d376 1
+a376 1
+	Mach_MonPrintf("Calling Proc_RecovInit\n");
+d378 1
+a378 1
+    Proc_RecovInit();
+@
+
+
+1.20
+log
+@Added various enhancments (brent for mgbaker)
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/sun2.md/RCS/mainInit.c,v 8.5 89/06/02 13:29:15 jhh Exp Locker: nelson $ SPRITE (Berkeley)";
+@
+
+
+1.19
+log
+@Moved Net_RouteInit call into here since it is no longer in Net_Init.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/sun4.md/RCS/mainInit.c,v 1.18 89/06/16 09:03:25 mendel Exp $ SPRITE (Berkeley)";
+a17 1
+#include "mem.h"
+d31 1
+d46 1
+a46 5
+#ifdef NOTDEF
+#define INIT	 	"/initsprite"
+#else
+#define	INIT		"/initsprite.mgbaker"
+#endif NOTDEF
+a94 3
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Main_InitVars().\n");
+    }
+a99 3
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Mach_Init().\n");
+    }
+a104 3
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Dbg_Init().\n");
+    }
+a152 1
+
+a156 1
+
+a160 1
+
+a164 1
+
+a168 1
+
+a173 1
+
+a185 1
+
+d216 4
+a219 10
+     * Enable server process manager.
+     */
+    if (main_PrintInitRoutines) {
+	Mach_MonPrintf("Calling Proc_ServerInit\n");
+    }
+    Proc_ServerInit();
+
+    /*
+     * Initialize the ethernet drivers and the routes.
+     * Dependencies: Vm_Init
+d231 8
+a383 1
+
+a391 1
+    printf("Hello World!\n");
+d416 1
+a416 2
+    static char		*initArgs[] = { INIT, (char *) NIL };
+    static char		*altInitArgs[] = { 0, (char *) NIL };
+d418 7
+d429 24
+d454 3
+a456 3
+	altInitArgs[0] = main_AltInit;
+	printf("Execing \"%s\"\n", altInitArgs[0]);
+	status = Proc_KernExec(altInitArgs[0], initArgs);
+d458 1
+a458 1
+			altInitArgs[0], status);
+d460 5
+d470 1
+@
+
+
+1.18
+log
+@Changed to not print init routines.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/sun4.md/RCS/mainInit.c,v 1.16 89/03/31 12:05:30 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d244 1
+a244 1
+     * Initialize the ethernet drivers.
+d251 4
+@
+
+
+1.17
+log
+@*** empty log message ***
+@
+text
+@d64 1
+a64 1
+int main_PrintInitRoutines = TRUE;/* print out each routine as it's called. */
+@
+
+
+1.16
+log
+@Eighteenth Kernel.  It executes a signal.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/sun4.md/RCS/mainInit.c,v 1.15 89/03/26 20:26:57 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+@
+
+
+1.15
+log
+@Seventeenth Kernel.  It executes its first system call:  Sys_Shutdown().
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/sun4.md/RCS/mainInit.c,v 1.14 89/03/06 12:04:25 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d293 1
+a295 1
+#ifdef NOTDEF
+a298 1
+#endif NOTDEF
+@
+
+
+1.14
+log
+@Sixteenth Kernel.  Kernel processes work and play tag over a monitor lock.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/sun4.md/RCS/mainInit.c,v 1.13 89/03/03 15:49:24 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d46 1
+d48 3
+a412 7
+extern	void	t1();
+extern	void	t2();
+Sync_Lock	tagLock = Sync_LockInitStatic("tagLock");
+Sync_Condition	t1Cond;
+Sync_Condition	t2Cond;
+
+#define	LOCKPTR	&tagLock
+a432 1
+#ifdef NOTDEF
+a435 2
+#endif NOTDEF
+    int			pid;
+a436 3
+    Proc_NewProc((Address) t2, PROC_KERNEL, FALSE, &pid, "t2");
+    t1();
+#ifdef NOTDEF
+a449 1
+#endif NOTDEF
+a450 32
+}
+
+void t1()
+{
+    LOCK_MONITOR;
+
+    while (TRUE) {
+	Sync_WaitTime(time_OneSecond);
+	printf("t1 here\n");
+	Sync_Broadcast(&t2Cond);
+	(void)Sync_Wait(&t1Cond, TRUE);
+    }
+
+    UNLOCK_MONITOR;
+}
+
+static	unsigned int	lockVal;
+
+void t2()
+{
+    lockVal = tagLock.inUse;
+
+    LOCK_MONITOR;
+
+    while (TRUE) {
+	Sync_WaitTime(time_OneSecond);
+	printf("t2 here\n");
+	Sync_Broadcast(&t1Cond);
+	(void)Sync_Wait(&t2Cond, TRUE);
+    }
+
+    UNLOCK_MONITOR;
+@
+
+
+1.13
+log
+@Fifteenth Kernel.  Initializes all kernel procs and gets to idle loop.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/sun4.md/RCS/mainInit.c,v 1.12 89/02/28 12:53:48 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+a395 1
+#ifdef NOTDEF
+a403 1
+#endif NOTDEF
+d409 7
+d436 1
+d440 2
+d443 3
+d459 1
+d463 31
+@
+
+
+1.12
+log
+@Gets through a lot of initialization and still works with the 
+interrupt-handling support added to mach.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/sun2.md/RCS/mainInit.c,v 8.3 89/02/19 22:05:15 jhh Exp $ SPRITE (Berkeley)";
+a220 1
+#ifdef NOTDEF
+a237 1
+#endif NOTDEF
+a265 1
+#ifdef NOTDEF
+a282 1
+#endif NOTDEF
+d291 1
+d295 1
+d396 1
+d405 2
+@
+
+
+1.11
+log
+@Fourteenth Kernel.  Debugger works, uses mem module and stdlib.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/sun4.md/RCS/mainInit.c,v 1.10 89/02/24 15:07:37 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d15 14
+d30 2
+a31 1
+#include "dbg.h"
+d33 31
+d70 4
+a73 2
+ *	First main routine for sun4.  All it does is print Hello World.
+ *	It should loop, doing this forever.
+d79 1
+a79 1
+ *	None.
+d87 19
+a105 5
+    extern	void	Timer_TimerInit();
+    extern	void	Timer_TimerStart();
+   /*
+    * Initialize machine dependent info.  MUST BE CALLED HERE!!!.
+    */
+d107 7
+a113 1
+    Mach_MonPrintf("After Mach_Init\n");
+d115 18
+a132 2
+    Mach_MonPrintf("After Dbg_Init\n");
+    /* Sys Init here */
+d134 52
+a185 4
+    Mach_MonPrintf("After Vm_BootInit\n");
+    Timer_TimerInit();
+    Timer_TimerStart();
+    Mach_MonPrintf("After Timer Initialize routines\n");
+d187 28
+a214 1
+    Mach_MonPrintf("After Sync_Init\n");
+d216 32
+a247 1
+    Mach_MonPrintf("After Vm_Init\n");
+d249 44
+a292 2
+    Mach_MonPrintf("After Net_Init\n");
+    Mach_MonPrintf("Enabling interrupts\n");
+a293 6
+    DBG_CALL;
+    Mach_MonPrintf("Debugger returned\n");
+    Mach_MonPrintf("Trying it again\n");
+    DBG_CALL;
+    Mach_MonPrintf("Debugger returned again\n");
+    Mach_MonPrintf("Here we are.\n");
+d295 2
+a296 2
+    for ( ; ; ) {
+	;
+d298 111
+d410 1
+d412 17
+a428 3
+int
+diddly(x)
+int	x;
+d430 6
+a435 5
+    if (x == 0) {
+	return 0;
+    } else {
+	Mach_MonPrintf("Hello World!\n");
+	diddly(x - 1);
+d437 11
+a447 1
+    return 1;
+a449 6
+printf(arg, a1, a2, a3, a4, a5, a6)
+char	*arg;
+{
+	Mach_MonPrintf(arg, a1, a2, a3, a4, a5, a6);
+	return;
+}
+@
+
+
+1.10
+log
+@Thirteenth Kernel.  sun4 fnishes vm init now.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/sun4.md/RCS/mainInit.c,v 1.9 89/02/05 17:33:36 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+a57 4
+#ifdef NOTDEF
+    NetIEInit("IE", 0, 0x3fd0c000);
+    Mach_MonPrintf("After NetIEInit\n");
+#else
+a59 1
+#endif NOTDEF
+a61 1
+#ifdef NOTDEF
+a66 1
+#else
+a67 1
+#endif
+@
+
+
+1.9
+log
+@Twelfth Kernel.  It uses only my trap table now.  The net module
+>> and the debugger work, plus it's taking timer and ethernet interrupts.
+>> Although it seems interrupts are disabled, I don't think they are.  It's
+>> just that I don't do keyboard interrupts yet.
+>> Because it uses my trap table, I've rearranged things so there's one
+>> less indirection.  Window overflow and underflow traps are direct now.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/sun4.md/RCS/mainInit.c,v 1.8 89/01/31 14:04:27 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d45 4
+d50 4
+a53 1
+    Dbg_Init();
+d55 3
+a57 3
+    Mach_MonPrintf("Before\n");
+    NetIEInit("IE", 0, 0xffd0c000);
+    Mach_MonPrintf("After\n");
+d59 3
+d63 3
+a65 4
+
+    Timer_TimerInit();
+    Timer_TimerStart();
+#endif /* NOTDEF */
+d67 1
+d73 3
+@
+
+
+1.8
+log
+@Eleventh Kernel.  The debugger single steps, calls functions, etc.
+>> This means that state saving and restoring and stack switching works.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/sun4.md/RCS/mainInit.c,v 1.7 89/01/29 17:22:11 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d53 3
+d57 1
+a57 1
+
+d63 1
+a63 5
+#ifdef NOTDEF
+    Timer_TimerInit();
+    Timer_TimerStart();
+    Mach_EnableIntr();		/* Should be ENABLE_INTR when I'm ready. */
+#endif NOTDEF
+@
+
+
+1.7
+log
+@Tenth Kernel.  Net module works for receiving, and I seem to set up
+>> state and enter the debugger from a debugger trap correctly.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/sun4.md/RCS/mainInit.c,v 1.6 89/01/29 13:21:14 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d57 3
+@
+
+
+1.6
+log
+@Putting in net module and debugger stuff.  It doesn't entirely work
+yet, but it's progress.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/sun4.md/RCS/mainInit.c,v 1.5 89/01/25 22:53:39 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d16 1
+d49 1
+a49 1
+    NetIEInit("howdy", 0, 0xffd0c000);
+d55 2
+a56 2
+
+    Dbg_Main(1, main);
+@
+
+
+1.5
+log
+@Ninth Kernel.  Timer interrupts and overflow and underflow traps still
+>> are all it does functionally, but now I save and restore state in a fancy
+>> way that will allow nested interrupts, avoids duplicating saved state,
+>> and works the same way for the debugger.  See README and the code for
+>> details.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/sun4.md/RCS/mainInit.c,v 1.4 89/01/23 00:04:05 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d44 13
+a56 1
+    diddly(20);
+a58 1
+#ifdef NOTDEF
+d79 2
+a80 2
+printf(args)
+char	*args;
+d82 1
+@
+
+
+1.4
+log
+@Seventh kernel.  Clock interrupt level is now at 10.  Interrupts work for
+what I have, but I'm not printing anything, which didn't work before,
+so I must try that again.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/sun4.md/RCS/mainInit.c,v 1.3 89/01/22 23:45:34 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+a61 1
+#ifdef NOTDEF
+a62 1
+#endif NOTDEF
+@
+
+
+1.3
+log
+@Interrupts seem to work again, but I've got lots of debugging
+>> code in here.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/sun4.md/RCS/mainInit.c,v 1.2 89/01/22 20:30:48 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+a39 1
+    extern	int	saveStart;
+a49 1
+    saveStart = 1;
+@
+
+
+1.2
+log
+@Checkpoint.  Traps work and interrupts remain enabled correctly.
+I've #ifdef'd out the code where I start the timer and try to take
+timer interrupts.  When I do that, interrupts get permanently disabled,
+somehow.
+
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/sun4.md/RCS/mainInit.c,v 1.1 89/01/11 19:09:37 mlgray Exp Locker: mlgray $ SPRITE (Berkeley)";
+d40 1
+a44 1
+
+a45 1
+#ifdef NOTDEF
+d48 1
+d51 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/main/sun4.md/mainInit.c,v 1.1 89/01/11 19:06:49 mlgray Exp Locker: mlgray $ SPRITE (Berkeley)";
+d38 13
+d52 12
+d65 2
+d68 7
+@

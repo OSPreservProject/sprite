@@ -1,0 +1,134 @@
+
+
+
+MODULOG                   User Commands                   MODULOG
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     modulog - Modify the user log
+
+SSYYNNOOPPSSIISS
+     mmoodduulloogg [_o_p_t_i_o_n_s]
+
+OOPPTTIIOONNSS
+     --hheellpp          Print a summary of the  command-line  options
+                    and exit.
+
+     --CC             Clear all login entries for the current host.
+
+     --pp _p_o_r_t        Port number to use when recording or  invali-
+                    dating a login.
+
+     --ii             Invalidate the login entry  for  the  current
+                    host on the specified port.
+
+     --uu _u_s_e_r        User  for  whom  to  create  a  login  entry.
+                    (Defaults to current user.)
+
+     --ll _l_o_c_a_t_i_o_n    Generate a new login entry, with  the  user's
+                    location specified by this argument.
+
+_________________________________________________________________
+
+
+IINNTTRROODDUUCCTTIIOONN
+     This program allows  modification  of  the  user  log.   The
+     caller  must  have  write-access  to the log database files.
+     MMoodduulloogg is typically used at boot  time  to  invalidate  old
+     login entries.  It can also be used to invalidate particular
+     entries for the host on which it is invoked, or  create  new
+     ones.
+
+     If the --CC switch is  given,  then  mmoodduulloogg  will  invalidate
+     login  entries.   Otherwise,  if  the --ii and --pp switches are
+     given, mmoodduulloogg will invalidate only the entry  corresponding
+     to  the  port  specified by the --pp switch.   Finally, if the
+     --pp, and --ll switches are used together,  a  new  login  entry
+     will  be  recorded,  as  if  _u_s_e_r logged in from _l_o_c_a_t_i_o_n on
+     /hosts/`hostname`/dev/rlogin_p_o_r_t at the time mmoodduulloogg is run.
+     To  generate a login record for the console, specify a  _p_o_r_t
+     of 0 and a location of ``''.   _U_s_e_r  defaults  to  the  user
+     invoking the mmoodduulloogg program.
+
+     /sprite/admin/data/userLog
+          The database of current logins on each host.
+
+     /sprite/admin/data/lastLog
+          The database of each user's most recent login.
+
+
+
+
+Sprite v.1.0       Printed:  October 16, 1990                   1
+
+
+
+
+
+
+MODULOG                   User Commands                   MODULOG
+
+
+
+     /hosts/`hostname`/dev/rlogin*
+          Pseudo-devices used by Rlogin, corresponding to ports 1
+          and beyond.
+
+KKEEYYWWOORRDDSS
+     login, user log, modify
+
+SSEEEE AALLSSOO
+     db, ulog, login, rlogin, rlogind
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  October 16, 1990                   2
+
+
+

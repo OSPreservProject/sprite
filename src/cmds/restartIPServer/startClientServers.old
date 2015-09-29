@@ -1,0 +1,20 @@
+#!/bin/csh -f
+#
+# Script to start up the daemons that run on clients
+# and depend on the ipServer
+#
+echo -n "ipServer "
+set host=`hostname`
+rm -f /hosts/$host/{X0,netIP,netUDP,netTCP,debug,rlogin*}
+if (-e /hosts/$host/ipStart) then
+	/hosts/$host/ipStart
+else
+	/sprite/daemons/ipServer >&! /hosts/$host/ip.out
+endif
+echo -n "inetd "
+/sprite/daemons/inetd
+echo -n "lpd "
+/sprite/daemons/lpd
+echo -n "sendmail "
+sendmail -bd
+echo "."

@@ -1,0 +1,226 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    jhh:1.1; strict;
+comment  @ * @;
+
+
+1.1
+date     92.06.04.22.03.22;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/* 
+ * Gate_Next.c --
+ *
+ *	Source code for the Gate_Next library procedure.
+ *
+ * Copyright 1992 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user6/voelker/src/hosttest/RCS/Gate_Next.c,v 1.1 92/03/26 19:44:53 voelker Exp Locker: voelker $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <stdio.h>
+#include <sprite.h>
+#include <ctype.h>
+#include <gate.h>
+#include <gateInt.h>
+#include <stdlib.h>
+#include <string.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+
+static Net_EtherAddress emptyEtherAddr;
+static Net_FDDIAddress  emptyFDDIAddr;
+
+
+/*
+ *-----------------------------------------------------------------------
+ *
+ * Gate_Next --
+ *
+ *	Read the next line from the gateway file and break it into the
+ *	appropriate fields of the structure.
+ *
+ * Results:
+ *	The return value is a pointer to a Gate_Entry structure
+ *	containing the information from the next line of the file.
+ *	This is a statically-allocated structure, which will only
+ *	retain its value up to the next call to this procedure.
+ *	If the end of the file is reached, or an error occurs, NULL
+ *	is returned.
+ *
+ * Side Effects:
+ *	The position in the file advances.
+ *
+ *-----------------------------------------------------------------------
+ */
+Gate_Entry *
+Gate_Next()
+{
+#define BUFFER_SIZE 512
+#define MAX_NAMES 20
+    static Gate_Entry	entry;
+    static char      	inputBuf[BUFFER_SIZE];
+    static char *	fields[MAX_NAMES+2];
+    struct in_addr      inetAddr;
+    Net_AddressType     currentType;
+    register char *	p;
+    int			numFields;
+    int    	  	c;
+    register int        result;
+
+    if (gateFile == (FILE *) NULL) {
+	return ((Gate_Entry *) NULL);
+    }
+    /*
+     * Loop until a valid entry has been found, or the end of the file
+     * has been reached.
+     */
+    while (!feof(gateFile)) {
+	/*
+	 * First skip any comment lines or blank lines.
+	 */
+
+	while (1) {
+	    c = getc(gateFile);
+	    if (c != '#' && c != '\n') {
+		break;
+	    }
+	    while ((c != '\n') && (c != EOF)) {
+		c = getc(gateFile);
+	    } 
+	}
+	if (c == EOF) {
+	    break; 
+	}
+	ungetc(c, gateFile);
+
+	/*
+	 * Get the gateway line.
+	 */
+
+	if (fgets(inputBuf, BUFFER_SIZE, gateFile) == NULL) {
+	    continue; 
+	}
+
+	/*
+	 * If the line didn't all fit in the buffer, throw away the
+	 * remainder.
+	 */
+
+	for (p = inputBuf; *p !=0; p++) {
+	    /* Null loop body */
+	}
+	if (p[-1] != '\n') {
+	    do {
+		c = getc(gateFile);
+	    } while ((c != '\n') && (c != EOF));
+	}
+	if (c == EOF) {
+	    break; 
+	}
+	/*
+	 * Break the line up into fields.
+	 */
+	for (p = inputBuf, numFields = 0; *p != 0; numFields++) {
+	    fields[numFields] = p;
+	    while (!isspace(*p)) {
+		p++;
+	    }
+	    *p = 0;
+	    p++;
+	    while (isspace(*p)) {
+		p++;
+	    }
+	    if (numFields == MAX_NAMES+1) {
+		break;
+	    }
+	}
+	if (numFields < 4) {
+	    continue;
+	}
+
+	/*
+	 * Fill in gateway description.
+	 */
+
+	entry.desc = fields[0];
+
+	/*
+	 * Determine the network type and parse the network address.
+	 */
+
+	if (!strcmp(fields[1], "ether")) {
+	    if (strcmp(fields[1], "ether") == 0) {
+		currentType = NET_ADDRESS_ETHER;
+	    } else if (strcmp(fields[1], "ultra") == 0) {
+		currentType = NET_ADDRESS_ULTRA;
+	    } else if (strcmp(fields[1], "fddi") == 0) {
+		currentType = NET_ADDRESS_FDDI;
+	    } else {
+		continue;
+	    }
+	}
+	entry.netAddr.type = currentType;
+	result = Net_StringToAddrNew(fields[2], currentType, &entry.netAddr);
+	entry.netAddr.type = currentType;
+	if (result != SUCCESS) {
+	    continue;
+	}
+	/*
+	 * If the address is invalid, then the entry is invalid.
+	 */
+	switch (currentType) {
+	case NET_ADDRESS_ETHER:
+	    if (!Net_EtherAddrCmp(emptyEtherAddr, 
+				  entry.netAddr.address.ether)) {
+		continue;
+	    }
+	case NET_ADDRESS_FDDI:
+	    if (!Net_FDDIAddrCmp(emptyFDDIAddr,
+				 entry.netAddr.address.fddi)) {
+		continue;
+	    }
+	case NET_ADDRESS_ULTRA:
+	default:
+	    break;
+	}
+	/*
+	 * Fill in the internet address.
+	 */
+	if (fields[3][0] == '*') {
+	    /*
+	     * Empty internet address.
+	     */
+	    entry.inetAddr = 0;
+	} else {
+	    entry.inetAddr = Net_StringToInetAddr(fields[3]);
+	}
+	return &entry;
+    }
+    return (Gate_Entry *)NULL;
+}
+
+@

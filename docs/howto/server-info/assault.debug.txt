@@ -1,0 +1,198 @@
+
+
+
+
+
+
+
+How to Boot Assault
+
+     I am ``Assault'', A Sprite file server.  To boot  after
+a power-up:
+
+    >>init
+     there will be a pause, then some info printed out
+    >>boot -f rz()new
+     a number should appear immediately, which is the size of the text being loaded
+
+The above commands will cause Assault to  boot  off  of  its
+disk.   If  Assault  doesn't  boot, then make sure you typed
+'init' before 'boot'.  If it still  doesn't  work  then  try
+booting off of Allspice:
+
+    >>init
+     there will be a pause, then some info printed out
+    >>boot -f tftp()new
+     a number should appear immediately, which is the size of the text being loaded
+
+If Assault still won't boot, then go to Allspice and  ensure
+that  its  'bootp'  daemon is running, as well as its 'rarp'
+and 'arp' daemons.
+
+     To reboot when running Sprite, use  the  shutdown  com-
+mand:
+
+    % sync
+    % shutdown -h
+
+The 'sync' command writes out the cache, is  isn't  required
+unless you are parnoid.  Shutdown will sync the disks as the
+last thing before rebooting.  After Assault halts, reboot it
+as  described  above.  There is no autoboot for the descsta-
+tions, apparently.
+
+     If Assault is so wedged you can't do anything from  its
+console, then attempt to sync the cache with:
+
+    F1-W
+
+You should get a message about syncing the disks.   You  can
+abort to the PROM with
+
+    F1-A
+
+Or, as a last resort, you can reset it with the reset button
+on the back.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Debugging Tips
+
+     If Assault acts up then you  might  try  the  following
+things.   If  you  aren't logged in, log in as root.  Useful
+commands are:
+
+    assault # rpcstat -srvr
+
+Which dumps out the status of all the RPC server  processes.
+If  a bunch are ``busy'', and they remain busy with the same
+RPC ID and client, then there may be a  deadlock.   If  they
+are  all  in the ``wait'' state it means that the Rpc_Daemon
+process is not doing rebinding for some reason.
+
+    assault # ps -a
+
+This will tell you if any important daemons have  died.   If
+the  ipServer  is in the DEBUG state you can kill it and the
+daemons that depend on it  with  /hosts/assault/fixIPServer.
+This  should  also  restart these daemons, but if it doesn't
+you can use /hosts/mint/restartservers.
+
+    % rpcecho -h hostname -n 1000
+
+This      program,       which       is       found       in
+/sprite/src/benchmarks/rpcecho,   and  may  or  may  not  be
+installed in /sprite/cmds, will tell you if  there  timeouts
+when using the RPC protocol to talk to another host.  If you
+suspect that a host with  an  Intel  ethernet  interface  is
+flaking  out,  you  can try this command.  Lot's of timeouts
+indicate trouble.  You can reset a host's network  interface
+from its console with either of these keystrokes.
+
+    Fl-N
+    break-N
+    Ll-N
+
+On a regular DecStation keyboard you use the F1 key  like  a
+shift  key.   On  a  regular Sun keyboard you use the L1 key
+like a shift key.  On an ascii terminal you  use  the  break
+key like an escape key, hit break, then the key.
+
+
+Kernel Debugging
+
+     If Assault is so hung you can't explore with user  com-
+mands, then the best you can do is sync the disks with:
+
+    F1-W
+
+This should print a message about queuing a call to sync the
+disks,  and when it is done it should print a '.' and a new-
+line.   If  you  don't  get  the  newline  then  Assault  is
+
+
+
+
+
+
+
+
+
+
+
+
+
+deadlocked  inside  the  file  system  cache,  sigh.   Throw
+Assault into the debugger with:
+
+    F1-D
+
+You should get a message about ``Entering the debugger...''.
+(If not, I think you're forced to reboot.)
+
+     You have to run the debugger from dill, which is behind
+you.     The    kernel    images   should   be   copied   to
+dill:/sprite/src/kernel/nelson,  and  their  version  number
+should be evident in their name, i.e. ds3100.1.043.  If not,
+you can run strings on the kernel images and grep for ``VER-
+SION''.
+
+    dill% strings /sprite/src/kernel/nelson/ds3100 | egrep VERSION
+
+To run the kernel debugger (a variant of dbx)
+
+    dill% cd /sprite/src/kernel/nelson
+    dill% Kdbx ds3100.version assault
+
+If there is a deadlock you can dump the process table:
+
+    (kdbx) set $pdump = 0
+
+You can switch from process to process and  to  stack  back-
+traces  by  using  the 'set $index = pid' command.  You only
+need to specify the last two hex digits of the  process  ID.
+If  you  only  have  a decimal ID, then you have to type the
+whole thing.  File system  deadlocks  center  around  locked
+handles,   usually.   When  you  find  a  process  stuck  in
+Fsutil_HandleFetch of Fsutil_HandleLock you can try to  find
+the culprit by looking at the *hdrPtr these guys are waiting
+on.  There is a 'lockProcessID' in the hdrPtr that is really
+the  address of a Proc_ControlBlock.  You can print this out
+with something like:
+
+    (kdbx) print *(Proc_ControlBlock *)(hdrPtr->lockProcessID)
+
+You cannot reboot Assault from within  kdbx.   You  have  to
+abort  it,  or reset it with the reset button on the back of
+the machine, and then reboot it as described above.
+
+Modify date
+
+     These notes were last updated by Brent Welch on January
+28, 1992.
+
+
+
+
+
+
+
+
+
+
+

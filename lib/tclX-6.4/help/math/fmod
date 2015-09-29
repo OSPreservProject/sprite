@@ -1,0 +1,4 @@
+
+
+          fmod num1 num2
+               Returns num1 modulo num2.

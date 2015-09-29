@@ -1,0 +1,62 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    mgbaker:1.1; strict;
+comment  @@;
+
+
+1.1
+date     89.12.12.17.54.14;  author mgbaker;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Initial copy.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@' $Header: /a/newcmds/rpcstat/RCS/rpcstat.man,v 1.5 89/06/23 15:49:59 brent Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS RECOVINFO cmds
+.BS
+.SH NAME
+recovinfo \- Print out statistics about the potential state of recovery
+.SH SYNOPSIS
+\fBrecovinfo\fR  -[\foptions\fR]
+.SH OPTIONS
+.IP "\fB\-verbose\fR" 14
+Print out all available information.
+.IP "\fB\-fileID\fR"
+Include the unique file ID's in the printed information.
+.IP "\fB\-streamInfo\fP"
+Include information about streams along with the I/O handle information.
+.IP "\fB\-files\fP"
+Print information only about objects of type local or remote file.
+.IP "\fB\-all\fP"
+Include information about I/O handles that wouldn't be recovered.
+.IP "\fB\-names\fP"
+Print the names, reference counts and cache information of the objects.
+.IP "\fB\-server\fP \fIserverName\fP"
+Only include information about recovery for objects on this server.
+.BE
+.SH INTRODUCTION
+This command prints out information about what I/O and stream handles would
+need to be recovered if access to servers were interrupted.  Without any
+arguments, it just prints a summary of information, including the number
+of file I/O handles that would need to be recovered, the number of files
+with no associated stream, the number of files with no stream and no
+cache blocks, the number of files with no stream and no dirty blocks, the
+number of files with dirty blocks, and the total number of handles that would
+need to be recovered at this time.  This summary information is useful
+for determining where we can discard work in our recovery system.
+.SH KEYWORDS
+recovery, handles
+@

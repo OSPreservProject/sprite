@@ -1,0 +1,32 @@
+# DO NOT DELETE THIS LINE -- make depend depends on it.
+
+sun4.md/installdec.o: installdec.c
+sun4.md/installdec.o: /sprite/lib/include/sprite.h
+sun4.md/installdec.o: /sprite/lib/include/cfuncproto.h
+sun4.md/installdec.o: /sprite/lib/include/kernel/ds3100.md/procMach.h
+sun4.md/installdec.o: /sprite/lib/include/stdio.h
+sun4.md/installsun.o: installsun.c
+sun4.md/installsun.o: /sprite/lib/include/sprite.h
+sun4.md/installsun.o: /sprite/lib/include/cfuncproto.h
+sun4.md/installsun.o: /sprite/lib/include/kernel/sun3.md/procMach.h
+sun4.md/installsun.o: /sprite/lib/include/stdio.h
+sun4.md/installboot.o: installboot.c
+sun4.md/installboot.o: /sprite/lib/include/sprite.h
+sun4.md/installboot.o: /sprite/lib/include/cfuncproto.h
+sun4.md/installboot.o: /sprite/lib/include/option.h
+sun4.md/installboot.o: /sprite/lib/include/disk.h
+sun4.md/installboot.o: /sprite/lib/include/sys/file.h
+sun4.md/installboot.o: /sprite/lib/include/kernel/fs.h
+sun4.md/installboot.o: /sprite/lib/include/kernel/dev.h
+sun4.md/installboot.o: /sprite/lib/include/kernel/fsdm.h
+sun4.md/installboot.o: /sprite/lib/include/kernel/ofs.h
+sun4.md/installboot.o: /sprite/lib/include/kernel/devDiskLabel.h
+sun4.md/installboot.o: /sprite/lib/include/kernel/lfsDesc.h
+sun4.md/installboot.o: /sprite/lib/include/kernel/lfsDescMap.h
+sun4.md/installboot.o: /sprite/lib/include/kernel/lfsFileLayout.h
+sun4.md/installboot.o: /sprite/lib/include/kernel/lfsSegLayout.h
+sun4.md/installboot.o: /sprite/lib/include/kernel/lfsStableMem.h
+sun4.md/installboot.o: /sprite/lib/include/kernel/lfsSuperBlock.h
+sun4.md/installboot.o: /sprite/lib/include/kernel/lfsUsageArray.h
+sun4.md/installboot.o: /sprite/lib/include/stdio.h
+sun4.md/installboot.o: /sprite/lib/include/errno.h

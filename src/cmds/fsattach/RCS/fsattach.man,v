@@ -1,0 +1,406 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.5
+date     91.01.12.16.49.27;  author jhh;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.02.16.17.54.35;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.02.14.14.00.01;  author jhh;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.06.07.22.14.37;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.04.10.11.13.13;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.5
+log
+@new boot sequence
+@
+text
+@'\" Copyright 1989 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/admin/fsattach/RCS/fsattach.man,v 1.4 90/02/16 17:54:35 brent Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS FSATTACH cmds
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+fsattach \- Check disks and export prefixes 
+.SH SYNOPSIS
+\fBfsattach\fR [\fIoptions\fR]
+.SH OPTIONS
+.IP "\fB\-m \fIfile\fR" 15
+Read mount table from \fIfile\fR.
+.IP "\fB\-W\fR" 15
+Check disks, but do not write changes.
+.IP "\fB\-f\fR" 15
+Don't check disks (fastboot).
+.IP "\fB\-s\fR" 15
+Ignore group information found in mount table and run \fBfscheck\fR 
+sequentially.
+.IP "\fB\-v\fR" 15
+Have both \fBfsattach\fR and \fBfscheck\fR  output verbose information
+while running.
+.IP "\fB\-n\fR" 15
+Don't attach disks or export prefixes.
+.IP "\fB\-p\fR" 15
+Print out actions but don't execute them.
+.IP "\fB\-help\fR" 15
+Print a summary of the command-line options and exit.
+.IP "\fB\-d \fIdeviceDirectory\fR" 15
+Specifies the directory containing the device files.
+The default is "/dev".
+.IP "\fB\-k\fR" 15
+Produce debugging output.
+.IP "\fB\-i \fIspriteID\fR" 15
+Causes prefixes that this machine will export to be preloaded into the
+prefix table. 
+This prevents the machine from broadcasting for its own prefixes while
+the disks are being checked.
+.IP "\fB\-j \fImaxJobs\fR" 15
+The default behavior is for \fBfsattach\fR to run as many \fBfscheck\fR
+jobs in parallel as it can.
+The parallelism is limited by the \fIgroup\fR of each device (see below),
+and the \fB\-j\fR flag.
+If this flag is used then at most \fImaxJobs\fR \fIfscheck\fRs will
+be run at a time.
+.IP "\fB\-fscheck \fIfscheckProg\fR" 15
+Use this to specify an alternative fscheck program, i.e. when testing
+a new fscheck.
+.IP "\fB\-c\fR 15
+Conditionally check the disks.  If the disks were just checked by \fIfscheck\fR
+and we are now rebooting, then we don't have to check again.  If the \fB\-c\fR
+flag is present then the disks won't be rechecked. 
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBFsattach\fR is used during system boot to check the disks for 
+inconsistencies and
+to export prefixes.
+The input to \fBfsattach\fR is a mount table, usually in 
+\fI/hosts/$HOST/mount\fR.
+The location of the mount table is specified by the
+\fB\-m\fR option.
+\fBFsattach\fR uses the pass information in the mount table to create child
+processes that check
+the disk partitions using \fBfscheck\fR.
+The output from \fBfscheck\fR is appended to a file with the same name as 
+the device and the suffix ".fsc".
+If \fBfscheck\fR completes normally, 
+then the filesystem is mounted and its prefix exported.
+.SH MOUNT TABLE 
+The mount table contains information on checking the disks and on exporting
+prefixes.
+Each line in the table consists of a command and its arguments. 
+Blank lines and lines that begin with '#' are ignored.
+The \fBAttach\fR command is used to check a disk partition and to attach the 
+partition to the file system. 
+\fBAttach\fR commands have the following format:
+.sp
+.in 5
+\fBAttach\fR \fIprefix\fR \fIdevice\fR \fIgroup\fR \fIscope\fR \fIaccess\fR
+.in 0
+.LP
+\fIPrefix\fR is the prefix under which to mount the partition. 
+.LP
+The \fIdevice\fR is the
+device on which to run fscheck and to attach.
+.LP
+The \fIgroup\fR parameter is used to determine the parallelism in checking the
+disks. \fBFscheck\fR is a very IO constrained application. 
+Most of the execution time is spent waiting for the disk. 
+If the system has more than one disk the overall run time of \fBfsattach\fR can
+be decreased by checking different disks at the same time.
+\fIFsattach\fR will run jobs in parallel if possible.
+Any partitions that are in the same group  will NOT be checked
+in parallel.
+A group name is any sequence of characters and is case sensitive.
+The group name "root" has special significance.
+It is used as the group of the root partition.
+This partition is checked before all other partitions, 
+and the server may have to reboot if an error is found in this partition.
+.LP
+The \fIscope\fR can be either local or export. 
+Partitions with local scope are attached only for the local machine, 
+whereas partitions with export scope are attached and exported under the
+given prefix.
+The prefix corresponding to the root partition (usually /bootTmp) is
+attached during system boot and is not reattached by \fBfsattach\fR.
+For this partition the scope parameter does not have any effect.
+.LP
+The \fIaccess\fR is used to set the access permissions of the prefix. 
+If the access is "r" then the prefix is read only. 
+If the access is "rw" then the prefix is can be both read and written.
+The access parameter has no effect if the partition is the root partition.
+.PP
+The \fBExport\fR command is used to export a prefix under a different name.
+\fBExport\fR commands have the following format:
+.sp
+.in 5
+\fBExport\fR \fIprefix\fR \fIlocalPath\fR 
+.in 0
+.LP
+\fIPrefix\fR is the name of the prefix to be exported.
+.LP
+\fILocalPath\fR is the name of a path that is to be exported as \fIprefix\fR.
+.PP
+All other non-comment lines are interpreted as containing arguments to
+\fBfscheck\fR.
+The format of these lines is:
+.sp
+.in 5
+\fIdeviceName\fR \fI[arguments]\fR
+.in 0
+.LP
+\fIDeviceName\fR is the name of the device for which \fBfscheck\fR is to use the
+\fIarguments\fR. A device name of \fBall\fR will cause \fBfscheck\fR to use the 
+arguments for all devices. Any number of arguments can follow the device
+name, 
+as long as they fit on a single line. 
+The same device name can appear on any number of lines.
+.PP
+The following is a sample mount table. The root partition is 
+\fI/dev/rsd0a\fR and
+it is exported under the prefix \fI/t1\fR. 
+\fI/t2\fR is another small partition on
+the same disk. 
+\fI/b\fR is a large partition on the disk, and \fI/a\fR is a large partition
+that is an entire second disk.
+.KS
+.DS 
+#<Command>      <Prefix>        <Device/Path> <Group>   <Scope>       <Access>
+
+Attach          /t1        	/dev/rsd0a     root     export          rw
+Attach          /t2             /dev/rsd0b      A       export          rw
+Attach          /b              /dev/rsd0g      A       export          rw
+Attach          /a              /dev/rsd1c      B       export          rw
+
+Export		/foo		/t2
+
+#<Device>       <Arguments to fscheck>
+
+all             -readBlock 10
+/dev/rsd0b      -outputFile foo
+.DE
+.KE
+.SH RETURN CODES
+\fBFsattach\fR returns one of the following codes upon exit.
+.IP 0
+No error.
+.IP 1
+An error was found in the root partition. Reboot the system. See \fBfscheck\fR
+for details.
+.IP 2
+A hard error occurred. There was some problem in either \fBfsattach\fR, 
+\fBfscheck\fR,
+or \fBprefix\fR that prevented \fBfsattach\fR from completing normally.
+.IP 3 
+\fBFscheck\fR returned a soft error indication. See \fBfscheck\fR for details.
+.IP 4
+An error was found in the root partition, but the number of consecutive
+times that \fBfscheck\fR was run and an error found exceeds the limit.
+.KS
+.SH FILES
+.DS L
+.nf
+/boot/cmds/fscheck			command to check disks
+/hosts/$HOST/*.fsc			output from fscheck
+/bootTmp/.fscheck.out			temporary output from fscheck
+.DE
+.KE
+.fi
+.SH KEYWORDS
+fsattach, fscheck, prefix, mount, disk, partition, crash, attach, boot 
+
+@
+
+
+1.4
+log
+@added -fscheck argument
+@
+text
+@d9 1
+a9 1
+'\" $Header: /sprite/src/admin/fsattach/RCS/fsattach.man,v 1.3 90/02/14 14:00:01 jhh Exp Locker: brent $ SPRITE (Berkeley)
+a40 4
+.IP "\fB\-b \fIbootPrefix\fR" 15
+Specifies the name of the prefix under which the kernel attaches the
+root partition.
+The default is "/bootTmp".
+d58 4
+@
+
+
+1.3
+log
+@Uses groups instead of passes
+@
+text
+@d9 1
+a9 1
+'\" $Header: /sprite/src/admin/fsattach/RCS/fsattach.man,v 1.2 89/06/07 22:14:37 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+d59 3
+@
+
+
+1.2
+log
+@Spring cleaning - new mount table format, bug fixes
+@
+text
+@d9 1
+a9 1
+'\" $Header: /sprite/src/admin/fsattach/RCS/fsattach.man,v 1.1 89/04/10 11:13:13 jhh Exp $ SPRITE (Berkeley)
+a19 2
+.IP "\fB\-c \fIfile\fR" 15
+Read configuration information from \fIfile\fR.
+d27 1
+a27 1
+Ignore pass information found in mount table and run \fBfscheck\fR 
+d38 21
+d66 4
+a69 3
+The input to \fBfsattach\fR is a mount table, 
+usually stored in \fI/local/bootBin/mount\fR.
+A different mount table can be specified by the \fB\-m\fR option.
+d75 2
+a76 4
+For those partitions on which \fBfscheck\fR completed normally, 
+the \fBprefix\fR
+program is used to attach the partitions to the file system and to 
+export prefixes.
+d87 1
+a87 1
+\fBAttach\fR \fIprefix\fR \fIdevice\fR \fIpass\fR \fIscope\fR \fIaccess\fR
+d95 1
+a95 1
+The \fIpass\fR parameter is used to determine the parallelism in checking the
+d100 8
+a107 5
+Any partitions that have the same pass number will be checked concurrently.
+Pass numbers start at 0 and increase. Pass 0 is restricted to the root
+partition. There are no restrictions on the other passes. It is up to the
+creator of the mount table to ensure that the pass numbers are allocated 
+in a sensible manner.
+d113 1
+a113 1
+The prefix corresponding to the root partition (usually /local) is
+d157 1
+a157 1
+#<Command>      <Prefix>        <Device/Path> <Pass>   <Scope>       <Access>
+d159 4
+a162 4
+Attach          /bootTmp        /dev/rsd0a      0       local           rw
+Attach          /t2             /dev/rsd0b      1       export          rw
+Attach          /b              /dev/rsd0g      2       export          rw
+Attach          /a              /dev/rsd1c      2       export          rw
+d164 1
+a164 1
+Export         /t1              /bootTmp
+d168 1
+a168 1
+all             -heapLimit 1000000
+d192 3
+a194 6
+/local/bootBin/mount			mount table
+/local/bootBin/fsattach.config		fsattach configuration file
+/local/bootBin/fscheck			command to check disks
+/local/bootBin/prefix			command to mount prefixes
+/local/*.fsc				output from fscheck
+/local/.fscheck.out			temporary output from fscheck
+@
+
+
+1.1
+log
+@First working version
+@
+text
+@d9 1
+a9 1
+'\" $Header: /sprite/lib/forms/RCS/cmd.man,v 1.1 89/02/23 13:08:24 ouster Exp $ SPRITE (Berkeley)
+d112 15
+d135 1
+a135 2
+.DS L
+.nf
+d138 6
+a143 4
+Attach		/local	        /dev/rsd0a	0	local		rw
+Attach		/t2	        /dev/rsd0b	1	export		rw
+Attach		/b	        /dev/rsd0g	2	export		rw
+Attach		/a	        /dev/rsd1c	2	export		rw
+d145 4
+a148 1
+Export		/t1	        /local
+a150 36
+.fi
+.SH CONFIGURATION FILE
+.PP
+\fBFsattach\fR reads a configuration file during startup. 
+The standard file is \fI/local/bootBin/fsattach.config\fR, although this can
+be changed using the \fB\-c\fR option. 
+The use of a configuration file is optional. It only exists so that
+certain internal variables of fsattach can be modified.
+Entries in the file consists of a variable name and its new value.
+Lines that are blank or start with '#' are ignored.
+The following variables are valid.
+.IP "\fBmountTableSize \fIsize\fR" 5
+Changes the maximum number of entries in the mount table. The default is
+30.
+.IP "\fBrootTempOutputFile \fIfile\fR" 5
+When \fBfscheck\fR checks the root partition it stores its output in a
+preallocated,
+temporary file. This output is later copied into the correct place.
+See \fBfscheck\fR for more details.
+The default  is ".fscheck.out".
+.IP "\fBrootTempOutputFileSize \fIsize\fR" 5
+Sets the size of the temporary output file to \fIsize\fR bytes. 
+If the output from \fBfscheck\fR exceeds this limit then the extra is discarded.
+The size of the temporary file must not cause the file to require more
+data blocks than the maximum number of direct blocks.
+The default is 8192 bytes.
+.IP "\fBheapLimit \fIlimit\fR" 5
+The size of the heap used by \fBfscheck\fR is constrained to be less than 
+\fIlimit\fR.
+The default is 1000000. See \fBfscheck\fR for details.
+.IP "\fBoutputDir \fIdir\fR" 5
+Changes the directory where the output from \fBfscheck\fR is stored. 
+The default is \fI/local\fR.
+.IP "\fBfscheck \fIcommand\fR" 5
+Makes \fIcommand\fR the command that is executed to run \fBfscheck\fR. 
+The default is \fI/local/bootBin/fscheck\fR.
+@

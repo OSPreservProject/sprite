@@ -1,0 +1,1 @@
+../../dist/gdb/xm-i386sco.h

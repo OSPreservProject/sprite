@@ -1,0 +1,78 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  srv030:1.1 srv028:1.1 srv027:1.1 srv026:1.1 srv024:1.1 srv022:1.1 srv021:1.1 srv019:1.1 srv018:1.1 srv016:1.1 srv015:1.1 srv014:1.1 srv012:1.1 srv011:1.1 srv010:1.1 srv008:1.1 srv007:1.1 srv006:1.1 srv005:1.1 srv004:1.1 srv003:1.1 srv002:1.1 srv001:1.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     92.04.16.11.58.39;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Instrumentation for the timer module.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/*
+ * timerStat.h --
+ *
+ *	Statistics for the timer module.
+ *
+ * Copyright 1992 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.8 92/03/02 15:32:57 bmiller Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _TIMERSTAT
+#define _TIMERSTAT
+
+#include <spriteTime.h>
+
+/* 
+ * One of the counts is the number of calls by the timer thread that happen 
+ * long after they were supposed to.  Break down this count according to
+ * what system action is being called late.
+ */
+
+#define TIMER_FSUTIL_SYNC		0
+#define TIMER_OTHER_SERVERPROC		1 /* other Proc_ServerProc calls */
+#define TIMER_RPC_DAEMON_WAKEUP		2
+#define TIMER_RECOV_PING_INTERVAL	3
+#define TIMER_NUM_LATE_TYPES		(TIMER_RECOV_PING_INTERVAL + 1)
+
+typedef struct {
+    int		schedule;	/* count of Timer_ScheduleRoutine calls */
+    int		desched;	/* count of Timer_DescheduleRoutine calls */
+    int		failedDesched;	/* desched calls where the element was 
+				 * already gone */
+    int		skipSleep;	/* count of times TimerThread didn't bother 
+				 * sleeping */ 
+    int		resched;	/* count of times we had to interrupt the
+				 * sleeping timer thread */
+    int		totalLateCalls;	/* total count of late calls */
+    int		lateCalls[TIMER_NUM_LATE_TYPES]; /* counts of late calls to 
+						  * selected routines */
+} Timer_Statistics;
+
+extern Timer_Statistics timer_Statistics;
+extern Time timer_QueueMaxBacklog;
+
+#endif /* _TIMERSTAT */
+@

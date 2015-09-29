@@ -1,0 +1,10 @@
+L DEP.C;1                           	dep.c	../dist/sun3-dep.c
+F DEPENDEN.MK;1                     	dependencies.mk
+F GDB.NEW;1                         	gdb.new
+L INITIALI.C;1                      	initialized_all_files.c	../sprite/initialized_all_files_sun.c
+F MD.MK;1                           	md.mk
+L OPCODE.H;1                        	opcode.h	../dist/m68k-opcode.h
+L PARAM.H;1                         	param.h	../sprite/m-sun3sprite.h
+L PINSN.C;1                         	pinsn.c	../dist/m68k-pinsn.c
+L PROCDEBU.C;1                      	procDebugRegs.c	../sprite/m68k_procDebugRegs.c
+L PTRACE.C;1                        	ptrace.c	../sprite/ptraceSun.c

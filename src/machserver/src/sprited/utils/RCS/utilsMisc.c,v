@@ -1,0 +1,555 @@
+head     1.12;
+branch   ;
+access   ;
+symbols  srv030:1.12 srv028:1.12 srv027:1.12 srv026:1.12 srv024:1.12 srv022:1.12 srv021:1.12 srv019:1.12 srv018:1.12 srv016:1.12 srv015:1.12 srv014:1.12 srv012:1.12 srv011:1.12 srv010:1.12 srv008:1.12 srv007:1.12 srv006:1.12 srv005:1.12 srv004:1.12 srv003:1.12 srv002:1.11 srv001:1.10;
+locks    ; strict;
+comment  @ * @;
+
+
+1.12
+date     92.04.29.21.46.11;  author kupfer;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     92.04.23.23.49.02;  author kupfer;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     92.04.16.11.25.28;  author kupfer;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     91.11.14.10.03.13;  author kupfer;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     91.10.07.14.09.55;  author kupfer;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     91.09.26.12.13.34;  author kupfer;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     91.09.24.16.30.04;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.09.23.14.20.07;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.09.02.22.56.07;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.09.01.21.02.55;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.08.19.12.17.19;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.07.19.15.28.13;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Misc. utility code.
+@
+
+
+1.12
+log
+@Get rid of unneeded includes.  Move mach_host_self() prototype into a
+header file.
+@
+text
+@/* 
+ * utilsMisc.c --
+ *
+ *	Various utility routines.
+ *
+ * Copyright 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/utils/RCS/utilsMisc.c,v 1.11 92/04/23 23:49:02 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+
+#include <main.h>
+#include <user/sys.h>
+#include <utils.h>
+#include <vmTypes.h>
+
+/* 
+ * The Mach errno.h doesn't provide errno, sigh.
+ */
+extern int errno;
+
+/* 
+ * This should be in a Mach header file somewhere... 
+ */
+extern int syscall _ARGS_((int syscallNumber, ...));
+
+#define PID_TO_TASK_SYSCALL	(-33) /* UX syscall number for pid_to_task */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Utils_MapSpriteProtect --
+ *
+ *	Map a Sprite protection code to a Mach protection code.
+ *
+ * Results:
+ *	Returns the Mach equivalent of the given Sprite protection code.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+vm_prot_t
+Utils_MapSpriteProtect(spriteAccess)
+    int spriteAccess;
+{
+    vm_prot_t result = 0;
+
+    switch (spriteAccess) {
+    case VM_READONLY_ACCESS:
+	result = VM_PROT_READ;
+	break;
+    case VM_OVERWRITE_ACCESS:
+	result = VM_PROT_WRITE;
+	break;
+    case VM_READWRITE_ACCESS:
+	result = VM_PROT_READ | VM_PROT_WRITE;
+	break;
+    default:
+	panic("Utils_MapSpriteProtect: bogus protection code.\n");
+	break;
+    }
+
+    result |= VM_PROT_EXECUTE;
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Utils_UnixPidToTask --
+ *
+ *	Convert a Unix process ID to a Mach task.  The UX server provides 
+ *	this back door for obtaining privileged system ports.
+ *	
+ *	Notes:
+ *	1. This routine goes away when the Sprite server is the startup
+ *	server.
+ *	2. This routine should be called only during initialization, before 
+ *	there are multiple threads running, so that we don't have to worry 
+ *	about races accessing errno.
+ *
+ * Results:
+ *	Returns a Unix errno code, or 0 if there wasn't an error.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Utils_UnixPidToTask(pid, taskPtr)
+    pid_t pid;			/* Unix process ID to look up */
+    task_t *taskPtr;		/* OUT: the corresponding task */
+{
+    if (main_MultiThreaded) {
+	printf("Warning: %s called after system is multithreaded.\n",
+	       "Utils_UnixPidToTask");
+    }
+    errno = 0;
+    *taskPtr = (task_t)syscall(PID_TO_TASK_SYSCALL, pid);    
+    return errno;
+}
+@
+
+
+1.11
+log
+@Fix a cast so that it will work with MK73.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/utils/RCS/utilsMisc.c,v 1.10 92/04/16 11:25:28 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a20 4
+#include <mach.h>
+#include <mach_error.h>
+#include <mach/mach_host.h>
+#include <user/sys.h>
+d23 1
+a37 6
+
+/* 
+ * XXX - this is in mach_traps.h, but there's a cpp problem including both 
+ * mach.h and mach_traps.h. 2-Oct-91.
+ */
+extern mach_port_t mach_host_self _ARGS_((void));
+@
+
+
+1.10
+log
+@Flush Utils_GetMachineType.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/utils/RCS/utilsMisc.c,v 1.9 91/11/14 10:03:13 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d125 1
+a125 1
+    *taskPtr = (port_t)syscall(PID_TO_TASK_SYSCALL, pid);    
+@
+
+
+1.9
+log
+@Snapshot. net, rpc, recov modules added.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/utils/RCS/utilsMisc.c,v 1.8 91/10/07 14:09:55 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a126 70
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Utils_GetMachineType --
+ *
+ *	Return a code identifying the current machine type.
+ *
+ * Results:
+ *	Returns the subtype for the architecture.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Utils_GetMachineType()
+{
+    kern_return_t kernStatus;
+    host_basic_info_data_t hostInfo;
+    mach_msg_type_number_t infoSize;
+
+    infoSize = sizeof(hostInfo)/sizeof(int);
+    kernStatus = host_info(mach_host_self(), HOST_BASIC_INFO,
+			   (host_info_t)&hostInfo, &infoSize);
+    if (kernStatus != KERN_SUCCESS) {
+	panic("Utils_GetMachineType: couldn't get host info: %s\n",
+	      mach_error_string(kernStatus));
+    }
+    if (infoSize < sizeof(hostInfo)/sizeof(int)) {
+	printf("Utils_GetMachineType: host_info returned only %d words.\n",
+	       infoSize);
+	return 0;
+    }
+
+    printf("CPU type %d, subtype %d\n", hostInfo.cpu_type,
+	   hostInfo.cpu_subtype); /* DEBUG */
+
+    switch (hostInfo.cpu_type) {
+    case CPU_TYPE_MC68020:
+	switch (hostInfo.cpu_subtype) {
+	case CPU_SUBTYPE_SUN3_50:
+	    return SYS_SUN_3_50;
+	    break;
+	case CPU_SUBTYPE_SUN3_160:
+	    return SYS_SUN_3_160;
+	    break;
+	case CPU_SUBTYPE_SUN3_60:
+	    return SYS_SUN_3_60;
+	    break;
+	default:
+	    goto unknown;
+	}
+	break;
+    case CPU_TYPE_MIPS:
+	return 0;
+	break;
+    default:
+	goto unknown;
+	break;
+    }
+
+ unknown:
+    printf("Utils_GetMachineType: unknown type/subtype (%d/%d)\n",
+	   hostInfo.cpu_type, hostInfo.cpu_subtype);
+    return 0;
+@
+
+
+1.8
+log
+@Add Utils_UnixPidToTask.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/utils/RCS/utilsMisc.c,v 1.7 91/09/26 12:13:34 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d22 3
+d42 6
+d127 70
+@
+
+
+1.7
+log
+@Utils_MapMachStatus moved into libc.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/utils/RCS/utilsMisc.c,v 1.6 91/09/24 16:30:04 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d23 1
+d27 12
+d79 39
+@
+
+
+1.6
+log
+@Add Utils_MapSpriteProtect.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/utils/RCS/utilsMisc.c,v 1.5 91/09/23 14:20:07 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a24 25
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Utils_MapMachStatus --
+ *
+ *	Map a Mach error status to a Sprite error status.
+ *
+ * Results:
+ *	Returns the equivalent Sprite code.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Utils_MapMachStatus(kernStatus)
+    kern_return_t kernStatus;	/* code to map */
+{
+    /* XXX should provide wider range of answers */
+    return (kernStatus == KERN_SUCCESS ? SUCCESS : FAILURE);
+}
+@
+
+
+1.5
+log
+@Snapshot.  Server is multithreaded internally.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/utils/RCS/utilsMisc.c,v 1.4 91/09/02 22:56:07 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d24 1
+d49 42
+@
+
+
+1.4
+log
+@Changes for module-based source organization.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/sprited/utils/RCS/utilsMisc.c,v 1.3 91/09/01 21:02:55 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a19 6
+/* 
+ * gcc claims that the stdio declaration of "printf" conflicts with our 
+ * definition below, so #define it so that stdio.h declares something 
+ * else.  Grumble.
+ */
+#define printf stupid_c_compiler
+a20 2
+#include <cthreads.h>
+#include <libc.h>
+a21 1
+#include <varargs.h>
+a22 1
+#include <sync.h>
+a23 75
+#undef printf
+
+extern vprintf();		/* XXX should be in a header file */
+
+/* 
+ * Mutex variable to protect printf against concurrent calls.
+ */
+static Sync_Lock printfLock = Sync_LockInitStatic("printfLock");
+
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * printf --
+ *
+ *      Perform a C style printf with protection against concurrent 
+ *      access by multiple threads.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------------
+ */
+
+
+#ifdef lint
+/* VARARGS1 */
+/* ARGSUSED */
+void printf(format)
+    char *format;
+{}
+#else /* lint */
+void
+printf(fmt, va_alist)
+    const char *fmt;
+    va_dcl
+{
+    va_list	args;
+
+    Sync_GetLock(&printfLock);
+    va_start(args);
+    (void) vprintf(fmt, args);
+    va_end(args);
+    fflush(stdout);
+    Sync_Unlock(&printfLock);
+}
+#endif /* lint */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * panic --
+ *
+ *	Print an error message and die.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+panic(message)
+    char *message;		/* message to print */
+{
+    printf("panic: %s\n", message);
+    abort();
+}
+@
+
+
+1.3
+log
+@Snapshot.  Full VM support.
+@
+text
+@d2 1
+a2 1
+ * util.c --
+d17 1
+a17 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/printfd/RCS/util.c,v 1.2 91/08/19 12:17:19 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d26 1
+d30 2
+a31 1
+#include <sprite.h>
+d33 1
+a33 2
+#include <varargs.h>
+#include "util.h"
+d114 1
+a114 1
+ * Util_MapMachStatus --
+d128 1
+a128 1
+Util_MapMachStatus(kernStatus)
+@
+
+
+1.2
+log
+@Snapshot: Code reorg. and locking for processes & segments.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/printfd/RCS/util.c,v 1.1 91/07/19 15:28:13 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d105 1
+a105 1
+    printf("%s\n", message);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.5 91/02/09 13:24:44 ouster Exp $ SPRITE (Berkeley)";
+d20 7
+d30 53
+a82 1
+#include <stdio.h>
+@

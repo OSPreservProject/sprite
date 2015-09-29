@@ -1,0 +1,10 @@
+F DBINT.H_V;1                       	dbInt.h,v
+F DBLOCKDE.C_V;1                    	DbLockDesc.c,v
+F DB_CLOSE.C_V;1                    	Db_Close.c,v
+F DB_GET.C_V;1                      	Db_Get.c,v
+F DB_LOCKD.C_V;1                    	Db_LockDesc.c,v
+F DB_MAN_V.;1                       	db.man,v
+F DB_OPEN.C_V;1                     	Db_Open.c,v
+F DB_PUT.C_V;1                      	Db_Put.c,v
+F DB_READE.C_V;1                    	Db_ReadEntry.c,v
+F DB_WRITE.C_V;1                    	Db_WriteEntry.c,v

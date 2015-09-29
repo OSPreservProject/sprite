@@ -1,0 +1,2946 @@
+head     9.4;
+branch   ;
+access   ;
+symbols  ds3100:9.4 sun3:9.4 sprited:9.3.1 sun4nw:9.4 symm:9.4 spur:9.4 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.4
+date     91.09.10.18.22.53;  author rab;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.11.06.16.51.02;  author shirriff;  state Exp;
+branches 9.3.1.1;
+next     9.2;
+
+9.2
+date     90.10.08.11.27.53;  author mendel;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.07.11.18.37.38;  author douglis;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.03.29;  author douglis;  state Stable;
+branches ;
+next     8.17;
+
+8.17
+date     89.09.08.15.50.14;  author douglis;  state Exp;
+branches ;
+next     8.16;
+
+8.16
+date     89.08.21.15.23.02;  author mendel;  state Exp;
+branches ;
+next     8.15;
+
+8.15
+date     89.08.17.12.12.49;  author brent;  state Exp;
+branches ;
+next     8.14;
+
+8.14
+date     89.07.01.18.05.33;  author brent;  state Exp;
+branches ;
+next     8.13;
+
+8.13
+date     89.07.01.17.38.22;  author brent;  state Exp;
+branches ;
+next     8.12;
+
+8.12
+date     89.06.15.09.18.01;  author brent;  state Exp;
+branches ;
+next     8.11;
+
+8.11
+date     89.06.02.16.59.35;  author brent;  state Exp;
+branches ;
+next     8.10;
+
+8.10
+date     89.05.31.10.08.47;  author brent;  state Exp;
+branches ;
+next     8.9;
+
+8.9
+date     89.04.27.11.33.00;  author douglis;  state Exp;
+branches ;
+next     8.8;
+
+8.8
+date     89.04.06.11.48.44;  author douglis;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.03.24.17.02.36;  author brent;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.02.10.16.44.52;  author douglis;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.02.07.14.23.06;  author brent;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     88.12.21.11.12.18;  author douglis;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     88.12.07.07.59.20;  author brent;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.11.26.11.43.25;  author douglis;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.18.14.05.03;  author douglis;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.24.26;  author douglis;  state Stable;
+branches ;
+next     7.0;
+
+7.0
+date     88.11.11.15.35.06;  author brent;  state Exp;
+branches ;
+next     6.10;
+
+6.10
+date     88.10.20.15.42.18;  author brent;  state Exp;
+branches ;
+next     6.9;
+
+6.9
+date     88.10.19.09.33.13;  author douglis;  state Exp;
+branches ;
+next     6.8;
+
+6.8
+date     88.10.14.12.18.56;  author brent;  state Exp;
+branches ;
+next     6.7;
+
+6.7
+date     88.10.13.17.44.20;  author brent;  state Exp;
+branches ;
+next     6.6;
+
+6.6
+date     88.10.11.16.17.30;  author brent;  state Exp;
+branches ;
+next     6.5;
+
+6.5
+date     88.10.10.11.28.17;  author douglis;  state Exp;
+branches ;
+next     6.4;
+
+6.4
+date     88.10.03.19.55.58;  author douglis;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.09.28.15.27.21;  author douglis;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.09.07.16.54.50;  author brent;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.31.12.07.26;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.18.59;  author brent;  state Stable;
+branches ;
+next     1.10;
+
+1.10
+date     88.08.11.10.54.59;  author brent;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     88.08.05.13.43.17;  author mlgray;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     88.08.04.18.09.35;  author mlgray;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.08.04.15.04.37;  author mlgray;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.08.03.17.18.46;  author mlgray;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.06.03.11.30.50;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.04.19.10.52.06;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.04.12.11.30.25;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.04.11.10.16.43;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.05.13.56.56;  author brent;  state Exp;
+branches ;
+next     ;
+
+9.3.1.1
+date     91.11.15.13.47.01;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@File migration module
+@
+
+
+9.4
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@/*
+ * fsTopMigrate.c --
+ *
+ * Procedures to handle migrating open files between machines.  The basic
+ * strategy is to first do some local book-keeping on the client we are
+ * leaving, then ship state to the new client, then finally tell the
+ * I/O server about it, and finish up with local book-keeping on the
+ * new client.  There are three stream-type procedures used: 'migStart'
+ * does the initial book-keeping on the original client, 'migEnd' does
+ * the final book-keeping on the new client, and 'migrate' is called
+ * on the I/O server to shift around state associated with the client.
+ *
+ * Copyright (C) 1985, 1988, 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsTopMigrate.c,v 9.3 90/11/06 16:51:02 shirriff Exp Locker: rab $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsconsist.h>
+#include <fspdev.h>
+#include <fsio.h>
+#include <fsprefix.h>
+#include <fsNameOps.h>
+#include <fsStat.h>
+#include <byte.h>
+#include <rpc.h>
+#include <procMigrate.h>
+#include <string.h>
+#include <stdio.h>
+
+extern int fsio_MigDebug;
+#define DEBUG( format ) \
+	if (fsio_MigDebug) { printf format ; }
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Fs_InitiateMigration --
+ *
+ *	Return the size of the encapsulated file system state.
+ *	(Note: for now, we'll let the encapsulation procedure do the same
+ *	work (in part); later things can be simplified to use a structure
+ *	and to keep around some info off the ClientData hook.)
+ *
+ * Results:
+ *	SUCCESS is returned directly; the size of the encapsulated state
+ *	is returned in infoPtr->size.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+
+/* ARGSUSED */
+ReturnStatus
+Fs_InitiateMigration(procPtr, hostID, infoPtr)
+    Proc_ControlBlock *procPtr;			/* process being migrated */
+    int hostID;					/* host to which it migrates */
+    Proc_EncapInfo *infoPtr;			/* area w/ information about
+						 * encapsulated state */
+{
+    Fs_ProcessState *fsPtr;
+    int numStreams;
+    int streamFlagsLen;
+    Fsprefix *prefixPtr;
+    int cwdLength;
+
+
+    fsPtr = procPtr->fsPtr;
+    numStreams = fsPtr->numStreams;
+    /*
+     * Get the prefix for the current working directory, and its size.
+     * We pass the name over so it can be opened to make sure the prefix
+     * is available.
+     */
+    if (fsPtr->cwdPtr->nameInfoPtr == (Fs_NameInfo *)NIL) {
+	panic("Fs_GetEncapSize: no name information for cwd.\n");
+	return(FAILURE);
+    }
+    prefixPtr = fsPtr->cwdPtr->nameInfoPtr->prefixPtr;
+    if (prefixPtr == (Fsprefix *)NIL) {
+	panic("Fs_GetEncapSize: no prefix for cwd.\n");
+	return(FAILURE);
+    }
+    cwdLength = Byte_AlignAddr(prefixPtr->prefixLength + 1);
+    
+    /*
+     * When sending an array of characters, it has to be even-aligned.
+     */
+    streamFlagsLen = Byte_AlignAddr(numStreams * sizeof(char));
+    
+    /*
+     * Send the groups, file permissions, number of streams, and encapsulated
+     * current working directory.  For each open file, send the
+     * streamID and encapsulated stream contents.
+     *
+     *	        data			size
+     *	 	----			----
+     * 		# groups		int
+     *	        groups			(# groups) * int
+     *		permissions		int
+     *		# files			int
+     *		per-file flags		(# files) * char
+     *		encapsulated files	(# files) * (Fsio_MigInfo + int)
+     *		cwd			Fsio_MigInfo + int + strlen(cwdPrefix) + 1
+     */
+    infoPtr->size = (4 + fsPtr->numGroupIDs) * sizeof(int) +
+	    streamFlagsLen + numStreams * (sizeof(Fsio_MigInfo) + sizeof(int)) +
+	    sizeof(Fsio_MigInfo) + cwdLength;
+    return(SUCCESS);	
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Fs_GetEncapSize --
+ *
+ *	Return the size of the encapsulated stream.
+ *
+ * Results:
+ *	The size of the migration information structure.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+
+int
+Fs_GetEncapSize()
+{
+    return(sizeof(Fsio_MigInfo));
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_EncapFileState --
+ *
+ *	Encapsulate the file system state of a process for migration.  
+ *
+ * Results:
+ *	Any error during stream encapsulation
+ *	is returned; otherwise, SUCCESS.  The encapsulated state is placed
+ *	in the area referenced by ptr.
+ *
+ * Side effects:
+ *	None.  
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+ReturnStatus
+Fs_EncapFileState(procPtr, hostID, infoPtr, ptr)
+    register Proc_ControlBlock 	*procPtr;  /* The process being migrated */
+    int hostID;				   /* host to which it migrates */
+    Proc_EncapInfo *infoPtr;		   /* area w/ information about
+					    * encapsulated state */
+    Address ptr;			   /* Pointer to allocated buffer */
+{
+    Fs_ProcessState *fsPtr;
+    int numStreams;
+    int numGroups;
+    int streamFlagsLen;
+    Fs_Stream *streamPtr;
+    int i;
+    ReturnStatus status;
+    Fsprefix *prefixPtr;
+    int cwdLength;
+    int size;
+    int encaps;
+
+
+    fsPtr = procPtr->fsPtr;
+    numStreams = fsPtr->numStreams;
+    /*
+     * Get the prefix for the current working directory, and its size.
+     * We pass the name over so it can be opened to make sure the prefix
+     * is available.
+     */
+    if (fsPtr->cwdPtr->nameInfoPtr == (Fs_NameInfo *)NIL) {
+	panic("Fs_EncapFileState: no name information for cwd.\n");
+	return(FAILURE);
+    }
+    prefixPtr = fsPtr->cwdPtr->nameInfoPtr->prefixPtr;
+    if (prefixPtr == (Fsprefix *)NIL) {
+	panic("Fs_EncapFileState: no prefix for cwd.\n");
+	return(FAILURE);
+    }
+    cwdLength = Byte_AlignAddr(prefixPtr->prefixLength + 1);
+    
+    /*
+     * When sending an array of characters, it has to be even-aligned.
+     */
+    streamFlagsLen = Byte_AlignAddr(numStreams * sizeof(char));
+    
+    /*
+     * Send the groups, file permissions, number of streams, and encapsulated
+     * current working directory.  For each open file, send the
+     * streamID and encapsulated stream contents.
+     *
+     *	        data			size
+     *	 	----			----
+     * 		# groups		int
+     *	        groups			(# groups) * int
+     *		permissions		int
+     *		# files			int
+     *		per-file flags		(# files) * char
+     *		encapsulated files	(# files) * (Fsio_MigInfo + int)
+     *		cwd			Fsio_MigInfo + int + strlen(cwdPrefix) + 1
+     */
+    size = (4 + fsPtr->numGroupIDs) * sizeof(int) +
+	    streamFlagsLen + numStreams * (sizeof(Fsio_MigInfo) + sizeof(int)) +
+	    sizeof(Fsio_MigInfo) + cwdLength;
+    if (size != infoPtr->size) {
+	panic("Fs_EncapState: size of encapsulated state changed.\n");
+	return(FAILURE);
+    }
+
+    /*
+     * Send groups, filePermissions, numStreams, the cwd, and each file.
+     */
+    
+    numGroups = fsPtr->numGroupIDs;
+    Byte_FillBuffer(ptr, unsigned int, numGroups);
+    if (numGroups > 0) {
+	bcopy((Address) fsPtr->groupIDs, ptr, numGroups * sizeof(int));
+	ptr += numGroups * sizeof(int);
+    }
+    Byte_FillBuffer(ptr, unsigned int, fsPtr->filePermissions);
+    Byte_FillBuffer(ptr, int, numStreams);
+    if (numStreams > 0) {
+	bcopy((Address) fsPtr->streamFlags, ptr, numStreams * sizeof(char));
+	ptr += streamFlagsLen;
+    }
+    
+    Byte_FillBuffer(ptr, int, prefixPtr->prefixLength);
+    (void) strncpy(ptr, prefixPtr->prefix, prefixPtr->prefixLength);
+    ptr[prefixPtr->prefixLength] = '\0';
+    ptr += cwdLength;
+
+    status = Fsio_EncapStream(fsPtr->cwdPtr, ptr);
+    if (status != SUCCESS) {
+	printf(
+		  "Fs_EncapFileState: Error %x from Fsio_EncapStream on cwd.\n",
+		  status);
+	return(status);
+    }
+    fsPtr->cwdPtr = (Fs_Stream *) NIL;
+    ptr += sizeof(Fsio_MigInfo);
+    encaps = 1;
+
+    for (i = 0; i < fsPtr->numStreams; i++) {
+	streamPtr = fsPtr->streamList[i];
+	if (streamPtr != (Fs_Stream *) NIL) {
+	    Byte_FillBuffer(ptr, int, i);
+	    status = Fsio_EncapStream(streamPtr, ptr);
+	    if (status != SUCCESS) {
+		printf(
+			  "Fs_EncapFileState: Error %x from Fsio_EncapStream.\n",
+			  status);
+		return(status);
+	    }
+	    fsPtr->streamList[i] = (Fs_Stream *) NIL;
+	    encaps++;
+	} else {
+	    Byte_FillBuffer(ptr, int, NIL);
+	    bzero(ptr, sizeof(Fsio_MigInfo));
+	}	
+	ptr += sizeof(Fsio_MigInfo);
+    }
+
+#ifndef CLEAN   
+    Proc_MigAddToCounter(encaps, &fs_Stats.mig.filesEncapsulated,
+			 &fs_Stats.mig.encapSquared);
+#endif /* CLEAN */    
+
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_DeencapFileState --
+ *
+ *	Get the file system state of a process from another node.  The
+ *	buffer contains group information, permissions, the encapsulated
+ *	current working directory, and encapsulated streams.
+ *
+ * Results:
+ *	If Fsio_DeencapStream returns an error, that error is returned.
+ *	Otherwise, SUCCESS is returned.  
+ *
+ * Side effects:
+ *	"Local" Fs_Streams are created and allocated to the foreign process.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+Fs_DeencapFileState(procPtr, infoPtr, buffer)
+    register Proc_ControlBlock 	*procPtr; /* The process being migrated */
+    Proc_EncapInfo *infoPtr;		  /* information about the buffer */
+    Address buffer;			  /* buffer containing data */
+{
+    register Fs_ProcessState *fsPtr;
+    int i;
+    int index;
+    int numGroups;
+    int numStreams;
+    ReturnStatus status;
+    char *cwdName;
+    int cwdLength;
+    Fs_Stream *prefixStreamPtr;
+
+    /*
+     * Set up an fsPtr for the process.  Initialize some fields so that
+     * at any point we can bail out on error by calling Fs_CloseState.  Some
+     * fields are initialized from the information from the other host.
+     */
+    procPtr->fsPtr = fsPtr = mnew(Fs_ProcessState);
+    fsPtr->cwdPtr = (Fs_Stream *) NIL;
+
+    /*
+     * Get group and permissions information.
+     */
+    Byte_EmptyBuffer(buffer, unsigned int, numGroups);
+    fsPtr->numGroupIDs = numGroups;
+    if (numGroups > 0) {
+	fsPtr->groupIDs = (int *)malloc(numGroups * sizeof(int));
+	bcopy(buffer, (Address) fsPtr->groupIDs, numGroups * sizeof(int));
+	buffer += numGroups * sizeof(int);
+    } else {
+	fsPtr->groupIDs = (int *)NIL;
+    }
+    Byte_EmptyBuffer(buffer, unsigned int, fsPtr->filePermissions);
+
+    /*
+     * Get numStreams, flags, and the encapsulated cwd.  Allocate memory
+     * for the streams and flags arrays if non-empty.  The array of
+     * streamFlags may be an odd number of bytes, so we skip past the
+     * byte of padding if it exists (using the Byte_AlignAddr macro).
+     */
+
+    Byte_EmptyBuffer(buffer, int, numStreams);
+    fsPtr->numStreams = numStreams;
+    if (numStreams > 0) {
+	fsPtr->streamList = (Fs_Stream **)
+		malloc(numStreams * sizeof(Fs_Stream *));
+	fsPtr->streamFlags = (char *)malloc(numStreams * sizeof(char));
+	bcopy(buffer, (Address) fsPtr->streamFlags, numStreams * sizeof(char));
+	buffer += Byte_AlignAddr(numStreams * sizeof(char));
+	for (i = 0; i < fsPtr->numStreams; i++) {
+	    fsPtr->streamList[i] = (Fs_Stream *) NIL;
+	}
+    } else {
+	fsPtr->streamList = (Fs_Stream **)NIL;
+	fsPtr->streamFlags = (char *)NIL;
+    }
+    /*
+     * Get the name of the current working directory and make sure it's
+     * an installed prefix.
+     */
+    Byte_EmptyBuffer(buffer, int, cwdLength);
+    cwdName = buffer;
+    buffer += Byte_AlignAddr(cwdLength + 1);
+
+    /*
+     * Unlock the process while doing remote operations using it, or else
+     * we can deadlock.
+     */
+    Proc_Unlock(procPtr);
+    
+    status = Fs_Open(cwdName, FS_READ | FS_FOLLOW, FS_FILE, 0,
+		     &prefixStreamPtr);
+    if (status != SUCCESS) {
+	if (fsio_MigDebug) {
+	    panic("Unable to open prefix '%s' for migrated process.\n",
+		   cwdName);
+	} else if (proc_MigDebugLevel > 1) {
+	    printf("%s unable to open prefix '%s' for migrated process.\n",
+		   "Warning: Fs_DeencapFileState:", cwdName);
+	}
+	goto failure;
+    } else {
+	(void) Fs_Close(prefixStreamPtr);
+    }
+
+    status = Fsio_DeencapStream(buffer, &fsPtr->cwdPtr);
+    if (status != SUCCESS) {
+	if (fsio_MigDebug) {
+	    panic("GetFileState: Fsio_DeencapStream returned %x for cwd.\n",
+		  status);
+	} else if (proc_MigDebugLevel > 1) {
+	    printf("%s Fsio_DeencapStream returned %x for cwd.\n",
+		  "Warning: Fs_DeencapFileState:", status);
+	}
+	fsPtr->cwdPtr = (Fs_Stream *) NIL;
+        goto failure;
+    }
+    buffer += sizeof(Fsio_MigInfo);
+
+    
+
+    /*
+     * Get the other streams.
+     */
+    for (i = 0; i < fsPtr->numStreams; i++) {
+	Byte_EmptyBuffer(buffer, int, index);
+	if ((status == SUCCESS) && (index != NIL)) {
+	    status = Fsio_DeencapStream(buffer, &fsPtr->streamList[index]);
+	    if (status != SUCCESS) {
+		    printf(
+      "Fs_DeencapFileState: Fsio_DeencapStream for file id %d returned %x.\n",
+			      index, status);
+		    fsPtr->streamList[index] = (Fs_Stream *) NIL;
+		    goto failure;
+	    }
+	}
+	buffer += sizeof(Fsio_MigInfo);
+    }
+
+#ifndef CLEAN   
+    Proc_MigAddToCounter(numStreams + 1, &fs_Stats.mig.filesDeencapsulated,
+			 &fs_Stats.mig.deencapSquared);
+#endif /* CLEAN */    
+    
+    Proc_Lock(procPtr);
+    return(SUCCESS);
+    
+failure:
+    Proc_Lock(procPtr);
+    Fs_CloseState(procPtr,1);
+    return(status);
+    
+}
+@
+
+
+9.3
+log
+@Modified to use new Fs_CloseState.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsTopMigrate.c,v 9.2 90/10/08 11:27:53 mendel Exp Locker: shirriff $ SPRITE (Berkeley)";
+d257 1
+a257 1
+    strncpy(ptr, prefixPtr->prefix, prefixPtr->prefixLength);
+@
+
+
+9.3.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fs/fsTopMigrate.c,v 9.3 90/11/06 16:51:02 shirriff Exp $ SPRITE (Berkeley)";
+@
+
+
+9.2
+log
+@Fixed inlude files to use <> rather than "". 
+Changed type than from FsMigInfo to Fsio_MigInfo.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsTopMigrate.c,v 9.1 90/07/11 18:37:38 douglis Exp $ SPRITE (Berkeley)";
+d453 1
+a453 1
+    Fs_CloseState(procPtr);
+@
+
+
+9.1
+log
+@count encap/deencap events here so we can see how many are associated w/ 
+each proc.
+@
+text
+@d2 1
+a2 1
+ * fsMigrate.c --
+d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsTopMigrate.c,v 9.0 89/09/12 15:03:29 douglis Stable Locker: douglis $ SPRITE (Berkeley)";
+d28 14
+a41 12
+#include "sprite.h"
+#include "fs.h"
+#include "fsutil.h"
+#include "fsconsist.h"
+#include "fspdev.h"
+#include "fsio.h"
+#include "fsprefix.h"
+#include "fsNameOps.h"
+#include "fsStat.h"
+#include "byte.h"
+#include "rpc.h"
+#include "procMigrate.h"
+d119 2
+a120 2
+     *		encapsulated files	(# files) * (FsMigInfo + int)
+     *		cwd			FsMigInfo + int + strlen(cwdPrefix) + 1
+d123 2
+a124 2
+	    streamFlagsLen + numStreams * (sizeof(FsMigInfo) + sizeof(int)) +
+	    sizeof(FsMigInfo) + cwdLength;
+d149 1
+a149 1
+    return(sizeof(FsMigInfo));
+d228 2
+a229 2
+     *		encapsulated files	(# files) * (FsMigInfo + int)
+     *		cwd			FsMigInfo + int + strlen(cwdPrefix) + 1
+d232 2
+a233 2
+	    streamFlagsLen + numStreams * (sizeof(FsMigInfo) + sizeof(int)) +
+	    sizeof(FsMigInfo) + cwdLength;
+d269 1
+a269 1
+    ptr += sizeof(FsMigInfo);
+d287 1
+a287 1
+	    bzero(ptr, sizeof(FsMigInfo));
+d289 1
+a289 1
+	ptr += sizeof(FsMigInfo);
+a334 1
+    int deencaps;
+d421 1
+a421 1
+    buffer += sizeof(FsMigInfo);
+d440 1
+a440 1
+	buffer += sizeof(FsMigInfo);
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsTopMigrate.c,v 8.17 89/09/08 15:50:14 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d36 1
+d188 1
+d268 1
+d282 1
+d290 5
+d333 1
+d441 6
+@
+
+
+8.17
+log
+@unlock process while opening its cwd & files
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsTopMigrate.c,v 8.16 89/08/21 15:23:02 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+@
+
+
+8.16
+log
+@Break up fs to sperate modules.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsMigrate.c,v 8.14 89/07/01 18:05:33 brent Exp $ SPRITE (Berkeley)";
+d376 7
+d431 1
+d435 1
+@
+
+
+8.15
+log
+@Changed a panic to a warning.
+@
+text
+@d30 6
+a35 11
+#include "fsInt.h"
+#include "fsMigrate.h"
+#include "fsStream.h"
+#include "fsClient.h"
+#include "fsPdev.h"
+#include "fsFile.h"
+#include "fsDevice.h"
+#include "fsPrefix.h"
+#include "fsOpTable.h"
+#include "fsDebug.h"
+#include "fsNameOpsInt.h"
+d40 1
+a40 1
+Boolean fsMigDebug = FALSE;
+d42 1
+a42 1
+	if (fsMigDebug) { printf format ; }
+a47 540
+ * Fs_EncapStream --
+ *
+ *	Package up a stream's state for migration to another host.  This
+ *	copies the stream's offset, streamID, ioFileID, nameFileID, and flags.
+ *	This routine is side-effect free with respect to both
+ *	the stream and the I/O handles.  The bookkeeping is done later
+ *	during Fs_DeencapStream so proper syncronization with Fs_Close
+ *	bookkeeping can be done.
+ *	It is reasonable to call Fs_DeencapStream again on this host,
+ *	for example, to back out an aborted migration.
+ *
+ * Results:
+ *	This always returns SUCCESS.
+ *	
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+
+ReturnStatus
+Fs_EncapStream(streamPtr, bufPtr)
+    Fs_Stream	*streamPtr;	/* Stream to be migrated */
+    Address	bufPtr;		/* Buffer to hold encapsulated stream */
+{
+    register	FsMigInfo	*migInfoPtr;
+    register FsHandleHeader	*ioHandlePtr;
+
+    /*
+     * Synchronize with stream duplication and closes
+     */
+    FsHandleLock(streamPtr);
+
+    /*
+     * The encapsulated stream state includes the read/write offset,
+     * the I/O server, the useFlags of the stream, and our SpriteID so
+     * the target of migration and the server can do the right thing later. 
+     */
+    migInfoPtr = (FsMigInfo *) bufPtr;
+    ioHandlePtr = streamPtr->ioHandlePtr;
+    migInfoPtr->streamID = streamPtr->hdr.fileID;
+    migInfoPtr->ioFileID = ioHandlePtr->fileID;
+    if (streamPtr->nameInfoPtr == (FsNameInfo *)NIL) {
+	/*
+	 * Anonymous pipes have no name information.
+	 */
+	migInfoPtr->nameID.type = -1;
+    } else {
+	migInfoPtr->nameID = streamPtr->nameInfoPtr->fileID;
+	migInfoPtr->rootID = streamPtr->nameInfoPtr->rootID;
+    }
+    migInfoPtr->offset = streamPtr->offset;
+    migInfoPtr->srcClientID = rpc_SpriteID;
+    migInfoPtr->flags = streamPtr->flags;
+
+    FsHandleUnlock(streamPtr);
+    return(SUCCESS);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Fs_DeencapStream --
+ *
+ *	Deencapsulate the stream that was packaged up on another machine
+ *	and recreate the stream on this machine.  This uses two stream-type
+ *	routines to complete the setup of the stream.  First, the
+ *	migrate routine is called to shift client references on the
+ *	server.  Then the migEnd routine is called to do local book-keeping.
+ *
+ * Results:
+ *	A return status, plus *streamPtrPtr is set to the new stream.
+ *
+ * Side effects:
+ *	Ensures that the stream exists on this host, along with the
+ *	associated I/O handle.  This calls a stream-type specific routine
+ *	to shuffle reference counts and detect cross-machine stream
+ *	sharing.  If a stream is shared by proceses on different machines
+ *	its flags field is marked with FS_RMT_SHARED.  This also calls
+ *	a stream-type specific routine to create the I/O handle when the
+ *	first reference to a stream migrates to this host.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+
+ReturnStatus
+Fs_DeencapStream(bufPtr, streamPtrPtr)
+    Address	bufPtr;		/* Encapsulated stream information. */
+    Fs_Stream	**streamPtrPtr;	/* Where to return pointer to the new stream */
+{
+    register	Fs_Stream	*streamPtr;
+    register	FsMigInfo	*migInfoPtr;
+    register	FsNameInfo	*nameInfoPtr;
+    ReturnStatus		status = SUCCESS;
+    Boolean			foundClient;
+    Boolean			foundStream;
+    int				size;
+    ClientData			data;
+
+    migInfoPtr = (FsMigInfo *) bufPtr;
+
+    if (migInfoPtr->srcClientID == rpc_SpriteID) {
+	/*
+	 * Migrating to ourselves.  Just fetch the stream.
+	 */
+	*streamPtrPtr = FsHandleFetchType(Fs_Stream, &migInfoPtr->streamID);
+	if (*streamPtrPtr == (Fs_Stream *)NIL) {
+	    return(FS_FILE_NOT_FOUND);
+	} else {
+	    return(SUCCESS);
+	}
+    }
+    /*
+     * Create a top-level stream and note if this is a new stream.  This is
+     * important because extra things happen when the first reference to
+     * a stream migrates to this host.  FS_NEW_STREAM is used to indicate this.
+     * Note that the stream has (at least) one reference count and a client
+     * list entry that will be cleaned up by a future call to Fs_Close.
+     */
+    streamPtr = FsStreamAddClient(&migInfoPtr->streamID, rpc_SpriteID,
+			     (FsHandleHeader *)NIL,
+			     migInfoPtr->flags & ~FS_NEW_STREAM, (char *)NIL,
+			     &foundClient, &foundStream);
+    if (!foundClient) {
+	migInfoPtr->flags |= FS_NEW_STREAM;
+	streamPtr->offset = migInfoPtr->offset;
+	DEBUG( ("Deencap NEW stream %d, migOff %d, ",
+		streamPtr->hdr.fileID.minor, migInfoPtr->offset) );
+    } else {
+	migInfoPtr->flags &= ~FS_NEW_STREAM;
+	DEBUG( ("Deencap OLD stream %d, migOff %d, ",
+		streamPtr->hdr.fileID.minor,
+		migInfoPtr->offset, streamPtr->offset) );
+    }
+    if (streamPtr->nameInfoPtr == (FsNameInfo *)NIL) {
+	if (migInfoPtr->nameID.type == -1) {
+	    /*
+	     * No name info to re-create.  This happens when anonymous
+	     * pipes get migrated.
+	     */
+	    streamPtr->nameInfoPtr = (FsNameInfo *)NIL;
+	} else {
+	    /*
+	     * Set up the nameInfo.  We sacrifice the name string as it is only
+	     * used in error messages.  The fileID is used with get/set attr.
+	     * If this file is the current directory then rootID is passed
+	     * to the server to trap "..", domainType is used to index the
+	     * name lookup operation switch, and prefixPtr is used for
+	     * efficient handling of lookup redirections.
+	     * Convert from remote to local file types, and vice-versa,
+	     * as needed.
+	     */
+	    streamPtr->nameInfoPtr = nameInfoPtr = mnew(FsNameInfo);
+	    nameInfoPtr->fileID = migInfoPtr->nameID;
+	    nameInfoPtr->rootID = migInfoPtr->rootID;
+	    if (nameInfoPtr->fileID.serverID != rpc_SpriteID) {
+		nameInfoPtr->domainType = FS_REMOTE_SPRITE_DOMAIN;
+		nameInfoPtr->fileID.type =
+		    fsLclToRmtType[nameInfoPtr->fileID.type];
+		nameInfoPtr->rootID.type =
+		    fsLclToRmtType[nameInfoPtr->rootID.type];
+	    } else {
+		/*
+		 * FIX HERE PROBABLY TO HANDLE PSEUDO_FILE_SYSTEMS.
+		 */
+		nameInfoPtr->domainType = FS_LOCAL_DOMAIN;
+		nameInfoPtr->fileID.type =
+		    fsRmtToLclType[nameInfoPtr->fileID.type];
+		nameInfoPtr->rootID.type =
+		    fsRmtToLclType[nameInfoPtr->rootID.type];
+	    }
+	    nameInfoPtr->prefixPtr = FsPrefixFromFileID(&migInfoPtr->rootID);
+	    if (nameInfoPtr->prefixPtr == (struct FsPrefix *)NIL) {
+		printf("Fs_DeencapStream: No prefix entry for <%d,%d,%d>\n",
+		    migInfoPtr->rootID.serverID,
+		    migInfoPtr->rootID.major, migInfoPtr->rootID.minor);
+	    }
+	}
+    }
+    /*
+     * Contact the I/O server to tell it that the client moved.  The I/O
+     * server checks for cross-network stream sharing and sets the
+     * FS_RMT_SHARED flag if it is shared.  Note that we set FS_NEW_STREAM
+     * in the migInfoPtr->flags, and this flag often gets rammed into
+     * the streamPtr->flags, which we don't want because it would confuse
+     * FsMigrateUseCounts on subsequent migrations.
+     */
+    FsHandleUnlock(streamPtr);
+    status = (*fsStreamOpTable[migInfoPtr->ioFileID.type].migrate)
+		(migInfoPtr, rpc_SpriteID, &streamPtr->flags,
+		 &streamPtr->offset, &size, &data);
+    streamPtr->flags &= ~FS_NEW_STREAM;
+
+    DEBUG( (" Type %d <%d,%d> offset %d, ", migInfoPtr->ioFileID.type,
+		migInfoPtr->ioFileID.major, migInfoPtr->ioFileID.minor,
+		streamPtr->offset) );
+
+    if (status == SUCCESS && !foundClient) {
+	/*
+	 * The stream is newly created on this host so we call down to
+	 * the I/O handle level to ensure that the I/O handle exists and
+	 * so the local object manager gets told about the new stream.
+	 */
+	migInfoPtr->flags = streamPtr->flags;
+	status = (*fsStreamOpTable[migInfoPtr->ioFileID.type].migEnd)
+		(migInfoPtr, size, data, &streamPtr->ioHandlePtr);
+	DEBUG( ("migEnd status %x\n", status) );
+    } else {
+	DEBUG( ("migrate status %x\n", status) );
+    }
+
+    if (status == SUCCESS) {
+	*streamPtrPtr = streamPtr;
+    } else {
+	FsHandleLock(streamPtr);
+	if (!foundStream &&
+	    FsStreamClientClose(&streamPtr->clientList, rpc_SpriteID)) {
+	    FsStreamDispose(streamPtr);
+	} else {
+	    FsHandleRelease(streamPtr, TRUE);
+	}
+    }
+
+    return(status);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * FsMigrateUseCounts --
+ *
+ *	This updates use counts to reflect any network sharing that
+ *	is a result of migration.  The rule adhered to is that there
+ *	are use counts kept on the I/O handle for each stream on each client
+ *	that uses the I/O handle.  A stream with only one reference
+ *	does not change use counts when it migrates, for example, because
+ *	the reference just moves.  A stream with two references will
+ *	cause a new client host to have a stream after migration, so the
+ *	use counts are updated in case both clients do closes.  Finally,
+ *	use counts get decremented when a stream completely leaves a
+ *	client after being shared.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Adjusts the use counts to reflect sharing of the I/O handle
+ *	due to migration.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+ReturnStatus
+FsMigrateUseCounts(flags, closeSrcClient, usePtr)
+    register int	 flags;		/* Flags from the stream */
+    Boolean		closeSrcClient;	/* TRUE if I/O close was done at src */
+    register FsUseCounts *usePtr;	/* Use counts from the I/O handle */
+{
+    if ((flags & FS_NEW_STREAM) && !closeSrcClient) {
+	/*
+	 * The stream is becoming shared across the network because
+	 * it is new at the destination and wasn't closed at the source.
+	 * Increment the use counts on the I/O handle
+	 * to reflect the additional client stream.
+	 */
+	usePtr->ref++;
+	if (flags & FS_WRITE) {
+	    usePtr->write++;
+	}
+	if (flags & FS_EXECUTE) {
+	    usePtr->exec++;
+	}
+    } else if ((flags & FS_NEW_STREAM) == 0 && closeSrcClient) {
+	/*
+	 * The stream is becoming un-shared.  The last reference from the
+	 * source was closed and there is already a reference at the dest.
+	 * Decrement the use counts to reflect the fact that the stream on
+	 * the original client is not referencing the I/O handle.
+	 */
+	usePtr->ref--;
+	if (flags & FS_WRITE) {
+	    usePtr->write--;
+	}
+	if (flags & FS_EXECUTE) {
+	    usePtr->exec--;
+	}
+    } else {
+	/*
+	 * The stream moved completly, or a reference just moved between
+	 * two existing streams, so there is no change visible to
+	 * the I/O handle use counts.
+	 */
+     }
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * FsIOClientMigrate --
+ *
+ *	Move a client of an I/O handle from one host to another.  Flags
+ *	indicate if the migration results in a newly shared stream, or
+ *	in a stream that is no longer shared, or in a stream with
+ *	no change visible at the I/O handle level.  We are careful to only
+ *	open the dstClient if it getting the stream for the first time.
+ *	Also, if the srcClient is switching from a writer to a reader, we
+ *	remove its write reference.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Adds the destination client to the clientList, if needed.
+ *	Removes the source client from the list, if needed.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+ENTRY void
+FsIOClientMigrate(clientList, srcClientID, dstClientID, flags, closeSrcClient)
+    List_Links	*clientList;	/* List of clients for the I/O handle. */
+    int		srcClientID;	/* The original client. */
+    int		dstClientID;	/* The destination client. */
+    int		flags;		/* FS_RMT_SHARED if a copy of the stream
+				 * still exists on the srcClient.
+				 * FS_NEW_STREAM if stream is new on dst.
+				 * FS_READ | FS_WRITE | FS_EXECUTE */
+    Boolean	closeSrcClient;	/* TRUE if we should close src client.  This
+				 * is set by FsStreamMigClient */
+{
+    register Boolean found;
+    Boolean cache = FALSE;
+
+    if (closeSrcClient) {
+	/*
+	 * The stream is not shared so we nuke the original client's use.
+	 */
+	found = FsIOClientClose(clientList, srcClientID, flags, &cache);
+	if (!found) {
+	    printf("FsIOClientMigrate, srcClient %d not found\n", srcClientID);
+	}
+    }
+    if (flags & FS_NEW_STREAM) {
+	/*
+	 * The stream is new on the destination host.
+	 */
+	(void)FsIOClientOpen(clientList, dstClientID, flags, FALSE);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsNotifyOfMigration --
+ *
+ *	This invokes the stream-specific migration routine on the I/O server.
+ *	This is used by various RMT (remote) stream types.
+ *
+ * Results:
+ *	A return status, plus new flags containing FS_RMT_SHARED bit,
+ *	a new stream offset, plus some stream-type-specific data used
+ *	when creating the I/O handle in the migEnd procedure.
+ *
+ * Side effects:
+ *      None here, but bookkeeping is done at the I/O server.
+ *	
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+FsNotifyOfMigration(migInfoPtr, flagsPtr, offsetPtr, outSize, outData)
+    FsMigInfo	*migInfoPtr;	/* Encapsulated information */
+    int		*flagsPtr;	/* New flags, may have FS_RMT_SHARED bit set */
+    int		*offsetPtr;	/* New stream offset */
+    int		outSize;	/* Size of returned data, outData */
+    Address	outData;	/* Returned data from server */
+{
+    register ReturnStatus	status;
+    Rpc_Storage 	storage;
+    FsMigParam		migParam;
+
+    storage.requestParamPtr = (Address) migInfoPtr;
+    storage.requestParamSize = sizeof(FsMigInfo);
+    storage.requestDataPtr = (Address)NIL;
+    storage.requestDataSize = 0;
+
+    storage.replyParamPtr = (Address)&migParam;
+    storage.replyParamSize = sizeof(FsMigParam);
+    storage.replyDataPtr = (Address) NIL;
+    storage.replyDataSize = 0;
+
+    status = Rpc_Call(migInfoPtr->ioFileID.serverID, RPC_FS_MIGRATE, &storage);
+
+    if (status == SUCCESS) {
+	FsMigrateReply	*migReplyPtr;
+
+	migReplyPtr = &(migParam.migReply);
+	*flagsPtr = migReplyPtr->flags;
+	*offsetPtr = migReplyPtr->offset;
+	if (migParam.dataSize > 0) {
+	    if (outSize < migParam.dataSize) {
+		panic("FsNotifyOfMigration: too much data returned %d not %d\n",
+			  migParam.dataSize, outSize);
+		status = FAILURE;
+	    } else {
+		bcopy((Address)&migParam.data, outData, migParam.dataSize);
+	    }
+	}
+    } else if (fsMigDebug) {
+	printf("FsNotifyOfMigration: status %x from remote migrate routine.\n",
+		  status);
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_RpcMigrateStream --
+ *
+ *	The RPC service stub for FsNotifyOfMigration.
+ *	This invokes the Migrate routine for the I/O handle given in
+ *	the encapsulated stream state.
+ *
+ * Results:
+ *	FS_STALE_HANDLE if handle that if client that is migrating the file
+ *	doesn't have the file opened on this machine.  Otherwise return
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+Fs_RpcMigrateStream(srvToken, clientID, command, storagePtr)
+    ClientData srvToken;	/* Handle on server process passed to
+				 * Rpc_Reply */
+    int clientID;		/* Sprite ID of client host */
+    int command;		/* Command identifier */
+    Rpc_Storage *storagePtr;    /* The request fields refer to the request
+				 * buffers and also indicate the exact amount
+				 * of data in the request buffers.  The reply
+				 * fields are initialized to NIL for the
+				 * pointers and 0 for the lengths.  This can
+				 * be passed to Rpc_Reply */
+{
+    register FsMigInfo		*migInfoPtr;
+    register FsHandleHeader	*hdrPtr;
+    register ReturnStatus	status;
+    register FsMigrateReply	*migReplyPtr;
+    register FsMigParam		*migParamPtr;
+    register Rpc_ReplyMem	*replyMemPtr;
+    Address    			dataPtr;
+    int				dataSize;
+
+    migInfoPtr = (FsMigInfo *) storagePtr->requestParamPtr;
+
+    hdrPtr = (*fsStreamOpTable[migInfoPtr->ioFileID.type].clientVerify)
+	    (&migInfoPtr->ioFileID, migInfoPtr->srcClientID, (int *)NIL);
+    if (hdrPtr == (FsHandleHeader *) NIL) {
+	printf("Fs_RpcMigrateStream, unknown %s handle <%d,%d>\n",
+	    FsFileTypeToString(migInfoPtr->ioFileID.type),
+	    migInfoPtr->ioFileID.major, migInfoPtr->ioFileID.minor);
+	return(FS_STALE_HANDLE);
+    }
+    FsHandleUnlock(hdrPtr);
+    migParamPtr = mnew(FsMigParam);
+    migReplyPtr = &(migParamPtr->migReply);
+    migReplyPtr->flags = migInfoPtr->flags;
+    storagePtr->replyParamPtr = (Address)migParamPtr;
+    storagePtr->replyParamSize = sizeof(FsMigParam);
+    storagePtr->replyDataPtr = (Address)NIL;
+    storagePtr->replyDataSize = 0;
+    status = (*fsStreamOpTable[hdrPtr->fileID.type].migrate) (migInfoPtr,
+		clientID, &migReplyPtr->flags, &migReplyPtr->offset,
+		&dataSize, &dataPtr);
+    migParamPtr->dataSize = dataSize;
+    if ((status == SUCCESS) && (dataSize > 0)) {
+	if (dataSize <= sizeof(migParamPtr->data)) {
+	    bcopy(dataPtr, (Address) &migParamPtr->data, dataSize);
+	    free(dataPtr);
+	} else {
+	    panic("Fs_RpcMigrateStream: migrate returned oversized buffer.\n");
+	    return(FAILURE);
+	}
+    } 
+	
+    FsHandleRelease(hdrPtr, FALSE);
+
+    replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
+    replyMemPtr->paramPtr = storagePtr->replyParamPtr;
+    replyMemPtr->dataPtr = (Address) NIL;
+    Rpc_Reply(srvToken, status, storagePtr, Rpc_FreeMem,
+		(ClientData)replyMemPtr);
+    return(SUCCESS);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * FsPassStream --
+ *
+ *	This is called from Fs_Open as a cltOpen routine.  It's job is
+ *	to take an encapsulated stream from a pseudo-device server and
+ *	unencapsulate it so the Fs_Open returns the stream that the
+ *	pseudo-device server had.
+ *
+ * Results:
+ *	A return status.
+ *
+ * Side effects:
+ *	Deencapsulates a stream.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+
+/* ARGSUSED */
+ReturnStatus
+FsPassStream(ioFileIDPtr, flagsPtr, clientID, streamData, name, ioHandlePtrPtr)
+    Fs_FileID		*ioFileIDPtr;	/* I/O fileID from the name server */
+    int			*flagsPtr;	/* Return only.  The server returns
+					 * a modified useFlags in FsFileState */
+    int			clientID;	/* IGNORED */
+    ClientData		streamData;	/* Pointer to encapsulated stream. */
+    char		*name;		/* File name for error msgs */
+    FsHandleHeader	**ioHandlePtrPtr;/* Return - a handle set up for
+					 * I/O to a file, NIL if failure. */
+{
+    return(FAILURE);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+d77 1
+a77 1
+    FsPrefix *prefixPtr;
+d88 1
+a88 1
+    if (fsPtr->cwdPtr->nameInfoPtr == (FsNameInfo *)NIL) {
+d93 1
+a93 1
+    if (prefixPtr == (FsPrefix *)NIL) {
+d184 1
+a184 1
+    FsPrefix *prefixPtr;
+d196 1
+a196 1
+    if (fsPtr->cwdPtr->nameInfoPtr == (FsNameInfo *)NIL) {
+d201 1
+a201 1
+    if (prefixPtr == (FsPrefix *)NIL) {
+d257 1
+a257 1
+    status = Fs_EncapStream(fsPtr->cwdPtr, ptr);
+d260 1
+a260 1
+		  "Fs_EncapFileState: Error %x from Fs_EncapStream on cwd.\n",
+d271 1
+a271 1
+	    status = Fs_EncapStream(streamPtr, ptr);
+d274 1
+a274 1
+			  "Fs_EncapFileState: Error %x from Fs_EncapStream.\n",
+d300 1
+a300 1
+ *	If Fs_DeencapStream returns an error, that error is returned.
+d308 1
+a308 1
+
+d379 1
+a379 1
+	if (fsMigDebug) {
+d391 1
+a391 1
+    status = Fs_DeencapStream(buffer, &fsPtr->cwdPtr);
+d393 2
+a394 2
+	if (fsMigDebug) {
+	    panic("GetFileState: Fs_DeencapStream returned %x for cwd.\n",
+d397 1
+a397 1
+	    printf("%s Fs_DeencapStream returned %x for cwd.\n",
+d413 1
+a413 1
+	    status = Fs_DeencapStream(buffer, &fsPtr->streamList[index]);
+d416 1
+a416 1
+      "Fs_DeencapFileState: Fs_DeencapStream for file id %d returned %x.\n",
+@
+
+
+8.14
+log
+@Updated comments
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsMigrate.c,v 8.12 89/06/15 09:18:01 brent Exp $ SPRITE (Berkeley)";
+d229 1
+a229 1
+		printf( "No prefix entry for <%d,%d,%d>\n",
+d518 1
+a518 1
+	panic("Fs_RpcMigrateStream, unknown %s handle <%d,%d>\n",
+@
+
+
+8.13
+log
+@Patched against pollution of streamPtr->flags with FS_NEW_STREAM,
+which only makes sense in the migInfoPtr->flags field.
+@
+text
+@d126 1
+a126 1
+ *	A return status.
+d129 7
+a135 2
+ *	Calls the migrate and migEnd stream-type procedures.  See these
+ *	routines for further details.
+d169 5
+a173 2
+     * Create a top-level stream.  We bump the reference count and add
+     * ourselves as a client because Fs_Close will clean up later.
+d199 1
+a199 1
+	     * Set up the nameInfo.  We sacrifice the name as it is only
+d218 3
+d238 4
+a241 2
+     * FS_RMT_SHARED flag if it is shared.  It also looks at the
+     * FS_NEW_STREAM flag which we've set/unset above.
+a248 14
+#define CHECK_FAILURE
+#ifdef CHECK_FAILURE
+    /*
+     * Try to check for a NoProc where it doesn't belong.  Unfortunately,
+     * NoProc is static, so we can only compare to a known entry that
+     * contains NoProc.
+     */
+    if (status == FAILURE &&
+	(fsStreamOpTable[migInfoPtr->ioFileID.type].migrate ==
+	 fsStreamOpTable[FS_STREAM].read)) {
+	panic("Fs_DeencapStream: trying to deencapsulate a file descriptor that can't migrate.  (Continuable, but call Fred.)");
+    }
+#endif /* CHECK_FAILURE */
+
+d255 3
+a257 4
+	 * Complete the setup of the stream with local book-keeping.  The
+	 * local book-keeping only needs to be done the first time the
+	 * stream is created here because stream sharing is not reflected
+	 * in the reference/use counts on the I/O handle.
+d291 1
+a291 1
+ *	does not change use counts, for example, when it migrates because
+d395 1
+a395 2
+	    printf("FsIOClientMigrate, srcClient %d not found\n",
+		srcClientID);
+d412 2
+a413 1
+ *	Send an rpc to the I/O server to inform it about a migration.
+d416 3
+a418 1
+ *	A return status.
+d421 1
+a421 1
+ *      None.
+d476 1
+a476 1
+ *	The service stub for FsNotifyOfMigration.
+@
+
+
+8.12
+log
+@Cleaned up RPCs.  Separated out migration from stream release.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsMigrate.c,v 8.11 89/06/02 16:59:35 brent Exp $ SPRITE (Berkeley)";
+d169 1
+a169 1
+			     migInfoPtr->flags, (char *)NIL,
+d234 1
+@
+
+
+8.11
+log
+@Nuked unused FS_LAST_WRITER flags
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsMigrate.c,v 8.10 89/05/31 10:08:47 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d473 1
+a473 2
+ * Fs_RpcNotifyOfMigration --
+ * Fs_RpcStartMigration --
+d475 1
+a475 1
+ *	The service stub for FsNotifyOfMigration (and FsStreamMigCallback).
+d491 1
+a491 1
+Fs_RpcStartMigration(srvToken, clientID, command, storagePtr)
+d514 2
+a515 11
+    /*
+     * This is getting hacked up.  Should we add a new RPC used only to
+     * call FsStreamMigrate (which should really be FsStreamRelease!)
+     */
+    if (migInfoPtr->ioFileID.type == FS_STREAM) {
+	hdrPtr = (FsHandleHeader *)FsStreamClientVerify(&migInfoPtr->ioFileID,
+						    migInfoPtr->srcClientID);
+    } else {
+	hdrPtr = (*fsStreamOpTable[migInfoPtr->ioFileID.type].clientVerify)
+		(&migInfoPtr->ioFileID, migInfoPtr->srcClientID, (int *)NIL);
+    }
+d517 1
+a517 1
+	panic("Fs_RpcStartMigration, unknown %s handle <%d,%d>\n",
+d539 1
+a539 1
+	    panic("Fs_RpcStartMigration: migrate returned oversized buffer.\n");
+a552 1
+
+@
+
+
+8.10
+log
+@Fixed stream locking in an error case
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsMigrate.c,v 8.9 89/04/27 11:33:00 douglis Exp $ SPRITE (Berkeley)";
+d323 1
+a323 1
+	if ((flags & FS_WRITE) && !(flags & FS_LAST_WRITER)) {
+@
+
+
+8.9
+log
+@Added a check for trying to deencapsulate a file descriptor
+for a pdev server or something else that can't migrate.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsMigrate.c,v 8.8 89/04/06 11:48:44 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d247 1
+a247 1
+#endif
+d271 1
+a273 1
+	    FsHandleLock(streamPtr);
+d276 1
+a276 1
+	    FsHandleRelease(streamPtr, FALSE);
+d464 1
+a464 2
+	printf(
+		  "FsNotifyOfMigration: status %x returned by remote migrate routine.\n",
+d549 1
+a549 2
+	    panic(
+		      "Fs_RpcStartMigration: migrate routine returned oversized data buffer.\n");
+@
+
+
+8.8
+log
+@changes for table-driven process migration encapsulation.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsMigrate.c,v 8.7 89/03/24 17:02:36 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d234 15
+@
+
+
+8.7
+log
+@Added preliminary code to support passing open streams from
+pseudo-device servers to their clients.
+@
+text
+@d13 1
+a13 1
+ * Copyright (C) 1985, 1988 Regents of the University of California
+d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsMigrate.c,v 8.6 89/02/10 16:44:52 douglis Exp $ SPRITE (Berkeley)";
+d572 1
+d590 81
+d700 3
+a702 4
+ *	A pointer to the encapsulated state is returned, along with
+ *	the size of the buffer allocated and the number of streams
+ *	that were encapsulated.  Any error during stream encapsulation
+ *	is returned; otherwise, SUCCESS.
+d705 1
+a705 1
+ *	Memory is allocated for the buffer.  
+d710 1
+d712 1
+a712 1
+Fs_EncapFileState(procPtr, bufPtr, sizePtr, numEncapPtr)
+d714 4
+a717 3
+    Address *bufPtr;			   /* Pointer to allocated buffer */
+    int *sizePtr;			   /* Size of allocated buffer */
+    int *numEncapPtr;			   /* Number of streams encapsulated */
+a722 1
+    register Address ptr;
+a724 1
+    int numEncap;
+d728 1
+a752 1
+    *numEncapPtr = numEncap = 0;
+d769 1
+a769 1
+    *sizePtr = (4 + fsPtr->numGroupIDs) * sizeof(int) +
+d772 4
+a775 2
+    *bufPtr = (Address)malloc(*sizePtr);
+    ptr = *bufPtr;
+a803 1
+	free(*bufPtr);
+a807 1
+    numEncap += 1;
+a811 1
+	    numEncap += 1;
+a817 1
+		free(*bufPtr);
+a827 2
+
+    *numEncapPtr = numEncap;
+a828 1
+
+a831 42
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_ClearFileState --
+ *
+ *	Clear the file state associated with a process after it has
+ *	been migrated.  FIXME: Perhaps things should be freed here instead?
+ *
+ *	Actually, the streams are closed as they are encapsulated, so they
+ *	can be nil'ed out as they are encapsulated as well.  This routine
+ *	is here only for compatibility with the installed proc and can
+ *	be removed after proc is reinstalled.  FD
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The current working directory and open streams of the process
+ *	are cleared.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Fs_ClearFileState(procPtr)
+    register Proc_ControlBlock 	*procPtr;  /* The process being migrated */
+{
+    int i;
+    Fs_ProcessState *fsPtr;
+
+    fsPtr = procPtr->fsPtr;
+    if (fsPtr == (Fs_ProcessState *) NIL) {
+	panic( "Fs_ClearFileState: NIL Fs_ProcessState!");
+	return;
+    }
+    for (i = 0; i < fsPtr->numStreams; i++) {
+	fsPtr->streamList[i] = (Fs_Stream *) NIL;
+    }
+    fsPtr->cwdPtr = (Fs_Stream *) NIL;
+}
+
+d852 4
+a855 3
+Fs_DeencapFileState(procPtr, buffer)
+    Proc_ControlBlock *procPtr;
+    Address buffer;
+@
+
+
+8.6
+log
+@clean up better when deencapsulating file state and hitting an error.
+this will call Fs_CloseState on error.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsMigrate.c,v 8.5 89/02/07 14:23:06 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d551 34
+@
+
+
+8.5
+log
+@Removed Lint
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsMigrate.c,v 8.4 88/12/21 11:12:18 douglis Exp $ SPRITE (Berkeley)";
+d798 5
+d804 1
+a804 1
+    
+d835 3
+d859 1
+a859 1
+	return(status);
+d873 2
+a874 1
+	return(status);
+d885 1
+a885 1
+	if (index != NIL) {
+a887 3
+#ifdef notdef
+		if (status != FAILURE) {
+#endif
+d891 2
+a892 5
+		    return(status);
+#ifdef notdef
+		}
+		fsPtr->streamList[index] = (Fs_Stream *) NIL;
+#endif
+a893 2
+	} else {
+	    fsPtr->streamList[i] = (Fs_Stream *) NIL;
+d898 5
+@
+
+
+8.4
+log
+@Fixed double migration bug (Brent)
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsMigrate.c,v 8.3 88/12/07 07:59:20 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+a611 1
+    char *cwdName;
+@
+
+
+8.3
+log
+@Added byte.h include for Byte_FillBuffer
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsMigrate.c,v 8.2 88/11/26 11:43:25 douglis Exp Locker: brent $ SPRITE (Berkeley)";
+d295 1
+a295 1
+FsMigrateUseCounts(flags, usePtr)
+d297 1
+d300 1
+a300 1
+    if ((flags & FS_NEW_STREAM) && (flags & FS_RMT_SHARED)) {
+d302 2
+a303 1
+	 * The stream is becoming shared across the network.
+d314 1
+a314 1
+    } else if ((flags & (FS_NEW_STREAM|FS_RMT_SHARED)) == 0) {
+d316 2
+a317 1
+	 * The stream is becoming un-shared.
+d361 1
+a361 1
+FsIOClientMigrate(clientList, srcClientID, dstClientID, flags)
+d365 2
+a366 1
+    int		flags;		/* FS_RMT_SHARED if stream is now shared.
+d369 2
+d375 1
+a375 1
+    if ((flags & FS_RMT_SHARED) == 0) {
+d503 1
+a503 1
+     * call FsStreamMigrate?  Or add FsStreamClientVerify to fsOpTable.c
+@
+
+
+8.2
+log
+@Fixed calls to Fs_Open and Fs_Close that are made when
+transferring the prefix for the current working directory.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsMigrate.c,v 8.1 88/11/18 14:05:03 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d41 1
+@
+
+
+8.1
+log
+@Pass over string for prefix of  cwd in order to make sure to load
+this prefix on the other machine before deencapsulating the cwd.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsMigrate.c,v 8.0 88/11/11 18:24:26 douglis Stable Locker: douglis $ SPRITE (Berkeley)";
+d790 1
+a790 1
+    Fs_Stream prefixStream;
+d835 2
+a836 1
+    status = Fs_Open(cwdName, FS_READ | FS_FOLLOW, FS_FILE, 0, &prefixStream);
+d847 1
+a847 1
+	(void) Fs_Close(&prefixStream);
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsMigrate.c,v 7.0 88/11/11 15:35:06 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d42 1
+d604 3
+d612 16
+d646 1
+a646 1
+     *		cwd			FsMigInfo
+d648 1
+a648 1
+    *sizePtr = (3 + fsPtr->numGroupIDs) * sizeof(int) +
+d650 1
+a650 1
+	    sizeof(FsMigInfo);
+d671 5
+d788 3
+d828 21
+d851 2
+a852 2
+	panic(
+		  "GetFileState: Fs_DeencapStream returned %x for cwd.\n",
+d854 5
+d861 2
+@
+
+
+7.0
+log
+@New version for conversion to new C library
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsMigrate.c,v 6.10 88/10/20 15:42:18 brent Exp Locker: brent $ SPRITE (Berkeley)";
+@
+
+
+6.10
+log
+@Changed Fs_EncapStream so it is Completely side-effect free.
+Now all bookkeeping is done at Deencap time, and an extra
+callback is made to the source client to clean up its
+references to streams that have migrated away
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsMigrate.c,v 6.8 88/10/14 12:18:56 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+a40 1
+#include "mem.h"
+d45 1
+a45 1
+	if (fsMigDebug) { Sys_Printf format ; }
+d198 1
+a198 1
+	    streamPtr->nameInfoPtr = nameInfoPtr = Mem_New(FsNameInfo);
+d216 1
+a216 1
+		Sys_Panic(SYS_WARNING, "No prefix entry for <%d,%d,%d>\n",
+d373 1
+a373 1
+	    Sys_Panic(SYS_WARNING,"FsIOClientMigrate, srcClient %d not found\n",
+d433 1
+a433 2
+		Sys_Panic(fsMigDebug ? SYS_FATAL : SYS_WARNING,
+			  "FsNotifyOfMigration: too much data returned %d not %d\n",
+d437 1
+a437 1
+		Byte_Copy(migParam.dataSize, (Address)&migParam.data, outData);
+d441 1
+a441 1
+	Sys_Panic(SYS_WARNING,
+d505 1
+a505 2
+	Sys_Panic(fsMigDebug ? SYS_FATAL : SYS_WARNING,
+		  "Fs_RpcStartMigration, unknown %s handle <%d,%d>\n",
+d511 1
+a511 1
+    migParamPtr = Mem_New(FsMigParam);
+d524 2
+a525 2
+	    Byte_Copy(dataSize, dataPtr, (Address) &migParamPtr->data);
+	    Mem_Free(dataPtr);
+d527 1
+a527 1
+	    Sys_Panic(SYS_FATAL,
+d535 1
+a535 1
+    replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
+d631 1
+a631 1
+    *bufPtr = Mem_Alloc(*sizePtr);
+d641 1
+a641 1
+	Byte_Copy(numGroups * sizeof(int), (Address) fsPtr->groupIDs, ptr);
+d647 1
+a647 2
+	Byte_Copy(numStreams * sizeof(char), (Address) fsPtr->streamFlags,
+		  ptr);
+d653 1
+a653 1
+	Sys_Panic(SYS_WARNING,
+d656 1
+a656 1
+	Mem_Free(*bufPtr);
+d670 1
+a670 1
+		Sys_Panic(SYS_WARNING,
+d673 1
+a673 1
+		Mem_Free(*bufPtr);
+d679 1
+a679 1
+	    Byte_Zero(sizeof(FsMigInfo), ptr);
+d724 1
+a724 1
+	Sys_Panic(SYS_FATAL, "Fs_ClearFileState: NIL Fs_ProcessState!");
+d764 1
+a764 1
+    procPtr->fsPtr = fsPtr = Mem_New(Fs_ProcessState);
+d773 2
+a774 2
+	fsPtr->groupIDs = (int *)Mem_Alloc(numGroups * sizeof(int));
+	Byte_Copy(numGroups * sizeof(int), buffer, (Address) fsPtr->groupIDs);
+d792 3
+a794 4
+		Mem_Alloc(numStreams * sizeof(Fs_Stream *));
+	fsPtr->streamFlags = (char *)Mem_Alloc(numStreams * sizeof(char));
+	Byte_Copy(numStreams * sizeof(char), buffer,
+		  (Address) fsPtr->streamFlags);
+d802 1
+a802 1
+	Sys_Panic(SYS_FATAL,
+d819 1
+a819 1
+		    Sys_Panic(SYS_WARNING,
+@
+
+
+6.9
+log
+@ Added checks against bad status codes.
+@
+text
+@d33 1
+a47 22
+/*
+ * The following record defines what parameters the I/O server returns
+ * after being told about a migration.  (Note, it will also return
+ * data that is specific to the type of the I/O handle.)
+ */
+typedef struct MigrateReply {
+    int flags;		/* New stream flags, the FS_RMT_SHARED bit is modified*/
+    int offset;		/* New stream offset */
+} MigrateReply;
+
+/*
+ * This structure is for byte-swapping the rpc parameters correctly.
+ */
+typedef struct  FsMigParam {
+    int                 dataSize;
+    FsUnionData         data;
+    MigrateReply        migReply;
+} FsMigParam;
+
+static void LocalToRemoteDomain();
+static void RemoteToLocalDomain();
+
+d56 4
+a59 3
+ *	The server of the file does not perceive the migration at this
+ *	time; only local book-keeping is done.  A future call to Fs_Deencap...
+ *	will result in an RPC to the server to 'move' the client.
+d64 1
+a64 2
+ *	FS_REMOTE_OP_INVALID if the domain of the file does not support 
+ *	migration.
+d68 1
+a68 5
+ *	One reference to the stream is removed, and when the last one
+ *	goes away the stream itself is removed.  The migStart procedure
+ *	for the I/O handle will do some local book-keeping, although
+ *	this is side-effect free with respect to the book-keeping on
+ *	the server.
+a79 1
+    ReturnStatus		status = SUCCESS;
+d83 1
+a83 3
+     * Synchronize with stream duplication.  Then set the shared flag
+     * so the I/O handle routines know whether or not to release references;
+     * if the stream is still shared they shouldn't clean up refs.
+a85 7
+    if (streamPtr->hdr.refCount <= 1) {
+	DEBUG( ("Encap stream %d, last ref", streamPtr->hdr.fileID.minor) );
+	streamPtr->flags &= ~FS_RMT_SHARED;
+    } else {
+	DEBUG( ("Encap stream %d, shared", streamPtr->hdr.fileID.minor) );
+	streamPtr->flags |= FS_RMT_SHARED;
+    }
+d109 2
+a110 23
+    /*
+     * Branch to a stream specific routine to encapsultate any extra state
+     * associated with the I/O handle, and to do local book-keeping.
+     */
+    status = (*fsStreamOpTable[ioHandlePtr->fileID.type].migStart) (ioHandlePtr,
+		    streamPtr->flags, rpc_SpriteID, &migInfoPtr->flags);
+
+    /*
+     * Clean up our reference to the stream.  We'll remove the
+     * stream from the handle table entirely if this is the last
+     * reference on a client and the stream is not a shadow for
+     * remote clients.  On error, or if the stream isn't the last
+     * reference, we just release our lock.
+     */
+    if ((status == SUCCESS)  && (streamPtr->hdr.refCount <= 1) &&
+	FsStreamClientClose(&streamPtr->clientList, rpc_SpriteID)) {
+	FsStreamDispose(streamPtr);
+    } else {
+	FsHandleRelease(streamPtr, TRUE);
+    }
+
+    DEBUG( (" status %x\n", status) );
+    return(status);
+d144 2
+a145 1
+    Boolean			found;
+d151 11
+a165 1
+
+d168 3
+a170 2
+			     migInfoPtr->flags, (char *)NIL, &found);
+    if (!found) {
+d237 1
+a237 1
+    if (status == SUCCESS && !found) {
+d249 1
+a249 1
+	DEBUG( ("srvMigrate status %x\n", status) );
+d255 1
+a255 1
+	if (!found &&
+d281 1
+a281 1
+ *	client.
+a376 8
+#ifdef notdef
+    } else if (flags & FS_LAST_WRITER) {
+	found = FsIOClientRemoveWriter(clientList, srcClientID);
+	if (!found) {
+	    Sys_Panic(SYS_WARNING,
+		"FsIOClientMigrate, last writer %d not found\n", srcClientID);
+	}
+#endif notdef
+d392 1
+a392 1
+ *	Send an rpc to the server to inform it about a migration.
+d427 1
+a427 1
+	MigrateReply	*migReplyPtr;
+d456 3
+a458 1
+ *	The service stub for FsNotifyOfMigration.
+d487 1
+a487 1
+    register MigrateReply	*migReplyPtr;
+d495 9
+a503 1
+    hdrPtr = (*fsStreamOpTable[migInfoPtr->ioFileID.type].clientVerify)
+d505 1
+d508 2
+a509 2
+		  "Fs_RpcStartMigration, unknown I/O handle <%d,%d,%d>\n",
+	    migInfoPtr->ioFileID.type,
+a839 71
+
+
+#ifdef notdef
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * LocalToRemoteDomain --
+ *
+ *	Convert a file ID from a local file type to a remote file type.
+ *	This is used only for naming and root information, so types
+ *	are presumably FS_LCL_FILE_STREAM or FS_RMT_FILE_STREAM.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	If the file ID references a local type, it is changed to remote.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+
+static void
+LocalToRemoteDomain(fileIDPtr)
+    Fs_FileID *fileIDPtr;
+{
+    if (fileIDPtr->type == FS_LCL_FILE_STREAM) {
+	fileIDPtr->type = FS_RMT_FILE_STREAM;
+    } else if (fileIDPtr->type != FS_RMT_FILE_STREAM) {
+	Sys_Panic(SYS_WARNING,
+		  "LocalToRemoteDomain: <%d,%d,%d> is %d, not a file stream.\n",
+		  fileIDPtr->serverID,  fileIDPtr->major,
+		  fileIDPtr->minor, fileIDPtr->type);
+    }
+}
+#endif notdef
+
+#ifdef notdef
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * RemoteToLocalDomain --
+ *
+ *	Convert a file ID from a local file type to a remote file type.
+ *	This is used only for naming and root information, so types
+ *	are presumably FS_LCL_FILE_STREAM or FS_RMT_FILE_STREAM.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	If the file ID references a local type, it is changed to remote.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+
+static void
+RemoteToLocalDomain(fileIDPtr)
+    Fs_FileID *fileIDPtr;
+{
+    if (fileIDPtr->type == FS_RMT_FILE_STREAM) {
+	fileIDPtr->type = FS_LCL_FILE_STREAM;
+    } else if (fileIDPtr->type != FS_LCL_FILE_STREAM) {
+	Sys_Panic(SYS_WARNING,
+		  "RemoteToLocalDomain: <%d,%d,%d> is %d, not a file stream.\n",
+		  fileIDPtr->serverID,  fileIDPtr->major,
+		  fileIDPtr->minor, fileIDPtr->type);
+    }
+}
+#endif notdef
+@
+
+
+6.8
+log
+@FsFileID FsUserID change
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: fsMigrate.c,v 6.7 88/10/13 17:44:20 brent Exp $ SPRITE (Berkeley)";
+d151 12
+a162 13
+    if (status == SUCCESS) {
+	/*
+	 * Clean up our reference to the stream.  We'll remove the
+	 * stream from the handle table entirely if this is the last
+	 * reference on a client and the stream is not a shadow for
+	 * remote clients.
+	 */
+	if ((streamPtr->hdr.refCount <= 1) &&
+	    FsStreamClientClose(&streamPtr->clientList, rpc_SpriteID)) {
+	    FsStreamDispose(streamPtr);
+	} else {
+	    FsHandleRelease(streamPtr, TRUE);
+	}
+d164 1
+d484 9
+a492 9
+    }
+    if (migParam.dataSize > 0) {
+	if (outSize < migParam.dataSize) {
+	    Sys_Panic(SYS_WARNING,
+		"FsNotifyOfMigration: too much data returned %d not %d\n",
+		migParam.dataSize, outSize);
+	    status = FAILURE;
+	} else {
+	    Byte_Copy(migParam.dataSize, (Address)&migParam.data, outData);
+d494 4
+d548 2
+a549 1
+	Sys_Panic(SYS_WARNING, "Fs_RpcStartMigration, unknown I/O handle <%d,%d,%d>\n",
+d566 1
+a566 1
+    if (dataSize > 0) {
+@
+
+
+6.7
+log
+@Switched from function to an array that maps between
+local and remote stream types.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: fsMigrate.c,v 6.6 88/10/11 16:17:30 brent Exp $ SPRITE (Berkeley)";
+a35 1
+#include "fsSpriteDomain.h"
+d39 1
+d900 1
+a900 1
+    FsFileID *fileIDPtr;
+d935 1
+a935 1
+    FsFileID *fileIDPtr;
+@
+
+
+6.6
+log
+@Extracted common migration operations out into a couple procedures,
+FsMigrateUseCounts() and FsIOClientMigrate().
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: fsMigrate.c,v 6.5 88/10/10 11:28:17 douglis Exp $ SPRITE (Berkeley)";
+d248 4
+a251 2
+		LocalToRemoteDomain(&nameInfoPtr->fileID);
+		LocalToRemoteDomain(&nameInfoPtr->rootID);
+d254 4
+a257 2
+		RemoteToLocalDomain(&nameInfoPtr->fileID);
+		RemoteToLocalDomain(&nameInfoPtr->rootID);
+d878 1
+d910 2
+a911 1
+}    
+d913 1
+d945 2
+a946 1
+}    
+@
+
+
+6.5
+log
+@New argument for verification.   pass addr. of flags to type-specific
+migStart routine.  NIL out streams as encapsulating fs state.
+@
+text
+@d10 1
+a10 1
+ * the final book-keeping on the new client, and 'srvMigrate' is called
+d24 1
+a24 1
+static char rcsid[] = "$Header: fsMigrate.c,v 6.4 88/10/03 19:55:58 douglis Exp $ SPRITE (Berkeley)";
+d155 2
+a156 2
+	 * reference on a client.  If we're the server, we still need
+	 * the stream around as a "shadow".
+d158 2
+a159 2
+	if ((ioHandlePtr->fileID.serverID != rpc_SpriteID) &&
+	    (streamPtr->hdr.refCount <= 1)) {
+d177 1
+a177 1
+ *	srvMigrate routine is called to shift client references on the
+d184 1
+a184 1
+ *	Calls the srvMigrate and migEnd stream-type procedures.  See these
+a200 1
+    Boolean			disposeOnError;
+d207 2
+a208 8
+     * Allocate and set up the stream.  We note if this is the first
+     * occurence of the stream on this host so the server can
+     * do the right thing.  If we're the server, we have to distinguish
+     * between a stream that's in use on this host and a "shadow stream".
+     * DisposeOnError
+     * is used to keep track of the original value of "found", since
+     * we want to dispose if we hit an error if & only if FsStreamFind
+     * created a new stream (found == FALSE).
+d211 2
+a212 1
+    streamPtr = FsStreamFind(&migInfoPtr->streamID, (FsHandleHeader *)NIL,
+a213 8
+
+    disposeOnError = !found;
+
+    if (found && (migInfoPtr->ioFileID.serverID == rpc_SpriteID)) {
+	if (!FsStreamClientFind(&streamPtr->clientList, rpc_SpriteID)) {
+	    found = FALSE;
+	}
+    }
+a267 5
+     *
+     * NOTE: It is clear that holding the handle while eventually calling
+     * FsFileMigrate will deadlock on the handle, since it gets locked again.
+     * it's NOT clear whether freeing it beforehand is actually the right
+     * thing to do!!  Help?!
+a293 3
+    } else if (disposeOnError) {
+	FsHandleLock(streamPtr);
+	FsStreamDispose(streamPtr);
+d295 7
+a301 2
+	FsHandleLock(streamPtr);
+	FsHandleRelease(streamPtr, TRUE);
+d306 128
+@
+
+
+6.4
+log
+@convert fileIDs to and from remote/local domains by changing their types.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: fsMigrate.c,v 6.3 88/09/28 15:27:21 douglis Exp $ SPRITE (Berkeley)";
+d43 1
+a43 1
+Boolean fsMigDebug = TRUE;
+d149 1
+a149 1
+		    streamPtr->flags, rpc_SpriteID, migInfoPtr->data);
+d211 2
+a212 2
+     * between a stream that's in use on this host and a "shadow stream"
+     * that has no reference counts associated with it.  DisposeOnError
+d427 1
+a427 1
+		(&migInfoPtr->ioFileID, migInfoPtr->srcClientID);
+d584 1
+d601 1
+d625 5
+a656 1
+
+@
+
+
+6.3
+log
+@fixed bug w/ copying out data buffers into param area.  removed check
+against FAILURE deencap status, since FAILURE really means we should report
+an error.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: fsMigrate.c,v 6.2 88/09/07 16:54:50 brent Exp $ SPRITE (Berkeley)";
+d66 2
+d254 2
+d262 2
+d266 2
+d755 67
+@
+
+
+6.2
+log
+@Moved name from stream to I/O handle.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: fsMigrate.c,v 6.1 88/08/31 12:07:26 brent Exp $ SPRITE (Berkeley)";
+a54 2
+    int pad;		/* filler because this structure confuses RPC if too
+			   small */
+d413 2
+d432 2
+d436 13
+a448 1
+		&migParamPtr->dataSize, &migParamPtr->data);
+d453 1
+d728 1
+d730 1
+d735 1
+d738 1
+@
+
+
+6.1
+log
+@Removed lint.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: fsMigrate.c,v 6.0 88/08/11 12:18:59 brent Stable $ SPRITE (Berkeley)";
+d219 1
+a219 1
+			     migInfoPtr->flags, &found);
+a268 1
+	    nameInfoPtr->name = (char *)NIL;
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: fsMigrate.c,v 1.10 88/08/11 10:54:59 brent Exp $ SPRITE (Berkeley)";
+a355 1
+#ifndef OLD_RPC_NUMBERS
+a356 4
+#else OLD_RPC_NUMBERS
+    status = Rpc_Call(migInfoPtr->ioFileID.serverID, RPC_FS_START_MIGRATION,
+		&storage);
+#endif OLD_RPC_NUMBERS
+d372 1
+a372 1
+	    Byte_Copy(migParam.dataSize, &(migParam.data), outData);
+@
+
+
+1.10
+log
+@Added clientdata size checking
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: fsMigrate.c,v 1.9 88/08/05 13:43:17 mlgray Exp $ SPRITE (Berkeley)";
+@
+
+
+1.9
+log
+@Fixed bad defines for new rpc numbers.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: fsMigrate.c,v 1.8 88/08/04 18:09:35 mlgray Exp $ SPRITE (Berkeley)";
+d371 8
+a378 1
+	Byte_Copy(migParam.dataSize, &(migParam.data), outData);
+@
+
+
+1.8
+log
+@oops - header file included twice...
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: fsMigrate.c,v 1.7 88/08/04 15:04:37 mlgray Exp $ SPRITE (Berkeley)";
+d356 3
+d361 2
+@
+
+
+1.7
+log
+@merging changes from fs into fs.new
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: fsMigrate.c,v 1.12 88/07/26 11:18:29 douglis Exp $ SPRITE (Berkeley)";
+a35 1
+#include "fsSpriteDomain.h"
+@
+
+
+1.6
+log
+@works on Spur.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: fsMigrate.c,v 1.8 88/07/08 17:28:16 douglis Exp $ SPRITE (Berkeley)";
+d37 1
+a37 1
+#include "fsRpcInt.h"
+d63 4
+a66 4
+typedef	struct	FsMigParam {
+    int			dataSize;
+    FsUnionData		data;
+    MigrateReply	migReply;
+d69 1
+d132 9
+a140 2
+    migInfoPtr->nameID = streamPtr->nameInfoPtr->fileID;
+    migInfoPtr->rootID = streamPtr->nameInfoPtr->rootID;
+a151 1
+#ifdef notdef
+d154 4
+a157 3
+	 * Clean up our reference to the stream.  We'll remove the stream from
+	 * the handle table entirely if this is the last reference.  Otherwise
+	 * we mark the stream as potentially being shared across the network.
+d159 2
+a160 1
+	if (streamPtr->hdr.refCount <= 1) {
+a165 3
+#else notdef
+    FsHandleUnlock(streamPtr);
+#endif notdef
+d202 1
+d211 6
+a216 1
+     * do the right thing.
+d222 7
+d241 6
+a246 13
+	/*
+	 * Set up the nameInfo.  We sacrifice the name as it is only
+	 * used in error messages.  The fileID is used with get/set attr.
+	 * If this file is the current directory then rootID is passed
+	 * to the server to trap "..", domainType is used to index the
+	 * name lookup operation switch, and prefixPtr is used for
+	 * efficient handling of lookup redirections.
+	 */
+	streamPtr->nameInfoPtr = nameInfoPtr = Mem_New(FsNameInfo);
+	nameInfoPtr->fileID = migInfoPtr->nameID;
+	nameInfoPtr->rootID = migInfoPtr->rootID;
+	if (nameInfoPtr->fileID.serverID != rpc_SpriteID) {
+	    nameInfoPtr->domainType = FS_REMOTE_SPRITE_DOMAIN;
+d248 23
+a270 1
+	    nameInfoPtr->domainType = FS_LOCAL_DOMAIN;
+a271 7
+	nameInfoPtr->prefixPtr = FsPrefixFromFileID(&migInfoPtr->rootID);
+	if (nameInfoPtr->prefixPtr == (struct FsPrefix *)NIL) {
+	    Sys_Panic(SYS_WARNING, "Didn't find prefix entry for <%d,%d,%d>\n",
+		migInfoPtr->rootID.serverID,
+		migInfoPtr->rootID.major, migInfoPtr->rootID.minor);
+	}
+	nameInfoPtr->name = (char *)NIL;
+d309 1
+a309 1
+    } else if (!found) {
+d361 1
+a368 1
+	
+@
+
+
+1.5
+log
+@Changed FsHandleRelease to not re-lock the handle if it is
+unlocked.  This means that the hdrPtr->refCount is no longer
+protected implicitly by the handle lock, and the stream routines
+(top-level stream) must lock their handle before releasing it
+if they still want to access the refCount outside the
+handle monitor lock
+@
+text
+@d13 8
+a20 2
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+d24 1
+a24 1
+static char rcsid[] = "$Header: fsMigrate.c,v 1.4 88/04/19 10:52:06 brent Exp $ SPRITE (Berkeley)";
+d37 1
+d56 2
+d60 9
+d144 1
+d157 3
+d251 5
+d257 1
+a264 1
+    FsHandleUnlock(streamPtr);
+d318 1
+a318 1
+    MigrateReply	migReply;
+d325 4
+a328 4
+    storage.replyParamPtr = (Address)&migReply;
+    storage.replyParamSize = sizeof(MigrateReply);
+    storage.replyDataPtr = outData;
+    storage.replyDataSize = outSize;
+d333 4
+a336 2
+	*flagsPtr = migReply.flags;
+	*offsetPtr = migReply.offset;
+d338 4
+d348 1
+a348 1
+ * Fs_RpcNofityOfMigration --
+d381 1
+d389 1
+a389 1
+	Sys_Panic(SYS_WARNING, "Fs_RpcMigrate, unknown I/O handle <%d,%d,%d>\n",
+d395 2
+a396 1
+    migReplyPtr = Mem_New(MigrateReply);
+d398 2
+a399 2
+    storagePtr->replyParamPtr = (Address)migReplyPtr;
+    storagePtr->replyParamSize = sizeof(int);
+d402 1
+a402 1
+		&storagePtr->replyDataSize, &storagePtr->replyDataPtr);
+a406 1
+    replyMemPtr->dataPtr = storagePtr->replyDataPtr;
+d414 24
+d440 1
+a440 1
+ * Fs_RpcFinishMigration --
+d442 1
+a442 1
+ *	Server stub for RemoteFinishMigration.  NOT USED.
+d445 4
+a448 1
+ *	A return status.
+d451 1
+a451 1
+ *	Call the client open routine to do cache consistency.
+d455 1
+a455 1
+/*ARGSUSED*/
+d457 5
+a461 11
+Fs_RpcFinishMigration(srvToken, clientID, command, storagePtr)
+    ClientData srvToken;	/* Handle on server process passed to
+				 * Rpc_Reply */
+    int clientID;		/* Sprite ID of client host */
+    int command;		/* IGNORED */
+    Rpc_Storage *storagePtr;    /* The request fields refer to the request
+				 * buffers and also indicate the exact amount
+				 * of data in the request buffers.  The reply
+				 * fields are initialized to NIL for the
+				 * pointers and 0 for the lengths.  This can
+				 * be passed to Rpc_Reply */
+d463 93
+a555 1
+    return(FAILURE);
+d559 1
+d561 1
+a561 1
+ * ----------------------------------------------------------------------------
+d563 1
+a563 1
+ * Fs_GetEncapSize --
+d565 2
+a566 1
+ *	Return the size of the encapsulated stream.
+d569 1
+a569 1
+ *	The size of the migration information structure.
+d572 2
+a573 1
+ *	None.
+d575 24
+a598 1
+ * ----------------------------------------------------------------------------
+d600 14
+d616 4
+a619 2
+int
+Fs_GetEncapSize()
+d621 74
+a694 1
+    return(sizeof(FsMigInfo));
+@
+
+
+1.4
+log
+@Added failure check 
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: fsMigrate.c,v 1.3 88/04/12 11:30:25 brent Exp $ SPRITE (Berkeley)";
+d259 2
+a260 1
+	FsHandleRelease(streamPtr, FALSE);
+@
+
+
+1.3
+log
+@Added stuff to propogate the (new) rootID of a file
+and to set up the nameInfoPtr completely.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: fsMigrate.c,v 1.2 88/04/11 10:16:43 brent Exp $ SPRITE (Berkeley)";
+d126 11
+a136 9
+    /*
+     * Clean up our reference to the stream.  We'll remove the stream from
+     * the handle table entirely if this is the last reference.  Otherwise
+     * we mark the stream as potentially being shared across the network.
+     */
+    if (streamPtr->hdr.refCount <= 1) {
+	FsStreamDispose(streamPtr);
+    } else {
+	FsHandleRelease(streamPtr, TRUE);
+@
+
+
+1.2
+log
+@fixed migration regarding shared stream offsets
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: fsMigrate.c,v 1.1 88/04/05 13:56:56 brent Exp $ SPRITE (Berkeley)";
+d114 1
+d169 1
+d188 2
+a189 1
+	DEBUG( ("Deenncap stream %d, offset %d, new",
+d193 1
+a193 1
+	DEBUG( ("Deencap stream %d, offset %d, found %d",
+d199 6
+a204 5
+	 * We are not setting up the nameInfo exactly as it comes out of
+	 * Fs_Open.  The important part is the fileID, which is used
+	 * when getting/setting attributes.  Also, for remote files the
+	 * fileID of the prefix is important, but that is handled by the
+	 * remote-file-specific migStart and migEnd routines.
+d206 15
+a220 4
+	streamPtr->nameInfoPtr = Mem_New(FsNameInfo);
+	streamPtr->nameInfoPtr->fileID = migInfoPtr->nameID;
+	streamPtr->nameInfoPtr->prefixPtr = (struct FsPrefix *)NIL;
+	streamPtr->nameInfoPtr->name = (char *)NIL;
+a227 3
+    DEBUG( (" Type %d <%d,%d> ", migInfoPtr->ioFileID.type,
+		migInfoPtr->ioFileID.major, migInfoPtr->ioFileID.minor) );
+
+d231 4
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: fsMigrate.c,v 1.1 88/04/04 10:34:40 brent Exp $ SPRITE (Berkeley)";
+d41 10
+a168 1
+    FsHandleHeader		*hdrPtr;
+a184 1
+	streamPtr->offset = migInfoPtr->offset;
+a188 4
+    	/*
+	 * BRENT Frankly, we don't quite know what to do with the offset
+	 * if the stream is already here.
+	 */
+a192 7
+#ifdef notdef
+	if (streamPtr->offset != migInfoPtr->offset) {
+	    Sys_Panic(SYS_WARNING,
+		"Fs_DeencapStream, using existing offset %d (mig offset %d)\n",
+		streamPtr->offset, migInfoPtr->offset);
+	}
+#endif notdef
+d199 2
+a200 2
+	 * fileID of the prefix is important.  This is handled by the
+	 * file-specific migStart and migEnd routines.
+a206 1
+    FsHandleUnlock(streamPtr);
+d210 2
+a211 1
+     * FS_RMT_SHARED flag if it is shared.
+d217 3
+a219 1
+		(migInfoPtr, rpc_SpriteID, &streamPtr->flags, &size, &data);
+d263 1
+a263 1
+FsNotifyOfMigration(migInfoPtr, flagsPtr, outSize, outData)
+d266 1
+d270 1
+d272 1
+d278 3
+a280 2
+    storage.replyParamPtr = (Address)flagsPtr;
+    storage.replyParamSize = sizeof(int);
+d284 7
+a290 2
+    return(Rpc_Call(migInfoPtr->ioFileID.serverID, RPC_FS_START_MIGRATION,
+		&storage));
+d325 5
+a329 5
+    FsMigInfo			*migInfoPtr;
+    FsHandleHeader		*hdrPtr;
+    ReturnStatus		status;
+    int				*flagsPtr;
+    Rpc_ReplyMem	*replyMemPtr;
+d342 3
+a344 3
+    flagsPtr = Mem_New(int);
+    *flagsPtr = migInfoPtr->flags;
+    storagePtr->replyParamPtr = (Address)flagsPtr;
+d347 2
+a348 2
+		clientID, flagsPtr, &storagePtr->replyDataSize,
+		&storagePtr->replyDataPtr);
+d365 1
+a365 1
+ *	Server stub for RemoteFinishMigration.
+@

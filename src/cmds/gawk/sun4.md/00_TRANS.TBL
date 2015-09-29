@@ -1,0 +1,15 @@
+F ARRAY.O;1                         	array.o
+F AWK.O;1                           	awk.o
+F BUILTIN.O;1                       	builtin.o
+F DEBUG.O;1                         	debug.o
+F DEPENDEN.MK;1                     	dependencies.mk
+F EVAL.O;1                          	eval.o
+F FIELD.O;1                         	field.o
+F IO.O;1                            	io.o
+F MAIN.O;1                          	main.o
+F MD.MK;1                           	md.mk
+F MISSING.O;1                       	missing.o
+F MSG.O;1                           	msg.o
+F NODE.O;1                          	node.o
+F REGEX.O;1                         	regex.o
+F VERSION.O;1                       	version.o

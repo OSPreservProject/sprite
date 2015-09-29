@@ -1,0 +1,174 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     89.11.27.17.34.25;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.12.30.14.34.35;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@added notation that this is obsolete
+@
+text
+@' $Header: /sprite/src/lib/c/etc/RCS/Swap.man,v 1.1 88/12/30 14:34:35 ouster Exp Locker: douglis $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS Swap lib
+.BS
+.SH NAME
+Swap_Buffer \- Do byte-swapping and alignment of data buffers
+.br
+Swap_BufSize \- Calculate the necessary buffer size to hold swapped and aligned data
+.SH SYNOPSIS
+\fB#include <swapBuffer.h>\fR
+.sp
+void
+\fBSwap_Buffer\fR(\fIinBuf, inSize, inType, outType, format, outBuf, outSizePtr\fR)
+.sp
+void
+\fBSwap_BufSize\fR(\fIinBuf, inSize, inType, outType, format, outSizePtr\fR)
+.SH ARGUMENTS
+.AS Option *optionArray
+.AP char *inBuf in
+In-coming data buffer
+.AP int inSize in
+Size in bytes of inBuf
+.AP int inType in
+Type of byte-order and alignment of data in inBuf
+.AP int outType in
+Type of byte-order and alignment of data in outBuf
+.AP char *format in
+String describing format of data in inBuf (see below for more details)
+.AP char *outBuf out
+Buffer in which to put out-going swapped and aligned data
+.AP int *outSizePtr in/out
+outSizePtr is an in/out parameter for \fBSwap_Buffer()\fR, but just an out
+parameter for \fBSwap_BufSize()\fR.  See below for its use in \fBSwap_Buffer()\fR and
+\fBSwap_BufSize()\fR.
+.BE
+.SH DESCRIPTION
+.PP
+These routines are obsolete.  See \fbFmt\fR instead.
+.PP
+\fBSwap_Buffer()\fR takes a buffer of data (\fIinBuf\fR) from one machine byte-order
+and alignment type (\fIinType\fR) and produces an output buffer (\fIoutBuf\fR)
+of the same data swapped and aligned
+to conform to a different machine byte-order and alignment type (\fIoutType\fR).
+The parameter \fIoutSizePtr\fR is an in/out parameter to \fBSwap_Buffer()\fR.
+In a call to \fBSwap_Buffer()\fR, \fI*outSizePtr\fR should contain the size in bytes
+of the buffer parameter \fIoutBuf\fR.  As \fBSwap_Buffer()\fR
+returns, \fI*outSizePtr\fR
+contains the actual size of the swapped and aligned data.  If the return value
+of \fI*outSizePtr\fR is larger than its input value, then \fBSwap_Buffer()\fR needed
+more buffer space for the out-going data than \fIoutBuf\fR provided.  In this
+case, \fBSwap_Buffer()\fR stops swapping the data and instead calculates the amount
+of space in bytes that it needs.   It returns that value in \fI*outSizePtr\fR.
+If \fI*outSizePtr\fR returns with a 0 value, then an error occurred, such
+as the \fIformat\fR argument contained unrecognizable characters or contained
+a '*' character in a position other than the last character (see description
+of format string, below), or the sizes of the \fIformat\fR string or \fIinBuf\fR
+weren't compatible.  In the case of an error,
+if \fBSwap_Buffer()\fR is called from a user process, it will
+panic with an error string explaining the problem.  If called in the kernel,
+it will print a warning-level system error message and return.
+.PP
+\fBSwap_BufSize()\fR calculates the size required for the \fIoutBuf\fR parameter
+to \fBSwap_Buffer()\fR given the same input data (\fIinBuf\fR), byte-ordering
+types (\fIinType\fR and \fIoutType\fR), and the same data
+format (\fIformat\fR).  It returns this calculated value in \fI*outSizePtr\fR.
+If *outSizePtr returns with a zero, then an error occurred.  (See the errors
+listed above for \fBSwap_Buffer()\fR for details.)
+Different machines have different alignment (and thus padding) requirements,
+and this is why the size of the out-going data may be different from the
+size of the in-coming data.
+.PP
+The format
+string (\fIformat\fR) must describe the configuration of the data in
+the input buffer, \fIinBuf\fR.  The
+data can contain bytes, half-words (4 bytes), words (8 bytes) and double-words
+(16 bytes).
+.PP
+The format string describes these data
+types as follows:
+.IP "'b'"
+The character 'b' stands for a byte value (1 byte).
+.IP "'h'"
+The character 'h' stands for a half-word (2 bytes).
+.IP "'w'"
+The character 'w' stands for a word (4 bytes).
+.IP "'d'"
+The character 'd' stands for a double-word (8 bytes and not yet implemented).
+.IP "'0'-'9'*"
+A number in ascii means that the previous value type ('b, 'h', 'w', or 'd')
+is repeated the given number
+of times.  For instance, the string "w88" means that inBuf contains
+88 word values in a row.
+.IP "\'*'"
+A '*' character means 1 or more occurrences of the previous value type.
+A '*' can only appear at the end of a format string, since otherwise there's no
+way to determine the actual number of repetitions of the previous value.
+.PP
+An example format string, "bwwh3w5b*", would describe a buffer
+containing the structure
+.DS
+.ta 1c 2c 3c 4c 5c 6c
+	struct	flea	{
+		char	mite;
+		int		spider;
+		int		worm;
+		short	moth;
+		short	mosquito;
+		short	beetle;
+		int		fly[5];
+		char	gnat[50];
+	};
+.DE
+.LP
+The machine byte-order and alignment types are defined in swapBuffer.h.
+Their names may change since complaints have been registered about the
+current names, but currently the types are as follows:
+.IP "\fBSWAP_SUN_TYPE\fR"
+The byte-ordering and alignment of 68020's.  Looking at an integer as if
+it were an array of 4 bytes (char buf[4]), buf[0] contains the low byte,
+buf[3] contains the high byte, and half-words and words are aligned
+to half-word boundaries.
+.IP "\fBSWAP_VAX_TYPE\fR"
+The byte-ordering and alignment of Vaxen.  Looking at an integer as if
+it were an array of 4 bytes (char buf[4]), buf[0] contains the high byte,
+buf[3] contains the low byte, and half-words and words are aligned
+to half-word boundaries.
+.IP "\fBSWAP_SPUR_TYPE\fR"
+The byte-ordering and alignment of the Spur machine.  Looking at an integer
+as if it were an array of 4 bytes (char buf[4]), buf[0] contains the high byte,
+buf[3] contains the low byte.  Half-words are half-word aligned and
+words are word aligned.
+.SH KEYWORDS
+byte-order, byte-swap, padding, alignment
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+' $Header: Swap_Buffer,v 1.2 88/09/14 16:53:42 mlgray Exp $ SPRITE (Berkeley)
+d37 2
+@

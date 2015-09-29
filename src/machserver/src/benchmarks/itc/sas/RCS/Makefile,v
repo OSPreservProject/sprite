@@ -1,0 +1,71 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  srv030:1.2 srv028:1.2 srv027:1.2 srv026:1.2 srv024:1.2 srv022:1.2 srv021:1.2 srv019:1.2 srv018:1.2 srv016:1.2 srv014:1.2 srv010:1.2 srv008:1.2 srv007:1.2 srv005:1.2;
+locks    ; strict;
+comment  @# @;
+
+
+1.2
+date     92.05.12.14.30.05;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     92.05.11.13.38.56;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Changes for sprited.
+@
+text
+@#
+# Set the -DSUN preprocessor variable if this machine puts the
+# most significant byte of a number first, and -DVAX if it puts
+# the most significant byte last.
+#
+# $Header$
+#
+
+default: ../bin/sas
+
+OBJS =		parser.o sas.o lexer.o
+
+TM=ds3100
+NAME=sas
+#include "/users/kupfer/lib/pmake/spriteClient.mk"
+SPRITEDINCLUDES = -I$(SPRITEINCLUDE)/user/$(TM).md -I$(SPRITEINCLUDE)/user
+
+CFLAGS =	-O -DVAX -DLOADER=\"../../../bin/sld\" \
+			-DPREPROCESSOR=\"../../../bin/cpp\" $(SPRITEDINCLUDES)
+
+../bin/sas:		$(OBJS)
+	ld $(LOADFLAGS) $(INITOBJS) $(OBJS) -lc -lmach_sa -lc -o ../bin/sas
+
+clean:
+	rm -f *.o ../bin/sas
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d6 2
+d9 9
+d19 1
+a19 1
+			-DPREPROCESSOR=\"../../../bin/cpp\"
+d21 2
+a22 2
+../bin/sas:		parser.o sas.o lexer.o
+	$(CC) parser.o sas.o lexer.o -o ../bin/sas
+@

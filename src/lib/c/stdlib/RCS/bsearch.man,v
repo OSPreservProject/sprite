@@ -1,0 +1,69 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     89.02.18.20.38.40;  author rab;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@'\" Copyright 1989 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header$
+'/" 
+.so \*(]ltmac.sprite
+.HS bsearch lib
+.BS
+.SH NAME
+bsearch \- Binary search
+.SH SYNOPSIS
+.nf
+\fBvoid *bsearch(key, base, n, size, cmp)
+.SH ARGUMENTS
+.AS size_t base
+.AP void *key;
+Pointer to the object being searched for.
+.AP void *base;
+Pointer to the base of the array to search.
+.AP size_t n;
+Number of items in the array.
+.AP size_t size;
+Size of each item.
+.AP int (*cmp)();
+Function to compare two items.
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBBsearch\fR searches \fBbase[0] ... base[n - 1]\fR for an item
+that matches \fB*key\fR.  The function \fBcmp\fR must return
+negative if its first argument (the search key) is less than
+its second (a table entry), zero if equal, and positive if greater.
+Items in the array \fBbase\fR must be in ascending order.  \fBbsearch\fR
+returns a pointer to a matching item, or \fBNULL\fR if none exits.
+
+.SH KEYWORDS
+search
+
+@

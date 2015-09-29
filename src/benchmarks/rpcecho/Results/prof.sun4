@@ -1,0 +1,684 @@
+Aug. 21, 1989
+
+loops shortened
+Rpc Send Test: N = 100, Host = mint (32), size = 32
+N = 100, Size = 32, Time = 0.002900
+Rpc Send Test: N = 100, Host = mint (32), size = 32
+N = 100, Size = 32, Time = 0.003000
+Rpc Send Test: N = 100, Host = mint (32), size = 32
+N = 100, Size = 32, Time = 0.003400
+
+Profile output:
+
+
+granularity: each sample hit covers 8 byte(s) for 0.47% of 4.28 seconds
+
+%time cumsecs seconds   calls name    
+ 57.5    2.46    2.46         _IdleLoop
+ 23.4    3.46    1.00         FlushingSegment
+  4.2    3.64    0.18         _bcopy
+  2.8    3.76    0.12         FlushingPage
+  1.9    3.84    0.08         _Sched_StartUserProc
+  0.9    3.88    0.04         _SetupContext
+  0.5    3.90    0.02         AddressValueOkay
+  0.5    3.92    0.02         ByteCopyIt
+  0.5    3.94    0.02         SkipStore
+  0.5    3.96    0.02         _FsFastWaitListInsert
+  0.5    3.98    0.02         _FsPrefixLookup
+  0.5    4.00    0.02         _FsServerStreamIOControl
+  0.5    4.02    0.02         _Fs_Read
+  0.5    4.04    0.02         _Fs_SelectStub
+  0.5    4.06    0.02         _MachFetchArgsEnd
+  0.5    4.08    0.02         _Mach_GetPC
+  0.5    4.10    0.02         _Recov_HostAlive
+  0.5    4.12    0.02         _RpcChanFree
+  0.5    4.14    0.02         _RpcDoCall
+  0.5    4.16    0.02         _Timer_GetRealTimeOfDay
+  0.5    4.18    0.02         _Timer_GetTimeOfDay
+  0.5    4.20    0.02         _VmMachWritePTE
+  0.5    4.22    0.02         _VmPageValidateInt
+  0.5    4.24    0.02         _vprintf
+  0.2    4.25    0.01         _RpcSetup
+  0.2    4.26    0.01         _Rpc_Call
+  0.2    4.27    0.01         _VmMachGetUserContext
+  0.2    4.28    0.01         _VmMachSetContextReg
+
+
+Aug. 23, 1989
+
+All the flushing optimizations up to and including straight-line context,
+seg and page flushing with offset optimizations.
+
+
+
+granularity: each sample hit covers 8 byte(s) for 0.57% of 3.50 seconds
+
+%time cumsecs seconds   calls name    
+ 63.4    2.22    2.22         _IdleLoop
+ 10.9    2.60    0.38         FlushingSegment
+  3.4    2.72    0.12         _bcopy
+  2.9    2.82    0.10         FlushingPage
+  2.3    2.90    0.08         _Sync_SlowMasterWait
+  1.1    2.94    0.04         _RpcDoCall
+  1.1    2.98    0.04         _Sched_StartUserProc
+  1.1    3.02    0.04         _SetupContext
+  0.9    3.05    0.03         _Sync_SlowWait
+  0.6    3.07    0.02         DoubleWordCopy
+  0.6    3.09    0.02         FlushingContext
+  0.6    3.11    0.02         SkipStore
+  0.6    3.13    0.02         _ChainSearch
+  0.6    3.15    0.02         _FsDeviceSelect
+  0.6    3.17    0.02         _HandleInstallInt
+  0.6    3.19    0.02         _Mach_SetupNewState
+  0.6    3.21    0.02         _Proc_ServerProc
+  0.6    3.23    0.02         _RequestResponse
+  0.6    3.25    0.02         _RpcChanAlloc
+  0.6    3.27    0.02         _Sched_LockAndSwitch
+  0.6    3.29    0.02         _SetupArgs
+  0.6    3.31    0.02         _Sync_GetLock
+  0.6    3.33    0.02         _Sync_GetWaitToken
+  0.6    3.35    0.02         _Timer_ScheduleRoutine
+  0.6    3.37    0.02         _VmMachSetContextReg
+  0.6    3.39    0.02         _VmMach_PageValidate
+  0.6    3.41    0.02         _VmVirtAddrParse
+  0.6    3.43    0.02         _Vm_CopyOutProc
+  0.6    3.45    0.02         __free
+  0.6    3.47    0.02         _bzero
+  0.6    3.49    0.02         _vprintf
+  0.3    3.50    0.01         _Sync_SlowBroadcast
+
+
+Aug. 25, 1989
+Without bcopy optimizations, but with network optimizations
+
+
+granularity: each sample hit covers 8 byte(s) for 0.38% of 5.24 seconds
+
+%time cumsecs seconds   calls name    
+ 76.3    4.00    4.00         _IdleLoop
+  5.0    4.26    0.26         FlushingSegment
+  3.8    4.46    0.20         _bcopy
+  2.3    4.58    0.12         FlushingPage
+  1.5    4.66    0.08         _Sync_SlowMasterWait
+  1.1    4.72    0.06         FlushingContext
+  1.1    4.78    0.06         _bzero
+  0.8    4.82    0.04         _MachUserAction
+  0.8    4.86    0.04         _Sched_StartUserProc
+  0.8    4.90    0.04         _Sync_Unlock
+  0.4    4.92    0.02         AddressValueOkay
+  0.4    4.94    0.02         DoubleWordCopy
+  0.4    4.96    0.02         SkipStore
+  0.4    4.98    0.02         _DoExec
+  0.4    5.00    0.02         _DoTrace
+  0.4    5.02    0.02         _FspdevControlSelect
+  0.4    5.04    0.02         _FspdevPseudoStreamIOControl
+  0.4    5.06    0.02         _GrabArgArray
+  0.4    5.08    0.02         _Hash
+  0.4    5.10    0.02         _Mach_SetupNewState
+  0.4    5.12    0.02         _Rpc_Call
+  0.4    5.14    0.02         _Sync_GetLock
+  0.4    5.16    0.02         _Sync_ProcWait
+  0.4    5.18    0.02         _VmMach_PageValidate
+  0.4    5.20    0.02         _VmUnmapPage
+  0.4    5.22    0.02         _vprintf
+  0.2    5.23    0.01         _IncPTUserCount
+  0.2    5.24    0.01         _Vm_SegmentDup
+
+
+
+Aug. 26, 1989
+With bcopy opts
+
+
+granularity: each sample hit covers 8 byte(s) for 0.60% of 3.36 seconds
+
+%time cumsecs seconds   calls name    
+ 63.1    2.12    2.12         _IdleLoop
+  9.5    2.44    0.32         FlushingSegment
+  5.4    2.62    0.18         FlushingPage
+  4.8    2.78    0.16         BDoubleWordCopy
+  4.2    2.92    0.14         _Sync_SlowMasterWait
+  2.4    3.00    0.08         _Sched_StartUserProc
+  1.2    3.04    0.04         _RpcSetup
+  0.9    3.07    0.03         SkipStore
+  0.6    3.09    0.02         FlushingContext
+  0.6    3.11    0.02         _Hash
+  0.6    3.13    0.02         _List_Remove
+  0.6    3.15    0.02         _MachUserAction
+  0.6    3.17    0.02         _Mach_TestAndSet
+  0.6    3.19    0.02         _SetupContext
+  0.6    3.21    0.02         _Sync_GetLock
+  0.6    3.23    0.02         _Sync_ProcWait
+  0.6    3.25    0.02         _VmListRemove
+  0.6    3.27    0.02         _VmMachSetContextReg
+  0.6    3.29    0.02         _VmVirtAddrParse
+  0.6    3.31    0.02         _Vm_FreeKernelStack
+  0.6    3.33    0.02         _bzero
+  0.6    3.35    0.02         _vprintf
+  0.3    3.36    0.01         GoAheadAndCopy
+
+
+With bcopy and network opts (profiled with tracing off on anise but not fenu).
+
+
+
+granularity: each sample hit covers 8 byte(s) for 0.00% of 2068.72 seconds
+
+%time cumsecs seconds   calls name    
+ 95.1 1967.26 1967.26         _IdleLoop
+  3.5 2040.48   73.22         _RpcOutput
+  0.3 2047.08    6.60         _Sync_SlowMasterWait
+  0.2 2050.62    3.54         _RpcDoCall
+  0.1 2053.01    2.39         _RpcSetup
+  0.1 2055.27    2.26         _Timer_GetTimeOfDay
+  0.1 2056.39    1.12         _Hash
+  0.1 2057.44    1.05         _Rpc_Call
+  0.0 2058.38    0.94         _Recov_HostAlive
+  0.0 2059.28    0.90         _Sync_GetLock
+  0.0 2060.06    0.78         BByteCopyIt
+  0.0 2060.84    0.78         _Hash_Find
+  0.0 2061.46    0.62         _ChainSearch
+  0.0 2062.06    0.60         _RpcChanAlloc
+  0.0 2062.60    0.54         _VmMachGetPageMap
+  0.0 2063.14    0.54         _VmMachGetSegMap
+  0.0 2063.59    0.45         _Rpc_Echo
+  0.0 2064.03    0.44         _Sync_Unlock
+  0.0 2064.41    0.38         _MachUserAction
+  0.0 2064.77    0.36         _RpcChanFree
+  0.0 2065.12    0.35         _Mach_TestAndSet
+  0.0 2065.40    0.28         BDoneCopying
+  0.0 2065.68    0.28         _Fs_SelectStub
+  0.0 2065.96    0.28         _Rpc_Ping
+  0.0 2066.16    0.20         _VmMachCopyEnd
+  0.0 2066.34    0.18         _Sched_LockAndSwitch
+  0.0 2066.48    0.14         _MachFetchArgsEnd
+  0.0 2066.61    0.13         _Fs_Write
+  0.0 2066.71    0.10         _Sync_GetWaitToken
+  0.0 2066.81    0.10         _malloc
+  0.0 2066.89    0.08         _FspdevServerStreamSelect
+  0.0 2066.97    0.08         _Fsutil_FastWaitListInsert
+  0.0 2067.04    0.07         _Fs_Read
+  0.0 2067.10    0.06         DoneTouchingPages
+  0.0 2067.16    0.06         WordCopy
+  0.0 2067.22    0.06         _DevNet_FsRead
+  0.0 2067.28    0.06         _Timer_GetRealTimeOfDay
+  0.0 2067.34    0.06         _Vm_CreateVA
+  0.0 2067.40    0.06         _Vm_MakeUnaccessible
+  0.0 2067.46    0.06         _vprintf
+  0.0 2067.50    0.04         DoubleWordCopy
+  0.0 2067.54    0.04         FinishWord
+  0.0 2067.58    0.04         _CountersToTime
+  0.0 2067.62    0.04         _DevNet_FsSelect
+  0.0 2067.66    0.04         _Fs_ReadStub
+  0.0 2067.70    0.04         _Fscache_Write
+  0.0 2067.74    0.04         _Hash_Delete
+  0.0 2067.78    0.04         _Mach_GetPC
+  0.0 2067.82    0.04         _Rpc_EchoTest
+  0.0 2067.86    0.04         _Sync_ProcWait
+  0.0 2067.90    0.04         _VmVirtAddrParse
+  0.0 2067.93    0.03         _Fs_IOControlStub
+  0.0 2067.95    0.02         ByteCopyIt
+  0.0 2067.97    0.02         GotArgs
+  0.0 2067.99    0.02         ReturnZero
+  0.0 2068.01    0.02         StartTouchingPages
+  0.0 2068.03    0.02         _DoExec
+  0.0 2068.05    0.02         _DoTrace
+  0.0 2068.07    0.02         _FindHistBucket
+  0.0 2068.09    0.02         _Fs_GetStreamPtr
+  0.0 2068.11    0.02         _Fscache_FetchBlock
+  0.0 2068.13    0.02         _Fscache_UnlockBlock
+  0.0 2068.15    0.02         _FsdmRecordDeletionStats
+  0.0 2068.17    0.02         _Fsio_DeviceSelect
+  0.0 2068.19    0.02         _FspdevControlSelect
+  0.0 2068.21    0.02         _FsrmtFileBlockAllocate
+  0.0 2068.23    0.02         _Fsrmt_Read
+  0.0 2068.25    0.02         _Fsutil_HandleUnlockHdr
+  0.0 2068.27    0.02         _Fsutil_WaitListInsert
+  0.0 2068.29    0.02         _Hash_Next
+  0.0 2068.31    0.02         _List_Move
+  0.0 2068.33    0.02         _List_Remove
+  0.0 2068.35    0.02         _Mem_Size
+  0.0 2068.37    0.02         _NetIEOutput
+  0.0 2068.39    0.02         _Proc_ServerProc
+  0.0 2068.41    0.02         _RpcReclaimServers
+  0.0 2068.43    0.02         _Rpc_Server
+  0.0 2068.45    0.02         _Sched_StartUserProc
+  0.0 2068.47    0.02         _SetupContext
+  0.0 2068.49    0.02         _Sync_ProcWakeup
+  0.0 2068.51    0.02         _Test_RpcStub
+  0.0 2068.53    0.02         _Time_Divide
+  0.0 2068.55    0.02         _Timer_ScheduleRoutine
+  0.0 2068.57    0.02         _VmMachFlushPage
+  0.0 2068.59    0.02         _VmMach_PageValidate
+  0.0 2068.61    0.02         _Vm_MakeAccessible
+  0.0 2068.63    0.02         __free
+  0.0 2068.65    0.02         _isspace
+  0.0 2068.66    0.01         _Fs_CreatePipeStub
+  0.0 2068.67    0.01         _Fs_UserWrite
+  0.0 2068.68    0.01         _Fs_WriteStub
+  0.0 2068.69    0.01         _InitUserProc
+  0.0 2068.70    0.01         _Mach_GetMachineType
+  0.0 2068.71    0.01         _Proc_NewProc
+  0.0 2068.72    0.01         _Rpc_SendTest
+
+
+
+Without network opts
+
+
+granularity: each sample hit covers 8 byte(s) for 0.00% of 2000.58 seconds
+
+%time cumsecs seconds   calls name    
+ 93.0 1860.90 1860.90         _IdleLoop
+  5.6 1973.76  112.86         _RpcOutput
+  0.3 1980.42    6.66         _Sync_SlowMasterWait
+  0.2 1984.08    3.66         _RpcDoCall
+  0.1 1986.08    2.00         BDoubleWordCopy
+  0.1 1988.03    1.95         _RpcSetup
+  0.1 1989.93    1.90         _Timer_GetTimeOfDay
+  0.1 1991.22    1.29         _Rpc_Call
+  0.1 1992.44    1.22         _Hash
+  0.0 1993.37    0.93         _Sync_GetLock
+  0.0 1994.00    0.63         _Rpc_Echo
+  0.0 1994.60    0.60         _RpcChanAlloc
+  0.0 1995.18    0.58         _Hash_Find
+  0.0 1995.76    0.58         _Recov_HostAlive
+  0.0 1996.24    0.48         _ChainSearch
+  0.0 1996.63    0.39         _Sync_Unlock
+  0.0 1996.96    0.33         _Rpc_Ping
+  0.0 1997.28    0.32         ByteCopyIt
+  0.0 1997.60    0.32         _RpcChanFree
+  0.0 1997.79    0.19         _Fs_SelectStub
+  0.0 1997.95    0.16         _MachUserAction
+  0.0 1998.09    0.14         FlushingSegment
+  0.0 1998.21    0.12         _Mach_GetPC
+  0.0 1998.33    0.12         _Rpc_EchoTest
+  0.0 1998.42    0.09         _Mach_TestAndSet
+  0.0 1998.50    0.08         BFinishWord
+  0.0 1998.58    0.08         FlushingPage
+  0.0 1998.66    0.08         _Fscache_Write
+  0.0 1998.74    0.08         _Fsutil_FastWaitListInsert
+  0.0 1998.82    0.08         _malloc
+  0.0 1998.88    0.06         _CountersToTime
+  0.0 1998.94    0.06         _Fs_GetStreamPtr
+  0.0 1999.00    0.06         _Fs_Read
+  0.0 1999.06    0.06         _Fscache_FetchBlock
+  0.0 1999.12    0.06         _FsdmRecordDeletionStats
+  0.0 1999.18    0.06         _Sync_ProcWait
+  0.0 1999.24    0.06         _isspace
+  0.0 1999.29    0.05         ReturnZero
+  0.0 1999.34    0.05         _Fsio_DeviceSelect
+  0.0 1999.38    0.04         _FindHistBucket
+  0.0 1999.42    0.04         _Fs_Write
+  0.0 1999.46    0.04         _FspdevServerStreamSelect
+  0.0 1999.50    0.04         _Fsutil_HandleLockHdr
+  0.0 1999.54    0.04         _Fsutil_HandleUnlockHdr
+  0.0 1999.58    0.04         _Fsutil_HandleValid
+  0.0 1999.62    0.04         _Fsutil_WaitListInsert
+  0.0 1999.66    0.04         _Mach_GetMachineType
+  0.0 1999.70    0.04         _Net_IDToRoute
+  0.0 1999.74    0.04         _Proc_ServerProc
+  0.0 1999.78    0.04         _Sched_LockAndSwitch
+  0.0 1999.82    0.04         _Sync_ProcWakeup
+  0.0 1999.86    0.04         _Test_RpcStub
+  0.0 1999.90    0.04         _Time_Divide
+  0.0 1999.94    0.04         _Timer_GetCurrentTicks
+  0.0 1999.98    0.04         _VmVirtAddrParse
+  0.0 2000.01    0.03         _Proc_GetEffectiveProc
+  0.0 2000.04    0.03         _Proc_NeverMigrate
+  0.0 2000.06    0.02         DoubleWordCopy
+  0.0 2000.08    0.02         FlushingContext
+  0.0 2000.10    0.02         _CleanSegment
+  0.0 2000.12    0.02         _DevNet_FsRead
+  0.0 2000.14    0.02         _DoTrace
+  0.0 2000.16    0.02         _Fs_IOControlStub
+  0.0 2000.18    0.02         _FscacheWaitForReadAhead
+  0.0 2000.20    0.02         _FspdevControlSelect
+  0.0 2000.22    0.02         _Fsutil_WaitListRemove
+  0.0 2000.24    0.02         _MachFetchArgsEnd
+  0.0 2000.26    0.02         _Mem_CallerPC
+  0.0 2000.28    0.02         _NetIEOutput
+  0.0 2000.30    0.02         _Sched_StartUserProc
+  0.0 2000.32    0.02         _Sync_GetWaitToken
+  0.0 2000.34    0.02         _Timer_DescheduleRoutine
+  0.0 2000.36    0.02         _Timer_GetRealTimeOfDay
+  0.0 2000.38    0.02         _Timer_ScheduleRoutine
+  0.0 2000.40    0.02         _VmMach_VirtAddrParse
+  0.0 2000.42    0.02         _Vm_MakeAccessible
+  0.0 2000.44    0.02         __free
+  0.0 2000.46    0.02         _bcmp
+  0.0 2000.48    0.02         _vprintf
+  0.0 2000.49    0.01         GoAheadAndCopy
+  0.0 2000.50    0.01         SkipStore
+  0.0 2000.51    0.01         _Fs_UserWrite
+  0.0 2000.52    0.01         _Fs_WriteStub
+  0.0 2000.53    0.01         _Fsio_DeviceWrite
+  0.0 2000.54    0.01         _Hash_Delete
+  0.0 2000.55    0.01         _Hash_LookOnly
+  0.0 2000.56    0.01         _Sys_GetTimeOfDay
+  0.0 2000.57    0.01         _Sys_SetTimeOfDay
+  0.0 2000.58    0.01         _TimeoutProc
+
+
+
+With network opts again (profiled) on system as quiet as the one without opts.
+
+
+
+granularity: each sample hit covers 8 byte(s) for 0.00% of 1894.24 seconds
+
+%time cumsecs seconds   calls name    
+ 94.2 1785.06 1785.06         _IdleLoop
+  4.2 1864.24   79.18         _RpcOutput
+  0.4 1872.68    8.44         _Sync_SlowMasterWait
+  0.2 1877.00    4.32         _RpcDoCall
+  0.1 1879.27    2.27         _RpcSetup
+  0.1 1881.31    2.04         BDoubleWordCopy
+  0.1 1883.13    1.82         _Timer_GetTimeOfDay
+  0.1 1884.29    1.16         _Recov_HostAlive
+  0.1 1885.38    1.09         _Rpc_Call
+  0.1 1886.36    0.98         _Hash
+  0.0 1887.19    0.83         _Sync_GetLock
+  0.0 1887.97    0.78         _Rpc_Echo
+  0.0 1888.63    0.66         _Hash_Find
+  0.0 1889.16    0.53         _Sync_Unlock
+  0.0 1889.62    0.46         _RpcChanAlloc
+  0.0 1890.07    0.45         _Rpc_Ping
+  0.0 1890.49    0.42         _ChainSearch
+  0.0 1890.81    0.32         _RpcChanFree
+  0.0 1891.08    0.27         _Mach_TestAndSet
+  0.0 1891.30    0.22         ByteCopyIt
+  0.0 1891.52    0.22         _Rpc_EchoTest
+  0.0 1891.68    0.16         _MachUserAction
+  0.0 1891.82    0.14         _Fs_SelectStub
+  0.0 1891.96    0.14         _Sync_GetWaitToken
+  0.0 1892.08    0.12         FlushingSegment
+  0.0 1892.20    0.12         _Sched_LockAndSwitch
+  0.0 1892.30    0.10         _DoTrace
+  0.0 1892.40    0.10         _FsdmRecordDeletionStats
+  0.0 1892.50    0.10         _MachFetchArgsEnd
+  0.0 1892.60    0.10         _malloc
+  0.0 1892.66    0.06         FinishWord
+  0.0 1892.72    0.06         FlushingPage
+  0.0 1892.78    0.06         _Fs_GetStreamPtr
+  0.0 1892.84    0.06         _Fscache_FetchBlock
+  0.0 1892.90    0.06         _FspdevServerStreamSelect
+  0.0 1892.96    0.06         _FsrmtFileWrite
+  0.0 1893.02    0.06         _Fsutil_FastWaitListInsert
+  0.0 1893.08    0.06         _Mach_GetPC
+  0.0 1893.14    0.06         _Vm_MakeAccessible
+  0.0 1893.20    0.06         _vprintf
+  0.0 1893.25    0.05         _Fs_Write
+  0.0 1893.29    0.04         _DevNet_FsRead
+  0.0 1893.33    0.04         _Fscache_Write
+  0.0 1893.37    0.04         _Fsrmt_Write
+  0.0 1893.41    0.04         _List_Remove
+  0.0 1893.45    0.04         _Sched_StartUserProc
+  0.0 1893.49    0.04         _Sync_ProcWait
+  0.0 1893.53    0.04         _Sync_ProcWakeup
+  0.0 1893.57    0.04         _Vm_CopyOut
+  0.0 1893.61    0.04         __free
+  0.0 1893.64    0.03         SkipStore
+  0.0 1893.67    0.03         _Fs_Read
+  0.0 1893.69    0.02         DoubleWordCopy
+  0.0 1893.71    0.02         ReturnZero
+  0.0 1893.73    0.02         _CountersToTime
+  0.0 1893.75    0.02         _DevNet_FsSelect
+  0.0 1893.77    0.02         _FindHistBucket
+  0.0 1893.79    0.02         _Fs_IOControlStub
+  0.0 1893.81    0.02         _FscacheWaitForReadAhead
+  0.0 1893.83    0.02         _FsrmtOpen
+  0.0 1893.85    0.02         _Fsutil_HandleLockHdr
+  0.0 1893.87    0.02         _Fsutil_WaitListRemove
+  0.0 1893.89    0.02         _Hash_Delete
+  0.0 1893.91    0.02         _List_Move
+  0.0 1893.93    0.02         _NetIEOutput
+  0.0 1893.95    0.02         _Proc_GetEffectiveProc
+  0.0 1893.97    0.02         _Proc_NeverMigrate
+  0.0 1893.99    0.02         _Recov_HostDead
+  0.0 1894.01    0.02         _RpcEcho
+  0.0 1894.03    0.02         _Time_Divide
+  0.0 1894.05    0.02         _Time_Subtract
+  0.0 1894.07    0.02         _Timer_DescheduleRoutine
+  0.0 1894.09    0.02         _Timer_GetCurrentTicks
+  0.0 1894.11    0.02         _Timer_GetRealTimeOfDay
+  0.0 1894.13    0.02         _VmMach_VirtAddrParse
+  0.0 1894.15    0.02         _VmVirtAddrParse
+  0.0 1894.17    0.02         _WaitTimeSubr
+  0.0 1894.19    0.02         _bzero
+  0.0 1894.21    0.02         _free
+  0.0 1894.22    0.01         GoAheadAndCopy
+  0.0 1894.23    0.01         _Mach_GetMachineType
+  0.0 1894.24    0.01         _Rpc_SendTest
+
+
+
+*****************************************************************************
+Tests run from fenu to anise.  tracing off.  First 32 byte tests without and
+with network opts. and then 8K bytes tests without and with network opts.
+
+32 bytes, no network opt:
+
+
+granularity: each sample hit covers 8 byte(s) for 0.03% of 57.68 seconds
+
+%time cumsecs seconds   calls name    
+ 76.2   43.96   43.96         _IdleLoop
+ 16.1   53.27    9.31         _NetIEOutput
+  1.5   54.15    0.88         _Sync_SlowMasterWait
+  0.9   54.67    0.52         _Rpc_Server
+  0.7   55.07    0.40         _Net_Output
+  0.7   55.45    0.38         FlushingSegment
+  0.5   55.75    0.30         _MachUserAction
+  0.3   55.95    0.20         _RpcEcho
+  0.3   56.15    0.20         _Rpc_Reply
+  0.3   56.35    0.20         _Timer_GetTimeOfDay
+  0.3   56.53    0.18         _Recov_HostAlive
+  0.3   56.71    0.18         _Sched_LockAndSwitch
+  0.3   56.87    0.16         _Net_IDToRoute
+  0.2   56.97    0.10         _RpcOutput
+  0.1   57.05    0.08         _Hash
+  0.1   57.12    0.07         _ChainSearch
+  0.1   57.18    0.06         _Fs_SelectStub
+  0.1   57.24    0.06         _Net_RouteMTU
+  0.1   57.30    0.06         _RpcSrvInitHdr
+  0.1   57.34    0.04         _Sync_SlowWait
+  0.0   57.36    0.02         BDoubleWordCopy
+  0.0   57.38    0.02         ByteCopyIt
+  0.0   57.40    0.02         FlushingPage
+  0.0   57.42    0.02         _Fs_Read
+  0.0   57.44    0.02         _Fsutil_HandleLockHdr
+  0.0   57.46    0.02         _Fsutil_HandleValid
+  0.0   57.48    0.02         _MachFetchArgsEnd
+  0.0   57.50    0.02         _SetupContext
+  0.0   57.52    0.02         _Sync_GetLock
+  0.0   57.54    0.02         _Sync_ProcWait
+  0.0   57.56    0.02         _Sync_SlowBroadcast
+  0.0   57.58    0.02         _VmMach_CopyOutProc
+  0.0   57.60    0.02         _VmVirtAddrParse
+  0.0   57.62    0.02         _malloc
+  0.0   57.64    0.02         _vprintf
+  0.0   57.65    0.01         _Hash_LookOnly
+  0.0   57.66    0.01         _NetIEXmitRestart
+  0.0   57.67    0.01         _Proc_GetEffectiveProc
+  0.0   57.68    0.01         _Proc_NeverMigrate
+
+
+
+Now with network opts:
+
+
+
+granularity: each sample hit covers 8 byte(s) for 0.03% of 64.86 seconds
+
+%time cumsecs seconds   calls name    
+ 84.9   55.08   55.08         _IdleLoop
+  8.2   60.38    5.30         _NetIEOutput
+  1.3   61.24    0.86         _Sync_SlowMasterWait
+  0.8   61.78    0.54         _Rpc_Server
+  0.8   62.27    0.49         FlushingSegment
+  0.5   62.59    0.32         _Net_IDToRoute
+  0.4   62.87    0.28         _RpcOutput
+  0.4   63.13    0.26         _Net_Output
+  0.3   63.35    0.22         _Timer_GetTimeOfDay
+  0.3   63.53    0.18         _MachUserAction
+  0.2   63.69    0.16         _RpcSrvInitHdr
+  0.2   63.81    0.12         _Recov_HostAlive
+  0.2   63.93    0.12         _RpcEcho
+  0.2   64.05    0.12         _Rpc_Reply
+  0.1   64.13    0.08         _Fs_SelectStub
+  0.1   64.21    0.08         _Sched_LockAndSwitch
+  0.1   64.27    0.06         _Sync_GetLock
+  0.1   64.32    0.05         _Hash
+  0.1   64.36    0.04         _MachFetchArgsEnd
+  0.1   64.40    0.04         _Net_RouteMTU
+  0.1   64.44    0.04         _Sync_Unlock
+  0.0   64.47    0.03         _ChainSearch
+  0.0   64.50    0.03         _VmMachFlushSegment
+  0.0   64.52    0.02         BDoubleWordCopy
+  0.0   64.54    0.02         FlushingContext
+  0.0   64.56    0.02         FlushingPage
+  0.0   64.58    0.02         _Fs_Read
+  0.0   64.60    0.02         _Fs_ReadStub
+  0.0   64.62    0.02         _FspdevServerStreamSelect
+  0.0   64.64    0.02         _FsrmtFileWrite
+  0.0   64.66    0.02         _Hash_Find
+  0.0   64.68    0.02         _Mach_TestAndSet
+  0.0   64.70    0.02         _RequestResponse
+  0.0   64.72    0.02         _Sync_GetWaitToken
+  0.0   64.74    0.02         _Sync_ProcWait
+  0.0   64.76    0.02         _Sync_SlowWait
+  0.0   64.78    0.02         _Timer_GetRealTimeOfDay
+  0.0   64.80    0.02         _bzero
+  0.0   64.82    0.02         _vprintf
+  0.0   64.83    0.01         ReturnZero
+  0.0   64.84    0.01         _Hash_Delete
+  0.0   64.85    0.01         _Hash_LookOnly
+  0.0   64.86    0.01         _Mach_GetMachineType
+
+
+
+8K byte test without network opts:
+
+
+
+granularity: each sample hit covers 8 byte(s) for 0.00% of 456.92 seconds
+
+%time cumsecs seconds   calls name    
+ 91.3  417.16  417.16         _IdleLoop
+  5.4  441.85   24.69         _NetIEOutput
+  0.8  445.39    3.54         _Net_Output
+  0.8  448.91    3.52         _RpcOutput
+  0.3  450.29    1.38         _Sync_SlowMasterWait
+  0.2  451.07    0.78         _Rpc_Reply
+  0.2  451.81    0.74         FlushingSegment
+  0.2  452.53    0.72         _MachUserAction
+  0.1  453.09    0.56         _Rpc_Server
+  0.1  453.65    0.56         _Timer_GetTimeOfDay
+  0.1  454.05    0.40         _Net_IDToRoute
+  0.1  454.43    0.38         _RpcEcho
+  0.0  454.65    0.22         _Hash
+  0.0  454.87    0.22         _Hash_Find
+  0.0  455.07    0.20         _RpcSrvInitHdr
+  0.0  455.27    0.20         _Sched_LockAndSwitch
+  0.0  455.43    0.16         _ChainSearch
+  0.0  455.57    0.14         _Fsutil_FastWaitListInsert
+  0.0  455.69    0.12         _Fs_SelectStub
+  0.0  455.81    0.12         _Recov_HostAlive
+  0.0  455.91    0.10         _vprintf
+  0.0  455.99    0.08         ByteCopyIt
+  0.0  456.07    0.08         _Sync_GetLock
+  0.0  456.13    0.06         _Fscache_CleanBlocks
+  0.0  456.19    0.06         _Sync_Unlock
+  0.0  456.23    0.04         BDoubleWordCopy
+  0.0  456.27    0.04         _Fs_GetStreamPtr
+  0.0  456.31    0.04         _Mach_TestAndSet
+  0.0  456.35    0.04         _Sync_ProcWait
+  0.0  456.39    0.04         _Sync_SlowBroadcast
+  0.0  456.43    0.04         _Timer_GetCurrentTicks
+  0.0  456.46    0.03         _Fsutil_HandleLockHdr
+  0.0  456.48    0.02         DoubleWordCopy
+  0.0  456.50    0.02         FlushingContext
+  0.0  456.52    0.02         GotArgs
+  0.0  456.54    0.02         _FindHistBucket
+  0.0  456.56    0.02         _Fs_Read
+  0.0  456.58    0.02         _Fscache_FetchBlock
+  0.0  456.60    0.02         _Fscache_Write
+  0.0  456.62    0.02         _Fsio_DeviceRead
+  0.0  456.64    0.02         _FspdevServerStreamSelect
+  0.0  456.66    0.02         _GetDirtyBlockInt
+  0.0  456.68    0.02         _MachFetchArgsEnd
+  0.0  456.70    0.02         _Net_EtherOutputSync
+  0.0  456.72    0.02         _Sched_StartUserProc
+  0.0  456.74    0.02         _Sig_Handle
+  0.0  456.76    0.02         _Sync_SlowWait
+  0.0  456.78    0.02         _Timer_GetRealTimeOfDay
+  0.0  456.80    0.02         _Timer_ScheduleRoutine
+  0.0  456.82    0.02         _VmListInsert
+  0.0  456.84    0.02         _Vm_CopyOut
+  0.0  456.86    0.02         _malloc
+  0.0  456.88    0.02         _strncpy
+  0.0  456.90    0.02         copyLoop
+  0.0  456.91    0.01         _Fsutil_HandleFetch
+  0.0  456.92    0.01         _NetIEXmitRestart
+
+
+Now 8K byte test with network opt.
+
+
+granularity: each sample hit covers 8 byte(s) for 0.00% of 435.62 seconds
+
+%time cumsecs seconds   calls name    
+ 94.5  411.70  411.70         _IdleLoop
+  2.6  423.13   11.43         _NetIEOutput
+  0.8  426.43    3.30         _RpcOutput
+  0.7  429.41    2.98         _Net_Output
+  0.3  430.53    1.12         _Sync_SlowMasterWait
+  0.2  431.21    0.68         _MachUserAction
+  0.1  431.75    0.54         _Rpc_Server
+  0.1  432.25    0.50         _Rpc_Reply
+  0.1  432.67    0.42         _RpcEcho
+  0.1  433.07    0.40         FlushingSegment
+  0.1  433.45    0.38         _Timer_GetTimeOfDay
+  0.1  433.71    0.26         _Net_IDToRoute
+  0.1  433.93    0.22         _Recov_HostAlive
+  0.0  434.13    0.20         _Hash
+  0.0  434.31    0.18         _Sched_LockAndSwitch
+  0.0  434.46    0.15         _Hash_Find
+  0.0  434.56    0.10         _RpcSrvInitHdr
+  0.0  434.66    0.10         _Sync_GetLock
+  0.0  434.74    0.08         _Fs_SelectStub
+  0.0  434.79    0.05         _Mach_TestAndSet
+  0.0  434.83    0.04         BDoubleWordCopy
+  0.0  434.87    0.04         ByteCopyIt
+  0.0  434.91    0.04         _ChainSearch
+  0.0  434.95    0.04         _Fs_IOControl
+  0.0  434.99    0.04         _Fs_ReadStub
+  0.0  435.03    0.04         _FspdevServerStreamSelect
+  0.0  435.07    0.04         _MachFetchArgsEnd
+  0.0  435.11    0.04         _Sync_GetWaitToken
+  0.0  435.15    0.04         _Sync_SlowWait
+  0.0  435.19    0.04         _Sync_Unlock
+  0.0  435.23    0.04         __free
+  0.0  435.27    0.04         _vprintf
+  0.0  435.30    0.03         _Hash_Delete
+  0.0  435.32    0.02         DoubleWordCopy
+  0.0  435.34    0.02         KeepZeroing
+  0.0  435.36    0.02         _DevNet_FsSelect
+  0.0  435.38    0.02         _Fs_GetStreamPtr
+  0.0  435.40    0.02         _Fs_Write
+  0.0  435.42    0.02         _Fsutil_FastWaitListInsert
+  0.0  435.44    0.02         _Fsutil_HandleUnlockHdr
+  0.0  435.46    0.02         _Fsutil_HandleValid
+  0.0  435.48    0.02         _Net_RouteMTU
+  0.0  435.50    0.02         _Sched_StartUserProc
+  0.0  435.52    0.02         _Sig_Handle
+  0.0  435.54    0.02         _Sync_ProcWait
+  0.0  435.56    0.02         _Sync_SlowBroadcast
+  0.0  435.58    0.02         _VmVirtAddrParse
+  0.0  435.59    0.01         GoAheadAndCopy
+  0.0  435.60    0.01         ReturnZero
+  0.0  435.61    0.01         SkipStore
+  0.0  435.62    0.01         _NetIEXmitDone
+
+

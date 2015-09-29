@@ -1,0 +1,188 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.5
+date     90.04.19.20.02.47;  author mgbaker;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.12.30.09.32.26;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.12.21.15.14.29;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.11.22.15.52.13;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.11.22.15.41.02;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@manual page for hostname cmd.
+@
+
+
+1.5
+log
+@Added flag to print machine type.
+@
+text
+@' $Header: /sprite/src/cmds/hostname/RCS/hostname.man,v 1.4 88/12/30 09:32:26 ouster Exp Locker: mgbaker $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS HOSTNAME cmds
+.BS
+.SH NAME
+hostname \- Print name or sprite ID of host
+.SH SYNOPSIS
+\fBhostname\fR [\fB\-v\fB] [\fB\-p\fB] [\fB\-i\fB] [\fB\-type\fB]
+.SH OPTIONS
+.IP "\fB\-v\fR"
+Print out information about the virtual host, which is the host on which
+the process is executing if it is not migrated, or the process's
+home node if it is migrated.  This is the default.
+.IP "\fB\-p\fR"  
+Print out information about the physical host, which is the host on which
+the process is physically executing, regardless of whether it is migrated.
+.IP "\fB\-i\fR"
+Print out sprite ID instead of host name.
+.IP "\fB\-type\fR"
+Print out the machine type.
+.BE
+.SH DESCRIPTION
+.LP
+By default, \fBhostname\fR prints out the official name of the host on
+which the process ``appears'' to be executing, 
+as specified in the 
+host description file.  (This is equivalent to the \fB\-v\fR, or virtual host, 
+option.)  Other options may be used to specify that information about the host 
+on which the process is currently physically executing be printed, or that 
+the integer sprite ID of the host is to be printed instead of host name.   
+.SH KEYWORDS
+host, name, migration, physical host, virtual host
+@
+
+
+1.4
+log
+@More format upgrades.
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/hostname/RCS/hostname.man,v 1.3 88/12/21 15:14:29 ouster Exp $ SPRITE (Berkeley)
+d8 1
+a8 1
+\fBhostname\fR [\fB\-v\fB] [\fB\-p\fB] [\fB\-i\fB]
+d19 2
+@
+
+
+1.3
+log
+@*** empty log message ***
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/hostname/RCS/hostname.man,v 1.2 88/11/22 15:52:13 douglis Exp $ SPRITE (Berkeley)
+d8 1
+a8 1
+\fBhostname\fR [\fB-v\fB] [\fB-p\fB] [\fB-i\fB]
+d10 1
+a10 1
+.IP "\fB-v\fR"
+d14 1
+a14 1
+.IP "\fB-p\fR"  
+d17 1
+a17 1
+.IP "\fB-i\fR"
+d22 1
+a22 1
+By default, Hostname prints out the official name of the host on
+d25 1
+a25 1
+host description file.  (This is equivalent to the \fB-v\fR, or virtual host, 
+@
+
+
+1.2
+log
+@changed to list new arguments (-v/-p/-i)
+@
+text
+@d1 3
+a3 2
+' $Header: /a/newcmds/hostname/RCS/hostname.man,v 1.1 88/11/22 15:41:02 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+.TH hostname prog
+d5 14
+a18 4
+.NA
+hostname \- Print name or spriteID of host(s)
+.SY
+\fBhostname\fR \fI[-v]\fR \fI[-p]\fR \fI[-i]\fR
+d22 1
+a22 1
+By default, \fIhostname\fR prints out the official name of the host on
+d25 1
+a25 1
+host description file.  (This is equivalent to the \fI-v\fR, or virtual host, 
+d28 1
+a28 11
+the integer spriteID of the host(s) be printed instead of host name(s).  
+.IP "-v"
+Print out information about the virtual host, which is the host on which
+the process is executing if it is not migrated, or the one on which it appears
+to be executing if it is migrated.  This is the default.
+.IP "-p"  
+Print out information about the physical host, which is the host on which
+the process is physically executing, regardless of whether it is migrated.
+.IP "-i"
+Print out sprite IDs for the virtual and or physical hosts rather than 
+hostnames. 
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+' $Header: /sprite/doc/ref/cmds/RCS/hostname,v 1.2 88/11/07 14:00:29 brent Exp $ SPRITE (Berkeley)
+d5 1
+a5 1
+hostname \- Print name or spriteID of host
+d7 1
+a7 1
+\fBhostname \fR["num"]
+a8 1
+
+d11 17
+a27 6
+Prints out the official name of this host machine, as specified in the
+host description file.  If an argument is present, then \fBhostname\fR
+prints out the integer spriteID of the host instead.  This feature is used to
+create the name of swap directories, which are of the form
+/swap/\fIspriteID\fR.  
+
+d29 1
+a29 1
+host, name
+@

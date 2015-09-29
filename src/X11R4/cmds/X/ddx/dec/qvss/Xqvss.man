@@ -1,0 +1,55 @@
+.\" $XConsortium: Xqvss.man,v 1.9 89/12/21 10:08:17 rws Exp $
+.TH XQVSS 1 "Release 4" "X Version 11"
+.SH NAME
+Xqvss - QVSS server for the X Window System
+.SH DESCRIPTION
+.PP
+This driver supports the QVSS and SM displays.
+.PP
+The QVSS hardware in the DEC VS2 is monochrome.  The usable size is 864
+lines by 1024 pixels/line.  (Under some versions of Ultrix, the driver
+thinks the screen is 960 pixels wide; to fix this for a VR260 monitor, patch
+the kernel variable qv_def_scrn to 2 and rebuild the kernel.).
+.PP
+The SM hardware in the DEC VaxStation is functionally identical with the QVSS
+hardware, except for new cursor support and slightly different cabling.
+.PP
+Probably the most irritating problem with the QVSS hardware is the
+cursor support, which is limited to 16x16.
+As only ``and'' and ``or'' operations are available in the hardware,
+the driver inverts the cursor depending upon the pixels below
+the cursor.
+The server displays a reasonable cursor in most (but not all)
+circumstances.  The SM hardware has better support \(em two planes
+instead of one; exactly what X needs.
+.PP
+Under Ultrix-32 release 1.1 and 4.2BSD,
+the window system will be slightly unreliable due
+to a kernel problem.
+Fixed in Ultrix32 release 1.2.
+Under Ultrix-32 1.1, your best bet is to use unix domain connections
+(unix:0 as host spec's) for local connections.
+.SH OPTIONS
+.br
+\fB-bp\fP \fIpixel-value\fP	set default black-pixel color
+.br
+\fB-wp\fP \fIpixel-value\fP	set default white-pixel color
+.sp
+The server also takes all of the standard server options (See \fIXserver(1)\fP
+for a complete list.)
+.PP
+Performance needs to be better, but the server is usable; it
+uses the X11 portable monchrome framebuffer code.  Look in 
+\fIcontrib/server/speedups/donohue.shar\fP for some ideas
+which could speed up this server.
+.SH "SEE ALSO"
+.PP
+Xserver(1), xinit(1), X(1)
+.SH COPYRIGHT
+Copyright 1988, Massachusetts Institute of Technology.
+.br
+See \fIX(1)\fP for a full statement of rights and permissions.
+.SH AUTHORS
+.PP
+Phil Karlton wrote the QVSS-specific pieces of X11; thanks to
+David Carver of the DEC Workstations group for work on X10.

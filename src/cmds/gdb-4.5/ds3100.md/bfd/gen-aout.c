@@ -1,0 +1,1 @@
+../../dist/bfd/gen-aout.c

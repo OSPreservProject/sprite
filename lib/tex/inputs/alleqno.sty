@@ -1,0 +1,49 @@
+% alleqno.sty -- LaTeX style file to make displayed equations numbered
+%                by default.
+%
+% This document style option makes all displayed equations numbered by
+% default.  In particular, it defines things so that \[, \], \[[, and
+% \]] may be used as follows:
+%
+%       \[  ...  \]     ==>     \begin{equation} ... \end{equation}
+%       \[[ ... \]]     ==>     \begin{eqnarray} ... \end{eqnarray}
+%
+% These new commands are short, and they stand out clearly from the
+% surrounding text on a terminal screen.
+%
+% Note that \begin{displaymath} ... \end{displaymath} should *not* be
+% used with this style file -- use \[ ... \] instead.  To override the
+% default and get an unnumbered displayed equation, use a one-line
+% \begin{eqnarray} ... \end{eqnarray}.
+%
+% - Jonathan Thornburg, 25/Sept/88
+%
+%   Dept of Geophysics & Astronomy               thornburg@mtsg.ubc.ca
+%   The University of British Columbia         userbkis@ubcmtsg.bitnet
+%   Vancouver     BC     V6T 1W5          userbkis%ubc@um.cc.umich.edu
+%   Canada                         ubc-vision!ubcmtsg.bitnet!thornburg
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Thanks to Donald Arseneau for help with the following macro.
+\def\mygobbletoken{\let\myjunktoken= }%%%
+%
+\def\[{\futurelet\mydisplayselect\mydisplay}%%%
+\def\mydisplay{%%%
+    \if\mydisplayselect[%%%
+        \begin{eqnarray}\let\mynextcommand=\mygobbletoken%%%
+    \else%%%
+        \begin{equation}\let\mynextcommand=\relax%%%
+    \fi%%%
+    \mynextcommand
+}%%%
+%
+\def\]{\futurelet\mydisplayselect\myenddisplay}%%%
+\def\myenddisplay{%%%
+    \if\mydisplayselect]%%%
+        \end{eqnarray}\let\mynextcommand=\mygobbletoken%%%
+    \else%%%
+        \end{equation}\let\mynextcommand=\relax%%%
+    \fi%%%
+    \mynextcommand
+}%%%

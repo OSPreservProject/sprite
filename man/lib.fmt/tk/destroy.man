@@ -1,0 +1,66 @@
+
+
+
+destroy                   User Commands                   destroy
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     destroy - Destroy a window
+
+SSYYNNOOPPSSIISS
+     ddeessttrrooyy _w_i_n_d_o_w
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     Given the path name for a window (_w_i_n_d_o_w) this command  will
+     delete that window and all of its descendants.  If _w_i_n_d_o_w is
+     ``.'' then the entire application will be destroyed.
+
+
+KKEEYYWWOORRDDSS
+     application, destroy, window
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     1
+
+
+

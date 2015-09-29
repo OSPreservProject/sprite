@@ -1,0 +1,132 @@
+
+
+
+DVISELECT                 User Commands                 DVISELECT
+
+
+
+NNAAMMEE
+     dviselect - extract pages from DVI files
+
+SSYYNNOOPPSSIISS
+     ddvviisseelleecctt [ --ss ] [ --ii _i_n_f_i_l_e ] [ --oo _o_u_t_f_i_l_e ] _l_i_s_t _o_f _p_a_g_e_s
+     [ _i_n_f_i_l_e [ _o_u_t_f_i_l_e ] ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _D_v_i_s_e_l_e_c_t selects pages from a DVI file produced by TeX,
+     creating a new DVI file usable by any of TeX's conversion
+     program (e.g., iptex), or even by dviselect itself.
+
+     A _r_a_n_g_e is a string of the form _f_i_r_s_t:_l_a_s_t where both _f_i_r_s_t
+     and _l_a_s_t are optional numeric strings, with negative numbers
+     indicated by a leading underscore character ``_''.  If both
+     _f_i_r_s_t and _l_a_s_t are omitted, the colon may also be omitted,
+     or may be replaced with an asterisk ``*''.  A _p_a_g_e _r_a_n_g_e is
+     a list of ranges separated by periods.  A _l_i_s_t _o_f _p_a_g_e_s is
+     described by a set of page ranges separated by commas and/or
+     white space.
+
+     _D_v_i_s_e_l_e_c_t actually looks at the ten _c_o_u_n_t variables that TeX
+     writes; the first of these (\count0) is the page number,
+     with \count1 through \count9 having varied uses depending on
+     which macro packages are in use.  (Typically \count1 is a
+     chapter or section number.)  A page is included in
+     _d_v_i_s_e_l_e_c_t's output if all its \count values are within any
+     one of the ranges listed on the command line.  For example,
+     the command ``dviselect *.1,35:'' might select everything in
+     chapter 1, as well as pages 35 and up.  ``dviselect 10:30''
+     would select pages 10 through 30 (inclusive).  ``:43'' means
+     everything up to and including page 43 (including negative-
+     numbered pages).  If a Table of Contents has negative page
+     numbers, ``:_1'' will select it.  ``*.4 .........1'' might
+     mean everything in every chapter 4 and an index, presuming
+     \count9 was set to 1 in the index.  (``*'' must be quoted
+     from the shell; the null string is more convenient to use,
+     if harder to read.)
+
+     Instead of \count values, _d_v_i_s_e_l_e_c_t can also select by
+     ``absolute page number'', where the first page is page 1,
+     the second page 2, and so forth.  Absolute page numbers are
+     indicated by a leading equal sign ``=''.  Ranges of absolute
+     pages are also allowed: ``dviselect =3:7'' will extract the
+     third through seventh pages.  Dot separators are not legal
+     in absolute ranges, and there are no negative absolute page
+     numbers.
+
+     More precisely, an asterisk or a null string implies no
+     limit; an equal sign means absolute pages rather than
+     \counts; a leading colon means everything up to and includ-
+     ing the given page; a trailing colon means everything from
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+DVISELECT                 User Commands                 DVISELECT
+
+
+
+     the given page on; and a period indicates that the next
+     \count should be examined.  If fewer than 10 ranges are
+     specified, the remaining \counts are left unrestricted (that
+     is, ``1:5'' and ``1:5.*'' are equivalent).  A single number
+     _n is treated as if it were the range _n:_n.  An arbitrary
+     number of page selectors may be given, separated by commas
+     or whitespace; a page is selected if any of the selectors
+     matches its \counts or absolute page number.
+
+     Dviselect normally prints the page numbers of the pages
+     selected; the -_s option suppresses this.
+
+AAUUTTHHOORR
+     Chris Torek, University of Maryland
+
+SSEEEE AALLSSOO
+     dvipr(1), iptex(1), tex(1), _T_h_e _T_e_X_b_o_o_k
+
+BBUUGGSS
+     A leading ``-'' ought to be allowed for negative numbers,
+     but it is currently used as a synonym for ``:'', for back-
+     wards compatibility.
+
+     Section or subsection selection will sometimes fail, for the
+     DVI file lists only the \count values that were active when
+     the page ended.  Clever macro packages can alleviate this by
+     making use of other ``free'' \count registers.  Chapters
+     normally begin on new pages, and do not suffer from this
+     particular problem.
+
+     _D_v_i_s_e_l_e_c_t does not adjust the parameters in the postamble;
+     however, since these values are normally used only to size
+     certain structures in the output conversion programs, and
+     the parameters never need to be adjusted upward, this has
+     not proven to be a problem.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     2
+
+
+

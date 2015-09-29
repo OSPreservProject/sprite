@@ -1,0 +1,22 @@
+' $Header: /a/newcmds/ssize/RCS/ssize.man,v 1.2 89/06/16 09:10:03 mendel Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS SSIZE cmds
+.BS
+.SH NAME
+ssize \- Print size of segments in a SPUR program image
+.SH SYNOPSIS
+\fBssize \fR[\fIfile file ...\fR]
+.BE
+
+.SH DESCRIPTION
+.LP
+Each \fIfile\fR argument should be the name of a program image
+file (e.g. \fBa.out\fR).  \fBSsize\fR will print out in decimal
+the sizes of the various segments in the file.  It will also print
+the total size in both decimal and hexadecimal.  If no \fIfile\fR
+argument is given, \fBa.out\fR will be used by default. This program is
+needed because the format of the SPUR a.out header is different from other
+Sprite machines and is not understood by the \fBsize\fR command.
+
+.SH KEYWORDS
+executable, image, program, size, SPUR

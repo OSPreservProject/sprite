@@ -1,0 +1,7 @@
+          flush fileId
+               Flushes any output that has been buffered  for  fileId.
+               FileId  must have been the return value from a previous
+               call to open, or it may be stdout or stderr  to  access
+               one  of  the  standard  I/O streams; it must refer to a
+               file that was opened for writing.  This command returns
+               an empty string.

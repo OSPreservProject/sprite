@@ -1,0 +1,6 @@
+
+
+          unlink [-nocomplain] filelist
+               Delete (unlink) the files whose names are in the list
+               filelist.  If -nocomplain is specified, then errors
+               will be ignored.

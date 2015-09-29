@@ -1,0 +1,221 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     89.03.22.00.47.37;  author rab;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.12.31.12.29.06;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.12.31.10.35.37;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.07.25.14.54.11;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.19.14.32.10;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.5
+log
+@*** empty log message ***
+@
+text
+@/* 
+ * unsetenv.c --
+ *
+ *	Procedure to simulate cshell unsetenv call.
+ *
+ * Copyright (C) 1986 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdlib/RCS/unsetenv.c,v 1.4 88/12/31 12:29:06 ouster Exp Locker: rab $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <stdlib.h>
+
+extern char **environ;
+extern char *malloc();
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * unsetenv --
+ *
+ *	Unsets the given variable.  Note: taken from MH, temporary, doesn't
+ *      free space.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	"Name" will no longer exist as an environment variable.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+unsetenv(name)
+    char	*name;	/* Name of variable. */
+{
+    register char **envPtr;
+    register char **newEnvPtr;
+    register char *charPtr;
+    register char *namePtr;
+    register Boolean found = FALSE;
+
+    for (envPtr = environ; *envPtr != NULL; envPtr++) {
+	for (charPtr = *envPtr, namePtr = name;
+	     *charPtr == *namePtr; namePtr++) {
+	     charPtr++;
+	     if (*charPtr == '=') {
+		 found = TRUE;
+		 break;
+	     }
+	 }
+	if (found) {
+	    break;
+	}
+    }
+    if (!found) {
+	return;
+    }
+    for (newEnvPtr = envPtr + 1; *newEnvPtr; newEnvPtr++) {
+    }
+    newEnvPtr--;
+    *envPtr = *newEnvPtr;
+    *newEnvPtr = NULL;
+}
+@
+
+
+1.4
+log
+@Eliminate include of compatInt.h:  not needed.
+@
+text
+@d17 2
+a18 2
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdlib/RCS/unsetenv.c,v 1.3 88/12/31 10:35:37 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+d20 2
+a21 1
+#include "sprite.h"
+@
+
+
+1.3
+log
+@Remove "transition" code to look in kernel environment area.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdlib/RCS/unsetenv.c,v 1.2 88/07/25 14:54:11 ouster Exp Locker: ouster $ SPRITE (Berkeley)";
+a20 2
+#include "proc.h"
+#include "compatInt.h"
+@
+
+
+1.2
+log
+@Lint.
+@
+text
+@d7 7
+a13 1
+ * All rights reserved.
+d17 1
+a17 1
+static char rcsid[] = "$Header: unsetenv.c,v 1.1 88/06/19 14:32:10 ouster Exp $ SPRITE (Berkeley)";
+d34 1
+a34 3
+ *      free space.  During transition period, if we have an empty environment
+ *	(or a nonexistent one -- which should no longer be the case), call
+ *	the kernel routines.
+d40 1
+a40 1
+ *	None.
+d49 5
+a53 2
+    if (environ == (char **) NULL || (*environ == (char *) NULL)) {
+	Proc_EnvironVar	envVar;
+d55 7
+a61 17
+	envVar.name = name;
+	Proc_OLDUnsetEnviron(envVar);
+    } else {
+	register char **envPtr;
+	register char **newEnvPtr;
+	register char *charPtr;
+	register char *namePtr;
+	register Boolean found = FALSE;
+
+	for (envPtr = environ; *envPtr != NULL; envPtr++) {
+	    for (charPtr = *envPtr, namePtr = name;
+		 *charPtr == *namePtr; namePtr++) {
+		 charPtr++;
+		 if (*charPtr == '=') {
+		     found = TRUE;
+		     break;
+		 }
+d63 3
+a65 3
+	    if (found) {
+		break;
+	    }
+a66 8
+	if (!found) {
+	    return;
+	}
+	for (newEnvPtr = envPtr + 1; *newEnvPtr; newEnvPtr++) {
+	}
+	newEnvPtr--;
+        *envPtr = *newEnvPtr;
+	*newEnvPtr = NULL;
+d68 8
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: unsetenv.c,v 1.3 88/02/12 11:14:09 douglis Exp $ SPRITE (Berkeley)";
+a50 1
+	register int    i;
+@

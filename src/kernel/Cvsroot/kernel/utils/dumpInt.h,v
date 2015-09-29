@@ -1,0 +1,165 @@
+head     9.1;
+branch   ;
+access   ;
+symbols  ds3100:9.1 sun3:9.1 sun4nw:9.1 symm:9.1 spur:9.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.1
+date     90.09.11.14.11.40;  author kupfer;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.22.09;  author douglis;  state Stable;
+branches ;
+next     8.1;
+
+8.1
+date     89.05.24.07.55.51;  author rab;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.41.26;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.28.53;  author brent;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.16.21.08.59;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Declaration of routines and types local to the dump routines.
+@
+
+
+9.1
+log
+@Use function prototypes. Lint.
+@
+text
+@/*
+ * dumpInt.h --
+ *
+ *	Declarations of the event table for the ``dump'' utility.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/utils/RCS/dumpInt.h,v 9.0 89/09/12 15:22:09 douglis Stable Locker: kupfer $ SPRITE (Berkeley)
+ */
+
+#ifndef _DUMPINT
+#define _DUMPINT
+/*
+ * Type of table of routines and their arguments to be called on dump events.
+ */
+
+typedef struct EventTableType {
+	char		key;		/* Key for dump event. */
+	void		(*routine) _ARGS_((ClientData));
+					/* Routine to call upon event. */
+	ClientData	argument;	/* Argument to routine. */
+	char		*description;	/* Help description of event. */
+} EventTableType;
+
+/*
+ * Special EventTableType.routines ---
+ * RESERVED_EVENT - A event char reserved by other parse of the system.
+ * LAST_EVENT - The last event in the table.
+ * Special EventTableType.arguments ---
+ * NULL_ARG - A missing argument pointer.
+ */
+
+#define RESERVED_EVENT	((void (*) _ARGS_((ClientData)) ) 1)	
+#define	LAST_EVENT	((void (*) _ARGS_((ClientData)) ) 0)
+#define	NULL_ARG	((ClientData) 0)
+
+/*
+ * Machine dependent routines for registering dump events.
+ */
+
+extern void Dump_Register_Events _ARGS_((EventTableType *));
+extern void Dump_Show_Local_Menu _ARGS_((void));
+
+#endif /* _DUMPINT */
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/utils/RCS/dumpInt.h,v 8.1 89/05/24 07:55:51 rab Exp Locker: douglis $ SPRITE (Berkeley)
+d21 2
+a22 1
+	void		(*routine)();	/* Routine to call upon event. */
+d35 2
+a36 2
+#define RESERVED_EVENT	((void (*)()) 1)	
+#define	LAST_EVENT	((void (*)()) 0)
+d43 2
+a44 2
+extern void Dump_Register_Events();
+extern void Dump_Show_Local_Menu();
+@
+
+
+8.1
+log
+@changes to allow optimization.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/utils/RCS/dumpInt.h,v 8.0 88/11/11 18:41:26 douglis Stable Locker: rab $ SPRITE (Berkeley)
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/utils/RCS/dumpInt.h,v 6.0 88/08/11 12:28:53 brent Stable Locker: douglis $ SPRITE (Berkeley)
+d45 1
+a45 1
+#endif _DUMPINT
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: dumpInt.h,v 1.1 88/06/16 21:08:59 mendel Exp $ SPRITE (Berkeley)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d10 1
+a10 1
+ * $Header: dump.h,v 5.0 87/08/11 10:51:48 sprite Exp $ SPRITE (Berkeley)
+@

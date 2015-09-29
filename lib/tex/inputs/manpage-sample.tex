@@ -1,0 +1,237 @@
+\documentstyle[11pt,twoside,manpage]{report}
+\begin{document}
+
+\date{November 25, 1990}
+
+\begin{titlepage}
+    \vspace*{1.0in}
+    \begin{flushright}
+          {\huge\bf OIM C++ Library} \\[.25cm]
+          {\rule[.1in]{4.5in}{.02in}}\\[.25cm]
+          {\large\bf Reference Manual} \\[2.0cm]
+          {\large\bf Version 1.0} \\[4.0cm]
+          {\bf Rong Chen}\\
+          {\bf Junsheng Long}\\[1.0cm]
+          {Research Services}\\
+          {Office for Information Management}\\
+          {1407 W. Gregory Drive}\\
+          {Urbana, IL 61801}\\
+          {(217)--244--8538}\\
+    \end{flushright}
+\end{titlepage}
+
+\pagenumbering{roman}
+\tableofcontents
+
+\chapter*{Preface}
+
+The Object-oriented problem solving and object-oriented programming 
+represent a way of thinking and a methodology for computer
+programming that are quite different from the traditional approaches 
+supported by structured programming languages. The powerful 
+features of object-oriented programming support the concepts that 
+make computer problem solving a more human-like activity and 
+that increase the re-usability of software code. As object-oriented
+languages are steadily available, object-oriented programming
+becomes more and more popular among both system developers 
+and application programmers.
+
+C++ is a hybrid language that fuses object-oriented functionality
+with the features of a traditional and efficient structured language, C. 
+C++ provides programmers and problem solvers object-oriented capability
+without loss of run-time or memory efficiency. In addition,
+C++ is available in almost every computer systems from PC to mainframe.
+
+\newpage
+
+\raggedbottom
+\pagenumbering{arabic}
+\pagestyle{headings}
+\chapter*{Class Descriptions}
+
+\begin{manpage}{OIM C++ Library}{Choice}{Version 1.0}
+
+\subtitle{Name}
+    Choice --- a set of boxes representing the choices available. 
+
+\subtitle{Declaration}
+    \#include \<choice.h\>
+
+\function{Choice(Point origin, Point corner,
+		int foreground_color, int background_color,
+		int frame_style, int space_in_between,
+                int number_of_choices,
+                const~char\* first_label, $...$ )}
+    Constructs a choice object.  Each choice object is a set of boxes
+    representing the choices available.  "Origin" and "corner" define the
+    rectangular area inside which the boxes are displayed. 
+    The "space_in_between" (in pixels)
+    defines the distance between two adjacent boxes.  Depending on 
+    whether there is enough room to put all the choices horizontally
+    or vertically in the designated area,
+    the choices will be laid out accordingly.  The
+    attributes "foreground_color", "background_color" and "frame_style"
+    define the colors for each box that represents each choice.
+    The number of labels starting with "first_label" must match the
+    number given by "number_of_choices".  Each label is displayed within
+    its corresponding box.  The choices are displayed 
+    as soon as they are created.
+
+\function{Choice(int number_of_choices, Boolean is_horizontal = VERTICAL)}
+    Constructs an array of choices or 
+    a choice object with boxes of different sizes.  The attributes
+    of the actual choices will be defined later using the
+    addItem() operation. Note: It is forbidden to have arguments
+    in the constructors of array objects in C++. 
+
+\function{\~Choice()}
+    Choice class has an empty destructor.
+
+\subtitle{Description}
+    A Choice object is a set of related boxes. It is used to display
+    multiple choices on the screen. 
+    A choice may either be selected by pressing a hot key
+    (when mouse is not enabled) or by pressing a mouse button when the mouse
+    cursor is within the intended choice box.  
+    The first highlighted character in the text label will be the 
+    hot key if the mouse is not enabled, otherwise, the highlighted
+    character will have no effect. For example, label "@N@ext" designates
+    "N" as the hot key for the button if the mouse is not enabled.
+    By default, if the mouse driver is loaded before program execution,
+    the mouse is enabled.  When using the mouse to select
+    a choice, the selection is immediate; a hot key must be confirmed
+    by pressing ENTER (carriage return key).  Arrow keys can also be used
+    to move the current selection in the direction indicated by the arrows,
+    this also requires an ENTER to confirm.
+
+\subtitle{Global \\ Variables}
+\variable{char host_name[20] = \"rose.cs.uiuc.edu\"}
+    The "host_name" buffer is initialized to the current machine name
+    before the main() function is executed.  The machine name is
+    usually declared in a DOS shell variable "OIMUSER".
+
+\variable{Boolean mouse_installed}
+    By default, the "mouse_installed" variable is assigned to TRUE if
+    the mouse driver has been installed before program execution;
+    otherwise it is assigned to FALSE.  The value may also be changed
+    through enableMouse() and disableMouse() functions.
+
+\subtitle{Macros}
+\function{MAX({\it x}, {\it y})}
+    Returns the maximum of the two comparable objects "x", and "y".
+    This macro is often used to compare integers or real numbers.
+
+\function{MIN({\it x}, {\it y})}
+    Returns the minimum of the two comparable objects "x", and "y".
+    This macro is often used to compare integers or real numbers.
+
+\subtitle{Public \\ Operations}
+\function{void addItem(Point origin, Point corner,
+		 int foreground_color, int background_color,
+		 int frame_style, const~char\* label,
+		 int text_color = WHITE,
+		 int text_highlight_color = LIGHT_WHITE)}
+    Defines the attributes of a choice box in the array declared by the
+    Choice(int "number_of_choices", Boolean "is_horizontal" = VERTICAL) 
+    constructor. It must be called exactly "number_of_choices"
+    times.  The first call specifies the first choice, second call specifies
+    the second choice, and so on.  The attributes "origin" and "corner"
+    define a box area where the choice item is located on the screen.  Other
+    attributes are self-explanatory.  This call is particularly useful
+    on program setup pages.
+
+\function{Boolean hasValue()}
+    Returns TRUE if the designated choice object has been selected at
+    least once.  Graphically,
+    it means one of the choices is rendered in reverse colors.  It is
+    sometimes necessary to check if all choice objects on a screen have
+    been selected, so that a program can go on to the next page of screen.
+    If a previous select() call is returned abnormally by pressing an ESC key,
+    this function will return FALSE. Should this occur, the previous 
+    value, if any, will also be lost.
+
+\subtitle{Virtual \\ Operations}
+
+\function{void action(int status)}
+    Defines the behaviors of the choice object when a choice handler
+    has been bonded to the object.  This function is called by the
+    event handler when it detects that the choice object has been
+    selected.  The default action is to do nothing if no choice handler
+    presents, otherwise, it invokes the choice handler 
+    and passes it along with the current status 
+    (whatever has been returned from a status() call).  
+    Do not modify this function unless it is absolutely necessary because
+    it redefines the semantics of all choice objects.
+
+\function{void bind(void \hbox{\rm (\*{\it handler})(int)})}
+    Associates a choice handler function with the choice object.  Every
+    time this choice object is invoked, the choice handler is called
+    immediately.  
+    The handler is passed along with the current "status"
+    (return value of status() call) as its argument. The default 
+    action taken by the event handler can be modified by changing
+    the next function action().
+
+\function{Boolean isSelected(Point cursor)}
+    Returns TRUE if a legal hot key is pressed for the
+    the indicated choice object. It also returns TRUE if 
+    a mouse button is pressed within the range of the choice object area.
+    This call is used by the event handler to check if this choice object
+    has been selected.  It is hardly needed in regular applications.
+    The "cursor" is for mouse cursor in mouse mode or faked with the
+    current keyboard input as the cursor's x coordinate.
+
+\subtitle{See Also}
+     Event, Button, Box
+
+\subtitle{Author}
+    Ron Chen at the Office for Information Management, UIUC. 9-1-89.
+
+\end{manpage}
+\newpage
+\begin{verbatim}
+    /* EXAMPLE 2 */
+    #include <stdlib.h>
+    #include "choice.h"
+
+    void handler1(int pick) {
+        Box box(500, 30, 600, 60, LIGHT_CYAN, LIGHT_MAGENTA);
+        box << pick + 1;
+    }
+
+    void handler2(int pick) {
+        Box box(500, 30, 600, 60, LIGHT_CYAN, LIGHT_MAGENTA);
+        box << (pick==0 ? "Ape" : (pick==1 ? "Bob" : "Car"));
+    }
+
+    void handler3(int pick) {
+        Box box(500, 30, 600, 60, LIGHT_CYAN, LIGHT_MAGENTA);
+        switch (pick) {
+            case 0: box << "D"; break; case 1: box << "E"; break;
+            case 2: box << "F"; break; case 3: box << "G"; break;
+            case 4: exit(0);
+        }
+    }
+
+    main() {
+        Point a(100, 100), b(220, 130);
+        Choice c1(a, b, BROWN, RED, ON_BORDER, 0, 4,
+                       "@1@", "@2@", "@3@", "@4@");
+        Choice c2(3, HORIZONTAL);
+        c2.addItem(Point(200, 200), Point(260,230),
+                   WHITE, BLUE, IN_BORDER, "@A@pe");
+        c2.addItem(Point(270, 200), Point(330,230),
+                   WHITE, BLUE, IN_BORDER, "@B@ob");
+        c2.addItem(Point(340, 200), Point(400,230),
+                   WHITE, BLUE, IN_BORDER, "@C@ar");
+        a = Point(500, 230); b = Point(550, 330);
+        Choice c3(a, b, GREEN, GRAY, NO_BORDER, 10, 5,
+                       "@D@", "@E@", "@F@", "@G@", "@H@");
+        c1.bind(handler1);
+        c2.bind(handler2);
+        c3.bind(handler3);
+        Event::waitForEvents();
+    }
+\end{verbatim}
+
+\end{document}

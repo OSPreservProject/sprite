@@ -1,0 +1,134 @@
+
+
+
+LABELDISK                 User Commands                 LABELDISK
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     labeldisk - read and write a disk's label
+
+SSYYNNOOPPSSIISS
+     llaabbeellddiisskk [--ffrroomm ffrroommDDeevviiccee] [--ww] [--qq] [--ssuunn] [--ddeecc]  [--nneeww]
+               _d_e_v_i_c_e
+
+OOPPTTIIOONNSS
+     --ffrroomm ffrroommDDeevviiccee
+          Read the label from this device.
+
+     --ww   Write a new label.
+
+     --qq   Write a new label quickly, without prompting for parti-
+          tion information.
+
+     --ssuunn Write out a Sun label.  The default is to  write  what-
+          ever type of label was read.
+
+     --ddeecc Write out a Dec label.
+
+     --nneeww Ignore any old label.
+
+     _d_e_v_i_c_e
+          The device file with the disk label.  Without --ffrroomm  it
+          is  the  device that the label is read from and written
+          to, otherwise it is the device that is written to.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This reads the disk label and verifies its checksum.  If the
+     --ffrroomm  ffrroommDDeevviiccee  option  is present then the disk label is
+     read from the ffrroommDDeevviiccee, and the  ddeevviiccee  argument  becomes
+     the device to which the label is written to.
+
+     If the --ww option is present labeldisk interactively  prompts
+     for partition information.  After this the user is presented
+     with the new label and given the opportunity to  commit  the
+     change  or  abort  it.  The user is also given the chance to
+     write the label to all of the valid partitions found on  the
+     device.   ``valid''  means that the partition has a positive
+     number of cylinders associated with it, and that a file sys-
+     tem  exists on the partition.  If a partition on the disk is
+     not ``valid'', then it is skipped.  An attempt  is  made  to
+     write  the label to the raw disk in the improbable case that
+     no valid partition starts on cylinder 0.  If  labeldisk  was
+     not  able  to write the label to the raw disk or to a parti-
+     tion that begins at cylinder 0, then a warning is issued  to
+     that effect.
+
+
+
+
+Sprite v.1.0        Printed:  October 3, 1991                   1
+
+
+
+
+
+
+LABELDISK                 User Commands                 LABELDISK
+
+
+
+     The --qq option turns off the prompting for partition informa-
+     tion only.  This is useful for copying a label from one par-
+     tition on one device to other partitions on the same or dif-
+     ferent  device  if the user knows that the label on the from
+     device  has  the  correct  information.   Overrides  the  --ww
+     option.
+
+     The --ddeecc option converts the label being written  to  a  dec
+     label.
+
+     The --ssuunn option converts the label being written  to  a  dec
+     label.
+
+     The --nneeww option ignores any label read, and  creates  a  new
+     one  instead.   If  either  the  --ddeecc  or the --ssuunn option is
+     specified then the new label created  is  of  the  specified
+     type.
+
+     Each disk is divided into 8 partitions,  named  ``ai''  thru
+     ``gi''.    Each  partition  is  specified  with  a  starting
+     cylinder number and the number  of  cylinders  it  contains.
+     Unused  partitions  are  indicated with a zero size.  Parti-
+     tions can overlap, but overlapping partitions  should  never
+     be used simultaneously!  Traditionally partition ``ai'' is a
+     small partition suitable for the root or a small /tmp.  Par-
+     tition  ``bi''  is  a  slightly larger system suitable for a
+     single machine's swap directory.  Partition ``ci'' is a sin-
+     gle  large  partition that specifies the whole disk.  Parti-
+     tions ``di'' and ``ei'' are often used as  large  partitions
+     beyond  ``ai''  and ``bi''.  Partition ``gi'' is usually set
+     up as all the space after  ``ai''  and  ``bi''.   Partitions
+     ``fi'' and ``hi'' usually aren't used, but they can be.
+
+     Partitions are useful to quarantine different sets of  users
+     from  one another, although they are a pain to change once a
+     filesystem has been created on them.  Changing them requires
+     recreating any affected filesystems.
+
+KKEEYYWWOORRDDSS
+     disk, label
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  October 3, 1991                   2
+
+
+

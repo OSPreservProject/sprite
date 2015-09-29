@@ -1,0 +1,1255 @@
+Info file gdb.info, produced by Makeinfo, -*- Text -*- from input
+file gdb-all.texinfo.
+
+   This file documents the GNU debugger GDB.
+
+   Copyright (C) 1988, 1989, 1990, 1991 Free Software Foundation, Inc.
+
+   Permission is granted to make and distribute verbatim copies of
+this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+   Permission is granted to copy and distribute modified versions of
+this
+manual under the conditions for verbatim copying, provided also that
+the section entitled "GNU General Public License" is included
+exactly as in the original, and provided that the entire resulting
+derived work is distributed under the terms of a permission notice
+identical to this one.
+
+   Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for
+modified versions, except that the section entitled "GNU General
+Public License" may be included in a translation approved by the
+Free Software Foundation instead of in the original English.
+
+
+File: gdb.info,  Node: Machine Code,  Prev: Source Path,  Up: Source
+
+Source and Machine Code
+=======================
+
+   You can use the command `info line' to map source lines to program
+addresses
+(and viceversa), and the command `disassemble' to display a range of
+addresses as machine instructions.
+
+`info line LINESPEC'
+     Print the starting and ending addresses of the compiled code for
+     source line LINESPEC.  You can specify source lines in any of
+     the ways understood by the `list' command (*note List::.).
+
+   For example, we can use `info line' to inquire on where the object
+code for the first line of function `m4_changequote' lies:
+
+     (gdb) info line m4_changecom
+     Line 895 of "builtin.c" starts at pc 0x634c and ends at 0x6350.
+
+We can also inquire (using `*ADDR' as the form for LINESPEC) what
+source line covers a particular address:
+
+     (gdb) info line *0x63ff
+     Line 926 of "builtin.c" starts at pc 0x63e4 and ends at 0x6404.
+
+   After `info line', the default address for the `x' command is
+changed to the starting address of the line, so that `x/i' is
+sufficient to begin examining the machine code (*note Memory::.). 
+Also, this address is saved as the value of the convenience variable
+`$_' (*note Convenience Vars::.).
+
+`disassemble'
+     This specialized command is provided to dump a range of memory
+     as machine instructions.  The default memory range is the
+     function surrounding the program counter of the selected frame.
+     A single argument to this command is a program counter value;
+     the function surrounding this value will be dumped.  Two
+     arguments (separated by one or more spaces) specify a range of
+     addresses (first inclusive, second exclusive) to be dumped.
+
+   We can use `disassemble' to inspect the object code range shown in
+the last `info line' example:
+
+     (gdb) disas 0x63e4 0x6404
+     Dump of assembler code from 0x63e4 to 0x6404:
+     0x63e4 builtin_init+5340:	ble 0x63f8 builtin_init+5360
+     0x63e8 builtin_init+5344:	sethi %hi(0x4c00), %o0
+     0x63ec builtin_init+5348:	ld [%i1+4], %o0
+     0x63f0 builtin_init+5352:	b 0x63fc builtin_init+5364
+     0x63f4 builtin_init+5356:	ld [%o0+4], %o0
+     0x63f8 builtin_init+5360:	or %o0, 0x1a4, %o0
+     0x63fc builtin_init+5364:	call 0x9288 path_search
+     0x6400 builtin_init+5368:	nop 
+     End of assembler dump.
+     (gdb)
+
+
+File: gdb.info,  Node: Data,  Next: Symbols,  Prev: Source,  Up: Top
+
+Examining Data
+**************
+
+   The usual way to examine data in your program is with the `print'
+command
+(abbreviated `p'), or its synonym `inspect'.  It evaluates and
+prints the value of any valid expression of the language the program
+is written in (for now, C or C++).  You type
+
+     print EXP
+
+where EXP is any valid expression (in the source language), and the
+value of EXP is printed in a format appropriate to its data type.
+
+   A more low-level way of examining data is with the `x' command. 
+It examines data in memory at a specified address and prints it in a
+specified format.  *Note Memory::.
+
+* Menu:
+
+* Expressions::			Expressions
+* Variables::			Program Variables
+* Arrays::			Artificial Arrays
+* Output formats::		Output formats
+* Memory::			Examining Memory
+* Auto Display::		Automatic Display
+* Print Settings::		Print Settings
+* Value History::		Value History
+* Convenience Vars::		Convenience Variables
+* Registers::			Registers
+* Floating Point Hardware::	Floating Point Hardware
+
+
+File: gdb.info,  Node: Expressions,  Next: Variables,  Prev: Data,  Up: Data
+
+Expressions
+===========
+
+   `print' and many other GDB commands accept an expression and
+compute its value.  Any kind of constant, variable or operator
+defined by the programming language you are using is legal in an
+expression in GDB.  This includes conditional expressions, function
+calls, casts and string constants.  It unfortunately does not
+include symbols defined by preprocessor `#define' commands,
+or C++ expressions involving `::', the name resolution operator.
+
+   Casts are supported in all languages, not just in C, because it is
+so useful to cast a number into a pointer so as to examine a
+structure at that address in memory.
+
+   GDB supports three kinds of operator in addition to those of
+programming languages:
+
+`@'
+     `@' is a binary operator for treating parts of memory as arrays.
+     *Note Arrays::, for more information.
+
+`::'
+     `::' allows you to specify a variable in terms of the file or
+     function where it is defined.  *Note Variables::.
+
+`{TYPE} ADDR'
+     Refers to an object of type TYPE stored at address ADDR in
+     memory.  ADDR may be any expression whose value is an integer
+     or pointer (but parentheses are required around binary
+     operators, just as in a cast).  This construct is allowed
+     regardless of what kind of data is normally supposed to reside
+     at ADDR.
+
+
+File: gdb.info,  Node: Variables,  Next: Arrays,  Prev: Expressions,  Up: Data
+
+Program Variables
+=================
+
+   The most common kind of expression to use is the name of a
+variable in your program.
+
+   Variables in expressions are understood in the selected stack
+frame (*note Selection::.); they must either be global (or static)
+or be visible according to the scope rules of the programming
+language from the point of execution in that frame.  This means that
+in the function
+
+     foo (a)
+          int a;
+     {
+       bar (a);
+       {
+         int b = test ();
+         bar (b);
+       }
+     }
+
+the variable `a' is usable whenever the program is executing within
+the function `foo', but the variable `b' is visible only while the
+program is executing inside the block in which `b' is declared.
+
+   There is an exception: you can refer to a variable or function
+whose scope is a single source file even if the current execution
+point is not in this file.  But it is possible to have more than one
+such variable or function with the same name (in different source
+files).  If that happens, referring to that name has unpredictable
+effects.  If you wish, you can specify a variable in a particular
+file, using the colon-colon notation:
+
+     FILE::VARIABLE
+
+Here FILE is the name of the source file whose variable you want.
+
+   This use of `::' is very rarely in conflict with the very similar
+use of the same notation in C++.  GDB also supports use of the C++
+name resolution operator in GDB expressions.
+
+     *Warning:* Occasionally, a local variable may appear to have the
+     wrong value at certain points in a function--just after entry
+     to the function, and just before exit.  You may see this
+     problem when you're stepping by machine instructions.  This is
+     because on most machines, it takes more than one instruction to
+     set up a stack frame (including local variable definitions); if
+     you're stepping by machine instructions, variables may appear
+     to have the wrong values until the stack frame is completely
+     built.  On function exit, it usually also takes more than one
+     machine instruction to destroy a stack frame; after you begin
+     stepping through that group of instructions, local variable
+     definitions may be gone.
+
+
+File: gdb.info,  Node: Arrays,  Next: Output formats,  Prev: Variables,  Up: Data
+
+Artificial Arrays
+=================
+
+   It is often useful to print out several successive objects of the
+same type in memory; a section of an array, or an array of
+dynamically determined size for which only a pointer exists in the
+program.
+
+   This can be done by constructing an "artificial array" with the
+binary operator `@'.  The left operand of `@' should be the first
+element of the desired array, as an individual object.  The right
+operand
+should be the desired length of the array.  The result is an array
+value whose elements are all of the type of the left argument.  The
+first element is actually the left argument; the second element
+comes from bytes of memory immediately following those that hold the
+first element, and so on.  Here is an example.  If a program says
+
+     int *array = (int *) malloc (len * sizeof (int));
+
+you can print the contents of `array' with
+
+     p *array@len
+
+   The left operand of `@' must reside in memory.  Array values made
+with `@' in this way behave just like other arrays in terms of
+subscripting, and are coerced to pointers when used in expressions. 
+Artificial arrays most often appear in expressions via the value
+history (*note Value History::.), after printing one out.)
+
+   Sometimes the artificial array mechanism isn't quite enough; in
+moderately complex data structures, the elements of interest may not
+actually be adjacent--for example, if you're interested in the
+values of pointers in an array.  One useful work-around in this
+situation is to use a convenience variable (*note Convenience
+Vars::.) as a counter in an expression that prints the first
+interesting value, and then repeat that expression via RET.  For
+instance, suppose you have an array `dtab' of pointers to
+structures, and you're interested in the values of a field `fv' in
+each structure.  Here's an example of what you might type:
+
+     set $i = 0
+     p dtab[$i++]->fv
+     RET
+     RET
+     ...
+
+
+File: gdb.info,  Node: Output formats,  Next: Memory,  Prev: Arrays,  Up: Data
+
+Output formats
+==============
+
+   By default, GDB prints a value according to its data type. 
+Sometimes this is not what you want.  For example, you might want to
+print a number in hex, or a pointer in decimal.  Or you might want
+to view data in memory at a certain address as a character string or
+as an instruction.  To do these things, specify an "output format"
+when you print a value.
+
+   The simplest use of output formats is to say how to print a value
+already computed.  This is done by starting the arguments of the
+`print' command with a slash and a format letter.  The format
+letters supported are:
+
+`x'
+     Regard the bits of the value as an integer, and print the
+     integer in hexadecimal.
+
+`d'
+     Print as integer in signed decimal.
+
+`u'
+     Print as integer in unsigned decimal.
+
+`o'
+     Print as integer in octal.
+
+`t'
+     Print as integer in binary.  The letter `t' stands for "two".
+
+`a'
+     Print as an address, both absolute in hex and as an offset from
+     the nearest preceding symbol.  This format can be used to
+     discover where (in what function) an unknown address is located:
+
+          (gdb) p/a 0x54320
+          $3 = 0x54320 <_initialize_vx+396>
+
+`c'
+     Regard as an integer and print it as a character constant.
+
+`f'
+     Regard the bits of the value as a floating point number and
+     print
+     using typical floating point syntax.
+
+   For example, to print the program counter in hex (*note
+Registers::.), type
+
+     p/x $pc
+
+Note that no space is required before the slash; this is because
+command names in GDB cannot contain a slash.
+
+   To reprint the last value in the value history with a different
+format, you can use the `print' command with just a format and no
+expression.  For example, `p/x' reprints the last value in hex.
+
+
+File: gdb.info,  Node: Memory,  Next: Auto Display,  Prev: Output formats,  Up: Data
+
+Examining Memory
+================
+
+`x/NFU EXPR'
+     The command `x' (for `examine') can be used to examine memory
+     without being constrained by your program's data types.  You
+     can specify the unit size U of memory to inspect, and a repeat
+     count N of how many of those units to display.  `x' understands
+     the formats F used by `print'; two additional formats, `s'
+     (string) and `i' (machine instruction) can be used without
+     specifying a unit size.
+
+   For example, `x/3uh 0x54320' is a request to display three
+halfwords (`h') of memory, formatted as unsigned decimal integers
+(`u'),
+starting at address `0x54320'.  `x/4xw $sp' prints the four words
+(`w') of memory above the stack pointer (here, `$sp'; *note
+Registers::.) in hexadecimal (`x').
+
+   Since the letters indicating unit sizes are all distinct from the
+letters specifying output formats, you don't have to remember
+whether unit size or format comes first; either order will work. 
+The output specifications `4xw' and `4wx' mean exactly the same thing.
+
+   After the format specification, you supply an expression for the
+address where GDB is to begin reading from memory.  The expression
+need not have a pointer value (though it may); it is always
+interpreted as an integer address of a byte of memory.  *Note
+Expressions:: for more information on expressions.
+
+   These are the memory units U you can specify with the `x' command:
+
+`b'
+     Examine individual bytes.
+
+`h'
+     Examine halfwords (two bytes each).
+
+`w'
+     Examine words (four bytes each).
+
+     Many assemblers and cpu designers still use `word' for a 16-bit
+     quantity, as a holdover from specific predecessor machines of
+     the 1970's that really did use two-byte words.  But more
+     generally the term `word' has always referred to the size of
+     quantity that a machine normally operates on and stores in its
+     registers.  This is 32 bits for all the machines that GDB runs
+     on.
+
+`g'
+     Examine giant words (8 bytes).
+
+   You can combine these unit specifications with any of the formats
+described for `print'.  *Note Output formats::.
+
+   `x' has two additional output specifications which derive the unit
+size from the data inspected:
+
+`s'
+     Print a null-terminated string of characters.  Any explicitly
+     specified unit size is ignored; instead, the unit is however
+     many bytes it takes to reach a null character (including the
+     null character).
+
+`i'
+     Print a machine instruction in assembler syntax (or nearly). 
+     Any specified unit size is ignored; the number of bytes in an
+     instruction varies depending on the type of machine, the opcode
+     and the addressing modes used.  The command `disassemble' gives
+     an alternative way of inspecting machine instructions.  *Note
+     Machine Code::.
+
+   If you omit either the format F or the unit size U, `x' will use
+the same one that was used last.  If you don't use any letters or
+digits after the slash, you can omit the slash as well.
+
+   You can also omit the address to examine.  Then the address used
+is just after the last unit examined.  This is why string and
+instruction formats actually compute a unit-size based on the data:
+so that the next string or instruction examined will start in the
+right place.
+
+   When the `print' command shows a value that resides in memory,
+`print' also sets the default address for the `x' command.  `info
+line' also sets the default for `x', to the address of the start of
+the machine code for the specified line (*note Machine Code::.), and
+`info breakpoints' sets it to the address of the last breakpoint
+listed (*note Set Breaks::.).
+
+   When you use RET to repeat an `x' command, the address specified
+previously (if any) is ignored, so that the repeated command
+examines the successive locations in memory rather than the same ones.
+
+   You can examine several consecutive units of memory with one
+command by writing a repeat-count after the slash (before the format
+letters, if any).  Omitting the repeat count N displays one unit of
+the appropriate size.  The repeat count must be a decimal integer. 
+It has the same effect as repeating the `x' command N times except
+that the output may be more compact, with several units per line. 
+For example,
+
+     x/10i $pc
+
+prints ten instructions starting with the one to be executed next in
+the selected frame.  After doing this, you could print a further
+seven instructions with
+
+     x/7
+
+--where the format and address are allowed to default.
+
+   The addresses and contents printed by the `x' command are not put
+in the value history because there is often too much of them and
+they would get in the way.  Instead, GDB makes these values
+available for subsequent use in expressions as values of the
+convenience variables `$_' and `$__'.  After an `x' command, the
+last address examined is available for use in expressions in the
+convenience variable `$_'.  The contents of that address, as
+examined, are available in the convenience variable `$__'.
+
+   If the `x' command has a repeat count, the address and contents
+saved are from the last memory unit printed; this is not the same as
+the last address printed if several units were printed on the last
+line of output.
+
+
+File: gdb.info,  Node: Auto Display,  Next: Print Settings,  Prev: Memory,  Up: Data
+
+Automatic Display
+=================
+
+   If you find that you want to print the value of an expression
+frequently (to see how it changes), you might want to add it to the
+"automatic
+display list" so that GDB will print its value each time the program
+stops.  Each expression added to the list is given a number to
+identify it; to remove an expression from the list, you specify that
+number.  The automatic display looks like this:
+
+     2: foo = 38
+     3: bar[5] = (struct hack *) 0x3804
+
+showing item numbers, expressions and their current values.  As with
+displays you request manually using `x' or `print', you can specify
+the output format you prefer; in fact, `display' decides whether to
+use `print' or `x' depending on how elaborate your format
+specification
+is--it uses `x' if you specify a unit size, or one of the two
+formats (`i' and `s') that are only supported by `x'; otherwise it
+uses `print'.
+
+`display EXP'
+     Add the expression EXP to the list of expressions to display
+     each time the program stops.  *Note Expressions::.
+
+     `display' will not repeat if you press RET again after using it.
+
+`display/FMT EXP'
+     For FMT specifying only a display format and not a size or
+     count, add the expression EXP to the auto-display list but
+     arranges to display it each time in the specified format FMT. 
+     *Note Output formats::.
+
+`display/FMT ADDR'
+     For FMT `i' or `s', or including a unit-size or a number of
+     units, add the expression ADDR as a memory address to be
+     examined each time the program stops.  Examining means in
+     effect doing `x/FMT ADDR'.  *Note Memory::.
+
+   For example, `display/i $pc' can be helpful, to see the machine
+instruction about to be executed each time execution stops (`$pc' is
+a common name for the program counter; *note Registers::.).
+
+`undisplay DNUMS...'
+`delete display DNUMS...'
+     Remove item numbers DNUMS from the list of expressions to display.
+
+     `undisplay' will not repeat if you press RET after using it. 
+     (Otherwise you would just get the error `No display number ...'.)
+
+`disable display DNUMS...'
+     Disable the display of item numbers DNUMS.  A disabled display
+     item is not printed automatically, but is not forgotten.  It
+     may be enabled again later.
+
+`enable display DNUMS...'
+     Enable display of item numbers DNUMS.  It becomes effective once
+     again in auto display of its expression, until you specify
+     otherwise.
+
+`display'
+     Display the current values of the expressions on the list, just
+     as is done when the program stops.
+
+`info display'
+     Print the list of expressions previously set up to display
+     automatically, each one with its item number, but without
+     showing the values.  This includes disabled expressions, which
+     are marked as such.  It also includes expressions which would
+     not be displayed right now because they refer to automatic
+     variables not currently available.
+
+   If a display expression refers to local variables, then it does
+not make sense outside the lexical context for which it was set up. 
+Such an expression is disabled when execution enters a context where
+one of its variables is not defined.  For example, if you give the
+command `display last_char' while inside a function with an argument
+`last_char', then this argument will be displayed while the program
+continues to stop inside that function.  When it stops
+elsewhere--where there is no variable `last_char'--display is
+disabled.  The next time your program stops where `last_char' is
+meaningful, you can enable the display expression once again.
+
+
+File: gdb.info,  Node: Print Settings,  Next: Value History,  Prev: Auto Display,  Up: Data
+
+Print Settings
+==============
+
+   GDB provides the following ways to control how arrays, structures,
+and symbols are printed.
+
+These settings are useful for debugging programs in any language:
+
+`set print address'
+`set print address on'
+     GDB will print memory addresses showing the location of stack
+     traces, structure values, pointer values, breakpoints, and so
+     forth, even when it also displays the contents of those
+     addresses.  The default is on.  For example, this is what a
+     stack frame display looks like, with `set print address on':
+
+          (gdb) f
+          #0  set_quotes (lq=0x34c78 "<<", rq=0x34c88 ">>") 
+              at input.c:530
+          530	    if (lquote != def_lquote)
+
+`set print address off'
+     Do not print addresses when displaying their contents.  For
+     example, this is the same stack frame displayed with `set print
+     address off':
+
+          (gdb) set print addr off
+          (gdb) f
+          #0  set_quotes (lq="<<", rq=">>") at input.c:530
+          530	    if (lquote != def_lquote)
+
+`show print address'
+     Show whether or not addresses are to be printed.
+
+`set print array'
+`set print array on'
+     GDB will pretty print arrays.  This format is more convenient to
+     read, but uses more space.  The default is off.
+
+`set print array off.'
+     Return to compressed format for arrays.
+
+`show print array'
+     Show whether compressed or pretty format is selected for
+     displaying arrays.
+
+`set print elements NUMBER-OF-ELEMENTS'
+     If GDB is printing a large array, it will stop printing after it
+     has printed the number of elements set by the `set print
+     elements' command.  This limit also applies to the display of
+     strings.
+
+`show print elements'
+     Display the number of elements of a large array that GDB will
+     print before losing patience.
+
+`set print pretty on'
+     Cause GDB to print structures in an indented format with one
+     member per line, like this:
+
+          $1 = {
+            next = 0x0,
+            flags = {
+              sweet = 1,
+              sour = 1
+            },
+            meat = 0x54 "Pork"
+          }
+
+`set print pretty off'
+     Cause GDB to print structures in a compact format, like this:
+
+          $1 = {next = 0x0, flags = {sweet = 1, sour = 1}, meat \
+          = 0x54 "Pork"}
+
+     This is the default format.
+
+`show print pretty'
+     Show which format GDB will use to print structures.
+
+`set print sevenbit-strings on'
+     Print using only seven-bit characters; if this option is set, 
+     GDB will display any eight-bit characters (in strings or
+     character values) using the notation `\'NNN.  For example,
+     `M-a' is displayed as `\341'.
+
+`set print sevenbit-strings off'
+     Print using either seven-bit or eight-bit characters, as
+     required.  This is the default.
+
+`show print sevenbit-strings'
+     Show whether or not GDB will print only seven-bit characters.
+
+`set print union on'
+     Tell GDB to print unions which are contained in structures. 
+     This is the default setting.
+
+`set print union off'
+     Tell GDB not to print unions which are contained in structures.
+
+`show print union'
+     Ask GDB whether or not it will print unions which are contained
+     in structures.
+
+     For example, given the declarations
+
+          typedef enum {Tree, Bug} Species;
+          typedef enum {Big_tree, Acorn, Seedling} Tree_forms;
+          typedef enum {Caterpillar, Cocoon, Butterfly} Bug_forms;
+          
+          struct thing {
+            Species it;
+            union {
+              Tree_forms tree;
+              Bug_forms bug;
+            } form;
+          };
+          
+          struct thing foo = {Tree, {Acorn}};
+
+     with `set print union on' in effect `p foo' would print
+
+          $1 = {it = Tree, form = {tree = Acorn, bug = Cocoon}}
+
+     and with `set print union off' in effect it would print
+
+          $1 = {it = Tree, form = {...}}
+
+These settings are of interest when debugging C++ programs:
+
+`set print demangle'
+`set print demangle on'
+     Print C++ names in their source form rather than in the mangled
+     form in which they are passed to the assembler and linker for
+     type-safe linkage.  The default is on.
+
+`show print demangle'
+     Show whether C++ names will be printed in mangled or demangled
+     form.
+
+`set print asm-demangle'
+`set print asm-demangle on'
+     Print C++ names in their source form rather than their mangled
+     form, even in assembler code printouts such as instruction
+     disassemblies.  The default is off.
+
+`show print asm-demangle'
+     Show whether C++ names in assembly listings will be printed in
+     mangled or demangled form.
+
+`set print object'
+`set print object on'
+     When displaying a pointer to an object, identify the *actual*
+     (derived) type of the object rather than the *declared* type,
+     using the virtual function table.
+
+`set print object off'
+     Display only the declared type of objects, without reference to
+     the virtual function table.  This is the default setting.
+
+`show print object'
+     Show whether actual, or declared, object types will be displayed.
+
+`set print vtbl'
+`set print vtbl on'
+     Pretty print C++ virtual function tables.  The default is off.
+
+`set print vtbl off'
+     Do not pretty print C++ virtual function tables.
+
+`show print vtbl'
+     Show whether C++ virtual function tables are pretty printed, or
+     not.
+
+
+File: gdb.info,  Node: Value History,  Next: Convenience Vars,  Prev: Print Settings,  Up: Data
+
+Value History
+=============
+
+   Values printed by the `print' command are saved in GDB's "value
+history" so that you can refer to them in other expressions.  Values
+are kept until the symbol table is re-read or discarded (for example
+with the `file' or `symbol-file' commands).  When the symbol table
+changes, the value history is discarded, since the values may
+contain pointers back to the types defined in the symbol table.
+
+   The values printed are given "history numbers" for you to refer to
+them by.  These are successive integers starting with one.  `print'
+shows you the history number assigned to a value by printing `$NUM =
+' before the value; here NUM is the history number.
+
+   To refer to any previous value, use `$' followed by the value's
+history number.  The way `print' labels its output is designed to
+remind
+you of this.  Just `$' refers to the most recent value in the
+history, and `$$' refers to the value before that.  `$$N' refers to
+the Nth value from the end; `$$2' is the value just prior to `$$',
+`$$1' is equivalent to `$$', and `$$0' is equivalent to `$'.
+
+   For example, suppose you have just printed a pointer to a
+structure and want to see the contents of the structure.  It
+suffices to type
+
+     p *$
+
+   If you have a chain of structures where the component `next'
+points to the next one, you can print the contents of the next one
+with this:
+
+     p *$.next
+
+You can print successive links in the chain by repeating this
+command--which you can do by just typing RET.
+
+   Note that the history records values, not expressions.  If the
+value of `x' is 4 and you type these commands:
+
+     print x
+     set x=5
+
+then the value recorded in the value history by the `print' command
+remains 4 even though the value of `x' has changed.
+
+`show values'
+     Print the last ten values in the value history, with their item
+     numbers.  This is like `p $$9' repeated ten times, except that
+     `show values' does not change the history.
+
+`show values N'
+     Print ten history values centered on history item number N.
+
+`show values +'
+     Print ten history values just after the values last printed.  If
+     no more values are available, produces no display.
+
+   Pressing RET to repeat `show values N' has exactly the same effect
+as `show values +'.
+
+
+File: gdb.info,  Node: Convenience Vars,  Next: Registers,  Prev: Value History,  Up: Data
+
+Convenience Variables
+=====================
+
+   GDB provides "convenience variables" that you can use within GDB
+to hold on to a value and refer to it later.  These variables exist
+entirely within GDB; they are not part of your program, and setting
+a convenience variable has no direct effect on further execution of
+your program.  That's why you can use them freely.
+
+   Convenience variables are prefixed with `$'.  Any name preceded by
+`$' can be used for a convenience variable, unless it is one of the
+predefined machine-specific register names (*note Registers::.). 
+(Value history references, in contrast, are *numbers* preceded by
+`$'.  *Note Value History::.)
+
+   You can save a value in a convenience variable with an assignment
+expression, just as you would set a variable in your program. 
+Example:
+
+     set $foo = *object_ptr
+
+would save in `$foo' the value contained in the object pointed to by
+`object_ptr'.
+
+   Using a convenience variable for the first time creates it; but
+its value is `void' until you assign a new value.  You can alter the
+value with another assignment at any time.
+
+   Convenience variables have no fixed types.  You can assign a
+convenience variable any type of value, including structures and
+arrays, even if that variable already has a value of a different
+type.  The convenience variable, when used as an expression, has the
+type of its current value.
+
+`show convenience'
+     Print a list of convenience variables used so far, and their
+     values.  Abbreviated `show con'.
+
+   One of the ways to use a convenience variable is as a counter to
+be incremented or a pointer to be advanced.  For example, to print a
+field from successive elements of an array of structures:
+
+     set $i = 0
+     print bar[$i++]->contents
+     ... repeat that command by typing RET.
+
+   Some convenience variables are created automatically by GDB and
+given values likely to be useful.
+
+`$_'
+     The variable `$_' is automatically set by the `x' command to the
+     last address examined (*note Memory::.).  Other commands which
+     provide a default address for `x' to examine also set `$_' to
+     that address; these commands include `info line' and `info
+     breakpoint'.
+
+`$__'
+     The variable `$__' is automatically set by the `x' command to
+     the value found in the last address examined.
+
+
+File: gdb.info,  Node: Registers,  Next: Floating Point Hardware,  Prev: Convenience Vars,  Up: Data
+
+Registers
+=========
+
+   Machine register contents can be referred to in expressions as
+variables with names starting with `$'.  The names of registers are
+different for each machine; use `info registers' to see the names
+used
+on your machine.
+
+`info registers'
+     Print the names and values of all registers (in the selected
+     stack frame).
+
+`info registers REGNAME'
+     Print the relativized value of register REGNAME.  REGNAME may be
+     any register name valid on the machine you are using, with or
+     without the initial `$'.
+
+   The register names `$pc' and `$sp' are used on most machines for
+the program counter register and the stack pointer.  For example,
+you could print the program counter in hex with
+
+     p/x $pc
+
+or print the instruction to be executed next with
+
+     x/i $pc
+
+or add four to the stack pointer with
+
+     set $sp += 4
+
+The last is a way of removing one word from the stack, on machines
+where stacks grow downward in memory (most machines, nowadays). 
+This assumes that the innermost stack frame is selected; setting
+`$sp' is not allowed when other stack frames are selected.  (To pop
+entire frames off the stack, regardless of machine architecture, use
+`return'; *note Returning::..)
+
+   Often `$fp' is used for a register that contains a pointer to the
+current stack frame, and `$ps' is sometimes used for a register that
+contains the processor status.  These standard register names may be
+available on your machine even though the `info registers' command
+shows other names.  For example, on the SPARC, `info registers'
+displays the processor status register as `$psr' but you can also
+refer
+to
+it as `$ps'.
+
+   GDB always considers the contents of an ordinary register as an
+integer when the register is examined in this way.  Some machines
+have special registers which can hold nothing but floating point;
+these registers are considered to have floating point values.  There
+is no way to refer to the contents of an ordinary register as
+floating point value (although you can *print* it as a floating
+point value with `print/f $REGNAME').
+
+   Some registers have distinct "raw" and "virtual" data formats. 
+This means that the data format in which the register contents are
+saved by the operating system is not the same one that your program
+normally sees.  For example, the registers of the 68881 floating
+point coprocessor are always saved in "extended" (raw) format, but
+all C programs expect to work with "double" (virtual) format.  In
+such cases, GDB normally works with the virtual format only (the
+format that makes sense for your program), but the `info registers'
+command prints the data in both formats.
+
+   Normally, register values are relative to the selected stack frame
+(*note Selection::.).  This means that you get the value that the
+register would contain if all stack frames farther in were exited
+and their saved registers restored.  In order to see the true
+contents of hardware registers, you must select the innermost frame
+(with `frame 0').
+
+   However, GDB must deduce where registers are saved, from the
+machine code generated by your compiler.  If some registers are not
+saved, or if GDB is unable to locate the saved registers, the
+selected stack frame will make no difference.
+
+
+File: gdb.info,  Node: Floating Point Hardware,  Prev: Registers,  Up: Data
+
+Floating Point Hardware
+=======================
+
+   Depending on the host machine architecture, GDB may be able to
+give you more information about the status of the floating point
+hardware.
+
+`info float'
+     If available, provides hardware-dependent information about the
+     floating point unit.  The exact contents and layout vary
+     depending on the floating point chip.
+
+
+File: gdb.info,  Node: Symbols,  Next: Altering,  Prev: Data,  Up: Top
+
+Examining the Symbol Table
+**************************
+
+   The commands described in this section allow you to inquire about
+the symbols (names of variables, functions and types) defined in
+your program.  This information is inherent in the text of your
+program and does not change as the program executes.  GDB finds it
+in your program's symbol table, in the file indicated when you
+started GDB  (*note File Options::.), or by one of the
+file-management commands (*note Files::.).
+
+`info address SYMBOL'
+     Describe where the data for SYMBOL is stored.  For a register
+     variable, this says which register it is kept in.  For a
+     non-register local variable, this prints the stack-frame offset
+     at which the variable is always stored.
+
+     Note the contrast with `print &SYMBOL', which does not work at
+     all for a register variables, and for a stack local variable
+     prints the exact address of the current instantiation of the
+     variable.
+
+`whatis EXP'
+     Print the data type of expression EXP.  EXP is not actually
+     evaluated, and any side-effecting operations (such as
+     assignments or function calls) inside it do not take place. 
+    
+     *Note Expressions::.
+
+`whatis'
+     Print the data type of `$', the last value in the value history.
+
+`ptype TYPENAME'
+     Print a description of data type TYPENAME.  TYPENAME may be the
+     name of a type, or for C code it may have the form `struct
+     STRUCT-TAG', `union UNION-TAG' or `enum ENUM-TAG'.
+
+`ptype EXP'
+     Print a description of the type of expression EXP.  `ptype'
+     differs from `whatis' by printing a detailed description,
+     instead of just the name of the type.  For example, if your
+     program declares a variable as
+
+          struct complex {double real; double imag;} v;
+
+     compare the output of the two commands:
+
+          (gdb) whatis v
+          type = struct complex
+          (gdb) ptype v
+          type = struct complex {
+              double real;
+              double imag;
+          }
+
+`info types REGEXP'
+`info types'
+     Print a brief description of all types whose name matches REGEXP
+     (or all types in your program, if you supply no argument). 
+     Each complete typename is matched as though it were a complete
+     line; thus, `i type value' gives information on all types in
+     your program whose name includes the string `value', but `i
+     type ^value$' gives information only on types whose complete
+     name is `value'.
+
+     This command differs from `ptype' in two ways: first, like
+     `whatis', it does not print a detailed description; second, it
+     lists all source files where a type is defined.
+
+`info source'
+     Show the name of the current source file--that is, the source
+     file for the function containing the current point of execution.
+
+`info sources'
+     Print the names of all source files in the program for which
+     there is debugging information, organized into two lists: those
+     for which symbols have been read in, and those for which
+     symbols will be read in on demand.
+
+`info functions'
+     Print the names and data types of all defined functions.
+
+`info functions REGEXP'
+     Print the names and data types of all defined functions whose
+     names contain a match for regular expression REGEXP.  Thus,
+     `info fun step' finds all functions whose names include `step';
+     `info fun ^step' finds those whose names start with `step'.
+
+`info variables'
+     Print the names and data types of all variables that are
+     declared outside of functions (i.e., excluding local variables).
+
+`info variables REGEXP'
+     Print the names and data types of all variables (except for
+     local variables) whose names contain a match for regular
+     expression REGEXP.
+
+`printsyms FILENAME'
+     Write a complete dump of the debugger's symbol data into the
+     file FILENAME.
+
+
+File: gdb.info,  Node: Altering,  Next: GDB Files,  Prev: Symbols,  Up: Top
+
+Altering Execution
+******************
+
+   Once you think you have found an error in the program, you might
+want to find out for certain whether correcting the apparent error
+would lead to correct results in the rest of the run.  You can find
+the answer by experiment, using the GDB features for altering
+execution of the program.
+
+   For example, you can store new values into variables or memory
+locations, give the program a signal, restart it at a different
+address, or even return prematurely from a function to its caller.
+
+* Menu:
+
+* Assignment::			Assignment to Variables
+* Jumping::			Continuing at a Different Address
+* Signaling::			Giving the Program a Signal
+* Returning::			Returning from a Function
+* Calling::			Calling your Program's Functions
+
+
+File: gdb.info,  Node: Assignment,  Next: Jumping,  Prev: Altering,  Up: Altering
+
+Assignment to Variables
+=======================
+
+   To alter the value of a variable, evaluate an assignment expression.
+*Note Expressions::.  For example,
+
+     print x=4
+
+would store the value 4 into the variable `x', and then print the
+value
+of the assignment expression (which is 4).  All the assignment
+operators of C are supported, including the increment operators `++'
+and `--', and combining assignments such as `+=' and `<<='.
+
+   If you are not interested in seeing the value of the assignment,
+use
+the `set' command instead of the `print' command.  `set' is really
+the same as `print' except that the expression's value is not
+printed and is not put in the value history (*note Value
+History::.).  The expression is evaluated only for its effects.
+
+   If the beginning of the argument string of the `set' command
+appears
+identical to a `set' subcommand, use the `set variable' command
+instead of just `set'.  This command is identical to `set' except
+for its lack of subcommands.  For example, a program might well have
+a variable `width'--which leads to an error if we try to set a new
+value with just `set width=13', as we might if `set width' didn't
+happen to be a GDB command:
+
+     (gdb) whatis width
+     type = double
+     (gdb) p width
+     $4 = 13
+     (gdb) set width=47
+     Invalid syntax in expression.
+
+The invalid expression, of course, is `=47'.  What we can do in order
+to actually set our program's variable `width' is
+
+     (gdb) set var width=47
+
+   GDB allows more implicit conversions in assignments than C does;
+you can freely store an integer value into a pointer variable or
+vice
+versa, and any structure can be converted to any other structure
+that is the same length or shorter.
+
+   To store values into arbitrary places in memory, use the `{...}'
+construct to generate a value of specified type at a specified
+address (*note Expressions::.).  For example, `{int}0x83040' refers
+to memory location `0x83040' as an integer (which implies a certain
+size and representation in memory), and
+
+     set {int}0x83040 = 4
+
+stores the value 4 into that memory location.
+
+
+File: gdb.info,  Node: Jumping,  Next: Signaling,  Prev: Assignment,  Up: Altering
+
+Continuing at a Different Address
+=================================
+
+   Ordinarily, when you continue the program, you do so at the place
+where it stopped, with the `continue' command.  You can instead
+continue at an address of your own choosing, with the following
+commands:
+
+`jump LINESPEC'
+     Resume execution at line LINESPEC.  Execution will stop
+     immediately if there is a breakpoint there.  *Note List:: for a
+     description of the different forms of LINESPEC.
+
+     The `jump' command does not change the current stack frame, or
+     the stack pointer, or the contents of any memory location or
+     any register other than the program counter.  If line LINESPEC
+     is in a different function from the one currently executing,
+     the results may be bizarre if the two functions expect
+     different patterns of arguments or of local variables.  For
+     this
+     reason, the `jump' command requests confirmation if the
+     specified line is not in the function currently executing. 
+     However, even bizarre results are predictable if you are well
+     acquainted with the machine-language code of the program.
+
+`jump *ADDRESS'
+     Resume execution at the instruction at address ADDRESS.
+
+   You can get much the same effect as the `jump' command by storing
+a new value into the register `$pc'.  The difference is that this
+does not start the program running; it only changes the address
+where it *will* run when it is continued.  For example,
+
+     set $pc = 0x485
+
+causes the next `continue' command or stepping command to execute at
+address 0x485, rather than at the address where the program stopped.
+*Note Continuing and Stepping::.
+
+   The most common occasion to use the `jump' command is to back up,
+perhaps with more breakpoints set, over a portion of a program that
+has already executed, in order to examine its execution in more
+detail.
+
+
+File: gdb.info,  Node: Signaling,  Next: Returning,  Prev: Jumping,  Up: Altering
+
+Giving the Program a Signal
+===========================
+
+`signal SIGNALNUM'
+     Resume execution where the program stopped, but give it
+     immediately the signal number SIGNALNUM.
+
+     Alternatively, if SIGNALNUM is zero, continue execution without
+     giving a signal.  This is useful when the program stopped on
+     account of a signal and would ordinary see the signal when
+     resumed with the `continue' command; `signal 0' causes it to
+     resume without a signal.
+
+     `signal' does not repeat when you press RET a second time after
+     executing the command.
+
+
+File: gdb.info,  Node: Returning,  Next: Calling,  Prev: Signaling,  Up: Altering
+
+Returning from a Function
+=========================
+
+`return'
+`return EXPRESSION'
+     You can cancel execution of a function call with the `return'
+     command.  If you give an EXPRESSION argument, its value is used
+     as the function's return value.
+
+   When you use `return', GDB discards the selected stack frame (and
+all frames within it).  You can think of this as making the
+discarded frame return prematurely.  If you wish to specify a value
+to be returned, give that value as the argument to `return'.
+
+   This pops the selected stack frame (*note Selection::.), and any
+other frames inside of it, leaving its caller as the innermost
+remaining frame.  That frame becomes selected.  The specified value
+is stored in the registers used for returning values of functions.
+
+   The `return' command does not resume execution; it leaves the
+program stopped in the state that would exist if the function had
+just returned.  In contrast, the `finish' command (*note Continuing
+and Stepping::.) resumes execution until the selected stack frame
+returns naturally.
+
+
+File: gdb.info,  Node: Calling,  Prev: Returning,  Up: Altering
+
+Calling your Program's Functions
+================================
+
+`call EXPR'
+     Evaluate the expression EXPR without displaying `void' returned
+     values.
+
+   You can use this variant of the `print' command if you want to
+execute a function from your program, but without cluttering the
+output with `void' returned values.  The result is printed and saved
+in the value history, if it is not void.
+
+
+File: gdb.info,  Node: GDB Files,  Next: Targets,  Prev: Altering,  Up: Top
+
+GDB's Files
+***********
+
+* Menu:
+
+* Files::			Commands to Specify Files
+* Symbol Errors::		Errors Reading Symbol Files
+
+

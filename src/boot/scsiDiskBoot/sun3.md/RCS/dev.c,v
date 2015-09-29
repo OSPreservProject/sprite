@@ -1,0 +1,360 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  ;
+locks    mendel:1.6; strict;
+comment  @ * @;
+
+
+1.6
+date     89.01.06.08.13.48;  author brent;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     87.05.27.14.31.55;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     87.05.11.11.13.45;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     87.05.08.17.43.25;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     86.07.21.09.33.10;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.07.17.13.13.26;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@General device support
+@
+
+
+1.6
+log
+@New include files and constants due to source reorganization
+@
+text
+@/*
+ * dev.c
+ *	Excerpts from the dev module in the kernel.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: dev.c,v 1.5 87/05/27 14:31:55 brent Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include "sprite.h"
+#include "dev.h"
+#include "devInt.h"
+#include "devMultibus.h"
+#include "vmSunConst.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_Config --
+ *
+ *	Call the initialization routines for various controllers and
+ *	devices based on configuration tables.  This should be called
+ *	after the regular memory allocater is set up so the drivers
+ *	can use it to configure themselves.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Call the controller and device initialization routines.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Dev_Config()
+{
+    register int index;
+    register int status;
+    register int machType = Mach_GetMachineType();
+    register Boolean mapItIn = TRUE;
+    register int memoryType;
+
+    for (index = 0 ; index < devNumConfigCntrlrs ; index++) {
+	register DevConfigController *cntrlrPtr;
+	cntrlrPtr = &devCntrlr[index];
+	/*
+	 * Multibus device addresses are relative to the base of
+	 * Multibus memory as it is mapped into the kernel.  Have
+	 * to add the base address here.
+	 */
+	if (machType == SYS_SUN_2_120) {
+	    if (cntrlrPtr->space != DEV_MULTIBUS) {
+		/*
+		 * Mapping VME addresses into a Multibus machine messes up.
+		 */
+		continue;
+	    } else {
+		cntrlrPtr->address += DEV_MULTIBUS_BASE;
+		mapItIn = FALSE;
+	    }
+	} else {
+	    /*
+	     * Handle the various VME spaces.  Not all of them, this is
+	     * optimized for space so only devices that appear in devConfig.c
+	     * will be handled.
+	     */
+	    switch(cntrlrPtr->space) {
+		/*
+		 * We have to relocate the controller address to the
+		 * true VME PHYSICAL address that the Sun MMU uses for
+		 * the different types of VME spaces.
+		 */
+		case DEV_VME_D16A16:
+		    /*
+		     * The high 64K of the VME address range is stolen for the
+		     * 16 bit address subset.
+		     */
+		    cntrlrPtr->address += 0xFFFF0000;
+		    break;
+		case DEV_VME_D16A24:
+		    /*
+		     * The high 16 Megabytes of the VME address range is stolen
+		     * for the 24 bit address subset.
+		     */
+		    cntrlrPtr->address += 0xFF000000;
+		    break;
+		    /*
+		     * The addresses for the full 32 bit VME bus are ok.
+		     */
+	    }
+	}
+	/*
+	 * To save space, the memoryType is set to 2 always.  This handles
+	 * the normal controllers using the 16 bit data bus.
+	 */
+#ifdef notdef
+	switch(cntrlrPtr->space) {
+	    case DEV_MULTIBUS:
+		memoryType = 2;
+		break;
+	    case DEV_VME_D16A16:
+	    case DEV_VME_D16A24:
+	    case DEV_VME_D16A32:
+		if (machType == SYS_SUN_2_50) {
+		    if (cntrlrPtr->address >= 0xFF800000) {
+			memoryType = 3;
+		    } else {
+			memoryType = 2;
+		    }
+		} else {
+		    memoryType = 2;
+		}
+		break;
+	    case DEV_MULTIBUS_IO:
+	    case DEV_VME_D32A16:
+	    case DEV_VME_D32A24:
+	    case DEV_VME_D32A32:
+		memoryType = 3;
+		break;
+	}
+#endif
+	memoryType = 2;
+	if (mapItIn) {
+	    cntrlrPtr->address =
+		(int)Vm_MapInDevice(cntrlrPtr->address, memoryType);
+	}
+	if (cntrlrPtr->address != NIL) {
+	    int exists = (*cntrlrPtr->initProc)(cntrlrPtr);
+#ifndef NO_PRINTF
+	    if (exists) {
+		Sys_Printf("%s-%d at kernel address %x\n", cntrlrPtr->name,
+			      cntrlrPtr->controllerID, cntrlrPtr->address);
+	    }
+#endif
+	}
+    }
+
+    for (index = 0 ; index < devNumConfigDevices ; index++) {
+	register DevConfigDevice *devPtr;
+	devPtr = &devDevice[index];
+#ifndef NO_PRINTF
+	Sys_Printf("Dev %d-%d flags %d ... ", devPtr->controllerID,
+			devPtr->slaveID, devPtr->flags);
+#endif
+	status = (*devPtr->initProc)(devPtr);
+#ifndef NO_PRINTF
+	Sys_Printf("<%x>\n", status);
+#endif
+    }
+}
+
+/*
+ * Private storage for Dev_IOAlloc.  DMA memory is alreay mapped
+ * for us by the PROM so we just allocate from it.
+ */
+static Address	ioMemEnd = (Address)VMMACH_DMA_START_ADDR;
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Dev_IOAlloc --
+ *
+ *     Allocate a block of memory of the given size from the
+ *	device memory space.  This returns
+ *	block aligned buffers so mapping works later.
+ *
+ * Results:
+ *     A pointer to the allocated memory.
+ *
+ * Side effects:
+ *     ioMemEnd is incremented in page size chunks.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+Address
+Dev_IOAlloc(numBytes)
+    register int numBytes;
+{
+    register Address	addr;
+
+    addr =  ioMemEnd;
+
+    ioMemEnd += (numBytes + VMMACH_PAGE_SIZE) & ~(VMMACH_PAGE_SIZE-1);
+
+    return(addr);
+}
+@
+
+
+1.5
+log
+@was still using DEV_MULTIBUS, not VM_DMA_START_ADDR, oops.
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: dev.c,v 1.4 87/05/11 11:13:45 brent Exp $ SPRITE (Berkeley)";
+d17 1
+a17 1
+#include "multibus.h"
+d63 1
+a63 1
+		cntrlrPtr->address += MULTIBUS_BASE;
+d161 1
+a161 1
+static Address	ioMemEnd = (Address)VM_DMA_START_ADDR;
+d189 1
+a189 1
+    ioMemEnd += (numBytes + VM_PAGE_SIZE) & ~(VM_PAGE_SIZE-1);
+@
+
+
+1.4
+log
+@Trimmed down version that handles MULTIBUS, VME_D16A16 and VME_D16A24
+type controllers.
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: dev.c,v 1.3 87/05/08 17:43:25 brent Exp $ SPRITE (Berkeley)";
+d158 1
+a158 1
+ * Private storage for Dev_IOAlloc.  Multibus memory is alreay mapped
+d161 1
+a161 1
+static Address	ioMemEnd = (Address)MULTIBUS_BASE;
+d169 1
+a169 1
+ *	device memory space (multibus memory).  This returns
+@
+
+
+1.3
+log
+@Fleshed out Dev_Config so it can handle different VME/Multibus configs
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: dev.c,v 1.2 86/07/21 09:33:10 brent Exp $ SPRITE (Berkeley)";
+d68 3
+a70 1
+	     * Handle the various VME spaces.
+a72 2
+		case DEV_MULTIBUS:
+		    continue;
+a77 1
+		case DEV_VME_D32A16:
+a84 1
+		case DEV_VME_D32A24:
+a94 3
+		case DEV_VME_D16A32:
+		case DEV_VME_D32A32:
+		    break;
+d97 5
+d126 2
+d134 1
+a134 1
+#ifndef NO_PRINTFS
+d146 1
+d149 1
+d151 1
+d153 1
+@
+
+
+1.2
+log
+@Moved Dev_IOAlloc here
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: dev.c,v 1.1 86/07/17 13:13:26 brent Exp $ SPRITE (Berkeley)";
+d43 4
+d54 1
+a54 2
+	 * to add the base address here.  SHOULD CHECK FOR DIFFERENT
+	 * MACHINE TYPES AS vme WILL BE DIFFERENT.
+d56 45
+a100 2
+	if (cntrlrPtr->address != 0) {
+	    cntrlrPtr->address += MULTIBUS_BASE;
+d102 37
+a138 1
+	(void)(*cntrlrPtr->initProc)(cntrlrPtr);
+d144 4
+a147 1
+	(void)(*devPtr->initProc)(devPtr);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d10 1
+a10 1
+static char rcsid[] = "$Header: proto.c,v 1.4 86/03/20 14:00:11 andrew Exp $ SPRITE (Berkeley)";
+d15 1
+d18 1
+d64 37
+@

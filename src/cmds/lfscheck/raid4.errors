@@ -1,0 +1,113 @@
+raid1% sun4.md/lfscheck -full -verbose /dev/raid4
+15:55:13.010:Read LFS checkpoint from /dev/raid4
+/dev/raid4:UsageArray: FreeBlocks wrong; is 1669559 should be 1669744
+15:55:33.270:Checking files
+15:57:37.870:Checking usage array
+/dev/raid4:CheckUsageArray: Active bytes for seg 1590 is wrong; is 307200 should be 0
+/dev/raid4:CheckUsageArray: Active bytes for seg 1591 is wrong; is 487424 should be 0
+/dev/raid4:CheckUsageArray: Active bytes for seg 1592 is wrong; is 499712 should be 0
+/dev/raid4:CheckUsageArray: Active bytes for seg 1593 is wrong; is 520192 should be 0
+/dev/raid4:CheckUsageArray: Active bytes for seg 1594 is wrong; is 520192 should be 0
+/dev/raid4:CheckUsageArray: Active bytes for seg 1595 is wrong; is 520192 should be 0
+/dev/raid4:CheckUsageArray: Active bytes for seg 1960 is wrong; is 380928 should be 0
+/dev/raid4:CheckUsageArray: Active bytes for seg 1961 is wrong; is 520192 should be 0
+/dev/raid4:CheckUsageArray: Active bytes for seg 1962 is wrong; is 520192 should be 0
+/dev/raid4:CheckUsageArray: Active bytes for seg 1963 is wrong; is 520192 should be 0
+/dev/raid4:CheckUsageArray: Active bytes for seg 1964 is wrong; is 520192 should be 0
+/dev/raid4:CheckUsageArray: Active bytes for seg 1965 is wrong; is 520192 should be 0
+/dev/raid4:CheckUsageArray: Active bytes for seg 2006 is wrong; is 61952 should be 55296
+15:57:38.060:Checking directory tree
+File traces/raid1.Jun.28.13.47 references non-allocated descriptor 23779. File Deleted.
+Entry raid1.Jun.28.13.47 (169) now has nameLength 18, recordLength 28, fileNumber 0.
+File traces/raid1.Jun.28.14.02 references non-allocated descriptor 23780. File Deleted.
+Entry raid1.Jun.28.14.02 (170) now has nameLength 18, recordLength 28, fileNumber 0.
+File traces/raid1.Jun.28.14.17 references non-allocated descriptor 23781. File Deleted.
+Entry raid1.Jun.28.14.17 (171) now has nameLength 18, recordLength 28, fileNumber 0.
+File traces/raid1.Jun.28.14.32 references non-allocated descriptor 23782. File Deleted.
+Entry raid1.Jun.28.14.32 (172) now has nameLength 18, recordLength 28, fileNumber 0.
+File traces/raid1.Jun.28.14.47 references non-allocated descriptor 23783. File Deleted.
+Entry raid1.Jun.28.14.47 (173) now has nameLength 18, recordLength 28, fileNumber 0.
+File traces/raid1.Jun.28.15.02 references non-allocated descriptor 23784. File Deleted.
+Entry raid1.Jun.28.15.02 (174) now has nameLength 18, recordLength 28, fileNumber 0.
+File traces/raid1.Jun.28.15.17 references non-allocated descriptor 23785. File Deleted.
+Entry raid1.Jun.28.15.17 (175) now has nameLength 18, recordLength 28, fileNumber 0.
+15:57:51.150:Checking summary regions
+/dev/raid4:CheckFileLayoutSummary: Desc block at 2189234 overlaps <1,8446,16384>
+16:00:58.560:Reporting errors
+/dev/raid4:No summary region for block at 2054308 own by <2,0,312>
+/dev/raid4:No summary region for block at 2054309 own by <2,0,312>
+/dev/raid4:No summary region for block at 2054310 own by <2,0,312>
+/dev/raid4:No summary region for block at 2054311 own by <2,0,312>
+/dev/raid4:No summary region for block at 2054312 own by <2,0,312>
+/dev/raid4:No summary region for block at 2054313 own by <2,0,312>
+/dev/raid4:No summary region for block at 2054314 own by <2,0,312>
+/dev/raid4:No summary region for block at 2054315 own by <2,0,312>
+/dev/raid4:No summary region for block at 2054316 own by <2,0,373>
+/dev/raid4:No summary region for block at 2054317 own by <2,0,373>
+/dev/raid4:No summary region for block at 2054318 own by <2,0,373>
+/dev/raid4:No summary region for block at 2054319 own by <2,0,373>
+/dev/raid4:No summary region for block at 2054320 own by <2,0,373>
+/dev/raid4:No summary region for block at 2054321 own by <2,0,373>
+/dev/raid4:No summary region for block at 2054322 own by <2,0,373>
+/dev/raid4:No summary region for block at 2054323 own by <2,0,373>
+/dev/raid4:No summary region for block at 2054357 own by <2,0,190>
+/dev/raid4:No summary region for block at 2054358 own by <2,0,190>
+/dev/raid4:No summary region for block at 2054359 own by <2,0,190>
+/dev/raid4:No summary region for block at 2054360 own by <2,0,190>
+/dev/raid4:No summary region for block at 2054361 own by <2,0,190>
+/dev/raid4:No summary region for block at 2054362 own by <2,0,190>
+/dev/raid4:No summary region for block at 2054363 own by <2,0,190>
+/dev/raid4:No summary region for block at 2054364 own by <2,0,190>
+/dev/raid4:No summary region for block at 2054389 own by <2,0,275>
+/dev/raid4:No summary region for block at 2054390 own by <2,0,275>
+/dev/raid4:No summary region for block at 2054391 own by <2,0,275>
+/dev/raid4:No summary region for block at 2054392 own by <2,0,275>
+/dev/raid4:No summary region for block at 2054393 own by <2,0,275>
+/dev/raid4:No summary region for block at 2054394 own by <2,0,275>
+/dev/raid4:No summary region for block at 2054395 own by <2,0,275>
+/dev/raid4:No summary region for block at 2054396 own by <2,0,275>
+/dev/raid4:No summary region for block at 2054405 own by <2,0,7>
+/dev/raid4:No summary region for block at 2054406 own by <2,0,7>
+/dev/raid4:No summary region for block at 2054407 own by <2,0,7>
+/dev/raid4:No summary region for block at 2054408 own by <2,0,7>
+/dev/raid4:No summary region for block at 2054409 own by <2,0,7>
+/dev/raid4:No summary region for block at 2054410 own by <2,0,7>
+/dev/raid4:No summary region for block at 2054411 own by <2,0,7>
+/dev/raid4:No summary region for block at 2054412 own by <2,0,7>
+/dev/raid4:No summary region for block at 2054429 own by <2,0,92>
+/dev/raid4:No summary region for block at 2054430 own by <2,0,92>
+/dev/raid4:No summary region for block at 2054431 own by <2,0,92>
+/dev/raid4:No summary region for block at 2054432 own by <2,0,92>
+/dev/raid4:No summary region for block at 2054433 own by <2,0,92>
+/dev/raid4:No summary region for block at 2054434 own by <2,0,92>
+/dev/raid4:No summary region for block at 2054435 own by <2,0,92>
+/dev/raid4:No summary region for block at 2054436 own by <2,0,92>
+/dev/raid4:No summary region for block at 2054437 own by <2,0,458>
+/dev/raid4:No summary region for block at 2054438 own by <2,0,458>
+/dev/raid4:No summary region for block at 2054439 own by <2,0,458>
+/dev/raid4:No summary region for block at 2054440 own by <2,0,458>
+/dev/raid4:No summary region for block at 2054441 own by <2,0,458>
+/dev/raid4:No summary region for block at 2054442 own by <2,0,458>
+/dev/raid4:No summary region for block at 2054443 own by <2,0,458>
+/dev/raid4:No summary region for block at 2054444 own by <2,0,458>
+/dev/raid4:No summary region for block at 2054453 own by <2,0,141>
+/dev/raid4:No summary region for block at 2054454 own by <2,0,141>
+/dev/raid4:No summary region for block at 2054455 own by <2,0,141>
+/dev/raid4:No summary region for block at 2054456 own by <2,0,141>
+/dev/raid4:No summary region for block at 2054457 own by <2,0,141>
+/dev/raid4:No summary region for block at 2054458 own by <2,0,141>
+/dev/raid4:No summary region for block at 2054459 own by <2,0,141>
+/dev/raid4:No summary region for block at 2054460 own by <2,0,141>
+/dev/raid4:No summary region for block at 2054569 own by <1,23611,1>
+/dev/raid4:No summary region for block at 2054570 own by <1,23611,1>
+/dev/raid4:No summary region for block at 2054571 own by <6,0,0>
+/dev/raid4:No summary region for block at 2054579 own by <1,23786,0>
+/dev/raid4:No summary region for block at 2054580 own by <1,23786,0>
+/dev/raid4:No summary region for block at 2054581 own by <1,23786,0>
+/dev/raid4:No summary region for block at 2189233 own by <1,8446,16384>
+/dev/raid4:No summary region for block at 2189235 own by <1,8446,16384>
+/dev/raid4:No summary region for block at 2189236 own by <1,8446,16384>
+/dev/raid4:No summary region for block at 2189237 own by <1,8446,16384>
+/dev/raid4:No summary region for block at 2189238 own by <1,8446,16384>
+/dev/raid4:No summary region for block at 2189239 own by <1,8446,16384>
+/dev/raid4: 77 major errors 14 minor errors

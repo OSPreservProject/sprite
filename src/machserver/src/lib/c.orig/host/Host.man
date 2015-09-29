@@ -1,0 +1,130 @@
+'\" $Header: /sprite/src/lib/c/host/RCS/Host.man,v 1.5 90/12/13 00:08:00 kupfer Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS Host lib
+.BS
+.SH NAME
+Host_ByName, Host_ByID, Host_ByNetAddr, Host_ByInetAddr, Host_SetFile,
+Host_Start, Host_Next, Host_End \- return information about Sprite machines
+.SH SYNOPSIS
+.nf
+\fB#include <host.h>\fR
+.sp
+Host_Entry *
+\fBHost_ByName\fR(\fIname\fP)
+.sp
+Host_Entry *
+\fBHost_ByID\fR(\fIspriteID\fP)
+.sp
+Host_Entry *
+\fBHost_ByNetAddr\fR(\fIaddrType, addrPtr\fP)
+.sp
+Host_Entry *
+\fBHost_ByInetAddr\fR(\fIinetAddr\fP)
+.sp
+int
+\fBHost_SetFile\fR(\fIfileName\fP)
+.sp
+int
+\fBHost_Start\fR()
+.sp
+Host_Entry *
+\fBHost_Next\fR()
+.sp
+void
+\fBHost_End\fR()
+.sp
+int
+\fBHost_Stat\fR(\fIstatPtr\fR)
+.SH ARGUMENTS
+.AS "struct in_addr" inetAddr
+.AP char *name in
+The name of a Sprite host for which information is desired.
+.AP int spriteID in
+The Sprite ID of the host for which information is desired.
+.AP Host_NetType addrType in
+Type of network the host is on.  Also defines the type of \fIaddrPtr\fR.
+Only \fBHOST_ETHER\fR and \fBHOST_INET\fR are defined right now.
+.AP char *addrPtr in
+The local network address of the host for which
+information is desired. The actual type used is based on the value of
+\fIaddrType\fP.  See the types defined below for the \fInetAddr\fR
+union in Host_Entry structures.
+.AP "struct in_addr" inetAddr in
+The internet address of the host for which information is desired.
+.AP char *fileName in
+The name of a host-description file.
+.AP struct stat *statPtr
+Pointer to stat structure for host database file.
+.BE
+.SH DESCRIPTION
+These functions are used to learn about hosts on the local Sprite network.
+These functions cause the host description file to be opened.
+\fBHost_End()\fR must be called to close the file.
+.PP
+A Host_Entry structure is defined as follows:
+.DS
+.ta 1c 2c 3c 4c 5c 6c 7c 8c 9c 10c
+typedef struct {
+	char			*name;	/* Primary name */
+	char			**aliases;	/* Other names (null-terminated array) */
+	int			id;		/* Sprite ID */
+	struct in_addr		inetAddr;	/* Internet address */
+	Host_NetType		netType;	/* Network used to connect to host */
+	union {
+		unsigned char		etherAddr[HOST_ETHER_ADDRESS_SIZE];
+							/* Address for \fInetType\fR \fBHOST_ETHER\fR 
+							   and gateway address for \fBHOST_INET\fR */
+	} netAddr;					/* Address in that network */
+	char				*machType;	/* Machine type, such as ``sun3''. */
+} Host_Entry;
+.DE
+The Host_Entry structures returned by the routines are statically allocated
+and may change on the next call to any \fBHost_\fR procedure.  Be sure to copy
+out any information you need before calling a \fBHost_\fR procedure again.
+.PP
+\fBHost_ByName()\fR returns a Host_Entry based on the name or alias of a host.
+.PP
+\fBHost_ByID()\fR returns a Host_Entry for the host with the given sprite ID.
+.PP
+\fBHost_ByNetAddr()\fR returns the Host_Entry for the host with the given
+local-area-network address.  The only type of network address currently
+supported is \fBHOST_ETHER\fR, so the address must always have the
+format defined for \fIetherAddr\fR in Host_Entry structures.
+.PP
+\fBHost_ByInetAddr()\fR returns the Host_Entry for the host with the given internet
+address.
+.PP
+\fBHost_SetFile()\fR specifies a different host information
+file to use (the file normally used
+is \fB/etc/spritehosts\fR).
+.PP
+\fBHost_Start()\fR opens the current host-description file (if it isn't
+already open), while \fBHost_End()\fR closes
+it.  The \fBHost_By\fR... procedures automatically call \fBHost_Start\fR.
+.PP
+\fBHost_Next()\fR may be used to step through the current host-description file.
+The host-description file must have been opened using \fBHost_Start()\fR or one of the
+\fBHost_By\fR functions.
+.PP
+\fBHost_Stat()\fR is used to get the statistics for the host-description file.
+See the \fBstat()\fR man page for details on the stat structure.
+\fBHost_Stat()\fR is
+useful if you are writing a daemon that wants to do something when
+the host-description file is updated. 
+The daemon can loop waiting for the modify time of the file to change.
+Make sure the host-description file is closed (use \fBHost_End()\fR) before
+the daemon waits, otherwise every machine running the daemon will have the
+host-description file open, causing lots of consistency traffic.
+.SH DIAGNOSTICS
+\fBHost_SetFile()\fR,\fBHost_Start()\fR and \fBHost_Stat()\fR
+return zero if all went well.  Otherwise
+they return -1 and the \fBerrno\fR variable contains additional information
+about what error occurred.
+\fBHost_Next()\fR returns NULL on end-of-file or error. \fBHost_ByName()\fR,
+\fBHost_ByID()\fR,
+\fBHost_ByNetAddr()\fR and \fBHost_ByInetAddr()\fR return NULL if
+the given host could not be found.
+.SH FILES
+/etc/spritehosts	The default host-description file.
+.SH KEYWORDS
+hostname, internet address, local net, machine type, sprite ID

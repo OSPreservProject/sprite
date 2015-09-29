@@ -1,0 +1,66 @@
+
+
+
+MLOCK                 C Library Procedures                  MLOCK
+
+
+
+NNAAMMEE
+     mlock, munlock - lock and unlock pages in memory.
+
+SSYYNNOOPPSSIISS
+     iinntt mmlloocckk((aaddddrr,, lleenn))
+     iinntt mmuunnlloocckk((aaddddrr,, lleenn))
+     ccaaddddrr__tt aaddddrr;;
+     iinntt lleenn;;
+
+DDEESSCCRRIIPPTTIIOONN
+     _M_l_o_c_k takes an address range and locks the associated pages
+     into physical memory.
+
+     _M_u_n_l_o_c_k takes an address range and unlocks the associated
+     pages so they can be paged out.
+
+RREETTUURRNN VVAALLUUEE
+     _M_l_o_c_k and _M_u_n_l_o_c_k return 0 if they are successful.  Other-
+     wise they return -1 and an error code is returned in _e_r_r_n_o.
+
+BBUUGGSS
+     These functions don't have much error checking.  Pages that
+     are locked down and not unlocked may remain unusable after
+     the process terminates.
+
+SSEEEE AALLSSOO
+     mmap(2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0             November 19, 1989                       1
+
+
+

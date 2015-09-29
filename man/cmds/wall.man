@@ -1,0 +1,30 @@
+' $Header: /sprite/src/cmds/wall/RCS/wall.man,v 1.4 89/11/27 14:27:02 douglis Exp $
+.so \*(]ltmac.sprite
+.HS WALL cmds
+.BS
+.SH NAME
+wall \- write to all users
+.SH SYNOPSIS
+\fBwall\fP [ \fB\-v\fP ] [ \fB-l\fP ] [ \fB-r\fP ] 
+.IP "\fB\-v\fR" 15
+Verbose: inform the user whether or not each machine
+successfully received the message.
+.IP "\fB\-l\fR" 15
+Local: Only inform users on the local host.
+.IP "\fB\-r\fR" 15
+No rlogins: Only write to /dev/syslog on each machine, not rlogins.
+.BE
+.SH DESCRIPTION
+.LP
+\fIWall\fP reads its standard input until an end-of-file.
+It then sends this message, preceded by `Broadcast Message ...',
+to the syslog window and all rlogins on each machine.  If the \fB-l\fR
+option is specified, only users on the local host are notified.  
+If the \fB-r\fR option is specified, only syslog windows are written to.
+The
+\fB\-v\fR option will inform 
+the user whether or not each machine successfully received the
+message.
+
+.SH KEYWORDS
+write, message, syslog

@@ -1,0 +1,2 @@
+detect processes that are hogging hosts and reclaim hosts from them.
+needs to consider different priorities.  

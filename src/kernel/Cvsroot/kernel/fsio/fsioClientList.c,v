@@ -1,0 +1,1444 @@
+head     9.2;
+branch   ;
+access   ;
+symbols  ds3100:9.2 sun3:9.2 sprited:9.2.1 sun4nw:9.2 symm:9.2 spur:9.2 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.2
+date     90.10.08.15.47.39;  author mendel;  state Exp;
+branches 9.2.1.1;
+next     9.1;
+
+9.1
+date     89.10.23.14.09.34;  author brent;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.06.09;  author douglis;  state Stable;
+branches ;
+next     8.12;
+
+8.12
+date     89.08.21.15.26.14;  author mendel;  state Exp;
+branches ;
+next     8.11;
+
+8.11
+date     89.06.28.16.37.50;  author brent;  state Exp;
+branches ;
+next     8.10;
+
+8.10
+date     89.06.22.16.28.49;  author brent;  state Exp;
+branches ;
+next     8.9;
+
+8.9
+date     89.06.22.12.23.18;  author brent;  state Exp;
+branches ;
+next     8.8;
+
+8.8
+date     89.06.15.09.12.51;  author brent;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.05.30.16.10.38;  author jhh;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.02.19.22.03.53;  author jhh;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.02.14.10.56.00;  author jhh;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.01.30.14.03.54;  author brent;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.01.06.11.18.58;  author jhh;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.12.15.09.36.11;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.28.12.49.29;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.18.33;  author douglis;  state Stable;
+branches ;
+next     7.0;
+
+7.0
+date     88.11.11.15.30.28;  author brent;  state Exp;
+branches ;
+next     6.5;
+
+6.5
+date     88.10.11.15.48.59;  author brent;  state Exp;
+branches ;
+next     6.4;
+
+6.4
+date     88.10.10.11.22.19;  author douglis;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.09.19.11.15.38;  author brent;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.09.15.16.33.41;  author brent;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.24.18.07.19;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.15.08;  author brent;  state Stable;
+branches ;
+next     1.5;
+
+1.5
+date     88.08.05.13.42.46;  author mlgray;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.08.04.15.03.34;  author mlgray;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.06.08.14.57.20;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.04.19.10.33.29;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.04.10.30.16;  author brent;  state Exp;
+branches ;
+next     ;
+
+9.2.1.1
+date     91.11.15.15.54.02;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@client list module.  Servers keep a list of clients for
+each of their streams and I/O handles.
+@
+
+
+9.2
+log
+@Fixed include files to use <> rather than "".
+Added function prototyping.  
+Changed name to fsioClientList.c
+@
+text
+@/* 
+ * fsClientList.c --
+ *
+ *	Routines to handle the client lists maintained at the stream level.
+ *	The stream-level client list is needed for migration.  It is not to
+ *	be confused with the client list that hangs off the I/O handles.
+ *
+ *
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/fs.mendel/RCS/fsClientList.c,v 1.1 90/01/16 17:10:30 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsconsist.h>
+#include <fsio.h>
+#include <fsStat.h>
+#include <rpc.h>
+
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Fsio_StreamClientOpen --
+ *
+ *	Add a client to the set of clients for a stream.  When a stream is
+ *	created the client list is started, and when migration causes
+ *	the stream to be shared by processes on different clients, new client
+ *	list elements are added.
+ *
+ * Results:
+ *	TRUE if the stream is shared by different clients after the open.
+ *	FALSE if this client is the only client of the stream.
+ *
+ * Side effects:
+ *	As well as putting the client in it's list,
+ *	the client is recorded in the master list of clients (if it isn't
+ *	already there) so client hosts can be easily scavenged.
+ *
+ * ----------------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+Boolean
+Fsio_StreamClientOpen(clientList, clientID, useFlags, foundPtr)
+    List_Links		*clientList;	/* List of clients */
+    int			clientID;	/* The client who is opening the file */
+    int			useFlags;	/* FS_READ | FS_WRITE | FS_EXECUTE */
+    Boolean		*foundPtr;	/* Return - TRUE if client existed */
+{
+    register FsioStreamClient *clientPtr;
+    register Boolean found = FALSE;
+    register Boolean shared = FALSE;
+
+    LIST_FORALL(clientList, (List_Links *)clientPtr) {
+	if (clientPtr->clientID == clientID) {
+	    found = TRUE;
+	} else {
+	    shared = TRUE;
+	    if (found) {
+		break;
+	    }
+	}
+    }
+    if (!found) {
+	clientPtr = mnew(FsioStreamClient);
+	clientPtr->clientID = clientID;
+	List_InitElement((List_Links *)clientPtr);
+	List_Insert((List_Links *) clientPtr, LIST_ATFRONT(clientList));
+	fs_Stats.object.streamClients++;
+    }
+
+    /*
+     * Make sure the client is in the master list of all clients for this host.
+     */
+    Fsconsist_AddClient(clientID);
+    if (foundPtr != (Boolean *)NIL) {
+	*foundPtr = found;
+    }
+    return(shared);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Fsio_StreamClientClose --
+ *
+ *	Remove a client from the client list of a stream.
+ *
+ * Results:
+ *	TRUE if the client list is empty after the close.
+ *
+ * Side effects:
+ *	The client list entry from the stream is removed.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+Boolean
+Fsio_StreamClientClose(clientList, clientID)
+    List_Links		*clientList;	/* List of clients who have it open */
+    int			clientID;	/* Host ID of client that had it open */
+{
+    register	FsioStreamClient	*clientPtr;
+
+    LIST_FORALL(clientList, (List_Links *) clientPtr) {
+	if (clientPtr->clientID == clientID) {
+	    List_Remove((List_Links *) clientPtr);
+	    free((Address) clientPtr);
+	    fs_Stats.object.streamClients--;
+	    break;
+	}
+    }
+    return(List_IsEmpty(clientList));
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Fsio_StreamClientFind --
+ *
+ *      See if a client appears in a client list.
+ *
+ * Results:
+ *      TRUE if the client is in the list.
+ *
+ * Side effects:
+ *      None.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+Boolean
+Fsio_StreamClientFind(clientList, clientID)
+    List_Links          *clientList;    /* List of clients who have it open */
+    int                 clientID;       /* Host ID of client to find */
+{
+    register    FsioStreamClient      *clientPtr;
+
+    LIST_FORALL(clientList, (List_Links *) clientPtr) {
+	if (clientPtr->clientID == clientID) {
+	    return(TRUE);
+	}
+    }
+    return(FALSE);
+}
+@
+
+
+9.2.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fsio/fsioClientList.c,v 9.2 90/10/08 15:47:39 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+9.1
+log
+@Changed typedef to FsioStreamClient
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsio/RCS/fsClientList.c,v 8.12 89/08/21 15:26:14 mendel Exp $ SPRITE (Berkeley)";
+d25 7
+a31 7
+#include "sprite.h"
+#include "fs.h"
+#include "fsutil.h"
+#include "fsconsist.h"
+#include "fsio.h"
+#include "fsStat.h"
+#include "rpc.h"
+d56 1
+a56 1
+
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d2 1
+a2 1
+ * fsClient.c --
+d5 2
+a6 1
+ *	The stream-level client list is needed for migration.
+d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsio/RCS/fsClientList.c,v 8.12 89/08/21 15:26:14 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d64 1
+a64 1
+    register FsStreamClientInfo *clientPtr;
+d79 1
+a79 1
+	clientPtr = mnew(FsStreamClientInfo);
+a80 1
+	clientPtr->useFlags = useFlags;
+d117 1
+a117 1
+    register	FsStreamClientInfo	*clientPtr;
+d151 1
+a151 1
+    register    FsStreamClientInfo      *clientPtr;
+@
+
+
+8.12
+log
+@Break up fs into many modules.    
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsClient.c,v 8.11 89/06/28 16:37:50 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+8.11
+log
+@Nuked warning statement about locked I/O client list entry
+@
+text
+@d4 2
+a5 8
+ *	Routines to handle the client lists.  There are two kinds of client
+ *	lists maintained, one at the stream level, and one at the I/O handle
+ *	level.  The stream-level client list is needed for migration, and
+ *	the I/O handle client list is needed for cache consistency and to
+ *	verify that client's are valid.  The routines here add and remove
+ *	clients from the two kinds of lists.
+ *	(Note that fsCacheConsist.c has routines which also use the client
+ *	list on the I/O handle, but those routines are specific to files.)
+a6 3
+ *	A master list of clients is also kept here to simplify cleaning
+ *	up after crashed clients.  Periodically this master list is checked
+ *	and the file state for dead clients is cleaned up.
+d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsClient.c,v 8.10 89/06/22 16:28:49 brent Exp $ SPRITE (Berkeley)";
+d26 3
+a28 4
+#include "fsInt.h"
+#include "fsClient.h"
+#include "fsStream.h"
+#include "fsRecovery.h"
+a31 265
+/*
+ * A master list of clients of this host.  This is maintained here and
+ * consulted periodically in order to be able to clean up after dead clients.
+ */
+static List_Links masterClientListHdr;
+static List_Links *masterClientList;
+
+typedef struct {
+    List_Links	links;
+    int		clientID;
+} ClientItem;
+
+static Sync_Lock clientLock;
+#define LOCKPTR (&clientLock)
+void ClientOpenInt();
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * FsClientInit --
+ *
+ *	Initialize the master list of clients for this server.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	List_Init.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+void
+FsClientInit()
+{
+    Sync_LockInitDynamic(&clientLock, "Fs:clientLock");
+    List_Init(&masterClientListHdr);
+    masterClientList = &masterClientListHdr;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * FsIOClientOpen --
+ *
+ *	Add the client to the set of clients doing I/O on a file.  This
+ *	increments reference counts due to the client.
+ *
+ * Results:
+ *	Returns a pointer to the client state just added.  This is used
+ *	by the file consistency routines, which set the cached boolean
+ *	and the openTimeStamp, but ignored by others.
+ *
+ * Side effects:
+ *	As well as adding the client to the set of clients for the I/O handle,
+ *	the client is recorded in the master list of clients (if it isn't
+ *	already there) so clients can be easily scavenged.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+ENTRY FsClientInfo *
+FsIOClientOpen(clientList, clientID, useFlags, cached)
+    List_Links	*clientList;	/* List of clients for the I/O handle. */
+    int		clientID;	/* The client who is opening the file. */
+    int		useFlags;	/* FS_READ | FS_WRITE | FS_EXECUTE */
+    Boolean	cached;		/* Boolean property recorded for client */
+{
+    register FsClientInfo *clientPtr;
+
+    LIST_FORALL(clientList, (List_Links *)clientPtr) {
+	if (clientPtr->clientID == clientID) {
+	    goto found;
+	}
+    }
+    fsStats.object.fileClients++;
+    clientPtr = mnew(FsClientInfo);
+    clientPtr->clientID = clientID;
+    clientPtr->use.ref = 0;
+    clientPtr->use.write = 0;
+    clientPtr->use.exec = 0;
+    clientPtr->openTimeStamp = 0;
+    clientPtr->locked = FALSE;
+    List_InitElement((List_Links *)clientPtr);
+    List_Insert((List_Links *) clientPtr, LIST_ATFRONT(clientList));
+found:
+    clientPtr->cached = cached;
+    clientPtr->use.ref++;
+    if (useFlags & FS_WRITE) {
+	clientPtr->use.write++;
+    }
+    if (useFlags & FS_EXECUTE) {
+	clientPtr->use.exec++;
+    }
+
+    /*
+     * Make sure the client is in the master list of all clients for this host.
+     */
+    ClientOpenInt(clientID);
+    return(clientPtr);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * 
+ FsIOClientReopen --
+ *
+ *	Add the client to the set of clients doing I/O on a file.  This
+ *	updates reference counts due to the client's reopen attempt.
+ *
+ * Results:
+ *	TRUE if the client was already listed.
+ *
+ * Side effects:
+ *	As well as adding the client to the set of clients for the I/O handle,
+ *	the client is recorded in the master list of clients (if it isn't
+ *	already there) so clients can be easily scavenged.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+Boolean
+FsIOClientReopen(clientList, clientID, usePtr)
+    List_Links	*clientList;	/* List of clients for the I/O handle. */
+    int		clientID;	/* The client who is opening the file. */
+    FsUseCounts	*usePtr;	/* In - Client's usage of the object.
+				 * Out - difference between old client useage.
+				 *  This means that the summary use counts
+				 *  can be updated by adding the use counts
+				 *  left over in this structure after the
+				 *  reconciliation with the old state. */
+{
+    register FsClientInfo *clientPtr;
+    register Boolean found = FALSE;
+    register int diff;
+
+    LIST_FORALL(clientList, (List_Links *)clientPtr) {
+	if (clientPtr->clientID == clientID) {
+	    found = TRUE;
+	    goto doit;
+	}
+    }
+    fsStats.object.fileClients++;
+    clientPtr = mnew(FsClientInfo);
+    clientPtr->clientID = clientID;
+    clientPtr->openTimeStamp = 0;
+    clientPtr->locked = FALSE;
+    clientPtr->cached = FALSE;
+    clientPtr->use.ref = 0;
+    clientPtr->use.write = 0;
+    clientPtr->use.exec = 0;
+    List_InitElement((List_Links *)clientPtr);
+    List_Insert((List_Links *) clientPtr, LIST_ATFRONT(clientList));
+doit:
+    clientPtr->use.ref += usePtr->ref;
+    clientPtr->use.write += usePtr->write;
+    clientPtr->use.exec += usePtr->exec;
+    /*
+     * Make sure the client is in the master list of all clients for this host.
+     */
+    ClientOpenInt(clientID);
+    return(found);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * FsIOClientClose --
+ *
+ *	Decrement the reference, executor and/or writer counts for the client 
+ *	for the given handle.  Note, we don't mess with the master list of
+ *	clients.  That gets cleaned up by FsClientScavenge.
+ *
+ * Results:
+ *	TRUE if there was a record that the client was using the file.
+ *	This is used to trap out invalid closes.
+ *
+ * Side effects:
+ *	The client list entry from the stream is removed.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+Boolean
+FsIOClientClose(clientList, clientID, flags, cachePtr)
+    List_Links		*clientList;	/* List of clients for I/O handle */
+    int			clientID;	/* Host ID of client that had it open */
+    register int	flags;		/* Flags from the stream. */
+    Boolean		*cachePtr;	/* In/Out.  If TRUE on entry, this won't
+					 * delete the client list entry if
+					 * the entry's cached field is also
+					 * TRUE.  On return, this is the value
+					 * of the client's cached field. */
+{
+    register	FsClientInfo	*clientPtr;
+    register	Boolean		found = FALSE;
+
+    LIST_FORALL(clientList, (List_Links *) clientPtr) {
+	if (clientPtr->clientID == clientID) {
+	    found = TRUE;
+	    break;
+	}
+    }
+    if (found) {
+	clientPtr->use.ref--;
+	if (flags & FS_WRITE) {
+	    clientPtr->use.write--;
+	}
+	if (flags & FS_EXECUTE) {
+	    clientPtr->use.exec--;
+	}
+	if ((clientPtr->use.ref < 0) || (clientPtr->use.write < 0) ||
+	    (clientPtr->use.exec < 0)) {
+	    panic("FsClientClose: client %d ref %d write %d exec %d\n",
+		clientPtr->clientID,
+		clientPtr->use.ref, clientPtr->use.write, clientPtr->use.exec);
+	}
+	if ((!(*cachePtr) || !clientPtr->cached) &&
+	    (clientPtr->use.ref == 0)) {
+	    *cachePtr = clientPtr->cached;
+	    if (!clientPtr->locked) {
+		/*
+		 * Free up the client list entry if it is not locked
+		 * due to an iteration through the client list.
+		 */
+		fsStats.object.fileClients--;
+		List_Remove((List_Links *) clientPtr);
+		free((Address) clientPtr);
+	    }
+	} else {
+	    *cachePtr = clientPtr->cached;
+	}
+    }
+    return(found);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * FsIOClientRemoveWriter --
+ *
+ *	Decrement the writer count for the client for the given handle.
+ *	This is done when a writer of a stream (for instance, a pipe)
+ *	becomes only a reader.
+ *
+ * Results:
+ *	TRUE if there was a record that the client was using the file.
+ *	This is used to trap out invalid closes.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+Boolean
+FsIOClientRemoveWriter(clientList, clientID)
+    List_Links		*clientList;	/* List of clients for I/O handle */
+    int			clientID;	/* Host ID of client that had it open */
+{
+    register	FsClientInfo	*clientPtr;
+    register	Boolean		found = FALSE;
+a32 16
+    LIST_FORALL(clientList, (List_Links *) clientPtr) {
+	if (clientPtr->clientID == clientID) {
+	    found = TRUE;
+	    break;
+	}
+    }
+    if (found) {
+	clientPtr->use.write--;
+	if (clientPtr->use.write < 0) {
+	    panic("FsClientRemoveWriter: client %d ref %d write %d exec %d\n",
+		clientPtr->clientID,
+		clientPtr->use.ref, clientPtr->use.write, clientPtr->use.exec);
+	}
+    }
+    return(found);
+}
+d37 1
+a37 1
+ * FsStreamClientOpen --
+d57 1
+a57 1
+FsStreamClientOpen(clientList, clientID, useFlags, foundPtr)
+d83 1
+a83 1
+	fsStats.object.streamClients++;
+d89 1
+a89 1
+    ClientOpenInt(clientID);
+d99 1
+a99 1
+ * FsStreamClientClose --
+d113 1
+a113 1
+FsStreamClientClose(clientList, clientID)
+d123 1
+a123 1
+	    fsStats.object.streamClients--;
+d133 1
+a133 1
+ * FsStreamClientFind --
+d147 1
+a147 1
+FsStreamClientFind(clientList, clientID)
+a159 175
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * ClientOpenInt --
+ *
+ *      Add a client to the master list of clients that is checked by
+ *	FsClientScavenge.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	May add the client to the list.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+ENTRY void
+ClientOpenInt(clientID)
+    int clientID;
+{
+    register	ClientItem	*listPtr;
+
+    LOCK_MONITOR;
+
+    LIST_FORALL(masterClientList, (List_Links *)listPtr) {
+	if (listPtr->clientID == clientID) {
+	    goto exit;
+	}
+    }
+    listPtr = mnew(ClientItem);
+    listPtr->clientID = clientID;
+    List_InitElement((List_Links *)listPtr);
+    List_Insert((List_Links *)listPtr, LIST_ATFRONT(masterClientList));
+exit:
+    UNLOCK_MONITOR;
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * FsClientScavenge --
+ *
+ *      Check the master list of clients for ones that have crashed.  If any
+ *	one has then we call FsRemoveClient to clean up the file state
+ *	associated with it.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Calls FsClientRemove on dead clients, and nukes them from the
+ *	master client list.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+ENTRY void
+FsClientScavenge()
+{
+    register	ClientItem	*listPtr;
+
+    LOCK_MONITOR;
+
+    LIST_FORALL(masterClientList, (List_Links *)listPtr) {
+	if (listPtr->clientID != rpc_SpriteID && 
+	    Recov_IsHostDown(listPtr->clientID) == FAILURE) {
+	    FsRemoveClient(listPtr->clientID);
+	}
+    }
+
+    UNLOCK_MONITOR;
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * FsIOClientKill --
+ *
+ *	Find and remove the given client in the list for the handle.  The
+ *	number of client references, writers, and executers is returned
+ *	so our caller can clean up the reference counts in the handle.
+ *
+ * Results:
+ *	*inUsePtr set to TRUE if the client has the file open, *writingPtr
+ *	set to TRUE if the client has the file open for writing, and 
+ *	*executingPtr set to TRUE if the client has the file open for
+ *	execution.
+ *	
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+void
+FsIOClientKill(clientList, clientID, refPtr, writePtr, execPtr)
+    List_Links *clientList;	/* List of clients to a file. */
+    int		clientID;	/* Client to delete. */
+    int		*refPtr;	/* Number of times client has file open. */
+    int		*writePtr;	/* Number of times client is writing file. */
+    int		*execPtr;	/* Number of times clients is executing file.*/
+{
+    register FsClientInfo 	*clientPtr;
+
+    *refPtr = 0;
+    *writePtr = 0;
+    *execPtr = 0;
+
+    /*
+     * Remove the client from the list of clients using the file.
+     */
+    LIST_FORALL(clientList, (List_Links *) clientPtr) {
+	if (clientPtr->clientID == clientID) {
+	    *refPtr += clientPtr->use.ref;
+	    *writePtr += clientPtr->use.write;
+	    *execPtr += clientPtr->use.exec;
+	    if (clientPtr->locked) {
+		printf("FsIOClientKill, client %d locked\n", clientID);
+		clientPtr->use.ref = 0;
+		clientPtr->use.write = 0;
+		clientPtr->use.exec = 0;
+	    } else {
+		fsStats.object.fileClients--;
+		List_Remove((List_Links *) clientPtr);
+		free((Address) clientPtr);
+	    }
+	    break;
+	}
+    }
+
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * FsIOClientStatus --
+ *
+ *	This computes the difference between a client's version of its
+ *	state and our version of the client's usage state.  This is called
+ *	during a device reopen to see how the client's state is different.
+ *
+ * Results:
+ *	The client's version of the use state is modified to reflect
+ *	the difference between our previous notion of the state and
+ *	the client's notion of the state.  This means that the ref, write,
+ *	and exec fields can be positive or negative after this call.
+ *	If they are zero then the client's state matches ours.
+ *	
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ *
+ */
+void
+FsIOClientStatus(clientList, clientID, clientUsePtr)
+    List_Links *clientList;	/* List of clients to a file. */
+    int		clientID;	/* Client to check. */
+    FsUseCounts	*clientUsePtr;	/* Client's version of the usage */
+{
+    register FsClientInfo 	*clientPtr;
+
+    LIST_FORALL(clientList, (List_Links *) clientPtr) {
+	if (clientPtr->clientID == clientID) {
+	    clientUsePtr->ref -= clientPtr->use.ref;
+	    clientUsePtr->write -= clientPtr->use.write;
+	    clientUsePtr->exec -= clientPtr->use.exec;
+	    return;
+	}
+    }
+}
+
+
+@
+
+
+8.10
+log
+@Fixed things so FsIOClientStatus and FsIOClientReopen work together.
+The first computes the relative difference in client/server state.
+The second reconciles the server's state using the computed difference.
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsClient.c,v 8.9 89/06/22 12:23:18 brent Exp $ SPRITE (Berkeley)";
+d265 5
+a269 4
+	    if (clientPtr->locked) {
+		printf("FsIOClientClose: locked client %d\n",
+		    clientPtr->clientID);
+	    } else {
+@
+
+
+8.9
+log
+@Chagned FsIoCLientStatus to return the *difference* between
+the client's state and the server's usage state.  This is
+used during device reopen.
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsClient.c,v 8.8 89/06/15 09:12:51 brent Exp $ SPRITE (Berkeley)";
+d149 2
+a150 1
+ * FsIOClientReopen --
+d193 3
+d199 3
+a201 1
+    clientPtr->use = *usePtr;
+@
+
+
+8.8
+log
+@Added FsClientReopen
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsClient.c,v 8.7 89/05/30 16:10:38 jhh Exp $ SPRITE (Berkeley)";
+d169 6
+a174 1
+    FsUseCounts	*usePtr;	/* Client's usage of the object */
+d178 1
+d583 3
+a585 3
+ *	This returns  information similar to that of FsIOClientKill, but it
+ *	does not remove the client from the list.  It is used for determining
+ *	reference counts for process migration.
+d588 5
+a592 5
+ *	If non-NIL, *inUsePtr set to the number of times the client
+ *	has the file open, *writingPtr set to the number of times the
+ *	client has the file open for writing, and *executingPtr set to
+ *	the number of times the client has the file open for
+ *	execution.
+d601 1
+a601 1
+FsIOClientStatus(clientList, clientID, usePtr)
+d604 1
+a604 1
+    FsUseCounts	*usePtr;	/* Useage to return */
+a607 3
+    /*
+     * Count references for the client using the file.
+     */
+d610 3
+a612 1
+	    *usePtr = clientPtr->use;
+a615 3
+    usePtr->ref = 0;
+    usePtr->write = 0;
+    usePtr->exec = 0;
+@
+
+
+8.7
+log
+@Removed call to Sync_LockRegister
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsClient.c,v 8.6 89/02/19 22:03:53 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d149 51
+d595 1
+a595 1
+FsIOClientStatus(clientList, clientID, refPtr, writePtr, execPtr)
+d598 1
+a598 3
+    int		*refPtr;	/* Number of times client has file open. */
+    int		*writePtr;	/* Number of times client is writing file. */
+    int		*execPtr;	/* Number of times clients is executing file.*/
+d607 1
+a607 9
+	    if (refPtr != (int *) NIL) {
+		*refPtr = clientPtr->use.ref;
+	    }
+	    if (writePtr != (int *) NIL) {
+		*writePtr = clientPtr->use.write;
+	    }
+	    if (execPtr != (int *) NIL) {
+		*execPtr = clientPtr->use.exec;
+	    }
+d611 3
+a613 9
+    if (refPtr != (int *) NIL) {
+	*refPtr = 0;
+    }
+    if (writePtr != (int *) NIL) {
+	*writePtr = 0;
+    }
+    if (execPtr != (int *) NIL) {
+	*execPtr = 0;
+    }
+@
+
+
+8.6
+log
+@Changes due to lock registration
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsClient.c,v 8.5 89/02/14 10:56:00 jhh Exp $ SPRITE (Berkeley)";
+a78 1
+    Sync_LockRegister(&clientLock);
+@
+
+
+8.5
+log
+@Update Sync_Lock initialization and registration
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsClient.c,v 8.4 89/01/30 14:03:54 brent Exp Locker: jhh $ SPRITE (Berkeley)";
+d79 1
+@
+
+
+8.4
+log
+@Added object stats
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsClient.c,v 8.3 89/01/06 11:18:58 jhh Exp $ SPRITE (Berkeley)";
+d54 1
+a54 1
+static Sync_Lock clientLock = SYNC_LOCK_INIT_STATIC();
+d78 1
+d119 1
+d206 1
+d511 1
+@
+
+
+8.3
+log
+@new Sync_Lock definition
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsClient.c,v 8.2 88/12/15 09:36:11 brent Exp Locker: jhh $ SPRITE (Berkeley)";
+d39 1
+d307 1
+d347 1
+@
+
+
+8.2
+log
+@Fixed bug in client list that would return the wrong value
+for clientPtr->cached, so the file server would not pay
+attention to returned attributes.  Access times were not
+being propogated back to the file server.
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsClient.c,v 8.1 88/11/28 12:49:29 brent Exp $ SPRITE (Berkeley)";
+d53 1
+a53 1
+static Sync_Lock clientLock;
+@
+
+
+8.1
+log
+@Added checks against client list elements that are locked
+during consistency.  This is to verify that occasionally
+a close will yank a client list element out from under
+someone scanning the client list during cache consistency.
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsClient.c,v 7.0 88/11/11 15:30:28 brent Exp $ SPRITE (Berkeley)";
+d198 1
+a205 1
+	    *cachePtr = FALSE;
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsClient.c,v 7.0 88/11/11 15:30:28 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d123 1
+d198 7
+a204 2
+	    List_Remove((List_Links *) clientPtr);
+	    free((Address) clientPtr);
+d499 9
+a507 2
+	    List_Remove((List_Links *) clientPtr);
+	    free((Address) clientPtr);
+@
+
+
+7.0
+log
+@New version for conversion to new C library
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsClient.c,v 6.5 88/10/11 15:48:59 brent Exp Locker: brent $ SPRITE (Berkeley)";
+@
+
+
+6.5
+log
+@Created ClientOpenInt() and adjusted FsStreamClientOpen interface
+for migration's needs.
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: fsClient.c,v 6.4 88/10/10 11:22:19 douglis Exp $ SPRITE (Berkeley)";
+d117 1
+a117 1
+    clientPtr = Mem_New(FsClientInfo);
+d191 1
+a191 2
+	    Sys_Panic(SYS_FATAL,
+		"FsClientClose: client %d ref %d write %d exec %d\n",
+d198 1
+a198 1
+	    Mem_Free((Address) clientPtr);
+d243 1
+a243 2
+	    Sys_Panic(SYS_FATAL,
+		"FsClientRemoveWriter: client %d ref %d write %d exec %d\n",
+d295 1
+a295 1
+	clientPtr = Mem_New(FsStreamClientInfo);
+d338 1
+a338 1
+	    Mem_Free((Address) clientPtr);
+d406 1
+a406 1
+    listPtr = Mem_New(ClientItem);
+d494 1
+a494 1
+	    Mem_Free((Address) clientPtr);
+@
+
+
+6.4
+log
+@Added FsIOClientRemoveWriter, which can convert a R/W ref. to a R 
+ref for a client, and FsIOClientStatus, which returns the number of
+inUse references and write references.
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: fsClient.c,v 6.3 88/09/19 11:15:38 brent Exp $ SPRITE (Berkeley)";
+d55 1
+a110 1
+    register ClientItem *listPtr;
+a111 2
+    LOCK_MONITOR;
+
+d138 1
+a138 11
+    LIST_FORALL(masterClientList, (List_Links *)listPtr) {
+	if (listPtr->clientID == clientID) {
+	    goto exit;
+	}
+    }
+    listPtr = Mem_New(ClientItem);
+    listPtr->clientID = clientID;
+    List_InitElement((List_Links *)listPtr);
+    List_Insert((List_Links *)listPtr, LIST_ATFRONT(masterClientList));
+exit:
+    UNLOCK_MONITOR;
+d275 2
+a276 2
+ENTRY Boolean
+FsStreamClientOpen(clientList, clientID, useFlags)
+d280 1
+a282 1
+    register ClientItem *listPtr;
+a285 2
+    LOCK_MONITOR;
+
+d307 3
+a309 4
+    LIST_FORALL(masterClientList, (List_Links *)listPtr) {
+	if (listPtr->clientID == clientID) {
+	    goto exit;
+	}
+a310 6
+    listPtr = Mem_New(ClientItem);
+    listPtr->clientID = clientID;
+    List_InitElement((List_Links *)listPtr);
+    List_Insert((List_Links *)listPtr, LIST_ATFRONT(masterClientList));
+exit:
+    UNLOCK_MONITOR;
+d322 1
+a322 2
+ *	TRUE if the client list is empty after the close.  This is used
+ *	to detect cross-network sharing of streams.
+d376 38
+@
+
+
+6.3
+log
+@Fixed FsIOClientOpen to always update the cached property of a client.
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: fsClient.c,v 6.2 88/09/15 16:33:41 brent Exp $ SPRITE (Berkeley)";
+d223 45
+d486 61
+@
+
+
+6.2
+log
+@Fixed cleanup of client lists so only the last writer of a
+file is kept in the list after the client is completely closed.
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: fsClient.c,v 6.1 88/08/24 18:07:19 brent Exp $ SPRITE (Berkeley)";
+a123 1
+    clientPtr->cached = cached;
+d128 1
+@
+
+
+6.1
+log
+@Took out extraneous monitor locks
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: fsClient.c,v 6.0 88/08/11 12:15:08 brent Stable $ SPRITE (Berkeley)";
+d208 4
+a211 5
+	if (!(*cachePtr) || !clientPtr->cached) {
+	    if (clientPtr->use.ref == 0) {
+		List_Remove((List_Links *) clientPtr);
+		Mem_Free((Address) clientPtr);
+	    }
+d213 2
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: fsClient.c,v 1.5 88/08/05 13:42:46 mlgray Exp $ SPRITE (Berkeley)";
+d411 1
+a411 1
+ENTRY void
+a420 2
+    LOCK_MONITOR;
+
+a438 1
+    UNLOCK_MONITOR;
+@
+
+
+1.5
+log
+@
+Brent's changes since this morning.
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: fsClient.c,v 1.4 88/08/04 15:03:34 mlgray Exp $ SPRITE (Berkeley)";
+@
+
+
+1.4
+log
+@merging changes from fs into fs.new
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: fsClient.c,v 1.3 88/06/08 14:57:20 brent Exp $ SPRITE (Berkeley)";
+d322 1
+a322 1
+^L
+@
+
+
+1.3
+log
+@Took out cruft and fixed a lucky mistake
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: fsClient.c,v 1.2 88/04/19 10:33:29 brent Exp $ SPRITE (Berkeley)";
+d308 1
+a308 1
+    List_Links		*clientList;	/* List of clients for I/O handle */
+d321 31
+@
+
+
+1.2
+log
+@Changed interface to FsIOClient{Open,Close} to include cached property.
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: fsClient.c,v 1.1 88/04/04 10:30:16 brent Exp $ SPRITE (Berkeley)";
+d311 1
+a311 1
+    register	FsClientInfo	*clientPtr;
+a352 21
+#ifdef we_ever_have_to_be_more_careful
+	    /*
+	     * We know the client is down.  Spin through the existing
+	     * dead client list to prevent duplicates.
+	     */
+	    found = FALSE;
+	    LIST_FORALL(deadClientList, (List_Links *)deadClientPtr) {
+		if (deadClientPtr->clientID == clientID) {
+		    found = TRUE;
+		    break;
+		}
+	    }
+	    if (!found) {
+		deadClientPtr =
+		    (FsDeadClient *)Mem_Alloc(sizeof(FsDeadClient));
+		deadClientPtr->clientID = clientID;
+		List_InitElement((List_Links *)deadClientPtr);
+		List_Insert((List_Links *)deadClientPtr,
+			    LIST_ATREAR(deadClientList));
+	    }
+#endif
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d29 1
+a29 1
+static char rcsid[] = "$Header: fsFileIO.c,v 5.17 87/11/25 13:32:54 brent Exp $ SPRITE (Berkeley)";
+d103 1
+a103 1
+FsIOClientOpen(clientList, clientID, useFlags)
+d107 1
+d124 1
+a124 1
+    clientPtr->cached = FALSE;
+d174 1
+a174 1
+FsIOClientClose(clientList, clientID, flags, wasCachedPtr)
+d178 5
+a182 1
+    Boolean		*wasCachedPtr;	/* TRUE if client marked as caching */
+a186 2
+    *wasCachedPtr = FALSE;
+
+d208 6
+a213 5
+	*wasCachedPtr = clientPtr->cached;
+#ifdef figure_out_cleanup
+	if (clientPtr->use.ref == 0) {
+	    List_Remove((List_Links *) clientPtr);
+	    Mem_Free((Address) clientPtr);
+a214 1
+#endif
+@

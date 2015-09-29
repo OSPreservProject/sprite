@@ -1,0 +1,35 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @# @;
+
+
+1.1
+date     88.12.06.09.57.26;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@script to generate summary information for the current runs of each sprite
+client (rather than across previous boots).
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#!/bin/csh -f
+set fileList = ()
+foreach host (paprika murder fenugreek thyme sage mace)
+    if (-e /sprite/admin/fsstats/$host/last) then
+	set fileList = ($fileList  /sprite/admin/fsstats/$host/last)
+    endif
+end
+awk -f fsstats.awk $fileList
+@

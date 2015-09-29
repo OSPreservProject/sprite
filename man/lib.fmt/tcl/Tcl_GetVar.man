@@ -1,0 +1,68 @@
+
+
+
+Tcl_GetVar        Tcl Command Language Library         Tcl_GetVar
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tcl_GetVar - return the value of a Tcl variable
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttccll..hh>>
+
+     char *
+     TTccll__GGeettVVaarr(_i_n_t_e_r_p, _v_a_r_N_a_m_e, _g_l_o_b_a_l)
+
+AARRGGUUMMEENNTTSS
+     Tcl_Interp   *_i_n_t_e_r_p   (in)      Interpreter  in  which   to
+                                      check for variable.
+
+     char         *_v_a_r_N_a_m_e  (in)      Name of desired variable.
+
+     int          _g_l_o_b_a_l    (in)      If  non-zero,  then  insist
+                                      that _v_a_r_N_a_m_e be interpreted
+                                      as   a   global    variable
+                                      regardless   of  whether  a
+                                      procedure invocation is  in
+                                      progress.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     TTccll__GGeettVVaarr is a utility procedure used by several of the Tcl
+     commands.   It  returns  the  value  of  variable _v_a_r_N_a_m_e in
+     interpreter _i_n_t_e_r_p.  If there isn't a Tcl command  procedure
+     being  interpreted right now, or if _g_l_o_b_a_l is non-zero, then
+     _v_a_r_N_a_m_e is always treated as the name of a global  variable.
+     Otherwise, if a procedure is being interpreted, then _v_a_r_N_a_m_e
+     will be treated as a local variable name, unless it has been
+     declared global using the gglloobbaall command.  If no variable by
+     the name _v_a_r_N_a_m_e exists right now, then a  NULL  pointer  is
+     returned.
+
+
+KKEEYYWWOORRDDSS
+     interpreter, global, local, variable
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  December 6, 1990                   1
+
+
+

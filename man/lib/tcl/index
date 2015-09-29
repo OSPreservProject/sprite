@@ -1,0 +1,96 @@
+AddErrInfo
+Tcl_AddErrorInfo, Tcl_SetErrorCode, Tcl_UnixError, Tcl_CheckStatus, 
+record information about errors
+error, stack, trace, variable, 
+AssembCmd
+Tcl_CreateCmdBuf, Tcl_AssembleCmd, Tcl_DeleteCmdBuf, 
+buffer pieces of Tcl commands
+assemble, buffer, partial command, 
+Backslash
+Tcl_Backslash, 
+parse a backslash sequence
+backslash, parse, 
+Concat
+Tcl_Concat, 
+concatenate a collection of strings
+concatenate, strings, 
+CrtCommand
+Tcl_CreateCommand, Tcl_DeleteCommand, 
+define application-specific command bindings
+bind, command, create, delete, interpreter, 
+CrtInterp
+Tcl_CreateInterp, Tcl_DeleteInterp, 
+create and delete Tcl command interpreters
+command, create, delete, interpreter, 
+CrtPipelin
+Tcl_CreatePipeline, 
+create one or more child processes, with I/O redirection
+background, child, detach, fork, process, status, wait, 
+CrtTrace
+Tcl_CreateTrace, Tcl_DeleteTrace, 
+arrange for command execution to be traced
+command, create, delete, interpreter, trace, 
+Eval
+Tcl_Eval, Tcl_VarEval, Tcl_EvalFile, Tcl_GlobalEval, 
+execute Tcl commands
+command, execute, file, global, interpreter, variable, 
+ExprLong
+Tcl_ExprLong, Tcl_ExprDouble, Tcl_ExprBool, Tcl_ExprString, 
+evaluate an expression
+boolean, double, evaluate, expression, integer, string, 
+Fork
+Tcl_Fork, Tcl_WaitPids, Tcl_DetachPids, 
+manage child processes
+background, child, detach, fork, process, status, wait, 
+GetInt
+Tcl_GetInt, Tcl_GetDouble, Tcl_GetBoolean, 
+convert from string to integer, double, or boolean
+boolean, conversion, double, floating-point, integer, 
+Hash
+Tcl_InitHashTable, Tcl_DeleteHashTable, Tcl_CreateHashEntry, Tcl_DeleteHashEntry, Tcl_FindHashEntry, Tcl_GetHashValue, Tcl_SetHashValue, Tcl_GetHashKey, Tcl_FirstHashEntry, Tcl_NextHashEntry, Tcl_HashStats, 
+procedures to manage hash tables
+hash table, key, lookup, search, value, 
+History
+Tcl_InitHistory, Tcl_RecordAndEval, 
+procedures for managing history list
+command, event, execute, history, interpreter, record, 
+Interp
+Tcl_Interp, 
+client-visible fields of interpreter structures
+free, initialized, interpreter, malloc, result, 
+RecordEval
+Tcl_RecordAndEval, 
+save a Tcl command in the history list, then execute it
+command, event, execute, history, interpreter, record, 
+SetResult
+Tcl_SetResult, Tcl_AppendResult, Tcl_AppendElement, Tcl_ResetResult, 
+manipulate Tcl result string
+append, command, element, list, result, return value, interpreter, 
+SetVar
+Tcl_SetVar, Tcl_SetVar2, Tcl_GetVar, Tcl_GetVar2, Tcl_UnsetVar, Tcl_UnsetVar2, 
+manipulate Tcl variables
+array, interpreter, scalar, set, unset, variable, 
+SplitList
+Tcl_SplitList, Tcl_Merge, Tcl_ScanElement, Tcl_ConvertElement, 
+manipulate Tcl lists
+backslash, convert, element, list, merge, split, strings, 
+StrMatch
+Tcl_StringMatch, 
+test whether a string matches a pattern
+match, pattern, string, 
+Tcl
+Tcl, 
+overview of tool command language facilities
+
+TildeSubst
+Tcl_TildeSubst, 
+replace tilde with home directory in a file name
+file name, home directory, tilde, user, 
+TraceVar
+Tcl_TraceVar, Tcl_TraceVar2, Tcl_UntraceVar, Tcl_UntraceVar2, Tcl_VarTraceInfo, Tcl_VarTraceInfo2, 
+monitor accesses to a variable
+clientData, trace, variable, 
+library
+library, 
+standard library of Tcl procedures
+auto-exec, auto-load, library, unknown, 

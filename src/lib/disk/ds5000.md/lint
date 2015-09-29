@@ -1,0 +1,75 @@
+diskIO.c:
+diskIO.c 2(216): warning: status unused in function Disk_BadBlockRead
+diskPrint.c:
+diskFragIO.c:
+diskHeader.c:
+diskHeader.c 2(810): warning: Increment/decrement in conditional expression
+diskHeader.c 2(811): warning: Non-compound statement
+diskHeader.c 2(823): warning: Increment/decrement in conditional expression
+diskHeader.c 2(824): warning: Non-compound statement
+diskHeader.c 2(837): warning: Increment/decrement in conditional expression
+diskHeader.c 2(838): warning: Non-compound statement
+diskHeader.c 2(981): warning: headerPtr unused in function Disk_ReadLfsSuperBlock
+diskHeader.c 2(1032): warning: argument diskLabelPtr unused in function Disk_WriteLfsSuperBlock
+Disk_FragRead multiply declared	diskFragIO.c 2(45)  ::  llib-lc:diskFragIO.c 2(45)
+Disk_FragWrite multiply declared	diskFragIO.c 2(108)  ::  llib-lc:diskFragIO.c 2(108)
+Disk_ReadDecLabel multiply declared	diskHeader.c 2(62)  ::  llib-lc:diskHeader.c 2(62)
+Disk_ReadSunLabel multiply declared	diskHeader.c 2(109)  ::  llib-lc:diskHeader.c 2(109)
+Disk_ReadDiskHeader multiply declared	diskHeader.c 2(147)  ::  llib-lc:diskHeader.c 2(147)
+Disk_ReadDomainHeader multiply declared	diskHeader.c 2(184)  ::  llib-lc:diskHeader.c 2(184)
+Disk_WriteDomainHeader multiply declared	diskHeader.c 2(226)  ::  llib-lc:diskHeader.c 2(226)
+Disk_ReadSummaryInfo multiply declared	diskHeader.c 2(252)  ::  llib-lc:diskHeader.c 2(252)
+Disk_WriteSummaryInfo multiply declared	diskHeader.c 2(285)  ::  llib-lc:diskHeader.c 2(285)
+Disk_WriteDecLabel multiply declared	diskHeader.c 2(308)  ::  llib-lc:diskHeader.c 2(308)
+Disk_WriteSunLabel multiply declared	diskHeader.c 2(331)  ::  llib-lc:diskHeader.c 2(331)
+Disk_ReadLabel multiply declared	diskHeader.c 2(355)  ::  llib-lc:diskHeader.c 2(355)
+Disk_WriteLabel multiply declared	diskHeader.c 2(394)  ::  llib-lc:diskHeader.c 2(394)
+Disk_NewLabel multiply declared	diskHeader.c 2(451)  ::  llib-lc:diskHeader.c 2(451)
+Disk_EraseLabel multiply declared	diskHeader.c 2(863)  ::  llib-lc:diskHeader.c 2(863)
+Disk_SectorRead multiply declared	diskIO.c 2(50)  ::  llib-lc:diskIO.c 2(50)
+Disk_SectorWrite multiply declared	diskIO.c 2(93)  ::  llib-lc:diskIO.c 2(93)
+Disk_BlockRead multiply declared	diskIO.c 2(147)  ::  llib-lc:diskIO.c 2(147)
+Disk_BadBlockRead multiply declared	diskIO.c 2(215)  ::  llib-lc:diskIO.c 2(215)
+Disk_BlockWrite multiply declared	diskIO.c 2(274)  ::  llib-lc:diskIO.c 2(274)
+Disk_PrintDomainHeader multiply declared	diskPrint.c 2(43)  ::  llib-lc:diskPrint.c 2(43)
+Disk_PrintSummaryInfo multiply declared	diskPrint.c 2(99)  ::  llib-lc:diskPrint.c 2(99)
+Disk_PrintFileDescBitmap multiply declared	diskPrint.c 2(140)  ::  llib-lc:diskPrint.c 2(140)
+Disk_PrintDataBlockBitmap multiply declared	diskPrint.c 2(180)  ::  llib-lc:diskPrint.c 2(180)
+Disk_PrintDirEntry multiply declared	diskPrint.c 2(220)  ::  llib-lc:diskPrint.c 2(220)
+Disk_PrintLabel multiply declared	diskPrint.c 2(245)  ::  llib-lc:diskPrint.c 2(245)
+Disk_GetLabelTypeName multiply declared	diskPrint.c 2(297)  ::  llib-lc:diskPrint.c 2(297)
+malloc, arg. 1 used inconsistently	llib-lc:malloc.c 2(49)  ::  diskHeader.c 2(1081)
+malloc, arg. 1 used inconsistently	llib-lc:malloc.c 2(49)  ::  diskHeader.c 2(1116)
+bzero value declared inconsistently	llib-lc:bzero.c 2(58)  ::  diskHeader.c 2(878)
+fprintf returns value which is always ignored
+Disk_BlockRead defined( diskIO.c 2(147) ), but never used
+Disk_BadBlockRead defined( diskIO.c 2(215) ), but never used
+Disk_BlockWrite defined( diskIO.c 2(274) ), but never used
+errno used( diskIO.c 2(115) ), but not defined
+Disk_PrintDomainHeader defined( diskPrint.c 2(43) ), but never used
+printf returns value which is always ignored
+Disk_PrintSummaryInfo defined( diskPrint.c 2(99) ), but never used
+Disk_PrintFileDescBitmap defined( diskPrint.c 2(140) ), but never used
+Disk_PrintDataBlockBitmap defined( diskPrint.c 2(180) ), but never used
+Disk_PrintDirEntry defined( diskPrint.c 2(220) ), but never used
+Disk_PrintLabel defined( diskPrint.c 2(245) ), but never used
+Disk_PrintLfsSuperBlock defined( diskPrint.c 2(488) ), but never used
+Disk_PrintLfsCheckPointHdr defined( diskPrint.c 2(520) ), but never used
+Disk_PrintLfsCheckPointRegion defined( diskPrint.c 2(556) ), but never used
+Disk_PrintLfsCheckPointTrailer defined( diskPrint.c 2(585) ), but never used
+Disk_FragRead defined( diskFragIO.c 2(45) ), but never used
+Disk_FragWrite defined( diskFragIO.c 2(108) ), but never used
+Disk_ReadDiskHeader defined( diskHeader.c 2(147) ), but never used
+Disk_ReadDomainHeader defined( diskHeader.c 2(184) ), but never used
+Disk_WriteDomainHeader defined( diskHeader.c 2(226) ), but never used
+Disk_ReadSummaryInfo defined( diskHeader.c 2(252) ), but never used
+Disk_WriteSummaryInfo defined( diskHeader.c 2(285) ), but never used
+Disk_ReadLabel defined( diskHeader.c 2(355) ), but never used
+Disk_WriteLabel defined( diskHeader.c 2(394) ), but never used
+Disk_NewLabel defined( diskHeader.c 2(451) ), but never used
+strcpy returns value which is always ignored
+strncpy returns value which is always ignored
+Disk_EraseLabel defined( diskHeader.c 2(863) ), but never used
+Disk_WriteLfsSuperBlock defined( diskHeader.c 2(1034) ), but never used
+Disk_ReadLfsCheckPointHdr defined( diskHeader.c 2(1061) ), but never used
+Disk_ForEachCheckPointRegion defined( diskHeader.c 2(1206) ), but never used

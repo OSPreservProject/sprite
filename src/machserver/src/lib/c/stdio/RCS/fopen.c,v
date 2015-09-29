@@ -1,0 +1,124 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  srv030:1.2 srv028:1.2 srv027:1.2 srv026:1.2 srv024:1.2 srv022:1.2 srv021:1.2 srv019:1.2 srv018:1.2 srv016:1.2 srv014:1.2 srv010:1.2 srv008:1.2 srv007:1.2 srv006:1.2 srv005:1.2 srv004:1.2 srv003:1.2 srv002:1.2 srv001:1.2;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     91.12.12.22.10.13;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.12.04.17.07.18;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Fix includes.
+@
+text
+@/* 
+ * fopen.c --
+ *
+ *	Source code for the "fopen" library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/lib/c/stdio/RCS/fopen.c,v 1.1 91/12/04 17:07:18 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <stdio.h>
+#include "fileInt.h"
+#include <stdlib.h>
+#include <sys/fcntl.h>
+#include <sys/file.h>
+
+extern long lseek();
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * fopen --
+ *
+ *	Open a file and associate a buffered stream with the open file.
+ *
+ * Results:
+ *	The return value is a stream that may be used to access
+ *	the file, or NULL if an error occurred in opening the file.
+ *
+ * Side effects:
+ *	A file is opened, and a stream is initialized.
+ *
+ *----------------------------------------------------------------------
+ */
+
+FILE *
+fopen(fileName, access)
+    char *fileName;		/* Name of file to be opened. */
+    char *access;		/* Indicates type of access:  "r" for reading,
+				 * "w" for writing, "a" for appending, "r+"
+				 * for reading and writing, "w+" for reading
+				 * and writing with initial truncation, "a+"
+				 * for reading and writing with initial
+				 * position at the end of the file.  The
+				 * letter "b" may also appear in the string,
+				 * for ANSI compatibility, but only after
+				 * the first letter.  It is ignored. */
+{
+    int 	streamID, flags;
+
+    flags = StdioFileOpenMode(access);
+    if (flags == -1) {
+	return (FILE *) NULL;
+    }
+
+    streamID = open(fileName, flags, 0666);
+    if (streamID < 0) {
+	return (FILE *) NULL;
+    }
+    if (access[0] == 'a') {
+	(void) lseek(streamID, 0L, L_XTND);
+    }
+
+    /*
+     * Initialize the stream structure.
+     */
+
+    return fdopen(streamID, access);
+}
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: fopen.c,v 1.4 88/07/29 18:56:33 ouster Exp $ SPRITE (Berkeley)";
+d20 1
+a20 1
+#include "stdio.h"
+d22 2
+a23 1
+#include "stdlib.h"
+@

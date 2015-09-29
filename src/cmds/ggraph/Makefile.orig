@@ -1,0 +1,105 @@
+.IGNORE:
+.ONESHELL:
+CFLAGS=-f68881 -O
+
+OBJS=ggraph.o commands.o points.o axis.o symbols.o ggraphdata.o hist.o \
+set.o legend.o
+
+CFILES=ggraph.c commands.c points.c axis.c symbols.c ggraphdata.c hist.c \
+set.c legend.c
+
+ggraph: ${OBJS}
+	cc ${OBJS} -f68881 -lm -o ggraph
+
+doc: ggraph.ms graph1
+	grn -Pip ggraph.ms|ditroff -ms -Pip
+
+list: ggraph.h commands.h ggraphstructs.h ggraphdefs.h \
+	ggraph.c commands.c points.c axis.c \
+	symbols.c ggraphdata.c hist.c set.c legend.c
+	lpr -P2 $*
+
+clean: 
+	rm -f *.o core make.out errs ggraph
+
+tags:   $(CFILES)
+	ctags $(CFILES)
+
+depend:
+	cp /dev/null x.c
+	for i in $(CFILES) ; do \
+		(/bin/grep '^#[         ]*include' x.c $$i | sed \
+			-e '/\.\.\//d' \
+			-e 's,<\(.*\)>,"/usr/include/\1",' \
+			-e 's/:[^"]*"\([^"]*\)".*/: \1/' \
+			-e 's/\.c/\.o/' >>makedep); done
+	echo '/^# DO NOT DELETE THIS LINE/+2,$$d' >eddep
+	echo '$$r makedep' >>eddep
+	echo 'w' >>eddep
+	cp Makefile Makefile.bak
+	ed - Makefile < eddep
+	rm eddep makedep x.c
+	echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
+	echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
+	echo '# see make depend above' >> Makefile
+
+# DO NOT DELETE THIS LINE -- make depend uses it
+# DEPENDENCIES MUST END AT END OF FILE
+ggraph.o: /usr/include/stdio.h
+ggraph.o: /usr/include/errno.h
+ggraph.o: /usr/include/strings.h
+ggraph.o: /usr/include/math.h
+ggraph.o: /usr/include/ctype.h
+ggraph.o: ggraph.h
+ggraph.o: ggraphdefs.h
+commands.o: /usr/include/stdio.h
+commands.o: /usr/include/errno.h
+commands.o: /usr/include/strings.h
+commands.o: /usr/include/math.h
+commands.o: /usr/include/ctype.h
+commands.o: ggraph.h
+commands.o: commands.h
+commands.o: ggraphdefs.h
+points.o: /usr/include/stdio.h
+points.o: /usr/include/errno.h
+points.o: /usr/include/strings.h
+points.o: /usr/include/math.h
+points.o: ggraph.h
+points.o: ggraphdefs.h
+axis.o: /usr/include/stdio.h
+axis.o: /usr/include/errno.h
+axis.o: /usr/include/strings.h
+axis.o: /usr/include/math.h
+axis.o: ggraph.h
+axis.o: ggraphdefs.h
+symbols.o: /usr/include/stdio.h
+symbols.o: /usr/include/errno.h
+symbols.o: /usr/include/strings.h
+symbols.o: /usr/include/math.h
+symbols.o: ggraph.h
+symbols.o: ggraphdefs.h
+ggraphdata.o: /usr/include/stdio.h
+ggraphdata.o: /usr/include/errno.h
+ggraphdata.o: ggraph.h
+ggraphdata.o: ggraphdefs.h
+hist.o: /usr/include/stdio.h
+hist.o: /usr/include/errno.h
+hist.o: /usr/include/strings.h
+hist.o: /usr/include/math.h
+hist.o: ggraph.h
+hist.o: ggraphdefs.h
+set.o: /usr/include/stdio.h
+set.o: /usr/include/errno.h
+set.o: /usr/include/strings.h
+set.o: /usr/include/math.h
+set.o: ggraph.h
+set.o: ggraphdefs.h
+legend.o: /usr/include/stdio.h
+legend.o: /usr/include/errno.h
+legend.o: /usr/include/strings.h
+legend.o: /usr/include/math.h
+legend.o: ggraph.h
+legend.o: ggraphdefs.h
+# DEPENDENCIES MUST END AT END OF FILE
+# IF YOU PUT STUFF HERE IT WILL GO AWAY
+# see make depend above

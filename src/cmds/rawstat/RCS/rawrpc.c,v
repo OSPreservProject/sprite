@@ -1,0 +1,633 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.6
+date     90.11.29.23.09.19;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     90.07.26.12.07.51;  author douglis;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.02.04.20.51.27;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.06.29.15.33.45;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.06.23.16.47.57;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.06.23.15.50.47;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Raw printing of RPC statistics
+@
+
+
+1.6
+log
+@Track the nack stats in Rpc_SrvStat.
+@
+text
+@/* 
+ * rawrpc.c --
+ *
+ *	Print raw format RPC statistics.
+ *
+ * Copyright (C) 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/cmds/rawstat/RCS/rawrpc.c,v 1.5 90/07/26 12:07:51 douglis Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <stdio.h>
+#include <sysStats.h>
+#include <option.h>
+#include <kernel/sched.h>
+#include <vmStat.h>
+#include <host.h>
+#include <kernel/sync.h>
+#include <kernel/timer.h>
+#include <kernel/rpcClient.h>
+#include <kernel/rpcServer.h>
+#include <kernel/rpcCltStat.h>
+#include <kernel/rpcSrvStat.h>
+#include <kernel/rpcTrace.h>
+#include <kernel/rpcCall.h>
+
+static ReturnStatus status;
+extern int zero;
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintRawRpcCltStat --
+ *
+ *	Prints out the low-level statistics for the client side
+ *	of the RPC system.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+PrintRawRpcCltStat()
+{
+    Rpc_CltStat rpcCltStat;
+    Rpc_CltStat *X = &rpcCltStat;
+
+    status = Sys_Stats(SYS_RPC_CLT_STATS, TRUE, &rpcCltStat);
+    if (status != SUCCESS) {
+	return;
+    }
+    printf("Rpc_CltStat\n");
+    ZeroPrint("toClient       %8u\n", X->toClient);
+    ZeroPrint("badChannel     %8u\n", X->badChannel);
+    ZeroPrint("chanBusy       %8u\n", X->chanBusy);
+    ZeroPrint("badId          %8u\n", X->badId);
+    ZeroPrint("requests       %8u\n", X->requests);
+    ZeroPrint("replies        %8u\n", X->replies);
+    ZeroPrint("acks           %8u\n", X->acks);
+    ZeroPrint("recvPartial    %8u\n", X->recvPartial);
+    ZeroPrint("timeouts       %8u\n", X->timeouts);
+    ZeroPrint("aborts         %8u\n", X->aborts);
+    ZeroPrint("resends        %8u\n", X->resends);
+    ZeroPrint("sentPartial    %8u\n", X->sentPartial);
+    ZeroPrint("errors         %8u\n", X->errors);
+    ZeroPrint("nullErrors     %8u\n", X->nullErrors);
+    ZeroPrint("dupFrag        %8u\n", X->dupFrag);
+    ZeroPrint("close          %8u\n", X->close);
+    ZeroPrint("oldInputs      %8u\n", X->oldInputs);
+    ZeroPrint("badInput       %8u\n", X->badInput);
+    ZeroPrint("tooManyAcks    %8u\n", X->tooManyAcks);
+    ZeroPrint("chanWaits      %8u\n", X->chanWaits);
+    ZeroPrint("chanBroads     %8u\n", X->chanBroads);
+    ZeroPrint("chanHits       %8u\n", X->chanHits);
+    ZeroPrint("chanNew        %8u\n", X->chanNew);
+    ZeroPrint("chanReuse      %8u\n", X->chanReuse);
+    ZeroPrint("paramOverrun   %8u\n", X->paramOverrun);
+    ZeroPrint("dataOverrun    %8u\n", X->dataOverrun);
+    ZeroPrint("shorts         %8u\n", X->shorts);
+    ZeroPrint("longs          %8u\n", X->longs);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintRawRpcSrvStat --
+ *
+ *	Prints out the low-level statistics for the service side
+ *	of the RPC system.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+PrintRawRpcSrvStat()
+{
+    Rpc_SrvStat rpcSrvStat;
+    Rpc_SrvStat *X = &rpcSrvStat;
+
+    status = Sys_Stats(SYS_RPC_SRV_STATS, TRUE, &rpcSrvStat);
+    if (status != SUCCESS) {
+	return;
+    }
+    printf("Rpc_SrvStat\n");
+    ZeroPrint("toServer       %8u\n", X->toServer);
+    ZeroPrint("noAlloc        %8u\n", X->noAlloc);
+    ZeroPrint("nacks          %8u\n", X->nacks);
+    ZeroPrint("invClient      %8u\n", X->invClient);
+    ZeroPrint("serverBusy     %8u\n", X->serverBusy);
+    ZeroPrint("requests       %8u\n", X->requests);
+    ZeroPrint("impAcks        %8u\n", X->impAcks);
+    ZeroPrint("handoffs       %8u\n", X->handoffs);
+    ZeroPrint("fragMsgs       %8u\n", X->fragMsgs);
+    ZeroPrint("handoffAcks    %8u\n", X->handoffAcks);
+    ZeroPrint("fragAcks       %8u\n", X->fragAcks);
+    ZeroPrint("sentPartial    %8u\n", X->sentPartial);
+    ZeroPrint("busyAcks       %8u\n", X->busyAcks);
+    ZeroPrint("resends        %8u\n", X->resends);
+    ZeroPrint("badState       %8u\n", X->badState);
+    ZeroPrint("extra          %8u\n", X->extra);
+    ZeroPrint("reclaims       %8u\n", X->reclaims);
+    ZeroPrint("reassembly     %8u\n", X->reassembly);
+    ZeroPrint("dupFrag        %8u\n", X->dupFrag);
+    ZeroPrint("nonFrag        %8u\n", X->nonFrag);
+    ZeroPrint("fragAborts     %8u\n", X->fragAborts);
+    ZeroPrint("recvPartial    %8u\n", X->recvPartial);
+    ZeroPrint("closeAcks      %8u\n", X->closeAcks);
+    ZeroPrint("discards       %8u\n", X->discards);
+    ZeroPrint("unknownAcks    %8u\n", X->unknownAcks);
+    ZeroPrint("mostNackBufs   %8u\n", X->mostNackBuffers);
+    ZeroPrint("selfNacks      %8u\n", X->selfNacks);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintSrvCount --
+ *
+ *	Prints out the number of RPC calls made to this (server) host
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+PrintSrvCount()
+{
+    ReturnStatus status = SUCCESS;
+    register int call;
+    int rpcServiceCount[RPC_LAST_COMMAND+1];
+
+    status = Sys_Stats(SYS_RPC_SRV_COUNTS, sizeof(rpcServiceCount),
+					(Address)rpcServiceCount);
+    if (status != SUCCESS) {
+	return;
+    }
+
+    printf("Rpc Service Calls\n");
+    for (call=0 ; call<=RPC_LAST_COMMAND ; call++) {
+	if (zero || rpcServiceCount[call] > 0) {
+	    PrintCommand(stdout, call, "%-15s");
+	    printf("%8u\n", rpcServiceCount[call]);
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintCallCount --
+ *
+ *	Prints out the number of RPC calls made by this (client) host
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+PrintCallCount()
+{
+    ReturnStatus status = SUCCESS;
+    register int call;
+    int rpcClientCalls[RPC_LAST_COMMAND+1];
+
+    status = Sys_Stats(SYS_RPC_CALL_COUNTS, sizeof(rpcClientCalls),
+					(Address)rpcClientCalls);
+    if (status != SUCCESS) {
+	return;
+    }
+
+    printf("Rpc Client Calls\n");
+    for (call=0 ; call<=RPC_LAST_COMMAND ; call++) {
+	if (zero || rpcClientCalls[call] > 0) {
+	    PrintCommand(stdout, call, "%-15s");
+	    printf("%8u\n", rpcClientCalls[call]);
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintHostName --
+ *
+ *	Prints out the host name and trims of the internet domain suffix.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+PrintHostName(spriteID, format)
+    int spriteID;
+    char *format;
+{
+    Host_Entry *entryPtr;
+    char string[64];
+    char *cPtr;
+
+    entryPtr = Host_ByID(spriteID);
+    if (entryPtr == (Host_Entry *)NULL) {
+	sprintf(string, "%d", spriteID);
+	ZeroPrint(format, string);
+    } else {
+	for (cPtr = entryPtr->name ; *cPtr ; cPtr++) {
+	    /*
+	     * Strip off the domain suffix.
+	     */
+	    if (*cPtr == '.') {
+		*cPtr = '\0';
+		break;
+	    }
+	}
+	ZeroPrint(format, entryPtr->name);
+    }
+}
+
+/*
+ * PrintCommand --
+ *
+ *	Convert from procedure ID to procedure name and output it.
+ */
+PrintCommand(stream, command, format)
+    FILE *stream;
+    int command;
+    char *format;
+{
+    char buffer[128];
+    char *string;
+
+    switch (command) {
+	case RPC_ECHO_1:
+	    string = "echoIntr";
+	    break;
+	case RPC_ECHO_2:
+	    string = "echo";
+	    break;
+	case RPC_SEND:
+	    string = "send";
+	    break;
+	case RPC_RECEIVE:
+	    string = "recv";
+	    break;
+	case RPC_GETTIME:
+	    string = "get_time";
+	    break;
+	case RPC_FS_PREFIX:
+	    string = "prefix";
+	    break;
+	case RPC_FS_OPEN:
+	    string = "open";
+	    break;
+	case RPC_FS_READ:
+	    string = "read";
+	    break;
+	case RPC_FS_WRITE:
+	    string = "write";
+	    break;
+	case RPC_FS_CLOSE:
+	    string = "close";
+	    break;
+	case RPC_FS_UNLINK:
+	    string = "remove";
+	    break;
+	case RPC_FS_RENAME:
+	    string = "rename";
+	    break;
+	case RPC_FS_MKDIR:
+	    string = "mkdir";
+	    break;
+	case RPC_FS_RMDIR:
+	    string = "rmdir";
+	    break;
+	case RPC_FS_MKDEV:
+	    string = "make_dev";
+	    break;
+	case RPC_FS_LINK:
+	    string = "link";
+	    break;
+	case RPC_FS_SYM_LINK:
+	    string = "link";
+	    break;
+	case RPC_FS_GET_ATTR:
+	    string = "get_attrID";
+	    break;
+	case RPC_FS_SET_ATTR:
+	    string = "set_attrID";
+	    break;
+	case RPC_FS_GET_ATTR_PATH:
+	    string = "get_attr";
+	    break;
+	case RPC_FS_SET_ATTR_PATH:
+	    string = "set_attr";
+	    break;
+	case RPC_FS_GET_IO_ATTR:
+	    string = "getI/Oattr";
+	    break;
+	case RPC_FS_SET_IO_ATTR:
+	    string = "setI/Oattr";
+	    break;
+	case RPC_FS_DEV_OPEN:
+	    string = "dev_open";
+	    break;
+	case RPC_FS_SELECT:
+	    string = "select";
+	    break;
+	case RPC_FS_IO_CONTROL:
+	    string = "ioctl";
+	    break;
+	case RPC_FS_CONSIST:
+	    string = "consist";
+	    break;
+	case RPC_FS_CONSIST_REPLY:
+	    string = "cnsst_rply";
+	    break;
+	case RPC_FS_COPY_BLOCK:
+	    string = "block_copy";
+	    break;
+	case RPC_FS_MIGRATE:
+	    string = "mig_file";
+	    break;
+	case RPC_FS_RELEASE:
+	case RPC_FS_RELEASE_NEW:
+	    string = "release";
+	    break;
+	case RPC_FS_REOPEN:
+	    string = "reopen";
+	    break;
+	case RPC_FS_RECOVERY:
+	    string = "recov";
+	    break;
+	case RPC_FS_DOMAIN_INFO:
+	    string = "domain_info";
+	    break;
+	case RPC_PROC_MIG_COMMAND:
+	    string = "mig_cmd";
+	    break;
+	case RPC_PROC_REMOTE_CALL:
+	    string = "mig_call";
+	    break;
+	case RPC_PROC_REMOTE_WAIT:
+	    string = "wait";
+	    break;
+	case RPC_PROC_GETPCB:
+	    string = "getpcb";
+	    break;
+	case RPC_REMOTE_WAKEUP:
+	    string = "wakeup";
+	    break;
+	case RPC_SIG_SEND:
+	    string = "signal";
+	    break;
+	default: {
+	    sprintf(buffer,"%d",command);
+	    string = buffer;
+	    break;
+	}
+    }
+    fprintf(stream, format, string);
+}
+@
+
+
+1.5
+log
+@added RPC_FS_RELEASE_NEW
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/cmds/rawstat/RCS/rawrpc.c,v 1.4 90/02/04 20:51:27 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d14 15
+a28 15
+#include "sprite.h"
+#include "stdio.h"
+#include "sysStats.h"
+#include "option.h"
+#include "kernel/sched.h"
+#include "vmStat.h"
+#include "host.h"
+#include "kernel/sync.h"
+#include "kernel/timer.h"
+#include "kernel/rpcClient.h"
+#include "kernel/rpcServer.h"
+#include "kernel/rpcCltStat.h"
+#include "kernel/rpcSrvStat.h"
+#include "kernel/rpcTrace.h"
+#include "kernel/rpcCall.h"
+d119 1
+d142 2
+@
+
+
+1.4
+log
+@Fixed label for getpcb RPC (was "wait")
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /a/newcmds/rawstat/RCS/rawrpc.c,v 1.3 89/06/29 15:33:45 brent Exp $ SPRITE (Berkeley)";
+d364 1
+@
+
+
+1.3
+log
+@Fixed field labels so they have no embedded spaces
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /a/newcmds/rawstat/RCS/rawrpc.c,v 1.2 89/06/23 16:47:57 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d385 1
+a385 1
+	    string = "wait";
+@
+
+
+1.2
+log
+@Chagned to unsigned print format to handle large numbers
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /a/newcmds/rawstat/RCS/rawrpc.c,v 1.1 89/06/23 15:50:47 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d286 1
+a286 1
+	    string = "get time";
+d316 1
+a316 1
+	    string = "make dev";
+d325 1
+a325 1
+	    string = "get attrID";
+d328 1
+a328 1
+	    string = "set attrID";
+d331 1
+a331 1
+	    string = "get attr";
+d334 1
+a334 1
+	    string = "set attr";
+d343 1
+a343 1
+	    string = "dev open";
+d355 1
+a355 1
+	    string = "cnsst rply";
+d358 1
+a358 1
+	    string = "block copy";
+d361 1
+a361 1
+	    string = "mig file";
+d373 1
+a373 1
+	    string = "domain info";
+d376 1
+a376 1
+	    string = "mig cmd";
+d379 1
+a379 1
+	    string = "mig call";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /a/newcmds/rpcstat/RCS/rpcstat.c,v 1.16 89/06/23 13:41:16 brent Exp $ SPRITE (Berkeley)";
+d60 28
+a87 28
+    ZeroPrint("toClient       %8d\n", X->toClient);
+    ZeroPrint("badChannel     %8d\n", X->badChannel);
+    ZeroPrint("chanBusy       %8d\n", X->chanBusy);
+    ZeroPrint("badId          %8d\n", X->badId);
+    ZeroPrint("requests       %8d\n", X->requests);
+    ZeroPrint("replies        %8d\n", X->replies);
+    ZeroPrint("acks           %8d\n", X->acks);
+    ZeroPrint("recvPartial    %8d\n", X->recvPartial);
+    ZeroPrint("timeouts       %8d\n", X->timeouts);
+    ZeroPrint("aborts         %8d\n", X->aborts);
+    ZeroPrint("resends        %8d\n", X->resends);
+    ZeroPrint("sentPartial    %8d\n", X->sentPartial);
+    ZeroPrint("errors         %8d\n", X->errors);
+    ZeroPrint("nullErrors     %8d\n", X->nullErrors);
+    ZeroPrint("dupFrag        %8d\n", X->dupFrag);
+    ZeroPrint("close          %8d\n", X->close);
+    ZeroPrint("oldInputs      %8d\n", X->oldInputs);
+    ZeroPrint("badInput       %8d\n", X->badInput);
+    ZeroPrint("tooManyAcks    %8d\n", X->tooManyAcks);
+    ZeroPrint("chanWaits      %8d\n", X->chanWaits);
+    ZeroPrint("chanBroads     %8d\n", X->chanBroads);
+    ZeroPrint("chanHits       %8d\n", X->chanHits);
+    ZeroPrint("chanNew        %8d\n", X->chanNew);
+    ZeroPrint("chanReuse      %8d\n", X->chanReuse);
+    ZeroPrint("paramOverrun   %8d\n", X->paramOverrun);
+    ZeroPrint("dataOverrun    %8d\n", X->dataOverrun);
+    ZeroPrint("shorts         %8d\n", X->shorts);
+    ZeroPrint("longs          %8d\n", X->longs);
+d117 24
+a140 24
+    ZeroPrint("toServer       %8d\n", X->toServer);
+    ZeroPrint("noAlloc        %8d\n", X->noAlloc);
+    ZeroPrint("invClient      %8d\n", X->invClient);
+    ZeroPrint("serverBusy     %8d\n", X->serverBusy);
+    ZeroPrint("requests       %8d\n", X->requests);
+    ZeroPrint("impAcks        %8d\n", X->impAcks);
+    ZeroPrint("handoffs       %8d\n", X->handoffs);
+    ZeroPrint("fragMsgs       %8d\n", X->fragMsgs);
+    ZeroPrint("handoffAcks    %8d\n", X->handoffAcks);
+    ZeroPrint("fragAcks       %8d\n", X->fragAcks);
+    ZeroPrint("sentPartial    %8d\n", X->sentPartial);
+    ZeroPrint("busyAcks       %8d\n", X->busyAcks);
+    ZeroPrint("resends        %8d\n", X->resends);
+    ZeroPrint("badState       %8d\n", X->badState);
+    ZeroPrint("extra          %8d\n", X->extra);
+    ZeroPrint("reclaims       %8d\n", X->reclaims);
+    ZeroPrint("reassembly     %8d\n", X->reassembly);
+    ZeroPrint("dupFrag        %8d\n", X->dupFrag);
+    ZeroPrint("nonFrag        %8d\n", X->nonFrag);
+    ZeroPrint("fragAborts     %8d\n", X->fragAborts);
+    ZeroPrint("recvPartial    %8d\n", X->recvPartial);
+    ZeroPrint("closeAcks      %8d\n", X->closeAcks);
+    ZeroPrint("discards       %8d\n", X->discards);
+    ZeroPrint("unknownAcks    %8d\n", X->unknownAcks);
+d175 1
+a175 1
+	    printf("%8d\n", rpcServiceCount[call]);
+d212 1
+a212 1
+	    printf("%8d\n", rpcClientCalls[call]);
+@

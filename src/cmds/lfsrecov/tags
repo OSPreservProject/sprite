@@ -1,0 +1,50 @@
+ALLOC_SIZE	files.c	/^#define	ALLOC_SIZE(nameLength)	\\$/
+AddEntryToDirectory	files.c	/^AddEntryToDirectory(dirFileNumber, dirOffset, dirE/
+AddrOlderThan	usage.c	/^AddrOlderThan(addr1, addr2)$/
+C	lfsrecov.c	/^#define	C(FIELD, NAME) if(entryPtr->FIELD != newEn/
+CheckVersionTruncNum	files.c	/^CheckVersionTruncNum(startAddress, fileNumber, tru/
+CompareCheckpoints	lfsrecov.c	/^CompareCheckpoints(lfsPtr, newLfsPtr)$/
+CreateLostDirectory	files.c	/^CreateLostDirectory(fileNumber) $/
+DescExists	files.c	/^DescExists(fileNumber)$/
+DirOpFlagsToString	dirlog.c	/^DirOpFlagsToString(opFlags)$/
+FileTypeToString	files.c	/^FileTypeToString(fileType)$/
+FindLost_FoundDir	files.c	/^FindLost_FoundDir(lfsPtr)$/
+FindNewDesc	desc.c	/^FindNewDesc(fileNumber, addrPtr, descPtrPtr)$/
+FindStartEntryAddr	dirlog.c	/^FindStartEntryAddr(logSeqNum, addrPtr)$/
+GrowDirectory	files.c	/^GrowDirectory(dirFilePtr, dirOffset)$/
+LfsFileAddToDirectory	files.c	/^LfsFileAddToDirectory(dirFilePtr, filePtr, name)$/
+LostFile	files.c	/^} LostFile;$/
+MakeEmptyDirectory	files.c	/^MakeEmptyDirectory(fileNumber, parentFileNumber)$/
+MarkSegDirty	usage.c	/^MarkSegDirty(segNumber)$/
+Mlfsrecov	lfsrecov.c	/^main(argc,argv)$/
+NewDescValue	desc.c	/^} NewDescValue;$/
+RecordBlockUsageChange	files.c	/^RecordBlockUsageChange(fileNumber, oldFilePtr, new/
+RecordIndirectBlockUsage	files.c	/^RecordIndirectBlockUsage(oldFilePtr, newFilePtr, v/
+RecordLogEntryStart	dirlog.c	/^RecordLogEntryStart(entryPtr, addr)$/
+RecordLostCreate	files.c	/^RecordLostCreate(dirFileNumber,dirEntryPtr)$/
+RecordNewDesc	desc.c	/^RecordNewDesc(fileNumber, address, descPtr)$/
+RecordSegInLog	usage.c	/^RecordSegInLog(segNo, blockOffset)$/
+RecordUnrefDesc	desc.c	/^RecordUnrefDesc(fileNumber, dirFileNumber, dirEntr/
+RecovDescMapSummary	desc.c	/^RecovDescMapSummary(lfsPtr, pass, segPtr, startAdd/
+RecovDirLogBlock	dirlog.c	/^RecovDirLogBlock(hdrPtr, addr, pass)$/
+RecovDirLogEntry	dirlog.c	/^RecovDirLogEntry(entryPtr, addr)$/
+RecovFileLayoutSummary	files.c	/^RecovFileLayoutSummary(lfsPtr, pass, segPtr, start/
+RecovSegUsageSummary	usage.c	/^RecovSegUsageSummary(lfsPtr, pass, segPtr, startAd/
+RecoveryFile	files.c	/^RecoveryFile(fileNumber, address, descPtr)$/
+RemovedEntryFromDirectory	files.c	/^RemovedEntryFromDirectory(dirFileNumber, dirOffset/
+RollMetaDataForward	lfsrecov.c	/^RollMetaDataForward(lfsPtr)$/
+RollSegUsageForward	usage.c	/^RollSegUsageForward(lfsPtr)$/
+ScanNewDesc	desc.c	/^ScanNewDesc(clientDataPtr, fileNumberPtr, addressP/
+ScanNewDescEnd	desc.c	/^ScanNewDescEnd(clientDataPtr)$/
+ScanRecoveryLog	lfsrecov.c	/^ScanRecoveryLog(lfsPtr, pass)$/
+ScanUnrefDesc	desc.c	/^ScanUnrefDesc(clientDataPtr, fileNumberPtr)$/
+ScanUnrefDescEnd	desc.c	/^ScanUnrefDescEnd(clientDataPtr)$/
+SegInfo	usage.c	/^} SegInfo;$/
+SegIsPartOfLog	usage.c	/^SegIsPartOfLog(segNo)$/
+SetParentDirectory	files.c	/^SetParentDirectory(dirFileNumber, parentFileNumber/
+ShowDirLogBlock	dirlog.c	/^ShowDirLogBlock(hdrPtr, addr)$/
+UpdateDescLinkCount	files.c	/^UpdateDescLinkCount(opType, fileNumber, linkCount)/
+UpdateLost_Found	files.c	/^UpdateLost_Found(lfsPtr) $/
+WriteOutStats	lfsrecov.c	/^WriteOutStats(fd)$/
+escStatus	files.c	/^DescStatus(fileNumber, startAddr, addr)$/
+irBlockStatus	files.c	/^DirBlockStatus(dirFileNumber, dirOffset, startAddr/

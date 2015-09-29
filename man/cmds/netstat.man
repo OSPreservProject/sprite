@@ -1,0 +1,14 @@
+' $Header: /sprite/src/cmds/rpcsrvinfo/RCS/rpcsrvinfo.man,v 1.1 90/01/19 19:14:12 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS NETSTAT cmds
+.BS
+.SH NAME
+netstat \- Print out statistics about the network interface
+.SH SYNOPSIS
+\fBnetstat\fR
+.BE
+.SH INTRODUCTION
+This command prints out statistics about the network interface, such as
+number of packets received, number dropped, etc.
+.SH KEYWORDS
+network, packets, trace, statistics

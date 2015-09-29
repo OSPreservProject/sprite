@@ -1,0 +1,35 @@
+ Sprite
+/sprite/man/
+nroff -man -Tcrt %s > %s
+#
+Commands (1)
+cmds
+cmds.fmt
+#
+C Library (2 & 3)
+lib/c
+lib.fmt/c
+#
+Math Library (2M)
+lib/m
+lib.fmt/m
+#
+Sun RPC Library
+lib/sunrpc
+lib.fmt/sunrpc
+#
+Tcl Library
+lib/tcl
+lib.fmt/tcl
+#
+Devices (4)
+dev
+dev.fmt
+#
+Files (5)
+files
+files.fmt
+#
+Admin (6)
+admin
+admin.fmt

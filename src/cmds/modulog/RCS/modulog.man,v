@@ -1,0 +1,151 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.3
+date     88.12.30.09.59.40;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.12.22.10.11.39;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.12.22.10.08.47;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@More format upgrades.
+@
+text
+@' $Header: /a/newcmds/modulog/RCS/modulog.man,v 1.2 88/12/22 10:11:39 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS MODULOG cmds
+.BS
+.SH NAME
+modulog \- Modify the user log
+.SH SYNOPSIS
+\fBmodulog\fR [\fIoptions\fR]
+.SH OPTIONS
+.IP "\fB\-help\fR" 15
+Print a summary of the command-line options and exit.
+.IP "\fB\-C\fR"
+Clear all login entries for the current host.
+.IP "\fB\-p \fIport\fR"
+Port number to use when recording or invalidating a login.
+.IP "\fB\-i\fR"
+Invalidate the login entry for the current host on the specified port.
+.IP "\fB\-u \fIuser\f"
+User for whom to create a login entry.  (Defaults to current user.)
+.IP "\fB\-l \fIlocation\fR"
+Generate a new login entry, with the user's location specified by this
+argument. 
+.BE
+
+.SH INTRODUCTION
+.PP
+This program allows modification of the user log.  The caller must
+have write-access to the log database files.  \fBModulog\fR is typically
+used at boot time to invalidate old login entries.  It can also be
+used to invalidate particular entries for the host on which it is
+invoked, or create new ones.
+.PP
+If the \fB\-C\fR switch is given, then \fBmodulog\fR will invalidate login
+entries.  Otherwise, if the \fB\-i\fR and \fB\-p\fP switches are given,
+\fBmodulog\fR will invalidate only the entry corresponding to the port
+specified by the \fB\-p\fP switch.   Finally, if the \fB-p\fP,
+and \fB-l\fP switches are used together, a new login
+entry will be recorded, as if \fIuser\fP logged in from \fIlocation\fP
+on /hosts/`hostname`/dev/rlogin\fIport\fP at the time \fBmodulog\fR is run.
+To generate a login record for the console, specify a  \fIport\fP of
+0 and a location of ``''.
+\fIUser\fP defaults to the user invoking the \fBmodulog\fR program.
+.FILES
+.IP /sprite/admin/data/userLog
+The database of current logins on each host.
+.IP /sprite/admin/data/lastLog
+The database of each user's most recent login.
+.IP /hosts/`hostname`/dev/rlogin*
+Pseudo-devices used by Rlogin, corresponding to ports 1 and beyond.
+.SH KEYWORDS
+login, user log, modify
+.SH SEE ALSO
+db, ulog, login, rlogin, rlogind
+@
+
+
+1.2
+log
+@Updates to new official man format.
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/modulog/RCS/modulog.man,v 1.1 88/12/22 10:08:47 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d10 1
+a10 1
+.IP "\fB-help\fR" 15
+d12 1
+a12 1
+.IP "\fB-C\fR"
+d14 1
+a14 1
+.IP "\fB-p \fIport\fR"
+d16 1
+a16 1
+.IP "\fB-i\fR"
+d18 1
+a18 1
+.IP "\fB-u \fIuser\f"
+d20 1
+a20 1
+.IP "\fB-l \fIlocation\fR"
+d28 1
+a28 1
+have write-access to the log database files.  Modulog is typically
+d33 5
+a37 5
+If the \fB-C\fR switch is given, then Modulog will invalidate login
+entries.  Otherwise, if the \fB-i\fR and \fB-p\fP switches are given,
+Modulog will invalidate only the entry corresponding to the port
+specified by the \fB-p\fP switch.   Finally, if the \fB"-p"\fP,
+and \fB"-l"\fP switches are used together, a new login
+d39 1
+a39 1
+on /hosts/`hostname`/dev/rlogin\fIport\fP at the time Modulog is run.
+d41 2
+a42 2
+0 and a location of "".
+\fIUser\fP defaults to the user invoking the Modulog program.
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 3
+a3 2
+' $Header: modulog,v 1.1 88/09/23 13:00:48 douglis Exp $ SPRITE (Berkeley)
+.TH modulog cmds
+d5 1
+a5 1
+.NA
+d7 1
+a7 1
+.SY
+@

@@ -1,0 +1,125 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.4
+date     89.11.27.14.27.02;  author douglis;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.11.21.15.56.11;  author douglis;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.12.30.10.29.58;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.12.22.13.23.22;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.4
+log
+@added -r (no rlogins) option
+@
+text
+@' $Header: /sprite/src/cmds/wall/RCS/wall.man,v 1.3 89/11/21 15:56:11 douglis Exp Locker: douglis $
+.so \*(]ltmac.sprite
+.HS WALL cmds
+.BS
+.SH NAME
+wall \- write to all users
+.SH SYNOPSIS
+\fBwall\fP [ \fB\-v\fP ] [ \fB-l\fP ] [ \fB-r\fP ] 
+.IP "\fB\-v\fR" 15
+Verbose: inform the user whether or not each machine
+successfully received the message.
+.IP "\fB\-l\fR" 15
+Local: Only inform users on the local host.
+.IP "\fB\-r\fR" 15
+No rlogins: Only write to /dev/syslog on each machine, not rlogins.
+.BE
+.SH DESCRIPTION
+.LP
+\fIWall\fP reads its standard input until an end-of-file.
+It then sends this message, preceded by `Broadcast Message ...',
+to the syslog window and all rlogins on each machine.  If the \fB-l\fR
+option is specified, only users on the local host are notified.  
+If the \fB-r\fR option is specified, only syslog windows are written to.
+The
+\fB\-v\fR option will inform 
+the user whether or not each machine successfully received the
+message.
+
+.SH KEYWORDS
+write, message, syslog
+@
+
+
+1.3
+log
+@added -l option
+@
+text
+@d1 1
+a1 1
+' $Header: /sprite/src/cmds/wall/RCS/wall.man,v 1.2 88/12/30 10:29:58 ouster Exp Locker: douglis $
+d8 1
+a8 1
+\fBwall\fP [ \fB\-v\fP ] [ \fB-l\fP ]
+d14 2
+d22 3
+a24 1
+option is specified, only users on the local host are notified.  The
+d26 1
+a26 1
+the user whether or not each machine successfuly received the
+@
+
+
+1.2
+log
+@More format upgrades.
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/wall/RCS/wall.man,v 1.1 88/12/22 13:23:22 ouster Exp Locker: ouster $
+d8 1
+a8 1
+\fBwall\fP [ \fB\-v\fP ]
+d12 2
+d19 3
+a21 1
+to the syslog window of each machine.  The \fB\-v\fR option will inform
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+' $Header$
+d9 1
+a9 1
+.IP "\fB-v\fR" 15
+d17 1
+a17 1
+to the syslog window of each machine.  The -v option will inform
+@

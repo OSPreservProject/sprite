@@ -1,0 +1,68 @@
+
+
+
+Tcl_Backslash     Tcl Command Language Library      Tcl_Backslash
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tcl_Backslash - parse a backslash sequence
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttccll..hh>>
+
+     char
+     TTccll__BBaacckkssllaasshh(_s_r_c, _c_o_u_n_t_P_t_r)
+
+AARRGGUUMMEENNTTSS
+     char      *_s_r_c           (in)      Pointer   to   a   string
+                                        starting      with      a
+                                        backslash.
+
+     int       *_c_o_u_n_t_P_t_r      (out)     If _c_o_u_n_t_P_t_r  isn't  NULL,
+                                        *_c_o_u_n_t_P_t_r  gets filled in
+                                        with number of characters
+                                        in      the     backslash
+                                        sequence,  including  the
+                                        backslash character.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This is a utility procedure used by several of the Tcl  com-
+     mands.   It parses a backslash sequence and returns the sin-
+     gle character corresponding to the sequence.   TTccll__BBaacckkssllaasshh
+     modifies  *_c_o_u_n_t_P_t_r  to  contain the number of characters in
+     the backslash sequence.  If _s_r_c doesn't point to a backslash
+     sequence  understood  by  Tcl,  then Tcl_Backslash returns a
+     backslash as its result and *_c_o_u_n_t_P_t_r gets set to 1 (in this
+     case  the  backslash  character  should  not get any special
+     treatment).
+
+     See the Tcl  manual  entry  for  information  on  the  valid
+     backslash  sequences.  All of the sequences described in the
+     Tcl manual  entry  are  supported  by  TTccll__BBaacckkssllaasshh  except  |
+     backslash-newline, which is not understood.
+
+
+KKEEYYWWOORRDDSS
+     backslash, parse
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  November 26, 1989                  1
+
+
+

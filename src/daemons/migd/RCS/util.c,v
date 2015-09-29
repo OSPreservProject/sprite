@@ -1,0 +1,125 @@
+head     2.0;
+branch   ;
+access   ;
+symbols  before_fairness_changes:2.0 ckpt1:1.2;
+locks    ; strict;
+comment  @ * @;
+
+
+2.0
+date     90.06.30.17.11.09;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     90.02.28.10.54.46;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.02.15.19.19.38;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@General utilities for the migration daemon.
+@
+
+
+2.0
+log
+@Changing version numbers.
+@
+text
+@/* 
+ * util.c --
+ *
+ *	General utilities for the migration daemon.
+ *
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/daemons/migd/RCS/util.c,v 1.2 90/02/28 10:54:46 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <syslog.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <errno.h>
+#include <migd.h>
+
+extern int debug;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Malloc --
+ *
+ *	Centralized location for calling malloc and checking for
+ *	out of memory error.  
+ *
+ * Results:
+ *	A pointer to the allocated memory is returned.  NULL is never
+ *	returned.
+ *
+ * Side effects:
+ *	If out of memory, we panic if debugging is enabled or exit
+ *	otherwise.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+Malloc(numBytes)
+    int numBytes;	/* How many bytes to allocate. */
+{
+    char *buffer;
+
+    buffer = malloc(numBytes);
+    if (buffer == (char *) NULL) {
+	SYSLOG0(LOG_ERR, "Out of memory!  Exiting.");
+	if (debug) {
+	    panic("Out of memory.\n");
+	}
+	exit(ENOMEM);
+    }
+    return(buffer);
+}
+@
+
+
+1.2
+log
+@print msgs to both syslog & error log when appropriate.  
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/daemons/migd/RCS/util.c,v 1.1 90/02/15 19:19:38 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user2/douglis/pdev_mig/migd/RCS/util.c,v 1.1 90/02/08 20:20:58 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d22 1
+d24 1
+d56 1
+a56 1
+	syslog(LOG_ERR, "Out of memory!  Exiting.");
+@

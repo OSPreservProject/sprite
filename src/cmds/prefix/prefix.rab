@@ -1,0 +1,459 @@
+/* 
+ * prefix.c --
+ *
+ *	Program to print and manipulate the prefix table.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/cmds/prefix/RCS/prefix.c,v 1.9 91/10/25 15:57:01 rab Exp Locker: rab $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <fs.h>
+#include <fsCmd.h>
+#include <host.h>
+#include <option.h>
+#include <stdio.h>
+#include <string.h>
+#include <status.h>
+#include <sysStats.h>
+#include <sys/stat.h>
+
+static int PrintPrefixEntry _ARGS_ ((Fs_Prefix *prefixPtr));
+static void validateLocalPath _ARGS_ ((char *path));
+
+extern int errno;
+static char *programName;
+
+/*
+ * Command line options.
+ */
+
+static int print = 0;
+static int readOnly = 0;
+static int localAccess = 0;
+static int force = FALSE;
+static char *loadedPrefix = (char *) NULL;
+static char *deviceName = (char *) NULL;
+static char *unmountName = (char *) NULL;
+static char *exportedPrefix = (char *) NULL;
+static char *clearedPrefix = (char *) NULL;
+static char *deletedPrefix = (char *) NULL;
+static char *Prefix = (char *) NULL;
+static char *localPath = (char *) NULL;
+static char *addHostName = NULL;
+static char *delHostName = NULL;
+static char *serverName = NULL;
+
+static Option optionArray[] = {
+    {OPT_TRUE,   "p", (char *) &print,
+	"Print the prefix table or export list"},
+    {OPT_TRUE,   "f", (char *) &force,
+	"Force the prefix, even if the path doesn't exist"},
+    {OPT_STRING, "a", (char *) &loadedPrefix,
+	"Next argument is prefix to add"},
+    {OPT_STRING,  "s", (char *) &serverName,
+	"Next argument is name or id of server for added prefix (use with -a)"},
+    {OPT_STRING, "l", (char *) &localPath,
+	"Next argument is directory to mount/export (with -x, -M or -U)"},
+    {OPT_STRING, "M", (char *) &deviceName,
+	"Next argument is device to mount (use -l too)"},
+    {OPT_TRUE,	 "r", (char *) &readOnly,
+	"Mount read only"},
+    {OPT_TRUE,	 "L", (char *) &localAccess,
+	"Mount locally only; do not export"},
+    {OPT_STRING, "U", (char *) &unmountName,
+	"Next argument is prefix to unmount"},
+    {OPT_STRING, "x", (char *) &exportedPrefix, 
+	"Next argument is exported prefix (use with -p, -l, or -[hH])"},
+    {OPT_STRING, "h", (char *) &addHostName,
+	"Next argument is name or id of host to add to export list"},
+    {OPT_STRING, "H", (char *) &delHostName,
+	"Next argument is name or id of host to delete from export list"},
+    {OPT_STRING, "c", (char *) &clearedPrefix,
+	"Next argument is prefix to clear handle for"},
+    {OPT_STRING, "d", (char *) &deletedPrefix, 
+	"Next argument is prefix to delete altogether"},
+};
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	Collects arguments and uses Fs_Command to manipulate the
+ *	prefix table.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Calls Fs_Command...
+ *
+ *----------------------------------------------------------------------
+ */
+
+main(argc, argv)
+    int argc;
+    char *argv[];
+{
+    register 	ReturnStatus status = SUCCESS;	/* status of system calls */
+    int 	flags;
+    int 	addHostID = -1;
+    int 	delHostID = -1;
+    int 	serverID = FS_NO_SERVER;
+    Host_Entry	*entry;
+    int		scanned;
+    int		temp;
+
+    programName = argv[0];
+    if (argc == 1) {
+	print = 1;
+    } else {
+	argc = Opt_Parse(argc, argv, optionArray, Opt_Number(optionArray),
+		OPT_ALLOW_CLUSTERING);
+    }
+
+    if (argc != 1) {
+	fprintf(stderr, "%s got extraneous argument \"%s\".\n", argv[0],
+		argv[1]);
+	Opt_PrintUsage(argv[0], optionArray, Opt_Number(optionArray));
+	exit(1);
+    }
+    if (addHostName != (char *) NULL) {
+	scanned = sscanf(addHostName, " %d", &temp);
+	if (scanned == 1) {
+	    addHostID = temp;
+	} else {
+	    entry = Host_ByName(addHostName);
+	    if (entry == NULL) {
+		fprintf(stderr, "No such host \"%s\"\n", addHostName);
+		exit(1);
+	    }
+	    addHostID = entry->id;
+	}
+    }
+    if (delHostName != (char *) NULL) {
+	scanned = sscanf(delHostName, " %d", &temp);
+	if (scanned == 1) {
+	    delHostID = temp;
+	} else {
+	    entry = Host_ByName(delHostName);
+	    if (entry == NULL) {
+		fprintf(stderr, "No such host \"%s\"\n", delHostName);
+		exit(1);
+	    }
+	    delHostID = entry->id;
+	}
+    }
+    if (serverName != (char *) NULL) {
+	scanned = sscanf(serverName, " %d", &temp);
+	if (scanned == 1) {
+	    serverID = temp;
+	} else {
+	    entry = Host_ByName(serverName);
+	    if (entry == NULL) {
+		fprintf(stderr, "No such host \"%s\"\n", serverName);
+		exit(1);
+	    }
+	    serverID = entry->id;
+	}
+    }
+    if (loadedPrefix != (char *) NULL) {
+	/*
+	 * Load a prefix
+	 *	Load a prefix into the prefix table.
+	 *	A prefix in the prefix table causes an attempt to find the
+	 *	server the first time a file is opened under that prefix.
+	 *      If serverID == FS_NO_SERVER then a broadcast is done,
+	 *	otherwise the server is contacted directly.
+	 */
+	Fs_PrefixLoadInfo	loadInfo;
+
+	(void) strcpy(loadInfo.prefix, loadedPrefix);
+	loadInfo.serverID = serverID;
+	status = Fs_Command(FS_PREFIX_LOAD, sizeof(Fs_PrefixLoadInfo), 
+		 &loadInfo);
+	if (status != SUCCESS) {
+	    fprintf(stderr, "%s couldn't load prefix: %s.\n",
+		    argv[0], Stat_GetMsg(status));
+	    exit(1);
+	}
+    }
+    if (deviceName != (char *)NULL) {
+	validateLocalPath(localPath);
+	flags = 0;
+	if (localAccess) {
+	    flags |= FS_ATTACH_LOCAL;
+	}
+	if (readOnly) {
+	    flags |= FS_ATTACH_READ_ONLY;
+	}
+	status = Fs_AttachDisk(deviceName, localPath, flags);
+	if (status != SUCCESS) {
+	    fprintf(stderr, "Mount \"%s\" on \"%s\": %s\n", deviceName,
+			localPath, Stat_GetMsg(status));
+	    exit(1);
+	}
+	localPath = (char *)NULL;
+    }
+    if (unmountName != (char *)NULL) {
+	status = Fs_AttachDisk(deviceName, unmountName, FS_DETACH);
+	if (status != SUCCESS) {
+	    fprintf(stderr, "Unmount \"%s\": %s\n", unmountName,
+		    Stat_GetMsg(status));
+	    exit(1);
+	}
+    }
+    if (addHostID != -1 || delHostID != -1) {
+	Fs_PrefixControl	prefixControl;
+	/*
+	 * Add or remove a host from a prefix's export list.
+	 */
+	if (exportedPrefix == (char *) NULL) {
+	    fprintf(stderr, "Specify an exported prefix with -x\n");
+	    Opt_PrintUsage(argv[0], optionArray, Opt_Number(optionArray));
+	    exit(1);
+	}
+	if (addHostID != -1) {
+	    prefixControl.clientID = addHostID;
+	    prefixControl.delete = FALSE;
+	} else {
+	    prefixControl.clientID = delHostID;
+	    prefixControl.delete = TRUE;
+	}
+	(void) strcpy(prefixControl.prefix, exportedPrefix);
+	status = Fs_Command(FS_PREFIX_CONTROL, sizeof(prefixControl),
+		&prefixControl);
+	if (status != SUCCESS) {
+	    fprintf(stderr, "%s couldn't add/delete host: %s.\n",
+		    argv[0], Stat_GetMsg(status));
+	    exit(1);
+	}
+	exportedPrefix = (char *) NULL;
+    }
+    if (exportedPrefix != (char *) NULL) {
+	if (print) {
+	    /*
+	     * Print the export list of this prefix.
+	     */
+	    char buffer[100 * sizeof(int)];
+	    int *exportList = (int *)buffer;
+	    (void) strcpy(buffer, exportedPrefix);
+	    status = Sys_Stats(SYS_FS_PREFIX_EXPORT, sizeof(buffer), buffer);
+	    if (status != SUCCESS) {
+		fprintf(stderr, "%s: couldn't get export list\n",
+			exportedPrefix);
+		exit(status);
+	    } else if (*exportList == 0) {
+		printf("%s exported to all hosts\n", exportedPrefix);
+	    } else {
+		printf("\"%s\" EXPORT LIST\n", exportedPrefix);
+		for ( ; *exportList != 0 ; exportList++) {
+		    Host_Entry *hostPtr;
+		    hostPtr = Host_ByID(*exportList);
+		    if (hostPtr == (Host_Entry *)NULL) {
+			break;
+		    }
+		    printf("\t<%d> %s\n", hostPtr->id, hostPtr->name);
+		}
+	    }
+	} else {
+	    Fs_TwoPaths args;
+
+	    validateLocalPath(localPath);
+
+	    /*
+	     * Export a prefix.  This is used on a server to explicitly
+	     * export a local directory under some prefix.
+	     */
+    
+	    args.pathLen1 = strlen(localPath) + 1;
+	    args.path1 = localPath;
+	    args.pathLen2 = strlen(exportedPrefix) + 1;
+	    args.path2 = exportedPrefix;
+
+	    status = Fs_Command(FS_PREFIX_EXPORT, sizeof(Fs_TwoPaths), &args);
+	    if (status != SUCCESS) {
+		fprintf(stderr, "%s couldn't export prefix: %s.\n",
+			argv[0], Stat_GetMsg(status));
+		exit(1);
+	    }
+	}
+    }
+    if (clearedPrefix != (char *) NULL) {
+	/*
+	 * Clear a prefix's file handle.
+	 */
+	status = Fs_Command(FS_PREFIX_CLEAR, strlen(clearedPrefix) + 1,
+		clearedPrefix);
+	if (status != SUCCESS) {
+	    fprintf(stderr, "%s couldn't clear prefix handle: %s.\n",
+		    argv[0], Stat_GetMsg(status));
+	    exit(1);
+	}
+    }
+    if (deletedPrefix != (char *) NULL) {
+	/*
+	 * Delete a prefix
+	 */
+	status = Fs_Command(FS_PREFIX_DELETE, strlen(deletedPrefix) + 1,
+		deletedPrefix);
+	if (status != SUCCESS) {
+	    fprintf(stderr, "%s couldn't delete prefix: %s.\n",
+		    argv[0], Stat_GetMsg(status));
+	    exit(1);
+	}
+    }
+    if (print) {
+	register int index;
+	Fs_Prefix prefix;
+
+	printf("%-20s %-8s %7s %7s %8s\n", 
+		"Prefix", "Server", "Domain", "File #", "Version");
+	for (index = 0 ; status == SUCCESS; index++) {
+	    bzero((char *) &prefix, sizeof(Fs_Prefix));
+	    status = Sys_Stats(SYS_FS_PREFIX_STATS, index, (Address) &prefix);
+	    if (status == SUCCESS) {
+		PrintPrefixEntry(&prefix);
+	    }
+	}
+    }
+    exit(0);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintPrefixEntry --
+ *
+ *	Print out information for a single prefix table entry.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Stuff gets printed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int 
+PrintPrefixEntry(prefixPtr)
+    Fs_Prefix *prefixPtr;
+{
+    static char serverName[9];
+    static int  prevServerID = -1;
+    Host_Entry  *host;
+
+    printf("%-20s", prefixPtr->prefix);
+
+    if (prefixPtr->serverID > 0) {
+
+	/*
+	 * If the server ID is the same as the previous entry's ID, then
+	 * we can reuse serverName and save a call to Host_ByID.
+	 */
+	if (prefixPtr->serverID == prevServerID) {
+	    printf(" %-8s", serverName);
+	} else {
+	    host = Host_ByID(prefixPtr->serverID);
+	    if (host != (Host_Entry *)NULL) {
+		register int charCnt;
+		for (charCnt = 0 ; charCnt < sizeof(serverName) ; charCnt++) {
+		    if (host->name[charCnt] == '.' ||
+			host->name[charCnt] == '\0') {
+			serverName[charCnt] = '\0';
+			break;
+		    } else {
+			serverName[charCnt] = host->name[charCnt];
+		    }
+		}
+		serverName[sizeof(serverName)-1] = '\0';
+		printf(" %-8s", serverName);
+		prevServerID = prefixPtr->serverID;
+	    } else {
+		printf(" (%d)", prefixPtr->serverID);
+	    }
+	}
+    } else {
+	printf(" %-8s", "(none)");
+    }
+
+    printf(" %7d %7d %8d", prefixPtr->domain, prefixPtr->fileNumber, 
+		prefixPtr->version);
+
+    if (prefixPtr->flags & FS_LOCAL_PREFIX) {
+	printf(" local   ");
+    }
+    if (prefixPtr->flags & FS_IMPORTED_PREFIX) {
+	printf(" imported");
+    }
+    if (prefixPtr->flags & FS_EXPORTED_PREFIX) {
+	printf(" exported");
+    }
+    printf("\n");
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * validateLocalPath --
+ *
+ *	Make sure the local path specified with the -l option is valid.
+ *	It must be an absolute path starting with '/'.
+ *      It must be an already existing remote link.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Will exit with an error code of 1 if the path is invalid.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+validateLocalPath(path)
+    char *path;
+{
+    struct stat statBuf;
+
+    if (force) {
+	/* Do not check the path if the force flag is set. */
+	return;
+    }
+    if (path == NULL) {
+	fprintf(stderr, "%s:  You must specify a local directory with -l\n",
+	    programName);
+	Opt_PrintUsage(programName, optionArray, Opt_Number(optionArray));
+	exit(1);
+    } else if (*path != '/') {
+	fprintf(stderr,
+	    "%s:  %s is not an absolute path.  It must start with '/'\n",
+	    programName, path);
+	exit(1);
+    }
+    if (lstat(path, &statBuf) < 0) {
+	fprintf(stderr, "%s:  Cannot lstat %s:  %s\n",
+	    programName, path, strerror(errno));
+	exit(1);
+    }
+    if ((statBuf.st_mode & S_IFMT) != S_IFRLNK) {
+	fprintf(stderr, "%s:  %s is not a remote link.\n",
+	    programName, path);
+	exit(1);
+    }
+    return;
+}
+

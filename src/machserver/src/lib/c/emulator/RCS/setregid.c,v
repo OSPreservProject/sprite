@@ -1,0 +1,119 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  srv030:1.1 srv028:1.1 srv027:1.1 srv026:1.1 srv024:1.1 srv022:1.1 srv021:1.1 srv019:1.1 srv018:1.1 srv016:1.1 srv014:1.1 srv010:1.1 srv008:1.1 srv007:1.1 srv006:1.1 srv005:1.1 srv004:1.1 srv003:1.1 srv002:1.1 srv001:1.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     92.03.13.20.41.47;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@UNIX setregid call.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/* 
+ * setregid.c --
+ *
+ *	UNIX setregid() for the Sprite server.
+ *
+ * Copyright 1988, 1992 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.6 92/03/02 15:29:56 bmiller Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <mach.h>
+#include <sprite.h>
+#include <compatInt.h>
+#include <spriteEmuInt.h>
+#include <spriteSrv.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * setregid --
+ *
+ *	Procedure to map from Unix setregid system call to Sprite Proc_SetIDs.
+ *	Sprite doesn't have the notion of real and effective groud IDs;
+ *	instead, both gid arguments become the set of Sprite group IDs for
+ *	current process.
+ *
+ * Results:
+ *      UNIX_SUCCESS    - the call was successful.
+ *      UNIX_ERROR      - the call was not successful.
+ *                        The actual error code stored in errno.
+ *
+ * Side effects:
+ *	The previous group IDs are deleted.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+setregid(rgid, egid)
+    int	rgid, egid;
+{
+    ReturnStatus status = SUCCESS;
+    int array[2];
+    int num = 0;
+    kern_return_t kernStatus;
+    Boolean sigPending;
+
+    /*
+     * Make the rgid and egid the group IDs for the process. If a gid is
+     * -1, it is ignored.
+     */
+
+    if (rgid != -1) {
+	array[0] = rgid;
+	num = 1;
+	if (egid != rgid && egid != -1) {
+	    array[1] = egid;
+	    num++;
+	}
+    } else if (egid != -1) {
+	array[0] = egid;
+	num++;
+    }
+    if (num > 0) {
+	kernStatus = Proc_SetGroupIDsStub(SpriteEmu_ServerPort(), num,
+					  (vm_address_t)array, &status,
+					  &sigPending);
+	if (kernStatus != KERN_SUCCESS) {
+	    status = Utils_MapMachStatus(kernStatus);
+	}
+	if (sigPending) {
+	    SpriteEmu_TakeSignals();
+	}
+    }
+
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}
+
+@

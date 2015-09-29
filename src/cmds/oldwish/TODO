@@ -1,0 +1,78 @@
+BUG:
+I must be able to get autofocus in display window, or {shift middle} won't
+work since the shift is seen as a keypress and goes to the header window!
+
+1) After typing nothing and hitting return in a header window, it says "already
+a group" but then doesn't redisplay the background big enough!  If you do an
+mx-starting button press on something, it resets the handlers and then displays
+it correctly again.
+
+2) If you put focus into a header window, and then type on display window, focus
+is still in header window and you can't get rid of it!
+
+To fix, I put focus window as parent window:
+>    The difference is that wsPtr->curFocusPtr is set for title when called with
+>    surrounding window, but this isn't true for header.
+>    --> If I put focus in header window and then type in the edit window, I get
+>    the letters in the header window!
+
+If I execute sun4.md/wish, it can't find .wish file!
+Need interpreter in main for calls to WishCreate for its calls to
+	Tx_SetupAndFork.
+I can't seem to edit headers anymore!!!
+
+Plus Mendel's bug discoveries.
+
+BUG:  panic doesn't kill wish process, and it can't be killed.
+
+What must I do to get border between tx window and upper scroll bar?  I'm
+leaving in tx stripe right now to sort of hide this, but it's ugly this way.
+
+Why must I copy interpreter result to buffer to display it?  (WishPrintTclError)
+
+
+BUG:  If full string doesn't fit, it just displays blank!
+
+BUG:  Initial size picking picks ugly size.  Is it really happenning?
+
+BUG:  With option -nopick the display comes up blank!
+
+BUG:  Auto resize fights with you if you resize the window.
+
+BUG:  Auto resize picks very long window with mostly half blank
+	when you add two fields.
+
+    
+Make scrollbar white if background is.
+
+Move global display to be per-window.
+Use X11 Size hints to deal with resize aspect ratios, etc.
+John uses PResizeInc|PMinSize.
+How can XCreateSimpleWindow, etc return error status?
+PointerMotionMask && PointerMotionHintsMask?
+Change to use selection instead of background in reverseGc, and call it
+    selectionGc.
+accessTime = atime = time file data last read or mod'd
+descModifyTime = ctime = time file status last changed, writing
+    and inode changes.  (true in sprite that writing changes this too?)
+dataModifyTime = mtime = time data last modified.
+createTime = ??????
+FsflatRedraw in fsflatDisplay.c seems to imply that things can be
+	sorted by more than one way at a time.  Is this true?  Bad.
+
+
+Where I use ascent and descent for char heights, should I be calling
+    an Sx DefaultHeight routine?
+
+FIXED!!
+BUG!: I bring it up in proc.  I then ask for access time.  I scroll to where
+    DIFFS is first file.  Then it pops up notifier saying "Couldn't get
+    attributes for file   .  The file may no longer exist.  It leaves
+    it blank and includes date "0".  The position of file is between Makefile
+    and Syscall, so it must be the RCS DIRECTORY...  
+
+    Notifiers mess up and trash gets copied into names of directory files.
+
+Bug:  selecting is highlighting fields as well as name.
+
+BUG: exec ls $sel sticks word "exec" into tx window!

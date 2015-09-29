@@ -1,0 +1,81 @@
+head     1.2;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     88.07.29.17.40.52;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.19.14.31.58;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Lint.
+@
+text
+@/* 
+ * setpriority.c --
+ *
+ *	Procedure to map from Unix setpriority system call to Sprite.
+ *
+ * Copyright (C) 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: setpriority.c,v 1.1 88/06/19 14:31:58 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+#include "compatInt.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * setpriority --
+ *
+ *	Procedure to map from Unix setpriority system call to Sprite 
+ *	Proc_SetPriority. 
+ *
+ * Results:
+ *	Always return success for now.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+	/* ARGSUSED */
+int
+setpriority(which, who, prio)
+    int	which, who, prio;
+{
+    return(UNIX_SUCCESS);
+}
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: open.c,v 1.3 86/04/17 21:58:32 andrew Exp $ SPRITE (Berkeley)";
+d35 1
+@

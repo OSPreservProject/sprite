@@ -1,0 +1,22 @@
+# call tree for block device attach/release routines.
+blockDevAttach
+  Dev_BlockDeviceAttach
+    DevRawBlockDevOpen
+      (dev switch table)
+      DevRawBlockDevReopen
+releaseProc
+  Dev_BlockDeviceRelease
+    DevRawBlockDevClose
+      (dev switch table)
+  DevScsiReleaseDevice
+    devSCSIDisk.c:ReleaseProc	# set in DevScsiDiskAttach
+				# can have multiple disks on a single
+				# SCSI device, so the code to release
+				# a disk has to potentially release
+				# the device.
+    DevScsiDiskAttach
+      (dev switch table)
+    DevSCSIDeviceClose
+      (dev switch table)
+    DevSCSITapeClose
+      (dev switch table)

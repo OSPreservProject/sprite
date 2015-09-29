@@ -1,0 +1,3 @@
+#!/sprite/cmds/csh -f
+
+killexpr ipServer inetd migd loadavg cron lpd 

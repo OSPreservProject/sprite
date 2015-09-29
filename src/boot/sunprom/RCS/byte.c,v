@@ -1,0 +1,278 @@
+head     1.1;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     86.07.18.09.31.27;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Slimline version of sprite c library byte.c
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/* 
+ * byte.c --
+ *
+ *      Contains routines to do manipulate byte arrays: copying,
+ *	clearing, comparison, etc.
+ *	SLIMLINE BOOT VERSION
+ *
+ * Copyright 1985 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: byte.c,v 1.4 86/06/29 20:15:46 andrew Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+
+/* The following mask is used to detect proper alignment of addresses
+ * for doing word operations instead of byte operations.  It is
+ * machine-dependent.  If none of the following bits are set in an
+ * address, then word-based transfers may be used.
+ */
+
+#define WORDMASK 0x1
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Byte_Copy --
+ *
+ *	Copy numBytes from *sourcePtr to *destPtr.
+ *
+ * Results:
+ *	Contents at sourcePtr copied to contents at destPtr
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Byte_Copy(numBytes, sourcePtr, destPtr)
+    register int numBytes;	/* The number of bytes to copy */
+    Address sourcePtr;		/* Where to copy from */
+    Address destPtr;		/* Where to copy to */
+{
+    register int *sPtr = (int *) sourcePtr;
+    register int *dPtr = (int *) destPtr;
+    
+    /*
+     * If both the sourcePtr and the destPtr point to aligned
+     * addresses then copy as much as we can in large transfers.  Once
+     * we have less than 4 bytes to copy then it must be done by
+     * byte transfers.
+     */
+
+    if (!((int) sPtr & WORDMASK) && !((int) dPtr & WORDMASK)) {
+	while (numBytes >= 4) {
+	    *dPtr++ = *sPtr++;
+	    numBytes -= 4;
+	}
+	sourcePtr = (char *) sPtr;
+	destPtr = (char *) dPtr;
+    }
+
+    /*
+     * Copy the remaining bytes.
+     */
+
+    while (numBytes > 0) {
+	*destPtr++ = *sourcePtr++;
+	numBytes--;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Byte_Compare --
+ *
+ *	Compare numBytes from source to destination where sourcePtr points to 
+ *	the source address and destPtr points to the destination address.
+ *      This routine is optimized to do 4 byte compares.  However, if either 
+ *      sourcePtr or destPtr point to odd addresses then it is forced to
+ *      do single-byte compares.
+ *
+ * Results:
+ *	TRUE is returned if the memory at *sourcePtr is equal to the memory
+ *	at *destPtr.  FALSE is returned if there is a mismatch.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef notdef
+Boolean
+Byte_Compare(numBytes, sourcePtr, destPtr)
+    register int numBytes;		/* The number of bytes to compare */
+    register Address sourcePtr;		/* Where to compare from */
+    register Address destPtr;		/* Where to compare to */
+{
+    /*
+     * If both the sourcePtr and the destPtr point to aligned addesses then
+     * compare as much as we can by 4-byte transfers.  Once we have less than
+     * 4 bytes to compare then it must be done by byte compares.
+     */
+
+    if ((((int) sourcePtr & WORDMASK) == 0)
+	    && (((int) destPtr & WORDMASK) == 0)) {
+	while (numBytes >= 4) {
+	    if (*(int *) destPtr != *(int *) sourcePtr) {
+		return(FALSE);
+	    }
+	    sourcePtr += 4;
+	    destPtr += 4;
+	    numBytes -= 4;
+	}
+    }
+
+    /*
+     * Compare the remaining bytes
+     */
+
+    while (numBytes > 0) {
+	if (*destPtr++ != *sourcePtr++) {
+	    return(FALSE);
+	}
+	numBytes--;
+    }
+
+    return(TRUE);
+}
+#endif notdef
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Byte_Zero --
+ *
+ *	Zero numBytes at the given address.  This routine is optimized to do 
+ *      4-byte zeroes.  However, if the address is odd then it is forced to
+ *      do single byte zeroes.
+ *
+ * Results:
+ *	numBytes bytes of zeroes are placed at *destPtr at the given address.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Byte_Zero(numBytes, destPtr)
+    register int numBytes;	/* The number of bytes to zero. */
+    Address destPtr;		/* Where to zero. */
+{
+    register int *dPtr = (int *) destPtr;
+    
+    /*
+     * If the address is on an aligned boundary then zero as much
+     * as we can in big transfers (and also avoid loop overhead by
+     * storing many zeros per iteration).  Once we have less than
+     * 4 bytes to zero then it must be done by byte zeroes.
+     */
+
+    if (((int) dPtr & WORDMASK) == 0) {
+	while (numBytes >= 4) {
+	    *dPtr++ = 0;
+	    numBytes -= 4;
+	}
+	destPtr = (char *) dPtr;
+    }
+
+    /*
+     * Zero the remaining bytes
+     */
+
+    while (numBytes > 0) {
+	*destPtr++ = 0;
+	numBytes--;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Byte_Fill --
+ *
+ *	Fill numBytes at the given address.  This routine is optimized to do 
+ *      4-byte fills.  However, if the address is odd then it is forced to
+ *      do single byte fills.
+ *
+ * Results:
+ *	numBytes bytes of the fill byte are placed at *destPtr at the 
+ *	given address.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef notdef
+void
+Byte_Fill(fillByte, numBytes, destPtr)
+    register unsigned char fillByte;	/* The byte to be filled in. */
+    register int numBytes;	/* The number of bytes to be filled in. */
+    Address destPtr;		/* Where to fill. */
+{
+    register unsigned int fillInt = 
+	(fillByte) | (fillByte << 8) | (fillByte << 16) | (fillByte << 24);
+
+    register int *dPtr = (int *) destPtr;
+    
+    /*
+     * If the address is on an aligned boundary then fill in as much
+     * as we can in big transfers (and also avoid loop overhead by
+     * storing many fill ints per iteration).  Once we have less than
+     * 4 bytes to fill then it must be done by byte copies.
+     */
+
+    if (((int) dPtr & WORDMASK) == 0) {
+	while (numBytes >= 32) {
+	    *dPtr++ = fillInt;
+	    *dPtr++ = fillInt;
+	    *dPtr++ = fillInt;
+	    *dPtr++ = fillInt;
+	    *dPtr++ = fillInt;
+	    *dPtr++ = fillInt;
+	    *dPtr++ = fillInt;
+	    *dPtr++ = fillInt;
+	    numBytes -= 32;
+	}
+	while (numBytes >= 4) {
+	    *dPtr++ = fillInt;
+	    numBytes -= 4;
+	}
+	destPtr = (char *) dPtr;
+    }
+
+    /*
+     * Fill in the remaining bytes
+     */
+
+    while (numBytes > 0) {
+	*destPtr++ = fillByte;
+	numBytes--;
+    }
+}
+#endif notdef
+@

@@ -1,0 +1,4810 @@
+
+
+
+
+
+
+
+
+                       |
+                       |       Computing and Communications Division
+     CIC#1505          |
+     October 1989      |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |               LaTeX Letter Reference
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |
+                       |       ---------------------------------------------
+                       |       NOTICE TO USERS OF ONLINE DOCUMENTATION:
+                       |
+                       |       This document may not include some tables,
+                       |       graphics, and other features that you will
+                       |       find in the printed version.  To order the
+                       |       hardcopy, contact the CIC at (505) 667-6992.
+                       |       ---------------------------------------------
+                       |
+                       |
+     Los Alamos        |                     Los Alamos National Laboratory
+                       |                     Los Alamos, New Mexico   87545
+                       |
+
+
+
+
+
+
+
+
+
+
+
+
+
+     Who to Contact                  - ii -                    October 1989
+
+
+
+     WHO TO CONTACT
+     ______________________________________________________________________
+
+     =================================================================
+     CONTACT                                     PHONE          FTS
+     -----------------------------------------------------------------
+                                   CONSULTING
+     ICN Consulting Office (C-10)............(505)667-5745    843-5745
+      Closed from 1 p.m. to 2 p.m. MT on Mondays
+      electronic mail address:  consult@lanl.gov
+     CCF Dispatcher/CFS/PAGES (C-1)..........(505)667-4584    843-4584
+
+                            COMMUNICATIONS PROBLEMS
+     ICN Communications Problems.............(505)667-7423    843-7423
+      (C-4 Trouble Desk)
+
+                          EDUCATION and DOCUMENTATION
+     Computing Information Center - CIC .....(505)667-6992    843-6992
+      (C-2 publication distribution)
+      electronic mail address:  cic@lanl.gov
+
+                                STATUS MESSAGES
+     CCF Status Recording....................(505)667-5588    843-5588
+     FOCUS - Machine Status..................(505)667-2852    843-2852
+
+                                    SECURITY
+     Computer and Information Security.......(505)665-1805    855-1805
+      (OS-4 passwords and blacklisting)
+     =================================================================
+                                Revision History
+
+      Written by Marilyn Foster with technical input from Steve Sydoriak,
+                      Computer Documentation Group (C-2).
+
+                       Originally published October 1989
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     October 1989                   - iii -                        Contents
+
+
+
+     CONTENTS
+     ______________________________________________________________________
+
+
+     1. INTRODUCTION  ................................................    1
+     2. PREREQUISITES FOR USING LATEX LETTER COMMANDS  ...............    3
+          2.1. What You Need Before You Can Use the Letter Commands
+                ......................................................    3
+          2.2. Additional Information  ...............................    3
+          2.3. LaTeX Video Courses  ..................................    4
+     3. GETTING STARTED  .............................................    5
+     4. PREPARING THE PREAMBLE SECTION  ..............................    6
+          4.1. Defaults  .............................................    6
+          4.2. Document Style  .......................................    7
+          4.3. Letterhead Labels  ....................................    8
+           4.3.1. Nocallouts  ........................................    8
+           4.3.2. Date  ..............................................    9
+           4.3.3. In Reply Refer To  .................................    9
+           4.3.4. Mail Stop  .........................................   10
+           4.3.5. Telephone Number  ..................................   10
+          4.4. Address  ..............................................   11
+          4.5. Attention Line  .......................................   12
+          4.6. Thru or Via  ..........................................   13
+          4.7. Salutation  ...........................................   14
+          4.8. Subject Line  .........................................   14
+          4.9. Reference Line  .......................................   15
+          4.10. Continuation Pages  ..................................   15
+          4.11. Complimentary Close  .................................   17
+          4.12. Signature  ...........................................   17
+          4.13. Initial Line-Signer, Originator, and Typist  .........   18
+          4.14. Enclosures  ..........................................   18
+          4.15. Attachments  .........................................   19
+          4.16. Copy or Distribution List  ...........................   20
+     5. PREPARING THE DOCUMENT SECTION  ..............................   22
+     6. PRINTING YOUR LETTER  ........................................   23
+     7. CUSTOMIZING YOUR LETTER  .....................................   25
+          7.1. Header Style  .........................................   25
+          7.2. Body Style  ...........................................   26
+           7.2.1. Type Style  ........................................   26
+           7.2.2. Fonts  .............................................   27
+           7.2.3. Margin Space  ......................................   27
+          7.3. Classification Labels  ................................   28
+          7.4. Page Breaks  ..........................................   29
+           7.4.1. General Page Breaks  ...............................   29
+           7.4.2. Page Break Before a List  ..........................   29
+          7.5. Short Letters  ........................................   30
+          7.6. Preprinted Stationery  ................................   30
+          7.7. Multiple Letters to a Mailing List  ...................   32
+          7.8. Mailing Labels  .......................................   32
+           7.8.1. Return Address Labels  .............................   33
+           7.8.2. Label Size  ........................................   33
+           7.8.3. Skipping Labels  ...................................   34
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     Contents                        - iv -                    October 1989
+
+
+
+           7.8.4. The .MLB File  .....................................   34
+          7.9. Floats in LaTeX Letters  ..............................   34
+     APPENDIX A.  SUMMARY OF LATEX LETTER COMMANDS ...................   36
+     APPENDIX B.  SYNTAX RULES AND DOCUMENTATION CONVENTIONS .........   40
+          B.1.  Syntax Rules .........................................   40
+          B.2.  Documentation Conventions ............................   40
+     APPENDIX C.  EXAMPLE LETTERS ....................................   41
+          Example 1.  Typical Letter .................................   42
+          Example 2.  Short Letter Style .............................   43
+          Example 3.  Letter on Preprinted Stationery ................   44
+          Example 4.  Letter with Multiple Addressees ................   45
+          Example 5.  Multiple Letters with Mailing Labels ...........   46
+     APPENDIX D.  INSTALLING THE LATEX LETTER STYLE FILE .............   49
+          D.1.  On the IBM PC ........................................   50
+          D.2.  On the Sun Workstation ...............................   51
+          D.3.  On the Apollo Workstation ............................   51
+          D.4.  On VAX/VMS ...........................................   51
+          D.5.  On VAX/UNIX ..........................................   52
+     APPENDIX E.  WARNING AND ERROR MESSAGES .........................   53
+          E.1.  Warning Messages .....................................   53
+           E.1.1.  Leaving Out Information ...........................   53
+           E.1.2.  Letter Too Long for \shortletterstyle .............   55
+           E.1.3.  Using the Almost Modern (AM) Fonts ................   55
+           E.1.4.  Contradictory Information .........................   55
+           E.1.5.  Using \attn Outside of \to ........................   56
+          E.2.  Fatal Errors .........................................   56
+           E.2.1.  Invalid Classification Label ......................   56
+           E.2.2.  Duplicating \classlabel Commands ..................   57
+           E.2.3.  Specifying an Invalid Typeface ....................   57
+           E.2.4.  Specifying an Invalid Font for Letter Body ........   57
+           E.2.5.  Specifying an Invalid Font for Letter Header ......   58
+           E.2.6.  Using an Obsolete Version of Lafonts ..............   58
+     APPENDIX F.  GLOSSARY OF TERMS AND ACRONYMS .....................   59
+     READER COMMENTS FORM ............................................   63
+     DOCUMENTATION REQUEST FORM ......................................   65
+     INDEX ...........................................................   68
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     October 1989                    - 1 -                     Introduction
+
+
+
+     1.  INTRODUCTION
+     ______________________________________________________________________
+
+     LaTeX Letter Reference explains how to use LaTeX letter commands to
+     produce letters that conform to the Los Alamos National Laboratory
+     standards for correspondence.  LaTeX is a macro package that
+     supplements the TeX document preparation system to streamline the
+     production of many types of documents.  The LaTeX commands are put
+     into a LaTeX input file and are executed when you run the file through
+     LaTeX.
+
+     Although it is not necessary to read each section in order, the later
+     sections assume that you have read this introduction and, if you are
+     not familiar with the local documentation, Appendix B.
+
+     This document is divided into the following sections:
+
+        o Section 1: Introduction.  This section is a road map of the
+          document.
+
+        o Section 2: Prerequisites for Using LaTeX Letter Commands.  This
+          section tells on what systems you can use the letter commands and
+          lists what you need on your system so you can implement the
+          commands.  It also gives you sources for more information about
+          LaTeX.
+
+        o Section 3: Getting Started.  This section shows the general
+          format for a LaTeX letter file and explains the major parts of
+          the file.
+
+        o Section 4: Preparing the Preamble Section.  This section explains
+          commands that you will need in the preamble part of the LaTeX
+          letter file where the opening and closing of the letter is
+          defined.  This section only covers the basic letter commands
+          needed for a typical letter.  See Section 7 for information about
+          changing fonts and commands that give special instructions.
+
+        o Section 5: Preparing the Document Section.  This section
+          describes the part of the LaTeX letter file containing the body
+          of the document.
+
+        o Section 6: Printing Your Letter.  This section explains how to
+          print a letter.  The instructions in this chapter are very
+          general and are the same as the instructions for printing any
+          LaTeX file.
+
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     Introduction                    - 2 -                     October 1989
+
+
+
+        o Section 7: Customizing Your Letter.  This section gives details
+          about the special letter commands that can be put into the
+          preamble section of your file to control the fonts for the
+          letterhead, the fonts and typeface for the body of a letter,
+          pagebreaks, classification labeling, formatting for short
+          letters, producing letters for a mailing list, and printing
+          mailing labels.
+
+        o Appendix A: Summarizing the LaTeX Letter Commands.  This appendix
+          is a summary table for the letter commands.  It gives a brief
+          description of each command and a list of options and defaults
+          where applicable.
+
+        o Appendix B: Syntax Rules and Documentation Standards.  This
+          appendix explains the rules governing the LaTeX letter commands
+          and the various standards used in locally produced documentation.
+
+        o Appendix C: Example Letters.  This appendix gives examples of
+          letter files and their resulting letters.
+
+        o Appendix D: Installing the LaTeX Style File.  This appendix
+          explains how to install the letter style file on your system.
+
+        o Appendix E: Warning and Error Messages.  This appendix contains a
+          listing of all the error messages that are possible when using
+          the letter commands.
+
+        o Appendix F: Glossary of Terms and Acronyms.  Terms and acronyms
+          not commonly defined elsewhere, or whose meaning are specific to
+          the Los Alamos environment, are defined in this appendix.
+
+
+     Several forms follow the last appendix.  If you have any comments
+     about or suggestions for this document, please return them on the
+     Reader Comments Form.  If you would like to order documentation
+     referred to in this document, complete and return the Documentation
+     Request Form to the Computing Information Center (CIC).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     October 1989                    - 3 -                    Prerequisites
+
+
+
+     2.  PREREQUISITES FOR USING LATEX LETTER COMMANDS
+     ______________________________________________________________________
+
+     This section lists the systems on which you can use LaTeX letter
+     commands, the features you must have on your system, and sources for
+     general information about LaTeX.
+
+
+     2.1.  What You Need Before You Can Use the Letter Commands
+
+     You can use the LaTeX letter commands when working in the following
+     environments:
+
+        o UNIX distributed processors
+
+        o Sun and Apollo workstations
+
+        o IBM PCs
+
+        o VAX/VMS distributed processors
+
+
+     With each of these environments, you need the following:
+
+        o TeX and LaTeX installed
+
+        o The LaTeX letter style file installed
+
+        o Access to a printer that has the necessary software to print TeX
+          output
+
+
+
+            _____________________________________________________
+
+              See Appendix D for information about installing
+              the letter style file.
+            _____________________________________________________
+
+
+
+
+
+     2.2.  Additional Information
+
+     This document assumes that you know how to use LaTeX.  If you are not
+     already familiar with LaTeX, you can refer to the following
+     publications:
+
+        o An Introduction to LaTeX, by Michael Urban.  An introductory
+          document that will help you start working with LaTeX quickly.
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     Prerequisites                   - 4 -                     October 1989
+
+
+
+        o LaTeX:  A Document Preparation System, by Leslie Lamport.  A
+          complete reference manual written by the designer of LaTeX.
+
+     For information about using LaTeX at the Los Alamos National
+     Laboratory, see the following documents:
+
+        o Local Guide to LaTeX on VAX/UNIX at the Los Alamos National
+          Laboratory.  This document describes how to use LaTeX on the
+          VAX/VMS CCVAX distributed processor.
+
+        o Local Guide to LaTeX on VAX/VMS at the Los Alamos National
+          Laboratory.  This document tells you how to use LaTeX on the
+          VAX/Ultrix distributed processor Beta and on the VAX/UNIX
+          distributed processor Alpha.
+
+        o LaTeX Memo Reference.  This document explains how to use LaTeX to
+          produce memos that conform to the Los Alamos National Laboratory
+          standards.
+
+     You can order these publications from the Computing Information Center
+     (CIC) by filling out the Documentation Request Form in the back of
+     this document.  Please note, there is no charge for local
+     documentation, but you will be charged for the general LaTeX
+     publications.
+
+     If you would like more information about the Laboratory's letter
+     standards, see the Office Procedures Manual, OPM-1-2 for unclassified
+     letters and OPM-2-4 and OPM-2-11 for classified letters.  To order a
+     copy of the Office Procedures Manual, call the IS-11 Distribution
+     Center at (505) 667-3872.  Most group offices have one of these
+     manuals available for reference.
+
+
+
+
+     2.3.  LaTeX Video Courses
+
+     The Computing Learning Center (CLC) offers a two-hour introductory
+     video course entitled "Introduction to LaTeX" presented by Cris
+     Barnes, CTR-5 and a one-hour video course Preparing Laboratory Memos
+     with LaTeX presented by Margot Casey, C-2.  These courses are
+     available for viewing in the CLC, or you may check out the 1/2-inch
+     VHS tapes for viewing at home.  The courses are also broadcast on
+     LABNET.
+
+
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     October 1989                    - 5 -                  Getting Started
+
+
+
+     3.  GETTING STARTED
+     ______________________________________________________________________
+
+     To prepare a letter with LaTeX, you first create a file with a ".tex"
+     extension at the end of its name (e.g., test.tex).  This file is
+     called your LaTeX letter file.  LaTeX commands are case sensitive and
+     should be entered in upper- or lowercase characters as shown in this
+     document or other documentation.  Note that each command begins with a
+     backslash (\).
+
+     Each LaTeX letter file has two sections:  the preamble section and the
+     document section.  The preamble section contains the commands that set
+     up the information for the opening and closing of the letter and
+     describe the style of the letter.  It starts with a \documentstyle
+     command and ends with a \begin{document} command.  The document
+     section contains the text of the letter.  It starts with a
+     \begin{document} command and ends with an \end{document} command.
+
+     The general format of the preamble section of a LaTeX letter file is
+
+            \documentstyle{laletter}
+
+              Letter commands, such as
+                \to
+                \salutation
+                \complimentaryclose
+                 .
+                 .
+                 .
+
+     The general format of the document section of a LaTeX letter file is
+
+            \begin{document}
+            \opening
+
+              Body of letter
+
+           \closing
+           \end{document}
+
+
+     The spacing and indentation of the commands, as shown in the above
+     format, make the file easier to read; the outcome of the file is not
+     affected.  The details of the commands for the preamble section are
+     found in Section 4, and the details for the document section are found
+     in Section 5.
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     Preparing the Preamble Section  - 6 -                     October 1989
+
+
+
+     4.  PREPARING THE PREAMBLE SECTION
+     ______________________________________________________________________
+
+     The preamble section of your LaTeX letter file contains the commands
+     that set the opening and closing of the letter.  The preamble is
+     described in two sections: this section and Section 7.  This section
+     describes the letter commands that determine the opening and closing
+     of a typical letter.  Section 7 describes the letter commands that you
+     can use to customize your letter.
+
+     You can print a letter using only the preamble commands covered in
+     this chapter.  Notice, however, that if you use only the preamble
+     commands listed in this section, your letter will be printed with a
+     nonstandard Los Alamos logo.  See Section 7 for directions for
+     printing a letter with the standard outline type of logo.
+
+     The \documentstyle command is the only command required in the
+     preamble section and must be the first line in your LaTeX letter file.
+     The other commands can be arranged in any order within the preamble
+     section.  LaTeX will print them in the proper place in the letter.
+
+
+     4.1.  Defaults
+
+     Default values are the values that LaTeX puts in when you leave a
+     command out of the file.  With the default values, one of the
+     following will happen:
+
+        o The label in the header will be left blank. This happens with the
+          commands that have labels printed with the letterhead - \symbol,
+          \mailstop, and \telephone commands.
+
+        o Default information will be printed.  This information is
+          described with the appropriate commands.
+
+        o Nothing will be printed.  This happens with the commands that
+          have no preprinted labels on the stationery; for example, if you
+          leave out the enclosure command (\enc), LaTeX will not print an
+          enclosure list or the label "Enc."
+
+        o A font or register is set to the default value.
+
+     You may also receive a warning message if the omitted command is
+     needed to conform to Laboratory correspondence standards.
+
+
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     October 1989                    - 7 -   Preparing the Preamble Section
+
+
+
+            _____________________________________________________
+
+              The backslashes (\) and the braces ({ }) in the
+              following commands are a part of these commands
+              and must be included with the command.  They do
+              not denote optional parameters.
+            _____________________________________________________
+
+
+
+     Commands that print specific information in your letter are listed in
+     this section.  Essential LaTeX commands are listed where they must be
+     inserted into the preamble section.  The general commands are listed
+     in the order in which the Office Procedures Manual describes them.
+
+
+     4.2.  Document Style
+
+     \documentstyle{laletter}
+
+     This command tells LaTeX that your document is a letter.  It must be
+     the first line in your file because LaTeX sets up margins and other
+     values based on the style you specify inside the braces (in this case,
+     a Los Alamos letter style).
+
+     This command also sets the point size for the body of your letter.
+     LaTeX uses a point size of 10, 11, or 12, with a point size of 10 as
+     the default for all LaTeX documents.  The \documentstyle command, as
+     it is shown above, gives your letter a point size of 10, which is
+     small and may be difficult to read.  See Example 3 in Appendix C for
+     an example of text with a point size of 10.  You can increase the
+     point size by putting an [11pt] or [12pt] option (including the square
+     brackets[]) before the {laletter} parameter.  The following example
+     shows the command that gives a point size of 12 for the body of your
+     letter.  (This document is printed with a point size of 12.)
+
+
+       ==============================================================
+
+       \documentstyle[12pt]{laletter}
+
+       ==============================================================
+
+
+     The \documentstyle command is a LaTeX command, and it follows the
+     syntax rules for standard LaTeX commands.  See one of the LaTeX
+     reference books listed in Section 2 for these syntax rules.
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     Preparing the Preamble Section  - 8 -                     October 1989
+
+
+
+            _____________________________________________________
+
+              Warning:  You can not use
+              \documentstyle[10pt]{laletter} to specify a
+              point size of 10.  You must leave out the point
+              size if you want the default point size of 10.
+            _____________________________________________________
+
+
+
+
+
+     4.3.  Letterhead Labels
+
+     The Laboratory has two standard styles of letterheads: one with
+     callout labels printed in the upper right corner and the other with no
+     printed callout labels.  To supply information for the printed callout
+     labels, use the \date, \symbol, \serialnumber, \mailstop, and
+     \telephone commands, which are individually described in this section.
+
+
+
+     4.3.1.  Nocallouts
+
+     \nocallouts
+
+     If you do not want callout labels printed, you can use the command
+     \nocallouts and then use the \date, \symbol, or \serialnumber commands
+     to specify what information you want in the upper right corner.  The
+     following example shows that the date will be printed without a label,
+     and the symbol and serial number will be combined on the line labeled
+     Ref: and printed beneath the date.
+
+
+       ==============================================================
+
+       \nocallouts
+       \date { }
+       \symbol {DD}
+       \serialnumber {89-098}
+
+          prints
+
+       January 25, 1989
+       Ref: DD-89-98
+
+       ==============================================================
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     October 1989                    - 9 -   Preparing the Preamble Section
+
+
+
+     4.3.2.  Date
+
+     \date{text}
+
+     This command inserts the date into your letter.  The {text} is the
+     date you want to appear on your letter.  If you omit the text within
+     the braces or omit the entire command, the default will give you the
+     date at the time you run LaTeX.  This default date will appear in the
+     following form:  January 25, 1989.  You should include the text with
+     the \date command only if you have a specific date that you want to
+     appear on your letter.  The following example shows how to have a
+     specific date printed on a letter.
+
+
+       ==============================================================
+
+       \date{January 25, 1989}
+
+            prints
+
+       DATE:  January 25, 1989
+
+       ==============================================================
+
+
+
+
+     4.3.3.  In Reply Refer To
+
+     \symbol{group}
+     \serialnumber{id}
+
+     These commands fill in the portion of the letterhead marked "IN REPLY
+     REFER TO:".  The {group} is usually your group name.  The
+     \serialnumber command is needed only if your office uses a serial
+     number to identify and record its correspondence.  When used, the {id}
+     should be the serial number that identifies the letter.  It will be
+     appended to the symbol with a hyphen (-), as the following example
+     shows.  If you leave out the \serialnumber command, the serial number
+     will not be appended, and the group name will be the only information
+     on the In Reply... line.
+
+
+
+
+
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     Preparing the Preamble Section  - 10 -                    October 1989
+
+
+
+
+       ==============================================================
+
+       \symbol{C-2}
+       \serialnumber{89-025}
+
+            prints
+
+       IN REPLY REFER TO:  C-2-89-025
+
+       ==============================================================
+
+
+
+
+     4.3.4.  Mail Stop
+
+     \mailstop{text}
+
+     This command will produce the MAIL STOP line.  The {text} should be
+     your mail stop.
+
+
+       ==============================================================
+
+       \mailstop{M995}
+
+            prints
+
+       MAIL STOP:  M995
+
+       ==============================================================
+
+
+
+
+     4.3.5.  Telephone Number
+
+     \telephone{number}
+
+     This command will produce the TELEPHONE line.  The number should be
+     your complete telephone number including the area code.  The example
+     shows how to place an FTS number on a line below your regular number.
+
+
+
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     October 1989                    - 11 -  Preparing the Preamble Section
+
+
+
+
+       ==============================================================
+
+       \telephone{(505) 667-5993\\(FTS) 843-4355}
+
+            prints
+
+       TELEPHONE:  (505) 667-5993
+                   (FTS) 843-4355
+
+       ==============================================================
+
+
+
+
+     4.4.  Address
+
+     \to{addressee}
+
+     This command gives the name and address of the person to whom you are
+     sending the letter.  The double backslash (\\) in {addressee}
+     separates the information and starts a new line for each part of the
+     address.  When you have more than one addressee, use a \to command for
+     each addressee as the following example shows.  If you do not use a
+     \to command, you will get a warning message when you run the file
+     through LaTeX.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     Preparing the Preamble Section  - 12 -                    October 1989
+
+
+
+
+       ==============================================================
+
+       \to{John Binnington, Manager\\Technical Information Division\\
+            Brookhaven National Laboratory\\Associated Universities, Inc.\\
+            Upton, Long Island, NY 11973}
+
+       \to{R. R. Dickison, Manager\\Library Systems\\Oak Ridge National
+            Laboratory\\Oak Ridge, TN  37830}
+
+               prints
+
+       John Binnington, Manager
+       Technical Information Division
+       Brookhaven National Laboratory
+       Associated Universities, Inc.
+       Upton, Long Island, NY  11973
+
+       R. R. Dickison, Manager
+       Library Systems
+       Oak Ridge National Laboratory
+       Oak Ridge, TN 37830
+
+       ==============================================================
+
+
+     When you have more than two addressees, the list will be divided into
+     two columns.  If you want to specify in which column an address is
+     printed, you can use the command \leftto{addressee} or
+     \rightto{addressee}.
+
+
+     4.5.  Attention Line
+
+     \attn{name}
+
+     You can add an attention line within the address by using the \attn
+     command on any line above the street or box number.  The following
+     example shows how the \attn command is inserted within the \to
+     command.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     October 1989                    - 13 -  Preparing the Preamble Section
+
+
+
+
+       ==============================================================
+
+       \to {Genie Electronics\\
+       \attn{Mr. Robert Mercer, Sales Manager}\\
+       P.O. Box 8501\\
+       Midwest City, OK 73110}
+
+            prints
+
+       Genie Electronics
+       Attn: Mr. Robert Mercer, Sales Manager
+       P.O. Box 8501
+       Midwest City, OK 73110
+
+       ==============================================================
+
+
+
+
+     4.6.  Thru or Via
+
+     \thru{namelist}
+     \via{namelist}
+
+     Either of these commands supplies a name or list of names of the
+     people to whom your letter will be routed before it is sent to the
+     addressee.  The \via command prints VIA:, and the \thru command prints
+     THRU:.  The following example shows the \thru command.
+
+
+       ==============================================================
+
+       \thru{L. S. Steele, X-5, MS B567}
+
+            prints
+
+       THRU:  L. S. Steele, X-5, MS B567
+
+       ==============================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     Preparing the Preamble Section  - 14 -                    October 1989
+
+
+
+
+     4.7.  Salutation
+
+     \salutation{text}
+
+     To have a salutation in your letter, you must use the \salutation
+     command and specify the text you want.  In the following example,
+     notice that you must include the appropriate punctuation within the
+     {text}.
+
+
+       ==============================================================
+
+       \salutation{Dear Dr. Jones:}
+
+            prints
+
+       Dear Dr. Jones:
+
+       ==============================================================
+
+
+
+
+     4.8.  Subject Line
+
+     \subject{text}
+
+     This command gives you a subject line.  The {text} should be the
+     subject of your letter.  As the example shows, the subject line will
+     be printed in uppercase regardless of how you type it inside the
+     braces.
+
+
+       ==============================================================
+
+       \subject{Interruption of Building Schedule}
+
+            prints
+
+       SUBJECT:  INTERRUPTION OF BUILDING SCHEDULE
+
+       ==============================================================
+
+
+     Note that you can use LaTeX commands such as \bf (for boldface) inside
+     the braces { }.
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     October 1989                    - 15 -  Preparing the Preamble Section
+
+
+
+
+     4.9.  Reference Line
+
+     \reference{text}
+
+     This command prints a reference line for your letter.  The {text}
+     should be your reference; it will be printed in uppercase in the
+     opening of the letter, directly below the subject line.  If you
+     include more than one reference, the references will automatically be
+     numbered.
+
+     Notice in the example that when you have several references, you can
+     separate them with double backslashes (\\) inside the braces, or you
+     can place each reference on a separate command line.
+
+
+       ==============================================================
+
+       \reference{Office Procedures Manual \\ LaTeX Letter Reference}
+
+       or
+
+       \reference{Office Procedures Manual}
+       \reference{LaTeX Letter Reference}
+
+            prints
+
+       REFERENCES: 1. OFFICE PROCEDURES MANUAL
+                   2. LATEX LETTER REFERENCE
+
+       ==============================================================
+
+
+
+
+     4.10.  Continuation Pages
+
+     \usetoasheader
+
+     The heading on each page after the first page usually contains the
+     name of the addressee, the page number, the date, and the group serial
+     number.  This information will appear on the continuation pages by
+     default, or it will be supplied by the \usetoasheader command.
+
+
+
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     Preparing the Preamble Section  - 16 -                    October 1989
+
+
+
+     You may use the following commands to specify information for the
+     heading on the continuation pages.
+
+
+     Command                   Results
+
+     _______________________   ___________________________________________
+
+     \usetoasheader            The default.  The header includes the name
+                               of the addressee, the page number, the
+                               date, and the group serial number.
+
+     \useattnasheader          The name from the Attn: line is used in
+                               place of the addressee's name.
+
+     \usesubjectasheader       The subject line is printed in upper- and
+                               lowercase letters instead of the
+                               addressee's name.  You may want to use this
+                               header if there are many addressees.
+
+     \useotherasheader{text}   The {text}, such as Distribution, is used
+                               as the header instead of the addressee's
+                               name.
+
+
+     The following example shows a standard second page heading using the
+     \usetoasheader command.
+
+
+       ==============================================================
+
+       \usetoasheader
+
+            prints
+
+       Genie Electronics             -2-              March 13, 1989
+       C-2-89-025
+
+       ==============================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     October 1989                    - 17 -  Preparing the Preamble Section
+
+
+
+
+     4.11.  Complimentary Close
+
+     \complimentaryclose{text}
+
+     This command prints the text that you specify for the complimentary
+     close after the body of the letter.  You must include the proper
+     punctuation within the brackets.  If you do not include the
+     \complimentaryclose command in the preamble section, the default
+     close, Sincerely yours, will be printed on the letter.
+
+
+       ==============================================================
+
+       \complimentaryclose{Cordially,}
+
+            prints
+
+       Cordially,
+
+       ==============================================================
+
+
+
+
+     4.12.  Signature
+
+     \signature{name}
+
+     The \signature command leaves room for a signature (four blank lines)
+     and prints the signer's name under this area flush with the left
+     margin.  The printed name may be followed with a title on the next
+     line.  In the \signature command, the title is separated from the name
+     with a double backslash (\\), as shown in the following example.
+
+
+       ==============================================================
+
+       \signature{T. F. Wise \\ Special Projects Group Leader}
+
+            prints
+
+       T. F. Wise
+       Special Projects Group Leader
+
+       ==============================================================
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     Preparing the Preamble Section  - 18 -                    October 1989
+
+
+
+
+     4.13.  Initial Line-Signer, Originator, and Typist
+
+     \signer{initials}
+     \originator{initials}
+     \typist{initials}
+
+     These commands produce the identification initials, but you may omit
+     the initials that do not apply to your situation.  The \signer command
+     is for the initials of the signer, the \originator command is used if
+     a person other than the signer drafted the letter, and the \typist
+     command is for the typist of the letter.  If you leave out the \signer
+     command, you will get a warning message, but this does not affect the
+     printing of your letter.  The letter will print without the signer's
+     initials.
+     If you include all three sets of initials, they will be arranged on
+     the initial line as the following example shows.
+
+
+       ==============================================================
+
+       \signer{jm}
+       \originator{bf}
+       \typist{ar}
+
+            prints
+
+       JM-BF:ar
+
+       ==============================================================
+
+
+
+
+     4.14.  Enclosures
+
+     \enc{list}
+     \encas
+
+     You can use either the \enc or the \encas command to print the
+     enclosure line.  The \enc{list} command is used when you have several
+     enclosures with your letter that have not been specifically referred
+     to in the body of the letter.  The {list} is the list of your
+     enclosures with a double backslash (\\) separating the items.  The
+     enclosure list is automatically numbered as shown in the following
+     example
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     October 1989                    - 19 -  Preparing the Preamble Section
+
+
+
+
+       ==============================================================
+
+       \enc{Photograph, Neg. No. 72-4304 \\
+               Slide and Vu-graph Nos. 8755 and 3908 \\
+               Drawing No. 3988-R}
+
+            prints
+
+       Enc.  1. Photograph, Neg. No. 72-4304
+           2. Slide and Vu-graph Nos. 8755 and 3908
+           3. Drawing No. 3988-R
+
+       ==============================================================
+
+
+     The \encas (enclosed as stated) command is used only if each
+     individual enclosure is completely identified within the body of the
+     letter.  The following example shows the \encas command and the
+     enclosure line as it will appear on your letter.
+
+
+       ==============================================================
+
+       \encas
+
+            prints
+
+       Enc. a/s
+
+       ==============================================================
+
+
+
+
+     4.15.  Attachments
+
+     \attachments{list}
+
+     This command prints a numbered list of attachments for your letter.
+     The {list} is the list of attachments, and, as the example shows, the
+     items should be separated with a double backslash (\\) inside the
+     braces.
+
+
+
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     Preparing the Preamble Section  - 20 -                    October 1989
+
+
+
+
+       ==============================================================
+
+       \attachments{Memo, Gredin to Platz, March 12, 1982 \\
+              Memo, Rivera to Tines, January 14, 1983}
+
+            prints
+
+       Attachments:
+       1.  Memo, Gredin to Platz, March 12, 1982
+       2.  Memo, Rivera to Tines, January 14, 1983
+
+       ==============================================================
+
+
+     \attachmentas
+     \attachmentsas
+
+     Use the command \attachmentas to specify the singular attachment as
+     stated for an item completely identified in the text of the letter.
+     The command \attachmentsas is used for a number of specified
+     attachments.  The following example shows the singular \attachmentas
+     command.
+
+
+       ==============================================================
+
+       \attachmentas
+
+            prints
+
+       Attachment a/s
+
+       ==============================================================
+
+
+
+
+     4.16.  Copy or Distribution List
+
+     \cy{list}
+     \distribution{list}
+
+     Either of these commands gives a list of the people to whom
+     informational copies of your letter will be sent.  The \cy{list}
+     command prints the list with the first line beside a Cy:, and the
+     \distribution{list} command prints the list beneath a Distribution:
+     line.  The {list} is the list of people to whom copies should be sent.
+     The names are separated with a double backslash (\\), as shown in the
+     following example.
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     October 1989                    - 21 -  Preparing the Preamble Section
+
+
+
+
+       ==============================================================
+
+       \cy{R. T. Smith, C-2, MS B263 \\ M. K. Terry, C-10, MS B296 \\ File}
+
+            prints
+
+       Cy:  R. T. Smith, C-2, MS B263
+               M. K. Terry, C-10, MS B296
+               File
+
+
+       \distribution{T. S. Solomon, TP-1, MS B233 \\
+               A. J. Gomez, TP-2, MS B234}
+
+            prints
+
+       Distribution:
+       T. S. Solomon, TP-1, MS B233
+       A. J. Gomez, TP-2, MS B234
+
+       ==============================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     Preparing the Document Section  - 22 -                    October 1989
+
+
+
+     5.  PREPARING THE DOCUMENT SECTION
+     ______________________________________________________________________
+
+     This chapter describes the commands that go into the document section
+     of your letter.  The document section is the second main section in
+     your LaTeX letter file and follows immediately after the preamble
+     section.  It starts with a \begin{document} command, ends with an
+     \end{document} command, and contains the commands and text that
+     produce the body of the letter.
+
+
+            _____________________________________________________
+
+              The following letter commands must be in every
+              letter file in the order in which they are
+              presented.
+            _____________________________________________________
+
+
+
+     \begin{document}
+
+     This command signals the beginning of your document.  All of the
+     preamble commands should be placed before this command in your file.
+
+     \opening
+
+     This command uses the information from the preamble commands to print
+     the opening of your letter.  All of the preamble commands that supply
+     information for the opening of your letter must appear before this
+     command.  LaTeX will ignore or give an error message for any opening
+     preamble commands that are encountered after the \opening command.
+
+     Body of Letter
+
+     The body of your letter comes after the \opening command.  You can use
+     any of the standard LaTeX commands inside the body to control the
+     appearance of the text.
+
+     \closing
+
+     The \closing command comes after the body of your letter and tells
+     LaTeX to print out the closing information for your letter.  It uses
+     commands and information entered in the preamble section of your file.
+     All preamble commands must be placed before the \begin{document}
+     command.
+
+     \end{document}
+
+     The last line of your file must be the \end{document} command.  This
+     line tells LaTeX that you are finished with your document, and LaTeX
+     will ignore anything after this command.
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     October 1989                    - 23 -            Printing Your Letter
+
+
+
+     6.  PRINTING YOUR LETTER
+     ______________________________________________________________________
+
+     Once you have finished creating your letter file with the letter
+     commands in it, follow these steps to print your letter.
+
+
+            _____________________________________________________
+
+              These steps are the same steps you use to print
+              any LaTeX file.
+            _____________________________________________________
+
+
+
+
+     (1)  Run your file through LaTeX by typing
+
+            latex filename.tex
+
+          where filename.tex is the name of your letter file.
+
+          If you have any error messages, they will appear on the screen
+          during execution.  These error messages are interactive and will
+          wait for you to respond to the
+          ? (question mark) prompt.  You can type another question mark (?)
+          at the prompt to display a list of your options at that point.
+          You will also get a file called filename.log that contains the
+          error messages that were produced.  See
+          Appendix E for more information about error messages.
+
+          When LaTeX ends execution successfully, you will receive a
+          message that the filename.dvi file is created, and you can
+          proceed to the next step in printing your letter.  (Occasionally,
+          however, you may receive a message that a .dvi file has been
+          created when only a partial file has been created.  If this
+          happens, you probably have an error at the point where the
+          partial .dvi file ends.)  When an error occurs, you must correct
+          your error and run your file through LaTeX again before you can
+          print the letter.
+
+          If you have trouble running LaTeX, call the Consulting Office or
+          see one of the LaTeX publications mentioned in Additional
+          Information in Section 2.
+
+
+     (2)  If your computer has a program that will allow you to preview
+          .dvi files, you should preview your filename.dvi file now and
+          make any necessary corrections.  If your computer cannot preview
+          .dvi files, go on to the next step.
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     Printing Your Letter            - 24 -                    October 1989
+
+
+
+     (3)  Print out your filename.dvi file by using the correct procedures
+          for your computer.  If you need help with the printing, you
+          should contact your local system manager if you are using a
+          workstation or distributed processor, or you can call the
+          Consulting Office if you are using a C-Division computer.
+
+          If you want to send your output to one of the PAGES raster
+          printer-plotter devices, you can use a utility called DVIPAGES.
+          This utility can be used for unclassified output from the UNIX
+          distributed processors Alpha and Beta or from the VAX/VMS
+          distributed processors.  For more information about this utility,
+          see DVIPAGES: TEX DVI to PAGES Quick Steps.  You can order this
+          document from the CIC by using the Documentation Request Form in
+          the back of this document.
+
+
+            _____________________________________________________
+
+              At the present time, DVIPAGES cannot handle
+              secret or confidential letters.
+            _____________________________________________________
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     October 1989                    - 25 -         Customizing Your Letter
+
+
+
+     7.  CUSTOMIZING YOUR LETTER
+     ______________________________________________________________________
+
+     This chapter describes special letter commands that you can put into
+     the preamble section of your file to customize your letter.  These
+     commands must be placed before the \begin{document} command in your
+     file.
+
+
+     7.1.  Header Style
+
+     The header for a letter includes the Los Alamos logo and address, plus
+     the optional callout labels.  You can choose from four header styles.
+     Three of these header styles use fonts that print a header on plain
+     paper, and the other header style allows you to use the preprinted
+     stationery provided by the Laboratory.  The following table lists the
+     commands for the different header styles.
+
+
+     Command                     Results
+
+     _________________________   __________________________________________
+
+     \headerfonts{texfonts}      This is the default header style because
+                                 these fonts (Computer Modern) are
+                                 available on all computers with LaTeX and
+                                 TeX.  It gives a header similar to the
+                                 standard letterhead but with a solid Los
+                                 Alamos logo.
+
+     \headerfonts{lafonts}       This command gives the Laboratory's
+                                 standard letterhead with an outline style
+                                 logo, but these fonts are not installed on
+                                 all computers.
+
+     \headerfonts{postscript}    This command gives a header similar to the
+                                 standard letterhead with an outline style
+                                 logo.  These fonts can be used with
+                                 PostScript printers only.
+
+     \headerfonts{letterpaper}   This command allows you to use preprinted
+                                 stationery.  It suppresses the printing of
+                                 the header.  (See Section 7.6 for more
+                                 information.)
+
+
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     Customizing Your Letter         - 26 -                    October 1989
+
+
+
+            _____________________________________________________
+
+              The examples in Appendix C show what each of
+              these header styles produces.
+            _____________________________________________________
+
+
+
+     To use the lafonts for letters, you need four special fonts named
+     book6, book7, la28, and spec12.  These fonts are part of the PCTeX
+     distribution for IBM PCs.  For the VMS and UNIX systems, you can get
+     the fonts from the following files on the Common File System (CFS):
+
+        o /TEX/FONTS/MEMO_LETTER.BCK for VMS systems
+
+        o /TEX/FONTS/MEMO_LETTER.TAR for UNIX systems
+
+     For more information, see TeX Fonts for Los Alamos Memos and Letters
+     Installation Reference, which can be ordered from the CIC by using the
+     Documentation Request Form in the back of this document.  If you have
+     questions about the lafonts, call the Consulting Office.
+
+     The PostScript fonts are available for PostScript printers in a
+     program called DVIPS.  DVIPS is available on the distributed
+     processors Alpha and Beta.  The VAX/VMS version is available on CFS as
+     /TEX/DEVICE_DRIVERS/DVIPS8901.BCK.  For Sun and Apollo workstations,
+     you can purchase the DVIPS program from the CIC.  DVIPS for an IBM PC
+     can be purchased from MEC-9.
+
+
+     7.2.  Body Style
+
+     This section describes the commands that affect the body of your
+     letter.
+
+
+     7.2.1.  Type Style
+
+     The body of your letter can be printed in typewriter type or
+     proportionally spaced Roman type.  You can specify the type style by
+     putting one of the following commands in your preamble section:
+
+
+
+
+
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     October 1989                    - 27 -         Customizing Your Letter
+
+
+
+     Command           Results
+
+     _______________   _____________________________________________
+
+     \typeface{tt}     Gives typewriter type.  (This is the
+                       default.)
+
+     \typeface{rm}     Gives proportionally spaced Roman type.
+
+
+     The typeface default is typewriter type because letters are
+     traditionally typed with typewriters.  See Appendix C for examples of
+     the typewriter and Roman typefaces.
+
+
+     7.2.2.  Fonts
+
+     You can also pick different fonts for the body of your letter.  The
+     following table lists your choices for the body fonts.
+
+
+     Command                  Results
+     ______________________   ________________________________________
+
+     \bodyfonts{texfonts}     This is the default body font because
+                              these fonts are available on all
+                              computers with LaTeX and TeX.
+
+     \bodyfonts{postscript}   These fonts can be used only with
+                              PostScript printers.
+
+
+     The Computer Modern fonts come with TeX and are on all systems that
+     have TeX and LaTeX installed.  The PostScript fonts, for use with a
+     PostScript printer, require the DVIPS program mentioned in Section
+     7.1.  See Appendix C for examples of these body fonts.
+
+
+     7.2.3.  Margin Space
+
+     You can adjust both the top and side margins of your letter.  The
+     default side margin of a letter is defined by the edges of the
+     letterhead.  The top margin space (the space between the letterhead
+     and the address) is usually four vertical spaces.  The {amount} for
+     the margin space commands can be expressed in inches (in), centimeters
+     (cm), points (pt), picas (pc), or millimeters (mm).  A positive value
+     increases the {amount}, and a negative value decreases it.  You can
+     change the top and side margins of your letter with the following
+     commands where {amount} is the total change:
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     Customizing Your Letter         - 28 -                    October 1989
+
+
+
+     Command                    Results
+     ________________________   _____________________________________
+
+     \expandwidth{amount}       Increases or decreases the width of
+                                the text to change the side margin.
+                                The {amount} is split between the
+                                left and right sides.
+
+     \expandtopmargin{amount}   Increases or decreases the distance
+                                between the letterhead and the
+                                address.
+
+
+
+     7.3.  Classification Labels
+
+     The following commands can be used to print a secret, confidential, or
+     unclassified label on your letter.
+
+
+     Command           Results
+     _______________   _____________________________________________
+
+     \classlabel{ }    The default.  It does not print a label on
+                       the letter.
+
+     \classlabel{u}    Prints a label that says UNCLASSIFIED.
+
+     \classlabel{c}    Prints a label that says CONFIDENTIAL.
+
+     \classlabel{s}    Prints the SECRET label.
+
+
+     These commands print the appropriate label at the top and bottom of
+     the letter in heavy black print.  You can use them for labeling a
+     classified letter, but we suggest that you use the more visible red-
+     stamped classification labeling on the front and back of the paper
+     instead of using these commands.
+
+
+            _____________________________________________________
+
+              The LaTeX letter commands will not print a red
+              label and will not print any label on the back
+              of the paper.
+            _____________________________________________________
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     October 1989                    - 29 -         Customizing Your Letter
+
+
+
+
+     7.4.  Page Breaks
+
+     This section describes the commands that you can use to control the
+     page breaks in your letter.
+
+
+     7.4.1.  General Page Breaks
+
+     \newpage
+
+     The LaTeX command \newpage breaks for a new page at the place where
+     you use this command.  You can put the command anywhere in the body of
+     your letter or inside the brackets of a letter command.
+
+     The following example shows the \newpage command within the brackets
+     of another command.  It divides the list between the second and third
+     name, with the first two names appearing on the current page of the
+     letter and the third name appearing on the next page.
+
+
+       ==============================================================
+
+       \cy{A. B. Cog \\ C. D. Man
+               \newpage \\ E. F. Barr}
+
+            prints on separate pages
+
+       A. B. Cog                    E. F. Barr
+       C. D. Man
+
+       ==============================================================
+
+
+
+
+     7.4.2.  Page Break Before a List
+
+     If, after printing your letter, you find that some of the lists in the
+     closing section are broken between pages, you can use the following
+     commands to start the list at the top of the next page.  You can put
+     these commands anywhere in the preamble section of your file.
+
+
+
+
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     Customizing Your Letter         - 30 -                    October 1989
+
+
+
+     Command                  Results
+     ______________________   __________________________________________
+
+     \cypagebreak             Starts the copy list at the top of the
+                              next page.
+     \attachmentspagebreak    Starts the list of attachments at the top
+                              of the next page.
+     \distributionpagebreak   Starts the distribution list at the top of
+                              the next page.
+     \encpagebreak            Starts the list of enclosures at the top
+                              of the next page.
+
+
+
+     7.5.  Short Letters
+
+     \shortletterstyle
+
+     For short letters of ten or fewer lines, the Office Procedures Manual
+     recommends a modified block style.  The short letter style has double
+     spaced lines and indented paragraphs.
+
+     To produce this type of letter, add the \shortletterstyle command to
+     the preamble section of your file.  If you use this short letter style
+     and the body of your letter is over one page long, you will get a
+     warning message when you run LaTeX.  See Appendix C for an example of
+     a short letter style.
+
+
+     7.6.  Preprinted Stationery
+
+     You can use Laboratory stationery with the preprinted header on it by
+     including the following command in the preamble section of your file:
+
+       \headerfonts{letterpaper}
+
+     This command prints your header information next to the preprinted
+     labels. However, the information may not line up correctly with the
+     labels on the stationery because of the different types of printers.
+     If your printer is not lining up the information correctly, put the
+     following commands in the preamble section of your file to shift the
+     printed information and correct the problem.
+
+       \letterpaperhcorr{distance}
+       \letterpapervcorr{distance}
+
+     The \letterpaperhcorr command corrects the horizontal positioning, and
+     the \letterpapervcorr command corrects the vertical positioning.  The
+     {distance} parameter is the amount the text must be moved and can be
+     an integer or decimal number.  The {distance} can be expressed in
+     inches (in), centimeters (cm), points (pt), picas (pc), or millimeters
+     (mm), and it can be a positive or negative value.
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     October 1989                    - 31 -         Customizing Your Letter
+
+
+
+     When you want to adjust the printing horizontally (using
+     \letterpaperhcorr), a positive distance moves the printed material to
+     the right, and a negative distance moves the print to the left.  When
+     you want to adjust the printing vertically (using \letterpapervcorr),
+     a positive distance moves the printed material down on the page, and a
+     negative distance moves the print up on the page.
+
+     The following table shows the effect of each command in adjusting the
+     printing.  The n's indicate a number, and the u's indicate the
+     abbreviation for the unit of measure (e.g., in for inches).
+
+
+     Command                  Results
+     ______________________   ________________________________________
+
+     \letterpaperhcorr{+nu}   Moves text to the right
+     \letterpaperhcorr{-      Moves text to the left
+     nu}
+     \letterpapervcorr{+nu}   Moves text down on the paper
+     \letterpapervcorr{-      Moves text up on the paper
+     nu}
+
+
+     The following example will move the printed material of the letter to
+     the right 1 inch and up 2 inches.
+
+
+       ==============================================================
+
+       \letterpaperhcorr{1in}
+       \letterpapervcorr{-2in}
+
+       ==============================================================
+
+
+
+
+            _____________________________________________________
+
+              If you routinely use the same printer to print
+              letters on preprinted stationery, you can figure
+              out what distances line up the text properly for
+              your printer and use those distances for each
+              letter.  You must include these commands in each
+              letter file.
+            _____________________________________________________
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     Customizing Your Letter         - 32 -                    October 1989
+
+
+
+     7.7.  Multiple Letters to a Mailing List
+
+     With LaTeX letter commands, you can send a personalized letter to each
+     person on a mailing list.  The file for multiple letters is set up
+     differently from the file for single letters.  The \to command is
+     placed in the document section of the letter rather than in the
+     preamble section.  The body of the letter is put into a file by itself
+     and called by the letter file for each individual address.  Following
+     is a general format for a multiple-letter file, in which BODYFILE.TEX
+     is the name of the file that contains the body of the letter.
+            \documentstyle{laletter}
+
+              Letter commands, such as
+                   \mailstop
+                   \complimentaryclose
+                    .
+                    .
+
+           \begin{document}
+
+           \to{Address for first letter}
+           \opening
+           \input{bodyfile.tex}
+           \closing
+
+           \to{Address for second letter}
+           \opening
+           \input{bodyfile.tex}
+           \closing
+
+           \end{document}
+
+     It is also possible to change the salutation for each letter by
+     putting a \salutation command after each \to command.
+
+
+     7.8.  Mailing Labels
+
+     You can print mailing labels with the LaTeX letter commands by putting
+     the following command into the preamble section.
+
+          \makemaillabels
+
+     When you use this command, sheets of mailing labels will be printed
+     after the letters have been printed.  The default will produce labels
+     in two columns, each with seven
+     1 1/2- by 4-inch labels, suitable for reproducing onto Avery brand
+     number 5362 address labels.
+
+     An easy way to print mailing labels is to print them onto ordinary
+     paper and use a copy machine to transfer the addresses onto the sheets
+     of mailing labels.  If you are running mailing-label paper through a
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     October 1989                    - 33 -         Customizing Your Letter
+
+
+
+     laser printer or a copy machine, be sure to use paper suitable for a
+     laser printer.
+
+
+     7.8.1.  Return Address Labels
+
+     You can have labels printed with a return address by putting the
+     following line into the preamble section.
+
+          \returnaddress{text}
+
+     Your address is the {text} for the \returnaddress command.  The format
+     for the {text} is the same as used for the \to command.
+
+
+     7.8.2.  Label Size
+
+     You can print labels on different sizes of mailing labels, as long as
+     they are arranged in two columns on an 8 1/2- by 11-inch piece of
+     paper.  To indicate a specific size of mailing label, use these
+     commands:
+
+          \maillabelheight{amount}
+          \maillabeltopmargin{amount}
+
+     The {amount} for \maillabelheight indicates the height of each mailing
+     label.  The default is 1.5 inches.
+
+     At the top of a sheet of mailing labels, you will usually find a
+     narrow strip of paper that is not used for printing.  The {amount} for
+     \maillabeltopmargin indicates the distance from the top of the sheet
+     of labels down to the top of the first label.  The default is 0.25
+     inch.
+
+     The following example shows you how to print 1-inch labels that begin
+     1/2 inch down from the top of the sheet.
+
+
+       ==============================================================
+
+       \maillabelheight{1in}
+       \maillabeltopmargin{.5in}
+
+       ==============================================================
+
+
+     You may find that some printers do not accurately measure an inch.  If
+     the printing is not centered properly, try adjusting the values of
+     \maillabelheight and \maillabeltopmargin.  A very small adjustment
+     will often fix the problem.
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     Customizing Your Letter         - 34 -                    October 1989
+
+
+
+
+     7.8.3.  Skipping Labels
+
+     When you have a sheet of mailing labels with some labels peeled off,
+     you can use the command \skiplabels{number} in the preamble section to
+     specify the number of missing labels and start the printing at the
+     correct spot.  In the following example, four labels will be skipped
+     in column one, and the printing will start on the fifth label in that
+     column.
+
+
+       ==============================================================
+
+       \skiplabels{4}
+
+       ==============================================================
+
+
+
+
+     7.8.4.  The .MLB File
+
+     As part of the process of printing mailing labels, a temporary file
+     with the suffix .mlb is created.  You can remove filename.mlb after
+     LaTeX has finished running.
+
+
+     7.9.  Floats in LaTeX Letters
+
+     The LaTeX figure and table environments can be used in LaTeX letters.
+     (See LaTeX: a Document Preparation System, by Leslie Lamport, for more
+     information about the special environments.)  To avoid splitting a
+     table or figure, LaTeX floats these environments to a convenient place
+     in the document.
+
+     In the figure and table environments, optional placement arguments can
+     be included within square brackets. The arguments place the
+     environment at a specified place on the page, if possible.
+
+
+      Argument    Results
+
+     __________   __________________________________________________
+        [h]       Places the environment at the current line (here).
+
+        [b]       Places the environment at the bottom of the page.
+
+        [t]       Places the environment at the top of the page.
+
+        [p]       Places the environment on a separate page.
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     October 1989                    - 35 -         Customizing Your Letter
+
+
+
+     Some of the placement options can cause problems, so you should be
+     aware of how they can interact with the opening and the closing of the
+     letter.  The [t] option places the float at the top of a page, so if
+     it is used on page one, the float will be placed above the letterhead.
+     If no square brackets ([ ]) are used, the placement default is [tbp]
+     and can place the environment above the letterhead if it is used on
+     the first page.
+
+     Figure and table environments on the last page of text can also lead
+     to undesirable results.  The last figure or table can end up on a
+     separate page followed by the closing and signature on an additional
+     page.  Be sure to use the [h] option for any floating environments on
+     the last page and check that none of the tables and figures printed on
+     the last page have floated in from a previous page.  The use of the
+     [h] will usually make it possible for the end of the letter body and
+     the closing to be printed on the same page.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     Summary of Commands             - 36 -                    October 1989
+
+
+
+     APPENDIX A.  SUMMARY OF LATEX LETTER COMMANDS
+     ______________________________________________________________________
+
+
+
+     Command                          Description
+     ______________________________   ________________________________________
+     ______________________________   ________________________________________
+
+     Described in Preparing the Preamble section
+
+     \documentstyle{laletter}         sets up letter style for 10 point
+
+     \documentstyle[11pt]{laletter}   sets up letter style for 11 point
+
+     \documentstyle[12pt]{laletter}   sets up letter style for 12 point
+
+     \date{text}                      date on letter (default is the date you
+                                      run LaTeX)
+
+     \symbol{group}                   group identification
+
+     \serialnumber{id}                correspondence identification number
+
+     \mailstop{text}                  Laboratory mail stop
+
+     \telephone{text}                 complete telephone number
+
+     \to{name}                        letter recipient
+
+     \attn{name}                      attention line
+
+     \thru{namelist}                  person(s) to send letter through
+
+     \via{namelist}                   person(s) to send letter via
+
+     \salutation{name}                salutation line
+
+     \subject{text}                   subject line
+
+     \reference{text}                 supplies a reference line under the
+                                      subject line
+
+     \usetoasheader                   uses name of addressee as header on
+                                      continuation pages
+
+     \useattnasheader                 uses attention line as header on
+                                      continuation pages
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     October 1989                    - 37 -             Summary of Commands
+
+
+
+     \usesubjectasheader              uses subject as header on continuation
+                                      pages
+
+     \useotherasheader{text}          uses {text} as header on continuation
+                                      pages
+
+     \complimentaryclose{text}        complimentary close line (default is
+                                      Sincerely yours,)
+
+     \signature{name}                 leaves room for signature and prints
+                                      signer's name and title
+
+     \signer{initials}                initials of signer for initial line
+
+     \originator{initials}            initials of originator (if different
+                                      from signer) for initial line
+
+     \typist{initials}                initials of typist for initial line
+
+     \enc{list}                       list of enclosures
+
+     \encas                           gives the line:  Enc. a/s (enclosure as
+                                      stated)
+
+     \attachments{list}               list of attachments
+
+     \attachmentas                    gives the line: Attachment a/s (as
+                                      stated)
+
+     \attachmentsas                   gives the line: Attachments a/s (as
+                                      stated)
+
+     \cy{list}                        copy list
+
+     \distribution{list}              distribution list
+
+     Described in Preparing the Document section
+
+     \begin{document}                 begins letter
+
+     \opening                         prints opening of letter
+
+     \closing                         prints closing of letter
+
+     \end{document}                   ends letter
+
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     Summary of Commands             - 38 -                    October 1989
+
+
+
+     Described in Customizing Your Letter section
+
+     \headerfonts{font_type}          determines font for header of letter
+       texfonts  (default)
+       lafonts
+       postscript
+       letterpaper
+
+     \bodyfonts{font_type}            determines font for body of letter
+       texfonts  (default)
+       postscript
+
+     \typeface{type}                  sets typeface for body of letter
+       tt  (default)
+       rm
+
+     \expandwidth{amount}             increases or decreases side margins
+
+     \expandtopmargin{amount}         increases or decreases space between the
+                                      letterhead and address
+
+     \classlabel{label}               prints classification labels (No label
+                                      is the default.)
+       u                                unclassified
+       c                                confidential
+       s                                secret
+
+     \cypagebreak                     breaks page before copy list
+
+     \attachmentspagebreak            breaks page before list of attachments
+
+     \distributionpagebreak           breaks page before distribution list
+
+     \encpagebreak                    breaks page before list of enclosures
+
+     \shortletterstyle                format for short letters (double-spacing
+                                      and indented paragraphs)
+
+     \letterpaperhcorr{distance}      corrects horizontal alignment of letter
+                                      paper
+
+     \letterpapervcorr{distance}      corrects vertical alignment of letter
+                                      paper
+
+     \makemaillabels                  prints mailing labels for letters
+
+     \returnaddress{text}             prints return address for labels
+
+     \maillabelheight{amount}         specifies height of mailing label
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     October 1989                    - 39 -             Summary of Commands
+
+
+
+     \maillabeltopmargin{amount}      specifies distance from the top of a
+                                      sheet of labels to top of first label
+
+     \skiplabels{number}              starts printing at first usable label
+                                      after number of labels
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     Syntax and Conventions          - 40 -                    October 1989
+
+
+
+     APPENDIX B.  SYNTAX RULES AND DOCUMENTATION CONVENTIONS
+     ______________________________________________________________________
+
+
+     B.1.  Syntax Rules
+
+     The following syntax rules apply to the LaTeX letter commands:
+
+        o Commands in the preamble section are not order dependent.  That
+          is, you can specify them in any order.
+
+        o Spaces before and after braces ({ }) are ignored.
+
+        o You can continue a command over multiple lines.  However, you
+          should split the line at a space.
+
+        o You can specify only one preamble command per line.
+
+        o You can separate fields inside the braces ({ }) by a double
+          backslash (\\), or you can repeat the command with new
+          information inside the braces.
+
+
+     Note that these rules do not apply to the standard LaTeX commands (for
+     example, \documentstyle, \begin{document}, and \end{document}).
+
+
+     B.2.  Documentation Conventions
+
+     The following standards and conventions are used in C-Division
+     publications.
+
+        o The italicized characters are symbolic names that you must
+          replace with a name or value.
+
+        o Filenames are written in uppercase characters.
+
+        o Square brackets ([]) denote optional input.
+
+        o To enter a command at a terminal, you must end the line with a
+          return (or end-of-line keystroke) to send the command to the
+          computer.  In most cases, the return is not shown in the command
+          line or example; in others it is shown as <RETURN>, which
+          indicates pressing the key marked return or its equivalent.
+
+        o Examples show exactly what you type and are always shown enclosed
+          with double lines.
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     October 1989                    - 41 -                 Example Letters
+
+
+
+     APPENDIX C.  EXAMPLE LETTERS
+     ______________________________________________________________________
+
+     This appendix contains examples of letters that have been created with
+     the LaTeX letter commands.  The examples show the four types of
+     headers that are available for letters, as well as some of the various
+     combinations of body fonts and typefaces.  The body of each letter
+     explains what features to notice about that particular letter.  In
+     each example, you will see the LaTeX source file that produced the
+     letter, followed by the resulting letter.
+
+     The size of the actual example letters is reduced for display
+     purposes.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     Example Letters                 - 42 -                    October 1989
+
+
+
+
+     Example 1.  Typical Letter
+
+     \documentstyle[12pt]{laletter}
+       \nocallouts
+       \symbol{ST-5}
+       \serialnumber{89-213}
+       \to{Genie Electronics\\
+          \attn{Mr.\ Robert Mercer, Sales Manager}\\
+           P.O. Box 8501\\
+           Midwest City, OK 73110}
+       \salutation {Dear Mr.\ Mercer:}
+       \subject{typical letter}
+       \complimentaryclose {Sincerely yours,}
+       \signature {Gregory L. Stevenson\\
+            Engineering and Development Group Leader}
+       \signer {GLS}
+       \typist {sd}
+       \cy {CRMO (2), MS A150\\
+            File}
+       \headerfonts{lafonts}
+       \bodyfonts{texfonts}
+       \typeface{tt}
+
+     \begin{document}
+     \opening
+     This example shows what a typical letter might look like.  It uses
+     the lafonts option for the header and the texfonts option for the
+     body of the letter.  The body has the typewriter typeface with a
+     point size of 12.  This letter has no printed callout labels in the
+     upper right corner.
+
+     Remember that LaTeX interprets a blank line as the start of a new
+     paragraph, and that any of the special characters \#,\$,\%,
+     \&, \{, and \} must be preceded by a backslash.  To produce double
+     quotes in typewriter typeface, use the " key on your keyboard.
+
+     The spacing and indentation of the preamble commands make the
+     file easier to read; the outcome of your file is not affected.
+     The preamble section begins with the $\backslash$documentstyle
+     command and continues to the $\backslash$begin\{document\}
+     command where the document section starts.
+
+     I hope this sample letter will help you produce letters with LaTeX.
+     \closing
+     \end{document}
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     October 1989                    - 43 -                 Example Letters
+
+
+
+     ______________________________________________________________________
+
+     The hardcopy version of this document contains a figure in this space.
+     ______________________________________________________________________
+
+
+     Example 2.  Short Letter Style
+
+     \documentstyle{laletter}
+       \date{January 25, 1989}
+       \symbol{C-12}
+       \serialnumber{89-567}
+       \mailstop{B296}
+       \telephone{(505) 667-7877}
+       \subject{PostScript Printing of Letters}
+       \to{S. D. Thompson\\Department of Business Practice\\
+           ABC Business College\\4501 Sycamore Street\\Oakmont, OK}
+       \salutation{Dear Professor Thompson:}
+       \complimentaryclose{Sincerely yours,}
+       \signer{mbt}
+       \typist{tyj}
+       \signature{Michael B. Tole\\Computer User Services}
+       \cy{CRMO (2), MS A150\\C-10 File}
+       \shortletterstyle
+       \headerfonts{postscript}
+       \bodyfonts{postscript}
+       \classlabel{u}
+
+     \begin{document}
+     \opening
+
+     This letter is in the short-letter format.  It was printed with a
+     PostScript printer using PostScript fonts for both the header and
+     the body.  The print defaulted to a point size of 10.  The
+     classification label is printed in black on only the front of the page.
+
+     Notice how to input a sentence that ends in an uppercase letter, such
+     as a sentence about CFS\@.  This TeX procedure gives the correct
+     space when a period follows an uppercase letter.  Also notice the
+     $\backslash$date command is included so that the date will appear
+     as January 25, 1989, even though that date is not the date at the time
+     of printing.
+
+     \closing
+     \end{document}
+
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     Example Letters                 - 44 -                    October 1989
+
+
+
+     ______________________________________________________________________
+
+     The hardcopy version of this document contains a figure in this space.
+     ______________________________________________________________________
+
+
+     Example 3.  Letter on Preprinted Stationery
+
+     \documentstyle{laletter}
+       \symbol{A-DO}
+       \serialnumber{89-14}
+       \mailstop{J356}
+       \telephone{(505) 665-9321}
+       \to{R. K. Thome\\L. L. Smith and Company\\P. O. Box 421\\
+           Cleveland, Ohio 45690}
+       \salutation{Dear Ms.\ Thome:}
+       \subject{Letter Printed on Preprinted Stationery}
+       \complimentaryclose{Very truly yours,}
+       \signature{L. G. Gordon, Section Leader\\
+        Analysis and Assessment Division}
+       \signer{lgg}
+       \typist{ker}
+       \headerfonts{letterpaper}
+       \letterpaperhcorr{+.05in}
+       \letterpapervcorr{+.05in}
+       \bodyfonts{postscript}
+       \typeface{rm}
+       \attachmentas
+     \begin{document}
+     \opening
+
+     This letter was printed on preprinted stationery.  Notice that the
+     $\backslash$letterpaperhcorr and $\backslash$letterpapervcorr commands
+     are used to line up the information with the labels.  The body font
+     is the PostScript font, and the typeface is in Roman type.
+     Emphasized text (like {\em this}) is printed in italics.
+
+     Notice that you can use the equation formatting that TeX and LaTeX
+     are known for.  This feature is useful if your letters contain
+     equations like \[ x = \frac{-b \pm \sqrt{b^{2}-4ac} } {2a} \]
+
+     You can also use tables like the following:
+
+     \begin{tabular} {c c c c c}
+     \sl Year & \sl Simple Interest & \sl Annual Comp. &
+     \sl Daily Comp. & \sl Continuous\\
+     0 & 5000.00 & 5000.00 & 5000.00 & 5000.00\\
+     1 & 5400.00 & 5400.00 & 5416.37 & 5416.44\\
+     2 & 5800.00 & 5832.00 & 5867.42 & 5867.55
+     \end{tabular}
+     \closing
+     \end{document}
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     October 1989                    - 45 -                 Example Letters
+
+
+
+     ______________________________________________________________________
+
+     The hardcopy version of this document contains a figure in this space.
+     ______________________________________________________________________
+
+
+     Example 4.  Letter with Multiple Addressees
+
+     \documentstyle[12pt]{laletter}
+       \typeface{rm}
+       \date { }
+       \symbol {IS-DO}
+       \serialnumber {89-144}
+       \mailstop {P360}
+       \telephone {(505) 667-4355\\(FTS) 843-4355}
+       \to{John Binnington, Manager\\Technical Information Division\\
+         Brookhaven National Laboratory\\Upton, Long Island, NY  11973}
+       \to{R. R. Dickison, Manager\\Library System\\
+         Oak Ridge National Laboratory\\ Oak Ridge, TN 37830}
+       \to{Juanita L. Garcia\\Library Science Specialist\\
+         Sandia National Laboratories\\Albuquerque, NM  87115}
+       \to{Robert Lormand\\Solar Energy Research Institute\\
+         1536 Cole Boulevard\\ Golden, CO  80401}
+       \salutation {Ladies and Gentlemen:}
+       \subject {Letter with Multiple Addressees}
+       \reference{Your letter of January 8, 1989}
+       \complimentaryclose{Sincerely yours,}
+       \signature{Agnes J. Luise, Librarian\\Information Services Division}
+       \signer{ajl}
+       \originator {rsg}
+       \typist{gh}
+       \enc{Letter, Smith to Jones, June 25, 1986\\
+          Letter, Landau to Gresham, March 1, 1987}
+       \cy {CRMO (2), w/enc., MS A150\\File, w/enc.}
+
+     \begin {document}
+     \opening
+
+     This letter has a header that was created by the default texfonts
+     and a body using texfonts with Roman typeface.  The list of addresses
+     is printed in two columns.  When there is an uneven number in the
+     list, the left column will contain the extra address.
+
+     Notice that both the subject line and the reference line are printed
+     in uppercase characters.  The enclosure list is automatically
+     numbered.
+
+     These commands can help you prepare your next LaTeX letter.
+     \closing
+     \end {document}
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     Example Letters                 - 46 -                    October 1989
+
+
+
+     ______________________________________________________________________
+
+     The hardcopy version of this document contains a figure in this space.
+     ______________________________________________________________________
+
+
+     Example 5.  Multiple Letters with Mailing Labels
+
+     \documentstyle[11pt]{laletter}
+       \date{August 1, 1989}
+       \symbol{A-DO}
+       \serialnumber{89-14}
+       \mailstop{J356}
+       \telephone{(505) 665-9321}
+       \subject{Multiple Letters to a Mailing List}
+       \usesubjectasheader
+       \complimentaryclose{Very truly yours,}
+       \signature{L. G. Gordon, Section Leader\\
+        Analysis and Assessment Division}
+       \signer{lgg}
+       \typist{ker}
+       \headerfonts{postscript}
+       \bodyfonts{texfonts}
+       \typeface{rm}
+       \enc{Letter, Smith to Jones, June 25, 1986\\
+        Letter, Landau to Gresham, March 1, 1987\\
+        Letter Egon to Poulan, August 13, 1988\\
+        Memo, Martinite to Distribution, September 30, 1988}
+       \cy{CRMO (2), MS A150\\C-12 File}
+       \makemaillabels
+       \returnaddress{L. G. Gordon, MS J356\\
+        Analysis and Assessment Division\\
+        Los Alamos National Laboratory\\Los Alamos, NM  87545}
+
+     \begin{document}
+       \to{John Binnington, Manager\\L. L. Smith and Company\\
+        P. O. Box 9871\\ Cleveland, Ohio 45690}
+       \salutation{Dear Mr.\ Binnington:}
+       \opening
+       \input{bodyfile.tex}
+       \closing
+
+       \to{Roy Nielson\\Lawrence Berkeley Laboratory\\
+           University of California\\Berkeley, CA 94720}
+       \salutation{Dear Dr.\ Nielson:}
+       \opening
+       \input{bodyfile.tex}
+       \closing
+
+       \to{Ramon J. Martinez\\Technical Library\\
+        Sandia National Laboratories\\ Albuquerque, NM  87115}
+       \salutation{Dear Mr.\ Martinez:}
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     October 1989                    - 47 -                 Example Letters
+
+
+
+       \opening
+       \input{bodyfile.tex}
+       \closing
+
+       \to{James R. Jones\\Brown and Co.\\3685 North 13th St.\\
+        Chicago, IL 67834}
+       \salutation{Dear Mr.\ Brown:}
+       \opening
+       \input{bodyfile.tex}
+       \closing
+
+     \end{document}
+
+
+
+     Input Text File (BODYFILE.TEX)
+
+     This is an example of a letter that can be sent to individuals on a
+     mailing list.  Each letter has a unique address and greeting, but the
+     text is identical for all the letters.
+     The individual addresses are entered in your LaTeX letter file, and
+     the body of the letter is placed in a separate file that is called for
+     each letter by the $\backslash$input command.  A mailing label and a
+     return address label are printed for each letter.
+
+     Other features in this letter are
+     \begin{itemize}
+       \item The date is specified so all letters will have the same date
+             no matter when they are run through LaTeX.
+       \item The header is done with PostScript fonts, and the body is
+             done with the Computer Modern fonts in a point size of 11.
+       \item The enclosures appear in a numbered list.
+     \end{itemize}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     Example Letters                 - 48 -                    October 1989
+
+
+
+     ______________________________________________________________________
+
+     The hardcopy version of this document contains a figure in this space.
+     ______________________________________________________________________
+
+     ______________________________________________________________________
+
+     The hardcopy version of this document contains a figure in this space.
+     ______________________________________________________________________
+
+     Mailing Labels and Return Address Labels
+     ______________________________________________________________________
+
+     The hardcopy version of this document contains a figure in this space.
+     ______________________________________________________________________
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     October 1989                    - 49 -       Installing the Style File
+
+
+
+     APPENDIX D.  INSTALLING THE LATEX LETTER STYLE FILE
+     ______________________________________________________________________
+
+     The LaTeX letter style file must be installed on your computer before
+     you can use the LaTeX letter commands.  If you are not sure if the
+     style file has been installed, check with your system manager.  If you
+     are responsible for installing the style file, this appendix gives you
+     the information you need.
+
+
+            _____________________________________________________
+
+              This appendix assumes you already have TeX and
+              LaTeX running on your system.
+            _____________________________________________________
+
+
+
+     This appendix describes the procedures for finding the instructions
+     for installing the LaTeX letter style file on these computers:
+
+        o IBM PC
+
+        o Sun workstation
+
+        o Apollo workstation
+
+        o VAX/VMS
+
+        o VAX/UNIX
+
+     To install the letter style file on all of the above systems except
+     the IBM PC, you need to be a validated user of the Los Alamos
+     Integrated Computing Network (ICN).  You must also be familiar with
+     the GET command of the CFS utility and with the NTEXT utility.
+
+
+            _____________________________________________________
+
+              For more information about the CFS utility, see
+              the Common File System CFS Interface Reference
+              manual.  For more information about the STEXT
+              and NTEXT utilities, see the STEXT and NTEXT
+              Reference. You can order these documents with
+              the Documentation Request Form in the back of
+              this document.
+            _____________________________________________________
+
+
+
+     You will be using the following files in the installation procedures;
+     they are stored on CFS and are in standard text format.
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     Installing the Style File       - 50 -                    October 1989
+
+
+
+        o README.STD-tells you where to find the letter style file and
+          includes installation instructions.  For VMS, this file is named
+          LATEXLETTER.STD.
+
+        o LALETTER.STY-the style file that is used when you run LaTeX on
+          your letter input file.
+
+        o LETTEST.TEX-a test letter that you can use to see if you have
+          installed the letter style file correctly.
+
+     A commented version of the LALETTER.STY file, LALETTER.DOC, is
+     available on CFS.  If you want to make your own changes to the
+     LALETTER.STY file, you will find this commented version useful.  Check
+     the README.STD file for the CFS pathname for LALETTER.DOC.
+
+     D.1.  On the IBM PC
+
+     You can purchase a diskette from MEC-9 that has the LANL letter style
+     file on it.  The diskette is called TeX Files for LANL.  It contains
+     the LaTeX memo and letter style files, as well as LANL's memo and
+     letter fonts.  The file LALETTER.DOC is not included on the MEC-9
+     diskette, but it can be found on CFS.  The file named README.LA will
+     show you how to use the installation script that is also on the
+     diskette.
+
+     If you prefer to get the letter style file from CFS, you can find out
+     about the installation procedure for your IBM PC with the following
+     steps:
+
+       1.   >From your PC, sign on to the ICN computer of your choice by
+            using VTERM or some other communications software.
+
+       2.   While on the ICN computer,
+
+              Use the CFS utility GET command to retrieve the following
+              file from CFS:
+
+                /tex/macros/c-2/latexletter/ibmpc/readme.std
+
+              Use the NTEXT utility to convert README.STD to native text
+              format.
+
+              Look in the NTEXTed README.STD file to find the complete
+              installation instructions.
+
+
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     October 1989                    - 51 -       Installing the Style File
+
+
+
+     D.2.  On the Sun Workstation
+
+     The following steps tell you how to get information about installing
+     the LaTeX letter style file on the Sun workstation:
+
+       1.   Use the CFS utility GET command to retrieve the following file
+            from CFS:
+
+              /tex/macros/c-2/latexletter/sununix/readme.std
+
+       2.   Use the NTEXT utility to convert the file from standard text
+            format to native text format.
+
+       3.   Look in the NTEXTed README.STD for the complete installation
+            instructions.
+
+
+     D.3.  On the Apollo Workstation
+
+     The following steps tell you how to get information about installing
+     the LaTeX letter style file on the Apollo workstation:
+
+       1.   Use the CFS utility GET command to retrieve the following file
+            from CFS:
+
+              /tex/macros/c-2/latexletter/apollo/readme.std
+
+       2.   Use the NTEXT utility to convert the file from standard text
+            format to native text format.
+
+       3.   Look in the NTEXTed README.STD file for the complete
+            installation instructions.
+
+
+
+     D.4.  On VAX/VMS
+
+     The following steps tell you how to get information about installing
+     the LaTeX letter style file on VAX/VMS:
+
+       1.   Use the CFS utility GET command to retrieve the following file
+            from CFS:
+
+              /tex/macros/c-2/latexletter/vaxvms/readme.std
+
+
+       2.   Use the NTEXT utility to convert the file from standard text
+            format to native text format.
+
+       3.   Look in the NTEXTed README.STD for the complete installation
+            instructions.
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     Installing the Style File       - 52 -                    October 1989
+
+
+
+
+
+     D.5.  On VAX/UNIX
+
+     The following steps tell you how to get information about installing
+     the LaTeX letter style file on VAX/UNIX:
+
+       1.   Use the CFS utility GET command to retrieve the following file
+            from CFS:
+
+              /tex/macros/c-2/latexletter/vaxunix/readme.std
+
+       2.   Use the NTEXT utility to convert the file from standard text
+            format to native text format.
+
+       3.   Look in the NTEXTed README.STD file for the complete
+            installation instructions.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     October 1989                    - 53 -      Warning and Error Messages
+
+
+
+     APPENDIX E.  WARNING AND ERROR MESSAGES
+     ______________________________________________________________________
+
+     You can receive two types of error messages when running your letter
+     file through LaTeX-error messages from doing something wrong with the
+     letter commands and error messages from doing something wrong with the
+     standard LaTeX commands.  The error messages that come from standard
+     LaTeX commands are interactive and are explained in the chapter titled
+     "LaTeX Errors" in An Introduction to LaTeX by Michael Urban.  The
+     error messages that come from the letter commands are not interactive,
+     and the fatal error messages will cause LaTeX to abort.  The letter-
+     command error messages are listed below.
+
+     E.1.  Warning Messages
+
+     The following are warning messages that you might receive when using
+     the LaTeX letter commands.  These messages remind you that you might
+     be leaving something important out of your letter; they do not affect
+     the printing of your letter.
+
+
+     E.1.1.  Leaving Out Information
+
+     These warning messages occur if you leave out one of the letter
+     commands.  Omitting the \signer command leaves the signer's initials
+     out of the initial line.  When the \complimentaryclose command is not
+     used, the default \complimentaryclose{Sincerely yours,} will be used.
+     Leaving out the other commands mentioned in these warning messages
+     causes one of the letterhead labels at the top of the letter to be
+     left blank.
+
+
+       Warning: you have not called \salutation before calling \opening.
+
+                For example, use
+
+                \salutation{Dear Henry,}
+
+       Warning: you have not called \complimentaryclose before calling
+                \opening.  \complimentaryclose{Sincerely Yours,} will be used
+                by default.
+
+
+       Warning: you have not called \signature before calling \opening.
+
+                For example, use
+
+                \signature{Betty J. Donaldson}
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     Warning and Error Messages      - 54 -                    October 1989
+
+
+
+       Warning: you have not called \signer before calling \opening.
+
+                For example, use
+
+                \signer{BJD}
+
+
+       Warning: you have not specified an address before calling \opening.
+
+                Use \to to specify an address, for example
+
+                \to{Vieno Severi Alanne \\
+                414 Rio Seco \\
+                Santa Fe, NM 87501}
+
+       Warning: you have not specified the callout \symbol
+                before calling \opening.
+
+                For example, use
+
+                \symbol{C-2}
+
+
+       Warning: you have not specified the callout \mailstop
+                before calling \opening.
+
+                For example, use
+
+                \mailstop{B253}
+
+       Warning: you have not specified the callout \telephone
+                before calling \opening.
+
+                For example, use
+
+                \telephone{(505) 665-0859}
+
+
+       Warning: you have called \serialnumber, but you have not called
+                \symbol.
+
+                For example, use
+
+                \symbol{C-2}
+
+
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     October 1989                    - 55 -      Warning and Error Messages
+
+
+
+
+
+     E.1.2.  Letter Too Long for \shortletterstyle
+
+       Warning: Use of the \shortletterstyle macro is intended
+                for use with letters of ten lines or less.
+
+
+     E.1.3.  Using the Almost Modern (AM) Fonts
+
+       Warning: You are using the obsolete Almost Modern (AM) fonts.
+
+                Only cursory debugging has been attempted using AM fonts.
+                The Computer Modern (CM) fonts are fully supported by
+                laletter.
+
+
+     E.1.4.  Contradictory Information
+
+     There are pairs of commands that cannot both be specified within the
+     same letter.
+
+       Warning: You have used both \enc and \encas.
+                Use one or the other but not both.
+                "Enc. a/s" will not be printed on this letter.
+
+       Warning: You have used both \attachments and \attachmentas.
+                Use one or the other but not both.
+                "Attachment a/s" will not be printed on this letter.
+
+       Warning: You have used both \attachments and \attachmentsas.
+                Use one or the other but not both.
+                "Attachments a/s" will not be printed on this letter.
+
+       Warning: You have used both \attachmentas and \attachmentsas.
+                Use one or the other but not both.
+                "Attachment a/s" will not be printed on this letter.
+
+       Warning: you have used both \thru: and \via: in this letter.
+                Use one or the other, but not both.
+
+       Warning: you have called \leftto and/or \rightto as well as \to.
+                All addresses called by \to will be printed in the left
+                column.
+
+
+     Some commands can only be used if another command is also being used.
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     Warning and Error Messages      - 56 -                    October 1989
+
+
+
+       Warning: you specified \useattnasheader,
+                yet you have not called \attn.
+
+                The first line of the addressee will be used
+                on headers after page one.
+
+
+       Warning: you specified \usesubjectasheader,
+                yet you have not called \subject.
+
+                The first line of the addressee will be used
+                on headers after page one.
+
+
+     E.1.5.  Using \attn Outside of \to
+
+       Warning: \attn must be used only within the argument of \to,
+                for example,
+
+                \to{Genie Electronics \\
+                \attn{Mr. Robert Mercer, Sales Manager} \\
+                P.O. Box 8501 \\
+                Midwest City, OK 73110}
+
+
+     E.2.  Fatal Errors
+
+     The following errors will cause your letter to not be printed.  If you
+     receive one of these error messages, you must go back to your
+     filename.tex file to correct the error and then rerun the file through
+     LaTeX.
+
+
+     E.2.1.  Invalid Classification Label
+
+     Note that x in the following error message is replaced with the actual
+     invalid classification label you specified in your letter file.
+
+       Fatal error: \classlabel{x} calls for an invalid classification label.
+
+         To print CONFIDENTIAL on the top and bottom of your letter,
+         use \classlabel{c}
+
+         To print SECRET on the top and bottom of your letter,
+         use \classlabel{s}
+
+         To print UNCLASSIFIED on the top and bottom of your letter,
+         use \classlabel{u}
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     October 1989                    - 57 -      Warning and Error Messages
+
+
+
+         If you do not want a classification label on your letter,
+         use \classlabel{}
+         or do not use the \classlabel command.
+
+         Change your file, and rerun LaTeX.
+
+
+     E.2.2.  Duplicating \classlabel Commands
+
+       Fatal error: you have called \classlabel more than once, or you have
+                    called \classlabel after having called \begin{document}.
+
+         You are allowed to declare only one classification label per letter.
+         You must call \classlabel before using \begin{document}.
+
+         To print CONFIDENTIAL on the top and bottom of your letter,
+         use \classlabel{c}
+
+         To print SECRET on the top and bottom of your letter,
+         use \classlabel{s}
+
+         To print UNCLASSIFIED on the top and bottom of your letter,
+         use \classlabel{u}
+
+         If you do not want a classification label on your letter,
+         use \classlabel{}
+         or do not use the \classlabel command.
+
+         Change your file, and rerun LaTeX.
+
+
+     E.2.3.  Specifying an Invalid Typeface
+
+     Note that typename in the following error message is replaced with the
+     actual invalid typeface you specified in your letter file.
+
+
+       Fatal error: \typeface{typename} calls for an invalid typeface.
+
+         Use \typeface{tt} or \typeface{rm}
+
+         Change your file, and rerun LaTeX.
+
+
+     E.2.4.  Specifying an Invalid Font for Letter Body
+
+     Note that fontname in the following error message is replaced with the
+     actual invalid font you specified in your letter file.
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     Warning and Error Messages      - 58 -                    October 1989
+
+
+
+       Fatal error: \bodyfonts{fontname} calls for an invalid font.
+
+         Use \bodyfonts{texfonts} or \bodyfonts{postscript}
+         depending on what fonts are available on your machine.
+
+         Using \bodyfonts{} will give you the default fonts.
+
+         Change your file, and rerun LaTeX.
+
+
+     E.2.5.  Specifying an Invalid Font for Letter Header
+
+     Note that fontname in the following error message is replaced with the
+     actual invalid font you specified in your letter file.
+
+
+       Fatal error: \headerfonts{fontname} calls for an invalid font.
+
+         Use \headerfonts{lafonts}, \headerfonts{texfonts},
+         or \headerfonts{postscript} depending on what fonts
+         are available on your machine.
+
+         Using \headerfonts{} will give you the default fonts.
+
+         Use \headerfonts{letterpaper} if you wish to print your letter
+         on pre-printed letter paper.
+
+         Change your file, and rerun LaTeX.
+
+
+
+     E.2.6.  Using an Obsolete Version of Lafonts
+
+       Fatal error: Your system is using an obsolete version of lafonts.
+
+         See the manual TeX Fonts for Los Alamos Memos and Letters
+         Installation Reference.  To order, use the Documentation Request
+         Form at the back of this document.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     October 1989                    - 59 -                        Glossary
+
+
+
+     APPENDIX F.  GLOSSARY OF TERMS AND ACRONYMS
+     ______________________________________________________________________
+
+
+     AM (Almost Modern) fonts
+         The fonts that were originally used with TeX.  LaTeX letter does
+         not support these fonts.
+
+     callout labels
+         Preprinted labels that identify information printed in the letter
+         head.  Labeled information includes the date and the originating
+         group's name, correspondence identification number, mailstop, and
+         telephone number.
+
+     CFS (Common File System)
+         The Los Alamos centralized filing system that has virtually
+         unlimited storage space.
+
+     CIC (Computing Information Center)
+         The CIC is the distribution center for software and for
+         documentation describing the computers, operating systems, and
+         software available at Los Alamos.
+
+     CM (Computer Modern) fonts
+         The fonts that are included with the current version of TeX.
+         These fonts have replaced the Almost Modern (AM) fonts.
+
+     default
+         The value or option that is used when no value or option is
+         explicitly given.
+
+     document section
+         The second section of a LaTeX letter file.  It contains the
+         commands and text the produce the body of the letter.
+
+     distributed processor (DP)
+         A minicomputer owned by a user organization and connected to the
+         ICN through the XNET gateway.  The distributed processor supports
+         interactive terminal access to the ICN.
+
+     DVI file
+         The device-independent output file that TeX produces.  This file
+         cannot be printed directly on any printer but must be converted
+         into a format that your printer can understand.  A device driver
+         that is compatible with your printer performs this conversion.
+
+     font
+         A collection of characters of a given size and appearance.
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     Glossary                        - 60 -                    October 1989
+
+
+
+     header
+         The printed letterhead on stationery.  It features the Los Alamos
+         logo and may or may not have printed callout labels.
+
+     macro package
+         A group of macro definitions (defined TeX commands) that are
+         usually in one file and that define an integrated series of
+         commands.
+
+     PAGES (Print and Graphics Express Station)
+         The ICN node that is used to produce both print output and
+         graphics output.  You can pick up your output by the CCF
+         Dispatchers Desk at TA-3; the output is sorted by the last two
+         digits of your Z-number.
+
+     parameter
+         A quantity that may be given different values.
+
+     preamble section
+         The first section of a LaTeX letter file.  It contains the
+         commands that define the opening and closing of a letter.
+
+     special environments
+         A type of LaTeX construction for producing a display such as an
+         equation, table, or figure.
+
+     style file
+         A file that tells LaTeX how to format a document that uses this
+         style file.  There are four style files that come with LaTeX
+         (BOOK.STY, REPORT.STY, ARTICLE.STY, and LETTER.STY).  Style files
+         have a .STY extension after the filename and are accessed by the
+         \documentstyle command in LaTeX.
+
+     syntax rules
+         The rules that govern the structure of program commands.
+
+     TeX
+         A document formatting language that is used to prepare high-
+         quality technical manuscripts.  It is particularly suitable for
+         mathematical and tabular work.
+
+     typeface
+         A style of character with given dimensions and line thickness.
+
+     utility
+         A system program that exists as a public file on a system and can
+         be accessed directly with an execute line.
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     October 1989                    - 61 -                        Glossary
+
+
+
+     workstation
+         Usually a desktop computer containing its own operating system and
+         computing resources, possibly sharing resources with other
+         workstations in a local area network (LAN).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+     October 1989                    - 63 -            Reader Comments Form
+
+
+
+     READER COMMENTS FORM
+     ______________________________________________________________________
+
+
+     Date_______________       Name________________________________________
+
+     Group_________________    Mail Stop____________   Phone_______________
+
+     Organization*  _______________________________________________________
+
+     Street*  _____________________________________________________________
+
+     City/State/Zip*   ____________________________________________________
+     *PLEASE COMPLETE IF YOU ARE NOT AT LOS ALAMOS.
+
+     PLEASE ANSWER THE FOLLOWING QUESTIONS.  Your comments help us improve
+     the quality and usefulness of this documentation.
+
+     Are you an experienced computer user?               yes _____ no _____
+
+     Is the information in this document easy to find?   yes _____ no _____
+
+     Are the purpose and function of each chapter clear? yes _____ no _____
+
+     Does this document provide correct information?     yes _____ no _____
+
+     Does this document fully explain the subject?       yes _____ no _____
+
+     Are there enough examples in this document?         yes _____ no _____
+
+     Did this document meet your expectations?           yes _____ no _____
+
+     Do you think you will use this document again
+     when your needs change?                             yes _____ no _____
+
+     Please use the space below (and additional pages if needed) for
+     questions not addressed above or for expansion of responses.  In
+     particular, please explain responses marked "no."  When possible,
+     please give specific page references.
+     ______________________________________________________________________
+
+     ______________________________________________________________________
+
+     ______________________________________________________________________
+
+     Thank you for your help.
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                      fold
+
+     ______________________________________________________________________
+
+
+
+
+
+
+
+
+                    LOS ALAMOS NATIONAL LABORATORY
+                    COMPUTER DOCUMENTATION
+                    MAIL STOP B253
+                    LOS ALAMOS, NEW MEXICO 87545
+
+
+
+
+
+
+
+     ______________________________________________________________________
+
+                                fold and staple
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+     October 1989                    - 65 -      Documentation Request Form
+
+
+
+     DOCUMENTATION REQUEST FORM
+     ______________________________________________________________________
+
+
+     Z-Number__________    Name_______________________    Date_____________
+
+     Group_________________     Mail Stop____________    Phone_____________
+
+     Cost Code__________________________   Program Code____________________
+
+     Organization* ________________________________________________________
+
+     Street* ______________________________________________________________
+
+     City/State/Zip* ______________________________________________________
+     *PLEASE COMPLETE IF YOU ARE NOT AT LOS ALAMOS.
+
+     DOCUMENT ORDER**
+
+     Send me the following documents:
+
+     [  ] An Introduction to LaTeX, by Michael Urban (Charge) (CIC#913)
+
+     [  ] LaTeX:  A Document Preparation System, by Leslie Lamport (Charge)
+          (CIC#560)
+
+     [  ] Common File System CFS Interface Reference (CIC#895)
+
+     [  ] DVIPAGES: TEX DVI to PAGES Quick Steps (CIC#939)
+
+     [  ] LaTeX Memo Reference (CIC#1025)
+
+     [  ] STEXT and NTEXT Reference (CIC#1002)
+
+     [  ] TeX Fonts for Los Alamos Memos and Letters Installation Reference
+          (CIC#1128)
+
+     [  ] _________________________________________________________________
+     **Documents can also be ordered by using ECCOS, the Electronic Card
+     Catalog and Ordering System.  Access ECCOS by following these
+     directions.
+       - Choose CCVAX from the port selector menu or from the menu
+         on Machine G.
+       - When CCVAX prompts for Username, type CICUSR.
+       - At the prompts, type your Z-number and ICN password.
+       - Wait for the menu to appear on the screen and follow its
+         directions.
+
+     Monthly Computing Publications Subcription Requests
+
+     o    Computing and Communications Division News   [] Start   [] Cancel
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     Documentation Request Form      - 66 -                    October 1989
+
+
+
+     o    ICN Change Bulletin                          [] Start   [] Cancel
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                      fold
+
+     ______________________________________________________________________
+
+
+
+
+
+
+
+
+                    LOS ALAMOS NATIONAL LABORATORY
+                    COMPUTING INFORMATION CENTER
+                    MAIL STOP M996
+                    LOS ALAMOS, NEW MEXICO 87545
+
+
+
+
+
+
+
+     ______________________________________________________________________
+
+                                fold and staple
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+     Index                           - 68 -                    October 1989
+
+
+
+     INDEX
+     ______________________________________________________________________
+
+     Address, 11                           \originator, 17-18
+     Attachments, 19                       \reference, 15
+     Attention line, 13                    \returnaddress, 33
+                                           \rightto, 11
+     Backslash (), 6                       \salutation, 14
+     Body of letter, 22, 26                \serialnumber, 9-10
+     Braces ({ }), 6                       \shortletterstyle, 30
+                                           \signature, 17
+     Callout labels, 8                     \signer, 17-18
+     Classification labeling, 28           \skiplabels, 34
+     Commands                              \subject, 13-14
+      \attachments, 19-20                  \symbol, 9-10
+      \attachmentsas, 20                   \telephone, 11
+      \attachmentspagebreak, 29-30         \thru, 12-13
+      \attn, 12                            \to, 8, 11-12
+      \begin{document}, 22                 \typeface, 26-27
+      \bodyfonts, 27                       \typist, 17-18
+      \classlabel, 28                      \useattnasheader, 15
+      \closing, 22                         \useotherasheader, 16
+      \complimentaryclose, 17              \usesubjectasheader, 15
+      \cy, 20-21                           \usetoasheader, 15
+      \cypagebreak, 29-30                  \via, 13
+      \date, 9                             \}attachmentas, 20
+      \distribution, 20-21                Complimentary close, 17
+      \distributionpagebreak, 29-30       Continuation pages, 15
+      \documentstyle                      Copy list, 20
+       explanation of, 7-8                Customizing a letter, 25
+       point sizes, selecting, 7-8
+      \enc, 18-19                         Date, 9
+      \encas, 18-19                       Defaults, 6
+      \enclosurespagebreak, 29-30         Distribution list, 20
+      \encpagebreak, 30                   Document section, 5, 22
+      \end{document}, 22                  Documentation conventions, 40
+      \expandtopmargin, 28                Double backslash, 11
+      \expandwidth, 28
+      \headerfonts, 25-26, 30             Enclosures, 18
+      \input, 46                          Error messages, 58
+      \leftto, 11-12                       fatal errors, 58
+      \letterpaperhcorr, 30-31              duplicating classification, 57
+      \letterpapervcorr, 30-31              invalid classification, 56-57
+      \maillabelheight, 33                  invalid font, 57-58
+      \maillabeltopmargin, 33               invalid typeface, 57
+      \mailstop, 10                         obsolete lafonts, 58
+      \makemaillabels, 32                  warnings, 53
+      \newpage, 29-30                       Almost Modern fonts, 55
+      \nocallouts, 8                        attn error, 56
+      \opening, 22                          contradictory information, 55
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+     October 1989                    - 69 -                           Index
+
+
+
+       leaving out information, 53-54     LaTeX video course, 4
+       letter too long, 55                LaTeX video courses, 4
+       using letters too big, 55          Letter paper
+     Error Messages, 52                    lining up, 30
+     Example
+      \date command, 43                   Mail stop, 10
+      classification, 43                  Mailing labels, 33
+      PostScript fonts, 43                Mailing Labels, 32
+      short letter style, 43              Mailing list, 32
+     Example letters, 41                  Multiple letters, 32
+     Examples
+      equations, 44                       No callouts, 8
+      lafonts, 42, 45
+      mailing labels, 46                  Office Procedures Manual, 4
+      multiple addresses, 45
+      no printed callouts, 42             Page breaks, controlling, 29
+      PostScript fonts, 46                PAGES, 24
+      preprinted stationery, 44           Point sizes, changing, 7-8
+      return address labels, 46           Preamble, 5, 7-8, 10-15, 17-18,
+      Roman typeface, 44, 46                20-21
+      tables, 44                          Preamble section, 5
+      TeXfonts, 42, 45                    Preprinted stationery, 30
+      to a mailing list, 46               Prerequisites, 3
+      Typewriter typeface, 42             Printing a letter, 22-24
+
+     Figures, 34                          Reference line, 15
+     Floats, 34                           Return address labels, 33
+     Fonts
+      body of letter, 27                  Salutation, 14
+      header of letter, 25-26             Short letter form, 30
+      lafonts, 25-26                      Signature, 17
+      postscript fonts, 25-27             Skipping labels, 34
+      texfonts, 25-27                     Subject line, 14
+                                          Summary of commands, 36-38
+     General format of a letter, 5        Syntax rules, 40
+                                          Systems that can use letter
+     Header style, 25                       commands, 3
+
+     In Reply Refer To, 9                 Tables, 34
+     Initial line, 18                     Telephone number, 10
+     Installing the letter style file,    Thru, 13
+       49-52                              Typefaces
+      Apollo workstation, 51               Roman, 26-27
+      IBM PC, 50                           typewriter, 26-27
+      Sun workstation, 51
+      VAX/UNIX, 52                        Via, 13
+      VAX/VMS, 51-52
+                                          Warning Messages, 52
+     LaTeX letter file, 5
+
+
+
+
+
+                             LaTeX Letter Reference
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+     ______________________________________________________________________
+
+     Copyright, 1990, The Regents of the University of California.  This
+     document was produced under a U.S. Government contract (W-7405-ENG-36)
+     by the Los Alamos National Laboratory, which is operated by the
+     University of California for the U.S. Department of Energy.  The U.S.
+     Government is licensed to use, reproduce, and distribute this
+     document.  Permission is granted to the public to copy and use this
+     document without charge, provided that this notice and any statement
+     of authorship are reproduced on all copies.  Neither the Government
+     nor the University makes any warranty, express or implied, or assumes
+     any liability or responsibility for the use of this document.
+
+     All Los Alamos computers, computing systems, and their associated
+     communications systems are to be used only for official business.  The
+     Computing and Communications Division and the Operational
+     Security/Safeguards Division have the responsibility and the authority
+     to periodically audit users' files.
+
+
+
+
+
+
+
+
+

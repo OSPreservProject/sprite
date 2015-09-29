@@ -1,0 +1,15 @@
+F CC.MAN;1                          	cc.man
+F CC_MIPS.MAN;1                     	cc_mips.man
+D DIST                              	dist
+D DS3100_M                          	ds3100.md
+L GCC.C;1                           	gcc.c	sprite/gcc.c
+D G___DIST                          	g++-dist
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+L OBSTACK.C;1                       	obstack.c	dist/obstack.c
+D RCS                               	RCS
+D SPRITE                            	sprite
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md
+D SYMM_MD                           	symm.md
+L VERSION.C;1                       	version.c	dist/version.c

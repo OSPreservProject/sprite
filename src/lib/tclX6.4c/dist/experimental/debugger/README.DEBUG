@@ -1,0 +1,188 @@
+
+
+
+		        A SOURCE LEVEL DEBUGGER FOR TCL
+
+				      by
+
+				Karl Lehenbauer
+			       (karl@neosoft.com)
+
+			  Thu Jan 02 13:20:53 CST 1992
+
+
+
+WHAT IS THIS?
+=============
+
+This is the first cut of an experimental debugger that allows Extended
+Tcl programmers to set breakpoints, single step through procedures with 
+"step in" and "step over", and access and manipulate the environment of 
+the procedure being debugged.
+
+Something interesting about the debugger is that most of it is written
+in Tcl; enough C code was written to connect Tcl's capability to call a
+C routine every time a Tcl statement is executed back into Tcl to the
+point where it could call and execute a Tcl procedure, and provide
+control over its behavior.
+
+Thus, Tcl programmers can extend and modify the debugger without dropping
+into C.  The current "trace_step" routine, while providing some powerful
+capabilities, is nonetheless a dim shadow of what is possible.  For those
+wishing to enhance the debugger, some suggested capabilities are described
+below.
+
+COMMAND SUMMARY
+===============
+
+After getting Tcl built with the debugging code (see HOW TO INSTALL IT,
+below), starting tcl and doing a "source debug.tcl", the following
+commands are available:
+
+traceproc procName [args...]
+
+    Traces procedure procName, the debugger will print the name
+    of the routine and it's prompt, currently 
+
+    While tracing, before a statement is executed, the prompt "ncsa!?"
+    is output.
+
+    Enter "n" and RETURN, or just RETURN, to step over the routine, i.e.
+    execute it but not trace it.
+
+    Enter "s" (and RETURN, always), to step *into* the routine, to
+    start stepping the statements that comprise the routine.
+
+    Enter "c" to execute the rest of the routine being stepped without
+    stopping.
+
+    Enter "a" to show the command about to be executed, only with
+    any subordinate variable substitutions and square-bracketed
+    statements expanded.  This is neat.  Note that by how Tcl works
+    not every variable or expression may have been expanded.
+
+    Enter "!" to push to a tcl command loop which will be at the
+    same execution level as the procedure being traced, so you can
+    do an "info vars", look at variables, change them, and so forth.
+    (You can also use "info globals" to poke around the global vars.)
+    Type control-D to return to the debugger "ncsa!?" prompt.
+
+    If you include text past the "!", it will execute the text as
+    a statement then immediately return, so you can do things like:
+
+    ncsa!? !info vars
+
+    Entering "?" gets you a few lines of help.
+
+
+bp [procName...]
+
+    Set a breakpoint on entry to one or more named procedures.
+    If no names are specified, currently breakpoint procedures
+    are printed (sort of, they're printed, but with a spurious
+    "_bp" tagged onto the end of each one.)
+
+bc [procName...]
+
+    Clear a breakpoint on one or more named procedures, or all
+    all breakpoints if none is specified.
+
+tp procName [args...]
+
+    A shorthand for "traceproc".
+
+
+HOW TO INSTALL IT
+=================
+
+o Copy  ndebug.c to the src directory.
+
+o Add ndebug.o to the OBJS macro in src/Makefile
+
+o Added a call to `Tcl_InitnDebug (interp);' in Tcl_CreateExtendedInterp in
+  the file src/createExtd.c.
+
+o Copy ndebug.tcl to the tclsrc directory.
+
+o Added ndebug.tcl to the TCL_LIBFILES macro in tclsrc/Makefile
+
+o Rebuild and optionally reinstall Extended Tcl.
+
+HOW IT WORKS
+============
+
+The "traceproc" command takes a procedure name and optional args, and
+executes it with tracing enabled.
+
+    traceproc procname [args...]
+
+The "trace_step" procedure is executed every time a statement in the
+procedure being traced is executed, subject to more control described
+below.
+
+"trace_step" receives three arguments, the depth of the interpreter,
+the command that's being executed, and the command that's being
+executed with subordinate square bracketed statements expanded,
+variables substituted, and so forth.
+
+Of course trace_step itself is not traced -- that's the magic that makes
+it all work.
+
+Note that the C trace trace routine is still called, it just returns
+immediately -- a trace routine cannot delete itself.  The C code in
+baseline Tcl that handles execution tracing just can't deal with it at
+this time.
+
+tracecon depth [level]
+tracecon depthfloor [level]
+
+The tracing depth in interpreter levels is set and fetched with the
+variants of "tracecon depth".  The depth floor sets the lowest level
+we can trace.  Examine debug.tcl to see how the depth and depth floor
+can be manipulated to achieve "step in" and "step over".
+
+These will probably be replaced by standard tcl variables -- that would
+make a lot of sense.  It would, however, increase the execution overhead
+of the trace routine, even when there was nothing to be traced.  Perhaps
+the variable tracing from C capability could be used to monitor changes
+in the values of the variables and, when they're changed, convert them
+to the static integers that the C trace procedure, TraceRoutine, would
+examine very quickly.
+
+
+WHAT TO EXPECT IN THE FUTURE
+============================
+
+This package represents a first cut and, since it's so new and since it's
+really just scratching the surface of a fertile area of interest, I expect
+that it will evolve greatly as people use it and figure out improvements
+for it.
+
+I have no commitment to any long-term support of this version.
+
+Markd@Grizzly.com points out that, since a debugger stands alone from the
+code you're developing, evolution of the debugger doesn't have nearly
+as large of an impact on developers as, say, evolution of the language itself.
+
+
+SOME POSSIBLE ENHANCEMENTS
+==========================
+
+It would be nice to have commands to dump local and global variables, all
+or by name, and prettily, as parray.tcl does.
+
+Tracing variables by printing their contents as they change would be nice.
+(I am not talking about Tcl's variable trace capability.)
+
+Locating the position in a source file or in the procedure body and cursor
+addressing to provide a more screen-oriented debugger.  (Tcl error management
+knows how to figure it out, so see how it does it.)
+
+trace_step calling a managed list of subordinate routines to implement
+these sorts of things.
+
+It would be nice to be able to abort the execution of the trace.  This is hard
+because there is currently no mechanism for a C trace to control the 
+interpreter, only for it to passively see what's going to happen next.
+
+A trace where it executes a number of statements, not just one.

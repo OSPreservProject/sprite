@@ -1,0 +1,33 @@
+'\" Copyright 1990 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/cmds/lockdir/RCS/lockdir.man,v 1.1 90/02/28 21:25:22 douglis Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS lockdir cmds
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+lockdir \- Lock a directory atomically
+.SH SYNOPSIS
+\fBlockdir\fR [\fIfilename\fR]
+.SH OPTIONS
+.IP "\fIfilename\fR" 15
+Name of file to use for the lock (defaults to \fB./LOCK\fP).
+.BE
+
+.SH DESCRIPTION
+.PP
+This is a simple program to acquire a lock on a directory. It waits
+for
+up to 10 minutes before giving up.  It exits 0 if the lock was
+acquired and non-zero otherwise.  If no argument is given, it assumes
+it is in the proper directory and just uses the file \fBLOCK\fB in the
+current directory.  
+.SH KEYWORDS
+lock, atomic, 

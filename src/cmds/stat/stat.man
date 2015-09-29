@@ -1,0 +1,59 @@
+' Copyright 1989 Regents of the University of California
+' Permission to use, copy, modify, and distribute this
+' documentation for any purpose and without fee is hereby
+' granted, provided that this notice appears in all copies.
+' The University of California makes no representations about
+' the suitability of this material for any purpose.  It is
+' provided "as is" without express or implied warranty.
+' 
+' $Header: /sprite/lib/forms/RCS/proto.man,v 1.3 89/01/09 11:43:01 ouster Exp $ SPRITE (Berkeley)
+' 
+.so \*(]ltmac.sprite
+.HS STAT cmds
+.BS
+.SH NAME
+stat \- get file attributes
+.SH SYNOPSIS
+.nf
+\fBstat\fR [\fB-s -l -d -t\fR] [\fB-n \fInum\fR] \fIfile file ...\fR
+.SH OPTIONS
+.IP "\fB\-s\fR" 14
+Produce short, one line output for each file.
+.IP "\fB\-l\fR" 14
+Get the attributes of the link, not what it references.
+.IP "\fB\-d\fR" 14
+Include day of week in dates.
+.IP "\fB\-t\fR" 14
+Time a series of Fs_GetAttributes calls.
+.IP "\fB\-n \fInum\fR" 14
+Number of repetitions for the \fB-t\fP option.
+.BE
+
+.SH DESCRIPTION
+.PP
+Stat is used to print out attributes of files.
+Its output is self-explainitory
+and is a super-set of the output from the \fBls -l\fP command,
+which can also be obtained with the \fB-s\fP option.
+The extra attributes presented are the internal version number
+of the file that is incremented each time the file is re-written,
+the user-defined file type,
+the creation date,
+the file server ID,
+the file domain (disk),
+and the file number.
+For devices this also prints out the device serverID, type, and unit.
+A device serverID of -1 indicates that it is a common device
+found on all hosts.  Opening a common device attaches you to
+the instance of the device connected to the current host.
+.SH BUGS
+.PP
+User IDs and hostIDs are given in numerical form,
+not nice string names.
+.SH SEE ALSO
+.PP
+ls, prefix
+.SH KEYWORDS
+.PP
+attributes, version, create, device, file type, serverID
+

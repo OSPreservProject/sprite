@@ -1,0 +1,171 @@
+*** /tmp/,RCSt1463155	Mon Nov  4 17:41:10 1991
+--- sunBW2.c	Tue Jul 24 18:01:12 1990
+***************
+*** 55,65 ****
+  
+  #include    "sun.h"
+  #include    "resource.h"
+  
+  #include    <sys/mman.h>
+  #include    <sundev/bw2reg.h>
+  
+- extern caddr_t mmap();
+  
+  typedef struct bw2 {
+      u_char	image[BW2_FBSIZE];          /* Pixel buffer */
+--- 55,71 ----
+  
+  #include    "sun.h"
+  #include    "resource.h"
++ #include "sys/fb.h"
++ #include "sys/ioctl.h"
++ #include "kernel/vmMach.h"
++ #include "sys/types.h"
+  
++ extern caddr_t mmap();
++ 
+  #include    <sys/mman.h>
++ #ifndef	sprite
+  #include    <sundev/bw2reg.h>
+  
+  
+  typedef struct bw2 {
+      u_char	image[BW2_FBSIZE];          /* Pixel buffer */
+***************
+*** 68,73 ****
+--- 74,80 ----
+  typedef struct bw2hr {
+      u_char	image[BW2_FBSIZE_HIRES];          /* Pixel buffer */
+  } BW2HR, BW2HRRec, *BW2HRPtr;
++ #endif	sprite
+  
+  static int  sunBW2ScreenIndex;
+  
+***************
+*** 195,204 ****
+--- 202,245 ----
+      int	    	  argc;	    	/* The number of the Server's arguments. */
+      char    	  **argv;   	/* The arguments themselves. Don't change! */
+  {
++ #ifdef	NOTDEF
++ 	fbtype	fbt;
++ 	fbaddr	fba;
++ 	pointer	buffer;
++ 
++ 	if(Fb_GTYPE(&fbt) != SUCCESS) {
++ 		return FALSE;
++ 	}
++ 	switch(fbt.fb_type) {
++ 	case FBTYPE_SUN2BW:
++ 		if(Fb_MAP(&fba) != SUCCESS) {
++ 			return FALSE;
++ 		}
++ 		buffer = fba.fb_buffer;
++ 		break;
++ 	case FBTYPE_SUN4COLOR:
++ 		if(Fb_MAP(&fba) != SUCCESS) {
++ 			return FALSE;
++ 		}
++ 		buffer = fba.fb_overlay;
++ 		/* fudge */
++ 		fbt.fb_type = FBTYPE_SUN2BW;
++ 		fbt.fb_depth = 1;
++ 		fbt.fb_cmsize = 2;
++ 		fbt.fb_size = 128*1024;
++ 		break;
++ 	default:
++ 		return FALSE;
++ 	}
++ #endif NOTDEF
++ 
+      int         fd;
+      struct fbtype fbType;
+      int		pagemask, mapsize;
+      caddr_t	addr, mapaddr;
++ #ifdef sprite
++     int		sizeToUse;
++ #endif /* sprite */
+  
+      if ((fd = sunOpenFrameBuffer(FBTYPE_SUN2BW, &fbType, index, fbNum,
+  				 argc, argv)) < 0)
+***************
+*** 219,225 ****
+--- 260,273 ----
+       * If we are running pre-SunOS 4.0 then we first need to
+       * allocate some address range for mmap() to replace.
+       */
++ #ifdef sprite
++     sizeToUse = ((mapsize + VMMACH_SEG_SIZE) & ~(VMMACH_SEG_SIZE-1))
++ 	    + VMMACH_SEG_SIZE;
++     addr = (caddr_t) malloc(sizeToUse);
++     if (addr == NULL) {
++ #else
+      if ((addr = (caddr_t) valloc(mapsize)) == 0) {
++ #endif /* sprite */
+          ErrorF("Could not allocate room for frame buffer.\n");
+          (void) close(fd);
+          return FALSE;
+***************
+*** 226,231 ****
+--- 274,284 ----
+      }
+  #endif _MAP_NEW
+  
++ #ifdef sprite
++     addr = (caddr_t) mmap((caddr_t) addr, mapsize,
++ 	    PROT_READ | PROT_WRITE, MAP_SHARED, fd, (off_t)0);
++     if (addr == (caddr_t) NULL) {
++ #else
+      /*
+       * In SunOS 4.0 the standard C library mmap() system call
+       * wrapper will automatically add a _MAP_NEW flag for us.
+***************
+*** 235,252 ****
+       */
+      if ((mapaddr = (caddr_t) mmap(addr, mapsize,
+          PROT_READ | PROT_WRITE, MAP_SHARED, fd, (off_t)0)) == (caddr_t) -1) {
+          Error("mapping BW2");
+          (void) close(fd);
+          return FALSE;
+      }
+  
+      if (mapaddr == 0)
+          mapaddr = addr;
+  
+!     sunFbs[index].fb = (pointer)mapaddr;
+!     sunFbs[index].fd = fd;
+      sunFbs[index].info = fbType;
+      sunFbs[index].EnterLeave = NULL;
+      return TRUE;
+  }
+  
+--- 288,316 ----
+       */
+      if ((mapaddr = (caddr_t) mmap(addr, mapsize,
+          PROT_READ | PROT_WRITE, MAP_SHARED, fd, (off_t)0)) == (caddr_t) -1) {
++ #endif /* sprite */
+          Error("mapping BW2");
+          (void) close(fd);
+          return FALSE;
+      }
+  
++ #ifndef sprite
+      if (mapaddr == 0)
+          mapaddr = addr;
++ #endif /* sprite */
+  
+! #ifdef sprite
+!     sunFbs[index].fb = (pointer) addr;
+!     /*
+!      * XXX What do we do here about fudging the FBTYPE_SUN4COLOR to be
+!      * black and white (as in the notdef'ed section above).?
+!      */
+! #else
+!     sunFbs[index].fb = buffer;
+! #endif /* sprite */
+      sunFbs[index].info = fbType;
+      sunFbs[index].EnterLeave = NULL;
++     sunFbs[index].fd = fd;
+      return TRUE;
+  }
+  

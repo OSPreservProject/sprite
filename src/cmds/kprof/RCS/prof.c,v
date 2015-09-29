@@ -1,0 +1,60 @@
+head     1.1;
+access   ;
+symbols  ;
+locks    mendel:1.1; strict;
+comment  @ * @;
+
+
+1.1
+date     88.09.23.11.55.08;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#include "sprite.h"
+#include "io.h"
+
+main(argc, argv)
+    int argc;
+    char *argv[];
+{
+    ReturnStatus status;
+    char *fileName;
+    char *option;
+
+    if (argc < 2) {
+	Io_Print("Usage: prof <start | end | dump filename>\n");
+	Io_Print(" - argc = %d\n", argc);
+	Io_Print(" - %x %x %x\n", argv[0], argv[1], argv[2]);
+	Proc_Exit(1);
+    } else {
+	if (argc > 3) {
+	    Io_Print("Extra arguments ignored: %s...\n", argv[3]);
+	}
+	option = argv[1];
+	fileName = argv[2];
+    }
+    if (String_Compare(option, "start") == 0) {
+	status = Prof_Start();
+    } else if (String_Compare(option, "end") == 0) {
+	status = Prof_End();
+    } else if (String_Compare(option, "dump") == 0) {
+	status = Prof_Dump(fileName);
+    } else {
+	Io_Print("Unknown option: %s\n", option);
+	status = 1;
+    }
+
+    Proc_Exit(status);
+}
+@

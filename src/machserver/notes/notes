@@ -1,0 +1,13 @@
+Once we have the "proof-of-concept" version, here are some other
+things to think about:
+
+- rewrite pageout code to cooperate with file system? (movable
+  boundary between FS and VM pages) 
+
+- Replace Mach drivers with Sprite drivers.  (May want to do this
+  earlier, at least to provide RAID & Ultranet support.) 
+
+- Replace AT&T-licensed libc code with equivalent Sprite libc code.
+  (Also replace non-licensed code for which the Sprite version is
+  cleaner or more powerful?)
+

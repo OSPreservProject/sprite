@@ -1,0 +1,65 @@
+.\"
+.\"	$Id: mkmodules.man,v 1.1 89/10/18 11:16:41 berliner Exp $
+.\"
+.TH MKMODULES L "9 October 1989"
+.SH "NAME"
+mkmodules \- Rebuild modules database for CVS
+.SH "SYNOPSIS"
+.B mkmodules
+.I directory
+.SH "DESCRIPTION"
+.B mkmodules
+rebuilds the modules database that
+.BR cvs (l)
+uses.
+The
+.I directory
+specified is expected to contain the
+.BR modules,v " and " loginfo,v
+files.
+.B mkmodules
+carefully checks out the current head revisions of each of these files and
+reuilds the
+.BR ndbm (3)
+format modules database.
+A warning is generated if the modules file contains a duplicate key.
+.SH "FILES"
+.TP
+modules,v
+The modules
+.SM RCS
+file.
+.TP
+modules
+The checked out modules file.
+.TP
+loginfo,v
+The loginfo
+.SM RCS
+file.
+.TP
+loginfo
+The checked out loginfo file.
+.TP
+modules.dir, modules.pag
+The
+.BR ndbm (l)
+format modules database.
+.SH "ENVIRONMENT VARIABLES"
+.TP
+.SM RCSBIN
+Specifies the full pathname where to find
+.SM RCS
+programs, such as
+.BR co (l)
+and
+.BR ci (l).
+If not set, the default is
+.BR /usr/local/bin .
+.SH "SEE ALSO"
+.BR checkin (l),
+.BR co (l),
+.BR cvs (l),
+.BR ndbm (3),
+.BR rcs (l),
+.SH "BUGS"

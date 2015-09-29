@@ -1,0 +1,2058 @@
+head     9.14;
+branch   ;
+access   ;
+symbols  ds3100:9.14 sun3:9.14 sun4nw:9.10 symm:9.10 spur:9.10 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.14
+date     92.06.25.17.24.19;  author jhh;  state Exp;
+branches ;
+next     9.13;
+
+9.13
+date     92.05.13.14.45.37;  author jhh;  state Exp;
+branches ;
+next     9.12;
+
+9.12
+date     92.04.14.16.57.55;  author jhh;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     91.12.19.18.02.51;  author jhh;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     91.09.10.18.41.10;  author rab;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     91.04.08.14.04.22;  author jhh;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     91.03.19.14.04.14;  author jhh;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     91.03.15.16.23.33;  author jhh;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     91.02.12.14.14.36;  author jhh;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.11.05.21.26.10;  author jhh;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.10.19.15.47.37;  author jhh;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.01.30.11.03.48;  author mendel;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.11.16.15.18.55;  author rab;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.11.08.09.45.23;  author brent;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.13.46;  author douglis;  state Stable;
+branches ;
+next     8.5;
+
+8.5
+date     89.08.10.16.06.23;  author mendel;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.05.24.07.58.49;  author rab;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.03.15.15.58.18;  author brent;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.12.12.14.52.52;  author nelson;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.30.11.51.06;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.28.01;  author douglis;  state Stable;
+branches ;
+next     6.2;
+
+6.2
+date     88.10.13.13.27.00;  author mendel;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.09.06.09.06.49;  author mendel;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.21.02;  author brent;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     88.06.27.10.46.16;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.22.16.25.43;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Routines to transmit packets on the LANCE interface.
+@
+
+
+9.14
+log
+@OutputPacket no longer panics if the packet it too large. 
+Instead it prints out helpful information and returns FAILURE.
+@
+text
+@/* 
+ * netLEXmit.c --
+ *
+ *	Routines to transmit packets on the LANCE interface.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/net/sun3.md/netLEXmit.c,v 9.13 92/05/13 14:45:37 jhh Exp $ SPRITE (Berkeley)";
+#endif
+
+#include <sprite.h>
+#include <sys.h>
+#include <netLEInt.h>
+#include <vm.h>
+#include <vmMach.h>
+#include <list.h>
+#include <sync.h>
+#include <machMon.h>
+
+/*
+ * Macros to step ring pointers.
+ */
+
+#define	NEXT_SEND(p)	( ((p+1) > statePtr->xmitDescLastPtr) ? \
+				statePtr->xmitDescFirstPtr : \
+				(p+1))
+#define	PREV_SEND(p)	( ((p-1) < statePtr->xmitDescFirstPtr) ? \
+				statePtr->xmitDescLastPtr : \
+				(p-1))
+static	ReturnStatus	OutputPacket _ARGS_((Net_EtherHdr *etherHdrPtr,
+			    Net_ScatterGather *scatterGatherPtr,
+			    int scatterGatherLength,
+			    NetLEState *statePtr));
+static	void		AllocateXmitMem _ARGS_((NetLEState *statePtr));
+
+char	foo[NET_ETHER_MAX_BYTES];
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * OutputPacket --
+ *
+ *	Assemble and output the packet in the given scatter/gather element.
+ *	The ethernet header contains the address of the destination host
+ *	and the higher level protocol type already.
+ *
+ * Results:
+ *	FAILURE if something went wrong.
+ *
+ * Side effects:
+ *	Transmit command list is modified to contain the packet.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength, statePtr)
+    Net_EtherHdr		*etherHdrPtr;	/* Ethernet header of packet.*/
+    register	Net_ScatterGather   	*scatterGatherPtr; /* Data portion of
+							    * packet. */
+
+    int			scatterGatherLength;	/* Length of data portion 
+						 * gather array. */
+    NetLEState		*statePtr;		/* The interface state. */
+{
+    register volatile NetLEXmitMsgDesc	*descPtr;
+    register	char			*firstBufferPtr; 
+    Address				bufPtr;
+    int					bufCount;
+    int					totalLength;
+    int					length;
+    int					amountNeeded;
+#if defined(sun3) || defined(sun4)
+    Net_ScatterGather			newScatGathArr[NET_LE_NUM_XMIT_BUFFERS];
+    register Boolean			reMapped = FALSE;
+#endif
+    int					i;
+
+    descPtr = statePtr->xmitDescNextPtr;
+
+    /*
+     * Do some sanity checks.
+     */
+    if (NetBfByteTest(descPtr->bits1, ChipOwned, 1)) {
+	printf("LE ethernet: Transmit buffer owned by chip.\n");
+	return (FAILURE);
+    }
+
+    statePtr->transmitting = TRUE;
+    statePtr->curScatGathPtr = scatterGatherPtr;
+    firstBufferPtr = statePtr->firstDataBuffer;
+
+    /*
+     * Add the first data buffer to the ring.
+     */
+    descPtr->bufAddrLow = NET_LE_TO_CHIP_ADDR_LOW(firstBufferPtr);
+    descPtr->bufAddrHigh = NET_LE_TO_CHIP_ADDR_HIGH(firstBufferPtr);
+    NetBfByteSet(descPtr->bits1, StartOfPacket, 1);
+    NetBfByteSet(descPtr->bits1, EndOfPacket, 0);
+
+    /*
+     * Since the first part of a packet is always the ethernet header that
+     * is less than NET_LE_MIN_FIRST_BUFFER_SIZE we must use the 
+     * firstDataBuffer to build the first buffer of mimumum allowable size.
+     */
+
+
+    descPtr->bufferSize = -NET_LE_MIN_FIRST_BUFFER_SIZE; /* May be wrong 
+							  * for small 
+							  * packets. 
+							  */
+
+    /* 
+     * First copy in the header making sure the source address field is set
+     * correctly. (Such a fancy chip and it won't even set the source 
+     * address
+     * of the header for us.)
+     */
+
+    (* ((Net_EtherHdr *) firstBufferPtr)) = *etherHdrPtr;
+
+    ((Net_EtherHdr *) firstBufferPtr)->source = statePtr->etherAddress;
+
+    firstBufferPtr += sizeof(Net_EtherHdr);
+
+    if (NET_LE_COPY_PACKET) {
+	totalLength = sizeof(Net_EtherHdr);
+	for (i = 0; i < scatterGatherLength; i++) {
+	    totalLength += scatterGatherPtr[i].length;
+	} 
+	if (totalLength <= NET_ETHER_MAX_BYTES) {
+	    Net_GatherCopy(scatterGatherPtr, scatterGatherLength, 
+		firstBufferPtr);
+	    descPtr->bufferSize = -totalLength;
+	} else {
+	    printf("OutputPacket: packet too large (%d)\n", totalLength);
+	    for (i = 0; i < scatterGatherLength; i++) {
+		printf("\t Buffer %d: %d\n", i, scatterGatherPtr[i].length);
+	    }
+	    return FAILURE;
+	}
+    } else {
+
+    
+	/*
+	 * Then copy enough data to bring buffer up to size.
+	 */
+    
+	totalLength = sizeof(Net_EtherHdr);
+    
+	bufCount = 0;
+	for (bufCount = 0; bufCount < scatterGatherLength; 
+			    bufCount++,scatterGatherPtr++ ) {
+    
+	    /*
+	     * If is an empty buffer then skip it.
+	     */
+    
+	    length = scatterGatherPtr->length;
+	    if (length == 0) {
+		continue;
+	    }
+    
+	    bufPtr = scatterGatherPtr->bufAddr;
+    
+	    /*
+	     * Compute the amount of data needed in the first buffer to make it
+	     * a minumum size.
+	     */
+    
+	    amountNeeded = NET_LE_MIN_FIRST_BUFFER_SIZE - totalLength;
+	    if (amountNeeded > 0 ) {
+		/*
+		 * Still need more padding in first buffer.
+		 */
+		if (length <= amountNeeded) {
+		     /*
+		      * Needs this entire length.
+		      */
+		     bcopy(bufPtr, firstBufferPtr, length);
+		     totalLength += length;
+		     firstBufferPtr += length;
+		     /*
+		      * Get the next segment of the scatter.
+		      */
+		     continue;
+		} else {
+		    /*
+		     * Needs only part of this buffer.
+		     */
+		     bcopy(bufPtr, firstBufferPtr, amountNeeded);
+		     totalLength += amountNeeded;
+		     /*
+		      * Update the length and address for insertion into the
+		      * buffer ring. firstBufferPtr is not used anymore in this
+		      * loop.
+		      */
+		     length -= amountNeeded;
+		     bufPtr += amountNeeded;
+		     if (length == 0) {
+			    continue;
+		     }
+    
+		}
+	     }
+#if defined(sun3) || defined(sun4)
+	    if (!reMapped) { 
+		/*
+		 * Remap the packet into network addressible memory.
+		 */
+		VmMach_NetMapPacket(scatterGatherPtr, 
+		    scatterGatherLength-bufCount, newScatGathArr);
+		bufPtr = newScatGathArr->bufAddr + 
+			    (bufPtr - scatterGatherPtr->bufAddr);
+		scatterGatherPtr = newScatGathArr;
+		reMapped = TRUE;
+	    }
+#endif
+	    /*
+	     * Add bufPtr of length length to the next buffer of the chain.
+	     */
+	    descPtr = NEXT_SEND(descPtr);
+	    if (NetBfByteTest(descPtr->bits1, ChipOwned, 1)) {
+		/*
+		 * Along as we only transmit one packet at a time, a buffer
+		 * own by the chip is a serious problem.
+		 */
+		printf("LE ethernet: Transmit buffer owned by chip.\n");
+		return (FAILURE);
+	    }
+	    descPtr->bufAddrLow = NET_LE_TO_CHIP_ADDR_LOW(bufPtr);
+	    descPtr->bufAddrHigh = NET_LE_TO_CHIP_ADDR_HIGH(bufPtr);
+	    NetBfByteSet(descPtr->bits1, StartOfPacket, 0);
+	    NetBfByteSet(descPtr->bits1, EndOfPacket, 0);
+	    descPtr->bufferSize = -length;
+
+	    totalLength += length;
+	}
+    }
+
+    /*
+     * See if we need to update the size of the first buffer.
+     */
+
+    if (totalLength < NET_LE_MIN_FIRST_BUFFER_SIZE) {
+	/*
+	 * Since totalLength < NET_LE_MIN_FIRST_BUFFER_SIZE, descPtr should
+	 * still point at the buffer desciptor for the first block.
+	 * Just update its size. If the size is less than the minimum possible
+	 * length, increase the length and send the garbage in the buffer.
+	 */
+	descPtr->bufferSize = -totalLength;
+	if (totalLength < NET_ETHER_MIN_BYTES) {
+		descPtr->bufferSize = -NET_ETHER_MIN_BYTES;
+	} 
+    }
+
+    /*
+     * Finish off the packet.
+     */
+
+    NetBfByteSet(descPtr->bits1, EndOfPacket, 1);
+
+    /*
+     * Change the ownership to the chip. Avoid race conditions by doing it
+     * with the last buffer first.
+     */
+
+    while (TRUE) {
+	NetBfByteSet(descPtr->bits1, ChipOwned, 1);
+	if (descPtr == statePtr->xmitDescNextPtr) {
+	    break;
+	}
+	descPtr = PREV_SEND(descPtr);
+    }
+
+    /*
+     * Give the chip a little kick.
+     */
+    NetBfShortSet(statePtr->regPortPtr->addrPort, AddrPort, NET_LE_CSR0_ADDR);
+    Mach_EmptyWriteBuffer();
+    statePtr->regPortPtr->dataPort = 
+	    (NET_LE_CSR0_XMIT_DEMAND | NET_LE_CSR0_INTR_ENABLE);
+    return (SUCCESS);
+
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AllocateXmitMem --
+ *
+ *	Allocate kernel memory for transmission ring.	
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Device state structure is updated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+AllocateXmitMem(statePtr)
+    NetLEState		*statePtr; 	/* State of the interface. */
+{
+    unsigned int	memBase;	
+
+    /*
+     * Allocate the ring of transmission buffer descriptors.  
+     * The ring must start on 8-byte boundary.  
+     */
+    memBase = (unsigned int) BufAlloc(statePtr, 
+	(NET_LE_NUM_XMIT_BUFFERS * sizeof(NetLEXmitMsgDesc)) + 8);
+    /*
+     * Insure ring starts on 8-byte boundary.
+     */
+    if (memBase & 0x7) {
+	memBase = (memBase + 8) & ~0x7;
+    }
+    statePtr->xmitDescFirstPtr = (NetLEXmitMsgDesc *) memBase;
+
+    /*
+     * Allocate the first buffer for a packet.
+     */
+    statePtr->firstDataBuffer = BufAlloc(statePtr, ((NET_LE_COPY_PACKET) ? 
+	NET_ETHER_MAX_BYTES : NET_LE_MIN_FIRST_BUFFER_SIZE));
+    statePtr->xmitMemAllocated = TRUE;
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetLEXmitInit --
+ *
+ *	Initialize the transmission queue structures.  This includes setting
+ *	up the transmission ring buffers.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The transmission ring is initialized.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NetLEXmitInit(statePtr)
+    NetLEState		*statePtr; 	/* State of the interface. */
+{
+    int 		bufNum;
+    volatile NetLEXmitMsgDesc	*descPtr;
+
+
+    if (!statePtr->xmitMemAllocated) {
+	AllocateXmitMem(statePtr);
+    }
+    statePtr->xmitMemInitialized = TRUE;
+
+    /*
+     * Initialize the state structure to point to the ring. xmitDescFirstPtr
+     * is set by AllocateXmitMem() and never moved.
+     */
+    statePtr->xmitDescLastPtr = 
+		&(statePtr->xmitDescFirstPtr[NET_LE_NUM_XMIT_BUFFERS-1]);
+    statePtr->xmitDescNextPtr = statePtr->xmitDescFirstPtr;
+
+    descPtr = statePtr->xmitDescFirstPtr;
+    for (bufNum = 0; bufNum < NET_LE_NUM_XMIT_BUFFERS; bufNum++, descPtr++) { 
+	bzero((char *) descPtr, sizeof(NetLEXmitMsgDesc));
+    }
+    statePtr->transmitting = FALSE;
+    statePtr->curScatGathPtr = (Net_ScatterGather *) NIL;
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetLEXmitDone --
+ *
+ *	This routine will process a completed transmit command.  It will
+ *	check for errors and update the transmission ring pointers.
+ *
+ * Results:
+ *	FAILURE if problem is found.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+NetLEXmitDone(statePtr)
+    NetLEState		*statePtr; 	/* State of the interface. */
+{
+    register	volatile NetXmitElement     	*xmitElementPtr;
+    register	volatile NetLEXmitMsgDesc	*descPtr;
+    ReturnStatus			status;
+    char				*buffer; 
+
+    descPtr = statePtr->xmitDescNextPtr;
+
+    /*
+     * If there is nothing that is currently being sent then something is
+     * wrong.
+     */
+    if (statePtr->curScatGathPtr == (Net_ScatterGather *) NIL) {
+	printf( "NetLEXmitDone: No current packet\n.");
+	status = FAILURE;
+	goto exit;
+    }
+
+    if (NetBfByteTest(descPtr->bits1, ChipOwned, 1)) {
+	printf("LE ethernet: Bogus xmit interrupt. Buffer owned by chip.\n");
+	status = FAILURE;
+	goto exit;
+    }
+    if (NetBfByteTest(descPtr->bits1, StartOfPacket, 0)) {
+	printf("LE ethernet: Bogus xmit interrupt. Buffer not start of packet.\n");
+	status = FAILURE;
+	goto exit;
+    }
+
+    /*
+     * Check for errors.
+     */
+    while (TRUE) {
+
+	if (NetBfByteTest(descPtr->bits1, Error, 1)) {
+	    statePtr->stats.xmitPacketsDropped++;
+	    if (NetBfShortTest(descPtr->bits2, LostCarrier, 1)) {
+		printf("LE ethernet: Lost carrier.\n");
+	    }
+	    /*
+	     * Lost of carrier seems to also causes late collision.
+	     * Print only one of the messages.
+	     */
+	    if ((NetBfShortTest(descPtr->bits2, LateCollision, 1)) &&
+		(NetBfShortTest(descPtr->bits2, LostCarrier, 0))) {
+		statePtr->lateCollisions++;
+		if ((statePtr->lateCollisions % 100) == 0) {
+		    printf("LE ethernet: 100 transmit late collisions.\n");
+		}
+	    }
+	    if (NetBfShortTest(descPtr->bits2, RetryError, 1)) {
+		statePtr->stats.xmitCollisionDrop++;
+		statePtr->stats.collisions += 16;
+		if ((statePtr->stats.xmitCollisionDrop % 100) == 0) {
+		    printf(
+	    "LE ethernet: 100 packets dropped due to too many collisions.\n");
+		}
+	    }
+	    if (NetBfShortTest(descPtr->bits2, UnderflowError, 1)) {
+		printf("LE ethernet: Memory underflow error.\n");
+		status = FAILURE;
+		goto exit;
+	    }
+	}
+	if (NetBfShortTest(descPtr->bits2, XmitBufferError, 1)) {
+	    printf("LE ethernet: Transmit buffering error.\n");
+	    status = FAILURE;
+	    goto exit;
+	}
+	if (NetBfByteTest(descPtr->bits1, OneRetry, 1)) {
+	    statePtr->stats.collisions++;
+	}
+	if (NetBfByteTest(descPtr->bits1, Retries, 1)) {
+	    /*
+	     * Two is more than one.  
+	     */
+	    statePtr->stats.collisions += 2;	/* Only a guess. */
+	}
+
+	buffer = (char *) NET_LE_FROM_CHIP_ADDR(statePtr, 
+	    descPtr->bufAddrHigh, descPtr->bufAddrLow);
+
+	if (NetBfByteTest(descPtr->bits1, EndOfPacket, 1)) {
+		break;
+	}
+
+	descPtr = NEXT_SEND(descPtr);
+	if (descPtr == statePtr->xmitDescNextPtr) {
+	    panic("LE ethernet: Transmit ring with no end of packet.\n");
+	}
+	if (NetBfByteTest(descPtr->bits1, ChipOwned, 1)) {
+		printf("LE ethernet: Transmit Buffer owned by chip.\n");
+		status = FAILURE;
+		goto exit;
+	}
+    }
+
+    statePtr->stats.packetsSent++;
+
+    /*
+     * Update the ring pointer to point at the next buffer to use.
+     */
+
+    statePtr->xmitDescNextPtr = NEXT_SEND(descPtr);
+
+    /*
+     * Mark the packet as done.
+     */
+    statePtr->curScatGathPtr->done = TRUE;
+    if (statePtr->curScatGathPtr->mutexPtr != (Sync_Semaphore *) NIL) {
+	NetOutputWakeup(statePtr->curScatGathPtr->mutexPtr);
+    }
+
+    /*
+     * If there are more packets to send then send the first one on
+     * the queue.  Otherwise there is nothing being transmitted.
+     */
+    status = SUCCESS;
+    if (statePtr->resetPending == TRUE) {
+	goto exit;
+    }
+    if (!List_IsEmpty(statePtr->xmitList)) {
+	xmitElementPtr = (NetXmitElement *) List_First(statePtr->xmitList);
+	status = OutputPacket(xmitElementPtr->etherHdrPtr,
+		     xmitElementPtr->scatterGatherPtr,
+		     xmitElementPtr->scatterGatherLength, statePtr);
+	List_Move((List_Links *) xmitElementPtr, 
+		  LIST_ATREAR(statePtr->xmitFreeList));
+    } else {
+	statePtr->transmitting = FALSE;
+	statePtr->curScatGathPtr = (Net_ScatterGather *) NIL;
+    }
+exit:
+    /*
+     * This assumes that whatever calls us will reset the chip if we return
+     * anything other than SUCCESS.  This way we avoid resetting the chip 
+     * twice in a row.
+     */
+    if ((statePtr->resetPending == TRUE) && (status == SUCCESS)) {
+	statePtr->transmitting = FALSE;
+	NetLEReset(statePtr->interPtr);
+    }
+    if (status != SUCCESS) {
+	statePtr->transmitting = FALSE;
+    }
+    return (status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetLEOutput --
+ *
+ *	Output a packet.  The procedure is to either put the packet onto the 
+ *	queue of outgoing packets if packets are already being sent, or 
+ *	otherwise to send the packet directly.  The elements of the scatter 
+ *	array which come into this routine must satisfy the following two 
+ *	properties:
+ *
+ *
+ * Results:
+ *	SUCCESS if the packet was queued to the chip correctly, otherwise
+ *	a standard Sprite error code.
+ *
+ * Side effects:
+ *	Queue of packets modified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+NetLEOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength, rpc,
+	    statusPtr)
+    Net_Interface	*interPtr;	/* The network interface. */
+    Address		hdrPtr;		/* Packet header. */
+    register	Net_ScatterGather	*scatterGatherPtr; /* Data portion of 
+							    * the packet. */
+    int			scatterGatherLength;	/* Length of data portion gather
+						 * array. */
+    Boolean		rpc;			/* Is this an RPC packet? */
+    ReturnStatus	*statusPtr;		/* Status from sending packet.*/
+{
+    register	NetXmitElement		*xmitPtr;
+    ReturnStatus			status;
+    NetLEState				*statePtr;
+    Net_EtherHdr			*etherHdrPtr = (Net_EtherHdr *) hdrPtr;
+    Boolean				restart = FALSE;
+
+    statePtr = (NetLEState *) interPtr->interfaceData;
+    MASTER_LOCK(&interPtr->mutex);
+
+    statePtr->stats.packetsOutput++;
+
+    /*
+     * Verify that the scatter gather array is not too large.  There is a fixed
+     * upper bound because the list of transmit buffers is preallocated.
+     */
+
+    if (scatterGatherLength >= NET_LE_NUM_XMIT_BUFFERS) {
+	scatterGatherPtr->done = TRUE;
+
+	printf("LE ethernet: Packet in too many pieces\n");
+	status = FAILURE;
+	goto exit;
+    }
+
+
+    /*
+     * See if the packet is for us.  In this case just copy in the packet
+     * and call the higher level routine.
+     */
+
+    if (!Net_EtherAddrCmp(statePtr->etherAddress, etherHdrPtr->destination)) {
+	int i, length;
+
+        length = sizeof(Net_EtherHdr);
+        for (i = 0; i < scatterGatherLength; i++) {
+            length += scatterGatherPtr[i].length;
+        }
+
+        if (length <= NET_ETHER_MAX_BYTES) {
+	    register Address bufPtr;
+
+	    etherHdrPtr->source = statePtr->etherAddress;
+
+	    bufPtr = (Address)statePtr->loopBackBuffer;
+	    bcopy((Address)etherHdrPtr, bufPtr, sizeof(Net_EtherHdr));
+	    bufPtr += sizeof(Net_EtherHdr);
+            Net_GatherCopy(scatterGatherPtr, scatterGatherLength, bufPtr);
+
+	    Net_Input(interPtr, (Address)statePtr->loopBackBuffer, length);
+        }
+
+        scatterGatherPtr->done = TRUE;
+
+	status = SUCCESS;
+	if (statusPtr != (ReturnStatus *) NIL) {
+	    *statusPtr = SUCCESS;
+	}
+	goto exit;
+    }
+
+    /*
+     * If no packet is being sent then go ahead and send this one.
+     */
+
+    if (!statePtr->transmitting) {
+	status = 
+	    OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength,
+		    statePtr);
+	if (status != SUCCESS) {
+	    restart = TRUE;
+	} else if (statusPtr != (ReturnStatus *) NIL) {
+	    *statusPtr = SUCCESS;
+	}
+	goto exit;
+    }
+    /*
+     * There is a packet being sent so this packet has to be put onto the
+     * transmission queue.  Get an element off of the transmission free list.  
+     * If none available then drop the packet.
+     */
+
+    if (List_IsEmpty(statePtr->xmitFreeList)) {
+        scatterGatherPtr->done = TRUE;
+	status = FAILURE;
+	goto exit;
+    }
+
+    xmitPtr = (NetXmitElement *) List_First((List_Links *) statePtr->xmitFreeList);
+
+    List_Remove((List_Links *) xmitPtr);
+
+    /*
+     * Initialize the list element.
+     */
+
+    xmitPtr->etherHdrPtr = etherHdrPtr;
+    xmitPtr->scatterGatherPtr = scatterGatherPtr;
+    xmitPtr->scatterGatherLength = scatterGatherLength;
+
+    /* 
+     * Put onto the transmission queue.
+     */
+
+    List_Insert((List_Links *) xmitPtr, LIST_ATREAR(statePtr->xmitList)); 
+
+    if (statusPtr != (ReturnStatus *) NIL) {
+	*statusPtr = SUCCESS;
+    }
+    status = SUCCESS;
+exit:
+    MASTER_UNLOCK(&interPtr->mutex);
+    if (restart) {
+	NetLERestart(interPtr);
+    }
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetLEXmitDrop --
+ *
+ *	Drop the current packet.  Called at the beginning of the
+ *	restart sequence, before curScatGathPtr is reset to NIL.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Current scatter gather pointer is reset and processes waiting
+ *	for synchronous output are notified.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+NetLEXmitDrop(statePtr)
+    NetLEState		*statePtr; 	/* State of the interface. */
+{
+    if (statePtr->curScatGathPtr != (Net_ScatterGather *) NIL) {
+	statePtr->curScatGathPtr->done = TRUE;
+	if (statePtr->curScatGathPtr->mutexPtr != (Sync_Semaphore *) NIL) {
+	    NetOutputWakeup(statePtr->curScatGathPtr->mutexPtr);
+	}
+	statePtr->curScatGathPtr = (Net_ScatterGather *) NIL;
+    }
+    statePtr->transmitting = FALSE;
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetLEXmitRestart --
+ *
+ *	Restart transmission of packets at the end of the restart
+ *	sequence, after a chip reset.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Output queue started up.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+NetLEXmitRestart(statePtr)
+    NetLEState		*statePtr; 	/* State of the interface. */
+{
+    NetXmitElement	*xmitElementPtr;
+    ReturnStatus	status;
+
+    /*
+     * Start output if there are any packets queued up.
+     */
+    if (!List_IsEmpty(statePtr->xmitList)) {
+	xmitElementPtr = (NetXmitElement *) List_First(statePtr->xmitList);
+	status = OutputPacket(xmitElementPtr->etherHdrPtr,
+		     xmitElementPtr->scatterGatherPtr,
+		     xmitElementPtr->scatterGatherLength, statePtr);
+	if (status != SUCCESS) {
+	    panic("LE ethernet: Can not output first packet on restart.\n");
+	}
+	List_Move((List_Links *) xmitElementPtr, 
+		  LIST_ATREAR(statePtr->xmitFreeList));
+    } else {
+	statePtr->transmitting = FALSE;
+	statePtr->curScatGathPtr = (Net_ScatterGather *) NIL;
+    }
+    return;
+}
+@
+
+
+9.13
+log
+@Reduced number of error messages printed to syslog.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/net/sun3.md/netLEXmit.c,v 9.12 92/04/14 16:57:55 jhh Exp $ SPRITE (Berkeley)";
+d146 5
+a150 1
+	    panic("OutputPacket: packet too large (%d)\n", totalLength);
+@
+
+
+9.12
+log
+@Uses new Net_Address definition.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/net/sun3.md/netLEXmit.c,v 9.11 91/12/19 18:02:51 jhh Exp $ SPRITE (Berkeley)";
+a443 3
+	    if (NetBfShortTest(descPtr->bits2, LateCollision, 1)) {
+		printf("LE ethernet: Transmit late collision.\n");
+	    }
+d453 4
+a456 1
+		printf("LE ethernet: Transmit late collision.\n");
+d461 4
+a464 1
+		printf("LE ethernet: Too many collisions.\n");
+@
+
+
+9.11
+log
+@NetLEXmitDrop didn't mark the chip as not transmitting, so subsequent
+resets would be erroneously deferred.  NetLEOutput would call
+NetLEReset inside the monitor if OutputPacket failed, causing a deadlock.
+I moved the call to outside the monitor.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/net/sun3.md/netLEXmit.c,v 9.10 91/09/10 18:41:10 rab Exp $ SPRITE (Berkeley)";
+d618 1
+a618 1
+    if (NET_ETHER_COMPARE(statePtr->etherAddress, etherHdrPtr->destination)) {
+@
+
+
+9.10
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netLEXmit.c,v 9.9 91/04/08 14:04:22 jhh Exp Locker: rab $ SPRITE (Berkeley)";
+d592 1
+d657 1
+a657 1
+		NetLERestart(interPtr);
+d699 3
+d734 1
+@
+
+
+9.9
+log
+@fixed bug w/ delayed reset
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netLEXmit.c,v 9.8 91/03/19 14:04:14 jhh Exp $ SPRITE (Berkeley)";
+a261 8
+    }
+    if (rpc_SanityCheck && (etherHdrPtr->type == NET_ETHER_SPRITE)) {
+	ReturnStatus 	status;
+	status = Rpc_SanityCheck(scatterGatherLength, 
+		    statePtr->curScatGathPtr, totalLength);
+	if (status != SUCCESS) {
+	    panic("Sanity check failed on outgoing packet.\n");
+	}
+@
+
+
+9.8
+log
+@same lance driver for sun3, sun4c, and ds5000.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/ds5000.md/RCS/netLEXmit.c,v 1.2 91/03/19 10:49:14 jhh Exp $ SPRITE (Berkeley)";
+d554 3
+@
+
+
+9.7
+log
+@started merging with ds5000 sources
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/ds5000.md/RCS/netLEXmit.c,v 1.1 90/11/07 18:04:01 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d546 6
+a551 1
+    if (statePtr->resetPending == TRUE) {
+@
+
+
+9.6
+log
+@Added RPC sanity checking
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netLEXmit.c,v 9.5 90/11/05 21:26:10 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d28 1
+d34 1
+a34 1
+#define	NEXT_SEND(p)	( ((++p) > statePtr->xmitDescLastPtr) ? \
+d36 2
+a37 2
+				(p))
+#define	PREV_SEND(p)	( ((--p) < statePtr->xmitDescFirstPtr) ? \
+d39 1
+a39 1
+				(p))
+d45 2
+d87 1
+d101 9
+a116 1
+    firstBufferPtr = statePtr->firstDataBuffer;
+d118 3
+a120 11
+    /*
+     * Add the buffer to the ring.
+     */
+    descPtr->bufAddrLow = 
+	    NET_LE_SUN_TO_CHIP_ADDR_LOW(statePtr->firstDataBuffer);
+    descPtr->bufAddrHigh = 
+	    NET_LE_SUN_TO_CHIP_ADDR_HIGH(statePtr->firstDataBuffer);
+    NetBfByteSet(descPtr->bits1, StartOfPacket, 1);
+    NetBfByteSet(descPtr->bits1, EndOfPacket, 0);
+    descPtr->bufferSize = -NET_LE_MIN_FIRST_BUFFER_SIZE; /* May be wrong for 
+							  * small packets. 
+d125 2
+a126 1
+     * correctly. (Such a fancy chip and it won't even set the source address
+d136 11
+a146 17
+    /*
+     * Then copy enough data to bring buffer up to size.
+     */
+
+    totalLength = sizeof(Net_EtherHdr);
+
+    bufCount = 0;
+    for (bufCount = 0; bufCount < scatterGatherLength; 
+			bufCount++,scatterGatherPtr++ ) {
+
+	/*
+	 * If is an empty buffer then skip it.
+	 */
+
+	length = scatterGatherPtr->length;
+	if (length == 0) {
+	    continue;
+d148 1
+a148 2
+
+	bufPtr = scatterGatherPtr->bufAddr;
+d150 1
+d152 1
+a152 2
+	 * Compute the amount of data needed in the first buffer to make it a
+	 * minumum size.
+d154 18
+a171 3
+
+	amountNeeded = NET_LE_MIN_FIRST_BUFFER_SIZE - totalLength;
+	if (amountNeeded > 0 ) {
+d173 2
+a174 1
+	     * Still need more padding in first buffer.
+d176 3
+a178 12
+	    if (length <= amountNeeded) {
+		 /*
+		  * Needs this entire length.
+		  */
+		 bcopy(bufPtr, firstBufferPtr, length);
+		 totalLength += length;
+		 firstBufferPtr += length;
+		 /*
+		  * Get the next segment of the scatter.
+		  */
+		 continue;
+	    } else {
+d180 1
+a180 1
+		 * Needs only part of this buffer.
+d182 41
+a222 13
+		 bcopy(bufPtr, firstBufferPtr, amountNeeded);
+		 totalLength += amountNeeded;
+		 /*
+		  * Update the length and address for insertion into the
+		  * buffer ring. firstBufferPtr is not used anymore in this
+		  * loop.
+		  */
+		 length -= amountNeeded;
+		 bufPtr += amountNeeded;
+		 if (length == 0) {
+			continue;
+		 }
+
+a223 13
+	 }
+#if defined(sun3) || defined(sun4)
+	if (!reMapped) { 
+	    /*
+	     * Remap the packet into network addressible memory.
+	     */
+	    VmMach_NetMapPacket(scatterGatherPtr, scatterGatherLength-bufCount, 
+				newScatGathArr);
+	    bufPtr = newScatGathArr->bufAddr + 
+			(bufPtr - scatterGatherPtr->bufAddr);
+	    scatterGatherPtr = newScatGathArr;
+	    reMapped = TRUE;
+	}
+a224 5
+	/*
+	 * Add bufPtr of length length to the next buffer of the chain.
+	 */
+	descPtr = NEXT_SEND(descPtr);
+	if (NetBfByteTest(descPtr->bits1, ChipOwned, 1)) {
+d226 1
+a226 2
+	     * Along as we only transmit one packet at a time, a buffer
+	     * own by the chip is a serious problem.
+d228 16
+a243 2
+	    printf("LE ethernet: Transmit buffer owned by chip.\n");
+	    return (FAILURE);
+a244 7
+	descPtr->bufAddrLow = NET_LE_SUN_TO_CHIP_ADDR_LOW(bufPtr);
+	descPtr->bufAddrHigh = NET_LE_SUN_TO_CHIP_ADDR_HIGH(bufPtr);
+	NetBfByteSet(descPtr->bits1, StartOfPacket, 0);
+	NetBfByteSet(descPtr->bits1, EndOfPacket, 0);
+	descPtr->bufferSize = -length;
+
+	totalLength += length;
+d286 1
+a286 1
+	 break;
+a293 1
+
+d295 3
+a297 2
+    statePtr->regPortPtr->dataPort =
+		(NET_LE_CSR0_XMIT_DEMAND | NET_LE_CSR0_INTR_ENABLE);
+d329 2
+a330 2
+    memBase = (unsigned int) VmMach_NetMemAlloc(
+		(NET_LE_NUM_XMIT_BUFFERS * sizeof(NetLEXmitMsgDesc)) + 8);
+d342 2
+a343 2
+    statePtr->firstDataBuffer = 
+	VmMach_NetMemAlloc(NET_LE_MIN_FIRST_BUFFER_SIZE);
+d388 1
+a388 21
+	/*
+	 * Clear out error fields. 
+	 */
+	NetBfByteSet(descPtr->bits1, Error, 0);
+	NetBfByteSet(descPtr->bits1, Retries, 0);
+	NetBfByteSet(descPtr->bits1, OneRetry, 0);
+	NetBfByteSet(descPtr->bits1, Deferred, 0);
+	NetBfShortSet(descPtr->bits2, XmitBufferError, 0);
+	NetBfShortSet(descPtr->bits2, UnderflowError, 0);
+	NetBfShortSet(descPtr->bits2, RetryError, 0);
+	NetBfShortSet(descPtr->bits2, LostCarrier, 0);
+	NetBfShortSet(descPtr->bits2, LateCollision, 0);
+	/*
+	 * Clear packet boundry bits.
+	 */
+	NetBfByteSet(descPtr->bits1, StartOfPacket, 0);
+	NetBfByteSet(descPtr->bits1, EndOfPacket, 0);
+	/*
+	 * Set ownership to the os.
+	 */
+	NetBfByteSet(descPtr->bits1, ChipOwned, 0);
+a389 1
+
+d420 1
+a424 7
+     * Reset the interrupt.
+     */
+    NetBfShortSet(statePtr->regPortPtr->addrPort, AddrPort, NET_LE_CSR0_ADDR);
+    statePtr->regPortPtr->dataPort = 
+		(NET_LE_CSR0_XMIT_INTR | NET_LE_CSR0_INTR_ENABLE);
+
+    /*
+d430 2
+a431 1
+	return (FAILURE);
+d436 2
+a437 1
+	return (FAILURE);
+d441 2
+a442 1
+	return (FAILURE);
+a444 1
+
+d473 2
+a474 1
+		return (FAILURE);
+d479 2
+a480 1
+	    return (FAILURE);
+d492 3
+d505 2
+a506 1
+		return (FAILURE);
+d531 3
+d545 5
+d594 1
+a594 1
+    DISABLE_INTR();
+d607 2
+a608 2
+	ENABLE_INTR();
+	return FAILURE;
+d640 1
+a640 1
+	ENABLE_INTR();
+d644 1
+a644 1
+	return SUCCESS;
+d660 1
+a660 2
+	ENABLE_INTR();
+	return status;
+a661 1
+
+d670 2
+a671 2
+	ENABLE_INTR();
+	return FAILURE;
+d695 3
+a697 1
+    ENABLE_INTR();
+@
+
+
+9.5
+log
+@network output routines return a status
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netLEXmit.c,v 9.4 90/10/19 15:47:37 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d241 8
+@
+
+
+9.4
+log
+@Rewrite to support multiple interfaces and the Ultranet
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net.jhh/sun3.md/RCS/netLEXmit.c,v 9.6 90/09/20 21:13:53 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d549 2
+a550 1
+ *	None.
+d558 3
+a560 2
+void
+NetLEOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength)
+d567 2
+d590 1
+a590 1
+	return;
+d623 4
+a626 1
+	return;
+d639 2
+d643 1
+a643 1
+	return;
+d655 1
+a655 1
+	return;
+d676 3
+d680 1
+a680 1
+    return;
+@
+
+
+9.3
+log
+@Changed not to map very small packets that we are going to copy anyway.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netLEXmit.c,v 9.2 89/11/16 15:18:55 rab Exp $ SPRITE (Berkeley)";
+d21 7
+a27 8
+#include "sprite.h"
+#include "netLEInt.h"
+#include "net.h"
+#include "netInt.h"
+#include "sys.h"
+#include "vm.h"
+#include "vmMach.h"
+#include "list.h"
+a28 2
+#include "sync.h"
+
+d33 2
+a34 2
+#define	NEXT_SEND(p)	( ((++p) > netLEState.xmitDescLastPtr) ? \
+				netLEState.xmitDescFirstPtr : \
+d36 2
+a37 2
+#define	PREV_SEND(p)	( ((--p) < netLEState.xmitDescFirstPtr) ? \
+				netLEState.xmitDescLastPtr : \
+d39 5
+a43 18
+
+/*
+ * Pointer to scatter gather element for current packet being sent.
+ */
+static Net_ScatterGather *curScatGathPtr = (Net_ScatterGather *) NIL;
+
+/*
+ * A buffer that is used when handling loop back packets.
+ */
+static  char            loopBackBuffer[NET_ETHER_MAX_BYTES];
+
+/*
+ * A buffer that is used to insure that the first element of the transmit
+ * buffer chain is of a minumum size.
+ */
+
+static char		*firstDataBuffer;
+
+d64 1
+a64 1
+OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
+d71 1
+a73 1
+    volatile NetLEState			*netLEStatePtr;
+d85 1
+a85 3
+    netLEStatePtr = &netLEState;
+
+    descPtr = netLEStatePtr->xmitDescNextPtr;
+d90 1
+a90 1
+    if (descPtr->chipOwned) {
+d95 2
+a96 2
+    netLEState.transmitting = TRUE;
+    curScatGathPtr = scatterGatherPtr;
+d104 1
+a104 1
+    firstBufferPtr = firstDataBuffer;
+d109 6
+a114 4
+    descPtr->bufAddrLow = NET_LE_SUN_TO_CHIP_ADDR_LOW(firstDataBuffer);
+    descPtr->bufAddrHigh = NET_LE_SUN_TO_CHIP_ADDR_HIGH(firstDataBuffer);
+    descPtr->startOfPacket = 1;
+    descPtr->endOfPacket = 0;
+d127 1
+a127 1
+    ((Net_EtherHdr *) firstBufferPtr)->source = netLEStatePtr->etherAddress;
+d209 1
+a209 1
+	if (descPtr->chipOwned) {
+d219 2
+a220 2
+	descPtr->startOfPacket = 0;
+	descPtr->endOfPacket = 0;
+d247 1
+a247 1
+    descPtr->endOfPacket = 1;
+d255 5
+a259 5
+	 descPtr->chipOwned = 1;
+	 if (descPtr == netLEStatePtr->xmitDescNextPtr) {
+	     break;
+	 }
+	 descPtr = PREV_SEND(descPtr);
+d266 2
+a267 2
+    netLEStatePtr->regPortPtr->addrPort = NET_LE_CSR0_ADDR;
+    netLEStatePtr->regPortPtr->dataPort =
+a272 7
+
+/*
+ * Flag to note if xmit memory has been initialized and allocated.
+ */
+
+static	Boolean	xmitMemInitialized = FALSE;
+static	Boolean	xmitMemAllocated = FALSE;
+d291 2
+a292 1
+AllocateXmitMem()
+d308 1
+a308 1
+    netLEState.xmitDescFirstPtr = (NetLEXmitMsgDesc *) memBase;
+d313 3
+a315 2
+    firstDataBuffer = VmMach_NetMemAlloc(NET_LE_MIN_FIRST_BUFFER_SIZE);
+    xmitMemAllocated = TRUE;
+d337 2
+a338 1
+NetLEXmitInit()
+d344 2
+a345 2
+    if (!xmitMemAllocated) {
+	AllocateXmitMem();
+d347 1
+a347 1
+    xmitMemInitialized = TRUE;
+d353 3
+a355 3
+    netLEState.xmitDescLastPtr = 
+		&(netLEState.xmitDescFirstPtr[NET_LE_NUM_XMIT_BUFFERS-1]);
+    netLEState.xmitDescNextPtr = netLEState.xmitDescFirstPtr;
+d357 1
+a357 1
+    descPtr = netLEState.xmitDescFirstPtr;
+d362 9
+a370 9
+	descPtr->error = 0;
+	descPtr->retries = 0;
+	descPtr->oneRetry = 0;
+	descPtr->deferred = 0;
+	descPtr->bufferError = 0;
+	descPtr->underflowError = 0;
+	descPtr->retryError = 0;
+	descPtr->lostCarrier = 0;
+	descPtr->lateCollision = 0;
+d374 2
+a375 1
+	descPtr->startOfPacket = descPtr->endOfPacket = 0;
+d379 1
+a379 1
+	descPtr->chipOwned = 0;
+d382 2
+a383 2
+    netLEState.transmitting = FALSE;
+    curScatGathPtr = (Net_ScatterGather *) NIL;
+d406 2
+a407 1
+NetLEXmitDone()
+a410 1
+    register	volatile NetLEState		*netLEStatePtr;
+d413 1
+a413 3
+    netLEStatePtr = &netLEState;
+
+    descPtr = netLEStatePtr->xmitDescNextPtr;
+d418 2
+a419 2
+    netLEStatePtr->regPortPtr->addrPort = NET_LE_CSR0_ADDR;
+    netLEStatePtr->regPortPtr->dataPort = 
+d426 1
+a426 1
+    if (curScatGathPtr == (Net_ScatterGather *) NIL) {
+d431 1
+a431 1
+    if (descPtr->chipOwned) {
+d435 1
+a435 1
+    if (!descPtr->startOfPacket) {
+d446 3
+a448 3
+	if (descPtr->error) {
+	    net_EtherStats.xmitPacketsDropped++;
+	    if (descPtr->lateCollision) {
+d451 1
+a451 1
+	    if (descPtr->lostCarrier) {
+d458 2
+a459 1
+	    if (descPtr->lateCollision && !descPtr->lostCarrier) {
+d462 3
+a464 3
+	    if (descPtr->retryError) {
+		net_EtherStats.xmitCollisionDrop++;
+		net_EtherStats.collisions += 16;
+d467 1
+a467 1
+	    if (descPtr->underflowError) {
+d472 1
+a472 1
+	if (descPtr->bufferError) {
+d476 2
+a477 2
+	if (descPtr->oneRetry) {
+	    net_EtherStats.collisions++;
+d479 1
+a479 1
+	if (descPtr->retries) {
+d483 1
+a483 1
+	    net_EtherStats.collisions += 2;	/* Only a guess. */
+d486 1
+a486 1
+	if (descPtr->endOfPacket) {
+d491 1
+a491 1
+	if (descPtr == netLEStatePtr->xmitDescNextPtr) {
+d494 1
+a494 1
+	if (descPtr->chipOwned) {
+d500 1
+a500 1
+    net_EtherStats.packetsSent++;
+d506 1
+a506 1
+    netLEStatePtr->xmitDescNextPtr = NEXT_SEND(descPtr);
+d511 3
+a513 3
+    curScatGathPtr->done = TRUE;
+    if (curScatGathPtr->mutexPtr != (Sync_Semaphore *) NIL) {
+	NetOutputWakeup(curScatGathPtr->mutexPtr);
+d521 2
+a522 2
+    if (!List_IsEmpty(netLEState.xmitList)) {
+	xmitElementPtr = (NetXmitElement *) List_First(netLEState.xmitList);
+d525 1
+a525 1
+		     xmitElementPtr->scatterGatherLength);
+d527 1
+a527 1
+		  LIST_ATREAR(netLEState.xmitFreeList));
+d529 2
+a530 2
+	netLEState.transmitting = FALSE;
+	curScatGathPtr = (Net_ScatterGather *) NIL;
+d558 3
+a560 2
+NetLEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
+    Net_EtherHdr	*etherHdrPtr;	/* Ethernet header for the packet. */
+d568 2
+d571 1
+d574 1
+a574 1
+    net_EtherStats.packetsOutput++;
+d595 1
+a595 1
+    if (NET_ETHER_COMPARE(netLEState.etherAddress, etherHdrPtr->destination)) {
+d606 1
+a606 1
+	    etherHdrPtr->source = netLEState.etherAddress;
+d608 1
+a608 1
+	    bufPtr = (Address)loopBackBuffer;
+d613 1
+a613 1
+	    Net_Input((Address)loopBackBuffer, length);
+d626 1
+a626 1
+    if (!netLEState.transmitting) {
+d628 2
+a629 1
+	    OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength);
+d631 1
+a631 1
+		NetLERestart();
+d643 1
+a643 1
+    if (List_IsEmpty(netLEState.xmitFreeList)) {
+d649 1
+a649 1
+    xmitPtr = (NetXmitElement *) List_First((List_Links *) netLEState.xmitFreeList);
+d665 1
+a665 1
+    List_Insert((List_Links *) xmitPtr, LIST_ATREAR(netLEState.xmitList)); 
+d690 2
+a691 1
+NetLEXmitDrop()
+d693 4
+a696 4
+    if (curScatGathPtr != (Net_ScatterGather *) NIL) {
+	curScatGathPtr->done = TRUE;
+	if (curScatGathPtr->mutexPtr != (Sync_Semaphore *) NIL) {
+	    NetOutputWakeup(curScatGathPtr->mutexPtr);
+d698 1
+a698 1
+	curScatGathPtr = (Net_ScatterGather *) NIL;
+d720 2
+a721 1
+NetLEXmitRestart()
+d729 2
+a730 2
+    if (!List_IsEmpty(netLEState.xmitList)) {
+	xmitElementPtr = (NetXmitElement *) List_First(netLEState.xmitList);
+d733 1
+a733 1
+		     xmitElementPtr->scatterGatherLength);
+d738 1
+a738 1
+		  LIST_ATREAR(netLEState.xmitFreeList));
+d740 2
+a741 2
+	netLEState.transmitting = FALSE;
+	curScatGathPtr = (Net_ScatterGather *) NIL;
+@
+
+
+9.2
+log
+@Checked volatiles.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netLEXmit.c,v 9.1 89/11/08 09:45:23 brent Exp Locker: rab $ SPRITE (Berkeley)";
+d98 1
+a112 1
+
+a114 7
+#if defined(sun3) || defined(sun4)
+    /*
+     * Remap the packet into network addressible memory.
+     */
+    VmMach_NetMapPacket(scatterGatherPtr, scatterGatherLength, newScatGathArr);
+    scatterGatherPtr = newScatGathArr;
+#endif
+d208 13
+d316 1
+a316 1
+    unsigned int	memBase;		
+a335 1
+
+@
+
+
+9.1
+log
+@Fixed restarting of the chip so the process waiting on 
+the current packet doesn't get hung.
+@
+text
+@d18 2
+a19 2
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netLEXmit.c,v 9.0 89/09/12 15:13:46 douglis Stable Locker: brent $ SPRITE (Berkeley)";
+#endif not lint
+d88 2
+a89 2
+    register	NetLEXmitMsgDesc	*descPtr;
+    NetLEState				*netLEStatePtr;
+a310 11
+    Address		(*allocFunc)();
+
+#ifdef sun2
+    allocFunc = Vm_RawAlloc;
+#endif
+#ifdef sun3
+    allocFunc = VmMach_NetMemAlloc;
+#endif
+#ifdef sun4
+    allocFunc = VmMach_NetMemAlloc;
+#endif
+d316 1
+a316 1
+    memBase = (unsigned int) allocFunc(
+d329 1
+a329 1
+    firstDataBuffer = allocFunc(NET_LE_MIN_FIRST_BUFFER_SIZE);
+d332 1
+d356 1
+a356 1
+    NetLEXmitMsgDesc	*descPtr;
+d398 1
+a398 1
+
+d422 3
+a424 3
+    register	NetXmitElement	*xmitElementPtr;
+    register	NetLEXmitMsgDesc	*descPtr;
+    register	NetLEState		*netLEStatePtr;
+d678 1
+d709 1
+d751 1
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netLEXmit.c,v 8.5 89/08/10 16:06:23 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d108 1
+a108 2
+	printf(
+	    "LE ethernet: Transmit buffer owned by chip.\n");
+d224 1
+a224 2
+	    printf(
+		"LE ethernet: Transmit buffer owned by chip.\n");
+d458 1
+a458 2
+	printf(
+	    "LE ethernet: Bogus transmit interrupt. Buffer owned by chip.\n");
+d462 1
+a462 2
+	printf(
+	    "LE ethernet: Bogus transmit interrupt. Buffer not start of packet.\n");
+d475 1
+a475 2
+		printf(
+			  "LE ethernet: Transmit late collision.\n");
+d478 1
+a478 2
+		printf(
+			  "LE ethernet: Lost of carrier.\n");
+d485 1
+a485 2
+		printf(
+			  "LE ethernet: Transmit late collision.\n");
+d490 1
+a490 2
+		printf(
+			  "LE ethernet: Too many collisions.\n");
+d493 1
+a493 2
+		printf(
+			  "LE ethernet: Memory underflow error.\n");
+d498 1
+a498 2
+	    printf(
+			  "LE ethernet: Transmit buffering error.\n");
+d517 1
+a517 2
+	    panic( 
+		"LE ethernet: Transmit ring with no end of packet.\n");
+d520 1
+a520 2
+		printf(
+			  "LE ethernet: Transmit Buffer owned by chip.\n");
+d694 1
+a694 1
+ * NetLEXmitRestart --
+d696 2
+a697 1
+ *	Restart transmission of packets after a chip reset.
+d703 2
+a704 2
+ *	Current scatter gather pointer is reset and new packets may be
+ *	sent out.
+d709 1
+a709 1
+NetLEXmitRestart()
+a710 6
+    NetXmitElement	*xmitElementPtr;
+    ReturnStatus	status;
+
+    /*
+     * Drop the current outgoing packet.
+     */    
+d716 1
+d718 23
+@
+
+
+8.5
+log
+@Added and debuged support for sun4c.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netLEXmit.c,v 8.4 89/05/24 07:58:49 rab Exp Locker: mendel $ SPRITE (Berkeley)";
+@
+
+
+8.4
+log
+@Changes to allow optimization.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netLEXmit.c,v 8.3 89/03/15 15:58:18 brent Exp Locker: rab $ SPRITE (Berkeley)";
+d96 1
+a96 1
+#ifdef sun3
+d116 1
+a116 1
+#ifdef sun3
+d319 3
+@
+
+
+8.3
+log
+@Changed scatter/gather type a bit
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netLEXmit.c,v 8.2 88/12/12 14:52:52 nelson Exp Locker: brent $ SPRITE (Berkeley)";
+@
+
+
+8.2
+log
+@Changed to allocate memory and remap packets into high memory on a sun3.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netLEXmit.c,v 8.1 88/11/30 11:51:06 brent Exp $ SPRITE (Berkeley)";
+d546 2
+a547 2
+    if (curScatGathPtr->conditionPtr != (Sync_Condition *) NIL) {
+	NetOutputWakeup(curScatGathPtr->conditionPtr);
+d727 2
+a728 2
+	if (curScatGathPtr->conditionPtr != (Sync_Condition *) NIL) {
+	    NetOutputWakeup(curScatGathPtr->conditionPtr);
+@
+
+
+8.1
+log
+@Sys_Printf => printf   Sys_Panic => panic
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netLEXmit.c,v 8.0 88/11/11 18:28:01 douglis Stable Locker: brent $ SPRITE (Berkeley)";
+d27 1
+d58 1
+a58 1
+static char		firstDataBuffer[NET_LE_MIN_FIRST_BUFFER_SIZE];
+d96 3
+d116 7
+d313 1
+d315 7
+d326 1
+a326 1
+    memBase = (unsigned int) Vm_RawAlloc(
+d335 5
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netLEXmit.c,v 6.2 88/10/13 13:27:00 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d104 1
+a104 1
+	Sys_Panic(SYS_WARNING,
+d214 1
+a214 1
+	    Sys_Panic(SYS_WARNING,
+d428 1
+a428 1
+	Sys_Panic(SYS_WARNING, "NetLEXmitDone: No current packet\n.");
+d433 1
+a433 1
+	Sys_Panic(SYS_WARNING,
+d438 1
+a438 1
+	Sys_Panic(SYS_WARNING,
+d452 1
+a452 1
+		Sys_Panic(SYS_WARNING,
+d456 1
+a456 1
+		Sys_Panic(SYS_WARNING,
+d464 1
+a464 1
+		Sys_Panic(SYS_WARNING,
+d470 1
+a470 1
+		Sys_Panic(SYS_WARNING,
+d474 1
+a474 1
+		Sys_Panic(SYS_WARNING,
+d480 1
+a480 1
+	    Sys_Panic(SYS_WARNING,
+d500 1
+a500 1
+	    Sys_Panic(SYS_FATAL, 
+d504 1
+a504 1
+		Sys_Panic(SYS_WARNING,
+d590 1
+a590 1
+	Sys_Printf("LE ethernet: Packet in too many pieces\n");
+d717 1
+a717 1
+	    Sys_Panic(SYS_FATAL,"LE ethernet: Can not output first packet on restart.\n");
+@
+
+
+6.2
+log
+@Removed references to Byte_ routines.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: netLEXmit.c,v 6.1 88/09/06 09:06:49 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+6.1
+log
+@
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: netLEXmit.c,v 1.2 88/06/27 10:46:16 mendel Exp $ SPRITE (Berkeley)";
+a27 1
+#include "byte.h"
+d179 1
+a179 1
+		 Byte_Copy(length, bufPtr, firstBufferPtr);
+d190 1
+a190 1
+		 Byte_Copy(amountNeeded, bufPtr, firstBufferPtr);
+d615 1
+a615 1
+	    Byte_Copy(sizeof(Net_EtherHdr), (Address)etherHdrPtr, bufPtr);
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d26 1
+@
+
+
+1.2
+log
+@Updated copyright notice and cleaned up comment typos.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: netLEXmit.c,v 1.1 88/06/22 16:25:43 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d6 9
+a14 2
+ * Copyright 1985 Regents of the University of California
+ * All rights reserved.
+d18 1
+a18 1
+static char rcsid[] = "$Header: netLEXmit.c,v 5.3 88/05/05 17:58:45 brent Exp $ SPRITE (Berkeley)";
+d22 1
+a22 1
+#include "netLE.h"
+d80 6
+a85 3
+    Net_EtherHdr			*etherHdrPtr;
+    register	Net_ScatterGather   	*scatterGatherPtr;
+    int					scatterGatherLength;
+d145 1
+a145 1
+     * Then copy enought data to bring buffer up to size.
+d252 1
+a252 1
+     * backwards.
+d305 1
+a305 1
+     * The ring must starton 8 byte boundry.  
+d310 1
+a310 1
+     * Insure ring starts on 8 byte boundry.
+a339 1
+    NetXmitElement      *xmitElementPtr;
+a341 1
+    unsigned	int	addr;
+d569 5
+a573 3
+    Net_EtherHdr			*etherHdrPtr;
+    register	Net_ScatterGather	*scatterGatherPtr;
+    int					scatterGatherLength;
+@

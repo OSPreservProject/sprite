@@ -1,0 +1,293 @@
+head     1.17;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @# @;
+
+
+1.17
+date     92.12.03.18.08.24;  author jhh;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     92.10.20.16.45.09;  author jhh;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     92.07.27.17.16.10;  author mgbaker;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     92.05.30.16.38.35;  author kupfer;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     92.04.09.08.44.44;  author mgbaker;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     92.03.20.16.53.07;  author kupfer;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     92.02.06.22.02.50;  author mgbaker;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     92.01.30.22.10.32;  author jhh;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     91.11.25.15.14.49;  author mendel;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     91.09.27.17.54.28;  author jhh;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     91.09.13.12.06.49;  author shirriff;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     91.09.09.13.47.06;  author jhh;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.08.18.17.28.33;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.08.12.18.19.54;  author mendel;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.08.05.18.56.06;  author mendel;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.07.17.13.17.23;  author shirriff;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.06.06.17.31.54;  author shirriff;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.17
+log
+@added /holmes (RAID-II video stuff)
+@
+text
+@/user1
+/user4
+/user6
+/user2
+/user5
+/sprite/src/kernel
+/sprite/src
+/
+/X11
+/X11/R5
+/local
+/holmes
+/allspiceA
+/lustA
+@
+
+
+1.16
+log
+@Removed scratch filesystems.
+@
+text
+@d12 1
+@
+
+
+1.15
+log
+@jaquith temporarily removed due to huge file problem.
+@
+text
+@a5 1
+/postdev
+a11 2
+/scratch2
+/scratch4
+@
+
+
+1.14
+log
+@No more /pcs.
+@
+text
+@a16 1
+/jaquith
+@
+
+
+1.13
+log
+@*** empty log message ***
+@
+text
+@a5 1
+/pcs
+@
+
+
+1.12
+log
+@Remove /graphics--the graphics folks have converted it to an Ultrix
+disk.
+@
+text
+@d18 1
+@
+
+
+1.11
+log
+@Took out obsolete file systems.
+@
+text
+@a12 1
+/graphics
+@
+
+
+1.10
+log
+@added /user2, /user5 and /scratch2
+@
+text
+@a14 1
+/scratch1
+a18 2
+/r3
+/r4
+@
+
+
+1.9
+log
+@Removed /pcs/vlsi
+@
+text
+@d4 2
+a5 2
+/r3
+/r4
+d12 1
+a12 1
+/scratch1
+d15 2
+a18 1
+/scratch3
+d20 2
+@
+
+
+1.8
+log
+@*** empty log message ***
+@
+text
+@a6 1
+/pcs/vlsi
+@
+
+
+1.7
+log
+@Moved r3,r4 closer to the start.
+@
+text
+@d19 1
+@
+
+
+1.6
+log
+@added /r3 and /r4
+@
+text
+@d4 2
+a18 2
+/r3
+/r4
+@
+
+
+1.5
+log
+@No more /counters.
+@
+text
+@d17 2
+@
+
+
+1.4
+log
+@Removed nonexistant file system.
+@
+text
+@a8 1
+/counters
+@
+
+
+1.3
+log
+@Removed /traces/allspice which was the same file systems as /user4
+@
+text
+@a3 1
+/scratch5
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@a18 1
+/traces/allspice
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@a1 1
+/user2
+d17 3
+@

@@ -1,0 +1,15 @@
+D CVS_ADM                           	CVS.adm
+F NETCONFI.C;1                      	netConfig.c
+F NETDF.C;1                         	netDF.c
+F NETDFINT.H;1                      	netDFInt.h
+F NETDFMAC.C;1                      	netDFMach.c
+F NETDFMAC.H;1                      	netDFMachInt.h
+F NETDFREC.C;1                      	netDFRecv.c
+F NETDFXMI.C;1                      	netDFXmit.c
+F NETLE.C;1                         	netLE.c
+F NETLEINT.H;1                      	netLEInt.h
+F NETLEMAC.C;1                      	netLEMach.c
+F NETLEMAC.H;1                      	netLEMachInt.h
+F NETLEREC.C;1                      	netLERecv.c
+F NETLEXMI.C;1                      	netLEXmit.c
+D SCVS                              	SCVS

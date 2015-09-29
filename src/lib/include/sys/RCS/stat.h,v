@@ -1,0 +1,289 @@
+head     1.11;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.11
+date     92.02.25.17.08.43;  author rab;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     91.12.16.14.02.05;  author rab;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     91.06.03.17.26.29;  author kupfer;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     90.05.02.16.56.08;  author rab;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     89.07.05.21.10.07;  author rab;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.10.25.17.08.15;  author nelson;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.08.23.14.48.50;  author douglis;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.08.07.17.28.00;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.06.29.14.48.13;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.06.21.17.21.12;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.21.16.12.54;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.11
+log
+@Add macros to test for sprite-specific objects
+@
+text
+@/*
+ * Copyright (c) 1982, 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@@(#)stat.h	7.1 (Berkeley) 6/4/86
+ * $Header: /sprite/src/lib/include/sys/RCS/stat.h,v 1.10 91/12/16 14:02:05 rab Exp Locker: rab $
+ */
+
+#ifndef _STAT
+#define _STAT
+
+#include <cfuncproto.h>
+
+struct	stat
+{
+	dev_t	st_dev;
+	ino_t	st_ino;
+	unsigned short st_mode;
+	short	st_nlink;
+	uid_t	st_uid;
+	gid_t	st_gid;
+	dev_t	st_rdev;
+	off_t	st_size;
+	time_t	st_atime;
+	int	st_spare1;
+	time_t	st_mtime;
+	int	st_spare2;
+	time_t	st_ctime;
+	int	st_spare3;
+	long	st_blksize;
+	long	st_blocks;
+	long	st_serverID;
+	long	st_version;
+	long	st_userType;
+	long	st_devServerID;
+};
+
+#define	S_IFMT	0170000		/* type of file */
+#define	_IFMT	0170000		/* type of file */
+#define		S_IFDIR	0040000	/* directory */
+#define		S_IFCHR	0020000	/* character special */
+#define		S_IFBLK	0060000	/* block special */
+#define		S_IFREG	0100000	/* regular */
+#define		S_IFLNK	0120000	/* symbolic link */
+#define		S_IFSOCK 0140000/* socket */
+#define		S_IFIFO	0010000	/* fifo */
+/* Extra Sprite types */
+#define		S_IFPDEV 0150000 /* pseudo-device */
+#define		S_IFRLNK 0160000 /* remote link */
+#define	S_ISUID	0004000		/* set user id on execution */
+#define	S_ISGID	0002000		/* set group id on execution */
+#define	S_ISVTX	0001000		/* save swapped text even after use */
+#define	S_IREAD	0000400		/* read permission, owner */
+#define	S_IWRITE 0000200	/* write permission, owner */
+#define	S_IEXEC	0000100		/* execute/search permission, owner */
+
+#define S_ISBLK(m)      (((m)&_IFMT) == S_IFBLK)
+#define S_ISCHR(m)      (((m)&_IFMT) == S_IFCHR)
+#define S_ISDIR(m)      (((m)&_IFMT) == S_IFDIR)
+#define S_ISFIFO(m)     (((m)&_IFMT) == S_IFIFO)
+#define S_ISREG(m)      (((m)&_IFMT) == S_IFREG)
+#ifndef _POSIX_SOURCE
+#define S_ISLNK(m)      (((m)&_IFMT) == S_IFLNK)
+#define S_ISSOCK(m)     (((m)&_IFMT) == S_IFSOCK)
+/* Extra Sprite tests */
+#define S_ISPDEV(m)     (((m)&_IFMT) == S_IFPDEV)
+#define S_ISRLNK(m)     (((m)&_IFMT) == S_IFRLNK)
+#endif
+
+/*
+ * User-defined file types.  A number of types are standardized, but others
+ * may be defined by the user.
+ *
+ *	 S_TYPE_UNDEFINED	- no type set
+ *	 S_TYPE_TMP      	- temporary file
+ *	 S_TYPE_SWAP     	- swap file
+ *	 S_TYPE_OBJECT   	- ".o" file
+ *	 S_TYPE_BINARY   	- executable
+ *	 S_TYPE_OTHER   	- file that doesn't correspond to any
+ *				  specific type.  This is distinct
+ *				  from undefined, which says the type
+ *				  is uninitialized and may be inferred
+ *				  by parent directory or file name.
+ */
+#define S_TYPE_UNDEFINED 0
+#define S_TYPE_TMP 1
+#define S_TYPE_SWAP 2
+#define S_TYPE_OBJECT 3
+#define S_TYPE_BINARY 4
+#define S_TYPE_OTHER 5
+
+extern int fstat _ARGS_((int fd, struct stat *buf));
+extern int lstat _ARGS_((char *path, struct stat *buf));
+extern int stat _ARGS_((char *path, struct stat *buf));
+
+extern int mkdir _ARGS_((char *path, int mode));
+
+#endif /* _STAT */
+@
+
+
+1.10
+log
+@Added the definition for S_ISBLK, and a few others.
+@
+text
+@d7 1
+a7 1
+ * $Header: /sprite/src/lib/include/sys/RCS/stat.h,v 1.9 91/06/03 17:26:29 kupfer Exp Locker: rab $
+d40 1
+d66 3
+@
+
+
+1.9
+log
+@Add a prototype for mkdir().  Add prototype information to the
+declarations of stat, lstat, and fstat.
+@
+text
+@d7 1
+a7 1
+ * $Header$
+d56 11
+@
+
+
+1.8
+log
+@Added declarations for stat(), fstat() and lstat().
+@
+text
+@d7 1
+d13 2
+d78 5
+a82 3
+extern int fstat();
+extern int lstat();
+extern int stat();
+@
+
+
+1.7
+log
+@*** empty log message ***
+@
+text
+@d74 5
+@
+
+
+1.6
+log
+@Added device server ID.
+@
+text
+@d74 1
+a74 1
+#endif _STAT
+@
+
+
+1.5
+log
+@Added #defines for user file types (S_TYPE_* instead of FS_USER_TYPE_*).
+@
+text
+@d33 1
+@
+
+
+1.4
+log
+@Rename fields for consistency.
+@
+text
+@d52 21
+a72 1
+
+@
+
+
+1.3
+log
+@Add ifdefs to prevent files from being included multiple times.
+@
+text
+@d30 3
+a32 3
+	long	serverID;
+	long	version;
+	long	userType;
+@
+
+
+1.2
+log
+@Add back in Sprite types.
+@
+text
+@d9 3
+d30 3
+a32 1
+	long	st_spare4[2];
+d52 2
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d37 4
+@

@@ -1,0 +1,7 @@
+F ADD.C;1                           	add.c
+F COLLECT_.C;1                      	collect_sets.c
+F FIND_NAM.C;1                      	find_names.c
+F MAIN.C;1                          	main.c
+F README.;1                         	README
+F UPDATE.C;1                        	update.c
+F VERSION_.C;1                      	version_ts.c

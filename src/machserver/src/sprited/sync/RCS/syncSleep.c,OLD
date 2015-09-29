@@ -1,0 +1,178 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     91.09.23.14.19.58;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.09.02.22.55.10;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.08.19.12.28.48;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Interface between timer module & processes that want to sleep.
+@
+
+
+1.3
+log
+@Snapshot.  Server is multithreaded internally.
+@
+text
+@/* 
+ * syncSleep.c --
+ *
+ *	Interface between the timer module and processes that wish to sleep
+ * 	for a specified period of time.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/sync/RCS/syncSleep.c,v 1.2 91/09/02 22:55:10 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <cthreads.h>
+#include <spriteTime.h>
+
+#include <sync.h>
+#include <utils.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sync_WaitTime --
+ *
+ *	Sleep for the specified period of time.
+ *	XXX should be reimplemented using regular Sprite facilities.
+ *
+ * Results:
+ *	TRUE if aborted because of a signal, FALSE otherwise.
+ *
+ * Side effects:
+ *	Process is put to sleep.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Boolean
+Sync_WaitTime(time)
+    Time time;		/* Amount of time the process will sleep */
+{
+    int milliseconds;
+    static void msleep();	/* XXX */
+
+    milliseconds = time.seconds * 1000 + time.microseconds / 1000;
+    msleep(milliseconds);
+
+    return FALSE;
+}
+
+
+/* 
+ * Hack to sleep for a specified number of milliseconds.  XXX All this 
+ * stuff should go away once the timer module is working.
+ */
+
+#include <mach.h>
+#include <mach_error.h>
+#include <mach/message.h>
+
+static mach_msg_header_t sleepMsg;
+static mach_port_t sleepPort;
+static struct mutex sleepLock = MUTEX_INITIALIZER;
+
+static void SleepInitialize();
+
+static void
+msleep(milliseconds)
+    int milliseconds;
+{
+    static Boolean initialized = 0;
+    kern_return_t kernStatus;
+
+    mutex_lock(&sleepLock);
+    if (!initialized) {
+	SleepInitialize();
+	mutex_set_name(&sleepLock, "sync:sleepLock");
+	initialized = TRUE;
+    }
+    mutex_unlock(&sleepLock);
+
+    kernStatus = mach_msg(&sleepMsg, MACH_RCV_MSG | MACH_RCV_TIMEOUT, 0,
+			  sizeof(sleepMsg), sleepPort, milliseconds,
+			  MACH_PORT_NULL);
+    if (kernStatus != MACH_RCV_TIMED_OUT) {
+	panic("msleep timeout failed: %s\n", mach_error_string(kernStatus));
+    }
+}
+
+static void
+SleepInitialize()
+{
+    kern_return_t kernStatus;
+
+    kernStatus = mach_port_allocate(mach_task_self(),
+				    MACH_PORT_RIGHT_RECEIVE,
+				    &sleepPort);
+    if (kernStatus != KERN_SUCCESS) {
+	panic("SleepInitialize couldn't allocate sleep port: %s\n",
+	      mach_error_string(kernStatus));
+    }
+}
+@
+
+
+1.2
+log
+@Changes for module-based source organization.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/sprited/sync/RCS/syncSleep.c,v 1.1 91/08/19 12:28:48 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d65 1
+a65 1
+static struct mutex sleepLock;	/* for "initialized" flag */
+d79 1
+d88 1
+a88 2
+	printf("timeout failed: %s\n", mach_error_string(kernStatus));
+	panic("msleep");
+d101 2
+a102 3
+	printf("couldn't allocate sleep port: %s\n",
+	       mach_error_string(kernStatus));
+	panic("SleepInitialize");
+@
+
+
+1.1
+log
+@Snapshot: Code reorg. and locking for processes & segments.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sync/RCS/syncSleep.c,v 9.4 91/03/20 11:31:06 kupfer Exp $ SPRITE (Berkeley)";
+d18 3
+a20 2
+#include "sync.h"
+#include "util.h"
+@

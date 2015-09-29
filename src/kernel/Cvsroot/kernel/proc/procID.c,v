@@ -1,0 +1,772 @@
+head     9.3;
+branch   ;
+access   ;
+symbols  ds3100:9.3 sun3:9.3 sun4nw:9.3 symm:9.3 spur:9.3 sprited:9.3.1 Summer89:9.0 newlib:8.0 Summer88:6.0 argString:5.2;
+locks    ; strict;
+comment  @ * @;
+
+
+9.3
+date     90.09.12.13.57.58;  author jhh;  state Exp;
+branches 9.3.1.1;
+next     9.2;
+
+9.2
+date     90.09.06.17.56.51;  author jhh;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.12.11.12.51;  author douglis;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.14.38;  author douglis;  state Stable;
+branches ;
+next     8.2;
+
+8.2
+date     89.04.06.11.48.08;  author douglis;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.12.04.15.16.42;  author ouster;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.29.18;  author douglis;  state Stable;
+branches ;
+next     6.3;
+
+6.3
+date     88.10.27.20.00.47;  author mlgray;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.31.17.54.57;  author douglis;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.24.14.48.16;  author ouster;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.21.42;  author brent;  state Stable;
+branches ;
+next     5.6;
+
+5.6
+date     88.07.18.15.03.20;  author douglis;  state Exp;
+branches ;
+next     5.5;
+
+5.5
+date     88.05.10.14.04.12;  author brent;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     88.05.05.17.56.43;  author nelson;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     88.04.18.09.07.21;  author ouster;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.12.15.15.23.11;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.11.22.16.16.20;  author brent;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.47.14;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.3.1.1
+date     91.09.22.22.19.17;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.3
+log
+@changed format of #includes to use <>
+@
+text
+@/*
+ *  procID.c --
+ *
+ *	Routines to get and set the various identifiers of a process.
+ *	The routines implement the system calls of the same name. 
+ *	Synchronization to process table entries is done by locking the
+ *	process's PCB.
+ *
+ * Copyright (C) 1986, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procID.c,v 9.2 90/09/06 17:56:51 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <proc.h>
+#include <stdlib.h>
+#include <status.h>
+#include <sync.h>
+#include <sched.h>
+#include <vm.h>
+#include <bstring.h>
+
+/*
+ * Define a macro to get the minimum of two values.  Note: it is *not*
+ * side-effect free.  If "a" or "b" is a function call, the function will
+ * be called twice.  Of course, there shouldn't be side-effects in
+ * conditional expressions.
+ */
+
+#define Min(a,b) ((a) < (b) ? (a) : (b))
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_GetIDs --
+ *
+ *	Returns the process ID, user ID and effective user ID of the current
+ *	process.
+ *
+ * Results:
+ *	SYS_ARG_NOACCESS - 	the arguments were not accessible.
+ *	PROC_INVALID_PID -	the pid argument was illegal.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Proc_GetIDs(procIDPtr, parentIDPtr, userIDPtr, effUserIDPtr)
+    Proc_PID 	*procIDPtr;	/* Where to return pid. */
+    Proc_PID 	*parentIDPtr;	/* Where to return parent's pid */
+    int 	*userIDPtr;	/* Where to return real user id. */
+    int 	*effUserIDPtr;	/* Where to return effective user id. */
+{
+    register Proc_ControlBlock 	*procPtr;
+    Proc_PID myPID;
+
+    procPtr = Proc_GetEffectiveProc();
+
+    /*
+     *  Copy the information to the out parameters.
+     */
+
+    if (procIDPtr != USER_NIL) {
+	/*
+	 * Return the process ID this process thinks it is, not necessarily
+	 * the one in the PCB.
+	 */
+	if (procPtr->genFlags & PROC_FOREIGN) {
+	    myPID = procPtr->peerProcessID;
+	} else {
+	    myPID = procPtr->processID;
+	}
+	if (Proc_ByteCopy(FALSE, sizeof(Proc_PID), 
+	    (Address) &myPID, (Address) procIDPtr) != SUCCESS) {
+	    return(SYS_ARG_NOACCESS);
+	}
+    }
+
+    if (parentIDPtr != USER_NIL) {
+	if (Proc_ByteCopy(FALSE, sizeof(Proc_PID), 
+	    (Address) &(procPtr->parentID), (Address) parentIDPtr) != SUCCESS){
+	    return(SYS_ARG_NOACCESS);
+	}
+    }
+
+    if (userIDPtr != USER_NIL) {
+	if (Proc_ByteCopy(FALSE, sizeof(int), 
+	    (Address) &(procPtr->userID), (Address) userIDPtr) != SUCCESS){
+	    return(SYS_ARG_NOACCESS);
+	}
+    }
+
+    if (effUserIDPtr != USER_NIL) {
+	if (Proc_ByteCopy(FALSE, sizeof(int), 
+	    (Address) &(procPtr->effectiveUserID), 
+	    (Address) effUserIDPtr) != SUCCESS){
+	    return(SYS_ARG_NOACCESS);
+	}
+    }
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_SetIDs --
+ *
+ *	Changes the user ID or current user ID for the current process.
+ *  	If an argument is USER_NIL, the corresponding value in
+ *	the PCB structure is not changed.
+ *
+ * Results:
+ *	SYS_ARG_NOACCESS - 	the arguments were not accessible.
+ *	PROC_INVALID_PID -	the pid argument was illegal.
+ *
+ * Side effects:
+ *	The user ID and/or effective user ID for a process may change.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Proc_SetIDs(userID, effUserID)
+    int 	userID;
+    int 	effUserID;
+{
+    register	Proc_ControlBlock 	*procPtr;
+
+    procPtr = Proc_GetEffectiveProc();
+
+    if (userID == PROC_NO_ID) {
+	userID = procPtr->userID;;
+    }
+    if (effUserID == PROC_NO_ID) {
+	effUserID = procPtr->effectiveUserID;
+    }
+    if (userID != procPtr->userID && userID != procPtr->effectiveUserID &&
+	procPtr->effectiveUserID != PROC_SUPER_USER_ID) {
+       return(PROC_UID_MISMATCH);
+    }
+    if (effUserID != procPtr->userID && effUserID != procPtr->effectiveUserID &&
+	procPtr->effectiveUserID != PROC_SUPER_USER_ID) {
+       return(PROC_UID_MISMATCH);
+    }
+    procPtr->userID = userID;
+    procPtr->effectiveUserID = effUserID;
+
+    if (procPtr->state == PROC_MIGRATED) {
+	return(Proc_MigUpdateInfo(procPtr));
+    }
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_GetGroupIDs --
+ *
+ *	Returns all the group IDs of a process if the gidArrayPtr
+ *	argument is not USER_NIL. Also returns the actual number of
+ *	groups IDs in the process's PCB structure if trueNumGidsPtr
+ *	is not USER_NIL.
+ *
+ *	TODO: Move me to fs.
+ *
+ * Results:
+ *	SYS_ARG_NOACCESS - 	the arguments were not accessible.
+ *	SYS_INVALID_ARG - 	the argument was was invalid.
+ *	PROC_INVALID_PID -	the pid argument was illegal.
+ *	The group IDs are returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Proc_GetGroupIDs(numGIDs, gidArrayPtr, trueNumGIDsPtr)
+    int		numGIDs;		/* Number of group ids in gidArrayPtr.*/
+    int		*gidArrayPtr;		/* Array of group ids. */
+    int		*trueNumGIDsPtr;	/* Number of group ids actually 
+					 * returned. */
+{
+    register	Fs_ProcessState 	*fsPtr;
+    int 				trueNumGIDs;
+
+    fsPtr = (Proc_GetEffectiveProc())->fsPtr;
+
+    if (numGIDs < 0) {
+	return(SYS_INVALID_ARG);
+    }
+    trueNumGIDs = Min(numGIDs, fsPtr->numGroupIDs);
+    if (trueNumGIDs > 0 && gidArrayPtr != USER_NIL) {
+	if (Proc_ByteCopy(FALSE, trueNumGIDs * sizeof(int),
+			  (Address) fsPtr->groupIDs,
+			  (Address) gidArrayPtr) != SUCCESS) {
+	    return(SYS_ARG_NOACCESS);
+	}
+    }
+
+    if (trueNumGIDsPtr != USER_NIL) {
+	if (Proc_ByteCopy(FALSE, sizeof(int), (Address) &fsPtr->numGroupIDs,
+		      (Address) trueNumGIDsPtr) != SUCCESS) {
+	    return(SYS_ARG_NOACCESS);
+	}
+    }
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_SetGroupIDs --
+ *
+ *	Changes all the group IDs for a process.
+ *
+ * Results:
+ *	SYS_ARG_NOACCESS - 	the argument was not accessible.
+ *	SYS_INVALID_ARG - 	the argument was was invalid.
+ *	PROC_INVALID_PID -	the pid argument was illegal.
+ *
+ * Side effects:
+ *	The process's group IDs are changed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Proc_SetGroupIDs(numGIDs, gidArrayPtr)
+    int		numGIDs;	/* Number of group ids in gidArrayPtr. */
+    int		*gidArrayPtr;	/* Array of group ids. */
+{
+    register	Proc_ControlBlock	*procPtr;
+    register	Fs_ProcessState		*fsPtr;
+    int 				*newGidArrayPtr;
+    int 				size;
+    int					i;
+
+    /*
+     * See if there's anything to do before we validate the
+     * other arguments.
+     */
+
+    if ((numGIDs <= 0)  ||  (numGIDs > 128) || (gidArrayPtr == USER_NIL)) {
+	return(SYS_INVALID_ARG);
+    }
+
+    /*
+     * Need to protect against abritrary group setting.
+     */
+    procPtr = Proc_GetEffectiveProc();
+    if (procPtr->effectiveUserID != 0) {
+	return(GEN_NO_PERMISSION);
+    }
+
+    Vm_MakeAccessible(VM_READONLY_ACCESS,
+		    numGIDs * sizeof(int), (Address) gidArrayPtr,
+		    &size, (Address *) &newGidArrayPtr);
+    if (size != (numGIDs * sizeof(int))) {
+	return(SYS_ARG_NOACCESS);
+    }
+
+    /*
+     *  If the current group ID table is too small, allocate space
+     *	for a larger one.
+     */
+
+    fsPtr = procPtr->fsPtr;
+    if (fsPtr->numGroupIDs < numGIDs) {
+	free((Address) fsPtr->groupIDs);
+	fsPtr->groupIDs = (int *) malloc(numGIDs * sizeof(int));
+    }
+
+    for (i=0; i < numGIDs; i++) {
+	fsPtr->groupIDs[i] = newGidArrayPtr[i];
+    }
+    fsPtr->numGroupIDs = numGIDs;
+
+    Vm_MakeUnaccessible((Address) newGidArrayPtr, size);
+
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcAddToGroupList --
+ *
+ *	Add the given group ID to the given processes list of groups.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	A new group is added to the process's group if not already there.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+ProcAddToGroupList(procPtr, gid)
+    Proc_ControlBlock	*procPtr;
+    int			gid;
+{
+    register	Fs_ProcessState *fsPtr = procPtr->fsPtr;
+    int 	*newGidArrayPtr;
+    int		i;
+
+    /*
+     * See if this gid is already in the list.
+     */
+    for (i = 0; i < fsPtr->numGroupIDs; i++) {
+	if (gid == fsPtr->groupIDs[i]) {
+	    return;
+	}
+    }
+
+    /*
+     * Have to add the new group ID to the list.
+     */
+    newGidArrayPtr = (int *)malloc((fsPtr->numGroupIDs + 1) * sizeof(int));
+    bcopy((Address)fsPtr->groupIDs, (Address)newGidArrayPtr,
+	    sizeof (int) * fsPtr->numGroupIDs);
+    free((Address)fsPtr->groupIDs);
+    fsPtr->groupIDs = newGidArrayPtr;
+    fsPtr->groupIDs[fsPtr->numGroupIDs] = gid;
+    fsPtr->numGroupIDs++;
+}
+@
+
+
+9.3.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procID.c,v 9.3 90/09/12 13:57:58 jhh Exp $ SPRITE (Berkeley)";
+@
+
+
+9.2
+log
+@First pass at function prototypes
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procID.c,v 9.1 89/10/12 11:12:51 douglis Exp Locker: jhh $ SPRITE (Berkeley)";
+d23 8
+a30 8
+#include "sprite.h"
+#include "proc.h"
+#include "stdlib.h"
+#include "status.h"
+#include "sync.h"
+#include "sched.h"
+#include "vm.h"
+#include "bstring.h"
+@
+
+
+9.1
+log
+@handle getpid by foreign process
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procID.c,v 9.0 89/09/12 15:14:38 douglis Stable Locker: douglis $ SPRITE (Berkeley)";
+d30 1
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procID.c,v 8.2 89/04/06 11:48:08 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d67 1
+d76 9
+d86 1
+a86 1
+	    (Address) &(procPtr->processID), (Address) procIDPtr) != SUCCESS){
+@
+
+
+8.2
+log
+@changed Proc_MigSendUserInfo  to Proc_MigUpdateInfo.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procID.c,v 8.1 88/12/04 15:16:42 ouster Exp Locker: douglis $ SPRITE (Berkeley)";
+@
+
+
+8.1
+log
+@
+Stop using obsolete header files.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procID.c,v 6.3 88/10/27 20:00:47 mlgray Exp $ SPRITE (Berkeley)";
+d152 1
+a152 1
+	return(Proc_MigSendUserInfo(procPtr));
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procID.c,v 6.3 88/10/27 20:00:47 mlgray Exp Locker: douglis $ SPRITE (Berkeley)";
+d25 1
+a25 1
+#include "mem.h"
+a28 1
+#include "byte.h"
+@
+
+
+6.3
+log
+@1st pass at multi-processor, conversion to new C library.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: procID.c,v 6.2 88/08/31 17:54:57 douglis Exp $ SPRITE (Berkeley)";
+@
+
+
+6.2
+log
+@de-linted and endif-fix'ed.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: procID.c,v 6.1 88/08/24 14:48:16 ouster Exp $ SPRITE (Berkeley)";
+d277 2
+a278 2
+	Mem_Free((Address) fsPtr->groupIDs);
+	fsPtr->groupIDs = (int *) Mem_Alloc(numGIDs * sizeof(int));
+d328 4
+a331 4
+    newGidArrayPtr = (int *)Mem_Alloc((fsPtr->numGroupIDs + 1) * sizeof(int));
+    Byte_Copy(sizeof(int) * fsPtr->numGroupIDs,
+	      (Address)fsPtr->groupIDs, (Address)newGidArrayPtr);
+    Mem_Free((Address)fsPtr->groupIDs);
+@
+
+
+6.1
+log
+@Don't permit non-root to change groups.
+@
+text
+@d20 2
+a21 2
+static char rcsid[] = "$Header: procID.c,v 5.6 88/07/18 15:03:20 douglis Exp $ SPRITE (Berkeley)";
+#endif not lint
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d260 1
+a260 3
+	Sys_Panic(SYS_WARNING,
+		  "Proc_SetGroupIDs, non-setuid process <%x> setting groups\n",
+		  procPtr->processID);
+@
+
+
+5.6
+log
+@changed Proc_SetGroupIDs to print process id of non-setuid process
+setting groups.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: procID.c,v 5.5 88/05/10 14:04:12 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+5.5
+log
+@Changed process table so file system state is referenced
+through a single pointer, instead of embedding things.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: procID.c,v 5.4 88/05/05 17:56:43 nelson Exp $ SPRITE (Berkeley)";
+d260 3
+a262 1
+	Sys_Panic(SYS_WARNING, "Proc_SetGroupIDs, non-setuid setting groups\n");
+@
+
+
+5.4
+log
+@Handles move of functionality from sys to mach.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: procID.c,v 5.3 88/04/18 09:07:21 ouster Exp $ SPRITE (Berkeley)";
+d169 2
+d190 1
+a190 1
+    register	Proc_ControlBlock 	*procPtr;
+d193 1
+a193 1
+    procPtr = Proc_GetEffectiveProc();
+d198 1
+a198 1
+    trueNumGIDs = Min(numGIDs, procPtr->numGroupIDs);
+d201 1
+a201 1
+			  (Address) procPtr->groupIDs,
+d208 1
+a208 1
+	if (Proc_ByteCopy(FALSE, sizeof(int), (Address) &procPtr->numGroupIDs,
+d241 1
+d251 1
+a251 1
+    if ((numGIDs <= 0)  ||  (gidArrayPtr == USER_NIL)) {
+d255 3
+d259 3
+d275 4
+a278 3
+    if (procPtr->numGroupIDs < numGIDs) {
+	Mem_Free((Address) procPtr->groupIDs);
+	procPtr->groupIDs = (int *) Mem_Alloc(numGIDs * sizeof(int));
+a280 2
+/* HOW ABOUT SOME PROTECTION CHECKING ???? */
+
+d282 1
+a282 1
+	procPtr->groupIDs[i] = newGidArrayPtr[i];
+d284 1
+a284 1
+    procPtr->numGroupIDs = numGIDs;
+d309 2
+a310 2
+    register	Proc_ControlBlock	*procPtr;
+    int					gid;
+d312 1
+d319 2
+a320 2
+    for (i = 0; i < procPtr->numGroupIDs; i++) {
+	if (gid == procPtr->groupIDs[i]) {
+d328 7
+a334 7
+    newGidArrayPtr = (int *)Mem_Alloc((procPtr->numGroupIDs + 1) * sizeof(int));
+    Byte_Copy(sizeof(int) * procPtr->numGroupIDs,
+	      (Address)procPtr->groupIDs, (Address)newGidArrayPtr);
+    Mem_Free((Address)procPtr->groupIDs);
+    procPtr->groupIDs = newGidArrayPtr;
+    procPtr->groupIDs[procPtr->numGroupIDs] = gid;
+    procPtr->numGroupIDs++;
+@
+
+
+5.3
+log
+@Lint cleanup, change copyright notices.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: procID.c,v 5.2 87/12/15 15:23:11 nelson Exp $ SPRITE (Berkeley)";
+d69 1
+a69 1
+    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+d133 1
+a133 1
+    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+d191 1
+a191 1
+    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+d252 1
+a252 1
+    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+@
+
+
+5.2
+log
+@*** empty log message ***
+@
+text
+@d9 8
+a16 2
+ * Copyright (C) 1986 Regents of the University of California
+ * All rights reserved.
+d20 1
+a20 1
+static char rcsid[] = "$Header: procID.c,v 5.1 87/11/22 16:16:20 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+5.1
+log
+@added include for vm.h
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: procID.c,v 5.0 87/08/11 10:47:14 sprite Exp $ SPRITE (Berkeley)";
+d23 1
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d14 1
+a14 1
+static char rcsid[] = "$Header: procID.c,v 4.2 87/08/06 14:21:29 nelson Exp $ SPRITE (Berkeley)";
+d23 1
+@

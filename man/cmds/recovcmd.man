@@ -1,0 +1,24 @@
+' $Header: /sprite/src/cmds/recovinfo/RCS/recovinfo.man,v 1.1 89/12/12 17:54:14 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS RECOVCMD cmds
+.BS
+.SH NAME
+recovcmd \- Set variables affecting the recovery module of the kernel.
+.SH SYNOPSIS
+\fBrecovcmd\fR  -[\fIoptions\fR]
+.SH OPTIONS
+.IP "\fB\-abson\fR" 14
+Turn on absolute ping intervals for recovery.
+.IP "\fB\-absoff\fR"
+Turn off absolute ping intervals for recovery.
+.BE
+.SH INTRODUCTION
+This command changes variables affecting the behavior of he recovery system.
+The only variable so far is the absolute pinging variable.  If it's turned on,
+this means that pinging of servers occurs at absolute intervals, unaffected
+by how long the actual pinging takes.  If turned off, then the pinging takes
+place 30 seconds after the last pinging finished, no matter how long that took.
+Turning on absolute pinging should prevent client pinging from becoming
+synchronized by server reboots.
+.SH KEYWORDS
+recovery, ping

@@ -1,0 +1,278 @@
+
+alloc.h,0
+
+error.c,99
+error(93,2322
+fatal(59,1724
+set_program_name(125,2939
+unix_error_string(107,2591
+warn(75,1997
+
+error.h,0
+
+global.c,44
+init_global(116,3401
+more_global(129,3693
+
+global.h,0
+
+header.c,290
+WriteDefines(113,4050
+WriteEpilog(148,4686
+WriteIncludes(101,3733
+WriteInternalHeader(290,8435
+WriteInternalRedefine(281,8265
+WriteMigExternal(119,4102
+WriteProlog(130,4332
+WriteServerHeader(253,7634
+WriteServerRoutine(219,6543
+WriteUserHeader(191,5924
+WriteUserRoutine(159,4865
+
+lexxer.h,0
+
+mig.c,53
+main(221,6274
+myfopen(312,7987
+parseArgs(125,4403
+
+parser.c,77
+} YYSTYPE;98,2151
+import_name(119,2442
+yyerror(112,2385
+yyparse(308,9951
+
+parser.h,19
+} YYSTYPE;85,1953
+
+routine.c,940
+argAlloc(155,5095
+rtAddCountArg(808,21293
+rtAddDeallocArg(901,23946
+rtAddDummyReplyPort(1183,31249
+rtAddMsgOption(1152,30657
+rtAddPolyArg(844,22309
+rtAddRetCode(1097,29435
+rtAddSCopyArg(933,24874
+rtAddWaitTime(1119,29947
+rtAlloc(132,4708
+rtAugmentArgKind(617,15344
+rtCheckArgTrans(1061,28453
+rtCheckArgTypes(997,26468
+rtCheckDestroy(1279,33562
+rtCheckMask(480,12160
+rtCheckMaskFunction(493,12398
+rtCheckRoutine(1302,34041
+rtCheckRoutineArg(703,18623
+rtCheckRoutineArgs(956,25430
+rtCheckSimpleIn(388,10043
+rtCheckSimpleOut(426,11030
+rtCheckVariable(1217,32104
+rtCountMask(508,12710
+rtDefaultArgKind(524,13014
+rtFindSize(456,11703
+rtMakeFunction(251,7156
+rtMakeProcedure(219,6580
+rtMakeRoutine(191,6130
+rtMakeSimpleProcedure(235,6859
+rtMakeSimpleRoutine(205,6349
+rtPrintArg(296,8023
+rtPrintRoutine(361,9391
+rtProcessArgFlags(541,13316
+rtRoutineKindToStr(274,7602
+rtSetArgDefaults(759,19975
+rtSkip(149,5052
+
+routine.h,368
+#define akAddFeature(282,11416
+#define	akCheck(280,11315
+#define akCheckAll(281,11357
+#define akIdent(284,11507
+#define akRemFeature(283,11461
+#define	argByReferenceServer(356,14484
+#define	argByReferenceUser(352,14372
+typedef u_int  arg_kind_t;129,5232
+} argument_t;350,14357
+} routine_kind_t;374,14942
+} routine_t;424,17207
+rtCheckMaskFunction(441,17542
+
+server.c,1307
+CheckDestroyPortArg(926,26972
+InArgMsgField(684,20883
+ServerSideType(344,11783
+WriteAdjustMsgCircular(1094,31013
+WriteAdjustMsgSimple(1079,30685
+WriteAdjustMsgSize(1169,33362
+WriteAdjustRequestMsgPtr(757,22717
+WriteArgSize(1125,32274
+WriteArrayEntries(240,8316
+WriteCheckArgSize(590,18261
+WriteCheckHead(508,15589
+WriteCheckMsgSize(624,19151
+WriteCheckReturnValue(977,28031
+WriteCopyArgValue(1069,30462
+WriteDestroyArg(866,25311
+WriteDestroyPortArg(899,26173
+WriteEpilog(261,8792
+WriteExtractArg(804,23785
+WriteExtractArgValue(708,21456
+WriteFieldDecl(1334,37656
+WriteFinishMsgSize(1210,34518
+WriteGetReturnValue(967,27817
+WriteGlobalDecls(165,6155
+WriteIncludes(151,5752
+WriteInitializeCount(727,22021
+WriteLocalVarDecl(354,11952
+WriteMsgError(444,14295
+WritePackArg(1231,35007
+WritePackArgType(990,28297
+WritePackArgValue(1001,28552
+WritePackReplyArgs(1292,36778
+WriteProlog(204,7511
+WriteReplyHead(485,15083
+WriteReplyInit(452,14439
+WriteRoutine(1342,37788
+WriteServer(1451,40982
+WriteServerArgDecl(372,12357
+WriteServerCall(940,27216
+WriteServerCallArg(822,24203
+WriteStubArgDecl(1417,40031
+WriteStubDecl(1428,40255
+WriteSymTabEntries(217,7730
+WriteTypeCheck(535,16393
+WriteTypeCheckArg(745,22481
+WriteTypeCheckRequestArgs(769,23024
+WriteVarDecls(387,12691
+
+statement.c,17
+stAlloc(53,1675
+
+statement.h,51
+} statement_kind_t;57,1702
+} statement_t;70,1969
+
+string.c,89
+strbool(88,2430
+strconcat(68,2054
+strfree(81,2363
+strmake(56,1803
+strstring(98,2532
+
+string.h,95
+typedef string_t identifier_t;55,1756
+#define	streql(63,1966
+typedef char *string_t;54,1732
+
+type.c,705
+    if 440,12648
+init_type(828,21211
+itAlloc(155,4959
+itArrayDecl(686,18171
+itCStringDecl(749,19435
+itCalculateNameInfo(256,7558
+itCalculateSizeInfo(215,6534
+itCheckDecl(309,9511
+itCheckIntType(961,25869
+itCheckReplyPortType(938,25225
+itCheckRequestPortType(916,24579
+itCheckReturnType(899,24060
+itCopyType(585,16024
+itInsert(145,4811
+itLongDecl(552,15313
+itLookUp(121,4374
+itMakeCountType(774,19988
+itMakeDeallocType(808,20797
+itMakePolyType(791,20394
+itNameToString(200,6234
+itPrevDecl(631,17087
+itPrintDecl(473,13470
+itPrintTrans(448,12792
+itPtrDecl(707,18580
+itResetType(612,16708
+itShortDecl(532,14873
+itStructDecl(728,19009
+itTypeDecl(516,14633
+itVarArrayDecl(653,17494
+
+type.h,107
+} dealloc_t;89,2734
+typedef u_int ipc_flags_t;75,2229
+} ipc_type_t;210,7920
+#define	strdealloc(92,2786
+
+user.c,992
+WriteAdjustMsgSimple(664,21944
+WriteAdjustMsgSize(728,23501
+WriteAdjustReplyMsgPtr(1221,38343
+WriteArgSize(683,22372
+WriteCheckArgSize(991,31243
+WriteCheckIdentity(853,26649
+WriteCheckMsgSize(1023,32079
+WriteEpilog(274,9363
+WriteExtractArg(1198,37735
+WriteExtractArgValue(1088,34072
+WriteFieldDecl(1298,40395
+WriteFinishMsgSize(761,24412
+WriteGlobalDecls(248,8695
+WriteHeaderPortType(280,9418
+WriteIncludes(186,7025
+WriteMsgCheckReceive(475,15310
+WriteMsgError(411,13556
+WriteMsgRPC(549,18198
+WriteMsgReceive(530,17380
+WriteMsgSend(435,14321
+WriteMsgSendReceive(505,16479
+WritePackArg(787,25039
+WritePackArgType(576,19295
+WritePackArgValue(591,19810
+WriteProlog(264,9217
+WriteReplyArgs(1233,38606
+WriteRequestArgs(806,25486
+WriteRequestHead(290,9620
+WriteRetCodeCheck(921,29010
+WriteReturnValue(1272,39565
+WriteRoutine(1331,41469
+WriteStubDecl(1306,40525
+WriteTypeCheck(936,29527
+WriteUser(1410,43447
+WriteUserIndividual(1438,44121
+WriteVarDecls(358,11837
+
+utils.c,665
+FetchServerType(295,7472
+FetchUserType(288,7395
+ReturnTypeStr(278,7245
+SkipVFPrintf(420,11106
+WriteBogusDefines(99,3011
+WriteCheckDecl(252,6245
+WriteCopyType(480,12209
+WriteFieldDeclPrim(302,7551
+WriteImport(75,2442
+WriteList(135,4057
+WriteNameDecl(203,5309
+WritePackMsgType(596,16003
+WritePackMsgTypeLong(518,13056
+WritePackMsgTypeShort(560,14722
+WriteRCSDecl(83,2565
+WriteReverseList(187,5004
+WriteReverseListPrim(160,4541
+WriteServerVarDecl(221,5631
+WriteStaticDecl(398,10510
+WriteStaticLongDecl(349,8716
+WriteStaticShortDecl(376,9724
+WriteStructDecl(334,8354
+WriteTypeDeclIn(232,5851
+WriteTypeDeclOut(242,6047
+WriteUserVarDecl(211,5423
+
+utils.h,146
+extern void WriteFieldDeclPrim(79,2854
+extern void WriteList(59,1969
+extern void WriteReverseList(63,2120
+extern void WriteStructDecl(82,2960
+
+write.h,0
+
+y.tab.h,19
+} YYSTYPE;85,1953

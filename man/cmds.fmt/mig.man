@@ -1,0 +1,132 @@
+
+
+
+MIG                       User Commands                       MIG
+
+
+
+NNAAMMEE
+     mig - Mach message interface generator
+
+SSYYNNOOPPSSIISS
+     mmiigg [[--qqQQvvVVrrRRttTT]] [[--uusseerr <<nnaammee>>]] [[--sseerrvveerr <<nnaammee>>]] [[--hheeaaddeerr
+     <<nnaammee>>]] definitions-file
+
+
+DDEESSCCRRIIPPTTIIOONN
+     _m_i_g(_1) uses the interface definitions in the definitions-
+     file and creates two c modules: subsystemUser.c and
+     subsystemServer.c. These modules implement respectively the
+     user and the server ends of a remote procedure call inter-
+     face to the subsystem. A header file subsystem.h is also
+     generated that defines the external functions and can be
+     included in any code using the user interface.
+
+     The switches are:
+
+     -_r,-_R
+          If r, use msg_rpc, if R use msg_send, msg_receive
+          pairs. The default is _r.
+
+     -_q,-_Q
+          If -q, warning statements will be suppressed. If -Q
+          warning statements are printed. The default is _Q.
+
+     -_v,-_V
+          If v, all the types, routines and arguments are printed
+          out as they are encountered. If V, the compilation is
+          silent. The default is _V.
+
+     -_s,-_S
+          If s, a symbol table of rpc-name, number, routine tri-
+          plets is generated in the server file.  If S, the sym-
+          bol table is not generated. The default is _S.
+
+     -_i   If this switch is specified, each user routine is put
+          in its own file, for ease in building a library.  The
+          file name is <routine_name>.c.  If this switch is not
+          specified (the default), all of the user routines are
+          put in the same file.
+
+     -_u_s_e_r <_n_a_m_e>
+          Name the user file <name>.  If not specified, the user
+          file is named <subsystem>User.c.
+
+     -_s_e_r_v_e_r <_n_a_m_e>
+          Name the server file <name>.  If not specified, the
+          server file is named <subsystem>Server.c.
+
+     -_h_e_a_d_e_r <_n_a_m_e>
+
+
+
+Sprite v1.0                  1/19/87                            1
+
+
+
+
+
+
+MIG                       User Commands                       MIG
+
+
+
+          Name the header file <name>.  If not specified, the
+          server file is named <subsystem>.h.
+
+
+FFIILLEESS
+     /sprite/lib/include.mach/mig_errors.h - error codes gen-
+     erated by mig code
+     subsystemUser.c - the code for the user side of the inter-
+     face
+     subsystem.h - the include file for the user routines
+     subsystemServer.c - the code for the server side of the
+     interface
+
+
+HHIISSTTOORRYY
+     8-Feb-88   David B. Golub (dbg)
+          Updated document to reflect new switches.
+
+
+     21-Jul-87  Mary R. Thompson (mrt)
+          Updated document to reflect new switches.
+
+
+     2-Mar-87   Mary R. Thompson (mrt)
+          Updated document to reflect -q switch and new name for
+          the syntax definitions file.
+
+
+     20-Aug-86  Mary R. Thompson (mrt)
+          Created man page. mig was created by Michael W. Young
+          from the Spice Matchmaker program
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                  1/19/87                            2
+
+
+

@@ -1,0 +1,982 @@
+head     1.13;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.13
+date     92.04.22.14.21.28;  author kupfer;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     90.04.30.13.38.18;  author douglis;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     90.04.30.10.59.00;  author douglis;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     89.12.11.13.09.32;  author douglis;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     89.11.27.14.27.10;  author douglis;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     89.11.21.15.56.21;  author douglis;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     89.09.29.11.24.14;  author douglis;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.09.29.11.22.18;  author douglis;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.09.29.11.14.47;  author douglis;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.08.28.15.32.58;  author douglis;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.06.24.18.31.26;  author rab;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.03.12.20.47.41;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.09.16.14.12.39;  author rab;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@
+@
+
+
+1.13
+log
+@Fix to understand new pdev naming scheme.  Based on code from dlong.
+@
+text
+@/* 
+ * wall.c --
+ *
+ * Write to all.  Sends a message to the /dev/syslog window of
+ * each machine, or the local host if specified.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/cmds/wall/RCS/wall.c,v 1.12 90/04/30 13:38:18 douglis Exp Locker: kupfer $";
+#endif /* not lint */
+
+#define NDEBUG
+
+#include <sprite.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <mig.h>
+#include <host.h>
+#include <sys/time.h>
+#include <pwd.h>
+#include <option.h>
+#include <sys/signal.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <errno.h>
+#include <rloginPseudoDev.h>
+#include <setjmp.h>
+#include <ulog.h>
+
+
+#define MAX_NUM_HOSTS   0x100
+#define MAX_MSG_LEN     0x400
+#define TIME_OUT        180
+#define HOST_NAME_SIZE  64
+
+#ifdef __STDC__
+static void SendMsg(char *msg, int msize, char *host, int doRlogin);
+static void FillAlert(void);
+static void Down(int n);
+static void Prompt(void);
+#else
+static void SendMsg();
+static void FillAlert();
+static void Down();
+static void Prompt();
+#endif
+
+static Mig_Info infoArray[MAX_NUM_HOSTS];
+static char buf[MAX_MSG_LEN];
+static int verbose = 0;
+static int debug = 0;
+static int local = 0;
+static int wallRlogins = 1;
+static int consoles = 1;
+
+static char alert[0x100];
+
+extern int errno;
+
+Option optionArray[] = {
+    {OPT_TRUE, "l", (Address)&local,
+     "Run on local host only."},
+    {OPT_TRUE, "v", (Address)&verbose,
+     "Print as hosts are accessed."},
+    {OPT_TRUE, "d", (Address)&debug,
+     "Enable debugging."},
+    {OPT_FALSE, "r", (Address)&wallRlogins,
+     "Don't write to rlogins (useful if the swap server is down)."},
+    {OPT_FALSE, "C", (Address)&consoles,
+     "Don't write to consoles (useful just for debugging."},
+};
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	Prompts the invoker for a message, and then prints the
+ *      message to the /dev/syslog of all sprite machines.
+ *
+ * Results:
+ *	Zero exit code if there are no errors.
+ *
+ * Side effects:
+ *	Print a message to everybody's /dev/syslog.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+main(argc, argv)
+    int argc;
+    char **argv;
+{
+    register int n;
+    register Mig_Info *infoPtr;
+    register Host_Entry *hostPtr;
+    register char *b;
+    register int r;
+    register int size;
+    register int numRecs;
+    int doPrompt;
+    int loopIndex;
+    int myID;
+
+    (void) Opt_Parse(argc, argv, optionArray, Opt_Number(optionArray),
+		     OPT_ALLOW_CLUSTERING);
+
+    FillAlert();
+    if ((numRecs = Mig_GetAllInfo(infoArray, MAX_NUM_HOSTS)) <= 0) {
+	perror("Error in Mig_GetAllInfo");
+	exit(1);
+    }
+    if ((doPrompt = isatty(0)) != 0) {
+	Prompt();
+    }
+    for (b = buf, size = sizeof(buf); (r = read(0, b, size)) > 0; b += r) {
+	if ((size -= r) == 0) {
+	    (void) fprintf(stderr, "WARNING: max message length exceeded\n");
+	    break;
+	}
+	/*
+	 * stop if a `.' appears at the beginning of a line.
+	 * This assumes that stdin is line buffered.
+	 */
+	if (*b == '.' && b[-1] == '\n') {
+	    break;
+	}
+	if (doPrompt) {
+	    Prompt();
+	}
+    }
+    size = sizeof(buf) - size;
+    if (local) {
+	(void) Proc_GetHostIDs(&myID, (int *) NULL);
+    }
+    for (loopIndex = !consoles; loopIndex <= wallRlogins; loopIndex++) {
+	for (n = 0, infoPtr = &infoArray[0]; n < numRecs; ++infoPtr, ++n) {
+	    if (infoPtr->loadVec.timestamp == 0) {
+		continue;
+	    }
+	    if (local && infoPtr->hostID != myID) {
+		continue;
+	    }
+	    if (infoPtr->state == MIG_HOST_DOWN) {
+		if (verbose) {
+		    Down(infoPtr->hostID);
+		}
+		continue;
+	    }
+	    if (infoPtr->loadVec.timestamp - infoPtr->bootTime < 0) {
+		if (verbose) {
+		    Down(infoPtr->hostID);
+		}
+		continue;
+	    }
+	    if ((hostPtr = Host_ByID(infoPtr->hostID)) == NULL) {
+		(void) fprintf(stderr, "Error in Host_ByID(%d)\n", infoPtr->hostID);
+		continue;
+	    }
+	    SendMsg(buf, size, hostPtr->name, loopIndex);
+	}
+    }
+    exit(0);
+}   /* main */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Down --
+ *
+ *      Print a list of all machines that are down.
+ *
+ * Results:
+ *      None.
+ * 
+ * Side effects:
+ *      Prints a list to stdout.
+ *  
+ *----------------------------------------------------------------------
+ */ 
+
+static void
+Down(n)
+    int n;
+{
+    Host_Entry *hostPtr;
+
+    if ((hostPtr = Host_ByID(n)) == NULL) {
+	(void) fprintf(stderr, "Error in Host_ByID(%d)\n", n);
+	return;
+    }
+    (void) printf("%s is down\n", hostPtr->name);
+}
+
+
+/*
+ * Set the default timeout, in seconds.
+ */
+#ifndef TIMEOUT
+#define TIMEOUT 10
+#endif /* TIMEOUT */
+char currentFile[0x400];
+int exited;
+static jmp_buf	OpenTimeout;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AlarmHandler --
+ *
+ *	Routine to service a SIGALRM signal.  This routine disables
+ *	the alarm (letting the caller reenable it when appropriate).
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The alarm is disabled, and a warning message is printed. A
+ * 	global variable is set to indicate that the parent should give up.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+AlarmHandler()
+{
+    exited = 1;
+    alarm(0);
+    fprintf(stderr, "Warning: couldn't write to %s; removing file.\n",
+	    currentFile);
+    fflush(stderr);
+    if (unlink(currentFile) < 0) {
+	perror("unlink");
+    }
+    (void) signal (SIGALRM, SIG_IGN);
+    longjmp(OpenTimeout, 1);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SendMsg --
+ *
+ *      Write the message to a specific host.
+ *
+ * Results:
+ *      None.
+ * 
+ * Side effects:
+ *      Writes the message to the /dev/syslog of the specified host.
+ *  
+ *----------------------------------------------------------------------
+ */ 
+
+static void
+SendMsg(msg, msize, host, doRlogin)
+    char *msg;
+    int msize;
+    char *host;
+    int doRlogin;
+{
+    int fd;
+    int i;
+    struct stat statBuf;
+    char *s = currentFile;
+    int pid;
+    
+
+    if (!doRlogin) {
+	(void) sprintf(s, "/hosts/%s/dev/syslog", host);
+	if (debug) {
+	    printf("would write to %s\n", s);
+	    return;
+	} 
+	fd = open(s, O_WRONLY);
+	if (fd < 0) {
+	    perror(s);
+	    return;
+	}
+	if (verbose) {
+	    (void) printf("sending to %s\n", host);
+	}
+	(void) write(fd, alert, strlen(alert));
+	(void) write(fd, msg, msize);
+	(void) write(fd, "\7\7\7", 3);
+	(void) close(fd);
+    } else {
+	for (i = 1; i < ULOG_MAX_PORTS; ++i) {
+	    (void) sprintf(s, "/hosts/%s/%s%d", host, RLOGIN_PDEV_NAME, i);
+	    if (debug) {
+		printf("would write to %s\n", s);
+		return;
+	    } 
+	    if (stat(s, &statBuf) < 0) {
+		continue;
+	    }
+	    pid = fork();
+	    if (pid) {
+		union wait status;
+		int error;
+		int exitCode;
+		struct itimerval itimer;
+
+		itimer.it_interval.tv_sec = 0;
+		itimer.it_interval.tv_usec = 0;
+		itimer.it_value.tv_sec = TIMEOUT;
+		itimer.it_value.tv_usec = 0;
+		(void) signal(SIGALRM, AlarmHandler);
+		(void) setitimer(ITIMER_REAL, &itimer, NULL);
+
+		exited = 0;
+		do {
+		    if (setjmp(OpenTimeout) != 0) {
+			break;
+		    }
+		    error = wait(&status);
+		    if (error == -1) {
+			if (errno == EINTR) {
+			    /*
+			     * This will unfortunately never be reached
+			     * until wait can actually return EINTR (not
+			     * possible now due to migration interactions
+			     * with signals).  Hence the setjmp.
+			     */
+			    break;
+			} else {
+			    perror("wait");
+			    exited = 1;
+			}
+		    } else if (error == pid) {
+			if (status.w_stopval != WSTOPPED) {
+			    exited = 1;
+			}
+		    }
+		} while (!exited);
+		itimer.it_value.tv_sec = 0;
+		(void) setitimer(ITIMER_REAL, &itimer, NULL);
+	    } else {
+		/*
+		 * Child.
+		 */
+		if (verbose) {
+		    (void) printf("Opening %s.\n", s);
+		}
+		fd = open(s, O_WRONLY | O_APPEND);
+		if (fd < 0) {
+		    exit(1);
+		}
+		if (verbose) {
+		    (void) printf("Writing to %s.\n", s);
+		}
+		if (write(fd, alert, strlen(alert)) < 0) {
+		    exit(1);
+		}
+		(void) write(fd, msg, msize);
+		(void) write(fd, "\7\7\7", 3);
+		(void) close(fd);
+		exit(0);
+	    } 
+		
+	}
+    }
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FillAlert --
+ *
+ *      Creates the `alert' message that is sent as a prelude
+ *      to the main message.
+ *
+ * Results:
+ *      None.
+ * 
+ * Side effects:
+ *      Prints a string into the `alert' buffer.
+ *  
+ *----------------------------------------------------------------------
+ */ 
+
+static void
+FillAlert()
+{
+    char *me;
+    char hostname[32];
+    long clock;
+    char *timestamp;
+#ifdef notdef
+    struct tm *localtime();
+    struct tm *localclock;
+#endif
+    char *ttyname();
+
+    me = getpwuid(getuid())->pw_name;
+    (void) gethostname(hostname, sizeof(hostname));
+    (void) time(&clock);
+    timestamp = ctime(&clock);
+#ifdef notdef
+    localclock = localtime(&clock);
+    (void) sprintf(alert,
+	"\7\7\7%s broadcast message from %s@@%s at %d:%02d ...\n",
+	local ? "Local" : "Network-wide", me, hostname,
+		   localclock->tm_hour, localclock->tm_min);
+#endif
+    (void) sprintf(alert,
+	"\7\7\7%s broadcast message from %s@@%s at %s ...\n",
+	local ? "Local" : "Network-wide", me, hostname, timestamp);
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Prompt --
+ *
+ *      Print a prompt.
+ *
+ * Results:
+ *      None.
+ * 
+ * Side effects:
+ *      Prints a prompt to stdout.
+ *  
+ *----------------------------------------------------------------------
+ */ 
+
+static void
+Prompt()
+{
+
+    (void) write(1, "> ", 2);
+    return;
+}
+
+@
+
+
+1.12
+log
+@time out and remove bad rlogin file
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/cmds/wall/RCS/wall.c,v 1.11 90/04/30 10:59:00 douglis Exp Locker: douglis $";
+d36 1
+d38 1
+d300 2
+a301 2
+	for (i = 1; i < 10; ++i) {
+	    (void) sprintf(s, "/hosts/%s/rlogin%d", host, i);
+@
+
+
+1.11
+log
+@cleaned up a bit.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/cmds/wall/RCS/wall.c,v 1.10 89/12/11 13:09:32 douglis Exp Locker: douglis $";
+d32 5
+d45 4
+a48 4
+static void sendMsg(char *msg, int msize, char *host, int doRlogin);
+static void fillAlert(void);
+static void down(int n);
+static void prompt(void);
+d50 4
+a53 4
+static void sendMsg();
+static void fillAlert();
+static void down();
+static void prompt();
+d62 1
+d66 2
+d77 2
+d117 1
+a117 1
+    fillAlert();
+d123 1
+a123 1
+	prompt();
+d138 1
+a138 1
+	    prompt();
+d145 1
+a145 1
+    for (loopIndex = 0; loopIndex <= wallRlogins; loopIndex++) {
+d155 1
+a155 1
+		    down(infoPtr->hostID);
+d161 1
+a161 1
+		    down(infoPtr->hostID);
+d169 1
+a169 1
+	    sendMsg(buf, size, hostPtr->name, loopIndex);
+d179 1
+a179 1
+ * down --
+d193 1
+a193 1
+down(n)
+d207 43
+d252 1
+a252 1
+ * sendMsg --
+d266 1
+a266 1
+sendMsg(msg, msize, host, doRlogin)
+a272 1
+    char s[0x400];
+d274 4
+d304 1
+a304 1
+	    if ((fd = open(s, O_WRONLY | O_APPEND)) < 0) {
+d307 64
+a370 6
+	    if (write(fd, alert, strlen(alert)) < 0) {
+		continue;
+	    }
+	    (void) write(fd, msg, msize);
+	    (void) write(fd, "\7\7\7", 3);
+	    (void) close(fd);
+d380 1
+a380 1
+ * fillAlert --
+d395 1
+a395 1
+fillAlert()
+d428 1
+a428 1
+ * doPrompt --
+d442 1
+a442 1
+prompt()
+@
+
+
+1.10
+log
+@use ctime to generate datestamp so we print date as well as time.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/cmds/wall/RCS/wall.c,v 1.9 89/11/27 14:27:10 douglis Exp Locker: douglis $";
+a52 1
+static struct timeval currentTime;
+a106 4
+    if (gettimeofday(&currentTime, (struct timezone *) NULL) < 0) {
+	perror("gettimeofday");
+	exit(1);
+    }
+d112 1
+a112 1
+    if ((doPrompt = isatty(0)) != 0)
+d114 1
+d124 1
+a124 1
+	if (*b == '.' && b[-1] == '\n')
+d126 2
+a127 1
+	if (doPrompt)
+d129 1
+d137 1
+a137 4
+	    if (infoPtr ->timestamp == 0)
+		continue;
+	    if (infoPtr->hostID != n) {
+		(void) fprintf(stderr, "ListHosts: bad hostID for entry %d\n", n);
+d143 4
+a146 3
+	    if (currentTime.tv_sec - infoPtr->timestamp > TIME_OUT) {
+		if (verbose)
+		    down(n);
+d149 8
+a156 7
+	    if (infoPtr->timestamp - infoPtr->bootTime < 0) {
+		if (verbose)
+		    down(n);
+		continue;
+	    }
+	    if ((hostPtr = Host_ByID(n)) == NULL) {
+		(void) fprintf(stderr, "Error in Host_ByID(%d)\n", n);
+d234 1
+a234 1
+	if (verbose)
+d236 1
+d300 3
+a302 2
+	"\7\7\7Broadcast message from %s@@%s at %d:%02d ...\n",
+	me, hostname, localclock->tm_hour, localclock->tm_min);
+d305 2
+a306 2
+	"\7\7\7Broadcast message from %s@@%s at %s ...\n",
+	me, hostname, timestamp);
+@
+
+
+1.9
+log
+@added -r (no rlogins) option
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/cmds/wall/RCS/wall.c,v 1.8 89/11/21 15:56:21 douglis Exp Locker: douglis $";
+d288 2
+d292 1
+d298 2
+d304 4
+@
+
+
+1.8
+log
+@added -l option
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/cmds/wall/RCS/wall.c,v 1.7 89/09/29 11:24:14 douglis Exp Locker: douglis $";
+d57 1
+d68 2
+d102 1
+a102 1
+    int doRlogin;
+d137 1
+a137 1
+    for (doRlogin = 0; doRlogin <= 1; doRlogin++) {
+d162 1
+a162 1
+	    sendMsg(buf, size, hostPtr->name, doRlogin);
+d246 4
+@
+
+
+1.7
+log
+@fixed prototype problem with last change
+@
+text
+@d5 1
+a5 1
+ * each machine.
+d18 1
+a18 1
+static char rcsid[] = "$Header: /a/newcmds/wall/RCS/wall.c,v 1.6 89/09/29 11:22:18 douglis Exp Locker: douglis $";
+d31 1
+d56 2
+d60 8
+d100 1
+a100 5
+
+    switch (argc) {
+
+    case 1:
+        break;
+d102 2
+a103 10
+    case 2:
+        if (strncmp(argv[1], "-v", 2) == 0) {
+	    verbose = 1;
+	    break;
+	}
+        if (strncmp(argv[1], "-d", 2) == 0) {
+	    debug = 1;
+	    break;
+	}
+	/* FALLTHROUGH*/
+a104 4
+    default:
+        (void) fprintf(stderr, "usage: wall [-{v|d}]\n");
+	exit(1);
+    }
+d131 3
+d142 3
+d307 1
+a307 1
+ *      Prints a promp to stdout.
+@
+
+
+1.6
+log
+@do rlogins only after syslogs
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /a/newcmds/wall/RCS/wall.c,v 1.5 89/09/29 11:14:47 douglis Exp Locker: douglis $";
+d39 1
+a39 1
+static void sendMsg(char *msg, int msize, char *host);
+@
+
+
+1.5
+log
+@open in append mode.  debug flag.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /a/newcmds/wall/RCS/wall.c,v 1.4 89/08/28 15:32:58 douglis Exp Locker: douglis $";
+d88 1
+d136 23
+a158 20
+    for (n = 0, infoPtr = &infoArray[0]; n < numRecs; ++infoPtr, ++n) {
+	if (infoPtr ->timestamp == 0)
+	    continue;
+	if (infoPtr->hostID != n) {
+	    (void) fprintf(stderr, "ListHosts: bad hostID for entry %d\n", n);
+	    continue;
+	}
+	if (currentTime.tv_sec - infoPtr->timestamp > TIME_OUT) {
+	    if (verbose)
+		down(n);
+	    continue;
+	}
+	if (infoPtr->timestamp - infoPtr->bootTime < 0) {
+	    if (verbose)
+		down(n);
+	    continue;
+	}
+	if ((hostPtr = Host_ByID(n)) == NULL) {
+	    (void) fprintf(stderr, "Error in Host_ByID(%d)\n", n);
+	    continue;
+a159 1
+	sendMsg(buf, size, hostPtr->name);
+d212 1
+a212 1
+sendMsg(msg, msize, host)
+d216 1
+d222 10
+a231 20
+    (void) sprintf(s, "/hosts/%s/dev/syslog", host);
+    if (debug) {
+	printf("would write to %s\n", s);
+	return;
+    } 
+    fd = open(s, O_WRONLY);
+    if (fd < 0) {
+	perror(s);
+	return;
+    }
+    if (verbose)
+	(void) printf("sending to %s\n", host);
+    (void) write(fd, alert, strlen(alert));
+    (void) write(fd, msg, msize);
+    (void) write(fd, "\7\7\7", 3);
+    (void) close(fd);
+    for (i = 1; i < 10; ++i) {
+	(void) sprintf(s, "/hosts/%s/rlogin%d", host, i);
+	if ((fd = open(s, O_WRONLY | O_APPEND)) < 0) {
+	    continue;
+d233 3
+a235 3
+	if (write(fd, alert, strlen(alert)) < 0) {
+	    continue;
+	}
+d239 13
+@
+
+
+1.4
+log
+@got rid of "on $TTY" because ttyname is brain-damaged and it's not 
+needed anyway.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /a/newcmds/wall/RCS/wall.c,v 1.3 89/06/24 18:31:26 rab Exp Locker: douglis $";
+d53 2
+a54 1
+static int verbose;
+d99 4
+d106 1
+a106 1
+        (void) fprintf(stderr, "usage: wall [-v]\n");
+d219 6
+a224 1
+    if ((fd = open(s, O_WRONLY)) < 0) {
+d233 1
+a233 1
+#if 0
+d236 1
+a236 1
+	if ((fd = open(s, O_WRONLY)) < 0) {
+d244 1
+a245 1
+#endif
+d283 1
+a283 1
+	me, hostname, mytty, localclock->tm_hour, localclock->tm_min);
+@
+
+
+1.3
+log
+@Added `.' for end of input.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /a/newcmds/wall/RCS/wall.c,v 1.2 89/03/12 20:47:41 rab Exp Locker: rab $";
+a261 1
+    char *mytty;
+a268 4
+    if ((mytty = ttyname(2)) == NULL) {
+	perror("ttyname");
+	exit(1);
+    }
+d272 1
+a272 1
+	"\7\7\7Broadcast message from %s@@%s on %s at %d:%02d ...\n",
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header$";
+d38 6
+d48 1
+d120 6
+d153 2
+a154 1
+}
+d211 1
+d223 14
+d245 1
+a245 1
+ *      Creates the `alert' message that is send as a prelude
+d279 1
+d304 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+/*
+d6 9
+d18 2
+a19 2
+static char rcsid[] = "@@(#)wall.c";
+#endif /* !lint */
+a31 1
+int verbose;
+d41 1
+d46 1
+a46 1
+
+d49 18
+d79 1
+d106 2
+d113 2
+d116 1
+d142 17
+d169 1
+a169 1
+    printf("%s is down\n", hostPtr->name);
+d172 17
+d204 1
+a204 1
+	printf("sending to %s\n", host);
+d210 18
+d250 24
+@

@@ -1,0 +1,6 @@
+
+          packages [-location]
+          Returns a list of the names of all defined packages. If
+          -location is specified, the an keyed list is returned of
+          package name and the values being a list of the .tlib path
+          name, offset and length of the package within the library.

@@ -1,0 +1,113 @@
+#
+# $Header: /etc/RCS/spritehosts,v 1.134 92/04/29 15:38:09 kupfer Exp $
+# This file contains a database of all the machines currently known
+# to this Sprite system.  Each line describes one machine
+# and has the following format:
+#
+# <spriteID> <netType> <netAddr> <inetAddr> <machType> <name> <aliases>
+#
+# Where the fields are as follows:
+#	spriteID	    The Sprite ID for the host (small number)
+#	netType 	    Type of local network by which the machine is
+#	    	  	    connected. Currently, only "ether" is
+#	    	  	    understood.
+#	netAddr	  	    The host's address on its local network (format
+#			    depends on type of local network).
+#	inetAddr  	    The internet address of the host.
+#	machType	    The machine type.  This string value is used
+#			    when expanding $MACHINE in pathnames.
+#	name	  	    The official name for the machine.
+#	aliases	  	    Other names for the machine.
+#
+1 ether 8:0:2b:1a:c5:91 128.32.150.11 ds5000 lust.Berkeley.EDU lust
+2  ether 8:0:2b:d:78:5b 128.32.150.90  ds3100 kvetching.Berkeley.EDU kvetching
+3  ether 8:0:20:1:be:34 128.32.150.7   sun3 nutmeg.Berkeley.EDU nutmeg
+4  ether 8:0:2b:e:f8:b8 128.32.150.15  ds3100 dill.Berkeley.EDU dill
+5  ether 8:0:20:f:2a:34 128.32.150.16  sun4 basil.Berkeley.EDU basil
+6  ether 8:0:2b:10:73:47 128.32.150.13 ds3100 pride.Berkeley.EDU pride
+8  ether 8:0:20:0:26:ED 128.32.150.55  sun3 fenugreek.Berkeley.EDU fenugreek
+9  ether 8:0:2b:19:96:05 128.32.150.105 ds5000 piracy.Berkeley.EDU piracy
+#10 ether 8:0:20:8:71:a4 128.32.150.4 sun4 saffron.Berkeley.EDU saffron
+11 ether 8:0:20:1:48:2E 128.32.150.8   sun3 paprika.Berkeley.EDU paprika
+14 ether 8:0:20:0:5:6d  128.32.150.27  sun4 allspice.Berkeley.EDU allspice
+#15 at bottom of file
+16 ether 8:0:2b:1b:00:cd 128.32.150.20  ds5000 pepper.Berkeley.EDU pepper
+17 ether 8:0:20:0:FA:48 128.32.150.9   sun3 murder.Berkeley.EDU murder
+18 ether 8:0:20:f:27:b9 128.32.150.89  sun4 jaywalk.Berkeley.EDU jaywalk
+#19 at bottom of file
+#20 ether 8:0:2b:f:45:25 128.32.150.19  ds3100 parsley.Berkeley.EDU parsley
+#22 ether 8:0:20:8:46:35 128.32.150.16  sun4 basil.Berkeley.EDU basil
+24 ether 8:0:2b:d:78:65  128.32.150.22 ds3100 greed.Berkeley.EDU greed
+25 ether 8:0:2b:d:c0:4b  128.32.150.106 ds3100 assault.Berkeley.EDU assault 
+26 ether 8:0:20:8:17:d7 128.32.150.17  sun4 thyme.Berkeley.EDU thyme
+27 ether 8:0:20:1:cf:16 128.32.150.54  sun3 mace.Berkeley.EDU mace
+#28 is in use as ohm in cory hall
+29 ether 8:0:20:8:7:65 128.32.150.41  sun4 sassafras.Berkeley.EDU sassafras
+#30 at bottom of file
+31 ether 8:0:2b:1a:c5:88 128.32.150.95 ds5000 hijack.Berkeley.EDU hijack
+33 ether 8:0:20:d:e3:cf 128.32.150.6   sun4 sage.Berkeley.EDU sage
+#34 ether 8:0:20:1:3d:e3 128.32.150.31  sun3 fennel.Berkeley.EDU fennel
+38 ether 8:0:20:1:DC:B5 128.32.150.29  sun3 oregano.Berkeley.EDU oregano
+#39 ether  8:0:2b:10:72:83 128.32.150.39  ds3100 cardamom.Berkeley.EDU cardamom
+42 ether 8:0:2b:10:73:e8 128.32.150.104 ds3100 violence.Berkeley.EDU violence
+43 ether 8:0:2b:19:99:48 128.32.150.93 ds5000 forgery.Berkeley.EDU forgery
+44 ether 8:0:2b:1a:c0:2c 128.32.150.38 ds5000 mustard.Berkeley.EDU mustard
+#45 at bottom of file
+47 ether 8:0:20:1:BD:31 128.32.150.26 	sun3 chilli.Berkeley.EDU chilli
+48 ether 8:0:20:1:c8:25 128.32.150.74   sun3 catnip.Berkeley.EDU catnip
+49 ether 8:0:20:0:EF:48 128.32.150.34 	sun4 anise.Berkeley.EDU anise
+51 ether 8:0:2b:10:73:b9 128.32.150.85  ds3100 piquante.Berkeley.EDU piquante
+#52 ether 8:0:2b:d:c4:ba 128.32.150.113 ds3100 gluttony.Berkeley.EDU gluttony
+53 ether 8:0:20:f:28:7d 128.32.150.115	sun4 treason.Berkeley.EDU treason
+#55 ether 8:0:20:7:a2:a8 128.32.150.118	 sun4 crackle.Berkeley.EDU crackle
+57 ether 8:0:2b:24:37:64 128.32.150.2  ds5000 clove.Berkeley.EDU clove
+58 ether 8:0:2b:f:7a:a8 128.32.150.116 ds3100 vagrancy.Berkeley.EDU vagrancy
+59 ether 8:0:2b:10:72:ed 128.32.150.107 ds3100 adultery.Berkeley.EDU adultery
+60 ether 8:0:2b:1a:c0:39 128.32.150.108   ds5000 arson.Berkeley.EDU arson
+61 ether 8:0:2b:0f:0c:95 128.32.150.148 ds3100 bribery.Berkeley.EDU bribery
+62 ether 8:0:20:f:2b:77 128.32.150.102 sun4 terrorism.Berkeley.EDU terrorism
+63 ether 8:0:20:f:28:54 128.32.150.99 sun4 sabotage.Berkeley.EDU sabotage
+65 ether 8:0:20:1:4a:93 128.32.150.98 sun3 poltroonery.Berkeley.EDU poltroonery
+66 ether 8:0:20:1:48:51 128.32.150.112 sun3 espionage.Berkeley.EDU espionage
+#67 at bottom of file
+68 ether 8:0:20:8:94:35 128.32.150.100 sun4 sedition.Berkeley.EDU sedition
+#70 at bottom of file
+71 ether 8:0:2b:10:76:d5 128.32.150.125 ds3100 lsisim.Berkeley.EDU lsisim
+72 ether 8:0:2b:f:7d:9e 128.32.150.94 ds3100 heresy.Berkeley.EDU heresy
+73 ether 8:0:20:7:ac:11 128.32.150.97 sun4 larceny.Berkeley.EDU larceny
+74 ether 8:0:20:8:6a:50 128.32.150.96 sun4 joyride.Berkeley.EDU joyride
+75 ether 8:0:20:8:b8:34 128.32.150.103 sun4 tyranny.Berkeley.EDU tyranny
+76 ether 8:0:20:8:66:31 128.32.150.127 sun4 mercenary.Berkeley.EDU mercenary
+77 ether 8:0:20:0:30:90 128.32.150.130 sun4 raid1.Berkeley.EDU raid1
+#78 ether 8:0:47:0:19:37 128.32.150.124 symm soda.Berkeley.EDU soda blackmail
+79 ether 8:0:2b:19:99:40 128.32.150.5 ds5000 garlic.Berkeley.EDU garlic
+80 ether 8:0:20:9:AA:EC 128.32.150.131 sun4 boing.Berkeley.EDU boing
+#81 ether 8:0:20:1:c6:88 128.32.150.143 sun3 hoot.Berkeley.EDU hoot
+82 ether 8:0:2b:19:a5:73 128.32.150.145 ds5000 coons.Berkeley.EDU coons
+83 ether 8:0:2b:1a:bf:b3 128.32.150.139 ds5000 loiter.Berkeley.EDU loiter
+84 ether 8:0:2b:10:68:4a 128.32.150.146 ds3100 roar.Berkeley.EDU roar
+#86 is at bottom of file
+87 ether 8:0:2b:1a:c4:da 128.32.150.140 ds5000 mayhem.Berkeley.EDU mayhem
+88 ether 8:0:2b:1a:c8:50 128.32.150.92 ds5000 covet.Berkeley.EDU covet
+#89 ether 8:00:2b:1a:c4:0c 128.32.150.133 ds5000 anarchy.Berkeley.EDU anarchy
+89 ether 8:00:2b:1a:c4:0c 128.32.150.133 dsmach anarchy.Berkeley.EDU anarchy
+90 ether 8:0:2b:1a:bf:b7 128.32.150.101 ds5000 subversion.Berkeley.EDU subversion
+#91 is at bottom of file
+#92 is at bottom of file
+#
+# internets have to come last for now
+#
+15 inet  8:0:2b:3:bc:d6 128.32.240.50 sun3 tonkawa.Berkeley.EDU tonkawa
+#19 inet  8:0:2b:3:bc:d6 128.32.156.149 sun3 ponca.Berkeley.EDU ponca
+#30 inet	 8:0:2b:3:bc:d6 128.32.156.104 sun4 raid.Berkeley.EDU raid
+#45 inet  8:0:2b:3:bc:d6 128.32.156.157 spur spur1.Berkeley.EDU spur1
+#64 inet  8:0:2b:10:75:1f 128.32.240.47 ds3100 sioux.Berkeley.EDU sioux
+67 inet  8:0:2b:3:bc:d6 128.32.240.49 ds3100 king.Berkeley.EDU king
+70 inet 8:0:2b:3:bc:d6 128.32.240.48 ds3100 chisum.Berkeley.EDU chisum
+86 inet 8:0:2b:3:bc:d6 128.32.240.58 sun4 raid2.Berkeley.EDU raid2
+50 ether 8:0:2b:ff:bb:bb 128.32.199.199 ds5000 notused.Berkeley.EDU notused
+93 ether 8:0:20:1:52:9c 128.32.150.138 sun3 jealousy.Berkeley.EDU jealousy
+94 ether 08:00:2b:10:74:bc 128.32.150.120 ds3100 babylon.Berkeley.EDU babylon
+#92 is at bottom of file
+91 inet 8:0:2b:3:bc:d6 128.32.240.96 sun4 chenonceau.Berkeley.EDU chenonceau
+92 inet  8:0:2b:3:bc:d6  128.32.240.88 ds5000 aix.Berkeley.EDU aix

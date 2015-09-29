@@ -1,0 +1,874 @@
+head     9.1;
+branch   ;
+access   ;
+symbols  ds3100:9.1 sun3:9.1 sprited:9.1.1 sun4nw:9.1 symm:9.1 spur:9.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.1
+date     90.10.08.13.18.17;  author mendel;  state Exp;
+branches 9.1.1.1;
+next     9.0;
+
+9.0
+date     89.09.12.15.11.10;  author douglis;  state Stable;
+branches ;
+next     8.7;
+
+8.7
+date     89.08.21.15.29.51;  author mendel;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.05.30.16.11.44;  author jhh;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.03.15.14.55.40;  author brent;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.02.28.08.50.00;  author brent;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.02.14.10.56.30;  author jhh;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.01.06.11.19.56;  author jhh;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.01.04.08.52.23;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.21.11;  author douglis;  state Stable;
+branches ;
+next     7.0;
+
+7.0
+date     88.11.11.15.32.31;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.16.56;  author brent;  state Stable;
+branches ;
+next     1.5;
+
+1.5
+date     88.06.15.17.23.15;  author douglis;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.06.14.22.10.17;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.06.08.15.00.24;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.04.11.10.13.28;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.04.10.36.17;  author brent;  state Exp;
+branches ;
+next     ;
+
+9.1.1.1
+date     91.11.15.17.02.56;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@The notifier module for use by device drivers
+@
+
+
+9.1
+log
+@Changed name to fsutilNotify.c
+Changed include to use <> rather than "" and added function prototypes.
+Fixed lint.
+@
+text
+@/* 
+ * fsNotify.c --
+ *
+ * Routines to handle notification of processes waiting on handles.
+ * Each handle has a few "wait lists" associated with it that contain
+ * state for each process waiting on a file, each list is for a different
+ * kind of waiter, ie. readers, writers, lockers.  Processes get stuck into
+ * these wait lists when an operation on the file would block for some reason.
+ * When the file unblocks, there are other routines to call to notify all
+ * the processes that have been added to the waiting lists.
+ *
+ * Copyright (C) 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/fs.mendel/RCS/fsNotify.c,v 1.1 90/01/16 17:11:05 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsNameOps.h>
+#include <proc.h>
+#include <sync.h>
+#include <rpc.h>
+#include <net.h>
+
+#include <stdio.h>
+
+static Sync_Lock notifyLock = Sync_LockInitStatic("Fs:notifyLock");
+#define LOCKPTR (&notifyLock)
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_WaitListInsert --
+ *
+ *	Add a process to a list of waiters.  This handles the case where
+ *	the process is already on the list.
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	Calls malloc and adds to the list.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+Fsutil_WaitListInsert(list, waitPtr)
+    List_Links *list;		/* List to add waiter to */
+    Sync_RemoteWaiter *waitPtr;	/* Info about process for remote waiting */
+{
+    register Sync_RemoteWaiter *myWaitPtr;
+
+    LOCK_MONITOR;
+
+    LIST_FORALL(list, (List_Links *) myWaitPtr) {
+	/*
+	 * If already on list then update wait token.
+	 */
+	if (myWaitPtr->pid == waitPtr->pid &&
+	    myWaitPtr->hostID == waitPtr->hostID) {
+	    myWaitPtr->waitToken = waitPtr->waitToken;
+	    UNLOCK_MONITOR;
+	    return;
+	}
+    }
+
+    /*
+     * Not on the list so put it there.
+     */
+
+    myWaitPtr = (Sync_RemoteWaiter *) malloc(sizeof(Sync_RemoteWaiter));
+    *myWaitPtr = *waitPtr;
+    List_Insert((List_Links *)myWaitPtr, LIST_ATREAR(list));
+
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_FastWaitListInsert --
+ *
+ *	An un-monitored version of Fsutil_WaitListInsert that depends
+ *	on handle locking, or something, by higher levels for
+ *	synchronization.  Note: the malloc is needed because
+ *	of select.  Regular read and write use a Sync_RemoteWaiter
+ *	struct declared in Fs_Read or Fs_Write, and it won't go
+ *	away while the pipe reader or writer waits.  However, with
+ *	select the waiter might go away before we notify it, so
+ *	we have to malloc and copy the wait structure.
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	Calls malloc and adds to the list.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+Fsutil_FastWaitListInsert(list, waitPtr)
+    List_Links *list;		/* List to add waiter to */
+    Sync_RemoteWaiter *waitPtr;	/* Info about process for remote waiting */
+{
+    register Sync_RemoteWaiter *myWaitPtr;
+
+    LIST_FORALL(list, (List_Links *) myWaitPtr) {
+	/*
+	 * If already on list then update wait token.
+	 */
+	if (myWaitPtr->pid == waitPtr->pid &&
+	    myWaitPtr->hostID == waitPtr->hostID) {
+	    myWaitPtr->waitToken = waitPtr->waitToken;
+	    return;
+	}
+    }
+
+    /*
+     * Not on the list so put it there.
+     */
+
+    myWaitPtr = (Sync_RemoteWaiter *) malloc(sizeof(Sync_RemoteWaiter));
+    *myWaitPtr = *waitPtr;
+    List_Insert((List_Links *)myWaitPtr, LIST_ATREAR(list));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_WaitListNotify --
+ *
+ *      Notify all the processes in a wait-list.  If the process is on a
+ *      remote host then an RPC is done to that host.
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *      This results in a call to Sync_ProcWakeup on the host of the
+ *      waiting process.  The list is emptied with each item being freed
+ *      with free.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+Fsutil_WaitListNotify(list)
+    register List_Links *list;	/* List of waiting processes to notify */
+{
+    register Sync_RemoteWaiter *waitPtr;
+
+    LOCK_MONITOR;
+    while ( ! List_IsEmpty(list)) {
+	waitPtr = (Sync_RemoteWaiter *)List_First(list);
+	if (waitPtr->hostID != rpc_SpriteID) {
+	    /*
+	     * Contact the remote host and get it to notify the waiter.
+	     */
+	    if (waitPtr->hostID > NET_NUM_SPRITE_HOSTS) {
+		printf( "Fsutil_WaitListNotify bad hostID %d.\n",
+			  waitPtr->hostID);
+	    } else {
+		(void)Sync_RemoteNotify(waitPtr);
+	    }
+	} else {
+	    /*
+	     * Mark the local process as runable.
+	     */
+	    Sync_ProcWakeup(waitPtr->pid, waitPtr->waitToken);
+	}
+	List_Remove((List_Links *)waitPtr);
+	free((Address)waitPtr);
+    }
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_FastWaitListNotify --
+ *
+ *      A faster version of Fsutil_WaitListNotify that depends on higher
+ *	level synchronization like handle locking.
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *      This results in a call to Sync_ProcWakeup on the host of the
+ *      waiting process.  The list is emptied with each item being freed
+ *      with free.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+Fsutil_FastWaitListNotify(list)
+    register List_Links *list;	/* List of waiting processes to notify */
+{
+    register Sync_RemoteWaiter *waitPtr;
+
+    while ( ! List_IsEmpty(list)) {
+	waitPtr = (Sync_RemoteWaiter *)List_First(list);
+	if (waitPtr->hostID != rpc_SpriteID) {
+	    /*
+	     * Contact the remote host and get it to notify the waiter.
+	     */
+	    (void)Sync_RemoteNotify(waitPtr);
+	} else {
+	    /*
+	     * Mark the local process as runable.
+	     */
+	    Sync_ProcWakeup(waitPtr->pid, waitPtr->waitToken);
+	}
+	List_Remove((List_Links *)waitPtr);
+	free((Address)waitPtr);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_WaitListRemove --
+ *
+ *	Remove a process from the list of waiters.
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	Calls free and deletes from the list.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+Fsutil_WaitListRemove(list, waitPtr)
+    List_Links *list;		/* List to remove waiter from. */
+    Sync_RemoteWaiter *waitPtr;	/* Info about process for remote waiting */
+{
+    register Sync_RemoteWaiter *myWaitPtr;
+    register Sync_RemoteWaiter *nextPtr;
+
+    LOCK_MONITOR;
+
+    nextPtr = (Sync_RemoteWaiter *) List_First(list);
+    while (! List_IsAtEnd(list, (List_Links *)nextPtr) ) {
+	myWaitPtr = nextPtr;
+	nextPtr = (Sync_RemoteWaiter *)List_Next((List_Links *)myWaitPtr);
+	if (myWaitPtr->pid == waitPtr->pid &&
+	    myWaitPtr->hostID == waitPtr->hostID) {
+	    List_Remove((List_Links *) myWaitPtr);
+	    free((Address) myWaitPtr);
+	}
+    }
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_WaitListDelete --
+ *
+ *	Delete and Free all entries from a wait list.  This is used
+ *	when removing handles.
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	Calls free and deletes from the list.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+Fsutil_WaitListDelete(list)
+    List_Links *list;		/* List to clean up. */
+{
+    register Sync_RemoteWaiter *myWaitPtr;
+
+    while (!List_IsEmpty(list)) {
+	myWaitPtr = (Sync_RemoteWaiter *)List_First(list);
+	List_Remove((List_Links *) myWaitPtr);
+	free((Address) myWaitPtr);
+    }
+}
+
+@
+
+
+9.1.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fsutil/fsutilNotify.c,v 9.1 90/10/08 13:18:17 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsutil/RCS/fsNotify.c,v 8.7 89/08/21 15:29:51 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d21 10
+a30 8
+#include "sprite.h"
+#include "fs.h"
+#include "fsutil.h"
+#include "fsNameOps.h"
+#include "proc.h"
+#include "sync.h"
+#include "rpc.h"
+#include "net.h"
+@
+
+
+8.7
+log
+@
+
+
+Break up fs into many modules.    
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsNotify.c,v 8.6 89/05/30 16:11:44 jhh Exp $ SPRITE (Berkeley)";
+@
+
+
+8.6
+log
+@Removed call to Sync_LockRegister
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsNotify.c,v 8.5 89/03/15 14:55:40 brent Exp Locker: jhh $ SPRITE (Berkeley)";
+d23 2
+a24 2
+#include "fsInt.h"
+#include "fsOpTable.h"
+d37 1
+a37 1
+ * FsWaitListInsert --
+d52 1
+a52 1
+FsWaitListInsert(list, waitPtr)
+d86 1
+a86 1
+ * FsFastWaitListInsert --
+d88 1
+a88 1
+ *	An un-monitored version of FsWaitListInsert that depends
+d107 1
+a107 1
+FsFastWaitListInsert(list, waitPtr)
+d136 1
+a136 1
+ * FsWaitListNotify --
+d153 1
+a153 1
+FsWaitListNotify(list)
+d166 1
+a166 1
+		printf( "FsWaitListNotify bad hostID %d.\n",
+d186 1
+a186 1
+ * FsFastWaitListNotify --
+d188 1
+a188 1
+ *      A faster version of FsWaitListNotify that depends on higher
+d203 1
+a203 1
+FsFastWaitListNotify(list)
+d230 1
+a230 1
+ * FsWaitListRemove --
+d244 1
+a244 1
+FsWaitListRemove(list, waitPtr)
+d269 1
+a269 1
+ * FsWaitListDelete --
+d284 1
+a284 1
+FsWaitListDelete(list)
+@
+
+
+8.5
+log
+@A partial back-out of the recent changes to allow waitlist notification
+from an interrupt handler.  Master-lock synchronization is still used,
+but there are races (apparently) when trying to do Proc_CallFuncs
+that call Sync_RemoteNotify.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsNotify.c,v 8.3 89/02/14 10:56:30 jhh Exp $ SPRITE (Berkeley)";
+a58 1
+    Sync_LockRegister(&notifyLock);
+@
+
+
+8.4
+log
+@Changed synchronization to be with a MASTER_LOCK so that
+device notifications can be done directly instead of
+indirectly via a Proc_ServerProc
+@
+text
+@a29 6
+/*
+ * Access to wait lists are either synchronized by higher levels
+ * (with HandleLocks, for example) or they are synchronized with
+ * the following MASTER_LOCK.  This is used for device notifications.
+ */
+#ifdef notdef
+a31 3
+#endif notdef
+
+static Sync_Semaphore notifyMutex = Sync_SemInitStatic("Fs:notifyMutex");
+d40 1
+a40 10
+ *	the process is already on the list.  This is only called from
+ *	process level code so it is ok for it to hold a MASTER lock
+ *	and call malloc, which has a monitor lock.  What would cause deadlock
+ *	is a call to free from an interrupt handler if the process holding
+ *	the free monitor lock was the one interrupted:
+ *		Hold malloc/free monitor
+ *		* INTERRUPT *
+ *		grab notify master lock
+ *		block on free monitor lock
+ *		DEADLOCK
+d58 1
+a58 1
+    MASTER_LOCK(&notifyMutex);
+d68 1
+a68 1
+	    MASTER_UNLOCK(&notifyMutex);
+d81 1
+a81 1
+    MASTER_UNLOCK(&notifyMutex);
+a113 2
+    MASTER_LOCK(&notifyMutex);
+
+a120 1
+	    MASTER_UNLOCK(&notifyMutex);
+a131 2
+
+    MASTER_UNLOCK(&notifyMutex);
+d159 3
+a161 3
+    MASTER_LOCK(&notifyMutex);
+
+    LIST_FORALL(list, (List_Links *)waitPtr) {
+a164 2
+	     * UGLY, unlock monitor during RPC.  The monitor really
+	     * protects free/malloc calls.
+a165 2
+
+	    MASTER_UNLOCK(&notifyMutex);
+a171 1
+	    MASTER_LOCK(&notifyMutex);
+a177 4
+#ifdef notdef
+	/*
+	 * The free() call can cause deadlock.
+	 */
+a179 1
+#endif notdef
+d181 1
+a181 1
+    MASTER_UNLOCK(&notifyMutex);
+d209 2
+a210 3
+    MASTER_LOCK(&notifyMutex);
+
+    LIST_FORALL(list, (List_Links *)waitPtr) {
+a214 1
+	    MASTER_UNLOCK(&notifyMutex);
+a215 1
+	    MASTER_LOCK(&notifyMutex);
+a221 1
+#ifdef notdef
+a223 1
+#endif notdef
+a224 1
+    MASTER_UNLOCK(&notifyMutex);
+d252 1
+a252 1
+    MASTER_LOCK(&notifyMutex);
+d264 1
+a264 1
+    MASTER_UNLOCK(&notifyMutex);
+a289 1
+    MASTER_LOCK(&notifyMutex);
+a294 1
+    MASTER_UNLOCK(&notifyMutex);
+@
+
+
+8.3
+log
+@Update Sync_Lock initialization and registration
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsNotify.c,v 8.2 89/01/06 11:19:56 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d30 6
+d38 1
+d40 2
+d49 10
+a58 1
+ *	the process is already on the list.
+d76 1
+a76 1
+    LOCK_MONITOR;
+d86 1
+a86 1
+	    UNLOCK_MONITOR;
+d99 1
+a99 1
+    UNLOCK_MONITOR;
+d132 2
+d141 1
+d153 2
+d182 3
+a184 3
+    LOCK_MONITOR;
+    while ( ! List_IsEmpty(list)) {
+	waitPtr = (Sync_RemoteWaiter *)List_First(list);
+d188 2
+d191 2
+d199 1
+d206 4
+d212 1
+d214 1
+a214 1
+    UNLOCK_MONITOR;
+d242 3
+a244 2
+    while ( ! List_IsEmpty(list)) {
+	waitPtr = (Sync_RemoteWaiter *)List_First(list);
+d249 1
+d251 1
+d258 1
+d261 1
+d263 1
+d291 1
+a291 1
+    LOCK_MONITOR;
+d303 1
+a303 1
+    UNLOCK_MONITOR;
+d329 1
+d335 1
+@
+
+
+8.2
+log
+@new Sync_Lock definition
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsNotify.c,v 8.1 89/01/04 08:52:23 brent Exp Locker: jhh $ SPRITE (Berkeley)";
+d30 1
+a30 1
+static Sync_Lock notifyLock = SYNC_LOCK_INIT_STATIC();
+d59 1
+@
+
+
+8.1
+log
+@Fixed use of LIST_FORALL so things are not free'ed up from
+underneath this loop.  Caused bugs in multi-processors.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsNotify.c,v 7.0 88/11/11 15:32:31 brent Exp $ SPRITE (Berkeley)";
+d30 1
+a30 1
+static Sync_Lock notifyLock;
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsNotify.c,v 7.0 88/11/11 15:32:31 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d249 1
+d252 5
+a256 1
+    LIST_FORALL(list, (List_Links *) myWaitPtr) {
+d289 2
+a290 1
+    LIST_FORALL(list, (List_Links *) myWaitPtr) {
+@
+
+
+7.0
+log
+@New version for conversion to new C library
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsNotify.c,v 6.0 88/08/11 12:16:56 brent Stable Locker: brent $ SPRITE (Berkeley)";
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: fsNotify.c,v 1.5 88/06/15 17:23:15 douglis Exp $ SPRITE (Berkeley)";
+d46 1
+a46 1
+ *	Calls Mem_Alloc and adds to the list.
+d76 1
+a76 1
+    myWaitPtr = (Sync_RemoteWaiter *) Mem_Alloc(sizeof(Sync_RemoteWaiter));
+d90 1
+a90 1
+ *	synchronization.  Note: the Mem_Alloc is needed because
+d101 1
+a101 1
+ *	Calls Mem_Alloc and adds to the list.
+d128 1
+a128 1
+    myWaitPtr = (Sync_RemoteWaiter *) Mem_Alloc(sizeof(Sync_RemoteWaiter));
+d147 1
+a147 1
+ *      with Mem_Free.
+d166 1
+a166 1
+		Sys_Panic(SYS_WARNING, "FsWaitListNotify bad hostID %d.\n",
+d178 1
+a178 1
+	Mem_Free((Address)waitPtr);
+d197 1
+a197 1
+ *      with Mem_Free.
+d222 1
+a222 1
+	Mem_Free((Address)waitPtr);
+d238 1
+a238 1
+ *	Calls Mem_Free and deletes from the list.
+d255 1
+a255 1
+	    Mem_Free((Address) myWaitPtr);
+d273 1
+a273 1
+ *	Calls Mem_Free and deletes from the list.
+d286 1
+a286 1
+	Mem_Free((Address) myWaitPtr);
+@
+
+
+1.5
+log
+@Changed FATAL panic to WARNING.  The problem should now be fixed
+anyway by implementing waiting on locks correctly.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: fsNotify.c,v 1.4 88/06/14 22:10:17 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+1.4
+log
+@check for bogus waitPtr->hostID (checked in by FD).
+,
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: fsNotify.c,v 1.3 88/06/08 15:00:24 brent Exp $ SPRITE (Berkeley)";
+d166 4
+a169 2
+		Sys_Panic(SYS_FATAL, "FsWaitListNotify bad hostID %d (continue-able)\n",
+		waitPtr->hostID);
+a170 1
+	    (void)Sync_RemoteNotify(waitPtr);
+@
+
+
+1.3
+log
+@Aded FsWaitListDelete for cleaning up when handels get closed
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: fsNotify.c,v 1.2 88/04/11 10:13:28 brent Exp $ SPRITE (Berkeley)";
+d28 1
+d165 4
+@
+
+
+1.2
+log
+@Added faster versions of wait list routines for use by pipes
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: fsNotify.c,v 1.1 88/04/04 10:36:17 brent Exp $ SPRITE (Berkeley)";
+d254 30
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: fsNotify.c,v 5.1 87/09/29 10:25:00 nelson Exp $ SPRITE (Berkeley)";
+d85 50
+d153 1
+a153 1
+    List_Links *list;		/* List of waiting processes to notify */
+d155 1
+a155 1
+    Sync_RemoteWaiter *waitPtr;
+d175 43
+@

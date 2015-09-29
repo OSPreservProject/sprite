@@ -1,0 +1,35 @@
+Mggraph	ggraph.c	/^main (argc, argv)$/
+calc_legend	legend.c	/^calc_legend(plotx, ploty)$/
+calc_text	set.c	/^calc_text(xo, yo)$/
+draw_symbol	symbols.c	/^draw_symbol(symtype, symx, symy)$/
+drawaxis	axis.c	/^drawaxis()$/
+drawctext	ggraph.c	/^drawctext (x, y, font, size, string, just)$/
+drawframe	axis.c	/^drawframe()$/
+drawlbox	legend.c	/^drawlbox()$/
+drawlegend	legend.c	/^drawlegend()$/
+drawline	ggraph.c	/^drawline (brush, x1, y1, x2, y2)$/
+drawvtext	ggraph.c	/^drawvtext (x, y, font, size, string, charh)$/
+findcmd	commands.c	/^findcmd (cmdstr)$/
+findline	commands.c	/^findline (line_name)$/
+globalarg	commands.c	/^globalarg()$/
+gremlinheader	ggraph.c	/^gremlinheader () {$/
+hist	hist.c	/^hist ()$/
+linearg	commands.c	/^linearg(command_arg, line_field)$/
+onoff	commands.c	/^onoff(command_arg)$/
+plotpoints	points.c	/^plotpoints () {$/
+putboxpoint	symbols.c	/^putboxpoint (x, y)$/
+putcboxpoint	symbols.c	/^putcboxpoint (x, y)$/
+putcdiapoint	symbols.c	/^putcdiapoint (x, y)$/
+putcirclepoint	symbols.c	/^putcirclepoint (x, y)$/
+putcrosspoint	symbols.c	/^putcrosspoint (x, y)$/
+putdiapoint	symbols.c	/^putdiapoint (x, y)$/
+puttripoint	symbols.c	/^puttripoint (x, y)$/
+pututripoint	symbols.c	/^pututripoint (x, y)$/
+putxboxpoint	symbols.c	/^putxboxpoint (x, y)$/
+putxpoint	symbols.c	/^putxpoint (x, y)$/
+readcmds	commands.c	/^readcmds (infile)$/
+readpoints	points.c	/^int     readpoints (infile, line_name)$/
+rreadcmds	commands.c	/^rreadcmds (readfile)$/
+setdefault	set.c	/^setdefault () {$/
+setlim	set.c	/^setlim () {$/
+strip	commands.c	/^strip(strip_line)$/

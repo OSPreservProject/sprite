@@ -1,0 +1,11 @@
+loMem.s
+mach.h
+machAddrs.h
+machAsm.s
+machCode.c
+machConst.h
+machInt.h
+machMon.c
+machMon.h
+machTypes.h
+md.mk.sed

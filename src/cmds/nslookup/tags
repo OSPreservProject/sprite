@@ -1,0 +1,39 @@
+Calloc	subr.c	/^Calloc(num, size)$/
+DecodeError	subr.c	/^DecodeError(result)$/
+DecodeType	subr.c	/^DecodeType(type)$/
+FindHostInfo	getinfo.c	/^FindHostInfo(nsAddrPtr, address, len, hostPtr)$/
+Finger	list.c	/^Finger(string, putToFile)$/
+Fprint_query	debug.c	/^Fprint_query(msg, eom, printHeader,file)$/
+FreeHostInfoPtr	getinfo.c	/^FreeHostInfoPtr(hostPtr)$/
+GetAnswer	getinfo.c	/^GetAnswer(nsAddrPtr, queryType, msg, msglen, iquer/
+GetHostDomain	getinfo.c	/^GetHostDomain(nsAddrPtr, queryClass, queryType, na/
+GetHostInfo	getinfo.c	/^GetHostInfo(nsAddrPtr, queryClass, queryType, name/
+GetHostList	getinfo.c	/^GetHostList(nsAddrPtr, queryType, name, defaultNam/
+GetShort	getinfo.c	/^#define GetShort(cp)	_getshort(cp); cp += sizeof(u/
+IntrHandler	subr.c	/^IntrHandler()$/
+ListHosts	list.c	/^ListHosts(string, putToFile)$/
+LocalServer	main.c	/^LocalServer(defaultPtr)$/
+LookupHost	main.c	/^LookupHost(string, putToFile)$/
+LookupHostWithServer	main.c	/^LookupHostWithServer(string, putToFile)$/
+Mmain	main.c	/^main(argc, argv)$/
+OpenFile	subr.c	/^OpenFile(string, file)$/
+PrintHelp	main.c	/^PrintHelp()$/
+PrintHostInfo	subr.c	/^PrintHostInfo(file, title, hp)$/
+PrintListInfo	list.c	/^PrintListInfo(file, msg, eom, queryType)$/
+Print_cdname	debug.c	/^Print_cdname(cp, msg, eom, file)$/
+Print_cdname2	debug.c	/^Print_cdname2(cp, msg, eom, file)$/
+Print_cdname_sub	debug.c	/^Print_cdname_sub(cp, msg, eom, file, format)$/
+Print_query	debug.c	/^Print_query(msg, eom, printHeader)$/
+Print_rr	debug.c	/^Print_rr(cp, msg, eom, file)$/
+STRIP_DOMAIN	list.c	/^#define STRIP_DOMAIN(string) if((dot = index(strin/
+SendRequest	send.c	/^SendRequest(nsAddrPtr, buf, buflen, answer, anslen/
+SetDefaultServer	main.c	/^SetDefaultServer(string, local)$/
+SetOption	main.c	/^SetOption(option)$/
+ShowOptions	main.c	/^ShowOptions(special)$/
+StringToClass	subr.c	/^StringToClass(class, dflt)$/
+StringToType	subr.c	/^StringToType(type, dflt)$/
+Usage	main.c	/^Usage()$/
+ViewList	list.c	/^ViewList(string)$/
+res_re_init	main.c	/^res_re_init()$/
+res_skip	skip.c	/^res_skip(msg, numFieldsToSkip, eom)$/
+res_skip_rr	skip.c	/^res_skip_rr(cp, eom)$/

@@ -1,0 +1,73 @@
+'\"
+'\" Nice macros to have.
+'\" To install an entry in the index, use
+'\"
+'\" .Ix <index number> { def | ref } <entry>
+'\"
+'\" (Ix == IndeX) The first argument should be "def" if it is the definition
+'\" of the entry (the main reference point for it) and "ref" if it is merely
+'\" a reference to the concept. Each entry may be composed of up to four
+'\" parts. The index will be sorted on each part in turn. I.e. given
+'\" .Ix def "Definitions" "RootWindow"
+'\" .Ix def "Definitions" "Tile"
+'\" .Ix def "Data"
+'\"
+'\" The index will look like this:
+'\"	Data <reference-list>
+'\"	Definitions
+'\"		Tile <reference-list>
+'\"		RootWindow <reference-list>
+'\"
+'\" Any number of indices may be created. Each will be sorted and printed
+'\" separately. To give a title to a particular index, use
+'\"
+'\" .Tx <index number> <title>
+'\"
+'\" An untitled index's title defaults to "Index".
+'\"
+'\"
+'\" To note a reference to a section, use
+'\"
+'\" .Rm <reference-number> <section-number>
+'\"
+'\" Where <reference-number> is a number you've assigned to the reference.
+'\" When you get to the section in question, use
+'\"
+'\" .Rd <reference-number>
+'\"
+'\" Mismatching section numbers will be flagged.
+'\"
+'\"	$Id: tmac.index,v 1.3 89/01/08 17:56:07 adam Exp $
+'\"
+.de Ix
+.if \\n(.$==6 \!X ENTRY \\n% \\$1 \\$2 "\\$3" "\\$4" "\\$5" "\\$6"
+.if \\n(.$==5 \!X ENTRY \\n% \\$1 \\$2 "\\$3" "\\$4" "\\$5"
+.if \\n(.$==4 \!X ENTRY \\n% \\$1 \\$2 "\\$3" "\\$4"
+.if \\n(.$==3 \!X ENTRY \\n% \\$1 \\$2 "\\$3"
+.if \\n(.$<=2 .tm Missing arguments for Ix, line \\n(.c
+..
+.de Tx
+.ie \\n(.$!=2 .tm Improper Tx usage on line \\n(.c
+.el \!X TITLE \\$1 \\$2
+..
+.de Rm
+\!X REF \\n(.c \\$1 \\$2
+..
+.de Rd
+\!X DEF \\n(.c \\$1 \\*(SN
+..
+.am EM
+.ec 
+.if !""*(LH" \!X HL *(LH
+.if !""*(CH" \!X HC *(CH
+.if !""*(RH" \!X HR *(RH
+.if !""*(LF" \!X FL *(LF
+.if !""*(CF" \!X FC *(CF
+.if !""*(RF" \!X FR *(RF
+.if !""*(O1" \!X HO *(O1
+.if !""*(E2" \!X HE *(E2
+.if !""*(O3" \!X FO *(O3
+.if !""*(E4" \!X FE *(E4
+\!X PN n%
+.ec \\
+..

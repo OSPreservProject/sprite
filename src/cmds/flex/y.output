@@ -1,0 +1,738 @@
+
+state 0
+	$accept : _goal $end 
+	initlex : _    (2)
+
+	.  reduce 2
+
+	goal  goto 1
+	initlex  goto 2
+
+state 1
+	$accept :  goal_$end 
+
+	$end  accept
+	.  error
+
+
+state 2
+	goal :  initlex_sect1 sect1end sect2 initforrule 
+	sect1 : _    (4)
+
+	error  shift 4
+	.  reduce 4
+
+	sect1  goto 3
+
+state 3
+	goal :  initlex sect1_sect1end sect2 initforrule 
+	sect1 :  sect1_startconddecl WHITESPACE namelist1 \n 
+
+	SECTEND  shift 7
+	SCDECL  shift 8
+	XSCDECL  shift 9
+	.  error
+
+	sect1end  goto 5
+	startconddecl  goto 6
+
+state 4
+	sect1 :  error_\n 
+
+	\n  shift 10
+	.  error
+
+
+state 5
+	goal :  initlex sect1 sect1end_sect2 initforrule 
+	sect2 : _    (13)
+
+	.  reduce 13
+
+	sect2  goto 11
+
+state 6
+	sect1 :  sect1 startconddecl_WHITESPACE namelist1 \n 
+
+	WHITESPACE  shift 12
+	.  error
+
+
+state 7
+	sect1end :  SECTEND_    (6)
+
+	.  reduce 6
+
+
+state 8
+	startconddecl :  SCDECL_    (7)
+
+	.  reduce 7
+
+
+state 9
+	startconddecl :  XSCDECL_    (8)
+
+	.  reduce 8
+
+
+state 10
+	sect1 :  error \n_    (5)
+
+	.  reduce 5
+
+
+state 11
+	goal :  initlex sect1 sect1end sect2_initforrule 
+	sect2 :  sect2_initforrule flexrule \n 
+	initforrule : _    (14)
+
+	.  reduce 14
+
+	initforrule  goto 13
+
+state 12
+	sect1 :  sect1 startconddecl WHITESPACE_namelist1 \n 
+
+	error  shift 16
+	NAME  shift 15
+	.  error
+
+	namelist1  goto 14
+
+state 13
+	goal :  initlex sect1 sect1end sect2 initforrule_    (1)
+	sect2 :  sect2 initforrule_flexrule \n 
+
+	error  shift 22
+	CHAR  shift 32
+	PREVCCL  shift 29
+	EOF_OP  shift 21
+	^  shift 19
+	<  shift 23
+	.  shift 27
+	"  shift 30
+	(  shift 31
+	[  shift 33
+	.  reduce 1
+
+	flexrule  goto 17
+	scon  goto 18
+	re  goto 20
+	series  goto 25
+	re2  goto 24
+	singleton  goto 26
+	fullccl  goto 28
+
+state 14
+	sect1 :  sect1 startconddecl WHITESPACE namelist1_\n 
+	namelist1 :  namelist1_WHITESPACE NAME 
+
+	WHITESPACE  shift 35
+	\n  shift 34
+	.  error
+
+
+state 15
+	namelist1 :  NAME_    (10)
+
+	.  reduce 10
+
+
+state 16
+	namelist1 :  error_    (11)
+
+	.  reduce 11
+
+
+state 17
+	sect2 :  sect2 initforrule flexrule_\n 
+
+	\n  shift 36
+	.  error
+
+
+state 18
+	flexrule :  scon_^ re eol 
+	flexrule :  scon_re eol 
+	flexrule :  scon_EOF_OP 
+
+	CHAR  shift 32
+	PREVCCL  shift 29
+	EOF_OP  shift 39
+	^  shift 37
+	.  shift 27
+	"  shift 30
+	(  shift 31
+	[  shift 33
+	.  error
+
+	re  goto 38
+	series  goto 25
+	re2  goto 24
+	singleton  goto 26
+	fullccl  goto 28
+
+state 19
+	flexrule :  ^_re eol 
+
+	CHAR  shift 32
+	PREVCCL  shift 29
+	.  shift 27
+	"  shift 30
+	(  shift 31
+	[  shift 33
+	.  error
+
+	re  goto 40
+	series  goto 25
+	re2  goto 24
+	singleton  goto 26
+	fullccl  goto 28
+
+state 20
+	flexrule :  re_eol 
+	re :  re_| series 
+	re2 :  re_/ 
+	eol : _    (27)
+
+	$  shift 44
+	|  shift 42
+	/  shift 43
+	.  reduce 27
+
+	eol  goto 41
+
+state 21
+	flexrule :  EOF_OP_    (20)
+
+	.  reduce 20
+
+
+state 22
+	flexrule :  error_    (21)
+
+	.  reduce 21
+
+
+state 23
+	scon :  <_namelist2 > 
+
+	error  shift 47
+	NAME  shift 46
+	.  error
+
+	namelist2  goto 45
+
+state 24
+	re :  re2_series 
+
+	CHAR  shift 32
+	PREVCCL  shift 29
+	.  shift 27
+	"  shift 30
+	(  shift 31
+	[  shift 33
+	.  error
+
+	series  goto 48
+	singleton  goto 26
+	fullccl  goto 28
+
+state 25
+	re :  series_    (30)
+	series :  series_singleton 
+
+	CHAR  shift 32
+	PREVCCL  shift 29
+	.  shift 27
+	"  shift 30
+	(  shift 31
+	[  shift 33
+	.  reduce 30
+
+	singleton  goto 49
+	fullccl  goto 28
+
+state 26
+	series :  singleton_    (33)
+	singleton :  singleton_* 
+	singleton :  singleton_+ 
+	singleton :  singleton_? 
+	singleton :  singleton_{ NUMBER , NUMBER } 
+	singleton :  singleton_{ NUMBER , } 
+	singleton :  singleton_{ NUMBER } 
+
+	*  shift 50
+	+  shift 51
+	?  shift 52
+	{  shift 53
+	.  reduce 33
+
+
+state 27
+	singleton :  ._    (40)
+
+	.  reduce 40
+
+
+state 28
+	singleton :  fullccl_    (41)
+
+	.  reduce 41
+
+
+state 29
+	singleton :  PREVCCL_    (42)
+
+	.  reduce 42
+
+
+state 30
+	singleton :  "_string " 
+	string : _    (52)
+
+	.  reduce 52
+
+	string  goto 54
+
+state 31
+	singleton :  (_re ) 
+
+	CHAR  shift 32
+	PREVCCL  shift 29
+	.  shift 27
+	"  shift 30
+	(  shift 31
+	[  shift 33
+	.  error
+
+	re  goto 55
+	series  goto 25
+	re2  goto 24
+	singleton  goto 26
+	fullccl  goto 28
+
+state 32
+	singleton :  CHAR_    (45)
+
+	.  reduce 45
+
+
+state 33
+	fullccl :  [_ccl ] 
+	fullccl :  [_^ ccl ] 
+	ccl : _    (50)
+
+	^  shift 57
+	.  reduce 50
+
+	ccl  goto 56
+
+state 34
+	sect1 :  sect1 startconddecl WHITESPACE namelist1 \n_    (3)
+
+	.  reduce 3
+
+
+state 35
+	namelist1 :  namelist1 WHITESPACE_NAME 
+
+	NAME  shift 58
+	.  error
+
+
+state 36
+	sect2 :  sect2 initforrule flexrule \n_    (12)
+
+	.  reduce 12
+
+
+state 37
+	flexrule :  scon ^_re eol 
+
+	CHAR  shift 32
+	PREVCCL  shift 29
+	.  shift 27
+	"  shift 30
+	(  shift 31
+	[  shift 33
+	.  error
+
+	re  goto 59
+	series  goto 25
+	re2  goto 24
+	singleton  goto 26
+	fullccl  goto 28
+
+state 38
+	flexrule :  scon re_eol 
+	re :  re_| series 
+	re2 :  re_/ 
+	eol : _    (27)
+
+	$  shift 44
+	|  shift 42
+	/  shift 43
+	.  reduce 27
+
+	eol  goto 60
+
+state 39
+	flexrule :  scon EOF_OP_    (19)
+
+	.  reduce 19
+
+
+state 40
+	flexrule :  ^ re_eol 
+	re :  re_| series 
+	re2 :  re_/ 
+	eol : _    (27)
+
+	$  shift 44
+	|  shift 42
+	/  shift 43
+	.  reduce 27
+
+	eol  goto 61
+
+state 41
+	flexrule :  re eol_    (18)
+
+	.  reduce 18
+
+
+state 42
+	re :  re |_series 
+
+	CHAR  shift 32
+	PREVCCL  shift 29
+	.  shift 27
+	"  shift 30
+	(  shift 31
+	[  shift 33
+	.  error
+
+	series  goto 62
+	singleton  goto 26
+	fullccl  goto 28
+
+state 43
+	re2 :  re /_    (31)
+
+	.  reduce 31
+
+
+state 44
+	eol :  $_    (26)
+
+	.  reduce 26
+
+
+state 45
+	scon :  < namelist2_> 
+	namelist2 :  namelist2_, NAME 
+
+	>  shift 63
+	,  shift 64
+	.  error
+
+
+state 46
+	namelist2 :  NAME_    (24)
+
+	.  reduce 24
+
+
+state 47
+	namelist2 :  error_    (25)
+
+	.  reduce 25
+
+
+state 48
+	re :  re2 series_    (29)
+	series :  series_singleton 
+
+	CHAR  shift 32
+	PREVCCL  shift 29
+	.  shift 27
+	"  shift 30
+	(  shift 31
+	[  shift 33
+	.  reduce 29
+
+	singleton  goto 49
+	fullccl  goto 28
+
+state 49
+	series :  series singleton_    (32)
+	singleton :  singleton_* 
+	singleton :  singleton_+ 
+	singleton :  singleton_? 
+	singleton :  singleton_{ NUMBER , NUMBER } 
+	singleton :  singleton_{ NUMBER , } 
+	singleton :  singleton_{ NUMBER } 
+
+	*  shift 50
+	+  shift 51
+	?  shift 52
+	{  shift 53
+	.  reduce 32
+
+
+state 50
+	singleton :  singleton *_    (34)
+
+	.  reduce 34
+
+
+state 51
+	singleton :  singleton +_    (35)
+
+	.  reduce 35
+
+
+state 52
+	singleton :  singleton ?_    (36)
+
+	.  reduce 36
+
+
+state 53
+	singleton :  singleton {_NUMBER , NUMBER } 
+	singleton :  singleton {_NUMBER , } 
+	singleton :  singleton {_NUMBER } 
+
+	NUMBER  shift 65
+	.  error
+
+
+state 54
+	singleton :  " string_" 
+	string :  string_CHAR 
+
+	CHAR  shift 67
+	"  shift 66
+	.  error
+
+
+state 55
+	re :  re_| series 
+	re2 :  re_/ 
+	singleton :  ( re_) 
+
+	|  shift 42
+	/  shift 43
+	)  shift 68
+	.  error
+
+
+state 56
+	fullccl :  [ ccl_] 
+	ccl :  ccl_CHAR - CHAR 
+	ccl :  ccl_CHAR 
+
+	CHAR  shift 70
+	]  shift 69
+	.  error
+
+
+state 57
+	fullccl :  [ ^_ccl ] 
+	ccl : _    (50)
+
+	.  reduce 50
+
+	ccl  goto 71
+
+state 58
+	namelist1 :  namelist1 WHITESPACE NAME_    (9)
+
+	.  reduce 9
+
+
+state 59
+	flexrule :  scon ^ re_eol 
+	re :  re_| series 
+	re2 :  re_/ 
+	eol : _    (27)
+
+	$  shift 44
+	|  shift 42
+	/  shift 43
+	.  reduce 27
+
+	eol  goto 72
+
+state 60
+	flexrule :  scon re eol_    (16)
+
+	.  reduce 16
+
+
+state 61
+	flexrule :  ^ re eol_    (17)
+
+	.  reduce 17
+
+
+state 62
+	re :  re | series_    (28)
+	series :  series_singleton 
+
+	CHAR  shift 32
+	PREVCCL  shift 29
+	.  shift 27
+	"  shift 30
+	(  shift 31
+	[  shift 33
+	.  reduce 28
+
+	singleton  goto 49
+	fullccl  goto 28
+
+state 63
+	scon :  < namelist2 >_    (22)
+
+	.  reduce 22
+
+
+state 64
+	namelist2 :  namelist2 ,_NAME 
+
+	NAME  shift 73
+	.  error
+
+
+state 65
+	singleton :  singleton { NUMBER_, NUMBER } 
+	singleton :  singleton { NUMBER_, } 
+	singleton :  singleton { NUMBER_} 
+
+	,  shift 74
+	}  shift 75
+	.  error
+
+
+state 66
+	singleton :  " string "_    (43)
+
+	.  reduce 43
+
+
+state 67
+	string :  string CHAR_    (51)
+
+	.  reduce 51
+
+
+state 68
+	singleton :  ( re )_    (44)
+
+	.  reduce 44
+
+
+state 69
+	fullccl :  [ ccl ]_    (46)
+
+	.  reduce 46
+
+
+state 70
+	ccl :  ccl CHAR_- CHAR 
+	ccl :  ccl CHAR_    (49)
+
+	-  shift 76
+	.  reduce 49
+
+
+state 71
+	fullccl :  [ ^ ccl_] 
+	ccl :  ccl_CHAR - CHAR 
+	ccl :  ccl_CHAR 
+
+	CHAR  shift 70
+	]  shift 77
+	.  error
+
+
+state 72
+	flexrule :  scon ^ re eol_    (15)
+
+	.  reduce 15
+
+
+state 73
+	namelist2 :  namelist2 , NAME_    (23)
+
+	.  reduce 23
+
+
+state 74
+	singleton :  singleton { NUMBER ,_NUMBER } 
+	singleton :  singleton { NUMBER ,_} 
+
+	NUMBER  shift 78
+	}  shift 79
+	.  error
+
+
+state 75
+	singleton :  singleton { NUMBER }_    (39)
+
+	.  reduce 39
+
+
+state 76
+	ccl :  ccl CHAR -_CHAR 
+
+	CHAR  shift 80
+	.  error
+
+
+state 77
+	fullccl :  [ ^ ccl ]_    (47)
+
+	.  reduce 47
+
+
+state 78
+	singleton :  singleton { NUMBER , NUMBER_} 
+
+	}  shift 81
+	.  error
+
+
+state 79
+	singleton :  singleton { NUMBER , }_    (38)
+
+	.  reduce 38
+
+
+state 80
+	ccl :  ccl CHAR - CHAR_    (48)
+
+	.  reduce 48
+
+
+state 81
+	singleton :  singleton { NUMBER , NUMBER }_    (37)
+
+	.  reduce 37
+
+
+31/300 terminals, 19/300 nonterminals
+53/600 grammar rules, 82/750 states
+0 shift/reduce, 0 reduce/reduce conflicts reported
+30/350 working sets used
+memory: states,etc. 472/24000, parser 50/12000
+31/600 distinct lookahead sets
+9 extra closures
+121 shift entries, 1 exceptions
+32 goto entries
+23 entries saved by goto default
+Optimizer space used: input 289/24000, output 258/12000
+258 table entries, 160 zero
+maximum spread: 265, maximum offset: 263

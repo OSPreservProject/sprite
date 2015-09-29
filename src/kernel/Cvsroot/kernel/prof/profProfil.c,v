@@ -1,0 +1,802 @@
+head     9.5;
+branch   ;
+access   ;
+symbols  ds3100:9.5 sun3:9.5 sun4nw:9.3 symm:9.3 spur:9.3 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.5
+date     92.01.08.01.14.43;  author shirriff;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     91.11.11.16.24.39;  author rab;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.10.19.15.52.28;  author rab;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.09.11.12.04.47;  author rab;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.30.20.45.06;  author rab;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.16.37;  author douglis;  state Stable;
+branches ;
+next     1.5;
+
+1.5
+date     89.04.06.11.53.45;  author douglis;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.03.23.00.31.29;  author rab;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.03.22.16.09.42;  author douglis;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.03.12.21.15.33;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.03.03.05.49.49;  author rab;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.5
+log
+@Fixed a problem in computing the bin for a profiled pc.  The problem was
+that the multiplication would overflow.
+@
+text
+@/* 
+ * profProfil.c --
+ *
+ *	Profil system call.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/prof/profProfil.c,v 9.4 91/11/11 16:24:39 rab Exp $";
+#endif /* not lint */
+
+#include <assert.h>
+#include "sprite.h"
+#include "proc.h"
+#include "prof.h"
+#include "sync.h"
+#include "vm.h"
+
+/*
+ * Program counter recorded by the interrupt handler.
+ */
+/* int Prof_InterruptPC; */
+
+/*
+ * Monitor lock for this module.
+ */
+#ifndef lint
+static Sync_Lock profilLock = Sync_LockInitStatic("Prof:profilLock");
+#else
+static Sync_Lock profilLock;
+#endif
+#define LOCKPTR &profilLock
+
+static void tick _ARGS_((Timer_Ticks time, ClientData clientData));
+
+/*
+ * Information that is passed to Timer_ScheduleRoutine() to
+ * queue tick() for invocation by the call back timer
+ * interrupt handler.
+ */
+Timer_QueueElement profTimer_QueueElement = {
+    { NULL, NULL }, /* links */
+    tick,           /* routine */
+    0,              /* time */
+    1234,           /* clientData */
+    FALSE,          /* processed */
+    0               /* interval */
+};
+
+/*
+ * Count of the number of processes being profiled.
+ */
+static int profCount = 0;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * profProfil --
+ *
+ *	Profil system call.
+ *
+ * Results:
+ *      Always returns success.
+ *
+ * Side effects:
+ *	Same as Prof_Enable.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Prof_Profil(buffer, bufSize, offset, scale)
+    short *buffer;
+    int bufSize;
+    int offset;
+    int scale;
+{
+    Prof_Enable(Proc_GetCurrentProc(), buffer, bufSize, offset, scale);
+    return SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Prof_Enable --
+ *
+ *      Enables or disables the profiling of a process.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *      Changes the Profiling fields in the Proc_ControlBlock, increments
+ *      or decrements ProfCount, and schedules or deschedules tick()
+ *      in the call back queue.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Prof_Enable(procPtr, buffer, bufSize, offset, scale)
+    Proc_ControlBlock *procPtr;
+    short *buffer;
+    int bufSize;
+    int offset;
+    int scale;
+{
+
+    assert(procPtr != (Proc_ControlBlock *) NIL);
+    LOCK_MONITOR;
+    if (scale != 0 && scale != 1 && procPtr->Prof_Scale == 0) {
+	/*
+	 * If the profile routine has not already been scheduled for invocation
+	 * by the call back timer, then schedule it.
+	 */
+	if (profCount == 0) {
+	    profTimer_QueueElement.interval = 20 * timer_IntOneMillisecond;
+	    Timer_ScheduleRoutine(&profTimer_QueueElement, TRUE);
+	}
+	++profCount;
+    } else if ((scale == 0 || scale == 1) && procPtr->Prof_Scale != 0) {
+	assert(profCount > 0);
+	/*
+	 * Disable profiling.  If there are no other processes being profiled,
+	 * then remove tick() from the call back queue.
+	 */
+	--profCount;
+	if (profCount == 0) {
+	    Timer_DescheduleRoutine(&profTimer_QueueElement);
+	}
+    }
+    procPtr->Prof_Buffer = buffer;
+    procPtr->Prof_BufferSize = bufSize;
+    procPtr->Prof_Offset = offset;
+    procPtr->Prof_Scale = scale;
+    procPtr->Prof_PC = 0;
+    UNLOCK_MONITOR;
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * tick --
+ *
+ *      If any processes are scheduled for profiling this routine
+ *      is called on each call back timer interrupt.
+ *
+ * Results:
+ *      Always returns SUCCESS.
+ * 
+ * Side effects:
+ *
+ *      If the current process is scheduled for profiling then the 
+ *      specialHandling flag is set, and the current PC is recorded in
+ *      the process control block.
+ *
+ *----------------------------------------------------------------------
+ */ 
+
+/*ARGSUSED*/
+static void
+tick(time, clientData)
+    Timer_Ticks time;
+    ClientData clientData;
+{
+    Proc_ControlBlock *curProcPtr;
+
+    assert(clientData == profTimer_QueueElement.clientData);
+    if (!mach_KernelMode) {
+	assert(profCount);
+	curProcPtr = Proc_GetCurrentProc();
+	assert(curProcPtr !=  (Proc_ControlBlock *) NIL);
+	if (curProcPtr->Prof_Scale >= 2) {
+	    curProcPtr->specialHandling = TRUE;
+	}
+    }
+    Timer_ScheduleRoutine(&profTimer_QueueElement, TRUE);
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Prof_RecordPC --
+ *
+ *
+ *
+ * Results:
+ *      None.
+ * 
+ * Side effects:
+ *      None.
+ *  
+ *----------------------------------------------------------------------
+ */ 
+
+void
+Prof_RecordPC(procPtr)
+    Proc_ControlBlock *procPtr;
+{
+    long pos;
+    short *ptr;
+    union {
+	short shrt;
+	char c[2];
+    } u;
+
+    assert(procPtr->Prof_Scale);
+    /*
+     * We have to make sure our multiply doesn't overflow
+     */
+    pos = ((((unsigned long)procPtr->Prof_PC - procPtr->Prof_Offset)>>16) *
+	    procPtr->Prof_Scale) |
+	    ((((procPtr->Prof_PC - procPtr->Prof_Offset)&0xFFFF) *
+	    procPtr->Prof_Scale) >> 16);
+
+    ptr = &procPtr->Prof_Buffer[pos/sizeof(*ptr)];
+    /*
+     * Make sure the pointer is in the proper range.
+     */
+    if (ptr < procPtr->Prof_Buffer || ptr >=
+        &procPtr->Prof_Buffer[procPtr->Prof_BufferSize/sizeof(short)]) {
+	procPtr->Prof_PC = 0;
+	return;
+    }
+    /*
+     * Copy the counter in, increment it, and copy it back out.
+     */
+    if (Vm_CopyInProc(sizeof(short), procPtr, (Address) ptr, u.c, 1)
+      != SUCCESS) {
+	Prof_Disable(procPtr);
+	return;
+    }
+    ++u.shrt;
+    if (Vm_CopyOutProc(sizeof(short), u.c, 1, procPtr, (Address) ptr)
+      != SUCCESS) {
+	Prof_Disable(procPtr);
+	return;
+    }
+    procPtr->Prof_PC = 0;
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Prof_Disable --
+ *
+ *	Disable profiling of a process.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *      Clears the Prof_Scale and Prof_PC fields of the PCB, and decrements
+ *      the count of profiled processes.  If no other processes are being
+ *      profiled, removes the profil timer from the callback timer queue.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Prof_Disable(procPtr)
+    Proc_ControlBlock *procPtr;
+{
+    LOCK_MONITOR;
+    if (procPtr->Prof_Scale != 0) {
+	assert(profCount > 0);
+	procPtr->Prof_Scale = 0;
+	procPtr->Prof_PC = 0;
+	--profCount;
+	if (profCount == 0) {
+	    Timer_DescheduleRoutine(&profTimer_QueueElement);
+	}
+    }
+    UNLOCK_MONITOR;
+    return;
+}
+
+@
+
+
+9.4
+log
+@*** empty log message ***
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/prof/profProfil.c,v 9.3 90/10/19 15:52:28 rab Exp $";
+d212 1
+d220 9
+a228 2
+    ptr = &procPtr->Prof_Buffer[(((procPtr->Prof_PC -
+        procPtr->Prof_Offset) * procPtr->Prof_Scale) >> 16) / sizeof(*ptr)];
+@
+
+
+9.3
+log
+@Implemented profiling on the ds3100.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/prof/RCS/profProfil.c,v 9.2 90/09/11 12:04:47 rab Exp Locker: rab $";
+a118 7
+
+#if 0
+    printf("Prof_Enable(p = %x, id = %x, buffer = %08x, bufSize = %d, offset = %d, scale = %d\n",
+	procPtr, procPtr->processID, buffer, bufSize, offset, scale);
+    printf("profCount = %d\n", profCount);
+#endif    
+
+a178 13
+    LOCK_MONITOR;
+    assert(profCount != 0);
+#if 0    
+    if (profCount == 0) {
+	printf("Descheduling profil timer\n");
+	Timer_DescheduleRoutine(&profTimer_QueueElement);
+	return;
+    }
+#endif    
+#if 0
+    printf("Prof tick, mach_KernelMode = %d, profCount = %d\n",
+	mach_KernelMode, profCount);
+#endif
+a183 4
+#if 0
+	printf("Prof tick, scale=%d, pc=%08x, profCount = %d\n",
+	    curProcPtr->Prof_Scale,	curProcPtr->Prof_PC, profCount);
+#endif
+a188 1
+    UNLOCK_MONITOR;
+a237 5
+
+#if 0
+    printf("Prof_RecordPC(), shrt = %d,  profCount = %d\n", u.shrt, profCount);
+#endif    
+
+@
+
+
+9.2
+log
+@Added include of "vm.h" for forward declarations.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/prof/RCS/profProfil.c,v 9.1 89/10/30 20:45:06 rab Exp Locker: rab $";
+d30 1
+a30 1
+int Prof_InterruptPC;
+d42 2
+d46 1
+a46 1
+ * queue Prof_Tick() for invocation by the call back timer
+d51 1
+a51 1
+    Prof_Tick,      /* routine */
+d104 1
+a104 1
+ *      or decrements ProfCount, and schedules or deschedules Prof_Tick
+d118 8
+d128 1
+a128 1
+    if (scale != 0 && procPtr->Prof_Scale == 0) {
+d130 3
+a132 3
+	* If the profile routine has not already been scheduled for invocation
+	* by the call back timer, then schedule it.
+	*/
+d138 1
+a138 1
+    } else if (scale == 0 && procPtr->Prof_Scale != 0) {
+d142 1
+a142 1
+	 * then remove Prof_Tick from the call back queue.
+d161 1
+a161 1
+ * Prof_Tick --
+d179 2
+a180 2
+void
+Prof_Tick(time, clientData)
+d186 13
+a199 1
+    time = time;
+d201 1
+d204 4
+a208 1
+	    curProcPtr->Prof_PC = Prof_InterruptPC;
+d213 1
+d242 1
+d263 5
+@
+
+
+9.1
+log
+@fixed lint stuff.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/prof/RCS/profProfil.c,v 9.0 89/09/12 15:16:37 douglis Stable Locker: rab $";
+d25 1
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/prof/RCS/profProfil.c,v 1.5 89/04/06 11:53:45 douglis Exp Locker: douglis $";
+a30 15
+#ifdef __STDC__
+extern ReturnStatus Prof_Profil(short *buffer,
+    int bufSize, int offset, int scale);
+extern void Prof_Tick(Timer_Ticks time, 
+    ClientData clientData);
+extern void Prof_Disable(Proc_ControlBlock *procPtr);
+extern void Prof_Enable(Proc_ControlBlock *procPtr, short *buffer, int bufSize,
+    int offset, int scale);
+#else
+extern ReturnStatus Prof_Profil();
+extern void Prof_Tick();
+extern void Prof_Disable();
+extern void Prof_Enable();
+#endif
+
+d228 2
+a229 1
+    if (Vm_CopyInProc(sizeof(short), procPtr, ptr, u.c, 1) != SUCCESS) {
+d234 2
+a235 1
+    if (Vm_CopyOutProc(sizeof(short), u.c, 1, procPtr, ptr) != SUCCESS){
+@
+
+
+1.5
+log
+@removed migration routines (now in ProfMigrate.c)
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/prof/RCS/profProfil.c,v 1.4 89/03/23 00:31:29 rab Exp Locker: douglis $";
+@
+
+
+1.4
+log
+@*** empty log message ***
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/prof/RCS/profProfil.c,v 1.3 89/03/22 16:09:42 douglis Exp Locker: rab $";
+a291 102
+
+
+
+struct profEncapsulation {
+    short *Prof_Buffer;
+    int Prof_BufferSize;
+    int Prof_Offset;
+    int Prof_Scale;
+};
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Prof_GetEncapSize --
+ *
+ *	Returns the size of the storage area used to record profiling
+ *      information that is sent with a migrated process.
+ *
+ * Results:
+ *	Returns the size of a struct profEncapsulation.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Prof_GetEncapSize()
+{
+    return sizeof(struct profEncapsulation);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Prof_EncapState --
+ *
+ *	Encapsulate the profiling information to be sent with
+ *      a migrated process.  If the processes is being profiled,
+ *      then turn if off.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Disables profiling of the process.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Prof_EncapState(procPtr, ptr)
+    Proc_ControlBlock *procPtr;
+    Address ptr;
+{
+    struct profEncapsulation *encap;
+
+    encap = (struct profEncapsulation *) ptr;
+    encap->Prof_Buffer = procPtr->Prof_Buffer;
+    encap->Prof_BufferSize = procPtr->Prof_BufferSize;
+    encap->Prof_Offset = procPtr->Prof_Offset;
+    encap->Prof_Scale = procPtr->Prof_Scale;
+    if (procPtr->Prof_Scale) {
+	Prof_Disable(procPtr);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Prof_DeencapState
+ *
+ *	De-encapsulate information that arrived with a migrated process.
+ *      If the process was being profiled at home, then turn profiling
+ *      on here.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	May enable profiling of the process.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Prof_DeencapState(procPtr, ptr)
+    Proc_ControlBlock *procPtr;
+    Address ptr;
+{
+    struct profEncapsulation *encap;
+
+    encap = (struct profEncapsulation *) ptr;
+    procPtr->Prof_Scale = 0;
+    Prof_Enable(procPtr, encap->Prof_Buffer, encap->Prof_BufferSize,
+	encap->Prof_Offset, encap->Prof_Scale);
+    return;
+}
+@
+
+
+1.3
+log
+@removed the ifdefs disabling profiling
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/prof/RCS/profProfil.c,v 1.2 89/03/12 21:15:33 rab Exp Locker: douglis $";
+d49 1
+d51 3
+d137 1
+a137 1
+	if (profCount++ == 0) {
+d141 1
+d148 2
+a149 1
+	if (--profCount == 0) {
+d182 1
+d189 1
+d191 1
+d243 1
+a243 1
+    if (Vm_CopyInProc(sizeof(short), procPtr, ptr, &(u.c), 1) != SUCCESS) {
+d248 1
+a248 1
+    if (Vm_CopyOutProc(sizeof(short), &(u.c), 1, procPtr, ptr) != SUCCESS){
+d284 2
+a285 1
+	if (--profCount == 0) {
+d357 1
+a357 1
+    if (procPtr->Prof_Scale)
+d359 1
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/prof/RCS/profProfil.c,v 1.1 89/03/03 05:49:49 rab Exp Locker: rab $";
+a94 1
+#if 0
+a95 1
+#endif
+a125 1
+#if 0
+a152 1
+#endif
+a181 1
+#if 0
+a191 1
+#endif
+a219 1
+#if 0
+a243 1
+#endif
+a269 1
+#if 0
+a279 1
+#endif
+a284 1
+#if 0
+a382 2
+
+#endif
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header$";
+d37 2
+d43 1
+d69 1
+a69 1
+int profCount = 0;
+d83 1
+a83 1
+ *	None.
+d95 5
+a99 2
+#ifdef NOTDEF
+    Proc_ControlBlock *curProcPtr;
+d101 29
+a129 6
+    curProcPtr = Proc_GetCurrentProc();
+    assert(curProcPtr != (Proc_ControlBlock *) NIL);
+    /*
+     * If the profile routine has not already been scheduled for invocation
+     * by the call back timer, then schedule it.
+     */
+d131 5
+a135 1
+    if (scale != 0 && curProcPtr->Prof_Scale == 0) {
+d140 1
+a140 1
+    } else if (scale == 0 && curProcPtr->Prof_Scale != 0) {
+d142 4
+a148 2
+    } else {
+	goto exit;
+d150 5
+a154 6
+    curProcPtr->Prof_Buffer = buffer;
+    curProcPtr->Prof_BufferSize = bufSize;
+    curProcPtr->Prof_Offset = offset;
+    curProcPtr->Prof_Scale = scale;
+    curProcPtr->Prof_PC = 0;
+exit:
+d157 1
+a157 1
+    return SUCCESS;
+d186 1
+a186 1
+
+d197 1
+d226 2
+a227 1
+
+d251 1
+d278 1
+a278 1
+#ifdef NOTDEF
+d280 7
+a286 2
+    if (procPtr->Prof_Scale == 0) {
+	goto exit;
+a287 7
+    assert(profCount > 0);
+    procPtr->Prof_Scale = 0;
+    procPtr->Prof_PC = 0;
+    if (--profCount == 0) {
+	Timer_DescheduleRoutine(&profTimer_QueueElement);
+    }
+exit:
+d292 104
+@

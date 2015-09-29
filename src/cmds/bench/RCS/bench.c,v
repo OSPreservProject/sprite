@@ -1,0 +1,1205 @@
+head     1.18;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.18
+date     90.02.16.11.10.43;  author jhh;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     89.08.03.16.07.53;  author brent;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     89.01.31.13.37.05;  author david;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     89.01.04.15.37.10;  author david;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     88.09.29.17.02.44;  author david;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     88.09.26.10.28.51;  author nelson;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     88.09.13.13.35.54;  author nelson;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     88.09.12.18.43.10;  author nelson;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     88.09.08.20.22.32;  author nelson;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     87.12.31.16.02.10;  author nelson;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     87.12.23.17.31.00;  author nelson;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     87.12.22.10.27.09;  author brent;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     87.12.22.10.15.12;  author brent;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     87.08.22.16.16.35;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     87.08.17.13.07.10;  author nelson;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     87.07.14.10.26.09;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     87.05.01.15.52.24;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     87.04.01.10.40.27;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Benchmarking program to measure resourse usage.  Runs either stand alone
+or it synchronizes N clients and a server.
+@
+
+
+1.18
+log
+@Option to start server on signal
+@
+text
+@/*
+ * A standard harness with which to benchmark programs.
+ * This sets up statistics stuff, then forks and execs a
+ * program to benchmark.  When the program completes, its
+ * resource usage is recorded, as well as other filesystem
+ * related statistics.
+ *
+ * The programs output goes to standard out, while the
+ * statistics taken go to error output or another file.
+ */
+
+#include "sprite.h"
+#include "status.h"
+#include "sys/ioctl.h"
+#include "sys/file.h"
+#include "fs.h"
+#include "fsCmd.h"
+#include "sysStats.h"
+#include "proc.h"
+#include "vm.h"
+#include "kernel/sched.h"
+#include "kernel/fsStat.h"
+#include "kernel/vm.h"
+#include "kernel/net.h"
+#include "option.h"
+#include "sig.h"
+#include "signal.h"
+#include "stdio.h"
+#ifdef spur
+#include "ccMachStat.h"
+#endif
+Boolean flushCache = FALSE;
+Boolean clean = FALSE;
+Boolean exec = FALSE;
+Boolean histogram = FALSE;
+int numClients = -1;			/* For multi-program synchronization,
+					 * this is the number of slaves with
+					 * which to synchronize */
+Boolean slave = FALSE;
+char *outFile = "bench.out";
+extern char *pdev;
+Boolean	dontSyncCache = FALSE;
+Boolean	useSignals = FALSE;
+int	pause = 0;
+Boolean waitForSignal = FALSE;
+
+Option optionArray[] = {
+	{OPT_STRING, "o", (Address)&outFile,
+		"Output file name\n"},
+	{OPT_STRING, "p", (Address)&pdev,
+		"Name of the master pseudo device\n"},
+	{OPT_TRUE, "f", (Address)&flushCache,
+		"Flush cache before benchmark"},
+	{OPT_TRUE, "x", (Address)&clean,
+		"Turn off all tracing"},
+	{OPT_TRUE, "h", (Address)&histogram,
+		"Leave histograms on (ok with -x)"},
+	{OPT_TRUE, "S", (Address)&slave,
+		"Slave bench program"},
+	{OPT_INT, "M", (Address)&numClients,
+		"Master for -M (int) clients"},
+	{OPT_TRUE, "d", (Address)&dontSyncCache,
+		"Dont sync the cache when done"},
+	{OPT_TRUE, "s", (Address)&useSignals,
+"Use signals to rendevous the master and slave instead of pseudo-devices.\n"},
+	{OPT_INT, "P", (Address)&pause,
+		"Seconds to pause before get final stats"},
+	{OPT_REST, "c", (Address)&exec,
+		"(Follow with command to benchmark)"},
+	{OPT_TRUE, "w", (Address) &waitForSignal,
+		"Master waits for USR1 signal before starting slaves.\n"},
+};
+int numOptions = sizeof(optionArray) / sizeof(Option);
+
+Fs_Stats fsStartStats, fsEndStats;
+Vm_Stat	vmStartStats, vmEndStats;
+Sys_DiskStats	diskStartStats[10], diskEndStats[10];
+
+Time startTime, endTime;
+Sched_Instrument startSchedStats, endSchedStats;
+Net_EtherStats	netStartStats, netEndStats;
+
+#ifdef spur
+MachStats startMachStats, endMachStats;
+#endif
+
+#define NUM_PCBS	256
+Proc_ControlBlock pcbs1[NUM_PCBS];
+Proc_ControlBlock pcbs2[NUM_PCBS];
+Proc_PCBArgString argStrings1[NUM_PCBS];
+Proc_PCBArgString argStrings2[NUM_PCBS];
+int numPCB1, numPCB2;
+
+extern void ServerSetup();
+extern void Serve();
+
+extern void ClientSetup();
+extern void ClientDone();
+
+extern void PrintTimes();
+extern void PrintIdleTime();
+extern void PrintFsStats();
+extern void PrintVmStats();
+extern void PrintDiskStats();
+
+extern int errno;
+
+Boolean	gotSig = FALSE;
+Boolean startClients = FALSE;
+
+main(argc, argv)
+    int argc;
+    char *argv[];
+{
+    register ReturnStatus status = SUCCESS;
+    Proc_PID child;
+    Proc_ResUsage usage;
+    FILE *outStream;
+    int i;
+    ClientData serverData, clientData;
+    int	mastPID;
+    int	pidFD;
+
+
+    argc = Opt_Parse(argc, argv, optionArray, numOptions, 0);
+    if (!exec && (numClients < 0)) {
+	fprintf(stderr, "Master: %s [-xfh] -M numSlaves\n", argv[0]);
+	fprintf(stderr, 
+		"Slave: %s [-xfh] -S -c commandPathName flags...\n", argv[0]);
+	Opt_PrintUsage(argv[0], optionArray, numOptions);
+	exit(1);
+    }
+    if ((numClients < 0) && waitForSignal) {
+	fprintf(stderr,"The -w flag can only be used with the -M flag.\n");
+	Opt_PrintUsage(argv[0], optionArray, numOptions);
+	exit(1);
+    }
+    if (waitForSignal) {
+	int HandleUSR1();
+	(void) signal(SIGUSR1, HandleUSR1);
+    }
+    if (clean) {
+	int newValue;
+	newValue = 0;
+	Fs_Command(FS_SET_CACHE_DEBUG, sizeof(int), (Address) &newValue);
+	newValue = 0;
+	Fs_Command(FS_SET_TRACING, sizeof(int), (Address) &newValue);
+	newValue = 0;
+	Fs_Command(FS_SET_RPC_DEBUG, sizeof(int), (Address) &newValue);
+	newValue = 0;
+	Fs_Command(FS_SET_RPC_TRACING, sizeof(int), (Address) &newValue);
+	if (!histogram) {
+	    newValue = 0;
+	    (void) Fs_Command(FS_SET_RPC_SERVER_HIST, sizeof(int),
+				(Address) &newValue);
+	    newValue = 0;
+	    (void) Fs_Command(FS_SET_RPC_CLIENT_HIST, sizeof(int),
+				(Address) &newValue);
+	}
+    }
+    if (flushCache) {
+	int numLockedBlocks = 0;
+	Fs_Command(FS_EMPTY_CACHE, sizeof(int), (Address) &numLockedBlocks);
+        if (numLockedBlocks > 0) {
+            fprintf(stderr, "Flush found %d locked blocks left\n",
+                                      numLockedBlocks);
+        }
+    }
+    outStream = fopen(outFile, "w+");
+    if (outStream == NULL) {
+	fprintf(stderr, "\"%s\": ", outFile);
+	Stat_PrintMsg(status, "Can't open");
+	exit(status);
+    }
+    /*
+     * Copy command line to output file.
+     */
+    fprintf(outStream, "%s ", argv[0]);
+    if (clean) {
+	fprintf(outStream, "-x ");
+    }
+    if (histogram) {
+	fprintf(outStream, "-h ");
+    }
+    if (flushCache) {
+	fprintf(outStream, "-f ");
+    }
+    if (clean) {
+	fprintf(outStream, "-x ");
+    }
+    for (i=1 ; i<argc ; i++) {
+	fprintf(outStream, "%s ", argv[i]);
+    }
+    fprintf(outStream, "\n");
+    if (useSignals) {
+	if (numClients > 0) {
+	    int		bytesWritten;
+	    Sig_Action	newAction, oldAction;
+	    int		Handler();
+
+	    newAction.action = SIG_HANDLE_ACTION;
+	    newAction.handler = Handler;
+	    newAction.sigHoldMask = 0;
+	    Sig_SetAction(30, &newAction, &oldAction);
+	    /*
+	     * Get our PID and store it in a file.
+	     */
+	    Proc_GetIDs(&mastPID, NULL, NULL, NULL);
+	    pidFD = open("/tmp/db.pid", 
+				O_WRONLY | O_CREAT | O_TRUNC,
+				0666, &pidFD);
+	    if (pidFD == NULL) {
+		fprintf(stderr,
+			"Master: Couldn't open pid file, status <%x>\n",
+			errno);
+		exit(errno);
+	    }
+	    bytesWritten = write(pidFD, &mastPID, sizeof(int));
+	    while (!gotSig) {
+		Sig_Pause(0);
+	    }
+	    gotSig = FALSE;
+	    printf("Got start signal\n");
+	    fflush(stdout);
+	}
+	if (slave) {
+	    int	bytesRead;
+	    /*
+	     * Read the master's pid out of the pid file and send him a 
+	     * signal.
+	     */
+	    do {
+		pidFD = open("/tmp/db.pid", O_RDONLY, 0);
+		if (pidFD < 0) {
+		    fprintf(stderr,
+	    "Slave: Couldn't open pid file, status <%x>, pausing 5 seconds\n",
+			errno);
+		    Sync_WaitTime(5, 0);
+		    continue;
+		}
+		mastPID = 0;
+		bytesRead = read(pidFD, &mastPID, sizeof(int));
+		status = Sig_Send(30, mastPID, FALSE);
+		if (status == SUCCESS) {
+		    /*
+		     * Pause for one second to let the master receive
+		     * our signal and gather stats.
+		     */
+		    Sync_WaitTime(1, 0);
+		    break;
+		}
+		fprintf(stderr,
+	    "Slave: couldn't signal parent, status <%x>, pausing 5 seconds\n",
+		    status);
+		close(pidFD);
+		Sync_WaitTime(5, 0);
+		continue;
+	    } while (TRUE);
+	}
+    } else {
+	/*
+	 * Check for multi-program master/slave setup.
+	 */
+	if (numClients > 0) {
+	    ServerSetup(numClients, &serverData);
+	    slave = FALSE;
+	}
+	if (slave) {
+	    ClientSetup(&clientData);
+	}
+    }
+    /*
+     * Get first sample of filesystem stats, vm stats, time, and idle ticks.
+     */
+    status = Fs_Command(FS_RETURN_STATS, sizeof(Fs_Stats),
+			(Address) &fsStartStats);
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "Error getting FS stats");
+	exit(status);
+    }
+    status = Sys_Stats(SYS_VM_STATS, 0, (Address) &vmStartStats);
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "Error getting VM stats");
+	exit(status);
+    }
+    status = Sys_Stats(SYS_DISK_STATS, 10, diskStartStats);
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "Error getting Disk stats");
+	exit(status);
+    }
+    /*
+     * Clear low and high water marks for the file system cache.
+     */
+    status = Vm_Cmd(VM_RESET_FS_STATS, 0);
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "Error resetting fs low and high water marks\n");
+    }
+    status = Sys_Stats(SYS_NET_ETHER_STATS, 0, (Address) &netStartStats);
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "Error getting NET stats");
+	exit(status);
+    }
+    /*
+     * Snapshot the process table so we can apportion CPU usage
+     * to various processes.
+     */
+    numPCB1 = GetProcTable(NUM_PCBS, pcbs1, argStrings1);
+
+    status = Sys_GetTimeOfDay(&startTime, NULL, NULL);
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "Error in Sys_GetTimeOfDay");
+	exit(status);
+    }
+    status = Sys_Stats(SYS_SCHED_STATS, 0, (Address) &startSchedStats);
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "Error in Sys_Stats");
+	exit(status);
+    }
+#ifdef spur
+    status = InitMachStats( (Address) &startMachStats, MODE_PERF_COUNTER_OFF);
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "Error in InitMachStats");
+        exit(status);
+    }
+#endif
+    if (slave || numClients < 0) {
+	status = Proc_Fork(FALSE, &child);
+	if (status == PROC_CHILD_PROC) {
+	    /*
+	     * Put ourselves in our own family.
+	     */
+	    (void) Proc_SetFamilyID(PROC_MY_PID, child);
+	    (void) Ioc_SetOwner (0, child, IOC_OWNER_FAMILY);
+	    /*
+	     * Exec the program to benchmark.  Opt_Parse has left the command
+	     * starting at argv[1], hence the following argv++.
+	     */
+	    argv++;
+	    status = Proc_Exec(argv[0], argv, FALSE);
+	    if (status != SUCCESS) {
+		fprintf(stderr,"Exec of \"%s\" failed",argv[0]);
+		Stat_PrintMsg(status, "");
+		fflush(stdout);
+		exit(status);
+	    }
+	} else if (status == SUCCESS) {
+	    /*
+	     * Wait for the benchmark to complete.
+	     */
+	    status = Proc_Wait(0, NULL, TRUE, NULL,
+			      NULL, NULL, NULL, &usage);
+	    if (status != SUCCESS) {
+		Stat_PrintMsg(status, "Error in Proc_Wait");
+		exit(status);
+	    }
+	    /*
+	     * Take ending statistics and print user, system, and elapsed times.
+	     */
+#ifdef spur
+	    status = GetMachStats( (Address) &endMachStats);
+	    if (status != SUCCESS) {
+		Stat_PrintMsg(status, "Error in GetMachStats");
+		exit(status);
+	    };
+#endif
+	    Sys_GetTimeOfDay(&endTime, NULL, NULL);
+	    Sys_Stats(SYS_SCHED_STATS, 0, (Address) &endSchedStats);
+	    Time_Subtract(endTime, startTime, &endTime);
+	    PrintTimes(stderr, &usage, &endTime);
+	    if (!dontSyncCache) {
+		Sys_Shutdown(SYS_WRITE_BACK, "");	/* sync cache */
+	    }
+	    if (slave) {
+		if (useSignals) {
+		    status = Sig_Send(30, mastPID, FALSE);
+		    if (status != SUCCESS) {
+			fprintf(stderr,
+			    "Slave: couldn't signal parent (2), status <%x>\n",
+			    status);
+		    }
+		} else {
+		    ClientDone(clientData);
+		}
+	    }
+	    numPCB2 = GetProcTable(NUM_PCBS, pcbs2, argStrings2);
+	    Fs_Command(FS_RETURN_STATS, sizeof(Fs_Stats), (Address) &fsEndStats);
+	    Sys_Stats(SYS_VM_STATS, 0, (Address) &vmEndStats);
+	    Sys_Stats(SYS_DISK_STATS, 10, diskEndStats);
+	    Sys_Stats(SYS_NET_ETHER_STATS, 0, (Address) &netEndStats);
+	    /*
+	     * Print FS statistics.
+	     */
+	    PrintTimes(outStream, &usage, &endTime);
+	    PrintIdleTime(outStream, &startSchedStats, &endSchedStats, &endTime);
+	    PrintFsStats(outStream, &fsStartStats, &fsEndStats, TRUE);
+	    PrintDiskStats(outStream, diskStartStats, diskEndStats);
+	    /*
+	     * Print VM statistics.
+	     */
+	    PrintVmStats(outStream, &vmStartStats, &vmEndStats);
+	    /*
+	     * Print network statistics.
+	     */
+	    fprintf(outStream,
+			"Network stats: Bytes received %d bytes sent %d\n",
+			netEndStats.bytesReceived - netStartStats.bytesReceived,
+			netEndStats.bytesSent - netStartStats.bytesSent);
+	    /*
+	     * Print out process info.
+	     */
+	    PrintProcStats(outStream, numPCB1, pcbs1, argStrings1,
+				      numPCB2, pcbs2, argStrings2);
+#ifdef spur
+	    /*
+	     * Print Machine dependent stats
+	     */
+	    PrintMachStats(outStream, &startMachStats, &endMachStats);
+#endif
+	} else {
+	    Stat_PrintMsg(status, "Error in Proc_Fork");
+	}
+    } else {
+	if (useSignals) {
+	    while (!gotSig) { 
+		Sig_Pause(0);
+	    }
+	    printf("Got end signal\n");
+	    fflush(stdout);
+	} else {
+	    Serve(serverData);
+	}
+	if (pause) {
+	    sleep(pause);
+	}
+#ifdef spur
+	/*
+	 * Take ending statistics and print user, system, and elapsed times.
+	 */
+	status = GetMachStats( (Address) &endMachStats);
+	if (status != SUCCESS) {
+	    Stat_PrintMsg(status, "Error in GetMachStats");
+	    exit(status);
+	};
+#endif
+	Sys_GetTimeOfDay(&endTime, NULL, NULL);
+	Sys_Stats(SYS_SCHED_STATS, 0, (Address) &endSchedStats);
+	Time_Subtract(endTime, startTime, &endTime);
+	PrintTimes(stderr, &usage, &endTime);
+
+	if (!dontSyncCache) {
+	    Sys_Shutdown(SYS_WRITE_BACK, "");	/* sync cache */
+	}
+	Fs_Command(FS_RETURN_STATS, sizeof(Fs_Stats), (Address) &fsEndStats);
+	Sys_Stats(SYS_VM_STATS, 0, (Address) &vmEndStats);
+	Sys_Stats(SYS_DISK_STATS, 10, diskEndStats);
+	Sys_Stats(SYS_NET_ETHER_STATS, 0, (Address) &netEndStats);
+	/*
+	 * Print FS statistics.
+	 */
+	PrintTimes(outStream, &usage, &endTime);
+	PrintIdleTime(outStream, &startSchedStats, &endSchedStats, &endTime);
+	PrintFsStats(outStream, &fsStartStats, &fsEndStats, TRUE);
+	PrintDiskStats(outStream, diskStartStats, diskEndStats);
+	/*
+	 * Print VM statitistics.
+	 */
+	PrintVmStats(outStream, &vmStartStats, &vmEndStats);
+	/*
+	 * Print network statistics.
+	 */
+	fprintf(outStream,
+		    "Network stats: Bytes received %d bytes sent %d\n",
+		    netEndStats.bytesReceived - netStartStats.bytesReceived,
+		    netEndStats.bytesSent - netStartStats.bytesSent);
+#ifdef spur
+	/*
+	** Print Machine dependent stats
+	*/
+	PrintMachStats(outStream, &startMachStats, &endMachStats);
+#endif
+    }
+    exit(status);
+}
+
+int
+Handler()
+{
+    gotSig = TRUE;
+}
+
+int
+HandleUSR1()
+{
+    startClients = TRUE;
+}
+@
+
+
+1.17
+log
+@Fixed call to print Proc stats
+@
+text
+@d27 1
+d29 1
+d31 1
+a31 1
+
+d45 1
+d70 2
+d75 1
+a75 1
+FsStats fsStartStats, fsEndStats;
+d83 1
+d85 1
+d109 1
+d133 9
+d275 1
+a275 1
+    status = Fs_Command(FS_RETURN_STATS, sizeof(FsStats),
+d319 1
+d325 1
+a325 1
+
+d341 2
+a342 1
+		Stat_PrintMsg(status, "Exec failed");
+d359 1
+d365 1
+d386 1
+a386 1
+	    Fs_Command(FS_RETURN_STATS, sizeof(FsStats), (Address) &fsEndStats);
+d413 1
+d418 1
+d435 1
+a435 1
+
+d444 1
+d453 1
+a453 1
+	Fs_Command(FS_RETURN_STATS, sizeof(FsStats), (Address) &fsEndStats);
+d475 1
+d480 1
+d489 6
+@
+
+
+1.16
+log
+@Added the machine dependent support that was lost when the file got
+munged.
+@
+text
+@d80 7
+d116 1
+d286 6
+d364 1
+a364 1
+
+d388 7
+a394 2
+	    ** Print Machine dependent stats
+	    */
+@
+
+
+1.15
+log
+@Convert to machine dependent format and prints SPUR cache controller
+register results.
+@
+text
+@d28 1
+d78 2
+d109 1
+a109 1
+    (void) Opt_Parse(argc, argv, optionArray, numOptions, 0);
+d114 1
+a114 1
+	Opt_PrintUsage(argv[0], numOptions, optionArray);
+d288 5
+d326 5
+d373 4
+d397 5
+d432 4
+@
+
+
+1.14
+log
+@
+@
+text
+@@
+
+
+1.13
+log
+@Can now make it sleep for a while after completion of the benchmark before
+getting the final stats.
+@
+text
+@d14 2
+a15 1
+#include "io.h"
+d27 1
+d44 1
+a44 1
+	{OPT_STRING, 'o', (Address)&outFile,
+d46 1
+a46 1
+	{OPT_STRING, 'p', (Address)&pdev,
+d48 1
+a48 1
+	{OPT_TRUE, 'f', (Address)&flushCache,
+d50 1
+a50 1
+	{OPT_TRUE, 'x', (Address)&clean,
+d52 1
+a52 1
+	{OPT_TRUE, 'h', (Address)&histogram,
+d54 1
+a54 1
+	{OPT_TRUE, 'S', (Address)&slave,
+d56 1
+a56 1
+	{OPT_INT, 'M', (Address)&numClients,
+d58 1
+a58 1
+	{OPT_TRUE, 'd', (Address)&dontSyncCache,
+d60 1
+a60 1
+	{OPT_TRUE, 's', (Address)&useSignals,
+d62 1
+a62 1
+	{OPT_INT, 'P', (Address)&pause,
+d64 1
+a64 1
+	{OPT_REST, 'c', (Address)&exec,
+d89 2
+d100 1
+a100 1
+    Io_Stream outStream;
+d106 1
+a106 1
+    (void) Opt_Parse(&argc, argv, numOptions, optionArray);
+d108 2
+a109 2
+	Io_PrintStream(io_StdErr, "Master: %s [-xfh] -M numSlaves\n", argv[0]);
+	Io_PrintStream(io_StdErr, 
+d112 1
+a112 1
+	Proc_Exit(1);
+d137 1
+a137 1
+            Io_PrintStream(io_StdErr, "Flush found %d locked blocks left\n",
+d141 3
+a143 3
+    outStream = Io_Open(outFile, "w+");
+    if (outStream == (Io_Stream)NULL) {
+	Io_PrintStream(io_StdErr, "\"%s\": ", outFile);
+d145 1
+a145 1
+	Proc_Exit(status);
+d150 1
+a150 1
+    Io_PrintStream(outStream, "%s ", argv[0]);
+d152 1
+a152 1
+	Io_PrintStream(outStream, "-x ");
+d155 1
+a155 1
+	Io_PrintStream(outStream, "-h ");
+d158 1
+a158 1
+	Io_PrintStream(outStream, "-f ");
+d161 1
+a161 1
+	Io_PrintStream(outStream, "-x ");
+d164 1
+a164 1
+	Io_PrintStream(outStream, "%s ", argv[i]);
+d166 1
+a166 1
+    Io_PrintStream(outStream, "\n");
+d181 2
+a182 2
+	    status = Fs_Open("/tmp/db.pid", 
+				FS_WRITE | FS_CREATE | FS_TRUNC,
+d184 2
+a185 2
+	    if (status != SUCCESS) {
+		Io_PrintStream(io_StdErr,
+d187 2
+a188 2
+			status);
+		Proc_Exit(status);
+d190 1
+a190 1
+	    Fs_Write(pidFD, sizeof(int), &mastPID, &bytesWritten);
+d195 2
+a196 2
+	    Io_Print("Got start signal\n");
+	    Io_Flush(io_StdOut);
+d205 3
+a207 3
+		status = Fs_Open("/tmp/db.pid", FS_READ, 0, &pidFD);
+		if (status != SUCCESS) {
+		    Io_PrintStream(io_StdErr,
+d209 1
+a209 1
+			status);
+d214 1
+a214 1
+		Fs_Read(pidFD, sizeof(int), &mastPID, &bytesRead);
+d224 1
+a224 1
+		Io_PrintStream(io_StdErr,
+d227 1
+a227 1
+		Fs_Close(pidFD);
+d251 1
+a251 1
+	Proc_Exit(status);
+d256 1
+a256 1
+	Proc_Exit(status);
+d261 1
+a261 1
+	Proc_Exit(status);
+d273 1
+a273 1
+	Proc_Exit(status);
+d278 1
+a278 1
+	Proc_Exit(status);
+d283 1
+a283 1
+	Proc_Exit(status);
+d302 2
+a303 2
+		Io_Flush(io_StdOut);
+		Proc_Exit(status);
+d313 1
+a313 1
+		Proc_Exit(status);
+d321 1
+a321 1
+	    PrintTimes(io_StdErr, &usage, &endTime);
+d329 1
+a329 1
+			Io_PrintStream(io_StdErr,
+d356 1
+a356 1
+	    Io_PrintStream(outStream,
+d368 2
+a369 2
+	    Io_Print("Got end signal\n");
+	    Io_Flush(io_StdOut);
+d383 1
+a383 1
+	PrintTimes(io_StdErr, &usage, &endTime);
+d406 1
+a406 1
+	Io_PrintStream(outStream,
+d411 1
+a411 1
+    Proc_Exit(status);
+@
+
+
+1.12
+log
+@Added stuff for when have a master.
+@
+text
+@d39 1
+d60 2
+d213 5
+d369 4
+@
+
+
+1.11
+log
+@Fixed signal rendevous mechanism.
+@
+text
+@d374 1
+d382 1
+@
+
+
+1.10
+log
+@Added disk stats.
+@
+text
+@d174 1
+a174 1
+	    status = Fs_Open("/sprite/daemons/db.pid", 
+d198 1
+a198 1
+		status = Fs_Open("/sprite/daemons/db.pid", FS_READ, 0, &pidFD);
+@
+
+
+1.9
+log
+@Added resetting of vm fs stats and puts child in a family named by its
+own pid.
+@
+text
+@d66 2
+d82 1
+d246 5
+d328 1
+d336 1
+@
+
+
+1.8
+log
+@Added ability to use signals to synchronize instead of pseudo-devices.
+@
+text
+@d81 2
+d181 4
+a184 1
+	    Sig_Pause(0);
+d243 7
+d270 5
+d343 3
+a345 1
+	    Sig_Pause(0);
+d389 1
+@
+
+
+1.7
+log
+@Fixed call to Sys_Shutdown.
+@
+text
+@d25 1
+d38 1
+d57 2
+d91 2
+d155 68
+a222 6
+    /*
+     * Check for multi-program master/slave setup.
+     */
+    if (numClients > 0) {
+	ServerSetup(numClients, &serverData);
+	slave = FALSE;
+a223 3
+    if (slave) {
+	ClientSetup(&clientData);
+    }
+d289 10
+a298 1
+		ClientDone(clientData);
+d325 7
+a331 1
+	Serve(serverData);
+d365 5
+@
+
+
+1.6
+log
+@Removed some lint.
+@
+text
+@a75 2
+extern void PrintTimes();
+extern void PrintTimes();
+d91 2
+a92 1
+	Io_PrintStream(io_StdErr, "Slave: %s [-xfh] -S -c commandPathName flags...\n", argv[0]);
+d221 1
+a221 1
+		Sys_Shutdown(0);	/* sync cache */
+d261 1
+a261 1
+	    Sys_Shutdown(0);	/* sync cache */
+d279 2
+a280 1
+	Io_PrintStream(outStream, "Network stats: Bytes received %d bytes sent %d\n",
+@
+
+
+1.5
+log
+@Converted from Test_Stats to Sys_Stats
+@
+text
+@d66 13
+d90 1
+a90 1
+    Opt_Parse(&argc, argv, numOptions, optionArray);
+d100 1
+a100 1
+	Fs_Command(FS_SET_CACHE_DEBUG, sizeof(int), &newValue);
+d102 1
+a102 1
+	Fs_Command(FS_SET_TRACING, sizeof(int), &newValue);
+d104 1
+a104 1
+	Fs_Command(FS_SET_RPC_DEBUG, sizeof(int), &newValue);
+d106 1
+a106 1
+	Fs_Command(FS_SET_RPC_TRACING, sizeof(int), &newValue);
+d109 2
+a110 1
+	    (void) Fs_Command(FS_SET_RPC_SERVER_HIST, sizeof(int), &newValue);
+d112 2
+a113 1
+	    (void) Fs_Command(FS_SET_RPC_CLIENT_HIST, sizeof(int), &newValue);
+d118 1
+a118 1
+	Fs_Command(FS_EMPTY_CACHE, sizeof(int), &numLockedBlocks);
+d163 2
+a164 1
+    status = Fs_Command(FS_RETURN_STATS, sizeof(FsStats), &fsStartStats);
+d169 1
+a169 1
+    status = Sys_Stats(SYS_VM_STATS, 0, &vmStartStats);
+d174 1
+a174 1
+    status = Sys_Stats(SYS_NET_ETHER_STATS, 0, &netStartStats);
+d184 1
+a184 1
+    status = Sys_Stats(SYS_SCHED_STATS, 0, &startSchedStats);
+d218 1
+a218 1
+	    Sys_Stats(SYS_SCHED_STATS, 0, &endSchedStats);
+d224 3
+a226 1
+	    if (slave) ClientDone(clientData);
+d228 3
+a230 3
+	    Fs_Command(FS_RETURN_STATS, sizeof(FsStats), &fsEndStats);
+	    Sys_Stats(SYS_VM_STATS, 0, &vmEndStats);
+	    Sys_Stats(SYS_NET_ETHER_STATS, 0, &netEndStats);
+d236 1
+a236 1
+	    PrintFsStats(outStream, &fsStartStats, &fsEndStats);
+d244 2
+a245 1
+	    Io_PrintStream(outStream, "Network stats: Bytes received %d bytes sent %d\n",
+d257 1
+a257 1
+	Sys_Stats(SYS_SCHED_STATS, 0, &endSchedStats);
+d264 3
+a266 3
+	Fs_Command(FS_RETURN_STATS, sizeof(FsStats), &fsEndStats);
+	Sys_Stats(SYS_VM_STATS, 0, &vmEndStats);
+	Sys_Stats(SYS_NET_ETHER_STATS, 0, &netEndStats);
+d272 1
+a272 1
+	PrintFsStats(outStream, &fsStartStats, &fsEndStats);
+@
+
+
+1.4
+log
+@Added network bytes stats.
+@
+text
+@d16 2
+a17 1
+#include "rpc.h"
+d153 1
+a153 1
+    status = Vm_Cmd(VM_GET_STATS, &vmStartStats);
+d158 1
+a158 1
+    status = Vm_Cmd(10000, &netStartStats);
+d168 1
+a168 1
+    status = Test_Stats(SCHED_STATS, 0, &startSchedStats);
+d170 1
+a170 1
+	Stat_PrintMsg(status, "Error in Test_Stats");
+d202 1
+a202 1
+	    Test_Stats(SCHED_STATS, 0, &endSchedStats);
+d211 2
+a212 2
+	    Vm_Cmd(VM_GET_STATS, &vmEndStats);
+	    Vm_Cmd(10000, &netEndStats);
+d238 1
+a238 1
+	Test_Stats(SCHED_STATS, 0, &endSchedStats);
+d246 2
+a247 2
+	Vm_Cmd(VM_GET_STATS, &vmEndStats);
+	Vm_Cmd(10000, &netEndStats);
+@
+
+
+1.3
+log
+@Fiddled with the server interface
+@
+text
+@d22 1
+d35 1
+d52 2
+d63 1
+d157 5
+d204 3
+a206 2
+
+	    Sys_Shutdown(0);	/* sync cache */
+d211 1
+d222 6
+d241 3
+a243 1
+	Sys_Shutdown(0);	/* sync cache */
+d246 1
+d257 6
+@
+
+
+1.2
+log
+@Modified bench.c to use pseudo-dev interface
+@
+text
+@d33 1
+a33 1
+extern char *devBench;
+d38 1
+a38 1
+	{OPT_STRING, 'p', (Address)&devBench,
+a133 1
+	ServerStart(serverData);
+a137 1
+	ClientStart(clientData);
+d214 1
+a214 1
+	ServerWait(serverData);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d9 1
+a9 1
+ * statistics taken go to error output.
+d28 1
+a28 1
+int numSlaves = -1;			/* For multi-program synchronization,
+d33 1
+a33 1
+extern char *masterPipe;
+d38 2
+a39 2
+	{OPT_STRING, 'p', (Address)&masterPipe,
+		"Name of the master pipe\n"},
+d48 2
+a49 2
+	{OPT_INT, 'M', (Address)&numSlaves,
+		"Master for -M (int) slaves"},
+d69 1
+a69 1
+    ClientData masterData, slaveData;
+d72 1
+a72 1
+    if (!exec && (numSlaves < 0)) {
+d132 3
+a134 3
+    if (numSlaves > 0) {
+	MasterSetup(numSlaves, &masterData);
+	MasterStart(masterData);
+d138 2
+a139 2
+	SlaveSetup(&slaveData);
+	SlaveStart(slaveData);
+d165 1
+a165 1
+    if (slave || numSlaves < 0) {
+d198 1
+a198 1
+	    if (slave) SlaveDone(slaveData);
+d216 1
+a216 1
+	MasterWait(masterData);
+@

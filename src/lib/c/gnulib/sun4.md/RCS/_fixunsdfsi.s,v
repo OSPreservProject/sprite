@@ -1,0 +1,57 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @! @;
+
+
+1.2
+date     90.02.15.10.48.35;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.02.14.15.30.20;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Patched around bug in Sprite underflow handler
+@
+text
+@	.seg	"text"			! [internal]
+	.proc	4
+	.global	___fixunsdfsi
+___fixunsdfsi:
+!#PROLOGUE# 0
+!#PROLOGUE# 1
+	save	%sp,-96,%sp
+	st	%i0,[%fp+68]
+	st	%i1,[%fp+72]
+	mov	%i0,%o0
+	call	__dtou,2
+	mov	%i1,%o1
+	mov	%o0,%i0
+	ret
+	restore	%g0,%g0,%g0
+	.seg	"data"			! [internal]
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d13 1
+d15 1
+a15 1
+	restore	%g0,%o0,%o0
+@

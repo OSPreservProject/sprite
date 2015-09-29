@@ -1,0 +1,8 @@
+D DS3100_M                          	ds3100.md
+L LOCAL.MK;1                        	local.mk	../main/local.mk
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+F RECOV.H;1                         	recov.h
+F RECOVERY.C;1                      	recovery.c
+F RECOVPRO.C;1                      	recovProc.c
+D SUN3_MD                           	sun3.md

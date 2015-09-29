@@ -1,0 +1,210 @@
+/dev/rsd33c:UsageArray: FreeBlocks wrong; is 696767 should be 692312
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 57 is wrong; is 31616 should be 27520
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 61 is wrong; is 11264 should be 10752
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 63 is wrong; is 107008 should be 102912
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 66 is wrong; is 6016 should be 1920
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 68 is wrong; is 61568 should be 57472
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 70 is wrong; is 347776 should be 343680
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 108 is wrong; is 371200 should be 367104
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 166 is wrong; is 6272 should be 5760
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 170 is wrong; is 4096 should be 0
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 175 is wrong; is 55296 should be 51200
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 232 is wrong; is 10624 should be 14208
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 241 is wrong; is 280832 should be 276736
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 243 is wrong; is 4096 should be 0
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 254 is wrong; is 20864 should be 16768
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 273 is wrong; is 34048 should be 29952
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 282 is wrong; is 88448 should be 84352
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 286 is wrong; is 15488 should be 18560
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 288 is wrong; is 34048 should be 33536
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 292 is wrong; is 4096 should be 0
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 294 is wrong; is 45184 should be 48256
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 303 is wrong; is 45056 should be 40960
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 307 is wrong; is 8192 should be 4096
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 313 is wrong; is 430848 should be 426752
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 344 is wrong; is 73984 should be 69888
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 349 is wrong; is 10368 should be 6272
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 413 is wrong; is 30336 should be 26240
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 422 is wrong; is 13568 should be 9472
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 515 is wrong; is 63232 should be 62720
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 534 is wrong; is 4096 should be 0
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 543 is wrong; is 182272 should be 178176
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 545 is wrong; is 4096 should be 0
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 548 is wrong; is 121088 should be 120576
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 551 is wrong; is 20352 should be 16256
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 555 is wrong; is 9344 should be 8320
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 567 is wrong; is 4096 should be 0
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 569 is wrong; is 41600 should be 40576
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 658 is wrong; is 4096 should be 0
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 664 is wrong; is 12288 should be 8192
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 667 is wrong; is 500864 should be 496768
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 705 is wrong; is 121984 should be 117888
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 726 is wrong; is 60544 should be 56448
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 760 is wrong; is 459264 should be 458752
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 763 is wrong; is 15104 should be 11008
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 769 is wrong; is 409344 should be 405248
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 776 is wrong; is 471552 should be 467456
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 794 is wrong; is 4096 should be 0
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 797 is wrong; is 4096 should be 0
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 812 is wrong; is 105728 should be 105216
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 815 is wrong; is 178048 should be 173952
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 839 is wrong; is 14336 should be 10240
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 857 is wrong; is 61056 should be 56960
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 864 is wrong; is 4096 should be 0
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 871 is wrong; is 16128 should be 12032
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 914 is wrong; is 466944 should be 462848
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 926 is wrong; is 36864 should be 32768
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 945 is wrong; is 134784 should be 130688
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 950 is wrong; is 4096 should be 0
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 952 is wrong; is 478336 should be 474240
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 956 is wrong; is 321792 should be 317696
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 963 is wrong; is 345216 should be 341120
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 970 is wrong; is 18560 should be 21632
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 991 is wrong; is 447616 should be 443520
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1000 is wrong; is 289024 should be 284928
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1007 is wrong; is 74112 should be 70016
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1008 is wrong; is 9728 should be 5632
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1019 is wrong; is 336896 should be 332800
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1044 is wrong; is 138624 should be 134528
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1047 is wrong; is 57344 should be 53248
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1067 is wrong; is 187520 should be 183424
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1079 is wrong; is 31488 should be 27392
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1085 is wrong; is 512 should be 0
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1128 is wrong; is 4096 should be 0
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1133 is wrong; is 434176 should be 430080
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1134 is wrong; is 76800 should be 72704
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1137 is wrong; is 180352 should be 176256
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1147 is wrong; is 17536 should be 13440
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1165 is wrong; is 13056 should be 12544
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1172 is wrong; is 481920 should be 477824
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1176 is wrong; is 12032 should be 7936
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1178 is wrong; is 4224 should be 128
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1221 is wrong; is 351232 should be 350720
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1237 is wrong; is 86528 should be 90112
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1248 is wrong; is 486528 should be 482432
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1281 is wrong; is 13568 should be 17152
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1282 is wrong; is 446720 should be 442624
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1285 is wrong; is 19584 should be 15488
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1304 is wrong; is 480384 should be 476288
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1337 is wrong; is 462848 should be 458752
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1340 is wrong; is 4736 should be 640
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1341 is wrong; is 145664 should be 149248
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1351 is wrong; is 473216 should be 469120
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1357 is wrong; is 491520 should be 487424
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1358 is wrong; is 437376 should be 433280
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1361 is wrong; is 86656 should be 82560
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1372 is wrong; is 87936 should be 83840
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1375 is wrong; is 110976 should be 106880
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1388 is wrong; is 4096 should be 0
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1397 is wrong; is 503808 should be 499712
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1422 is wrong; is 487424 should be 483328
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1424 is wrong; is 492160 should be 488064
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1428 is wrong; is 458752 should be 454656
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1442 is wrong; is 1536 should be 0
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1448 is wrong; is 471040 should be 466944
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1449 is wrong; is 9216 should be 7168
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1470 is wrong; is 17024 should be 12928
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1490 is wrong; is 493696 should be 489600
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1499 is wrong; is 4096 should be 0
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1502 is wrong; is 397568 should be 397056
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1507 is wrong; is 21120 should be 17024
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1511 is wrong; is 29312 should be 25216
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1538 is wrong; is 54528 should be 50432
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1539 is wrong; is 187648 should be 183552
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1551 is wrong; is 4096 should be 0
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1556 is wrong; is 74752 should be 70656
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1558 is wrong; is 181248 should be 177152
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1568 is wrong; is 471040 should be 466944
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1609 is wrong; is 3328 should be 2816
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1655 is wrong; is 168960 should be 164864
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1676 is wrong; is 36480 should be 32384
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1691 is wrong; is 101888 should be 97792
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1707 is wrong; is 452736 should be 448640
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1724 is wrong; is 419456 should be 415360
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1739 is wrong; is 7296 should be 3200
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1750 is wrong; is 15616 should be 11520
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1760 is wrong; is 11008 should be 8448
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1774 is wrong; is 11904 should be 7808
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1792 is wrong; is 502400 should be 505984
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1798 is wrong; is 275840 should be 271744
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1809 is wrong; is 56320 should be 52224
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1817 is wrong; is 17024 should be 12928
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1830 is wrong; is 62208 should be 58112
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1836 is wrong; is 468864 should be 464768
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1893 is wrong; is 11648 should be 11136
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1905 is wrong; is 200704 should be 196608
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1913 is wrong; is 13568 should be 9472
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1914 is wrong; is 131712 should be 131200
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1917 is wrong; is 104960 should be 100864
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1936 is wrong; is 6400 should be 2304
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 1957 is wrong; is 65664 should be 61568
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2003 is wrong; is 8832 should be 4736
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2007 is wrong; is 4096 should be 0
+/dev/rsd33c:Clean segment 2009 with activeBytes 1280
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2014 is wrong; is 9600 should be 5504
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2026 is wrong; is 195712 should be 199296
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2056 is wrong; is 483328 should be 479232
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2059 is wrong; is 60800 should be 56704
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2064 is wrong; is 179328 should be 175232
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2105 is wrong; is 10624 should be 6528
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2110 is wrong; is 111744 should be 107648
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2120 is wrong; is 28544 should be 24448
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2130 is wrong; is 252800 should be 248192
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2132 is wrong; is 71808 should be 75392
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2138 is wrong; is 50688 should be 46592
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2153 is wrong; is 14976 should be 10880
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2156 is wrong; is 63872 should be 59776
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2168 is wrong; is 144000 should be 143488
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2173 is wrong; is 6528 should be 2432
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2174 is wrong; is 55040 should be 50944
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2180 is wrong; is 127104 should be 123008
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2215 is wrong; is 12288 should be 8192
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2236 is wrong; is 234880 should be 230784
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2324 is wrong; is 11648 should be 7552
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2326 is wrong; is 4096 should be 0
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2328 is wrong; is 31232 should be 30720
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2355 is wrong; is 220672 should be 212992
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2383 is wrong; is 4096 should be 0
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2392 is wrong; is 66688 should be 62592
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2396 is wrong; is 32768 should be 28672
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2402 is wrong; is 479232 should be 475136
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2416 is wrong; is 462848 should be 458752
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2422 is wrong; is 4096 should be 0
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2440 is wrong; is 55808 should be 51712
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2449 is wrong; is 478976 should be 474880
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2461 is wrong; is 483840 should be 479744
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2476 is wrong; is 4096 should be 0
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2482 is wrong; is 412288 should be 408192
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2485 is wrong; is 465024 should be 460928
+/dev/rsd33c:CheckUsageArray: Active bytes for seg 2492 is wrong; is 49152 should be 45056
+Non-printable characters in name for file 39104 in directory mendel/
+Entry ? (214) now has nameLength 1, recordLength 12, fileNumber 39104.
+Link count corrected for file 2.  Is 20 should be 21.
+File 39072 is unreferenced
+File 39127 is unreferenced
+File 39129 is unreferenced
+File 39136 is unreferenced
+File 39137 is unreferenced
+File 45080 is unreferenced
+File 45085 is unreferenced
+File 59527 is unreferenced
+File 59528 is unreferenced
+File 68471 is unreferenced
+File 68936 is unreferenced
+File 68952 is unreferenced
+File 69883 is unreferenced
+File 86703 is unreferenced
+File 113979 is unreferenced
+File 114018 is unreferenced
+File 121887 is unreferenced
+File 156094 is unreferenced
+File 156449 is unreferenced
+19 unreferenced files
+1 links counts corrected
+20:22:15.900:Read LFS checkpoint from /dev/rsd33c
+20:22:43.960:Checking files
+20:39:23.530:Checking usage array
+20:39:23.740:Checking directory tree
+20:41:29.470:Checking summary regions
+20:48:58.440:Reporting errors
+/dev/rsd33c: 11 major errors 168 minor errors

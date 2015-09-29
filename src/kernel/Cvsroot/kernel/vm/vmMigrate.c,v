@@ -1,0 +1,2161 @@
+head     9.12;
+branch   ;
+access   ;
+symbols  ds3100:9.12 sun3:9.12 sun4nw:9.11 symm:9.11 spur:9.11 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.12
+date     91.11.04.21.16.35;  author jhh;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     90.11.06.17.16.40;  author rab;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     90.09.12.13.36.32;  author shirriff;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     90.09.11.10.44.45;  author shirriff;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     90.07.11.18.39.46;  author douglis;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.05.03.10.56.00;  author douglis;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     89.11.27.14.53.42;  author mgbaker;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     89.10.30.18.01.19;  author shirriff;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     89.10.24.12.42.34;  author shirriff;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     89.10.23.09.11.19;  author brent;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.22.23.08.41;  author shirriff;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.12.15.08.58;  author douglis;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.23.16;  author douglis;  state Stable;
+branches ;
+next     8.5;
+
+8.5
+date     89.08.14.13.47.42;  author douglis;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.07.31.17.59.39;  author douglis;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.04.06.11.47.02;  author douglis;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.02.10.16.41.52;  author douglis;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.12.04.15.51.12;  author ouster;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.43.00;  author douglis;  state Stable;
+branches ;
+next     6.3;
+
+6.3
+date     88.10.28.19.14.45;  author mlgray;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.10.28.18.18.44;  author mlgray;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.27.19.43.39;  author nelson;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.30.06;  author brent;  state Stable;
+branches ;
+next     5.11;
+
+5.11
+date     88.07.26.11.10.45;  author douglis;  state Exp;
+branches ;
+next     5.10;
+
+5.10
+date     88.07.12.19.54.09;  author nelson;  state Exp;
+branches ;
+next     5.9;
+
+5.9
+date     88.07.08.16.38.58;  author douglis;  state Exp;
+branches ;
+next     5.8;
+
+5.8
+date     88.03.30.11.13.40;  author brent;  state Exp;
+branches ;
+next     5.7;
+
+5.7
+date     88.03.10.15.50.46;  author nelson;  state Exp;
+branches ;
+next     5.6;
+
+5.6
+date     87.12.18.15.16.54;  author nelson;  state Exp;
+branches ;
+next     5.5;
+
+5.5
+date     87.12.12.16.27.02;  author nelson;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     87.12.11.13.27.57;  author nelson;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     87.11.18.21.51.03;  author nelson;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.10.22.14.49.44;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.09.24.14.42.05;  author brent;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.52.34;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.12
+log
+@Changed assertion that de-encapsulated stream ioHandlePtr isn't NIL to
+a test that returns FAILURE.  It's not a fix, but at least the machine
+won't die.
+@
+text
+@/*
+ * vmMigrate.c --
+ *
+ *	Routines to handle process migration from the standpoint of virtual
+ *	memory.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/vm/vmMigrate.c,v 9.11 90/11/06 17:16:40 rab Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <vm.h>
+#include <vmInt.h>
+#include <lock.h>
+#include <proc.h>
+#include <procMigrate.h>
+#include <fs.h>
+#include <fsio.h>
+#include <stdlib.h>
+#include <byte.h>
+#include <stdio.h>
+#include <bstring.h>
+#include <assert.h>    
+
+static ReturnStatus EncapSegment _ARGS_((Vm_Segment *segPtr,
+	Proc_ControlBlock *procPtr, Address *bufPtrPtr));
+ENTRY static void PrepareSegment _ARGS_((Vm_Segment *segPtr));
+static ReturnStatus FlushSegment _ARGS_((Vm_Segment *segPtr));
+static void FreePages _ARGS_((Vm_Segment *segPtr));
+ENTRY static void LoadSegment _ARGS_((int length, register Address buffer,
+	register Vm_Segment *segPtr));
+ENTRY static ReturnStatus CheckSharers _ARGS_((register Vm_Segment *segPtr,
+	Proc_EncapInfo *infoPtr));
+
+/*
+ * Define the number of ints transferred... FIXME: change to a struct.
+ */
+#define NUM_FIELDS 5
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_InitiateMigration --
+ *
+ *	Set up a process for migration.  Lock the dirty pages of each
+ *	segment, and free the rest.  Flush the dirty pages to disk.
+ *
+ * Results:
+ *	SUCCESS is returned directly; the size of the encapsulated state
+ *	is returned in infoPtr->size.
+ *
+ * Side effects:
+ *	The pages in the process are flushed.  Any copy-on-write pages
+ *	are isolated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+ReturnStatus
+Vm_InitiateMigration(procPtr, hostID, infoPtr)
+    Proc_ControlBlock *procPtr;			/* process being migrated */
+    int hostID;					/* host to which it migrates */
+    Proc_EncapInfo *infoPtr;			/* area w/ information about
+						 * encapsulated state */
+{
+    int			seg;
+    Vm_Segment 		*segPtr;
+    Vm_Segment 		**segPtrPtr;
+    int			fsSize;
+    int			size = 0;
+    ReturnStatus	status;
+    int			varSize;
+
+
+    segPtrPtr = procPtr->vmPtr->segPtrArray;
+    status = CheckSharers(segPtrPtr[VM_HEAP], infoPtr);
+    if (status != SUCCESS) {
+	return(status);
+    }
+    fsSize = Fs_GetEncapSize();
+
+    /*
+     * Prepare each segment for migration.  This involves some work in
+     * a monitored procedure and an unmonitored one.
+     */
+    for (seg = VM_CODE; seg < VM_NUM_SEGMENTS; seg++) {
+	segPtr = segPtrPtr[seg];
+	if (segPtr->type != VM_CODE) {
+	    if (vm_CanCOW) {
+		/*
+		 * Get rid of all copy-on-write dependencies.
+		 */
+		status = VmCOWCopySeg(segPtr);
+		if (status != SUCCESS) {
+		    printf("Warning: Vm_MigrateSegment: Could not copy segment\n");
+		    return(status);
+		}
+	    }
+	    PrepareSegment(segPtr);
+	    /*
+	     * Unlock the process while flushing it to the server -- we might
+	     * have to wait a while while this is going on.
+	     */
+	    Proc_Unlock(procPtr);
+	    status = FlushSegment(segPtr);
+	    Proc_Lock(procPtr);
+	    if (status != SUCCESS) {
+		return(status);
+	    }
+	    varSize = segPtr->ptSize * sizeof(Vm_PTE);
+	} else {
+	    varSize = sizeof(Vm_ExecInfo);
+	}
+	size += NUM_FIELDS * sizeof(int) + varSize + fsSize;
+    }
+    infoPtr->size = size;
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_EncapState --
+ *
+ *	Encapsulate the state of a process's virtual memory.  All the
+ *	work in going through its page tables has been done, so
+ *	just wait for all its pages to be written to disk, then
+ *	package up the state.
+ *
+ * Results:
+ *	If any error occurs with writing the swap files, an error is
+ *	indicated; otherwise, SUCCESS is returned.
+ *
+ * Side effects:
+ *	Each of the process's segments is freed.
+ *
+ *----------------------------------------------------------------------
+ */
+/* ARGSUSED */
+ReturnStatus
+Vm_EncapState(procPtr, hostID, infoPtr, bufferPtr)
+    register Proc_ControlBlock 	*procPtr;  /* The process being migrated */
+    int hostID;				   /* host to which it migrates */
+    Proc_EncapInfo *infoPtr;		   /* area w/ information about
+					    * encapsulated state */
+    Address bufferPtr;			   /* Pointer to allocated buffer */
+{
+    ReturnStatus status;
+    Vm_Segment 		*segPtr;
+    Vm_Segment 		**segPtrPtr;
+    int			seg;
+
+
+    /*
+     * Encapsulate the virtual memory, and set up the process so the kernel
+     * knows the process has no VM on this machine.
+     */
+	
+    procPtr->genFlags |= PROC_NO_VM;
+
+    segPtrPtr = procPtr->vmPtr->segPtrArray;
+
+    /*
+     * Encapsulate each segment.  If it's not a code segment, it must
+     * be freed up.
+     */
+    for (seg = VM_CODE; seg < VM_NUM_SEGMENTS; seg++) {
+	segPtr = segPtrPtr[seg];
+	if (segPtr->type != VM_CODE) {
+	    FreePages(segPtr);
+	    if (segPtr->flags & VM_SEG_IO_ERROR) {
+		return(VM_SWAP_ERROR);
+	    }
+	}
+        status = EncapSegment(segPtr, procPtr, &bufferPtr);
+	if (status != SUCCESS) {
+	    return(status);
+	}
+    }
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_DeencapState --
+ *
+ *	Deencapsulate the state of a process's virtual memory. 
+ *	For each segment, get the information from a foreign
+ *	Vm_Segment from a buffer and create a segment for it on this
+ *	(the remote) node.  Set up the file pointer for its swap file,
+ *	if it is a stack or heap segment.  If it is a code segment, do
+ *	a Vm_SegmentFind (just as Proc_Exec does) and initialize the
+ *	page tables if necessary, then return.
+ *
+ * Results:
+ *	If any error occurs with deencapsulating the swap files, an error is
+ *	indicated; otherwise, SUCCESS is returned.
+ *
+ * Side effects:
+ *	Creates segments for the process.
+ *
+ *----------------------------------------------------------------------
+ */
+/* ARGSUSED */
+ReturnStatus
+Vm_DeencapState(procPtr, infoPtr, buffer)
+    register Proc_ControlBlock 	*procPtr;  /* The process being migrated */
+    Proc_EncapInfo *infoPtr;		   /* area w/ information about
+					    * encapsulated state */
+    Address buffer;			   /* Pointer to allocated buffer */
+{
+    ReturnStatus status;
+    Vm_Segment 		*segPtr;
+    int			seg;
+    int 	offset;
+    int 	fileAddr;
+    int 	type;
+    int 	numPages;
+    int 	varSize;
+    int 	ptSize;
+    Fs_Stream 	*filePtr;
+    int 	fsInfoSize;
+    Vm_ExecInfo	*execInfoPtr;
+    Vm_ExecInfo	*oldExecInfoPtr;
+    Boolean	usedFile;
+
+
+    fsInfoSize = Fs_GetEncapSize();
+
+    for (seg = VM_CODE; seg < VM_NUM_SEGMENTS; seg++) {
+	Byte_EmptyBuffer(buffer, int, offset);
+	Byte_EmptyBuffer(buffer, int, fileAddr);
+	Byte_EmptyBuffer(buffer, int, type);
+	if (type != seg) {
+	    if (proc_MigDebugLevel > 0) {
+		panic("Vm_DeencapState: mismatch getting segment %d\n",
+		      seg);
+		return(FAILURE);
+	    }
+	}
+	Byte_EmptyBuffer(buffer, int, numPages);
+	Byte_EmptyBuffer(buffer, int, ptSize);
+	switch (type) {
+	    case VM_CODE: {
+		varSize = sizeof(Vm_ExecInfo);
+		oldExecInfoPtr = (Vm_ExecInfo *) buffer;
+		buffer += varSize;
+		status = Fsio_DeencapStream(buffer, &filePtr);
+		buffer += fsInfoSize;
+		if (status != SUCCESS) {
+		    printf("Vm_DeencapState: Fsio_DeencapStream returned status %x.\n",
+			   status);
+		    return(status);
+		}
+		if (filePtr->ioHandlePtr == (Fs_HandleHeader *) NIL) {
+		    printf("Vm_DeencapState: stream has NIL ioHandlePtr\n");
+		    return FAILURE;
+		}
+		segPtr = Vm_FindCode(filePtr, procPtr, &execInfoPtr, &usedFile);
+		if (segPtr == (Vm_Segment *) NIL) {
+		    segPtr = Vm_SegmentNew(VM_CODE, filePtr, fileAddr,
+					   numPages, offset, procPtr);
+		    if (segPtr == (Vm_Segment *) NIL) {
+			Vm_InitCode(filePtr, (Vm_Segment *) NIL,
+				    (Vm_ExecInfo *) NIL);
+			(void)Fs_Close(filePtr);
+			return(VM_NO_SEGMENTS);
+		    }
+		    Vm_ValidatePages(segPtr, offset, 
+				     offset + numPages - 1, FALSE, TRUE);
+		    Vm_InitCode(filePtr, segPtr, oldExecInfoPtr);
+		} else {
+		    if (!usedFile) {
+			(void)Fs_Close(filePtr);
+		    }
+		}
+		procPtr->vmPtr->segPtrArray[type] = segPtr;
+		break;
+	    }
+	    case VM_HEAP: {
+		Fsio_StreamCopy(procPtr->vmPtr->segPtrArray[VM_CODE]->filePtr,
+				    &filePtr);
+		if (filePtr == (Fs_Stream *) NIL) {
+		    panic("Vm_DeencapState: no code file pointer.\n");
+		}
+		break;
+	    }
+	    case VM_STACK: {
+		filePtr = (Fs_Stream *) NIL;
+		break;
+	    }
+	    default: {
+		panic("Vm_DeencapState: unknown segment type.\n");
+	    }
+	}
+	if (type != VM_CODE) {
+	    segPtr = Vm_SegmentNew(type, filePtr, fileAddr, numPages,
+				   offset, procPtr);
+	    if (segPtr == (Vm_Segment *) NIL) {
+		return(VM_NO_SEGMENTS);
+	    }
+	    procPtr->vmPtr->segPtrArray[type] = segPtr;
+	    segPtr->ptSize = ptSize;
+	    varSize = ptSize * sizeof(Vm_PTE);
+	    LoadSegment(varSize, buffer, segPtr);
+	    buffer += varSize;
+	    if (proc_MigDebugLevel > 4) {
+		printf("Deencapsulating swap file for segment %d.\n", type);
+	    }
+	    status = Fsio_DeencapStream(buffer, &segPtr->swapFilePtr);
+	    buffer += fsInfoSize;
+	    if (status != SUCCESS) {
+		printf("Vm_DeencapState: Fsio_DeencapStream on swapFile returned status %x.\n",
+		       status);
+		return(status);
+	    }
+	    if (proc_MigDebugLevel > 4) {
+		printf("Deencapsulated swap file successfully.\n");
+	    }
+	    if (segPtr->swapFileName != (char *) NIL) { 
+		free(segPtr->swapFileName);
+		segPtr->swapFileName = (char *) NIL;
+	    }
+	    segPtr->flags |= VM_SWAP_FILE_OPENED;
+	}
+    }
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_FinishMigration --
+ *
+ *	Clean up the state of a process's virtual memory after migration.
+ *	The process control blocked is assumed to be unlocked on entry.
+ *
+ *		.. OBSOLETE ..
+ *
+ * Results:
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	Deletes segments for the process.
+ *
+ *----------------------------------------------------------------------
+ */
+/* ARGSUSED */
+ReturnStatus
+Vm_FinishMigration(procPtr, hostID, infoPtr, bufferPtr, failure)
+    register Proc_ControlBlock 	*procPtr;  /* The process being migrated */
+    int hostID;				   /* host to which it migrates */
+    Proc_EncapInfo *infoPtr;		   /* area w/ information about
+					    * encapsulated state */
+    Address bufferPtr;			   /* Pointer to allocated buffer */
+    int failure;			   /* indicates whether migration
+					      succeeded */
+{
+    int seg;
+    
+    if (proc_MigDebugLevel > 4) {
+	printf("Vm_FinishMigration called.\n");
+    }
+    
+    for (seg = VM_CODE; seg < VM_NUM_SEGMENTS; seg++) {
+	if (proc_MigDebugLevel > 5) {
+	    printf("Vm_FinishMigration deleting segment %d.\n", seg);
+	}
+	Vm_SegmentDelete(procPtr->vmPtr->segPtrArray[seg], procPtr);
+    }
+    /*
+     * Would also need to set PROC_NO_VM here...
+     */
+    return(SUCCESS);
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * EncapSegment --
+ *
+ * 	Copy the information from a Vm_Segment into a buffer, ready to
+ *	be transferred to another node.  We have to duplicate the
+ *	stream to the swap or code file for the segment because
+ *	Fsio_EncapStream effectively closes the stream.  By dup'ing the
+ *	stream we can later call Vm_SegmentDelete which will close the
+ *	stream (again).
+ *
+ * Results:
+ *      If an error occurred writing the swap file, VM_SWAP_ERROR is
+ *	returned, else SUCCESS.  The new pointer into the buffer
+ *	is returned in *bufPtrPtr.
+ *
+ * Side effects:
+ *      None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+static ReturnStatus
+EncapSegment(segPtr, procPtr, bufPtrPtr)
+    Vm_Segment	*segPtr;	/* Pointer to the segment to be migrated */
+    Proc_ControlBlock 	*procPtr;  /* The process being migrated */
+    Address	*bufPtrPtr;	/* pointer to pointer into buffer */
+{
+    register Address ptr;
+    int varSize;
+    ReturnStatus status;
+    Fs_Stream *dummyStreamPtr;
+
+    if (segPtr->type != VM_CODE) {
+	varSize = segPtr->ptSize * sizeof(Vm_PTE);
+    } else {
+	varSize = sizeof(Vm_ExecInfo);
+    }
+
+    ptr = *bufPtrPtr;
+    bcopy((Address) &segPtr->offset, ptr, NUM_FIELDS * sizeof(int));
+    ptr += NUM_FIELDS * sizeof(int);
+    if (segPtr->type != VM_CODE) {
+	bcopy((Address) segPtr->ptPtr, ptr, varSize);
+	ptr += varSize;
+	Fsio_StreamCopy(segPtr->swapFilePtr, &dummyStreamPtr);
+	status = Fsio_EncapStream(segPtr->swapFilePtr, ptr);
+    } else {
+	bcopy((Address) &segPtr->execInfo, ptr, varSize);
+	ptr += varSize;
+	Fsio_StreamCopy(segPtr->filePtr, &dummyStreamPtr);
+	status = Fsio_EncapStream(segPtr->filePtr, ptr);
+    }
+    if (status != SUCCESS) {
+	return(status);
+    }
+    *bufPtrPtr = ptr + Fs_GetEncapSize();
+
+    if (proc_MigDebugLevel > 4) {
+	printf("Deleting segment %d from encapsulation routine.\n",
+	       segPtr->type);
+    }
+    Proc_Unlock(procPtr);
+    VmMach_HandleSegMigration(segPtr);
+    Vm_SegmentDelete(segPtr, procPtr);
+    Proc_Lock(procPtr);
+    if (proc_MigDebugLevel > 4) {
+	printf("Deleted segment.\n");
+    }
+
+    return(SUCCESS);
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LoadSegment --
+ *
+ *	Copy the page table for a segment from a buffer area into the
+ * 	segment's page table.  
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The page table is loaded.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY static void
+LoadSegment(length, buffer, segPtr)
+    int				length;
+    register	Address		buffer;
+    register	Vm_Segment	*segPtr;
+{
+    LOCK_MONITOR;
+
+    bcopy(buffer, (Address) segPtr->ptPtr, length);
+
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CheckSharers --
+ *
+ *	Verify that a process is not using shared memory.  
+ *
+ * Results:
+ *	SUCCESS if not, or GEN_PERMISSION_DENIED if so.
+ *	Once we can handle shared memory processes, it will return
+ *	SUCCESS and rely on the special flag in the encapInfo structure
+ *	to fix things up.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY static ReturnStatus
+CheckSharers(segPtr, infoPtr)
+    register	Vm_Segment	*segPtr;
+    Proc_EncapInfo *infoPtr;			/* area w/ information about
+						 * encapsulated state */
+    
+{
+    LOCK_MONITOR;
+
+    if (segPtr->refCount > 1) {
+	infoPtr->special = 1;
+	if (proc_MigDebugLevel > 0) {
+	    printf("Vm_InitiateMigration: can't migrate process sharing heap.\n");
+	}
+	UNLOCK_MONITOR;
+	return(FAILURE);
+    }
+    UNLOCK_MONITOR;
+    return(SUCCESS);
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * PrepareSegment --
+ *
+ *	Set up a segment to be migrated.  Lock its dirty pages and free
+ *	the rest.  
+ *
+ * Results:
+ *     	The number of pages flushed is returned.
+ *
+ * Side effects:
+ *     	All modified pages allocated to the segment are locked; other
+ *	pages are freed.
+ *
+ * ----------------------------------------------------------------------------
+ */
+ENTRY static void
+PrepareSegment(segPtr)
+    Vm_Segment	*segPtr;	/* Pointer to the segment to be flushed */
+{
+    Vm_PTE		*ptePtr;
+    Vm_VirtAddr		virtAddr;
+    Boolean		referenced;
+    Boolean		modified;
+    register int	i;
+
+    LOCK_MONITOR;
+
+    virtAddr.segPtr = segPtr;
+    virtAddr.sharedPtr = (Vm_SegProcList *) NIL;
+
+    if (segPtr->type == VM_STACK) {
+	virtAddr.page = mach_LastUserStackPage - segPtr->numPages + 1;
+	ptePtr = VmGetPTEPtr(segPtr, virtAddr.page);
+    } else {
+	virtAddr.page = segPtr->offset;
+	ptePtr = segPtr->ptPtr;
+    }
+
+    /*
+     * Free all clean pages that this segment has in real memory.
+     * Lock the dirty ones.
+     */
+
+    for (i = 0; 
+	 i < segPtr->numPages; 
+	 i++, virtAddr.page++, VmIncPTEPtr(ptePtr, 1)) {
+	/*
+	 * If the page is not resident in memory then go to the next page.
+	 */
+	if (!(*ptePtr & VM_PHYS_RES_BIT)) {
+	    continue;
+	}
+	/*
+	 * The page is resident so lock it if it needs to be written, or else
+	 * free the page frame.
+	 */
+	VmMach_GetRefModBits(&virtAddr, Vm_GetPageFrame(*ptePtr), &referenced,
+			     &modified);
+	if ((*ptePtr & VM_MODIFIED_BIT) || modified) {
+	    VmLockPageInt(Vm_GetPageFrame(*ptePtr));
+	} else {
+	    VmPageFreeInt(Vm_GetPageFrame(*ptePtr));
+	    *ptePtr &= ~(VM_PHYS_RES_BIT | VM_PAGE_FRAME_FIELD);
+	    segPtr->resPages--;
+	}
+    }
+
+    UNLOCK_MONITOR;
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * FlushSegment --
+ *
+ *     	Flush the dirty pages of a segment to disk.  This part is done
+ *	without the monitor lock because it calls monitored procedures.
+ *
+ * Results:
+ *     	If the swap file cannot be opened, the error is propagated.  Otherwise,
+ *	SUCCESS is returned.
+ *
+ * Side effects:
+ *     All modified pages allocated to the segment are forced to disk.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static ReturnStatus
+FlushSegment(segPtr)
+    Vm_Segment 	*segPtr;	/* Pointer to the segment to be flushed */
+{
+    Vm_PTE		*ptePtr;
+    Vm_VirtAddr		virtAddr;
+    int    		i;
+    ReturnStatus	status;
+#ifndef CLEAN
+    int			pagesWritten = 0;
+#endif /* CLEAN */
+
+    /*
+     * Open the swap file unconditionally.
+     */
+    
+    VmSwapFileLock(segPtr);
+    if (!(segPtr->flags & VM_SWAP_FILE_OPENED)) {
+	status = VmOpenSwapFile(segPtr);
+	if (status != SUCCESS) {
+	    VmSwapFileUnlock(segPtr);
+	    return(status);
+	}
+    }
+    VmSwapFileUnlock(segPtr);
+
+    virtAddr.segPtr = segPtr;
+    virtAddr.sharedPtr = (Vm_SegProcList *) NIL;
+
+    if (segPtr->type == VM_STACK) {
+	virtAddr.page = mach_LastUserStackPage - segPtr->numPages + 1;
+	ptePtr = VmGetPTEPtr(segPtr, virtAddr.page);
+    } else {
+	virtAddr.page = segPtr->offset;
+	ptePtr = segPtr->ptPtr;
+    }
+
+    /*
+     * Go through the page table and cause all modified pages to be
+     * written to disk.  During encapsulation time, we'll start at the
+     * top and free each page.  This has the side-effect of waiting
+     * for dirty pages to go to disk.  Note that by doing this
+     * two-pass write, multiple pages may be written to disk at once
+     * since the writes are asynchronous.
+     */
+    
+    for (i = 0; 
+	 i < segPtr->numPages; 
+	 i++, virtAddr.page++, VmIncPTEPtr(ptePtr, 1)) {
+	/*
+	 * If the page is not resident in memory then go to the next page.
+	 */
+	if (!(*ptePtr & VM_PHYS_RES_BIT)) {
+	    continue;
+	}
+	/*
+	 * The page is dirty so put it on the dirty list.  Wait later on
+	 * for it to be written out.
+	 */
+#ifndef CLEAN
+	pagesWritten++;
+#endif /* CLEAN */
+	
+	VmPutOnDirtyList(Vm_GetPageFrame(*ptePtr));
+    }
+#ifndef CLEAN
+	if (proc_MigDoStats) {
+	    Proc_MigAddToCounter(pagesWritten,
+				 &proc_MigStats.varStats.pagesWritten,
+				 &proc_MigStats.squared.pagesWritten);
+	}
+#endif /* CLEAN */
+    return(SUCCESS);
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FreePages --
+ *
+ *	Free the pages of a segment (waiting for them to be written first).
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The pages are freed..
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+FreePages(segPtr)
+    Vm_Segment *segPtr;		/* segment whose pages should be freed */
+{
+    Vm_PTE		*ptePtr;
+    Vm_VirtAddr		virtAddr;
+    int    		i;
+
+    virtAddr.segPtr = segPtr;
+    virtAddr.sharedPtr = (Vm_SegProcList *) NIL;
+
+    if (segPtr->type == VM_STACK) {
+	virtAddr.page = mach_LastUserStackPage - segPtr->numPages + 1;
+	ptePtr = VmGetPTEPtr(segPtr, virtAddr.page);
+    } else {
+	virtAddr.page = segPtr->offset;
+	ptePtr = segPtr->ptPtr;
+    }
+
+    for (i = 0; 
+	 i < segPtr->numPages; 
+	 i++, virtAddr.page++, VmIncPTEPtr(ptePtr, 1)) {
+	/*
+	 * If the page is not resident in memory then go to the next page.
+	 */
+	if (!(*ptePtr & VM_PHYS_RES_BIT)) {
+	    continue;
+	}
+	VmPageFree(Vm_GetPageFrame(*ptePtr));
+	segPtr->resPages--;
+	*ptePtr = VM_VIRT_RES_BIT | VM_ON_SWAP_BIT;
+    }
+}
+@
+
+
+9.11
+log
+@Check to make sure file pointer returned from Fsio_DeencapState is valid.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMigrate.c,v 9.10 90/09/12 13:36:32 shirriff Exp Locker: rab $ SPRITE (Berkeley)";
+d265 4
+a268 1
+		assert(filePtr->ioHandlePtr != (Fs_HandleHeader *) NIL);
+@
+
+
+9.10
+log
+@Changed includes from quotes to angles.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMigrate.c,v 9.9 90/09/11 10:44:45 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d27 1
+a27 1
+    
+d265 1
+@
+
+
+9.9
+log
+@Added function prototyping.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm.ken/RCS/vmMigrate.c,v 9.8 90/07/11 18:39:46 douglis Exp Locker: shirriff $ SPRITE (Berkeley)";
+d15 12
+a26 12
+#include "sprite.h"
+#include "vm.h"
+#include "vmInt.h"
+#include "lock.h"
+#include "proc.h"
+#include "procMigrate.h"
+#include "fs.h"
+#include "fsio.h"
+#include "stdlib.h"
+#include "byte.h"
+#include "stdio.h"
+#include "bstring.h"
+@
+
+
+9.8
+log
+@changed to use new Proc_MigAddToCounter routine, which takes a pointer to
+the place to add in the square of the value passed.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMigrate.c,v 9.7 90/05/03 10:56:00 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+a15 1
+#include "vmMach.h"
+d25 2
+d29 9
+a37 6
+static ReturnStatus 		EncapSegment();
+ENTRY static void	 	PrepareSegment();
+static ReturnStatus		FlushSegment();
+static void			FreePages();
+ENTRY static void		LoadSegment();
+ENTRY static ReturnStatus	CheckSharers();
+@
+
+
+9.7
+log
+@fix to keep processes from being locked while vm flushed.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMigrate.c,v 9.6 89/11/27 14:53:42 mgbaker Exp Locker: douglis $ SPRITE (Berkeley)";
+d683 3
+a685 1
+	    Proc_MigAddToCounter(&proc_MigStats.pagesWritten, pagesWritten);
+@
+
+
+9.6
+log
+@Added sun4 migration.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMigrate.c,v 9.5 89/10/30 18:01:19 shirriff Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d103 5
+d109 1
+@
+
+
+9.5
+log
+@Lint change.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMigrate.c,v 9.4 89/10/24 12:42:34 shirriff Exp $ SPRITE (Berkeley)";
+d433 1
+a433 2
+#define EARLY_DELETE
+#ifdef EARLY_DELETE
+d439 1
+d445 1
+a445 1
+#endif
+@
+
+
+9.4
+log
+@Fixed shared memory problems.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMigrate.c,v 9.3 89/10/23 09:11:19 brent Exp Locker: shirriff $ SPRITE (Berkeley)";
+d23 1
+@
+
+
+9.3
+log
+@Updated calls to new FS modules
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMigrate.c,v 9.2 89/10/22 23:08:41 shirriff Exp $ SPRITE (Berkeley)";
+d550 1
+d636 1
+d709 1
+@
+
+
+9.2
+log
+@Lint changes.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMigrate.c,v 9.1 89/10/12 15:08:58 douglis Exp $ SPRITE (Berkeley)";
+d247 1
+a247 1
+		status = Fs_DeencapStream(buffer, &filePtr);
+d250 1
+a250 1
+		    printf("Vm_DeencapState: Fs_DeencapStream returned status %x.\n",
+d276 1
+a276 1
+		Fs_StreamCopy(procPtr->vmPtr->segPtrArray[VM_CODE]->filePtr,
+d305 1
+a305 1
+	    status = Fs_DeencapStream(buffer, &segPtr->swapFilePtr);
+d308 1
+a308 1
+		printf("Vm_DeencapState: Fs_DeencapStream on swapFile returned status %x.\n",
+d382 1
+a382 1
+ *	Fs_EncapStream effectively closes the stream.  By dup'ing the
+d420 2
+a421 2
+	Fs_StreamCopy(segPtr->swapFilePtr, &dummyStreamPtr);
+	status = Fs_EncapStream(segPtr->swapFilePtr, ptr);
+d425 2
+a426 2
+	Fs_StreamCopy(segPtr->filePtr, &dummyStreamPtr);
+	status = Fs_EncapStream(segPtr->filePtr, ptr);
+@
+
+
+9.1
+log
+@use Proc_MigAddToCounter in order to use monitor when accessing
+statistics variable
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMigrate.c,v 9.0 89/09/12 15:23:16 douglis Stable Locker: douglis $ SPRITE (Berkeley)";
+d276 1
+a276 1
+		(void)Fs_StreamCopy(procPtr->vmPtr->segPtrArray[VM_CODE]->filePtr,
+d383 1
+a383 1
+ *	stream we can later call Vm_DeleteSegment which will close the
+d420 1
+a420 1
+	(void)Fs_StreamCopy(segPtr->swapFilePtr, &dummyStreamPtr);
+d425 1
+a425 1
+	(void)Fs_StreamCopy(segPtr->filePtr, &dummyStreamPtr);
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMigrate.c,v 8.5 89/08/14 13:47:42 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d616 3
+d667 1
+a667 1
+	proc_MigStats.pagesWritten++;
+d672 5
+@
+
+
+8.5
+log
+@added return to Vm_FinishMigration to make lint happy.  routine isn't 
+called at this point.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMigrate.c,v 8.4 89/07/31 17:59:39 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+@
+
+
+8.4
+log
+@migration statistics
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMigrate.c,v 8.3 89/04/06 11:47:02 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d370 1
+@
+
+
+8.3
+log
+@changes for table-driven process migration encapsulation.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMigrate.c,v 8.2 89/02/10 16:41:52 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d662 4
+@
+
+
+8.2
+log
+@check the IO_ERROR flag to return a bad status if pageout failed.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMigrate.c,v 8.1 88/12/04 15:51:12 ouster Exp Locker: douglis $ SPRITE (Berkeley)";
+d21 1
+d25 13
+d39 6
+a44 27
+static ReturnStatus 	EncapsulateInfo();
+static ReturnStatus	FlushSegment();
+static void 		FreeSegment();
+ENTRY static void 	PrepareFlush();
+ENTRY static void 	LoadSegment();
+
+Boolean vmMigLeakDebug = FALSE;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_FreezeSegments --
+ *
+ *	Freeze all segments associated with a process, as well as marking
+ *	any other processes sharing memory with this process for migration
+ *	as well.
+ *
+ * Results:
+ *	A linked list of processes is returned.  The processes are all
+ *	the processes sharing memory, including the process that is passed
+ *	into Vm_FreezeSegments.  The length of the list is also returned.
+ *	SUCCESS is returned but other ReturnStatuses may be returned at
+ *	a later point.
+ *
+ * Side effects:
+ *	The processes are suspended and marked for migration.
+d46 11
+d61 6
+a66 6
+ENTRY ReturnStatus
+Vm_FreezeSegments(procPtr, nodeID, procListPtr, numProcsPtr)
+    Proc_ControlBlock	*procPtr;	/* The process being migrated */
+    int			nodeID;	        /* Node to which it migrates */
+    List_Links		**procListPtr;	/* Pointer to header of process list */
+    int			*numProcsPtr;	/* Number of processes sharing */
+d68 1
+d70 5
+a74 4
+#ifdef WONT_WORK_YET
+    register VmProcLink	*procLinkPtr;
+    register Proc_ControlBlock	*shareProcPtr;
+#endif
+a75 1
+    LOCK_MONITOR;
+d77 4
+a80 9
+    segPtr = procPtr->vmPtr->segPtrArray[VM_HEAP];
+#ifdef WONT_WORK_YET
+    *numProcsPtr = 0;
+    LIST_FORALL(segPtr->procList, (List_Links *) procLinkPtr) {
+	shareProcPtr = procLinkPtr->procPtr;
+	Proc_Lock(shareProcPtr);	/* DEADLOCK ????? */
+	Proc_FlagMigration(shareProcPtr, nodeID);
+	Proc_Unlock(shareProcPtr);
+	*numProcsPtr += 1;
+d82 29
+a110 3
+#else
+    if (segPtr->refCount > 1) {
+	panic("Can't migrate process sharing heap.\n");
+d112 1
+a112 5
+    *numProcsPtr = 1;
+#endif    
+    *procListPtr = segPtr->procList;
+
+    UNLOCK_MONITOR;
+d120 1
+a120 1
+ * Vm_MigrateSegment --
+d122 11
+a132 15
+ *	Force a segment to disk and package the information for it into a
+ *	buffer.  Allocate space for the buffer and return a pointer to it, as
+ *	well as the length of the buffer.  If the segment is a code segment,
+ *	do not search for dirty pages; otherwise, flush dirty pages to the
+ *	swap file.
+ *
+ * Results:
+ *	A pointer to the buffer containing the segment information is
+ *	returned.  The size of the buffer is returned, as is the number of
+ *	pages written.  Also, a ReturnStatus
+ *	indicates SUCCESS or FAILURE.
+ *
+ * Side effects:
+ *	The segment is forced to disk.  Memory is allocated (to be freed
+ *	by the proc module after being sent to the remote node).
+d136 1
+d138 6
+a143 5
+Vm_MigrateSegment(segPtr, bufferPtr, bufferSizePtr, numPagesPtr)
+    Vm_Segment 	*segPtr;	/* Pointer to segment to migrate */
+    Address	*bufferPtr;
+    int		*bufferSizePtr;
+    int		*numPagesPtr;	/* Number of pages flushed */
+d146 13
+d160 10
+a169 10
+    *numPagesPtr = 0;
+    if (segPtr->type != VM_CODE) {
+	if (vm_CanCOW) {
+	    /*
+	     * Get rid of all copy-on-write dependencies.
+	     */
+	    status = VmCOWCopySeg(segPtr);
+	    if (status != SUCCESS) {
+		printf("Warning: Vm_MigrateSegment: Could not copy segment\n");
+		return(status);
+d172 1
+a172 2
+	PrepareFlush(segPtr, numPagesPtr);
+	status = FlushSegment(segPtr);
+d176 144
+a319 2
+	if (segPtr->flags & VM_SEG_IO_ERROR) {
+	    return(VM_SWAP_ERROR);
+d322 1
+a322 5
+    status = EncapsulateInfo(segPtr, bufferPtr, bufferSizePtr);
+#ifdef CANT_DO_YET
+    FreeSegment(segPtr);
+#endif
+    return(status);
+d327 3
+a329 1
+ * ----------------------------------------------------------------------------
+d331 2
+a332 1
+ * EncapsulateInfo --
+d334 1
+a334 5
+ *     	Copy the information from a Vm_Segment into a buffer, ready to be
+ *	transferred to another node.  We have to duplicate the stream to the
+ *	swap or code file for the segment because Fs_EncapStream effectively
+ *	closes the stream.  By dup'ing the stream the proc module can
+ *	safely call Vm_DeleteSegment which will close the stream (again).
+d337 52
+a388 1
+ *      A pointer to the buffer and its length are returned.
+d391 1
+a391 1
+ *      Memory for the buffer is allocated.
+a395 2
+#define NUM_FIELDS 5
+
+d397 1
+a397 1
+EncapsulateInfo(segPtr, bufferPtr, bufferSizePtr)
+d399 2
+a400 2
+    Address	*bufferPtr;
+    int		*bufferSizePtr;
+d402 1
+a402 3
+    Address buffer;
+    Address ptr;
+    int bufferSize;
+d413 1
+a413 3
+    bufferSize = NUM_FIELDS * sizeof(int) + varSize + Fs_GetEncapSize();
+    buffer = (Address) malloc(bufferSize);
+    ptr = buffer;
+d430 14
+a443 2
+    *bufferPtr = buffer;
+    *bufferSizePtr = bufferSize;
+a446 121
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Vm_ReceiveSegmentInfo --
+ *
+ *     	Get the information from a foreign Vm_Segment from a buffer and create
+ *	a segment for it on this (the remote) node.  Set up the file pointer
+ *	for its swap file, if it is a stack or heap segment.  If it is
+ *	a code segment, do a Vm_SegmentFind (just as Proc_Exec does) and
+ *	initialize the page tables if necessary, then return.
+ *
+ * Results:
+ *      SUCCESS - the segment was created successfully.
+ *	Error codes will be propagated from other routines.
+ *
+ * Side effects:
+ *      None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+ReturnStatus
+Vm_ReceiveSegmentInfo(procPtr, buffer)
+    Proc_ControlBlock	*procPtr;/* Control block for foreign process */
+    Address		buffer;	 /* Buffer containing segment information */
+{
+    int 	offset;
+    int 	fileAddr;
+    int 	type;
+    int 	numPages;
+    int 	varSize;
+    int 	ptSize;
+    Vm_Segment 	*segPtr;
+    ReturnStatus status;
+    Fs_Stream 	*filePtr;
+    int 	fsInfoSize;
+    Vm_ExecInfo	*execInfoPtr;
+    Vm_ExecInfo	*oldExecInfoPtr;
+    Boolean	usedFile;
+
+    fsInfoSize = Fs_GetEncapSize();
+
+    Byte_EmptyBuffer(buffer, int, offset);
+    Byte_EmptyBuffer(buffer, int, fileAddr);
+    Byte_EmptyBuffer(buffer, int, type);
+    Byte_EmptyBuffer(buffer, int, numPages);
+    Byte_EmptyBuffer(buffer, int, ptSize);
+    switch (type) {
+	case VM_CODE:
+	    varSize = sizeof(Vm_ExecInfo);
+	    oldExecInfoPtr = (Vm_ExecInfo *) buffer;
+	    buffer += varSize;
+	    status = Fs_DeencapStream(buffer, &filePtr);
+	    buffer += fsInfoSize;
+	    if (status != SUCCESS) {
+		printf("Vm_ReceiveSegmentInfo: Fs_DeencapStream returned status %x.\n",
+			   status);
+		return(status);
+	    }
+	    segPtr = Vm_FindCode(filePtr, procPtr, &execInfoPtr, &usedFile);
+	    if (segPtr == (Vm_Segment *) NIL) {
+		if (vmMigLeakDebug) {
+		    printf("Calling Vm_SegmentNew for code.\n");
+		}
+		segPtr = Vm_SegmentNew(VM_CODE, filePtr, fileAddr,
+				       numPages, offset, procPtr);
+		if (segPtr == (Vm_Segment *) NIL) {
+		    Vm_InitCode(filePtr, (Vm_Segment *) NIL,
+				(Vm_ExecInfo *) NIL);
+		    (void)Fs_Close(filePtr);
+		    return(VM_NO_SEGMENTS);
+		}
+		Vm_ValidatePages(segPtr, offset, 
+				 offset + numPages - 1, FALSE, TRUE);
+		Vm_InitCode(filePtr, segPtr, oldExecInfoPtr);
+	    } else {
+		if (!usedFile) {
+		    (void)Fs_Close(filePtr);
+		}
+	    }
+	    procPtr->vmPtr->segPtrArray[type] = segPtr;
+	    return(SUCCESS);
+	case VM_HEAP:
+	    (void)Fs_StreamCopy(procPtr->vmPtr->segPtrArray[VM_CODE]->filePtr,
+			  &filePtr);
+	    if (filePtr == (Fs_Stream *) NIL) {
+		panic("Vm_ReceiveSegmentInfo: no code file pointer.\n");
+	    }
+	    break;
+	case VM_STACK:
+	    filePtr = (Fs_Stream *) NIL;
+	    break;
+	default:
+	    panic("Vm_ReceiveSegmentInfo: unknown segment type.\n");
+    }
+    if (vmMigLeakDebug) {
+	printf("Calling Vm_SegmentNew for type = %d.\n", type);
+    }
+    segPtr = Vm_SegmentNew(type, filePtr, fileAddr, numPages, offset, procPtr);
+    if (segPtr == (Vm_Segment *) NIL) {
+	return(VM_NO_SEGMENTS);
+    }
+    procPtr->vmPtr->segPtrArray[type] = segPtr;
+    segPtr->ptSize = ptSize;
+    varSize = ptSize * sizeof(Vm_PTE);
+    LoadSegment(varSize, buffer, segPtr);
+    buffer += varSize;
+    status = Fs_DeencapStream(buffer, &segPtr->swapFilePtr);
+    if (status != SUCCESS) {
+	printf("Vm_ReceiveSegmentInfo: Fs_DeencapStream on swapFile returned status %x.\n",
+		   status);
+	return(status);
+    }
+    if (segPtr->swapFileName != (char *) NIL) { 
+	free(segPtr->swapFileName);
+	segPtr->swapFileName = (char *) NIL;
+    }
+    segPtr->flags |= VM_SWAP_FILE_OPENED;
+    return(SUCCESS);
+}
+d480 111
+d595 2
+a596 2
+ *     	Flush the dirty pages of a segment to disk.  The monitor lock is not
+ *	needed because all the pages should have been locked beforehand.
+a613 2
+    Vm_PTE		*firstPTEPtr;
+    int			firstPage;
+d642 5
+a646 4
+     * written to disk.  Then start at the top and free each page.  This
+     * has the side-effect of waiting for dirty pages to go to disk.
+     * Note that by doing this two-pass write, multiple pages may be
+     * written to disk at once since the writes are asynchronous.
+a648 3
+    firstPTEPtr = ptePtr;
+    firstPage = virtAddr.page;
+
+a663 15
+    ptePtr = firstPTEPtr;
+    virtAddr.page = firstPage;
+    for (i = 0; 
+	 i < segPtr->numPages; 
+	 i++, virtAddr.page++, VmIncPTEPtr(ptePtr, 1)) {
+	/*
+	 * If the page is not resident in memory then go to the next page.
+	 */
+	if (!(*ptePtr & VM_PHYS_RES_BIT)) {
+	    continue;
+	}
+	VmPageFree(Vm_GetPageFrame(*ptePtr));
+	segPtr->resPages--;
+	*ptePtr = VM_VIRT_RES_BIT | VM_ON_SWAP_BIT;
+    }
+d667 1
+d670 1
+a670 1
+ * ----------------------------------------------------------------------------
+d672 1
+a672 1
+ * PrepareFlush --
+d674 1
+a674 3
+ * 	Lock the dirty pages of a segment, and free the rest.  The
+ *	monitor lock is not needed because all the pages should have
+ *	been locked beforehand.
+d677 1
+a677 1
+ *     	The number of pages flushed is returned.
+d680 1
+a680 2
+ *     	All modified pages allocated to the segment are locked; other
+ *	pages are freed.
+d682 1
+a682 1
+ * ----------------------------------------------------------------------------
+d684 4
+a687 4
+ENTRY static void
+PrepareFlush(segPtr, numPagesPtr)
+    Vm_Segment	*segPtr;	/* Pointer to the segment to be flushed */
+    int		*numPagesPtr;	/* Number of pages flushed */
+d691 1
+a691 5
+    Boolean		referenced;
+    Boolean		modified;
+    register int	i;
+
+    LOCK_MONITOR;
+a702 5
+    /*
+     * Free all clean pages that this segment has in real memory.
+     * Lock the dirty ones.
+     */
+
+d712 3
+a714 82
+	/*
+	 * The page is resident so lock it if it needs to be written, or else
+	 * free the page frame.
+	 */
+	VmMach_GetRefModBits(&virtAddr, Vm_GetPageFrame(*ptePtr), &referenced,
+			     &modified);
+	if ((*ptePtr & VM_MODIFIED_BIT) || modified) {
+	    VmLockPageInt(Vm_GetPageFrame(*ptePtr));
+	    *numPagesPtr += 1;
+	} else {
+	    VmPageFreeInt(Vm_GetPageFrame(*ptePtr));
+	    *ptePtr &= ~(VM_PHYS_RES_BIT | VM_PAGE_FRAME_FIELD);
+	    segPtr->resPages--;
+	}
+    }
+
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * FreeSegment --
+ *
+ *     This routine will delete the given migrated segment by calling a
+ *     monitored routine to do most of the work.  Since the calls to the
+ *     memory allocator must be done at non-monitor level, if the resources
+ *     for this segment must be released then the calls to the machine
+ *     dependent routine that uses the memory allocator are done here at
+ *     non-monitored level.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     The segment is deleted.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static void
+FreeSegment(segPtr)
+    register	Vm_Segment      *segPtr;
+{
+    VmProcLink		*procLinkPtr;
+    Fs_Stream		*objStreamPtr;
+    VmDeleteStatus	status;
+
+    status = VmSegmentDeleteInt(segPtr, (Proc_ControlBlock *) NIL,
+				&procLinkPtr, &objStreamPtr, TRUE);
+    if (status == VM_DELETE_SEG) {
+	VmMach_SegDelete(segPtr);
+	free((Address)segPtr->ptPtr);
+	segPtr->ptPtr = (Vm_PTE *)NIL;
+	VmPutOnFreeSegList(segPtr);
+    }
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Vm_MigSegmentDelete --
+ *
+ *     	Temporary routine to give access to the static FreeSegment routine,
+ *     	while segments for migrated processes are freed upon exit rather than
+ *	upon initial migration.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     The segment is deleted.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+Vm_MigSegmentDelete(segPtr)
+    Vm_Segment      *segPtr;
+{
+    if (segPtr != (Vm_Segment *) NIL) {
+	FreeSegment(segPtr);
+@
+
+
+8.1
+log
+@Stop using obsolete header files.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMigrate.c,v 8.0 88/11/11 18:43:00 douglis Stable Locker: ouster $ SPRITE (Berkeley)";
+d143 3
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMigrate.c,v 6.3 88/10/28 19:14:45 mlgray Exp Locker: douglis $ SPRITE (Berkeley)";
+d22 1
+a22 1
+#include "mem.h"
+@
+
+
+6.3
+log
+@Missing ptr casts.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMigrate.c,v 6.2 88/10/28 18:18:44 mlgray Exp $ SPRITE (Berkeley)";
+@
+
+
+6.2
+log
+@Converted to new C library.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmMigrate.c,v 6.1 88/08/27 19:43:39 nelson Exp Locker: mlgray $ SPRITE (Berkeley)";
+d195 1
+a195 1
+    buffer = malloc(bufferSize);
+@
+
+
+6.1
+log
+@Fixed lint errors.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: vmMigrate.c,v 5.11 88/07/26 11:10:45 douglis Exp $ SPRITE (Berkeley)";
+d84 1
+a84 1
+	Sys_Panic(SYS_FATAL, "Can't migrate process sharing heap.\n");
+d135 1
+a135 2
+		Sys_Panic(SYS_WARNING, 
+			  "Vm_MigrateSegment: Could not copy segment\n");
+d195 1
+a195 1
+    buffer = Mem_Alloc(bufferSize);
+d197 1
+a197 1
+    Byte_Copy(NUM_FIELDS * sizeof(int), (Address) &segPtr->offset, ptr);
+d200 1
+a200 1
+	Byte_Copy(varSize, (Address) segPtr->ptPtr, ptr);
+d205 1
+a205 1
+	Byte_Copy(varSize, (Address) &segPtr->execInfo, ptr);
+d274 1
+a274 1
+		Sys_Printf("Vm_ReceiveSegmentInfo: Fs_DeencapStream returned status %x.\n",
+d281 1
+a281 1
+		    Sys_Printf("Calling Vm_SegmentNew for code.\n");
+d305 1
+a305 2
+		Sys_Panic(SYS_FATAL,
+			  "Vm_ReceiveSegmentInfo: no code file pointer.\n");
+d312 1
+a312 2
+	    Sys_Panic(SYS_FATAL,
+		      "Vm_ReceiveSegmentInfo: unknown segment type.\n");
+d315 1
+a315 1
+	Sys_Printf("Calling Vm_SegmentNew for type = %d.\n", type);
+d328 1
+a328 1
+	Sys_Printf("Vm_ReceiveSegmentInfo: Fs_DeencapStream on swapFile returned status %x.\n",
+d333 1
+a333 1
+	Mem_Free(segPtr->swapFileName);
+d365 1
+a365 1
+    Byte_Copy(length, buffer, (Address) segPtr->ptPtr);
+d575 1
+a575 1
+	Mem_Free((Address)segPtr->ptPtr);
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d203 1
+a203 1
+	Fs_StreamCopy(segPtr->swapFilePtr, &dummyStreamPtr);
+d208 1
+a208 1
+	Fs_StreamCopy(segPtr->filePtr, &dummyStreamPtr);
+d289 1
+a289 1
+		    Fs_Close(filePtr);
+d297 1
+a297 1
+		    Fs_Close(filePtr);
+d303 1
+a303 1
+	    Fs_StreamCopy(procPtr->vmPtr->segPtrArray[VM_CODE]->filePtr,
+@
+
+
+5.11
+log
+@Changed to look more like what happens on an exec.  (handling no
+segment condition, and changing order of calls around a bit).
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: vmMigrate.c,v 5.10 88/07/12 19:54:09 nelson Exp $ SPRITE (Berkeley)";
+@
+
+
+5.10
+log
+@Lint error fixes and more tracing.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: vmMigrate.c,v 5.9 88/07/08 16:38:58 douglis Exp $ SPRITE (Berkeley)";
+a258 1
+    Vm_PTE	pte;
+d287 2
+a291 2
+		Vm_InitCode(filePtr, segPtr, oldExecInfoPtr);
+		Byte_Zero(sizeof(pte), (Address) &pte);
+d294 1
+@
+
+
+5.9
+log
+@Just removed an obsolete comment.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: vmMigrate.c,v 5.8 88/03/30 11:13:40 brent Exp $ SPRITE (Berkeley)";
+d304 1
+a304 1
+			  &filePtr, procPtr->processID);
+@
+
+
+5.8
+log
+@Added calls to Copy a stream before Encap'ing it so
+that Vm_SegmentDelete doesn't die trying to close the segment's file.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: vmMigrate.c,v 5.7 88/03/10 15:50:46 nelson Exp $ SPRITE (Berkeley)";
+d160 1
+a160 3
+ *	transferred to another node.  This includes generating the name of
+ *	the swap file (since we don't migrate files yet) so it can be opened
+ *	from the remote node.  We have to duplicate the stream to the
+@
+
+
+5.7
+log
+@Made the proper call for copy-on-write.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: vmMigrate.c,v 5.6 87/12/18 15:16:54 nelson Exp $ SPRITE (Berkeley)";
+d162 4
+a165 1
+ *	from the remote node.
+d189 1
+d205 1
+d210 1
+@
+
+
+5.6
+log
+@Fixed oversight in code.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: vmMigrate.c,v 5.5 87/12/12 16:27:02 nelson Exp $ SPRITE (Berkeley)";
+d129 11
+a572 3
+	if (vm_CanCOW) {
+	    VmCOWDeleteFromSeg(segPtr, -1, -1);
+	}
+@
+
+
+5.5
+log
+@More work on moving out machine dependent stuff.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: vmMigrate.c,v 5.4 87/12/11 13:27:57 nelson Exp $ SPRITE (Berkeley)";
+d517 1
+a517 1
+	if (modified) {
+@
+
+
+5.4
+log
+@New VM system where put machine dependent VM stuff into the SUN module.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: vmMigrate.c,v 5.3 87/11/18 21:51:03 nelson Exp $ SPRITE (Berkeley)";
+d435 1
+a435 1
+	VmPutOnDirtyList(VmGetPageFrame(*ptePtr));
+d448 1
+a448 1
+	VmPageFree(VmGetPageFrame(*ptePtr));
+d515 1
+a515 1
+	VmMach_GetRefModBits(&virtAddr, VmGetPageFrame(*ptePtr), &referenced,
+d518 1
+a518 1
+	    VmLockPageInt(VmGetPageFrame(*ptePtr));
+d521 1
+a521 1
+	    VmPageFreeInt(VmGetPageFrame(*ptePtr));
+d555 3
+a557 3
+    VmSpace	space;
+    VmFileInfo	fileInfo;
+    VmDeleteStatus status;
+d559 2
+a560 2
+    status = VmSegmentDeleteInt(segPtr, (Proc_ControlBlock *) NIL, &space, 
+				&fileInfo, TRUE);
+d566 2
+a567 4
+	VmCleanSegment(segPtr, &space, TRUE, &fileInfo);
+	if (space.spaceToFree && space.ptPtr != (Vm_PTE *)NIL) {
+	    Mem_Free((Address)space.ptPtr);
+	}
+@
+
+
+5.3
+log
+@Copy-on-write
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: vmMigrate.c,v 5.2 87/10/22 14:49:44 nelson Exp $ SPRITE (Berkeley)";
+a14 1
+
+d16 1
+d59 4
+a62 4
+    Proc_ControlBlock 	*procPtr;	/* The process being migrated */
+    int nodeID;			        /* Node to which it migrates */
+    List_Links **procListPtr;	/* pointer to header of process list */
+    int *numProcsPtr;		/* number of processes sharing */
+d64 1
+a64 1
+    Vm_Segment 		*segPtr;	/* pointer to its heap segment info */
+a117 1
+
+d120 4
+a123 4
+    Vm_Segment 		*segPtr;	/* pointer to segment to migrate */
+    Address *bufferPtr;
+    int *bufferSizePtr;
+    int *numPagesPtr;			     /* Number of pages flushed */
+a141 1
+
+d166 3
+a168 3
+    Vm_Segment 	*segPtr;	/* Pointer to the segment to be migrated */
+    Address *bufferPtr;
+    int *bufferSizePtr;
+a175 1
+
+d228 2
+a229 2
+    Proc_ControlBlock *procPtr;	/* control block for foreign process */
+    Address buffer;		/* buffer containing segment information */
+a239 1
+    Vm_PTE 	pte;
+d244 1
+d278 2
+a279 4
+		pte.validPage = 1;
+		pte.protection = VM_URW_PROT;
+		Vm_InitPageTable(segPtr, &pte, offset, 
+				 offset + numPages - 1, TRUE);
+a344 1
+
+a375 1
+
+d381 1
+a381 1
+    VmVirtAddr		virtAddr;
+d383 1
+a383 1
+    Vm_PTE		*firstPtePtr;
+d404 1
+a404 1
+	virtAddr.page = MACH_LAST_USER_STACK_PAGE - segPtr->numPages + 1;
+d419 1
+a419 1
+    firstPtePtr = ptePtr;
+d421 1
+a421 1
+    
+a424 1
+
+d428 1
+a428 2
+
+	if (!(ptePtr->resident && ptePtr->modified)) {
+a430 1
+
+d435 1
+a435 2
+
+	VmPutOnDirtyList((int) VmPhysToVirtPage(ptePtr->pfNum));
+d437 1
+a437 1
+    ptePtr = firstPtePtr;
+a441 1
+
+d445 1
+a445 2
+
+	if (!(ptePtr->resident)) {
+d448 3
+a450 6
+
+	VmPageFree((int) VmPhysToVirtPage(ptePtr->pfNum));
+	ptePtr->resident = 0;
+	ptePtr->pfNum = 0;
+	ptePtr->modified = 0;
+	ptePtr->onSwap = 1;
+a473 1
+
+d476 2
+a477 2
+    Vm_Segment 	*segPtr;	/* Pointer to the segment to be flushed */
+    int *numPagesPtr;			     /* Number of pages flushed */
+d479 5
+a483 4
+    Vm_PTE  	hardPte;
+    Vm_PTE	*softPtePtr;
+    VmVirtAddr	virtAddr;
+    register int    i;
+d490 2
+a491 2
+	virtAddr.page = MACH_LAST_USER_STACK_PAGE - segPtr->numPages + 1;
+	softPtePtr = VmGetPTEPtr(segPtr, virtAddr.page);
+d494 1
+a494 1
+	softPtePtr = segPtr->ptPtr;
+d504 1
+a504 8
+	 i++, virtAddr.page++, VmIncPTEPtr(softPtePtr, 1)) {
+
+        /*
+	 * Get the hardware page table entry for this page.
+	 */
+
+	hardPte = VmGetPTE(&virtAddr);
+
+d508 1
+a508 2
+
+	if (!hardPte.resident) {
+a510 1
+
+d515 4
+a518 3
+
+	if (hardPte.modified) {
+	    VmLockPageInt((int) VmPhysToVirtPage(hardPte.pfNum));
+d521 3
+a523 3
+	    VmPageFreeInt((int) VmPhysToVirtPage(hardPte.pfNum));
+	    softPtePtr->resident = 0;
+	    softPtePtr->pfNum = 0;
+a550 1
+
+d565 1
+d567 3
+a569 1
+	VmMachFreeSpace(space);
+a591 1
+
+d594 1
+a594 1
+    register	Vm_Segment      *segPtr;
+@
+
+
+5.2
+log
+@Changed proc table so that it points to VM stuff that is defined here.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: vmMigrate.c,v 5.1 87/09/24 14:42:05 brent Exp $ SPRITE (Berkeley)";
+a559 1
+ *
+d587 4
+@
+
+
+5.1
+log
+@Fixed call to Fs_StreamCopy
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: vmMigrate.c,v 5.0 87/08/11 10:52:34 sprite Exp $ SPRITE (Berkeley)";
+d72 1
+a72 1
+    segPtr = procPtr->segPtrArray[VM_HEAP];
+d290 1
+a290 1
+	    procPtr->segPtrArray[type] = segPtr;
+d293 2
+a294 2
+	    Fs_StreamCopy(procPtr->segPtrArray[VM_CODE]->filePtr, &filePtr,
+			    procPtr->processID);
+d314 1
+a314 1
+    procPtr->segPtrArray[type] = segPtr;
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: vmMigrate.c,v 4.5 87/08/06 12:02:49 nelson Exp $ SPRITE (Berkeley)";
+d293 2
+a294 1
+	    Fs_StreamCopy(procPtr->segPtrArray[VM_CODE]->filePtr, &filePtr);
+@

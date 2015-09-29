@@ -1,0 +1,68 @@
+
+
+
+NEWTEE                    User Commands                    NEWTEE
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     newtee - Copy input to both  stdout  and  the  listed  files
+     without blocking.
+
+SSYYNNOOPPSSIISS
+     nneewwtteeee  -[_o_p_t_i_o_n_s] outputfile1 ...
+
+OOPPTTIIOONNSS
+     --aappppeenndd       Append output to listed  output  files  rather
+                   than overwrite them.
+
+     --iinnppuuttFFiillee    Use the given file as input rather than stdin.
+
+     --kkeeeeppGGooiinngg    Keep waiting for more input, even  at  end-of-
+                   file, as is done in "tail -f."
+
+_________________________________________________________________
+
+IINNTTRROODDUUCCTTIIOONN
+     Copy data from input (either a file or stdin) to stdout  and
+     also  to  the listed output files.  The data is not buffered
+     and also the data will be copied to stdout even  if  writing
+     to  the  output  files  blocks (due to server failure, etc).
+     This is useful  for  reading  /dev/syslog  and  sending  the
+     stdout  to an X window while copying the data also to a file
+     so that you can read the syslog for the  machine  from  any-
+     where and not just the console.
+
+KKEEYYWWOORRDDSS
+     tee syslog cat X copy
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  October 16, 1991                   1
+
+
+

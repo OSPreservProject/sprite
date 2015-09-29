@@ -1,0 +1,237 @@
+head     9.9;
+branch   ;
+access   ;
+symbols  ds3100:9.9 sun3:9.9 sun4nw:9.9 symm:9.9 spur:9.9 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.9
+date     91.09.24.17.35.51;  author rab;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     91.08.09.16.30.47;  author shirriff;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     91.07.26.17.12.00;  author shirriff;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.07.30.16.15.48;  author douglis;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.07.30.16.03.27;  author douglis;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.07.15.13.34.08;  author shirriff;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.06.22.11.33.56;  author douglis;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.11.27.10.33.34;  author shirriff;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.09.18.20.58.54;  author shirriff;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.16.28;  author douglis;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     89.09.08.11.32.23;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@machine-dependent migration version number.
+@
+
+
+9.9
+log
+@Incremented migration version number.
+@
+text
+@/*
+ * migVersion.h --
+ *
+ *	Define the migration version, which is machine-dependent.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/proc/ds3100.md/RCS/migVersion.h,v 9.8 91/08/09 16:30:47 shirriff Exp Locker: rab $ SPRITE (Berkeley)
+ */
+
+/*
+ * Set the migration version number.  Machines can only migrate to other
+ * machines of the same architecture and version number.
+ */
+#ifndef PROC_MIGRATE_VERSION
+#define PROC_MIGRATE_VERSION 20
+#endif /* PROC_MIGRATE_VERSION */
+
+@
+
+
+9.8
+log
+@A new migration version because I changed Mach_State.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/proc/ds3100.md/RCS/migVersion.h,v 9.7 91/07/26 17:12:00 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+d23 1
+a23 1
+#define PROC_MIGRATE_VERSION 19
+@
+
+
+9.7
+log
+@Large install for unix compatibility
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/proc/ds3100.md/RCS/migVersion.h,v 9.6 90/07/30 16:15:48 douglis Exp Locker: shirriff $ SPRITE (Berkeley)
+d23 1
+a23 1
+#define PROC_MIGRATE_VERSION 18
+@
+
+
+9.6
+log
+@incremented migration version
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/proc/ds3100.md/RCS/migVersion.h,v 9.5 90/07/30 16:03:27 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+d23 1
+a23 1
+#define PROC_MIGRATE_VERSION 16
+@
+
+
+9.5
+log
+@incremented migration version.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/proc/ds3100.md/RCS/migVersion.h,v 9.4 90/07/15 13:34:08 shirriff Exp Locker: douglis $ SPRITE (Berkeley)
+d23 1
+a23 1
+#define PROC_MIGRATE_VERSION 15
+@
+
+
+9.4
+log
+@Bumped migration version number because I changed Proc_ControlBlock.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/proc/ds3100.md/RCS/migVersion.h,v 9.3 90/06/22 11:33:56 douglis Exp Locker: shirriff $ SPRITE (Berkeley)
+d23 1
+a23 1
+#define PROC_MIGRATE_VERSION 14
+@
+
+
+9.3
+log
+@bumped migration version number
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/fd.proc/ds3100.md/RCS/migVersion.h,v 9.2 89/11/27 10:33:34 shirriff Exp Locker: douglis $ SPRITE (Berkeley)
+d23 1
+a23 1
+#define PROC_MIGRATE_VERSION 13
+@
+
+
+9.2
+log
+@*** empty log message ***
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/proc/ds3100.md/RCS/migVersion.h,v 9.1 89/09/18 20:58:54 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+d23 1
+a23 1
+#define PROC_MIGRATE_VERSION 12
+@
+
+
+9.1
+log
+@Increased mig version number.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/proc/ds3100.md/RCS/migVersion.h,v 9.0 89/09/12 15:16:28 douglis Stable Locker: shirriff $ SPRITE (Berkeley)
+d23 1
+a23 1
+#define PROC_MIGRATE_VERSION 11
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/proc/ds3100.md/RCS/migVersion.h,v 1.1 89/09/08 11:32:23 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+d23 1
+a23 1
+#define PROC_MIGRATE_VERSION 9
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.2 89/01/07 04:12:44 rab Exp $ SPRITE (Berkeley)
+@

@@ -1,0 +1,5 @@
+L KHADAFY.LIN;1                     	khadafy.lines	../dist/tests/khadafy.lines
+L KHADAFY.REG;1                     	khadafy.regexp	../dist/tests/khadafy.regexp
+F REGRESS.SH;1                      	regress.sh
+F SCRIPTGE.AWK;1                    	scriptgen.awk
+L SPENCER.TES;1                     	spencer.tests	../dist/tests/spencer.tests

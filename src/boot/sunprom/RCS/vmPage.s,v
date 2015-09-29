@@ -1,0 +1,351 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @# @;
+
+
+1.5
+date     89.01.06.08.14.49;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     87.05.27.14.36.51;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     87.05.11.11.34.01;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     87.05.08.17.46.26;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     87.05.08.12.07.26;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Page mapping support
+@
+
+
+1.5
+log
+@New include files and constants due to source reorganization
+@
+text
+@|* vmPage.s -
+|*
+|*	Subroutines to access Sun virtual memory mapping hardware.
+|*
+|* Copyright (C) 1985 Regents of the University of California
+|* All rights reserved.
+|*
+
+#include "vmSunConst.h"
+
+#ifndef lint
+    .data
+    .asciz "$Header: vmPage.s,v 1.4 87/05/27 14:36:51 brent Exp $ SPRITE (Berkeley)"
+    .even
+#endif not lint
+    .text
+
+|*
+|* ----------------------------------------------------------------------------
+|*
+|* VmGetPageMap --
+|*
+|*     	Return the page map entry for the given virtual address.
+|*	It is assumed that the user context register is set to the context
+|*	for which the page map entry is to retrieved.
+|*
+|*	int GetPageMap(virtualAddress)
+|*	    int virtualAddress;
+|*
+|* Results:
+|*     The contents of the hardware page map entry.
+|*
+|* Side effects:
+|*     None.
+|*
+|* ----------------------------------------------------------------------------
+|*
+
+    .globl	_VmGetPageMap
+_VmGetPageMap:
+
+    movc	sfc,d1			| Save source function code
+    movl	#VMMACH_MMU_SPACE,d0	| Get function code in a reg
+    movc	d0,sfc			| Set source function code
+
+    movl	sp@@(4),d0		| Get virtual address into a register
+    andw	#VMMACH_PAGE_MAP_MASK,d0| Get relevant bits from address.
+    addl	#VMMACH_PAGE_MAP_OFF,d0	| Add in segment map offset
+    movl	d0,a0			| Move result into another register
+    movsl	a0@@,d0			| Read page map entry into the return
+				    	| register.
+
+    movc	d1,sfc			| Restore source function code
+
+    rts					| Return
+
+|*
+|* ----------------------------------------------------------------------------
+|*
+|* VmSetPageMap --
+|*
+|*     	Set the page map entry for the given virtual address to the value 
+|*      given in value.  It is assumed that the user context register is 
+|*	set to the context for which the page map entry is to be set.
+|*
+|*	void VmSetPageMap(virtualAddress, value)
+|*	    int virtualAddress;
+|*	    int value;
+|*
+|* Results:
+|*     None.
+|*
+|* Side effects:
+|*     The hardware page map entry is set.
+|*
+|* ----------------------------------------------------------------------------
+|*
+
+    .globl	_VmSetPageMap
+_VmSetPageMap:
+
+    movc	dfc,d1			| Save dest function code
+    movl	#VMMACH_MMU_SPACE,d0	| Get function code in a reg
+    movc	d0,dfc			| Set destination function code
+
+    movl	sp@@(4),d0		| Get virtual address into a register
+    andw	#VMMACH_PAGE_MAP_MASK,d0| Mask out low bits
+    addl	#VMMACH_PAGE_MAP_OFF,d0	| Add in page map offset.
+    movl	d0,a0			| Move to another register.
+    movl	sp@@(8),d0		| Get page map entry into a register
+    movsl	d0,a0@@			| Write page map entry
+
+    movc	d1,dfc			| Restore dest function code
+
+    rts					| Return
+
+|*
+|* ----------------------------------------------------------------------------
+|*
+|* VmGetSegMap --
+|*
+|*     	Return the segment map entry for the given virtual address.
+|*	It is assumed that the user context register is set to the context
+|*	for which the segment map entry is to retrieved.
+|*
+|*	int VmGetSegMap(virtualAddress)
+|*	    int virtualAddress;
+|*
+|* Results:
+|*     The contents of the segment map entry.
+|*
+|* Side effects:
+|*     None.
+|*
+|* ----------------------------------------------------------------------------
+|*
+    .globl	_VmGetSegMap
+_VmGetSegMap:
+
+    movc	sfc,d1			| Save source function code
+    movl	#VMMACH_MMU_SPACE,d0	| Get function code in a reg
+    movc	d0,sfc			| Set source function code
+
+    movl	sp@@(4),d0		| Get virtual address in a register.
+    andw	#VMMACH_SEG_MAP_MASK,d0	| Get relevant bits.
+    addl	#VMMACH_SEG_MAP_OFF,d0	| Add in segment map offset
+    movl	d0,a0			| Move to another register.
+    clrl	d0			| Clear the return register.
+    movsb	a0@@,d0			| Read segment map entry into return
+					| register.
+
+    movc	d1,sfc			| Restore source function code
+
+    rts					| Return
+
+|*
+|* ----------------------------------------------------------------------------
+|*
+|* VmSetSegMap --
+|*
+|*     	Set the segment map entry for the given virtual address to the given 
+|*	value.  It is assumed that the user context register is set to the 
+|*	context for which the segment map entry is to be set.
+|*
+|*	void VmSetSegMap(virtualAddress, value)
+|*	    int virtualAddress;
+|*	    int value;
+|*
+|* Results:
+|*     None.
+|*
+|* Side effects:
+|*     Hardware segment map entry for the current user context is set.
+|*
+|* ----------------------------------------------------------------------------
+|*
+#ifdef notdef
+    .globl	_VmSetSegMap
+_VmSetSegMap:
+
+    movc	dfc,d1			| Save dest function code
+    movl	#VMMACH_MMU_SPACE,d0	| Get function code in a reg
+    movc	d0,dfc			| Set destination function code
+
+    movl	sp@@(4),d0		| Get access address
+    andw	#VMMACH_SEG_MAP_MASK,d0	| Mask out low bits
+    addl	#VMMACH_SEG_MAP_OFF,d0	| Bump to segment map offset
+    movl	d0,a0			| Move to another register.
+    movl	sp@@(8),d0		| Get segment map entry to write in a 
+				        | register.
+    movsb	d0,a0@@			| Write segment map entry
+
+    movc	d1,dfc			| Restore dest function code
+
+    rts				        | return
+#endif notdef
+
+|*
+|* ----------------------------------------------------------------------------
+|*
+|* VmSetUserContext --
+|*
+|*     	Set the user context register to be in the kernel context.
+|*
+|*	void VmSetUserContext()
+|*
+|* Results:
+|*     None.
+|*
+|* Side effects:
+|*     None.
+|*
+|* ----------------------------------------------------------------------------
+|*
+
+    .globl	_VmSetUserContext
+_VmSetUserContext:
+#ifndef SUN3
+    movc	dfc,d1				| Save dest function code
+    movl	#VMMACH_MMU_SPACE,d0		| Get function code in a reg
+    movc	d0,dfc				| Set destination function code
+    movl	#VMMACH_KERN_CONTEXT,d0		| Get context value to set 
+					    	| into a register
+    movsb	d0,VMMACH_USER_CONTEXT_OFF:w 	| Move value into context 
+					    	| register
+    movc	d1,dfc				| Restore dest function code
+#endif
+    rts						| Return
+
+@
+
+
+1.4
+log
+@Added stuff for sun3's.  There are page map and segment map offsets
+that need to be used.
+@
+text
+@d13 1
+a13 1
+    .asciz "$Header: vmPage.s,v 1.3 87/05/11 11:34:01 brent Exp $ SPRITE (Berkeley)"
+d43 1
+a43 1
+    movl	#VM_MMU_SPACE,d0	| Get function code in a reg
+d47 2
+a48 2
+    andw	#VM_PAGE_MAP_MASK,d0	| Get relevant bits from address.
+    addl	#VM_PAGE_MAP_OFF,d0	| Add in segment map offset
+d83 1
+a83 1
+    movl	#VM_MMU_SPACE,d0	| Get function code in a reg
+d87 2
+a88 2
+    andw	#VM_PAGE_MAP_MASK,d0	| Mask out low bits
+    addl	#VM_PAGE_MAP_OFF,d0	| Add in page map offset.
+d121 1
+a121 1
+    movl	#VM_MMU_SPACE,d0	| Get function code in a reg
+d125 2
+a126 2
+    andw	#VM_SEG_MAP_MASK,d0	| Get relevant bits.
+    addl	#VM_SEG_MAP_OFF,d0	| Add in segment map offset
+d162 1
+a162 1
+    movl	#VM_MMU_SPACE,d0	| Get function code in a reg
+d166 2
+a167 2
+    andw	#VM_SEG_MAP_MASK,d0	| Mask out low bits
+    addl	#VM_SEG_MAP_OFF,d0	| Bump to segment map offset
+d200 1
+a200 1
+    movl	#VM_MMU_SPACE,d0		| Get function code in a reg
+d202 1
+a202 1
+    movl	#VM_KERN_CONTEXT,d0		| Get context value to set 
+d204 1
+a204 1
+    movsb	d0,VM_USER_CONTEXT_OFF:w 	| Move value into context 
+@
+
+
+1.3
+log
+@Added VmGetSegMap
+@
+text
+@d13 1
+a13 1
+    .asciz "$Header: vmPage.s,v 1.2 87/05/08 17:46:26 brent Exp $ SPRITE (Berkeley)"
+d48 1
+d88 1
+d198 1
+a198 1
+
+d207 1
+a207 1
+	 
+@
+
+
+1.2
+log
+@Added VmSetSegMap and VmGetSegMap
+@
+text
+@d13 1
+a13 1
+    .asciz "$Header: vmPage.s,v 1.1 87/05/08 12:07:26 brent Exp $ SPRITE (Berkeley)"
+d155 1
+a155 1
+
+d174 1
+a174 1
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d13 1
+a13 1
+    .asciz "$Header: vmSunAsm.s,v 1.10 86/05/01 22:43:19 nelson Exp $ SPRITE (Berkeley)"
+d94 81
+@

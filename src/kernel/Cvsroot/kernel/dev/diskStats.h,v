@@ -1,0 +1,92 @@
+head     9.1;
+branch   ;
+access   ;
+symbols  ds3100:9.1 sun3:9.1 sun4nw:9.1 symm:9.1 spur:9.1 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.1
+date     90.09.11.12.13.21;  author rab;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.58.02;  author douglis;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     89.05.24.07.54.03;  author rab;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@
+@
+
+
+9.1
+log
+@Added prototypes.
+@
+text
+@/*
+ * devDiskStats.h --
+ *
+ *	Declarations of routines for collecting statistics on Sprite disk 
+ *	usage.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/dev/RCS/diskStats.h,v 9.0 89/09/12 14:58:02 douglis Stable Locker: rab $ SPRITE (Berkeley)
+ */
+
+#ifndef _DISKSTATS
+#define _DISKSTATS
+
+
+/* procedures */
+
+extern DevDiskStats *DevRegisterDisk _ARGS_((Fs_Device *devicePtr, char *deviceName, Boolean (*idleCheck)(), ClientData clientData));
+extern void Dev_GatherDiskStats _ARGS_((void));
+extern int Dev_GetDiskStats _ARGS_((Sys_DiskStats *diskStatArr, int numEntries));
+
+#endif /* _DISKSTATS */
+
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/dev/RCS/diskStats.h,v 1.1 89/05/24 07:54:03 rab Exp Locker: douglis $ SPRITE (Berkeley)
+d25 3
+a27 3
+extern Sys_DiskStats *DevRegisterDisk();
+extern void Dev_GatherDiskStats();
+extern int Dev_GetDiskStats();
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.2 89/01/07 04:12:44 rab Exp $ SPRITE (Berkeley)
+@

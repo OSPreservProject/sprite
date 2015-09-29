@@ -1,0 +1,3 @@
+This directory contains the raw bits we received from DEC which provide server
+and support code for a new font format "pcf".  Diffs are with respect to a
+pre-R4 snapshot; it may take some work to integrate them into R4.

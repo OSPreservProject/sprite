@@ -1,0 +1,239 @@
+cd /sprite/src/kernel/
+aid user
+BIC_BUSERR     mach/symm.md/machBIC.h
+BRK_USERBP     mach/cleands3100.md/ultrixSignal.h mach/ds5000.md/ultrixSignal.h mach/ds3100.md/ultrixSignal.h
+BusError       net/sun3.md/netIE.c net/sun3.md/netIEInt.h net/sun4.md/netIE.c net/sun4.md/netIEInt.h net/cleansun3.md/netIE.c net/cleansun3.md/netIEInt.h net/sun4nw.md/netIE.c net/cleansun4.md/netIE.c net/cleansun4.md/netIEInt.h
+DPL_USER       mach/symm.md/machCode.c mach/symm.md/machGDT.h
+DevMouseRead   dev/cleansun4.md/devFsOpTable.c dev/cleansun4.md/devMouse.c dev/cleansun4.md/mouse.h dev/sun3.md/devMouse.c dev/sun3.md/mouse.h dev/sun3.md/devFsOpTable.c dev/sun4.md/devMouse.c dev/sun4.md/mouse.h dev/sun4.md/devFsOpTable.c dev/cleansun3.md/devFsOpTable.c dev/cleansun3.md/devMouse.c dev/cleansun3.md/mouse.h dev/sun4c.md/devMouse.c dev/sun4c.md/mouse.h dev/sun4c.md/devFsOpTable.c dev/sun4nw.md/devFsOpTable.c dev/sun4nw.md/devMouse.c dev/sun4nw.md/mouse.h dev/cleansun4c.md/devFsOpTable.c dev/cleansun4c.md/devMouse.c dev/cleansun4c.md/mouse.h
+DoneWithUserStuff mach/sun4.md/machTrap.s mach/sun4c.md/machTrap.s mach/sun4nw.md/machTrap.s mach/cleansun4.md/machTrap.s mach/cleansun4c.md/machTrap.s
+FMT_USER_FMT   dev/symm.md/devScedScsi.h
+FSDM_FD_USERTYPE_DIRTY fsdm/fsdm.h fsdm/fsdmFileDesc.c fslcl/fslclAttributes.c
+FS_USER        dev/devNet.c fs/fs.h fs/fsSysCall.c fs/fsStubs.c fscache/fscacheOps.c fsio/fsioPipe.c fsio/fsioDevice.c fspdev/fspdevPfs.c fspdev/fspdevSrv.c fspdev/fspdevSetup.c fspdev/fspdevControl.c fsrmt/fsrmtIO.c
+FS_USER_IN     fs/fs.h fs/fsSysCall.c fs/fsStubs.c fs/fsStreamOps.c fspdev/fspdevSrv.c
+FS_USER_OUT    fs/fs.h fs/fsSysCall.c fs/fsStubs.c fspdev/fspdevSrv.c
+FS_USER_PREFIX_LENGTH fsprefix/fsprefixOps.c
+FS_USER_TYPE_BINARY fsdm/fsdmDisk.c
+FS_USER_TYPE_OBJECT fsdm/fsdmDisk.c
+FS_USER_TYPE_SWAP fsdm/fsdmDisk.c
+FS_USER_TYPE_TMP fsdm/fsdmDisk.c
+FS_USER_TYPE_UNDEFINED fscache/fscacheOps.c lfs/lfsDesc.c ofs/ofsFileDesc.c
+Fs_UserClose   mach/cleands3100.md/machUNIXSyscall.c mach/ds5000.md/machUNIXSyscall.c mach/ds3100.md/machUNIXSyscall.c mach/symm.md/machSyscallTrace.c fs/fs.h fs/fsSysCall.c fs/fsStubs.c sys/sysSysCall.c
+Fs_UserIDs     fs/fs.h fs/fsNameOps.c fs/fsNameOps.h fs/fsSysCall.c fs/fsStubs.c fs/fsAttributes.c fslcl/fslclInt.h fslcl/fslclAttributes.c fslcl/fslclLookup.c fspdev/fspdevSrv.c fspdev/fspdevInt.h fsprefix/fsprefixOps.c fsrmt/fsrmtDomain.c fsrmt/fsrmtInt.h fsrmt/fsrmtAttributes.c
+Fs_UserRead    fs/fs.h fs/fsSysCall.c
+Fs_UserReadVector fs/fs.h fs/fsSysCall.c
+Fs_UserWrite   fs/fs.h fs/fsSysCall.c
+Fs_UserWriteVector fs/fs.h fs/fsSysCall.c
+IncPTUserCount vm/vmSeg.c
+InitUserProc   proc/procFork.c
+KillUserProc   mach/sun4.md/machTrap.s mach/sun4c.md/machTrap.s mach/sun4nw.md/machTrap.s mach/cleansun4.md/machTrap.s mach/cleansun4c.md/machTrap.s
+MACH_FIRST_USER_ADDR mach/sun3.md/machCode.c mach/sun3.md/machConst.h mach/cleansun3.md/machCode.c mach/cleansun3.md/machConst.h mach/sun4.md/machTrap.s mach/sun4.md/machCode.c mach/sun4.md/machConst.h mach/sun4c.md/machCode.c mach/sun4c.md/machConst.h mach/sun4c.md/machTrap.s mach/cleands3100.md/machCode.c mach/cleands3100.md/machConst.h mach/ds5000.md/machCode.c mach/ds5000.md/machConst.h mach/ds3100.md/machConst.h mach/ds3100.md/machCode.c mach/sun4nw.md/machCode.c mach/sun4nw.md/machConst.h mach/sun4nw.md/machTrap.s mach/symm.md/machConst.h mach/symm.md/machCode.c mach/cleansun4.md/machCode.c mach/cleansun4.md/machConst.h mach/cleansun4.md/machTrap.s mach/cleansun4c.md/machCode.c mach/cleansun4c.md/machConst.h mach/cleansun4c.md/machTrap.s vm/symm.md/vmSymm.c
+MACH_FIRST_USER_PSR mach/sun4.md/machCode.c mach/sun4.md/machConst.h mach/sun4c.md/machCode.c mach/sun4c.md/machConst.h mach/sun4nw.md/machCode.c mach/sun4nw.md/machConst.h mach/cleansun4.md/machCode.c mach/cleansun4.md/machConst.h mach/cleansun4c.md/machCode.c mach/cleansun4c.md/machConst.h
+MACH_KERNEL_VA_USER mach/symm.md/machConst.h mach/symm.md/machCode.c mach/symm.md/machTrap.c mach/symm.md/machLocore.s mach/symm.md/machGenAsmSymbols.c mach/symm.md/machAsmSymbols.h vm/symm.md/vmSymm.c vm/symm.md/vmSymmAsm.s
+MACH_LAST_USER_ADDR mach/sun3.md/machCode.c mach/sun3.md/machConst.h mach/cleansun3.md/machCode.c mach/cleansun3.md/machConst.h mach/sun4.md/machCode.c mach/sun4.md/machConst.h mach/sun4c.md/machCode.c mach/sun4c.md/machConst.h mach/cleands3100.md/machCode.c mach/cleands3100.md/machConst.h mach/ds5000.md/machCode.c mach/ds5000.md/machConst.h mach/ds3100.md/machConst.h mach/ds3100.md/machCode.c mach/sun4nw.md/machCode.c mach/sun4nw.md/machConst.h mach/symm.md/machConst.h mach/symm.md/machCode.c mach/symm.md/machTrap.c mach/symm.md/machLocore.s mach/symm.md/machGenAsmSymbols.c mach/symm.md/machAsmSymbols.h mach/cleansun4.md/machCode.c mach/cleansun4.md/machConst.h mach/cleansun4c.md/machCode.c mach/cleansun4c.md/machConst.h vm/symm.md/vmSymm.c vm/symm.md/vmSymmAsm.s
+MACH_LAST_USER_STACK_PAGE mach/sun3.md/machConst.h mach/cleansun3.md/machConst.h mach/sun4.md/machConst.h mach/sun4c.md/machConst.h mach/cleands3100.md/machConst.h mach/ds5000.md/machConst.h mach/ds3100.md/machConst.h mach/sun4nw.md/machConst.h mach/symm.md/machConst.h mach/symm.md/machCode.c mach/cleansun4.md/machConst.h mach/cleansun4c.md/machConst.h
+MACH_MAX_USER_STACK_ADDR mach/sun3.md/machCode.c mach/sun3.md/machConst.h mach/cleansun3.md/machCode.c mach/cleansun3.md/machConst.h mach/sun4.md/machTrap.s mach/sun4.md/machCode.c mach/sun4.md/machConst.h mach/sun4c.md/machCode.c mach/sun4c.md/machConst.h mach/sun4c.md/machTrap.s mach/cleands3100.md/machCode.c mach/cleands3100.md/machConst.h mach/ds5000.md/machCode.c mach/ds5000.md/machConst.h mach/ds3100.md/machConst.h mach/ds3100.md/machCode.c mach/sun4nw.md/machCode.c mach/sun4nw.md/machConst.h mach/sun4nw.md/machTrap.s mach/symm.md/machConst.h mach/symm.md/machCode.c mach/cleansun4.md/machCode.c mach/cleansun4.md/machConst.h mach/cleansun4.md/machTrap.s mach/cleansun4c.md/machCode.c mach/cleansun4c.md/machConst.h mach/cleansun4c.md/machTrap.s vm/symm.md/vmSymm.c
+MACH_NO_INTR_USER_PSR mach/sun4.md/machConst.h mach/sun4c.md/machConst.h mach/sun4nw.md/machConst.h mach/cleansun4.md/machConst.h mach/cleansun4c.md/machConst.h
+MACH_SR_USERPRIO mach/sun3.md/machConst.h mach/cleansun3.md/machConst.h mach/sun4.md/machAsmDefs.h mach/sun4c.md/machAsmDefs.h mach/sun4nw.md/machAsmDefs.h mach/cleansun4.md/machAsmDefs.h mach/cleansun4c.md/machAsmDefs.h
+MACH_USER      mach/sun3.md/machCode.c mach/sun3.md/machTypes.h mach/cleansun3.md/machCode.c mach/sun4.md/machCode.c mach/sun4.md/machTypes.h mach/sun4c.md/machCode.c mach/sun4c.md/machTypes.h mach/cleands3100.md/machCode.c mach/ds5000.md/machCode.c mach/ds5000.md/machTypes.h mach/ds3100.md/machCode.c mach/ds3100.md/machTypes.h mach/sun4nw.md/machCode.c mach/symm.md/mach.h mach/symm.md/machCode.c mach/symm.md/machTypes.h mach/cleansun4.md/machCode.c mach/cleansun4c.md/machCode.c
+MACH_USER_ERROR mach/sun3.md/machCode.c mach/sun3.md/machTrap.s mach/sun3.md/machConst.h mach/cleansun3.md/machCode.c mach/cleansun3.md/machConst.h mach/cleansun3.md/machTrap.s mach/sun4.md/machConst.h mach/sun4c.md/machConst.h mach/cleands3100.md/machAsm.s mach/cleands3100.md/machCode.c mach/cleands3100.md/machConst.h mach/ds5000.md/machAsm.s mach/ds5000.md/machCode.c mach/ds5000.md/machConst.h mach/ds3100.md/machAsm.s mach/ds3100.md/machConst.h mach/ds3100.md/machCode.c mach/sun4nw.md/machConst.h mach/cleansun4.md/machConst.h mach/cleansun4c.md/machConst.h
+MACH_USER_PC_OFFSET mach/cleands3100.md/machAsm.s mach/cleands3100.md/machConst.h mach/ds5000.md/machAsm.s mach/ds5000.md/machConst.h mach/ds3100.md/machAsm.s mach/ds3100.md/machConst.h
+MACH_USER_SP_OFFSET mach/sun3.md/machTrap.s mach/sun3.md/machConst.h mach/sun3.md/machAsmDefs.h mach/cleansun3.md/machAsmDefs.h mach/cleansun3.md/machConst.h mach/cleansun3.md/machTrap.s
+MACH_USER_VA_MAP_SEG mach/symm.md/machConst.h vm/symm.md/vmSymm.c
+MachBusError   mach/sun3.md/machVector.s mach/sun3.md/machTrap.s mach/cleansun3.md/machTrap.s mach/cleansun3.md/machVector.s
+MachReturnFromUserTrap mach/sun3.md/machTrap.s mach/sun3.md/machAsmDefs.h mach/cleansun3.md/machAsmDefs.h mach/cleansun3.md/machTrap.s
+MachRunUserDeathString mach/sun4.md/machCode.c mach/sun4.md/machAsm.s mach/sun4c.md/machAsm.s mach/sun4c.md/machCode.c mach/sun4nw.md/machAsm.s mach/sun4nw.md/machCode.c mach/cleansun4.md/machAsm.s mach/cleansun4.md/machCode.c mach/cleansun4c.md/machAsm.s mach/cleansun4c.md/machCode.c
+MachRunUserProc mach/sun3.md/machCode.c mach/sun3.md/machAsm.s mach/cleansun3.md/machAsm.s mach/cleansun3.md/machCode.c mach/sun4.md/machCode.c mach/sun4.md/machInt.h mach/sun4.md/machAsm.s mach/sun4c.md/machAsm.s mach/sun4c.md/machCode.c mach/sun4c.md/machInt.h mach/cleands3100.md/machAsm.s mach/cleands3100.md/machCode.c mach/ds5000.md/machAsm.s mach/ds5000.md/machCode.c mach/ds3100.md/machAsm.s mach/ds3100.md/machCode.c mach/sun4nw.md/machAsm.s mach/sun4nw.md/machCode.c mach/sun4nw.md/machInt.h mach/symm.md/machCode.c mach/symm.md/machLocore.s mach/cleansun4.md/machAsm.s mach/cleansun4.md/machCode.c mach/cleansun4.md/machInt.h mach/cleansun4c.md/machAsm.s mach/cleansun4c.md/machCode.c mach/cleansun4c.md/machInt.h
+MachUserAction mach/sun4.md/machTrap.s mach/sun4.md/machCode.c mach/sun4.md/machInt.h mach/sun4c.md/machCode.c mach/sun4c.md/machInt.h mach/sun4c.md/machTrap.s mach/sun4nw.md/machCode.c mach/sun4nw.md/machInt.h mach/sun4nw.md/machTrap.s mach/cleansun4.md/machCode.c mach/cleansun4.md/machInt.h mach/cleansun4.md/machTrap.s mach/cleansun4c.md/machCode.c mach/cleansun4c.md/machInt.h mach/cleansun4c.md/machTrap.s
+MachUserDebug  mach/sun4.md/machTrap.s mach/sun4.md/machCode.c mach/sun4.md/machInt.h mach/sun4c.md/machCode.c mach/sun4c.md/machInt.h mach/sun4c.md/machTrap.s mach/sun4nw.md/machCode.c mach/sun4nw.md/machInt.h mach/sun4nw.md/machTrap.s mach/cleansun4.md/machCode.c mach/cleansun4.md/machInt.h mach/cleansun4.md/machTrap.s mach/cleansun4c.md/machCode.c mach/cleansun4c.md/machInt.h mach/cleansun4c.md/machTrap.s
+MachUserException mach/cleands3100.md/machAsm.s mach/ds5000.md/machAsm.s mach/ds3100.md/machAsm.s
+MachUserExceptionHandler mach/cleands3100.md/machAsm.s mach/cleands3100.md/machCode.c mach/cleands3100.md/machInt.h mach/ds5000.md/machAsm.s mach/ds5000.md/machCode.c mach/ds5000.md/machInt.h mach/ds3100.md/machInt.h mach/ds3100.md/machAsm.s mach/ds3100.md/machCode.c
+MachUserReturn mach/sun3.md/machCode.c mach/sun3.md/machInt.h mach/sun3.md/machTrap.s mach/cleansun3.md/machCode.c mach/cleansun3.md/machInt.h mach/cleansun3.md/machTrap.s mach/cleands3100.md/machAsm.s mach/cleands3100.md/machCode.c mach/cleands3100.md/machInt.h mach/ds5000.md/machAsm.s mach/ds5000.md/machCode.c mach/ds5000.md/machInt.h mach/ds3100.md/machInt.h mach/ds3100.md/machAsm.s mach/ds3100.md/machCode.c mach/symm.md/machTrap.c
+Mach_AddrBusErr mach/sun3.md/machTypes.h
+Mach_BusErrorReg mach/sun3.md/machTypes.h
+Mach_ExecUserProc mach/sun3.md/machCode.c mach/sun3.md/mach.h mach/cleansun3.md/mach.h mach/cleansun3.md/machCode.c mach/sun4.md/mach.h mach/sun4.md/machCode.c mach/sun4.md/sun4/reg.h mach/sun4c.md/mach.h mach/sun4c.md/machCode.c mach/cleands3100.md/mach.h mach/cleands3100.md/machCode.c mach/ds5000.md/mach.h mach/ds5000.md/machCode.c mach/ds3100.md/mach.h mach/ds3100.md/machCode.c mach/sun4nw.md/mach.h mach/sun4nw.md/machCode.c mach/symm.md/mach.h mach/symm.md/machCode.c mach/cleansun4.md/mach.h mach/cleansun4.md/machCode.c mach/cleansun4c.md/mach.h mach/cleansun4c.md/machCode.c proc/procExec.c
+Mach_GetUserStackPtr mach/sun3.md/machCode.c mach/sun3.md/mach.h mach/cleansun3.md/mach.h mach/cleansun3.md/machCode.c mach/cleands3100.md/mach.h mach/cleands3100.md/machCode.c mach/ds5000.md/mach.h mach/ds5000.md/machCode.c mach/ds3100.md/mach.h mach/ds3100.md/machCode.c
+Mach_LongAddrBusErr mach/sun3.md/machTypes.h
+Mach_PrintBusErrorRegs mach/sun4nw.md/machCode.c
+Mach_ShortAddrBusErr mach/sun3.md/machTypes.h
+Mach_StartUserProc mach/sun3.md/machCode.c mach/sun3.md/mach.h mach/cleansun3.md/mach.h mach/cleansun3.md/machCode.c mach/sun4.md/mach.h mach/sun4.md/machCode.c mach/sun4.md/sun4/reg.h mach/sun4c.md/mach.h mach/sun4c.md/machCode.c mach/cleands3100.md/mach.h mach/cleands3100.md/machCode.c mach/ds5000.md/mach.h mach/ds5000.md/machCode.c mach/ds3100.md/mach.h mach/ds3100.md/machCode.c mach/sun4nw.md/mach.h mach/sun4nw.md/machCode.c mach/symm.md/mach.h mach/symm.md/machCode.c mach/cleansun4.md/mach.h mach/cleansun4.md/machCode.c mach/cleansun4c.md/mach.h mach/cleansun4c.md/machCode.c proc/procRemote.c sched/schedule.c
+Mach_UserGenException mach/cleands3100.md/machAsm.s mach/cleands3100.md/machCode.c mach/ds5000.md/machAsm.s mach/ds5000.md/machCode.c mach/ds3100.md/machAsm.s mach/ds3100.md/machCode.c vm/ds3100.md/vmPmaxAsm.s vm/cleands3100.md/vmPmaxAsm.s vm/ds5000.md/vm3maxAsm.s
+Mach_UserState mach/sun3.md/machCode.c mach/sun3.md/machTypes.h mach/sun3.md/machMigrate.c mach/cleansun3.md/machCode.c mach/cleansun3.md/machMigrate.c mach/cleands3100.md/machCode.c mach/cleands3100.md/machMigrate.c mach/ds5000.md/machCode.c mach/ds5000.md/machMigrate.c mach/ds5000.md/machTypes.h mach/ds3100.md/machMigrate.c mach/ds3100.md/machCode.c mach/ds3100.md/machTypes.h
+MouseReport    dev/ds5000.md/dc7085.h dev/ds5000.md/devGraphics.c dev/ds3100.md/dc7085.h dev/ds3100.md/devGraphics.c dev/cleands3100.md/dc7085.h dev/cleands3100.md/devGraphics.c
+NotUserStack   mach/sun4.md/machTrap.s mach/sun4c.md/machTrap.s mach/sun4nw.md/machTrap.s mach/cleansun4.md/machTrap.s mach/cleansun4c.md/machTrap.s
+PROC_SUPER_USER_ID proc/procID.c proc/procMisc.c proc/procRemote.c proc/procStubs.c proc/procMigrate.c proc/procFamily.c vm/vmSwapDir.c
+PROC_USER      mach/sun3.md/machCode.c mach/cleansun3.md/machCode.c mach/sun4.md/machCode.c mach/sun4c.md/machCode.c mach/sun4nw.md/machCode.c mach/symm.md/machCode.c mach/cleansun4.md/machCode.c mach/cleansun4c.md/machCode.c proc/procExit.c proc/procExec.c proc/procMisc.c proc/procFork.c proc/procRpc.c proc/procStubs.c sched/schedule.c sys/sysCalls.c vm/vmSubr.c
+PfsGetUserLevelIDs fspdev/fspdevPfs.c
+RestoreUserFpuState mach/sun3.md/machAsm.s mach/sun3.md/machTrap.s mach/sun3.md/machAsmDefs.h mach/cleansun3.md/machAsm.s mach/cleansun3.md/machAsmDefs.h mach/cleansun3.md/machTrap.s
+RestoreUserRegs mach/sun3.md/machAsm.s mach/sun3.md/machTrap.s mach/sun3.md/machAsmDefs.h mach/cleansun3.md/machAsm.s mach/cleansun3.md/machAsmDefs.h mach/cleansun3.md/machTrap.s
+RpcServerUserStateInfo rpc/rpcTypes.h rpc/rpc.h rpc/rpcServer.h rpc/rpcServer.c sys/sysCalls.c sys/rpc.h sys/rpcTypes.h
+SYS_VM_MAPKERNELINTOUSER sys/sysSysCall.h
+SaveUserFpuState mach/sun3.md/machTrap.s mach/sun3.md/machAsmDefs.h mach/cleansun3.md/machAsmDefs.h mach/cleansun3.md/machTrap.s
+SaveUserRegs   mach/sun3.md/machAsmDefs.h mach/cleansun3.md/machAsmDefs.h
+Sched_StartUserProc proc/procFork.c sched/sched.h sched/schedule.c
+Sig_UserSend   mach/cleands3100.md/machUNIXSyscall.c mach/ds5000.md/machUNIXSyscall.c mach/ds3100.md/machUNIXSyscall.c mach/symm.md/machSyscallTrace.c sig/signals.c sig/sig.h sig/sigStubs.c sys/sysSysCall.c
+Sync_UserLock  sync/sync.h sync/syncUser.c
+T_USER         mach/symm.md/machTrap.h
+USER_CS        mach/symm.md/machCode.c mach/symm.md/machGDT.h mach/symm.md/machTrap.c mach/symm.md/machGenAsmSymbols.c mach/symm.md/machAsmSymbols.h
+USER_DS        mach/symm.md/machCode.c mach/symm.md/machGDT.h mach/symm.md/machTrap.c mach/symm.md/machLocore.s mach/symm.md/machGenAsmSymbols.c mach/symm.md/machAsmSymbols.h
+USER_EXC_FRAME_SIZE mach/cleands3100.md/machAsm.s mach/ds5000.md/machAsm.s mach/ds3100.md/machAsm.s
+USER_NIL       fs/fsSelect.c net/netRoute.c proc/procExit.c proc/procID.c proc/procExec.c proc/procTimer.c proc/procMisc.c proc/procRpc.c proc/procRemote.c proc/procStubs.c proc/procEnviron.c proc/procMigrate.c proc/procFamily.c rpc/rpcDebug.c sig/signals.c sys/sysCalls.c vm/vmSeg.c
+USER_RPL       mach/symm.md/machGDT.h
+USER_SR_OFFSET mach/cleands3100.md/machAsm.s mach/ds5000.md/machAsm.s mach/ds3100.md/machAsm.s
+User           vm/sun3.md/vmSunAsm.s vm/symm.md/vmSymmAsm.s vm/cleansun3.md/vmSunAsm.s
+UserArgs       proc/procExec.c
+UserStack      mach/sun4.md/machTrap.s mach/sun4c.md/machTrap.s mach/sun4nw.md/machTrap.s mach/cleansun4.md/machTrap.s mach/cleansun4c.md/machTrap.s
+UserStackOkay  mach/sun4.md/machAsm.s mach/sun4c.md/machAsm.s mach/sun4nw.md/machAsm.s mach/cleansun4.md/machAsm.s mach/cleansun4c.md/machAsm.s
+VMMACH_USER_CONTEXT_OFF mach/sun3.md/machAsm.s mach/cleansun3.md/machAsm.s vm/sun3.md/vmSunAsm.s vm/cleansun3.md/vmSunAsm.s
+VMMACH_USER_DATA_SPACE vm/sun3.md/vmSunConst.h vm/sun4.md/vmSunConst.h vm/cleansun3.md/vmSunConst.h vm/sun4c.md/vmSunConst.h vm/cleansun4.md/vmSunConst.h vm/cleansun4c.md/vmSunConst.h vm/sun4nw.md/vmSunConst.h
+VMMACH_USER_DVMA_ENABLE_REG vm/sun4.md/vmSunAsm.s vm/sun4.md/vmSunConst.h vm/sun4c.md/vmSunAsm.s vm/sun4c.md/vmSunConst.h vm/cleansun4.md/vmSunAsm.s vm/cleansun4.md/vmSunConst.h vm/cleansun4c.md/vmSunAsm.s vm/cleansun4c.md/vmSunConst.h vm/sun4nw.md/vmSunAsm.s vm/sun4nw.md/vmSunConst.h
+VMMACH_USER_DVMA_MAP vm/sun4.md/vmSunAsm.s vm/sun4.md/vmSunConst.h vm/sun4c.md/vmSunAsm.s vm/sun4c.md/vmSunConst.h vm/cleansun4.md/vmSunAsm.s vm/cleansun4.md/vmSunConst.h vm/cleansun4c.md/vmSunAsm.s vm/cleansun4c.md/vmSunConst.h vm/sun4nw.md/vmSunAsm.s vm/sun4nw.md/vmSunConst.h
+VMMACH_USER_MAPPING_BASE_ADDR mach/cleands3100.md/machConst.h mach/ds5000.md/machConst.h mach/ds3100.md/machConst.h vm/ds3100.md/vmPmax.c vm/ds3100.md/vmPmaxConst.h vm/cleands3100.md/vmPmax.c vm/cleands3100.md/vmPmaxConst.h vm/ds5000.md/vm3max.c vm/ds5000.md/vm3maxConst.h
+VMMACH_USER_MAPPING_BASE_PAGE mach/cleands3100.md/machConst.h mach/ds5000.md/machConst.h mach/ds3100.md/machConst.h vm/ds3100.md/vmPmax.c vm/ds3100.md/vmPmaxConst.h vm/cleands3100.md/vmPmax.c vm/cleands3100.md/vmPmaxConst.h vm/ds5000.md/vm3max.c vm/ds5000.md/vm3maxConst.h
+VMMACH_USER_MAPPING_PAGES vm/ds3100.md/vmPmax.c vm/ds3100.md/vmPmaxConst.h vm/cleands3100.md/vmPmax.c vm/cleands3100.md/vmPmaxConst.h vm/ds5000.md/vm3max.c vm/ds5000.md/vm3maxConst.h
+VMMACH_USER_PROGRAM_SPACE vm/sun3.md/vmSunConst.h vm/sun4.md/vmSunConst.h vm/cleansun3.md/vmSunConst.h vm/sun4c.md/vmSunConst.h vm/cleansun4.md/vmSunConst.h vm/cleansun4c.md/vmSunConst.h vm/sun4nw.md/vmSunConst.h
+VMMACH_USER_SHARED_PAGES mach/sun3.md/machConst.h mach/cleansun3.md/machConst.h mach/sun4.md/machConst.h mach/sun4c.md/machConst.h mach/cleands3100.md/machConst.h mach/ds5000.md/machConst.h mach/ds3100.md/machConst.h mach/sun4nw.md/machConst.h mach/cleansun4.md/machConst.h mach/cleansun4c.md/machConst.h vm/sun3.md/vmSun.c vm/sun3.md/vmSunConst.h vm/sun4.md/vmSun.c vm/sun4.md/vmSunConst.h vm/cleansun3.md/vmSun.c vm/cleansun3.md/vmSunConst.h vm/ds3100.md/vmPmax.c vm/ds3100.md/vmPmaxConst.h vm/sun4c.md/vmSun.c vm/sun4c.md/vmSunConst.h vm/cleands3100.md/vmPmax.c vm/cleands3100.md/vmPmaxConst.h vm/cleansun4.md/vmSun.c vm/cleansun4.md/vmSunConst.h vm/cleansun4c.md/vmSun.c vm/cleansun4c.md/vmSunConst.h vm/sun4nw.md/vmSun.c vm/sun4nw.md/vmSunConst.h vm/ds5000.md/vm3max.c vm/ds5000.md/vm3maxConst.h
+VM_MAX_USER_MAP_PAGES vm/vm.h
+VmDecPTUserCount dbg/sun4.md/vmInt.h dbg/sun3.md/vmInt.h dbg/cleansun3.md/vmInt.h dbg/sun4c.md/vmInt.h dbg/sun4nw.md/vmInt.h dbg/cleansun4.md/vmInt.h dbg/cleansun4c.md/vmInt.h vm/vmSeg.c vm/vmInt.h vm/vmPage.c vm/vmMap.c vm/vmPrefetch.c vm/vmSysCall.c vm/vmSubr.c
+VmMachCheckUserWrite vm/symm.md/vmSymm.c
+VmMachCopyUserSegMap dbg/sun4.md/vmMachInt.h dbg/sun3.md/vmMachInt.h dbg/cleansun3.md/vmMachInt.h dbg/sun4c.md/vmMachInt.h dbg/sun4nw.md/vmMachInt.h dbg/cleansun4.md/vmMachInt.h dbg/cleansun4c.md/vmMachInt.h vm/sun3.md/vmMachInt.h vm/sun4.md/vmSun.c vm/sun4.md/vmSunAsm.s vm/sun4.md/vmMachInt.h vm/cleansun3.md/vmMachInt.h vm/sun4c.md/vmMachInt.h vm/sun4c.md/vmSun.c vm/sun4c.md/vmSunAsm.s vm/cleansun4.md/vmMachInt.h vm/cleansun4.md/vmSun.c vm/cleansun4.md/vmSunAsm.s vm/cleansun4c.md/vmMachInt.h vm/cleansun4c.md/vmSun.c vm/cleansun4c.md/vmSunAsm.s vm/sun4nw.md/vmMachInt.h vm/sun4nw.md/vmSun.c vm/sun4nw.md/vmSunAsm.s
+VmMachGetUserContext dbg/sun4.md/vmMachInt.h dbg/sun3.md/dbgTrap.s dbg/sun3.md/vmMachInt.h dbg/cleansun3.md/dbgTrap.s dbg/cleansun3.md/vmMachInt.h dbg/sun4c.md/vmMachInt.h dbg/sun4nw.md/vmMachInt.h dbg/cleansun4.md/vmMachInt.h dbg/cleansun4c.md/vmMachInt.h vm/sun3.md/vmSunAsm.s vm/sun3.md/vmMachInt.h vm/sun4.md/vmSunAsm.s vm/sun4.md/vmMachInt.h vm/cleansun3.md/vmMachInt.h vm/cleansun3.md/vmSunAsm.s vm/sun4c.md/vmMachInt.h vm/sun4c.md/vmSunAsm.s vm/cleansun4.md/vmMachInt.h vm/cleansun4.md/vmSunAsm.s vm/cleansun4c.md/vmMachInt.h vm/cleansun4c.md/vmSunAsm.s vm/sun4nw.md/vmMachInt.h vm/sun4nw.md/vmSunAsm.s
+VmMachSetUserContext dbg/sun4.md/vmMachInt.h dbg/sun3.md/vmMachInt.h dbg/cleansun3.md/vmMachInt.h dbg/sun4c.md/vmMachInt.h dbg/sun4nw.md/vmMachInt.h dbg/cleansun4.md/vmMachInt.h dbg/cleansun4c.md/vmMachInt.h vm/sun3.md/vmSun.c vm/sun3.md/vmSunAsm.s vm/sun3.md/vmMachInt.h vm/sun4.md/vmSun.c vm/sun4.md/vmSunAsm.s vm/sun4.md/vmMachInt.h vm/cleansun3.md/vmMachInt.h vm/cleansun3.md/vmSun.c vm/cleansun3.md/vmSunAsm.s vm/sun4c.md/vmMachInt.h vm/sun4c.md/vmSun.c vm/sun4c.md/vmSunAsm.s vm/cleansun4.md/vmMachInt.h vm/cleansun4.md/vmSun.c vm/cleansun4.md/vmSunAsm.s vm/cleansun4c.md/vmMachInt.h vm/cleansun4c.md/vmSun.c vm/cleansun4c.md/vmSunAsm.s vm/sun4nw.md/vmMachInt.h vm/sun4nw.md/vmSun.c vm/sun4nw.md/vmSunAsm.s
+VmMach_IntMapKernelIntoUser dev/cleansun4.md/devGraphics.c dev/sun3.md/devGraphics.c dev/sun4.md/devGraphics.c dev/sun4c.md/devGraphics.c dev/cleansun4c.md/devGraphics.c vm/sun3.md/vmSun.c vm/sun3.md/vmMach.h vm/sun4.md/vmSun.c vm/sun4.md/vmMach.h vm/cleansun3.md/vmMach.h vm/cleansun3.md/vmSun.c vm/sun4c.md/vmMach.h vm/sun4c.md/vmSun.c vm/cleansun4.md/vmMach.h vm/cleansun4.md/vmSun.c vm/cleansun4c.md/vmMach.h vm/cleansun4c.md/vmSun.c vm/sun4nw.md/vmMach.h vm/sun4nw.md/vmSun.c
+VmMach_MapKernelIntoUser mach/symm.md/machSyscallTrace.c sys/sysSysCall.c vm/vm.h vm/sun3.md/vmSun.c vm/symm.md/vmSymm.c vm/sun4.md/vmSun.c vm/cleansun3.md/vmSun.c vm/ds3100.md/vmPmax.c vm/sun4c.md/vmSun.c vm/cleands3100.md/vmPmax.c vm/cleansun4.md/vmSun.c vm/cleansun4c.md/vmSun.c vm/sun4nw.md/vmSun.c vm/ds5000.md/vm3max.c
+VmMach_PinUserPages vm/vm.h vm/vmPage.c vm/sun3.md/vmSun.c vm/symm.md/vmSymm.c vm/sun4.md/vmSun.c vm/cleansun3.md/vmSun.c vm/ds3100.md/vmPmax.c vm/sun4c.md/vmSun.c vm/cleands3100.md/vmPmax.c vm/cleansun4.md/vmSun.c vm/cleansun4c.md/vmSun.c vm/sun4nw.md/vmSun.c vm/ds5000.md/vm3max.c
+VmMach_UnpinUserPages vm/vm.h vm/vmPage.c vm/sun3.md/vmSun.c vm/symm.md/vmSymm.c vm/sun4.md/vmSun.c vm/cleansun3.md/vmSun.c vm/ds3100.md/vmPmax.c vm/sun4c.md/vmSun.c vm/cleands3100.md/vmPmax.c vm/cleansun4.md/vmSun.c vm/cleansun4c.md/vmSun.c vm/sun4nw.md/vmSun.c vm/ds5000.md/vm3max.c
+VmMach_UserMap dev/ds5000.md/devGraphics.c dev/ds3100.md/devGraphics.c dev/cleands3100.md/devGraphics.c vm/ds3100.md/vmMach.h vm/ds3100.md/vmPmax.c vm/cleands3100.md/vmMach.h vm/cleands3100.md/vmPmax.c vm/ds5000.md/vmMach.h vm/ds5000.md/vm3max.c
+VmMach_UserUnmap dev/ds5000.md/devGraphics.c dev/ds3100.md/devGraphics.c dev/cleands3100.md/devGraphics.c vm/ds3100.md/vmMach.h vm/ds3100.md/vmPmax.c vm/cleands3100.md/vmMach.h vm/cleands3100.md/vmPmax.c vm/ds5000.md/vmMach.h vm/ds5000.md/vm3max.c
+VmTouchUserPage vm/symm.md/vmMachInt.h vm/symm.md/vmSymm.c vm/symm.md/vmSymmAsm.s
+VmTouchUserPageError mach/symm.md/machTrap.c vm/symm.md/vmMach.h vm/symm.md/vmSymmAsm.s
+VmTouchUserPageFetch mach/symm.md/machTrap.c vm/symm.md/vmMach.h vm/symm.md/vmSymmAsm.s
+Vm_PinUserMem  sync/syncUser.c vm/vm.h vm/vmPage.c vm/vmSysCall.c
+Vm_UnpinUserMem sync/syncUser.c vm/vm.h vm/vmPage.c vm/vmSysCall.c
+_SYNCUSER      libc/memInt.h
+addrBusErr     mach/sun3.md/machCode.c mach/sun3.md/machTypes.h mach/cleansun3.md/machCode.c dbg/sun3.md/dbgMain.c dbg/cleansun3.md/dbgMain.c
+busErr         mach/sun3.md/machCode.c mach/sun3.md/machTypes.h mach/cleansun3.md/machCode.c
+busError       mach/sun3.md/machInt.h mach/cleansun3.md/machInt.h net/sun4nw.md/netIEInt.h
+busErrorReg    mach/sun3.md/machCode.c mach/sun3.md/machTypes.h mach/cleansun3.md/machCode.c mach/sun4.md/machCode.c mach/sun4.md/machInt.h mach/sun4c.md/machCode.c mach/sun4c.md/machInt.h mach/sun4nw.md/machCode.c mach/sun4nw.md/machInt.h mach/cleansun4.md/machCode.c mach/cleansun4.md/machInt.h mach/cleansun4c.md/machCode.c mach/cleansun4c.md/machInt.h
+causeReg       mach/cleands3100.md/machCode.c mach/cleands3100.md/machInt.h mach/ds5000.md/mach.h mach/ds5000.md/machCode.c mach/ds5000.md/machInt.h mach/ds5000.md/machTypes.h mach/ds3100.md/machInt.h mach/ds3100.md/machCode.c mach/ds3100.md/machTypes.h dbg/ds3100.md/dbgMain.c dbg/cleands3100.md/dbgMain.c dbg/ds5000.md/dbgMain.c dev/ds5000.md/devDC7085.c timer/ds3100.md/timerMC.c timer/cleands3100.md/timerMC.c timer/ds5000.md/timerMC.c
+cd_clr_buserr  mach/symm.md/machConfig.h
+cd_read_buserr mach/symm.md/machConfig.h
+childUserCpuUsage mach/cleands3100.md/machUNIXSyscall.c mach/ds5000.md/machUNIXSyscall.c mach/ds3100.md/machUNIXSyscall.c proc/procExit.c proc/procInt.h proc/procTypes.h proc/procTable.c proc/procMisc.c proc/procFork.c proc/procRpc.c proc/procStubs.c proc/procMigrate.c
+ct_clr_buserr  mach/symm.md/machConfig.h
+ct_read_buserr mach/symm.md/machConfig.h
+dbgUserContext dbg/sun4.md/dbgInt.h dbg/sun4.md/dbgMain.c dbg/sun3.md/dbgMain.c dbg/sun3.md/dbgTrap.s dbg/sun3.md/dbgInt.h dbg/cleansun3.md/dbgInt.h dbg/cleansun3.md/dbgMain.c dbg/cleansun3.md/dbgTrap.s dbg/sun4c.md/dbgInt.h dbg/sun4c.md/dbgMain.c dbg/sun4nw.md/dbgInt.h dbg/sun4nw.md/dbgMain.c dbg/cleansun4.md/dbgInt.h dbg/cleansun4.md/dbgMain.c dbg/cleansun4c.md/dbgInt.h dbg/cleansun4c.md/dbgMain.c
+effUserID      proc/procID.c proc/proc.h proc/procStubs.c
+effUserIDPtr   proc/procID.c proc/proc.h
+effectiveUserID fs/fsNameOps.c fs/fsSysCall.c fs/fsStubs.c fs/fsStreamOps.c fspdev/fspdevSrv.c fspdev/fspdevSetup.c proc/procID.c proc/procExec.c proc/procTypes.h proc/procTable.c proc/procMisc.c proc/procFork.c proc/procRpc.c proc/procStubs.c proc/procMigrate.c proc/procFamily.c sig/signals.c sync/syncSysV.c sys/sysCalls.c vm/vmSwapDir.c
+fpaBusErr      mach/sun3.md/machTypes.h
+kernUserError  mach/sun3.md/machTrap.s mach/cleansun3.md/machTrap.s
+machSigUserStateOffsetOnStack mach/sun4.md/machCode.c mach/sun4.md/machAsm.s mach/sun4c.md/machAsm.s mach/sun4c.md/machCode.c mach/sun4nw.md/machAsm.s mach/sun4nw.md/machCode.c mach/cleansun4.md/machAsm.s mach/cleansun4.md/machCode.c mach/cleansun4c.md/machAsm.s mach/cleansun4c.md/machCode.c
+machUserExcTable mach/cleands3100.md/machAsm.s mach/cleands3100.md/machCode.c mach/ds5000.md/machAsm.s mach/ds5000.md/machCode.c mach/ds3100.md/machAsm.s mach/ds3100.md/machCode.c
+mach_FirstUserAddr mach/sun3.md/machCode.c mach/sun3.md/mach.h mach/cleansun3.md/mach.h mach/cleansun3.md/machCode.c mach/sun4.md/mach.h mach/sun4.md/machCode.c mach/sun4.md/sun4/reg.h mach/sun4c.md/mach.h mach/sun4c.md/machCode.c mach/cleands3100.md/mach.h mach/cleands3100.md/machCode.c mach/ds5000.md/mach.h mach/ds5000.md/machCode.c mach/ds3100.md/mach.h mach/ds3100.md/machCode.c mach/sun4nw.md/mach.h mach/sun4nw.md/machCode.c mach/symm.md/mach.h mach/symm.md/machCode.c mach/cleansun4.md/mach.h mach/cleansun4.md/machCode.c mach/cleansun4c.md/mach.h mach/cleansun4c.md/machCode.c vm/sun3.md/vmSunAsm.s vm/sun4.md/vmSunAsm.s vm/cleansun3.md/vmSunAsm.s vm/sun4c.md/vmSunAsm.s vm/cleansun4.md/vmSunAsm.s vm/cleansun4c.md/vmSunAsm.s vm/sun4nw.md/vmSunAsm.s vm/vmSubr.c
+mach_KernelVirtAddrUser mach/symm.md/mach.h mach/symm.md/machCode.c sync/syncUser.c vm/vmMap.c
+mach_LastUserAddr mach/sun3.md/machCode.c mach/sun3.md/mach.h mach/cleansun3.md/mach.h mach/cleansun3.md/machCode.c mach/sun4.md/mach.h mach/sun4.md/machCode.c mach/sun4.md/sun4/reg.h mach/sun4c.md/mach.h mach/sun4c.md/machCode.c mach/cleands3100.md/mach.h mach/cleands3100.md/machCode.c mach/ds5000.md/mach.h mach/ds5000.md/machCode.c mach/ds3100.md/mach.h mach/ds3100.md/machCode.c mach/sun4nw.md/mach.h mach/sun4nw.md/machCode.c mach/symm.md/mach.h mach/symm.md/machCode.c mach/cleansun4.md/mach.h mach/cleansun4.md/machCode.c mach/cleansun4c.md/mach.h mach/cleansun4c.md/machCode.c vm/sun3.md/vmSunAsm.s vm/sun4.md/vmSunAsm.s vm/cleansun3.md/vmSunAsm.s vm/sun4c.md/vmSunAsm.s vm/cleansun4.md/vmSunAsm.s vm/cleansun4c.md/vmSunAsm.s vm/sun4nw.md/vmSunAsm.s vm/vmSubr.c
+mach_LastUserStackPage mach/sun3.md/machCode.c mach/sun3.md/mach.h mach/cleansun3.md/mach.h mach/cleansun3.md/machCode.c mach/sun4.md/mach.h mach/sun4.md/machCode.c mach/sun4.md/sun4/reg.h mach/sun4c.md/mach.h mach/sun4c.md/machCode.c mach/cleands3100.md/mach.h mach/cleands3100.md/machCode.c mach/ds5000.md/mach.h mach/ds5000.md/machCode.c mach/ds3100.md/mach.h mach/ds3100.md/machCode.c mach/sun4nw.md/mach.h mach/sun4nw.md/machCode.c mach/symm.md/mach.h mach/symm.md/machCode.c mach/cleansun4.md/mach.h mach/cleansun4.md/machCode.c mach/cleansun4c.md/mach.h mach/cleansun4c.md/machCode.c proc/procExec.c vm/vmCOW.c vm/vmSeg.c vm/vmPage.c vm/symm.md/vmSymm.c vm/vmMap.c vm/vmMigrate.c vm/vmServer.c vm/vmPrefetch.c vm/vmSysCall.c vm/vmSubr.c
+mach_MaxUserStackAddr mach/sun3.md/machCode.c mach/sun3.md/mach.h mach/cleansun3.md/mach.h mach/cleansun3.md/machCode.c mach/sun4.md/mach.h mach/sun4.md/machCode.c mach/sun4.md/sun4/reg.h mach/sun4c.md/mach.h mach/sun4c.md/machCode.c mach/cleands3100.md/mach.h mach/cleands3100.md/machCode.c mach/ds5000.md/mach.h mach/ds5000.md/machCode.c mach/ds3100.md/mach.h mach/ds3100.md/machCode.c mach/sun4nw.md/mach.h mach/sun4nw.md/machCode.c mach/symm.md/mach.h mach/symm.md/machCode.c mach/cleansun4.md/mach.h mach/cleansun4.md/machCode.c mach/cleansun4c.md/mach.h mach/cleansun4c.md/machCode.c proc/procExec.c vm/vmMap.c
+newUserVirtAddr vm/sun3.md/vmSun.c vm/sun4.md/vmSun.c vm/cleansun3.md/vmSun.c vm/sun4c.md/vmSun.c vm/cleansun4.md/vmSun.c vm/cleansun4c.md/vmSun.c vm/sun4nw.md/vmSun.c
+noUserInput    sched/sched.h sys/sysCalls.c
+noUsers        fsio/fsioFile.c
+numUserPages   vm/vmPage.c
+numUsers       dev/sun3.md/devFsOpTable.c dev/cleansun3.md/devFsOpTable.c dev/devFsOpTable.h dev/sun4c.md/devFsOpTable.c dev/cleansun4c.md/devFsOpTable.c
+ptUserCount    vm/vmSeg.c vm/vm.h vm/vmMap.c vm/vmPrefetch.c vm/vmSubr.c
+st_userType    fs/fsStubs.c
+suser          dev/symm.md/devZDCDisk.c
+swapStreamUsers vm/vmSwapDir.c
+sys/user.h     mach/sun4.md/fpu_simulator.c mach/sun4c.md/fpu_simulator.c mach/sun4nw.md/fpu_simulator.c mach/cleansun4.md/fpu_simulator.c mach/cleansun4c.md/fpu_simulator.c
+useRealID      fs/fs.h fs/fsSysCall.c
+useReg         mach/sun4.md/machAsmDefs.h mach/sun4c.md/machAsmDefs.h mach/sun4nw.md/machAsmDefs.h mach/cleansun4.md/machAsmDefs.h mach/cleansun4c.md/machAsmDefs.h vm/sun4.md/vmSunConst.h vm/sun4c.md/vmSunConst.h vm/cleansun4.md/vmSunConst.h vm/cleansun4c.md/vmSunConst.h vm/sun4nw.md/vmSunConst.h
+useReg1        mach/sun4.md/machAsmDefs.h mach/sun4c.md/machAsmDefs.h mach/sun4nw.md/machAsmDefs.h mach/cleansun4.md/machAsmDefs.h mach/cleansun4c.md/machAsmDefs.h
+useReg2        mach/sun4.md/machAsmDefs.h mach/sun4c.md/machAsmDefs.h mach/sun4nw.md/machAsmDefs.h mach/cleansun4.md/machAsmDefs.h mach/cleansun4c.md/machAsmDefs.h
+user           mach/sun3.md/machCode.c mach/sun3.md/machAsm.s mach/sun3.md/mach.h mach/sun3.md/machTrap.s mach/cleansun3.md/mach.h mach/cleansun3.md/machAsm.s mach/cleansun3.md/machCode.c mach/cleansun3.md/machTrap.s mach/sun4.md/mach.h mach/sun4.md/machCode.c mach/sun4.md/sun4/reg.h mach/sun4c.md/mach.h mach/sun4c.md/machCode.c mach/cleands3100.md/mach.h mach/cleands3100.md/machAsm.s mach/cleands3100.md/machCode.c mach/ds5000.md/mach.h mach/ds5000.md/machAsm.s mach/ds5000.md/machCode.c mach/ds3100.md/mach.h mach/ds3100.md/machAsm.s mach/ds3100.md/machCode.c mach/sun4nw.md/mach.h mach/sun4nw.md/machCode.c mach/symm.md/machCode.c mach/symm.md/machLocore.s mach/cleansun4.md/mach.h mach/cleansun4.md/machCode.c mach/cleansun4c.md/mach.h mach/cleansun4c.md/machCode.c dbg/sun3.md/dbgTrap.s dbg/cleansun3.md/dbgTrap.s fs/fsNameOps.c fsio/fsioFile.c fslcl/fslclAttributes.c fslcl/fslclLookup.c fspdev/fspdevSrv.c proc/procMisc.c sched/schedule.c sys/sysCalls.c vm/sun3.md/vmSunAsm.s vm/symm.md/vmSymmAsm.s vm/cleansun3.md/vmSunAsm.s vm/ds3100.md/vmPmax.c vm/cleands3100.md/vmPmax.c vm/ds5000.md/vm3max.c
+user/bit.h     mach/cleands3100.md/socket.c mach/ds5000.md/socket.c mach/ds3100.md/socket.c
+user/bstring.h dev/cleansun4.md/devMouse.c dev/sun3.md/devMouse.c dev/sun4.md/devMouse.c dev/cleansun3.md/devMouse.c dev/sun4c.md/devMouse.c dev/sun4nw.md/devMouse.c dev/cleansun4c.md/devMouse.c
+user/dev/graphics.h mach/cleands3100.md/ioctl.c mach/ds5000.md/ioctl.c mach/ds3100.md/ioctl.c fs/fsStubs.c
+user/dev/net.h mach/cleands3100.md/ioctl.c mach/cleands3100.md/socket.c mach/ds5000.md/ioctl.c mach/ds5000.md/socket.c mach/ds3100.md/socket.c mach/ds3100.md/ioctl.c fs/fsStubs.c
+user/dev/tty.h mach/cleands3100.md/ioctl.c mach/ds5000.md/ioctl.c mach/ds3100.md/ioctl.c fs/fsStubs.c
+user/fcntl.h   mach/cleands3100.md/fcntl.c mach/ds5000.md/fcntl.c mach/ds3100.md/fcntl.c
+user/fmt.h     mach/sun3.md/machTypes.h mach/sun3.md/mach.h mach/cleansun3.md/mach.h mach/sun4.md/machTypes.h mach/sun4c.md/machTypes.h mach/cleands3100.md/mach.h mach/ds5000.md/mach.h mach/ds5000.md/machTypes.h mach/ds3100.md/mach.h mach/ds3100.md/machTypes.h mach/symm.md/mach.h mach/symm.md/machTypes.h
+user/fs.h      mach/cleands3100.md/cvtStat.c mach/cleands3100.md/machUNIXSyscall.c mach/cleands3100.md/socket.c mach/ds5000.md/cvtStat.c mach/ds5000.md/machUNIXSyscall.c mach/ds5000.md/socket.c mach/ds3100.md/socket.c mach/ds3100.md/cvtStat.c mach/ds3100.md/machUNIXSyscall.c dev/devNet.h dev/devBlockDevice.h dev/devSyslog.h dev/rawBlockDev.h dev/scsiDevice.h dev/devDiskStats.h dev/devFsOpTable.h dev/ds3100.md/devSII.c dev/cleands3100.md/devSII.c dev/devRawBlockDev.c dev/devDiskStats.c fs/fs.h lfs/lfsInt.h
+user/fsCmd.h   fs/fsCommand.c
+user/inet.h    mach/cleands3100.md/socket.c mach/ds5000.md/socket.c mach/ds3100.md/socket.c
+user/list.h    sync/syncLock.h
+user/net.h     dbg/sun4.md/dbgIP.c dbg/sun3.md/dbgIP.c dbg/cleansun3.md/dbgIP.c dbg/ds3100.md/dbgIP.c dbg/cleands3100.md/dbgIP.c dbg/sun4c.md/dbgIP.c dbg/sun4nw.md/dbgIP.c dbg/cleansun4.md/dbgIP.c dbg/cleansun4c.md/dbgIP.c dbg/ds5000.md/dbgIP.c dev/devNet.c net/net.h net/netRoute.h net/netTypes.h
+user/net/if.h  mach/cleands3100.md/ioctl.c mach/ds5000.md/ioctl.c mach/ds3100.md/ioctl.c fs/fsStubs.c
+user/net/route.h mach/cleands3100.md/ioctl.c mach/ds5000.md/ioctl.c mach/ds3100.md/ioctl.c
+user/netEther.h mach/cleands3100.md/ioctl.c mach/ds5000.md/ioctl.c mach/ds3100.md/ioctl.c net/net.h
+user/netInet.h dbg/sun4.md/dbg.h dbg/sun3.md/dbg.h dbg/cleansun3.md/dbg.h dbg/sun4c.md/dbg.h dbg/sun4nw.md/dbg.h dbg/cleansun4.md/dbg.h dbg/cleansun4c.md/dbg.h dev/devNet.c net/net.h
+user/netUltra.h net/net.h
+user/netinet/in.h mach/cleands3100.md/socket.c mach/ds5000.md/socket.c mach/ds3100.md/socket.c
+user/proc.h    mach/sun4.md/machTrap.s mach/sun4.md/machAsm.s mach/sun4c.md/machAsm.s mach/sun4c.md/machTrap.s mach/sun4nw.md/machAsm.s mach/sun4nw.md/machTrap.s mach/cleansun4.md/machAsm.s mach/cleansun4.md/machTrap.s mach/cleansun4c.md/machAsm.s mach/cleansun4c.md/machTrap.s proc/procTypes.h proc/procMigrate.h sync/syncTypes.h
+user/rpc.h     rpc/rpcSrvStat.h rpc/rpcCltStat.h rpc/rpcCltStat.c
+user/sig.h     mach/cleands3100.md/compatSig.c mach/ds5000.md/compatSig.c mach/ds3100.md/compatSig.c sig/sigTypes.h
+user/sigMach.h mach/sun3.md/machCode.c mach/cleansun3.md/machCode.c
+user/status.h  mach/cleands3100.md/socket.c mach/ds5000.md/socket.c mach/ds3100.md/socket.c
+user/stdlib.h  mach/cleands3100.md/socket.c mach/ds5000.md/socket.c mach/ds3100.md/socket.c
+user/sync.h    proc/proc.h proc/procTypes.h sync/syncTypes.h sync/syncLock.h
+user/sys.h     mach/cleands3100.md/socket.c mach/ds5000.md/socket.c mach/ds3100.md/socket.c sys/sys.h
+user/sys/file.h mach/cleands3100.md/machUNIXSyscall.c mach/ds5000.md/machUNIXSyscall.c mach/ds3100.md/machUNIXSyscall.c fs/fsStubs.c
+user/sys/ioctl.h mach/cleands3100.md/ioctl.c mach/ds5000.md/ioctl.c mach/ds3100.md/ioctl.c fs/fsStubs.c
+user/sys/resource.h mach/cleands3100.md/machUNIXSyscall.c mach/ds5000.md/machUNIXSyscall.c mach/ds3100.md/machUNIXSyscall.c fs/fsStubs.c proc/procStubs.c sig/sigStubs.c sys/sysStubs.c
+user/sys/signal.h mach/cleands3100.md/compatSig.c mach/cleands3100.md/signals.c mach/ds5000.md/compatSig.c mach/ds5000.md/signals.c mach/ds3100.md/compatSig.c mach/ds3100.md/signals.c sig/sigStubs.c
+user/sys/socket.h mach/cleands3100.md/ioctl.c mach/cleands3100.md/socket.c mach/ds5000.md/ioctl.c mach/ds5000.md/socket.c mach/ds3100.md/socket.c mach/ds3100.md/ioctl.c fs/fsStubs.c
+user/sys/stat.h fs/fsStubs.c
+user/sys/termios.h mach/cleands3100.md/ioctl.c mach/ds5000.md/ioctl.c mach/ds3100.md/ioctl.c fs/fsStubs.c
+user/sys/time.h mach/cleands3100.md/ioctl.c mach/cleands3100.md/machUNIXSyscall.c mach/ds5000.md/ioctl.c mach/ds5000.md/machUNIXSyscall.c mach/ds3100.md/ioctl.c mach/ds3100.md/machUNIXSyscall.c fs/fsStubs.c proc/procStubs.c sig/sigStubs.c sys/sysStubs.c timer/timerStubs.c
+user/sys/ttychars.h mach/cleands3100.md/ioctl.c mach/ds5000.md/ioctl.c mach/ds3100.md/ioctl.c
+user/sys/ttydev.h mach/cleands3100.md/ioctl.c mach/ds5000.md/ioctl.c mach/ds3100.md/ioctl.c
+user/sys/types.h mach/cleands3100.md/cvtStat.c mach/cleands3100.md/ioctl.c mach/cleands3100.md/machUNIXSyscall.c mach/cleands3100.md/socket.c mach/ds5000.md/cvtStat.c mach/ds5000.md/ioctl.c mach/ds5000.md/machUNIXSyscall.c mach/ds5000.md/socket.c mach/ds3100.md/socket.c mach/ds3100.md/ioctl.c mach/ds3100.md/cvtStat.c mach/ds3100.md/machUNIXSyscall.c fs/fsStubs.c proc/procStubs.c sig/sigStubs.c sys/sysStubs.c timer/timerStubs.c vm/vmStubs.c
+user/sys/uio.h mach/cleands3100.md/machUNIXSyscall.c mach/cleands3100.md/socket.c mach/ds5000.md/machUNIXSyscall.c mach/ds5000.md/socket.c mach/ds3100.md/socket.c mach/ds3100.md/machUNIXSyscall.c fs/fsStubs.c
+user/sys/wait.h mach/cleands3100.md/machUNIXSyscall.c mach/ds5000.md/machUNIXSyscall.c mach/ds3100.md/machUNIXSyscall.c fs/fsStubs.c proc/procStubs.c sig/sigStubs.c sys/sysStubs.c
+user/sysStats.h dev/dev.h dev/devDiskStats.h main/symm.md/mainInit.c rpc/rpcDebug.c
+user/vm.h      sys/sysSysCall.c vm/vmCOW.c vm/vm.h vm/vmPage.c vm/symm.md/vmSymm.c vm/vmPrefetch.c vm/vmSysCall.c
+userAddr       recov/recovery.c recov/recov.h
+userArgs       proc/procExec.c
+userArgsPtr    proc/procExec.c
+userBuffer     fsio/fsioDevice.c
+userCpuUsage   mach/cleands3100.md/machUNIXSyscall.c mach/ds5000.md/machUNIXSyscall.c mach/ds3100.md/machUNIXSyscall.c proc/procExit.c proc/procInt.h proc/procTypes.h proc/procTable.c proc/procMisc.c proc/procFork.c proc/procRpc.c proc/procRemote.c proc/procStubs.c proc/procMigrate.c sched/schedule.c
+userData       net/netRoute.c net/net.h net/netRoute.h
+userDead       sys/sysCalls.c
+userDeviceName fs/fs.h fs/fsSysCall.c
+userEnvironPtr proc/procEnviron.c
+userExceptMaskPtr fs/fs.h fs/fsSelect.c
+userFPURegs    mach/symm.md/machCode.c mach/symm.md/machMigrate.c mach/symm.md/machTypes.h
+userID         fs/fs.h fs/fsInit.c fs/fsNameOps.c fs/fsNameOps.h fs/fsSysCall.c fs/fsAttributes.c fslcl/sospRecord.h fslcl/fslclInt.h fslcl/fslclAttributes.c fspdev/fspdevSrv.c fspdev/fspdevInt.h fsrmt/fsrmtInt.h fsrmt/fsrmtAttributes.c proc/procID.c proc/migrate.h proc/proc.h proc/procTypes.h proc/procTable.c proc/procMisc.c proc/procFork.c proc/procRpc.c proc/procRemote.c proc/procStubs.c proc/procMigrate.c proc/procFamily.c sig/signals.c utils/sospRecord.h
+userIDPtr      proc/procID.c proc/proc.h proc/procFamily.c
+userLevelID    fspdev/fspdevPfs.c fspdev/fspdevSrv.c fspdev/fspdevInt.h
+userLocalName  fs/fs.h fs/fsSysCall.c
+userLockPtr    sync/syncUser.c
+userMapIndex   vm/ds3100.md/vmPmax.c vm/cleands3100.md/vmPmax.c vm/ds5000.md/vm3max.c
+userMapped     vm/ds3100.md/vmPmax.c vm/cleands3100.md/vmPmax.c vm/ds5000.md/vm3max.c
+userMappingTable vm/ds3100.md/vmPmax.c vm/cleands3100.md/vmPmax.c vm/ds5000.md/vm3max.c
+userMaskPtr    mach/cleands3100.md/socket.c mach/ds5000.md/socket.c mach/ds3100.md/socket.c
+userMode       proc/procInt.h proc/procExec.c proc/procTimer.c
+userOptionsArray mach/cleands3100.md/socket.c mach/ds5000.md/socket.c mach/ds3100.md/socket.c
+userPrefix     fsprefix/fsprefixOps.c
+userProc       proc/procExec.c
+userProcsOnly  proc/proc.h proc/procMisc.c
+userReadMaskPtr fs/fs.h fs/fsSelect.c
+userRegs       mach/symm.md/machCode.c mach/symm.md/machMigrate.c mach/symm.md/machTypes.h
+userRegsPtr    mach/sun4.md/machInt.h mach/sun4.md/machFPUGlue.c mach/sun4c.md/machFPUGlue.c mach/sun4c.md/machInt.h mach/sun4nw.md/machFPUGlue.c mach/sun4nw.md/machInt.h mach/cleansun4.md/machFPUGlue.c mach/cleansun4.md/machInt.h mach/cleansun4c.md/machFPUGlue.c mach/cleansun4c.md/machInt.h
+userSpace      fsrmt/fsrmtIO.c
+userStackPointer proc/procExec.c
+userStackPtr   mach/sun3.md/machCode.c mach/sun3.md/machTypes.h mach/sun3.md/mach.h mach/cleansun3.md/mach.h mach/cleansun3.md/machCode.c mach/sun4.md/mach.h mach/sun4.md/machCode.c mach/sun4.md/sun4/reg.h mach/sun4c.md/mach.h mach/sun4c.md/machCode.c mach/cleands3100.md/mach.h mach/cleands3100.md/machCode.c mach/ds5000.md/mach.h mach/ds5000.md/machCode.c mach/ds3100.md/mach.h mach/ds3100.md/machCode.c mach/sun4nw.md/mach.h mach/sun4nw.md/machCode.c mach/symm.md/machCode.c mach/cleansun4.md/mach.h mach/cleansun4.md/machCode.c mach/cleansun4c.md/mach.h mach/cleansun4c.md/machCode.c
+userState      mach/sun3.md/machCode.c mach/sun3.md/machTypes.h mach/sun3.md/machMigrate.c mach/cleansun3.md/machCode.c mach/cleansun3.md/machMigrate.c mach/sun4.md/machCode.c mach/sun4.md/machSig.h mach/sun4.md/machTypes.h mach/sun4c.md/machCode.c mach/sun4c.md/machSig.h mach/sun4c.md/machTypes.h mach/cleands3100.md/compatSig.c mach/cleands3100.md/fcntl.c mach/cleands3100.md/ioctl.c mach/cleands3100.md/machCode.c mach/cleands3100.md/machMigrate.c mach/cleands3100.md/machUNIXSyscall.c mach/cleands3100.md/signals.c mach/cleands3100.md/socket.c mach/ds5000.md/compatSig.c mach/ds5000.md/fcntl.c mach/ds5000.md/ioctl.c mach/ds5000.md/machCode.c mach/ds5000.md/machMigrate.c mach/ds5000.md/machTypes.h mach/ds5000.md/machUNIXSyscall.c mach/ds5000.md/signals.c mach/ds5000.md/socket.c mach/ds3100.md/machMigrate.c mach/ds3100.md/socket.c mach/ds3100.md/ioctl.c mach/ds3100.md/machCode.c mach/ds3100.md/compatSig.c mach/ds3100.md/fcntl.c mach/ds3100.md/signals.c mach/ds3100.md/machUNIXSyscall.c mach/ds3100.md/machTypes.h mach/sun4nw.md/machCode.c mach/sun4nw.md/machSig.h mach/symm.md/machTrap.c mach/symm.md/machTypes.h mach/cleansun4.md/machCode.c mach/cleansun4.md/machSig.h mach/cleansun4c.md/machCode.c mach/cleansun4c.md/machSig.h proc/procStubs.c sig/sigStubs.c sys/sysUnixSyscall.c
+userStatePtr   mach/cleands3100.md/machCode.c mach/ds5000.md/machCode.c mach/ds3100.md/machCode.c
+userTicks      proc/procRpc.c
+userTime       proc/procMisc.c sched/sched.h sched/schedule.c sys/sysCalls.c
+userTimeMigrated sched/sched.h sched/schedule.c sys/sysCalls.c
+userTimeOutPtr mach/cleands3100.md/socket.c mach/ds5000.md/socket.c mach/ds3100.md/socket.c
+userTimeoutPtr fs/fs.h fs/fsSelect.c
+userTimerPtr   proc/proc.h proc/procTimer.c
+userType       fs/fsStubs.c fscache/fscache.h fscache/fscacheOps.c fsdm/fsdm.h fsdm/fsdmDisk.c fsdm/fsdmFileDesc.c fsio/fsioFile.c fslcl/fslclAttributes.c lfs/lfsDesc.c ofs/ofsFileDesc.c
+userVectorArray fs/fs.h fs/fsSysCall.c
+userVirtAddr   vm/vm.h vm/sun3.md/vmSun.c vm/sun3.md/vmMach.h vm/symm.md/vmSymm.c vm/sun4.md/vmSun.c vm/sun4.md/vmMach.h vm/cleansun3.md/vmMach.h vm/cleansun3.md/vmSun.c vm/sun4c.md/vmMach.h vm/sun4c.md/vmSun.c vm/cleansun4.md/vmMach.h vm/cleansun4.md/vmSun.c vm/cleansun4c.md/vmMach.h vm/cleansun4c.md/vmSun.c vm/sun4nw.md/vmMach.h vm/sun4nw.md/vmSun.c
+userWaitFlagPtr sync/syncUser.c
+userWriteMaskPtr fs/fs.h fs/fsSelect.c
+userdmaPageBitMap vm/sun4.md/vmSun.c vm/sun4c.md/vmSun.c vm/cleansun4.md/vmSun.c vm/cleansun4c.md/vmSun.c vm/sun4nw.md/vmSun.c
+vmeBusErr      mach/sun3.md/machTypes.h
+
+ID scan finished at Sun Feb 24 17:57:30

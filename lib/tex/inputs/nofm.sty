@@ -1,0 +1,37 @@
+% This is a LaTeX document style option for "n of m" style pagination.
+% It produces a centered header in the above style, and no footer; variations
+% to put the information elsewhere, incorporate other information, or include
+% the word "page" should be easy.  This option works by recording the last
+% page's page number in the .aux file (using the standard label/pageref
+% mechanism).  Therefore, you will have to run LaTeX a second time if the
+% number of pages changes, in order to get correct output.
+%
+% WARNING: This completely disables \thispagestyle as a quick and dirty
+%          way to avoid the automatic \thispagestyle{plain} that occurs
+%          for the first page and first index page in the usual styles.
+%          It seems that "n of m" users would in general not want that,
+%          nor want to use \thispagestyle themselves.  The relevant line
+%          (first thing after the identifying typeout below) is easy to
+%          comment out if you disagree with this.
+%
+%     -- Max Hailperin, 9/27/88
+
+\typeout{Document Style Option 'nofm' -- Released 27 September 1988}
+
+\def\thispagestyle#1{}  %  SEE ABOVE WARNING
+
+% The following definitions produce the headers and footers in the desired
+% format; they should be changed for variations.
+\def\@oddhead{\rm\hfil \thepage\ of \pageref{@last-page} \hfil}
+\def\@evenhead{\@oddhead}
+\def\@oddfoot{}\def\@evenfoot{\@oddfoot}
+
+% The below is reproduced from the latex.tex file, version 2.09 of 27 October
+% 1986, Copyright (C) 1985 by Leslie Lamport, with the exception of the
+% marked change in the first line----vvvvvvvvvvvvvvvvvv.
+\def\enddocument{\@checkend{document}\label{@last-page}\clearpage\begingroup  
+\if@filesw \immediate\closeout\@mainaux 
+\def\global\@namedef##1##2{}\def\newlabel{\@testdef r}%
+\def\bibcite{\@testdef b}\@tempswafalse \makeatletter\input \jobname.aux
+\if@tempswa \@warning{Label(s) may have changed.  Rerun to get
+cross-references right}\fi\fi\endgroup\deadcycles\z@\@@end}

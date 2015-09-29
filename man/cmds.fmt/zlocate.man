@@ -1,0 +1,66 @@
+
+
+
+ZLOCATE                   User Commands                   ZLOCATE
+
+
+
+NNAAMMEE
+     zlocate - find a user using Zephyr
+
+SSYYNNOOPPSSIISS
+     zzllooccaattee [ --aa | --dd ] user ...
+
+DDEESSCCRRIIPPTTIIOONN
+     _Z_l_o_c_a_t_e uses the _Z_e_p_h_y_r(_1) Notification Service to find
+     where a user is currently logged in.  If the user is not
+     logged in, or has set his location information such that you
+     do not have access to see it, _z_l_o_c_a_t_e prints "Hidden or not
+     logged-in".  Otherwise, each machine that the user is
+     currently logged into is printed, along with the time of
+     login and location.  The location is usually the X window
+     system display name of the user's display, but may be the
+     terminal name if he is not using X or for some other reason
+     is only using the terminal interface to _z_w_g_c(_1).
+
+     By default, all zlocate requests are authenticated using
+     _K_e_r_b_e_r_o_s.  If you do not have kerberos tickets, or for some
+     other reason do not want to authenticate, the --dd option will
+     turn off authentication.  The --aa option is the default,
+     authentication on.
+
+
+DDIIAAGGNNOOSSTTIICCSS
+     _z_l_o_c_a_t_e exits with status zero (0) if at least one user was
+     found, and one (1) if no users were found.
+
+SSEEEE AALLSSOO
+     zctl(1), zephyr(1), znol(1), zwgc(1), zhm(8), zephyrd(8),
+     X(1)
+     Project Athena Technical Plan Section E.4.1, `Zephyr Notifi-
+     cation Service'
+
+AAUUTTHHOORRSS
+     Robert S. French (MIT-Project Athena)
+     Marc Horowitz (MIT-Project Athena)
+
+RREESSTTRRIICCTTIIOONNSS
+     Copyright (c) 1987,1988 by the Massachusetts Institute of
+     Technology.  All Rights Reserved.
+     _z_e_p_h_y_r(_1) specifies the terms and conditions for redistribu-
+     tion.
+
+
+
+
+
+
+
+
+
+
+
+MIT Project Athena       April 17, 1990                         1
+
+
+

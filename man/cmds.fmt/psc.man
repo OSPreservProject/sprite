@@ -1,0 +1,132 @@
+
+
+
+PSC                  UNKNOWN MANUAL SECTION                  PSC
+
+
+
+     6.19  1
+
+NNAAMMEE
+     psc - prepare sc files
+
+SSYYNNOOPPSSIISS
+     ppsscc [ -_f_L_k_r_S_P_v ] [ -_s _c_e_l_l ] [ -_R _n ] [ -_C _n ] [ -_n _n ] [ -_d
+     _c ]
+
+
+DDEESSCCRRIIPPTTIIOONN
+     _P_s_c is used to prepare data for input to the spread sheet
+     calculator _s_c(_1). It accepts normal ascii data on standard
+     input.  Standard output is a _s_c file.  With no options, _p_s_c
+     starts the spread sheet in cell A0.  Strings are right jus-
+     tified.  All data on a line is entered on the same row; new
+     input lines cause the output row number to increment by one.
+     The default delimiters are tab and space.  The column for-
+     mats are set to one larger than the number of columns
+     required to hold the largest value in the column.
+
+     Options:
+
+
+     -f   Omit column width calculations.  This option is for
+          preparing data to be merged with an existing
+          spreadsheet.  If the option is not specified, the
+          column widths calculated for the data read by _p_s_c will
+          override those already set in the existing spreadsheet.
+
+
+     -L   Left justify strings.
+
+
+     -k   Keep all delimiters.  This option causes the output
+          cell to change on each new delimiter encountered in the
+          input stream.   The default action is to condense mul-
+          tiple delimters to one, so that the cell only changes
+          once per input data item.
+
+
+     -r   Output the data by row first then column.  For input
+          consisting of a single column, this option will result
+          in output of one row with multiple columns instead of a
+          single column spread sheet.
+
+
+     -s cell
+          Start the top left corner of the spread sheet in _c_e_l_l.
+          For example, -_s _B_3_3 will arrange the output data so
+          that the spread sheet starts in column B, row 33.
+
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+PSC                  UNKNOWN MANUAL SECTION                  PSC
+
+
+
+     -R n Increment by _n on each new output row.
+
+
+     -C n Increment by _n on each new output column.
+
+
+     -n n Output _n rows before advancing to the next column.
+          This option is used when the input is arranged in a
+          single column and the spread sheet is to have multiple
+          columns, each of which is to be length _n.
+
+
+     -d c Use the single character _c as the delimiter between
+          input fields.
+
+
+     -P   Plain numbers only.  A field is a number only when
+          there is no imbeded [-+eE].
+
+
+     -S   All numbers are strings.
+
+
+     -v   Print the version of psc
+
+
+SSEEEE AALLSSOO
+     sc(1)
+
+
+AAUUTTHHOORR
+     Robert Bond
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     2
+
+
+

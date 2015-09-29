@@ -1,0 +1,134 @@
+
+
+
+INITSPRITE                User Commands                INITSPRITE
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     initsprite - First process executed during bootstrap
+
+SSYYNNOOPPSSIISS
+     iinniittsspprriittee [--ccffssxx] [--bb _b_o_o_t_c_o_m_m_a_n_d]
+
+OOPPTTIIOONNSS
+     --bb _b_o_o_t_c_o_m_m_a_n_d    _B_o_o_t_c_o_m_m_a_n_d will be passed to the prom  if
+                       the  machine is rebooted.  This happens if
+                       there is an error checking the root parti-
+                       tion.   The  _b_o_o_t_c_o_m_m_a_n_d_s parameter allows
+                       the reboot to be done using the same  ker-
+                       nel and arguments as the original boot.
+
+     --cc                Causes a fileserver to run rroooottccmmddss before
+                       running  ddiisskkccmmddss. RRoooottccmmddss typically con-
+                       tains  commands  that  allows  a  non-root
+                       fileserver to serve as root.
+
+     --ff                Causes  a  fileserver  mount   its   disks
+                       without checking them.
+
+     --ss                Causes iinniittsspprriittee to exec a login  instead
+                       of running ddiisskkccmmddss and bboooottccmmddss.
+
+     --xx                Causes a fileserver to run rroooottccmmddss before
+                       running ddiisskkccmmddss.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     IInniittsspprriittee is the first  user-level  program  executed  when
+     Sprite  bootstraps  itself  on  a machine.  It is invoked as
+     root, with no arguments.  IInniittsspprriittee opens the console  ter-
+     minal  on its standard I/O channels, initializes environment
+     variables like HHOOSSTT, MMAACCHHIINNEE, and PPAATTHH, and then invokes ccsshh
+     command scripts to perform system initialization.
+
+     IInniittsspprriittee looks first for  a  file  //bboooott//ccmmddss//ccsshh;  if  it
+     exists,  then it is invoked to process the command script in
+     //bboooott//ddiisskkccmmddss.  The purpose of ddiisskkccmmddss is to initialize  a
+     local  disk,  if  there is one (if there is a local disk the
+     kernel will load the prefix for //bboooottTTmmpp and // before invok-
+     ing iinniittsspprriittee).
+
+     The   main   initialization   script   is   in   the    file
+     //bboooott//bboooottccmmddss.  However, if it is desirable to perform spe-
+     cial initialization operations  for  a  particular  machine,
+     then there should exist a file //hhoossttss//_m_a_c_h_i_n_e//bboooottccmmddss where
+     _m_a_c_h_i_n_e is the name of the machine to be treated  specially;
+     iinniittsspprriittee   checks   for  this  file  and  executes  it  in
+
+
+
+Sprite v.1.0        Printed:  August 20, 1989                   1
+
+
+
+
+
+
+INITSPRITE                User Commands                INITSPRITE
+
+
+
+     preference  to  //bboooott//bboooottccmmddss.   Typically,  the   machine-
+     dependent script will source //bboooott//bboooottccmmddss and then perform
+     machine-specific initialization afterwards.
+
+     If iinniittsspprriittee successfully  executes  //bboooott//bboooottccmmddss  (or  a
+     machine-specific  replacement), then it exits.  Otherwise it
+     invokes an interactive shell as root on the console  device.
+     Normally bboooottccmmddss takes care of starting up llooggiinn processes.
+
+     For more information see the man page for bboooott.
+
+
+KKEEYYWWOORRDDSS
+     bootstrap, initialization, startup, boot
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  August 20, 1989                   2
+
+
+

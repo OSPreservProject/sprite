@@ -1,0 +1,6 @@
+F DEPENDEN.MK;1                     	dependencies.mk
+F MD.MK;1                           	md.mk
+F PORT.O;1                          	port.o
+F RDATE.;1                          	rdate
+F RDATE.O;1                         	rdate.o
+F SOCKIO.O;1                        	sockio.o

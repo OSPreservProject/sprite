@@ -1,0 +1,1328 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    mendel:1.1; strict;
+comment  @ * @;
+
+
+1.1
+date     90.06.01.10.10.18;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Old summary format.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/* 
+ * checkLfs.c --
+ *
+ *	The checkLfs program - Check an LFS file system to make sure it
+ *	is consistent.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.2 89/01/07 04:12:18 rab Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <stdio.h>
+#include <option.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/file.h>
+#include <alloca.h>
+
+#include "user/fs.h"
+#include "kernel/fs.h"
+#include "kernel/dev.h"
+#include "kernel/fsdm.h"
+#include "kernel/devDiskLabel.h"
+
+#include "lfsDesc.h"
+#include "lfsDescMap.h"
+#include "lfsFileLayout.h"
+#include "lfsSegLayout.h"
+#include "lfsStableMem.h"
+#include "lfsSuperBlock.h"
+#include "lfsUsageArray.h"
+
+
+#define	BlockToSegmentNum(block)	(((block) - superBlockPtr->hdr.logStartOffset)/(superBlockPtr->usageArray.segmentSize/blockSize))
+/*
+ * The descriptor map and segment usage array of file system.
+ */
+LfsDescMapEntry *descMapPtr = (LfsDescMapEntry *) NIL;
+LfsDescMapCheckPoint *descMapCheckPointPtr;
+LfsStableMemCheckPoint *descMapStableMemPtr;
+int		      *descMapBlockIndexPtr;
+Boolean		     *descFoundArray;
+
+LfsSegUsageEntry *usageArrayPtr = (LfsSegUsageEntry *) NIL;
+LfsSegUsageCheckPoint *usageArrayCheckPointPtr;
+LfsStableMemCheckPoint *usageArrayStableMemPtr;
+int		      *usageArrayBlockIndexPtr;
+
+/*
+ * The super block of the file system.
+ */
+LfsSuperBlock	*superBlockPtr;
+
+
+typedef struct BlockInfo {
+    int	type;		/* Type of block. See defines below. */
+    int fileNum;	/* File number of block's owner. */
+    int blockNum;	/* Block number of block's owner. */
+    Boolean  found;	/* TRUE if found in summary region. */
+} BlockInfo;
+#define	UNUSED	0
+#define	FILE	1
+#define	DESC_MAP 2
+#define USAGE_ARRAY 3
+#define	SUMMARY	    4
+#define CHECKPOINT  5
+#define	DESC	   6
+
+BlockInfo	*blockInfoArray;
+int		numBlocks;
+int		*activeBytesArray;
+
+int	blockSize = 512;
+int	offset = 64*512;
+Boolean dumpFlag = FALSE;
+char	*deviceName;
+
+Option optionArray[] = {
+    {OPT_DOC, (char *) NULL,  (char *) NULL,
+	"This program the file or a LFS file system.\n Synopsis: \"checkLfs [switches] deviceName\"\n Command-line switches are:"},
+    {OPT_INT, "blockSize", (Address) &blockSize, 
+	"Block size of file system."},
+    {OPT_INT, "offset", (Address) &offset, 
+	"Offset into device to start file system."},
+    {OPT_TRUE, "dump", (Address) &dumpFlag, 
+	"Print out a description of file system."},
+};
+/*
+ * Forward routine declartions. 
+ */
+static void PrintSegUsage();
+static int DiskRead();
+static Boolean IsZero();
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	Main routine of checkLfs - parse arguments and do the work.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+main(argc,argv)
+    int	argc;
+    char *argv[];
+{
+    int	   diskFd, maxCheckPointSize, maxCheckPointBlocks, moduleType;
+    int		blocks, blocksPerSeg, segNum;
+    LfsCheckPointHdr	checkPointHdr[2], *checkPointHdrPtr;
+    char		*segmentPtr, *checkPointPtr, *trailerPtr;
+    LfsSegSummaryHdr	*sumHdrPtr;
+    LfsCheckPointRegion *regionPtr;
+    LfsSegSummary 	*segSumPtr;
+    LfsCheckPointHdr    *cpHdrPtr, *oldCheckPointPtr;
+    LfsCheckPointTrailer *trailPtr;
+    int			choosenOne, i;
+
+
+
+    argc = Opt_Parse(argc, argv, optionArray, Opt_Number(optionArray), 0);
+    if (argc != 2) { 
+         Opt_PrintUsage(argv[0], optionArray, Opt_Number(optionArray));
+	 exit(1);
+    } else {
+	deviceName = argv[1];
+    }
+    diskFd = open(deviceName, O_RDONLY, 0);
+    if (diskFd < 0) {
+	fprintf(stderr,"%s: ", argv[0]);
+	perror(deviceName);
+	exit(1);
+    }
+    /*
+     * Fill in the super block header.
+     */
+    offset = offset/blockSize;
+    superBlockPtr = (LfsSuperBlock *) malloc(LFS_SUPER_BLOCK_SIZE);
+    if (DiskRead(diskFd, offset, sizeof(LfsSuperBlock), (char *)superBlockPtr)
+		!= sizeof(LfsSuperBlock)) {
+	fprintf(stderr,"%s: Can't read superblock.\n", argv[0]);
+	exit(1);
+
+    }
+    if (superBlockPtr->hdr.magic != LFS_SUPER_BLOCK_MAGIC) {
+	fprintf(stderr,"%s: Bad magic number for filesystem\n", argv[0]);
+	exit(1);
+    }
+    if (dumpFlag) {
+       PrintSuperBlock(superBlockPtr);
+    }
+    if (!IsZero(superBlockPtr->hdr.padding, sizeof(superBlockPtr->hdr.padding))
+		) {
+	fprintf(stderr,"%s: SuperBlockHdr padding is not zero.\n",argv[0]);
+    }
+
+    /*
+     * Examine the two checkpoint areas to locate the checkpoint area with the
+     * newest timestamp.
+     */
+    if (DiskRead(diskFd, superBlockPtr->hdr.checkPointOffset[0],
+		sizeof(LfsCheckPointHdr), (char *) (checkPointHdr+0)) != 
+	sizeof(LfsCheckPointHdr)) {
+	fprintf(stderr,"%s: Can't read checkPointHeader 0.\n", argv[0]);
+	exit(1);
+    }
+    if (dumpFlag) {
+	PrintCheckPointHdr(checkPointHdr, 0);
+    }
+    if (DiskRead(diskFd, superBlockPtr->hdr.checkPointOffset[1],
+		sizeof(LfsCheckPointHdr), (char *) (checkPointHdr+1))  != 
+	sizeof(LfsCheckPointHdr)) {
+	fprintf(stderr,"%s: Can't read checkPointHeader 1.\n", argv[0]);
+	exit(1);
+    }
+    if (dumpFlag) {
+	PrintCheckPointHdr(checkPointHdr+1, 1);
+    }
+
+    choosenOne = (checkPointHdr[0].timestamp<checkPointHdr[1].timestamp) ?
+				1 : 0;
+
+    maxCheckPointSize = superBlockPtr->hdr.maxCheckPointBlocks * 
+				blockSize;
+    checkPointPtr = malloc(maxCheckPointSize);
+    if (DiskRead(diskFd, superBlockPtr->hdr.checkPointOffset[choosenOne],
+		maxCheckPointSize, checkPointPtr) != maxCheckPointSize) {
+	fprintf(stderr,"%s: Can't read checkPoint %d\n", argv[0], choosenOne);
+    }
+
+
+    checkPointHdrPtr = (LfsCheckPointHdr *) checkPointPtr;
+    trailerPtr = (checkPointPtr + checkPointHdrPtr->size - 
+				sizeof(LfsCheckPointTrailer));
+    trailPtr = (LfsCheckPointTrailer *) trailerPtr;
+    if (trailPtr->timestamp != checkPointHdrPtr->timestamp) {
+	fprintf(stderr,"%s: Header timestamp %d doesn't match trailer timestamp %d\n", argv[0], checkPointHdrPtr->timestamp, trailPtr->timestamp);
+    }
+    printf("Using checkpoint area %d with timestamp %d domain %d (%s)\n",
+	choosenOne, checkPointHdrPtr->timestamp, 
+	checkPointHdrPtr->domainNumber,checkPointHdrPtr->domainPrefix);
+
+    checkPointPtr = checkPointPtr + sizeof(LfsCheckPointHdr);
+
+    numBlocks = superBlockPtr->usageArray.numberSegments * 
+			(superBlockPtr->usageArray.segmentSize/blockSize) +
+			superBlockPtr->hdr.logStartOffset;
+    blockInfoArray = (BlockInfo *) malloc(numBlocks * sizeof(BlockInfo));
+    bzero((char *) blockInfoArray, numBlocks * sizeof(BlockInfo));
+    descFoundArray = (Boolean *) malloc(sizeof(Boolean) * 
+				superBlockPtr->descMap.maxDesc);
+    bzero(descFoundArray, sizeof(Boolean)* superBlockPtr->descMap.maxDesc);
+
+    for (i = 0; i < superBlockPtr->hdr.logStartOffset; i++) {
+	blockInfoArray[i].type = CHECKPOINT;
+	blockInfoArray[i].found = TRUE;
+    }
+    activeBytesArray = (int *) malloc(sizeof(activeBytesArray[0]) * 
+				superBlockPtr->usageArray.numberSegments);
+    bzero((char *) activeBytesArray, sizeof(activeBytesArray[0]) * 
+				superBlockPtr->usageArray.numberSegments);
+    while (checkPointPtr < trailerPtr) { 
+	regionPtr = (LfsCheckPointRegion *) checkPointPtr;
+	if (regionPtr->size == 0) {
+	    break;
+	}
+	switch (regionPtr->type) {
+	case LFS_SEG_USAGE_MOD:
+	    LoadUsageArray(diskFd, regionPtr->size - sizeof(*regionPtr),
+				(char *) (regionPtr+1));
+	    break;
+	case LFS_DESC_MAP_MOD:
+	    LoadDescMap(diskFd, regionPtr->size - sizeof(*regionPtr),
+				(char *) (regionPtr+1));
+	    break;
+	case LFS_FILE_LAYOUT_MOD:
+	    if (regionPtr->size != sizeof(*regionPtr)) {
+		fprintf(stderr,"%s: Bad size %d for FILE_LAYOUT checkpoint\n",
+				argv[0],regionPtr->size);
+	    }
+	    break;
+	default: {
+	    fprintf(stderr,"%s: Unknown region type %d of size %d\n", argv[0],
+			regionPtr->type, regionPtr->size);
+	    break;
+	    }
+	}
+	checkPointPtr += regionPtr->size;
+    }
+
+    CheckAllFiles(diskFd);
+    CheckUsageArray(diskFd);
+    CheckSummaryRegions(diskFd);
+    for (i = 0; i < numBlocks; i++) {
+	if ((blockInfoArray[i].type != UNUSED) && !blockInfoArray[i].found) {
+	    fprintf(stderr,"No summary region for block at %d own by <%d,%d,%d>\n",
+			i * blockSize,
+			blockInfoArray[i].type,
+			blockInfoArray[i].fileNum,
+			blockInfoArray[i].blockNum);
+	}
+
+    }
+    for (i = 2; i < superBlockPtr->descMap.maxDesc; i++) {
+	if ((descMapPtr[i].flags == LFS_DESC_MAP_ALLOCED) &&
+		!descFoundArray[i]) {
+	    fprintf(stderr,"No summary region for desc %d; should be a %d\n",
+			i, descMapPtr[i].blockAddress);
+	}
+    }
+    exit(0);
+}
+char *GetState();
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LoadUsageArray --
+ *
+ *	Load the segment usage array into memory.
+ *
+ * Results:
+ *	TRUE if array can be loaded. FALSE otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Boolean
+LoadUsageArray(diskFd, checkPointSize, checkPointPtr)
+    int	diskFd;
+    int	checkPointSize;
+    char *checkPointPtr;
+{
+    LfsSegUsageParams	*usagePtr;
+    LfsSegUsageCheckPoint	*cp;
+    LfsSegUsageEntry		*array;
+    int				i, blockNum;
+    char			*dataPtr;
+    LfsStableMemCheckPoint *cpPtr;
+    int			arraySize;
+    LfsStableMemParams  *smemParamsPtr;
+    int			*blockIndexPtr;
+    int	numClean,  numDirty, numFull;
+    int freeBlocks;
+    Boolean ret = TRUE;
+
+    usagePtr = &(superBlockPtr->usageArray);
+    smemParamsPtr = &(superBlockPtr->usageArray.stableMem);
+
+
+    usageArrayCheckPointPtr = cp = (LfsSegUsageCheckPoint *) checkPointPtr;
+    if (dumpFlag) { 
+	printf("NumClean segments %d (%3.1f%%) NumDirty %d (%3.1f%%)\n",
+	cp->numClean, 
+	100.0*cp->numClean/(double)usagePtr->numberSegments,
+	cp->numDirty,
+	100.0*cp->numDirty/(double)usagePtr->numberSegments);
+
+	printf("FreeBlocks %d (%3.1f%%) dirtyActiveBytes %d (%3.1f%%) currentSegment %d\n",
+	cp->freeBlocks, 
+	100.0*cp->freeBlocks/ (double) numBlocks,
+	cp->dirtyActiveBytes, 
+	100.0*cp->dirtyActiveBytes/(double)usagePtr->segmentSize,
+	cp->currentSegment);
+    }
+
+    usageArrayStableMemPtr = cpPtr = (LfsStableMemCheckPoint *)
+			(checkPointPtr + sizeof(LfsSegUsageCheckPoint));
+
+    usageArrayBlockIndexPtr = blockIndexPtr = 
+		(int *)(((char *) cpPtr) + sizeof(LfsStableMemCheckPoint));
+    arraySize = smemParamsPtr->blockSize * smemParamsPtr->maxNumBlocks;
+    usageArrayPtr = (LfsSegUsageEntry *) malloc(arraySize);
+    dataPtr = (char *) usageArrayPtr;
+    for (blockNum = 0; blockNum < cpPtr->numBlocks; blockNum++) {
+	unsigned int blockIndex = blockIndexPtr[blockNum];
+	if (blockIndex == FSDM_NIL_INDEX) {
+	    bzero(dataPtr, smemParamsPtr->blockSize);
+	} else {
+	    int i;
+	    if (blockIndex+smemParamsPtr->blockSize/blockSize > numBlocks) {
+		   fprintf(stderr, "usageArray:Block %d out of range %d\n",
+				blockNum, blockIndex);
+		    blockIndex = 0;
+	    }
+	    for (i = 0; i < smemParamsPtr->blockSize/blockSize; i++) {
+		if (blockInfoArray[blockIndex + i].type != UNUSED) {
+		    fprintf(stderr, "usageArray:Block %d duplicate usage of block %d ",
+
+				blockNum, blockIndex + i);
+		    fprintf(stderr,"Previous use at <%d, %d>\n",
+				blockInfoArray[blockIndex + i].type,
+				blockInfoArray[blockIndex + i].blockNum);
+
+		} else {
+		    blockInfoArray[blockIndex + i].type = USAGE_ARRAY;
+		    blockInfoArray[blockIndex + i].blockNum = blockNum;
+		    activeBytesArray[BlockToSegmentNum(blockIndex + i)] +=
+					blockSize;
+		}
+	    }
+	    if (DiskRead(diskFd, blockIndex, 
+				  smemParamsPtr->blockSize, dataPtr) != 
+			smemParamsPtr->blockSize) {
+		fprintf(stderr,"Can't read block %d of segment usage array\n",
+				blockNum);
+		bzero(dataPtr, smemParamsPtr->blockSize);
+		ret = FALSE;
+	    }
+	}
+	dataPtr += smemParamsPtr->blockSize;
+    }
+    bzero(dataPtr, (smemParamsPtr->maxNumBlocks - cpPtr->numBlocks) * 
+			smemParamsPtr->blockSize);
+
+    if (dumpFlag) { 
+	for (i = 0; i < usagePtr->numberSegments; i++) {
+	    printf("SegNum %d activeBytes %d state %s\n", 
+		    i, usageArrayPtr[i].activeBytes,
+		    GetState(usageArrayPtr + i));
+	}
+    }
+    freeBlocks = 0;
+    numClean = numDirty = numFull = 0;
+    for (i = 0; i < usagePtr->numberSegments; i++) {
+	if ((usageArrayPtr[i].activeBytes < 0) ||
+	    (usageArrayPtr[i].activeBytes > usagePtr->segmentSize)) {
+	       fprintf(stderr, 
+	       "UsageArray: segment %d has bad activeBytes of %d\n",
+			i, usageArrayPtr[i].activeBytes);
+	}
+	freeBlocks += (usagePtr->segmentSize - usageArrayPtr[i].activeBytes) /
+					blockSize;
+	if (usageArrayPtr[i].flags == LFS_SEG_USAGE_CLEAN) {
+	    numClean++;
+	    if (usageArrayPtr[i].activeBytes != 0) {
+	       fprintf(stderr, 
+       "UsageArray: segment %d is marked clean with activeBytes of %d\n",
+			i, usageArrayPtr[i].activeBytes);
+	    }
+	} else if (usageArrayPtr[i].flags == LFS_SEG_USAGE_DIRTY) {
+	    numDirty++;
+	    if (usageArrayPtr[i].activeBytes > cp->dirtyActiveBytes) {
+	       fprintf(stderr, 
+       "UsageArray: segment %d is marked dirty with activeBytes of %d\n",
+			i, usageArrayPtr[i].activeBytes);
+	    }
+	} else if (usageArrayPtr[i].flags == 0) {
+	    numFull++;
+	    if (usageArrayPtr[i].activeBytes < cp->dirtyActiveBytes) {
+	       fprintf(stderr, 
+       "UsageArray: segment %d is marked full with activeBytes of %d\n",
+			i, usageArrayPtr[i].activeBytes);
+	    }
+	} else {
+		numFull++;
+	       fprintf(stderr, 
+	       "UsageArray: segment %d has unknown flags of 0x%x\n",
+			i, usageArrayPtr[i].flags);
+	}
+
+    }
+    if (numClean != cp->numClean) {
+	fprintf(stderr,"UsageArray: Clean count wrong; is %d should be %d\n",
+		    cp->numClean, numClean);
+
+    }
+    if (numDirty != cp->numDirty) {
+	fprintf(stderr,"UsageArray: Dirty count wrong; is %d should be %d\n",
+		    cp->numDirty, numDirty);
+
+    }
+    if (freeBlocks != cp->freeBlocks) {
+	fprintf(stderr,"UsageArray: FreeBlocks wrong; is %d should be %d\n",
+		    cp->freeBlocks, freeBlocks);
+    }
+   return ret;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LoadDescMap --
+ *
+ *	Load the descriptor map array into memory.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+Boolean 
+LoadDescMap(diskFd, checkPointSize, checkPointPtr)
+    int	diskFd;
+    int	checkPointSize;
+    char *checkPointPtr;
+{
+    LfsDescMapParams	*descMapParamsPtr;
+    LfsDescMapCheckPoint	*cp;
+    int				i, blockNum;
+    char			*dataPtr;
+    LfsStableMemCheckPoint *cpPtr;
+    int			arraySize, numAlloced;
+    LfsStableMemParams  *smemParamsPtr;
+    int			*blockIndexPtr;
+    Boolean 		ret = TRUE;
+
+    descMapParamsPtr = &(superBlockPtr->descMap);
+    smemParamsPtr = &(superBlockPtr->descMap.stableMem);
+
+
+    descMapCheckPointPtr = cp = (LfsDescMapCheckPoint *) checkPointPtr;
+
+    descMapStableMemPtr = cpPtr = (LfsStableMemCheckPoint *)
+			(checkPointPtr + sizeof(LfsDescMapCheckPoint));
+
+    arraySize = smemParamsPtr->maxNumBlocks*smemParamsPtr->blockSize;
+    descMapPtr = (LfsDescMapEntry *) malloc(arraySize);
+    descMapBlockIndexPtr = blockIndexPtr = (int *)(((char *) cpPtr) + sizeof(LfsStableMemCheckPoint));
+    dataPtr = (char *) descMapPtr;
+    for (blockNum = 0; blockNum < cpPtr->numBlocks; blockNum++) {
+	unsigned int blockIndex = blockIndexPtr[blockNum];
+	if (blockIndex == FSDM_NIL_INDEX) {
+	    bzero(dataPtr, smemParamsPtr->blockSize);
+	} else {
+	    if (blockIndex+smemParamsPtr->blockSize/blockSize > numBlocks) {
+		   fprintf(stderr, "descMap:Block %d out of range %d\n",
+				blockNum, blockIndex);
+		blockIndex = 0;
+	    }
+	    for (i = 0; i < smemParamsPtr->blockSize/blockSize; i++) {
+		if (blockInfoArray[blockIndex + i].type != UNUSED) {
+		    fprintf(stderr, "usageArray:Block %d duplicate usage of block %d ",
+
+				blockNum, blockIndex + i);
+		    fprintf(stderr,"Previous use at <%d, %d>\n",
+				blockInfoArray[blockIndex + i].type,
+				blockInfoArray[blockIndex + i].blockNum);
+
+		} else {
+		    blockInfoArray[blockIndex + i].type = DESC_MAP;
+		    blockInfoArray[blockIndex + i].blockNum = blockNum;
+		    activeBytesArray[BlockToSegmentNum(blockIndex + i)] +=
+					blockSize;
+		}
+	    }
+	    if (DiskRead(diskFd, blockIndex, 
+				  smemParamsPtr->blockSize, dataPtr) != 
+		smemParamsPtr->blockSize) { 
+		fprintf("Can't read desc map block %d\n", blockNum);
+		ret = FALSE;
+	    }
+	}
+	dataPtr += smemParamsPtr->blockSize;
+    }
+    bzero(dataPtr, (smemParamsPtr->maxNumBlocks - cpPtr->numBlocks) * 
+			smemParamsPtr->blockSize);
+
+    if (dumpFlag) { 
+	printf("DescMap num allocated: %d\n", cp->numAllocDesc);
+	for (i = 0; i < superBlockPtr->descMap.maxDesc; i++) {
+	    printf("File %d at %d (seg %d) version %d flags %d\n", 
+			    i, descMapPtr[i].blockAddress, 
+			    descMapPtr[i].blockAddress/
+			    (superBlockPtr->usageArray.segmentSize/blockSize),
+			    descMapPtr[i].truncVersion,
+			    descMapPtr[i].flags);
+	}
+    }
+    numAlloced = 0;
+    for (i = 0; i < descMapParamsPtr->maxDesc; i++) {
+	if (descMapPtr[i].flags == LFS_DESC_MAP_ALLOCED) {
+	    numAlloced++;
+	} else if (descMapPtr[i].flags != 0) {
+	    fprintf(stderr,"Unknowned desc map flags (0x%x) for file %d\n",
+			descMapPtr[i].flags, i);
+	}
+    }
+    if (numAlloced != descMapCheckPointPtr->numAllocDesc) {
+	fprintf(stderr, "DescMap: Bad alloc count; is %d should be %d\n",
+			numAlloced, descMapCheckPointPtr->numAllocDesc);
+
+    }
+    return ret;
+
+}
+
+char *
+GetState(entryPtr)
+    LfsSegUsageEntry *entryPtr;
+{
+    if (entryPtr->flags & LFS_SEG_USAGE_DIRTY) 
+	return "Dirty";
+    if (entryPtr->flags & LFS_SEG_USAGE_CLEAN) 
+	return "Clean";
+    return "Full";
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DiskRead --
+ *
+ *	Read data from disk.
+ *
+ * Results:
+ *	The number of bytes returned.  -1 if error.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+DiskRead(diskFd, blockOffset, bufferSize, bufferPtr)
+    int	diskFd;		/* File descriptor of disk. */
+    int	blockOffset;	/* Block offset to start read. */
+    char *bufferPtr;	/* Buffer to place data. */
+    int	 bufferSize;	/* Size of buffer. */
+{
+    int	numBytes, status;
+    int	blocks;
+    char *bufPtr;
+
+
+    /*
+     * Seek to the start of the blocks to read.
+     */
+    status = lseek(diskFd, blockOffset*blockSize, L_SET);
+    if (status < 0) {
+	fprintf(stderr,"read device: ");
+	perror("lseek");
+	return status;
+    }
+    /*
+     * Read the blocks handling the case the a request that is not a 
+     * multiple number of blocks by reading to a temp buffer and copying.
+     */
+    blocks = (bufferSize + blockSize-1)/blockSize;
+    if (bufferSize != blocks * blockSize) { 
+	bufPtr = malloc(blocks*blockSize);
+    } else {
+	bufPtr = bufferPtr;
+    }
+    status = read(diskFd, bufPtr, blocks*blockSize);
+    if (status != blocks*blockSize) {
+	if (status < 0) {
+	    fprintf(stderr,"read device: ");
+	    perror("read");
+	    return status;
+	}
+	fprintf(stderr,"Short read on device %d != %d\n", status,
+		blocks*blockSize);
+    } else {
+	status = bufferSize;
+    }
+    if (bufPtr != bufferPtr) { 
+	bcopy(bufPtr, bufferPtr, bufferSize);
+	free(bufPtr);
+    }
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * IsZero --
+ *
+ *	Check to see if a region of memory is zero. Warning: number of 
+ *	bytes and alignment of pointer must be a 4 byte boundry.
+ *
+ * Results:
+ *	TRUE if the region is all zeros.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Boolean
+IsZero(regionPtr, size)
+    char *regionPtr;	/* Pointer to region to check. MUST be int aligned.
+			 */
+    register int size;	/* Size of region in bytes. MUST be multiple of int. */
+{
+    register int *iPtr = (int *) regionPtr;
+    while (size > 0) {
+	if (*iPtr != 0) {
+	    return FALSE;
+	}
+	size += sizeof(int);
+	iPtr++;
+    }
+    return TRUE;
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CheckAllFiles --
+ *
+ *	Check all the files in the system.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+CheckAllFiles(diskFd)
+    int diskFd;
+{
+    LfsFileDescriptor	*descPtr;
+    char *descBuf;
+    int bufSize, i, j;
+
+    bufSize = superBlockPtr->fileLayout.descPerBlock * sizeof(*descPtr);
+
+    descBuf = alloca(bufSize);
+
+    if (descMapPtr[0].flags != LFS_DESC_MAP_ALLOCED) {
+	fprintf(stderr,"CheckAllFiles: file 0 not allocated.\n");
+    }
+    if (descMapPtr[1].flags != LFS_DESC_MAP_ALLOCED) {
+	fprintf(stderr,"CheckAllFiles: file 1 not allocated.\n");
+    }
+    for (i = 2; i < superBlockPtr->descMap.maxDesc; i++) {
+	if (descMapPtr[i].flags != LFS_DESC_MAP_ALLOCED) {
+	    continue;
+	}
+	if ((descMapPtr[i].blockAddress < 0) || 
+	    (descMapPtr[i].blockAddress > numBlocks)) {
+	   fprintf(stderr, "CheckAllFiles: Desc %d address out of range %d\n",
+			i, descMapPtr[i].blockAddress);
+	    continue;
+	}
+	if ((blockInfoArray[descMapPtr[i].blockAddress].type != UNUSED) &&
+	    (blockInfoArray[descMapPtr[i].blockAddress].type != DESC)) {
+	    fprintf(stderr, "CheckAllFiles:Desc block for %d duplicate usage of block %d ",
+
+			i, descMapPtr[i].blockAddress);
+	    fprintf(stderr,"Previous use at <%d,%d,%d>\n",
+			blockInfoArray[descMapPtr[i].blockAddress].type,
+			blockInfoArray[descMapPtr[i].blockAddress].fileNum,
+			blockInfoArray[descMapPtr[i].blockAddress].blockNum);
+
+	} else {
+	    blockInfoArray[descMapPtr[i].blockAddress].type = DESC;
+	    blockInfoArray[descMapPtr[i].blockAddress].blockNum = 0;
+	    activeBytesArray[BlockToSegmentNum(descMapPtr[i].blockAddress)] +=
+				sizeof(LfsFileDescriptor);
+	}
+	if (DiskRead(diskFd, descMapPtr[i].blockAddress, bufSize, descBuf)
+			!= bufSize) {
+	    fprintf(stderr,"CheckAllFiles: Can't read desc for file %d\n",i);
+	}
+	descPtr = (LfsFileDescriptor *)descBuf;
+	for (j = 0; j < superBlockPtr->fileLayout.descPerBlock; j++) {
+	    if (!(descPtr->common.flags & FSDM_FD_ALLOC)) {
+		break;
+	    }
+	    if (descPtr->fileNumber == i) {
+		break;
+	    }
+	    descPtr++;
+	}
+	if ((j >= superBlockPtr->fileLayout.descPerBlock) ||
+	    !(descPtr->common.flags & FSDM_FD_ALLOC) ||
+	    (descPtr->fileNumber != i)) {
+	    fprintf(stderr,"CheckAllFiles: Can't desc for file %d at %d\n",
+			i, descMapPtr[i].blockAddress);
+	    continue;
+	}
+	CheckFile(diskFd, i, descPtr);
+    }
+}
+CheckFile(diskFd, fileNum, descPtr) 
+    int diskFd;
+    int fileNum;
+    LfsFileDescriptor *descPtr;
+{
+    int i, bsize, j;
+
+    for (i = 0; i < FSDM_NUM_DIRECT_BLOCKS; i++) {
+	if (descPtr->common.direct[i] != FSDM_NIL_INDEX) {
+	    if (i * FS_BLOCK_SIZE > descPtr->common.lastByte + 1) {
+		fprintf(stderr, 
+		"CheckFile: File %d has a non-NIL block %d after lastByte %d.\n",
+		    fileNum, i, descPtr->common.lastByte);
+		 continue;
+	    }
+	    CheckBlock(diskFd, fileNum, descPtr, i, descPtr->common.direct[i]);
+	}
+    }
+    if (descPtr->common.indirect[0] != FSDM_NIL_INDEX) { 
+	    if (FSDM_NUM_DIRECT_BLOCKS * FS_BLOCK_SIZE > 
+			descPtr->common.lastByte + 1) {
+		fprintf(stderr, 
+		"CheckFile: File %d has a non-NIL block %d after lastByte %d.\n",
+		    fileNum, -1, descPtr->common.lastByte);
+	    }
+	    CheckIndirectBlock(diskFd, fileNum, descPtr, -1,
+				descPtr->common.indirect[0]);
+    }
+    if (descPtr->common.indirect[1] != FSDM_NIL_INDEX) { 
+	    if (FSDM_NUM_DIRECT_BLOCKS * FS_BLOCK_SIZE + 
+			FS_BLOCK_SIZE * FS_BLOCK_SIZE/4 > 
+			descPtr->common.lastByte + 1) {
+		fprintf(stderr, 
+	"CheckFile: File %d has a non-NIL block %d after lastByte %d.\n",
+		    fileNum, -2, descPtr->common.lastByte);
+	    }
+	    CheckIndirectBlock(diskFd, fileNum, descPtr, -2, 
+				descPtr->common.indirect[1]);
+    }
+    if (descPtr->common.indirect[2] != FSDM_NIL_INDEX) { 
+		fprintf(stderr, 
+	"CheckFile: File %d has a non-NIL block %d after lastByte %d.\n",
+		    fileNum, -3, descPtr->common.lastByte);
+    }
+}
+
+
+CheckIndirectBlock(diskFd, fileNum, descPtr, blockNum, blockAddress)
+    int diskFd;
+    int fileNum;
+    LfsFileDescriptor *descPtr;
+    int blockNum;
+    int	blockAddress;
+{
+    int j, i;
+    int blockPtrs[FS_BLOCK_SIZE/4];
+
+    CheckBlock(diskFd, fileNum, descPtr, blockNum, blockAddress);
+    if (DiskRead(diskFd, blockAddress, FS_BLOCK_SIZE, (char *)blockPtrs)
+		!= FS_BLOCK_SIZE) {
+	fprintf(stderr,"CheckIndirectBlock: Can't read block %d of file %d.\n",
+				blockNum, fileNum);
+	return;
+
+    }
+    if ((blockNum == -1) || (blockNum < -3)) { 
+	int start;
+	if (blockNum == -1) {
+	    start = FSDM_NUM_DIRECT_BLOCKS;
+	} else {
+	    start = FSDM_NUM_DIRECT_BLOCKS + (FS_BLOCK_SIZE/4) + 
+			     (FS_BLOCK_SIZE/4) * 
+			     (-blockNum - (FSDM_NUM_INDIRECT_BLOCKS+1));
+	}
+	for (i = 0; i < FS_BLOCK_SIZE/4; i++) {
+	    if (blockPtrs[i] != FSDM_NIL_INDEX) { 
+		CheckBlock(diskFd, fileNum, descPtr,
+			   start + i,blockPtrs[i]);
+	    }
+	}
+	return;
+    } 
+    if (blockNum == -2) {
+	for (i = 0; i < FS_BLOCK_SIZE/4; i++) {
+	    if (blockPtrs[i] != FSDM_NIL_INDEX) { 
+		CheckIndirectBlock(diskFd, fileNum, descPtr,
+			    - i  - (FSDM_NUM_INDIRECT_BLOCKS+1),blockPtrs[i]);
+	    }
+	}
+	return;
+    }
+    fprintf(stderr,"CheckIndirectBlock: Bad block number %d for file %d\n",
+			blockNum, fileNum);
+}
+
+
+CheckBlock(diskFd, fileNum, descPtr, blockNum, blockAddress)
+    int diskFd;
+    int fileNum;
+    LfsFileDescriptor *descPtr;
+    int blockNum;
+    int	blockAddress;
+{
+    int j;
+
+    if ((blockAddress < 0) || 
+	(blockAddress+(FS_BLOCK_SIZE/blockSize) > numBlocks)) {
+	fprintf(stderr, "CheckFile: file %d block %d is out of range %d\n",
+		fileNum, blockNum, blockAddress);
+	return;
+    }
+    for (j = 0; j < (FS_BLOCK_SIZE/blockSize); j++) {
+	if (blockInfoArray[blockAddress+j].type != UNUSED) {
+	    fprintf(stderr, 
+	    "CheckFile:file %d block %d duplicate usage of block %d ",
+
+			fileNum, blockNum, blockAddress + j);
+	    fprintf(stderr,"Previous use at <%d,%d,%d>\n",
+	      blockInfoArray[blockAddress + j].type,
+	      blockInfoArray[blockAddress + j].fileNum,
+	       blockInfoArray[blockAddress + j].blockNum);
+	} else {
+	    blockInfoArray[blockAddress + j].type = FILE;
+	    blockInfoArray[blockAddress + j].fileNum = fileNum;
+	    blockInfoArray[blockAddress + j].blockNum = blockNum;
+	    activeBytesArray[BlockToSegmentNum(blockAddress +j)] 
+			+= blockSize;
+	}
+    }
+}
+CheckUsageArray(diskFd)
+int diskFd;
+{
+    int segNo;
+    for (segNo = 0; segNo < superBlockPtr->usageArray.numberSegments; 
+	segNo++) {
+	if (usageArrayPtr[segNo].flags == LFS_SEG_USAGE_CLEAN) {
+	    if (activeBytesArray[segNo] != 0) {
+		fprintf(stderr, "Clean segment %d with activeBytes %d\n",
+			segNo, activeBytesArray[segNo]);
+	    }
+	}
+	if (usageArrayPtr[segNo].activeBytes != activeBytesArray[segNo]) {
+		fprintf(stderr,"CheckUsageArray: Active bytes for seg %d is wrong; is %d should be %d\n", segNo, usageArrayPtr[segNo].activeBytes, 
+			activeBytesArray[segNo]);
+	}
+    }
+}
+CheckSummaryRegions(diskFd)
+int diskFd;
+{
+    int segNo, ssize, startAddr, blockOffset;
+    char *segMemPtr, *summaryLimitPtr, *summaryPtr, *memPtr;
+    LfsSegSummary *segSummaryPtr;
+    LfsSegSummaryHdr *segSummaryHdrPtr;
+    int numDataBlocks;
+
+    ssize = superBlockPtr->usageArray.segmentSize;
+    memPtr = segMemPtr = alloca(ssize);
+    for (segNo = 0; segNo < superBlockPtr->usageArray.numberSegments; 
+	segNo++) {
+	segMemPtr = memPtr;
+	startAddr = segNo * (ssize/blockSize) + 
+			superBlockPtr->hdr.logStartOffset;
+        if (DiskRead(diskFd, startAddr , ssize, (char *)segMemPtr) != ssize) {
+   	    fprintf(stderr,"CheckSummary: Can't read segment %d.\n", segNo);
+	    continue;
+	}
+
+    	segSummaryPtr = (LfsSegSummary *)
+				 (segMemPtr + ssize - sizeof(LfsSegSummary));
+        summaryPtr = segMemPtr + ssize - segSummaryPtr->size;
+	summaryLimitPtr = segMemPtr + ssize;
+	numDataBlocks = ssize/blockSize - segSummaryPtr->size/blockSize;
+	blockOffset = startAddr;
+	while (summaryPtr < summaryLimitPtr) {
+	   segSummaryHdrPtr = (LfsSegSummaryHdr *) summaryPtr;
+	   if (segSummaryHdrPtr->lengthInBytes == 0) {
+		break;
+	   }
+	   switch (segSummaryHdrPtr->moduleType) { 
+	   case LFS_SEG_USAGE_MOD:
+	      CheckSegUsageSummary(diskFd, segMemPtr, blockOffset, 
+				segSummaryHdrPtr);
+	       break;
+	   case LFS_DESC_MAP_MOD:
+	      CheckDescMapSummary(diskFd, segMemPtr, blockOffset, 
+				segSummaryHdrPtr);
+	       break;
+	   case LFS_FILE_LAYOUT_MOD:
+	      CheckFileLayoutSummary(diskFd, segMemPtr, blockOffset, 
+				segSummaryHdrPtr);
+	        break;
+	   default: {
+		fprintf(stderr,"CheckSummary: Unknown module type %d\n",
+			segSummaryHdrPtr->moduleType);
+		break;
+	        }
+	   }
+	   summaryPtr += segSummaryHdrPtr->lengthInBytes;
+	   blockOffset += segSummaryHdrPtr->numDataBlocks;
+	   segMemPtr += segSummaryHdrPtr->numDataBlocks * blockSize;
+	}
+    }
+}
+CheckSegUsageSummary(diskFd, segMemPtr, startAddress, segSummaryHdrPtr) 
+    int diskFd;
+    char *segMemPtr;
+    int startAddress;
+    LfsSegSummaryHdr *segSummaryHdrPtr;
+{
+    int blocks, *blockArray, i, startAddr, fsBlocks, j;
+
+    fsBlocks = superBlockPtr->usageArray.stableMem.blockSize/blockSize;
+    blocks = (segSummaryHdrPtr->lengthInBytes - sizeof(LfsSegSummaryHdr)) /
+				sizeof(int);
+    if (blocks * fsBlocks != segSummaryHdrPtr->numDataBlocks) {
+	fprintf(stderr,"CheckSegUsageSummary: Wrong block count; is %d should be %s\n", blocks * fsBlocks, segSummaryHdrPtr->numDataBlocks);
+    }
+    blockArray = (int *) (segSummaryHdrPtr + 1);
+    for (i = 0; i < blocks; i++) {
+	startAddr = startAddress + i * fsBlocks;
+	if ((blockArray[i] < 0) || 
+	    (blockArray[i] > superBlockPtr->usageArray.stableMem.maxNumBlocks)){
+	   fprintf(stderr,"CheckSegUsageSummary: Bad block number %d at %d\n",
+			blockArray[i], startAddr);
+	    continue;
+	}
+	for (j = 0; j < fsBlocks; j++) { 
+	    if (usageArrayBlockIndexPtr[blockArray[i]] != startAddr) {
+		if (blockInfoArray[startAddr + j].type != UNUSED) {
+		    fprintf(stderr,"CheckSegUsageSummary: Summary wrong. Not current block %d at %d in use by <%d,%d,%d>\n", blockArray[i], startAddr + j,
+			blockInfoArray[startAddr + j].type,
+			blockInfoArray[startAddr + j].fileNum,
+			blockInfoArray[startAddr + j].blockNum);
+		 }
+	    } else {
+		if ((blockInfoArray[startAddr + j].type != USAGE_ARRAY) ||
+		    (blockInfoArray[startAddr + j].blockNum != blockArray[i])) {
+		    fprintf(stderr,"CheckSegUsageSummary: Summary wrong. Current block %d at %d in use by <%d,%d,%d>\n", blockArray[i], startAddr + j,
+			blockInfoArray[startAddr + j].type,
+			blockInfoArray[startAddr + j].fileNum,
+			blockInfoArray[startAddr + j].blockNum);
+		 }
+		 blockInfoArray[startAddr + j].found = TRUE;
+	    }
+	}
+    }
+
+}
+CheckDescMapSummary(diskFd, segMemPtr, startAddress, segSummaryHdrPtr) 
+    int diskFd;
+    char *segMemPtr;
+    int startAddress;
+    LfsSegSummaryHdr *segSummaryHdrPtr;
+{
+    int blocks, *blockArray, i, startAddr, fsBlocks, j;
+
+    fsBlocks = superBlockPtr->descMap.stableMem.blockSize/blockSize;
+    blocks = (segSummaryHdrPtr->lengthInBytes - sizeof(LfsSegSummaryHdr)) /
+				sizeof(int);
+    if (blocks * fsBlocks != segSummaryHdrPtr->numDataBlocks) {
+	fprintf(stderr,"CheckDescMapSummary: Wrong block count; is %d should be %s\n", blocks * fsBlocks, segSummaryHdrPtr->numDataBlocks);
+    }
+    blockArray = (int *) (segSummaryHdrPtr + 1);
+    for (i = 0; i < blocks; i++) {
+	startAddr = startAddress + i * fsBlocks;
+	if ((blockArray[i] < 0) || 
+	    (blockArray[i] > superBlockPtr->descMap.stableMem.maxNumBlocks)){
+	   fprintf(stderr,"CheckDescMapSummary: Bad block number %d at %d\n",
+			blockArray[i], startAddr);
+	    continue;
+	}
+	for (j = 0; j < fsBlocks; j++) { 
+	    if (descMapBlockIndexPtr[blockArray[i]] != startAddr) {
+		if (blockInfoArray[startAddr + j].type != UNUSED) {
+		    fprintf(stderr,"CheckDescMapSummary: Summary wrong. Not current block %d at %d in use by <%d,%d,%d>\n", blockArray[i], startAddr + j,
+			blockInfoArray[startAddr + j].type,
+			blockInfoArray[startAddr + j].fileNum,
+			blockInfoArray[startAddr + j].blockNum);
+		 }
+	    } else {
+		if ((blockInfoArray[startAddr + j].type != DESC_MAP) ||
+		    (blockInfoArray[startAddr + j].blockNum != blockArray[i])) {
+		    fprintf(stderr,"CheckDescMapSummary: Summary wrong. Current block %d at %d in use by <%d,%d,%d>\n", blockArray[i], startAddr + j,
+			blockInfoArray[startAddr + j].type,
+			blockInfoArray[startAddr + j].fileNum,
+			blockInfoArray[startAddr + j].blockNum);
+		 }
+		 blockInfoArray[startAddr + j].found = TRUE;
+	    }
+	}
+    }
+
+}
+CheckFileLayoutSummary(diskFd, segMemPtr, startAddr, segSummaryHdrPtr) 
+    int diskFd;
+    char *segMemPtr;
+    int startAddr;
+    LfsSegSummaryHdr *segSummaryHdrPtr;
+{
+    char *summaryPtr, *limitPtr;
+    int descMapBlocks;
+    int startAddress, j;
+
+
+    startAddress = startAddr;
+    descMapBlocks = superBlockPtr->descMap.stableMem.blockSize/blockSize;
+    summaryPtr = (char *) (segSummaryHdrPtr + 1);
+    limitPtr = summaryPtr + segSummaryHdrPtr->lengthInBytes - 
+			sizeof(LfsSegSummaryHdr);
+    while (summaryPtr < limitPtr) {
+	switch (*(unsigned short *) summaryPtr) {
+	case LFS_FILE_LAYOUT_DESC: {
+	    int diskAddr;
+	    int		fileNumber;
+	    int		slot;
+	    LfsFileDescriptor	*descPtr;
+	    descPtr = (LfsFileDescriptor *) 
+			(segMemPtr + (startAddr - startAddress) * blockSize);
+	    for (slot = 0; slot < superBlockPtr->fileLayout.descPerBlock; 
+		slot++) {
+		int addr;
+		/*
+		 * The descriptor block is terminated by an unallocated
+		 * descriptor.
+		 */
+		if (!(descPtr[slot].common.flags & FSDM_FD_ALLOC)) {
+		    break;
+		}
+		addr = startAddress + (slot * sizeof(LfsFileDescriptor))/
+						blockSize;
+		fileNumber = descPtr[slot].fileNumber;
+		if ((fileNumber < 0) || 
+		    (fileNumber >= superBlockPtr->descMap.maxDesc)) {
+		   fprintf(stderr,"CheckFileLayoutSummary: bad file number %d in desc block at %d\n", fileNumber, startAddress);
+		   continue;
+		}
+
+		if ((blockInfoArray[addr].type != DESC) &&
+		    (blockInfoArray[addr].type != UNUSED)) {
+		    fprintf(stderr,"CheckFileLayoutSummary: Desc block at %d overlaps <%d,%d,%d>\n", addr, 
+			blockInfoArray[addr].type,
+			blockInfoArray[addr].fileNum,
+			blockInfoArray[addr].blockNum);
+		}
+		blockInfoArray[addr].found = TRUE;
+	       if ((descMapPtr[fileNumber].flags == LFS_DESC_MAP_ALLOCED) 
+		    && (descMapPtr[fileNumber].blockAddress == startAddr)) {
+		   descFoundArray[fileNumber] = TRUE;
+		}
+	     }
+	    /*
+	     * Skip over the summary bytes describing this block. 
+	     */
+	    summaryPtr += sizeof(LfsFileLayoutDesc);
+	    startAddress += descMapBlocks;
+	    break;
+	}
+	case LFS_FILE_LAYOUT_DATA: {
+	    int	*blockArray, diskAddress;
+	    int			  i;
+	    unsigned short	curTruncVersion;
+	    LfsFileLayoutSummary *fileSumPtr;
+	    Boolean dead;
+	    /*
+	     * We ran into a data block. If it is still alive bring it into
+	     * the cache. 
+	     */
+	     fileSumPtr = (LfsFileLayoutSummary *) summaryPtr;
+	    if ((fileSumPtr->fileNumber < 0) || 
+		(fileSumPtr->fileNumber >= superBlockPtr->descMap.maxDesc)) {
+	       fprintf(stderr,"CheckFileLayoutSummary: bad file number %d at %d\n", fileSumPtr->fileNumber, startAddress);
+	       goto out;
+	    }
+	     /*
+	      * Liveness check.   First see if the version number is
+	      * the same and the file is still allocated.
+	      */
+	     if ((descMapPtr[fileSumPtr->fileNumber].flags != 
+		  LFS_DESC_MAP_ALLOCED) || 
+		 (descMapPtr[fileSumPtr->fileNumber].truncVersion != 
+		  fileSumPtr->truncVersion)) {
+		dead = TRUE;
+	    } else {
+		dead = FALSE;
+	    }
+
+	    /*
+	     * For each block ... 
+	     */
+	    blockArray = (int *)(summaryPtr + sizeof(LfsFileLayoutSummary));
+	    for (i = 0; i < fileSumPtr->numDataBlocks; i++) {
+		int addr = startAddress + i*FS_BLOCK_SIZE/blockSize;
+		for (j = 0; j < FS_BLOCK_SIZE/blockSize; j++) { 
+		    if (dead) {
+			if (blockInfoArray[addr+j].type != UNUSED) {
+			    fprintf(stderr,"CheckFileLayoutSummary: Dead block %d of file %d in use at %d, used by <%d,%d,%d>\n", 
+			    blockArray[i], fileSumPtr->fileNumber, addr+j,
+			    blockInfoArray[addr+j].type,
+			    blockInfoArray[addr+j].fileNum,
+			    blockInfoArray[addr+j].blockNum);
+			 }
+		    } else {
+			if (!((blockInfoArray[addr+j].type == UNUSED) ||
+			    ((blockInfoArray[addr+j].type == FILE) &&
+			    (blockInfoArray[addr+j].fileNum == 
+					fileSumPtr->fileNumber) &&
+			    (blockInfoArray[addr+j].blockNum == blockArray[i])))){
+			    fprintf(stderr,"CheckFileLayoutSummary: Block %d of file %d in use at %d, used by <%d,%d,%d>\n", 
+			    blockArray[i], fileSumPtr->fileNumber, addr+j,
+			    blockInfoArray[addr+j].type,
+			    blockInfoArray[addr+j].fileNum,
+			    blockInfoArray[addr+j].blockNum);
+			 } else {
+			     blockInfoArray[addr+j].found = TRUE;
+			 }
+		    }
+		}
+	    }
+	    out:
+	    startAddress = startAddress + fileSumPtr->numBlocks;
+	    summaryPtr += sizeof(LfsFileLayoutSummary) + 
+				fileSumPtr->numDataBlocks * sizeof(int); 
+	    break;
+	  }
+
+	case LFS_FILE_LAYOUT_DIR_LOG: {
+	    LfsFileLayoutLog	*logSumPtr;
+	    /* 
+	     * Directory log info is not needed during clean so we 
+	     * just skip over it.
+	     */
+	     logSumPtr = (LfsFileLayoutLog *) summaryPtr;
+	     summaryPtr = summaryPtr + logSumPtr->numBytes;
+	     break;
+	}
+	case LFS_FILE_LAYOUT_DBL_INDIRECT: 
+	case LFS_FILE_LAYOUT_INDIRECT: 
+	default: {
+	    panic("Unknown type");
+	}
+      }
+    }
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintSuperBlock --
+ *
+ *	Print super block contents.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+PrintSuperBlock(superBlockPtr)
+    LfsSuperBlock *superBlockPtr;
+{
+    printf("SuperBlock.hdr.version: %d\n", superBlockPtr->hdr.version);
+    printf("SuperBlock.hdr.blockSize: %d\n", 
+			    superBlockPtr->hdr.blockSize);
+    printf("SuperBlock.hdr.maxCheckPointBlocks: %d\n", 
+			    superBlockPtr->hdr.maxCheckPointBlocks);
+    printf("SuperBlock.hdr.checkPointOffset[0]: %d\n", 
+		    superBlockPtr->hdr.checkPointOffset[0]);
+    printf("SuperBlock.hdr.checkPointOffset[1]: %d\n", 
+		    superBlockPtr->hdr.checkPointOffset[1]);
+    printf("SuperBlock.hdr.logStartOffset: %d\n", 
+		    superBlockPtr->hdr.logStartOffset);
+    printf("SuperBlock.hdr.maxNumCacheBlocks: %d\n", 
+		    superBlockPtr->hdr.maxNumCacheBlocks);
+    printf("SuperBlock.descMap.version: %d\n", superBlockPtr->descMap.version);
+    printf("SuperBlock.descMap.maxDesc: %d\n", superBlockPtr->descMap.maxDesc);
+    printf("SuperBlock.descMap.stableMem.blockSize: %d\n", 
+			superBlockPtr->descMap.stableMem.blockSize);
+    printf("SuperBlock.descMap.stableMem.maxNumBlocks: %d\n", 
+			superBlockPtr->descMap.stableMem.maxNumBlocks);
+    printf("SuperBlock.usageArray.segmentSize: %d\n", 
+				superBlockPtr->usageArray.segmentSize);
+    printf("SuperBlock.usageArray.numberSegments: %d\n", 
+				superBlockPtr->usageArray.numberSegments);
+    printf("SuperBlock.usageArray.minNumClean: %d\n", 
+				superBlockPtr->usageArray.minNumClean);
+    printf("SuperBlock.usageArray.minFreeBlocks: %d\n", 
+				superBlockPtr->usageArray.minFreeBlocks);
+    printf("SuperBlock.usageArray.stableMem.blockSize: %d\n", 
+			superBlockPtr->descMap.stableMem.blockSize);
+    printf("SuperBlock.usageArray.stableMem.maxNumBlocks: %d\n", 
+			superBlockPtr->descMap.stableMem.maxNumBlocks);
+    printf("SuperBlock.fileLayout.descPerBlock: %d\n", 
+				superBlockPtr->fileLayout.descPerBlock);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintCheckPointHdr --
+ *
+ *	Print check point header contents.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+PrintCheckPointHdr(headerPtr, region)
+    LfsCheckPointHdr *headerPtr;
+    int region;
+{
+    printf("CheckPointHdr[%d].timestamp: %d\n", region, headerPtr->timestamp);
+    printf("CheckPointHdr[%d].size: %d\n", region, headerPtr->size);
+    printf("CheckPointHdr[%d].version: %d\n", region, headerPtr->version);
+    printf("CheckPointHdr[%d].domainPrefix: %s\n", region, 
+					headerPtr->domainPrefix);
+    printf("CheckPointHdr[%d].domainNumber: %d\n", region,
+				headerPtr->domainNumber);
+    printf("CheckPointHdr[%d].attachSeconds: %d\n", region, 
+			headerPtr->attachSeconds);
+    printf("CheckPointHdr[%d].detachSeconds: %d\n", region, 
+			headerPtr->detachSeconds);
+    printf("CheckPointHdr[%d].serverID: %d\n", region, 
+			headerPtr->serverID);
+}
+
+@

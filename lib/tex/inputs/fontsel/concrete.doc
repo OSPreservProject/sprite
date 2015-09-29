@@ -1,0 +1,330 @@
+
+\def\fileversion{v1.0f}
+\def\filedate{90/04/05}
+\def\docdate {90/01/28}
+
+%\iffalse   % this is a METACOMMENT !
+%
+%% File `concret.doc'.
+%% Copyright (C) 1989 Frank Mittelbach and Rainer Sch\"opf,
+%% all rights reserved.
+%
+% Copying of this file is authorized only if either
+% (1) you make absolutely no changes to your copy, including name, or
+% (2) if you do make changes, you name it something other than
+%     concrete.doc.
+% This restriction helps ensure that all styles developed at Mainz
+% are identical.
+%
+%
+% Error reports please to: F. Mittelbach
+%                          Eichenweg 29
+%                          D-6500 Mainz 1
+%                          Federal Republic of Germany
+%                 Bitnet:  <PZF5HZ@DRUEDS2>
+%
+%                      or: R. Sch\"opf
+%                          Inst. f. Theor. Physik
+%                          der Universit\"at Heidelberg
+%                          Philosophenweg 16
+%                          D-6900 Heidelberg
+%                          Federal Republic of Germany
+%                 Bitnet:  <BK4@DHDURZ1>
+%
+%
+%\fi
+%% \CheckSum{90}
+%% \CharacterTable
+%%  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
+%%   Lower-case    \a\b\c\d\e\f\g\h\i\j\k\l\m\n\o\p\q\r\s\t\u\v\w\x\y\z
+%%   Digits        \0\1\2\3\4\5\6\7\8\9
+%%   Exclamation   \!     Double quote  \"     Hash (number) \#
+%%   Dollar        \$     Percent       \%     Ampersand     \&
+%%   Acute accent  \'     Left paren    \(     Right paren   \)
+%%   Asterisk      \*     Plus          \+     Comma         \,
+%%   Minus         \-     Point         \.     Solidus       \/
+%%   Colon         \:     Semicolon     \;     Less than     \<
+%%   Equals        \=     Greater than  \>     Question mark \?
+%%   Commercial at \@     Left bracket  \[     Backslash     \\
+%%   Right bracket \]     Circumflex    \^     Underscore    \_
+%%   Grave accent  \`     Left brace    \{     Vertical bar  \|
+%%   Right brace   \}     Tilde         \~}
+%%
+%
+% \title{The {\tt concrete} style option}
+% \author{Frank Mittelbach \and Rainer Sch\"opf}
+%
+% \section{Introduction}
+%
+% This style option sets up some font shape defintion and one math
+% version to allow setting documents similar to the book ``Concrete
+% math''.
+%
+% The current version of this file should serve only as a model. It isn't
+% finished and will eventually change but I don't like to do work
+% which is already done elsewhere. Therefore this has to wait until I get
+% hold of a copy of Don Knuth macros for typesetting~\cite{?}. 
+%
+% \StopEventually{}
+%
+% \section{The Implementation}
+%
+% We start by writing to the VDU and the transcript file.
+%    \begin{macrocode}
+\typeout{Style Option: `concrete'
+  \fileversion\space <\filedate> (FMi and RmS)}
+\typeout{English Documentation
+  \@spaces\@spaces\space <\docdate> (FMi and RmS)}
+%    \end{macrocode}
+% But we should also check if the new fontselection is actually in
+% force otherwise the user will get a lot of uninstructive error
+% messages later on. 
+%    \begin{macrocode}
+\@ifundefined{selectfont}
+     {\@latexerr{`concrete' style option could only be used
+                  with the new font selection scheme}\@eha
+      \endinput}{}
+%    \end{macrocode}
+%
+% Now we define the font shapes for the concrete roman font family
+% designed by {\sc Don Knuth}. First the normal shape in medium weight
+% and width (others aren't available anyway).
+% We assume that for \LaTeX{} use at least the standard magifications
+% are available.
+% \changes{v1.0f}{90/01/28}{Fifth argument for `new@fontshape.}
+%    \begin{macrocode}
+\new@fontshape{ccr}{m}{n}{%
+   <5>ccr5%
+   <6>ccr6%
+   <7>ccr7%
+   <8>ccr8%
+   <9>ccr9%
+   <10>ccr10%
+   <11>ccr10 at10.95pt%
+   <12>ccr10 at12pt%
+   <14>ccr10 at14.4pt%
+   <17>ccr10 at17.28pt%
+   <20>ccr10 at20.74pt%
+   <25>ccr10 at24.88pt}{}
+%    \end{macrocode}
+%
+% The {\it italic\/} shape in concrete roman is only provided for the
+% 10pt size.  Again we assume that at least for 11 and 12 pt magnified
+% fonts are available. For the smaller or larger sizes we substitude
+% the normal shape.
+%    \begin{macrocode}
+\new@fontshape{ccr}{m}{it}{%
+   <5>1ccr5%
+   <6>1ccr6%
+   <7>1ccr7%
+   <8>1ccr8%
+   <9>1ccr9%
+   <10>ccti10%
+   <11>ccti10 at10.95pt%
+   <12>ccti10 at12pt%
+   <14>1ccr10 at14.4pt%
+   <17>1ccr10 at17.28pt%
+   <20>1ccr10 at20.74pt%
+   <25>1ccr10 at24.88pt}{}
+%    \end{macrocode}
+%
+% Also {\sc a caps and small caps} shape for 10pt is provided.
+%    \begin{macrocode}
+\new@fontshape{ccr}{m}{sc}{%
+   <5>1ccr5%
+   <6>1ccr6%
+   <7>1ccr7%
+   <8>1ccr8%
+   <9>1ccr9%
+   <10>cccsc10%
+   <11>cccsc10 at10.95pt%
+   <12>cccsc10 at12pt%
+   <14>1ccr10 at14.4pt%
+   <17>1ccr10 at17.28pt%
+   <20>1ccr10 at20.74pt%
+   <25>1ccr10 at24.88pt}{}
+%    \end{macrocode}
+%
+% There is also a slanted shape in 9pt with condensed width and medium
+% weight which is used for``graffiti'' throughout the book which will
+% be defined below.  Again we provide substitudes for other sizes.
+% Since this font does not exist in ten point size it would be nearly
+% impossible to use it via the standard \LaTeX{} mechanism with
+% commands like \verb+\small+ etc.\ (who knows to what pointsize
+% \verb+\small+ belongs to?  Therefore we add later on a macro to
+% address this font directly.
+%    \begin{macrocode}
+\new@fontshape{ccr}{c}{sl}{%
+   <5>1ccr5%
+   <6>1ccr6%
+   <7>1ccr7%
+   <8>1ccr8%
+   <9>ccslc9%
+   <10>1ccr10%
+   <11>1ccr10 at10.95pt%
+   <12>1ccr10 at12pt%
+   <14>1ccr10 at14.4pt%
+   <17>1ccr10 at17.28pt%
+   <20>1ccr10 at20.74pt%
+   <25>1ccr10 at24.88pt}{}
+%    \end{macrocode}
+% 
+%    \begin{macrocode}
+\extra@def{ccr}{}{}
+%    \end{macrocode}
+
+
+% From the Euler fonts designed by Hermann Zapf we need the families
+% `euler cursive'. (Others will follow in the finial version of this
+% option.) 
+%    \begin{macrocode}
+\new@fontshape{eur}{m}{n}{%
+   <5>eurm5%
+   <6>eurm6%
+   <7>eurm7%
+   <8>eurm8%
+   <9>eurm9%
+   <10>eurm10%
+   <11>eurm10 at10.95pt%
+   <12>eurm10 at12pt%
+   <14>eurm10 at14.4pt%
+   <17>eurm10 at17.28pt%
+   <20>eurm10 at20.74pt%
+   <25>eurm10 at24.88pt}{}
+%    \end{macrocode}
+% We will have to set a \verb+\skewchar+ but I don't know the right
+% value. 
+%    \begin{macrocode}
+\extra@def{eur}{\skewchar#1'177}{}
+%    \end{macrocode}
+%
+% Don Knuth re-designed some of the math extension symbols to blend
+% better with the euler fonts. So we have a font called `Euler
+% compatible extension font'  available in 7 to 10pt. 
+%    \begin{macrocode}
+\new@fontshape{euex}{m}{n}{%
+   <5>1euex7%
+   <6>1euex7%
+   <7>euex7%
+   <8>euex8%
+   <9>euex9%
+   <10>euex10%
+   <11>1euex10%
+   <12>1euex10%
+   <14>1euex10%
+   <17>1euex10%
+   <20>1euex10%
+   <25>1euex10}{}
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+\extra@def{euex}{}{}
+%    \end{macrocode}
+%
+%
+% \begin{macro}{\graffiti}
+% \begin{macro}{\pgraffiti}
+%    As I remarked above 
+%
+%    I don't think that it is really necessary to make a robust
+%    version but \ldots
+%    \begin{macrocode}
+\def\graffiti{\protect\pgraffiti}
+%    \end{macrocode}
+%    Note that this command has no arguments, it simply calls or
+%    protects (depending on the current meaning of \verb+\protect+)
+%    the \verb+\pgraffiti+ macro.  \marginpar{\graffiti This macro now
+%    sets everything necessary to switch to the {\tt ccslc} font. It
+%    therefore serves as a good example how to access special fonts
+%    for special applications with the new font selection scheme.}
+%    \begin{macrocode}
+\def\pgraffiti{\family{ccr}\series{c}\shape{sl}\size{9}{10pt}\selectfont}
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+%
+% \begin{macro}{\mv@euler}
+%    \begin{macrocode}
+\new@mathversion\mv@euler
+%    \end{macrocode}
+%    Now we define the basic {\em math groups\/} for the new version,
+%    i.e.\ the groups 0 to 3.
+%    \begin{macrocode}
+\define@mathgroup\mv@euler{0}
+                 {ccr}{m}{n}
+\define@mathgroup\mv@euler{1}
+                 {eur}{m}{n}
+\define@mathgroup\mv@euler{2}
+                 {cmsy}{m}{n}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\euex@group}
+%    We also add a special math group to the euler version which
+%    contains the redesigned math symbols. Since we don't assume that
+%    this version has to live in coexistance with the `normal' or `bold'
+%    version we don't add this group to the other versions.
+%    \begin{macrocode}
+\new@mathgroup\euex@group
+\define@mathgroup\mv@euler\euex@group
+                 {euex}{m}{n}
+%    \end{macrocode}
+% \end{macro}
+%
+%
+% To set up the math version properly we have to reset some
+% \verb+\mathcode+s. We have to take, for example, digits in math
+% from the math group number one, i.e.\ from the euler cursive font.
+% If we do this globally switching back to, let's say, \LaTeX{}s
+% normal version will produces an undesired effect: we will then get
+% oldstyle numerals in math.  
+%
+% We will leave this problem open at the moment until there is more
+% experience with this new font selection scheme.  After all, it does
+% not seem a very good idea to use such incompatible math versions
+% together in one document.
+%
+% So here we are, re-arranging some of the internal tables:
+%    \begin{macrocode}
+\mathcode`\0="7130
+\mathcode`\1="7131
+\mathcode`\2="7132
+\mathcode`\3="7133
+\mathcode`\4="7134
+\mathcode`\5="7135
+\mathcode`\6="7136
+\mathcode`\7="7137
+\mathcode`\8="7138
+\mathcode`\9="7139
+%    \end{macrocode}
+%
+% And here are some example for using the symbols from the special
+% extension font. We use \verb+\hexnumber@+ to get the unknown assignment to
+% \verb+\euex@group+ as a hexadecimal number into  the macro \verb+\@tempa+.
+%    \begin{macrocode}
+\edef\@tempa{\hexnumber@\euex@group}
+\mathchardef\intop="1\@tempa 52
+\mathchardef\ointop="1\@tempa 48
+\mathchardef\sum="1\@tempa 50
+\mathchardef\prod="1\@tempa 51
+%    \end{macrocode}
+%
+% \begin{macro}{\@makefnmark}
+%    Since numbers for footnotes are text numbers and not math
+%    formulas we prefere shapes comming from Concrete roman (like
+%    12345) instead of $12345$. So we have to change the footnote mark
+%    generation to avoid using math mode.
+%    \begin{macrocode}
+\def\@makefnmark{\raise 1ex\hbox{\scriptsize\@thefnmark}}
+%    \end{macrocode}
+% \end{macro}
+%
+%
+%    \begin{macrocode}
+\mathversion{euler}
+%    \end{macrocode}
+%
+% \Finale
+
+\endinput

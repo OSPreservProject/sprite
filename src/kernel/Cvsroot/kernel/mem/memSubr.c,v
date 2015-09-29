@@ -1,0 +1,630 @@
+head     9.4;
+branch   ;
+access   ;
+symbols  ds3100:9.4 sun3:9.4 sun4nw:9.4 symm:9.4 spur:9.4 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.4
+date     90.10.11.12.42.56;  author kupfer;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.09.12.13.42.40;  author shirriff;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.09.11.10.43.16;  author shirriff;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.24.11.49.03;  author mgbaker;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.12.18;  author douglis;  state Stable;
+branches ;
+next     8.3;
+
+8.3
+date     89.01.26.08.45.57;  author brent;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.12.15.10.14.54;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.13.11.22.39;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.25.55;  author douglis;  state Stable;
+branches ;
+next     6.2;
+
+6.2
+date     88.11.11.15.27.41;  author mendel;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.26.17.35.01;  author mlgray;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.19.33;  author brent;  state Stable;
+branches ;
+next     5.5;
+
+5.5
+date     87.11.15.20.02.47;  author douglis;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     87.09.22.17.32.48;  author nelson;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     87.09.06.14.17.00;  author andrew;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.09.04.10.30.30;  author brent;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.09.03.18.55.44;  author andrew;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.45.24;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.4
+log
+@Mem_DumpStats should take a ClientData.
+@
+text
+@/*
+ * memSubr.c --
+ *
+ *	This file contains user/kernel-dependent routines used by the
+ *	dynamic memory allocation system. It provides procedures
+ *	to allocate storage, and a panic routine to halt execution.
+ *
+ *	Every routine in this file assumes that the monitor lock is held.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/mem/RCS/memSubr.c,v 9.3 90/09/12 13:42:40 shirriff Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <vm.h>
+#include <stdlib.h>
+#include <varargs.h>
+#include <mem.h>
+#include <memInt.h>
+
+/*
+ * memPrintProc is the routine called by the routines in memory.c
+ * when they have something to print. It is set to PrintProc in
+ * MemProcInit().
+ */
+
+static void 	PrintProc _ARGS_(());
+
+void (*memPrintProc) _ARGS_(());
+
+ClientData	memPrintData = (ClientData) 0;
+
+/*
+ * Flag to determine whether to panic when freeing free blocks. This
+ * value is user/kernel dependent and is therefore placed in this file.
+ */
+
+Boolean memAllowFreeingFree = FALSE;
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MemPanic --
+ *
+ *	MemPanic is a procedure that's called by the memory allocator
+ *	when it has uncovered a fatal error.  MemPanic prints the
+ *	message and aborts.  It does NOT return.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The program is exited.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+MemPanic(message)
+    char *message;
+{
+    panic(message);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MemChunkAlloc --
+ *
+ *	Mem_Alloc will call MemChunkAlloc to get another region of storage
+ *	from the system (i.e. whenever the storage it's gotten so far
+ *	is insufficient to meet a request).  The actual size returned
+ *	may be greater than size but not less.  This region now becomes
+ *	the permanent property of Mem_Alloc, and will never be returned.
+ *
+ * Results:
+ *	The actual size of the block allocated in bytes.
+ *
+ * Side effects:
+ *	Memory is passed to the allocator and lost forever.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+MemChunkAlloc(size, addressPtr)
+    int size;			/* Number of bytes desired.  */
+    Address *addressPtr;	/* Address of the new region */
+{
+    *addressPtr = Vm_RawAlloc(size);
+    return(size);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mem_DumpStats --
+ *
+ *	Call back routine used to print memory stats with
+ *	a magic 'L1-m' keystroke on the console.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Stuff is printed on the console.
+ *
+ *----------------------------------------------------------------------
+ */
+static	int	smallMinNum = 1;
+static	int	largeMinNum = 1;
+static	int	largeMaxSize = 10000;
+
+/* ARGSUSED */
+void
+Mem_DumpStats(dummy)
+    ClientData dummy;
+{
+    Mem_PrintStatsSubrInt(PrintProc, (ClientData) 0, smallMinNum, largeMinNum,
+	    largeMaxSize);
+    Mem_DumpTrace(-1);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintProc --
+ *
+ *	The default printing routine for the kernel.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+static void
+PrintProc(va_alist)
+    va_dcl		/* ClientData, then char *format, then any number
+			 * of additional values to be printed. */
+{
+    ClientData clientData;
+    char *format;
+    va_list args;
+
+    va_start(args);
+    clientData = va_arg(args, ClientData);
+#ifdef lint
+    clientData = clientData;
+#endif /* lint */
+    format = va_arg(args, char *);
+    (void)vprintf(format, args);
+    va_end(args);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MemPrintInit --
+ *
+ *	Initializes the default printing routine.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The default printing routine is initialized.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+MemPrintInit()
+{
+    memPrintProc = PrintProc;
+    memPrintData = (ClientData) 0;
+}
+@
+
+
+9.3
+log
+@Changed includes to angle brackets.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/mem/RCS/memSubr.c,v 9.2 90/09/11 10:43:16 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d121 1
+d123 2
+a124 1
+Mem_DumpStats()
+@
+
+
+9.2
+log
+@Added function prototyping.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/mem.ken/RCS/memSubr.c,v 9.1 89/10/24 11:49:03 mgbaker Exp Locker: shirriff $ SPRITE (Berkeley)";
+d18 6
+a23 6
+#include "sprite.h"
+#include "vm.h"
+#include "stdlib.h"
+#include "varargs.h"
+#include "mem.h"
+#include "memInt.h"
+@
+
+
+9.1
+log
+@fixing lint
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/mem/RCS/memSubr.c,v 9.0 89/09/12 15:12:18 douglis Stable Locker: mgbaker $ SPRITE (Berkeley)";
+d22 2
+d31 4
+a34 3
+extern	void	Mem_PrintStatsSubrInt();
+static  void	PrintProc();
+void		(*memPrintProc)() = PrintProc;
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/mem/RCS/memSubr.c,v 8.3 89/01/26 08:45:57 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d29 1
+d154 3
+@
+
+
+8.3
+log
+@Fixed memory tracing
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/mem/RCS/memSubr.c,v 8.2 88/12/15 10:14:54 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+8.2
+log
+@Fixed PrintProc to use varargs and vprintf()
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/mem/RCS/memSubr.c,v 8.1 88/11/13 11:22:39 brent Exp $ SPRITE (Berkeley)";
+d113 2
+a114 2
+static	int	smallMinNum = 50;
+static	int	largeMinNum = 10;
+d122 1
+@
+
+
+8.1
+log
+@Added forward declarations
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/mem/RCS/memSubr.c,v 8.0 88/11/11 18:25:55 douglis Stable Locker: brent $ SPRITE (Berkeley)";
+d21 1
+d24 1
+a24 1
+ * MemPrintProc is the routine called by the routines in memory.c
+d142 3
+a144 4
+PrintProc(clientData, format, args)
+    ClientData	clientData;
+    char	*format;
+    int		args;
+d146 9
+a154 1
+    printf(format, (char *) &args);
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/mem/RCS/memSubr.c,v 6.2 88/11/11 15:27:41 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d20 1
+a20 1
+#include "mem.h"
+@
+
+
+6.2
+log
+@Ported to use new libc.a
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: memSubr.c,v 6.1 88/08/26 17:35:01 mlgray Exp $ SPRITE (Berkeley)";
+@
+
+
+6.1
+log
+@Fixed some lint errors.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: memSubr.c,v 6.0 88/08/11 12:19:33 brent Stable $ SPRITE (Berkeley)";
+a18 1
+#include "sys.h"
+d29 2
+a30 2
+void		(*memPrintProc)();
+ClientData	memPrintData;
+d63 1
+a63 1
+    Sys_Panic(SYS_FATAL, message);
+d146 1
+a146 1
+    (void) Sys_DoPrintf(format, (char *) &args);
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d1 1
+a1 1
+/* 
+d5 1
+a5 1
+ *	dynamic memory allocation system. It provides procedures 
+d15 2
+a16 2
+static char rcsid[] = "$Header: memSubr.c,v 5.5 87/11/15 20:02:47 douglis Exp $ SPRITE (Berkeley)";
+#endif not lint
+d21 1
+d25 1
+a25 1
+ * when they have something to print. It is set to PrintProc in 
+d48 1
+a48 1
+ *	when it has uncovered a fatal error.  MemPanic prints the 
+d75 3
+a77 3
+ *	is insufficient to meet a request).  The actual size returned 
+ *	may be greater than size but not less.  This region now becomes 
+ *	the permanent property of Mem_Alloc, and will never be returned.  
+d120 2
+a121 1
+    Mem_PrintStatsSubrInt(PrintProc, 0, smallMinNum, largeMinNum, largeMaxSize);
+d140 1
+a140 1
+
+d147 1
+a147 1
+    Sys_DoPrintf(format, (char *) &args);
+@
+
+
+5.5
+log
+@Added memAllowFreeingFree variable (= FALSE).
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: memSubr.c,v 5.4 87/09/22 17:32:48 nelson Exp $ SPRITE (Berkeley)";
+@
+
+
+5.4
+log
+@Changed dump stats call to call the internal unmonitored routine.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: memSubr.c,v 5.3 87/09/06 14:17:00 andrew Exp $ SPRITE (Berkeley)";
+d32 6
+@
+
+
+5.3
+log
+@fixed Mem_DumpStats to call Mem_PrintSTatsSubr instead of Mem_PrintStats,
+which ignores arguments.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: memSubr.c,v 5.2 87/09/04 10:30:30 brent Exp $ SPRITE (Berkeley)";
+d113 1
+a113 1
+    Mem_PrintStatsSubr(PrintProc, 0, smallMinNum, largeMinNum, largeMaxSize);
+@
+
+
+5.2
+log
+@Added Mem_DumpStats back.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: memSubr.c,v 5.1 87/09/03 18:55:44 andrew Exp $ SPRITE (Berkeley)";
+d102 1
+a102 1
+ *	None.
+d113 1
+a113 1
+    Mem_PrintStats(PrintProc, 0, smallMinNum, largeMinNum, largeMaxSize);
+@
+
+
+5.1
+log
+@added code code to support printing of alloc,free trace records.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: memSubr.c,v 4.2 87/07/09 10:41:09 nelson Exp $ SPRITE (Berkeley)";
+d88 26
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d22 11
+d89 1
+a90 1
+
+d94 1
+a94 1
+ * Mem_PrintTrace --
+d96 1
+a96 1
+ *	Print out the given trace information about a memory trace record.
+d106 6
+a111 6
+void
+Mem_Trace(allocated, blockAddr, pc, numBytes)
+    Boolean	allocated;
+    Address	blockAddr;
+    Address	pc;
+    int		numBytes;
+d113 1
+a113 2
+    Sys_Printf("%s: PC=%x size=%d blockAddr=%d\n",
+		allocated ? "Alloc" : "Free", pc, numBytes, blockAddr);
+d115 1
+a116 7
+void	PrintProc();
+
+static	int	smallMinNum = 50;
+static	int	largeMinNum = 10;
+static	int	largeMaxSize = 10000;
+
+
+d120 1
+a120 1
+ * Mem_DumpStats --
+d122 1
+a122 1
+ *	Print out memory statistics.
+d128 1
+a128 1
+ *	None.
+a131 5
+void
+Mem_DumpStats()
+{
+    Mem_PrintStats(PrintProc, 0, smallMinNum, largeMinNum, largeMaxSize);
+}
+d134 1
+a134 4
+PrintProc(clientData, format, args)
+    ClientData	clientData;
+    char	*format;
+    int		args;
+d136 2
+a137 1
+    Sys_DoPrintf(format, (char *) &args);
+@

@@ -1,0 +1,200 @@
+
+
+
+NETROUTE                  User Commands                  NETROUTE
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     netroute - Set up host names, addresses, and machine types
+
+SSYYNNOOPPSSIISS
+     nneettrroouuttee  [ooppttiioonnss]
+
+OOPPTTIIOONNSS
+     [none]
+          Print out the kernel's route table.
+
+     --hh _h_o_s_t
+          The host to operate upon. Either a hostname  or  Sprite
+          ID.
+
+     --ff _f_i_l_e
+          Use given file for the Sprite host database.
+
+     --gg _f_i_l_e
+          Use given file for the Sprite gateway database.
+
+     --ffaavvoorr _n_e_t
+          Try to establish routes across networks of type _n_e_t.
+
+     --ddiissffaavvoorr _n_e_t
+          Try not to establish routes  across  networks  of  type
+          _n_e_t.
+
+     --eetthheerr _f_f:_o_o:_o_o:_b_b:_a_a:_r_r@_a_a._b_b._c_c._d_d    Establish a route to
+                                             a  host  with  these
+                                             ethernet and  inter-
+                                             net addresses.
+
+     --uullttrraa _h_h/_i_i@_a_a._b_b._c_c._d_d                Establish a route to
+                                             a  host  with  these
+                                             ultranet and  inter-
+                                             net addresses.
+
+     --ffddddii _q_q:_w_w:_e_e:_r_r:_t_t:_y_y@_a_a._b_b._c_c._d_d     Establish a route to
+                                             a  host  with  these
+                                             fddi  and   internet
+                                             addresses.
+
+     --pp   Print routes.
+
+     --ii   Install routes. This is the default  operations  if  no
+          operations are given.
+
+     --dd _r_o_u_t_e_I_D
+          Delete the route with the given ID.
+
+
+
+
+Sprite v.1.0         Printed:  June 30, 1992                    1
+
+
+
+
+
+
+NETROUTE                  User Commands                  NETROUTE
+
+
+
+     --mm _m_a_c_h_i_n_e__t_y_p_e
+          Host's machine type, where the host is specified by the
+          --hh option.
+
+     --vv   Verbose.
+
+     --nn   Print actions instead of doing them.   Not  fully  sup-
+          ported yet.
+
+_________________________________________________________________
+
+IINNTTRROODDUUCCTTIIOONN
+     This command is used to access the kernel's  internal  route
+     table.   This  route  table  is used to determine routes for
+     sending RPC packets between the hosts. The route  table  has
+     nothing  to  do  with  user-level  network communication via
+     TCP/IP or similar protocols.  Normally nneettrroouuttee  is  invoked
+     during  the  boot  script to install routes to all the hosts
+     found in /etc/spritehosts (/etc/spritehosts.new  during  the
+     transition  period  to the new spritehosts file format). The
+     /etc/spritehosts file contains the spriteID of the  host,  a
+     network  type  and  address  (i.e.  ethernet),  an  internet
+     address, a machine type, and a name plus  optional  aliases.
+     The  spriteID  is  used  internally  for  RPC  communication
+     between Sprite hosts.  The network type and network  address
+     are  used  to map the Sprite ID to the correct local network
+     address.  The internet address is used for the internet pro-
+     tocols.   The machine type is used when expanding the string
+     ``$MACHINE'' inside pathnames.  The file  server  must  know
+     its  clients  machine  types  in order to do this correctly.
+     The names are used to make console error messages contain  a
+     human  understandable  host name, and are also used with the
+     internet library routines.
+
+UUSSAAGGEE
+     There are three operations that can be performed on  routes.
+     One  is  to  print them, another is to install them, and the
+     last is to delete them.  These operations are specified with
+     the pp, ii and dd options.
+
+
+IINNSSTTAALLLLIINNGG RROOUUTTEESS
+     For installing hosts, the information is normally taken from
+     a  host database file.  A host can be installed from scratch
+     by  specifying  its  name  (hhRR  ooppttiioonn)),,  mmaacchhiinnee  ttyyppee  ((mmRR
+     ooppttiioonn)),,  aanndd  nneettwwoorrkk aaddddrreesssseess..  TThhee nneettwwoorrkk aaddddrreesssseess aarree
+     ssppeecciiffiieedd uussiinngg tthhee eetthheerrRR,, uullttrraa, and  ffddddii  options.   The
+     strings  passed  to  these  options  must  be  of  the  form
+     _n_e_t__a_d_d_r_e_s_s@_i_n_e_t__a_d_d_r_e_s_s because each network interface  has
+     both  a  network  address and an internet address.  At least
+     one must be specified.
+
+     Routes to hosts can be installed only over one network type.
+     When  they  are  installed, nneettrroouuttee uses a list of types to
+
+
+
+Sprite v.1.0         Printed:  June 30, 1992                    2
+
+
+
+
+
+
+NETROUTE                  User Commands                  NETROUTE
+
+
+
+     check in a predefined order (use the vv option to  find  this
+     order.)  It  will  try  to establish a route using the first
+     network type; if that fails, it  will  try  the  next,  etc.
+     This  list  can  be  changed dynamically using the ffaavvoorr and
+     ddiissffaavvoorr options to either favor one network  type  most  or
+     one  network type the least, respectively.  Both options can
+     be used at the same time.
+
+     For example, normally routes are installed over ethernet. To
+     change  it so that fddi routes are installed where possible,
+     use:
+
+     % netroute -i -favor fddi
+
+     This will install fddi routes to those machines that support
+     fddi routes, and ethernet routes to the remainder.
+
+     When new routes are  installed  successfully,  the  previous
+     route is removed.
+
+
+DDEELLEETTIINNGG RROOUUTTEESS
+     Routes are deleted by specifying a  route  ID  using  the  dd
+     option.
+
+
+PPRRIINNTTIINNGG RROOUUTTEESS
+     When routes are printed, the following information is  given
+     about  each  route:  the  Sprite ID of the host to which the
+     route goes; the hostname and the machine type of that  host;
+     a  description  of  the route from the kernel; the route ID,
+     and the route ID shifted by right by 16 places; the  network
+     type  of  the  route;   the network address of the interface
+     from which the route sends packets;  the protocol  that  the
+     route  serves;  the  route  flags;  a reference count to the
+     route; min and max packet sizes over the route; min and  max
+     RPC  sizes  over  the  route; and the network address of the
+     destination host to which packets are sent.
+
+
+FFIILLEESS
+          //eettcc//sspprriitteehhoossttss    Contains the old host database
+          //eettcc//sspprriitteehhoossttss..nneeww Contains the new host database.
+
+KKEEYYWWOORRDDSS
+     ethernet, ultranet, fddi, internet, net, route, $MACHINE
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  June 30, 1992                    3
+
+
+

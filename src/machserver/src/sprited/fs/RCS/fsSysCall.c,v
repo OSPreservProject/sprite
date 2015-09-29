@@ -1,0 +1,3352 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  srv030:1.5 srv028:1.4 srv027:1.4 srv026:1.4 srv024:1.4 srv022:1.4 srv021:1.4 srv020d:1.4.4 srv020c:1.4.3 srv019:1.4 srv018:1.4 srv016:1.4 srv015:1.4 srv014:1.4 srv012:1.4 srv011:1.4 srv010:1.4 srv008:1.4 srv007:1.4 srv006:1.4 srv005:1.4 srv004:1.4 srv003:1.4 srv002:1.4 srv001:1.4;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     92.07.16.18.06.57;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     92.02.27.16.35.00;  author kupfer;  state Exp;
+branches 1.4.3.1 1.4.4.1;
+next     1.3;
+
+1.3
+date     92.01.21.15.02.46;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.12.01.21.58.09;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.11.18.13.56.07;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+1.4.3.1
+date     92.07.01.16.45.04;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+1.4.4.1
+date     92.07.02.13.36.04;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.5
+log
+@Split spriteSrv.h into user and server versions.
+@
+text
+@/* 
+ * fsSysCall.c --
+ *
+ *	These are the system call stubs that get called by the MIG stub
+ *	routine.  These routines gather up arguments and then call the
+ *	workhorse routines to do the actual work.
+ *
+ * Copyright 1987, 1991 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/fs/RCS/fsSysCall.c,v 1.4 92/02/27 16:35:00 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <sprite.h>
+#include <ckalloc.h>
+#include <mach.h>
+#include <sys/file.h>
+
+#include <fs.h>
+#include <fsMach.h>
+#include <fsutil.h>
+#include <fsutilTrace.h>
+#include <fsNameOps.h>
+#include <fsio.h>
+#include <fslcl.h>
+#include <fsdm.h>
+#include <sig.h>
+#include <spriteSrvServer.h>
+#include <vm.h>
+#include <proc.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_AttachDiskStub --
+ *
+ *	Stub for the Fs_AttachDisk system call.  This gets ahold of
+ *	the filename arguments, opens the disk to be attached, and
+ *	calls Fsdm_AttachDisk to do the work.
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  The Sprite code will be SUCCESS or an error 
+ *	code from finding junk on the disk.  Fills in the "pending signals" 
+ *	flag.
+ *
+ * Side effects:
+ *	Call Fs_AttachDisk or Fs_DetachDisk.
+ *
+ *----------------------------------------------------------------------
+ */
+    
+kern_return_t
+Fs_AttachDiskStub(serverPort, deviceName, devNameLength, localName,
+		  localNameLength, flags, statusPtr, sigPendingPtr)
+    mach_port_t serverPort;	/* request port */
+    char *deviceName;		/* Name of raw disk device file to attach */
+    mach_msg_type_number_t devNameLength; /* extra parameter to appease MIG */
+    char *localName;		/* Local directory where disk is attached */
+    mach_msg_type_number_t localNameLength; /* extra parm to appease MIG */
+    int flags;		/* FS_ATTACH_READ_ONLY, FS_DETATCH, FS_ATTACH_LOCAL */
+    ReturnStatus *statusPtr;	/* OUT: Sprite status */
+    boolean_t *sigPendingPtr;	/* OUT: is there a signal pending */
+{
+#ifndef SPRITED_LOCALDISK
+#ifdef lint
+    statusPtr = statusPtr;
+    flags = flags;
+    localNameLength = localNameLength;
+    localName = localName;
+    devNameLength = devNameLength;
+    deviceName = deviceName;
+    serverPort = serverPort;
+    sigPendingPtr = sigPendingPtr;
+#endif
+    return KERN_FAILURE;	/* temporarily disabled */
+#else /* SPRITED_LOCALDISK */
+    int useFlags;		/* Flags for the Fs_Open call */
+    Fs_Stream *streamPtr;	/* Stream from the Fs_Open call */
+
+#ifdef lint
+    serverPort = serverPort;
+    localNameLength = localNameLength;
+    devNameLength = devNameLength;
+#endif
+
+    *statusPtr = SUCCESS;
+    if (localNameLenght == 0) {
+	localName = (char *)NIL;
+    }
+    if (devNameLength == 0) {
+	deviceName = (char *)NIL;
+    }
+
+    if (flags & FS_DETACH) {
+	/*
+	 * Flush data associated with the domain and remove the domain
+	 * from the prefix table.
+	 */
+	*statusPtr = Fsdm_DetachDisk(localName);
+    } else {
+	/*
+	 * Attach a local domain into the prefix table.
+	 */
+	if (deviceName == (char *)NIL ||
+	    localName == (char *)NIL) {
+	    *statusPtr = FS_INVALID_ARG;
+	} else {
+	    if (flags & FS_ATTACH_READ_ONLY) {
+		useFlags = FS_READ;
+	    } else {
+		useFlags = FS_READ|FS_WRITE;
+	    }
+	    *statusPtr = Fs_Open(deviceName, useFlags, FS_DEVICE, 0,
+				 &streamPtr);
+	    if (*statusPtr == SUCCESS) {
+		*statusPtr = Fsdm_AttachDiskByHandle(streamPtr->ioHandlePtr, 
+						     localName, flags);
+	    }
+	}
+    }
+
+    *sigPendingPtr = Sig_Pending(Proc_GetCurrentProc());
+    return KERN_SUCCESS;
+#endif /* SPRITED_LOCALDISK */
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_OpenStub --
+ *
+ *      This is the stub for the Fs_Open system call.  This routine sets up
+ *      a Stream ID for the Fs_Stream object returned by (the internal)
+ *      Fs_Open.  Stream Id's get passed to read and write calls and
+ *      identify the stream to the system.  If FS_CREATE is one of the
+ *      usage flags then the third argument, permissions, specifies the
+ *      base permissions for the newly created file.
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code, the 
+ *	user's new stream ID, and the "pending signals" flag.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+kern_return_t
+Fs_OpenStub(serverPort, pathName, pathNameLength, usageFlags, permissions,
+	    statusPtr, streamIDPtr, sigPendingPtr)
+    mach_port_t serverPort;	/* request port */
+    char *pathName;		/* The name of the file to open */
+    mach_msg_type_number_t pathNameLength; /* extra parameter to appease MIG */
+    int usageFlags;		/* FS_READ, FS_WRITE, FS_CREATE, FS_TRUNC */
+    int permissions;		/* Permission mask to use on creation */
+    ReturnStatus *statusPtr;	/* OUT: Sprite return code */
+    int *streamIDPtr;		/* OUT: This is the user's handle on the open
+				 * file used in later filesystem requests */
+    boolean_t *sigPendingPtr;	/* OUT: is there a signal pending */
+{
+    Fs_Stream	 	*streamPtr;
+    ReturnStatus	status;
+
+#ifdef lint
+    serverPort = serverPort;
+    pathNameLength = pathNameLength;
+#endif
+    FSUTIL_TRACE(FSUTIL_TRACE_OPEN);
+
+    /*
+     * Open the file and get a stream descriptor for it.
+     */
+    usageFlags &= ~FS_KERNEL_FLAGS;
+    usageFlags |= (FS_USER | FS_FOLLOW);
+    if (fsutil_Tracing) {
+	usageFlags |= FSUTIL_TRACE_FLAG;
+    }
+
+    status = Fs_Open(pathName, usageFlags, FS_FILE,
+		     permissions & 0777, &streamPtr);
+    
+    FSUTIL_TRACE_NAME(FSUTIL_TRACE_OPEN_DONE_2, pathName);
+
+    /*
+     * Save a pointer to the descriptor in a list kept in the proc table.
+     * Its index in the list is the "Stream ID".
+     */
+
+    if (status == SUCCESS) {
+	status = Fs_GetStreamID(streamPtr, streamIDPtr);
+	if (status != SUCCESS) {
+	    (void) Fs_Close(streamPtr);
+	}
+    }
+
+    if (status == SUCCESS) {
+	FSUTIL_TRACE(FSUTIL_TRACE_OPEN_DONE_3);
+    }
+
+    *statusPtr = status;
+    *sigPendingPtr = Sig_Pending(Proc_GetCurrentProc());
+    return KERN_SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_CloseStub --
+ *
+ *	System call to release a stream Id.  Calls the internal Fs_Close
+ *	routine.
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code and the 
+ *	"pending signals" flag.
+ *
+ * Side effects:
+ *	The streamID becomes invalid (until it gets reassigned by
+ *	another Fs_Open call).
+ *
+ *----------------------------------------------------------------------
+ */
+
+kern_return_t
+Fs_CloseStub(serverPort, streamID, statusPtr, sigPendingPtr)
+    mach_port_t serverPort;	/* request port */
+    int streamID;
+    ReturnStatus *statusPtr;	/* OUT: Sprite return code */
+    boolean_t *sigPendingPtr;	/* OUT: is there a signal pending */
+{
+    ReturnStatus	status;
+    Fs_Stream 		*streamPtr;	/* Stream pointer from the process's
+				 	 * list of open streams */
+    Proc_ControlBlock	*procPtr;	/* This process's control block */
+    
+#ifdef lint
+    serverPort = serverPort;
+#endif
+
+    /*
+     * Map from the streamID to a streamPtr.
+     */
+
+    procPtr = Proc_GetEffectiveProc();
+    status = Fs_GetStreamPtr(procPtr, streamID, &streamPtr);
+    if (status != SUCCESS) {
+	/*
+	 * Fudge the return status.  A close() can only return EBADF or
+	 * EINTR, so return something that maps to EBADF even if it
+	 * doesn't make sense here.  Sprite system calls are going
+	 * away soon anyway.
+	 */
+	if (status != GEN_EINTR) {
+	    status = FS_NEW_ID_TOO_BIG;
+	}
+	goto bailOut;
+    }
+
+    /*
+     * Look after any shared memory associated with the file.
+     */
+    Vm_CleanupSharedFile(procPtr, streamPtr);
+
+    /*
+     * Clear the user-level streamID and then close the underlying stream.
+     */
+
+    Fs_ClearStreamID(streamID, procPtr);
+    status = Fs_Close(streamPtr);
+
+ bailOut:
+    *statusPtr = status;
+    *sigPendingPtr = Sig_Pending(procPtr);
+    return KERN_SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_ReadStub --
+ *
+ *      The stub for the Fs_Read system call.  
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code, the 
+ *	count of bytes read, and the "pending signals" flag.
+ *
+ * Side effects:
+ *	Copies the read data into the user's buffer.
+ *
+ *----------------------------------------------------------------------
+ */
+
+kern_return_t
+Fs_ReadStub(serverPort, streamID, amountRead, buffer, statusPtr,
+	    amountReadPtr, sigPendingPtr)
+    mach_port_t serverPort;	/* request port */
+    int		streamID;	/* The user's index into its open file list */
+    int		amountRead;	/* The amount of bytes to read */
+    vm_address_t buffer;	/* The user buffer to read into */
+    ReturnStatus *statusPtr;	/* OUT: Sprite return code */
+    int		*amountReadPtr;	/* OUT: The amount of bytes actually read */
+    boolean_t *sigPendingPtr;	/* OUT: is there a signal pending */
+{
+    register ReturnStatus	status;
+    Fs_Stream		*streamPtr;	/* The stream to read from */
+    Proc_ControlBlock 	*procPtr;	/* This process's control block */
+
+#ifdef lint
+    serverPort = serverPort;
+#endif
+
+    /*
+     * Map from stream ID to file pointer and do the read.
+     * If the process is not remote, Fs_Read takes care of making
+     * the read buffer accessible.
+     */
+
+    procPtr = Proc_GetEffectiveProc();
+    status = Fs_GetStreamPtr(procPtr, streamID, &streamPtr);
+    if (status == SUCCESS) {
+	*amountReadPtr = amountRead;
+	status = Fs_Read(streamPtr, (Address)buffer, streamPtr->offset,
+			 amountReadPtr);
+    } else {
+	*amountReadPtr = 0;
+    }
+
+    *statusPtr = status;
+    *sigPendingPtr = Sig_Pending(procPtr);
+    return KERN_SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_WriteStub --
+ *
+ *	The Fs_Write system call stub.  
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code, the 
+ *	count of bytes written, and the "pending signals" flag.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+kern_return_t
+Fs_WriteStub(serverPort, streamID, writeLength, buffer, statusPtr,
+	     writeLengthPtr, sigPendingPtr)
+    mach_port_t serverPort;	/* request port */
+    int streamID;		/* which file to write to */
+    int writeLength;		/* how big the user's buffer is */
+    vm_address_t buffer;	/* the user's buffer */
+    ReturnStatus *statusPtr;	/* OUT: Sprite return code */
+    int *writeLengthPtr;	/* OUT: number of bytes actually written */
+    boolean_t *sigPendingPtr;	/* OUT: is there a signal pending */
+{
+    register ReturnStatus status;
+    Fs_Stream	*streamPtr;	/* The stream to write to */
+    Proc_ControlBlock *procPtr;	/* This process's control block */
+
+#ifdef lint
+    serverPort = serverPort;
+#endif
+
+    /*
+     * Map from stream ID to streamPtr.  If the process is not remote,
+     * Fs_Write takes care of making the user's buffer accessible.
+     */
+    procPtr = Proc_GetEffectiveProc();
+    status = Fs_GetStreamPtr(procPtr, streamID, &streamPtr);
+    if (status == SUCCESS) {
+	*writeLengthPtr = writeLength;
+	status = Fs_Write(streamPtr, (Address)buffer, streamPtr->offset,
+			  writeLengthPtr);
+    } else {
+	*writeLengthPtr = 0;
+    }
+
+    *statusPtr = status;
+    *sigPendingPtr = Sig_Pending(procPtr);
+    return KERN_SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_CommandStub --
+ *
+ *	Stub for the Fs_Command system call.  This copies in a buffer
+ *	containing arguments for the particular command, and copies
+ *	out whatever Fs_Command leaves in the buffer after its done.
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code and "pending
+ *	signals" flag.
+ *
+ * Side effects:
+ *	Whatever Fs_Command does.
+ *
+ *----------------------------------------------------------------------
+ */
+
+kern_return_t
+Fs_CommandStub(serverPort, command, bufSize, buffer, statusPtr,
+	       sigPendingPtr)
+    mach_port_t serverPort;	/* request port */
+    int command;		/* Defined in user include "fsCmd.h" */
+    vm_size_t bufSize;		/* Size in bytes of buffer */
+    vm_address_t buffer;	/* In/Out - Command specific data */
+    ReturnStatus *statusPtr;	/* OUT: Sprite status code */
+    boolean_t *sigPendingPtr;	/* OUT: is there a signal pending */
+{
+    ReturnStatus status = SUCCESS;
+    Address localBuffer = (Address)NIL;
+
+#ifdef lint
+    serverPort = serverPort;
+#endif
+
+    if (bufSize != 0) {
+	localBuffer = (Address)ckalloc(bufSize);
+	status = Vm_CopyIn((int)bufSize, (Address)buffer, localBuffer);
+    }
+
+    if (status == SUCCESS) {
+	status = Fs_Command(command, (int)bufSize, localBuffer);
+    }
+
+    if (localBuffer != (Address)NIL) {
+	if (status == SUCCESS) {
+	    status = Vm_CopyOut((int)bufSize, localBuffer, (Address)buffer);
+	}
+	ckfree(localBuffer);
+    }
+    *statusPtr = status;
+    *sigPendingPtr = Sig_Pending(Proc_GetCurrentProc());
+    return KERN_SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_MakeDeviceStub --
+ *
+ *	The Fs_MakeDevice system call stub.
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  Fills in Sprite status code and "pending 
+ *	signals" flag.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+kern_return_t
+Fs_MakeDeviceStub(serverPort, pathName, pathNameLength, device,
+		  permissions, statusPtr, sigPendingPtr)
+    mach_port_t serverPort;	/* request port */
+    char *pathName;		/* Device file to create */
+    mach_msg_type_number_t pathNameLength; /* extra parameter to appease MIG */
+    Fs_Device device;		/* Specifies the device file attributes */
+    int permissions;		/* Permissions on the special file */
+    ReturnStatus *statusPtr;	/* OUT: Sprite status code */
+    boolean_t *sigPendingPtr;	/* OUT: is there a signal pending */
+{
+#ifdef lint
+    serverPort = serverPort;
+    pathNameLength = pathNameLength;
+#endif
+
+    *statusPtr = Fs_MakeDevice(pathName, &device, permissions);
+    *sigPendingPtr = Sig_Pending(Proc_GetCurrentProc());
+    return KERN_SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_MakeDirStub --
+ *
+ *	The Fs_MakeDir system call stub.
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  Fills in Sprite status code and "pending 
+ *	signals" flag.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+kern_return_t
+Fs_MakeDirStub(serverPort, pathName, pathNameLength, permissions,
+	       statusPtr, sigPendingPtr)
+    mach_port_t serverPort;	/* request port */
+    char *pathName;		/* directory to create */
+    mach_msg_type_number_t pathNameLength; /* extra parameter to appease MIG */
+    int permissions;
+    ReturnStatus *statusPtr;	/* OUT: Sprite status code */
+    boolean_t *sigPendingPtr;	/* OUT: is there a signal pending */
+{
+#ifdef lint
+    serverPort = serverPort;
+    pathNameLength = pathNameLength;
+#endif
+
+    *statusPtr = Fs_MakeDir(pathName, permissions);
+    *sigPendingPtr = Sig_Pending(Proc_GetCurrentProc());
+    return KERN_SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_RemoveStub --
+ *
+ *	The stub for the Fs_Remove system call.
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  Fills in the Sprite result code from
+ *	Fs_Remove and the "pending signals" flag.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+kern_return_t
+Fs_RemoveStub(serverPort, pathName, pathNameLength, statusPtr,
+	      sigPendingPtr)
+    mach_port_t serverPort;	/* request port */
+    char *pathName;		/* the file to remove */
+    mach_msg_type_number_t pathNameLength; /* extra parameter to appease MIG */
+    ReturnStatus *statusPtr;	/* OUT: result code */
+    boolean_t *sigPendingPtr;	/* OUT: is there a signal pending */
+{
+#ifdef lint
+    serverPort = serverPort;
+    pathNameLength = pathNameLength;
+#endif
+
+    *statusPtr = Fs_Remove(pathName);
+    *sigPendingPtr = Sig_Pending(Proc_GetCurrentProc());
+    return KERN_SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_RemoveDirStub --
+ *
+ *	The Fs_RemoveDir system call stub.
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  Fills in the Sprite result code from
+ *	Fs_RemoveDir and the "pending signals" flag.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+kern_return_t
+Fs_RemoveDirStub(serverPort, pathName, pathNameLength, statusPtr,
+		 sigPendingPtr)
+    mach_port_t serverPort;	/* request port */
+    char *pathName;		/* the directory to remove */
+    mach_msg_type_number_t pathNameLength; /* extra parameter to appease MIG */
+    ReturnStatus *statusPtr;	/* OUT: result code */
+    boolean_t *sigPendingPtr;	/* OUT: is there a signal pending */
+{
+#ifdef lint
+    serverPort = serverPort;
+    pathNameLength = pathNameLength;
+#endif
+
+    *statusPtr = Fs_RemoveDir(pathName);
+    *sigPendingPtr = Sig_Pending(Proc_GetCurrentProc());
+    return KERN_SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_ChangeDirStub --
+ *
+ *	Change the current working directory for the current user process.
+ *	The argument specifies a new current directory.  The argument
+ *	can be a relative path name.
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  Fills in a Sprite status code and "pending 
+ *	signals" flag.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+kern_return_t
+Fs_ChangeDirStub(serverPort, pathName, pathNameLength, statusPtr,
+		 sigPendingPtr)
+    mach_port_t serverPort;	/* request port */
+    char *pathName;		/* new cwd */
+    mach_msg_type_number_t pathNameLength; /* extra parameter to appease MIG */
+    ReturnStatus *statusPtr;	/* OUT: result code */
+    boolean_t *sigPendingPtr;	/* OUT: is there a signal pending */
+{
+#ifdef lint
+    serverPort = serverPort;
+    pathNameLength = pathNameLength;
+#endif
+
+    *statusPtr = Fs_ChangeDir(pathName);
+    *sigPendingPtr = Sig_Pending(Proc_GetCurrentProc());
+    return KERN_SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_GetNewIDStub --
+ *
+ *	The stub for the system call that duplicates a stream ID.
+ *	See Fs_GetNewID.
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code, the new 
+ *	stream ID, and the "pending signals" flag.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+kern_return_t
+Fs_GetNewIDStub(serverPort, streamID, newStreamIDPtr, statusPtr,
+		sigPendingPtr)
+    mach_port_t serverPort;	/* request port */
+    int streamID;		/* stream to duplicate */
+    int *newStreamIDPtr;	/* IN: FS_ANYID or stream to close;
+				 * OUT: the copy stream ID */
+    ReturnStatus *statusPtr;	/* OUT: Sprite status code */
+    boolean_t *sigPendingPtr;	/* OUT: is there a signal pending */
+{
+#ifdef lint
+    serverPort = serverPort;
+#endif
+
+    *statusPtr = Fs_GetNewID(streamID, newStreamIDPtr);
+    *sigPendingPtr = Sig_Pending(Proc_GetCurrentProc());
+    return KERN_SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_GetAttributesStub --
+ *
+ *	Stub for the Fs_GetAttributes system call.
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code and "pending 
+ *	signals" flag.  If successful, fills in the attributes for the 
+ *	named file.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+kern_return_t
+Fs_GetAttributesStub(serverPort, pathName, pathNameLength, fileOrLink,
+		     statusPtr, attrPtr, sigPendingPtr)
+    mach_port_t serverPort;	/* request port */
+    char *pathName;		/* file to get attributes for */
+    mach_msg_type_number_t pathNameLength; /* extra parameter to appease MIG */
+    int fileOrLink;
+    ReturnStatus *statusPtr;	/* OUT: Sprite status code */
+    Fs_Attributes *attrPtr;	/* OUT: file's attributes */
+    boolean_t *sigPendingPtr;	/* OUT: is there a signal pending */
+{
+#ifdef lint
+    serverPort = serverPort;
+    pathNameLength = pathNameLength;
+#endif
+
+    *statusPtr = Fs_GetAttributes(pathName, fileOrLink, attrPtr);
+    *sigPendingPtr = Sig_Pending(Proc_GetCurrentProc());
+    return KERN_SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_CheckAccess --
+ *
+ *	Process the Fs_CheckAccess system all.
+ *
+ * Results:
+ *	SUCCESS if accessible.
+ *	FS_NO_ACCESS if not accessible.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fs_CheckAccess(pathName, perm, useRealID)
+    char 	*pathName;	/* name of file to check (server addr) */
+    int		perm;		/* Sprite permission flags */
+    Boolean	useRealID;
+{
+    ReturnStatus	status;
+    Fs_Attributes	attributes;
+    Proc_ControlBlock	*procPtr;
+    register int	bits;
+
+    procPtr = Proc_GetEffectiveProc();
+
+    status = Fs_GetAttributes(pathName, FS_ATTRIB_FILE, &attributes);
+    if (status != SUCCESS) {
+	return(status);
+    } else if (perm == FS_EXISTS) {
+	/*
+	 * Only checking for existence, not read or write access.
+	 */
+	return(SUCCESS);
+    } else if ((useRealID && (procPtr->userID == 0)) ||
+		(!useRealID && (procPtr->effectiveUserID == 0))) {
+	/*
+	 * Let the super-user do anything.
+	 */
+	return(SUCCESS);
+    }
+    /*
+     * Translate from FS_READ etc, into permission bits, ie. FS_WORLD_READ.
+     * The world permissions are shifted left to the owner or group permissions
+     * if the process's userID or one of its group IDs matches the file's.
+     */
+    bits = 0;
+    if (perm & FS_READ) {
+	bits |= FS_WORLD_READ;
+    }
+    if (perm & FS_WRITE) {
+	bits |= FS_WORLD_WRITE;
+    }
+    if (perm & FS_EXECUTE) {
+	bits |= FS_WORLD_EXEC;
+    }
+
+    if ((useRealID && attributes.uid == procPtr->userID) ||
+        (!useRealID && attributes.uid == procPtr->effectiveUserID)) {
+	bits <<= 6;
+    } else {
+	int	i;
+	for (i = 0; i < procPtr->fsPtr->numGroupIDs; i++) {
+	    if (attributes.gid == procPtr->fsPtr->groupIDs[i]) {
+		bits <<= 3;
+		break;
+	    }
+	}
+    }
+    if ((attributes.permissions & bits) == bits) {
+	return (GEN_SUCCESS);
+    } else {
+	return (FS_NO_ACCESS);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_GetAttributesIDStub --
+ *
+ *	Stub for the Fs_GetAttributesID system call.
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code, the 
+ *	attributes of the given file, and the "pending signals" flag.
+ *
+ * Side effects:
+ *	 None.
+ *
+ *----------------------------------------------------------------------
+ */
+kern_return_t
+Fs_GetAttributesIDStub(serverPort, streamID, statusPtr, attrPtr,
+		       sigPendingPtr)
+    mach_port_t serverPort;	/* request port */
+    int		streamID;	/* The user's index into its open file list */
+    ReturnStatus *statusPtr;	/* OUT: Sprite return code */
+    Fs_Attributes *attrPtr;	/* OUT: the file's attributes */
+    boolean_t *sigPendingPtr;	/* OUT: is there a signal pending */
+{
+    register	ReturnStatus 	status;
+    Fs_Stream			*streamPtr;
+
+#ifdef lint
+    serverPort = serverPort;
+#endif
+
+    status = Fs_GetStreamPtr(Proc_GetEffectiveProc(), streamID, &streamPtr);
+    if (status == SUCCESS) {
+	status = Fs_GetAttrStream(streamPtr, attrPtr);
+    }
+
+    *statusPtr = status;
+    *sigPendingPtr = Sig_Pending(Proc_GetCurrentProc());
+    return KERN_SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_SetAttrStub --
+ *
+ *	Change attributes for the named file.
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code and the 
+ *	"pending signals" flag.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+kern_return_t
+Fs_SetAttrStub(serverPort, pathName, pathNameLength, fileOrLink, newAttr,
+	       flags, statusPtr, sigPendingPtr)
+    mach_port_t serverPort;	/* request port */
+    char *pathName;		/* Name of file to manipulate */
+    mach_msg_type_number_t pathNameLength; /* extra parameter to appease MIG */
+    int fileOrLink;		/* Whether or not to follow symbolic links */
+    Fs_Attributes newAttr;	/* New values for attributes */
+    int flags;			/* What attributes to set */
+    ReturnStatus *statusPtr;	/* OUT: Sprite return code */
+    boolean_t *sigPendingPtr;	/* OUT: is there a signal pending */
+{
+#ifdef lint
+    serverPort = serverPort;
+    pathNameLength = pathNameLength;
+#endif
+
+    *statusPtr = Fs_SetAttributes(pathName, fileOrLink, &newAttr, flags);
+    *sigPendingPtr = Sig_Pending(Proc_GetCurrentProc());
+    return KERN_SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_SetAttrIDStub --
+ *
+ *	Stub for Fs_SetAttrID system call: set file attributes.
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code and "pending 
+ *	signals" flag.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+kern_return_t
+Fs_SetAttrIDStub(serverPort, streamID, newAttr, flags, statusPtr,
+		 sigPendingPtr)
+    mach_port_t serverPort;	/* request port */
+    int streamID;		/* which file to change */
+    Fs_Attributes newAttr;	/* New attributes for the file */
+    int flags;			/* What attributes to set */
+    ReturnStatus *statusPtr;	/* OUT: Sprite return code */
+    boolean_t *sigPendingPtr;	/* OUT: is there a signal pending */
+{
+    register 	ReturnStatus 	status;
+    Fs_Stream			*streamPtr;
+    Fs_UserIDs			ids;
+    Proc_ControlBlock		*procPtr;
+
+#ifdef lint
+    serverPort = serverPort;
+#endif
+
+    /*
+     * Map from stream ID to file pointer and get the attributes.
+     */
+    procPtr = Proc_GetEffectiveProc();
+    status = Fs_GetStreamPtr(procPtr, streamID, &streamPtr);
+    if (status == SUCCESS) {
+	Fs_SetIDs(procPtr, &ids);
+	status = Fs_SetAttrStream(streamPtr, &newAttr, &ids, flags);
+    }
+
+    *statusPtr = status;
+    *sigPendingPtr = Sig_Pending(procPtr);
+    return KERN_SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_SetDefPermStub --
+ *
+ *	Set the default permissions on files created by this process.
+ *	These defaults get inherited by child processes.  ("umask" in 
+ *	UNIX.)
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  Fills in the old default permissions and the 
+ *	"pending signals" flag.
+ *
+ * Side effects:
+ *	Sets the default permissions mask in the filesystem related
+ *	state kept in the proc table.
+ *
+ *----------------------------------------------------------------------
+ */
+kern_return_t
+Fs_SetDefPermStub(serverPort, permissions, oldPermPtr, sigPendingPtr)
+    mach_port_t serverPort;	/* request port */
+    int permissions;	/*  A mask of 9 permission bits.  Three sets of 3
+			 * bits.  The first set is for the owner's permissions,
+			 * the second for the group's, and the last is for
+			 * everyone else.  The three bits indicate read,
+			 * write, and execute permissions, respectively.
+			 * A permission bit set in this mask ENABLES the
+			 * permission on created files. */
+    int *oldPermPtr;	/* OUT: the previous value of the permissions mask */
+    boolean_t *sigPendingPtr;	/* OUT: is there a signal pending */
+{
+    register	Proc_ControlBlock	*procPtr;
+
+#ifdef lint
+    serverPort = serverPort;
+#endif
+
+    procPtr = Proc_GetEffectiveProc();
+    *oldPermPtr = procPtr->fsPtr->filePermissions;
+    procPtr->fsPtr->filePermissions = (unsigned int)(permissions & 0777);
+
+    *sigPendingPtr = Sig_Pending(Proc_GetCurrentProc());
+    return KERN_SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_HardLinkStub --
+ *
+ *	Stub for the Fs_HardLink system call.
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  Fills in a Sprite status code and "pending 
+ *	signals" flag.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+kern_return_t
+Fs_HardLinkStub(serverPort, fileName, fileNameLength, linkName,
+		linkNameLength, statusPtr, sigPendingPtr)
+    mach_port_t serverPort;	/* request port */
+    char *fileName;	/* Name of the existing file */
+    mach_msg_type_number_t fileNameLength; /* extra parameter to appease MIG */
+    char *linkName;	/* New name to link to the existing file */
+    mach_msg_type_number_t linkNameLength; /* extra parameter to appease MIG */
+    ReturnStatus *statusPtr;	/* OUT: Sprite result code */
+    boolean_t *sigPendingPtr;	/* OUT: is there a signal pending */
+{
+#ifdef lint
+    serverPort = serverPort;
+    fileNameLength = fileNameLength;
+    linkNameLength = linkNameLength;
+#endif
+
+    *statusPtr = Fs_HardLink(fileName, linkName);
+    *sigPendingPtr = Sig_Pending(Proc_GetCurrentProc());
+    return KERN_SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_RenameStub --
+ *
+ *	Rename a file (or directory).
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code and the 
+ *	"pending signals" flag.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+kern_return_t
+Fs_RenameStub(serverPort, pathName, pathNameLength, newName, newNameLength,
+	      statusPtr, sigPendingPtr)
+    mach_port_t serverPort;	/* request port */
+    char *pathName;
+    mach_msg_type_number_t pathNameLength; /* extra parameter to appease MIG */
+    char *newName;
+    mach_msg_type_number_t newNameLength; /* extra parameter to appease MIG */
+    ReturnStatus *statusPtr;	/* OUT: Sprite return code */
+    boolean_t *sigPendingPtr;	/* OUT: is there a signal pending */
+{
+#ifdef lint
+    serverPort = serverPort;
+    newNameLength = newNameLength;
+    pathNameLength = pathNameLength;
+#endif
+
+    *statusPtr = Fs_Rename(pathName, newName);
+    *sigPendingPtr = Sig_Pending(Proc_GetCurrentProc());
+    return KERN_SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_SymLinkStub --
+ *
+ *	Create a symbolic link.
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code and the 
+ *	"pending signals" flag.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+kern_return_t
+Fs_SymLinkStub(serverPort, targetName, targetNameLength, linkName,
+	       linkNameLength, remoteFlag, statusPtr, sigPendingPtr)
+    mach_port_t serverPort;	/* request port */
+    char *targetName;		/* what the link points to */
+    mach_msg_type_number_t targetNameLength; /* extra parm to appease MIG */
+    char *linkName;		/* name of link to create */
+    mach_msg_type_number_t linkNameLength; /* extra parameter to appease MIG */
+    Boolean remoteFlag;		/* make a remote link? */
+    ReturnStatus *statusPtr;	/* OUT: Sprite return code */
+    boolean_t *sigPendingPtr;	/* OUT: is there a signal pending */
+{
+#ifdef lint
+    serverPort = serverPort;
+    targetNameLength = targetNameLength;
+    linkNameLength = linkNameLength;
+#endif
+
+    *statusPtr = Fs_SymLink(targetName, linkName, remoteFlag);
+    *sigPendingPtr = Sig_Pending(Proc_GetCurrentProc());
+    return KERN_SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_ReadLinkStub --
+ *
+ *	Stub for Fs_ReadLink system call.  The named file should be a
+ *	remote link or a symbolic link file.  It is opened and its
+ *	contents (another file's name) are read and stored in the buffer.
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  Fills in the Sprite return code from the
+ *	open and read, the number of bytes written into the user buffer,
+ *	and the "pending signals" flag.
+ *
+ * Side effects:
+ *	Fills in the user buffer with the contents of the link file.
+ *
+ *----------------------------------------------------------------------
+ */
+kern_return_t
+Fs_ReadLinkStub(serverPort, linkName, linkNameLength, bufSize, buffer,
+		statusPtr, linkSizePtr, sigPendingPtr)
+    mach_port_t serverPort;	/* request port */
+    char *linkName;		/* Name of the link file */
+    mach_msg_type_number_t linkNameLength; /* extra parameter to appease MIG */
+    int bufSize;		/* Size of the user's buffer */
+    vm_address_t buffer;	/* buffer to hold link's value (user addr) */
+    ReturnStatus *statusPtr;	/* OUT: Sprite status code */
+    int *linkSizePtr;		/* OUT: the amount of data in buffer */
+    boolean_t *sigPendingPtr;	/* OUT: is there a signal pending */
+{
+    ReturnStatus	status;
+    Fs_Stream		*streamPtr = NULL;
+    char		newLinkName[FS_MAX_PATH_NAME_LENGTH];
+
+#ifdef lint
+    serverPort = serverPort;
+    linkNameLength = linkNameLength;
+#endif
+
+    status = Fs_Open(linkName, FS_READ | FS_USER,
+		     FS_SYMBOLIC_LINK|FS_REMOTE_LINK, 0, &streamPtr);
+    if (status != SUCCESS) {
+	goto bailOut;
+    }
+
+    status = Fs_Read(streamPtr, (Address)buffer, 0, &bufSize);
+    if (status != SUCCESS) {
+	goto bailOut;
+    }
+
+    if (bufSize > FS_MAX_PATH_NAME_LENGTH) {
+	printf("Fs_ReadLinkStub: symbolic link %s has a bogus length (%d).\n", 
+	       linkName, bufSize);
+	status = FS_INVALID_ARG;
+	goto bailOut;
+    }
+		
+    /*
+     * Sprite's link count includes the terminating null character
+     * in the character count return while Unix doesn't.  Make our
+     * count backward-compatible with Unix.
+     */
+    status = Vm_CopyIn(bufSize, (Address)buffer, (Address)newLinkName);
+    if (status == SUCCESS && newLinkName[bufSize-1] == '\0') {
+	bufSize--;
+    }
+
+    *linkSizePtr = bufSize;
+
+ bailOut:
+    if (streamPtr != NULL) {
+	(void)Fs_Close(streamPtr);
+    }
+    *statusPtr = status;
+    *sigPendingPtr = Sig_Pending(Proc_GetCurrentProc());
+    return KERN_SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_IOControlStub --
+ *
+ *	Stub for the Fs_IOControl system call.  IOControl commands
+ *	that affect Fs_Stream objects are done here.  The rest of
+ *	the commands are passed down to the stream type specific
+ *	IOControl procedures.
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  Fills in a Sprite return status and "pending 
+ *	signals" flag.  The output buffer is modified with results for the
+ *	command.  The format of the various results is explained in
+ *	user/fs.h for generic operations, and in dev/ *.h for device
+ *	specific operations.
+ *
+ * Side effects:
+ *	Depends on the command.
+ *
+ *----------------------------------------------------------------------
+ */
+
+kern_return_t
+Fs_IOControlStub(serverPort, streamID, command, inBufSize, inBuffer,
+			   outBufSize, outBuffer, statusPtr, sigPendingPtr)
+    mach_port_t serverPort;	/* request port */
+    int 	streamID;	/* User's handle on the stream */
+    int 	command;	/* IOControl command */
+    int 	inBufSize;	/* Size of inBuffer */
+    vm_address_t inBuffer;	/* Command specific input parameters */
+    int 	outBufSize;	/* Size of outBuffer */
+    vm_address_t outBuffer;	/* Command specific output parameters */
+    ReturnStatus *statusPtr;	/* OUT: Sprite return code */
+    boolean_t *sigPendingPtr;	/* OUT: is there a signal pending */
+{
+    Proc_ControlBlock *procPtr;
+    Fs_ProcessState *fsPtr;
+    Fs_Stream 	 *streamPtr;
+    register ReturnStatus status = SUCCESS;
+    Address	localInBuffer = (Address)NIL;
+    Address	localOutBuffer = (Address)NIL;
+    Fs_IOCParam ioctl;
+    Fs_IOReply reply;
+
+#ifdef lint
+    serverPort = serverPort;
+#endif
+
+    /*
+     * Get a stream pointer.
+     */
+    procPtr = Proc_GetEffectiveProc();
+    status = Fs_GetStreamPtr(procPtr, streamID, &streamPtr);
+    if (status != SUCCESS) {
+	goto done;
+    }
+
+    if (!Fsutil_HandleValid(streamPtr->ioHandlePtr)) {
+	status = FS_STALE_HANDLE;
+	goto done;
+    }
+
+    ioctl.command = command;
+    ioctl.format = fsMach_Format;
+    ioctl.procID = procPtr->processID;
+    ioctl.familyID = procPtr->familyID;
+    ioctl.uid = procPtr->effectiveUserID;
+
+    /*
+     * Fast path for non-generic I/O controls to pseudo-devices.
+     * We don't copy in/out the user's parameter blocks because the
+     * pseudo-device code does direct cross-address-space copy later.
+     * We also skip the check against large parameter blocks so arbitrary
+     * amounts of data can be fed to and from a pseudo-device.
+     */
+    if ((streamPtr->ioHandlePtr->fileID.type == FSIO_LCL_PSEUDO_STREAM) &&
+	(command > IOC_GENERIC_LIMIT)) {
+	ioctl.inBufSize = inBufSize;
+	ioctl.inBuffer = (Address)inBuffer;
+	ioctl.outBufSize = outBufSize;  
+	ioctl.outBuffer = (Address)outBuffer;
+	ioctl.flags = FS_USER_IN|FS_USER_OUT;
+	status = Fs_IOControl(streamPtr, &ioctl, &reply);
+	goto done;
+    }
+
+    if (inBufSize > IOC_MAX_BYTES || outBufSize > IOC_MAX_BYTES) {
+	status = SYS_INVALID_ARG;
+	goto done;
+    }
+    ioctl.flags = 0;	/* We'll copy buffer's into/out of the kernel */
+
+    /*
+     * The input parameters are copied into kernel
+     * space, and the results are copied back out so that the
+     * lower level routines don't have to worry about it.
+     */
+    if ((outBufSize > 0) && (outBuffer != (vm_address_t)USER_NIL) &&
+			    (outBuffer != (vm_address_t)NIL)){
+	ioctl.outBuffer = localOutBuffer = (Address) ckalloc(outBufSize);
+	ioctl.outBufSize = outBufSize;
+    } else {
+	ioctl.outBuffer = (Address)NIL;
+	ioctl.outBufSize = outBufSize = 0;
+    }
+    if ((inBufSize > 0) && (inBuffer != (vm_address_t)USER_NIL) &&
+			   (inBuffer != (vm_address_t)NIL)) {
+#ifdef SOSP91
+	/*
+	 * Allocate space after the arguments on an IOC_REPOSITION for the
+	 * current offset.
+	 */
+	ioctl.inBuffer  = localInBuffer = (Address) 
+				ckalloc(inBufSize + 3 * sizeof(int));
+#else
+	ioctl.inBuffer  = localInBuffer = (Address) ckalloc(inBufSize);
+#endif
+	ioctl.inBufSize = inBufSize;
+    } else {
+	ioctl.inBuffer = (Address)NIL;
+	ioctl.inBufSize = 0;
+    }
+
+    if (ioctl.inBufSize &&
+	Vm_CopyIn(ioctl.inBufSize, (Address)inBuffer, ioctl.inBuffer) 
+		!= SUCCESS) {
+	status = SYS_ARG_NOACCESS;
+    } else {
+	status = Fs_IOControl(streamPtr, &ioctl, &reply);
+	if (status == SUCCESS) {
+	    /*
+	     * Post process the set/get flags stuff because the close-on-exec
+	     * flag is not kept down at the stream level, but up along
+	     * with the streamID.
+	     */
+	    fsPtr = procPtr->fsPtr;
+	    switch(command) {
+		case IOC_GET_FLAGS: {
+		    if (fsPtr->streamFlags[streamID] & FS_CLOSE_ON_EXEC) {
+			*(int *)ioctl.outBuffer |= IOC_CLOSE_ON_EXEC;
+		    }
+		    break;
+		}
+		case IOC_SET_BITS:
+		case IOC_SET_FLAGS: {
+		    int flags;
+		    flags = *(int *)ioctl.inBuffer;
+
+		    if (flags & IOC_CLOSE_ON_EXEC) {
+			fsPtr->streamFlags[streamID] |= FS_CLOSE_ON_EXEC;
+		    } else if (command == IOC_SET_FLAGS) {
+			fsPtr->streamFlags[streamID] &= ~FS_CLOSE_ON_EXEC;
+		    }
+		    break;
+		}
+		case IOC_CLEAR_BITS:{
+		    int flags;
+		    flags = *(int *)ioctl.inBuffer;
+		    if (flags & IOC_CLOSE_ON_EXEC) {
+			fsPtr->streamFlags[streamID] &= ~FS_CLOSE_ON_EXEC;
+		    }
+		    break;
+		}
+	    }
+	    if (outBufSize) {
+		status = Vm_CopyOut(reply.length, ioctl.outBuffer,
+				    (Address)outBuffer);
+	    }
+	}
+    }
+    if (localInBuffer != (Address)NIL) {
+	ckfree(localInBuffer);
+    }
+    if (localOutBuffer != (Address)NIL) {
+	ckfree(localOutBuffer);
+    }
+
+ done:
+    *statusPtr = status;
+    *sigPendingPtr = Sig_Pending(procPtr);
+    return KERN_SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_CreatePipeStub --
+ *
+ *      This is the stub for the Fsio_CreatePipe system call.  This routine
+ *      sets up stream IDs for the two Fs_Stream objects returned by (the
+ *      internal) Fsio_CreatePipe: one for reading the pipe and one for
+ *      writing to it.
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code, the 
+ *	two new stream IDs, and the "pending signals" flag.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+kern_return_t
+Fs_CreatePipeStub(serverPort, statusPtr, inStreamIDPtr, outStreamIDPtr,
+		  sigPendingPtr)
+    mach_port_t serverPort;	/* request port */
+    ReturnStatus *statusPtr;	/* OUT: Sprite return code */
+    int *inStreamIDPtr;		/* OUT: Handle for reading the pipe. */
+    int *outStreamIDPtr;	/* OUT: Handle for writing the pipe. */
+    boolean_t *sigPendingPtr;	/* OUT: is there a signal pending */
+{
+    register ReturnStatus	status;
+    Fs_Stream			*inStreamPtr;
+    Fs_Stream			*outStreamPtr;
+
+#ifdef lint
+    serverPort = serverPort;
+#endif
+
+    /*
+     * Call the internal routine to create the pipe.
+     */
+    status = Fsio_CreatePipe(&inStreamPtr, &outStreamPtr);
+    if (status != SUCCESS) {
+	goto bailOut;
+    }
+    inStreamPtr->flags |= FS_USER;
+    outStreamPtr->flags |= FS_USER;
+
+    /*
+     * Get stream ids for the two streams.
+     */
+
+    status = Fs_GetStreamID(inStreamPtr, inStreamIDPtr);
+    if (status != SUCCESS) {
+	(void) Fs_Close(inStreamPtr);
+	(void) Fs_Close(outStreamPtr);
+	goto bailOut;
+    }
+    status = Fs_GetStreamID(outStreamPtr, outStreamIDPtr);
+    if (status != SUCCESS) {
+	Fs_ClearStreamID(*inStreamIDPtr, (Proc_ControlBlock *)NIL);
+	(void) Fs_Close(inStreamPtr);
+	(void) Fs_Close(outStreamPtr);
+	goto bailOut;
+    }
+
+ bailOut:
+    *statusPtr = status;
+    *sigPendingPtr = Sig_Pending(Proc_GetCurrentProc());
+    return KERN_SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_AccessStub --
+ *
+ *	UNIX "access" system call - determine if the current user process 
+ *	is allowed the requested access to the named file.
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code and
+ *	"pending signals" flag.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+kern_return_t
+Fs_AccessStub(serverPort, fileName, fileNameLength, mode, statusPtr,
+	      pendingSigPtr)
+    mach_port_t serverPort;	/* request port */
+    Fs_PathName fileName;	/* name of file to check */
+    mach_msg_type_number_t fileNameLength; /* extra parameter to appease MIG */
+    int mode;			/* UNIX access mode to test for */
+    ReturnStatus *statusPtr;	/* OUT: Sprite return status */
+    boolean_t *pendingSigPtr;	/* OUT: is there a signal pending */
+{
+    int spriteMode;
+
+#ifdef lint
+    serverPort = serverPort;
+    fileNameLength = fileNameLength;
+#endif
+
+    /* 
+     * Map from UNIX access mode to Sprite permissions flags.
+     */
+    if (mode == F_OK) {
+	spriteMode = FS_EXISTS;
+    } else {
+	spriteMode = ((mode&R_OK)?FS_READ:0) | ((mode&W_OK)?FS_WRITE:0) |
+	    ((mode&X_OK)?FS_EXECUTE:0);
+    }
+
+    *statusPtr = Fs_CheckAccess(fileName, spriteMode, TRUE);
+    *pendingSigPtr = Sig_Pending(Proc_GetCurrentProc());
+    return KERN_SUCCESS;
+}
+@
+
+
+1.4
+log
+@Snapshot.  Can kill, suspend, and resume processes.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/fs/RCS/fsSysCall.c,v 1.3 92/01/21 15:02:46 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d38 1
+a38 1
+#include <spriteSrv.h>
+@
+
+
+1.4.4.1
+log
+@Hack instrumentation to find where the time is going in open().
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/fs/RCS/fsSysCall.c,v 1.4 92/02/27 16:35:00 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a41 2
+Time fsOpenStubTime;		/* temp */
+
+a175 1
+    Time startTime, endTime;	/* temp */
+a191 5
+    if (sys_CallProfiling) {
+	Timer_GetTimeOfDay(&startTime, (int *)NULL, (Boolean *)NULL);
+    } else {
+	startTime = time_ZeroSeconds;
+    }
+a193 5
+    if (sys_CallProfiling && !Time_EQ(startTime, time_ZeroSeconds)) {
+	Timer_GetTimeOfDay(&endTime, (int *)NULL, (Boolean *)NULL);
+	Time_Subtract(endTime, startTime, &endTime);
+	Time_Add(endTime, fsOpenStubTime, &fsOpenStubTime);
+    }
+@
+
+
+1.4.3.1
+log
+@Hack instrumentation to find where the time is going in close().
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/fs/RCS/fsSysCall.c,v 1.4 92/02/27 16:35:00 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a41 3
+Time vmCleanupTime;		/* temp */
+Time fsCloseTimeLtd;		/* temp */
+
+a248 1
+    Time startTime, endTime;	/* temp */
+a275 5
+    if (sys_CallProfiling) {
+	Timer_GetTimeOfDay(&startTime, (int *)NULL, (Boolean *)NULL);
+    } else {
+	startTime = time_ZeroSeconds;
+    }
+a276 5
+    if (sys_CallProfiling && !Time_EQ(startTime, time_ZeroSeconds)) {
+	Timer_GetTimeOfDay(&endTime, (int *)NULL, (Boolean *)NULL);
+	Time_Subtract(endTime, startTime, &endTime);
+	Time_Add(endTime, vmCleanupTime, &vmCleanupTime);
+    }
+a282 5
+    if (sys_CallProfiling) {
+	Timer_GetTimeOfDay(&startTime, (int *)NULL, (Boolean *)NULL);
+    } else {
+	startTime = time_ZeroSeconds;
+    }
+a283 5
+    if (sys_CallProfiling && !Time_EQ(startTime, time_ZeroSeconds)) {
+	Timer_GetTimeOfDay(&endTime, (int *)NULL, (Boolean *)NULL);
+	Time_Subtract(endTime, startTime, &endTime);
+	Time_Add(endTime, fsCloseTimeLtd, &fsCloseTimeLtd);
+    }
+@
+
+
+1.3
+log
+@Change VM code to use Sprite FS instead of UNIX.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/fs/RCS/fsSysCall.c,v 1.2 91/12/01 21:58:09 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d37 1
+d54 2
+a55 1
+ *	code from finding junk on the disk.
+d65 1
+a65 1
+		  localNameLength, flags, statusPtr)
+d73 1
+d84 1
+d133 1
+d152 2
+a153 2
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code and the 
+ *	user's new stream ID.
+d163 1
+a163 1
+	    statusPtr, streamIDPtr)
+d172 1
+d214 1
+d228 2
+a229 1
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code.
+d239 1
+a239 1
+Fs_CloseStub(serverPort, streamID, statusPtr)
+d243 1
+d287 1
+d300 2
+a301 2
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code and the 
+ *	count of bytes read.
+d311 1
+a311 1
+	    amountReadPtr)
+d318 1
+d345 1
+d358 2
+a359 2
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code and the 
+ *	count of bytes written.
+d369 1
+a369 1
+	     writeLengthPtr)
+d376 1
+d401 1
+d416 2
+a417 1
+ *	Returns KERN_SUCCESS.  Fills in Sprite status code.
+d426 2
+a427 1
+Fs_CommandStub(serverPort, command, bufSize, buffer, statusPtr)
+d433 1
+d458 1
+d470 2
+a471 1
+ *	Returns KERN_SUCCESS.  Fills in Sprite status code.
+d481 1
+a481 1
+		  permissions, statusPtr)
+d488 1
+d496 1
+d508 2
+a509 1
+ *	Returns KERN_SUCCESS.  Fills in Sprite status code.
+d518 2
+a519 1
+Fs_MakeDirStub(serverPort, pathName, pathNameLength, permissions, statusPtr)
+d525 1
+d533 1
+d546 1
+a546 1
+ *	Fs_Remove.
+d555 2
+a556 1
+Fs_RemoveStub(serverPort, pathName, pathNameLength, statusPtr)
+d561 1
+d569 1
+d582 1
+a582 1
+ *	Fs_RemoveDir.
+d591 2
+a592 1
+Fs_RemoveDirStub(serverPort, pathName, pathNameLength, statusPtr)
+d597 1
+d605 1
+d619 2
+a620 1
+ *	Returns KERN_SUCCESS.  Fills in a Sprite status code.
+d629 2
+a630 1
+Fs_ChangeDirStub(serverPort, pathName, pathNameLength, statusPtr)
+d635 1
+d643 1
+d656 2
+a657 2
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code and the new 
+ *	stream ID.
+d665 2
+a666 1
+Fs_GetNewIDStub(serverPort, streamID, newStreamIDPtr, statusPtr)
+d672 1
+d679 1
+d692 3
+a694 2
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code and, if 
+ *	successful, the attributes for the named file.
+d703 1
+a703 1
+		     statusPtr, attrPtr)
+d710 1
+d718 1
+d811 2
+a812 2
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code and the 
+ *	attributes of the given file.
+d820 2
+a821 1
+Fs_GetAttributesIDStub(serverPort, streamID, statusPtr, attrPtr)
+d826 1
+d841 1
+d854 2
+a855 1
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code.
+d864 1
+a864 1
+	       flags, statusPtr)
+d872 1
+d880 1
+d892 2
+a893 1
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code.
+d901 2
+a902 1
+Fs_SetAttrIDStub(serverPort, streamID, newAttr, flags, statusPtr)
+d908 1
+d930 1
+d944 2
+a945 1
+ *	Returns KERN_SUCCESS;
+d954 1
+a954 1
+Fs_SetDefPermStub(serverPort, permissions, oldPermPtr)
+d964 1
+d976 1
+d988 2
+a989 1
+ *	Returns KERN_SUCCESS.  Fills in a Sprite status code.
+d998 1
+a998 1
+		linkNameLength, statusPtr)
+d1005 1
+d1014 1
+d1027 2
+a1028 1
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code.
+d1037 1
+a1037 1
+	      statusPtr)
+d1044 1
+d1053 1
+d1066 2
+a1067 1
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code.
+d1076 1
+a1076 1
+	       linkNameLength, remoteFlag, statusPtr)
+d1084 1
+d1093 1
+d1108 3
+a1110 3
+ *	Returns KERN_SUCCESS.  Fills in the Sprite return code from the 
+ *	open and read, and fills in the number of bytes written into the 
+ *	user buffer.
+d1119 1
+a1119 1
+		statusPtr, linkSizePtr)
+d1127 1
+d1173 1
+d1188 5
+a1192 4
+ *	Returns KERN_SUCCESS and fills in a Sprite return status.  The
+ *	output buffer is modified with results for the command.  The format
+ *	of the various results is explained in user/fs.h for generic
+ *	operations, and in dev/ *.h for device specific operations.
+d1202 1
+a1202 1
+			   outBufSize, outBuffer, statusPtr)
+d1211 1
+d1357 1
+d1373 2
+a1374 2
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code and the 
+ *	two new stream IDs.
+d1382 2
+a1383 1
+Fs_CreatePipeStub(serverPort, statusPtr, inStreamIDPtr, outStreamIDPtr)
+d1388 1
+d1428 1
+d1442 2
+a1443 1
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code.
+d1452 2
+a1453 1
+Fs_AccessStub(serverPort, fileName, fileNameLength, mode, statusPtr)
+d1459 1
+d1479 1
+@
+
+
+1.2
+log
+@Snapshot.  FS appears to work.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/fs/RCS/fsSysCall.c,v 1.1 91/11/18 13:56:07 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a263 1
+#ifdef SPRITED_REALFS
+d267 1
+a267 4
+    if (procPtr->vmPtr->sharedSegs != (List_Links *)NIL) {
+	Vm_CleanupSharedFile(procPtr,streamPtr);
+    }
+#endif
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d4 3
+a6 4
+ *	These are the system call stubs that get called from the
+ *	system call trap handler.  These routines make sure that
+ *	their arguments are addressable and then call the workhorse
+ *	routines to do the actual work.
+d8 1
+a8 1
+ * Copyright 1987 Regents of the University of California
+d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsSysCall.c,v 9.9 91/05/21 11:32:56 mgbaker Exp $ SPRITE (Berkeley)";
+d25 3
+d30 1
+d37 1
+d52 2
+a53 1
+ *	SUCCESS, or an error code from finding junk on the disk.
+d60 9
+a68 5
+
+ReturnStatus
+Fs_AttachDiskStub(userDeviceName, userLocalName, flags)
+    char *userDeviceName;/* Name of raw disk device file to attach */
+    char *userLocalName;/* Local directory name where disk is attached */
+d70 1
+d72 12
+a83 1
+    ReturnStatus status;
+a85 4
+    char *deviceName;		/* Kernel resident pathname storage */
+    char *localName;		/* Kernel resident pathname storage */
+    int	localNameLength;
+    int	deviceNameLength;
+d87 8
+a94 7
+    if (userLocalName != (char *)NIL && userLocalName != (char *)0) {
+	localName = (char *)malloc(FS_MAX_PATH_NAME_LENGTH);
+	if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, userLocalName, localName,
+			   &localNameLength) != SUCCESS) {
+	    return(SYS_ARG_NOACCESS);
+	}
+    } else {
+d97 1
+a97 10
+    if (userDeviceName != (char *)NIL && userDeviceName != (char *)0) {
+	deviceName = (char *)malloc(FS_MAX_PATH_NAME_LENGTH);
+	if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, userDeviceName, deviceName,
+			   &deviceNameLength) != SUCCESS) {
+	    if (localName != (char *)NIL) {
+		free(localName);
+	    }
+	    return(SYS_ARG_NOACCESS);
+	}
+    } else {
+d100 1
+d106 1
+a106 1
+	status = Fsdm_DetachDisk(localName);
+d113 1
+a113 1
+	    status = FS_INVALID_ARG;
+d120 5
+a124 4
+	    status = Fs_Open(deviceName, useFlags, FS_DEVICE, 0, &streamPtr);
+	    if (status == SUCCESS) {
+		status = Fsdm_AttachDiskByHandle(streamPtr->ioHandlePtr, 
+					     localName, flags);
+d128 3
+a130 7
+    if (deviceName != (char *)NIL) {
+	free(deviceName);
+    }
+    if (localName != (char *)NIL) {
+	free(localName);
+    }
+    return(status);
+d132 1
+d139 16
+a154 17
+ *      This is the stub for the Fs_Open system call.  This routine makes
+ *	its arguments accessible, then sets up a Stream ID for the Fs_Stream
+ *      object returned by (the internal) Fs_Open.  Stream Id's get
+ *      passed to read and write calls and identify the stream to the
+ *      system.  If FS_CREATE is one of the usage flags then the third
+ *      argument, permissions, specifies the base permissions for the
+ *      newly created file.
+ *
+ * Results:
+ *	An error code or SUCCESS if successful.
+ *
+ * Side effects:
+ *	The last argument is an out parameter and gets filled in with
+ *	the stream id.  
+ *
+ *----------------------------------------------------------------------
+ */
+d156 4
+a159 2
+ReturnStatus
+Fs_OpenStub(pathName, usageFlags, permissions, streamIDPtr)
+d161 1
+d164 2
+a165 1
+    int *streamIDPtr;		/* This is the user's handle on the open
+a167 1
+    int		 	streamID;
+d169 1
+a169 3
+    ReturnStatus 	status;
+    int			pathNameLength;
+    char		newName[FS_MAX_PATH_NAME_LENGTH];
+d171 4
+a177 11
+     * Copy the name in from user space to the kernel stack.
+     */
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
+		       &pathNameLength) != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    }
+    if (pathNameLength == FS_MAX_PATH_NAME_LENGTH) {
+	return(FS_INVALID_ARG);
+    }
+
+    /*
+d186 1
+a186 1
+    status = Fs_Open(newName, usageFlags, FS_FILE,
+a190 4
+    if (status != SUCCESS) {
+	return(status);
+    }
+
+d196 5
+a200 4
+    status = Fs_GetStreamID(streamPtr, &streamID);
+    if (status != SUCCESS) {
+	(void) Fs_Close(streamPtr);
+	return(status);
+d203 1
+a203 2
+    if (Vm_CopyOut(sizeof(int), (Address) &streamID, 
+		   (Address) streamIDPtr) == SUCCESS) {
+d205 4
+a208 5
+	return(SUCCESS);
+    } 
+    status = SYS_ARG_NOACCESS;
+    (void) Fs_UserClose(streamID);	/* This clears the streamID, too */
+    return(status);
+d215 1
+a215 1
+ * Fs_UserClose --
+d217 1
+a217 1
+ *	System call to release a stream Id.  Calls then internal Fs_Close
+d221 1
+a221 1
+ *	An return status.
+d230 3
+a232 2
+ReturnStatus
+Fs_UserClose(streamID)
+d234 1
+d241 4
+d258 2
+a259 2
+	if (status != GEN_ENOENT) {
+	    return(FS_NEW_ID_TOO_BIG);
+d261 1
+a261 1
+	return(status);
+d264 1
+d271 1
+d280 3
+a282 1
+    return(status);
+d291 1
+a291 2
+ *      The stub for the Fs_Read system call.  Calls Fs_UserRead to do the
+ *	work, then copies out the argument to the user's address space.
+d294 8
+a301 7
+ *	An return status.
+ *
+ * Side effects:
+ *	The amountReadPtr is updated to reflect the amount actually read.
+ *
+ *----------------------------------------------------------------------
+ */
+d303 4
+a306 2
+ReturnStatus
+Fs_ReadStub(streamID, amountRead, buffer, amountReadPtr)
+d309 3
+a311 2
+    Address	buffer;		/* The storage place for the read */
+    int		*amountReadPtr;	/* The amount of bytes actually read */
+d317 3
+a319 58
+    /*
+     * (Begin inlined called to Fs_UserRead.)
+     */
+    /*
+     * Map from stream ID to file pointer and do the read.
+     * If the process is not remote, Fs_Read takes care of making
+     * the read buffer accessible.
+     */
+
+    procPtr = Proc_GetEffectiveProc();
+    status = Fs_GetStreamPtr(procPtr, streamID, &streamPtr);
+    if (status == SUCCESS) {
+	status = Fs_Read(streamPtr, buffer, streamPtr->offset, &amountRead);
+    } else {
+	amountRead = 0;
+    }
+    /*
+     * (End Fs_UserRead.)
+     */
+
+    if (Vm_CopyOut(sizeof(int), (Address) &amountRead, 
+		   (Address) amountReadPtr) != SUCCESS) {
+	status = SYS_ARG_NOACCESS;
+    }
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_UserRead --
+ *
+ *      The Fs_Read system call.  Read from the file indicated by the
+ *      stream id into the buffer.  bufSize indicates how much
+ *      data to read, and amountReadPtr is an output parameter that
+ *      indicates how much data was read.  A length of zero means
+ *      end-of-file.
+ *
+ * Results:
+ *	A return status.
+ *
+ * Side effects:
+ *	The amountReadPtr is updated to reflect the amount actually read.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Fs_UserRead(streamID, amountRead, buffer, amountReadPtr)
+    int		streamID;	/* The user's index into its open file list */
+    int		amountRead;	/* The amount of bytes to read */
+    Address	buffer;		/* The storage place for the read */
+    int		*amountReadPtr;	/* The amount of bytes actually read */
+{
+    register ReturnStatus	status;
+    Fs_Stream		*streamPtr;	/* The stream to read from */
+    Proc_ControlBlock 	*procPtr;	/* This process's control block */
+d331 2
+a332 1
+	status = Fs_Read(streamPtr, buffer, streamPtr->offset, amountReadPtr);
+a335 104
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_ReadVectorStub --
+ *
+ *      The stub for the Fs_ReadVector system call.  Calls Fs_UserReadVector 
+ *	to do the work, then copies out the argument to the user's address 
+ *	space.
+ *
+ * Results:
+ *	An return status.
+ *
+ * Side effects:
+ *	The amountReadPtr is updated to reflect the amount actually read.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Fs_ReadVectorStub(streamID, numVectors, userVectorArray, amountReadPtr)
+    int		streamID;	/* The user's index into its open file list. */
+    int		numVectors;	/* The # of vectors in userVectorArray. */
+    Fs_IOVector	userVectorArray[];	
+				/* The vectors defining where and how much to
+				 * read. */
+    int		*amountReadPtr;	/* The amount of bytes actually read */
+{
+    ReturnStatus status;
+    int		amountRead;
+    Fs_IOVector *vectorPtr;
+
+    if (numVectors < 0) {
+	return(SYS_INVALID_ARG);
+    }
+
+    /*
+     * Copy the I/O vector into kernel space. The buffer addresses in each
+     * vector will be made accessible by the Fs_Read routine.
+     */
+    vectorPtr = (Fs_IOVector *) malloc(numVectors * sizeof(Fs_IOVector));
+    if (Vm_CopyIn(numVectors * sizeof(Fs_IOVector), 
+		   (Address) userVectorArray,
+		   (Address) vectorPtr) != SUCCESS) {
+	free((Address) vectorPtr);
+	return(SYS_ARG_NOACCESS);
+    }
+
+    status = Fs_UserReadVector(streamID, numVectors, vectorPtr, &amountRead);
+
+    free((Address) vectorPtr);
+    if (Vm_CopyOut(sizeof(int), (Address) &amountRead, 
+		   (Address) amountReadPtr) != SUCCESS) {
+	status = SYS_ARG_NOACCESS;
+    }
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_UserReadVector --
+ *
+ *      The Fs_ReadVector system call.  Read from the file indicated by
+ *      the stream ID into the buffer.  Each I/O vector contains a value
+ *      to indicate how much data to read. *AmountReadPtr contains the
+ *      total number of bytes read into the vector buffers.
+ *      *amountReadPtr will be smaller that the sum of the bufSize fields
+ *      in the vector array if an error occurs or an end-of-file is
+ *      reached.  A length of zero in *amountReadPtr means an end-of-file
+ *      occurred on the first buffer in the vector.
+ *
+ * Results:
+ *	A return status.
+ *
+ * Side effects:
+ *	The *amountReadPtr is updated to reflect the amount actually read.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Fs_UserReadVector(streamID, numVectors, vectorPtr, amountReadPtr)
+    int		streamID;	/* The user's index into its open file list */
+    register int numVectors;	/* The # of vectors in vectorArray */
+    register Fs_IOVector *vectorPtr;	
+				/* The vectors defining where and how much to 
+				 * read. */
+    int		*amountReadPtr;	/* Total # of bytes read. */
+{
+    ReturnStatus	status;
+    Fs_Stream		*streamPtr;	/* The stream to read from */
+    Proc_ControlBlock 	*procPtr;	/* This process's control block */
+    register int	sum = 0;	/* Total # of bytes read. */
+    register int	i;
+
+    /*
+     * Map from stream ID to file pointer and do the read.
+     * If the process is not remote, Fs_Read takes care of making
+     * the read buffer accessible.
+     */
+d337 2
+a338 23
+    procPtr = Proc_GetEffectiveProc();
+    status = Fs_GetStreamPtr(procPtr, streamID, &streamPtr);
+
+    if (status == SUCCESS) {
+	/*
+	 * Doing a Fs_Read for each vector buffer is probably not the
+	 * most efficiennt way to do this, but it is simple.
+	 */
+	for (i= 0; i < numVectors; i++, vectorPtr++) {
+
+	    status = Fs_Read(streamPtr, vectorPtr->buffer, streamPtr->offset, 
+				&(vectorPtr->bufSize));
+	    /*
+	     * Check to see if the read failed or we got an end-of-file.
+	     */
+	    if ((status != SUCCESS) || (vectorPtr->bufSize == 0)) {
+		break;
+	    }
+	    sum += vectorPtr->bufSize;
+	}
+    }
+    *amountReadPtr = sum;
+    return(status);
+d347 1
+a347 2
+ *	The Fs_Write system call stub.  Calls Fs_UserWrite to do the
+ *	work, then copies out the amount written to the user's address space.
+d350 18
+a367 14
+ *	A return status.
+ *
+ * Side effects:
+ *	The writeLengthPtr is updated to reflect the amount actually written.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Fs_WriteStub(streamID, writeLength, buffer, writeLengthPtr)
+    int streamID;
+    int writeLength;
+    Address buffer;
+    int *writeLengthPtr;
+d373 3
+a375 53
+    /*
+     * (Begin inlined Fs_UserWrite.)
+     */
+    /*
+     * Map from stream ID to streamPtr.  If the process is not remote,
+     * Fs_Write takes care of making the user's buffer accessible.
+     */
+    procPtr = Proc_GetEffectiveProc();
+    status = Fs_GetStreamPtr(procPtr, streamID, &streamPtr);
+    if (status == SUCCESS) {
+	status = Fs_Write(streamPtr, buffer, streamPtr->offset, &writeLength);
+    } else {
+	writeLength = 0;
+    }
+    /*
+     * (End inlined Fs_UserWrite.)
+     */
+    if (Vm_CopyOut(sizeof(int), (Address) &writeLength, 
+		   (Address) writeLengthPtr) != SUCCESS) {
+	status = SYS_ARG_NOACCESS;
+    }
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_UserWrite --
+ *
+ *	The user interface to Fs_Write.  Write writeLength characters from
+ *	buffer to the file identified by streamID.  *writeLengthPtr
+ *	is updated to reflect how much was actually written.
+ *
+ * Results:
+ *	A return status. 
+ *
+ * Side effects:
+ *	The writeLengthPtr is updated to reflect the amount actually written.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Fs_UserWrite(streamID, writeLength, buffer, writeLengthPtr)
+    int streamID;
+    int writeLength;
+    Address buffer;
+    int *writeLengthPtr;
+{
+    ReturnStatus status;
+    Fs_Stream	*streamPtr;	/* The stream to write to */
+    Proc_ControlBlock *procPtr;	/* This process's control block */
+d385 2
+a386 1
+	status = Fs_Write(streamPtr, buffer, streamPtr->offset, writeLengthPtr);
+a389 52
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_WriteVectorStub --
+ *
+ *      The stub for the Fs_WriteVector system call.  Calls Fs_UserWriteVector 
+ *	to do the work, then copies out the argument to the user's address 
+ *	space.
+ *
+ * Results:
+ *	An return status.
+ *
+ * Side effects:
+ *	The *amountWrittenPtr is updated to reflect the amount actually read.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Fs_WriteVectorStub(streamID, numVectors, userVectorArray, amountWrittenPtr)
+    int		streamID;	/* The user's index into its open file list. */
+    int		numVectors;	/* The # of vectors in userVectorArray. */
+    Fs_IOVector	userVectorArray[];	
+				/* The vectors defining where and how much to
+				 * write. */
+    int	*amountWrittenPtr;	/* The amount of bytes actually written. */
+{
+    ReturnStatus status;
+    int		amountWritten;
+    Fs_IOVector *vectorPtr;
+
+    if (numVectors < 0) {
+	return(SYS_INVALID_ARG);
+    }
+
+    /*
+     * Copy the I/O vector into kernel space. The buffer addresses in each
+     * vector will be made accessible by the Fs_Write routine.
+     */
+    vectorPtr = (Fs_IOVector *) malloc(numVectors * sizeof(Fs_IOVector));
+    if (Vm_CopyIn(numVectors * sizeof(Fs_IOVector), 
+		   (Address) userVectorArray,
+		   (Address) vectorPtr) != SUCCESS) {
+	free((Address) vectorPtr);
+	return(SYS_ARG_NOACCESS);
+    }
+
+    status = Fs_UserWriteVector(streamID, numVectors, vectorPtr, 
+			&amountWritten);
+d391 2
+a392 6
+    free((Address) vectorPtr);
+    if (Vm_CopyOut(sizeof(int), (Address) &amountWritten, 
+		   (Address) amountWrittenPtr) != SUCCESS) {
+	status = SYS_ARG_NOACCESS;
+    }
+    return(status);
+a398 66
+ * Fs_UserWriteVector --
+ *
+ *      The Fs_WriteVector system call.  Write from the file indicated by
+ *      the stream ID into the buffer.  Each I/O vector contains a value
+ *      to indicate how much data to write. *AmountWrittenPtr contains the
+ *      total number of bytes written from the vector buffers.
+ *
+ * Results:
+ *	A return status.
+ *
+ * Side effects:
+ *	The *amountWrittenPtr is updated to reflect the amount 
+ *	actually written.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Fs_UserWriteVector(streamID, numVectors, vectorPtr, amountWrittenPtr)
+    int		streamID;	/* The user's index into its open file list */
+    register int numVectors;	/* The # of vectors in vectorArray */
+    register Fs_IOVector *vectorPtr;	
+				/* The vectors defining where and how much to 
+				 * write. */
+    int		*amountWrittenPtr;	/* Total # of bytes written. */
+{
+    ReturnStatus	status;
+    Fs_Stream		*streamPtr;	/* The stream to write to. */
+    Proc_ControlBlock 	*procPtr;	/* This process's control block. */
+    register int	sum = 0;	/* Total # of bytes written. */
+    register int	i;
+
+    /*
+     * Map from stream ID to file pointer and do the write.
+     * If the process is not remote, Fs_Write takes care of making
+     * the write buffer accessible.
+     */
+
+    procPtr = Proc_GetEffectiveProc();
+    status = Fs_GetStreamPtr(procPtr, streamID, &streamPtr);
+
+    if (status == SUCCESS) {
+	/*
+	 * Doing a Fs_Write for each vector buffer is probably not the
+	 * most efficiennt way to do this, but it is simple.
+	 */
+	for (i= 0; i < numVectors; i++, vectorPtr++) {
+
+	    status = Fs_Write(streamPtr, vectorPtr->buffer, streamPtr->offset, 
+				&(vectorPtr->bufSize));
+	    /*
+	     * Check to see if the write failed or we got an end-of-file.
+	     */
+	    if ((status != SUCCESS) || (vectorPtr->bufSize == 0)) {
+		break;
+	    }
+	    sum += vectorPtr->bufSize;
+	}
+    }
+    *amountWrittenPtr = sum;
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+d406 1
+a406 1
+ *	A return code.
+d409 1
+a409 1
+ *	Call Fs_Command
+d411 13
+a423 2
+ *----------------------------------------------------------------------
+ */
+d425 3
+a427 8
+ReturnStatus
+Fs_CommandStub(command, bufSize, buffer)
+    int command;	/* Defined in user include "test.h" */
+    int bufSize;	/* Size in bytes of buffer */
+    Address buffer;	/* In/Out - Command specific data */
+{
+    ReturnStatus status;
+    Address localBuffer;
+d429 3
+a431 8
+    if (bufSize > 0) {
+	localBuffer = (Address)malloc(bufSize);
+	status = Vm_CopyIn(bufSize, buffer, localBuffer);
+	if (status != SUCCESS) {
+	    return(status);
+	}
+    } else {
+	localBuffer = (Address)NIL;
+d434 3
+a436 1
+    status = Fs_Command(command, bufSize, localBuffer);
+d440 1
+a440 1
+	    status = Vm_CopyOut(bufSize, localBuffer, buffer);
+d442 1
+a442 1
+	free(localBuffer);
+d444 2
+a445 1
+    return(status);
+d456 1
+a456 1
+ *	Those of Fs_MakeDevice.
+d464 4
+a467 2
+ReturnStatus
+Fs_MakeDeviceStub(pathName, devicePtr, permissions)
+d469 2
+a470 1
+    Fs_Device *devicePtr;	/* Specifies the device file attributes */
+d472 1
+d474 4
+a477 3
+    Fs_Device 			device;
+    int				pathNameLength;
+    char			newName[FS_MAX_PATH_NAME_LENGTH];
+d479 2
+a480 16
+    /*
+     * Copy the device name in from user space onto the kernel stack.
+     */
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
+		       &pathNameLength) != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    }
+    if (pathNameLength == FS_MAX_PATH_NAME_LENGTH) {
+	return(FS_INVALID_ARG);
+    }
+    if (Vm_CopyIn(sizeof(Fs_Device), (Address)devicePtr, 
+		  (Address)&device) != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    }
+
+    return(Fs_MakeDevice(newName, &device, permissions));
+d491 1
+a491 1
+ *	Those of Fs_MakeDir.
+d499 5
+a503 3
+ReturnStatus
+Fs_MakeDirStub(pathName, permissions)
+    char *pathName;
+d505 1
+d507 4
+a510 14
+    int			pathNameLength;
+    char		newName[FS_MAX_PATH_NAME_LENGTH];
+
+    /*
+     * Copy the name in from user space to the kernel stack.
+     */
+
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
+		       &pathNameLength) != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    }
+    if (pathNameLength == FS_MAX_PATH_NAME_LENGTH) {
+	return(FS_INVALID_ARG);
+    }
+d512 2
+a513 1
+    return(Fs_MakeDir(newName, permissions));
+d524 2
+a525 1
+ *	Those of Fs_Remove.
+d529 10
+a538 7
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Fs_RemoveStub(pathName)
+    char *pathName;
+d540 4
+a543 14
+    int			pathNameLength;
+    char		newName[FS_MAX_PATH_NAME_LENGTH];
+
+    /*
+     * Copy the name in from user space to the kernel stack.
+     */
+
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
+		       &pathNameLength) != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    }
+    if (pathNameLength == FS_MAX_PATH_NAME_LENGTH) {
+	return(FS_INVALID_ARG);
+    }
+d545 2
+a546 1
+    return(Fs_Remove(newName));
+d557 2
+a558 1
+ *	The results of Fs_RemoveDir.
+d562 10
+a571 7
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Fs_RemoveDirStub(pathName)
+    char *pathName;
+d573 4
+a576 2
+    int		pathNameLength;
+    char	newName[FS_MAX_PATH_NAME_LENGTH];
+d578 2
+a579 12
+    /*
+     * Copy the name in from user space onto the kernel stack.
+     */
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
+		       &pathNameLength) != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    }
+    if (pathNameLength == FS_MAX_PATH_NAME_LENGTH) {
+	return(FS_INVALID_ARG);
+    }
+
+    return(Fs_RemoveDir(newName));
+d587 1
+a587 1
+ *	The stub for the system call that changes the current directory.
+d592 1
+a592 1
+ *	None.
+d597 9
+a605 6
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Fs_ChangeDirStub(pathName)
+    char *pathName;
+d607 4
+a610 2
+    int		pathNameLength;
+    char	newName[FS_MAX_PATH_NAME_LENGTH];
+d612 2
+a613 12
+    /*
+     * Copy the name in from user space onto the kernel stack.
+     */
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
+		       &pathNameLength) != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    }
+    if (pathNameLength == FS_MAX_PATH_NAME_LENGTH) {
+	return(FS_INVALID_ARG);
+    }
+
+    return(Fs_ChangeDir(newName));
+d625 2
+a626 1
+ *	A return status.
+d630 10
+a639 7
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fs_GetNewIDStub(streamID, newStreamIDPtr)
+    int streamID;
+    int *newStreamIDPtr;
+d641 3
+a643 11
+    ReturnStatus 	status;
+    int 		newStreamID;
+
+    if (Vm_CopyIn(sizeof(int), (Address) newStreamIDPtr, 
+		  (Address) &newStreamID) != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    }
+    status = Fs_GetNewID(streamID, &newStreamID);
+    if (status != SUCCESS) {
+	return(status);
+    }
+d645 2
+a646 6
+    if (Vm_CopyOut(sizeof(int), (Address) &newStreamID, 
+			(Address) newStreamIDPtr) != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    } else {
+	return(SUCCESS);
+    }
+d658 2
+a659 1
+ *	The attributes for the named file.
+d662 10
+a671 7
+ *	*attrPtr is filled in with the attributes of the file.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fs_GetAttributesStub(pathName, fileOrLink, attrPtr)
+    char *pathName;
+d673 2
+a674 1
+    Fs_Attributes *attrPtr;
+d676 4
+a679 4
+    ReturnStatus 	status;
+    Fs_Attributes	attributes;
+    int			pathNameLength;
+    char		newName[FS_MAX_PATH_NAME_LENGTH];
+d681 2
+a682 22
+    /*
+     * Copy the name in from user space onto the kernel stack.
+     */
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
+		       &pathNameLength) != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    }
+    if (pathNameLength == FS_MAX_PATH_NAME_LENGTH) {
+	return(FS_INVALID_ARG);
+    }
+
+    status = Fs_GetAttributes(newName, fileOrLink, &attributes);
+    if (status != SUCCESS) {
+	return(status);
+    }
+
+    if (Vm_CopyOut(sizeof(attributes), (Address) &attributes, 
+		   (Address) attrPtr) != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    } else {
+	return(SUCCESS);
+    }
+d694 3
+a696 6
+ *	SYS_ARG_NOACCESS if pathname not accessible.
+ *	FS_INVALID_ARG if pathname too long.
+ *	Otherwise:
+ *	    SUCCESS if accessible.
+ *	    FS_NO_ACCESS if not accessible.
+ *
+d704 2
+a705 2
+    char 	*pathName;
+    int		perm;
+a710 2
+    int			pathNameLength;
+    char		newName[FS_MAX_PATH_NAME_LENGTH];
+a712 11
+    /*
+     * Copy the name in from user space onto the kernel stack.
+     */
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
+		       &pathNameLength) != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    }
+    if (pathNameLength == FS_MAX_PATH_NAME_LENGTH) {
+	return(FS_INVALID_ARG);
+    }
+
+d715 1
+a715 1
+    status = Fs_GetAttributes(newName, FS_ATTRIB_FILE, &attributes);
+d774 2
+a775 2
+ *	Get the attributes for the file referred to by the specified
+ *	descriptor.
+d778 2
+a779 2
+ *	 *attrPtr is filled in with the attributes of the file.
+ *
+d782 3
+a784 2
+ReturnStatus
+Fs_GetAttributesIDStub(streamID, attrPtr)
+d786 2
+a787 1
+    Fs_Attributes *attrPtr;	/* point to buffer to hold attributes */
+a790 1
+    Fs_Attributes 		attributes;
+d792 4
+d797 2
+a798 6
+    if (status != SUCCESS) {
+	return(status);
+    }
+    status = Fs_GetAttrStream(streamPtr, &attributes);
+    if (status != SUCCESS) {
+	return(status);
+d801 2
+a802 6
+    if (Vm_CopyOut(sizeof(attributes), (Address) &attributes, 
+		   (Address) attrPtr) != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    } else {
+	return(SUCCESS);
+    }
+d804 1
+a804 45
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_SetAttributesStub --
+ *
+ *	Stub for Fs_SetAttributes system call.  This is a general
+ *	routine that sets ownership, access & modify times, permissions,
+ *	and user-defined file type.  The calling process must own the file.	
+ *
+ * Results:
+ *	A return status.
+ *
+ * Side effects:
+ *	None here in this stub.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fs_SetAttributesStub(pathName, fileOrLink, attrPtr)
+    char *pathName;
+    int fileOrLink;
+    Fs_Attributes *attrPtr;
+{
+    int				pathNameLength;
+    Fs_Attributes		attr;
+    char			newName[FS_MAX_PATH_NAME_LENGTH];
+
+    if (Vm_CopyIn(sizeof(attr), (Address) attrPtr, 
+		  (Address) &attr) != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    }
+    /*
+     * Copy the name in from user space onto the kernel stack.
+     */
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
+		       &pathNameLength) != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    }
+    if (pathNameLength == FS_MAX_PATH_NAME_LENGTH) {
+	return(FS_INVALID_ARG);
+    }
+
+    return(Fs_SetAttributes(newName, fileOrLink, &attr, FS_SET_ALL_ATTRS));
+}
+d811 1
+a811 3
+ *	Stub for Fs_SetAttr system call.  Like the old Fs_SetAttributes
+ *	but with an additional flag specifying exactly which attributes
+ *	to update.
+d814 1
+a814 1
+ *	A return status.
+d821 4
+a824 2
+ReturnStatus
+Fs_SetAttrStub(pathName, fileOrLink, attrPtr, flags)
+d826 1
+d828 1
+a828 1
+    Fs_Attributes *attrPtr;	/* New values for attributes */
+d830 1
+d832 4
+a835 52
+    int				pathNameLength;
+    Fs_Attributes		attr;
+    char			newName[FS_MAX_PATH_NAME_LENGTH];
+
+    if (Vm_CopyIn(sizeof(attr), (Address) attrPtr, 
+		  (Address) &attr) != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    }
+    /*
+     * Copy the name in from user space onto the kernel stack.
+     */
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newName,
+		       &pathNameLength) != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    }
+    if (pathNameLength == FS_MAX_PATH_NAME_LENGTH) {
+	return(FS_INVALID_ARG);
+    }
+
+    return(Fs_SetAttributes(newName, fileOrLink, &attr, flags));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_SetAttributesIDStub --
+ *
+ *	Stub for Fs_SetAttributesID system call.
+ *
+ * Results:
+ *	A return status.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fs_SetAttributesIDStub(streamID, attrPtr)
+    int streamID;
+    Fs_Attributes *attrPtr;
+{
+    register 	ReturnStatus 	status;
+    Fs_Stream			*streamPtr;
+    Fs_Attributes		attr;
+    Fs_UserIDs			ids;
+    Proc_ControlBlock		*procPtr;
+
+    if (Vm_CopyIn(sizeof(attr), (Address) attrPtr, 
+		  (Address) &attr) != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    }
+d837 2
+a838 10
+    /*
+     * Map from stream ID to file pointer and get the attributes.
+     */
+    procPtr = Proc_GetEffectiveProc();
+    status = Fs_GetStreamPtr(procPtr, streamID, &streamPtr);
+    if (status == SUCCESS) {
+	Fs_SetIDs(procPtr, &ids);
+	status = Fs_SetAttrStream(streamPtr, &attr, &ids, FS_SET_ALL_ATTRS);
+    }
+    return(status);
+d846 1
+a846 2
+ *	Stub for Fs_SetAttrID system call.  Like Fs_SetAttributesID
+ *	but has a flag parameter that specifies what attrs to set.
+d849 1
+a849 1
+ *	A return status.
+d856 5
+a860 4
+ReturnStatus
+Fs_SetAttrIDStub(streamID, attrPtr, flags)
+    int streamID;		/* References file to manipulate */
+    Fs_Attributes *attrPtr;	/* New attributes for the file */
+d862 1
+a865 1
+    Fs_Attributes		attr;
+d869 3
+a871 4
+    if (Vm_CopyIn(sizeof(attr), (Address) attrPtr, 
+		  (Address) &attr) != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    }
+d880 1
+a880 1
+	status = Fs_SetAttrStream(streamPtr, &attr, &ids, flags);
+d882 3
+a884 1
+    return(status);
+d893 2
+a894 1
+ *	These defaults get inherited by child processes.
+d897 1
+a897 1
+ *	A return status.
+d905 3
+a907 2
+ReturnStatus
+Fs_SetDefPermStub(permissions, oldPermPtr)
+d915 1
+a915 1
+    int *oldPermPtr;	/* Output, the previous value of the permissions mask */
+a917 1
+    int 				oldPerm;
+d919 4
+d924 1
+a924 1
+    oldPerm = procPtr->fsPtr->filePermissions;
+d926 2
+a927 6
+    if (Proc_ByteCopy(FALSE, sizeof(int), (Address)&oldPerm, 
+		(Address)oldPermPtr) != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    } else {
+	return(SUCCESS);
+    }
+d938 1
+a938 1
+ *	A return status.
+d945 4
+a948 2
+ReturnStatus
+Fs_HardLinkStub(fileName, linkName)
+d950 1
+d952 2
+d955 5
+a959 35
+    ReturnStatus 	status = SUCCESS;
+    int			fileNameLength;
+    int			linkNameLength;
+    char		newFileName[FS_MAX_PATH_NAME_LENGTH];
+    char		*newLinkName;
+
+    /*
+     * Copy the filename in from user space onto the kernel stack.
+     */
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, fileName, newFileName,
+		       &fileNameLength) != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    }
+    if (fileNameLength == FS_MAX_PATH_NAME_LENGTH) {
+	return(FS_INVALID_ARG);
+    }
+
+    /*
+     * Maybe I could put the link name onto the stack as well but I am 
+     * allocing it here because I'm not sure if the stack is big enough.
+     * Should just make the stack bigger I suppose ...
+     */
+    newLinkName = (char  *) malloc(FS_MAX_PATH_NAME_LENGTH);
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, linkName, newLinkName,
+		       &linkNameLength) == SUCCESS) {
+	if (linkNameLength == FS_MAX_PATH_NAME_LENGTH) {
+	    status = FS_INVALID_ARG;
+	} else {
+	    status = Fs_HardLink(newFileName, newLinkName);
+	}
+    } else {
+	status = SYS_ARG_NOACCESS;
+    }
+
+    free((Address) newLinkName);
+d961 2
+a962 1
+    return(status);
+d971 1
+a971 1
+ *	Stub for Fs_Rename system call.
+d974 1
+a974 1
+ *	A return status.
+d981 4
+a984 2
+ReturnStatus
+Fs_RenameStub(pathName, newName)
+d986 1
+d988 2
+d991 5
+a995 35
+    ReturnStatus	status;
+    int			pathNameLength;
+    int			newNameLength;
+    char		newPathName[FS_MAX_PATH_NAME_LENGTH];
+    char		*newNewName;
+
+    /*
+     * Copy the name in from user space onto the kernel stack.
+     */
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, pathName, newPathName,
+		       &pathNameLength) != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    }
+    if (pathNameLength == FS_MAX_PATH_NAME_LENGTH) {
+	return(FS_INVALID_ARG);
+    }
+
+    /*
+     * Maybe I could put the new name onto the stack as well but I am 
+     * allocing it here because I'm not sure if the stack is big enough.
+     * Should just make the stack bigger I suppose ...
+     */
+    newNewName = (char  *) malloc(FS_MAX_PATH_NAME_LENGTH);
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, newName, newNewName,
+		       &newNameLength) == SUCCESS) {
+	if (newNameLength == FS_MAX_PATH_NAME_LENGTH) {
+	    status = FS_INVALID_ARG;
+	} else {
+	    status = Fs_Rename(newPathName, newNewName);
+	}
+    } else {
+	status = SYS_ARG_NOACCESS;
+    }
+
+    free((Address) newNewName);
+d997 2
+a998 1
+    return(status);
+d1007 1
+a1007 1
+ *	Stub for Fs_SymLink system call.
+d1010 1
+a1010 4
+ *	None.
+ *
+ * Side effects:
+ *	None.
+d1012 15
+a1026 7
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fs_SymLinkStub(targetName, linkName, remoteFlag)
+    char *targetName;
+    char *linkName;
+    Boolean remoteFlag;
+d1028 5
+a1032 34
+    ReturnStatus	status;
+    int			targetNameLength;
+    int			linkNameLength;
+    char		newTargetName[FS_MAX_PATH_NAME_LENGTH];
+    char		*newLinkName;
+
+    /*
+     * Copy the name in from user space onto the kernel stack.
+     */
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, targetName, newTargetName,
+		       &targetNameLength) != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    }
+    if (targetNameLength == FS_MAX_PATH_NAME_LENGTH) {
+	return(FS_INVALID_ARG);
+    }
+
+    /*
+     * Maybe I could put the new name onto the stack as well but I am 
+     * allocing it here because I'm not sure if the stack is big enough.
+     * Should just make the stack bigger I suppose ...
+     */
+    newLinkName = (char  *) malloc(FS_MAX_PATH_NAME_LENGTH);
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, linkName, newLinkName,
+		       &linkNameLength) == SUCCESS) {
+	if (linkNameLength == FS_MAX_PATH_NAME_LENGTH) {
+	    status = FS_INVALID_ARG;
+	} else {
+	    status = Fs_SymLink(newTargetName, newLinkName, remoteFlag);
+	}
+    } else {
+	status = SYS_ARG_NOACCESS;
+    }
+    free((Address) newLinkName);
+d1034 2
+a1035 1
+    return(status);
+d1049 3
+a1051 1
+ *	A return code from the open and read.
+d1054 3
+a1056 4
+ *	Fills in the buffer with contents of the link file, and
+ *	returns the amount of data stored there in *linkSizePtr.
+ *
+ *----------------------------------------------------------------------
+d1058 4
+a1061 2
+ReturnStatus
+Fs_ReadLinkStub(linkName, bufSize, buffer, linkSizePtr)
+d1063 1
+d1065 3
+a1067 2
+    char *buffer;		/* The buffer to hold the link's value */
+    int *linkSizePtr;		/* Return, the amount of data in buffer */
+d1070 1
+a1070 2
+    Fs_Stream		*streamPtr;
+    int			linkNameLength;
+d1073 9
+a1081 9
+    /*
+     * Copy the name in from user space onto the kernel stack.
+     */
+    if (Fsutil_StringNCopy(FS_MAX_PATH_NAME_LENGTH, linkName, newLinkName,
+		       &linkNameLength) != SUCCESS) {
+	return(SYS_ARG_NOACCESS);
+    }
+    if (linkNameLength == FS_MAX_PATH_NAME_LENGTH) {
+	return(FS_INVALID_ARG);
+d1084 26
+a1109 29
+    status = Fs_Open(newLinkName, FS_READ | FS_USER,
+		     FS_SYMBOLIC_LINK|FS_REMOTE_LINK, 0, &streamPtr);
+    if (status == SUCCESS) {
+	status = Fs_Read(streamPtr, buffer, 0, &bufSize);
+	if (status == SUCCESS) {
+	    /*
+	     * Sprite's link count includes the terminating null character
+	     * in the character count return while Unix doesn't.  Make our
+	     * count backward-compatible with Unix.
+	     */
+	     status = Proc_ByteCopy(TRUE, sizeof(int), (Address) &bufSize,
+		    (Address) &linkNameLength);
+	    if (status == SUCCESS) {
+		if (linkNameLength >= FS_MAX_PATH_NAME_LENGTH) {
+		    status = FS_INVALID_ARG;
+		} else {
+		    status = Proc_ByteCopy(TRUE, linkNameLength,
+			    (Address) buffer, (Address) newLinkName);
+		    if (status == SUCCESS &&
+			    newLinkName[linkNameLength-1] == '\0') {
+			linkNameLength--;
+			status = Proc_ByteCopy(FALSE, sizeof(int),
+				(Address) &linkNameLength, (Address) &bufSize);
+		    }
+		}
+	    }
+	    status = Proc_ByteCopy(FALSE, sizeof(int), (Address)&linkNameLength,
+			       (Address)linkSizePtr);
+	}
+d1112 2
+a1113 1
+    return(status);
+d1127 4
+a1130 4
+ *	A return status.  The output buffer is modified with results
+ *	for the command.  The format of the various results is explained
+ *	in user/fs.h for generic operations, and in dev/ *.h for
+ *	device specific operations.
+d1138 4
+a1141 3
+ReturnStatus
+Fs_IOControlStub(streamID, command, inBufSize, inBuffer,
+			   outBufSize, outBuffer)
+d1145 1
+a1145 1
+    Address 	inBuffer;	/* Command specific input parameters */
+d1147 2
+a1148 1
+    Address 	outBuffer;	/* Command specific output parameters */
+d1159 4
+d1169 1
+a1169 1
+	return(status);
+d1173 2
+a1174 1
+	return(FS_STALE_HANDLE);
+d1178 1
+a1178 1
+    ioctl.format = mach_Format;
+d1193 1
+a1193 1
+	ioctl.inBuffer = inBuffer;
+d1195 1
+a1195 1
+	ioctl.outBuffer = outBuffer;
+d1197 2
+a1198 1
+	return(Fs_IOControl(streamPtr, &ioctl, &reply));
+d1202 2
+a1203 1
+	return(SYS_INVALID_ARG);
+d1212 3
+a1214 3
+    if ((outBufSize > 0) && (outBuffer != (Address)0) &&
+			    (outBuffer != (Address)NIL)){
+	ioctl.outBuffer = localOutBuffer = (Address) malloc(outBufSize);
+d1220 2
+a1221 2
+    if ((inBufSize > 0) && (inBuffer != (Address)0) &&
+			   (inBuffer != (Address)NIL)) {
+d1228 1
+a1228 1
+				malloc(inBufSize + 3 * sizeof(int));
+d1230 1
+a1230 1
+	ioctl.inBuffer  = localInBuffer = (Address) malloc(inBufSize);
+d1239 2
+a1240 1
+	Vm_CopyIn(ioctl.inBufSize, inBuffer, ioctl.inBuffer) != SUCCESS) {
+d1281 1
+a1281 1
+				    outBuffer);
+d1286 1
+a1286 1
+	free(localInBuffer);
+d1289 1
+a1289 1
+	free(localOutBuffer);
+d1291 4
+a1294 1
+    return(status);
+d1303 4
+a1306 11
+ *      This is the stub for the Fsio_CreatePipe system call.  This routine sets
+ *      up stream IDs for the two Fs_Stream objects returned by (the internal)
+ *      Fsio_CreatePipe: one for reading the pipe and one for writing to it.
+ *
+ * Results:
+ *	A retrun status or SUCCESS if successful.
+ *
+ * Side effects:
+ *	The two arguments are out parameters and get filled in with a
+ *	stream id.  Also, opening a pipe sets up state until both ends are 
+ *	closed with Fs_Close system calls.
+d1308 15
+a1322 8
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fs_CreatePipeStub(inStreamIDPtr, outStreamIDPtr)
+    int *inStreamIDPtr;		/* Handle that the user can use to read the
+				 * pipe. */
+    int *outStreamIDPtr;	/* Handle that the user can use to write the
+				 * pipe. */
+a1325 1
+    int		 		inStreamID;
+a1326 1
+    int				outStreamID;
+d1328 4
+d1337 1
+a1337 1
+	return(status);
+d1346 1
+a1346 1
+    status = Fs_GetStreamID(inStreamPtr, &inStreamID);
+d1350 1
+a1350 1
+	return(status);
+d1352 1
+a1352 1
+    status = Fs_GetStreamID(outStreamPtr, &outStreamID);
+d1354 1
+a1354 1
+	Fs_ClearStreamID(inStreamID, (Proc_ControlBlock *)NIL);
+d1357 1
+a1357 1
+	return(status);
+d1360 32
+a1391 3
+    /*
+     * Copy out the stream ids to the user.
+     */
+d1393 4
+a1396 6
+    if (Vm_CopyOut(sizeof(int), (Address) &inStreamID, 
+		   (Address) inStreamIDPtr) == SUCCESS &&
+	Vm_CopyOut(sizeof(int), (Address) &outStreamID, 
+		   (Address) outStreamIDPtr) == SUCCESS) {
+	return(SUCCESS);
+    }
+d1398 2
+a1399 2
+    /*
+     * If couldn't copy out then clean up state and return an error.
+d1401 6
+a1406 5
+
+    Fs_ClearStreamID(inStreamID, (Proc_ControlBlock *)NIL);
+    Fs_ClearStreamID(outStreamID, (Proc_ControlBlock *)NIL);
+    (void) Fs_Close(inStreamPtr);
+    (void) Fs_Close(outStreamPtr);
+d1408 2
+a1409 1
+    return(SYS_ARG_NOACCESS);
+a1410 1
+
+@

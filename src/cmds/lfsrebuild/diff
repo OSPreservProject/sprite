@@ -1,0 +1,493 @@
+17c17
+< static char rcsid[] = "$Header: /sprite/src/cmds/fscheck/RCS/checkdir.c,v 1.29 90/10/10 15:29:03 mendel Exp $ SPRITE (Berkeley)";
+---
+> static char rcsid[] = "$Header: /sprite/src/cmds/fscheck/RCS/checkdir.c,v 1.30 90/11/01 23:28:33 jhh Exp $ SPRITE (Berkeley)";
+20c20
+< #include <option.h>
+---
+> #include "option.h"
+22c22
+< #include <list.h>
+---
+> #include "list.h"
+27c27,28
+< static  int 		lostFoundFileNum = -1;
+---
+> static	int		adding = 0;
+> extern	int 		writeDisk;
+28a30,43
+> static	FdInfo		*descInfoArray;
+> static	int	
+> lostFoundFileNum = -1;
+> extern	int		patchRoot;
+> int			outputFileNum = -1;
+> int			partFID;
+> Ofs_DomainHeader		*domainPtr;
+> 
+> void			CheckDirEntry();
+> static void		CheckDir();
+> static ReturnStatus	AddToDirectory();
+> 
+> Fsdm_FileDescriptor	*rootFDPtr;
+> Fsdm_FileDescriptor	*lostFoundFDPtr;
+30,44c45
+< int foundError;
+< int verbose = 1;
+< int debug = 0;
+< int tooBig = 0;
+< static int		diskFd;
+< 
+< Fsdm_FileDescriptor	*rootFDPtr, *lostFoundFDPtr;
+< 
+< static int MakePtrAccessible _ARGS_((register DirIndexInfo *indexInfoPtr));
+< static int GetFirstIndex _ARGS_((int blockNum, register DirIndexInfo *indexInfoPtr));
+< static int GetNextIndex _ARGS_((register DirIndexInfo *indexInfoPtr));
+< static void OpenDir _ARGS_((Fsdm_FileDescriptor *fdPtr, FdInfo *fdInfoPtr, DirIndexInfo *indexInfoPtr, Fslcl_DirEntry **dirEntryPtrPtr));
+< static void NextDirEntry _ARGS_((DirIndexInfo *indexInfoPtr, Fslcl_DirEntry **dirEntryPtrPtr));
+< static void CloseDir _ARGS_((DirIndexInfo *indexInfoPtr));
+< static void CheckDir _ARGS_((int fdNum, Fsdm_FileDescriptor *fdPtr, FdInfo *fdInfoPtr, int parentFdNum, int lostDirNum, int *dirOKPtr));
+---
+> extern int verbose;
+70,73c71,75
+<     int bufSize,  j;
+<     LfsFileDescriptor	*descPtr;
+<     char *descBuf;
+<     LfsDescMapEntry *descMapPtr;
+---
+>     ModListElement	*modElemPtr;
+>     RelocListElement	*relocElemPtr;
+>     static char		block[FS_BLOCK_SIZE];
+>     int			blockNum;
+>     int			offset;
+75,83c77
+<     if ((fdNum < 0) || (fdNum >= superBlockPtr->descMap.maxDesc)) {
+< 	return 0;
+<     }
+<     if (descInfoArray[fdNum].flags & FD_UNREADABLE) {
+< 	return 0;
+<     }
+<     bufSize = superBlockPtr->fileLayout.descPerBlock * sizeof(*descPtr);
+< 
+<     descBuf = alloca(bufSize);
+---
+>     descInfoArray[fdNum].flags &= ~FD_MODIFIED;
+85,106c79,80
+<     descMapPtr = DescMapEntry(fdNum);
+<     if (descMapPtr->flags != LFS_DESC_MAP_ALLOCED) {
+< 	Alloc(*fdPtrPtr,Fsdm_FileDescriptor,1);
+< 	if (tooBig) {
+< 	    return 0;
+< 	}
+< 	bzero((char *) *fdPtrPtr, sizeof(Fsdm_FileDescriptor));
+< 	return 1;
+<     }
+<     if (DiskRead(diskFd, descMapPtr->blockAddress, bufSize, descBuf)
+< 		    != bufSize) {
+< 	return 0;
+<     }
+<     descPtr = (LfsFileDescriptor *)descBuf;
+<     for (j = 0; j < superBlockPtr->fileLayout.descPerBlock; j++) {
+< 	if (!(descPtr->common.flags & FSDM_FD_ALLOC)) {
+< 	    break;
+< 	}
+< 	if (descPtr->fileNumber == fdNum) {
+< 	    break;
+< 	}
+< 	descPtr++;
+---
+>     if (descInfoArray[fdNum].flags & FD_UNREADABLE) {
+> 	return(0);
+108,111c82,107
+<     if ((j >= superBlockPtr->fileLayout.descPerBlock) ||
+< 	!(descPtr->common.flags & FSDM_FD_ALLOC) ||
+< 	(descPtr->fileNumber != fdNum)) {
+< 	return 0;
+---
+>     if (descInfoArray[fdNum].flags & FD_RELOCATE) {
+> 	LIST_FORALL(relocList, (List_Links *)relocElemPtr) {
+> 	    if (relocElemPtr->origFdNum == fdNum) {
+> 		*fdPtrPtr = relocElemPtr->fdPtr;
+> 		return(1);
+> 	    }
+> 	}
+> 	Output(stderr, "FetchFileDesc: FD not found in relocate list.\n");
+> 	abort();
+>     }
+>     if (descInfoArray[fdNum].flags & ON_MOD_LIST) {
+> 	LIST_FORALL(modList, (List_Links *)modElemPtr) {
+> 	    if (modElemPtr->fdNum == fdNum) {
+> 		*fdPtrPtr = modElemPtr->fdPtr;
+> 		return(1);
+> 	    }
+> 	}
+> 	Output(stderr, "FetchFileDesc: FD not found in mod list.\n");
+> 	abort();
+>     }
+>     blockNum = domainPtr->fileDescOffset + fdNum / FSDM_FILE_DESC_PER_BLOCK;
+>     offset = (fdNum & (FSDM_FILE_DESC_PER_BLOCK - 1)) * FSDM_MAX_FILE_DESC_SIZE;
+>     if (Disk_BlockRead(partFID, domainPtr, blockNum, 1, 
+> 		       (Address) block) < 0) {
+> 	OutputPerror("FetchFileDesc: Read failed on previously readable block");
+> 	exit(EXIT_READ_FAILURE);
+117c113
+<     bcopy((Address)&(descPtr->common), (Address)*fdPtrPtr, 
+---
+>     bcopy((Address)&block[offset], (Address)*fdPtrPtr, 
+143,144c139,167
+<     extern void panic();
+<     panic("StoreFileDesc not implemented\n");
+---
+>     ModListElement	*modElemPtr;
+> 
+>     if (descInfoArray[fdNum].flags & FD_MODIFIED) {
+> 	if (descInfoArray[fdNum].flags & ON_MOD_LIST) {
+> 	    LIST_FORALL(modList, (List_Links *)modElemPtr) {
+> 		if (modElemPtr->fdNum == fdNum) {
+> 		    /*
+> 		     * The old fd may be in use on another list so we can't
+> 		     * free it, but it may become unreferenced. 
+> 		     */
+> 		    modElemPtr->fdPtr = fdPtr;
+> 		    return;
+> 		}
+> 	    }
+> 	    Output(stderr, "StoreFileDesc: FD not found in list.\n");
+> 	    abort();
+> 	} else {
+> 	    ModListElement	*modElemPtr;
+> 
+> 	    Alloc(modElemPtr,ModListElement,1);
+> 	    if (tooBig) {
+> 		return;
+> 	    }
+> 	    descInfoArray[fdNum].flags |= ON_MOD_LIST;
+> 	    modElemPtr->fdNum = fdNum;
+> 	    modElemPtr->fdPtr = fdPtr;
+> 	    List_Insert((List_Links *)modElemPtr, LIST_ATREAR(modList));
+> 	}
+>     }
+186,189c209,212
+< 	if (DiskRead(diskFd,
+< 			  *blockAddrPtr, FS_BLOCK_SIZE,
+< 			  indexInfoPtr->firstBlock) != FS_BLOCK_SIZE) {
+< 	    fprintf(stderr,"MakePtrAccessible: Read (1) failed block %d\n",
+---
+> 	if (Disk_FragRead(partFID, domainPtr,
+> 			  *blockAddrPtr, FS_FRAGMENTS_PER_BLOCK,
+> 			  indexInfoPtr->firstBlock) < 0) {
+> 	    Output(stderr,"MakePtrAccessible: Read (1) failed block %d\n",
+206,209c229,232
+< 	if (DiskRead(diskFd, 
+< 			  *blockAddrPtr, FS_BLOCK_SIZE,
+< 			  indexInfoPtr->secondBlock) != FS_BLOCK_SIZE) {
+< 	    fprintf(stderr,"MakePtrAccessible: Read (2) failed block %d\n",
+---
+> 	if (Disk_FragRead(partFID, domainPtr,
+> 			  *blockAddrPtr, FS_FRAGMENTS_PER_BLOCK,
+> 			  indexInfoPtr->secondBlock) < 0) {
+> 	    Output(stderr,"MakePtrAccessible: Read (2) failed block %d\n",
+406c429
+< static void
+---
+> void
+425c448
+< 	fprintf(stderr,
+---
+> 	Output(stderr,
+438c461
+< 	fprintf(stderr, "OpenDir: Error setting up index\n");
+---
+> 	Output(stderr, "OpenDir: Error setting up index\n");
+451,456c474,480
+<     if (DiskRead(diskFd, 
+< 		      indexInfoPtr->blockAddr, 
+< 		      fragsToRead*FS_FRAGMENT_SIZE, indexInfoPtr->dirBlock) 
+< 		      != fragsToRead*FS_FRAGMENT_SIZE) {
+< 	fprintf(stderr, "OpenDir: Read failed block %d\n",
+< 		       indexInfoPtr->blockAddr); 
+---
+>     if (Disk_FragRead(partFID, domainPtr,
+> 		      indexInfoPtr->blockAddr + 
+> 		      domainPtr->dataOffset * FS_FRAGMENTS_PER_BLOCK, 
+> 		      fragsToRead, indexInfoPtr->dirBlock) < 0) {
+> 	Output(stderr, "OpenDir: Read failed block %d\n",
+> 		       indexInfoPtr->blockAddr + 
+> 		               domainPtr->dataOffset * FS_FRAGMENTS_PER_BLOCK);
+481c505
+< static void
+---
+> void
+501a526,537
+> 	if (indexInfoPtr->dirDirty && writeDisk) {
+> 	    if (Disk_FragWrite(partFID, domainPtr,
+> 			      indexInfoPtr->blockAddr + 
+> 			      domainPtr->dataOffset * 
+> 			      FS_FRAGMENTS_PER_BLOCK, 
+> 			      indexInfoPtr->numFrags, 
+> 			      indexInfoPtr->dirBlock) < 0) {
+> 		Output(stderr, "NextDirEntry: Write failed block %d\n",
+> 			       indexInfoPtr->blockAddr + 
+> 			        domainPtr->dataOffset * FS_FRAGMENTS_PER_BLOCK);
+> 	    }
+> 	}
+516d551
+< #ifdef notdef
+517a553,561
+> 	    if (Disk_FragWrite(partFID, domainPtr,
+> 			      indexInfoPtr->blockAddr + 
+> 			      domainPtr->dataOffset * 
+> 			      FS_FRAGMENTS_PER_BLOCK, 
+> 			      indexInfoPtr->numFrags, 
+> 			      indexInfoPtr->dirBlock) < 0) {
+> 		Output(stderr, "NextDirEntry: Write (2) failed block %d\n",
+> 			       indexInfoPtr->blockAddr + 
+> 			        domainPtr->dataOffset * FS_FRAGMENTS_PER_BLOCK);
+518a563
+> 		return;
+521d565
+< #endif
+523c567
+< 	    fprintf(stderr, "NextDirEntry: Get index failed\n");
+---
+> 	    Output(stderr, "NextDirEntry: Get index failed\n");
+534,538c578,585
+< 	if (DiskRead(diskFd,   indexInfoPtr->blockAddr,
+< 			  fragsToRead*FS_FRAGMENT_SIZE, 
+< 			  indexInfoPtr->dirBlock) != fragsToRead*FS_FRAGMENT_SIZE) {
+< 	    fprintf(stderr, "NextDirEntry: Read failed block %d\n",
+< 			    indexInfoPtr->blockAddr); 
+---
+> 	if (Disk_FragRead(partFID, domainPtr,
+> 			  indexInfoPtr->blockAddr + 
+> 			  domainPtr->dataOffset * 
+> 			  FS_FRAGMENTS_PER_BLOCK, 
+> 			  fragsToRead, indexInfoPtr->dirBlock) < 0) {
+> 	    Output(stderr, "NextDirEntry: Read failed block %d\n",
+> 			    indexInfoPtr->blockAddr + 
+> 			    domainPtr->dataOffset * FS_FRAGMENTS_PER_BLOCK);
+551a599,600
+> static	DirIndexInfo	rootDirIndex;
+> static  Fslcl_DirEntry	*rootDirEntryPtr;
+580d628
+< #ifdef notdef
+581a630,638
+> 	if (Disk_FragWrite(partFID, domainPtr,
+> 			  indexInfoPtr->blockAddr + 
+> 			  domainPtr->dataOffset * 
+> 			  FS_FRAGMENTS_PER_BLOCK, 
+> 			  indexInfoPtr->numFrags, 
+> 			  indexInfoPtr->dirBlock) < 0) {
+> 	    Output(stderr, "CloseDir: Write (2) failed block %d\n",
+> 			   indexInfoPtr->blockAddr + 
+> 			    domainPtr->dataOffset * FS_FRAGMENTS_PER_BLOCK);
+582a640
+> 	}
+584d641
+< #endif
+605,606c662,667
+< CheckDirTree(diskId)
+<     int			diskId;
+---
+> CheckDirTree(partFIDParm, domainParmPtr, descInfoParm,fdBitmapPtr, bitmapPtr)
+>     int			partFIDParm;
+>     Ofs_DomainHeader	*domainParmPtr;
+>     FdInfo		*descInfoParm;
+>     u_char		*fdBitmapPtr;
+>     u_char		*bitmapPtr;
+615a677,679
+>     char		newFileName[100];
+>     int			offset;
+>     int			outputFileLength;
+617a682,684
+>     partFID = partFIDParm;
+>     domainPtr = domainParmPtr;
+>     descInfoArray = descInfoParm;
+619d685
+<     diskFd = diskId;
+624c690
+< 	fprintf(stderr, "Unable to fetch file descriptor for root");
+---
+> 	Output(stderr, "Unable to fetch file descriptor for root");
+631a698
+> 	char *fileName;
+633c700
+< 	fprintf(stderr, "Root directory corrupted\n");
+---
+> 	Output(stderr, "Root directory corrupted\n");
+636a704,709
+> 	/*
+> 	 * On 5/10/88 the root of a disk (/sprite) was overwritten.  It was
+> 	 * patched by looking for directories with a ".." entry that
+> 	 * referenced root, fileNumber == 2, and putting them into the
+> 	 * root just like other orphans are put into lost+found.
+> 	 */
+694a768,770
+>     if (outputFileName != NULL) {
+> 	outputFileLength = strlen(outputFileName);
+>     }
+703a780,784
+> 	} else if (rawOutput && outputFileName != NULL &&
+> 	    (dirEntryPtr->nameLength == outputFileLength) && 
+> 	    strncmp(outputFileName, dirEntryPtr->fileName, outputFileLength)
+> 		== 0) {
+> 	    outputFileNum = dirEntryPtr->fileNumber;
+714c795
+< 	fprintf(stderr, "lost+found missing from root\n");
+---
+> 	Output(stderr, "lost+found missing from root\n");
+721c802
+< 	    fprintf(stderr, "Unable to fetch file descriptor for lost+found");
+---
+> 	    Output(stderr, "Unable to fetch file descriptor for lost+found");
+728c809
+< 	    fprintf(stderr,
+---
+> 	    Output(stderr,
+740c821
+< 		    fprintf(stderr, "Could not open lost+found\n");
+---
+> 		    Output(stderr, "Could not open lost+found\n");
+750d830
+< 
+753a834
+> 
+759c840
+< 	 i < superBlockPtr->descMap.maxDesc; 
+---
+> 	 i < domainPtr->numFileDesc; 
+771c852
+< 	    fprintf(stderr,
+---
+> 	    Output(stderr,
+778a860
+> 
+832c914
+< 	 i < superBlockPtr->descMap.maxDesc; 
+---
+> 	 i <= domainPtr->numFileDesc; 
+839d920
+< 
+842c923
+< 	} else if (i == superBlockPtr->descMap.maxDesc-1) {
+---
+> 	} else if (i == domainPtr->numFileDesc) {
+857c938
+< 		fprintf(stderr, "File %d is unreferenced\n", i);
+---
+> 		Output(stderr, "File %d is unreferenced\n", i);
+864d944
+< 
+869c949
+< 			fprintf(stderr, 
+---
+> 			Output(stderr, 
+878c958
+< 		fprintf(stderr,
+---
+> 		Output(stderr,
+894c974
+< 		    fprintf(stderr,
+---
+> 		    Output(stderr,
+908c988
+< 	fprintf(stderr, "%d files not added to directory %d.\n", notAdded,
+---
+> 	Output(stderr, "%d files not added to directory %d.\n", notAdded,
+913c993
+< 	fprintf(stderr, "%d unreferenced files\n", unrefFiles);
+---
+> 	Output(stderr, "%d unreferenced files\n", unrefFiles);
+916c996
+< 	fprintf(stderr, "%d links counts corrected\n",
+---
+> 	Output(stderr, "%d links counts corrected\n",
+920d999
+< #ifdef notdef
+931d1009
+< #endif
+965d1042
+< 					 */
+988c1065
+< 	fprintf(stderr, "Empty directory %d %s changed to a file.\n",
+---
+> 	Output(stderr, "Empty directory %d %s changed to a file.\n",
+1000c1077
+< 	fprintf(stderr,"Working on %s\n",pathName);
+---
+> 	Output(stderr,"Working on %s\n",pathName);
+1012c1089
+< 		fprintf(stderr,
+---
+> 		Output(stderr,
+1022c1099
+< 		fprintf(stderr, 
+---
+> 		Output(stderr, 
+1037c1114
+< 		fprintf(stderr,
+---
+> 		Output(stderr,
+1047c1124
+< 		fprintf(stderr, 
+---
+> 		Output(stderr, 
+1065c1142
+< 		    fprintf(stderr, "Found #%d, an orphan of dir #%d\n", 
+---
+> 		    Output(stderr, "Found #%d, an orphan of dir #%d\n", 
+1091c1168
+< 		    fprintf(stderr,
+---
+> 		    Output(stderr,
+1158c1235
+< 	fprintf(stderr,
+---
+> 	Output(stderr,
+1182c1259
+< 	    fprintf(stderr,
+---
+> 	    Output(stderr,
+1204c1281
+< 	    fprintf(stderr,
+---
+> 	    Output(stderr,
+1216,1217c1293,1294
+<         dirEntryPtr->fileNumber >= superBlockPtr->descMap.maxDesc) {
+< 	fprintf(stderr, 
+---
+>         dirEntryPtr->fileNumber >= domainPtr->numFileDesc) {
+> 	Output(stderr, 
+1233c1310
+< 	fprintf(stderr, 
+---
+> 	Output(stderr, 
+1242c1319
+< 	fprintf(stderr,"Entry %s ok.\n",dirEntryPtr->fileName);
+---
+> 	Output(stderr,"Entry %s ok.\n",dirEntryPtr->fileName);
+1245c1322
+< 	fprintf(stderr,
+---
+> 	Output(stderr,
+1251d1327
+< #ifdef notdef
+1284c1360
+< 	fprintf(stderr, "SetDotDot: Could not open dir\n");
+---
+> 	Output(stderr, "SetDotDot: Could not open dir\n");
+1293c1369
+< 	fprintf(stderr, "SetDotDot: Could not move from . to ..\n");
+---
+> 	Output(stderr, "SetDotDot: Could not move from . to ..\n");
+1304c1380
+< 	    fprintf(stderr, "SetDotDot: Write failed block %d\n",
+---
+> 	    Output(stderr, "SetDotDot: Write failed block %d\n",
+1311a1388
+> 
+1371c1448
+< 	    fprintf(stderr,
+---
+> 	    Output(stderr,
+1474d1550
+< #endif

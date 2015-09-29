@@ -1,0 +1,1022 @@
+head     1.14;
+branch   ;
+access   ;
+symbols  ds3100:1.14 sun3:1.14 sun4nw:1.11 symm:1.11 spur:1.11;
+locks    ; strict;
+comment  @ * @;
+
+
+1.14
+date     92.03.19.17.31.57;  author jhh;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     92.03.06.11.56.53;  author mgbaker;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     91.12.17.17.33.49;  author jhh;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     91.08.22.13.18.04;  author mendel;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     91.07.26.17.20.52;  author mendel;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     91.06.29.17.02.37;  author mendel;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     91.05.29.14.17.50;  author mendel;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     91.05.29.14.08.10;  author mendel;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     91.05.26.15.35.03;  author mendel;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.01.09.12.16.46;  author mendel;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.10.19.17.22.55;  author mendel;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.08.02.16.19.35;  author mendel;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.05.25.15.33.06;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.01.16.17.12.27;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.14
+log
+@Fixed up bug introduced when verification of clean segments was added. 
+A short read is no longer a fatal error at the low level, instead it
+is passed up. Otherwise short reads when looking for the root panic
+the machine.
+@
+text
+@/* 
+ * lfsMain.c --
+ *
+ *	Routines for attaching and detaching LFS file systems.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/lfs/lfsMain.c,v 1.13 92/03/06 11:56:53 mgbaker Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <lfs.h>
+#include <lfsInt.h>
+#include <stdlib.h>
+#include <fsioDevice.h>
+#include <fsdm.h>
+#include <proc.h>
+#include <string.h>
+#include <fsCmd.h>
+
+
+typedef struct CheckPointData {
+    Lfs		*lfsPtr;	/* Lfs data structure of file system. */
+    Boolean	interval;	/* Set to TRUE if the checkpoint should
+				 * stop. */
+} CheckPointData;
+
+static void CheckpointCallBack _ARGS_((ClientData clientData, 
+		Proc_CallInfo *callInfoPtr));
+static ReturnStatus GetDomainFromCmdArgs _ARGS_((int *bufSizePtr, 
+			char **bufferPtr, Fsdm_Domain **domainPtrPtr));
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Lfs_Init --
+ *
+ *	Initialized the modules of LFS.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Memory may be allocated.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Lfs_Init() 
+{
+    LfsFileLayoutInit();
+    LfsDescMapInit();
+    LfsSegUsageInit();
+
+    Fsdm_RegisterDiskManager("LFS", Lfs_AttachDisk);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Lfs_AttachDomain --
+ *
+ *	Attach a LFS file system from the specified device. 
+ *
+ * Results:
+ *	SUCCESS if device is attached, FAILURE otherwise.
+ *
+ * Side effects:
+ *	LFS modules initialied if this is the first LFS attached.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Lfs_AttachDisk(devicePtr, localName, flags, domainNumPtr)
+    Fs_Device	*devicePtr;	/* Device containing file system. */
+    char *localName;		/* The local prefix for the domain */
+    int  flags;			/* Attach flags. */
+    int *domainNumPtr;		/* OUT: Domain number allocated. */
+{
+    Lfs			*lfsPtr;
+    LfsDiskAddr		diskAddr;
+    ReturnStatus	status;
+    CheckPointData 	*cpDataPtr;
+    /*
+     * Allocate space for the Lfs data structure fill in the fields need
+     * by the rest of the Lfs module to perform initialization correctly.
+     */
+    lfsPtr = (Lfs *) malloc(sizeof(*lfsPtr));
+    bzero((char *)lfsPtr, sizeof(*lfsPtr));
+    lfsPtr->devicePtr = devicePtr;
+    lfsPtr->name = localName;
+    lfsPtr->name = malloc(strlen(localName)+1);
+    lfsPtr->controlFlags = 0;
+    (void) strcpy(lfsPtr->name, localName);
+    lfsPtr->attachFlags = flags;
+
+    /*
+     * Read the super block of the file system. Put a lot of trust in the
+     * magic number. 
+     */
+    LfsOffsetToDiskAddr(LFS_SUPER_BLOCK_OFFSET, &diskAddr);
+    status = LfsReadBytes(lfsPtr, diskAddr,  LFS_SUPER_BLOCK_SIZE,
+		 (char *) &(lfsPtr->superBlock));
+    if (status != SUCCESS) {
+	free((char *) lfsPtr);
+	return status;
+    }
+    /*
+     * Validate the super block here.
+     */
+    if ((lfsPtr->superBlock.hdr.magic != LFS_SUPER_BLOCK_MAGIC) ||
+	(lfsPtr->superBlock.hdr.version != LFS_SUPER_BLOCK_VERSION)) {
+	free((char *) lfsPtr);
+	return FAILURE;
+    }
+    /*
+     * Check to make sure that the partition that the file system was
+     * built in matches the partition it is to be loaded from. To be
+     * backwards compatible we check the domainUID. If it's zero then
+     * the partition number isn't valid either. This check should go away
+     * once all lfs systems are upgraded to the new version of the 
+     * superblock.
+     */
+    if (lfsPtr->superBlock.hdr.domainUID != 0) {
+	if (lfsPtr->superBlock.hdr.partition != 
+	    devicePtr->unit % FSDM_NUM_DISK_PARTS) {
+
+	    /* 
+	     * File system was built on a different partition.
+	     */
+	    free((char *) lfsPtr);
+	    return FAILURE;
+	}
+    }
+    lfsPtr->blockSizeShift = LfsLogBase2((unsigned)LfsBlockSize(lfsPtr));
+    lfsPtr->checkpointIntervalPtr = (int *) NIL;
+    Sync_LockInitDynamic(&(lfsPtr->lock), "LfsLock");
+    lfsPtr->activeFlags = 0;
+    lfsPtr->cleanerProcPtr = (Proc_ControlBlock *) NIL;
+    lfsPtr->dirModsActive = 0;
+    lfsPtr->numDirtyBlocks = 0;
+    status = LfsLoadFileSystem(lfsPtr, flags); 
+    if (status != SUCCESS) { 
+	free((char *)lfsPtr);
+	return status;
+    }
+    LfsMemInit(lfsPtr);
+    *domainNumPtr = lfsPtr->domainPtr->domainNumber;
+    /*
+     * Make our own copy of the prefix name.
+     */
+    lfsPtr->name = malloc(strlen(localName)+1);
+    (void) strcpy(lfsPtr->name, localName);
+    cpDataPtr = (CheckPointData *) malloc(sizeof(*cpDataPtr));
+    cpDataPtr->lfsPtr = lfsPtr;
+    cpDataPtr->interval = lfsPtr->superBlock.hdr.checkpointInterval *
+				timer_IntOneSecond;
+
+    lfsPtr->checkpointIntervalPtr = &(cpDataPtr->interval);
+
+    Proc_CallFunc(CheckpointCallBack, (ClientData) cpDataPtr,
+			cpDataPtr->interval);
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Lfs_DetachDomain --
+ *
+ *	Detach a LFS file system domain.
+ *
+ * Results:
+ *	SUCCESS if device is detached, FAILURE otherwise.
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Lfs_DetachDisk(domainPtr)
+     Fsdm_Domain *domainPtr;	/* Domain to detach. */
+
+{
+    Lfs	*lfsPtr = LfsFromDomainPtr(domainPtr);
+    ReturnStatus status;
+
+    status = LfsDetachFileSystem(lfsPtr);
+    LfsMemDetach(lfsPtr);
+    Fscache_UnregisterBackend(lfsPtr->domainPtr->backendPtr);
+    lfsPtr->domainPtr->backendPtr = (Fscache_Backend *) NIL;
+    Sync_LockClear(&lfsPtr->lock);
+    free(lfsPtr->name);
+    free((char *)lfsPtr);
+    return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Lfs_RereadSummaryInfo --
+ *
+ *	Reread the summary sector associated with the prefix and update
+ *	the domain information. This should be called if the summary
+ *	sector on the disk has been changed since the domain was attached.
+ *	LFS uses this call to reread the superBlock and get any changes made.
+ *
+ * Results:
+ *	SUCCESS 
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+Lfs_RereadSummaryInfo(domainPtr)
+    Fsdm_Domain		*domainPtr;	/* Domain to reread summary for. */
+{
+    Lfs	*lfsPtr = LfsFromDomainPtr(domainPtr);
+    LfsDiskAddr		diskAddr;
+    ReturnStatus status;
+    LfsSuperBlock	newSuperBlock;
+    /*
+     * Read the super block of the file system. Put a lot of trust in the
+     * magic number. 
+     */
+    LfsOffsetToDiskAddr(LFS_SUPER_BLOCK_OFFSET, &diskAddr);
+    status = LfsReadBytes(lfsPtr, diskAddr,  LFS_SUPER_BLOCK_SIZE,
+		 (char *) &newSuperBlock);
+    if (status != SUCCESS) {
+	return status;
+    }
+    /*
+     * Validate the super block here.
+     */
+    if ((newSuperBlock.hdr.magic != LFS_SUPER_BLOCK_MAGIC) ||
+	(newSuperBlock.hdr.version != LFS_SUPER_BLOCK_VERSION)) {
+	return FAILURE;
+    }
+    /*
+     * Looks ok, update our incore version.
+     */
+    bcopy((char *) &newSuperBlock, (char *) &lfsPtr->superBlock,
+		sizeof(LfsSuperBlock));
+    return SUCCESS;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Lfs_DomainWriteBack --
+ *
+ *	Force all domain information to disk.
+ *
+ * Results:
+ *	Error code if the write failed.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Lfs_DomainWriteBack(domainPtr, shutdown)
+    Fsdm_Domain	*domainPtr;	/* Domain to be written back. */
+    Boolean	shutdown;	/* TRUE if are syncing to shutdown the system.*/
+{
+    Lfs	*lfsPtr = LfsFromDomainPtr(domainPtr);
+
+    return LfsCheckPointFileSystem(lfsPtr, LFS_CHECKPOINT_WRITEBACK);
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetDomainFromCmdArgs --
+ *
+ *	Return the Fsdm_Domain specified in the Lfs_Command arguments.
+ *	This routine updates the bufSize and bufferPtr to remove the
+ *	domain specifier argument.
+ *
+ * Results:
+ *	SUCCESS if domain fetched.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+
+static ReturnStatus
+GetDomainFromCmdArgs(bufSizePtr, bufferPtr, domainPtrPtr)
+    int	*bufSizePtr;	/* Size of Lfs_Command argument buffer. */
+    char **bufferPtr;	/* Argument buffer. */
+    Fsdm_Domain	**domainPtrPtr; /* OUT: Lfs Domain specified by arguments. */
+{
+    int		bufSize = (*bufSizePtr);
+    char	*buffer = (*bufferPtr);
+    int		domainNumber;
+    Fsdm_Domain	*domainPtr;
+
+    if (bufSize < sizeof(int)) {
+	return GEN_INVALID_ARG;
+    }
+    bcopy(buffer, (char *) &domainNumber, sizeof(int));
+    domainPtr = Fsdm_DomainFetch(domainNumber, FALSE);
+    if (domainPtr == (Fsdm_Domain *) NIL) {
+	return GEN_INVALID_ARG;
+    }
+    if (domainPtr->domainOpsPtr->attachDisk != Lfs_AttachDisk) {
+	Fsdm_DomainRelease(domainNumber);
+	return GEN_INVALID_ARG;
+    }
+    (*domainPtrPtr) = domainPtr;
+    (*bufSizePtr) -= sizeof(int);
+    (*bufferPtr) += sizeof(int);
+    return SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Lfs_Command --
+ *
+ *	Perform a user specified command on a LFS file system
+ *
+ * Results:
+ *	SUCCESS if the operation succeeded. An ReturnStatus otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+
+ReturnStatus
+Lfs_Command(command, bufSize, buffer)
+    int command;	/* Command to perform. */
+    int bufSize;	/* Size of the user's input/output buffer. */
+    Address buffer;	/* The user's input or output buffer. */
+{
+    Lfs	*lfsPtr;
+    ReturnStatus status;
+    Fsdm_Domain	*domainPtr;
+    char	*outBufferPtr = buffer;
+
+    switch (command) {
+	case	FS_CLEAN_LFS_COMMAND: {
+	    status = GetDomainFromCmdArgs(&bufSize, &buffer, &domainPtr);
+	    if (status != SUCCESS) {
+		return status;
+	    }
+	    lfsPtr = (Lfs *) domainPtr->clientData;
+	    LfsSegCleanStart(lfsPtr);
+	    Fsdm_DomainRelease(domainPtr->domainNumber);
+	    break;
+	}
+	case FS_SET_CONTROL_FLAGS_LFS_COMMAND: {
+	    status = GetDomainFromCmdArgs(&bufSize, &buffer, &domainPtr);
+	    if (status != SUCCESS) {
+		return status;
+	    }
+	    lfsPtr = (Lfs *) domainPtr->clientData;
+	    if (bufSize >= sizeof(int)) {
+		bcopy(buffer, (char *) &(lfsPtr->controlFlags), sizeof(int));
+	    } else {
+		status = GEN_INVALID_ARG;
+	    }
+	    Fsdm_DomainRelease(domainPtr->domainNumber);
+	    break;
+	}
+	case FS_GET_CONTROL_FLAGS_LFS_COMMAND: {
+	    status = GetDomainFromCmdArgs(&bufSize, &buffer, &domainPtr);
+	    if (status != SUCCESS) {
+		return status;
+	    }
+	    lfsPtr = (Lfs *) domainPtr->clientData;
+	    if (bufSize >= sizeof(int)) {
+		bcopy((char *) &(lfsPtr->controlFlags), outBufferPtr, 
+				sizeof(int));
+	    } else {
+		status = GEN_INVALID_ARG;
+	    }
+	    Fsdm_DomainRelease(domainPtr->domainNumber);
+	    break;
+	}
+	case FS_FREE_FILE_NUMBER_LFS_COMMAND: {
+	    int	fileNumber;
+	    status = GetDomainFromCmdArgs(&bufSize, &buffer, &domainPtr);
+	    if (status != SUCCESS) {
+		return status;
+	    }
+	    lfsPtr = (Lfs *) domainPtr->clientData;
+	    if (bufSize >= sizeof(int)) {
+		bcopy(buffer, (char *) &fileNumber, sizeof(int));
+		printf("Lfs_FreeFileNumber(%s,%d)\n", lfsPtr->name, 
+				fileNumber);
+		status = Lfs_FreeFileNumber(domainPtr, fileNumber);
+	    } else {
+		status = GEN_INVALID_ARG;
+	    }
+	    Fsdm_DomainRelease(domainPtr->domainNumber);
+	    return status;
+	}
+	case FS_ADJUST_SEG_USAGE_LFS_COMMAND: {
+	    int	segNumber, activeBytes;
+	    status = GetDomainFromCmdArgs(&bufSize, &buffer, &domainPtr);
+	    if (status != SUCCESS) {
+		return status;
+	    }
+	    lfsPtr = (Lfs *) domainPtr->clientData;
+	    if (bufSize >= sizeof(int)*2) {
+		bcopy(buffer, (char *) &segNumber, sizeof(int));
+		bcopy(buffer+sizeof(int), (char *) &activeBytes, sizeof(int));
+		printf("LfsSetSegUsage(%s,%d,%d)\n", lfsPtr->name, 
+				segNumber, activeBytes);
+		LfsSetSegUsage(lfsPtr, segNumber, activeBytes);
+	    } else {
+		status = GEN_INVALID_ARG;
+	    }
+
+	    return status;
+	}
+	case FS_ZERO_ASPLOS_STATS_LFS_COMMAND: {/* For ASPLOS only.  Remove when
+					        * that's done. -Mary 2/15/92. */
+	    /*
+	     * Zero the stats used for asplos measurements.  We've gotta
+	     * run this once per file system  before removing the stats so that
+	     * the checkpoint copies of the padding bytes will be zeroed again.
+	     */
+	    status = GetDomainFromCmdArgs(&bufSize, &buffer, &domainPtr);
+	    if (status != SUCCESS) {
+		return status;
+	    }
+	    lfsPtr = (Lfs *) domainPtr->clientData;
+	    bzero((char *) &(lfsPtr->stats.log.fsyncWrites),
+		    sizeof(LfsStatsCounter));
+	    bzero((char *) &(lfsPtr->stats.log.fsyncPartialWrites),
+		    sizeof(LfsStatsCounter));
+	    bzero((char *) &(lfsPtr->stats.log.fsyncBytes),
+		    sizeof(LfsStatsCounter));
+	    bzero((char *) &(lfsPtr->stats.log.fsyncPartialBytes),
+		    sizeof(LfsStatsCounter));
+	    bzero((char *) &(lfsPtr->stats.log.partialWriteBytes),
+		    sizeof(LfsStatsCounter));
+	    bzero((char *) &(lfsPtr->stats.log.cleanPartialWriteBytes),
+		    sizeof(LfsStatsCounter));
+	    bzero((char *) &(lfsPtr->stats.log.fileBytesWritten),
+		    sizeof(LfsStatsCounter));
+	    bzero((char *) &(lfsPtr->stats.log.cleanFileBytesWritten),
+		    sizeof(LfsStatsCounter));
+	    bzero((char *) &(lfsPtr->stats.log.partialFileBytes),
+		    sizeof(LfsStatsCounter));
+
+	    bzero((char *) &(lfsPtr->stats.layout.descLayoutBytes),
+		    sizeof(LfsStatsCounter));
+	    
+	    bzero((char *) &(lfsPtr->stats.dirlog.cleaningBytesWritten),
+		    sizeof(LfsStatsCounter));
+
+	    break;
+	}
+	case FS_TOGGLE_ASPLOS_STATS_LFS_COMMAND: {/* Just for ASPLOS. */
+	    /*
+	     * Toggle on or off the taking of Lfs ASPLOS stats. The last time
+	     * these stats are taken, they must be turned off and then
+	     * zeroed with the above command.
+	     */
+	    Lfs_DoASPLOSStats = 1 - Lfs_DoASPLOSStats;
+	    status = SUCCESS;
+	    break;
+	}
+	default: {
+	    status = GEN_INVALID_ARG;
+	}
+    }
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CheckpointCallBack --
+ *
+ *	A Proc_CallFunc for checkpoint LFS file systems.
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+CheckpointCallBack(clientData, callInfoPtr)
+    ClientData       clientData;		/* Lfs structure of LFS */
+    Proc_CallInfo	*callInfoPtr;
+{
+
+    CheckPointData *cpDataPtr = (CheckPointData *) clientData;
+    Lfs	*lfsPtr = cpDataPtr->lfsPtr;
+
+    if (cpDataPtr->interval > 0) {
+	(void) LfsCheckPointFileSystem(lfsPtr, LFS_CHECKPOINT_TIMER);
+	callInfoPtr->interval = cpDataPtr->interval;
+    } else if (cpDataPtr->interval == 0) {
+	free((char *) cpDataPtr);
+	callInfoPtr->interval = 0;
+    } else {
+	callInfoPtr->interval = -cpDataPtr->interval;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LfsLogBase2 --
+ *
+ *	Compute the log base 2 of the given integer. The argument is assumed
+ *	to have only one bit set in it.
+ *
+ * Results:
+ *	Log base 2 of the integer.
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+LfsLogBase2(val)
+    unsigned	int	val;	/* Value of take log of. */
+{
+    register int	 bit;
+
+    for (bit = 0; bit < sizeof(val)*8; bit++) {
+	if (val & (1 << bit)) {
+		break;
+	}
+    }
+    if (val != (1 << bit)) {
+	panic("LfsLogBase2: Botched computation of %d\n", val);
+    }
+    return bit;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LfsError --
+ *
+ *	Print an error message.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+LfsError(lfsPtr, status, message)
+    Lfs	*lfsPtr;
+    ReturnStatus status;
+    char *message;
+{
+    panic("LfsError: on %s status 0x%x, %s\n", lfsPtr->name, status, message);
+}
+
+
+@
+
+
+1.13
+log
+@Added temporary measurements for ASPLOS paper.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/lfs/lfsMain.c,v 1.12 91/12/17 17:33:49 jhh Exp $ SPRITE (Berkeley)";
+d139 3
+a141 3
+	    printf("Lfs_AttachDisk: partition mismatch, %d != %d\n", 
+	    lfsPtr->superBlock.hdr.partition, 
+	    devicePtr->unit % FSDM_NUM_DISK_PARTS);
+@
+
+
+1.12
+log
+@Added the domainUID and partition fields to the super block. The partition
+is checked during attach to make sure the file system is being attached
+under the same partition as it was built. Also, the domainPrefix in the
+checkpoint is no longer set during the attach. Domain prefixes are only
+set by the fsdomain program.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/lfs/lfsMain.c,v 1.11 91/08/22 13:18:04 mendel Exp $ SPRITE (Berkeley)";
+d442 49
+@
+
+
+1.11
+log
+@Added FS_ADJUST_SEG_USAGE_LFS_COMMAND command.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/lfs/RCS/lfsMain.c,v 1.10 91/07/26 17:20:52 mendel Exp $ SPRITE (Berkeley)";
+d126 19
+@
+
+
+1.10
+log
+@Added Lfs_RereadSummaryInfo() routine that rereads superblock.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/lfs/RCS/lfsMain.c,v 1.9 91/06/29 17:02:37 mendel Exp $ SPRITE (Berkeley)";
+d403 19
+@
+
+
+1.9
+log
+@Added count of number of dirty block in file cache.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/lfs/RCS/lfsMain.c,v 1.8 91/05/29 14:17:50 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d190 53
+@
+
+
+1.8
+log
+@Removed duplicate include of stdlib.h
+.;
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/lfs/RCS/lfsMain.c,v 1.7 91/05/29 14:08:10 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d133 1
+@
+
+
+1.7
+log
+@Added initialization of cleanerProcPtr.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/lfs/RCS/lfsMain.c,v 1.6 91/05/26 15:35:03 mendel Exp $ SPRITE (Berkeley)";
+a26 1
+#include <stdlib.h>
+@
+
+
+1.6
+log
+@Added FS_FREE_FILE_NUMBER_LFS_COMMAND to nuke invalid descMap entry
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/lfs/RCS/lfsMain.c,v 1.5 91/01/09 12:16:46 mendel Exp $ SPRITE (Berkeley)";
+d132 1
+@
+
+
+1.5
+log
+@Added a few Lfs_Commands.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/lfs/RCS/lfsMain.c,v 1.4 90/10/19 17:22:55 mendel Exp $ SPRITE (Berkeley)";
+d332 18
+@
+
+
+1.4
+log
+@Many bug fixed. First installed LFS.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/lfs/RCS/lfsMain.c,v 1.3 90/08/02 16:19:35 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d29 1
+d40 3
+d105 1
+d216 18
+d235 29
+d288 50
+a337 1
+    return SUCCESS;
+@
+
+
+1.3
+log
+@Checkin before adding recovery
+./
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/lfs/RCS/lfsMain.c,v 1.2 90/05/25 15:33:06 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d20 20
+a39 9
+#include "sprite.h"
+#include "lfs.h"
+#include "lfsInt.h"
+#include "stdlib.h"
+#include "fsioDevice.h"
+#include "fsdm.h"
+
+
+
+d43 1
+a43 1
+ * Init --
+d89 1
+d91 1
+a91 1
+
+d100 3
+a102 2
+    lfsPtr->readOnly = ((flags & FS_ATTACH_READ_ONLY) != 0);
+    lfsPtr->dirty = FALSE;
+a103 2
+    Sync_LockInitDynamic(&(lfsPtr->lfsLock), "LfsLock");
+    lfsPtr->locked = FALSE;
+d108 3
+a110 3
+
+    status = LfsReadBytes(lfsPtr, LFS_SUPER_BLOCK_OFFSET,  
+		LFS_SUPER_BLOCK_SIZE, (char *) &(lfsPtr->superBlock));
+d124 4
+a127 4
+    lfsPtr->activeBlockOffset = -1;
+    lfsPtr->writeBackActive = FALSE;
+    lfsPtr->checkForMoreWork = FALSE;
+    lfsPtr->cleanActive = FALSE;
+d133 1
+a133 5
+    lfsPtr->cleanBlocks =   Fscache_ReserveBlocks(
+			        lfsPtr->domainPtr->backendPtr, 
+				lfsPtr->superBlock.hdr.maxNumCacheBlocks +
+				LfsSegSizeInBlocks(lfsPtr),
+				2*LfsSegSizeInBlocks(lfsPtr));
+d135 14
+d176 5
+a180 2
+    Fscache_ReleaseReserveBlocks(domainPtr->backendPtr, lfsPtr->cleanBlocks)
+    Sync_LockClear(&lfsPtr->lfsLock);
+a206 2
+    int	flags;
+    ReturnStatus status = SUCCESS;
+d208 1
+a208 13
+    flags = 0;
+    if (shutdown) {
+	flags |= LFS_DETACH;
+    }
+    if (lfsPtr->dirty) { 
+	status = LfsCheckPointFileSystem(lfsPtr, flags);
+    }
+#ifdef notdef
+    if (!shutdown && (lfsPtr->usageArray.checkPoint.numDirty > 10)) {
+	LfsSegCleanStart(lfsPtr);
+    }
+#endif
+    return status;
+d212 17
+d230 43
+d331 1
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs.mendel/RCS/lfsMain.c,v 1.1 90/01/16 17:12:27 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d112 2
+a113 2
+    lfsPtr->blockSizeShift = 
+		LfsLogBase2((unsigned)lfsPtr->superBlock.hdr.blockSize);
+d117 1
+a117 1
+    status = LfsLoadFileSystem(lfsPtr); 
+d125 2
+a126 3
+	LfsBytesToBlocks(lfsPtr, lfsPtr->usageArray.params.segmentSize),
+	2*LfsBytesToBlocks(lfsPtr, lfsPtr->usageArray.params.segmentSize)
+		);
+d151 8
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.2 89/01/07 04:12:18 rab Exp $ SPRITE (Berkeley)";
+d24 2
+a26 1
+#include "fsdm.h"
+d44 2
+a45 2
+static void
+Init() 
+d50 2
+d71 5
+a75 7
+Lfs_AttachDomain(devicePtr, name, flags, domainPtr)
+     Fs_Device *devicePtr;	/* Device containing file system. */
+     char      *name;		/* Prefix we are trying to attach. */
+     int 	flags;		/* FS_ATTACH_READ_ONLY or FS_ATTACH_LOCAL */
+     Fsdm_Domain *domainPtr;	/* Domain structure for file system being 
+				 * attached. */
+
+a78 1
+    static Boolean initialized = FALSE;   
+a80 6
+     * If this is the first time we are called initialize everything.
+     */
+    if (!initialized) {
+	Init();
+    }
+    /*
+d87 1
+a87 2
+    lfsPtr->name = name;
+    lfsPtr->domainPtr = domainPtr;
+d91 2
+d112 5
+a116 2
+    lfsPtr->blockSizeShift = LfsLogBase2(lfsPtr->superBlock.hdr.blockSize);
+    lfsPtr->writeActive = FALSE;
+d118 1
+a118 1
+    if (status != SUCCESS) {
+d120 1
+a120 2
+    } else {
+	((Lfs *) ((domainPtr)->dataBlockBitmap)) = lfsPtr;
+d122 7
+d171 1
+a171 1
+Lfs_DomainWriteBack(domainPtr, shutdown, detach)
+a173 2
+    Boolean	detach;		/* TRUE if are writing back as part of 
+				 * detaching the domain.  */
+d175 1
+a175 1
+    Lfs	*lfsPtr;
+a178 1
+    lfsPtr = LfsFromDomainPtr(domainPtr);
+d186 1
+d190 1
+a193 24
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Lfs_DomainStartWrite --
+ *
+ *	Start a write..
+ *
+ * Results:
+ *	Error code if the write failed.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Lfs_DomainStartWrite(domainPtr)
+    Fsdm_Domain	*domainPtr;	/* Domain to be written back. */
+{
+    LfsSegWriteStart(LfsFromDomainPtr(domainPtr));
+    return;
+
+}
+d250 1
+d252 1
+a252 1
+    panic("LfsError: 0x%x, %s\n", status, message);
+@

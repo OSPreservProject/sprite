@@ -1,0 +1,1 @@
+../../dist/t/comp/package.t

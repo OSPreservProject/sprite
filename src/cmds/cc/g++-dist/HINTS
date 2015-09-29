@@ -1,0 +1,503 @@
+BABYL OPTIONS:
+Version: 5
+Labels:
+Note:   This is the header of an rmail file.
+Note:   If you are seeing it in rmail,
+Note:    it means the file has no messages in it.
+
+1,,
+Return-Path: <csmith@convex.com>
+Received: by teacake.sun.com (4.0/SMI-4.0)
+	id AA01354; Thu, 18 Jan 90 19:09:01 PST
+Date: Thu, 18 Jan 90 19:09:01 -0600
+From: csmith@convex.com (Chris Smith)
+To: ngo%tammy@harvard (Tom Ngo)
+In-Reply-To: ngo%tammy@HARVARD.HARVARD.EDU's message of 17 Jan 90 22:12:19 GMT
+Subject: How to use collect2... my conjecture
+Status: R
+
+*** EOOH ***
+Return-Path: <csmith@convex.com>
+Date: Thu, 18 Jan 90 19:09:01 -0600
+From: csmith@convex.com (Chris Smith)
+To: ngo%tammy@harvard (Tom Ngo)
+In-Reply-To: ngo%tammy@HARVARD.HARVARD.EDU's message of 17 Jan 90 22:12:19 GMT
+Subject: How to use collect2... my conjecture
+
+Sorry, I've been neglecting my netnews reading and didn't see your
+earlier messages. 
+
+The secret of collect2.c is to install it as "/usr/local/lib/gcc-ld"
+--- it then does its thing with the constructors & destructors and
+runs the real ld.
+
+1,,
+Return-Path: <@nsfnet-relay.ac.uk,@computer-lab.cambridge.ac.uk:balen@camscan.uucp>
+Received: by teacake.sun.com (4.0/SMI-4.0)
+	id AA01354; Wed, 17 Jan 90 09:35:21  PST
+Date: Wed, 17 Jan 90 09:35:21 GMT
+From: henry Balen <balen%camscan.uucp@nsfnet-relay.ac.uk>
+To: bug-g++@prep.ai.mit.edu
+Subject: HINTS
+Reply-To: balen%camscan.uucp@nsfnet-relay.ac.uk
+Status: R
+
+*** EOOH ***
+Return-Path: <@nsfnet-relay.ac.uk,@computer-lab.cambridge.ac.uk:balen@camscan.uucp>
+Date: Wed, 17 Jan 90 09:35:21 GMT
+From: henry Balen <balen%camscan.uucp@nsfnet-relay.ac.uk>
+To: bug-g++@prep.ai.mit.edu
+Subject: HINTS
+Reply-To: balen%camscan.uucp@nsfnet-relay.ac.uk
+
+I have managed to get g++ 1.36.2 up and running on the sun386. I had a lot of problems with 1.36.1 in that when I did get the compiler to work it produced code that crashed!
+I have listed the changes that I found necessary for 1.36.2 below. I hope that these are of some help.
+
+Henry Balen <balen%camscan.uucp@uk.ac.ukc>
+Camscan, Saxon Way, Bar Hill, Cambridge CB3 0JE, United Kingdom.
+
+--------------------------------------------------------------------------
+In xm-sun386i.h at line 47
+
+	#define LINK_SPEC "%{!e*:-e _start} -dc -dp %{g:-Bstatic}"
+
+to
+
+	#define LINK_SPEC "%{!e*:}  -Bstatic "
+
+--------------------------------------------------------------------------
+In crt0.c
+
+the
+	__do_global_init()
+and
+	__do_global_cleanup()
+
+needed to be removed (I put ifndef COFF round them).
+
+--------------------------------------------------------------------------
+In tm-sun386i.h at line 34
+
+	#define STARTFILE_SPEC  \
+	  "%{pg:gcrt0.o%s}%{!pg:%{p:mcrt0.o%s}%{!p:crt0.o%s}}"
+
+to
+
+	#define STARTFILE_SPEC  \
+	  "%{pg:gcrt0.o%s}%{!pg:%{p:mcrt0.o%s}%{!p:crt0+.o%s}}"
+
+--------------------------------------------------------------------------
+In gcc.c at line 306
+
+	ld %{o*} %g.R %g.O
+
+to
+
+	ld -Bstatic -e _start %{o*} %g.R %g.O -L/vol/local/lib.sun386\n\
+
+and at line 310
+
+	char *link_spec = "%{!c:%{!M*:%{!E:%{!S:ld -r -o %g.R %l\
+
+to
+
+	char *link_spec = "%{!c:%{!M*:%{!E:%{!S:ld -r -L/vol/local/lib.sun386 -o %g.R %l\
+
+1,,
+Return-Path: <csusac!cvms!ronald@ucdavis.edu>
+Date: Tue, 12 Sep 89 15:40:39 edt
+From: csusac!cvms!ronald@ucdavis.edu
+To: csusac!ucdavis!prep.ai.mit.edu!info-g++@ucdavis.edu
+Subject: UNIX PC
+
+*** EOOH ***
+Return-Path: <csusac!cvms!ronald@ucdavis.edu>
+Date: Tue, 12 Sep 89 15:40:39 edt
+From: csusac!cvms!ronald@ucdavis.edu
+To: csusac!ucdavis!prep.ai.mit.edu!info-g++@ucdavis.edu
+Subject: UNIX PC
+
+If you have an AT&T UNIX PC, here are some patches which may be of
+some consolation.  They are from:
+
+Ronald Cole               | uucp:     cvms!ronald       voice: +1 916 895 8321
+Senior Software Engineer  | internet: cvms!ronald@csuchico.edu
+CVM Systems               +----------------------------------------------------
+
+diff -rc2 g++-1.36.0-/config/tm-att386.h g++/config/tm-att386.h
+*** g++-1.36.0-/config/tm-att386.h	Wed Feb 22 09:28:08 1989
+--- g++/config/tm-att386.h	Wed Oct 18 22:46:58 1989
+***************
+*** 23,26 ****
+--- 23,29 ----
+  /* Define the syntax of instructions and addresses.  */
+  
++ /* G++: ATT assemblers *do not* allow '$' in symbol names. (u3b, i386, etc.) */
++ #define NO_DOLLAR_IN_LABEL 1
++ 
+  /* Define some concatenation macros to concatenate an opcode
+     and one, two or three operands.  In other assembler syntaxes
+
+
+1,,
+Return-Path: <@ORION.CF.UCI.EDU,@paris.ics.UCI.EDU:schmidt@glacier.ICS.UCI.EDU>
+To: tiemann@sun.com
+Subject: HINTS
+From: "Douglas C. Schmidt" <schmidt%glacier.ics.uci.edu@ORION.CF.UCI.EDU>
+
+*** EOOH ***
+Return-Path: <@ORION.CF.UCI.EDU,@paris.ics.UCI.EDU:schmidt@glacier.ICS.UCI.EDU>
+To: tiemann@sun.com
+Subject: HINTS
+From: "Douglas C. Schmidt" <schmidt%glacier.ics.uci.edu@ORION.CF.UCI.EDU>
+
+Beginning with g++ version 1.36 the GNU G++ library, libg++, is no
+longer automatically linked with your object code when running the
+linker.  In order to link libg++ you need to explicity add -lg++ to
+your compilation command line or Makefile, e.g.,
+
+% g++ -g -O foobar.c -lg++
+
+The easiest way to make this change transparent to you is simply to
+make an alias for g++ that automagically appends -lg++ to the end.
+
+Douglas C. Schmidt
+schmidt@ics.uci.edu
+
+
+1,,
+Return-Path: <mlm@cs.brown.edu>
+From: mlm@cs.brown.edu (Moises Lejter)
+To: bug-g++@prep.ai.mit.edu
+Subject: HINTS
+Reply-To: mlm@cs.brown.edu
+
+*** EOOH ***
+Return-Path: <mlm@cs.brown.edu>
+From: mlm@cs.brown.edu (Moises Lejter)
+To: bug-g++@prep.ai.mit.edu
+Subject: HINTS
+Reply-To: mlm@cs.brown.edu
+
+	Sun3 SunOS 4.0: ld++ cannot find Mcrt0.o:
+
+	Turns out that gcc.c as distributed allows you to redefine
+	STANDARD_STARTFILE_PREFIX to be any directory you want.  It
+	will check there and in /usr/local/lib 	for startup files, not
+	in /usr/lib.  Unfortunately, most system startup files live in
+	/usr/lib, so unless you define STANDARD_STARTFILE_PREFIX to be
+	/usr/lib, you'll lose.  I changed the line in gcc.c
+
+	char *standard_startfile_prefix_1 = "/usr/local/lib/";
+
+	to read 
+
+	char *standard_startfile_prefix_1 = "/usr/lib/";
+
+	This way I can specify my own startfile directory, without
+	losing access to the system startup files.
+
+						Moises
+
+Internet/CSnet:   mlm@cs.brown.edu		BITNET:  mlm@browncs.BITNET
+UUCP:    ...!uunet!brunix!mlm			Phone:	 (401)863-7664
+USmail:  Moises Lejter, Box 1910 Brown University, Providence RI 02912
+
+1,,
+Return-Path: <tiemann>
+Received: by teacake.sun.com (4.0/SMI-4.0)
+	id AA01354; Sat, 3 Feb 90 09:02:12 PST
+Date: Sat, 3 Feb 90 09:02:12 PST
+From: tiemann (Michael Tiemann)
+Message-Id: <9002031702.AA01354@teacake.sun.com>
+To: bug-g++@prep.ai.mit.edu
+Subject: HINTS
+Reply-To: tiemann@sun.com
+Status: R
+
+*** EOOH ***
+Return-Path: <tiemann>
+Date: Sat, 3 Feb 90 09:02:12 PST
+From: tiemann (Michael Tiemann)
+To: bug-g++@prep.ai.mit.edu
+Subject: HINTS
+Reply-To: tiemann@sun.com
+
+	If you are using a non-Sun machine, and use the native
+	assembler instead of GAS, you will need to #define FASCIST_ASSEMBLER
+	when compiling cplus-decl.c.  This is because Sun's as and GAS
+	appear to be the only assemblers out there which assemble stabs
+	instead of checking them.  If you don't remember to do
+	this, the assembler will remind you by telling you that it did
+	not understand a stab which the compiler is trying to pass to
+	the linker.
+
+Michael Tiemann
+tiemann@lurch.stanford.edu
+
+1,,
+Return-Path: <tiemann>
+Received: by teacake.sun.com (4.0/SMI-4.0)
+	id AA01354; Sat, 3 Feb 90 09:02:12 PST
+Date: Sat, 3 Feb 90 09:02:12 PST
+From: tiemann (Michael Tiemann)
+Message-Id: <9002031702.AA01354@teacake.sun.com>
+To: bug-g++@prep.ai.mit.edu
+Subject: HINTS
+Reply-To: tiemann@sun.com
+Status: R
+
+*** EOOH ***
+Return-Path: <tiemann>
+Date: Sat, 3 Feb 90 09:02:12 PST
+From: tiemann (Michael Tiemann)
+To: bug-g++@prep.ai.mit.edu
+Subject: HINTS
+Reply-To: tiemann@sun.com
+
+The 2.0 C++ language specification provides many new features which
+can trip up the novice user.  All of these features are being
+implemented in GNU C++, and most of them work right now.  However,
+this does not mean that they are all that easily used.  Perhaps on of
+the toughest new features to take advantage of right now is extern "C".
+What makes this hard is that up until now, C and C++ really looked
+like they had about the same langauge linkage.  Member functions had
+their names mangled, but non-overloaded global functions did not.
+In 2.0, all functions declared in C++ scope are automatically
+overloaded, and all such functions all get mangled names.  So if you
+declare, e.g., `int printf (const char *, ...)' in C++ language scope,
+and you get printf from libc.a, you will lose, since the compiler will
+assume that you are looking for e.g., "_printf_PQI", when you are
+really looking for "_printf".  To get around this problem, you can use
+extern "C" to tell the compiler which names should be mangled and how.
+There is a macro called NO_AUTO_OVERLOAD, which if defined, will provide
+the standard cfront 1.2 and old GNU C++ behavior.  If not defined, it
+provides the cfront 2.0 behavior.  One should move from the old to the
+new carefully, and if you get lots of new undefined symbols from the
+linker where such did not exist before, the first question you should
+ask yourself is `how is extern "C" or extern "C++" doing me in?'
+
+Michael Tiemann
+tiemann@lurch.stanford.edu
+
+1,,
+Return-Path: <tiemann>
+Received: by teacake.sun.com (4.0/SMI-4.0)
+	id AA01354; Sat, 3 Feb 90 09:02:12 PST
+Date: Sat, 3 Feb 90 09:02:12 PST
+From: tiemann (Michael Tiemann)
+Message-Id: <9002031702.AA01354@teacake.sun.com>
+To: bug-g++@prep.ai.mit.edu
+Subject: HINTS
+Reply-To: tiemann@sun.com
+Status: R
+
+*** EOOH ***
+Return-Path: <tiemann>
+Date: Sat, 3 Feb 90 09:02:12 PST
+From: tiemann (Michael Tiemann)
+To: bug-g++@prep.ai.mit.edu
+Subject: HINTS
+Reply-To: tiemann@sun.com
+
+The default LINK_SPEC in gcc.c tells the linker to link
+with crt0+.o.  Many machine-specific files define their own
+LINK_SPECs.  A strategy which worked until tm-sun?-nfp-os? came along
+was to edit the tm-*.h file into tm-*+.h, and replace the string
+"crt0.o" with "crt0+.o".  This strategy is defeated with one tm-*.h
+file includes a file defining LINK_SPEC.  I will fix this in release
+1.35.1.  In the mean time, copy LINK_SPEC from the file that is being
+included, #undef it and redef it in the top level tm-*.h file.
+
+
+Michael Tieman
+tieman@lurch.stanford.edu
+
+1,,
+Return-Path: <dwf@lanl.gov>
+Received: by teacake.sun.com (4.0/SMI-4.0)
+	id AA01354; Sat, 3 Feb 90 09:02:12 PST
+Date: Sat, 3 Feb 90 09:02:12 PST
+From: dwf@lanl.gov (Dave Forslund)
+To: bug-g++@prep.ai.mit.edu
+Subject: HINTS
+Reply-To: tiemann@sun.com
+Status: R
+
+*** EOOH ***
+Return-Path: <dwf@lanl.gov>
+Date: Sat, 3 Feb 90 09:02:12 PST
+From: dwf@lanl.gov (Dave Forslund)
+To: bug-g++@prep.ai.mit.edu
+Subject: HINTS
+Reply-To: tiemann@sun.com
+
+I have successfully built G++ 1.35.0 on Sun3's and Sun4's running
+OS4.0.3. I have to make one change to the newld complation: -Dsun3 and
+-Dsun4 respectively in order to get the a.out.h info included
+correctly.  This is apparently a change in the header files from Sun.
+It shouldn't hurt earlier releases of the OS.  Also a similar problem
+occurs in libg++ compilation with the exec struct not being defined
+from the a.out.h file.  I had to add -D_CROSS_TARGET_ARCH=SUN4 to the
+compile line for test.hello.cc to get the dynamic linking to work.
+
+David Forslund
+MS E531
+Los Alamos National Laboratory
+Los Alamos, NM 87545
+dwf@lanl.gov
+
+
+1,,
+Return-Path: <hoptoad!gnu>
+Received: from sun.Sun.COM by teacake.sun.com (4.0/SMI-4.0)
+	id AA06643; Thu, 15 Feb 90 04:13:28 PST
+Received: from hoptoad.UUCP by sun.Sun.COM (4.1/SMI-4.1)
+	id AA01279; Thu, 15 Feb 90 04:10:55 PST
+Received: by hop.toad.com id AA05988; Thu, 15 Feb 90 01:44:58 PST
+Date: Thu, 15 Feb 90 01:44:58 PST
+From: hoptoad!gnu (John Gilmore)
+Message-Id: <9002150944.AA05988@hop.toad.com>
+To: tiemann@sun.com
+Subject: Re: [comp.sys.atari.st] Re: C++ on the ST
+In-Reply-To: your article <10908@stag.math.lsa.umich.edu>
+Status: O
+
+*** EOOH ***
+Return-Path: <hoptoad!gnu>
+Date: Thu, 15 Feb 90 01:44:58 PST
+From: hoptoad!gnu (John Gilmore)
+To: tiemann@sun.com
+Subject: Re: [comp.sys.atari.st] Re: C++ on the ST
+In-Reply-To: your article <10908@stag.math.lsa.umich.edu>
+
+Archive-name: atari-st-g++/08-Feb-90
+Original-posting-by: mwjester@wsucsa.uucp
+Original-subject: Re: C++ on the ST
+Archive-site: terminator.cc.umich.edu [35.1.33.8]
+Reposted-by: emv@math.lsa.umich.edu (Edward Vielmetti)
+
+In article <451@pico.oz>, akenning@pico.oz (Alan Kennington) writes:
+> I'm amazed that I haven't seen any mention of C++ for the Atari ST.
+> Does anyone if there is such a thing? After all, the IBM PC has had it for
+> years now.
+> 
+> ak.
+FSF's GNU project C++ is available (in not fully-debugged form) from a couple
+of FTP'able sites -- terminator.cc.umich.edu is one -- but from all reports
+it requires at least 2Mbytes to run, 4M to do anything serious, so an unex-
+panded 1040ST is not enough.  If you have a Mega or have expanded your ST's
+memory, you might want to check it out.
+
+--
+Max J
+mwjester@wsucsa
+
+
+1, deleted,,
+Return-Path: <tiemann>
+Received: by teacake.sun.com (4.0/SMI-4.0)
+	id AA01354; Sat, 3 Feb 90 09:02:12 PST
+Date: Sat, 3 Feb 90 09:02:12 PST
+From: tiemann (Michael Tiemann)
+Message-Id: <9002031702.AA01354@teacake.sun.com>
+To: bug-g++@prep.ai.mit.edu
+Subject: HINTS
+Reply-To: tiemann@sun.com
+Status: R
+
+*** EOOH ***
+Return-Path: <tiemann>
+Date: Sat, 3 Feb 90 09:02:12 PST
+From: tiemann (Michael Tiemann)
+To: bug-g++@prep.ai.mit.edu
+Subject: HINTS
+Reply-To: tiemann@sun.com
+
+I saw this at Stanford:
+
+    >From December's Reason magazine
+
+    Rep. Bill Schuette (R-MI) recently advised constituents not to expect
+    all their problems to be solved by the federal government.  He warned
+    voters, "Congress is not the sole suppository of wisdom."
+
+Michael
+
+
+1,,
+Return-Path: <bug-g++-request@prep.ai.mit.edu>
+Received: from Sun.COM (sun-barr) by teacake.sun.com (4.0/SMI-4.0)
+	id AA04317; Mon, 26 Feb 90 10:14:16 PST
+Received: from life.ai.mit.edu by Sun.COM (4.1/SMI-4.1)
+	id AA16343; Mon, 26 Feb 90 10:11:35 PST
+Received: from tut.cis.ohio-state.edu by life.ai.mit.edu (4.0/AI-4.10) id AA17718; Mon, 26 Feb 90 13:10:59 EST
+Received: by tut.cis.ohio-state.edu (5.61-kk/5.900222)
+	id AA10639; Mon, 26 Feb 90 12:57:58 -0500
+Received: from USENET by tut.cis.ohio-state.edu with netnews
+	for bug-g++@prep.ai.mit.edu (bug-g++@prep.ai.mit.edu)
+	(contact usenet@tut.cis.ohio-state.edu if you have questions)
+Date: 26 Feb 90 11:21:06 GMT
+From: eutws1!wsinpdb@tuegate.tue.nl  (Paul de Bra)
+Organization: Eindhoven University of Technology, The Netherlands
+Subject: g++ for sVr3.2 on a 386
+Message-Id: <1551@tuegate.tue.nl>
+Sender: bug-g++-request@prep.ai.mit.edu
+To: bug-g++@prep.ai.mit.edu
+Status: RO
+
+*** EOOH ***
+Return-Path: <bug-g++-request@prep.ai.mit.edu>
+Date: 26 Feb 90 11:21:06 GMT
+From: eutws1!wsinpdb@tuegate.tue.nl  (Paul de Bra)
+Organization: Eindhoven University of Technology, The Netherlands
+Subject: g++ for sVr3.2 on a 386
+Sender: bug-g++-request@prep.ai.mit.edu
+To: bug-g++@prep.ai.mit.edu
+
+
+Here is my list of changes to g++1.36.4 to get it working with
+AT&T System V release 3.2u.
+
+First of all, let me state that this applies to g++1.36.4 only.
+An earlier attempt to get g++1.36.0 running failed miserably.
+
+This list only indecates how to get g++ up and running if you already
+have gcc with the gnu assembler and gnu-ld running, and converted the
+libraries to gnu format. g++ will not work with the AT&T loader.
+
+First do the make maketest but you have to create a directory config
+and links to the config files from gcc yourself as system v does not
+have symbolic links (yet).
+
+Do config.g++ i386-sysv-gas
+
+Makefile
+- do NOT define COFFFLAGS, as we do not use coff.
+- define INSTALL=cp and LINK=ln as indicated in the Makefile.
+- do not define CLIB=-lPW as gcc does not use it.
+- use MALLOC=malloc.o, just to be sure.
+- define all to be crt1+.o g++ cc1plus ld++ g++filt
+
+cplus-dem.c
+- This file needs USG defined. I just put a define on line 1.
+  It obviously needs a better fix.
+
+ld.c
+- you don't need sys/time.h and sys/resource.h (I just commented them
+  out, but you should use an ifdef).
+
+malloc.c
+- needs defines from config.h, so include it. (This include is ifdef-ed
+  emacs, but shouldn't)
+
+That's it.
+Type make and you're going...
+
+Now, libg++ still has a few problems, for instance in String.h.
+Don't know yet what's needed to fix that.
+
+Paul.
+(debra@research.att.com)
+
+

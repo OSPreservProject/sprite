@@ -1,0 +1,107 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.3
+date     91.01.09.15.18.00;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.01.09.12.17.55;  author tve;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.02.14.16.05.27;  author tve;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@Add -DSHAPE.
+@
+text
+@#
+# This file is linked to symbolically by the "local.mk" files of most
+# of the subdirectories.
+#
+# $Source: /X11/R4/src/cmds/X/RCS/common.mk,v $
+# $Date: 91/01/09 12:17:55 $
+# $Revision: 1.2 $ $Author: tve $
+
+X	= /X11/R4
+
+INSERVER=
+#include <$(X)/root.mk>
+
+#
+# Extra flags to define or undefine for compilations:
+#
+# TCPCONN	includes driver for network connections via TCP
+# UNIXCONN	includes driver for network connections via unix domain
+# DNETCONN	includes driver for network connections via DECnet
+# SPRITEPDEVCONN include driver for sprite pdev connections.
+# NOLOGOHACK	is defined because the sprite OS layer doesn't support it,
+#		whatever the logo hack may be.
+# SHAPE		the MIT shape extension.  See root.mk.
+#
+CFLAGS		+= -DNOLOGOHACK
+CFLAGS		+= -DTCPCONN
+CFLAGS		+= -DSPRITEPDEVCONN
+CFLAGS		+= -DSHAPE
+
+# Font/color support
+CFLAGS		+= $(FONTDEFINES)
+CFLAGS		+= $(DEFFONTPATH) $(DEFRGB_DB)
+
+# More include files
+.PATH.h		:  $(SERVINCDIR) $(INCDIR)/X11
+@
+
+
+1.2
+log
+@Misc. fixes (Mike checking in for Thorsten).
+@
+text
+@d5 3
+a7 3
+# $Source: /mic/X11R4/src/cmds/X/RCS/common.mk,v $
+# $Date: 90/02/14 16:05:27 $
+# $Revision: 1.1 $ $Author: tve $
+d23 1
+d28 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d5 3
+a7 3
+# $Source$
+# $Date$
+# $Revision$ $Author$
+d9 1
+a9 1
+X	= /X11R4
+d11 1
+d20 1
+d26 1
+d28 1
+a28 1
+# Font support
+d30 1
+@

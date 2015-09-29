@@ -1,0 +1,68 @@
+
+
+
+util                  C Library Procedures                   util
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Util_CanonicalDir - Canonicalize a directory name to a  full
+     path.
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<uuttiill..hh>>
+
+     char *
+     UUttiill__CCaannoonniiccaallDDiirr(_n_e_w_D_i_r, _c_u_r_r_e_n_t_D_i_r, _b_u_f_f_e_r)
+
+AARRGGUUMMEENNTTSS
+     char          *_n_e_w_D_i_r       (in)      The new directory name
+                                           to canonicalize.
+
+     char          *_c_u_r_r_e_n_t_D_i_r   (in)      The current  directory
+                                           (or   other  name)  to
+                                           which _n_e_w_D_i_r _i_s  _r_e_l_a_-
+                                           _t_i_v_e - _m_a_y _b_e _N_U_L_L.
+
+     _c_h_a_r          *_b_u_f_f_e_r       (_i_n/_o_u_t)  Pre-allocated space in
+                                           which   to   put   new
+                                           canonicalized  name  -
+                                           may be NULL.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The procedure takes a directory name, _n_e_w_D_i_r, and  turns  it
+     into  a  full  path relative to a directory _c_u_r_r_e_n_t_D_i_r.  The
+     parameter _c_u_r_r_e_n_t_D_i_r can actually be any full pathname to  a
+     directory   but   is  usually  the  current  directory.   If
+     _c_u_r_r_e_n_t_D_i_r is NULL, the procedure calls _g_e_t_w_d() to find  the
+     full  path  name to the current directory.  If the parameter
+     _b_u_f_f_e_r is NULL, then the procedure allocates space  for  the
+     new  canonicalized  directory  name and returns a pointer to
+     that new string.  If _b_u_f_f_e_r is not NULL, then it must be  an
+     area  of  at  least  MAXPATHLEN characters in which the pro-
+     cedure will copy the computed canonicalized name.  A pointer
+     to  _b_u_f_f_e_r  is  then  returned.   It  is okay for _b_u_f_f_e_r and
+     _n_e_w_D_i_r to be the same physical string, since _n_e_w_D_i_r is  only
+     overwritten at the end of the computation.
+
+     The procedure returns a pointer to a new  full  pathname  if
+     successful.  If there is a failure, it returns NULL, with an
+     error string in _b_u_f_f_e_r if that parameter was non-NULL.
+
+
+KKEEYYWWOORRDDSS
+     directory, path, pathname, full
+
+
+
+
+
+Sprite v.1.0       Printed:  November 15, 1991                  1
+
+
+

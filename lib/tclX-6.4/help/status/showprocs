@@ -1,0 +1,5 @@
+
+
+          showprocs [procname...]
+               List the definition of all of the named procedures, or
+               all defined procedures if none are specified.

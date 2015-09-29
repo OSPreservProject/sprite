@@ -1,0 +1,200 @@
+head     9.2;
+branch   ;
+access   ;
+symbols  ds3100:9.2 sun3:9.2 sun4nw:9.2 symm:9.2 spur:9.2 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.2
+date     90.09.12.13.36.47;  author shirriff;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.22.23.24.40;  author shirriff;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.22.38;  author douglis;  state Stable;
+branches ;
+next     8.1;
+
+8.1
+date     89.08.15.19.16.35;  author rab;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.41.58;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.29.18;  author brent;  state Stable;
+branches ;
+next     5.1;
+
+5.1
+date     87.11.18.21.50.36;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.52.08;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.2
+log
+@Changed includes from quotes to angles.
+@
+text
+@/*
+ * lock.h --
+ *
+ *	Header file to be used by files whose routines use the global vm
+ *	monitor.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/vm/RCS/lock.h,v 9.1 89/10/22 23:24:40 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+ */
+
+#ifndef _VMLOCK
+#define _VMLOCK
+
+#include <sync.h>
+#include <dbg.h>
+
+/*
+ * Monitor declarations
+ */
+
+extern	Sync_Lock vmMonitorLock;
+#define LOCKPTR &vmMonitorLock
+
+#define Dbg_Call	printf("SHM MONITOR PROBLEM\n")
+
+extern Sync_Lock vmShmLock;
+extern int vmShmLockCnt;
+
+#if 0
+#define LOCK_SHM_MONITOR	if (vmShmLockCnt>0) {Dbg_Call;} else {Sync_GetLock(&vmShmLock); vmShmLockCnt++;}
+#define UNLOCK_SHM_MONITOR	if (vmShmLockCnt==0) {Dbg_Call;} else {Sync_Unlock(&vmShmLock); vmShmLockCnt--;}
+#define CHECK_SHM_MONITOR	if (vmShmLockCnt!=1) Dbg_Call
+#else
+#define LOCK_SHM_MONITOR
+#define UNLOCK_SHM_MONITOR
+#define CHECK_SHM_MONITOR
+#endif
+
+#endif /* _VMLOCK */
+@
+
+
+9.1
+log
+@Added shared memory locks.
+(Currently lock code is ifdef'd out).
+@
+text
+@d11 1
+a11 1
+ * $Header: /c/src/kernel/vm.ken/RCS/lock.h,v 1.1 89/10/10 21:21:06 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+d17 2
+a18 2
+#include "sync.h"
+#include "dbg.h"
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/lock.h,v 8.1 89/08/15 19:16:35 rab Exp Locker: douglis $ SPRITE (Berkeley)
+d18 1
+d26 15
+@
+
+
+8.1
+log
+@Commented #endif labels.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/lock.h,v 8.0 88/11/11 18:41:58 douglis Stable Locker: rab $ SPRITE (Berkeley)
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+ * $Header: /sprite/src/kernel/vm/RCS/lock.h,v 6.0 88/08/11 12:29:18 brent Stable Locker: douglis $ SPRITE (Berkeley)
+d26 1
+a26 1
+#endif _VMLOCK
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+ * $Header: lock.h,v 5.1 87/11/18 21:50:36 nelson Exp $ SPRITE (Berkeley)
+@
+
+
+5.1
+log
+@Copy-on-write
+@
+text
+@d11 1
+a11 1
+ * $Header: lock.h,v 5.0 87/08/11 10:52:08 sprite Exp $ SPRITE (Berkeley)
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d11 1
+a11 1
+ * $Header: lock.h,v 1.1 86/11/06 20:05:57 nelson Exp $ SPRITE (Berkeley)
+a24 11
+
+/*
+ * Condition variables.
+ */
+
+extern	Sync_Condition	vmSegExpandCondition;	/* Used to wait when want
+						   to read or change size
+						   of a segment but cannot. */
+extern	Sync_Condition	vmPageTableCondition;	/* Used to wait for the page
+						   table for a code segment to 
+						   be initialized. */
+@

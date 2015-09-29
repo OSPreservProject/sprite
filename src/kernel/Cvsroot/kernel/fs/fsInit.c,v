@@ -1,0 +1,2208 @@
+head     9.16;
+branch   ;
+access   ;
+symbols  ds3100:9.16 sun3:9.16 sprited:9.15.1 sun4nw:9.16 symm:9.16 spur:9.16 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.16
+date     91.09.10.18.22.31;  author rab;  state Exp;
+branches ;
+next     9.15;
+
+9.15
+date     91.07.17.11.48.59;  author jhh;  state Exp;
+branches 9.15.1.1;
+next     9.14;
+
+9.14
+date     91.05.10.12.43.47;  author mgbaker;  state Exp;
+branches ;
+next     9.13;
+
+9.13
+date     91.03.30.17.03.05;  author jhh;  state Exp;
+branches ;
+next     9.12;
+
+9.12
+date     91.01.26.15.33.45;  author mgbaker;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     90.11.06.16.50.35;  author shirriff;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     90.10.08.10.56.41;  author mendel;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     90.07.30.16.29.35;  author jhh;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     90.07.19.15.03.04;  author jhh;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.07.18.15.11.18;  author jhh;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.05.14.13.17.01;  author douglis;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.05.14.13.16.31;  author douglis;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.04.19.10.05.16;  author brent;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.01.29.18.01.47;  author shirriff;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.12.11.17.40.50;  author brent;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.23.09.30.35;  author brent;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.02.52;  author douglis;  state Stable;
+branches ;
+next     8.10;
+
+8.10
+date     89.09.12.12.28.20;  author mendel;  state Exp;
+branches ;
+next     8.9;
+
+8.9
+date     89.08.21.15.22.29;  author mendel;  state Exp;
+branches ;
+next     8.8;
+
+8.8
+date     89.06.14.22.30.08;  author jhh;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.06.02.13.30.59;  author jhh;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.05.30.16.10.46;  author jhh;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.05.23.09.47.49;  author mendel;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.05.10.11.30.12;  author mendel;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.03.03.08.13.44;  author brent;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.01.29.14.39.26;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.12.15.09.34.42;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.19.09;  author douglis;  state Stable;
+branches ;
+next     7.0;
+
+7.0
+date     88.11.11.15.31.00;  author brent;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.10.16.10.15.37;  author brent;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.10.14.12.15.12;  author brent;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.31.12.05.13;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.15.34;  author brent;  state Stable;
+branches ;
+next     1.8;
+
+1.8
+date     88.07.15.17.54.43;  author mendel;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.06.15.16.36.10;  author brent;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.06.08.14.58.52;  author brent;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.05.06.12.39.27;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.05.05.17.33.24;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.04.28.08.16.37;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.04.11.17.41.04;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.05.13.56.11;  author brent;  state Exp;
+branches ;
+next     ;
+
+9.15.1.1
+date     91.11.15.13.25.39;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Filesystem initialization routines
+@
+
+
+9.16
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@/* 
+ * fsInit.c --
+ *
+ *	Filesystem initializtion.  This is done by setting up the
+ *	initial process and then having all other processes
+ *	inherit things.
+ *
+ * Copyright (C) 1987 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsInit.c,v 9.15 91/07/17 11:48:59 jhh Exp Locker: rab $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <sprite.h>
+
+#include <fs.h>
+#include <fsutil.h>
+#include <fsNameOps.h>
+#include <fsio.h>
+#include <fsprefix.h>
+#include <fslcl.h>
+#include <devFsOpTable.h>
+#include <fspdev.h>
+#include <fsStat.h>
+#include <fsconsist.h>
+#include <proc.h>
+#include <rpc.h>
+#include <recov.h>
+#include <timer.h>
+#include <fsdm.h>
+#include <fsrmt.h>
+#include <devTypes.h>
+#include <strings.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+
+#define	SCSI_MAKE_DEVICE_TYPE(type, hbaType, ctrlNum, targetID, LUN, dBits) \
+		(((hbaType)<<8)|(type))
+#define	SCSI_MAKE_DEVICE_UNIT(type, hbaType, ctrlNum, targetID, LUN, dBits)  \
+		(((ctrlNum)<<10)|((LUN)<<7)|((targetID)<<4)|(dBits))
+
+/*
+ * The prefix under which the local disk is attached.  
+ */
+#define LOCAL_DISK_NAME		"/"
+int fsDefaultDomainNumber = 0;
+
+/*
+ * We record the maximum transfer size supported by the RPC system
+ * for use in chopping up remote I/O operations.
+ *
+ * If these are initialized to zero they will be set to the maximum
+ * sizes reported back by the RPC system.
+ */
+int fsMaxRpcDataSize = 0;	/* Used to be 4096 */
+int fsMaxRpcParamSize = 0;	/* Used to be 1024 */
+
+/*
+ * Statistics structure.
+ */
+Fs_Stats	fs_Stats;
+
+/*
+ * Timer queue element for updating time of day.
+ */
+
+Timer_QueueElement	fsutil_TimeOfDayElement;
+
+/* 
+ * Flag to make sure we only do certain things, such as syncing the disks,
+ * after the file system has been initialized.
+ */
+Boolean fsutil_Initialized = FALSE;
+
+/*
+ * Flag to indicate whether we have attached a disk or not.  We can use
+ * this to determine if we are a client or a server.
+ */
+
+Boolean fsDiskAttached = FALSE;
+
+
+void Fs_Init()
+{
+    Fs_InitData();
+    Fs_InitNameSpace();
+}
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_InitData
+ *
+ *	Initialize most filesystem data structures.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Data structures in the file system are initialized.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Fs_InitData()
+{
+    /*
+     * Initialized the known domains. Local, Remote, and Pfs.
+     */
+    Fslcl_NameInitializeOps();
+    Fsio_InitializeOps();
+    Fsrmt_InitializeOps();
+    Fspdev_InitializeOps();
+
+    bzero((Address) &fs_Stats, sizeof(Fs_Stats));
+    fs_Stats.statsVersion = FS_STAT_VERSION;
+
+    /*
+     * The handle cache and the block cache start out with a hash table of
+     * a given size which grows on demand.  Thus the numbers passed to
+     * the next two routines are not crucial.
+     */
+    Fscache_Init(64);
+    Fsutil_HandleInit(64);
+    Fsprefix_Init();
+    Fsconsist_ClientInit();
+    Fslcl_DomainInit();
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_InitNameSpace
+ *
+ *	Initialize the filesystem name space.
+ *	This does the first steps in boot-strapping
+ *	the name space.  The prefix table is primed with "/", and
+ *	a local disk is attached under "/bootTmp" if possible.  Later
+ *	in Fs_ProcInit "/bootTmp" gets promoted to root if noone
+ *	else is around to serve root.
+ *
+ *	This also initializes the file system's time (which could
+ *	perhaps be replaced someday).  This has to be done after
+ *	Rpc_Start.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	"/" is stuck in the prefix table with no handle.
+ *	Local disk is attached under "/bootTmp".
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Fs_InitNameSpace()
+{
+
+    /*
+     * Install a crash callback with the recovery module.  (A reboot
+     * callback is installed later only if we have to recover with a host.)
+     */
+
+    Recov_CrashRegister(Fsutil_ClientCrashed, (ClientData) NIL);
+
+    /*
+     * This is the initial step in boot-strapping the name space.  Place
+     * an entry for "/" in the prefix table.  The NIL token will cause a
+     * broadcast to get a valid token the first time the prefix is used.
+     */
+    (void)Fsprefix_Install("/", (Fs_HandleHeader *)NIL, -1, FSPREFIX_IMPORTED); 
+
+    fsutil_Initialized = TRUE;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_Bin --
+ *
+ *	Setup objects to be binned.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Fs_Bin()
+{
+    Fsio_Bin();
+    Fspdev_Bin();
+    Fsrmt_Bin();
+#ifdef INET
+    FsSocketBin();
+#endif
+    Mem_Bin(FS_BLOCK_SIZE);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_ProcInit
+ *
+ *	Initialize the filesystem part of the process table entry.
+ *	This has to be called after Proc_InitMainProc
+ *	because of the call to Proc_GetCurrentProc.
+ *	It should be done after Rpc_Start because it might do
+ *	an RPC to open the current directory.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The current directory is opened for the main process.
+ *	The permissions mask is initialized.
+ *	The table of open file Id's is cleared to zero size.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Fs_ProcInit()
+{
+    ReturnStatus	status;		/* General status code return */
+    Proc_ControlBlock	*procPtr;	/* Main process's proc table entry */
+    register Fs_ProcessState	*fsPtr;	/* FS state ref'ed from proc table */
+    Fs_Stream		*stream;
+    Fs_Device 		*defaultDiskPtr;
+    int			i;
+    int			argc;
+    char		*argv[10];
+    char		argBuffer[256];
+    int			numDefaults;
+    Boolean		stdDefaults;
+    Time		waitTime;
+    Time		incrTime;
+
+    procPtr = Proc_GetCurrentProc();
+    procPtr->fsPtr = fsPtr = mnew(Fs_ProcessState);
+    /*
+     * General filesystem initialization.
+     * Find out how much we can transfer with the RPC system.
+     * (If these are already set we don't change them.)
+     *
+     * FIX THIS TO CALL DOMAIN SPECIFIC INITIALIZATION ROUTINES.
+     */
+    if (fsMaxRpcDataSize + fsMaxRpcParamSize == 0) {
+	Rpc_MaxSizes(&fsMaxRpcDataSize, &fsMaxRpcParamSize);
+    }
+
+    fsPtr->numGroupIDs	= 1;
+    fsPtr->groupIDs 	= (int *) malloc(1 * sizeof(int));
+    fsPtr->groupIDs[0]	= 0;
+
+    defaultDiskPtr = (Fs_Device *) malloc(sizeof(Fs_Device));
+    numDefaults = devNumDefaultDiskPartitions;
+    stdDefaults = TRUE;
+    argc = Mach_GetBootArgs(10, 256, argv, argBuffer);
+    for (i = 0; i < argc; i++) {
+	if (!strcasecmp(argv[i], "-rootdisk")) {
+	    if (argc == i + 1) {
+		printf("-rootdisk option requires an argument\n");
+	    } else {
+		int	type;
+		int	unit;
+		int	n;
+		n = sscanf(argv[i+1], " %d.%d ", &type, &unit);
+		if (n != 2) {
+		    printf("-rootdisk has the following syntax:\n");
+		    printf("\t-rootdisk <type>.<unit>\n");
+		} else {
+		    printf("Found -rootdisk option, %d.%d\n",
+			type, unit);
+		    defaultDiskPtr->serverID = -1;
+		    defaultDiskPtr->type = type;
+		    defaultDiskPtr->unit = unit;
+		    defaultDiskPtr->data = (ClientData) NIL;
+		    numDefaults = 1;
+		    stdDefaults = FALSE;
+		}
+	    }
+	}
+    }
+    for (i=0 ; i< numDefaults ; i++) {
+	/*
+	 * Second step in bootstrapping the name space.  Try and attach
+	 * a disk. 
+	 */
+	if (stdDefaults) {
+	    *defaultDiskPtr = devFsDefaultDiskPartitions[i];
+	}
+
+	status = Fsdm_AttachDisk(defaultDiskPtr, LOCAL_DISK_NAME, 
+		    FS_ATTACH_LOCAL | FS_DEFAULT_DOMAIN);
+	if (status == SUCCESS) {
+	    Fs_Attributes	attr;
+	    int			i;
+	    char		buffer[128];
+	    Boolean		rootServer = FALSE;
+
+	    (void) sprintf(buffer, "%s/ROOT", LOCAL_DISK_NAME);
+	    status = Fs_GetAttributes(buffer, FS_ATTRIB_FILE, &attr);
+	    if (status != SUCCESS) {
+		printf("Stat of %s returned 0x%x\n", buffer, status);
+		rootServer = FALSE;
+	    } else {
+		printf("Found %s.\n", buffer);
+		rootServer = TRUE;
+	    }
+	    argc = Mach_GetBootArgs(10, 256, argv, argBuffer);
+	    for (i = 0; i < argc; i++) {
+		if (!strcasecmp(argv[i], "-backup")) {
+		    printf("Found %s option.\n", argv[i]);
+		    rootServer = FALSE;
+		}
+		if (!strcasecmp(argv[i], "-root")) {
+		    printf("Found %s option.\n", argv[i]);
+		    rootServer = TRUE;
+		}
+	    }
+	    if (rootServer) {
+		(void) sprintf(buffer, "%s/boot", LOCAL_DISK_NAME);
+		status = Fs_GetAttributes(buffer, FS_ATTRIB_FILE, &attr);
+		if (status != SUCCESS) {
+		    printf("/boot not found on root partition.\n");
+		    rootServer = FALSE;
+		} else {
+		    printf("Found /boot.\n");
+		    if ((attr.type != FS_DIRECTORY)) {
+			printf("/boot is not a directory!\n");
+			rootServer = FALSE;
+		    } else {
+			printf("/boot is a directory.\n");
+		    }
+		}
+	    }
+	    if (rootServer) {
+		Fs_Stream		*streamPtr;
+		static char		rootPrefix[] = "/";
+    
+		status = Fs_Open(LOCAL_DISK_NAME, FS_READ|FS_FOLLOW,
+				FS_DIRECTORY, 0, &streamPtr);
+		if (status != SUCCESS) {
+		    printf("Fs_ProcInit: Unable to open local disk prefix!");
+		} else {
+		    printf("Installing the local disk as %s.\n", rootPrefix);
+		    (void)Fsprefix_Install(rootPrefix, streamPtr->ioHandlePtr, 
+			    FS_LOCAL_DOMAIN, 
+			    FSPREFIX_LOCAL|FSPREFIX_IMPORTED|FSPREFIX_OVERRIDE);
+		    if (strcmp(LOCAL_DISK_NAME, rootPrefix)) {
+			printf("Clearing local disk prefix %s.\n", 
+			    LOCAL_DISK_NAME);
+			Fsprefix_Clear(LOCAL_DISK_NAME, TRUE, FALSE);
+		    }
+		    fsDiskAttached = TRUE;
+		    break;
+		}
+	    } else {
+		printf("Detaching the local disk.\n");
+		Fsdm_DetachDisk(LOCAL_DISK_NAME);
+	    }
+	}
+    }
+    /*
+     * Try and open /.
+     */
+    status = FAILURE;
+    Time_Multiply(time_OneSecond, 5, &incrTime);
+    waitTime = time_ZeroSeconds;
+    do {
+	if (Time_LT(waitTime, time_OneMinute)) {
+	    Time_Add(waitTime, incrTime, &waitTime);
+	}
+	status = Fs_Open("/", FS_READ, FS_DIRECTORY, 0, &stream);
+	if (status != SUCCESS) {
+	    if (fsDiskAttached) {
+		panic(
+		"Fs_ProcInit: I'm the root server and I can't open \"/\".\n");
+	    }
+	    /*
+	     *  Wait a bit and retry the open of "/".
+	     */
+	    printf("Can't find server for \"/\", waiting %d seconds.\n",
+		waitTime.seconds);
+	    (void)Sync_WaitTime(waitTime);
+	}
+    } while (status != SUCCESS);
+    Fs_Close(stream);
+    fsPtr->cwdPtr = (Fs_Stream *)NIL;
+    status = Fs_Open("/boot", FS_READ, FS_DIRECTORY, 0, &fsPtr->cwdPtr);
+    if (status != SUCCESS) {
+	panic("Fs_ProcInit: can't open /boot.\n");
+    }
+    /*
+     * Set the default permissions mask; it indicates the maximal set of
+     * permissions that a newly created file can have.
+     */
+    fsPtr->filePermissions = FS_OWNER_WRITE |
+			FS_OWNER_READ | FS_OWNER_EXEC |
+			FS_GROUP_READ | FS_GROUP_EXEC |
+			FS_WORLD_READ | FS_WORLD_EXEC;
+    /*
+     * The open file list is only needed by user processes.
+     * Fs_GetNewID will create and grow this list.
+     */
+    fsPtr->numStreams = 0;
+    fsPtr->streamList = (Fs_Stream **)NIL;
+    if (!fsDiskAttached) {
+	free((char *) defaultDiskPtr);
+    }
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_InheritState -
+ *
+ *	This is called during process creation to have the new process
+ *	inherit filesystem state from its parent.  This includes the
+ *	current directory, open files, and the permission mask.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Duplicate the filesystem state of the parent process in
+ *	the new child process.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Fs_InheritState(parentProcPtr, newProcPtr)
+    Proc_ControlBlock *parentProcPtr;	/* Process to inherit from */
+    Proc_ControlBlock *newProcPtr;	/* Process that inherits */
+{
+    register 	Fs_ProcessState	*parFsPtr;
+    register 	Fs_ProcessState	*newFsPtr;
+    register	Fs_Stream	**parStreamPtrPtr;
+    register	Fs_Stream	**newStreamPtrPtr;
+    register 	int 		i;
+    int 			len;
+
+    /*
+     * User Ids.  This is kept separate from the file system state
+     * so other modules can use the user ID for permission checking.
+     */
+    newProcPtr->userID = parentProcPtr->userID;
+
+    /*
+     * The rest of the filesystem state hangs off the Fs_ProcessState record.
+     * This could be shared after forking to implement file descriptor sharing.
+     */
+    parFsPtr = parentProcPtr->fsPtr;
+    newProcPtr->fsPtr = newFsPtr = mnew(Fs_ProcessState);
+
+    /*
+     * Current working directory.
+     */
+    if (parFsPtr->cwdPtr != (Fs_Stream *)NIL) {
+	Fsio_StreamCopy(parFsPtr->cwdPtr, &newFsPtr->cwdPtr);
+    } else {
+	newFsPtr->cwdPtr = (Fs_Stream *)NIL;
+    }
+
+    /*
+     * Open stream list.
+     */
+    len = newFsPtr->numStreams = parFsPtr->numStreams;
+    if (len > 0) {
+	newFsPtr->streamList =
+		(Fs_Stream **)malloc(len * sizeof(Fs_Stream *));
+	newFsPtr->streamFlags = (char *)malloc(len * sizeof(char));
+	for (i = 0, parStreamPtrPtr = parFsPtr->streamList,
+		    newStreamPtrPtr = newFsPtr->streamList;
+	     i < len;
+	     i++, parStreamPtrPtr++, newStreamPtrPtr++) {
+	    if (*parStreamPtrPtr != (Fs_Stream *) NIL) {
+		Fsio_StreamCopy(*parStreamPtrPtr, newStreamPtrPtr);
+		newFsPtr->streamFlags[i] = parFsPtr->streamFlags[i];
+	    } else {
+		*newStreamPtrPtr = (Fs_Stream *) NIL;
+		newFsPtr->streamFlags[i] = 0;
+	    }
+	}
+    } else {
+	newFsPtr->streamList = (Fs_Stream **)NIL;
+	newFsPtr->streamFlags = (char *)NIL;
+    }
+
+    newFsPtr->filePermissions = parFsPtr->filePermissions;
+
+    /*
+     * Group ID list.
+     */
+
+    len = newFsPtr->numGroupIDs = parFsPtr->numGroupIDs;
+    if (len) {
+	newFsPtr->groupIDs = (int *)malloc(len * sizeof(int));
+	for (i=0 ; i<len; i++) {
+	    newFsPtr->groupIDs[i] = parFsPtr->groupIDs[i];
+	}
+    } else {
+	newFsPtr->groupIDs = (int *)NIL;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_CloseOnExec -
+ *
+ *	Called just before a process overlays itself with another program.
+ *	At this point any stream marked as CLOSE_ON_EXEC are closed.
+ *	This makes cleanup for shell-like programs easier.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Close streams marked CLOSE_ON_EXEC.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Fs_CloseOnExec(procPtr)
+    Proc_ControlBlock *procPtr;		/* Process to operate on */
+{
+    register int i;
+    register Fs_Stream **streamPtrPtr;	/* Pointer into streamList */
+    char *flagPtr;			/* Pointer into flagList */
+
+    for (i=0, streamPtrPtr = procPtr->fsPtr->streamList,
+	      flagPtr = procPtr->fsPtr->streamFlags ;
+	 i < procPtr->fsPtr->numStreams ;
+	 i++, streamPtrPtr++, flagPtr++) {
+	if ((*streamPtrPtr != (Fs_Stream *)NIL) &&
+	    (*flagPtr & FS_CLOSE_ON_EXEC)) {
+	    (void)Fs_Close(*streamPtrPtr);
+	    *streamPtrPtr = (Fs_Stream *)NIL;
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_CloseState
+ *
+ *	This is called when a process dies to clean up its filesystem state
+ *	by closing its open files and its current directory.
+ *
+ *	Note: to avoid problems when destroying a process, we have two
+ *	phases of removing file system state.  Phase 0 will just close
+ *	streams.  Phase 1 closes down everything.  (Phase 0 is optional.)
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	All its open streams are closed, and associated memory is free'd.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Fs_CloseState(procPtr, phase)
+    Proc_ControlBlock *procPtr;		/* An exiting process to clean up */
+    int phase;				/* 0 for start, 1 for total. */
+{
+    register int i;
+    register Fs_ProcessState *fsPtr = procPtr->fsPtr;
+
+    if (phase>0) {
+	if (fsPtr->cwdPtr != (Fs_Stream *) NIL) {
+	    (void)Fs_Close(fsPtr->cwdPtr);
+	}
+    }
+
+    if (fsPtr->streamList != (Fs_Stream **)NIL) {
+	for (i=0 ; i < fsPtr->numStreams ; i++) {
+	    register Fs_Stream *streamPtr;
+
+	    streamPtr = fsPtr->streamList[i];
+	    if (streamPtr != (Fs_Stream *)NIL) {
+		(void)Fs_Close(streamPtr);
+	    }
+	}
+	free((Address) fsPtr->streamList);
+	free((Address) fsPtr->streamFlags);
+	fsPtr->streamList = (Fs_Stream **)NIL;
+    }
+
+    if (phase>0) {
+	if (fsPtr->groupIDs != (int *) NIL) {
+	    free((Address) fsPtr->groupIDs);
+	    fsPtr->groupIDs = (int *) NIL;
+	    fsPtr->numGroupIDs = 0;
+	}
+	free((Address)fsPtr);
+	procPtr->fsPtr = (Fs_ProcessState *)NIL;
+    }
+}
+@
+
+
+9.15
+log
+@default partition devices are now malloc'ed, so that lfs can keep
+a pointer to it
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsInit.c,v 9.14 91/05/10 12:43:47 mgbaker Exp $ SPRITE (Berkeley)";
+a33 1
+#include <fsutilTrace.h>
+a39 1
+#include <trace.h>
+a134 1
+
+a135 1
+
+a136 1
+
+d138 1
+a138 3
+
+    Fsutil_TraceInit();
+    Fspdev_TraceInit();
+d318 1
+a318 1
+	    sprintf(buffer, "%s/ROOT", LOCAL_DISK_NAME);
+d339 1
+a339 1
+		sprintf(buffer, "%s/boot", LOCAL_DISK_NAME);
+@
+
+
+9.15.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fs/fsInit.c,v 9.15 91/07/17 11:48:59 jhh Exp $ SPRITE (Berkeley)";
+@
+
+
+9.14
+log
+@Fixed infinite recovery loop due to stale prefixes.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsInit.c,v 9.13 91/03/30 17:03:05 jhh Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d252 1
+a252 1
+    Fs_Device 		defaultDisk;
+d279 1
+d298 4
+a301 4
+		    defaultDisk.serverID = -1;
+		    defaultDisk.type = type;
+		    defaultDisk.unit = unit;
+		    defaultDisk.data = (ClientData) NIL;
+d314 1
+a314 1
+	    defaultDisk = devFsDefaultDiskPartitions[i];
+d317 1
+a317 1
+	status = Fsdm_AttachDisk(&defaultDisk, LOCAL_DISK_NAME, 
+d328 1
+d432 3
+a434 1
+
+@
+
+
+9.13
+log
+@Mary checking this in for John H.  It contains a fix so that
+broadcasting for '/' won't hang.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsInit.c,v 9.12 91/01/26 15:33:45 mgbaker Exp Locker: jhh $ SPRITE (Berkeley)";
+d375 1
+a375 1
+			Fsprefix_Clear(LOCAL_DISK_NAME, TRUE);
+@
+
+
+9.12
+log
+@Sosp stuff.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsInit.c,v 9.11 90/11/06 16:50:35 shirriff Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d259 2
+d390 2
+d393 3
+d405 3
+a407 2
+	    printf("Can't find server for \"/\", waiting 1 min.\n");
+	    (void)Sync_WaitTime(time_OneMinute);
+@
+
+
+9.11
+log
+@Added phase to Fs_CloseState, so process's files are closed in two
+steps.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsInit.c,v 9.10 90/10/08 10:56:41 mendel Exp Locker: shirriff $ SPRITE (Berkeley)";
+a59 7
+
+Boolean	fsutil_WriteThrough = FALSE;	
+Boolean	fsutil_WriteBackOnClose  = FALSE;
+Boolean	fsutil_DelayTmpFiles = FALSE;
+int	fsutil_TmpDirNum = -1;	
+Boolean	fsutil_WriteBackASAP = FALSE;
+Boolean fsutil_WBOnLastDirtyBlock = FALSE;
+@
+
+
+9.10
+log
+@Fixed include files to use <> rather than "".  
+Moved call to Fsutil_HandleInit() to after Fscache_Init() so HandleInit()
+knows size of file cache.
+Rid fs of Fsutil_UpdateTimeOfDay call back. 
+Removed unused variables.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsInit.c,v 9.9 90/07/30 16:29:35 jhh Exp $ SPRITE (Berkeley)";
+d573 4
+d586 1
+a586 1
+Fs_CloseState(procPtr)
+d588 1
+d593 4
+a596 2
+    if (fsPtr->cwdPtr != (Fs_Stream *) NIL) {
+	(void)Fs_Close(fsPtr->cwdPtr);
+d613 8
+a620 4
+    if (fsPtr->groupIDs != (int *) NIL) {
+	free((Address) fsPtr->groupIDs);
+	fsPtr->groupIDs = (int *) NIL;
+	fsPtr->numGroupIDs = 0;
+a621 2
+    free((Address)fsPtr);
+    procPtr->fsPtr = (Fs_ProcessState *)NIL;
+@
+
+
+9.9
+log
+@new boot sequence (let's try again)
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsInit.c,v 9.7 90/07/18 15:11:18 jhh Exp $ SPRITE (Berkeley)";
+d24 1
+a24 1
+#include "sprite.h"
+d26 22
+a47 19
+#include "fs.h"
+#include "fsutil.h"
+#include "fsNameOps.h"
+#include "fsio.h"
+#include "fsprefix.h"
+#include "fslcl.h"
+#include "devFsOpTable.h"
+#include "fspdev.h"
+#include "fsutilTrace.h"
+#include "fsStat.h"
+#include "fsconsist.h"
+#include "proc.h"
+#include "rpc.h"
+#include "recov.h"
+#include "timer.h"
+#include "trace.h"
+#include "fsdm.h"
+#include "fsrmt.h"
+#include "devTypes.h"
+d49 1
+d142 1
+a143 1
+    Fscache_Init(64);
+a183 14
+    ReturnStatus status;
+    Time time;
+
+    /*
+     * Put the routine on the timeout queue that keeps the time in
+     * seconds up to date.  WHY NOT USE Timer_GetTimeOfDay?
+     */
+
+    fsutil_TimeOfDayElement.routine = Fsutil_UpdateTimeOfDay;
+    fsutil_TimeOfDayElement.clientData = 0;
+    fsutil_TimeOfDayElement.interval = timer_IntOneSecond;
+    Timer_ScheduleRoutine(&fsutil_TimeOfDayElement, TRUE);
+    Timer_GetTimeOfDay(&time, (int *) NIL, (Boolean *) NIL);
+    fsutil_TimeInSeconds = time.seconds;
+a257 2
+    char		buffer[128];
+    Boolean		standalone;
+@
+
+
+9.8
+log
+@reverting to version 9.6 because detaching a domain does not
+work properly
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsInit.c,v 9.6 90/05/14 13:17:01 douglis Exp $ SPRITE (Berkeley)";
+d44 1
+d46 5
+d54 1
+a54 1
+#define LOCAL_DISK_NAME		"/bootTmp"
+a181 2
+    int	i;
+    Fs_Device defaultDisk;
+a208 14
+    for (i=0 ; i<devNumDefaultDiskPartitions; i++) {
+	/*
+	 * Second step in bootstrapping the name space.  Try and attach
+	 * a disk under the /bootTmp prefix.  Later this local partition
+	 * may be promoted to the root domain (see Fs_ProcInit).
+	 */
+	defaultDisk = devFsDefaultDiskPartitions[i];
+
+	status = Fsdm_AttachDisk(&defaultDisk, LOCAL_DISK_NAME, FS_ATTACH_LOCAL);
+	if (status == SUCCESS) {
+	    fsDiskAttached = TRUE;
+	    break;
+	}
+    }
+d271 7
+d296 26
+a321 22
+    /*
+     * If there is an attached disk and we are booting standalone (no -c
+     * option and there is a boot directory on the attached disk) then
+     * install a "/" prefix.
+     */
+    standalone = FALSE;
+    if (fsDiskAttached) {
+	Fs_Attributes	attr;
+	int		argc;
+	char		*argv[10];
+	char		argBuffer[256];
+	int		i;
+
+	standalone = TRUE;
+	sprintf(buffer, "%s/boot", LOCAL_DISK_NAME);
+	status = Fs_GetAttributes(buffer, FS_ATTRIB_FILE, &attr);
+	if (status != SUCCESS) {
+	    standalone = FALSE;
+/* XXX */	printf ("no /boot, status %x\n", status);
+	} else if ((attr.type != FS_DIRECTORY)) {
+		printf("%s/boot is not a directory!\n", LOCAL_DISK_NAME);
+		standalone = FALSE;
+d323 8
+a330 6
+	argc = Mach_GetBootArgs(10, 256, argv, argBuffer);
+	for (i = 0; i < argc; i++) {
+	    if (!strcmp(argv[i], "-c")) {
+		standalone = FALSE;
+		break;
+	    }
+a331 3
+	if (standalone) {
+	    Fs_Stream		*streamPtr;
+	    static char		rootPrefix[] = "/";
+d333 10
+a342 2
+	    status = Fs_Open(LOCAL_DISK_NAME, FS_READ|FS_FOLLOW,
+			    FS_DIRECTORY, 0, &streamPtr);
+d344 53
+a396 2
+		printf("Fs_ProcInit: Unable to open local disk prefix!");
+		standalone = FALSE;
+d398 2
+a399 3
+		(void)Fsprefix_Install(rootPrefix, streamPtr->ioHandlePtr, 
+			FS_LOCAL_DOMAIN, 
+			FSPREFIX_LOCAL|FSPREFIX_IMPORTED|FSPREFIX_OVERRIDE);
+d410 1
+a410 1
+	    if (standalone) {
+d412 1
+a412 1
+		"Fs_ProcInit: Booting standalone and can't open \"/\".\n");
+@
+
+
+9.7
+log
+@new boot sequence
+@
+text
+@a43 1
+#include "devTypes.h"
+a44 5
+#define	SCSI_MAKE_DEVICE_TYPE(type, hbaType, ctrlNum, targetID, LUN, dBits) \
+		(((hbaType)<<8)|(type))
+#define	SCSI_MAKE_DEVICE_UNIT(type, hbaType, ctrlNum, targetID, LUN, dBits)  \
+		(((ctrlNum)<<10)|((LUN)<<7)|((targetID)<<4)|(dBits))
+
+d48 1
+a48 1
+#define LOCAL_DISK_NAME		"/"
+d176 2
+d205 14
+a280 7
+    Fs_Device 		defaultDisk;
+    int			i;
+    int			argc;
+    char		*argv[10];
+    char		argBuffer[256];
+    int			numDefaults;
+    Boolean		stdDefaults;
+d299 28
+a326 25
+    numDefaults = devNumDefaultDiskPartitions;
+    stdDefaults = TRUE;
+    argc = Mach_GetBootArgs(10, 256, argv, argBuffer);
+    for (i = 0; i < argc; i++) {
+	if (!strcasecmp(argv[i], "-rootdisk")) {
+	    if (argc == i + 1) {
+		printf("-rootdisk option requires an argument\n");
+	    } else {
+		int	type;
+		int	unit;
+		int	n;
+		n = sscanf(argv[i+1], " %d.%d ", &type, &unit);
+		if (n != 2) {
+		    printf("-rootdisk has the following syntax:\n");
+		    printf("\t-rootdisk <type>.<unit>\n");
+		} else {
+		    printf("Found -rootdisk option, %d.%d\n",
+			type, unit);
+		    defaultDisk.serverID = -1;
+		    defaultDisk.type = type;
+		    defaultDisk.unit = unit;
+		    defaultDisk.data = (ClientData) NIL;
+		    numDefaults = 1;
+		    stdDefaults = FALSE;
+		}
+d329 3
+a331 9
+    }
+    for (i=0 ; i< numDefaults ; i++) {
+	/*
+	 * Second step in bootstrapping the name space.  Try and attach
+	 * a disk. 
+	 */
+	if (stdDefaults) {
+	    defaultDisk = devFsDefaultDiskPartitions[i];
+	}
+d333 2
+a334 10
+	status = Fsdm_AttachDisk(&defaultDisk, LOCAL_DISK_NAME, 
+		    FS_ATTACH_LOCAL | FS_DEFAULT_DOMAIN);
+	if (status == SUCCESS) {
+	    Fs_Attributes	attr;
+	    int			i;
+	    char		buffer[128];
+	    Boolean		rootServer = FALSE;
+
+	    sprintf(buffer, "%s/ROOT", LOCAL_DISK_NAME);
+	    status = Fs_GetAttributes(buffer, FS_ATTRIB_FILE, &attr);
+d336 2
+a337 53
+		rootServer = FALSE;
+	    } else {
+		printf("Found %s.\n", buffer);
+		rootServer = TRUE;
+	    }
+	    argc = Mach_GetBootArgs(10, 256, argv, argBuffer);
+	    for (i = 0; i < argc; i++) {
+		if (!strcasecmp(argv[i], "-backup")) {
+		    printf("Found %s option.\n", argv[i]);
+		    rootServer = FALSE;
+		}
+		if (!strcasecmp(argv[i], "-root")) {
+		    printf("Found %s option.\n", argv[i]);
+		    rootServer = TRUE;
+		}
+	    }
+	    if (rootServer) {
+		sprintf(buffer, "%s/boot", LOCAL_DISK_NAME);
+		status = Fs_GetAttributes(buffer, FS_ATTRIB_FILE, &attr);
+		if (status != SUCCESS) {
+		    printf("/boot not found on root partition.\n");
+		    rootServer = FALSE;
+		} else {
+		    printf("Found /boot.\n");
+		    if ((attr.type != FS_DIRECTORY)) {
+			printf("/boot is not a directory!\n");
+			rootServer = FALSE;
+		    } else {
+			printf("/boot is a directory.\n");
+		    }
+		}
+	    }
+	    if (rootServer) {
+		Fs_Stream		*streamPtr;
+		static char		rootPrefix[] = "/";
+    
+		status = Fs_Open(LOCAL_DISK_NAME, FS_READ|FS_FOLLOW,
+				FS_DIRECTORY, 0, &streamPtr);
+		if (status != SUCCESS) {
+		    printf("Fs_ProcInit: Unable to open local disk prefix!");
+		} else {
+		    printf("Installing the local disk as %s.\n", rootPrefix);
+		    (void)Fsprefix_Install(rootPrefix, streamPtr->ioHandlePtr, 
+			    FS_LOCAL_DOMAIN, 
+			    FSPREFIX_LOCAL|FSPREFIX_IMPORTED|FSPREFIX_OVERRIDE);
+		    if (strcmp(LOCAL_DISK_NAME, rootPrefix)) {
+			printf("Clearing local disk prefix %s.\n", 
+			    LOCAL_DISK_NAME);
+			Fsprefix_Clear(LOCAL_DISK_NAME, TRUE);
+		    }
+		    fsDiskAttached = TRUE;
+		    break;
+		}
+d339 3
+a341 2
+		printf("Detaching the local disk.\n");
+		Fsdm_DetachDisk(LOCAL_DISK_NAME);
+d352 1
+a352 1
+	    if (fsDiskAttached) {
+d354 1
+a354 1
+		"Fs_ProcInit: I'm the root server and I can't open \"/\".\n");
+@
+
+
+9.6
+log
+@initialize new fs_Stats.statsVersion field.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsInit.c,v 9.4 90/04/19 10:05:16 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d44 1
+d46 5
+d54 1
+a54 1
+#define LOCAL_DISK_NAME		"/bootTmp"
+a181 2
+    int	i;
+    Fs_Device defaultDisk;
+a208 14
+    for (i=0 ; i<devNumDefaultDiskPartitions; i++) {
+	/*
+	 * Second step in bootstrapping the name space.  Try and attach
+	 * a disk under the /bootTmp prefix.  Later this local partition
+	 * may be promoted to the root domain (see Fs_ProcInit).
+	 */
+	defaultDisk = devFsDefaultDiskPartitions[i];
+
+	status = Fsdm_AttachDisk(&defaultDisk, LOCAL_DISK_NAME, FS_ATTACH_LOCAL);
+	if (status == SUCCESS) {
+	    fsDiskAttached = TRUE;
+	    break;
+	}
+    }
+d271 7
+d296 26
+a321 22
+    /*
+     * If there is an attached disk and we are booting standalone (no -c
+     * option and there is a boot directory on the attached disk) then
+     * install a "/" prefix.
+     */
+    standalone = FALSE;
+    if (fsDiskAttached) {
+	Fs_Attributes	attr;
+	int		argc;
+	char		*argv[10];
+	char		argBuffer[256];
+	int		i;
+
+	standalone = TRUE;
+	sprintf(buffer, "%s/boot", LOCAL_DISK_NAME);
+	status = Fs_GetAttributes(buffer, FS_ATTRIB_FILE, &attr);
+	if (status != SUCCESS) {
+	    standalone = FALSE;
+/* XXX */	printf ("no /boot, status %x\n", status);
+	} else if ((attr.type != FS_DIRECTORY)) {
+		printf("%s/boot is not a directory!\n", LOCAL_DISK_NAME);
+		standalone = FALSE;
+d323 8
+a330 6
+	argc = Mach_GetBootArgs(10, 256, argv, argBuffer);
+	for (i = 0; i < argc; i++) {
+	    if (!strcmp(argv[i], "-c")) {
+		standalone = FALSE;
+		break;
+	    }
+a331 3
+	if (standalone) {
+	    Fs_Stream		*streamPtr;
+	    static char		rootPrefix[] = "/";
+d333 10
+a342 2
+	    status = Fs_Open(LOCAL_DISK_NAME, FS_READ|FS_FOLLOW,
+			    FS_DIRECTORY, 0, &streamPtr);
+d344 53
+a396 2
+		printf("Fs_ProcInit: Unable to open local disk prefix!");
+		standalone = FALSE;
+d398 2
+a399 3
+		(void)Fsprefix_Install(rootPrefix, streamPtr->ioHandlePtr, 
+			FS_LOCAL_DOMAIN, 
+			FSPREFIX_LOCAL|FSPREFIX_IMPORTED|FSPREFIX_OVERRIDE);
+d410 1
+a410 1
+	    if (standalone) {
+d412 1
+a412 1
+		"Fs_ProcInit: Booting standalone and can't open \"/\".\n");
+@
+
+
+9.5
+log
+@brent's changes for prefixes
+@
+text
+@d125 2
+@
+
+
+9.4
+log
+@Split the Fs_Init procedure into two parts.  The first
+part initializes data structures and tables.  This has
+to be called before Fsio_BootTimeTtyOpen.  The second
+part initializes the file systems time-of-day and starts
+the bootstrap of the name space.  This is called after
+Rpc_Start (and Fsio_BootTimeTtyOpen).
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsInit.c,v 9.3 90/01/29 18:01:47 shirriff Exp $ SPRITE (Berkeley)";
+d152 2
+a153 2
+ *	a local disk is attached under "/local" if possible.  Later
+ *	in Fs_ProcInit "/local" gets promoted to root if noone
+d165 1
+a165 1
+ *	Local disk is attached under "/local".
+a177 26
+     * Initialized the known domains. Local, Remote, and Pfs.
+     */
+    Fslcl_NameInitializeOps();
+    Fsio_InitializeOps();
+    Fsrmt_InitializeOps();
+    Fspdev_InitializeOps();
+
+    bzero((Address) &fs_Stats, sizeof(Fs_Stats));
+    /*
+     * The handle cache and the block cache start out with a hash table of
+     * a given size which grows on demand.  Thus the numbers passed to
+     * the next two routines are not crucial.
+     */
+    Fsutil_HandleInit(64);
+    Fscache_Init(64);
+
+    Fsprefix_Init();
+
+    Fsconsist_ClientInit();
+
+    Fslcl_DomainInit();
+
+    Fsutil_TraceInit();
+    Fspdev_TraceInit();
+
+    /*
+d206 1
+a206 1
+	 * a disk under the /local prefix.  Later this local partition
+d315 1
+d320 5
+a324 7
+	if (standalone) {
+	    argc = Mach_GetBootArgs(10, 256, argv, argBuffer);
+	    for (i = 0; i < argc; i++) {
+		if (!strcmp(argv[i], "-c")) {
+		    standalone = FALSE;
+		    break;
+		}
+d334 2
+a335 1
+		panic("Fs_ProcInit: Unable to open local disk prefix!");
+d357 1
+a357 2
+	    printf(
+		    "Can't find server for \"/\", waiting 1 min.\n");
+@
+
+
+9.3
+log
+@Changed size of argument buffer to handle ds3100.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsInit.c,v 9.2 89/12/11 17:40:50 brent Exp $ SPRITE (Berkeley)";
+d93 5
+d101 1
+a101 1
+ * Fs_Init
+d103 48
+a150 2
+ *	Initialize the filesystem.  As well as initialize various
+ *	tables and lists, this does the first steps in boot-strapping
+d156 4
+a163 1
+ *	Data structures in the file system are initialized.
+d170 1
+a170 1
+Fs_Init()
+@
+
+
+9.2
+log
+@Nuked Attach Disk print statement that is now done elsewhere
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsInit.c,v 9.1 89/10/23 09:30:35 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d279 1
+a279 1
+	char		argBuffer[100];
+d292 1
+a292 1
+	    argc = Mach_GetBootArgs(10, 100, argv, argBuffer);
+@
+
+
+9.1
+log
+@Removed lint
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsInit.c,v 8.10 89/09/12 12:28:20 mendel Exp $ SPRITE (Berkeley)";
+a184 2
+	    printf("Attached disk type %d unit %d to \"%s\"\n",
+		     defaultDisk.type, defaultDisk.unit, LOCAL_DISK_NAME);
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsInit.c,v 8.10 89/09/12 12:28:20 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d311 1
+a311 1
+		Fsprefix_Install(rootPrefix, streamPtr->ioHandlePtr, 
+@
+
+
+8.10
+log
+@Added Mem_Bin of FS_BLOCK_SIZE.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs.mendel/RCS/fsInit.c,v 8.9 89/08/21 15:22:29 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+8.9
+log
+@Break up fs to sperate modules.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsInit.c,v 8.8 89/06/14 22:30:08 jhh Exp $ SPRITE (Berkeley)";
+d219 1
+@
+
+
+8.8
+log
+@Tidied up Fs_Init.  It does a getAttr of /boot to see
+if it exists as opposed to a full open.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsInit.c,v 8.7 89/06/02 13:30:59 jhh Exp $ SPRITE (Berkeley)";
+d27 8
+a34 9
+#include "fsInt.h"
+#include "fsOpTable.h"
+#include "fsDevice.h"
+#include "fsPrefix.h"
+#include "fsLocalDomain.h"
+#include "fsNameHash.h"
+#include "fsRecovery.h"
+#include "fsPdev.h"
+#include "fsTrace.h"
+d36 1
+a36 1
+#include "fsClient.h"
+d42 3
+d51 7
+d71 1
+a71 1
+FsStats	fsStats;
+d77 1
+a77 1
+Timer_QueueElement	fsTimeOfDayElement;
+d83 1
+a83 1
+Boolean fsInitialized = FALSE;
+d123 9
+a131 1
+    bzero((Address) &fsStats, sizeof(FsStats));
+d137 2
+a138 2
+    FsHandleInit(64);
+    FsBlockCacheInit(64);
+d140 1
+a140 1
+    FsPrefixInit();
+d142 3
+a144 3
+    FsClientInit();
+
+    FsLocalDomainInit();
+d146 2
+a147 2
+    FsTraceInit();
+    FsPdevTraceInit();
+d154 4
+a157 4
+    fsTimeOfDayElement.routine = FsUpdateTimeOfDay;
+    fsTimeOfDayElement.clientData = 0;
+    fsTimeOfDayElement.interval = timer_IntOneSecond;
+    Timer_ScheduleRoutine(&fsTimeOfDayElement, TRUE);
+d159 1
+a159 1
+    fsTimeInSeconds = time.seconds;
+d166 1
+a166 1
+    Recov_CrashRegister(FsClientCrashed, (ClientData) NIL);
+d173 1
+a173 1
+    (void)FsPrefixInstall("/", (FsHandleHeader *)NIL, -1, FS_IMPORTED_PREFIX); 
+d183 1
+a183 1
+	status = FsAttachDisk(&defaultDisk, LOCAL_DISK_NAME, FS_ATTACH_LOCAL);
+d191 1
+a191 1
+    fsInitialized = TRUE;
+d213 3
+a215 5
+    Mem_Bin(sizeof(FsLocalFileIOHandle));
+    Mem_Bin(sizeof(FsRmtFileIOHandle));
+    Mem_Bin(sizeof(FsFileDescriptor));
+    Mem_Bin(sizeof(PdevServerIOHandle));
+    Mem_Bin(sizeof(PdevControlIOHandle));
+d310 1
+a310 1
+		FsPrefixInstall(rootPrefix, streamPtr->ioHandlePtr, 
+d312 1
+a312 1
+			FS_LOCAL_PREFIX|FS_IMPORTED_PREFIX|FS_OVERRIDE_PREFIX);
+d407 1
+a407 1
+	Fs_StreamCopy(parFsPtr->cwdPtr, &newFsPtr->cwdPtr);
+d425 1
+a425 1
+		Fs_StreamCopy(*parStreamPtrPtr, newStreamPtrPtr);
+@
+
+
+8.7
+log
+@removed some of the boot printfs
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsInit.c,v 8.6 89/05/30 16:10:46 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d262 5
+a266 5
+	int	dummy;
+	int	argc;
+	char	*argv[10];
+	char	argBuffer[100];
+	int	i;
+d270 1
+a270 1
+	status = Fs_Open(buffer, FS_READ, FS_DIRECTORY, 0, &dummy);
+a271 1
+	    printf("Can't open %s <0x%x>\n", buffer, status);
+d273 5
+a277 1
+	} else {
+@
+
+
+8.6
+log
+@Removed call to Sync_LockRegister
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsInit.c,v 8.4 89/05/10 11:30:12 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+a269 1
+	printf("Trying to open %s.\n", buffer);
+a274 1
+	    printf("Open succeeded.\n");
+a291 1
+		printf("Installing %s prefix.\n", rootPrefix);
+a301 1
+    printf("Trying to open /.\n");
+a316 1
+    printf("Open succeeded.\n");
+a318 1
+    printf("Trying to open /boot.\n");
+a322 1
+    printf("Open succeeded.\n");
+@
+
+
+8.5
+log
+@1) Changed to use only bottom 8 bits of device type number for index
+   into dev switch.
+2) Patched to use new async block IO interface.
+@
+text
+@d44 1
+a44 2
+ * The prefix under which the local disk is attached.  The /initSprite
+ * program looks for things under "/local".
+d46 1
+a46 1
+#define LOCAL_DISK_NAME		"/local"
+d76 7
+d170 1
+d234 3
+d256 47
+a302 1
+     * Open the root as the current directory.
+d304 2
+a305 1
+    fsPtr->cwdPtr = (Fs_Stream *)NIL;
+d307 1
+a307 1
+	status = Fs_Open("/", FS_READ, FS_DIRECTORY, 0, &fsPtr->cwdPtr);
+d309 4
+d314 1
+a314 1
+	     * No server for "/" around so try using the local disk as "/"
+d316 4
+a319 31
+	    FsHandleHeader *hdrPtr;
+	    char *lookupName;
+	    int domainType;
+	    Fs_FileID rootID;
+	    FsPrefix *prefixPtr;
+	    ReturnStatus status2;
+    
+	    status2 = FsPrefixLookup(LOCAL_DISK_NAME,
+				FS_LOCAL_PREFIX | FS_EXACT_PREFIX, 
+				FS_LOCALHOST_ID, &hdrPtr, &rootID, &lookupName,
+				&domainType, &prefixPtr);
+	    if (status2 == SUCCESS) {
+		printf("Exporting \"%s\" as root\n", LOCAL_DISK_NAME);
+		(void)FsPrefixInstall("/", hdrPtr, domainType,
+				     FS_EXPORTED_PREFIX | FS_IMPORTED_PREFIX);
+		status = Fs_Open("/", FS_READ, FS_DIRECTORY, 0, &fsPtr->cwdPtr);
+		if (status != SUCCESS) {
+		    panic(
+			      "Fs_ProcInit: Can't open local root <0x%x>\n",
+			      status);
+		    (void)Fs_PrefixClear("/", FALSE);
+		}
+	    } else {
+		/*
+		 * No local disk.  Wait a bit and retry the open of "/".
+		 */
+		printf(
+			"Can't find server for \"/\", waiting 1 min.\n");
+		(void)Sync_WaitTime(time_OneMinute);
+	    }
+	} 
+d321 9
+@
+
+
+8.4
+log
+@*** empty log message ***
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsInit.c,v 8.3 89/03/03 08:13:44 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+8.3
+log
+@Added INET support
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsInit.c,v 8.2 89/01/29 14:39:26 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d152 1
+a152 1
+    for (i=0 ; i<devNumDiskTypes ; i++) {
+d158 1
+a158 4
+	defaultDisk.serverID = -1;
+	defaultDisk.type = devFsDefaultDiskTypes[i];
+	defaultDisk.unit = 0;
+	defaultDisk.data = (ClientData)NIL;
+@
+
+
+8.2
+log
+@Added some Mem_Bin calls.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsInit.c,v 8.1 88/12/15 09:34:42 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d197 3
+@
+
+
+8.1
+log
+@Ramped up fs's use of RPC so maximum bandwidth can
+be obtained with remote access.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsInit.c,v 8.0 88/11/11 18:19:09 douglis Stable Locker: brent $ SPRITE (Berkeley)";
+d34 1
+d111 2
+a112 2
+     * a given size (8).  The hash routines, however, automatically grow their
+     * hash tables if they gets too filled.  Thus the mysterious 8.
+d114 2
+a115 2
+    FsHandleInit(8);
+    FsBlockCacheInit(8);
+d195 2
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsInit.c,v 7.0 88/11/11 15:31:00 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d56 2
+a57 2
+int fsMaxRpcDataSize = 4096;
+int fsMaxRpcParamSize = 1024;
+@
+
+
+7.0
+log
+@New version for conversion to new C library
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsInit.c,v 6.3 88/10/16 10:15:37 brent Exp Locker: brent $ SPRITE (Berkeley)";
+@
+
+
+6.3
+log
+@Updated calls to FsPrefixInstall
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: fsInit.c,v 6.2 88/10/14 12:15:12 brent Exp $ SPRITE (Berkeley)";
+a37 2
+#include "mem.h"
+#include "byte.h"
+d107 1
+a107 1
+    Byte_Zero(sizeof(FsStats), (Address) &fsStats);
+d164 1
+a164 1
+	    Sys_Printf("Attached disk type %d unit %d to \"%s\"\n",
+d226 1
+a226 1
+    procPtr->fsPtr = fsPtr = Mem_New(Fs_ProcessState);
+d239 1
+a239 1
+    fsPtr->groupIDs 	= (int *) Mem_Alloc(1 * sizeof(int));
+d264 1
+a264 1
+		Sys_Printf("Exporting \"%s\" as root\n", LOCAL_DISK_NAME);
+d269 1
+a269 1
+		    Sys_Panic(SYS_FATAL,
+d278 1
+a278 1
+		Sys_Panic(SYS_WARNING,
+d344 1
+a344 1
+    newProcPtr->fsPtr = newFsPtr = Mem_New(Fs_ProcessState);
+d361 2
+a362 2
+		(Fs_Stream **)Mem_Alloc(len * sizeof(Fs_Stream *));
+	newFsPtr->streamFlags = (char *)Mem_Alloc(len * sizeof(char));
+d388 1
+a388 1
+	newFsPtr->groupIDs = (int *)Mem_Alloc(len * sizeof(int));
+d470 2
+a471 2
+	Mem_Free((Address) fsPtr->streamList);
+	Mem_Free((Address) fsPtr->streamFlags);
+d476 1
+a476 1
+	Mem_Free((Address) fsPtr->groupIDs);
+d480 1
+a480 1
+    Mem_Free((Address)fsPtr);
+@
+
+
+6.2
+log
+@FsFileID FsUserID change
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: fsInit.c,v 6.1 88/08/31 12:05:13 brent Exp $ SPRITE (Berkeley)";
+d267 1
+a267 1
+		FsPrefixInstall("/", hdrPtr, domainType,
+@
+
+
+6.1
+log
+@Removed lint.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: fsInit.c,v 6.0 88/08/11 12:15:34 brent Stable $ SPRITE (Berkeley)";
+d257 1
+a257 1
+	    FsFileID rootID;
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: fsInit.c,v 1.8 88/07/15 17:54:43 mendel Exp $ SPRITE (Berkeley)";
+d274 1
+a274 1
+		    Fs_PrefixClear("/", FALSE);
+d282 1
+a282 1
+		Sync_WaitTime(time_OneMinute);
+@
+
+
+1.8
+log
+@Moved device switch table into dev module.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: fsInit.c,v 1.7 88/06/15 16:36:10 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+1.7
+log
+@Fixed initialization of the name cache.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: fsInit.c,v 1.6 88/06/08 14:58:52 brent Exp $ SPRITE (Berkeley)";
+a43 1
+
+a44 7
+ * A list of disk device types that is used when probing for a disk.
+ */
+int fsDefaultDiskTypes[] = { FS_DEV_SCSI_DISK, FS_DEV_XYLOGICS,
+			     FS_DEV_SBC_DISK };
+static int numDiskTypes = sizeof(fsDefaultDiskTypes) / sizeof(int);
+
+/*
+d153 1
+a153 1
+    for (i=0 ; i<numDiskTypes ; i++) {
+d160 1
+a160 1
+	defaultDisk.type = fsDefaultDiskTypes[i];
+@
+
+
+1.6
+log
+@Plugged core leak
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: fsInit.c,v 1.5 88/05/06 12:39:27 brent Exp $ SPRITE (Berkeley)";
+d48 2
+a49 1
+int fsDefaultDiskTypes[] = { FS_DEV_SCSI_DISK, FS_DEV_XYLOGICS };
+d80 6
+d174 1
+a174 1
+	    Sys_Printf("Attached disk <%d, %d> to \"%s\"\n",
+a175 7
+	    /*
+	     * Initialize the hash table used to speed lookups.
+	     * This hash table is fixed in size.  It is only needed
+	     * on diskful machines.
+	     */
+	    FsNameHashInit(fsNameTablePtr, fsNameHashSize);
+	
+d179 1
+@
+
+
+1.5
+log
+@Changed proc table -> file system interface
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: fsInit.c,v 1.4 88/05/05 17:33:24 brent Exp $ SPRITE (Berkeley)";
+a199 1
+    Mem_Bin(FS_BLOCK_SIZE);
+d202 1
+d480 1
+d489 2
+@
+
+
+1.4
+log
+@Nuked Sys_GetProcessorNumber
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: fsInit.c,v 1.3 88/04/28 08:16:37 brent Exp $ SPRITE (Berkeley)";
+a221 1
+ *	(The current domain will also be intialized.)
+d232 1
+a232 1
+    Fs_Stream		*cwdPtr;	/* File for the current directory */
+d235 1
+d247 4
+d254 1
+a254 2
+    procPtr->cwdPtr = (Fs_Stream *)NIL;
+    cwdPtr = (Fs_Stream *)NIL;
+d256 1
+a256 1
+	status = Fs_Open("/", FS_READ, FS_DIRECTORY, 0, &cwdPtr);
+d276 1
+a276 1
+		status = Fs_Open("/", FS_READ, FS_DIRECTORY, 0, &cwdPtr);
+a292 1
+    procPtr->cwdPtr = cwdPtr;
+d297 4
+a300 3
+    procPtr->filePermissions = FS_OWNER_READ|FS_OWNER_WRITE|FS_OWNER_EXEC |
+			       FS_GROUP_READ | FS_WORLD_READ |
+			       FS_GROUP_EXEC | FS_WORLD_EXEC;
+d305 2
+a306 2
+    procPtr->numStreams = 0;
+    procPtr->streamList = (Fs_Stream **)NIL;
+d335 2
+d343 2
+a344 1
+     * Current working directory and open files.
+d346 16
+a361 3
+    newProcPtr->cwdPtr = parentProcPtr->cwdPtr;
+    if (parentProcPtr->cwdPtr != (Fs_Stream *)NIL) {
+	Fs_StreamCopy(parentProcPtr->cwdPtr, &newProcPtr->cwdPtr);
+d364 4
+a367 1
+    len = newProcPtr->numStreams = parentProcPtr->numStreams;
+d369 1
+a369 1
+	newProcPtr->streamList =
+d371 3
+a373 2
+	for (i = 0, parStreamPtrPtr = parentProcPtr->streamList,
+		    newStreamPtrPtr = newProcPtr->streamList;
+d378 1
+d381 1
+d385 2
+a386 1
+	newProcPtr->streamList = (Fs_Stream **)NIL;
+d389 1
+a389 1
+    newProcPtr->filePermissions = parentProcPtr->filePermissions;
+d392 1
+a392 1
+     * User and Group Ids.
+a393 1
+    newProcPtr->userID = parentProcPtr->userID;
+d395 1
+a395 1
+    len = newProcPtr->numGroupIDs = parentProcPtr->numGroupIDs;
+d397 1
+a397 1
+	newProcPtr->groupIDs = (int *)Mem_Alloc(len * sizeof(int));
+d399 1
+a399 1
+	    newProcPtr->groupIDs[i] = parentProcPtr->groupIDs[i];
+d402 1
+a402 1
+	newProcPtr->groupIDs = (int *)NIL;
+d428 2
+a429 1
+    register Fs_Stream *streamPtr;
+d431 8
+a438 6
+    for (i=0 ; i<procPtr->numStreams ; i++) {
+	streamPtr = procPtr->streamList[i];
+	if ((streamPtr != (Fs_Stream *)NIL) &&
+	    (streamPtr->flags & FS_CLOSE_ON_EXEC)) {
+	    (void)Fs_Close(streamPtr);
+	    FsClearStreamID(i, procPtr);
+d464 1
+d466 2
+a467 2
+    if (procPtr->cwdPtr != (Fs_Stream *) NIL) {
+	(void)Fs_Close(procPtr->cwdPtr);
+d470 2
+a471 2
+    if (procPtr->streamList != (Fs_Stream **)NIL) {
+	for (i=0 ; i<procPtr->numStreams ; i++) {
+d474 1
+a474 1
+	    streamPtr = procPtr->streamList[i];
+d479 2
+a480 2
+	Mem_Free((Address) procPtr->streamList);
+	procPtr->streamList = (Fs_Stream **)NIL;
+d483 4
+a486 4
+    if (procPtr->groupIDs != (int *) NIL) {
+	Mem_Free((Address) procPtr->groupIDs);
+	procPtr->groupIDs = (int *) NIL;
+	procPtr->numGroupIDs = 0;
+@
+
+
+1.3
+log
+@Added call to pdev trace init routine
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: fsInit.c,v 1.2 88/04/11 17:41:04 brent Exp $ SPRITE (Berkeley)";
+d235 1
+a235 1
+    procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+@
+
+
+1.2
+log
+@Changed interface to fsPrefixLookup, slightly.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: fsInit.c,v 1.1 88/04/05 13:56:11 brent Exp $ SPRITE (Berkeley)";
+d126 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: fsInit.c,v 1.1 88/04/04 10:33:18 brent Exp $ SPRITE (Berkeley)";
+d260 1
+d266 1
+a266 1
+				FS_LOCALHOST_ID, &hdrPtr, &lookupName,
+@

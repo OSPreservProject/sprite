@@ -1,0 +1,86 @@
+% ACM DOCUMENT STYLE -- version 0.92 - released 25 October 1984
+%    for LaTeX version 2.07
+% Copyright (C) 1984 by Leslie Lamport
+
+\typeout{Document Style 'acm'. Version 0.92 - released 25 October 1984}
+
+
+
+%  ****************************************
+%  *            PAGE LAYOUT               *
+%  ****************************************
+%
+% All margin dimensions measured from a point one inch from top and side
+% of page.  Dimensions shrink by about 2 percent
+
+% SIDE MARGINS:
+   \oddsidemargin  17pt      %   Note that \oddsidemargin = \evensidemargin
+   \evensidemargin 17pt
+
+% VERTICAL SPACING:        
+                         % Top of page:
+\topmargin -40pt         %    Nominal distance from top of page to top of
+                         %    box containing running head.
+\headheight 12pt         %    Height of box containing running head.
+\headsep 25pt            %    Space between running head and text.
+% \topskip = 10pt        %    '\baselineskip' for first line of page.
+                         % Bottom of page:
+\footheight 12pt         %    Height of box containing running foot.
+\footskip 75pt           %    Distance from baseline of box containing foot 
+                         %    to baseline of last line of text.
+
+
+% DIMENSION OF TEXT:
+
+\textheight 11.88in      % Height of text (including footnotes and figures, 
+                         % excluding running head and foot).
+\textwidth 8.99in        % Width of text line.
+                         % For two-column mode: 
+\columnsep .5in          %    Space between columns 
+\columnseprule 0pt       %    Width of rule between columns.
+
+
+
+%    ****************************************
+%    *            PAGE STYLES               *
+%    ****************************************
+%
+
+\def\@oddhead{}\def\@evenhead{}
+\def\@oddfoot{\rm \@rhead\hfil Page \thepage}
+\def\@evenfoot{\@oddfoot}
+
+
+%    ****************************************
+%    *               TITLE                  *
+%    ****************************************
+%
+
+
+\def\@maketitle{\vbox to 3in{\hsize\textwidth \linewidth\hsize \vfil \centering
+  {\LARGE \@title \par}     % Title set in \LARGE size. 
+  \vskip 2em                % Vertical space after title.
+  {\large \begin{tabular}[t]{c}\@author \end{tabular}\par}    
+  \vfil}}
+
+\def\copyrightspace{\footnotetext[0]{\mbox{}\vrule height 130pt width 0pt}}
+
+% The abstract Environment
+
+\def\abstract{\section*{Abstract}}
+\def\endabstract{\par}
+
+
+%    ****************************************
+%    *           INITIALIZATION             *
+%    ****************************************
+%
+% Default initializations
+
+\twocolumn                  
+\sloppy
+\parindent 1em
+\leftmargini 2em
+\leftmargin\leftmargini 
+\leftmarginv .5em
+\leftmarginvi .5em

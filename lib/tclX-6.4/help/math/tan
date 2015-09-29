@@ -1,0 +1,4 @@
+
+
+          tan expr
+               Returns the tangent of expr.  expr is in radians.

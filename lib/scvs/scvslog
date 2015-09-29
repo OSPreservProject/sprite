@@ -1,0 +1,21 @@
+#!/sprite/cmds/perl
+require 'ctime.pl';
+
+$module = shift;
+$module =~ m|kernel/(\S+)|;
+$module = $1;
+#
+# Don't record changes to the links file since its not very useful.
+#
+if ($module =~ /.*\/SCVS/) {
+    exit(0);
+}
+print("\n---------------------------------------------------------------\n");
+printf("Date	: %s", &ctime(time));
+printf("Module	: $module\n");
+printf("User	: %s\n", getlogin);
+while(<STDIN>) {
+    next if (/^Update of/);
+    next if (/^In directory/);
+    print;
+}

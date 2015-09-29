@@ -1,0 +1,2 @@
+M = $(MACHINE)
+#include  <$(SYSMAKEFILE)>

@@ -1,0 +1,214 @@
+\input amstex
+\documentstyle{amstexsiam}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Macro definitions for running heads and first page              %
+% Use \def or \redefine for these definitions                     %
+\accepted                                                         %
+\pageno=10                        % starting page of paper        %
+\def\journalname{{\sixrm SIAM J. M{\fiverm ATH.} F{\fiverm OOL.}}}%
+\def\issuevolume{1}                                               %
+\def\issuenumber{2}                                               %
+\def\issuemonth{February}                                         %
+\def\placenumber{002}             % place of paper in this issue  %
+\def\issueyear{1988}                                              %
+\def\oddhead{a sample paper}                                      %
+\def\evenhead{bradley j\. lucier and douglas n\. arnold}          %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Macros specific to this paper   %
+\define\BbbR{{\Bbb R}}            %
+\define\loner{{L^1(\BbbR)}}       %
+\define\linfr{{L^\infty(\BbbR)}}  %
+\define\bvr{{\roman{BV}(\BbbR)}}  %
+\define\TV{{\roman {TV}}}         %
+\define\sdot{\,\cdot\,}           %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\topmatter
+\title
+A SAMPLE PAPER TO ILLUSTRATE THE 
+\AmSTeX\ SIAM STYLE\footnote"*"{Unlikely to appear.}
+\endtitle
+\author
+BRADLEY J. LUCIER\footnote"\dag"{Department of Mathematics, Purdue University,
+West Lafayette, Indiana 47907.
+The work of the first author was not supported by the
+Wolf Foundation.
+} and
+DOUGLAS N. ARNOLD\footnote"\ddag"{Department of Mathematics, University
+of Maryland, College Park, Maryland 20742.}
+\endauthor
+\abstract{This sample paper illustrates many of the amstex
+macros as used with the \AmSTeX\ SIAM style file.
+The \AmSTeX\ SIAM style file (amstexsiam.sty), which is a modification of
+the amsppt style of Michael Spivak, gives authors easy
+access to most of the typographical constructions used in SIAM journals.
+It does not address the issues of the table of contents
+or tables, which must be set using more primitive \TeX\ macros.}
+\keywords{porous medium, interface curves}
+\subjclass{65N60}
+\endtopmatter
+\document
+\subheading{1. Introduction}
+We are concerned with numerical approximations to the so-called
+porous-medium equation \cite{6},
+$$
+\alignedat2
+  &u_t=\phi(u)_{xx},&&\qquad x\in\BbbR,\quad t>0,\quad\phi(u)=u^m,\quad m>1,
+\\
+  &u(x,0)=u_0(x),&&\qquad x\in\BbbR.
+\endalignedat
+\tag 1.1
+$$
+We assume that the initial data $u_0(x)$ has bounded support, that
+$0\leq u_0\leq M$, and that $\phi(u_0)_x\in\bvr$.
+It is well known that a unique solution $u(x,t)$ of (1.1) exists,
+and that $u$ satisfies
+$$
+  0\leq u\leq M\text{ and }\TV\phi(u(\,\cdot\,,t))_x\leq\TV\phi(u_0)_x.
+\tag 1.2
+$$
+If the data has slightly more regularity, then this too is satisfied
+by the solution. Specifically, if $m$ is no greater than two and
+$u_0$ is Lipschitz continuous, then $u(\,\cdot\,,t)$ is also Lipschitz;
+if $m$ is greater than two and $(u_0^{m-1})_x\in\linfr$, then
+$(u(\,\cdot\,,t)^{m-1})_x\in\linfr$ 
+(see [3]). (This will follow from results presented here, also.)
+We also use the fact that the solution $u$ is H\"older continuous in $t$.
+
+\subheading{2. $\linfr$ error bounds}
+After a simple definition, we state a theorem
+that expresses the error of approximations $u^h$ in
+terms of the weak truncation error $E$.
+\proclaim{Definition 2.1}\rm A {\it definition}
+is the same as a theorem set in roman
+type.
+\endproclaim
+\proclaim{Theorem 2.1}
+Let $\{u^h\}$ be a family of approximate solutions satisfying
+the following conditions for $0\leq t\leq T$:
+\roster
+\item For all $x\in\BbbR$ and positive $t$, $0\leq u^h(x,t)\leq M$;
+\item Both $u$ and $u^h$ are H\"older--$\alpha$ in $x$
+for some $\alpha\in(0,1\wedge 1/(m-1))$; $u^h$ is right continuous in $t$;
+and $u^h$ is H\"older continuous in $t$ on
+strips $\BbbR\times(t^n,t^{n+1})$, with the set $\{t^n\}$ having no
+limit points; and
+\item There exists a positive function $\omega(h,\epsilon)$ such that:
+whenever $\{w^\epsilon\}_{0<\epsilon\leq\epsilon_0}$ is a family of functions
+in $\bold X$ for which
+{\roster
+\item"(a)" there is a sequence of positive numbers $\epsilon$ tending
+to zero, such that for these  values of
+$\epsilon$, $\|w^\epsilon\|_\infty\leq 1/\epsilon$,
+\item"(b)" for all positive
+$\epsilon$, $\|w_x^\epsilon(\sdot,t)\|_\loner\leq 1/\epsilon^2$, and
+\item"(c)" for all $\epsilon>0$, 
+$$
+\sup\Sb
+x\in\BbbR\\0\leq t_1,t_2\leq T\endSb
+\dfrac{|w^\epsilon(x,t_2)-w^\epsilon(x,t_1)|}{|t_2-t_1|^p}\leq 1/\epsilon^2,
+$$
+where $p$ is some number not exceeding $1$,
+\endroster}
+then $|E (u^h,w^\epsilon,T)|\leq\omega(h,\epsilon).$
+\endroster
+Then, there is a constant $C=C(m,M,T)$ such that
+$$
+\|u-u^h\|_{\infty,\BbbR\times[0,T]}\leq
+C\left[
+\sup \left |\int_\BbbR(u_0(x)-u^h(x,0))  w(x,0) \,dx\right|+
+\omega(h,\epsilon)+\epsilon^\alpha\right],
+\tag 2.1
+$$
+where the supremum is taken over all $w\in\bold X$.
+\endproclaim
+\demo{Proof}Let $z$ be in $\bold X$. Because $E(u,\sdot,\sdot)\equiv0$,
+Equation (1.5) implies that
+$$
+\int_\BbbR\Delta uz|^T_0dx=\int_0^T\int_\BbbR
+\Delta u(z_t+\phi[u,u^h]z_{xx})\,dx\,dt-
+E(u^h,z,t),
+\tag 2.2
+$$
+where $\Delta u=u-u^h$ and 
+$$
+\phi[u,u^h]=\dfrac{\phi(u)-\phi(u^h)}{u-u^h}.
+$$
+Extend $\phi[u,u^h](\cdot,t)=\phi[u,u^h](\cdot,0)$ for negative $t$, and
+$\phi[u,u^h](\cdot,t)=\phi[u,u^h](\cdot,T)$
+for $t>T$.\footnote{This is an obvious ploy, but we need a footnote.}
+Fix a point $x_0$ and a number $\epsilon>0$. Let $j_\epsilon$
+be a smooth function of $x$ with integral $1$ and support in 
+$[-\epsilon,\epsilon]$,
+and let $J_\delta$ be a smooth function of
+$x$ and $t$ with integral $1$ and support in 
+$[-\delta,\delta]\times[-\delta,\delta]$; $\delta$ and $\epsilon$ are
+positive numbers to be specified later.
+We choose $z=z^{\epsilon\delta}$ to satisfy
+$$
+\aligned
+  &z_t+(\delta+J_\delta*\phi[u,u^h])z_{xx}=0,\qquad x\in\BbbR,\;0\leq t\leq T,
+\\
+  &z(x,T)=j_\epsilon(x-x_0).
+\endaligned
+\tag 2.3
+$$
+The conclusion of the theorem now follows from (2.1) and the fact that
+$$
+|j_\epsilon*\Delta u(x_0,t)-\Delta u(x_0,t)|\leq C\epsilon^\alpha,
+$$
+which follows from  Assumption 2.\qed
+\enddemo
+\Refs
+\ref
+  \no 1
+  \by L. A. Caffarelli and A. Friedman
+  \paper Regularity of the free boundary of a gas flow in an 
+         $n$-dimensional porous medium
+  \jour Indiana Math. J.
+  \vol 29
+  \yr 1980
+  \pages 361--391
+\endref
+\ref 
+  \no 2
+  \by K. Hollig and M. Pilant
+  \paper Regularity of the free boundary for the porous medium equation
+  \paperinfo MRC Tech. Rep. 2742
+\endref
+\ref 
+  \no 3
+  \by J. Jerome
+  \book Approximation of Nonlinear Evolution Systems 
+  \publ Academic Press 
+  \publaddr New York 
+  \yr 1983
+\endref
+\ref
+  \no 4
+  \manyby R. J. LeVeque
+  \paper Convergence of a large time step generalization of Godunov's method 
+         for conservation laws
+  \jour Comm. Pure Appl. Math.
+  \vol 37 
+  \yr 1984
+  \pages 463--478
+\endref
+\ref
+  \no 5
+  \bysame
+  \paper A large time step generalization of Godunov's method for systems
+         of conservation laws
+  \jour
+  \toappear
+\endref
+\ref 
+  \no 6
+  \by B. J. Lucier
+  \paper On nonlocal monotone difference methods for scalar conservation laws
+  \jour Math. Comp.
+  \vol 47
+  \yr 1986
+  \pages 19--36
+\endref
+\enddocument

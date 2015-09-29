@@ -1,0 +1,68 @@
+
+
+
+HOSTNAME                  User Commands                  HOSTNAME
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     hostname - Print name or sprite ID of host
+
+SSYYNNOOPPSSIISS
+     hhoossttnnaammee [--vv]] [[--pp]] [[--ii]] [[--ttyyppee]]
+
+OOPPTTIIOONNSS
+     --vv   Print out information about the virtual host, which  is
+          the host on which the process is executing if it is not
+          migrated, or the process's home node if it is migrated.
+          This is the default.
+
+     --pp   Print out information about the physical host, which is
+          the  host on which the process is physically executing,
+          regardless of whether it is migrated.
+
+     --ii   Print out sprite ID instead of host name.
+
+     --ttyyppee
+          Print out the machine type.
+
+_________________________________________________________________
+
+DDEESSCCRRIIPPTTIIOONN
+     By default, hhoossttnnaammee prints out the  official  name  of  the
+     host  on  which  the process ``appears'' to be executing, as
+     specified in the host description file.  (This is equivalent
+     to  the  --vv, or virtual host, option.)  Other options may be
+     used to specify that information about the host on which the
+     process  is  currently  physically  executing be printed, or
+     that the integer sprite ID of the  host  is  to  be  printed
+     instead of host name.
+
+KKEEYYWWOORRDDSS
+     host, name, migration, physical host, virtual host
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  August 28, 1990                   1
+
+
+

@@ -1,0 +1,147 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.5
+date     91.10.20.12.38.30;  author mottsmth;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.07.08.10.30.21;  author mottsmth;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.04.27.12.05.02;  author shirriff;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.01.19.10.11.11;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.12.30.10.06.38;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@More format upgrades.
+@
+
+
+1.5
+log
+@Add remote mount points to support the mounting
+of one NFS filesystem within another.
+@
+text
+@' $Header: /sprite/src/cmds/nfsmount/RCS/nfsmount.man,v 1.4 91/07/08 10:30:21 mottsmth Exp Locker: mottsmth $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS NFSMOUNT cmds
+.BS
+.SH NAME
+nfsmount \- a Sprite-to-NFS filesystem gateway
+.SH SYNOPSIS
+\fBnfsmount\fR  [\fB\-t\fR] \fIhost:/filesystem /prefix\fR
+.SH OPTIONS
+.IP "\fB\-t\fR" 14
+Trace each access to the remote file system.
+.IP "\fB\-m \fIlocal-name remote-name\fR" 14
+Specify logical mount points within the namespace.  See commentary
+below. \fIlocal-name\fR is the sub-mount point relative to \fI/prefix\fR.
+\fIremote-name\fR is an absolute path specifying the Sprite remote link.
+.BE
+.SH INTRODUCTION
+.PP
+\fBNfsmount\fP is a pseudo-filesystem server that provides access
+to a remote NFS file system.  The first argument is a host name,
+a separating colon (`:'), and a file system on that host.
+The second argument is a Sprite prefix under which the remote
+file system will be visible.  The server is still very simple,
+although quite functional.  Each operation
+causes an RPC to the remote host;  there is no caching yet.
+.PP
+Real NFS allows one filesystem to be mounted onto another NFS filesystem.
+This doesn't work in Sprite because Sprite requires a remote link
+(see ln command) for each NFS filesystem and it is not possible to create
+one of these within the parent NFS filesystem. Consequently, the subsidiary
+filesystem must be mounted elsewhere in the Sprite tree. Then the
+parent nfsmount program must be told that there is a logical mount
+point within its namespace using the -m option.  The first argument is
+the name (relative to the root of the parent tree) where the mount point
+logically exists. The second parameter is the absolute path of the
+remote link where the child NFS tree is really mounted in Sprite.
+.SH BUGS
+The \fBgetpwd()\fR library call doesn't work yet because it can't find
+the ``inode'' number of the prefix correctly.  This is fixable
+but may not happen right away.  A related problem is that the
+\fBdf\fP command won't report disk space.
+.SH KEYWORDS
+NFS
+@
+
+
+1.4
+log
+@modify man page to remove restriction
+on the execution of NFS files.
+@
+text
+@d1 1
+a1 1
+' $Header: /sprite/src/cmds/nfsmount/RCS/nfsmount.man,v 1.3 90/04/27 12:05:02 shirriff Exp Locker: mottsmth $ SPRITE (Berkeley)
+d12 4
+d26 11
+@
+
+
+1.3
+log
+@Fixed typo.
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/nfsmount/RCS/nfsmount.man,v 1.2 89/01/19 10:11:11 brent Exp $ SPRITE (Berkeley)
+a26 3
+.PP
+Execution of NFS files is currently dis-allowed by the server pending
+a fix to the Sprite kernel to allow this.
+@
+
+
+1.2
+log
+@Disallowing execution pending Sprite kernel fix
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/nfsmount/RCS/nfsmount.man,v 1.1 88/12/30 10:06:38 ouster Exp $ SPRITE (Berkeley)
+d8 1
+a8 1
+\fBnetmount\fR  [\fB\-t\fR] \fIhost:/filesystem /prefix\fR
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+' $Header: /sprite/doc/ref/cmds/RCS/nfsmount,v 1.1 88/12/13 09:23:44 brent Exp $ SPRITE (Berkeley)
+d8 1
+a8 1
+\fBnetroute\fR  [\fB\-t\fR] \fIhost:/filesystem /prefix\fR
+d27 3
+@

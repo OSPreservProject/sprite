@@ -1,0 +1,28 @@
+F AP.;1                             	ap
+L COMPONEN.;1                       	components	../mh.gen/components
+F CONFLICT.;1                       	conflict
+L DIGESTCO.;1                       	digestcomps	../mh.gen/digestcomps
+L DISTCOMP.;1                       	distcomps	../mh.gen/distcomps
+F DP.;1                             	dp
+L FORWCOMP.;1                       	forwcomps	../mh.gen/forwcomps
+F INSTALL_.;1                       	install-mh
+L MAILALIA.;1                       	MailAliases	../mh.gen/MailAliases
+F MHL.;1                            	mhl
+L MHL_DIGE.;1                       	mhl.digest	../mh.gen/mhl.digest
+L MHL_FORM.;1                       	mhl.format	../mh.gen/mhl.format
+L MHL_FORW.;1                       	mhl.forward	../mh.gen/mhl.forward
+L MHL_REPL.;1                       	mhl.reply	../mh.gen/mhl.reply
+L MTSTAILO.;1                       	mtstailor	../mh.gen/mtstailor
+F POST.;1                           	post
+F RCVDIST.;1                        	rcvdist
+L RCVDISTC.;1                       	rcvdistcomps	../mh.gen/rcvdistcomps
+F RCVPACK.;1                        	rcvpack
+F RCVSTORE.;1                       	rcvstore
+F RCVTTY.;1                         	rcvtty
+L REPLCOMP.;1                       	replcomps	../mh.gen/replcomps
+L SCAN.SIZ;1                        	scan.size	../mh.gen/scan.size
+L SCAN0.TIM;1                       	scan.time	../mh.gen/scan.time
+L SCAN1.TIM;1                       	scan.timely	../mh.gen/scan.timely
+F SLOCAL.;1                         	slocal
+F SPOST.;1                          	spost
+L TMAC.H;1                          	tmac.h	../mh.gen/tmac.h

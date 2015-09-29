@@ -1,0 +1,1 @@
+../../c.orig/mig/Mig_GetAllInfo.c

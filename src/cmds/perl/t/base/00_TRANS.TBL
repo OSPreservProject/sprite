@@ -1,0 +1,6 @@
+L COND.T;1                          	cond.t	../../dist/t/base/cond.t
+L IF.T;1                            	if.t	../../dist/t/base/if.t
+L LEX.T;1                           	lex.t	../../dist/t/base/lex.t
+L PAT.T;1                           	pat.t	../../dist/t/base/pat.t
+L PERL.;1                           	perl	../perl
+L TERM.T;1                          	term.t	../../dist/t/base/term.t

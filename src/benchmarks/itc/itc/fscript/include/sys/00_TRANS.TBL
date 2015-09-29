@@ -1,0 +1,8 @@
+F DIR.H;1                           	dir.h
+F IOCTL.H;1                         	ioctl.h
+F SOCKET.H;1                        	socket.h
+F STAT.H;1                          	stat.h
+F TTYCHARS.H;1                      	ttychars.h
+F TTYDEV.H;1                        	ttydev.h
+F TYPES.H;1                         	types.h
+F WAIT.H;1                          	wait.h

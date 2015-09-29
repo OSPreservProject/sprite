@@ -1,0 +1,132 @@
+
+
+
+TIMES                 C Library Procedures                  TIMES
+
+
+
+NNAAMMEE
+     times - get process times
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<ssyyss//ttiimmeess..hh>>
+
+     ttiimmeess((bbuuffffeerr))
+     ssttrruucctt ttmmss **bbuuffffeerr;;
+
+DDEESSCCRRIIPPTTIIOONN
+     TThhiiss iinntteerrffaaccee iiss oobbssoolleetteedd bbyy ggeettrruussaaggee((22))..
+
+     _T_i_m_e_s returns time-accounting information for the current
+     process and for the terminated child processes of the
+     current process.  All times are in 1/HZ seconds, where HZ is
+     60.
+
+     This is the structure returned by _t_i_m_e_s:
+
+     /*
+      * times.h --
+      *
+      *   Structure returned by backwards compatible times()
+      *      function.  Times() has been obsoleted by getrusage(2).
+      *
+      * Copyright 1989 Regents of the University of California
+      * Permission to use, copy, modify, and distribute this
+      * software and its documentation for any purpose and without
+      * fee is hereby granted, provided that the above copyright
+      * notice appear in all copies.  The University of California
+      * makes no representations about the suitability of this
+      * software for any purpose.  It is provided "as is" without
+      * express or implied warranty.
+      *
+      * $Header: /sprite/src/lib/include/sys/RCS/times.h,v 1.1 89/08/20 19:30:10 rab Exp $
+      */
+
+     #ifndef _SYS_TIMES_H
+     #define _SYS_TIMES_H
+
+
+     /*
+      * Structure returned by times()
+      */
+     struct tms {
+         time_t    tms_utime;          /* user time */
+         time_t    tms_stime;          /* system time */
+         time_t    tms_cutime;         /* user time, children */
+         time_t    tms_cstime;         /* system time, children */
+     };
+
+
+
+
+Sprite v1.0                May 9, 1985                          1
+
+
+
+
+
+
+TIMES                 C Library Procedures                  TIMES
+
+
+
+     #endif /* _SYS_TIMES_H */
+
+
+     The children times are the sum of the children's process
+     times and their children's times.
+
+SSEEEE AALLSSOO
+     time(1), getrusage(2), wait3(2), time(3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                May 9, 1985                          2
+
+
+

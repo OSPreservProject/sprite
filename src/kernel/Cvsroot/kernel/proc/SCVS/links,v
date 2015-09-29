@@ -1,0 +1,47 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ds3100:1.2 sun3:1.2 sun4nw:1.1 symm:1.1 spur:1.1;
+locks    ; strict;
+comment  @# @;
+
+
+1.2
+date     91.12.19.17.24.38;  author shirriff;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.10.29.16.48.53;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@scvs
+@
+text
+@# This file is used by scvs and contains symbolic link
+# information.  Each line is of the form "link target"
+# $Header
+file.h                   /sprite/src/attcmds/file/file.h
+machType68k.c            /sprite/src/attcmds/file//machType68k.c
+machTypeMips.c           /sprite/src/attcmds/file//machTypeMips.c
+machTypeSparc.c          /sprite/src/attcmds/file//machTypeSparc.c
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@a7 2
+machTypeSpur.c           /sprite/src/attcmds/file//machTypeSpur.c
+machTypeSymm.c           /sprite/src/attcmds/file/machTypeSymm.c
+@

@@ -1,0 +1,582 @@
+head     2.4;
+branch   ;
+access   ;
+symbols  no-auto-remigrate:2.1 installed:2.0;
+locks    ; strict;
+comment  @ * @;
+
+
+2.4
+date     90.09.24.14.46.49;  author douglis;  state Exp;
+branches ;
+next     2.3;
+
+2.3
+date     90.08.15.15.59.17;  author douglis;  state Exp;
+branches ;
+next     2.2;
+
+2.2
+date     90.06.26.18.44.20;  author douglis;  state Exp;
+branches ;
+next     2.1;
+
+2.1
+date     90.06.22.14.58.26;  author douglis;  state Exp;
+branches ;
+next     2.0;
+
+2.0
+date     90.03.10.13.13.05;  author douglis;  state Stable;
+branches ;
+next     1.3;
+
+1.3
+date     90.03.10.13.11.34;  author douglis;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.02.28.10.58.49;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.02.16.14.29.46;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Source code for the Mig_RequestIdleHosts procedure.
+This procedure returns one or more idle hosts that may be
+used for migration with a specified priority.
+@
+
+
+2.4
+log
+@added callback flag to MigHostCache to make it easier to flag all hosts as reclaimed after error
+@
+text
+@/* 
+ * Mig_RequestIdleHosts.c --
+ *
+ *	Source code for the Mig_RequestIdleHosts procedure.
+ *	This procedure returns one or more idle hosts that may be
+ *	used for migration with a specified priority.
+ *
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/mig/RCS/Mig_RequestIdleHosts.c,v 2.3 90/08/15 15:59:17 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <sprite.h>
+#include <mig.h>
+#include <host.h>
+#include <errno.h>
+#include <stdio.h>
+#include <status.h>
+#include "migInt.h"
+
+extern int errno;
+extern char *strerror();
+extern char *malloc();
+
+void (*migCallBackPtr)() = NULL;/* Procedure to call if idle hosts become
+				   available, or NULL. */
+
+/*
+ * Define some state values to keep track of what we know about the
+ * global daemon.
+ *
+ * MIGD_OKAY	- we believe everything's okay.
+ * MIGD_WAITING	- waiting for the local migration daemon to talk to the global
+ * 		  daemon.
+ * MIGD_ERROR	- we've already hit an error and we don't want to announce 
+ * 		  further errors.
+ */
+typedef enum {
+    MIGD_OKAY,
+    MIGD_WAITING,
+    MIGD_ERROR,
+} MigdState;
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StartMigd --
+ *
+ *	Fork a process to become the local migration daemon.
+ *
+ * Results:
+ *	0 for successful completion, -1 for error, in which case
+ *	errno indicates the nature of the error.  The parent
+ *	will return success as long as it can successfully fork.  That
+ * 	doesn't necessarily mean the migration daemon has been started,
+ *	at least by the child, but the parent will go
+ * 	ahead and try to contact the daemon again in any case.
+ *
+ * Side effects:
+ *	A new process is spawned and it tries to invoke migd.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+StartMigd()
+{
+    int pid;
+    char *argArray[4];
+    
+    pid = fork();
+    if (pid < 0) {
+	fprintf(stderr, "couldn't fork\n");
+	return(-1);
+    }
+    if (pid > 0) {
+	/*
+	 * We use the sprite Proc_Wait because we don't want to
+	 * find out about any other children.
+	 */
+	ReturnStatus status =
+	    Proc_Wait(1, &pid, PROC_WAIT_BLOCK, (Proc_PID *) NULL,
+		      (int *) NULL, (int *) NULL, (int *) NULL,
+		      (Proc_ResUsage *) NULL);
+	if (status != SUCCESS) {
+	    fprintf(stderr, "Error waiting for child to start migd: %s.",
+		   Stat_GetMsg(status));
+	    return(-1);
+	}
+	return(0);
+    }
+
+    /*
+     * We are the child, and will try to become the migration daemon.
+     * First, sleep for just a moment so that we don't exit before our
+     * parent has waited for us... we don't want a user's signal handler to
+     * find out about us.  Then try to invoke migd.
+     */
+    sleep(1);
+    (void) system("/sprite/daemons/migd -D 2 -L");
+    exit(0);
+}
+
+
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mig_RequestIdleHosts --
+ *
+ *	Obtain one or more idle hosts from the migration server.
+ *	The caller specifies the number of hosts requested, the
+ *	priority at which they'll be used, flags to tell the daemon,
+ *	a callback procedure if a host is reclaimed or more hosts are
+ *	available, and an array to hold the identifiers of hosts.
+ *
+ * Results:
+ *	On error, -1 is returned, else the number of hosts in hostIDArray
+ *	is returned.  0 indicates no hosts were available.
+ *
+ * Side effects:
+ *      If the connection to the global server has not been opened, then
+ *	it is opened.  A callback is registered if one is specified.
+ *	If the local daemon isn't running, it is started.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Mig_RequestIdleHosts(numHosts, priority, flags, callBackPtr, hostArray)
+    int numHosts;		/* Number of hosts requested. */
+    int priority;		/* Priority of tasks; see mig.h */
+    int flags;			/* Flags for mig daemon; ditto. */
+    void (*callBackPtr)();	/* Procedure to call when getting
+				 * messages from mig daemon. */
+    int hostArray[];		/* Array of integers to fill with hostIDs. */
+{
+    Mig_IdleRequest request;
+    int virtualHost;
+    int physicalHost;
+    char *buffer;	 	/* Dynamically-allocated buffer for result
+				   of ioctl. */
+    unsigned int bufSize;	/* Size of buffer. */
+    int *intPtr; 		/* Pointer into buffer. */
+    int i;			/* Counter. */
+    int status;			/* Status of system calls. */
+    int retries;		/* Count of retries if error during ioctl. */
+    int numWanted;		/* Number of hosts we wanted, set to
+				   numHosts. */
+    static MigdState migdState
+	= MIGD_OKAY; 		/* We think migd is doing fine. */
+
+
+#ifdef DEBUG
+    fprintf(stderr, "Mig_RequestIdleHosts called.\n");
+#endif /* DEBUG */
+    if (mig_GlobalPdev < 0) {
+	if (MigOpenPdev(TRUE) < 0) {
+#ifdef DEBUG
+	    fprintf(stderr, "Mig_RequestIdleHosts encountered error contacting global daemon.\n");
+#endif /* DEBUG */
+	    return(-1);
+	}
+    }
+
+
+    if (!migGetNewHosts && !Mig_ConfirmIdle(0)) {
+#ifdef DEBUG
+	fprintf(stderr, "Mig_RequestIdleHosts -- no new hosts available.\n");
+#endif /* DEBUG */
+	return(0);
+    }
+    /*
+     * Tell the daemon what our physical host is so it doesn't try to tell
+     * us to migrate to this host.
+     */
+    status = Proc_GetHostIDs(&virtualHost, &physicalHost);
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(-1);
+    }
+
+    request.numHosts = numHosts;
+    request.priority = priority;
+    request.flags = flags;
+    request.virtHost = virtualHost;
+
+    bufSize = sizeof(int) * (1 + numHosts);
+    buffer = malloc(bufSize);
+    if (buffer == (char *) NULL) {
+	errno = ENOMEM;
+	return(-1);
+    }
+    for (retries = 2; retries >= 0; retries--) {
+#ifdef DEBUG
+	fprintf(stderr, "Mig_RequestIdleHosts starting ioctl.\n");
+#endif				/* DEBUG */
+	if (MigSetAlarm() < 0) {
+	    fprintf(stderr,
+		    "Error setting alarm for contact with migd.\n");
+	    return(-1);
+	}
+	status = Fs_IOControl(mig_GlobalPdev, IOC_MIG_GETIDLE,
+			      sizeof(Mig_IdleRequest),
+			      (char *) &request,
+			      bufSize, buffer);
+	if (MigClearAlarm() < 0) {
+	    fprintf(stderr,
+		    "Error clearing alarm for contact with migd.\n");
+	}
+#ifdef DEBUG
+	fprintf(stderr, "Mig_RequestIdleHosts ioctl returned %x.\n", status);
+#endif				/* DEBUG */
+	if (status != SUCCESS) {
+	    if (status == NET_NOT_CONNECTED) {
+		if (migdState == MIGD_OKAY) {
+		    fprintf(stderr,
+			    "No migd daemon running on your host.  Waiting to see if it starts.\n");
+		    migdState = MIGD_WAITING;
+		    sleep(10);
+
+		} else if (migdState == MIGD_WAITING) {
+		    fprintf(stderr,
+			    "Starting a new migd.\n");
+		    migdState = MIGD_ERROR;
+		    if (StartMigd() < 0) {
+			return(0);
+		    }
+		    sleep(5);
+		}
+	    }
+	    close(mig_GlobalPdev);
+	    mig_GlobalPdev = 0;
+	    if (retries == 0 || MigOpenPdev(TRUE) < 0) {
+		if (migdState != MIGD_ERROR) {
+		    fprintf(stderr,
+			    "Mig_RequestIdleHosts: error during ioctl to global master: %s\n",
+			    Stat_GetMsg(status));
+		    migdState = MIGD_ERROR;
+		}
+		errno = Compat_MapCode(status);
+		free(buffer);
+		return(-1);
+	    }
+	} else {
+	    break;
+	}
+    }
+
+    migdState == MIGD_OKAY;
+    intPtr = (int *) buffer;
+    numWanted = numHosts;
+    numHosts = *intPtr;
+#ifdef DEBUG_REQUEST
+    fprintf(stderr, "numHosts = %d\n", numHosts);
+    fflush(stderr);
+#endif /* DEBUG_REQUEST */
+
+    intPtr++;
+
+    for (i = 0; i < numHosts; i++) {
+	hostArray[i] = *intPtr;
+	(void) MigHostCache(*intPtr, MIG_CACHE_ADD, FALSE);
+#ifdef DEBUG
+	fprintf(stderr, "hostArray[%d] = %d\n", i, *intPtr);
+	fflush(stderr);
+#endif /* DEBUG */
+	intPtr++;
+    }
+
+    free(buffer);
+    if (numHosts < numWanted) {
+#ifdef DEBUG
+	fprintf(stderr, "Mig_RequestIdleHosts didn't get enough hosts.\n");
+#endif /* DEBUG */
+	migGetNewHosts = 0;
+    }
+    if (callBackPtr != NULL) {
+	migCallBackPtr = callBackPtr;
+    }
+#ifdef DEBUG
+    fprintf(stderr, "Mig_RequestIdleHosts returning %d hosts.\n", numHosts);
+#endif /* DEBUG */
+    return(numHosts);
+    
+}
+@
+
+
+2.3
+log
+@added logic to wait for local daemon to start if we're informed none exists.
+this avoids us starting a new one when the old one just hasn't talked to 
+the global daemon yet.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/mig/RCS/Mig_RequestIdleHosts.c,v 2.2 90/06/26 18:44:20 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d274 1
+a274 1
+	(void) MigHostCache(*intPtr, MIG_CACHE_ADD);
+@
+
+
+2.2
+log
+@set the call back pointer regardless.
+before, it would only set it if not enough hosts were obtained.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/mig/RCS/Mig_RequestIdleHosts.c,v 2.1 90/06/22 14:58:26 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d38 15
+d107 1
+a107 2
+     * find out about us.  Then try to invoke migd, and then sleep a bit
+     * before returning to our parent so things can get set up.
+a110 1
+    sleep(5);
+d161 2
+a162 1
+    static int didMsg = 0;	/* Error message printed? */
+d205 1
+a205 2
+    for (retries = 2; retries >= 0; retries--) 
+	{
+d207 15
+a221 15
+	    fprintf(stderr, "Mig_RequestIdleHosts starting ioctl.\n");
+#endif /* DEBUG */
+	    if (MigSetAlarm() < 0) {
+		fprintf(stderr,
+			"Error setting alarm for contact with migd.\n");
+		return(-1);
+	    }
+	    status = Fs_IOControl(mig_GlobalPdev, IOC_MIG_GETIDLE,
+				  sizeof(Mig_IdleRequest),
+				  (char *) &request,
+				  bufSize, buffer);
+	    if (MigClearAlarm() < 0) {
+		fprintf(stderr,
+			"Error clearing alarm for contact with migd.\n");
+	    }
+d223 16
+a238 11
+	    fprintf(stderr, "Mig_RequestIdleHosts ioctl returned %x.\n", status);
+#endif /* DEBUG */
+	    if (status != SUCCESS) {
+		if (!didMsg) {
+		    didMsg = 1;
+		    if (status == NET_NOT_CONNECTED) {
+			fprintf(stderr,
+	       "No migd daemon running on your host.  Will start one.\n");
+			if (StartMigd() < 0) {
+			    return(0);
+			}
+d240 1
+d242 9
+a250 12
+		close(mig_GlobalPdev);
+		mig_GlobalPdev = 0;
+		if (retries == 0 || MigOpenPdev(TRUE) < 0) {
+		    if (!didMsg) {
+			fprintf(stderr,
+			       "Mig_RequestIdleHosts: error during ioctl to global master: %s\n",
+			       Stat_GetMsg(status));
+			didMsg = 1;
+		    }
+		    errno = Compat_MapCode(status);
+		    free(buffer);
+		    return(-1);
+d252 3
+a254 2
+	    } else {
+		break;
+d256 2
+d259 1
+d261 1
+@
+
+
+2.1
+log
+@changes for alarms for timeouts with migd and for printing to stderr instead of syslog
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/mig/RCS/Mig_RequestIdleHosts.c,v 2.0 90/03/10 13:13:05 douglis Stable Locker: douglis $ SPRITE (Berkeley)";
+d267 3
+a269 3
+	if (callBackPtr != NULL) {
+	    migCallBackPtr = callBackPtr;
+	}
+@
+
+
+2.0
+log
+@Changing version numbers.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/mig/RCS/Mig_RequestIdleHosts.c,v 1.3 90/03/10 13:11:34 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+a24 1
+#include <syslog.h>
+d68 1
+a68 1
+	syslog(LOG_ERR, "couldn't fork\n");
+d81 1
+a81 1
+	    syslog(LOG_ERR, "Error waiting for child to start migd: %s.",
+d152 1
+a152 1
+    syslog(LOG_INFO, "Mig_RequestIdleHosts called.\n");
+d157 1
+a157 1
+	    syslog(LOG_INFO, "Mig_RequestIdleHosts encountered error contacting global daemon.\n");
+d166 1
+a166 1
+	syslog(LOG_INFO, "Mig_RequestIdleHosts -- no new hosts available.\n");
+d194 1
+a194 1
+	    syslog(LOG_INFO, "Mig_RequestIdleHosts starting ioctl.\n");
+d196 5
+d205 4
+d210 1
+a210 1
+	    syslog(LOG_INFO, "Mig_RequestIdleHosts ioctl returned %x.\n", status);
+d216 1
+a216 1
+			syslog(LOG_WARNING,
+d227 1
+a227 1
+			syslog(LOG_WARNING,
+d264 1
+a264 1
+	syslog(LOG_INFO, "Mig_RequestIdleHosts didn't get enough hosts.\n");
+d272 1
+a272 1
+    syslog(LOG_INFO, "Mig_RequestIdleHosts returning %d hosts.\n", numHosts);
+@
+
+
+1.3
+log
+@fork off local daemon if none running.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/mig/RCS/Mig_RequestIdleHosts.c,v 1.2 90/02/28 10:58:49 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+@
+
+
+1.2
+log
+@added migCallBackPtr use.  changed Mig_OpenPdev to internal Mig routine.
+added debug msg if the daemon says no local daemon is running.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/mig/RCS/Mig_RequestIdleHosts.c,v 1.1 90/02/16 14:29:46 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d43 66
+d124 1
+d192 1
+a192 1
+    for (retries = 1; retries >= 0; retries--) 
+a207 3
+			syslog(LOG_WARNING, "No migd daemon running on your host.\n");
+			return(0);
+		    } else {
+d209 4
+a212 2
+			       "Mig_RequestIdleHosts: error during ioctl to global master: %s\n",
+			       Stat_GetMsg(status));
+d218 6
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /user2/douglis/pdev_mig/mig_p/RCS/Mig_RequestIdleHosts.c,v 1.3 90/02/13 10:07:19 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d29 1
+d36 3
+a60 1
+/* ARGSUSED */
+d82 1
+d89 1
+a89 1
+	if (Mig_OpenPdev(TRUE) < 0) {
+d138 11
+a148 3
+		syslog(LOG_WARNING,
+		       "Mig_RequestIdleHosts: error during ioctl to global master: %s\n",
+		       Stat_GetMsg(status));
+d151 1
+a151 1
+		if (retries == 0 || Mig_OpenPdev(TRUE) < 0) {
+d187 3
+@

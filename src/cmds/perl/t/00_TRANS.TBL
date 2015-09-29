@@ -1,0 +1,12 @@
+D BASE                              	base
+L C.;1                              	c	TEST
+D CMD                               	cmd
+D COMP                              	comp
+D IO                                	io
+D LIB                               	lib
+L MAKEFILE.;1                       	Makefile	../Makefile
+D OP                                	op
+L PERL.;1                           	perl	../$MACHINE.md/perl
+L README.;1                         	README	../dist/t/README
+L TEST.;1                           	TEST	../dist/t/TEST
+D TMP                               	tmp

@@ -1,0 +1,109 @@
+.\" $Header$
+.TH SAS 1 "29 May 1988"
+.ds ]W SPUR Release 1.0
+.SH NAME
+sas \- SPUR assembler
+.SH SYNOPSIS
+\fBsas\fP [ \fB\-a\fP ] [ \fB\-L\fp ] [ \fB\-p\fP ] [\fB-I\fIpathname\fR ] [ \fB\-o\fP objfile ]  
+[ \fB\-D\fIname\^\fR[\^\fB=\fIdef\fR ] [ \fB\-U\fIname\fR ] file 
+.SH DESCRIPTION
+\fISas\fP translates assembly code in the named \fIfile\fP into executable object
+code in the specified
+.IR objfile .
+.LP
+All undefined symbols in the assembly are treated as global.
+.LP
+The output of the assembly is left in the file \fIobjfile\fP.
+If the \fB\-o\fP flag is omitted, file
+.IB a . out
+is used.
+.SH OPTIONS
+.TP
+\fB-a\fP
+Assemble only.  Normally, sas invokes the linker (sld) to perform
+various normalizing 
+tasks (backpatching forward references, etc.).  This switch suppresses
+that pass, 
+leaving the "raw" assembly output in the output file.  This option is
+seldom 
+useful except for debugging the assembler and linker.
+.TP
+\fB-p\fP
+Invoke the preprocessor.  This runs the preprocessor, cpp, over the
+input file.
+It is necessary to do so in the presence of preprocessor (#)
+directives.
+.TP
+\fB-f\fP
+Allow ``fake'' operation codes that have significance to the
+simulator.  By default,
+these are not allowed.  Additionally, when the -f switch is on,
+certain operations
+are given distinguished opcodes so that the simulator can distinguish
+them.  Without 
+the -f switch they are synonyms for other instructions.
+This option may be expected to vanish in the future.
+.TP
+\fB-F\fP
+Use the floating-point format of the machine running sas.  This is
+useful only if you are going to run a simulator on the host upon the
+result of the assembly.  This option may be expected to vanish in the
+future.
+.TP
+\fB-I\fIpathname\fR
+Include file directory.  Add 
+\fIpathname\fP to the list of directories in which to search for
+\fB#include\fP files
+with relative pathnames (not beginning with slash).
+The preprocessor first searches for
+.B #include
+files in the directory containing
+.I sourcefile,
+then in directories named with
+.B \-I
+options (if any), and finally, in
+.I /usr/include .
+The \fB\-I\fR switch implies the \fB\-p\fR switch.
+.TP
+\fB\-L\fR
+Leave local labels starting with `L', the assembler usually directs
+the linker to remove these.
+.TP
+\fB\-D\fIname\^\fR[\^\fB=\fIdef\fR
+Define \fIname\fR for the preprocessor, giving it value \fIdef\fR, if
+the latter is
+supplied, and otherwise the null string.  This switch implies \fB\-p\fR.
+.TP
+\fB\-U\fIname\fR
+Undefine any initial definition of symbol name for cpp(1).
+.SH ASSEMBLER FORMAT
+SPUR assembly language conventions resemble those of `as' for the VAX
+in the Berkeley release.  Immediate constants begin with `$'.  Integer
+(floating-point, special) register operands
+have the form r\fIn\fR (f\fIn\fR, s\fIn\fR), or may be manifest integer expressions.
+.LP
+Numeric local labels are allowed, (re)defined by an integer followed by a
+colon, and referenced as an integer followed by `f' (next label
+defined with this number) or `b' (last label defined with this number).
+.LP
+The pseudo-operations `.text1,' `.text2,' `.text3,' `.data1,'
+`.data2,' and `.data3' provide alternate text and data assembly
+regions, which the assembler concatenates after the default text and
+data regions.
+.LP
+The pseudo-operations `.sdata,' `.sdata1,' `.sdata2,' `.scomm,' and
+`.slcomm' are analogous to the operations without the initial `s', but
+place or allocate from the shared segment of memory.
+.LP
+The assembler is much more liberal about load-time expressions.  The
+values of these expressions may involve any operands, symbolic or
+literal, whether or not defined in the current assembly.  The defining
+expressions for `.set' symbols are equally liberal, and all such
+symbols may be exported.   The only restriction is that there may not
+be circular dependences in the definition of any symbol.  Also,
+certain expressions, such as those associated with `.org' or `.space'
+or those designating registers,
+must still be manifest.
+.SH "SEE ALSO"
+sld(1),
+a.out(5)

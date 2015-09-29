@@ -1,0 +1,621 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     89.04.10.16.36.03;  author mgbaker;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.03.23.09.55.40;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.08.16.11.19.40;  author mendel;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.04.27.09.10.03;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.27.08.52.14;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Statitistics taking
+@
+
+
+1.5
+log
+@Added ifndef sun4 to inhibit certain extraneous library routines.
+@
+text
+@/* 
+ * stat.c --
+ *	
+ *	Routines to print statistics about the IP server.
+ *
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/daemons/ipServer/RCS/stat.c,v 1.4 89/03/23 09:55:40 brent Exp Locker: mgbaker $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include "sprite.h"
+#include "ipServer.h"
+#include "stat.h"
+
+#include "time.h"
+#include "proc.h"
+#include "dev/net.h"
+
+Stat_Info	stats;
+
+static Proc_ResUsage	lastUsage;
+static void ComputeDiff();
+static char statDumpFile[100];
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Stat_Command --
+ *
+ *	Interprets IOC_NET_STATS command.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Statistics may be updated or printed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+extern char myHostName[];
+
+int
+Stat_Command(command)
+    unsigned int command;
+{
+
+    switch (command & 0xFFFF) { 
+	case NET_STATS_RESET:
+	    bzero((Address) &stats,sizeof(stats));
+#ifndef KERNEL
+	    Sys_GetTimeOfDay(&stats.startTime, (int *) NULL, (Boolean *) NULL);
+	    Proc_GetResUsage(PROC_MY_PID, &lastUsage);
+#endif
+	    break;
+
+	case NET_STATS_DUMP:
+#ifndef KERNEL
+	    (void) sprintf(statDumpFile, 
+			"/tmp/ipServer.%s.%d", myHostName, command >> 16);
+#endif
+	    Stat_PrintInfo(-1, -1);
+	    break;
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Stat_PrintInfo --
+ *
+ *	Prints a summary of the statistics collected so far.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Statistics are printed on the standard error stream or to a file.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*ARGSUSED*/
+int
+Stat_PrintInfo(sigNum, sigCode)
+    int		sigNum;		/* > 0 if called by signal handler. */
+    int		sigCode;	/* used as stat file version #. */
+{
+    Proc_ResUsage	usage;
+    Proc_ResUsage	diff;
+    Time		curTime;
+    int			localOffset;
+    char		timeString[TIME_CVT_BUF_SIZE];
+#ifndef KERNEL
+    extern unsigned int fsNumTimeoutEvents;
+    extern unsigned int fsNumStreamEvents;
+    FILE		*stream;
+    if (sigNum == -1) {
+	stream = fopen(statDumpFile, "w");
+    } else {
+	stream = stderr;
+    }
+#else
+    int stream = 0;
+#endif
+
+    Sys_GetTimeOfDay(&curTime, &localOffset, (Boolean *) NULL);
+#ifndef sun4
+    {
+	char	*Version();
+	(void) fprintf(stream, "IP Server stats:  %s\n\n", (char *) Version());
+    }
+#endif sun4
+
+    Time_ToAscii(stats.startTime.seconds + 60 * (localOffset+60), 
+		FALSE, timeString);
+    (void) fprintf(stream, "Started at:   %s\n", timeString);
+
+    Time_ToAscii(curTime.seconds + 60 * (localOffset+60), FALSE, timeString);
+    (void) fprintf(stream, "Current time: %s\n", timeString);
+
+    Time_Subtract(curTime, stats.startTime, &curTime);
+    Time_ToAscii(curTime.seconds, TRUE, timeString);
+    (void) fprintf(stream, "Difference:   %s\n", timeString);
+
+#ifndef KERNEL
+    Proc_GetResUsage(PROC_MY_PID, &usage);
+    ComputeDiff(&usage, &lastUsage, &diff);
+    (void) fprintf(stream, "\nResource Usage:\n");
+	(void) fprintf(stream, " %16s %16s %11s %11s\n",
+	    "kernel CPU", "user CPU", "invol.cs", "vol.cs");
+	(void) fprintf(stream, " %9d.%06d %9d.%06d %11d %11d\n",
+	    diff.kernelCpuUsage.seconds,
+	    diff.kernelCpuUsage.microseconds,
+	    diff.userCpuUsage.seconds,
+	    diff.userCpuUsage.microseconds,
+	    diff.numQuantumEnds,
+	    diff.numWaitEvents);
+#endif
+    (void) fprintf(stream, "Socket:\n");
+	(void) fprintf(stream, " %11s %11s %11s %11s %11s %11s\n",
+	    "open","close", "read", "write", "ioctl", "select");
+	(void) fprintf(stream, " %11d %11d %11d %11d %11d %11d\n",
+	    stats.sock.open,
+	    stats.sock.close,
+	    stats.sock.read,
+	    stats.sock.write,
+	    stats.sock.ioctl,
+	    stats.sock.select);
+	(void) fprintf(stream, " %11s %11s %11s %11s %11s %11s\n",
+	    "append", "app.part", "part.bytes", "app.fail", "remove", "fetch");
+	(void) fprintf(stream, " %11d %11d %11d %11d %11d %11d\n",
+	    stats.sock.buffer.append,
+	    stats.sock.buffer.appendPartial,
+	    stats.sock.buffer.appPartBytes,
+	    stats.sock.buffer.appendFail,
+	    stats.sock.buffer.remove,
+	    stats.sock.buffer.fetch);
+	(void) fprintf(stream, " %11s %11s %11s %11s %11s %11s\n",
+	    "copies", "bytes copied", "rte $hits %", "dispatches", 
+	    "timeouts", "streams");
+	(void) fprintf(stream, " %11d %11d %11d %11d %11d %11d\n",
+	    stats.sock.buffer.copy,
+	    stats.sock.buffer.copyBytes,
+	    (stats.misc.routeCalls != 0 ? 
+		(100*stats.misc.routeCacheHits)/stats.misc.routeCalls : 0),
+	    stats.misc.dispatchLoop,
+#ifndef KERNEL
+	    fsNumTimeoutEvents,
+	    fsNumStreamEvents);
+#else
+	    0, 0);
+#endif
+
+
+    (void) fprintf(stream, "\n");
+
+    (void) fprintf(stream, "TCP:\n");
+	(void) fprintf(stream, " %11s %11s %11s %11s %11s %11s\n",
+	    "send: total", "data bytes", "data pack","ack only", "win probe", 
+	    "win update");
+	(void) fprintf(stream, " %11d %11d %11d %11d %11d %11d\n",
+	    stats.tcp.send.total,
+	    stats.tcp.send.byte,
+	    stats.tcp.send.pack,
+	    stats.tcp.send.acks,
+	    stats.tcp.send.probe,
+	    stats.tcp.send.winUpdate);
+	(void) fprintf(stream, " %11s %11s %11s %11s %11s %11s\n",
+	    "recv: total","bad", "data: ok","dupl.", "part dupl.", "bad order");
+	(void) fprintf(stream, " %11d %11d %11d %11d %11d %11d\n",
+	    stats.tcp.recv.total,
+	    stats.tcp.recv.badChecksum +
+		stats.tcp.recv.badOffset +
+		stats.tcp.recv.shortLen,
+	    stats.tcp.recv.pack,
+	    stats.tcp.recv.dupPack,
+	    stats.tcp.recv.partDupPack,
+	    stats.tcp.recv.ooPack);
+	(void) fprintf(stream, " %11s %11s %11s %11s %11s %11s\n",
+	    "data bytes", "data > win", "after close", "win probe", 
+	    "win update","");
+	(void) fprintf(stream, " %11d %11d %11d %11d %11d %11d\n",
+	    stats.tcp.recv.byte,
+	    stats.tcp.recv.packAfterWin,
+	    stats.tcp.recv.afterClose,
+	    stats.tcp.recv.winProbe,
+	    stats.tcp.recv.winUpd,
+	    0);
+	(void) fprintf(stream, " %11s %11s %11s %11s %11s %11s\n",
+	    "acks", "dupl. ack", "ack > win", "urgent", "urg only","");
+	(void) fprintf(stream, " %11d %11d %11d %11d %11d %11d\n",
+	    stats.tcp.recv.ackPack,
+	    stats.tcp.recv.dupAck,
+	    stats.tcp.recv.ackTooMuch,
+	    stats.tcp.recv.urgent,
+	    stats.tcp.recv.urgentOnly,
+	    0);
+	(void) fprintf(stream, " %11s %11s %11s %11s %11s %11s\n",
+	    "timer: tot.", "delay ack","retrans", "retr.drop", "persist", 
+	    "2*msl");
+	(void) fprintf(stream, " %11d %11d %11d %11d %11d %11d\n",
+	    stats.tcp.timerCalls,
+	    stats.tcp.delayAck,
+	    stats.tcp.rexmtTimeout,
+	    stats.tcp.timeoutDrop,
+	    stats.tcp.persistTimeout,
+	    stats.tcp.mslTimeout);
+	(void) fprintf(stream, " %11s %11s %11s\n",
+	    "total keeps", "dropped", "probes");
+	(void) fprintf(stream, " %11d %11d %11d\n",
+	    stats.tcp.keepTimeout,
+	    stats.tcp.keepDrops,
+	    stats.tcp.keepProbe);
+
+    (void) fprintf(stream, "\n");
+    (void) fprintf(stream, "UDP:\n");
+	(void) fprintf(stream, " %11s %11s %11s %11s %11s %11s\n",
+	    "recv: total", "accepts", "deamons", "bad", "#bytes", "acc.bytes");
+	(void) fprintf(stream, " %11d %11d %11d %11d %11d %11d\n",
+	    stats.udp.recv.total,
+	    stats.udp.recv.accepted,
+	    stats.udp.recv.daemon,
+	    stats.udp.recv.shortLen+
+		stats.udp.recv.badChecksum,
+	    stats.udp.recv.dataLen,
+	    stats.udp.recv.acceptLen);
+	(void) fprintf(stream, " %11s %11s\n",
+	    "send: total", "#bytes");
+	(void) fprintf(stream, " %11d %11d\n",
+	    stats.udp.send.total,
+	    stats.udp.send.dataLen);
+
+    (void) fprintf(stream, "\n");
+    (void) fprintf(stream, "ICMP:\n");
+	(void) fprintf(stream, " %11s %11s %11s %11s %11s\n",
+	    "recv: total", "short", "bad sum", "bad type", "bad code");
+	(void) fprintf(stream, " %11d %11d %11d %11d %11d\n",
+	    stats.icmp.total, 
+	    stats.icmp.shortLen, 
+	    stats.icmp.badChecksum, 
+	    stats.icmp.badType, 
+	    stats.icmp.badCode);
+	(void) fprintf(stream, " %11s %11s %11s %11s %11s\n",
+	  "unreachable", "redirect", "src quench", "time exceed", "param prob");
+	(void) fprintf(stream, " %11d %11d %11d %11d %11d\n",
+	    stats.icmp.inHistogram[NET_ICMP_UNREACHABLE],
+	    stats.icmp.inHistogram[NET_ICMP_REDIRECT],
+	    stats.icmp.inHistogram[NET_ICMP_SOURCE_QUENCH],
+	    stats.icmp.inHistogram[NET_ICMP_TIME_EXCEED],
+	    stats.icmp.inHistogram[NET_ICMP_PARAM_PROB]);
+	(void) fprintf(stream, " %11s %11s %11s %11s\n",
+	    "echo", "timestamp", "info", "mask");
+	(void) fprintf(stream, " %11d %11d %11d %11d\n",
+	    stats.icmp.inHistogram[NET_ICMP_ECHO],
+	    stats.icmp.inHistogram[NET_ICMP_TIMESTAMP],
+	    stats.icmp.inHistogram[NET_ICMP_INFO_REQ],
+	    stats.icmp.inHistogram[NET_ICMP_MASK_REQ]);
+
+    (void) fprintf(stream, "\n");
+    (void) fprintf(stream, "IP:\n");
+	(void) fprintf(stream, " %11s %11s %11s %11s %11s\n",
+	    "recv: total", "frags","short", "bad sum", "not for us");
+	(void) fprintf(stream, " %11d %11d %11d %11d %11d\n",
+	    stats.ip.totalRcv,
+	    stats.ip.fragsRcv,
+	    stats.ip.shortPacket + stats.ip.shortHeader + 
+		stats.ip.shortLen,
+	    stats.ip.badChecksum,
+	    stats.ip.forwards);
+	(void) fprintf(stream, " %11s %11s %11s %11s %11s %11s\n",
+	    "send: total", "whole","fragmented", "#frags", "dont frag",
+	    "TO calls");
+	(void) fprintf(stream, " %11d %11d %11d %11d %11d %11d\n",
+	    stats.ip.wholeSent+ stats.ip.fragOnSend,
+	    stats.ip.wholeSent,
+	    stats.ip.fragOnSend,
+	    stats.ip.fragsSent,
+	    stats.ip.dontFragment,
+	    stats.ip.fragTimeouts);
+
+    (void) fprintf(stream, "\n");
+    (void) fprintf(stream, "Raw:\n");
+	(void) fprintf(stream, " %11s %11s %11s %11s\n",
+	    "recv: total", "accepted","send: total", "#bytes");
+	(void) fprintf(stream, " %11d %11d %11d %11d\n",
+	    stats.raw.recv.total,
+	    stats.raw.recv.accepted,
+	    stats.raw.send.total,
+	    stats.raw.send.dataLen);
+    (void) fflush(stream);
+}
+
+static void
+ComputeDiff(newPtr, oldPtr, diffPtr)
+    register Proc_ResUsage	*newPtr;
+    register Proc_ResUsage	*oldPtr;
+    register Proc_ResUsage	*diffPtr;
+{
+    Time_Subtract(newPtr->kernelCpuUsage, oldPtr->kernelCpuUsage, 
+			&diffPtr->kernelCpuUsage);
+    Time_Subtract(newPtr->userCpuUsage, oldPtr->userCpuUsage, 
+			&diffPtr->userCpuUsage);
+    diffPtr->numQuantumEnds = newPtr->numQuantumEnds - oldPtr->numQuantumEnds;
+    diffPtr->numWaitEvents  = newPtr->numWaitEvents  - oldPtr->numWaitEvents;
+}
+@
+
+
+1.4
+log
+@Added #ifdef KERNEL because certain statistics don't apply.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: stat.c,v 1.3 88/08/16 11:19:40 mendel Exp $ SPRITE (Berkeley)";
+d121 1
+d126 1
+@
+
+
+1.3
+log
+@Converted to use new libc.a
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: stat.c,v 1.2 88/04/27 09:10:03 brent Exp $ SPRITE (Berkeley)";
+d23 1
+a28 1
+#include <stdio.h>
+d63 1
+d66 1
+d70 1
+d73 1
+a101 2
+    extern unsigned int fsNumTimeoutEvents;
+    extern unsigned int fsNumStreamEvents;
+d107 3
+a110 1
+
+d116 3
+a119 1
+    Proc_GetResUsage(PROC_MY_PID, &usage);
+d137 2
+d150 1
+a150 1
+
+d179 1
+d182 3
+@
+
+
+1.2
+log
+@New update with Jacobson enhancements
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: stat.c,v 6.3 88/04/24 23:07:34 andrew Exp $ SPRITE (Berkeley)";
+a24 1
+#include "io.h"
+a25 2
+#include "fs.h"
+#include "sys.h"
+d28 1
+a28 1
+#include "byte.h"
+d62 1
+a62 1
+	    Byte_Zero(sizeof(stats), (Address) &stats);
+d68 1
+a68 1
+	    Io_PrintString(statDumpFile, 
+d105 1
+a105 1
+    Io_Stream		stream;
+d108 1
+a108 1
+	stream = Io_Open(statDumpFile, "w");
+d110 1
+a110 1
+	stream = io_StdErr;
+d115 4
+a119 2
+    Io_PrintStream(stream, "IP Server stats:  %s\n\n", Version());
+
+d122 1
+a122 1
+    Io_PrintStream(stream, "Started at:   %s\n", timeString);
+d125 1
+a125 1
+    Io_PrintStream(stream, "Current time: %s\n", timeString);
+d129 1
+a129 1
+    Io_PrintStream(stream, "Difference:   %s\n", timeString);
+d132 2
+a133 2
+    Io_PrintStream(stream, "\nResource Usage:\n");
+	Io_PrintStream(stream, " %16s %16s %11s %11s\n",
+d135 1
+a135 1
+	Io_PrintStream(stream, " %9d.%06d %9d.%06d %11d %11d\n",
+d143 2
+a144 2
+    Io_PrintStream(stream, "Socket:\n");
+	Io_PrintStream(stream, " %11s %11s %11s %11s %11s %11s\n",
+d146 1
+a146 1
+	Io_PrintStream(stream, " %11d %11d %11d %11d %11d %11d\n",
+d153 1
+a153 1
+	Io_PrintStream(stream, " %11s %11s %11s %11s %11s %11s\n",
+d155 1
+a155 1
+	Io_PrintStream(stream, " %11d %11d %11d %11d %11d %11d\n",
+d162 1
+a162 1
+	Io_PrintStream(stream, " %11s %11s %11s %11s %11s %11s\n",
+d165 1
+a165 1
+	Io_PrintStream(stream, " %11d %11d %11d %11d %11d %11d\n",
+d175 1
+a175 1
+    Io_PrintStream(stream, "\n");
+d177 2
+a178 2
+    Io_PrintStream(stream, "TCP:\n");
+	Io_PrintStream(stream, " %11s %11s %11s %11s %11s %11s\n",
+d181 1
+a181 1
+	Io_PrintStream(stream, " %11d %11d %11d %11d %11d %11d\n",
+d188 1
+a188 1
+	Io_PrintStream(stream, " %11s %11s %11s %11s %11s %11s\n",
+d190 1
+a190 1
+	Io_PrintStream(stream, " %11d %11d %11d %11d %11d %11d\n",
+d199 1
+a199 1
+	Io_PrintStream(stream, " %11s %11s %11s %11s %11s %11s\n",
+d202 1
+a202 1
+	Io_PrintStream(stream, " %11d %11d %11d %11d %11d %11d\n",
+d209 1
+a209 1
+	Io_PrintStream(stream, " %11s %11s %11s %11s %11s %11s\n",
+d211 1
+a211 1
+	Io_PrintStream(stream, " %11d %11d %11d %11d %11d %11d\n",
+d218 1
+a218 1
+	Io_PrintStream(stream, " %11s %11s %11s %11s %11s %11s\n",
+d221 1
+a221 1
+	Io_PrintStream(stream, " %11d %11d %11d %11d %11d %11d\n",
+d228 1
+a228 1
+	Io_PrintStream(stream, " %11s %11s %11s\n",
+d230 1
+a230 1
+	Io_PrintStream(stream, " %11d %11d %11d\n",
+d235 3
+a237 3
+    Io_PrintStream(stream, "\n");
+    Io_PrintStream(stream, "UDP:\n");
+	Io_PrintStream(stream, " %11s %11s %11s %11s %11s %11s\n",
+d239 1
+a239 1
+	Io_PrintStream(stream, " %11d %11d %11d %11d %11d %11d\n",
+d247 1
+a247 1
+	Io_PrintStream(stream, " %11s %11s\n",
+d249 1
+a249 1
+	Io_PrintStream(stream, " %11d %11d\n",
+d253 3
+a255 3
+    Io_PrintStream(stream, "\n");
+    Io_PrintStream(stream, "ICMP:\n");
+	Io_PrintStream(stream, " %11s %11s %11s %11s %11s\n",
+d257 1
+a257 1
+	Io_PrintStream(stream, " %11d %11d %11d %11d %11d\n",
+d263 1
+a263 1
+	Io_PrintStream(stream, " %11s %11s %11s %11s %11s\n",
+d265 1
+a265 1
+	Io_PrintStream(stream, " %11d %11d %11d %11d %11d\n",
+d271 1
+a271 1
+	Io_PrintStream(stream, " %11s %11s %11s %11s\n",
+d273 1
+a273 1
+	Io_PrintStream(stream, " %11d %11d %11d %11d\n",
+d279 3
+a281 3
+    Io_PrintStream(stream, "\n");
+    Io_PrintStream(stream, "IP:\n");
+	Io_PrintStream(stream, " %11s %11s %11s %11s %11s\n",
+d283 1
+a283 1
+	Io_PrintStream(stream, " %11d %11d %11d %11d %11d\n",
+d290 1
+a290 1
+	Io_PrintStream(stream, " %11s %11s %11s %11s %11s %11s\n",
+d293 1
+a293 1
+	Io_PrintStream(stream, " %11d %11d %11d %11d %11d %11d\n",
+d301 3
+a303 3
+    Io_PrintStream(stream, "\n");
+    Io_PrintStream(stream, "Raw:\n");
+	Io_PrintStream(stream, " %11s %11s %11s %11s\n",
+d305 1
+a305 1
+	Io_PrintStream(stream, " %11d %11d %11d %11d\n",
+d310 1
+a310 1
+    Io_Flush(stream);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: stat.c,v 6.0 87/09/08 15:58:52 andrew Stable $ SPRITE (Berkeley)";
+d31 1
+d65 1
+a65 1
+	    Byte_Zero(sizeof(stats), &stats);
+d95 1
+d169 1
+a169 1
+	    (stats.misc.routeCalls > 0 ? 
+@

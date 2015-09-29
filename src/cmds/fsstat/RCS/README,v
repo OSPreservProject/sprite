@@ -1,0 +1,37 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @# @;
+
+
+1.1
+date     88.12.06.09.56.57;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@message to be read by people interested in this directory.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@The awk script fsstats.awk contains an awk script to combine the output
+from multiple invocations of fsstat.  If the output format of fsstat changes,
+the awk script may have to change as well.  The scripts
+
+		    Clients
+		    ClientsCurrent
+		    Mint
+		    Servers
+
+select one or more files from the repository of fsstats output
+(symlinked to by "Sys") and pipe them into awk.
+@

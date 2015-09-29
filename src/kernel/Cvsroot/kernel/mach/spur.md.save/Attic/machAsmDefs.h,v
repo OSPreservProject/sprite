@@ -1,0 +1,2228 @@
+head     8.4;
+branch   ;
+access   ;
+symbols  symm:8.4 spur:8.4 newlib:8.0;
+locks    ; strict;
+comment  @ * @;
+
+
+8.4
+date     89.07.23.18.38.31;  author jhh;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.06.19.14.01.29;  author jhh;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.01.11.09.43.24;  author mendel;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.30.10.32.05;  author mendel;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.05.48;  author douglis;  state Stable;
+branches ;
+next     1.27;
+
+1.27
+date     88.11.11.15.35.49;  author mendel;  state Exp;
+branches ;
+next     1.26;
+
+1.26
+date     88.10.20.09.20.34;  author mendel;  state Exp;
+branches ;
+next     1.25;
+
+1.25
+date     88.10.02.14.28.44;  author mendel;  state Exp;
+branches ;
+next     1.24;
+
+1.24
+date     88.09.09.08.40.50;  author mendel;  state Exp;
+branches ;
+next     1.23;
+
+1.23
+date     88.08.26.11.55.05;  author nelson;  state Exp;
+branches ;
+next     1.22;
+
+1.22
+date     88.08.23.10.18.02;  author mendel;  state Exp;
+branches ;
+next     1.21;
+
+1.21
+date     88.08.18.18.43.32;  author nelson;  state Exp;
+branches ;
+next     1.20;
+
+1.20
+date     88.08.09.18.38.45;  author nelson;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     88.08.01.16.34.13;  author mendel;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     88.07.29.11.26.18;  author nelson;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     88.07.23.12.50.41;  author nelson;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     88.07.20.18.29.45;  author nelson;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     88.07.19.20.00.14;  author nelson;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     88.07.16.15.51.35;  author nelson;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     88.07.16.15.40.55;  author nelson;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     88.07.15.11.32.03;  author nelson;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     88.07.07.16.02.34;  author nelson;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     88.07.05.15.11.15;  author nelson;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     88.06.30.15.32.16;  author nelson;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     88.06.14.09.56.47;  author nelson;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.06.11.17.51.30;  author nelson;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.06.09.10.17.55;  author nelson;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.06.07.21.05.43;  author nelson;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.06.03.10.57.38;  author nelson;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.05.25.23.02.29;  author nelson;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.05.24.22.54.50;  author nelson;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.05.23.22.48.49;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+8.4
+log
+@changed to use VMMACH_CACHE_LINE_SIZE
+@
+text
+@/*
+ * machAsmDefs.h --
+ *
+ *	Assembly language macros for the SPUR architecture.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/mach/spur.md/RCS/machAsmDefs.h,v 8.3 89/06/19 14:01:29 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+ */
+
+#ifndef _MACHASMDEFS
+#define _MACHASMDEFS
+
+/*
+ * LD_PC_RELATIVE --
+ *
+ *	Load the the value stored at label into register rd.  This load is done
+ *	PC relative so label should not be more than a 14 signed immediate
+ *	away from the current PC.
+ */
+#define LD_PC_RELATIVE(rd, label) \
+	rd_special	rd, pc ;\
+0:	ld_32		rd, rd, $((label-0b)+4); \
+	nop
+
+/*
+ * LD_CONSTANT --
+ *
+ *	Load the 32 bit constant 'constant' into register 'rd'
+ *
+ * Side effects:
+ *	Changes the insert register.
+ */
+#define LD_CONSTANT(rd, constant) \
+	rd_insert	VOL_TEMP1; \
+	add_nt		rd, r0, $((constant)&0xff) ; \
+	wr_insert	$1 ; \
+	insert		rd, rd, $(((constant)>>8)&0xff) ; \
+	wr_insert	$2 ; \
+	insert		rd, rd, $(((constant)>>16)&0xff) ; \
+	wr_insert	$3 ; \
+	insert		rd, rd, $(((constant)>>24)&0xff); \
+	wr_insert	VOL_TEMP1
+
+/*
+ * SET_KPSW --
+ *
+ *	Set bits in the kpsw.
+ */
+#define SET_KPSW(bits) \
+	ld_constant(VOL_TEMP1, bits) ; \
+	rd_kpsw		VOL_TEMP2 ; \
+	or		VOL_TEMP2, VOL_TEMP1, VOL_TEMP2 ; \
+	wr_kpsw		VOL_TEMP2, r0
+
+/*
+ * CLR_KPSW --
+ *
+ *	Clear bits in the KPSW.
+ */
+#define CLR_KPSW(bits) \
+	ld_constant(VOL_TEMP1, bits) ; \
+	add_nt		VOL_TEMP2, r0, $-1 ; \
+	xor		VOL_TEMP1, VOL_TEMP2, VOL_TEMP1 ; \
+	rd_kpsw		VOL_TEMP2 ; \
+	and		VOL_TEMP2, VOL_TEMP1, VOL_TEMP2 ; \
+	wr_kpsw		VOL_TEMP2, r0
+
+/*
+ * MOD_KPSW --
+ *
+ *	Change bits in the KPSW.
+ */
+#define MOD_KPSW(set,clr) \
+	ld_constant(VOL_TEMP1, clr) ; \
+	xor		VOL_TEMP1, VOL_TEMP1, VOL_TEMP1 ; \
+	rd_kpsw		VOL_TEMP2 ; \
+	and		VOL_TEMP2, VOL_TEMP1, VOL_TEMP2 ; \
+	ld_constant(VOL_TEMP1, set) ; \
+	or		VOL_TEMP2, VOL_TEMP1, VOL_TEMP2 ; \
+	wr_kpsw		VOL_TEMP2, r0
+
+/*
+ * SET_UPSW --
+ *
+ *	Set bits in the upsw.
+ */
+#define SET_UPSW(bits) \
+	ld_constant(VOL_TEMP1, bits) ; \
+	rd_special	VOL_TEMP2, upsw ; \
+	or		VOL_TEMP2, VOL_TEMP1, VOL_TEMP2 ; \
+	wr_special	upsw, VOL_TEMP2, r0
+
+/*
+ * CLR_UPSW --
+ *
+ *	Clear bits in the upsw.
+ */
+#define CLR_UPSW(bits) \
+	ld_constant(VOL_TEMP1, bits) ; \
+	add_nt		VOL_TEMP2, r0, $-1 ; \
+	xor		VOL_TEMP1, VOL_TEMP2, VOL_TEMP1 ; \
+	rd_special	VOL_TEMP2, upsw ; \
+	and		VOL_TEMP2, VOL_TEMP1, VOL_TEMP2 ; \
+	wr_special	upsw, VOL_TEMP2, r0
+
+/*
+ * MOD_UPSW --
+ *
+ *	Change bits in the upsw
+ */
+#define MOD_UPSW(set,clr) \
+	ld_constant(VOL_TEMP1, clr) ; \
+	xor		VOL_TEMP1, VOL_TEMP1, VOL_TEMP1 ; \
+	rd_special	VOL_TEMP2, upsw ; \
+	and		VOL_TEMP2, VOL_TEMP1, VOL_TEMP2 ; \
+	ld_constant(VOL_TEMP1, set) ; \
+	or		VOL_TEMP2, VOL_TEMP1, VOL_TEMP2 ; \
+	wr_special	upsw, VOL_TEMP2, r0
+
+/*
+ * LD_SLOT_ID(rx) -- 
+ *
+ *	Load slotid into register rx
+ *
+ *	rx --	register to load slotid into.
+ */
+#define LD_SLOT_ID(rx)	\
+		ld_external rx, r0, $MACH_SLOT_ID_REG|MACH_CO_RD_REG;\
+		Nop;	\
+		and		rx,rx,$0xff
+
+/*
+ * ST_RPTM(rx, rptm) --
+ *
+ *	Store to RPTM register in CC
+ *
+ *	rx -- 	register containing the 32 bit base address of the root page
+ *	      	table physical map
+ *	rptm --	address of byte 0 of specific RPTM register (e.g., RPTM0)
+ *
+ * rptm<19:0> <= rx<31:12>
+ */
+#define ST_RPTM(rx,rptm) \
+	extract		VOL_TEMP1, rx, $1 ;\
+	st_external	VOL_TEMP1, r0, $rptm|MACH_CO_WR_REG|0x20  ;\
+	extract		VOL_TEMP2, rx, $2 ;\
+	st_external	VOL_TEMP2, r0, $rptm|MACH_CO_WR_REG|0x40  ;\
+	extract		VOL_TEMP2, rx, $3 ;\
+	st_external	VOL_TEMP2, r0, $rptm|MACH_CO_WR_REG|0x60 
+
+/*
+ * ST_RPTM_PAGE(rx, rptm) --
+ *
+ *	Store to RPTM register in CC
+ *
+ *	rx -- 	register containing the 20 bit page number of the root page
+ *	      	table physical map
+ *	rptm --	address of byte 0 of specific RPTM register (e.g., RPTM0)
+ *
+ * rptm<19:0> <= rx<19:0>
+ */
+#define ST_RPTM_PAGE(rx,rptm) \
+        sll		VOL_TEMP1,rx,$3 ;\
+        sll		VOL_TEMP1,VOL_TEMP1,$1 ;\
+	st_external	VOL_TEMP1, r0, $rptm|MACH_CO_WR_REG|0x20  ;\
+	extract		VOL_TEMP2, VOL_TEMP1, $1 ;\
+	st_external	VOL_TEMP2, r0, $rptm|MACH_CO_WR_REG|0x40  ;\
+	extract		VOL_TEMP2, VOL_TEMP1, $2 ;\
+	st_external	VOL_TEMP2, r0, $rptm|MACH_CO_WR_REG|0x60 
+
+/*
+ * LD_RPTM_PAGE(rx, rptm) --
+ *
+ *	Load from RPTM register in CC
+ *
+ *	rx -- 	register containing the 20 bit page number of the root page
+ *	      	table physical map
+ *	rptm --	address of byte 0 of specific RPTM register (e.g., RPTM0)
+ *
+ * rptm<19:0> <= rx<19:0>
+ */
+#define LD_RPTM_PAGE(rx,rptm) \
+	ld_external	rx, r0, $rptm|MACH_CO_RD_REG|0x20  ;\
+	ld_external	VOL_TEMP1, r0, $rptm|MACH_CO_RD_REG|0x40  ;\
+	wr_insert	$1; \
+	insert		rx, rx, VOL_TEMP1; \
+	ld_external	VOL_TEMP1, r0, $rptm|MACH_CO_RD_REG|0x80  ;\
+	wr_insert	$2; \
+	insert		rx, rx, VOL_TEMP1; \
+	srl		rx, rx, $1; \
+	srl		rx, rx, $1; \
+	srl		rx, rx, $1; \
+	srl		rx, rx, $1
+
+/*
+ *
+ * ST_GSN(rx,gsn) --
+ *
+ *	Store to active segment register in CC
+ *
+ *	rx --	register containing the global segment number
+ *	gsn --	specific GSN register (e.g., GSN0)
+ *
+ * gsn<7:0> <= rx<7:0>
+ */
+#define ST_GSN(rx,gsn) st_external	rx, r0, $gsn|MACH_CO_WR_REG
+
+/*
+ *
+ * LD_GSN(rx,gsn) --
+ *
+ *	Load from active segment register in CC
+ *
+ *	rx --	register containing the global segment number
+ *	gsn --	specific GSN register (e.g., GSN0)
+ *
+ * gsn<7:0> => rx<31:0>
+ */
+#define LD_GSN(rx,gsn) \
+		ld_external	rx, r0, $gsn|MACH_CO_RD_REG ;\
+		and		rx, rx, $0xff
+
+/*
+ * ST_PT_BASE(rx) --
+ *
+ *	Store to high-order bits of PTEVA in the CC
+ *
+ *	rx -- 	Virtual pagenumber which is base of the page table.
+ *
+ * pteva<37:28> <= rx<25:16>
+ */
+#define ST_PT_BASE(rx) \
+	sra		VOL_TEMP1, rx, $1 ;\
+	sra		VOL_TEMP1, VOL_TEMP1, $1 ;\
+	extract		VOL_TEMP2, VOL_TEMP1, $2 ;\
+	st_external	VOL_TEMP2, r0, $MACH_PTEVA_4|MACH_CO_WR_REG ;\
+	sra		VOL_TEMP1, VOL_TEMP1, $1 ;\
+	sra		VOL_TEMP1, VOL_TEMP1, $1 ;\
+	extract		VOL_TEMP2, VOL_TEMP1, $1 ;\
+	st_external	VOL_TEMP2, r0, $MACH_PTEVA_3|MACH_CO_WR_REG
+
+/*
+ * ST_RPT_BASE(rx) -- 
+ *
+ *	Store to high-order bits of RPTEVA in the CC
+ *
+ *	rx -- 	Virtual pagenumber which is base of the page table.
+ *
+ * rpteva<37:28> <= rx<25:16>
+ * rpteva<27:18> <= rx<25:16>
+ */
+#define ST_RPT_BASE(rx) \
+	sra		VOL_TEMP1, rx, $1 ;\
+	sra		VOL_TEMP1, VOL_TEMP1, $1 ;\
+	extract		VOL_TEMP2, VOL_TEMP1, $2 ;\
+	st_external	VOL_TEMP2, r0, $MACH_RPTEVA_4|MACH_CO_WR_REG ;\
+	wr_insert	$1 ;\
+	insert		VOL_TEMP1, rx, VOL_TEMP2 ;\
+	sll		VOL_TEMP1, VOL_TEMP1, $2 ;\
+	extract		VOL_TEMP2, VOL_TEMP1, $2 ;\
+	st_external	VOL_TEMP2, r0, $MACH_RPTEVA_2|MACH_CO_WR_REG  ;\
+	sll		VOL_TEMP1, VOL_TEMP1, $2 ;\
+	extract		VOL_TEMP2, VOL_TEMP1, $2 ;\
+	st_external	VOL_TEMP2, r0, $MACH_RPTEVA_3|MACH_CO_WR_REG 
+
+/*
+ * READ_STATUS_REGS(baseVal, resReg)
+ *
+ *	Read the value out of the interrupt status, interrupt mask and
+ *	fe status registers.
+ */
+#define READ_STATUS_REGS(baseVal, resReg) \
+	rd_insert	VOL_TEMP1; \
+	ld_external	resReg, r0, $baseVal|MACH_CO_RD_REG; \
+	ld_external	VOL_TEMP2, r0, $baseVal|0x20|MACH_CO_RD_REG; \
+	wr_insert	$1; \
+	insert		resReg, resReg, VOL_TEMP2; \
+	ld_external	VOL_TEMP2, r0, $baseVal|0x40|MACH_CO_RD_REG; \
+	wr_insert	$2; \
+	insert		resReg, resReg, VOL_TEMP2; \
+	ld_external	VOL_TEMP2, r0, $baseVal|0x60|MACH_CO_RD_REG; \
+	wr_insert	$3; \
+	insert		resReg, resReg, VOL_TEMP2; \
+	wr_insert	VOL_TEMP1
+
+/*
+ * WRITE_STATUS_REGS(baseVal, resReg)
+ *
+ *	Store the value to the interrupt status, interrupt mask and
+ *	fe status registers.
+ */
+#define WRITE_STATUS_REGS(baseVal, reg) \
+	st_external	reg, r0, $baseVal|MACH_CO_WR_REG; \
+	extract		VOL_TEMP1, reg, $1; \
+	st_external	VOL_TEMP1, r0, $baseVal|0x20|MACH_CO_WR_REG; \
+	extract		VOL_TEMP1, reg, $2; \
+	st_external	VOL_TEMP1, r0, $baseVal|0x40|MACH_CO_WR_REG; \
+	extract		VOL_TEMP1, reg, $3; \
+	st_external	VOL_TEMP1, r0, $baseVal|0x60|MACH_CO_WR_REG
+
+/*
+ * VERIFY_SWP(label, underFlowBytes) -- 
+ *
+ *	Verify that the saved window pointer is valid.  If so branch to the
+ *	given label.  The swp is valid if
+ *
+ *	    swp >= min_swp_offset and
+ *	    swp <= max_swp_offset - MACH_SAVED_REG_SET_SIZE
+ *
+ *	These bounds ensure that a single window underflow will work and many 
+ *	overflows will work.
+ */
+#define	VERIFY_SWP(label) \
+	LD_MACH_CUR_STATE_PTR(VOL_TEMP1); \
+	rd_special	VOL_TEMP2, swp; \
+	ld_32		VOL_TEMP3, VOL_TEMP1, $MACH_MIN_SWP_OFFSET; \
+	Nop; \
+	cmp_br_delayed	ult, VOL_TEMP2, VOL_TEMP3, 1f; \
+	Nop; \
+	ld_32		VOL_TEMP3, VOL_TEMP1, $MACH_MAX_SWP_OFFSET; \
+	Nop; \
+	sub		VOL_TEMP3, VOL_TEMP3, $MACH_SAVED_REG_SET_SIZE; \
+	cmp_br_delayed	ule, VOL_TEMP2, VOL_TEMP3, label; \
+	Nop; \
+1:
+
+/*
+ * SWITCH_TO_KERNEL_STACKS()
+ *
+ *	Switch to the kernel's spill and overflow stacks.  Before we
+ *	are called we have already saved all of the windows through
+ *	cwp - 2 onto the user's saved window stack.  So the act of switching
+ *	to the kernel's saved window stack involves leaving the cwp alone and
+ *	setting the swp equal to the cwp - 2 + stack_base.  This requires
+ *	the following sequence of instructions:
+ *
+ *		1) VOL_TEMP3 <= cwp
+ *		2) VOL_TEMP3 = (VOL_TEMP3 - 8) & 0x1c to decrement the cwp
+ *			by 2 and mask out bits in case it wraps.
+ *		3) VOL_TEMP3 <<= 5 to shift cwp<4:2> to swp<9:7>
+ *		4) VOL_TEMP3 += StackBase
+ *		5) swp <= VOL_TEMP3
+ */
+#define	SWITCH_TO_KERNEL_STACKS() \
+	LD_MACH_CUR_STATE_PTR(VOL_TEMP1); \
+	Nop; \
+	ld_32		SPILL_SP, VOL_TEMP1, $MACH_KERN_STACK_END_OFFSET; \
+	ld_32		VOL_TEMP2, VOL_TEMP1, $MACH_KERN_STACK_START_OFFSET; \
+	rd_special	VOL_TEMP3, cwp; \
+	sub		VOL_TEMP3, VOL_TEMP3, $8; \
+	and		VOL_TEMP3, VOL_TEMP3, $0x1c; \
+	sll		VOL_TEMP3, VOL_TEMP3, $3; \
+	sll		VOL_TEMP3, VOL_TEMP3, $2; \
+	add_nt		VOL_TEMP3, VOL_TEMP3, VOL_TEMP2; \
+	wr_special	swp, VOL_TEMP3, $0
+
+/*
+ * SAVE_USER_STATE --
+ *
+ *	Save the state of the user process onto the saved window stack
+ *	and into the machine state struct.
+ */
+#define	SAVE_USER_STATE() \
+	LD_MACH_CUR_STATE_PTR(VOL_TEMP1); \
+	Nop; \
+	add_nt		VOL_TEMP1, VOL_TEMP1, $MACH_TRAP_REG_STATE_OFFSET; \
+	rd_special	VOL_TEMP2, pc; \
+	add_nt		VOL_TEMP2, VOL_TEMP2, $16; \
+	Nop; \
+	jump		SaveState; \
+	Nop
+
+/*
+ * RESTORE_USER_STATE --
+ *
+ *	Restore the state of the user process from the machine state struct.
+ */
+#define	RESTORE_USER_STATE() \
+	LD_MACH_CUR_STATE_PTR(VOL_TEMP1); \
+	Nop; \
+	add_nt		VOL_TEMP1, VOL_TEMP1, $MACH_TRAP_REG_STATE_OFFSET; \
+	rd_special	VOL_TEMP2, pc; \
+	add_nt		VOL_TEMP2, VOL_TEMP2, $16; \
+	Nop; \
+	jump		RestoreState; \
+	Nop
+
+/*
+ * USER_ERROR(errorType) --
+ *
+ *	Handle a user error.  This is only called from a trap handler
+ *	that happened in user mode.  The error is taken by trapping back
+ *	into the kernel.  Before trapping back in save the error type and
+ *	first and second PCs in registers that won't be trashed by the interrupt
+ *	handler.
+ *
+ *	errorType - Type of user error.
+ */
+#ifdef PATCH_IBUFFER
+	/*
+	 * Patch for IBUFFER.
+	 *	Clear CUR_PC_REG so we can detect when interrupt trap
+	 *	handling messes up.
+	 */
+#define USER_ERROR(userError) \
+	add_nt		NON_INTR_TEMP1, CUR_PC_REG, $0; \
+	add_nt		CUR_PC_REG, r0, $0; \
+	add_nt		NON_INTR_TEMP2, NEXT_PC_REG, $0; \
+	invalidate_ib; \
+	rd_special	VOL_TEMP1, pc; \
+	return_trap	VOL_TEMP1, $12; \
+	Nop; \
+	invalidate_ib; \
+	cmp_trap	always, r0, r0, $userError; \
+	Nop
+#else
+#define USER_ERROR(userError) \
+	add_nt		NON_INTR_TEMP1, CUR_PC_REG, $0; \
+	add_nt		NON_INTR_TEMP2, NEXT_PC_REG, $0; \
+	invalidate_ib; \
+	rd_special	VOL_TEMP1, pc; \
+	return_trap	VOL_TEMP1, $12; \
+	Nop; \
+	cmp_trap	always, r0, r0, $userError; \
+	Nop
+#endif
+/*
+ * USER_SWP_ERROR() ==
+ *
+ *	Handle a user swp error.  This is called from a trap handler
+ *	that happened in kernel mode.
+ */
+#ifdef PATCH_IBUFFER
+	/*
+	 * Patch for IBUFFER.
+	 *	Clear CUR_PC_REG so we can detect when interrupt trap
+	 *	handling messes up.
+	 */
+#define	USER_SWP_ERROR() \
+	SWITCH_TO_KERNEL_STACKS(); \
+	rd_kpsw		VOL_TEMP1; \
+	or		VOL_TEMP1, VOL_TEMP1, $MACH_KPSW_ALL_TRAPS_ENA; \
+	and		VOL_TEMP1, VOL_TEMP1, $~(MACH_KPSW_IBUFFER_ENA); \
+	wr_kpsw		VOL_TEMP1, $0; \
+	add_nt		CUR_PC_REG, r0,$0; \
+	add_nt		OUTPUT_REG1, r0, $MACH_USER_BAD_SWP; \
+	invalidate_ib; \
+	call		_MachUserError; \
+	Nop
+#else
+#define	USER_SWP_ERROR() \
+	SWITCH_TO_KERNEL_STACKS(); \
+	rd_kpsw		VOL_TEMP1; \
+	or		VOL_TEMP1, VOL_TEMP1, $MACH_KPSW_ALL_TRAPS_ENA; \
+	wr_kpsw		VOL_TEMP1, $0; \
+	add_nt		OUTPUT_REG1, r0, $MACH_USER_BAD_SWP; \
+	invalidate_ib; \
+	call		_MachUserError; \
+	Nop
+#endif
+
+/*
+ * SWITCH_TO_DEBUGGER_STACKS()
+ *
+ *	Switch to the debugger's spill and overflow stacks.  Before we
+ *	are called we have already saved all of the windows through
+ *	cwp - 2 onto the normal saved window stack.  So the act of
+ *	switching to the debugger's overflow stack involves leaving the cwp
+ *	alone and setting the swp equal to the cwp - 2 + stack_base.
+ *	This requires the following sequence of instructions:
+ *
+ *		1) VOL_TEMP2 <= cwp
+ *		2) VOL_TEMP2 = (VOL_TEMP2 - 8) & 0x1c to decrement the cwp
+ *			by 2 and mask out bits in case it wraps.
+ *		3) VOL_TEMP2 <<= 5 to shift cwp<4:2> to swp<9:7>
+ *		4) VOL_TEMP2 += StackBase
+ *		5) swp <= VOL_TEMP2
+ *
+ * 	If were not the processor to run the debugger (the master processor)
+ *	then use our current stack.
+ */
+#define	SWITCH_TO_DEBUGGER_STACKS() \
+	ld_32		VOL_TEMP2, r0, $_machMasterProcessor; \
+	GET_PNUM_FROM_BOARD(VOL_TEMP1); \
+	cmp_br_delayed	ne, VOL_TEMP1, VOL_TEMP2, 1f; \
+	sll		VOL_TEMP1, VOL_TEMP1,$2; \
+	ld_32		SPILL_SP,VOL_TEMP1, $debugSpillStackEndPtr; \
+	ld_32		VOL_TEMP1, VOL_TEMP1, $debugSWStackBasePtr; \
+	nop; \
+	rd_special	VOL_TEMP2, cwp; \
+	sub		VOL_TEMP2, VOL_TEMP2, $8; \
+	and		VOL_TEMP2, VOL_TEMP2, $0x1c; \
+	sll		VOL_TEMP2, VOL_TEMP2, $3; \
+	sll		VOL_TEMP2, VOL_TEMP2, $2; \
+	add_nt		VOL_TEMP2, VOL_TEMP2, VOL_TEMP1; \
+	wr_special	swp, VOL_TEMP2, $0
+1:
+/*
+ * CALL_DEBUGGER(regErrorVal, constErrorVal)
+ *
+ *	Call the kernel debugger.  It is assumed that when we are called
+ *	the spill stack is the kernel's and the saved window stack is OK.
+ *	This macro does the following:
+ *	
+ *	    1) Saves the state into _machDebugState
+ *	    2) Switch to the debuggers own spill and saved window stacks.
+ *	    3) Turn off interrupts, turn on all traps, and turn off and 
+ *	       invalidate the ibuffer.
+ *	    4) Flush the cache.
+ *	    5) Call routine _MachCallDebugger(errorType, &machDebugState)
+ *	    6) Restore state from _machDebugState (note that this will 
+ *	       reenable the ibuffer unless the debugger has modified the
+ *	       kpsw to not have it enabled).
+ *	    7) Clear any pending debugger signals.
+ *	    8) Continue the other processors.
+ *	    9) Do a normal return from trap.
+ *
+ *	regErrorVal -	Register that holds an error value.
+ *	constErrorVal -	Constant error value.
+ */
+
+#define	CALL_DEBUGGER(regErrorVal, constErrorVal) \
+	GET_PNUM_FROM_BOARD(VOL_TEMP1); \
+	sll		VOL_TEMP1, VOL_TEMP1,$2; \
+	ld_32		VOL_TEMP1, VOL_TEMP1, $_machDebugStatePtrs; \
+	rd_special	VOL_TEMP2, pc; \
+	add_nt		VOL_TEMP2, VOL_TEMP2, $16; \
+	jump		SaveState; \
+	Nop; \
+	\
+	SWITCH_TO_DEBUGGER_STACKS(); \
+	\
+	rd_kpsw		VOL_TEMP1; \
+	and		VOL_TEMP1, VOL_TEMP1, $~MACH_KPSW_INTR_TRAP_ENA; \
+	or		VOL_TEMP1, VOL_TEMP1, $MACH_KPSW_ALL_TRAPS_ENA; \
+	and		VOL_TEMP1, VOL_TEMP1, $~MACH_KPSW_IBUFFER_ENA; \
+	wr_kpsw		VOL_TEMP1, $0; \
+	invalidate_ib; \
+	\
+	add_nt		r1, r0, $0; \
+	LD_CONSTANT(r2, VMMACH_CACHE_SIZE); \
+1:	st_external	r0, r1, $MACH_CO_FLUSH; \
+	add_nt		r1, r1, $VMMACH_CACHE_LINE_SIZE; \
+	cmp_br_delayed	lt, r1, r2, 1b; \
+	Nop; \
+	add_nt		OUTPUT_REG1, regErrorVal, $constErrorVal; \
+	GET_PNUM_FROM_BOARD(OUTPUT_REG2); \
+	sll		OUTPUT_REG2, OUTPUT_REG2,$2; \
+	ld_32		OUTPUT_REG2, OUTPUT_REG2, $_machDebugStatePtrs; \
+	Nop; \
+	invalidate_ib; \
+	call		_MachEnterKernelDebugger; \
+	Nop; \
+	ld_32		OUTPUT_REG2, r0, $_machDbgInterruptMask;\
+        WRITE_STATUS_REGS(MACH_FE_STATUS_0, OUTPUT_REG2); \
+	invalidate_ib; \
+	call		_MachContinueProcessors; \
+	Nop; \
+	GET_PNUM_FROM_BOARD(VOL_TEMP1); \
+	sll		VOL_TEMP1, VOL_TEMP1,$2; \
+	ld_32		VOL_TEMP1, VOL_TEMP1, $_machDebugStatePtrs; \
+	rd_special	VOL_TEMP2, pc; \
+	add_nt		VOL_TEMP2, VOL_TEMP2, $16; \
+	jump		RestoreState; \
+	Nop; \
+	\
+	add_nt		RETURN_VAL_REG, r0, $MACH_NORM_RETURN; \
+	jump		ReturnTrap; \
+	Nop
+
+/*
+ * Save the cache controller state in virtual mode.
+ */
+#define SAVE_CC_STATE_VIRT() \
+	add_nt		r1, r0, $0; \
+	ld_32		r2, r0, $ccStatePtr; \
+	nop; \
+1:	ld_external	r5, r1, $MACH_CO_RD_REG; \
+	nop; \
+	ld_external	r6, r1, $(MACH_CO_RD_REG + 0x20); \
+	wr_insert	$1; \
+	insert		r5, r5, r6; \
+	ld_external	r6, r1, $(MACH_CO_RD_REG + 0x40); \
+	wr_insert	$2; \
+	insert		r5, r5, r6; \
+	ld_external	r6, r1, $(MACH_CO_RD_REG + 0x60); \
+	wr_insert	$3; \
+	insert		r5, r5, r6; \
+	st_32		r5, r2, $0; \
+	add_nt		r1, r1, $0x80; \
+	add_nt		r2, r2, $4; \
+	add_nt		r3, r0, $0x1000; \
+	cmp_br_delayed	lt, r1, r3, 1b; \
+	nop
+
+/*
+ * FETCH_CUR_INSTRUCTION(destReg) --
+ *
+ *	Load the contents of the instruction at CUR_PC_REG into destReg.
+ *
+ *	destReg -- Register to load instruction into.
+ */
+#ifdef BARB 
+#define FETCH_CUR_INSTRUCTION(destReg) \
+        LD_CONSTANT(VOL_TEMP2, 0x20000); \
+        LD_CONSTANT(VOL_TEMP3, 0x40000000); \
+        cmp_br_delayed  lt, CUR_PC_REG, VOL_TEMP2, 1f; \
+        nop; \
+        cmp_br_delayed  ge, CUR_PC_REG, VOL_TEMP3, 1f; \
+        nop; \
+        sub             VOL_TEMP2, CUR_PC_REG, VOL_TEMP2; \
+        add             VOL_TEMP2, VOL_TEMP2, VOL_TEMP3; \
+        cmp_br_delayed	always, r0, r0, 2f; \
+        nop; \
+1: \
+        add_nt          VOL_TEMP2, CUR_PC_REG, $0; \
+2: \
+        ld_32           destReg, VOL_TEMP2, $0
+#else
+#define FETCH_CUR_INSTRUCTION(destReg) \
+        ld_32           destReg, CUR_PC_REG, $0
+#endif
+
+/*
+ * EXT_MASK(mask)
+ *
+ *	Take the given unsigned mask and extend the sign bit.
+ */
+#define	EXT_MASK(mask) (-((~(mask))+1))
+
+/*
+ * LD_MACH_CUR_STATE_PTR(destReg)
+ * Load a pointer to the Mach_State structure of the currently executing 
+ * process on the current processor. The pointer can be found by indexing
+ * into _machCurStatePtrs using the pnum read from the kpsw.
+ */
+
+#define	LD_MACH_CUR_STATE_PTR(destReg) \
+	rd_kpsw		destReg; \
+	extract		destReg, destReg, $3; \
+	sll		destReg,destReg,$2; \
+	ld_32	destReg, destReg, $_machCurStatePtrs
+
+/*
+ * LD_MACH_CUR_STATE_PTR(srcReg)
+ * Store a pointer to the Mach_State structure of the currently executing 
+ * process on the current processor. The pointer is store at the location
+ * fromed by indexing  into _machCurStatePtrs using the pnum read 
+ * from the kpsw.
+ *
+ * The macro should use the addressing mode of the st_32 instruction 
+ * (ie st_32	srcReg, tempReg, $_machCurStatePtr) but this doesn't work
+ * the current version of sas.  
+ * 
+ */
+
+#define	ST_MACH_CUR_STATE_PTR(srcReg, tempReg) \
+	rd_kpsw		tempReg; \
+	extract		tempReg, tempReg, $3; \
+	sll		tempReg,tempReg,$2; \
+	add_nt		tempReg,tempReg,$_machCurStatePtrs ; \
+	st_32		srcReg,tempReg,$0
+
+
+/*
+ * LD_CURRENT_PCB_PTR(destReg)
+ * Load a pointer to the PCB Proc_ControlBlock structure of the process 
+ * executing on this processor. The pointer can be found by indexing
+ * into runningProcesses using the pnum read from the kpsw.
+ */
+
+#define	LD_CURRENT_PCB_PTR(destReg) \
+	rd_kpsw		VOL_TEMP1; \
+	extract		VOL_TEMP1, VOL_TEMP1, $3; \
+	sll		VOL_TEMP1,VOL_TEMP1,$2; \
+	ld_32		destReg, r0, $runningProcesses ; \
+	Nop ; \
+	ld_32		destReg, destReg,$0  ; \
+	Nop ; \
+	ld_32		destReg, destReg,VOL_TEMP1
+
+/*
+ * GET_PNUM_FROM_BOARD(pnumReg) 
+ * Compute the processor number by reading the slot id from the cache controler
+ * and doing the mapping.
+ */
+
+#define	GET_PNUM_FROM_BOARD(pnumReg) \
+	LD_SLOT_ID(pnumReg); \
+	sll		pnumReg,pnumReg,$2; \
+	ld_32	pnumReg, pnumReg, $_machMapSlotIdToPnum ; \
+	Nop
+
+
+#endif _MACHASMDEFS
+@
+
+
+8.3
+log
+@Cleaning up locked files
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/spur.md/RCS/machAsmDefs.h,v 8.2 89/01/11 09:43:24 mendel Exp $ SPRITE (Berkeley)
+d546 1
+a546 1
+	add_nt		r1, r1, $VMMACH_CACHE_BLOCK_SIZE; \
+@
+
+
+8.2
+log
+@Fixed indexing into runningProcesses array.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/spur.md/RCS/machAsmDefs.h,v 8.1 88/11/30 10:32:05 mendel Exp $ SPRITE (Berkeley)
+d412 1
+d423 1
+d450 1
+d460 1
+d554 1
+d559 1
+@
+
+
+8.1
+log
+@Added LD_CURRENT_PCB_PTR() macro and removed instructions fixing the
+processor number at zero.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/spur.md/RCS/machAsmDefs.h,v 8.0 88/11/11 18:05:48 douglis Stable Locker: mendel $ SPRITE (Berkeley)
+d670 4
+a673 4
+	rd_kpsw		destReg; \
+	extract		destReg, destReg, $3; \
+	sll		destReg,destReg,$2; \
+	ld_32		destReg, destReg, $runningProcesses ; \
+d675 1
+a675 1
+	ld_32		destReg, destReg, $0 ; \
+d677 1
+a677 1
+	ld_32		destReg, destReg, $0 
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/spur.md/RCS/machAsmDefs.h,v 1.27 88/11/11 15:35:49 mendel Exp Locker: douglis $ SPRITE (Berkeley)
+a638 1
+	add_nt		destReg, r0, $0 ; \
+a657 1
+	add_nt		tempReg, r0, $0 ; \
+d661 17
+@
+
+
+1.27
+log
+@Changes for multiprocessor, ibuffer, and new libc.a.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/spur.md/RCS/machAsmDefs.h,v 1.26 88/10/20 09:20:34 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+@
+
+
+1.26
+log
+@Added support for multiple processors.
+@
+text
+@d10 1
+a10 1
+ * $Header: machAsmDefs.h,v 1.25 88/10/02 14:28:44 mendel Exp $ SPRITE (Berkeley)
+d402 6
+d410 1
+d415 1
+d418 10
+a427 1
+
+d434 6
+d444 1
+d446 1
+d450 10
+a460 1
+
+d477 3
+d482 6
+a487 2
+	ld_32		SPILL_SP, r0, $debugSpillStackEnd; \
+	ld_32		VOL_TEMP1, r0, $debugSWStackBase; \
+d496 1
+a496 1
+
+d513 3
+a515 1
+ *	    7) Do a normal return from trap.
+a519 6
+#ifdef notdef
+	rd_kpsw		VOL_TEMP1; \
+	and		VOL_TEMP1, VOL_TEMP1, $~MACH_KPSW_ALL_TRAPS_ENA; \
+	wr_kpsw		VOL_TEMP1, $0; \
+	st_32		r0, r0, $-1
+#endif
+d522 3
+a524 1
+	ld_32		VOL_TEMP1, r0, $debugStatePtr; \
+a544 3
+	\
+	SAVE_CC_STATE_VIRT(); \
+	\
+d546 3
+a548 1
+	ld_32		OUTPUT_REG2, r0, $debugStatePtr; \
+d550 1
+a550 1
+	call		_kdb; \
+d552 7
+a558 2
+	\
+	ld_32		VOL_TEMP1, r0, $debugStatePtr; \
+d673 2
+a674 1
+	ld_32	pnumReg, pnumReg, $_machMapSlotToPnum
+@
+
+
+1.25
+log
+@Added nop to delay slot of ld_external in LD_SLOT_ID().
+@
+text
+@d10 1
+a10 1
+ * $Header: machAsmDefs.h,v 1.24 88/09/09 08:40:50 mendel Exp $ SPRITE (Berkeley)
+d132 2
+a133 1
+		Nop
+d317 1
+a317 1
+	ld_32		VOL_TEMP1, r0, $_machCurStatePtr; \
+d348 2
+a349 2
+	ld_32		VOL_TEMP1, r0, $_machCurStatePtr; \
+	Nop; \
+d367 2
+a368 2
+	ld_32		VOL_TEMP1, r0, $_machCurStatePtr; \
+	Nop; \
+d382 2
+a383 2
+	ld_32		VOL_TEMP1, r0, $_machCurStatePtr; \
+	Nop; \
+d584 48
+@
+
+
+1.24
+log
+@Modified LD_GSN to mask out undefined bits from the ld_external.
+@
+text
+@d10 1
+a10 1
+ * $Header: machAsmDefs.h,v 1.23 88/08/26 11:55:05 nelson Exp $ SPRITE (Berkeley)
+d130 3
+a132 1
+#define LD_SLOT_ID(rx)	ld_external rx, r0, $MACH_SLOT_ID_REG|MACH_CO_RD_REG
+@
+
+
+1.23
+log
+@Deleted old SAVE_CC_STATE macro.
+@
+text
+@d10 1
+a10 1
+ * $Header: machAsmDefs.h,v 1.22 88/08/23 10:18:02 mendel Exp $ SPRITE (Berkeley)
+d217 1
+a217 1
+ * gsn<7:0> <= rx<7:0>
+d219 3
+a221 1
+#define LD_GSN(rx,gsn) ld_external	rx, r0, $gsn|MACH_CO_RD_REG
+@
+
+
+1.22
+log
+@Patched bug in VERIFY_SWP
+@
+text
+@d10 1
+a10 1
+ * $Header: machAsmDefs.h,v 1.21 88/08/18 18:43:32 nelson Exp $ SPRITE (Berkeley)
+a518 26
+
+/*
+ * Save the cache controller state.
+ */
+#define SAVE_CC_STATE() \
+	add_nt		r1, r0, $0; \
+	LD_CONSTANT(r2, 0xff03b000); \
+	nop; \
+1:	ld_external	r5, r1, $MACH_CO_RD_REG; \
+	nop; \
+	ld_external	r6, r1, $(MACH_CO_RD_REG + 0x20); \
+	wr_insert	$1; \
+	insert		r5, r5, r6; \
+	ld_external	r6, r1, $(MACH_CO_RD_REG + 0x40); \
+	wr_insert	$2; \
+	insert		r5, r5, r6; \
+	ld_external	r6, r1, $(MACH_CO_RD_REG + 0x60); \
+	wr_insert	$3; \
+	insert		r5, r5, r6; \
+	st_32		r5, r2, $0; \
+	add_nt		r1, r1, $0x80; \
+	add_nt		r2, r2, $4; \
+	add_nt		r3, r0, $0x1000; \
+	cmp_br_delayed	lt, r1, r3, 1b; \
+	nop
+
+@
+
+
+1.21
+log
+@Got simple user processes working.
+@
+text
+@d10 1
+a10 1
+ * $Header: machAsmDefs.h,v 1.20 88/08/09 18:38:45 nelson Exp $ SPRITE (Berkeley)
+d316 1
+a316 1
+	cmp_br_delayed	lt, VOL_TEMP2, VOL_TEMP3, 1f; \
+d319 1
+d321 1
+a321 1
+	cmp_br_delayed	le, VOL_TEMP2, VOL_TEMP3, label; \
+@
+
+
+1.20
+log
+@Middle of spur port.
+@
+text
+@d10 1
+a10 1
+ * $Header: machAsmDefs.h,v 1.19 88/08/01 16:34:13 mendel Exp $ SPRITE (Berkeley)
+d170 1
+d172 1
+d174 23
+d209 13
+d327 5
+a331 3
+ *	Switch to the kernel's spill and overflow stacks.  The act of switching
+ *	to the kernel's overflow stack involves leaving the cwp alone and
+ *	setting the swp equal to the cwp - 1 + stack_base.  This requires
+d335 2
+a336 2
+ *		2) VOL_TEMP3 = (VOL_TEMP3 - 1) & 0x1c to decrement the cwp
+ *			and mask out bits in case it wraps.
+d347 1
+a347 1
+	sub		VOL_TEMP3, VOL_TEMP3, $4; \
+d424 3
+a426 1
+ *	Switch to the debugger's spill and overflow stacks.  The act of
+d428 1
+a428 1
+ *	alone and setting the swp equal to the cwp - 1 + stack_base.
+d432 2
+a433 2
+ *		2) VOL_TEMP2 = (VOL_TEMP2 - 1) & 0x1c to decrement the cwp
+ *			and mask out bits in case it wraps.
+d443 1
+a443 1
+	sub		VOL_TEMP2, VOL_TEMP2, $4; \
+@
+
+
+1.19
+log
+@Added ST_RPTM_PAGE macro.
+@
+text
+@d10 1
+a10 1
+ * $Header: machAsmDefs.h,v 1.18 88/07/29 11:26:18 nelson Exp $ SPRITE (Berkeley)
+d372 1
+a375 1
+	SWITCH_TO_KERNEL_STACKS(); \
+@
+
+
+1.18
+log
+@SPUR port in progress.
+@
+text
+@d10 1
+a10 1
+ * $Header: machAsmDefs.h,v 1.17 88/07/23 12:50:41 nelson Exp $ SPRITE (Berkeley)
+d151 19
+@
+
+
+1.17
+log
+@Successfully use non-maskable timer to refresh wells.
+@
+text
+@d10 1
+a10 1
+ * $Header: machAsmDefs.h,v 1.16 88/07/20 18:29:45 nelson Exp $ SPRITE (Berkeley)
+d380 1
+d410 7
+a417 1
+	st_32		r0, r0, $-1; \
+d440 2
+d485 1
+a485 1
+ * Save the cache controller state.
+d489 1
+a489 1
+	LD_CONSTANT(r2, (MACH_STACK_BOTTOM + 4096)); \
+@
+
+
+1.16
+log
+@Initial spur boot
+@
+text
+@d10 1
+a10 1
+ * $Header: machAsmDefs.h,v 1.15 88/07/19 20:00:14 nelson Exp $ SPRITE (Berkeley)
+d410 1
+d455 26
+@
+
+
+1.15
+log
+@*** empty log message ***
+@
+text
+@d10 1
+a10 1
+ * $Header: machAsmDefs.h,v 1.14 88/07/16 15:51:35 nelson Exp $ SPRITE (Berkeley)
+d399 3
+a401 2
+ *	    4) Call routine _MachCallDebugger(errorType, &machDebugState)
+ *	    5) Restore state from _machDebugState (note that this will 
+d404 1
+a404 1
+ *	    6) Do a normal return from trap.
+d425 7
+d447 25
+@
+
+
+1.14
+log
+@*** empty log message ***
+@
+text
+@d10 1
+a10 1
+ * $Header: machAsmDefs.h,v 1.13 88/07/16 15:40:55 nelson Exp $ SPRITE (Berkeley)
+d399 1
+a399 1
+ *	    4) Call routine _MachCallDebugger(errorType)
+d425 3
+a427 1
+	call		_MachCallDebugger; \
+@
+
+
+1.13
+log
+@Added the UART mapping and the refresh and single step traps and made the
+debugger be entered with all traps enabled but interrupts off.
+@
+text
+@d10 1
+a10 1
+ * $Header: machAsmDefs.h,v 1.12 88/07/15 11:32:03 nelson Exp $ SPRITE (Berkeley)
+d419 1
+a419 1
+	or		VOL_TEMP1, VOL_TEMP1, $MACH_ALL_TRAPS_ENA; \
+@
+
+
+1.12
+log
+@Simulate window overflow and underflow, saving and restoring state and
+faults and interrupts.
+@
+text
+@d10 1
+a10 1
+ * $Header: machAsmDefs.h,v 1.11 88/07/07 16:02:34 nelson Exp $ SPRITE (Berkeley)
+d397 2
+a398 1
+ *	    3) Turn off and invalidate the ibuffer.
+d418 2
+@
+
+
+1.11
+log
+@Changed to handle the new signal stuff.
+@
+text
+@d10 1
+a10 1
+ * $Header: machAsmDefs.h,v 1.10 88/07/05 15:11:15 nelson Exp $ SPRITE (Berkeley)
+d234 1
+a234 1
+	st_external	reg, r0, $baseVal|MACH_CO_RD_REG; \
+d236 1
+a236 1
+	st_external	VOL_TEMP1, r0, $baseVal|0x20|MACH_CO_RD_REG; \
+d238 1
+a238 1
+	st_external	VOL_TEMP1, r0, $baseVal|0x40|MACH_CO_RD_REG; \
+d240 1
+a240 1
+	st_external	VOL_TEMP1, r0, $baseVal|0x60|MACH_CO_RD_REG
+d431 2
+a432 1
+	jump		returnTrap_NormReturn; \
+d444 3
+a446 3
+        LD_CONSTANT(VOL_TEMP1, 0x20000); \
+        LD_CONSTANT(VOL_TEMP2, 0x40000000); \
+        cmp_br_delayed  lt, CUR_PC_REG, VOL_TEMP1, 1f; \
+d448 1
+a448 1
+        cmp_br_delayed  ge, CUR_PC_REG, VOL_TEMP2, 1f; \
+d450 3
+a452 3
+        sub             VOL_TEMP1, CUR_PC_REG, VOL_TEMP1; \
+        add             VOL_TEMP1, VOL_TEMP1, VOL_TEMP2; \
+        cmp_br_delayed	always, 2f; \
+d455 1
+a455 1
+        add_nt          VOL_TEMP1, CUR_PC_REG, $0; \
+d457 1
+a457 1
+        ld_32           destReg, VOL_TEMP1, $0
+@
+
+
+1.10
+log
+@*** empty log message ***
+@
+text
+@d10 1
+a10 1
+ * $Header: machAsmDefs.h,v 1.9 88/06/30 15:32:16 nelson Exp $ SPRITE (Berkeley)
+d397 6
+a402 3
+ *	    3) Call routine _MachCallDebugger(errorType)
+ *	    4) Restore state from _machDebugState
+ *	    5) Do a normal return from trap.
+d408 1
+a408 1
+	add_nt		VOL_TEMP1, r0, $debugStatePtr; \
+d416 5
+d425 1
+a425 1
+	add_nt		VOL_TEMP1, r0, $debugStatePtr; \
+@
+
+
+1.9
+log
+@*** empty log message ***
+@
+text
+@d10 1
+a10 1
+ * $Header: machAsmDefs.h,v 1.6 88/06/09 10:17:55 nelson Exp $ SPRITE (Berkeley)
+d17 1
+a17 1
+ * LD_ADDR --
+d19 3
+a21 2
+ *	Load the address of the instruction specified by 'label' into
+ *	register 'rd'.
+d23 4
+a26 3
+#define LD_ADDR(rd, label) \
+	rd_special	rd, Pc ;\
+0:	add_nt		rd, rd, $(((label-0b)+4)&0x3fff)
+@
+
+
+1.8
+log
+@*** empty log message ***
+@
+text
+@d261 1
+a261 1
+	cmp_br_delayed	le, VOL_TEMP2, VOL_TEMP3, goodLabel; \
+d283 2
+a284 2
+	ld_32		SPILL_SP, VOL_TEMP1, $MACH_KERN_STACK_END; \
+	ld_32		VOL_TEMP2, VOL_TEMP1, $MACH_KERN_STACK_START; \
+d287 1
+a287 1
+	and		VOL_TEMP3, VOL_TEMP3, 0x1c; \
+d380 1
+a380 1
+	and		VOL_TEMP2, VOL_TEMP2, 0x1c; \
+@
+
+
+1.7
+log
+@*** empty log message ***
+@
+text
+@d35 1
+d42 2
+a43 1
+	insert		rd, rd, $(((constant)>>24)&0xff)
+a205 38
+ * JUMP_VIRTUAL(rx) --  
+ *	
+ *	Switch from fetching instructions from the physical address space
+ *	to the virtual address space.
+ *
+ *	rx -- 	register containing the virtual address to begin execution.
+ *
+ * Side Effects:
+ *	1) IB is disabled. VOL_TEMP1 contains the previous value of the
+ *	   K_IBuffer
+ *	   bit.
+ *	2) The INVALIDATE_IB instruction MUST be executed before re-enabling
+ *	   the IBuffer.
+ */
+#define JUMP_VIRTUAL(rx) \
+	rd_kpsw		VOL_TEMP1 ;\
+	and		VOL_TEMP2, VOL_TEMP1, $~MACH_KPSW_IBUFFER_ENA ;\
+	and 		VOL_TEMP1, VOL_TEMP1, $MACH_KPSW_IBUFFER_ENA ;\
+	or		VOL_TEMP2, VOL_TEMP2, $MACH_KPSW_VIRT_IFETCH_ENA ;\
+	jump_reg	rx, r0 ;\
+	wr_kpsw		VOL_TEMP2, r0
+
+
+/*
+ * REENABLE_IB -- 
+ *
+ *	Re-enable the IB after executing a 'jump_virtual' macro
+ *
+ *	Assumptions:
+ *		VOL_TEMP1 contains the previous value of the K_IBuffer bit.
+ */
+#define REENABLE_IB() \
+	invalidate_ib ;\
+	rd_kpsw		VOL_TEMP2 ;\
+	or		VOL_TEMP2, VOL_TEMP2, VOL_TEMP1 ;\
+	wr_kpsw		VOL_TEMP2, r0
+
+/*
+d260 1
+a260 1
+	sub_nt		VOL_TEMP3, VOL_TEMP3, $MACH_SAVED_REG_SET_SIZE; \
+d286 1
+a286 1
+	sub_nt		VOL_TEMP3, VOL_TEMP3, $4; \
+d353 1
+a353 1
+	wr_kpsw		VOL_TEMP1; \
+d379 1
+a379 1
+	sub_nt		VOL_TEMP2, VOL_TEMP2, $4; \
+d451 7
+@
+
+
+1.6
+log
+@*** empty log message ***
+@
+text
+@d10 1
+a10 1
+ * $Header: machAsmDefs.h,v 1.5 88/06/07 21:05:43 nelson Exp $ SPRITE (Berkeley)
+d310 1
+a310 1
+ *		2) VOL_TEMP3 = (VOL_TEMP3 - 1) & 0x1c0 to decrement the cwp
+d323 1
+a323 1
+	and		VOL_TEMP3, VOL_TEMP3, 0x1c0; \
+d342 2
+a343 1
+	jump		SaveState
+d357 2
+a358 1
+	jump		RestoreState
+d372 2
+a373 3
+	add_nt		NON_INTR_TEMP1, r0, $userError; \
+	add_nt		NON_INTR_TEMP2, CUR_PC_REG, $0; \
+	add_nt		NON_INTR_TEMP3, NEXT_PC_REG, $0; \
+d377 1
+a377 1
+	cmp_trap	always, r0, r0, $MACH_USER_ERROR_TRAP; \
+d395 1
+d397 26
+d430 4
+a433 3
+ *	    2) Call routine _MachCallDebugger(errorType)
+ *	    3) Restore state from _machDebugState
+ *	    4) Do a normal return from trap.
+d444 2
+@
+
+
+1.5
+log
+@*** empty log message ***
+@
+text
+@d10 1
+a10 1
+ * $Header: machAsmDefs.h,v 1.4 88/06/03 10:57:38 nelson Exp $ SPRITE (Berkeley)
+a43 47
+ * CLR_FE_STATUS --
+ *
+ *	Selectively clear the FEStatus register. Clear each bit in 'bits' 
+ *	that is 1.
+ */
+#define CLR_FE_STATUS(bits) \
+	add_nt          VOL_TEMP1, r0, $((bits)&0xff) ; \
+	st_external     VOL_TEMP1, r0, $MACH_FE_STATUS_0|MACH_CO_WR_REG ; \
+	add_nt          VOL_TEMP1, r0, $(((bits)>>8)&0xff) ; \
+	st_external     VOL_TEMP1, r0, $MACH_FE_STATUS_1|MACH_CO_WR_REG ; \
+	add_nt          VOL_TEMP1, r0, $(((bits)>>16)&0xff) ; \
+	st_external     VOL_TEMP1, r0, $MACH_FE_STATUS_2|MACH_CO_WR_REG ; \
+	add_nt          VOL_TEMP1, r0, $(((bits)>>24)&0xff) ; \
+	st_external     VOL_TEMP1, r0, $MACH_FE_STATUS_3|MACH_CO_WR_REG
+
+/*
+ * CLR_INTR_STATUS --
+ *
+ *	Selectively clear the IStatus register. Clear each bit in 'bits'
+ *	that is 1.
+ */
+#define CLR_INTR_STATUS(bits) \
+	add_nt          VOL_TEMP1, r0, $((bits)&0xff) ; \
+	st_external     VOL_TEMP1, r0, $MACH_INTR_STATUS_0|MACH_CO_WR_REG ; \
+	add_nt          VOL_TEMP1, r0, $(((bits)>>8)&0xff) ; \
+	st_external     VOL_TEMP1, r0, $MACH_INTR_STATUS_1|MACH_CO_WR_REG ; \
+	add_nt          VOL_TEMP1, r0, $(((bits)>>16)&0xff) ; \
+	st_external     VOL_TEMP1, r0, $MACH_INTR_STATUS_2|MACH_CO_WR_REG ; \
+	add_nt          VOL_TEMP1, r0, $(((bits)>>24)&0xff) ; \
+	st_external     VOL_TEMP1, r0, $MACH_INTR_STATUS_3|MACH_CO_WR_REG
+
+/*
+ * SET_INTR_MASK --
+ *
+ *	Set the IMask register. 
+ */
+#define SET_INTR_MASK(bits) \
+	add_nt          VOL_TEMP1, r0, $((bits)&0xff) ; \
+	st_external     VOL_TEMP1, r0, $MACH_INTR_MASK_0|MACH_CO_WR_REG ; \
+	add_nt          VOL_TEMP1, r0, $(((bits)>>8)&0xff) ; \
+	st_external     VOL_TEMP1, r0, $MACH_INTR_MASK_1|MACH_CO_WR_REG ; \
+	add_nt          VOL_TEMP1, r0, $(((bits)>>16)&0xff) ; \
+	st_external     VOL_TEMP1, r0, $MACH_INTR_MASK_2|MACH_CO_WR_REG ; \
+	add_nt          VOL_TEMP1, r0, $(((bits)>>24)&0xff) ; \
+	st_external     VOL_TEMP1, r0, $MACH_INTR_MASK_3|MACH_CO_WR_REG
+
+/*
+d244 1
+a244 1
+ *	The the value out of the interrupt status, interrupt mask and
+d247 1
+a247 1
+#define READ_CACHE_REG(baseVal, resReg) \
+d262 15
+d282 2
+a283 2
+ *	    swp >= min_swp_offset - MACH_SAVED_WINDOW_SIZE and
+ *	    swp + MACH_OVERFLOW_EXTRA <= max_swp_offset
+a286 4
+ *
+ *	underFlowBytes -- Used by the window overflow to indicate that the
+ *			  lower bound should be min_swp_offset instead of
+ *			  min_swp_offset - MACH_SAVED_WINDOW_SIZE.
+a292 1
+	sub_nt		VOL_TEMP3, VOL_TEMP3, $(MACH_SAVED_WINDOW_SIZE - underFlowBytes); \
+d296 1
+a296 1
+	add_nt		VOL_TEMP2, VOL_TEMP2, $MACH_OVERFLOW_EXTRA; \
+d302 1
+a302 1
+ * SWITCH_TO_KERNEL_SPILL_STACK()
+d304 11
+a314 2
+ *	Switch to the kernel's spill stack while saving the old value
+ *	in the process state struct.
+d316 1
+a316 5
+#define SWITCH_TO_KERNEL_SPILL_STACK() \
+	rd_kpsw		VOL_TEMP1; \
+	and		VOL_TEMP1, VOL_TEMP1, $MACH_KPSW_PREV_MODE; \
+	cmp_br_delayed	eq, VOL_TEMP1, $0, 1f; \
+	Nop; \
+a318 1
+	st_32		SPILL_SP, VOL_TEMP1, $MACH_TRAP_USP_OFFSET; \
+d320 17
+d338 5
+a342 1
+1:
+d345 1
+a345 1
+ * RESTORE_USER_SPILL_STACK()
+d347 1
+a347 1
+ *	Switch back to the user's stack.
+d349 1
+a349 5
+#define	RESTORE_USER_SPILL_STACK() \
+	rd_kpsw		VOL_TEMP1; \
+	and		VOL_TEMP1, VOL_TEMP1, $MACH_KPSW_PREV_MODE; \
+	cmp_br_delayed	eq, VOL_TEMP1, $0, 1f; \
+	Nop; \
+d352 3
+a354 1
+	ld_32		SPILL_SP, VOL_TEMP1, $MACH_TRAP_USP_OFFSET; \
+d356 1
+a356 1
+1:
+d380 15
+d404 1
+a404 4
+ *	    4) If came from user mode put back into user mode and restore spill
+ *	       stack.
+ *	    5) Turn on all traps.
+ *	    6) Return from trap.
+d410 3
+a412 3
+	add_nt		SAFE_TEMP1, r0, $debugStatePtr; \
+	rd_special	SAFE_TEMP2, pc; \
+	add_nt		SAFE_TEMP2, $16; \
+d420 3
+a422 3
+	add_nt		SAFE_TEMP1, r0, $debugStatePtr; \
+	rd_special	SAFE_TEMP2, pc; \
+	add_nt		SAFE_TEMP2, $16; \
+d426 1
+a426 12
+	rd_kpsw		SAFE_TEMP1; \
+	and		VOL_TEMP1, SAFE_TEMP1, $MACH_KPSW_PREV_MODE; \
+	cmp_br_delayed	eq, VOL_TEMP1, 0, 1f; \
+	Nop; \
+	or		SAFE_TEMP1, SAFE_TEMP1, $MACH_KPSW_CUR_MODE; \
+	RESTORE_USER_SPILL_STACK(); \
+	\
+1:	or		SAFE_TEMP1, SAFE_TEMP1, $MACH_KPSW_ALL_TRAPS_ENA; \
+	wr_kpsw		SAFE_TEMP1; \
+	\
+	jump_reg	CUR_PC_REG, $0; \
+	return_trap	NEXT_PC_REG, $0; \
+@
+
+
+1.4
+log
+@*** empty log message ***
+@
+text
+@d10 1
+a10 1
+ * $Header: machAsmDefs.h,v 1.3 88/05/25 23:02:29 nelson Exp $ SPRITE (Berkeley)
+d289 1
+a289 1
+ * VERIFY_SWP(savedBytes) -- 
+d291 19
+a309 2
+ *	Verify that the saved window pointer is valid.  If not kill
+ *	the current process.  The swp is valid if
+d311 2
+a312 2
+ *	    swp - 128 >= min_swp_offset and
+ *	    swp + page_size <= max_swp_offset
+d314 2
+a315 6
+ *	The 128 bytes of extra space is required on the bottom in order
+ *	to handle the case when	we are trying to allocate more memory after a
+ *	window underflow and we need space to save a window in case of a
+ *	window overflow fault.  The page_size worth of data at the top is
+ *	there for the same reason.  A whole page is used instead of just
+ *	one window because we may need to save lots of windows.
+d317 6
+a322 2
+ *	savedBytes - Number of bytes that there should be available on the
+ *		     saved window stack.
+d324 2
+a325 4
+#define	VERIFY_SWP(savedBytes) \
+	ld_32		VOL_TEMP1, r0, $curStatePtr; \
+	Nop; \
+	ld_32		VOL_TEMP1, VOL_TEMP1, $0; \
+d329 2
+a330 2
+	add_nt		VOL_TEMP3, VOL_TEMP3, $(savedBytes + 128); \
+	cmp_br_delayed	gt, VOL_TEMP3, VOL_TEMP2, 1f; \
+d333 2
+a334 2
+	add_nt		VOL_TEMP2, VOL_TEMP2, $MACH_PAGE_SIZE; \
+	cmp_br_delayed	ge, VOL_TEMP3, VOL_TEMP2, 2f; \
+d336 1
+a336 2
+1:	USER_ERROR(MACH_USER_BAD_SWP); \
+2:
+d339 1
+a339 1
+ * SWITCH_TO_KERNEL_SPILL_STACK() -
+d341 2
+a342 1
+ *	Switch to the kernel's register spill stack.
+d345 3
+a347 1
+	ld_32		VOL_TEMP1, r0, $curStatePtr; \
+d349 1
+a349 1
+	ld_32		VOL_TEMP1, VOL_TEMP1, $0; \
+d351 1
+d353 2
+a354 1
+	Nop
+d357 1
+a357 1
+ * SWITCH_TO_KERNEL_STACKS() -
+d359 1
+a359 1
+ *	Switch to both the kernel's normal stack and the saved window stack.
+d361 4
+a364 2
+#define SWITCH_TO_KERNEL_STACKS() \
+	ld_32		VOL_TEMP1, r0, $curStatePtr; \
+d366 1
+a366 1
+	ld_32		SPILL_SP, VOL_TEMP1, $MACH_KERN_STACK_END; \
+d368 3
+a370 4
+	ld_32		VOL_TEMP2, VOL_TEMP1, $MACH_KERN_STACK_START; \
+	add_nt		VOL_TEMP2, r0, $0x380; \
+	wr_special	cwp, r0; \
+	wr_special	swp, VOL_TEMP2
+d385 2
+a386 2
+	add_nt		NON_INTR_TEMP2, FIRST_PC_REG, $0; \
+	add_nt		NON_INTR_TEMP3, SECOND_PC_REG, $0; \
+d394 49
+d445 1
+a445 1
+ *	Load the contents of the instruction at FIRST_PC_REG into destReg.
+d451 3
+a453 3
+        ld_constant(VOL_TEMP1, 0x20000); \
+        ld_constant(VOL_TEMP2, 0x40000000); \
+        cmp_br_delayed  lt, FIRST_PC_REG, VOL_TEMP1, 1f; \
+d455 1
+a455 1
+        cmp_br_delayed  ge, FIRST_PC_REG, VOL_TEMP2, 1f; \
+d457 1
+a457 1
+        sub             VOL_TEMP1, FIRST_PC_REG, VOL_TEMP1; \
+d462 1
+a462 1
+        add_nt          VOL_TEMP1, FIRST_PC_REG, $0; \
+d467 1
+a467 1
+        ld_32           destReg, FIRST_PC_REG, $0
+@
+
+
+1.3
+log
+@*** empty log message ***
+@
+text
+@d10 1
+a10 1
+ * $Header: machAsmDefs.h,v 1.2 88/05/24 22:54:50 nelson Exp $ SPRITE (Berkeley)
+a399 36
+
+/*
+ * SAVE_STATE_AND_SWITCH_STACK()
+ *
+ *	Save all user state into the current state structure and switch to
+ *	the kernel stack.
+ */
+#define SAVE_STATE_AND_SWITCH_STACK() \
+	ld_32		VOL_TEMP1, r0, $curStatePtr; \
+	Nop; \
+	ld_32		VOL_TEMP1, VOL_TEMP1, $0; \
+	st_32		SPILL_SP, VOL_TEMP1, $MACH_USER_STACK_PTR_OFFSET; \
+	rd_special	VOL_TEMP2, cwp; \
+	st_32		VOL_TEMP2, VOL_TEMP1, $MACH_CWP_OFFSET; \
+	rd_special	VOL_TEMP2, swp; \
+	st_32		VOL_TEMP2, VOL_TEMP1, $MACH_SWP_OFFSET; \
+	st_32		FIRST_PC_REG, VOL_TEMP1, $MACH_FIRST_PC_OFFSET; \
+	st_32		SECOND_PC_REG, VOL_TEMP1, $MACH_SECOND_PC_OFFSET; \
+	ld_32		SPILL_SP, VOL_TEMP1, $MACH_KERN_STACK_END; \
+	Nop
+
+
+/*
+ * RESTORE_STATE()
+ *
+ *	Restore all user state from the current state structure.  This
+ *	assumes that the state was saved with SAVE_STATE_AND_SWITCH_STACK
+ *	and VOL_TEMP1 contains the pointer to the current processes state
+ *	structure.
+ */
+#define RESTORE_USER_STATE() \
+	ld_32		SPILL_SP, VOL_TEMP1, $MACH_USER_STACK_PTR_OFFSET; \
+	ld_32		VOL_TEMP2, VOL_TEMP1, $MACH_SWP_OFFSET; \
+	ld_32		FIRST_PC_REG, VOL_TEMP1, $MACH_FIRST_PC_OFFSET; \
+	ld_32		SECOND_PC_REG, VOL_TEMP1, $MACH_SECOND_PC_OFFSET; \
+	wr_special	swp, VOL_TEMP2
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d10 1
+a10 1
+ * $Header: machAsmDefs.h,v 1.1 88/05/23 22:48:49 nelson Exp $ SPRITE (Berkeley)
+a16 8
+ * The macros in these macros are allowed to use temporary registers
+ * 6 through 9.
+#define	LREG1	r22
+#define	LREG2	r23
+#define	LREG3	r24
+#define	LREG4	r25
+
+/*
+a47 3
+ *
+ * Side effects:
+ *	Changes the temporary register LREG1.
+d50 8
+a57 8
+	add_nt          LREG1, r0, $((bits)&0xff) ; \
+	st_external     LREG1, r0, $MACH_FE_STATUS_0|MACH_CO_WR_REG ; \
+	add_nt          LREG1, r0, $(((bits)>>8)&0xff) ; \
+	st_external     LREG1, r0, $MACH_FE_STATUS_1|MACH_CO_WR_REG ; \
+	add_nt          LREG1, r0, $(((bits)>>16)&0xff) ; \
+	st_external     LREG1, r0, $MACH_FE_STATUS_2|MACH_CO_WR_REG ; \
+	add_nt          LREG1, r0, $(((bits)>>24)&0xff) ; \
+	st_external     LREG1, r0, $MACH_FE_STATUS_3|MACH_CO_WR_REG
+a63 3
+ *
+ * Side effects:
+ *	Changes the temporary register LREG1.
+d66 8
+a73 8
+	add_nt          LREG1, r0, $((bits)&0xff) ; \
+	st_external     LREG1, r0, $MACH_INTR_STATUS_0|MACH_CO_WR_REG ; \
+	add_nt          LREG1, r0, $(((bits)>>8)&0xff) ; \
+	st_external     LREG1, r0, $MACH_INTR_STATUS_1|MACH_CO_WR_REG ; \
+	add_nt          LREG1, r0, $(((bits)>>16)&0xff) ; \
+	st_external     LREG1, r0, $MACH_INTR_STATUS_2|MACH_CO_WR_REG ; \
+	add_nt          LREG1, r0, $(((bits)>>24)&0xff) ; \
+	st_external     LREG1, r0, $MACH_INTR_STATUS_3|MACH_CO_WR_REG
+a78 3
+ *
+ * Side effects:
+ *	Changes the temporary register LREG1.
+d81 8
+a88 8
+	add_nt          LREG1, r0, $((bits)&0xff) ; \
+	st_external     LREG1, r0, $MACH_INTR_MASK_0|MACH_CO_WR_REG ; \
+	add_nt          LREG1, r0, $(((bits)>>8)&0xff) ; \
+	st_external     LREG1, r0, $MACH_INTR_MASK_1|MACH_CO_WR_REG ; \
+	add_nt          LREG1, r0, $(((bits)>>16)&0xff) ; \
+	st_external     LREG1, r0, $MACH_INTR_MASK_2|MACH_CO_WR_REG ; \
+	add_nt          LREG1, r0, $(((bits)>>24)&0xff) ; \
+	st_external     LREG1, r0, $MACH_INTR_MASK_3|MACH_CO_WR_REG
+a93 4
+ *
+ * Side effects:
+ *	Changes the temporary registers LREG1 and LREG2 and the insert
+ *	register.
+d96 4
+a99 4
+	ld_constant(LREG1, bits) ; \
+	rd_kpsw		LREG2 ; \
+	or		LREG2, LREG1, LREG2 ; \
+	wr_kpsw		LREG2, r0
+a104 4
+ *
+ * Side effects:
+ *	Changes the temporary registers LREG1 and LREG2 and the insert 
+ *	register.
+d107 6
+a112 6
+	ld_constant(LREG1, bits) ; \
+	add_nt		LREG2, r0, $-1 ; \
+	xor		LREG1, LREG2, LREG1 ; \
+	rd_kpsw		LREG2 ; \
+	and		LREG2, LREG1, LREG2 ; \
+	wr_kpsw		LREG2, r0
+a117 4
+ *
+ * Side effects:
+ *	Changes the temporary registers LREG1 and LREG2 and the	insert
+ *	register.
+d120 7
+a126 7
+	ld_constant(LREG1, clr) ; \
+	xor		LREG1, LREG1, LREG1 ; \
+	rd_kpsw		LREG2 ; \
+	and		LREG2, LREG1, LREG2 ; \
+	ld_constant(LREG1, set) ; \
+	or		LREG2, LREG1, LREG2 ; \
+	wr_kpsw		LREG2, r0
+a131 4
+ *
+ * Side effects:
+ *	Changes the temporary registers LREG1 and LREG2 and the insert 
+ *	register.
+d134 4
+a137 4
+	ld_constant(LREG1, bits) ; \
+	rd_special	LREG2, upsw ; \
+	or		LREG2, LREG1, LREG2 ; \
+	wr_special	upsw, LREG2, r0
+a142 4
+ *
+ * Side effects:
+ *	Changes the temporary registers LREG1 and LREG2 and the insert 
+ *	register.
+d145 6
+a150 6
+	ld_constant(LREG1, bits) ; \
+	add_nt		LREG2, r0, $-1 ; \
+	xor		LREG1, LREG2, LREG1 ; \
+	rd_special	LREG2, upsw ; \
+	and		LREG2, LREG1, LREG2 ; \
+	wr_special	upsw, LREG2, r0
+a155 4
+ *
+ * Side effects:
+ *	Changes the temporary registers LREG1 and LREG2 and the insert
+ *	register.
+d158 7
+a164 7
+	ld_constant(LREG1, clr) ; \
+	xor		LREG1, LREG1, LREG1 ; \
+	rd_special	LREG2, upsw ; \
+	and		LREG2, LREG1, LREG2 ; \
+	ld_constant(LREG1, set) ; \
+	or		LREG2, LREG1, LREG2 ; \
+	wr_special	upsw, LREG2, r0
+d187 6
+a192 6
+	extract		LREG1, rx, $1 ;\
+	st_external	LREG1, r0, $rptm|MACH_CO_WR_REG|0x20  ;\
+	extract		LREG2, rx, $2 ;\
+	st_external	LREG2, r0, $rptm|MACH_CO_WR_REG|0x40  ;\
+	extract		LREG2, rx, $3 ;\
+	st_external	LREG2, r0, $rptm|MACH_CO_WR_REG|0x60 
+d217 8
+a224 8
+	sra		LREG1, rx, $1 ;\
+	sra		LREG1, LREG1, $1 ;\
+	extract		LREG2, LREG1, $2 ;\
+	st_external	LREG2, r0, $MACH_PTEVA_4|MACH_CO_WR_REG ;\
+	sra		LREG1, LREG1, $1 ;\
+	sra		LREG1, LREG1, $1 ;\
+	extract		LREG2, LREG1, $1 ;\
+	st_external	LREG2, r0, $MACH_PTEVA_3|MACH_CO_WR_REG
+d237 4
+a240 4
+	sra		LREG1, rx, $1 ;\
+	sra		LREG1, LREG1, $1 ;\
+	extract		LREG2, LREG1, $2 ;\
+	st_external	LREG2, r0, $MACH_RPTEVA_4|MACH_CO_WR_REG ;\
+d242 7
+a248 7
+	insert		LREG1, rx, LREG2 ;\
+	sll		LREG1, LREG1, $2 ;\
+	extract		LREG2, LREG1, $2 ;\
+	st_external	LREG2, r0, $MACH_RPTEVA_2|MACH_CO_WR_REG  ;\
+	sll		LREG1, LREG1, $2 ;\
+	extract		LREG2, LREG1, $2 ;\
+	st_external	LREG2, r0, $MACH_RPTEVA_3|MACH_CO_WR_REG 
+d259 2
+a260 1
+ *	1) IB is disabled. LREG1 contains the previous value of the K_IBuffer
+d266 4
+a269 4
+	rd_kpsw		LREG1 ;\
+	and		LREG2, LREG1, $~MACH_KPSW_IBUFFER_ENA ;\
+	and 		LREG1, LREG1, $MACH_KPSW_IBUFFER_ENA ;\
+	or		LREG2, LREG2, $MACH_KPSW_VIRT_IFETCH_ENA ;\
+d271 1
+a271 1
+	wr_kpsw		LREG2, r0
+d280 1
+a280 1
+ *		LREG1 contains the previous value of the K_IBuffer bit.
+d284 3
+a286 3
+	rd_kpsw		LREG2 ;\
+	or		LREG2, LREG2, LREG1 ;\
+	wr_kpsw		LREG2, r0
+d308 1
+a308 1
+	ld_32		LREG1, r0, $curStatePtr; \
+d310 3
+a312 3
+	ld_32		LREG1, LREG1, $0; \
+	rd_special	LREG2, swp; \
+	ld_32		LREG3, LREG1, $MACH_MIN_SWP_OFFSET; \
+d314 2
+a315 2
+	add_nt		LREG3, LREG3, $(savedBytes + 128); \
+	cmp_br_delayed	gt, LREG3, LREG2, 1f; \
+d317 3
+a319 3
+	ld_32		LREG3, LREG1, $MACH_MAX_SWP_OFFSET; \
+	add_nt		LREG2, LREG2, $MACH_PAGE_SIZE; \
+	cmp_br_delayed	ge, LREG3, LREG2, 2f; \
+d327 1
+a327 1
+ *	Switch to both the kernel's register spill stack.
+d330 1
+a330 1
+	ld_32		LREG1, r0, $curStatePtr; \
+d332 1
+a332 1
+	ld_32		LREG1, LREG1, $0; \
+d334 1
+a334 1
+	ld_32		r4, LREG1, $MACH_KERN_STACK_END; \
+d343 1
+a343 1
+	ld_32		LREG1, r0, $curStatePtr; \
+d345 1
+a345 1
+	ld_32		r4, LREG1, $MACH_KERN_STACK_END; \
+d347 2
+a348 2
+	ld_32		LREG2, LREG1, $MACH_KERN_STACK_START; \
+	add_nt		LREG2, r0, $0x380; \
+d350 1
+a350 1
+	wr_special	swp, LREG2
+d358 2
+a359 3
+ *	first and second PCs in this windows input registers.  These registers
+ *	are will not be touched by interrupt handlers so will be guaranteed
+ *	to be in good shape when we trap back in.
+d364 6
+a369 5
+	add_nt		r13, r0, $userError; \
+	add_nt		r14, r10, $0; \
+	add_nt		r15, r16, $0; \
+	add_nt		r10, r0, $ExecNop; \
+	return_trap	r10, $0; \
+d376 1
+a376 1
+ *	Load the contents of the instruction at r10 into destReg.
+d382 3
+a384 3
+        ld_constant(LREG1, 0x20000); \
+        ld_constant(LREG2, 0x40000000); \
+        cmp_br_delayed  lt, r10, LREG1, 1f; \
+d386 1
+a386 1
+        cmp_br_delayed  ge, r10, LREG2, 1f; \
+d388 2
+a389 2
+        sub             LREG1, r10, LREG1; \
+        add             LREG1, LREG1, LREG2; \
+d393 1
+a393 1
+        add_nt          LREG1, r10, $0; \
+d395 1
+a395 1
+        ld_32           destReg, LREG1, $0
+d398 1
+a398 1
+        ld_32           destReg, r10, $0
+d408 1
+a408 1
+	ld_32		LREG1, r0, $curStatePtr; \
+d410 9
+a418 9
+	ld_32		LREG1, LREG1, $0; \
+	st_32		r4, LREG1, $MACH_USER_STACK_PTR_OFFSET; \
+	rd_special	LREG2, cwp; \
+	st_32		LREG2, LREG1, $MACH_CWP_OFFSET; \
+	rd_special	LREG2, swp; \
+	st_32		LREG2, LREG1, $MACH_SWP_OFFSET; \
+	st_32		r10, LREG1, $MACH_FIRST_PC_OFFSET; \
+	st_32		r16, LREG1, $MACH_SECOND_PC_OFFSET; \
+	ld_32		r4, LREG1, $MACH_KERN_STACK_END; \
+d425 4
+a428 1
+ *	Restore all user state from the current state structure.
+d431 5
+a435 5
+	ld_32		r4, LREG1, $MACH_USER_STACK_PTR_OFFSET; \
+	ld_32		LREG2, LREG1, $MACH_SWP_OFFSET; \
+	ld_32		r10, LREG1, $MACH_FIRST_PC_OFFSET; \
+	ld_32		r16, LREG1, $MACH_SECOND_PC_OFFSET; \
+	wr_special	swp, LREG2
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d10 1
+a10 1
+ * $Header: machConst.h,v 1.3 88/05/05 17:55:27 nelson Exp $ SPRITE (Berkeley)
+d17 2
+a18 2
+ * The macros in these macros are allowed to use temporary registers 1 through
+ * 4.
+a207 87
+ * SWITCH_TO_KERNEL_MODE() -- 
+ *
+ *	Switch to kernel mode and save the current mode in the prev mode
+ *	bit of the kpsw.
+ */
+#define	SWITCH_TO_KERNEL_MODE() \
+	rd_kpsw		LREG1; \
+	and		LREG2, LREG1, $MACH_KPSW_CUR_MODE; \
+	cmp_br_delayed	eq, LREG2, r0, 1f; \
+	Nop; \
+	or		LREG1, LREG1, $MACH_KPSW_PREV_MODE; \
+	cmp_br_delayed	always, 2f; \
+	Nop; \
+1:	and		LREG1, LREG1, $(~MACH_KPSW_PREV_MODE); \
+2:	and 		LREG1, LREG1, $(~MACH_KPSW_CUR_MODE)
+
+/*
+ * VERIFY_SWP(savedBytes) -- 
+ *
+ *	Verify that the saved window pointer is valid.  If not kill
+ *	the current process.  The swp is valid if it is greater than or
+ *	equal to the minimum value stored in the current process' state
+ *	structure and there is at least one page of bytes between the
+ *	maximum swp value and the current value.
+ *
+ *	savedBytes - Number of bytes that there should be available on the
+ *		     saved window stack.
+ */
+#define	VERIFY_SWP(savedBytes) \
+	ld_32		LREG1, r0, $curStatePtr; \
+	rd_special	LREG2, swp; \
+	ld_32		LREG3, LREG1, $MACH_MIN_SWP_OFFSET; \
+	Nop; \
+	add_nt		LREG3, LREG3, savedBytes; \
+	cmp_br_delayed	gt, LREG3, LREG2, 1f; \
+	Nop; \
+	ld_32		LREG3, LREG1, $MACH_MAX_SWP_OFFSET; \
+	add_nt		LREG2, LREG2, $MACH_PAGE_SIZE; \
+	cmp_br_delayed	ge, LREG3, LREG2, 2f; \
+	Nop; \
+1:	USER_ERROR(MACH_USER_BAD_SWP); \
+2:
+
+/*
+ * SWITCH_TO_KERNEL_SPILL_STACK() -
+ *
+ *	Switch to both the kernel's normal stack and the saved window stack.
+ */
+#define SWITCH_TO_KERNEL_SPILL_STACK() \
+	ld_32		LREG1, r0, $curStatePtr; \
+	Nop; \
+	ld_32		r4, LREG1, $MACH_KERN_STACK_END; \
+	Nop
+
+/*
+ * SWITCH_TO_KERNEL_STACKS() -
+ *
+ *	Switch to both the kernel's normal stack and the saved window stack.
+ */
+#define SWITCH_TO_KERNEL_STACKS() \
+	ld_32		LREG1, r0, $curStatePtr; \
+	Nop; \
+	ld_32		r4, LREG1, $MACH_KERN_STACK_END; \
+	Nop; \
+	ld_32		LREG2, LREG1, $MACH_KERN_STACK_START; \
+	add_nt		LREG2, r0, $0x380; \
+	wr_special	cwp, r0; \
+	wr_special	swp, LREG2
+
+/*
+ * USER_ERROR(errorType) --
+ *
+ *	Handle a fatal user error.  This involves switching to kernel
+ *	mode, switching to the kernel's normal stack and saved window
+ *	stack and calling the user error routine.
+ *
+ *	errorType - Type of user error.
+ */
+#define USER_ERROR(userError) \
+	SWITCH_TO_KERNEL_MODE(); \
+	SWITCH_TO_KERNEL_STACKS(); \
+	SET_KPSW(MACH_KPSW_ALL_TRAPS_ENA); \
+	add_nt		r27, r0, $userError; \
+	call		_MachUserError$w; \
+	Nop
+
+/*
+d327 146
+@

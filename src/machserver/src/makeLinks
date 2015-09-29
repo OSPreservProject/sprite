@@ -1,0 +1,5 @@
+#! /bin/csh -f
+# Install links to shell scripts.
+
+cd ~/cmds.sprited
+ln -s /bin/arch .

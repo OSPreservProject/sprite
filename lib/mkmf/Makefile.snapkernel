@@ -1,0 +1,48 @@
+#
+# Prototype Makefile for kernel modules.
+#
+# This Makefile is automatically generated.
+# DO NOT EDIT IT OR YOU MAY LOSE YOUR CHANGES.
+#
+# Generated from @(TEMPLATE)
+# @(DATE)
+#
+# For more information, refer to the mkmf manual page.
+#
+# $Header: /sprite/lib/mkmf/RCS/Makefile.snapkernel,v 1.3 92/06/10 13:04:49 jhh Exp $ SPRITE (Berkeley)
+#
+# Allow mkmf
+
+ALLSRCS		= @(ALLSRCS)
+LINTLIBS	= dbg.ln dev.ln fs.ln fscache.ln fsconsist.ln fsdm.ln fsio.ln \
+		  fslcl.ln fspdev.ln fsprefix.ln fsrmt.ln fsutil.ln libc.ln \
+		  main.ln mem.ln net.ln proc.ln prof.ln mach.ln rpc.ln \
+		  sched.ln sys.ln sync.ln timer.ln utils.ln vm.ln 
+
+MACHINES	= @(MACHINES)
+MAKEFILE	= @(MAKEFILE)
+NAME		= @(NAME)
+PUBHDRS		= @(PUBHDRS)
+SYSMAKEFILE	= kernel.mk
+TYPE		= @(TYPE)
+DISTDIR         ?= @(DISTDIR)
+#include	<settm.mk>
+USERINCLUDEDIR	= ../include
+
+#if exists($(HOME)/kernel.mk)
+#include "$(HOME)/kernel.mk"
+#endif
+
+#if exists($(TM).md/md.mk)
+#include	"$(TM).md/md.mk"
+#endif
+
+#if exists(local.mk)
+#include 	"local.mk"
+#else
+#include	<$(SYSMAKEFILE)>
+#endif
+
+#if exists($(DEPFILE))
+#include	"$(DEPFILE)"
+#endif

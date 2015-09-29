@@ -1,0 +1,22 @@
+L CTYPE.MAN;1                       	ctype.man	../../c.orig/ctype/ctype.man
+L CTYPEBIT.C;1                      	ctypeBits.c	../../c.orig/ctype/ctypeBits.c
+D DS3100_M                          	ds3100.md
+L ISALNUM.C;1                       	isalnum.c	../../c.orig/ctype/isalnum.c
+L ISALPHA.C;1                       	isalpha.c	../../c.orig/ctype/isalpha.c
+L ISASCII.C;1                       	isascii.c	../../c.orig/ctype/isascii.c
+L ISCNTRL.C;1                       	iscntrl.c	../../c.orig/ctype/iscntrl.c
+L ISDIGIT.C;1                       	isdigit.c	../../c.orig/ctype/isdigit.c
+L ISGRAPH.C;1                       	isgraph.c	../../c.orig/ctype/isgraph.c
+L ISLOWER.C;1                       	islower.c	../../c.orig/ctype/islower.c
+L ISPRINT.C;1                       	isprint.c	../../c.orig/ctype/isprint.c
+L ISPUNCT.C;1                       	ispunct.c	../../c.orig/ctype/ispunct.c
+L ISSPACE.C;1                       	isspace.c	../../c.orig/ctype/isspace.c
+L ISUPPER.C;1                       	isupper.c	../../c.orig/ctype/isupper.c
+L ISXDIGIT.C;1                      	isxdigit.c	../../c.orig/ctype/isxdigit.c
+L LOCAL.MK;1                        	local.mk	../etc/local.mk
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+D SUN3_MD                           	sun3.md
+L TOASCII.C;1                       	toascii.c	../../c.orig/ctype/toascii.c
+L TOLOWER.C;1                       	tolower.c	../../c.orig/ctype/tolower.c
+L TOUPPER.C;1                       	toupper.c	../../c.orig/ctype/toupper.c

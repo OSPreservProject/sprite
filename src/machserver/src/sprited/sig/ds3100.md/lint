@@ -1,0 +1,12 @@
+ds3100.md/sigMach.c:
+signals.c:
+sigStubs.c:
+bcopy, arg. 1 used inconsistently	ds3100.md/sigMach.c 2(91)  ::  signals.c 2(172)
+bcopy, arg. 2 used inconsistently	ds3100.md/sigMach.c 2(91)  ::  signals.c 2(172)
+bcopy, arg. 1 used inconsistently	ds3100.md/sigMach.c 2(91)  ::  signals.c 2(214)
+bcopy, arg. 2 used inconsistently	ds3100.md/sigMach.c 2(91)  ::  signals.c 2(214)
+bcopy, arg. 1 used inconsistently	ds3100.md/sigMach.c 2(91)  ::  signals.c 2(217)
+bcopy, arg. 2 used inconsistently	ds3100.md/sigMach.c 2(91)  ::  signals.c 2(217)
+bcopy, arg. 1 used inconsistently	ds3100.md/sigMach.c 2(91)  ::  signals.c 2(329)
+bcopy, arg. 2 used inconsistently	ds3100.md/sigMach.c 2(91)  ::  signals.c 2(329)
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(452)  ::  signals.c(676)

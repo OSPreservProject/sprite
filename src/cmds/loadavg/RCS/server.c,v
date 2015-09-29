@@ -1,0 +1,301 @@
+head     2.1;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+2.1
+date     87.03.11.18.12.49;  author douglis;  state Exp;
+branches ;
+next     2.0;
+
+2.0
+date     87.03.11.12.40.30;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Server process to read named pipe and maintain global system
+state.
+@
+
+
+2.1
+log
+@Keep track of whether to migrate processes based on load average
+and keyboard/mouse idle time.
+@
+text
+@/*
+ * server.c --
+ *
+ *	Server process to read named pipe and maintain global system
+ *    	state.
+ *
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: server.c,v 2.0 87/03/11 12:40:30 douglis Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include "loadAvg.h"
+#include "byte.h"
+
+static void UpdateData();
+static void PrintAllInfo();
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RunServer --
+ *
+ *	(Optionally) fork a child to be the global server.  This daemon will
+ *	receive load information from local daemons using named
+ *	pipes and respond to requests for lighty-loaded machines.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	A second process may be created.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+RunServer()
+{
+    ReturnStatus status;
+    NodeInfo nodeInfo[MAX_NUM_HOSTS];
+    NodeInfo info;
+    Proc_PID pid;
+    int requestStreamID;
+    int responseStreamID;
+    char fileName[FS_MAX_PATH_NAME_LENGTH];
+    int i;
+    int bytesRead;
+    int flags;
+    int requestType;
+
+
+    if (forkChild) {
+	status = Proc_Fork(FALSE, &pid);
+    } else {
+	status = PROC_CHILD_PROC;
+    }
+    if (status == PROC_CHILD_PROC) {
+	Io_PrintString(fileName, "%s/%s", pipeDir, requestFile);
+	flags = FS_READ | FS_NAMED_PIPE_OPEN;
+	if (debug) {
+	    Io_PrintStream(io_StdErr, "Opening file %s.\n", fileName);
+	    Io_Flush(io_StdErr);
+	}
+	status = Fs_Open(fileName, flags, 0, &requestStreamID);
+	if (status != SUCCESS) {
+	    Stat_PrintMsg(status, "Error in Fs_Open");
+	    Proc_Exit(status);
+	}
+
+	Io_PrintString(fileName, "%s/%s", pipeDir, responseFile);
+	flags = FS_WRITE | FS_CREATE | FS_NAMED_PIPE_OPEN;
+	if (debug) {
+	    Io_PrintStream(io_StdErr, "Opening file %s.\n", fileName);
+	    Io_Flush(io_StdErr);
+	}
+	status = Fs_Open(fileName, flags, OPEN_MODE, &responseStreamID);
+	if (status != SUCCESS) {
+	    Stat_PrintMsg(status, "Error in Fs_Open");
+	    Proc_Exit(status);
+	}
+
+	for (i = 0; i < MAX_NUM_HOSTS; i++) {
+	    nodeInfo[i].timestamp = NIL;
+	}
+
+	while(TRUE) {
+	    status = Fs_Read(requestStreamID, sizeof(NodeInfo),
+			     (Address) &info, &bytesRead);
+	    if (status != SUCCESS) {
+		Stat_PrintMsg(status, "Error in Fs_Read");
+		Proc_Exit(status);
+	    }
+	    if (bytesRead != sizeof(NodeInfo)) {
+		Io_PrintStream(io_StdErr, "Only %d bytes read.\n",
+			       bytesRead);
+		Proc_Exit(FAILURE);
+	    }
+
+#ifdef reallynotdone
+	    switch (requestType) {
+		case LA_RPC_UPDATE: {
+		    UpdateData(bufPtr, nodeInfo);
+		    break;
+		}
+		case LA_RPC_IDLE: {
+#ifdef notdone
+		    PrintIdleNode(nodeInfo);
+#else
+		    PrintAllInfo(nodeInfo);
+#endif
+		    break;
+		}
+		case LA_RPC_ALL_INFO: {
+		    PrintAllInfo(nodeInfo);
+		    break;
+		}
+	    }
+#endif reallynotdone
+	    nodeInfo[info.hostID] = info;
+	}
+    } else if (status != SUCCESS) {
+	Stat_PrintMsg(status, "Error in Proc_Fork");
+	Proc_Exit(status);
+    }
+}
+
+#ifdef notdef
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UpdateData --
+ *
+ *	Update the information for a node.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	'nodeInfo' is updated for the specified host.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+UpdateData(bufPtr, nodeInfo)
+    char *bufPtr;		/* buffer containing data to be parsed */
+    NodeInfo nodeInfo[];	/* pointer to array of per-node data */
+{
+    int numScanned;
+    int hostID;
+    NodeInfo info;
+
+    numScanned = Io_ScanString(bufPtr,
+			       "%d %d %d %d %d %d %lf %lf %lf",
+			       &hostID,
+			       &info.timestamp,
+			       &info.noInput,
+			       &info.utils[0],
+			       &info.utils[1],
+			       &info.utils[2],
+			       &info.lengths[0],
+			       &info.lengths[1],
+			       &info.lengths[2]);
+    if (numScanned != 9) {
+	Io_PrintStream(io_StdErr,
+"Error scanning information from request pipe.  Scanned %d items.\n",
+		       numScanned);
+	Proc_Exit(FAILURE);
+    }
+    if (hostID <= 0 || hostID >= MAX_NUM_HOSTS) {
+	Io_PrintStream(io_StdErr, "Invalid hostID: %d.\n", hostID);
+	Proc_Exit(FAILURE);
+    }
+    if (debug) {
+	Io_PrintStream(io_StdErr,
+		       "Received info from node %d.\n", hostID);
+	Io_Flush(io_StdErr);
+    }
+    nodeInfo[hostID] = info;
+}
+#endif notdef
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintAllInfo --
+ *
+ *	Print statistics for all nodes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Data is written to io_StdOut.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+PrintAllInfo(nodeInfo)
+	NodeInfo nodeInfo[];	/* array of per-node data */
+{
+    int hostID;
+
+    if (debug) {
+	Io_PrintStream(io_StdErr,
+		       "Received request for idle node.\n");
+    }
+    for (hostID = 0; hostID < MAX_NUM_HOSTS; hostID++) {
+	if (nodeInfo[hostID].timestamp != NIL) {
+	    Io_PrintStream(io_StdErr,
+			   "%3d %10u %10u %3d %3d %3d %5.2lf %5.2lf %5.2lf\n",
+			   hostID,
+			   nodeInfo[hostID].timestamp,
+			   nodeInfo[hostID].noInput,
+			   nodeInfo[hostID].utils[0],
+			   nodeInfo[hostID].utils[1],
+			   nodeInfo[hostID].utils[2],
+			   nodeInfo[hostID].lengths[0],
+			   nodeInfo[hostID].lengths[1],
+			   nodeInfo[hostID].lengths[2]);
+	}
+    }
+    Io_Flush(io_StdErr);
+}
+
+@
+
+
+2.0
+log
+@Initial revision.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: loadAvg.c,v 1.8 87/03/11 11:09:50 douglis Exp $ SPRITE (Berkeley)";
+d46 1
+a52 3
+    char buffer[UTIL_RECORD_SIZE];
+    char *bufPtr;
+    int numScanned;
+d92 2
+a93 2
+	    status = Fs_Read(requestStreamID, UTIL_RECORD_SIZE, buffer,
+			     &bytesRead);
+d98 1
+a98 1
+	    if (bytesRead != UTIL_RECORD_SIZE) {
+d103 2
+a104 9
+	    bufPtr = buffer;
+	    numScanned = Io_ScanString(bufPtr, "%2d", &requestType);
+	    if (numScanned != 1) {
+		Io_PrintStream(io_StdErr,
+       "Error scanning request type from pipe.  Input string is '%s'.\n",
+			       bufPtr);
+		Proc_Exit(FAILURE);
+	    }
+	    bufPtr += 3;
+d123 2
+d132 1
+d187 1
+@

@@ -1,0 +1,463 @@
+'\" Copyright 1989 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/cmds/tx/RCS/tx.man,v 1.15 90/08/10 17:50:20 shirriff Exp $ SPRITE (Berkeley)
+'
+.so \*(]ltmac.sprite
+.HS TX cmds
+.BS
+.SH NAME
+tx \- Scrollable terminal emulator for X
+.SH SYNOPSIS
+\fBtx \fR[\fIoptions\fR]
+.SH OPTIONS
+.IP "\fB\-bd \fIcolor\fR" 15
+Use \fIcolor\fR as the border color for the window.  If this switch
+isn't given then the \fBborderColor\fR X default is used.  If it isn't given
+either, then the foreground color is used.
+.IP "\fB\-bg \fIcolor\fR" 15
+Use \fIcolor\fR as the background color for the window.  If this switch
+isn't given then the \fBbackground\fR X default is used.  If it isn't given
+either, or if the display is a black-and-white one, then White is used.
+.IP "\fB\-D\fR" 15
+.VS
+Causes \fBtx\fR not to detach itself from its parent process.
+.IP "\fB\-display \fIhost\fB:\fIdisplay\fR" 15
+.VS
+Use \fIhost\fR and \fIdisplay\fR as an indication of the
+display on which to open the window.  The display defaults to the
+one specified in the \fBDISPLAY\fR environment variable.
+.VE
+.IP "\fB\-fg \fIcolor\fR" 15
+Use \fIcolor\fR as the foreground color for the window.  If this switch
+isn't given then the \fBforeground\fR X default is used.  If it isn't given
+either, or if the display is a black-and-white one, then Black is used.
+.IP "\fB\-fn \fIfont\fR" 15
+Use \fIfont\fR as the font for the window.  If this switch isn't given,
+then the \fBfont\fR X default is used as the font.  If it isn't given
+either, then the Sx default font is used.
+.IP "\fB\-geometry \fIgeometry\fR" 15
+.VS
+Use \fIgeometry\fR as the geometry for the window.  If no geometry
+is specified on the command line, it the geometry defaults to the value of the
+\fBgeometry\fR X default.  If no default is specified, then
+\fBtx\fR picks a geometry.
+.IP \fB\-help\fR
+Print out a list of the command-line options (and brief descriptions
+of their functions) and exit without opening a window.
+.VE
+.IP "\fB\-icon \fIfile\fR" 15
+\fIFile\fR is the name of a file in bitmap format.  Read the file and
+use it as the icon for the window.  If \fIfile\fR is \fBlocalhost\fR,
+then \fBtx\fR chooses the default icon file corresponding to the local host.
+.IP "\fB\-ix \fIxcoord\fR" 15
+Display the icon at x-coordinate \fIxcoord\fR.
+.IP "\fB\-iy \fIycoord\fR" 15
+Display the icon at y-coordinate \fIycoord\fR.
+.IP "\fB\-sb \fIcolor\fR" 15
+Use \fIcolor\fR as the background color for the window's scrollbar.
+If this switch isn't given then the \fBscrollbar.background\fR
+X default is used.  If it isn't given either, then the background
+color for the text window is used.
+.IP "\fB\-se \fIcolor\fR" 15
+Use \fIcolor\fR as the color for the window's scrollbar elevator.
+If this switch isn't given then the \fBscrollbar.elevator\fR
+X default is used.  If it isn't given either, then the background
+color for the text window is used.
+.IP "\fB\-sf \fIcolor\fR" 15
+Use \fIcolor\fR as the foreground color for the window's scrollbar.
+If this switch isn't given then the \fBscrollbar.foreground\fR
+X default is used.  If it isn't given either, then the foreground
+color for the text window is used.
+.IP "\fB\-showtitle\fR" 15
+.VS
+Display a title bar at the top of the window.  Tx normally assumes
+that a window manager will display a title bar;  if your window
+manager doesn't, you may wish to use this switch.  If this switch
+isn't specified, then Tx checks for a \fBshowTitle\fR X default;
+if it exists and contains the string ``yes'', then a title
+bar will be displayed.
+.VE
+.IP "\fB\-tb \fIcolor\fR" 15
+Use \fIcolor\fR as the background color for the window's title bar.
+If this switch isn't given then the \fBtitle.background\fR
+X default is used.  If it isn't given either, then the background
+color for the text window is used.  This option is ignored if
+Tx isn't displaying a title bar.
+.IP "\fB\-tf \fIcolor\fR" 15
+Use \fIcolor\fR as the foreground color for the window's title bar.
+If this switch isn't given then the \fBtitle.foreground\fR
+X default is used.  If it isn't given either, then the foreground
+color for the text window is used.  This option is ignored if
+Tx isn't displaying a title bar.
+.IP "\fB\-ts \fIcolor\fR" 15
+Use \fIcolor\fR as the color for the window's title stripes.
+If this switch isn't given then the \title.stripe\fR
+X default is used.  If it isn't given either, then the foreground
+color for the text window is used.  This option is ignored if
+Tx isn't displaying a title bar.
+.IP "\fB\-title \fIname\fR" 15
+Display \fIname\fR in the title bar for the window.  The default title
+is the name of the pseudo-terminal associated with the window.
+.IP "\fB=\fIgeometry\fR" 15
+Use \fIgeometry\fR as the geometry specifier for the window (same effect
+as the \fB\-geometry option).
+.IP "\fIhost:display\fR" 15
+Use this argument to select the display on which to create the window
+(same effect as the \fB\-display\fR option).
+.IP "\fB\-e \fIcommand\fP" 15
+This switch must be the last one, if it is present.  The arguments following
+the \fB\-e\fR switch constitute
+the command to execute in the window.
+\fICommand\fR is run using the terminal emulator for
+standard input and standard output.  When the command completes, the window
+will be destroyed and \fBtx\fR will exit.  The default command is ``/bin/csh -i'',
+or if a SHELL environment variable is defined, then it is invoked with a -i
+argument.
+.BE
+.SH INTRODUCTION
+\fBTx\fR is a terminal emulator that uses the facilities of the X window
+system, the Sx supplementary library, and the Tcl command interpreter.
+It executes a command
+(usually a shell) and arranges for the command's standard input and
+standard output streams to be directed from/to a pseudo-terminal controlled
+by \fBtx\fR.  \fBTx\fR, in turn, displays a scrollable window in more-or-less the
+same way as \fBmx\fR;  output from the application is displayed in the window
+and keystrokes typed in the window are passed through to the application.
+\fBTx\fR windows emulate a very simple terminal with enough facilities to run
+programs like vi.
+.LP
+The implementation of \fBtx\fR is very similar to that of \fBmx\fR;  it shares
+much of the code and many of the commands.  You should read the \fBmx\fR
+manual page before reading this one, in order to learn about the basic
+command interface and the \fBmx\fR commands.  \fBTx\fR commands that are identical
+to \fBmx\fR commands are not documented here except by reference to the \fBmx\fR
+manual page.
+
+.SH ".TX FILES"
+After processing command line options and opening the window,
+\fBtx\fR checks for the existence of a file ``.tx'' in your
+home directory (environment variable HOME).  If the file exists, \fBtx\fR
+reads it in and processes it as a command file, just as if it were read
+with the \fBsource\fP command.  Then it checks for a .tx file in the
+current directory, and processes it if it exists.
+
+.SH SELECTION
+Selection in \fBtx\fR is identical to that in \fBmx\fR, except for one difference.
+In \fBtx\fR the caret always appears at the end of the typescript, except
+when the typescript is in vi mode (see the \fBvi\fR command);  there
+is no way to reposition the caret with the mouse.
+
+.SH "VARIABLES"
+See the \fBmx\fR manual page for overall information.  The special
+variables defined by \fBtx\fR are:
+.RS
+.TP
+\fBargs\fP
+Set by \fBtx\fR to hold the arguments to the current variable being executed, if any.
+.TP
+\fBheight\fP
+Set by \fBtx\fR to hold the
+height of the window, in lines of text.  If the last line
+appearing in the window is only partially visible, it doesn't count.
+.TP
+\fBsearchCmd\fP
+When the middle button is clicked in the ``Search'' string entry, or when
+carriage-return is typed there, the contents of this variable are
+executed as a command.
+.TP
+\fBsearchString\fP
+Set by \fBtx\fR to hold the contents of the search entry subwindow.
+.TP
+\fBtermcap\fP
+Set by \fBtx\fR to hold a
+termcap entry that provides enough functionality to run Vi and other
+prehistoric screen-based programs.  It's based on a terminal type ``tx''.
+This variable is automatically reset whenever the window changes size.
+.TP
+\fBversion\fR
+.VS
+Set by \fBtx\fR to hold a version number in the form \fIx.y\fR, where
+changes in \fIx\fR correspond to major revisions with probable
+incompatibilities, and changes in \fIy\fR represent small bug fixes
+and upgrades that should not cause substantial compatibility problems.
+.VE
+.TP
+\fBwidth\fP
+Set by \fBtx\fR to hold the
+width of the window, in characters.  If the last character position
+is only partially-visible, then it doesn't count.  If a variable-width
+font is being used, the average character size is used in computing
+the window's width.
+.TP
+\fBwindowId\fR
+Set by \fBtx\fR to hold the X window identifier for this window.
+.RE
+
+.SH "MARKS"
+See the \fBmx\fR manual page for documentation.  The same special marks are
+defined in \fBtx\fR as in \fBmx\fR.
+
+.SH "COMMANDS"
+\fBTx\fR is based around the Tcl interpreter just as \fBmx\fR is.  Each keystroke
+or menu selection is bound to a Tcl command string, which is passed to
+the Tcl interpreter for execution.  See the Tcl man page for details
+on the built-in commands provided by Tcl.  In addition to them, \fBtx\fR
+provides the following additional built-in commands.  Many of them
+are identical to the corresponding commands in \fBmx\fR.
+.TP
+\fBbind \fR[\fIsequence\fR [\fIcommand\fR]]
+Same as in \fBmx\fR.
+.TP
+\fBcaret \fIoperand\fR
+Same as in \fBmx\fR.
+.TP
+\fBcontrol \fIoption string\fR
+.VS
+Same as in \fBmx\fR.
+.VE
+.TP
+\fBdelete\fI mark1 \fR[\fImark2\fR]
+Same as in \fBmx\fR.
+.TP
+\fBescape \fIoption\fR\fR
+If \fIoption\fR is \fBon\fR, this command enables escape sequences
+in window output:  whenever \fBtx\fR finds an escape character (33\s-2\d8\u\s+2)
+in the stream of characters output to the pseudo-device for display in
+the window, it discards the escape sequence and interprets
+the following characters (up to and including the next newline character)
+as a \fBtx\fR command rather than characters to be displayed in the window.
+If \fIoption\fR is \fBoff\fR, escape sequences are disabled:  they will
+be output to the window just like any other characters.  Escape sequences
+are enabled by default in \fBtx\fR, and must be enabled for the TERMCAP mechanisms
+to work.  This command is most useful to temporarily disable escape-processing
+while running programs that generate meaningless escape sequences.
+.TP
+\fBextract\fI mark1 \fR[\fImark2\fR]
+Same as in \fBmx\fR.
+.TP
+\fBfocus \fIwindow \fR[\fBclear\fR]
+Same as in \fBmx\fR.
+.TP
+\fBgeometry \fIspec\fR
+Same as in \fBmx\fR.
+.TP
+\fBinsert\fR \fIbytes\fR \fIbytes\fR ...
+Send \fIbytes\fR to the application as keyboard input on the pty.  If
+more than one \fIbytes\fR argument is supplied, each is input in turn,
+with a single space between them.
+.TP
+\fBmark\fI src op args\fR
+Same as in \fBmx\fR.
+.TP
+\fBmenu\fI option args\fR
+Same as in \fBmx\fR.
+.TP
+\fBmessage\fI string\fR
+Same as in \fBmx\fR.
+.TP
+\fBmxopen \fR[\fIoptions\fR] \fIfile file ...\fR
+.VS
+Same as \fBopen\fR command in in \fBmx\fR.  Used to create an \fBmx\fR
+window from \fBtx\fR, e.g. to display variable values.
+.TP
+\fBmxsend \fIwindow command\fR
+Same as in \fBsend\fR command in \fBmx\fR.  Used to send commands to
+\fBmx\fR windows created from \fBtx\fR.
+.VE
+.TP
+\fBopen\fR [\fIoptions\fR]
+.VS
+Open a new \fBtx\fR window.  The \fIoptions\fR to this command are exactly
+the same as the command-line options for the \fBtx\fR program, with
+the following exceptions.  If the \fB\-e\fR switch is given, then
+a new typescript is
+created and all the remaining arguments to \fBopen\fR are used as a
+command name and arguments for the top-level application in
+the new typescript.  If the \fB\-e\fR option is not given, then the new
+window will provide an alternate view on the same typescript as the
+invoking window.  The \fB\-D\fR
+option is not permitted, nor are options that specify a display.
+If no geometry specification is given in
+\fIoptions\fR, then \fBtx\fR uses the contents of the global variable
+\fBgeometry\fP as a default geometry;  if no \fBgeometry\fP variable
+exists, then \fBtx\fR picks a default geometry.
+Other options, such
+as foreground color and font, default to the values from the invoking
+window, rather than looking for X defaults.
+.VE
+\fBOpen\fR sets the global variable \fBnewWindow\fR
+to hold the id of the newly-created window.  This may be used in
+conjunction with the \fBsend\fR command to issue commands to the
+new window.  The return value is always an empty string.
+.TP
+\fBoutput \fIbytes\fR
+Insert \fIbytes\fR in the output display as if they had been output
+by the application.
+.TP
+\fBquit\fR
+Destroy the \fBtx\fR window and end the program.
+.TP
+\fBquote\fR
+.VS
+Same as in \fBmx\fR.
+.VE
+.TP
+\fBsearch \fR[\fIdirection \fR[\fIpattern\fR]]
+Same as in \fBmx\fR.
+.TP
+\fBsee \fImark\fP [\fBtop\fR|\fBcenter\fR|\fBbottom\fR]
+Same as in \fBmx\fR.
+.TP
+\fBselection \fIoption \fR[\fIarg ...\fR]
+Same as in \fBmx\fR.
+.TP
+\fBsend \fIwindow command\fR
+Same as in \fBmx\fR.
+.TP
+\fBtitle \fIleft center right wmName\fR
+.VS
+Change the title information for the window.  \fILeft\fR will be
+displayed at the left side of the title bar, \fIcenter\fR in the
+middle of the bar, and \fIright\fR at the right side of the title
+bar.  If any of these three arguments is an empty string, then
+nothing will be displayed in the corresponding position.  The
+string given by \fIwmName\fR will be recorded as the window's
+name for the window manager.  This name will probably appear when
+the window is iconified, for example.  If Tx isn't displaying a title
+for the window, then only the \fIwmName\fR argument will be used.
+.VE
+.TP
+\fBupdate\fR
+Same as in \fBmx\fR.
+.TP
+\fBvi \fIoption args\fR
+This command provides an alternate mode of operation, called ``vi mode'',
+which provides sufficient terminal emulation to run the vi editor.  When
+the window is in vi mode, an additional window-full of blank lines  (called
+the \fIvi area\fR) is
+added at the beginning (top) of the typescript, and the view is shifted
+to display those lines.  Most of the \fBvi\fR commands are used only
+in the crude termcap entry that \fBtx\fR provides for itself.  The
+\fBvi\fR command must have one of the following forms:
+.RS
+.TP
+\fBvi enter\fR
+Enter vi mode.  Fill the vi area with blank lines, change the window's
+view to display those lines, and move the caret to position 0.0.
+.TP
+\fBvi leave\fR
+Leave vi mode.  Delete the lines in the vi area,
+move the caret back to the end of the typescript, and change the window's
+view to display the end of the typescript.
+.TP
+\fBvi cd\fR
+Clear all the lines on the screen at or below the caret position, leaving
+the caret at the beginning of its (now-blank) line.  This command is
+provided primarily for emulating the \fBcd\fR termcap entry.
+.TP
+\fBvi ce\fR
+Clear from the caret position to the end of the line, leaving the caret
+where it is.  This command is provided primarily for emulating the \fBce\fR
+termcap entry.
+.TP
+\fBvi clear\fR
+Clear the lines in the vi area and move the caret to the home position
+(0.0).
+.TP
+\fBvi cursor\fI lineIndex charIndex\fR
+Set the caret position to line \fIlineIndex\fR, character \fIcharIndex\fR.
+This position must lie within the via area.
+.TP
+\fBvi deleteline\fR
+Delete the line containing the caret, and add a new line to the bottom
+of the vi area to keep the total number of lines in the via area constant.
+.TP
+\fBvi insertline\fR
+Add a new blank line to the vi area, just before the caret (the caret
+should be at the beginning of a line).  Delete the last line in the vi
+area, in order to keep the total number of lines in the vi area constant.
+.TP
+\fBvi on\fR
+Returns a non-zero string if the window is currently in vi mode,
+and a zero string otherwise.
+.TP
+\fBvi tab\fR
+Move the caret to the next tab stop.
+.TP
+\fBvi up\fR
+Move the caret up one line.
+.TP
+\fBvi vt100 \fImode\fR
+.VS
+If mode is nonzero, tx enters vt100 emulation mode.  If mode is zero,
+tx exits vt100 emulation mode.  Not all vt100 functions are emulated.
+.VE
+.RE
+
+.SH "COMMAND PROCEDURES"
+.VS
+In addition to the built-in commands described above, a number of Tcl
+command procedures are created by the default \fBtx\fR startup file.  They
+may be invoked just like built-in commands, and are described below.
+.TP
+\fBshowBindings \fIbinding binding ...\fR
+Same as in \fBmx\fR.
+.TP
+\fBshowMenus \fIname name ...\fR
+Same as in \fBmx\fR.
+.TP
+\fBshowProcs \fIname name ...\fR
+Same as in \fBmx\fR.
+.TP
+\fBshowVars \fIname name ...\fR
+Same as in \fBmx\fR.
+.TP
+\fBwhere\fR
+Same as in \fBmx\fR.
+.VE
+
+.SH "TERMCAP INFORMATION"
+\fBTx\fR stores an up-to-date termcap entry in the \fBtermcap\fR variable, and
+initializes the TERM and TERMCAP environment variables when it
+starts up, so that
+you can run programs that use termcap information.  If you change the
+size of a \fBtx\fR window, \fBtx\fR will update the \fBtermcap\fR variable
+and invoke the TIOCSWINSZ ioctl to notify the application, but
+it cannot update the TERM and TERMCAP environment variables in the
+application;  you can use the ``Set Termcap'' menu entry to invoke
+shell commands to update TERM and TERMCAP.
+If you use \fBtx\fR to rlogin to a different machine, most machines
+have never heard of \fBtx\fR so they don't have entries for it in their
+/etc/termcap files.  There are two possible solutions to this problem:
+a) you can invoke the ``Set Termcap'' menu entry after you've gotten
+logged in to the remote machine;  b) you can use the \fItxinfo\fR
+program as part of your .login shell script, in order to set up the
+TERMCAP automatically.  See the manual page for \fItxinfo\fR for
+details.
+
+.SH "COMMAND SUBWINDOW"
+Same as in \fBmx\fR.
+
+.SH "MULTIPLE WINDOWS ON SAME TYPESCRIPT"
+The \fBopen\fR command may be used to open several windows on the
+same typescript.  The windows behave identically except for
+one thing: window size.  There is a single window size associated
+with the typescript, which is returned when applications perform
+TIOCGWINSZ ioctl operations on the pseudo-terminal.  If the different
+windows have different sizes, then Tx always uses the size from
+a particular one of the windows (usually the first window created on the
+typescript).  The other windows are labelled
+\fBAlternate\fR at the right side of their title bars
+to indicate that their sizes will not be reflected to the application.
+
+.SH "SEE ALSO"
+mx, txcmd, txinfo
+
+.SH KEYWORDS
+mouse, terminal emulator, typescript, window

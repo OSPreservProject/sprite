@@ -1,0 +1,76 @@
+% This file implements citations for the ``named'' bibliography style.
+%  Place it in a file called named.sty in the TeX search path.  (Placing it
+% in the same directory as the LaTeX document should also work.)
+
+% Prepared by Peter F. Patel-Schneider, with the assistance of several,
+% since forgotten, LaTeX hackers.
+% This style is NOT guaranteed to work.  It is provided in the hope
+% that it will make the preparation of papers easier.
+%
+% There are undoubtably bugs in this style.  If you make bug fixes,
+% improvements, etc.  please let me know.  My e-mail address is:
+%	pfps@research.att.com
+
+% The preparation of this file was supported by Schlumberger Palo Alto
+% Research and AT\&T Bell Laboratories.
+
+% This file can be modified and used in other conferences as long
+% as credit to the authors and supporting agencies is retained, this notice
+% is not changed, and further modification or reuse is not restricted.
+
+% The ``named'' bibliography style creates citations with labels like
+%	\citeauthoryear{author-info}{year}
+% these labels are processed by the following commands:
+%	\cite{key}
+%		which produces citations with both author and year,
+%		enclosed in square brackets
+%	\shortcite{key}
+%		which produces citations with year only,
+%		enclosed in square brackets
+%	\citeauthor{key}
+%		which produces the author information only
+%	\citeyear{key}
+%		which produces the year information only
+
+% Bugs:  Using \cite and \shortcite in vertical mode (usually as the first
+% thing in a paragraph) does not work.  A simple fix might work, but I'm
+% not ready to delve into TeX at the moment.
+
+\def\@up#1{\raise.2ex\hbox{#1}}
+
+\let\@internalcite\cite
+\def\cite{\def\@citeseppen{-1000}%
+ \def\@cite##1##2{\@up[\nobreak\hskip 0in{##1\if@tempswa , ##2\fi}\@up]}%
+ \def\citeauthoryear##1##2{##1, ##2}\@internalcite}
+\def\shortcite{\def\@citeseppen{1000}%
+ \def\@cite##1##2{\@up[{##1\if@tempswa , ##2\fi}\@up]}%
+ \def\citeauthoryear##1##2{##2}\@internalcite}
+
+\def\citeauthor#1{\def\@citeseppen{1000}%
+ \def\@cite##1##2{{##1\if@tempswa , ##2\fi}}%
+ \def\citeauthoryear##1##2{##1}\@citedata{#1}}
+\def\citeyear#1{\def\@citeseppen{1000}%
+ \def\@cite##1##2{{##1\if@tempswa , ##2\fi}}%
+ \def\citeauthoryear##1##2{##2}\@citedata{#1}}
+
+\def\@citedata#1{\@tempswafalse%
+ \if@filesw\immediate\write\@auxout{\string\citation{#1}}\fi
+  \def\@citea{}\@cite{\@for\@citeb:=#1\do
+    {\@citea\def\@citea{,\penalty\@citeseppen\ }\@ifundefined
+       {b@\@citeb}{{\bf ?}\@warning
+       {Citation `\@citeb' on page \thepage \space undefined}}%
+{\csname b@\@citeb\endcsname}}}{}}
+
+% don't box citations, separate with ; and a space
+% also, make the penalty between citations negative: a good place to break
+\def\@citex[#1]#2{\if@filesw\immediate\write\@auxout{\string\citation{#2}}\fi
+  \def\@citea{}\@cite{\@for\@citeb:=#2\do
+    {\@citea\def\@citea{;\penalty\@citeseppen\ }\@ifundefined
+       {b@\@citeb}{{\bf ?}\@warning
+       {Citation `\@citeb' on page \thepage \space undefined}}%
+{\csname b@\@citeb\endcsname}}}{#1}}
+
+% raise the brackets in bibliography labels
+\def\@biblabel#1{\def\citeauthoryear##1##2{##1, ##2}%
+  \raise.2ex\hbox{[}#1\raise.2ex\hbox{]}\hfill}
+

@@ -1,0 +1,17 @@
+L BIN.;1                            	bin	cmds.$MACHINE
+D CC1_SPUR                          	cc1.spur
+L CMDS.DS3;1                        	cmds.ds3100	cmds.ds5000
+D CMDS_DS5                          	cmds.ds5000
+D CMDS_DSM                          	cmds.dsmach
+D CMDS_SU0                          	cmds.sun3
+D CMDS_SU1                          	cmds.sun4
+D CPP                               	cpp
+D GCC                               	gcc
+D ITC                               	itc
+F MAKEFILE.;1                       	Makefile
+F README.;1                         	README
+F RESULTS.;1                        	results
+F RESULTS.DEC;1                     	results.dec
+D SAS                               	sas
+D SLD                               	sld
+D SRANLIB                           	sranlib

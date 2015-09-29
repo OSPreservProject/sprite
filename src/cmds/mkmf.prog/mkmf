@@ -1,0 +1,288 @@
+#! /sprite/cmds/csh -f
+# Script to generate a Makefile, depending on the current directory.
+#
+# $Header: /sprite/src/cmds/mkmf.prog/RCS/mkmf,v 1.16 91/11/03 17:42:51 jhh Exp $
+#
+# The old way to prevent mkmf from working in a directory is
+# to have the comment
+#	# No mkmf
+# in Makefile.  This is being reversed to require a line of the form
+#	# Allow mkmf
+# before mkmf will run.
+#
+
+#
+# First, make sure "." is not in the path!  Otherwise things like "sed"
+# can get screwed up when made in the corresponding sprite directory.
+#
+set path = (/sprite/cmds.$MACHINE /sprite/cmds)
+setenv MKMFDIR /sprite/lib/mkmf
+set dependall="pmake dependall"
+set depend="pmake depend"
+set userMap=()
+set sysMap=${MKMFDIR}/mkmf.map
+set defmachine=$MACHINE
+set distMap=${MKMFDIR}/mkmf.dist
+set machTypes=`grep -v "^#" /sprite/admin/machineTypes`
+
+#
+# No global flags by default.
+#
+setenv MKMFFLAGS
+
+#
+# If makeRCS is set, an RCS directory will be created should one not exist
+# If makeMd is set, a machine-dependent subdirectory will be created if
+# none exists already.
+#
+set makeRCS
+set makeMd
+
+#
+# Process options.
+#
+set i=1
+set makefile=Makefile
+set machinesToDo
+set noglob
+set usage = 'Usage: mkmf [-x] [-f file] [-mtm | -m tm]'
+unset noglob
+
+
+while ( $i <= $#argv )
+	switch( "$argv[$i]" )
+#
+# Handle echoing
+#
+		case "-x" 
+			set echo
+			setenv MKMFFLAGS "$MKMFFLAGS -x"
+			shift
+			@ i--
+			breaksw
+#
+# Figure out alternate makefile if -f given
+#
+		case "-f" :
+			if ($i != $#argv) then
+			    shift
+			    set makefile=$argv[$i]
+			    shift
+			    @ i--
+			endif
+			breaksw
+#
+# Build list of machine types to be done.
+#
+		case "-m*" :
+			set tmp = `echo "$argv[$i]" | sed "s/-m//"`
+			if ("$tmp" == '') then
+			    if ($i != $#argv) then
+				shift
+				set machinesToDo = ($machinesToDo $argv[$i])
+				unset dependall
+				shift
+			    else
+				echo "$usage"
+				exit (1)
+			    endif
+			else
+			    set machinesToDo = ($machinesToDo $tmp)
+			    unset dependall
+			    shift
+			endif
+			@ i--
+			breaksw
+		default :
+			echo "$usage"
+			exit(1)
+			breaksw
+	endsw
+	@ i++
+end
+
+#
+# If the caller has a .mkmf file in his/her home directory, source it
+# now;  this can be used to modify some of the controlling variables
+# above, like MKMFDIR and map.
+#
+
+if (-e ~/.mkmf) then
+	source ~/.mkmf
+endif
+
+#
+# Check for permission to do this:
+# egrep -s returns 0 if a match is found for the pattern.
+# If a "no mkmf" comment is found in the current makefile, we refuse to run.
+# If no "allow mkmf" comment is in the current makefile, we must ask permission
+# before proceeding (if permission given, save the old Makefile in a
+# backup location, just in case).
+#
+#
+if (-e $makefile) then
+	if ({ egrep -s '^#[ 	]*[Nn]o mkmf' $makefile }) then
+		echo "Sorry, mkmf not allowed in this directory"
+		exit 1
+	else if (! { egrep -s '^#[ 	]*[Aa]llow mkmf' \
+	    $makefile }) then
+		echo "WARNING: no '# Allow mkmf' in existing $makefile"
+		echo -n "Ok to run mkmf? Enter 'y' if ok: "
+		set a="$<"
+		if ("$a" !~ [Yy]*) then
+		    echo "mkmf aborted"
+		    exit 1
+		endif
+		mv -f $makefile $makefile.~
+	endif
+endif
+
+#
+# Determine what version of mkmf to run. Set $mkmf to contain that version name
+# Pass through mkmf.map looking for a line whose pattern matches the
+# current working directory and place the following fields into
+# 'ans'.
+#
+
+set ans=()
+if ( "$userMap" != "") set ans=(`echo $cwd | awk -f $userMap`)
+if ( "$ans" == "")     set ans=(`echo $cwd | awk -f $sysMap`)
+set distdir=()
+if ( "$distMap" != "") set distdir=(`echo $cwd | nawk -f $distMap`)
+set mkmf=$ans[1]
+if ($ans[2] !~ [Yy]*) unset makeRCS
+if ($ans[3] !~ [Yy]*) then
+    unset depend
+    unset dependall
+endif
+if ($ans[4] !~ [Yy]*) unset makeMd
+setenv DISTDIR $distdir
+setenv SUBTYPE $ans[5]
+#
+# This is a kludge because the machine types "sun4c" and "ds5000" are
+# only visible in the kernel sources.
+#
+if ($ans[5] == "kernel") then
+    set machTypes=($machTypes "sun4c" "ds5000")
+endif
+
+setenv MKMF ${MKMFDIR}/mkmf.$mkmf
+if (-x mkmf.local && ! -d mkmf.local) then
+	echo "Using mkmf.local"
+	set uselocal
+endif
+
+#
+# Create RCS directory if it should be here but isn't
+#
+if ((! -e RCS) && $?makeRCS) then
+	echo "Making RCS directory."
+	mkdir RCS
+endif
+
+#
+# Create ".md" directories (if they don't already exist) for those
+# machine types specified with the "-m" option.  Also check that the
+# machine types are valid.
+#
+if ("$machinesToDo" != "") then
+    set tmp=""
+    foreach i ($machinesToDo)
+	if (! -e $i.md) then
+	    if (" $machTypes " =~ *\ $i\ *) then
+		echo "Making $i.md directory."
+		mkdir $i.md
+		chmod 775 $i.md
+		set tmp=($tmp $i)
+	    else 
+		echo "$i isn't a valid machine type."
+	    endif
+	else
+	    set tmp=($tmp $i)
+	endif
+    end
+    if ("$tmp" == "") then
+	exit 1
+    else
+	set machinesToDo=($tmp)
+    endif
+endif
+
+#
+# Locate machine-dependent subdirectories (*.md) and set the environment
+# variable MACHINES to hold the names of the machines that we are to run
+# mkmf for, and ALLMACHINES to the names of all possible machine
+# types (without the ".md"suffixes).  
+# If no machine-dependent subdirectories exist, create one
+# if that's permitted.
+#
+set nonomatch
+set mds=(*.md)
+unset nonomatch
+set machines
+set domachines
+if ("$mds" != "*.md") then
+	foreach i ($mds)
+		set machName =  $i:r
+		if ("$machinesToDo" == "" || \
+		    " $machinesToDo " =~ *\ $machName\ *) then
+		    set domachines = ($domachines $machName)
+		endif
+		set machines = ($machines $machName)
+	end
+else
+	if ( $?makeMd ) then
+		echo "Making $defmachine.md directory."
+		mkdir $defmachine.md
+		if ("$machinesToDo" == "" || \
+		    " $machinesToDo " =~ *\ $defmachine\ *) then
+		    set machines=($defmachine)
+		    set domachines=($defmachine)
+		endif
+	endif
+endif
+setenv MACHINES "$machines"
+setenv DOMACHINES "$domachines"
+
+#
+# Store the name of the makefile we're manipulating in the MAKEFILE
+# envariable and invoke the appropriate version of mkmf
+#
+setenv MAKEFILE $makefile
+if ($?uselocal) then
+    eval ./mkmf.local $MKMFFLAGS $*
+else
+    eval ${MKMFDIR}/mkmf.$mkmf $MKMFFLAGS $*
+endif
+
+#
+# if a .sed file exists for the makefile, muck with it some more
+#
+if (-e $makefile.sed) then
+    echo "Modifying with $makefile.sed."
+    mv $makefile{,.$$~~}
+    sed -f $makefile.sed $makefile.$$~~ > $makefile
+    rm $makefile.$$~~
+endif
+
+#
+# if a .ex file exists for the makefile, edit the makefile using the .ex file
+# as a command script
+#
+if (-e $makefile.ex) then
+    echo "Modifying with $makefile.ex."
+    ex - $makefile < $makefile.ex
+endif
+
+#
+# Form dependencies for the makefile if required
+#
+if ($?dependall) then
+	eval $dependall
+else if ($?depend) then
+	foreach i ($domachines)
+	    eval $depend TM=$i
+	end
+endif
+
+exit 0

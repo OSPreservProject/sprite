@@ -1,0 +1,40 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     90.04.27.14.53.23;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@' $Header: /sprite/src/cmds/sync/RCS/sync.man,v 9.0 89/09/12 15:19:54 douglis Stable $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS SYNC cmds
+.BS
+.SH NAME
+sync \- force the file system's cache to the disk or the file server.
+.SH SYNOPSIS
+\fBsync\fR
+.BE
+
+.SH INTRODUCTION
+.LP
+This command forces the file system's cache to the disk or the file server.
+.SH KEYWORDS
+sync, write-back, cache, file system
+@

@@ -1,0 +1,149 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  ds3100:1.6 sun3:1.6 sun4nw:1.6 symm:1.6 spur:1.6;
+locks    ; strict;
+comment  @ * @;
+
+
+1.6
+date     90.10.12.14.01.27;  author eklee;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     90.09.19.14.54.33;  author eklee;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.09.27.17.15.03;  author eklee;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.08.30.11.27.27;  author eklee;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.08.30.11.10.20;  author eklee;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.27.13.06.08;  author eklee;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@external interface for the raid module
+@
+
+
+1.6
+log
+@Added Raid_ prefix to external names and cleaned up warning messages.
+@
+text
+@/* 
+ * raidExt.h --
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/raid/RCS/raidExt.h,v 1.5 90/09/19 14:54:33 eklee Exp Locker: eklee $ SPRITE (Berkeley)
+ */
+
+#ifndef _RAIDEXT
+#define _RAIDEXT
+
+#include "devBlockDevice.h"
+
+DevBlockDeviceHandle	*DevRaidAttach();
+DevBlockDeviceHandle	*DevDebugAttach();
+
+#endif _RAIDEXT
+@
+
+
+1.5
+log
+@Added prototypes.
+@
+text
+@d13 1
+a13 1
+ * $Header: /sprite/src/kernel/raid/RCS/raidExt.h,v 1.4 89/09/27 17:15:03 eklee Exp Locker: eklee $ SPRITE (Berkeley)
+@
+
+
+1.4
+log
+@Misc insignificant changes.
+@
+text
+@d13 1
+a13 1
+ * $Header: /sprite/src/kernel/dev.new/RCS/devBlockDevice.h,v 1.1 89/05/01 15:27:18 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+@
+
+
+1.3
+log
+@*** empty log message ***
+@
+text
+@a21 2
+
+#ifndef DevDebugAttach
+a22 1
+#endif  DevDebugAttach
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d1 1
+a1 1
+/*
+d13 1
+a13 1
+ * $Header: /sprite/src/kernel/raid/RCS/raidExt.h,v 1.1 89/07/27 13:06:08 eklee Exp Locker: eklee $ SPRITE (Berkeley)
+d25 1
+a25 1
+#endif /*  DevDebugAttach */
+d27 1
+a27 1
+#endif /* _RAIDEXT */
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+/* 
+d13 1
+a13 1
+ * $Header: /sprite/src/kernel/dev.new/RCS/devBlockDevice.h,v 1.1 89/05/01 15:27:18 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d25 1
+a25 1
+#endif  DevDebugAttach
+d27 1
+a27 1
+#endif _RAIDEXT
+@

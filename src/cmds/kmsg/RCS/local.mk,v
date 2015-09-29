@@ -1,0 +1,57 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     89.04.03.22.06.19;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.10.24.08.51.49;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@chmod 4770 so mere mortals can't run it.
+@
+text
+@#
+# This file is included by Makefile.  Makefile is generated automatically
+# by mkmf, and this file provides additional local personalization.  The
+# variable SYSMAKEFILE is provdied by Makefile;  it's a system Makefile
+# that must be included to set up various compilation stuff.
+#
+
+#
+# Must run set-user-id to root. Let's also make it so mere mortals can't
+# exec it by accident.
+#
+INSTALLFLAGS	+= -o root -m 4770
+
+#include	<$(SYSMAKEFILE)>
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d9 2
+a10 1
+# Must run set-user-id to root.
+d12 1
+a12 1
+INSTALLFLAGS	+= -o root -m 4775
+@

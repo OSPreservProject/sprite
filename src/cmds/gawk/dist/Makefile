@@ -1,0 +1,233 @@
+# Makefile for GNU Awk.
+#
+# Copyright (C) 1986, 1988, 1989 the Free Software Foundation, Inc.
+# 
+# This file is part of GAWK, the GNU implementation of the
+# AWK Progamming Language.
+# 
+# GAWK is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 1, or (at your option)
+# any later version.
+# 
+# GAWK is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with GAWK; see the file COPYING.  If not, write to
+# the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+
+# User tunable macros
+
+# CFLAGS: options to the C compiler
+#
+#	-O	optimize
+#	-g	include dbx/sdb info
+#	-gg	include gdb debugging info; only for GCC (deprecated)
+#	-pg	include new (gmon) profiling info
+#	-p	include old style profiling info (System V)
+#
+#	To port GAWK, examine and adjust the following flags carefully.
+#	In addition, you will have to look at alloca below.
+#	The intent (eventual) is to not penalize the most-standard-conforming
+#	systems with a lot of #define's.
+#
+#	-DBCOPY_MISSING		- bcopy() et al. are missing; will replace
+#				  with a #define'd memcpy() et al. -- use at
+#				  your own risk (should really use a memmove())
+#	-DSPRINTF_INT		- sprintf() returns int (most USG systems)
+#	-DBLKSIZE_MISSING	- st_blksize missing from stat() structure
+#				  (most USG systems)
+#	-DBSDSTDIO		- has a BSD internally-compatible stdio
+#	-DDOPRNT_MISSING	- lacks doprnt() routine
+#	-DDUP2_MISSING		- lacks dup2() system call (S5Rn, n < 4)
+#	-DGCVT_MISSING		- lacks gcvt() routine
+#	-DGETOPT_MISSING	- lacks getopt() routine
+#	-DMEMCMP_MISSING	- lacks memcmp() routine
+#	-DMEMCPY_MISSING	- lacks memcpy() routine
+#	-DMEMSET_MISSING	- lacks memset() routine
+#	-DRANDOM_MISSING	- lacks random() routine
+#	-DSTRCASE_MISSING	- lacks strcasecmp() routine
+#	-DSTRCHR_MISSING	- lacks strchr() and strrchr() routines
+#	-DSTRERROR_MISSING	- lacks (ANSI C) strerror() routine
+#	-DSTRTOD_MISSING	- lacks strtod() routine
+#	-DTMPNAM_MISSING	- lacks or deficient tmpnam() routine
+#	-DVPRINTF_MISSING	- lacks vprintf and associated routines
+#	-DSIGTYPE=int		- signal routines return int (default void)
+
+# Sun running SunOS 4.x
+MISSING = -DSTRERROR_MISSING -DSTRCASE_MISSING
+
+# SGI Personal Iris (Sys V derived)
+# MISSING = -DSPRINTF_INT -DBLKSIZE_MISSING -DSTRERROR_MISSING -DRANDOM_MISSING
+
+# VAX running Ultrix 3.x
+# MISSING = -DSTRERROR_MISSING
+
+# A generic 4.2 BSD machine
+# (eliminate GETOPT_MISSING for 4.3 release)
+# (eliminate STRCASE_MISSING and TMPNAM_MISSING for Tahoe release)
+# MISSING = -DBSDSTDIO -DMEMCMP_MISSING -DMEMCPY_MISSING -DMEMSET_MISSING \
+#	-DSTRERROR_MISSING -DSTRTOD_MISSING -DVPRINTF_MISSING \
+#	-DSTRCASE_MISSING -DTMPNAM_MISSING \
+#	-DGETOPT_MISSING -DSTRCHR_MISSING -DSIGTYPE=int
+
+# On Amdahl UTS, a SysVr2-derived system
+# MISSING = -DBCOPY_MISSING -DSPRINTF_INT -DRANDOM_MISSING -DSTRERROR_MISSING \
+#	-DSTRCASE_MISSING -DDUP2_MISSING # -DBLKSIZE_MISSING ??????
+
+# Comment out the next line if you don't have gcc.
+# Also choose just one of -g and -O.
+CC=		 gcc
+
+OPTIMIZE=	-O -g
+PROFILE=	#-pg
+DEBUG=		#-DDEBUG #-DMEMDEBUG #-DFUNC_TRACE #-DMPROF
+DEBUGGER=	#-g -Bstatic
+WARN=		#-W -Wunused -Wimplicit -Wreturn-type -Wcomment	# for gcc only
+
+# Parser to use on grammar -- if you don't have bison use the first one
+#PARSER = yacc
+PARSER = bison
+
+# ALLOCA
+#	Set equal to alloca.o if your system is S5 and you don't have
+#	alloca. Uncomment one of the rules below to make alloca.o from
+#	either alloca.s or alloca.c.
+ALLOCA= #alloca.o
+
+#
+# With the exception of the alloca rule referred to above, you shouldn't
+# need to customize this file below this point.
+#
+
+FLAGS= $(MISSING) $(DEBUG)
+CFLAGS= $(FLAGS) $(DEBUGGER) $(PROFILE) $(OPTIMIZE) $(WARN)
+
+# object files
+AWKOBJS = main.o eval.o builtin.o msg.o debug.o io.o field.o array.o node.o \
+		version.o missing.o
+
+ALLOBJS = $(AWKOBJS) awk.tab.o
+
+# GNUOBJS
+#	GNU stuff that gawk uses as library routines.
+GNUOBJS= regex.o $(ALLOCA)
+
+# source and documentation files
+SRC =	main.c eval.c builtin.c msg.c \
+	debug.c io.c field.c array.c node.c missing.c
+
+ALLSRC= $(SRC) awk.tab.c
+
+AWKSRC= awk.h awk.y $(ALLSRC) version.sh patchlevel.h
+
+GNUSRC = alloca.c alloca.s regex.c regex.h
+
+COPIES = missing.d/dup2.c missing.d/gcvt.c missing.d/getopt.c \
+	missing.d/memcmp.c missing.d/memcpy.c missing.d/memset.c \
+	missing.d/random.c missing.d/strcase.c missing.d/strchr.c \
+	missing.d/strerror.c missing.d/strtod.c missing.d/tmpnam.c \
+	missing.d/vprintf.c
+
+SUPPORT = support/texindex.c support/texinfo.tex
+
+DOCS= gawk.1 gawk.texinfo
+
+INFOFILES= gawk-info gawk-info-1 gawk-info-2 gawk-info-3 gawk-info-4 \
+	   gawk-info-5 gawk-info-6 gawk.aux gawk.cp gawk.cps gawk.fn \
+	   gawk.fns gawk.ky gawk.kys gawk.pg gawk.pgs gawk.toc \
+	   gawk.tp gawk.tps gawk.vr gawk.vrs
+
+MISC = CHANGES COPYING FUTURES Makefile PROBLEMS README
+
+PCSTUFF= pc.d/Makefile.pc pc.d/popen.c pc.d/popen.h
+
+ALLDOC= gawk.dvi $(INFOFILES)
+
+ALLFILES= $(AWKSRC) $(GNUSRC) $(COPIES) $(MISC) $(DOCS) $(ALLDOC) $(PCSTUFF) $(SUPPORT)
+
+# Release of gawk.  There can be no leading or trailing white space here!
+REL=2.11
+
+# rules to build gawk
+gawk: $(ALLOBJS) $(GNUOBJS)
+	$(CC) -o gawk $(CFLAGS) $(ALLOBJS) $(GNUOBJS) -lm
+
+$(AWKOBJS): awk.h
+
+main.o: patchlevel.h
+
+awk.tab.o: awk.h awk.tab.c
+
+awk.tab.c: awk.y
+	$(PARSER) -v awk.y
+	-mv -f y.tab.c awk.tab.c
+
+version.c: version.sh
+	sh version.sh $(REL) > version.c
+
+# Alloca: uncomment this if your system (notably System V boxen)
+# does not have alloca in /lib/libc.a
+#
+#alloca.o: alloca.s
+#	/lib/cpp < alloca.s | sed '/^#/d' > t.s
+#	as t.s -o alloca.o
+#	rm t.s
+
+# If your machine is not supported by the assembly version of alloca.s,
+# use the C version instead.  This uses the default rules to make alloca.o.
+#
+#alloca.o: alloca.c
+
+# auxiliary rules for release maintenance
+lint: $(ALLSRC)
+	lint -hcbax $(FLAGS) $(ALLSRC)
+
+xref:
+	cxref -c $(FLAGS) $(ALLSRC) | grep -v '	/' >xref
+
+clean:
+	rm -f gawk *.o core awk.output awk.tab.c gmon.out make.out version.c
+
+clobber: clean
+	rm -f $(ALLDOC) gawk.log
+
+gawk.dvi: gawk.texinfo
+	tex gawk.texinfo ; texindex gawk.??
+	tex gawk.texinfo ; texindex gawk.??
+	tex gawk.texinfo
+
+$(INFOFILES): gawk.texinfo
+	makeinfo gawk.texinfo
+
+srcrelease: $(AWKSRC) $(GNUSRC) $(DOCS) $(MISC) $(COPIES) $(PCSTUFF) $(SUPPORT)
+	-mkdir gawk-$(REL)
+	cp -p $(AWKSRC) $(GNUSRC) $(DOCS) $(MISC) gawk-$(REL)
+	-mkdir gawk-$(REL)/missing.d
+	cp -p $(COPIES) gawk-$(REL)/missing.d
+	-mkdir gawk-$(REL)/pc.d
+	cp -p $(PCSTUFF) gawk-$(REL)/pc.d
+	-mkdir gawk-$(REL)/support
+	cp -p $(SUPPORT) gawk-$(REL)/support
+	tar -cf - gawk-$(REL) | compress > gawk-$(REL).tar.Z
+
+docrelease: $(ALLDOC)
+	-mkdir gawk-$(REL)-doc
+	cp -p $(INFOFILES) gawk.dvi gawk-$(REL)-doc
+	nroff -man gawk.1 > gawk-$(REL)-doc/gawk.1.pr
+	tar -cf - gawk-$(REL)-doc | compress > gawk-doc-$(REL).tar.Z
+
+psrelease: docrelease
+	-mkdir gawk-postscript
+	dvi2ps gawk.dvi > gawk-postscript/gawk.postscript
+	psroff -t -man gawk.1 > gawk-postscript/gawk.1.ps
+	tar -cf - gawk-postscript | compress > gawk.postscript.tar.Z
+
+release: srcrelease docrelease psrelease
+	rm -fr gawk-postscript gawk-$(REL) gawk-$(REL)-doc
+
+diff:
+	for i in RCS/*; do rcsdiff -c -b $$i > `basename $$i ,v`.diff; done

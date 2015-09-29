@@ -1,0 +1,1 @@
+gdb/initialized_all_files.c

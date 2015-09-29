@@ -1,0 +1,15 @@
+server thread context:
+
+(1) all point to single PCB for Sprite
+- don't have info in proc table for all server threads, don't have
+  much debugging info
+
+(2) nil
+
+(3) point to per-thread full PCB
+- lots of unused fields in PCB
+o need back pointer in the PCB to thread
+
+(4) point to per-thread "server" PCB
+- have to be careful about accessing the union type correctly
+o need back pointer in the PCB to thread

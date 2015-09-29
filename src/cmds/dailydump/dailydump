@@ -1,0 +1,89 @@
+#!/sprite/cmds/csh -f
+#
+# Perform a daily, level 1, dump.
+# Must be run as root.
+#
+# $Header: /sprite/src/admin/dailydump/RCS/dailydump,v 1.20 92/09/29 12:22:46 jhh Exp $
+#
+
+set tapeDrives = `grep -v '^#' /sprite/admin/dump/tapelist`
+if ($#tapeDrives < 1) then
+    echo "No tape drives in /sprite/admin/dump/tapelist?"
+    exit -1
+endif
+set tape = $tapeDrives[1]
+set filesystems=(`cat /sprite/admin/dump/dumplist`)
+set dump = dump
+
+if ($#argv >  0) then
+    if ("$argv[1]" == "-i") then
+	echo "Initializing tape and rescheduling daily dumps"
+	$dump -s -l 1 -f $tape
+	if ($status != 0) then
+	    echo "Initialization failed"
+	    echo "Daily dump initialization failed" | \
+		mail -s "Dump error" dumper
+	    exit
+	endif
+	if (-e /sprite/admin/dump/doingweekly) then
+	    rm /sprite/admin/dump/doingweekly
+	endif
+	echo "Daily dumps rescheduled"
+	exit
+    endif
+endif
+
+if (-e /sprite/admin/dump/doingweekly) then
+    echo "Skipping daily dump" `date` >> /sprite/admin/dump/dumplog
+    exit
+endif
+
+# If the user specified a starting filesystem, skip over the ones in
+# front of it.
+
+set start = ""
+
+if ($#argv > 0) then
+    set start = "$argv[1]"
+endif
+
+if ("$start" != "") then
+	while (_$filesystems[1] != _$start)
+		if ($#filesystems == 1) then
+			echo $start "isn't in the list of filesystems."
+			echo $start "isn't in the list of filesystems. |\
+			    mail -s "Dump error" dumper
+			exit 1
+		endif
+		shift filesystems
+	end
+	echo "Starting with filesystem $start"
+endif
+
+echo "Doing daily dump" >> /sprite/admin/dump/dumplog
+
+/sprite/cmds/hostname >! /sprite/admin/dump/doingdaily.active
+
+while ($#filesystems > 0)
+    set fs=$filesystems[1]
+    $dump -l 1 -f $tape $fs
+    if ($status != 0) goto err
+    shift filesystems
+end
+
+# Figure out how much tape has been used
+set info = `tail -1 /sprite/admin/dump/dumpdates`
+set tapenum = `echo $info | awk '{print $1}'`
+set remaining = `echo $info | awk '{print $5}'`
+
+rm -f /sprite/admin/dump/doingdaily.active
+
+(echo "Daily dumps completed" ; \
+    echo "Tape $tapenum : $remaining MB remaining on tape.")| \
+	mail -s "Daily dump done" dumper
+exit
+
+
+err:
+    echo "Daily dumps encountered error ($status)" | \
+	mail -s "Dump failed" dumper

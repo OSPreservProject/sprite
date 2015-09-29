@@ -1,0 +1,480 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.6
+date     89.06.16.08.30.08;  author brent;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.01.06.08.14.41;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     87.05.08.17.45.40;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     86.07.21.09.36.35;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     86.07.18.11.58.32;  author nelson;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.07.18.09.33.18;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Block index chasing.
+@
+
+
+1.6
+log
+@Updated to the new device interface
+@
+text
+@/* 
+ * fsIndex.c --
+ *
+ *	Routines to allow moving through a files block pointers.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifdef notdef
+static char rcsid[] = "$Header: /sprite/src/boot/scsiDiskBoot.new/RCS/fsIndex.c,v 1.5 89/01/06 08:14:41 brent Exp Locker: brent $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+#include "fsBoot.h"
+#include "byte.h"
+
+char	firstBlockBuffer[FS_BLOCK_SIZE];
+char	secondBlockBuffer[FS_BLOCK_SIZE];
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MakePtrAccessible --
+ *
+ *	Make the block pointer in the file descriptor accessible.  This
+ *	may entail reading in indirect blocks and locking them down in the
+ *	cache.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Indirect blocks are locked down in the cache.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+MakePtrAccessible(handlePtr, indexInfoPtr, descPtr)
+    register	FsLocalFileIOHandle	 *handlePtr;
+    register	BlockIndexInfo 	 *indexInfoPtr;
+    register	FsFileDescriptor *descPtr;
+{
+    register 	int 		 *blockAddrPtr;
+
+    /* 
+     * Read in the first block.
+     */
+
+    if (indexInfoPtr->firstBlockNil) {
+	FsDeviceBlockIO(FS_READ, &fsDevice,
+		      descPtr->indirect[indexInfoPtr->indexType],
+		      FS_FRAGMENTS_PER_BLOCK, firstBlockBuffer);
+    }
+
+    blockAddrPtr = 
+	(int *) (firstBlockBuffer + sizeof(int) * indexInfoPtr->firstIndex);
+
+    if (indexInfoPtr->indexType == FS_INDIRECT) {
+	indexInfoPtr->blockAddrPtr = blockAddrPtr;
+	return(SUCCESS);
+    }
+
+    /* 
+     * Get the second level block.
+     */
+
+    FsDeviceBlockIO(FS_READ, &fsDevice, *blockAddrPtr,
+		       FS_FRAGMENTS_PER_BLOCK, secondBlockBuffer);
+    indexInfoPtr->blockAddrPtr = 
+	(int *) (secondBlockBuffer + sizeof(int) * indexInfoPtr->secondIndex);
+
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsGetFirstIndex --
+ *
+ *	Initialize the index structure.  This will set up the index info
+ *	structure so that it contains a pointer to the desired block pointer.
+ *
+ * Results:
+ *	A status indicating whether there was sufficient space to allocate
+ *	indirect blocks.
+ *
+ * Side effects:
+ *	The index structure is initialized.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+FsGetFirstIndex(handlePtr, blockNum, indexInfoPtr)
+    register FsLocalFileIOHandle	    *handlePtr;    /* Handle for file that are 
+					      indexing. */
+    register int	    blockNum;      /* Where to start indexing. */
+    register BlockIndexInfo *indexInfoPtr; /* Index structure to initialize.*/
+{
+    register FsFileDescriptor *descPtr;
+    register int	      indirectBlock;
+
+    descPtr = handlePtr->descPtr;
+    indexInfoPtr->firstBlockNil = TRUE;
+    indexInfoPtr->blockNum = blockNum;
+
+    if (blockNum < FS_NUM_DIRECT_BLOCKS) {
+	/*
+	 * This is a direct block.
+	 */
+	indexInfoPtr->indexType = FS_DIRECT;
+	indexInfoPtr->blockAddrPtr = &descPtr->direct[blockNum];
+	return(SUCCESS);
+    }
+
+    /*
+     * Is an indirect block.
+     */
+
+    blockNum -= FS_NUM_DIRECT_BLOCKS;
+    indirectBlock = blockNum / FS_INDICES_PER_BLOCK;
+    if (indirectBlock == 0) {
+	/*
+	 * This is a singly indirect block.
+	 */
+	indexInfoPtr->indexType = FS_INDIRECT;
+	indexInfoPtr->firstIndex = blockNum;
+    } else {
+	/*
+	 * This a doubly indirect block.
+	 */
+	indexInfoPtr->indexType = FS_DBL_INDIRECT;
+	indexInfoPtr->firstIndex = indirectBlock - 1;
+	indexInfoPtr->secondIndex = blockNum -
+				    indirectBlock * FS_INDICES_PER_BLOCK;
+    }
+
+    /*
+     * Finish off by making the block pointer accessible.  This may include
+     * reading indirect blocks into the cache.
+     */
+
+    return(MakePtrAccessible(handlePtr, indexInfoPtr, descPtr));
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsGetNextIndex --
+ *
+ *	Put the correct pointers in the index structure to access the
+ *	block after the current block.
+ *
+ * Results:
+ *	A status indicating whether there was sufficient space to allocate
+ *	indirect blocks if they were needed.
+ *
+ * Side effects:
+ *	The allocation structure is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+FsGetNextIndex(handlePtr, indexInfoPtr)
+    register FsLocalFileIOHandle       *handlePtr;    /* Handle for file that is being
+					      indexed. */
+    register BlockIndexInfo *indexInfoPtr; /* Index structure to set up. */
+{
+    register Boolean	      accessible = FALSE;
+    register FsFileDescriptor *descPtr;
+
+    descPtr = handlePtr->descPtr;
+    indexInfoPtr->blockNum++;
+
+    /*
+     * Determine whether we are now in direct, indirect or doubly indirect
+     * blocks.
+     */
+
+    switch (indexInfoPtr->indexType) {
+	case FS_DIRECT:
+	    if (indexInfoPtr->blockNum < FS_NUM_DIRECT_BLOCKS) {
+		/*
+		 * Still in the direct blocks.
+		 */
+		indexInfoPtr->blockAddrPtr++;
+		accessible = TRUE;
+	    } else {
+		/*
+		 * Moved into indirect blocks.
+		 */
+		indexInfoPtr->indexType = FS_INDIRECT;
+		indexInfoPtr->firstIndex = 0;
+	    }
+	    break;
+	case FS_INDIRECT:
+	    if (indexInfoPtr->blockNum < 
+			FS_NUM_DIRECT_BLOCKS + FS_INDICES_PER_BLOCK) {
+		/*
+		 * Still in singly indirect blocks.
+		 */
+		indexInfoPtr->blockAddrPtr++;
+		accessible = TRUE;
+		break;
+	   } else {
+		/*
+		 * Moved into doubly indirect blocks.
+		 */
+		indexInfoPtr->firstIndex = 0;
+		indexInfoPtr->secondIndex = 0;
+		indexInfoPtr->indexType = FS_DBL_INDIRECT;
+		indexInfoPtr->firstBlockNil = TRUE;
+	    }
+	    break;
+	case FS_DBL_INDIRECT:
+	    indexInfoPtr->secondIndex++;
+	    if (indexInfoPtr->secondIndex == FS_INDICES_PER_BLOCK) {
+		indexInfoPtr->firstIndex++;
+		indexInfoPtr->secondIndex = 0;
+	    } else {
+		indexInfoPtr->blockAddrPtr++;
+		accessible = TRUE;
+	    }
+	    break;
+    }
+
+    /*
+     * Make the block pointers accessible if necessary.
+     */
+
+    if (!accessible) {
+	return(MakePtrAccessible(handlePtr, indexInfoPtr, descPtr));
+    } else {
+	return(SUCCESS);
+    }
+}
+@
+
+
+1.5
+log
+@New include files and constants due to source reorganization
+@
+text
+@d10 2
+a11 2
+#ifndef lint
+static char rcsid[] = "$Header: fsIndex.c,v 1.4 87/05/08 17:45:40 brent Exp $ SPRITE (Berkeley)";
+d15 1
+a15 2
+#include "fs.h"
+#include "fsDisk.h"
+a16 2
+#include "fsIndex.h"
+#include "fsOpTable.h"
+d42 1
+a42 1
+    register	FsHandle	 *handlePtr;
+d53 1
+a53 1
+	FsBlockIO(FS_READ, &handlePtr->device,
+d70 1
+a70 1
+    FsBlockIO(FS_READ, &handlePtr->device, *blockAddrPtr,
+d99 1
+a99 1
+    register FsHandle	    *handlePtr;    /* Handle for file that are 
+d171 1
+a171 1
+    register FsHandle       *handlePtr;    /* Handle for file that is being
+@
+
+
+1.4
+log
+@Updated to reflect changes in fs header files
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsIndex.c,v 1.3 86/07/21 09:36:35 brent Exp $ SPRITE (Berkeley)";
+a15 1
+#include "fsInt.h"
+d56 1
+a56 1
+	FsBlockIO(FS_READ, &handlePtr->rec.device,
+d73 1
+a73 1
+    FsBlockIO(FS_READ, &handlePtr->rec.device, *blockAddrPtr,
+d110 1
+a110 1
+    descPtr = (FsFileDescriptor *) handlePtr->nameToken;
+d181 1
+a181 1
+    descPtr = (FsFileDescriptor *) handlePtr->nameToken;
+@
+
+
+1.3
+log
+@changed interface to FsBlockIO
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsIndex.c,v 1.2 86/07/18 11:58:32 nelson Exp $ SPRITE (Berkeley)";
+d57 1
+a57 1
+	FsBlockIO(FS_READ, &handlePtr->device,
+d74 1
+a74 1
+    FsBlockIO(FS_READ, &handlePtr->device, *blockAddrPtr,
+d111 1
+a111 1
+    descPtr = (FsFileDescriptor *) handlePtr->domainToken;
+d182 1
+a182 1
+    descPtr = (FsFileDescriptor *) handlePtr->domainToken;
+@
+
+
+1.2
+log
+@Trimmed.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsIndex.c,v 1.1 86/07/18 09:33:18 brent Exp $ SPRITE (Berkeley)";
+d20 1
+d57 2
+a58 1
+	FsBlockIO(handlePtr, descPtr->indirect[indexInfoPtr->indexType],
+d74 2
+a75 2
+    FsBlockIO(handlePtr, *blockAddrPtr, FS_FRAGMENTS_PER_BLOCK,
+	      secondBlockBuffer);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: fsIndex.c,v 1.8 86/07/16 14:21:13 nelson Exp $ SPRITE (Berkeley)";
+d46 1
+a46 1
+    register	BlockIndexInfo *indexInfoPtr;
+d49 1
+a49 1
+    register 	int 		 blockAddr;
+a50 6
+    if (indexInfoPtr->indexType == FS_INDIRECT) {
+	blockAddr = descPtr->indirect[0];
+    } else {
+	blockAddr = descPtr->indirect[1];
+    }
+
+d55 3
+a57 4
+    if (indexInfoPtr->firstBlockPtr == (Address) NIL) {
+	indexInfoPtr->firstBlockPtr = firstBlockBuffer;
+	FsFileBlockIO(handlePtr, blockAddr, FS_FRAGMENTS_PER_BLOCK,
+				 firstBlockBuffer);
+d60 2
+a61 2
+    blockAddr = 
+	*(int *) (firstBlockBuffer + sizeof(int) * indexInfoPtr->firstIndex);
+d64 1
+a64 1
+	indexInfoPtr->blockAddr = blockAddr;
+d69 1
+a69 1
+     * Lock the second level block into the cache.
+d72 4
+a75 4
+    FsFileBlockIO(handlePtr, blockAddr, FS_FRAGMENTS_PER_BLOCK,
+			     secondBlockBuffer);
+    indexInfoPtr->blockAddr = 
+	*(int *) (secondBlockBuffer + sizeof(int) * indexInfoPtr->secondIndex);
+d101 3
+a103 3
+    FsHandle		      *handlePtr;    /* Handle for file that are 
+						indexing. */
+    int			      blockNum;      /* Where to start indexing. */
+d107 1
+a107 1
+    int			      indirectBlock;
+d110 1
+a110 2
+    indexInfoPtr->firstBlockPtr = (Address) NIL;
+    indexInfoPtr->secondBlockPtr = secondBlockBuffer;
+d118 1
+a118 2
+	indexInfoPtr->firstIndex = blockNum;
+	indexInfoPtr->blockAddr = descPtr->direct[blockNum];
+d173 2
+a174 2
+    FsHandle		      *handlePtr;    /* Handle for file that is being
+						indexed. */
+d177 2
+a178 2
+    Boolean			accessible = FALSE;
+    register FsFileDescriptor	*descPtr;
+d194 1
+a194 3
+		indexInfoPtr->firstIndex++;
+		indexInfoPtr->blockAddr = 
+				descPtr->direct[indexInfoPtr->firstIndex];
+d210 1
+a210 3
+		indexInfoPtr->firstIndex++;
+		indexInfoPtr->blockAddr = *(int *) (firstBlockBuffer + 
+				sizeof(int) * indexInfoPtr->firstIndex);
+d220 1
+a220 1
+		indexInfoPtr->firstBlockPtr = (Address) NIL;
+d229 1
+a229 2
+		indexInfoPtr->blockAddr = *(int *) (secondBlockBuffer + 
+				sizeof(int) * indexInfoPtr->secondIndex);
+@

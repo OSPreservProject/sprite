@@ -1,0 +1,496 @@
+File latex.dif,  version of 16 Mar 88.
+
+This file contains the results of running the Unix diff program on
+successive versions of file, starting with the 3 Jan 1988 release.
+Lines starting with `***' give the name of the file.  The output of diff
+will indicate the release date of the two versions of the file.
+
+*** latex.tex
+1c1
+< % LATEX VERSION 2.09 <3 Jan 1988>
+---
+> % LATEX VERSION 2.09 <14 Jan 1988>
+4,5c4,5
+< \everyjob{\typeout{LaTeX Version 2.09 <3 Jan 1988>}}
+< \immediate\write10{LaTeX Version 2.09 <3 Jan 1988>}
+---
+> \everyjob{\typeout{LaTeX Version 2.09 <14 Jan 1988>}}
+> \immediate\write10{LaTeX Version 2.09 <14 Jan 1988>}
+3819a3820
+> %% (Extra space removed 14 Jan 88)
+3822,3826c3823,3826
+<         \vbox{\vskip-\@wholewidth
+<               \hrule \@height\@wholewidth
+<               \hbox{\vrule \@width\@wholewidth #1\vrule \@width  \@wholewidth}
+<   	      \hrule \@height \@wholewidth\vskip -\@halfwidth}
+<   	      \hskip-\@wholewidth}}
+---
+>      \vbox{\vskip-\@wholewidth
+>             \hrule \@height\@wholewidth
+>           \hbox{\vrule \@width\@wholewidth #1\vrule \@width\@wholewidth}\hrule
+>            \@height \@wholewidth\vskip -\@halfwidth}\hskip-\@wholewidth}}
+
+*** report.sty
+1c1
+< % report.sty  12-Oct-87
+---
+> % report.sty 19-Jan-88
+3c3
+< \typeout{Document Style `report' <12 Oct 87>.}
+---
+> \typeout{Document Style `report' <19 Jan 88>.}
+73a74,86
+> 
+> \def\part{\cleardoublepage \thispagestyle{plain} \if@twocolumn \onecolumn
+> \@tempswatrue \else \@tempswafalse \fi \hbox{}\vfil \secdef\@part\@spart} 
+> 
+> \def\@part[#1]#2{\ifnum \c@secnumdepth >-2\relax \refstepcounter{part}
+> \addcontentsline{toc}{part}{\thepart \hspace{1em}#1}\else
+> \addcontentsline{toc}{part}{#1}\fi \markboth{}{}
+>  {\centering \ifnum \c@secnumdepth >-2\relax \huge\bf Part \thepart \par
+> \vskip 20pt \fi \Huge \bf #1\par}\@endpart} 
+> \def\@endpart{\vfil\newpage \if@twoside \hbox{} \thispagestyle{empty} 
+>  \newpage 
+>  \fi \if@tempswa \twocolumn \fi} 
+> \def\@spart#1{{\centering \Huge \bf #1\par}\@endpart}
+
+*** rep10.sty
+1c1
+< % rep10.sty 22-Dec-87
+---
+> % rep10.sty 19-Jan-88
+58,72d57
+< \def\part{\cleardoublepage \thispagestyle{plain} \if@twocolumn \onecolumn
+< \@tempswatrue \else \@tempswafalse \fi \hbox{}\vfil \bgroup \centering
+< \secdef\@part\@spart} 
+< 
+< \def\@part[#1]#2{\ifnum \c@secnumdepth >-2\relax \refstepcounter{part}
+< \addcontentsline{toc}{part}{\thepart \hspace{1em}#1}\else
+< \addcontentsline{toc}{part}{#1}\fi \markboth{}{}
+<  \ifnum \c@secnumdepth >-2\relax \huge\bf Part \thepart \par \vskip 20pt \fi
+< \Huge \bf #1\@endpart} 
+< \def\@endpart{\par\egroup \vfil\newpage \if@twoside \hbox{}
+< \thispagestyle{empty} 
+<  \newpage 
+<  \fi \if@tempswa \twocolumn \fi} 
+< \def\@spart#1{\Huge \bf #1\@endpart}
+< 
+
+*** rep11.sty
+1c1
+< % rep11.sty 22-Dec-87
+---
+> % rep11.sty 19-Jan-88
+58,71d57
+< \def\part{\cleardoublepage \thispagestyle{plain} \if@twocolumn \onecolumn
+< \@tempswatrue \else \@tempswafalse \fi \hbox{}\vfil \bgroup \centering
+< \secdef\@part\@spart} 
+< 
+< \def\@part[#1]#2{\ifnum \c@secnumdepth >-2\relax \refstepcounter{part}
+< \addcontentsline{toc}{part}{\thepart \hspace{1em}#1}\else
+< \addcontentsline{toc}{part}{#1}\fi \markboth{}{}
+<  \ifnum \c@secnumdepth >-2\relax \huge\bf Part \thepart \par \vskip 20pt \fi
+< \Huge \bf #1\@endpart} 
+< \def\@endpart{\par\egroup \vfil\newpage \if@twoside \hbox{}
+< \thispagestyle{empty} 
+<  \newpage 
+<  \fi \if@tempswa \twocolumn \fi} 
+< \def\@spart#1{\Huge \bf #1\@endpart}
+
+*** rep12.sty
+1c1
+< % rep12.sty 22-Dec-87
+---
+> % rep12.sty 19-Jan-88
+58,70d57
+< \def\part{\cleardoublepage \thispagestyle{plain} \if@twocolumn \onecolumn
+< \@tempswatrue \else \@tempswafalse \fi \hbox{}\vfil \bgroup \centering
+< \secdef\@part\@spart} 
+< \def\@part[#1]#2{\ifnum \c@secnumdepth >-2\relax \refstepcounter{part}
+< \addcontentsline{toc}{part}{\thepart \hspace{1em}#1}\else
+< \addcontentsline{toc}{part}{#1}\fi \markboth{}{}
+<  \ifnum \c@secnumdepth >-2\relax \huge\bf Part \thepart \par \vskip 20pt \fi
+< \Huge \bf #1\@endpart} 
+< \def\@endpart{\par\egroup \vfil\newpage \if@twoside \hbox{}
+< \thispagestyle{empty} 
+<  \newpage 
+<  \fi \if@tempswa \twocolumn \fi} 
+< \def\@spart#1{\Huge \bf #1\@endpart}
+
+*** book.sty
+1c1
+< % book.sty  12-Oct-87
+---
+> % book.sty 19-Jan-88
+3c3
+< \typeout{Document Style `book' <12 Oct 87>.}
+---
+> \typeout{Document Style `book' <19 Jan 88>.}
+72a73,85
+> 
+> \def\part{\cleardoublepage \thispagestyle{plain} \if@twocolumn \onecolumn
+> \@tempswatrue \else \@tempswafalse \fi \hbox{}\vfil \secdef\@part\@spart} 
+> 
+> \def\@part[#1]#2{\ifnum \c@secnumdepth >-2\relax \refstepcounter{part}
+> \addcontentsline{toc}{part}{\thepart \hspace{1em}#1}\else
+> \addcontentsline{toc}{part}{#1}\fi \markboth{}{}
+>  {\centering \ifnum \c@secnumdepth >-2\relax \huge\bf Part \thepart \par
+> \vskip 20pt \fi \Huge \bf #1\par}\@endpart} 
+> \def\@endpart{\vfil\newpage \if@twoside \hbox{} \thispagestyle{empty} 
+>  \newpage 
+>  \fi \if@tempswa \twocolumn \fi} 
+> \def\@spart#1{{\centering \Huge \bf #1\par}\@endpart}
+
+*** bk10.sty
+1c1
+< % bk10.sty 22-Dec-87
+---
+> % bk10.sty 19-Jan-88
+55,69d54
+< \def\part{\cleardoublepage \thispagestyle{plain} \if@twocolumn \onecolumn
+< \@tempswatrue \else \@tempswafalse \fi \hbox{}\vfil \bgroup \centering
+< \secdef\@part\@spart} 
+< 
+< \def\@part[#1]#2{\ifnum \c@secnumdepth >-2\relax \refstepcounter{part}
+< \addcontentsline{toc}{part}{\thepart \hspace{1em}#1}\else
+< \addcontentsline{toc}{part}{#1}\fi \markboth{}{}
+<  \ifnum \c@secnumdepth >-2\relax \huge\bf Part \thepart \par \vskip 20pt \fi
+< \Huge \bf #1\@endpart} 
+< \def\@endpart{\par\egroup \vfil\newpage \if@twoside \hbox{}
+< \thispagestyle{empty} 
+<  \newpage 
+<  \fi \if@tempswa \twocolumn \fi} 
+< \def\@spart#1{\Huge \bf #1\@endpart}
+< 
+
+*** bk11.sty
+1c1
+< % bk11.sty 22-Dec-87
+---
+> % bk11.sty 19-Jan-88
+55,68d54
+< \def\part{\cleardoublepage \thispagestyle{plain} \if@twocolumn \onecolumn
+< \@tempswatrue \else \@tempswafalse \fi \hbox{}\vfil \bgroup \centering
+< \secdef\@part\@spart} 
+< 
+< \def\@part[#1]#2{\ifnum \c@secnumdepth >-2\relax \refstepcounter{part}
+< \addcontentsline{toc}{part}{\thepart \hspace{1em}#1}\else
+< \addcontentsline{toc}{part}{#1}\fi \markboth{}{}
+<  \ifnum \c@secnumdepth >-2\relax \huge\bf Part \thepart \par \vskip 20pt \fi
+< \Huge \bf #1\@endpart} 
+< \def\@endpart{\par\egroup \vfil\newpage \if@twoside \hbox{}
+< \thispagestyle{empty} 
+<  \newpage 
+<  \fi \if@tempswa \twocolumn \fi} 
+< \def\@spart#1{\Huge \bf #1\@endpart}
+
+*** bk12.sty
+1c1
+< % bk12.sty 22-Dec-87
+---
+> % bk12.sty 19-Jan-88
+55,67d54
+< \def\part{\cleardoublepage \thispagestyle{plain} \if@twocolumn \onecolumn
+< \@tempswatrue \else \@tempswafalse \fi \hbox{}\vfil \bgroup \centering
+< \secdef\@part\@spart} 
+< \def\@part[#1]#2{\ifnum \c@secnumdepth >-2\relax \refstepcounter{part}
+< \addcontentsline{toc}{part}{\thepart \hspace{1em}#1}\else
+< \addcontentsline{toc}{part}{#1}\fi \markboth{}{}
+<  \ifnum \c@secnumdepth >-2\relax \huge\bf Part \thepart \par \vskip 20pt \fi
+< \Huge \bf #1\@endpart} 
+< \def\@endpart{\par\egroup \vfil\newpage \if@twoside \hbox{}
+< \thispagestyle{empty} 
+<  \newpage 
+<  \fi \if@tempswa \twocolumn \fi} 
+< \def\@spart#1{\Huge \bf #1\@endpart}
+
+*** latex.tex
+1c1
+< % LATEX VERSION 2.09 <14 Jan 1988>
+---
+> % LATEX VERSION 2.09 <20 Jan 1988>
+4,5c4,5
+< \everyjob{\typeout{LaTeX Version 2.09 <14 Jan 1988>}}
+< \immediate\write10{LaTeX Version 2.09 <14 Jan 1988>}
+---
+> \everyjob{\typeout{LaTeX Version 2.09 <20 Jan 1988>}}
+> \immediate\write10{LaTeX Version 2.09 <20 Jan 1988>}
+3692a3693
+> %              \parskip          = 0pt           %% added 20 Jan 87
+3880c3881
+<     \parindent\z@
+---
+>     \parindent\z@ \parskip\z@
+
+*** letter.sty
+1c1
+< % letter.sty 22-Dec-87
+---
+> % letter.sty 20-Jan-88
+3c3
+< \typeout{Document Style `letter' <22 Dec 87>.}
+---
+> \typeout{Document Style `letter' <20 Jan 88>.}
+128c128
+< \long\def\closing#1{\par\nobreak\vspace{\parskip}
+---
+> \long\def\closing#1{\par\nobreak\vspace{\parskip} 
+134,135c134
+<  \ignorespaces #1\\[6\parskip]
+<  \ifx\@empty\fromsig 
+---
+>  \ignorespaces #1\\[6\medskipamount] \ifx\@empty\fromsig 
+
+*** latex.tex
+1c1
+< % LATEX VERSION 2.09 <20 Jan 1988>
+---
+> % LATEX VERSION 2.09 <25 Jan 1988>
+4,5c4,5
+< \everyjob{\typeout{LaTeX Version 2.09 <20 Jan 1988>}}
+< \immediate\write10{LaTeX Version 2.09 <20 Jan 1988>}
+---
+> \everyjob{\typeout{LaTeX Version 2.09 <25 Jan 1988>}}
+> \immediate\write10{LaTeX Version 2.09 <25 Jan 1988>}
+6089c6089,6091
+< %                \numberline command.
+---
+> %                \numberline command.  
+> %                As of 25 Jan 88, this is also the amount of extra indentation
+> %                added to second and later lines of a multiple line entry.   
+6091a6094
+> %
+6103c6106
+<   {\hangindent #2\relax \rightskip \@tocrmarg \parfillskip -\rightskip
+---
+>   {\leftskip #2\relax \rightskip \@tocrmarg \parfillskip -\rightskip
+6107c6110
+<    \@tempdima #3\relax
+---
+>    \@tempdima #3\relax \advance\leftskip \@tempdima \hbox{}\hskip -\leftskip
+6110a6114
+> 
+6112a6117,6119
+> %%%
+> %%% Changed 25 Jan 88 to use \leftskip instead of \hangindent so
+> %%% leaders of multiple-line contents entries would line up properly.
+6114d6120
+< 
+6116,6117c6122,6124
+< %   It puts NUMBER flushleft in a box of width \@tempdima and adds 
+< %   \@tempdima to the hanging indentation.
+---
+> %   It puts NUMBER flushleft in a box of width \@tempdima 
+> %   (Before 25 Jan 88 change, it also added \@tempdima to the hanging 
+> %   indentation.)
+6119c6126
+< \def\numberline#1{\advance\hangindent\@tempdima \hbox to\@tempdima{#1\hfil}}
+---
+> \def\numberline#1{\hbox to\@tempdima{#1\hfil}}
+6122d6128
+< 
+6578c6584
+<        { \end@float %%%% BRACE MATCHING}        %% by 15 Dec 87 change
+---
+> %       { \end@float %%%% BRACE MATCHING}        %% by 15 Dec 87 change
+
+*** article.sty
+1c1
+< % article.sty  12-Oct-87
+---
+> % article.sty  5-Feb-88
+3c3
+< \typeout{Document Style `article' <12 Oct 87>.}
+---
+> \typeout{Document Style `article' <5 Feb 88>.}
+91c91,92
+<  \bf \leavevmode #1\hfil \hbox to\@pnumwidth{\hss #2}\par
+---
+>  \bf \leavevmode \advance\leftskip\@tempdima \hskip -\leftskip #1\nobreak\hfil
+> \nobreak\hbox to\@pnumwidth{\hss #2}\par
+92a94
+>  
+
+*** report.sty
+1c1
+< % report.sty 19-Jan-88
+---
+> % report.sty  5-Feb-88
+3c3
+< \typeout{Document Style `report' <19 Jan 88>.}
+---
+> \typeout{Document Style `report' <5 Feb 88>.}
+109c109,110
+<  \bf \leavevmode #1\hfil \hbox to\@pnumwidth{\hss #2}\par
+---
+>  \bf \leavevmode \advance\leftskip\@tempdima \hskip -\leftskip #1\nobreak\hfil
+> \nobreak\hbox to\@pnumwidth{\hss #2}\par
+
+*** book.sty
+1c1
+< % book.sty 19-Jan-88
+---
+> % book.sty  5-Feb-88
+3c3
+< \typeout{Document Style `book' <19 Jan 88>.}
+---
+> \typeout{Document Style `book' <5 Feb 88>.}
+108c108,109
+<  \bf \leavevmode #1\hfil \hbox to\@pnumwidth{\hss #2}\par
+---
+>  \bf \leavevmode \advance\leftskip\@tempdima \hskip -\leftskip #1\nobreak\hfil
+> \nobreak\hbox to\@pnumwidth{\hss #2}\par
+
+*** showidx.sty
+1c1
+< % showidx.sty 29-Oct-85
+---
+> % showidx.sty 22-Feb-88
+38c38,39
+<  \def\index{\@bsphack\begingroup\@sanitize
+---
+>  \def\index{\@bsphack\begingroup
+>  \def\protect####1{\string####1\space}\@sanitize
+41a43
+> 
+
+*** latex.tex
+1c1
+< % LATEX VERSION 2.09 <25 Jan 1988>
+---
+> % LATEX VERSION 2.09 <26 Feb 1988>
+4,5c4,5
+< \everyjob{\typeout{LaTeX Version 2.09 <25 Jan 1988>}}
+< \immediate\write10{LaTeX Version 2.09 <25 Jan 1988>}
+---
+> \everyjob{\typeout{LaTeX Version 2.09 <26 Feb 1988>}}
+> \immediate\write10{LaTeX Version 2.09 <26 Feb 1988>}
+7464,7466d7463
+< %                     if there are footnote insertions
+< %                       then advance \@pageht and \@pagedp and
+< %                            reinsert footnotes                fi
+7471,7472c7468,7480
+< %                               then \@addtocurcol   %% this is a float
+< %                               else \@addmarginpar  %% this is a marginal note
+---
+> %                           %% Changed 28 Feb 88 so \@pageht and \@pagedp
+> %                           %% aren't changed for a marginal note
+> %                               then  %% this is a float
+> %                                 if there are footnote insertions
+> %                                   then advance \@pageht and \@pagedp and
+> %                                   reinsert footnotes                
+> %                                 fi
+> %                                 \@addtocurcol   
+> %                               else  %% this is a marginal note
+> %                                 if there are footnote insertions
+> %                                   reinsert footnotes                
+> %                                 fi
+> %                                 \@addmarginpar  
+8125,8128c8133,8136
+< % CHANGE TO \@specialoutput:
+< % \penalty\z@ changed to \penalty\interlinepenalty so \samepage
+< % works properly with figure and table environments.
+< % (Changed 23 Oct 86)
+---
+> % CHANGES TO \@specialoutput:
+> % * \penalty\z@ changed to \penalty\interlinepenalty so \samepage
+> %   works properly with figure and table environments.
+> %   (Changed 23 Oct 86)
+8129a8138,8141
+> % * Definition of \@specialoutput changed 28 Feb 88 so \@pageht and \@pagedp
+> %   aren't changed for a marginal note.  (Change suggested by
+> %   Chris Rowley.)
+> %
+8139,8141d8150
+<         \ifvoid\footins\else\advance\@pageht\ht\footins
+<           \advance\@pageht\skip\footins \advance\@pagedp\dp\footins
+<           \insert\footins{\unvbox\footins}\fi
+8143c8152,8157
+<             \@addtocurcol\else\@addmarginpar\fi}\@latexbug
+---
+>            \ifvoid\footins\else\advance\@pageht\ht\footins
+>              \advance\@pageht\skip\footins \advance\@pagedp\dp\footins
+>              \insert\footins{\unvbox\footins}\fi
+>             \@addtocurcol\else
+>            \ifvoid\footins\else\insert\footins{\unvbox\footins}\fi
+>             \@addmarginpar\fi}\@latexbug
+8145a8160
+> 
+
+*** article.sty
+1c1
+< % article.sty  5-Feb-88
+---
+> % article.sty 16-Mar-88
+3c3
+< \typeout{Document Style `article' <5 Feb 88>.}
+---
+> \typeout{Document Style `article' <16 Mar 88>.}
+14c14
+< \def\labelenumi{\arabic{enumi}.} 
+---
+> \def\labelenumi{\theenumi.} 
+16c16
+< \def\labelenumii{(\alph{enumii})}
+---
+> \def\labelenumii{(\theenumii)}
+19c19
+< \def\labelenumiii{\roman{enumiii}.}
+---
+> \def\labelenumiii{\theenumiii.}
+22c22
+< \def\labelenumiv{\Alph{enumiv}.}
+---
+> \def\labelenumiv{\theenumiv.}
+
+*** report.sty
+1c1
+< % report.sty  5-Feb-88
+---
+> % report.sty 16-Mar-88
+3c3
+< \typeout{Document Style `report' <5 Feb 88>.}
+---
+> \typeout{Document Style `report' <16 Mar 88>.}
+13c13
+< \def\labelenumi{\arabic{enumi}.} 
+---
+> \def\labelenumi{\theenumi.} 
+15c15
+< \def\labelenumii{(\alph{enumii})}
+---
+> \def\labelenumii{(\theenumii)}
+18c18
+< \def\labelenumiii{\roman{enumiii}.}
+---
+> \def\labelenumiii{\theenumiii.}
+21c21
+< \def\labelenumiv{\Alph{enumiv}.}
+---
+> \def\labelenumiv{\theenumiv.}
+
+*** book.sty
+1c1
+< % book.sty  5-Feb-88
+---
+> % book.sty 16-Mar-88
+3c3
+< \typeout{Document Style `book' <5 Feb 88>.}
+---
+> \typeout{Document Style `book' <16 Mar 88>.}
+12c12
+< \def\labelenumi{\arabic{enumi}.} 
+---
+> \def\labelenumi{\theenumi.} 
+14c14
+< \def\labelenumii{(\alph{enumii})}
+---
+> \def\labelenumii{(\theenumii)}
+17c17
+< \def\labelenumiii{\roman{enumiii}.}
+---
+> \def\labelenumiii{\theenumiii.}
+20c20
+< \def\labelenumiv{\Alph{enumiv}.}
+---
+> \def\labelenumiv{\theenumiv.}

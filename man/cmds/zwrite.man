@@ -1,0 +1,260 @@
+.\"	$Source: /mit/zephyr/src.rw/man/man1/RCS/zwrite.1,v $
+.\"	$Author: raeburn $
+.\"	$Header: /mit/zephyr/src.rw/man/man1/RCS/zwrite.1,v 1.18 90/11/13 17:31:18 raeburn Exp $
+.\"
+.\" Copyright 1987,1988 by the Massachusetts Institute of Technology
+.\" All rights reserved.  The file /usr/include/zephyr/mit-copyright.h
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"
+.TH ZWRITE 1 "October 26, 1989" "MIT Project Athena"
+.ds ]W MIT Project Athena
+.SH NAME
+zwrite \- write to another user via Zephyr
+.SH SYNOPSIS
+.B zwrite
+[
+.BI -a
+] [
+.BI -d
+] [
+.BI -v
+] [
+.BI -q
+] [
+.BI -t
+] [
+.BI -u
+] [
+.BI -o
+] [
+.BI -n
+] [
+.BI -l
+] [
+.BI -O
+opcode ] [
+.BI -s
+signature ] [
+.BI -c
+class ] [
+.BI -i
+instance ] [
+.BI -f
+arg ] [
+.BI user \ ...
+] [
+.BI -m
+.BI message
+]
+.SH DESCRIPTION
+.I Zwrite
+sends a message from you to another user through the
+.I zephyr(1)
+notification service.  The user must have subscribed to messages of
+the appropriate class and instance using the
+.I zctl(1)
+program.
+.PP
+.I Zwrite
+understands the following options.
+.TP 12
+.B \-a
+Causes
+.I zwrite
+to send the message authenticated, using
+.I Kerberos
+to perform the authentication.  This is the default.
+.TP
+.B \-d
+Causes
+.I zwrite
+to send the message unauthenticated.
+.TP
+.B \-v
+Causes
+.I zwrite
+to print what type of message it is sending, and whether or not it was
+successful.
+.TP
+.B \-q
+Forces
+.I zwrite
+to suppress information about whether or not the message was sent.
+.TP
+.B \-t
+Prevents
+.I zwrite
+from expanding tabs in the message into appropriate spaces.  Normally
+.I zwrite
+will expand any tabs it finds into the appropriate number of spaces to
+maintain separation based on 8-character tab stops.
+.TP
+.B \-l
+Causes
+.I zwrite
+to ignore `.' on a line by itself in the input and only end a typed
+message when the user types the end-of-file character (usually
+control-D).  When the input is not a terminal, this is the default action.
+.TP
+.B \-u
+Sends an urgent message.  This changes the
+.I zephyr
+instance of the message to ``URGENT''.
+.TP
+.B \-o
+Causes
+.I zwrite
+to ignore the Zephyr variables 
+.IR zwrite-class ,
+.IR zwrite-inst ,
+and
+.I zwrite-opcode
+when picking a default class, instance, and opcode.
+.TP
+.B \-n
+prevents
+.I zwrite
+from sending a PING message to verify the recipient is subscribing to
+messages.  By default,
+.I zwrite
+will send a notice to the destination class, instance, and recipient,
+with opcode ``PING'' before sending the message.  If the PING is sent,
+and the server response indicates there are no recipients subscribed to
+your message,
+.I zwrite
+exits without sending a message.
+When the
+.B \-m
+option is used, no PING is sent.
+.TP
+.B \-s \fIsignature\fR
+sets the signature to be included in the message.  This overrides both
+the user's name (as found in the password file) and any
+setting of the Zephyr variable 
+.IR zwrite-signature .
+.I signature
+must
+be a single argument, hence when using a shell it should be quoted with
+double quotes.  A
+.I signature
+argument of "" leaves the signature in
+the message empty.
+.TP
+.B \-c \fIclass\fR
+Allows a user to specify a different class for the message.  This allows
+a message to be sent to a large group of people with some degree of
+security.  See
+.I zephyr(1)
+and
+.I zephyrd(8)
+for a description of how to restrict access to classes.  When this option
+is specified, the message is sent to recipient "*" unless an additional
+list of recipients is specified.
+.br
+This argument may not be used in conjunction with the -f option.
+.TP
+.B \-i \fIinstance\fR
+Allows a user to specify a different instance than the default.
+When this option is used, the message is sent to recipient "*" unless an
+additional list of recipients is specified.  This allows a message to be
+sent to a large group of people (e.g. a development group) just by having
+the members subscribe to messages of class "MESSAGE", the specified instance,
+and recipient "*".
+.br
+This argument may not be used in conjunction with the -f option.
+.TP
+.B \-O \fIopcode\fR
+Allows a user to specify a different opcode for the message.
+Some Zephyr notice display programs may use the opcode to decide how
+to display a notice.
+.TP
+.B \-f \fIarg\fR
+Allows a user to specify an argument to be interpreted as a filesystem
+specification.  The class is set to 
+.BR FILSRV .
+he instance is set
+to
+.I arg
+as modified:
+If
+.I arg
+contains no colons (`:'), it is assumed to
+be a host name, and it is converted into an official host name via 
+.I gethostbyname(3).
+If
+.I arg
+contains a colon, the portion preceding the colon is
+treated as a host name, and the colon and any trailing characters are
+appended to the offical host name returned by
+.I gethostbyname.
+If the name fails to resolve into an official host name, the instance is
+set to
+.I arg
+unmodified.
+.br
+This option may not be used in conjunction with the -c or -i option.
+.TP
+.B \-m
+.I Zwrite
+sends the remaining arguments on the command line as the message.
+.PP
+If the
+.I \-m
+option is not specified, the user is prompted for the message to be
+sent.  The message may be terminated by typing ^D or ``.'' on a line
+by itself.
+.PP
+The default class for messages is ``MESSAGE'', the default instance
+is ``PERSONAL'', andthe default opcode is ``'' (an empty string).
+These defaults can be overridden by setting the Zephyr
+variables
+.IR zwrite-class ,
+.IR zwrite-inst ,
+and
+.IR zwrite-opcode ,
+respectively.
+Command-line options can override the defaults.
+.PP
+If the class is ``MESSAGE'' and the instance is either ``PERSONAL'' or
+``URGENT'', a recipient must be specified.  These comparisons are
+case-sensitive.
+.PP
+Unless the
+.B \-s
+option is used, the contents of the Zephyr variable
+.I zwrite-signature
+are used to augment the user's username in the
+message.  If
+.I zwrite-signature
+is not set and the
+.B \-s
+option is not specified, the user's full name (as specified in the
+password file) is used instead.
+.SH BUGS
+Tab expansion should really be done by the receiver of the message.
+.br
+The \-u option is provided for compatibility with old versions of
+.I zwrite
+and is not necessarily useful for sending messages to users who do not
+have old subscription files.
+.SH SEE ALSO
+kerberosintro(1), zctl(1), zephyr(1), zwgc(1), zhm(8), zephyrd(8),
+gethostbyname(3)
+.br
+Project Athena Technical Plan Section E.4.1, `Zephyr Notification
+Service'
+.SH FILES
+/etc/passwd
+.br
+$HOME/.zephyr.vars
+.SH AUTHOR
+.PP
+.br
+Robert S. French (MIT-Project Athena)
+.SH RESTRICTIONS
+Copyright (c) 1987,1988 by the Massachusetts Institute of Technology.
+All Rights Reserved.
+.br
+.I zephyr(1)
+specifies the terms and conditions for redistribution.

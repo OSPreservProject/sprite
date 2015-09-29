@@ -1,0 +1,10 @@
+L DS3100.MD;1                       	ds3100.md	ds5000.md
+D DS5000_M                          	ds5000.md
+F LOGINFO.;1                        	loginfo
+F LOGINFO_.;1                       	loginfo,v
+F MODULES.;1                        	modules
+L MODULES.DIR;1                     	modules.dir	$MACHINE.md/modules.dir
+L MODULES.PAG;1                     	modules.pag	$MACHINE.md/modules.pag
+F MODULES_.;1                       	modules,v
+L SUN3.MD;1                         	sun3.md	sun4.md
+D SUN4_MD                           	sun4.md

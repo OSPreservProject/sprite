@@ -1,0 +1,52 @@
+%
+% To produce an accented c, type ^c.
+% the uparrow is also used for the breve,
+% to keep finger-training down.
+%
+\def\^#1{\ifx#1u\u u%  ^u gives breve on u
+	   \else\ifx#1U\u U%  and ^u gives one on U (rare)
+	    \else\ifx#1h{\rlap{\accent 94{}}h}%^h mustn't be too tall
+             \else\ifx#1j{\accent 94 \j}%  ^j requires undotted j
+               \else{\accent 94 #1}\fi\fi\fi\fi} % Normal circumflexing
+\let\superscript=^	% Save current binding of ^
+\catcode`\^=\active	% ^ now active
+\def^{\ifmmode\let\ACC=\superscript\else\let\ACC=\^\fi\ACC} 
+% Does auto-accent iff not math
+%
+% Some de-anglicizations.  The input is the same, however,
+% to preserve the integrity of the documentation.
+%
+\def\tableofcontents{\section*{Enhavoj\@mkboth{ENHAVOJ}{ENHAVOJ}}
+  \@starttoc{toc}}
+\def\listoffigures{\section*{Listo de Figuroj\@mkboth
+   {LISTO DE FIGUROJ}{LISTO DE FIGUROJ}}\@starttoc{lof}}
+\def\listoftables{\section*{Listo de Tabeloj\@mkboth
+   {LISTO DE TABELOJ}{LISTO DE TABELOJ}}\@starttoc{lot}}
+\def\thebibliography#1{\section*{Aludoj\@mkboth
+  {ALUDOJ}{ALUDOJ}}\list
+  {[\arabic{enumi}]}{\settowidth\labelwidth{[#1]}\leftmargin\labelwidth
+    \advance\leftmargin\labelsep
+    \usecounter{enumi}}
+    \def\newblock{\hskip .11em plus .33em minus -.07em}
+    \sloppy
+    \sfcode`\.=1000\relax}
+\def\theindex{\@restonecoltrue\if@twocolumn\@restonecolfalse\fi
+\columnseprule \z@
+\columnsep 35pt\twocolumn[\section*{Indekso}]
+    \@mkboth{INDEKSO}{INDEKSO}\thispagestyle{plain}\parindent\z@
+    \parskip\z@ plus .3pt\relax\let\item\@idxitem}
+\def\fnum@figure{Figuro \thefigure}
+\def\fnum@table{Tabelo \thetable}
+\def\abstract{\if@twocolumn
+\section*{Resumo}
+\else \small 
+\begin{center}
+{\bf Resumo\vspace{-.5em}\vspace{0pt}} 
+\end{center}
+\quotation 
+\fi}
+
+\def\today{la \number\day a de \ifcase\month\or
+  januaro\or februaro\or marto\or aprilo\or majo\or junio\or
+  julio\or a^ugusto\or septembro\or oktobro\or novembro\or decembro\fi,\space
+  \number\year}

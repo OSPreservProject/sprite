@@ -1,0 +1,105 @@
+\subsubsection{The {\tt a4} and {\tt a4wide} Style Options}
+
+By default, the output page is designed to be printed on US paper.
+The {\tt a4} and {\tt a4wide} style options result in output
+that fits better onto A4 size pages.
+It is sometimes convenient to be able to fit more text onto an A4 page.
+The {\tt a4wide} option accomplishes this by using narrower margins.
+
+\subsubsection{The {\tt tgrind} Style Option}{\label{tagrind}}
+
+It is useful to be able to include program fragments as figures in a
+text.  The {\tt tgrind} style option can be used to accomplish this
+fairly painlessly by defining the \verb|\tagrind| command. 
+
+The \verb|\tagrind| command has the following proforma:
+\begin{itemize} \tt
+\item[]
+\verb|\tagrind*|[{\it loc\/}]\{{\it file\/}\}\{{\it caption \/}\}\{{\it 
+label \/}\}
+\end{itemize}
+
+As usual,
+\begin{itemize}
+\item in two-column format, the ordinary form produces a
+single-column listing and the $\ast$-forms produces a double-column listing;
+
+\item {\it loc\/}
+is a sequence of one to four of the letters \verb|h| ({\it here\/}),
+\verb|t| ({\it top\/}), \verb|b| ({\it bottom\/}) and \verb|p| ({\it
+page\/}) specifying where the listing may be placed. 
+
+\item {\it file} specifies the file from which the ground listing
+is to be taken.
+
+\item {\it caption} produces a numbered caption.
+
+\item {\it label} assigns a label to the listing, so that it may be
+referred to by means to the \verb|\ref{|{\it label\/}\verb|}| command.
+
+\end{itemize}
+
+The listing file should be generated using {\tt tgrind} and removing
+the first and last lines of the resulting file. For example, if the C
+source file {\tt file.c} were to be used as a listing,
+\begin{verbatim}
+     tgrind -f -lc file.c | sed -e 1d -e \$d >file.tex
+\end{verbatim}
+would generate a file {\tt file.tex} suitable for use
+with \verb|tagrind|. For example,
+\begin{verbatim}
+\tagrind{file}{This is an example}{eg}
+\end{verbatim}
+
+\subsubsection{The {\tt sfwmac} Style Option}
+
+The {\tt sfwmac} style option defines a set of macros which are
+useful when writing program documentation.  The \verb|\pgm{|{\it
+program\/}\verb|}| command expects a program name as an argument.
+The name in printed (in italics) and an index entry is made for it.
+Similarly, the \verb|\man{|{\it program\/}\verb|}(|{\it
+section\/}\verb|)| command may be used to produce references to
+manual page entries.
+The \verb|\arg{|{\it argument\/}\verb|}|, \verb|\switch{|{\it
+switch\/}\verb|}| and \verb|\file{|{\it file\/}\verb|}| commands may be
+used when referring to program arguments and switches  and to
+filenames. These produce no index entry.
+
+This style also defines a number of common program names such as
+\latex/, \slitex/, etc.  These are produced by means of
+\verb|\LaTeX|, \verb|\SLiTeX| commands and indexed.  
+
+Suggestions for additions to the list of defined program names are
+welcome.
+
+\subsubsection{The {\tt trademark} Style Option}
+
+The {\tt trademark} style option defines a number of trademarks and
+trade names.  For example, \Unix/ (note the automatically defined
+footnote) was produced by a \verb|\Unix/| command.  Note that there
+is no need to append \verb*|\ | or \verb|{}| to prevent the
+swallowing up of succeeding spaces.
+
+Suggestions for additions to the list of trademarks are welcome.
+
+\subsubsection{The {\tt lcustom} Style Option}
+
+This style contains a whole bunch of useful little command
+definitions.  The \verb|\inputverbatim{|{\it file\/}\verb|}|
+command inserts the file in verbatim mode.  However, it is usually
+better to use the \verb|\tagrind| command described in section
+\ref{tagrind} for this purpose.  A number of further commands
+provide a clean way of introducing diagrams and tables from
+subsidiary files.  They are similar in form and usage to the to the
+\verb|\tagrind| command.
+
+\subsubsection{The {\tt vdm} Style Option}
+
+The {\tt vdm} style option aids typesetting of VDM specifications: it
+provides macros for typesetting formulae, data types, functions,
+operations and proofs in whatever the currently approved VDM manner
+happens to be.  A copy of the user manual for the {\tt vdm} style option
+can be obtained by typing
+\begin{verbatim}
+     latex /usr/lib/tex/macros/vdm.tex
+\end{verbatim}

@@ -1,0 +1,15 @@
+D DS3100_M                          	ds3100.md
+F GLOBAL.C;1                        	global.c
+F GLOBAL.H;1                        	global.h
+F LOCAL.MK;1                        	local.mk
+F MAIN.C;1                          	main.c
+F MAKEFILE.;1                       	Makefile
+F MIGD.C;1                          	migd.c
+F MIGD.H;1                          	migd.h
+F MIGPDEV.C;1                       	migPdev.c
+F MIGPDEV.H;1                       	migPdev.h
+F MIG_GETP.C;1                      	Mig_GetPdevName.c
+D RCS                               	RCS
+F TAGS.;1                           	TAGS
+F UTIL.C;1                          	util.c
+F VERSION.H;1                       	version.h

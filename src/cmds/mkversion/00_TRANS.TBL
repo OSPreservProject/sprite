@@ -1,0 +1,6 @@
+F MAKEFILE.;1                       	Makefile
+F MKVERSIO.C;1                      	mkversion.c
+F MKVERSIO.MAN;1                    	mkversion.man
+D RCS                               	RCS
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md

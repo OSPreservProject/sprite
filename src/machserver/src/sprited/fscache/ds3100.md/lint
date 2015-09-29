@@ -1,0 +1,9 @@
+fscacheBlocks.c:
+fscacheBlocks.c(2643): warning: argument onFront unused in function Fscache_ReturnDirtyFile
+fscacheOps.c:
+fscacheReadAhead.c:
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(452)  ::  fscacheBlocks.c 2(292)
+PutFileOnDirtyList, arg. 2 used inconsistently	fscacheBlocks.c(3189)  ::  fscacheBlocks.c(2665)
+PutFileOnDirtyList, arg. 2 used inconsistently	fscacheBlocks.c(3189)  ::  fscacheBlocks.c(2740)
+PutFileOnDirtyList, arg. 2 used inconsistently	fscacheBlocks.c(3189)  ::  fscacheBlocks.c(2820)
+Sync_SlowWait returns value which is always ignored

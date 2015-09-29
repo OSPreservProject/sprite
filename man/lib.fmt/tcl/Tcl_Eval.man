@@ -1,0 +1,134 @@
+
+
+
+Tcl_Eval          Tcl Command Language Library           Tcl_Eval
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tcl_Eval - execute a Tcl command string
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttccll..hh>>
+
+     int
+     TTccll__EEvvaall(_i_n_t_e_r_p, _c_m_d, _f_l_a_g_s, _t_e_r_m_P_t_r)
+
+AARRGGUUMMEENNTTSS
+     Tcl_Interp   *_i_n_t_e_r_p      (in)      Interpreter in which  to
+                                         execute   the   command.
+                                         String  result  will  be
+                                         stored     in    _i_n_t_e_r_p-
+                                         >_r_e_s_u_l_t.
+
+     char         *_c_m_d         (in)      Command (or sequence  of
+                                         commands) to execute.
+
+     char         _f_l_a_g_s        (in)      Either  TTCCLL__BBRRAACCKKEETT__TTEERRMM
+                                         or   0.    If   0,  then  |
+                                         TTccll__EEvvaall  will   process  |
+                                         commands  from _c_m_d until  |
+                                         it  reaches   the   null  |
+                                         character  at the end of  |
+                                         the  string;    newlines  |
+                                         will  be treated as com-  |
+                                         mand   separators.    If  |
+                                         TTCCLL__BBRRAACCKKEETT__TTEERRMM,   then  |
+                                         TTccll__EEvvaall  will   process  |
+                                         comands  from  _c_m_d until  |
+                                         either it reaches a null  |
+                                         character      or     it  |
+                                         encounters    a    close  |
+                                         bracket    that    isn't  |
+                                         backslashed or  enclosed  |
+                                         in   braces,   at  which  |
+                                         point  it  will  return;  |
+                                         newlines will treated as  |
+                                         white space, not as com-  |
+                                         mand  separators.  Under  |
+                                         normal conditions, _f_l_a_g_s  |
+                                         should be 0.
+
+     char         **_t_e_r_m_P_t_r    (out)     If _t_e_r_m_P_t_r is  non-NULL,  |
+                                         TTccll__EEvvaall     fills    in  |
+                                         *_t_e_r_m_P_t_r    with     the  |
+                                         address of the character  |
+                                         just after the last  one  |
+                                         in   the   last  command  |
+
+
+
+Sprite v.1.0         Printed:  June 21, 1990                    1
+
+
+
+
+
+
+Tcl_Eval          Tcl Command Language Library           Tcl_Eval
+
+
+
+                                         successfully    executed  |
+                                         (normally the null char-  |
+                                         acter  at  the  end   of  |
+                                         _c_m_d).    If   an   error  |
+                                         occurs in the first com-  |
+                                         mand    in   _c_m_d,   then  |
+                                         *_t_e_r_m_P_t_r will be set  to  |
+                                         _c_m_d.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     TTccll__EEvvaall parses commands from _c_m_d and executes them in order
+     until either an error occurs or TTccll__EEvvaall reaches a terminat-
+     ing character (']' or ' ', depending on the value of _f_l_a_g_s).
+     The  return  value  from  TTccll__EEvvaall  is one of the Tcl return
+     codes   TTCCLL__OOKK,   TTCCLL__EERRRROORR,   TTCCLL__RREETTUURRNN,   TTCCLL__BBRREEAAKK,   or
+     TTCCLL__CCOONNTTIINNUUEE, and _i_n_t_e_r_p->_r_e_s_u_l_t will point to a string with
+     additional information  (result  value  or  error  message).
+     This return information corresponds to the last command exe-
+     cuted from _c_m_d.
+
+     During the processing of a  command  it  is  legal  to  make
+     nested  calls  to TTccll__EEvvaall (this is how conditionals, loops,
+     and procedures are  implemented).   If  a  code  other  than
+     TTCCLL__OOKK  is  returned from a nested TTccll__EEvvaall invocation, then
+     the caller should normally return immediately, passing  that
+     same  return  code  back  to its caller, and so on until the
+     top-level application is reached.  A few commands, like ffoorr,
+     will  check  for  certain  return  codes, like TTCCLL__BBRREEAAKK and
+     TTCCLL__CCOONNTTIINNUUEE, and process them specially without returning.
+
+     TTccll__EEvvaall keeps track of how many nested Tcl_Eval invocations
+     are  in  progress  for  _i_n_t_e_r_p.   If  a  code of TTCCLL__RREETTUURRNN,
+     TTCCLL__BBRREEAAKK, or TTCCLL__CCOONNTTIINNUUEE is about to be returned from  the
+     topmost  TTccll__EEvvaall  invocation for _i_n_t_e_r_p, then TTccll__EEvvaall con-
+     verts the return code to TTCCLL__EERRRROORR and  sets  _i_n_t_e_r_p->_r_e_s_u_l_t
+     to  point  to  an  error message indicating that the rreettuurrnn,
+     bbrreeaakk, or ccoonnttiinnuuee command was invoked in  an  inappropriate
+     place.   This means that top-level applications should never
+     see a  return  code  from  TTccll__EEvvaall  other  then  TTCCLL__OOKK  or
+     TTCCLL__EERRRROORR.
+
+
+KKEEYYWWOORRDDSS
+     command, execute, interpreter
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  June 21, 1990                    2
+
+
+

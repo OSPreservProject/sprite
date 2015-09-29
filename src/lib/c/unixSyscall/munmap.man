@@ -1,0 +1,72 @@
+.\" $Copyright:	$
+.\" Copyright (c) 1984, 1985, 1986 Sequent Computer Systems, Inc.
+.\" All rights reserved
+.\"  
+.\" This software is furnished under a license and may be used
+.\" only in accordance with the terms of that license and with the
+.\" inclusion of the above copyright notice.   This software may not
+.\" be provided or otherwise made available to, or used by, any
+.\" other person.  No title to or ownership of the software is
+.\" hereby transferred.
+...
+.V= $Header: munmap.2 1.7 86/05/13 $
+.TH MUNMAP 2 "\*(V)" "DYNIX"
+.SH NAME
+munmap \- unmap part of the process's address space
+.SH SYNOPSIS
+.nf
+.ft 3
+.ta 0.8i 1.6i
+NOTE: this man page is inaccurate.
+munmap(addr, len)
+caddr_t	addr;	/* starting virt-addr */
+int	len;	/* length (bytes) to unmap */
+.ft 1
+.fi
+.SH DESCRIPTION
+.I Munmap
+removes a mapping created by
+.IR mmap (2).
+The
+.I addr
+and
+.I len
+arguments must be integral multiples of the system page size,
+as defined by
+.IR getpagesize (2).
+.PP
+After successful completion of
+.IR munmap ,
+the address space from
+.I addr
+through
+.I addr+len-1
+does not exist and will result
+in a segmentation fault (SIGSEGV) if referenced.
+.SH "RETURN VALUE"
+Munmap returns zero when successful.
+Otherwise it returns -1 and places the error number in the global variable
+.IR errno .
+.SH ERRORS
+.TP 15
+[EINVAL]
+.I Addr
+or
+.I len
+is not a multiple of the system page size.
+.TP 15
+[EINVAL]
+The area defined by
+.I addr
+and
+.I len
+overlaps the text or stack segment
+or a non-existent part of the address space.
+.SH "SEE ALSO"
+mmap(2), vm_ctl(2), getpagesize(2)
+.SH NOTES
+The current implementation can unmap only data space.
+.PP
+Any address space holes created by
+.I munmap
+read as zeroes in a core file.

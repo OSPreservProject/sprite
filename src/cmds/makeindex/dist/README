@@ -1,0 +1,99 @@
+------------------------------------------------------------------------------
+MakeIndex is Copyright (C) 1987, 1988 by Pehong Chen (phc@berkeley.edu)
+All rights reserved.
+
+MakeIndex is a general purpose index processor.  This release contains
+this README file, a COPYING notice, a doc directory, a paper directory,
+a src directory, a lib directory, and a test directory.
+
+------------------------------------------------------------------------------
+Everyone should read COPYING before installing or distributing MakeIndex.
+
+------------------------------------------------------------------------------
+The doc directory contains
+
+makeindex.info		an Emacs (TOPS-20 and GNU) INFO node produced
+			automatically from makeindex.vms by vmshelp
+			(available from Utah)
+
+makeindex.l		a UNIX man page
+
+makeindex.ps		PostScript translation of makeindex.l
+
+makeindex.tex		documentation for the use under	LaTeX
+			by Leslie Lamport
+
+makeindex.vms		VAX/VMS equivalent of makeindex.l suitable
+			for inclusion in a local help library
+
+------------------------------------------------------------------------------
+For a detailed discussion on the design of MakeIndex, please read
+
+	Pehong Chen and Michael Harrison, ``Automating Index Preparation'',
+	Tech. Report No. 87/347, Computer Science Division,
+	University of California, Berkeley, March 1987.
+
+A version of this report is included in the paper directory.  A
+somewhat condensed version entitled
+
+	``Index Preparation and Processing''
+
+will appear in Software: Practice and Experience, 1988.
+
+------------------------------------------------------------------------------
+The src directory contains the C source of MakeIndex.  This current
+version is known to compile and run on UNIX (cc and gcc), VAX/VMS (VMS
+cc), TOPS-20 (kcc-20 and pcc-20), and IBM PC DOS (Microsoft C Version
+5.0); Atari ST support is present as well, but has not been tested as
+of late January 1988.
+
+Type make to compile under UNIX.  Makefiles for the other operating
+systems are included as well.  Implementations of Make for them are
+available as part of the Utah DVI driver distribution (send e-mail to
+beebe@science.utah.edu).
+
+Early porting work was carried out by Charles Karney
+(karney%ppc.mfenet@nmfecc.arpa) at Princeton University and David J.
+Buerger (dbeurger%scu.bitnet@jade.berkeley.edu) at University of Santa
+Clara.  These efforts were independent of the port to PC DOS, TOPS-20,
+VAX VMS, and the draft-ANSI C environment for version 2.3 carried out
+by Nelson H.F. Beebe (beebe@science.utah.edu).  That port is described
+in the file src/README in the src directory.
+
+------------------------------------------------------------------------------
+The lib directory contains the file idxmac.tex, which is an excerpt of
+LaTeX's macros for indexing.  This file can be included in plain TeX
+documents to generate the .idx file.  Similarly, the file
+idxmac-amstex.tex can be used with AmSTeX.  Some hacking may be
+necessary to incorporate it with other dialects.  Some people have
+complained not having the LaTeX sty file mentioned in
+doc/makeindex.tex in their library, so a copy of makeidx.sty and
+makeidx.doc is also included in the lib directory.
+
+------------------------------------------------------------------------------
+The test directory contains three sets of test files
+
+book.idx		Raw index generated from ``The Technology War'',
+			David Brandin and Michael Harrison,
+			John Wiley and Sons, New York, 1988.
+
+torture.idx		a host of odd raw index entries
+
+test.tex, test.idx	a version of doc/makeindex.tex (due to Leslie Lamport)
+			that incorporates index entries (prepared by Beebe).
+			This can be used both to test MakeIndex, as well as to
+			illustrate the production of an index for new users.
+			Read src/README for more info.
+
+All three files come with .bak files for both the processed index (the
+.ind file) and the log (the .ilg file).  Comparisons can be made
+against these files to make sure your version of MakeIndex works
+correctly.
+
+------------------------------------------------------------------------------
+						Pehong Chen
+						20-Mar-1988
+
+						Nelson H.F. Beebe
+						28-Jan-88
+------------------------------------------------------------------------------

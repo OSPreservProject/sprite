@@ -1,0 +1,1043 @@
+%               DEPROCLDC.TeX
+%
+%  This file is the preliminary version of a talk given at the Spring '86
+%  DECUS in Dallas by Barbara Beeton, American Mathematical Society.
+%  It describes the method by which an author of an article for the DECUS
+%  Proceedings can prepare his camera copy using LaTeX.
+%
+%  This file, when run through LaTeX, will be formatted as described below.
+%  It uses the macro package DEPROC.STY and the LaTeX ARTICLE.STY files,
+%  plus a few locally defined macros, which are given at the top of this file.
+%
+%  One page in the output will be blank, reserved for a table.  The
+%  contents of the table are in the file DEPROCDEV.TeX, which is to be
+%  run through TeX as a separate job.
+%
+%  Although essentially complete, and to the best of my knowledge correct,
+%  some details can be expected to change prior to publication.
+%
+%  Barbara Beeton
+%  American Mathematical Society
+%  P O Box 6248
+%  Providence, RI 02940
+%    (401)272-9500
+%
+%  20 Apr 86
+
+%  If TeX is the program being run, this \input statement is required.
+%\input latex
+\documentstyle [draft]{deproc}
+
+%       try to force a blank page in the middle for the floating figure
+
+\def\dblfloatpagefraction{.5}
+\def\textfraction{0}
+\def\floatpagefraction{.5}
+
+%       macros needed for this article
+
+\newcommand{\AMS}{American Mathematical Society}
+\newcommand{\Proc}{Proceedings}
+\newcommand{\DP}{\mbox{\tt DEPROC}}
+\newcommand{\DProc}{{\sl DECUS \Proc}}
+\newcommand{\POBox}{P.\thinspace O.~Box }
+\newcommand{\TB}{{\sl The \TeX book}}
+\newcommand{\tub}{TUGboat}
+\newcommand{\TUG}{\TeX\ Users Group}
+\newcommand{\VAX}{\leavevmode\hbox{V\kern-.12em A\kern-.1em X}}
+
+%\def{\<#1>{$\langle${#1}$\rangle$}
+%\newcommand{\cs}{\<cs>}
+%\newcommand{\css}{\cs es}
+\newcommand{\cs}{{\tt cs}}
+\newcommand{\css}{\cs-es}
+\newcommand{\CR}{$\langle${\sc cr}$\rangle$}
+\newcommand{\tab}{$\langle${\sc tab}$\rangle$}
+\newcommand{\ttvert}{{\tt\char'174 }\ignorespaces}
+\newcommand{\allowhbreak}{\penalty0\hskip0pt}
+
+\makeatletter
+\newlength{\n@rmal@labelwidth}\setlength{\n@rmal@labelwidth}{\labelwidth}
+\newlength{\n@rmal@labelsep}\setlength{\n@rmal@labelsep}{\labelsep}
+\def\pseudobibliography#1{\setbox0=\hbox{#1}\list
+  {\ifomit@biblabels \else [\arabic{enumi}]\fi}{\ifomit@biblabels
+  \setlength{\labelwidth}{0pt}\setlength{\labelsep}{0pt}\else
+  \settowidth\labelwidth{[#1]}\fi\leftmargin\labelwidth
+  \advance\leftmargin\labelsep
+  \ifomit@biblabels\else\usecounter{enumi}\fi}}
+\def\endpseudobibliography{\endlist \global\omit@biblabelsfalse
+  \setlength{\labelwidth}{\n@rmal@labelwidth}%
+  \setlength{\labelsep}{\n@rmal@labelsep}}
+\makeatother
+\def\pseudocite#1{[#1]}
+
+
+
+
+
+
+
+
+
+
+\begin{document}
+
+\title{Typesetting Articles for the DECUS
+    Proceedings with \LaTeX}
+\author{Barbara N. Beeton\\
+    \AMS\\
+    Providence, Rhode Island}
+
+\begin{abstract}
+The \DProc\/ have traditionally been published from copy supplied by
+the authors, prepared according to rules devised for typewritten
+material.  The power of the computer typesetting language
+\TeX,\footnotemark\ through the macro package \LaTeX, has
+now been applied to this task, and a formatting package, named \DP,
+has been submitted to the DECUS Program Library for use by authors who
+have access to a working \TeX\ system.  (The \TeX\ program and related
+software, created by Donald Knuth of Stanford, are in the public domain.)
+
+This paper presents the important features of the \LaTeX\ implementation
+of \DP\ and, through
+examples, shows how it is to be used.  Use of \DP, which is
+encouraged, will produce the author's work, nicely typeset, in the
+standard {\sl\Proc\/} format.  There is a general description
+of how the package works and of the mechanical requirements for camera
+copy of {\sl\Proc\/} articles, which will be created on the
+author's local output device.
+
+No prior knowledge of \TeX\ or \LaTeX\ is required, but authors using \DP\ will
+be expected to learn some rudiments, especially if their papers
+contain special notation or formats such as tables.
+\end{abstract}
+
+%\begin{document}
+
+\maketitle
+
+\footnotetext[1]{\TeX\ is a trademark of the \AMS.}
+
+The \DProc, like the conference proceedings of many other organizations,
+is rushed to publication as quickly as possible so that the material
+will reach the conference participants and other interested readers
+before its value is diminished by time.  Reproducing author-prepared
+copy eliminates the considerable bother and expense of typesetting,
+proofreading and corrections.  The published document should be
+compact, uniform in appearance, and readable, regardless of the kind
+or quality of printing device available to the author.  For these
+reasons, instructions to authors have heretofore assumed that nothing
+more elaborate is available than an ordinary typewriter or dot matrix
+printer.
+
+To enforce uniformity, the author is provided with ``model paper'', on
+which are printed (in non-reproducing ink) column and page borders,
+alignment marks, and instructions for placement of title, author, and
+the other parts of a proceedings article.  The dimensions of the model
+paper are almost always larger than those of the published \Proc\Dash
+this permits more text to be packed onto each page, and also improves
+its appearance or ``quality'' when photographically reduced, smoothing
+out the rough edges of letters and symbols generated by a typewriter,
+dot-matrix printer or other ``low-resolution'' device.
+
+Within the past few years, advances in laser-printer technology have
+made good-quality output accessible to a growing number of users,
+through a widening selection of low-cost output systems based on print
+engines with 300 dot-per-inch resolution and (relatively) easy-to-use
+interfaces.  Such devices have been attached to most kinds of DEC
+computers, and drivers now exist to print the output from such programs
+as Scribe,\footnote{Scribe is a trademark of Unilogic Ltd.}
+\TeX\ and Troff.  Most low-end laser printers cannot use paper wider
+than $8\sfrac1/2''$, however, so even if both a good composition
+program and output printer had been available, until now an author
+would have been discouraged from using them for mechanical reasons.
+
+The editor of the \DProc\/ has now agreed to accept typeset copy
+printed on such a system at 100\% on $8\sfrac1/2\times11''$ paper,
+provided it conforms to the published format.  This article (which has
+itself been produced by the technique it describes) introduces a
+package, \DP, designed to prepare {\sl\Proc\/} articles using \LaTeX.
+
+
+
+
+
+
+
+
+
+
+
+\newcommand{\Dag}{$^{\thinspace\dagger}$}
+\newcommand{\1}[1]{{\let\\=\newline\parbox[t]{.177\hsize}{\raggedright#1}}}
+\newcommand{\8}{\vrule height .9\baselineskip depth 0pt width 0pt\ignorespaces}
+\newcommand{\9}{\vrule height 0pt depth .4\baselineskip width 0pt}
+\newcommand{\KnS}{Kellerman\thinspace\&\thinspace Smith}
+\begin{figure*}[p]
+\begin{tabular}{|l|l|l|l|l|}                    \hline
+\1{\8\9}& \multicolumn{1}{c}{DECSystem-10}
+                & \multicolumn{1}{c}{DECSYSTEM-20}
+                        & \multicolumn{1}{c}{VAX (Unix)}
+                                & \multicolumn{1}{c}{VAX (VMS)} \\ \hline
+\1{\8 Allied Linotronic\\L100, L300P\9}
+        &       &       & \1{Textset}
+                                & \1{Textset} \\ \hline
+\1{\8 Apple LaserWriter\\ \9}
+        &       &       & \1{Carleton University\\Textset\Dag}
+                                & \1{Textset\Dag} \\ \hline
+\1{\8 Autologic\\APS-5, Micro-5\9}
+        &       & \1{Textset}
+                        & \1{Textset}
+                                & \1{Intergraph\Dag\\Textset} \\ \hline
+\1{\8 Canon\\ \9}
+        &       &       & \1{Canon} &   \\ \hline
+\1{\8 Compugraphic\\8400, 8600\9}
+        &       &       &       & \1{\KnS}      \\ \hline
+\1{\8 DEC LN01\\ \9}
+        &       &       & \1{Univ of Washington}
+                                & \1{Louisiana State U} \\ \hline
+\1{\8 DEC LN03\\ \9}
+        &       &       &       & \1{DEC\\ \KnS} \\ \hline
+\1{\8 Imagen\\ \9}
+        & \1{Stanford\\Vanderbilt}
+                & \1{SRI\\Columbia}
+                        & \1{Univ of Maryland}
+                                & \1{\KnS\Dag} \\ \hline
+\1{\8 QMS Lasergrafix\\ \9}
+        &       &       & \1{Textset\\Univ of Washington}
+                        & \1{GA Technologies\\Texas A\&M\\Textset\9} \\ \hline
+\1{\8 Symbolics\\ \9}
+        &       & \1{Univ of Washington}
+                        & \1{Univ of Washington}
+                                & \1{UMass} \\ \hline
+\1{\8 Talaris\\ \9}
+        & \1{Talaris\Dag}
+                & \1{Talaris\Dag}
+                        & \1{Talaris\Dag}
+                                & \1{Talaris\Dag} \\ \hline
+\1{\8 Xerox Dover\\ \9}
+        &       & \1{Carnegie-Mellon U}
+                        & \1{Stanford}  & \\ \hline
+\1{\8 Xerox 2700\\ \9}
+        &       & \1{Ohio State U}
+                        & \1{Ohio State U}      & \\ \hline
+\1{\8 Xerox 9700\\ \9}
+        & \1{Univ of Delaware}
+                &       & \1{Univ of Delaware}
+                                & \1{ACC\\Textset} \\ \hline
+\end{tabular}
+\par\vspace{2pt}
+\mbox{\Dag\thinspace Graphics supported}
+\vspace{-.5\baselineskip}
+\caption[outdev]{Computer/output device combinations with \TeX\ interfaces}
+\vspace{.5\baselineskip}
+\label{outdev}
+\end{figure*}
+\newcommand{\site}[1]{\par \noindent \hangindent 20pt
+                {\bf #1}\quad\ignorespaces}
+\begin{table*}[p]
+\hbox to\textwidth{%
+\parbox[t]{.47\textwidth}{%
+  Information regarding the interfaces shown here can be obtained
+  from the individual listed below for the site.  This table and
+  the names of the site contacts were provided by the \TeX\ Users Group.
+
+\raggedright \hyphenpenalty=10000 \exhyphenpenalty=10000
+\medskip
+\site{ACC {\rm(Advanced Computer Communications)}} Diane~Cast, 805-963-9431
+
+\site{Canon {\rm (Tokyo)}} Masaaki Nagashima, (03) 758-2111
+
+\site{Carleton University} Neil Holtz, 613-231-7145
+
+\site{Carnegie-Mellon University} Howard Gayle, 412-578-3042
+
+\site{Columbia University} Frank da Cruz, 212-280-5126
+
+\site{DEC {\rm(Digital Equipment Corp)}} John Sauter, 603-881-2301
+
+\site{GA Technologies} Phil Andrews, 619-455-4583
+
+\site{Intergraph} Mike Cunningham, 205-772-2000
+
+\site{\KnS} Barry Smith, 503-222-4234
+
+}%              end \parbox
+\hfill
+\parbox[t]{.47\textwidth}{%
+\raggedright \hyphenpenalty=10000 \exhyphenpenalty=10000
+\site{Louisiana State University} Neil Stoltzfus, 504-388-1570
+
+\site{Ohio State University} John Gourlay, 614-422-6653
+
+\site{SRI}
+
+\site{Stanford}
+
+\site{Talaris} Sonny Burkett, 619-587-0787
+
+\site{Texas A\&M} Bart Childs, 409-845-5470
+
+\site{Textset} Bruce Baker, 313-996-3566
+
+\site{University of Delaware} Daniel Grim, 302-451-1990
+
+\site{University of Maryland} Chris Torek, 301-454-7690
+
+\site{University of Massachusetts} Gary Wallace, 413-545-4296
+
+\site{University of Washington} Pierre MacKay, 206-543-2386
+
+\site{Vanderbilt University} H. Denson Burnum, 615-322-2357
+
+}%              end \parbox
+}%              end \line
+\end{table*}
+
+
+
+
+
+
+
+
+
+
+
+\section{What is \TeX? What is \LaTeX?}
+
+\TeX\ is a public-domain typesetting language created by Donald Knuth
+of Stanford University.  His original aim was to typeset his own books,
+in particular {\sl The Art of Computer Programming\/} \cite{ACP}, with
+a quality equal to that produced by the best traditional composition
+methods.  The technical content of these books assured that full
+attention was given to the niceties of formatting mathematical
+expressions, as well as to the structures of documents commonly
+encountered in technical publishing.
+
+\TeX\ deals with low-level concepts familiar to typesetters\Dash type
+size, leading, interword spacing and kerning.  It does not incorporate
+directly the structures an author encounters when writing a paper\Dash
+title, figure references, bibliographic entries.  However, \TeX\ is
+essentially a macro compiler, and provides a full vocabulary of low-level
+functions that can be manipulated by knowledgeable users to create
+higher-level packages to support the casual user.
+
+One such macro package is \LaTeX.  \LaTeX\ \cite{LT} is
+a powerful document formatter, providing the capability to format
+books and reports, with functionality similar to that provided by
+Scribe.
+
+
+
+
+
+
+
+
+
+
+
+\section{The \DP\ macro package}
+
+In order to use this implementation of the \DP\ macro package, the
+author of a \DProc\/ article must have available a working \LaTeX\ system,
+which presupposes a working \TeX\ system.
+\TeX\ has been implemented on \VAX es and DECsystem-10s and -20s
+under the standard operating systems.
+There is also a good selection of output devices available, capable
+of production output of quality suitable for the {\sl\Proc\/};
+Table~\ref{outdev}
+shows the computer/output device combinations known to the \TUG.
+(\TeX\ has not, however, been implemented on PDP-11s, since
+it requires a larger address space than is supported on those machines.)
+
+\LaTeX\ may not be available to all \TeX\ users.  (\TeX\ is a very large
+program by itself, and routinely adding a large macro package can put
+unwelcome strain on an already overloaded machine.  Some system
+administrators prefer not to give their users that opportunity.)
+An earlier implementation of \DP\ does not require \LaTeX, but only
+\TeX\ itself; it was
+described in \cite{DP}, and the supporting files are on the Fall~'85
+DECUS Program Library tapes for Languages \& Tools, Large Systems, and \VAX.
+
+The present \LaTeX-based version of this macro package
+is called \verb|DEPROC.STY|, for ``\DProc\/ style file''.  It is
+an ordinary ASCII file, and has been submitted to the Spring~86 DECUS
+Program Library for the same systems listed above.
+
+
+
+
+
+
+
+
+
+
+
+\section{Some preliminary \TeX nical information}
+
+An author who intends to use the \LaTeX\ version of \DP\ should
+preferably have used \LaTeX\ already.  Nonetheless, a few basic
+concepts are worth repeating.  (\LaTeX\ is identical to \TeX\ in
+many ways.  The following discussion will specify \LaTeX\ only when
+there is a difference.)
+
+\subsection{Spacing}
+
+\TeX\ uses different spacing rules in text (paragraphs) and math.
+Paragraphs are set so that interword spacing is as uniform as possible.
+Wider spaces are set after punctuation that indicates the ends of
+sentences (period, !\ and ?).  Within math, the best traditions for
+arranging symbols in two dimensions, including proper spacing, are
+observed.  Thus input spacing is largely ignored, except
+for its functions of separating words and marking the boundaries of
+certain kinds of expressions.  \TeX\ considers
+multiple spaces in an input file to be equivalent to a single space.
+The carriage return \CR\ and the tab character \tab\ are equivalent
+to ordinary spaces, except in special environments (noted below).
+And all spaces at the beginning of any line are ignored.
+
+\subsection{Paragraph breaks}
+
+A blank line in the input file indicates a paragraph break.  A line is
+blank if it contains only a \CR\ or spaces and a \CR.  Multiple blank
+lines are equivalent to a single blank line.  (A paragraph can also be
+indicated by \verb|\par|; terms beginning with \verb|\| are described below.)
+
+\subsection{Comments}
+
+A comment may be entered on any line; a comment begins with a \verb|%| sign:
+\begin{verbatim}
+%  This line contains nothing but a comment.
+\newcommand{\cs}{...}%  explanatory comment
+... Smythe % ***** check spelling *****
+\end{verbatim}
+\TeX\ will ignore the \verb|%| and everything following it, including the \CR.
+Thus, the space ordinarily indicated by the \CR\ will be suppressed,
+and if a space is really wanted between the last item before a comment
+and the first item on the next line, it must be input before the \verb|%|.
+Conversely, if no space is wanted between the last item on a line and
+the first item on the next, a \verb|%| can be used to suppress it
+intentionally.
+
+\subsection{Control sequences, also called macros}
+
+A ``control sequence'' \cs\ is an instruction for \TeX\ to perform
+some action or to produce a particular symbol.  A \cs\ begins with a
+backslash, \verb|\|.  There are two types of \css:
+\begin{itemize}
+\item[--] A ``control word'' consists of \verb|\| followed by one or more
+        letters.  It is terminated by any non-letter, including a space;
+        multiple spaces follow the usual compression rule, so a
+        special technique (see next paragraph) is required to create an
+        output space after a control word.  \verb|\TeX| is an example of
+        a control word; it produces the \TeX\ logo.
+\item[--] A ``control symbol'' consists of \verb|\| followed by exactly one
+        non-letter.  Since its length is known, no special terminator
+        is required.  \verb|\&| is a control symbol to produce an \&.
+        \verb*|\ | (\verb|\| followed by a space) is an explicit space, to
+        be used where an output space should follow an element
+        input as a control word.
+\end{itemize}
+
+\noindent
+New \css\ can be defined within a document to make input easier or clearer.
+A few principles governing \cs\ names should be observed carefully.
+\begin{itemize}
+\item[--] Case matters; \verb|\csname| is not the same as
+        \verb|\Csname| or \verb|\CSName|.
+        Try to pick a name that means something to you, and is easy to type.
+\item[--] Don't try to redefine an existing \cs\ name unless you really
+        know what you're doing; results, as they say, ``may be unpredictable''.
+\item[--] Never define or redefine any \cs\ whose name begins with
+        `\verb|\end|'.
+\end{itemize}
+
+\noindent
+To define a new command,
+\begin{verbatim}
+\newcommand{\csname}{...something...}
+\end{verbatim}
+If the name has been used before, \LaTeX\ will stop and report an
+error.  If you are really adamant about re-using this name,
+\begin{verbatim}
+\renewcommand{\csname}{...something...}
+\end{verbatim}
+will assign it the new meaning.
+
+The control symbols \verb|\0,...,\9| always start out undefined, so they are
+available for transient use without checking.
+
+A \cs\ with arguments is defined by
+\begin{verbatim}
+\newcommand{\csname}[2]{...#1...{#2}...}
+\end{verbatim}
+with the number of arguments given in brackets as shown; for details,
+see \cite{LT}.
+
+\subsection{Math}
+
+Mathematical expressions are input between \verb|\(...\)|.  Display
+math is begun and ended with \verb|\[...\]|.  For details of math
+input, see \cite{LT}.
+%(Math input is also described in \cite{FG} and \cite{TB}, in
+%increasing order of complexity of expressions handled.)
+
+
+
+
+
+
+
+
+
+
+
+\section{Starting a \DProc\/ article}
+
+The first step in preparing an article is to create a file.
+The first two lines in this file should be
+\begin{verbatim}
+\documentstyle{deproc}
+\begin{document}
+\end{verbatim}
+This will cause the formatting definitions to be loaded when the file
+is input to \LaTeX.
+
+Next, enter the ``top matter''.  This consists of such
+things as the title of the article, the author(s) and their addresses,
+and the abstract.
+
+\subsection{Title and authors}
+
+For an article with a short title and one author, the input looks like this:
+\begin{verbatim}
+\title{A One-Line Title}
+\author{Author Name\\
+    Author's Organization\\
+    City, State}
+\end{verbatim}
+The double backslashes \verb"\\" indicate line breaks.  This technique is
+also used to break up long titles:
+\begin{verbatim}
+\title{Here We Have a Particularly
+    Long Title\\That Can't Possibly
+    Fit on a Single Line}
+\end{verbatim}
+This will be set (in a boldface font slightly larger than text size) as\strut
+\begin{center}
+        \bf Here We Have a Particularly Long Title\\
+        That Can't Possibly Fit on a Single Line
+\end{center}
+Notice that the way the lines are broken in the input file is not how
+they appear in the output\Dash only \verb"\\" matters to \TeX.
+Actually, \TeX\ will break long titles into lines short enough to fit
+on the page, but a multi-line title usually makes more sense to the reader
+if the author decides where the line breaks should occur.
+
+For multiple authors, the same \verb"\author" tag is used with
+\verb"\and" or \verb"\And":
+\begin{verbatim}
+\author{First Author
+  \and
+    Second Author\\
+    Common Organization\\
+    City, State}
+\end{verbatim}
+or
+\begin{verbatim}
+\author{First Author\\
+    First Organization\\
+    City, State
+  \And
+    Second Author\\
+    Second Organization\\
+    City, State}
+\end{verbatim}
+and so forth, which will appear thus in the output:\strut
+\begin{center}
+        {\bf First Author\enspace{\rm and}\enspace Second Author}\\
+        Common Organization\\
+        City, State
+\end{center}
+\par\noindent
+or\strut
+\begin{center}
+        \interlinepenalty=10000
+        {\bf First Author}\\
+        First Organization\\
+        City, State\\
+        \hspace{10pt}\\
+        {\bf Second Author}\\
+        Second Organization\\
+        City, State\endgraf
+\end{center}
+%\noindent
+Authors' names (the first line, and the first line after \verb"\And") are
+printed in boldface; if an author name is to appear on any other line,
+begin that line with \verb"\bf" (the \TeX\ instruction for boldface type).
+
+The title and author of the present paper look like this in the file:
+\begin{verbatim}
+\title{Typesetting Articles for the DECUS
+    Proceedings with \LaTeX}
+\author{Barbara N. Beeton\\
+    \AMS\\
+    Providence, Rhode Island}
+\end{verbatim}
+One item to look at here is \verb"\AMS", which becomes \AMS\ in the output.
+This is an example of a ``local definition'', something that is not likely
+to be useful to anyone else, but can save the author a lot of time correcting
+typing errors.  Local definitions that are used throughout an article are
+best input right after specifying the document style:
+\begin{verbatim}
+\documentstyle{deproc}
+\newcommand{\AMS}{American
+           Mathematical Society}
+...
+\begin{document}
+\end{verbatim}
+
+\subsection{Abstract}
+
+The abstract is the final part of the top matter.
+\begin{verbatim}
+\begin{abstract}
+This is a short summary of what
+the article is about.
+\end{abstract}
+\end{verbatim}
+\par\noindent
+The heading ``{\bf Abstract}'' is provided automatically; don't input it.
+The abstract may contain more than one paragraph.  Paragraphs are
+separated by a blank line or by \verb"\par", as usual.
+
+The top matter is now complete.  The body of the article follows.
+\begin{itemize} \parskip=0pt \itemsep=0pt
+\item[] \verb"\maketitle"
+\item[] (\it{Text of footnotes to the top matter is given here\/})
+\item[] {}
+\item[] \verb"This is the first sentence of article text."
+\item[] \verb"..."
+\item[] \verb"\end{document}"
+\end{itemize}
+
+
+
+
+
+
+
+
+
+
+
+\section{The body of the article}
+
+An article can start out with text or with a heading.
+Three levels of headings are provided by \DP:
+\begin{verbatim}
+\section{Section heading}
+\subsection{Subsection heading}
+\subsubsection{Subsubsection heading}
+\end{verbatim}
+These produce headings (with extra space above and below, not shown here)
+in the following styles:
+$$\vbox{\advance\baselineskip by 2pt
+\centerline{\bf Section heading}
+\leftline{\bf Subsection heading}
+\leftline{\it Subsubsection heading}}
+$$
+
+The first paragraph following a heading will not be indented in the
+default style.  Other paragraphs will be indented a standard amount.
+To suppress indentation on a single paragraph, precede it by \verb"\noindent".
+
+\subsection{Footnotes}
+
+A footnote consists of two parts, the mark and the text.  These
+are usually entered as a unit\footnote{Like this.}:
+\begin{verbatim}
+... as a unit\footnote{Like this.}:
+\end{verbatim}
+This is equivalent to the two statements\footnotemark
+\footnotetext{Or this.}
+\begin{verbatim}
+... two statements\footnotemark
+\footnotetext{Or this.}
+\end{verbatim}
+The two-statement form must be used for footnotes in the title or
+abstract and in ``boxed'' environments
+ (which will not be explained here; see
+\cite{LT} for details).  In such cases, the \verb"\footnotetext" should
+be specified as soon as possible after completion of the special
+environment.
+
+Footnotes are automatically numbered sequentially starting with 1.
+Numbers may also be given explicitly, between \verb"[...]"
+following the \verb"\footnote..." command.  In most contexts, this is
+optional, but for footnotes in abstracts or in ``boxed'' environments,
+the number {\sl must\/} be given for the \verb"\footnotetext"; the
+first footnote in this article was produced by the following:
+\begin{verbatim}
+\maketitle
+\footnotetext[1]{\TeX\ is a trademark
+       of the \AMS.}
+\end{verbatim}
+
+Footnote numbers can be reset if necessary by
+\begin{itemize}
+\item[] \verb"\resetcounter{footnote}{"{\it integer\/}\verb"}"
+\end{itemize}
+
+
+\subsection{Quotations}
+
+Short quotations, of less than a paragraph, are set with
+\begin{verbatim}
+\begin{quote}
+If you can't fix it, ... {\em Button}
+\end{quote}
+\end{verbatim}
+and look like this:
+\begin{quote}
+If you can't fix it, call it a feature. \ {\em Button}
+\end{quote}
+
+\noindent
+For longer quotations, use
+\begin{verbatim}
+\begin{quotation}
+...
+\end{quotation}
+\end{verbatim}
+in a similar manner, separating paragraphs with blank lines as usual.
+
+
+\subsection{Lists}
+
+Itemized and enumerated lists occur in many \DProc\/ articles.
+\LaTeX\ provides automatic counters and up to four levels of nesting.
+Here is a short example of a two-level itemized list.
+\begin{verbatim}
+\begin{itemize}
+  \item first item
+  \item second item
+ \begin{itemize}
+   \item new level
+   \item one more
+ \end{itemize}
+  \item back a level
+\end{itemize}
+\end{verbatim}
+\par\noindent
+Here's what the output looks like, after padding out the text a bit to show
+how longer items look.
+\begin{itemize}
+\item The first item in this list isn't particularly interesting,
+        but it has to be long enough to make two lines.
+\item The second item isn't either.
+\begin{itemize}
+\item Even going to a new level doesn't add very much
+        excitement to this exercise.
+\item We'll do one more at this level.
+\end{itemize}
+\item Then we'll go back a level to finish things off.
+\end{itemize}
+%\noindent
+If \verb"{enumerate}" is specified instead of \verb"{itemize}", the
+items will be numbered\Dash 1, 2,\dots\ at the first level,
+a, b,\dots\ at the second level.  If the default labels aren't what
+you want, an overriding label may be specified, for example,
+\mbox{\verb"[--]"} (used in Figure~\ref{figtype}).  Each item
+comprises one paragraph; an unlabeled paragraph can be produced by
+specifying an empty label.  Extra space above and below a list is
+provided automatically.
+
+\begin{figure}[t,b]
+\hrule
+\begin{itemize}
+\item[--] Small figures which can be set in place, i.e., in the same
+        relative position where they occur in the input file
+\item[--] One-column figures to be set at the top or bottom of the
+        first available column
+\item[--] Double-column figures to be set at the top or bottom of the
+        first available page
+\item[--] Full-page figures
+\end{itemize}
+\vspace{-.5\baselineskip}
+\caption[figtype]{Possible figure formats}
+\vspace{.5\baselineskip}
+\hrule
+\label{figtype}
+\end{figure}
+
+\subsection{Figures}
+
+Figures come in the sizes, shapes and page locations listed in
+Figure \ref{figtype}.  Not all these formats are supported yet by \DP\@.
+In particular, two-column figures cannot be placed at the
+bottom of text pages.
+
+\subsubsection{One-column figures}
+
+To get a single-column figure, enter
+\begin{itemize} \parskip=0pt \itemsep=0pt
+\item[] \verb"\begin{figure}["{\it loc\/}\verb"]"
+\item[] {\it content of figure}
+\item[] \verb"\caption{Caption text}"
+\item[] \verb"\label{"{\it label\/}\verb"}"
+\item[] \verb"\end{figure}"
+\end{itemize}
+\par\noindent
+{\it loc\/} is the location where the figure is to be placed, specified
+by one to four letters (in the order in which you find the possible
+locations suitable), as follows:
+\begin{itemize}
+\item[\verb"h"] here, at the position in the text where the figure is input.
+\item[\verb"t"] at the top of a text page.
+\item[\verb"b"] at the bottom of a text page.
+\item[\verb"p"] on a page of ``floats''.
+\end{itemize}
+\par\noindent
+The default {\it loc\/} is \verb"tbp"; note that figures will not be
+placed in-line unless \verb"h" is indicated explicitly.  For
+additional details, see \cite{LT}.
+
+Figures are numbered automatically.  The optional {\it label\/} is
+provided to permit references in the text to the figure:
+\begin{itemize}
+\item[] \verb"... shown in Figure~\ref{"{\it label\/}\verb"}"
+\end{itemize}
+
+To reserve space for figures which will be prepared separately,
+use the command \verb"\vspace{"{\it dimension\/}\verb"}".
+Some space is automatically skipped above and below a figure, and also
+between the figure and the caption, so the dimension given with
+\verb"\vspace" should be precisely the height of the item to be pasted in.
+
+
+\subsubsection{Two-column figures}
+
+Double-column figures can be placed either at the top of a text
+page or on a separate page of ``floats''.  The command syntax is the same
+as for one-column figures, except that the ``star'' notation
+\verb"\begin{figure*}...\end{figure*}" is used.
+
+
+\subsubsection{Full-page figures}
+
+Full-page figures are a special case of two-column figures,
+specified by \verb"\begin{figure*}[p]...\end{figure*}".  A full-page
+figure will be placed on the first available page.  If space is to
+be reserved for insertion of a separately-prepared figure, use the
+\verb"\vspace" command with a suitably large dimension; \verb"8.5in"
+should be sufficient.
+
+
+\subsection{Tables}
+
+\LaTeX\ contains powerful table-formatting capabilities.  However, since
+their use is specialized and the rules somewhat complex, specifics
+are not presented here; see \cite{LT} for details.
+
+
+\subsection{Verbatim}
+
+Verbatim items are printed in so-called ``typewriter'' style, using \TeX's
+\verb"\tt" font.  In-text verbatim items are preceded by the command
+\verb"\verb" and enclosed within a pair of identical characters which
+do not occur within the verbatim string (except a space, a letter,
+or \verb"*"), for example, vertical bars \verb"|...|" or ditto marks
+\verb|"..."|.  Blocks of verbatim code are delimited by
+\begin{itemize} \parskip=0pt \itemsep=0pt
+\item[] \verb"\begin{verbatim}"
+\item[] \verb"..."
+\item[] \verb"\end{verbatim}"
+\end{itemize}
+\verb"\begin{verbatim}" and \verb"\end{verbatim}" should be on lines
+by themselves.  Within verbatim
+mode, \CR s are obeyed as line breaks, not spaces.  An input line that is too
+long for the current column width will be broken at a space if possible,
+and the remainder of the line hanging indented on the next output line;
+since this may change the meaning of the verbatim passage, such passages
+should be checked with special care in the output.  Overlong lines also
+frequently result in overfull \verb"\hbox"es, which are listed in the
+transcript file.  To mark overfull \verb"\hbox"es clearly on the printed
+output (with black boxes: \rule{5pt}{\ht\strutbox}\thinspace), specify
+\begin{verbatim}
+\documentstyle [draft]{deproc}
+\end{verbatim}
+at the beginning of your input file.
+%{\vrule height\ht\strutbox depth\dp\strutbox width 5pt }\thinspace.
+The \verb"draft" option can easily be removed when you are ready to
+prepare the final copy.
+
+A passage occurring between \verb"\begin{verbatim}..."\allowhbreak
+\verb"\end{verbatim}"
+is treated as a unit by \LaTeX\Dash if it is too long for the vertical
+space available, it either will be carried over as a unit to the next
+column or page, or will result in an overfull \verb"\vbox", which will
+be noted only in the transcript of the \LaTeX\ run.  In such a case,
+the best remedy is to break the passage in two, by inserting another
+\verb"\end{verbatim} \begin{verbatim}".
+
+Verbatim mode is suitable for program listings, indicating keyboarding
+instructions, file names, and similar uses.
+
+\subsection{References, bibliography}
+
+References in text to items in the bibliography are input as
+\begin{itemize}
+\item[] \verb"\cite{"{\it label\/}\verb"}"
+\item[] \verb"\cite["{\it text\/}\verb"]{"{\it label\/}\verb"}"
+\end{itemize}
+where the label is the same as that specified for the item in the bibliography.
+For a label ``ABC'', the reference will be rendered \pseudocite{ABC}.
+See \cite[pp.~73, 189]{LT} for further details.
+
+References may also be made to figures, tables, or anything else for which
+you have established a label:
+\begin{itemize}
+\item[] \verb"\ref{"{\it label\/}\verb"}"
+\item[] \verb"\pageref{"{\it label\/}\verb"}"
+\end{itemize}
+\verb"\pageref" is not immediately useful\Dash the page numbers
+generated by \TeX\ will not be the same as those assigned when the
+collection is put together in the editorial office.  This feature would
+become useful if it ever becomes possible to submit articles electronically,
+as \LaTeX\ input files.
+
+Before you start to input the reference list, some housekeeping is
+required\Dash you must decide what you want the list to look like.
+This is what the input looks like for one of the items in the reference
+list at the end of this article:
+\begin{verbatim}
+\bibitem[TB]{TB} Knuth, Donald E., \TB,
+    Addison-Wesley and \AMS, 1984.
+\end{verbatim}
+(\verb"\TB" and \verb"\AMS" are among the local definitions for this article.)
+Default output looks like this:
+\smallskip
+{\begin{pseudobibliography}{ACP}
+\bibitem[TB]{TB} Knuth, Donald E., \TB, Addison-Wesley and \AMS, 1984.\endgraf
+\end{pseudobibliography}
+}
+\smallskip
+
+Labels may also be omitted, or numbered sequentially.  Begin the
+reference list with this command:
+\begin{itemize}
+\item[] \verb"\begin{thebibliography}{"{\it widest label\/}\verb"}"
+\end{itemize}
+This will generate the {\bf References} section heading, and establish
+the item indentation, using the width of the specified label.
+
+If you do not wish to use labels, substitute \verb"\omit" for the widest
+label.  (The \verb"{...}" are still required in the context of
+\verb"\bibitem".)
+\begin{verbatim}
+\bibitem{} Knuth, Donald E., ...
+\end{verbatim}
+will result in
+\par\nobreak\smallskip
+{\begin{pseudobibliography}{\omit}
+\bibitem{} Knuth, Donald E., \TB, Addison-Wesley and \AMS, 1984.\endgraf
+\end{pseudobibliography}
+}
+\smallskip
+\noindent Note that \verb"\cite" cannot be used if references are unlabeled.
+
+If your labels are numeric, no labels need be entered\Dash items will
+automatically be numbered sequentially.  However, the widest label
+must be specified at the beginning of \verb"thebibliography" environment.
+The input
+\begin{verbatim}
+\begin{thebibliography}{99}
+\bibitem{TB} Knuth, Donald E., ...
+\end{verbatim}
+will now look like this:
+\par\nobreak\smallskip
+{\begin{pseudobibliography}{99}
+\bibitem[2]{TB} Knuth, Donald E., \TB, Addison-Wesley and \AMS, 1984.\endgraf
+\end{pseudobibliography}
+}
+
+
+
+
+
+
+
+
+
+
+
+\section{Caveats}
+
+\DP\ and this article were created on a DECSYSTEM-20 at the
+\AMS, running \LaTeX\ version~2.08 under
+\TeX\ version~1.3.  The AMS installation is standard in all ways.
+
+With one exception, none of the changes to the \TeX\ program since
+version~1.0 should have any noticeable effect on an article produced
+with \DP.  The exception is large, complex tables\Dash
+tables incorporating many boxes and rules require large amounts of
+\TeX\ memory.  Memory management was radically changed in version~1.3
+to make more memory available to the user without actually changing
+the physical memory allotment.  (Otherwise, if you run out of memory,
+the most likely cause is an input error.)
+
+Although thorough testing has been attempted, no one outside the AMS has
+tried to use \DP\ yet, so bugs are sure to be found.  In fact,
+the version of \DP\ first placed in the Program Library should best
+be considered a beta test version.  If you find a bug, please
+communicate it to the author, accompanied by an example which
+demonstrates the bug as simply as possible.  Suggestions for
+improvements are also welcome.  Send everything to\break
+{\obeylines %
+        \indent Barbara Beeton
+        \AMS
+        \POBox 6248
+        Providence, RI 02940
+}
+
+
+
+
+
+
+
+
+
+
+
+%\Bibliography{ACP}
+\begin{thebibliography}{ACP}
+
+\bibitem[DP]{DP} Beeton, Barbara, Typesetting articles for the DECUS
+        Proceedings with \TeX, {\sl Proceedings of the Digital Equipment
+        Computer Users Society}, USA Spring 1985, 349--356.
+
+\bibitem[ACP]{ACP} Knuth, Donald E., {\sl The Art of Computer Programming},
+        Addison-Wesley, Vol.~2, second edition, 1981.
+
+\bibitem[TB]{TB} Knuth, Donald E., \TB, Addison-Wesley and \AMS, 1984.
+
+\bibitem[LT]{LT} Lamport, Leslie, {\sl L\kern-.36em\raise.3ex\hbox{\small A}%
+        \kern-.15em\TeX, A document preparation system}, Addison-Wesley,
+        1985.
+
+\bibitem[TD]{TD} Southall, Richard, First principles of typographic design
+        for document production, {\sl\tub\/} Vol.~5 (1984), No.~2, 79--90;
+        Corrigenda, Vol.~6 (1985), No.~1, p.~6.
+
+\bibitem[TUB]{TUB} {\sl\tub, the Newsletter of the \TUG}, \TUG, \careof\AMS,
+        \POBox 9506, Providence, RI, 02940.
+
+\end{thebibliography}
+
+\end{document}
+

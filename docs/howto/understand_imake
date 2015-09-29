@@ -1,0 +1,48 @@
+
+
+
+     imake - C preprocessor interface to the make utility
+
+     imake [ -Ddefine ] [ -Idir ] [ -Ttemplate ] [ -f filename ]
+     [ -s filename ] [ -e ] [ -v ]
+
+
+     Imake is used to generate Makefiles from a template, a set
+     of cpp macro functions, and a per-directory input file
+     called an Imakefile.  This allows machine dependencies (such
+     has compiler options, alternate command names, and special
+     make rules) to be kept separate from the descriptions of the
+     various items to be built.
+
+
+     Here is a summary of the files read by imake as used by X.
+     The indentation shows what files include what other files.
+
+         Imake.tmpl                generic variables
+             site.def              site-specific, BeforeVendorCF defined
+             sun.cf                machine-specific
+                 sunLib.rules      shared library rules
+             site.def              site-specific, AfterVendorCF defined
+             Project.tmpl          X-specific variables
+                 sunLib.tmpl       shared library variables
+             Imake.rules           rules
+         Imakefile
+             Library.tmpl          library rules
+             Server.tmpl           server rules
+
+
+
+
+------------------------ Sample Imakefile (xclock) ----------------------
+
+XCOMM $XConsortium: Imakefile,v 1.14 91/07/19 14:56:54 rws Exp $
+        DEPLIBS = XawClientDepLibs
+LOCAL_LIBRARIES = XawClientLibs
+           SRCS = xclock.c
+           OBJS = xclock.o
+
+ComplexProgramTarget(xclock)
+InstallAppDefaults(XClock)
+
+---------------------------------------------------------------------------
+

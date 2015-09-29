@@ -1,0 +1,251 @@
+SuperBlock.hdr.version: 1
+SuperBlock.hdr.blockSize: 512
+SuperBlock.hdr.maxCheckPointBlocks: 5
+SuperBlock.hdr.checkPointOffset[0]: 65
+SuperBlock.hdr.checkPointOffset[1]: 70
+SuperBlock.hdr.logStartOffset: 75
+SuperBlock.hdr.maxNumCacheBlocks: 600
+SuperBlock.descMap.version: 1
+SuperBlock.descMap.maxDesc: 6464
+SuperBlock.descMap.stableMem.blockSize: 4096
+SuperBlock.descMap.stableMem.maxNumBlocks: 20
+SuperBlock.usageArray.segmentSize: 524288
+SuperBlock.usageArray.numberSegments: 101
+SuperBlock.usageArray.minNumClean: 20
+SuperBlock.usageArray.minFreeBlocks: 34474
+SuperBlock.usageArray.stableMem.blockSize: 4096
+SuperBlock.usageArray.stableMem.maxNumBlocks: 20
+SuperBlock.fileLayout.descPerBlock: 32
+CheckPointHdr[0].timestamp: 1891
+CheckPointHdr[0].size: 240
+CheckPointHdr[0].version: 1
+CheckPointHdr[0].domainPrefix: /test
+CheckPointHdr[0].domainNumber: 0
+CheckPointHdr[0].attachSeconds: 660517464
+CheckPointHdr[0].detachSeconds: 660519033
+CheckPointHdr[0].serverID: 73
+CheckPointHdr[1].timestamp: 1894
+CheckPointHdr[1].size: 240
+CheckPointHdr[1].version: 1
+CheckPointHdr[1].domainPrefix: /test
+CheckPointHdr[1].domainNumber: 0
+CheckPointHdr[1].attachSeconds: 660517464
+CheckPointHdr[1].detachSeconds: 660519093
+CheckPointHdr[1].serverID: 73
+Using checkpoint area 0 with timestamp 1891 domain 0 (/test)
+DescMap num allocated: 109
+File 0 at 0 (seg 0) version 0 flags 1
+File 1 at 0 (seg 0) version 0 flags 1
+File 2 at 31810 (seg 31) version 1 flags 1
+File 3 at 54180 (seg 52) version 1 flags 1
+File 4 at 84387 (seg 82) version 0 flags 1
+File 5 at 24572 (seg 23) version 0 flags 1
+File 7 at 5129 (seg 5) version 0 flags 1
+File 5472 at 18497 (seg 18) version 0 flags 1
+File 5473 at 69652 (seg 68) version 15 flags 1
+File 5474 at 69652 (seg 68) version 22 flags 1
+File 5475 at 69652 (seg 68) version 18 flags 1
+File 5476 at 69652 (seg 68) version 14 flags 1
+File 5477 at 24572 (seg 23) version 19 flags 1
+File 5478 at 58352 (seg 56) version 15 flags 1
+File 5479 at 64472 (seg 62) version 20 flags 1
+File 5480 at 24572 (seg 23) version 18 flags 1
+File 5481 at 60466 (seg 59) version 23 flags 1
+File 5482 at 24572 (seg 23) version 19 flags 1
+File 5483 at 24572 (seg 23) version 12 flags 1
+File 5484 at 60466 (seg 59) version 16 flags 1
+File 5485 at 24572 (seg 23) version 17 flags 1
+File 5486 at 60466 (seg 59) version 19 flags 1
+File 5487 at 60466 (seg 59) version 18 flags 1
+File 5488 at 24572 (seg 23) version 17 flags 1
+File 5489 at 24572 (seg 23) version 15 flags 1
+File 5490 at 24572 (seg 23) version 21 flags 1
+File 5491 at 24572 (seg 23) version 18 flags 1
+File 5492 at 64472 (seg 62) version 18 flags 1
+File 5493 at 24572 (seg 23) version 19 flags 1
+File 5494 at 24572 (seg 23) version 14 flags 1
+File 5495 at 24572 (seg 23) version 14 flags 1
+File 5496 at 24572 (seg 23) version 12 flags 1
+File 5497 at 24572 (seg 23) version 18 flags 1
+File 5498 at 24572 (seg 23) version 10 flags 1
+File 5499 at 69652 (seg 68) version 18 flags 1
+File 5500 at 24572 (seg 23) version 13 flags 1
+File 5501 at 24572 (seg 23) version 14 flags 1
+File 5502 at 69652 (seg 68) version 18 flags 1
+File 5503 at 24044 (seg 23) version 20 flags 1
+File 5504 at 24044 (seg 23) version 16 flags 1
+File 5505 at 64472 (seg 62) version 18 flags 1
+File 5506 at 24044 (seg 23) version 17 flags 1
+File 5507 at 64472 (seg 62) version 16 flags 1
+File 5508 at 24044 (seg 23) version 15 flags 1
+File 5509 at 24044 (seg 23) version 13 flags 1
+File 5510 at 64472 (seg 62) version 14 flags 1
+File 5511 at 64472 (seg 62) version 17 flags 1
+File 5512 at 24044 (seg 23) version 12 flags 1
+File 5513 at 13361 (seg 13) version 17 flags 1
+File 5514 at 55281 (seg 53) version 17 flags 1
+File 5515 at 24044 (seg 23) version 16 flags 1
+File 5516 at 13361 (seg 13) version 13 flags 1
+File 5517 at 24044 (seg 23) version 19 flags 1
+File 5518 at 24044 (seg 23) version 17 flags 1
+File 5519 at 74818 (seg 73) version 17 flags 1
+File 5520 at 55281 (seg 53) version 15 flags 1
+File 5521 at 24044 (seg 23) version 19 flags 1
+File 5522 at 64472 (seg 62) version 17 flags 1
+File 5523 at 74818 (seg 73) version 18 flags 1
+File 5524 at 74818 (seg 73) version 17 flags 1
+File 5525 at 29746 (seg 29) version 15 flags 1
+File 5526 at 74818 (seg 73) version 10 flags 1
+File 5527 at 74818 (seg 73) version 16 flags 1
+File 5528 at 74818 (seg 73) version 18 flags 1
+File 5529 at 74818 (seg 73) version 16 flags 1
+File 5530 at 55281 (seg 53) version 14 flags 1
+File 5531 at 74818 (seg 73) version 16 flags 1
+File 5532 at 74818 (seg 73) version 18 flags 1
+File 5533 at 74818 (seg 73) version 18 flags 1
+File 5534 at 74818 (seg 73) version 19 flags 1
+File 5535 at 74818 (seg 73) version 16 flags 1
+File 5536 at 69652 (seg 68) version 19 flags 1
+File 5537 at 55281 (seg 53) version 11 flags 1
+File 5538 at 24044 (seg 23) version 11 flags 1
+File 5539 at 69652 (seg 68) version 15 flags 1
+File 5540 at 60466 (seg 59) version 18 flags 1
+File 5541 at 69652 (seg 68) version 18 flags 1
+File 5542 at 69652 (seg 68) version 15 flags 1
+File 5543 at 58352 (seg 56) version 16 flags 1
+File 5544 at 58352 (seg 56) version 17 flags 1
+File 5545 at 69652 (seg 68) version 18 flags 1
+File 5546 at 58352 (seg 56) version 18 flags 1
+File 5547 at 69652 (seg 68) version 16 flags 1
+File 5548 at 48081 (seg 46) version 11 flags 1
+File 5549 at 69652 (seg 68) version 14 flags 1
+File 5550 at 69652 (seg 68) version 11 flags 1
+File 5551 at 48081 (seg 46) version 16 flags 1
+File 5552 at 69652 (seg 68) version 11 flags 1
+File 5553 at 58352 (seg 56) version 16 flags 1
+File 5554 at 48081 (seg 46) version 15 flags 1
+File 5555 at 58352 (seg 56) version 17 flags 1
+File 5556 at 48081 (seg 46) version 11 flags 1
+File 5557 at 69652 (seg 68) version 11 flags 1
+File 5558 at 69652 (seg 68) version 18 flags 1
+File 5559 at 69652 (seg 68) version 17 flags 1
+File 5560 at 58352 (seg 56) version 15 flags 1
+File 5561 at 69652 (seg 68) version 13 flags 1
+File 5562 at 69652 (seg 68) version 17 flags 1
+File 5563 at 69652 (seg 68) version 17 flags 1
+File 5564 at 60466 (seg 59) version 15 flags 1
+File 5565 at 69652 (seg 68) version 17 flags 1
+File 5566 at 69652 (seg 68) version 18 flags 1
+File 5567 at 58352 (seg 56) version 14 flags 1
+File 5568 at 69652 (seg 68) version 12 flags 1
+File 5569 at 58352 (seg 56) version 12 flags 1
+File 5570 at 69652 (seg 68) version 20 flags 1
+File 5571 at 58352 (seg 56) version 10 flags 1
+File 5572 at 69652 (seg 68) version 15 flags 1
+File 6029 at 18497 (seg 18) version 0 flags 1
+NumClean segments 26 (25.7%) NumDirty 66 (65.3%)
+FreeBlocks 86523 (83.6%) dirtyActiveBytes 349525 (66.7%)
+currentSegment 72 currentBlockOffset 721 curSegActiveBytes 365568
+previousSegment 23 cleanSegList 10
+SegNum 0 activeBytes 520192 state Full
+SegNum 1 activeBytes 2 state Clean
+SegNum 2 activeBytes 5 state Clean
+SegNum 3 activeBytes 90112 state Dirty
+SegNum 4 activeBytes 358528 state Full
+SegNum 5 activeBytes 7 state Clean
+SegNum 6 activeBytes 19 state Clean
+SegNum 7 activeBytes 21 state Clean
+SegNum 8 activeBytes 0 state Dirty
+SegNum 9 activeBytes 4096 state Dirty
+SegNum 10 activeBytes 44 state Clean
+SegNum 11 activeBytes 32768 state Dirty
+SegNum 12 activeBytes 104704 state Dirty
+SegNum 13 activeBytes 132096 state Dirty
+SegNum 14 activeBytes 53248 state Dirty
+SegNum 15 activeBytes 108544 state Dirty
+SegNum 16 activeBytes 0 state Dirty
+SegNum 17 activeBytes 132864 state Dirty
+SegNum 18 activeBytes 36864 state Dirty
+SegNum 19 activeBytes 76 state Clean
+SegNum 20 activeBytes 0 state Dirty
+SegNum 21 activeBytes 27 state Clean
+SegNum 22 activeBytes 0 state Dirty
+SegNum 23 activeBytes 518784 state Full
+SegNum 24 activeBytes 153088 state Dirty
+SegNum 25 activeBytes 176128 state Dirty
+SegNum 26 activeBytes 52736 state Dirty
+SegNum 27 activeBytes 29 state Clean
+SegNum 28 activeBytes 212608 state Dirty
+SegNum 29 activeBytes 31 state Clean
+SegNum 30 activeBytes 33408 state Dirty
+SegNum 31 activeBytes 33 state Clean
+SegNum 32 activeBytes 434176 state Full
+SegNum 33 activeBytes 38 state Clean
+SegNum 34 activeBytes 122880 state Dirty
+SegNum 35 activeBytes 0 state Dirty
+SegNum 36 activeBytes 0 state Dirty
+SegNum 37 activeBytes 6 state Clean
+SegNum 38 activeBytes 39 state Clean
+SegNum 39 activeBytes 40 state Clean
+SegNum 40 activeBytes 47 state Clean
+SegNum 41 activeBytes 207872 state Dirty
+SegNum 42 activeBytes 520192 state Full
+SegNum 43 activeBytes 4096 state Dirty
+SegNum 44 activeBytes 37 state Clean
+SegNum 45 activeBytes 516096 state Full
+SegNum 46 activeBytes 120320 state Dirty
+SegNum 47 activeBytes 95 state Clean
+SegNum 48 activeBytes 161792 state Dirty
+SegNum 49 activeBytes 0 state Dirty
+SegNum 50 activeBytes 115200 state Dirty
+SegNum 51 activeBytes 204288 state Dirty
+SegNum 52 activeBytes 8832 state Dirty
+SegNum 53 activeBytes 220160 state Dirty
+SegNum 54 activeBytes 0 state Dirty
+SegNum 55 activeBytes 0 state Dirty
+SegNum 56 activeBytes 318720 state Dirty
+SegNum 57 activeBytes 259584 state Dirty
+SegNum 58 activeBytes 472832 state Full
+SegNum 59 activeBytes 0 state Dirty
+SegNum 60 activeBytes 162304 state Dirty
+SegNum 61 activeBytes 0 state Dirty
+SegNum 62 activeBytes 380800 state Full
+SegNum 63 activeBytes 0 state Dirty
+SegNum 64 activeBytes 105984 state Dirty
+SegNum 65 activeBytes 36864 state Dirty
+SegNum 66 activeBytes 0 state Dirty
+SegNum 67 activeBytes 518912 state Full
+SegNum 68 activeBytes 16384 state Dirty
+SegNum 69 activeBytes 0 state Dirty
+SegNum 70 activeBytes 86016 state Dirty
+SegNum 71 activeBytes 0 state Dirty
+SegNum 72 activeBytes 365568 state Full
+SegNum 73 activeBytes 0 state Dirty
+SegNum 74 activeBytes 0 state Dirty
+SegNum 75 activeBytes 0 state Dirty
+SegNum 76 activeBytes 88 state Clean
+SegNum 77 activeBytes 0 state Dirty
+SegNum 78 activeBytes 0 state Dirty
+SegNum 79 activeBytes 0 state Dirty
+SegNum 80 activeBytes 0 state Dirty
+SegNum 81 activeBytes 0 state Dirty
+SegNum 82 activeBytes 286336 state Dirty
+SegNum 83 activeBytes 0 state Dirty
+SegNum 84 activeBytes 0 state Dirty
+SegNum 85 activeBytes 0 state Dirty
+SegNum 86 activeBytes 0 state Dirty
+SegNum 87 activeBytes 0 state Dirty
+SegNum 88 activeBytes 1 state Clean
+SegNum 89 activeBytes 0 state Dirty
+SegNum 90 activeBytes 0 state Dirty
+SegNum 91 activeBytes 0 state Dirty
+SegNum 92 activeBytes 0 state Dirty
+SegNum 93 activeBytes 4096 state Dirty
+SegNum 94 activeBytes 278528 state Dirty
+SegNum 95 activeBytes 96 state Clean
+SegNum 96 activeBytes 97 state Clean
+SegNum 97 activeBytes 98 state Clean
+SegNum 98 activeBytes 99 state Clean
+SegNum 99 activeBytes 100 state Clean
+SegNum 100 activeBytes -1 state Clean
+/dev/rsd04c: 0 major errors 2 minor errors

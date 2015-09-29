@@ -1,0 +1,66 @@
+
+
+
+IPCS                      User Commands                      IPCS
+
+
+
+NNAAMMEE
+     ipcs, ipcrm - report status of System V semaphores.
+
+SSYYNNOOPPSSIISS
+     iippccss [ _k_e_y ]
+
+DDEESSCCRRIIPPTTIIOONN
+     iippccss prints information about System V semaphores in the
+     system.  It will delete a semaphore if the key is given as
+     an argument.  This program is a simplified version of the
+     System V iippccss and iippccrrmm programs.
+
+SSEEEE AALLSSOO
+     shmctl(2), shmop(2), shmget(2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0              April 25, 1990                         1
+
+
+

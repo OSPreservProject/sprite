@@ -1,0 +1,608 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    voelker:1.5; strict;
+comment  @ * @;
+
+
+1.5
+date     91.10.28.14.38.48;  author voelker;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.10.04.18.38.56;  author voelker;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.10.03.19.23.18;  author voelker;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.10.03.19.21.09;  author voelker;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.10.03.19.18.02;  author voelker;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Outputs information relating to the filesystems found
+on the disk device arguments (/dev/rsd*)
+@
+
+
+1.5
+log
+@fixed cmd line switch descriptions
+@
+text
+@n/*
+ * fsinfo.c --
+ *
+ *     Print out information related to the file systems, if any, found
+ *  on the disk devices (/dev/rsd*) passed as arguments.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/cmds/fsinfo/RCS/fsinfo.c,v 1.4 91/10/04 18:38:56 voelker Exp Locker: voelker $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+#include "sys/file.h"
+#include "stdio.h"
+#include "errno.h"
+
+#include "disk.h"
+#include "option.h"
+
+#define GENERIC_OFS_PREFIX  "(new domain)"
+
+/*
+ * output strings
+ */
+#define LFS_NAME            "lfs"
+#define OFS_NAME            "ofs"
+#define EMPTY_PREFIX_NAME   "(none)"
+
+/*
+ * delayed printing of header;  only print the header if
+ * more information is going to follow it
+ */
+static Boolean headerNotPrinted;
+
+/*
+ * If true, fsinfo will print out error messages.  fsinfo will
+ * complain if it finds a file system on a partition on which
+ * the file system was not created;  if it tries to open an invalid
+ * partition, which includes the device for the entire disk
+ * (e.g., /dev/rsd00);  or, if no file system is found, a message
+ * to that effect
+ */
+Boolean verbose = FALSE;
+
+Option optionArray[] = {
+    {OPT_DOC, "", (Address)NIL,
+	 "fsinfo [-verbose] device [device]..."},
+    {OPT_TRUE, "verbose", (Address)&verbose,
+	 "Print error messages"}
+};
+static int numOptions = sizeof(optionArray) / sizeof(Option);
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PartitionIndex --
+ *
+ *	Calculates the partition number/index using the device name,
+ *      e.g., /dev/rsd00a would have a partition index of 0.
+ *      Partition designations start at 'a' and are limited by the
+ *      number of partitions on the disk, as specified in the disk label.
+ *
+ * Results:
+ *	If no valid partition index could be found from the device
+ *      name, then an index of -1 is returned;  otherwise, the integer
+ *      index corresponding to the partition is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+PartitionIndex(deviceName, labelPtr)
+    char *deviceName;
+    Disk_Label *labelPtr;
+{
+    if (deviceName != NULL) {
+	char c;
+	int n;
+
+	c = deviceName[strlen(deviceName) - 1];
+	n = (int)(c - 'a');
+	if (n < 0 || n > labelPtr->numPartitions - 1) {
+	    return -1;
+	}
+	return n;
+    }
+    return -1;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintHeader --
+ *
+ *      Prints the column labels to stdout.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *	Prints to stdout.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+PrintHeader()
+{
+    printf("%-13s %-3s  %-15s  %8s  %8s  %9s  %7s\n",
+	   "Dev Name", "FS", "Prefix", "Dom. Num", "SpriteID",
+	   "Start Cyl", "End Cyl");
+}	   
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintInfo --
+ *
+ *      Prints the file system type, the domain prefix, the domain number,
+ *      the SpriteID, the start cylinder and size, and the index of
+ *      the partition denoted by `deviceName'.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *	Prints to stdout.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+PrintInfo(deviceName, fsType, domainPrefix, domainNumber, spriteID, 
+	  labelPtr, index)
+    char       *deviceName;             /* partition name, e.g., /dev/rsd00a */
+    char       *fsType;                 /* file system type */
+    char       *domainPrefix;           /* domain prefix */
+    int        domainNumber, spriteID;  /* domain # and Sprite ID */
+    Disk_Label *labelPtr;               /* disk label */
+    int        index;                   /* partition index */
+{
+    int startCyl, endCyl;
+    char *prefix;
+
+    if (labelPtr == NULL) {
+	return;
+    }
+    startCyl = labelPtr->partitions[index].firstCylinder;
+    endCyl = labelPtr->partitions[index].numCylinders;
+    if (endCyl > 0) {
+	endCyl += startCyl - 1;
+    } else {
+	endCyl = startCyl;
+    }
+    if (domainPrefix == NULL || *domainPrefix == NULL) {
+	prefix = EMPTY_PREFIX_NAME;
+    } else if (!strcmp(GENERIC_OFS_PREFIX, domainPrefix)) {
+	prefix = EMPTY_PREFIX_NAME;
+    } else {
+	prefix = domainPrefix;
+    } 
+    printf("%-13s %3s  %-15s  %8d  %8d  %9d  %7d\n",
+	   deviceName, fsType, prefix, domainNumber, spriteID,
+	   startCyl, endCyl); 
+}    
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintLfsInfo --
+ *
+ *      Prints the domain prefix, the domain number,
+ *      the SpriteID, the start cylinder and size, and the index of
+ *      the LFS partition found on the stream
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *	Prints to stdout.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+PrintLfsInfo(stream, deviceName, labelPtr)
+    int stream;
+    char *deviceName;
+    Disk_Label *labelPtr;
+{
+    LfsCheckPointHdr *headerPtr;
+    int index;
+    int area = 0;
+
+    headerPtr = Disk_ReadLfsCheckPointHdr(stream, labelPtr, &area);
+    if (headerPtr == NULL) {
+	return FAILURE;
+    } 
+    /*
+     * only print header if subsequent information is going to be printed
+     */
+    if (headerNotPrinted == TRUE) {
+	PrintHeader();
+	headerNotPrinted = FALSE;
+    }
+    index = PartitionIndex(deviceName, labelPtr);
+    if (verbose == TRUE && index == -1) {
+	fprintf(stderr, "%s: Bad partition.  ", deviceName);
+	fprintf(stderr, "If this is the raw disk handle,\n");
+	fprintf(stderr, "try specifying the `a' partition instead.\n");
+	free(headerPtr);
+	return FAILURE;
+    }
+    PrintInfo(deviceName, LFS_NAME, headerPtr->domainPrefix, 
+	      headerPtr->domainNumber, headerPtr->serverID, 
+	      labelPtr, index);
+    free(headerPtr);
+    return SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PrintOfsInfo --
+ *
+ *      Prints the domain prefix, the domain number,
+ *      the SpriteID, the start cylinder and size, and the index of
+ *      the OFS partition found on the stream.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *	Prints to stdout.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+PrintOfsInfo(stream, deviceName, labelPtr)
+    int stream;
+    char *deviceName;
+    Disk_Label *labelPtr;
+{
+    Ofs_DomainHeader *headerPtr;
+    Ofs_SummaryInfo *summaryPtr;
+    int index;
+
+    headerPtr = Disk_ReadDomainHeader(stream, labelPtr);
+    if (headerPtr == NULL) {
+	return FAILURE;
+    }
+    summaryPtr = Disk_ReadSummaryInfo(stream, labelPtr);
+    if (summaryPtr == NULL) {
+	free(headerPtr);
+	return FAILURE;
+    }
+    /*
+     * only print header if subsequent information is going to be printed
+     */
+    if (headerNotPrinted == TRUE) {
+	PrintHeader();
+	headerNotPrinted = FALSE;
+    }
+    index = PartitionIndex(deviceName, labelPtr);
+    if (verbose == TRUE && index == -1) {
+	fprintf(stderr, "%s: Bad partition.  ", deviceName);
+	fprintf(stderr, "If this is the raw disk handle,\n");
+	fprintf(stderr, "try specifying the `a' partition instead.\n");
+	free(headerPtr);
+	free(summaryPtr);
+	return FAILURE;
+    }
+    if (verbose == TRUE && DISK_PARTITION(&(headerPtr->device)) != index) {
+	fprintf(stderr, "%s: The partition has an OFS on it", deviceName);
+	fprintf(stderr, ", but the OFS\nwas created on partition `%c'.\n",
+		DISK_PARTITION(&(headerPtr->device)) + 'a');
+	free(headerPtr);
+	free(summaryPtr);
+	return FAILURE;
+    }
+    PrintInfo(deviceName, OFS_NAME, summaryPtr->domainPrefix, 
+	      summaryPtr->domainNumber, headerPtr->device.serverID, 
+	      labelPtr, index);
+    free(headerPtr);
+    free(summaryPtr);
+    return SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *      Open the device streams, then read and print the partition and 
+ *      file system info found to stdout.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *	Prints to stdout.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+main(argc, argv)
+    int argc;
+    char *argv[];
+{
+    int        stream;
+    int        n, fstype;
+    Disk_Label *labelPtr;
+
+    argc = Opt_Parse(argc, argv, optionArray, numOptions);
+    if (argc == 1) {
+	Opt_PrintUsage(argv[0], optionArray, numOptions);
+	exit(FAILURE);
+    }
+    headerNotPrinted = TRUE;
+    for (n = 1; n < argc; n++) {
+	stream = open(argv[n], O_RDONLY, 0);
+	if (stream < 0) {
+	    perror("opening device");
+	    continue;
+	}
+	labelPtr = Disk_ReadLabel(stream);
+	if (labelPtr == NULL) {
+	    if (verbose == TRUE) {
+		if (headerNotPrinted) {
+		    PrintHeader();
+		    headerNotPrinted = FALSE;
+		}
+		printf("fsinfo: cannot find label on device %s.  ", argv[n]);
+		printf("Is the label\non the disk of the correct type for");
+		printf("the machine being used?\n");
+	    }
+	    continue;
+	}
+	fstype = Disk_HasFilesystem(stream, labelPtr);
+	switch (fstype) {
+	    case DISK_HAS_OFS:
+	        PrintOfsInfo(stream, argv[n], labelPtr);
+		break;
+	    case DISK_HAS_LFS:
+	        PrintLfsInfo(stream, argv[n], labelPtr);
+		break;
+	    default:
+	        if (verbose == TRUE) {
+		    if (headerNotPrinted) {
+			PrintHeader();
+			headerNotPrinted = FALSE;
+		    }
+		    printf("%s: no file system found\n", argv[n]);
+		}
+		break;
+	}
+	free(labelPtr);
+    }
+}
+@
+
+
+1.4
+log
+@merged command line options to make the behavior more uniform
+and easier to control
+@
+text
+@d1 1
+a1 1
+/*
+d9 1
+a9 1
+static char rcsid[] = "$Header: /user6/voelker/fsinfo/RCS/fsinfo.c,v 1.3 91/10/03 19:23:18 voelker Exp Locker: voelker $ SPRITE (Berkeley)";
+d49 1
+a49 1
+	 "Do not print error messages"}
+d193 1
+d195 1
+a195 1
+    headerPtr = Disk_ReadLfsCheckPointHdr(stream, labelPtr);
+@
+
+
+1.3
+log
+@fooling with RCS ids
+
+@
+text
+@d9 1
+a9 1
+static char rcsid[] = "$Header$ Revision Author Date Locker$ SPRITE (Berkeley)";
+d17 1
+a17 1
+#include "mydisk.h"
+d30 5
+a34 15
+ * match and mismatch determine whether or not fsinfo cares if a FS is found
+ * on a partition that differs from the partition that it was
+ * created on (because partitions may overlap).  By default,
+ * fsinfo will print an error if the searched partition does not match
+ * the creation partition only if there is one partition argument.
+ * Otherwise, it will print file system information on any partition
+ * that it finds a filesystem on.  The `match' and `mismatch' flags
+ * override the default behavior.
+ */
+Boolean mismatch = FALSE;
+Boolean match = FALSE;
+/*
+ * if true, no error messages are printed out
+ */
+Boolean quiet = FALSE;
+d36 6
+a41 1
+ * if true, the header is not printed out
+d43 1
+a43 1
+Boolean noHeader = FALSE;
+d47 2
+a48 8
+	 "fsinfo [-mismatch] [-match] [-nohead] [-quiet] device [device]..."},
+    {OPT_TRUE, "mismatch", (Address)&mismatch,
+	 "Print whatever file system info is found"},
+    {OPT_TRUE, "match", (Address)&match,
+	 "Only print FS info if found on the partition it was created on"},
+    {OPT_TRUE, "nohead", (Address)&noHeader,
+	 "Do not print out the header"},
+    {OPT_TRUE, "quiet", (Address)&quiet,
+d53 21
+d75 1
+a75 1
+partitionIndex(deviceName, labelPtr)
+d85 1
+a85 1
+	if (n < 0 || n > labelPtr -> numPartitions - 1) {
+d90 1
+d92 16
+a107 1
+
+d115 18
+a132 1
+
+d136 5
+a140 5
+    char       *deviceName; 
+    char       *fsType;
+    char       *domainPrefix;
+    int        domainNumber, spriteID;
+    Disk_Label *labelPtr;
+d146 5
+a150 2
+    startCyl = labelPtr -> partitions[index].firstCylinder;
+    endCyl = labelPtr -> partitions[index].numCylinders;
+d158 1
+a158 1
+    } else if (strcmp(GENERIC_OFS_PREFIX)) {
+d162 1
+a162 1
+    }
+d167 18
+a184 1
+
+d198 12
+a209 7
+    index = partitionIndex(deviceName, labelPtr);
+    if (index == -1) {
+	if (quiet == FALSE) {
+	    fprintf(stderr, "%s: Bad partition.  ", deviceName);
+	    fprintf(stderr, "If this is the raw disk handle,\n");
+	    fprintf(stderr, "try specifying the `a' partition instead.\n");
+	}
+d213 2
+a214 2
+    PrintInfo(deviceName, LFS_NAME, headerPtr -> domainPrefix, 
+	      headerPtr -> domainNumber, headerPtr -> serverID, 
+d219 18
+a236 1
+
+d256 12
+a267 7
+    index = partitionIndex(deviceName, labelPtr);
+    if (index == -1) {
+	if (quiet == FALSE) {
+	    fprintf(stderr, "%s: Bad partition.  ", deviceName);
+	    fprintf(stderr, "If this is the raw disk handle,\n");
+	    fprintf(stderr, "try specifying the `a' partition instead.\n");
+	}
+d272 4
+a275 6
+    if (DISK_PARTITION(&(headerPtr -> device)) != index && match == TRUE) {
+	if (quiet == FALSE) {
+	    fprintf(stderr, "%s: The partition has an OFS on it", deviceName);
+	    fprintf(stderr, ", but the OFS\nwas created on partition `%c'.\n",
+		    DISK_PARTITION(&(headerPtr -> device)) + 'a');
+	}
+d280 2
+a281 2
+    PrintInfo(deviceName, OFS_NAME, summaryPtr -> domainPrefix, 
+	      summaryPtr -> domainNumber, headerPtr -> device.serverID, 
+d287 17
+a303 1
+
+d309 3
+a311 6
+    int stream;
+    Ofs_DomainHeader   *ofsHeaderPtr;
+    LfsSuperBlock      *superPtr;
+    LfsCheckPointHdr   *lfsHeaderPtr;
+    int                n, status, fstype;
+    Disk_Label         *labelPtr;
+d318 1
+a318 8
+    if (match != TRUE) {
+	if (mismatch == FALSE && argc == 2) {
+	    match = TRUE;
+	}
+    }
+    if (noHeader == FALSE) {
+	PrintHeader();
+    }
+d327 5
+a331 1
+	    if (quiet == FALSE) {
+d340 15
+a354 11
+	case DISK_HAS_OFS:
+	    PrintOfsInfo(stream, argv[n], labelPtr);
+	    break;
+	case DISK_HAS_LFS:
+	    PrintLfsInfo(stream, argv[n], labelPtr);
+	    break;
+	default:
+	    if (quiet == FALSE) {
+		printf("%s: no file system found\n", argv[n]);
+	    }
+	    break;
+@
+
+
+1.2
+log
+@initial version of fsinfo...
+reports prefix/domain names, file system type, partition, start
+cyclinder, and partition size of disk partition arguments
+
+@
+text
+@d9 1
+a9 1
+static char rcsid[] = "$Header Revision Author Date Locker$ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d9 1
+a9 1
+static char rcsid[] = "";
+@

@@ -1,0 +1,48 @@
+This is the latest and greatest version of dvips.  It supports:
+
+	- Automatic generation of fonts via MF whenever needed
+	- EPSF PostScript files complete with automatic determination
+		of graphics size (see epsf.tex)
+	- Literal PostScript includes complete with definitions
+	- Non-EPSF PostScript graphics with user-specified scaling
+	- TPIC specials
+	- Correct budgeting of printer memory
+	- Output at 300 or 400 DPI (or any other DPI)
+	- Use of PostScript fonts
+        - Use of virtual fonts
+	- Use of popen on output file.
+
+Usage:
+
+   dvips [options] filename[.dvi]
+
+The output PostScript file is written by default to `filename.ps'.
+
+Changes from 40 to 41:
+
+	- Cheaper on VM!  2100 bytes saved per TeX font used
+	- Bug found and fixed in afm2tfm (height of \i wrong in tfms)
+	- `Displaced' PostScript characters now usable (moved to 128...)
+	- Many flags now can be toggled off (eg, -r can be turned off with -r0)
+	- Texture support added to tpic specials
+	- Program no longer aborts if figure file cannot be found
+	- Either -tlegal or -t@legal will work to set page style
+	- @ang problem fixed
+	- Some typos fixed that caused various minor bugs and compile problems
+
+Changes from 41 to 50:
+        - Everything checked over by Don Knuth and tuned up to his specs
+        - Numerous bugs for weird and unusual cases fixed
+        - Documentation rewritten
+        - PostScript and TeX code revised
+        - New virtual font capability makes use of PostScript fonts much better
+        - Improved search for PK fonts near the desired resolution
+        - No longer can use -t@legal for page style! Say -tlegal, please
+        - \special psfile changed: clipping now done AFTER scaling and offset
+        - Landscape special allowed anywhere
+        - Compressed fonts now even smaller
+        - Error messages more consistent and more informative
+
+Make sure you install the new TFMs and new VFs and new header files!
+
+See the (new) man pages for more information.

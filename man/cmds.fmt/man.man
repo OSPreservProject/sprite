@@ -1,0 +1,200 @@
+
+
+
+MAN                       User Commands                       MAN
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     man - Print entries in the user reference manual
+
+SSYYNNOOPPSSIISS
+     mmaann [_o_p_t_i_o_n_s] [_s_e_c_t_i_o_n_N_u_m_b_e_r] _e_n_t_r_y_N_a_m_e _e_n_t_r_y_N_a_m_e ...
+
+OOPPTTIIOONNSS
+     --aa             Search  all  man  directories.   By  default,
+                    directories  marked  "ALL"  in  the configure
+                    file will be skipped.  In Sprite, the --aa flag
+                    will  cause Software Warehouse directories to
+                    be searched.
+
+     --cc _c_o_n_f_i_g_F_i_l_e  MMaann    normally    looks    in    the    file
+                    //sspprriittee//lliibb//mmaann//ccoonnffiigg  for information about
+                    where the man pages are.  If the --cc switch is
+                    given, then mmaann uses _c_o_n_f_i_g_F_i_l_e instead.
+
+     --ii             Generate index.  Instead of  printing  manual
+                    entries, treat each _e_n_t_r_y_N_a_m_e as a file name.
+                    Read all the files, and output index informa-
+                    tion on standard output.
+
+     --hheellpp          Print a summary of the  command-line  options
+                    and exit without printing any manual pages.
+
+     --kk             Keyword search.  Instead of  printing  manual
+                    entries,  treat  each _e_n_t_r_y_N_a_m_e argument as a
+                    keyword, search the manual indexes for infor-
+                    mation  about the keywords, and print all the
+                    matching index entries.
+
+     --rr             Normally, mmaann retains formatted  versions  of
+                    man  pages  for  faster  printing.   It  only
+                    reformats a man page if there is no formatted
+                    version  or  if  the source is newer than the
+                    formatted version.  This switch causes mmaann to
+                    reformat  the  man page even if the formatted
+                    copy appears to be up-to-date.
+
+     --ss _s_e_c_t_i_o_n_N_a_m_e Check only  in  section  _s_e_c_t_i_o_n_N_a_m_e  of  the
+                    manual for the desired entries.
+
+     --tt             Print  the  manual  entries  on  the  printer
+                    instead of on standard output.
+
+     --              MMaann normally filters the  man  pages  through
+                    mmoorree  --ss  to  break up the output and process
+                    underline and boldface requests.   If  the  --
+                    switch  is  given,  then  the  mmoorree filter is
+
+
+
+Sprite v.1.0       Printed:  September 5, 1991                  1
+
+
+
+
+
+
+MAN                       User Commands                       MAN
+
+
+
+                    omitted,  and  the  nnrrooffff  output  is  passed
+                    directly   to   standard  output.  The  PPAAGGEERR
+                    environment variable can be set to  the  name
+                    of a program to use instead of mmoorree.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The mmaann program locates and prints one or  more  entries  of
+     the  Sprite  reference manual.  The entries are given by the
+     _e_n_t_r_y_N_a_m_e arguments;  these are usually the  names  of  pro-
+     grams  or  library  procedures.   Normally, mmaann searches the
+     entire manual and invokes mmoorree to print the first entry that
+     matches  each  _e_n_t_r_y_N_a_m_e.   The  manual is divided into sec-
+     tions, and it is possible for the same name to be  used  for
+     entries in different sections.  You may use the --ss switch to
+     specify a particular section;  in this case, mmaann  will  look
+     only  in  the named section.  Section names include both the
+     traditional UNIX names (11, 22, etc.)  and  the  Sprite  names
+     (ccmmddss,  lliibb,  lliibb//cc,  ddeevv, etc.).  You may specify a section
+     name without the --ss switch if the section name starts with a
+     number and is entered as the first _e_n_t_r_y_N_a_m_e.
+
+     The default configuration file causes the current  directory
+     to  be searched for the desired manual entry before the sys-
+     tem directories.  If there is a file  _e_n_t_r_y_N_a_m_e..mmaann  in  the
+     current  directory, then it will be printed in preference to
+     any entries in the system area.
+
+     The --ii switch causes mmaann to generate  an  index  instead  of
+     printing a manual page.  Each _e_n_t_r_y_N_a_m_e argument is taken to
+     be a file name.  MMaann will read  all  the  files  and  output
+     index  information  for  them on standard output.  Normally,
+     each  directory  containing  installed  unformatted   manual
+     entries  also has a file named iinnddeexx containing index infor-
+     mation for all the files in the  directory.   When  printing
+     manual  entries,  if  mmaann  cannot  locate a file for a given
+     _e_n_t_r_y_N_a_m_e, then it reads the iinnddeexx files to see if _e_n_t_r_y_N_a_m_e
+     is  an alternate name for some other manual entry (an alter-
+     nate name is any name listed in  the  NNAAMMEE  section  of  the
+     entry).
+
+     The --kk switch causes mmaann to perform a keyword search instead
+     of printing a manual page.  Each _e_n_t_r_y_N_a_m_e argument is taken
+     to be a keyword, and mmaann searches all the  iinnddeexx  files  for
+     entries  that  match  the  keywords.  Each matching entry is
+     printed on standard output in a human-readable form.  A key-
+     word  matches  an index entry if it is a substring of any of
+     the entry's name, synopsis, or keyword fields.
+
+
+FFIILLEESS
+     /sprite/lib/man/config - default configuration file
+
+
+
+Sprite v.1.0       Printed:  September 5, 1991                  2
+
+
+
+
+
+
+MAN                       User Commands                       MAN
+
+
+
+KKEEYYWWOORRDDSS
+     help, index, keyword, manual, reference, section
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  September 5, 1991                  3
+
+
+

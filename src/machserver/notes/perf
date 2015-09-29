@@ -1,0 +1,193 @@
+Notes, ideas about performance
+
+
+	- Context switches -
+
+W/i Sprite server, do you lose much when signalling a process because
+(in Sync_WakeWaitingProcess) you do a broadcast on the condition
+variable, rather than waking only the one process?
+
+How much do you lose by doing context switches in the RPC processing
+path?
+
+
+	- Segment management -
+
+How often does segment lookup have to bail out and start over because
+the desired segment was in the middle of being destroyed?
+
+How much time would you save by having Sprite cache segments, rather
+than forcing them to be "immediately" destroyed?  (If you implement
+this, look at Fs_GetSegPtr and how native Sprite stashes away the
+segment handle.)
+
+How much time do you win by renaming the port to be the segment
+handle?
+
+How much is exec speeded up by using an initialization file for the
+heap?
+
+How much time is lost by always opening and closing the swap file?
+For a short lived process, you may never need to go to the swap file,
+so why bother opening it?  [Cost is significant: doubles the time of
+the fork benchmark.]
+
+Try to understand the read-ahead stuff done by native Sprite
+(vmServer.c).  How much does it buy you?
+
+How much time do you spend releasing the reference on the control port
+in the data_request, data_write, etc. routines?
+
+How much time do you spend cleaning "anonymous" (heap & stack)
+segments at process exit?
+
+Understand the Fs_FileBeingMapped calls: how they're used, how they
+affect performance.  See the comments in VmSegmentCleanup.
+
+How much time is spent waiting to process a request because the server
+is already processing a request for the given memory object?  (For
+example, you can't currently page-in in parallel multiple pages for a
+text segment.)
+
+How much time do you lose querying for the size of the swap file in
+VmCopySwapFile?  Should you keep that information in the Vm_Segment
+(and update it from memory_object_write)?
+
+How much time is spent waiting for the VM monitor lock?  How often is
+the lock held while doing an RPC?  (For example, as of 9-Jan-92, the
+code path for destroying a segment would hold the VM monitor lock
+while trying to notify the file server that the file was no longer
+mapped.  Also, Vm_GetSwapSegment holds the monitor lock while calling
+VmOpenSwapFile.)
+
+How much time in fork() is spent copying initialized heap pages?
+
+
+	- processes -
+
+Have you allocated enough Proc_ServerProcs?  Too many?  Should you
+split the FS cache and VM server processes into separate pools?  You
+might want to look at Mendel's changes to allow an expandable pool of
+Proc_ServerProcs (procServer.h, procServer.c, proc.h).
+
+How much do you lose by only having one thread to get requests and do
+pcb reaping?  Would it be better to have multiple threads, each of
+which goes through "obtain lock -> process dead list -> get msg ->
+release lock"?  (What is the cost of two mach_msg's and two context
+switches compared to the overall request processing time?)  Also,
+there are a bunch of messages from late October and early November
+1991 about the cthread_mach_mumble routines used in the UX server that
+you should review.
+Note: a possible alternative to locking (to avoid the process re-use
+race) is to use no-senders notification.  You may need to take
+advantage of sequence numbers; see Richard Draves's message of August
+9, 1991.
+
+
+	- network -
+
+How much time is required for a null RPC?  How does that compare with
+native Sprite?  Where is the time going?
+
+Disable the RPC delay code?
+[The way things are currently configured, this shouldn't make a
+difference.  Sun 3's, Sun 4's, and DECstations are all set with input
+and output times of 500 usec, and the RPC output code uses the
+difference between the receiver input rate and the sender output rate
+(i.e., 0) as the amount to delay.]
+
+What is the efficiency of the FS and VM caches?  Would having cache
+size negotiation make the caches more efficient?
+
+Instrument the driver to find out how long the packet queue is.  Maybe
+you should have multiple ReadPortSet threads.
+
+Don't bother with the UtilsMach_Delay calls?
+
+Should you re-enable the Proc_SetServerPriority call in
+Rpc_CreateServer?
+
+When comparing native and server Sprite, get an RPC count for the
+benchmark (i.e., find out where sprited is doing more RPC's than
+native Sprite and figure out if there's some good way to fix it).
+
+
+	- server memory usage -
+
+How much paging does the server do?  Are there data structures that
+can be shrunk (e.g., VmFileMap)?  Are there different algorithms or
+different ways of walking data structures to reduce the amount of
+paging? 
+
+Use the Sprite malloc (with Mem_Bin & callers)?
+
+
+	- other VM -
+
+Make the Vm_Copy{In,Out} code avoid vm_{read,write} calls when
+possible (when dealing with server addresses)?  Note that
+copy-on-write can only be used when the destination is backed by the
+default pager (rather than an external pager).
+
+Avoid using CopyIn/CopyOut by using a bounded string argument (e.g.,
+for file names & such)?
+
+When copying in arguments and environment variables from user space,
+would probably be faster if you ensure that the server's buffer is
+page-aligned (assuming you're still using Vm_CopyIn).  In fact, it
+might be worthwhile revisiting the interface presented by
+Vm_Copy{In,Out} to see if you can change it into something that
+doesn't cause so much byte copying.
+
+Keep counts for the number of 1-page, 2-page, 3-page, etc. page-ins
+and page-outs?
+
+Reduce the number of copies by using memory_object_data_supply with
+deallocate?
+
+
+	- timer -
+
+Are you getting burned by having elements in the timer queue processed
+too late?  (See notes for 12 November 1991).  Should you re-enable the
+Proc_SetPriority call in TimerThread()?
+
+The current timer code tries to schedule wakeups to the nearest
+millisecond, since that's what Mach advertises.  First, does the
+implementation really meet the specs, or is the granularity for
+wakeups coarser than 1ms?  Second, would you be better off by reducing
+overhead by upping the Sprite granularity to 10ms or 20ms?
+
+For systems that don't have a mapped timer, how expensive is
+Timer_GetTimeOfDay?  Should it always be called by TransferInProc?
+(If not, an alternative is to put something in the timer queue to run
+every N seconds and see whether there has been any console input in
+the previous interval.)
+
+
+	- file system -
+
+Look at Fsrmt_Read and Fsrmt_Write.  Notice the user of an
+intermediary buffer between the user buffer and the RPC packet
+(costing an extra alloc and copy).  Can this be fixed?  For example,
+JO has suggested mapping one or two pages of each user process
+directly into the server address space, keeping the mappings around
+from call to call until a different address is needed.  Does this
+alloc/copy problem show up in other stream types?
+
+
+	- signals -
+
+Are there any applications where signal-handling performance is
+critical (e.g., for SIGIO)?
+
+
+	- Sprite "system" calls -
+
+How much do you lose from the extra context switch (between the thread
+that reads messages and the thread that processes the request)?
+
+Is there a performance loss from creating/destroying the thread that
+processes the request (rather than keeping a pool of them)?
+
+Do you have too many paranoia checks?

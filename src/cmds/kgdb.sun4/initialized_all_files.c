@@ -1,0 +1,1 @@
+gdb/sun4.md/initialized_all_files.c

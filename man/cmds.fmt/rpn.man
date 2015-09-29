@@ -1,0 +1,332 @@
+
+
+
+RPN                       User Commands                       RPN
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     rpn - reverse polish notation visual desk calculator
+
+SSYYNNOOPPSSIISS
+     rrppnn
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     RRppnn is a stack-based desk calculator with a  screen-oriented
+     front  end.   This  calculator  is  very  similar,  in  many
+     respects, to  old  Hewlett-Packard  scientific  calculators.
+     The  available  commands  are listed in a menu at the top of
+     the screen.  the first few elements of its computation stack
+     are  listed  next.   At  the  bottom of the screen is a data
+     entry  area.   RRppnn  uses  ``reverse  polish  notation'',  or
+     stack-oriented commands.  Thus the basic syntax is
+
+          _a_r_g _a_r_g _o_p
+          For example: 47 358 +
+
+     This command pushes two values on the stack  (47  and  358),
+     then   applies  the  operation  (+)  to  those  two  values.
+     Operands are popped from  the  stack  and  replaced  by  the
+     result of the operation.  Items can be pushed onto the stack
+     one at a  time,  or  more  complicated  expressions  can  be
+     entered all on one line:
+
+          For example: 47 179 2 * +
+          or: 47 179 * 2 +
+
+     Note that the previous two examples are different  and  pro-
+     duce different answers.
+
+AARRIITTHHMMEETTIICC OOPPEERRAATTIIOONNSS
+     +          Addition
+
+     -          Subtraction
+
+     *          Multiplication
+
+     /          Division
+
+     mod        Modulo
+
+     **         Exponentiation
+
+     +-         Negation
+
+     1/x        Inverse
+
+
+
+
+Sprite v.1.0         Printed:  July 25, 1989                    1
+
+
+
+
+
+
+RPN                       User Commands                       RPN
+
+
+
+     min        Minimum of two arguments
+
+     max        Maximum of two arguments
+
+     abs        Absolute value
+
+     maxuint    Generates the maximum unsigned integer
+
+     maxint     Generates the maximum signed integer
+
+LLOOGGIICCAALL OOPPEERRAATTIIOONNSS
+     and (&)
+
+     or (|)
+
+     xor (^)
+
+     not (~)
+
+     shr (>>)   Shift right
+
+     shl (<<)   Shift left
+
+SSTTAACCKK OOPPEERRAATTIIOONNSS
+     xy         Swap top two stack elements
+
+     copy       Pushes a copy of the top of stack
+
+     clrx       Clear x, the top of the stack
+
+     y          Clear y, the next to top of the stack
+
+     clrs       Clear the whole stack
+
+     clrm _N     Clear register number N
+
+     sto _N      Store to register number N
+
+     sto+ _N     Add to register number N
+
+     sto- _N     Subtract from register number N
+
+     rcl _N      Recall register number N to top of stack
+
+     disp _D     Display D places before decimal point.  Rpn  uses
+                exponential notation if a number can't be display
+                in this field width.
+
+     oct        Display stack in octal
+
+     nooct      Remove octal stack display
+
+
+
+
+Sprite v.1.0         Printed:  July 25, 1989                    2
+
+
+
+
+
+
+RPN                       User Commands                       RPN
+
+
+
+     hex        Display stack in hexadecimal
+
+     nohex      Remove hexadecimal stack display
+
+     signed     (unknown function)
+
+     unsigned   (unknown function)
+
+     deg        Degree mode
+
+     rad        Radian mode
+
+TTRRIIGG FFUUNNCCTTIIOONNSS
+     sin        Sine
+
+     cos        Cosine
+
+     tan        Tangent
+
+     sinh       Hyperbolic sine
+
+     cosh       Hyperbolic cosine
+
+     tanh       Hyperbolic tangent
+
+     asin       Arcsine
+
+     acos       Arccosine
+
+     atan       Arctangent
+
+     asnh       Arc-hyperbolic sine
+
+     acnh       Arc-hyperbolic cosine
+
+     atnh       Arc-hyperbolic tangent
+
+     pi         Generate the constant pi
+
+LLOOGGAARRIITTHHMMIICC FFUUNNCCTTIIOONNSS
+     ln         Natural log
+
+     log        Base-10 log
+
+     lg2        Base-2 log
+
+     exp        Exponential
+
+     alog       Base-10 exponential
+
+     alg2       Base-2 exponential
+
+
+
+
+Sprite v.1.0         Printed:  July 25, 1989                    3
+
+
+
+
+
+
+RPN                       User Commands                       RPN
+
+
+
+SSTTAATTIISSTTIICCAALL FFUUNNCCTTIIOONNSS
+     s+         Statistical accumulation.  This accumulates  sta-
+                tistical  data  on  two  variables, X and Y, into
+                numbered registers.  The functions  var,  sd  and
+                rms  use  this  data.  Given a series of n corre-
+                lated X and Y pairs, enter each pair in the x and
+                y registers, and execute s+.  The data is accumu-
+                lated as follows:
+
+                sto 10         n
+                sto 9          sum XY
+                sto 8          sum Y**2
+                sto 7          sum Y
+                sto 6          sum X**2
+                sto 5          sum X
+
+     s-         This is the inverse of s+ and is used  to  remove
+                incorrectly entered X-Y pairs.
+
+     var        The variance of X and Y is computed in  registers
+                x and y, and also in registers 3 and 4.
+
+     sd         Standard deviation of X  and  Y  is  computed  in
+                registers x and y, and also in registers 3 and 4.
+
+     rms        Root-mean squared of  X  and  Y  is  computed  in
+                registers x and y, and also in registers 3 and 4.
+
+MMIISSCCEELLLLAANNEEOOUUSS FFUUNNCCTTIIOONNSS
+     sqrt       Square root
+
+     gcdv       Greatest common divisor
+
+     comb       Combinatorial ??
+
+     fact       Factorial
+
+     lrgn       Lagrange ??
+
+     trun       Truncate
+
+     roun       Round
+
+     rand       Generate a random number
+
+CCOONNVVEERRSSIIOONN FFUUNNCCTTIIOONNSS
+     d-r        Degrees to radians
+
+     r-d        Radians to degrees
+
+     r-p        Rectangular to polar (two dimensions)
+
+
+
+
+Sprite v.1.0         Printed:  July 25, 1989                    4
+
+
+
+
+
+
+RPN                       User Commands                       RPN
+
+
+
+     p-r        Polar to rectangular
+
+     r-s        Rectangular to spherical (three dimensions)
+
+     s-r        Spherical to rectangular
+
+KKEEYYWWOORRDDSS
+     calculator, stack, reverse polish notation
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  July 25, 1989                    5
+
+
+

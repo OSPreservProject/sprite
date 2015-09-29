@@ -1,0 +1,31 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ds3100:1.1 sun3:1.1 sun4nw:1.1 symm:1.1 spur:1.1;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     91.10.29.17.23.43;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#
+# This file is used automatically by mkmf to massage md.mk, in order
+# to guarantee that bootSysAsm.o is the first object file in the list.
+# It must eventually be the first file in the linked kernel.
+#
+/^OBJS/s|= \(.*\) \([^/ ]*\)/loMem.o|= \2/loMem.o \1|
+@

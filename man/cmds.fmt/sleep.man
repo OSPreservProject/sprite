@@ -1,0 +1,68 @@
+
+
+
+SLEEP                     User Commands                     SLEEP
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     sleep - Suspend execution for a given time period
+
+SSYYNNOOPPSSIISS
+     sslleeeepp _s_e_c_o_n_d_s
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This process simply suspends  itself  for  _s_e_c_o_n_d_s  seconds,
+     then exits.  It is convenient in situations where a particu-
+     lar command should be executed after a  given  time  period:
+     run sslleeeepp first, then the desired command.
+
+
+KKEEYYWWOORRDDSS
+     delay, sleep
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  March 14, 1989                    1
+
+
+

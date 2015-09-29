@@ -1,0 +1,330 @@
+
+
+
+                                                            cc(1)
+
+
+
+NAME
+     cc - C compiler
+
+SYNTAX
+     cc [option...] file...
+
+DESCRIPTION
+     The cc command invokes the ULTRIX C compiler and accepts the
+     following types of arguments:
+
+     +    Arguments whose names end with .c
+
+     +    Arguments whose names end with .s
+
+     +    Other arguments that are interpreted as either loader
+          option arguments or C-compatible object programs
+
+     Arguments ending in .c are interpreted as C source programs.
+     They are compiled, and each object program is left on a file
+     whose name is the same as the source file except .o is sub-
+     stituted for .c.  If a single C program is compiled and
+     loaded all at once, the .o file is deleted.
+
+     Arguments ending with .s are interpreted as assembly source
+     programs.  They are assembled, producing an .o file.
+
+     Arguments other than those ending with .c or .s were pro-
+     duced by previous cc runs or by libraries of C-compatible
+     routines.
+
+     The first argument passed to the ld(1) loader is always one
+     of the three crt0 files used for start up.  The compiler
+     uses /lib/mcrt0.o when the -p flag is given,
+     /usr/lib/gcrt0.o when the -pg is given, and /lib/crt0.o oth-
+     erwise.  If loading executables by hand, you must include
+     the appropriate file.
+
+OPTIONS
+     These options are accepted by cc. See ld(1) for load-time
+     options.
+
+     -b                  Does not pass -lc to ld(1) by default.
+
+     -Bstring            Finds substitute compiler passes in the
+                         files named string with the suffixes
+                         cpp, ccom, and c2.
+
+     -c                  Suppresses the loading phase of the com-
+                         pilation and forces an object file to be
+                         produced even if only one program is
+                         compiled.
+
+
+
+
+                                                                1
+
+
+
+
+
+
+cc(1)
+
+
+
+     -C                  Stops the macro preprocessor from omit-
+                         ting comments.
+
+     -Dname=def
+     -Dname              Defines the name to the processor, as if
+                         by #define.  If no definition is given,
+                         the name is defined as 1.
+
+     -E                  Runs only the macro preprocessor on the
+                         named C programs and sends the result to
+                         the standard output.
+
+     -Em                 Runs only the macro preprocessor on the
+                         named C programs and produces the
+                         makefile dependencies.
+
+     -f                  Specifies that computations involving
+                         only FFLOAT numbers be done in single
+                         precision and not promoted to double.
+                         Procedure arguments are still promoted
+                         to double.  Programs with a large number
+                         of single-precision computations will
+                         run faster with this option; however, a
+                         slight loss in precision may result due
+                         to the saving of intermediate results in
+                         a single-precision representation.
+
+     -g                  Directs the compiler to produce addi-
+                         tional symbol table information for
+                         dbx(1).  Also passes the -lg flag to
+                         ld(1).
+
+     -Idir               Searches first in the directory of the
+                         file argument for #include files whose
+                         names do not begin with a backslash (\),
+                         then in directories named in -I options,
+                         and, finally, in directories on a stan-
+                         dard list.
+
+     -lx                 Abbreviates the library name
+                         /lib/libx.a, where x is a string.  If
+                         that library name does not exist, ld
+                         searches /usr/lib/libx.a and then
+                         /usr/local/lib/libx.a.  The placement of
+                         the -l library option is significant
+                         because a library is searched when its
+                         name is encountered.
+
+     -M                  Specifies the floating point type to be
+                         used for double-precision floating point
+                         and is passed on to ld(1) as the map
+                         option.
+
+
+
+2
+
+
+
+
+
+
+                                                            cc(1)
+
+
+
+     -Md                 Specifies the default DFLOAT and passes
+                         the -lc flag to ld(1).
+
+     -Mg                 Specifies GFLOAT and passes the -lcg
+                         flag to ld(1), causing the GFLOAT ver-
+                         sion of libc to be used.  If the math
+                         library is used with code compiled with
+                         the -Mg flag, it is linked to the GFLOAT
+                         version by specifying -lmg on the cc(1)
+                         or ld(1) command.
+
+     -o output           Names the final output file output.  If
+                         this option is used, the file a.out is
+                         left alone.  If the named file has
+                         either .o or .a as a suffix, the follow-
+                         ing error message is displayed: -o would
+                         overwrite.
+
+     -O                  Uses the object code optimizer.
+
+     -p                  Arranges for the compiler to produce
+                         code which counts the number of times
+                         each routine is called.  If loading
+                         takes place, the -p option replaces the
+                         standard startup routine with one that
+                         automatically calls monitor(3) and that
+                         arranges to write out a mon.out file at
+                         normal termination of execution of the
+                         object program.  An execution profile
+                         can then be generated using prof(1).
+
+     -pg                 Causes the compiler to produce counting
+                         code as with -p, but invokes a run-time
+                         recorder that keeps more extensive
+                         statistics and produces a gmon.out file.
+                         Also, the -pg option searches a profil-
+                         ing library in lieu of the standard C
+                         library.  An execution profile can then
+                         be generated by using gprof(1).
+
+     -R                  Passed on to as, which makes initialized
+                         variables shared and read-only.
+
+     -S                  Compiles programs and writes output to
+                         .s files.
+
+     -t [p02al]          Finds the designated compiler passes in
+                         the files whose names are constructed by
+                         a -B option.  In the absence of a -B
+                         option, the string is taken to be
+                         /usr/c/.
+
+
+
+
+                                                                3
+
+
+
+
+
+
+cc(1)
+
+
+
+     -Uname              Removes any initial definition of name.
+
+     -w                  Suppresses warning diagnostics.
+
+     -Yenvironment       Compiles C programs for environment.  If
+                         environment is SYSTEM_FIVE or is omit-
+                         ted, it defines SYSTEM_FIVE for the
+                         preprocessor, cpp. If the loader is
+                         invoked, it specifies that the System V
+                         version of the C runtime library is
+                         used.  Also, if the math library is
+                         specified with the -lm option, the Sys-
+                         tem V version is used.  If environment
+                         is POSIX, it defines POSIX for the
+                         preprocessor.  If the environment vari-
+                         able PROG_ENV has the value SYSTEM_FIVE
+                         or POSIX, the effect is the same as when
+                         specifying the corresponding -Yenviron-
+                         ment option to cc. The -Y option over-
+                         rides the PROG_ENV variable; -YBSD can
+                         be used to override all special actions.
+
+DEFAULT SYMBOLS
+     The ULTRIX C compiler provides the following default symbols
+     for your use.  These symbols are useful in ifdef statements
+     to isolate code for one of the particular cases. Thus, these
+     symbols can be useful for ensuring portable code.
+
+          unix           Any UNIX system
+          bsd4_2         Berkeley UNIX Version 4.2
+          ultrix         ULTRIX only
+          vax            VAX only (as opposed to PDP-11)
+
+RESTRICTIONS
+     The compiler ignores advice to put char, unsigned char,
+     short or unsigned short variables in registers.
+
+     If the -Mg flag is used to produce GFLOAT code, it must be
+     used when compiling all the modules which will be linked.
+     Use the -Mg flag if you use the cc command to invoke ld(1)
+     indirectly to link the modules.  If ld(1) is invoked
+     directly, use the -lcg flag rather than -lc. If the math
+     library is used, specify the -lmg flag rather than the -lm
+     flag in order to use the GFLOAT version.
+
+     The compiler and the linker ld(1) cannot detect the use of
+     mixed double floating point types.  If you use them, your
+     program's results may be erroneous.
+
+DIAGNOSTICS
+     The diagnostics produced by C are intended to be self-
+     explanatory.  Occasional messages may be produced by the
+
+
+
+4
+
+
+
+
+
+
+                                                            cc(1)
+
+
+
+     assembler or loader.
+
+FILES
+     file.c         input file
+     file.o         object file
+     a.out          loaded output
+     /tmp/ctm?      temporary
+     /lib/cpp       preprocessor
+     /lib/ccom      compiler
+     /lib/c2        optional optimizer
+     /lib/crt0.o    runtime startoff
+     /lib/mcrt0.o   startoff for profiling
+     /usr/lib/gcrt0.ostartoff for gprof-profiling
+     /lib/libc.a    standard library, see intro(3)
+     /usr/libcg.a   GFLOAT version of the standard library, see
+     intro(3)
+     /usr/lib/libc_p.aprofiling library, see intro(3)
+     /usr/include   standard directory for #include files
+     mon.out        file produced for analysis by prof(1)
+     gmon.out       file produced for analysis by gprof(1)
+
+SEE ALSO
+     adb(1), as(1), cpp(1), dbx(1), gprof(1), ld(1), prof(1),
+     monitor(3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                5
+
+
+

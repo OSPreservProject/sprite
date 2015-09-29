@@ -1,0 +1,15 @@
+vmOps.c:
+vmPager.c:
+vmSegment.c:
+vmSwapDir.c:
+vmFsCache.c:
+vmSubr.c:
+vmMsgQueue.c:
+vmSysCall.c:
+Vm_CopyOut, arg. 1 used inconsistently	vmSubr.c(246)  ::  vmOps.c(1862)
+CopyInOutTest, arg. 2 used inconsistently	vmOps.c(1913)  ::  vmOps.c(1873)
+MakeAccessibleTest, arg. 2 used inconsistently	vmOps.c(1958)  ::  vmOps.c(1877)
+bzero, arg. 1 used inconsistently	vmOps.c(1867)  ::  vmPager.c(848)
+bzero, arg. 1 used inconsistently	vmOps.c(1867)  ::  vmSegment.c(305)
+bcopy, arg. 3 used inconsistently	vmOps.c(1974)  ::  vmSubr.c(379)
+bcopy, arg. 3 used inconsistently	vmOps.c(1974)  ::  vmSubr.c(414)

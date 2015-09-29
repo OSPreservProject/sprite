@@ -1,0 +1,200 @@
+
+
+
+AR                        User Commands                        AR
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     ar - archive maintenance
+
+SSYYNNOOPPSSIISS
+     aarr _f_l_a_g_s [_p_o_s_n_a_m_e] _a_r_c_h_i_v_e [_n_a_m_e _n_a_m_e ...]
+
+OOPPTTIIOONNSS
+     aa              Position the named files after _p_o_s_n_a_m_e.
+
+     bb              Position the named files before _p_o_s_n_a_m_e.
+
+     cc              If creating an archive for the first time, do
+                    it silently.
+
+     dd              Command: delete  the  named  files  from  the
+                    archive.
+
+     ii              Position the named files before _p_o_s_n_a_m_e.
+
+     ll              Ignored.  This flag is kept for compatibility
+                    with the UNIX aarr.
+
+     mm              Command: move the named files to a  different
+                    location in the archive.
+
+     oo              When extracting a file from the archive, give
+                    it the last-modified time that is recorded in
+                    the archive.  The default is to give  it  the
+                    current time.
+
+     pp              Command: print out the named  files.   If  no
+                    files  are  named, print out all files in the
+                    archive.
+
+     qq              Command: quickly append the  named  files  to
+                    the  archive.   If  the  named  files already
+                    exist, the archive will end  up  with  dupli-
+                    cates.  This command is intended for creating
+                    a new archive with lots  of  files  with  one
+                    invocation of aarr.
+
+     rr              Command:  replace  the  named  files  in  the
+                    archive.   If  a  named file isn't already in
+                    the archive, it is added.
+
+     ss              Create a  ____..SSYYMMDDEEFF  file  for  the  archive.
+                    This  flag  may  be used as a command or as a
+                    modifier to other commands.
+
+     tt              Command: list the named files in the archive.
+
+
+
+Sprite v.1.0        Printed:  October 4, 1991                   1
+
+
+
+
+
+
+AR                        User Commands                        AR
+
+
+
+                    If  no files are named, the table of contents
+                    for the entire archive is listed.
+
+     uu              If replacing files, only replace a file if it
+                    is  newer than the version in the archive (or
+                    if there is no  version  in  the  archive  at
+                    all).
+
+     vv              Turn on the ``verbose'' flag.
+
+     xx              Command: extract the  named  files  from  the
+                    archive.   If no files are named, extract all
+                    files in the archive.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     AArr maintains archive files, which are collections  of  other
+     files.   An  archive  file  is  usually used as a library of
+     object files, for use with lldd.
+
+     Each invocation of aarr always takes one command flag  and  an
+     archive name.  It may also take modifier flags, which appear
+     with the command letter.   For  example,  ttvv  specifies  the
+     ``table-of-contents''  command,  with  the  ``verbose'' flag
+     turned on.  It is equivalent to vvtt.  If you specify  any  of
+     the  aa,  bb,  or  ii flags (for the mm or rr commands), you must
+     also specify _p_o_s_n_a_m_e, which is the name of  a  file  in  the
+     archive  that  other  files  will be positioned relative to.
+     The default is to place the files at the end of the archive.
+     Finally,  most commands require that you specify one or more
+     file names.  These names refer  to  files  in  the  archive,
+     files  outside  the  archive, or both, depending on the com-
+     mand.
+
+     You may specify a complete path for any file name.  AArr  will
+     remove  leading  path information and truncate the file name
+     to 15 characters to get the name of the file as it is stored
+     in  the  archive.  However, the full given path will be used
+     when referring to files outside the archive for  the  qq,  rr,
+     and xx commands.
+
+     Some UNIX linkers require that an object file library have a
+     ____..SSYYMMDDEEFF  file,  which  contains  a  string  table that the
+     linker lldd uses to resolve external references.  This version
+     of  aarr  maintains  the ____..SSYYMMDDEEFF file automatically, once it
+     exists, and it will create the ____..SSYYMMDDEEFF file if the ss  flag
+     is  specified.   Thus,  rraannlliibb, which is the program usually
+     used to maintain the ____..SSYYMMDDEEFF file, is not needed with this
+     version of aarr.
+
+     The vv flag has a varied effect,  depending  on  the  command
+     involved.   For  most commands, specifying the vv flag merely
+
+
+
+Sprite v.1.0        Printed:  October 4, 1991                   2
+
+
+
+
+
+
+AR                        User Commands                        AR
+
+
+
+     causes aarr to tell you what it's doing as it  does  it.   For
+     the tt command, the vv flag causes information about each file
+     (other than just its name) to be printed.   This  additional
+     information consists of
+
+     o+    the permissions associated with the file (as displayed by
+          llss)
+
+     o+    the file's owner and group (displayed as integers)
+
+     o+    the file's length in bytes
+
+     o+    the last-modified time of the file
+
+
+SSEEEE AALLSSOO
+     ranlib, ld, ls
+
+
+KKEEYYWWOORRDDSS
+     archive, library
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  October 4, 1991                   3
+
+
+

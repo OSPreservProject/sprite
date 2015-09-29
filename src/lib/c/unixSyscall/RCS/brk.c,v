@@ -1,0 +1,320 @@
+head     1.7;
+branch   ;
+access   ;
+symbols  sprited:1.7.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.7
+date     89.04.12.17.11.23;  author rab;  state Exp;
+branches 1.7.1.1;
+next     1.6;
+
+1.6
+date     88.07.25.14.52.28;  author ouster;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.07.25.14.39.55;  author ouster;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.07.25.14.23.36;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.07.25.11.25.03;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.06.18.15.33.28;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.05.21.11.48.42;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.7.1.1
+date     91.12.02.22.08.18;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.7
+log
+@*** empty log message ***
+@
+text
+@/* 
+ * brk.c --
+ *
+ *	Source code for the "brk" and "sbrk" library procedures, which
+ *	emulate the UNIX kernel calls by the same names.
+ *
+ * Copyright 1985, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/unixSyscall/RCS/brk.c,v 1.6 88/07/25 14:52:28 ouster Exp Locker: rab $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <stdio.h>
+#include <vm.h>
+#include <sys/types.h>
+
+/*
+ * NextAddr is the user's idea of the location of the first
+ * as-yet-unallocated byte in the heap.  RealNextAddr is the
+ * real location.  We keep two pointers so we if a program
+ * asks brk() to reduce the size of the heap, we can shrink
+ * is without making any actual system calls.  The space is
+ * still allocated, so subsequent requests to extend the heap
+ * can also be met without system calls.
+ */
+
+extern int end;				/* Linker gives this variable an
+					 * address equal to the location just
+					 * above the top of the heap. */
+#ifndef LINTLIB
+static caddr_t nextAddr = (caddr_t) &end;
+static caddr_t realNextAddr = (caddr_t) &end;
+#else
+static caddr_t nextAddr = 0;
+static caddr_t realNextAddr = 0;
+#endif /* LINTLIB */
+static int pageSize;
+
+/*
+ * Macro to compute for any address, the first addresss of the page
+ * it is on.
+ */
+
+#define FirstAddrOnPage(address)  (((int) (address)) & (~pageSize))
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * brk --
+ *
+ *	Enlarge the heap, if necessary, so that it extends to at
+ *	least addr-1.
+ *
+ * Results:
+ *	0 is normally returned.  If the heap couldn't be extended
+ *	to the given place, then -1 is returned.
+ *
+ * Side effects:
+ *	The virtual address space of the process is extended.
+ *
+ *----------------------------------------------------------------------
+ */
+
+caddr_t
+brk(addr)
+    caddr_t addr;		/* Make this the new "first location just
+				 * above top of heap".  */
+{
+    static int initialized = 0;
+    ReturnStatus status;
+
+    if (!initialized) {
+        initialized = 1;
+
+	/*
+	 *  Get the system page size and calculate the address in the heap 
+	 *  after the end of data to start allocating chunks from.
+	 */
+
+	if (Vm_PageSize(&pageSize) != SUCCESS) {
+	    panic("brk couldn't get page size");
+	    return 0;		/* should never get here */
+	}
+	pageSize -= 1;
+    }
+
+    /*
+     * See if the new top-of-heap is already mapped;  if so, there's
+     * nothing for us to do.
+     */
+
+    if (addr <= realNextAddr) {
+	nextAddr = addr;
+	return 0;
+    }
+    if(FirstAddrOnPage(realNextAddr - 1) != FirstAddrOnPage(addr)) {
+	status = Vm_CreateVA(realNextAddr, addr-realNextAddr);
+	if (status != SUCCESS) {
+	    return (caddr_t) -1;
+	}
+    }
+    realNextAddr = nextAddr = addr;
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * sbrk --
+ *
+ *	Make "numBytes" more space available in the heap, and return
+ *	a pointer to it.
+ *
+ * Results:
+ *	The return value is a pointer to a new block of memory, which
+ *	is numBytes bytes long.  If no space could be allocated, then
+ *	-1 is returned.
+ *
+ * Side effects:
+ *	The virtual address space of the process is extended.
+ *
+ *----------------------------------------------------------------------
+ */
+
+caddr_t
+sbrk(numBytes)
+    int numBytes;			/* Number of bytes desired.  */
+{
+    caddr_t result;
+
+    result = nextAddr;
+    if (brk(nextAddr+numBytes) == (caddr_t) -1) {
+	return (caddr_t) -1;
+    }
+    return result;
+}
+@
+
+
+1.7.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/unixSyscall/RCS/brk.c,v 1.7 89/04/12 17:11:23 rab Exp $ SPRITE (Berkeley)";
+@
+
+
+1.6
+log
+@Botched last lint cleanup.
+@
+text
+@d18 2
+a19 2
+static char rcsid[] = "$Header: brk.c,v 1.5 88/07/25 14:39:55 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+d27 7
+a33 2
+ * NextAddr is the location of the first as-yet-unallocated byte in
+ * the heap.
+d41 1
+d44 2
+a45 1
+#endif LINTLIB
+d89 1
+a89 1
+    
+d102 2
+a103 1
+    if (addr <= nextAddr) {
+d106 2
+a107 2
+    if(FirstAddrOnPage(nextAddr - 1) != FirstAddrOnPage(addr)) {
+	status = Vm_CreateVA(nextAddr, addr-nextAddr);
+d112 1
+a112 2
+
+    nextAddr = addr;
+@
+
+
+1.5
+log
+@Generate cleaner lint library.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: brk.c,v 1.4 88/07/25 14:23:36 ouster Exp $ SPRITE (Berkeley)";
+d85 1
+a85 1
+	    return -1;		/* should never get here */
+@
+
+
+1.4
+log
+@Lint.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: brk.c,v 1.3 88/07/25 11:25:03 ouster Exp $ SPRITE (Berkeley)";
+d34 1
+d36 3
+@
+
+
+1.3
+log
+@Lint.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: brk.c,v 1.2 88/06/18 15:33:28 ouster Exp $ SPRITE (Berkeley)";
+d81 1
+a81 1
+	    return;		/* should never get here */
+@
+
+
+1.2
+log
+@Use panic instead of MemPanic.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: brk.c,v 1.1 88/05/21 11:48:42 ouster Exp $ SPRITE (Berkeley)";
+d21 3
+a23 2
+#include "sprite.h"
+#include "vm.h"
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: MemChunkAlloc.c,v 1.1 88/05/20 15:49:12 ouster Exp $ SPRITE (Berkeley)";
+d79 1
+a79 1
+	    MemPanic("Mem ChunkInit: failed to get page size");
+@

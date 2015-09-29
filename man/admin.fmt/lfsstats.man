@@ -1,0 +1,66 @@
+
+
+
+LFSSTATS                  User Commands                  LFSSTATS
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     lfsstats - Display the statistics counters stored in an  LFS
+     file system.
+
+SSYYNNOOPPSSIISS
+     llffssssttaattss _d_e_v_i_c_e_N_a_m_e
+
+
+DDEESSCCRRIIPPTTIIOONN
+     LLffssssttaatt displays the LfsStats counters from  the  checkpoint
+     region or an LFS file system.  See lfsStats.h for the defin-
+     ition of the fields.
+
+KKEEYYWWOORRDDSS
+     filesystem, LFS, sprite
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  June 13, 1991                    1
+
+
+

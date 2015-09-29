@@ -1,0 +1,10 @@
+D DS3100_M                          	ds3100.md
+F IOC_TAPE.C;1                      	Ioc_TapeCommand.c
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+F MT.C;1                            	mt.c
+F MT.MAN;1                          	mt.man
+F MTIO.H;1                          	mtio.h
+D RCS                               	RCS
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md

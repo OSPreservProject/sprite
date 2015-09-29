@@ -1,0 +1,46 @@
+#!/bin/csh -f
+#
+# InstallDefault
+#	This script installs default kernels from existing .new versions.
+#	No compliation is done here;  it is assumed that the .new
+#	kernels have been run on live machines before this script is run.
+#
+
+echo -n "OLD: "
+strings /sprite/boot/sun3.md/sprite | egrep VERSION
+echo -n "NEW: "
+strings /sprite/boot/sun3.md/sprite.new | egrep VERSION
+
+set error = "no"
+
+foreach tm (sun3 sun4 ds3100)
+
+    if (! -e /sprite/boot/$tm.md/sprite.new) then
+	set error = "yes"
+	echo "/sprite/boot/$tm.md/sprite.new" not found
+    endif
+end
+
+if ($error == "yes") exit 1
+
+foreach tm (sun3 sun4 ds3100)
+
+    if (-e /sprite/boot/$tm.md/sprite) then
+	mv /sprite/boot/$tm.md/sprite /sprite/boot/$tm.md/sprite.old
+    endif
+
+    echo "Installing default kernel in /sprite/boot/$tm.md"
+    mv /sprite/boot/$tm.md/sprite.new /sprite/boot/$tm.md/sprite
+end
+
+#
+# Do a parallel move over on ginger to support (0,961c,XX) boots for sun3's
+#
+set echo
+rsh ginger mv -f /sprite3/sun3 /sprite3/sun3.old
+rsh ginger mv -f /sprite3/sun3.new /sprite3/sun3
+
+#
+# Do not mess with /vmunix, this is what mint boots from its
+# local disk, and that is usually sun3.new
+#

@@ -1,0 +1,134 @@
+
+
+
+Hash_InitTable        C Library Procedures         Hash_InitTable
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Hash_InitTable - set up new hash table
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<hhaasshh..hh>>
+
+     Hash_InitTable(_t_a_b_l_e_P_t_r, _n_u_m_B_u_c_k_e_t_s, _k_e_y_T_y_p_e)
+
+AARRGGUUMMEENNTTSS
+     Hash_Table   *_t_a_b_l_e_P_t_r    (in)      Structure to use to hold
+                                         information  about  hash
+                                         table.  Caller must have
+                                         allocated    space    at
+                                         *tablePtr, but need  not
+                                         have   initialized  con-
+                                         tents.
+
+     int          _n_u_m_B_u_c_k_e_t_s   (in)      How many buckets  should
+                                         be  in  table initially.
+                                         If <=  0,  a  reasonable
+                                         default  will be chosen.
+                                         In any case, the  number
+                                         of  buckets  will change
+                                         dynamically    as    the
+                                         number of entries in the
+                                         table grows.
+
+     int          _k_e_y_T_y_p_e      (in)      What type of  keys  will
+                                         be   used   for   table:
+                                         HHAASSHH__SSTTRRIINNGG__KKEEYYSS,
+                                         HHAASSHH__OONNEE__WWOORRDD__KKEEYYSS,   or
+                                         integer >= 2.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     HHaasshh__IInniittTTaabbllee initializes a Hash_Table structure  and  sets
+     up  bucket  storage  for  the  table, with no entries in the
+     table initially.  It must be called before any other  opera-
+     tions are performed on the hash table.
+
+     The _k_e_y_T_y_p_e argument indicates what type  of  keys  will  be
+     used  in  the  table.   HASH_STRING_KEYS means that all keys
+     will be strings, and that the  _k_e_y  argument  to  procedures
+     like Hash_FindEntry will be passed in as a string:
+
+
+          Hash_Table table;
+          Hash_Entry *entryPtr;
+          char *key = "foobar";
+
+
+
+
+Sprite v.1.0       Printed:  February 13, 1989                  1
+
+
+
+
+
+
+Hash_InitTable        C Library Procedures         Hash_InitTable
+
+
+
+          Hash_InitTable(&table, 0, HASH_STRING_KEYS);
+          entryPtr = Hash_FindEntry(&table, key);
+
+     If _k_e_y_T_y_p_e is HASH_ONE_WORD_KEYS, then keys will be one-word
+     (Address)  values;   _k_e_y arguments passed to procedures like
+     HHaasshh__FFiinnddEEnnttrryy may be integers or any other  values  of  the
+     same  size  as  addresses, passed by casting the value to an
+     Address:
+
+
+          Hash_Table table;
+          Hash_Entry *entryPtr;
+          int key = 24;
+
+          Hash_InitTable(&table, 0, HASH_ONE_WORD_KEYS);
+          entryPtr = Hash_FindEntry(&table, (Address) key);
+
+     Finally, if _k_e_y_T_y_p_e is an integer greater than 1, then  keys
+     are multi-word values containing _k_e_y_T_y_p_e words (not bytes!),
+     passed into procedures like HHaasshh__FFiinnddEEnnttrryy by address:
+
+
+          Hash_Table table;
+          Hash_Entry *entryPtr;
+          int key[6] = {1,2,3,4,5,6};
+
+          Hash_InitTable(&table, 0, 6);
+          entryPtr = Hash_CreateEntry(tablePtr, (Address) key);
+
+
+KKEEYYWWOORRDDSS
+     hash table, initialization, key
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  February 13, 1989                  2
+
+
+

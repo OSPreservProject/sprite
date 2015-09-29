@@ -1,0 +1,45 @@
+Porting
+-------
+
+The initial porting effort identified three items which were version
+specific.  Each of the affect areas of the code is wrapped in cpp(1)
+directives to allow selection of known alternatives through appropriate
+#define statements.  The file rdate.h uses preset cpp(1) definitions
+(e.g., sun on SunOS systems) to specify the correct set of #define
+statements, where possible.  It is still necessary to specify some
+flags through the Makefile.  The current code has been ported to and
+tested on the following hardware/software combinations:
+
+HP 9000/825, HP/UX A.B7.00
+Sun 3, SunOS 4.1
+Sequent Symmetry, DYNIX 3.0.17
+VAX 3602, Ultrix 3.1
+PS/2, AIX
+Unisys U6000/51, System Vr3
+Interactive 386/ix
+
+To port rdate to another environment:
+
+1) Determine if your system is BSD-like or System V-like: does it use
+   settimeofday(2) or stime(2), respectively?
+
+2) If it is BSD-like, does it have adjtime(2)?
+
+3) Modify Makefile, and possibly rdate.h, according to the following:
+
+   If it is BSD-like and does not have adjtime(2), just use the generic
+   BSD compile and link flags.
+
+   If it is BSD-like and has adjtime(2), use the BSD flags which define
+   HAS_ADJTIME or modify rdate.h (in the manner used for sun and ultrix)
+   to automatically define this).
+
+   If it is System V-like, start by using the generic System V flags.
+   If this results in undefined references at link time, there is
+   probably a special link flag to include the socket routines.  Delve
+   into the manuals and determine what standard you vendor has chosen
+   to set.
+
+4) If this still isn't sufficient, get out the Veg-O-Matic and
+   start slicing and dicing.
+

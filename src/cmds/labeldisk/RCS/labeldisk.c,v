@@ -1,0 +1,2538 @@
+head     1.15;
+branch   ;
+access   ;
+symbols  ;
+locks    shirriff:1.15; strict;
+comment  @ * @;
+
+
+1.15
+date     92.02.06.12.05.21;  author voelker;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     91.10.30.13.08.01;  author pmchen;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     91.09.26.21.06.18;  author voelker;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     91.09.26.20.36.41;  author voelker;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     91.09.14.14.03.55;  author voelker;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     91.09.14.13.54.39;  author voelker;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     91.09.14.13.39.21;  author voelker;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     90.06.28.15.13.49;  author jhh;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     90.02.16.16.11.43;  author shirriff;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     90.01.11.17.13.40;  author jhh;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     90.01.11.15.11.41;  author jhh;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.08.01.23.32.23;  author jhh;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.08.01.23.27.56;  author jhh;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.06.19.14.34.44;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.12.05.10.02.06;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Program to read and possibly change a disk label
+@
+
+
+1.15
+log
+@if labeldisk tries to write the label to all partitions on a new
+disk that does not have filesystems on it, then it cannot check to
+see if the partitions are valid when copying a label from another
+disk.  changed it to just write the raw disk, and then exit.
+@
+text
+@/* 
+ * labeldisk.c --
+ *
+ *	Read and possibly change the disk label.
+ *
+ * Copyright (C) 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/cmds/labeldisk/RCS/labeldisk.c,v 1.14 91/10/30 13:08:01 pmchen Exp Locker: voelker $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include "option.h"
+#include "disk.h"
+#include <sys/file.h>
+#include <stdio.h>
+#include <errno.h>
+#include <kernel/dev.h>
+
+#define Min(a,b) (((a) < (b)) ? (a) : (b))
+/*
+ * Constants settable via the command line.
+ */
+char *fromName;         /* e.g. set to "/dev/rsd0" */
+char *toName;		/* e.g. set to "/dev/rsd0g" */
+Boolean writeLabel = FALSE;
+Boolean writeSun = FALSE;
+Boolean writeDec = FALSE;
+Boolean newLabel = FALSE;
+Boolean writeQuick = FALSE;
+
+Option optionArray[] = {
+    {OPT_DOC,"",(Address)NIL,
+	"labeldisk [-from fromDevice] [-w] [-q] [-sun] [-dec] [-new] toDevice"},
+    {OPT_STRING, "from", (char *)&fromName,
+	"Read the disk label from this partition"},
+    {OPT_TRUE, "w", (Address)&writeLabel,
+	"Write a new disk label"},
+    {OPT_TRUE, "sun", (Address)&writeSun,
+	"Write a Sun label"},
+    {OPT_TRUE, "dec", (Address)&writeDec,
+	"Write a Dec label"},
+    {OPT_TRUE, "new", (Address)&newLabel,
+	"Ignore any old label"},
+    {OPT_TRUE, "q", (Address)&writeQuick,
+	"Copy label quickly, without prompting to change the label"}
+};
+int numOptions = sizeof(optionArray) / sizeof(Option);
+
+static ReturnStatus	LabelDisk();
+static void		EditLabel();
+static void		InputNumber();
+static int		IsYes();
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	Open the disk device and call LabelDisk.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+main(argc, argv)
+    int argc;
+    char *argv[];
+{
+    int openFlags;
+    int toStreamID;
+    int fromStreamID;
+    int tmp;
+
+    argc = Opt_Parse(argc, argv, optionArray, numOptions);
+    if (argc != 2) {
+	if (argc == 1 && fromName != NULL && strlen(fromName) > 0) {
+	    toName = fromName;
+	} else {
+	    Opt_PrintUsage(argv[0], optionArray, numOptions);
+	    exit(FAILURE);
+	}
+    } else {
+	if (fromName == NULL || strlen(fromName) == 0) {
+	    fromName = argv[1];
+	}
+	toName = argv[1];
+    } 
+    if (writeSun || writeDec || writeQuick) {
+	writeLabel = TRUE;
+    }
+    if (writeLabel) {
+	openFlags = O_RDWR;
+    } else {
+	openFlags = O_RDONLY;
+    }
+    if ((writeSun?1:0)+(writeDec?1:0) > 1) {
+	fprintf(stderr,
+		"Can't specify more than one of -sun, -dec.\n");
+	Opt_PrintUsage(argv[0], optionArray, numOptions);
+	exit(FAILURE);
+    } 
+    fromStreamID = open(fromName, openFlags, 0);
+    if (fromStreamID < 0) {
+	perror("Can't open device");
+	exit(FAILURE);
+    }
+    tmp = strcmp(fromName, toName);
+    if (tmp) {
+	toStreamID = open(toName, openFlags, 0);
+	if (toStreamID < 0) {
+	    perror("Can't open device");
+	    exit(FAILURE);
+	}
+    } else {
+	toStreamID = fromStreamID;
+    }
+    if (LabelDisk(fromStreamID, toStreamID) != SUCCESS) {
+	if (errno == 0) {
+	    fprintf(stderr, "labeldisk: Short read, or EOF encountered ");
+	    fprintf(stderr, "on most likely an empty partition.\n");
+	} else {
+	    perror("labeldisk");
+	}
+    }
+    exit(errno);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LabelDisk --
+ *	Read and perhaps write the disk label.
+ *
+ * Results:
+ *	A status.
+ *
+ * Side effects:
+ *	Rewrites the partition information on the 0'th sector of the disk.
+ *
+ *----------------------------------------------------------------------
+ */
+static ReturnStatus
+LabelDisk(fromStreamID, toStreamID)
+    int fromStreamID;			/* Handle on raw input disk */
+    int toStreamID;                     /* Handle on raw output disk */
+{
+    Disk_Label 			*diskLabelPtr;
+    int 			n;
+    char 			answer[80];
+    Disk_NativeLabelType	inLabel, outLabel;
+    static char                 buffer[1024], buffer2[1024];
+    ReturnStatus		status;
+    Ofs_DomainHeader            *headerPtr;
+
+    if (writeSun) {
+	outLabel = DISK_SUN_LABEL;
+    } else if (writeDec) {
+	outLabel = DISK_DEC_LABEL;
+    } else {
+	outLabel = DISK_NO_LABEL;
+    }
+    diskLabelPtr = Disk_ReadLabel(fromStreamID);
+    if (newLabel || diskLabelPtr == NULL) {
+	if (!newLabel) {
+	    printf("The disk does not have a label.\n");
+	}
+	if (!writeLabel) {
+	    return FAILURE;
+	}
+	if (outLabel == DISK_NO_LABEL) {
+	    printf("You must specify the -sun, or -dec option.\n");
+	    return FAILURE;
+	}
+	inLabel = DISK_NO_LABEL;
+	diskLabelPtr = Disk_NewLabel(outLabel);
+    }
+    if (diskLabelPtr != NULL) {
+	inLabel = diskLabelPtr->labelType;
+    }
+    if (outLabel == DISK_NO_LABEL) {
+	outLabel = inLabel;
+    }
+    Disk_PrintLabel(diskLabelPtr);
+    if (!writeLabel) {
+	return SUCCESS;
+    }
+    if (inLabel != outLabel) {
+	/*
+	 * At this point, the output label should be an empty buffer.
+	 * diskHeaderPointer should be a valid label or empty buffer.
+	 * diskInfoPtr should be have the proper sector values and string.
+	 */
+	printf(
+	  "Do you really want to replace a %s label with a %s label? (y/n) ",
+	  Disk_GetLabelTypeName(inLabel), Disk_GetLabelTypeName(outLabel));
+	n = scanf("%s", answer);
+	if (n == EOF) {
+	    exit(1);
+	}
+	if (strcasecmp(answer, "y")) {
+	    exit(1);
+	}
+    }
+    if (!writeQuick) {
+	EditLabel(toStreamID, diskLabelPtr);
+    } else {
+	printf("\nCommit label? (y/n) ");
+	if (!IsYes()) {
+	    exit(0);
+	}
+    }
+    if (inLabel != outLabel && fromStreamID == toStreamID) {
+	status = Disk_EraseLabel(fromStreamID, inLabel);
+	if (status != SUCCESS) {
+	    printf("Unable to erase old label.\n");
+	}
+    }
+    printf("Write this label to all valid partitions? (y/n) ");
+    n = scanf("%s", answer);
+    if ((n == EOF) || strcasecmp(answer, "y")) {
+	printf("Writing disk label to %s.\n", toName);
+	status = Disk_WriteLabel(toStreamID, diskLabelPtr, outLabel);
+	return status;
+    } else {
+	int part, cyls, streamID, len, cantWriteToRawDisk = FALSE;
+	char c, *devName;
+
+	len = strlen(toName);
+	devName = (char *)malloc(sizeof(char) * len + 1);
+	    if (devName == NULL) {
+	    perror("allocating string");
+	    exit(FAILURE);
+	}
+	c = toName[len - 1];
+	if (c >= 'a' && c < 'i') {
+	    /*
+	     * the original destination name is a partition, 
+	     * e.g. "/dev/rsd00a", so make sure to write the label
+	     * to the beginning of the raw disk and then
+	     * write the label to all valid partitions
+	     */
+	    sprintf(devName, "%s",toName);
+	    devName[--len] = '\0';  
+	    streamID = open(devName, O_RDWR, 0);
+	} else {
+	    /*
+	     * the original destination name is a raw disk,
+	     * e.g. "/dev/rsd00", so write the label to the raw
+	     * disk and then to all valid partitions
+	     */
+	    sprintf(devName, "%s",toName);
+	    streamID = toStreamID;
+	}
+	printf("raw device: %s\n", devName);
+	if (streamID >= 0) {
+	    status = Disk_WriteLabel(streamID, diskLabelPtr, outLabel);
+	    if (status != SUCCESS) {
+		printf("Unable to write disk label to ");
+		printf("%s...skipping\n", devName);
+		cantWriteToRawDisk = TRUE;
+	    }
+	} else {
+	    cantWriteToRawDisk = TRUE;
+	}
+	devName[len + 1] = '\0';
+	for (part = 0 ; part < diskLabelPtr -> numPartitions; part++) {
+	    cyls = diskLabelPtr->partitions[part].numCylinders;
+	    if (cyls <= 0) {
+		continue;
+	    }
+	    devName[len] = 'a' + part;
+	    printf("partition: %s\n", devName);
+	    if (!strcmp(devName, fromName)) {
+		streamID = fromStreamID;
+	    } else if (!strcmp(devName, toName)) {
+		streamID = toStreamID;
+	    } else {
+		streamID = open(devName, O_RDWR, 0);
+		if (streamID < 0) {
+		    perror("Can't open device");
+		    exit(FAILURE);
+		}
+	    }
+	    status = Disk_HasFilesystem(streamID, diskLabelPtr);
+	    if (status == DISK_HAS_NO_FS) {
+		printf("Could not find file system on ");
+		printf("%s...skipping\n", devName);
+		continue;
+	    }
+	    status = Disk_WriteLabel(streamID, diskLabelPtr, outLabel);
+	    if (status) {
+		printf("Unable to write disk label to ");
+		printf("%s...skipping\n", devName);
+	    } else {
+		/*
+		 * Having written to the partition, if the partition
+		 * starts at cylinder 0 then we have effectively
+		 * written to the raw disk
+		 */
+		if (diskLabelPtr->partitions[part].firstCylinder == 0) {
+		    cantWriteToRawDisk = FALSE;
+		}
+	    }
+	}
+	if (cantWriteToRawDisk == TRUE) {
+	    devName[len] = '\0';
+	    printf("Warning:  either couldn't open and write to");
+	    printf("%s or\ncouldn't write to a valid partition ", devName);
+	    printf("that starts at cylinder 0.\n");
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * EditLabel --
+ *
+ *	Interactively edits the disk label.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Changes contents of the disk label.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+EditLabel(streamID, labelPtr)
+    int			streamID;	/* Handle on raw disk */
+    Disk_Label		*labelPtr;	/* The disk label */
+{
+    int                 numHeads, numSectors, part;
+    ReturnStatus        status = SUCCESS;
+    int                 first, cyls, last, lastSector, lastCyl;
+    char	        buffer[DEV_BYTES_PER_SECTOR];
+    char		*tmpPtr;
+    int			labelLen;
+
+editLabel:
+    printf("Size of ascii label (%d): ", labelPtr->asciiLabelLen);
+    InputNumber(&labelPtr->asciiLabelLen);
+    printf("ascii label (%s): ", labelPtr->asciiLabel);
+    tmpPtr = fgets(buffer, labelPtr->asciiLabelLen,stdin);
+    if (tmpPtr == NULL) {
+	exit(1);
+    }
+    printf("%d\n", strlen(buffer));
+    if (strlen(buffer) > 1) {
+	labelLen = Min(strlen(buffer), labelPtr->asciiLabelLen);
+	strncpy(labelPtr->asciiLabel, buffer, labelLen);
+	labelPtr->asciiLabel[labelLen - 1] = '\0';
+    }
+    printf("Number of heads (%d): ", labelPtr->numHeads);
+    InputNumber(&labelPtr->numHeads);
+    printf("Number of sectors per track (%d): ", labelPtr->numSectors);
+    InputNumber(&labelPtr->numSectors);
+    printf("Number of cylinders (%d): ", labelPtr->numCylinders);
+    InputNumber(&labelPtr->numCylinders);
+    printf("Number of alternate cylinders (%d): ", labelPtr->numAltCylinders);
+    InputNumber(&labelPtr->numAltCylinders);
+    printf("Starting sector of summary info (%d): ", labelPtr->summarySector);
+    InputNumber(&labelPtr->summarySector);
+    printf("Starting sector of boot program (%d): ", labelPtr->bootSector);
+    InputNumber(&labelPtr->bootSector);
+    printf("Number of boot sectors (%d): ", labelPtr->numBootSectors);
+    InputNumber(&labelPtr->numBootSectors);
+    printf("Starting sector of domain header (%d): ", labelPtr->domainSector);
+    InputNumber(&labelPtr->domainSector);
+    numHeads = labelPtr->numHeads;
+    numSectors = labelPtr->numSectors;
+    if (numHeads * numSectors != 
+	labelPtr->numHeads * labelPtr->numSectors) {
+	printf(
+    "The size of a cylinder changed so I have to zero the partition map.\n");
+	for (part=0 ; part < labelPtr->numPartitions; part++) {
+	    labelPtr->partitions[part].firstCylinder = 0;
+	    labelPtr->partitions[part].numCylinders = 0;
+	}
+    }
+    for (part=0 ; part < labelPtr->numPartitions; part++) {
+	first = labelPtr->partitions[part].firstCylinder;
+	cyls = labelPtr->partitions[part].numCylinders;
+	last = (cyls > 0) ? (cyls + first - 1) : first;
+	printf("\n%c: First %4d Last %4d Num %4d (%7d sectors)\n",
+		'a' + part, first, last, cyls,
+		cyls *  labelPtr->numHeads * labelPtr->numSectors);
+	printf("First (%d): ", labelPtr->partitions[part].firstCylinder);
+	InputNumber(&labelPtr->partitions[part].firstCylinder);
+	printf("Num (%d): ", labelPtr->partitions[part].numCylinders);
+	InputNumber(&labelPtr->partitions[part].numCylinders);
+    }
+    lastCyl = 0;
+    printf("\nNew Label\n");
+    Disk_PrintLabel(labelPtr);
+    lastSector = (lastCyl + 1) * numHeads * numSectors - 1;
+    status = Disk_SectorRead(streamID, lastSector, 1, buffer);
+    if (status != 0) {
+	printf("I couldn't read the last sector (sector %d)!!!\n", lastSector);
+	printf("Either the disk isn't as big as you think it is,\n");
+	printf("or the device is not a raw device.\n");
+    }
+    printf("\nCommit new label? (y/n) ");
+    if (!IsYes()) {
+	printf("Try again\n");
+	goto editLabel;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * InputNumber --
+ *
+ *	Get a number interactively.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Stuff is read from stdin..
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+InputNumber(number)
+    int		*number;	/* Place to store number. */
+{
+    int n, val;
+    char buffer[80];
+
+    if (fgets(buffer, 80, stdin) == NULL) {
+	exit(1);
+    }
+    n = sscanf(buffer, "%d", &val);
+    if (n < 1) {
+	return;
+    }
+    *number = val;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * IsYes --
+ *
+ *	Returns TRUE if user answers y.
+ *
+ * Results:
+ *	TRUE or FALSE.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+IsYes()
+{
+    int n;
+    char answer[80];
+    n = scanf("%s", answer);
+    if (n == EOF) {
+	exit(1);
+    }
+    if (strcmp(answer, "y")==0) {
+	return TRUE;
+    } else {
+	return FALSE;
+    }
+}
+@
+
+
+1.14
+log
+@*** empty log message ***
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/cmds/labeldisk/RCS/labeldisk.c,v 1.13 91/09/26 21:06:18 voelker Exp Locker: pmchen $ SPRITE (Berkeley)";
+d14 1
+a14 1
+#include "sprite.h"
+a15 3
+#include "sys/file.h"
+#include "stdio.h"
+#include "errno.h"
+d17 4
+a20 1
+#include "kernel/dev.h"
+d125 6
+a130 1
+	perror("labeldisk");
+a224 1
+
+a228 6
+	headerPtr = Disk_ReadDomainHeader(toStreamID, diskLabelPtr);
+	if (headerPtr == NULL) {
+	    printf("Could not read OFS domain header of ");
+	    printf("%s\n", toName);
+	    return -2; 
+	}
+d263 3
+a265 3
+	    status = Disk_HasFilesystem(streamID, diskLabelPtr);
+	    if (status == DISK_HAS_NO_FS) {
+		printf("Could not find file system on ");
+a267 7
+	    } else {
+		status = Disk_WriteLabel(streamID, diskLabelPtr, outLabel);
+		if (status) {
+		    printf("Unable to write disk label to ");
+		    printf("%s...skipping\n", devName);
+		    cantWriteToRawDisk = TRUE;
+		}
+d315 1
+a315 1
+	    printf("%s or\ncouldn't write to a valid partition", devName);
+@
+
+
+1.13
+log
+@extended it to cover lfs file systems too...
+
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/cmds/labeldisk/RCS/labeldisk.c,v 1.12 91/09/26 20:36:41 voelker Exp Locker: voelker $ SPRITE (Berkeley)";
+a370 2
+    numHeads = labelPtr->numHeads;
+    numSectors = labelPtr->numSectors;
+d387 2
+@
+
+
+1.12
+log
+@cleaned up code to Sprite coding standards...
+
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/cmds/labeldisk/RCS/labeldisk.c,v 1.11 91/09/14 14:03:55 voelker Exp Locker: voelker $ SPRITE (Berkeley)";
+d265 3
+a267 3
+	    headerPtr = Disk_ReadDomainHeader(streamID, diskLabelPtr);
+	    if (headerPtr == NULL) {
+		printf("Could not read OFS domain header of ");
+d300 3
+a302 3
+	    headerPtr = Disk_ReadDomainHeader(streamID, diskLabelPtr);
+	    if (headerPtr == NULL) {
+		printf("Could not read OFS domain header of ");
+@
+
+
+1.11
+log
+@added query to let user abort
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/cmds/labeldisk/RCS/labeldisk.c,v 1.10 91/09/14 13:54:39 voelker Exp Locker: voelker $ SPRITE (Berkeley)";
+a30 1
+Boolean writeSprite = FALSE;
+d79 1
+d114 2
+a115 1
+    if (strcmp(fromName, toName)) {
+a149 7
+    Disk_Label			diskLabel;
+    Sun_DiskLabel 		*sunLabelPtr;
+    Dec_DiskLabel 		*decLabelPtr;
+    Fsdm_DiskHeader		*diskHeaderPtr;
+    Sun_DiskLabel		sunLabel;
+    Dec_DiskLabel		decLabel;
+    Fsdm_DiskHeader		diskHeader;
+d153 1
+a153 2
+    static char	*labelName[3] = {"Sun", "Sprite", "Dec"};
+    static char buffer[1024], buffer2[1024];
+d155 1
+a163 2
+    diskHeaderPtr = (Fsdm_DiskHeader *)buffer;
+    decLabelPtr = (Dec_DiskLabel *)buffer2;
+d170 1
+a170 1
+	    return(FAILURE);
+d174 1
+a174 1
+	    return(FAILURE);
+a213 1
+/**  check **/
+d222 2
+a223 1
+    if ((scanf("%s", answer) == EOF) || strcasecmp(answer, "y")) {
+d225 2
+a226 1
+	if (Disk_ReadDomainHeader(toStreamID, diskLabelPtr) == NULL) {
+d229 1
+a229 1
+	    return -2;  /* error return value of Disk_WriteLabel() */
+d238 2
+a239 1
+	if ((devName = (char *)malloc(sizeof(char) * len + 1)) == NULL) {
+d243 2
+a244 1
+	if ((c = toName[len - 1]) >= 'a' && c < 'i') {
+d252 1
+a252 1
+	    devName[--len] = '\0';  /* null out partition designation */
+d265 2
+a266 1
+	    if (Disk_ReadDomainHeader(streamID, diskLabelPtr) == NULL) {
+d270 7
+a276 4
+	    } else if (Disk_WriteLabel(streamID, diskLabelPtr, outLabel)) {
+		printf("Unable to write disk label to ");
+		printf("%s...skipping\n", devName);
+		cantWriteToRawDisk = TRUE;
+d300 2
+a301 1
+	    if (Disk_ReadDomainHeader(streamID, diskLabelPtr) == NULL) {
+d306 2
+a307 1
+	    if (Disk_WriteLabel(streamID, diskLabelPtr, outLabel)) {
+d350 6
+a355 6
+    int n, numHeads, numSectors, part;
+    ReturnStatus 		status = SUCCESS;
+    int first, cyls, last, numCyls, lastSector, totalSectors, lastCyl;
+    char			buffer[DEV_BYTES_PER_SECTOR];
+    char			*tmpPtr;
+    int				labelLen;
+d477 1
+a477 1
+    int n, val;
+@
+
+
+1.10
+log
+@forgot to let -q work without having to specify -w...
+
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/cmds/labeldisk/RCS/labeldisk.c,v 1.9 91/09/14 13:39:21 voelker Exp Locker: voelker $ SPRITE (Berkeley)";
+d216 5
+@
+
+
+1.9
+log
+@extended it so that a source device can be specified from which
+labels are read, making the second device specified the device
+to which the labels are written.
+
+added an option that allows the quick copying of one label from
+one device/partition to another, skipping the interactive 
+partition information.
+
+after commiting a label, allows the user to write that label
+to all partition on the destination device which have a positive
+length and which have a valid filesystem installed on them.
+
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/cmds/labeldisk/RCS/labeldisk.c,v 1.8 90/06/28 15:13:49 jhh Exp Locker: voelker $ SPRITE (Berkeley)";
+d95 1
+a95 1
+    if (writeSun || writeDec) {
+@
+
+
+1.8
+log
+@totally rewritten.  Uses new Disk library, allows you to create
+a label from scratch.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/cmds/labeldisk/RCS/labeldisk.c,v 1.7 90/02/16 16:11:43 shirriff Exp $ SPRITE (Berkeley)";
+d26 2
+a27 1
+char *deviceName;		/* ie. set to "/dev/rsd0" */
+d33 1
+d37 3
+a39 1
+	"labeldisk [-w] [-sun] [-dec] [-new] rawDevice"},
+d48 2
+a56 2
+
+
+d78 2
+a79 1
+    int streamID;
+d83 12
+a94 4
+	Opt_PrintUsage(argv[0], optionArray, numOptions);
+	exit(FAILURE);
+    }
+    deviceName = argv[1];
+d103 1
+a103 1
+    if ( (writeSun?1:0)+(writeDec?1:0) > 1) {
+d109 2
+a110 2
+    streamID = open(deviceName, openFlags, 0);
+    if (streamID < 0) {
+d114 10
+a123 1
+    if (LabelDisk(streamID) != SUCCESS) {
+d144 3
+a146 2
+LabelDisk(streamID)
+    int streamID;			/* Handle on raw disk */
+a162 1
+
+d172 1
+a172 1
+    diskLabelPtr = Disk_ReadLabel(streamID);
+d214 6
+a219 3
+    EditLabel(streamID, diskLabelPtr);
+    if (inLabel != outLabel) {
+	status = Disk_EraseLabel(streamID, inLabel);
+d224 98
+a321 3
+    printf("Writing disk label.\n");
+    status = Disk_WriteLabel(streamID, diskLabelPtr, outLabel);
+    return status;
+a322 1
+
+@
+
+
+1.7
+log
+@Added dec disk label functions, cleaned stuff up.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/cmds/labeldisk/RCS/labeldisk.c,v 1.6 90/01/11 17:13:40 jhh Exp Locker: shirriff $ SPRITE (Berkeley)";
+d19 1
+a19 1
+#include "diskUtils.h"
+d22 1
+d35 1
+a35 1
+	"labeldisk [-w] [-sun] [-dec] [-sprite] [-new] rawDevice"},
+a41 2
+    {OPT_TRUE, "sprite", (Address)&writeSprite,
+	"Write a Sprite label"},
+d47 4
+a50 2
+extern short SeeSunCheckSum();
+extern unsigned int SeeSpriteCheckSum();
+a51 10
+void	ConvertSunToSprite();
+void	ConvertSpriteToSun();
+void	ConvertDecToSprite();
+void	ConvertSpriteToDec();
+ReturnStatus	EraseOldLabel();
+
+#define NOLABEL -1
+#define SUNLABEL 0
+#define SPRITELABEL 1
+#define DECLABEL 2
+d82 1
+a82 1
+    if (writeSun || writeSprite || writeDec) {
+d90 1
+a90 1
+    if ( (writeSun?1:0)+(writeSprite?1:0)+(writeDec?1:0) > 1) {
+d92 1
+a92 1
+		"Can't specify more than one of -sun, -dec, -sprite.\n");
+d121 1
+a121 1
+ReturnStatus
+d125 2
+a126 1
+    Disk_Info 			*diskInfoPtr;
+a129 1
+    Disk_Info			diskInfo;
+d135 1
+a135 1
+    int 			inLabel, outLabel;
+d142 1
+a142 1
+	outLabel = SUNLABEL;
+d144 1
+a144 3
+	outLabel = DECLABEL;
+    } else if (writeSprite) {
+	outLabel = SPRITELABEL;
+d146 1
+a146 1
+	outLabel = -1;
+d150 2
+a151 23
+    diskInfoPtr = Disk_ReadDiskInfo(streamID, 0);
+    if (!newLabel && diskInfoPtr != (Disk_Info *)0) {
+	sunLabelPtr = Disk_ReadSunLabel(streamID);
+	if (sunLabelPtr != (Sun_DiskLabel *)0) {
+	    inLabel = SUNLABEL;
+	} else {
+	    sunLabelPtr = (Sun_DiskLabel *)buffer2;
+	    diskHeaderPtr = Disk_ReadDiskHeader(streamID);
+	    if (diskHeaderPtr != (Fsdm_DiskHeader *) 0) {
+		inLabel = SPRITELABEL;
+	    } else {
+		diskHeaderPtr = (Fsdm_DiskHeader *)buffer;
+		decLabelPtr = Disk_ReadDecLabel(streamID);
+		if (decLabelPtr != (Dec_DiskLabel *)0) {
+		    inLabel = DECLABEL;
+		} else {
+		    fprintf(stderr, "Disk label is neither Sun nor Sprite.\n");
+		    return(FAILURE);
+		}
+	    }
+	}
+    } else {
+	inLabel = NOLABEL;
+d158 2
+a159 2
+	if (outLabel == NOLABEL) {
+	    printf("You must specify the -sun, -dec, or -sprite option.\n");
+d162 2
+a163 19
+	bzero(&diskInfo, sizeof(Disk_Info));
+	bzero(&sunLabel, sizeof(Sun_DiskLabel));
+	bzero(&decLabel, sizeof(Dec_DiskLabel));
+	bzero(&diskHeader, sizeof(Fsdm_DiskHeader)); diskInfoPtr = &diskInfo;
+	if (outLabel == DECLABEL) {
+	    diskInfoPtr->bootSector = DEC_BOOT_SECTOR;
+	    diskInfoPtr->numBootSectors = DEC_LABEL_SECTOR-1;
+	    diskInfoPtr->summarySector = DEC_SUMMARY_SECTOR;
+	    diskInfoPtr->domainSector = DEC_DOMAIN_SECTOR;
+	} else {
+	    diskInfoPtr->bootSector = 1;
+	    diskInfoPtr->numBootSectors = 15;
+	    diskInfoPtr->summarySector = 17;
+	    diskInfoPtr->domainSector = 18;
+	}
+	diskInfoPtr->numDomainSectors = FSDM_NUM_DOMAIN_SECTORS;
+	sunLabelPtr = &sunLabel;
+	decLabelPtr = &decLabel;
+	diskHeaderPtr = &diskHeader;
+d165 4
+a168 1
+    if (outLabel == NOLABEL) {
+d171 5
+a175 1
+    if ((inLabel != outLabel) && (inLabel != NOLABEL)) {
+d183 1
+a183 1
+	  labelName[inLabel], labelName[outLabel]);
+a190 31
+	/*
+	 * Make input into a Sprite label.  Then change to output label.
+	 */
+	if (inLabel == SUNLABEL) {
+	    ConvertSunToSprite(diskInfoPtr, sunLabelPtr, diskHeaderPtr);
+	} else if (inLabel == DECLABEL) {
+	    ConvertDecToSprite(diskInfoPtr, decLabelPtr, diskHeaderPtr);
+	}
+	if (outLabel == SUNLABEL) {
+	    ConvertSpriteToSun(diskInfoPtr, diskHeaderPtr, sunLabelPtr);
+	} else if (outLabel == DECLABEL) {
+	    ConvertSpriteToDec(diskInfoPtr, diskHeaderPtr, decLabelPtr);
+	}
+    }
+    /*
+     * At this point, the output label should be valid.
+     */
+    if (outLabel == SUNLABEL) {
+	status = DoSunLabel(diskInfoPtr, streamID, sunLabelPtr);
+    } else if (outLabel == DECLABEL) {
+	status = DoDecLabel(diskInfoPtr, streamID, decLabelPtr);
+    } else {
+	status = DoSpriteLabel(diskInfoPtr, streamID, diskHeaderPtr);
+    }
+    if (status == SUCCESS && inLabel != NOLABEL) {
+	int oldsector, newsector;
+	oldsector = inLabel == DECLABEL ? DEC_LABEL_SECTOR : 0;
+	newsector = outLabel == DECLABEL ? DEC_LABEL_SECTOR : 0;
+	if (oldsector != newsector) {
+	    status = EraseOldLabel(streamID, oldsector);
+	}
+d192 5
+a196 59
+    return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DoSunLabel --
+ *
+ *	Sets up a Sun label.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+DoSunLabel(diskInfoPtr, streamID, sunLabelPtr)
+    Disk_Info			*diskInfoPtr;
+    int				streamID;
+    Sun_DiskLabel 		*sunLabelPtr;
+{
+    int 			part;
+    ReturnStatus 		status = SUCCESS;
+    int				cyls;
+    int				first;
+    int				last;
+    Fsdm_DiskPartition		partitionMap[SUN_NUM_DISK_PARTS];
+
+    printInfo("SUN", diskInfoPtr);
+
+    /*
+     * Verify the magic number and the checksum.
+     */
+    if (sunLabelPtr->magic != SUN_DISK_MAGIC) {
+	printf("Bad magic number on disk <%x> not <%x>\n",
+	    sunLabelPtr->magic, SUN_DISK_MAGIC);
+    }
+    if (!CheckSunCheckSum(sunLabelPtr)) {
+	printf("Check sum incorrect, 0x%x not 0x%x\n",
+	    SeeSunCheckSum(sunLabelPtr), sunLabelPtr->checkSum);
+    }
+    for (part=0 ; part < SUN_NUM_DISK_PARTS; part++) {
+	first = sunLabelPtr->map[part].cylinder;
+	if (diskInfoPtr->numHeads * diskInfoPtr->numSectors <= 0) {
+	    printf("%c: Cylinder %6d NumSectors %6d\n",
+		first, sunLabelPtr->map[part].numBlocks);
+	    cyls = 0;
+	} else {
+	    cyls = sunLabelPtr->map[part].numBlocks /
+		    (diskInfoPtr->numHeads * diskInfoPtr->numSectors);
+	    last = (cyls > 0) ? (cyls + first - 1) : first;
+	    printf("%c: First %4d Last %4d Num %4d (Blocks %7d)\n",
+		    'a' + part, first, last, cyls,
+		    sunLabelPtr->map[part].numBlocks);
+a197 133
+	partitionMap[part].firstCylinder = first;
+	partitionMap[part].numCylinders = cyls;
+    }
+    if (!writeLabel) {
+	return(SUCCESS);
+    }
+    DoNewLabel(diskInfoPtr,partitionMap,SUN_NUM_DISK_PARTS, streamID);
+    strcpy(sunLabelPtr->asciiLabel, diskInfoPtr->asciiLabel);
+    sunLabelPtr->numHeads = diskInfoPtr->numHeads;
+    sunLabelPtr->numSectors = diskInfoPtr->numSectors;
+    for (part=0 ; part < SUN_NUM_DISK_PARTS; part++) {
+	sunLabelPtr->map[part].cylinder = partitionMap[part].firstCylinder;
+	sunLabelPtr->map[part].numBlocks = partitionMap[part].numCylinders *
+	       diskInfoPtr->numHeads * diskInfoPtr->numSectors;
+    }
+    sunLabelPtr->magic = SUN_DISK_MAGIC;
+    MakeSunCheckSum(sunLabelPtr);
+    printf("Writing new sun label\n");
+    status = Disk_SectorWrite(streamID, 0, 1, sunLabelPtr);
+    return status;
+}
+
+short
+SeeSunCheckSum(sunLabelPtr)
+    Sun_DiskLabel *sunLabelPtr;
+{
+        short *sp, sum = 0;
+        short count = DEV_BYTES_PER_SECTOR/sizeof(short) - 1;
+
+        sp = (short *)sunLabelPtr;
+        while (count--)
+                sum ^= *sp++;
+        return (sum);
+}
+
+
+CheckSunCheckSum(sunLabelPtr)
+    Sun_DiskLabel *sunLabelPtr;
+{
+        short *sp, sum = 0;
+        short count = DEV_BYTES_PER_SECTOR/sizeof(short);
+
+        sp = (short *)sunLabelPtr;
+        while (count--)
+                sum ^= *sp++;
+        return (sum ? 0 : 1);
+}
+
+MakeSunCheckSum(sunLabelPtr)
+    Sun_DiskLabel *sunLabelPtr;
+{
+        short *sp, sum = 0;
+        short count = DEV_BYTES_PER_SECTOR/sizeof(short) - 1;
+
+        sunLabelPtr->checkSum = 0;
+        sp = (short *)sunLabelPtr;
+        while (count--)
+                sum ^= *sp++;
+        sunLabelPtr->checkSum = sum;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DoSpriteLabel --
+ *
+ *	Sets up a Sprite label.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+DoSpriteLabel(diskInfoPtr, streamID, diskHeaderPtr)
+    Disk_Info		*diskInfoPtr;
+    int			streamID;
+    Fsdm_DiskHeader	*diskHeaderPtr;
+{
+    int 			part;
+    int 			n;
+    ReturnStatus 		status = SUCCESS;
+    int				blocks;
+    int				first;
+    int				last;
+    int				cyls;
+
+    printInfo("SPRITE", diskInfoPtr);
+
+    /*
+     * Verify the magic number and the checksum.
+     */
+    if (diskHeaderPtr->magic != FSDM_DISK_MAGIC) {
+	printf("Bad magic number on disk <%x> not <%x>\n",
+	    diskHeaderPtr->magic, FSDM_DISK_MAGIC);
+    }
+    if (!CheckSpriteCheckSum(diskHeaderPtr)) {
+	printf("Check sum incorrect, 0x%x not 0x%x\n",
+	    SeeSpriteCheckSum(diskHeaderPtr), FSDM_DISK_MAGIC);
+    }
+    for (part=0 ; part < SUN_NUM_DISK_PARTS; part++) {
+	first = diskHeaderPtr->map[part].firstCylinder;
+	cyls = diskHeaderPtr->map[part].numCylinders;
+	last = (cyls > 0) ? (cyls + first - 1) : first;
+	blocks = diskInfoPtr->numHeads * diskInfoPtr->numSectors *
+		diskHeaderPtr->map[part].numCylinders;
+	printf("%c: First %4d Last %4d Num %4d (Blocks %7d)\n",
+		'a' + part, first, last, cyls, blocks);
+    }
+    if (!writeLabel) {
+	return(SUCCESS);
+    }
+    DoNewLabel(diskInfoPtr,diskHeaderPtr->map,SUN_NUM_DISK_PARTS, streamID);
+    diskHeaderPtr->magic = FSDM_DISK_MAGIC;
+    strcpy(diskHeaderPtr->asciiLabel, diskInfoPtr->asciiLabel);
+    diskHeaderPtr->numHeads = diskInfoPtr->numHeads;
+    diskHeaderPtr->numSectors = diskInfoPtr->numSectors;
+    diskHeaderPtr->summarySector = diskInfoPtr->summarySector;
+    diskHeaderPtr->bootSector = diskInfoPtr->bootSector;
+    diskHeaderPtr->numBootSectors = diskInfoPtr->numBootSectors;
+    diskHeaderPtr->domainSector = diskInfoPtr->domainSector;
+    MakeSpriteCheckSum(diskHeaderPtr);
+    printf("Writing new sprite label\n");
+    status = Disk_SectorWrite(streamID, 0, 1, diskHeaderPtr);
+    {
+	FILE *fopen(), *file;
+	file = fopen("label.out","w");
+	fwrite(diskHeaderPtr,512,1,file);
+	fclose(file);
+d199 2
+a203 41
+unsigned int
+SeeSpriteCheckSum(diskHeaderPtr)
+    Fsdm_DiskHeader *diskHeaderPtr;
+{
+        int *sp, sum = 0;
+	int i;
+
+        sp = (int *)diskHeaderPtr;
+	for (i = 0; i < DEV_BYTES_PER_SECTOR; i += sizeof(int)) {
+	    sum ^= *sp++;
+	}
+        return (sum);
+}
+
+int
+CheckSpriteCheckSum(diskHeaderPtr)
+    Fsdm_DiskHeader *diskHeaderPtr;
+{
+        int *sp, sum = 0;
+	int i;
+
+        sp = (int *)diskHeaderPtr;
+	for (i = 0; i < DEV_BYTES_PER_SECTOR; i += sizeof(int)) {
+	    sum ^= *sp++;
+	}
+        return (sum == FSDM_DISK_MAGIC ? 1 : 0);
+}
+
+MakeSpriteCheckSum(diskHeaderPtr)
+    Fsdm_DiskHeader *diskHeaderPtr;
+{
+        int *sp, sum = 0;
+	int i;
+
+	diskHeaderPtr->checkSum = FSDM_DISK_MAGIC;
+        sp = (int *)diskHeaderPtr;
+	for (i = 0; i < DEV_BYTES_PER_SECTOR; i += sizeof(int)) {
+	    sum ^= *sp++;
+	}
+        diskHeaderPtr->checkSum = sum;
+}
+d208 1
+a208 1
+ * DoNewLabel --
+d210 1
+a210 1
+ *	Interactively gets the information for the new disk label.
+d216 1
+a216 1
+ *	Changes diskInfoPtr.
+d220 4
+a223 5
+    DoNewLabel(diskInfoPtr, partitionMap, numPart, streamID)
+    Disk_Info		*diskInfoPtr;
+    Fsdm_DiskPartition	partitionMap[];
+    int			numPart;
+    int			streamID;
+a225 1
+    char answer[80];
+d229 2
+d233 31
+a263 32
+    printf("ascii label: \"%s\", change this? (y/n) ", 
+	diskInfoPtr->asciiLabel);
+    if (isYes()) {
+	char *tmpPtr;
+	fgets(answer, 80, stdin);
+	printf("New ascii label ? ");
+	tmpPtr = fgets(diskInfoPtr->asciiLabel, 128,stdin);
+	if (tmpPtr == NULL) {
+	    exit(1);
+	}
+	diskInfoPtr->asciiLabel[strlen(diskInfoPtr->asciiLabel)-1] = '\0';
+    }
+    numHeads = diskInfoPtr->numHeads;
+    numSectors = diskInfoPtr->numSectors;
+    printf("Sectors: summary %d, boot %d, # boot %d, domain %d, %s ",
+	    diskInfoPtr->summarySector, diskInfoPtr->bootSector,
+	    diskInfoPtr->numBootSectors, diskInfoPtr->domainSector,
+	    "change this? (y/n)");
+    if (isYes()) {
+	diskInfoPtr->summarySector = getNum("New summary sector?");
+	diskInfoPtr->bootSector = getNum("New boot sector?");
+	diskInfoPtr->numBootSectors = getNum("Number of boot sectors?");
+	diskInfoPtr->domainSector = getNum("New domain sector?");
+    }
+    printf(" %d heads, change this? (y/n) ", numHeads);
+    if (isYes()) {
+	numHeads = getNum("New # of heads?");
+    }
+    printf(" %d sectors/track, change this (y/n) ", numSectors);
+    if (isYes()) {
+	numSectors = getNum("New # of sectors/track?");
+    }
+d265 1
+a265 1
+	diskInfoPtr->numHeads * diskInfoPtr->numSectors) {
+d268 3
+a270 3
+	for (part=0 ; part < numPart; part++) {
+	    partitionMap[part].firstCylinder = 0;
+	    partitionMap[part].numCylinders = 0;
+d273 3
+a275 5
+    diskInfoPtr->numHeads = numHeads;
+    diskInfoPtr->numSectors = numSectors;
+    for (part=0 ; part < numPart; part++) {
+	first = partitionMap[part].firstCylinder;
+	cyls = partitionMap[part].numCylinders;
+d277 7
+a283 11
+	printf("\n%c: First %4d Last %4d Num %4d, change this? (y/n) ",
+		'a' + part, first, last, cyls);
+	if (isYes()) {
+	    int firstCyl = -1;
+	    int numCyls = -1;
+
+	    firstCyl = getNum("First Cyl?");
+	    numCyls = getNum("Num Cyls ?");
+	    partitionMap[part].firstCylinder = firstCyl;
+	    partitionMap[part].numCylinders = numCyls;
+	}
+d286 2
+a287 12
+    printf("\nNew Map\n");
+    for (part=0 ; part < numPart; part++) {
+	first = partitionMap[part].firstCylinder;
+	cyls = partitionMap[part].numCylinders;
+	last = (cyls > 0) ? (cyls + first - 1) : first;
+	if (last > lastCyl) {
+	    lastCyl = last;
+	}
+	printf("%c: First %4d Last %4d Num %4d (Cylinders %7d)\n",
+		'a' + part, first, last, cyls,
+		partitionMap[part].numCylinders);
+    }
+d292 2
+d296 1
+a296 1
+    if (!isYes()) {
+d305 1
+a305 1
+ * ConvertSunToSprite --
+d307 1
+a307 3
+ *	Converts a Sun label to a Sprite label. Any fields that cannot
+ *	be converted directly are set to their default values.
+ *	diskInfoPtr is used to get the name and the sector locations. 
+d313 1
+a313 1
+ *	None.
+d317 3
+a319 6
+
+void
+ConvertSunToSprite(diskInfoPtr, sunLabelPtr, diskHeaderPtr)
+    Disk_Info			*diskInfoPtr;
+    Sun_DiskLabel		*sunLabelPtr;
+    Fsdm_DiskHeader		*diskHeaderPtr;
+d321 2
+a322 232
+    int i;
+
+    /*
+     * Verify the magic number and the checksum.
+     */
+    if (sunLabelPtr->magic != SUN_DISK_MAGIC) {
+	printf("Bad magic number on disk <%x> not <%x>\n",
+	    sunLabelPtr->magic, SUN_DISK_MAGIC);
+    }
+    if (!CheckSunCheckSum(sunLabelPtr)) {
+	printf("Check sum incorrect, 0x%x not 0x%x\n",
+	    SeeSunCheckSum(sunLabelPtr), sunLabelPtr->checkSum);
+    }
+    bzero(diskHeaderPtr, sizeof(*diskHeaderPtr));
+    diskHeaderPtr->magic = FSDM_DISK_MAGIC;
+    diskHeaderPtr->partition = 0;
+    diskHeaderPtr->bootSector = diskInfoPtr->bootSector;
+    diskHeaderPtr->numBootSectors = diskInfoPtr->numBootSectors;
+    diskHeaderPtr->summarySector = diskInfoPtr->summarySector;
+    diskHeaderPtr->domainSector = diskInfoPtr->domainSector;
+    diskHeaderPtr->numDomainSectors = diskInfoPtr->numDomainSectors;
+    diskHeaderPtr->numSectors = sunLabelPtr->numSectors;
+    diskHeaderPtr->numHeads = sunLabelPtr->numHeads;
+    diskHeaderPtr->numCylinders = sunLabelPtr->numCylinders;
+    diskHeaderPtr->numAltCylinders = sunLabelPtr->numAltCylinders;
+    strncpy(diskHeaderPtr->asciiLabel, diskInfoPtr->asciiLabel, 128);
+    for (i = 0; i < FSDM_NUM_DISK_PARTS && i < SUN_NUM_DISK_PARTS; i++) {
+	diskHeaderPtr->map[i].firstCylinder = sunLabelPtr->map[i].cylinder;
+	diskHeaderPtr->map[i].numCylinders = sunLabelPtr->map[i].numBlocks /
+	    (diskInfoPtr->numHeads * diskInfoPtr->numSectors);
+    }
+    MakeSpriteCheckSum(diskHeaderPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConvertSpriteToSun --
+ *
+ *	Converts a Sprite label to a Sun label. Any fields that cannot
+ *	be converted directly are set to their default values.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+ConvertSpriteToSun(diskInfoPtr, diskHeaderPtr, sunLabelPtr)
+    Disk_Info			*diskInfoPtr;
+    Fsdm_DiskHeader		*diskHeaderPtr;
+    Sun_DiskLabel		*sunLabelPtr;
+{
+    int i;
+
+    /*
+     * Verify the magic number and the checksum.
+     */
+    if (diskHeaderPtr->magic != FSDM_DISK_MAGIC) {
+	printf("Bad magic number on disk <%x> not <%x>\n",
+	    diskHeaderPtr->magic, FSDM_DISK_MAGIC);
+    }
+    if (!CheckSpriteCheckSum(diskHeaderPtr)) {
+	printf("Check sum incorrect, 0x%x not 0x%x\n",
+	    SeeSpriteCheckSum(diskHeaderPtr), diskHeaderPtr->checkSum);
+    }
+    bzero(sunLabelPtr, sizeof(*sunLabelPtr));
+    sunLabelPtr->magic = SUN_DISK_MAGIC;
+    sunLabelPtr->numSectors = diskHeaderPtr->numSectors;
+    sunLabelPtr->numHeads = diskHeaderPtr->numHeads;
+    sunLabelPtr->numCylinders = diskHeaderPtr->numCylinders;
+    sunLabelPtr->numAltCylinders = diskHeaderPtr->numAltCylinders;
+    sunLabelPtr->partitionID = 0;
+    sunLabelPtr->bhead = 0;
+    sunLabelPtr->gap1 = 65535;
+    sunLabelPtr->gap2 = 65535;
+    sunLabelPtr->interleave = 1;
+    strncpy(sunLabelPtr->asciiLabel, diskInfoPtr->asciiLabel, 128);
+    for (i = 0; i < FSDM_NUM_DISK_PARTS && i < SUN_NUM_DISK_PARTS; i++) {
+	sunLabelPtr->map[i].cylinder = diskHeaderPtr->map[i].firstCylinder;
+	sunLabelPtr->map[i].numBlocks = diskHeaderPtr->map[i].numCylinders *
+	    diskInfoPtr->numHeads * diskInfoPtr->numSectors;
+    }
+    MakeSunCheckSum(sunLabelPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConvertDecToSprite --
+ *
+ *	Converts a Dec label to a Sprite label. Any fields that cannot
+ *	be converted directly are set to their default values.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+ConvertDecToSprite(diskInfoPtr, decLabelPtr, diskHeaderPtr)
+    Disk_Info			*diskInfoPtr;
+    Dec_DiskLabel		*decLabelPtr;
+    Fsdm_DiskHeader		*diskHeaderPtr;
+{
+    int i;
+    int cylLength = diskInfoPtr->numHeads * diskInfoPtr->numSectors *
+	    DEV_BYTES_PER_SECTOR;
+    int totalCyls = 0;
+
+    /*
+     * Verify the magic number and the checksum.
+     */
+    if (decLabelPtr->magic != DEC_LABEL_MAGIC) {
+	printf("Bad magic number on disk <%x> not <%x>\n",
+	    decLabelPtr->magic, DEC_LABEL_MAGIC);
+    } else if (decLabelPtr->spriteMagic != FSDM_DISK_MAGIC) {
+	printf("Disk has original dec label, not Sprite/dec label\n");
+    }
+    bzero(diskHeaderPtr, sizeof(*diskHeaderPtr));
+    diskHeaderPtr->magic = FSDM_DISK_MAGIC;
+    diskHeaderPtr->partition = 0;
+    diskHeaderPtr->bootSector = diskInfoPtr->bootSector;
+    diskHeaderPtr->numBootSectors = diskInfoPtr->numBootSectors;
+    diskHeaderPtr->summarySector = diskInfoPtr->summarySector;
+    diskHeaderPtr->domainSector = diskInfoPtr->domainSector;
+    diskHeaderPtr->numDomainSectors = diskInfoPtr->numDomainSectors;
+    diskHeaderPtr->numSectors = decLabelPtr->numSectors;
+    diskHeaderPtr->numHeads = decLabelPtr->numHeads;
+    diskHeaderPtr->numAltCylinders = decLabelPtr->numAltCylinders;
+    *diskHeaderPtr->asciiLabel = '\0';
+    for (i = 0; i < FSDM_NUM_DISK_PARTS && i < DEC_NUM_DISK_PARTS; i++) {
+	if (decLabelPtr->map[i].offsetBytes % cylLength != 0) {
+	    printf("Warning: offset %x is not multiple of cylinder size\n",
+		    decLabelPtr->map[i].offsetBytes);
+	}
+	diskHeaderPtr->map[i].firstCylinder = decLabelPtr->map[i].numBytes/
+		cylLength;
+	if (decLabelPtr->map[i].numBytes % cylLength != 0) {
+	    printf("Warning: partition %x is not multiple of cylinder size\n",
+		    decLabelPtr->map[i].offsetBytes);
+	}
+	diskHeaderPtr->map[i].numCylinders = decLabelPtr->map[i].numBytes /
+		cylLength;
+	totalCyls += diskHeaderPtr->map[i].numCylinders;
+    }
+    diskHeaderPtr->numCylinders = totalCyls;
+    MakeSpriteCheckSum(diskHeaderPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConvertSpriteToDec --
+ *
+ *	Converts a Sprite label to a Dec label. Any fields that cannot
+ *	be converted directly are set to their default values.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+ConvertSpriteToDec(diskInfoPtr, diskHeaderPtr, decLabelPtr)
+    Disk_Info			*diskInfoPtr;
+    Fsdm_DiskHeader		*diskHeaderPtr;
+    Dec_DiskLabel		*decLabelPtr;
+{
+    int i;
+    int cylLength = diskInfoPtr->numHeads * diskInfoPtr->numSectors *
+	    DEV_BYTES_PER_SECTOR;
+
+    /*
+     * Verify the magic number and the checksum.
+     */
+    if (diskHeaderPtr->magic != FSDM_DISK_MAGIC) {
+	printf("Bad magic number on disk <%x> not <%x>\n",
+	    diskHeaderPtr->magic, FSDM_DISK_MAGIC);
+    }
+    bzero(decLabelPtr, sizeof(*decLabelPtr));
+    decLabelPtr->magic = DEC_LABEL_MAGIC;
+    decLabelPtr->isPartitioned = 1;
+    decLabelPtr->numHeads = diskHeaderPtr->numHeads;
+    decLabelPtr->numSectors = diskHeaderPtr->numSectors;
+    decLabelPtr->domainSector = diskHeaderPtr->domainSector;
+    decLabelPtr->numDomainSectors = diskHeaderPtr->numDomainSectors;
+    decLabelPtr->numCylinders = diskHeaderPtr->numCylinders;
+    decLabelPtr->numAltCylinders = diskHeaderPtr->numAltCylinders;
+    decLabelPtr->bootSector = DEC_BOOT_SECTOR;
+    decLabelPtr->numBootSectors = diskHeaderPtr->numBootSectors;
+    decLabelPtr->summarySector = diskHeaderPtr->summarySector;
+    decLabelPtr->domainSector = diskHeaderPtr->domainSector;
+    decLabelPtr->numDomainSectors = diskHeaderPtr->numDomainSectors;
+    decLabelPtr->spriteMagic = FSDM_DISK_MAGIC;
+    strncpy(decLabelPtr->asciiLabel, diskInfoPtr->asciiLabel, 128);
+    for (i = 0; i < FSDM_NUM_DISK_PARTS && i < DEC_NUM_DISK_PARTS; i++) {
+	decLabelPtr->map[i].numBytes = diskHeaderPtr->map[i].numCylinders *
+	        cylLength;
+	decLabelPtr->map[i].offsetBytes = diskHeaderPtr->map[i].firstCylinder *
+		cylLength;
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DoDecLabel --
+ *
+ *	Sets up a Dec label.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+d324 2
+a325 56
+ReturnStatus
+DoDecLabel(diskInfoPtr, streamID, decLabelPtr)
+    Disk_Info			*diskInfoPtr;
+    int				streamID;
+    Dec_DiskLabel 		*decLabelPtr;
+{
+    int 			part;
+    ReturnStatus 		status = SUCCESS;
+    int				cyls;
+    int				first;
+    int				last;
+    int				cylLength;
+    Fsdm_DiskPartition		partitionMap[DEC_NUM_DISK_PARTS];
+
+    printInfo("DEC", diskInfoPtr);
+
+    /*
+     * Verify the magic number and the checksum.
+     */
+    if (decLabelPtr->magic != DEC_LABEL_MAGIC) {
+	printf("Bad magic number on disk <%x> not <%x>\n",
+	    decLabelPtr->magic, DEC_LABEL_MAGIC);
+    }
+    cylLength = decLabelPtr->numHeads * decLabelPtr->numSectors *
+	    DEV_BYTES_PER_SECTOR;
+    for (part=0 ; part < DEC_NUM_DISK_PARTS; part++) {
+	first = decLabelPtr->map[part].offsetBytes / cylLength;;
+	cyls = decLabelPtr->map[part].numBytes / cylLength;
+	last = (cyls > 0) ? (cyls + first - 1) : first;
+	printf("%c: First %4d Last %4d Num %4d (Bytes %7d)\n",
+		'a' + part, first, last, cyls,
+		decLabelPtr->map[part].numBytes);
+	partitionMap[part].firstCylinder = first;
+	partitionMap[part].numCylinders = cyls;
+    }
+    if (!writeLabel) {
+	return(SUCCESS);
+    }
+    DoNewLabel(diskInfoPtr,partitionMap,DEC_NUM_DISK_PARTS, streamID);
+    decLabelPtr->numHeads = diskInfoPtr->numHeads;
+    decLabelPtr->numSectors = diskInfoPtr->numSectors;
+    decLabelPtr->summarySector = diskInfoPtr->summarySector;
+    decLabelPtr->bootSector = diskInfoPtr->bootSector;
+    decLabelPtr->numBootSectors = diskInfoPtr->numBootSectors;
+    decLabelPtr->domainSector = diskInfoPtr->domainSector;
+    decLabelPtr->version = DEC_LABEL_VERSION;
+    decLabelPtr->magic = DEC_LABEL_MAGIC;
+    decLabelPtr->spriteMagic = FSDM_DISK_MAGIC;
+    strcpy(decLabelPtr->asciiLabel, diskInfoPtr->asciiLabel);
+    cylLength = decLabelPtr->numHeads * decLabelPtr->numSectors *
+	    DEV_BYTES_PER_SECTOR;
+    for (part=0 ; part < DEC_NUM_DISK_PARTS; part++) {
+	decLabelPtr->map[part].offsetBytes = partitionMap[part].firstCylinder *
+		cylLength;
+	decLabelPtr->map[part].numBytes = partitionMap[part].numCylinders *
+		cylLength;
+d327 7
+a333 98
+    printf("Writing new dec label\n");
+    status = Disk_SectorWrite(streamID, DEC_LABEL_SECTOR, 1, decLabelPtr);
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * EraseOldLabel --
+ *
+ *	Zero out the block containing the old label.
+ *
+ * Results:
+ *	Status.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+EraseOldLabel(streamID, sector)
+int streamID;
+int sector;
+{
+    char buffer[DEV_BYTES_PER_SECTOR];
+    bzero(buffer, DEV_BYTES_PER_SECTOR);
+    printf("Erasing label at sector %d\n",sector);
+    return Disk_SectorWrite(streamID, sector, 1, buffer);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * printInfo --
+ *
+ *	Print out info in the diskInfoPtr;
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+printInfo(type, diskInfoPtr)
+char				*type;
+Disk_Info			*diskInfoPtr;
+{
+    printf("%s LABEL <%s>\n", type, diskInfoPtr->asciiLabel);
+    printf(" %d heads %d sectors/track\n",
+	diskInfoPtr->numHeads, diskInfoPtr->numSectors);
+    printf("Boot sector = %x\n", diskInfoPtr->bootSector);
+    printf("Number of boot sectors = %x\n", diskInfoPtr->numBootSectors);
+    printf("Summary sector = %x\n", diskInfoPtr->summarySector);
+    printf("Domain sector = %x\n", diskInfoPtr->domainSector);
+    printf("Number of domain sectors = %x\n", diskInfoPtr->numDomainSectors);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * getNum --
+ *
+ *	Get a number interactively.
+ *
+ * Results:
+ *	Number.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+getNum(string)
+char	*string;
+{
+    int n, val;
+    char answer[80];
+    do {
+	printf("%s ",string);
+	n = scanf("%d", &val);
+	if (n == EOF) {
+	    exit(1);
+	}
+	if (n == 0) {
+	    /*
+	     * Skip the trashy line
+	     */
+	    fgets(answer, sizeof(answer), stdin);
+	}
+    } while (n<1);
+    return val;
+}
+
+d337 1
+a337 1
+ * isYes --
+d349 2
+a350 2
+int
+isYes()
+@
+
+
+1.6
+log
+@handles disks without a label, you can edit the ascii string, and
+answering "n" to not commit the label sends you back to re-edit the 
+label
+@
+text
+@d4 1
+a4 1
+ *	Read and possible change the disk label.
+d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/cmds/labeldisk/RCS/labeldisk.c,v 1.5 90/01/11 15:11:41 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d28 1
+d30 1
+d33 2
+a34 1
+    {OPT_DOC,"",(Address)NIL, "labeldisk [-w] [-sun] [-sprite] rawDevice"},
+d39 2
+d43 2
+d51 5
+a55 2
+extern void	ConvertSunToSprite();
+extern void	ConvertSpriteToSun();
+d60 1
+d91 3
+d99 3
+a101 2
+    if (writeSun && writeSprite) {
+	fprintf(stderr, "Can't specify both -sun and -sprite.\n");
+d110 1
+a110 1
+    if (LabelDisk(streamID) < 0) {
+d136 1
+d140 1
+d145 3
+a147 2
+    static char	*labelName[2] = {"Sun", "Sprite"};
+    static char buffer[1024];
+d152 2
+d159 2
+d162 1
+a162 1
+    if (diskInfoPtr != (Disk_Info *)0) {
+a165 1
+	    diskHeaderPtr = (Fsdm_DiskHeader *) buffer;
+d167 1
+a170 1
+		sunLabelPtr = (Sun_DiskLabel *) buffer;
+d172 8
+a179 2
+		fprintf(stderr, "Disk label is neither Sun nor Sprite.\n");
+		return(FAILURE);
+d184 3
+a186 1
+	printf("The disk does not have a label.\n");
+d191 1
+a191 1
+	    printf("You must specify either the -sun or -sprite option.\n");
+d196 13
+a208 6
+	bzero(&diskHeader, sizeof(Fsdm_DiskHeader));
+	diskInfoPtr = &diskInfo;
+	diskInfoPtr->bootSector = 1;
+	diskInfoPtr->numBootSectors = 15;
+	diskInfoPtr->summarySector = 17;
+	diskInfoPtr->domainSector = 18;
+d211 1
+a211 2
+	sunLabelPtr->magic = SUN_DISK_MAGIC;
+	MakeSunCheckSum(sunLabelPtr);
+a212 2
+	diskHeaderPtr->magic = FSDM_DISK_MAGIC;
+	MakeSpriteCheckSum(diskHeaderPtr);
+d218 5
+d233 3
+d238 4
+a241 1
+	} else {
+d243 2
+d247 3
+d251 3
+a253 1
+	return DoSunLabel(diskInfoPtr, streamID, sunLabelPtr);
+d255 12
+a266 3
+	return DoSpriteLabel(diskInfoPtr, streamID, diskHeaderPtr);
+    }
+}
+d291 1
+a291 3
+    int 			totalCyls, part;
+    int 			n;
+    char 			answer[80];
+d296 1
+a296 11
+    int				numHeads;
+    int				numSectors;
+    int				numCyls;
+    int				lastSector;
+    int				totalSectors;
+    int				lastCyl;
+    char			buffer[DEV_BYTES_PER_SECTOR];
+
+    for (totalSectors = 0, part = 0; part < SUN_NUM_DISK_PARTS; part++) {
+	totalSectors += sunLabelPtr->map[part].numBlocks;
+    }
+d298 1
+a298 3
+    printf("SUN LABEL <%s>\n", diskInfoPtr->asciiLabel);
+    printf(" %d heads %d sectors/track\n",
+	diskInfoPtr->numHeads, diskInfoPtr->numSectors);
+d313 14
+a326 6
+	cyls = sunLabelPtr->map[part].numBlocks /
+		(diskInfoPtr->numHeads * diskInfoPtr->numSectors);
+	last = (cyls > 0) ? (cyls + first - 1) : first;
+	printf("%c: First %4d Last %4d Num %4d (Blocks %7d)\n",
+		'a' + part, first, last, cyls,
+		sunLabelPtr->map[part].numBlocks);
+d331 4
+a334 68
+editLabel:
+    printf("ascii label: \"%s\", change this? (y/n) ", 
+	sunLabelPtr->asciiLabel);
+    n = scanf("%s", answer);
+    if (n == EOF) {
+	exit(1);
+    }
+    if (strcmp(answer, "y") == 0) {
+	char *tmpPtr;
+	fgets(answer, 80, stdin);
+	printf("New ascii label ? ");
+	tmpPtr = fgets(sunLabelPtr->asciiLabel, 128,stdin);
+	if (tmpPtr == NULL) {
+	    exit(1);
+	}
+	sunLabelPtr->asciiLabel[strlen(sunLabelPtr->asciiLabel)-1] = '\0';
+    }
+    numHeads = diskInfoPtr->numHeads;
+    numSectors = diskInfoPtr->numSectors;
+    printf(" %d heads, change this? (y/n) ", numHeads);
+    n = scanf("%s", answer);
+    if (n == EOF) {
+	exit(1);
+    }
+    if (strcmp(answer, "y") == 0) {
+	printf("New # of heads ? ");
+	n = scanf("%d", &numHeads);
+	if (n == EOF) {
+	    exit(1);
+	}
+	if (n == 0) {
+	    /*
+	     * Skip the trashy line
+	     */
+	    fgets(answer, sizeof(answer), streamID);
+	}
+    }
+    printf(" %d sectors/track, change this (y/n) ", numSectors);
+    n = scanf("%s", answer);
+    if (n == EOF) {
+	exit(1);
+    }
+    if (strcmp(answer, "y") == 0) {
+	printf("New # of sectors/track ? ");
+	n = scanf("%d", &numSectors);
+	if (n == EOF) {
+	    exit(1);
+	}
+	if (n == 0) {
+	    /*
+	     * Skip the trashy line
+	     */
+	    fgets(answer, sizeof(answer), streamID);
+	}
+    }
+    if (numHeads * numSectors != 
+	diskInfoPtr->numHeads * diskInfoPtr->numSectors) {
+	printf(
+    "The size of a cylinder changed so I have to zero the partition map.\n");
+	for (part=0 ; part < SUN_NUM_DISK_PARTS; part++) {
+	    sunLabelPtr->map[part].cylinder = 0;
+	    sunLabelPtr->map[part].numBlocks = 0;
+	}
+    }
+    diskInfoPtr->numHeads = numHeads;
+    diskInfoPtr->numSectors = numSectors;
+    sunLabelPtr->numHeads = numHeads;
+    sunLabelPtr->numSectors = numSectors;
+d336 3
+a338 44
+	first = sunLabelPtr->map[part].cylinder;
+	cyls = sunLabelPtr->map[part].numBlocks /
+		(diskInfoPtr->numHeads * diskInfoPtr->numSectors);
+	last = (cyls > 0) ? (cyls + first - 1) : first;
+	printf("\n%c: First %4d Last %4d Num %4d, change this? (y/n) ",
+		'a' + part, first, last, cyls);
+	n = scanf("%s", answer);
+	if (n == EOF) {
+	    exit(1);
+	}
+	if (strcmp(answer, "y") == 0) {
+	    int firstCyl = -1;
+	    int numCyls = -1;
+
+	    do {
+		printf("First Cyl ? ");
+		n = scanf("%d", &firstCyl);
+		if (n == EOF) {
+		    exit(1);
+		}
+		if (n == 0) {
+		    /*
+		     * Skip the trashy line
+		     */
+		    fgets(answer, sizeof(answer), streamID);
+		}
+	    } while (n < 1);
+	    do {
+		printf("Num Cyls ? ");
+		n = scanf("%d", &numCyls);
+		if (n == EOF) {
+		    exit(1);
+		}
+		if (n == 0) {
+		    /*
+		     * Skip the trashy line
+		     */
+		    fgets(answer, sizeof(answer), streamID);
+		}
+	    } while (n < 1);
+	    sunLabelPtr->map[part].cylinder = firstCyl;
+	    sunLabelPtr->map[part].numBlocks = numCyls * 
+			    diskInfoPtr->numHeads * diskInfoPtr->numSectors;
+	}
+d340 1
+d342 3
+a344 33
+    lastCyl = 0;
+    printf("\nNew Map\n");
+    for (part=0 ; part < SUN_NUM_DISK_PARTS; part++) {
+	first = sunLabelPtr->map[part].cylinder;
+	cyls = sunLabelPtr->map[part].numBlocks /
+		(diskInfoPtr->numHeads * diskInfoPtr->numSectors);
+	last = (cyls > 0) ? (cyls + first - 1) : first;
+	if (last > lastCyl) {
+	    lastCyl = last;
+	}
+	printf("%c: First %4d Last %4d Num %4d (Blocks %7d)\n",
+		'a' + part, first, last, cyls,
+		sunLabelPtr->map[part].numBlocks);
+    }
+    lastSector = (lastCyl + 1) * numHeads * numSectors - 1;
+    status = Disk_SectorRead(streamID, lastSector, 1, buffer);
+    if (status != 0) {
+	printf("I couldn't read the last sector (sector %d)!!!\n", lastSector);
+    }
+    printf("\nCommit new label? (y/n) ");
+    n = scanf("%s", answer);
+    if (n == EOF) {
+	exit(1);
+    }
+    if (strcmp(answer, "y") == 0) {
+	printf("Writing new label\n");
+	status = Disk_SectorWrite(streamID, 0, 1, sunLabelPtr);
+    } else {
+	printf("Try again\n");
+	goto editLabel;
+    }
+
+    return(status);
+d408 1
+a408 1
+    int 			totalCyls, part;
+a409 1
+    char 			answer[80];
+a414 11
+    int				numHeads;
+    int				numSectors;
+    int				numCyls;
+    int				totalSectors;
+    int				lastSector;
+    int				lastCyl;
+    char			buffer[DEV_BYTES_PER_SECTOR];
+
+    for (totalCyls = 0, part = 0; part < FSDM_NUM_DISK_PARTS; part++) {
+	totalCyls += diskHeaderPtr->map[part].numCylinders;
+    }
+d416 1
+a416 3
+    printf("SPRITE LABEL <%s>\n", diskInfoPtr->asciiLabel);
+    printf(" %d heads %d sectors/track\n",
+	diskInfoPtr->numHeads, diskInfoPtr->numSectors);
+d441 6
+a446 1
+editLabel:
+a448 1
+    diskHeaderPtr->summarySector = diskInfoPtr->summarySector;
+d450 82
+a531 1
+    diskHeaderPtr->numDomainSectors = diskInfoPtr->numDomainSectors;
+d533 2
+a534 6
+	diskHeaderPtr->asciiLabel);
+    n = scanf("%s", answer);
+    if (n == EOF) {
+	exit(1);
+    }
+    if (strcmp(answer, "y") == 0) {
+d537 2
+a538 2
+	printf(" New ascii label ? ");
+	tmpPtr = fgets(diskHeaderPtr->asciiLabel, 128,stdin);
+d542 1
+a542 1
+	diskHeaderPtr->asciiLabel[strlen(diskHeaderPtr->asciiLabel)-1] = '\0';
+d546 10
+a555 2
+    numCyls = totalCyls;
+    totalSectors = numCyls * numHeads * numSectors;
+d557 2
+a558 16
+    n = scanf("%s", answer);
+    if (n == EOF) {
+	exit(1);
+    }
+    if (strcmp(answer, "y") == 0) {
+	printf("New # of heads ? ");
+	n = scanf("%d", &numHeads);
+	if (n == EOF) {
+	    exit(1);
+	}
+	if (n == 0) {
+	    /*
+	     * Skip the trashy line
+	     */
+	    fgets(answer, sizeof(answer), streamID);
+	}
+d561 2
+a562 16
+    n = scanf("%s", answer);
+    if (n == EOF) {
+	exit(1);
+    }
+    if (strcmp(answer, "y") == 0) {
+	printf("New # of sectors/track ? ");
+	n = scanf("%d", &numSectors);
+	if (n == EOF) {
+	    exit(1);
+	}
+	if (n == 0) {
+	    /*
+	     * Skip the trashy line
+	     */
+	    fgets(answer, sizeof(answer), streamID);
+	}
+d568 3
+a570 3
+	for (part=0 ; part < FSDM_NUM_DISK_PARTS; part++) {
+	    diskHeaderPtr->map[part].firstCylinder = 0;
+	    diskHeaderPtr->map[part].numCylinders = 0;
+d575 3
+a577 5
+    diskHeaderPtr->numHeads = numHeads;
+    diskHeaderPtr->numSectors = numSectors;
+    for (part=0 ; part < FSDM_NUM_DISK_PARTS; part++) {
+	first = diskHeaderPtr->map[part].firstCylinder;
+	cyls = diskHeaderPtr->map[part].numCylinders;
+d581 1
+a581 5
+	n = scanf("%s", answer);
+	if (n == EOF) {
+	    exit(1);
+	}
+	if (strcmp(answer, "y") == 0) {
+d585 4
+a588 28
+	    do {
+		printf("First Cyl ? ");
+		n = scanf("%d", &firstCyl);
+		if (n == EOF) {
+		    exit(1);
+		}
+		if (n == 0) {
+		    /*
+		     * Skip the trashy line
+		     */
+		    fgets(answer, sizeof(answer), streamID);
+		}
+	    } while (n < 1);
+	    do {
+		printf("Num Cyls ? ");
+		n = scanf("%d", &numCyls);
+		if (n == EOF) {
+		    exit(1);
+		}
+		if (n == 0) {
+		    /*
+		     * Skip the trashy line
+		     */
+		    fgets(answer, sizeof(answer), streamID);
+		}
+	    } while (n < 1);
+	    diskHeaderPtr->map[part].firstCylinder = firstCyl;
+	    diskHeaderPtr->map[part].numCylinders = numCyls;
+a590 5
+    MakeSpriteCheckSum(diskHeaderPtr);
+    if (!CheckSpriteCheckSum(diskHeaderPtr)) {
+	printf("Check sum incorrect, 0x%x not 0x%x\n",
+	    SeeSpriteCheckSum(diskHeaderPtr), FSDM_DISK_MAGIC);
+    }
+d593 3
+a595 3
+    for (part=0 ; part < FSDM_NUM_DISK_PARTS; part++) {
+	first = diskHeaderPtr->map[part].firstCylinder;
+	cyls = diskHeaderPtr->map[part].numCylinders;
+d600 3
+a602 4
+	blocks = diskInfoPtr->numHeads * diskInfoPtr->numSectors *
+		diskHeaderPtr->map[part].numCylinders;
+	printf("%c: First %4d Last %4d Num %4d (Blocks %7d)\n",
+		'a' + part, first, last, cyls, blocks);
+d610 1
+a610 8
+    n = scanf("%s", answer);
+    if (n == EOF) {
+	exit(1);
+    }
+    if (strcmp(answer, "y") == 0) {
+	printf("Writing new label\n");
+	status = Disk_SectorWrite(streamID, 0, 1, diskHeaderPtr);
+    } else {
+a613 43
+    return(status);
+}
+
+unsigned int
+SeeSpriteCheckSum(diskHeaderPtr)
+    Fsdm_DiskHeader *diskHeaderPtr;
+{
+        int *sp, sum = 0;
+	int i;
+
+        sp = (int *)diskHeaderPtr;
+	for (i = 0; i < DEV_BYTES_PER_SECTOR; i += sizeof(int)) {
+	    sum ^= *sp++;
+	}
+        return (sum);
+}
+
+int
+CheckSpriteCheckSum(diskHeaderPtr)
+    Fsdm_DiskHeader *diskHeaderPtr;
+{
+        int *sp, sum = 0;
+	int i;
+
+        sp = (int *)diskHeaderPtr;
+	for (i = 0; i < DEV_BYTES_PER_SECTOR; i += sizeof(int)) {
+	    sum ^= *sp++;
+	}
+        return (sum == FSDM_DISK_MAGIC ? 1 : 0);
+}
+
+MakeSpriteCheckSum(diskHeaderPtr)
+    Fsdm_DiskHeader *diskHeaderPtr;
+{
+        int *sp, sum = 0;
+	int i;
+
+	diskHeaderPtr->checkSum = FSDM_DISK_MAGIC;
+        sp = (int *)diskHeaderPtr;
+	for (i = 0; i < DEV_BYTES_PER_SECTOR; i += sizeof(int)) {
+	    sum ^= *sp++;
+	}
+        diskHeaderPtr->checkSum = sum;
+d623 1
+d730 328
+@
+
+
+1.5
+log
+@now you can change #sectors/track, #heads, etc
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /a/newcmds/labeldisk/RCS/labeldisk.c,v 1.4 89/08/01 23:32:23 jhh Exp $ SPRITE (Berkeley)";
+d31 1
+a31 2
+    {OPT_STRING, "d", (Address)&deviceName,
+	"Required (if no -u): Name of raw disk device, eg. \"/dev/rsd0\""},
+d47 1
+d75 1
+a75 2
+
+    if (deviceName == (char *)0) {
+d79 1
+d122 3
+d140 15
+a154 7
+    if (diskInfoPtr == (Disk_Info *)0) {
+	return(FAILURE);
+    }
+    sunLabelPtr = Disk_ReadSunLabel(streamID);
+    if (sunLabelPtr != (Sun_DiskLabel *)0) {
+	inLabel = SUNLABEL;
+	diskHeaderPtr = (Fsdm_DiskHeader *) buffer;
+d156 7
+a162 6
+	diskHeaderPtr = Disk_ReadDiskHeader(streamID);
+	if (diskHeaderPtr != (Fsdm_DiskHeader *) 0) {
+	    inLabel = SPRITELABEL;
+	    sunLabelPtr = (Sun_DiskLabel *) buffer;
+	} else {
+	    fprintf(stderr, "Disk label is neither Sun nor Sprite.\n");
+d165 15
+d181 1
+a181 1
+    if (outLabel == -1) {
+d184 1
+a184 1
+    if (inLabel != outLabel) {
+d277 17
+d420 2
+a421 1
+	printf("Bailing out\n");
+d535 22
+d687 2
+a688 1
+	printf("Bailing out\n");
+a689 1
+
+@
+
+
+1.4
+log
+@fixed a stupid bug in computing sun checksums
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /a/newcmds/labeldisk/RCS/labeldisk.c,v 1.3 89/08/01 23:27:56 jhh Exp $ SPRITE (Berkeley)";
+a70 1
+    ReturnStatus status;	/* status of system calls */
+d121 1
+a121 1
+    FsDiskHeader		*diskHeaderPtr;
+d143 1
+a143 1
+	diskHeaderPtr = (FsDiskHeader *) buffer;
+d146 1
+a146 1
+	if (diskHeaderPtr != (FsDiskHeader *) 0) {
+d211 7
+d219 2
+a220 3
+    for (totalCyls = 0, part = 0; part < SUN_NUM_DISK_PARTS; part++) {
+	totalCyls += sunLabelPtr->map[part].numBlocks /
+		(diskInfoPtr->numHeads * diskInfoPtr->numSectors);
+a226 9
+    for (part=0 ; part < SUN_NUM_DISK_PARTS; part++) {
+	first = sunLabelPtr->map[part].cylinder;
+	cyls = sunLabelPtr->map[part].numBlocks /
+		(diskInfoPtr->numHeads * diskInfoPtr->numSectors);
+	last = (cyls > 0) ? (cyls + first - 1) : first;
+	printf("%c: First %4d Last %4d Num %4d (Blocks %7d)\n",
+		'a' + part, first, last, cyls,
+		sunLabelPtr->map[part].numBlocks);
+    }
+d238 9
+d250 51
+d348 1
+d355 3
+d362 5
+d441 1
+a441 1
+    FsDiskHeader	*diskHeaderPtr;
+d451 7
+d459 1
+a459 1
+    for (totalCyls = 0, part = 0; part < FS_NUM_DISK_PARTS; part++) {
+d467 11
+d487 24
+a510 6
+    /*
+     * Verify the magic number and the checksum.
+     */
+    if (diskHeaderPtr->magic != FS_DISK_MAGIC) {
+	printf("Bad magic number on disk <%x> not <%x>\n",
+	    diskHeaderPtr->magic, FS_DISK_MAGIC);
+d512 4
+a515 3
+    if (!CheckSpriteCheckSum(diskHeaderPtr)) {
+	printf("Check sum incorrect, 0x%x not 0x%x\n",
+	    SeeSpriteCheckSum(diskHeaderPtr), FS_DISK_MAGIC);
+d517 12
+a528 2
+    if (!writeLabel) {
+	return(SUCCESS);
+d530 14
+a543 1
+    for (part=0 ; part < SUN_NUM_DISK_PARTS; part++) {
+d590 1
+a590 1
+	    SeeSpriteCheckSum(diskHeaderPtr), FS_DISK_MAGIC);
+d592 1
+d594 1
+a594 1
+    for (part=0 ; part < FS_NUM_DISK_PARTS; part++) {
+d598 3
+d606 5
+d628 1
+a628 1
+    FsDiskHeader *diskHeaderPtr;
+d642 1
+a642 1
+    FsDiskHeader *diskHeaderPtr;
+d651 1
+a651 1
+        return (sum == FS_DISK_MAGIC ? 1 : 0);
+d655 1
+a655 1
+    FsDiskHeader *diskHeaderPtr;
+d660 1
+a660 1
+	diskHeaderPtr->checkSum = FS_DISK_MAGIC;
+d689 1
+a689 1
+    FsDiskHeader		*diskHeaderPtr;
+d705 1
+a705 1
+    diskHeaderPtr->magic = FS_DISK_MAGIC;
+d717 1
+a717 1
+    for (i = 0; i < FS_NUM_DISK_PARTS && i < SUN_NUM_DISK_PARTS; i++) {
+d745 1
+a745 1
+    FsDiskHeader		*diskHeaderPtr;
+d753 1
+a753 1
+    if (diskHeaderPtr->magic != FS_DISK_MAGIC) {
+d755 1
+a755 1
+	    diskHeaderPtr->magic, FS_DISK_MAGIC);
+d773 1
+a773 1
+    for (i = 0; i < FS_NUM_DISK_PARTS && i < SUN_NUM_DISK_PARTS; i++) {
+@
+
+
+1.3
+log
+@Now does Sprite labels
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /a/newcmds/labeldisk/RCS/labeldisk.c,v 1.2 89/06/19 14:34:44 jhh Exp $ SPRITE (Berkeley)";
+d335 1
+a335 1
+        short count = DEV_BYTES_PER_SECTOR/sizeof(short) -1;
+@
+
+
+1.2
+log
+@fixed bug calling Opt_PrintUsage
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /a/newcmds/labeldisk/RCS/labeldisk.c,v 1.1 88/12/05 10:02:06 brent Exp $ SPRITE (Berkeley)";
+d27 2
+d35 4
+d42 2
+a43 1
+short SeeCheckSum();
+d45 6
+d86 5
+d94 1
+a94 1
+	exit(status);
+d96 1
+a96 1
+    if (LabelDisk(streamID, writeLabel) < 0) {
+d117 1
+a117 1
+LabelDisk(streamID, writeLabel)
+a118 1
+    Boolean writeLabel;			/* If TRUE then write new label */
+d120 9
+a128 8
+    ReturnStatus status = SUCCESS;
+    Disk_Info *diskInfoPtr;
+    Sun_DiskLabel *sunLabelPtr;
+    int totalCyls, part;
+    int i, n;
+    char answer[80];
+    register unsigned short checkSum;
+    register unsigned short *shortPtr;
+d130 7
+a136 1
+
+d142 37
+a178 3
+    if (sunLabelPtr == (Sun_DiskLabel *)0) {
+	fprintf(stderr, "I only do Sun labels\n");
+	return(FAILURE);
+d180 18
+d199 14
+d223 6
+a228 5
+	printf("%c: First Cyl %4d Num Cyl %4d (Blocks %5d)\n",
+		'a' + part,
+		sunLabelPtr->map[part].cylinder,
+		sunLabelPtr->map[part].numBlocks /
+		(diskInfoPtr->numHeads * diskInfoPtr->numSectors),
+d238 1
+a238 1
+    if (!CheckCheckSum(sunLabelPtr)) {
+d240 1
+a240 1
+	    SeeCheckSum(sunLabelPtr), sunLabelPtr->checkSum);
+d246 6
+a251 5
+	printf("\n%c: First Cyl %4d Num Cyl %4d, change this? (y/n) ",
+		'a' + part,
+		sunLabelPtr->map[part].cylinder,
+		sunLabelPtr->map[part].numBlocks /
+		(diskInfoPtr->numHeads * diskInfoPtr->numSectors));
+d291 1
+a291 1
+    MakeCheckSum(sunLabelPtr);
+d294 6
+a299 5
+	printf("%c: First Cyl %4d Num Cyl %4d (Blocks %5d)\n",
+		'a' + part,
+		sunLabelPtr->map[part].cylinder,
+		sunLabelPtr->map[part].numBlocks /
+		(diskInfoPtr->numHeads * diskInfoPtr->numSectors),
+d318 1
+a318 1
+SeeCheckSum(sunLabelPtr)
+d331 1
+a331 1
+CheckCheckSum(sunLabelPtr)
+d335 1
+a335 1
+        short count = DEV_BYTES_PER_SECTOR/sizeof(short);
+d343 1
+a343 1
+MakeCheckSum(sunLabelPtr)
+d349 1
+d354 291
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: labelDisk.c,v 1.1 88/06/02 13:23:34 brent Exp $ SPRITE (Berkeley)";
+d65 1
+a65 1
+	Opt_PrintUsage(argv[0], numOptions, optionArray);
+@

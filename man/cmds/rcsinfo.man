@@ -1,0 +1,48 @@
+' Copyright 1989 Regents of the University of California
+' Permission to use, copy, modify, and distribute this
+' documentation for any purpose and without fee is hereby
+' granted, provided that this notice appears in all copies.
+' The University of California makes no representations about
+' the suitability of this material for any purpose.  It is
+' provided "as is" without express or implied warranty.
+' 
+' $Header: /a/newcmds/rcsinfo.prog/RCS/rcsinfo.man,v 1.2 89/01/25 15:20:42 ouster Exp $ SPRITE (Berkeley)
+' 
+.so \*(]ltmac.sprite
+.HS RCSINFO cmds
+.BS
+.SH NAME
+rcsinfo, rcstell \- Generate listing of files that are checked out via RCS
+.SH SYNOPSIS
+.nf
+\fBrcsinfo\fR [\fIoptions\fR] [\fIRCS-directory\fR]
+\fBrcstell\fR [\fIoptions\fR] [\fIRCS-directory\fR]
+.SH OPTIONS
+.IP "\fB\-u\fR" 14
+Only list files checked out by the user invoking the program.
+.IP "\fB\-s\fR" 14
+For \fBrcsinfo\fR, produce no output if no files are locked.
+.BE
+
+.SH DESCRIPTION
+.PP
+This program lists files checked out via RCS.  If invoked as
+\fBrcsinfo\fR, it prints a verbose description of each file, including
+the name of each file, who locked it, its RCS version number, and the
+date and time when it was locked.  If invoked as \fBrcstell\fR, this
+program prints just the name of each file that is checked out.  (This
+may be useful for constructs such as ``\fBrcsdiff\fR
+`\fBrcstell\fR`''.)  In each case, the \fB-u\fR option may be used to
+restrict output to files locked by the caller.  
+
+If no files are locked, \fBrcsinfo\fR prints a message to that effect
+unless the \fB-s\fR (silent) option is specified.  \fBrcstell\fR
+prints nothing in either case.
+
+By default, the program lists files controlled by the subdirectory
+\fBRCS\fR.  It may be directed to a different RCS directory by
+specifying the name of the directory on the command line.
+.SH KEYWORDS
+RCS, list, checked out
+.SH "SEE ALSO"
+rcsdiff

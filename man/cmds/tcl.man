@@ -1,0 +1,496 @@
+.TH TCLSHELL TCL "" "Tcl"
+.ad b
+'@index: tclshell
+.SH NAME
+Tcl - Tcl interactive shell.
+.SH SYNOPSIS
+.br
+.B tcl [-q] [[-f] \fIscript\fB]|[-c \fIcommand\fB] [\fIargs\fR]
+
+.SH DESCRIPTION
+.PP
+'@help: tclshell/intro
+'@brief: Introduction to the tcl shell.
+.B tcl [-q] [[-f] \fIscript\fB]|[-c \fIcommand\fB] [\fIargs\fR]
+.PP
+\fBTcl\fR starts the interactive Tcl command interpreter.  The Tcl shell
+provides an environment for writing, debugging and executing Tcl scripts.  The
+functionality of the Tcl shell can also be obtained in any Tcl-based
+application.
+.PP
+The \fBtcl\fR command, issued without any arguments,
+invokes an interactive Tcl shell.
+If \fIscript\fR is specified, then the script is executed noninteractively
+with \fIargs\fR being supplied in the Tcl variable `\fBargv\fR'.  If 
+\fIcommand\fR is supplied, then this command (or series of commands, 
+separated by `;') is executed, with `\fBargv\fR' containing \fIargs\fR.
+.P
+The Tcl shell is intended as an environment for Tcl program development and
+execution.  While it is not a full-featured interactive shell, it provides a
+comfortable environment for the interactive development of Tcl code.  Note
+that the package library code described here overrides the \fBunknown\fR
+command provided as part of the standard Berkeley Tcl library facility,
+although Tcl source libraries coded to that standard can be loaded and used by
+Extended Tcl.
+'@endhelp
+'
+.SH "INITIALIZATION SEQUENCE"
+'@help: tclshell/initialize
+'@brief: Tcl shell initialization sequence.
+.PP
+The standard Tcl shell initialization consists of the following steps:
+.IP
+Search for a default file.  The default file is a Tcl script that is executed
+to set important Tcl variables that govern startup, such as \fBTCLPATH\fR.
+The Tcl default file is searched for using the following
+algorithm:  The current Extended Tcl version, represented by $ver, is included
+in the default file naming to allow multiple Tcl versions to exists on a
+system.  Note that the Extended Tcl version is the standard Tcl version number
+with an alphabetic character added to indicated the version of Extended Tcl.
+The \fBinfox version\fR command will return this version number.
+.sp
+.RS 10
+- An environment variable, \fBTCLDEFAULT\fR, is checked for.  If present,
+it is used as the name of the
+default file.
+.sp
+- A file, \fBTCLDEFAULT\fR, is looked for in the current directory.
+.sp
+- A global default file with is usually either \fB/etc/default/tcl$ver\fR or
+\fB/usr/local/lib/tcldefault$ver\fR.  (Tcl may be compiled to use a different
+directory on some systems).
+.RE
+.IP
+First, \fBTcl\fR executes the default file.  This file normally sets at 
+least two Tcl variables:
+\fBTCLPATH\fR, which contains a list of directories that contain tcl source
+files, and \fBTCLINIT\fR, the
+full pathname of the Tcl source file that performs Tcl initialization.
+Other site-specific variables may also be set in
+this file.
+.IP
+Next, \fBtcl\fR executes the initialization file specified by the Tcl 
+variable \fBTCLINIT\fR.
+This is normally the \fBTclInit.Tcl\fR file distributed with Tcl.  This
+file defines the Tcl environment, including standard Tcl procs and variables.
+'@endhelp
+'
+.SH FLAGS
+'@help: tclshell/flags
+'@brief: Tcl shell command line flags.
+.TP
+.B \-q
+Quick initialization flag.  If this flag is set the only initialization step
+performed is to locate the Tcl default file and save its name in the Tcl
+variable TCLDEFAULT.  The file is not evaluated nor is the TclInit.tcl file.
+This provides for a faster start up, but does not make any of the standard
+Tcl procedures and facilities available.
+.TP
+.B \-f
+Take the next argument as a Tcl script to source rather than enter interactive
+mode.  The \fB-f\fR flag is optional.  Normally the first argument that does
+not start with a `-' is taken as the script to execute unless the `-c' option
+is specified.  All following arguments are passed to the script in \fBargv\fR,
+thus any other Tcl shell flags must precede this option.
+.TP
+.B \-c
+Take the next argument as a Tcl command to execute.  It may be series of 
+commands to execute, separated by `;'.  All following arguments are passed in
+\fBargv\fR, thus any other Tcl shell flags must precede this option.
+.TP
+.B \-\-
+Mark the end of the arguments to the Tcl shell. All arguments following this
+are passed in the Tcl variable \fBargv\fR.  This is useful to pass arguments
+without attempting to execute a Tcl script.
+'@endhelp
+'
+.SH "TCLINIT FILE"
+'@help: tclshell/tclinit
+'@brief: Tcl shell initialization file.
+.PP
+The Tcl initialization file, normally \fITclInit.tcl\fR in the main Tcl script
+directory, initializes the Tcl shell.  It defines various Tcl procedures
+that are required to implement loading of Tcl source from libraries via the
+package libraries and autoload facilities.  
+.PP
+If the Tcl is invoked interactively, it will source a \fI.tclrc\fR in the
+user's home directory, if it exists.  Tcl is viewed primarly as a programming
+language, not an interactive shell, so the \fI.tclrc\fR is intended for use for
+loading development utilities, not to support programs, which should not rely
+on the user's environment.
+'
+'@endhelp
+'
+.SH VARIABLES
+'@help: tclshell/variables
+'@brief: Tcl shell variables.
+.PP
+The following variables are set and/or used by the Tcl shell.
+.TP
+.B argv
+A list containing the arguments passed in from the command line, excluding
+arguments used by the Tcl shell.  The first element is the first passed
+argument, not the program name.
+.TP
+.B interactiveSession
+Set to \fB1\fR if Tcl shell is invoked interactively, or \fB0\fR if the
+Tcl shell is directly
+executing a script.
+.TP
+.B noAutoExec
+If this variable exists and has a value of \fB1\fR, then the Tcl shell will not
+attempt to exec an non-existent command as a shell command.
+.TP
+.B programName
+The name that the Tcl shell is executing as.  All directory
+components are removed from the program name.
+.TP
+.B scriptName
+The name of the script that the Tcl shell is executing if the script was
+invoked on the command line.
+.TP
+.B TCLDEFAULT
+Name of the default file that was used to locate all other files used by the
+Tcl shell.
+.TP
+.B TCLENV
+Array that contains information used internally by various Tcl procedures that
+are part of the Tcl shell.
+.TP
+.B TCLENV(topLevelPromptHook)
+Contains code to run to generate the prompt used when interactively prompting
+for commands.  The code in this hook will be evaluated and the result will be
+used for the prompt.
+.TP
+.B TCLENV(downLevelPromptHook)
+Contains code to run to generate the prompt used when interactively prompting
+for continuation of an incomplete command.  The code in this hook
+will be evaluated and the result will be used for the prompt
+.TP
+.B TCLINIT
+The name of the file that initializes, and does startup processing of,
+Tcl.
+.TP
+.B TCLPATH
+Path to search to locate Tcl scripts.  Used by the \fBload\fR and 
+\fBdemand_load\fR procedures.
+'@endhelp
+'
+.SH "HELP FACILITY"
+'@help: help
+'@brief: Tcl shell help facility.
+.PP
+The help facility allows for display of help files extracted from
+the standard Tcl manual pages and Tcl scripts.  Help files are structured in a
+multilevel directory tree of subjects and help files.  The
+following commands and options are provided with the help package:
+.TP
+.B help
+.br
+Help, without arguments, lists of all the top-level help subject
+directories and files.
+.TP
+.B help \fIsubjectdir\fR
+Displays all of help files and lower level subject files (if any exist) under
+the directory \fIsubjectdir\fR.
+.TP
+.B help \fIsubjectdir/helpfile\fR
+Display the specified help file.  The help output is passed through a simple
+pager if output exceeds 23 lines, pausing waiting for a return to be entered.
+If any other character is entered, the output is terminated.
+.TP
+.B helpcd [\fIsubjectdir\fR]
+Change the current subject directory, which is much like the Unix current
+directory.  This directory can be changed with the \fBhelpcd\fR command.  If
+\fIsubjectdir\fR is not specified, return to the top-level of the help tree.
+Help path names may also include ``..'' elements.
+.TP
+.B helppwd
+Displays the current help subject directory.
+.TP
+.B help help | ?
+Displays help on the help facility at any directory level.
+.TP
+.B apropos \fIpattern\fR
+This command locates subjects by searching their one-line descriptions for a
+pattern.  \fRApropos\fR is useful when you can remember part of the name or
+description of a command, and want to search through the one-line summaries
+for matching lines.  Full regular expressions may be specified (see 
+the \fBregexp\fR command).
+'@endhelp
+'
+.SH "COMMAND RESULTS"
+'@help: tclshell/results
+'@brief: Tcl shell command result processsing.
+.PP
+The string result of a command typed at the Tcl shell command prompt is
+normally echoed back to the user.  If an error occurs, then the string result
+is displayed, along with the error message.  The error message will be
+preceded by the string ``Error:''.
+.PP
+The \fBset\fR command is a special case.  If the command is called to set
+a variable (i.e. with two arguments), then the result will not be echoed.
+If only one argument, the name of a variable, is supplied to \fBset\fR, then
+the result will be echoed.
+'@endhelp
+'
+.SH "EXECUTION OF UNIX COMMANDS"
+'@help: tclshell/unixcommands
+'@brief: Tcl shell Unix command execution.
+.PP
+If an unknown Tcl command is entered from the command line, then the Unix
+command path, specified in the environment variable \fBPATH\fR,
+will be searched for a command of the same name.
+If found, the command will be executed.
+This feature is provided to enhance the interactive environment for developing
+Tcl scripts. This is only supported from the command line, not in script files
+or in procedures, to eliminate confusion.  The \fBexec\fR or \fBsystem\fR 
+command should be used to run Unix commands inside scripts.
+'@endhelp
+'
+.SH "TCL SHELL PROCEDURES"
+.PP
+The follow additional procedures are defined by the Tcl shell and may be 
+generally useful:
+.TP
+'@help: tclshell/load
+'@brief: Search the TCLPATH for a file to source.
+.B load \fIfile\fR
+Source a file, as with the source command, except search the TCLPATH for
+the file.
+'@endhelp
+.TP
+'@help: tclshell/utilprocs
+'@brief: Search a path list for a file.
+.B searchpath \fIpath file\fR
+Search all directories in the specified path, which is a Tcl list, for the
+specified file.  Returns the full path name of the file, or an empty string
+if the file is not found.
+'@endhelp
+'
+.SH AUTOLOAD
+'@help: tclshell/autoload
+'@brief: Autoloading of commands.
+.PP
+.B autoload \fIfile proc1\fR [..\fIprocN\fR]
+.sp
+The \fIautoload\fR procedure, defined in \fBTclInit.tcl\fR, allows the Tcl
+programmer to name one or more procedures and the file they are defined in.
+After \fIautoload\fR has been executed to inform Tcl of the presence of them,
+a subsequent attempt to execute one of the procedures will cause the
+corresponding file to be loaded transparently prior to executing the function.
+For example, executing:
+.IP
+autoload showproc.tcl showproc showprocs
+.PP
+tells Tcl to automatically load the file \fBshowproc.tcl\fR the first time
+in the current session that either \fIshowproc\fR or \fIshowprocs\fR is
+executed.
+'@endhelp
+'
+'@help: tclshell/packagelib
+'@brief: Tcl shell package libraries.
+.SH "PACKAGE LIBRARIES
+.PP
+Package libraries work like \fIautoload\fR, except that a package library file
+can contain multiple independent Tcl packages.  A package is a collection
+of related Tcl procedures.
+.PP
+The package library file is just a regular Unix text file, editable with your
+favorite text editor, containing packages of Tcl source code. The package
+library must end in \fB.tlib\fR, an index file with the suffix \fB.tndx\fR
+will be built corresponding to the package library.  The start of a package
+is delimited by:
+.IP
+.B #@package: \fIpackage_name proc1\fR [\fI..procN\fR]
+.PP
+These lines must start in column one.
+Everything between the \fBpackage\fR keyword and
+the next \fBpackage\fR keyword, or the end of the file,
+becomes part of the named
+package. The specified procedures, \fIproc1..procN\fR, are the entry points
+of the package.  When a command named in a package command is executed and 
+detected as an unknown command, all code in the specified package will be 
+sourced.  This
+package should define all of the procedures named on the package line, define 
+any support procedures required by the package and do any package-specific 
+initialization.
+.PP
+For example, in a package source file, the presence of the following line:
+.IP
+\fB#@package: directory_stack pushd popd dirs\fR
+.PP
+says that the text lines following that line in the package file up
+to the next \fIpackage\fR line or the end of the file is a package named
+\fBdirectory_stack\fR and that an attempt to execute either \fIpushd\fR,
+\fIpopd\fR or \fIdirs\fR when the routine is not already defined will cause 
+the \fBdirectory_stack\fR portion of the package file to be loaded.
+'
+.SH PACKAGE INDEX FILES
+.PP
+A package library file has associated with it an index file 
+called a \fB.tndx\fR file.  The \fB.tndx\fR file contains the names
+of the packages in the \fB.tlib\fR file, their addresses and lengths
+within the \fB.tlib\fR file and the functions that are to cause the
+different packages to be autoloaded when an attempt is made to execute
+them.
+.PP
+The first time Tcl tries to execute a procedure where the procedure doesn't
+exist and isn't an autoload, Tcl will search along \fBTCLPATH\fR looking
+for any files ending in \fB.tlib\fR.  For each one it finds, it checks
+to see if there is a corresponding file in the same directory ending
+in \fB.tndx\fR.  If the \fB.tndx\fR file doesn't exist, or if its date
+of last modification is older than that of the \fB.tlib\fR file,
+the \fB.tndx\fR is automatically (re)generated if possible.  If Tcl can't
+regenerate the file (most likely due to file or directory permission
+problems), an error occurs.
+.PP
+Demand loading is also supported from indexes build by the \fBmkindex.tcl\fR
+program, supplied with standard Tcl.  However, \fBinit.tcl\fR
+is not loaded.  Note that the \fBinfo library\fR command is not used to locate
+libraries by this shell; the \fBTCLPATH\fR variable is set by the default file
+and is used to locate the libraries.
+'@endhelp
+'
+.SH "PACKAGE MANAGEMENT COMMANDS"
+.PP
+Several commands are available for building and managing package libraries.
+If you are not building package libraries and are using the standard Tcl
+initialization file, they are all transparent.  These commands are either
+defined or autoloaded by \fBTclInit.tcl\fR.
+.TP
+'@help: tclshell/autoprocs
+'@brief: List names of autload and package library procs.
+.B autoprocs
+Lists the names of all known autoload and package library procedures.
+'@endhelp
+.TP
+'@help: tclshell/buildpackageindex
+'@brief: Build an index to a package library.
+.B buildpackageindex \fIlibfile\fR
+Build an index for a package library.  The the \fIlibfile\fR name must end with
+the suffix \fB.tlib\fR.
+'@endhelp
+.TP
+'@help: tclshell/demand_load
+'@brief: Force an autoload proc or a package to be loaded.
+.B demand_load \fIprocname\fR
+Attempt to load the specified procedure, either as an autoload function or by
+loading the package containing the procedure.  If the package indexes have not
+been loaded for all package libraries in \fBTCLPATH\fR, they will be loaded.
+Out-of-date library indexes will be rebuilt if they are writable.  The
+procedure returns \fB1\fR if the procedure was sucessfully
+loaded, or \fB0\fR if it was
+not.
+'@endhelp
+.TP
+'@help: tclshell/loadlibindex
+'@brief: Load the index of a package library
+.B loadlibindex \fIlibfile\fR
+Load the package library index of the library file \fBlibfile\fR (which must
+have the suffix \fI.tlib\fR).  Package library indexes along the \fBTCLPATH\fR
+are loaded automatically on the first demand_load; this command is provided to
+explicitly load libraries that are not in the path.  If the index file (with
+a \fI.tndx\fR suffix)
+does not exists or is out of date, it will be rebuilt if the user has
+directory permissions to create it.
+'@endhelp
+.TP
+'@help: tclshell/packages
+'@brief: List all known packages.
+.B packages
+Returns a list of the names of all known packages.
+'@endhelp
+.TP
+'
+.SH "TCL SHELL INTERNAL STRUCTURE"
+.PP
+This section discusses the internal structure of the standard Tcl
+initialization file and the facilities it implements.  This is intended
+primarily for developers who want to customize these facilities for their
+applications.
+'
+.SS "Autoload and Package Library Structures"
+.PP
+The package library index consists of an entry for each package in the library,
+where each entry
+is a call to the \fBTCLSH:defpkg\fR procedure.  Loading of the package
+index is done with the \fBsource\fR command.
+The \fIdefpackage\fR routine initializes elements of
+the \fBTCLENV\fR array which are used by \fBdemand_load\fR to locate and load
+a package.  The \fBbuildpackageindex\fR procedure is contained in
+\fBpackages.tcl\fR.
+'
+.PP
+The following elements of the \fBTCLENV\fR are used to implement the autoload
+and package library facility.
+.TP
+\fBTCLENV(PROC:\fIprocName\fB)\fR
+Each procedure that is to be loaded by the \fBdemand_load\fR command has an
+entry in this
+array, indexed by the concatenation of `PROC:' with the procedure name.
+If the entry is for a package, it is a list consisting `P' followed by the
+name of the package.  The package name must be looked up in the TCLENV array
+to find the actual library file.  If the entry is for an autoload procedure,
+it is a list consisting of 'F' followed by the name of the file to load.
+.TP
+\fBTCLENV(PKG:\fIpackageName\fB)\fR
+Each package has an entry in the array indexed by the concatenation of
+`PKG:' and the name of the package.  The entry is a list containing the
+full path to the library file, the byte offset in the file of the start of the
+package, and the length of the package.
+.TP
+\fBTCLENV(packageIndexesLoaded)\fR
+A boolean that indicates if the package indexes have been loaded.  They will
+not be loaded until the first call to \fBdemand_load\fR.
+.TP
+\fBTCLENV(inUnknown)\fR
+Indicates if the \fBunknown\fR command is currently being executed.
+It is used
+to detect recursion in situations where an unknown command is found
+during unknown command processing.
+'
+.PP
+The following procedures are used to implement the internals of the autoload
+and package library facility, and are defined by \fBTclInit.tcl\fR:
+.TP
+\fBTCLSH:defpkg\fR \fIpkgname libfile offset len proc1\fR [..\fIprocN\fR]
+Define a package for the current interpreter.  \fIPkgname\fR is the name
+of the package to define, \fIlibfile\fR is the full path to the library file.
+\fIoffset\fR is the byte offset into the of the start of the package code;
+\fIlen\fR is the length of the package code, in bytes, and
+\fIproc1..procN\fR are the entry point procedures defined by the package.
+This procedure is normally not called directly by the user or the
+user's script.  The library index files
+consists of calls to this procedure to define every package in a library.
+.TP
+\fBTCLSH:LoadOusterIndex dir\fR
+Load an index file, \fIdir\fR/\fBtclIndex\fR, of the type built by John
+Ousterhout's \fBmkindex.tcl\fR program (included with the standard Tcl
+distribution).  This style of index defines procedure names and the files that
+contain them.  It is a one-index-to-many-source-files structure. All of the
+files pointed to by this must reside in \fIdir\fR.  The procedures in these
+libraries will be defined as if the autoload command had been used.
+.TP
+\fBTCLSH:LoadPackageIndexes\fR
+This procedure searches the path defined by Tcl variable \fBTCLPATH\fR and
+loads all of the indexes for all of the \fI.tlib\fR package libraries in the
+path.  If any of the indexes are older that their corresponding library file
+or do not exist, then they will be rebuilt if the user has write access to the
+directory.  Also all Ousterhout-style indexes found along the path will be
+loaded.
+.TP
+\fBunknown\fR
+This is the actual unknown command trap handler.  It will first do a
+\fBdemand_load\fR, loading the \fBunknown\fR command if it has been defined by
+\fBautoload\fR, or by a package library index.  The library indexes will be be
+loaded if this is the first call to \fBunknown\fR.  If the command is not
+found by \fBdemand_load\fR, the Unix path (in the environment
+variable \fBPATH\fR,
+will be searched for the command.  If it is found, it will be executed via the
+\fBsystem\fR command, providing full shell (\fBsh\fR) command line expansion,
+with output going to standard out rather than being returned as the result of
+the command.  This binary path search will only occur if this is an
+interactive session running at the top level (i.e., not in a procedure or a
+script). This behavior can be disabled with the \fBnoAutoExec\fR variable.
+

@@ -1,0 +1,1 @@
+../dist/ed.chared.c

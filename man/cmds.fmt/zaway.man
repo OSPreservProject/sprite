@@ -1,0 +1,132 @@
+
+
+
+ZAWAY                     User Commands                     ZAWAY
+
+
+
+NNAAMMEE
+     zaway - tell other people via Zephyr that you aren't around
+
+SSYYNNOOPPSSIISS
+     zzaawwaayy [ _f_i_l_e ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _z_a_w_a_y provides a way for you to automatically send replies
+     when other people contact you using _z_w_r_i_t_e(_1). _z_a_w_a_y sub-
+     scribes itself to class "MESSAGE", instance "*", so that it
+     can monitor your incoming messages.  It does not affect the
+     operation of any other client receiving messages.  _z_a_w_a_y is
+     typically run when you are leaving your terminal or display
+     temporarily.  _z_a_w_a_y usually never exits; when you return to
+     your terminal you should type the interrupt character (usu-
+     ally ^C) in order to make _z_a_w_a_y exit.
+
+     _z_a_w_a_y uses a message file (which defaults to $HOME/.away) to
+     describe what reponses should be sent to which senders.  The
+     general format of this file is:
+
+          >name
+          >name
+          message
+          >name
+          message
+
+     Any number of user names may be specified preceding the mes-
+     sage to send to those senders.  If a user name appears more
+     than once, the message will be a concatenation of each of
+     the appropriate messages.  There are two special names: "*"
+     indicates that the following message should be sent to all
+     senders and "%" indicates that the following message should
+     only be sent if the user name has not matched yet.
+
+     If no file is specified, and no default file can be found,
+     the following message is returned:
+
+          I'm sorry, but I am currently away from the terminal
+          and am not able to receive your message.
+
+     If a user name does not match any of those listed in the
+     file, and no "*" or "%" field is specified, no return mes-
+     sage is sent.  All messages are preceded by the line
+     "Automated reply:".  To avoid loops, messages are not sent
+     in response to messages beginning with "Automated reply:" or
+     sent by the same Kerberos principal as the user running
+     _z_a_w_a_y.
+
+
+SSAAMMPPLLEE FFIILLEE
+     >eichin
+
+
+
+MIT Project Athena        July 1, 1988                          1
+
+
+
+
+
+
+ZAWAY                     User Commands                     ZAWAY
+
+
+
+     >tony
+     Hi there guys!  I'm in the other room right now.
+     I'll be back in 5 minutes or so.
+     >jruser
+     Sorry, but I'm gone for the day...
+     >%
+     Hello...I'm not sure who you are.  I'll be back soon,
+     though.
+     >*
+     This message comes to you compliments of zaway!
+
+     The final "compliments" message will be included in all mes-
+     sages, whereas the "I'm not sure" message will only be
+     included in messages that are not from "eichin", "tony", or
+     "jruser".
+
+FFIILLEESS
+     $HOME/.away
+
+SSEEEE AALLSSOO
+     zephyr(1), zwgc(1), zwrite(1), zhm(8), zephyrd(8)
+     Project Athena Technical Plan Section E.4.1, `Zephyr Notifi-
+     cation Service'
+
+AAUUTTHHOORR
+     Robert S. French (MIT-Project Athena)
+
+RREESSTTRRIICCTTIIOONNSS
+     Copyright (c) 1987,1988 by the Massachusetts Institute of
+     Technology.  All Rights Reserved.
+     _z_e_p_h_y_r(_1) specifies the terms and conditions for redistribu-
+     tion.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+MIT Project Athena        July 1, 1988                          2
+
+
+

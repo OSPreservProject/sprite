@@ -1,0 +1,17 @@
+ds3100.md/rpcDelays.c:
+rpcDebug.c:
+rpcTest.c:
+rpcStubs.c:
+rpcCall.c:
+rpcClient.c:
+rpcDaemon.c:
+rpcDispatch.c:
+rpcInit.c:
+rpcOutput.c:
+rpcServer.c:
+rpcHistogram.c:
+rpcTrace.c:
+rpcByteSwap.c:
+rpcCltStat.c:
+rpcSrvStat.c:
+strncpy returns value which is always ignored

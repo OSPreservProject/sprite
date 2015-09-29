@@ -1,0 +1,11 @@
+F HOST.MAN;1                        	Host.man,v
+F HOSTINT.H_V;1                     	hostInt.h,v
+F HOST_BY0.C_V;1                    	Host_ByID.c,v
+F HOST_BY1.C_V;1                    	Host_ByInetAddr.c,v
+F HOST_BY2.C_V;1                    	Host_ByName.c,v
+F HOST_BY3.C_V;1                    	Host_ByNetAddr.c,v
+F HOST_END.C_V;1                    	Host_End.c,v
+F HOST_NEX.C_V;1                    	Host_Next.c,v
+F HOST_SET.C_V;1                    	Host_SetFile.c,v
+F HOST_ST0.C_V;1                    	Host_Start.c,v
+F HOST_ST1.C_V;1                    	Host_Stat.c,v

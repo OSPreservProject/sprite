@@ -1,0 +1,16 @@
+This directory contains the -liberty library of free software.
+It is a collection of subroutines used by various GNU programs.
+Current members include:
+
+	getopt -- get options from command line
+	obstack -- stacks of arbitrarily-sized objects
+
+We expect many of the GNU subroutines that are floating around to
+eventually arrive here.
+
+To build the library, do:
+
+	./configure HOSTTYPE
+	make
+
+Please report bugs and fixes to "bug-gnu-utils@prep.ai.mit.edu".  Thank you.

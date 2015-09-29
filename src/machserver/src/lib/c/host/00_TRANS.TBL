@@ -1,0 +1,14 @@
+D DS3100_M                          	ds3100.md
+L HOSTINT.H;1                       	hostInt.h	../../c.orig/host/hostInt.h
+L HOST_BY0.C;1                      	Host_ByID.c	../../c.orig/host/Host_ByID.c
+L HOST_BY1.C;1                      	Host_ByInetAddr.c	../../c.orig/host/Host_ByInetAddr.c
+L HOST_BY2.C;1                      	Host_ByName.c	../../c.orig/host/Host_ByName.c
+L HOST_BY3.C;1                      	Host_ByNetAddr.c	../../c.orig/host/Host_ByNetAddr.c
+L HOST_END.C;1                      	Host_End.c	../../c.orig/host/Host_End.c
+L HOST_NEX.C;1                      	Host_Next.c	../../c.orig/host/Host_Next.c
+L HOST_SET.C;1                      	Host_SetFile.c	../../c.orig/host/Host_SetFile.c
+F HOST_ST0.C;1                      	Host_Start.c
+L HOST_ST1.C;1                      	Host_Stat.c	../../c.orig/host/Host_Stat.c
+L LOCAL.MK;1                        	local.mk	../etc/local.mk
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS

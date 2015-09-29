@@ -1,0 +1,122 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     89.05.09.23.14.46;  author rab;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.03.26.20.20.29;  author mgbaker;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.03.17.23.44.10;  author mgbaker;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Syscall preamble for the sun4.
+@
+
+
+1.3
+log
+@Fixed macro to work with gnu cpp.
+@
+text
+@/*
+ * userSysCallInt.h --
+ *
+ *     Contains macro for stubs for user-level system calls.
+ *
+ * Copyright 1985, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * rcs = $Header: /sprite/src/lib/c/syscall/sun4.md/RCS/userSysCallInt.h,v 1.2 89/03/26 20:20:29 mgbaker Exp Locker: rab $ SPRITE (Berkeley)
+ */
+
+#include "kernel/sysSysCall.h"
+#include "kernel/machConst.h"
+#ifndef _USERSYSCALLINT
+#define _USERSYSCALLINT
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * SYS_CALL --
+ *
+ *      Define a user-level system call.  The call sets up a trap into a 
+ *	system-level routine with the appropriate constant passed as
+ * 	an argument to specify the type of system call.
+ *
+ *	1) Put constant into global register %g1.  This is what sun OS does,
+ *	so the compiler and C library have agreed it's okay to trash g1 when
+ *	taking a system call.
+ *	2) Execute a software trap instruction.  Arguments to the trap
+ *	are left in the output registers, since this is a leaf routine, and
+ *	they will become the input registers to the trap window.
+ *	3) The return value is left in %o0, since this is a leaf routine,
+ *	and it will be found correctly in %o0 by our caller.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+#ifdef __STDC__
+#define SYS_CALL(name, constant)	\
+	.globl _ ## name; _ ## name:	\
+	set	constant, %g1;		\
+	ta MACH_SYSCALL_TRAP; 		\
+	retl;				\
+	nop
+#else
+#define SYS_CALL(name, constant)	\
+	.globl _/**/name; _/**/name:	\
+	set	constant, %g1;		\
+	ta MACH_SYSCALL_TRAP; 		\
+	retl;				\
+	nop
+#endif
+#endif /* _USERSYSCALLINT */
+@
+
+
+1.2
+log
+@Seventeenth Kernel.  It executes its first system call: Sys_Shutdown().
+@
+text
+@d15 1
+a15 1
+ * rcs = $Header: /sprite/src/lib/c/syscall/sun4.md/RCS/userSysCallInt.h,v 1.1 89/03/17 23:44:10 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d43 1
+d45 7
+d57 2
+a58 2
+
+#endif _USERSYSCALLINT
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+ * rcs = $Header: userSysCallInt.h,v 1.1 88/06/19 14:30:08 ouster Exp $ SPRITE (Berkeley)
+d19 1
+@

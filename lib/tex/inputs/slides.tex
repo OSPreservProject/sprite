@@ -1,0 +1,513 @@
+% Created 5 June 1984
+
+\documentstyle[twoside]{report}
+
+\oddsidemargin -2pt
+\evensidemargin 96pt
+
+\newskip\foobarskip
+\foobarskip=10pt plus 5pt minus 5pt
+\newlength{\pagewidth}
+\setlength{\pagewidth}{\textwidth}
+\addtolength\pagewidth\marginparwidth
+\addtolength\pagewidth\marginparsep
+
+\makeatletter
+\def\ps@headings{\def\@oddfoot{}%
+\def\@oddhead{\makebox[\textwidth][l]{\underline{\hbox to \pagewidth{\bf
+\firstmark\hfill\thepage}}}}%
+\def\@evenfoot{}%
+\def\@evenhead{\makebox[\textwidth][r]{\underline{\hbox to \pagewidth{\bf
+\thepage\hfill\@lhead}}}}%
+\def\chaptermark##1{\mark{}\def\@lhead{##1}}%
+\def\sectionmark##1{{\let\protect\noexpand\mark{\thesection 
+    \hskip 1em##1}}}}
+
+\pagestyle{headings}
+
+
+
+
+\newlength\examboxwidth
+\setlength\examboxwidth{.5\pagewidth}
+\addtolength\examboxwidth{-13pt}
+\def\exambox{\par\addvspace\foobarskip\setbox0=\hbox 
+  to \pagewidth\bgroup \hspace*{3pt}\small \minipage[t]{\examboxwidth}}
+\def\midbox{\endminipage\hfill\minipage[t]{\examboxwidth}}
+\def\endexambox{\endminipage\hspace{3pt}\egroup 
+\setbox0=\hbox{\frame{\vbox{\vskip 3pt \box0 \vskip 3pt}}}
+\noindent \rule{0pt}{\ht0}
+\marginpar[{\makebox[0pt][l]{\copy0}}]{\makebox[\marginparwidth][r]{\copy0}}
+    \par\vskip\foobarskip}
+
+\long\def\exampage#1{\mbox{}\hfill\raisebox{-176pt}{\framebox(145,188){\vbox 
+   to 153pt{\hsize=115pt #1}}}\hfill\mbox{}}
+
+\long\def\slidepage#1{\exampage{\xipt \baselineskip=13.5pt \sf #1}}
+
+\parskip 0pt plus 1pt 
+\nofiles
+
+
+\newcommand\bs{\char '134 }  % A backslash character for \tt font
+\newcommand\lb{\char '173 }  % A left brace character for \tt font
+\newcommand\rb{\char '175 }  % A right brace character for \tt font
+\newcommand{\xsp}{\hspace{.3em}}
+\newcommand{\Xsp}{\nolinebreak\hspace{.3em}}
+\newcommand{\yspace}{\vspace{1.1ex}}
+\newcommand{\remindbox}[1]{\begin{center}
+\fbox{\parbox{300pt}{\it #1}}
+\end{center}}
+\newcommand{\warningbox}[1]{\par\vskip 6pt
+{\it \noindent\underline{Warning:}
+#1}\par\vskip 6pt}
+
+\setlength{\unitlength}{1pt}
+
+
+\def\LATEX{L\kern-.3em\raise.8ex\hbox{a}\TeX}
+\let\TEX = \TeX
+\def\BIBTEX{BIB\kern-.1em\TeX}
+\def\SLITEX{S\kern-.065em L\kern-.18em\raise.32ex\hbox{i}\kern-.03em\TEX}
+
+
+% TEMPORARY DEFINITIONS
+\def\knuth{The \TEX book}
+
+%&t&\mbox{\tt #}&
+%&h&\hbox#& 
+%&v&\hbox{\verb"#"}&
+%&m&\mbox{#}& 
+%&i&\index{#}&
+%&x&\xsp{}#& 
+%&.&\Xsp.#& 
+
+
+\begin{document}
+
+\begin{titlepage}
+\vspace*{2in}
+\begin{center}
+\Large Addendum \\to the
+Second Preliminary Edition\\
+(dated December 13, 1983)\\
+of the\\
+\LARGE \LATEX{} Manual\\[.3in]
+\large Leslie Lamport\\
+\today
+\end{center}
+\end{titlepage}
+
+
+\appendix
+
+\setcounter{chapter}{2}
+\setcounter{page}{156}
+
+\chapter{Making Color Slides
+  With \protect\SLITEX}
+
+\section{How \protect\SLITEX{} Makes Colors}
+
+\SLITEX{} \index{!slitex} is a version of \LATEX{} designed for making
+color \index{color slides}\index{slides,color}slides, \index{slides}
+though you can use it for black-and-white \index{slides,black and
+white} slides as well.  You don't need a special printer to make color
+slides; \SLITEX{} uses the same black-and-white printer as \LATEX.
+You get color slides by copying \SLITEX's output onto colored
+transparencies.  To see how this works, suppose you want to make
+the following slide:\footnote{The illustrations of slides used here are not
+accurate representations of the output actually produced by
+\SLITEX.}
+\begin{center}
+\slidepage{\hbox to \hsize{\small +\hfill +}
+    \vfill
+    \noindent\hspace*{20pt}\rule{0pt}{25pt}RED\\
+    \hspace*{20pt}\rule{0pt}{25pt}BLACK\\
+    \hspace*{20pt}\rule{0pt}{25pt}BLUE
+    \vfill
+    \hbox to \hsize{\small +\hfill \makebox[2em][l]{9}}}
+\end{center}
+where ``{\sf RED}'' is colored red, ``{\sf BLACK}'' is colored black,
+and ``{\sf BLUE}'' is colored blue.  \SLITEX{} would generate
+the following three separate pages of output for this slide:
+
+{\setbox0=\hbox to \pagewidth
+{\slidepage{\hbox to \hsize{\small +\hfill +}
+    \vfill
+    \noindent\hspace*{20pt}\rule{0pt}{25pt}RED\\
+    \hspace*{20pt}\rule{0pt}{25pt}\\
+    \hspace*{20pt}\rule{0pt}{25pt}
+    \vfill
+    \hbox to \hsize{\small +\hfill \makebox[2em][l]{9}}}\hfill
+\slidepage{\hbox to \hsize{\small +\hfill +}
+    \vfill
+    \noindent\hspace*{20pt}\rule{0pt}{25pt}\\
+    \hspace*{20pt}\rule{0pt}{25pt}BLACK\\
+    \rule{0pt}{25pt}
+    \vfill
+    \hbox to \hsize{\small +\hfill \makebox[2em][l]{9}}}\hfill
+\slidepage{\hbox to \hsize{\small +\hfill +}
+    \vfill
+    \rule{0pt}{25pt}\\
+    \rule{0pt}{25pt}\\
+    \hspace*{20pt}\rule{0pt}{25pt}BLUE
+    \vfill
+    \hbox to \hsize{\small +\hfill \makebox[2em][l]{9}}}}
+\par
+\vskip\foobarskip
+\noindent \vrule width 0pt height \ht0 depth \dp0
+\marginpar[{\makebox[0pt][l]{\copy0}}]{\makebox[\marginparwidth][r]{\copy0}}
+    \par\vskip\foobarskip}
+
+These pages are called {\it color \index{color layer} layers}.  Each
+color layer is then copied onto a special sheet that produces a
+transparency of the appropriate color.  (Such sheets are commercially
+available for an assortment of colors.)  The slide is produced by
+laying the three transparencies on top of one another.
+
+I will refer to the text that is meant to be colored red on the slide,
+and is therefore printed by \SLITEX{} on the red color layer, as ``red
+text''.  So, remember that when I write about the color of
+a piece of text, I'm referring only to the color layer on which it
+appears; \SLITEX{} doesn't print anything in red ink.
+
+It's hard to tell what a slide will look like from the
+separate color layers.  Therefore, \SLITEX{} also produces a
+black-and-white version of the slide, containing all the color layers
+properly superimposed.  When first making a set of slides, you should
+generate only the black-and-white versions, making the color layers
+after you've fixed all the problems that are visible in the
+black-and-white versions.  If you don't want color slides, you
+don't have to make any color layers, and can copy the black-and-white
+versions onto transparencies.
+
+
+\section{The Root File}
+
+\SLITEX{} is a separate program that you run the same way you run
+\LATEX{}, giving it the first name of an input file whose second name
+is \xsp{}\mbox{\tt .tex}\Xsp.  This file is called the {\it root
+\index{root file} file}.  As usual, I'll suppose that your root file
+is named \index{myfile.tex}\xsp{}\mbox{\tt myfile.tex}\Xsp.  This file
+starts out with the customary
+\xsp\hbox{\verb"\pagelayout"}\index{!pagelayou}\xsp{} 
+and \linebreak %%%%%%
+\xsp{}\hbox{\verb"\documentstyle"}\index{!documentstyle}\xsp{}
+commands.  The standard page layout and document styles for making
+slides are both named \xsp{}\mbox{\tt slides}\Xsp,\index{slides
+document style} so your file is likely to begin
+\begin{verbatim}
+       \pagelayout{slides}
+       \documentstyle{slides}
+\end{verbatim}
+The commands are followed by any declarations that you may want to
+make, followed in turn by the \xsp{}\hbox{\verb"\begin{document}"}\Xsp.
+
+Any text that comes after the \xsp{}\hbox{\verb"\begin{document}"}\xsp{}
+is treated as
+``front \index{front matter} matter''
+and not as slide material.  You can use it for notes to
+identify the slides.   
+\begin{exambox}
+\slidepage{\vfill
+This is an example of front matter.
+Note the different type style, and how the
+text is centered on the page. 
+\par\vfill}
+\midbox
+\begin{verbatim}
+\begin{document}
+
+This is an example of front matter.
+Note the different type style, and how 
+the text ...
+\end{verbatim}
+\end{exambox}
+
+For \SLITEX{} to produce color slides, you have to tell it what colors
+you will be using.  This is done with the
+\xsp{}\hbox{\verb"\colors"\index{!colors}}\xsp{} command.  The command
+\begin{verbatim}
+       \colors{red,black,blue}
+\end{verbatim}
+states that you will be using three colors, which you have named
+\xsp{}\mbox{\tt red}\Xsp, \xsp{}\mbox{\tt black}\Xsp, and
+\xsp{}\mbox{\tt blue}\Xsp.  \SLITEX{} knows nothing about real colors,
+so you could just as well have called your three colors \mbox{\tt
+puce}, \mbox{\tt mauve}, and \mbox{\tt fred}.  If you're making only
+black-and-white slides, then you don't need a
+\xsp{}\hbox{\verb"\colors"}\xsp{} command.
+
+The text of your slides is contained not in \xsp{}\mbox{\tt
+myfile.tex}\Xsp, but in a separate {\it slide \index{slide file}
+file}.  This file can have any name that ends in \mbox{\tt .tex}; I
+will assume that it is called \xsp{}\mbox{\tt myslid.tex}\Xsp.  What
+goes into the file \xsp{}\mbox{\tt myslid.tex}\xsp{} is explained
+below.  Black-and white-slides are generated by placing the following
+command in the root file:\index{!blackandwhite}
+\begin{verbatim}
+       \blackandwhite{myslid}
+\end{verbatim}
+Color slides are generated by the command\index{!colorslides}
+\begin{verbatim}
+       \colorslides{myslid}
+\end{verbatim}
+The \xsp{}\hbox{\verb"\colorslides"}\xsp{} command generates a set of
+color layer pages for each color specified by the
+\hbox{\verb"\colors"} command.  For example, the command
+\begin{verbatim}
+       \colors{red,black,blue}
+\end{verbatim}
+causes a subsequent \xsp{}\hbox{\verb"\colorslides"}\xsp{} command to
+generate first all the red color-layer pages, then the black ones, and
+then the blue ones.
+
+As usual, your root file ends with an
+\xsp{}\hbox{\verb"\end{document}"}\xsp{} command.
+
+\section{The Slide File}
+
+The main purpose of the root file is to tell \SLITEX{} what colors to
+use and where to find the slide file, so the root file tends to be pretty
+short.  It's the slide file that actually makes the individual
+slides.
+
+
+\subsection{Slides}
+
+Each slide is produced by a \xsp{}\mbox{\tt \index{slide
+environment}slide}\xsp{} environment.  This environment has a single
+argument, which is a list of all the colors contained on the slide.
+For example, a slide that has the colors \xsp{}\mbox{\tt red}\xsp{}
+and \xsp{}\mbox{\tt blue}\xsp{} is created by an environment
+\begin{verbatim}
+       \begin{slide}{red,blue}
+       ...
+       \end{slide}
+\end{verbatim}
+The colors in the argument must have been declared by a
+\xsp{}\hbox{\verb"\colors"\index{!colors}}\xsp{} command in the root
+file.  They tell \SLITEX{} which color layers to produce for this
+particular slide.  If there is green text in the slide, that text will
+appear in the black-and-white version, but no green color layer will
+be generated unless \xsp{}\mbox{\tt green}\xsp{} is included in the
+\xsp{}\mbox{\tt slide}\xsp{} environment's argument.  If you want only
+black-and-white slides, then you can use a null argument:
+\begin{verbatim}
+       \begin{slide}{}
+       ...
+\end{verbatim}
+
+The text that appears on a slide is produced using ordinary \LATEX{}
+commands.  You can use any commands that make sense for slides.
+Commands that {\it don't\/} make sense include sectioning commands,
+\xsp{}\mbox{\tt figure}\xsp{} and \xsp{}\mbox{\tt table}\xsp{}
+environments, indexing commands, commands for generating a
+bibliography, and page-breaking commands.  The latter make no sense in
+a slide because each slide must fit on a single page.  You can use an
+\xsp{}\hbox{\verb"\input"\index{!input}}\xsp{} command, but not an
+\xsp{}\hbox{\verb"\include"}\xsp{} command.  Commands for producing
+only some of the slides in your slide file are described below.
+
+There are two major differences between the text generated by
+\SLITEX{} and that generated by \LATEX{}.  First of all, text is
+automatically centered vertically on the slide.  Secondly, and most
+noticable, \SLITEX{} uses a set of type \index{type faces} faces
+especially chosen for slides.  The characters in these type faces are
+much larger than the ones in the corresponding \LATEX{} type faces.
+\SLITEX's \xsp{}\hbox{\verb"\normalsize"}\xsp{} produces roughly the
+same size characters as \LATEX's \xsp{}\hbox{\verb"\LARGE"}\Xsp.
+Also, \SLITEX's ordinary Roman type style is similar to \LATEX's sans
+serif style.  Besides Roman, the only other type styles generally
+available are italic (\hbox{\verb"\it"}), bold (\hbox{\verb"\bf"}),
+and typewriter (\hbox{\verb"\tt"}).
+
+The only commands you need inside a slide that aren't present in
+ordinary \LATEX{} input are ones to tell \SLITEX{} what color the text
+is.  The \xsp{}\hbox{\verb"\colors"}\xsp{} command in your root file
+defines the declarations \index{color declarations} for doing this.
+For example, if the root file contains the command
+\xsp{}\hbox{\verb"\colors{red,black,blue}"}\Xsp,
+then \xsp{}\hbox{\verb"\red"}\Xsp, \xsp{}\hbox{\verb"\black"}\Xsp, and
+\xsp{}\hbox{\verb"\blue"}\xsp{} are declarations that specify the
+color.  They work just like any other declaration, such as
+\xsp{}\hbox{\verb"\bf"}\Xsp, having the same scoping rules.  This is
+illustrated below, where only the red color layer is shown.
+\begin{exambox}
+\slidepage{\hbox to \hsize{\small +\hfill +}
+\vfill
+This is red text with two
+\makebox[50pt]{}.
+
+This is more red text.
+\vfill 
+\hbox to \hsize{\small +\hfill \makebox[2em][l]{6}}}
+\midbox
+\begin{verbatim}
+\red
+\begin{slide}{red,blue}
+   This is red text with two 
+   {\blue blue words}.
+
+   This is more red text.
+\end{slide}
+\end{verbatim}
+\end{exambox}
+A color declaration does not affect the type style, as illustrated
+by the following example, where again only the red color layer is
+shown.
+
+\begin{exambox}
+\slidepage{\hbox to \hsize{\small +\hfill +}
+\vfill
+\it This is red italic.
+\vfill
+\hbox to \hsize{\small +\hfill\makebox[2em][l]{7}}}
+\midbox
+\begin{verbatim}
+\begin{slide}{red,blue}
+  \begin{blue} This is blue Roman text.
+      {\it This is blue italic.
+
+           {\red This is red italic.}
+
+           This is more blue italic.    }
+      This is blue Roman.
+  \end{blue}
+\end{slide}
+\end{verbatim}
+\end{exambox}
+
+The command \xsp{}\hbox{\verb"\invisible"\index{!invisible}}\xsp{} is
+a special color declaration for invisible text.  Invisible text is not
+only colorless, appearing in no color layer, but does not appear in
+the black-and-white version either.  The use of invisible text is
+explained below.
+
+\warningbox{Don't use a color declaration or an 
+\xsp\hbox{\tt \bs invisible}\xsp{} command in math mode.}
+
+\warningbox{Certain horizontal lines drawn by\/ {\rm \TEX} will appear
+in color layers where they shouldn't.  The offending lines are the
+ones produced by \xsp{}\mbox{\tt \index{!underline}\bs underline}\Xsp,
+\xsp{}\mbox{\tt \index{!overline}\bs overline}\Xsp, and
+\xsp{}\mbox{\tt \index{!frac}\bs frac}\Xsp.}
+
+\subsection{Overlays}
+
+The \xsp{}\mbox{\tt overlay\index{overlay environment}}\xsp{}
+environment is exactly the same as the \xsp{}\mbox{\tt slide}\xsp{}
+environment except for how the page is numbered.  The first
+\xsp{}\mbox{\tt overlay}\xsp{} following slide number~9 is numbered
+``9a'', the second one is numbered ``9b'', and so forth.  To make an
+overlay that perfectly overlays a slide, the slide and the overlay
+should be absolutely identical except that text visible in one should
+be invisible in the other.  This is illustrated by the following
+example.
+
+\settowidth{\dimen2}{\xipt\sf overlay}
+\settowidth{\dimen0}{\xipt \sf An}
+\begin{exambox}
+\slidepage{\hbox to \hsize{\small +\hfill +}
+\vfill
+An \makebox[\dimen2]{} goes here.\par
+\vfill 
+\hbox to \hsize{\small +\hfill \makebox[2em][l]{9}}}
+\midbox
+\begin{verbatim}
+\begin{slide}{red}
+
+\red
+An {\invisible overlay}
+goes here.
+
+\end{slide}
+\end{verbatim}
+\end{exambox}
+\begin{exambox}
+\slidepage{\hbox to \hsize{\small +\hfill +}
+\vfill
+\makebox[\dimen0]{} overlay \par
+\vfill 
+\hbox to \hsize{\small +\hfill \makebox[2em][l]{9-a}}}
+\midbox
+\begin{verbatim}
+\begin{overlay}{red}
+
+\invisible
+An {\red overlay}
+goes here.
+
+\end{overlay}
+\end{verbatim}
+\end{exambox}
+ 
+The slide and the overlay will match up to read
+\[ \mbox{\xipt \sf An overlay goes here.} \]
+when placed atop one another.
+
+\subsection{Notes}
+
+It is sometimes convenient to put notes to yourself in with the
+slides.  The \mbox{\tt note}\index{note environment} environment
+produces a one-page note that appears only in the black-and-white
+versions of the slides.  For example,
+\begin{exambox}
+\slidepage{\vfill This is a note to myself,
+perhaps reminding me of
+what I wanted to say here.
+\vfill 
+\hbox to \hsize{\small \hfill 9-1}}
+\midbox
+\begin{verbatim}
+\begin{note}
+
+  This is a note to myself,
+  perhaps ...
+
+\end{note}
+\end{verbatim}
+\end{exambox}
+
+\noindent 
+Notes that follow slide number~9 are numbered
+``9-1'', ``9-2'', etc.  
+
+
+\section{Making Some of the Slides}
+
+For making corrections, it's handy to be able to produce a subset of
+the slides in your file.  The command\index{!onlyslides}
+\begin{verbatim}
+       \onlyslides{4,7-13,23}
+\end{verbatim}
+in the root file will cause the following
+\xsp{}\hbox{\verb"\blackandwhite"}\xsp{} and
+\xsp{}\hbox{\verb"\colorslides"}\xsp{} commands to generate only
+slides numbered 4, 7-13 (inclusive) and 23, plus all of their
+overlays.  The slide numbers in the argument must be in ascending
+order, and can include nonexistent slides---for example, you can type
+\begin{verbatim}
+       \onlyslides{10-9999}
+\end{verbatim}
+to produce all but the first nine slides.  The argument of the
+\xsp{}\hbox{\verb"\onlyslides"}\xsp{} command must be nonempty.
+
+There is also an analogous
+\xsp{}\hbox{\verb"\onlynotes"\index{!onlynotes}}\xsp{} command to
+generate a subset of the notes.  Notes numbered 11-1, 11-2, etc. will
+all be generated by specifying page 11 in the argument of the
+\xsp{}\hbox{\verb"\onlynotes"}\xsp{} command.
+
+If your input has an \xsp{}\hbox{\verb"\onlyslides"}\xsp{} command and
+no \hbox{\verb"\onlynotes"} command, then notes will be produced for
+the specified slides.  If there is an
+\xsp{}\hbox{\verb"\onlynotes"}\xsp{} command but no
+\xsp{}\hbox{\verb"\onlyslide"}\xsp{} command, then no slides will be
+produced.  Including both an \xsp{}\hbox{\verb"\onlyslides"}\xsp{} and
+an \xsp{}\hbox{\verb"\onlynotes"}\xsp{} command has the expected
+effect of producing only the specified slides and notes.
+
+\end{document}
+

@@ -1,0 +1,11 @@
+Instructions on how to generate the programs contained in this
+directory:
+
+1. Modify the Makefiles in each of the subdirectories of this directory
+according to the directions in the Makefile.  Even if the Makefile doesn't
+contain any directions, you may wish to modify its CFLAGS and/or CC
+definitions in order to make your compiler produce the best possible code.
+
+2. Type "make" in this directory.
+
+3. Follow the directions in itc/Makefile to run the benchmark.

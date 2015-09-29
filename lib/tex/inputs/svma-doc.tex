@@ -1,0 +1,307 @@
+\def\UNX{UN$\star$X}
+%\documentstyle[svma,draft]{report}
+\documentstyle[svma]{report}
+\begin{document}
+\tableofcontents
+\chapter{Springer-Verlag Document Styles for \LaTeX}
+\chapterauthors{Ed Sznyter\footnote{Distributed Systems Group,
+	Computer Science Department,
+	Stanford University, Stanford, CA 94305--2140}}
+\begin{abstract}
+This document describes the \LaTeX\ styles ``svma,'' Springer-Verlag's
+style package for multiauthored books,
+and ``svsa,'' Springer-Verlag's style package for single-authored books.
+These styles are variations of the standard ``report'' style, and
+only the differences are noted here.
+For a complete reference, see {\it \LaTeX: A Document Preparation System}
+by Leslie Lamport.
+
+A short example of a paper prepared with the ``svma'' style
+may be found at the end of this document.
+\end{abstract}
+
+\section{Starting the Document}
+\label{starting}
+
+\subsection{Multi-Authored Books}
+Each chapter in a multiauthored book may be written by different authors,
+who write and test their parts as self-contained manuscripts.
+The chapters are then submitted to the editor to be collected into the whole.
+
+An author's document should start out as follows.
+\begin{verbatim}
+\documentstyle[svma,draft]{report}
+\begin{document}
+\chapter{Title of your Chapter}
+\chapterauthors{Your Name\footnote{Your institution}\\
+Another Author's Name\footnote{Their institution}}
+
+\begin{abstract}
+The abstract...
+\end{abstract}
+\end{verbatim}
+
+and should end with
+\begin{verbatim}
+\end{document}
+\end{verbatim}
+
+All these are standard \LaTeX\ commands, except for \verb|\chapterauthors|.
+\verb|\chapterauthors|
+takes as an argument a list of authors, separated by the command \verb|\\|.
+Each author should have a footnote which specifies their institution.
+
+As a side-effect of this command,
+the chapter name and the names of the authors will be placed in the
+running heads automatically.
+
+\subsection{Single-Authored Books}
+A document that uses the ``svsa'' style should start as follows.
+\begin{verbatim}
+\documentstyle[svsa,draft]{report}
+\begin{document}
+\end{verbatim}
+and each chapter starts with
+\begin{verbatim}
+\chapter{Chapter Title}
+\end{verbatim}
+Naturally, \verb|\chapterauthors| and the abstract is not necessary
+for each chapter.  In this style, the chapter name and the section name
+will be placed in the running heads.
+
+\section{Sectioning Commands}
+The following sectioning commands, as described in the \LaTeX\ book,
+are available in this style:
+\verb|\part|, \verb|\chapter|,
+\verb|\section|, \verb|\subsection|, \verb|\subsubsection|,
+\verb|\paragraph|, and \verb|\subparagraph|.
+\verb|\part| is only used when the separate papers are put together
+into one document.
+
+By default, 
+\verb|\part|, \verb|\chapter|, \verb|\section|, and \verb|\subsection|
+are numbered and placed in the table of contents.
+The commands
+\begin{verbatim}
+\setcounter{secnumdepth}{2}	% number section and subsections
+\setcounter{tocdepth}{2}	% and put them in the table of contents
+\end{verbatim}
+found in the style file may be copied and changed by the editor if desired,
+but should not be changed by the individual authors.
+
+The important words in a section argument should be capitalized.
+
+\section{Tables}
+A special type of float, the \verb|stable|, has been added.  For example,
+
+\begin{verbatim}
+\begin{stable}{HYN Common Stock}{rcrp{2in}}
+\multicolumn{1}{c}{Year}
+	& \multicolumn{1}{c}{Price}
+		& \multicolumn1c{Dividend}\\
+\TableSubtitleRule
+1971	& 41--54	& \$2.60\\
+2	& 41--54	& 2.70	& This paragraph is long enough to span
+				  at least two lines.
+\TableFootnote{Prices are in dollars per share}
+\end{stable}
+\end{verbatim}
+will produce table \ref{shorttable} here or at the top of the next page.
+
+\begin{stable}{HYN Common Stock}{rcrp{2in}}
+\multicolumn{1}{c}{Year}
+	& \multicolumn{1}{c}{Price}
+		& \multicolumn1c{Dividend}\\
+\TableSubtitleRule
+1971	& 41--54	& \$2.60\\
+2	& 41--54	& 2.70	& This paragraph is long enough to span
+				  at least two lines.
+\TableFootnote{Prices are in dollars per share}
+\label{shorttable}
+\end{stable}
+
+The first argument to \verb|stable| is the title of the table,
+the second is the normal preamble that would be specified for a table
+made with the \verb|tabular| environment.
+
+The body of the \verb|stable| is specified in the same manner as
+the body of \verb|tabular|.  The command \verb|\TableSubtitleRule|
+will draw a horizontal rule below the column heads, with the proper
+vertical spacing.  Note that you have to specify the centering of the
+column heads, since \TeX\ doesn't know they're different from normal
+column entries.
+
+\verb|\TableFootnote| takes one argument, the text to go in the footnote
+of the table.  It may appear anywhere in the body of the \verb|stable|.
+
+\section{Acknowledgements}
+Acknowledgements go at the end of a chapter, just before the bibliography.
+\verb|\acknowledgements| is a sectioning command without any arguments,
+and should be followed by a paragraph of text.
+
+\section{The Bibliography}
+\label{bibl}
+
+Bibliographies are created with \verb|bibtex|.
+Generally, you will have a central bibliography database,
+which will have an entry for every paper you have ever referenced.
+
+In the text of the document, put the command
+\verb|\cite{CHERI83}| to reference the paper ``The Distributed V Kernel
+and its Performance for Diskless Workstations'' by D.R. Cheriton.
+Then, at the end of the document, but before the
+\verb|\end{document}|, put
+\begin{verbatim}
+\bibliographystyle{alpha}
+\bibliography{master}		% name of your bibliography database
+\end{verbatim}
+
+Then, run your document through \LaTeX.  It will complain
+\begin{verbatim}
+LaTeX Warning: Citation `CHERI83' on page 1 undefined.
+\end{verbatim}
+and
+\begin{verbatim}
+No file paper.bbl
+\end{verbatim}
+
+This will put some entries in the .aux file.  Now run \verb|bibtex paper|,
+which will create the file paper.bbl, by extracting the proper
+references from your bibliographic database.  \verb|bibtex| should not
+give any error messages.
+Then run \LaTeX\ again. Again, the warning
+\begin{verbatim}
+LaTeX Warning: Citation `CHERI83' on page 1 undefined.
+\end{verbatim}
+will appear.  Run \LaTeX\ yet again, and there should be no warnings.
+
+This process must be repeated every time a new reference is added to
+your document, so you will probably want to wait until the paper is
+nearly finished before producing the bibliography.
+
+\subsection{The Bibliography Database}
+The bibliography entry for the preceding example would have been put
+into the file master.bib thusly:
+\begin{verbatim}
+@Inproceedings(CHERI83, key ="CHERI83",
+author="D.R.~Cheriton and W.~Zwaenepoel",
+title="The Distributed V Kernel and its Performance for Diskless Workstations",
+booktitle="Proceedings of the 9th Symposium on Operating System Principles",
+Organization="ACM",
+Year=1983)
+\end{verbatim}
+\subsection{What Bibtex Produces}
+
+In the preceding example, the file paper.bbl might contain
+
+\begin{verbatim}
+\begin{thebibliography}{CZ83}
+
+\bibitem[BL80]{lampson}
+Ed. B.W.~Lampson.
+\newblock {\it Distributed Systems: Architecture and Implementation}.
+\newblock Springer-Verlag, 1980.
+
+\bibitem[CZ83]{cheri83}
+D.R.~Cheriton and W.~Zwaenepoel.
+\newblock The distributed v kernel and its performance for diskless
+  workstations.
+\newblock In {\it Proceedings of the 9th Symposium on Operating System
+  Principles}, ACM, 1983.
+
+\end{thebibliography}
+\end{verbatim}
+
+If you don't have bibtex, this file could be produced by hand.  However,
+bibtex should be part of the \LaTeX\ package.
+
+\section{Producing the Collected Works in the ``svma'' Style}
+
+The standard commands up to and including \verb|\begin{document}|,
+and after and including
+\verb|\end{document}| must be removed from each chapter.
+Then, a master file should be produced, with the commands
+\begin{verbatim}
+\documentstyle[svma]{report}
+\begin{document}
+\tableofcontents
+\end{verbatim}
+followed by an \verb|\include| command for each chapter.
+Front material may be in this master file, or a separate file that's included.
+\verb|part| commands, if desired, should be put in this file, between the
+\verb|include| commands.
+
+\acknowledgements
+Thanks to Gerhard Rossbach, Donna Moore, and Barbara Tompkins of
+Springer-Verlag for their patience with my endless questions.
+
+\subsection{Bibliography}
+In order to produce a bibliography for each chapter in a collected work,
+each chapter must be in a separate file, and be set up as in
+section \ref{bibl} (except the chapter doesn't end in \verb|\end{document}|).
+Run \LaTeX\ on the whole document, then bibtex on each chapter, then
+re-run \LaTeX\ on the whole document twice.
+
+A master bibliography for the entire work may be produced in the normal
+manner, by putting the appropriate commands in the master file and
+running bibtex on the master file.  You can have both bibliographies
+for each chapter and for the entire work at the same time.
+
+\appendix
+\chapter{A Short Example}
+
+This example will serve as a framework from which to start.
+
+\begin{verbatim}
+\documentstyle[svma,draft]{report}
+\begin{document}
+\chapter{Springer-Verlag Multi-Author Style for \LaTeX}
+\chapterauthors{Ed Sznyter\footnote{Distributed Systems Group,
+	Computer Science Department,
+	Stanford University, Stanford, CA 94305--2140}}
+\begin{abstract}
+This document describes the style ``svma,'' Springer-Verlag's
+style package for multiauthored books that are typeset using
+\LaTeX.
+\end{abstract}
+
+\section{Starting the Document}
+Each chapter in a multiauthored book may be written by a
+different author, who write and test their parts as
+self-contained manuscripts.
+
+\subsection{The Bibliography Database}
+
+\acknowledgements
+Thanks go to the appropriate people.
+
+\appendix
+\chapter{A Short Example}
+
+\bibliographystyle{alpha}
+\bibliography{master}		% name of your bibliography database
+
+\end{document}
+\end{verbatim}
+
+\chapter{Installing the Style Packages}
+Optimally, the files svma.sty and svsa.sty
+ should be placed in the same location
+as the rest of the style files; on \UNX, that might be\linebreak[4]
+/usr/local/lib/tex/macros/svma.sty.
+If the user doesn't have the privileges to install system software,
+the environment variable \verb|TEXINPUTS| may be set to look for
+style files wherever desired.  For example, on \UNX, the csh command
+\begin{verbatim}
+setenv TEXINPUTS ".:$HOME/lib:/usr/local/lib/tex/macros"
+\end{verbatim}
+will cause \TeX\ to look in the current directory, the user's private
+library directory, and the default system directory.  svma.sty will be
+found if placed in any of these locations.  Equivalent commands are
+available on most other operating systems.
+
+Directly including the style file into your source, or using \verb|\input|
+or \verb|\include| will not work, because the style files contain
+special commands that are valid only when processed using
+\verb|documentstyle|.
+\end{document}

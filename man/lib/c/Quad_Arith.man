@@ -1,0 +1,49 @@
+'\" Copyright 1991 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/lib/c/quad/RCS/Quad_Arith.man,v 1.1 91/03/18 12:19:22 kupfer Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS Quad lib
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+Quad_AddUns, Quad_AddUnsLong \- Arithmetic operations on 64-bit integers
+.SH SYNOPSIS
+.nf
+\fB#include <quad.h>\fR
+.sp
+void
+\fBQuad_AddUns\fR(\fIuQuad1\fR, \fIuQuad2\fR, \fIuResultPtr\fR)
+.sp
+void
+\fBQuad_AddUnsLong\fR(\fIuQuad1\fR, \fIuLong\fR, \fIuResultPtr\fR)
+.SH ARGUMENTS
+.AS u_quad *uResultPtr
+.AP u_quad uQuadN in
+N'th unsigned quad operand
+.AP u_long uLong in
+unsigned long operand
+.AP u_quad *uResultPtr out
+unsigned quad result
+.BE
+
+.SH DESCRIPTION
+.PP
+Sprite provides some common operations on 64-bit integers.
+.B Quad_AddUns
+adds two unsigned quads together.
+.B Quad_AddUnsLong 
+adds an unsigned long to an unsigned quad.  In both cases, one of the
+quad operands can also be used to hold the result.
+.PP
+It is expected that more quad operations will be added to the library
+as they are needed for different applications.
+
+.SH KEYWORDS
+quad, arithmetic, counter

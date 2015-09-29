@@ -1,0 +1,11 @@
+#!/bin/csh -fx
+
+/local/cmds/mcp "/sprite/boot/*.md/sprite" "/sprite/boot/=1.md/old"
+/local/cmds/mcp "/sprite/boot/*.md/new" "/sprite/boot/=1.md/sprite"
+
+set bootdirs = (/allspiceA /lustA)
+
+foreach dir ($bootdirs) 
+    cp $dir/sprite $dir/old
+    cp $dir/new $dir/sprite
+end

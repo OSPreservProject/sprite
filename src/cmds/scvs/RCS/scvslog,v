@@ -1,0 +1,40 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    jhh:1.1; strict;
+comment  @# @;
+
+
+1.1
+date     91.10.09.11.10.59;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#!/sprite/cmds/perl
+require 'ctime.pl';
+
+$module = shift;
+$module =~ m|kernel/(\S+)|;
+$module = $1;
+print("\n---------------------------------------------------------------\n");
+printf("Date	: %s", &ctime(time));
+printf("Module	: $module\n");
+printf("User	: %s\n", getlogin);
+while(<STDIN>) {
+    next if (/^Update of/);
+    next if (/^In directory/);
+    print;
+}
+@

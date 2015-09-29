@@ -1,0 +1,3308 @@
+head     9.15;
+branch   ;
+access   ;
+symbols  ds3100:9.14 sun3:9.14 sun4nw:9.14 symm:9.14 spur:9.14 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.15
+date     92.12.13.18.22.34;  author mgbaker;  state Exp;
+branches ;
+next     9.14;
+
+9.14
+date     91.09.10.18.43.16;  author rab;  state Exp;
+branches ;
+next     9.13;
+
+9.13
+date     91.08.24.20.04.32;  author mottsmth;  state Exp;
+branches ;
+next     9.12;
+
+9.12
+date     91.08.09.13.28.28;  author mendel;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     90.12.07.15.02.35;  author mgbaker;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     90.12.06.17.39.05;  author shirriff;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     90.12.02.20.35.35;  author mgbaker;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     90.10.19.15.57.20;  author rab;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.10.11.13.03.53;  author kupfer;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.10.11.12.53.20;  author mendel;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.10.05.17.14.21;  author mendel;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.06.21.17.45.36;  author mgbaker;  state Exp;
+branches 9.4.1.1;
+next     9.3;
+
+9.3
+date     90.05.01.12.24.05;  author jhh;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.30.18.01.19;  author jhh;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.21.17.17.34;  author jhh;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.19.13;  author douglis;  state Stable;
+branches ;
+next     8.21;
+
+8.21
+date     89.08.30.13.03.49;  author jhh;  state Exp;
+branches ;
+next     8.20;
+
+8.20
+date     89.08.29.15.09.37;  author jhh;  state Exp;
+branches ;
+next     8.19;
+
+8.19
+date     89.08.17.17.31.22;  author jhh;  state Exp;
+branches ;
+next     8.18;
+
+8.18
+date     89.08.16.22.32.41;  author jhh;  state Exp;
+branches ;
+next     8.17;
+
+8.17
+date     89.06.07.12.26.58;  author douglis;  state Exp;
+branches ;
+next     8.16;
+
+8.16
+date     89.03.31.12.09.31;  author mgbaker;  state Exp;
+branches ;
+next     8.15;
+
+8.15
+date     89.03.15.18.17.46;  author jhh;  state Exp;
+branches ;
+next     8.14;
+
+8.14
+date     89.02.19.22.11.04;  author jhh;  state Exp;
+branches ;
+next     8.13;
+
+8.13
+date     89.02.07.17.37.11;  author mendel;  state Exp;
+branches ;
+next     8.12;
+
+8.12
+date     89.01.11.10.21.07;  author mendel;  state Exp;
+branches ;
+next     8.11;
+
+8.11
+date     89.01.05.15.44.47;  author mendel;  state Exp;
+branches ;
+next     8.10;
+
+8.10
+date     89.01.03.10.01.40;  author mendel;  state Exp;
+branches ;
+next     8.9;
+
+8.9
+date     88.12.29.17.15.53;  author mendel;  state Exp;
+branches ;
+next     8.8;
+
+8.8
+date     88.12.21.17.51.03;  author douglis;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     88.12.19.14.25.07;  author mendel;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     88.12.09.08.51.10;  author mendel;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     88.12.04.12.27.28;  author ouster;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     88.11.30.16.18.50;  author douglis;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     88.11.22.10.44.02;  author douglis;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.11.18.15.28.52;  author jhh;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.12.18.06.40;  author jhh;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.37.08;  author douglis;  state Stable;
+branches ;
+next     6.6;
+
+6.6
+date     88.10.30.21.06.42;  author jhh;  state Exp;
+branches ;
+next     6.5;
+
+6.5
+date     88.10.07.14.44.50;  author mlgray;  state Exp;
+branches ;
+next     6.4;
+
+6.4
+date     88.10.07.14.25.59;  author mlgray;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.08.26.11.22.26;  author douglis;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.25.12.10.25;  author nelson;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.23.16.55.54;  author douglis;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.26.22;  author brent;  state Stable;
+branches ;
+next     5.8;
+
+5.8
+date     88.08.05.09.04.43;  author ouster;  state Exp;
+branches ;
+next     5.7;
+
+5.7
+date     88.07.31.16.47.22;  author mendel;  state Exp;
+branches ;
+next     5.6;
+
+5.6
+date     88.06.26.09.56.42;  author ouster;  state Exp;
+branches ;
+next     5.5;
+
+5.5
+date     88.05.05.17.59.36;  author nelson;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     88.05.04.17.21.13;  author nelson;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     88.04.13.11.28.14;  author ouster;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     88.03.08.16.10.57;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.12.12.16.40.25;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.49.43;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.4.1.1
+date     90.08.07.18.15.38;  author mgbaker;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.15
+log
+@Check to see if we're at interrupt level when entering the idle loop.
+@
+text
+@/* 
+ * schedule.c --
+ *
+ *  	Routines to implement the fair share scheduler algorithm.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/sched/schedule.c,v 9.14 91/09/10 18:43:16 rab Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <sched.h>
+#include <schedInt.h>
+#include <proc.h>
+#include <list.h>
+#include <timer.h>
+#include <sync.h>
+#include <sys.h>
+#include <dbg.h>
+#include <mach.h>
+#include <bstring.h>
+#include <stdio.h>
+
+#ifdef spur
+#include <devCC.h>
+#endif
+
+#ifdef sequent
+#include "machSGSProc.h"
+#include "devClockArbiter.h"	/* for blinky lights */
+#endif /* sequent */
+
+static int	foundOnDeck[MACH_MAX_NUM_PROCESSORS];
+static int	foundInQueue[MACH_MAX_NUM_PROCESSORS];
+static int	missedStack[MACH_MAX_NUM_PROCESSORS];
+
+/*
+ *  The basic philosophy is that processes that have not executed
+ *  as much as other processes deserve to be run first.  Thus we
+ *  keep a smoothed average of recent CPU usage (the more recent the
+ *  usage, the higher the weighting).  The process with the lowest
+ *  recent usage gets highest scheduling priority.  The smoothed
+ *  average is maintained by adding CPU usage as the process accumulates
+ *  it, then periodically (once a second) reducing all the usages of
+ *  all processes by a specific factor.  Thus, if a process stops using
+ *  the CPU then its average will gradually decay to zero;  if a process
+ *  becomes CPU-intensive, its average will gradually increase, up to
+ *  a maximum value.  The controlling parameters are:
+ *
+ *  FORGET_INTERVAL -	How often to reduce everyone's usage.
+ *  FORGET_MULTIPLY -
+ *  FORGET_SHIFT -	These two factors determine how CPU usage decays:
+ *			every second, everyone's CPU usage is multiplied
+ *			by FORGET_MULTIPLY, then shifted right by
+ *			FORGET_SHIFT.  Right now, the combined effect of
+ *			these two is to "forget" 1/8th of the process's
+ *			usage.
+ */
+
+#define FORGET_MULTIPLY		14
+#define FORGET_SHIFT		4
+#define FORGET_INTERVAL		timer_IntOneSecond
+
+/*  
+ *  The half-life of the average in seconds can be computed using this formula:
+ *
+ *        half-life  = ln(2) / ln(F)
+ *
+ *  where F = (FORGET_MULTIPLY)/(2**FORGET_SHIFT).  For the current settings
+ *  the half-life is about 5.1 seconds.  This means that if a process
+ *  suddenly stops executing, its usage will decay to half its early value
+ *  in about 5 seconds.  The half-life gives an idea of how responsive the
+ *  scheduler is to changes in process behavior.  If it responds too slowly,
+ *  then a previously-idle process could become CPU-bound and monopolize the
+ *  whole CPU for a long time until its usage rises.  If the half-life is
+ *  too short, then an interactive process that does anything substantial
+ *  (e.g. dragging a selection) will instantly lose its scheduling priority
+ *  relative to other compute-bound processes.
+ */
+ 
+/*
+ * The scheduler module mutex semaphore.  Used in sync module as well,
+ * since synchronization involves mucking with the process queues.
+ */
+Sync_Semaphore sched_Mutex ; 
+Sync_Semaphore *sched_MutexPtr = &sched_Mutex;
+
+/*
+ * Flag to see if Sched_Init has been called.  Used by Sched_GatherProcessInfo
+ * to know when things have been initialized. It's needed because GPI
+ * is called from the timer module and possibly before Sched_Init has been
+ * called.
+ */
+static Boolean init = FALSE;
+
+/*
+ * Global variable for the timer queue for Sched_ForgetUsage.
+ */
+static Timer_QueueElement forgetUsageElement;
+
+/*
+ * Structure for instrumentation.
+ */
+Sched_Instrument sched_Instrument;
+
+/*
+ * Status of each processor.
+ */
+Sched_ProcessorStatus	sched_ProcessorStatus[MACH_MAX_NUM_PROCESSORS];
+
+/*
+ * Length of time that a process can run before it is preempted.  This is
+ * expressed as a number of timer interrupts.  The quantum length and
+ * timer interrupt interval may not divide evenly.
+ */
+
+int	sched_Quantum = SCHED_DESIRED_QUANTUM / TIMER_CALLBACK_INTERVAL_APPROX;
+
+
+Sched_OnDeck	sched_OnDeck[MACH_MAX_NUM_PROCESSORS];
+
+/*
+ * Forward Declarations.
+ */
+static void RememberUsage _ARGS_((Proc_ControlBlock *curProcPtr));
+static Proc_ControlBlock *IdleLoop _ARGS_((void));
+static void QuantumEnd _ARGS_((Proc_ControlBlock *procPtr));
+extern void SchedPrintSchedStats _ARGS_((Timer_Ticks time, 
+				ClientData clientData));
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Sched_Init --
+ *
+ *      Initialize data structures and variables for the scheduler.
+ *	Cause Sched_ForgetUsage to be called from timer callback queue.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Global variables are initialized.  Run queue is initialized.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+void
+Sched_Init()
+{
+    int	cpu;
+
+    sched_ProcessorStatus[0] = SCHED_PROCESSOR_ACTIVE;
+    for(cpu = 0; cpu < MACH_MAX_NUM_PROCESSORS; cpu++) {
+	sched_ProcessorStatus[cpu] = SCHED_PROCESSOR_NOT_STARTED;
+	sched_OnDeck[cpu].procPtr = (Proc_ControlBlock *) NIL;
+    }
+    bzero((Address) &(sched_Instrument),sizeof(sched_Instrument));
+
+    List_Init(schedReadyQueueHdrPtr);
+    Sync_SemInitDynamic(sched_MutexPtr, "sched_Mutex");
+    Sync_SemRegister(sched_MutexPtr);
+
+    forgetUsageElement.routine		= Sched_ForgetUsage; 
+    forgetUsageElement.clientData	= 0;
+    forgetUsageElement.interval		= FORGET_INTERVAL;
+    Timer_ScheduleRoutine(&forgetUsageElement, TRUE);
+
+    init = TRUE;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sched_ForgetUsage --
+ *
+ *	Adjusts the priority for all user processes on the system.
+ *  
+ *	This routine is called at regular intervals by the 
+ *	Timer module TimeOut routine.
+ *
+ *
+ * Results:
+ *	none.
+ *
+ * Side Effects:
+ *	Priorities of user processes are modified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*ARGSUSED*/
+void
+Sched_ForgetUsage(time, clientData)
+    Timer_Ticks time;	/* The absolute time when this routine is called. 
+			 * (not used). */
+    ClientData	clientData;	/* 0 - not used. */
+{
+    register Proc_ControlBlock *procPtr;
+    register int i;
+
+    /*
+     *  Gain exclusive access to usage fields in the process table.
+     */
+     MASTER_LOCK(sched_MutexPtr);
+
+    /*
+     *  Loop through all the processes on the system and
+     *  forget some of the CPU usage for them.
+     */
+    for (i = 0; i < proc_MaxNumProcesses; i++) {
+	procPtr = proc_PCBTable[i];
+	if (procPtr->state == PROC_UNUSED) {
+	    continue;
+	}
+        procPtr->unweightedUsage = 
+		(procPtr->unweightedUsage * FORGET_MULTIPLY) >> FORGET_SHIFT;
+
+	procPtr->weightedUsage =
+		(procPtr->weightedUsage * FORGET_MULTIPLY) >> FORGET_SHIFT;
+    }
+
+    /*
+     *  Schedule this procedure to be called again later.
+     */
+    Timer_ScheduleRoutine(&forgetUsageElement, TRUE);
+
+    MASTER_UNLOCK(sched_MutexPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  Sched_GatherProcessInfo --
+ *
+ *	This routine is called at every timer interrupt. It collects
+ *	statistics about the running process such as the state of CPU and
+ *	CPU usage. 
+ *
+ *  Results:
+ *	None.
+ *
+ *  Side Effects:
+ *	Various statistics about the running process are collected in the
+ *      process's control block.
+ *
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Sched_GatherProcessInfo(interval)
+    unsigned int interval;	/* Number of ticks since last invocation. */
+{
+    register Proc_ControlBlock  *curProcPtr;
+    register int		cpu;
+
+    if (!init) {
+	return;
+    }
+
+    MASTER_LOCK(sched_MutexPtr);
+
+    /*
+     *  Get a pointer to the current process from the array that keeps
+     *  track of running processes on each processor.
+     */
+    for (cpu = 0; cpu < mach_NumProcessors; cpu++) {
+
+	curProcPtr = proc_RunningProcesses[cpu];
+
+	/*
+	 * If no process is currently running on this processor, don't
+	 * charge the usage to a particular process but keep track of it.
+	 */
+	if (curProcPtr == (Proc_ControlBlock *) NIL) {
+	    Timer_AddIntervalToTicks(
+		    sched_Instrument.processor[cpu].noProcessRunning, 
+		    interval,
+		    &(sched_Instrument.processor[cpu].noProcessRunning));
+	    continue;
+	}
+
+	/*
+	 *  We want to gather statistics about how much CPU time is spent in
+	 *  kernel and user states.  The processor state is determined by
+	 *  calling a machine-dependent routine.
+	 */
+	if (Mach_ProcessorState(cpu) == MACH_KERNEL) {
+	    Timer_AddIntervalToTicks(curProcPtr->kernelCpuUsage.ticks, interval,
+		           &(curProcPtr->kernelCpuUsage.ticks));
+	} else {
+	    Timer_AddIntervalToTicks(curProcPtr->userCpuUsage.ticks, interval,
+		           &(curProcPtr->userCpuUsage.ticks));
+	}
+
+	/*
+	 *  Update the CPU usage for scheduling priority calculations
+	 *  for the current process.
+	 */
+	curProcPtr->recentUsage += interval;
+
+	/*
+	 * See if the quantum has expired for the process.  It can go
+	 * negative if the user process happened to be running in kernel mode
+	 * when the quantum expired for the first time and the process has
+	 * not reentered the kernel voluntarily.
+	 */
+	if ((curProcPtr->genFlags & PROC_USER) && 
+	    (curProcPtr->billingRate != PROC_NO_INTR_PRIORITY)) {
+	    if (curProcPtr->schedQuantumTicks != 0) {
+		curProcPtr->schedQuantumTicks--;
+	    }
+	    if (curProcPtr->schedQuantumTicks == 0) {
+		QuantumEnd(curProcPtr);
+	    }
+	}
+    }
+
+    MASTER_UNLOCK(sched_MutexPtr);
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Sched_ContextSwitchInt --
+ *
+ *	Change to a new process.  Set the state of the current process
+ *	to the state argument.
+ *
+ *	If no process is runnable, then loop with interrupts enabled and
+ *	the master lock released until one is found.
+ *
+ *	The master lock is assumed to be held with sched_Mutex when
+ *	this routine is called.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	A new process is made runnable.  Counters of context switches are
+ *	incremented.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+void
+Sched_ContextSwitchInt(state)
+    register	Proc_State state;	/* New state of current process */
+{
+    register Proc_ControlBlock	*curProcPtr;  	/* PCB for currently runnning 
+						 * process. */
+    register Proc_ControlBlock	*newProcPtr;  	/* PCB for new process. */
+    Proc_ControlBlock		*tnewProcPtr;
+    register int cpu;
+
+    cpu = Mach_GetProcessorNumber();
+    sched_Instrument.processor[cpu].numContextSwitches++;
+
+    curProcPtr = Proc_GetCurrentProc();
+    /*
+     * If we have a context switch pending get rid of it.
+     */
+    curProcPtr->schedFlags &= ~SCHED_CONTEXT_SWITCH_PENDING;
+
+    /*
+     * Adjust scheduling priorities.
+     */
+    RememberUsage(curProcPtr);
+    if (state == PROC_READY) {
+	/*
+	 * If the current process is PROC_READY, add it to the ready queue and
+	 * get the next runnable process.  If that happens to be the current
+	 */
+	curProcPtr->numQuantumEnds++; 
+	if (List_IsEmpty(schedReadyQueueHdrPtr)) {
+	    curProcPtr->schedQuantumTicks = sched_Quantum;
+	    return;
+	}
+
+	curProcPtr->state = PROC_READY;
+	Sched_InsertInQueue(curProcPtr, &tnewProcPtr);
+	newProcPtr = tnewProcPtr;
+	if (newProcPtr == (Proc_ControlBlock *) NIL) {
+	    newProcPtr = IdleLoop();
+	} else if (newProcPtr == curProcPtr) {
+	    curProcPtr->schedQuantumTicks = sched_Quantum;
+	    curProcPtr->state = PROC_RUNNING;
+	    return;
+	} 
+	/*
+ 	 * Don't run this process if another processor is already using
+	 * its stack.
+	 */
+	if (newProcPtr->schedFlags & SCHED_STACK_IN_USE) {
+	    Sched_InsertInQueue(newProcPtr, (Proc_ControlBlock **) NIL);
+	    newProcPtr = IdleLoop();
+	} 
+    } else {
+	if (state == PROC_WAITING) {
+	    curProcPtr->numWaitEvents++; 
+	}
+	curProcPtr->state = state;
+	/*
+	 * Drop into the idle loop and come out with a runnable process.
+	 * This procedure exists to try and capture idle time when profiling.
+	 */
+	newProcPtr = IdleLoop();
+    }
+
+    /*
+     * Set the state of the new process.  
+     */
+    newProcPtr->state = PROC_RUNNING;
+    newProcPtr->processor = cpu;
+#ifdef sun4
+    /*
+     * HACK.  The window overflow handler in the sparc mach module spills
+     * windows via the CurrentProc pointer when the user's stack is
+     * not resident. Before changing the CurrentProc pointer besure that
+     * no user windows are active in the register windows.  We need do
+     * this only if CurrentProc is changing.  The mach module should
+     * be fixed not to use CurrentProc anyway.
+     */
+     if (newProcPtr != curProcPtr) {
+	 /*
+	  * This is overkill because we only need flush the user's windows
+	  * and not all (kernel and user) windows. It not real bad because
+	  * we are about to do a Mach_ContextSwitch() which spills all
+	  * windows anyway.
+	  */
+	Mach_FlushWindowsToStack();
+    }
+#endif /* sun4 */
+    Proc_SetCurrentProc(newProcPtr);
+
+    /*
+     * Set up the quantum as the number of clocks ticks that this process 
+     * is allowed to run berfore it is context-switched.
+     * (This field is ignored for kernel processes and user processes with 
+     * a billing rate of PROC_NO_INTR_PRIORITY, which allows them to run 
+     * forever.)
+     */
+    newProcPtr->schedQuantumTicks = sched_Quantum;
+
+    /*
+     * If the current process is continuing, then don't bother to 
+     * to do full context switch.  
+     */
+    if (newProcPtr == curProcPtr) { 
+	return;
+    }
+
+    sched_Instrument.processor[cpu].numFullCS++;
+
+    /*
+     * Perform the hardware context switch.  After switching, make
+     * sure that there is a context for this process.
+     */
+    newProcPtr->schedFlags |= SCHED_STACK_IN_USE;
+    curProcPtr->schedFlags &= ~SCHED_STACK_IN_USE;
+    Mach_ContextSwitch(curProcPtr, newProcPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RememberUsage --
+ *
+ *	Adjusts the weighted and unweighted CPU usages for a kernel or
+ *	and user process. A process with the billingRate of 
+ *	PROC_NO_INTR_PRIORITY does not get charged for weighted CPU usage,
+ *	which is used in deciding priority in the run queue.
+ *	
+ *	This routine assumes the sched_Mutex master lock is held.
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	CPU usages of the process are modified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+RememberUsage(curProcPtr)
+    register Proc_ControlBlock *curProcPtr;	/* The process that will be 
+						 * adjusted */
+{
+    register int billingRate = curProcPtr->billingRate;
+
+    /*
+     *  We want to calculate the process's CPU usage at this moment.
+     *  There are 2 smoothed usage averages that we maintain: an
+     *  unweighted value and a weighted value.  The weighted usage is used
+     *  for calculating scheduling priority.  The unweighted usage keeps
+     *  track of the real smoothed usage.
+     */ 
+
+    curProcPtr->unweightedUsage += curProcPtr->recentUsage;
+
+    /*
+     *  The billing rate basically specifies a process's scheduling 
+     *  priority. It it used to modify the amount of the recent usage
+     *  that gets added to the weighted usage.
+     *
+     *  If the billing rate equals the normal value then the recent usage
+     *  is not multiplied or divided by any factor.  If the billing rate
+     *  is greater than the normal value then only a faction of the recent
+     *  usage is added to the weighted usage.  If the billing rate is less
+     *  than the normal value then the recent usage is multiplied by a
+     *  power of 2 before it is added to the weighted  usage.
+     *
+     *  A process with a billing rate of PROC_NO_INTR_PRIORITY does
+     *  not get charged for CPU usage.
+     */
+
+
+    if (billingRate >= PROC_NORMAL_PRIORITY) {
+	if (billingRate != PROC_NO_INTR_PRIORITY) {
+	    curProcPtr->weightedUsage += curProcPtr->recentUsage >> billingRate;
+	}
+    } else {
+	curProcPtr->weightedUsage += curProcPtr->recentUsage << -(billingRate);
+    }
+
+    /*
+     *  Reset the recent usage back to zero.
+     */
+
+    curProcPtr->recentUsage = 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * IdleLoop --
+ *
+ *	This fetches a runnable process from the ready queue and returns it.
+ *	If none are available this goes into an idle loop, enabling and
+ *	disabling interrupts, and waits for something to become runnable.
+ *
+ * Results:
+ *	A pointer to the next process to run.
+ *
+ * Side effects:
+ *	Momentarily enables interrupts.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Proc_ControlBlock *
+IdleLoop()
+{
+    register Proc_ControlBlock	*procPtr;
+    register int cpu;
+    register List_Links		*queuePtr;
+    register Boolean		foundOne;
+    Proc_ControlBlock		*lastProcPtr = Proc_GetCurrentProc();
+    Boolean			onReadyQueue;
+#ifdef spur 
+	/* Turn off perf counters. */
+    Dev_CCSetCounters(COUNTERS_OFF);
+#endif
+
+    cpu = Mach_GetProcessorNumber();
+    queuePtr = schedReadyQueueHdrPtr;
+    if (sched_ProcessorStatus[cpu] == SCHED_PROCESSOR_ACTIVE) {
+	foundOne = FALSE;
+	procPtr = (Proc_ControlBlock *) List_First(queuePtr);
+	while (!List_IsAtEnd(queuePtr,(List_Links *) procPtr)) {
+	    if (!(procPtr->schedFlags & SCHED_STACK_IN_USE) ||
+		 (procPtr->processor == cpu)) {
+		foundOne = TRUE;
+		break; 
+	    }
+	    if (procPtr->schedFlags & SCHED_STACK_IN_USE) {
+		missedStack[cpu]++;
+	    }
+	    procPtr = (Proc_ControlBlock *)List_Next((List_Links *)procPtr);
+	}
+	if (foundOne) {
+	    /*
+	     * We found a READY process for us, break out of the
+	     * idle loop.
+	     */
+	    onReadyQueue = TRUE;
+	    foundInQueue[cpu]++;
+#ifdef spur
+	    Mach_InstCountOff(0);
+#endif
+	    goto exit;
+	}
+    }
+#ifdef sun4
+    /*
+     * HACK.  The window overflow handler in the sparc mach module spills
+     * windows via the CurrentProc pointer when the user's stack is
+     * not resident.  Before nuking the CurrentProc point besure
+     * that no user window is resident. THIS SHOULD BE FIXED.
+     */
+    Mach_FlushWindowsToStack();
+#endif /* sun4 */
+    Proc_SetCurrentProc((Proc_ControlBlock *) NIL);
+#ifdef spur
+    Mach_InstCountEnd(0);
+#endif
+    MASTER_UNLOCK(sched_MutexPtr);
+
+    if (Mach_AtInterruptLevel()) {
+	Mach_EnableIntr();
+	panic("At interrupt level going into idle loop!\n");
+    }
+    if (Mach_IntrNesting(cpu) != 0) {
+	int i;
+
+	Mach_EnableIntr();
+	i = Mach_IntrNesting(cpu);
+	mach_NumDisableIntrsPtr[cpu] = 0;
+	Mach_EnableIntr();
+	panic("Interrupt level at %d going into idle loop.\n", i);
+    }
+
+#ifdef sequent
+    /*
+     * Really going idle, turn off the front panel light
+     * and the processor board light.
+     */
+    if (light_show) {
+	if (fp_lights) {
+	    FP_LIGHTOFF(cpu);
+	}
+	*(int *)PHYS_LED = 0;
+    }
+#endif /* sequent */
+
+    while (1) {
+	/*
+	 * Wait for a process to become runnable.  
+	 */
+	if (((List_IsEmpty(queuePtr) == FALSE) ||
+	     (sched_OnDeck[cpu].procPtr != (Proc_ControlBlock *) NIL)) &&
+	    ((sched_ProcessorStatus[cpu] == SCHED_PROCESSOR_ACTIVE) ||
+	     (sched_ProcessorStatus[cpu] == SCHED_PROCESSOR_COUNTING_TICKS) ||
+	     (lastProcPtr->state == PROC_READY))) {
+	    /*
+	     * Looks like there might be something in the queue. We don't
+	     * have sched_Mutex down at this point, so this is only a hint.
+	     */
+	    MASTER_LOCK(sched_MutexPtr);
+#ifdef spur
+	    Mach_InstCountStart(2);
+#endif
+	    /*
+	     * Look and see if there is anything for us on deck.
+	     */
+	    procPtr = sched_OnDeck[cpu].procPtr;
+	    if (procPtr != (Proc_ControlBlock *) NIL) {
+		if ((procPtr->schedFlags & SCHED_STACK_IN_USE) &&
+		    (procPtr->processor != cpu)) {
+		    panic("Process with stack in use in the staging area.");
+		}
+		sched_OnDeck[cpu].procPtr = (Proc_ControlBlock *) NIL;
+		onReadyQueue = FALSE;
+		foundOnDeck[cpu]++;
+#ifdef spur
+		Mach_InstCountOff(2);
+#endif
+		break;
+	    }
+	    /*
+	     * If we are counting ticks then we are waiting for one 
+	     * specific process to wake up, and it will show up in the
+	     * staging area.  If we didn't find one there then skip to
+	     * the bottom of the loop.
+	     */
+	    if (sched_ProcessorStatus[cpu] != SCHED_PROCESSOR_COUNTING_TICKS) {
+		/*
+		 * Make sure queue is not empty. If there is a ready process
+		 * take a peek at it to insure that we can execute it. The
+		 * only condition preventing a processor from executing a
+		 * process is that its stack is being used by another processor.
+		 */
+		foundOne = FALSE;
+		procPtr = (Proc_ControlBlock *) List_First(queuePtr);
+		while (!List_IsAtEnd(queuePtr,(List_Links *) procPtr)) {
+		    if (!(procPtr->schedFlags & SCHED_STACK_IN_USE) ||
+			 (procPtr->processor == cpu)) {
+			foundOne = TRUE;
+			break; 
+		    }
+		    if (procPtr->schedFlags & SCHED_STACK_IN_USE) {
+			missedStack[cpu]++;
+		    }
+		    procPtr = (Proc_ControlBlock *)
+			List_Next((List_Links *)procPtr);
+		}
+		if (foundOne) {
+		    /*
+		     * We found a READY processor for us, break out of the
+		     * idle loop.
+		     */
+		     onReadyQueue = TRUE;
+		     foundInQueue[cpu]++;
+#ifdef spur
+		    Mach_InstCountOff(2);
+#endif
+		    break;
+		}
+	    }
+	    sync_InstrumentPtr[cpu]->sched_MutexMiss++;
+#ifdef spur
+	    Mach_InstCountEnd(2);
+#endif
+	    MASTER_UNLOCK(sched_MutexPtr);
+	}
+	/*
+	 * Count Idle ticks.  
+	 */
+	if (sched_Instrument.processor[cpu].idleTicksLow ==
+					(unsigned) 0xffffffff) {
+	    sched_Instrument.processor[cpu].idleTicksLow = 0;
+	    sched_Instrument.processor[cpu].idleTicksOverflow++;
+	} else {
+	    sched_Instrument.processor[cpu].idleTicksLow++;
+	}
+    }
+exit:
+#ifdef spur
+    Mach_InstCountStart(1);
+#endif
+#ifdef spur
+    Dev_CCSetCounters(COUNTERS_RESTORE); /* Restore perf counters. */
+#endif
+
+    if (procPtr->state != PROC_READY) {
+	/*
+	 * Unlock sched_Mutex because panic tries to grab it somewhere.
+	 * Do the panic by hand, without syncing the disks, because
+	 * we still deadlock someplace.
+	 */
+	MASTER_UNLOCK(sched_MutexPtr);
+	printf("Fatal Error: Non-ready process found in ready queue.\n");
+	DBG_CALL;
+	MASTER_LOCK(sched_MutexPtr);
+    }
+    if (onReadyQueue == TRUE) {
+	((List_Links *)procPtr)->prevPtr->nextPtr =
+					    ((List_Links *)procPtr)->nextPtr;
+	((List_Links *)procPtr)->nextPtr->prevPtr =
+					    ((List_Links *)procPtr)->prevPtr;
+    /*
+	List_Remove((List_Links *)procPtr);
+    */
+	sched_Instrument.numReadyProcesses -= 1;
+    }
+
+#ifdef sequent
+    /*
+     * Leaving idle, turn on the front panel light
+     * and the processor board light.
+     */
+    if (light_show) {
+	if (fp_lights) {
+	    FP_LIGHTON(cpu);
+	}
+	*(int *)PHYS_LED = 1;
+    }
+#endif /* sequent */
+
+    return(procPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sched_TimeTicks --
+ *
+ *	Idle for a few seconds and count the ticks recorded in IdleLoop.
+ *	For now, we only do this for one processor. All we're trying to get
+ *	is a rough estimate of idleTicksPerSecond.
+ *
+ *      This procedure is called during boot. The results are pretty much
+ *	meaningless if it is not.
+ *	
+ *	For best results all interrupts except for timer interrupts should
+ *	be off.  If we are on a multiprocessor then we idle all processors
+ *	for first so they don't interfere as badly.  Interrupts will still
+ *	screw us up (they are handled by processor 1 but they still use
+ *	locks we may need),  but I don't think turning off interrupts
+ *	for 5 seconds on a live system is a good idea.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Momentarily enables interrupts.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Sched_TimeTicks()
+{
+    register int lowTicks;
+    register int cpu;
+    Time time;
+    int i;
+    Boolean	wasIdled[MACH_MAX_NUM_PROCESSORS];
+
+    cpu = Mach_GetProcessorNumber(); 
+    if (cpu != 0) {
+	sched_ProcessorStatus[cpu] = SCHED_PROCESSOR_COUNTING_TICKS;
+	for (i = 0; i < mach_NumProcessors; i++) {
+	     if (sched_ProcessorStatus[i] == SCHED_PROCESSOR_ACTIVE) {
+		 (void) Sched_IdleProcessor(i);
+		 wasIdled[i] = TRUE;
+	     } else {
+		 wasIdled[i] = FALSE;
+	     }
+	 }
+    }
+    Time_Multiply(time_OneSecond, 5, &time);
+    printf("Idling processor %d for 5 seconds...",cpu);
+    lowTicks = sched_Instrument.processor[cpu].idleTicksLow;
+    (void) Sync_WaitTime(time);
+    lowTicks = sched_Instrument.processor[cpu].idleTicksLow - lowTicks;
+    printf(" %d ticks\n", lowTicks);
+    sched_Instrument.processor[cpu].idleTicksPerSecond = lowTicks / 5;
+    sched_ProcessorStatus[cpu] = SCHED_PROCESSOR_ACTIVE;
+    if (cpu != 0) {
+	for (i = 0; i < mach_NumProcessors; i++) {
+	     if (wasIdled[i]) {
+		 (void) Sched_StartProcessor(i);
+	     }
+	 }
+     }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * QuantumEnd --
+ *
+ *	Called by Sched_GatherProcessInfo when a process's quantum has expired.
+ *	A global flag is set to indicate that the current process should
+ *	be involuntarily context switched at the next available moment.
+ *	If the process is executing in kernel mode, then don't force a context
+ *	switch now, but instead mark the process as having a context switch
+ *	pending.
+ *
+ *	N.B. This routine assumes the sched mutex is already locked.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	A context switch is initiated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+QuantumEnd(procPtr)
+    register	Proc_ControlBlock 	*procPtr;
+{
+    procPtr->schedFlags |= SCHED_CONTEXT_SWITCH_PENDING;
+    procPtr->specialHandling = 1;
+    if (procPtr->processor != Mach_GetProcessorNumber()) {
+	/* 
+	 * If the process whose quantum has ended is running on a different
+	 * processor we need to poke the processor and force it into the
+	 * kernel. On its way back to user mode the special handling flag
+	 * will be checked and a context switch will occur (assuming that
+	 * the offending process is still running).
+	 */
+	Mach_CheckSpecialHandling(procPtr->processor);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sched_PrintStat --
+ *
+ *	Print the sched module statistics.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Do the prints.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Sched_PrintStat()
+{
+    Time  tmp;
+    int   i;
+
+    printf("Sched Statistics\n");
+    for(i = 0; i < mach_NumProcessors;i++) {
+	printf("Processor: %d\n",i);
+	printf("numContextSwitches = %d\n",
+	       sched_Instrument.processor[i].numContextSwitches);
+	printf("numFullSwitches    = %d\n",
+	       sched_Instrument.processor[i].numFullCS);
+	printf("numInvoluntary     = %d\n",
+	       sched_Instrument.processor[i].numInvoluntarySwitches);
+	Timer_TicksToTime(sched_Instrument.processor[i].noProcessRunning, &tmp);
+	printf("Idle Time          = %d.%06d seconds\n", 
+  	       tmp.seconds, tmp.microseconds);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sched_LockAndSwitch --
+ *
+ *	Acquires the Master Lock and performs a context switch.
+ *	Called when a process's quantum has expired and a trace trap
+ *	exception has arisen with the sched_ContextSwitchInProgress flag set.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	A context switch is performed.  The count of involuntary switches is
+ *	incremented.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Sched_LockAndSwitch()
+{
+    MASTER_LOCK(sched_MutexPtr);
+    sched_Instrument.processor[Mach_GetProcessorNumber()].
+				numInvoluntarySwitches++;
+    Sched_ContextSwitchInt(PROC_READY);
+#ifdef spur
+    Mach_InstCountEnd(1);
+#endif
+
+    MASTER_UNLOCK(sched_MutexPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sched_ContextSwitch --
+ *
+ *	Acquires the Master Lock and performs a context switch.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	A context switch is performed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Sched_ContextSwitch(state)
+    Proc_State	state;
+{
+
+    MASTER_LOCK(sched_MutexPtr);
+    Sched_ContextSwitchInt(state);
+#ifdef spur
+    Mach_InstCountEnd(1);
+#endif
+    MASTER_UNLOCK(sched_MutexPtr);
+
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sched_StartKernProc --
+ *
+ *	Start a process by unlocking the master lock and calling the
+ *	function whose address has been passed to us as an argument.
+ *	If the function returns then exit.
+ *
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The master lock is released.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Sched_StartKernProc(func)
+    void	(*func)();
+{
+#ifdef spur
+    Mach_InstCountEnd(1);
+#endif
+    MASTER_UNLOCK(sched_MutexPtr);
+    func();
+    Proc_Exit(0);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sched_MakeReady --
+ *
+ *	Put the process on the ready queue.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	State of given process changed to ready.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Sched_MakeReady(procPtr)
+    register	Proc_ControlBlock	*procPtr;
+{
+    MASTER_LOCK(sched_MutexPtr);
+    procPtr->state = PROC_READY;
+    Sched_InsertInQueue(procPtr, (Proc_ControlBlock **) NIL);
+    MASTER_UNLOCK(sched_MutexPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sched_StartUserProc --
+ *
+ *	Start a user process running.  This is the first thing that is
+ * 	called when a newly created process begins execution.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Sched_StartUserProc(pc)
+    Address	pc;	/* Program counter where process is to start
+			 * executing. */
+{
+    register     	Proc_ControlBlock *procPtr;
+
+#ifdef spur
+    Mach_InstCountEnd(1);
+#endif
+    MASTER_UNLOCK(sched_MutexPtr);
+    procPtr = Proc_GetCurrentProc();
+
+#ifdef notdef
+    Proc_Lock(procPtr);
+    procPtr->genFlags |= PROC_DONT_MIGRATE;
+    Proc_Unlock(procPtr);
+#endif
+    
+    /*
+     * Start the process running.  This does not return.
+     */
+    Mach_StartUserProc(procPtr, pc);
+}
+#if (MACH_MAX_NUM_PROCESSORS != 1)
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcessorStartProcess --
+ *
+ *	The initial process of a processor.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	
+ *
+ *----------------------------------------------------------------------
+ */
+
+static 
+void ProcessorStartProcess()
+{
+       /*
+         * Detach from parent so that cleanup will occur when the
+         * processor exits with this process. Also set the SCHED_STACK_IN_USE
+         * flag so that cleanup wont happen too early.
+         */
+        Proc_Detach(SUCCESS);
+        Sched_ContextSwitch(PROC_WAITING);
+	Proc_Exit(0);
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * StartProcessor --
+ *
+ *	Start up a processor..
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+StartProcessor(pnum)
+    int		pnum;		/* Processor number to start. */
+{
+    Proc_PID    pid;
+    Proc_ControlBlock *procPtr;
+    char        procName[128];
+    ReturnStatus status;
+
+    /*
+     * Startup an initial process for the processor pnum.  
+     */
+    sprintf(procName,"Processor%dStart",pnum);
+    Proc_NewProc((Address)ProcessorStartProcess, PROC_KERNEL, FALSE, &pid,
+				    procName, FALSE);
+    procPtr = Proc_GetPCB(pid);
+    /*
+     * Wait for this processor to go into the WAIT state.
+     */
+    while (procPtr->state != PROC_WAITING) {
+	(void) Sync_WaitTimeInterval(10 * timer_IntOneMillisecond);
+    }
+
+    /*
+     * Wait for its stack to become free .
+     */
+    while (procPtr->schedFlags & SCHED_STACK_IN_USE) {
+	(void) Sync_WaitTimeInterval(10 * timer_IntOneMillisecond);
+    }
+    Sched_ContextSwitch(PROC_READY);
+    printf("Starting processor %d with pid 0x%x\n",pnum,pid);
+    status = Mach_SpinUpProcessor(pnum,procPtr);
+    if (status != SUCCESS) {
+	printf("Warning: Processor %d not started.\n",pnum);
+    }
+    return (status);
+}
+#endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sched_StartProcessor --
+ *
+ *	Start a processor running processes.
+ *
+ * Results:
+ *	A return status.
+ *
+ * Side effects:
+ *	A processor maybe started.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Sched_StartProcessor(pnum)
+    int		pnum;	/* Processor number to start. */
+{
+    ReturnStatus	status;
+    /*
+     * Insure that processor number is in range.   
+     * 
+     */
+    if (pnum >= MACH_MAX_NUM_PROCESSORS) {
+	return (GEN_INVALID_ARG);
+    }
+    MASTER_LOCK(sched_MutexPtr);
+    switch (sched_ProcessorStatus[pnum]) { 
+	case SCHED_PROCESSOR_IDLE: {
+	    sched_ProcessorStatus[pnum] = SCHED_PROCESSOR_ACTIVE;
+	    /*
+	     * Fall thru .
+	     */
+	}
+	case SCHED_PROCESSOR_STARTING:
+	case SCHED_PROCESSOR_ACTIVE: {
+		status = SUCCESS;
+		break;
+	}
+	case SCHED_PROCESSOR_NOT_STARTED: {
+#if (MACH_MAX_NUM_PROCESSORS != 1)
+	    sched_ProcessorStatus[pnum] == SCHED_PROCESSOR_STARTING;
+	    MASTER_UNLOCK(sched_MutexPtr);
+	    status = StartProcessor(pnum);
+	    return (status);
+#endif
+	} 
+	default: {
+	    printf("Warning: Unknown processor state %d for processor %d\n",
+		    (int) sched_ProcessorStatus[pnum], pnum);
+	    status = FAILURE;
+	}
+    }
+    MASTER_UNLOCK(sched_MutexPtr);
+    return (status);
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sched_IdleProcessor --
+ *
+ *	Put a processor into the idle state so it wont be scheduled for
+ *	anymore processes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	A processor will be idled started.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Sched_IdleProcessor(pnum)
+    int		pnum;	/* Processor number to start. */
+{
+    ReturnStatus	status;
+    /*
+     * Insure that processor number is in range.   
+     * 
+     */
+
+#ifdef sequent
+    if ((pnum < 0) || (pnum >= mach_NumProcessors)) {
+        return GEN_INVALID_ARG;
+    }
+#else /* sequent */
+    if (pnum >= MACH_MAX_NUM_PROCESSORS) {
+	return (GEN_INVALID_ARG);
+    }
+#endif /* sequent */
+    MASTER_LOCK(sched_MutexPtr);
+    switch (sched_ProcessorStatus[pnum]) { 
+	case SCHED_PROCESSOR_ACTIVE: 
+	    sched_ProcessorStatus[pnum] = SCHED_PROCESSOR_IDLE;
+	    /*
+	     * Fall thru.
+	     */
+	case SCHED_PROCESSOR_IDLE: {
+		status = SUCCESS;
+		break;
+	}
+	case SCHED_PROCESSOR_NOT_STARTED: 
+	case SCHED_PROCESSOR_STARTING: {
+		status = GEN_INVALID_ARG;
+		break;
+	}
+	default: {
+	    printf("Warning: Unknown processor state %d for processor %d\n",
+		    (int) sched_ProcessorStatus[pnum], pnum);
+	    status = FAILURE;
+	}
+    }
+    MASTER_UNLOCK(sched_MutexPtr);
+    return (status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sched_DumpReadyQueue --
+ *
+ *	Print out the contents of the ready queue.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Output goes to the screen.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+void
+Sched_DumpReadyQueue(dummy)
+    ClientData dummy;
+{
+    List_Links *itemPtr;
+    Proc_ControlBlock *snapshot[SCHED_MAX_DUMP_SIZE];
+    int snapshotCnt;
+    int overflow;
+    int i;
+
+    if (List_IsEmpty(schedReadyQueueHdrPtr)) {
+	printf("\nReady queue is empty.\n");
+    } else {
+	printf("\n%8s %5s %10s %10s %8s %8s   %s\n",
+	    "ID", "wtd", "user", "kernel", "event", "state", "name");
+	overflow = FALSE;
+	snapshotCnt = 0;
+	MASTER_LOCK(sched_MutexPtr);
+	LIST_FORALL(schedReadyQueueHdrPtr,itemPtr) {
+	    if (snapshotCnt >= SCHED_MAX_DUMP_SIZE) {
+		overflow = TRUE;
+		break;
+	    }
+	    snapshot[snapshotCnt++] = (Proc_ControlBlock *) itemPtr;
+	}
+	MASTER_UNLOCK(sched_MutexPtr);
+	for (i = 0; i <snapshotCnt; i++) {
+	    Proc_DumpPCB(snapshot[i]);
+	}
+	if (overflow) {
+	    printf("Ready queue too large to snapshot.\n");
+	}
+    }
+}
+
+
+/*
+ * Temporary call-back for printing sched statistics for recovery.
+ */
+Timer_QueueElement      schedStatElement;
+Boolean                 getSchedStats = FALSE;
+
+/*ARGSUSED*/
+void
+SchedPrintSchedStats(time, clientData)
+    Timer_Ticks time;
+    ClientData  clientData;
+{
+    int                 i;
+
+    /* print stuff */
+    Sched_PrintStat();
+    for (i = 0; i < mach_NumProcessors; i++) {
+	printf("processor %d:\n", i);
+        printf("idleTicksLow: %d\n",
+		sched_Instrument.processor[i].idleTicksLow);
+        printf("idleTicksOverflow: %d\n",
+		sched_Instrument.processor[i].idleTicksOverflow);
+    }
+    printf("\n");
+
+    if (getSchedStats) {
+        Timer_ScheduleRoutine(&schedStatElement, TRUE);
+    }
+    return;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sched_StartSchedStats --
+ *
+ *      Start up the kernel's periodic printing of sched stats.
+ *      Temporary routine for recovery statistics.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Call-back routine scheduled.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Sched_StartSchedStats()
+{
+    schedStatElement.routine = SchedPrintSchedStats;
+    schedStatElement.clientData = 0;
+    schedStatElement.interval = timer_IntOneSecond * 10;
+    getSchedStats = TRUE;
+    Timer_ScheduleRoutine(&schedStatElement, TRUE);
+
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Sched_StopSchedStats --
+ *
+ *      Stop the kernel's periodic printing of sched stats.
+ *      Temporary routine for recovery statistics.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Call-back routine descheduled.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Sched_StopSchedStats()
+{
+    getSchedStats = FALSE;
+    (void) Timer_DescheduleRoutine(&schedStatElement);
+
+    return;
+}
+
+@
+
+
+9.14
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 9.13 91/08/24 20:04:32 mottsmth Exp Locker: rab $ SPRITE (Berkeley)";
+d617 4
+@
+
+
+9.13
+log
+@Add true vfork support
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 9.12 91/08/09 13:28:28 mendel Exp $ SPRITE (Berkeley)";
+a108 1
+#ifdef SOSP91
+a109 12
+ * Get overall user and system time too, rather than just per-process.
+ */
+
+Sched_OverallTimes      sched_OverallTimesPerProcessor[MACH_MAX_NUM_PROCESSORS];
+
+#include <sospRecord.h>
+Timer_Ticks nameTime[10] = {0};
+#endif /* SOSP91 */
+
+
+
+/*
+a295 18
+#ifdef SOSP91
+            Timer_AddIntervalToTicks(
+		    sched_OverallTimesPerProcessor[cpu].kernelTime, interval,
+                    &(sched_OverallTimesPerProcessor[cpu].kernelTime));
+	    {
+		int n;
+		n = curProcPtr->SOSP_IN_NAME_LOOKUP;
+		if (n>=0 && n<6) {
+		    Timer_AddIntervalToTicks( nameTime[n], interval,
+			    &nameTime[n]);
+		} else {
+		    /*
+		     * We weren't initialized.
+		     */
+		    curProcPtr->SOSP_IN_NAME_LOOKUP = 0;
+		}
+	    }
+#endif SOSP91
+a298 11
+#ifdef SOSP91
+            Timer_AddIntervalToTicks(
+		    sched_OverallTimesPerProcessor[cpu].userTime, interval,
+                    &(sched_OverallTimesPerProcessor[cpu].userTime));
+	    if (curProcPtr->genFlags & PROC_FOREIGN) {
+		Timer_AddIntervalToTicks(
+			sched_OverallTimesPerProcessor[cpu].userTimeMigrated,
+			interval, &(
+			sched_OverallTimesPerProcessor[cpu].userTimeMigrated));
+	    }
+#endif SOSP91
+@
+
+
+9.12
+log
+@Added code to flush register windows on sun4 before calling 
+Proc_SetCurrentProc.  This removes from problem of the overflow
+handlers spilling into the wrong Proc_ControlBlock.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 9.11 90/12/07 15:02:35 mgbaker Exp Locker: mendel $ SPRITE (Berkeley)";
+d1193 1
+a1193 1
+				    procName);
+@
+
+
+9.11
+log
+@Added more counters.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 9.10 90/12/06 17:39:05 shirriff Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d463 19
+d644 9
+@
+
+
+9.10
+log
+@Added timing of name lookups.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 9.9 90/12/02 20:35:35 mgbaker Exp Locker: shirriff $ SPRITE (Berkeley)";
+a112 5
+typedef struct  Sched_OverallTimes {
+    Timer_Ticks kernelTime;
+    Timer_Ticks userTime;
+    Timer_Ticks userTimeMigrated;
+} Sched_OverallTimes;
+d114 1
+a114 1
+Sched_OverallTimes      overallTimesPerProcessor[MACH_MAX_NUM_PROCESSORS];
+d310 3
+a312 3
+            Timer_AddIntervalToTicks(overallTimesPerProcessor[cpu].kernelTime,
+                    interval,
+                    &(overallTimesPerProcessor[cpu].kernelTime));
+d331 3
+a333 3
+            Timer_AddIntervalToTicks(overallTimesPerProcessor[cpu].userTime,
+                    interval,
+                    &(overallTimesPerProcessor[cpu].userTime));
+d336 3
+a338 3
+			overallTimesPerProcessor[cpu].userTimeMigrated,
+			interval,
+			&(overallTimesPerProcessor[cpu].userTimeMigrated));
+@
+
+
+9.9
+log
+@Added user/system timing.
+(Checked in by shirriff)
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 9.8 90/10/19 15:57:20 rab Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d120 3
+d318 13
+@
+
+
+9.8
+log
+@Changes for symmetry.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 9.7 90/10/11 13:03:53 kupfer Exp Locker: rab $ SPRITE (Berkeley)";
+d109 1
+d111 14
+d311 5
+d319 11
+@
+
+
+9.7
+log
+@Sched_DumpReadyQueue should take a ClientData.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 9.6 90/10/11 12:53:20 mendel Exp Locker: kupfer $ SPRITE (Berkeley)";
+d31 5
+d598 14
+d732 14
+d1233 6
+d1242 1
+@
+
+
+9.6
+log
+@Removed lint caused by function prototypes from the timer module.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 9.5 90/10/05 17:14:21 mendel Exp $ SPRITE (Berkeley)";
+d1246 1
+d1248 2
+a1249 1
+Sched_DumpReadyQueue()
+@
+
+
+9.5
+log
+@Added function prototypes and fixed include files ito use <>.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 9.4 90/06/21 17:45:36 mgbaker Exp Locker: mendel $ SPRITE (Berkeley)";
+d193 1
+a193 1
+Sched_ForgetUsage(time)
+d196 1
+@
+
+
+9.4
+log
+@New interface for cpu sched stats.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 9.3 90/05/01 12:24:05 jhh Exp $ SPRITE (Berkeley)";
+d14 12
+a25 10
+#include "sprite.h"
+#include "sched.h"
+#include "schedInt.h"
+#include "proc.h"
+#include "list.h"
+#include "timer.h"
+#include "sync.h"
+#include "sys.h"
+#include "dbg.h"
+#include "mach.h"
+d28 1
+a28 1
+#include "devCC.h"
+d123 5
+a127 3
+static Proc_ControlBlock *IdleLoop();
+static void QuantumEnd();
+static void RememberUsage();
+a1291 1
+    int                 numStats;
+@
+
+
+9.4.1.1
+log
+@Contains asplos statistics-gathering code.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 9.4 90/06/21 17:45:36 mgbaker Exp $ SPRITE (Berkeley)";
+a100 9
+/*
+ * Other temporary instrumentation needed for asplos paper statistics.
+ */
+typedef	struct	Sched_OverallTimes {
+    Timer_Ticks	kernelTime;
+    Timer_Ticks	userTime;
+} Sched_OverallTimes;
+
+Sched_OverallTimes	overallTimesPerProcessor[MACH_MAX_NUM_PROCESSORS];
+a101 1
+
+a285 6
+	    /*
+	     * Also do temporary statistics for asplos paper.
+	     */
+	    Timer_AddIntervalToTicks(overallTimesPerProcessor[cpu].kernelTime,
+		    interval,
+		    &(overallTimesPerProcessor[cpu].kernelTime));
+a288 6
+	    /*
+	     * Also do temporary statistics for asplos paper.
+	     */
+	    Timer_AddIntervalToTicks(overallTimesPerProcessor[cpu].userTime,
+		    interval,
+		    &(overallTimesPerProcessor[cpu].userTime));
+@
+
+
+9.3
+log
+@meaningless changes for the spur
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 9.2 89/10/30 18:01:19 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d1274 90
+@
+
+
+9.2
+log
+@added support for idling and restarting all processors while counting
+ticks.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 9.1 89/10/21 17:17:34 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d25 4
+d541 1
+a541 1
+     int	modeReg = Dev_CCIdleCounters(FALSE,0);
+d684 1
+a684 1
+	modeReg = Dev_CCIdleCounters(TRUE,modeReg); /* Restore perf counters. */
+@
+
+
+9.1
+log
+@All processors idle when counting idle ticks.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 8.21 89/08/30 13:03:49 jhh Exp $ SPRITE (Berkeley)";
+d652 1
+a652 1
+    #ifdef spur
+d654 1
+a654 1
+    #endif
+d742 1
+d749 4
+a752 1
+		 Sched_IdleProcessor(i);
+d766 2
+a767 2
+	     if (sched_ProcessorStatus[i] == SCHED_PROCESSOR_IDLE) {
+		 Sched_StartProcessor(i);
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 8.21 89/08/30 13:03:49 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d153 1
+d542 21
+a562 20
+    foundOne = FALSE;
+    procPtr = (Proc_ControlBlock *) List_First(queuePtr);
+    while (!List_IsAtEnd(queuePtr,(List_Links *) procPtr)) {
+	if (!(procPtr->schedFlags & SCHED_STACK_IN_USE) ||
+	     (procPtr->processor == cpu)) {
+	    foundOne = TRUE;
+	    break; 
+	}
+	if (procPtr->schedFlags & SCHED_STACK_IN_USE) {
+	    missedStack[cpu]++;
+	}
+	procPtr = (Proc_ControlBlock *)List_Next((List_Links *)procPtr);
+    }
+    if (foundOne) {
+	/*
+	 * We found a READY processor for us, break out of the
+	 * idle loop.
+	 */
+	onReadyQueue = TRUE;
+	foundInQueue[cpu]++;
+d564 1
+a564 1
+	Mach_InstCountOff(0);
+d566 2
+a567 1
+	goto exit;
+d590 2
+a591 1
+	    ((sched_ProcessorStatus[cpu] != SCHED_PROCESSOR_IDLE) ||
+d602 1
+a602 2
+	     * Look and see if there is anything for us in the staging
+	     * area.
+d619 4
+a622 4
+	     * Make sure queue is not empty. If there is a ready process
+	     * take a peek at it to insure that we can execute it. The
+	     * only condition preventing a processor from executing a
+	     * process is that its stack is being used by another processor.
+d624 20
+a643 7
+	    foundOne = FALSE;
+	    procPtr = (Proc_ControlBlock *) List_First(queuePtr);
+	    while (!List_IsAtEnd(queuePtr,(List_Links *) procPtr)) {
+		if (!(procPtr->schedFlags & SCHED_STACK_IN_USE) ||
+		     (procPtr->processor == cpu)) {
+		    foundOne = TRUE;
+		    break; 
+d645 11
+a655 2
+		if (procPtr->schedFlags & SCHED_STACK_IN_USE) {
+		    missedStack[cpu]++;
+a656 13
+	        procPtr = (Proc_ControlBlock *)List_Next((List_Links *)procPtr);
+	    }
+	    if (foundOne) {
+		/*
+ 		 * We found a READY processor for us, break out of the
+		 * idle loop.
+		 */
+		 onReadyQueue = TRUE;
+		 foundInQueue[cpu]++;
+#ifdef spur
+		Mach_InstCountOff(2);
+#endif
+		break;
+d718 7
+d741 1
+d745 6
+a750 1
+	sched_ProcessorStatus[cpu] = SCHED_PROCESSOR_IDLE;
+d760 7
+@
+
+
+8.21
+log
+@Added #ifdef SPUR
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 8.20 89/08/29 15:09:37 jhh Exp $ SPRITE (Berkeley)";
+@
+
+
+8.20
+log
+@added on deck circles, rewrote queue routines
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 8.19 89/08/17 17:31:22 jhh Exp $ SPRITE (Berkeley)";
+d561 1
+d563 1
+@
+
+
+8.19
+log
+@New timer interface
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 8.18 89/08/16 22:32:41 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d25 4
+d111 3
+d145 1
+a145 1
+    for(cpu = 1; cpu < MACH_MAX_NUM_PROCESSORS; cpu++) {
+d147 1
+d344 1
+d371 6
+a376 2
+	newProcPtr = Sched_InsertInQueue(curProcPtr, TRUE);
+	if (newProcPtr == curProcPtr) {
+d378 1
+a380 1
+	curProcPtr->state = PROC_READY;
+d386 2
+a387 2
+		(void) Sched_InsertInQueue(newProcPtr, FALSE);
+		newProcPtr = IdleLoop();
+d533 1
+a538 1
+    Sync_SemRegister(sched_MutexPtr);
+d541 24
+a579 1
+	Proc_SetCurrentProc((Proc_ControlBlock *) NIL);
+d583 2
+a584 1
+	if ((List_IsEmpty(queuePtr) == FALSE) &&
+d596 18
+d627 3
+d637 2
+d661 1
+d680 2
+a681 1
+    ((List_Links *)procPtr)->prevPtr->nextPtr =
+d683 1
+a683 1
+    ((List_Links *)procPtr)->nextPtr->prevPtr =
+d685 5
+a689 4
+/*
+    List_Remove((List_Links *)procPtr);
+*/
+    sched_Instrument.numReadyProcesses -= 1;
+d933 1
+a933 1
+    Sched_MoveInQueue(procPtr);
+@
+
+
+8.18
+log
+@added some code for counting instructions on the spur
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 8.17 89/06/07 12:26:58 douglis Exp $ SPRITE (Berkeley)";
+a76 22
+ * GATHER_INTERVAL is the amount of time in milliseconds between calls to
+ * Sched_GatherProcInfo when it is called by the timer module. 
+ */
+#define GATHER_INTERVAL 	TIMER_CALLBACK_INTERVAL
+static unsigned int gatherInterval;
+
+/*
+ * Pre-computed ticks to add when timer goes off.
+ */
+static Timer_Ticks	gatherTicks;
+
+/*
+ * QuantumInterval is the interval a process is allowed to run before 
+ * possibly being preempted. QUANTUM is the quantum length in milliseconds.
+ * QuantumTicks is the quantum interval expressed as the number of calls 
+ * to Sched_GatherProcessInfo before the quantum has expired.
+ */
+#define QUANTUM 100
+static unsigned int quantumInterval;
+static int quantumTicks;
+
+/*
+d100 8
+a140 10
+    quantumInterval = QUANTUM * timer_IntOneMillisecond;
+#ifdef TESTING
+    quantumInterval = timer_IntOneSecond;
+    quantumInterval = timer_IntOneHour;
+#endif /* TESTING */
+
+    gatherInterval	= GATHER_INTERVAL * timer_IntOneMillisecond;
+    Timer_AddIntervalToTicks(gatherTicks, gatherInterval, &gatherTicks);
+    quantumTicks	= quantumInterval / gatherInterval;
+
+d233 2
+a234 1
+Sched_GatherProcessInfo()
+d258 4
+a261 3
+	    Timer_AddTicks(sched_Instrument.processor[cpu].noProcessRunning, 
+		      gatherTicks,
+		      &(sched_Instrument.processor[cpu].noProcessRunning));
+d271 1
+a271 1
+	    Timer_AddTicks(curProcPtr->kernelCpuUsage.ticks, gatherTicks,
+d274 1
+a274 1
+	    Timer_AddTicks(curProcPtr->userCpuUsage.ticks, gatherTicks,
+d282 1
+a282 1
+	curProcPtr->recentUsage += gatherInterval;
+d358 1
+a358 1
+	    curProcPtr->schedQuantumTicks = quantumTicks;
+d364 1
+a364 1
+	    curProcPtr->schedQuantumTicks = quantumTicks;
+d402 1
+a402 1
+    newProcPtr->schedQuantumTicks = quantumTicks;
+@
+
+
+8.17
+log
+@when hitting non-ready process in ready queue, do a manual DBG_CALL to
+try to avoid deadlocking.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 8.16 89/03/31 12:09:31 mgbaker Exp Locker: douglis $ SPRITE (Berkeley)";
+d550 3
+d577 3
+d601 3
+d606 4
+d624 3
+d799 4
+d830 3
+d861 3
+d921 3
+@
+
+
+8.16
+log
+@Eighteenth sun4 Kernel.  It executes a signal now.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 8.15 89/03/15 18:17:46 jhh Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d617 2
+d621 2
+a622 1
+	panic("Non-ready process found in ready queue.\n");
+@
+
+
+8.15
+log
+@panic if you enter the idle loop with interrupts off
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 8.14 89/02/19 22:11:04 jhh Exp $ SPRITE (Berkeley)";
+d551 1
+@
+
+
+8.14
+log
+@Changes due to lock registration
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 8.13 89/02/07 17:37:11 mendel Exp $ SPRITE (Berkeley)";
+d551 9
+@
+
+
+8.13
+log
+@Turn off the perf counters in the spur idle loop.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 8.12 89/01/11 10:21:07 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d73 1
+a73 1
+Sync_Semaphore sched_Mutex = SYNC_SEM_INIT_STATIC("sched_Mutex");
+d168 1
+d547 1
+@
+
+
+8.12
+log
+@Added Sched_IdleProcessor and Sched_StartProcessor
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 8.11 89/01/05 15:44:47 mendel Exp $ SPRITE (Berkeley)";
+d541 4
+d598 4
+@
+
+
+8.11
+log
+@Changed sched_Instrument and STACK_IN_USE flag.  Modified to look down
+ready queue when first process has STACK_IN_USE.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 8.10 89/01/03 10:01:40 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d116 4
+d149 6
+a371 1
+
+a408 1
+
+d540 1
+d550 3
+a552 1
+	if (List_IsEmpty(queuePtr) == FALSE) {
+d642 3
+d646 1
+a646 1
+    printf("Idling for 5 seconds...");
+d651 2
+a652 1
+    sched_Instrument.idleTicksPerSecond = lowTicks / 5;
+d885 202
+@
+
+
+8.10
+log
+@Changed SCHED_STACK_IN_USE to be valid even when the process is not in
+the idle loop.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 8.9 88/12/29 17:15:53 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d270 3
+a272 2
+	    Timer_AddTicks(sched_Instrument.noProcessRunning[cpu], gatherTicks,
+		           &(sched_Instrument.noProcessRunning[cpu]));
+d350 1
+a350 1
+    sched_Instrument.numContextSwitches[cpu]++;
+d425 1
+a425 1
+    sched_Instrument.numFullCS[cpu]++;
+a528 1
+    register Proc_ControlBlock	*lastProcPtr;
+d531 1
+a534 7
+    /*
+     * Mark in the process control block for the current process that it's 
+     * stack is still in use. This prevents the scheduler from scheduling
+     * this process (and stack) to another processor.  
+     */
+    lastProcPtr = Proc_GetCurrentProc();
+    lastProcPtr->schedFlags |= SCHED_STACK_IN_USE;
+d548 4
+a551 1
+	     * Make sure queue is not empty.
+d553 3
+a555 8
+	    if (List_IsEmpty(queuePtr) == FALSE) {
+		/*
+		 * There is a ready process. Take a peek at it to insure that
+		 * we can execute it.  The only condition preventing a 
+		 * processor from executing a process is if its stack is
+		 * being used by another processor in the idle loop.
+		 */
+		procPtr = (Proc_ControlBlock *) List_First(queuePtr);
+d557 2
+a558 1
+		           (procPtr == lastProcPtr)) {
+d561 1
+d563 7
+d575 4
+a578 3
+	if (sched_Instrument.idleTicksLow[cpu] == (unsigned) 0xffffffff) {
+	    sched_Instrument.idleTicksLow[cpu] = 0;
+	    sched_Instrument.idleTicksOverflow[cpu]++;
+d580 1
+a580 1
+	    sched_Instrument.idleTicksLow[cpu]++;
+d633 1
+a633 1
+    lowTicks = sched_Instrument.idleTicksLow[cpu];
+d635 1
+a635 1
+    lowTicks = sched_Instrument.idleTicksLow[cpu] - lowTicks;
+d707 1
+a707 1
+	       sched_Instrument.numContextSwitches[i]);
+d709 1
+a709 1
+	       sched_Instrument.numFullCS[i]);
+d711 2
+a712 2
+	       sched_Instrument.numInvoluntarySwitches[i]);
+	Timer_TicksToTime(sched_Instrument.noProcessRunning[i], &tmp);
+d742 2
+a743 1
+    sched_Instrument.numInvoluntarySwitches[Mach_GetProcessorNumber()]++;
+@
+
+
+8.9
+log
+@Changed the call to Timer_RescheduleRoutine to use Timer_ScheduleRoutine.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 8.8 88/12/21 17:51:03 douglis Exp Locker: mendel $ SPRITE (Berkeley)";
+d430 2
+a565 1
+		    lastProcPtr->schedFlags &= ~SCHED_STACK_IN_USE;
+d766 1
+d770 1
+@
+
+
+8.8
+log
+@don't set the PROC_DONT_MIGRATE flag; it's now used fo rsomething else
+and was never looked at before anyway.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 8.7 88/12/19 14:25:07 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d220 1
+a220 1
+    Timer_RescheduleRoutine(&forgetUsageElement, TRUE);
+@
+
+
+8.7
+log
+@Patched bug in last mod.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 8.6 88/12/09 08:51:10 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d854 1
+d858 1
+@
+
+
+8.6
+log
+@Added SCHED_STACK_IN_USE flag to prevent two processors from sharing the
+same kernel stack. 
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 8.5 88/12/04 12:27:28 ouster Exp Locker: mendel $ SPRITE (Berkeley)";
+d377 1
+a377 1
+	}
+d379 8
+d562 1
+a562 1
+		if (~(procPtr->schedFlags & SCHED_STACK_IN_USE) ||
+a564 1
+
+@
+
+
+8.5
+log
+@Eliminated unneeded include file.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 8.4 88/11/30 16:18:50 douglis Exp Locker: ouster $ SPRITE (Berkeley)";
+d518 2
+a520 1
+    register int cpu;
+d524 7
+d547 13
+a559 1
+		break; 
+a572 1
+    procPtr = (Proc_ControlBlock *) List_First(queuePtr);
+@
+
+
+8.4
+log
+@fixed a lingering use of old semaphore init macro.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 8.3 88/11/22 10:44:02 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+a21 1
+#include "byte.h"
+@
+
+
+8.3
+log
+@this is FD checking in for JHH.  Changed to conform to MASTER_*LOCK
+taking a ptr. Checking in prior to changing initialization call.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 8.2 88/11/18 15:28:52 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d74 1
+a74 1
+Sync_Semaphore sched_Mutex = SYNC_SEMAPHORE_STATIC("sched_Mutex");
+@
+
+
+8.2
+log
+@deleted sched_DoContextSwitch -- it is no longer needed because 
+the interrupt handler checks the specialHandling field
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 8.1 88/11/12 18:06:40 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d74 3
+a76 2
+int sched_Mutex = 0;
+ 
+d200 1
+a200 1
+    MASTER_LOCK(sched_Mutex);
+d223 1
+a223 1
+    MASTER_UNLOCK(sched_Mutex);
+d256 1
+a256 1
+    MASTER_LOCK(sched_Mutex);
+d312 1
+a312 1
+    MASTER_UNLOCK(sched_Mutex);
+d524 1
+a524 1
+    MASTER_UNLOCK(sched_Mutex);
+d535 1
+a535 1
+	    MASTER_LOCK(sched_Mutex);
+d542 1
+a542 1
+	    MASTER_UNLOCK(sched_Mutex);
+d559 1
+a559 1
+     	MASTER_UNLOCK(sched_Mutex);
+d561 1
+a561 1
+	MASTER_LOCK(sched_Mutex);
+d713 1
+a713 1
+    MASTER_LOCK(sched_Mutex);
+d716 1
+a716 1
+    MASTER_UNLOCK(sched_Mutex);
+d740 1
+a740 1
+    MASTER_LOCK(sched_Mutex);
+d742 1
+a742 1
+    MASTER_UNLOCK(sched_Mutex);
+d769 1
+a769 1
+    MASTER_UNLOCK(sched_Mutex);
+d795 1
+a795 1
+    MASTER_LOCK(sched_Mutex);
+d798 1
+a798 1
+    MASTER_UNLOCK(sched_Mutex);
+d826 1
+a826 1
+    MASTER_UNLOCK(sched_Mutex);
+d872 1
+a872 1
+	MASTER_LOCK(sched_Mutex);
+d880 1
+a880 1
+	MASTER_UNLOCK(sched_Mutex);
+@
+
+
+8.1
+log
+@fixed problem with dumping ready queue. Now we take a snapshot of the
+queue before printing it.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 8.0 88/11/11 18:37:08 douglis Stable Locker: jhh $ SPRITE (Berkeley)";
+a106 6
+ * Sched_DoContextSwitch is set to force an involuntary context switch.
+ * The context switch occurs the next time the process traps.
+ */
+int sched_DoContextSwitch = 0;
+
+/*
+a640 8
+    if (!mach_KernelMode) {
+	/*
+	 * FIX ME - either get rid of this flag, or have one per processor.
+	 * The spur port doesn't even use this thing, so maybe it can go 
+	 * away.
+	 */
+	sched_DoContextSwitch = TRUE;
+    }
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 6.6 88/10/30 21:06:42 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d122 1
+d873 4
+d881 4
+a885 1
+	printf("\n");
+d887 5
+a891 1
+	    Proc_DumpPCB((Proc_ControlBlock *) itemPtr);
+d894 6
+@
+
+
+6.6
+log
+@multiprocessor port
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/sched/RCS/schedule.c,v 6.5 88/10/07 14:44:50 mlgray Exp Locker: jhh $ SPRITE (Berkeley)";
+@
+
+
+6.5
+log
+@Changed reference to dev module to timer module.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: schedule.c,v 6.4 88/10/07 14:25:59 mlgray Exp $ SPRITE (Berkeley)";
+d160 1
+a160 1
+    Byte_Zero(sizeof(sched_Instrument), (Address) &sched_Instrument);
+a246 2
+ *  FIXME:
+ *	Everything should understand multiprocessors: instrumentation, etc.
+d275 2
+a276 2
+	    Timer_AddTicks(sched_Instrument.noProcessRunning, gatherTicks,
+		           &(sched_Instrument.noProcessRunning));
+d351 1
+d353 2
+a354 1
+    sched_Instrument.numContextSwitches++;
+d401 1
+d421 1
+a421 1
+    sched_Instrument.numFullCS++;
+d524 1
+d526 1
+d528 3
+a530 1
+    while (List_IsEmpty(queuePtr)) {
+d532 1
+a532 2
+	 * Wait for a process to become runnable.  Turn on interrupts, then
+	 * turn off interrupts again and see if someone became runnable.
+d534 14
+a547 1
+	Proc_SetCurrentProc((Proc_ControlBlock *) NIL);
+d549 1
+a549 1
+	 * Count Idle ticks.  This is uni-processor code.
+d551 3
+a553 3
+	if (sched_Instrument.idleTicksLow == (unsigned) 0xffffffff) {
+	    sched_Instrument.idleTicksLow = 0;
+	    sched_Instrument.idleTicksOverflow++;
+d555 1
+a555 1
+	    sched_Instrument.idleTicksLow++;
+a556 2
+	MASTER_UNLOCK(sched_Mutex);
+	MASTER_LOCK(sched_Mutex);
+d560 6
+a565 1
+	Sys_Panic(SYS_FATAL, "Non-ready process found in ready queue.\n");
+d584 2
+d587 3
+d591 1
+a591 1
+ *	A pointer to the next process to run.
+d603 1
+d605 2
+d608 2
+a609 2
+    Sys_Printf("Idling for 5 seconds...");
+    lowTicks = sched_Instrument.idleTicksLow;
+d611 2
+a612 2
+    lowTicks = sched_Instrument.idleTicksLow - lowTicks;
+    Sys_Printf(" %d ticks\n", lowTicks);
+d647 5
+d654 10
+d685 15
+a699 9
+    Sys_Printf("Sched Statistics\n");
+    Sys_Printf("numContextSwitches = %d\n",sched_Instrument.numContextSwitches);
+    Sys_Printf("numFullSwitches    = %d\n",sched_Instrument.numFullCS);
+    Sys_Printf("numInvoluntary     = %d\n",
+				      sched_Instrument.numInvoluntarySwitches);
+/*    Sys_Printf("numIdles           = %d\n",sched_Instrument.numIdles); */
+    Timer_TicksToTime(sched_Instrument.noProcessRunning, &tmp);
+    Sys_Printf("Idle Time          = %d.%06d seconds\n", 
+				      tmp.seconds, tmp.microseconds);
+d726 1
+a726 1
+    sched_Instrument.numInvoluntarySwitches++;
+d849 34
+@
+
+
+6.4
+log
+@removed #include devTimer.h
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: schedule.c,v 6.3 88/08/26 11:22:26 douglis Exp $ SPRITE (Berkeley)";
+d80 1
+a80 1
+#define GATHER_INTERVAL 	DEV_CALLBACK_INTERVAL
+@
+
+
+6.3
+log
+@fixed the endif's.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: schedule.c,v 6.2 88/08/25 12:10:25 nelson Exp $ SPRITE (Berkeley)";
+a18 1
+#include "devTimer.h"
+@
+
+
+6.2
+log
+@Changed to use new cpu usage time format.
+@
+text
+@d11 2
+a12 2
+static char rcsid[] = "$Header: schedule.c,v 6.1 88/08/23 16:55:54 douglis Exp $ SPRITE (Berkeley)";
+#endif not lint
+d155 1
+a155 1
+#endif TESTING
+@
+
+
+6.1
+log
+@Got rid of some lint.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: schedule.c,v 6.0 88/08/11 12:26:22 brent Stable $ SPRITE (Berkeley)";
+d278 2
+a279 2
+	    Time_Add(sched_Instrument.noProcessRunning, gatherTicks,
+		     &(sched_Instrument.noProcessRunning));
+d289 2
+a290 2
+	    Time_Add(curProcPtr->kernelCpuUsage, gatherTicks,
+		     &(curProcPtr->kernelCpuUsage));
+d292 2
+a293 2
+	    Time_Add(curProcPtr->userCpuUsage, gatherTicks,
+		     &(curProcPtr->userCpuUsage));
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: schedule.c,v 5.8 88/08/05 09:04:43 ouster Exp $ SPRITE (Berkeley)";
+d310 1
+a310 1
+	    if (curProcPtr->schedQuantumTicks > 0) {
+d583 1
+a583 1
+    Sync_WaitTime(time);
+@
+
+
+5.8
+log
+@Increased half-life of scheduling from about 1.6 sec. to about
+5.1 sec.  Also eliminated business about charging process for
+.5 timer interval for any time slice, no matter how short.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: schedule.c,v 5.7 88/07/31 16:47:22 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+5.7
+log
+@Replaced floating point divide with equivalent integer divide in 
+Sched_TimeTicks.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: schedule.c,v 5.6 88/06/26 09:56:42 ouster Exp $ SPRITE (Berkeley)";
+d29 10
+a38 3
+ *  as much as other processes deserve to be run first. As a process runs,
+ *  its priority will drop, possibly to a level where another process
+ *  with a better priority will preempt it.
+d40 8
+a47 10
+ *  The priority of a process is based on how much CPU time the process has
+ *  obtained recently. A smoothed average of CPU usage is determined by 
+ *  1) adding the CPU time when a process completes a quantum or goes to sleep 
+ *  and 2) forgetting a portion of the smoothed average once a second.
+ *  The formula is:
+ *
+ *  remembering: new average = 
+ * 		 old average + ((CPU usage * REMEMBER_FACTOR)/DENOMINATOR)
+ *
+ *  forgetting:  new average = (old average * FORGET_FACTOR)/DENOMINATOR
+d49 3
+a51 4
+ 
+#define REMEMBER_FACTOR		3
+#define DENOMINATOR		8
+#define FORGET_FACTOR		(DENOMINATOR - REMEMBER_FACTOR)
+a53 1
+ 
+a55 2
+ *        half-life  = ln 2 / (REMEMBER_FACTOR/DENOMINATOR)   or
+ *        half-life ~= (.69 * DENOMINATOR) / REMEMBER_FACTOR
+d57 1
+a57 7
+ *  When a process commences execution, its CPU average will be 0 (i.e.
+ *  the highest priority) so it will run. If the process is compute-intensive, 
+ *  the average will increase until it is preempted by a higher priority
+ *  process. While the process is not running, its priority will increase
+ *  because part of the CPU average is forgotten at regular intervals.
+ *  If the process is I/O-intensive, it will never use much of the CPU, its
+ *  usage will be low and its priority will therefore remain high.
+d59 10
+a68 4
+ *  The Sched_ForgetUsage routine adjusts scheduling priorities for all
+ *  processes in the system once a second by forgiving part of the
+ *  smoothed CPU average.  The recording of CPU usage is performed when
+ *  the process experiences a quantum end or goes to sleep in Sync_Wait.
+a87 8
+/*
+ * It is possible that a process might run and not be charged for any
+ * CPU usage. This happens when the process starts and stops between
+ * calls to Sched_GatherProcesseInfo. To make sure a process is charged
+ * for some CPU use, RememberUsage() uses the value noRecentUsageCharge 
+ * when calculating weighted and unweigthed usage.
+ */
+static unsigned int noRecentUsageCharge;
+d156 1
+a156 1
+    
+a158 1
+    noRecentUsageCharge	= ((gatherInterval / 2) * REMEMBER_FACTOR) /DENOMINATOR;
+d217 1
+a217 1
+		(procPtr->unweightedUsage * FORGET_FACTOR) / DENOMINATOR;
+d220 1
+a220 1
+		(procPtr->weightedUsage * FORGET_FACTOR) / DENOMINATOR;
+a456 1
+    register unsigned int recentUsage;
+a464 3
+     *
+     *  The upper bound on the unweighted usage value is equal to the
+     *  interval between calls to Sched_ForgetUsage.
+d467 1
+a467 1
+    recentUsage = (curProcPtr->recentUsage * REMEMBER_FACTOR) /DENOMINATOR;
+a469 12
+     * Make sure the process gets charged for some CPU usage. We can't
+     * determine exactly how much CPU usage the process has accumulated, so
+     * charge it some value that's less than the full value (gatherInterval).
+     */
+
+    if (recentUsage == 0) {
+	recentUsage = noRecentUsageCharge;
+    }
+
+    curProcPtr->unweightedUsage += recentUsage;
+
+    /*
+d479 1
+a479 1
+     *  multiple of 2 before it is added to the weighted  usage.
+d488 1
+a488 1
+	    curProcPtr->weightedUsage += recentUsage >> billingRate;
+d491 1
+a491 1
+	curProcPtr->weightedUsage += recentUsage << -(billingRate);
+@
+
+
+5.6
+log
+@Improper use of Proc_GetRunningProc macro.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: schedule.c,v 5.5 88/05/05 17:59:36 nelson Exp $ SPRITE (Berkeley)";
+d610 1
+a610 1
+    sched_Instrument.idleTicksPerSecond = (int)((double)lowTicks / 5.);
+@
+
+
+5.5
+log
+@Handles move of functionality from sys to mach.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: schedule.c,v 5.4 88/05/04 17:21:13 nelson Exp $ SPRITE (Berkeley)";
+d279 1
+a279 1
+	curProcPtr = Proc_GetCurrentProc(cpu);
+@
+
+
+5.4
+log
+@Handles new mach module stuff.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: schedule.c,v 5.3 88/04/13 11:28:14 ouster Exp $ SPRITE (Berkeley)";
+d277 1
+a277 1
+    for (cpu = 0; cpu < sys_NumProcessors; cpu++) {
+d296 1
+a296 1
+	if (Sys_ProcessorState(cpu) == SYS_KERNEL) {
+d365 1
+a365 1
+    curProcPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+d402 1
+a402 1
+	newProcPtr = IdleLoop(Sys_GetProcessorNumber());
+d410 1
+a410 1
+    Proc_SetCurrentProc(Sys_GetProcessorNumber(), newProcPtr);
+d544 1
+a544 2
+IdleLoop(myProcessor)
+    int myProcessor;
+d555 1
+a555 1
+	Proc_SetCurrentProc(myProcessor, (Proc_ControlBlock *) NIL);
+d643 1
+a643 1
+    if (!sys_KernelMode) {
+d815 1
+a815 1
+    procPtr = Proc_GetCurrentProc(Sys_GetProcessorNumber());
+@
+
+
+5.3
+log
+@Changes to make kernel calls much faster.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: schedule.c,v 5.2 88/03/08 16:10:57 nelson Exp $ SPRITE (Berkeley)";
+a21 1
+#include "vmMach.h"
+d25 1
+a25 2
+#include "sunMon.h"
+#include "machine.h"
+d435 1
+a435 2
+    dbgMaxStackAddr = newProcPtr->stackStart + mach_KernStackSize;
+    VmMach_ContextSwitch(curProcPtr, newProcPtr);
+d739 1
+a739 1
+ * Sched_StartProcess --
+d741 3
+a743 3
+ *	Start a process by unlocking the master lock and returning.  The
+ *	stack is arranged so that this procedure will return into the
+ *	procedure that is to be invoked.
+a753 1
+
+d755 2
+a756 1
+Sched_StartProcess()
+d759 2
+d809 3
+a811 1
+Sched_StartUserProc()
+a822 12
+     * Disable interrupts.  Note we don't use the macro DISABLE_INTR because
+     * there is an implicit enable interrupt on return to user space.
+     */
+    Sys_DisableIntr();
+
+    /*
+     * We need the user proc to return the return code that indicates that
+     * this is the child and not the parent.
+     */
+    procPtr->genRegs[D0] = PROC_CHILD_PROC;
+
+    /*
+d825 1
+a825 2
+    Proc_RunUserProc(procPtr->genRegs, procPtr->progCounter, Proc_Exit,
+		     procPtr->stackStart + mach_ExecStackOffset);
+@
+
+
+5.2
+log
+@More optimizations to the context switching code.  Changed
+the timer to compute in ticks and not seconds.  Also removed
+a constant computation from the interval timer scheduling routine...
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: schedule.c,v 5.1 87/12/12 16:40:25 nelson Exp $ SPRITE (Berkeley)";
+d646 1
+@
+
+
+5.1
+log
+@Moved call to set up the context out of the master lock so that it could
+be monitored.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: schedule.c,v 5.0 87/08/11 10:49:43 sprite Exp $ SPRITE (Berkeley)";
+d86 4
+d167 1
+d267 1
+a267 1
+    int cpu;
+d288 2
+a289 3
+	    Timer_AddIntervalToTicks(sched_Instrument.noProcessRunning, 
+				       gatherInterval,
+				       &(sched_Instrument.noProcessRunning));
+d299 2
+a300 3
+	    Timer_AddIntervalToTicks(curProcPtr->kernelCpuUsage, 
+				    gatherInterval,
+				    &(curProcPtr->kernelCpuUsage));
+d302 2
+a303 3
+	    Timer_AddIntervalToTicks(curProcPtr->userCpuUsage, 
+				    gatherInterval,
+				    &(curProcPtr->userCpuUsage));
+d359 1
+a359 1
+    Proc_State state;			/* new state of current process */
+a363 1
+    int 			myProcessor;	/* Processor number. */
+d367 1
+a367 7
+    myProcessor = Sys_GetProcessorNumber();
+
+    curProcPtr = Proc_GetCurrentProc(myProcessor);
+    if (curProcPtr == (Proc_ControlBlock *) NIL) {
+	Sys_Panic(SYS_FATAL, "Current process is NIL!!\n");
+    }
+
+d374 1
+a374 4
+     * Charge the current process for the CPU usage since the last call
+     * to Sched_GatherProcessInfo.  This is done primarily to keep user
+     * processes from hogging the CPU by sleeping and not being
+     * charged for any usage, then waking up again immediately.
+a377 5
+    /*
+     * If the current process is PROC_READY, add it to the ready queue.
+     * Also, record what type of context switch this is.
+     */
+    curProcPtr->state = state;
+d379 4
+a382 1
+	Sched_MoveInQueue(curProcPtr);
+d384 21
+a404 2
+    } else if (state == PROC_WAITING) {
+	curProcPtr->numWaitEvents++; 
+a406 5
+    /*
+     * Drop into the idle loop and come out with a runnable process.
+     * This procedure exists to try and capture idle time when profiling.
+     */
+    newProcPtr = IdleLoop(myProcessor);
+d412 1
+a412 1
+    Proc_SetCurrentProc(myProcessor, newProcPtr);
+d438 1
+a438 1
+    Mach_ContextSwitch(newProcPtr->saveRegs, curProcPtr->saveRegs);
+d550 2
+a551 1
+    register Proc_ControlBlock *newProcPtr;
+d553 2
+a554 2
+    newProcPtr = Sched_GetRunnableProcess();
+    while (newProcPtr == (Proc_ControlBlock *) NIL) {
+a570 1
+	newProcPtr = Sched_GetRunnableProcess();
+d572 13
+a584 1
+    return(newProcPtr);
+a707 1
+    VmMach_SetupContext(Proc_GetCurrentProc(Sys_GetProcessorNumber()));
+a733 1
+    VmMach_SetupContext(Proc_GetCurrentProc(Sys_GetProcessorNumber()));
+a760 1
+    VmMach_SetupContext(Proc_GetCurrentProc(Sys_GetProcessorNumber()));
+a814 1
+    VmMach_SetupContext(procPtr);
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: schedule.c,v 4.1 87/05/07 20:03:02 douglis Exp $ SPRITE (Berkeley)";
+d360 1
+a360 1
+					      	 * process. */
+d433 1
+a433 2
+    dbgMaxStackAddr = newProcPtr->stackStart + 
+			MACH_NUM_STACK_PAGES  * VM_PAGE_SIZE;
+a434 1
+    Vm_SetupContext(curProcPtr);
+d692 1
+d719 1
+a745 1
+    Vm_SetupContext(Proc_GetCurrentProc(Sys_GetProcessorNumber()));
+d747 1
+d800 1
+d802 1
+a803 3
+    Vm_SetupContext(procPtr);
+    MASTER_UNLOCK(sched_Mutex);
+
+d824 1
+a824 1
+		     procPtr->stackStart + MACH_EXEC_STACK_OFFSET);
+@

@@ -1,0 +1,68 @@
+
+
+
+Tcl_SetVar        Tcl Command Language Library         Tcl_SetVar
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tcl_SetVar - change the value of a Tcl variable
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttccll..hh>>
+
+     TTccll__SSeettVVaarr(_i_n_t_e_r_p, _v_a_r_N_a_m_e, _n_e_w_V_a_l_u_e, _g_l_o_b_a_l)
+
+AARRGGUUMMEENNTTSS
+     Tcl_Interp   *_i_n_t_e_r_p   (in)      Interpreter  in  which   to
+                                      change variable.
+
+     char         *_v_a_r_N_a_m_e  (in)      Name of variable.
+
+     char         *_n_e_w_V_a_l_u_e (in)      New value for _v_a_r_N_a_m_e
+
+     int          _g_l_o_b_a_l    (in)      If non-zero, then insist on
+                                      interpreting  _v_a_r_N_a_m_e  as a
+                                      global variable, regardless
+                                      of   whether   a  procedure
+                                      invocation is in progress.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This is a utility procedure used by many  of  the  Tcl  com-
+     mands.   It  changes the value of variable _v_a_r_N_a_m_e in inter-
+     preter _i_n_t_e_r_p, such that future  calls  to  TTccll__GGeettVVaarr  will
+     return  _n_e_w_V_a_l_u_e  as  the value of _v_a_r_N_a_m_e.  TTccll__SSeettVVaarr uses
+     the same rules for selecting a global or local  variable  as
+     TTccll__GGeettVVaarr.   If  _v_a_r_N_a_m_e  doesn't already exist, then a new
+     variable is created.  TTccll__SSeettVVaarr  copies  both  _v_a_r_N_a_m_e  and
+     _n_e_w_V_a_l_u_e  into  its  own  private storage, so the caller may
+     change  the  contents  of  these  strings  after  TTccll__SSeettVVaarr
+     returns without affecting the variable's value.
+
+
+KKEEYYWWOORRDDSS
+     interpreter, variable
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  November 26, 1989                  1
+
+
+

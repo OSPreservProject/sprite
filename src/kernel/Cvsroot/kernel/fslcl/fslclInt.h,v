@@ -1,0 +1,664 @@
+head     9.4;
+branch   ;
+access   ;
+symbols  ds3100:9.4 sun3:9.4 sprited:9.3.1 sun4nw:9.4 symm:9.4 spur:9.4 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.4
+date     91.09.10.18.38.47;  author rab;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     91.02.01.16.32.04;  author shirriff;  state Exp;
+branches 9.3.1.1;
+next     9.2;
+
+9.2
+date     90.10.08.15.37.27;  author mendel;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.09.21.10.39.58;  author brent;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.07.44;  author douglis;  state Stable;
+branches ;
+next     8.3;
+
+8.3
+date     89.08.21.15.27.31;  author mendel;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.08.15.18.42.49;  author rab;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.02.04.14.12.58;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.20.10;  author douglis;  state Stable;
+branches ;
+next     7.0;
+
+7.0
+date     88.11.07.14.47.30;  author brent;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.10.04.09.04.25;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.16.14;  author brent;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.04.10.33.54;  author brent;  state Exp;
+branches ;
+next     ;
+
+9.3.1.1
+date     91.11.15.16.18.02;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Definitions for local naming procedures
+@
+
+
+9.4
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@/*
+ * fslclInt.h --
+ *
+ *	Definitions of the parameters required for Local Domain operations.
+ *
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/fslcl/RCS/fslclInt.h,v 9.3 91/02/01 16:32:04 shirriff Exp Locker: rab $ SPRITE (Berkeley)
+ */
+
+#ifndef _FSLCLINT
+#define _FSLCLINT
+
+#include <fscache.h>
+#include <fsio.h>
+#include <fsioFile.h>
+
+#include <stdio.h>
+
+
+/*
+ * Image of a new directory.
+ */
+extern char *fslclEmptyDirBlock;
+
+
+/*
+ * Declarations for the Local Domain lookup operations called via
+ * the switch in Fsprefix_LookupOperation.  These are called with a pathname.
+ */
+extern ReturnStatus FslclExport _ARGS_((Fs_HandleHeader *hdrPtr, int clientID,
+		Fs_FileID *ioFileIDPtr, int *dataSizePtr, 
+		ClientData *clientDataPtr));
+extern ReturnStatus FslclOpen _ARGS_((Fs_HandleHeader *prefixHandlePtr,
+		char *relativeName, Address argsPtr, Address resultsPtr, 
+		Fs_RedirectInfo **newNameInfoPtrPtr));
+extern ReturnStatus FslclLookup _ARGS_((Fs_HandleHeader *prefixHdrPtr, 
+		char *relativeName, Fs_FileID *rootIDPtr, int useFlags,
+		int type, int clientID, Fs_UserIDs *idPtr, int permissions, 
+		int fileNumber, Fsio_FileIOHandle **handlePtrPtr, 
+		Fs_RedirectInfo **newNameInfoPtrPtr));
+extern ReturnStatus FslclGetAttrPath _ARGS_((Fs_HandleHeader *prefixHandlePtr,
+		char *relativeName, Address argsPtr, Address resultsPtr,
+		Fs_RedirectInfo **newNameInfoPtrPtr));
+extern ReturnStatus FslclSetAttrPath _ARGS_((Fs_HandleHeader *prefixHandlePtr,
+		char *relativeName, Address argsPtr, Address resultsPtr,
+		Fs_RedirectInfo **newNameInfoPtrPtr));
+extern ReturnStatus FslclMakeDevice _ARGS_((Fs_HandleHeader *prefixHandle, 
+		char *relativeName, Address argsPtr, Address resultsPtr,
+		Fs_RedirectInfo **newNameInfoPtrPtr));
+extern ReturnStatus FslclMakeDir _ARGS_((Fs_HandleHeader *prefixHandle, 
+		char *relativeName, Address argsPtr, Address resultsPtr, 
+		Fs_RedirectInfo **newNameInfoPtrPtr));
+extern ReturnStatus FslclRemove _ARGS_((Fs_HandleHeader *prefixHandle, 
+		char *relativeName, Address argsPtr, Address resultsPtr, 
+		Fs_RedirectInfo **newNameInfoPtrPtr));
+extern ReturnStatus FslclRemoveDir _ARGS_((Fs_HandleHeader *prefixHandle, 
+		char *relativeName, Address argsPtr, Address resultsPtr, 
+		Fs_RedirectInfo **newNameInfoPtrPtr));
+extern ReturnStatus FslclRename _ARGS_((Fs_HandleHeader *prefixHandle1, 
+		char *relativeName1, Fs_HandleHeader *prefixHandle2, 
+		char *relativeName2, Fs_LookupArgs *lookupArgsPtr, 
+		Fs_RedirectInfo **newNameInfoPtrPtr, Boolean *name1ErrorPtr));
+extern ReturnStatus FslclHardLink _ARGS_((Fs_HandleHeader *prefixHandle1, 
+		char *relativeName1, Fs_HandleHeader *prefixHandle2,
+		char *relativeName2, Fs_LookupArgs *lookupArgsPtr, 
+		Fs_RedirectInfo **newNameInfoPtrPtr, Boolean *name1ErrorPtr));
+
+/*
+ * Declarations for the Local Domain attribute operations called via
+ * the fsAttrOpsTable switch.  These are called with a fileID.
+ */
+extern ReturnStatus FslclGetAttr _ARGS_((Fs_FileID *fileIDPtr, int clientID, 
+		Fs_Attributes *attrPtr));
+extern ReturnStatus FslclSetAttr _ARGS_((Fs_FileID *fileIDPtr, 
+		Fs_Attributes *attrPtr, Fs_UserIDs *idPtr, int flags));
+
+extern void FslclAssignAttrs _ARGS_((Fsio_FileIOHandle *handlePtr,
+		Boolean isExeced, Fs_Attributes *attrPtr));
+
+#endif /* _FSLCLINT */
+@
+
+
+9.3
+log
+@Added clientID to attribute tracing.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/fslcl/RCS/fslclInt.h,v 9.2 90/10/08 15:37:27 mendel Exp Locker: shirriff $ SPRITE (Berkeley)
+a79 1
+#ifdef SOSP91
+a80 6
+		Fs_Attributes *attrPtr, int hostID, int userID));
+extern ReturnStatus FslclSetAttr _ARGS_((Fs_FileID *fileIDPtr, 
+		Fs_Attributes *attrPtr, Fs_UserIDs *idPtr, int flags, int
+		clientID, int hostID, int userID));
+#else
+extern ReturnStatus FslclGetAttr _ARGS_((Fs_FileID *fileIDPtr, int clientID, 
+a83 1
+#endif
+@
+
+
+9.3.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/fslcl/fslclInt.h,v 9.3 91/02/01 16:32:04 shirriff Exp $ SPRITE (Berkeley)
+@
+
+
+9.2
+log
+@Fixed includes to use <> rather than "", added functions prototypes, and
+removed lint.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/fs.mendel/RCS/fslclInt.h,v 1.1 90/01/16 17:12:09 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d80 1
+d82 6
+d91 1
+@
+
+
+9.1
+log
+@Changed private FslclDirEntry to exported Fslcl_DirEntry
+FsDirRecLength => Fslcl_DirRecLength
+@
+text
+@d6 8
+a13 2
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+d15 1
+a15 2
+ *
+ * $Header: /sprite/src/kernel/fslcl/RCS/fslclInt.h,v 9.0 89/09/12 15:07:44 douglis Stable Locker: brent $ SPRITE (Berkeley)
+d18 6
+a23 2
+#ifndef _FSLOCALDOMAIN
+#define _FSLOCALDOMAIN
+d25 1
+a25 2
+#include "fscache.h"
+#include "fsio.h"
+d38 37
+a74 11
+ReturnStatus FslclExport();
+ReturnStatus FslclOpen();
+ReturnStatus FslclLookup();
+ReturnStatus FslclGetAttrPath();
+ReturnStatus FslclSetAttrPath();
+ReturnStatus FslclMakeDevice();
+ReturnStatus FslclMakeDir();
+ReturnStatus FslclRemove();
+ReturnStatus FslclRemoveDir();
+ReturnStatus FslclRename();
+ReturnStatus FslclHardLink();
+d80 4
+a83 2
+ReturnStatus FslclGetAttr();
+ReturnStatus FslclSetAttr();
+d85 2
+a86 1
+extern void FslclAssignAttrs();
+d88 1
+a88 1
+#endif /* _FSLOCALDOMAIN */
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/fslcl/RCS/fslclInt.h,v 8.3 89/08/21 15:27:31 mendel Exp Locker: douglis $ SPRITE (Berkeley)
+a19 29
+/*
+ * A directory entry:
+ */
+typedef struct FslclDirEntry {
+    int fileNumber;		/* Index of the file descriptor for the file. */
+    short recordLength;		/* How many bytes this directory entry is */
+    short nameLength;		/* The length of the name in bytes */
+    char fileName[FS_MAX_NAME_LENGTH+1];	/* The name itself */
+} FslclDirEntry;
+/*
+ *	FSLCL_DIR_BLOCK_SIZE	Directory's grow in multiples of this constant,
+ *		and records within a directory don't cross directory blocks.
+ *	FSLCL_DIR_ENTRY_HEADER	The size of the header of a FslclDirEntry;
+ *	FSLCL_REC_LEN_GRAIN	The number of bytes in a directory record
+ *				are rounded up to a multiple of this constant.
+ */
+#define FSLCL_DIR_BLOCK_SIZE	512
+#define FSLCL_DIR_ENTRY_HEADER	(sizeof(int) + 2 * sizeof(short))
+#define FSLCL_REC_LEN_GRAIN	4
+
+/*
+ * FsDirRecLength --
+ *	This computes the number of bytes needed for a directory entry.
+ *	The argument should be the return of the String_Length function,
+ *	ie, not include the terminating null in the count.
+ */
+#define FsDirRecLength(stringLength) \
+    (FSLCL_DIR_ENTRY_HEADER + \
+    ((stringLength / FSLCL_REC_LEN_GRAIN) + 1) * FSLCL_REC_LEN_GRAIN)
+@
+
+
+8.3
+log
+@Break up fs into many modules.    
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsLocalDomain.h,v 8.1 89/02/04 14:12:58 brent Exp $ SPRITE (Berkeley)
+@
+
+
+8.2
+log
+@Commented #endif labels.
+@
+text
+@d2 1
+a2 1
+ * fsLocalDomain.h --
+d10 1
+a10 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsLocalDomain.h,v 8.1 89/02/04 14:12:58 brent Exp Locker: rab $ SPRITE (Berkeley)
+d16 2
+a17 3
+#include "fsDisk.h"
+#include "fsBlockCache.h"
+#include "fsFile.h"
+d19 1
+d21 24
+a44 1
+ * Stuff for block allocation
+d46 3
+a48 3
+
+#define	FS_NUM_FRAG_SIZES	3
+
+d52 1
+a52 145
+extern char *fsEmptyDirBlock;
+
+/*
+ * Structure to keep statistics about each cylinder.
+ */
+
+typedef struct FsCylinder {
+    int	blocksFree;	/* Number of blocks free in this cylinder. */
+} FsCylinder;
+
+/*
+ * Structure to keep information about each fragment.
+ */
+
+typedef struct FsFragment {
+    List_Links	links;		/* Links to put in list of free fragments of
+				   this size. */
+    int		blockNum;	/* Block that this fragment comes from. */
+} FsFragment;
+
+/*
+ * Structure for each domain.
+ */
+
+typedef struct FsDomain {
+    FsLocalFileIOHandle	physHandle;	/* Handle to use to read and write
+					 * physical blocks. */
+    FsDomainHeader *headerPtr; 		/* Disk information for the domain. */
+    /*
+     * Disk summary information.
+     */
+    FsSummaryInfo *summaryInfoPtr;
+    int		  summarySector;
+    /*
+     * Data block allocation.
+     */
+    unsigned char *dataBlockBitmap;	/* The per domain data block bit map.*/
+    int		bytesPerCylinder;	/* The number of bytes in the bit map
+					 * for each cylinder. */
+    FsCylinder	*cylinders;		/* Pointer to array of cylinder
+					 * information. */
+    List_Links	*fragLists[FS_NUM_FRAG_SIZES];	/* Lists of fragments. */
+    Sync_Lock	dataBlockLock;		/* Lock for data block allocation. */
+    int		minKFree;		/* The minimum number of kbytes that
+					 * must be free at all times. */
+    /*
+     * File descriptor allocation.
+     */
+    unsigned char *fileDescBitmap;	/* The per domain file descriptor bit
+					 * map.*/
+    Sync_Lock	fileDescLock;		/* Lock for file descriptor
+					 * allocation. */
+    int		flags;		/* Flags defined below. */
+    int		refCount;	/* Number of active users of the domain. */
+    Sync_Condition condition;	/* Condition to wait on. */
+} FsDomain;
+
+/*
+ * Domain flags used for two stage process of detaching a domain:
+ *
+ *    FS_DOMAIN_GOING_DOWN	This domain is being detached.
+ *    FS_DOMAIN_DOWN		The domain is detached.
+ */
+#define	FS_DOMAIN_GOING_DOWN	0x1
+#define	FS_DOMAIN_DOWN 		0x2
+
+/*
+ * A table of domains.  This is used to go from domain number
+ * to the state for the domain.
+ *
+ * FS_MAX_LOCAL_DOMAINS defines how many local domains a server can keep
+ *      track of.
+ */
+#define FS_MAX_LOCAL_DOMAINS    10
+extern FsDomain *fsDomainTable[];
+
+/*
+ * Types of indexing.  Order is important here because the indirect and
+ * double indirect types can be used to index into the indirect block
+ * pointers in the file descriptor.
+ */
+
+#define	FS_INDIRECT		0
+#define	FS_DBL_INDIRECT		1
+#define	FS_DIRECT		2
+
+typedef	int	FsBlockIndexType;
+
+/*
+ * Structure to keep information about the indirect and doubly indirect
+ * blocks used in indexing.
+ */
+
+typedef struct FsIndirectInfo {
+    	FsCacheBlock 	*blockPtr;	/* Pointer to indirect block. */
+    	int		index;		/* An index into the indirect block. */
+    	Boolean	 	blockDirty;	/* TRUE if the block has been
+					   modified. */
+    	int	 	deleteBlock;	/* FS_DELETE_BLOCK bit set if should
+					   delete the block when are
+					   done with it. */
+} FsIndirectInfo;
+
+/*
+ * Structure used when going through the indexing structure of a file.
+ */
+
+typedef struct FsBlockIndexInfo {
+    FsBlockIndexType	 indexType;	/* Whether chasing direct, indirect,
+					   or doubly indirect blocks. */
+    int		blockNum;		/* Block that is being read, written,
+					   or allocated. */
+    int		lastDiskBlock;		/* The disk block for the last file
+					   block. */
+    int		*blockAddrPtr;		/* Pointer to pointer to block. */
+    int		directIndex;		/* Index into direct block pointers. */
+    FsIndirectInfo indInfo[2];		/* Used to keep track of the two
+					   indirect blocks. */
+    int		 flags;			/* Flags defined below. */
+    FsDomain	*domainPtr;		/* Domain that the file is in. */
+} FsBlockIndexInfo;
+
+/*
+ * Flags for the index structure.
+ *
+ *     FS_ALLOC_INDIRECT_BLOCKS		If an indirect is not allocated then
+ *					allocate it.
+ *     FS_DELETE_INDIRECT_BLOCKS	After are finished with an indirect
+ *					block if it is empty delete it.
+ *     FS_DELETING_FROM_FRONT		Are deleting blocks from the front
+ *					of the file.
+ *     FS_DELETE_EVERYTHING		The file is being truncated to length
+ *					0 so delete all blocks and indirect
+ *					blocks.
+ */
+
+#define	FS_ALLOC_INDIRECT_BLOCKS	0x01
+#define	FS_DELETE_INDIRECT_BLOCKS	0x02
+#define	FS_DELETING_FROM_FRONT		0x04
+#define	FS_DELETE_EVERYTHING		0x08
+
+
+/*
+ * Declarations for the file descriptor allocation routines.
+ */
+a53 25
+extern ReturnStatus	FsFileDescAllocInit();
+extern ReturnStatus	FsWriteBackFileDescBitmap();
+extern ReturnStatus	FsGetNewFileDesc();
+extern ReturnStatus	FsFetchFileDesc();
+extern ReturnStatus	FsStoreFileDesc();
+extern ReturnStatus	FsFreeFileDesc();
+
+/*
+ * Declarations for the local Domain data block allocation routines and
+ * indexing routines.
+ */
+
+extern	ReturnStatus	FsLocalBlockAllocInit();
+extern	ReturnStatus	FsWriteBackDataBlockBitmap();
+extern	void		FsLocalBlockAllocate();
+extern	ReturnStatus	FsLocalTruncateFile();
+extern	int		FsSelectCylinder();
+extern	void		FsFreeCylinderBlock();
+extern	void		FsFindBlock();
+extern	void		FsFreeBlock();
+extern	void		FsFindFrag();
+extern	void		FsFreeFrag();
+extern	ReturnStatus	FsGetFirstIndex();
+extern	ReturnStatus	FsGetNextIndex();
+extern	void		FsEndIndex();
+d57 1
+a57 1
+ * the switch in FsLookupOperation.  These are called with a pathname.
+d59 11
+a69 11
+ReturnStatus FsLocalExport();
+ReturnStatus FsLocalOpen();
+ReturnStatus FsLocalLookup();
+ReturnStatus FsLocalGetAttrPath();
+ReturnStatus FsLocalSetAttrPath();
+ReturnStatus FsLocalMakeDevice();
+ReturnStatus FsLocalMakeDir();
+ReturnStatus FsLocalRemove();
+ReturnStatus FsLocalRemoveDir();
+ReturnStatus FsLocalRename();
+ReturnStatus FsLocalHardLink();
+d75 2
+a76 2
+ReturnStatus FsLocalGetAttr();
+ReturnStatus FsLocalSetAttr();
+d78 1
+a78 13
+/*
+ * Misc. routines.
+ */
+ReturnStatus FsLocalInitIO();
+void	     FsLocalDomainInit();
+void 	     FsLocalDomainWriteBack();
+ReturnStatus FsLocalSetFirstByte();
+
+/*
+ * Routines to manipulate domains.
+ */
+extern	FsDomain	*FsDomainFetch();
+extern	void		FsDomainRelease();
+@
+
+
+8.1
+log
+@Tidied up a typedef
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsLocalDomain.h,v 7.0 88/11/07 14:47:30 brent Exp $ SPRITE (Berkeley)
+d21 1
+a21 1
+ * Stuff for block allocation 
+d44 1
+a44 1
+    List_Links	links;		/* Links to put in list of free fragments of 
+d72 1
+a72 1
+    int		minKFree;		/* The minimum number of kbytes that 
+d81 1
+a81 1
+    int		flags;		/* Flags defined below. */		
+d107 1
+a107 1
+ * double indirect types can be used to index into the indirect block 
+d111 1
+a111 1
+#define	FS_INDIRECT		0 
+d127 1
+a127 1
+    	int	 	deleteBlock;	/* FS_DELETE_BLOCK bit set if should 
+d145 1
+a145 1
+    FsIndirectInfo indInfo[2];		/* Used to keep track of the two 
+d183 1
+a183 1
+ * Declarations for the local Domain data block allocation routines and 
+d238 1
+a238 1
+#endif _FSLOCALDOMAIN
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsLocalDomain.h,v 7.0 88/11/07 14:47:30 brent Exp Locker: douglis $ SPRITE (Berkeley)
+d122 1
+a122 1
+typedef struct {
+@
+
+
+7.0
+log
+@New version for conversion to new C library
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsLocalDomain.h,v 6.1 88/10/04 09:04:25 brent Exp Locker: brent $ SPRITE (Berkeley)
+@
+
+
+6.1
+log
+@Fixed extern. DomainPrefix => DomainImport/DomainExport
+@
+text
+@d10 1
+a10 1
+ * $Header: fsLocalDomain.h,v 6.0 88/08/11 12:16:14 brent Stable $ SPRITE (Berkeley)
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: fsLocalDomain.h,v 1.1 88/04/04 10:33:54 brent Exp $ SPRITE (Berkeley)
+d205 1
+a205 1
+ReturnStatus FsLocalPrefix();
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d10 1
+a10 1
+ * $Header: fsLocalDomain.h,v 5.7 87/10/20 18:05:04 nelson Exp $ SPRITE (Berkeley)
+@

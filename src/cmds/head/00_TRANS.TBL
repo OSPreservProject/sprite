@@ -1,0 +1,6 @@
+F HEAD.C;1                          	head.c
+F HEAD.MAN;1                        	head.man
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md

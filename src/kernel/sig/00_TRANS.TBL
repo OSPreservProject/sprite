@@ -1,0 +1,15 @@
+D CVS_ADM                           	CVS.adm
+F DISTFILE.;1                       	Distfile
+D DS3100_M                          	ds3100.md
+D DS5000_M                          	ds5000.md
+D SCVS                              	SCVS
+F SIG.H;1                           	sig.h
+F SIGINT.H;1                        	sigInt.h
+F SIGMIGRA.C;1                      	sigMigrate.c
+F SIGNALS.C;1                       	signals.c
+F SIGSTUBS.C;1                      	sigStubs.c
+F SIGTYPES.H;1                      	sigTypes.h
+F SIGUNIXS.H;1                      	sigUnixStubs.h
+D SUN3_MD                           	sun3.md
+D SUN4C_MD                          	sun4c.md
+D SUN4_MD                           	sun4.md

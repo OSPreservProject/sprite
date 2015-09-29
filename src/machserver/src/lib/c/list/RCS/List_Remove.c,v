@@ -1,0 +1,79 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  srv030:1.1 srv028:1.1 srv027:1.1 srv026:1.1 srv024:1.1 srv022:1.1 srv021:1.1 srv019:1.1 srv018:1.1 srv016:1.1 srv014:1.1 srv010:1.1 srv008:1.1 srv007:1.1 srv006:1.1 srv005:1.1 srv004:1.1 srv003:1.1 srv002:1.1 srv001:1.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     92.01.02.16.51.48;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/* 
+ * List_Remove.c --
+ *
+ *	Source code for the List_Remove library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/list/RCS/List_Remove.c,v 1.4 90/11/27 11:06:34 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <stdio.h>
+#include "list.h"
+
+extern void panic();
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * List_Remove --
+ *
+ *	Remove a list element from the list in which it is contained.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The given structure is removed from its containing list.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+List_Remove(itemPtr)
+    register	List_Links *itemPtr;	/* list element to remove */
+{
+    if (itemPtr == (List_Links *) NIL || !itemPtr ||
+	itemPtr == itemPtr->nextPtr) {
+	panic("List_Remove: invalid item to remove.\n");
+    }
+    if (itemPtr->prevPtr->nextPtr != itemPtr ||
+	itemPtr->nextPtr->prevPtr != itemPtr) {
+	panic("List_Remove: item's pointers are invalid.\n");
+    }
+    itemPtr->prevPtr->nextPtr = itemPtr->nextPtr;
+    itemPtr->nextPtr->prevPtr = itemPtr->prevPtr;
+}
+@

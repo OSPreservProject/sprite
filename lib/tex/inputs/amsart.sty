@@ -1,0 +1,650 @@
+%% This is file `amsart.sty' generated from `amsart.doc'
+%% on 31-JUL-1991 by the docstrip.ams utility (1.0). 
+%% 
+%%@texfile{%
+%% filename="amsart.sty"
+%% version="1.1b",
+%% date="31-JUL-1991",
+%% filetype="AMS-LaTeX: documentstyle",
+%% copyright="Copyright (C) American Mathematical Society",
+%% author="American Mathematical Society",
+%% address="American Mathematical Society,
+%%     Technical Support Group,
+%%     P. O. Box 6248,
+%%     Providence, RI 02940,
+%%     USA",
+%% telephone="401-455-4080 or (in the USA) 800-321-4AMS",
+%% email="Internet: Tech-Support@Math.AMS.com",
+%% codetable="ISO/ASCII",
+%% checksumtype="line count",
+%% checksum="650",
+%% keywords="latex, amslatex, ams-latex",
+%% abstract="This file is part of the AMS-\LaTeX{} package, version 1.1.
+%%   It is a LaTeX documentstyle that produces output in the style of
+%%   the principal American Mathematical Society journals: Journal of
+%%   the A.M.S, Transactions of the A.M.S, Proceedings of the A.M.S.,
+%%   etc."
+%%}
+\expandafter\ifx\csname amsart.sty\endcsname\relax
+  \expandafter\gdef\csname amsart.sty\endcsname{}
+\else \message{already loaded}\endinput\fi
+\def\filename{amsart.sty}
+\def\fileversion{1.1b}       \def\filedate{31-JUL-1991}
+%%% end of file header
+\ifx\undefined\if@article % If \if@article is undefined,
+\expandafter\let          % we will end up with \let\if@article\iftrue
+\else \expandafter\@gobbletwo\fi % otherwise \@gobbletwo\if@article\iftrue
+\if@article\iftrue       % which removes this line.
+\if@article
+\immediate\write16{%
+AMS-LaTeX document style `AMSART' (\fileversion, \filedate)}
+\fi
+\input amstex.sty
+\def\@ptsize{0}
+\@namedef{ds@11pt}{\def\@ptsize{1}}
+\@namedef{ds@12pt}{\def\@ptsize{2}}
+\@namedef{ds@twoside}{\@empty}
+\def\ds@draft{\overfullrule 5\p@}
+\@namedef{ds@twocolumn}{\typeout{Sorry---the `twocolumn' option
+      is not available in the AMSART and AMSBOOK documentstyles.}}
+\@namedef{ds@openbib}{\typeout{Sorry---the `openbib' option
+      is not available in the AMSART and AMSBOOK documentstyles.}}
+\@namedef{ds@fleqn}{\typeout{Sorry---the `fleqn' option
+      is not available in the AMSART and AMSBOOK documentstyles.}}
+\if@article %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ARTICLE ONLY
+\@namedef{ds@titlepage}{\typeout{Sorry---the `titlepage' option
+      is not available in the AMSART documentstyle.}}
+\fi %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ARTICLE ONLY
+\@options
+\let\ds@twocolumn\relax       \let\ds@openbib\relax
+\let\ds@fleqn\relax
+\if@article %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ARTICLE ONLY
+\let\ds@titlepage\relax
+\fi %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ARTICLE ONLY
+\input{margid.sty}
+\def\@plus{plus}
+\def\@string{\expandafter\@gobble\string}
+\def\@oparg#1[#2]{\@ifnextchar[{#1}{#1[#2]}}
+\long\def\@ifempty#1{%
+ \expandafter\ifx\@car#1@\@nil @\@empty
+  \expandafter\@leftmark\else\expandafter\@rightmark\fi}
+\long\def\@ifnotempty#1{\@ifempty{#1}{}}
+\long\def\@leftmark#1#2{#1}
+\long\def\@rightmark#1#2{#2}
+\def\@andify#1#2{%
+  \expandafter\in@\expandafter\and\expandafter{#2}%
+  \ifin@
+  \begingroup\global\toks\@ne{}% initialize to empty
+  \def\and##1\and{\@ifnotempty{##1}{\advance\@tempcnta\@ne\and}}%
+  \@tempcnta\z@\expandafter\and#2\and%
+  \ifnum\@tempcnta>\tw@
+    \def\and##1\and{\advance\@tempcnta\m@ne
+      \global\toks\@ne\expandafter{\the\toks\@ne ##1}%
+      \edef\@tempa{\the\toks\@ne\ifnum\@tempcnta=\@ne\unskip,#1\else
+          \ifnum\@tempcnta>\@ne\unskip,\ \fi\fi}%
+      \global\toks\@ne\expandafter{\@tempa \ignorespaces}%
+      \ifnum\@tempcnta>\z@\expandafter\and\fi}%
+  \else % if NOT > 2
+    \def\and##1\and{\advance\@tempcnta\m@ne
+       \global\toks\@ne\expandafter{\the\toks\@ne ##1}%
+       \edef\@tempa{\the\toks\@ne
+         \ifnum\@tempcnta=\@ne\unskip#1\ignorespaces\fi}%
+       \global\toks\@ne\expandafter{\@tempa}%
+       \ifnum\@tempcnta>\z@\expandafter\and\fi}%
+  \fi % ifnum
+ \expandafter\and#2\relax\endgroup
+ \edef#2{\the\toks\@ne}%
+\fi % ifin@
+}
+\def\uppercasetext@#1{%
+   {\spaceskip1.3\fontdimen2\the\font plus1.3\fontdimen3\the\font
+    \upchars@\skipmath@#1$\skipmath@$}}
+\def\upchars@{\def\ss{SS}\let\i=I\let\j=J\let\ae\AE\let\oe\OE
+  \let\o\O\let\aa\AA\let\l\L}
+\def\skipmath@#1$#2${\skipmath@b#1\(\skipmath@b\)%
+  \ifx\skipmath@#2\else$#2$\expandafter\skipmath@\fi}
+\def\skipmath@b#1\(#2\){\uppercase{#1}%
+  \ifx\skipmath@b#2\else\(#2\)\expandafter\skipmath@b\fi}
+\def\today{\ifcase\month\or
+ January\or February\or March\or April\or May\or June\or
+ July\or August\or September\or October\or November\or December\fi
+ \space\number\day, \number\year}
+\def\LaTeX{L\raise.42ex\hbox{\kern-.33em\protect\scriptsize A\kern-.15em}\TeX}
+\def\@ifundefined#1{\expandafter\ifx\csname#1\endcsname\relax
+        \expandafter\@leftmark
+        \else\expandafter\@rightmark\fi}
+\def\ref#1{\@ifundefined{r@#1}{{\normalshape\bf ??}\iffirstchoice@
+  \@warning{Reference `#1' on page \thepage \space undefined}\fi}%
+  {\rom{\expandafter\expandafter\expandafter
+    \@car\csname r@#1\endcsname\@nil\null}}}
+\def\defaultfont{\family\default@family \series\default@series
+  \shape\default@shape \selectfont}
+\def\title{\@dblarg\@xtitle}
+\def\@title{}
+\if@article %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ARTICLE ONLY
+\def\@xtitle[#1]#2{\def\sh@rttitle{\def\\{\unskip\space\ignorespaces}%
+   \ignorespaces#1\unskip}%
+   \def\@title{\ignorespaces#2\unskip}}
+\def\sh@rttitle{}
+\fi %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ARTICLE ONLY
+\def\author{\@dblarg{\@xauthor}}
+\def\@authors{}
+\if@article %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ARTICLE ONLY
+\def\@xauthor[#1]#2{\expandafter\def\expandafter
+  \@authors\expandafter{\@authors#2\and}%
+  \@ifnotempty{#1}{\expandafter\def\expandafter\sh@rtauthor
+       \expandafter{\sh@rtauthor#1\and}}%
+}
+\def\sh@rtauthor{}
+\fi %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ARTICLE ONLY
+\newtoks\@addresstoks
+\def\address{\@oparg\@xaddress[]}
+\def\@xaddress[#1]#2{%
+  \@addresstoks\expandafter{\the\@addresstoks\address{#1}{#2}{}{}{}{}}}
+\def\@setaddress{%
+  \par\expandafter\@ifnotempty\expandafter{\the\@addresstoks}{%
+  \nobreak \begingroup \small
+  \def\\{\unskip, \ignorespaces}%
+  \interlinepenalty\@M
+  \def\address##1##2##3##4##5##6{%
+    \nobreak\bigskip\indent
+    \@ifnotempty{##1}{(\ignorespaces##1\unskip) }%
+    {\sc\ignorespaces##2}\par
+    \@ifnotempty{##4}{\nobreak\indent{\it Current address}%
+      \@ifnotempty{##3}{, \ignorespaces##3\unskip}\/:\space
+      ##4\par}%
+    \@ifnotempty{##6}{\nobreak\indent{\it E-mail address}%
+      \@ifnotempty{##5}{, \ignorespaces##5\unskip}\/:\space
+      ##6\par}%
+  }% End definition of \address.
+  \the\@addresstoks
+  \endgroup
+}% End of \@ifnotempty{\the\@addresstoks}
+}%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% end of \@setaddress
+\def\curraddr{\@oparg\@xcurraddr[]}
+\def\@xcurraddr[#1]#2{\@address@concat\curraddr{#1}{#2}{##5}{##6}}
+\def\email{\@oparg\@xemail[]}
+\def\@xemail[#1]#2{\@address@concat\email{##3}{##4}{#1}{#2}}
+\def\@address@concat#1#2#3#4#5{%
+  \expandafter\@ifempty\expandafter{\the\@addresstoks}%
+  {\errmessage{\string#1 can't precede \string\address.}}%
+  {\begingroup \global\toks\@ne{}\global\toks\thr@@{}%
+    \def\address##1##2##3##4##5##6{\global\toks\thr@@\expandafter{%
+      \the\toks\expandafter\thr@@\the\toks\@ne}%
+      \global\toks\@ne{\address{##1}{##2}{##3}{##4}{##5}{##6}}}%
+    \the\@addresstoks
+    \def\address##1##2##3##4##5##6{\global\toks\thr@@\expandafter{%
+      \the\toks\thr@@\address{##1}{##2}{#2}{#3}{#4}{#5}}}%
+    \the\toks\@ne
+    \endgroup \@addresstoks\toks\thr@@
+}}
+\def\date#1{\def\@date{#1}}
+\def\@date{}
+\def\thanks#1{\ifx\@empty\@thanks
+   \def\@thanks{#1}%
+ \else \expandafter\def\expandafter\@thanks\expandafter
+   {\@thanks\@@par#1}\fi
+}
+\def\@thanks{}
+\def\dedicatory#1{\def\@dedicatory{#1}}
+\def\@dedicatory{}
+\def\keywords#1{\def\@keywords{#1}}
+\def\@keywords{}
+\def\subjclass#1{\def\@subjclass{#1}}
+\def\@subjclass{}
+\def\translator#1{\def\@translator{#1}}
+\def\@translator{}
+\if@article %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ARTICLE ONLY
+\def\maketitle{\par
+  \@topnum\z@ % this prevents figures from falling at the top of page 1
+  \ifx\@empty\sh@rtauthor \let\sh@rtauthor\sh@rttitle\fi
+  \begingroup
+  \@maketitle
+  \endgroup
+  \@andify{ AND }\sh@rtauthor
+  \thispagestyle{plain}%
+  \c@footnote\z@
+  \def\do##1{\let##1\relax}%
+  \do\maketitle \do\@maketitle
+  \do\title \do\@xtitle \do\@title
+  \do\author \do\@xauthor \do\@authors
+  \do\address \do\@xaddress
+  \do\email \do\@xemail \do\curraddr \do\@xcurraddr
+  \do\dedicatory \do\@dedicatory
+  \do\thanks \do\@thanks
+  \do\keywords \do\@keywords
+  \do\subjclass \do\@subjclass
+  \do\@andify
+}
+\def\@maketitle{%
+  \defaultfont\normalsize
+  \let\@makefnmark\relax  \let\@thefnmark\relax
+  \ifx\@empty\@subjclass\else
+   \@footnotetext{1991 {\it Mathematics Subject
+     Classification}.\enspace
+        \@subjclass.}\fi
+  \ifx\@empty\@keywords\else
+   \@footnotetext{{\it Key words and phrases.}\enspace \@keywords.}\fi
+\ifx\@empty\@thanks\else
+   \@footnotetext{\@thanks}\fi
+\topskip66\p@ % 6.5 picas to the base of the first title line
+  \vtop{\centering{\baselineskip14\p@\bf
+    \expandafter\uppercasetext@\expandafter{\@title}\@@par}%
+   \global\dimen@i\prevdepth}%
+  \prevdepth\dimen@i
+  \ifx\@empty\@authors
+  \else
+    \baselineskip32\p@
+    \vtop{\@andify{ AND }\@authors
+      \centering{\small
+  \expandafter\uppercasetext@\expandafter{\@authors}\@@par}%
+         \global\dimen@i\prevdepth}\relax
+    \prevdepth\dimen@i
+  \fi
+  \ifx\@empty\@dedicatory
+  \else
+    \baselineskip18\p@
+  \vtop{\centering{\small\it\@dedicatory\@@par}%
+      \global\dimen@i\prevdepth}\prevdepth\dimen@i
+  \fi
+  \ifx\@empty\@date\else
+  \baselineskip24\p@
+    \vtop{\centering\@date\@@par
+      \global\dimen@i\prevdepth}\prevdepth\dimen@i
+  \fi
+  \normalsize
+  \dimen@32\p@ \advance\dimen@-\baselineskip
+  \vskip\dimen@\@plus14\p@
+  } % end \@maketitle
+\fi %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ARTICLE ONLY
+\def\abstractname{Abstract}
+\def\abstract{%
+  \global\let\abstract\relax
+  \defaultfont\small  \skip@28\p@ \advance\skip@-\lastskip
+  \advance\skip@-\baselineskip \vskip\skip@
+  \moveright 3pc\vtop \bgroup
+  \advance \hsize -6pc
+  \trivlist \labelsep.5em\item[\hskip\labelsep
+    {\sc\abstractname}.]\ignorespaces
+}
+\def\endabstract{\endtrivlist
+  \global\let\endabstract\relax
+  \global\dimen@i\prevdepth \egroup \prevdepth\dimen@i
+  \skip@32\p@\@plus 14\p@ \advance\skip@-\baselineskip
+  \vskip\skip@
+}
+\def\titlepage{\thispagestyle{empty}\c@page\z@}
+\def\endtitlepage{\newpage}
+\def\labelenumi{(\@arabic\c@enumi)}
+\def\theenumi{\@arabic\c@enumi}
+\def\labelenumii{(\@alph\c@enumii)}
+\def\theenumii{\@alph\c@enumii}
+\def\p@enumii{\theenumi}
+\def\labelenumiii{(\@roman\c@enumiii)}
+\def\theenumiii{\@roman\c@enumiii}
+\def\p@enumiii{\theenumi(\theenumii)}
+\def\labelenumiv{(\@Alph\c@enumiv)}
+\def\theenumiv{\@Alph\c@enumiv}
+\def\p@enumiv{\p@enumiii\theenumiii}
+\def\labelitemi{$\m@th\bullet$}
+\def\labelitemii{\bf --}% \normalshape already done by \itemize
+\def\labelitemiii{$\m@th\ast$}
+\def\labelitemiv{$\m@th\cdot$}
+\def\verse{\let\\\@centercr
+ \list{}{\itemsep\z@ \itemindent -1.5em\listparindent\itemindent
+ \rightmargin\leftmargin \advance\leftmargin 1.5em}\item[]}
+\let\endverse=\endlist
+\def\quotation{\list{}{\listparindent 1.5em\itemindent\listparindent
+ \rightmargin\leftmargin \parsep\z@ \@plus\p@}\item[]}
+\let\endquotation=\endlist
+\def\quote{\list{}{\rightmargin\leftmargin}\item[]}
+\let\endquote=\endlist
+\def\trivlist{\parsep\parskip
+  \@trivlist \labelwidth\z@ \leftmargin\z@
+  \itemindent\z@ \def\makelabel##1{\normalshape##1}}
+\def\enumerate{\ifnum \@enumdepth >3 \@toodeep\else
+      \advance\@enumdepth \@ne
+      \edef\@enumctr{enum\romannumeral\the\@enumdepth}\list
+      {\csname label\@enumctr\endcsname}{\usecounter
+        {\@enumctr}\def\makelabel##1{\hss\llap{\normalshape##1}}}\fi}
+\def\itemize{\ifnum\@itemdepth>3 \@toodeep
+  \else \advance\@itemdepth\@ne
+  \edef\@itemitem{labelitem\romannumeral\the\@itemdepth}%
+  \list{\csname\@itemitem\endcsname}%
+  {\def\makelabel##1{\hss\llap{\normalshape##1}}}\fi}
+\def\descriptionlabel#1{\hspace\labelsep \normalshape\bf #1:}
+\def\description{\list{}{%
+\advance\leftmargin6\p@ \itemindent-6\p@
+  \labelwidth\z@ \let\makelabel\descriptionlabel}}
+\let\enddescription=\endlist
+\input amsart1\@ptsize.sty\relax
+\def\@startsection#1#2#3#4#5#6{%
+\if@noskipsec \leavevmode \fi
+ \par \@tempskipa #4\relax
+ \@afterindenttrue
+ \ifdim \@tempskipa <\z@ \@tempskipa -\@tempskipa \@afterindentfalse\fi
+ \if@nobreak \everypar{}\else
+     \addpenalty\@secpenalty\addvspace\@tempskipa\fi
+ \@ifstar{\@dblarg{\@sect{#1}{\@m}{#3}{#4}{#5}{#6}}}%
+         {\@dblarg{\@sect{#1}{#2}{#3}{#4}{#5}{#6}}}%
+}
+\def\@sect#1#2#3#4#5#6[#7]#8{%
+\ifnum #2>\c@secnumdepth
+   \let\@svsec\@empty
+ \else
+   \refstepcounter{#1}%
+\edef\@svsec{\ifnum#2<\@m
+             \@ifundefined{#1name}{}{\csname #1name\endcsname\ }\fi
+\noexpand\rom{\csname the#1\endcsname.}\enspace}\fi
+ \@tempskipa #5\relax
+ \ifdim \@tempskipa>\z@ % then this is not a run-in section heading
+   \begingroup #6\relax
+   \@hangfrom{\hskip #3\relax\@svsec}{\interlinepenalty\@M #8\par}%
+   \endgroup
+   \if@article\else\csname #1mark\endcsname{%
+        \ifnum \c@secnumdepth >#2\relax\csname the#1\endcsname. \fi#7}\fi
+\ifnum#2>\@m \else
+       \addcontentsline{toc}{#1}%
+{\ifnum #2>\c@secnumdepth \else
+             \protect\numberline{%
+               \ifnum#2<\@m
+               \@ifundefined{#1name}{}{\csname #1name\endcsname\ }\fi
+               \csname the#1\endcsname.}\fi
+           #8}%
+     \fi
+ \else
+  \def\@svsechd{#6\hskip #3\@svsec
+    \@ifnotempty{#8}{\ignorespaces#8\unskip
+       \ifnum\spacefactor<1001.\fi}%
+        \ifnum#2>\@m \else
+          \addcontentsline{toc}{#1}%
+            {\ifnum #2>\c@secnumdepth \else
+              \protect\numberline{%
+                \ifnum#2<\@m
+                \@ifundefined{#1name}{}{\csname #1name\endcsname\ }\fi
+                \csname the#1\endcsname.}\fi
+             #8}\fi}%
+ \fi
+\@xsect{#5}}
+\def\frenchspacing{\count@ 1001 \sfcode`\.\count@ \sfcode`\?\count@
+  \sfcode`\!\count@ \sfcode`\:\count@ \sfcode`\;\count@
+  \sfcode`\,\count@}
+\def\@xsect#1{\@tempskipa #1\relax
+ \ifdim \@tempskipa>\z@ % then this is not a run-in heading
+   \par \nobreak \vskip\@tempskipa
+   \@afterheading
+ \else % otherwise it IS a run-in heading
+   \global\@nobreakfalse \global\@noskipsectrue
+   \everypar{\if@noskipsec \global\@noskipsecfalse
+               \clubpenalty\@M \kern-\parindent
+               \begingroup \@svsechd \endgroup \hskip -#1\relax
+             \else \clubpenalty \@clubpenalty\everypar{}\fi
+            }%
+ \fi\ignorespaces}
+\def\@afterheading{\global\@nobreaktrue
+   \everypar{\if@nobreak \global\@nobreakfalse \clubpenalty\@M
+               \if@afterindent \else {\setbox\z@\lastbox}\fi
+             \else \clubpenalty\@clubpenalty \everypar{}\fi}}
+\def\@hangfrom#1{\setboxz@h{#1}\hangindent\wdz@ \noindent\box\z@}
+\let\@ssect\relax % to save memory.  \@ssect not needed in amsart.sty.
+\newcounter{part}
+\newcounter{section}
+\newcounter{subsection}[section]
+\newcounter{subsubsection}[subsection]
+\def\thepart{\@Roman\c@part}
+\def\thesection{\@arabic\c@section}
+\def\thesubsection{\thesection.\@arabic\c@subsection}
+\def\thesubsubsection{\thesubsection.\@arabic\c@subsubsection}
+\setcounter{secnumdepth}{3}
+\def\@pnumwidth{1.6em}
+\def\@tocrmarg {2.6em}
+\setcounter{tocdepth}{2}
+\if@article %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ARTICLE ONLY
+\def\tableofcontents{%
+\removelastskip\vskip\z@skip
+  \@startsection{}\@M\z@{12\p@\@plus12\p@}{6\p@}%
+        {\centering\sc}\contentsname
+ \@starttoc{toc}%
+ \addvspace{32\p@\@plus14\p@}%
+\let\tableofcontents\relax
+\let\l@part\relax \let\l@section\relax
+\let\l@subsection\relax \let\l@subsubsection\relax
+}
+\fi %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ARTICLE ONLY
+\def\contentsname{Contents}
+\def\@tocline#1#2#3#4#5{\par
+  \addpenalty\@secpenalty\addvspace{#1}%
+  \begingroup   \@tempdima#2\relax % used by \numberline
+  \parindent\z@ \rightskip\@pnumwidth \parfillskip-\@pnumwidth
+  {#3\leavevmode #4\hfil \hbox to\@pnumwidth{\hss #5}}\par\nobreak
+  \endgroup}
+\def\l@part{\@tocline\bigskipamount{2em}{\normalshape\bf}}
+\def\l@section{\@tocline\medskipamount{2em}{\normalshape\bf}}
+\def\@dottedtocline#1#2#3#4#5{\ifnum #1>\c@tocdepth \else
+  \vskip \z@\@plus\p@
+  {\leftskip #2\relax \rightskip\@tocrmarg \parfillskip-\rightskip
+   \parindent #2\relax \@afterindenttrue
+   \interlinepenalty\@M \leavevmode
+   \@tempdima #3\relax \advance\leftskip\@tempdima
+    \null \hskip-\leftskip #4\nobreak
+        \hfill\nobreak
+  \ifnum#1<\c@tocdepth\hbox to\@pnumwidth{\hfil\normalshape#5}\fi
+  \null\par}\fi}
+\def\numberline#1{\setboxz@h{#1\enspace}\ifdim\wdz@>\@tempdima
+  \box\z@\else \hbox to\@tempdima{#1\hfil}\fi}
+\def\l@subsection{\@dottedtocline\tw@{1.5em}{2.3em}}
+\def\l@subsubsection{\@dottedtocline\thr@@{3.8em}{3.2em}}
+\def\l@paragraph{\@dottedtocline4{7em}{4.1em}}
+\def\refname{References}
+\def\bibname{Bibliography}
+\if@article %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ARTICLE ONLY
+\def\thebibliography#1{\section*\refname
+  \defaultfont\small\labelsep .5em\relax
+  \list{\@arabic\c@enumi.}{\settowidth\labelwidth{#1.}%
+  \leftmargin\labelwidth \advance\leftmargin\labelsep
+  \usecounter{enumi}}%
+  \sloppy \clubpenalty4000\relax \widowpenalty\clubpenalty
+  \sfcode`\.\@m}
+\let\endthebibliography=\endlist
+\fi %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ARTICLE ONLY
+\def\bysame{\leavevmode\hbox to3em{\hrulefill}\,}
+\def\newblock{}
+\def\footnoterule{\kern-.4\p@
+        \hrule\@width 5pc\kern11\p@\kern-\footnotesep}
+\def\@makefnmark{\hbox{$\m@th^{\@thefnmark}$}}
+\def\@makefntext{\indent\@makefnmark}
+\long\def\@footnotetext#1{\insert\footins{%
+    \defaultfont\footnotesize
+    \interlinepenalty\interfootnotelinepenalty
+    \splittopskip\footnotesep \splitmaxdepth \dp\strutbox
+    \floatingpenalty\@MM \hsize\columnwidth
+\@parboxrestore \parindent\normalparindent \sloppy
+  \edef\@currentlabel{\p@footnote\@thefnmark}\@makefntext
+ {\rule\z@\footnotesep\ignorespaces#1\unskip\strut\par}}}
+\def\sloppy{\tolerance9999\relax}
+\hfuzz=1pt \vfuzz=\hfuzz
+\setcounter{topnumber}{2}
+\def\topfraction{.7}
+\setcounter{bottomnumber}{1}
+\def\bottomfraction{.3}
+\setcounter{totalnumber}{3}
+\def\textfraction{.2}
+\def\floatpagefraction{.5}
+\setcounter{dbltopnumber}{2}
+\def\dbltopfraction{.7}
+\def\dblfloatpagefraction{.5}
+\long\def\@makecaption#1#2{%
+\setbox\@tempboxa\vbox{\advance\hsize-6pc\noindent
+    \sc#1\expandafter\@ifnotempty\expandafter
+        {\@cdr#2\@nil}{.\normalshape\enspace#2}%
+    \unskip\kern-6pc\par
+    \global\setbox\@ne\lastbox}%
+\ifhbox\@ne % the normal case
+  \setbox\@ne\hbox{\unhbox\@ne\unskip\unskip\unpenalty\unkern}%
+\fi
+  \ifdim\wd\@tempboxa=\z@ % this means caption will fit on one line
+    \setbox\@ne\hbox to\columnwidth{\hss\kern-6pc\box\@ne\hss}%
+  \else % tempboxa contained more than one line (or other vertical mode stuff)
+    \setbox\@ne\vbox{\unvbox\@tempboxa\parskip\z@skip
+        \noindent\unhbox\@ne\advance\hsize-6pc\par}%
+\fi
+  \ifnum\@tempcnta<64 % if the float IS a figure...
+    \vskip 1pc%
+    \moveright 3pc\box\@ne
+  \else % if the float IS NOT a figure...
+    \moveright 3pc\box\@ne
+    \vskip 1pc%
+  \fi
+\relax
+}
+\newcounter{figure}
+\def\thefigure{\@arabic\c@figure}
+\def\fps@figure{tbp}
+\def\ftype@figure{1}
+\def\ext@figure{lof}
+\def\fnum@figure{\figurename\ \thefigure}
+\def\figurename{Figure}
+\def\figure{\@float{\@string\figure}}
+\let\endfigure=\end@float
+\newcounter{table}
+\def\thetable{\@arabic\c@table}
+\def\fps@table{tbp}
+\def\ftype@table{2}
+\def\ext@table{lot}
+\def\fnum@table{\tablename\ \thetable}
+\def\tablename{Table}
+\def\table{\@float{\@string\table}}
+\let\endtable=\end@float
+\input theorem.sty
+\theorembodyfont{}
+\def\@begintheorem#1#2[#3]{\item[\hskip\labelsep \theorem@headerfont
+       \theorem@indent#1\ \rom{#2}\unskip
+      \@ifnotempty{#3}{\ \rom(#3\rom)}.]\ignorespaces}
+\def\@thm#1#2{\refstepcounter{#1}%
+   \trivlist
+   \@topsep \theorempreskipamount               % used by first \item
+   \@topsepadd \theorempostskipamount           % used by \@endparenv
+   \@oparg{\@begintheorem{#2}{\csname the#1\endcsname}}[]}
+\let\@opargbegintheorem\relax \let\@ythm\relax
+\def\th@plain{\it}
+\def\th@definition{\theorempreskipamount6\p@\@plus6\p@
+    \theorempostskipamount\theorempreskipamount
+    \normalshape}
+\def\th@remark{\theorempreskipamount6\p@\@plus6\p@
+    \theorempostskipamount\z@\@plus6\p@
+    \def\theorem@headerfont{\it}\normalshape}
+\def\theorem@headerfont{\normalshape\bf}
+\let\theorem@indent\noindent
+\theorempreskipamount=6pt plus9pt
+\theorempostskipamount=\theorempreskipamount
+\def\@endtheorem{\endtrivlist\@endpefalse }
+\if@article %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ARTICLE ONLY
+\def\pf{%
+  \par\topsep6\p@\@plus6\p@
+  \trivlist
+  \item[\hskip\labelsep\it\proofname.]\ignorespaces}
+\def\endpf{\qed\endtrivlist}
+\@namedef{pf*}#1{\par\toks@\expandafter{\proofname}%
+  \edef\restoreproofname{\def\noexpand\proofname{\the\toks@}}%
+  \def\proofname{#1}\pf\restoreproofname\ignorespaces}
+\expandafter\let\csname endpf*\endcsname=\endpf
+\fi %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ARTICLE ONLY
+\def\qedsymbol{\RIfM@\bgroup\else$\bgroup\aftergroup$\fi
+  \vcenter{\hrule\hbox{\vrule\@height.6em\kern.6em\vrule}\hrule}\egroup}
+\def\qed{\RIfM@\else\unskip\nobreak\fi\quad\qedsymbol}
+\def\proofname{Proof}
+\def\enddocument{\@checkend{document}\par
+\if@article %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ARTICLE ONLY
+  \ifx\@empty\@translator \else
+    \addvspace{6\p@\@plus9\p@}%
+    \hbox to\columnwidth{\hss\defaultfont\normalsize
+     Translated by \expandafter\uppercasetext@\expandafter{\@translator}}%
+  \fi
+ \removelastskip\@setaddress
+\fi %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ARTICLE ONLY
+ \clearpage\begingroup
+ \if@filesw \immediate\closeout\@mainaux
+ \def\global\@namedef##1##2{}\def\newlabel{\@testdef r}%
+ \def\bibcite{\@testdef b}\@tempswafalse \makeatletter\input \jobname.aux
+ \if@tempswa \@warning{Label(s) may have changed.  Rerun to get
+ cross-references right}\fi\fi\endgroup\deadcycles\z@\@@end}
+\if@article %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ARTICLE ONLY
+\def\ps@headings{\let\@mkboth\@gobbletwo
+  \let\partmark\@gobble\let\sectionmark\@gobble
+  \let\subsectionmark\@gobble
+  \let\@oddfoot\@empty\let\@evenfoot\@empty%
+  \def\@evenhead{\defaultfont\small
+      \rlap{\thepage}\hfil
+      \expandafter\uppercasetext@\expandafter{\sh@rtauthor}\hfil}%
+  \def\@oddhead{\defaultfont\small \hfil
+      \expandafter\uppercasetext@\expandafter{\sh@rttitle}\hfil
+      \llap{\thepage}}%
+}
+\fi %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ARTICLE ONLY
+\def\ps@myheadings{\let\@mkboth\@gobbletwo
+  \let\@oddfoot\@empty\let\@evenfoot\@empty
+  \def\@oddhead{\null\defaultfont\small\rightmark \hfil\thepage}%
+  \def\@evenhead{\defaultfont\small \thepage\hfil\leftmark\null}%
+}
+\def\ps@plain{\let\@mkboth\@gobbletwo
+     \let\@oddhead\@empty \let\@evenhead\@empty
+     \def\@oddfoot{\defaultfont\small \hfil\thepage\hfil}%
+     \let\@evenfoot\@oddfoot}
+\def\@cite#1#2{\rom{\mediumseries[{#1\if@tempswa , #2\fi}]}}
+\def\rom#1{\leavevmode\skip@\lastskip\unskip\/%
+        \ifdim\skip@=\z@\else\hskip\skip@\fi
+   {\normalshape#1}}
+\atdef@-{\let\next-%%
+  \DN@{\ifx\next-%%
+    \def\next-{\setboxz@h{-}\unhbox\z@\FN@\next@}%%
+    \expandafter\next \else\nobreak\fi}%%
+  \next@-}%%
+\def\eqref#1{\rom{\tagform@{\ref{#1}}}}
+\def\theequation{\@arabic\c@equation}
+\ctagsplit@true
+\if@article %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ARTICLE ONLY
+\advance\textheight by -\headheight
+\advance\textheight by -\headsep
+\advance\textheight by -\normalbaselineskip
+\advance\textheight by \topskip
+\oddsidemargin=8.5 true in % standard U.S. paper width
+\advance\oddsidemargin by -\textwidth
+\oddsidemargin=.5\oddsidemargin
+\ifdim\oddsidemargin < .5 true in
+  \oddsidemargin = .5 true in \fi
+\advance\oddsidemargin by -1 true in
+\evensidemargin=\oddsidemargin
+\topmargin=11 true in % standard U.S. paper width
+\advance\topmargin by -\textheight
+\advance\topmargin by -\headheight
+\advance\topmargin by -\headsep
+\advance\topmargin by -\footheight
+\advance\topmargin by -\footskip
+\topmargin=.5\topmargin
+\ifdim\topmargin<.5 true in
+  \topmargin=.5 true in \fi
+\advance\topmargin by -1 true in
+\pagenumbering{arabic}
+\onecolumn
+\@twosidetrue \@mparswitchtrue   % this = `twoside' option
+\mark{{}{}}
+\ps@headings
+\fi %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% ARTICLE ONLY
+%% \CharacterTable
+%%  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
+%%   Lower-case    \a\b\c\d\e\f\g\h\i\j\k\l\m\n\o\p\q\r\s\t\u\v\w\x\y\z
+%%   Digits        \0\1\2\3\4\5\6\7\8\9
+%%   Exclamation   \!     Double quote  \"     Hash (number) \#
+%%   Dollar        \$     Percent       \%     Ampersand     \&
+%%   Acute accent  \'     Left paren    \(     Right paren   \)
+%%   Asterisk      \*     Plus          \+     Comma         \,
+%%   Minus         \-     Point         \.     Solidus       \/
+%%   Colon         \:     Semicolon     \;     Less than     \<
+%%   Equals        \=     Greater than  \>     Question mark \?
+%%   Commercial at \@     Left bracket  \[     Backslash     \\
+%%   Right bracket \]     Circumflex    \^     Underscore    \_
+%%   Grave accent  \`     Left brace    \{     Vertical bar  \|
+%%   Right brace   \}     Tilde         \~}
+\endinput
+%% 
+%% End of file `amsart.sty'.

@@ -1,0 +1,68 @@
+
+
+
+DIFFH                     User Commands                     DIFFH
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     diffh - Used internally by diff for -h option
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This program should never  be  invoked  directly  by  users.
+     It's  a program that's invoked by ddiiffff when the --hh option is
+     given.  For details on its arguments and actions,  read  the
+     ddiiffffhh and ddiiffff code.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  March 28, 1989                    1
+
+
+

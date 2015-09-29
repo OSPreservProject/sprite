@@ -1,0 +1,7 @@
+F LOCAL.MK;1                        	local.mk
+F MAKEBOOT.C;1                      	makeBoot.c
+F MAKEBOOT.MAN;1                    	makeboot.man
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md

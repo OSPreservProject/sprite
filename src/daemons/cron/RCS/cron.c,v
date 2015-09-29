@@ -1,0 +1,977 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     90.02.16.12.54.50;  author douglis;  state Exp;
+branches 1.5.1.1;
+next     1.4;
+
+1.4
+date     89.09.11.12.48.21;  author douglis;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.12.14.10.59.16;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.03.31.17.19.21;  author deboor;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     87.09.08.13.21.49;  author deboor;  state Exp;
+branches ;
+next     ;
+
+1.5.1.1
+date     91.04.12.13.17.12;  author rab;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@daemon to run all the time and run other things occasionally
+@
+
+
+1.5
+log
+@
+use hex pids
+@
+text
+@/* 
+ * cron.c --
+ *
+ *	Cron daemon.  Reads /hosts/{hostname}/crontab.  Wakes
+ *      up periodically to run the commands.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/daemons/cron/RCS/cron.c,v 1.4 89/09/11 12:48:21 douglis Exp Locker: douglis $";
+#endif /* not lint */
+
+
+#include <sys/types.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <signal.h>
+#include <sys/time.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <sys/ioctl.h>
+#include <sys/file.h>
+#include <pwd.h>
+#include <fcntl.h>
+
+#define	LISTS	(2*BUFSIZ)
+#define	MAXLIN	BUFSIZ
+
+#ifndef CRONTAB
+#define CRONTAB "/sprite/lib/cron/crontab"
+#endif
+
+#ifndef CRONTABLOC
+#define CRONTABLOC  "/usr/lib/crontab.local"
+#endif
+
+#define	EXACT	100
+#define	ANY	101
+#define	LIST	102
+#define	RANGE	103
+#define	EOS	104
+
+static char	crontab[]	= CRONTAB;
+static char	loc_crontab[256]   = CRONTABLOC;
+static time_t	itime;
+static struct	tm *loct;
+extern struct	tm *localtime();
+static int	flag;
+static char	*list;
+static char	*listend;
+static unsigned listsize;
+
+static FILE	*debug;
+#define dprintf if (debug) fprintf
+
+static char *cmp();
+static void slp();
+static void ex();
+static void init();
+static void append();
+static void reapchild();
+static void untty();
+static int number();
+static void Fs_GetPrivateName();
+
+void
+main(argc, argv)
+	int argc;
+	char **argv;
+{
+    register char *cp;
+    char *cmp();
+    time_t filetime = 0;
+    time_t lfiletime = 0;
+    char c;
+    extern char *optarg;
+    extern int errno;
+
+     /*
+      * Check command line arguments
+      */
+     c = getopt(argc, argv, "d:");
+     if (c == 'd') {
+	 if ((debug = fopen(optarg, "w")) == NULL) {
+	     fprintf(stderr, "Can't open %s: %s\n", optarg, strerror(errno));
+	     exit(1);
+	 }   
+	 fcntl(fileno(debug), F_SETFL, FAPPEND);
+     }
+    /*
+     * Detach from parent.
+     */
+     if (!debug && fork()) {
+	 exit(0);
+     }
+
+     chdir("/");
+     freopen("/", "r", stdout);
+     freopen("/", "r", stderr);
+     untty();
+
+     /*
+      * Ignore signals
+      */
+     signal(SIGHUP, SIG_IGN);
+     signal(SIGINT, SIG_IGN);
+#ifndef sprite
+     signal(SIGQUIT, SIG_IGN);
+#endif
+     signal(SIGCHLD, reapchild);
+     time(&itime);
+     itime -= localtime(&itime)->tm_sec;
+
+     Fs_GetPrivateName("crontab", loc_crontab);
+
+     for (;; itime+=60, slp()) {
+	 struct stat cstat, lcstat;
+	 int newcron, newloc;
+
+	 newcron = 0;
+	 if (stat(crontab, &cstat) < 0) {
+	     cstat.st_mtime = 1;
+	 }   
+	 if (cstat.st_mtime != filetime) {
+	     filetime = cstat.st_mtime;
+	     newcron++;
+	 }
+	 newloc  = 0;
+	 if (stat(loc_crontab, &lcstat) < 0) {
+	     lcstat.st_mtime = 1;
+	 }
+	 if (lcstat.st_mtime != lfiletime) {
+	     lfiletime = lcstat.st_mtime;
+	     newloc++;
+	 }
+	 if (newcron || newloc) {
+	     dprintf(debug, "%x: reading crontab files\n", getpid()),
+	         fflush(debug);
+	     init();
+	     append(crontab);
+	     append(loc_crontab);
+	     *listend++ = EOS;
+	     *listend++ = EOS;
+	 }
+	 loct = localtime(&itime);
+	 loct->tm_mon++;		 /* 1-12 for month */
+	 if (loct->tm_wday == 0) {
+	     loct->tm_wday = 7;	/* sunday is 7, not 0 */
+	 }
+	 for(cp = list; *cp != EOS;) {
+	     flag = 0;
+	     cp = cmp(cp, loct->tm_min);
+	     cp = cmp(cp, loct->tm_hour);
+	     cp = cmp(cp, loct->tm_mday);
+	     cp = cmp(cp, loct->tm_mon);
+	     cp = cmp(cp, loct->tm_wday);
+	     if(flag == 0) {
+		 ex(cp);
+	     }   
+	     while(*cp++ != 0) {
+		 ;
+	     }
+	 }
+     }   
+}
+
+static char *
+cmp(p, v)
+    char *p;
+{
+    register char *cp;
+
+    cp = p;
+    switch(*cp++) {
+
+    case EXACT:
+	if (*cp++ != v) {
+	    flag++;
+	}
+	return cp;
+
+    case ANY:
+	return cp;
+
+    case LIST:
+	while(*cp != LIST) {
+	    if(*cp++ == v) {
+		while(*cp++ != LIST) {
+		    ;
+		}
+		return cp;
+	    }
+	}
+	flag++;
+	return cp+1;
+
+    case RANGE:
+	if(*cp > v || cp[1] < v) {
+	    flag++;
+	}
+	return cp+2;
+    }
+    if(cp[-1] != v) {
+	flag++;
+    }
+    return cp;
+}
+
+static void
+slp()
+{
+    register i;
+    time_t t;
+
+    time(&t);
+    i = itime - t;
+    if(i < -60 * 60 || i > 60 * 60) {
+	itime = t;
+	i = 60 - localtime(&itime)->tm_sec;
+	itime += i;
+    }
+    if(i > 0) {
+	sleep(i);
+    }
+    return;
+}
+
+static void
+ex(s)
+    char *s;
+{
+    int st;
+    register struct passwd *pwd;
+    char user[BUFSIZ];
+    char *c = user;
+    int pid;
+
+    if (fork()) {
+	return;
+    }
+
+    pid = getpid();
+    while(*s != ' ' && *s != '\t') {
+	*c++ = *s++;
+    }
+    *c = '\0';
+    s++;
+    if ((pwd = getpwnam(user)) == NULL) {
+	dprintf(debug, "%x: cannot find %s\n", pid, user),
+	    fflush(debug);
+	    exit(1);
+    }   
+    (void) setgid(pwd->pw_gid);
+    initgroups(pwd->pw_name, pwd->pw_gid);
+    (void) setuid(pwd->pw_uid);
+    freopen("/", "r", stdin);
+    dprintf(debug, "%x: executing %s", pid, s), fflush (debug);
+    execl("/bin/sh", "sh", "-c", s, 0);
+    dprintf(debug, "%x: cannot execute sh\n", pid), fflush (debug);
+    exit(0);
+}
+
+static void
+init()
+{
+    /*
+     * Don't free in case was longer than LISTS.  Trades off
+     * the rare case of crontab shrinking vs. the common case of
+     * extra realloc's needed in append() for a large crontab.
+     */
+    if (list == 0) {
+	list = malloc(LISTS);
+	listsize = LISTS;
+    }
+    listend = list;
+    return;
+}
+
+static void
+append(fn)
+    char *fn;
+{
+    register i, c;
+    register char *cp;
+    register char *ocp;
+    register int n;
+
+    if (freopen(fn, "r", stdin) == NULL) {
+	return;
+    }
+    cp = listend;
+loop:
+    if(cp > list+listsize-MAXLIN) {
+	int length = cp - list;
+
+	listsize += LISTS;
+	list = realloc(list, listsize);
+	cp = list + length;
+    }
+    ocp = cp;
+    for(i=0;; i++) {
+	do {
+	    c = getchar();
+	} while(c == ' ' || c == '\t');
+	if(c == EOF || c == '\n') {
+	    goto ignore;
+	}
+	if(i == 5) {
+	    break;
+	}
+	if(c == '*') {
+	    *cp++ = ANY;
+	    continue;
+	}
+	if ((n = number(c)) < 0) {
+	    goto ignore;
+	}
+	c = getchar();
+	if(c == ',') {
+	    goto mlist;
+	}
+	if(c == '-') {
+	    goto mrange;
+	}
+	if(c != '\t' && c != ' ') {
+	    goto ignore;
+	}
+	*cp++ = EXACT;
+	*cp++ = n;
+	continue;
+
+    mlist:
+	*cp++ = LIST;
+	*cp++ = n;
+	do {
+	    if ((n = number(getchar())) < 0) {
+		goto ignore;
+	    }
+	    *cp++ = n;
+	    c = getchar();
+	} while (c==',');
+	if(c != '\t' && c != ' ') {
+	    goto ignore;
+	}
+	*cp++ = LIST;
+	continue;
+
+    mrange:
+	*cp++ = RANGE;
+	*cp++ = n;
+	if ((n = number(getchar())) < 0) {
+			goto ignore;
+	}
+	c = getchar();
+	if(c != '\t' && c != ' ') {
+	    goto ignore;
+	}
+	*cp++ = n;
+    }
+    while(c != '\n') {
+	if(c == EOF) {
+	    goto ignore;
+	}
+	if(c == '%') {
+	    c = '\n';
+	}
+	*cp++ = c;
+	c = getchar();
+    }
+    *cp++ = '\n';
+    *cp++ = 0;
+    goto loop;
+
+ignore:
+    cp = ocp;
+    while(c != '\n') {
+	if(c == EOF) {
+	    fclose(stdin);
+	    listend = cp;
+	    return;
+	}
+	c = getchar();
+    }
+    goto loop;
+}
+
+static int
+number(c)
+    register c;
+{
+    register n = 0;
+
+    while (isdigit(c)) {
+	n = n*10 + c - '0';
+	c = getchar();
+    }
+    ungetc(c, stdin);
+    if (n>=100) {
+	return -1;
+    }
+    return n;
+}
+
+static void
+reapchild()
+{
+    union wait status;
+    int pid;
+
+    while ((pid = wait3(&status, WNOHANG, 0)) > 0) {
+	dprintf(debug, "%x: child exits with signal %d status %d\n",
+	    pid, status.w_termsig, status.w_retcode),
+	    fflush (debug);
+    }
+    return;
+}
+
+static void
+untty()
+{
+    int i;
+
+    i = open("/dev/tty", O_RDWR);
+    if (i >= 0) {
+	ioctl(i, TIOCNOTTY, (char *)0);
+	(void) close(i);
+    }
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fs_GetPrivateName --
+ *
+ *      Fill a buffer with the path name of a file private to the local
+ *      machine. The file is located in /hosts/<hostname>/<file>
+ *
+ * Results:
+ *      The path of the file.
+ *
+ * Side Effects:
+ *      The passed buffer is overwritten.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+Fs_GetPrivateName (fileName, bufPtr)
+    char                *fileName;      /* Short name of private file */
+    char                *bufPtr;        /* Pointer to buffer for storage */
+{
+    static int      	initialized = 0;
+    static char         hostname[64];   /* Name of local host */
+
+#define PRIVATE_DIR     "/hosts"
+
+    if (!initialized) {
+        gethostname (hostname, sizeof(hostname));
+	hostname[sizeof(hostname)-1] = 0;
+        initialized = 1;
+    }
+
+    sprintf (bufPtr, "%s/%s/%s", PRIVATE_DIR, hostname, fileName);
+    return;
+}
+@
+
+
+1.5.1.1
+log
+@Debugging changes (?) (Mike checking in for Bob.)
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/daemons/cron/RCS/cron.c,v 1.5 90/02/16 12:54:50 douglis Exp Locker: rab $";
+a51 2
+extern int errno;
+
+d86 1
+a231 1
+	dprintf(debug, "Sleeping for %d seconds\n", i);
+a475 1
+
+@
+
+
+1.4
+log
+@conversion to ANSI C?  (ci by FD for RAB)
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header$";
+d39 1
+a39 1
+#define CRONTAB "/lib/crontab"
+a87 7
+    /*
+     * Detach from parent.
+     */
+     if (fork()) {
+	 exit(0);
+     }
+
+d99 7
+d116 1
+d118 1
+d146 2
+d258 1
+a258 1
+	dprintf(debug, "%d: cannot find %s\n", pid, user),
+d266 1
+a266 1
+    dprintf(debug, "%d: executing %s", pid, s), fflush (debug);
+d268 1
+a268 1
+    dprintf(debug, "%d: cannot execute sh\n", pid), fflush (debug);
+d420 1
+a420 1
+	dprintf(debug, "%d: child exits with signal %d status %d\n",
+@
+
+
+1.3
+log
+@Eliminate ancient Sprite library calls.
+@
+text
+@d1 16
+d18 3
+a20 2
+static char *sccsid = "@@(#)cron.c	4.12 (Berkeley) 5/27/86";
+#endif
+d24 1
+d52 9
+a60 13
+char	crontab[]	= CRONTAB;
+char	loc_crontab[256]   = CRONTABLOC;
+time_t	itime;
+struct	tm *loct;
+struct	tm *localtime();
+char	*malloc();
+char	*realloc();
+int	reapchild();
+void	Fs_GetPrivateName();
+int	flag;
+char	*list;
+char	*listend;
+unsigned listsize;
+d62 1
+a62 1
+FILE	*debug;
+d65 11
+d80 90
+a169 74
+	register char *cp;
+	char *cmp();
+	time_t filetime = 0;
+	time_t lfiletime = 0;
+	char c;
+	extern char *optarg;
+
+	if (fork())
+		exit(0);
+	c = getopt(argc, argv, "d:");
+	if (c == 'd') {
+		debug = fopen(optarg, "w");
+		if (debug == NULL)
+			exit(1);
+		fcntl(fileno(debug), F_SETFL, FAPPEND);
+	}
+	chdir("/");
+	freopen("/", "r", stdout);
+	freopen("/", "r", stderr);
+	untty();
+	signal(SIGHUP, SIG_IGN);
+	signal(SIGINT, SIG_IGN);
+	signal(SIGQUIT, SIG_IGN);
+	signal(SIGCHLD, reapchild);
+	time(&itime);
+	itime -= localtime(&itime)->tm_sec;
+
+	Fs_GetPrivateName("crontab", loc_crontab);
+
+	for (;; itime+=60, slp()) {
+		struct stat cstat, lcstat;
+		int newcron, newloc;
+		
+		newcron = 0;
+		if (stat(crontab, &cstat) < 0)
+		    cstat.st_mtime = 1;
+		if (cstat.st_mtime != filetime) {
+			filetime = cstat.st_mtime;
+			newcron++;
+		}
+
+		newloc  = 0;
+		if (stat(loc_crontab, &lcstat) < 0)
+		    lcstat.st_mtime = 1;
+		if (lcstat.st_mtime != lfiletime) {
+			lfiletime = lcstat.st_mtime;
+			newloc++;
+		}
+
+		if (newcron || newloc) {
+			init();
+			append(crontab);
+			append(loc_crontab);
+			*listend++ = EOS;
+			*listend++ = EOS;
+		}
+
+		loct = localtime(&itime);
+		loct->tm_mon++;		 /* 1-12 for month */
+		if (loct->tm_wday == 0)
+			loct->tm_wday = 7;	/* sunday is 7, not 0 */
+		for(cp = list; *cp != EOS;) {
+			flag = 0;
+			cp = cmp(cp, loct->tm_min);
+			cp = cmp(cp, loct->tm_hour);
+			cp = cmp(cp, loct->tm_mday);
+			cp = cmp(cp, loct->tm_mon);
+			cp = cmp(cp, loct->tm_wday);
+			if(flag == 0)
+				ex(cp);
+			while(*cp++ != 0)
+				;
+		}
+	}
+d172 1
+a172 1
+char *
+d174 1
+a174 1
+char *p;
+d176 1
+a176 1
+	register char *cp;
+d178 34
+a211 29
+	cp = p;
+	switch(*cp++) {
+
+	case EXACT:
+		if (*cp++ != v)
+			flag++;
+		return(cp);
+
+	case ANY:
+		return(cp);
+
+	case LIST:
+		while(*cp != LIST)
+			if(*cp++ == v) {
+				while(*cp++ != LIST)
+					;
+				return(cp);
+			}
+		flag++;
+		return(cp+1);
+
+	case RANGE:
+		if(*cp > v || cp[1] < v)
+			flag++;
+		return(cp+2);
+	}
+	if(cp[-1] != v)
+		flag++;
+	return(cp);
+d214 1
+d217 2
+a218 2
+	register i;
+	time_t t;
+d220 11
+a230 9
+	time(&t);
+	i = itime - t;
+	if(i < -60 * 60 || i > 60 * 60) {
+		itime = t;
+		i = 60 - localtime(&itime)->tm_sec;
+		itime += i;
+	}
+	if(i > 0)
+		sleep(i);
+d233 1
+d235 1
+a235 1
+char *s;
+d237 29
+a265 28
+	int st;
+	register struct passwd *pwd;
+	char user[BUFSIZ];
+	char *c = user;
+	int pid;
+
+	if (fork()) {
+		return;
+	}
+
+	pid = getpid();
+	while(*s != ' ' && *s != '\t')
+		*c++ = *s++;
+	*c = '\0';
+	s++;
+	if ((pwd = getpwnam(user)) == NULL) {
+		dprintf(debug, "%d: cannot find %s\n", pid, user),
+			fflush(debug);
+		exit(1);
+	}
+	(void) setgid(pwd->pw_gid);
+	initgroups(pwd->pw_name, pwd->pw_gid);
+	(void) setuid(pwd->pw_uid);
+	freopen("/", "r", stdin);
+	dprintf(debug, "%d: executing %s", pid, s), fflush (debug);
+	execl("/bin/sh", "sh", "-c", s, 0);
+	dprintf(debug, "%d: cannot execute sh\n", pid), fflush (debug);
+	exit(0);
+d268 1
+d271 11
+a281 10
+	/*
+	 * Don't free in case was longer than LISTS.  Trades off
+	 * the rare case of crontab shrinking vs. the common case of
+	 * extra realloc's needed in append() for a large crontab.
+	 */
+	if (list == 0) {
+		list = malloc(LISTS);
+		listsize = LISTS;
+	}
+	listend = list;
+d284 1
+d286 1
+a286 1
+char *fn;
+d288 4
+a291 4
+	register i, c;
+	register char *cp;
+	register char *ocp;
+	register int n;
+d293 4
+a296 3
+	if (freopen(fn, "r", stdin) == NULL)
+		return;
+	cp = listend;
+d298 2
+a299 2
+	if(cp > list+listsize-MAXLIN) {
+		int length = cp - list;
+d301 67
+a367 54
+		listsize += LISTS;
+		list = realloc(list, listsize);
+		cp = list + length;
+	}
+	ocp = cp;
+	for(i=0;; i++) {
+		do
+			c = getchar();
+		while(c == ' ' || c == '\t')
+			;
+		if(c == EOF || c == '\n')
+			goto ignore;
+		if(i == 5)
+			break;
+		if(c == '*') {
+			*cp++ = ANY;
+			continue;
+		}
+		if ((n = number(c)) < 0)
+			goto ignore;
+		c = getchar();
+		if(c == ',')
+			goto mlist;
+		if(c == '-')
+			goto mrange;
+		if(c != '\t' && c != ' ')
+			goto ignore;
+		*cp++ = EXACT;
+		*cp++ = n;
+		continue;
+
+	mlist:
+		*cp++ = LIST;
+		*cp++ = n;
+		do {
+			if ((n = number(getchar())) < 0)
+				goto ignore;
+			*cp++ = n;
+			c = getchar();
+		} while (c==',');
+		if(c != '\t' && c != ' ')
+			goto ignore;
+		*cp++ = LIST;
+		continue;
+
+	mrange:
+		*cp++ = RANGE;
+		*cp++ = n;
+		if ((n = number(getchar())) < 0)
+			goto ignore;
+		c = getchar();
+		if(c != '\t' && c != ' ')
+			goto ignore;
+		*cp++ = n;
+d369 2
+a370 7
+	while(c != '\n') {
+		if(c == EOF)
+			goto ignore;
+		if(c == '%')
+			c = '\n';
+		*cp++ = c;
+		c = getchar();
+d372 6
+a377 3
+	*cp++ = '\n';
+	*cp++ = 0;
+	goto loop;
+d380 6
+a385 8
+	cp = ocp;
+	while(c != '\n') {
+		if(c == EOF) {
+			fclose(stdin);
+			listend = cp;
+			return;
+		}
+		c = getchar();
+d387 3
+a389 1
+	goto loop;
+d392 1
+d394 1
+a394 1
+register c;
+d396 1
+a396 1
+	register n = 0;
+d398 9
+a406 8
+	while (isdigit(c)) {
+		n = n*10 + c - '0';
+		c = getchar();
+	}
+	ungetc(c, stdin);
+	if (n>=100)
+		return(-1);
+	return(n);
+d409 1
+d412 2
+a413 2
+	union wait status;
+	int pid;
+d415 6
+a420 4
+	while ((pid = wait3(&status, WNOHANG, 0)) > 0)
+		dprintf(debug, "%d: child exits with signal %d status %d\n",
+			pid, status.w_termsig, status.w_retcode),
+			fflush (debug);
+d423 1
+d426 1
+a426 1
+	int i;
+d428 6
+a433 5
+	i = open("/dev/tty", O_RDWR);
+	if (i >= 0) {
+		ioctl(i, TIOCNOTTY, (char *)0);
+		(void) close(i);
+	}
+d435 1
+d453 1
+a453 1
+void
+d470 1
+@
+
+
+1.2
+log
+@Added Fs_GetPrivateName to get host-specific file
+@
+text
+@d362 1
+a362 1
+#ifndef notdef
+d390 2
+a391 1
+        Sys_GetHostName (sizeof(hostname), hostname);
+d395 1
+a395 1
+    Io_PrintString (bufPtr, "%s/%s/%s", PRIVATE_DIR, hostname, fileName);
+a396 1
+#endif notdef
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d21 1
+a21 1
+#define CRONTAB "/usr/lib/crontab"
+d35 1
+a35 1
+char	loc_crontab[]   = CRONTABLOC;
+d42 1
+d82 2
+d362 35
+@

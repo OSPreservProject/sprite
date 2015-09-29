@@ -1,0 +1,132 @@
+
+
+
+frame                     User Commands                     frame
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     frame - Create and manipulate frame widgets
+
+SSYYNNOOPPSSIISS
+     ffrraammee _p_a_t_h_N_a_m_e ?--ccllaassss _c_l_a_s_s_N_a_m_e? ?_o_p_t_i_o_n_s?
+
+SSTTAANNDDAARRDD OOPPTTIIOONNSS
+     bbaacckkggrroouunndd      ccuurrssoorr         rreelliieeff                         |
+     bboorrddeerrWWiiddtthh     ggeeoommeettrryy
+
+     See the ``options'' manual entry for details on the standard
+     options.
+
+WWIIDDGGEETT--SSPPEECCIIFFIICC OOPPTTIIOONNSS
+     None.
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The ffrraammee command creates a new window (given by  the  _p_a_t_h_-
+     _N_a_m_e argument) and makes it into a frame widget.  Additional
+     options, described above, may be specified  on  the  command
+     line  or  in the option database to configure aspects of the
+     frame such as its background color and  relief.   The  ffrraammee
+     command returns the path name of the new window.
+
+     A frame is a simple widget.  Its primary purpose is  to  act
+     as  a  spacer  or container for complex window layouts.  The
+     only features of a frame are its  background  color  and  an
+     optional  3-D  border  to  make  the  frame appear raised or
+     sunken.
+
+     In addition to the standard options listed above,  a  --ccllaassss
+     option  may  be  specified  on  the  command line.  If it is
+     specified, then the  new  widget's  class  will  be  set  to
+     _c_l_a_s_s_N_a_m_e  instead  of FFrraammee.  Changing the class of a frame
+     widget may be useful in order to use a special class name in
+     database  options referring to this widget and its children.
+     Note:  --ccllaassss is handled differently than other command-line
+     options  and  cannot  be specified using the option database
+     (it has to be processed before the other  options  are  even
+     looked  up,  since the new class name will affect the lookup
+     of the other options).  In addition, the --ccllaassss  option  may
+     not be queried or changed using the ccoonnffiigg command described
+     below.
+
+
+WWIIDDGGEETT CCOOMMMMAANNDD
+     The ffrraammee command creates a new Tcl command  whose  name  is
+     the  same  as  the  path  name  of the frame's window.  This
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+frame                     User Commands                     frame
+
+
+
+     command may be used to  invoke  various  operations  on  the
+     widget.  It has the following general form:
+
+          _p_a_t_h_N_a_m_e _o_p_t_i_o_n ?_a_r_g _a_r_g ...?
+     _P_a_t_h_N_a_m_e is the name of the command, which is  the  same  as
+     the frame widget's path name.  _O_p_t_i_o_n and the _a_r_gs determine
+     the exact behavior of the command.  The  following  commands
+     are possible for frame widgets:
+
+     _p_a_t_h_N_a_m_e ccoonnffiigguurree ?_o_p_t_i_o_n? ?_v_a_l_u_e _o_p_t_i_o_n _v_a_l_u_e ...?
+          Query  or  modify  the  configuration  options  of  the
+          widget.   If  no  _o_p_t_i_o_n  is  specified, returns a list
+          describing all of the available  options  for  _p_a_t_h_N_a_m_e
+          (see  TTkk__CCoonnffiigguurreeIInnffoo for information on the format of
+          this list).  If _o_p_t_i_o_n is specified with no _v_a_l_u_e, then
+          the  command  returns  a  list describing the one named
+          option (this list will be identical to the  correspond-
+          ing  sublist  of  the  value  returned  if no _o_p_t_i_o_n is
+          specified).  If one  or  more  _o_p_t_i_o_n-_v_a_l_u_e  pairs  are
+          specified,  then  the command modifies the given widget
+          option(s) to have the given value(s);  in this case the
+          command  returns  an empty string.  _O_p_t_i_o_n may have any
+          of the values accepted by the ffrraammee command.
+
+
+BBIINNDDIINNGGSS
+     When a new frame is created, it has no default  event  bind-
+     ings: frames are not intended to be interactive.
+
+
+KKEEYYWWOORRDDSS
+     frame, widget
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     2
+
+
+

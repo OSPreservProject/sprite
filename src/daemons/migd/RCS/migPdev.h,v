@@ -1,0 +1,67 @@
+head     2.0;
+branch   ;
+access   ;
+symbols  before_fairness_changes:2.0 ckpt1:1.1;
+locks    ; strict;
+comment  @ * @;
+
+
+2.0
+date     90.06.30.17.09.46;  author douglis;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     90.02.15.19.19.17;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Declarations of functions and variables for the migration
+daemon pseudo-device management.
+@
+
+
+2.0
+log
+@Changing version numbers.
+@
+text
+@/*
+ * migPdev.h --
+ *
+ *	Declarations of functions and variables for the migration
+ *	daemon pseudo-device management.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $MigPdev: /sprite/lib/forms/RCS/proto.h,v 1.4 89/10/28 15:57:26 rab Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _MIGPDEV
+#define _MIGPDEV
+
+extern int migPdev_Debug;
+
+extern int MigPdev_OpenMaster();
+extern void MigPdev_End();
+extern void MigPdev_SignalClients();
+
+#endif /* _MIGPDEV */
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@@

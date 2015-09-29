@@ -1,0 +1,103 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  srv030:1.2 srv028:1.2 srv027:1.2 srv026:1.2 srv024:1.2 srv022:1.2 srv021:1.2 srv019:1.2 srv018:1.2 srv016:1.2 srv014:1.2 srv010:1.2 srv008:1.2 srv007:1.2 srv006:1.2 srv005:1.2 srv004:1.2 srv003:1.2 srv002:1.2 srv001:1.2;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     91.12.01.22.31.50;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.11.23.23.10.54;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Snapshot: FS support.
+@
+text
+@/* 
+ * strncpy.c --
+ *
+ *	Source code for the "strncpy" library routine.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/lib/c/string/RCS/strncpy.c,v 1.1 91/11/23 23:10:54 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <string.h>
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * strncpy --
+ *
+ *	Copy exactly numChars characters from src to dst.  If src doesn't
+ *	contain exactly numChars characters, then the last characters are
+ *	ignored (if src is too long) or filled with zeros (if src
+ *	is too short).  If src is too long then dst will not be
+ *	null-terminated.
+ *
+ * Results:
+ *	The return value is a pointer to the destination string, dst.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+strncpy(dst, src, numChars)
+    register _CONST char *src;	/* Place from which to copy. */
+    char *dst;			/* Place to store copy. */
+    int numChars;		/* Maximum number of characters to copy. */
+{
+    register char *copy = dst;
+
+    while (--numChars >= 0) {
+	if ((*copy++ = *src++) == '\0') {
+	    while (--numChars >= 0) {
+		*copy++ = '\0';
+	    }
+	    return dst;
+	}
+    }
+    return dst;
+}
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/string/RCS/strncpy.c,v 1.2 89/03/22 16:07:14 rab Exp $ SPRITE (Berkeley)";
+d44 1
+a44 1
+    register char *src;		/* Place from which to copy. */
+@

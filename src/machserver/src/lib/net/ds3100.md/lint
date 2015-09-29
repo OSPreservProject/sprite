@@ -1,0 +1,23 @@
+Net_AddrNetMask.c:
+Net_AddrNetMask.c 2(50): warning: comparison of unsigned with negative constant
+Net_AddrNetMask.c 2(52): warning: comparison of unsigned with negative constant
+Net_AddrNetNum.c:
+Net_AddrNetNum.c 2(50): warning: comparison of unsigned with negative constant
+Net_EtherAddrToString.c:
+Net_HostToNetInt.c:
+Net_HostToNetShort.c:
+Net_InetAddrHostNum.c:
+Net_InetAddrHostNum.c 2(50): warning: comparison of unsigned with negative constant
+Net_InetHdrChecksum.c:
+Net_MakeInetAddr.c:
+Net_NetToHostInt.c:
+Net_StringToEtherAddr.c:
+Net_StringToInetAddr.c:
+Net_StringToNetNum.c:
+Net_AddrToString.c:
+Net_InetAddrToString.c:
+Net_InetChecksum.c:
+Net_NetToHostShort.c:
+Net_StringToAddr.c:
+bzero value declared inconsistently	llib-lc:bzero.c 2(58)  ::  Net_StringToEtherAddr.c 2(52)
+sprintf returns value which is always ignored

@@ -1,0 +1,34 @@
+There is a program TEXINDEX (in VAX/VMS Pascal) which will sort the file of
+index entries written by LaTeX when you request an index (with \makeindex).
+This program was originally written in INTERLISP by Terry Winograd and Bill
+Paxton.  It was converted into Pascal by Skip Montanaro.  The interface to
+LaTeX was written by Charles Karney (Karney%PPC.MFENET@NMFECC.ARPA)
+
+In order to use it, specify ``texindex'' as one of the optional
+arguments to \documentstyle.  E.g.,
+    \documentstyle[texindex,11pt]{article}.
+
+Specify \makeindex (as documented in the LaTeX manual) to turn on the
+collection of entries.
+
+For each entry you wish to index specify
+    \index{topic;subtopic;subsubtopic}
+The semicolons separate the topics from the subtopics.  E.g.,
+    We next consider the ballooning
+    instability\index{instabilities;ballooning}.
+The subtopics are optional.  In the above example, you could have used
+\index{ballooning instabilities} to provide a separate index entry for
+ballooning instabilities.
+
+At the point at which you want the index to appear, type
+    \insertindex
+
+The procedure for producing an up-to-date index for paper.tex is as
+follows:
+
+(1) Run LaTeX on your file.  This produces an unsorted index file
+paper.idx.
+(2) Run TEXINDEX with
+    TEXINDEX paper
+This reads paper.idx and produces a sorted index file paper.ind.
+(3) Rerun LaTeX on your original file.

@@ -1,0 +1,293 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  ds3100:1.6 sun3:1.6 sun4nw:1.5 symm:1.5 spur:1.5;
+locks    ; strict;
+comment  @ * @;
+
+
+1.6
+date     91.12.17.17.33.52;  author jhh;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.10.09.16.25.48;  author mendel;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.10.19.17.23.11;  author mendel;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.08.02.16.20.12;  author mendel;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.05.25.15.33.24;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.01.16.17.12.33;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.6
+log
+@Added the domainUID and partition fields to the super block. The partition
+is checked during attach to make sure the file system is being attached
+under the same partition as it was built. Also, the domainPrefix in the
+checkpoint is no longer set during the attach. Domain prefixes are only
+set by the fsdomain program.
+@
+text
+@/*
+ * lfsSuperBlock.h --
+ *
+ *	Declarations defining the disk resident format of the LFS 
+ *	super block. The main purpose of the super block is to allow
+ *	the file system to be recovered and reattached upon file server
+ *	reboot. The super block is divided into two section the static
+ *	super block and the checkpoint area.  The super block
+ *	contains the nonchangable parameters that describe the LFS. 
+ *	The checkpoint area contains the parameters that change when the
+ *	file system is modified.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/lfs/lfsSuperBlock.h,v 1.5 91/10/09 16:25:48 mendel Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _LFSSUPERBLOCK
+#define _LFSSUPERBLOCK
+
+#ifdef EKERNEL
+#include <lfsDescMap.h>
+#include <lfsUsageArray.h>
+#include <lfsFileLayout.h>
+#else
+#include <kernel/lfsDescMap.h>
+#include <kernel/lfsUsageArray.h>
+#include <kernel/lfsFileLayout.h>
+#endif
+/*
+ * The LfsSuperBlockHdr contains static parameters describing the file system
+ * layout on disk. 
+ */
+#define	LFS_SUPER_BLOCK_HDR_SIZE	128
+typedef struct LfsSuperBlockHdr {
+    unsigned int magic;		/* Better be LFS_SUPER_BLOCK_MAGIC. */
+    unsigned int version;  	/* Version number describing the format used
+				 * for this LFS.  */
+    int blockSize;		/* The block size of this file system. Should
+				 * be set to the minumum addressable unit. */
+	/*
+	 * File system layout. 
+	 */
+    int maxCheckPointBlocks;  /* Maximum size of checkpoint region in blocks. */
+    int checkPointOffset[2];/* The block offset into the device of the
+			     * two checkpoint areas. Two areas are
+			     * used so we never update in place. The
+			     * format the segment is defined below. */
+    int logStartOffset;     /* The block offset starting the segmented log. */
+    int	 checkpointInterval;	/* Frequency of checkpoint in seconds. */
+    int  maxNumCacheBlocks;     /* Maximum number of blocks to clean at time.*/
+    int	 domainUID;		/* Unique ID for file system. */
+    int	 partition;		/* Partition number file system was built in. */
+    char reserved[LFS_SUPER_BLOCK_HDR_SIZE-11*sizeof(int)];
+			    /* Reserved, must be set to zero. */
+
+} LfsSuperBlockHdr;
+
+#define	LFS_SUPER_BLOCK_MAGIC		0x106d15c 	/* LogDisc */
+#define	LFS_SUPER_BLOCK_VERSION		1
+#define	LFS_SUPER_BLOCK_SIZE		512
+#define LFS_SUPER_BLOCK_OFFSET		64
+/*
+ * The format a LFS super block. 
+ */
+typedef struct LfsSuperBlock {
+    LfsSuperBlockHdr  hdr;	/* Header describing the layout of the LFS. */
+    int		reserved;	/* Reseved field must be zero. */
+    LfsDescMapParams  descMap;	/* Descriptor map parameters. */
+    LfsSegUsageParams usageArray; /* The segment usage map parameters. */
+    LfsFileLayoutParams fileLayout; /* Parameters describing file layout. */
+    char padding[LFS_SUPER_BLOCK_SIZE-sizeof(LfsFileLayoutParams) - 
+		 sizeof(LfsSegUsageParams)-sizeof(LfsDescMapParams) -
+		 sizeof(int) - sizeof(LfsSuperBlockHdr)];	
+} LfsSuperBlock;
+
+
+/*
+ * Format of the LFS checkpoint areas.  The checkpoint area consists of
+ * a LfsCheckPointHdr structure followed by zero or more LfsCheckPointRegion
+ * from each module.  The last LfsCheckPointRegion is ended with a 
+ * LfsCheckPointTrailer.
+ */
+
+typedef struct LfsCheckPointHdr {
+    unsigned int timestamp;	/* Timestamp of this checkpoint. */
+    int size;			/* Size of checkpoint in bytes. */
+    unsigned int version;	/* Region write version number. */
+    char domainPrefix[64];	/* Last prefix used for the domain */
+    int	 domainNumber;		/* Last domain we ran under. */
+    int	 attachSeconds;		/* Time the disk was attached */
+    int	 detachSeconds;		/* Time the disk was off-lined. */
+    int	 serverID;		/* Sprite ID of server. */
+} LfsCheckPointHdr;
+
+typedef struct LfsCheckPointRegion {
+    unsigned int type;		/* Region type -- see log writing types in
+				 * lfsLogFormat.h. */
+    int size;			/* Size of the region in bytes. */
+} LfsCheckPointRegion;
+
+typedef struct LfsCheckPointTrailer {
+    unsigned int timestamp;	/* Timestamp of this checkpoint. Must match
+				 * the checkpoint on header. */
+    unsigned int checkSum;	/* A checksum of the checkpoint check used to
+				 * detect partial checkpoint writes. */
+} LfsCheckPointTrailer;
+
+
+#define	LFS_SUPER_BLOCK_SIZE_OK() \
+	((sizeof(LfsSuperBlock) == LFS_SUPER_BLOCK_SIZE) &&		\
+	 (sizeof(LfsSuperBlockHdr) == LFS_SUPER_BLOCK_HDR_SIZE) &&	\
+	 (sizeof(LfsDescMapParams) == LFS_DESC_MAP_PARAM_SIZE) &&	\
+	 (sizeof(LfsSegUsageParams) == LFS_USAGE_ARRAY_PARAM_SIZE) &&   \
+	 (sizeof(LfsFileLayoutParams) == LFS_FILE_LAYOUT_PARAMS_SIZE))
+
+#endif /* _LFSSUPERBLOCK */
+@
+
+
+1.5
+log
+@Moved reserved field so that LfsSuperBlockHdr was back to 128 bytes.
+@
+text
+@d22 1
+a22 1
+ * $Header: /sprite/src/kernel/lfs/RCS/lfsSuperBlock.h,v 1.4 90/10/19 17:23:11 mendel Exp $ SPRITE (Berkeley)
+d59 3
+a61 1
+    char reserved[LFS_SUPER_BLOCK_HDR_SIZE-9*sizeof(int)];
+@
+
+
+1.4
+log
+@Many bug fixed. First installed LFS.
+@
+text
+@d22 1
+a22 1
+ * $Header: /sprite/src/kernel/lfs/RCS/lfsSuperBlock.h,v 1.3 90/08/02 16:20:12 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d59 1
+a59 1
+    char reserved[LFS_SUPER_BLOCK_HDR_SIZE-8*sizeof(int)];
+d73 1
+d79 1
+a79 1
+		 sizeof(LfsSuperBlockHdr)];	
+d113 8
+@
+
+
+1.3
+log
+@Checkin before adding recovery
+./
+@
+text
+@d5 1
+a5 1
+ *	super block. The main purpose of the super blocks is to allow
+d22 1
+a22 1
+ * $Header: /sprite/src/kernel/lfs/RCS/lfsSuperBlock.h,v 1.2 90/05/25 15:33:24 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d28 9
+a36 4
+#include "lfsDescMap.h"
+#include "lfsUsageArray.h"
+#include "lfsFileLayout.h"
+
+d53 3
+a55 3
+			  * two checkpoint areas. Two areas are
+			  * used so we never update in place. The
+			  * format the segment is defined below. */
+d57 4
+a60 2
+    int maxNumCacheBlocks;  /* Maximum number of blocks to clean at a time. */
+    char padding[LFS_SUPER_BLOCK_HDR_SIZE-8*4];
+d66 2
+a67 1
+#define	LFS_SUPER_BLOCK_SIZE	512
+a103 1
+
+a112 1
+#define LFS_SUPER_BLOCK_OFFSET	64
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d22 1
+a22 1
+ * $Header: /sprite/src/kernel/fs.mendel/RCS/lfsSuperBlock.h,v 1.1 90/01/16 17:12:33 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d53 1
+a53 1
+    char padding[LFS_SUPER_BLOCK_HDR_SIZE-32];
+d83 1
+a83 1
+    unsigned int size;		/* Size of checkpoint in bytes. */
+d95 1
+a95 1
+    unsigned int size;		/* Size of the region in bytes. */
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d22 1
+a22 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.4 89/10/28 15:57:26 rab Exp $ SPRITE (Berkeley)
+d41 1
+a41 1
+    unsigned int blockSize;	/* The block size of this file system. Should
+d46 8
+a53 9
+    unsigned int maxCheckPointBlocks;  /* Maximum size of checkpoint region in
+				      * blocks. */
+    unsigned int checkPointOffset[2];/* The block offset into the device of the
+				      * two checkpoint areas. Two areas are
+				      * used so we never update in place. The
+				      * format the segment is defined below. */
+    unsigned int logStartOffset;     /* The block offset starting the segmented
+				      * log. */
+    char padding[LFS_SUPER_BLOCK_HDR_SIZE-28];
+d89 1
+@

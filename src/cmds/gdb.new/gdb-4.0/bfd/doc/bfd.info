@@ -1,0 +1,64 @@
+Info file bfd.info, produced by Makeinfo, -*- Text -*- from input
+file bfd.texinfo.
+
+   This file documents the BFD library.
+
+   Copyright (C) 1991 Free Software Foundation, Inc.
+
+   Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+   Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, subject to the
+terms of the GNU General Public License, which includes the provision
+that the entire resulting derived work is distributed under the terms
+of a permission notice identical to this one.
+
+   Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions.
+
+Indirect:
+bfd.info-1: 821
+bfd.info-2: 42961
+bfd.info-3: 82569
+   
+Tag Table:
+(Indirect)
+Node: Top823
+Node: Overview1087
+Node: History1992
+Node: How It Works2945
+Node: What BFD Version 1 Can Do4372
+Node: BFD information loss5398
+Node: Mechanism8013
+Node: BFD front end12349
+Node: Memory Usage17366
+Node: Sections18586
+Node: Section Input19059
+Node: Section Output20323
+Node: typedef asection21698
+Node: section prototypes26487
+Node: Symbols30021
+Node: Reading Symbols31610
+Node: Writing Symbols32567
+Node: typedef asymbol34097
+Node: symbol handling functions37543
+Node: Archives39405
+Node: Formats40854
+Node: Relocations42963
+Node: Core Files54841
+Node: Targets55736
+Node: bfd_target57455
+Node: Architectures66096
+Node: Opening and Closing69698
+Node: Internal71576
+Node: File Caching74036
+Node: BFD back end76541
+Node: What to Put Where76735
+Node: aout76864
+Node: coff82571
+Node: Index93539
+
+End Tag Table

@@ -1,0 +1,593 @@
+head     1.8;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.8
+date     92.01.08.22.54.48;  author jhh;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     92.01.08.22.49.27;  author dlong;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     90.06.28.15.14.34;  author rab;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     90.02.16.16.12.46;  author shirriff;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.08.15.12.28.44;  author rab;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.06.16.09.34.40;  author jhh;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.10.31.12.35.46;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.10.31.11.56.02;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Program to install a boot program on a disk header
+@
+
+
+1.8
+log
+@didn't start boot program at correct sector for decstations.
+@
+text
+@/* 
+ * installboot.c --
+ *
+ *	Copy a boot program to the correct place on the disk.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/admin/installboot.dlong/RCS/installboot.c,v 1.7 91/01/04 23:41:40 dlong Exp $ SPRITE (Berkeley)";
+#endif
+
+#include <sprite.h>
+#include <option.h>
+#include <disk.h>
+
+#include <stdio.h>
+#include <errno.h>
+#include <sys/file.h>
+
+/*
+ * Settable via the command line.
+ */
+Boolean unixStyleBootFile = FALSE;
+Boolean keepHeader = FALSE;
+
+/*
+ * The following are used to go from a command line like
+ * bootInstall -dev rsd0
+ * to /dev/rsd0a 	- for the partition that has the disk label
+ * and to /dev/rsd0b	- for the partition to format.
+ */
+char *deviceName;		/* Set to "rsd0" or "rxy1", etc. */
+char defaultFirstPartName[] = "a";
+char *firstPartName = defaultFirstPartName;
+char devDirectory[] = "/dev/";
+
+Option optionArray[] = {
+    {OPT_STRING, "dev", (Address)&deviceName,
+	"Required: Name of device, eg \"rsd0\" or \"rxy1\""},
+    {OPT_STRING, "part", (Address)&firstPartName,
+	"Optional: Partition ID: (a, b, c, d, e, f, g)"},
+    {OPT_TRUE, "noStrip", (Address)&keepHeader,
+	"Do not strip off the a.out header (sun4c)\n",},
+    {OPT_TRUE, "u", (Address)&unixStyleBootFile,
+	"The boot file has no a.out header (unix style)\n",},
+};
+int numOptions = sizeof(optionArray) / sizeof(Option);
+
+/*
+ * Forward Declarations.
+ */
+ReturnStatus InstallBoot();
+ReturnStatus DecHeader(), SunHeader();
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	Create the required file names from the command line
+ *	arguments.  Then open the first partition on the disk
+ *	and copy the boot program there.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Calls InstallBoot
+ *
+ *----------------------------------------------------------------------
+ */
+main(argc, argv)
+    int argc;
+    char *argv[];
+{
+    ReturnStatus status;	/* status of system calls */
+    int diskFID;		/* File ID for first parition on the disk */
+    int bootFID;		/* File ID for partiton to format */
+    char firstPartitionName[64];
+    char *bootFile;
+
+    argc = Opt_Parse(argc, argv, optionArray, numOptions);
+
+    if (deviceName == (char *)0) {
+	printf("Specify device name with -dev option\n");
+	status = FAILURE;
+    } else if (argc < 2) {
+	printf("Specify boot program after options\n");
+	status = FAILURE;
+    } else {
+	bootFile = argv[1];
+	status = SUCCESS;
+    }
+    if (status != SUCCESS) {
+	exit(FAILURE);
+    }
+    /*
+     * Gen up the name of the first partition on the disk.
+     */
+    (void)strcpy(firstPartitionName, devDirectory);	/* eg. /dev/ */
+    (void)strcat(firstPartitionName, deviceName);	/* eg. /dev/rxy0 */
+    (void)strcat(firstPartitionName, firstPartName);	/* eg. /dev/rxy0a */
+
+    diskFID = open(firstPartitionName, O_RDWR, 0);
+    if (diskFID < 0) {
+	fprintf(stderr, "Can't open \"%s\": %s\n",
+				  firstPartitionName, strerror(errno));
+	exit(status);
+    }
+    bootFID = open(bootFile, O_RDONLY, 0);
+    if (bootFID < 0) {
+	fprintf(stderr, "Can't open boot file \"%s\": %s\n",
+				  bootFile, strerror(errno));
+	exit(status);
+    }
+    status = InstallBoot(diskFID, bootFID);
+
+    exit(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * InstallBoot --
+ *
+ *	Write a boot program to the boot sectors of the disk.
+ *
+ * Results:
+ *	An error code.
+ *
+ * Side effects:
+ *	Write all over the disk partition.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+InstallBoot(diskFID, bootFID)
+    int diskFID;	/* Handle on the first partition of the disk */
+    int bootFID;	/* Handle on the boot program */
+{
+    ReturnStatus status;
+    register int numBlocks;
+#if 1    
+    Disk_Label *diskInfoPtr;
+#else    
+    Disk_Info  *diskInfoPtr;
+#endif    
+    Dec_DiskBoot	decBootInfo;
+    int bytesRead;
+    Address sector;
+    int sectorIndex;
+    Address loadAddr;
+    Address execAddr;
+    int	length;
+    int	headerSize;
+    int toRead;
+    int decDisk = 0;	/* 1 if this is a Dec disk. */
+
+    /*
+     * Read the copy of the super block at the beginning of the partition
+     * to find out basic disk geometry and where to write the boot program.
+     */
+#if 1
+    if ((diskInfoPtr = Disk_ReadLabel(diskFID)) == NULL) {
+	return FAILURE;
+    }
+#else    
+    diskInfoPtr = Disk_ReadDiskInfo(diskFID, 0);
+    if (diskInfoPtr == (Disk_Info *)0) {
+	return(FAILURE);
+    }
+#endif    
+    if (Disk_ReadDecLabel(diskFID) != (Dec_DiskLabel *)0) {
+	decDisk++;
+    }
+
+    if ((headerSize = SunHeader(bootFID, &loadAddr, &execAddr, &length)) < 0) {
+	if (DecHeader(bootFID, &loadAddr, &execAddr, &length) != SUCCESS) {
+	    printf("Need impure text format (OMAGIC) file\n");
+	    return FAILURE;
+	}
+    }
+
+    if (keepHeader) {
+	lseek(bootFID, 0L, 0);
+	length += headerSize;
+    }
+
+    /*
+     * Write the boot information block.
+     */
+    if (decDisk) {
+	diskInfoPtr->bootSector = DEC_BOOT_SECTOR + 1;
+	decBootInfo.magic = DEC_BOOT_MAGIC;
+	decBootInfo.mode = 0;
+	decBootInfo.loadAddr = (int) loadAddr;
+	decBootInfo.execAddr = (int) execAddr;
+	decBootInfo.map[0].numBlocks = diskInfoPtr->numBootSectors;
+	decBootInfo.map[0].startBlock = diskInfoPtr->bootSector;
+	decBootInfo.map[1].numBlocks = 0;
+	status = Disk_SectorWrite(diskFID, DEC_BOOT_SECTOR, 1, &decBootInfo);
+	if (status < 0) {
+	    fprintf(stderr, "Sector write %d failed: ", DEC_BOOT_SECTOR);
+	    perror("");
+	    return(errno);
+	}
+    }
+    /*
+     * Write the remaining code to the correct place on the disk.
+     */
+    sector = (Address)malloc(DEV_BYTES_PER_SECTOR);
+    for (sectorIndex=0 ; sectorIndex < diskInfoPtr->numBootSectors && length>0;
+			 sectorIndex++) {
+	bzero(sector, DEV_BYTES_PER_SECTOR);
+	toRead = length < DEV_BYTES_PER_SECTOR ? length :
+		DEV_BYTES_PER_SECTOR;
+	bytesRead = read(bootFID, sector, toRead);
+	if (bytesRead < toRead) {
+	    perror("Boot file read failed");
+	    return(status);
+	}
+	if (bytesRead > 0) {
+	    length -= bytesRead;
+	    status = Disk_SectorWrite(diskFID,
+				 diskInfoPtr->bootSector + sectorIndex,
+				 1, sector);
+	    if (status < 0) {
+		fprintf(stderr, "Sector write %d failed: ", sectorIndex);
+		perror("");
+		return(errno);
+	    }
+	} else {
+	    sectorIndex++;
+	    break;
+	}
+    }
+    printf("Wrote %d sectors\n", sectorIndex);
+    if (length > 0) {
+	printf("Warning: didn't reach end of boot program!\n");
+    }
+    return(SUCCESS);
+}
+@
+
+
+1.7
+log
+@checking this in for dlong -- jhh
+@
+text
+@d203 1
+@
+
+
+1.6
+log
+@Converted to use the new disk.h.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/admin/installboot/RCS/installboot.c,v 1.5 90/02/16 16:12:46 shirriff Exp Locker: rab $ SPRITE (Berkeley)";
+d33 1
+d37 1
+a37 1
+ * bootInstall -D rsd0
+d47 1
+a47 1
+    {OPT_STRING, "D", (Address)&deviceName,
+d49 4
+d95 1
+a95 1
+	printf("Specify device name with -D option\n");
+a158 1
+    Fsdm_DomainHeader *headerPtr;
+d165 1
+d187 1
+a187 1
+    if (SunHeader(bootFID, &loadAddr, &execAddr, &length) != SUCCESS) {
+d192 5
+@
+
+
+1.5
+log
+@Modified so coff format boot files can be used.  Made a bunch of
+small changes.  Changed to work for Dec boot program.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/admin/installboot/RCS/installboot.c,v 1.4 89/08/15 12:28:44 rab Exp Locker: brent $ SPRITE (Berkeley)";
+d23 1
+a23 1
+#include <diskUtils.h>
+d148 5
+a152 1
+    Disk_Info *diskInfoPtr;
+d168 5
+d177 1
+d188 1
+@
+
+
+1.4
+log
+@Replaced <procAOUT.h> with <procMach.h> and changed
+references to proc_AOUT with procExecHeader.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/admin/installboot/RCS/installboot.c,v 1.3 89/06/16 09:34:40 jhh Exp Locker: rab $ SPRITE (Berkeley)";
+a23 1
+#include <kernel/procMach.h>
+d57 1
+d149 2
+a150 2
+    FsDomainHeader *headerPtr;
+    ProcExecHeader aout;
+d154 5
+d168 3
+d172 6
+d179 1
+a179 2
+     * Read the program header to find out how big it is.  We have to
+     * trim this header before writing the boot program to disk.
+d181 14
+a194 4
+    bytesRead = read(bootFID, (char *)&aout, sizeof(ProcExecHeader));
+    if (bytesRead < 0) {
+	perror("Can't read a.out header");
+	return(errno);
+a195 5
+    if (aout.magic != PROC_OMAGIC) {
+	printf("Magic is <0%o>, need impure text format <0%o>\n", aout.magic,
+	     PROC_OMAGIC);
+	return(FAILURE);
+    }
+d197 1
+a197 2
+     * Now that the header is skipped just write the remaining code
+     * to the correct place on the disk.
+d200 1
+a200 1
+    for (sectorIndex=0 ; sectorIndex < diskInfoPtr->numBootSectors;
+d203 4
+a206 2
+	bytesRead = read(bootFID, sector, DEV_BYTES_PER_SECTOR);
+	if (bytesRead < 0) {
+d211 1
+d226 3
+@
+
+
+1.3
+log
+@Converted to use new c library correctly.
+@
+text
+@d18 2
+a19 2
+static char rcsid[] = "$Header: /sprite/src/admin/installboot/RCS/installboot.c,v 1.2 88/10/31 12:35:46 brent Exp $ SPRITE (Berkeley)";
+#endif not lint
+d24 1
+a24 1
+#include <kernel/procAOUT.h>
+d150 1
+a150 1
+    Proc_AOUT aout;
+d168 1
+a168 1
+    bytesRead = read(bootFID, (char *)&aout, sizeof(Proc_AOUT));
+@
+
+
+1.2
+log
+@Converted to new C library
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: bootInstall.c,v 1.1 88/06/02 13:13:19 brent Exp $ SPRITE (Berkeley)";
+d21 4
+a24 4
+#include "sprite.h"
+#include "option.h"
+#include "diskUtils.h"
+#include "kernel/procAOUT.h"
+d26 3
+a28 2
+#include "stdio.h"
+#include "errno.h"
+d109 1
+a109 1
+    diskFID = open(firstPartitionName, FS_READ|FS_WRITE, 0);
+d115 1
+a115 1
+    bootFID = open(bootFile, FS_READ, 0);
+d173 3
+a175 5
+    if (PROC_BAD_MAGIC_NUMBER(aout)) {
+	printf("Bad magic number on boot file <0%o>\n", aout.magic);
+	return(FAILURE);
+    } else if (aout.magic != PROC_OMAGIC) {
+	printf("Need impure text format, magic <0%o>\n", PROC_OMAGIC);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d2 1
+a2 1
+ * bootInstall.c --
+d8 7
+a22 1
+#include "io.h"
+d26 3
+d46 1
+a46 1
+    {OPT_STRING, 'D', (Address)&deviceName,
+d48 1
+a48 1
+    {OPT_TRUE, 'u', (Address)&unixStyleBootFile,
+d56 1
+a56 1
+ReturnStatus BootInstall();
+d72 1
+a72 1
+ *	Calls BootInstall
+d86 1
+a86 1
+    (void)Opt_Parse(&argc, argv, numOptions, optionArray);
+d89 1
+a89 1
+	Io_Print("Specify device name with -D option\n");
+d92 1
+a92 1
+	Io_Print("Specify boot program after options\n");
+d99 1
+a99 1
+	Proc_Exit(FAILURE);
+d104 3
+a106 3
+    String_Copy(devDirectory, firstPartitionName);	/* eg. /dev/ */
+    String_Cat(deviceName, firstPartitionName);		/* eg. /dev/rxy0 */
+    String_Cat(firstPartName, firstPartitionName);	/* eg. /dev/rxy0a */
+d108 5
+a112 5
+    status = Fs_Open(firstPartitionName, FS_READ|FS_WRITE, 0, &diskFID);
+    if (status != SUCCESS) {
+	Io_PrintStream(io_StdErr, "Can't open \"%s\" <%x>\n",
+				  firstPartitionName, status);
+	Proc_Exit(status);
+d114 5
+a118 5
+    status = Fs_Open(bootFile, FS_READ, 0, &bootFID);
+    if (status != SUCCESS) {
+	Io_PrintStream(io_StdErr, "Can't open boot file \"%s\" <%x>\n",
+				  bootFile, status);
+	Proc_Exit(status);
+d120 1
+a120 3
+    Io_PrintStream(io_StdErr, "Opened boot file <%x>\n", status);
+    Io_Flush(io_StdErr);
+    status = BootInstall(diskFID, bootFID);
+d122 1
+a122 5
+    Io_Flush(io_StdErr);
+    Io_Flush(io_StdOut);
+    (void)Fs_Close(diskFID);
+    (void)Fs_Close(bootFID);
+    Proc_Exit(status);
+d128 1
+a128 1
+ * BootInstall --
+d141 1
+a141 1
+BootInstall(diskFID, bootFID)
+d147 1
+a147 1
+    BasicDiskInfo *diskInfoPtr;
+d158 2
+a159 2
+    diskInfoPtr = ReadBasicDiskInfo(diskFID, 0);
+    if (diskInfoPtr == (BasicDiskInfo *)0) {
+d167 4
+a170 3
+    status = Fs_Read(bootFID, sizeof(Proc_AOUT), &aout, &bytesRead);
+    if (status != SUCCESS) {
+	return(status);
+d173 1
+a173 1
+	Io_Print("Bad magic number on boot file <0%o>\n", aout.magic);
+d176 1
+a176 1
+	Io_Print("Need impure text format, magic <0%o>\n", PROC_OMAGIC);
+d183 1
+a183 1
+    sector = (Address)Mem_Alloc(DEV_BYTES_PER_SECTOR);
+d186 4
+a189 4
+	Byte_Zero(DEV_BYTES_PER_SECTOR, sector);
+	status = Fs_Read(bootFID, DEV_BYTES_PER_SECTOR, sector, &bytesRead);
+	if (status != SUCCESS) {
+	    Stat_PrintMsg(status, "Boot file read failed");
+d193 1
+a193 1
+	    status = SectorWrite(diskFID,
+d196 4
+a199 5
+	    if (status != SUCCESS) {
+		Io_PrintStream(io_StdErr, "Sector write %d failed: ",
+					  sectorIndex);
+		Stat_PrintMsg(status, "");
+		return(status);
+d206 1
+a206 1
+    Io_Print("Wrote %d sectors\n", sectorIndex);
+@

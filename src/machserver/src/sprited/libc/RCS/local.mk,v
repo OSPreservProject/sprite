@@ -1,0 +1,38 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  srv030:1.1 srv028:1.1 srv027:1.1 srv026:1.1 srv024:1.1 srv022:1.1 srv021:1.1 srv019:1.1 srv018:1.1 srv016:1.1 srv015:1.1 srv014:1.1 srv012:1.1 srv011:1.1 srv010:1.1 srv008:1.1 srv007:1.1 srv006:1.1 srv005:1.1 srv004:1.1 srv003:1.1 srv002:1.1 srv001:1.1;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     91.10.18.18.36.54;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#
+# This file is included by Makefile.  Makefile is generated automatically
+# by mkmf, and this file provides additional local personalization.  The
+# variable SYSMAKEFILE is provided by Makefile;  it's a system Makefile
+# that must be included to set up various compilation stuff.
+#
+
+# Define MEM_VALIDATE to turn on ultra-paranoid (but slow) memory
+# checking in ckalloc.c.  Not useful unless MEM_DEBUG is turned on in
+# spritedCommon.mk. 
+# CFLAGS		+= -DMEM_VALIDATE
+
+#include "/users/kupfer/lib/pmake/spritedCommon.mk"
+@

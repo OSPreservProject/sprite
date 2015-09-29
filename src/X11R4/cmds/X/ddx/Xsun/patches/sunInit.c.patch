@@ -1,0 +1,181 @@
+*** /tmp/,RCSt1659767	Mon Nov  4 17:41:20 1991
+--- sunInit.c	Tue Jan  8 23:00:54 1991
+***************
+*** 48,53 ****
+--- 48,54 ----
+  #endif
+  
+  #include    "sun.h"
++ #include    <signal.h>
+  #include    <servermd.h>
+  #include    "dixstruct.h"
+  #include    "dix.h"
+***************
+*** 54,68 ****
+  #include    "opaque.h"
+  #include    "mipointer.h"
+  
+  extern int sunMouseProc();
+  extern int sunKbdProc();
+  extern Bool sunBW2Probe(), sunBW2Create();
+  extern Bool sunCG2CProbe(), sunCG2CCreate();
+  extern Bool sunCG3CProbe(), sunCG3CCreate();
+  extern Bool sunCG4CProbe(), sunCG4CCreate();
+- #ifdef FBTYPE_SUNFAST_COLOR /* doesn't exist in sunos3.x */
+  extern Bool sunCG6CProbe(), sunCG6CCreate();
+- #endif
+  extern void ProcessInputEvents();
+  
+  extern void SetInputCheck();
+--- 55,77 ----
+  #include    "opaque.h"
+  #include    "mipointer.h"
+  
++ #define	R_OK	4
++ #define	W_OK	2
++ #define	X_OK	1
++ #define	F_OK	0
++ 
++ #include "sys/ioctl.h"
++ #include "fcntl.h"
++ 
+  extern int sunMouseProc();
+  extern int sunKbdProc();
+  extern Bool sunBW2Probe(), sunBW2Create();
++ #ifndef	sprite
+  extern Bool sunCG2CProbe(), sunCG2CCreate();
++ #endif	sprite
+  extern Bool sunCG3CProbe(), sunCG3CCreate();
+  extern Bool sunCG4CProbe(), sunCG4CCreate();
+  extern Bool sunCG6CProbe(), sunCG6CCreate();
+  extern void ProcessInputEvents();
+  
+  extern void SetInputCheck();
+***************
+*** 72,78 ****
+  #define	XDEVICE	"XDEVICE"
+  #define	PARENT	"WINDOW_GFX"
+  
+! int sunSigIO = 0;	 /* For use with SetInputCheck */
+  static int autoRepeatHandlersInstalled;	/* FALSE each time InitOutput called */
+  
+  static Bool sunDevsProbed = FALSE;
+--- 81,87 ----
+  #define	XDEVICE	"XDEVICE"
+  #define	PARENT	"WINDOW_GFX"
+  
+! int spriteCheckInput = 0;	 /* For use with SetInputCheck */
+  static int autoRepeatHandlersInstalled;	/* FALSE each time InitOutput called */
+  
+  static Bool sunDevsProbed = FALSE;
+***************
+*** 79,115 ****
+  Bool sunSupportsDepth8 = FALSE;
+  unsigned long sunGeneration = 0;
+  
+- 
+- /*-
+-  *-----------------------------------------------------------------------
+-  * SigIOHandler --
+-  *	Signal handler for SIGIO - input is available.
+-  *
+-  * Results:
+-  *	sunSigIO is set - ProcessInputEvents() will be called soon.
+-  *
+-  * Side Effects:
+-  *	None
+-  *
+-  *-----------------------------------------------------------------------
+-  */
+- /*ARGSUSED*/
+- static void
+- SigIOHandler(sig, code, scp)
+-     int		code;
+-     int		sig;
+-     struct sigcontext *scp;
+- {
+-     sunSigIO = 1;
+- }
+- 
+  sunFbDataRec sunFbData[] = {
+      sunBW2Probe,  	"/dev/bwtwo0",	    sunBW2Create,
+      sunCG2CProbe,  	"/dev/cgtwo0",	    sunCG2CCreate,
+      sunCG3CProbe,  	"/dev/cgthree0",    sunCG3CCreate,
+- #ifdef FBTYPE_SUNFAST_COLOR
+      sunCG6CProbe,	"/dev/cgsix0",	    sunCG6CCreate,
+- #endif
+      sunCG4CProbe,  	"/dev/cgfour0",	    sunCG4CCreate,
+      sunBW2Probe,  	"/dev/bwtwo0",	    sunBW2Create,
+  };
+--- 88,100 ----
+  Bool sunSupportsDepth8 = FALSE;
+  unsigned long sunGeneration = 0;
+  
+  sunFbDataRec sunFbData[] = {
+      sunBW2Probe,  	"/dev/bwtwo0",	    sunBW2Create,
++ #ifndef	sprite
+      sunCG2CProbe,  	"/dev/cgtwo0",	    sunCG2CCreate,
++ #endif	sprite
+      sunCG3CProbe,  	"/dev/cgthree0",    sunCG3CCreate,
+      sunCG6CProbe,	"/dev/cgsix0",	    sunCG6CCreate,
+      sunCG4CProbe,  	"/dev/cgfour0",	    sunCG4CCreate,
+      sunBW2Probe,  	"/dev/bwtwo0",	    sunBW2Create,
+  };
+***************
+*** 149,157 ****
+--- 134,144 ----
+  {
+      register int i;
+  
++ #ifndef	sprite
+      i = fcntl(2, F_GETFL, 0);
+      if (i >= 0)
+  	(void) fcntl(2, F_SETFL, i & ~FNDELAY);
++ #endif	sprite
+  }
+  
+  /*-
+***************
+*** 187,192 ****
+--- 174,180 ----
+  	else if (!strcmp(argv[i],"-mono"))
+  	    devStart = 0;
+      }
++ #ifndef	sprite
+      /*
+       *	Writes to /dev/console can block - causing an
+       *	excess of error messages to hang the server in
+***************
+*** 206,211 ****
+--- 194,200 ----
+  	    ErrorF("InitOutput: can't put stderr in non-block mode\n");
+  	}
+      }
++ #endif	sprite
+      pScreenInfo->imageByteOrder = IMAGE_BYTE_ORDER;
+      pScreenInfo->bitmapScanlineUnit = BITMAP_SCANLINE_UNIT;
+      pScreenInfo->bitmapScanlinePad = BITMAP_SCANLINE_PAD;
+***************
+*** 272,280 ****
+      RegisterPointerDevice(p);
+      RegisterKeyboardDevice(k);
+      miRegisterPointerDevice(screenInfo.screens[0], p);
+!     signal(SIGIO, SigIOHandler);
+  
+!     SetInputCheck (&zero, &sunSigIO);
+  }
+  
+  /*-
+--- 261,272 ----
+      RegisterPointerDevice(p);
+      RegisterKeyboardDevice(k);
+      miRegisterPointerDevice(screenInfo.screens[0], p);
+! 
+!     spriteCheckInput = 0;
+!     SetInputCheck (&zero, &spriteCheckInput);
+  
+!     screenInfo.screens[0]->blockData =
+! 	screenInfo.screens[0]->wakeupData = (pointer)k;
+  }
+  
+  /*-

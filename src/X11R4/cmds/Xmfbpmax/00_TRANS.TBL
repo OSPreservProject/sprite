@@ -1,0 +1,12 @@
+L DIX.;1                            	dix	../X/dix
+D DS3100_M                          	ds3100.md
+L EXTENSIO.;1                       	extensions	../X/extensions
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+L MFB.;1                            	mfb	../X/ddx/mfb
+L MI.;1                             	mi	../X/ddx/mi
+L OS.;1                             	os	../X/os/sprite
+L PCF.;1                            	pcf	../X/ddx/pcf
+L SNF.;1                            	snf	../X/ddx/snf
+F TMP.;1                            	tmp
+L XMFBPMAX.;1                       	Xmfbpmax	../X/ddx/Xmfbpmax

@@ -1,0 +1,61 @@
+' Copyright 1989 Regents of the University of California
+' Permission to use, copy, modify, and distribute this
+' documentation for any purpose and without fee is hereby
+' granted, provided that this notice appears in all copies.
+' The University of California makes no representations about
+' the suitability of this material for any purpose.  It is
+' provided "as is" without express or implied warranty.
+' 
+' $Header: /sprite/src/man/files/RCS/userLog.man,v 1.1 89/02/16 10:04:22 ouster Exp $ SPRITE (Berkeley)
+' 
+.so \*(]ltmac.sprite
+.HS userLog files
+.BS
+.SH NAME
+/sprite/admin/userLog, /sprite/admin/lastLog \- files containing information about user logins
+.SH DESCRIPTION
+.PP
+Each time a user logs into a sprite host, the system records
+information about the login in two files.  Each record in each file is
+a fixed-length ASCII string, so a particular record
+may be updated without the need to read and rewrite all other records
+in the file. 
+.PP
+One file records information on a per-host basis, while the other
+records information about the last login of each user.  The per-host
+file, \fB/sprite/admin/userLog\fP, has one record for each ``port'' of
+each host.  The ports are numbered, with port 0 reserved for the
+console of each host and ports 1-N corresponding to rlogin
+pseudo-devices 1-N.  The per-user file, \fB/sprite/admin/lastLog\fP,
+has one record per registered user, indexed by the userID in
+\fB/etc/passwd\fP.  
+.PP
+When a user logs in, the record for the user's last login is updated
+to show the new login.  The record for the host and port into which
+the user logs in is updated with the same information.  When the user
+logs out, the latter record is invalidated to show no one is currently
+logged in on that port, but the record for last login is updated only
+when the user logs in again.
+.PP
+Each record contains the following information, separated by white
+space:
+.IP valid 14
+Whether the entry corresponds to a current login.
+.IP hostID 14
+Host on which user logged in.
+.IP portID 14
+Port on this host on which user logged in.
+.IP time 14
+time at which user logged in, or 0 when record is invalidated.
+.IP location 14
+string indicating other host from which rlogin occurred, or empty.
+.PP
+Although the information is stored in ASCII format, to make it
+sharable by machines with different byte orderings, internally the
+user log is accessed via routines that convert between ASCII
+and an internal C structure.  Refer to the documentation for the
+\fBulog\fP library for information about this structure.
+.SH "SEE ALSO"
+ulog, db, login, finger
+.SH KEYWORDS
+database, user log

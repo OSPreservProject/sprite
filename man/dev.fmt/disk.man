@@ -1,0 +1,68 @@
+
+
+
+DISK                         Devices                         DISK
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     disk - Device used to read and write disk sectors
+
+_________________________________________________________________
+
+DDEESSCCRRIIPPTTIIOONN
+     Disk devices are used to read and write sectors on  magnetic
+     disk devices.  Each rreeaadd or wwrriittee kernel call on a disk dev-
+     ice may access one or  more  sectors  on  the  device.   The
+     buffer  specified  to  the kernel call must be a multiple of
+     the disk's sector size,  normally  512  bytes.   Reading  or
+     writing disk sectors advances the file pointer to the sector
+     after the last one accessed. The llsseeeekk kernel  call  may  be
+     used to position the file pointer to any sector.
+
+PPAARRTTIITTIIOONNSS
+     A disk may be divided into eight possibly overlapping ranges
+     of  disk  sectors  called  partitions.  The  partitions  are
+     defined by a structure called a disk label which resides  in
+     the  first  sector  of  the  disk.   The  label structure is
+     defined in the include file <kernel/devDiskLabel.h>.  Tradi-
+     tionally,  partitions  have  been  named  by  the  letters aa
+     through hh.  Partition cc  is  normally  used  to  access  the
+     entire disk.
+
+UUNNIITT NNUUMMBBEERRSS
+     For disk devices, the least significant  four  bits  of  the
+     unit  number are used to select the partition. A unit number
+     of zero implies partition aa while seven implies partition hh.
+     The entire disk can be accessed using a unit number of eight
+     regardless of the partitioning defined by  the  label.  Unit
+     number  eight  is useful for writing a label to an unlabeled
+     disk.
+
+KKEEYYWWOORRDDSS
+     disk, partition, label
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  February 3, 1990                   1
+
+
+

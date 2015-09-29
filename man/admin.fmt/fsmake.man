@@ -1,0 +1,266 @@
+
+
+
+FSMAKE                    User Commands                    FSMAKE
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     fsmake - Create a file system on a disk partition.
+
+SSYYNNOOPPSSIISS
+     ffssmmaakkee --ddeevv _d_e_v_i_c_e --ppaarrtt _p_a_r_t_i_t_i_o_n [[_o_p_t_i_o_n_s]
+
+OOPPTTIIOONNSS
+     --ddeevv _d_e_v_i_c_e   _D_e_v_i_c_e is the root  name  of  a  device,  i.e.
+                   rxy0, rsd1, rsb0
+
+     --ppaarrtt _p_a_r_t_i_t_i_o_n
+                   _P_a_r_t_i_t_i_o_n is a letter indicating a  partition,
+                   i.e. a, b, c, d, e, f, g.
+
+     --ddeevvDDiirr _d_e_v_D_i_r
+                   _D_e_v_D_i_r is an alternate directory in  which  to
+                   find  the  device  file named by concatenating
+                   _d_e_v_i_c_e and _p_a_r_t_i_t_i_o_n.  The  default  directory
+                   name is ``/dev``.
+
+     --iinniittiiaallPPaarrtt _f_i_r_s_t_P_a_r_t_N_a_m_e
+                   _f_i_r_s_t_P_a_r_t_N_a_m_e is the name of the initial  par-
+                   tition  on  the disk which contains basic disk
+                   geometry information.  The default  is  parti-
+                   tion ``a''.
+
+     --wwrriittee        Write the disk.  The default is to  not  write
+                   the disk.
+
+     --oovveerrllaapp      Overlap filesystem blocks across  track  boun-
+                   daries. The default is to not overlap blocks.
+
+     --rraattiioo        Ratio  of  Kbytes  to  file  descriptors.  The
+                   default is 4.
+
+     --tteesstt         Don't write to the disk. This is the default.
+
+     --ssccssii         Compute the disk geometry for a SCSI disk. The
+                   geometry  will  be laid out to maximize usable
+                   storage.
+
+     --nnoossccssii       Compute the disk geometry for a non-SCSI disk.
+                   The  geometry  will  be  laid  out to maximize
+                   transfer bandwidth.  The file system currently
+                   doesn't  do  anything  intelligent when laying
+                   out a file, so this  option  is  probably  not
+                   worth anything.
+
+     --hhoosstt _h_o_s_t_I_D  Sets the host id field in the  domain  header.
+                   The default is to use the local host id if the
+
+
+
+Sprite v.1.0         Printed:  June 13, 1991                    1
+
+
+
+
+
+
+FSMAKE                    User Commands                    FSMAKE
+
+
+
+                   device server is the local host, otherwise use
+                   the  device server's id.  _H_o_s_t_I_D is either the
+                   name or Sprite id of the machine to which  the
+                   domain will be attached.
+
+     --bboooott _b_o_o_t_S_e_c_t_o_r_s
+                   Number of sectors in  the  root  partition  to
+                   reserve for the boot program.
+
+     --rreeppaarrttiittiioonn  This option will change  the  partitioning  of
+                   the  disk.  DO  NOT USE IF THE DISK CONTAINS A
+                   FILESYSTEM YOU WISH TO KEEP.  Use  the  --ppaarrtt--
+                   ddiisskkttaabb  option to use the partitioning infor-
+                   mation in the disktab file, otherwise use  the
+                   --ssiizzee  option  to  set the size of the current
+                   partition.
+
+     --ppaarrttddiisskkttaabb  Use  in  conjunction  with  the   --rreeppaarrttiittiioonn
+                   option  to  set the disk partitioning from the
+                   disktab file.
+
+     --ssiizzee _p_e_r_c_e_n_t_a_g_e
+                   Use  in  conjunction  with  the   --rreeppaarrttiittiioonn
+                   option to specify the size of the current par-
+                   tition as a percentage of the total disk size.
+                   _P_e_r_c_e_n_t_a_g_e is an integer from 0-100.
+
+     --rreeccoonnffiigg     Reconfigures the basic disk geometry.  DO  NOT
+                   USE IF THE DISK CONTAINS A FILESYSTEM YOU WISH
+                   TO KEEP. If the disk is a non-scsi  disk  then
+                   you   must  also  specify  the  --ccoonnffiiggddiisskkttaabb
+                   option which causes the disk  geometry  to  be
+                   read  from the disktab file.  If the disk is a
+                   scsi disk then you may omit the --ccoonnffiiggddiisskkttaabb
+                   option.   _F_s_m_a_k_e will then invent a configura-
+                   tion that minimizes wasted disk space.
+
+     --ccoonnffiiggddiisskkttaabb
+                   Use in conjunction with the  --rreeccoonnffiigg  option
+                   to  set the disk configuration (geometry) from
+                   the disktab file.
+
+     --ddiisskkttaabbNNaammee _f_i_l_e_n_a_m_e
+                   Specify the  disktab  file.   The  default  is
+                   /_e_t_c/_d_i_s_k_t_a_b.
+
+     --ddiisskkttyyppee _t_y_p_e
+                   Specify the type of disk.  This _t_y_p_e parameter
+                   must  be the type of disk found in the disktab
+                   file.  This option must be present in order to
+                   use the disktab file.
+
+
+
+
+Sprite v.1.0         Printed:  June 13, 1991                    2
+
+
+
+
+
+
+FSMAKE                    User Commands                    FSMAKE
+
+
+
+     --llaabbeellttyyppee _t_y_p_e
+                   Type of label  to  write  on  the  disk.   The
+                   default   is   to   write  whatever  label  is
+                   appropriate for the machine on which ffssmmaakkee is
+                   run.
+
+     --ddiirr _d_i_r_e_c_t_o_r_y
+                   Copy the specified directory  into  the  newly
+                   created filesystem.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     FFssmmaakkee will create a Sprite filesystem on  a  partition.  It
+     has  a large number of options and is intended to be invoked
+     from a shell script.  FFssmmaakkee's basic function is to create a
+     filesystem  out  of  an entire partition by initializing the
+     the file descriptor bitmap, data  block  bitmap  and  domain
+     header,  and  creating  the root and lost+found directories.
+     If you desire you can copy a directory  tree  into  the  new
+     filesystem via the --ddiirr option.  The --ddiirr option is intended
+     to be used under UNIX.  If you need to copy stuff  into  the
+     new  filesystem  under  Sprite  use the uuppddaattee command.  The
+     rest of the options are more complex and probably  not  used
+     often.   The  disk configuration, such as sectors per track,
+     tracks per cylinder, etc, can be  set  using  the  --rreeccoonnffiigg
+     option.  Don't use this option if the disk contains anything
+     you want to keep, since it may goof up the size and location
+     of  the  disk  partition.  If you don't specify the --ccoonnffiigg--
+     ddiisskkttaabb option then ffssmmaakkee will make up a configuration that
+     minimizes  wasted  disk space.  This only works under Sprite
+     and on SCSI disks.  The --rreeppaarrttiittiioonn allows  you  to  change
+     the partitioning of the disk.  The --ppaarrttddiisskkttaabb will set the
+     partitioning from the disktab file.  Once again,  don't  use
+     this option if there is valuable stuff on the disk since you
+     may lose it.  If you don't use the --ppaarrttddiisskkttaabb option  then
+     you  have  to  use  the  --ssiizzee option to set the size of the
+     current partition as a percentage of the  total  disk  size.
+     FFssmmaakkee  will adjust the start of all paritions that "follow"
+     the current one on the disk.  Note that  ffssmmaakkee  assumes  an
+     ordering  on the partitions, ie disk and 'b' is not used. If
+     you want to change the size of a bunch  of  partitions  then
+     run  ffssmmaakkee  on  the patritions in alphabetical order.  That
+     should do the right thing.  The  --rraattiioo  option  allows  you
+     change  the ratio of file system blocks to file descriptors.
+     Non-SCSI disks can have their  file  system  blocks  overlap
+     track  boundaries  by  specifying the --oovveerrllaapp option.  This
+     packs more blocks per cylinder.
+
+FFssmmaakkee oonn UUNNIIXX
+     The ffssmmaakkee command can be run on a UNIX system to  create  a
+     Sprite  filesystem.   There are several differences in func-
+     tionality. First, ffssmmaakkee cannot make up a configuration  for
+
+
+
+Sprite v.1.0         Printed:  June 13, 1991                    3
+
+
+
+
+
+
+FSMAKE                    User Commands                    FSMAKE
+
+
+
+     the  disk.   The  configuration must be set from the disktab
+     file.  Second, the --ddiirr option uses a special mechanism  for
+     creating Sprite devices.  If ffssmmaakkee comes across a file with
+     the suffix "SPRITE_DEV" it is assumed to  be  a  placeholder
+     for  a  Sprite device.  The contents of the file specify the
+     device server, major number and minor  number.   Lines  that
+     are  blank  or  begin with '#' are ignored.  The file should
+     contain one line with three integers --  the  device  server
+     SpriteID, major number (device type), and minor number (dev-
+     ice unit).
+
+KKEEYYWWOORRDDSS
+     filesystem
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  June 13, 1991                    4
+
+
+

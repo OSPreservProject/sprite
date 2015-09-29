@@ -1,0 +1,1101 @@
+#! /bin/sh
+# This is a shell archive, meaning:
+# 1. Remove everything above the #! /bin/sh line.
+# 2. Save the resulting text in a file.
+# 3. Execute the file with /bin/sh (not csh) to create:
+#	lgraph.readme
+#	lgraph.p
+#	lgraph.skel
+# This archive created: Mon Mar  9 01:47:12 1987
+# By:	SKY ()
+export PATH; PATH=/bin:/usr/bin:$PATH
+echo shar: "extracting 'lgraph.readme'" '(24094 characters)'
+if test -f 'lgraph.readme'
+then
+	echo shar: "will not over-write existing file 'lgraph.readme'"
+else
+cat << \SHAR_EOF > 'lgraph.readme'
+			PLOTTING GRAPHS WITH LaTeX
+			--------------------------
+					sunil podar (podar@sbcs.csnet)
+					...!{allegra, philabs}!podar!sbcs
+last update: Feb 2, 1987 (fixed bugs: wasn't doings things right when (0,0)
+	was not on the graph. Also removed the printing of a few of the
+	margin commands from preamble. Added some more defaults.
+last update: Oct 5, 1986
+	Added the ability to plot any quadrant.
+	Changed the characters numbers from digits to Capital Letters.
+	removed "X --->". Now prints X and Y near the axes vector-heads.
+	Some parameters changed: NEW: %picdimens,%[XY]deltab:n,%[XY]orig-num
+	DELETED: %picheight,%piclength,%want-X^Y^,%[XY]deltabar,%[XY]deltanum
+last update: Apr 14 1985 original version.
+
+
+This program provides an integrated (somewhat) system to plot graphs. Latex
+has a fairly powerful pic environment but it lacks any direct graph
+environment, and this program attempts to simulate one.
+
+You must have some knowledge of LaTeX, and in particular the pic environment
+if there is any need to change the output of this program. Actually if you
+know only the pic environment, you should be able to manage.
+
+The program can produce the graph as a complete document if you desire. The
+idea is that even non-LaTeX users can plot graphs and only graphs and it
+doesn't have to be part of regular text. 
+
+The program, using the options given in the parameter list, produces a LaTeX
+file using all known-to-work and regular LaTeX commands and the file can
+easily be edited if needed. So, the moral is that one can plot graphs with
+being quite oblivious to the fact that LaTeX is being used to plot it; of
+course, you have to run LaTeX on the graph to print it.
+
+Please feel free to contact me (podar@sbcs) if there are any bugs, if it
+doesn't do what you want and can't figure out how to do it, or would like
+some other features in the program. I have not tested the program extensively
+so I can't promise it will work if you try to stretch it to its limits. I do
+not have complicated error-checking or error-recovery. If you make any
+modifications to this program, please let me know.
+
+The program generates LaTeX commands to do the following:
+
+1. print the X-axis vector.
+2. print the Y-axis vector.
+3. put little vertical bars on the X-axis at regular intervals.
+4. put little horizontal bars on the Y-axis at regular intervals.
+5. put numbers along those bars on both axes.
+6. prints "X" and "Y" along the axes.
+7. sets up a legend box with info about X-axis, Y-axis and the various
+   characters plotted on the graph; controlled by a variety of options.
+8. reads input data in 3-tuples (character# X-coordinate Y-coordinate),
+   scales the data according to given scale and generates commands to plot
+   it. If there is no data, then it simply produces the skeleton graph.
+
+
+some quirks, limitations, suggestions, ideas regarding the program
+------------------------------------------------------------------
+The program is not a very powerful program and the code is rather sloppy,
+but I attempt to do things right as far as possible
+and if not then I give pointers to how one might have to edit the output
+file. Some of the commands that I generate are highly dependent on the font
+being used, the unitlength etc., so I can only make a reasonable attempt to
+get things right. In order to use this program, I suggest that
+you print out the file produced by the program and then see what needs
+fixing; in most cases the fixing will be limited to changing a few
+coordinates of some commands.
+
+You can of course use the program to generate a dummy skeleton graph even if
+all you need is a few things out of the 8 steps listed above and extract
+out of the file the desired portion. The format of the graph is my personal
+preference and differs from other graph plotting packages that plot the
+graph within a bounded rectangle (such as graph(1) of unix.)
+
+The program may not give you what you desire but there are ways of
+still exploiting it if what you need is not what it can handle. For
+instance, you can use it to translate input data (the coordinate pairs)
+to the "\put" statements with desired scaling factors.
+
+1. It can plot any or all quadrants. Shifted origins also handled.
+
+2. I try to act smart when printing numbers along the axes. If I figure that
+   the numbers are whole numbers (xx.00) then I print integers, otherwise I
+   print real numbers with two significant digits. You can easily edit the
+   file if you want more or less significant digits.
+
+3. Since Pascal is very unfriendly when it comes to handling character strings
+   the syntax of the parameters is a bit unfriendly too. Also the max string
+   size that I can handle is 80 chars, and if you need more than that, you
+   can give less to the program and then edit the output file without any
+   difficulty. I give a lot of comments at appropriate places (all begin with
+   a % since that is a latex comment char), you can safely get rid of them in
+   your final document.
+
+4. What I regard as a misfeature in LaTeX (could pass for just a quirk), the
+   \caption command ALWAYS prints the "Figure 2.2" in normalsize no matter
+   what your environment fonttype is or what you specify in the caption
+   arguement. So, to get around it I have a command that explicitly puts a
+   caption-look-alike caption at the bottom of the figure in the specified
+   font. If you choose to print LaTeX caption then I force a normalsize
+   caption but if you want everything in another font then use "explicit"
+   option on the ??caption parameter. Since LaTeX decides the figure number
+   by itself, I ignore the "fignumber" parameter if you chose the "LaTeX"
+   option; on the other hand I ignore the "labelname" parameter if you chose
+   the "explicit" option. If you need things other than what the program
+   gives you you can explicitly edit the file.
+
+5. From my experience & personal preference, font "small" or even smaller
+   looks nice on the graph; normalsize comes out a bit too big and looks
+   unwieldly, specially for printing large real numbers along the Y-axis.
+   
+6. If you are going to have many such graphs in one document, then doing 
+   the following will make life easier:
+   a. have \newcommand{\pcharA}{} 
+           ...........
+           \newcommand{\pcharF}{}
+	   \newcommand{\xaxis}{}
+	   \newcommand{\yaxis}{}
+      in the preamble of the document; this just initializes the name to null.
+   b. change all subsequent "\newcommand"s in each of the graphs to
+      "\renewcommand".
+
+7. The syntax for running the program is
+
+        latexgraph <infile >outfile   (use outfile.tex if standalone)
+
+   infile should have, besides the parameters, only the data lines with 
+   1 capital letter and 2 numbers on each line:
+
+   LETTER1 Xreal2 Yreal3
+
+   LETTER1: range= A..F
+   	     it is the code for the kind of character to be plotted at the
+	     specified coordinates.
+   Xreal2  : is the X-coordinate of the point to be plotted, a real number.
+   Yreal3  : is the Y-coordinate of the point to be plotted, a real number.
+
+   For input file, a file-name-extension of the form ".gra" or ".in" could
+   be used with a ".tex" for the output. The output file(s) can
+   subsequently be simply "\input" into the main document, if any.
+
+8. The numbers along the axes are always below the X-axis and to the left
+   of Y-axis. If you desire them differently, for intance, in the case of a
+   2nd quadrant graph, then you will have to manually change the coordinates
+   in the output file. (I didn't feel like adding yet another option!).
+
+9. However ugly the scheme of taking parameters may appear, it has many
+   advantages and that's why it was decided upon:
+   a. Some of the options could easily be implemented as command line
+      options but then you may not remember which graph has what options. 
+      With the implemented scheme, all the information required for a graph
+      can be put into one file and forgotten about.
+   b. portability of the program. many computers do not have unix(tm) like
+      facilities for command-line options.
+
+10. I have been asked often, how about providing for "joining the dots".
+   Well, there is a companion (actually, quite independent of this program)
+   TeX macro package called "epic" authored by myself. It is implemented as a
+   documentstyle option and contains several high-level commands for the
+   picture environment including line-drawing commands for dotted, dashed, and
+   solid lines. It also contains macros that define corresponding
+   environments. All these line drawing commands draw straight line segments
+   (no smooth curves). Instead of describing things in more details, I suggest
+   you acquire that package and read the corresponding documentation, which
+   contains an example of how to add line-drawing commands to the output of
+   this program. You may obtain the "epic" package from the same source as you
+   obtained this, or send mail to me; I perfer that the former channel be
+   explored first. Due to lack of motivation and fear of further complicating
+   things, I have not implemented options in this program that interface with
+   the "epic" package. Hence, you will have to explicitly edit the output to
+   incorporate commands to join the dots; I assure you it is very easy and
+   requires very minimal editing.
+
+Syntax of the parameters:
+-------------------------
+
+1.  All parameters are recognized by the string of 10 characters at the 
+    beginning and exactly 10 characters -- no more -- no less. They all
+    begin with a % sign because that is the comment character for latex. The 
+    "%" is quite unnecessary, but remains for historical reasons.
+
+2. When the arguement for a parameter is an integer then there MUST be atleast
+   one blank after the parameter name and for more than one integer, again
+   blank char is the separater.
+
+3. When the arguement for a parameter is a string then there MUST BE NO BLANK
+   and instead it should be a /. The string that follows the / is taken 
+   exactly as it appears starting from the next character including any 
+   blanks. All that is important is that the 11th char be a /.
+
+4. There should be no blank lines before or  in the middle until the string
+   '%%%%%%%%%%' . That string of 10 %'s ends the list of arguements. I don't
+   think there should be any blank lines anywhere at all.
+
+5. The list of parameters SHOULD be the first thing in the file , that is, 
+   right on the top followed by data, if any. Without any data, you will
+   simply get the skeleton of the graph with all things laid out. This is
+   one way to make use of this program if you already have explicit statements
+   for plotting the points; first get the graph skeleton, and then insert
+   your file with latex commands that plot points at the appropriate place.
+   
+6. There are 6 parameters for plotting chars at the specified coordinates.
+   That means with this program you can have 6 kinds of data plotted in one
+   graph. The parameters are %plotcharA .. %plotcharF. Each parameter has
+   a LETTER at the end and that is very significant. The data to be plotted
+   must have as its first argument a LETTER A..F that directly corresponds
+   to the plotchar# defined in the parameter list. E.g. the data line
+   B 20 30  => put plotcharB at (X,Y)=(20,30) on the graph. The idea is that
+   I imagine that you will have some program that produces numbers to be
+   plotted and you can have that program produce the 3-tuples needed for
+   this program very easily.
+   There are five corresponding plotname's too. These are short strings
+   of upto 25 characters that are used in the legendbox for names of the
+   plotchar symbols. You ought to keep them short else the box will become
+   too big.
+   
+   You do not have to have all the 6 char & names. In the input file, you
+   may have only as many of the six set as necessary. By default, the
+   unlisted char is a 'no'.
+
+7. For some options there are default values, hence you need not have them
+   in the input file unless values other than the default ones are desired.
+   The default values are (only for the ones listed here):
+   %pre&post?/no
+   %unitlngth  1.0	(i.e. 1mm)
+   %font-name/{normalsize}
+   %picdimens 100 100 0 0
+   %??caption/no
+   %labelname/no
+   %legendloc/no
+   %Xratiog:r 10 10	(* 1 : 1 *)
+   %Xdeltab:n 5 10	(* numbers on alternate bars *)
+   %Xoriginum 0
+   %Yratiog:r 10 10	(* 1 : 1 *)
+   %Ydeltab:n 5 10	(* numbers on alternate bars *)
+   %Yoriginum 0
+   %plotcharA/no
+   %plotnameA/A
+   %plotcharB/no
+   %plotnameB/B
+   .....
+   %plotcharF/no
+   %plotnameF/F
+
+The options are as follows:
+
+command		arguments	explanation
+-------		---------	-----------
+
+%pre&post?/	yes		writes the preamble & post-amble alongwith
+				the graph. idea is to have a standalone 
+				graph i.e. a complete document.
+		no		doesn't write any preamble or post-amble.
+				starts with \begin{figure}...... 
+				& ends with \end{figure}.
+
+%unitlngth	mm real		the unitlength for the graph.
+
+%font-name/	{fontname}	one of the many fontnames that LaTeX provides,
+				such as normalsize,tt,small, etc. All the 
+				printed stuff on the graph will be in the spe-
+				cified font. MUST put the {} around fontname.
+
+%picdimens 	picwd picht Xorigin Yorigin
+		All the four must be integers and in graph units. All four
+		must be specified even if they are 0. max graph height about
+		200mm or so. max graph width is about 240mm. For larger than
+		about 170mm you need to do -L on dvi-imagen, which also means
+		you have to print this page separately, since just a page
+		can't be rotated by latex or dvi-imagen.
+
+		Xorigin & Yorigin have special significance and should be
+		chosen with care.
+		To understand business about [XY]origin you should have read
+		the details about origin of picture environment in the LaTeX
+		book. [XY]origin refers to the coordinate of the bottom-left
+		corner of the whole picture box in which the graph resides.
+		Together with the width and the height of the picture box,
+		they determine the layout of the graph as to which of the
+		quadrants constitute the graph and what is the desired
+		origin of the graph. Note that [XY]origin refer to the
+		origin of the overall picture box and not of the underlying
+		graph. E.g.
+
+		%picdimens 100 100 -50 -50
+		denotes a picture box of size 100x100 whose bottom left
+		corner is (-50,-50) and thus the graph origin (0,0) lies in
+		the middle of the picture box. This graph will have all four
+		quadrants.
+		
+		%picdimens 100 100 -100 0
+		denotes a picture box of size 100x100 whose bottom left
+		corner is at (-100,0) and thus the graph origin (0,0) lies
+		at the bottom-right corner. This graph will be only the 2nd
+		quadrant.
+		
+		%picdimens 100 100 50 50
+		denotes a picture box of size 100x100 whose bottom left
+		corner is at (50,50) and so is its graph origin. This is a
+		shifted 1st quadrant.
+		
+		One way to decide the 4 numbers for %picdimens is to draw on
+		a piece of paper a rectangle and decide where you want your
+		graph origin and what are its coordinates. Then figure out
+		what are the coordinates of the bottom-left corner of the
+		enclosing rectangle.
+
+%Xaxisstrg/	string		max char 80.for xaxis to appear in the legend
+				box and/or in the caption.
+				It should be kept small so as not to make
+				the box too large.
+
+%Yaxisstrg/	string	 	for yaxis ................. same as above.
+
+%??caption/	LaTeX		produce LaTeX command for making caption.
+		explicit	make an explicit box for a fake caption-look-
+				alike caption. see discussion above.
+		no		no caption of whatever kind.
+
+%fignumber/ 	string		max char = 10.
+				the number you wish to give this graph to 
+				appear on the fake-caption at bottom. This
+				is ignored if ??caption=LaTeX.
+
+%capstring/	YX  		
+		string 		explicit string of less than 80 characters.
+				option YX will print the string of 'Y vs. X'
+				where Y & X are same as the ones specified
+				in the Xaxisstrg & Yaxisstrg above.
+
+%labelname/	{labelname}	the name of label you wish to give to the
+				figure. This is ignored if you did not choose
+				LaTeX option on ??caption. MUST have {} around
+				the label name. Also LaTeX doesn't like blanks
+				in the name of a label.
+		no		no \label statement desired.
+
+%legendloc/[location option letters][/ X Y]
+
+		The box is my favorite entity in this program and is very 
+		versatile and fun. "location option letters" are any 
+		combination of t, b, l, r letters, each occurring max 
+		once. These options are identical to general options on
+		the LaTeX \makebox command and are interpreted likewise;
+		In addition, if you do not want the box at all, then write
+		"no" after the first /.
+		By default the option is to center along unspecified axis.
+		The idea is that you can specify one of	nine points as the
+		reference point for location of the box:
+
+			      t
+		     tl	+-----+-----+ tr	t : top
+			|           |		b : bottom
+		      l	+     +     + r		l : left
+			|           |		r : right
+		     bl	+-----+-----+ br	blank: center 
+			      b
+
+		The ordering is unimportant. You also have an option of 
+		explicitly specifying the coordinates in conjunction with 
+		the specified reference point. The syntax is that if there 
+		are no arguement besides reference letters (upto 2), then I
+		will place it appropriately on the graph, in the region 
+		specified by the option letters. If you do wish to specify 
+		explicit coordinates, then the reference letters, if any,
+		must be immediately followed by a / , then X and then Y 
+		coordinates; e.g.
+
+%legendloc/tl  		--> place the legend box in the top left corner of 
+			    the graph (I do leave some space between the
+		            axes and the box).
+%legendloc/tl/ 20 80	--> place the top-left corner of box at (20,80).
+%legendloc// 50 50	--> place the box such that its center is at (50,50).
+%legendloc/r/ 50 50	--> place the box such that center of the right edge
+			    (denoted by r in pic above) is at (50,50). If you
+			    did not specify 50,50, then I will calculate and
+			    place it exactly at the center-right of the graph.
+%legendloc/no		--> no box at all.
+
+		NOTE: the second / should be there only if X & Y integer
+		      coordinates are specified, else the program will bomb.
+
+%Xratiog:r 	integer1 real2 
+				g:r means graph vs. reality; i.e. to say that
+				integer1 # of units on graph represent real2
+				units of reality; e.g. 10 25 means each 10
+				units on graph = 25 reality units.
+				this ratio is used to translate the data from
+				reality numbers to graph units.
+
+%Xorig-num	integer/real	The number that corresponds to the origin
+				along X-axis.
+%Xdeltab:n 	integer	integer	In the b:n, b -> bar, n-> number
+		 units   units	the first integer specifies the increment
+				used for putting vertical bars (|) on the
+				X-axis starting from origin and can be
+				different from Xdeltanum (see next parameter).
+				should be specified in graph units.
+
+				The second integer specifies the increment
+				used for putting numbers along the X-axis.
+				It can be different from the first integer.
+				Though there is no restriction, but normally
+				one puts them under the vertical bars or
+				perhaps alternate bars.
+				Should be specified in graph units. Translated
+				to numbers using Xratiog:r. see example below.
+
+%Yratiog:r 	integer real	-----same as for corresponding X....
+
+%Yorig-num 	integer		The number that corresponds to the origin
+				along Y-axis.
+%Ydeltab:n 	integer		same story for these three as above.
+
+%plotcharA/	{definition of character number A to be plotted}
+		no		these specify the LaTeX statement for the
+				definition of the character to be put at the
+				coordinates, e.g. {circle*{1.0}}
+				no:  means no character with the number 
+				     associated with plotchar.
+				see discussion above.
+%plotnameA/	string 		name for the plotcharA symbol used in the
+				legendbox; is valid only if %plotcharA 
+				is not equal to 'no'.
+%plotcharB/	{definition of character number B to be plotted}
+		no
+%plotnameB/	string		name for character B.
+...
+...
+%plotcharF/	{definition of character number F to be plotted}
+		no
+%plotnameF/	string		name for character F.
+
+%%%%%%%%%%			THIS LINE OF 10 %'s IS A MUST. IT ACTS AS THE
+				DELIMITER OF THE ABOVE PARAMETERS.
+data follows after above parameters.
+
+-----------------------------------------------------------------------------
+An example of an inputfile:
+-----------------------------------------------------------------------------
+%pre&post?/yes
+%unitlngth 1.0		
+%font-name/{footnotesize}
+%picdimens 140 120 -70 -60 
+%Xaxisstrg/Number of Hops. 
+%Yaxisstrg/\%age of Hops
+%??caption/Latex
+%fignumber/1-1
+%capstring/Half-Length of Symmetric Intervals as \%-age of Lifetime means
+%labelname/{my-graph-1}
+%legendloc/tr
+%Xratiog:r 10 10
+%Xdeltab:n 5 10
+%Xoriginum 0
+%Yratiog:r 10 10
+%Ydeltab:n 5 10
+%Yoriginum 0
+%plotcharA/{\circle*{1.0}}
+%plotnameA/Message Switching
+%plotcharB/{\makebox(0,0){$\otimes$}}
+%plotnameB/Circuit Switching
+%plotcharD/no
+%plotcharE/no
+%%%%%%%%%% 
+A 20 20
+A 20 -20
+A -20 20
+A -20 -20
+B 30 10
+B 30 -10
+B -30 10
+B -30 -10
+------------------------------------------------------------------------------
+The output produced by the above input:
+------------------------------------------------------------------------------
+\documentstyle{article}
+\setlength{\topmargin}{0cm}
+\setlength{\headheight}{1cm}
+\setlength{\footskip}{3cm}
+\setlength{\oddsidemargin}{0cm}
+\setlength{\textwidth}{170.00mm}
+\pagestyle{empty}     % => no page number 
+\begin{document}
+
+\newcommand{\xaxis}{Number of Hops. } % the literal for X-axis
+\newcommand{\yaxis}{\%age of Hops} % the literal for Y-axis
+\newcommand{\pcharA}{\circle*{1.0}}
+\newcommand{\pcharB}{\makebox(0,0){$\otimes$}}
+
+\begin{footnotesize}
+\begin{figure}[p]     %you might want different options here
+\unitlength = 1.00mm
+\begin{center}
+\begin{picture}(150,130)(-80,-70)
+\thicklines
+\put(0,0){\vector(1,0){70}}
+\put(72,0){\makebox(0,0)[l]{X}}
+\put(0,0){\vector(-1,0){70}}
+\put(-72,0){\makebox(0,0)[r]{X}}
+\put(0,0){\vector(0,1){60}}
+\put(0,62){\makebox(0,0)[b]{Y}}
+\put(0,0){\vector(0,-1){60}}
+\put(0,-62){\makebox(0,0)[t]{Y}}
+\thinlines
+\multiput(0,-1)(5,0){14}{\line(0,1){2}}
+\multiput(0,-1)(-5,0){14}{\line(0,1){2}}
+\multiput(-1,0)(0,5){12}{\line(1,0){2}}
+\multiput(-1,0)(0,-5){12}{\line(1,0){2}}
+% Add a line similar to next one if number at origin desired.
+\put(10,-2){\makebox(0,0)[t]{10}}
+\put(20,-2){\makebox(0,0)[t]{20}}
+\put(30,-2){\makebox(0,0)[t]{30}}
+\put(40,-2){\makebox(0,0)[t]{40}}
+\put(50,-2){\makebox(0,0)[t]{50}}
+\put(60,-2){\makebox(0,0)[t]{60}}
+\put(-10,-2){\makebox(0,0)[t]{-10}}
+\put(-20,-2){\makebox(0,0)[t]{-20}}
+\put(-30,-2){\makebox(0,0)[t]{-30}}
+\put(-40,-2){\makebox(0,0)[t]{-40}}
+\put(-50,-2){\makebox(0,0)[t]{-50}}
+\put(-60,-2){\makebox(0,0)[t]{-60}}
+\put(-2,10){\makebox(0,0)[r]{10}}
+\put(-2,20){\makebox(0,0)[r]{20}}
+\put(-2,30){\makebox(0,0)[r]{30}}
+\put(-2,40){\makebox(0,0)[r]{40}}
+\put(-2,50){\makebox(0,0)[r]{50}}
+\put(-2,-10){\makebox(0,0)[r]{-10}}
+\put(-2,-20){\makebox(0,0)[r]{-20}}
+\put(-2,-30){\makebox(0,0)[r]{-30}}
+\put(-2,-40){\makebox(0,0)[r]{-40}}
+\put(-2,-50){\makebox(0,0)[r]{-50}}
+\put(70,60){\makebox(0,0)[tr]{\fbox{\shortstack[l]{
+ {\makebox(4,2)[lb]{\put(2,1){\pcharA}}}: Message Switching\\
+ {\makebox(4,2)[lb]{\put(2,1){\pcharB}}}: Circuit Switching\\
+ {\makebox(4,4)[b]{X}}: \xaxis \\
+ {\makebox(4,2)[b]{Y}}: \yaxis
+ }}}}
+% beginning of data
+\put(20.00000,20.00000){\pcharA}
+\put(20.00000,-20.00000){\pcharA}
+\put(-20.00000,20.00000){\pcharA}
+\put(-20.00000,-20.00000){\pcharA}
+\put(30.00000,10.00000){\pcharB}
+\put(30.00000,-10.00000){\pcharB}
+\put(-30.00000,10.00000){\pcharB}
+\put(-30.00000,-10.00000){\pcharB}
+% end of data
+\end{picture}
+\end{center}
+% if the caption line is longer than the graphwidth,use a
+% \parbox[t]{...mm}{.......} like statement for the argument
+% with suitable args for parbox to get things centered.
+\caption{\protect\normalsize 
+Half-Length of Symmetric Intervals as \%-age of Lifetime means
+}
+\label{my-graph-1}
+\end{figure}
+
+\end{footnotesize}
+
+\end{document}
+------------------------------------------------------------------------------
+END OF DOC.
+SHAR_EOF
+if test 24094 -ne "`wc -c < 'lgraph.readme'`"
+then
+	echo shar: "error transmitting 'lgraph.readme'" '(should have been 24094 characters)'
+fi
+fi
+echo shar: "extracting 'lgraph.p'" '(17530 characters)'
+if test -f 'lgraph.p'
+then
+	echo shar: "will not over-write existing file 'lgraph.p'"
+else
+cat << \SHAR_EOF > 'lgraph.p'
+(**************************************************************************)
+(* This program simulates a graph environment for LaTeX. Using a list of  *)
+(* parameters, it generates LaTeX commands to produce a complete graph.   *)
+(* see the latexgraph.doc file for detailed documentation.                *)
+(* author:Sunil Podar, podar@sbcs.csnet, ...!{allegra,philabs}!sbcs!podar *)
+(* Please quote the following date when sending bug reports.		  *)
+(* last update: Feb 2, 1987 (fixed bugs: wasn't doings things right when  *)
+(*		(0,0) was not on the graph. Also removed the printing of  *)
+(*		a few of the margin commands from preamble.		  *)
+(* last update: Oct 5, 1986						  *)
+(**************************************************************************)
+program main (input,output);
+const   delim = '@';  (* Latex never uses @ except for \@ for a little *)
+		      (* space before a sentence-ending period         *)
+	maxchar = 'F';(* maximum types of characters permitted for plotchar*)
+		      (* A..F i.e. 6 distinct chars permitted *)
+type    wholeline  =  packed array[1..80] of char;
+        tenchar    =  packed array[1..10] of char;
+        ninechar   =  packed array[1..9] of char;
+	twochar    =  packed array[1..2] of char;
+	plotstufftype =	record
+			  chardef : wholeline;
+			  charname : wholeline
+			end;
+var
+	plotstuff : array['A'..maxchar] of plotstufftype;
+	error1,itsreal :boolean;
+	picwd,picht,pos,Xdeltabar,
+	   Ydeltabar,i,Xlegloc,Ylegloc,Xdeltanum,Ydeltanum : integer;
+	Xaxisstrg,Yaxisstrg,capstring,blank80,labelname,fontname : wholeline;
+  	legendloc,captiontwo,prepost : twochar;
+	string,blank10,captiontype,fignumber : tenchar;
+	plotchar,c : char;
+	string9 : ninechar;
+	Xscalegraph,Yscalegraph : integer;
+	XGorig,YGorig,XP1orig,YP1orig,XP2orig,YP2orig : integer;
+	Xscalereal,Yscalereal,xreality, yreality, xgraph, ygraph,
+	unitlngth,textwd,Xorignum,Yorignum,deln,num : real;
+
+procedure strreadline(var commandstr: wholeline);
+var charac:char;
+    i : integer;
+    endoffile, endofline:boolean;
+begin
+   i:=1;
+   endoffile :=false;
+   endofline:=false;
+   commandstr:=blank80;
+   repeat
+      read(charac);
+      if (i < 80) then commandstr[i] := charac; (* 80th char remains @ *)
+      i := i+1;
+      if eof then endoffile :=true
+	     else if eoln then endofline :=true
+   until (endoffile or endofline);
+   if (i <= 80) then commandstr[i] := delim;
+   if not endoffile then readln
+end; (*strreadline*)
+
+procedure strreadword(var string: tenchar; var string9: ninechar);
+var charac:char;
+    i : integer;
+begin
+   i:=1;
+   string:=blank10;
+   read(charac);
+   repeat
+      string[i] := charac;
+      read(charac);
+      i := i+1
+   until ((charac = '/') or (charac = ' ') or (i > 10) or eoln);
+      (* so I'm reading the / without assigning it to string, neat *)
+   if (eoln and (i <=10)) then string[i]:= charac;
+      (* a kluge, to capture the last charac when using this procedure to *)
+      (* read the argument. normally I use it only for parameters. *)
+   for i:= 1 to 9 do string9[i] := string[i]
+end; (*strreadword*)
+
+procedure strwrite(str: wholeline);
+var i : integer;
+begin
+i := 1;
+while (str[i] <> delim) do
+   begin
+     write(str[i]); i := i+1
+   end
+end;
+
+procedure legendread;
+var i : integer;
+    temp : twochar;
+begin
+   temp := '  ';
+   legendloc := '  '; i := 0;
+   if (not eoln) then
+      repeat
+          i := i+1; read(legendloc[i]);
+      until  (eoln) or (i >= 2) or (legendloc[i] = '/');
+   if (not eoln) then if (legendloc[i] <> '/') then read(temp[1]);
+   if (temp[1] = '/') or (legendloc[i] = '/')
+      then readln(Xlegloc,Ylegloc)
+      else readln
+end; (* legendread *)
+
+(* in the following procedures, the boolean var XorY: true => X & false => Y*)
+procedure putbars(XorY:boolean; Xpos, Ypos, deltabar, distance: integer);
+var times: integer;
+begin
+   times := distance div abs(deltabar);
+   if times > 0 then
+     if XorY (* X *)
+       then writeln('\multiput(',Xpos:1,',',Ypos:1,')(',
+		deltabar:1,',0){',times:1,'}{\line(0,1){2}}')
+       else writeln('\multiput(',Xpos:1,',',Ypos:1,')(0,',
+		deltabar:1,'){',times:1,'}{\line(1,0){2}}');
+end; (* putbars *)
+
+(* see a note about putnumbers in the main program. 		*)
+(* because we may have real numbers, we can't use a counter 	*)
+(* in conjunction with a \multiput statement.			*)
+procedure putnumbers(XorY:boolean; fixedpos, initpos:integer;
+	 initnum, deln:real; deltanum:integer; limit:real);
+var pos: integer;
+    num: real;
+begin
+   num:=initnum; pos:= initpos;
+   if (abs(num) - round(abs(num) - 0.5)) > 0 then itsreal := true;
+   while abs(pos) < abs(limit) do
+     begin
+        if XorY then (* X *)
+	   write('\put(',pos:1,',',fixedpos:1,'){\makebox(0,0)[t]{')
+	else write('\put(',fixedpos:1,',',pos:1,'){\makebox(0,0)[r]{');
+	if itsreal then writeln(num:1:2,'}}')
+		   else writeln(trunc(num):1,'}}');
+	pos := pos + deltanum;
+	num := num + deln
+     end;
+end; (* putnumbers *)
+
+begin(* main *)
+   (*----------------------------------*)
+   (* Initializations & default values *)
+   (*----------------------------------*)
+   error1 := false;
+   itsreal:=false;
+   for i := 1 to 10 do blank10[i] := ' ';
+   for i := 1 to 79 do blank80[i] := ' '; blank80[80] := delim;
+   captiontype := blank10; captiontype := 'no        '; (*default 'no' *)
+   fignumber := blank10;
+   fontname  := blank80; (* just playing it safe *)
+   fontname  := '{normalsize}'; fontname[13] := delim;
+   labelname := blank80; labelname[1] := 'n';  (* default 'no' *)
+   prepost   := 'no';
+   unitlngth := 1.0;
+   picwd := 100; picht := 100; XP1orig := 0; YP1orig := 0;
+   legendloc := 'no';
+   Xscalegraph := 10; Xscalereal := 10;
+   Yscalegraph := 10; Yscalereal := 10;
+   Xdeltabar   := 5;  Xdeltanum  := 10;
+   Ydeltabar   := 5;  Ydeltanum  := 10;
+   Xorignum    := 0;
+   Yorignum    := 0;
+   for c := 'A' to maxchar do
+     begin
+	plotstuff[c].chardef[1] := 'n'; (* default value is 'no' *)
+	plotstuff[c].charname := blank80;
+	plotstuff[c].charname[1] := c;
+	plotstuff[c].charname[2] := delim
+     end;
+   Xlegloc := -999999;
+   Ylegloc := -999999;
+   strreadword(string, string9);
+   while string <> '%%%%%%%%%%' do
+   begin
+    if string =  '%pre&post?'  then readln(prepost[1])
+    else if string =  '%unitlngth'  then  readln(unitlngth)
+    else if string =  '%font-name'  then  strreadline(fontname)
+    else if string =  '%picdimens'  then  readln(picwd,picht,XP1orig,YP1orig)
+    else if string =  '%??caption'  then begin
+				   	   strreadword(captiontype, string9);
+					   readln
+			        	 end
+    else if string =  '%fignumber'  then begin
+					   strreadword(fignumber, string9);
+					   readln
+					  end
+    else if string =  '%Xaxisstrg'  then  strreadline(Xaxisstrg)
+    else if string =  '%Yaxisstrg'  then  strreadline(Yaxisstrg)
+    else if string =  '%capstring'  then  strreadline(capstring)
+    else if string =  '%labelname'  then  strreadline(labelname)
+    else if string =  '%legendloc'  then  legendread
+    else if string =  '%Xdeltab:n'  then  readln(Xdeltabar,Xdeltanum)
+    else if string =  '%Xoriginum'  then  readln(Xorignum)
+    else if string =  '%Ydeltab:n'  then  readln(Ydeltabar,Ydeltanum)
+    else if string =  '%Yoriginum'  then  readln(Yorignum)
+    else if string =  '%Xratiog:r'  then  readln(Xscalegraph,Xscalereal)
+    else if string =  '%Yratiog:r'  then  readln(Yscalegraph,Yscalereal)
+    else if string9 =  '%plotchar'  then
+		strreadline(plotstuff[string[10]].chardef)
+    else if string9 =  '%plotname'  then
+		strreadline(plotstuff[string[10]].charname)
+    else begin
+	  readln;writeln;
+          writeln('**********************************************');
+          writeln('error: unknown string: "',string,'"');
+	  writeln('**********************************************');
+	  error1:=true
+	 end;
+    string := blank10;
+    strreadword(string, string9)
+   end; (* while *)
+   readln;  (* this readln is to finish reading the %%%%%.. line*)
+
+   (* THE FUN BEGINS HERE *)
+   if not error1 then
+   begin
+   textwd := picwd*unitlngth + 15.0; (* in mm *)
+   if (textwd < 170) then textwd := 170;
+   if textwd >240
+   then begin
+	writeln('% *****************************************************');
+        writeln('% max-possible-picwd is about 240mm which will have ');
+	writeln('% to be in Landscape. You''ll have to reduce scales.');
+	writeln('% *****************************************************')
+	end
+   else if textwd > 170 then
+        begin
+	  writeln('% *****************************************************');
+	  writeln('% THIS TEXT IS A BIT TOO WIDE FOR VERTICAL PAPER MODE.');
+	  writeln('% YOU WILL HAVE TO USE LANDSCAPE MODE TO PRINT.');
+	  writeln('% *****************************************************')
+	end;
+
+   if prepost[1] = 'y' then
+   begin
+   writeln('\documentstyle{article}');
+   writeln('\setlength{\textwidth}{',textwd:1:2,'mm}');
+   writeln('\pagestyle{empty}     % => no page number ');
+   writeln('\begin{document}');
+   writeln;
+   end; (* end prepost *)
+
+   write('\newcommand{\xaxis}{'); strwrite(Xaxisstrg);
+   writeln('} % the literal for X-axis');
+   write('\newcommand{\yaxis}{'); strwrite(Yaxisstrg);
+   writeln('} % the literal for Y-axis');
+   c := 'A';
+   while (plotstuff[c].chardef[1] <> 'n') and (c <= maxchar) do
+   begin
+	   write('\newcommand{\pchar',c,'}');
+	   strwrite(plotstuff[c].chardef); writeln;
+	   c := chr(ord(c) + 1)
+   end;
+   writeln;
+   write('\begin'); strwrite(fontname); writeln; (* fontname contains braces*)
+   writeln('\begin{figure}[p]     %you might want different options here');
+
+   (* XGorig & YGorig refer to the origin of the graph. *)
+   (* XP1orig & YP1orig refer to the bottom-left origin of the picture box.*)
+   (* XP2orig & YP2orig refer to the bottom-right corner of the picture box.*)
+   (* see if (0,0) is on the graph or not *)
+   XGorig := 0; YGorig := 0;
+   if XP1orig >= 0 then XGorig := XP1orig
+      else if (picwd + XP1orig) < 0 then XGorig := XP1orig + picwd;
+   if YP1orig >= 0 then YGorig := YP1orig
+      else if (picht + YP1orig) < 0 then YGorig := YP1orig + picht;
+   XP2orig := picwd + XP1orig;
+   YP2orig := picht + YP1orig;
+   writeln('\unitlength = ',unitlngth:1:2,'mm');
+   writeln('\begin{center}');
+   writeln('\begin{picture}(',(picwd+10):1,',',(picht+10):1,')(',
+			(XP1orig-5):1,',',(YP1orig-5):1,')');
+   (* need a box of +10 on both axes to account for -10 origins & to *)
+   (* get proper centering *)
+   writeln('\thicklines');
+   (* plot the horizontal axis *)
+   if (XP2orig - XGorig) > 0 then
+   begin
+     writeln('\put(',XGorig:1,',',YGorig:1,'){\vector(1,0){',
+					abs(XP2orig-XGorig):1,'}}');
+     writeln('\put(',(XP2orig+2):1,',',YGorig:1,'){\makebox(0,0)[l]{X}}')
+   end;
+   if (XGorig - XP1orig) > 0 then
+   begin
+     writeln('\put(',XGorig:1,',',YGorig:1,'){\vector(-1,0){',
+		abs(XGorig-XP1orig):1,'}}');
+     writeln('\put(',(XP1orig-2):1,',',YGorig:1,
+		'){\makebox(0,0)[r]{X}}')
+   end;
+   (* plot the vertical axis *)
+   if (YP2orig - YGorig) > 0 then
+   begin
+     writeln('\put(',XGorig:1,',',YGorig:1,'){\vector(0,1){',
+					abs(YP2orig-YGorig):1,'}}');
+     writeln('\put(',XGorig:1,',',(YP2orig+2):1,'){\makebox(0,0)[b]{Y}}')
+   end;
+   if (YGorig - YP1orig) > 0 then
+   begin
+     writeln('\put(',XGorig:1,',',YGorig:1,'){\vector(0,-1){',
+		abs(YGorig-YP1orig):1,'}}');
+     writeln('\put(',XGorig:1,',',(YP1orig-2):1,
+		'){\makebox(0,0)[t]{Y}}')
+   end;
+   writeln('\thinlines');
+
+   (*********************************************************************)
+   (*the following put numbers & bars along X-axis and Y-axis		*)
+   (*********************************************************************)
+   putbars(true,XGorig,(YGorig-1),Xdeltabar,abs(XP2orig-XGorig));
+   putbars(true,XGorig,(YGorig-1),-Xdeltabar,abs(XGorig-XP1orig));
+   putbars(false,(XGorig-1),YGorig,Ydeltabar,abs(YP2orig-YGorig));
+   putbars(false,(XGorig-1),YGorig,-Ydeltabar,abs(YGorig-YP1orig));
+
+(* Before invoking putnumbers, we must explicitly check if it needs to
+   be invoked at all. This is because in the procedure putnumbers I use
+   absolute values as the stopping condition for while loop.
+   We use absolute values in the procedure so as to handle plotting
+   numbers on both the positive and negative halves of the axes.
+   deln below represents the delta graph units corresponding to X|Ydeltanum.
+*)
+   writeln('% Add a line similar to next one if number at origin desired.');
+   deln  := (Xscalereal*Xdeltanum) / Xscalegraph;
+   pos := XGorig + Xdeltanum; num:=Xorignum + deln;
+   if pos < XP2orig then
+   putnumbers(true,(YGorig-2),pos,num,deln,Xdeltanum,XP2orig);
+   pos := XGorig - Xdeltanum; num:=Xorignum - deln;
+   if pos > XP1orig then
+   putnumbers(true,(YGorig-2),pos,num,-deln,-Xdeltanum,XP1orig);
+
+   deln  := ( Yscalereal*Ydeltanum) / Yscalegraph;
+   pos := YGorig + Ydeltanum; num:=Yorignum + deln;
+   if pos < YP2orig then
+   putnumbers(false,(XGorig-2),pos,num,deln,Ydeltanum,YP2orig);
+   pos := YGorig - Ydeltanum; num:=Yorignum - deln;
+   if pos > YP1orig then
+   putnumbers(false,(XGorig-2),pos,num,-deln,-Ydeltanum,YP1orig);
+
+   (***********************)
+   (* put the legend box  *)
+   (***********************)
+   if (legendloc <> 'no') then
+   begin   (* and if it is then obviously do nothing *)
+   if (Xlegloc = -999999) and (Ylegloc = -999999) then
+     begin   (* implies explicit coordinates not specified  *)
+             (* if they are then they are set in legendread *)
+	Xlegloc := picwd div 2; (* default is center *)
+	Ylegloc := picht div 2; (* default is center *)
+	if (legendloc[1] = 't') or (legendloc[2] = 't')
+	  then if YP2orig > 0 then Ylegloc := picht else Ylegloc := picht-10;
+	if (legendloc[1] = 'b') or (legendloc[2] = 'b')
+	  then if YP1orig >= 0 then Ylegloc := 10 else Ylegloc := 0;
+	if (legendloc[1] = 'l') or (legendloc[2] = 'l')
+	  then if XP1orig >= 0 then Xlegloc := 10 else Xlegloc := 0;
+	if (legendloc[1] = 'r') or (legendloc[2] = 'r')
+	  then if XP2orig > 0 then Xlegloc := picwd else Xlegloc := picwd-10;
+	Xlegloc := Xlegloc + XP1orig;
+	Ylegloc := Ylegloc + YP1orig
+     end;
+
+   write('\put(',Xlegloc:1,',',Ylegloc:1,'){\makebox(0,0)');
+   i:= 1; write('[');
+   while (i <= 2) do
+       begin
+         if  (legendloc[i] <> ' ') and (legendloc[i] <> '/') then
+ 	    write(legendloc[i]);
+         i:=i+1
+      end;
+   write(']');
+   writeln('{\fbox{\shortstack[l]{');
+   c:='A';
+   while (plotstuff[c].chardef[1] <> 'n') and (c <= maxchar) do
+   begin
+      write(' {\makebox(4,2)[lb]{\put(2,1){\pchar',c,'}}}: ');
+      strwrite(plotstuff[c].charname); writeln('\\');
+      c := chr(ord(c) + 1)
+   end;
+   writeln(' {\makebox(4,4)[b]{X}}: \xaxis \\');
+   writeln(' {\makebox(4,2)[b]{Y}}: \yaxis');
+   writeln(' }}}}')
+   end; (* not 'no' of legendloc*)
+
+   (* put the caption if explicit *)
+   captiontwo[1]:=capstring[1];
+   captiontwo[2]:=capstring[2];
+   if captiontype[1] = 'e' then    (* "e"xplicit, anything else other than *)
+				   (* "L" for LaTeX => no   *)
+   if captiontwo = 'YX' then
+   begin
+     writeln('% if the caption line is longer than the graphwidth, comment');
+     writeln('% out the second line and use first one. you might have to');
+     writeln('% fiddle with the width of parbox in the second stmt.');
+     write('%\put(',XP1orig:1,',',(YP1orig-18):1,
+			'){\makebox(',picwd:1,',0)[tl]{');
+     writeln('Figure ',fignumber,'$\!$: \parbox[t]{',(textwd-32):1:1,'mm}{%');
+     write('\put(',XP1orig:1,',',(YP1orig-18):1,
+			'){\makebox(',picwd:1,',0)[t]{');
+     writeln('Figure ',fignumber,'$\!$: {%');
+     writeln('%\yaxis\ vs.\ \xaxis}}}')
+   end
+   else  (* means explicit string is specified *)
+   begin
+     write('%\put(',XP1orig:1,',',(YP1orig-18):1,
+			'){\makebox(',picwd:1,',0)[tl]{');
+     writeln('Figure ',fignumber,'$\!$: \parbox[t]{',(textwd-32):1:1,'mm}{%');
+     write('\put(',XP1orig:1,',',(YP1orig-18):1,
+			'){\makebox(',picwd:1,',0)[t]{');
+     writeln('Figure ',fignumber,'$\!$: {%');
+     strwrite(capstring); writeln;
+     writeln('}}}');
+   end;
+
+   writeln('% beginning of data');
+   while not eof do
+   begin
+     readln(plotchar,xreality,yreality);
+     xgraph := (xreality*Xscalegraph)/Xscalereal;
+     ygraph := (yreality*Yscalegraph)/Yscalereal;
+     writeln('\put(',xgraph:1:5,',',ygraph:1:5,'){\pchar',plotchar,'}')
+   end;
+   writeln('% end of data');
+   writeln('\end{picture}');
+   writeln('\end{center}');
+
+   (* put the LaTeX \caption if so specified *)
+   if captiontype[1] = 'L' then     (* "L"aTeX . if it is not = 'L' or 'e'*)
+				    (* then interpreted as 'no'  *)
+   begin
+     writeln('% if the caption line is longer than the graphwidth,use a');
+     writeln('% \parbox[t]{...mm}{.......} like statement for the argument');
+     writeln('% with suitable args for parbox to get things centered.');
+     if captiontwo = 'YX'
+	then begin
+	     writeln('% You might want to add a [] to \caption below.');
+	     writeln('\caption{\protect\normalsize \yaxis\ vs.\ \xaxis }')
+	     end
+	   else begin
+		writeln('\caption{\protect\normalsize ');
+		strwrite(capstring); writeln;
+		writeln('}')
+		end;
+     if labelname[1] = '{' then    (* anything else => 'no' *)
+	begin
+           write('\label'); strwrite(labelname); writeln
+				   (* labelname contains the braces *)
+        end
+   end;
+
+   writeln('\end{figure}');
+   writeln;  (* a blank line is supposedly needed before \end fontname *)
+   		      (* so says the latex manual *)
+   write('\end'); strwrite(fontname); writeln; (* fontname contains braces *)
+   writeln;
+
+   if prepost[1] = 'y' then
+   	writeln('\end{document}');
+   end (* not error1 *)
+end.
+SHAR_EOF
+if test 17530 -ne "`wc -c < 'lgraph.p'`"
+then
+	echo shar: "error transmitting 'lgraph.p'" '(should have been 17530 characters)'
+fi
+fi
+echo shar: "extracting 'lgraph.skel'" '(613 characters)'
+if test -f 'lgraph.skel'
+then
+	echo shar: "will not over-write existing file 'lgraph.skel'"
+else
+cat << \SHAR_EOF > 'lgraph.skel'
+%pre&post?/yes
+%unitlngth 1.0		
+%font-name/{footnotesize}
+%picdimens 140 120 -70 -60 
+%Xaxisstrg/Number of Hops. 
+%Yaxisstrg/\%age of Hops
+%??caption/explicit
+%fignumber/1-1
+%capstring/Half-Length of Symmetric Intervals as \%-age of Lifetime means
+%labelname/{my-graph-1}
+%legendloc/tr
+%Xratiog:r 10 10
+%Xdeltab:n 5 10
+%Xoriginum 0
+%Yratiog:r 10 10
+%Ydeltab:n 5 10
+%Yoriginum 0
+%plotcharA/{\circle*{1.0}}
+%plotnameA/Message Switching
+%plotcharB/{\makebox(0,0){$\otimes$}}
+%plotnameB/Circuit Switching
+%plotcharD/no
+%plotcharE/no
+%%%%%%%%%% 
+A 20 20
+A 20 -20
+A -20 20
+A -20 -20
+B 30 10
+B 30 -10
+B -30 10
+B -30 -10
+SHAR_EOF
+if test 613 -ne "`wc -c < 'lgraph.skel'`"
+then
+	echo shar: "error transmitting 'lgraph.skel'" '(should have been 613 characters)'
+fi
+fi
+exit 0
+#	End of shell archive

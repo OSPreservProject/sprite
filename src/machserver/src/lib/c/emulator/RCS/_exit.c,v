@@ -1,0 +1,107 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  srv030:1.2 srv028:1.2 srv027:1.2 srv026:1.2 srv024:1.2 srv022:1.2 srv021:1.2 srv019:1.2 srv018:1.2 srv016:1.2 srv014:1.2 srv010:1.2 srv008:1.2 srv007:1.2 srv006:1.2 srv005:1.2 srv004:1.2 srv003:1.2 srv002:1.2 srv001:1.2;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     91.10.04.12.00.02;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.10.01.19.56.05;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Convert for use with Sprite server.
+@
+text
+@/* 
+ * _exit.c --
+ *
+ *	Procedure to map from Unix _exit system call to Sprite.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/lib/c/emulator/RCS/_exit.c,v 1.1 91/10/01 19:56:05 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <mach.h>
+#include <proc.h>
+#include <spriteEmuInt.h>
+#include <spriteSrv.h>
+
+#include "compatInt.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * _exit --
+ *
+ *	Procedure to map from Unix _exit system call to Sprite Proc_RawExit.
+ *
+ * Results:
+ *	Never returns.
+ *
+ * Side effects:
+ *	Any open streams are closed, then the process invoking _exit() is
+ *	terminated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+_exit(exitStatus)
+    int exitStatus;		/* process's termination status */
+{
+    (void)Proc_RawExitStub(SpriteEmu_ServerPort(), exitStatus);
+    /*
+     * We should never reach this point, regardless of status value.
+     */
+    thread_terminate(mach_thread_self());
+}
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: _exit.c,v 1.1 88/06/19 14:31:00 ouster Exp $ SPRITE (Berkeley)";
+d14 5
+a18 2
+#include "sprite.h"
+#include "proc.h"
+d31 1
+a31 2
+ *	_exit() should never return.  If it does, however, UNIX_ERROR is
+ *	returned.
+d40 1
+a40 1
+int
+d44 1
+a44 1
+    Proc_RawExit(exitStatus);
+d48 1
+a48 2
+    errno = Compat_MapCode(FAILURE);
+    return(UNIX_ERROR);
+@

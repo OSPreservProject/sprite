@@ -1,0 +1,37 @@
+MOTION COMMANDS
+CR,LF,^N,j	go to next entry
+-,<bs>,^P,k	go to previous entry
+f,^F,^V		forward a window
+b,^B,M-V	backward a window
+1		go to top of dir
+G		go to bottom of dir
+/ reg-exp	search forward thru filenames for reg-exp, or last one if null
+? reg-exp	as above, but searches backwards.
+
+GENERAL CONTROL
+Q		quit
+x		abort from this ded level w/o deletions
+^Z,z		stop ded
+h		display this help blurb
+! cmd, % cmd	execute 'cmd', replacing %'s by full pathname, #'s by tail and
+		    @'s by relative directory.  ! in other window, % fullscreen
+.		execute last ! or % cmd, substituting current filename
+
+INDEX DISPLAY
+^L	     	refresh screen
+l		re-stat current entry and redisplay it
+L		re-stat all entries on current screen and redisplay
+r [f,n,r,s,w]	reverse sort by filename; filename as number; read date;
+			size; write date
+s		same as r but normal sort
+
+ACTIONS ON CURRENT ENTRY
+d		mark current entry for deletion
+u		undelete current entry
+t		type current entry on terminal & pause in 2 window mode
+			abort with 'q' or interrupt (^C or DEL).
+T		type current entry using full screen (like "cat")
+m		Use the pager ("more") to display the current entry.
+e		edit current entry via editor or via ded if directory
+p		print current entry on line printer in small font (pr2)
+P		print current entry on line printer in large font

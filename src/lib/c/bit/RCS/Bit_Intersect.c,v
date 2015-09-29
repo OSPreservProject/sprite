@@ -1,0 +1,120 @@
+head     1.1;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     88.06.19.14.34.51;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/* 
+ * Bit_Intersect.c --
+ *
+ *	Source code for the Bit_Intersect library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: proto.c,v 1.2 88/03/11 08:39:08 ouster Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include "bit.h"
+#include "bitInt.h"
+
+
+/*-
+ *-----------------------------------------------------------------------
+ *
+ * Bit_Intersect --
+ *
+ *	Take the intersection of two bit masks and store it some place.
+ *	If no destination is given (it's a NULL pointer), the intersection
+ *	is taken but the result isn't stored anyplace.
+ *
+ * Results:
+ *	Returns TRUE if the intersection is non-empty. Stores the
+ *	intersection in the destination array, overwriting its previous
+ *	contents.
+ *
+ * Side Effects:
+ *	The destination is overwritten.
+ *
+ *-----------------------------------------------------------------------
+ */
+
+Boolean
+Bit_Intersect(numBits, src1Ptr, src2Ptr, destPtr)
+    int	    	  numBits;  	/* Number of bits in all arrays */
+    register int  *src1Ptr; 	/* First source array */
+    register int  *src2Ptr; 	/* Second source array */
+    register int  *destPtr; 	/* Destination array */
+{
+    register int  i;
+    register Boolean rval = FALSE;
+    register int  lastMask;
+
+    GET_MASK_AND_INTS(numBits, i, lastMask);
+
+    if (destPtr == (int *)NULL) {
+	/*
+	 * No destination, just go through the intersection and return TRUE
+	 * as soon as we find a non-empty member
+	 */
+	while (i != 0) {
+	    if (*src1Ptr & *src2Ptr) {
+		return(TRUE);
+	    }
+	    src1Ptr++; src2Ptr++; i--;
+	}
+	if (lastMask && ((*src1Ptr & *src2Ptr) & lastMask)) {
+	    return (TRUE);
+	}
+    } else {
+	/*
+	 * Have a destination. Form the intersection into it and set
+	 * rval TRUE if any of the destination integers is non-zero.
+	 */
+	while (i != 0) {
+	    *destPtr = *src1Ptr & *src2Ptr;
+	    if (*destPtr) {
+		rval = TRUE;
+	    }
+	    destPtr++; src1Ptr++; src2Ptr++; i--;
+	}
+	if (lastMask) {
+	    int	  src1 = *src1Ptr;
+	    int	  src2 = *src2Ptr;
+
+	    *destPtr &= ~lastMask;
+	    *destPtr |= (src1 & src2) & lastMask;
+	    if (*destPtr & lastMask) {
+		rval = TRUE;
+	    }
+	}
+    }
+    return(rval);
+}
+@

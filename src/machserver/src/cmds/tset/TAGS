@@ -1,0 +1,32 @@
+
+tset.c,572
+# define	CHK(321,11148
+# define	CNTL(319,11089
+#define	WHITE(1776,39974
+baudrate(1961,43567
+bequal(1667,38363
+bmove(1649,38191
+cancelled(1918,42934
+cat(1624,37901
+fatal 2062,45074
+flush(1616,37822
+isalias(1725,39116
+# define	isalnum(323,11235
+# define	isdigit(322,11192
+main(534,15633
+makealias(1699,38763
+mapped(1977,43821
+nextarg(2051,44896
+prc(1608,37738
+prmap(2038,44743
+prs(1597,37652
+putbuf(1936,43242
+reportek(1511,36438
+sequal(1686,38596
+setdelay(1557,37003
+setmode(1433,34854
+settabs(1392,33937
+stypeof(1741,39328
+wrtermcap(1780,40051
+
+tset.delays.h,0

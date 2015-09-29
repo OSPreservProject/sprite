@@ -1,0 +1,211 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.3
+date     90.06.27.11.17.36;  author shirriff;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.03.19.13.33.05;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.02.20.14.06.26;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@Updated BUGS part of man page.
+@
+text
+@.\" SCCSID: @@(#)shmget.2	4.1	12/9/88
+.TH shmget 2
+.SH NAME
+shmget \- get shared memory segment
+.SH SYNTAX
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+.PP
+.ft B
+int shmget (key, size, shmflg)
+key_t key;
+int size, shmflg;
+.fi
+.SH DESCRIPTION
+.NXR "shmget system call"
+.NXA "shmget system call" "ftok subroutine"
+.NXA "shmget system call" "shmctl system call"
+.NXA "shmget system call" "shmop system call"
+.NXR "shared memory" "getting"
+The
+.PN shmget
+system call
+returns the shared memory identifier associated with
+.I key.
+.sp
+A shared memory identifier and associated data
+structure and shared memory
+segment of size
+.I size
+bytes 
+are created for
+.I key
+if one of the following are true:
+.RS 8
+.PP
+The
+.I key
+is equal to IPC_PRIVATE.
+For further information, see intro(2).
+.PP
+The
+.I key
+does not already have a shared memory
+identifier associated with it, and 
+.RI ( shmflg
+& IPC_CREAT ) is "true".
+.RE
+.PP
+Upon creation, the data structure associated with the new shared memory
+identifier is initialized as follows:
+.RS 8
+.PP
+The
+.BR shm_perm.cuid, shm_perm.uid, shm_perm.cgid,
+and
+.B shm_perm.gid
+are set equal to the effective user ID
+and effective group ID, respectively, of
+the calling process.
+.PP
+The low-order 9 bits of 
+.B shm_perm.mode
+are set equal to the low-order 9 bits of
+.I shmflg.
+The
+.B shm_segsz 
+is set equal to the value of
+.I size.
+.PP
+The
+.BR shm_lpid, shm_nattch, shm_atime,
+and
+.B shm_dtime
+are set equal to 0.
+The
+.B shm_ctime
+is set equal to the current time.
+.RE
+.SH RETURN VALUE
+Upon successful completion,
+a non-negative integer, namely a shared memory
+identifier is returned.  Otherwise, a value of \-1 is returned and
+.I errno
+is set to indicated the error.
+.SH DIAGNOSTICS
+.NXR "shmget system call" "diagnostics"
+The
+.PN shmget
+system call
+will fail if one or more of the following are true:
+.TP 15
+[EINVAL]
+The
+.I size
+is less than the system imposed minimum
+or greater than the system imposed maximum. 
+.TP 15
+[EACCES]
+A shared memory identifier exists for 
+.I key
+but operations permission
+as specified by the low-order 9 bits of 
+.I shmflg
+would not be granted. 
+For further information, see 
+.MS errno 2 .
+.TP 15
+[EINVAL]
+A shared memory identifier exists for
+.I key
+but the size of the segment associated with it is less than
+.I size
+and
+.I size
+is not equal to zero. 
+.TP 15
+[ENOENT]
+A shared memory identifier does not exist for
+.I key 
+and
+.RI ( shmflg
+& IPC_CREAT )
+is "false". 
+.TP 15
+[ENOSPC]
+A shared memory identifier is to be
+created but the system imposed limit on the
+maximum number of allowed shared memory
+identifiers system wide would be exceeded. 
+.TP 15
+[ENOMEM]
+A shared memory identifier and
+associate shared memory segment are to be
+created by the amount of available
+physical memory is not sufficient to fill
+the request. 
+.TP 15
+[EEXIST]
+A shared memory identifier exists for 
+.I key
+but 
+.RI (( shmflg
+& IPC_CREAT )
+& 
+.RI ( shmflg
+& IPC_EXCL ))
+is "true". 
+.SH SEE ALSO
+shmctl(2), shmop(2), ftok(3)
+.SH BUGS
+The System V shared memory functions are implemented at user level on top
+of the mmap(2) interface.  Not all the System V functionality is
+implemented.
+@
+
+
+1.2
+log
+@assorted man pages
+@
+text
+@d42 1
+a42 2
+For further information, see 
+.MS intro 2 .
+d153 4
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@@

@@ -1,0 +1,330 @@
+
+
+
+NSLOOKUP                  User Commands                  NSLOOKUP
+
+
+
+NNAAMMEE
+     nslookup - query name servers interactively
+
+SSYYNNOOPPSSIISS
+     nnssllooookkuupp [ -_o_p_t_i_o_n ... ] [ _h_o_s_t-_t_o-_f_i_n_d | - [ _s_e_r_v_e_r ]]
+
+DDEESSCCRRIIPPTTIIOONN
+     _N_s_l_o_o_k_u_p is a program to query DARPA Internet domain name
+     servers. Nslookup has two modes: interactive and non-
+     interactive.  Interactive mode allows the user to query the
+     name server for information about various  hosts and domains
+     or print a list of hosts in the domain. Non-interactive mode
+     is used to print just the name and Internet address of a
+     host or domain.
+
+
+AARRGGUUMMEENNTTSS
+     Interactive mode is entered in the following cases:
+
+     a)  when no arguments are given (the default name server
+         will be used),
+
+     b)  when the first argument is a hyphen (-) and the second
+         argument is the hostname or Internet address of a name
+         server.
+
+     Non-interactive mode is used when the name of the host to be
+     looked up is given as the first argument. The optional
+     second argument specifies the hostname or Internet address
+     of a name server.
+
+     The options listed under the ``set'' command below can be
+     specified on the command line if they precede the arguments
+     and are prefixed with a hyphen. For example, to change the
+     default query type to host information, and the default
+     timeout to 10 seconds, type:
+
+          nslookup -query=hinfo -timeout=10
+
+
+IINNTTEERRAACCTTIIVVEE CCOOMMMMAANNDDSS
+     Commands may be interrupted at any time by typing a
+     control-C.  To exit, type a control-D (EOF) or type exit.
+     The command line length must be less than 80 characters.
+     NN..BB.. an unrecognized command will be interpreted as a host
+     name.
+
+
+     _h_o_s_t [_s_e_r_v_e_r]
+          Look up information for _h_o_s_t using the current default
+          server or using _s_e_r_v_e_r if specified.
+
+
+
+
+Sprite v1.0              August 17, 1988                        1
+
+
+
+
+
+
+NSLOOKUP                  User Commands                  NSLOOKUP
+
+
+
+     sseerrvveerr _d_o_m_a_i_n
+     llsseerrvveerr _d_o_m_a_i_n
+          Change the default server to _d_o_m_a_i_n. LLsseerrvveerr uses the
+          initial server to look up information about _d_o_m_a_i_n
+          while sseerrvveerr uses the current default server. If an
+          authoritative answer can't be found, the names of
+          servers that might have the answer are returned.
+
+
+     rroooott Changes the default server to the server for the root
+          of the domain name space.  Currently, the host sri-
+          nic.arpa is used.  (This command is a synonym for the
+          llsseerrvveerr ssrrii--nniicc..aarrppaa.) The name of the root server can
+          be changed with the sseett rroooott command.
+
+
+     ffiinnggeerr [_n_a_m_e] [>> _f_i_l_e_n_a_m_e]
+     ffiinnggeerr [_n_a_m_e] [>>>> _f_i_l_e_n_a_m_e]
+          Connects with the finger server on the current host.
+          The current host is defined when a previous lookup for
+          a host was successful and returned address information
+          (see the sseett qquueerryyttyyppee==AA command).  _N_a_m_e is optional. >>
+          and >>>> can be used to redirect output in the usual
+          manner.
+
+
+     llss _d_o_m_a_i_n [>> _f_i_l_e_n_a_m_e]
+     llss _d_o_m_a_i_n [>>>> _f_i_l_e_n_a_m_e]
+     llss --aa _d_o_m_a_i_n [>> _f_i_l_e_n_a_m_e]
+     llss --aa _d_o_m_a_i_n [>>>> _f_i_l_e_n_a_m_e]
+     llss --hh _d_o_m_a_i_n [>> _f_i_l_e_n_a_m_e]
+     llss --hh _d_o_m_a_i_n [>>>> _f_i_l_e_n_a_m_e]
+     llss --dd _d_o_m_a_i_n [>> _f_i_l_e_n_a_m_e]
+     llss --dd _d_o_m_a_i_n [>>>> _f_i_l_e_n_a_m_e]
+          List the information available for _d_o_m_a_i_n, optionally
+          creating or appending to _f_i_l_e_n_a_m_e.  The default output
+          contains host names and their Internet addresses. The
+          --aa option lists aliases of hosts in the domain.  The --hh
+          option lists CPU and operating system information for
+          the domain.  The --dd option lists all contents of a zone
+          transfer.  When output is directed to a file, hash
+          marks are printed for every 50 records received from
+          the server.
+
+
+     vviieeww _f_i_l_e_n_a_m_e
+          Sorts and lists the output of previous llss command(s)
+          with _m_o_r_e(1).
+
+
+     hheellpp
+
+
+
+
+Sprite v1.0              August 17, 1988                        2
+
+
+
+
+
+
+NSLOOKUP                  User Commands                  NSLOOKUP
+
+
+
+     ??    Prints a brief summary of commands.
+
+
+     eexxiitt Exits the program.
+
+
+     sseett _k_e_y_w_o_r_d[=_v_a_l_u_e]
+          This command is used to change state information that
+          affects the lookups.  Valid keywords are:
+
+          aallll  Prints the current values of the various options
+               to sseett.  Information about the  current default
+               server and host is also printed.
+
+          [[nnoo]]ddeebbuugg
+               Turn debugging mode on. A lot more information is
+               printed about the packet sent to the server and
+               the resulting answer.
+               (Default = nodebug, abbreviation = [no]deb)
+
+          [[nnoo]]dd22
+               Turn exhaustive debugging mode on.  Essentially
+               all fields of every packet are printed.
+               (Default = nod2)
+
+          [[nnoo]]ddeeffnnaammee
+               Append the default domain name to every lookup.
+               (Default = defname, abbreviation = [no]def)
+
+          [[nnoo]]sseeaarrcchh
+               With defname, search for each name in parent
+               domains of the current domain.
+               (Default = search)
+
+          ddoommaaiinn==_n_a_m_e
+               Change the default domain name to _n_a_m_e. The
+               default domain name is appended to all lookup
+               requests if the ddeeffnnaammee option has been set.  The
+               search list is set to parents of the domain with
+               at least two components in their names.
+               (Default = value in hostname or /etc/resolv.conf,
+               abbreviation = do)
+
+          qquueerryyttyyppee==_v_a_l_u_e
+
+          ttyyppee==_v_a_l_u_e
+               Change the type of information returned from a
+               query to one of:
+
+               A         the host's Internet address (the
+                         default).
+
+
+
+
+Sprite v1.0              August 17, 1988                        3
+
+
+
+
+
+
+NSLOOKUP                  User Commands                  NSLOOKUP
+
+
+
+               CNAME     the canonical name for an alias.
+
+               HINFO     the host CPU and operating system type.
+
+               MD        the mail destination.
+
+               MX        the mail exchanger.
+
+               MG        the mail group member.
+
+               MINFO     the mailbox or mail list information.
+
+               MR        the mail rename domain name.
+
+               NS        nameserver for the named zone.
+          Other types specified in the RFC-1035 document are
+          valid but aren't very useful.
+          (Abbreviation = q)
+
+          [[nnoo]]rreeccuurrssee
+               Tell the name server to query other servers if it
+               does not have the information.
+               (Default = recurse, abbreviation = [no]rec)
+
+          rreettrryy==_n_u_m_b_e_r
+               Set the number of retries to _n_u_m_b_e_r. When a reply
+               to a request is not received within a certain
+               amount of time (changed with sseett ttiimmeeoouutt), the
+               request is resent. The retry value controls how
+               many times a request is resent before giving up.
+               (Default = 2, abbreviation = ret)
+
+          rroooott==_h_o_s_t
+               Change the name of the root server to _h_o_s_t. This
+               affects the rroooott command.
+               (Default = sri-nic.arpa, abbreviation = ro)
+
+          ttiimmeeoouutt==_n_u_m_b_e_r
+               Change the time-out interval for waiting for a
+               reply to _n_u_m_b_e_r seconds.
+               (Default = 10 seconds, abbreviation = t)
+
+          [[nnoo]]vvcc
+               Always use a virtual circuit when sending requests
+               to the server.
+               (Default = novc, abbreviation = [no]v)
+
+DDIIAAGGNNOOSSTTIICCSS
+     If the lookup request was not successful, an error message
+     is printed.  Possible errors are:
+
+     Time-out
+
+
+
+Sprite v1.0              August 17, 1988                        4
+
+
+
+
+
+
+NSLOOKUP                  User Commands                  NSLOOKUP
+
+
+
+          The server did not respond to a request after a certain
+          amount of time (changed with sseett ttiimmeeoouutt==_v_a_l_u_e) and a
+          certain number of retries (changed with sseett
+          rreettrryy==_v_a_l_u_e).
+
+     No information
+          Depending on the query type set with the sseett qquueerryyttyyppee
+          command, no information about the host was available,
+          though the host name is valid.
+
+     Non-existent domain
+          The host or domain name does not exist.
+
+     Connection refused
+     Network is unreachable
+          The connection to the name or finger server could not
+          be made at the current time.  This error commonly
+          occurs with ffiinnggeerr requests.
+
+     Server failure
+          The name server found an internal inconsistency in its
+          database and could not return a valid answer.
+
+     Refused
+          The name server refused to service the request.
+
+
+     The following error should not occur and it indicates a bug
+     in the program.
+
+     Format error
+          The name server found that the request packet was not
+          in the proper format.
+
+
+FFIILLEESS
+     /etc/resolv.conf    initial domain name and name server
+     addresses.
+     /usr/local/nslookup.help summary of commands.
+
+SSEEEE AALLSSOO
+     resolver(3), resolver(5), named(8),
+     RFC-1034  ``Domain Names - Concepts and Facilities''
+     RFC-1035  ``Domain Names - Implementation and Specifica-
+     tion''
+
+AAUUTTHHOORR
+     Andrew Cherenson
+
+
+
+
+
+
+
+Sprite v1.0              August 17, 1988                        5
+
+
+

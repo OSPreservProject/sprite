@@ -1,0 +1,8 @@
+#!/sprite/cmds/csh -f
+
+echo "$1 Bytes (slave)"
+foreach rep (1 2 3 4 5)
+    sleep 1
+    pdevtest -S -n 1000 -i -d $1
+    sleep 2
+end

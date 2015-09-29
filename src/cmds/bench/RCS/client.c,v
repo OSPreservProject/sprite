@@ -1,0 +1,600 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.6
+date     89.01.04.15.36.27;  author david;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.09.29.17.02.23;  author david;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     87.12.22.10.15.33;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     87.07.14.10.27.03;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     87.05.01.15.51.58;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     87.04.01.10.41.22;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Client code to use pseudo devices to synchronize with a server process.
+@
+
+
+1.6
+log
+@Convert to machine dependent format and prints SPUR cache controller
+register results.
+@
+text
+@/* 
+ * client.c --
+ *
+ *	The client part of some multi-program synchronization primatives.
+ *	The routines here interface to the server; initial contact,
+ *	waiting for the start message, and notification of completion.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: client.c,v 1.5 88/09/29 17:02:23 david Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include "sprite.h"
+#include "status.h"
+#include "sys/ioctl.h"
+#include "sys/file.h"
+#include "stdio.h"
+
+extern char *pdev;
+extern int errno;
+
+char buffer[4096];
+int bufSize = sizeof(buffer);
+
+typedef struct ClientState {
+    int clientStreamID;
+} ClientState;
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ClientSetup --
+ *
+ *	Establish contact with the server.
+ *
+ * Results:
+ *	A pointer to state about the clients needed by ClientStart and
+ *	ClientDone.
+ *
+ * Side effects:
+ *	Creates named pipes and communicates with server
+ *	This exits upon error.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+ClientSetup(dataPtr)
+    ClientData *dataPtr;
+{
+    ClientState *statePtr;
+    ReturnStatus status;
+
+    statePtr = (ClientState *)malloc(sizeof(ClientState));
+
+    statePtr->clientStreamID = open(pdev, O_RDWR, 0);
+    if (statePtr->clientStreamID < 0) {
+	Stat_PrintMsg(errno, "ClientSetup: error opening pseudo device");
+	fflush(stderr);
+	exit(errno);
+    }
+    *dataPtr = (ClientData)statePtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ClientRead --
+ *
+ *	Read from a pseudo-device.  The amount and number of repetitions
+ *	can be varied for measurment.
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+ClientRead(data, size, reps)
+    ClientData data;
+    int size;
+    int reps;
+{
+    ClientState *statePtr;
+    int amountRead;
+    ReturnStatus status;
+    char *buffer = (char *)malloc(size);
+
+    statePtr = (ClientState *)data;
+    do {
+	amountRead = read(statePtr->clientStreamID, buffer, size);
+	if (amountRead < 0) {
+	    Stat_PrintMsg(errno, "ClientRead: error on read");
+	    break;
+	} if (amountRead != size) {
+	    fprintf(stderr, "Short read %d < %d\n", amountRead, size);
+	}
+    } while (--reps > 0);
+    free(buffer);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ClientWrite --
+ *
+ *	Write from a pseudo-device.  The amount and number of repetitions
+ *	can be varied for measurment.
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+ClientWrite(data, size, reps)
+    ClientData data;
+    int size;
+    int reps;
+{
+    ClientState *statePtr;
+    int amountWrite;
+    ReturnStatus status;
+    char *buffer = (char *)malloc(size);
+
+    statePtr = (ClientState *)data;
+    do {
+        amountWrite = write(statePtr->clientStreamID, buffer, size);
+	if (amountWrite < 0) {
+	    Stat_PrintMsg(errno, "ClientWrite: error on read");
+	    break;
+	} if (amountWrite != size) {
+	    fprintf(stderr, "Short write %d < %d\n", amountWrite,
+					size);
+	}
+    } while (--reps > 0);
+    free(buffer);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ClientIOControl --
+ *
+ *	Do an IOControl to a pseudo-device.
+ *	The amount of data passed in and number of repetitions
+ *	can be varied for measurment.
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+ClientIOControl(data, size, reps)
+    ClientData data;
+    int size;
+    int reps;
+{
+    ClientState *statePtr;
+    ReturnStatus status;
+    Address inBuffer = (Address)malloc(size);
+    Address outBuffer = (Address)malloc(size);
+    int foo = 27;
+
+    statePtr = (ClientState *)data;
+    do {
+	/*
+	status = Fs_IOControl(statePtr->clientStreamID, foo, size, inBuffer,
+				size, outBuffer);
+	*/
+	if (status != SUCCESS) {
+	    Stat_PrintMsg(status, "ClientIOControl: error ");
+	    break;
+	}    } while (--reps > 0);
+    free(inBuffer);
+    free(outBuffer);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ClientDone --
+ *
+ *	Tell the server we're done.  This is just done by closing
+ *	the pseudo stream.
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	None
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+ClientDone(data)
+    ClientData data;
+{
+    ClientState *statePtr;
+    ReturnStatus status;
+
+    statePtr = (ClientState *)data;
+    status = close(statePtr->clientStreamID);
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "ClientDone: error on close");
+    }
+}
+@
+
+
+1.5
+log
+@Converted to new libraries.
+@
+text
+@d13 1
+a13 1
+static char rcsid[] = "$Header: client.c,v 1.4 87/12/22 10:15:33 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+1.4
+log
+@removed some lint.
+@
+text
+@d13 1
+a13 1
+static char rcsid[] = "$Header: client.c,v 1.3 87/07/14 10:27:03 brent Exp $ SPRITE (Berkeley)";
+d19 3
+a21 3
+#include "io.h"
+#include "fs.h"
+#include "mem.h"
+d24 1
+d58 1
+a58 1
+    statePtr = (ClientState *)Mem_Alloc(sizeof(ClientState));
+d60 5
+a64 6
+    status = Fs_Open(pdev, FS_READ|FS_WRITE, 0,
+				 &statePtr->clientStreamID);
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "ClientSetup: error opening pseudo device");
+	Io_Flush(io_StdErr);
+	Proc_Exit(status);
+d95 1
+a95 1
+    char *buffer = (char *)Mem_Alloc(size);
+d99 3
+a101 3
+	status = Fs_Read(statePtr->clientStreamID, size, buffer, &amountRead);
+	if (status != SUCCESS) {
+	    Stat_PrintMsg(status, "ClientRead: error on read");
+d104 1
+a104 1
+	    Io_PrintStream(io_StdErr, "Short read %d < %d\n", amountRead, size);
+d107 1
+a107 1
+    Mem_Free(buffer);
+d136 1
+a136 1
+    char *buffer = (char *)Mem_Alloc(size);
+d140 3
+a142 3
+	status = Fs_Write(statePtr->clientStreamID, size, buffer, &amountWrite);
+	if (status != SUCCESS) {
+	    Stat_PrintMsg(status, "ClientWrite: error on read");
+d145 1
+a145 1
+	    Io_PrintStream(io_StdErr, "Short write %d < %d\n", amountWrite,
+d149 1
+a149 1
+    Mem_Free(buffer);
+d178 2
+a179 2
+    Address inBuffer = Mem_Alloc(size);
+    Address outBuffer = Mem_Alloc(size);
+d184 1
+d187 1
+d192 2
+a193 2
+    Mem_Free(inBuffer);
+    Mem_Free(outBuffer);
+d221 1
+a221 1
+    status = Fs_Close(statePtr->clientStreamID);
+@
+
+
+1.3
+log
+@Updated to handle new pseudo-device interface
+@
+text
+@d13 1
+a13 1
+static char rcsid[] = "$Header: client.c,v 1.2 87/05/01 15:51:58 brent Exp $ SPRITE (Berkeley)";
+d21 1
+a92 1
+    int client;
+a133 1
+    int client;
+a176 2
+    int client;
+    int amountRead;
+d178 3
+a180 2
+    char *inBuffer = (char *)Mem_Alloc(size);
+    char *outBuffer = (char *)Mem_Alloc(size);
+d184 1
+a184 1
+	status = Fs_IOControl(statePtr->clientStreamID, 27, size, inBuffer,
+@
+
+
+1.2
+log
+@Changed over to use pseudo-dev interface instead of named pipes.
+@
+text
+@d13 1
+a13 1
+static char rcsid[] = "$Header: client.c,v 1.1 87/02/17 15:10:35 brent Exp $ SPRITE (Berkeley)";
+d22 1
+a22 1
+extern char *devBench;
+d58 1
+a58 1
+    status = Fs_Open(devBench, FS_READ|FS_WRITE, 0,
+d71 1
+a71 1
+ * ClientStart --
+d73 2
+a74 3
+ *	Synchronize with the server by doing our first operation on
+ *	the pseudo device.  The server will wait until all clients have
+ *	generated their requests before letting any one of them complete.
+d86 1
+a86 1
+ClientStart(data)
+d88 2
+d95 1
+a95 2
+    int len;
+    char buffer[20];
+d97 29
+a125 4
+    /*
+     * A read is done here, but it doesn't much matter what we do.
+     * The server is just waiting for contact from us indicating we are ready.
+     */
+d127 12
+a138 1
+    len = sizeof(buffer);
+d140 11
+a150 5
+    status = Fs_Read(statePtr->clientStreamID, len, buffer, &amountRead);
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "ClientStart: error on read");
+	Proc_Exit(status);
+    }
+d156 43
+d201 1
+a201 1
+ *	Tell the server we're done.  This is just done by writing to
+a217 1
+    int amountWritten;
+a218 2
+    int len;
+    char buffer[20];
+a219 1
+    len = sizeof(buffer);
+d221 1
+a221 1
+    status = Fs_Write(statePtr->clientStreamID, len, buffer, &amountWritten);
+d223 1
+a223 1
+	Stat_PrintMsg(status, "ClientDone: error writing done message");
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d2 1
+a2 1
+ * slave.c --
+d4 2
+a5 2
+ *	The slave part of some multi-program synchronization primatives.
+ *	The routines here interface to the master; initial contact,
+d13 1
+a13 1
+static char rcsid[] = "$Header: slave.c,v 1.1 87/02/17 15:10:35 brent Exp $ SPRITE (Berkeley)";
+d18 1
+d22 1
+a22 1
+extern char *masterPipe;
+d27 3
+a29 7
+char slavePipeName[80 + sizeof("hello\n")] = "hello\n";
+
+typedef struct SlaveState {
+    int masterPipeID;
+    int slavePipeID;
+    char *slavePipeName;
+} SlaveState;
+d34 1
+a34 1
+ * SlaveSetup --
+d36 1
+a36 1
+ *	Establish contact with the master.
+d39 2
+a40 2
+ *	A pointer to state about the slaves needed by SlaveStart and
+ *	SlaveDone.
+d43 1
+a43 1
+ *	Creates named pipes and communicates with master
+d50 1
+a50 1
+SlaveSetup(dataPtr)
+d53 1
+a53 3
+    SlaveState *statePtr;
+    int slave;
+    int amountWritten;
+a54 2
+    int pid;
+    int len;
+d56 1
+a56 1
+    statePtr = (SlaveState *)Mem_Alloc(sizeof(SlaveState));
+d58 2
+a59 2
+    status = Fs_Open(masterPipe, FS_WRITE|FS_NAMED_PIPE_OPEN, 0,
+				 &statePtr->masterPipeID);
+d61 1
+a61 1
+	Stat_PrintMsg(status, "Error opening master pipe");
+a64 29
+    /*
+     * Generate a unique slave pipe name.  The "hello" message is
+     * stuck in front of the pipe name for an atomic write.
+     */
+    Proc_GetIDs(&pid, NULL, NULL, NULL);
+    String_Cat("/tmp/slave.", slavePipeName);
+    len = String_Length(slavePipeName);
+    Cvt_ItoA(pid, 10, &slavePipeName[len]);
+    len = String_Length("hello\n");
+    statePtr->slavePipeName = &slavePipeName[len];
+
+    status = Fs_Open(statePtr->slavePipeName,
+		     FS_CREATE|FS_READ|FS_NAMED_PIPE_OPEN,
+		     0666, &statePtr->slavePipeID);
+    if (status != SUCCESS) {
+	Stat_PrintMsg(status, "Error opening slave pipe");
+	Proc_Exit(status);
+    }
+    /*
+     * Write both the "hello" message and the name of our pipe.
+     */
+    status = Fs_Write(statePtr->masterPipeID, sizeof(slavePipeName),
+					     slavePipeName, &amountWritten);
+    if ((status != SUCCESS) ||
+	(amountWritten != sizeof(slavePipeName))) {
+	Stat_PrintMsg(status, "Error writing master pipe");
+	Io_Flush(io_StdErr);
+	Proc_Exit(status);
+    }
+d71 1
+a71 1
+ * SlaveStart --
+d73 3
+a75 1
+ *	Wait for a start message from the master.
+d81 1
+a81 1
+ *	The start message is read from the slave's pipe.
+d87 1
+a87 1
+SlaveStart(data)
+d90 2
+a91 2
+    SlaveState *statePtr;
+    int slave;
+d95 1
+d97 10
+a106 6
+    len = sizeof("start\n") - 1;
+    statePtr = (SlaveState *)data;
+    status = Fs_Read(statePtr->slavePipeID, len, buffer, &amountRead);
+    if (status != SUCCESS ||
+	(String_NCompare(len, "start\n", buffer) != 0)) {
+	Stat_PrintMsg(status, "Error reading start command");
+a108 7
+    /*
+     * Remove the slave's pipe.  It appears that whenever this is
+     * is done it is likely to be serviced on the server during the benchmark.
+     * It would be possible to have another command, SlaveCleanup,
+     * that a master used to call back to slaves to tidy up.
+     */
+    Fs_Remove(statePtr->slavePipeName);
+d114 1
+a114 1
+ * SlaveDone --
+d116 2
+a117 1
+ *	Tell the master we're done.
+d123 1
+a123 1
+ *	Writes the stop message to the pipe.
+d129 1
+a129 1
+SlaveDone(data)
+d132 1
+a132 2
+    SlaveState *statePtr;
+    int slave;
+d136 1
+d138 5
+a142 5
+    len = sizeof("done\n") - 1;
+    statePtr = (SlaveState *)data;
+    status = Fs_Write(statePtr->masterPipeID, len, "done\n", &amountWritten);
+    if (status != SUCCESS || amountWritten != len) {
+	Stat_PrintMsg(status, "Error writing done message");
+@

@@ -1,0 +1,822 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  srv030:1.2 srv028:1.2 srv027:1.2 srv026:1.2 srv024:1.2 srv022:1.2 srv021:1.2 srv019:1.2 srv018:1.2 srv016:1.2 srv014:1.2 srv010:1.2 srv008:1.2 srv007:1.2 srv006:1.2 srv005:1.2 srv004:1.2 srv003:1.2;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     92.04.29.21.29.53;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     92.04.26.21.54.44;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Fix order of includes, to make cpp happy.  Lint.
+@
+text
+@/* 
+ * pfs.c --
+ *
+ *	The routines in this module set up a call-back interface for
+ *	a pseudo-file-system server.  Call-back procedures are called
+ *	when client processes do naming operation on the pseudo-file-system.
+ *	As a side-effect of the PFS_OPEN operation a pseudo-device connection
+ *	can be created for the I/O operations on the object in the
+ *	pseudo-file-system.  Pfs_OpenConnection is used to do this, and it
+ *	sets of a set of service call-backs for the pseudo-device connenction.
+ *	Thus a pseudo-file-system server has a set of naming service
+ *	call-backs (typedef Pfs_CallBacks) that are tied to a single
+ *	"naming" stream, and another set of I/O service call-backs
+ *	(typedef Pdev_CallBacks) for each open file in the pseudo-file-system.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/lib/c/etc/RCS/pfs.c,v 1.1 92/04/26 21:54:44 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+/* 
+ * Make sure that fs.h comes after sys/types.h, so that major() and minor() 
+ * can get undef'd.
+ */
+#include <sys/types.h>
+#include <fs.h>
+
+#include <stdio.h>
+#include <sprite.h>
+#include <ctype.h>
+#include <pfs.h>
+#include <errno.h>
+#include <list.h>
+#include <status.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/file.h>
+
+/*
+ * The string below holds an error message if Pfs_Open fails.
+ */
+
+char pfs_ErrorMsg[150];
+
+typedef struct Server {
+    unsigned int magic;		/* PFS_MAGIC */
+    int streamID;		/* StreamID of naming request-response */
+    List_Links connectList;	/* List of all service streams for this
+				 * pseudo-filesystem. */
+    Pfs_CallBacks *nameService;	/* Naming handlers for pfs operations */
+    char *prefix;		/* Pseudo-filesystem prefix */
+    Address requestBuf;		/* Naming connection request buffer */
+    ClientData clientData;	/* Passed to naming service procedures */
+} Server;
+
+/*
+ * Boolean that can be toggled by applications to get tracing.
+ */
+int pfs_Trace;
+
+static int	PfsNullProc();
+
+static Pfs_CallBacks pfsDefaultCallBacks = {
+	PfsNullProc,		/* PFS_OPEN */
+	PfsNullProc,		/* PFS_GET_ATTR */
+	PfsNullProc,		/* PFS_SET_ATTR */
+	PfsNullProc,		/* PFS_MAKE_DEVICE */
+	PfsNullProc,		/* PFS_MAKE_DIR */
+	PfsNullProc,		/* PFS_REMOVE */
+	PfsNullProc,		/* PFS_REMOVE_DIR */
+	PfsNullProc,		/* PFS_HARD_LINK */
+	PfsNullProc,		/* PFS_SYM_LINK */
+	PfsNullProc,		/* PFS_DOMAIN_INFO */
+};
+
+/*
+ * PFS_REQUEST_BUF_SIZE 	Size of the request buffer for naming stream.
+ */
+
+#define PFS_REQUEST_BUF_SIZE	(sizeof(Pfs_Request) + sizeof(Fs_2PathData))
+
+/*
+ * Forward references to procedures in this file:
+ */
+
+extern void	PfsNamingRequest();
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Pfs_Open --
+ *
+ *	Establish a pseudo-filesystem server with a given set of handler
+ *	procedures both for the naming operations to the pseudo-filesystem,
+ *	and for the I/O operations on pseudo-device connections established
+ *	inside the pseudo-filesystem.
+ * 
+ * Results:
+ *	An pointer to a token that contains a clientData field for use
+ *	by the caller of Pfs_Open, and the streamID of the naming
+ *	request-response stream.  This pointer gets be passed
+ *	to Pfs_Close and Pfs_SetHandler.
+ *
+ * Side effects:
+ *	Opens the pseudo-filesystem.  Sets up a call-back.
+ *
+ *----------------------------------------------------------------------
+ */
+Pfs_Token
+Pfs_Open(prefix, rootIDPtr, service, clientData)
+    char *prefix;		/* Prefix of the pseudo-filesystem */
+    Fs_FileID *rootIDPtr;	/* Server-defined ID of the root */
+    Pfs_CallBacks *service;	/* Set of callback procedures.  Can be NULL,
+				 * or individual elements can be NULL, to
+				 * get default callbacks. */
+    ClientData clientData;	/* Passed to naming callbacks */
+{
+    int namingFD;
+    register Server *pfsPtr;
+    Pdev_SetBufArgs setBuf;
+    int status;
+
+    namingFD = open(prefix, O_PFS_MASTER|O_RDONLY, 0);
+    if (namingFD < 0) {
+	sprintf(pfs_ErrorMsg, "Pfs_Open: \"%s\" service failed, errno %d",
+	    prefix, errno);
+	return((Pfs_Token)NULL);
+    }
+
+    pfsPtr = (Server *)malloc(sizeof(Server));
+    pfsPtr->magic = PFS_MAGIC;
+    pfsPtr->streamID = namingFD;
+    pfsPtr->clientData = clientData;
+
+    List_Init(&pfsPtr->connectList);
+
+    pfsPtr->nameService = (Pfs_CallBacks *)malloc(sizeof(Pfs_CallBacks));
+    if (service == (Pfs_CallBacks *)NULL) {
+	bcopy((Address) &pfsDefaultCallBacks, (Address) pfsPtr->nameService,
+		    sizeof(Pfs_CallBacks));
+    } else {
+	bcopy((Address) service, (Address) pfsPtr->nameService,
+		    sizeof(Pfs_CallBacks));
+    }
+    if (pfsPtr->nameService->open == (int (*)())NULL) {
+	pfsPtr->nameService->open = pfsDefaultCallBacks.open;
+    }
+    if (pfsPtr->nameService->getAttr == (int (*)())NULL) {
+	pfsPtr->nameService->getAttr = pfsDefaultCallBacks.getAttr;
+    }
+    if (pfsPtr->nameService->setAttr == (int (*)())NULL) {
+	pfsPtr->nameService->setAttr = pfsDefaultCallBacks.setAttr;
+    }
+    if (pfsPtr->nameService->makeDevice == (int (*)())NULL) {
+	pfsPtr->nameService->makeDevice = pfsDefaultCallBacks.makeDevice;
+    }
+    if (pfsPtr->nameService->makeDir == (int (*)())NULL) {
+	pfsPtr->nameService->makeDir = pfsDefaultCallBacks.makeDir;
+    }
+    if (pfsPtr->nameService->remove == (int (*)())NULL) {
+	pfsPtr->nameService->remove = pfsDefaultCallBacks.remove;
+    }
+    if (pfsPtr->nameService->removeDir == (int (*)())NULL) {
+	pfsPtr->nameService->removeDir = pfsDefaultCallBacks.removeDir;
+    }
+    if (pfsPtr->nameService->rename == (int (*)())NULL) {
+	pfsPtr->nameService->rename = pfsDefaultCallBacks.rename;
+    }
+    if (pfsPtr->nameService->hardLink == (int (*)())NULL) {
+	pfsPtr->nameService->hardLink = pfsDefaultCallBacks.hardLink;
+    }
+    if (pfsPtr->nameService->symLink == (int (*)())NULL) {
+	pfsPtr->nameService->symLink = pfsDefaultCallBacks.symLink;
+    }
+    if (pfsPtr->nameService->domainInfo == (int (*)())NULL) {
+	pfsPtr->nameService->domainInfo = pfsDefaultCallBacks.domainInfo;
+    }
+
+    pfsPtr->prefix = prefix;
+    pfsPtr->requestBuf = (Address)malloc(PFS_REQUEST_BUF_SIZE);
+    setBuf.requestBufAddr = pfsPtr->requestBuf;
+    setBuf.requestBufSize = PFS_REQUEST_BUF_SIZE;
+    setBuf.readBufAddr = NULL;
+    setBuf.readBufSize = 0;
+    status = Fs_IOControl(namingFD, IOC_PDEV_SET_BUF, sizeof(Pdev_SetBufArgs),
+		(Address)&setBuf, 0, (Address) NULL);
+    if (status != SUCCESS) {
+	sprintf(pfs_ErrorMsg, "IOC_PDEV_SET_BUF failed <%x>\n", status);
+	close(namingFD);
+	return((Pfs_Token)NULL);
+    }
+    (void)Fs_IOControl(namingFD, IOC_PFS_SET_ID, sizeof(Fs_FileID),
+		(Address)rootIDPtr, 0, (Address) NULL);
+
+    Fs_EventHandlerCreate(namingFD, FS_READABLE, PfsNamingRequest,
+			    (ClientData)pfsPtr);
+
+    return((Pfs_Token)pfsPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Pfs_SetHandler --
+ *
+ *	Set a handler for a particular PFS request.  If the handler is
+ *	NULL then a default procedure replaces the existing handler.
+ * 
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Updates the top-level callback list, the one used for naming requests.
+ *
+ *----------------------------------------------------------------------
+ */
+int (*
+Pfs_SetHandler(pfsToken, operation, handler))()
+    Pfs_Token pfsToken;		/* Return value from Pfs_Open */
+    int operation;		/* Which operation to set the handler for */
+    int (*handler)();		/* The callback procedure */
+{
+    register Server *pfsPtr = (Server *)pfsToken;
+    register Pfs_CallBacks *service = pfsPtr->nameService;
+    int (*oldHandler)();
+
+    if (pfsPtr->magic != PFS_MAGIC) {
+	fprintf(stderr, "Bad token passed to Pfs_SetHandler\n");
+	return NULL;
+    }
+    switch (operation) {
+	case PFS_OPEN:
+	    oldHandler = service->open;
+	    if (handler == (int (*)())NULL) {
+		service->open = PfsNullProc;
+	    } else {
+		service->open = handler;
+	    }
+	    break;
+	case PFS_GET_ATTR:
+	    oldHandler = service->getAttr;
+	    if (handler == (int (*)())NULL) {
+		service->getAttr = PfsNullProc;
+	    } else {
+		service->getAttr = handler;
+	    }
+	    break;
+	case PFS_SET_ATTR:
+	    oldHandler = service->setAttr;
+	    if (handler == (int (*)())NULL) {
+		service->setAttr = PfsNullProc;
+	    } else {
+		service->setAttr = handler;
+	    }
+	    break;
+	case PFS_MAKE_DEVICE:
+	    oldHandler = service->makeDevice;
+	    if (handler == (int (*)())NULL) {
+		service->makeDevice = PfsNullProc;
+	    } else {
+		service->makeDevice = handler;
+	    }
+	    break;
+	case PFS_MAKE_DIR:
+	    oldHandler = service->makeDir;
+	    if (handler == (int (*)())NULL) {
+		service->makeDir = PfsNullProc;
+	    } else {
+		service->makeDir = handler;
+	    }
+	    break;
+	case PFS_REMOVE:
+	    oldHandler = service->remove;
+	    if (handler == (int (*)())NULL) {
+		service->remove = PfsNullProc;
+	    } else {
+		service->remove = handler;
+	    }
+	    break;
+	case PFS_REMOVE_DIR:
+	    oldHandler = service->removeDir;
+	    if (handler == (int (*)())NULL) {
+		service->removeDir = PfsNullProc;
+	    } else {
+		service->removeDir = handler;
+	    }
+	    break;
+	case PFS_RENAME:
+	    oldHandler = service->rename;
+	    if (handler == (int (*)())NULL) {
+		service->rename = PfsNullProc;
+	    } else {
+		service->rename = handler;
+	    }
+	    break;
+	case PFS_HARD_LINK:
+	    oldHandler = service->hardLink;
+	    if (handler == (int (*)())NULL) {
+		service->hardLink = PfsNullProc;
+	    } else {
+		service->hardLink = handler;
+	    }
+	    break;
+	case PFS_SYM_LINK:
+	    oldHandler = service->symLink;
+	    if (handler == (int (*)())NULL) {
+		service->symLink = PfsNullProc;
+	    } else {
+		service->symLink = handler;
+	    }
+	    break;
+	case PFS_DOMAIN_INFO:
+	    oldHandler = service->domainInfo;
+	    if (handler == (int (*)())NULL) {
+		service->domainInfo = PfsNullProc;
+	    } else {
+		service->domainInfo = handler;
+	    }
+	    break;
+	default:
+	    fprintf(stderr, "Bad operation passed to Pfs_SetHandler");
+	    oldHandler = NULL;
+	    break;
+    }
+    return oldHandler;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PfsNamingRequest --
+ *
+ *	Called when the naming request-response stream has a new request.
+ *	This makes a call-back to the corresponding procedure in the
+ *	nameService list for the pseudo-filesystem.
+ * 
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Calls the user's handler for the naming operation.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+void
+PfsNamingRequest(clientData, streamID, eventMask)
+    ClientData clientData;
+    int streamID;
+    int eventMask;
+{
+    register Server *pfsPtr = (Server *)clientData;
+    Pdev_BufPtrs bufPtrs;
+    Pfs_Request *requestPtr;
+    Pdev_Reply reply;
+    int numBytes;
+    Address dataPtr;
+    int status;
+    int replySize;
+    Address replyBuf;
+    Fs_Attributes attr;
+    Fs_DomainInfo domainInfo;
+    Fs_RedirectInfo redirectInfo;
+    Fs_2PathRedirectInfo redirect2Info;
+
+    if (pfs_Trace) {
+	fprintf(stderr, "<%s> ", pfsPtr->prefix);
+    }
+    /*
+     * Read the current pointers for the request buffer.
+     */
+
+    numBytes = read(streamID, (char *) &bufPtrs, sizeof(Pdev_BufPtrs));
+    if (numBytes != sizeof(Pdev_BufPtrs)) {
+	panic("%s; status \"%s\", count %d",
+	    "PfsNamingRequest had trouble reading request buffer pointers",
+	    strerror(errno), numBytes);
+    }
+    if (bufPtrs.magic != PDEV_BUF_PTR_MAGIC) {
+	panic("%s: %d", "PfsNamingRequest got bad pointer magic number",
+		bufPtrs.magic);
+    }
+    /*
+     * While there are still requests in the buffer, service them.
+     */
+    while (bufPtrs.requestFirstByte < bufPtrs.requestLastByte) {
+	requestPtr =
+	    (Pfs_Request *)&pfsPtr->requestBuf[bufPtrs.requestFirstByte];
+	if (requestPtr->hdr.magic != PFS_REQUEST_MAGIC) {
+	    printf("PfsNamingRequest, bad request magic # 0x%x\n",
+			    requestPtr->hdr.magic);
+	    bufPtrs.requestFirstByte = bufPtrs.requestLastByte + 1;
+	}
+	dataPtr = (Address)((int)requestPtr + sizeof(Pfs_Request));
+
+	status = FS_FILE_NOT_FOUND;
+	replySize = 0;
+	replyBuf = NULL;
+	switch (requestPtr->hdr.operation) {
+	    case PFS_OPEN: {
+		register char *name;
+		Fs_OpenArgs *openArgsPtr;
+
+		name = (char *)dataPtr;
+		openArgsPtr = &requestPtr->param.open;
+		if (pfs_Trace) {
+		    fprintf(stderr, "OPEN %s: uid %d gid %d use %x cwd <%d,%d,%x,%x>",
+			name, openArgsPtr->id.user, openArgsPtr->id.group[0],
+			openArgsPtr->useFlags,
+			openArgsPtr->prefixID.serverID,
+			openArgsPtr->prefixID.type, openArgsPtr->prefixID.major,
+			openArgsPtr->prefixID.minor);
+		}
+		status = (*pfsPtr->nameService->open)(pfsPtr->clientData,
+				name, openArgsPtr, &redirectInfo);
+		if (status == SUCCESS) {
+		    /*
+		     * The openProc has already replied.
+		     */
+		    if (pfs_Trace) {
+			fprintf(stderr, " Returns OK\n");
+		    }
+		    goto nextMsg;
+		}
+		break;
+	    }
+	    case PFS_GET_ATTR: {
+		register char *name;
+
+		name = (char *)dataPtr;
+
+		if (pfs_Trace) {
+		    fprintf(stderr, "GET_ATTR %s", name);
+		}
+		status = (*pfsPtr->nameService->getAttr)
+			(pfsPtr->clientData, name, &requestPtr->param.getAttr,
+			&attr, &redirectInfo);
+		if (status == SUCCESS) {
+		    replyBuf = (Address)&attr;
+		    replySize = sizeof(Fs_Attributes);
+		}
+		break;
+	    }
+	    case PFS_SET_ATTR: {
+		register Pfs_SetAttrData *setAttrPtr =
+			(Pfs_SetAttrData *)dataPtr;
+
+		if (pfs_Trace) {
+		    fprintf(stderr, "SET_ATTR %s: ", setAttrPtr->name);
+		    fprintf(stderr, "client %d uid %d gid %d: ",
+			requestPtr->param.open.clientID,
+			requestPtr->param.open.id.user,
+			requestPtr->param.open.id.group[0]);
+		    if (setAttrPtr->flags & FS_SET_TIMES) {
+			fprintf(stderr, "(access = %d) (modify = %d) ",
+				setAttrPtr->attr.accessTime.seconds,
+				setAttrPtr->attr.dataModifyTime.seconds);
+		    }
+		    if (setAttrPtr->flags & FS_SET_MODE) {
+			fprintf(stderr, "(mode = 0%o) ", setAttrPtr->attr.permissions);
+		    }
+		    if (setAttrPtr->flags & FS_SET_OWNER) {
+			fprintf(stderr, "(uid = %d) (gid = %d) ", setAttrPtr->attr.uid,
+				    setAttrPtr->attr.gid);
+		    }
+		    if (setAttrPtr->flags & FS_SET_FILE_TYPE) {
+			fprintf(stderr, "(userType = %d) ", setAttrPtr->attr.userType);
+		    }
+		    if (setAttrPtr->flags & FS_SET_DEVICE) {
+			fprintf(stderr, "(device = <%d,%d,%d>) ",
+			    setAttrPtr->attr.devServerID,
+			    setAttrPtr->attr.devType,
+			    setAttrPtr->attr.devUnit);
+		    }
+		}
+		status = (*pfsPtr->nameService->setAttr)
+			(pfsPtr->clientData, setAttrPtr->name,
+			 &requestPtr->param.setAttr, setAttrPtr->flags,
+			 &setAttrPtr->attr, &redirectInfo);
+		break;
+	    }
+	    case PFS_MAKE_DEVICE: {
+		register char *name;
+
+		name = (char *)dataPtr;
+		if (pfs_Trace) {
+		    fprintf(stderr, "MAKE_DEVICE %s: <%d,%d,%d>", name,
+			requestPtr->param.makeDevice.device.serverID,
+			requestPtr->param.makeDevice.device.type,
+			requestPtr->param.makeDevice.device.unit);
+		}
+		status = (*pfsPtr->nameService->makeDevice)
+			(pfsPtr->clientData, name, &requestPtr->param.makeDevice,
+			&redirectInfo);
+		break;
+	    }
+	    case PFS_MAKE_DIR: {
+		register char *name;
+
+		name = (char *)dataPtr; 
+		if (pfs_Trace) {
+		    fprintf(stderr, "MAKE_DIR %s", name);
+		}
+		status = (*pfsPtr->nameService->makeDir)
+			(pfsPtr->clientData, name, &requestPtr->param.makeDir,
+			&redirectInfo);
+		break;
+	    }
+	    case PFS_REMOVE: {
+		register char *name;
+
+		name = (char *)dataPtr;
+		if (pfs_Trace) {
+		    fprintf(stderr, "REMOVE %s", name);
+		}
+		status = (*pfsPtr->nameService->remove)
+			(pfsPtr->clientData, name, &requestPtr->param.remove,
+			&redirectInfo);
+		break;
+	    }
+	    case PFS_REMOVE_DIR: {
+		register char *name;
+
+		name = (char *)dataPtr;
+		if (pfs_Trace) {
+		    fprintf(stderr, "REMOVE %s", name);
+		}
+		status = (*pfsPtr->nameService->removeDir)
+			(pfsPtr->clientData, name, &requestPtr->param.removeDir,
+			&redirectInfo);
+		break;
+	    }
+	    case PFS_RENAME: {
+		register Fs_2PathData *pathsPtr;
+
+		pathsPtr = (Fs_2PathData *)dataPtr;
+		if (pfs_Trace) {
+		    fprintf(stderr, "PFS_RENAME %s %s", 
+			pathsPtr->path1, pathsPtr->path2);
+		}
+		status = (*pfsPtr->nameService->rename)
+			(pfsPtr->clientData, pathsPtr->path1, pathsPtr->path2,
+			&requestPtr->param.rename, &redirect2Info);
+		break;
+	    }
+	    case PFS_HARD_LINK: {
+		register Fs_2PathData *pathsPtr;
+
+		pathsPtr = (Fs_2PathData *)dataPtr;
+		if (pfs_Trace) {
+		    fprintf(stderr, "PFS_HARD_LINK %s %s", 
+			pathsPtr->path1, pathsPtr->path2);
+		}
+		status = (*pfsPtr->nameService->hardLink)
+			(pfsPtr->clientData, pathsPtr->path1, pathsPtr->path2,
+			&requestPtr->param.hardLink, &redirect2Info);
+		break;
+	    }
+	    case PFS_SYM_LINK: {
+		register Fs_2PathData *pathsPtr;
+
+		pathsPtr = (Fs_2PathData *)dataPtr;
+		if (pfs_Trace) {
+		    fprintf(stderr, "PFS_SYM_LINK %s %s", 
+			pathsPtr->path1, pathsPtr->path2);
+		}
+		status = (*pfsPtr->nameService->symLink)
+			(pfsPtr->clientData, pathsPtr->path1, pathsPtr->path2,
+			&requestPtr->param.symLink, &redirectInfo);
+		break;
+	    }
+	    case PFS_DOMAIN_INFO: {
+		if (pfs_Trace) {
+		    fprintf(stderr, "PFS_DOMAIN_INFO");
+		}
+		status = (*pfsPtr->nameService->domainInfo)
+			(pfsPtr->clientData, &requestPtr->param.domainInfo,
+			&domainInfo);
+		replyBuf = (Address)&domainInfo;
+		replySize = sizeof(domainInfo);
+		break;
+	    }
+	    default:
+		panic("PfsNamingRequest: bad request on request stream: %d",
+			requestPtr->hdr.operation);
+	}
+	if (status == EREMOTE || status == FS_LOOKUP_REDIRECT) {
+	    status = FS_LOOKUP_REDIRECT;
+	    if (requestPtr->hdr.operation == PFS_RENAME ||
+		requestPtr->hdr.operation == PFS_HARD_LINK) {
+		replyBuf = (Address)&redirect2Info;
+		replySize = sizeof(Fs_2PathRedirectInfo);
+	    } else {
+		replyBuf = (Address)&redirectInfo;
+		replySize = sizeof(Fs_RedirectInfo);
+	    }
+	}
+	if (pfs_Trace) {
+	    fprintf(stderr, " Returns %x\n", status);
+	}
+	reply.magic = PDEV_REPLY_MAGIC;
+	reply.status = status;
+	reply.replyBuf = replyBuf;
+	reply.replySize = replySize;
+	reply.selectBits = 0;
+	reply.signal = 0;
+	reply.code = 0;
+	status = Fs_IOControl(streamID, IOC_PDEV_REPLY,
+		sizeof(Pdev_Reply), (Address) &reply, 0, (Address) NULL);
+	if (status != SUCCESS) {
+	    fprintf(stderr, "IOC_PDEV_REPLY status 0x%x\n", status);
+	}
+	/*
+	 * Check the next message.
+	 */
+nextMsg:
+	bufPtrs.requestFirstByte += requestPtr->hdr.messageSize;
+    }
+    /*
+     * Tell the kernel we've processed the messages.
+     */
+    (void)Fs_IOControl(streamID, IOC_PDEV_SET_PTRS,
+		    sizeof(Pdev_BufPtrs), (Address)&bufPtrs,
+		    0, (Address) NULL);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Pfs_OpenConnection --
+ *
+ *	Called to open a new pdev connection in response to an PFS_OPEN
+ *	request.  This does an IOC_PFS_OPEN to set up the connection, and
+ *	the sets up a call-back to PdevServiceRequest to handle the subsequent
+ *	operations on the new connection.  The pdev handlers are the
+ *	default ones until updated with Pdev_SetupHandler.
+ * 
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Turns off tracing, etc.
+ *
+ *----------------------------------------------------------------------
+ */
+Pdev_Stream *
+Pfs_OpenConnection(token, fileIDPtr, reqBufSize, readBufSize, readBuf, selectBits, service)
+    Pfs_Token token;		/* Ref. to pseudo-file-system state */
+    Fs_FileID *fileIDPtr;	/* Server's name for this conection */
+    int reqBufSize;		/* Preferred size for request buffer */
+    int readBufSize;		/* Size for optional read buffer, 0 means
+				 * no read buffer */
+    char *readBuf;		/* The read buffer itself, or NULL */
+    int selectBits;		/* Initial select state of the connection */
+    Pdev_CallBacks *service;	/* Set of handlers for this pdev connection */
+{
+    int newStreamID;
+    register Server *pfsPtr = (Server *)token;
+    int status;
+
+    if (pfsPtr->magic != PFS_MAGIC) {
+	fprintf(stderr, "Pfs_OpenConnection got bad token\n");
+	return NULL;
+    }
+    status = Fs_IOControl(pfsPtr->streamID, IOC_PFS_OPEN, sizeof(Fs_FileID),
+		fileIDPtr, sizeof(int), (Address)&newStreamID);
+    if (status != SUCCESS) {
+	fprintf(stderr, "IOC_PFS_OPEN failed <%x>\n", status);
+	return NULL;
+    }
+    /*
+     * Set up state for the new pseudo-device connection
+     */
+    return (PdevSetup(newStreamID, (Address)pfsPtr, &pfsPtr->connectList,
+	    reqBufSize, readBufSize, readBuf, service, selectBits));
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Pfs_PassFile --
+ *
+ *	Pass off an open file in response to an open request by a client.
+ *	This takes a regular open file descriptor and passes it into the
+ *	kernel in response to an open request by a client.  This should
+ *	only be called from the open call-back service procedure.
+ *
+ * Results:
+ *	An error code.
+ *
+ * Side effects:
+ *	Completes a PFS_OPEN transaction by making the IOC_PFS_PASS_STREAM
+ *	ioctl to pass off the open file descriptor.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Pfs_PassFile(pfsToken, streamID)
+    Pfs_Token pfsToken;
+    int streamID;
+{
+    register Server *pfsPtr = (Server *)pfsToken;
+    register int status;
+
+    if (pfsPtr->magic != PFS_MAGIC) {
+	fprintf(stderr, "Pfs_PassFile got bad token\n");
+	return EINVAL;
+    }
+    status = Fs_IOControl(pfsPtr->streamID, IOC_PFS_PASS_STREAM, sizeof(int),
+		&streamID, 0, NULL);
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Pfs_Close --
+ *
+ *	Stop pseudo-file-system service.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Closes the naming request-response stream and free's up alloc'd memory.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Pfs_Close(pfsToken)
+    Pfs_Token pfsToken;
+{
+    register Server *pfsPtr = (Server *)pfsToken;
+
+    if (pfsPtr->magic != PFS_MAGIC) {
+	fprintf(stderr, "Pfs_Close got bad token\n");
+	return;
+    }
+    (void)close(pfsPtr->streamID);
+    (void)free((char *)pfsPtr->nameService);
+    (void)free((char *)pfsPtr->requestBuf);
+    (void)free((char *)pfsPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PfsNullProc --
+ *
+ *	Do-nothing callback.
+ *
+ * Results:
+ *	Returns FS_FILE_NOT_FOUND.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+PfsNullProc()
+{
+    return(FS_FILE_NOT_FOUND);
+}
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/etc/RCS/pfs.c,v 1.5 89/09/12 14:42:42 brent Exp $ SPRITE (Berkeley)";
+d30 7
+d40 1
+a41 1
+#include <pfs.h>
+a128 1
+    register int op;
+a667 1
+    Pdev_SetBufArgs setBuf;
+@

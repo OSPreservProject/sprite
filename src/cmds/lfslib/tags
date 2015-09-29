@@ -1,0 +1,73 @@
+AccessFileBlockAddr	fileAccess.c	/^AccessFileBlockAddr(op, filePtr, blockNum, blockad/
+AccessFileOp	fileAccess.c	/^enum AccessFileOp { OP_GET, OP_SET};$/
+AddBlockToSegment	stableMem.c	/^AddBlockToSegment(address, blockNum,  stableMemPtr/
+AddNewSummaryBlock	seg.c	/^AddNewSummaryBlock(segPtr)$/
+CopySegToBuffer	seg.c	/^CopySegToBuffer( segPtr, maxSize, bufferPtr, lenPt/
+CreateSegmentToWrite	seg.c	/^CreateSegmentToWrite(lfsPtr, dontBlock) $/
+DeleteCacheBlock	lfs.c	/^DeleteCacheBlock(diskCachePtr, cacheBlockPtr)$/
+DestorySegStruct	seg.c	/^DestorySegStruct(segPtr)$/
+DiskBlock	lfs.c	/^} DiskBlock;$/
+DiskCache	lfs.c	/^} DiskCache;$/
+DoWriteDoneCalls	seg.c	/^DoWriteDoneCalls( segPtr, flags) $/
+FileSegLayout	fileAccess.c	/^} FileSegLayout;$/
+FreeSegmentMem	seg.c	/^FreeSegmentMem(segPtr)$/
+GetDirtyBlock	fileAccess.c	/^GetDirtyBlock(filePtr, blockType, lastDirtyBlockPt/
+GetDirtyFile	fileAccess.c	/^GetDirtyFile(lfsPtr)$/
+GetSegStruct	seg.c	/^GetSegStruct(lfsPtr, segLogRangePtr, startBlockOff/
+InitSegmentMem	seg.c	/^InitSegmentMem(lfsPtr, segPtr)$/
+LayoutNewSeg	seg.c	/^LayoutNewSeg(segPtr, checkPointPtr, sizePtr)$/
+LfsCheckPointFileSystem	lfs.c	/^LfsCheckPointFileSystem(lfsPtr, flags)$/
+LfsDescMapCheckpoint	descMap.c	/^LfsDescMapCheckpoint(segPtr, checkPointPtr, checkP/
+LfsDescMapGetDiskAddr	descMap.c	/^LfsDescMapGetDiskAddr(lfsPtr, fileNumber, diskAddr/
+LfsDescMapGetVersion	descMap.c	/^LfsDescMapGetVersion(lfsPtr, fileNumber, versionNu/
+LfsDescMapSetDiskAddr	descMap.c	/^LfsDescMapSetDiskAddr(lfsPtr, fileNumber, diskAddr/
+LfsDescMapWriteDone	descMap.c	/^LfsDescMapWriteDone(segPtr, flags)$/
+LfsDiskCache	lfs.c	/^LfsDiskCache(lfsPtr, maxCacheBytes)$/
+LfsDiskCacheInvalidate	lfs.c	/^LfsDiskCacheInvalidate(lfsPtr, blockOffset, blockS/
+LfsDiskRead	lfs.c	/^LfsDiskRead(lfsPtr, blockOffset, bufferSize, buffe/
+LfsDiskWrite	lfs.c	/^LfsDiskWrite(lfsPtr, blockOffset, bufferSize, buff/
+LfsFileBlockAddr	fileAccess.c	/^LfsFileBlockAddr(filePtr, blockNum, blocksizePtr)$/
+LfsFileBlockAlloc	fileAccess.c	/^LfsFileBlockAlloc(filePtr,blockNum, blocksize, fil/
+LfsFileBlockFetch	fileAccess.c	/^LfsFileBlockFetch(filePtr, blockNum, fileBlockPtrP/
+LfsFileClose	fileAccess.c	/^LfsFileClose(filePtr)$/
+LfsFileLayoutCheckpoint	fileAccess.c	/^LfsFileLayoutCheckpoint(segPtr, checkPointPtr,  ch/
+LfsFileLayoutWriteDone	fileAccess.c	/^LfsFileLayoutWriteDone(segPtr, flags)$/
+LfsFileNameLookup	fileAccess.c	/^LfsFileNameLookup(dirFilePtr, name, fileNumberPtr,/
+LfsFileOpen	fileAccess.c	/^LfsFileOpen(lfsPtr, fileNumber, filePtrPtr)$/
+LfsFileOpenDesc	fileAccess.c	/^LfsFileOpenDesc(lfsPtr, descPtr, filePtrPtr)$/
+LfsFileSetBlockAddr	fileAccess.c	/^LfsFileSetBlockAddr(filePtr, blockNum, blockAddr)$/
+LfsFileStoreBlock	fileAccess.c	/^LfsFileStoreBlock(fileBlockPtr, newSize)$/
+LfsFileStoreDesc	fileAccess.c	/^LfsFileStoreDesc(filePtr)$/
+LfsGetLogTail	segUsage.c	/^LfsGetLogTail(lfsPtr, cantWait, logRangePtr, start/
+LfsGetNewFileNumber	descMap.c	/^LfsGetNewFileNumber(lfsPtr, dirFileNumber, fileNum/
+LfsGetStableMemBlockIndex	stableMem.c	/^LfsGetStableMemBlockIndex(clientData, blockNum)$/
+LfsGetStableMemEntry	stableMem.c	/^LfsGetStableMemEntry(clientData, entryNumber)$/
+LfsLoadDescMap	descMap.c	/^LfsLoadDescMap(lfsPtr, checkPointSize, checkPointP/
+LfsLoadFileSystem	lfs.c	/^LfsLoadFileSystem(programName, deviceName, blockSi/
+LfsLoadStableMem	stableMem.c	/^LfsLoadStableMem(lfsPtr, smemParamsPtr, cpPtr)$/
+LfsLoadUsageArray	segUsage.c	/^LfsLoadUsageArray(lfsPtr, checkPointSize, checkPoi/
+LfsMarkStableMemEntryDirty	stableMem.c	/^LfsMarkStableMemEntryDirty(clientData, entryNumber/
+LfsSegCheckPoint	seg.c	/^LfsSegCheckPoint(lfsPtr, checkPointPtr, checkPoint/
+LfsSegFetchBlock	seg.c	/^LfsSegFetchBlock(segPtr, blockOffset, size)$/
+LfsSegInit	seg.c	/^LfsSegInit(lfsPtr, segNumber)$/
+LfsSegRelease	seg.c	/^LfsSegRelease(segPtr)$/
+LfsSegReleaseBlock	seg.c	/^LfsSegReleaseBlock(segPtr, memPtr)$/
+LfsSegSlowAddDataBuffer	seg.c	/^LfsSegSlowAddDataBuffer(segPtr, blocks, bufferPtr,/
+LfsSegSlowDiskAddress	seg.c	/^LfsSegSlowDiskAddress(segPtr, segElementPtr)$/
+LfsSegSlowGrowSummary	seg.c	/^LfsSegSlowGrowSummary(segPtr, dataBlocksNeeded, su/
+LfsSegStartAddr	seg.c	/^LfsSegStartAddr(segPtr)$/
+LfsSegUsageAdjustBytes	segUsage.c	/^LfsSegUsageAdjustBytes(lfsPtr, diskAddr, changeInB/
+LfsSegUsageCheckpointUpdate	segUsage.c	/^LfsSegUsageCheckpointUpdate(lfsPtr, checkPointPtr,/
+LfsSegUsageWriteDone	segUsage.c	/^LfsSegUsageWriteDone(segPtr, flags)$/
+LfsSetLogTail	segUsage.c	/^LfsSetLogTail(lfsPtr, logRangePtr, startBlock, act/
+LfsSetStableMemBlockIndex	stableMem.c	/^LfsSetStableMemBlockIndex(clientData, blockNum, di/
+LfsStableMemCheckpoint	stableMem.c	/^LfsStableMemCheckpoint(segPtr,  checkPointPtr, che/
+LfsStableMemWriteDone	stableMem.c	/^LfsStableMemWriteDone(segPtr, flags, clientData)$/
+LfsUsageCheckpoint	segUsage.c	/^LfsUsageCheckpoint(segPtr, checkPointPtr, checkPoi/
+PlaceFileInSegment	fileAccess.c	/^PlaceFileInSegment(segPtr, filePtr, segLayoutDataP/
+ReturnDirtyBlock	fileAccess.c	/^ReturnDirtyBlock(fileBlockPtr, written)$/
+ReturnDirtyFile	fileAccess.c	/^ReturnDirtyFile(filePtr, onFront)$/
+RewindCurPtrs	seg.c	/^RewindCurPtrs(segPtr)$/
+SegIsEmpty	seg.c	/^#define SegIsEmpty(segPtr) (((segPtr)->numBlocks =/
+StableMem	stableMem.c	/^} StableMem;$/
+WriteSegment	seg.c	/^WriteSegment(segPtr) $/

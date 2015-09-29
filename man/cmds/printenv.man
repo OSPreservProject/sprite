@@ -1,0 +1,22 @@
+' $Header: /sprite/src/cmds/printenv/RCS/printenv.man,v 1.2 90/01/17 17:24:08 shirriff Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS PRINTENV cmds
+.BS
+.SH NAME
+printenv \- Print out values of environment variables.
+.SH SYNOPSIS
+\fBprintenv\fR
+[
+.B name
+]
+.BE
+
+.SH DESCRIPTION
+.LP
+This program prints out the names and values of all environment
+variables that are currently defined, in alphabetical order.  If a name
+is specified, only the value of the specified environment variable
+is returned.
+
+.SH KEYWORDS
+environment, print, variable

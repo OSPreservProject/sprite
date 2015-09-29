@@ -1,0 +1,32 @@
+CmdWrite
+TclCommandWriting, 
+Writing C language extensions to Tcl.
+
+CreateExte
+Tcl_CreateExtendedInterp, 
+set up a new Tcl command interpreter and 
+command, create, interpreter, 
+Handles
+Tcl_HandleAlloc, Tcl_HandleFree, Tcl_HandleTblInit, Tcl_HandleTblRelease, Tcl_HandleTblUseCount, 
+Dynamic, handle addressable tables.
+handle, table, allocate, 
+Keylist
+Tcl_GetKeyedListField, Tcl_SetKeyedListField, Tcl_DeleteKeyedListField, 
+Keyed list management routines.
+lists, keyed, 
+MathErr
+Tcl_MathError, 
+Floating point math error trap handler for Tcl.
+floating point, math, error, 
+Memory
+ckalloc, memory, ckfree, Tcl_DisplayMemory, Tcl_InitMemory, Tcl_ValidateAllMemory, 
+Validated memory allocation interface.
+ckalloc, ckfree, free, memory, malloc, 
+TclX
+TclX, 
+Extended Tcl - Extended command set for Tcl 6.1.
+
+tcl
+Extended, 
+Tcl procedure library
+

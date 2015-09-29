@@ -1,0 +1,63 @@
+     COMMAND RESULTS
+          Each command produces two results:  a  code  and  a  string.
+          The   code   indicates   whether   the   command   completed
+          successfully  or  not,  and  the  string  gives   additional
+          information.  The valid codes are defined in tcl.h, and are:
+
+               TCL_OK              This is the normal return code, and
+                                   indicates    that    the    command
+                                   completed successfully.  The string
+                                   gives the command's return value.
+
+               TCL_ERROR           Indicates that an  error  occurred;
+                                   the    string   gives   a   message
+                                   describing the error.  In  additon,
+                                   the  global variable errorInfo will
+                                   contain human-readable  information
+                                   describing   which   commands   and
+                                   procedures were being executed when
+                                   the  error occurred, and the global
+                                   variable  errorCode  will   contain
+                                   machine-readable  details about the
+                                   error, if they are available.   See
+                                   the   section   BUILT-IN  VARIABLES
+                                   below for more information.
+
+               TCL_RETURN          Indicates that the  return  command
+                                   has  been  invoked,  and  that  the
+                                   current  procedure  (or   top-level
+                                   command  or  source command) should
+                                   return  immediately.   The   string
+                                   gives  the  return  value  for  the
+                                   procedure or command.
+
+               TCL_BREAK           Indicates that  the  break  command
+                                   has  been invoked, so the innermost
+                                   loop should abort immediately.  The
+                                   string should always be empty.
+
+               TCL_CONTINUE        Indicates that the continue command
+                                   has  been invoked, so the innermost
+                                   loop  should  go  on  to  the  next
+                                   iteration.    The   string   should
+                                   always be empty.
+          Tcl programmers do not normally need to think  about  return
+          codes,  since TCL_OK is almost always returned.  If anything
+          else is returned by a  command,  then  the  Tcl  interpreter
+          immediately  stops  processing  commands  and returns to its
+          caller.  If there are several nested invocations of the  Tcl
+          interpreter  in  progress,  then  each  nested  command will
+          usually return the error to its caller, until eventually the
+          error  is  reported  to the top-level application code.  The
+          application will then display  the  error  message  for  the
+          user.
+
+          In a few cases, some commands will handle certain  ``error''
+          conditions  themselves  and  not  return  them upwards.  For
+          example, the for command checks for the TCL_BREAK  code;  if
+          it occurs, then for stops executing the body of the loop and
+          returns TCL_OK to its caller.  The for command also  handles
+          TCL_CONTINUE  codes  and  the  procedure interpreter handles
+          TCL_RETURN codes.  The catch command allows Tcl programs  to
+          catch  errors  and  handle  them  without  aborting  command
+          interpretation any further.

@@ -1,0 +1,8 @@
+D DS3100_M                          	ds3100.md
+F LCONV.C;1                         	lconv.c
+F LOCALECO.C;1                      	localeconv.c
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+F SETLOCAL.C;1                      	setlocale.c
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md

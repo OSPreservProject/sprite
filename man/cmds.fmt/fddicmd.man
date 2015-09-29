@@ -1,0 +1,134 @@
+
+
+
+FDDICMD                   User Commands                   FDDICMD
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     fddicmd - invoke ioctls on the FDDI device driver
+
+SSYYNNOOPPSSIISS
+     ffddddiiccmmdd   [--rreesseett]   [--hhaalltt]   [--fflluusshh]   [--aaddddrr]   [--ddeebbuugg]
+               [--ssttaattss]  [--eecchhoo  SSpprriitteeIIDD] [--ssiizzee bbyytteess] [--rreeppeeaatt
+               nn] [--ssyysslloogg] [--rreegg] [--eerrrrlloogg]
+
+OOPPTTIIOONNSS
+     --rreesseett
+          Reset the adapter.
+
+     --hhaalltt
+          Halt the adapter.
+
+     --fflluusshh
+          Flush the driver's transmit queue of waiting packets.
+
+     --aaddddrr
+          Print the adapter's network address.
+
+     --ddeebbuugg
+          Toggle debugging.  Messages are printed to the syslog.
+
+     --ssttaattss
+          Print adapter statistics.
+
+     --eecchhoo SSpprriitteeIIDD
+          Echo packets off of the specified host.
+
+     --ssiizzee bbyytteess
+          Set the size of packets to echo.
+
+     --rreeppeeaatt nn
+          Number of times to echo packets.
+
+     --rreegg Print the contents of the adapter registers.
+
+     --eerrrrlloogg
+          Print the internal and external error  codes  that  the
+          adapter  writes as it halts.  Should be zero for normal
+          operation.
+
+     --ssyysslloogg
+          Print info onto syslog instead of terminal.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The various options perform ioctls on the FDDI driver.
+
+
+
+
+Sprite v.1.0         Printed:  June 15, 1992                    1
+
+
+
+
+
+
+FDDICMD                   User Commands                   FDDICMD
+
+
+
+     The rreesseett and hhaalltt options control the adapter's  connection
+     to the ring. The rreesseett option resets the adapter, connecting
+     it back to the ring.  The hhaalltt  option  halts  the  adapter,
+     disconnecting it from the ring.
+
+
+     The fflluusshh option flushes the driver's transmit queue.
+
+
+     The aaddddrr option prints out the adapter's network address  in
+     the standard aa:bb:cc:dd:ee:ff form.
+
+
+     The ddeebbuugg option toggles debugging output.  The messages are
+     written  to  the  syslog,  and really slow down the adapter.
+     Useful for seeing how the adapter works.
+
+
+     The ssttaattss option prints out  adapter  statistics.  It  first
+     reports  the  number of packets and bytes sent and received.
+     Then comes an array of receive reaped numbers.   Each  array
+     slot  denotes a number of received packets, and the value in
+     that slot is the number of times that the driver reaped that
+     number  of  packets  in one interrupt.  Following this is an
+     array counting packet sizes, both sent and received.
+
+
+     The eecchhoo, ssiizzee, and rreeppeeaatt options let hosts be pinged  over
+     FDDI.   The  argument  to eehhccoo is the Sprite ID of a host to
+     ping.  The argument to ssiizzee controls the size of the RPC  to
+     ping with.  And rreeppeeaatt controls the number of times the host
+     is echoed.  Timing numbers are reported when the echoes fin-
+     ish.
+
+
+     The rreegg and eerrrrlloogg options print out some of  the  adapter's
+     internal   state.   rreegg  prints  out  the  contents  of  the
+     adapter's registers.  eerrrrlloogg prints  out  the  internal  and
+     external  error  codes written by the adapter when it halts.
+     These codes should be zero during normal operation.
+
+
+     The ssyysslloogg option was intended to  control  whethere  output
+     would  be  printed  on  the  syslog  or on the terminal that
+     invoked ffddddiiccmmdd.  This is only partially supported.
+
+
+KKEEYYWWOORRDDSS
+     net, FDDI
+
+
+
+
+
+
+Sprite v.1.0         Printed:  June 15, 1992                    2
+
+
+

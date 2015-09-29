@@ -1,0 +1,68 @@
+
+
+
+NFSMOUNT                  User Commands                  NFSMOUNT
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     nfsmount - a Sprite-to-NFS filesystem gateway
+
+SSYYNNOOPPSSIISS
+     nnffssmmoouunntt  [--tt] _h_o_s_t:/_f_i_l_e_s_y_s_t_e_m /_p_r_e_f_i_x
+
+OOPPTTIIOONNSS
+     --tt            Trace each access to the remote file system.
+
+     --mm _l_o_c_a_l-_n_a_m_e _r_e_m_o_t_e-_n_a_m_e
+                   Specify  logical  mount  points   within   the
+                   namespace.   See  commentary below. _l_o_c_a_l-_n_a_m_e
+                   is the sub-mount point  relative  to  /_p_r_e_f_i_x.
+                   _r_e_m_o_t_e-_n_a_m_e is an absolute path specifying the
+                   Sprite remote link.
+
+_________________________________________________________________
+
+IINNTTRROODDUUCCTTIIOONN
+     NNffssmmoouunntt is a pseudo-filesystem server that provides  access
+     to  a  remote NFS file system.  The first argument is a host
+     name, a separating colon (`:'), and a file  system  on  that
+     host.   The  second  argument is a Sprite prefix under which
+     the remote file system will be visible.  The server is still
+     very  simple,  although  quite  functional.   Each operation
+     causes an RPC to the remote host;  there is no caching yet.
+
+     Real NFS allows one filesystem to be  mounted  onto  another
+     NFS  filesystem.  This doesn't work in Sprite because Sprite
+     requires a  remote  link  (see  ln  command)  for  each  NFS
+     filesystem  and  it  is  not possible to create one of these
+     within the parent NFS filesystem. Consequently, the subsidi-
+     ary filesystem must be mounted elsewhere in the Sprite tree.
+     Then the parent nfsmount program must be told that there  is
+     a  logical  mount  point  within  its namespace using the -m
+     option.  The first argument is the  name  (relative  to  the
+     root  of  the  parent  tree) where the mount point logically
+     exists. The second parameter is the  absolute  path  of  the
+     remote  link  where  the child NFS tree is really mounted in
+     Sprite.
+
+BBUUGGSS
+     The ggeettppwwdd(()) library call doesn't work yet because it  can't
+     find  the ``inode'' number of the prefix correctly.  This is
+     fixable but may not happen right away.  A related problem is
+     that the ddff command won't report disk space.
+
+KKEEYYWWOORRDDSS
+     NFS
+
+
+
+
+
+
+Sprite v.1.0       Printed:  November 9, 1991                   1
+
+
+

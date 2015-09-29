@@ -1,0 +1,62 @@
+#include <Server.tmpl>
+
+DEFINES = -DDRAGONPIX=32 -DNPLANES=`cat ../NPLANESFILE` 
+
+TASM = tasm
+TFILES = tltemplate.ta
+
+SRCS = tlloadtemp.c \
+	tlptobmask.c tlptob2color.c \
+	tlpolytext.c tlsolidtext.c tlimagetext.c \
+	tlplanecopy.c tlplanestipple.c tlplanetile.c \
+	tloffscreen.c tlinit.c \
+	tlbitblt.c tlspa.c tltranslate.c tlsolidline.c tldashedline.c tlqd.c \
+	tlsetspan.c tlglobals.c tlconpolys.c \
+	tlrotile.c tldrawshapes.c tldma.c tldchange.c
+OBJS = tlloadtemp.o \
+	tlptobmask.o tlsolidtext.o tlptob2color.o \
+	tlpolytext.o tlimagetext.o \
+	tlplanecopy.o tlplanestipple.o tlplanetile.o  \
+	tloffscreen.o tlinit.o \
+	tlbitblt.o tlspa.o tltranslate.o tlsolidline.o tldashedline.o tlqd.o \
+	tlsetspan.o tlglobals.o tlconpolys.o \
+	tlrotile.o tldrawshapes.o tldma.o tldchange.o
+
+INCLUDES = -I. -I.. -I../../../../include -I$(INCLUDESRC) -I../../../mfb -I../../../mi -I$(FONTSRC)/include
+
+NormalLibraryObjectRule()
+NormalLibraryTarget(tl,$(OBJS))
+
+#ifdef HasGcc
+# gcc doesn't seem to compile this file correctly
+tldma.o:
+	$(RM) $@ tldma.s
+	cc -S $(INCLUDES) $(STD_DEFINES) $(DEFINES) $*.c
+	/lib/c2 -i tldma.s | $(AS) -o $@
+	$(RM) tldma.s
+#else
+#ifndef ultrix
+# The 4.3 optimizer does bad things with byte operations in
+# i/o space unless you give it the (undocumented) -i switch.
+# Note that this does NOT pickup CDEBUGFLAGS
+tldma.o:
+	$(RM) $@ tldma.s
+	$(CC) -S $(INCLUDES) $(STD_DEFINES) $(DEFINES) $*.c
+	/lib/c2 -i tldma.s | $(AS) -o $@
+	$(RM) tldma.s
+#endif
+#endif
+
+# tasm (template code assembler) not provided
+#ifdef HAVE_TASM
+tlloadtemp.c: $(TFILES)
+	$(TASM) -i ${TFILES} -o tlloadtemp.c
+
+tltemplabels.h: $(TFILES)
+	$(TASM) -i ${TFILES} -x -l tltemplabels.h
+#endif
+
+DependTarget()
+
+NormalLintTarget($(SRCS))
+

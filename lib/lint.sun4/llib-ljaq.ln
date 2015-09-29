@@ -1,0 +1,1172 @@
+512
+llib-ljaq:admin.c 2
+2
+3 70 36 0 0
+Admin_CheckAuth
+18 0 0
+24 96 1771
+18 0 0
+16
+0 120 4 0 0
+Admin_CheckAuth
+2
+3 144 36 0 0
+Admin_AddAuth
+18 0 0
+24 96 1771
+4 0 0
+16
+0 175 4 0 0
+Admin_AddAuth
+2
+2 199 36 0 0
+Admin_ReadArchConfig
+18 0 0
+24 8256 31119
+16
+0 232 4 0 0
+Admin_ReadArchConfig
+2
+2 255 36 0 0
+Admin_WriteArchConfig
+18 0 0
+24 8256 31119
+16
+0 276 4 0 0
+Admin_WriteArchConfig
+2
+2 298 36 0 0
+Admin_GetCurTBuf
+18 0 0
+20 0 0
+16
+0 327 4 0 0
+Admin_GetCurTBuf
+2
+2 353 36 0 0
+Admin_SetCurTBuf
+18 0 0
+4 0 0
+16
+0 380 4 0 0
+Admin_SetCurTBuf
+2
+1 406 36 0 0
+Admin_AvailVolInfo
+18 0 0
+16
+0 418 4 0 0
+Admin_AvailVolInfo
+2
+2 442 104 384 23058
+Admin_OpenVolInfo
+18 0 0
+24 2112 23918
+16
+0 474 24 384 23058
+Admin_OpenVolInfo
+2
+2 497 36 0 0
+Admin_CloseVolInfo
+24 2112 23918
+24 384 23058
+16
+0 501 4 0 0
+Admin_CloseVolInfo
+2
+2 525 36 0 0
+Admin_ReadVolInfo
+24 384 23058
+24 128 13645
+16
+0 540 4 0 0
+Admin_ReadVolInfo
+2
+2 563 36 0 0
+Admin_WriteVolInfo
+24 384 23058
+24 128 13645
+16
+0 578 4 0 0
+Admin_WriteVolInfo
+2
+2 601 104 384 23058
+Admin_OpenMetaInfo
+18 0 0
+4 0 0
+16
+0 628 24 384 23058
+Admin_OpenMetaInfo
+2
+1 650 36 0 0
+Admin_CloseMetaInfo
+24 384 23058
+16
+0 653 4 0 0
+Admin_CloseMetaInfo
+2
+2 680 36 0 0
+Admin_ReadMetaInfo
+24 384 23058
+24 128 24584
+16
+0 697 4 0 0
+Admin_ReadMetaInfo
+2
+2 724 36 0 0
+Admin_WriteMetaInfo
+24 384 23058
+24 128 24584
+16
+0 733 4 0 0
+Admin_WriteMetaInfo
+2
+4 759 36 0 0
+Admin_CvtTBufId
+18 0 0
+4 0 0
+20 0 0
+20 0 0
+16
+0 797 4 0 0
+Admin_CvtTBufId
+2
+3 822 36 0 0
+Admin_AddTBufId
+18 0 0
+4 0 0
+4 0 0
+16
+0 854 4 0 0
+Admin_AddTBufId
+2
+4 878 36 0 0
+Admin_UpdateLRU
+18 0 0
+18 0 0
+4 0 0
+4 0 0
+16
+0 937 4 0 0
+Admin_UpdateLRU
+2
+3 962 36 0 0
+Admin_RemoveLRU
+18 0 0
+18 0 0
+20 0 0
+16
+0 999 4 0 0
+Admin_RemoveLRU
+2
+3 1034 36 0 0
+Admin_GetDiskUse
+18 0 0
+20 0 0
+21 0 0
+16
+0 1059 4 0 0
+Admin_GetDiskUse
+512
+llib-ljaq:admin.c
+2
+3 1142 104 96 7822
+Admin_FindVolOwner
+4 0 0
+18 0 0
+18 0 0
+16
+0 1198 24 96 7822
+Admin_FindVolOwner
+2
+3 1222 36 0 0
+Admin_ReadDevConfig
+18 0 0
+24 2080 20083
+20 0 0
+16
+0 1265 4 0 0
+Admin_ReadDevConfig
+2
+3 1289 36 0 0
+Admin_WriteDevConfig
+18 0 0
+24 2080 20083
+4 0 0
+16
+0 1307 4 0 0
+Admin_WriteDevConfig
+2
+3 1330 36 0 0
+Admin_ReadVolConfig
+18 0 0
+24 704 29859
+20 0 0
+16
+0 1368 4 0 0
+Admin_ReadVolConfig
+2
+3 1391 36 0 0
+Admin_WriteVolConfig
+18 0 0
+24 704 29859
+4 0 0
+16
+0 1409 4 0 0
+Admin_WriteVolConfig
+2
+2 1441 36 0 0
+Admin_GetFreeVol
+18 0 0
+20 0 0
+16
+0 1509 4 0 0
+Admin_GetFreeVol
+2
+2 1532 36 0 0
+Admin_PutFreeVol
+18 0 0
+4 0 0
+16
+0 1590 4 0 0
+Admin_PutFreeVol
+512
+llib-ljaq:dev.c 2
+2
+3 65 36 0 0
+Dev_MoveVolume
+4 0 0
+4 0 0
+4 0 0
+16
+0 85 4 0 0
+Dev_MoveVolume
+2
+2 109 36 0 0
+Dev_OpenVolume
+18 0 0
+4 0 0
+16
+0 116 4 0 0
+Dev_OpenVolume
+2
+1 138 36 0 0
+Dev_CloseVolume
+4 0 0
+16
+0 145 4 0 0
+Dev_CloseVolume
+2
+3 169 36 0 0
+Dev_ReadVolume
+4 0 0
+18 0 0
+4 0 0
+16
+0 171 4 0 0
+Dev_ReadVolume
+2
+3 195 36 0 0
+Dev_WriteVolume
+4 0 0
+18 0 0
+4 0 0
+16
+0 197 4 0 0
+Dev_WriteVolume
+2
+1 224 36 0 0
+Dev_UnloadVolume
+18 0 0
+16
+0 254 4 0 0
+Dev_UnloadVolume
+2
+2 281 36 0 0
+Dev_InitRobot
+18 0 0
+20 0 0
+16
+0 288 4 0 0
+Dev_InitRobot
+2
+4 313 36 0 0
+Dev_ReadVolLabel
+4 0 0
+4 0 0
+18 0 0
+20 0 0
+16
+0 318 4 0 0
+Dev_ReadVolLabel
+2
+1 343 36 0 0
+Dev_CvtVolLabel
+18 0 0
+16
+0 355 4 0 0
+Dev_CvtVolLabel
+2
+3 382 36 0 0
+Dev_SeekVolume
+4 0 0
+4 0 0
+4 0 0
+16
+0 428 4 0 0
+Dev_SeekVolume
+2
+2 452 36 0 0
+Dev_WriteEOF
+4 0 0
+4 0 0
+16
+0 475 4 0 0
+Dev_WriteEOF
+2
+2 499 36 0 0
+Dev_GetVolStatus
+4 0 0
+24 160 28319
+16
+0 523 4 0 0
+Dev_GetVolStatus
+2
+3 546 36 0 0
+Dev_DisplayMsg
+4 0 0
+18 0 0
+4 0 0
+16
+0 565 4 0 0
+Dev_DisplayMsg
+2
+1 587 36 0 0
+Dev_OpenDoor
+4 0 0
+16
+0 589 4 0 0
+Dev_OpenDoor
+2
+2 612 36 0 0
+Dev_RemoveVolume
+4 0 0
+4 0 0
+16
+0 633 4 0 0
+Dev_RemoveVolume
+2
+2 656 36 0 0
+Dev_InsertVolume
+4 0 0
+4 0 0
+16
+0 677 4 0 0
+Dev_InsertVolume
+2
+3 701 36 0 0
+Dev_BuildVolList
+4 0 0
+24 704 29859
+20 0 0
+16
+0 729 4 0 0
+Dev_BuildVolList
+512
+llib-ljaq:hash.c 2
+2
+4 64 104 544 7273
+Hash_Create
+18 0 0
+4 0 0
+148 0 0
+4 0 0
+16
+0 98 24 544 7273
+Hash_Create
+2
+1 120 32 0 0
+Hash_Destroy
+24 544 7273
+2
+4 164 36 0 0
+Hash_Insert
+24 544 7273
+18 0 0
+4 0 0
+4 0 0
+16
+0 180 4 0 0
+Hash_Insert
+2
+4 205 36 0 0
+Hash_Update
+24 544 7273
+18 0 0
+4 0 0
+4 0 0
+16
+0 223 4 0 0
+Hash_Update
+2
+3 247 36 0 0
+Hash_Delete
+24 544 7273
+18 0 0
+4 0 0
+16
+0 265 4 0 0
+Hash_Delete
+2
+4 290 36 0 0
+Hash_Lookup
+24 544 7273
+18 0 0
+4 0 0
+20 0 0
+16
+0 308 4 0 0
+Hash_Lookup
+2
+3 347 32 0 0
+Hash_Iterate
+24 544 7273
+148 0 0
+20 0 0
+2
+2 399 32 0 0
+Hash_Stats
+24 544 7273
+24 352 25290
+512
+llib-ljaq:indx.c 2
+2
+3 70 36 0 0
+Indx_Open
+18 0 0
+18 0 0
+88 384 23058
+16
+0 122 4 0 0
+Indx_Open
+2
+1 145 36 0 0
+Indx_Close
+24 384 23058
+16
+0 150 4 0 0
+Indx_Close
+2
+2 179 36 0 0
+Indx_ReadIndxEntry
+24 384 23058
+24 576 10698
+16
+0 254 4 0 0
+Indx_ReadIndxEntry
+2
+3 286 36 0 0
+Indx_WriteIndxEntry
+24 576 10698
+4 0 0
+24 384 23058
+16
+0 369 4 0 0
+Indx_WriteIndxEntry
+2
+7 407 36 0 0
+Indx_Match
+24 320 6263
+18 0 0
+18 0 0
+24 96 1771
+148 0 0
+20 0 0
+4 0 0
+16
+0 595 4 0 0
+Indx_Match
+2
+3 619 36 0 0
+Indx_MakeIndx
+18 0 0
+18 0 0
+18 0 0
+16
+0 637 4 0 0
+Indx_MakeIndx
+2
+3 662 36 0 0
+Indx_MakeIndxList
+18 0 0
+18 0 0
+24 160 8275
+16
+0 683 4 0 0
+Indx_MakeIndxList
+512
+llib-ljaq:lock.c 2
+2
+3 67 36 0 0
+Lock_Acquire
+18 0 0
+4 0 0
+24 2112 23918
+16
+0 108 4 0 0
+Lock_Acquire
+2
+1 130 36 0 0
+Lock_Release
+24 2112 23918
+16
+0 149 4 0 0
+Lock_Release
+2
+2 173 32 0 0
+Lock_RemoveAll
+18 0 0
+4 0 0
+512
+llib-ljaq:mem.c 2
+2
+0 60 4 0 0
+traceInit
+2
+3 97 98 0 0
+Mem_Alloc
+18 0 0
+4 0 0
+4 0 0
+16
+0 177 18 0 0
+Mem_Alloc
+2
+3 202 36 0 0
+Mem_Free
+18 0 0
+4 0 0
+18 0 0
+16
+0 288 4 0 0
+Mem_Free
+2
+4 313 32 0 0
+Mem_Report
+18 0 0
+4 0 0
+18 0 0
+4 0 0
+2
+4 497 32 0 0
+Mem_Control
+4 0 0
+24 384 23058
+4 0 0
+4 0 0
+512
+llib-ljaq:option.c 2
+2
+5 80 36 0 0
+Opt_Parse
+4 0 0
+82 0 0
+24 128 1669
+4 0 0
+4 0 0
+16
+0 291 4 0 0
+Opt_Parse
+2
+3 316 32 0 0
+Opt_PrintUsage
+18 0 0
+24 128 1669
+4 0 0
+512
+llib-ljaq:queue.c 2
+2
+2 52 104 160 8275
+Q_Create
+18 0 0
+4 0 0
+16
+0 64 24 160 8275
+Q_Create
+2
+1 84 32 0 0
+Q_Destroy
+24 160 8275
+2
+3 141 32 0 0
+Q_Add
+24 160 8275
+4 0 0
+4 0 0
+2
+1 218 36 0 0
+Q_Remove
+24 160 8275
+16
+0 243 4 0 0
+Q_Remove
+2
+1 264 36 0 0
+Q_Count
+24 160 8275
+16
+0 272 4 0 0
+Q_Count
+2
+1 293 36 0 0
+Q_Peek
+24 160 8275
+16
+0 307 4 0 0
+Q_Peek
+2
+2 328 32 0 0
+Q_Print
+24 160 8275
+24 384 23058
+2
+3 385 36 0 0
+Q_Iterate
+24 160 8275
+148 0 0
+20 0 0
+16
+0 423 4 0 0
+Q_Iterate
+512
+llib-ljaq:regexp.c 2
+2
+1 216 104 768 15344
+regcomp
+18 0 0
+16
+0 290 24 768 15344
+regcomp
+2
+2 731 36 0 0
+regexec
+24 768 15344
+18 0 0
+16
+0 784 4 0 0
+regexec
+512
+llib-ljaq:regexp.c
+512
+llib-ljaq:sock.c 2
+2
+3 69 36 0 0
+Sock_SendRespHdr
+4 0 0
+4 0 0
+4 0 0
+16
+0 82 4 0 0
+Sock_SendRespHdr
+2
+2 105 32 0 0
+Sock_ReadRespHdr
+4 0 0
+24 128 8506
+2
+3 147 32 0 0
+Sock_SetSocket
+4 0 0
+18 0 0
+4 0 0
+2
+1 177 36 0 0
+Sock_ReadSocket
+4 0 0
+16
+0 204 4 0 0
+Sock_ReadSocket
+2
+2 228 36 0 0
+Sock_ReadInteger
+4 0 0
+20 0 0
+16
+0 239 4 0 0
+Sock_ReadInteger
+2
+2 263 36 0 0
+Sock_ReadShort
+4 0 0
+19 0 0
+16
+0 274 4 0 0
+Sock_ReadShort
+2
+3 299 36 0 0
+Sock_ReadString
+4 0 0
+82 0 0
+4 0 0
+16
+0 327 4 0 0
+Sock_ReadString
+2
+3 351 36 0 0
+Sock_ReadFileStat
+4 0 0
+24 576 10698
+4 0 0
+16
+0 413 4 0 0
+Sock_ReadFileStat
+2
+3 437 36 0 0
+Sock_ReadNBytes
+4 0 0
+18 0 0
+4 0 0
+16
+0 463 4 0 0
+Sock_ReadNBytes
+2
+2 486 36 0 0
+Sock_WriteInteger
+4 0 0
+4 0 0
+16
+0 494 4 0 0
+Sock_WriteInteger
+2
+2 518 36 0 0
+Sock_WriteShort
+4 0 0
+4 0 0
+16
+0 526 4 0 0
+Sock_WriteShort
+2
+3 550 36 0 0
+Sock_WriteString
+4 0 0
+18 0 0
+4 0 0
+16
+0 570 4 0 0
+Sock_WriteString
+2
+3 598 36 0 0
+Sock_WriteFileStat
+4 0 0
+24 576 10698
+4 0 0
+16
+0 636 4 0 0
+Sock_WriteFileStat
+2
+3 660 36 0 0
+Sock_WriteNBytes
+4 0 0
+18 0 0
+4 0 0
+16
+0 680 4 0 0
+Sock_WriteNBytes
+2
+3 704 36 0 0
+Sock_SetupSocket
+4 0 0
+18 0 0
+4 0 0
+16
+0 749 4 0 0
+Sock_SetupSocket
+2
+1 772 36 0 0
+Sock_SetupEarSocket
+20 0 0
+16
+0 807 4 0 0
+Sock_SetupEarSocket
+2
+3 831 98 0 0
+Sock_PackData
+18 0 0
+82 0 0
+20 0 0
+16
+0 896 18 0 0
+Sock_PackData
+2
+4 921 36 0 0
+Sock_UnpackData
+18 0 0
+18 0 0
+20 0 0
+338 0 0
+16
+0 966 4 0 0
+Sock_UnpackData
+2
+6 993 32 0 0
+Sock_SendReqHdr
+4 0 0
+4 0 0
+4 0 0
+18 0 0
+18 0 0
+4 0 0
+512
+llib-ljaq:str.c 2
+2
+2 50 36 0 0
+Str_Match
+18 0 0
+18 0 0
+16
+0 212 4 0 0
+Str_Match
+2
+5 242 354 0 0
+Str_Split
+18 0 0
+4 0 0
+20 0 0
+4 0 0
+82 0 0
+16
+0 304 82 0 0
+Str_Split
+2
+1 326 36 0 0
+Str_Unquote
+18 0 0
+16
+0 340 4 0 0
+Str_Unquote
+2
+2 364 98 0 0
+Str_Quote
+18 0 0
+18 0 0
+16
+0 387 18 0 0
+Str_Quote
+2
+1 410 36 0 0
+Str_StripDots
+18 0 0
+16
+0 445 4 0 0
+Str_StripDots
+2
+1 467 98 0 0
+Str_Dup
+18 0 0
+16
+0 475 18 0 0
+Str_Dup
+2
+1 500 98 0 0
+Str_Cat
+4 0 0
+16
+0 532 18 0 0
+Str_Cat
+512
+llib-ljaq:str.c
+512
+llib-ljaq:tbuf.c 2
+2
+3 93 36 0 0
+TBuf_Pad
+4 0 0
+4 0 0
+4 0 0
+16
+0 116 4 0 0
+TBuf_Pad
+2
+5 146 36 0 0
+TBuf_Open
+18 0 0
+4 0 0
+20 0 0
+20 0 0
+4 0 0
+16
+0 204 4 0 0
+TBuf_Open
+2
+2 227 36 0 0
+TBuf_Seek
+4 0 0
+4 0 0
+16
+0 233 4 0 0
+TBuf_Seek
+2
+3 257 36 0 0
+TBuf_Close
+4 0 0
+4 0 0
+4 0 0
+16
+0 275 4 0 0
+TBuf_Close
+2
+2 298 36 0 0
+TBuf_Terminate
+4 0 0
+4 0 0
+16
+0 310 4 0 0
+TBuf_Terminate
+2
+2 334 36 0 0
+TBuf_WriteTarHdr
+4 0 0
+24 576 10698
+16
+0 435 4 0 0
+TBuf_WriteTarHdr
+2
+2 458 36 0 0
+TBuf_ParseTarHdr
+18 0 0
+24 576 10698
+16
+0 544 4 0 0
+TBuf_ParseTarHdr
+2
+2 567 36 0 0
+TBuf_FindFile
+4 0 0
+24 576 10698
+16
+0 612 4 0 0
+TBuf_FindFile
+2
+4 642 36 0 0
+TBuf_Delete
+18 0 0
+18 0 0
+4 0 0
+4 0 0
+16
+0 663 4 0 0
+TBuf_Delete
+512
+llib-ljaq:tlog.c 2
+2
+1 55 32 0 0
+Log_SetDetail
+4 0 0
+2
+1 85 36 0 0
+Log_Open
+18 0 0
+16
+0 107 4 0 0
+Log_Open
+2
+0 128 36 0 0
+Log_Close
+16
+0 138 4 0 0
+Log_Close
+2
+3 162 36 0 0
+Log_Event
+18 0 0
+18 0 0
+4 0 0
+16
+0 179 4 0 0
+Log_Event
+2
+3 202 36 0 0
+Log_AtomicEvent
+18 0 0
+18 0 0
+18 0 0
+16
+0 227 4 0 0
+Log_AtomicEvent
+512
+llib-ljaq:ttime.c 2
+2
+1 66 98 0 0
+Time_CvtToString
+21 0 0
+16
+0 95 18 0 0
+Time_CvtToString
+2
+3 119 36 0 0
+Time_Compare
+5 0 0
+5 0 0
+4 0 0
+16
+0 126 4 0 0
+Time_Compare
+2
+0 148 37 0 0
+Time_GetCurDate
+16
+0 158 5 0 0
+Time_GetCurDate
+2
+2 193 36 0 0
+getindate
+18 0 0
+24 96 12506
+16
+0 229 4 0 0
+getindate
+2
+3 253 36 0 0
+getindatepair
+18 0 0
+24 96 12506
+24 96 12506
+16
+0 275 4 0 0
+getindatepair
+512
+llib-ljaq:utils.c 2
+2
+2 57 32 0 0
+Utils_Bailout
+18 0 0
+4 0 0
+2
+2 104 32 0 0
+Utils_GetWorkingDir
+18 0 0
+20 0 0
+2
+1 134 98 0 0
+Utils_MakeFullPath
+18 0 0
+16
+0 150 18 0 0
+Utils_MakeFullPath
+2
+2 173 36 0 0
+Utils_CheckName
+18 0 0
+4 0 0
+16
+0 188 4 0 0
+Utils_CheckName
+2
+2 211 98 0 0
+Utils_ReadLine
+24 384 23058
+4 0 0
+16
+0 230 18 0 0
+Utils_ReadLine
+2
+3 259 36 0 0
+Utils_StringHashProc
+18 0 0
+4 0 0
+4 0 0
+16
+0 282 4 0 0
+Utils_StringHashProc
+2
+3 306 36 0 0
+Utils_IntegerHashProc
+18 0 0
+4 0 0
+4 0 0
+16
+0 314 4 0 0
+Utils_IntegerHashProc
+2
+4 344 36 0 0
+Utils_CvtInteger
+18 0 0
+4 0 0
+4 0 0
+20 0 0
+16
+0 355 4 0 0
+Utils_CvtInteger
+2
+1 377 98 0 0
+Utils_GetLoginByUid
+4 0 0
+16
+0 390 18 0 0
+Utils_GetLoginByUid
+2
+1 412 98 0 0
+Utils_GetGroupByGid
+4 0 0
+16
+0 425 18 0 0
+Utils_GetGroupByGid
+2
+1 448 36 0 0
+Utils_GetUidByLogin
+18 0 0
+16
+0 459 4 0 0
+Utils_GetUidByLogin
+2
+1 480 36 0 0
+Utils_GetGidByGroup
+18 0 0
+16
+0 491 4 0 0
+Utils_GetGidByGroup
+2
+2 514 98 0 0
+Utils_MakeErrorMsg
+4 0 0
+4 0 0
+16
+0 550 18 0 0
+Utils_MakeErrorMsg
+2
+3 574 36 0 0
+Utils_SendMail
+18 0 0
+18 0 0
+18 0 0
+16
+0 580 4 0 0
+Utils_SendMail
+2
+2 603 32 0 0
+Utils_FreeFileStat
+24 576 10698
+4 0 0
+2
+1 637 104 576 10698
+Utils_CopyFileStat
+24 576 10698
+16
+0 650 24 576 10698
+Utils_CopyFileStat
+2
+1 672 36 0 0
+Utils_GetOk
+18 0 0
+16
+0 687 4 0 0
+Utils_GetOk
+2
+3 709 36 0 0
+Utils_GetInteger
+18 0 0
+4 0 0
+4 0 0
+16
+0 723 4 0 0
+Utils_GetInteger

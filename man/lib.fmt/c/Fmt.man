@@ -1,0 +1,398 @@
+
+
+
+Fmt                   C Library Procedures                    Fmt
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Fmt_Convert - Package for converting  data  from  one  byte-
+     order/alignment format to another.
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ffmmtt..hh>>
+
+     int
+     FFmmtt__CCoonnvveerrtt(_c_o_n_t_e_n_t_s, _i_n_F_o_r_m_a_t, _i_n_S_i_z_e_P_t_r, _i_n_B_u_f_f_e_r, _o_u_t_F_o_r_m_a_t, _o_u_t_S_i_z_e_P_t_r, _o_u_t_B_u_f_f_e_r)
+
+     int
+     FFmmtt__SSiizzee(_c_o_n_t_e_n_t_s, _i_n_F_o_r_m_a_t, _i_n_S_i_z_e_P_t_r, _o_u_t_F_o_r_m_a_t, _o_u_t_S_i_z_e_P_t_r)
+
+AARRGGUUMMEENNTTSS
+     char         *_c_o_n_t_e_n_t_s    (in)      String  describing  con-
+                                         tents  of  _i_n_B_u_f_f_e_r (see
+                                         below).
+
+     Fmt_Format   _i_n_F_o_r_m_a_t     (in)      Byte-order/alignment
+                                         format    of   data   in
+                                         _i_n_B_u_f_f_e_r.
+
+     int          *_i_n_S_i_z_e_P_t_r   (in/out)  Points   to   size    of
+                                         _i_n_B_u_f_f_e_r.   Upon  return
+                                         *_i_n_S_i_z_e_P_t_r is the number
+                                         of bytes actually used.
+
+     char         *_i_n_B_u_f_f_e_r    (in)      Data to be converted.
+
+     Fmt_Format   _o_u_t_F_o_r_m_a_t    (in)      Byte-order/alignment
+                                         format  of  data in _o_u_t_-
+                                         _B_u_f_f_e_r.
+
+     int          *_o_u_t_S_i_z_e_P_t_r  (in/out)  Points to size  of  _o_u_t_-
+                                         _B_u_f_f_e_r.    Upon   return
+                                         *_o_u_t_S_i_z_e_P_t_r contains the
+                                         number of bytes actually
+                                         used. For FFmmtt__SSiizzee  this
+                                         is   strictly   an   out
+                                         parameter.
+
+     char         *_o_u_t_B_u_f_f_e_r   (in)      Converted data.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     FFmmtt__CCoonnvveerrtt   converts   data   between   different    byte-
+     order/alignment formats. Typically this is done between dif-
+     ferent machine types, but it can be used to convert  between
+     two  compilers that align data differently.  _I_n_F_o_r_m_a_t speci-
+     fies  the  byte-order/alignment  format  of  the   data   in
+
+
+
+Sprite v.1.0         Printed:  May 29, 1990                     1
+
+
+
+
+
+
+Fmt                   C Library Procedures                    Fmt
+
+
+
+     _i_n_B_u_f_f_e_r,  and  _o_u_t_F_o_r_m_a_t specifies the byte-order/alignment
+     format of the data in _o_u_t_B_u_f_f_e_r after the  conversion.   The
+     data to be converted is read from _i_n_B_u_f_f_e_r and the converted
+     data is  written  to  _o_u_t_B_u_f_f_e_r.   The  parameter  _i_n_S_i_z_e_P_t_r
+     points  to  the  size  of the input buffer. When FFmmtt__CCoonnvveerrtt
+     returns *_i_n_S_i_z_e_P_t_r contains the number of  bytes  that  were
+     actually  used.   It  is  possible  for less than the entire
+     buffer to be converted depending upon the  _c_o_n_t_e_n_t_s  string.
+     See  below for more details on _c_o_n_t_e_n_t_s.  The parameter _o_u_t_-
+     _S_i_z_e_P_t_r points to  the  size  of  the  output  buffer.  When
+     FFmmtt__CCoonnvveerrtt returns *_o_u_t_S_i_z_e_P_t_r contains the number of bytes
+     actually used.
+
+     FFmmtt__SSiizzee computes the minimum size output buffer needed con-
+     verting  the  data  at  described by the _c_o_n_t_e_n_t_s string The
+     result is returned in *_o_u_t_S_i_z_e_P_t_r.  This size  can  then  be
+     passed to FFmmtt__CCoonnvveerrtt (assuming that the format and contents
+     parameters remain the same).
+
+     The legal values for the format parameters  are  defined  in
+     fmt.h.  They are as follows:
+
+     FFMMTT__6688KK__FFOORRMMAATT
+          The byte-order/alignment format of code compiled by Gcc
+          for Motorola 680x0 machines.  Treating an integer as an
+          array of 4 bytes (char  buf[4]),  buf[0]  contains  the
+          most significant byte. Halfwords, words and doublewords
+          are aligned on even boundaries. The alignment of struc-
+          tures  and unions equals the most restrictive alignment
+          of one of their members, such that they  are  at  least
+          aligned  on  an  even boundary.  The size of structures
+          and unions is a multiple of their alignment.
+
+     FFMMTT__VVAAXX__FFOORRMMAATT
+          The byte-order/alignment format of the  Vax.   Treating
+          an integer as an array of 4 bytes (char buf[4]), buf[0]
+          contains the  least  significant  byte.  Halfwords  are
+          aligned  on  even boundaries. Words and doublewords are
+          aligned on word boundaries. The alignment of structures
+          and unions equals the most restrictive alignment of one
+          of their members.  The size of structures and unions is
+          a multiple of their alignment.
+
+     FFMMTT__SSPPUURR__FFOORRMMAATT
+          The byte-order/alignment format of code compiled by Gcc
+          for  the  Spur.   Treating  an integer as an array of 4
+          bytes (char buf[4]), buf[0] contains the least signifi-
+          cant  byte.   Halfwords are aligned on even boundaries,
+          words are aligned on quad boundaries,  and  doublewords
+          are aligned on oct boundaries.  The alignment of struc-
+          tures and unions equals the most restrictive  alignment
+          of  one  of  their members, such that they are at least
+
+
+
+Sprite v.1.0         Printed:  May 29, 1990                     2
+
+
+
+
+
+
+Fmt                   C Library Procedures                    Fmt
+
+
+
+          aligned on a quad boundary.  The size of structures and
+          unions is a multiple of their alignment.
+
+     FFMMTT__SSPPAARRCC__FFOORRMMAATT
+          The byte-order/alignment format of code compiled by the
+          SunOS compiler for the Sparc architecture.  Treating an
+          integer as an array of 4 bytes  (char  buf[4]),  buf[0]
+          contains  the  most  significant  byte.   Halfwords are
+          aligned on even boundaries, words are aligned  on  quad
+          boundaries,  and  doublewords  are aligned on oct boun-
+          daries.  The alignment of structures and unions  equals
+          the most restrictive alignment of one of their members.
+          The size of structures and  unions  is  a  multiple  of
+          their alignment.
+
+     FFMMTT__MMIIPPSS__FFOORRMMAATT
+          The byte-order/alignment format of code compiled by the
+          Ultrix compiler for the Mips (DecStation3100) architec-
+          ture.  Treating an integer as an array of 4 bytes (char
+          buf[4]),  buf[0]  contains  the least significant byte.
+          Halfwords are aligned on  even  boundaries,  words  are
+          aligned on quad boundaries, and doublewords are aligned
+          on oct boundaries.  The  alignment  of  structures  and
+          unions  equals the most restrictive alignment of one of
+          their members.  The size of structures and unions is  a
+          multiple of their alignment.                             |
+
+     FFMMTT__MMYY__FFOORRMMAATT                                                      ||
+          This  format  is  set  to  the format of the machine on  |
+          which the code is running.  This relieves  the  program  |
+          that  is  using  the  FFmmtt package from having to decide  |
+          with format is appropriate for a particular machine.
+
+     The _c_o_n_t_e_n_t_s parameter is used to describe  the  data  types
+     that  comprise  the  input  buffer.  The  buffer can contain
+     bytes, halfwords (2 bytes), words (4 bytes), doublewords  (8
+     bytes),  structures,  and  unions.   These  data  types  are
+     represented in the contents string using the following char-
+     acters.
+
+     bb    One byte.
+
+     hh    One halfword (2 bytes).
+
+     ww    One word (4 bytes).
+
+     dd    One double word (8 bytes).
+
+     {{    The start of a structure.
+
+     }}    The end of a structure.
+
+
+
+
+Sprite v.1.0         Printed:  May 29, 1990                     3
+
+
+
+
+
+
+Fmt                   C Library Procedures                    Fmt
+
+
+
+     ((    The start of a union. The '((' must  be  followed  by  a
+          discriminant  that indicates which of the components of
+          the union is to be converted.  The  discriminant  is  a
+          decimal  number  that gives the index of the component,
+          starting at 0.
+
+     ))    The end of a union.
+
+     00-99* A decimal number following a data type (byte, halfword,
+          word,  doubleword,  structure, or union) indicates that
+          the data type is repeated the given  number  of  times.
+          For instance, the string "w5" means that the input con-
+          tains 5 consecutive words. There is an  ambiguity  that
+          arises  when  describing  the contents of a union. "w5"
+          can either refer to one component of 5 words, or  to  5
+          components  of  one word each. The abiguity is resolved
+          by having "w5" refer to one component of 5  words,  and
+          "wwwww"  refer  to 5 components of one word. Similarly,
+          "w*" refers to one component (see  next  paragraph  for
+          description of the '*' character).
+
+     **    A '**' means 1 or more repetitions of the previous  data
+          type.  The  number  of repetitions is determined by the
+          amount of data remaining in the input buffer. Care must
+          be  taken if the '**' character is anything but the last
+          character in the string.  Certain  formats  place  con-
+          straints on the sizes of unions and structures that may
+          cause the '**' character to give unwanted  results.  For
+          example, consider a structure consisting of a word fol-
+          lowed by a byte that is defined  as  "{wb*}".   In  the
+          Spur  format  "b*"  will refer to 4 bytes, while in the
+          68K format it will refer to 2 bytes.
+
+
+     The following are examples of input data types  and  content
+     strings.
+
+     _D_a_t_a:
+
+          int  foo[5];
+
+     _C_o_n_t_e_n_t _s_t_r_i_n_g:
+
+          "w5" or "w*" or "wwwww"
+
+     _D_a_t_a:
+
+
+              struct      flea    {
+                  char        mite;
+                  int         spider;
+                  int         worm;
+
+
+
+Sprite v.1.0         Printed:  May 29, 1990                     4
+
+
+
+
+
+
+Fmt                   C Library Procedures                    Fmt
+
+
+
+                  short       moth;
+                  short       mosquito;
+                  short       beetle;
+                  int         fly[5];
+                  char        gnat[50];
+              };
+
+     _C_o_n_t_e_n_t _s_t_r_i_n_g:
+
+     "{bwwh3w5b*}"
+
+     _D_a_t_a:
+
+
+              struct  foo     {
+                  char        bar;
+                  int         baz;
+                  union {
+                              short   quux;
+                              double  cow;
+                  } dog[6];
+              };
+
+     _C_o_n_t_e_n_t _s_t_r_i_n_g:
+
+         "{bw(0hd)6}" or "{bw(0hd)*}"  if "quux" is the component
+     of "dog" to be converted,
+     or,
+         "{bw(1hd)6}" or "{bw(1hd)*}" if "cow" is  the  component
+     of "dog" to be converted.
+
+
+RREETTUURRNN VVAALLUUEESS
+     The following return codes are defined in fmt.h:
+
+     FFMMTT__OOKK (0)
+          Procedure completed properly
+
+     FFMMTT__CCOONNTTEENNTT__EERRRROORR
+          The _c_o_n_t_e_n_t_s parameter contained an error.
+
+     FFMMTT__IINNPPUUTT__TTOOOO__SSMMAALLLL
+          The input buffer was smaller  than  indicated  by  _c_o_n_-
+          _t_e_n_t_s.
+
+     FFMMTT__OOUUTTPPUUTT__TTOOOO__SSMMAALLLL
+          The output buffer was too small to hold  the  converted
+          data. This is only returned by FFmmtt__CCoonnvveerrtt.
+
+     FFMMTT__IILLLLEEGGAALL__FFOORRMMAATT
+          One of the format parameters was illegal.
+
+
+
+
+Sprite v.1.0         Printed:  May 29, 1990                     5
+
+
+
+
+
+
+Fmt                   C Library Procedures                    Fmt
+
+
+
+KKEEYYWWOORRDDSS
+     byte-order, byte-swap, alignment, data conversion
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  May 29, 1990                     6
+
+
+

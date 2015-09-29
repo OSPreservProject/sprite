@@ -1,0 +1,19 @@
+L CHANGES.;1                        	CHANGES	../dist/CHANGES
+D CONFIG                            	config
+L CONFIG.MK;1                       	Config.mk	../dist/Config.mk
+D EXPERIME                          	experimental
+L MAKEFILE.;1                       	Makefile	../dist/Makefile
+F MAKEFILE.SAV;1                    	Makefile.save
+F MAKEFILE.SPR;1                    	Makefile.sprite
+L MAN.;1                            	man	../dist/man
+L MANIFEST.;1                       	MANIFEST	../dist/MANIFEST
+D OSSUPPOR                          	osSupport
+D RCS                               	RCS
+L README.EXT;1                      	README.EXTD	../dist/README.EXTD
+D SRC                               	src
+D TCLLIB                            	tcllib
+D TCLSRC                            	tclsrc
+D TESTS                             	tests
+D TKSRC                             	tksrc
+D TKUCBSRC                          	tkucbsrc
+D UCBSRC                            	ucbsrc

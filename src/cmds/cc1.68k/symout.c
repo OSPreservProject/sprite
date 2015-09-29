@@ -1,0 +1,1 @@
+../cc/dist/symout.c

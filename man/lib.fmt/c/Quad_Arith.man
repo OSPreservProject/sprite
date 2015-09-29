@@ -1,0 +1,68 @@
+
+
+
+Quad                  C Library Procedures                   Quad
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Quad_AddUns, Quad_AddUnsLong - Arithmetic operations on  64-
+     bit integers
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<qquuaadd..hh>>
+
+     void
+     QQuuaadd__AAddddUUnnss(_u_Q_u_a_d_1, _u_Q_u_a_d_2, _u_R_e_s_u_l_t_P_t_r)
+
+     void
+     QQuuaadd__AAddddUUnnssLLoonngg(_u_Q_u_a_d_1, _u_L_o_n_g, _u_R_e_s_u_l_t_P_t_r)
+
+AARRGGUUMMEENNTTSS
+     u_quad   _u_Q_u_a_d_N        (in)      N'th unsigned quad operand
+
+     u_long   _u_L_o_n_g         (in)      unsigned long operand
+
+     u_quad   *_u_R_e_s_u_l_t_P_t_r   (out)     unsigned quad result
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     Sprite provides some common operations on  64-bit  integers.
+     QQuuaadd__AAddddUUnnss    adds    two    unsigned    quads    together.
+     QQuuaadd__AAddddUUnnssLLoonngg adds an unsigned long to an  unsigned  quad.
+     In  both cases, one of the quad operands can also be used to
+     hold the result.
+
+     It is expected that more quad operations will  be  added  to
+     the library as they are needed for different applications.
+
+
+KKEEYYWWOORRDDSS
+     quad, arithmetic, counter
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  March 18, 1991                    1
+
+
+

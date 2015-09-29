@@ -1,0 +1,158 @@
+*** /tmp/,RCSt1790819	Mon Nov  4 17:53:35 1991
+--- sun.h	Wed Jan  9 11:52:31 1991
+***************
+*** 13,57 ****
+   * express or implied warranty.
+   *
+   *	"$XConsortium: sun.h,v 5.7 89/12/06 09:37:35 rws Exp $ SPRITE (Berkeley)"
+   */
+  #ifndef _SUN_H_
+  #define _SUN_H_
+  
+! #include    <errno.h>
+! extern int  errno;
+! #include    <sys/param.h>
+! #include    <sys/types.h>
+! #include    <sys/time.h>
+! #include    <sys/file.h>
+! #include    <sys/fcntl.h>
+! #include    <sys/signal.h>
+! #include    <sundev/kbd.h>
+! #include    <sundev/kbio.h>
+! #include    <sundev/msio.h>
+! #include    <sun/fbio.h>
+! 
+! /*
+!  * SUN_WINDOWS is now defined (or not) by the Makefile
+!  * variable $(SUNWINDOWSFLAGS) in server/Makefile.
+!  */
+! 
+! #ifdef SUN_WINDOWS
+! #include    <varargs.h>
+! #include    <sys/ioctl.h>
+! #include    <stdio.h>
+! #include    <pixrect/pixrect_hs.h>
+! #include    <sunwindow/rect.h>
+! #include    <sunwindow/rectlist.h>
+! #include    <sunwindow/pixwin.h>
+! #include    <sunwindow/win_screen.h>
+! #include    <sunwindow/win_input.h>
+! #include    <sunwindow/cms.h>
+! #include    <sunwindow/win_struct.h>
+! #else 
+! /* already included by sunwindow/win_input.h */
+! #include    <sundev/vuid_event.h>
+! #endif SUN_WINDOWS
+  
+  #include    "X.h"
+  #include    "Xproto.h"
+  #include    "scrnintstr.h"
+--- 13,40 ----
+   * express or implied warranty.
+   *
+   * "$XConsortium: sun.h,v 5.7 89/12/06 09:37:35 rws Exp $ SPRITE (Berkeley)"
++  * $Header: /X11/R4/src/cmds/X/ddx/Xsun/RCS/sun.h,v 1.5 91/01/09 11:52:30 kupfer Exp $
+   */
+  #ifndef _SUN_H_
+  #define _SUN_H_
+  
+! #define Time	  SpriteTime
+  
++ /* 
++  * Force spriteTime.h to be included here, so that its Time typedef 
++  * gets the correct name.
++  */
++ #include    <sprite.h>
++ #include    <spriteTime.h>
++ #include    <kernel/devVid.h>
++ #include    <dev/mouse.h>
++ #include    <vm.h>
++ 
++ #include "sys/fb.h"
++ 
++ 
++ #undef Time
++ 
+  #include    "X.h"
+  #include    "Xproto.h"
+  #include    "scrnintstr.h"
+***************
+*** 92,103 ****
+  typedef struct kbPrivate {
+      int	    	  type;           	/* Type of keyboard */
+      int	    	  fd;	    	    	/* Descriptor open to device */
+!     Firm_event	  *(*GetEvents)();  	/* Function to read events */
+      void    	  (*ProcessEvent)();	/* Function to process an event */
+      void    	  (*DoneEvents)();  	/* Function called when all events */
+  					/* have been handled. */
+      pointer 	  devPrivate;	    	/* Private to keyboard device */
+-     Bool	  map_q;		/* TRUE if fd has a mapped event queue */
+      int		  offset;		/* to be added to device keycodes */
+      KeybdCtrl	  *ctrl;    	    	/* Current control structure (for
+   					 * keyclick, bell duration, auto-
+--- 75,85 ----
+  typedef struct kbPrivate {
+      int	    	  type;           	/* Type of keyboard */
+      int	    	  fd;	    	    	/* Descriptor open to device */
+!     Mouse_Event	  *(*GetEvents)();  	/* Function to read events */
+      void    	  (*ProcessEvent)();	/* Function to process an event */
+      void    	  (*DoneEvents)();  	/* Function called when all events */
+  					/* have been handled. */
+      pointer 	  devPrivate;	    	/* Private to keyboard device */
+      int		  offset;		/* to be added to device keycodes */
+      KeybdCtrl	  *ctrl;    	    	/* Current control structure (for
+   					 * keyclick, bell duration, auto-
+***************
+*** 104,114 ****
+   					 * repeat, etc.) */
+  } KbPrivRec, *KbPrivPtr;
+  
+- #define	MIN_KEYCODE	8	/* necessary to avoid the mouse buttons */
+- #ifndef KB_SUN4
+- #define KB_SUN4		0x04	/* Type 4 Sun keyboard */
+- #endif
+- 
+  /*
+   * Data private to any sun pointer device.
+   *	GetEvents, ProcessEvent and DoneEvents have uses similar to the
+--- 86,91 ----
+***************
+*** 119,125 ****
+   */
+  typedef struct ptrPrivate {
+      int	    	  fd;	    	    	/* Descriptor to device */
+!     Firm_event 	  *(*GetEvents)(); 	/* Function to read events */
+      void    	  (*ProcessEvent)();	/* Function to process an event */
+      void    	  (*DoneEvents)();  	/* When all the events have been */
+  					/* handled, this function will be */
+--- 96,102 ----
+   */
+  typedef struct ptrPrivate {
+      int	    	  fd;	    	    	/* Descriptor to device */
+!     Mouse_Event 	  *(*GetEvents)(); 	/* Function to read events */
+      void    	  (*ProcessEvent)();	/* Function to process an event */
+      void    	  (*DoneEvents)();  	/* When all the events have been */
+  					/* handled, this function will be */
+***************
+*** 190,199 ****
+      pointer 	  	fb; 	    /* Frame buffer itself */
+      Bool    	  	mapped;	    /* TRUE if frame buffer already mapped */
+      Bool		parent;	    /* TRUE if fd is a SunWindows window */
+!     int	    	  	fd; 	    /* Descriptor open to frame buffer */
+!     struct fbtype 	info;	    /* Frame buffer characteristics */
+      void		(*EnterLeave)();    /* screen switch */
+      pointer 	  	fbPriv;	    /* Frame-buffer-dependent data */
+  } fbFd;
+  
+  extern Bool sunSupportsDepth8;
+--- 167,176 ----
+      pointer 	  	fb; 	    /* Frame buffer itself */
+      Bool    	  	mapped;	    /* TRUE if frame buffer already mapped */
+      Bool		parent;	    /* TRUE if fd is a SunWindows window */
+!     fbtype	 	info;	    /* Frame buffer characteristics */
+      void		(*EnterLeave)();    /* screen switch */
+      pointer 	  	fbPriv;	    /* Frame-buffer-dependent data */
++     int			fd;	    /* fd of frame buffer */
+  } fbFd;
+  
+  extern Bool sunSupportsDepth8;

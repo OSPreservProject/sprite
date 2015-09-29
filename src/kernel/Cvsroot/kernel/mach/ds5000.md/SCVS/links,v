@@ -1,0 +1,90 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  ds3100:1.4 sun3:1.4 sun4nw:1.1 symm:1.1 spur:1.1;
+locks    ; strict;
+comment  @@;
+
+
+1.4
+date     92.08.18.11.03.16;  author jhh;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     92.08.06.16.33.04;  author jhh;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     92.06.16.17.17.32;  author shirriff;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.10.29.17.23.43;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.4
+log
+@scvs
+@
+text
+@# This file is used by scvs and contains symbolic link
+# information.  Each line is of the form "link target"
+# $Header
+compatMapCode.c          /sprite/src/lib/c/unixSyscall/compatMapCode.c
+compatSig.h              /sprite/src/lib/c/unixSyscall/compatSig.h
+softfp.po                softfp.o
+softfp.go                softfp.o
+@
+
+
+1.3
+log
+@*** empty log message ***
+@
+text
+@d7 1
+@
+
+
+1.2
+log
+@scvs
+@
+text
+@d4 3
+a6 12
+compatMapCode.c          ../ds3100.md/compatMapCode.c
+compatSig.c              ../ds3100.md/compatSig.c
+compatSig.h              ../ds3100.md/compatSig.h
+cvtStat.c                ../ds3100.md/cvtStat.c
+machAsmDefs.h            ../ds3100.md/machAsmDefs.h
+machDis.c                ../ds3100.md/machDis.c
+machMigrate.c            ../ds3100.md/machMigrate.c
+machUNIXSyscall.c        ../ds3100.md/machUNIXSyscall.c
+softfp.o                 ../ds3100.md/softfp.o
+stat.h                   ../ds3100.md/stat.h
+sysinfo.h                ../ds3100.md/sysinfo.h
+ultrixSignal.h           ../ds3100.md/ultrixSignal.h
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@a7 1
+fcntl.c                  ../ds3100.md/fcntl.c
+a11 2
+signals.c                ../ds3100.md/signals.c
+socket.c                 ../ds3100.md/socket.c
+@

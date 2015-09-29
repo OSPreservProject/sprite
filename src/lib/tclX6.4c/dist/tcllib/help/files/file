@@ -1,0 +1,124 @@
+          file option name ?arg arg ...?
+               Operate on a file or a file name.  Name is the name  of
+               a   file;  if  it  starts  with  a  tilde,  then  tilde
+               substitution is done before executing the command  (see
+               the  manual  entry  for  Tcl_TildeSubst  for  details).
+               Option indicates what to do with the  file  name.   Any
+               unique  abbreviation  for  option  is  acceptable.  The
+               valid options are:
+
+               file atime name
+                    Return  a  decimal string giving the time at which
+                    file name was last accessed.  The time is measured
+                    in  the  standard  UNIX  fashion as seconds from a
+                    fixed starting time (often January 1,  1970).   If
+                    the  file  doesn't exist or its access time cannot
+                    be queried then an error is generated.
+
+               file dirname name
+                    Return all of the characters in name up to but not
+                    including the last slash character.  If there  are
+                    no slashes in name then return ``.''.  If the last
+                    slash in name is its first character, then  return
+                    ``/''.
+
+               file executable name
+                    Return 1 if file name is executable by the current
+                    user, 0 otherwise.
+
+               file exists name
+                    Return  1 if file name exists and the current user
+                    has search privileges for the directories  leading
+                    to it, 0 otherwise.
+
+               file extension name
+                    Return  all  of  the  characters in name after and
+                    including the last dot in name.  If  there  is  no
+                    dot in name then return the empty string.
+
+               file isdirectory name
+                    Return 1 if file name is a directory, 0 otherwise.
+
+               file isfile name
+                    Return  1  if  file  name  is  a  regular  file, 0
+                    otherwise.
+
+               file lstat name varName
+                    Same  as  stat  option (see below) except uses the
+                    lstat kernel call instead  of  stat.   This  means
+                    that  if  name  refers  to  a  symbolic  link  the
+                    information returned in varName is  for  the  link
+                    rather  than  the  file  it refers to.  On systems
+                    that don't  support  symbolic  links  this  option
+                    behaves exactly the same as the stat option.
+
+               file mtime name
+                    Return  a  decimal string giving the time at which
+                    file name was last modified.  The time is measured
+                    in  the  standard  UNIX  fashion as seconds from a
+                    fixed starting time (often January 1,  1970).   If
+                    the file doesn't exist or its modified time cannot
+                    be queried then an error is generated.
+
+               file owned name
+                    Return  1  if  file  name  is owned by the current
+                    user, 0 otherwise.
+
+               file readable name
+                    Return  1  if file name is readable by the current
+                    user, 0 otherwise.
+
+               file readlink name
+                    Returns  the  value  of the symbolic link given by
+                    name (i.e. the name of the file it points to).  If
+                    name  isn't a symbolic link or its value cannot be
+                    read, then an error is returned.  On systems  that
+                    don't   support  symbolic  links  this  option  is
+                    undefined.
+
+               file rootname name
+                    Return all of the characters in name up to but not
+                    including the last ``.'' character  in  the  name.
+                    If name doesn't contain a dot, then return name.
+
+               file size name
+                    Return  a  decimal  string giving the size of file
+                    name in bytes.  If the file doesn't exist  or  its
+                    size cannot be queried then an error is generated.
+
+               file stat  name varName
+                    Invoke  the  stat kernel call on name, and use the
+                    variable given  by  varName  to  hold  information
+                    returned from the kernel call.  VarName is treated
+                    as an array variable, and the  following  elements
+                    of  that variable are set: atime, ctime, dev, gid,
+                    ino, mode, mtime, nlink, size,  type,  uid.   Each
+                    element  except  type is a decimal string with the
+                    value of the corresponding  field  from  the  stat
+                    return  structure;  see  the manual entry for stat
+                    for details on the meanings of  the  values.   The
+                    type  element  gives  the  type of the file in the
+                    same form returned by the command file type.  This
+                    command returns an empty string.
+
+               file tail name
+                    Return  all  of  the  characters in name after the
+                    last slash.  If  name  contains  no  slashes  then
+                    return name.
+
+               file type name
+                    Returns  a  string  giving  the type of file name,
+                    which   will   be   one   of   file,    directory,
+                    characterSpecial,  blockSpecial,  fifo,  link,  or
+                    socket.
+
+               file writable name
+                    Return  1  if file name is writable by the current
+                    user, 0 otherwise.
+
+               The  file  commands  that  return 0/1 results are often
+               used in conditional or looping commands, for example:
+
+                    if {![file exists foo]} then {error {bad file name}}
+
+

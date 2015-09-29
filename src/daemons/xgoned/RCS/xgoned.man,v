@@ -1,0 +1,70 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     90.02.28.23.29.15;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@'\" Copyright 1990 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/lib/forms/RCS/cmd.man,v 1.2 90/02/20 17:11:01 douglis Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS XGONED cmds
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+xgoned \- Daemon to start a screen saver on an idle machine
+.SH SYNOPSIS
+\fBxgoned\fR [\fIoptions\fR]
+.SH OPTIONS
+.IP "\fB\-t \fIidleTime\fR" 15
+Length of time (in seconds) that the
+machine must be idle before starting the screen saver.
+The default is 300 (5 minutes).
+.IP "\fB\-D\fR" 15
+Don't detach the process.
+.IP "\fB\-d\fR" 15
+Print debugging information.
+.IP "\fB\-help\fR" 15
+Print a summary of the command-line options.
+.BE
+
+.SH DESCRIPTION
+.PP
+The \fBxgoned\fR program is used to start "xgone" on an idle
+machine.  
+A machine is idle if it has not received input from the console in
+a fixed amount of time.
+.SH BUGS
+.PP
+An idle machine is one that has not received input from the keyboard.
+Mouse motion is not considered, causing "xgone" to be
+started if the user uses only the mouse for too long.
+.SH KEYWORDS
+xgone, idle machine, screen saver
+
+@

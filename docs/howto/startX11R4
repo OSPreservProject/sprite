@@ -1,0 +1,32 @@
+How to setup your account to use X11R4 on Sprite.
+
+Step 0) - (Only needed until /dev/fb is implemented.)  If your machine is not
+	  a standard monochrome display be sure that there is an entry for
+	  it in /X11/R4/lib/fbtypes.  
+
+Step 1) - Add /X11/R4/cmds to your path. If you path contains X11R3 or X11R2
+	  binaries be sure that /X11/R4/cmds is before these.
+
+Step 2) - There seems to be about ten different ways of starting X. Here's the
+	  one I use:  Type "xinit". If you would like something more than a
+	  single "tx" window at start up, create a script named ".xinitrc".
+	  Xinit will run this script and when the script exits so will the
+	  X server. A sample .xinitrc file can be found in ~newuser/.xinitrc
+	  This .xinitrc runs the script $HOME/.xsetup. A sample .xsetup file
+	  can be found in ~newuser/.xsetup.
+
+Notes:
+	1) If you have a file named ".xserverrc" in your home directory it
+	   will most likely break something.  Please delete it.  
+	   Users with accounts that start with dedood, drewes, elm, hunt,
+	   johnw, krste, leong, sah, schauser, ss, tve, or wlo should follow
+	   this note.
+	2) The X11 R4 twm is not totally backward compatible with the new twm.
+	   The problem that bites most people is lines in the .twmrc like:
+
+	   Button1 = mc  : window  : f.resize
+
+	   are no longer legal.  The correct form is:
+
+	   Button1 = m | c  : window  : f.resize
+

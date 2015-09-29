@@ -1,0 +1,1854 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     92.03.12.19.23.21;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.12.19.13.22.41;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.12.12.21.39.09;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.12.09.22.26.52;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.12.01.22.34.38;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@UNIX system calls that basically just make Sprite calls.
+@
+
+
+1.5
+log
+@Add sigPending parameter to Sprite calls.  Add getitimer, setitimer.
+@
+text
+@/* 
+ * unixSyscalls.c --
+ *
+ *	Facade routines to call the MIG-generated stubs for the Sprite 
+ *	server.  The routines in this file mostly correspond to UNIX
+ *	system calls.  The MIG-generated stubs are all loaded
+ *	together in one file, so these routines might as well be, too, at 
+ *	least to start.  (If a user has a private version of a UNIX system 
+ *	call, this approach loses.)
+ *
+ * Copyright 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/lib/c/emulator/RCS/unixSyscalls.c,v 1.4 91/12/19 13:22:41 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <mach.h>
+#include <mach/message.h>
+#include <sprite.h>
+#include <compatInt.h>
+#include <errno.h>
+#include <spriteEmu.h>
+#include <spriteEmuInt.h>
+#include <spriteSrv.h>
+#include <status.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/file.h>
+#include <sys/time.h>
+#include <sys/types.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * access --
+ *
+ *	Procedure for Unix access call. 
+ *
+ * Results:
+ *	UNIX_SUCCESS if the access mode was valid.
+ *	UNIX_FAILURE if the access mode was not valid.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+access(pathName, mode)
+    char *pathName;		/* name of file to check */
+    int mode;			/* access mode to check for */
+{
+    ReturnStatus status;
+    kern_return_t kernStatus;
+    mach_msg_type_number_t pathNameLength = strlen(pathName) + 1;
+    Boolean sigPending;
+
+    kernStatus = Fs_AccessStub(SpriteEmu_ServerPort(), pathName,
+			       pathNameLength, mode, &status, &sigPending);
+    if (kernStatus != KERN_SUCCESS) {
+	status = Utils_MapMachStatus(kernStatus);
+    }
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return UNIX_ERROR;
+    } else {
+	return UNIX_SUCCESS;
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * chdir --
+ *
+ *	Procedure to map from Unix chdir system call to Sprite Fs_ChangeDir.
+ *
+ * Results:
+ *	UNIX_ERROR is returned upon error, with the actual error code
+ *	stored in errno.  Upon success, UNIX_SUCCESS is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+chdir(pathName)
+    char *pathName;		/* directory to be made current directory */
+{
+    ReturnStatus status;	/* result returned by Fs_ChangeDir */
+    kern_return_t kernStatus;
+    mach_msg_type_number_t pathNameLength = strlen(pathName) + 1;
+    Boolean sigPending;
+
+    kernStatus = Fs_ChangeDirStub(SpriteEmu_ServerPort(), pathName,
+				  pathNameLength, &status, &sigPending);
+    if (kernStatus != KERN_SUCCESS) {
+	status = Utils_MapMachStatus(kernStatus);
+    }
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * chmod --
+ *
+ *	Procedure to map from Unix chmod system call to Sprite 
+ *	Fs_SetAttr call.
+ *
+ * Results:
+ *      UNIX_SUCCESS    - the call was successful.
+ *      UNIX_ERROR      - the call was not successful.
+ *                        The actual error code stored in errno.
+ *
+ * Side effects:
+ *	The protection of the specified file is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+chmod(path, mode)
+    char *path;
+    int mode;
+{
+    ReturnStatus status;
+    Fs_Attributes attributes;	/* struct containing all file attributes,
+				 * only mode is looked at. */
+    kern_return_t kernStatus;
+    mach_msg_type_number_t pathNameLength = strlen(path) + 1;
+    Boolean sigPending;
+
+    attributes.permissions = mode;
+    kernStatus = Fs_SetAttrStub(SpriteEmu_ServerPort(), path,
+				pathNameLength, FS_ATTRIB_FILE, attributes,
+				FS_SET_MODE, &status, &sigPending);
+    if (kernStatus != KERN_SUCCESS) {
+	status = Utils_MapMachStatus(kernStatus);
+    }
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * chown --
+ *
+ *	Procedure to map from Unix chown system call to Sprite 
+ *	Fs_SetAttr call.
+ *
+ * Results:
+ *      UNIX_SUCCESS    - the call was successful.
+ *      UNIX_ERROR      - the call was not successful.
+ *                        The actual error code stored in errno.
+ *
+ * Side effects:
+ *	The protection of the specified file is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+chown(path, owner, group)
+    char *path;
+    int owner;
+    int group;
+{
+    ReturnStatus status;
+    Fs_Attributes attributes;	/* struct containing all file attributes.
+				 * only ownership is looked at. */
+    mach_msg_type_number_t pathNameLength = strlen(path) + 1;
+    kern_return_t kernStatus;
+    Boolean sigPending;
+
+    attributes.uid = owner;
+    attributes.gid = group;
+    kernStatus = Fs_SetAttrStub(SpriteEmu_ServerPort(), path,
+				pathNameLength, FS_ATTRIB_LINK, attributes,
+				FS_SET_OWNER, &status, &sigPending);
+    if (kernStatus != KERN_SUCCESS) {
+	status = Utils_MapMachStatus(kernStatus);
+    }
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * close --
+ *
+ *	Procedure to map from Unix close system call to Sprite Fs_Close.
+ *
+ * Results:
+ *	UNIX_ERROR is returned upon error, with the actual error code
+ *	stored in errno.  UNIX_SUCCESS is returned upon success.
+ *
+ * Side effects:
+ *	The steamId passed to close is no longer associated with an open 
+ *	file.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+close(streamId)
+    int streamId;		/* identifier for stream to close */
+{
+    ReturnStatus status;	/* result returned by Fs_Close */
+    kern_return_t kernStatus;
+    Boolean sigPending;
+
+    kernStatus = Fs_CloseStub(SpriteEmu_ServerPort(), streamId, &status,
+			      &sigPending);
+    if (kernStatus != KERN_SUCCESS) {
+	status = Utils_MapMachStatus(kernStatus);
+    }
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * creat --
+ *
+ *	Procedure to map from Unix creat system call to Sprite Fs_Open,
+ *	with appropriate parameters.
+ *
+ * Results:
+ *	UNIX_ERROR is returned upon error, with the actual error code
+ *	stored in errno.  A file descriptor is returned upon success.
+ *
+ * Side effects:
+ *	Creating a file sets up state in the filesystem until the file is
+ *	closed.  
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+creat(pathName, permissions)
+    char *pathName;		/* The name of the file to create */
+    int permissions;		/* Permission mask to use on creation */
+{
+    int streamId;		/* place to hold stream id allocated by
+				 * Fs_Open */
+    ReturnStatus status;
+    kern_return_t kernStatus;
+    mach_msg_type_number_t pathNameLength = strlen(pathName) + 1;
+    boolean_t sigPending;
+
+    kernStatus = Fs_OpenStub(SpriteEmu_ServerPort(), pathName,
+			     pathNameLength, FS_CREATE|FS_TRUNC|FS_WRITE, 
+			     permissions, &status, &streamId, &sigPending);
+    if (kernStatus != KERN_SUCCESS) {
+	status = Utils_MapMachStatus(kernStatus);
+    }
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(streamId);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * dup --
+ *
+ *	Procedure to map from Unix dup system call to Sprite Fs_GetNewID.
+ *
+ * Results:
+ *	UNIX_ERROR is returned upon error, with the actual error code
+ *	stored in errno.  Upon success, the new file descriptor is returned.
+ *
+ * Side effects:
+ *	A new open file descriptor is allocated for the process.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+dup(oldStreamID)
+    int oldStreamID;		/* original stream identifier */
+{
+    ReturnStatus status;
+    kern_return_t kernStatus;
+    int newStreamID = FS_ANYID;	/* new stream identifier */
+    Boolean sigPending;
+
+    kernStatus = Fs_GetNewIDStub(SpriteEmu_ServerPort(), oldStreamID,
+				 &newStreamID, &status, &sigPending);
+    if (kernStatus != KERN_SUCCESS) {
+	status = Utils_MapMachStatus(kernStatus);
+    }
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(newStreamID);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * dup2 --
+ *
+ *	Procedure to map from Unix dup2 system call to Sprite Fs_GetNewID.
+ *
+ * Results:
+ *	UNIX_ERROR is returned upon error, with the actual error code
+ *	stored in errno.  Upon success, the new file descriptor is returned.
+ *
+ * Side effects:
+ *	A new open file descriptor is allocated for the process.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+dup2(oldStreamID, newStreamID)
+    int oldStreamID;		/* original stream identifier */
+    int newStreamID;		/* new stream identifier */
+{
+    ReturnStatus status;
+    kern_return_t kernStatus;
+    Boolean sigPending;
+
+    kernStatus = Fs_GetNewIDStub(SpriteEmu_ServerPort(), oldStreamID, 
+				 &newStreamID, &status, &sigPending);
+    if (kernStatus != KERN_SUCCESS) {
+	status = Utils_MapMachStatus(kernStatus);
+    }
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * fchmod --
+ *
+ *	Procedure to map from Unix fchmod system call to Sprite 
+ *	Fs_SetAttributesID call.
+ *
+ * Results:
+ *      UNIX_SUCCESS    - the call was successful.
+ *      UNIX_ERROR      - the call was not successful.
+ *                        The actual error code stored in errno.
+ *
+ * Side effects:
+ *	The protection of the specified file is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+fchmod(fd, mode)
+    int fd;
+    int mode;
+{
+    ReturnStatus status;
+    Fs_Attributes attributes;      /* struct containing all file attributes,
+				    * only mode is looked at. */
+    kern_return_t kernStatus;
+    Boolean sigPending;
+
+    attributes.permissions = mode;
+    kernStatus = Fs_SetAttrIDStub(SpriteEmu_ServerPort(), fd, attributes,
+				  FS_SET_MODE, &status, &sigPending);
+    if (kernStatus != KERN_SUCCESS) {
+	status = Utils_MapMachStatus(kernStatus);
+    }
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * fchown --
+ *
+ *	Procedure to map from Unix fchown system call to Sprite 
+ *	Fs_SetAttrID call.
+ *
+ * Results:
+ *      UNIX_SUCCESS    - the call was successful.
+ *      UNIX_ERROR      - the call was not successful.
+ *                        The actual error code stored in errno.
+ *
+ * Side effects:
+ *	The protection of the specified file is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+fchown(fd, owner, group)
+    int fd;
+    int owner;
+    int group;
+{
+    ReturnStatus status;
+    Fs_Attributes attributes;	/* struct containing all file attributes,
+				 * only ownship info is looked at. */
+    kern_return_t kernStatus;
+    Boolean sigPending;
+
+    attributes.uid = owner;
+    attributes.gid = group;
+    kernStatus = Fs_SetAttrIDStub(SpriteEmu_ServerPort(), fd, attributes, 
+				  FS_SET_OWNER, &status, &sigPending);
+    if (kernStatus != KERN_SUCCESS) {
+	status = Utils_MapMachStatus(kernStatus);
+    }
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * fsync --
+ *
+ *	Procedure to map from Unix fsync system call to Sprite 
+ *	call.
+ *
+ * Results:
+ *	UNIX_SUCCESS is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+fsync(fd)
+    int fd;			/* Identifier for stream to flush to disk. */
+{
+    ReturnStatus status;
+    kern_return_t kernStatus;
+    Boolean sigPending;
+
+    kernStatus = Fs_FileWriteBackStub(SpriteEmu_ServerPort(), fd, -1, -1,
+				      1, &status, &sigPending);
+    if (kernStatus != KERN_SUCCESS) {
+	status = Utils_MapMachStatus(kernStatus);
+    }
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * geteuid --
+ *
+ *	Procedure to map from Unix geteuid system call to Sprite Proc_GetIDs.
+ *
+ * Results:
+ *	UNIX_ERROR is returned upon error, with the actual error code
+ *	stored in errno.  Upon success, the effective user ID of the current
+ *	process is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+geteuid()
+{
+    ReturnStatus status;
+    int userId;			/* effective user ID of current process */
+    kern_return_t kernStatus;
+    Proc_PID dummyPid;
+    Proc_PID dummyParent;
+    int dummyRealId;
+    Boolean sigPending;
+
+    kernStatus = Proc_GetIDsStub(SpriteEmu_ServerPort(), &dummyPid, 
+				 &dummyParent, &dummyRealId, &userId,
+				 &sigPending);
+    status = (kernStatus == KERN_SUCCESS) ? 
+	SUCCESS : Utils_MapMachStatus(kernStatus);
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(userId);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * getgroups --
+ *
+ *	Procedure to map from Unix getgroups system call to 
+ *	Sprite Proc_GetGroupIDs.
+ *
+ * Results:
+ *      UNIX_SUCCESS    - the call was successful.
+ *      UNIX_ERROR      - the call was not successful.
+ *                        The actual error code stored in errno.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+getgroups(gidsetlen, gidset)
+    int gidsetlen;
+    int *gidset;
+{
+    ReturnStatus status;	/* result returned by Proc_GetGroupIDs */
+    int	numGids;
+    kern_return_t kernStatus;
+    Boolean sigPending;
+
+    numGids = gidsetlen;
+    kernStatus = Proc_GetGroupIDsStub(SpriteEmu_ServerPort(), &numGids,
+				      (vm_address_t)gidset, &status,
+				      &sigPending);
+    if (kernStatus != KERN_SUCCESS) {
+	status = Utils_MapMachStatus(kernStatus);
+    }
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	if (numGids > gidsetlen) {
+	    numGids = gidsetlen;
+	}
+	return(numGids);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * getitimer --
+ *
+ *	Map the UNIX getitimer call to the Sprite Proc_GetIntervalTimer 
+ *	request.
+ *
+ * Results:
+ *	UNIX_SUCCESS if the Sprite return returns SUCCESS.
+ *	Otherwise, UNIX_ERROR and errno is set to the Unix equivalent
+ *	status.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+getitimer(which, value)
+    int which;
+    struct itimerval *value;
+{
+    ReturnStatus status;
+    kern_return_t kernStatus;
+    Boolean sigPending;
+
+    /*
+     * The Sprite and Unix timer values have the same layout.
+     */
+    kernStatus = Proc_GetIntervalTimerStub(SpriteEmu_ServerPort(), which,
+					   &status,
+					   (Proc_TimerInterval *) value,
+					   &sigPending);
+    if (kernStatus != KERN_SUCCESS) {
+	status = Utils_MapMachStatus(kernStatus);
+    }
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * getpgrp --
+ *
+ *	Procedure to map from Unix getpgrp system call to Sprite 
+ *	Proc_GetFamilyID. 
+ *
+ * Results:
+ *	UNIX_ERROR is returned upon error, with the actual error code
+ *	stored in errno.  Otherwise the family id of the given process is
+ *	returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+pid_t
+getpgrp(pid)
+    pid_t pid;			/* Process to get the process group for. */
+{
+    ReturnStatus status;
+    Proc_PID familyID;		/* Family ID of process. */
+    kern_return_t kernStatus;
+    Boolean sigPending;
+
+    if (pid == 0) {
+	pid = PROC_MY_PID;
+    }
+    kernStatus = Proc_GetFamilyIDStub(SpriteEmu_ServerPort(),
+				      (Proc_PID)pid, &status, &familyID,
+				      &sigPending);
+    if (kernStatus != KERN_SUCCESS) {
+	status = Utils_MapMachStatus(kernStatus);
+    }
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return((pid_t)familyID);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * getppid --
+ *
+ *	Procedure to map from Unix getppid system call to Sprite Proc_GetIDs.
+ *
+ * Results:
+ *	UNIX_ERROR is returned upon error, with the actual error code
+ *	stored in errno.  Upon success, the ID of the parent of the current
+ *	process is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+getppid()
+{
+    ReturnStatus status;	/* result returned by Proc_GetIDs */
+    Proc_PID parentPid;		/* ID of parent of current process */
+    kern_return_t kernStatus;
+    Proc_PID dummyPid;
+    int dummyUid;
+    Boolean sigPending;
+
+    kernStatus = Proc_GetIDsStub(SpriteEmu_ServerPort(), &dummyPid,
+				 &parentPid, &dummyUid, &dummyUid,
+				 &sigPending);
+    status = (kernStatus == KERN_SUCCESS) ? 
+	SUCCESS : Utils_MapMachStatus(kernStatus);
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(parentPid);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * link --
+ *
+ *	Procedure to map from Unix link system call to Sprite Fs_HardLink.
+ *
+ * Results:
+ *      UNIX_SUCCESS    - the call was successful.
+ *      UNIX_ERROR      - the call was not successful.
+ *                        The actual error code stored in errno.
+ *
+ * Side effects:
+ *	Cause the two pathnames to refer to the same file.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+link(name1, name2)
+    char *name1;
+    char *name2;
+{
+    ReturnStatus status;
+    kern_return_t kernStatus;
+    mach_msg_type_number_t nameOneLength = strlen(name1) + 1;
+    mach_msg_type_number_t nameTwoLength = strlen(name2) + 1;
+    Boolean sigPending;
+
+    kernStatus = Fs_HardLinkStub(SpriteEmu_ServerPort(), name1,
+				 nameOneLength, name2, nameTwoLength,
+				 &status, &sigPending);
+    if (kernStatus != KERN_SUCCESS) {
+	status = Utils_MapMachStatus(kernStatus);
+    }
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * mkdir --
+ *
+ *	Procedure to map from Unix mkdir system call to Sprite Fs_MakeDir.
+ *
+ * Results:
+ *	UNIX_ERROR is returned upon error, with the actual error code
+ *	stored in errno.  Otherwise UNIX_SUCCESS is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+mkdir(pathName, permissions)
+    char *pathName;		/* The name of the directory to create */
+    int permissions;		/* Permission mask to use on creation */
+{
+    ReturnStatus status;
+    kern_return_t kernStatus;
+    mach_msg_type_number_t pathNameLength = strlen(pathName) + 1;
+    Boolean sigPending;
+
+    kernStatus = Fs_MakeDirStub(SpriteEmu_ServerPort(), pathName,
+				pathNameLength, permissions, &status,
+				&sigPending);
+    if (kernStatus != KERN_SUCCESS) {
+	status = Utils_MapMachStatus(kernStatus);
+    }
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * pipe --
+ *
+ *	Procedure to map from Unix pipe system call to Sprite Fs_CreatePipe
+ *	call.
+ *
+ * Results:
+ *	Error returned if error returned from Fs_CreatePipe. Otherwise
+ *	UNIX_SUCCESS.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+pipe(filedes)
+    int	filedes[2];			/* array of stream identifiers */	
+{
+    ReturnStatus status;
+    kern_return_t kernStatus;
+    Boolean sigPending;
+
+    kernStatus = Fs_CreatePipeStub(SpriteEmu_ServerPort(), &status, 
+				   &(filedes[0]), &(filedes[1]), &sigPending);
+    if (kernStatus != KERN_SUCCESS) {
+	status = Utils_MapMachStatus(kernStatus);
+    }
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * readlink --
+ *
+ *	Procedure to map from Unix readlink system call to Sprite Fs_ReadLink.
+ *
+ * Results:
+ *	UNIX_ERROR is returned upon error, with the actual error code
+ *	stored in errno.  Upon success, the number of bytes actually
+ *	read (ie. the length of the link's target pathname) is returned.
+ *	
+ *
+ * Side effects:
+ *	The buffer is filled with the number of bytes indicated by
+ *	the length parameter.  
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+readlink(link, buffer, numBytes)
+    char *link;			/* name of link file to read */
+    char *buffer;		/* pointer to buffer area */
+    int numBytes;		/* number of bytes to read */
+{
+    ReturnStatus status;
+    int amountRead;		/* place to hold number of bytes read */
+    kern_return_t kernStatus;
+    mach_msg_type_number_t linkNameLength = strlen(link) + 1;
+    Boolean sigPending;
+
+    kernStatus = Fs_ReadLinkStub(SpriteEmu_ServerPort(), link,
+				 linkNameLength, numBytes,
+				 (vm_address_t)buffer, &status,
+				 &amountRead, &sigPending);
+    if (kernStatus != KERN_SUCCESS) {
+	status = Utils_MapMachStatus(kernStatus);
+    }
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	/*
+	 * Sprite's Fs_ReadLink includes the terminating null character
+	 * in the character count return (amountRead) while Unix doesn't.
+	 *
+	 * ** NOTE ** this check can go away  once all hosts are running
+	 * kernels that fix this before returning the value.
+	 */
+	if (buffer[amountRead-1] == '\0') {
+	    amountRead--;
+	}
+	
+	return(amountRead);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * rename --
+ *
+ *	Procedure to map from Unix rename system call to Sprite Fs_Rename.
+ *
+ * Results:
+ *      UNIX_SUCCESS    - the call was successful.
+ *      UNIX_ERROR      - the call was not successful.
+ *                        The actual error code stored in errno.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+rename(from, to)
+    char *from;
+    char *to;
+{
+    ReturnStatus status;
+    kern_return_t kernStatus;
+    mach_msg_type_number_t fromNameLength = strlen(from) + 1;
+    mach_msg_type_number_t toNameLength = strlen(to) + 1;
+    Boolean sigPending;
+
+    kernStatus = Fs_RenameStub(SpriteEmu_ServerPort(), from,
+			       fromNameLength, to, toNameLength, &status,
+			       &sigPending);
+    if (kernStatus != KERN_SUCCESS) {
+	status = Utils_MapMachStatus(kernStatus);
+    }
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * rmdir --
+ *
+ *	Procedure to map from Unix rmdir system call to Sprite Fs_RemoveDir.
+ *
+ * Results:
+ *	UNIX_ERROR is returned upon error, with the actual error code
+ *	stored in errno.  Othewise UNIX_SUCCESS is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+rmdir(pathName)
+    char *pathName;		/* The name of the directoy to remove */
+{
+    ReturnStatus status;
+    kern_return_t kernStatus;
+    mach_msg_type_number_t pathNameLength = strlen(pathName) + 1;
+    Boolean sigPending;
+
+    kernStatus = Fs_RemoveDirStub(SpriteEmu_ServerPort(), pathName,
+				  pathNameLength, &status, &sigPending);
+    if (kernStatus != KERN_SUCCESS) {
+	status = Utils_MapMachStatus(kernStatus);
+    }
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * setitimer --
+ *
+ *	map from UNIX setitimer to Sprite Proc_SetIntervalTimer..
+ *
+ * Results:
+ *	UNIX_SUCCESS if the Sprite return returns SUCCESS.
+ *	Otherwise, UNIX_ERROR and errno is set to the Unix equivalent
+ *	status.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+setitimer(which, value, ovalue)
+    int which;
+    struct itimerval *value;
+    struct itimerval *ovalue;
+{
+    ReturnStatus status;
+    kern_return_t kernStatus;
+    Boolean sigPending;
+    struct itimerval dummyVal;	/* if the user doesn't want the old value */
+
+    if (ovalue == (struct itimerval *)NULL) {
+	ovalue = &dummyVal;
+    }
+
+    /*
+     * The Sprite and Unix timer values have the same layout.
+     */
+    kernStatus = Proc_SetIntervalTimerStub(SpriteEmu_ServerPort(), which,
+					   *(Proc_TimerInterval *) value,
+					   &status, 
+					   (Proc_TimerInterval *) ovalue,
+					   &sigPending);
+    if (kernStatus != KERN_SUCCESS) {
+	status = Utils_MapMachStatus(kernStatus);
+    }
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * setpgrp --
+ *
+ *	Procedure to map from Unix setpgrp system call to Sprite 
+ *	Proc_SetFamilyID. 
+ *
+ * Results:
+ *	UNIX_ERROR is returned upon error, with the actual error code
+ *	stored in errno.  Otherwise UNIX_SUCCESS is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+setpgrp(pid, pgrp)
+    pid_t pid;			/* Process to set the pid for. */
+    pid_t pgrp;			/* Name of group. */
+{
+    ReturnStatus status;	/* result returned by Proc_SetFamilyID */
+    kern_return_t kernStatus;
+    Boolean sigPending;
+
+    if (pid == 0) {
+	pid = PROC_MY_PID;
+    }
+
+    kernStatus = Proc_SetFamilyIDStub(SpriteEmu_ServerPort(),
+				      (Proc_PID)pid, (Proc_PID)pgrp,
+				      &status, &sigPending);
+    if (kernStatus != KERN_SUCCESS) {
+	status = Utils_MapMachStatus(kernStatus);
+    }
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * setregid --
+ *
+ *	Procedure to map from Unix setregid system call to Sprite Proc_SetIDs.
+ *	Sprite doesn't have the notion of real and effective groud IDs;
+ *	instead, both gid arguments become the set of Sprite group IDs for
+ *	current process.
+ *
+ * Results:
+ *      UNIX_SUCCESS    - the call was successful.
+ *      UNIX_ERROR      - the call was not successful.
+ *                        The actual error code stored in errno.
+ *
+ * Side effects:
+ *	The previous group IDs are deleted.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+setregid(rgid, egid)
+    int	rgid, egid;
+{
+    ReturnStatus status = SUCCESS;
+    int array[2];
+    int num = 0;
+    kern_return_t kernStatus;
+    Boolean sigPending;
+
+    /*
+     * Make the rgid and egid the group IDs for the process. If a gid is
+     * -1, it is ignored.
+     */
+
+    if (rgid != -1) {
+	array[0] = rgid;
+	num = 1;
+	if (egid != rgid && egid != -1) {
+	    array[1] = egid;
+	    num++;
+	}
+    } else if (egid != -1) {
+	array[0] = egid;
+	num++;
+    }
+    if (num > 0) {
+	kernStatus = Proc_SetGroupIDsStub(SpriteEmu_ServerPort(), num,
+					  (vm_address_t)array, &status,
+					  &sigPending);
+	if (kernStatus != KERN_SUCCESS) {
+	    status = Utils_MapMachStatus(kernStatus);
+	}
+	if (sigPending) {
+	    SpriteEmu_TakeSignals();
+	}
+    }
+
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * setreuid --
+ *
+ *	Procedure to map from Unix setreuid system call to Sprite Proc_SetIDs.
+ *
+ * Results:
+ *	UNIX_ERROR is returned upon error, with the actual error code
+ *	stored in errno.  Upon success, UNIX_SUCCESS is returned.
+ *
+ * Side effects:
+ *	The real and effective user ID's of the process are modified as
+ *	specified, if the user is privileged to do so.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+setreuid(ruid, euid)
+    int	ruid, euid;
+{
+    ReturnStatus status;	/* result returned by Proc_SetIDs */
+    kern_return_t kernStatus;
+    Boolean sigPending;
+
+    if (ruid == -1) {
+	ruid = PROC_NO_ID;
+    }
+    if (euid == -1) {
+	euid = PROC_NO_ID;
+    }
+    kernStatus = Proc_SetIDsStub(SpriteEmu_ServerPort(), ruid, euid,
+				 &status, &sigPending);
+    if (kernStatus != KERN_SUCCESS) {
+	status = Utils_MapMachStatus(kernStatus);
+    }
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * symlink --
+ *
+ *	Procedure to map from Unix symlink system call to Sprite Fs_SymLink.
+ *
+ * Results:
+ *      UNIX_SUCCESS    - the call was successful.
+ *      UNIX_ERROR      - the call was not successful.
+ *                        The actual error code stored in errno.
+ *
+ * Side effects:
+ *	Create a symbolic link file named link that refers to target.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+symlink(target, link)
+    char *target;
+    char *link;
+{
+    ReturnStatus status;
+    kern_return_t kernStatus;
+    mach_msg_type_number_t targetNameLength = strlen(target) + 1;
+    mach_msg_type_number_t linkNameLength = strlen(link) + 1;
+    Boolean sigPending;
+
+    kernStatus = Fs_SymLinkStub(SpriteEmu_ServerPort(), target,
+				targetNameLength, link, linkNameLength,
+				FALSE, &status, &sigPending);
+    if (kernStatus != KERN_SUCCESS) {
+	status = Utils_MapMachStatus(kernStatus);
+    }
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * unlink --
+ *
+ *	Procedure to map from Unix unlink system call to Sprite Fs_Remove.
+ *
+ * Results:
+ *	UNIX_ERROR is returned upon error, with the actual error code
+ *	stored in errno.  Upon success, UNIX_SUCCESS is returned.
+ *
+ * Side effects:
+ *	The named file is removed from the filesystem.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+unlink(pathName)
+    char *pathName;			/* file to remove */
+{
+    ReturnStatus status;	/* result returned by Fs_Remove */
+    mach_msg_type_number_t pathNameLength = strlen(pathName) + 1;
+    kern_return_t kernStatus;
+    Boolean sigPending;
+
+    kernStatus = Fs_RemoveStub(SpriteEmu_ServerPort(), pathName,
+			       pathNameLength, &status, &sigPending);
+    if (kernStatus != KERN_SUCCESS) {
+	status = Utils_MapMachStatus(kernStatus);
+    }
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(UNIX_SUCCESS);
+    }
+}
+@
+
+
+1.4
+log
+@Add getgroups, getpgrp, getppid, getpgrp, setregid, setreuid.
+@
+text
+@d8 2
+a9 1
+ *	least to start.
+d22 1
+a22 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/lib/c/emulator/RCS/unixSyscalls.c,v 1.3 91/12/12 21:39:09 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d66 1
+d69 1
+a69 1
+			       pathNameLength, mode, &status);
+d73 3
+d109 1
+d112 1
+a112 1
+				  pathNameLength, &status);
+d116 3
+d157 1
+a157 1
+    
+d162 1
+a162 1
+				FS_SET_MODE, &status);
+d166 3
+d208 1
+d214 1
+a214 1
+				FS_SET_OWNER, &status);
+d218 3
+d254 1
+d256 2
+a257 1
+    kernStatus = Fs_CloseStub(SpriteEmu_ServerPort(), streamId, &status);
+d261 3
+d302 1
+d306 1
+a306 1
+			     permissions, &status, &streamId);
+d310 3
+d346 1
+d349 1
+a349 1
+				 &newStreamID, &status);
+d353 3
+d389 1
+d392 1
+a392 1
+				 &newStreamID, &status);
+d396 3
+d436 1
+d440 1
+a440 1
+				  FS_SET_MODE, &status);
+d444 3
+d485 1
+d490 1
+a490 1
+				  FS_SET_OWNER, &status);
+d494 3
+d529 1
+d532 1
+a532 1
+				      1, &status);
+d536 3
+d575 1
+d578 2
+a579 1
+				 &dummyParent, &dummyRealId, &userId);
+d582 3
+d621 1
+d625 2
+a626 1
+				      (vm_address_t)gidset, &status);
+d630 3
+d648 1
+a648 1
+ * getpgrp --
+d650 2
+a651 2
+ *	Procedure to map from Unix getpgrp system call to Sprite 
+ *	Proc_GetFamilyID. 
+d654 3
+a656 3
+ *	UNIX_ERROR is returned upon error, with the actual error code
+ *	stored in errno.  Otherwise the family id of the given process is
+ *	returned.
+d664 4
+a667 3
+pid_t
+getpgrp(pid)
+    pid_t pid;			/* Process to get the process group for. */
+a669 1
+    Proc_PID familyID;		/* Family ID of process. */
+d671 1
+d673 7
+a679 5
+    if (pid == 0) {
+	pid = PROC_MY_PID;
+    }
+    kernStatus = Proc_GetFamilyIDStub(SpriteEmu_ServerPort(),
+				      (Proc_PID)pid, &status, &familyID);
+d683 3
+d690 1
+a690 1
+	return((pid_t)familyID);
+d698 1
+a698 1
+ * getppid --
+d700 2
+a701 1
+ *	Procedure to map from Unix getppid system call to Sprite Proc_GetIDs.
+d705 2
+a706 2
+ *	stored in errno.  Upon success, the ID of the parent of the current
+ *	process is returned.
+d714 3
+a716 2
+int
+getppid()
+d718 2
+a719 2
+    ReturnStatus status;	/* result returned by Proc_GetIDs */
+    Proc_PID parentPid;		/* ID of parent of current process */
+d721 1
+a721 2
+    Proc_PID dummyPid;
+    int dummyUid;
+d723 12
+a734 4
+    kernStatus = Proc_GetIDsStub(SpriteEmu_ServerPort(), &dummyPid,
+				 &parentPid, &dummyUid, &dummyUid);
+    status = (kernStatus == KERN_SUCCESS) ? 
+	SUCCESS : Utils_MapMachStatus(kernStatus);
+d739 1
+a739 1
+	return(parentPid);
+d747 1
+a747 1
+ * getuid --
+d749 1
+a749 1
+ *	Procedure to map from Unix getuid system call to Sprite Proc_GetIDs.
+d753 1
+a753 1
+ *	stored in errno.  Upon success, the real user ID of the current
+d763 1
+a763 1
+getuid()
+d765 2
+a766 2
+    ReturnStatus status;
+    int userId;			/* real user ID of current process */
+d769 2
+a770 1
+    int dummyId;
+d773 2
+a774 1
+				 &dummyPid, &userId, &dummyId);
+d777 3
+d784 1
+a784 1
+	return(userId);
+d816 1
+d820 1
+a820 1
+				 &status);
+d824 3
+d861 1
+d864 2
+a865 1
+				pathNameLength, permissions, &status);
+d869 3
+d905 1
+d908 1
+a908 1
+				   &(filedes[0]), &(filedes[1]));
+d912 3
+d954 1
+d959 1
+a959 1
+				 &amountRead);
+d963 3
+d1013 1
+d1016 2
+a1017 1
+			       fromNameLength, to, toNameLength, &status);
+d1021 3
+d1057 1
+d1060 57
+a1116 1
+				  pathNameLength, &status);
+d1120 3
+d1157 1
+d1165 1
+a1165 1
+				      &status);
+d1169 3
+d1210 1
+d1230 2
+a1231 1
+					  (vm_address_t)array, &status);
+d1235 3
+d1273 1
+d1282 1
+a1282 1
+				 &status);
+d1286 3
+d1325 1
+d1329 1
+a1329 1
+				FALSE, &status);
+d1333 3
+d1369 1
+d1372 1
+a1372 1
+			       pathNameLength, &status);
+d1375 3
+@
+
+
+1.3
+log
+@Add chmod, chown, creat, fchmod, fchown, fsync, geteuid, getppid,
+getuid, link, mkdir, pipe, readlink, rename, rmdir, symlink.
+Re-enable use of printf.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/lib/c/emulator/RCS/unixSyscalls.c,v 1.2 91/12/09 22:26:52 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d37 1
+d547 90
+d963 153
+@
+
+
+1.2
+log
+@Add dup(), dup2().  Remove read() & write(), because they should call
+routines that catch signals and retry.
+@
+text
+@d7 2
+a8 1
+ *	together in one file, so these routines might as well be, too.
+d21 1
+a21 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/lib/c/emulator/RCS/unixSyscalls.c,v 1.1 91/12/01 22:34:38 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d33 1
+d36 1
+d121 95
+d254 45
+d377 293
+a669 1
+ * open --
+d671 1
+a671 2
+ *	Procedure to map from Unix open system call to Sprite Fs_Open.
+ *	Mostly this has to map the usageFlags argument
+d675 1
+a675 1
+ *	stored in errno.  A file descriptor is returned upon success.
+d678 1
+a678 2
+ *	Opening a file sets up state in the filesystem until the file is
+ *	closed.  
+a682 1
+	/* VARARGS2 */
+d684 2
+a685 4
+open(pathName, unixFlags, permissions)
+    char *pathName;		/* The name of the file to open */
+    register int unixFlags;	/* O_RDONLY O_WRONLY O_RDWR O_NDELAY
+				 * O_APPEND O_CREAT O_TRUNC O_EXCL */
+d688 179
+a866 3
+    int streamId;		/* place to hold stream id allocated by
+				 * Fs_Open */
+    ReturnStatus status;	/* result returned by Fs_Open */
+a867 1
+    register int useFlags = 0;	/* Sprite version of flags */
+d870 4
+a873 35
+    /*
+     * Convert unixFlags to FS_READ, etc.
+     */
+     
+    if (unixFlags & FASYNC) {
+#ifdef LIBC_PRINTF
+	fprintf(stderr, "open - FASYNC not supported\n");
+#endif
+	errno = EINVAL;
+	return(UNIX_ERROR);
+    }
+    if (unixFlags & O_RDWR) {
+	useFlags |= FS_READ|FS_WRITE;
+    } else if (unixFlags & O_WRONLY) {
+	useFlags |= FS_WRITE;
+    } else {
+	useFlags |= FS_READ;
+    }
+    if (unixFlags & FNDELAY) {
+	useFlags |= FS_NON_BLOCKING;
+    }
+    if (unixFlags & FAPPEND) {
+	useFlags |= FS_APPEND;
+    }
+    if (unixFlags & FTRUNC) {
+	useFlags |= FS_TRUNC;
+    }
+    if (unixFlags & FEXCL) {
+	useFlags |= FS_EXCLUSIVE;
+    }
+    if (unixFlags & O_MASTER) {
+	useFlags |= FS_PDEV_MASTER;
+    }
+    if (unixFlags & O_PFS_MASTER) {
+	useFlags |= FS_PFS_MASTER;
+d875 5
+a879 2
+    if (unixFlags & FCREAT) {
+	useFlags |= FS_CREATE;
+d881 30
+d912 3
+a914 3
+    kernStatus = Fs_OpenStub(SpriteEmu_ServerPort(), pathName,
+			     pathNameLength, useFlags, permissions,
+			     &status, &streamId);
+d922 1
+a922 1
+	return(streamId);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.5 91/02/09 13:24:44 ouster Exp $ SPRITE (Berkeley)";
+d156 78
+d323 1
+a323 1
+ * read --
+d325 1
+a325 1
+ *	Procedure to map from Unix read system call to Sprite Fs_Read.
+d329 1
+a329 2
+ *	stored in errno.  Upon success, the number of bytes actually
+ *	read is returned.
+d332 1
+a332 2
+ *	The buffer is filled with the number of bytes indicated by
+ *	the length parameter.  
+d338 2
+a339 4
+read(descriptor, buffer, numBytes)
+    int descriptor;		/* descriptor for stream to read */
+    char *buffer;		/* pointer to buffer area */
+    int numBytes;		/* number of bytes to read */
+d341 2
+a342 43
+    ReturnStatus status;	/* result returned by Fs_Read */
+    int amountRead;		/* place to hold number of bytes read */
+    kern_return_t kernStatus;
+    
+    kernStatus = Fs_ReadStub(SpriteEmu_ServerPort(), descriptor, numBytes,
+			     (vm_address_t)buffer, &status, &amountRead);
+    if (kernStatus != KERN_SUCCESS) {
+	status = Utils_MapMachStatus(kernStatus);
+    }
+    if (status != SUCCESS) {
+	errno = Compat_MapCode(status);
+	return(UNIX_ERROR);
+    } else {
+	return(amountRead);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * write --
+ *
+ *	Procedure to map from Unix write system call to Sprite Fs_Write.
+ *
+ * Results:
+ *	UNIX_ERROR is returned upon error, with the actual error code
+ *	stored in errno.  Upon success, the number of bytes actually
+ *	written is returned.
+ *
+ * Side effects:
+ *	The data in the buffer is written to the file at the indicated offset.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+write(descriptor, buffer, numBytes)
+    int descriptor;		/* descriptor for stream to write */
+    char *buffer;		/* pointer to buffer area */
+    int numBytes;		/* number of bytes to write */
+{
+    ReturnStatus status;	/* result returned by Fs_Write */
+a343 1
+    int amountwritten;		/* place to hold number of bytes written */
+d345 2
+a346 2
+    kernStatus = Fs_WriteStub(SpriteEmu_ServerPort(), descriptor, numBytes,
+			      (vm_address_t)buffer, &status, &amountwritten);
+d354 1
+a354 1
+	return(amountwritten);
+@

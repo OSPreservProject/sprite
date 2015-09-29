@@ -1,0 +1,332 @@
+
+
+
+Tk_Get3DBorder        UNKNOWN SECTION (tk)         Tk_Get3DBorder
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tk_Get3DBorder,   Tk_Draw3DRectangle,    Tk_Fill3DRectangle,
+     Tk_Draw3DPolygon,                          Tk_Fill3DPolygon,
+     Tk_SetBackgroundFromBorder,               Tk_NameOf3DBorder,
+     Tk_Free3DBorder   -   draw  borders  with  three-dimensional
+     appearance
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttkk..hh>>
+
+     Tk_3DBorder
+     TTkk__GGeett33DDBBoorrddeerr((_i_n_t_e_r_p, _t_k_w_i_n, _c_o_l_o_r_M_a_p, _c_o_l_o_r_N_a_m_e))
+
+     void
+     TTkk__DDrraaww33DDRReeccttaannggllee((_d_i_s_p_l_a_y, _d_r_a_w_a_b_l_e, _b_o_r_d_e_r, _x, _y, _w_i_d_t_h, _h_e_i_g_h_t, _b_o_r_d_e_r_W_i_d_t_h, _r_e_l_i_e_f))
+
+     void
+     TTkk__FFiillll33DDRReeccttaannggllee((_d_i_s_p_l_a_y, _d_r_a_w_a_b_l_e, _b_o_r_d_e_r, _x, _y, _w_i_d_t_h, _h_e_i_g_h_t, _b_o_r_d_e_r_W_i_d_t_h, _r_e_l_i_e_f))
+
+     void
+     TTkk__DDrraaww33DDPPoollyyggoonn((_d_i_s_p_l_a_y, _d_r_a_w_a_b_l_e, _b_o_r_d_e_r, _p_o_i_n_t_P_t_r, _n_u_m_P_o_i_n_t_s, _p_o_l_y_B_o_r_d_e_r_W_i_d_t_h, _l_e_f_t_R_e_l_i_e_f))
+
+     void
+     TTkk__FFiillll33DDPPoollyyggoonn((_d_i_s_p_l_a_y, _d_r_a_w_a_b_l_e, _b_o_r_d_e_r, _p_o_i_n_t_P_t_r, _n_u_m_P_o_i_n_t_s, _p_o_l_y_B_o_r_d_e_r_W_i_d_t_h, _l_e_f_t_R_e_l_i_e_f))
+
+     void
+     TTkk__SSeettBBaacckkggrroouunnddFFrroommBBoorrddeerr((_t_k_w_i_n, _b_o_r_d_e_r))
+
+     char *
+     TTkk__NNaammeeOOff33DDBBoorrddeerr((_b_o_r_d_e_r))
+
+     TTkk__FFrreeee33DDBBoorrddeerr((_b_o_r_d_e_r))
+
+AARRGGUUMMEENNTTSS
+     Tcl_Interp    *_i_n_t_e_r_p       (in)      Interpreter to use for
+                                           error reporting.
+
+     Tk_Window     _t_k_w_i_n         (in)      Token  for  window  in
+                                           which  border  will be
+                                           drawn.
+
+     Colormap      _c_o_l_o_r_m_a_p      (in)      Colormap from which to
+                                           allocate  colors.   If
+                                           None, then the default
+                                           colormap  for  _t_k_w_i_n's
+                                           screen is used.
+
+     Tk_Uid        _c_o_l_o_r_N_a_m_e     (in)      Textual description of
+                                           color corresponding to
+                                           background       (flat
+
+
+
+Sprite v.1.0          Printed:  May 2, 1991                     1
+
+
+
+
+
+
+Tk_Get3DBorder        UNKNOWN SECTION (tk)         Tk_Get3DBorder
+
+
+
+                                           areas).    Illuminated
+                                           edges will be brighter
+                                           than  this,  and  sha-
+                                           dowed  edges  will  be
+                                           darker than this.
+
+     Display       *_d_i_s_p_l_a_y      (in)      Xlib pointer  indicat-
+                                           ing display with which
+                                           drawable  is   associ-
+                                           ated.
+
+     Drawable      _d_r_a_w_a_b_l_e      (in)      X token for window  or
+                                           pixmap;      indicates
+                                           where border is to  be
+                                           drawn.
+
+     Tk_3DBorder   _b_o_r_d_e_r        (in)      Token for border  pre-
+                                           viously  allocated  in
+                                           call                to
+                                           TTkk__GGeett33DDBBoorrddeerr.
+
+     int           _x             (in)      X-coordinate        of
+                                           upper-left  corner  of
+                                           rectangle   describing
+                                           border.
+
+     int           _y             (in)      Y-coordinate        of
+                                           upper-left  corner  of
+                                           rectangle   describing
+                                           border.
+
+     int           _w_i_d_t_h         (in)      Width   of   rectangle
+                                           describing  border, in
+                                           pixels.
+
+     int           _h_e_i_g_h_t        (in)      Height  of   rectangle
+                                           describing  border, in
+                                           pixels.
+
+     int           _b_o_r_d_e_r_W_i_d_t_h   (in)      Width  of  border   in
+                                           pixels. Positive means
+                                           border is inside  rec-
+                                           tangle  given by _x, _y,
+                                           _w_i_d_t_h,  _h_e_i_g_h_t,  nega-
+                                           tive  means  border is
+                                           outside rectangle.
+
+     int           _r_e_l_i_e_f        (in)      Indicates 3-D position
+                                           of interior of rectan-
+                                           gle relative to  exte-
+                                           rior;     should    be
+                                           TK_RELIEF_RAISED    or
+
+
+
+Sprite v.1.0          Printed:  May 2, 1991                     2
+
+
+
+
+
+
+Tk_Get3DBorder        UNKNOWN SECTION (tk)         Tk_Get3DBorder
+
+
+
+                                           TK_RELIEF_SUNKEN  (may
+                                           also be TK_RELIEF_FLAT
+                                           for
+                                           TTkk__FFiillll33DDRReeccttaannggllee))..
+
+     XXPPooiinntt        *_p_o_i_n_t_P_t_r     ((iinn))      Pointer  to  array  of
+                                           points  describing the
+                                           set of vertices  in  a
+                                           polygon.   The polygon
+                                           need not be closed (it
+                                           will     be     closed
+                                           automatically  if   it
+                                           isn't).
+
+     int           _n_u_m_P_o_i_n_t_s     (in)      Number  of  points  at
+                                           *_p_o_i_n_t_P_t_r.
+
+     int           _p_o_l_y_B_o_r_d_e_r_W_i_d_t_h(in)     Width  of  border   in
+                                           pixels.   If positive,
+                                           border  is  drawn   to
+                                           left   of   trajectory
+                                           given by _p_o_i_n_t_P_t_r;  if
+                                           negative,   border  is
+                                           drawn to right of tra-
+                                           jectory.
+
+     int           _l_e_f_t_R_e_l_i_e_f    (in)      Height of left side of
+                                           polygon's  path  rela-
+                                           tive     to     right.
+                                           TK_RELIEF_RAISED means
+                                           left    side    should
+                                           appear         higher,
+                                           TK_RELIEF_SUNKEN means
+                                           right    side   should
+                                           appear  higher.    For
+                                           TTkk__FFiillll33DDPPoollyyggoonn,
+                                           TK_RELIEF_FLAT     may
+                                           also  be  specified to
+                                           indicate no difference
+                                           in height.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     These procedures provide facilities for drawing window bord-
+     ers  in  a way that produces a three-dimensional appearance.
+     TTkk__GGeett33DDBBoorrddeerr allocates colors and Pixmaps needed to draw a
+     border  in  the  window  given  by  the _t_k_w_i_n argument.  The
+     _c_o_l_o_r_m_a_p argument specifies a Colormap to use for allocating
+     colors,  and  the  _c_o_l_o_r_N_a_m_e  argument indicates what colors
+     should be used in the border.  _C_o_l_o_r_N_a_m_e may  be  any  value
+     acceptable to TTkk__GGeettCCoolloorr.  The color indicated by _c_o_l_o_r_N_a_m_e
+     will not actually be used in the border;  it  indicates  the
+
+
+
+Sprite v.1.0          Printed:  May 2, 1991                     3
+
+
+
+
+
+
+Tk_Get3DBorder        UNKNOWN SECTION (tk)         Tk_Get3DBorder
+
+
+
+     background  color for the window (i.e. a color for flat sur-
+     faces).  The illuminated portions of the border will  appear
+     brighter  than indicated by _c_o_l_o_r_N_a_m_e, and the shadowed por-
+     tions of the border will appear darker than _c_o_l_o_r_N_a_m_e.
+
+     TTkk__GGeett33DDBBoorrddeerr returns a token that may  be  used  in  later
+     calls to TTkk__DDrraaww33DDRReeccttaannggllee.  If an error occurs in allocat-
+     ing information for the border (e.g. _c_o_l_o_r_N_a_m_e isn't a legal
+     color specifier), then NULL is returned and an error message
+     is left in _i_n_t_e_r_p->_r_e_s_u_l_t.
+
+     Once a border structure has been created, TTkk__DDrraaww33DDRReeccttaannggllee
+     may be invoked to draw the border.  The _d_i_s_p_l_a_y and _d_r_a_w_a_b_l_e
+     arguments specify a window or pixmap in which the border  is
+     to  be drawn.  _D_r_a_w_a_b_l_e need not refer to the same window as
+     the _t_k_w_i_n used to create the border, but it must refer to  a
+     compatible  pixmap  or window:  one associated with the same
+     display and with the same depth as the _t_k_w_i_n used to  create
+     the  border.   The  _x, _y, _w_i_d_t_h, and _h_e_i_g_h_t arguments define
+     the bounding box of the border region within _d_r_a_w_a_b_l_e  (usu-
+     ally  _x  and  _y are zero and _w_i_d_t_h and _h_e_i_g_h_t are the dimen-
+     sions of the window), and _b_o_r_d_e_r_W_i_d_t_h specifies  the  number
+     of pixels actually occupied by the border.  The _r_e_l_i_e_f argu-
+     ment indicates which of  two  three-dimensional  effects  is
+     desired:  TK_RELIEF_RAISED  means  that  the interior of the
+     rectangle should appear raised relative to the  exterior  of
+     the  rectangle, and TK_RELIEF_SUNKEN means that the interior
+     should appear depressed.
+
+     TTkk__FFiillll33DDRReeccttaannggllee  is  somewhat   like   TTkk__DDrraaww33DDRReeccttaannggllee
+     except  that  it  first  fills the rectangular area with the
+     background color (one corresponding to the _c_o_l_o_r_N_a_m_e used to
+     create  _b_o_r_d_e_r).  Then it calls TTkk__DDrraaww33DDRReeccttaannggllee to draw a
+     border just inside the outer edge of the  rectangular  area.
+     The   argument   _r_e_l_i_e_f   indicates   the   desired  effect:
+     TK_RELIEF_RAISED means the interior of the rectangle  should
+     appear higher than the exterior;  TK_RELIEF_SUNKEN means the
+     reverse; and TK_RELIEF_FLAT means no border should be  drawn
+     at  all  (all that happens is to fill the rectangle with the
+     background color).
+
+     The procedure TTkk__DDrraaww33DDPPoollyyggoonn may be used to draw more com-
+     plex   shapes  with  a  three-dimensional  appearance.   The
+     _p_o_i_n_t_P_t_r  and  _n_u_m_P_o_i_n_t_s  arguments  define  a   trajectory,
+     _p_o_l_y_B_o_r_d_e_r_W_i_d_t_h indicates how wide the border should be (and
+     on which side of the trajectory to draw it), and  _l_e_f_t_R_e_l_i_e_f
+     indicates which side of the trajectory should appear raised.
+     TTkk__DDrraaww33DDPPoollyyggoonn draws a border around the given  trajectory
+     using  the colors from _b_o_r_d_e_r to produce a three-dimensional
+     appearance.  If the trajectory is non-self-intersecting, the
+     appearance  will  be  a raised or sunken polygon shape.  The
+     trajectory may be self-intersecting, although it's not clear
+
+
+
+Sprite v.1.0          Printed:  May 2, 1991                     4
+
+
+
+
+
+
+Tk_Get3DBorder        UNKNOWN SECTION (tk)         Tk_Get3DBorder
+
+
+
+     how  useful  this  is.   If the trajectory contains only two
+     points, then the result will be a groove or ridge, depending
+     on     whether    _l_e_f_t_R_e_l_i_e_f    is    TK_RELIEF_RAISED    or
+     TK_RELIEF_SUNKEN (respectively).
+
+     TTkk__FFiillll33DDPPoollyyggoonn     is     to      TTkk__DDrraaww33DDPPoollyyggoonn      as
+     TTkk__FFiillll33DDRReeccttaannggllee  is  to TTkk__DDrraaww33DDRReeccttaannggllee:  it fills the
+     polygonal area with the background color from  _b_o_r_d_e_r,  then
+     calls  TTkk__DDrraaww33DDPPoollyyggoonn  to  draw  a  border around the area
+     (unless _l_e_f_t_R_e_l_i_e_f  is  TK_RELIEF_FLAT;   in  this  case  no
+     border is drawn).
+
+     The procedure  TTkk__SSeettBBaacckkggrroouunnddFFrroommBBoorrddeerr  will  modify  the
+     background  pixel and/or pixmap of _t_k_w_i_n to produce a result
+     compatible with _b_o_r_d_e_r.  For color displays,  the  resulting
+     background  will  just  be  the color given by the _c_o_l_o_r_N_a_m_e
+     argument passed to TTkk__GGeett33DDBBoorrddeerr when _b_o_r_d_e_r  was  created;
+     for  monochrome displays, the resulting background will be a
+     light stipple pattern, in order  to  distinguish  the  back-
+     ground from the illuminated portion of the border.
+
+     Given a token for a border, the procedure  TTkk__NNaammeeOOff33DDBBoorrddeerr
+     will   return  the  _c_o_l_o_r_N_a_m_e  string  that  was  passed  to
+     TTkk__GGeett33DDBBoorrddeerr to create the border.
+
+     When a border is no longer needed, TTkk__FFrreeee33DDBBoorrddeerr should be
+     called  to release the resources associated with the border.
+     There should be exactly one call to TTkk__FFrreeee33DDBBoorrddeerr for each
+     call to TTkk__GGeett33DDBBoorrddeerr.
+
+
+KKEEYYWWOORRDDSS
+     3D,  background,  border,  color,  depressed,  illumination,
+     polygon, raised, shadow, three-dimensional effect
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0          Printed:  May 2, 1991                     5
+
+
+

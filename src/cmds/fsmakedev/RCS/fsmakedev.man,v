@@ -1,0 +1,71 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    shirriff:1.1; strict;
+comment  @@;
+
+
+1.1
+date     90.11.23.21.23.22;  author shirriff;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@' $Header: /a/newcmds/prefix/RCS/prefix.man,v 1.2 88/12/30 10:08:40 ouster Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS FSMAKEDEV cmds
+.BS
+.SH NAME
+fsmakedev \- Create a device file
+.SH SYNOPSIS
+\fBfsmakedev\fR [\fB-s\fI serverID\fR] [\fB-d\fI devType\fR] [\fB-u\fI unit\fR] [\fB-p\fI mode\fR]
+.SH "OPTIONS"
+.IP "\fB\-s \fIserverID\fR" 14
+The serverID is needed for devices attached to a particular host.  If not
+specified then the device created is a \fIcommon\fP device found on all hosts
+and the local instance of the device is used.  The serverID is a numeric
+hostID, not a name.
+.IP "\fB\-d\fI devType\fR" 14
+This specifies the type of the device.  This is a numeric value found in
+/sprite/src/kernel/dev/*.md/devTypesInt.h
+.IP "\fB\-u\fI unit\fR" 14
+The unit number of the device.
+.IP "\fB\-p\fI mode\fR" 14
+This specifies the permission bits of the device file.
+.BE
+
+.SH DESCRIPTION
+.PP
+Fsmakedev creates a special device file that is a placeholder for
+a peripheral device.  The device file indicates the device type
+and a unit number.  It also indicates the location of the device.
+In Sprite devices are either \fIcommon\fP,
+which means that all hosts have them, or they are specific to a
+particular host.  When a common device is opened then the device
+attached to the local host is used.  Otherwise the serverID in the
+device file indicates where the device is.  The default is for
+a common device file to be created.  Use the \fB-s\fP option to
+specific the serverID for devices attached to a particular host.
+By convention common devices are found in the /dev directory,
+and specific devices are in the /hosts/\fIhostname\fP/dev directory.
+.SH BUGS
+.PP
+The device type is a magic number found in the
+/sprite/src/kernel/dev/*.md/devTypesInt.h file.
+The serverID is a numeric hostID, not a hostname.
+.SH SEE ALSO
+fsmakenetdev
+.SH KEYWORDS
+device
+@

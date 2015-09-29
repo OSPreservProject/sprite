@@ -1,0 +1,1627 @@
+head     9.1;
+branch   ;
+access   ;
+symbols  ds3100:9.1 sun3:9.1 sprited:9.1.1 sun4nw:9.1 symm:9.1 spur:9.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.1
+date     90.10.08.15.39.44;  author mendel;  state Exp;
+branches 9.1.1.1;
+next     9.0;
+
+9.0
+date     89.09.12.15.07.29;  author douglis;  state Stable;
+branches ;
+next     8.9;
+
+8.9
+date     89.08.21.15.27.15;  author mendel;  state Exp;
+branches ;
+next     8.8;
+
+8.8
+date     89.06.21.12.31.16;  author brent;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.06.15.09.19.48;  author brent;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.03.24.17.03.00;  author brent;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.03.03.08.14.10;  author brent;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.02.09.09.12.11;  author brent;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.02.07.14.22.15;  author brent;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.01.24.17.07.18;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.01.24.12.18.49;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.21.30;  author douglis;  state Stable;
+branches ;
+next     7.0;
+
+7.0
+date     88.11.11.15.32.35;  author brent;  state Exp;
+branches ;
+next     6.7;
+
+6.7
+date     88.10.22.15.14.14;  author brent;  state Exp;
+branches ;
+next     6.6;
+
+6.6
+date     88.10.20.15.46.11;  author brent;  state Exp;
+branches ;
+next     6.5;
+
+6.5
+date     88.10.14.10.36.12;  author brent;  state Exp;
+branches ;
+next     6.4;
+
+6.4
+date     88.10.11.16.02.07;  author brent;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.08.31.12.05.40;  author brent;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.24.18.29.55;  author brent;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.13.11.21.18;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.17.08;  author brent;  state Stable;
+branches ;
+next     1.9;
+
+1.9
+date     88.07.15.17.54.51;  author mendel;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     88.06.15.17.14.13;  author brent;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.06.06.09.36.16;  author brent;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.06.04.12.11.48;  author brent;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.06.01.17.20.57;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.05.03.14.45.40;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.04.19.10.45.56;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.04.11.10.14.10;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.05.13.58.30;  author brent;  state Exp;
+branches ;
+next     ;
+
+9.1.1.1
+date     91.11.15.16.21.13;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Operation switch tables
+@
+
+
+9.1
+log
+@Changed name to fslclNameOps.c
+Fixed includes to use <> rather than "", added functions prototypes, and
+removed lint.
+Changed to use new Fs_InstallDomainLookupOps interface.
+@
+text
+@/* 
+ * fsLclNameOps.c --
+ *
+ *	Routine for initializing the fsOpTable switch entries for 
+ *	local naming domain.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/fs.mendel/RCS/fsLclNameOps.c,v 1.1 90/01/16 17:10:51 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <fs.h>
+#include <fsio.h>
+#include <fsNameOps.h>
+#include <fslcl.h>
+#include <fslclInt.h>
+
+/*
+ * fs_DomainLookup for FS_REMOTE_SPRITE_DOMAIN type.
+ */
+
+static Fs_DomainLookupOps lclDomainLookup = {
+     Fsio_NoProc, FslclExport, FslclOpen, FslclGetAttrPath,
+     FslclSetAttrPath, FslclMakeDevice, FslclMakeDir,
+     FslclRemove, FslclRemoveDir, FslclRename, FslclHardLink,
+};
+
+static Fs_AttrOps lclAttrOpTable =   { FslclGetAttr, FslclSetAttr };
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FsLclInitializeOps --
+ *
+ *	Initialize the fsOpTable switch for the remote domain naming 
+ *	and remote domain streams.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Fslcl_NameInitializeOps()
+{
+
+    Fs_InstallDomainLookupOps(FS_LOCAL_DOMAIN, &lclDomainLookup, 
+			&lclAttrOpTable);
+}
+
+@
+
+
+9.1.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fslcl/fslclNameOps.c,v 9.1 90/10/08 15:39:44 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fslcl/RCS/fsLclNameOps.c,v 8.9 89/08/21 15:27:15 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d21 6
+a26 6
+#include "sprite.h"
+#include "fs.h"
+#include "fsio.h"
+#include "fsNameOps.h"
+#include "fslcl.h"
+#include "fslclInt.h"
+d32 1
+a32 1
+static ReturnStatus (*lclDomainLookup[FS_NUM_NAME_OPS])() = {
+d62 1
+a62 1
+    Fs_InstallDomainLookupOps(FS_LOCAL_DOMAIN, lclDomainLookup, 
+@
+
+
+8.9
+log
+@Break up fs into many modules.    
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.2 89/01/07 04:12:18 rab Exp $ SPRITE (Berkeley)";
+@
+
+
+8.8
+log
+@Added call to FsDeviceReopen
+@
+text
+@d2 1
+a2 1
+ * fsOpTable.c --
+d4 2
+a5 6
+ *	The operation tables for the file system.  They are encountered
+ *	by the system in roughly the order they are presented here.  First
+ *	the Domain Lookup routines are used for name operations.  They
+ *	are used by FsLookupOperation and FsTwoNameOperation which use
+ *	the prefix table to choose a server.  If a stream is to be made
+ *	then the Open operations are used.  Next comes the Stream operations.
+d7 1
+a7 2
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+d18 2
+a19 2
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsOpTable.c,v 8.7 89/06/15 09:19:48 brent Exp $ SPRITE (Berkeley)";
+#endif not lint
+a20 1
+
+d23 4
+a26 3
+#include "fsInt.h"
+#include "fsOpTable.h"
+#include "fsDisk.h"
+d28 9
+a36 39
+/*
+ * Domain specific include files.
+ */
+#include "fsSpriteDomain.h"
+#include "fsLocalDomain.h"
+
+/*
+ * Stream specific include files.
+ */
+#include "fsStream.h"
+#include "fsFile.h"
+#include "fsDevice.h"
+#include "fsPipe.h"
+#include "fsNamedPipe.h"
+#include "fsPdev.h"
+#include "fsSocket.h"
+
+static ReturnStatus NullProc();
+static void	    NullClientKill();
+static ReturnStatus NoProc();
+static FsHandleHeader *NoHandle();
+
+/*
+ * Domain specific routine table for lookup operations.
+ * The following operate on a single pathname.  They are called via
+ *	FsLookupOperation with arguments described in fsOpTable.h
+ *	DomainImport
+ *	DomainExport
+ *	DomainOpen
+ *	DomainGetAttrPath
+ *	DomainSetAttrPath
+ *	DomainMakeDevice
+ *	DomainMakeDir
+ *	DomainRemove
+ *	DomainRemoveDir
+ * The following operate on two pathnames.
+ *	DomainRename
+ *	DomainHardLink
+ */
+d38 1
+a38 20
+/*
+ * THIS ARRAY INDEXED BY DOMAIN TYPE.  Do not arbitrarily insert entries.
+ */
+ReturnStatus (*fsDomainLookup[FS_NUM_DOMAINS][FS_NUM_NAME_OPS])() = {
+/* FS_LOCAL_DOMAIN */
+    {NoProc, FsLocalExport, FsLocalOpen, FsLocalGetAttrPath,
+     FsLocalSetAttrPath, FsLocalMakeDevice, FsLocalMakeDir,
+     FsLocalRemove, FsLocalRemoveDir, FsLocalRename, FsLocalHardLink},
+/* FS_REMOTE_SPRITE_DOMAIN */
+    {FsSpriteImport, NoProc, FsSpriteOpen, FsRemoteGetAttrPath,
+     FsRemoteSetAttrPath, FsSpriteMakeDevice, FsSpriteMakeDir, 
+     FsSpriteRemove, FsSpriteRemoveDir, FsSpriteRename, FsSpriteHardLink},
+/* FS_PSEUDO_DOMAIN */
+    {NoProc, FsPfsExport, FsPfsOpen, FsPfsGetAttrPath, FsPfsSetAttrPath,
+     FsPfsMakeDevice, FsPfsMakeDir, FsPfsRemove, FsPfsRemoveDir,
+     FsPfsRename, FsPfsHardLink},
+/* FS_NFS_DOMAIN */
+    {NoProc, NoProc, NullProc, NullProc, NullProc, NullProc, NullProc, NullProc,
+     NullProc, NullProc, NullProc},
+};
+d42 6
+a47 1
+ * File type server open routine table:
+d49 5
+a53 57
+ * THIS ARRAY INDEXED BY FILE TYPE.  Do not arbitrarily insert entries.
+ */
+FsOpenOps fsOpenOpTable[] = {
+    /*
+     * FILE through SYMBOLIC_LINK are all the same.
+     */
+    { FS_FILE, FsFileSrvOpen },
+    { FS_DIRECTORY, FsFileSrvOpen },
+    { FS_SYMBOLIC_LINK, FsFileSrvOpen },
+    /*
+     * A remote link can either be treated like a regular file,
+     * or opened by a pseudo-filesystem server.
+     */
+    { FS_REMOTE_LINK, FsRmtLinkSrvOpen },
+    /*
+     * Remote devices are opened like ordinary devices, so the old
+     * remote-device type is unused.
+     */
+    { FS_DEVICE, FsDeviceSrvOpen },
+    { 0, NullProc },
+    /*
+     * Local pipes.
+     */
+    { FS_LOCAL_PIPE, NoProc},
+    /*
+     * Named pipes.  Unimplemented, treat like a regular file.
+     */
+    { FS_NAMED_PIPE, FsFileSrvOpen },
+    /*
+     * Pseudo devices.
+     */
+    { FS_PSEUDO_DEV, FsPseudoDevSrvOpen},
+    { FS_PSEUDO_FS, NoProc},
+    /*
+     * Special file type for testing new kinds of files.
+     */
+    { FS_XTRA_FILE, FsFileSrvOpen},
+};
+/*
+ * Domain specific get/set attributes table.  These routines are used
+ * to get/set attributes on the name server given a fileID (not a pathname).
+ */
+FsAttrOps fsAttrOpTable[FS_NUM_DOMAINS] = {
+/* FS_LOCAL_DOMAIN */
+    { FsLocalGetAttr, FsLocalSetAttr },
+/* FS_REMOTE_SPRITE_DOMAIN */
+    { FsRemoteGetAttr, FsRemoteSetAttr },
+/* FS_PSEUDO_DOMAIN */
+    { FsPseudoGetAttr, FsPseudoSetAttr },
+/* FS_NFS_DOMAIN */
+    { NoProc, NoProc },
+};
+
+
+/*
+ * Stream type specific routine table.  See fsOpTable.h for an explaination
+ *	of the calling sequence for each routine.
+d55 1
+a55 1
+ * THIS ARRAY INDEXED BY STREAM TYPE.  Do not arbitrarily insert entries.
+a56 325
+FsStreamTypeOps fsStreamOpTable[] = {
+    /*
+     * Top level stream.  This is created by Fs_Open and returned to clients.
+     * This in turn references a I/O handle of a different stream type.  The
+     * main reason this exists as a handle is so that it can be found
+     * during various cases of migration, although the reopen and scavenge
+     * entry points in this table are used.
+     */
+    { FS_STREAM, NoProc, NoProc, NoProc,	/* cltOpen, read, write */
+		NoProc, NoProc,			/* iocontrol, select */
+		NoProc, NoProc,			/* getIOAttr, setIOAttr */
+		NoHandle,			/* clientVerify */
+		NoProc, NoProc,			/* release, migEnd */
+		NoProc,				/* migrate */
+		FsStreamReopen,	NoProc,		/* reopen, blockAlloc */
+		NoProc, NoProc,	NoProc,		/* blkRead, blkWrite, blkCopy */
+		(Boolean (*)())NIL, NullClientKill,/* scavenge, kill */
+		NoProc},			/* close */
+    /*
+     * Local file stream.  The file is on a local disk and blocks are
+     * cached in the block cache.  The GetIOAttr(SetIOAttr) routine
+     * is NullProc because all the work of getting(setting) cached attributes
+     * is already done by FsLocalGetAttr(FsLocalSetAttr).
+     */
+    { FS_LCL_FILE_STREAM, FsFileCltOpen, FsFileRead, FsFileWrite,
+		FsFileIOControl, FsFileSelect,
+		NullProc, NullProc,		/* Get/Set IO Attr */
+		NoHandle, FsFileRelease, FsFileMigEnd, FsFileMigrate,
+		FsFileReopen,
+		FsFileBlockAllocate, FsFileBlockRead, FsFileBlockWrite,
+		FsFileBlockCopy, FsFileScavenge, FsFileClientKill, FsFileClose},
+    /*
+     * Remote file stream.  The file is at a remote server but blocks might
+     * be cached in the block cache.
+     */
+    { FS_RMT_FILE_STREAM, FsRmtFileCltOpen, FsRmtFileRead, FsRmtFileWrite,
+		FsRmtFileIOControl, FsFileSelect,
+		FsRmtFileGetIOAttr, FsRmtFileSetIOAttr,
+		FsRmtFileVerify, FsRmtFileRelease, FsRmtFileMigEnd,
+		FsRmtFileMigrate, FsRmtFileReopen,
+		FsRmtFileAllocate, FsRmtFileBlockRead, FsRmtFileBlockWrite,
+		FsRemoteBlockCopy, FsRmtFileScavenge,
+		NullClientKill, FsRmtFileClose},
+    /*
+     * Local device stream.  These routines branch to the device driver
+     * for the particular device type.
+     */
+    { FS_LCL_DEVICE_STREAM, FsDeviceCltOpen, FsDeviceRead, FsDeviceWrite,
+		FsDeviceIOControl, FsDeviceSelect,
+		FsDeviceGetIOAttr, FsDeviceSetIOAttr,
+		NoHandle,				/* clientVerify */
+		FsDeviceRelease, FsDeviceMigEnd, FsDeviceMigrate,
+		FsDeviceReopen,				/* reopen */
+		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
+		FsDeviceScavenge, FsDeviceClientKill, FsDeviceClose},
+    /*
+     * Remote device stream.  Forward the operations to the remote I/O server.
+     */
+    { FS_RMT_DEVICE_STREAM, FsRmtDeviceCltOpen, FsRemoteRead, FsRemoteWrite,
+		FsRemoteIOControl, FsRemoteSelect,
+		FsRemoteGetIOAttr, FsRemoteSetIOAttr,
+		FsRmtDeviceVerify, FsRemoteIORelease, FsRemoteIOMigEnd,
+		FsRmtDeviceMigrate, FsRmtDeviceReopen,
+		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
+		FsRemoteHandleScavenge, NullClientKill, FsRemoteIOClose},
+    /*
+     * Local anonymous pipe stream.  
+     */
+    { FS_LCL_PIPE_STREAM, NoProc, FsPipeRead, FsPipeWrite,
+		FsPipeIOControl, FsPipeSelect,
+		FsPipeGetIOAttr, FsPipeSetIOAttr,
+		NoHandle,				/* clientVerify */
+		FsPipeRelease, FsPipeMigEnd, FsPipeMigrate,
+		FsPipeReopen,
+		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
+		FsPipeScavenge, FsPipeClientKill, FsPipeClose},
+    /*
+     * Remote anonymous pipe stream.  These arise because of migration.
+     */
+    { FS_RMT_PIPE_STREAM, NoProc, FsRemoteRead, FsRemoteWrite,
+		FsRemoteIOControl, FsRemoteSelect,
+		FsRemoteGetIOAttr, FsRemoteSetIOAttr,
+		FsRmtPipeVerify, FsRemoteIORelease, FsRemoteIOMigEnd,
+		FsRmtPipeMigrate, FsRmtPipeReopen,
+		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
+		FsRemoteHandleScavenge, NullClientKill, FsRemoteIOClose},
+    /*
+     * A control stream is what a server program gets when it opens a
+     * pseudo device file.  This stream is used to notify the server
+     * of new clients; the ID of the server stream set up for each
+     * new client is passed over this control stream.
+     */
+    { FS_CONTROL_STREAM, FsControlCltOpen, FsControlRead, NoProc,
+		FsControlIOControl, FsControlSelect,
+		FsControlGetIOAttr, FsControlSetIOAttr,
+		FsControlVerify,
+		NoProc, NoProc,				/* migStart, migEnd */
+		NoProc, FsControlReopen,		/* migrate, reopen */
+		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
+		FsControlScavenge, FsControlClientKill, FsControlClose },
+    /*
+     * A server stream gets set up for the server whenever a client opens
+     * a pseudo device.  The server reads the stream the learn about new
+     * requests from the client.  IOControls on the stream are used
+     * to control the connection to the client.
+     */
+    { FS_SERVER_STREAM, NoProc, FsServerStreamRead, NoProc,
+		FsServerStreamIOControl, FsServerStreamSelect,
+		NullProc, NullProc,			/* Get/Set IO Attr */
+		NoHandle,				/* verify */
+		NoProc, NoProc,				/* migStart, migEnd */
+		NoProc, NoProc,				/* migrate, reopen */
+		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
+		(Boolean (*)())NIL, NullClientKill, FsServerStreamClose },
+    /*
+     * A pseudo stream with the server process running locally.  
+     */
+    { FS_LCL_PSEUDO_STREAM, FsPseudoStreamCltOpen, FsPseudoStreamRead,
+		FsPseudoStreamWrite, FsPseudoStreamIOControl,
+		FsPseudoStreamSelect,
+		FsPseudoStreamGetIOAttr, FsPseudoStreamSetIOAttr,
+		NoHandle, FsPseudoStreamRelease, FsPseudoStreamMigEnd,
+		FsPseudoStreamMigrate, NoProc,		/* migrate, reopen */
+		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
+		(Boolean (*)())NIL, NullClientKill, FsPseudoStreamClose },
+    /*
+     * A pseudo stream with a remote server.  
+     */
+    { FS_RMT_PSEUDO_STREAM, FsRmtPseudoStreamCltOpen, FsRemoteRead,
+		FsRemoteWrite,
+		FsRemoteIOControl, FsRemoteSelect,
+		FsRemoteGetIOAttr, FsRemoteSetIOAttr,
+		FsRmtPseudoStreamVerify,
+		FsRemoteIORelease, FsRemoteIOMigEnd,
+		FsRmtPseudoStreamMigrate, NoProc,	/* migrate, reopen */
+		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
+		FsRemoteHandleScavenge, NullClientKill, FsRemoteIOClose },
+    /*
+     * A control stream used to mark the existence of a pseudo-filesystem.
+     * The server doesn't do I/O to this stream; it is only used at
+     * open and close time.
+     */
+    { FS_PFS_CONTROL_STREAM, FsPfsCltOpen,
+		NoProc, NoProc,				/* read, write */
+		NoProc, NoProc,				/* IOControl, select */
+		NullProc, NullProc,			/* Get/Set IO Attr */
+		FsControlVerify,
+		NoProc, NoProc,				/* migStart, migEnd */
+		NoProc, FsControlReopen,		/* migrate, reopen */
+		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
+		FsControlScavenge, FsControlClientKill,
+		FsControlClose },
+    /*
+     * The 'naming stream' for a pseudo-filesystem is used to forward lookup
+     * operations from the kernel up to the user-level server.  It is like
+     * a regular pdev request-response stream, except that extra connections
+     * to it are established via the prefix table when remote Sprite hosts
+     * import a pseudo-filesystem.  The routines here are used to set this up.
+     * This stream is only accessed locally.  To remote hosts the domain is
+     * a regular remote sprite domain, and the RPC stubs on the server then
+     * switch out to either local-domain or pseudo-domain routines.
+     */
+    { FS_PFS_NAMING_STREAM, FsPfsNamingCltOpen,
+		NoProc, NoProc,				/* read, write */
+		NoProc, NoProc,				/* IOControl, select */
+		NullProc, NullProc,			/* Get/Set IO Attr */
+		FsRmtPseudoStreamVerify,
+		NoProc, NoProc,				/* migStart, migEnd */
+		NoProc, NoProc,				/* migrate, reopen */
+		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
+		FsRemoteHandleScavenge, NullClientKill,
+		FsRemoteIOClose },
+    /*
+     * A pseudo stream to a pseudo-filesystem server.  This is just like
+     * a pseudo stream to a pseudo-device server, except for the CltOpen
+     * routine because setup is different.  
+     */
+    { FS_LCL_PFS_STREAM, FsPfsStreamCltOpen, FsPseudoStreamRead,
+		FsPseudoStreamWrite, FsPseudoStreamIOControl,
+		FsPseudoStreamSelect,
+		FsPseudoStreamGetIOAttr, FsPseudoStreamSetIOAttr,
+		NoHandle, FsPseudoStreamRelease, FsPseudoStreamMigEnd,
+		FsPseudoStreamMigrate, NoProc,		/* migrate, reopen */
+		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
+		(Boolean (*)())NIL, NullClientKill, FsPseudoStreamClose },
+    /*
+     * A pseudo stream to a remote pseudo-filesystem server.  This is
+     * like the remote pseudo-device stream, except for setup because the
+     * pseudo-device connection is already set up by the time the
+     * CltOpen routine is called.
+     */
+    { FS_RMT_PFS_STREAM, FsRmtPfsStreamCltOpen, FsRemoteRead,
+		FsRemoteWrite,
+		FsRemoteIOControl, FsRemoteSelect,
+		FsRemoteGetIOAttr, FsRemoteSetIOAttr,
+		FsRmtPseudoStreamVerify,
+		FsRemoteIORelease, FsRemoteIOMigEnd,
+		FsRmtPseudoStreamMigrate, NoProc,	/* migrate, reopen */
+		NoProc, NoProc, NoProc, NoProc,		/* cache ops */
+		FsRemoteHandleScavenge, NullClientKill, FsRemoteIOClose },
+    /*
+     * This stream type is only used during get/set I/O attributes when
+     * the pseudo-device server is remote.  No handles of this type are
+     * actually created, only fileIDs that map to FS_CONTROL_STREAM.  
+     */
+    { FS_RMT_CONTROL_STREAM, NoProc, NoProc,	/* cltOpen, read */
+		NoProc,				/* write */
+		NoProc, NoProc,			/* ioctl, select */
+		FsRemoteGetIOAttr, FsRemoteSetIOAttr,
+		(FsHandleHeader *(*)())NoProc,	/* verify */
+		NoProc, NoProc,			/* release, migend */
+		NoProc, NoProc,			/* migrate, reopen */
+		NoProc, NoProc, NoProc, NoProc,	/* cache ops */
+		(Boolean (*)())NIL,		/* scavenge */
+		(void (*)())NoProc, NoProc },	/* kill, close */
+    /*
+     * Stream used to pass streams from a pseudo-device server to
+     * a client in response to an open request.
+     */
+    { FS_PASSING_STREAM, FsPassStream,
+		NoProc, NoProc, NoProc, NoProc,	/* read, write, ioctl, select */
+		NoProc, NoProc,			/* get/set attr */
+		(FsHandleHeader *(*)())NoProc,	/* verify */
+		NoProc, NoProc,			/* release, migend */
+		NoProc, NoProc,			/* migrate, reopen */
+		NoProc, NoProc, NoProc, NoProc,	/* cache ops */
+		(Boolean (*)())NIL,		/* scavenge */
+		(void (*)())NoProc, NoProc },	/* kill, close */
+
+
+#ifdef INET
+    /*
+     * Raw IP Protocol stream.  
+     */
+    { FS_RAW_IP_STREAM, FsSocketCltOpen, FsSocketRead,
+		FsSocketWrite, FsSocketIOControl,
+		FsSocketSelect, FsSocketGetIOAttr, FsSocketSetIOAttr,
+		NoHandle,			/* verify */
+		NoProc, NoProc,			/* release, migend */
+		NoProc, NoProc,			/* migrate, reopen */
+		NoProc, NoProc,	NoProc, NoProc,	/* cache ops */
+		FsSocketScavenge,
+		(void (*)())NoProc, FsSocketClose },
+    /*
+     * UDP Protocol stream.  
+     */
+    { FS_UDP_STREAM, FsSocketCltOpen, FsSocketRead,
+		FsSocketWrite, FsSocketIOControl,
+		FsSocketSelect, FsSocketGetIOAttr, FsSocketSetIOAttr,
+		NoHandle,			/* verify */
+		NoProc, NoProc,			/* release, migend */
+		NoProc, NoProc,			/* migrate, reopen */
+		NoProc, NoProc,	NoProc, NoProc,	/* cache ops */
+		FsSocketScavenge,
+		(void (*)())NoProc, FsSocketClose },
+    /*
+     * Raw IP Protocol stream.  
+     */
+    { FS_TCP_STREAM, FsSocketCltOpen, FsSocketRead,
+		FsSocketWrite, FsSocketIOControl,
+		FsSocketSelect, FsSocketGetIOAttr, FsSocketSetIOAttr,
+		NoHandle,			/* verify */
+		NoProc, NoProc,			/* release, migend */
+		NoProc, NoProc,			/* migrate, reopen */
+		NoProc, NoProc,	NoProc, NoProc,	/* cache ops */
+		FsSocketScavenge,
+		(void (*)())NoProc, FsSocketClose },
+#endif /* INET */
+};
+
+/*
+ * Simple arrays are used to map between local and remote types.
+ */
+int fsRmtToLclType[FS_NUM_STREAM_TYPES] = {
+    FS_STREAM, 			/* FS_STREAM */
+    FS_LCL_FILE_STREAM,		/* FS_LCL_FILE_STREAM */
+    FS_LCL_FILE_STREAM,		/* FS_RMT_FILE_STREAM */
+    FS_LCL_DEVICE_STREAM,	/* FS_LCL_DEVICE_STREAM */
+    FS_LCL_DEVICE_STREAM,	/* FS_RMT_DEVICE_STREAM */
+    FS_LCL_PIPE_STREAM,		/* FS_LCL_PIPE_STREAM */
+    FS_LCL_PIPE_STREAM,		/* FS_RMT_PIPE_STREAM */
+    FS_CONTROL_STREAM,		/* FS_CONTROL_STREAM */
+    FS_SERVER_STREAM,		/* FS_SERVER_STREAM */
+    FS_LCL_PSEUDO_STREAM,	/* FS_LCL_PSEUDO_STREAM */
+    FS_LCL_PSEUDO_STREAM,	/* FS_RMT_PSEUDO_STREAM */
+    FS_PFS_CONTROL_STREAM,	/* FS_PFS_CONTROL_STREAM */
+    FS_LCL_PSEUDO_STREAM,	/* FS_PFS_NAMING_STREAM */
+    FS_LCL_PFS_STREAM,		/* FS_LCL_PFS_STREAM */
+    FS_LCL_PFS_STREAM,		/* FS_RMT_PFS_STREAM */
+    FS_CONTROL_STREAM,		/* FS_RMT_CONTROL_STREAM */
+    FS_PASSING_STREAM,		/* FS_PASSING_STREAM */
+#ifdef INET
+    FS_RAW_IP_STREAM,		/* FS_RAW_IP_STREAM */
+    FS_UDP_STREAM,		/* FS_UDP_STREAM */
+    FS_TCP_STREAM,		/* FS_TCP_STREAM */
+#endif /* INET */
+
+};
+
+int fsLclToRmtType[FS_NUM_STREAM_TYPES] = {
+    FS_STREAM, 			/* FS_STREAM */
+    FS_RMT_FILE_STREAM,		/* FS_LCL_FILE_STREAM */
+    FS_RMT_FILE_STREAM,		/* FS_RMT_FILE_STREAM */
+    FS_RMT_DEVICE_STREAM,	/* FS_LCL_DEVICE_STREAM */
+    FS_RMT_DEVICE_STREAM,	/* FS_RMT_DEVICE_STREAM */
+    FS_RMT_PIPE_STREAM,		/* FS_LCL_PIPE_STREAM */
+    FS_RMT_PIPE_STREAM,		/* FS_RMT_PIPE_STREAM */
+    FS_CONTROL_STREAM,		/* FS_CONTROL_STREAM */
+    -1,				/* FS_SERVER_STREAM */
+    FS_RMT_PSEUDO_STREAM,	/* FS_LCL_PSEUDO_STREAM */
+    FS_RMT_PSEUDO_STREAM,	/* FS_RMT_PSEUDO_STREAM */
+    FS_PFS_CONTROL_STREAM,	/* FS_PFS_CONTROL_STREAM */
+    FS_PFS_NAMING_STREAM,	/* FS_PFS_NAMING_STREAM */
+    FS_RMT_PFS_STREAM,		/* FS_LCL_PFS_STREAM */
+    FS_RMT_PFS_STREAM,		/* FS_RMT_PFS_STREAM */
+    FS_RMT_CONTROL_STREAM,	/* FS_RMT_CONTROL_STREAM */
+    FS_PASSING_STREAM,		/* FS_PASSING_STREAM */
+#ifdef INET
+    FS_RAW_IP_STREAM,		/* FS_RAW_IP_STREAM */
+    FS_UDP_STREAM,		/* FS_UDP_STREAM */
+    FS_TCP_STREAM,		/* FS_TCP_STREAM */
+#endif /* INET */
+
+};
+
+d58 2
+a59 2
+static ReturnStatus
+NullProc()
+a60 16
+    return(SUCCESS);
+}
+static ReturnStatus
+NoProc()
+{
+    return(FAILURE);
+}
+
+/*ARGSUSED*/
+static void
+NullClientKill(hdrPtr, clientID)
+    FsHandleHeader *hdrPtr;
+    int clientID;
+{
+    FsHandleUnlock(hdrPtr);
+}
+d62 2
+a63 4
+static FsHandleHeader *
+NoHandle()
+{
+    return((FsHandleHeader *)NIL);
+@
+
+
+8.7
+log
+@Nuked FsStreamMigrate.  A separate FS_STREAM_RELEASE RPC is used
+so we don't have to overload the stream-specific migration routine.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsOpTable.c,v 8.6 89/03/24 17:03:00 brent Exp $ SPRITE (Berkeley)";
+d210 1
+a210 1
+		NullProc,				/* reopen */
+@
+
+
+8.6
+log
+@Added FS_PASSING_STREAM to be used when a pseudo-device server
+passes an open stream to its client.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsOpTable.c,v 8.5 89/03/03 08:14:10 brent Exp $ SPRITE (Berkeley)";
+d170 2
+a171 3
+		NoProc, NoProc,			/* migStart, migEnd */
+		FsStreamMigrate,		/* Used to tell source of mig.
+						 * to release stream */
+@
+
+
+8.5
+log
+@Added Socket stream types
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsOpTable.c,v 8.4 89/02/09 09:12:11 brent Exp $ SPRITE (Berkeley)";
+d374 15
+d449 1
+d475 1
+@
+
+
+8.4
+log
+@Changed some scavenge routines to NIL so that type
+of handle does not get put into the LRU list and scavenged.
+This should reduce (by up to half) the size of the LRU list.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsOpTable.c,v 8.3 89/02/07 14:22:15 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d48 1
+d374 1
+a374 1
+#ifdef notdef
+d376 1
+a376 1
+     * Locally cached named pipe stream.  
+d378 9
+a386 7
+    { FS_LCL_NAMED_PIPE_STREAM, FsNamedPipeCltOpen, FsNamedPipeRead,
+		FsNamedPipeWrite, FsNamedPipeIOControl,
+		FsNamedPipeSelect, FsNamedPipeGetIOAttr, FsNamedPipeSetIOAttr,
+		NoHandle, FsNamedPipeEncap, FsNamedPipeDeencap,
+		FsNamedPipeAllocate, FsNamedPipeBlockRead,
+		FsNamedPipeBlockWrite, FsNamedPipeBlockCopy,
+		FsNamedPipeClose, FsNamedPipeDelete },
+d388 1
+a388 3
+     * Remotely cached name pipe stream.  There is little to do on this
+     * machine so we use the remote device routines to forward operations
+     * to the I/O server.
+d390 9
+a398 6
+    { FS_RMT_NAMED_PIPE_STREAM, FsRmtNamedPipeCltOpen, FsRemoteRead,
+		FsRemoteWrite, FsRemoteIOControl,
+		FsRemoteSelect, FsRemoteGetIOAttr, FsRemoteSetIOAttr,
+		FsRmtNamedPipeVerify, FsRmtDeviceEncap, FsRmtDeviceDeencap,
+		NoProc, NoProc, NoProc, NoProc,
+		FsRmtDeviceClose, FsRmtDeviceDelete},
+d400 1
+a400 1
+     * A stream to the hybrid Sprite/Unix server.  DECOMMISIONED.
+d402 10
+a411 18
+    { FS_RMT_UNIX_STREAM, FsRmtUnixCltOpen, FsRmtUnixRead, FsRmtUnixWrite,
+		FsRmtUnixIOControl, FsRmtUnixSelect,
+		NullProc, NullProc,
+		NoHandle, NoProc, NoProc,
+		FsRmtUnixAllocate, FsRmtUnixBlockRead,
+		FsRmtUnixBlockWrite, FsRmtUnixBlockCopy,
+		FsRmtUnixClose, FsRmtUnixDelete},
+    /*
+     * A stream to a remote NFS file.  
+     */
+    { FS_RMT_NFS_STREAM, NoProc, NoProc, NoProc,
+		NoProc, NoProc,
+		NoProc, NoProc,
+		NoHandle, NoProc, NoProc,
+		NoProc, NoProc,
+		NoProc, NoProc,
+		NoProc, NoProc},
+#endif /* notdef */
+d434 5
+a439 4
+    -1,				/* FS_RMT_NFS_STREAM */
+    FS_LCL_NAMED_PIPE_STREAM,	/* FS_LCL_NAMED_PIPE_STREAM */
+    FS_LCL_NAMED_PIPE_STREAM,	/* FS_RMT_NAMED_PIPE_STREAM */
+    -1,				/* FS_RMT_UNIX_STREAM */
+d459 5
+a464 4
+    FS_RMT_NFS_STREAM,		/* FS_RMT_NFS_STREAM */
+    FS_RMT_NAMED_PIPE_STREAM,	/* FS_LCL_NAMED_PIPE_STREAM */
+    FS_RMT_NAMED_PIPE_STREAM,	/* FS_RMT_NAMED_PIPE_STREAM */
+    FS_RMT_UNIX_STREAM,		/* FS_RMT_UNIX_STREAM */
+@
+
+
+8.3
+log
+@Removed Lint
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsOpTable.c,v 8.2 89/01/24 17:07:18 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d174 1
+a174 1
+		FsStreamScavenge, NullClientKill,/* scavenge, kill */
+d271 1
+a271 1
+		FsHandleUnlockHdr, NullClientKill, FsServerStreamClose },
+d282 1
+a282 1
+		FsHandleUnlockHdr, NullClientKill, FsPseudoStreamClose },
+d342 1
+a342 1
+		FsHandleUnlockHdr, NullClientKill, FsPseudoStreamClose },
+d371 1
+a371 1
+		(Boolean (*)())NoProc,		/* scavenge */
+@
+
+
+8.2
+log
+@Added FS_RMT_CONTROL_STREAM type needed for get/set I/O attrs
+of pseudo-devices
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsOpTable.c,v 8.1 89/01/24 12:18:49 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d371 1
+a371 1
+		(void (*)())NoProc,		/* scavenge */
+@
+
+
+8.1
+log
+@Added get/set IO attr routines for pseudo-devices
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsOpTable.c,v 7.0 88/11/11 15:32:35 brent Exp $ SPRITE (Berkeley)";
+d252 1
+a252 1
+		NullProc, NullProc,			/* Get/Set IO Attr */
+d358 15
+d437 1
+d461 1
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsOpTable.c,v 7.0 88/11/11 15:32:35 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d278 1
+a278 1
+		NullProc, NullProc,		/* Get/Set IO Attr */
+d338 1
+a338 1
+		NullProc, NullProc,			/* Get/Set IO Attr */
+@
+
+
+7.0
+log
+@New version for conversion to new C library
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsOpTable.c,v 6.7 88/10/22 15:14:14 brent Exp Locker: brent $ SPRITE (Berkeley)";
+@
+
+
+6.7
+log
+@Changed CltOpen routine for RMT_PFS stream
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsOpTable.c,v 6.6 88/10/20 15:46:11 brent Exp $ SPRITE (Berkeley)";
+d81 2
+a82 2
+    {FsSpriteImport, NoProc, FsSpriteOpen, FsSpriteGetAttrPath,
+     FsSpriteSetAttrPath, FsSpriteMakeDevice, FsSpriteMakeDir, 
+d143 1
+a143 1
+    { FsSpriteGetAttr, FsSpriteSetAttr },
+d199 1
+a199 1
+		FsSpriteBlockCopy, FsRmtFileScavenge,
+d216 2
+a217 2
+    { FS_RMT_DEVICE_STREAM, FsRmtDeviceCltOpen, FsSpriteRead, FsSpriteWrite,
+		FsRemoteIOControl, FsSpriteSelect,
+d237 2
+a238 2
+    { FS_RMT_PIPE_STREAM, NoProc, FsSpriteRead, FsSpriteWrite,
+		FsRemoteIOControl, FsSpriteSelect,
+d286 3
+a288 3
+    { FS_RMT_PSEUDO_STREAM, FsRmtPseudoStreamCltOpen, FsSpriteRead,
+		FsSpriteWrite,
+		FsRemoteIOControl, FsSpriteSelect,
+d349 3
+a351 3
+    { FS_RMT_PFS_STREAM, FsRmtPfsStreamCltOpen, FsSpriteRead,
+		FsSpriteWrite,
+		FsRemoteIOControl, FsSpriteSelect,
+d374 3
+a376 3
+    { FS_RMT_NAMED_PIPE_STREAM, FsRmtNamedPipeCltOpen, FsSpriteRead,
+		FsSpriteWrite, FsSpriteIOControl,
+		FsSpriteSelect, FsRemoteGetIOAttr, FsRemoteSetIOAttr,
+@
+
+
+6.6
+log
+@Changed the MigStart procedure to a Release procedure.  It is called
+via a callback from the I/O server to let the client know it is
+time to release references on a I/O handle because of a migration.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: fsOpTable.c,v 6.5 88/10/14 10:36:12 brent Exp $ SPRITE (Berkeley)";
+d344 4
+a347 3
+     * A pseudo stream to a remote pseudo-filesystem server.  This is just
+     * like the remote pseudo-device stream, except that it maps to a
+     * FS_LCL_PFS_STREAM type on the server.
+d349 1
+a349 1
+    { FS_RMT_PFS_STREAM, FsRmtPseudoStreamCltOpen, FsSpriteRead,
+@
+
+
+6.5
+log
+@Added more switch entries for pseudo-filesystems.
+Added mapping arrays between local and remote types.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: fsOpTable.c,v 6.4 88/10/11 16:02:07 brent Exp $ SPRITE (Berkeley)";
+a48 1
+
+d169 3
+a171 1
+		NoProc, NoProc, NoProc,		/* migStart, migEnd, migrate */
+d185 1
+a185 1
+		NoHandle, FsFileMigStart, FsFileMigEnd, FsFileMigrate,
+d196 1
+a196 1
+		FsRmtFileVerify, FsRmtFileMigStart, FsRmtFileMigEnd,
+d209 1
+a209 1
+		FsDeviceMigStart, FsDeviceMigEnd, FsDeviceMigrate,
+d219 1
+a219 1
+		FsRmtDeviceVerify, FsRemoteIOMigStart, FsRemoteIOMigEnd,
+d221 1
+a221 1
+		NoProc, NoProc, NoProc, NoProc,
+d230 1
+a230 1
+		FsPipeMigStart, FsPipeMigEnd, FsPipeMigrate,
+d240 1
+a240 1
+		FsRmtPipeVerify, FsRemoteIOMigStart, FsRemoteIOMigEnd,
+d279 1
+a279 1
+		NoHandle, FsPseudoStreamMigStart, FsPseudoStreamMigEnd,
+d291 1
+a291 1
+		FsRemoteIOMigStart, FsRemoteIOMigEnd,
+d339 1
+a339 1
+		NoHandle, FsPseudoStreamMigStart, FsPseudoStreamMigEnd,
+d353 1
+a353 1
+		FsRemoteIOMigStart, FsRemoteIOMigEnd,
+@
+
+
+6.4
+log
+@Changed to Import/Export with prefix stuff.
+Added streamOps entries for pseudo-filesystem related streams.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: fsOpTable.c,v 6.3 88/08/31 12:05:40 brent Exp $ SPRITE (Berkeley)";
+d146 1
+a146 1
+    { NoProc, NoProc },
+a308 1
+#ifdef not_done_yet
+d315 3
+d325 1
+a325 1
+		NoProc, FsPfsNamingReopen,		/* migrate, reopen */
+d327 2
+a328 2
+		FsPfsNamingScavenge, FsPfsNamingClientKill,
+		FsPfsNamingClose },
+d330 28
+d398 50
+a447 1
+#endif not_done_yet
+@
+
+
+6.3
+log
+@Removed lint.
+@
+text
+@d23 1
+a23 1
+static char rcsid[] = "$Header: fsOpTable.c,v 6.2 88/08/24 18:29:55 brent Exp $ SPRITE (Berkeley)";
+d59 2
+a60 1
+ *	DomainPrefix
+d78 2
+a79 2
+    {FsLocalPrefix, FsLocalOpen, FsLocalGetAttrPath, FsLocalSetAttrPath, 
+     FsLocalMakeDevice, FsLocalMakeDir,
+d82 2
+a83 2
+    {FsSpritePrefix, FsSpriteOpen, FsSpriteGetAttrPath, FsSpriteSetAttrPath,
+     FsSpriteMakeDevice, FsSpriteMakeDir, 
+d86 3
+a88 2
+    {NoProc, NullProc, NullProc, NullProc, NullProc, NullProc, NullProc,
+     NullProc, NullProc, NullProc},
+d90 1
+a90 1
+    {NoProc, NullProc, NullProc, NullProc, NullProc, NullProc, NullProc,
+d102 1
+a102 1
+     * FILE through REMOTE_LINK are all the same.
+a106 1
+    { FS_REMOTE_LINK, FsFileSrvOpen },
+d108 5
+d252 2
+a253 1
+		FsControlVerify, FsControlMigStart, FsControlMigEnd,
+d265 3
+a267 2
+		NullProc, NullProc,		/* Get/Set IO Attr */
+		NoHandle, FsServerStreamMigStart, FsServerStreamMigEnd,
+d294 15
+d311 17
+d349 1
+a349 1
+     * A stream to the hybrid Sprite/Unix server.  
+@
+
+
+6.2
+log
+@Added a SrvOpen routine for FS_NAMED_PIPE so we can remove them.
+@
+text
+@d6 1
+a6 1
+ *	the Domain Lookup routines are used for name operations.  The
+d9 1
+a9 2
+ *	the the Open operations are used.  Next comes the Stream operations,
+ *	and lastly come the Device operations (WHICH HAVE BEEN MOVE TO dev.o).
+d23 1
+a23 1
+static char rcsid[] = "$Header: fsOpTable.c,v 6.1 88/08/13 11:21:18 brent Exp $ SPRITE (Berkeley)";
+d56 3
+a58 1
+ * Domain specific routine table for lookup operations:
+d67 1
+d84 1
+a84 6
+/* FS_REMOTE_UNIX_DOMAIN */
+#ifdef unix_domain
+    {FsUnixPrefix, FsUnixOpen, FsUnixGetAttrPath, FsUnixSetAttrPath,
+     FsUnixMakeDevice, FsUnixMakeDir, 
+     FsUnixRemove, FsUnixRemoveDir, FsUnixRename, FsUnixHardLink},
+#else
+a86 1
+#endif
+d139 1
+a139 1
+/* FS_REMOTE_UNIX_DOMAIN */
+@
+
+
+6.1
+log
+@Changed some Sprite names to Remote names
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: fsOpTable.c,v 6.0 88/08/11 12:17:08 brent Stable $ SPRITE (Berkeley)";
+d121 1
+a121 1
+     * Named pipes.
+d123 1
+a123 1
+    { FS_NAMED_PIPE, NoProc },
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: fsOpTable.c,v 1.9 88/07/15 17:54:51 mendel Exp $ SPRITE (Berkeley)";
+d215 1
+a215 1
+		FsSpriteGetIOAttr, FsSpriteSetIOAttr,
+d236 1
+a236 1
+		FsSpriteGetIOAttr, FsSpriteSetIOAttr,
+d284 1
+a284 1
+		FsSpriteGetIOAttr, FsSpriteSetIOAttr,
+d308 1
+a308 1
+		FsSpriteSelect, FsSpriteGetIOAttr, FsSpriteSetIOAttr,
+@
+
+
+1.9
+log
+@Moved device switch table into dev module.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: fsOpTable.c,v 1.8 88/06/15 17:14:13 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+1.8
+log
+@Put in SBC disk
+@
+text
+@d10 1
+a10 1
+ *	and lastly come the Device operations (WHICH SHOULD MOVE TO dev.o).
+d24 1
+a24 1
+static char rcsid[] = "$Header: fsOpTable.c,v 1.7 88/06/06 09:36:16 brent Exp $ SPRITE (Berkeley)";
+a49 3
+/*
+ * Device specific include files.
+ */
+a50 7
+#include "devConsole.h"
+#include "devSBCDisk.h"
+#include "devSCSIDisk.h"
+#include "devSCSITape.h"
+#include "devXylogicsDisk.h"
+#include "net.h"
+
+a53 1
+static ReturnStatus NoDevice();
+a54 1
+static ReturnStatus NullSelectProc();
+a334 10
+/*
+ * Device type specific routine table:
+ *	This is for the file-like operations as they apply to devices.
+ *	DeviceOpen
+ *	DeviceRead
+ *	DeviceWrite
+ *	DeviceIOControl
+ *	DeviceClose
+ *	DeviceSelect
+ */
+a335 75
+extern ReturnStatus Dev_NullRead();
+extern ReturnStatus Dev_NullWrite();
+
+FsDeviceTypeOps fsDeviceOpTable[] = {
+    /*
+     * The console.  The workstation's display and keyboard.
+     */
+    {FS_DEV_CONSOLE, Dev_ConsoleOpen, Dev_ConsoleRead, Dev_ConsoleWrite,
+		     Dev_ConsoleIOControl, Dev_ConsoleClose, Dev_ConsoleSelect},
+    /*
+     * The system error log.  If this is not open then error messages go
+     * to the console.
+     */
+    {FS_DEV_SYSLOG, Dev_SyslogOpen, Dev_SyslogRead, Dev_SyslogWrite,
+		    Dev_SyslogIOControl, Dev_SyslogClose, Dev_SyslogSelect},
+    /*
+     * The following device numbers are unused.
+     */
+    {FS_DEV_KEYBOARD, NoDevice,NullProc,NullProc, NullProc, NullProc, NullProc},
+    {FS_DEV_PLACEHOLDER_2, NoDevice, NullProc, NullProc,
+		    NullProc, NullProc, NullProc},
+    /*
+     * SCSI Disk interface.
+     */
+    {FS_DEV_SCSI_DISK, Dev_SCSIDiskOpen, Dev_SCSIDiskRead, Dev_SCSIDiskWrite,
+		    Dev_SCSIDiskIOControl, Dev_SCSIDiskClose, NullProc},
+    /*
+     * SCSI Tape interface.
+     */
+    {FS_DEV_SCSI_TAPE, Dev_SCSITapeOpen, Dev_SCSITapeRead, Dev_SCSITapeWrite,
+		    Dev_SCSITapeIOControl, Dev_SCSITapeClose, NullProc},
+    /*
+     * /dev/null
+     */
+    {FS_DEV_MEMORY, NullProc, Dev_NullRead, Dev_NullWrite,
+		    NullProc, NullProc, NullSelectProc},
+    /*
+     * Xylogics 450 disk controller.
+     */
+    {FS_DEV_XYLOGICS, Dev_XylogicsDiskOpen, Dev_XylogicsDiskRead,
+		    Dev_XylogicsDiskWrite, Dev_XylogicsDiskIOControl,
+		    Dev_XylogicsDiskClose, NullProc},
+    /*
+     * Network devices.  The unit number specifies the ethernet protocol number.
+     */
+    {FS_DEV_NET, Net_FsOpen, Net_FsRead, Net_FsWrite, Net_FsIOControl,
+		    Net_FsClose, Net_FsSelect},
+    /*
+     * SCSI-3 Disk interface.  Sun's newer SCSI host adaptor.
+     */
+    {FS_DEV_SBC_DISK, Dev_SBCDiskOpen, Dev_SBCDiskRead, Dev_SBCDiskWrite,
+		     Dev_SBCDiskIOControl, Dev_SBCDiskClose, NullProc},
+};
+
+int fsNumDevices = sizeof(fsDeviceOpTable) / sizeof(FsDeviceTypeOps);
+
+/*
+ * Device Block I/O operation table.  This table is sparse because not
+ * all devices support block I/O.
+ *	FsBlockIOInit
+ *	FsBlockIO
+ */
+FsBlockOps fsBlockOpTable[] = {
+    { FS_DEV_CONSOLE, 0 },
+    { FS_DEV_SYSLOG, 0 },
+    { FS_DEV_KEYBOARD, 0 },
+    { FS_DEV_PLACEHOLDER_2, 0 },
+    { FS_DEV_SCSI_DISK, Dev_SCSIDiskBlockIO },
+    { FS_DEV_SCSI_TAPE, 0 },
+    { FS_DEV_MEMORY, 0 },
+    { FS_DEV_XYLOGICS, Dev_XylogicsDiskBlockIO },
+    { FS_DEV_NET, 0 },
+    { FS_DEV_SBC_DISK, Dev_SBCDiskBlockIO },
+};
+
+a340 7
+
+static void
+VoidProc()
+{
+    return;
+}
+
+a346 6
+static ReturnStatus
+NoDevice()
+{
+    return(FS_INVALID_ARG);
+}
+
+a359 11
+}
+
+/*ARGSUSED*/
+static ReturnStatus
+NullSelectProc(devicePtr, inFlags, outFlagsPtr)
+    Fs_Device	*devicePtr;	/* Ignored. */
+    int		inFlags;	/* FS_READBLE, FS_WRITABLE, FS_EXCEPTION. */
+    int		*outFlagsPtr;	/* Copy of inFlags. */
+{
+    *outFlagsPtr = inFlags;
+    return(SUCCESS);
+@
+
+
+1.7
+log
+@Changed close interface to pass back the streamID so the server's
+shadow streams can be closed too.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: fsOpTable.c,v 1.6 88/06/04 12:11:48 brent Exp $ SPRITE (Berkeley)";
+a407 1
+#ifdef sbc_disk
+a409 1
+#endif sbc_disk
+a429 1
+#ifdef sbc_disk
+a430 1
+#endif
+@
+
+
+1.6
+log
+@Added devSBCDisk device
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: fsOpTable.c,v 1.5 88/06/01 17:20:57 brent Exp $ SPRITE (Berkeley)";
+d408 1
+d411 1
+d432 1
+d434 1
+@
+
+
+1.5
+log
+@Mapped FS_XTRA_FILE to a regular file so old pseudo-device
+files can be deleted.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: fsOpTable.c,v 1.4 88/05/03 14:45:40 brent Exp $ SPRITE (Berkeley)";
+d55 1
+d405 5
+d412 2
+d430 1
+@
+
+
+1.4
+log
+@Added ControlReopen and ControlClientKill
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: fsOpTable.c,v 1.3 88/04/19 10:45:56 brent Exp $ SPRITE (Berkeley)";
+d143 1
+a143 1
+    { FS_XTRA_FILE, NoProc},
+@
+
+
+1.3
+log
+@Added the pseudo-device related entries
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: fsOpTable.c,v 1.2 88/04/11 10:14:10 brent Exp $ SPRITE (Berkeley)";
+d260 1
+a260 1
+		NullProc, NullProc,		/* Get/Set IO Attr */
+d262 1
+a262 1
+		NoProc, NoProc,				/* migrate, reopen */
+d264 1
+a264 1
+		FsControlScavenge, NullClientKill, FsControlClose },
+@
+
+
+1.2
+log
+@Changed interface to ClientKill and added NullClientKill stub.
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: fsOpTable.c,v 1.1 88/04/05 13:58:30 brent Exp $ SPRITE (Berkeley)";
+a126 1
+#ifdef not_done_yet
+d134 1
+a134 1
+    { FS_NAMED_PIPE, FsNamedPipeSrvOpen },
+d139 1
+a139 1
+    { FS_PSEUDO_FS, NullProc},
+d143 1
+a143 2
+    { FS_XTRA_FILE, NullProc},
+#endif
+a251 1
+#ifdef not_done_yet
+a252 21
+     * Locally cached named pipe stream.  
+     */
+    { FS_LCL_NAMED_PIPE_STREAM, FsNamedPipeCltOpen, FsNamedPipeRead,
+		FsNamedPipeWrite, FsNamedPipeIOControl,
+		FsNamedPipeSelect, FsNamedPipeGetIOAttr, FsNamedPipeSetIOAttr,
+		NoHandle, FsNamedPipeEncap, FsNamedPipeDeencap,
+		FsNamedPipeAllocate, FsNamedPipeBlockRead,
+		FsNamedPipeBlockWrite, FsNamedPipeBlockCopy,
+		FsNamedPipeClose, FsNamedPipeDelete },
+    /*
+     * Remotely cached name pipe stream.  There is little to do on this
+     * machine so we use the remote device routines to forward operations
+     * to the I/O server.
+     */
+    { FS_RMT_NAMED_PIPE_STREAM, FsRmtNamedPipeCltOpen, FsSpriteRead,
+		FsSpriteWrite, FsSpriteIOControl,
+		FsSpriteSelect, FsSpriteGetIOAttr, FsSpriteSetIOAttr,
+		FsRmtNamedPipeVerify, FsRmtDeviceEncap, FsRmtDeviceDeencap,
+		NoProc, NoProc, NoProc, NoProc,
+		FsRmtDeviceClose, FsRmtDeviceDelete},
+    /*
+d260 5
+a264 4
+		FsControlGetIOAttr, FsControlSetIOAttr,
+		NoHandle, FsControlEncap, FsControlDeencap,
+		NoProc, NoProc, NoProc, NoProc,
+		FsControlClose, FsControlDelete },
+d271 1
+a271 1
+    { FS_SERVER_STREAM, FsServerStreamCltOpen, FsServerStreamRead, NoProc,
+d273 5
+a277 4
+		FsServerStreamGetIOAttr, FsServerStreamSetIOAttr,
+		NoHandle, FsServerStreamEncap, FsServerStreamDeencap,
+		NoProc, NoProc, NoProc, NoProc,
+		FsServerStreamClose, FsServerStreamDelete },
+d284 5
+a288 4
+		FsPseudoStreamGetIOAttr, FsPseudoStreamSetIOAttr,
+		NoHandle, FsPseudoStreamEncap, FsPseudoStreamDeencap,
+		NoProc, NoProc, NoProc, NoProc,
+		FsPseudoStreamClose, FsPseudoStreamDelete},
+d292 4
+a295 4
+    { FS_RMT_PSEUDO_STREAM, FsRmtPseudoStreamCltOpen, FsRmtPseudoStreamRead,
+		FsRmtPseudoStreamWrite,
+		FsRmtPseudoStreamIOControl, FsRmtPseudoStreamSelect,
+		FsRmtPseudoStreamGetIOAttr, FsRmtPseudoStreamSetIOAttr,
+d297 24
+a320 1
+		FsRmtPseudoStreamEncap, FsRmtPseudoStreamDeencap,
+d322 1
+a322 1
+		FsRmtPseudoStreamClose, FsRmtPseudoStreamDelete},
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d24 1
+a24 1
+static char rcsid[] = "$Header: fsOpTable.c,v 1.1 88/04/04 10:37:34 brent Exp $ SPRITE (Berkeley)";
+d61 1
+a61 1
+static void	    VoidProc();
+d184 1
+a184 1
+		FsStreamScavenge, VoidProc,	/* scavenge, kill */
+d209 2
+a210 1
+		FsSpriteBlockCopy, FsRmtFileScavenge, VoidProc, FsRmtFileClose},
+d232 1
+a232 1
+		FsRemoteHandleScavenge, VoidProc, FsRemoteIOClose},
+d253 1
+a253 1
+		FsRemoteHandleScavenge, VoidProc, FsRemoteIOClose},
+d444 9
+@

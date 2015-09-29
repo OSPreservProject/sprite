@@ -1,0 +1,444 @@
+head     9.2;
+branch   ;
+access   ;
+symbols  ds3100:9.2 sun3:9.2 sprited:9.2.1 sun4nw:9.2 symm:9.2 spur:9.2 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.2
+date     90.10.08.15.39.26;  author mendel;  state Exp;
+branches 9.2.1.1;
+next     9.1;
+
+9.1
+date     89.10.23.12.33.52;  author brent;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.07.24;  author douglis;  state Stable;
+branches ;
+next     8.2;
+
+8.2
+date     89.08.21.15.27.12;  author mendel;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.08.15.18.42.57;  author rab;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.20.54;  author douglis;  state Stable;
+branches ;
+next     7.0;
+
+7.0
+date     88.11.07.14.47.37;  author brent;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.30.13.16.29;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.16.46;  author brent;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     88.06.15.17.09.17;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.04.10.35.07;  author brent;  state Exp;
+branches ;
+next     ;
+
+9.2.1.1
+date     91.11.15.16.20.44;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Definitions for the component name hash table module
+@
+
+
+9.2
+log
+@Changed name to fslclNameHash.h
+Fixed includes to use <> rather than "", added functions prototypes, and
+removed lint.
+@
+text
+@/* fslclNameHash.h --
+ *
+ *	Definitions for the filesystem name hash table.
+ *
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/fs.mendel/RCS/fsNameHash.h,v 1.1 90/01/16 17:11:00 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+ */
+
+
+#ifndef	_FSLCLNAMEHASH
+#define	_FSLCLNAMEHASH
+
+#include <list.h>
+
+/* 
+ * The hash table includes an array of bucket list headers,
+ * and some administrative information that affects the hash
+ * function and comparison functions.  The table is contrained to
+ * have a power of two number of entries to make the hashing go faster.
+ */
+typedef struct FslclHashTable {
+    struct FslclHashBucket *table;	/* Pointer to array of List_Links. */
+    List_Links		lruList;	/* The header of the LRU list */
+    int 		size;		/* Actual size of array. */
+    int 		numEntries;	/* Number of entries in the table. */
+    int 		downShift;	/* Shift count, used in hashing 
+					 * function. */
+    int 		mask;		/* Used to select bits for hashing. */
+} FslclHashTable;
+
+/*
+ * Default size of the name hash table.
+ */
+extern fslclNameHashSize;
+#define FSLCL_NAME_HASH_SIZE	512
+
+/*
+ * The bucket header is just a list header.
+ */
+
+typedef struct FslclHashBucket {
+    List_Links	list;
+} FslclHashBucket;
+
+/* 
+ * The following defines one entry in the hash table. 
+ */
+
+typedef struct FslclHashEntry {
+    List_Links	links;		/* For the list starting at the bucket header */
+    FslclHashBucket *bucketPtr;	/* Pointer to hash bucket for this entry */
+    struct FsLruList {
+	List_Links links;	/* Links for the LRU list */
+	struct FslclHashEntry *entryPtr;	/* Back pointer needed to get entry */
+    } lru;
+    Fs_HandleHeader *hdrPtr;	/* Pointer to handle of named component. */
+    Fs_HandleHeader *keyHdrPtr;	/* Pointer to handle of parent directory. */
+    char 	keyName[4];	/* Text name of this entry.  Note: the
+				 * actual size may be longer if necessary
+				 * to hold the whole string. This MUST be
+				 * the last entry in the structure!!! */
+} FslclHashEntry;
+
+typedef struct FslclLruEntry {
+    List_Links	lruList;	/* This record is used to map from the LRU */
+    FslclHashBucket *entryPtr;	/* List back to the hash entry */
+} FslclLruEntry;
+
+/*
+ * The following procedure declarations and macros
+ * are the only things that should be needed outside
+ * the implementation code.
+ */
+
+extern FslclHashTable	fslclNameTable;
+extern FslclHashTable	*fslclNameTablePtr;
+extern Boolean		fslclNameCaching;
+
+extern void FslclNameHashStats _ARGS_((void));
+extern FslclHashEntry *FslclHashLookOnly _ARGS_((FslclHashTable *table,
+			char *string, Fs_HandleHeader *keyHdrPtr));
+extern void FslclHashDelete _ARGS_((FslclHashTable *table, char *string, 
+			Fs_HandleHeader *keyHdrPtr));
+extern FslclHashEntry *FslclHashInsert _ARGS_((FslclHashTable *table, 
+			char *string, Fs_HandleHeader *keyHdrPtr, 
+			Fs_HandleHeader *hdrPtr));
+
+#define FSLCL_HASH_LOOK_ONLY(table, string, keyHandle) \
+    (fslclNameCaching ? \
+	FslclHashLookOnly(table, string, (Fs_HandleHeader *)keyHandle) : \
+	(FslclHashEntry *)NIL)
+
+#define FSLCL_HASH_INSERT(table, string, keyHandle, handle) \
+    if (fslclNameCaching) { \
+	(void)FslclHashInsert(table, string, (Fs_HandleHeader *)keyHandle, \
+			   (Fs_HandleHeader *)handle); \
+    }
+
+#define FSLCL_HASH_DELETE(table, string, keyHandle) \
+    if (fslclNameCaching) { \
+	FslclHashDelete(table, string, (Fs_HandleHeader *)keyHandle); \
+    }
+
+#endif /* _FSLCLNAMEHASH */
+@
+
+
+9.2.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d14 1
+a14 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/fslcl/fslclNameHash.h,v 9.2 90/10/08 15:39:26 mendel Exp $ SPRITE (Berkeley)
+@
+
+
+9.1
+log
+@Nuked extern
+@
+text
+@d1 1
+a1 1
+/* fsNameHash.h --
+d5 8
+a12 2
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+d14 1
+a14 1
+ * $Header: /sprite/src/kernel/fslcl/RCS/fsNameHash.h,v 9.0 89/09/12 15:07:24 douglis Stable Locker: brent $ SPRITE (Berkeley)
+d18 2
+a19 2
+#ifndef	_FSNAMEHASH
+#define	_FSNAMEHASH
+d21 1
+a21 1
+#include "list.h"
+d87 8
+a94 4
+extern void		FslclNameHashStats();
+extern FslclHashEntry 	*FslclHashLookOnly();
+extern void 		FslclHashDelete();
+extern FslclHashEntry	*FslclHashInsert();
+d112 1
+a112 1
+#endif _FSNAMEHASH
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d8 1
+a8 1
+ * $Header: /sprite/src/kernel/fslcl/RCS/fsNameHash.h,v 8.2 89/08/21 15:27:12 mendel Exp Locker: douglis $ SPRITE (Berkeley)
+a80 1
+extern void 		FslclNameHashInit();
+@
+
+
+8.2
+log
+@Break up fs into many modules.    
+@
+text
+@d8 1
+a8 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsNameHash.h,v 7.0 88/11/07 14:47:37 brent Exp $ SPRITE (Berkeley)
+@
+
+
+8.1
+log
+@Commented #endif labels.
+@
+text
+@d8 1
+a8 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsNameHash.h,v 8.0 88/11/11 18:20:54 douglis Stable Locker: rab $ SPRITE (Berkeley)
+d17 1
+a17 1
+/*
+d23 2
+a24 2
+typedef struct FsHashTable {
+    struct FsHashBucket *table;	/* Pointer to array of List_Links. */
+d28 1
+a28 1
+    int 		downShift;	/* Shift count, used in hashing
+d31 1
+a31 1
+} FsHashTable;
+d36 2
+a37 2
+extern fsNameHashSize;
+#define FS_NAME_HASH_SIZE	512
+d43 1
+a43 1
+typedef struct FsHashBucket {
+d45 1
+a45 1
+} FsHashBucket;
+d47 2
+a48 2
+/*
+ * The following defines one entry in the hash table.
+d51 1
+a51 1
+typedef struct FsHashEntry {
+d53 1
+a53 1
+    FsHashBucket *bucketPtr;	/* Pointer to hash bucket for this entry */
+d56 1
+a56 1
+	struct FsHashEntry *entryPtr;	/* Back pointer needed to get entry */
+d58 2
+a59 2
+    FsHandleHeader *hdrPtr;	/* Pointer to handle of named component. */
+    FsHandleHeader *keyHdrPtr;	/* Pointer to handle of parent directory. */
+d64 1
+a64 1
+} FsHashEntry;
+d66 1
+a66 1
+typedef struct FsLruEntry {
+d68 2
+a69 2
+    FsHashBucket *entryPtr;	/* List back to the hash entry */
+} FsLruEntry;
+d77 3
+a79 3
+extern FsHashTable	fsNameTable;
+extern FsHashTable	*fsNameTablePtr;
+extern Boolean		fsNameCaching;
+d81 10
+a90 14
+extern void 		FsNameHashInit();
+extern void		Fs_NameHashStats();
+extern void		FsHashKill();
+extern FsHashEntry 	*FsHashFind();
+extern FsHashEntry 	*FsHashLookOnly();
+extern void 		FsHashDelete();
+extern void 		FsHashStartSearch();
+extern FsHashEntry	*FsHashInsert();
+extern FsHashEntry	*FsHashNext();
+
+#define FS_HASH_LOOK_ONLY(table, string, keyHandle) \
+    (fsNameCaching ? \
+	FsHashLookOnly(table, string, (FsHandleHeader *)keyHandle) : \
+	(FsHashEntry *)NIL)
+d92 4
+a95 4
+#define FS_HASH_INSERT(table, string, keyHandle, handle) \
+    if (fsNameCaching) { \
+	(void)FsHashInsert(table, string, (FsHandleHeader *)keyHandle, \
+			   (FsHandleHeader *)handle); \
+d98 3
+a100 3
+#define FS_HASH_DELETE(table, string, keyHandle) \
+    if (fsNameCaching) { \
+	FsHashDelete(table, string, (FsHandleHeader *)keyHandle); \
+d103 1
+a103 1
+#endif /* _FSNAMEHASH */
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d8 1
+a8 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsNameHash.h,v 7.0 88/11/07 14:47:37 brent Exp Locker: douglis $ SPRITE (Berkeley)
+d17 1
+a17 1
+/* 
+d28 1
+a28 1
+    int 		downShift;	/* Shift count, used in hashing 
+d47 2
+a48 2
+/* 
+ * The following defines one entry in the hash table. 
+d107 1
+a107 1
+#endif _FSNAMEHASH
+@
+
+
+7.0
+log
+@New version for conversion to new C library
+@
+text
+@d8 1
+a8 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsNameHash.h,v 6.1 88/08/30 13:16:29 brent Exp Locker: brent $ SPRITE (Berkeley)
+@
+
+
+6.1
+log
+@Fixed macro to remove lint
+@
+text
+@d8 1
+a8 1
+ * $Header: fsNameHash.h,v 6.0 88/08/11 12:16:46 brent Stable $ SPRITE (Berkeley)
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d8 1
+a8 1
+ * $Header: fsNameHash.h,v 1.2 88/06/15 17:09:17 brent Exp $ SPRITE (Berkeley)
+d97 4
+a100 3
+    (fsNameCaching ? \
+	FsHashInsert(table, string, (FsHandleHeader *)keyHandle, \
+	(FsHandleHeader *)handle) : (FsHashEntry *)NIL)
+@
+
+
+1.2
+log
+@Fixed name cache initialization
+@
+text
+@d8 1
+a8 1
+ * $Header: fsNameHash.h,v 1.1 88/04/04 10:35:07 brent Exp $ SPRITE (Berkeley)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d8 1
+a8 1
+ * $Header: fsNameHash.h,v 5.1 87/11/02 10:45:59 brent Exp $ SPRITE (Berkeley)
+d77 1
+@

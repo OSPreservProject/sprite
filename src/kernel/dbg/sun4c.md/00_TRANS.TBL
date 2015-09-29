@@ -1,0 +1,7 @@
+D CVS_ADM                           	CVS.adm
+L DBG.H;1                           	dbg.h	../sun4.md/dbg.h
+L DBGINT.H;1                        	dbgInt.h	../sun4.md/dbgInt.h
+L DBGIP.C;1                         	dbgIP.c	../sun4.md/dbgIP.c
+L DBGMAIN.C;1                       	dbgMain.c	../sun4.md/dbgMain.c
+D SCVS                              	SCVS
+F TAGS.;1                           	TAGS

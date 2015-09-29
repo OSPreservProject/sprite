@@ -1,0 +1,634 @@
+head     1.22;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.22
+date     91.12.13.13.30.49;  author jhh;  state Exp;
+branches ;
+next     1.21;
+
+1.21
+date     91.09.24.17.47.09;  author jhh;  state Exp;
+branches ;
+next     1.20;
+
+1.20
+date     90.11.08.21.01.12;  author jhh;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     90.07.30.15.42.47;  author rab;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     90.03.08.16.51.14;  author douglis;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     90.02.27.17.42.54;  author douglis;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     89.10.09.06.55.28;  author rab;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     89.04.03.22.23.15;  author douglis;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     89.01.13.09.35.53;  author douglis;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     89.01.09.22.33.34;  author douglis;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     88.12.28.14.47.31;  author ouster;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     88.12.04.13.53.33;  author ouster;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     88.11.23.17.28.06;  author ouster;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     88.11.23.09.52.01;  author ouster;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     88.08.13.11.23.15;  author ouster;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.08.12.21.35.43;  author ouster;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.08.12.21.29.40;  author ouster;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.08.12.16.36.13;  author ouster;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.08.12.10.56.19;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.07.27.17.45.19;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.06.21.10.02.02;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.05.13.57.29;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.22
+log
+@added update and snapshot targets
+@
+text
+@#
+# This is a library Makefile that is included by the Makefiles for
+# top-level directories.  This file just arranges for a variety of
+# targets to be passed on to each of a collection of subdirectories.
+# The file that includes this one should already have defined the
+# following variables:
+#	SUBDIRS		Subdirectories that contain "interesting" things
+#			(e.g., individual commands, modules of the kernel,
+#			of sub-portions of a large library).
+#
+# A bunch of variables are passed on to lower-level makes, if they are
+# defined;  see the definitions immediately below for a complete list.
+#	
+# $Header: /sprite/lib/pmake/RCS/top.mk,v 1.21 91/09/24 17:47:09 jhh Exp $
+#
+
+#
+# System programs -- assign conditionally so they may be redefined in
+# including makefile
+#
+BINDIR		?= /sprite/cmds.$(MACHINE)
+
+CAT		?= $(BINDIR)/cat
+CP		?= $(BINDIR)/cp
+MV		?= $(BINDIR)/mv
+RM		?= $(BINDIR)/rm
+TEST            ?= $(BINDIR)/test
+UPDATE		?= $(BINDIR)/update
+
+#
+# Figure out what stuff we'll pass to sub-makes.
+#
+PASSVARS	=
+#ifdef		CC
+PASSVARS	+= 'CC=$(CC)'
+#endif
+#ifdef		XCFLAGS
+PASSVARS	+= 'XCFLAGS=$(XCFLAGS)'
+#endif
+#ifdef		XAFLAGS
+PASSVARS	+= 'XAFLAGS=$(XAFLAGS)'
+#endif
+#ifdef		INCLUDEDIR
+PASSVARS	+= 'INCLUDEDIR=$(INCLUDEDIR)'
+#endif
+#ifdef		INSTALLDIR
+PASSVARS	+= 'INSTALLDIR=$(INSTALLDIR)'
+#endif
+#ifdef		NOBACKUP
+PASSVARS	+= 'NOBACKUP=$(NOBACKUP)'
+#endif
+#ifdef		BACKUPAGE
+PASSVARS	+= 'BACKUPAGE=$(BACKUPAGE)'
+#endif
+#ifdef		TM
+PASSVARS	+= 'TM=$(TM)'
+#endif
+
+# MAKESUBDIRS usage:
+#	<target> : MAKESUBDIRS
+#
+# This .USE target will simply pass <target> onto each subdirectory
+# in a separate make.  If the TM variable is defined, then only pass
+# the target on to subdirectories whose Makefiles include the given
+# TM among their MACHINES.
+#
+MAKESUBDIRS	: .USE .MAKE .SILENT .NOEXPORT
+	for i in $(SUBDIRS);
+	do
+#ifdef TM
+		if grep '^MACHINES' $i/Makefile | grep -s $(TM); then
+			true;
+		else continue;
+		fi
+#endif TM
+		echo %%% ${i} %%%
+		(cd $i; $(MAKE) $(PASSVARS) $(.TARGET))
+	done
+
+default		: $(SUBDIRS) .NOEXPORT
+
+#
+# Here as with MAKESUBDIRS, if an explicit TM is given then only
+# re-make in the subdirectories that support that particular target
+# machine.
+#
+$(SUBDIRS)	:: .SILENT .NOEXPORT
+#ifdef TM
+	if grep '^MACHINES' $(.TARGET)/Makefile | grep -s $(TM); then
+		(cd $(.TARGET); $(MAKE) $(PASSVARS))
+	else true;
+	fi
+#else
+	(cd $(.TARGET); $(MAKE) $(PASSVARS))
+#endif
+
+clean		:: .NOEXPORT
+	rm -f *~
+
+mkmf		! .MAKE .SILENT .NOEXPORT
+	mkmf
+	for i in $(SUBDIRS);
+	do
+		echo  %%% ${i} %%%
+		(cd $i; $(MAKE) mkmf)
+	done
+
+newtm		! .MAKE .SILENT .NOEXPORT
+	for i in $(SUBDIRS);
+	do
+		echo %%% ${i} %%%
+		(cd $i; $(MAKE) $(PASSVARS) newtm)
+	done
+
+rcsinfo		: .MAKE .SILENT .NOEXPORT
+	for i in $(SUBDIRS);
+	do
+		echo %%% ${i} %%%
+		(cd $i; rcsinfo)
+	done
+
+dist ::   subdirs_d
+#if defined(DISTDIR) && !empty(DISTDIR)
+	for i in Makefile local.mk
+	do
+	if $(TEST) -e $${i};
+	    then $(UPDATE)  $${i} $(DISTDIR)/$${i} ; else true; fi
+	done
+#endif
+
+subdirs_d:
+	for i in $(SUBDIRS)
+	do
+	    echo %%% $${i} %%%
+#if defined(DISTDIR) && !empty(DISTDIR)
+#ifdef TM
+	    ( cd $${i}; $(MAKE) dist 'DISTDIR=$(DISTDIR)'/$${i} 'TM=$(TM)' )
+#else
+	    ( cd $${i}; $(MAKE) dist 'DISTDIR=$(DISTDIR)'/$${i} )
+#endif
+#else
+#ifdef TM
+	    ( cd $${i}; $(MAKE) dist 'TM=$(TM)' )
+#else
+	    ( cd $${i}; $(MAKE) dist )
+#endif
+#endif
+	done
+
+all clean tidy cleanall			:: MAKESUBDIRS
+debug depend dependall install		:: MAKESUBDIRS
+installhdrs installdebug installman	:: MAKESUBDIRS
+installprofile lint profile rdist	:: MAKESUBDIRS
+tags TAGS update snapshot		:: MAKESUBDIRS
+
+.MAKEFLAGS	: -C		# No compatibility needed
+@
+
+
+1.21
+log
+@added cleanall
+@
+text
+@d14 1
+a14 1
+# $Header: /sprite/lib/pmake/RCS/top.mk,v 1.20 90/11/08 21:01:12 jhh Exp $
+d154 1
+a154 1
+tags TAGS				:: MAKESUBDIRS
+@
+
+
+1.20
+log
+@added the dependall target
+@
+text
+@d14 1
+a14 1
+# $Header: /sprite/lib/pmake/RCS/top.mk,v 1.19 90/07/30 15:42:47 rab Exp Locker: jhh $
+d150 1
+a150 1
+all clean tidy 				:: MAKESUBDIRS
+@
+
+
+1.19
+log
+@Changed : to :: for dist rule.
+@
+text
+@d14 1
+a14 1
+# $Header: /sprite/lib/pmake/RCS/top.mk,v 1.18 90/03/08 16:51:14 douglis Exp Locker: rab $
+d151 1
+a151 1
+debug depend install 			:: MAKESUBDIRS
+@
+
+
+1.18
+log
+@handle recursive makes of TAGS file.
+@
+text
+@d14 1
+a14 1
+# $Header: /sprite/lib/pmake/RCS/top.mk,v 1.17 90/02/27 17:42:54 douglis Exp Locker: douglis $
+d122 1
+a122 1
+dist:   subdirs_d
+@
+
+
+1.17
+log
+@added support for backup age flag BACKUPAGE
+@
+text
+@d14 1
+a14 1
+# $Header: /sprite/lib/pmake/RCS/top.mk,v 1.16 89/10/09 06:55:28 rab Exp Locker: douglis $
+d154 1
+@
+
+
+1.16
+log
+@Fixed distribution stuff.
+@
+text
+@d14 1
+a14 1
+# $Header: /sprite/lib/pmake/RCS/top.mk,v 1.15 89/04/03 22:23:15 douglis Exp Locker: rab $
+d51 3
+@
+
+
+1.15
+log
+@added 'tidy' target.
+@
+text
+@d14 1
+a14 1
+# $Header: /sprite/lib/pmake/RCS/top.mk,v 1.14 89/01/13 09:35:53 douglis Exp Locker: douglis $
+d18 13
+d117 28
+@
+
+
+1.14
+log
+@more .NOEXPORT changes.
+@
+text
+@d14 1
+a14 1
+# $Header: /sprite/lib/pmake/RCS/top.mk,v 1.13 89/01/09 22:33:34 douglis Exp Locker: douglis $
+d106 2
+a107 1
+all clean debug depend install 		:: MAKESUBDIRS
+@
+
+
+1.13
+log
+@don't export top level makes.
+@
+text
+@d14 1
+a14 1
+# $Header: /sprite/lib/pmake/RCS/top.mk,v 1.12 88/12/28 14:47:31 ouster Exp Locker: douglis $
+d64 1
+a64 1
+default		: $(SUBDIRS)
+d71 1
+a71 1
+$(SUBDIRS)	:: .SILENT
+d84 1
+a84 1
+mkmf		! .MAKE .SILENT
+d92 1
+a92 1
+newtm		! .MAKE .SILENT
+d99 1
+a99 1
+rcsinfo		: .MAKE .SILENT
+@
+
+
+1.12
+log
+@Added "installman" target.
+@
+text
+@d14 1
+a14 1
+# $Header: /sprite/lib/pmake/RCS/top.mk,v 1.11 88/12/04 13:53:33 ouster Exp $
+d51 1
+a51 1
+MAKESUBDIRS	: .USE .MAKE .SILENT
+@
+
+
+1.11
+log
+@Added "all" target.
+@
+text
+@d14 1
+a14 1
+# $Header: /sprite/lib/pmake/RCS/top.mk,v 1.10 88/11/23 17:28:06 ouster Exp $
+d107 1
+a107 1
+installhdrs installdebug		:: MAKESUBDIRS
+@
+
+
+1.10
+log
+@Revisions to make "make newtm" work.
+@
+text
+@d14 1
+a14 1
+# $Header: /sprite/lib/pmake/RCS/top.mk,v 1.9 88/11/23 09:52:01 ouster Exp $
+d106 3
+a108 3
+clean debug depend install installhdrs 	:: MAKESUBDIRS
+installdebug installprofile		:: MAKESUBDIRS
+lint profile rdist			:: MAKESUBDIRS
+@
+
+
+1.9
+log
+@Major changes to finalize the new C library (move include.new to
+include, etc.).
+@
+text
+@d14 1
+a14 1
+# $Header: top.mk,v 1.8 88/08/13 11:23:15 ouster Exp $
+d74 1
+a74 1
+		cd $(.TARGET); $(MAKE) $(PASSVARS)
+d78 1
+a78 1
+	cd $(.TARGET); $(MAKE) $(PASSVARS)
+d89 1
+a89 1
+		(cd $i; make mkmf)
+d92 7
+d108 1
+a108 1
+lint newtm profile rdist		:: MAKESUBDIRS
+@
+
+
+1.8
+log
+@Don't ignore errors:  too hard to find them later.
+@
+text
+@d14 1
+a14 1
+# $Header: top.mk,v 1.7 88/08/12 21:35:43 ouster Exp $
+d47 4
+a50 1
+# in a separate make.
+d54 6
+d65 13
+a77 1
+$(SUBDIRS)	::
+d79 1
+d81 5
+a85 1
+mkmf		: .MAKE .SILENT
+d89 1
+a89 1
+		(cd $i; mkmf)
+a91 7
+newtarget	: .MAKE .SILENT
+	for i in $(SUBDIRS);
+	do
+		echo %%% ${i} %%%
+		(cd $i; mkdir $(TM).md)
+	done
+
+d101 1
+a101 1
+lint profile rdist			:: MAKESUBDIRS
+@
+
+
+1.7
+log
+@Added "debug" target.
+@
+text
+@d14 1
+a14 1
+# $Header: top.mk,v 1.6 88/08/12 21:29:40 ouster Exp $
+d48 1
+a48 1
+MAKESUBDIRS	: .USE .IGNORE .MAKE .SILENT
+d66 1
+a66 1
+newtarget	: .MAKE .IGNORE .SILENT
+d73 1
+a73 1
+rcsinfo		: .MAKE .IGNORE .SILENT
+@
+
+
+1.6
+log
+@Rename "all" to "default" to avoid conflict with all.mk's target.
+@
+text
+@d14 1
+a14 1
+# $Header: top.mk,v 1.5 88/08/12 16:36:13 ouster Exp $
+d80 1
+a80 1
+clean depend install installhdrs 	:: MAKESUBDIRS
+@
+
+
+1.5
+log
+@Added installdebug and installprofile.
+@
+text
+@d14 1
+a14 1
+# $Header: top.mk,v 1.4 88/08/12 10:56:19 ouster Exp $
+d55 1
+a55 1
+all		: $(SUBDIRS)
+@
+
+
+1.4
+log
+@Changed CCFLAGS -> XCFLAGS, CAFLAGS -> XAFLAGS.
+@
+text
+@d14 1
+a14 1
+# $Header: top.mk,v 1.3 88/07/27 17:45:19 ouster Exp $
+d81 1
+@
+
+
+1.3
+log
+@Added rcsinfo target.
+@
+text
+@d14 1
+a14 1
+# $Header: top.mk,v 1.2 88/06/21 10:02:02 ouster Exp $
+d24 2
+a25 2
+#ifdef		CCFLAGS
+PASSVARS	+= 'CCFLAGS=$(CCFLAGS)'
+d27 2
+a28 2
+#ifdef		CAFLAGS
+PASSVARS	+= 'CAFLAGS=$(CAFLAGS)'
+@
+
+
+1.2
+log
+@Make output prettier.
+@
+text
+@d14 1
+a14 1
+# $Header: top.mk,v 1.1 88/06/05 13:57:29 ouster Exp $
+d71 7
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d14 1
+a14 1
+# $Header: command2.mk,v 1.4 88/06/05 11:48:40 ouster Exp $
+d51 1
+a51 1
+		echo ${i}:
+d62 1
+a62 1
+		echo ${i}:
+d69 1
+a69 1
+		echo ${i}:
+@

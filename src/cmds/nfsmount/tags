@@ -1,0 +1,107 @@
+BadProc	main.c	/^BadProc()$/
+CheckPermissions	nfsName.c	/^    CheckPermissions(nfsAttrPtr, created, useFlags/
+ExpandLink	nfsLookup.c	/^ExpandLink(nfsPtr, dirResultsPtr, curCharPtr, offs/
+LookupCacheInsert	nfsLookup.c	/^LookupCacheInsert(component, dirResultsPtr)$/
+Mmain	main.c	/^main(argc, argv)$/
+NfsCacheAttributes	nfsAttr.c	/^NfsCacheAttributes(fileIDPtr, nfsAttrPtr)$/
+NfsClose	nfsIO.c	/^NfsClose(streamPtr)$/
+NfsDomainInfo	nfsName.c	/^NfsDomainInfo(clientData, fileIDPtr, domainInfoPtr/
+NfsFindCookie	nfsAttr.c	/^NfsFindCookie(fileIDPtr, offset, cookiePtr)$/
+NfsGetAttrPath	nfsName.c	/^NfsGetAttrPath(clientData, name, openArgsPtr, spri/
+NfsGetAttrStream	nfsAttr.c	/^NfsGetAttrStream(streamPtr, spriteAttrPtr, selectB/
+NfsHandlePrint	nfsName.c	/^NfsHandlePrint(handlePtr)$/
+NfsHardLink	nfsName.c	/^NfsHardLink(clientData, srcName, dstName, twoNameA/
+NfsIoctl	nfsIO.c	/^NfsIoctl(streamPtr, ioctlPtr, selectBitsPtr, sigPt/
+NfsLookup	nfsLookup.c	/^NfsLookup(nfsPtr, cwdFilePtr, name, useFlags, dirR/
+NfsLookupTest	nfsLookup.c	/^NfsLookupTest(private, name)$/
+NfsMakeDevice	nfsName.c	/^NfsMakeDevice(clientData, name, makeDevArgsPtr, re/
+NfsMakeDir	nfsName.c	/^NfsMakeDir(clientData, name, openArgsPtr, redirect/
+NfsOpen	nfsName.c	/^NfsOpen(clientData, name, openArgsPtr, redirectInf/
+NfsProbe	nfsName.c	/^NfsProbe(nfsPtr, print, nfsAttrPtr)$/
+NfsRead	nfsIO.c	/^NfsRead(streamPtr, readPtr, freeItPtr, selectBitsP/
+NfsReadTest	nfsLookup.c	/^NfsReadTest() { return; } ;$/
+NfsRemove	nfsName.c	/^NfsRemove(clientData, name, lookupArgsPtr, redirec/
+NfsRemoveDir	nfsName.c	/^NfsRemoveDir(clientData, name, lookupArgsPtr, redi/
+NfsRename	nfsName.c	/^NfsRename(clientData, srcName, dstName, twoNameArg/
+NfsSetAttrPath	nfsName.c	/^NfsSetAttrPath(clientData, name, openArgsPtr, flag/
+NfsSetAttrStream	nfsAttr.c	/^NfsSetAttrStream(streamPtr, flags, uid, gid, sprit/
+NfsSetupAuth	nfsName.c	/^NfsSetupAuth(nfsPtr, cwdFilePtr, idPtr)$/
+NfsStatusMap	nfs.h	/^#define NfsStatusMap(errno) \\$/
+NfsSymLink	nfsName.c	/^NfsSymLink(clientData, linkName, value, openArgsPt/
+NfsToSpriteAttr	nfsAttr.c	/^NfsToSpriteAttr(nfsAttrPtr, spriteAttrPtr)$/
+NfsToSpriteDirectory	nfsAttr.c	/^NfsToSpriteDirectory(dirListPtr, offset, countPtr,/
+NfsWrite	nfsIO.c	/^NfsWrite(streamPtr, async, writePtr, selectBitsPtr/
+NfsWriteTest	nfsLookup.c	/^NfsWriteTest(private, spriteName, nfsName)$/
+Nfs_Exports	mount.c	/^Nfs_Exports(clnt, host)$/
+Nfs_InitClient	nfsName.c	/^Nfs_InitClient(host)$/
+Nfs_Mount	mount.c	/^Nfs_Mount(clnt, rfs)$/
+Nfs_MountDump	mount.c	/^Nfs_MountDump(clnt)$/
+Nfs_MountInitClient	mount.c	/^Nfs_MountInitClient(host)$/
+Nfs_MountTest	mount.c	/^Nfs_MountTest(clnt, host)$/
+Nfs_Unmount	mount.c	/^Nfs_Unmount(clnt, rfs)$/
+Nfs_UnmountAll	mount.c	/^Nfs_UnmountAll(clnt)$/
+PrefixIDToHandle	nfsName.c	/^#define PrefixIDToHandle(prefixID) \\$/
+SpriteToNfsAttr	nfsAttr.c	/^SpriteToNfsAttr(flags, spriteAttrPtr, nfsAttrPtr)$/
+mountproc_dump_1	mount_clnt.c	/^mountproc_dump_1(argp, clnt)$/
+mountproc_export_1	mount_clnt.c	/^mountproc_export_1(argp, clnt)$/
+mountproc_exportall_1	mount_clnt.c	/^mountproc_exportall_1(argp, clnt)$/
+mountproc_mnt_1	mount_clnt.c	/^mountproc_mnt_1(argp, clnt)$/
+mountproc_null_1	mount_clnt.c	/^mountproc_null_1(argp, clnt)$/
+mountproc_umnt_1	mount_clnt.c	/^mountproc_umnt_1(argp, clnt)$/
+mountproc_umntall_1	mount_clnt.c	/^mountproc_umntall_1(argp, clnt)$/
+nfsproc_create_2	nfs_prot_clnt.c	/^nfsproc_create_2(argp, clnt)$/
+nfsproc_getattr_2	nfs_prot_clnt.c	/^nfsproc_getattr_2(argp, clnt)$/
+nfsproc_link_2	nfs_prot_clnt.c	/^nfsproc_link_2(argp, clnt)$/
+nfsproc_lookup_2	nfs_prot_clnt.c	/^nfsproc_lookup_2(argp, clnt)$/
+nfsproc_mkdir_2	nfs_prot_clnt.c	/^nfsproc_mkdir_2(argp, clnt)$/
+nfsproc_null_2	nfs_prot_clnt.c	/^nfsproc_null_2(argp, clnt)$/
+nfsproc_read_2	nfs_prot_clnt.c	/^nfsproc_read_2(argp, clnt)$/
+nfsproc_readdir_2	nfs_prot_clnt.c	/^nfsproc_readdir_2(argp, clnt)$/
+nfsproc_readlink_2	nfs_prot_clnt.c	/^nfsproc_readlink_2(argp, clnt)$/
+nfsproc_remove_2	nfs_prot_clnt.c	/^nfsproc_remove_2(argp, clnt)$/
+nfsproc_rename_2	nfs_prot_clnt.c	/^nfsproc_rename_2(argp, clnt)$/
+nfsproc_rmdir_2	nfs_prot_clnt.c	/^nfsproc_rmdir_2(argp, clnt)$/
+nfsproc_root_2	nfs_prot_clnt.c	/^nfsproc_root_2(argp, clnt)$/
+nfsproc_setattr_2	nfs_prot_clnt.c	/^nfsproc_setattr_2(argp, clnt)$/
+nfsproc_statfs_2	nfs_prot_clnt.c	/^nfsproc_statfs_2(argp, clnt)$/
+nfsproc_symlink_2	nfs_prot_clnt.c	/^nfsproc_symlink_2(argp, clnt)$/
+nfsproc_write_2	nfs_prot_clnt.c	/^nfsproc_write_2(argp, clnt)$/
+nfsproc_writecache_2	nfs_prot_clnt.c	/^nfsproc_writecache_2(argp, clnt)$/
+xdr_arbname	mount_xdr.c	/^xdr_arbname(xdrs, objp)$/
+xdr_attrstat	nfs_prot_xdr.c	/^xdr_attrstat(xdrs, objp)$/
+xdr_createargs	nfs_prot_xdr.c	/^xdr_createargs(xdrs, objp)$/
+xdr_dirlist	nfs_prot_xdr.c	/^xdr_dirlist(xdrs, objp)$/
+xdr_diropargs	nfs_prot_xdr.c	/^xdr_diropargs(xdrs, objp)$/
+xdr_diropokres	nfs_prot_xdr.c	/^xdr_diropokres(xdrs, objp)$/
+xdr_diropres	nfs_prot_xdr.c	/^xdr_diropres(xdrs, objp)$/
+xdr_dirpath	mount_xdr.c	/^xdr_dirpath(xdrs, objp)$/
+xdr_entry	nfs_prot_xdr.c	/^xdr_entry(xdrs, objp)$/
+xdr_exportnode	mount_xdr.c	/^xdr_exportnode(xdrs, objp)$/
+xdr_exports	mount_xdr.c	/^xdr_exports(xdrs, objp)$/
+xdr_fattr	nfs_prot_xdr.c	/^xdr_fattr(xdrs, objp)$/
+xdr_fhandle	mount_xdr.c	/^xdr_fhandle(xdrs, objp)$/
+xdr_fhstatus	mount_xdr.c	/^xdr_fhstatus(xdrs, objp)$/
+xdr_filename	nfs_prot_xdr.c	/^xdr_filename(xdrs, objp)$/
+xdr_ftype	nfs_prot_xdr.c	/^xdr_ftype(xdrs, objp)$/
+xdr_groupnode	mount_xdr.c	/^xdr_groupnode(xdrs, objp)$/
+xdr_groups	mount_xdr.c	/^xdr_groups(xdrs, objp)$/
+xdr_linkargs	nfs_prot_xdr.c	/^xdr_linkargs(xdrs, objp)$/
+xdr_mountlist	mount_xdr.c	/^xdr_mountlist(xdrs, objp)$/
+xdr_nfs_fh	nfs_prot_xdr.c	/^xdr_nfs_fh(xdrs, objp)$/
+xdr_nfscookie	nfs_prot_xdr.c	/^xdr_nfscookie(xdrs, objp)$/
+xdr_nfspath	nfs_prot_xdr.c	/^xdr_nfspath(xdrs, objp)$/
+xdr_nfsstat	nfs_prot_xdr.c	/^xdr_nfsstat(xdrs, objp)$/
+xdr_nfstime	nfs_prot_xdr.c	/^xdr_nfstime(xdrs, objp)$/
+xdr_readargs	nfs_prot_xdr.c	/^xdr_readargs(xdrs, objp)$/
+xdr_readdirargs	nfs_prot_xdr.c	/^xdr_readdirargs(xdrs, objp)$/
+xdr_readdirres	nfs_prot_xdr.c	/^xdr_readdirres(xdrs, objp)$/
+xdr_readlinkres	nfs_prot_xdr.c	/^xdr_readlinkres(xdrs, objp)$/
+xdr_readokres	nfs_prot_xdr.c	/^xdr_readokres(xdrs, objp)$/
+xdr_readres	nfs_prot_xdr.c	/^xdr_readres(xdrs, objp)$/
+xdr_renameargs	nfs_prot_xdr.c	/^xdr_renameargs(xdrs, objp)$/
+xdr_sattr	nfs_prot_xdr.c	/^xdr_sattr(xdrs, objp)$/
+xdr_sattrargs	nfs_prot_xdr.c	/^xdr_sattrargs(xdrs, objp)$/
+xdr_statfsokres	nfs_prot_xdr.c	/^xdr_statfsokres(xdrs, objp)$/
+xdr_statfsres	nfs_prot_xdr.c	/^xdr_statfsres(xdrs, objp)$/
+xdr_symlinkargs	nfs_prot_xdr.c	/^xdr_symlinkargs(xdrs, objp)$/
+xdr_writeargs	nfs_prot_xdr.c	/^xdr_writeargs(xdrs, objp)$/

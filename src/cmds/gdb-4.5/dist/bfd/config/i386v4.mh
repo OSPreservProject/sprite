@@ -1,0 +1,3 @@
+# Host configuration for SVR4.
+AR_FLAGS = cq
+RANLIB = echo

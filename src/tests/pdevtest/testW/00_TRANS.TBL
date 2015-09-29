@@ -1,0 +1,21 @@
+F DOALL.;1                          	DoAll
+F DOIT.W;1                          	Doit.w
+F EX_SCRIP.;1                       	ex.script
+L PDEVTEST.NEW;1                    	pdevtest.new	../pdevtest.new
+F PDEVTEST.OUT;1                    	pdevtest.out
+F WRITE.102;1                       	write.1024
+F WRITE.128;1                       	write.128
+F WRITE.1;1                         	write.1
+F WRITE.256;1                       	write.256
+F WRITE.32;1                        	write.32
+F WRITE.512;1                       	write.512
+F WRITE.64;1                        	write.64
+F WRITE.;1                          	WRITE
+F WRITE.BEH;1                       	WRITE.BEHIND
+F WRITEBEH.102;1                    	writeBehind.1024
+F WRITEBEH.128;1                    	writeBehind.128
+F WRITEBEH.1;1                      	writeBehind.1
+F WRITEBEH.256;1                    	writeBehind.256
+F WRITEBEH.32;1                     	writeBehind.32
+F WRITEBEH.512;1                    	writeBehind.512
+F WRITEBEH.64;1                     	writeBehind.64

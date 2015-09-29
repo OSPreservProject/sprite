@@ -1,0 +1,97 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ds3100:1.3 sun3:1.3 sun4nw:1.2 symm:1.2 spur:1.2;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     92.09.03.18.13.28;  author shirriff;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.10.19.17.22.49;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.01.16.17.12.24;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@Moved type declarations into lfsTypes.h.
+@
+text
+@/*
+ * lfsFileLayoutInt.h --
+ *
+ *	Declarations of data structures describing the layout of 
+ *	files and descriptors in LFS segments.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/lfs/lfsFileLayoutInt.h,v 1.2 90/10/19 17:22:49 mendel Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _LFSFILELAYOUTINT
+#define _LFSFILELAYOUTINT
+
+#include <lfsFileLayout.h>
+
+extern void LfsFileLayoutInit _ARGS_((void));
+extern Boolean LfsFileMatch _ARGS_((Fscache_FileInfo *cacheInfoPtr,
+			ClientData clientData));
+
+
+#endif /* _LFSFILELAYOUTINT */
+@
+
+
+1.2
+log
+@Many bug fixed. First installed LFS.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fs.mendel/RCS/lfsFileLayoutInt.h,v 1.1 90/01/16 17:12:24 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+a22 4
+
+typedef struct LfsFileLayout {
+    LfsFileLayoutParams	 params;	/* File layout description. */
+} LfsFileLayout;
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.4 89/10/28 15:57:26 rab Exp $ SPRITE (Berkeley)
+d22 1
+a22 1
+#include "lfsFileLayout.h"
+a25 2
+    Boolean	writeBackEverything;	/* TRUE is we should write back 
+					 * everything regardless of age. */
+d27 5
+@

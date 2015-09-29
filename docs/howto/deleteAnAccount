@@ -1,0 +1,19 @@
+
+How to delete an account.
+
+1. Send mail several days in advance, warning the user that the
+   account is about to disappear.
+
+2. Make sure a dump is done just before the deletion so that if anything
+   needs to be restored the latest version is available.
+
+3. Check in /sprite/spool/mail to see if the user has any unread mail.
+   If so, you should forward it to a unix machine that the user has an
+   account on.
+
+4. Remove the user from the mailing lists in /sprite/lib/sendmail/aliases.
+
+5. Delete the user's home directory.
+
+6. Remove the user from /etc/passwd.
+

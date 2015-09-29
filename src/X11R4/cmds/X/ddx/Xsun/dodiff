@@ -1,0 +1,2 @@
+#! /bin/sh
+diff -c /X11R3/src/cmds/Xsp/ddx/sun/sun$1 /X11/R4/src/cmds/X/ddx/sprite/sun$1

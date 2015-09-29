@@ -1,0 +1,329 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     92.06.08.14.51.58;  author voelker;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     92.02.08.15.33.44;  author voelker;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@IOControl definitions for the FDDI device
+@
+
+
+1.2
+log
+@fddi definitions
+@
+text
+@/*
+ * fddi.h --
+ *
+ *	Declarations for ioctls specific to the DEC FDDI device.
+ *
+ * Copyright 1992 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/lib/include/dev/RCS/fddi.h,v 1.1 92/02/08 15:33:44 voelker Exp Locker: voelker $ SPRITE (Berkeley)
+ */
+
+#ifndef _FDDI_IOC
+#define _FDDI_IOC
+
+#define IOC_FDDI	(21 << 16)
+
+/*
+ * Ioctl definitions specific to the FDDI device.
+ */
+
+#define IOC_FDDI_RESET                 (IOC_FDDI | 0x1)
+#define IOC_FDDI_DEBUG                 (IOC_FDDI | 0x2)  /* Toggle debug */
+#define IOC_FDDI_SEND_PACKET           (IOC_FDDI | 0x3)
+#define IOC_FDDI_REG_CONTENTS          (IOC_FDDI | 0x4)
+#define IOC_FDDI_ERR_LOG               (IOC_FDDI | 0x5)
+#define IOC_FDDI_FLUSH_XMT_Q           (IOC_FDDI | 0x6)
+#define IOC_FDDI_ADDRESS               (IOC_FDDI | 0x7)
+#define IOC_FDDI_PRINT_DEBUG_RING      (IOC_FDDI | 0x8)
+#define IOC_FDDI_RPC_ECHO              (IOC_FDDI | 0x9)
+#define IOC_FDDI_HALT                  (IOC_FDDI | 0xA)
+#define IOC_FDDI_SOURCE                (IOC_FDDI | 0xB)
+#define IOC_FDDI_STATS                 (IOC_FDDI | 0xC)
+
+/*
+ * IOC_FDDI_SEND_PACKET input parameter.
+ */
+typedef struct Dev_FDDISendPacket {
+    char 	buffer[IOC_MAX_BYTES - sizeof(int) - sizeof(Net_Address)]; 
+                                        /* The data. */
+    int		length;			/* Length of the data. */
+    Net_FDDIAddress dest;
+} Dev_FDDISendPacket;
+
+/*
+ * IOC_FDDI_REG_CONTENTS output parameter.
+ */
+typedef struct Dev_FDDIRegContents {
+    unsigned short regReset;
+    unsigned short regCtrlA;
+    unsigned short regCtrlB;
+    unsigned short regStatus;
+    unsigned short regEvent;
+    unsigned short regMask;
+} Dev_FDDIRegContents;
+
+/*
+ * IOC_FDDI_ERR_LOG output parameter.
+ */
+typedef struct Dev_FDDIErrLog {
+    unsigned long internal;      /* Internal Error Code */
+    unsigned long external;      /* External Error Code (should match error
+				  * code in the STATUS register */
+} Dev_FDDIErrLog;
+
+/*
+ * IOC_FDDI_ADDRESS output parameter.  The link address of the
+ * adapter.
+ */
+typedef struct Dev_FDDILinkAddr {
+    Net_FDDIAddress source;
+} Dev_FDDILinkAddr;
+
+/*
+ * IOC_FDDI_RPC_ECHO input parameter.
+ */
+typedef struct Dev_FDDIRpcEcho {
+    unsigned long packetSize;
+    unsigned long numEchoes;
+    unsigned long serverID;
+    Boolean       printSyslog;
+} Dev_FDDIRpcEcho;
+
+/*
+ * IOC_FDDI_RPC_ECHO output parameter.
+ */
+typedef struct Dev_FDDIRpcEchoReturn {
+    Time rpcTime;
+} Dev_FDDIRpcEchoReturn;
+
+/*
+ * IOC_FDDI_SEND_PACKET input parameter.
+ */
+typedef struct Dev_FDDISourcePacket {
+    int		length;			/* Length of the data. */
+    Time        time;
+    Net_FDDIAddress dest;
+} Dev_FDDISourcePacket;
+
+/*
+ * IOC_FDDI_STATS output structure.  It should look very similar
+ * to the Net_FDDIStats structure.
+ */
+typedef struct Dev_FDDIStats {
+    int		packetsSent;		/* Number of packets sent. */
+    int		bytesSent;	        /* Number of bytes sent. */
+    int         transmitHistogram[NET_FDDI_STATS_HISTO_NUM];
+                                        /* Histogram of packet sizes sent */
+    int		packetsReceived;	/* Number of packets received. */
+    int		bytesReceived;		/* Number of bytes received. */
+    int         receiveHistogram[NET_FDDI_STATS_HISTO_NUM];
+                                        /* Histogram of rcved packet sizes */
+    int         receiveReaped[NET_FDDI_STATS_RCV_REAPED];
+                                        /* Number of packets reaped per
+					 * receive interrupt */
+    int         xmtPacketsDropped;      /* Packets dropped because 
+					 * of lack of transmit buffer space. */
+    int         packetsQueued;          /* Number of packets written
+					 * to adapter transmit buffers. */
+} Dev_FDDIStats;
+
+#endif /* _FDDI_IOC */
+
+
+
+
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d2 1
+a2 1
+ * ultra.h --
+d4 1
+a4 1
+ *	Declarations for ioctls specific to the Ultranet VME adapter.
+d6 1
+a6 1
+ * Copyright 1990 Regents of the University of California
+d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/dev/RCS/ultra.h,v 1.4 90/10/19 15:51:49 jhh Exp $ SPRITE (Berkeley)
+d18 78
+a95 38
+#ifndef _ULTRA
+#define _ULTRA
+
+#define IOC_ULTRA	(14 << 16)
+
+/*
+ * Ioctl definitions specific to the Ultranet device.
+ */
+
+#define IOC_ULTRA_SET_FLAGS		(IOC_ULTRA | 0x1)
+#define IOC_ULTRA_RESET_FLAGS		(IOC_ULTRA | 0x2)
+#define IOC_ULTRA_GET_FLAGS		(IOC_ULTRA | 0x3)
+#define IOC_ULTRA_RESET			(IOC_ULTRA | 0x4)
+#define IOC_ULTRA_CLR			(IOC_ULTRA | 0x5)
+#define IOC_ULTRA_INT			(IOC_ULTRA | 0x6)
+#define IOC_ULTRA_WFI			(IOC_ULTRA | 0x7)
+#define IOC_ULTRA_LOAD			(IOC_ULTRA | 0x8)
+#define IOC_ULTRA_GO			(IOC_ULTRA | 0x9)
+#define IOC_ULTRA_EXTENDED_DIAG		(IOC_ULTRA | 0xa)
+#define IOC_ULTRA_DIAG			(IOC_ULTRA | 0xb)
+#define IOC_ULTRA_DUMP			(IOC_ULTRA | 0xc)
+#define IOC_ULTRA_GET_ADAP_INFO		(IOC_ULTRA | 0xd)
+#define IOC_ULTRA_DEBUG			(IOC_ULTRA | 0xe)
+#define IOC_ULTRA_INIT			(IOC_ULTRA | 0xf)
+#define IOC_ULTRA_START			(IOC_ULTRA | 0x10)
+#define IOC_ULTRA_ADDRESS		(IOC_ULTRA | 0x11)
+#define IOC_ULTRA_SEND_DGRAM		(IOC_ULTRA | 0x12)
+#define IOC_ULTRA_ECHO			(IOC_ULTRA | 0x13)
+#define IOC_ULTRA_TRACE			(IOC_ULTRA | 0x14)
+#define IOC_ULTRA_SOURCE		(IOC_ULTRA | 0x15)
+#define IOC_ULTRA_SINK			(IOC_ULTRA | 0x16)
+#define IOC_ULTRA_COLLECT_STATS		(IOC_ULTRA | 0x17)
+#define IOC_ULTRA_CLEAR_STATS		(IOC_ULTRA | 0x18)
+#define IOC_ULTRA_GET_STATS		(IOC_ULTRA | 0x19)
+#define IOC_ULTRA_MAP_THRESHOLD		(IOC_ULTRA | 0x1a)
+#define IOC_ULTRA_BCOPY_TEST		(IOC_ULTRA | 0x1b)
+#define IOC_ULTRA_SG_BCOPY_TEST		(IOC_ULTRA | 0x1c)
+#define IOC_ULTRA_HARD_RESET		(IOC_ULTRA | 0x1d)
+d97 1
+a97 1
+ * IOC_ULTRA_LOAD_BLOCK parameter.
+d99 1
+a99 2
+
+typedef struct Dev_UltraLoadBlock {
+d101 3
+a103 3
+    int 	address;			/* Load address. */
+    char 	buffer[IOC_MAX_BYTES - 2 * sizeof(int)]; /* The data. */
+} Dev_UltraLoadBlock;
+d106 25
+a130 91
+ * IOC_ULTRA_GO parameter. 
+ */
+
+typedef struct Dev_UltraGo {
+    int		address;		/* Starting address. */
+} Dev_UltraGo;
+
+/* 
+ * IOC_ULTRA_DIAG parameter.
+ */
+
+typedef struct Dev_UltraDiag {
+    int		version;		/* Firmware version. */
+    int		error;			/* 0 if tests passed, otherwise
+					 * the number of the test that
+					 * failed. */
+    int		hwModel;		/* Hardware model. */
+    int		hwVersion;		/* Hardware version. */
+    int		hwRevision;		/* Hardware revision. */
+    int		hwOption;		/* Hardware option. */
+    int		hwSerial;		/* Hardware serial number. */
+} Dev_UltraDiag;
+
+/*
+ * IOC_ULTRA_GET_ADAP_INFO parameter. This is the same as IOC_ULTRA_DIAG,
+ * except that the 'error' field isn't used because diagnostics aren't
+ * run.
+ */
+
+typedef Dev_UltraDiag Dev_UltraAdapterInfo;
+
+/*
+ * IOC_ULTRA_EXTENDED_DIAG parameter.
+ */
+
+typedef struct Dev_UltraExtendedDiag {
+    int		version;		/* Firmware version. */
+    int		error;			/* 0 if tests passed, otherwise
+					 * the number of the test that
+					 * failed. */
+    Boolean	externalLoopback;	/* TRUE => use external loopback
+					 * (there had better be a loopback
+					 * connector attached to the
+					 * adapter!) */
+} Dev_UltraExtendedDiag;
+
+/*
+ * IOC_ULTRA_LOAD parameter.
+ */
+
+typedef struct Dev_UltraLoad {
+    int		address;	/* Load address. */
+    int		length;		/* Length of the block. */
+    char	data[IOC_MAX_BYTES - 2 * sizeof(int)];	/* The block to load. */
+} Dev_UltraLoad;
+
+/*
+ * IOC_ULTRA_SEND_DGRAM parameter.
+ */
+
+typedef struct Dev_UltraSendDgram {
+    Net_Address		address;
+    int			count;
+    Time		time;
+    int			size;
+    Boolean		useBuffer;
+    char		buffer[100];
+} Dev_UltraSendDgram;
+
+/*
+ * IOC_ULTRA_ECHO parameter.
+ */
+
+typedef struct Dev_UltraEcho {
+    Boolean		echo;	/* TRUE => echo received datagrams back
+				 * to sender. */
+} Dev_UltraEcho;
+
+typedef struct Dev_UltraSink {
+    int		packets;
+    Time	time;
+} Dev_UltraSink;
+
+typedef struct Dev_UltraStats {
+    int		packetsSent;
+    int		bytesSent;
+    int		sentHistogram[33];
+    int		packetsReceived;
+    int		bytesReceived;
+    int		receivedHistogram[33];
+} Dev_UltraStats;    
+a131 1
+#endif /* _ULTRA */
+@

@@ -1,0 +1,133 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  srv030:1.1 srv028:1.1 srv027:1.1 srv026:1.1 srv024:1.1 srv022:1.1 srv021:1.1 srv019:1.1 srv018:1.1 srv016:1.1 srv014:1.1 srv010:1.1 srv008:1.1 srv007:1.1 srv006:1.1 srv005:1.1 srv004:1.1 srv003:1.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     88.11.21.09.10.32;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Formed from net.c of src/lib/old/net.c.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/* 
+ * Net_StringToNetNum.c --
+ *
+ *	Convert a string to the network number part of the address.
+ *
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: net.c,v 2.0 87/08/11 09:34:20 brent Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include "sprite.h"
+#include "net.h"
+#include "ctype.h"
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_StringToNetNum --
+ *
+ *	Given a string containing an IP address in the Internet standard 
+ *	"." notation, return  the network number for that address.
+ *
+ * Results:
+ *	The network number of the address.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+unsigned int
+Net_StringToNetNum(cp)
+    register char *cp;
+{
+    register unsigned int value;
+    register unsigned int base;
+    unsigned int parts[4];
+    register unsigned int *partsPtr = parts;
+    register char c;
+    register int i;
+    unsigned int n;
+
+again:
+    value = 0; 
+    base = 10;
+    if (*cp == '0') {
+	base = 8;
+	cp++;
+    }
+    if (*cp == 'x' || *cp == 'X') {
+	base = 16;
+	cp++;
+    }
+
+    c = *cp;
+    while (c != '\0') {
+	if (isdigit(c)) {
+	    value = (value * base) + (c - '0');
+	} else if (base == 16 && isxdigit(c)) {
+	    value = (value << 4) + (c + 10 - (islower(c) ? 'a' : 'A'));
+	} else {
+	    break;
+	}
+	cp++;
+	c = *cp;
+    }
+
+    if (*cp == '.') {
+	if (partsPtr >= parts + 4) {
+	    return(-1);
+	}
+	*partsPtr = value;
+	partsPtr++;
+	cp++;
+	goto again;
+    }
+
+    if (*cp != '\0' && !isspace(*cp)) {
+	return(-1);
+    }
+
+    *partsPtr = value;
+    partsPtr++;
+
+    n = partsPtr - parts;
+    if (n > 4) {
+	return(-1);
+    }
+    for (value = 0, i = 0; i < n; i++) {
+	    value <<= 8;
+	    value |= parts[i] & 0xff;
+    }
+    return(value);
+}
+
+@

@@ -1,0 +1,132 @@
+
+
+
+Tk_CreateTimerHandler C Library Procedures  Tk_CreateTimerHandler
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tk_CreateTimerHandler, Tk_DeleteTimerHandler - call  a  pro-
+     cedure at a given time
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttkk..hh>>
+
+     Tk_TimerToken
+     TTkk__CCrreeaatteeTTiimmeerrHHaannddlleerr(_m_i_l_l_i_s_e_c_o_n_d_s, _p_r_o_c, _c_l_i_e_n_t_D_a_t_a)
+
+     TTkk__DDeelleetteeTTiimmeerrHHaannddlleerr(_t_o_k_e_n)
+
+AARRGGUUMMEENNTTSS
+     int             _m_i_l_l_i_s_e_c_o_n_d_s   (in)      How    many    mil-
+                                              liseconds  to  wait
+                                              before     invoking
+                                              _p_r_o_c.
+
+     Tk_TimerProc    *_p_r_o_c          (in)      Procedure to invoke
+                                              after  _m_i_l_l_i_s_e_c_o_n_d_s
+                                              have elapsed.
+
+     ClientData      _c_l_i_e_n_t_D_a_t_a     (in)      Arbitrary  one-word
+                                              value  to  pass  to
+                                              _p_r_o_c.
+
+     Tk_TimerToken   _t_o_k_e_n          (in)      Token           for
+                                              previously-created
+                                              timer handler  (the
+                                              return  value  from
+                                              some previous  call
+                                              to
+                                              TTkk__CCrreeaatteeTTiimmeerrHHaannddlleerr))..
+__________________________________________________________________________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     TTkk__CCrreeaatteeTTiimmeerrHHaannddlleerr arranges for _p_r_o_c to be invoked  at  a
+     time  _m_i_l_l_i_s_e_c_o_n_d_s milliseconds in the future.  The callback
+     to   _p_r_o_c   will    be    made    by    TTkk__DDooOOnneeEEvveenntt,    so
+     TTkk__CCrreeaatteeTTiimmeerrHHaannddlleerr   is  only  useful  in  programs  that
+     dispatch events through TTkk__DDooOOnneeEEvveenntt or  through  other  Tk
+     procedures  that  call  TTkk__DDooOOnneeEEvveenntt,  such as TTkk__MMaaiinnLLoooopp.
+     The call to _p_r_o_c may not be made at the exact time given  by
+     _m_i_l_l_i_s_e_c_o_n_d_s:  it will be made at the next opportunity after
+     that time.  For example, if TTkk__DDooOOnneeEEvveenntt isn't called until
+     long after the time has elapsed, or if there are other pend-
+     ing events to process before the call to _p_r_o_c, then the call
+     to _p_r_o_c will be delayed.
+
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+Tk_CreateTimerHandler C Library Procedures  Tk_CreateTimerHandler
+
+
+
+     _P_r_o_c should have arguments and return value that  match  the
+     type TTkk__TTiimmeerrPPrroocc:
+          typedef void Tk_TimerProc(ClientData _c_l_i_e_n_t_D_a_t_a);
+     The _c_l_i_e_n_t_D_a_t_a parameter to _p_r_o_c is a copy of the _c_l_i_e_n_t_D_a_t_a
+     argument  given  to TTccll__CCrreeaatteeTTiimmeerrHHaannddlleerr when the callback
+     was created.  Typically, _c_l_i_e_n_t_D_a_t_a points to a data  struc-
+     ture  containing application-specific information about what
+     to do in _p_r_o_c.
+
+     TTkk__DDeelleetteeTTiimmeerrHHaannddlleerr may be called to delete a  previously-
+     created  timer handler.  It deletes the handler indicated by
+     _t_o_k_e_n so that no call to _p_r_o_c will be made;  if that handler
+     no  longer  exists (e.g. because the time period has already
+     elapsed    and    _p_r_o_c    has     been     invoked)     then
+     TTkk__DDeelleetteeTTiimmeerrHHaannddlleerr does nothing.
+
+
+KKEEYYWWOORRDDSS
+     callback, clock, handler, timer
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     2
+
+
+

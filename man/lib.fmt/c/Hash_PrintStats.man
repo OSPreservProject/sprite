@@ -1,0 +1,68 @@
+
+
+
+Hash_PrintStats       C Library Procedures        Hash_PrintStats
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Hash_PrintStats - print statistics about a hash table
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<hhaasshh..hh>>
+
+     HHaasshh__PPrriinnttSSttaattss(_t_a_b_l_e_P_t_r, _p_r_o_c, _c_l_i_e_n_t_D_a_t_a)
+
+AARRGGUUMMEENNTTSS
+     Hash_Table   *_t_a_b_l_e_P_t_r    (in)      Table  about  which   to
+                                         print information.
+
+     void         (*_p_r_o_c)()    (in)      Procedure  to  call   to
+                                         actually  print informa-
+                                         tion.
+
+     ClientData   _c_l_i_e_n_t_D_a_t_a   (in)      Arbitrary     additional
+                                         argument to be passed to
+                                         _p_r_o_c.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     HHaasshh__PPrriinnttSSttaattss prints  out  statistical  information  about
+     bucket  usage  in  _t_a_b_l_e_P_t_r.   The  information includes the
+     total number of buckets and entries in  the  table,  plus  a
+     histogram  indicating  how  many buckets have each different
+     number of entries in them.
+
+     HHaasshh__PPrriinnttSSttaattss does not output the  statistics  information
+     directly.   Instead, it invokes _p_r_o_c to do the output.  Proc
+     must have the following calling sequence:
+
+          void
+          proc(_c_l_i_e_n_t_D_a_t_a, _s_t_r_i_n_g)
+              ClientData _c_l_i_e_n_t_D_a_t_a;
+              char *_s_t_r_i_n_g;
+          {
+          }
+
+     The _c_l_i_e_n_t_D_a_t_a parameter will be the same as the  _c_l_i_e_n_t_D_a_t_a
+     to  HHaasshh__PPrriinnttSSttaattss;   ostensibly it provides information to
+     help _p_r_o_c perform the actual I/O, such  as  channel  number.
+     _S_t_r_i_n_g  is a NULL-terminated string of characters containing
+     the statistical information.  _P_r_o_c may be invoked many times
+     during a single call to HHaasshh__PPrriinnttSSttaattss.
+
+
+KKEEYYWWOORRDDSS
+     hash table, print, statistics
+
+
+
+
+Sprite v.1.0         Printed:  May 14, 1989                     1
+
+
+

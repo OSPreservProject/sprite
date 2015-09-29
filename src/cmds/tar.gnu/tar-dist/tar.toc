@@ -1,0 +1,15 @@
+\unnumbchapentry {Preface}{1}
+\chapentry {The Uses of Tape Archives}{1}{2}
+\chapentry {The Different Operations {\fam \ttfam \tentt \rawbackslash \frenchspacing tar}\hbox {} Can Perform}{2}{3}
+\chapentry {Options That Change How {\fam \ttfam \tentt \rawbackslash \frenchspacing tar}\hbox {} Works}{3}{5}
+\secentry {Options That Are Always Meaningful}{3}{1}{5}
+\secentry {Options for Creating Or Updating an Archive}{3}{2}{8}
+\secentry {Options for Listing Or Extracting Files}{3}{3}{10}
+\secentry {Old Syntax for Options}{3}{4}{12}
+\chapentry {Using {\fam \ttfam \tentt \rawbackslash \frenchspacing tar}\hbox {} to Perform Full Dumps}{4}{13}
+\chapentry {Using {\fam \ttfam \tentt \rawbackslash \frenchspacing tar}\hbox {} to Perform Incremental Dumps}{5}{14}
+\chapentry {Common Problems Using {\fam \ttfam \tentt \rawbackslash \frenchspacing tar}\hbox {}}{6}{16}
+\chapentry {The Remote Tape Server}{7}{17}
+\chapentry {The Format of a {\fam \ttfam \tentt \rawbackslash \frenchspacing tar}\hbox {} Archive}{8}{18}
+\secentry {The Standard Format}{8}{1}{18}
+\secentry {GNU Extensions to the Archive Format}{8}{2}{24}

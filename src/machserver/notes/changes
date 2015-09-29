@@ -1,0 +1,258 @@
+# Overview of changes going from native Sprite to Sprite server.
+
+			      -- dev --
+
+- machine-independent code should stay the same, except need to
+  store some Mach ports in Fs_Device & other data structures (e.g.,
+  DevTty).  
+- machine-dependent code becomes facade over the Mach device
+  interface (anything under the FS switch table is open to being
+  completely rewritten).  
+- Input is done by a separate thread that does a read request and
+  blocks until it gets something from Mach, at which point it notifies
+  the rest of Sprite (equivalent to getting an input interrupt).
+- Console handled by reading/writing UNIX /dev/tty in raw mode, using
+  Sprite Td library and Sprite stdio.  Changed the tty output buffer
+  size in attempt to work around what appears to be a bug in the UX
+  telnetd.
+- tty code is potentially simplified: don't need intermediate buffer (which
+  was there to simplify buffer management at interrupt level).  
+- Some thought needed to get resource management (reference counts) right?
+- Note that we access remote devices using Sprite RPC, rather than Mach
+  IPC.  
+- The Sprite server will not use the attach/release mechanism to
+  truly open/close a block device--do it all in the open/close routines.
+- I started out trying to match up driver functionality, make sure that
+  the Sprite #define's would match up with the Mach #define's, etc.
+  This was apparently a waste of time, so I punted.
+- No more L1 commands.
+
+			    -- fscache --
+
+- initially use a fixed-size (4MB), wired-down FS cache.  
+- Get rid of machine-dependent call to lock cache pages (used in
+  native Sprite for sun4).
+
+			       -- fs --
+
+- needed more precise handling of VM segPtr
+- Sys_Stats command for "fscmd -O" was broken--would zero out state
+  information as well as counters. 
+- Ripped out useless (broken?) support for shared mapped files.
+
+			      -- mach --
+
+- Most of the mach module (e.g., hardware definitions, interrupt
+  masking, machine/boot initialization, calls to the monitor) goes away.
+- Some of the #define's should come from Mach (e.g., boundaries of user
+  address space).  
+- The machine-dependent process state code (e.g., exec & debugger
+  support) is replaced by a much smaller bit of machine-dependent code
+  that uses thread_{get,set}_state.
+- Some routines and globals were renamed to move them into other
+  modules (e.g., mach_Format -> fsMach_Format).
+
+			      -- main --
+
+- start-up code similar, though somewhat simpler, and order of module
+  initialization is different. 
+- Added flag to tell when there are multiple threads running (e.g., so
+  that code that calls UNIX can tell whether it's safe).
+
+			      -- net --
+
+- Network polling (for the debugger) goes away.  
+- changed to always send packets asynchronously.  (Native Sprite sends
+  some packets synchronously to avoid overwriting the buffer before
+  the packet is sent.)
+- Fixed bug in arp/rarp code that was tickled by receiving our own
+  broadcast packets.
+- Less bandwidth and more latency when using Mach device interface.
+  This means it's even more important than in native Sprite to avoid
+  going remote.
+- hacked local version of Mach to make maximum inband size big enough
+  to hold most Sprite RPC packets.  Big perf win for null RPCs; less
+  impressive win for Andrew benchmark.
+
+			      -- proc --
+
+- in native Sprite, when you're running in the kernel you have a
+  particular context and you can access your memory.  In a server, you
+  have to be more careful about accessing memory.  As far as contexts,
+  you can mostly use the same code, but there are places that need
+  attention, like getting the "current" context and doing a context
+  switch.  Also, the process could conceivably continue doing things
+  while the server is processing a request, which it not at all possible
+  in native version.  Also, processes can go away without your control,
+  so you either need a notification mechanism or be prepared for
+  tasks/threads to vanish at arbitrary times.  
+- Need additional locking (e.g., lock parent proc in Proc_NewProc)
+  because we now allow asynchronous kills.  (Native Sprite allows
+  asynchronous kills, but it appears to be supported only when the
+  killed process is not able to kill itself (e.g., it's migrated).)
+  Asynchronous kills also make it harder to ensure that request ports
+  point to the right PCB entry.  Also complicated interaction with sig
+  module, introduced deadlocks, etc.
+- Have to be careful about where a process exits, so that MIG buffers
+  get freed correctly.  
+- Sprite process model isn't same as Mach model (Mach can have
+  multiple threads per task): can either hack to make it use Mach
+  model, or can put in limitations/checks to make sure it uses the
+  Sprite model.
+- To help get PCB locking right, added a new type to represent a
+  locked PCB entry.
+- Server processes don't always have FS state because (1) they don't
+  need it (except for the ancestors of init) and (2) early server
+  threads (e.g., for network & timer) can't get it because it hasn't
+  been set up yet.
+- For exec(), changed interface to pass strings in directly,
+  rather than copying in one at a time.  In general, cross-address
+  space references (e.g., copyin/copyout, Vm_MakeAccessible) seem to
+  be more expensive with sprited than with native Sprite.
+- Big perf win from sticky segments.
+- Fixed deadlock in native interval timer code (was inconsistent about
+  locking monitor or PCB first).
+
+			  -- (proc) traps --
+
+- Replace trap handling code with exception handler & MIG-based
+  syscall code.  Some of the standard "return from trap" code
+  (especially checking for signals) goes into the system call stubs in
+  the emulation library.
+
+			      -- rpc --
+
+- Fixed native Sprite race condition between timeout and receipt of
+  RPC ack (?) that would cause RPC channel to get doubly enqueued in
+  timeout queue.
+- Fixed native Sprite bug that would cause processes to hang when
+  trying to allocate a channel. 
+- Fixed native Sprite bug where Sprite would smash the arguments to
+  Test_Rpc via bogus Vm_MakeAccessible calls.
+- Cleaned up RPC timing histogram code.
+
+			 -- sched and sync --
+
+- this gets simplified in some ways, because somebody else has
+  provided the basic synchronization mechanism (e.g., don't 
+  need sched master lock anymore).  In fact, the entire sched module
+  goes away (which requires some renaming, e.g., Sched_ContextSwitch
+  becomes Proc_ContextSwitch).
+- Is more complicated if you want to build synch primitives on top of
+  the given package (e.g., your synch 
+  package has to know something about impl of the lower-level package).
+- If native version is event-based, can either keep (e.g.,
+  single-server) or replace with condition variables (Sprite).  
+- Sprite condition variables don't require initialization; CThreads condition
+  variables do.  
+- Race conditions are more likely; pretend that you're on a
+  multiprocessor, even if you're on a uniprocessor.  
+- Sync_SlowWait had to be hacked because sprited implements the
+  process SUSPENDED state with a condition variable (rather than just
+  removing the process from the run queue).  (Maybe it would have been
+  cleaner to ditch the SUSPENDED state and make it a PCB flag.)
+
+			    -- signals --
+
+- server no longer manages time slices, so can't guarantee that
+  process will notice that it's got a signal.  To get same behavior as
+  native version, need mechanism to force the user process into a signal
+  handler or whatever.  This messes up the current Sprite signals
+  code something fierce, because routines like Sig_Handle and
+  Sig_SuspendProcess assume that the current process is the one that the
+  signal is being delivered to.  Some of the problems weren't
+  immediately obvious.  For example, if a process gets multiple
+  SIGDEBUGs, the Sprite server has to make sure the process isn't
+  already in the debug list (in native Sprite, the process puts itself
+  in the debug list, so it can't already be there).  Also, a process
+  normally changes its own state to EXITED or DEAD, so the usual
+  transition is from RUNNING.  With sprited, you can also go from
+  WAITING and SUSPENDED.  In an attempt to limit some of the
+  complications, suspending a process other than yourself is postponed
+  if that process is in the middle of a Sprite request.
+- C Threads doesn't provide support for "wake if signal" semantics.  
+- Hard to separate out machine-management functionality from UNIX
+  virtual machine management, e.g., do you really need to maintain all
+  that state on the signal stack, or can the kernel manage some of it;
+  complicated by the sheer hairiness of the code.  
+- Have to set up mapping from Mach exception codes to Sprite signals &
+  subcodes--rather tedious, especially with all the machine-dependent
+  subcodes.
+
+			      -- sys --
+
+- Get rid of the trap-based calls and use MIG-based stubs.  In a
+  couple places this requires some extra checks to verify that the
+  Sprite MIG type definitions are compatible with the Sprite C type
+  definitions.  This also requires writing various stubs in modules
+  that have direct user requests.
+- Allowing request queue to grow arbitrarily large is a bad idea;
+  it causes the "thrash" program to (eventually) see bogus pages.
+
+			      -- timer --
+
+- no clock interrupts, so for the timer queue do what the UX
+  server does: figure out when you want to get woken up, and do a
+  msg_receive with the corresponding timeout.  When you get woken up,
+  check whether it's time to execute something from the queue; if not,
+  recompute how long to wait and repeat.  If a new event gets added to
+  the queue with a timeout earlier that the current front of the queue,
+  do a send, which will force the waiting thread to reschedule.
+- Management of the current time-of-day is simplified--just ask the
+  kernel.  All the hardware management code goes away.  Also, can just
+  query Mach (HOST_SCHED_INFO) to get the timer resolution.
+- Make "Timer_Ticks" and timer "intervals" be the same as "Time" (lots of
+  edits because intervals are integers, and Time is a struct).
+
+			       -- VM --
+
+- throw out most of old VM implementation.  Write memory manager.
+  Write interface layer so that rest of Sprite sees the same interface.
+- Would like to avoid bookkeeping (in favor of having the kernel do it
+  and querying the kernel when necessary), but this causes performance
+  bottlenecks (e.g., for fork()).
+- Used a reference count instead of no-senders notification to manage
+  the memory objects.  I understand reference counts, and the
+  no-senders stuff looks like it has some strange special cases to
+  worry about (at least from looking at the UX code).
+- Note race condition in Vm_MakeAccessible: can get name port for the
+  segment via vm_region before the pager has gotten it via
+  memory_object_init.
+- Note problem with catching the server's exceptions for copyin &
+  copyout (no way for the pager to directly cause the copyin/copyout
+  to fail).
+- Vm_MakeAccessible abuse in native Sprite: calls that would map in a
+  struct, then map in objects pointed by the struct, overwriting
+  fields in the original struct (e.g., Test_RpcStub).  Could also be a
+  problem with, say, an array of string pointers that is passed in by
+  a user program: if you pass an element of the array to
+  Proc_MakeStringAccessible, it will mung the array.
+- Not being able to use the default pager is definitely a lose as far
+  as the performance of fork.  Even when you don't have to go to the
+  file server, you end up with a lot of zero-fill page faults...
+
+			      -- misc. --
+
+- Sprite should use more typedefs for, e.g., file offset and
+  lengths (sizes) of things.  
+- In order to make reintegration easier, I tried to avoid propagating
+  the Mach typedefs into old Sprite function definitions & types.
+- Fair amount of lint in some places (e.g., use of signed versus
+  unsigned integers in RPC module). 
+
+		 -- instrumentation and debugging --
+
+- some numbers (e.g., resource usage) have to be done by the kernel,
+  so if Mach doesn't provide them, you either do without or you hack
+  the kernel.
+- added system call counting & timing to the ds5000 system call trap
+  handler in native Sprite.  This was a lot easier to do for sprited,
+  since there I could do it in C!
+
+
+			      -- mem --
+
+- Goes away, at least initially: use ckalloc on top of UX malloc.
+  (Using ckalloc requires edits in a lot of places, though.)  Would
+  get better performance using binned memory allocator like the native
+  Sprite one?

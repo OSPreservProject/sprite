@@ -1,0 +1,155 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  sun4nw:1.5 symm:1.5 spur:1.5;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     90.10.12.14.00.45;  author eklee;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.09.19.14.53.56;  author eklee;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.09.05.12.37.06;  author eklee;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.08.29.13.54.13;  author eklee;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.06.22.13.32.57;  author eklee;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Implements bitvectors for use as bitmaps etc...
+@
+
+
+1.5
+log
+@Added Raid_ prefix to external names and cleaned up warning messages.
+@
+text
+@/*
+ *
+ */
+
+#include <stdlib.h>
+#include <bstring.h>
+#include "bitvec.h"
+
+BitVec
+MakeBitVec(n)
+    int n;
+{
+    BitVec vec;
+    int size = VecSize(n);
+
+    vec = (BitVec) malloc((unsigned) size);
+    bzero((char *) vec, size);
+    return vec;
+}
+
+void
+ClearBitVec(bitVec, n)
+    BitVec	bitVec;
+    int		n;
+{
+    int size = VecSize(n);
+    bzero((char *) bitVec, size);
+}
+
+int
+GetBitIndex(bitVec, i, n)
+    BitVec bitVec;
+    int    i;
+    int    n;
+{
+    int	   wordIndex;
+    register int   bitIndex;
+    register int   word;
+
+    for (wordIndex = WordIndex(i+1); wordIndex <= WordIndex(n-1); wordIndex++){
+	if (bitVec[wordIndex] != 0) {
+	    word = (unsigned) bitVec[wordIndex];
+	    bitIndex = 0;
+	    if (!(word & 0x0000ffff)) {
+		bitIndex += 16;
+		word = word >> 16;
+	    }
+	    if (!(word & 0x00ff)) {
+		bitIndex += 8;
+		word = word >> 8;
+	    }
+	    if (!(word & 0x0f)) {
+		bitIndex += 4;
+		word = word >> 4;
+	    }
+	    if (!(word & 0x03)) {
+		bitIndex += 2;
+		word = word >> 2;
+	    }
+	    if (!(word & 0x01)) {
+		bitIndex += 1;
+	    }
+	    ClrBit(bitVec, VecIndex(wordIndex, bitIndex));
+	    return VecIndex(wordIndex, bitIndex);
+	}
+    }
+    return -1;
+}
+@
+
+
+1.4
+log
+@Added prototypes.
+@
+text
+@d5 2
+d21 1
+d30 1
+@
+
+
+1.3
+log
+@Added VecSize macro.
+@
+text
+@@
+
+
+1.2
+log
+@Added ClearBitVec
+@
+text
+@d12 1
+a12 1
+    int size = (n/32 + 1) * sizeof(int);
+d23 1
+a23 1
+    int size = (n/32 + 1) * sizeof(int);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d19 8
+@

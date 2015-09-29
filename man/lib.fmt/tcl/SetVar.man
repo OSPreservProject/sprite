@@ -1,0 +1,264 @@
+
+
+
+Tcl_SetVar            C Library Procedures             Tcl_SetVar
+
+
+
+_________________________________________________________________
+
+NNAAMMEE                                                               |
+     Tcl_SetVar,    Tcl_SetVar2,     Tcl_GetVar,     Tcl_GetVar2,  |
+     Tcl_UnsetVar, Tcl_UnsetVar2 - manipulate Tcl variables        |
+
+SSYYNNOOPPSSIISS                                                           |
+     ##iinncclluuddee <<ttccll..hh>>                                              |
+
+     char *                                                        |
+     TTccll__SSeettVVaarr(_i_n_t_e_r_p, _v_a_r_N_a_m_e, _n_e_w_V_a_l_u_e, _f_l_a_g_s)                  |
+
+     char *                                                        |
+     TTccll__SSeettVVaarr22(_i_n_t_e_r_p, _n_a_m_e_1, _n_a_m_e_2, _n_e_w_V_a_l_u_e, _f_l_a_g_s)            |
+
+     char *                                                        |
+     TTccll__GGeettVVaarr(_i_n_t_e_r_p, _v_a_r_N_a_m_e, _f_l_a_g_s)                            |
+
+     char *                                                        |
+     TTccll__GGeettVVaarr22(_i_n_t_e_r_p, _n_a_m_e_1, _n_a_m_e_2, _f_l_a_g_s)                      |
+
+     int                                                           |
+     TTccll__UUnnsseettVVaarr(_i_n_t_e_r_p, _v_a_r_N_a_m_e, _f_l_a_g_s)                          |
+
+     int                                                           |
+     TTccll__UUnnsseettVVaarr22(_i_n_t_e_r_p, _n_a_m_e_1, _n_a_m_e_2, _f_l_a_g_s)                    |
+
+AARRGGUUMMEENNTTSS                                                          |
+     Tcl_Interp   *_i_n_t_e_r_p     (in)                                      ||
+                                        Interpreter    containing  |
+                                        variable.                  |
+
+     char         *_v_a_r_N_a_m_e    (in)                                      ||
+                                        Name  of  variable.   May  |
+                                        refer to a  scalar  vari-  |
+                                        able  or an element of an  |
+                                        array variable.            |
+
+     char         *_n_e_w_V_a_l_u_e   (in)                                      ||
+                                        New value for variable.    |
+
+     int          _f_l_a_g_s       (in)                                      ||
+                                        OR-ed combination of bits  |
+                                        providing      additional  |
+                                        information   for  opera-  |
+                                        tion. See below for valid  |
+                                        values.                    |
+
+     char         *_n_a_m_e_1      (in)                                      ||
+                                        Name  of scalar variable,  |
+                                        or name of array variable  |
+                                        if _n_a_m_e_2 is non-NULL.      |
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+Tcl_SetVar            C Library Procedures             Tcl_SetVar
+
+
+
+     char         *_n_a_m_e_2      (in)                                      ||
+                                        If  non-NULL,  gives name  |
+                                        of element  within  array  |
+                                        and  _n_a_m_e_1  must refer to  |
+                                        an array variable.         |
+_________________________________________________________________  |
+
+
+DDEESSCCRRIIPPTTIIOONN                                                        |
+     These procedures may be used to create,  modify,  read,  and  |
+     delete   Tcl   variables   from   C  code.   TTccll__SSeettVVaarr  and  |
+     TTccll__SSeettVVaarr22 will create a new variable or modify an existing  |
+     one.  Both of these procedures set the given variable to the  |
+     value given by _n_e_w_V_a_l_u_e, and they return a pointer to a copy  |
+     of  the variable's new value, which is stored in Tcl's vari-  |
+     able structure.  Tcl keeps a private copy of the  variable's  |
+     value,  so  the  caller may change _n_e_w_V_a_l_u_e after these pro-  |
+     cedures return without affecting the value of the  variable.  |
+     If  an  error  occurs in setting the variable (e.g. an array  |
+     variable is referenced without  giving  an  index  into  the  |
+     array), then NULL is returned.                                |
+
+     The name of the variable may be specified in either  of  two  |
+     ways.   If  TTccll__SSeettVVaarr is called, the variable name is given  |
+     as a single string, _v_a_r_N_a_m_e.  If _v_a_r_N_a_m_e  contains  an  open  |
+     parenthesis  and  ends  with  a  close parenthesis, then the  |
+     value between the parentheses is treated as an index  (which  |
+     can  have  any  string  value) and the characters before the  |
+     first open parenthesis are treated as the name of  an  array  |
+     variable.   If _v_a_r_N_a_m_e doesn't have parentheses as described  |
+     above, then the entire string is treated as the  name  of  a  |
+     scalar  variable.   If TTccll__SSeettVVaarr22 is called, then the array  |
+     name and index have been separated by the  caller  into  two  |
+     separate strings, _n_a_m_e_1 and _n_a_m_e_2 respectively;  if _n_a_m_e_2 is  |
+     zero it means that a scalar variable is being referenced.     |
+
+     The _f_l_a_g_s argument may be used to  specify  any  of  several  |
+     options to the procedures.  It consists of an OR-ed combina-  |
+     tion of any of the following bits:                            |
+
+     TCL_GLOBAL_ONLY                                                    ||
+          Under normal circumstances the procedures look up vari-  |
+          ables at  the  current  level  of  procedure  call  for  |
+          _i_n_t_e_r_p,  or at global level if there is no call active.  |
+          However, if this bit is set in _f_l_a_g_s then the  variable  |
+          is  looked  up  at global level even if there is a pro-  |
+          cedure call active.                                      |
+
+     TCL_LEAVE_ERR_MSG                                                  ||
+          If  an  error is returned and this bit is set in _f_l_a_g_s,  |
+          then an error message will be left  in  _i_n_t_e_r_p->_r_e_s_u_l_t.  |
+          If  this  flag  bit  isn't set then no error message is  |
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+Tcl_SetVar            C Library Procedures             Tcl_SetVar
+
+
+
+          left (_i_n_t_e_r_p->_r_e_s_u_l_t will not be modified).              |
+
+     TCL_APPEND_VALUE                                                   ||
+          If  this  bit  is  set then _n_e_w_V_a_l_u_e is appended to the  |
+          current value, instead of replacing it.  If  the  vari-  |
+          able is currently undefined, then this bit is ignored.   |
+
+     TCL_LIST_ELEMENT                                                   ||
+          If  this  bit  is  set, then _n_e_w_V_a_l_u_e is converted to a  |
+          valid Tcl list element before setting (or appending to)  |
+          the variable.  If the list element is being appended to  |
+          an non-empty value, then a space character is  appended  |
+          before  the new list element to separate it from previ-  |
+          ous elements.                                            |
+
+     TCL_NO_SPACE                                                       ||
+          If  this  bit  is  set,  it  prevents  the  output of a  |
+          separating space character in TCL_LIST_ELEMENT appends.  |
+          This  bit  has  no  effect  if the TCL_LIST_ELEMENT bit  |
+          isn't set.                                               |
+
+     TTccll__GGeettVVaarr and TTccll__GGeettVVaarr22 return the  current  value  of  a  |
+     variable.   The arguments to these procedures are treated in  |
+     the same way as the arguments to TTccll__SSeettVVaarr and TTccll__SSeettVVaarr22.  |
+     Under normal circumstances, the return value is a pointer to  |
+     the variable's value (which  is  stored  in  Tcl's  variable  |
+     structure  and  will  not  change  before  the  next call to  |
+     TTccll__SSeettVVaarr or TTccll__SSeettVVaarr22).  The only bits of _f_l_a_g_s that are  |
+     used  are  TCL_GLOBAL_ONLY  and  TCL_LEAVE_ERR_MSG,  both of  |
+     which have the same meaning as for TTccll__SSeettVVaarr.  If an  error  |
+     occurs  in  reading  the variable (e.g. the variable doesn't  |
+     exist or an array element is specified for  a  scalar  vari-  |
+     able), then NULL is returned.                                 |
+
+     TTccll__UUnnsseettVVaarr and TTccll__UUnnsseettVVaarr22 may be used to remove a vari-  |
+     able,  so that future calls to TTccll__GGeettVVaarr or TTccll__GGeettVVaarr22 for  |
+     the variable will return an error.  The arguments  to  these  |
+     procedures  are  treated in the same way as the arguments to  |
+     TTccll__GGeettVVaarr and TTccll__GGeettVVaarr22.  If the variable is successfully  |
+     removed  then  0  is  returned.   If  the variable cannot be  |
+     removed because it doesn't  exist  or  because  a  trace  is  |
+     active  for it, then -1 is returned.  If an array element is  |
+     specified, the  given  element  is  removed  but  the  array  |
+     remains.   If  an  array name is specified without an index,  |
+     then the entire array is removed.                             |
+
+
+SSEEEE AALLSSOO                                                           |
+     Tcl_TraceVar                                                  |
+
+
+
+
+
+
+Sprite v1.0                                                     3
+
+
+
+
+
+
+Tcl_SetVar            C Library Procedures             Tcl_SetVar
+
+
+
+KKEEYYWWOORRDDSS                                                           |
+     array, interpreter, scalar, set, unset, variable
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     4
+
+
+

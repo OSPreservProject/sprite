@@ -1,0 +1,164 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  srv030:1.3 srv028:1.3 srv027:1.3 srv026:1.3 srv024:1.3 srv022:1.3 srv021:1.3 srv019:1.3 srv018:1.3 srv016:1.3 srv014:1.3 srv010:1.3 srv008:1.3 srv007:1.3 srv006:1.3 srv005:1.3 srv004:1.3 srv003:1.3 srv002:1.3 srv001:1.3;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     91.12.12.21.56.40;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.12.09.22.28.26;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.12.04.16.21.01;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@Re-enable use of printf.
+@
+text
+@/* 
+ * MemChunkAlloc.c --
+ *
+ *	Source code for the "MemChunkAlloc" procedure, which is used
+ *	internally by the memory allocator to create new memory for
+ *	user-level programs.  Different programs or uses of the
+ *	allocator may replace this version of MemChunkAlloc with
+ *	something appropriate to the particular program.  See memInt.h
+ *	for overall information about how the allocator works.
+ *
+ * Copyright 1985, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/lib/c/stdlib/RCS/MemChunkAlloc.c,v 1.2 91/12/09 22:28:26 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "memInt.h"
+#include <stdio.h>
+#include <sys/types.h>
+
+/*
+ * UNIX library imports:
+ */
+
+extern caddr_t	sbrk();
+
+/*
+ * The variables below don't exactly belong in this file, but they
+ * need to be someplace that's use-dependent (just like MemChunkAlloc)
+ * so that they can be initialized differently for different uses
+ * of the allocator (e.g. kernel vs. user).
+ */
+
+extern int	fprintf();
+int		(*memPrintProc)()	= fprintf;
+ClientData	memPrintData		= (ClientData) stdout;
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MemChunkAlloc --
+ *
+ *	malloc calls this procedure to get another region of storage
+ *	from the system (i.e. whenever the storage it's gotten so far
+ *	is insufficient to meet a request).  The actual size returned 
+ *	may be greater than size but not less.  This region now becomes 
+ *	the permanent property of malloc, and will never be returned.  
+ *
+ * Results:
+ *	The return value is a pointer to a new block of memory that
+ *	is size bytes long.
+ *
+ * Side effects:
+ *	The virtual address space of the process is extended.
+ *	If the VAS can't be increased, the process is terminated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Address
+MemChunkAlloc(size)
+    int size;			/* Number of bytes desired.  */
+{
+    Address result;
+    int misAlignment;
+
+    result = (Address) sbrk(size);
+    if (result == (Address) -1) {
+	panic("MemChunkAlloc couldn't extend heap\n");
+	return(0);		/* should never get here */
+    }
+    /* Make sure `result' is aligned to hold at least a double */
+    if ((misAlignment = (int) result & 7) != 0) {
+	result += 8 - misAlignment;
+	(void) sbrk(8 - misAlignment);
+    }
+    return result;
+}
+@
+
+
+1.2
+log
+@Temporarily disable use of printf & panic.  Lint.
+@
+text
+@d22 1
+a22 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/lib/c/stdlib/RCS/MemChunkAlloc.c,v 1.1 91/12/04 16:21:01 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a42 1
+#ifdef LIBC_PRINTF
+a44 4
+#else
+int		(*memPrintProc)()	= NULL;
+ClientData	memPrintData		= (ClientData) 0;
+#endif
+a76 1
+#ifdef LIBC_PRINTF
+a77 4
+#else
+	Test_PutMessage("MemChunkAlloc couldn't extend heap\n");
+	exit(1);
+#endif
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d22 1
+a22 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdlib/RCS/MemChunkAlloc.c,v 1.4 90/09/27 04:42:29 rab Exp $ SPRITE (Berkeley)";
+d43 1
+d46 4
+d82 6
+a87 1
+	panic("MemChunkAlloc couldn't extend heap");
+d93 1
+a93 1
+	(Address) sbrk(8 - misAlignment);
+@

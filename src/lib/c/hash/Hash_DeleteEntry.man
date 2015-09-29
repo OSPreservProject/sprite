@@ -1,0 +1,25 @@
+' $Header: /sprite/src/lib/c/hash/RCS/Hash_DeleteEntry.man,v 1.1 88/12/30 15:05:17 ouster Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS Hash_DeleteEntry lib
+.BS
+.SH NAME
+Hash_DeleteEntry \- remove an existing entry from a hash table 
+.SH SYNOPSIS
+\fB#include <hash.h>\fR
+.sp
+\fBHash_DeleteEntry\fR(\fItablePtr, entryPtr\fR)
+.AS Hash_Table *tablePtr
+.SH ARGUMENTS
+.AP Hash_Table *tablePtr in
+Table in which to delete entry.
+.AP Hash_Entry *entryPtr in
+Address of entry to delete (must exist in table).  If NULL,
+the procedure does nothing.
+.BE
+
+.SH DESCRIPTION
+.LP
+\fBHash_DeleteEntry\fR removes the given entry from the given table.
+
+.SH KEYWORDS
+delete, hash table

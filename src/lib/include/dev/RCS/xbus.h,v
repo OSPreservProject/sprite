@@ -1,0 +1,114 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    elm:1.1; strict;
+comment  @ * @;
+
+
+1.1
+date     92.07.09.18.35.10;  author elm;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Include file to be used with the XBUS board driver.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/*
+ * xbus.h --
+ *
+ *	Declarations of interface to the xbus board.
+ *
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/dev/sun4.md/RCS/vmelink.h,v 1.1 91/09/18 12:39:35 jhh Exp Locker: elm $ SPRITE (Berkeley)
+ */
+
+#ifndef _XBUS
+#define _XBUS
+
+#define	IOC_XBUS			(18 << 16)
+#define	IOC_XBUS_RESET			(IOC_XBUS | 0x1)
+#define	IOC_XBUS_READ_REG		(IOC_XBUS | 0x11)
+#define	IOC_XBUS_WRITE_REG		(IOC_XBUS | 0x12)
+
+typedef struct DevXbusRegisterAccess {
+    unsigned int	registerNum;
+    unsigned int	value;
+} DevXbusRegisterAccess;
+
+#define	DEV_XBUS_MAX_BOARDS		4
+
+/*
+ * Sun4 address space the link occupies (2=d16, 3=d32)
+ */
+#define DEV_XBUS_ADDR_SPACE		3
+
+#define	DEV_XBUS_DIP_SWITCH		5
+#define	DEV_XBUS_MEMORY_BASE		(DEV_XBUS_DIP_SWITCH >> 24)
+#define	DEV_XBUS_REGISTER_BASE		(0x08400000 | DEV_XBUS_MEMORY_BASE)
+
+#define	DEV_XBUS_REG_RESET		0x000
+#define	DEV_XBUS_REG_ATC0_PAR_ADDR	0x080
+#define	DEV_XBUS_REG_ATC0_PAR_DATA	0x084
+#define	DEV_XBUS_REG_ATC1_PAR_ADDR	0x088
+#define	DEV_XBUS_REG_ATC1_PAR_DATA	0x08c
+#define	DEV_XBUS_REG_ATC2_PAR_ADDR	0x090
+#define	DEV_XBUS_REG_ATC2_PAR_DATA	0x094
+#define	DEV_XBUS_REG_ATC3_PAR_ADDR	0x098
+#define	DEV_XBUS_REG_ATC3_PAR_DATA	0x09c
+#define	DEV_XBUS_REG_SERVER_PAR_ADDR	0x0a0
+#define	DEV_XBUS_REG_SERVER_PAR_DATA	0x0c0
+#define	DEV_XBUS_REG_STATUS		0x0e0
+#define	DEV_XBUS_REG_HIPPID_CTRL_FIFO	0x400
+#define	DEV_XBUS_REG_HIPPIS_CTRL_FIFO	0x800
+#define	DEV_XBUS_REG_XOR_CTRL_FIFO	0xc00
+
+#define	DEV_XBUS_RESETREG_CHECK_PARITY	(1 << 13)
+#define	DEV_XBUS_RESETREG_RESET		0x0
+#define	DEV_XBUS_RESETREG_NORMAL	(0x0ffb | \
+					 DEV_XBUS_RESETREG_CHECK_PARITY)
+
+#define	DEV_XBUS_STATUS_ATC0_PARITY_ERR		(1 << 0)
+#define	DEV_XBUS_STATUS_ATC1_PARITY_ERR		(1 << 1)
+#define	DEV_XBUS_STATUS_ATC2_PARITY_ERR		(1 << 2)
+#define	DEV_XBUS_STATUS_ATC3_PARITY_ERR		(1 << 3)
+#define	DEV_XBUS_STATUS_SERVER_PARITY_ERR	(1 << 4)
+#define	DEV_XBUS_STATUS_XOR_INTERRUPT		(1 << 5)
+#define	DEV_XBUS_STATUS_HIPPID_FIFO_NONEMPTY	(1 << 6)
+#define	DEV_XBUS_STATUS_HIPPIS_FIFO_NONEMPTY	(1 << 7)
+
+typedef struct DevXbusParityErrorInfo {
+    volatile unsigned int	data;
+    volatile unsigned int	addr;
+} DevXbusParityErrorInfo;
+
+typedef struct DevXbusCtrlRegs {
+    volatile unsigned int	reset;
+    volatile unsigned int	pad1[0x1f];
+    DevXbusParityErrorInfo atcParity[4];
+    volatile unsigned int	serverParityAddr;
+    volatile unsigned int	pad2[0x7];
+    volatile unsigned int	serverParityData;
+    volatile unsigned int	pad3[0x7];
+    volatile unsigned int	status;
+} DevXbusCtrlRegs;
+
+#endif	/* _XBUS */
+@

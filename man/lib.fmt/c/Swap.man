@@ -1,0 +1,200 @@
+
+
+
+Swap                  C Library Procedures                   Swap
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Swap_Buffer - Do byte-swapping and alignment of data buffers
+     Swap_BufSize - Calculate the necessary buffer size  to  hold
+     swapped and aligned data
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<sswwaappBBuuffffeerr..hh>>
+
+     void SSwwaapp__BBuuffffeerr(_i_n_B_u_f,  _i_n_S_i_z_e,  _i_n_T_y_p_e,  _o_u_t_T_y_p_e,  _f_o_r_m_a_t,
+     _o_u_t_B_u_f, _o_u_t_S_i_z_e_P_t_r)
+
+     void SSwwaapp__BBuuffSSiizzee(_i_n_B_u_f, _i_n_S_i_z_e,  _i_n_T_y_p_e,  _o_u_t_T_y_p_e,  _f_o_r_m_a_t,
+     _o_u_t_S_i_z_e_P_t_r)
+
+AARRGGUUMMEENNTTSS
+     char     *_i_n_B_u_f         (in)      In-coming data buffer
+
+     int      _i_n_S_i_z_e         (in)      Size in bytes of inBuf
+
+     int      _i_n_T_y_p_e         (in)      Type  of  byte-order   and
+                                       alignment of data in inBuf
+
+     int      _o_u_t_T_y_p_e        (in)      Type  of  byte-order   and
+                                       alignment  of data in out-
+                                       Buf
+
+     char     *_f_o_r_m_a_t        (in)      String  describing  format
+                                       of   data  in  inBuf  (see
+                                       below for more details)
+
+     char     *_o_u_t_B_u_f        (out)     Buffer  in  which  to  put
+                                       out-going    swapped   and
+                                       aligned data
+
+     int      *_o_u_t_S_i_z_e_P_t_r    (in/out)  outSizePtr  is  an  in/out
+                                       parameter              for
+                                       SSwwaapp__BBuuffffeerr(()), but just an
+                                       out      parameter     for
+                                       SSwwaapp__BBuuffSSiizzee(()).  See below
+                                       for     its     use     in
+                                       SSwwaapp__BBuuffffeerr(())          and
+                                       SSwwaapp__BBuuffSSiizzee(()).
+
+_________________________________________________________________
+
+DDEESSCCRRIIPPTTIIOONN
+     These routines are obsolete.  See Fmt instead.
+
+     SSwwaapp__BBuuffffeerr(()) takes  a  buffer  of  data  (_i_n_B_u_f)  from  one
+     machine  byte-order and alignment type (_i_n_T_y_p_e) and produces
+     an output buffer (_o_u_t_B_u_f)  of  the  same  data  swapped  and
+     aligned  to  conform  to  a different machine byte-order and
+
+
+
+Sprite v.1.0         Printed:  June 3, 1991                     1
+
+
+
+
+
+
+Swap                  C Library Procedures                   Swap
+
+
+
+     alignment type (_o_u_t_T_y_p_e).  The parameter  _o_u_t_S_i_z_e_P_t_r  is  an
+     in/out   parameter   to   SSwwaapp__BBuuffffeerr(()).    In   a  call  to
+     SSwwaapp__BBuuffffeerr(()), *_o_u_t_S_i_z_e_P_t_r should contain the size in  bytes
+     of  the  buffer parameter _o_u_t_B_u_f.  As SSwwaapp__BBuuffffeerr(()) returns,
+     *_o_u_t_S_i_z_e_P_t_r contains the actual  size  of  the  swapped  and
+     aligned  data.  If the return value of *_o_u_t_S_i_z_e_P_t_r is larger
+     than its input value, then SSwwaapp__BBuuffffeerr(()) needed more  buffer
+     space  for the out-going data than _o_u_t_B_u_f provided.  In this
+     case, SSwwaapp__BBuuffffeerr(()) stops swapping the data and instead cal-
+     culates  the  amount  of  space in bytes that it needs.   It
+     returns that value in *_o_u_t_S_i_z_e_P_t_r.  If  *_o_u_t_S_i_z_e_P_t_r  returns
+     with  a  0 value, then an error occurred, such as the _f_o_r_m_a_t
+     argument contained unrecognizable characters or contained  a
+     '*'  character  in  a position other than the last character
+     (see description of format string, below), or the  sizes  of
+     the  _f_o_r_m_a_t string or _i_n_B_u_f weren't compatible.  In the case
+     of an error, if SSwwaapp__BBuuffffeerr(()) is called from a user process,
+     it  will  panic with an error string explaining the problem.
+     If called in the kernel, it will print a warning-level  sys-
+     tem error message and return.
+
+     SSwwaapp__BBuuffSSiizzee(()) calculates the size required for  the  _o_u_t_B_u_f
+     parameter   to  SSwwaapp__BBuuffffeerr(())  given  the  same  input  data
+     (_i_n_B_u_f), byte-ordering types (_i_n_T_y_p_e and _o_u_t_T_y_p_e),  and  the
+     same data format (_f_o_r_m_a_t).  It returns this calculated value
+     in *_o_u_t_S_i_z_e_P_t_r.  If *outSizePtr returns with a zero, then an
+     error   occurred.    (See   the   errors  listed  above  for
+     SSwwaapp__BBuuffffeerr(()) for details.)  Different  machines  have  dif-
+     ferent  alignment  (and thus padding) requirements, and this
+     is why the size of the out-going data may be different  from
+     the size of the in-coming data.
+
+     The format string (_f_o_r_m_a_t) must describe  the  configuration
+     of  the  data in the input buffer, _i_n_B_u_f.  The data can con-
+     tain bytes,  half-words  (4  bytes),  words  (8  bytes)  and
+     double-words (16 bytes).
+
+     The format string describes these data types as follows:
+
+     'b'  The character 'b' stands for a byte value (1 byte).
+
+     'h'  The character 'h' stands for a half-word (2 bytes).
+
+     'w'  The character 'w' stands for a word (4 bytes).
+
+     'd'  The character 'd' stands for a double-word (8 bytes and
+          not yet implemented).
+
+     '0'-'9'*
+          A number in ascii means that the  previous  value  type
+          ('b,  'h', 'w', or 'd') is repeated the given number of
+          times.  For instance, the string "w88" means that inBuf
+
+
+
+Sprite v.1.0         Printed:  June 3, 1991                     2
+
+
+
+
+
+
+Swap                  C Library Procedures                   Swap
+
+
+
+          contains 88 word values in a row.
+
+     '*'  A '*' character means 1 or more occurrences of the pre-
+          vious  value type.  A '*' can only appear at the end of
+          a format string, since  otherwise  there's  no  way  to
+          determine  the actual number of repetitions of the pre-
+          vious value.
+
+     An example format  string,  "bwwh3w5b*",  would  describe  a
+     buffer containing the structure
+
+              struct  flea    {
+                  char    mite;
+                  int     spider;
+                  int     worm;
+                  short   moth;
+                  short   mosquito;
+                  short   beetle;
+                  int     fly[5];
+                  char    gnat[50];
+              };
+
+     The machine byte-order and alignment types  are  defined  in
+     swapBuffer.h.   Their names may change since complaints have
+     been registered about the current names, but  currently  the
+     types are as follows:
+
+     SSWWAAPP__SSUUNN__TTYYPPEE
+          The byte-ordering and alignment of 68020's.  Looking at
+          an  integer  as  if  it  were an array of 4 bytes (char
+          buf[4]), buf[0] contains the low byte, buf[3]  contains
+          the  high byte, and half-words and words are aligned to
+          half-word boundaries.
+
+     SSWWAAPP__VVAAXX__TTYYPPEE
+          The byte-ordering and alignment of Vaxen.   Looking  at
+          an  integer  as  if  it  were an array of 4 bytes (char
+          buf[4]), buf[0] contains the high byte, buf[3] contains
+          the  low  byte, and half-words and words are aligned to
+          half-word boundaries.
+
+     SSWWAAPP__SSPPUURR__TTYYPPEE
+          The byte-ordering and alignment of  the  Spur  machine.
+          Looking at an integer as if it were an array of 4 bytes
+          (char buf[4]), buf[0] contains the  high  byte,  buf[3]
+          contains   the  low  byte.   Half-words  are  half-word
+          aligned and words are word aligned.
+
+KKEEYYWWOORRDDSS
+     byte-order, byte-swap, padding, alignment
+
+
+
+
+
+Sprite v.1.0         Printed:  June 3, 1991                     3
+
+
+

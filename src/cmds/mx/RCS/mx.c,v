@@ -1,0 +1,1349 @@
+head     1.27;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.27
+date     90.11.11.11.52.00;  author ouster;  state Exp;
+branches ;
+next     1.26;
+
+1.26
+date     90.03.22.15.35.30;  author ouster;  state Exp;
+branches ;
+next     1.25;
+
+1.25
+date     90.01.29.10.04.24;  author ouster;  state Exp;
+branches ;
+next     1.24;
+
+1.24
+date     89.08.19.13.01.15;  author ouster;  state Exp;
+branches ;
+next     1.23;
+
+1.23
+date     89.07.10.10.14.43;  author ouster;  state Exp;
+branches ;
+next     1.22;
+
+1.22
+date     89.06.08.15.20.30;  author ouster;  state Exp;
+branches ;
+next     1.21;
+
+1.21
+date     89.06.05.12.16.40;  author shirriff;  state Exp;
+branches ;
+next     1.20;
+
+1.20
+date     89.05.19.10.35.30;  author ouster;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     89.05.19.10.33.13;  author ouster;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     89.01.07.12.20.31;  author ouster;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     88.12.23.14.55.16;  author ouster;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     88.10.03.09.23.14;  author ouster;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     88.08.31.08.19.32;  author ouster;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     88.08.20.15.49.50;  author ouster;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     88.07.18.13.45.14;  author ouster;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     88.04.20.17.23.41;  author ouster;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     88.04.01.12.58.45;  author ouster;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     88.03.31.09.21.44;  author ouster;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     88.03.16.17.30.43;  author ouster;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     88.01.07.09.14.20;  author ouster;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.01.05.19.22.22;  author nelson;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.01.04.15.30.04;  author ouster;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.01.03.15.21.42;  author ouster;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     87.11.28.13.25.43;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     87.10.23.14.16.32;  author deboor;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     87.08.24.10.55.33;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     87.08.21.10.33.58;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.27
+log
+@Reduce # of signals for which handlers are declared:  handlers make
+it hard to track bugs.
+@
+text
+@/* 
+ * mx.c --
+ *
+ *	This file contains the top-level routines for "mx", a mouse-based
+ *	editor that runs on top of the X window system and uses the Sx
+ *	library package.
+ *
+ * Copyright (C) 1986, 1987, 1988 Regents of the University of California.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/cmds/mx/RCS/mx.c,v 1.26 90/03/22 15:35:30 ouster Exp Locker: ouster $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
+#define Time SpriteTime
+#include <ctype.h>
+#include <errno.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "mxInt.h"
+
+/*
+ * Forward references to other procedures defined in this file:
+ */
+
+static void		MainSignalProc();
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	The main program for mx.  Initialize, load file, create window,
+ *	and loop processing events.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Almost anything can happen.  Depends on commands that user types.
+ *
+ *----------------------------------------------------------------------
+ */
+
+main(argc, argv)
+    int argc;			/* Count of command-line arguments. */
+    char **argv;		/* Array of strings containing args. */
+{
+    int detach = 0;
+    int signalPid = 0;
+    int i, put;
+    char *p;
+    Tcl_Interp *interp;		/* Initial interpreter used for error
+				 * reporting before there's a window open
+				 * within an interpreter of its own to use. */
+
+    /*
+     * If running under Sprite, tell the memory allocator to be paranoid
+     * about freeing the same block twice.
+     */
+
+#ifdef sprite
+    extern int memAllowFreeingFree;
+    memAllowFreeingFree = 0;
+#endif
+
+    /*
+     *--------------------------------------------------------------
+     * Parse some of the command line arguments, leaving many others
+     * to get parsed by Mx_OpenCmd.
+     *--------------------------------------------------------------
+     */
+
+    p = rindex(argv[0], '/');
+    if (p == NULL) {
+	p = argv[0];
+    } else {
+	p++;
+    }
+    if (strcmp(p, "mxsync") == 0) {
+	detach = 0;
+    } else {
+	detach = 1;
+    }
+    interp = Tcl_CreateInterp();
+    for (i = 1, put = 1; i < argc; i++) {
+	if (strcmp(argv[i], "-D") == 0) {
+	    detach = 0;
+	} else if (strcmp(argv[i], "-s") == 0) {
+	    i++;
+	    if (i >= argc) {
+		fprintf(stderr,
+			"Mx: argument for \"%s\" switch missing.\n",
+			argv[i-1]);
+		exit(1);
+	    }
+	    signalPid = atoi(argv[i]);
+	} else {
+	    argv[put] = argv[i];
+	    put++;
+	}
+    }
+    argc = put;
+    if (detach) {
+	Proc_Detach(0);
+    }
+    Sx_SetErrorHandler();
+    (void) signal(SIGINT, MainSignalProc);
+    (void) signal(SIGQUIT, MainSignalProc);
+    (void) signal(SIGTERM, MainSignalProc);
+
+    /*
+     *------------------------------------------------------
+     * Create the (first) window.
+     *------------------------------------------------------
+     */
+
+    if (Mx_OpenCmd((MxWindow *) NULL, interp, argc, argv) != TCL_OK) {
+	fprintf(stderr, "Mx quitting: %s\n", interp->result);
+	exit(1);
+    }
+
+    /*
+     *--------------------------------------------
+     * Enter a loop reading and processing events.
+     *--------------------------------------------
+     */
+
+    while (1) {
+	XEvent event;
+	XNextEvent(mx_Display, &event);
+
+	/*
+	 * Part of Mike's hack.  Remove when Mike's gone.
+	 */
+	 
+	if ((signalPid != 0) && (event.type == Expose)) {
+	    kill(signalPid, SIGINT);
+	    signalPid = 0;
+	}
+	Sx_HandleEvent(&event);
+	if (mx_FileCount == 0) {
+	    exit(0);
+	}
+	Mx_Update();
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MainSignalProc --
+ *
+ *	Invoked in response to fatal signals.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Clean up Mx windows, then exit.
+ *
+ *----------------------------------------------------------------------
+ */
+
+	/* ARGSUSED */
+
+static void
+MainSignalProc(sigNum, sigCode)
+    int sigNum;			/* Signal number (major class). */
+    int sigCode;		/* Signal code (minor class). */
+{
+    static struct sigvec action = {SIG_DFL, 0, 0};
+    struct sigvec old;
+
+    sigvec(sigNum, &action, &old);
+    Mx_Cleanup();
+    kill(getpid(), sigNum);
+}
+@
+
+
+1.26
+log
+@Added "mxsync" option to avoid detaching.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/cmds/mx/RCS/mx.c,v 1.25 90/01/29 10:04:24 ouster Exp Locker: ouster $ SPRITE (Berkeley)";
+a120 5
+    (void) signal(SIGFPE, MainSignalProc);
+    (void) signal(SIGILL, MainSignalProc);
+    (void) signal(SIGBUS, MainSignalProc);
+    (void) signal(SIGSEGV, MainSignalProc);
+    (void) signal(SIGSYS, MainSignalProc);
+@
+
+
+1.25
+log
+@Don't include proc.h anymore.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/cmds/mx/RCS/mx.c,v 1.24 89/08/19 13:01:15 ouster Exp Locker: ouster $ SPRITE (Berkeley)";
+d63 1
+d84 12
+a95 2
+    
+    detach = 1;
+@
+
+
+1.24
+log
+@Turn on duplicate-free checks.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /a/newcmds/mx/RCS/mx.c,v 1.23 89/07/10 10:14:43 ouster Exp Locker: ouster $ SPRITE (Berkeley)";
+a26 1
+#include <proc.h>
+@
+
+
+1.23
+log
+@Forgot to initialize signalPid.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /a/newcmds/mx/RCS/mx.c,v 1.22 89/06/08 15:20:30 ouster Exp Locker: shirriff $ SPRITE (Berkeley)";
+d67 10
+@
+
+
+1.22
+log
+@Moved almost everything out of this file and into Mx_OpenCmd.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /a/newcmds/mx/RCS/mx.c,v 1.21 89/06/05 12:16:40 shirriff Exp $ SPRITE (Berkeley)";
+d62 2
+a63 3
+    Window window;
+    int i, put, signalPid;
+    MxWindow *mxwPtr;
+a82 1
+		missingArg:
+a124 1
+    mainLoop:
+@
+
+
+1.21
+log
+@Added timestamp reading when opening first file.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /a/newcmds/mx/RCS/mx.c,v 1.20 89/05/19 10:35:30 ouster Exp Locker: shirriff $ SPRITE (Berkeley)";
+a34 6
+ * Connection to X server:
+ */
+
+Display *display;
+
+/*
+d38 1
+a38 2
+static unsigned long	MainGetColor();
+static int		MainSignalProc();
+d61 1
+a61 3
+    Mx_WindowInfo info;
+    char *geometry, *fg, *bg, *fn, *displayName, *searchString;
+    char *border, *sbFg, *sbBg, *sbEl, *titleFg, *titleBg, *titleStripe;
+d63 1
+a63 1
+    int i, lineNumber;
+a64 4
+    struct sigvec old, action;
+    int debug;
+    int signalPid;		/* Special hack for Mike. */
+    int exitValue = 0;
+d70 4
+a73 3
+     *------------------------------
+     * Parse command line arguments.
+     *------------------------------
+d76 1
+a76 5
+    geometry = fg = bg = fn = displayName = searchString = NULL;
+    border = sbFg = sbBg = sbEl = titleFg = titleBg = titleStripe = NULL;
+    info.name = NULL;
+    lineNumber = -1;
+    debug = 0;
+d78 4
+a81 4
+    for (i = 1; i < argc; i++) {
+	if (*argv[i] == '=') {
+	    geometry = argv[i];
+	} else if (strcmp(argv[i], "-fn") == 0) {
+d90 1
+a90 111
+	    fn = argv[i];
+	} else if (strcmp(argv[i], "-fg") == 0) {
+	    i++;
+	    if (i >= argc) {
+		goto missingArg;
+	    }
+	    fg = argv[i];
+	} else if (strcmp(argv[i], "-bg") == 0) {
+	    i++;
+	    if (i >= argc) {
+		goto missingArg;
+	    }
+	    bg = argv[i];
+	} else if (strcmp(argv[i], "-bd") == 0) {
+	    i++;
+	    if (i >= argc) {
+		goto missingArg;
+	    }
+	    border = argv[i];
+	} else if (strcmp(argv[i], "-sf") == 0) {
+	    i++;
+	    if (i >= argc) {
+		goto missingArg;
+	    }
+	    sbFg = argv[i];
+	} else if (strcmp(argv[i], "-sb") == 0) {
+	    i++;
+	    if (i >= argc) {
+		goto missingArg;
+	    }
+	    sbBg = argv[i];
+	} else if (strcmp(argv[i], "-se") == 0) {
+	    i++;
+	    if (i >= argc) {
+		goto missingArg;
+	    }
+	    sbEl = argv[i];
+	} else if (strcmp(argv[i], "-tf") == 0) {
+	    i++;
+	    if (i >= argc) {
+		goto missingArg;
+	    }
+	    titleFg = argv[i];
+	} else if (strcmp(argv[i], "-tb") == 0) {
+	    i++;
+	    if (i >= argc) {
+		goto missingArg;
+	    }
+	    titleBg = argv[i];
+	} else if (strcmp(argv[i], "-ts") == 0) {
+	    i++;
+	    if (i >= argc) {
+		goto missingArg;
+	    }
+	    titleStripe = argv[i];
+	} else if (strcmp(argv[i], "-t") == 0) {
+	     int result;
+	    
+	    i++;
+	    if (i >= argc) {
+		goto missingArg;
+	    }
+	    Tcl_Return(interp, (char *) NULL, TCL_STATIC);
+	    result = Mx_GetTag(argv[i], (char *) NULL, &info.name,
+		    &searchString, interp);
+	    if (result != TCL_OK) {
+		fprintf(stderr, "%s\n", interp->result);
+		exit(1);
+	    }
+	    lineNumber = -1;
+	} else if (strcmp(argv[i], "-D") == 0) {
+	    debug = 1;
+	} else if (strcmp(argv[i], "-s") == 0) {
+	    /*
+	     * This is a special temporary hack to help Mike Nelson's
+	     * instrumentaion package.  Signal the given pid's family
+	     * when the window appears on the screen.
+	     */
+
+	    i++;
+	    if (i >= argc) {
+		goto missingArg;
+	    }
+	    sscanf(argv[i], "%d", &signalPid);
+	} else if (argv[i][0] == '-') {
+	    fprintf(stderr, "Mx: switch \"%s\" isn't legal.\n",
+		    argv[i]);
+	    exit(1);
+	} else if (index(argv[i], ':') != NULL) {
+	    displayName = argv[i];
+	} else if (argv[i][0] == '+') {
+	    if (argv[i][1] == 0) {
+		lineNumber = -2;
+		searchString = NULL;
+	    } else if (!isdigit(argv[i][1])) {
+		searchString = argv[i] + 1;
+		if (*searchString == '/') {
+		    searchString++;
+		}
+		lineNumber = -1;
+	    } else { 
+		char *result;
+		lineNumber = strtol(argv[i] + 1, &result, 10);
+		if ((result == (argv[i] + 1)) || (*result != 0)
+			|| (lineNumber < 1)) {
+		    fprintf(stderr,
+			    "Mx: \"%s\" is a bad line number.\n", argv[i]);
+		    exit(1);
+		}
+		searchString = NULL;
+	    }
+d92 2
+a93 1
+	    info.name = argv[i];
+d96 2
+a97 1
+    if (!debug) {
+a99 14
+
+    display = XOpenDisplay(displayName);
+    if (display == NULL) {
+	if (displayName == NULL) {
+	    fprintf(stderr, "Mx couldn't open the display.\n");
+	    fprintf(stderr,
+		    "Is your DISPLAY environment variable set?\n");
+	} else {
+	    fprintf(stderr, "Mx couldn't open display %s.\n",
+		displayName);
+	}
+	exit(1);
+    }
+    /* XSynchronize(display, True); */
+d101 8
+a108 29
+    if (geometry == NULL) {
+	geometry = XGetDefault(display, "mx", "geometry");
+    }
+
+    /*
+     * If no file name is given, start up on the first tutorial.  In this
+     * case, also provide a default geometry if none was given.
+     */
+
+    if (info.name == NULL) {
+	static char tutName[100];
+	sprintf(tutName, "%.80s/%s", MXLIBDIR, "tutorial1");
+	info.name = tutName;
+	if (geometry == NULL) {
+	    geometry = "=80x50+0+0";
+	}
+    }
+
+    action.sv_handler = MainSignalProc;
+    action.sv_mask = 0;
+    action.sv_onstack = 0;
+    sigvec(SIGINT, &action, &old);
+    sigvec(SIGQUIT, &action, &old);
+    sigvec(SIGFPE, &action, &old);
+    sigvec(SIGILL, &action, &old);
+    sigvec(SIGBUS, &action, &old);
+    sigvec(SIGSEGV, &action, &old);
+    sigvec(SIGSYS, &action, &old);
+    sigvec(SIGTERM, &action, &old);
+d112 1
+a112 1
+     * Create the (first) window, and set up event handlers.
+d116 3
+a118 2
+    if (fn == NULL) {
+	fn = XGetDefault(display, "mx", "font");
+a119 125
+    if (fn != NULL) {
+	info.fontPtr = XLoadQueryFont(display, fn);
+	if (info.fontPtr != NULL) {
+	    Sx_SetDefaultFont(info.fontPtr);
+	} else {
+	    info.fontPtr = Sx_GetDefaultFont(display);
+	}
+    } else {
+	info.fontPtr = Sx_GetDefaultFont(display);
+    }
+    info.file = Mx_FileLoad(info.name);
+    if (info.file == NULL) {
+	if (errno != ENOENT) {
+	    char msg[100];
+	    int result;
+	    sprintf(msg, "Mx couldn't read\n\"%s\":\n%s.",
+		    info.name, strerror(errno));
+	    result = Sx_Notify(display, DefaultRootWindow(display), -1, -1, 0,
+		msg, info.fontPtr, 1, "Make a new file", "Quit", NULL);
+	    if (result == 1) {
+		exit(0);
+	    }
+	}
+	info.file = Mx_FileLoad((char *) NULL);
+    }
+    info.flags = MX_UNDO|MX_DELETE;
+    if (fg == NULL) {
+	fg = XGetDefault(display, "mx", "foreground");
+    }
+    info.foreground = MainGetColor(display, fg,
+	    BlackPixel(display, DefaultScreen(display)));
+    if (bg == NULL) {
+	bg = XGetDefault(display, "mx", "background");
+    }
+    info.background = MainGetColor(display, bg,
+	    WhitePixel(display, DefaultScreen(display)));
+    if (border == NULL) {
+	border = XGetDefault(display, "mx", "borderColor");
+    }
+    info.border = MainGetColor(display, border,
+	    BlackPixel(display, DefaultScreen(display)));
+    if (sbFg == NULL) {
+	sbFg = XGetDefault(display, "mx", "scrollbar.foreground");
+    }
+    info.sbForeground = MainGetColor(display, sbFg, info.foreground);
+    if (sbBg == NULL) {
+	sbBg = XGetDefault(display, "mx", "scrollbar.background");
+    }
+    info.sbBackground = MainGetColor(display, sbBg, info.background);
+    if (sbEl == NULL) {
+	sbEl = XGetDefault(display, "mx", "scrollbar.elevator");
+    }
+    info.sbElevator = MainGetColor(display, sbEl, info.background);
+    if (titleFg == NULL) {
+	titleFg = XGetDefault(display, "mx", "title.foreground");
+    }
+    info.titleForeground = MainGetColor(display, titleFg, info.foreground);
+    if (titleBg == NULL) {
+	titleBg = XGetDefault(display, "mx", "title.background");
+    }
+    info.titleBackground = MainGetColor(display, titleBg, info.background);
+    if (titleStripe == NULL) {
+	titleStripe = XGetDefault(display, "mx", "title.stripe");
+    }
+    info.titleStripe = MainGetColor(display, titleStripe, info.foreground);
+
+    if (geometry == NULL) {
+	geometry = "=80x30";
+    }
+    window = MxCreateWindow(display, geometry, info.fontPtr,
+	    4*Sx_DefaultHeight(display, info.fontPtr) + 5,
+	    info.foreground, info.background, &info.width,
+	    &info.height);
+    if (Mx_Make(display, window, &info, interp) != TCL_OK) {
+	fprintf(stderr, "Mx quitting: %s.\n", interp->result);
+
+	/*
+	 * Go immediately to the main command loop, in order to wait
+	 * for the window to be deleted gracefully before exiting.
+	 */
+
+	exitValue = 1;
+	goto mainLoop;
+    }
+    mxwPtr = MxGetMxWindow(display, window);
+    mxwPtr->fileInfoPtr->lastMod = MxLastMod(info.name);
+
+    /*
+     * If a line number or search string was given, set the view at
+     * the correct line number.  Don't forget:  users number lines from
+     * 1, but we number from 0.
+     */
+
+    if (lineNumber != -1) {
+	Mx_Position first, last, eof;
+
+	eof = Mx_EndOfFile(mxwPtr->fileInfoPtr->file);
+	if (lineNumber == -2) {
+	    first = eof;
+	} else {
+	    first.lineIndex = lineNumber;
+	    first.charIndex = 0;
+	    if (MX_POS_LESS(last, eof)) {
+		first = Mx_Offset(mxwPtr->fileInfoPtr->file, first, -1);
+	    } else {
+		first = eof;
+	    }
+	}
+	first.charIndex = 0;
+	MxSelectionSet(mxwPtr, first, first);
+	MxGetInWindow(mxwPtr, first, mxwPtr->heightLines/2, 0);
+    } else if (searchString != NULL) {
+	Mx_Position first, last;
+
+	if (!Mx_SearchPattern(info.file, Mx_ZeroPosition,
+		Mx_EndOfFile(info.file), searchString, &first, &last)) {
+	    (void) Sx_Notify(display, window, -1, -1, 0,
+		    "Couldn't find matching pattern.", mxwPtr->fontPtr, 1,
+		    "Continue", NULL);
+	} else {
+	    MxSelectionSet(mxwPtr, first, last);
+	    MxGetInWindow(mxwPtr, first, mxwPtr->heightLines/2, 0);
+	}
+    }
+    XMapRaised(display, window);
+d130 1
+a130 1
+	XNextEvent(display, &event);
+d142 1
+a142 1
+	    exit(exitValue);
+a150 55
+ * MainGetColor --
+ *
+ *	This local procedure is used to parse a color spec and return
+ *	a matching color.
+ *
+ * Results:
+ *	The return value is a color value to use for the given spec.
+ *	If the color couldn't be found, then the default value is
+ *	returned.  If the display isn't a color display and the color
+ *	isn't black or white, then the default is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static unsigned long
+MainGetColor(display, colorName, defPixel)
+    Display *display;		/* Connection to X server. */
+    char *colorName;		/* Description of color, or NULL. */
+    unsigned long defPixel;	/* Default to use if colorName is NULL or
+				 * can't be found. */
+{
+    XColor color;
+
+    if (colorName == NULL) {
+	return defPixel;
+    }
+    if (DisplayCells(display, DefaultScreen(display)) <= 2) {
+	if ((strcmp(colorName, "black") == 0)
+		|| (strcmp(colorName, "Black") == 0)) {
+	    return BlackPixel(display, DefaultScreen(display));
+	} else if ((strcmp(colorName, "white") == 0)
+		|| (strcmp(colorName, "White") == 0)) {
+	    return WhitePixel(display, DefaultScreen(display));
+	} else {
+	    return defPixel;
+	}
+    }
+    if (XParseColor(display,
+	    DefaultColormap(display, DefaultScreen(display)), colorName,
+	    &color) == 0) {
+	return defPixel;
+    }
+    if (XAllocColor(display, 
+	    DefaultColormap(display, DefaultScreen(display)), &color) == 0) {
+	return defPixel;
+    }
+    return color.pixel;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+d166 1
+a166 1
+static int
+@
+
+
+1.20
+log
+@Comment clean-up.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /a/newcmds/mx/RCS/mx.c,v 1.19 89/05/19 10:33:13 ouster Exp Locker: ouster $ SPRITE (Berkeley)";
+d363 1
+@
+
+
+1.19
+log
+@Clean up static definitions, use symbolic link for mxInt.h
+@
+text
+@d2 1
+a2 1
+ * main.c --
+d19 1
+a19 1
+static char rcsid[] = "$Header: /a/newcmds/mx/RCS/main.c,v 1.18 89/01/07 12:20:31 ouster Exp Locker: ouster $ SPRITE (Berkeley)";
+@
+
+
+1.18
+log
+@Better color support.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /a/newcmds/mx/RCS/main.c,v 1.17 88/12/23 14:55:16 ouster Exp Locker: ouster $ SPRITE (Berkeley)";
+d32 1
+a32 1
+#include </sprite/src/lib/mx/mxInt.h>
+d44 2
+a45 2
+extern unsigned long	MainGetColor();
+extern int		MainSignalProc();
+d502 2
+a503 1
+	
+@
+
+
+1.17
+log
+@Change to use /sprite/lib/mx as the library directory.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /a/newcmds/mx/RCS/main.c,v 1.16 88/10/03 09:23:14 ouster Exp Locker: ouster $ SPRITE (Berkeley)";
+d70 1
+d89 1
+d119 42
+d314 29
+d457 1
+a457 1
+    XColor hard, exact;
+d473 1
+a473 1
+    if (XAllocNamedColor(display,
+d475 1
+a475 1
+	    &hard, &exact) == 0) {
+d478 5
+a482 1
+    return hard.pixel;
+@
+
+
+1.16
+log
+@Changed file name.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: mxMain.c,v 1.15 88/08/31 08:19:32 ouster Exp $ SPRITE (Berkeley)";
+d206 1
+a206 1
+	sprintf(tutName, "%.80s/%s", HELPDIR, "tutorial1");
+@
+
+
+1.15
+log
+@Wrong test of XAllocNamedColor return value.
+@
+text
+@d2 1
+a2 1
+ * mxMain.c --
+d19 1
+a19 1
+static char rcsid[] = "$Header: mxMain.c,v 1.14 88/08/20 15:49:50 ouster Exp $ SPRITE (Berkeley)";
+@
+
+
+1.14
+log
+@On errors, wait for window to get cleaned up before exiting.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: mxMain.c,v 1.13 88/07/18 13:45:14 ouster Exp $ SPRITE (Berkeley)";
+d402 1
+a402 1
+	    &hard, &exact) != 0) {
+@
+
+
+1.13
+log
+@Go back to using UNIX library procedures (wherever possible).
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: mxMain.c,v 1.12 88/04/20 17:23:41 ouster Exp $ SPRITE (Berkeley)";
+d76 1
+d280 8
+a287 1
+	exit(1);
+d335 2
+a336 1
+    
+d351 1
+a351 1
+	    exit(0);
+@
+
+
+1.12
+log
+@Major Tcl revision:  put tcl_Result into individual interpreters,
+use {} instead of (), etc.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: mxMain.c,v 1.11 88/04/01 12:58:45 ouster Exp $ SPRITE (Berkeley)";
+a23 1
+#undef Boolean
+d25 2
+a26 6
+#include <sprite.h>
+#include <char.h>
+#include <cvt.h>
+#include <io.h>
+#include "mx.h"
+#include "mxInt.h"
+d28 3
+a30 2
+#include <sig.h>
+#include <status.h>
+d32 1
+a32 2
+#include <sx.h>
+#include <tcl.h>
+d73 2
+a74 2
+    Sig_Action old, action;
+    Boolean debug;
+d89 1
+a89 1
+    debug = FALSE;
+d94 1
+a94 1
+	} else if (String_Compare(argv[i], "-fn") == 0) {
+d98 1
+a98 1
+		Io_PrintStream(io_StdErr,
+d101 1
+a101 1
+		Proc_Exit(1);
+d104 1
+a104 1
+	} else if (String_Compare(argv[i], "-fg") == 0) {
+d110 1
+a110 1
+	} else if (String_Compare(argv[i], "-bg") == 0) {
+d116 1
+a116 1
+	} else if (String_Compare(argv[i], "-t") == 0) {
+d127 2
+a128 2
+		Io_PrintStream(io_StdErr, "%s\n", interp->result);
+		Proc_Exit(1);
+d131 3
+a133 3
+	} else if (String_Compare(argv[i], "-D") == 0) {
+	    debug = TRUE;
+	} else if (String_Compare(argv[i], "-s") == 0) {
+d144 1
+a144 1
+	    Io_ScanString(argv[i], "%d", &signalPid);
+d146 1
+a146 1
+	    Io_PrintStream(io_StdErr, "Mx: switch \"%s\" isn't legal.\n",
+d148 2
+a149 2
+	    Proc_Exit(1);
+	} else if (String_FindChar(argv[i], ':') != NULL) {
+d155 1
+a155 1
+	    } else if (!Char_IsDigit(argv[i][1])) {
+d163 1
+a163 1
+		result = Cvt_AtoI(argv[i] + 1, 10, &lineNumber);
+d166 1
+a166 1
+		    Io_PrintStream(io_StdErr,
+d168 1
+a168 1
+		    Proc_Exit(1);
+d183 2
+a184 2
+	    Io_PrintStream(io_StdErr, "Mx couldn't open the display.\n");
+	    Io_PrintStream(io_StdErr,
+d187 1
+a187 1
+	    Io_PrintStream(io_StdErr, "Mx couldn't open display %s.\n",
+d190 1
+a190 1
+	Proc_Exit(1);
+d205 1
+a205 1
+	Io_PrintString(tutName, "%.80s/%s", HELPDIR, "tutorial1");
+d212 11
+a222 8
+    action.action = SIG_HANDLE_ACTION;
+    action.handler = MainSignalProc;
+    action.sigHoldMask = 0;
+    Sig_SetAction(SIG_INTERRUPT, &action, &old);
+    Sig_SetAction(SIG_ARITH_FAULT, &action, &old);
+    Sig_SetAction(SIG_ILL_INST, &action, &old);
+    Sig_SetAction(SIG_ADDR_FAULT, &action, &old);
+    Sig_SetAction(SIG_TERM, &action, &old);
+d245 1
+a245 1
+	if (stat_LastError != FS_FILE_NOT_FOUND) {
+d248 2
+a249 2
+	    Io_PrintString(msg, "Mx couldn't read\n\"%s\":\n%s.",
+		    info.name, Stat_GetMsg(stat_LastError));
+d251 1
+a251 1
+		msg, info.fontPtr, TRUE, "Make a new file", "Quit", NULL);
+d253 1
+a253 1
+		Proc_Exit(0);
+d278 2
+a279 2
+	Io_PrintStream(io_StdErr, "Mx quitting: %s.\n", interp->result);
+	Proc_Exit(1);
+d306 1
+a306 1
+	MxGetInWindow(mxwPtr, first, mxwPtr->heightLines/2, FALSE);
+d313 1
+a313 1
+		    "Couldn't find matching pattern.", mxwPtr->fontPtr, TRUE,
+d317 1
+a317 1
+	    MxGetInWindow(mxwPtr, first, mxwPtr->heightLines/2, FALSE);
+d328 1
+a328 1
+    while (TRUE) {
+d337 1
+a337 1
+	    Sig_Send(SIG_INTERRUPT, signalPid, FALSE);
+d342 1
+a342 1
+	    Proc_Exit(0);
+d381 2
+a382 2
+	if ((String_Compare(colorName, "black") == 0)
+		|| (String_Compare(colorName, "Black") == 0)) {
+d384 2
+a385 2
+	} else if ((String_Compare(colorName, "white") == 0)
+		|| (String_Compare(colorName, "White") == 0)) {
+d421 2
+a422 2
+    static Sig_Action action = {SIG_DEFAULT_ACTION, (int (*)()) NULL, 0};
+    Sig_Action old;
+d424 1
+a424 1
+    Sig_SetAction(sigNum, &action, &old);
+d426 1
+a426 1
+    Sig_Send(sigNum, PROC_MY_PID, FALSE);
+@
+
+
+1.11
+log
+@Change X defaults to not be capitalized.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: mxMain.c,v 1.10 88/03/31 09:21:44 ouster Exp $ SPRITE (Berkeley)";
+d81 3
+d95 1
+d128 1
+a128 1
+	    Tcl_Return((char *) NULL, TCL_STATIC);
+d130 1
+a130 1
+		    &searchString);
+d132 1
+a132 1
+		Io_PrintStream(io_StdErr, "%s\n", tcl_Result);
+d279 2
+a280 2
+    if (Mx_Make(display, window, &info) != TCL_OK) {
+	Io_PrintStream(io_StdErr, "Mx quitting: %s.\n", tcl_Result);
+@
+
+
+1.10
+log
+@Use correct Tcl interface when calling Mx_GetTag.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: mxMain.c,v 1.9 88/03/16 17:30:43 ouster Exp $ SPRITE (Berkeley)";
+d196 1
+a196 1
+	geometry = XGetDefault(display, "mx", "WindowGeometry");
+d229 1
+a229 1
+	fn = XGetDefault(display, "mx", "Font");
+d258 1
+a258 1
+	fg = XGetDefault(display, "mx", "Foreground");
+d263 1
+a263 1
+	bg = XGetDefault(display, "mx", "Background");
+@
+
+
+1.9
+log
+@Massive revision to switch over to using Tcl.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: mxMain.c,v 1.2 88/02/20 13:23:14 ouster Exp $ SPRITE (Berkeley)";
+d124 1
+d127 2
+a128 2
+	    if (result != NULL) {
+		Io_PrintStream(io_StdErr, "%s\n", result);
+@
+
+
+1.8
+log
+@Take out environment hack.
+@
+text
+@d8 1
+a8 1
+ * Copyright (C) 1986 Regents of the University of California.
+d19 1
+a19 1
+static char rcsid[] = "$Header: mxMain.c,v 1.7 88/01/05 19:22:22 nelson Exp $ SPRITE (Berkeley)";
+d26 4
+a29 4
+#include "sprite.h"
+#include "char.h"
+#include "cvt.h"
+#include "io.h"
+d32 6
+a37 5
+#include "proc.h"
+#include "sig.h"
+#include "status.h"
+#include "string.h"
+#include "sx.h"
+d118 1
+a118 1
+	    char *result;
+d274 2
+a275 1
+    if (!Mx_Make(display, window, &info)) {
+@
+
+
+1.7
+log
+@Changed the Sig_Send for Mike's hack to send to the process only, not a
+family.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: mxMain.c,v 1.6 88/01/04 15:30:04 ouster Exp $ SPRITE (Berkeley)";
+a79 8
+
+    /*
+     * The lines below are a temporary hack until the environment stuff
+     * gets straightened out.
+     */
+
+    extern char **environ;
+    environ = 0;
+@
+
+
+1.6
+log
+@Special hack for Mike.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: mxMain.c,v 1.5 88/01/03 15:21:42 ouster Exp $ SPRITE (Berkeley)";
+d340 1
+a340 1
+	    Sig_Send(SIG_INTERRUPT, signalPid, TRUE);
+@
+
+
+1.5
+log
+@Temporary hack to make environments work.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: mxMain.c,v 1.4 87/11/28 13:25:43 ouster Exp $ SPRITE (Berkeley)";
+d79 1
+d140 12
+d334 9
+@
+
+
+1.4
+log
+@Don't tie server-synchronization to -D flag:  it's too slow.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: mxMain.c,v 1.3 87/10/23 14:16:32 deboor Exp $ SPRITE (Berkeley)";
+d79 8
+@
+
+
+1.3
+log
+@Adapted to new XGetDefault
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: mxMain.c,v 1.2 87/08/24 10:55:33 ouster Exp $ SPRITE (Berkeley)";
+d178 1
+a178 3
+    if (debug) {
+	XSynchronize(display, True);
+    }
+@
+
+
+1.2
+log
+@Lint.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: mxMain.c,v 1.1 87/08/21 10:33:58 ouster Exp $ SPRITE (Berkeley)";
+d183 1
+a183 1
+	geometry = XGetDefault("mx", "WindowGeometry");
+d216 1
+a216 1
+	fn = XGetDefault("mx", "Font");
+d245 1
+a245 1
+	fg = XGetDefault("mx", "Foreground");
+d250 1
+a250 1
+	bg = XGetDefault("mx", "Background");
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: mxMain.c,v 1.6 87/08/03 11:05:39 ouster Exp $ SPRITE (Berkeley)";
+d75 1
+a75 1
+    int i, lineNumber, flags;
+@

@@ -1,0 +1,594 @@
+
+
+
+TCLSHELL             UNKNOWN MANUAL SECTION              TCLSHELL
+
+
+
+NNAAMMEE
+     Tcl - Tcl interactive shell.
+
+SSYYNNOOPPSSIISS
+     ttccll [[--qq]] [[[[--ff]] _s_c_r_i_p_t]]||[[--cc _c_o_m_m_a_n_d]] [[_a_r_g_s]
+
+
+DDEESSCCRRIIPPTTIIOONN
+     ttccll [[--qq]] [[[[--ff]] _s_c_r_i_p_t]]||[[--cc _c_o_m_m_a_n_d]] [[_a_r_g_s]
+
+     TTccll starts the interactive Tcl command interpreter.  The Tcl
+     shell  provides  an  environment  for writing, debugging and
+     executing Tcl scripts.  The functionality of the  Tcl  shell
+     can also be obtained in any Tcl-based application.
+
+     The ttccll command, issued without any  arguments,  invokes  an
+     interactive  Tcl  shell.   If  _s_c_r_i_p_t is specified, then the
+     script is executed noninteractively with _a_r_g_s being supplied
+     in  the  Tcl  variable `aarrggvv'.  If _c_o_m_m_a_n_d is supplied, then
+     this command (or series of commands, separated  by  `;')  is
+     executed, with `aarrggvv' containing _a_r_g_s.
+
+     The Tcl shell is intended as an environment for Tcl  program
+     development  and execution.  While it is not a full-featured
+     interactive shell, it provides a comfortable environment for
+     the  interactive  development  of  Tcl  code.  Note that the
+     package library code described here  overrides  the  uunnkknnoowwnn
+     command  provided  as  part  of  the  standard  Berkeley Tcl
+     library facility, although Tcl  source  libraries  coded  to
+     that standard can be loaded and used by Extended Tcl.
+
+IINNIITTIIAALLIIZZAATTIIOONN SSEEQQUUEENNCCEE
+     The standard Tcl shell initialization consists of  the  fol-
+     lowing steps:
+
+          Search for a default file.  The default file is  a  Tcl
+          script  that is executed to set important Tcl variables
+          that govern startup, such as TTCCLLPPAATTHH.  The Tcl  default
+          file  is  searched  for  using the following algorithm:
+          The current Extended Tcl version, represented by  $ver,
+          is  included in the default file naming to allow multi-
+          ple Tcl versions to exists on a system.  Note that  the
+          Extended Tcl version is the standard Tcl version number
+          with an alphabetic character  added  to  indicated  the
+          version  of  Extended  Tcl.   The iinnffooxx vveerrssiioonn command
+          will return this version number.
+
+               - An environment variable, TTCCLLDDEEFFAAUULLTT, is  checked
+               for.   If  present,  it is used as the name of the
+               default file.
+
+               - A file, TTCCLLDDEEFFAAUULLTT, is looked for in the current
+
+
+
+Tcl                                                             1
+
+
+
+
+
+
+TCLSHELL             UNKNOWN MANUAL SECTION              TCLSHELL
+
+
+
+               directory.
+
+               - A global default file  with  is  usually  either
+               //eettcc//ddeeffaauulltt//ttccll$$vveerr                            or
+               //uussrr//llooccaall//lliibb//ttccllddeeffaauulltt$$vveerr.  (Tcl may  be  com-
+               piled  to  use  a different directory on some sys-
+               tems).
+
+          First, TTccll executes the default file.  This  file  nor-
+          mally  sets  at least two Tcl variables: TTCCLLPPAATTHH, which
+          contains a list of directories that contain tcl  source
+          files, and TTCCLLIINNIITT, the full pathname of the Tcl source
+          file that performs  Tcl  initialization.   Other  site-
+          specific variables may also be set in this file.
+
+          Next, ttccll executes the initialization file specified by
+          the   Tcl  variable  TTCCLLIINNIITT.   This  is  normally  the
+          TTccllIInniitt..TTccll  file  distributed  with  Tcl.   This  file
+          defines  the  Tcl  environment,  including standard Tcl
+          procs and variables.
+
+FFLLAAGGSS
+     --qq   Quick initialization flag.  If this  flag  is  set  the
+          only initialization step performed is to locate the Tcl
+          default file and save its  name  in  the  Tcl  variable
+          TCLDEFAULT.   The  file  is  not  evaluated  nor is the
+          TclInit.tcl file.  This provides for a faster start up,
+          but  does  not  make any of the standard Tcl procedures
+          and facilities available.
+
+     --ff   Take the next argument as a Tcl script to source rather
+          than  enter interactive mode.  The --ff flag is optional.
+          Normally the first argument that does not start with  a
+          `-'  is  taken as the script to execute unless the `-c'
+          option  is  specified.   All  following  arguments  are
+          passed  to the script in aarrggvv, thus any other Tcl shell
+          flags must precede this option.
+
+     --cc   Take the next argument as a Tcl command to execute.  It
+          may be series of commands to execute, separated by `;'.
+          All following arguments are passed in  aarrggvv,  thus  any
+          other Tcl shell flags must precede this option.
+
+     ----   Mark the end of the arguments to  the  Tcl  shell.  All
+          arguments following this are passed in the Tcl variable
+          aarrggvv.   This  is  useful  to  pass  arguments   without
+          attempting to execute a Tcl script.
+
+TTCCLLIINNIITT FFIILLEE
+     The Tcl initialization file,  normally  _T_c_l_I_n_i_t._t_c_l  in  the
+     main  Tcl  script  directory, initializes the Tcl shell.  It
+     defines  various  Tcl  procedures  that  are   required   to
+
+
+
+Tcl                                                             2
+
+
+
+
+
+
+TCLSHELL             UNKNOWN MANUAL SECTION              TCLSHELL
+
+
+
+     implement loading of Tcl source from libraries via the pack-
+     age libraries and autoload facilities.
+
+     If the Tcl is invoked interactively, it will source a ._t_c_l_r_c
+     in  the  user's home directory, if it exists.  Tcl is viewed
+     primarly as  a  programming  language,  not  an  interactive
+     shell,  so  the  ._t_c_l_r_c  is  intended  for  use  for loading
+     development utilities, not to support programs, which should
+     not rely on the user's environment.
+
+VVAARRIIAABBLLEESS
+     The following variables are  set  and/or  used  by  the  Tcl
+     shell.
+
+     aarrggvv A list containing the arguments passed in from the com-
+          mand  line,  excluding arguments used by the Tcl shell.
+          The first element is the first passed argument, not the
+          program name.
+
+     iinntteerraaccttiivveeSSeessssiioonn
+          Set to 11 if Tcl shell is invoked interactively, or 00 if
+          the Tcl shell is directly executing a script.
+
+     nnooAAuuttooEExxeecc
+          If this variable exists and has a value of 11, then  the
+          Tcl shell will not attempt to exec an non-existent com-
+          mand as a shell command.
+
+     pprrooggrraammNNaammee
+          The name that the  Tcl  shell  is  executing  as.   All
+          directory components are removed from the program name.
+
+     ssccrriippttNNaammee
+          The name of the script that the Tcl shell is  executing
+          if the script was invoked on the command line.
+
+     TTCCLLDDEEFFAAUULLTT
+          Name of the default file that was used  to  locate  all
+          other files used by the Tcl shell.
+
+     TTCCLLEENNVV
+          Array that  contains  information  used  internally  by
+          various Tcl procedures that are part of the Tcl shell.
+
+     TTCCLLEENNVV((ttooppLLeevveellPPrroommppttHHooookk))
+          Contains code to run to generate the prompt  used  when
+          interactively prompting for commands.  The code in this
+          hook will be evaluated and the result will be used  for
+          the prompt.
+
+     TTCCLLEENNVV((ddoowwnnLLeevveellPPrroommppttHHooookk))
+          Contains code to run to generate the prompt  used  when
+
+
+
+Tcl                                                             3
+
+
+
+
+
+
+TCLSHELL             UNKNOWN MANUAL SECTION              TCLSHELL
+
+
+
+          interactively  prompting  for continuation of an incom-
+          plete command.  The code in this hook will be evaluated
+          and the result will be used for the prompt
+
+     TTCCLLIINNIITT
+          The name of the file that initializes, and does startup
+          processing of, Tcl.
+
+     TTCCLLPPAATTHH
+          Path to search to locate Tcl scripts.  Used by the llooaadd
+          and ddeemmaanndd__llooaadd procedures.
+
+HHEELLPP FFAACCIILLIITTYY
+     The help facility allows for display of help files extracted
+     from  the  standard  Tcl manual pages and Tcl scripts.  Help
+     files are structured in a multilevel directory tree of  sub-
+     jects  and  help  files.  The following commands and options
+     are provided with the help package:
+
+     hheellpp
+          Help, without arguments, lists  of  all  the  top-level
+          help subject directories and files.
+
+     hheellpp _s_u_b_j_e_c_t_d_i_r
+          Displays all of help  files  and  lower  level  subject
+          files (if any exist) under the directory _s_u_b_j_e_c_t_d_i_r.
+
+     hheellpp _s_u_b_j_e_c_t_d_i_r/_h_e_l_p_f_i_l_e
+          Display the specified help file.  The  help  output  is
+          passed  through  a  simple  pager  if output exceeds 23
+          lines, pausing waiting for a return to be entered.   If
+          any  other  character  is  entered,  the output is ter-
+          minated.
+
+     hheellppccdd [[_s_u_b_j_e_c_t_d_i_r]
+          Change the current subject  directory,  which  is  much
+          like the Unix current directory.  This directory can be
+          changed with the hheellppccdd command.  If _s_u_b_j_e_c_t_d_i_r is  not
+          specified,  return  to  the top-level of the help tree.
+          Help path names may also include ``..'' elements.
+
+     hheellppppwwdd
+          Displays the current help subject directory.
+
+     hheellpp hheellpp || ??
+          Displays help on the help  facility  at  any  directory
+          level.
+
+     aapprrooppooss _p_a_t_t_e_r_n
+          This command locates subjects by searching  their  one-
+          line  descriptions  for  a  pattern.  Apropos is useful
+          when you can remember part of the name  or  description
+
+
+
+Tcl                                                             4
+
+
+
+
+
+
+TCLSHELL             UNKNOWN MANUAL SECTION              TCLSHELL
+
+
+
+          of  a  command, and want to search through the one-line
+          summaries for matching lines.  Full regular expressions
+          may be specified (see the rreeggeexxpp command).
+
+CCOOMMMMAANNDD RREESSUULLTTSS
+     The string result of a command typed at the Tcl  shell  com-
+     mand  prompt  is  normally  echoed  back to the user.  If an
+     error occurs, then the string  result  is  displayed,  along
+     with  the error message.  The error message will be preceded
+     by the string ``Error:''.
+
+     The sseett command is a special case.  If the command is called
+     to set a variable (i.e. with two arguments), then the result
+     will not be echoed.  If only one argument,  the  name  of  a
+     variable,  is  supplied  to  sseett,  then  the  result will be
+     echoed.
+
+EEXXEECCUUTTIIOONN OOFF UUNNIIXX CCOOMMMMAANNDDSS
+     If an unknown Tcl command is entered from the command  line,
+     then  the  Unix  command  path, specified in the environment
+     variable PPAATTHH, will be searched for a command  of  the  same
+     name.  If found, the command will be executed.  This feature
+     is provided  to  enhance  the  interactive  environment  for
+     developing Tcl scripts. This is only supported from the com-
+     mand line, not in script files or in  procedures,  to  elim-
+     inate  confusion.  The eexxeecc or ssyysstteemm command should be used
+     to run Unix commands inside scripts.
+
+TTCCLL SSHHEELLLL PPRROOCCEEDDUURREESS
+     The follow additional procedures  are  defined  by  the  Tcl
+     shell and may be generally useful:
+
+     llooaadd _f_i_l_e
+          Source a file,  as  with  the  source  command,  except
+          search the TCLPATH for the file.
+
+     sseeaarrcchhppaatthh _p_a_t_h _f_i_l_e
+          Search all directories in the specified path, which  is
+          a  Tcl  list, for the specified file.  Returns the full
+          path name of the file, or an empty string if  the  file
+          is not found.
+
+AAUUTTOOLLOOAADD
+     aauuttoollooaadd _f_i_l_e _p_r_o_c_1 [.._p_r_o_c_N]
+
+     The _a_u_t_o_l_o_a_d procedure, defined in TTccllIInniitt..ttccll,  allows  the
+     Tcl  programmer  to name one or more procedures and the file
+     they are defined in.  After _a_u_t_o_l_o_a_d has  been  executed  to
+     inform  Tcl of the presence of them, a subsequent attempt to
+     execute one of the procedures will cause  the  corresponding
+     file to be loaded transparently prior to executing the func-
+     tion.  For example, executing:
+
+
+
+Tcl                                                             5
+
+
+
+
+
+
+TCLSHELL             UNKNOWN MANUAL SECTION              TCLSHELL
+
+
+
+          autoload showproc.tcl showproc showprocs
+
+     tells Tcl to automatically load the  file  sshhoowwpprroocc..ttccll  the
+     first  time  in  the current session that either _s_h_o_w_p_r_o_c or
+     _s_h_o_w_p_r_o_c_s is executed.
+
+PPAACCKKAAGGEE LLIIBBRRAARRIIEESS
+     Package libraries work like _a_u_t_o_l_o_a_d, except that a  package
+     library  file can contain multiple independent Tcl packages.
+     A package is a collection of related Tcl procedures.
+
+     The package library file is just a regular Unix  text  file,
+     editable with your favorite text editor, containing packages
+     of Tcl source code. The package library must end  in  ..ttlliibb,
+     an   index   file  with  the  suffix  ..ttnnddxx  will  be  built
+     corresponding to the package library.  The start of a  pack-
+     age is delimited by:
+
+          ##@@ppaacckkaaggee:: _p_a_c_k_a_g_e__n_a_m_e _p_r_o_c_1 [.._p_r_o_c_N]
+
+     These lines must start in column  one.   Everything  between
+     the ppaacckkaaggee keyword and the next ppaacckkaaggee keyword, or the end
+     of the file, becomes part of the named package.  The  speci-
+     fied  procedures,  _p_r_o_c_1.._p_r_o_c_N, are the entry points of the
+     package.  When a command named in a package command is  exe-
+     cuted  and  detected  as an unknown command, all code in the
+     specified package will  be  sourced.   This  package  should
+     define  all  of  the  procedures  named on the package line,
+     define any support procedures required by the package and do
+     any package-specific initialization.
+
+     For example, in a package source file, the presence  of  the
+     following line:
+
+          ##@@ppaacckkaaggee:: ddiirreeccttoorryy__ssttaacckk ppuusshhdd ppooppdd ddiirrss
+
+     says that the text lines following that line in the  package
+     file up to the next _p_a_c_k_a_g_e line or the end of the file is a
+     package named ddiirreeccttoorryy__ssttaacckk and that an attempt to execute
+     either  _p_u_s_h_d,  _p_o_p_d or _d_i_r_s when the routine is not already
+     defined will cause the ddiirreeccttoorryy__ssttaacckk portion of the  pack-
+     age file to be loaded.
+
+PPAACCKKAAGGEE IINNDDEEXX FFIILLEESS
+     A package library file has associated with it an index  file
+     called  a  ..ttnnddxx file.  The ..ttnnddxx file contains the names of
+     the packages in the ..ttlliibb file, their addresses and  lengths
+     within  the  ..ttlliibb  file and the functions that are to cause
+     the different packages to be autoloaded when an  attempt  is
+     made to execute them.
+
+     The first time Tcl tries to execute a  procedure  where  the
+
+
+
+Tcl                                                             6
+
+
+
+
+
+
+TCLSHELL             UNKNOWN MANUAL SECTION              TCLSHELL
+
+
+
+     procedure  doesn't  exist  and  isn't  an autoload, Tcl will
+     search along TTCCLLPPAATTHH looking for any files ending in  ..ttlliibb.
+     For  each  one  it  finds,  it  checks  to see if there is a
+     corresponding file in the same directory  ending  in  ..ttnnddxx.
+     If  the  ..ttnnddxx  file  doesn't  exist, or if its date of last
+     modification is older than that of the ..ttlliibb file, the ..ttnnddxx
+     is  automatically  (re)generated  if possible.  If Tcl can't
+     regenerate the file (most likely due to  file  or  directory
+     permission problems), an error occurs.
+
+     Demand loading is also supported from indexes build  by  the
+     mmkkiinnddeexx..ttccll  program,  supplied with standard Tcl.  However,
+     iinniitt..ttccll is not loaded.  Note that the iinnffoo lliibbrraarryy  command
+     is  not  used to locate libraries by this shell; the TTCCLLPPAATTHH
+     variable is set by the default file and is  used  to  locate
+     the libraries.
+
+PPAACCKKAAGGEE MMAANNAAGGEEMMEENNTT CCOOMMMMAANNDDSS
+     Several commands are available  for  building  and  managing
+     package   libraries.    If  you  are  not  building  package
+     libraries and are  using  the  standard  Tcl  initialization
+     file,  they  are all transparent.  These commands are either
+     defined or autoloaded by TTccllIInniitt..ttccll.
+
+     aauuttoopprrooccss
+          Lists the names  of  all  known  autoload  and  package
+          library procedures.
+
+     bbuuiillddppaacckkaaggeeiinnddeexx _l_i_b_f_i_l_e
+          Build an index for a package library.  The the  _l_i_b_f_i_l_e
+          name must end with the suffix ..ttlliibb.
+
+     ddeemmaanndd__llooaadd _p_r_o_c_n_a_m_e
+          Attempt to load the specified procedure, either  as  an
+          autoload  function or by loading the package containing
+          the procedure.  If the package indexes  have  not  been
+          loaded  for all package libraries in TTCCLLPPAATTHH, they will
+          be loaded.  Out-of-date library indexes will be rebuilt
+          if  they  are writable.  The procedure returns 11 if the
+          procedure was sucessfully loaded, or 00 if it was not.
+
+     llooaaddlliibbiinnddeexx _l_i_b_f_i_l_e
+          Load the package library index of the library file lliibb--
+          ffiillee  (which  must  have  the  suffix  ._t_l_i_b).  Package
+          library indexes along the TTCCLLPPAATTHH are loaded  automati-
+          cally  on  the  first demand_load; this command is pro-
+          vided to explicitly load libraries that are not in  the
+          path.  If the index file (with a ._t_n_d_x suffix) does not
+          exists or is out of date, it will  be  rebuilt  if  the
+          user has directory permissions to create it.
+
+     ppaacckkaaggeess
+
+
+
+Tcl                                                             7
+
+
+
+
+
+
+TCLSHELL             UNKNOWN MANUAL SECTION              TCLSHELL
+
+
+
+          Returns a list of the names of all known packages.
+
+     This section discusses the internal structure of  the  stan-
+     dard  Tcl  initialization  file and the facilities it imple-
+     ments.  This is intended primarily for developers  who  want
+     to customize these facilities for their applications.
+
+     AAuuttoollooaadd aanndd PPaacckkaaggee LLiibbrraarryy SSttrruuccttuurreess
+
+     The package library index consists  of  an  entry  for  each
+     package  in  the  library, where each entry is a call to the
+     TTCCLLSSHH::ddeeffppkkgg procedure.  Loading of  the  package  index  is
+     done  with  the ssoouurrccee command.  The _d_e_f_p_a_c_k_a_g_e routine ini-
+     tializes elements of the TTCCLLEENNVV  array  which  are  used  by
+     ddeemmaanndd__llooaadd  to  locate  and load a package.  The bbuuiillddppaacckk--
+     aaggeeiinnddeexx procedure is contained in ppaacckkaaggeess..ttccll.
+
+     The following elements of the TTCCLLEENNVV are used  to  implement
+     the autoload and package library facility.
+
+     TTCCLLEENNVV((PPRROOCC::_p_r_o_c_N_a_m_e))
+          Each procedure that is to be loaded by the  ddeemmaanndd__llooaadd
+          command has an entry in this array, indexed by the con-
+          catenation of `PROC:' with the procedure name.  If  the
+          entry  is  for  a  package, it is a list consisting `P'
+          followed by the name of the package.  The package  name
+          must  be  looked  up  in  the  TCLENV array to find the
+          actual library file.  If the entry is for  an  autoload
+          procedure,  it  is a list consisting of 'F' followed by
+          the name of the file to load.
+
+     TTCCLLEENNVV((PPKKGG::_p_a_c_k_a_g_e_N_a_m_e))
+          Each package has an entry in the array indexed  by  the
+          concatenation  of  `PKG:'  and the name of the package.
+          The entry is a list containing the  full  path  to  the
+          library  file, the byte offset in the file of the start
+          of the package, and the length of the package.
+
+     TTCCLLEENNVV((ppaacckkaaggeeIInnddeexxeessLLooaaddeedd))
+          A boolean that indicates if the  package  indexes  have
+          been  loaded.   They will not be loaded until the first
+          call to ddeemmaanndd__llooaadd.
+
+     TTCCLLEENNVV((iinnUUnnkknnoowwnn))
+          Indicates if the uunnkknnoowwnn  command  is  currently  being
+          executed.  It is used to detect recursion in situations
+          where an unknown command is found during  unknown  com-
+          mand processing.
+
+     The following procedures are used to implement the internals
+     of  the  autoload  and  package  library  facility,  and are
+     defined by TTccllIInniitt..ttccll:
+
+
+
+Tcl                                                             8
+
+
+
+
+
+
+TCLSHELL             UNKNOWN MANUAL SECTION              TCLSHELL
+
+
+
+     TTCCLLSSHH::ddeeffppkkgg _p_k_g_n_a_m_e _l_i_b_f_i_l_e _o_f_f_s_e_t _l_e_n _p_r_o_c_1 [.._p_r_o_c_N]
+          Define a package for the current interpreter.   _P_k_g_n_a_m_e
+          is  the  name  of the package to define, _l_i_b_f_i_l_e is the
+          full path to the library  file.   _o_f_f_s_e_t  is  the  byte
+          offset  into  the of the start of the package code; _l_e_n
+          is the length  of  the  package  code,  in  bytes,  and
+          _p_r_o_c_1.._p_r_o_c_N  are the entry point procedures defined by
+          the package.  This procedure  is  normally  not  called
+          directly by the user or the user's script.  The library
+          index files consists of  calls  to  this  procedure  to
+          define every package in a library.
+
+     TTCCLLSSHH::LLooaaddOOuusstteerrIInnddeexx ddiirr
+          Load an index file, _d_i_r/ttccllIInnddeexx, of the type built  by
+          John  Ousterhout's  mmkkiinnddeexx..ttccll  program (included with
+          the standard Tcl distribution).  This  style  of  index
+          defines  procedure  names  and  the  files that contain
+          them.  It is  a  one-index-to-many-source-files  struc-
+          ture.  All  of the files pointed to by this must reside
+          in _d_i_r.  The procedures  in  these  libraries  will  be
+          defined as if the autoload command had been used.
+
+     TTCCLLSSHH::LLooaaddPPaacckkaaggeeIInnddeexxeess
+          This procedure searches the path defined by  Tcl  vari-
+          able  TTCCLLPPAATTHH  and  loads all of the indexes for all of
+          the ._t_l_i_b package libraries in the path.  If any of the
+          indexes are older that their corresponding library file
+          or do not exist, then they will be rebuilt if the  user
+          has   write   access   to   the  directory.   Also  all
+          Ousterhout-style indexes found along the path  will  be
+          loaded.
+
+     uunnkknnoowwnn
+          This is the actual unknown command  trap  handler.   It
+          will  first  do a ddeemmaanndd__llooaadd, loading the uunnkknnoowwnn com-
+          mand if it has been defined by aauuttoollooaadd, or by a  pack-
+          age  library  index.   The  library  indexes will be be
+          loaded if this is the first call to  uunnkknnoowwnn.   If  the
+          command  is not found by ddeemmaanndd__llooaadd, the Unix path (in
+          the environment variable PPAATTHH, will be searched for the
+          command.   If  it is found, it will be executed via the
+          ssyysstteemm command, providing full shell (sshh) command  line
+          expansion,  with  output  going  to standard out rather
+          than being returned as the result of the command.  This
+          binary  path  search  will  only  occur  if  this is an
+          interactive session running at the top level (i.e., not
+          in  a procedure or a script). This behavior can be dis-
+          abled with the nnooAAuuttooEExxeecc variable.
+
+
+
+
+
+
+
+Tcl                                                             9
+
+
+

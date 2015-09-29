@@ -1,0 +1,170 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     91.04.09.18.33.11;  author shirriff;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.04.09.16.43.23;  author shirriff;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Mary checking this in for Ken since I have to reinstall vm.
+@
+text
+@/*
+ * Copyright (c) 1991 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ */
+
+#ifndef _MMAN
+#define _MMAN
+
+/*
+ * Protection flags.
+ */
+#define PROT_READ	0x4	/* Read permissions. */
+#define PROT_WRITE	0x2	/* Write permissions. */
+#define PROT_EXEC	0x1	/* Exec permissions. */
+/*
+ * For no good reason, Sun and Sequent have the flags in the reverse order.
+ */
+#define SUN_PROT_READ	0x1	/* Read permissions. */
+#define SUN_PROT_WRITE	0x2	/* Write permissions. */
+#define SUN_PROT_EXEC	0x4	/* Exec permissions. */
+
+#define PROT_RDWR	(PROT_READ|PROT_WRITE)
+#define PROT_BITS	(PROT_READ|PROT_WRITE|PROT_EXEC)
+
+/*
+ * Sharing flags.
+ */
+#define MAP_SHARED	1	/* Share modifications. */
+#define MAP_PRIVATE	2	/* Keep modifications private. */
+#define MAP_ZEROFILL	3	/* Zerofill pages. */
+#define MAP_TYPE	0xf	/* Mask for type. */
+
+#define MAP_FIXED	0x10	/* Force mapping to user's address. */
+
+#define _MAP_NEW	0x80000000 /* Return address instead of 0. */
+
+#endif _MMAN
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@a0 12
+/* $Copyright:	$
+ * Copyright (c) 1984, 1985, 1986, 1987 Sequent Computer Systems, Inc.
+ * All rights reserved
+ *  
+ * This software is furnished under a license and may be used
+ * only in accordance with the terms of that license and with the
+ * inclusion of the above copyright notice.   This software may not
+ * be provided or otherwise made available to, or used by, any
+ * other person.  No title to or ownership of the software is
+ * hereby transferred.
+ */
+
+d2 3
+a4 1
+ * $Header: mman.h 2.10 87/04/06 $
+a5 2
+ * mman.h
+ *	Structures and definitions for memory mapping support.
+d8 2
+a9 2
+/* $Log:	mman.h,v $
+ */
+d12 1
+a12 5
+ * mmap() system-call interface definitions.
+ *
+ * In the current implementation:
+ *	PROT_WRITE ==> PROT_READ.
+ *	PROT_EXEC insists on PROT_READ, and arranges caching of the map.
+d14 3
+a16 15
+
+#include <sys/types.h>
+#define	PROT_READ	0x4		/* read access */
+#define	PROT_WRITE	0x2		/* write access */
+#define	PROT_EXEC	0x1		/* executable access */
+
+#define	PROT_RDWR	(PROT_READ|PROT_WRITE)
+#define	PROT_BITS	(PROT_READ|PROT_WRITE|PROT_EXEC)
+
+#define	PROT_LASTFD	0x8		/* internal state, orthog to above */
+
+#define	MAP_SHARED	1		/* shared modifications */
+#define	MAP_PRIVATE	2		/* private modifications */
+#define	MAP_ZEROFILL	3		/* pages are zero-filled, private */
+
+d18 1
+a18 2
+ * Mapping operations structure -- defines a mapper.
+ * There is a set of map operations per type of file (eg, VREG, VCHR).
+d20 3
+d24 2
+a25 13
+struct	mapops	{
+	int	(*map_new)();		/* create a new map */
+	int	(*map_dup)();		/* dup ref to map (fork) */
+	int	(*map_unmap)();		/* release reference to map */
+	int	(*map_swpout)();	/* swap out ref to map */
+	int	(*map_swpin)();		/* swap in ref to map */
+	int	(*map_refpg)();		/* get ref to page */
+	int	(*map_derefpg)();	/* remove page ref */
+	int	(*map_realloc)();	/* drop reclaim link to page */
+	int	(*map_pgout)();		/* page-out page */
+	int	(*map_stat)();		/* get info about the map */
+	int	(*map_err)();		/* import an error to the map */
+};
+d28 1
+a28 6
+ * Per-process array of struct mmap keeps track of current mmap's.
+ * mm_pgcnt < mm_size if some pages are unmapped or re-mapped.
+ * mm_pgcnt == 0 ==> entry is unused.
+ *
+ * mm_prot holds maximimum possible protection mapped by this entry; must
+ * have enough bits to fit PROT_BITS.
+d30 8
+d39 1
+a39 16
+struct	mmap	{
+	u_long		mm_off;		/* 1st file offset mapped (HW pages) */
+	size_t		mm_1stpg;	/* 1st vpn in process */
+	size_t		mm_size;	/* size mapped (HW pages) */
+	size_t		mm_pgcnt;	/* # HW pages mapped */
+	struct	mapops	*mm_ops;	/* mapper operations */
+	u_long		mm_handle;	/* identifies mapped object */
+	short		mm_fdidx;	/* fd index mapped */
+	char		mm_prot;	/* "prot" bits mapped by this entry */
+	u_char		mm_paged: 1,	/* paged? else phys */
+			mm_noio:  1,	/* IO services prohibited? */
+			mm_lastfd:1,	/* last fd ref is getting closed */
+			mm_cor:   1,	/* copy-on-ref these pages */
+			mm_text:  1,	/* is this a "text" map? */
+				: 3;	/* reserved */
+};
+@

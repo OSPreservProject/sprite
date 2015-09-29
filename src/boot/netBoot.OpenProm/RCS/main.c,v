@@ -1,0 +1,164 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     91.01.13.02.39.23;  author dlong;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.10.10.15.13.28;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@added support for sun4c.  Little effort made to keep sun4 stuff.
+@
+text
+@/*-
+ * main.c --
+ *	First-level boot program for Sprite. Takes its arguments
+ *	and uses tftp to download the appropriate kernel image.
+ *
+ * Copyright (c) 1987 by the Regents of the University of California
+ *
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ */
+#ifndef lint
+static char rcsid[] =
+"$Header: /sprite/src/boot/netBoot/RCS/main.c,v 1.1 90/10/10 15:13:28 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+#endif lint
+
+#include    "boot.h"
+#include    "mach.h"
+#include    <string.h>
+
+/*-
+ *-----------------------------------------------------------------------
+ * main --
+ *	Main function for downloading stuff.
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *	Begins the booted program.
+ *
+ *-----------------------------------------------------------------------
+ */
+main() 
+{
+    int		unitNum = 0;
+    char	*fileName, *devName;
+    int		startAddr;
+    void	*fileId;
+    
+    /*
+     * Enable interrupts so that L1-a and the milli-second timer work.
+     */
+    Mach_EnableIntr();
+    if (!CheckRomMagic()) {
+	printf("Do not know about ROM magic %x\n", RomMagic);
+	ExitToMon();
+    }
+    printf ("\nROM version is %d\n", RomVersion);
+    devName = BootDevName();
+    printf("Boot Device: %s\n", devName);
+    fileName = BootFileName();
+    printf("Boot Path: %s\n", fileName);
+
+    if ((strcmp(fileName, "vmunix") == 0) || (*fileName == '\0')) {
+	fileName = BOOT_FILE;
+    }
+
+    printf ("\nSpriteBoot: ");
+    PrintBootCommand();
+
+    fileId = (void *)DevOpen(devName);
+    if (fileId == 0) {
+	printf("DevOpen(\"%s\") failed.  Aborting.\n", devName);
+	ExitToMon();
+    }
+    etheropen(fileId);
+    startAddr = tftpload(fileId, fileName, unitNum);
+    (void)DevClose(fileId);
+    
+    if (startAddr == -1){
+	ExitToMon();
+    } else {
+	/*
+	 * Jump to the address returned by tftpload
+	 */
+	printf("Starting execution at 0x%x\n", startAddr);
+	startKernel(startAddr);
+	return(startAddr);
+    }
+}
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d20 1
+a20 1
+"$Header$ SPRITE (Berkeley)";
+d24 2
+a26 3
+#include    "saio.h"
+#include    "bootparam.h"
+
+d42 4
+a45 3
+    register struct bootparam	*bp = *romp->v_bootparam;
+    struct saioreq	    req;
+    int	    	  	startAddr;
+d47 13
+d61 2
+a62 2
+    if ((strcmp(bp->bp_name, "vmunix") == 0) || (*bp->bp_name == '\0')) {
+	bp->bp_name = BOOT_FILE;
+d65 2
+a66 3
+    printf ("SpriteBoot: %c%c(%x,%x,%x)%s\n",
+	    bp->bp_dev[0], bp->bp_dev[1], bp->bp_ctlr,
+	    bp->bp_unit, bp->bp_part, bp->bp_name);
+d68 4
+a71 7
+    req.si_ctlr = bp->bp_ctlr;
+    req.si_unit = bp->bp_unit;
+    req.si_boff = (daddr_t)bp->bp_part;
+    req.si_boottab = bp->bp_boottab;
+    
+    if (devopen(&req)) {      /* Do all the hard work */
+	(*romp->v_exit_to_mon)();
+d73 3
+a75 3
+    etheropen( &req);
+    startAddr = tftpload(&req, bp);
+    devclose(&req);
+d78 1
+a78 1
+	(*romp->v_exit_to_mon)();
+@

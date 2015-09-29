@@ -1,0 +1,164 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     91.01.13.02.35.53;  author dlong;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.06.16.08.30.31;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.06.02.11.10.59;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Header file for sprite tftp boot program
+@
+
+
+1.3
+log
+@define more macros for sending and receiving packets,
+getting things from PROM data structures, etc.
+@
+text
+@/*-
+ * boot.h --
+ *	 Header file for sprite tftp boot program
+ *
+ * Copyright (c) 1987 by the Regents of the University of California
+ *
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *	"$Header: /sprite/src/boot/netBoot.OpenProm/RCS/boot.h,v 1.2 89/06/16 08:30:31 brent Exp Locker: dlong $ SPRITE (Berkeley)"
+ */
+#ifndef _BOOT_H
+#define _BOOT_H
+
+#include <sprite.h>
+#include <sys/types.h>
+#include <netEther.h>
+#ifndef OPENPROMS
+#define OPENPROMS
+#endif
+#include "sunromvec.h"
+
+extern struct sunromvec	*romp;
+#define romVectorPtr	romp
+
+#define printf	  		(*romp->v_printf)
+#define millitime()		(*romp->v_nmiclock)
+
+#if defined(sun4)
+
+#define inet_cmp(x, y)		(bcmp(&(x), &(y), 4) == 0)
+#define inet_copy(x, y)		bcopy(&(y), &(x), 4)
+
+#else
+
+#define inet_cmp(x, y)		((x) == (y))
+#define inet_copy(x, y)		((x) = (y))
+
+#endif
+
+extern char *BootDevName();
+extern char *BootFileName();
+extern void PrintBootCommand();
+
+#if defined(sun4c)
+
+#define ExitToMon()		(*romp->v_exit_to_mon)();
+#define CheckRomMagic()		(ROMVEC_MAGIC == RomMagic)
+#define RomVersion		(romp->v_romvec_version)
+#define RomMagic		(romp->v_magic)
+
+#define DevOpen(dev) \
+    (RomVersion >= 2 \
+    ? (*romp->op_open)(dev) \
+    : (*romp->v_open)(dev))
+
+#define DevClose(fileId) \
+    (RomVersion >= 2 \
+    ? (*romp->op_close)(fileId) \
+    : (*romp->v_close)(fileId))
+
+#define xmit_packet(fileId, buf, len) \
+    (RomVersion >= 2 \
+    ? (*romp->op_write)(fileId, buf, len) \
+    : (*romp->v_xmit_packet)(fileId, len, buf))
+
+#define poll_packet(fileId, buf) \
+    (RomVersion >= 2 \
+    ? (*romp->op_read)(fileId, buf, NET_ETHER_MAX_BYTES) \
+    : (*romp->v_poll_packet)(fileId, NET_ETHER_MAX_BYTES, buf))
+
+#define reset(fileId)	/* don't know how to reset */
+
+#else  /* sun4c */
+
+#include "saio.h"
+typedef struct saioreq SIP;
+
+#define xmit_packet(fileId, buf, len) \
+    (*(SIP *)(fileId)->si_sif->sif_xmit)((SIP *)(fileId)->si_devdata, buf, len)
+#define poll_packet(fileId, buf)
+    (*(SIP *)(fileId)->si_sif->sif_poll)((SIP *)(fileId)->si_devdata, buf)
+#define reset(fileId)
+    (*(SIP *)(fileId)->si_sif->sif_reset)((SIP *)(fileId)->si_devdata)
+
+#endif /* sun4c */
+
+#endif /* _BOOT_H */
+@
+
+
+1.2
+log
+@Added machparam.h
+@
+text
+@d15 1
+a15 1
+ *	"$Header$ SPRITE (Berkeley)"
+d20 7
+a26 1
+#include <machparam.h>
+d28 2
+a29 3
+#ifndef ASM
+#include    "sunromvec.h"
+#endif /* ASM */
+d31 2
+a32 1
+#define BOOT_START	    (BOOT_CODE-KERNEL_START)
+d34 58
+a91 2
+#define printf	  (*romp->v_printf)
+#define printhex  (*romp->v_printhex)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d19 2
+@

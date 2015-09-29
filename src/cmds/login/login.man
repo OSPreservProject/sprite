@@ -1,0 +1,59 @@
+' $Header: /a/newcmds/login/RCS/login.man,v 1.4 89/04/07 18:43:21 douglis Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS LOGIN cmds
+.BS
+.SH NAME
+login \- Allow a user to login
+.SH SYNOPSIS
+\fBlogin\fR [\fIoptions\fR] [\fIuser\fR]
+.SH OPTIONS
+.IP "\fB\-help\fR" 15
+Print a summary of the command-line options and exit without
+performing any logins.
+.IP "\fB\-l\fR"
+Don't record information about the user in a file of logins.
+The default is to record the login and logout in a file
+of logins used by programs like \fBfinger\fR.
+.IP "\fB\-P \fIportNum\fR"
+Use \fIportNum\fR as the port number associated with this login in
+the file of logins (ignored if the \fB\-l\fR option is given).
+.IP "\fB\-r\f"
+Repeat:  when a login shell exits, prompt for another account and
+password, and start another login shell.  The default is for \fBlogin\fR
+to exit as soon as its login shell exits.
+.IP "\fB\-d \fIdevice\fR"
+Use \fIdevice\fR for the login rather than the current tty.
+.BE
+
+.SH DESCRIPTION
+.PP
+If an extra argument is given, \fBlogin\fR uses that name as the name
+of the user to log in.  Otherwise, it prompts for an account name.  In
+either case, \fBlogin\fR prompts for a password.  If the
+password matches the account, the user is logged in and a command
+shell is run for the user.  Information about the account, password,
+home directory, and login shell is taken from \fB/etc/passwd\fR.  If
+the password does not match the account, or the account doesn't exist,
+\fBlogin\fR will prompt for a new account and password.  
+.PP
+If \fIdevice\fR is given, then \fBlogin\fR attempts to use it for the
+standard input, standard output, and standard error channels
+associated with the login.  If no \fIdevice\fR is given, then \fBlogin\fR
+uses the standard I/O channels provided to it by the shell.
+.PP
+Normally, \fBlogin\fR waits for the login shell to exit, which signals
+the end of the login session, and then \fBlogin\fR exits.  If, however,
+the \fB\-r\fR switch is given, then \fBlogin\fR will repeat itself, asking
+for another account and password, and running another login shell.
+This will repeat indefinitely.  If the repeat switch is not given,
+logins will time out after 60 seconds if they are not completed.
+.PP
+If the \fB\-l\fR switch isn't given, then \fBlogin\fR will record information
+about the login and logout in a file for use by programs like Finger.
+The \fB\-P\fR switch is used to indicate which of several ports to
+associate with the login.  If \fB\-l\fR is given, then no login information
+is recorded.
+.PP
+
+.SH KEYWORDS
+account, login, password, user

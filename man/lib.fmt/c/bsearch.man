@@ -1,0 +1,68 @@
+
+
+
+bsearch               C Library Procedures                bsearch
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     bsearch - Binary search
+
+SSYYNNOOPPSSIISS
+     vvooiidd **bbsseeaarrcchh((kkeeyy,, bbaassee,, nn,, ssiizzee,, ccmmpp))
+
+AARRGGUUMMEENNTTSS
+     void *_k_e_y;                Pointer  to   the   object   being
+                               searched for.
+
+     void *_b_a_s_e;               Pointer to the base of  the  array
+                               to search.
+
+     size_t    _n;              Number of items in the array.
+
+     size_t    _s_i_z_e;           Size of each item.
+
+     int  (*_c_m_p)();            Function to compare two items.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     BBsseeaarrcchh searches bbaassee[[00]] ...... bbaassee[[nn -- 11]] for  an  item  that
+     matches  **kkeeyy.  The function ccmmpp must return negative if its
+     first argument (the search key) is less than its  second  (a
+     table entry), zero if equal, and positive if greater.  Items
+     in the array bbaassee  must  be  in  ascending  order.   bbsseeaarrcchh
+     returns a pointer to a matching item, or NNUULLLL if none exits.
+
+
+KKEEYYWWOORRDDSS
+     search
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  June 29, 1989                    1
+
+
+

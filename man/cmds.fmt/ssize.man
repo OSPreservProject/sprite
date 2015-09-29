@@ -1,0 +1,68 @@
+
+
+
+SSIZE                     User Commands                     SSIZE
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     ssize - Print size of segments in a SPUR program image
+
+SSYYNNOOPPSSIISS
+     ssssiizzee [_f_i_l_e _f_i_l_e ...]
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     Each _f_i_l_e argument should be the name  of  a  program  image
+     file  (e.g.  aa..oouutt).   SSssiizzee  will  print out in decimal the
+     sizes of the various segments in the  file.   It  will  also
+     print the total size in both decimal and hexadecimal.  If no
+     _f_i_l_e argument is given, aa..oouutt will be used by default.  This
+     program  is  needed  because  the  format  of the SPUR a.out
+     header is different from other Sprite machines  and  is  not
+     understood by the ssiizzee command.
+
+
+KKEEYYWWOORRDDSS
+     executable, image, program, size, SPUR
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0      Printed:  September 30, 1990                  1
+
+
+

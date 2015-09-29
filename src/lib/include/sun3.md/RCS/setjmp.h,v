@@ -1,0 +1,81 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     91.06.11.10.43.00;  author eklee;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.06.05.23.33.35;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.09.02.17.38.14;  author rab;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@This used to be a symbolic link to ../sun2.md/ but became
+are real file when the sun2 stuff was deleted.
+@
+
+
+1.3
+log
+@added #ifndef _SETJMP
+@
+text
+@/*	setjmp.h	4.1	83/05/03	*/
+/* $Header: /sprite/src/lib/include/sun3.md/RCS/setjmp.h,v 1.2 91/06/05 23:33:35 kupfer Exp Locker: eklee $ */
+
+#ifndef _SETJMP
+#define _SETJMP
+
+#include <cfuncproto.h>
+
+
+/*
+ * Only 10 words are needed for the VAX, but 15 for the Sun.  Use the
+ * larger of the two.
+ */
+
+typedef int jmp_buf[15];
+
+extern int setjmp _ARGS_((jmp_buf));
+extern void longjmp _ARGS_((jmp_buf, int));
+
+#endif /* _SETJMP */
+@
+
+
+1.2
+log
+@Add function prototypes for setjmp and longjmp.
+@
+text
+@d2 1
+a2 1
+/* $Header$ */
+d4 3
+d19 2
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d2 1
+d4 1
+d6 1
+d13 3
+@

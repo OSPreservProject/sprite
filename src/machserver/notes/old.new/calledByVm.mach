@@ -1,0 +1,653 @@
+<boot_ufs/dir.h>
+  DEV_BSIZE
+  	device/dev_pager.c
+<cpus.h>			# NCPUS
+
+<cputypes.h>			# list of supported CPU types (config)
+
+# Do we really need the device pager?  Note: it looks like you need quite a
+# few of the files in device/, and you haven't checked what routines
+# they call.
+<device/dev_hdr.h>
+	device/dev_pager.c
+<device/device.h>
+	boot_ufs/default_pager.c
+<device/device_types.h>
+	boot_ufs/default_pager.c
+	device/dev_pager.c
+<device/ds_routines.h>
+	device/dev_pager.c
+<device/io_req.h>
+	device/dev_pager.c
+<device/param.h>
+	device/dev_pager.c
+<ipc/ipc_port.h>
+  MACH_PORT_NULL
+	boot_ufs/default_pager.c
+  	vm/{memory_object,vm_map,vm_object}.c
+  MACH_PORT_VALID
+	device/dev_pager.c
+  	vm/{memory_object,vm_object}.c
+  MACH_PORT_RIGHT_PORT_SET
+	boot_ufs/default_pager.c
+  MACH_PORT_RIGHT_RECEIVE
+	boot_ufs/default_pager.c
+  MSG_TYPE_NORMAL
+  	boot_ufs/def_pager_setup.c
+  MSG_TYPE_PORT
+	boot_ufs/def_pager_setup.c
+  PAGER_PORT_HASH_COUNT
+  	boot_ufs/default_pager.c
+
+  # Each VM object has a set of ports associated with it, which the
+  # kernel and memory manager (aka "pager") use to communicate.  The
+  # calls here in vm_object are just to alloc/free ports when
+  # creating/destroying VM objects.
+  ipc_port_alloc_kernel		# allocate a kernel-owned port
+	device/dev_pager.c
+  	vm/vm_object.c
+  ipc_port_copy_send		# make copy of port send rights
+  	vm/{memory_object,vm_object}.c
+  ipc_port_dealloc_kernel	# free a kernel-owned port
+	device/dev_pager.c
+  	vm/vm_object.c
+  ipc_port_make_send		# make a send right from a recv right
+	device/dev_pager.c
+  	vm/vm_object.c
+  ipc_port_release_receive
+	device/dev_pager.c
+  ipc_port_release_send		# free a send right
+	device/dev_pager.c
+  	vm/vm_object.c
+
+  # actual port data structure, with queues, counts of tasks with
+  # access rights, etc. 
+  ipc_port_t			
+	device/dev_pager.c
+  	vm/{memory_object,vm_object}.c
+
+  mach_port_allocate
+  	boot_ufs/default_pager.c
+  mach_port_destroy
+  	boot_ufs/default_pager.c
+  mach_port_move_member
+  	boot_ufs/default_pager.c
+  mach_port_t			# names a port
+  	boot_ufs/{def_pager_setup,default_pager}.c
+	device/dev_pager.c
+  	vm/{memory_object,vm_map,vm_object}.c
+  	vm/vm_object.h
+  memory_manager_default_port
+  	vm/memory_object.c
+  port_allocate
+  	boot_ufs/def_pager_setup.c
+  task_get_bootstrap_port
+  	boot_ufs/def_pager_setup.c
+
+# IPC ports live in a "space".  Each task has a (private?) space, and
+# there are distinguised spaces (e.g., ipc_space_kernel, ipc_space_reply).
+<ipc/ipc_space.h>		
+	device/dev_pager.c
+  	vm/vm_object.c
+
+# Each host has a default memory manager.  All this stuff appears to
+# be related to initializing the default memory mgr. for the current host.
+<kern/host.h>
+  HOST_NULL
+  	vm/memory_object.c
+  KERN_INVALID_HOST
+  	vm/memory_object.c
+  host
+  	vm/memory_object.c
+  host_t
+  	vm/memory_object.c
+
+# General-purpose memory allocator, built on top of zalloc.
+<kern/kalloc.h>
+  kalloc
+	boot_ufs/{def_pager_setup,default_pager}.c
+	device/dev_pager.c
+	sun3/pmap.h
+  kfree
+	boot_ufs/default_pager.c
+	device/dev_pager.c
+	sun3/pmap.h
+
+<kern/lock.h>
+  # The PV list maps physical addresses to virtual addresses.
+  # This macro is ifdef'd to whatever locking mechanism is appropriate
+  # for the given machine (no-op for uniprocessors).
+  LOCK_PVH			
+  	sun3/pmap.c
+  # read-locks pmap.  splvm on uniprocessor, general lock on multiprocessor
+  PMAP_READ_LOCK
+  	sun3/pmap.c
+  PMAP_READ_UNLOCK
+  	sun3/pmap.c
+  PMAP_WRITE_LOCK
+  	sun3/pmap.c
+  PMAP_WRITE_TO_READ_LOCK	# downgrade lock
+  	sun3/pmap.c
+  PMAP_WRITE_UNLOCK
+  	sun3/pmap.c
+  UNLOCK_PVH
+  	sun3/pmap.c
+  _lock_read			# Does Sprite do any inlining?
+  	sun3/inline/mc68020pats.c
+  _lock_write
+  	sun3/inline/mc68020pats.c
+  decl_simple_lock_data		# macro to declare spin lock
+	boot_ufs/default_pager.c
+	device/dev_pager.c
+  	sun3/pmap.h
+  	vm/memory_object.c
+  	vm/vm_map.h
+  	vm/vm_object.c
+  	vm/{vm_object,vm_page}.h
+  	vm/vm_resident.c
+  kern/lock.h
+  	vm/vm_init.c
+  	vm/vm_map.h
+  	vm/vm_object.c
+  	vm/{vm_object,vm_page}.h
+  lock_clear_recursive		# see lock_set_recursive
+  	vm/vm_map.h
+  # Struct for general lock (lock_t).  These allow for multiple readers,
+  # upgrading from read to write, and sleeping until the lock is
+  # available.  Can flag lock as "can't sleep".
+  lock_data_t
+  	sun3/pmap.c
+  	vm/vm_map.h
+  lock_init			# initialize a general lock
+  	sun3/pmap.c
+  	vm/vm_map.h
+  lock_read			# obtain general lock for reading
+  	vm/vm_map.h
+  lock_read_done		# release read lock
+  	vm/vm_map.h
+  lock_read_to_write		# upgrade lock
+  	vm/vm_map.h
+  # must explicitly enable/disable recursive locking for a particular
+  # general lock.
+  lock_set_recursive		
+  	vm/vm_map.h
+  lock_write
+  	vm/vm_map.h
+  lock_write_done
+  	vm/vm_map.h
+  lock_write_to_read		# downgrade lock (?)
+  	vm/vm_map.h
+  memory_object_data_unlock	# device pager call (shouldn't happen)
+  	boot_ufs/default_pager.c
+	device/dev_pager.c
+  	vm/vm_fault.c
+  memory_object_lock_completed	# ? - something to do with inode pager
+  	boot_ufs/default_pager.c
+	device/dev_pager.c
+  	vm/memory_object.c
+  # Exported?  Controls locking of page, also used to clean pages &
+  # flush cached pages.
+  memory_object_lock_request
+  	vm/memory_object.c
+  page_lock			# page-level protection field
+  	vm/{memory_object,vm_fault,vm_object}.c
+  	vm/vm_page.h
+  	vm/{vm_pageout,vm_resident}.c
+  pmap_system_lock
+  	sun3/pmap.c
+  simple_lock			# spin lock
+  	boot_ufs/default_pager.c
+	device/dev_pager.c
+  	sun3/pmap.c
+  	vm/{memory_object,vm_map,vm_object}.c
+  	vm/{vm_object,vm_page}.h
+  	vm/{vm_pageout,vm_resident}.c
+  simple_lock_addr		# more impl. hiding for spin locks
+  	boot_ufs/default_pager.c
+  	vm/memory_object.c
+  	vm/vm_object.h
+  	vm/{vm_pageout,vm_resident}.c
+  simple_lock_init
+	device/dev_pager.c
+  	sun3/pmap.c
+  	vm/{memory_object,vm_map,vm_object}.c
+  	vm/vm_object.h
+  	vm/vm_resident.c
+  simple_lock_try
+  	vm/vm_object.c
+  	vm/vm_object.h
+  simple_unlock
+  	boot_ufs/default_pager.c
+	device/dev_pager.c
+  	sun3/pmap.c
+  	vm/{memory_object,vm_map,vm_object}.c
+  	vm/{vm_object,vm_page}.h
+  	vm/{vm_pageout,vm_resident}.c
+  # There are queues of free, active, and inactive memory.  There is
+  # apparently one lock that can lock all three at the same time, plus
+  # a lock for the free queue and another for the active and inactive
+  # queues. (?)
+  vm_page_lock_queues
+	device/dev_pager.c
+  	vm/{memory_object,vm_fault,vm_kern,vm_object}.c
+  	vm/vm_page.h
+  	vm/{vm_pageout,vm_resident}.c
+  vm_page_queue_free_lock
+  	vm/vm_page.h
+  	vm/{vm_pageout,vm_resident}.c
+  vm_page_queue_lock
+  	vm/vm_page.h
+  	vm/vm_resident.c
+  vm_page_unlock_queues
+	device/dev_pager.c
+  	vm/{memory_object,vm_fault,vm_kern,vm_object}.c
+  	vm/vm_page.h
+  	vm/{vm_pageout,vm_resident}.c
+
+# Doubly-linked, circular list.
+<kern/queue.h>
+  dequeue_head
+  	sun3/pmap.c
+  enqueue_head
+  	sun3/pmap.c
+  enqueue_tail
+  	sun3/pmap.c
+  	sun3/pmap.h
+  queue_empty
+  	sun3/pmap.c
+  	vm/{memory_object,vm_object,vm_pageout,vm_resident}.c
+  queue_end
+	boot_ufs/default_pager.c
+	device/dev_pager.c
+  	sun3/pmap.c
+  	vm/{memory_object,vm_object,vm_pageout}.c
+  queue_enter
+	boot_ufs/default_pager.c
+	device/dev_pager.c
+  	vm/{memory_object,vm_object,vm_pageout,vm_resident}.c
+  queue_entry_t
+	boot_ufs/default_pager.c
+  	sun3/pmap.c
+  	sun3/pmap.h
+  	vm/{memory_object,vm_object,vm_pageout}.c
+  queue_first
+	boot_ufs/default_pager.c
+	device/dev_pager.c
+  	sun3/pmap.c
+  	vm/{memory_object,vm_object,vm_pageout}.c
+  queue_head_t
+	boot_ufs/default_pager.c
+	device/dev_pager.c
+  	sun3/pmap.c
+  	sun3/pmap.h
+  	vm/{memory_object,vm_object}.c
+  	vm/vm_page.h
+  	vm/vm_resident.c
+  queue_init
+	boot_ufs/default_pager.c
+	device/dev_pager.c
+  	sun3/pmap.c
+  	vm/{memory_object,vm_object,vm_resident}.c
+  queue_iterate
+  	vm/{vm_object,vm_resident}.c
+  queue_next
+	boot_ufs/default_pager.c
+	device/dev_pager.c
+  	sun3/pmap.c
+  	vm/vm_object.c
+  queue_remove
+	boot_ufs/default_pager.c
+	device/dev_pager.c
+  	vm/{memory_object,vm_object}.c
+  	vm/vm_page.h
+  	vm/{vm_pageout,vm_resident}.c
+  queue_remove_first
+  	vm/{vm_object,vm_resident}.c
+  queue_remove_last
+  	vm/vm_resident.c
+  remqueue
+  	sun3/pmap.c
+  	sun3/pmap.h
+
+<kern/sched_prim.h>
+  # call before thread_block, specifying what event to wait on and
+  # whether the wait is interruptible.  Apparently "sleep" is split
+  # like this so that you can say what you're waiting on, then release
+  # any locks you're holding or set a timeout before blocking.
+  # Possible results: normal wakeup, timeout, interrupted (by
+  # clear_wait()), request to terminate thread, request to restart
+  # operation.
+  assert_wait
+	vm/vm_map.c
+	vm/{vm_object,vm_page}.h
+	vm/vm_pageout.c
+# For Sprite, can equate tasks & threads.
+<kern/task.h>
+  TASK_MAP			# genassym symbol for .s files
+  	sun3/cswtch.s
+  TASK_NULL
+	vm/vm_debug.c
+  THREAD_TASK			# another genassym symbol
+  	sun3/{cswtch,locore}.s
+  current_task
+	boot_ufs/def_pager_setup.c
+  kernel_task_create		# create a task running in the kernel
+  	boot_ufs/def_pager_setup.c
+  mach_task_self		# give caller send rights for own task port
+  	boot_ufs/{default_pager,file_io,load}.c
+  task_get_bootstrap_port
+  	boot_ufs/def_pager_setup.c
+  task_self
+  	boot_ufs/def_pager_setup.c
+  task_t
+	vm/vm_debug.c
+  task_terminate		# kill the task on certain traps
+  	sun3/trap.c
+<kern/thread.h>
+  THREAD_AWAKENED		# checking result of assert_wait/thread_block
+  	vm/{vm_fault,vm_object}.c
+  THREAD_NULL
+	sun3/{pcb,trap}.c
+  	vm/pmap.h
+  # genassym symbol.  For copyin/copyout and similar operations,
+  # detect addressing errors by faulting and then being unable to
+  # recover from the fault; the "recover" routine handles the
+  # resulting error.
+  THREAD_RECOVER
+  	sun3/locore.s
+  THREAD_RESTART
+  	vm/vm_fault.c
+  _thread_wakeup
+  	sun3/inline/mc68020pats.c
+  active_threads		# per-CPU list of active threads
+  	sun3/{cswtch,locore}.s
+  current_thread		# active_threads[my_cpu]
+	boot_ufs/default_pager.c
+  	sun3/{db_interface,pcb,pmap,trap}.c
+  	vm/{memory_object,vm_fault,vm_object}.c
+  	vm/vm_object.h
+  	vm/{vm_pageout,vm_resident}.c
+  kern/thread.h
+  	boot_ufs/{def_pager_setup,default_pager}.c
+  	vm/{memory_object,vm_fault}.c
+  	vm/vm_page.h
+  	vm/vm_resident.c
+  # Does Sprite swap?
+  kern/thread_swap.h		# swap states, swap-related routines
+  	vm/vm_pageout.c
+  kernel_thread			# start kernel thread in given task
+  	boot_ufs/def_pager_setup.c
+  swapout_threads		# look for threads to swap out
+  	vm/vm_pageout.c
+  thread_block			# also uses assert_wait
+  	sun3/trap.c
+  	vm/{memory_object,vm_fault,vm_map,vm_pageout}.c
+  thread_halt_self
+  	sun3/trap.c
+  thread_set_timeout		# set timeout after assert_wait
+  	vm/vm_pageout.c
+  thread_should_halt
+  	sun3/trap.c
+  thread_sleep			# wrapper over assert_wait/thread_block
+  	boot_ufs/default_pager.c
+  	vm/memory_object.c
+  	vm/{vm_object,vm_page}.h
+  	vm/{vm_pageout,vm_resident}.c
+  thread_swappable		# mark thread as (non-)swappable
+  	boot_ufs/default_pager.c
+  thread_t
+  	boot_ufs/default_pager.c
+  	sun3/{db_trace,genassym,model_dep,pcb,pmap,trap}.c
+  thread_wakeup
+  	boot_ufs/default_pager.c
+	vm/{memory_object,vm_map}.c
+	vm/{vm_object,vm_page}.h
+	vm/vm_resident.c
+  thread_wakeup_with_result	# wakeup, but can specify, e.g., restart
+	vm/vm_fault.c
+<kern/thread_swap.h>
+  swapout_threads		# (see above)
+	vm/vm_pageout.c
+<kern/xpr.h>				# printf debugging
+
+# zone-based memory allocation.  Typically have one zone per data
+# structure.  Zone can be fixed size or expandible; wired or pageable;
+# collectable. 
+<kern/zalloc.h>
+  ZALLOC
+  	vm/vm_map.c
+  ZFREE
+	vm/vm_map.c
+  ZONE_NULL
+  	vm/vm_external.c
+  pmap_zone
+  	sun3/pmap.c
+  	sun3/pmap.h
+  pv_list_zone
+  	sun3/pmap.c
+  vm_external_zone
+  	vm/vm_external.c
+  vm_map_copy_zone
+  	vm/{vm_map,vm_pageout}.c
+  vm_map_entry_zone
+  	vm/vm_map.c
+  vm_map_kentry_zone
+  	vm/vm_map.c
+  vm_map_zone
+  	vm/vm_map.c
+  vm_object_large_existence_map_zone
+  	vm/vm_external.c
+  vm_object_small_existence_map_zone
+  	vm/vm_external.c
+  vm_object_zone
+  	vm/vm_object.c
+  vm_page_fictitious_zone
+  	vm/memory_object.c
+  	vm/vm_page.h
+  	vm/{vm_pageout,vm_resident}.c
+  zalloc
+	boot_ufs/default_pager.c
+	device/dev_pager.c
+  	sun3/pmap.c
+  	vm/{memory_object,vm_external,vm_map,vm_object,vm_pageout}.c
+  zchange
+	vm/vm_external.c
+  zcram
+	vm/vm_map.c
+  zfree
+	boot_ufs/default_pager.c
+	device/dev_pager.c
+	sun3/pmap.c
+	vm/{memory_object,vm_external,vm_map,vm_object,vm_resident}.c
+  zinit
+	boot_ufs/default_pager.c
+	device/dev_pager.c
+	sun3/pmap.c
+	vm/{vm_external,vm_map,vm_object,vm_resident}.c
+  zone_bootstrap
+  	vm/vm_init.c
+  zone_init
+  	vm/vm_init.c
+  zone_t
+	boot_ufs/default_pager.c
+	device/dev_pager.c
+  	sun3/pmap.c
+  	sun3/pmap.h
+  	vm/{vm_external,vm_map,vm_object}.c
+  	vm/vm_page.h
+  	vm/{vm_pageout,vm_resident}.c
+<mach/boolean.h>
+<mach/kern_return.h>
+  KERN_FAILURE			# catch-all
+	boot_ufs/default_pager.c
+	device/dev_pager.c
+  	sun3/pcb.c
+  	vm/{memory_object,vm_fault,vm_map}.c
+  KERN_INVALID_ADDRESS
+  	sun3/trap.c
+  	vm/vm_map.c
+  # function requested not applicable to given argument or type of
+  # argument.
+  KERN_INVALID_ARGUMENT
+	boot_ufs/default_pager.c
+  	sun3/pcb.c
+  	sun3/pmap.h
+  	vm/{memory_object,vm_debug,vm_map,vm_object,vm_user}.c
+  KERN_INVALID_HOST		# target host isn't actually a host
+  	vm/memory_object.c
+  KERN_INVALID_TASK		# target task isn't active
+  	vm/vm_debug.c
+  # pager can't provide data for fault, possibly only temporarily
+  KERN_MEMORY_ERROR
+  	vm/{vm_fault,vm_object}.c
+  # requested addr range is in use, or couldn't find large enough range
+  KERN_NO_SPACE
+  	vm/{vm_debug,vm_map}.c
+  KERN_PROTECTION_FAILURE	# protection violation
+  	vm/vm_map.c
+  KERN_RESOURCE_SHORTAGE
+	boot_ufs/default_pager.c
+	device/dev_pager.c
+  	vm/{memory_object,vm_debug}.c
+  KERN_SUCCESS
+	boot_ufs/{default_pager,file_io,load}.c
+	device/dev_pager.c
+  	sun3/{pcb,trap}.c
+  	vm/{memory_object,vm_debug,vm_fault,vm_kern,vm_map,vm_object,vm_pageout,vm_user}.c
+<mach/mach_types.h>			# std. type definitions
+<mach/machine/vm_types.h>
+# External memory management interface (in mach because is exported).
+# Some impl. code in boot_ufs, also in device (?).  Will have to deal
+# with MIG dependencies (e.g, #include <mach/memory_object_server.c>).
+<mach/memory_object.h>
+<mach/memory_object_default.h>
+<mach/memory_object_user.h>
+<mach/message.h>
+  # part of sending reply when memory_object_lock_request completes.
+  mach_msg_type_name_t
+  	boot_ufs/default_pager.c
+	vm/memory_object.c
+  mach_msg_type_number_t	# part of getting info about a region
+	vm/vm_debug.c
+  msg_receive
+  	boot_ufs/def_pager_setup.c
+  msg_send
+  	boot_ufs/def_pager_setup.c
+<mach/port.h>
+	(see <ipc/ipc_port.h>)
+<mach/std_types.h>
+<mach/sun3/vm_param.h>
+<mach/vm_attributes.h>
+<mach/vm_inherit.h>
+<mach/vm_param.h>
+<mach/vm_prot.h>
+<mach/vm_statistics.h>
+<mach_debug/page_info.h>
+<mach_debug/vm_info.h>
+<mach_kdb.h>				# MACH_KDB (enable debugger)
+<mach_pagemap.h>			# MACH_PAGEMAP (?)
+<mach_vm_debug.h>
+<machine/machparam.h>
+  KERNELBASE			# virt. addr. where kernel starts
+  	sun3/locore.s
+  	sun3/pmap.c
+  	sun3/scb.s
+  	sun3/sun_init.c
+  NBPG				# number bytes per page
+	sun3/locore.s
+	sun3/{model_dep,pmap,sun_init}.c
+  NBSG				# number bytes per segment
+  	sun3/cpu.h
+  	sun3/locore.s
+  	sun3/{pmap,sun_init}.c
+  PGOFSET			# mask for offset in page (NBPG-1)
+  	sun3/autoconf.c
+  	sun3/model_dep.c
+  PGSHIFT			# log2(NBPG)
+  	sun3/locore.s
+  	sun3/pmap.c
+  SGOFSET			# NBSG-1
+  	sun3/sun_init.c
+  SGSHIFT			# log2(NBSG)
+  	sun3/cpu.h
+  	sun3/locore.s
+  SPLVM				# goto SPL for VM
+  	sun3/pmap.c
+  SPLX				# goto arbitrary spl
+  	sun3/pmap.c
+  USERMODE			# is processor state in user mode
+  	sun3/trap.c
+  # a "cluster" is the software page size
+  btoc				# bytes to clusters, rounded
+  	sun3/autoconf.c
+  	sun3/{model_dep,trap}.c
+  btop				# bytes to clusters, truncated
+  	sun3/{autoconf,genassym}.c
+  	sun3/sun_init.c
+  ctob
+  	sun3/autoconf.c
+  	sun3/model_dep.c
+  ptob				# same as ctob, but with different cast
+  	sun3/{model_dep,sun_init}.c
+  spl0
+  	vm/vm_pageout.c
+  spl0
+  	vm/vm_pageout.c
+  spl1
+  	sun3/cswtch.s
+  spl2
+  	sun3/cswtch.s
+  spl3
+  	sun3/cswtch.s
+  spl4
+  	sun3/cswtch.s
+  spl5
+  	sun3/cswtch.s
+  spl6
+  	sun3/{softint,trap}.c
+  spl7
+  	sun3/db_interface.c
+  	sun3/{model_dep,trap}.c
+  splbio
+  	sun3/machparam.h
+  splclock
+  	sun3/clock.c
+  splhigh
+  	sun3/trap.c
+  splvm
+  	sun3/pmap.c
+  splx
+  	sun3/{model_dep,pmap,softint,trap}.c
+<machine/pmap.h>
+<machine/vm_tuning.h>
+<sun3/cpu.h>
+  # CPU_MACH is mask for machine impl (160, etc.); CPU_ARCH is mask
+  # for architecture (sun3, sun4, etc.).
+  CPU_MACH
+  	sun3/autoconf.c
+  CPU_NUMBER_D0			# put CPU number in d0
+  	sun3/{cswtch,locore}.s
+  NCPUS				# num. cpu's in machine
+  	sun3/autoconf.c
+  	sun3/{cswtch,locore}.s
+  	sun3/{model_dep,pmap,sun_init}.c
+  	vm/vm_resident.c
+  cpu_number			# which CPU am I
+  	sun3/pmap.c
+  cpudelay			# scale factor for DELAY
+  	sun3/autoconf.c
+<sun3/mmu.h>
+<vm/pmap.h>
+<vm/vm_external.h>
+<vm/vm_fault.h>
+<vm/vm_kern.h>
+<vm/vm_map.h>
+<vm/vm_object.h>
+<vm/vm_page.h>
+<vm/vm_pageout.h>
+
+
+Local Variables:
+mode: text
+tab-stop-list: (8 32)
+End:

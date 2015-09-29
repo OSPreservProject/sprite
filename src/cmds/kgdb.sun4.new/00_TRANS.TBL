@@ -1,0 +1,47 @@
+L BLOCKFRA.C;1                      	blockframe.c	gdb/blockframe.c
+L BREAKPOI.C;1                      	breakpoint.c	gdb/breakpoint.c
+L COFFREAD.C;1                      	coffread.c	gdb/coffread.c
+L COMMAND.C;1                       	command.c	gdb/command.c
+L CORE.C;1                          	core.c	gdb/core.c
+L CPLUS_DE.C;1                      	cplus-dem.c	gdb/cplus-dem.c
+L DBXREAD.C;1                       	dbxread.c	gdb/dbxread.c
+L ENVIRON.C;1                       	environ.c	gdb/environ.c
+L EVAL.C;1                          	eval.c	gdb/eval.c
+L EXEC.C;1                          	exec.c	gdb/sun4.md/exec.c
+L EXPPRINT.C;1                      	expprint.c	gdb/expprint.c
+L EXPREAD.Y;1                       	expread.y	gdb/expread.y
+L FINDVAR.C;1                       	findvar.c	gdb/findvar.c
+L GDB.;1                            	gdb	../gdb.new
+L IEEE_FLO.C;1                      	ieee-float.c	gdb/ieee-float.c
+L INFCMD.C;1                        	infcmd.c	gdb/infcmd.c
+L INFLOW.C;1                        	inflow.c	gdb/inflow.c
+L INFPTRAC.C;1                      	infptrace.c	gdb/sun4.md/infptrace.c
+L INFRUN.C;1                        	infrun.c	gdb/infrun.c
+L INFTARG.C;1                       	inftarg.c	gdb/inftarg.c
+L INITIALI.C;1                      	initialized_all_files.c	gdb/sun4.md/initialized_all_files.c
+L KGDBCMD.C;1                       	kgdbcmd.c	gdb/sprite/kgdb/kgdbcmd.c
+L KGDB_PTR.C;1                      	kgdb_ptrace.c	gdb/sprite/kgdb/kgdb_ptrace.c
+F LOCAL.MK;1                        	local.mk
+L MAIN.C;1                          	main.c	gdb/main.c
+F MAKEFILE.;1                       	Makefile
+L MEM_BREA.C;1                      	mem-break.c	gdb/mem-break.c
+L PINSN.C;1                         	pinsn.c	gdb/sun4.md/pinsn.c
+L PRINTCMD.C;1                      	printcmd.c	gdb/printcmd.c
+D RCS                               	RCS
+F REMOTE.C;1                        	remote.c
+L SIGNAME.C;1                       	signame.c	gdb/signame.c
+L SOURCE.C;1                        	source.c	gdb/source.c
+L SPARC_TD.C;1                      	sparc-tdep.c	gdb/sun4.md/sparc-tdep.c
+L SPARC_XD.C;1                      	sparc-xdep.c	gdb/sun4.md/sparc-xdep.c
+L STACK.C;1                         	stack.c	gdb/stack.c
+D SUN4_MD                           	sun4.md
+L SYMFILE.C;1                       	symfile.c	gdb/symfile.c
+L SYMMISC.C;1                       	symmisc.c	gdb/symmisc.c
+L SYMTAB.C;1                        	symtab.c	gdb/symtab.c
+L TARGET.C;1                        	target.c	gdb/target.c
+L UTILS.C;1                         	utils.c	gdb/utils.c
+L VALARITH.C;1                      	valarith.c	gdb/valarith.c
+L VALOPS.C;1                        	valops.c	gdb/valops.c
+L VALPRINT.C;1                      	valprint.c	gdb/valprint.c
+L VALUES.C;1                        	values.c	gdb/values.c
+L VERSION.C;1                       	version.c	gdb/version.c

@@ -1,0 +1,920 @@
+head     1.8;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.8
+date     92.08.31.12.20.44;  author voelker;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     91.09.14.15.17.13;  author mendel;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     90.10.10.09.45.08;  author rab;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     90.03.16.17.41.19;  author jhh;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.01.31.17.04.48;  author jhh;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.09.25.12.32.37;  author jhh;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.10.27.15.30.56;  author nelson;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.02.12.54.20;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Routines to print out disk header st!!
+data structures
+@
+
+
+1.8
+log
+@lfs routines. checked in by jhh
+@
+text
+@/* 
+ * diskPrint.c --
+ *
+ *	Routines to print out data structures found on the disk.
+ *
+ * Copyright (C) 1987 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/disk/RCS/diskPrint.c,v 1.7 91/09/14 15:17:13 mendel Exp Locker: voelker $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <stdio.h> 
+#include "disk.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_PrintDomainHeader --
+ *
+ *	Print out the domain header.  Used in testing.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Disk_PrintDomainHeader(headerPtr)
+    register Ofs_DomainHeader *headerPtr;/* Reference to domain header to print*/
+{
+    register Ofs_Geometry *geoPtr;
+    register int	index;
+
+    printf("Domain Header <%x>\n", headerPtr->magic);
+    printf("First Cyl %d, num Cyls %d", headerPtr->firstCylinder,
+		    headerPtr->numCylinders);
+    printf(", raw size %d kbytes\n", headerPtr->numCylinders *
+		headerPtr->geometry.sectorsPerTrack *
+		headerPtr->geometry.numHeads / 2);
+    printf("%-20s %10s %10s\n", "", "offset", "blocks");
+    printf("%-20s %10d %10d\n", "FD Bitmap", headerPtr->fdBitmapOffset,
+		    headerPtr->fdBitmapBlocks);
+    printf("%-20s %10d %10d %10d\n", "File Desc", headerPtr->fileDescOffset,
+		    headerPtr->numFileDesc/FSDM_FILE_DESC_PER_BLOCK,
+		    headerPtr->numFileDesc);
+    printf("%-20s %10d %10d\n", "Bitmap", headerPtr->bitmapOffset,
+		    headerPtr->bitmapBlocks);
+    printf("%-20s %10d %10d\n", "Data Blocks", headerPtr->dataOffset,
+		    headerPtr->dataBlocks);
+    geoPtr = &headerPtr->geometry;
+    printf("Geometry\n");
+    printf("sectorsPerTrack %d, numHeads %d\n", geoPtr->sectorsPerTrack,
+			      geoPtr->numHeads);
+    printf("blocksPerRotSet %d, tracksPerRotSet %d\n",
+			   geoPtr->blocksPerRotSet, geoPtr->tracksPerRotSet);
+    printf("rotSetsPerCyl %d, blocksPerCylinder %d\n",
+			   geoPtr->rotSetsPerCyl, geoPtr->blocksPerCylinder);
+    printf("Offset	(Sorted)\n");
+    for (index = 0 ; index < geoPtr->blocksPerRotSet ; index++) {
+	printf("%8d %8d\n", geoPtr->blockOffset[index],
+		       geoPtr->sortedOffsets[index]);
+    }
+
+    printf(">> %d files, %d kbytes\n", headerPtr->numFileDesc,
+		headerPtr->dataBlocks * 4);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_PrintSummaryInfo --
+ *
+ *	Print out the summary information.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Disk_PrintSummaryInfo(summaryPtr)
+    register Ofs_SummaryInfo *summaryPtr; /* Reference to summary info to print */
+{
+    printf("\"%s\" (%d) \t%d Kbytes free, %d file descriptors free\n",
+	    summaryPtr->domainPrefix, 
+	    summaryPtr->domainNumber,
+	    summaryPtr->numFreeKbytes,
+	    summaryPtr->numFreeFileDesc);
+    printf("Attach seconds: %d\n");
+    printf("Detach seconds: %d\n");
+    if (summaryPtr->flags & OFS_DOMAIN_NOT_SAFE) {
+	printf("OFS_DOMAIN_NOT_SAFE\n");
+    }
+    if (summaryPtr->flags & OFS_DOMAIN_ATTACHED_CLEAN) {
+	printf("OFS_DOMAIN_ATTACHED_CLEAN\n");
+    }
+    if (summaryPtr->flags & OFS_DOMAIN_TIMES_VALID) {
+	printf("OFS_DOMAIN_TIMES_VALID\n");
+    }
+    if (summaryPtr->flags & OFS_DOMAIN_JUST_CHECKED) {
+	printf("OFS_DOMAIN_JUST_CHECKED\n");
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_PrintFileDescBitmap --
+ *
+ *	Print out the file descriptor bitmap.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Disk_PrintFileDescBitmap(headerPtr, bitmap)
+    Ofs_DomainHeader	*headerPtr;	/* Pointer to disk header info. */
+    char		*bitmap;	/* Pointer to file desc bit map. */
+{
+    register int index;
+
+    printf("File Descriptor bitmap\n");
+    for (index = 0;
+	 index < headerPtr->fdBitmapBlocks * FS_BLOCK_SIZE;) {
+	if ((index % 32) == 0) {
+	    printf("%6d ", index * BITS_PER_BYTE);
+	    if (index * BITS_PER_BYTE > headerPtr->numFileDesc) {
+		printf(" (The rest of the map is not used)\n");
+		break;
+	    }
+	}
+	printf("%02x", bitmap[index] & 0xff);
+	index++;
+	if ((index % 32) == 0) {
+	    printf("\n");
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_PrintDataBlockBitmap --
+ *
+ *	Print out the data block bitmap.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Disk_PrintDataBlockBitmap(headerPtr, bitmap)
+    Ofs_DomainHeader	*headerPtr;	/* Ptr to disk header info. */
+    char		*bitmap;	/* Ptr to data block bit map. */
+{
+    register int index;
+
+    printf("Data block bitmap:\n");
+    for (index = 0;
+	 index < headerPtr->bitmapBlocks * FS_BLOCK_SIZE;) {
+	if ((index % 32) == 0) {
+	    printf("%6d ", index * BITS_PER_BYTE);
+	    if (index * BITS_PER_BYTE >
+		headerPtr->dataBlocks * DISK_KBYTES_PER_BLOCK) {
+		printf(" (The rest of the bitmap is not used)\n");
+		break;
+	    }
+	}
+	printf("%02x", bitmap[index] & 0xff);
+	index++;
+	if ((index % 32) == 0) {
+	    printf("\n");
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_PrintDirEntry --
+ *
+ *	Print out one directory entry
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Disk_PrintDirEntry(dirEntryPtr)
+    Fslcl_DirEntry *dirEntryPtr;	/* Ptr to directory entry. */
+{
+    printf("\"%-15s\", File Number = %d, Rec Len = %d, Name Len = %d\n",
+		   dirEntryPtr->fileName, dirEntryPtr->fileNumber,
+		   dirEntryPtr->recordLength, dirEntryPtr->nameLength);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_PrintLabel--
+ *
+ *	Print the contents of a Disk_Label.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Stuff is printed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Disk_PrintLabel(labelPtr)
+    Disk_Label		*labelPtr;	/* Label to be printed.*/
+{
+    int	i;
+    int first, last, cyls;
+
+    printf("Ascii label: \"%s\"\n", labelPtr->asciiLabel);
+    printf("Length of ascii label: %d\n", labelPtr->asciiLabelLen);
+    printf("The disk has a %s label.\n", 
+	Disk_GetLabelTypeName(labelPtr->labelType));
+    printf("The disk label is in sector %d\n", labelPtr->labelSector);
+    printf("Number of heads: %d\n", labelPtr->numHeads);
+    printf("Number of sectors per track: %d\n", labelPtr->numSectors);
+    printf("Number of cylinders: %d\n", labelPtr->numCylinders);
+    printf("Number of alternate cylinders: %d\n", labelPtr->numAltCylinders);
+    printf("Starting boot sector: %d\n", labelPtr->bootSector);
+    printf("Number of boot sectors: %d\n", labelPtr->numBootSectors);
+    printf("Start of summary info: %d\n", labelPtr->summarySector);
+    printf("Number of summary sectors: %d\n", labelPtr->numSummarySectors);
+    printf("Start of domain header: %d\n", labelPtr->domainSector);
+    printf("Number of domain header sectors: %d\n", labelPtr->numDomainSectors);
+    printf("Number of disk partitions: %d\n", labelPtr->numPartitions);
+    printf("Partition map:\n");
+    for (i = 0; i < labelPtr->numPartitions; i++) {
+	first = labelPtr->partitions[i].firstCylinder;
+	cyls = labelPtr->partitions[i].numCylinders;
+	last = (cyls > 0) ? (cyls + first - 1) : first;
+	printf("%c: First %4d Last %4d Num %4d (%7d sectors)\n",
+	    i + 'a', first, last, cyls,
+	    cyls *  labelPtr->numHeads * labelPtr->numSectors);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_GetLabelTypeName --
+ *
+ *	Returns a string which is the name of the machine-specific
+ *	label type.
+ *
+ * Results:
+ *	Character string name of label type if the type parameter is
+ *	valid, NULL otherwise
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+Disk_GetLabelTypeName(labelType)
+    Disk_NativeLabelType labelType;	/* Type of machine specific label. */
+{
+    static char *names[3] = {"NO LABEL", "Sun", "Dec"};
+
+    if (labelType < 0 || labelType > 2) {
+	return NULL;
+    }
+    return names[labelType];
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_PrintLfsSuperBlockHdr
+ *
+ *	Print out the contents of the LFS SuperBlock header
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints stuff to stdout.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Disk_PrintLfsSuperBlockHdr(headerPtr)
+    LfsSuperBlockHdr *headerPtr;
+{
+    if (headerPtr == NULL) {
+	return;
+    }
+    printf("LFS SuperBlock magic:                0x%x\n", headerPtr -> magic);
+    printf("LFS version:                         %d\n", headerPtr -> version);
+    printf("LFS block size in bytes:             %d\n", 
+	   headerPtr -> blockSize);
+    printf("Maximum number of checkpoint blocks: %d\n", 
+	   headerPtr -> maxCheckPointBlocks);
+    printf("Checkpoint #0 offset:                %d\n", 
+	   headerPtr -> checkPointOffset[0]);
+    printf("Checkpoint #1 offset:                %d\n", 
+	   headerPtr -> checkPointOffset[1]);
+    printf("Segemented log offset:               %d\n", 
+	   headerPtr -> logStartOffset);
+    printf("Frequency of checkpoint in seconds:  %d\n",
+	   headerPtr -> checkpointInterval);
+    printf("Maximum number of blocks to clean at one time: %d\n",
+	   headerPtr -> maxNumCacheBlocks);
+    printf("Unique ID for file system:           %d\n",
+	   headerPtr -> domainUID);
+    printf("Partition that the file system was built in: %c\n",
+	   headerPtr -> partition);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_PrintLfsStableMemParams
+ *
+ *	Print out the contents of a LFS StableMemParam structure
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints stuff to stdout.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Disk_PrintLfsStableMemParams(stableMemPtr)
+    LfsStableMemParams *stableMemPtr;
+{
+    if (stableMemPtr == NULL) {
+	return;
+    }
+    printf("Stable memory type:          %d\n", stableMemPtr -> memType);
+    printf("Block size in bytes:         %d\n", stableMemPtr -> blockSize);
+    printf("Size of each entry in bytes: %d\n", stableMemPtr -> entrySize);
+    printf("Maximum number of entries:   %d\n", stableMemPtr -> maxNumEntries);
+    printf("Number of entries per block: %d\n", 
+	   stableMemPtr -> entriesPerBlock);
+    printf("Maximum nmber of blocks:     %d\n", stableMemPtr -> maxNumBlocks);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_PrintLfsDescMapParams
+ *
+ *	Print out the contents of a LFS DescMapParams structure
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints stuff to stdout.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Disk_PrintLfsDescMapParams(descMapPtr)
+    LfsDescMapParams *descMapPtr;
+{
+    if (descMapPtr == NULL) {
+	return;
+    }
+    printf("Version number:                 %d\n", descMapPtr -> version);
+    printf("Maximum size in descriptor map: %d\n\n", descMapPtr -> maxDesc);
+    printf("Index Parameters for the descriptor map:\n");
+    Disk_PrintLfsStableMemParams(&(descMapPtr -> stableMem));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_PrintLfsSegUsageParams
+ *
+ *	Print out the contents of a LFS SegUsageParams structure
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints stuff to stdout.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Disk_PrintLfsSegUsageParams(segUsagePtr)
+    LfsSegUsageParams *segUsagePtr;
+{
+    if (segUsagePtr == NULL) {
+	return;
+    }
+    printf("Number of bytes in each segment:            %d\n", 
+	   segUsagePtr -> segmentSize);
+    printf("Number of segments in file system:          %d\n", 
+	   segUsagePtr -> numberSegments);
+    printf("Minimum number of clean segments allowed:   %d\n", 
+	   segUsagePtr -> minNumClean);
+    printf("Minimum number of free blocks allowed:      %d\n", 
+	   segUsagePtr -> minFreeBlocks);
+    printf("Number of allowed waste blocks per segment: %d\n", 
+	   segUsagePtr -> wasteBlocks);
+    printf("Number of segments to clean at a time:      %d\n\n", 
+	   segUsagePtr -> numSegsToClean);
+    printf("Index Parameters for the Segment Usage Map:\n");
+    Disk_PrintLfsStableMemParams(&(segUsagePtr -> stableMem));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_PrintLfsFileLayoutParams
+ *
+ *	Print out the contents of a LFS FileLayoutParams structure
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints stuff to stdout.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Disk_PrintLfsFileLayoutParams(fileLayoutPtr)
+    LfsFileLayoutParams *fileLayoutPtr;
+{
+    if (fileLayoutPtr == NULL) {
+	return;
+    }
+    printf("Number of file descriptors to pack per block: %d\n",
+	   fileLayoutPtr -> descPerBlock);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_PrintLfsSuperBlock
+ *
+ *	Print out the contents of a LFS SuperBlock
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints stuff to stdout.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Disk_PrintLfsSuperBlock(superPtr)
+    LfsSuperBlock *superPtr;
+{
+    if (superPtr == NULL) {
+	return;
+    }
+    printf("SuperBlock Header:\n");
+    Disk_PrintLfsSuperBlockHdr(&(superPtr -> hdr));
+    printf("\nDescriptor Map Parameters:\n");
+    Disk_PrintLfsDescMapParams(&(superPtr -> descMap));
+    printf("\nSegment Usage Map Parameters:\n");
+    Disk_PrintLfsSegUsageParams(&(superPtr -> usageArray));
+    printf("\nFile Layout Parameters:\n");
+    Disk_PrintLfsFileLayoutParams(&(superPtr -> fileLayout));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_PrintLfsCheckPointHdr
+ *
+ *	Print out the contents of a LFS CheckPointHdr
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints stuff to stdout.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Disk_PrintLfsCheckPointHdr(headerPtr)
+    LfsCheckPointHdr *headerPtr;
+{
+    if (headerPtr == NULL) {
+	return;
+    }
+    printf("Timestamp of the checkpoint:      %d\n", headerPtr -> timestamp);
+    printf("Size of the checkpoint in bytes:  %d\n", headerPtr -> size);
+    printf("Region write version number:      %d\n", headerPtr -> version);
+    printf("Last prefix used for this domain: %s\n", headerPtr -> 
+	   domainPrefix);
+    printf("Last domain run under:            %d\n", headerPtr -> 
+	   domainNumber);
+    printf("Time the disk was attached:       %d\n", headerPtr -> 
+	   attachSeconds);
+    printf("Time the disk was off-lined:      %d\n", headerPtr -> 
+	   detachSeconds);
+    printf("Sprite ID of server:              %d\n", headerPtr -> serverID);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_PrintLfsCheckPointRegion
+ *
+ *	Print out the contents of a LFS CheckPointRegion
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints stuff to stdout.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Disk_PrintLfsCheckPointRegion(regionPtr)
+    LfsCheckPointRegion *regionPtr;
+{
+    if (regionPtr == NULL) {
+	return;
+    }
+    printf("Region type:             %s\n", 
+	   (regionPtr -> type == LFS_FILE_LAYOUT_MOD) ? "LFS_FILE_LAYOUT_MOD" :
+	   ((regionPtr -> type == LFS_DESC_MAP_MOD) ? "LFS_DESC_MAP_MOD" :
+	   "LFS_SEG_USAGE_MOD"));
+    printf("Size of region in bytes: %d\n", regionPtr -> size);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Disk_PrintLfsCheckPointTrailer
+ *
+ *	Print out the contents of a LFS CheckPointTrailer
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints stuff to stdout.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Disk_PrintLfsCheckPointTrailer(trailerPtr)
+    LfsCheckPointTrailer *trailerPtr;
+{
+    if (trailerPtr == NULL) {
+	return;
+    }
+    printf("Timestamp of the checkpoint: %d\n", trailerPtr -> timestamp);
+    printf("Checksum of the checkpoint:  %d\n", trailerPtr -> checkSum);
+}
+
+@
+
+
+1.7
+log
+@Changes to reflect the old Sprite file system name being OFS and the
+addition of LFS.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/disk/RCS/diskPrint.c,v 1.6 90/10/10 09:45:08 rab Exp Locker: mendel $ SPRITE (Berkeley)";
+d304 291
+@
+
+
+1.6
+log
+@*** empty log message ***
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/disk/RCS/diskPrint.c,v 1.5 90/03/16 17:41:19 jhh Exp Locker: rab $ SPRITE (Berkeley)";
+d42 1
+a42 1
+    register Fsdm_DomainHeader *headerPtr;/* Reference to domain header to print*/
+d44 1
+a44 1
+    register Fsdm_Geometry *geoPtr;
+d98 1
+a98 1
+    register Fsdm_SummaryInfo *summaryPtr; /* Reference to summary info to print */
+d107 2
+a108 2
+    if (summaryPtr->flags & FSDM_DOMAIN_NOT_SAFE) {
+	printf("FSDM_DOMAIN_NOT_SAFE\n");
+d110 5
+a114 5
+    if (summaryPtr->flags & FSDM_DOMAIN_ATTACHED_CLEAN) {
+	printf("FSDM_DOMAIN_ATTACHED_CLEAN\n");
+    }
+    if (summaryPtr->flags & FSDM_DOMAIN_TIMES_VALID) {
+	printf("FSDM_DOMAIN_TIMES_VALID\n");
+d116 2
+a117 2
+    if (summaryPtr->flags & FSDM_DOMAIN_JUST_CHECKED) {
+	printf("FSDM_DOMAIN_JUST_CHECKED\n");
+d138 1
+a138 1
+    Fsdm_DomainHeader	*headerPtr;	/* Pointer to disk header info. */
+d178 1
+a178 1
+    Fsdm_DomainHeader	*headerPtr;	/* Ptr to disk header info. */
+@
+
+
+1.5
+log
+@replaced DiskInfo abstraction with Disk_Label
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/disk/RCS/diskPrint.c,v 1.4 90/01/31 17:04:48 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+@
+
+
+1.4
+log
+@made printing of summary info better
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/disk/RCS/diskPrint.c,v 1.3 89/09/25 12:32:37 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d22 1
+a22 1
+#include "diskUtils.h"
+d224 80
+@
+
+
+1.3
+log
+@Conforms to new fs module structure
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/disk/RCS/diskPrint.c,v 1.2 88/10/27 15:30:56 nelson Exp Locker: jhh $ SPRITE (Berkeley)";
+d100 4
+a103 2
+    printf("\"%s\"\t%d Kbytes free, %d file descriptors free\n",
+	    summaryPtr->domainPrefix, summaryPtr->numFreeKbytes,
+d105 14
+@
+
+
+1.2
+log
+@Ported to the new C library.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: diskPrint.c,v 1.1 88/06/02 12:54:20 brent Exp $ SPRITE (Berkeley)";
+d42 1
+a42 1
+    register FsDomainHeader *headerPtr;/* Reference to domain header to print*/
+d44 1
+a44 1
+    register FsGeometry *geoPtr;
+d57 1
+a57 1
+		    headerPtr->numFileDesc/FS_FILE_DESC_PER_BLOCK,
+d98 1
+a98 1
+    register FsSummaryInfo *summaryPtr; /* Reference to summary info to print */
+d122 1
+a122 1
+    FsDomainHeader	*headerPtr;	/* Pointer to disk header info. */
+d162 1
+a162 1
+    FsDomainHeader	*headerPtr;	/* Ptr to disk header info. */
+d203 1
+a203 1
+    FsDirEntry *dirEntryPtr;	/* Ptr to directory entry. */
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: fsDiskUtils.c,v 1.4 87/06/02 11:20:32 nelson Exp $ SPRITE (Berkeley)";
+d21 1
+a21 2
+#include "sprite.h"
+#include "io.h"
+a22 2
+#include "mem.h"
+#include "byte.h"
+d28 1
+a28 1
+ * PrintDomainHeader --
+d41 2
+a42 2
+PrintDomainHeader(headerPtr)
+    register FsDomainHeader *headerPtr;/* Reference to domain header to print */
+d44 2
+a45 2
+    register FsGeometry *geoPtr;/* Reference to domain geometry info */
+    register int index;
+d47 2
+a48 2
+    Io_Print("Domain Header <%x>\n", headerPtr->magic);
+    Io_Print("First Cyl %d, num Cyls %d", headerPtr->firstCylinder,
+d50 1
+a50 1
+    Io_Print(", raw size %d kbytes\n", headerPtr->numCylinders *
+d53 2
+a54 2
+    Io_Print("%-20s %10s %10s\n", "", "offset", "blocks");
+    Io_Print("%-20s %10d %10d\n", "FD Bitmap", headerPtr->fdBitmapOffset,
+d56 2
+a57 2
+    Io_Print("%-20s %10d %10d %10d\n", "File Desc", headerPtr->fileDescOffset,
+		    headerPtr->numFileDesc/FILE_DESC_PER_BLOCK,
+d59 1
+a59 1
+    Io_Print("%-20s %10d %10d\n", "Bitmap", headerPtr->bitmapOffset,
+d61 1
+a61 1
+    Io_Print("%-20s %10d %10d\n", "Data Blocks", headerPtr->dataOffset,
+d64 2
+a65 2
+    Io_Print("Geometry\n");
+    Io_Print("sectorsPerTrack %d, numHeads %d\n", geoPtr->sectorsPerTrack,
+d67 1
+a67 1
+    Io_Print("blocksPerRotSet %d, tracksPerRotSet %d\n",
+d69 1
+a69 1
+    Io_Print("rotSetsPerCyl %d, blocksPerCylinder %d\n",
+d71 1
+a71 1
+    Io_Print("Offset	(Sorted)\n");
+d73 1
+a73 1
+	Io_Print("%8d %8d\n", geoPtr->blockOffset[index],
+d77 1
+a77 1
+    Io_Print(">> %d files, %d kbytes\n", headerPtr->numFileDesc,
+d84 1
+a84 1
+ * PrintSummaryInfo --
+d97 1
+a97 1
+PrintSummaryInfo(summaryPtr)
+d100 1
+a100 1
+    Io_Print("\"%s\"\t%d Kbytes free, %d file descriptors free\n",
+d108 1
+a108 1
+ * PrintFileDescBitmap --
+d121 3
+a123 3
+PrintFileDescBitmap(headerPtr, bitmap)
+    FsDomainHeader *headerPtr;
+    char *bitmap;
+d127 1
+a127 1
+    Io_Print("File Descriptor bitmap\n");
+d131 1
+a131 1
+	    Io_Print("%6d ", index * BITS_PER_BYTE);
+d133 1
+a133 1
+		Io_Print(" (The rest of the map is not used)\n");
+d137 1
+a137 1
+	Io_Print("%02x", bitmap[index] & 0xff);
+d140 1
+a140 1
+	    Io_Print("\n");
+d148 1
+a148 1
+ * PrintDataBlockBitmap --
+d161 3
+a163 3
+PrintDataBlockBitmap(headerPtr, bitmap)
+    FsDomainHeader *headerPtr;
+    char *bitmap;
+d167 1
+a167 1
+    Io_Print("Data block bitmap:\n");
+d171 1
+a171 1
+	    Io_Print("%6d ", index * BITS_PER_BYTE);
+d173 2
+a174 2
+		headerPtr->dataBlocks * KBYTES_PER_BLOCK) {
+		Io_Print(" (The rest of the bitmap is not used)\n");
+d178 1
+a178 1
+	Io_Print("%02x", bitmap[index] & 0xff);
+d181 1
+a181 1
+	    Io_Print("\n");
+d189 1
+a189 1
+ * PrintDirEntry --
+d202 2
+a203 2
+PrintDirEntry(dirEntryPtr)
+    FsDirEntry *dirEntryPtr;
+d205 1
+a205 1
+    Io_Print("\"%-15s\", File Number = %d, Rec Len = %d, Name Len = %d\n",
+@

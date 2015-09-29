@@ -1,0 +1,9 @@
+D DIST                              	dist
+F FTP.;1                            	FTP
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+F README.;1                         	README
+F README.SPR;1                      	README.sprite
+D SUN4_MD                           	sun4.md
+F TRACEROU.C;1                      	traceroute.c
+L TRACEROU.MAN;1                    	traceroute.man	dist/traceroute.man

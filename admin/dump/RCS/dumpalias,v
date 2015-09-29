@@ -1,0 +1,42 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @# @;
+
+
+1.2
+date     91.11.10.11.24.14;  author mottsmth;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.11.10.11.23.26;  author mottsmth;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Initial version
+@
+
+
+1.2
+log
+@dumper->mottsmth
+@
+text
+@mottsmth
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+rab
+@

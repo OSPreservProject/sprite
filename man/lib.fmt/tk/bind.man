@@ -1,0 +1,462 @@
+
+
+
+bind                      User Commands                      bind
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     bind - Arrange for X events to invoke Tcl commands
+
+SSYYNNOOPPSSIISS
+     bbiinndd _w_i_n_d_o_w_S_p_e_c
+     bbiinndd _w_i_n_d_o_w_S_p_e_c _s_e_q_u_e_n_c_e
+     bbiinndd _w_i_n_d_o_w_S_p_e_c _s_e_q_u_e_n_c_e _c_o_m_m_a_n_d
+     bbiinndd _w_i_n_d_o_w_S_p_e_c _s_e_q_u_e_n_c_e ++_c_o_m_m_a_n_d
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     If all three arguments are specified, bbiinndd will arrange  for
+     _c_o_m_m_a_n_d (a Tcl command) to be executed whenever the sequence
+     of events given by _s_e_q_u_e_n_c_e occurs in the window(s)  identi-  |
+     fied  by  _w_i_n_d_o_w_S_p_e_c.   If _c_o_m_m_a_n_d is prefixed with a ``+'',
+     then it is appended to any existing  binding  for  _s_e_q_u_e_n_c_e;
+     otherwise _c_o_m_m_a_n_d replaces the existing binding, if any.  If
+     _c_o_m_m_a_n_d is an empty string  then  the  current  binding  for
+     _s_e_q_u_e_n_c_e  is destroyed, leaving _s_e_q_u_e_n_c_e unbound.  In all of
+     the cases where a _c_o_m_m_a_n_d argument is provided, bbiinndd returns
+     an empty string.
+
+     If _s_e_q_u_e_n_c_e is specified without a _c_o_m_m_a_n_d, then the command
+     currently  bound to _s_e_q_u_e_n_c_e is returned, or an empty string
+     if there is no binding for _s_e_q_u_e_n_c_e.   If  neither  _s_e_q_u_e_n_c_e
+     nor  _c_o_m_m_a_n_d  is  specified, then the return value is a list
+     whose elements are all the sequences for which  there  exist  |
+     bindings for _w_i_n_d_o_w_S_p_e_c.                                      |
+
+     The _w_i_n_d_o_w_S_p_e_c argument selects which window(s) the  binding  |
+     applies  to.  It may have one of three forms.  If _w_i_n_d_o_w_S_p_e_c  |
+     is the path name for a window, then the binding  applies  to  |
+     that  particular  window.   If  _w_i_n_d_o_w_S_p_e_c  is the name of a  |
+     class of widgets, then the binding applies to all widgets in  |
+     that  class.   Lastly, _w_i_n_d_o_w_S_p_e_c may have the value aallll, in  |
+     which case the binding applies to all windows in the  appli-  |
+     cation.
+
+     The _s_e_q_u_e_n_c_e argument specifies a sequence of  one  or  more
+     event  patterns,  with optional white space between the pat-
+     terns.  Each event pattern may take either of two forms.  In
+     the  simplest  case it is a single printing ASCII character,
+     such as aa or [[.  The character may not be a space  character
+     or the character <<.  This form of pattern matches a KKeeyyPPrreessss
+     event for the particular character.  The second form of pat-
+     tern  is longer but more general.  It has the following syn-
+     tax:
+
+          <<_m_o_d_i_f_i_e_r-_m_o_d_i_f_i_e_r-_t_y_p_e-_d_e_t_a_i_l>>
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+bind                      User Commands                      bind
+
+
+
+     The entire event pattern is surrounded  by  angle  brackets.
+     Inside  the  angle  brackets  are zero or more modifiers, an
+     event type, and an extra piece of information (_d_e_t_a_i_l) iden-
+     tifying  a  particular  button or keysym.  Any of the fields
+     may be omitted, as long as at least one of _t_y_p_e  and  _d_e_t_a_i_l
+     is  present.  The fields must be separated by white space or
+     dashes.
+
+     Modifiers may consist of any of the values in the  following
+     list:
+
+          CCoonnttrrooll                 AAnnyy
+          SShhiifftt                   DDoouubbllee
+          LLoocckk                    TTrriippllee
+          BBuuttttoonn11,, BB11             MMoodd11,, MM11,, MM
+          BBuuttttoonn22,, BB22             MMoodd22,, MM22
+          BBuuttttoonn33,, BB33             MMoodd33,, MM33
+          BBuuttttoonn44,, BB44             MMoodd44,, MM44
+          BBuuttttoonn55,, BB55             MMoodd55,, MM55
+     Where more than one value is listed,  separated  by  commas,
+     the  values  are  equivalent.    All of the modifiers except
+     AAnnyy, DDoouubbllee, and TTrriippllee have the obvious  X  meanings.   For
+     example,  BBuuttttoonn11  requires  that button 1 be depressed when
+     the event occurs.  Under normal conditions  the  button  and
+     modifier  state  at the time of the event must match exactly
+     those specified in the bbiinndd command.  If  no  modifiers  are
+     specified,  then  events will match only if no modifiers are
+     present.  If the AAnnyy modifier is specified, then  additional
+     modifiers may be present besides those specified explicitly.
+     For example, if button 1 is pressed while the shift and con-
+     trol  keys  are  down,  the specifier <<AAnnyy--CCoonnttrrooll--BBuuttttoonn--11>>
+     will match the event, but the  specifier  <<CCoonnttrrooll--BBuuttttoonn--11>>
+     will not.
+
+     The DDoouubbllee and TTrriippllee modifiers are a convenience for speci-
+     fying  double  mouse  clicks and other repeated events. They
+     cause a particular event pattern  to  be  repeated  2  or  3
+     times,  and  also  place a time and space requirement on the
+     sequence:  for a sequence of events to  match  a  DDoouubbllee  or
+     TTrriippllee  pattern, all of the events must occur close together
+     in time and without substantial  mouse  motion  in  between.
+     For  example,  <<DDoouubbllee--BBuuttttoonn--11>>  is  equivalent to <<BBuuttttoonn--
+     11>><<BBuuttttoonn--11>> with the extra time and space requirement.
+
+     The _t_y_p_e field may be any of the  standard  X  event  types,
+     with  a few extra abbreviations.  Below is a list of all the
+     valid types;  where  two  name  appear  together,  they  are
+     synonyms.
+
+          BBuuttttoonnPPrreessss,, BBuuttttoonn            GGrraavviittyy
+          BBuuttttoonnRReelleeaassee                  KKeeyymmaapp
+          CCiirrccuullaattee                      KKeeyyPPrreessss,, KKeeyy
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+bind                      User Commands                      bind
+
+
+
+          CCiirrccuullaatteeRReeqquueesstt               KKeeyyRReelleeaassee
+          CCoolloorrmmaapp                       MMaappRReeqquueesstt
+          CCoonnffiigguurree                      MMoottiioonn
+          CCoonnffiigguurreeRReeqquueesstt               LLeeaavvee
+          DDeessttrrooyy                        MMaapp
+          EEnntteerr                          PPrrooppeerrttyy
+          EExxppoossee                         RReeppaarreenntt
+          FFooccuussIInn                        RReessiizzeeRReeqquueesstt
+          FFooccuussOOuutt                       UUnnmmaapp
+
+     The last part of a long event specification is  _d_e_t_a_i_l.   In
+     the  case of a BBuuttttoonnPPrreessss or BBuuttttoonnRReelleeaassee event, it is the
+     number of a button (1-5).  If a button number is given, then
+     only  an  event on that particular button will match;  if no
+     button number is given, then an event  on  any  button  will
+     match.   Note:  giving a specific button number is different
+     than specifying a button modifier; in  the  first  case,  it
+     refers  to  a button being pressed or released, while in the
+     second it refers  to  some  other  button  that  is  already
+     depressed  when  the  matching  event  occurs.   If a button
+     number is given then _t_y_p_e may be omitted:  if  will  default
+     to   BBuuttttoonnPPrreessss.    For   example,  the  specifier  <<11>>  is
+     equivalent to <<BBuuttttoonnPPrreessss--11>>.
+
+     If the event type is KKeeyyPPrreessss or KKeeyyRReelleeaassee, then _d_e_t_a_i_l may
+     be  specified  in the form of an X keysym.  Keysyms are tex-
+     tual specifications for particular  keys  on  the  keyboard;
+     they  include  all  the  alphanumeric ASCII characters (e.g.
+     ``a'' is the keysym for the  ASCII  character  ``a''),  plus
+     descriptions  for  non-alphanumeric characters (``comma'' is
+     the keysym for the comma character), plus  descriptions  for
+     all  the  non-ASCII keys on the keyboard (``Shift_L'' is the
+     keysm for the left shift key, and ``F1'' is the  keysym  for
+     the  F1  function  key, if it exists).  The complete list of
+     keysyms is not presented here;  it should  be  available  in
+     other  X  documentation.   If  necessary, you can use the %%KK
+     notation described below to print out the keysym name for an
+     arbitrary  key.   If a keysym _d_e_t_a_i_l is given, then the _t_y_p_e
+     field may be omitted;  it will  default  to  KKeeyyPPrreessss.   For
+     example,   <<CCoonnttrrooll--ccoommmmaa>>   is   equivalent   to  <<CCoonnttrrooll--
+     KKeeyyPPrreessss--ccoommmmaa>>.  If a keysym _d_e_t_a_i_l is specified  then  the
+     SShhiifftt  modifier need not be specified and will be ignored if
+     specified:  each keysym already implies a  particular  state
+     for the shift key.
+
+     The _c_o_m_m_a_n_d argument to bbiinndd is a Tcl command string,  which
+     will  be  executed whenever the given event sequence occurs.
+     _C_o_m_m_a_n_d will be executed in the same  interpreter  that  the
+     bbiinndd  command  was  executed  in.  If _c_o_m_m_a_n_d contains any %%
+     characters, then the command string  will  not  be  executed
+     directly.   Instead,  a new command string will be generated
+     by replacing each %%, and the character  following  it,  with
+
+
+
+Sprite v1.0                                                     3
+
+
+
+
+
+
+bind                      User Commands                      bind
+
+
+
+     information from the current event.  The replacement depends
+     on the character following the %%, as  defined  in  the  list
+     below.   Unless  otherwise indicated, the replacement string  |
+     is the decimal value of the given  field  from  the  current  |
+     event.  Some of the substitutions are only valid for certain
+     types of events;  if they are used for other types of events
+     the value substituted is undefined.
+
+     %%%%   Replaced with a single percent.
+
+     %%##   The number of the last client request processed by  the
+          server  (the  _s_e_r_i_a_l  field from the event).  Valid for
+          all event types.
+
+     %%aa   The _a_b_o_v_e field from the event.  Valid only for  CCoonnffii--
+          gguurreeNNoottiiffyy events.
+
+     %%bb   The number of the button that was pressed or  released.
+          Valid only for BBuuttttoonnPPrreessss and BBuuttttoonnRReelleeaassee events.
+
+     %%cc   The _c_o_u_n_t field from the event.  Valid only for EExxppoossee,
+          GGrraapphhiiccssEExxppoossee, and MMaappppiinnggNNoottiiffyy events.
+
+     %%dd   The _d_e_t_a_i_l field from the event.  The %%dd is replaced by
+          a  string  identifying  the  detail.   For EEnntteerrNNoottiiffyy,
+          LLeeaavveeNNoottiiffyy, FFooccuussIInn, and FFooccuussOOuutt events,  the  string
+          will be one of the following:
+
+               NNoottiiffyyAAnncceessttoorr          NNoottiiffyyNNoonnlliinneeaarrVViirrttuuaall
+               NNoottiiffyyDDeettaaiillNNoonnee        NNoottiiffyyPPooiinntteerr
+               NNoottiiffyyIInnffeerriioorr          NNoottiiffyyPPooiinntteerrRRoooott
+               NNoottiiffyyNNoonnlliinneeaarr         NNoottiiffyyVViirrttuuaall
+          For CCoonnffiigguurreeRReeqquueesstt  events,  the  substituted  string
+          will be one of the following:
+
+               AAbboovvee                   OOppppoossiittee
+               BBeellooww                   TTooppIIff
+               BBoottttoommIIff
+          For events other than these, the substituted string  is
+          undefined.
+
+     %%ff   The _f_o_c_u_s field from the event (00 or  11).   Valid  only
+          for EEnntteerrNNoottiiffyy and LLeeaavveeNNoottiiffyy events.
+
+     %%hh   The _h_e_i_g_h_t field from the event.  Valid only  for  CCoonn--
+          ffiigguurree,  CCoonnffiigguurreeNNoottiiffyy,  EExxppoossee,  GGrraapphhiiccssEExxppoossee, and
+          RReessiizzeeRReeqquueesstt events.
+
+     %%kk   The _k_e_y_c_o_d_e field  from  the  event.   Valid  only  for
+          KKeeyyPPrreessss and KKeeyyRReelleeaassee events.
+
+     %%mm   The _m_o_d_e field from the event.  The substituted  string
+
+
+
+Sprite v1.0                                                     4
+
+
+
+
+
+
+bind                      User Commands                      bind
+
+
+
+          is  one  of  NNoottiiffyyNNoorrmmaall, NNoottiiffyyGGrraabb, NNoottiiffyyUUnnggrraabb, or
+          NNoottiiffyyWWhhiilleeGGrraabbbbeedd.  Valid only for EEnntteerrWWiinnddooww,  FFooccuu--
+          ssIInn, FFooccuussOOuutt, and LLeeaavveeWWiinnddooww events.
+
+     %%oo   The _o_v_e_r_r_i_d_e__r_e_d_i_r_e_c_t field from the event.  Valid only
+          for CCrreeaatteeNNoottiiffyy, MMaappNNoottiiffyy, RReeppaarreennttNNoottiiffyy, and CCoonnffii--
+          gguurreeNNoottiiffyy events.
+
+     %%pp   The _p_l_a_c_e field from the event, substituted as  one  of
+          the  strings  PPllaacceeOOnnTToopp  or PPllaacceeOOnnBBoottttoomm.  Valid only
+          for CCiirrccuullaatteeNNoottiiffyy and CCiirrccuullaatteeRReeqquueesstt events.
+
+     %%ss   The _s_t_a_t_e field from the event.  For BBuuttttoonnPPrreessss,  BBuutt--
+          ttoonnRReelleeaassee, EEnntteerrNNoottiiffyy, KKeeyyPPrreessss, KKeeyyRReelleeaassee, LLeeaavveeNNoo--
+          ttiiffyy, and MMoottiioonnNNoottiiffyy events, a decimal string is sub-  |
+          stituted.   For  VViissiibbiilliittyyNNoottiiffyy,  one  of the strings
+          VViissiibbiilliittyyUUnnoobbssccuurreedd, VViissiibbiilliittyyPPaarrttiiaallllyyOObbssccuurreedd,  and
+          VViissiibbiilliittyyFFuullllyyOObbssccuurreedd is substituted.
+
+     %%tt   The _t_i_m_e field from the event.  Valid only  for  events
+          that contain a _t_i_m_e field.
+
+     %%vv   The _v_a_l_u_e__m_a_s_k field from the event.   Valid  only  for
+          CCoonnffiigguurreeRReeqquueesstt events.
+
+     %%ww   The _w_i_d_t_h field from the event.  Valid only for CCoonnffiigg--
+          uurree,   CCoonnffiigguurreeRReeqquueesstt,  EExxppoossee,  GGrraapphhiiccssEExxppoossee,  and
+          RReessiizzeeRReeqquueesstt events.
+
+     %%xx   The _x field from the event.  Valid only for events con-
+          taining an _x field.
+
+     %%yy   The _y field from the event.  Valid only for events con-
+          taining a _y field.
+
+     %%AA   Substitutes the ASCII character  corresponding  to  the
+          event,  or  the  empty  string  if  the  event  doesn't
+          correspond to an ASCII character (e.g.  the  shift  key
+          was  pressed).   XXLLooookkuuppSSttrriinngg  does  all  the  work of
+          translating from  the  event  to  an  ASCII  character.
+          Valid only for KKeeyyPPrreessss and KKeeyyRReelleeaassee events.
+
+     %%BB   The _b_o_r_d_e_r__w_i_d_t_h field from the event.  Valid only  for
+          CCoonnffiigguurreeNNoottiiffyy and CCrreeaatteeWWiinnddooww events.
+
+     %%DD   The _d_i_s_p_l_a_y field from the event.  Valid for all  event
+          types.
+
+     %%EE   The _s_e_n_d__e_v_e_n_t field from the  event.   Valid  for  all
+          event types.
+
+     %%KK   The keysym corresponding to the event, substituted as a
+
+
+
+Sprite v1.0                                                     5
+
+
+
+
+
+
+bind                      User Commands                      bind
+
+
+
+          textual string.  Valid only for KKeeyyPPrreessss and KKeeyyRReelleeaassee
+          events.
+
+     %%NN   The keysym corresponding to the event, substituted as a  |
+          decimal number.  Valid only for KKeeyyPPrreessss and KKeeyyRReelleeaassee
+          events.
+
+     %%RR   The _r_o_o_t window identifier from the event.  Valid  only
+          for events containing a _r_o_o_t field.
+
+     %%SS   The _s_u_b_w_i_n_d_o_w window identifier from the event.   Valid
+          only for events containing a _s_u_b_w_i_n_d_o_w field.
+
+     %%TT   The _t_y_p_e field from the event.   Valid  for  all  event
+          types.
+
+     %%WW   The path name of the window  to  which  the  event  was
+          reported  (the _w_i_n_d_o_w field from the event).  Valid for
+          all event types.
+
+     %%XX   The _x__r_o_o_t field from the event.  Valid only  for  BBuutt--
+          ttoonnPPrreessss,   BBuuttttoonnRReelleeaassee,  KKeeyyPPrreessss,  KKeeyyRReelleeaassee,  and
+          MMoottiioonnNNoottiiffyy events.
+
+     %%YY   The _y__r_o_o_t field from the event.  Valid only  for  BBuutt--
+          ttoonnPPrreessss,   BBuuttttoonnRReelleeaassee,  KKeeyyPPrreessss,  KKeeyyRReelleeaassee,  and
+          MMoottiioonnNNoottiiffyy events.
+
+     If the replacement string for a %-replacement contains char-  |
+     acters  that  are  interpreted  specially  by the Tcl parser  |
+     (such as backslashes or square  brackets  or  spaces)  addi-  |
+     tional  backslashes are added during replacement so that the  |
+     result after parsing is  the  original  replacement  string.  |
+     For example, if _c_o_m_m_a_n_d is                                    |
+
+          iinnsseerrtt %%AA                                                |
+     and the character typed is an open square bracket, then  the  |
+     command actually executed will be                             |
+
+          iinnsseerrtt \\[[                                                |
+     This will cause the iinnsseerrtt to receive the original  replace-  |
+     ment string (open square bracket) as its first argument.  If  |
+     the extra backslash hadn't been added, Tcl  would  not  have  |
+     been able to parse the command correctly.
+
+     At most one binding will trigger for any given X event.   If
+     several  bindings match the recent events, the most specific
+     binding is chosen and its command  will  be  executed.   The
+     following tests are applied, in order, to determine which of
+     several matching sequences is more specific: (a)  a  binding  |
+     whose  _w_i_n_d_o_w_S_p_e_c names a particular window is more specific  |
+     than a binding for a class, which is more  specific  than  a  |
+
+
+
+Sprite v1.0                                                     6
+
+
+
+
+
+
+bind                      User Commands                      bind
+
+
+
+     binding  whose  _w_i_n_d_o_w_S_p_e_c is aallll; (b) a longer sequence (in
+     terms of number of events matched) is more specific  than  a
+     shorter  sequence;  (c)  an  event  pattern that specifies a
+     specific button or  key  is  more  specific  than  one  that
+     doesn't;   (e)  an  event pattern that requires a particular
+     modifier is more specific than one that doesn't require  the
+     modifier;  (e)  an event pattern specifying the AAnnyy modifier
+     is less specific than one that  doesn't.   If  the  matching
+     sequences  contain  more  than one event, then tests (c)-(e)
+     are applied in order from the most recent event to the least
+     recent  event  in  the  sequences.   If  these tests fail to
+     determine  a  winner,  then  the  most  recently  registered
+     sequence is the winner.
+
+     If an X event does not match any of the  existing  bindings,
+     then  the  event  is  ignored  (an unbound event is not con-
+     sidered to be an error).
+
+     When a _s_e_q_u_e_n_c_e specified in a bbiinndd  command  contains  more
+     than  one  event pattern, then its command is executed when-
+     ever the recent events (leading  up  to  and  including  the
+     current  event)  match  the given sequence.  This means, for
+     example, that if button 1 is clicked repeatedly the sequence
+     <<DDoouubbllee--BBuuttttoonnPPrreessss--11>>  will match each button press but the
+     first.  Extraneous BBuuttttoonnRReelleeaassee, KKeeyyRReelleeaassee,  MMoottiioonnNNoottiiffyy,  |
+     GGrraapphhiiccssEExxppoossee,  and  NNooEExxppoossee  events  are  ignored if they
+     would otherwise  prevent  a  binding  from  matching  recent
+     events.   Thus, <<DDoouubbllee--BBuuttttoonnPPrreessss--11>> will match a sequence
+     of presses of button 1, even though there  will  be  BBuuttttoonn--
+     RReelleeaassee  events  (and  possibly MMoottiioonnNNoottiiffyy events) between
+     the BBuuttttoonnPPrreessss events.  In addition, if  several  MMoottiioonnNNoo--
+     ttiiffyy  events  occur  in a row, only the last one is used for
+     purposes of matching binding sequences.
+
+     If an error occurs in executing the command  for  a  binding
+     then the ttkkeerrrroorr mechanism is used to report the error.
+
+
+SSEEEE AALLSSOO
+     tkerror
+
+
+KKEEYYWWOORRDDSS
+     form, manual
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     7
+
+
+

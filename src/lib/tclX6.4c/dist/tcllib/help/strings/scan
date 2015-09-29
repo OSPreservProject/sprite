@@ -1,0 +1,15 @@
+          scan string format varname1 ?varname2 ...?
+               This command parses fields from an input string in  the
+               same  fashion  as the C sscanf procedure.  String gives
+               the input to be parsed  and  format  indicates  how  to
+               parse  it,  using  %  fields  as in sscanf.  All of the
+               sscanf options are valid; see the sscanf man  page  for
+               details.   Each  varname  gives the name of a variable;
+               when a field is scanned  from  string,  the  result  is
+               converted  back  into  a  string  and  assigned  to the
+               corresponding varname.  The only unusual conversion  is
+               for %c.  For %c conversions a single character value is
+               converted to a decimal string, which is  then  assigned
+               to  the  corresponding  varname;  no field width may be
+               specified for this conversion.
+

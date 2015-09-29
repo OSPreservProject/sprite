@@ -1,0 +1,68 @@
+
+
+
+MACHSTAT                  User Commands                  MACHSTAT
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     machstat - Machine-dependent statistics
+
+SSYYNNOOPPSSIISS
+     mmaacchhssttaatt  [_o_p_t_i_o_n_s]
+
+OOPPTTIIOONNSS
+     --rraaww          Print out raw numbers.
+
+     --nnooPPeerrcceennttss   Turn off printing out percentage results.
+
+     --ssyyssCCaallllss     Print out  the  information  for  each  system
+                   call.
+
+_________________________________________________________________
+
+IINNTTRROODDUUCCTTIIOONN
+     This command is used to  get  machine-dependent  statistics.
+     For  the  sun4's  it prints out register window overflow and
+     underflow information and cache flushing information.
+
+KKEEYYWWOORRDDSS
+     mach stat window register overflow underflow cache flush
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  July 3, 1990                     1
+
+
+

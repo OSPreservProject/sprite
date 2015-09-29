@@ -1,0 +1,16 @@
+D DS3100_M                          	ds3100.md
+F FOO.;1                            	foo
+F MAKEFILE.;1                       	Makefile
+F MINIMAL.;1                        	minimal
+F OUT.;1                            	out
+F OUT.JHH;1                         	out.jhh
+F OUT_JHH.2;1                       	out.jhh.2
+D RCS                               	RCS
+D RESULTS0                          	Results
+D RESULTS1                          	results
+F RPCECHO.C;1                       	rpcecho.c
+F RPCECHO.MAN;1                     	rpcecho.man
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md
+F TEST.;1                           	test
+F XG.;1                             	xg

@@ -1,0 +1,78 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  srv030:1.2 srv028:1.2 srv027:1.2 srv026:1.2 srv024:1.2 srv022:1.2 srv021:1.2 srv019:1.2 srv018:1.2 srv016:1.2 srv014:1.2 srv010:1.2 srv008:1.2 srv007:1.2 srv006:1.2 srv005:1.2 srv004:1.2 srv003:1.2 srv002:1.1 srv001:1.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     92.04.29.21.32.45;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.10.04.12.05.19;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Temporary hack to support client sleep() calls.
+@
+
+
+1.2
+log
+@Make sure mach_init call precedes mach_task_self call.
+@
+text
+@/* Temporary hack to provide sleep support the clients. */
+
+#include <sprite.h>
+#include <mach.h>
+#include <mach/message.h>
+
+static mach_msg_header_t sleepMsg;
+static mach_port_t sleepPort;
+static void SleepInitialize();
+
+void
+msleep(milliseconds)
+    int milliseconds;
+{
+    static Boolean initialized = 0;
+
+    if (!initialized) {
+	SleepInitialize();
+	initialized = TRUE;
+    }
+    (void)mach_msg(&sleepMsg, MACH_RCV_MSG | MACH_RCV_TIMEOUT, 0,
+		   sizeof(sleepMsg), sleepPort,
+		   (mach_msg_timeout_t)milliseconds, MACH_PORT_NULL);
+}
+
+void
+sleep(seconds)
+    int seconds;
+{
+    msleep(seconds * 1000);
+}
+
+static void
+SleepInitialize()
+{
+    mach_init();
+    (void)mach_port_allocate(mach_task_self(), MACH_PORT_RIGHT_RECEIVE,
+			     &sleepPort);
+}
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d36 1
+@

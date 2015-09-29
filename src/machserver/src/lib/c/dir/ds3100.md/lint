@@ -1,0 +1,19 @@
+closedir.c:
+opendir.c:
+readdir.c:
+scandir.c:
+seekdir.c:
+telldir.c:
+swapLong, arg. 1 used inconsistently	readdir.c 2(78)  ::  readdir.c 2(60)
+swapShort, arg. 1 used inconsistently	readdir.c 2(95)  ::  readdir.c 2(61)
+swapShort, arg. 1 used inconsistently	readdir.c 2(95)  ::  readdir.c 2(62)
+abort value declared inconsistently	llib-lc:abort.c 2(45)  ::  readdir.c 2(69)
+malloc value used inconsistently	llib-lc:malloc.c 2(49)  ::  scandir.c 2(44)
+malloc value used inconsistently	llib-lc:malloc.c 2(49)  ::  scandir.c 2(55)
+realloc, arg. 2 used inconsistently	llib-lc:realloc.c 2(48)  ::  scandir.c 2(71)
+realloc value used inconsistently	llib-lc:realloc.c 2(48)  ::  scandir.c 2(71)
+qsort, arg. 1 used inconsistently	llib-lc:qsort.c 2(53)  ::  scandir.c 2(79)
+malloc value declared inconsistently	llib-lc:malloc.c 2(49)  ::  scandir.c 2(55)
+realloc value declared inconsistently	llib-lc:realloc.c 2(48)  ::  scandir.c 2(71)
+qsort value declared inconsistently	llib-lc:qsort.c 2(53)  ::  scandir.c 2(79)
+close returns value which is always ignored

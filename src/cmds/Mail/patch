@@ -1,0 +1,48 @@
+*** /tmp/,RCSt1139075	Thu Feb  8 15:47:03 1990
+--- v7.local.h	Thu Feb 16 12:55:34 1989
+***************
+*** 25,44 ****
+  #define	LOCAL		'j'		/* Local host id */
+  #endif	GETHOST
+  
+! #define	MAIL		"/bin/mail"	/* Name of mail sender */
+! #define SENDMAIL	"/usr/lib/sendmail"
+! 					/* Name of classy mail deliverer */
+! #define	EDITOR		"/usr/ucb/ex"	/* Name of text editor */
+! #define	VISUAL		"/usr/ucb/vi"	/* Name of display editor */
+! #define	SHELL		"/bin/csh"	/* Standard shell */
+  #define	MORE		"/usr/ucb/more"	/* Standard output pager */
+! #define	HELPFILE	"/usr/lib/Mail.help"
+  					/* Name of casual help file */
+! #define	THELPFILE	"/usr/lib/Mail.tildehelp"
+! #define	POSTAGE		"/usr/adm/maillog"
+  					/* Where to audit mail sending */
+  					/* Name of casual tilde help */
+! #define	MASTER		"/usr/lib/Mail.rc"
+  #define	APPEND				/* New mail goes to end of mailbox */
+  #define CANLOCK				/* Locking protocol actually works */
+  #define	UTIME				/* System implements utime(2) */
+--- 25,47 ----
+  #define	LOCAL		'j'		/* Local host id */
+  #endif	GETHOST
+  
+! #ifndef SENDMAIL
+! #define SENDMAIL	"/sprite/cmds/sendmail"	/* Name of mail deliverer */
+! #endif
+! #define	MAIL		"/sprite/lib/sendmail/$MACHINE.md/mail"	
+! 					/* Name of fallback mail deliverer  */
+! 
+! #define	EDITOR		"/sprite/cmds/ex"	/* Name of text editor */
+! #define	VISUAL		"/sprite/cmds/vi"	/* Name of display editor */
+! #define	SHELL		"/sprite/cmds/csh"	/* Standard shell */
+  #define	MORE		"/usr/ucb/more"	/* Standard output pager */
+! #define	HELPFILE	"/sprite/lib/Mail/Mail.help"
+  					/* Name of casual help file */
+! #define	THELPFILE	"/sprite/lib/Mail/Mail.tildehelp"
+! #define	POSTAGE		"/tmp/maillog"
+  					/* Where to audit mail sending */
+  					/* Name of casual tilde help */
+! #define	MASTER		"/sprite/lib/Mail/Mail.rc"
+  #define	APPEND				/* New mail goes to end of mailbox */
+  #define CANLOCK				/* Locking protocol actually works */
+  #define	UTIME				/* System implements utime(2) */

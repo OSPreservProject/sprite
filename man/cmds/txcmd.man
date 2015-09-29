@@ -1,0 +1,23 @@
+' $Header: /a/newcmds/txcmd/RCS/txcmd.man,v 1.2 88/12/30 10:24:19 ouster Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS TXCMD cmds
+.BS
+.SH NAME
+txcmd \- Invoke a tx command
+.SH SYNOPSIS
+\fBtxcmd\fR \fIcommand command ...\fR
+.BE
+.SH INTRODUCTION
+For this command to work correctly, the standard output must connect
+(eventually) to a \fBtx\fR window.  \fBTxcmd\fR will output the \fIcommand\fRs
+to standard output, preceded by an escape character, separated by
+spaces, and followed by a newline character.  This will cause
+\fBtx\fR to process them as commands, rather than as data to be displayed.
+There should be no newline characters embedded in any of
+the \fIcommand\fRs.
+
+.SH "SEE ALSO"
+tx
+
+.SH KEYWORDS
+terminal emulator, typescript, window

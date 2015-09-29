@@ -1,0 +1,28 @@
+Results of running the "bcopy" benchmark on different configurations.
+The benchmark times bcopy speeds for different buffer sizes.  The
+table below has two results for each configuration:  the first is
+for large blocks that fit in the cache, and the second is for
+large blocks that don't fit in the cache (if the machine has a
+cache).
+
+Configuration				Cache Hit	Cache Miss
+-------------				---------	----------
+
+DS5000 Ultrix 3.1D 3/20/90		40 MB/sec	12.6 MB/sec
+M2000 RISC/os 4.0 10/3/89		38.9		20.4
+8800 Ultrix 3.0	9/19/89			22.0		16.0
+HP835 HP-UX 4/13/90			17.4		 6.2
+RS/6000-320 AIX 3.1 5/9/90		14.3		 7.3
+Sun-4 Sprite 9/19/89			11.1		 5.0
+SS1 Sprite 1.061 3/25/90		10.4		 6.9
+DS3100 Sprite FD.035 9/29/89		10.2		 5.4
+DS3100 Ultrix 3.1 10/25/89		10.2		 5.1
+DS3100 Mach 2.5 4/3/90			10.2		 5.1
+DS3100 Ultrix 3.0 9/19/89		 9.9		 4.7
+Sun-4 SunOS 4.0.3 3/25/90		 8.2		 4.7
+Sun-4 Mach 2.5 4/4/90			 8.1		 4.6
+SS1 SunOS 4.0.3c 3/25/90		 7.6		 5.6
+RT-APC Mach 2.5 11/8/89			 5.9		 5.9
+Sun-3 Sprite 9/19/89			 5.6		 5.5
+Sun-3 SunOS 3.5 2/2/90			 4.6		 4.6
+MVAX2 Ultrix 3.0 9/27/89		 3.5		 3.3

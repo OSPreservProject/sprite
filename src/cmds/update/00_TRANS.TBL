@@ -1,0 +1,15 @@
+F CFUNCPRO.H;1                      	cfuncproto.h
+D DS3100_M                          	ds3100.md
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+F MAKEFILE.ORI;1                    	makefile.orig
+F OPTION.C;1                        	option.c
+F OPTION.H;1                        	option.h
+D RCS                               	RCS
+F REGEXP.C;1                        	regexp.c
+F REGEXP.H;1                        	regexp.h
+F STRTOUL.C;1                       	strtoul.c
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md
+F UPDATE.C;1                        	update.c
+F UPDATE.MAN;1                      	update.man

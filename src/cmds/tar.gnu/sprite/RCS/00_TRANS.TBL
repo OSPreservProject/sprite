@@ -1,0 +1,12 @@
+F BUFFER.C_V;1                      	buffer.c,v
+F CREATE.C_V;1                      	create.c,v
+F DIFFARCH.C_V;1                    	diffarch.c,v
+F EXTRACT.C_V;1                     	extract.c,v
+F LIST.C_V;1                        	list.c,v
+F PORT.C_V;1                        	port.c,v
+F RMT.H_V;1                         	rmt.h,v
+F RTAPE_LI.C_V;1                    	rtape_lib.c,v
+F SPRITE.C_V;1                      	sprite.c,v
+F TAR.C_V;1                         	tar.c,v
+F TAR.H_V;1                         	tar.h,v
+F UPDATE.C_V;1                      	update.c,v

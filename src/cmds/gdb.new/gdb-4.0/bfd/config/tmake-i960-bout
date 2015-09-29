@@ -1,0 +1,5 @@
+TDEFINES = \
+	-DDEFAULT_VECTOR=B_OUT_VEC_LITTLE_HOST \
+	-DICOFF_BIG_VEC=icoff_big_vec \
+	-DB_OUT_VEC_LITTLE_HOST=b_out_vec_little_host \
+	-DB_OUT_VEC_BIG_HOST=b_out_vec_big_host

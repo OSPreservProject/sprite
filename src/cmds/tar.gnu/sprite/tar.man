@@ -1,0 +1,277 @@
+'\" Copyright 1992 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/lib/forms/RCS/cmd.man,v 1.4 92/03/02 15:20:18 bmiller Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS TAR cmds
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+tar \- tape archiver
+.SH SYNOPSIS
+\fBtar\fR \fIoptions\fR [ \fIname ...\fR ]
+.SH COMMAND OPTIONS
+.IP "\fB\-c\fR" 15
+Create a new archive using the named files.
+.IP "\fB\-d\fR" 15
+Compare (``diff'') the contents of the archive with the named files.
+.IP "\fB\-r\fR" 15
+Append the named files to the end of the archive.
+.IP "\fB\-t\fR" 15
+``Table of contents'' command: list the named files in the archive.
+.IP "\fB\-u\fR" 15
+``Update'' command: like 
+.BR \-r ,
+except files are appended only if they aren't already in the archive or
+are newer than the version in the archive.
+.IP "\fB\-x\fR" 15
+Extract files from the archive.
+'\" .IP "\fB\-A\fR" 15
+'\" Concatenate multiple archives into one big archive (untested GNU
+'\" extension). 
+'\" .IP "\fB\-D\fR" 15
+'\" Delete files from the archive (untested GNU extension).  Don't use
+'\" on tapes.
+.IP "\fB\+version\fR" 15
+Display the version of
+.B tar
+that you're running.
+.SH GENERIC MODIFIER OPTIONS
+.IP "\fB\-b \fIblockSize\fR" 15
+Use a blocking factor of \fIblockSize\fR blocks per read or write
+(default 20).
+.IP "\fB\-B\fR" 15
+Ensure that the blocking factor is used.
+.IP "\fB\-f \fIfileName\fR" 15
+Name of the archive.
+.IP "\fB\-C \fIdirectory\fR" 15
+Change \fBtar\fR's current working directory to
+.IR directory .
+.IP "\fB\-e\fR" 15
+Enable debug output.
+'\" .IP "\fB\-M\fR" 15
+'\" Let the archive occupy multiple volumes (e.g., tapes or floppies)
+'\" (untested GNU extension).
+'\" .IP "\fB\-N \fIdate\fR" 15
+'\" Only work on files that are more recent than 
+'\" .I date
+'\" (untested GNU extension)
+.IP "\fB\-R\fR" 15
+Include the current record number when printing a message.
+.IP "\fB\-T \fIfileName\fR" 15
+Get the file list from
+.I fileName
+instead of from the command line.
+.IP "\fB\-v\fR" 15
+Verbose flag.
+.IP "\fB\-w\fR" 15
+Ask for confirmation before doing anything important.
+'\" .IP "\fB\-X \fIfileName\fR" 15
+'\" Exclude files using the globbing expressions read from
+'\" .I fileName 
+'\" (untested GNU extension).
+'\" .IP "\fB\-z\fR" 15
+'\" Keep the archive in compressed form (untested GNU extension).
+.SH OPTIONS FOR WRITING AN ARCHIVE
+'\" .IP "\fB\-G\fR" 15
+'\" Write special records to the archive for use in incremental dumps
+'\" (untested GNU extension).
+.IP "\fB\-h\fR" 15
+Write the target of a symbolic link, rather than the link itself.
+.IP "\fB\-l\fR" 15
+Don't cross filesystem boundaries when archiving a directory tree.
+.IP "\fB\-L\fR" 15
+Enable processing of files with long names (local extension).
+.IP "\fB\-n\fR" 15
+Don't recursively dump the contents of directories.
+.IP "\fB\-o\fR" 15
+Write the archive in a format that is compatible with very old
+versions of
+.BR tar .
+'\" .IP "\fB\-S\fR" 15
+'\" Be clever about sparse files (untested GNU extension).
+'\" .IP "\fB\-V\fR" 15
+'\" Write a volume header at the start of the archive (untested GNU extension).
+.IP "\fB\-W\fR" 15
+Verify the archive after writing it.
+.SH OPTIONS FOR READING AN ARCHIVE
+'\" .IP "\fB\-G\fR" 15
+'\" Used with incremental dumps.  Untested GNU extension.
+.IP "\fB\-i\fR" 15
+Ignore the usual 
+.B tar
+end-of-file marker in the archive.
+.IP "\fB\-k\fR" 15
+Don't overwrite existing files when restoring from the archive.
+'\" .IP "\fB\-K \fIfileName\fR" 15
+'\" Ignore entries before
+'\" .I fileName
+'\" in the archive (untested GNU extension).
+.IP "\fB\-m\fR" 15
+Use the current time as a file's modification time, rather than its
+modification time that was stored in the archive.
+.IP "\fB\-O\fR" 15
+Write the files' contents to
+.BR stdout ,
+rather than creating the files.
+.IP "\fB\-p\fR" 15
+Ignore the current user's
+.B umask
+when creating the files.
+.IP "\fB\-P\fR" 15
+Don't strip off the leading ``/'' (if any) in file pathnames.
+'\" .IP "\fB\-s\fR" 15
+'\" Promises that the file list is in the same order as the contents of
+'\" the archive (untested GNU extension).
+.BE
+
+.SH DESCRIPTION
+.PP
+.B Tar 
+writes an archive file containing one or more files.  The
+version currently installed is derived from the GNU
+.BR tar ,
+with some local extensions.  All of the standard 
+.B tar 
+features are expected to work.  Not all GNU extensions are guaranteed
+to work.
+.PP
+The usual
+.B tar
+command syntax looks something like
+.DS
+tar cfb /dev/rst05.nr 20 /user2 /user3 /sprite/src/kernel
+.DE
+In this example,
+.B cfb 
+is the 
+.B c
+command, followed by two flags, 
+.B f
+and 
+.BR b .
+Following the 
+.B cfb 
+are flag arguments, in the order that the flags
+appeared 
+.RB ( /dev/rst05.nr
+for 
+.B f
+and 
+.B 20
+for 
+.BR b ).
+After the flag arguments are names of files or directories that are in
+(or are to be put into) the archive.  For some commands (e.g., 
+.B t
+and
+.BR x ) 
+the file name arguments are optional, in which case the operation is
+done on all files in the archive.  For directories, the name refers to
+all the files in the subtree rooted at that name.
+
+The
+.B \-C
+flag is most useful when it appears in the middle of the file list,
+as in
+.DS
+tar cf /dev/rst05.nr -C /sprite/src kernel -C /sprite/src/lib include lib/c
+.DE
+It tells
+.B tar
+to change its working directory (e.g., to 
+.B /sprite/src
+and then later to
+.B /sprite/src/lib
+in the example above).
+File names that appear after the flag are interpreted relative to the
+working directory.
+For successive
+.B \-C
+commands, each directory name is relative to the directory name from
+the previous
+.B \-C
+command.
+
+The meaning of the
+.B \-v
+flag depends on the command.  For the 
+.B c
+and
+.B x
+commands, 
+.B tar
+will print the name of each file as it is processed (normally 
+.B tar
+works silently).  For the
+.B t
+command,
+.B tar
+prints additional information about the file, such as its size,
+last-modification time, owner, etc.
+
+Normally
+.B tar
+assumes that its read or write requests will maintain the requested
+blocking factor.  For some cases, for example when
+.B tar
+is in a pipeline that crosses a network, this is a bad assumption, and
+the user should include the
+.B \-B
+flag to ensure that blocking is done correctly.
+
+If a file name begins with a slash (``/''), 
+.B tar
+will normally store the file name in the archive with the slash
+removed.  If the name in the archive contains a slash, 
+.B tar
+will normally ignore the leading slash when extracting the file from
+the archive.  To disable this feature (i.e., maintain the leading
+slash in absolute path names), use the
+.B \-P
+flag.
+
+When creating an archive,
+.B tar
+detects hard links by checking the i-number and device-number for the
+current file name.  If another name with the same i-number and device-number
+has already been dumped, 
+.B tar
+marks in the archive that the current name is simply a hard link to
+that other name.  The file's contents are not written to the archive again.
+When extracting the file from the archive,
+.B tar
+simply recreates the link.  If the other name doesn't exist, 
+.B tar
+will report an error.  If the contents of the other name have changed
+since the archive was made, the link will refer to the new contents,
+not the contents on the archive.
+
+.B Tar
+normally limits names to 100 characters.  When creating an archive, 
+.B tar
+will either truncate a long name or skip over the file completely,
+depending on circumstances.  To allow file name lengths up to the
+system limit, add the
+.B \-L
+flag when creating an archive.
+
+GNU
+.B tar
+uses some fields in the per-file headers that are unused in other
+versions of
+.BR tar .
+Mumble more about compatibility with BSD tar, Posix.
+
+.SH BUGS
+
+-l doesn't work with Sprite, at least not without -h.
+
+.SH KEYWORDS
+file, tape, archive

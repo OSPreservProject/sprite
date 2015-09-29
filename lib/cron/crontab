@@ -1,0 +1,15 @@
+#
+# Global crontab file.
+#
+# Collect system statistics.
+#
+#5 8,11,14,17,20,23 * * *	root /user2/brent/stats/RAW
+#
+# Update routing tables (this is lame)
+#
+#30 58 * * * root netroute -f /etc/spritehosts
+#10 * * * * root netroute.new -f /etc/spritehosts
+#
+# Synchronize your watches
+#
+0 4 * * * root /sprite/admin/Rdate > /dev/syslog 2 >& 1

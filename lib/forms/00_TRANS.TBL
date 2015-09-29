@@ -1,0 +1,14 @@
+F CMD.MAN;1                         	cmd.man
+L DS3100.MD;1                       	ds3100.md	ds5000.md
+D DS5000_M                          	ds5000.md
+F LIB.MAN;1                         	lib.man
+F LOCAL.MK;1                        	local.mk
+F MAIN.C;1                          	main.c
+F PROCHEAD.;1                       	prochead
+F PROTO.C;1                         	proto.c
+F PROTO.CSH;1                       	proto.csh
+F PROTO.EL;1                        	proto.el
+F PROTO.H;1                         	proto.h
+D RCS                               	RCS
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md

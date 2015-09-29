@@ -1,0 +1,118 @@
+head     9.1;
+branch   ;
+access   ;
+symbols  ds3100:9.1 sun3:9.1 sun4nw:9.1 symm:9.1 spur:9.1 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.1
+date     90.09.11.12.13.41;  author rab;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.58.29;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     89.07.14.09.34.20;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.02.15.23.36;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.1
+log
+@Added prototypes.
+@
+text
+@/*
+ * scsiHBADevice.h --
+ *
+ *	External definitions for the SCSI HBA device.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/dev/RCS/scsiHBADevice.h,v 9.0 89/09/12 14:58:29 douglis Stable Locker: rab $ SPRITE (Berkeley)
+ */
+
+#ifndef _SCSI_HBA_DEVICE
+#define _SCSI_HBA_DEVICE
+
+extern ReturnStatus DevSCSIDeviceOpen _ARGS_((Fs_Device *devicePtr,
+    int useFlags, Fs_NotifyToken token, int *flagsPtr));
+extern ReturnStatus DevSCSIDeviceIOControl _ARGS_((Fs_Device *devicePtr,
+    Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus DevSCSIDeviceClose _ARGS_((Fs_Device *devicePtr,
+    int useFlags, int openCount, int writerCount));
+
+#endif /* _SCSIHBADEVICE */
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/dev/RCS/scsiHBADevice.h,v 1.2 89/07/14 09:34:20 mendel Exp Locker: douglis $ SPRITE (Berkeley)
+d22 6
+a27 6
+
+
+extern ReturnStatus DevSCSIDeviceOpen();
+extern ReturnStatus DevSCSIDeviceIOControl();
+extern ReturnStatus DevSCSIDeviceClose();
+
+@
+
+
+1.2
+log
+@Fixed some compilation errors.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/dev/RCS/scsiHBADevice.h,v 1.1 89/07/02 15:23:36 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/dev/RCS/scsiTape.h,v 8.6 89/05/24 07:54:28 rab Exp $ SPRITE (Berkeley)
+d19 2
+a20 2
+#ifndef _SCSIHBADEVICE
+#define _SCSIHBADEVICE
+d24 3
+a26 3
+ReturnStatus DevSCSIDeviceOpen();
+ReturnStatus DevSCSIDeviceIOControl();
+ReturnStatus DevSCSIDeviceClose();
+@

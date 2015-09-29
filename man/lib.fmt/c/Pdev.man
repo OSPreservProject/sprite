@@ -1,0 +1,662 @@
+
+
+
+Pdev                  C Library Procedures                   Pdev
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Pdev_Open,        Pdev_Close,        Pdev_SetDefaultHandler,
+     Pdev_SetStreamHandler,  Pdev_EnumStreams  - Package for ser-
+     vicing pseudo-devices.
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ppddeevv..hh>>
+
+     Pdev_Token
+     PPddeevv__OOppeenn(_n_a_m_e, _r_e_a_l_N_a_m_e_P_t_r, _r_e_q_B_u_f_S_i_z_e,  _r_e_a_d_B_u_f_S_i_z_e,  _s_e_r_-
+     _v_i_c_e, _c_l_i_e_n_t_D_a_t_a)
+     void
+     PPddeevv__CClloossee(_p_d_e_v_T_o_k_e_n)
+     int
+     PPddeevv__GGeettSSttrreeaammIIDD(_p_d_e_v_T_o_k_e_n)
+     int (*
+     PPddeevv__SSeettDDeeffaauullttHHaannddlleerr(_p_d_e_v_T_o_k_e_n, _o_p_e_r_a_t_i_o_n, _h_a_n_d_l_e_r))()
+     int (*
+     PPddeevv__SSeettSSttrreeaammHHaannddlleerr(_s_t_r_e_a_m_P_t_r, _o_p_e_r_a_t_i_o_n, _h_a_n_d_l_e_r))()
+     int
+     PPddeevv__EEnnuummSSttrreeaammss(_p_d_e_v_T_o_k_e_n, _f_u_n_c, _c_l_i_e_n_t_D_a_t_a)
+
+AARRGGUUMMEENNTTSS
+     char             *_n_a_m_e         (in)      Name of file to use
+                                              for pseudo-device.
+
+     char             **_r_e_a_l_N_a_m_e_P_t_r (out)     Where   to    store
+                                              pointer  to  actual
+                                              pseudo-device  file
+                                              name,  or  NULL  if
+                                              _n_a_m_e is to  be  the
+                                              complete   name  of
+                                              pseudo-device file.
+
+     int              _r_e_q_B_u_f_S_i_z_e    (in)      The preferred  size
+                                              for         request
+                                              buffers.
+
+     int              _r_e_a_d_B_u_f_S_i_z_e   (in)      The size for a read
+                                              buffer.  Zero means
+                                              no read buffering.
+
+     Pdev_CallBacks   *_s_e_r_v_i_c_e      (in)      A  set  of  service
+                                              call-back      pro-
+                                              cedures.
+
+     ClientData       _c_l_i_e_n_t_D_a_t_a    (in)      Private       user-
+                                              defined data field.
+
+     Pdev_Token       _p_d_e_v_T_o_k_e_n     (in)      Token    for    the
+
+
+
+Sprite v.1.0        Printed:  August 27, 1990                   1
+
+
+
+
+
+
+Pdev                  C Library Procedures                   Pdev
+
+
+
+                                              pseudo-device
+                                              returned       from
+                                              PPddeevv__OOppeenn.
+
+     Pdev_Stream      *_s_t_r_e_a_m_P_t_r    (in)      Handle for a stream
+                                              to    the   pseudo-
+                                              device.
+
+     int              _o_p_e_r_a_t_i_o_n     (in)      PPDDEEVV__OOPPEENN,
+                                              PPDDEEVV__CCLLOOSSEE,
+                                              PPDDEEVV__RREEAADD,
+                                              PPDDEEVV__WWRRIITTEE,
+                                              PPDDEEVV__IIOOCCTTLL,
+                                              PPDDEEVV__SSEETT__AATTTTRR,
+                                              PPDDEEVV__GGEETT__AATTTTRR.
+
+     int              (*_h_a_n_d_l_e_r)()  (in)      Service   call-back
+                                              procedure.
+
+     int              (*_f_u_n_c)()     (in)      A procedure applied
+                                              to  each  stream to
+                                              the pseudo-device.
+
+_________________________________________________________________
+
+PPddeevv__OOppeenn
+     PPddeevv__OOppeenn creates a pseudo-device and installs a set of ser-
+     vice  procedures for it.  The pseudo-device can subsequently
+     be opened by any number of regular (client)  processes,  and
+     the  service  call-backs are made each time a client process
+     makes a file system operation on  the  pseudo-device.   Thus
+     the  service  call-backs  implement the standard file system
+     operations for the  pseudo-device  while  the  Pdev  package
+     manages the interface between the kernel and the server pro-
+     cess.
+
+     There are two ways that PPddeevv__OOppeenn can pick the name  of  the
+     file  to use for the pseudo-device.  If _r_e_a_l_N_a_m_e_P_t_r is NULL,
+     then PPddeevv__OOppeenn uses _n_a_m_e as the name.  If _r_e_a_l_N_a_m_e_P_t_r  isn't
+     NULL,  then  PPddeevv__OOppeenn will generate a file name of the form
+     _h_o_s_t_D_i_r//_n_a_m_e_X_X, where _h_o_s_t_D_i_r is  the  name  of  a  standard
+     host-specific  directory, _n_a_m_e is the parameter to this pro-
+     cedure, and _X_X is a decimal number generated  by  PPddeevv__OOppeenn.
+     PPddeevv__OOppeenn  tries  numbers  up from 1 until it finds one that
+     works.  The name of the  successful  pseudo-device  file  is
+     returned  by  storing  a pointer to it at *_r_e_a_l_N_a_m_e_P_t_r;  the
+     storage for the name is dynamically  allocated  with  mmaalllloocc
+     and must eventually be freed by the caller.
+
+     PPddeevv__OOppeenn returns an opaque token that is used in  calls  to
+     PPddeevv__CClloossee,  PPddeevv__SSeettDDeeffaauullttHHaannddlleerr,  and  PPddeevv__EEnnuummSSttrreeaammss.
+     If a pseudo-device couldn't be opened, then NULL is returned
+     and ppddeevv__EErrrroorrMMssgg contains a string describing the problem.
+
+
+
+
+Sprite v.1.0        Printed:  August 27, 1990                   2
+
+
+
+
+
+
+Pdev                  C Library Procedures                   Pdev
+
+
+
+     After a successful PPddeevv__OOppeenn call the Pdev package will  set
+     up  a  _s_e_r_v_i_c_e  _s_t_r_e_a_m  whenever  a client process opens the
+     pseudo-device.  Each service stream  is  identified  to  the
+     call-backs  by a PPddeevv__SSttrreeaamm record.  Thus the pseudo-device
+     can be multiplexed over several clients with  each  client's
+     request  comming  over a different service stream.  However,
+     forks and dups are not visible to the pseudo-device  server,
+     so  more than one process might be using any particular ser-
+     vice stream.
+
+     The _r_e_q_B_u_f_S_i_z_e is used to configure a request buffer associ-
+     ated  with  each  service  stream.  This size determines how
+     many request messages can be buffered before the  kernel  is
+     forced  to  wait  for  them  to  be serviced.  More than one
+     request may be outstanding due to asynchronous writes, which
+     are  described  below.  A minimum size on the request buffer
+     is enforced by the library, so zero can be passed in to  get
+     a default size (about 1 Kbyte).
+
+     The _r_e_a_d_B_u_f_S_i_z_e is used to configure an optional read buffer
+     associated  with  each service stream.  If this size is non-
+     zero it indicates that a read buffer will be used to satisfy
+     client  read  requests  instead  of  using  the read service
+     call-back.  In this case the Pdev package  will  allocate  a
+     read  buffer  each time a service stream is created and pass
+     the address of this buffer to  the  open  call-back.   After
+     that  it  is  up  to  the  server process to manage the read
+     buffer.  See the device man page for ppddeevv for details.
+
+     The _c_l_i_e_n_t_D_a_t_a parameter to PPddeevv__OOppeenn is passed to the  open
+     call-back  as  described below.  It is meant to be used as a
+     pointer back to some top-level state of the pseudo-device.
+
+     The Pdev package uses the facilities of FFss__DDiissppaattcchh in order
+     to  keep  track  of  the streams associated with the pseudo-
+     device and ensure  that  Pdev  is  notified  whenever  those
+     streams  become  readable.   In  order to use Pdev, you must
+     also use FFss__DDiissppaattcchh.
+
+PPddeevv__CClloossee
+     PPddeevv__CClloossee shuts  down  a  pseudo-device,  closing  all  the
+     streams associated with it and releasing any resources allo-
+     cated to the pseudo-device.   As  a  side-effect  the  close
+     call-back  is  made  to any existing service streams.  After
+     this procedure  returns,  _p_d_e_v_T_o_k_e_n  should  never  be  used
+     again.
+
+PPddeevv__GGeettSSttrreeaammIIDD
+     PPddeevv__GGeettSSttrreeaammIIDD  returns  the  identifier  for  the  stream
+     associated  with  the token returned by PPddeevv__OOppeenn.  This may
+     be used for stream-oriented calls such as ffssttaatt  but  should
+     not  be  used as the argument to cclloossee (PPddeevv__CClloossee should be
+
+
+
+Sprite v.1.0        Printed:  August 27, 1990                   3
+
+
+
+
+
+
+Pdev                  C Library Procedures                   Pdev
+
+
+
+     used instead.)
+
+PPddeevv__EEnnuummSSttrreeaammss
+     The PPddeevv__EEnnuummSSttrreeaammss procedure is used to apply  a  function
+     to  all  the  service  streams  to  the pseudo-device.  This
+     enumeration procedure eliminates the need to keep  track  of
+     each  service  stream.   The _f_u_n_c argument is called on each
+     service stream as follows:
+
+          int
+          (*func)(streamPtr, clientData)
+              Pdev_Stream *streamPtr;
+              ClientData clientData;
+
+     Where _s_t_r_e_a_m_P_t_r identifies the service stream,  and  _c_l_i_e_n_t_-
+     _D_a_t_a  is  what  was passed to PPddeevv__EEnnuummSSttrreeaammss.  _f_u_n_c should
+     return zero to mean success, or a non-zero error status.  In
+     the  case of an error PPddeevv__EEnnuummSSttrreeaammss stops its enumeration
+     and returns the non-zero status.
+
+PPddeevv__SSeettDDeeffaauullttHHaannddlleerr
+     PPddeevv__SSeettDDeeffaauullttHHaannddlleerr is used  to  set  the  call-back  for
+     individual  pdev  operations.   It is not normally needed as
+     you  can  define  all  the  call-backs  with  PPddeevv__OOppeenn  (or
+     PPffss__OOppeennCCoonnnneeccttiioonn).  The call-backs passed to PPddeevv__OOppeenn are
+     inherited by each service stream that is created.   Changing
+     a  call-back  with  PPddeevv__SSeettDDeeffaauullttHHaannddlleerr changes the call-
+     back for  all  subsequently  created  service  streams.   It
+     doesn't  affect  any  service streams that are already esta-
+     blished.  This returns the old default call-back.
+
+PPddeevv__SSeettSSttrreeaammHHaannddlleerr
+     PPddeevv__SSeettSSttrreeaammHHaannddlleerr is used to  set  a  call-back  for  an
+     already  existing  service stream.  It returns the old call-
+     back.
+
+SSEERRVVIICCEE PPRROOCCEEDDUURREESS
+     The call-back service procedures are given to PPddeevv__OOppeenn (and
+     PPffss__OOppeennCCoonnnneeccttiioonn) as a record of procedures:
+
+          typedef struct {
+              int (*open)();            /* PDEV_OPEN */
+              int (*read)();            /* PDEV_READ */
+              int (*write)();           /* PDEV_WRITE and PDEV_WRITE_ASYNC */
+              int (*ioctl)();           /* PDEV_IOCTL */
+              int (*close)();           /* PDEV_CLOSE */
+              int (*getAttr)();         /* PDEV_GET_ATTR */
+              int (*setAttr)();         /* PDEV_SET_ATTR */
+          } Pdev_CallBacks;
+
+     Any of the record elements can be NULL to indicate that  the
+     operation  should  be  handled  by  a  default handler.  The
+
+
+
+Sprite v.1.0        Printed:  August 27, 1990                   4
+
+
+
+
+
+
+Pdev                  C Library Procedures                   Pdev
+
+
+
+     _s_e_r_v_i_c_e parameter  itself  can  also  be  NULL  to  indicate
+     default  handling  for  all operations.  This is only useful
+     during initial test.  If a client  makes  an  operation  for
+     which no service procedure is provided it is simply a no-op;
+     it is not an error.  The global variable ppddeevv__TTrraaccee  can  be
+     set  to  a non-zero value to generate printfs to stderr when
+     each  service  procedure  (default  or   user-supplied)   is
+     invoked.
+
+     Service procedures should return  zero  to  mean  successful
+     completion,  otherwise  they  should  return  an appropriate
+     errno value.  Additionally, the rreeaadd  and  wwrriittee  procedures
+     use  EEWWOOUULLDDBBLLOOCCKK to indicate incomplete operations.  This is
+     described further below.
+
+     Each service procedure also sets the  current  select  state
+     bits for the pseudo-device.  The select bits are used in the
+     kernel's implementation of sseelleecctt for pseudo-devices.   They
+     should   be   a   bitwise  or  combination  of  FFSS__RREEAADDAABBLLEE,
+     FFSS__WWRRIITTAABBLLEE, and FFSS__EEXXCCEEPPTTIIOONN.   As  well  as  setting  this
+     select  state  after  each  client  operation, it may be set
+     asynchronously with the IIOOCC__PPDDEEVV__RREEAADDYY iiooccttll command on  the
+     service stream.
+
+     These same service procedures  are  used  for  pseudo-device
+     connections  into  the pseudo-file-system.  See PPffss__OOppeenn and
+     PPffss__OOppeennCCoonnnneeccttiioonn.  The ggeettAAttttrr and sseettAAttttrr call-backs  are
+     only   made  to  pseudo-file-system  servers.   For  regular
+     pseudo-devices the kernel takes care of all  attribute  han-
+     dling.
+
+ooppeenn
+          int
+          (*service->open)(clientData, streamPtr, readBuffer, flags, procID,
+               hostID, uid, selectBitsPtr)
+              ClientData clientData;    /* Private data passed to Pdev_Open */
+              Pdev_Stream *streamPtr;   /* Identifies stream to pseudo-device. */
+              char *readBuffer;         /* Storage for optional read buffer */
+              int flags;                /* Flags to the open system call. NOTE!
+                                         * These are Sprite flags defined in <fs.h>,
+                                         * not the Unix flags defined in <sys/file.h> */
+              int procID;               /* ID of process opening the pseudo-device */
+              int hostID;               /* Host where that process is executing */
+              int uid;                  /* User ID of that process */
+              int *selectBitsPtr;       /* Return - the initial select state of the process */
+
+     When a client process makes  an  ooppeenn  system  call  on  the
+     pseudo-device the Pdev library package invokes the ooppeenn ser-
+     vice call-back to give the server  a  chance  to  refuse  or
+     accept  the open by the client process.  The return value of
+     the open call-back is either 0 for success, or an  appropri-
+     ate errno value.
+
+
+
+Sprite v.1.0        Printed:  August 27, 1990                   5
+
+
+
+
+
+
+Pdev                  C Library Procedures                   Pdev
+
+
+
+     The ooppeenn call-back gets passed the _c_l_i_e_n_t_D_a_t_a that was given
+     to  the  PPddeevv__OOppeenn  procedure, and a new _s_t_r_e_a_m_P_t_r that is a
+     handle on the service stream corresponding to  the  open  by
+     the  client.  _s_t_r_e_a_m_P_t_r is a pointer to a PPddeevv__SSttrreeaamm record
+     that contains a cclliieennttDDaattaa field for use by the  call-backs,
+     and a ssttrreeaammIIDD field that is used in iiooccttll calls on the ser-
+     vice stream.  The possible iiooccttll calls are listed at the end
+     of  this  man  page.   The  _s_t_r_e_a_m_P_t_r gets passed to all the
+     other    call-backs,    and    is     also     passed     to
+     PPddeevv__SSeettSSttrreeaammHHaannddlleerr.
+
+     The parameters also  include  the  useFlags  passed  to  the
+     FFss__OOppeenn  system  call,  and the user ID and Sprite hostID of
+     the client process.  (FFss__OOppeenn is the Sprite version of ooppeenn.
+     The  flag  bits  are  different  and  are defined in <fs.h>.
+     Flags passed to ooppeenn are mapped  to  the  Sprite  flag  bits
+     you'll  get here.) If the _r_e_a_d_B_u_f_S_i_z_e parameter to PPddeevv__OOppeenn
+     was non-zero then Pdev allocates _r_e_a_d_B_u_f_f_e_r and passes it to
+     the  open call-back.  Thus there will be one read buffer for
+     each service stream  if  the  server  is  implementing  read
+     buffering.
+
+cclloossee
+          int
+          (*service->close)(streamPtr)
+              Pdev_Stream *streamPtr;   /* Identifies service stream */
+
+     This is called when a service stream is closed.   This  hap-
+     pens  either  as  a  side  effect of PPddeevv__CClloossee, or when the
+     client has closed is last reference to the  service  stream.
+     (Dups and forks are not visible to the pseudo-device server,
+     so there is only one close per open system call by a  client
+     process.)
+
+rreeaadd
+          int
+          (*service->read)(streamPtr, readPtr, freeItPtr, selectBitsPtr, sigPtr)
+              Pdev_Stream *streamPtr;   /* Identifies service stream */
+              Pdev_RWParam *readPtr;    /* Read parameter block */
+              Boolean *freeItPtr;       /* Set to TRUE if buffer should be free'd */
+              int *selectBitsPtr;       /* Return - select state of the pseudo-device */
+              Pdev_Signal *sigPtr;      /* Return - signal to generate, if any */
+
+     The read service  procedure  is  passed  a  record  of  type
+     PPddeevv__RRWWPPaarraamm  that  indicates the lleennggtthh, ooffffsseett, and bbuuffffeerr
+     for the read.  The  buffer  is  pre-allocated  by  the  PPddeevv
+     library.   If the read service procedure wants to use a dif-
+     ferent buffer it can change _r_e_a_d_P_t_r-->>bbuuffffeerr to reference its
+     own  storage.   If  this  different storage area ought to be
+     freed  after  the  library  completes  the  operation,  then
+     *_f_r_e_e_I_t_P_t_r should be set to a non-zero value.
+
+
+
+
+Sprite v.1.0        Printed:  August 27, 1990                   6
+
+
+
+
+
+
+Pdev                  C Library Procedures                   Pdev
+
+
+
+     The _r_e_a_d_P_t_r-->>lleennggtthh record field indicates how much data  is
+     requested, and it should be updated to reflect the amount of
+     data actually returned.  If there is no  data  available  on
+     the  pseudo-device  then  the  read  call-back should return
+     EEWWOOUULLDDBBLLOOCCKK and set _r_e_a_d_P_t_r-->>lleennggtthh to  zero.   This  causes
+     the  kernel  to  block  the  client process until the select
+     state of the pseudo-device is changed to indicate  readabil-
+     ity.   If  there  are  some bytes available the return value
+     should be zero and _r_e_a_d_P_t_r-->>lleennggtthh  set  appropriately.   If
+     the  read  leaves  no  additional  bytes  available then the
+     FFSS__RREEAADDAABBLLEE bit can be cleared from *_s_e_l_e_c_t_B_i_t_s_P_t_r in  order
+     to block the next read request.  End-of-file is indicated to
+     the client by a zero return code and a zero number of  bytes
+     returned.
+
+     A signal can be generated in response to a read  request  by
+     setting  _s_i_g_P_t_r-->>ssiiggnnaall  to  a non-zero value.  _s_i_g_P_t_r-->>ccooddee
+     can also be set to modify the signal meaning.  Data  can  be
+     returned if a signal is generated.  The client application's
+     system call will complete, its signal handler, if any,  will
+     be invoked, and the system call will be retried.
+
+     Note:  If there is a read buffer associated with the service
+     stream,  which is indicated by a non-zero valued _r_e_a_d_B_u_f_S_i_z_e
+     parameter to PPddeevv__OOppeenn, then this read  call-back  is  never
+     called.   Instead  the  kernel  takes data directly from the
+     read buffer.  The protocol  for  adding  data  to  the  read
+     buffer is described in the ppddeevv device man page.
+
+wwrriittee
+          int
+          (*service->write)(streamPtr, async, writePtr, selectBitsPtr, sigPtr)
+              Pdev_Stream *streamPtr;   /* Identifies service stream */
+              int async;                /* TRUE during an asynchronous write */
+              Pdev_RWParam *writePtr;   /* Write parameter block */
+              int *selectBitsPtr;       /* Return - select state of the pseudo-device */
+              Pdev_Signal *sigPtr;      /* Return - signal to generate, if any */
+
+     The write service procedure is passed a parameter block that
+     indicates  the lleennggtthh, ooffffsseett, and bbuuffffeerr for the operation,
+     plus various IDs of the application process.   If  _a_s_y_n_c  is
+     FFAALLSSEE  (zero)  then  _w_r_i_t_e_P_t_r-->>lleennggtthh  should  be updated to
+     reflect how much data was  processed  by  the  service  pro-
+     cedure.   If  _a_s_y_n_c is non-zero it indicates an asynchronous
+     write and the service procedure must accept all of the  data
+     and the return value of _w_r_i_t_e_P_t_r-->>lleennggtthh is ignored.
+
+     If the server cannot accept all of the data it  must  return
+     EEWWOOUULLDDBBLLOOCCKK _a_n_d update _w_r_i_t_e_P_t_r-->>lleennggtthh to indicate just how
+     much data it accepted.  This return value causes the  kernel
+     to  block  the  client process until the select state of the
+     pseudo-device  is  changed  to  indicate  writability.    To
+
+
+
+Sprite v.1.0        Printed:  August 27, 1990                   7
+
+
+
+
+
+
+Pdev                  C Library Procedures                   Pdev
+
+
+
+     repeat, returning a short write count and a zero return code
+     will cause the kernel to  immediately  issue  another  write
+     request  to  complete the client's write operation.  By also
+     returning EEWWOOUULLDDBBLLOOCCKK the pseudo-device  server  forces  the
+     client process to wait until the pseudo-device becomes writ-
+     able.
+
+     A signal to the client application can  be  generated  as  a
+     side  effect  by setting _s_i_g_P_t_r-->>ssiiggnnaall to a non-zero value.
+     _s_i_g_P_t_r-->>ccooddee can be set to modify the signal.  Data  can  be
+     accepted  by the write service procedure if a signal is gen-
+     erated.  The client application's write call will  complete,
+     its  signal  handler, if any, will be invoked, and the write
+     call will be retried.
+
+iiooccttll
+          int
+          (*service->ioctl)(streamPtr, ioctlPtr, selectBitsPtr, sigPtr)
+              Pdev_Stream *streamPtr;   /* Set by open service procedure */
+              Pdev_IOCParam *ioctlPtr;  /* I/O Control parameter block */
+              int *selectBitsPtr;       /* Return - select state of pdev */
+              Pdev_Signal *sigPtr;      /* Return - signal to generate, if any */
+
+     The ioctl service procedure takes  a  parameter  block  that
+     specifies the ccoommmmaanndd, and two buffers, one containing input
+     data (iinnBBuuffffeerr), and one for data  returned  to  the  client
+     (oouuttBBuuffffeerr).    The  ioctl  service  has  to  set  _i_o_c_t_l_P_t_r--
+     >>oouuttBBuuffSSiizzee to indicate how much data is being  returned  to
+     the  client process.  The PPddeevv__IIOOCCPPaarraamm struct also contains
+     various processIDs, and the ffoorrmmaatt of the host on which  the
+     client application is executing.
+
+     The pseudo-device server can implement any _i_o_c_t_l_P_t_r-->>ccoommmmaanndd
+     it wants.  Generic commands are defined in <fs.h>, and other
+     ranges of commands for particular devices and pseudo-devices
+     are defined in header files in /sprite/src/lib/include/dev.
+
+     The input and output data is not byteswapped by the  operat-
+     ing system.  It is the server's responsibility to fix up the
+     input and output buffers in the case that the client  has  a
+     different  byte  order.   The local byte order is defined as
+     MMAACCHH__BBYYTTEE__OORRDDEERR by  <machparam.h>,  and  the  client's  byte
+     order  and alignment are indicated by _i_o_c_t_l_P_t_r-->>ffoorrmmaatt.  The
+     FFmmtt__CCoonnvveerrtt library routine can be used to  swap  and  align
+     incomming and outgoing buffers.
+
+     A signal to the client application can  be  generated  as  a
+     side  effect  by setting _s_i_g_P_t_r-->>ssiiggnnaall to a non-zero value.
+     _s_i_g_P_t_r-->>ccooddee can be set to modify the signal.
+
+ggeettAAttttrr
+          int
+
+
+
+Sprite v.1.0        Printed:  August 27, 1990                   8
+
+
+
+
+
+
+Pdev                  C Library Procedures                   Pdev
+
+
+
+          GetAttrProc(streamPtr, attrPtr, selectBitsPtr)
+              Pdev_Stream *streamPtr;   /* Identifies service stream */
+              Fs_Attributes *attrPtr;   /* Return - attributes */
+              int *selectBitsPtr;       /* Return - select state of the pseudo-device */
+
+     This procedure is called to handle an fstat() call on a file
+     in a pseudo-file system.  The _s_t_r_e_a_m_P_t_r parameter identifies
+     the open stream, and the server should fill  in  the  attri-
+     butes.   This call-back is not made to regular pseudo-device
+     servers, only to pseudo-file-system servers.
+
+sseettAAttttrr
+          int
+          SetAttrProc(streamPtr, flags, uid, gid, attrPtr, selectBitsPtr)
+              Pdev_Stream *streamPtr;   /* Identifies service stream */
+              int flags;                /* Indicate what attributes to set */
+              int uid;                  /* Identifies user making the call */
+              int gid;                  /* Identifies group of process */
+              Fs_Attributes *attrPtr;   /* Attributes to set as indicated by flags */
+              int *selectBitsPtr;       /* Return - select state of the pseudo-device */
+
+     This procedure is called to set  certain  attributes  of  an
+     open  file in a pseudo-file system.  The _s_t_r_e_a_m_P_t_r parameter
+     identifies the open stream.  The flags argument contains  an
+     or'd     combinantion    of    FFSS__SSEETT__TTIIMMEESS,    FFSS__SSEETT__MMOODDEE,
+     FFSS__SSEETT__OOWWNNEERR, FFSS__SSEETT__FFIILLEE__TTYYPPEE, FFSS__SSEETT__DDEEVVIICCEE that  indicate
+     what  attributes to set.  The attribute values are contained
+     in *_a_t_t_r_P_t_r.  The _u_i_d and _g_i_d arguments identify the calling
+     process.   This  call-back  is  not  made to regular pseudo-
+     device servers, only to pseudo-file-system servers.
+
+SSeerrvviiccee SSttrreeaamm IIooccttllss
+     The pseudo-device server can make a few  FFss__IIOOCCoonnttrrooll  calls
+     on   its  service  streams.   The  details  of  the  calling
+     sequences is described in the device man  page  for  pseduo-
+     devices (pdev).  The possible operations are:
+
+     IOC_PDEV_READY
+          Used to change the select state of  the  pseudo-device.
+          The input buffer to Fs_IOControl should contain an or'd
+          combination    of    FFSS__RREEAADDAABBLLEE,    FFSS__WWRRIITTAABBLLEE,    or
+          FFSS__EEXXCCEEPPTTIIOONN.
+
+     IOC_PDEV_SIGNAL_OWNER
+          Used to send a signal to the owning process or  process
+          group  of the pseudo-device.  This is useful for imple-
+          menting interrupt characters in tty emulators.  No spe-
+          cial permission is needed.
+
+     IOC_PDEV_WRITE_BEHIND
+          Used to set or unset asynchronous writing.
+
+
+
+
+Sprite v.1.0        Printed:  August 27, 1990                   9
+
+
+
+
+
+
+Pdev                  C Library Procedures                   Pdev
+
+
+
+     IOC_PDEV_BIG_WRITES
+          Used to  allow  or  disallow  writes  larger  than  the
+          request buffer.
+
+     IOC_PDEV_SET_PTRS
+          Used to adjust pointers into the read  buffer  and  the
+          request  buffer.  Users of the Pdev package should only
+          use this to adjust read  buffer  pointers.   Leave  the
+          request  buffer  pointers equal to -1 so you don't mess
+          up the managing of the request buffer.
+
+     For example:
+
+          status = Fs_IOControl(streamPtr->streamID, IOC_PDEV_READY,
+                        sizeof(int), &selectBits, 0, NULL);
+
+SSEEEE AALLSSOO
+     pdev (devices), Pfs, Swap_Buffer
+
+KKEEYYWWOORRDDSS
+     pseudo-device
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  August 27, 1990                  10
+
+
+

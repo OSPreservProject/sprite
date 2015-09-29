@@ -1,0 +1,68 @@
+
+
+
+TROFF_P                   User Commands                   TROFF_P
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     troff_p - Used internally by ditroff for typesetting
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     TTrrooffff__pp should never be invoked directly by  users.   It  is
+     used  internally  by ddiittrrooffff to perform all the real work of
+     typesetting (ddiittrrooffff is a shell script that processes  argu-
+     ments,  then  invokes  ttrrooffff__pp).   For  details on ttrrooffff__pp's
+     arguments, read the ttrrooffff__pp and ddiittrrooffff code.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  July 27, 1991                    1
+
+
+

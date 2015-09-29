@@ -1,0 +1,116 @@
+512
+llib-ldyn:dyn_append.c
+2
+3 21 36 0 0
+DynAppend
+24 192 10982
+18 0 0
+4 0 0
+16
+0 42 4 0 0
+DynAppend
+512
+llib-ldyn:dyn_create.c
+2
+2 26 104 192 10982
+DynCreate
+4 0 0
+4 0 0
+16
+0 40 24 192 10982
+DynCreate
+2
+1 44 36 0 0
+DynDestroy
+24 192 10982
+16
+0 48 4 0 0
+DynDestroy
+512
+llib-ldyn:dyn_debug.c
+2
+2 20 36 0 0
+DynDebug
+24 192 10982
+4 0 0
+16
+0 25 4 0 0
+DynDebug
+512
+llib-ldyn:dyn_delete.c
+2
+2 24 36 0 0
+DynDelete
+24 192 10982
+4 0 0
+16
+0 77 4 0 0
+DynDelete
+512
+llib-ldyn:dyn_insert.c
+2
+4 20 36 0 0
+DynInsert
+24 192 10982
+4 0 0
+18 0 0
+4 0 0
+16
+0 60 4 0 0
+DynInsert
+512
+llib-ldyn:dyn_paranoid.c
+2
+2 20 36 0 0
+DynParanoid
+24 192 10982
+4 0 0
+16
+0 26 4 0 0
+DynParanoid
+512
+llib-ldyn:dyn_put.c
+2
+2 22 98 0 0
+DynGet
+24 192 10982
+4 0 0
+16
+0 41 18 0 0
+DynGet
+2
+2 46 36 0 0
+DynAdd
+24 192 10982
+18 0 0
+16
+0 55 4 0 0
+DynAdd
+2
+3 69 36 0 0
+DynPut
+24 192 10982
+18 0 0
+4 0 0
+16
+0 85 4 0 0
+DynPut
+512
+llib-ldyn:dyn_realloc.c
+2
+2 24 36 0 0
+_DynRealloc
+24 192 10982
+4 0 0
+16
+0 50 4 0 0
+_DynRealloc
+512
+llib-ldyn:dyn_size.c
+2
+1 19 36 0 0
+DynSize
+24 192 10982
+16
+0 24 4 0 0
+DynSize

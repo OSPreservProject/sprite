@@ -1,0 +1,26 @@
+.TH MOPD 8C "Nov 27, 1990"
+.UC 5
+.SH NAME
+mopd \- Maintenance Operation Protocal boot daemon
+.SH SYNOPSIS
+.B mopd [-d ...]
+.SH DESCRIPTION
+.I Mopd
+is a server which supports the MOP boot protocol, used by DEC machines.
+The server responds to "Request Program" messages and provides the
+requested boot program.  A single -d debug flag gives some debugging
+information; two flags give more information.
+.PP
+Note: the MOP protocol doesn't have any user feedback.
+There is no user-visible response until 10 seconds when the loaded kernel
+starts.  If there is an error, nothing continues to happen after 10 seconds.
+Sometimes mopd runs into synchronization problems.  In this case, the
+mop request should succeed if it is retried.
+.SH "AUTHOR"
+Mopd on sprite was written by Ken Shirriff (shirriff@sprite), and the mopd
+server is currently being run on lust.
+.SH "FILES"
+/sprite/boot, /sprite/admin/mopdlog
+.SH "SEE ALSO"
+"DECnet DIGITAL Network Architecture (Phase III)
+Maintenance Operation Protocol Functional Specification AA-K178A-TK"

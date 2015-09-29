@@ -1,0 +1,248 @@
+head     1.10;
+branch   ;
+access   ;
+symbols  srv030:1.10 srv028:1.10 srv027:1.10 srv026:1.10 srv024:1.10 srv022:1.10 srv021:1.10 srv019:1.10 srv018:1.10 srv016:1.10 srv015:1.10 srv014:1.10 srv012:1.10 srv011:1.10 srv010:1.10 srv008:1.10 srv007:1.10 srv006:1.10 srv005:1.10 srv004:1.10 srv003:1.10 srv002:1.10 srv001:1.10;
+locks    ; strict;
+comment  @ * @;
+
+
+1.10
+date     92.04.16.11.25.32;  author kupfer;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     91.12.01.22.00.33;  author kupfer;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     91.11.14.10.03.14;  author kupfer;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     91.10.18.18.09.13;  author kupfer;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     91.10.07.14.09.41;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.09.24.16.30.29;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.09.23.14.20.07;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.09.02.22.56.08;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.08.19.12.17.22;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.07.19.15.28.25;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Declarations for utility code.
+@
+
+
+1.10
+log
+@Flush Utils_GetMachineType.
+@
+text
+@/*
+ * utils.h --
+ *
+ *	Declarations for miscellaneous utility routines.
+ *
+ * Copyright 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /user5/kupfer/spriteserver/src/sprited/utils/RCS/utils.h,v 1.9 91/12/01 22:00:33 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+ */
+
+#ifndef _UTILS
+#define _UTILS
+
+#include <cfuncproto.h>
+#include <mach.h>
+#include <sprite.h>
+
+/* 
+ * These are well-known "process IDs" that can be passed to the 
+ * unix_task_by_pid UX routine to get back privileged system ports. 
+ */
+#define UTILS_PRIV_HOST_PID	(-1) /* host privileged request port */
+#define UTILS_DEVICE_PID	(-2) /* device server request port */
+
+/* 
+ * Note: don't use valloc.  It causes memory leaks.
+ */
+
+extern ReturnStatus	Utils_MapMachStatus _ARGS_((kern_return_t kernStatus));
+extern vm_prot_t	Utils_MapSpriteProtect _ARGS_((int accessType));
+extern int		Utils_UnixPidToTask _ARGS_((int pid, task_t *taskPtr));
+
+#endif /* _UTILS */
+@
+
+
+1.9
+log
+@Snapshot.  FS appears to work.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/utils/RCS/utils.h,v 1.8 91/11/14 10:03:14 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+a35 1
+extern int		Utils_GetMachineType _ARGS_((void));
+@
+
+
+1.8
+log
+@Snapshot. net, rpc, recov modules added.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/utils/RCS/utils.h,v 1.7 91/10/18 18:09:13 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d29 1
+@
+
+
+1.7
+log
+@Don't use valloc.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/utils/RCS/utils.h,v 1.6 91/10/07 14:09:41 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d35 1
+@
+
+
+1.6
+log
+@Add Utils_UnixPidToTask.  Some tweaks.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/utils/RCS/utils.h,v 1.5 91/09/24 16:30:29 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d31 3
+a33 1
+extern Address valloc _ARGS_((unsigned int));
+@
+
+
+1.5
+log
+@Add Utils_MapSpriteProtect.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/utils/RCS/utils.h,v 1.4 91/09/23 14:20:07 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d23 1
+d25 6
+d33 3
+a35 3
+extern ReturnStatus Utils_MapMachStatus _ARGS_((kern_return_t kernStatus));
+
+extern vm_prot_t Utils_MapSpriteProtect _ARGS_((int accessType));
+@
+
+
+1.4
+log
+@Snapshot.  Server is multithreaded internally.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/utils/RCS/utils.h,v 1.3 91/09/02 22:56:08 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d27 2
+@
+
+
+1.3
+log
+@Changes for module-based source organization.
+@
+text
+@d15 1
+a15 1
+ * $Header: /user6/kupfer/spriteserver/src/sprited/utils/RCS/utils.h,v 1.2 91/08/19 12:17:22 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d21 1
+d24 2
+a25 7
+/* 
+ * Our declaration for printf conflicts with the Mach stdio 
+ * declaration, so don't declare it if stdio has already been included.
+ */
+#ifndef FILE
+extern void printf _ARGS_(());
+#endif
+@
+
+
+1.2
+log
+@Snapshot: Code reorg. and locking for processes & segments.
+@
+text
+@d2 1
+a2 1
+ * util.h --
+d15 1
+a15 1
+ * $Header: /user6/kupfer/spriteserver/src/printfd/RCS/util.h,v 1.1 91/07/19 15:28:25 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d18 2
+a19 2
+#ifndef _UTIL
+#define _UTIL
+d30 1
+a30 1
+extern ReturnStatus Util_MapMachStatus _ARGS_((kern_return_t kernStatus));
+d32 1
+a32 1
+#endif /* _UTIL */
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.7 91/02/09 13:24:52 ouster Exp $ SPRITE (Berkeley)
+d23 7
+@

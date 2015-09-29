@@ -1,0 +1,57 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ds3100:1.2 sun3:1.2 sun4nw:1.1 symm:1.1 spur:1.1;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     92.08.06.16.32.45;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.10.29.17.23.38;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@# This file is used by scvs and contains symbolic link
+# information.  Each line is of the form "link target"
+# $Header
+compatMapCode.c          ../ds5000.md/compatMapCode.c
+compatSig.c              ../ds5000.md/compatSig.c
+compatSig.h              ../ds5000.md/compatSig.h
+cvtStat.c                ../ds5000.md/cvtStat.c
+machAsmDefs.h            ../ds5000.md/machAsmDefs.h
+machDis.c                ../ds5000.md/machDis.c
+machMigrate.c            ../ds5000.md/machMigrate.c
+machUNIXSyscall.c        ../ds5000.md/machUNIXSyscall.c
+softfp.o                 ../ds5000.md/softfp.o
+stat.h                   ../ds5000.md/stat.h
+sysinfo.h                ../ds5000.md/sysinfo.h
+ultrixSignal.h           ../ds5000.md/ultrixSignal.h
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d4 12
+a15 3
+compatMapCode.c          /sprite/src/lib/c/unixSyscall/compatMapCode.c
+compatSig.h              /sprite/src/lib/c/unixSyscall/compatSig.h
+softfp.po                softfp.o
+@

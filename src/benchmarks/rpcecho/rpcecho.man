@@ -1,0 +1,39 @@
+' $Header: /sprite/doc/ref/cmds/RCS/rpcecho,v 1.1 88/10/31 14:10:06 brent Exp $ SPRITE (Berkeley)
+.TH rpcecho prog
+.BS
+.NA
+rpcecho \- Do echo or send RPCs to another Sprite host
+.SY
+\fBrpcecho\fR  -h \fIhostname\fR [-D] [-d \fIsize\fP] [-n \fInum\fP] [-estc]
+.SH OPTIONS
+.IP "\fB-h \fIhostname\fR" 14
+Indicates the target host of the RPC test.
+.IP "\fB-D\fR"
+Run with a series of data block sizes.
+.IP "\fB-d \fIsize\fP"
+Run with a particular block size.
+.IP "\fB-n \fInum\fP"
+Repeat the echo/send \fInum\fP times.
+.IP "\fB-e\fP"
+Do an Echo RPC. This is the default.
+.IP "\fB-s\fP"
+Do a Send RPC. Data is sent one way.
+.IP "\fB-t\fP"
+Leave kernel RPC tracing on.  This adds time.
+.IP "\fB-c\fP"
+Set process to high priority.
+.BE
+.SH INTRODUCTION
+This command is used to test and time the Sprite RPC system.  It is also
+useful for probing another hosts state, or to make sure that another
+Sprite host knows of your existence.  The default is to send an ECHO
+RPC, which transfers data in both directions.  The RPC is serviced by
+a kernel server process on the target host, so the time reported includes
+the context switch costs.  This program ordinarily turns off kernel
+tracing during the test in order to get the fastest time.
+The -t option leaves tracing on for debugging.  The -s option
+makes the program use the SEND RPC instead, which only transfers data
+towards the target host.  The -D option is used to perform a series
+of benchmarks with various block sizes.
+.SH KEYWORDS
+rpc, echo, send

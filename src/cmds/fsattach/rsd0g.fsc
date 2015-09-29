@@ -1,0 +1,54 @@
+      
+***** Fscheck *****
+Wed May 24 00:19:21 1989
+Checking /dev/rsd0g.
+      
+***** Fscheck *****
+Wed May 24 00:22:42 1989
+Checking /dev/rsd0g.
+Performing recovery check
+Summary Sector Info:
+(new domain) domain -1 safe
+Attach/Detach fields not valid.
+Fscheck has fixed disk 0 times already.
+Checking file descriptors:
+
+Traversing directory tree:
+
+
+Comparing old and new data block bit maps:
+Found error in data block bitmap
+3 files, 12 blocks in use, 59216 blocks free, 0 fragments
+      
+***** Fscheck *****
+Wed May 24 11:32:45 1989
+Checking /dev/rsd0g.
+Performing recovery check
+Summary Sector Info:
+/hosts/murder/jhh2 domain 1 safe
+Down -68 seconds.
+Fscheck has fixed disk 1 times already.
+Checking file descriptors:
+
+Traversing directory tree:
+
+
+Comparing old and new data block bit maps:
+3 files, 12 blocks in use, 59216 blocks free, 0 fragments
+      
+***** Fscheck *****
+Wed May 24 11:33:35 1989
+Checking /dev/rsd0g.
+Performing recovery check
+Summary Sector Info:
+/hosts/murder/jhh2 domain 1 not-safe
+Down 39952 seconds.
+Fscheck has fixed disk 1 times already.
+Checking file descriptors:
+
+Traversing directory tree:
+
+
+Comparing old and new data block bit maps:
+3 files, 12 blocks in use, 59216 blocks free, 0 fragments
+Writing disk

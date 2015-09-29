@@ -1,0 +1,21 @@
+This is TeX, C Version 3.14t3 (format=splain 91.8.19)  2 SEP 1991 14:42
+**slides
+(slides.tex
+SliTeX Version 2.09 <8 Jun 1988>
+(report.sty
+Document Style `report' <13 Nov 89>.
+(rep10.sty
+! Undefined control sequence.
+l.31 \normalsize
+                
+? x
+ 
+Here is how much of TeX's memory you used:
+ 46 strings out of 4394
+ 282 string characters out of 61884
+ 23842 words of memory out of 262141
+ 2056 multiletter control sequences out of 9500
+ 23875 words of font info for 92 fonts, out of 72000 for 255
+ 14 hyphenation exceptions out of 607
+ 8i,0n,13p,149b,7s stack positions out of 300i,40n,60p,3000b,4000s
+No pages of output.

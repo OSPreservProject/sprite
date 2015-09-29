@@ -1,0 +1,19 @@
+#include <Server.tmpl>
+
+SRCS = snffonts.c
+OBJS = snffonts.o
+
+   INCLUDES = -I. -I../../include -I$(INCLUDESRC)
+   LINTLIBS = ../../dix/llib-ldix.ln ../../os/4.2bsd/llib-los.ln
+
+NormalLibraryObjectRule()
+NormalLibraryTarget(snf,$(OBJS))
+LintLibraryTarget(snf,$(SRCS))
+NormalLintTarget($(SRCS))
+
+#if HasSaberC
+saber_src:
+	/**/#load $(CFLAGS) $(SRCS)
+#endif
+
+DependTarget()

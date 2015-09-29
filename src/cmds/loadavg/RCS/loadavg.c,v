@@ -1,0 +1,1206 @@
+head     1.13;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.13
+date     90.09.24.14.37.42;  author douglis;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     90.06.29.11.24.01;  author douglis;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     90.04.09.10.17.46;  author douglis;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     89.08.22.22.58.47;  author douglis;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     89.07.31.17.51.58;  author douglis;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     89.07.13.23.24.42;  author douglis;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     89.06.15.22.54.53;  author douglis;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.05.04.15.49.03;  author douglis;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.03.17.12.42.17;  author douglis;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.12.21.16.01.05;  author douglis;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.11.19.15.54.09;  author douglis;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.11.15.12.14.08;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.11.14.13.28.37;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Program for keeping track of the migration database.  See RCS/loadAvg.c,v
+for earlier comments.
+@
+
+
+1.13
+log
+@print hasmig + "*" if in use for background job.
+@
+text
+@/*
+ * loadavg.c --
+ *
+ *	Provide access to the load average information database.  
+ *
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/cmds/loadavg/RCS/loadavg.c,v 1.12 90/06/29 11:24:01 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <sprite.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <mig.h>
+#include <kernel/net.h>
+#include <option.h>
+#include <host.h>
+#include <syslog.h>
+#include <sys/time.h>
+#include <sysStats.h>
+
+/*
+ * Define constants for defaults values of variables that may be assigned
+ * by command-line arguments.
+ */
+
+int allHosts = 0;
+int getLoad = 0;
+int debug = 0;
+int zapHostInfo = 0;
+int forceEvict = 0;
+int stripDomain = 1;
+
+Option optionArray[] = {
+	{OPT_TRUE, "l", (char *)&getLoad,
+	     "Get the load average of this node (DEFAULT)."},
+	{OPT_TRUE, "a", (char *)&allHosts,
+	     "Get the load average of all nodes."},
+	{OPT_FALSE, "S", (char *)&stripDomain,
+	     "Don't strip the domain from host names."},
+	{OPT_TRUE, "E", (char *)&forceEvict, "Evict foreign processes immediately."},
+	{OPT_TRUE, "D", (char *)&debug, "Enable debugging information."},
+	{OPT_TRUE, "Z", (char *)&zapHostInfo,
+		 "Zap (remove) the information for hosts specified as remaining arguments."},
+};
+static int numOptions = sizeof(optionArray) / sizeof(Option);
+
+/*
+ * Global variables.
+ */
+struct timeval currentTime;
+int hostID;
+#define HOST_NAME_LENGTH 64
+char hostname[HOST_NAME_LENGTH];
+char *machType;
+char *myName = NULL;
+int migVersion;
+int kernelState;
+
+
+static void ListHosts();
+static void OutputStatus();
+static void ZapHostInfo();
+extern char *rindex();
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Main --
+ *
+ *	The driver for the loadavg program.  Parse options and invoke
+ *	subroutines as appropriate.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Initializes global variables.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+main(argc, argv)
+    int argc;
+    char *argv[];
+{
+    int status;
+    int numScanned;
+    int i;
+    int host;
+    Mig_Info *infoPtr;
+    Host_Entry *hostPtr;
+    
+
+    argc = Opt_Parse(argc, argv, optionArray, numOptions,
+		       OPT_ALLOW_CLUSTERING);
+
+    myName = rindex(argv[0], '/');
+    if (myName){
+	myName++;
+    } else {
+	myName = argv[0];
+    }
+
+    /*
+     * Process interrelated defaults and perform sanity checking on
+     * arguments.
+     */
+
+    /*
+     * Default operation is to get the local load.
+     */
+
+    if (! (getLoad || allHosts || zapHostInfo || forceEvict)) {
+	if (!strcmp(myName, "rup")) {
+	    allHosts = 1;
+	} else if (!strcmp(myName, "evict")) {
+	    forceEvict = 1;
+	} else {
+	    getLoad = 1;
+	}
+    }
+
+    /*
+     * Initialize global variables.
+     */
+    if (gethostname(hostname, sizeof(hostname)) < 0) {
+	perror("gethostname");
+	exit(1);
+    }
+    hostPtr = Host_ByName(hostname);
+    if (hostPtr == (Host_Entry *) NULL) {
+	fprintf(stderr, "error getting host information for '%s'.\n",
+	       myName);
+	exit(1);
+    }
+    hostID = hostPtr->id;
+    machType = malloc((unsigned) strlen(hostPtr->machType) + 1);
+    if (machType == (char *) NULL) {
+	panic("Out of memory");
+    }
+    (void) strcpy(machType, hostPtr->machType);
+    
+    /*
+     * Get our migration version.
+     */
+    status = Sys_Stats(SYS_PROC_MIGRATION, SYS_PROC_MIG_GET_VERSION,
+		       (Address) &migVersion);
+    if (status != SUCCESS) {
+	fprintf(stderr, "Error in Sys_Stats getting migration version: %s\n",
+		Stat_GetMsg(status));
+	exit(Compat_MapCode(status));
+    }
+    /*
+     * Get the kernel's idea of what we're importing and exporting.
+     */
+    status = Sys_Stats(SYS_PROC_MIGRATION, SYS_PROC_MIG_GET_STATE,
+		       (Address) &kernelState);
+    if (status != SUCCESS) {
+	(void) fprintf(stderr,
+		       "%s: warning: error in Sys_Stats getting migration state.\n",
+		       myName);
+	kernelState = PROC_MIG_ALLOW_DEFAULT;
+    }
+    if (debug) {
+        (void) fprintf(stderr,
+		       "My hostID is %d.  machType is %s.  kernel state is 0x%x.\n",
+		       hostID, machType, kernelState);
+    }
+    status = gettimeofday(&currentTime, (struct timezone *) NULL);
+    if (status == -1) {
+	perror("Error in gettimeofday");
+	exit(1);
+    }
+
+    if (zapHostInfo) {
+	for (i = 1; i < argc; i++) {
+	    ZapHostInfo(argv[i]);
+	}
+    }
+    if (allHosts) {
+	ListHosts();
+    } else if (getLoad) {
+	infoPtr = Mig_GetInfo((int) PROC_MY_HOSTID);
+	if (infoPtr == (Mig_Info *) NULL) {
+	    perror("Error in Mig_GetInfo");
+	    exit(1);
+	}
+	OutputStatus(infoPtr);
+    }
+
+    if (forceEvict) {
+	int numEvicted = Mig_Evict();
+	if (numEvicted < 0) {
+	    perror("Mig_Evict");
+	} else {
+	    printf("Evicted %d foreign processes.\n", numEvicted);
+	}
+    }
+    exit(0);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ListHosts --
+ *
+ *	Output the load average and status of all nodes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The data are is written to stdout.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ListHosts()
+{
+    int numRecs;
+    register Mig_Info *infoPtr;
+    Mig_Info *infoArray;
+    int i;
+    int maxSize;
+    int hostID;
+    int status;
+
+    if (debug) {
+	(void) fprintf(stderr, "ListHosts called.\n");
+ 	(void) fflush(stderr);
+    }
+
+    i = gettimeofday(&currentTime, (struct timezone *) NULL);
+    if (i == -1) {
+	perror("Error in gettimeofday");
+	exit(1);
+    }
+
+    maxSize = NET_NUM_SPRITE_HOSTS * sizeof(Mig_Info);
+    infoArray = (Mig_Info *) malloc((unsigned) maxSize);
+    numRecs = Mig_GetAllInfo(infoArray, NET_NUM_SPRITE_HOSTS);
+    if (numRecs < 0) {
+	perror("Error in Mig_GetAllInfo");
+	exit(1);
+    }
+    if (debug && numRecs == 0) {
+	(void) fprintf(stderr, "No host records found.\n");
+ 	(void) fflush(stderr);
+	return;
+    }
+	
+    printf("            HOST     TYPE      STATUS       MIG     LOAD AVERAGE   IDLE TIME\n");
+
+    for (i = 0; i < numRecs; i++) {
+	OutputStatus(&infoArray[i]);
+    }
+    free((char *) infoArray);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * OutputStatus --
+ *
+ *	Determine the status of the given host and write a "ruptime"-like
+ *	record to stdout.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*
+ * Size of the buffer for the current host's name.
+ */
+#define HOST_NAME_SIZE 64
+
+/*
+ * Size of the buffer for reporting up- or down-time.
+ */
+#define TIME_STR_LEN 13
+
+/*
+ * For Time_ToAscii, if relative time is specified, the time value is
+ * interpreted as the difference between two absolute time values and
+ * has the form:
+ *		0 days, 02:45:09
+ *			     ^^^
+ * SECOND_OFFSET is used to hide the seconds field by overwriting the colon
+ * with a null character.
+ */
+#define SECOND_OFFSET 9
+
+static void
+OutputStatus(infoPtr)
+    register Mig_Info *infoPtr;
+{
+    int state;
+    char idleTime[TIME_STR_LEN];
+    char *idlePtr;
+    char timeStr[TIME_STR_LEN];
+    char upStr[5];
+    char stateStr[8];
+    char migOK;
+    char hostName[HOST_NAME_SIZE];
+    register char *hp;
+    register char *sp;
+    register int i;
+    int diff;
+    Host_Entry *hostPtr;
+
+    hostPtr = Host_ByID(infoPtr->hostID);
+    if (hostPtr == (Host_Entry *) NULL) {
+	syslog(LOG_WARNING, 
+	       "error in Host_ByID(%d).\n", infoPtr->hostID);
+	return;
+    }
+    /*
+     * Copy the name of the host, up to HOST_NAME_SIZE or the first
+     * '.' so we don't output the domain.
+     */
+    for (sp = hostName, hp = hostPtr->name, i = 0;
+	 i < HOST_NAME_SIZE && *hp != '\0' && (!stripDomain || *hp != '.');
+	 sp++, hp++, i++) {
+	*sp = *hp;
+    }
+    *sp = '\0';
+    
+
+    /*
+     * See if the entry is out of date.  (Assume that anything updated
+     * after the current time is fairly recent and is caused by clock
+     * skew, so negative diffs are okay.)
+     */
+    state = infoPtr->state;
+    if (state == MIG_HOST_DOWN) {
+	diff = currentTime.tv_sec - infoPtr->loadVec.timestamp;
+    } else {
+	/*
+	 * We want to know how long the machine has been up.
+	 */
+	diff = infoPtr->loadVec.timestamp - infoPtr->bootTime;
+	if (diff < 0) {
+	    (void) fprintf(stderr,
+			   "Change was made before boot time??  modTime %d, bootTime %d, host %s.\n",
+			   infoPtr->loadVec.timestamp, infoPtr->bootTime,
+			   hostPtr->name);
+	    diff = 0;
+	}
+    }
+	    
+
+    Time_ToAscii(diff, 1, timeStr);
+    timeStr[SECOND_OFFSET] = '\0';
+
+    /*
+     * We allow migration if it's the right version,
+     * the file says to allow it, the entry in the
+     * file is current, we're exporting, and it is the same machine type.
+     * We're only concerned with normal priority processes, so we check
+     * against the max count if the host is partially in use.
+     */
+    migOK = ' ';
+    if (state != MIG_HOST_DOWN) {
+	if (infoPtr->loadVec.allowMigration) {
+	    if ((state == MIG_HOST_PART_USED) || (state == MIG_HOST_FULL)) {
+		strcpy(stateStr, "hasmig");
+	    } else {
+		strcpy(stateStr, "avail");
+	    }
+	    if (!strcmp(hostPtr->machType, machType)) {
+		if (infoPtr->migVersion != migVersion) {
+		    strcpy(stateStr, "refuses");
+		} else if (hostPtr->id != hostID &&
+			   state != MIG_HOST_FULL &&
+			   infoPtr->foreign[MIG_NORMAL_PRIORITY] <
+			   infoPtr->maxProcs) {
+		    migOK = '*';
+		}
+	    }
+	} else if (infoPtr->state == MIG_HOST_REFUSES) {
+	    strcpy(stateStr, "refuses");
+	} else {
+	    strcpy(stateStr, "inuse");
+	}
+	strcpy(upStr, "up");
+    } else {
+	strcpy(upStr, "down");
+	stateStr[0] = '\0';
+    }
+    (void) fprintf(stdout,
+		   "%16s%c  %6s %4s %s %7s",
+		   hostName, migOK,
+		   hostPtr->machType,
+		   upStr,
+		   timeStr,
+		   stateStr);
+    if (state != MIG_HOST_DOWN) {
+	(void) fprintf(stdout,
+		       " %5.2lf %5.2lf %5.2lf",
+		       infoPtr->loadVec.lengths[0], infoPtr->loadVec.lengths[1],
+		       infoPtr->loadVec.lengths[2]);
+	if ((state != MIG_HOST_ACTIVE) || (infoPtr->loadVec.noInput > 60)) {
+	    Time_ToAscii(infoPtr->loadVec.noInput, 1, idleTime);
+	    idleTime[SECOND_OFFSET] = '\0';
+	    for (idlePtr = idleTime; *idlePtr == ' '; idlePtr++) {
+	    }
+	    fprintf(stdout, " (%s)", idlePtr);
+	}
+    }
+    (void) fprintf(stdout, "\n");
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ZapHostInfo --
+ *
+ *	Zero out the information for a host.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The global database is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ZapHostInfo(hostname)
+    char *hostname;
+{
+    ReturnStatus status;
+    Mig_Info info;
+    Host_Entry *hostPtr;
+    
+
+    hostPtr = Host_ByName(hostname);
+    if (hostPtr == (Host_Entry *) NULL) {
+	(void) fprintf(stderr, "ZapHostInfo: couldn't get info for %s.\n",
+		       hostname);
+	return;
+    }
+    status = Mig_DeleteHost(hostPtr->id);
+    if (status != 0) {
+	perror("Error in Mig_DeleteHost");
+    }
+}
+@
+
+
+1.12
+log
+@changes for printing idle time info and available hosts when they're
+partially used (for background jobs).
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/cmds/loadavg/RCS/loadavg.c,v 1.11 90/04/09 10:17:46 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d385 6
+a390 6
+	if (((state == MIG_HOST_PART_USED) &&
+	     (infoPtr->foreign[MIG_NORMAL_PRIORITY] == infoPtr->maxProcs)) ||
+	    (state == MIG_HOST_FULL)) {
+	    strcpy(stateStr, "hasmig");
+	} else if (infoPtr->loadVec.allowMigration) {
+	    strcpy(stateStr, "avail");
+d394 4
+a397 1
+		} else if (hostPtr->id != hostID) {
+@
+
+
+1.11
+log
+@major rework for new interface for migd.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /a/newcmds/loadavg/RCS/loadavg.c,v 1.10 89/08/22 22:58:47 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d380 2
+d385 3
+a387 1
+	if (state == MIG_HOST_PART_USED || state == MIG_HOST_FULL) {
+d416 5
+a420 2
+	int doIdle;
+	if (state != MIG_HOST_ACTIVE) {
+a424 9
+	    doIdle = 1;
+	} else {
+	    doIdle = 0;
+	}
+	(void) fprintf(stdout,
+		       " %5.2lf %5.2lf %5.2lf",
+		       infoPtr->loadVec.lengths[0], infoPtr->loadVec.lengths[1],
+		       infoPtr->loadVec.lengths[2]);
+	if (doIdle) {
+@
+
+
+1.10
+log
+@print "!" for machines w/ allowable migration but of different type/version
+@
+text
+@d4 1
+a4 4
+ *	Maintain load average information on a per-host basis.  This program
+ *	may be invoked as a daemon (to update global state on a regular basis)
+ *	or as a stand-alone program (to return the load of the local host or
+ * 	all hosts on the network).
+d6 1
+a6 1
+ * Copyright 1987, 1988 Regents of the University of California
+d17 1
+a17 1
+static char rcsid[] = "$Header: /a/newcmds/loadavg/RCS/loadavg.c,v 1.9 89/07/31 17:51:58 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d21 7
+a27 7
+#include "loadavg.h"
+
+#include "sprite.h"
+#include "option.h"
+#include "host.h"
+#include "sysStats.h"
+
+d30 1
+a36 60
+/*
+ * Constants specific to gathering load average statistics.  (The weights may
+ * be modified with -D options but are not user-specifiable on the
+ * command line.)  The LOAD_INTERVAL is the number of seconds between sampling
+ * the utilization and ready queue lengths, and the WRITE_INTERVAL is the
+ * maximum number of seconds that may pass between updating the shared data
+ * file.  (The private data file is updated on each iteration.)
+ * For example, to write once per minute if the state of a machine doesn't
+ * change between idle and inUse, WRITE_INTERVAL would be (12 * LOAD_INTERVAL).
+ * To write every time, set it equal to LOAD_INTERVAL.  TIME_OUT is the
+ * default time to allow a host before assuming it's down.
+ */
+
+#ifndef LOAD_INTERVAL
+#define LOAD_INTERVAL 5
+#endif 
+
+#ifndef WRITE_INTERVAL
+#define WRITE_INTERVAL (12 * LOAD_INTERVAL)
+#endif
+
+#ifndef TIME_OUT
+#define TIME_OUT 180
+#endif
+
+#define WEIGHT1 0.9200444146293232     /* exp(-1/12) */
+#define WEIGHT2 0.9834714538216174     /* exp(-1/60) */
+#define WEIGHT3 0.9944598480048967     /* exp(-1/180) */
+
+double weights[] = {WEIGHT1, WEIGHT2, WEIGHT3};
+
+
+/*
+ * Define arbitrary thresholds (see loadavg.h).
+ *
+ * All load values must be below their corresponding THRESHOLD_LOW* to
+ * start accepting foreign processes, but once they are being
+ * accepted, there are different thresholds for each average: if any
+ * one of them is exceeded, stop aceepting foreign processes.
+ *
+ * INPUT_THRESHOLD is the number of seconds that a node must
+ * be idle for it to accept migrated processes.  (Set to a low value for
+ * testing.)
+ */
+
+
+#define THRESHOLD_LOW0 0.5
+#define THRESHOLD_LOW1 1.0
+#define THRESHOLD_LOW2 1.5
+#define THRESHOLD_HIGH0 2.0
+#define THRESHOLD_HIGH1 1.5
+#define THRESHOLD_HIGH2 1.0
+#define INPUT_THRESHOLD 300
+
+Thresholds thresholds = {
+    INPUT_THRESHOLD,
+    {THRESHOLD_LOW0, THRESHOLD_LOW1, THRESHOLD_LOW2},
+    {THRESHOLD_HIGH0, THRESHOLD_HIGH1, THRESHOLD_HIGH2}
+};
+
+a38 1
+int runDaemon = 0;
+a39 5
+int verbose = 0;
+int loadInterval = LOAD_INTERVAL;
+int writeInterval = WRITE_INTERVAL;
+int timeOut = TIME_OUT;
+int getIdleNode = 0;
+a40 3
+int neverAccept = 0;
+int migVersion = 0;
+int alwaysAccept = 0;
+a42 11
+int useKernelIdleTime = 1;
+
+/*
+ * Both of these are temporary areas to hold changes in the default values.
+ * If untouched by options, then they aren't used.
+ */
+
+char *lowThresholdString = NULL;
+char *highThresholdString = NULL;
+
+char *myName = NULL;
+a50 10
+	{OPT_TRUE, "i", (char *)&getIdleNode,
+	     "Get the hostID of an idle node."},
+	{OPT_TRUE, "d", (char *)&runDaemon,
+    "Run as a daemon and report load information to the global file."},
+	{OPT_FALSE, "K", (char *)&useKernelIdleTime,
+		 "Try not to use the internal kernel variable to keep track of idle time."},
+	{OPT_TRUE, "r", (char *)&neverAccept,
+		 "Claim to refuse migrations regardless of load or idle time."},
+	{OPT_TRUE, "R", (char *)&alwaysAccept,
+		 "Claim to accept migrations regardless of load or idle time."},
+a52 16
+	{OPT_TRUE, "v", (char *)&verbose,
+		 "Enable extra information messages."},
+	{OPT_INT, "M", (char *)&migVersion,
+    "Override the value of the kernel migration level to store in the database."},
+	{OPT_INT, "I", (char *)&loadInterval,
+    "Interval between iterations for getting load info."},
+	{OPT_INT, "w", (char *)&writeInterval,
+		 "Maximum interval between outputting load info."},
+	{OPT_INT, "W", (char *)&timeOut,
+		 "Maximum time during which info is valid without update."},
+	{OPT_INT, "N", (char *)&thresholds.noInput,
+		 "Minimum idle time to allow foreign procs."},
+	{OPT_STRING, "t", (char *)&lowThresholdString,
+		 "Set of minimum thresholds before accepting migration, once refused (as in the form '-t \"0.5 1.0 1.5\"')."},
+	{OPT_STRING, "T", (char *)&highThresholdString,
+		 "Set of maximum thresholds before refusing migration, once allowed (as in the form '-T \"2.0 1.5 1.0\"')."},
+a58 14
+ * Define a few possible states of machines.  If a host hasn't updated
+ * its entry recently, or if the entry is nonsensical, we mark the host
+ * as DOWN.  If it's up but active, it's UP, and if it's up and idle for
+ * some period of time, it's MIG_ALLOWED.
+ */
+typedef enum {
+    DOWN,
+    UP,
+    MIG_ALLOWED
+} MachineState;
+
+#define HOST_NAME_LENGTH 64
+
+/*
+d63 1
+d66 2
+d69 1
+a69 4
+int numLowPris;
+#ifdef INTERIM
+int oldKernel = 0;
+#endif /* INTERIM */
+d89 1
+a89 1
+ *	The global var. 'hostID' is initialized.
+d123 1
+a123 1
+     * Default operation is to get the local load, using a global data file.
+d126 1
+a126 2
+    if (! (runDaemon || getIdleNode || getLoad || allHosts ||
+	   zapHostInfo || forceEvict)) {
+a135 33
+    if (lowThresholdString) {
+	numScanned = sscanf(lowThresholdString, "%lf %lf %lf",
+				   &thresholds.min[0], &thresholds.min[1],
+				   &thresholds.min[2]);
+	if (numScanned < 3) {
+	    (void) fprintf(stderr, "%s: Invalid thresholds '%s'.\n", myName,
+			   lowThresholdString);
+	    exit(FAILURE);
+	}
+    }
+
+    if (highThresholdString) {
+	numScanned = sscanf(highThresholdString, "%lf %lf %lf",
+				   &thresholds.max[0], &thresholds.max[1],
+				   &thresholds.max[2]);
+	if (numScanned < 3) {
+	    (void) fprintf(stderr, "%s: Invalid thresholds '%s'.\n", myName,
+			   highThresholdString);
+	    exit(FAILURE);
+	}
+    }
+
+    if (writeInterval < loadInterval) {
+	writeInterval = loadInterval;
+    }
+
+    if (debug && runDaemon) {
+	(void) fprintf(stderr, "Weights are %f, %f, %f.\n",
+		       weights[0], weights[1], weights[2]);
+    }
+
+    openlog("loadavg", LOG_PID, runDaemon? LOG_DAEMON : LOG_USER);
+    
+a139 1
+	syslog(LOG_ERR, "error getting hostname.\n");
+d145 1
+a145 1
+	syslog(LOG_ERR, "error getting host information for '%s'.\n",
+d159 6
+a164 8
+    if (!migVersion){
+	status = Sys_Stats(SYS_PROC_MIGRATION, SYS_PROC_MIG_GET_VERSION,
+			   (Address) &migVersion);
+	if (status != SUCCESS) {
+	    syslog(LOG_ERR, "Error in Sys_Stats getting migration version: %s\n",
+		   Stat_GetMsg(status));
+	    exit(Compat_MapCode(status));
+	}
+d172 3
+a174 5
+	if (debug) {
+	    (void) fprintf(stderr,
+			   "%s: warning: error in Sys_Stats getting migration state.\n",
+			   myName);
+	}
+a175 3
+#ifdef INTERIM
+	oldKernel = 1;
+#endif /* INTERIM */
+a192 15
+    if (runDaemon) {
+	RunDaemon();
+    }
+    if (getIdleNode) {
+	host = Mig_GetIdleNode();
+	if (host < 0) {
+	    perror("Error in Mig_GetIdleNode");
+	    exit(1);
+	} else if (host != 0) {
+	    (void) printf("%d\n", host);
+	    (void) Mig_Done(host);
+	} else if (verbose) {
+	    (void) fprintf(stderr, "No idle node found.\n");
+	}
+    }
+d205 4
+a208 1
+	int numEvicted = FindForeign(EVICT, 1);
+d210 1
+d240 2
+d248 6
+d267 1
+d270 1
+a270 10
+	infoPtr = &infoArray[i];
+	if (infoPtr->timestamp != 0) {
+	    if (i != infoPtr->hostID) {
+		(void) fprintf(stderr,
+			       "ListHosts: mismatch between counter (%d) and value in data file (%d).\n",
+			       i, infoPtr->hostID);
+		exit(1);
+	    }
+	    OutputStatus(infoPtr);
+	}
+a274 1
+
+d318 1
+a318 1
+    MachineState state;
+d320 1
+d322 3
+a330 1
+    char stateChar;
+d355 3
+a357 4
+    state = UP;
+    diff = currentTime.tv_sec - infoPtr->timestamp;
+    if (diff > timeOut) {
+	state = DOWN;
+d360 1
+a360 1
+	 * Now we want to know how long the machine has been up.
+d362 1
+a362 1
+	diff = infoPtr->timestamp - infoPtr->bootTime;
+d365 3
+a367 3
+			   "Change was made before boot time??  modTime %d, bootTime %d.\n",
+			   infoPtr->timestamp, infoPtr->bootTime);
+	    state = DOWN;
+d377 2
+a378 1
+     * We allow migration if the file says to allow it, the entry in the
+d381 12
+a392 12
+    if (state == UP && infoPtr->allowMigration &&
+	strcmp(hostPtr->machType, machType) == 0 &&
+	((kernelState & PROC_MIG_EXPORT_ALL) == PROC_MIG_EXPORT_ALL) &&
+	infoPtr->migVersion == migVersion) {
+	state = MIG_ALLOWED;
+    }
+    if (state != DOWN) {
+	if (state == MIG_ALLOWED) {
+	    if (infoPtr->foreignProcs > 0) {
+		stateChar = '+';
+	    } else {
+		stateChar = '*';
+d394 2
+a395 4
+	} else if (infoPtr->foreignProcs > 0) {
+		stateChar = '-';
+	} else if (infoPtr->allowMigration > 0) {
+		stateChar = '!';
+d397 1
+a397 1
+	    stateChar = ' ';
+d399 1
+d401 2
+a402 1
+	stateChar = ' ';
+d405 2
+a406 2
+		   "%16s%c %6s  %s %s",
+		   hostName, stateChar,
+d408 14
+a421 4
+		   (state == DOWN) ? "down" : "  up",
+		   timeStr);
+    if (state != DOWN) {
+	Time_ToAscii(infoPtr->noInput, 1, idleTime);
+d423 6
+a428 3
+		       " %5.2lf %5.2lf %5.2lf  (idle %s)",
+		       infoPtr->lengths[0], infoPtr->lengths[1],
+		       infoPtr->lengths[2], idleTime);
+d433 1
+a457 1
+    Db_Handle sharedHandle;
+d466 1
+a466 16
+    if (debug) {
+	(void) fprintf(stderr, "Opening shared database.\n");
+	(void) fflush(stderr);
+    }
+    status = Mig_OpenInfo(MIG_SHARED, 1, &sharedHandle);
+    if (status != 0) {
+	perror("Error in Mig_OpenInfo (shared)");
+	exit(1);
+    }
+    bzero((Address) &info, sizeof(info));
+    status = Mig_UpdateInfo(hostPtr->id, &info, &sharedHandle, 1);
+    if (status != 0) {
+	perror("Error in Mig_UpdateInfo (shared)");
+	exit(1);
+    }
+    status = Db_Close(&sharedHandle);
+d468 1
+a468 2
+	perror("Error in Db_Close");
+	exit(1);
+@
+
+
+1.9
+log
+@single '.')
+>> use the kernel idle time by default, but changes to support statting 
+if only it would work without requiring exclusive access
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /a/newcmds/loadavg/RCS/loadavg.c,v 1.8 89/07/13 23:24:42 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d569 2
+@
+
+
+1.8
+log
+@Don't charge low priority processes against the load average when deciding whether to accept migrations
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /a/newcmds/loadavg/RCS/loadavg.c,v 1.7 89/06/15 22:54:53 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d114 1
+d137 2
+@
+
+
+1.7
+log
+@check against verbose mode.  reset count to 0 when evicting.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /a/newcmds/loadavg/RCS/loadavg.c,v 1.6 89/05/04 15:49:03 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d185 1
+@
+
+
+1.6
+log
+@changed to use the kernel state variable for import/export permissions.
+print machine type of hosts in listing of loads.  strip domain names.
+print "-" next to hosts that are not allowing migration from us but
+which have foreign processes.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /a/newcmds/loadavg/RCS/loadavg.c,v 1.5 89/03/17 12:42:17 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d503 1
+a503 1
+	syslog(LOG_ERR, 
+d505 1
+a505 1
+	exit(1);
+@
+
+
+1.5
+log
+@removed (double) cast for constants since new gcc broke.  other
+minor changes to procedure args.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /a/newcmds/loadavg/RCS/loadavg.c,v 1.4 88/12/21 16:01:05 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+a107 1
+int forkChild = 0;
+d113 1
+d130 2
+a151 1
+	{OPT_TRUE, "F", (char *)&forkChild, "Fork off daemons."},
+d184 4
+d316 15
+a330 6
+	    if (debug) {
+		(void) fprintf(stderr,
+			       "%s: warning: error in Sys_Stats getting version.\n",
+			       myName);
+	    }
+	    migVersion = 1;
+d332 4
+d338 3
+a340 2
+        (void) fprintf(stderr, "My hostID is %d.  machType is %s.\n", hostID,
+		machType);
+d491 6
+a496 2
+    static char idleTime[TIME_STR_LEN];
+    static char timeStr[TIME_STR_LEN];
+d507 11
+d548 1
+a548 1
+     * file is current, and it is the same machine type.
+d552 1
+d557 8
+a564 4
+	if (infoPtr->foreignProcs > 0) {
+	    stateChar = '+';
+	} else if (state == MIG_ALLOWED) {
+	    stateChar = '*';
+d572 3
+a574 2
+		   "%24s%c %s %s",
+		   hostPtr->name, stateChar,
+@
+
+
+1.4
+log
+@allow eviction based on command line argument.  compare migVersion before
+noting that another host is available (in "rup" format).
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /a/newcmds/loadavg/RCS/loadavg.c,v 1.3 88/11/19 15:54:09 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d64 3
+a66 3
+#define WEIGHT1 (double) 0.9200444146293232     /* exp(-1/12) */
+#define WEIGHT2 (double) 0.9834714538216174     /* exp(-1/60) */
+#define WEIGHT3 (double) 0.9944598480048967     /* exp(-1/180) */
+d141 1
+a141 1
+		 "Report to stderr when no idle nodes available."},
+d281 2
+d287 1
+a287 1
+	syslog(LOG_ERR, "%s: error getting hostname.\n", myName);
+d293 2
+a294 2
+	syslog(LOG_ERR, "%s: error getting host information for '%s'.\n",
+	       myName, hostname);
+d361 1
+a361 1
+	int numEvicted = FindForeign(EVICT);
+d481 1
+a481 1
+	       "%s: error in Host_ByID(%d).\n", myName, infoPtr->hostID);
+d590 1
+a590 1
+    status = Mig_UpdateInfo(hostPtr->id, &info, &sharedHandle);
+@
+
+
+1.3
+log
+@arguments to override idle time considerations to always or never accept
+foreign processes.  check for machine being down before printing "+".
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /a/newcmds/loadavg/RCS/loadavg.c,v 1.2 88/11/15 12:14:08 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d29 1
+d113 1
+d138 1
+d187 1
+a188 1
+
+d223 6
+a228 1
+    myName = argv[0];
+d239 9
+a247 2
+    if (! (runDaemon || getIdleNode || getLoad || zapHostInfo)) {
+	getLoad = 1;
+d302 15
+d347 7
+a353 10
+    if (getLoad) {
+	if (allHosts) {
+	    ListHosts();
+	} else {
+	    infoPtr = Mig_GetInfo((int) PROC_MY_HOSTID);
+	    if (infoPtr == (Mig_Info *) NULL) {
+		perror("Error in Mig_GetInfo");
+		exit(1);
+	    }
+	    OutputStatus(infoPtr);
+d355 1
+d358 4
+d515 2
+a516 1
+	strcmp(hostPtr->machType, machType) == 0) {
+@
+
+
+1.2
+log
+@got rid of obsolete declarations.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /a/newcmds/loadavg/RCS/loadavg.c,v 1.1 88/11/14 13:28:37 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d109 3
+d132 4
+d139 2
+d312 1
+d364 1
+a364 1
+    maxSize = MAX_NUM_HOSTS * sizeof(Mig_Info);
+d366 1
+a366 1
+    numRecs = Mig_GetAllInfo(infoArray, MAX_NUM_HOSTS);
+d486 8
+a493 4
+    if (infoPtr->foreignProcs > 0) {
+	stateChar = '+';
+    } else if (state == MIG_ALLOWED) {
+	stateChar = '*';
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: loadAvg.c,v 2.12 88/06/23 11:46:48 douglis Exp $ SPRITE (Berkeley)";
+a430 1
+    char *upStr;
+@

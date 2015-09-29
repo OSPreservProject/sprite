@@ -1,0 +1,15 @@
+D ADMIN                             	admin
+F BOOT.TXT;1                        	boot.txt
+D DOCS                              	docs
+F DS5000.BT;1                       	ds5000.bt
+F FILENAME.LST;1                    	filename.lst
+F INDEX.TXT;1                       	index.txt
+D LIB                               	lib
+F LS_LR.;1                          	ls_lR
+D MAN                               	man
+D PAPERS                            	papers
+F README.TXT;1                      	readme.txt
+F SPRITE.TXT;1                      	sprite.txt
+D SRC                               	src
+F SUN4.BT;1                         	sun4.bt
+D UTIL                              	util

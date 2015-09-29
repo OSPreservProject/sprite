@@ -1,0 +1,23 @@
+% latex style using Times for both text and math.
+
+\def\@mrm{t-rom}% times - roman
+\def\@mit{t-ita}% times - italic
+\def\@msl{t-obl}% times - oblique
+\def\@mbf{t-bol}% times - bold
+\def\@mmit{t-mathita}% times - math italic
+\def\@mtt{c-med}% courier
+\def\@mcsc{t-romsc}% times - roman - small caps
+\def\@mss{h-med}% helvetica
+
+\input psfonts.sty
+
+\def\@psfonts#1#2#3#4{%
+\def\prm{\@@getfont\prm\z@#1\@mrm{#2}{#3}{#4}}%
+\def\pit{\@@getfont\pit\itfam#1\@mit{#2}{#3}{#4}}%
+\def\psl{\@@getfont\psl\slfam#1\@msl{#2}{#3}{#4}}%
+\def\pbf{\@@getfont\pbf\bffam#1\@mbf{#2}{#3}{#4}}%
+\def\ptt{\@@getfont\ptt\ttfam#1\@mtt{#2}{#3}{#4}%
+\@nohyphens\ptt {#2}\@nohyphens\ptt {#3}\@nohyphens\ptt {#4}}%
+\def\psf{\@@getfont\psf\sffam#1\@mss{#2}{#3}{#4}}%
+\def\psc{\@@getfont\psc\scfam#1\@mcsc{#2}{#3}{#4}}%
+\@@getfont\pmit\@ne#1\@mmit{#2}{#3}{#4}}

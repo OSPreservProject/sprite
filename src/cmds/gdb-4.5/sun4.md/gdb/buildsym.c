@@ -1,0 +1,1 @@
+../../dist/gdb/buildsym.c

@@ -1,0 +1,132 @@
+
+
+
+Tk_Name               C Library Procedures                Tk_Name
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tk_Name,  Tk_PathName,  Tk_NameToWindow  -  convert  between
+     names and window tokens
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttkk..hh>>
+
+     Tk_Uid
+     TTkk__NNaammee(_t_k_w_i_n)
+
+     char *
+     TTkk__PPaatthhNNaammee(_t_k_w_i_n)
+
+     Tk_Window
+     TTkk__NNaammeeTTooWWiinnddooww(_i_n_t_e_r_p, _p_a_t_h_N_a_m_e, _t_k_w_i_n)
+
+AARRGGUUMMEENNTTSS
+     Tk_Window    _t_k_w_i_n       (in)      Token for window.
+
+     Tcl_Interp   *_i_n_t_e_r_p     (out)     Interpreter  to  use  for
+                                        error reporting.
+
+     char         *_p_a_t_h_N_a_m_e   (in)      Character string contain-
+                                        ing path name of window.
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     Each window managed by Tk has two names, a short  name  that
+     identifies a window among children of the same parent, and a
+     path name that identifies the window uniquely among all  the
+     windows belonging to the same main window.  The path name is
+     used more often in Tk than the short name;   many  commands,
+     like bbiinndd, expect path names as arguments.
+
+     The TTkk__NNaammee macro returns a window's short  name,  which  is
+     the  same as the _n_a_m_e argument passed to TTkk__CCrreeaatteeMMaaiinnWWiinnddooww
+     or TTkk__CCrreeaatteeTTooppLLeevveellWWiinnddooww or TTkk__CCrreeaatteeCChhiillddWWiinnddooww when  the
+     window  was  created.   The  value  is returned as a Tk_Uid,
+     which may be used just like a string pointer  but  also  has
+     the  properties  of a unique identfier (see the manual entry
+     for TTkk__GGeettUUiidd for details).
+
+     The TTkk__PPaatthhNNaammee macro returns a hierarchical name for _t_k_w_i_n.
+     Path  names  have  a structure similar to file names in Unix
+     but with dots between elements instead of slashes:  the main
+     window   for   an   application   (one  created  by  calling
+     TTkk__CCrreeaatteeMMaaiinnWWiinnddooww or  by  calling  TTkk__CCrreeaatteeTTooppLLeevveellWWiinnddooww
+     with  a  NULL _p_a_r_e_n_t argument) has the path name ``.'';  its
+     children have names like ``.a'' and ``.b'';  their  children
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+Tk_Name               C Library Procedures                Tk_Name
+
+
+
+     have  names like ``.a.aa'' and ``.b.bb''; and so on.  A win-
+     dow is considered to be be a child  of  another  window  for
+     naming  purposes if the second window was named as the first
+     window's _p_a_r_e_n_t when the first window was created.  This  is
+     not always the same as the X window hierarchy.  For example,
+     a pop-up is created as a child of the root window,  but  its
+     logical  parent will usually be a window within the applica-
+     tion.
+
+     The procedure TTkk__NNaammeeTTooWWiinnddooww returns the token for a window
+     given its path name (the _p_a_t_h_N_a_m_e argument) and another win-
+     dow belonging to the same main window (_t_k_w_i_n).  It  normally
+     returns  a token for the named window, but if no such window
+     exists TTkk__NNaammeeTTooWWiinnddooww leaves an error  message  in  _i_n_t_e_r_p-
+     >_r_e_s_u_l_t   and   returns   NULL.    The   _t_k_w_i_n  argument  to
+     TTkk__NNaammeeTTooWWiinnddooww is needed because path names are only unique
+     within  a  single application hierarchy.  If, for example, a
+     single process has opened two main windows, each will have a
+     separate  naming  hierarchy  and  the  same  path name might
+     appear in each of the hierarchies.  Normally  _t_k_w_i_n  is  the
+     main  window  of the desired hierarchy, but this need not be
+     the case:  any window in the desired hierarchy may be used.
+
+
+KKEEYYWWOORRDDSS
+     name, path name, token, window
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     2
+
+
+

@@ -1,0 +1,58 @@
+XCOMM platform:  $XConsortium: ultrix.cf,v 1.45 91/07/30 12:12:11 rws Exp $
+
+#define OSName           Sprite
+XCOMM operating system:  OSName
+#define OSMajorVersion    4
+#define OSMinorVersion    2
+
+#define HasPutenv NO
+#define HasSaberC NO
+#define HasShm NO
+#define LintLibFlag -o
+#define LintOpts -ax
+
+#ifdef VaxArchitecture
+#define XqdssServer YES
+#define XqvssServer YES
+#define UnalignedReferencesAllowed YES	       /* if arbitrary deref is okay */
+#if HasGcc
+#define BuildPexExt XqdssServer
+#else
+#define BuildPex NO /* compiler runs out of table space */
+#endif
+#endif
+
+#ifdef MipsArchitecture
+#ifdef sprite
+#define XdecServer NO
+#define XmfbpmaxServer YES
+#define XcfbpmaxServer YES
+#define NeedFunctionPrototypes NO
+#else
+#if OSMajorVersion > 4 || (OSMajorVersion == 4 && OSMinorVersion >= 2)
+#define XdecServer YES
+/* Even under ultrix 4.2, the compiler miscompiles some alloca calls */
+#define AllocateLocalDefines /* -DINCLUDE_ALLOCA_H */
+#else
+#define XmfbpmaxServer NO
+#define XcfbpmaxServer YES
+#define AllocateLocalDefines /**/
+#define NeedFunctionPrototypes YES
+#endif
+#endif /* sprite */
+#define PexCCOptions -Wf,-XNp15000,-XNd15000 -Dsprite
+#endif
+
+#if HasGcc
+#define CcCmd gcc -ansi -Dvax -Dultrix -fpcc-struct-return
+#define ServerCCOptions /* */
+#define AllocateLocalDefines /* */
+#endif
+
+#define ServerOSDefines AllocateLocalDefines
+
+#ifdef sprite
+#undef DefaultCCOptions
+#define DefaultCCOptions  -Dsprite
+#endif
+

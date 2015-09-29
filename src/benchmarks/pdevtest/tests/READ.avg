@@ -1,0 +1,8 @@
+0 bytes avg 0.336000 us each
+1 bytes avg 3.862000 us each
+32 bytes avg 3.866000 us each
+64 bytes avg 3.884000 us each
+128 bytes avg 3.910000 us each
+256 bytes avg 3.936000 us each
+512 bytes avg 4.034000 us each
+1024 bytes avg 4.224000 ms each

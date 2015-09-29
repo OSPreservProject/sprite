@@ -1,0 +1,37 @@
+This is Common TeX, Version 2.9 (INITEX) 3 DEC 1991 20:18
+**/lib/tex/lplain 
+(/lib/tex/lplain.tex Preloading the plain format: codes, registers,
+\maxdimen=\dimen10
+\hideskip=\skip10
+\@centering=\skip11
+\p@=\dimen11
+\z@=\dimen12
+\z@skip=\skip12
+\voidb@x=\box10
+
+parameters,
+\smallskipamount=\skip13
+\medskipamount=\skip14
+\bigskipamount=\skip15
+\normalbaselineskip=\skip16
+\normallineskip=\skip17
+\normallineskiplimit=\dimen13
+\jot=\dimen14
+\interdisplaylinepenalty=\count22
+\interfootnotelinepenalty=\count23
+ macros,
+\strutbox=\box11
+\mscount=\count24
+ math definitions,
+\rootbox=\box12
+\p@renwd=\dimen15
+\footins=\insert254
+ hyphenation (/lib/tex/hyphen.tex)
+(/lib/tex/lfonts.tex
+! Font \fivrm=cmr5 not loadable: Metric (TFM) file not found.
+<to be read again> 
+                   \font 
+l.174  \font
+            \fivmi  = cmmi5              % math italic
+? X
+No pages of output.

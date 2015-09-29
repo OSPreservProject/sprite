@@ -1,0 +1,113 @@
+head     8.2;
+branch   ;
+access   ;
+symbols  sun4nw:8.2 symm:8.2 spur:8.2 newlib:8.0;
+locks    ; strict;
+comment  @ * @;
+
+
+8.2
+date     89.07.15.13.06.31;  author rab;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.30.10.31.23;  author mendel;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.15.59;  author douglis;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     88.07.20.22.03.56;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Internal types and procedure headers for the keyboard driver.
+@
+
+
+8.2
+log
+@Who knows?  This is jo checking in for rab
+@
+text
+@/*
+ * devKeyboardInt.h --
+ *
+ * 	Internal types and procedure headers for the keyboard driver.
+ * 	Corresponds to the file in the sun machine-dependent directory,
+ *	but it may be possible to eliminate this file entirely.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/dev/spur.md/RCS/devKeyboardInt.h,v 8.1 88/11/30 10:31:23 mendel Exp Locker: rab $ SPRITE (Berkeley)
+ */
+
+#ifndef _DEVKEYBOARDINT
+#define _DEVKEYBOARDINT
+
+#include "sync.h"
+/*
+ * Master lock for keyboard/mouse driver.
+ */
+
+extern volatile Sync_Semaphore devKbdMutex;
+
+#endif /* _DEVKEYBOARDINT */
+@
+
+
+8.1
+log
+@Modifed to use new MASTER_LOCK declarations.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/dev/spur.md/RCS/devKeyboardInt.h,v 8.0 88/11/11 18:15:59 douglis Stable Locker: mendel $ SPRITE (Berkeley)
+d28 1
+a28 1
+extern Sync_Semaphore	devKbdMutex;
+d30 1
+a30 1
+#endif _DEVKEYBOARDINT
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/dev/spur.md/RCS/devKeyboardInt.h,v 1.1 88/07/20 22:03:56 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+d23 1
+d28 1
+a28 1
+extern int	devKbdMutex;
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+ * $Header: devKeyboardInt.h,v 5.0 87/08/11 10:39:09 sprite Exp $ SPRITE (Berkeley)
+@

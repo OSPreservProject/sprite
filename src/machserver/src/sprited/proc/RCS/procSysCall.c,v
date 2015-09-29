@@ -1,0 +1,500 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  srv030:1.4 srv028:1.3 srv027:1.3 srv026:1.3 srv024:1.3 srv022:1.3 srv021:1.3 srv019:1.3 srv018:1.3 srv016:1.3 srv015:1.3 srv014:1.3 srv012:1.3 srv011:1.3 srv010:1.3 srv008:1.3 srv007:1.3 srv006:1.3 srv005:1.3 srv004:1.3 srv003:1.3 srv002:1.3 srv001:1.3;
+locks    ; strict;
+comment  @ * @;
+
+
+1.4
+date     92.07.16.18.06.55;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     92.03.12.17.37.45;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     92.02.27.16.29.00;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.12.18.23.21.56;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Short stubs for Sprite system calls.
+@
+
+
+1.4
+log
+@Split spriteSrv.h into user and server versions.
+@
+text
+@/* 
+ * procSysCall.c --
+ *
+ *	Short stubs for Sprite system calls.  These routines go between the 
+ *	MIG-generated routine on the one side and the actual Sprite routine 
+ *	on the other side.
+ *
+ * Copyright 1991, 1992 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/proc/RCS/procSysCall.c,v 1.3 92/03/12 17:37:45 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <mach.h>
+#include <proc.h>
+#include <sig.h>
+#include <spriteSrvServer.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_DetachStub --
+ *
+ *	Detach the current process from its parent.
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  Proc_Detach always succeeds, so there's no 
+ *	Sprite return status.  Fills in the "pending signals" flag.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+    
+kern_return_t
+Proc_DetachStub(serverPort, status, sigPendingPtr)
+    mach_port_t serverPort;
+    int status;			/* Detach status from caller */
+    boolean_t *sigPendingPtr;	/* OUT: is there a signal pending */
+{
+#ifdef lint
+    serverPort = serverPort;
+#endif
+    (void)Proc_Detach(status);
+    *sigPendingPtr = Sig_Pending(Proc_GetCurrentProc());
+    return KERN_SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_GetFamilyIDStub --
+ *
+ *	Get the process family ID (process group) for the given process.
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code from 
+ *	Proc_GetFamilyID and the "pending signals" flag.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+kern_return_t
+Proc_GetFamilyIDStub(serverPort, pid, statusPtr, familyIdPtr,
+		     sigPendingPtr)
+    mach_port_t serverPort;
+    Proc_PID pid;		/* the process to get the family for */
+    ReturnStatus *statusPtr;	/* OUT: Sprite return status */
+    Proc_PID *familyIdPtr;	/* OUT: the resulting family ID */
+    boolean_t *sigPendingPtr;	/* OUT: is there a signal pending */
+{
+#ifdef lint
+    serverPort = serverPort;
+#endif
+    *statusPtr = Proc_GetFamilyID(pid, familyIdPtr);
+    *sigPendingPtr = Sig_Pending(Proc_GetCurrentProc());
+    return KERN_SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_GetGroupIDsStub --
+ *
+ *	Return the groups that a process belongs to.
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code from 
+ *	Proc_GetGroupIDs and the "pending signals" flag..  Fills in the
+ *	array of group IDs with the group IDs that the current process
+ *	belongs to.  Fills in the number of group IDs returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+kern_return_t
+Proc_GetGroupIDsStub(serverPort, numGIDsPtr, gidArray, statusPtr,
+		     sigPendingPtr)
+    mach_port_t serverPort;
+    int *numGIDsPtr;		/* IN: size of gidArray; OUT: number of IDs 
+				 * that the process has */
+    vm_address_t gidArray;	/* array to fill in */
+    ReturnStatus *statusPtr;	/* OUT: Sprite return status */
+    boolean_t *sigPendingPtr;	/* OUT: is there a signal pending */
+{
+#ifdef lint
+    serverPort = serverPort;
+#endif
+    *statusPtr = Proc_GetGroupIDs(*numGIDsPtr, (int *)gidArray,
+				  numGIDsPtr);
+    *sigPendingPtr = Sig_Pending(Proc_GetCurrentProc());
+    return KERN_SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_GetPCBInfoStub --
+ *
+ *	Get information from the process control block table.  See 
+ *	Proc_GetPCBInfo. 
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code from
+ *	Proc_GetPCBInfo and the "pending signals" flag..  If successful,
+ *	fills in (1) the PCB array with information about the requested
+ *	processes and (2) the number of entries in the array that were
+ *	filled in.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+kern_return_t
+Proc_GetPCBInfoStub(serverPort, firstPid, lastPid, hostID, infoSize,
+		    infoArray, argStrings, statusPtr, pcbsUsedPtr,
+		    sigPendingPtr)
+    mach_port_t serverPort;
+    Proc_PID firstPid;		/* first pid to look at, or PROC_MY_PID */
+    Proc_PID lastPid;		/* last pid to look at */
+    int hostID;			/* host to query, or PROC_MY_HOSTID */
+    int infoSize;		/* expected size for one pcb */
+    vm_address_t infoArray;	/* address of pcb array to fill in */
+    vm_address_t argStrings;	/* address of "ps" arg strings to fill in */
+    ReturnStatus *statusPtr;	/* OUT: Sprite result code */
+    int *pcbsUsedPtr;		/* OUT: number of array elements filled in */
+    boolean_t *sigPendingPtr;	/* OUT: is there a signal pending */
+{
+#ifdef lint
+    serverPort = serverPort;
+#endif
+    *statusPtr = Proc_GetPCBInfo(firstPid, lastPid, hostID, infoSize,
+				 (Address)infoArray,
+				 (Proc_PCBArgString *)argStrings,
+				 pcbsUsedPtr);
+    *sigPendingPtr = Sig_Pending(Proc_GetCurrentProc());
+    return KERN_SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_SetFamilyIDStub --
+ *
+ *	Change the family ID (process group) for the given process.
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code from 
+ *	Proc_SetFamilyID and the "pending signals" flag.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+kern_return_t
+Proc_SetFamilyIDStub(serverPort, pid, familyID, statusPtr, sigPendingPtr)
+    mach_port_t serverPort;
+    Proc_PID pid;		/* the process to get the new family ID */
+    Proc_PID familyID;		/* the new family ID */
+    ReturnStatus *statusPtr;	/* OUT: Sprite status code */
+    boolean_t *sigPendingPtr;	/* OUT: is there a signal pending */
+{
+#ifdef lint
+    serverPort = serverPort;
+#endif
+    *statusPtr = Proc_SetFamilyID(pid, familyID);
+    *sigPendingPtr = Sig_Pending(Proc_GetCurrentProc());
+    return KERN_SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_SetGroupIDsStub --
+ *
+ *	Change the list of groups that a process belongs to.
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code from 
+ *	Proc_SetGroupIDsStub and the "pending signals" flag.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+kern_return_t
+Proc_SetGroupIDsStub(serverPort, numGIDs, gidArray, statusPtr,
+		     sigPendingPtr)
+    mach_port_t serverPort;
+    int numGIDs;		/* number of elements in gidArray */
+    vm_address_t gidArray;	/* array of group IDs to use */
+    ReturnStatus *statusPtr;	/* OUT: Sprite status code */
+    boolean_t *sigPendingPtr;	/* OUT: is there a signal pending */
+{
+#ifdef lint
+    serverPort = serverPort;
+#endif
+    *statusPtr = Proc_SetGroupIDs(numGIDs, (int *)gidArray);
+    *sigPendingPtr = Sig_Pending(Proc_GetCurrentProc());
+    return KERN_SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_SetIDsStub --
+ *
+ *	Set the real and effective user IDs for the current process.
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code from 
+ *	Proc_SetIDs and the "pending signals" flag.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+kern_return_t
+Proc_SetIDsStub(serverPort, userID, effUserID, statusPtr, sigPendingPtr)
+    mach_port_t serverPort;
+    int userID;			/* real user ID */
+    int effUserID;		/* effective user ID */
+    ReturnStatus *statusPtr;	/* OUT: Sprite status code */
+    boolean_t *sigPendingPtr;	/* OUT: is there a signal pending */
+{
+#ifdef lint
+    serverPort = serverPort;
+#endif
+    *statusPtr = Proc_SetIDs(userID, effUserID);
+    *sigPendingPtr = Sig_Pending(Proc_GetCurrentProc());
+    return KERN_SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_SetIntervalTimerStub --
+ *
+ *	Set the current process's specified interval timer.
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code, "pending 
+ *	signals" flag, and previous timer setting.
+ *
+ * Side effects:
+ *	See Proc_SetIntervalTimer.
+ *
+ *----------------------------------------------------------------------
+ */
+
+kern_return_t
+Proc_SetIntervalTimerStub(serverPort, timerType, newTimer, statusPtr,
+			  oldTimerPtr, sigPendingPtr)
+    mach_port_t serverPort;
+    int timerType;		/* which timer to set */
+    Proc_TimerInterval newTimer; /* new setting for the timer */
+    ReturnStatus *statusPtr;	/* OUT: Sprite status code */
+    Proc_TimerInterval *oldTimerPtr; /* OUT: previous setting for the timer */
+    boolean_t *sigPendingPtr;	/* OUT: is there a signal pending */
+{
+#ifdef lint
+    serverPort = serverPort;
+#endif
+    *statusPtr = Proc_SetIntervalTimer(timerType, &newTimer, oldTimerPtr);
+    *sigPendingPtr = Sig_Pending(Proc_GetCurrentProc());
+    return KERN_SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_GetIntervalTimerStub --
+ *
+ *	Get the setting of the current process's specified interval timer.
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code, "pending 
+ *	signals" flag, and timer setting.
+ *
+ * Side effects:
+ *	See Proc_GetIntervalTimer.
+ *
+ *----------------------------------------------------------------------
+ */
+
+kern_return_t
+Proc_GetIntervalTimerStub(serverPort, timerType, statusPtr, timerPtr,
+			  sigPendingPtr)
+    mach_port_t serverPort;
+    int timerType;		/* which timer to get */
+    ReturnStatus *statusPtr;	/* OUT: Sprite status code */
+    Proc_TimerInterval *timerPtr; /* OUT: current setting for the timer */
+    boolean_t *sigPendingPtr;	/* OUT: is there a signal pending */
+{
+#ifdef lint
+    serverPort = serverPort;
+#endif
+    *statusPtr = Proc_GetIntervalTimer(timerType, timerPtr);
+    *sigPendingPtr = Sig_Pending(Proc_GetCurrentProc());
+    return KERN_SUCCESS;
+}
+@
+
+
+1.3
+log
+@Add interval timer support.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/proc/RCS/procSysCall.c,v 1.2 92/02/27 16:29:00 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d26 1
+a26 1
+#include <spriteSrv.h>
+@
+
+
+1.2
+log
+@Snapshot.  Can kill, suspend, and resume processes.
+@
+text
+@d5 2
+a6 2
+ *	MIG routine on the one side and the actual Sprite routine on the 
+ *	other side.
+d8 1
+a8 1
+ * Copyright 1991 Regents of the University of California
+d19 1
+a19 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/proc/RCS/procSysCall.c,v 1.1 91/12/18 23:21:56 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d281 71
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.5 91/02/09 13:24:44 ouster Exp $ SPRITE (Berkeley)";
+d25 1
+d38 1
+a38 1
+ *	Sprite return status.
+d47 1
+a47 1
+Proc_DetachStub(serverPort, status)
+d50 1
+d56 1
+d70 1
+a70 1
+ *	Proc_GetFamilyID.
+d79 2
+a80 1
+Proc_GetFamilyIDStub(serverPort, pid, statusPtr, familyIdPtr)
+d85 1
+d91 1
+d105 3
+a107 3
+ *	Proc_GetGroupIDs.  Fills in the array of group IDs with the group 
+ *	IDs that the current process belongs to.  Fills in the number of 
+ *	group IDs returned.
+d116 2
+a117 1
+Proc_GetGroupIDsStub(serverPort, numGIDsPtr, gidArray, statusPtr)
+d123 1
+d130 1
+d144 5
+a148 4
+ *	Returns KERN_SUCCESS.  Fills in the Sprite status code from 
+ *	Proc_GetPCBInfo.  If successful, fills in (1) the PCB array with 
+ *	information about the requested processes and (2) the number of 
+ *	entries in the array that were filled in.
+d158 2
+a159 1
+		    infoArray, argStrings, statusPtr, pcbsUsedPtr)
+d169 1
+d178 1
+d192 1
+a192 1
+ *	Proc_SetFamilyID.
+d201 1
+a201 1
+Proc_SetFamilyIDStub(serverPort, pid, familyID, statusPtr)
+d206 1
+d212 1
+d226 1
+a226 1
+ *	Proc_SetGroupIDsStub.
+d235 2
+a236 1
+Proc_SetGroupIDsStub(serverPort, numGIDs, gidArray, statusPtr)
+d241 1
+d247 1
+d261 1
+a261 1
+ *	Proc_SetIDs.
+d270 1
+a270 1
+Proc_SetIDsStub(serverPort, userID, effUserID, statusPtr)
+d275 1
+d281 1
+@

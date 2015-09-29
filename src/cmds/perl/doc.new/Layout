@@ -1,0 +1,35 @@
+This is the layout of the pages of the reference guide
+
+
+		    center of paper
+			  |
+	+-----------------+-----------------+
+	|                           <----------- top margin
+	|     xxxxxxxxxx  :  xxxxxxxxxx     |
+	|     xxxxxxxxxx     xxxxxxxxxx     |
+	|     xxxxxxxxxx     xxxxxxxxxx     |
+	|     xxxxxxxxxx     xxxxxxxxxx     |
+	|     xxxxxxxxxx     xxxxxxxxxx  <------ right margin
+	|     xxxxxxxxxx     xxxxxxxxxx     |
+	|     xxxxxxxxxx     xxxxxxxxxx     |
+	| ^   xxxxxxxxxx     xxxxxxxxxx     |
+	| |   xxxxxxxxxx     xxxxxxxxxx     |
+	| |   xxxxxxxxxx  :  xxxxxxxxxx     |
+	| |                                 |
+	+-|---------------------------------+
+	  |
+     left margin
+
+
+These are the values:
+			A4 (cm)	    US Letter (inch)
+    text width		 9.0		3.5		same for both
+    text height		19.2		7.5		same for both
+    top margin	 	 1.0		0.5
+    left margin		 4.9		1.6
+    right margin	 4.9		1.6
+    space between	 2.0		0.8		same for both
+
+After printing double-sided, the pages can be stapled (the ":" in the
+picture), folded, and the excess margins cut off. Personally, I cut it
+to 10.6 cm (4.2 inch).

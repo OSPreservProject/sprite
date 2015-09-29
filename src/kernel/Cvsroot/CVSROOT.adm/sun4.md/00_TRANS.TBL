@@ -1,0 +1,6 @@
+F LOGINFO.;1                        	loginfo
+L LOGINFO_.;1                       	loginfo,v	../loginfo,v
+L MODULES.;1                        	modules	../modules
+F MODULES.DIR;1                     	modules.dir
+F MODULES.PAG;1                     	modules.pag
+L MODULES_.;1                       	modules,v	../modules,v

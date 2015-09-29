@@ -1,0 +1,23 @@
+%%%%%%%%%%%%%%%%%%%%%%%% FRENCHPONCT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\catcode`\@=11
+% Origine brochcod.tex Y.Roy
+% Les caracteres de double ponctuation (!?;:) sont
+% saisis precedes d'un espace.
+\catcode`\;=\active
+\catcode`\:=\active
+\catcode`\!=\active
+\catcode`\?=\active
+\def;{\relax\ifhmode\ifdim\lastskip>\z@
+  \unskip\kern\fontdimen2\font \kern-1.4\fontdimen3\font
+  \fi\fi\string;}
+\def:{\relax\ifhmode\ifdim\lastskip>\z@
+  \unskip\penalty\@M\ \fi\fi\string:}
+\def!{\relax\ifhmode\ifdim\lastskip>\z@
+  \unskip\kern\fontdimen2\font
+  \kern-1.4\fontdimen3\font\fi\fi\string!}
+\def?{\relax\ifhmode\ifdim\lastskip>\z@
+  \unskip\kern\fontdimen2\font
+  \kern-1.4\fontdimen3\font\fi\fi\string?}
+
+\frenchspacing
+\catcode`\@=12

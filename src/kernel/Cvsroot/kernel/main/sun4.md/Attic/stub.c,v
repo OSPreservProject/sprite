@@ -1,0 +1,654 @@
+head     9.3;
+branch   ;
+access   ;
+symbols  sun4nw:9.3 symm:9.3 spur:9.3 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.3
+date     90.10.19.15.38.56;  author shirriff;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.11.27.14.54.58;  author mgbaker;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.29.21.45.51;  author shirriff;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.12.04;  author douglis;  state Stable;
+branches ;
+next     1.10;
+
+1.10
+date     89.08.30.13.07.20;  author mgbaker;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     89.03.31.12.05.54;  author mgbaker;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     89.03.26.20.27.09;  author mgbaker;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     89.03.03.15.49.31;  author mgbaker;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.02.28.12.54.20;  author mgbaker;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.02.24.21.56.23;  author mgbaker;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.02.24.15.07.56;  author mgbaker;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.02.05.17.33.43;  author mgbaker;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.01.31.14.04.40;  author mgbaker;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.01.29.13.21.39;  author mgbaker;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Putting in net module and debugger stuff.  It doesn't entirely work
+>> yet, but it's progress.
+@
+
+
+9.3
+log
+@This file is no longer used.
+@
+text
+@@
+
+
+9.2
+log
+@Took out old migration stubs.
+@
+text
+@a0 34
+#include "sprite.h"
+#include "mach.h"
+
+int	debugOne = 0;
+int	debugTwo = 0;
+int	debugThree = 0;
+int	debugFour = 0;
+
+#ifdef sun4c
+/*
+ * Various prom things called in these routines don't exist on the sun4c.
+ */
+int
+Test_GetLine()
+{
+}
+
+int
+Test_GetChar()
+{
+}
+#endif
+
+/*ARGSUSED*/
+VmMachTracePMEG(pmeg)
+int pmeg;
+{
+    panic("VmMachTracePMEG called.\n");
+}
+
+Mach_GetStackPointer()
+{
+    panic("Mach_GetStackPointer called.\n");
+}
+@
+
+
+9.1
+log
+@Lint change.
+@
+text
+@a23 11
+Mach_GetLastSyscall()
+{
+}
+
+Proc_RpcMigInfo()
+{
+}
+Proc_RpcMigInit()
+{
+}
+
+a33 42
+}
+
+ReturnStatus
+Mach_EncapState()
+{
+    panic("Mach_EncapState called.\n");
+}
+
+ReturnStatus
+Mach_GetEncapState()
+{
+    panic("Mach_GetEncapState called.\n");
+}
+
+ReturnStatus
+Mach_GetEncapSize()
+{
+    panic("Mach_GetEncapSize called.\n");
+}
+
+ReturnStatus
+Mach_DeencapState()
+{
+    panic("Mach_DeencapState called.\n");
+}
+
+Boolean
+Mach_CanMigrate()
+{
+    panic("Mach_CanMigrate called.\n");
+}
+
+Vm_FreezeSegments()
+{
+}
+
+Vm_MigrateSegment()
+{
+}
+
+Vm_ReceiveSegmentInfo()
+{
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d35 3
+a37 1
+VmMachTracePMEG()
+@
+
+
+1.10
+log
+@Added various enhancments (brent for mgbaker)
+@
+text
+@@
+
+
+1.9
+log
+@Eighteenth Kernel.  It executes a signal.
+@
+text
+@d9 24
+a32 10
+int	proc_PCBTable[100];
+
+int *
+Mach_GetEtherAddress(etherAddressPtr)
+int *	etherAddressPtr;
+{
+	*etherAddressPtr = 0x08002000;
+	etherAddressPtr++;
+	*etherAddressPtr = 0xef480000;
+	return etherAddressPtr;
+a34 2
+int	*sched_MutexPtr;
+
+a39 44
+Dump_Register_Events()
+{
+    panic("Dump_Register_Events called\n");
+}
+
+Dump_Show_Local_Menu()
+{
+    panic("Dump_Show_Local_Menu called.\n");
+}
+
+Prof_Init()
+{
+    panic("Prof_Init called.\n");
+}
+
+Prof_Start()
+{
+    panic("Prof_Start called.\n");
+}
+
+Prof_Enable()
+{
+}
+
+Prof_Disable()
+{
+    panic("Prof_Disable called.\n");
+}
+
+Prof_Profil()
+{
+    panic("Prof_Profil called.\n");
+}
+
+Prof_End()
+{
+    panic("Prof_End called.\n");
+}
+
+Prof_DumpStub()
+{
+    panic("Prof_DumpStub called.\n");
+}
+
+d45 1
+a45 15
+Prof_EncapState()
+{
+    panic("Prof_EncapState called.\n");
+}
+
+Prof_DeencapState()
+{
+    panic("Prof_DeencapState called.\n");
+}
+
+Prof_GetEncapSize()
+{
+    panic("Prof_GetEncapSize called.\n");
+}
+
+d51 1
+d57 1
+d63 1
+d69 1
+d75 9
+a83 1
+modf()
+@
+
+
+1.8
+log
+@Seventeenth Kernel.  It executes its first system call:  Sys_Shutdown().
+@
+text
+@d116 4
+@
+
+
+1.7
+log
+@Fifteenth Kernel.  Initializes all kernel procs and gets to idle loop.
+@
+text
+@d48 4
+d77 11
+a87 1
+Mach_MonTrap()
+d89 1
+a89 1
+    panic("Mach_MonTrap called.\n");
+@
+
+
+1.6
+log
+@Gets through a lot of initialization and still works with the
+interrupt-handling support added to mach.
+@
+text
+@a67 5
+Mach_ContextSwitch()
+{
+    panic("Mach_ContextSwitch called.\n");
+}
+
+@
+
+
+1.5
+log
+@Fourteenth Kernel.  Debugger works, uses mem module and stdlib.
+@
+text
+@a3 23
+Rpc_Dispatch()
+{
+}
+
+Sys_HostPrint()
+{
+}
+
+Proc_CallFunc()
+{
+}
+
+Dev_SyslogReturnBuffer()
+{
+}
+
+Dev_SyslogDebug()
+{
+}
+
+Mach_MonReboot()
+{
+}
+a10 2
+int	proc_RunningProcesses = 1;
+
+d21 3
+a23 2
+char	*
+SpriteVersion()
+d25 1
+a25 1
+    return "Sun4 kernel.\n";
+d28 1
+a28 2
+#ifdef NOTDEF
+VmMach_UnmapIntelPage()
+d30 1
+a31 1
+#endif NOTDEF
+d33 1
+a33 1
+DevNetEtherHandler()
+d35 1
+d38 1
+a38 2
+#ifdef NOTDEF
+Vm_CopyOut()
+d40 1
+d43 1
+a43 1
+Vm_StringNCopy()
+d45 1
+d48 1
+a48 1
+Vm_CopyIn()
+d50 1
+a51 1
+#endif NOTDEF
+d53 1
+a53 1
+Sched_ContextSwitchInt()
+d55 1
+d58 1
+a58 2
+#ifdef NOTDEF
+Vm_StoreTraceTime()
+d60 1
+a61 1
+#endif NOTDEF
+d63 1
+a63 1
+Dev_GatherDiskStats()
+d65 1
+d68 1
+a68 1
+Sched_GatherProcessInfo()
+d70 1
+d73 1
+a73 3
+int	*sched_MutexPtr;
+
+Sched_MoveInQueue()
+d75 1
+d78 1
+a78 1
+Mach_CheckSpecialHandling()
+d80 1
+d83 1
+a83 1
+Rpc_Call()
+d85 1
+d88 1
+a88 1
+Rpc_Reply()
+d90 1
+d93 1
+a93 1
+Proc_PushLockStack()
+d95 1
+d97 2
+a98 1
+Proc_RemoveFromLockStack()
+d100 1
+d102 2
+a103 1
+Proc_NeverMigrate()
+d105 1
+a105 75
+}
+VmMachTracePMEG()
+{
+}
+Fs_GetEncapSize()
+{
+}
+Fs_Close()
+{
+}
+Fs_DeencapStream()
+{
+}
+Fs_StreamCopy()
+{
+}
+Fs_EncapStream()
+{
+}
+Fs_GetPageFromFS()
+{
+}
+Sig_SendProc()
+{
+}
+Sig_Send()
+{
+}
+Fs_WaitForHost()
+{
+}
+Fs_GetSegPtr()
+{
+}
+Fs_GetFileHandle()
+{
+}
+Fs_GetFileName()
+{
+}
+Sys_GetHostId()
+{
+}
+Fs_Read()
+{
+}
+Fs_Open()
+{
+}
+Fs_PageRead()
+{
+}
+Fs_PageCopy()
+{
+}
+Proc_GetEffectiveProc()
+{
+}
+Fs_CacheBlocksUnneeded()
+{
+}
+Fs_PageWrite()
+{
+}
+Fs_Remove()
+{
+}
+Proc_Unlock()
+{
+}
+Proc_Lock()
+{
+}
+Fs_Write()
+{
+@
+
+
+1.4
+log
+@Thirteenth Kernel.  sun4 fnishes vm init now.
+@
+text
+@a111 4
+Mem_Bin()
+{
+}
+
+a193 4
+{
+}
+
+_free()
+@
+
+
+1.3
+log
+@Twelfth Kernel.  It uses only my trap table now.  The net module
+>> and the debugger work, plus it's taking timer and ethernet interrupts.
+>> Although it seems interrupts are disabled, I don't think they are.  It's
+>> just that I don't do keyboard interrupts yet.
+>> Because it uses my trap table, I've rearranged things so there's one
+>> less indirection.  Window overflow and underflow traps are direct now.
+@
+text
+@d27 4
+d52 1
+d56 1
+d62 1
+d74 1
+d80 1
+a80 2
+int	vm_Tracing = 0;
+
+d84 1
+a93 4
+Vm_BootAlloc()
+{
+}
+
+d108 1
+a108 1
+Vm_PinUserMem()
+d112 1
+a112 1
+Vm_UnpinUserMem()
+d116 1
+a116 1
+Rpc_Reply()
+d119 1
+a119 8
+
+Address	vmMemEnd;
+
+int	vmKernMemSize = 4096 * 1024;
+
+Address
+Vm_RawAlloc(numBytes)
+    int	numBytes;
+a120 12
+    Address	retAddr;
+
+    retAddr = vmMemEnd;
+
+    retAddr = (Address) (((unsigned) retAddr + 7) & ~7);
+    vmMemEnd += (numBytes + 7) & ~7;
+
+    if (vmMemEnd > (Address) (mach_KernStart + vmKernMemSize)) {
+	panic("Ran out of memory!\n");
+    }
+
+    return retAddr;
+d122 1
+a122 5
+
+extern	unsigned	int	end;
+
+void
+Vm_BootInit()
+a123 3
+    vmMemEnd = (Address) &end;
+    vmMemEnd = (Address) (((int) vmMemEnd + 7) & ~7);
+    return;
+d125 75
+d201 1
+a201 1
+Mem_Bin()
+@
+
+
+1.2
+log
+@Eleventh Kernel.  The debugger single steps, calls functions, etc.
+>> This means that state saving and restoring and stack switching works.
+@
+text
+@d147 4
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d45 1
+a45 1
+    return "Things are bad.\n";
+@

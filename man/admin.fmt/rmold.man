@@ -1,0 +1,68 @@
+
+
+
+RMOLD                     User Commands                     RMOLD
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     rmold - Delete old files
+
+SSYYNNOOPPSSIISS
+     rrmmoolldd [_o_p_t_i_o_n_s] _n_u_m_D_a_y_s _f_i_l_e _f_i_l_e ...
+
+OOPPTTIIOONNSS
+     --mmoodd           Use modify time instead  of  access  time  to
+                    control deletion.
+
+     --pprriinntt         Do not actually delete any files;  just print
+                    a list of those that would be deleted.
+
+     --ttiimmeessFFrroomm _d_i_r_e_c_t_o_r_y
+                    For each _f_i_l_e, get  the  access  (or  modify)
+                    time  from  _d_i_r_e_c_t_o_r_y//_f_i_l_e  instead  of  from
+                    _f_i_l_e.
+
+     --hheellpp          Print a summary of the  command-line  options
+                    and exit without updating any targets.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The rrmmoolldd program  deletes  all  of  the  named  files  that
+     haven't  been  accessed in the last _n_u_m_D_a_y_s days.  It prints
+     the names of all the files it deleted.  If the  --mmoodd  switch
+     is given, then rrmmoolldd deletes all the files that haven't been
+     modified in _n_u_m_D_a_y_s days.  If --pprriinntt is specified then rrmmoolldd
+     prints  the  names  of  files that haven't been accessed (or
+     modified) in _n_u_m_D_a_y_s, but it doesn't delete any of them.
+
+     If ttiimmeessFFrroomm is specified, rrmmoolldd will  use  the  access  (or
+     modify)  time  of the same-named file in the given alternate
+     directory.  This option lets you  delete  old  backup  files
+     after  the installed version of the file has been around for
+     awhile.  For example, to delete backup  copies  of  commands
+     that were installed over 90 days ago, you could do something
+     like
+
+               cd /sprite/cmds.$MACHINE.old
+               rmold -mod -timesFrom /sprite/cmds.$MACHINE 90 *
+
+
+KKEEYYWWOORRDDSS
+     access, delete, modified, old
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  March 12, 1991                    1
+
+
+

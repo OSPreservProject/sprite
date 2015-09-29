@@ -1,0 +1,68 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  srv030:1.2 srv028:1.2 srv027:1.2 srv026:1.2 srv024:1.2 srv022:1.2 srv021:1.2 srv019:1.2 srv018:1.2 srv016:1.2 srv015:1.2 srv014:1.2 srv012:1.2 srv011:1.2 srv010:1.2 srv008:1.2 srv007:1.2 srv006:1.2 srv005:1.2 srv004:1.2 srv003:1.2;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     92.04.29.21.53.19;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     92.04.27.16.59.56;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Hack for sprited.
+@
+text
+@/*
+ * migVersion.h --
+ *
+ *	Define the migration version, which is machine-dependent.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /user5/kupfer/spriteserver/src/sprited/proc/ds3100.md/RCS/migVersion.h,v 1.1 92/04/27 16:59:56 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+ */
+
+/*
+ * Set the migration version number.  Machines can only migrate to other
+ * machines of the same architecture and version number.
+ */
+#ifndef PROC_MIGRATE_VERSION
+#define PROC_MIGRATE_VERSION 1001
+#endif /* PROC_MIGRATE_VERSION */
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/proc/ds3100.md/RCS/migVersion.h,v 9.8 91/08/09 16:30:47 shirriff Exp $ SPRITE (Berkeley)
+d23 1
+a23 1
+#define PROC_MIGRATE_VERSION 19
+@

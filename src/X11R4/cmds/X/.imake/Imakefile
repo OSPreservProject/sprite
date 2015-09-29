@@ -1,0 +1,558 @@
+/*
+ * Server Master Makefile
+ */
+
+#include <Server.tmpl>
+
+#ifdef XhpServer
+      OTHEREXTS = $(EXTENSIONSRC)/server/xinput/libxinput.a
+#else
+      OTHEREXTS = /* nothing */
+#endif
+     EXTENSIONS = $(OTHEREXTS) $(EXTENSIONSRC)/server/libext.a
+         EXTDIR = $(EXTENSIONSRC)/server
+    FONTUTILDIR = $(FONTSRC)/mkfontdir
+       FONTUTIL = $(FONTUTILDIR)/fontdir.o
+            BSD = os/4.2bsd/libos.a $(XAULIB) $(XDMCPLIB)
+        BSDEMUL = os/bsdemul/libbsdemul.a
+           SYSV = os/sysV/libos.a
+            MFB = ddx/mfb/libmfb.a
+            CFB = ddx/cfb/libcfb.a
+             MI = ddx/mi/libmi.a
+            DIX = dix/libdix.a
+            SNF = ddx/snf/libsnf.a
+         APOLLO = ddx/apollo/libapollo.a
+            APC = ddx/apollo/apc/libapc.a
+            SUN = ddx/sun/libsun.a
+          MACII = ddx/macII/libmacII.a
+            TEK = ddx/tek/libtek.a
+         XAULIB = $(TOP)/lib/Xau/libXau.a
+       XDMCPLIB = $(TOP)/lib/Xdmcp/libXdmcp.a
+        SYSLIBS = -lm -ldbm
+
+/**/#
+/**/# This turns off the default rule for compiling .c files because
+/**/# this makefile does not really know how to build it.  This is really
+/**/# just a hack because of sun's version of make and nfs.
+/**/#
+.c.o:
+
+
+
+
+/*****************************************************************************
+ *                                                                           * 
+ *                            To add a new server                            *
+ *                                                                           * 
+ *     1.  Add an #ifdef block at the end of the following list.  It should  *
+ *         determine whether or not a particular server is being built by    *
+ *         checking to see if the symbol X<what>Server is defined:           *
+ *                                                                           * 
+ *             If so, then define a symbol do<what>Server                    * 
+ *             If not, then define X<what>Server to be an empty comment      * 
+ *                                                                           * 
+ *     2.  Add the X<what>Server to the end of the ALL line below.           * 
+ *                                                                           * 
+ *     3.  Add the name of the server to the ALLPOSSIBLE list below.         * 
+ *                                                                           * 
+ *     4.  Add a set of object file definitions and build rules.             * 
+ *                                                                           * 
+ *****************************************************************************/
+
+#ifdef	XqvssServer
+#define doqvssServer
+#else
+#define	XqvssServer /* as nothing */
+#endif
+
+#ifdef	XqdssServer
+#define doqdssServer
+#else
+#define	XqdssServer /* as nothing */
+#endif
+
+#ifdef XmfbpmaxServer
+#define domfbpmaxServer
+#else
+#define XmfbpmaxServer /* as nothing */
+#endif
+
+#ifdef XcfbpmaxServer
+#define docfbpmaxServer
+#else
+#define XcfbpmaxServer /* as nothing */
+#endif
+
+#ifdef	XsunServer
+#define dosunServer
+#else
+#define	XsunServer /* as nothing */
+#endif
+
+#ifdef	XhpServer
+#define dohpServer
+#else
+#define	XhpServer /* as nothing */
+#endif
+
+#ifdef	XapolloServer
+#define doapolloServer
+#else
+#define	XapolloServer /* as nothing */
+#endif
+
+#ifdef	XibmServer
+#define doibmServer
+#else
+#define	XibmServer /* as nothing */
+#endif
+
+#ifdef	XtekServer
+#define dotekServer
+#else
+#define	XtekServer /* as nothing */
+#endif
+
+#ifdef	XmacIIServer
+#define domacIIServer
+#else
+#define	XmacIIServer /* as nothing */
+#endif
+
+/*****************************************************************************
+ *                                                                           *
+ * Now add X<what>Server to the ALL line; do NOT split across lines or you   *
+ * will confuse make.  Then, add the name of the server to ALLPOSSIBLE.      *
+ *                                                                           *
+/*****************************************************************************
+ */
+ALL = XqvssServer XqdssServer XsunServer XapolloServer XibmServer XhpServer XmacIIServer XmfbpmaxServer XcfbpmaxServer XtekServer
+ALLPOSSIBLE = Xqvss Xqdss Xsun Xibm Xapollo Xhp XmacII Xcfbpmax Xmfbpmax Xtek
+
+all: $(ALL)
+
+
+/*****************************************************************************
+ *		  Build rule blocks, add one for each server                 *
+ *****************************************************************************/
+
+
+#ifdef doqvssServer
+/**/#
+/**/# qvss server
+/**/#
+#define need_dix
+#define need_ddx_snf
+#define need_ddx_mi
+#define need_ddx_mfb
+#define need_ddx_dec_lk201
+#define need_ddx_dec_qvss
+#define need_os_42bsd
+QVSSDIRS = dix ddx/snf ddx/mi ddx/mfb ddx/dec/lk201 ddx/dec/qvss os/4.2bsd
+QVSSOBJS = ddx/dec/qvss/init.o ddx/dec/qvss/qvss_io.o ddx/dec/lk201/lk201.o\
+	$(FONTUTIL)
+QVSSLIBS = $(DIX) $(BSD) $(SNF) $(MFB) $(MI) $(EXTENSIONS)
+XqvssDIRS = $(QVSSDIRS)
+
+ServerTarget(Xqvss,$(EXTDIR) $(FONTUTILDIR) $(QVSSDIRS),$(QVSSOBJS),$(QVSSLIBS),$(SYSLIBS))
+#endif /* doqvssServer */
+
+
+
+#ifdef doqdssServer
+/**/#
+/**/# qdss server
+/**/#
+#define need_dix
+#define need_ddx_snf
+#define need_ddx_mi
+#define need_ddx_mfb
+#define need_ddx_dec_lk201
+#define need_ddx_dec_qdss
+#define need_os_42bsd
+QDSSDIRS = dix ddx/snf ddx/mi ddx/mfb ddx/dec/lk201 ddx/dec/qdss \
+           ddx/dec/qdss/libtl os/4.2bsd
+QDSSOBJS = ddx/dec/qdss/init.o ddx/dec/qdss/qdss_io.o ddx/dec/lk201/lk201.o\
+	$(FONTUTIL)
+QDSSLIBS = ddx/dec/qdss/libqdss.a ddx/dec/qdss/libtl/libtl.a \
+           ddx/dec/qdss/libqdss.a \
+           $(DIX) $(BSD) $(SNF) $(MFB) $(MI) $(EXTENSIONS)
+XqdssDIRS = $(QDSSDIRS)
+
+ServerTarget(Xqdss,$(EXTDIR) $(FONTUTILDIR) $(QDSSDIRS),$(QDSSOBJS),$(QDSSLIBS),$(SYSLIBS))
+#endif /* doqdssServer */
+
+#ifdef domfbpmaxServer
+/**/#
+/**/# mfbpmax server
+/**/#
+#define need_dix
+#define need_ddx_snf
+#define need_ddx_mi
+#define need_ddx_mfb
+#define need_ddx_dec_lk201
+#define need_ddx_dec_mfbpmax
+#define need_os_42bsd
+PMAXMFBDIRS = dix ddx/snf ddx/mi ddx/mfb ddx/dec/lk201 ddx/dec/mfbpmax os/4.2bsd
+PMAXMFBOBJS = ddx/dec/mfbpmax/init.o ddx/dec/mfbpmax/mfbpmax_io.o ddx/dec/lk201/lk201.o\
+	$(FONTUTIL)
+PMAXMFBLIBS = $(DIX) $(BSD) $(SNF) $(MFB) $(MI) $(EXTENSIONS)
+XmfbpmaxDIRS = $(PMAXMFBDIRS)
+
+ServerTarget(Xmfbpmax,$(EXTDIR) $(FONTUTILDIR) $(PMAXMFBDIRS),$(PMAXMFBOBJS),$(PMAXMFBLIBS),$(SYSLIBS))
+#endif /* domfbpmaxServer */
+
+#ifdef docfbpmaxServer
+/**/#
+/**/# cfbpmax server
+/**/#
+#define need_dix
+#define need_ddx_snf
+#define need_ddx_mi
+#define need_ddx_mfb
+#define need_ddx_cfb
+#define need_ddx_dec_lk201
+#define need_ddx_dec_cfbpmax
+#define need_os_42bsd
+PMAXCFBDIRS = dix ddx/snf ddx/mi ddx/mfb ddx/cfb ddx/dec/lk201 ddx/dec/cfbpmax os/4.2bsd
+PMAXCFBOBJS = ddx/dec/cfbpmax/init.o ddx/dec/cfbpmax/cfbpmax_io.o\
+	ddx/dec/cfbpmax/cfbpmaxcolor.o ddx/dec/lk201/lk201.o $(FONTUTIL)
+PMAXCFBLIBS = $(DIX) $(BSD) $(SNF) $(CFB) $(MFB) $(MI) $(EXTENSIONS)
+XcfbpmaxDIRS = $(PMAXCFBDIRS)
+
+ServerTarget(Xcfbpmax,$(EXTDIR) $(FONTUTILDIR) $(PMAXCFBDIRS),$(PMAXCFBOBJS),$(PMAXCFBLIBS),$(SYSLIBS))
+#endif /* docfbpmaxServer */
+
+#ifdef dosunServer
+/**/#
+/**/# sun server
+/**/#
+#if defined(UseSunWindowsInServer) && UseSunWindowsInServer
+SUNWINDOWSLIBS = -lsunwindow -lpixrect
+#endif
+#define need_dix
+#define need_ddx_snf
+#define need_ddx_mi
+#define need_ddx_mfb
+#define need_ddx_cfb
+#define need_ddx_sun
+#define need_os_42bsd
+SUNDIRS = dix ddx/snf ddx/mi ddx/mfb ddx/cfb ddx/sun os/4.2bsd
+SUNOBJS = ddx/sun/sunInit.o $(FONTUTIL)
+SUNLIBS = $(SUN) $(CFB) $(DIX) $(BSD) $(SNF) $(MFB) $(MI) $(EXTENSIONS)
+SUNSYSLIBS = $(SYSLIBS) $(SUNWINDOWSLIBS)
+XsunDIRS = $(SUNDIRS)
+
+ServerTarget(Xsun,$(EXTDIR) $(FONTUTILDIR) $(SUNDIRS),$(SUNOBJS),$(SUNLIBS),$(SUNSYSLIBS))
+
+saber_src_sun:
+	#cd dix
+	#make saber_src
+	#cd ../ddx/snf
+	#make saber_src
+	#cd ../mi
+	#make saber_src
+	#cd ../mfb
+	#make saber_src
+	#cd ../cfb
+	#make saber_src
+	#cd ../sun
+	#make saber_src
+	#cd ../../os/4.2bsd
+	#make saber_src
+	#cd ../../../extensions/server
+	#make saber_src
+	#cd ../../fonts/mkfontdir
+	#make saber_src_server
+	#cd ../../lib/Xau
+	#make saber_src
+	#cd ../../server
+	#load /usr/lib/libm.a
+	#load /usr/lib/libdbm.a
+#endif /* dosunServer */
+
+
+
+#ifdef dohpServer
+/**/#
+/**/# HP server
+/**/#
+#define need_dix
+#define need_ddx_snf
+#define need_ddx_mi
+#define need_ddx_hp
+#define need_os_42bsd
+#define need_os_bsdemul
+HPDIRS = dix ddx/snf ddx/mi ddx/hp os/4.2bsd os/bsdemul
+
+/* set up .o load */
+#ifdef hp9000s300
+HPOBJS = ddx/hp/hp.300.o $(FONTUTIL)
+#else /* 800 */
+HPOBJS = ddx/hp/hp.800.o $(FONTUTIL)
+#endif /* hp9000s300 */
+
+HPLIBS = $(DIX) $(BSD) $(MI) $(EXTENSIONS) $(BSDEMUL)
+#if ServerMallocLib
+HPMALLOCLIB = -lmalloc
+#endif
+HPSYSLIBS = $(SYSLIBS) $(HPMALLOCLIB)
+XhpDIRS = $(HPDIRS)
+
+ServerTarget(Xhp,$(EXTDIR) $(FONTUTILDIR) $(HPDIRS),$(HPOBJS),$(HPLIBS),$(HPSYSLIBS))
+#endif /* dohpServer */
+
+
+#ifdef doibmServer
+/**/#
+/**/# ibm server
+/**/#
+#if SpecialMalloc
+IBMALLOCLIB = ddx/ibm/common/libibmalloc.a
+#else
+IBMALLOCLIB = 
+#endif
+
+#define need_dix
+#define need_ddx_snf
+#define need_ddx_mi
+#define need_ddx_mfb
+#define need_ddx_ibm
+#define need_os_42bsd
+IBMDIRS = dix ddx/snf ddx/mi ddx/mfb ddx/ibm os/4.2bsd
+IBMOBJS = ddx/ibm/common/ibmcomm.o ddx/ibm/common/ibmDate.o $(FONTUTIL)
+IBMLIBS = ddx/ibm/libibm.a $(IBMALLOCLIB) \
+		$(DIX)  $(BSD) $(SNF) $(MFB) $(MI) $(EXTENSIONS)
+IBMSYSLIBS = $(SYSLIBS)
+XibmDIRS = $(IBMDIRS)
+
+ServerTarget(Xibm,$(EXTDIR) $(FONTUTILDIR) $(IBMDIRS),$(IBMOBJS),$(IBMLIBS),$(IBMSYSLIBS))
+#endif /* doibmServer */
+
+
+
+#ifdef doapolloServer
+/**/#
+/**/# apollo server
+/**/#
+#define need_dix
+#define need_ddx_snf
+#define need_ddx_mi
+#define need_ddx_mfb
+#define need_ddx_apollo
+#define need_ddx_apollo_apc
+#define need_os_42bsd
+APOLLODIRS = dix ddx/snf ddx/mi ddx/mfb ddx/apollo ddx/apollo/apc os/4.2bsd
+APOLLOOBJS = ddx/apollo/ap_init.o /sys/traits/io_traits.2 $(FONTUTIL)
+APOLLOLIBS = $(APOLLO) $(APC) $(DIX) $(BSD) $(SNF) $(MFB) $(MI) $(EXTENSIONS)
+XapolloDIRS = $(APOLLODIRS)
+
+ServerTarget(Xapollo,$(EXTDIR) $(FONTUTILDIR) $(APOLLODIRS),$(APOLLOOBJS),$(APOLLOLIBS),$(SYSLIBS))
+#endif /* doapolloServer */
+
+
+
+#ifdef dotekServer
+/**/#
+/**/# tek server
+/**/#
+#define need_dix
+#define need_ddx_snf
+#define need_ddx_mi
+#define need_ddx_cfb
+#define need_ddx_mfb
+#define need_ddx_tek
+#define need_os_42bsd
+TEKDIRS = dix ddx/snf ddx/mi ddx/mfb ddx/cfb ddx/tek os/4.2bsd
+TEKOBJS = ddx/tek/pegInit.o $(FONTUTIL)
+TEKLIBS = $(DIX) $(BSD) $(SNF) $(TEK) $(MFB) $(CFB) $(MI) $(EXTENSIONS)
+XtekDIRS = $(TEKDIRS)
+
+ServerTarget(Xtek,$(EXTDIR) $(FONTUTILDIR) $(TEKDIRS),$(TEKOBJS),$(TEKLIBS),$(SYSLIBS))
+#endif /* dotekServer */
+
+
+
+#ifdef domacIIServer
+/**/#
+/**/# macII server
+/**/#
+#define need_dix
+#define need_ddx_snf
+#define need_ddx_mi
+#define need_ddx_mfb
+#define need_ddx_cfb
+#define need_ddx_macII
+#define need_os_42bsd
+#define need_os_bsdemul
+MACIIDIRS = dix ddx/snf ddx/mi ddx/mfb ddx/cfb ddx/macII os/4.2bsd os/bsdemul
+MACIIOBJS = ddx/macII/macIIInitS.o ddx/macII/macIIColor.o $(FONTUTIL)
+MACIILIBS = $(MACII) $(CFB) $(DIX) $(BSD) $(SNF) $(BSDEMUL) $(MFB) $(MI) $(EXTENSIONS)
+MACIISYSLIBS = $(SYSLIBS)
+XmacIIDIRS = $(MACIIDIRS)
+ 
+ServerTarget(XmacII,$(EXTDIR) $(FONTUTILDIR) $(MACIIDIRS),$(MACIIOBJS),$(MACIILIBS),$(MACIISYSLIBS))
+#endif /* domacIIServer */
+
+
+
+/*****************************************************************************
+ *                                                                           *
+ *			Do not modify rest of Imakefile                      *
+ *                                                                           *
+ *****************************************************************************/
+
+#ifdef need_dix
+#define dir_dix dix
+#else
+#define dir_dix /**/
+#endif
+#ifdef need_os_42bsd
+#define dir_os_42bsd os/4.2bsd
+#else
+#define dir_os_42bsd /**/
+#endif
+#ifdef need_os_bsdemul
+#define dir_os_bsdemul os/bsdemul
+#else
+#define dir_os_bsdemul /**/
+#endif
+
+#ifdef need_ddx_snf
+#define dir_ddx_snf ddx/snf
+#else
+#define dir_ddx_snf /**/
+#endif
+#ifdef need_ddx_mfb
+#define dir_ddx_mfb ddx/mfb
+#else
+#define dir_ddx_mfb /**/
+#endif
+#ifdef need_ddx_mi
+#define dir_ddx_mi ddx/mi
+#else
+#define dir_ddx_mi /**/
+#endif
+#ifdef need_ddx_cfb
+#define dir_ddx_cfb ddx/cfb
+#else
+#define dir_ddx_cfb /**/
+#endif
+
+#ifdef need_ddx_apollo
+#define dir_ddx_apollo ddx/apollo
+#else
+#define dir_ddx_apollo /**/
+#endif
+
+#ifdef need_ddx_apollo_apc
+#define dir_ddx_apollo_apc ddx/apollo/apc
+#else
+#define dir_ddx_apollo_apc /**/
+#endif
+
+#ifdef need_ddx_tek
+#define dir_ddx_tek ddx/tek
+#else
+#define dir_ddx_tek /**/
+#endif
+
+#ifdef need_ddx_dec_lk201
+#define dir_ddx_dec_lk201 ddx/dec/lk201
+#else
+#define dir_ddx_dec_lk201 /**/
+#endif
+#ifdef need_ddx_dec_qdss
+#define dir_ddx_dec_qdss ddx/dec/qdss ddx/dec/qdss/libtl
+#else
+#define dir_ddx_dec_qdss /**/
+#endif
+#ifdef need_ddx_dec_qvss
+#define dir_ddx_dec_qvss ddx/dec/qvss
+#else
+#define dir_ddx_dec_qvss /**/
+#endif
+#ifdef need_ddx_dec_mfbpmax
+#define dir_ddx_dec_mfbpmax ddx/dec/mfbpmax
+#else
+#define dir_ddx_dec_mfbpmax /**/
+#endif
+#ifdef need_ddx_dec_cfbpmax
+#define dir_ddx_dec_cfbpmax ddx/dec/cfbpmax
+#else
+#define dir_ddx_dec_cfbpmax /**/
+#endif
+#ifdef need_ddx_hp
+#define dir_ddx_hp ddx/hp
+#else
+#define dir_ddx_hp /**/
+#endif
+#ifdef need_ddx_ibm
+#define dir_ddx_ibm ddx/ibm
+#else
+#define dir_ddx_ibm /**/
+#endif
+#ifdef need_ddx_macII
+#define dir_ddx_macII ddx/macII
+#else
+#define dir_ddx_macII /**/
+#endif
+#ifdef need_ddx_sun
+#define dir_ddx_sun ddx/sun
+#else
+#define dir_ddx_sun /**/
+#endif
+
+OURDIX = dir_dix
+OURDDX = dir_ddx_snf dir_ddx_mfb dir_ddx_cfb dir_ddx_mi
+OUROS = dir_os_42bsd dir_os_bsdemul
+DECDDX = dir_ddx_dec_lk201 dir_ddx_dec_qdss dir_ddx_dec_qvss dir_ddx_dec_mfbpmax dir_ddx_dec_cfbpmax
+HPDDX = dir_ddx_hp
+OTHERDDX = dir_ddx_apollo dir_ddx_apollo_apc dir_ddx_ibm dir_ddx_macII dir_ddx_sun dir_ddx_tek
+
+SUBDIRS = $(OURDIX) $(OURDDX) $(OUROS) $(DECDDX) $(HPDDX) $(OTHERDDX)
+
+     ALLDDXDIRS = ddx/snf ddx/mi ddx/cfb ddx/mfb \
+                  ddx/dec/lk201 ddx/dec/qvss ddx/dec/qdss ddx/dec/qdss/libtl \
+                  ddx/sun \
+                  ddx/apollo ddx/apollo/apc \
+                  ddx/ibm \
+		  ddx/dec/mfbpmax ddx/dec/cfbpmax \
+                  ddx/hp ddx/tek \
+                  ddx/macII
+      ALLOSDIRS = os/4.2bsd os/bsdemul
+     ALLSUBDIRS = dix $(ALLDDXDIRS) $(ALLOSDIRS)
+
+InstallMultiple($(ALL),$(BINDIR))
+
+#define IHaveSubdirs
+
+DependSubdirs($(SUBDIRS))
+MakeLintLibSubdirs($(SUBDIRS))
+LintSubdirs($(SUBDIRS))
+
+NamedCleanSubdirs(AllClean,$(ALLSUBDIRS))
+NamedTagSubdirs(AllTags,$(ALLSUBDIRS))
+
+MakeMakeSubdirs($(ALLSUBDIRS),AllMakefiles)
+
+
+
+$(EXTDIR) $(FONTUTILDIR) $(SUBDIRS): FRC
+	@cd $@ ; echo "making $@"; \
+	$(MAKE) $(MFLAGS) PassCDebugFlags all
+
+clean::
+	$(RM) $(ALLPOSSIBLE)
+
+InstallManPage(Xserver,$(MANDIR))
+
+install::
+	@echo "************************************************************"
+	@echo "* "
+	@echo "*     Don't forget to create a link called $(BINDIR)/X"
+	@echo "*     pointing to the default server, if there is one."
+	@echo "* "
+	@echo "************************************************************"
+
+FRC:

@@ -1,0 +1,14 @@
+#!/bin/nawk -f
+# Fix a dvi2ps TeXPSfonts.map file to work as a dvips psfonts.map file.
+{	if (NF == 2) {
+            printf("%-20s\t\"/%s\"\n",$1,$2);
+	} else if (NF >= 3) {
+	    printf("%-20s\t%s",$1,$3);
+	    for (i=4;i<=NF;i++) {
+		printf(" %s",$i);
+	    }
+	    printf("\n");
+	} else {
+	    print "Don't know what to do with " $1 ":" $2 ":" $3 ":" $4 ":" $5 "  " NF
+	}
+}

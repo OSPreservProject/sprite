@@ -1,0 +1,45 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ds3100:1.1 sun3:1.1 sun4nw:1.1 symm:1.1 spur:1.1;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     91.10.29.17.50.45;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@# This file is used by scvs and contains symbolic link
+# information.  Each line is of the form "link target"
+# $Header
+console.h                ../sun4.md/console.h
+devConsole.c             ../sun4.md/devConsole.c
+devGraphics.c            ../sun4.md/devGraphics.c
+devInit.c                ../sun4.md/devInit.c
+devInt.h                 ../sun4.md/devInt.h
+devMouse.c               ../sun4.md/devMouse.c
+devMultibus.h            ../sun4.md/devMultibus.h
+devSCSIC90.c             ../ds5000.md/devSCSIC90.c
+devSCSIC90.h             ../ds5000.md/devSCSIC90.h
+devSCSIC90Int.h          ../ds5000.md/devSCSIC90Int.h
+devTtyAttach.c           ../sun4.md/devTtyAttach.c
+devVidSun4.s             ../sun4.md/devVidSun4.s
+devZ8530.c               ../sun4.md/devZ8530.c
+devfb.h                  ../sun4.md/devfb.h
+mouse.h                  ../sun4.md/mouse.h
+ttyAttach.h              ../sun4.md/ttyAttach.h
+z8530.h                  ../sun4.md/z8530.h
+@

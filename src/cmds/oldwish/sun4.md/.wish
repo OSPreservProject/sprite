@@ -1,0 +1,66 @@
+set selectionButton Left
+
+sortFiles alpha
+
+setFields name
+
+bind \Cv {friddle friddle ping}
+bind \Cc {close}
+bind \Cq {quit}
+bind \Ce {exec ls $sel {\n}}
+bind \Cm {exec mx $sel {\n}}
+bind \Cr {redraw}
+bind \Cw {window}
+bind \Co {open $sel}
+bind \Cs {sortFiles}
+bind \Cf {setFields}
+bind \Cg {changeGroup}
+bind \Cd {changeDirectory $sel}
+bind \Ct {exec fstree $sel {\n}}
+
+menu create Control	\
+    {Redraw} - {C-r} - {redraw}	\
+    {sortFiles} - {C-s} - {sortFiles}	\
+    {setFields} - {C-f} - {setFields}	\
+    {ChangeGroup} - {C-g} - {changeGroup}	\
+    {ChangeDirectory $sel} - {C-d} - {changeDirectory $sel}	\
+    {Window} - {C-w} - {window}	\
+    {Open $sel} - {C-o} - {open $sel}	\
+    {Close} - {C-c} - {close}	\
+    {Quit} - {C-q} - {quit}
+    
+menu create Commands	\
+    {ls $sel} - {C-e} - {exec ls $sel {\n}}	\
+    {mx $sel} - {C-m} - {exec mx $sel {\n}}	\
+    {fstree $sel} - {C-t} - {exec fstree $sel {\n}}
+
+defineGroup comparison *.h
+groupBind *.h right {exec mx $pointed {\n}}
+
+defineGroup comparison *.c
+groupBind *.c right {exec mx $pointed {\n}}
+groupBind *.c {shift middle} {exec cc -g -c $pointed {\n}}
+
+defineGroup comparison *.o
+groupBind *.o right {exec strings $pointed >! strings.out; mx strings.out {\n}}
+
+defineGroup comparison *,v 
+defineGroup comparison *.tex
+defineGroup comparison *.ps
+defineGroup comparison *.dvi
+defineGroup comparison *.bib
+defineGroup comparison *.ms
+defineGroup comparison *.me
+#
+# for proc rules, the proc must return 1 if file matches, 0 if not, and < 0
+# for an error.  The argument is the filename.
+#
+defineGroup proc {proc DotFiles filename {
+    return [pattern {!(.) && !(..) && (.*)} $filename]
+}}
+defineGroup proc {proc EverythingElse filename {
+    return [pattern { !(.) && !(..) && !(.*) && !(*.c) && !(*.h) && !(*.o) && !(*,v) && !(*.tex) && !(*.ps) && !(*.dvi) && !(*.bib) && !(*.ms) && !(*.me)} $filename]}
+}
+
+# changeGroup *.c comparison *.h
+# changeGroup *.c comparison *.o

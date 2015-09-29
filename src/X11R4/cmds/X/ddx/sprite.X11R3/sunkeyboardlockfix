@@ -1,0 +1,81 @@
+*** /tmp/,RCSt1003433	Thu Oct 22 09:20:46 1987
+--- sunKbd.c	Thu Oct 22 09:20:27 1987
+***************
+*** 51,57 ****
+--- 51,60 ----
+  #include <stdio.h>
+  #include "Xproto.h"
+  #include "keysym.h"
++ #include "inputstr.h"
+  
++ extern CARD16 keyModifiersList[];
++ 
+  typedef struct {
+      int	    	  trans;          	/* Original translation form */
+  } SunKbPrivRec, *SunKbPrivPtr;
+***************
+*** 365,370 ****
+--- 368,374 ----
+      PtrPrivPtr	  	ptrPriv;
+      int			delta;
+      static xEvent	autoRepeatEvent;
++     BYTE		key;
+  
+      ptrPriv = (PtrPrivPtr) LookupPointerDevice()->devicePrivate;
+  
+***************
+*** 402,421 ****
+  	return;
+      }
+  
+!     /*
+!      * Kill AutoRepeater on any real Kbd event.
+!      */
+!     autoRepeatKeyDown = 0;
+!     if (autoRepeatDebug)
+! 	ErrorF("sunKbdProcessEvent: autoRepeat off\n");
+  
+      xE.u.keyButtonPointer.time = TVTOMILLI(fe->time);
+      xE.u.keyButtonPointer.rootX = ptrPriv->x;
+      xE.u.keyButtonPointer.rootY = ptrPriv->y;
+      xE.u.u.type = ((fe->value == VKEY_UP) ? KeyRelease : KeyPress);
+!     xE.u.u.detail = (fe->id & 0x7F) + sysKbPriv.offset;
+  
+!     if (fe->value == VKEY_DOWN) {	/* turn on AutoRepeater */
+  	if (autoRepeatDebug)
+              ErrorF("sunKbdProcessEvent: VKEY_DOWN\n");
+  	autoRepeatEvent = xE;
+--- 406,438 ----
+  	return;
+      }
+  
+!     key = (fe->id & 0x7F) + sysKbPriv.offset;
+!     if (!keyModifiersList[key])
+!     {
+! 	/*
+! 	 * Kill AutoRepeater on any real non-modifier Kbd event.
+! 	 */
+! 	autoRepeatKeyDown = 0;
+! 	if (autoRepeatDebug)
+! 	    ErrorF("sunKbdProcessEvent: autoRepeat off\n");
+!     }
+  
+      xE.u.keyButtonPointer.time = TVTOMILLI(fe->time);
+      xE.u.keyButtonPointer.rootX = ptrPriv->x;
+      xE.u.keyButtonPointer.rootY = ptrPriv->y;
+      xE.u.u.type = ((fe->value == VKEY_UP) ? KeyRelease : KeyPress);
+!     xE.u.u.detail = key;
+  
+!     if (keyModifiersList[key] & LockMask)
+!     {
+! 	if (xE.u.u.type == KeyRelease)
+! 	    return; /* this assumes autorepeat is not desired */
+! 	if (((DeviceIntPtr)pKeyboard)->down[key >> 3] & (1 << (key & 7)))
+! 	    xE.u.u.type = KeyRelease;
+!     }
+! 
+!     if ((fe->value == VKEY_DOWN) && !autoRepeatKeyDown)
+!     {	/* turn on AutoRepeater */
+  	if (autoRepeatDebug)
+              ErrorF("sunKbdProcessEvent: VKEY_DOWN\n");
+  	autoRepeatEvent = xE;

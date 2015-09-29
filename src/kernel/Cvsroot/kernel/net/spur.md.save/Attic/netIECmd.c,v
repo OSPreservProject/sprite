@@ -1,0 +1,239 @@
+head     8.0;
+branch   ;
+access   ;
+symbols  sun4nw:8.0 symm:8.0 spur:8.0 newlib:8.0;
+locks    ; strict;
+comment  @ * @;
+
+
+8.0
+date     88.11.11.18.28.22;  author douglis;  state Stable;
+branches ;
+next     1.3;
+
+1.3
+date     88.10.27.13.30.45;  author mendel;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.08.01.17.20.32;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.30.10.02.44;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@SPUR ethernet driver.
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@/* netIECmd.c -
+ *
+ * Routines to execute commands for the Intel 82586 device driver.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/net/spur.md/RCS/netIECmd.c,v 1.3 88/10/27 13:30:45 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+#include "list.h"
+#include "vm.h"
+#include "sync.h"
+#include "netIEInt.h"
+#include "net.h"
+#include "netInt.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetIECheckSCBCmdAccept --
+ *
+ *	Check to see if the scb command was accepted.  Panic if not accepted.
+ *	This routine is always called with interrupts disabled.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ */
+
+void
+NetIECheckSCBCmdAccept(scbPtr)
+    NetIESCB	*scbPtr;
+{
+    int	 i;
+    unsigned short *cmdWordPtr;
+
+     cmdWordPtr = ((unsigned short *) scbPtr)+1;
+
+    for (i = 0; i < 5; i++) {
+	NET_IE_DELAY((*cmdWordPtr == 0));
+
+	if ( *cmdWordPtr != 0) {
+	    printf("Warning: Intel: scb command not accepted\n");
+	} else {
+	    return;
+	}
+    }
+    panic("NetIECmd: scb command not accepted\n");
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetIEExecCommand --
+ *
+ *	Execute a simple Intel command.  This is done by executing the command
+ *	and then waiting until it completes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NetIEExecCommand(cmdPtr)
+    register	NetIECommandBlock	*cmdPtr;
+{
+    /*
+     * Initialize the command header.
+     */
+
+    *(short *) cmdPtr = 0;	/* Clear the status bits. */
+    cmdPtr->endOfList = 1;	/* Mark this as the end of the list. */
+    cmdPtr->interrupt = 1;	/* Have the command unit interrupt us when
+				   it is done. */
+
+    /*
+     * Start the command unit.
+     */
+
+    netIEState.scbPtr->cmdUnitCmd = NET_IE_CUC_START;
+    NET_IE_CHANNEL_ATTENTION;
+    NetIECheckSCBCmdAccept(netIEState.scbPtr);
+
+    /*
+     * Wait for the command to complete.
+     */
+
+    NET_IE_DELAY(cmdPtr->cmdDone && netIEState.scbPtr->cmdDone &&
+	         netIEState.scbPtr->cmdUnitNotActive);
+    if (!cmdPtr->cmdDone ||
+        !netIEState.scbPtr->cmdDone ||
+	!netIEState.scbPtr->cmdUnitNotActive) {
+	panic("Intel: Could not execute a simple command: %d %d %d\n", 
+			cmdPtr->cmdDone, netIEState.scbPtr->cmdDone,
+			netIEState.scbPtr->cmdUnitNotActive);
+	return;
+    }
+
+    /*
+     * Ack the the command completion and the command unit going not active.
+     */
+
+    netIEState.scbPtr->ackCmdDone = 1;
+    netIEState.scbPtr->ackCmdUnitNotActive = 1;
+
+    NET_IE_CHANNEL_ATTENTION;
+    NetIECheckSCBCmdAccept(netIEState.scbPtr);
+}
+@
+
+
+1.3
+log
+@
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: netIECmd.c,v 1.2 88/08/01 17:20:32 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+1.2
+log
+@Fixed to handle SPUR's padding and alignment of structures.
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: netIECmd.c,v 1.1 88/06/30 10:02:44 mendel Exp $ SPRITE (Berkeley)";
+a19 1
+#include "sys.h"
+d57 1
+a57 1
+	    Sys_Panic(SYS_WARNING, "Intel: scb command not accepted\n");
+d62 1
+a62 1
+    Sys_Panic(SYS_FATAL, "Intel: scb command not accepted\n");
+d113 1
+a113 1
+	Sys_Panic(SYS_FATAL, "Intel: Could not execute a simple command: %d %d %d\n", 
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: netIECmd.c,v 5.1 88/05/05 17:58:33 brent Exp $ SPRITE (Berkeley)";
+d50 1
+d52 2
+d55 1
+a55 1
+	NET_IE_DELAY((*(short *) &(scbPtr->cmdWord) == 0));
+d57 1
+a57 1
+	if (*(short *) &(scbPtr->cmdWord) != 0) {
+d101 1
+a101 1
+    netIEState.scbPtr->cmdWord.cmdUnitCmd = NET_IE_CUC_START;
+d109 2
+a110 2
+    NET_IE_DELAY(cmdPtr->cmdDone && netIEState.scbPtr->statusWord.cmdDone &&
+	         netIEState.scbPtr->statusWord.cmdUnitNotActive);
+d112 2
+a113 2
+        !netIEState.scbPtr->statusWord.cmdDone ||
+	!netIEState.scbPtr->statusWord.cmdUnitNotActive) {
+d115 2
+a116 2
+			cmdPtr->cmdDone, netIEState.scbPtr->statusWord.cmdDone,
+			netIEState.scbPtr->statusWord.cmdUnitNotActive);
+d124 2
+a125 2
+    netIEState.scbPtr->cmdWord.ackCmdDone = 1;
+    netIEState.scbPtr->cmdWord.ackCmdUnitNotActive = 1;
+@

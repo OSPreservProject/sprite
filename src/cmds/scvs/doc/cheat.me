@@ -1,0 +1,283 @@
+'\"  This is a cheat sheet for using SCVS.
+.fo ''%''
+.lp
+.sz +4
+.ce
+\fBSCVS Cheat Sheet\fP
+.sz -4
+.sp
+.ce
+November 3, 1991
+.sp
+.pp
+The SCVS Cheat Sheet explains some of the standard uses of \fBscvs\fP.
+If you want to do something that is not covered here you should 
+refer to the
+man pages for \fBscvs\fP, \fBcvs\fP, and \fBrcs\fP.
+\fBScvs\fP manages source directory trees called \fImodules\fP.
+\fBScvs\fP modules for the kernel correspond to what we've traditionally
+called modules, e.g. net, timer, mach, etc.
+The "master" copy of the modules is stored in the \fIrepository\fP,
+which is a directory tree of RCS files rooted at 
+\fC/sprite/src/kernel/Cvsroot\fP.
+In order to modify the source for a module you must first get your
+own copy of the module.
+Make your changes in your copy, and when you are satisfied with them
+commit your changes to the repository.
+Your changes are not applied to the repository until you commit them,
+at which time they become the "latest" version of the sources.
+Throughout this cheat sheet the term "latest version" refers to 
+the current
+version of the sources in the repository.
+.(b
+.ip "\fBHow do I get a copy of a module?\fP"
+.sp
+Copies of kernel modules are usually kept in your kernel build directory
+(\fC/sprite/src/kernel/\fP\fIusername\fP). 
+In this directory type \fBscvs co\fP \fImodule\fP.
+A subdirectory called \fImodule\fP will be created,
+and it will be populated
+with the current version of the module.  
+You will be told about other users that have a copy of the module
+checked out, including any other copies you might have.
+You may want to check with these people to make sure that your changes
+will be compatible.
+If you don't intend to commit your changes to the repository
+then you should use the \fB\-i\fP option so that other
+users are not told about your copy.
+.sp
+After the checkout is complete you need to run \fBmkmf\fP in your copy
+to create a Makefile, dependencies.mk, etc.
+.sp
+It is ok to re-checkout a module if you
+checked it out before and still have the source tree.
+.)b
+
+.(b
+.ip "\fBHow do I get information about the status of my copy of a module?\fP"
+.sp
+Once you have a copy of a module you may want some information about
+the files in your copy, 
+like which ones you've modified and
+which ones are out-of-date with the latest version. 
+\fBscvs info\fP will tell you what
+you want to know.  Here's what its output means:
+.(l
+\fBU\fP \fIfile\fP	Your copy of \fIfile\fP needs to be updated.
+\fBM\fP \fIfile\fP	You've modified \fIfile\fP.
+\fBC\fP \fIfile\fP	You've modified \fIfile\fP, and it is also out-of-date.
+\fBA\fP \fIfile\fP	You've added \fIfile\fP.
+\fBR\fP \fIfile\fP	You've removed \fIfile\fP.
+\fBD\fP \fIfile\fP	Somebody deleted \fIfile\fP from the repository.
+.)l
+.)b
+
+.(b
+.ip "\fBWhat if I want more information about my copy of a file?\fP"
+.sp
+The command \fBscvs status\fP \fIfile\fP 
+will give you RCS information about the your copy of a file and
+the latest version of the file.
+Here is
+some sample output for the file \fItimerInt.h\fP.
+.(l
+File:	timerInt.h
+From:	9.8	Fri Sep 13 15:04:52 1991 timerInt.h
+RCS:	9.9	/sprite/src/kernel/Cvsroot/kernel/timer/timerInt.h,v
+.)l
+.ip
+The \fIFrom:\fP line tells you that your copy of \fItimerInt.h\fP 
+came from RCS version 9.8 of that file, and that you created the
+copy on Friday, September 13, 1991 at 15:04:52.  The \fIRCS:\fP
+line tells you that the latest RCS version of the file is 9.9,
+and it gives you the full path to the RCS file, not that you would
+ever need it.
+.)b
+
+.(b
+.ip "\fBHow do I get the RCS log for my copy of a file?\fP"
+.sp
+\fBScvs log\fP \fIfile\fP will print out the RCS log for the file.
+.)b
+
+.(b
+.ip "\fBHow do I run diff on my copy of a file?\fP"
+.sp
+\fBScvs diff\fP \fIfile\fP will do a \fBrcsdiff\fP between your
+copy of a file and the version from which it came.  If you want
+to do a diff between your version and the latest version you
+should do \fBscvs diff \-R\fP \fIfile\fP.
+You can also do diffs between various versions of the file by specifying
+the standard \fB\-r\fP options.
+.)b
+
+.(b
+.ip "\fBHow do I bring my copy up-to-date with the latest version?\fP"
+.sp
+If your copy of the sources is out-of-date 
+with the latest version in the repository
+you can update it using
+\fBscvs update\fP [\fImodules|subdirs|files\fP].  
+If you don't specify any files it will update all
+files in the current directory and its subdirectories, otherwise it will
+only update the files or subdirectories
+you listed.  If \fBscvs update\fP discovers that
+you have modified a file, and the copy of the file in the repository 
+has changed also, it will use \fBrcsmerge\fP to try and merge the changes.
+If this happens you will want to look at the file to make sure the
+changes were compatible.  The output from \fBscvs update\fP is similar to
+that of \fBscvs info\fP:
+.(l
+\fBU\fP \fIfile\fP	Your copy of \fIfile\fP was updated.
+\fBM\fP \fIfile\fP	Your changes to \fIfile\fP were merged with the new version.
+\fBC\fP \fIfile\fP	Your changes to \fIfile\fP were merged, but there was a conflict.
+\fBA\fP \fIfile\fP	You've added \fIfile\fP.
+\fBR\fP \fIfile\fP	You've removed \fIfile\fP.
+\fBD\fP \fIfile\fP	\fIfile\fP was deleted from your sources.
+.)l
+.ip
+An "update" target has been added to the Makefile for kernel modules
+so that \fBpmake update\fP will run \fBscvs update\fP.
+This is useful for updating all modules in \fC/sprite/src/kernel\fP.
+.)b
+
+.(b
+.ip "\fBWho else has a copy of the same module?\fP"
+.sp
+When you check out a module you will be told about other users who
+also have a copy.
+You can also find out by doing \fBscvs who\fP [\fImodules\fP].
+.)b
+
+.(b
+.ip "\fBWhat if I just want to look at the sources for a module?\fP"
+.sp
+Copies of all kernel modules are kept in \fC/sprite/src/kernel\fP.
+These copies are read-only so don't try to modify them. 
+These copies can be used for browsing, as well as for building the
+object files that are used to produce official kernels.
+.)b
+
+.(b
+.ip "\fBHow do I add a new file to a module?\fP"
+.sp
+\fBScvs\fP only deals with files it knows about.  
+If \fBscvs\fP hasn't been told about a file it will 
+be ignored by any \fBscvs\fP commands.
+To add a file to a module create the file in your copy of the module,
+then type
+\fBscvs add\fP \fIfile\fP.  
+The file must exist in order to be added.
+The file will not be added to the repository until you \fBcommit\fP your
+changes.  
+.)b
+
+.(b
+.ip "\fBHow do I add a new subdirectory to a module?\fP"
+.sp
+Subdirectories are added using \fBscvs add\fP 
+in your copy of a module
+just like files, except
+that you will be asked if you really want to do this.  If the subdirectory
+contains any files they must be added individually (\fBadd\fP is not recursive).
+.)b
+
+.(b
+.ip "\fBHow do I remove a file from a module?\fP"
+.sp
+In your copy of a module type
+\fBscvs remove\fP \fIfile\fP to remove a file.
+If the file still exists it will be deleted.
+The file will not be removed from the repository until you \fBcommit\fP your
+changes.
+.)b
+
+.(b
+.ip "\fBOops. I just accidently removed a file from my copy!\fP"
+.sp
+If you haven't \fBcommit\fPted your changes yet, you can retrieve 
+the file using \fBscvs add\fP \fIfile\fP.
+It will give you the version of the file you originally checked out.
+.)b
+
+.(b
+.ip "\fBHow do I add a new module to the repository?\fP"
+.sp
+Don't try this at home.  Send mail to jhh@sprite.
+.)b
+
+.(b
+.ip "\fBHow do I undo my changes to a file?\fP"
+.sp
+Currently the best way to do this is to use
+\fBscvs remove\fP \fIfile\fP, followed by \fBscvs add\fP \fIfile\fP. 
+This will give you the version of the file you originally checked out.
+.)b
+
+.(b
+.ip "\fBHow do I commit my changes to a module?\fP"
+.sp
+After you have made your changes to a module 
+you need to commit them into the repository.
+There are several steps in committing your changes:
+.np
+Verify that your copy is up-to-date and it works properly.
+.np
+Lock the module(s) using \fBscvs lock\fP [\fImodules\fP].
+Locking the modules prevents other users from committing changes
+at the same time.
+.np
+Use \fBscvs commit\fP [\fIfiles\fP] (\fBcommit\fP is usually
+abbreviated
+as \fBci\fP) to commit your changes.  
+Each \fBscvs ci\fP command allows you to specify one log message
+(either using \fB\-m\fP or by bringing up an editor).  
+If you want all the files you modified
+to have the same message use \fBscvs ci\fP
+without any options,
+otherwise you must run \fBscvs ci\fP once for each message and
+corresponding list of files.
+.np
+As you commit your changes the copy of the sources
+in \fC/sprite/src/kernel/\fP\fImodule\fP
+will be updated.
+These copies are used to build kernels, so you need to recompile any
+source files you may have changed.
+To do this cd to \fC/sprite/src/kernel/\fP\fImodule\fP.
+Run \fBmkmf\fP, followed by \fBpmake\fP.
+Make sure the resulting object files produce a working kernel.
+Then run \fBpmake install\fP.
+Be sure to compile and install for all machine types.
+If the sources don't build a working kernel then you
+may have forgotten to \fBadd\fP 
+or \fBremove\fP a file.
+.np
+Unlock the modules using \fBscvs unlock\fP [\fImodules\fP].
+Don't forget to do this.
+.)b
+
+.(b
+.ip "\fBWhat do I do when I'm done with my copy?\fP"
+.sp
+\fBscvs done\fP
+lets \fBscvs\fP know that you are done with your copy,
+so that other users will no longer be told about it.
+The \fB\-d\fP option will delete your copy.
+Use the \fB\-d\fP option with care.
+If you deleted your copy using \fBrm\fP without running \fBscvs done\fP
+first then \fBscvs\fP will think you still have a copy.
+You set it straight with \fBscvs done\fP \fIpathname\fP,
+where \fIpathname\fP is the full pathname of the copy you used to have.
+.)b
+
+.(b
+.ip "\fBHow do I unlock a locked module?\fP"
+.sp
+If \fBsvcs\fP is killed unexpectedly it will leave 
+locks on any modules
+it was processing at the time.
+If you have an unwanted lock on a module you can remove it with
+\fBscvs unlock\fP [\fImodules\fP].
+If you want to remove all locks on a module, even those owned by other
+people, you can do so with \fBscvs unlock -a\fP [\fImodules\fP].
+.)b

@@ -1,0 +1,18 @@
+/dev/rsd14g:UsageArray: FreeBlocks wrong; is 502923 should be 503238
+Non-printable characters in name for file 4869 in directory src/cmds/sospexample/sun4.md/
+Entry *?? (7) now has nameLength 3, recordLength 380, fileNumber 4869.
+File 19344 is unreferenced
+File 34138 is unreferenced
+File 37885 is unreferenced
+File 37888 is unreferenced
+File 52919 is unreferenced
+File 56454 is unreferenced
+6 unreferenced files
+/dev/rsd14g: Bad magic number 0xffffffff for summary region of segment 554
+15:21:15.930:Read LFS checkpoint from /dev/rsd14g
+15:21:26.000:Checking files
+15:25:33.390:Checking usage array
+15:25:33.400:Checking directory tree
+15:26:15.450:Checking summary regions
+15:27:27.090:Reporting errors
+/dev/rsd14g: 1 major errors 1 minor errors

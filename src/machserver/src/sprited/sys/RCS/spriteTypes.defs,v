@@ -1,0 +1,362 @@
+head     1.10;
+branch   ;
+access   ;
+symbols  srv030:1.10 srv028:1.9 srv027:1.9 srv026:1.9 srv024:1.9 srv022:1.9 srv021:1.9 srv019:1.9 srv018:1.9 srv016:1.9 srv015:1.9 srv014:1.9 srv012:1.8 srv011:1.8 srv010:1.8 srv008:1.8 srv007:1.8 srv006:1.8 srv005:1.8 srv004:1.8 srv003:1.8 srv002:1.8 srv001:1.8;
+locks    ; strict;
+comment  @@;
+
+
+1.10
+date     92.07.16.18.07.28;  author kupfer;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     92.06.10.15.24.47;  author kupfer;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     92.03.13.20.46.59;  author kupfer;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     92.03.12.17.27.23;  author kupfer;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     92.02.27.16.07.39;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.12.01.21.58.03;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.11.14.10.02.06;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.10.04.11.37.47;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.08.15.14.20.44;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.07.22.12.36.32;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@MIG type definitions for Sprite server.
+@
+
+
+1.10
+log
+@Add Sys_CharArray.
+@
+text
+@/* 
+ * spriteTypes.defs --
+ *
+ *	MIG type definitions for the Sprite server.
+ *
+ * Copyright 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+/* $Header: /user5/kupfer/spriteserver/src/sprited/sys/RCS/spriteTypes.defs,v 1.9 92/06/10 15:24:47 kupfer Exp Locker: kupfer $ */
+
+#include <mach/std_types.defs>
+
+/* XXX want to import regular Sprite header files where possible. */
+
+
+/* 
+ * Definitions for sprite.h:
+ */
+
+import <sprite.h>;
+
+type ReturnStatus = int;
+
+
+/* 
+ * Definitions for spriteTime.h:
+ */
+
+import <spriteTime.h>;
+
+type Time = struct[2] of int;
+
+
+/* 
+ * Definitions for sys/types.h:
+ */
+
+import <sys/types.h>;
+
+type off_t = int;
+
+
+/* 
+ * Definitions for <user/proc.h>:
+ */
+
+import <user/proc.h>;
+
+type Proc_PID = unsigned;
+type Proc_TimerInterval = struct[2] of Time;
+type Proc_StringOffset = int;	/* offset into string table */
+type Proc_OffsetTable = array[] of Proc_StringOffset;
+type Proc_Strings = array[] of char;
+
+
+/* 
+ * Definitions for <user/fs.h>:
+ */
+
+#include <user/fs.h>
+import <user/fs.h>;
+
+/* 
+ * Note that a variable-length array results in 2 C parameters: one 
+ * for the array itself, and one for the length of the array.  
+ * Grumble. 
+ */
+type Fs_PathName = array[*:FS_MAX_PATH_NAME_LENGTH] of char;
+
+type Fs_Attributes = struct[FS_ATTRIBUTES_SIZE] of int;
+type Fs_Device = struct[FS_DEVICE_SIZE] of int;
+
+
+/* 
+ * Definitions for <user/test.h>
+ */
+
+#include <user/test.h>
+import <user/test.h>;
+    
+type Test_MessageBuffer = (MACH_MSG_TYPE_STRING_C, 8 * TEST_BUFFER_SIZE);
+
+
+/* 
+ * Definitions for <user/sig.h>
+ */
+
+#include <user/sig.h>
+import <user/sig.h>;
+
+type Sig_Action = struct[SIG_ACTION_SIZE] of int;
+
+
+/* 
+ * Definitions for <user/sys.h>.
+ */
+
+import <user/sys.h>;
+
+/* 
+ * Arbitrary-length array of bytes for use by any call that wants to pass a 
+ * byte array via the MIG stub instead of using copyin/copyout.
+ */
+type Sys_CharArray = array[] of char;
+@
+
+
+1.9
+log
+@Add Proc_StringOffset, Proc_OffsetTable, and Proc_Strings.
+@
+text
+@d16 1
+a16 1
+/* $Header: /user5/kupfer/spriteserver/src/sprited/sys/RCS/spriteTypes.defs,v 1.8 92/03/13 20:46:59 kupfer Exp Locker: kupfer $ */
+d99 13
+@
+
+
+1.8
+log
+@Don't import the sprited proc.h.
+@
+text
+@d16 1
+a16 1
+/* $Header: /user5/kupfer/spriteserver/src/sprited/sys/RCS/spriteTypes.defs,v 1.7 92/03/12 17:27:23 kupfer Exp Locker: kupfer $ */
+d58 3
+@
+
+
+1.7
+log
+@Put proc declarations after more basic types.
+@
+text
+@d16 1
+a16 1
+/* $Header$ */
+d51 1
+a51 1
+ * Definitions for proc.h and user/proc.h:
+d54 1
+a54 1
+import <proc.h>;
+a56 3
+
+import <user/proc.h>;
+
+@
+
+
+1.6
+log
+@Snapshot.  Can kill, suspend, and resume processes.
+@
+text
+@d16 1
+a16 2
+/* $Header: /r3/kupfer/spriteserver/src/sprited/sys/RCS/spriteTypes.defs,v */
+/* 1.2 91/08/15 14:20:44 kupfer Exp Locker: kupfer $ */
+d24 1
+a24 1
+ * Definitions for proc.h:
+a25 4
+import <proc.h>;
+
+type Proc_PID = unsigned;
+
+a26 3
+/* 
+ * Definitions for sprite.h:
+ */
+d35 1
+d44 1
+d48 13
+@
+
+
+1.5
+log
+@Snapshot.  FS appears to work.
+@
+text
+@d83 9
+@
+
+
+1.4
+log
+@Snapshot. net, rpc, recov modules added.
+@
+text
+@d27 1
+a30 2
+import <proc.h>;
+
+d35 1
+a38 2
+import <sprite.h>;
+
+d43 1
+a46 2
+import <spriteTime.h>;
+
+d51 1
+a54 2
+import <sys/types.h>;
+
+d57 1
+a57 8
+ * Definitions for spriteTypesTemp.h.  (Note that we can't call it 
+ * spriteTypes.h, because that confuses pmake into thinking that it's 
+ * mechanically derived from this defs file.)
+ */
+
+/* 
+ * XXX should get this from the same place that the .h file gets it, 
+ * and fix things so that the Makefile dependencies are correct.
+a58 1
+#define FS_MAX_PATH_NAME_LENGTH	4096
+d60 2
+a61 3
+/* XXX make the 1024 a symbolic constant of some sort */
+    
+type Test_MessageBuffer = (MACH_MSG_TYPE_STRING_C, 8*1024);
+d70 2
+a71 1
+import <spriteTypesTemp.h>;
+d73 9
+@
+
+
+1.3
+log
+@Snapshot.  fork/exec work.
+@
+text
+@d52 9
+@
+
+
+1.2
+log
+@Snapshot.
+@
+text
+@d16 2
+a17 1
+/* $Header$ */
+d19 2
+d23 28
+d52 3
+a54 1
+ * Definitions for spriteTypes.h:
+d74 1
+a74 1
+import <spriteTypes.h>;
+a76 7
+/* 
+ * Definitions for sprite.h:
+ */
+
+type ReturnStatus = int;
+
+import <sprite.h>;
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 14
+d31 2
+d34 6
+a39 1
+type MessageBuffer = (MACH_MSG_TYPE_STRING_C, 8*1024);
+d41 8
+a48 1
+/* XXX want to import regular Sprite header files where possible. */
+d50 1
+a50 1
+import "spriteTypes.h";
+@

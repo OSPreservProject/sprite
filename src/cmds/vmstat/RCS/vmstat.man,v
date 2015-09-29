@@ -1,0 +1,429 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.3
+date     90.07.03.16.26.45;  author mendel;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.12.30.10.28.58;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.12.22.13.20.02;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@Added decStation 3100 based stats.
+@
+text
+@' $Header: /sprite/src/cmds/vmstat/RCS/vmstat.man,v 1.2 88/12/30 10:28:58 ouster Exp Locker: mendel $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS VMSTAT cmds
+.BS
+.SH NAME
+vmstat \- print virtual memory stats
+.SH SYNOPSIS
+\fBvmstat \fR[\fB\-svmP\fR] [\fB\-t \fIinterval\fR] [\fB\-T \fImaxSkip\fR] [\fB\-l \fIlines\fR] [\fB\-fp \fIthreshold\fR]
+.SH OPTIONS
+.IP "\fB\-s\fR" 14
+Print out statistics about all in-use segments instead of overall vm stats.
+.IP "\fB\-v\fR" 14
+Print out extra information when printing overall vm stats.
+.IP "\fB\-t \fIinterval\fR" 14
+Print out a line of terse vm stats every \fIinterval\fR seconds.  If 
+\fIinterval\fR is specified as 0 then only a single line is printed.
+.IP "\fB\-m\fR" 14
+Print out the number of modified pages instead of kernel stack pages when using
+the \fB\-t\fR option.
+.IP "\fB\-l \fInumLines\fR" 14
+Print out \fInumLines\fR lines before printing the header again when
+using the \fB\-t\fR option.
+The default is 25 lines.
+.IP "\fB\-f \fIthreshold\fR" 14
+Number of page faults per second before should print out stats with 
+the \fB\-t\fR option.
+No lines will be printed unless more than \fIthreshold\fR page faults occur
+or the \fB\-p\fR or \fB\-T\fR options are in effect.
+.IP "\fB\-p \fIthreshold\fR" 14
+Number of page-outs per second before should print out stats with the 
+\fB\-t\fR option.
+No lines will be printed unless more than \fIthreshold\fR page-outs occur
+or the \fB\-f\fR or \fB\-T\fR options are in effect.
+.IP "\fB\-T \fImaxSkip\fR" 14
+Maximum number of times to skip printing out statistics because of the
+\fB\-f\fR and \fB\-p\fR options.
+.IP "\fB\-P\fI" 14
+Print out statistics since the last time that they were printed, not
+since the last interval.  Used with the \fB\-t\fR option.
+.BE
+
+.SH DESCRIPTION
+.LP
+This command prints out virtual memory statistics.  There are three
+possible formats and types of information that are printed.
+The default is to print overall virtual memory
+statistics; the volume of statistics that are printed is controlled by
+the \fB\-v\fR option.  If the \fB\-s\fR option is specified then statistics about
+all actively used segments are printed instead.  If the \fB\-t\fR option
+is specified then a terse line of information is printed at regular
+intervals;  the \fB\-TlfpPm\fR options control how the data is formatted
+and how often it is printed.
+The next three sections describe the three printing formats in more detail.
+.SH "GENERAL STATISTICS"
+By default \fBvmstat\fR prints out general statistics about the virtual memory 
+system.  If the \fB\-v\fR option is specified then more detailed statistics
+will be printed.  The normal information that is printed is divided into
+5 sections: memory use, segment use, page fault statistics, page-out 
+statistics and copy-on-write activity.  The memory use section is titled
+``MEMORY STATS'' and contains 6 lines of information with the following
+titles and information:
+.IP "\fIPage Size\fR" 15
+The logical page size; this is a multiple of the physical page size.
+.IP "\fIMemory Size\fR" 15
+The amount of physical memory in Kbytes that is available on the machine.
+.IP "\fIKernel Memory\fR" 15
+The amount of memory in Kbytes that is being used by the kernel.  There are
+four pieces of information on this line (from left to right):
+the total amount of memory used by the kernel, the portion of the total
+that is used for kernel 
+code and data, the portion used for kernel stacks and the portion that is 
+kept in emergency reserve.
+.IP "\fIUser Memory\fR" 15
+The amount of memory in Kbytes that is being used by user processes.  There
+are 3 pieces of information on this line (from left to right):
+the total amount of memory used by user processes, the portion of the total
+that is dirty and the portion that is clean. 
+.IP "\fIFS Memory\fR" 15
+The amount of memory in Kbytes that is being used by the file system.
+The 3 pieces of information on this line are (from left to right): the
+total amount of memory used by the file system, the minimum amount of memory
+that has ever been used and the maximum amount that has been used.
+.IP "\fIFree Memory\fR" 15
+The amount of memory in Kbytes that is not being used by anyone.
+.LP
+The second section of statistics is entitled ``SEGMENT STATS''.  This section
+contains four lines of information, one each for active code segments,
+inactive code segments, heap segments and stack segments.  Each contains
+the number of segments of the given type and the amount of memory in 
+Kbytes that is being used by the particular type of segment.
+.LP
+The third section of statistics is entitled ``FAULT STATS''.  The first
+line contains the total number of faults.  The second line divides the
+total faults into the 7 different types of faults:
+.IP "\fIZero\fR" 10
+Pages that are filled with zeroes.
+.IP "\fIFS\fR" 10
+Pages that are filled from an object file in the file system.
+.IP "\fISwap\fR" 10
+Pages that are filled from a swap file.
+.IP "\fIQuick\fR" 10
+Page faults that were handled merely by validating the page in hardware.
+.IP "\fICOW\fR" 10
+Copy-on-write faults.
+.IP "\fICOR\fR" 10
+Copy-on-reference faults.
+.IP "\fICOR-mod\fR" 10
+Faults that occured because pages that were filled because of copy-on-reference
+faults were marked as read-only.  This is done to compare copy-on-reference
+to copy-on-write (see \fIvmcmd\fR for details).
+.LP
+The third line divides the faults into the different segments that the
+faults occured in.  The last line is the number of faults that collided with
+another process faulting on the same page.
+.LP
+The fourth section which is entitled ``PAGE-OUTS'' contains the number of
+pages that were written to swap space.
+.LP
+The last section is entitled ``COPY-ON-WRITE'' and contains statistics
+about copy-on-write and copy-on-reference behavior.  The information in
+this section is presented as the number of faults that occured divided
+by the number of copy-on-write or copy-on-reference pages.  Statistics
+are presented for both heap and stack segments separately (the entries
+are labeled \fIHeap\fR and \fIStack\fR respectively) and for the sum
+of the heap and stack statistics (labeled \fITot\fR).  The first two
+lines contain information about copy-on-write (COW) behavior, the second
+two about copy-on-reference (COR) behavior and the last two 
+about the percentage
+of pages that were copied because of copy-on-reference faults that were
+eventually modified (COR-mod).  The information about COW behavior contains
+an additional statistic labeled \fIQuick\fR which is the number of 
+copy-on-write faults that were handled by merely changing the protection;
+no copy was required.
+.LP
+When the \fB\-v\fR option is specified additional results are presented.
+These results are more obscure and are probably only of interest to those who
+understand the internals of the Sprite virtual memory system.  The first
+additional statistic is a measurement of the need for modify bits
+and is given under the ``MEMORY STATS'' section.  This line of statistics
+which is labeled \fIMod page stats\fR gives three bits of information.
+The first entry (labeled \fIPot-mod\fR) is the number of
+page frames that were being actively used by heap and stack segments
+that were taken away from the segment and given to another segment; since
+these segments are writable, the pages in these segments are potentially
+modified.
+The second entry (labeled \fINot-mod\fR) is the number of potentially modified
+pages that were clean.  The last entry (labeled 
+\fINot-hard-mod\fR) is the number of potentially modified pages that did
+not have the hardware modify bit set; pages can be marked as modified by
+the virtual memory system (e.g. zero-filled pages) even though they do not
+have the modify bit set by the hardware.
+.LP
+The second extra set of statistics is under the ``PAGE-OUTS'' section.  The
+first extra line which is labeled \fIClean-wait\fR is the number of times that
+processes that were exiting had to wait because a page that they were
+freeing was being cleaned.  The second line labeled \fICleaner starts\fR 
+is the number of times that a page cleaner was started up to write out
+pages.
+.LP
+The remaining extra statistics that are printed with the \fB\-v\fR option
+are under entirely different sections.  The first section which is
+entitled ``ALLOCATION STATS'' gives statistics about the allocation of
+memory.  The first line which is labeled \fIVm allocs\fR gives the
+following information (from left to right): the total number of pages that
+were allocated, the portion of this total that came from the free list,
+the portion that came from the file system and the portion that came from
+the allocate list.  The second line which is labeled \fIVM-FS stats\fR gives
+statistics about the virtual memory and file system negotiation.  The
+first two entries give the number
+of times that the file system asked the virtual memory system for the
+age of its oldest page (labeled \fIFS-asked\fR) and the number of these 
+times that a free page was available (labeled \fIHad-free-page\fR).
+The second two entries give the number of pages that the file system added
+to its cache and the number of pages that it deleted from its cache
+(labeled \fIFS-map\fR and \fIFS-unmap\fR respectively).
+.LP
+The next two lines of statistics under the ``ALLOCATION STATS'' section
+contains information about searching the memory lists.  The
+first line gives how many times that the lists were searched for pages and
+how many times the memory was found on the free list and how many times
+it was found on the allocation list (labeled \fIFree\fR and \fIIn-use\fR
+respectively).  The second line gives information about why multiple
+iterations through the allocation list were required; most of the time
+the first element on the list can be used.  This line contains the
+following information from left to right: the total number of extra searches,
+the portion of extra searches that were required because
+the page frame was locked (labeled \fILock\fR), the page frame was
+referenced (\fIlabeled \fIRef\fR) or the page frame was dirty
+(\fIDirty\fR).
+.LP
+The next section of statistics is entitled ``LIST STATS''.  This
+section gives the current number of pages that are
+on each of the four memory list.
+.LP
+The next section is labeled ``PAGE MAPPING STATS''.  This section gives
+the number of times a process had to wait because the fixed number of slots
+that are used to map user pages into the kernel's virtual address spacce
+were all in use.
+.LP
+The last section is entitled ``HARDWARE STATS'' and contains
+information that depends on the hardware.  For Sun workstations it
+contains statistics about many times one of the 8 hardware contexts had
+to be taken away from one process and given to another and the number
+of times that a hardware PMEG had to be taken away from one segment and
+given to another. For MIPS R2000/R3000 based machines such as
+DecStations, the number of times TLB pids were stolen from active processes
+is reported.
+.SH "SEGMENT STATISTICS"
+.LP
+When the \fI-s\fR option is given to \fBvmstat\fR then statistics about all 
+in use segments are printed.  There are 6 columns of information:
+.IP \fISEG-NUM\fR 20
+The segment number.
+.IP \fITYPE\fR 20
+The type of segment.  The segment type can be
+\fIInactive\fR for inactive code segments or \fICode\fR, \fIHeap\fR  or
+\fIStack\fR for the other three types of segments.
+.IP \fISIZE\fR 20
+The total size of the segment's virtual addres space in Kbytes.
+.IP \fIRES-SIZE\fR 20
+The amount of physical memory occupied by the segment in Kbytes.
+.IP \fINUM-REFS\fR 20
+The number of processes that are actively using this segment.
+.IP \fIOBJECT-FILE-NAME\fR 20
+The name of the object file that the code segment is being demand loaded
+from.
+.LP
+After the information about each individual segment is printed a summary
+of the segment information is printed.
+.SH "STATISTICS AT REGULAR INTERVALS"
+.LP
+If the \fB\-t \fIinterval\fR option is given to \fBvmstat\fR then a line of 
+terse statistics is printed out at regular intervals.  If \fIinterval\fR is 0 
+then only a single line of statistics is printed.  If \fIinterval\fR is
+greater than 0 then a line of statistics is printed out every
+\fIinterval\fR seconds.  If the \fB\-f \fIfaultThreshold\fR and/or
+\fB\-p \fIpageoutThreshold\fR options are used then statistics will be
+checked every \fIinterval\fR seconds but only will be printed out
+if the number of page faults in the last interval is greater than 
+\fIfaultThreshold\fR or the number of pageouts is greater than 
+\fIpageoutThreshold\fR.  If the \fB\-T \fImaxSkip\fR option is used then
+statistics will be printed out at least every \fImaxSkip\fR intervals
+regardless whether or not enough page-outs or page faults have occured.
+.LP
+All memory use statistics are printed in units of 1024 bytes.
+Each line contains 10 columns of information:
+.IP \fIAVAIL\fR 10
+The total amount of physical memory available.
+.IP \fIFREE\fR 10
+The amount of memory that is not being used by anyone.
+.IP \fIUSER\fR 10
+The amount of memory that is being used by user processes.
+.IP \fIKMEM\fR 10
+The amount of memory that is being used by the kernel for code and data.
+.IP \fIKSTK\fR 10
+The amount of memory that is being used for kernel stacks.
+.IP \fIFS$\fR 10
+The size of the file system cache.
+.IP \fIPF-NUM\fR 10
+The number of page faults that have occured. 
+.IP \fIPF-SWP\fR 10
+The number of page faults that were filled from swap space.
+.IP \fIPF-FS\fR 10
+The number of page faults that were filled from the file system.
+.IP \fIPOUTS\fR 10
+The number of pages that were written to swap space.
+.LP
+If the \fB\-m\fR option is specified then the \fIKSTK\fR column will be
+replaced by a column labeled \fIMOD%\fR which contains the percentage
+of user memory that is modified.  The number of kernel stack pages
+will be added into the statistics under the \fIKMEM\fR column.
+.LP
+By default a new column header line will be printed after 25 lines of
+output.  The \fB\-l \fIlines\fR option can be used to force the header line
+to be printed after \fIlines\fR lines of output are printed.
+.LP
+The number of page faults and page-outs that are printed are by default
+the number since the last interval.  However, many intervals can
+be skipped because of the \fB\-f\fR and \fB\-p\fR options.  The
+\fB\-P\fR option will force \fBvmstat\fR to print out the number of faults and
+pageouts since the last time that a line was printed instead of since the 
+last interval.
+.SH KEYWORDS
+virtual memory, statistics
+@
+
+
+1.2
+log
+@More format upgrades.
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/vmstat/RCS/vmstat.man,v 1.1 88/12/22 13:20:02 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d205 3
+a207 1
+given to another.
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+' $Header: vmstat,v 1.1 88/08/15 15:53:07 nelson Exp $ SPRITE (Berkeley)
+d8 1
+a8 1
+\fBvmstat \fR[\fB-svmP\fR] [\fB-t \fIinterval\fR] [\fB-T \fImaxSkip\fR] [\fB-l \fIlines\fR] [\fB-fp \fIthreshold\fR]
+d10 1
+a10 1
+.IP "\fB-s\fR" 14
+d12 1
+a12 1
+.IP "\fB-v\fR" 14
+d14 1
+a14 1
+.IP "\fB-t \fIinterval\fR" 14
+d17 1
+a17 1
+.IP "\fB-m\fR" 14
+d19 2
+a20 2
+the \fB-t\fR option.
+.IP "\fB-l \fInumLines\fR" 14
+d22 1
+a22 1
+using the \fB-t\fR option.
+d24 1
+a24 1
+.IP "\fB-f \fIthreshold\fR" 14
+d26 1
+a26 1
+the \fB-t\fR option.
+d28 2
+a29 2
+or the \fB-p\fR or \fB-T\fR options are in effect.
+.IP "\fB-p \fIthreshold\fR" 14
+d31 1
+a31 1
+\fB-t\fR option.
+d33 2
+a34 2
+or the \fB-f\fR or \fB-T\fR options are in effect.
+.IP "\fB-T \fImaxSkip\fR" 14
+d36 2
+a37 2
+\fB-f\fR and \fB-p\fR options.
+.IP "\fB-P\fI" 14
+d39 1
+a39 1
+since the last interval.  Used with the \fB-t\fR option.
+d48 2
+a49 2
+the \fB-v\fR option.  If the \fB-s\fR option is specified then statistics about
+all actively used segments are printed instead.  If the \fB-t\fR option
+d51 1
+a51 1
+intervals;  the \fB-TlfpPm\fR options control how the data is formatted
+d55 2
+a56 2
+By default vmstat prints out general statistics about the virtual memory 
+system.  If the \fB-v\fR option is specified then more detailed statistics
+d135 1
+a135 1
+When the \fB-v\fR option is specified additional results are presented.
+d160 1
+a160 1
+The remaining extra statistics that are printed with the \fB-v\fR option
+d208 1
+a208 1
+When the \fI-s\fR option is given to vmstat then statistics about all 
+d230 1
+a230 1
+If the \fB-t \fIinterval\fR option is given to vmstat then a line of 
+d234 2
+a235 2
+\fIinterval\fR seconds.  If the \fB-f \fIfaultThreshold\fR and/or
+\fB-p \fIpageoutThreshold\fR options are used then statistics will be
+d239 1
+a239 1
+\fIpageoutThreshold\fR.  If the \fB-T \fImaxSkip\fR option is used then
+d266 1
+a266 1
+If the \fB-m\fR option is specified then the \fIKSTK\fR column will be
+d272 1
+a272 1
+output.  The \fB-l \fIlines\fR option can be used to force the header line
+d277 2
+a278 2
+be skipped because of the \fB-f\fR and \fB-p\fR options.  The
+\fB-P\fR option will force vmstat to print out the number of faults and
+@

@@ -1,0 +1,855 @@
+\input texinfo
+@setfilename gdb.info
+@c $Id: gdb.texinfo,v 2.45 1991/08/01 00:02:27 pesch Exp $
+@c THIS MANUAL REQUIRES TEXINFO-2 macros and info-makers to format properly.
+@c
+@c NOTE: this manual is marked up for preprocessing with a collection
+@c of m4 macros called "pretex.m4".  If you see _if__ and _fi__
+@c scattered around the source, you have the full source before
+@c preprocessing; if you don't, you have the source configured for
+@c machine specific architectures (and you can of course get the full source,
+@c with all configurations, from wherever you got this).
+@tex
+\def\$#1${{#1}}  % Kluge: collect RCS revision info without $...$
+\xdef\manvers{\$Revision: 2.45 $}  % For use in headers, footers too
+@end tex
+@c
+@syncodeindex ky cp
+@c FOR UPDATES LEADING TO THIS DRAFT, GDB CHANGELOG CONSULTED BETWEEN:
+@c Wed Jul 31 12:06:29 1991  John Gilmore  ( at cygint.cygnus.com)
+@c Sat Dec 22 02:51:40 1990  John Gilmore  ( at cygint)
+@ifinfo
+This file documents the GNU debugger GDB.
+
+Copyright (C) 1988, 1989, 1990, 1991 Free Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+@ignore
+Permission is granted to process this file through TeX and print the
+results, provided the printed document carries copying permission
+notice identical to this one except for the removal of this paragraph
+(this paragraph not being relevant to the printed manual).
+
+@end ignore
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that the
+section entitled ``GNU General Public License'' is included exactly as
+in the original, and provided that the entire resulting derived work is
+distributed under the terms of a permission notice identical to this
+one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that the section entitled ``GNU General Public License'' may be
+included in a translation approved by the Free Software Foundation
+instead of in the original English.
+@end ifinfo
+@smallbook
+@setchapternewpage odd
+@settitle Using GDB (v4.0)
+@iftex
+@finalout
+@end iftex
+@titlepage
+@title{Using GDB}
+@subtitle{A Guide to the GNU Source-Level Debugger}
+@sp 1
+@c Maybe crank this up to "Fourth Edition" when released at FSF
+@c @subtitle Third Edition---GDB version 4.0
+@subtitle GDB version 4.0
+@subtitle July 1991
+@author{Richard M. Stallman@qquad @hfill Free Software Foundation}
+@author{Roland H. Pesch@qquad @hfill Cygnus Support}
+@page
+@tex
+{\parskip=0pt
+\hfill rms\@ai.mit.edu, pesch\@cygnus.com\par
+\hfill {\it Using GDB}, \manvers\par
+\hfill \TeX{}info \texinfoversion\par
+}
+@end tex
+
+@vskip 0pt plus 1filll
+Copyright @copyright{} 1988, 1989, 1990, 1991 Free Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that the
+section entitled ``GNU General Public License'' is included exactly as
+in the original, and provided that the entire resulting derived work is
+distributed under the terms of a permission notice identical to this
+one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that the section entitled ``GNU General Public License'' may be
+included in a translation approved by the Free Software Foundation
+instead of in the original English.
+@end titlepage
+@page
+
+@node Top, Summary, (dir), (dir)
+@ifinfo
+This file describes version 4.0 of GDB, the GNU symbolic debugger.
+@end ifinfo
+
+@menu
+* Summary::			Summary of GDB
+* New Features::		New Features in GDB version 4.0
+* Sample Session::		A Sample GDB Session
+* Invocation::			Getting In and Out of GDB
+* Commands::			
+* Running::			Running Programs Under GDB
+* Stopping::			Stopping and Continuing
+* Stack::			Examining the Stack
+* Source::			Examining Source Files
+* Data::			Examining Data
+* Symbols::			Examining the Symbol Table
+* Altering::			Altering Execution
+* GDB Files::		
+* Targets::			Specifying a Debugging Target 
+* Controlling GDB::		Controlling GDB
+* Sequences::			Canned Sequences of Commands
+* Emacs::			Using GDB under GNU Emacs
+* GDB Bugs::			Reporting Bugs in GDB
+* Renamed Commands::		
+* Installing GDB::		Installing GDB
+* Copying::			GNU GENERAL PUBLIC LICENSE
+* Index::			Index
+ --- The Detailed Node Listing ---
+
+Summary of GDB
+
+* Free Software::		Free Software
+* Contributors::		Contributors to GDB
+
+Getting In and Out of GDB
+
+* Starting GDB::		Starting GDB
+* Leaving GDB::			Leaving GDB
+* Shell Commands::		Shell Commands
+
+Starting GDB
+
+* File Options::		Choosing Files
+* Mode Options::		Choosing Modes
+
+GDB Commands
+
+* Command Syntax::		Command Syntax
+* Help::			Getting Help
+
+Running Programs Under GDB
+
+* Compilation::			Compiling for Debugging
+* Starting::			Starting your Program
+* Arguments::			Your Program's Arguments
+* Environment::			Your Program's Environment
+* Working Directory::		Your Program's Working Directory
+* Input/Output::		Your Program's Input and Output
+* Attach::			Debugging an Already-Running Process
+* Kill Process::		Killing the Child Process
+
+Stopping and Continuing
+
+* Breakpoints::			Breakpoints, Watchpoints, and Exceptions
+* Continuing and Stepping::	Resuming Execution
+* Signals::			Signals
+
+Breakpoints, Watchpoints, and Exceptions
+
+* Set Breaks::			Setting Breakpoints
+* Set Watchpoints::		Setting Watchpoints
+* Exception Handling::		Breakpoints and Exceptions
+* Delete Breaks::		Deleting Breakpoints
+* Disabling::			Disabling Breakpoints
+* Conditions::			Break Conditions
+* Break Commands::		Breakpoint Command Lists
+* Breakpoint Menus::		Breakpoint Menus
+* Error in Breakpoints::	
+
+Examining the Stack
+
+* Frames::			Stack Frames
+* Backtrace::			Backtraces
+* Selection::			Selecting a Frame
+* Frame Info::			Information on a Frame
+
+Examining Source Files
+
+* List::			Printing Source Lines
+* Search::			Searching Source Files
+* Source Path::			Specifying Source Directories
+* Machine Code::		Source and Machine Code
+
+Examining Data
+
+* Expressions::			Expressions
+* Variables::			Program Variables
+* Arrays::			Artificial Arrays
+* Output formats::		Output formats
+* Memory::			Examining Memory
+* Auto Display::		Automatic Display
+* Print Settings::		Print Settings
+* Value History::		Value History
+* Convenience Vars::		Convenience Variables
+* Registers::			Registers
+* Floating Point Hardware::	Floating Point Hardware
+
+Altering Execution
+
+* Assignment::			Assignment to Variables
+* Jumping::			Continuing at a Different Address
+* Signaling::			Giving the Program a Signal
+* Returning::			Returning from a Function
+* Calling::			Calling your Program's Functions
+
+GDB's Files
+
+* Files::			Commands to Specify Files
+* Symbol Errors::		Errors Reading Symbol Files
+
+Specifying a Debugging Target 
+
+* Active Targets::		Active Targets
+* Target Commands::		Commands for Managing Targets
+* Remote::			Remote Debugging
+
+Remote Debugging
+
+* i960-Nindy Remote::		
+* EB29K Remote::		
+* VxWorks Remote::		
+
+GDB with a Remote i960 (Nindy)
+
+* Nindy Startup::		Startup with Nindy
+* Nindy Options::		Options for Nindy
+* Nindy reset::			Nindy Reset Command
+
+GDB with a Remote EB29K
+
+* Comms (EB29K)::		Communications Setup
+* gdb-EB29K::			EB29K cross-debugging
+* Remote Log::			Remote Log
+
+GDB and VxWorks
+
+* VxWorks connection::		Connecting to VxWorks
+* VxWorks download::		VxWorks Download
+* VxWorks attach::		Running Tasks
+
+Controlling GDB
+
+* Prompt::			Prompt
+* Editing::			Command Editing
+* History::			Command History
+* Screen Size::			Screen Size
+* Numbers::			Numbers
+* Messages/Warnings::		Optional Warnings and Messages
+
+Canned Sequences of Commands
+
+* Define::			User-Defined Commands
+* Command Files::		Command Files
+* Output::			Commands for Controlled Output
+
+Reporting Bugs in GDB
+
+* Bug Criteria::		Have You Found a Bug?
+* Bug Reporting::		How to Report Bugs
+@end menu
+
+@node Summary, New Features, Top, Top
+@unnumbered Summary of GDB
+
+The purpose of a debugger such as GDB is to allow you to see what is
+going on ``inside'' another program while it executes---or what another
+program was doing at the moment it crashed.  
+
+GDB can do four main kinds of things (plus other things in support of
+these) to help you catch bugs in the act:
+
+@itemize @bullet
+@item
+Start your program, specifying anything that might affect its behavior.
+
+@item
+Make your program stop on specified conditions.
+
+@item
+Examine what has happened, when your program has stopped.
+
+@item
+Change things in your program, so you can experiment with correcting the
+effects of one bug and go on to learn about another.
+@end itemize
+
+GDB can be used to debug programs written in C and C++.  Pascal support
+is being implemented, and Fortran support will be added when a GNU
+Fortran compiler is ready.
+
+@menu
+* Free Software::		Free Software
+* Contributors::		Contributors to GDB
+@end menu
+
+@node Free Software, Contributors, Summary, Summary
+@unnumberedsec Free Software
+GDB is @dfn{free software}, protected by the GNU General Public License (GPL).
+The GPL gives you the freedom to copy or adapt a licensed
+program---but every person getting a copy also gets with it the
+freedom to modify that copy (which means that they must get access to
+the source code), and the freedom to distribute further copies.
+Typical software companies use copyrights to limit your freedoms; the
+Free Software Foundation uses the GPL to preserve these freedoms.
+
+Fundamentally, the General Public License is a license which says that
+you have these freedoms and that you can't take these freedoms away
+from anyone else.
+
+@c FIXME: (passim) go through all xrefs, expanding to use text headings
+For full details, @pxref{Copying}.
+@node Contributors,  , Free Software, Summary
+@unnumberedsec Contributors to GDB
+
+Richard Stallman was the original author of GDB, and of many other GNU
+programs.  Many others have contributed to its development.  This
+section attempts to credit major contributors.  One of the virtues of
+free software is that everyone is free to contribute to it; with
+regret, we cannot actually acknowledge everyone here.  The file
+@file{ChangeLog} in the GDB distribution approximates a blow-by-blow
+account.
+
+Changes much prior to version 2.0 are lost in the mists of time.
+
+@quotation
+@emph{Plea:} Additions to this section are particularly welcome.  If you
+or your friends (or enemies; let's be evenhanded) have been unfairly
+omitted from this list, we would like to add your names!
+@end quotation
+
+So that they may not regard their long labor as thankless, we
+particularly thank those who shepherded GDB through major releases:
+John Gilmore (release 4.0); Jim Kingdon (releases 3.9, 3.5, 3.4, 3.3);
+and Randy Smith (releases 3.2, 3.1, 3.0).  As major maintainer of GDB
+for some period, each contributed significantly to the structure,
+stability, and capabilities of the entire debugger.
+
+Richard Stallman, assisted at various times by Pete TerMaat, Chris
+Hanson, and Richard Mlynarik, handled releases through 2.8.
+
+Michael Tiemann is the author of most of the GNU C++ support in GDB,
+with significant additional contributions from Per Bothner.  James
+Clark wrote the GNU C++ demangler.  Early work on C++ was by Peter
+TerMaat (who also did much general update work leading to release 3.0).
+
+GDB 4.0 uses the BFD subroutine library to examine multiple
+object-file formats; BFD was a joint project of V. Gumby
+Henkel-Wallace, Rich Pixley, Steve Chamberlain, and John Gilmore.
+
+David Johnson wrote the original COFF support; Pace Willison did
+the original support for encapsulated COFF.
+
+Adam de Boor and Bradley Davis contributed the ISI Optimum V support.
+Per Bothner, Noboyuki Hikichi, and Alessandro Forin contributed MIPS
+support.  Jean-Daniel Fekete contributed Sun 386i support.  Chris
+Hanson improved the HP9000 support.  Noboyuki Hikichi and Tomoyuki
+Hasei contributed Sony/News OS 3 support.  David Johnson contributed
+Encore Umax support.  Jyrki Kuoppala contributed Altos 3068 support.
+Keith Packard contributed NS32K support.  Doug Rabson contributed
+Acorn Risc Machine support.  Chris Smith contributed Convex support
+(and Fortran debugging).  Jonathan Stone contributed Pyramid support.
+Michael Tiemann contributed SPARC support.  Tim Tucker contributed
+support for the Gould NP1 and Gould Powernode.  Pace Willison
+contributed Intel 386 support.  Jay Vosburgh contributed Symmetry
+support.
+
+Rich Schaefer helped with support of SunOS shared libraries.
+
+Jay Fenlason and Roland McGrath ensured that GDB and GAS agree about
+several machine instruction sets.
+
+Patrick Duval, Ted Goldstein, Vikram Koka and Glenn Engel helped
+develop remote debugging.  Intel Corporation and Wind River Systems
+contributed remote debugging modules for their products.
+
+Brian Fox is the author of the readline libraries providing
+command-line editing and command history.
+
+@node New Features, Sample Session, Summary, Top
+@unnumbered New Features since GDB version 3.5
+
+@table @emph
+@item Targets
+Using the new command @code{target}, you can select at runtime whether
+you are debugging local files, local processes, standalone systems over
+a serial port, realtime systems over a TCP/IP connection, etc.
+Internally, GDB now uses a function vector to mediate access to
+different targets; if you need to add your own support for a remote
+protocol, this makes it much easier.
+
+@item Watchpoints
+GDB now sports watchpoints as well as breakpoints.  You can use a
+watchpoint to stop execution whenever the value of an expression
+changes, without having to predict a particular place in your program
+where this may happen.
+
+@item Object Code Formats
+GDB uses a new scheme called the Binary File Descriptor (BFD)
+Library to permit it to switch dynamically, without reconfiguration or
+recompilation, between different object-file formats.  Formats currently
+supported are COFF, a.out, and the Intel 960 b.out; files may be read as
+.o's, archive libraries, or core dumps.  BFD is available as a
+subroutine library so that other programs may take advantage of it, and
+the other GNU binary utilities are being converted to use it.
+
+@item Configuration
+Compile-time configuration (to select a particular architecture and
+operating system) is much easier.  The script @code{configure} now
+allows you to configure GDB as either a native debugger or a
+cross-debugger. 
+
+@item Interaction
+The user interface to GDB's control variables has been simplified
+and consolidated in two commands, @code{set} and @code{show}.  Output
+lines are now broken at readable places, rather than overflowing onto
+the next line.  You can suppress output of machine-level addresses,
+displaying only source language information.
+
+
+@item Source Language
+GDB now has limited support for C++ exception handling: GDB can
+break when an exception is raised, before the stack is peeled back to
+the exception handler's context.  
+
+@item Command Rationalization
+Many GDB commands have been renamed to make them easier to remember
+and use.  In particular, the subcommands of @code{info} and
+@code{show}/@code{set} are grouped to make the former refer to the state
+of your program, and the latter refer to the state of GDB itself.
+@xref{Renamed Commands}, for details on what commands were renamed.
+
+@item Ports
+GDB has been ported to the following new architectures: AT&T 3b1,
+Acorn RISC machine, HP300 running HPUX, big- and little-endian MIPS
+machines, Motorola 88k, Sun 386i, and Sun 3 running SunOS 4.  In
+addition, the following are supported as targets only: AMD 29k, Intel
+960, and Wind River's VxWorks.
+
+@item Shared Libraries
+GDB 4.0 supports SunOS shared libraries.
+
+@item Work in Progress
+Kernel debugging for BSD and Mach systems; Tahoe and HPPA architecture
+support.
+
+@end table
+
+@node Sample Session, Invocation, New Features, Top
+@chapter A Sample GDB Session
+
+You can use this manual at your leisure to read all about GDB.
+However, a handful of commands are enough to get started using the
+debugger.  This chapter illustrates these commands.
+
+@iftex
+In this sample session, we emphasize user input like this: @i{input},
+to make it easier to pick out from the surrounding output.
+@end iftex
+
+@c FIXME: this example may not be appropriate for some configs, where
+@c FIXME...primary interest is in remote use.
+
+One of the preliminary versions of GNU @code{m4} (a generic macro
+processor) exhibits the following bug: sometimes, when we change its
+quote strings from the default, the commands used to capture one macro's
+definition in another stop working.  In the following short @code{m4}
+session, we define a macro @code{foo} which expands to @code{0000}; we
+then use the @code{m4} builtin @code{defn} to define @code{bar} as the
+same thing.  However, when we change the open quote string to
+@code{<QUOTE>} and the close quote string to @code{<UNQUOTE>}, the same
+procedure fails to define a new synonym @code{baz}:
+
+@smallexample
+$ @i{cd /m4}
+$ @i{./m4}
+@i{define(foo,0000)}
+
+@i{foo}
+0000
+@i{define(bar,defn(`foo'))}
+
+@i{bar}
+0000
+@i{changequote(<QUOTE>,<UNQUOTE>)}
+
+@i{define(baz,defn(<QUOTE>foo<UNQUOTE>))}
+@i{baz}
+@i{C-d}
+m4: End of input: 0: fatal error: EOF in string
+@end smallexample
+
+@noindent
+Let's use GDB to try to see what's going on.
+
+@smallexample
+$ @i{gdb m4}
+Reading symbol data from m4...done.
+(gdb) 
+@end smallexample
+
+@noindent
+GDB reads only enough symbol data to know where to find the rest
+when needed; as a result, the first prompt comes up very quickly.  We
+then tell GDB to use a narrower display width than usual, so
+that examples will fit in this manual.
+
+@smallexample
+(gdb) @i{set width 70}
+@end smallexample
+
+@noindent 
+Let's see how the @code{m4} builtin @code{changequote} works.
+Having looked at the source, we know the relevant subroutine is
+@code{m4_changequote}, so we set a breakpoint there with GDB's
+@code{break} command.
+
+@smallexample
+(gdb) @i{break m4_changequote}
+Breakpoint 1 at 0x62f4: file builtin.c, line 879.
+@end smallexample
+
+@noindent
+Using the @code{run} command, we start @code{m4} running under GDB
+control; as long as control does not reach the @code{m4_changequote}
+subroutine, the program runs as usual:
+
+@smallexample
+(gdb) @i{run}
+Starting program: /work/Editorial/gdb//m4/m4 
+@i{define(foo,0000)}
+
+@i{foo}
+0000
+@end smallexample
+
+@noindent
+To trigger the breakpoint, we call @code{changequote}.  GDB
+suspends execution of @code{m4}, displaying information about the
+context where it stops.
+
+@smallexample
+@i{changequote(<QUOTE>,<UNQUOTE>)}
+
+Breakpoint 1, m4_changequote (argc=3, argv=0x33c70) at builtin.c:879
+879         if (bad_argc(TOKEN_DATA_TEXT(argv[0]), argc, 1, 3))
+@end smallexample
+
+@noindent
+Now we use the command @code{n} (@code{next}) to advance execution to
+the next line of the current function.
+
+@smallexample
+(gdb) @i{n}
+882         set_quotes((argc >= 2) ? TOKEN_DATA_TEXT(argv[1]) : nil,
+@end smallexample
+
+@noindent
+@code{set_quotes} looks like a promising subroutine.  We can go into it
+by using the command @code{s} (@code{step}) instead of @code{next}.
+@code{step} goes to the next line to be executed in @emph{any}
+subroutine, so it steps into @code{set_quotes}.  
+
+@smallexample
+(gdb) @i{s}
+set_quotes (lq=0x34c78 "<QUOTE>", rq=0x34c88 "<UNQUOTE>")
+    at input.c:530
+530         if (lquote != def_lquote)
+@end smallexample
+
+@noindent
+The summary display showing the subroutine where @code{m4} is now
+suspended (and its arguments) is called a stack frame display.  We can
+use the @code{backtrace} command (which can also be spelled @code{bt}),
+to see where we are in the stack: it displays a stack frame for each
+active subroutine.
+
+@smallexample
+(gdb) @i{bt}
+#0  set_quotes (lq=0x34c78 "<QUOTE>", rq=0x34c88 "<UNQUOTE>")
+    at input.c:530
+#1  0x6344 in m4_changequote (argc=3, argv=0x33c70) at builtin.c:882
+#2  0x8174 in expand_macro (sym=0x33320) at macro.c:242
+#3  0x7a88 in expand_token (obs=0x0, t=209696, td=0xf7fffa30)
+    at macro.c:71
+#4  0x79dc in expand_input () at macro.c:40
+#5  0x2930 in main (argc=0, argv=0xf7fffb20) at m4.c:195
+@end smallexample
+
+@noindent
+Let's step through a few more lines to see what happens.  The first two
+times, we can use @samp{s}; the next two times we use @code{n} to avoid
+falling into the @code{xstrdup} subroutine.
+@smallexample
+(gdb) @i{s}
+0x3b5c  532         if (rquote != def_rquote)
+(gdb) @i{s}
+0x3b80  535         lquote = (lq == nil || *lq == '\0') ? def_lquote :\
+ xstrdup(lq);
+(gdb) @i{n}
+536         rquote = (rq == nil || *rq == '\0') ? def_rquote : xstrdup\
+(rq);
+(gdb) @i{n}
+538         len_lquote = strlen(rquote);
+@end smallexample
+
+@noindent
+The last line displayed looks a little odd; let's examine the variables
+@code{lquote} and @code{rquote} to see if they are in fact the new left
+and right quotes we specified.  We can use the command @code{p}
+(@code{print}) to see their values.
+
+@smallexample
+(gdb) @i{p lquote}
+$1 = 0x35d40 "<QUOTE>"
+(gdb) @i{p rquote}
+$2 = 0x35d50 "<UNQUOTE>"
+@end smallexample
+
+@noindent
+@code{lquote} and @code{rquote} are indeed the new left and right quotes.
+Let's look at some context; we can display ten lines of source
+surrounding the current line, with the @code{l} (@code{list}) command.
+
+@smallexample
+(gdb) @i{l}
+533             xfree(rquote);
+534     
+535         lquote = (lq == nil || *lq == '\0') ? def_lquote : xstrdup\
+(lq);
+536         rquote = (rq == nil || *rq == '\0') ? def_rquote : xstrdup\
+(rq);
+537     
+538         len_lquote = strlen(rquote);
+539         len_rquote = strlen(lquote);
+540     @}
+541     
+542     void
+@end smallexample
+
+@noindent
+Let's step past the two lines that set @code{len_lquote} and
+@code{len_rquote}, and then examine the values of those variables.
+
+@smallexample
+(gdb) @i{n}
+539         len_rquote = strlen(lquote);
+(gdb) @i{n}
+540     @}
+(gdb) @i{p len_lquote}
+$3 = 9
+(gdb) @i{p len_rquote}
+$4 = 7
+@end smallexample
+
+@noindent
+That certainly looks wrong, assuming @code{len_lquote} and
+@code{len_rquote} are meant to be the lengths of @code{lquote} and
+@code{rquote} respectively.  Let's try setting them to better values.
+We can use the @code{p} command for this, since it'll print the value of
+any expression---and that expression can include subroutine calls and
+assignments. 
+
+@smallexample
+(gdb) p len_lquote=strlen(lquote)
+$5 = 7
+(gdb) p len_rquote=strlen(rquote)
+$6 = 9
+@end smallexample
+
+@noindent
+Let's see if that fixes the problem of using the new quotes with the
+@code{m4} built-in @code{defn}.  We can allow @code{m4} to continue
+executing with the @code{c} (@code{continue}) command, and then try the
+example that caused trouble initially:
+
+@smallexample
+(gdb) @i{c}
+Continuing.
+
+@i{define(baz,defn(<QUOTE>foo<UNQUOTE>))}
+
+baz
+0000
+@end smallexample
+
+@noindent
+Success!  The new quotes now work just as well as the default ones.  The
+problem seems to have been just the two typos defining the wrong
+lengths.  We'll let @code{m4} exit by giving it an EOF as input.
+
+@smallexample
+@i{C-d}
+Program exited normally.
+@end smallexample
+
+@noindent 
+The message @samp{Program exited normally.} is from GDB; it
+indicates @code{m4} has finished executing.  We can end our GDB
+session with the GDB @code{quit} command.
+
+@smallexample
+(gdb) @i{quit}
+@end smallexample
+
+@node Invocation, Commands, Sample Session, Top
+@chapter Getting In and Out of GDB
+
+@menu
+* Starting GDB::		Starting GDB
+* Leaving GDB::			Leaving GDB
+* Shell Commands::		Shell Commands
+@end menu
+
+@node Starting GDB, Leaving GDB, Invocation, Invocation
+@section Starting GDB
+
+GDB is invoked with the shell command @code{gdb}.  Once started,
+it reads commands from the terminal until you tell it to exit.
+
+You can run @code{gdb} with no arguments or options; but the most
+usual way to start GDB is with one argument or two, specifying an
+executable program as the argument:
+@example
+gdb program
+@end example
+@noindent
+You can also start with both an executable program and a core file specified:
+@example
+gdb program core
+@end example
+
+@noindent
+You can further control how GDB starts up by using command-line
+options.  GDB itself can remind you of the options available:
+@example
+gdb -help
+@end example
+@noindent
+will display all available options and briefly describe their use
+(@samp{gdb -h} is a shorter equivalent).
+
+All options and command line arguments you give are processed
+in sequential order.  The order makes a difference when the
+@samp{-x} option is used.  
+
+@menu
+* File Options::		Choosing Files
+* Mode Options::		Choosing Modes
+@end menu
+
+@node File Options, Mode Options, Starting GDB, Starting GDB
+@subsection Choosing Files
+
+As shown above, any arguments other than options specify an executable
+file and core file; that is, the first argument encountered with no
+associated option flag is equivalent to a @samp{-se} option, and the
+second, if any, is equivalent to a @samp{-c} option.  Many options have
+both long and short forms; both are shown here.  The long forms are also
+recognized if you truncate them, so long as enough of the option is
+present to be unambiguous.  (If you prefer, you can flag option
+arguments with @samp{+} rather than @samp{-}, though we illustrate the
+more usual convention.)
+
+@table @code
+@item -symbols=@var{file}
+@itemx -s @var{file}
+Read symbol table from file @var{file}.
+
+@item -exec=@var{file}
+@itemx -e @var{file}
+Use file @var{file} as the executable file to execute when
+appropriate, and for examining pure data in conjunction with a core
+dump.
+
+@item -se=@var{file}
+Read symbol table from file @var{file} and use it as the executable
+file.
+
+@item -core=@var{file}
+@itemx -c @var{file}
+Use file @var{file} as a core dump to examine.
+
+@item -command=@var{file}
+@itemx -x @var{file}
+Execute GDB commands from file @var{file}.  @xref{Command Files}.
+
+@item -directory=@var{directory}
+@itemx -d @var{directory}
+Add @var{directory} to the path to search for source files.
+@end table
+
+@node Mode Options,  , File Options, Starting GDB
+@subsection Choosing Modes
+
+@table @code
+@item -nx
+@itemx -n
+Do not execute commands from any @file{.gdbinit} initialization files.
+Normally, the commands in these files are executed after all the
+command options and arguments have been processed.  @xref{Command
+Files}.
+
+@item -quiet
+@itemx -q
+``Quiet''.  Do not print the introductory and copyright messages.  These
+messages are also suppressed in batch mode, or if an executable file name is
+specified on the GDB command line.
+
+@item -batch
+Run in batch mode.  Exit with status @code{0} after processing all the command
+files specified with @samp{-x} (and @file{.gdbinit}, if not inhibited).
+Exit with nonzero status if an error occurs in executing the GDB
+commands in the command files.  
+
+Batch mode may be useful for running GDB as a filter, for example to
+download and run a program on another computer; in order to make this
+more useful, the message 
+@example
+Program exited normally.
+@end example
+@noindent
+(which is ordinarily issued whenever a program running under GDB control
+terminates) is not issued when running in batch mode.
+
+@item -cd=@var{directory}
+Run GDB using @var{directory} as its working directory,
+instead of the current directory.
+
+@item -fullname
+@itemx -f
+Emacs sets this option when it runs GDB as a subprocess.  It tells GDB
+to output the full file name and line number in a standard,
+recognizable fashion each time a stack frame is displayed (which
+includes each time the program stops).  This recognizable format looks
+like two @samp{\032} characters, followed by the file name, line number
+and character position separated by colons, and a newline.  The
+Emacs-to-GDB interface program uses the two @samp{\032} characters as
+a signal to display the source code for the frame.
+
+@item -b @var{bps}
+Set the line speed (baud rate or bits per second) of any serial
+interface used by GDB for remote debugging.
+
+@item -tty=@var{device}
+Run using @var{device} for your program's standard input and output.
+@c FIXME: kingdon thinks there's more to -tty.  Investigate.
+@end table
+

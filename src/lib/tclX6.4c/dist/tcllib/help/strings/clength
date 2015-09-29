@@ -1,0 +1,7 @@
+
+
+          clength string
+               Returns the length of string in characters. This
+               command is a shortcut for:
+
+                   string length string

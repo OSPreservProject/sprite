@@ -1,0 +1,42 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    jhh:1.1; strict;
+comment  @@;
+
+
+1.1
+date     92.06.10.17.08.06;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#
+# This file is included by Makefile.  Makefile is generated automatically
+# by mkmf, and this file provides additional local personalization.  The
+# variable SYSMAKEFILE is provided by Makefile;  it's a system Makefile
+# that must be included to set up various compilation stuff.
+#
+
+#
+# Must run set-user-id to root.
+INSTALLFLAGS	+= -o root -m 4775
+
+# Use the uninstalled C library since the installed one doesn't have the
+# correct version of the Mig library and a new one can't be installed just
+# yet.
+LIBS = -lc_g
+
+#include	<$(SYSMAKEFILE)>
+@

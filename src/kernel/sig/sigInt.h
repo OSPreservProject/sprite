@@ -1,0 +1,58 @@
+/*
+ * sigInt.h --
+ *
+ *     Data structures and procedure headers exported by the
+ *     the signal module.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /cdrom/src/kernel/Cvsroot/kernel/sig/sigInt.h,v 9.2 90/10/05 16:15:45 mendel Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _SIGINT
+#define _SIGINT
+
+#include <sprite.h>
+#include <sig.h>
+
+/*
+ * Flags for the sigFlags field in the proc table.
+ *
+ * SIG_PAUSE_IN_PROGRESS	A Sig_Pause is currently being executed.
+ *
+ */
+
+#define	SIG_PAUSE_IN_PROGRESS	0x01
+
+/*
+ * Signals that can be blocked.
+ */
+extern	int	sigCanHoldMask;
+
+/*
+ * Array of bit masks, one for each signal.  The bit mask for a particular
+ * signal is equal to 1 << signal.  This is to allow particular bits be
+ * extracted and set in the signal masks.
+ */
+
+extern	unsigned int	sigBitMasks[];
+
+/*
+ * Array of default actions for signals.
+ */
+
+extern	int	sigDefActions[];
+
+extern	Sync_Lock	sigLock;
+#define LOCKPTR &sigLock
+
+extern void SigClearPendingMask _ARGS_((Proc_ControlBlock *procPtr,int sigNum));
+extern ReturnStatus SigSendRemoteSignal _ARGS_((int hostID, int sigNum, 
+		int code, Proc_PID id, Boolean familyID, Address addr));
+
+extern ReturnStatus SigMigSend _ARGS_((Proc_ControlBlock *procPtr, int sigNum,
+			int code, Address addr));
+
+#endif /* _SIGINT */

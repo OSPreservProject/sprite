@@ -1,0 +1,10 @@
+console 	0 0
+rz0a		4 0
+rz0c		4 2
+etherIP		8 2048
+etherARP	8 2054
+etherRARP	8 2101
+syslog		1 0
+null		6 0
+mouse		9 1
+xcons		0 0

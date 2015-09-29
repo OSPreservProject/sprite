@@ -1,0 +1,1 @@
+../cc/dist/c-decl.c

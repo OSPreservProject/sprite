@@ -1,0 +1,51 @@
+'\" Copyright 1992 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/admin/fsattach/RCS/fsattach.man,v 1.5 91/01/12 16:49:27 jhh Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS LFSREBUILD cmds
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+lfsrebuild \- Rebuild a lfs file system.
+.SH SYNOPSIS
+\fBlfsrebuild\fR [\fIoptions\fR] \fBdeviceName\fP
+.SH OPTIONS
+.IP "\fB\-blockSize\fR \fsize\fP" 15
+Block size of file system.
+.IP "\fB\-superBlockOffset\fR \fIoffset\fP" 15
+Offset into device of the superBlock.
+.IP "\fB\-dump\fR" 15
+Print out a description of the file system.
+.IP "\fB\-showDirLog\fR" 15
+Print out the directory operation log.
+.IP "\fB\-full\fR" 15
+Print a full error analysis.
+.IP "\fB\-verbose\fR" 15
+Output progress messages during execution.
+.IP "\fB\-oldcp\fR" 15
+Uses old checkpoint (?).  This flag makes lfscheck use the opposite
+checkpoint area from the one it would use otherwise.
+.IP "\fB\-shownew\fR" 15
+Print new metadata to stdout.
+.IP "\fB\-doWrites\fR" 15
+Write new metadata to disk.
+.BE
+.SH DESCRIPTION
+.PP
+\fBLfsrebuild\fR rebuilds the file system metadata such as the inode map
+and segment usage table by scanning the summary blocks on disk.   It is 
+intented to be run to recover from errors that destory the inode map or
+segment usage table.   
+.SH BUGS
+This program is one of Mendel's private programs and has some bugs.
+In particular, it may mangle the file system.  Even after a "successful"
+rebuild, there may be dangling files and directories.
+.SH KEYWORDS
+lfs, disk, check, rebuild

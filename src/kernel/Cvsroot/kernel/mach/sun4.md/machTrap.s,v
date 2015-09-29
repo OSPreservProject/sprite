@@ -1,0 +1,5319 @@
+head     9.15;
+branch   ;
+access   ;
+symbols  ds3100:9.14 sun3:9.14 sun4nw:9.13 symm:9.13 spur:9.13 Summer89:9.0;
+locks    ; strict;
+comment  @| @;
+
+
+9.15
+date     93.01.06.20.09.19;  author mgbaker;  state Exp;
+branches ;
+next     9.14;
+
+9.14
+date     92.07.19.22.40.08;  author shirriff;  state Exp;
+branches ;
+next     9.13;
+
+9.13
+date     91.10.18.01.24.42;  author dlong;  state Exp;
+branches ;
+next     9.12;
+
+9.12
+date     91.08.02.18.41.59;  author mgbaker;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     91.07.26.17.04.17;  author shirriff;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     91.03.29.17.56.16;  author shirriff;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     90.10.12.17.41.31;  author mendel;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     90.09.10.12.22.33;  author mendel;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.03.26.12.13.58;  author mgbaker;  state Exp;
+branches 9.7.1.1;
+next     9.6;
+
+9.6
+date     90.01.31.18.07.42;  author mgbaker;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.01.26.19.30.26;  author mgbaker;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.01.11.10.39.54;  author mgbaker;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     89.12.12.18.01.27;  author mgbaker;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.11.29.20.08.51;  author mgbaker;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.11.27.14.51.51;  author mgbaker;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.52.24;  author douglis;  state Stable;
+branches ;
+next     1.42;
+
+1.42
+date     89.09.08.16.21.19;  author mgbaker;  state Exp;
+branches ;
+next     1.41;
+
+1.41
+date     89.08.17.15.19.21;  author mgbaker;  state Exp;
+branches ;
+next     1.40;
+
+1.40
+date     89.08.09.12.34.00;  author mgbaker;  state Exp;
+branches ;
+next     1.39;
+
+1.39
+date     89.05.21.18.24.45;  author mgbaker;  state Exp;
+branches ;
+next     1.38;
+
+1.38
+date     89.05.02.23.26.21;  author mgbaker;  state Exp;
+branches ;
+next     1.37;
+
+1.37
+date     89.04.29.19.51.49;  author mgbaker;  state Exp;
+branches ;
+next     1.36;
+
+1.36
+date     89.04.25.15.28.40;  author mgbaker;  state Exp;
+branches ;
+next     1.35;
+
+1.35
+date     89.04.23.16.31.02;  author mgbaker;  state Exp;
+branches ;
+next     1.34;
+
+1.34
+date     89.04.21.23.14.59;  author mgbaker;  state Exp;
+branches ;
+next     1.33;
+
+1.33
+date     89.04.20.00.00.00;  author mgbaker;  state Exp;
+branches ;
+next     1.32;
+
+1.32
+date     89.04.19.23.20.32;  author mgbaker;  state Exp;
+branches ;
+next     1.31;
+
+1.31
+date     89.04.09.13.23.53;  author mgbaker;  state Exp;
+branches ;
+next     1.30;
+
+1.30
+date     89.04.06.20.34.16;  author mgbaker;  state Exp;
+branches ;
+next     1.29;
+
+1.29
+date     89.04.05.10.46.54;  author mgbaker;  state Exp;
+branches ;
+next     1.28;
+
+1.28
+date     89.03.31.11.59.04;  author mgbaker;  state Exp;
+branches ;
+next     1.27;
+
+1.27
+date     89.03.30.23.24.36;  author mgbaker;  state Exp;
+branches ;
+next     1.26;
+
+1.26
+date     89.03.28.16.09.20;  author mgbaker;  state Exp;
+branches ;
+next     1.25;
+
+1.25
+date     89.03.26.20.16.50;  author mgbaker;  state Exp;
+branches ;
+next     1.24;
+
+1.24
+date     89.03.24.15.39.39;  author mgbaker;  state Exp;
+branches ;
+next     1.23;
+
+1.23
+date     89.03.22.14.07.40;  author mgbaker;  state Exp;
+branches ;
+next     1.22;
+
+1.22
+date     89.03.18.15.40.52;  author mgbaker;  state Exp;
+branches ;
+next     1.21;
+
+1.21
+date     89.03.17.14.51.37;  author mgbaker;  state Exp;
+branches ;
+next     1.20;
+
+1.20
+date     89.03.17.12.32.37;  author mgbaker;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     89.03.17.00.39.43;  author mgbaker;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     89.03.16.22.35.59;  author mgbaker;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     89.03.09.17.08.29;  author mgbaker;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     89.03.06.12.01.53;  author mgbaker;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     89.03.02.00.21.27;  author mgbaker;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     89.02.28.12.49.51;  author mgbaker;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     89.02.24.21.57.28;  author mgbaker;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     89.02.24.16.38.35;  author mgbaker;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     89.02.05.17.33.07;  author mgbaker;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     89.01.31.14.04.09;  author mgbaker;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     89.01.29.17.21.56;  author mgbaker;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     89.01.29.13.10.19;  author mgbaker;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     89.01.25.22.52.26;  author mgbaker;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.01.23.17.55.27;  author mgbaker;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.01.23.00.06.42;  author mgbaker;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.01.22.23.45.00;  author mgbaker;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.01.22.20.33.21;  author mgbaker;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.01.17.18.41.54;  author mgbaker;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.01.17.14.55.03;  author mgbaker;  state Exp;
+branches ;
+next     ;
+
+9.7.1.1
+date     90.08.07.18.13.27;  author mgbaker;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Sixth Kernel!  It now uses my simple versions of the overflow and
+>> underflow trap handlers and my trap preamble and return-from-trap
+>> routines.
+@
+
+
+9.15
+log
+@Can now run sparcstation kernel with no proprietary software floating point
+emulation code.
+@
+text
+@/*
+ * machTrap.s --
+ *
+ *	Traps for sun4.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+.seg	"data"
+.asciz	"$Header: /sprite/src/kernel/Cvsroot/kernel/mach/sun4.md/machTrap.s,v 9.15 93/01/04 21:21:14 shirriff Exp $ SPRITE (Berkeley)"
+.align	8
+.seg	"text"
+
+#include "user/proc.h"
+#include "machConst.h"
+#include "machAsmDefs.h"
+
+.align	8
+.seg	"text"
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MachTrap --
+ *
+ *	All traps except window overflow and window underflow go through
+ *	this trap handler.  This handler is used to save the appropriate
+ *	state, set up the kernel stack, and then jump to the correct
+ *	handler depending on the type of trap.  The handler assumes that
+ *	we have saved the trap %psr into %CUR_PSR_REG before we get here (as
+ *	an instruction in the vector table that made us branch here).
+ *
+ *	Window overflow and underflow jump directly from the vector table
+ *	to their handlers, since in the most common cases they do not need
+ *	to save state and they should be as fast as possible.
+ *
+ *	The scheme of things:
+ *
+ *	1) Check to see if we're in an invalid window.  If so, deal first with
+ *	window overflow.
+ *	2) Now that it's safe to overwrite our out registers, update the stack
+ *	pointer.  If coming from user mode, this means pulling the kernel
+ *	stack pointer out of the state structure and adding the appropriate
+ *	amount.  Otherwise, it means just means adding the appropriate amount to
+ *	our %fp.
+ *	3) Save the rest of the trap state (globals) to the stack.  Note that
+ *	although locals and ins contain trap state (ins are our caller's outs
+ *	which we shouldn't mess up, and the psr and other state registers are
+ *	in our locals) we need not save them explicitly, since they will be
+ *	saved as a part of the normal window overflow and underflow.  There
+ *	are exceptions to this, such as context switching or debugger traps,
+ *	where we must explicitly save the window to the stack, but the
+ *	exceptions must take care of this for themselves.
+ *	4) Re-enable traps and disable interrupts.  Traps must be disabled
+ *	so that if we get another window overflow or underflow,
+ *	we'll be able to deal with it.
+ *	5) Figure out what handler to call and call it.
+ *
+ *	The handler must call our return-from-trap post-amble, rather than
+ *	return here.
+ *
+ *	If a window underflow or overflow trap discovers that it must do
+ *	something tricky, such as call Vm_PageIn, that requires turning
+ *	on traps and interrupts, then it will call MachTrap to save state
+ *	for it.  This is why there are entries in MachTrap for window
+ *	overflow and underflow.  These are the entries to take care of the
+ *	"slow trap" overflows and underflows.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	We make space on our kernel stack to save this trap window.
+ *	If it is a user process entering the kernel, then we make its trapRegs
+ *	field point to this save-window area on the kernel stack.
+ *
+ * ----------------------------------------------------------------------
+ */
+.global	_MachTrap
+_MachTrap:
+	/*
+	 * Save the state registers.  This is safe, since we're saving them
+	 * to local registers and we can do this even if we've entered
+	 * into an invalid window.
+	 * In the vector table that jumps here, we have already saved
+	 * the %psr into %CUR_PSR_REG.  The trap instruction itself saved
+	 * the trap pc and next pc into local registers %CUR_PC_REG and
+	 * %NEXT_PC_REG.  This means we must save only the %tbr and the %y
+	 * registers.
+	 */
+	mov	%tbr, %CUR_TBR_REG
+	mov	%y, %CUR_Y_REG
+	/*
+	 * Are we in an invalid window?
+	 */
+	MACH_INVALID_WINDOW_TEST()
+	be	WindowOkay
+	nop
+	/*
+	 * Deal with window overflow - put return addr in SAFE_TEMP since
+	 * the overflow handler will look for the return address there..
+	 * It is okay to do this, even if we got here after due to a slow
+	 * overflow trap due to special action needed, because if we did that,
+	 * then we've already taken care of the overflow problem and so we
+	 * won't get it here and so we won't be overwriting the return address
+	 * in SAFE_TEMP.
+	 */
+	set	MachWindowOverflow, %VOL_TEMP1
+	jmpl	%VOL_TEMP1, %SAFE_TEMP
+	nop
+WindowOkay:
+	/*
+	 * Now that we know our out registers are safe to use, since we're
+	 * in a valid window, update our stack  pointer.
+	 * If coming from user mode, I need to get kernel sp from
+	 * state structure.  If we came from kernel
+	 * mode, just subtract a stack frame from the current frame pointer and
+	 * continue. To see if we came from user mode, we look at the
+	 * previous state bit (PS) in the processor state register.
+	 * I set up the stack pointer in the delay slot of the branch if I came
+	 * from kernel mode, so it's as fast as possible.  I annul the
+	 * instruction if it turns out to be a user stack.
+	 * We must give the stack a full state frame so that C routines
+	 * we call will have space to store their arguments.  (System calls,
+	 * for example!)
+	 *
+	 * NOTE: The amount we bump up the stack by here must
+	 * agree with the debugger stack test in the window underflow routine,
+	 * so that we don't trash our stack when returning from the
+	 * debugger!!!!!
+	 */
+        andcc   %CUR_PSR_REG, MACH_PS_BIT, %g0 		/* previous state? */
+        bne,a   DoneWithUserStuff 			/* was kernel mode */
+        add     %fp, -MACH_SAVED_STATE_FRAME, %sp 	/* set kernel sp */
+	MACH_GET_CUR_STATE_PTR(%VOL_TEMP2, %VOL_TEMP1)	/* into %VOL_TEMP2 */
+        add     %VOL_TEMP2, MACH_KSP_OFFSET, %VOL_TEMP1 /* &(machPtr->ksp) */
+        ld      [%VOL_TEMP1], %sp 			/* machPtr->ksp */
+	set	(MACH_KERN_STACK_SIZE - MACH_SAVED_STATE_FRAME), %VOL_TEMP1
+        add     %sp, %VOL_TEMP1, %sp 
+	/*
+	 * Since we came from user mode, set the trapRegs field of the
+	 * current state structure to the value of our new kernel sp,
+	 * since the trap regs are saved on top of the stack.
+	 */
+	add	%VOL_TEMP2, MACH_TRAP_REGS_OFFSET, %VOL_TEMP2
+	st	%sp, [%VOL_TEMP2]
+
+DoneWithUserStuff:
+	/* Test stack alignment here?? */
+
+	/*
+	 * This only saves the globals to the stack.  The locals
+	 * and ins make it there through normal overflow and underflow.
+	 *
+	 * NOTE that we cannot trash %g1 even after saving the global
+	 * registers, since that is the register that contains the system
+	 * call number for system call traps!
+	 */
+	MACH_SAVE_GLOBAL_STATE()
+
+	/* traps on, maskable interrupts off */
+	MACH_SR_HIGHPRIO()
+
+	/*
+	 * It is tedious to do all these serial comparisons against the
+	 * trap type, so this should be changed to a jump table.  It's this
+	 * way right now because I'm working on other things and this is
+	 * easy for debugging.
+	 */
+	and	%CUR_TBR_REG, MACH_TRAP_TYPE_MASK, %VOL_TEMP1 /* get trap */
+
+	cmp	%VOL_TEMP1, MACH_LEVEL0_INT
+	bl	NotAnInterrupt
+	nop
+	cmp	%VOL_TEMP1, MACH_LEVEL15_INT
+	bgu	NotAnInterrupt
+	nop
+	/*
+	 * It's an interrupt.
+	 */
+	b	MachHandleInterrupt
+	nop
+
+NotAnInterrupt:
+
+	cmp	%VOL_TEMP1, MACH_TRAP_SYSCALL		/* system call */
+	be	MachSyscallTrap
+	nop
+
+	cmp	%VOL_TEMP1, MACH_INSTR_ACCESS		/* instruction fault */
+	be	MachHandlePageFault
+	nop
+
+	cmp	%VOL_TEMP1, MACH_DATA_ACCESS		/* data fault */
+	be	MachHandlePageFault
+	nop
+
+	cmp	%VOL_TEMP1, MACH_TRAP_SIG_RETURN	/* ret from handler */
+	be	_MachReturnFromSignal
+	nop
+
+	cmp	%VOL_TEMP1, MACH_TRAP_FLUSH_WINDOWS	/* flush window trap */
+	be	MachFlushWindowsToStackTrap
+	nop
+
+	cmp	%VOL_TEMP1, MACH_TRAP_UNIX_SYSCALL	/* unix syscall */
+	be	MachUnixSyscallTrap
+	nop
+
+	cmp	%VOL_TEMP1, MACH_TRAP_INSTR_2		/* Dynamic linking  */
+	be	MachLinkTrap
+	nop
+
+	/*
+	 * These next few are handled by C routines, and we want them to
+	 * return to MachReturnFromTrap, so set that address as the return pc.
+	 */
+	cmp	%VOL_TEMP1, MACH_ILLEGAL_INSTR		/* illegal instr */
+	set	_MachReturnFromTrap, %RETURN_ADDR_REG	/* set return pc */
+	mov	%VOL_TEMP1, %o0
+	mov	%CUR_PC_REG, %o1
+	mov	%CUR_PSR_REG, %o2
+	be	_MachHandleTrap		/* C routine */
+	nop
+
+	cmp	%VOL_TEMP1, MACH_PRIV_INSTR		/* privileged instr */
+	set	_MachReturnFromTrap, %RETURN_ADDR_REG	/* set return pc */
+	mov	%VOL_TEMP1, %o0
+	mov	%CUR_PC_REG, %o1
+	mov	%CUR_PSR_REG, %o2
+	be	_MachHandleTrap		/* C routine */
+	nop
+
+	cmp	%VOL_TEMP1, MACH_MEM_ADDR_ALIGN		/* addr not aligned */
+	set	_MachReturnFromTrap, %RETURN_ADDR_REG	/* set return pc */
+	mov	%VOL_TEMP1, %o0
+	mov	%CUR_PC_REG, %o1
+	mov	%CUR_PSR_REG, %o2
+	be	_MachHandleTrap		/* C routine */
+	nop
+
+	cmp	%VOL_TEMP1, MACH_TAG_OVERFLOW		/* tagged instr ovfl */
+	set	_MachReturnFromTrap, %RETURN_ADDR_REG	/* set return pc */
+	mov	%VOL_TEMP1, %o0
+	mov	%CUR_PC_REG, %o1
+	mov	%CUR_PSR_REG, %o2
+	be	_MachHandleTrap		/* C routine */
+	nop
+
+	cmp	%VOL_TEMP1, MACH_FP_EXCEP		/* fp unit badness */
+	set	_MachReturnFromTrap, %RETURN_ADDR_REG	/* set return pc */
+	mov	%VOL_TEMP1, %o0
+	mov	%CUR_PC_REG, %o1
+	mov	%CUR_PSR_REG, %o2
+	be	_MachHandleTrap		/* C routine */
+	nop
+
+	cmp	%VOL_TEMP1, MACH_FP_DISABLED		/* fp unit disabled */
+	set	_MachReturnFromTrap, %RETURN_ADDR_REG	/* set return pc */
+	mov	%VOL_TEMP1, %o0
+	mov	%CUR_PC_REG, %o1
+	mov	%CUR_PSR_REG, %o2
+	be	_MachHandleTrap		/* C routine */
+	nop
+
+	/*
+	 * We never get here directly from the window overflow trap.
+	 * Instead, what this means is that after handling a window
+	 * overflow trap, on the way out we had to deal with a special
+	 * user action.  Because we don't save state, etc, on a regular
+	 * window overflow, we've executed the above code to save the
+	 * state for us.  Now we just want to go back and deal with the
+	 * special overflow.
+	 */
+	cmp	%VOL_TEMP1, MACH_WINDOW_OVERFLOW	/* weird overflow */
+	be	MachReturnToOverflowWithSavedState
+	nop
+
+	cmp	%VOL_TEMP1, MACH_WINDOW_UNDERFLOW	/* weird underflow */
+	be	MachReturnToUnderflowWithSavedState
+	nop
+
+	cmp	%VOL_TEMP1, MACH_TRAP_DEBUGGER		/* enter debugger */
+	be	_MachHandleDebugTrap
+	nop
+
+	b	_MachHandleDebugTrap		/* all  others to debugger */
+	nop
+
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MachReturnFromTrap --
+ *
+ *	Go through the inverse of MachTrap.  The trap handlers that MachTrap
+ *	called return to here rather than MachTrap.
+ *
+ *	The scheme of things:
+ *
+ *	1) Determine if we are returning to user mode.  If so, then we must
+ *	check the specialHandling flag.  If it is set, then we must call
+ *	MachUserAction.
+ *	2) If we called MachUserAction, then we must check its return value
+ *	to see if we need to deal with any signals.  If we do, then
+ *	we call MachHandleSignal().  It returns to user mode itself via
+ *	a rett instruction, so we don't come back here until the
+ *	return-from-signal trap that the user ends up executing to return to
+ *	the kernel from a signal.
+ *	3) For both returns to user mode and returns to kernel mode, we
+ *	must next check if we would return to an invalid window.  If so,
+ *	we must make it valid or we will get a watchdog reset.  We may
+ *	call the window underflow routine to do this.  But, if we are
+ *	returning to user mode, we must check to make sure the user stack
+ *	is resident, since the underflow routine can't get any page faults.
+ *	If the user stack isn't resident, we page it in.
+ *	4) Finally, we disable traps again (or the rett instruction will
+ *	give us a watchdog reset), restore the global registers, restore
+ *	the %tbr, %y registers, restore the %psr to the trap psr, and rett
+ *	(return from trap) to the saved trap pc and next pc.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	We jump back to where we came from.  If we came from a system call
+ *	or certain other traps, we'll actually return to where we came from
+ *	plus 8, or else we would re-execute the system call instruction.
+ *	The addition of 8 was done by the individual handlers that know
+ *	whether or not they would need to do this.
+ *
+ *	If a user process has a bad stack pointer, we will kill it here and
+ *	print out a message.
+ *
+ * ----------------------------------------------------------------------
+ */
+.global	_MachReturnFromTrap
+_MachReturnFromTrap:
+	/* Are we a user or kernel process? */
+	andcc	%CUR_PSR_REG, MACH_PS_BIT, %g0
+	bne	NormalReturn
+	nop
+	/* Do we need to take a special action? Check special handling flag. */
+	MACH_GET_CUR_PROC_PTR(%VOL_TEMP1)
+	sethi	%hi(_machSpecialHandlingOffset), %VOL_TEMP2
+	ld	[%VOL_TEMP2 + %lo(_machSpecialHandlingOffset)], %VOL_TEMP2
+	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	tst	%VOL_TEMP1
+	be	NormalReturn
+	nop
+	call	_MachUserAction
+	nop
+	/* Check if we must handle a signal */
+	tst	%RETURN_VAL_REG
+	be	NormalReturn
+	nop
+	cmp	%RETURN_VAL_REG, 2
+	be	DoUnixSignal
+	nop
+	/*
+	 * We must handle a signal.  Call the leaf routine MachSetupSignal.
+	 * It does its own return from trap, so we don't come back here when
+	 * it's done!
+	 */
+	call	_MachHandleSignal
+	nop
+DoUnixSignal:
+	MACH_RESTORE_WINDOW_FROM_STACK()
+	nop
+	sub	%fp, 0x8f0, %fp
+	nop
+NormalReturn:
+	MACH_UNDERFLOW_TEST()
+	be	UnderflowOkay
+	nop
+	/*
+	 * Make sure stack is resident.  We don't want to get a page
+	 * fault in the underflow routine, because it moves into the window
+	 * to restore and so its calls to Vm code would move into this
+	 * window and overwrite it!  First check if it's a user process, since
+	 * that should be the only case where the stack isn't resident.
+	 */
+	andcc	%CUR_PSR_REG, MACH_PS_BIT, %g0
+	bne	CallUnderflow
+	nop
+	/*
+	 * It's a user process, so check residence and protection fields of pte.
+	 * Before anything we check stack alignment.
+	 */
+	andcc	%fp, 0x7, %g0
+	bne	KillUserProc
+	nop
+	MACH_CHECK_FOR_FAULT(%fp, %VOL_TEMP1)
+	be	CheckNextFault
+	nop
+	/*
+	 * Call VM Stuff with the %fp which will be stack pointer in
+	 * the window we restore.
+	 */
+	QUICK_ENABLE_INTR(%VOL_TEMP1)
+	mov	%fp, %o0
+	clr	%o1		/* also check for protection????? */
+	call	_Vm_PageIn, 2
+	nop
+	QUICK_DISABLE_INTR(%VOL_TEMP1)
+	tst	%RETURN_VAL_REG
+	bne	KillUserProc
+	nop
+CheckNextFault:
+	/* Check other extreme of area we'd touch */
+	add	%fp, (MACH_SAVED_WINDOW_SIZE - 4), %o0
+	MACH_CHECK_FOR_FAULT(%o0, %VOL_TEMP1)
+	be	CallUnderflow
+	nop
+	QUICK_ENABLE_INTR(%VOL_TEMP1)
+	clr	%o1
+	call	_Vm_PageIn, 2
+	nop
+	QUICK_DISABLE_INTR(%VOL_TEMP1)
+	tst	%RETURN_VAL_REG
+	be	CallUnderflow
+	nop
+KillUserProc:
+	/*
+	 * Kill user process!  Its stack is bad.
+	 */
+	MACH_SR_HIGHPRIO()	/* traps back on for overflow from printf */
+	set	_MachReturnFromTrapDeathString, %o0
+	call	_printf, 1
+	nop
+	MACH_GET_CUR_PROC_PTR(%o0)		/* procPtr in %o0 */
+        sethi	%hi(_machGenFlagsOffset), %o1 
+        ld	[%o1 + %lo(_machGenFlagsOffset)], %o1
+        add	%o0, %o1, %o1
+        ld	[%o1], %o1
+        sethi	%hi(_machForeignFlag), %o2
+        ld      [%o2 + %lo(_machForeignFlag)], %o2
+        andcc   %o1, %o2, %o1			/* Is this a migrated proc? */
+        be      DebugIt
+        nop
+	set	PROC_TERM_DESTROYED, %o0	/* If so, kill it. */
+	set	PROC_BAD_STACK, %o1
+	clr	%o2
+	call	_Proc_ExitInt, 3
+	nop
+DebugIt:					/* Else, make it debuggable. */
+	MACH_GET_CUR_PROC_PTR(%o0)		/* procPtr in %o0 */
+	call	_Sig_CheckForKill, 1		/* kill proc if KILL signal */
+	nop
+	MACH_GET_CUR_PROC_PTR(%o0)		/* procPtr in %o0 */
+	set	TRUE, %o1			/* debug TRUE */
+	set	PROC_TERM_DESTROYED, %o2
+	set	PROC_BAD_STACK, %o3
+	clr	%o4
+	call	_Proc_SuspendProcess, 5
+	nop
+	ba	DebugIt			/* proc should loop if continued */
+	nop
+
+CallUnderflow:
+	set	MachWindowUnderflow, %VOL_TEMP1
+	jmpl	%VOL_TEMP1, %RETURN_ADDR_REG
+	nop
+UnderflowOkay:
+	MACH_DISABLE_TRAPS(%VOL_TEMP1, %VOL_TEMP2)
+	MACH_RESTORE_GLOBAL_STATE()
+	/* restore y reg */
+	mov	%CUR_Y_REG, %y
+
+	/* restore tbr reg */
+	mov	%CUR_TBR_REG, %tbr
+	/* restore psr */
+	MACH_RESTORE_PSR()
+	jmp	%CUR_PC_REG
+	rett	%NEXT_PC_REG
+	nop
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MachHandleWindowOverflowTrap --
+ *
+ *	Trap entrance to the window overflow handler.  We try to get in and
+ *	out of here as quickly as possible in the normal case.  Unlike
+ *	most traps, we jump here directly from the trap table, and do not
+ *	go through the usual MachTrap preamble.  This means no
+ *	state has been saved and we have no stack pointer.  This in turn means
+ *	that we cannot turn traps on, since we have no saved state and no place
+ *	to save the trap registers. This routine sets up a return
+ *	address, calls the overflow handler, restores the psr, and
+ *	returns from the trap.  It assumes that the trap psr was stored in
+ *	%CUR_PSR_REG before jumping here (in the trap vector table).
+ *
+ *	When we return to this routine from the actual overflow handling
+ *	routine, we check to see if we're returning to user mode.  If we aren't
+ *	we can just leave this routine normally.  If we're returning to user
+ *	mode, however, we must check for some special cases.  It may be that
+ *	the user stack wasn't resident and that we had to save the overflow
+ *	window to a special internal buffer rather than the user stack.  If this
+ *	is so, we require extra processing.  So we call MachTrap to save state
+ *	for us and then call MachReturnFromTrap, which will handle the fact
+ *	that the window was saved to an internal buffer.  The effect of all of
+ *	this is to turn the overflow trap into a "slow overflow trap" that goes
+ *	through the usual trap preamble and postamble.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The mach state structure may be modified if this is a user window
+ *	and its stack isn't resident, causing us to save the window to
+ *	the buffers in the mach state structure.
+ *
+ * ----------------------------------------------------------------------
+ */
+.global	MachHandleWindowOverflowTrap
+MachHandleWindowOverflowTrap:
+	/*
+	 * Call actual overflow handler.
+	 */
+	set	MachWindowOverflow, %VOL_TEMP1
+	jmpl	%VOL_TEMP1, %SAFE_TEMP
+	nop
+	/*
+	 * If returning to user mode, check special handling flags here to
+	 * see if we need to do any fancy processing (due to the user's
+	 * stack not being resident so we had to save the window to an internal
+	 * buffer instead).
+	 */
+        andcc   %CUR_PSR_REG, MACH_PS_BIT, %g0		/* user or kernel? */
+        bne     NormalOverflowReturn
+        nop
+        /* Do we need to take a special action? Check special handling flag. */
+	MACH_GET_CUR_PROC_PTR(%VOL_TEMP1)
+        sethi	%hi(_machSpecialHandlingOffset), %VOL_TEMP2
+        ld      [%VOL_TEMP2 + %lo(_machSpecialHandlingOffset)], %VOL_TEMP2
+        add     %VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
+        ld      [%VOL_TEMP1], %VOL_TEMP1
+        tst     %VOL_TEMP1
+        be      NormalOverflowReturn
+	nop
+	/*
+	 * We need to save state and allocate space on the stack, etc.
+	 * Run through regular trap preamble to do this.  The trap preamble
+	 * will then return us to here.  This is all in preparation for
+	 * calling MachReturnFromTrap, since that will call MachUserAction
+	 * to deal with the window saved to the internal buffer.
+	 */
+	call	_MachTrap
+	nop
+MachReturnToOverflowWithSavedState:
+	/*
+	 * Now call trap postamble to restore state and push saved window to
+	 * the user stack.  MachReturnFromTrap will return to user mode, so
+	 * we will not come back here after this call!
+	 */
+	call	_MachReturnFromTrap
+	nop
+
+	/*
+	 * This was a normal fast window overflow trap, so just return.
+	 */
+NormalOverflowReturn:
+	MACH_RESTORE_PSR()
+	jmp	%CUR_PC_REG
+	rett	%NEXT_PC_REG
+	nop
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MachWindowOverflow --
+ *
+ *	Window overflow handler.  It's set up so that it can be called from the
+ *	fast window overflow trap handler, or it can be called directly from
+ *	MachTrap for any trap that causes us to land inside an invalid window.
+ *
+ *	The window we've trapped into is currently invalid.  We want to
+ *	make it valid.  We do this by moving one window further, saving that
+ *	window to the stack, marking it as the new invalid window, and then
+ *	moving back to the window that we trapped into.  It is then valid
+ *	and usable.  Note that we move first to the window to save and then
+ *	mark it invalid.  In the other order we would get another overflow
+ *	trap, but with traps turned off, which causes a watchdog reset...
+ *	Note that %sp should point to the lowest address usable
+ *	word in the current stack frame.  %fp is the %sp of the
+ *	caller's stack frame, so the first (highest in memory) usable word
+ *	of a current stack frame is (%fp - 4).
+ *
+ *	This code will be called with traps DISABLED, so nothing in this
+ *	code is allowed to cause a trap.  This means no procedure calls are
+ *	allowed.
+ *
+ * Results:
+ *	Returns to the address %SAFE_TEMP + 8.
+ *
+ * Side effects:
+ *	The window invalid mask changes and a register window is saved.
+ *	The mach state structure may change if we need to save this window
+ *	into its internal buffers (if it's a user window and the stack isn't
+ *	resident).
+ *
+ * ----------------------------------------------------------------------
+ */
+.global	MachWindowOverflow
+MachWindowOverflow:
+	/*
+	 * We enter inside of an invalid window, so we can't use in registers,
+	 * out registers or global registers to begin with.
+	 * We temporarily clear out some globals since we won't be able to
+	 * use locals in window we move to before saving it.  Using them would
+	 * mess them up for window's owner.
+	 */
+	mov	%g3, %VOL_TEMP1
+	mov	%g4, %VOL_TEMP2
+	save				/* move to the window to save */
+	MACH_ADVANCE_WIM(%g3, %g4)	/* reset %wim to current window */
+	/*
+	 * If this is a user window, then see if stack space is resident.
+	 * If it is, go ahead, but if not, then set special handling and
+	 * save to buffers.  It's fairly dreadful that we must do all this
+	 * checking here, since this will slow down all the overflow traps.
+	 */
+	set	MACH_MAX_USER_STACK_ADDR, %g3	/* %sp in user space? */
+	subcc	%g3, %sp, %g0			/* need sp < highest addr */
+	bleu	NotUserStack
+	nop
+	set	MACH_FIRST_USER_ADDR, %g3	/* need sp >= lowest addr */
+	subcc	%sp, %g3, %g0
+	bgeu	UserStack
+	nop
+NotUserStack:
+	set	MACH_STACK_BOTTOM, %g3
+	subcc	%sp, %g3, %g0			/* need sp >= lowest addr */
+	blu	BadStack
+	nop
+	set	VMMACH_DEV_START_ADDR, %g3	/* need sp < highest addr */
+	subcc	%g3, %sp, %g0
+	bgu	NormalOverflow
+	nop
+BadStack:
+	/*
+	 * Assume it was a user process's bad stack pointer.  We can't kill
+	 * the process here, so just take over the window and the user process
+	 * will die a terrible death later.  To take over the window, we just
+	 * return, since we've already advanced the %wim.
+	 */
+	ba	ReturnFromOverflow
+	nop
+UserStack:
+	/*
+	 * If the stack alignment is bad, we just take over the window and
+	 * assume the user process will die a horrible death later on.
+	 */
+	andcc	%sp, 0x7, %g0
+	bne	ReturnFromOverflow
+	nop
+
+	/* Would saving window cause a page fault? */
+	MACH_CHECK_FOR_FAULT(%sp, %g3)
+	bne	SaveToInternalBuffer
+	nop
+
+	/* check other address extreme */
+	add	%sp, (MACH_SAVED_WINDOW_SIZE - 4), %g4
+	MACH_CHECK_FOR_FAULT(%g4, %g3)
+	be	NormalOverflow
+	nop
+SaveToInternalBuffer:
+	/*
+	 * The stack wasn't resident, so we must save to an internal buffer
+	 * and set the special handling flag.
+	 * We update the saved mask to show that this window had to be saved
+	 * to the internal buffers.  We do this by or'ing in the value of
+	 * the current window invalid mask, since it's been set to point to
+	 * this window we must save.
+	 */
+	MACH_GET_CUR_STATE_PTR(%g3, %g4)	/* puts machStatePtr in %g3 */
+	sethi	%hi(_machCurStatePtr), %g4
+						/* update it */
+	st	%g3, [%g4 + %lo(_machCurStatePtr)]
+	add	%g3, MACH_SAVED_MASK_OFFSET, %g3
+	ld	[%g3], %g3
+	mov	%wim, %g4
+	or	%g3, %g4, %g4
+	sethi	%hi(_machCurStatePtr), %g3
+	ld	[%g3 + %lo(_machCurStatePtr)], %g3
+	add	%g3, MACH_SAVED_MASK_OFFSET, %g3
+	st	%g4, [%g3]
+
+	/*
+	 * Get and set the special handling flag in the current process state.
+	 */
+	MACH_GET_CUR_PROC_PTR(%g3)
+	sethi	%hi(_machSpecialHandlingOffset), %g4
+	ld	[%g4 + %lo(_machSpecialHandlingOffset)], %g4
+	add	%g3, %g4, %g3
+	mov	0x1, %g4
+	st	%g4, [%g3]
+
+	/*
+	 * Save the current user stack pointer for this window.
+	 */
+	sethi	%hi(_machCurStatePtr), %g3
+	ld	[%g3 + %lo(_machCurStatePtr)], %g3
+	add	%g3, MACH_SAVED_SPS_OFFSET, %g3
+	mov	%psr, %g4
+	and	%g4, MACH_CWP_BITS, %g4
+	/* Multiply by 4 bytes per int */
+	sll	%g4, 2, %g4
+	add	%g3, %g4, %g3
+	st	%sp, [%g3]
+
+	/*
+	 * Now save to internal buffer.
+	 */
+	sethi	%hi(_machCurStatePtr), %g3
+	ld	[%g3 + %lo(_machCurStatePtr)], %g3
+	add	%g3, MACH_SAVED_REGS_OFFSET, %g3
+	/*
+	 * Current window * 4 bytes per reg is still in %g4.  Now we just
+	 * need to multiply it by the number of registers per window.
+	 */
+	sll	%g4, MACH_NUM_REG_SHIFT, %g4
+	add	%g3, %g4, %g3		/* offset to start saving at */
+	MACH_SAVE_WINDOW_TO_BUFFER(%g3)
+	set	ReturnFromOverflow, %g3
+	jmp	%g3
+	nop
+NormalOverflow:
+	/*
+	 * Save this window to stack - save locals and ins to top 16 words
+	 * on the stack. (Since our stack grows down, the top word is %sp
+	 * and the bottom will be (%sp + offset).
+	 */
+	MACH_SAVE_WINDOW_TO_STACK()
+ReturnFromOverflow:
+	restore				/* move back to trap window */
+	mov	%VOL_TEMP1, %g3		/* restore global registers */
+	mov	%VOL_TEMP2, %g4
+
+	/*
+	 * jump to calling routine - this may be a trap-handler or not.
+	 */
+	jmp	%SAFE_TEMP + 8
+	nop
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MachHandleWindowUnderflowTrap --
+ *
+ *	Trap entrance to the window underflow handler.  This sets up a
+ *	return address, retreats a window, calls the underflow handler,
+ *	advances back to window in which we entered the routine, restores
+ *	the psr, and returns from the trap.  We must retreat a window since
+ *	on a trap we are 2 windows away from the window to restore, but
+ *	on returning from a trap and checking if we need to restore a window,
+ *	we are only one window away.  See the comments in MachWindowUnderflow()
+ *	for more details.
+ *	Because we must do some work in the window we were executing in when
+ *	we took a trap, we must make sure to save and restore the registers
+ *	we use there.  This means clearing two globals out for this purpose.
+ *	We save and restore the globals in the actual trap window, since we
+ *	know we can use the local registers there freely.  The underflow
+ *	routine expects its return address in %RETURN_ADDR_REG, so this is the
+ *	register we must save and restore in the inbetween window.
+ *
+ *	In the case where the window we're restoring is for a user process,
+ *	we must also check for whether the stack is resident and writable.
+ *	If it isn't, we must page it in.  To do this is gross.  Since the
+ *	trap window we've entered into is 2 windows away from the window to
+ *	restore, we must move back one window and check the %fp there.  (This
+ *	will be the %sp in the actual window to restore.)  If it isn't
+ *	resident, then we must move forward again to the trap window and call
+ *	MachTrap to save state for us. Then we can call the Vm_PageIn code
+ *	from the trap window to page in the nasty stuff.  If it fails, we
+ *	must kill the user process.  All of this is complicated a bit further
+ *	by the fact that we have 2 addresses to test: the %fp and the
+ *	%fp + the size of the saved window stuff. So we check both for
+ *	residence.  If both are okay, we just do normal underflow.  If one or
+ *	the other fails, we save state.  We then test the first address,
+ *	if it fails, we page it in.  Then if the second one fails, we also
+ *	page it in.  It most likely will have been paged in by the first one,
+ *	though.  Then, after all this, we call the normal underflow which
+ *	should then be protected from page faults.  It has to be, since
+ *	it operates in one window back from the trap window where we saved
+ *	state, and we can't have any calls to Vm code there overwriting our
+ *	saved state.  Then we return.  If we marked that we had to save
+ *	state, then we must restore state by calling MachReturnFromTrap and
+ *	leaving as if this had all been a slow trap instead.  Unfortunately,
+ *	we must test some stuff twice, since there are no registers to save
+ *	anything into (%VOL_TEMP registers are blasted by the MachTrap code,
+ *	and the SAFE_TEMP register is already used to mark whether we saved
+ *	state).
+ *
+ *	NOTE:  In the case where we must save state by calling MachTrap,
+ *	a lot of the underflow code is duplicated in MachReturnFromTrap,
+ *	which we also end up calling.  The reason I cannot simply call
+ *	MachReturnFrom trap then to do all that work, is that I must do the
+ *	work in one window away in the case of a real underflow trap.  There
+ *	may be a way to deal with this, but I haven't done it yet.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The window in question is restored.
+ *
+ * ----------------------------------------------------------------------
+ */
+.global	MachHandleWindowUnderflowTrap
+MachHandleWindowUnderflowTrap:
+	/*
+	 * We need a global to mark further actions, and a global to save
+	 * the fp in if we find it needs to be page faulted.  We can save one
+	 * global in SAFE_TEMP since it's only whacked by MachTrap, which is
+	 * the only thing that might whack it, in case MachTrap gets an
+	 * overflow.  But we won't get one since this is an underflow trap.
+	 * %o5 also appears to be safe here since it is not overwritten
+	 * by parameters to Vm_PageIn, etc.  We also need 2 more globals for
+	 * checking whether the stack will cause a fault.  We use a few more
+	 * out registers that we hope Vm_PageIn won't trash. NOTE:  WE ARE
+	 * MAKING AN ASSUMPTION that Vm_PageIn isn't compiled to mess with its
+	 * in registers.  If we switch compilers, this may break!!!
+	 */
+	mov	%g3, %SAFE_TEMP
+	mov	%g4, %o5
+	mov	%g2, %o3
+	mov	%g5, %o4
+
+	/* Test if we came from user mode. */
+	andcc	%CUR_PSR_REG, MACH_PS_BIT, %g0
+	bne	NormalUnderflow
+	nop
+
+	/*
+	 * Test if stack is resident for window we need to restore.
+	 * This means move back a window and test its frame pointer since
+	 * we've trapped into a window 2 away from the one whose stack is
+	 * in question.
+	 */
+	restore
+	/*
+	 * If the alignment of the user stack pointer is bad, kill the process!
+	 * We must be back in the trap window to do that.
+	 */
+	andcc	%fp, 0x7, %g0
+	be,a	CheckForFaults
+	clr	%g3			/* g3 clear for no problem yet */
+	mov	0x1, %g3		/* Mark why we will save state */
+	bne,a	MustSaveState
+	save		/* back to trap window, in annulled delay slot */
+
+CheckForFaults:
+	/*
+	 * %g3 will have have a record of what faults would occur.
+	 */
+	MACH_CHECK_STACK_FAULT(%fp, %g2, %g3, %g5, UndflFault1, UndflFault2)
+	mov	%fp, %g4		/* in case we need to fault it */
+	be	NormalUnderflow
+	save				/* back to trap window */
+
+MustSaveState:
+	/*
+	 * We need to save state.   We must do this in actual trap window.
+	 * This state-saving enables traps.  We will return to
+	 * MachReturnToUnderflowWithSavedState
+	 */
+	call	_MachTrap
+	nop
+MachReturnToUnderflowWithSavedState:
+	/*
+	 * We had to save state for some reason.  %g3 contains the reason
+	 * why.
+	 */
+	cmp	%g3, 0x1
+	be	KillTheProc
+	nop
+	andcc	%g3, 0x2, %g0
+	be	CheckNextUnderflow	/* It wasn't first possible fault */
+	nop
+
+	QUICK_ENABLE_INTR(%VOL_TEMP1)
+	/* Address that would fault is in %g4. */
+	mov	%g4, %o0
+	clr	%o1			/* also check protection???? */
+	call	_Vm_PageIn, 2
+	nop
+	QUICK_DISABLE_INTR(%VOL_TEMP1)
+	tst	%RETURN_VAL_REG
+	be	CheckNextUnderflow		/* succeeded, try next */
+	nop
+	/* Otherwise, bad return, fall through to kill process. */
+KillTheProc:
+	/* Need I restore all the global registers here since it's dying? */
+
+	mov	%SAFE_TEMP, %g3			/* restore g3 */
+	mov	%o5, %g4			/* restore g4 */
+	mov	%o3, %g2			/* etc */
+	mov	%o4, %g5
+
+	/* KILL IT - must be in trap window */
+	MACH_SR_HIGHPRIO()	/* traps back on for overflow from printf */
+	set	_MachHandleWindowUnderflowDeathString, %o0
+	call	_printf, 1
+	nop
+	MACH_GET_CUR_PROC_PTR(%o0)		/* procPtr in %o0 */
+	sethi	%hi(_machGenFlagsOffset), %o1
+	ld	[%o1 + %lo(_machGenFlagsOffset)], %o1
+	add	%o0, %o1, %o1
+	ld	[%o1], %o1
+	sethi	%hi(_machForeignFlag), %o2
+	ld	[%o2 + %lo(_machForeignFlag)], %o2
+	andcc	%o1, %o2, %o1			/* Is this a migrated proc? */
+	be	SuspendIt
+	nop
+	set	PROC_TERM_DESTROYED, %o0	/* If so, kill it. */
+	set	PROC_BAD_STACK, %o1
+	clr	%o2
+	call	_Proc_ExitInt, 3
+	nop
+SuspendIt:					/* Else, make it debuggable. */
+	MACH_GET_CUR_PROC_PTR(%o0)		/* procPtr in %o0 */
+	call	_Sig_CheckForKill, 1		/* kill proc if KILL signal */
+	nop
+	MACH_GET_CUR_PROC_PTR(%o0)		/* procPtr in %o0 */
+	set	TRUE, %o1			/* debug TRUE */
+	set	PROC_TERM_DESTROYED, %o2
+	set	PROC_BAD_STACK, %o3
+	clr	%o4
+	call	_Proc_SuspendProcess, 5
+	nop
+	ba	SuspendIt		/* proc should loop if continued */
+	nop
+
+CheckNextUnderflow:
+	andcc	%g3, 0x4, %g0		/* See if second address would fault */
+	be	BackAgain
+	nop
+	QUICK_ENABLE_INTR(%VOL_TEMP1)
+	/* old %fp is in %g4 */
+	add	%g4, (MACH_SAVED_WINDOW_SIZE - 4), %o0
+	clr	%o1			/* also check protection???? */
+	call	_Vm_PageIn, 2
+	nop
+	QUICK_DISABLE_INTR(%VOL_TEMP1)
+	tst	%RETURN_VAL_REG
+	bne	KillTheProc
+	nop
+BackAgain:
+	/*
+	 * Don't deal with underflow itself.  Just pretend this was only
+	 * a stack page fault.  User's restore instruction will get
+	 * re-executed and will cause a further underflow trap.  This time,
+	 * the page should be there.
+	 */
+
+	/* Restore globals */
+	mov	%SAFE_TEMP, %g3			/* restore g3 and g4 */
+	mov	%o5, %g4
+	mov	%o3, %g2
+	mov	%o4, %g5
+
+	call	_MachReturnFromTrap
+	nop
+
+NormalUnderflow:
+	restore					/* retreat a window */
+	/*
+	 * We need to preserve l6 and l7 in this window
+	 */
+	mov	%l6, %g2
+	mov	%l7, %g5
+	mov	%RETURN_ADDR_REG, %g3		/* save reg in global */
+	set	MachWindowUnderflow, %g4	/* put address in global */
+	jmpl	%g4, %RETURN_ADDR_REG		/* our return addr to reg */
+	nop
+	mov	%g3, %RETURN_ADDR_REG		/* restore ret_addr */
+	mov	%g2, %l6
+	mov	%g5, %l7
+	save					/* back to trap window */
+
+	/* Restore globals */
+	mov	%SAFE_TEMP, %g3			/* restore g3, g4, g2 & g5 */
+	mov	%o5, %g4
+	mov	%o3, %g2
+	mov	%o4, %g5
+
+	MACH_RESTORE_PSR()			/* restore psr */
+	jmp	%CUR_PC_REG			/* return from trap */
+	rett	%NEXT_PC_REG
+	nop
+
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MachWindowUnderflow --
+ *
+ *	Window underflow handler.  It's set up so that it can be called as a
+ *	result of a window underflow trap or as a result of needing to restore
+ *	an invalid window before returning from a trap or interrupt.
+ *	The address of the calling instruction is stored in %RETURN_ADDR_REG,
+ *	which is the normal place.
+ *
+ *	The window we are in when we enter is one beyond the invalid window we
+ *	need to restore. On an underflow trap we enter the kernel 2 windows
+ *	away from the window that is invalid.  (This is because we tried to
+ *	retreat to an invalid window and couldn't, so we trapped.  Trapping
+ *	advances the current window, so we are 2 windows away from the invalid
+ *	window.)  From the trap handler, then, we must retreat one window
+ *	before calling this routine so that we're only one window away from
+ *	the invalid window.  Then after returning from here, we must do a
+ *	save to get back to our old trap window.
+ *
+ *	First we mark the window behind the invalid window as the
+ *	new invalid window, and then we move to the invalid window.  Then we
+ *	restore data from the stack into the invalid window.  Then we return
+ *	to our previous window.  Note that we first mark
+ *	the new invalid window and then move to the old invalid window.  If
+ *	we did this in the other order, we'd get another window underflow trap.
+ *	(This is the opposite order from window overflow.)
+ *
+ *	For the window to restore, the %sp should be good since it doesn't
+ *	get changed by these routines, even if it was a user window and this
+ *	is a kernel window.
+ *
+ *	The %sp should point to highest (on stack, lowest in memory)
+ *	usable word in the current stack frame.  %fp is the %sp of the
+ *	caller's stack frame, so the first (highest in memory) usable word
+ *	of a current stack frame is (%fp - 4).
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The window invalid mask changes and a register window is restored.
+ *
+ * ----------------------------------------------------------------------
+ */
+.global	MachWindowUnderflow
+MachWindowUnderflow:
+	/*
+	 * Check to see if we're about to return to the trap window from
+	 * the debugger.  If so, then the frame pointer should be equal
+	 * to the base of the debugger stack.  If it is, change it to be
+	 * the top of the regular stack, so that when we return to the previous
+	 * window, our sp is at the top of the regular stack.
+	 * NOTE: The test below must agree with the amount we bump up the stack
+	 * by in MachTrap.
+	 */
+	sethi	%hi(_machDebugStackStart), %VOL_TEMP1
+							/* base of stack */
+	ld	[%VOL_TEMP1 + %lo(_machDebugStackStart)], %VOL_TEMP1
+	set	MACH_FULL_STACK_FRAME, %VOL_TEMP2
+	sub	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1	/* offset from base */
+	cmp	%VOL_TEMP1, %fp
+	bne	RegularStack
+	nop
+
+DealWithDebugStack:
+	/* Set stack pointer of next window to regular frame pointer */
+	sethi	%hi(_machSavedRegisterState), %VOL_TEMP1
+	ld	[%VOL_TEMP1 + %lo(_machSavedRegisterState)], %fp
+	
+RegularStack:
+	/*
+	 * We assume that by the time we've gotten here, the stack has been
+	 * made resident, if it was a user stack, and we can just go blasting
+	 * ahead.
+	 *
+	 * It should be ok to use locals here - it's a dead window.
+	 * Note that this means one cannot do a restore and then a save
+	 * and expect that the old locals in the dead window are still the
+	 * same.  That would be a really dumb thing to think anyway.
+	 */
+	/* mark new invalid window */
+	MACH_RETREAT_WIM(%VOL_TEMP1, %VOL_TEMP2)
+
+	/* move to window to restore */
+	restore
+	/* restore data from stack to window - stack had better be resident! */
+	MACH_RESTORE_WINDOW_FROM_STACK()
+	/* Move back to previous window.   Clear registers too??? */
+	save
+	/*
+	 * jump to calling routine - this may be a trap-handler or not.
+	 */
+	jmp	%RETURN_ADDR_REG + 8
+	nop
+
+
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MachHandleDebugTrap --
+ *
+ *	Enter the debugger.  This means make sure all the windows are
+ *	saved to the stack, save my stack pointer, switch the stack pointer
+ *	to the debugger stack, and go.
+ *
+ *	When we return, we change stack pointers and go to the usual
+ *	return from trap routine.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------
+ */
+.global	_MachHandleDebugTrap
+_MachHandleDebugTrap:
+	/*
+	 * If we came from user mode, we do different stuff.
+	 */
+        andcc   %CUR_PSR_REG, MACH_PS_BIT, %g0 		/* previous state? */
+        bne	KernelDebug 				/* was kernel mode */
+	nop
+	call	_MachUserDebug
+	nop
+	set	_MachReturnFromTrap, %VOL_TEMP1
+	jmp	%VOL_TEMP1
+	nop
+KernelDebug:
+	/*
+	 * This points to the top stack frame, which consists of a
+	 * Mach_RegState structure.  This is handed to the debugger.  We
+	 * also use this to restore our stack pointer upon returning from the
+	 * debugger.
+	 */
+	sethi	%hi(_machSavedRegisterState), %VOL_TEMP1
+	st	%sp, [%VOL_TEMP1 + %lo(_machSavedRegisterState)]
+	/*
+	 * Now make sure all windows are flushed to the stack.  We do this
+	 * with MACH_NUM_WINDOWS - 1 saves and restores.  The window overflow
+	 * and underflow traps will then handle this for us.  We put the counter
+	 * in a global, since they have all been saved already and are free
+	 * for our use and we need the value across windows.
+	 */
+
+	sethi	%hi(_machNumWindows), %g2
+	ld	[%g2 + %lo(_machNumWindows)], %g2
+	sub	%g2, 1, %g1
+SaveSomeMore:
+	save
+	subcc	%g1, 1, %g1
+	bne	SaveSomeMore
+	nop
+	sub	%g2, 1, %g1
+RestoreSomeMore:
+	restore
+	subcc	%g1, 1, %g1
+	bne	RestoreSomeMore
+	nop
+
+	/* Set stack base for debugger */
+	sethi	%hi(_machDebugStackStart), %VOL_TEMP1
+							/* stack base */
+	ld	[%VOL_TEMP1 + %lo(_machDebugStackStart)], %VOL_TEMP1
+	set	MACH_FULL_STACK_FRAME, %VOL_TEMP2
+	sub	%VOL_TEMP1, %VOL_TEMP2, %sp		/* offset from base */
+	/* get trap type into o0 from local saved value */
+	and	%CUR_TBR_REG, MACH_TRAP_TYPE_MASK, %o0
+	srl	%o0, 4, %o0
+	/* put saved reg ptr into o1 */
+	sethi	%hi(_machSavedRegisterState), %VOL_TEMP1
+	ld	[%VOL_TEMP1 + %lo(_machSavedRegisterState)], %o1
+	/*
+	 * Set wim to this window, so that when we return from debugger,
+	 * we'll restore the registers for this window from the stack state
+	 * handled by the debugger.  This is safe to do before calling the
+	 * debugger, since we just saved all the windows to the stack.
+	 */
+	MACH_SET_WIM_TO_CWP()
+	/*
+	 * Is there a window of vulnerability here when the sp doesn't match
+	 * what's saved on the stack and I might restore incorrectly from
+	 * stack if I took another trap?  But interrupts should be off and
+	 * I shouldn't get a trap.
+	 */
+
+	/* call debugger */
+	call	_Dbg_Main,2
+	nop
+
+	/* put saved stack pointer into %sp. */
+	sethi	%hi(_machSavedRegisterState), %VOL_TEMP1
+	ld	[%VOL_TEMP1 + %lo(_machSavedRegisterState)], %sp
+
+	/* finish as for regular trap */
+	set	_MachReturnFromTrap, %VOL_TEMP1
+	jmp	%VOL_TEMP1
+	nop
+
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MachSyscallTrap --
+ *
+ *	This is the code to handle system call traps.  The number of the
+ *	system call is in %g1.
+ *
+ * Results:
+ *	Returns a status to the caller in the caller's %o0 (or %i0).
+ *
+ * Side effects:
+ *	Depends on the kernel call.
+ *
+ * ----------------------------------------------------------------------
+ */
+.global	MachSyscallTrap
+MachSyscallTrap:
+	/*
+	 * So that we don't re-execute the trap instruction when we
+	 * return from the system call trap via the return trap procedure,
+	 * we increment the return pc and npc here.
+	 */
+	mov	%NEXT_PC_REG, %CUR_PC_REG
+	add	%NEXT_PC_REG, 0x4, %NEXT_PC_REG
+	/*
+	 * Make sure user stack pointer is written into state structure so that
+	 * it can be used while processing the system call.  (Who uses it??)
+	 * This means saving the frame pointer (previous user stack pointer).
+	 */
+	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
+	add	%VOL_TEMP1, MACH_TRAP_REGS_OFFSET, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	add	%VOL_TEMP1, MACH_FP_OFFSET, %VOL_TEMP1
+	st	%fp, [%VOL_TEMP1]
+	/* If fork call, save registers and invalidate trapRegs stuff????? */
+	/*
+	 * Check number of kernel call for validity.  This was stored in %g1.
+	 * We must be careful not to have trashed it.  But if we end up
+	 * trashing it, we could instead pull it out of the saved globals state
+	 * in the mach state structure since it got saved there.
+	 */
+	set	_machMaxSysCall, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	cmp	%VOL_TEMP1, %g1
+	bgeu	GoodSysCall
+	nop
+	/*
+	 * If bad, (take user error? - on spur) then do normal return from trap.
+	 * Is this magic number a return value?  It's in the sun3 code.
+	 */
+	set	SYS_INVALID_SYSTEM_CALL, %RETURN_VAL_REG
+	set	ReturnFromSyscall, %VOL_TEMP1
+	jmp	%VOL_TEMP1
+	nop
+GoodSysCall:
+	/*
+	 * Save sys call number into lastSysCall field in process state so
+	 * that migration can figure out what it was supposed to be.
+	 * %g1 must still contain syscall number.
+	 */
+	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
+	set	_machLastSysCallOffset, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2
+	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
+	st	%g1, [%VOL_TEMP1]
+	/*
+	 * Fetch args.  Copy them from user space if they aren't all in
+	 * the input registers.  For now I copy all the input registers,
+	 * since there isn't a table giving the actual number of args?
+	 * For args beyond the number of words that can fit in the input
+	 * registers, I get the offset to copy to and the pc to jump to inside
+	 * the copying from tables set up in Mach_SyscallInit.  If there
+	 * are no args to copy, then the pc gets set to jump to
+	 * MachFetchArgsEnd.
+	 */
+	mov	%i5, %o5
+	mov	%i4, %o4
+	mov	%i3, %o3
+	mov	%i2, %o2
+	mov	%i1, %o1
+	mov	%i0, %o0
+	/*
+	 * Fetch offsets to copy from and to out of table.
+	 */
+	sll	%g1, 2, %g1				/* system call index */
+	set	_machArgOffsets, %VOL_TEMP2		/* offset in table */
+	add	%g1, %VOL_TEMP2, %VOL_TEMP2		/* addr in table */
+	ld	[%VOL_TEMP2], %VOL_TEMP2		/* offset value */
+	add	%fp, %VOL_TEMP2, %VOL_TEMP1		/* need global here? */
+	add	%sp, %VOL_TEMP2, %VOL_TEMP2		/* need global here? */
+
+	/*
+	 * Fetch pc branch address out of table and put it into %SAFE_TEMP
+	 */
+	set	_machArgDispatch, %SAFE_TEMP
+	add	%g1, %SAFE_TEMP, %SAFE_TEMP
+	ld	[%SAFE_TEMP], %SAFE_TEMP
+	jmp	%SAFE_TEMP
+	nop
+
+.global	_MachFetchArgs
+_MachFetchArgs:
+	ld	[%VOL_TEMP1], %SAFE_TEMP	/* first word - pc offset 0 */
+	st	%SAFE_TEMP, [%VOL_TEMP2]
+	add	%VOL_TEMP1, 4, %VOL_TEMP1
+	add	%VOL_TEMP2, 4, %VOL_TEMP2
+	ld	[%VOL_TEMP1], %SAFE_TEMP	/* second word - pc offset 16 */
+	st	%SAFE_TEMP, [%VOL_TEMP2]
+	add	%VOL_TEMP1, 4, %VOL_TEMP1
+	add	%VOL_TEMP2, 4, %VOL_TEMP2
+	ld	[%VOL_TEMP1], %SAFE_TEMP	/* third word - pc offset 32 */
+	st	%SAFE_TEMP, [%VOL_TEMP2]
+	add	%VOL_TEMP1, 4, %VOL_TEMP1
+	add	%VOL_TEMP2, 4, %VOL_TEMP2
+	ld	[%VOL_TEMP1], %SAFE_TEMP	/* fourth word */
+	st	%SAFE_TEMP, [%VOL_TEMP2]
+	add	%VOL_TEMP1, 4, %VOL_TEMP1
+	add	%VOL_TEMP2, 4, %VOL_TEMP2
+	ld	[%VOL_TEMP1], %SAFE_TEMP	/* fifth word */
+	st	%SAFE_TEMP, [%VOL_TEMP2]
+	add	%VOL_TEMP1, 4, %VOL_TEMP1
+	add	%VOL_TEMP2, 4, %VOL_TEMP2
+	ld	[%VOL_TEMP1], %SAFE_TEMP	/* sixth word */
+	st	%SAFE_TEMP, [%VOL_TEMP2]
+	add	%VOL_TEMP1, 4, %VOL_TEMP1
+	add	%VOL_TEMP2, 4, %VOL_TEMP2
+	ld	[%VOL_TEMP1], %SAFE_TEMP	/* seventh word */
+	st	%SAFE_TEMP, [%VOL_TEMP2]
+	add	%VOL_TEMP1, 4, %VOL_TEMP1
+	add	%VOL_TEMP2, 4, %VOL_TEMP2
+	ld	[%VOL_TEMP1], %SAFE_TEMP	/* eighth word */
+	st	%SAFE_TEMP, [%VOL_TEMP2]
+	add	%VOL_TEMP1, 4, %VOL_TEMP1
+	add	%VOL_TEMP2, 4, %VOL_TEMP2
+	ld	[%VOL_TEMP1], %SAFE_TEMP	/* ninth word */
+	st	%SAFE_TEMP, [%VOL_TEMP2]
+	add	%VOL_TEMP1, 4, %VOL_TEMP1
+	add	%VOL_TEMP2, 4, %VOL_TEMP2
+	ld	[%VOL_TEMP1], %SAFE_TEMP	/* tenth word */
+	st	%SAFE_TEMP, [%VOL_TEMP2]
+	add	%VOL_TEMP1, 4, %VOL_TEMP1
+	add	%VOL_TEMP2, 4, %VOL_TEMP2
+	/*
+	 * Marks last place where PC could be when a page fault occurs while
+	 * fetching arguments.  Needed to distinguish between a page fault
+	 * during arg fetch (which is okay) from other page faults in the
+	 * kernel, which are fatal errors.
+	 */
+.global	_MachFetchArgsEnd
+_MachFetchArgsEnd:
+	/* get address from table */
+	MACH_GET_CUR_PROC_PTR(%VOL_TEMP1)		/* into %VOL_TEMP1 */
+	set	_machKcallTableOffset, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2		/* offset to kcalls */
+	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* addr of array */
+	add	%g1, %VOL_TEMP1, %VOL_TEMP1		/* index to kcall */
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* got addr */
+	/* enable interrupts */
+	QUICK_ENABLE_INTR(%VOL_TEMP2)
+	/* go do it */
+	call	%VOL_TEMP1
+	nop
+ReturnFromSyscall:
+	/* Disable interrupts. */
+	QUICK_DISABLE_INTR(%VOL_TEMP1)
+	/*
+	 * Move return value to caller's return val register.
+	 */
+	mov	%RETURN_VAL_REG, %RETURN_VAL_REG_CHILD
+	/*
+	 * Sun3 checks special handling flag here.  I do it in return from
+	 * trap, if we came from a user process.
+	 */
+
+	/* restore the stack pointers? */
+
+	/* do normal return from trap */
+	set	_MachReturnFromTrap, %VOL_TEMP1
+	jmp	%VOL_TEMP1
+	nop
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MachLinkTrap --
+ *
+ *	This is the code to handle a dynamic linking trap #2.
+ *	Apparently we don't have to do anything.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------
+ */
+.global	MachLinkTrap
+MachLinkTrap:
+	/*
+	 * So that we don't re-execute the trap instruction when we
+	 * return from the system call trap via the return trap procedure,
+	 * we increment the return pc and npc here.
+	 */
+	mov	%NEXT_PC_REG, %CUR_PC_REG
+	add	%NEXT_PC_REG, 0x4, %NEXT_PC_REG
+
+	/* do normal return from trap */
+	set	_MachReturnFromTrap, %VOL_TEMP1
+	jmp	%VOL_TEMP1
+	nop
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MachUnixSyscallTrap --
+ *
+ *	This is the code to handle unix system call traps.  The number of the
+ *	system call is in %g1.
+ *
+ * Results:
+ *	Returns a status to the caller in the caller's %o0 (or %i0).
+ *
+ * Side effects:
+ *	Depends on the kernel call.
+ *
+ * ----------------------------------------------------------------------
+ */
+.global	MachUnixSyscallTrap
+MachUnixSyscallTrap:
+	/*
+	 * So that we don't re-execute the trap instruction when we
+	 * return from the system call trap via the return trap procedure,
+	 * we increment the return pc and npc here.
+	 */
+	mov	%NEXT_PC_REG, %CUR_PC_REG
+	add	%NEXT_PC_REG, 0x4, %NEXT_PC_REG
+	/*
+	 * Make sure user stack pointer is written into state structure so that
+	 * it can be used while processing the system call.  (Who uses it??)
+	 * This means saving the frame pointer (previous user stack pointer).
+	 */
+	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
+	add	%VOL_TEMP1, MACH_TRAP_REGS_OFFSET, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	add	%VOL_TEMP1, MACH_FP_OFFSET, %VOL_TEMP1
+	st	%fp, [%VOL_TEMP1]
+	nop
+	/* If fork call, save registers and invalidate trapRegs stuff????? */
+	/*
+	 * Check number of kernel call for validity.  This was stored in %g1.
+	 * We must be careful not to have trashed it.  But if we end up
+	 * trashing it, we could instead pull it out of the saved globals state
+	 * in the mach state structure since it got saved there.
+	 */
+	set	_sysUnixNumSyscalls, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	cmp	%VOL_TEMP1, %g1
+	bgeu	GoodUnixSysCall
+	nop
+	/*
+	 * If bad, (take user error? - on spur) then do normal return from trap.
+	 * Is this magic number a return value?  It's in the sun3 code.
+	 */
+	set	-1, %RETURN_VAL_REG
+	set	ReturnFromUnixSyscall, %VOL_TEMP1
+	jmp	%VOL_TEMP1
+	nop
+GoodUnixSysCall:
+	/*
+	 * Save sys call number into lastSysCall field in process state so
+	 * that migration can figure out what it was supposed to be.
+	 * %g1 must still contain syscall number.
+	 */
+	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* into %VOL_TEMP1 */
+	set	_machLastSysCallOffset, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2
+	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
+	st	%g1, [%VOL_TEMP1]
+	/*
+	 * Save i0 for call restart.
+	 */
+	st	%i0, [%VOL_TEMP1+4]
+	/*
+	 * Fetch args.  Copy them from user space if they aren't all in
+	 * the input registers.  For now I copy all the input registers,
+	 * since there isn't a table giving the actual number of args?
+	 * For args beyond the number of words that can fit in the input
+	 * registers, I get the offset to copy to and the pc to jump to inside
+	 * the copying from tables set up in Mach_SyscallInit.  If there
+	 * are no args to copy, then the pc gets set to jump to
+	 * MachFetchArgsEnd.
+	 */
+	mov	%i5, %o5
+	mov	%i4, %o4
+	mov	%i3, %o3
+	mov	%i2, %o2
+	mov	%i1, %o1
+	mov	%i0, %o0
+
+	cmp	%g1, 0x8b /* Sigreturn */
+	be	DoSigreturn
+
+	sll	%g1, 3, %g1
+	set	_sysUnixSysCallTable, %VOL_TEMP2
+	add	%g1, %VOL_TEMP2, %VOL_TEMP2		/* index to kcall */
+	ld	[%VOL_TEMP2], %VOL_TEMP2		/* got addr */
+	/* enable interrupts */
+	QUICK_ENABLE_INTR(%VOL_TEMP1)
+	/* go do it */
+	call	%VOL_TEMP2
+	nop
+ReturnFromUnixSyscall:
+	/* Disable interrupts. */
+	QUICK_DISABLE_INTR(%VOL_TEMP1)
+	/*
+	 * Move return value to caller's return val register.
+	 */
+
+	/*
+	 * Check if error.
+	 */
+	cmp	%RETURN_VAL_REG, -1
+	bne	UnixOk
+	nop
+
+	/*
+	 * Get the errno from the pcb and use it as the return value.
+	 */
+	MACH_GET_CUR_PROC_PTR(%VOL_TEMP1)		/* into %VOL_TEMP1 */
+	set	MACH_UNIX_ERRNO_OFFSET, %VOL_TEMP2
+	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	mov	%VOL_TEMP1, %RETURN_VAL_REG_CHILD
+
+	/*
+	 * Set the carry to indicate an error.
+	 */
+	mov	%CUR_PSR_REG, %VOL_TEMP2
+	set	MACH_CARRY_BIT, %VOL_TEMP1
+	or	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2
+	mov	%VOL_TEMP2, %CUR_PSR_REG
+	set	_MachReturnFromTrap, %VOL_TEMP1
+	jmp	%VOL_TEMP1
+	nop
+
+UnixOk:
+	mov	%RETURN_VAL_REG, %RETURN_VAL_REG_CHILD
+	mov	%o1, %i1
+	mov	%CUR_PSR_REG, %VOL_TEMP2
+	set	MACH_CARRY_BITMASK, %VOL_TEMP1
+	and	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2
+	mov	%VOL_TEMP2, %CUR_PSR_REG
+	set	_MachReturnFromTrap, %VOL_TEMP1
+	jmp	%VOL_TEMP1
+	nop
+
+DoSigreturn:
+	/* We have to skip the errno checking */
+	QUICK_ENABLE_INTR(%VOL_TEMP1)
+	/* go do it */
+	call	_Mach_SigreturnStub
+	nop
+	MACH_RESTORE_WINDOW_FROM_STACK()
+	/* Disable interrupts. */
+	QUICK_DISABLE_INTR(%VOL_TEMP1)
+	set	_MachReturnFromTrap, %VOL_TEMP1
+	jmp	%VOL_TEMP1
+	nop
+
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MachHandlePageFault --
+ *
+ *	An instruction or data fault has occurred.  This routine will retrieve
+ *	the fault error from the bus error register and the faulting address
+ *	from the address error register and will call
+ *	Vm routines to handle faulting in the page.
+ *
+ * Results:
+ *	Returns to MachReturnFromTrap rather than its caller.
+ *
+ * Side effects:
+ *	The page that caused the fault will become valid.
+ *
+ * ----------------------------------------------------------------------
+ */
+.global MachHandlePageFault
+MachHandlePageFault:
+#ifdef sun4c
+	/* synchronous error register value as first arg - clears it too. */
+	set	VMMACH_SYNC_ERROR_REG, %o0
+	lda	[%o0] VMMACH_CONTROL_SPACE, %o0
+
+	/* synch error address register value as second arg - clears it. */
+	set	VMMACH_SYNC_ERROR_ADDR_REG, %o1
+	lda	[%o1] VMMACH_CONTROL_SPACE, %o1
+
+	/* clear async regs as well since they latch on sync errors as well. */
+	set	VMMACH_ASYNC_ERROR_REG, %VOL_TEMP1
+	lda	[%VOL_TEMP1] VMMACH_CONTROL_SPACE, %g0
+
+	/* async error addr reg as well, so clear it.  Very silly. */
+	set	VMMACH_ASYNC_ERROR_ADDR_REG, %VOL_TEMP1
+	lda	[%VOL_TEMP1] VMMACH_CONTROL_SPACE, %g0
+#else
+	/* bus error register value as first arg. */
+	set	VMMACH_BUS_ERROR_REG, %o0
+	lduba	[%o0] VMMACH_CONTROL_SPACE, %o0
+
+	/* memory address causing the error as second arg */
+	set	VMMACH_ADDR_ERROR_REG, %o1
+	ld	[%o1], %o1
+
+	/* Write the address register to clear it */
+	set	VMMACH_ADDR_ERROR_REG, %VOL_TEMP1
+	st	%o1, [%VOL_TEMP1]
+#endif
+	/* trap value of the psr as third arg */
+	mov	%CUR_PSR_REG, %o2	
+
+	/* trap value of pc as fourth argument */
+	mov	%CUR_PC_REG, %o3
+#ifndef sun4c
+	/*
+	 * If the trap was on a pc access rather than a data access, the
+	 * memoory address register won't have frozen the correct address.
+	 * Just move the pc into the second argument.
+	 */
+	and	%CUR_TBR_REG, MACH_TRAP_TYPE_MASK, %VOL_TEMP1
+	cmp	%VOL_TEMP1, MACH_INSTR_ACCESS
+	bne	AddressValueOkay
+	nop
+	mov	%CUR_PC_REG, %o1
+#endif
+AddressValueOkay:
+	/* enable interrupts */
+	/*
+	QUICK_ENABLE_INTR(%VOL_TEMP1)
+	*/
+	call	_MachPageFault, 4
+	nop
+	/* Disable interrupts. */
+	QUICK_DISABLE_INTR(%VOL_TEMP1)
+
+	set	_MachReturnFromTrap, %VOL_TEMP1
+	jmp	%VOL_TEMP1
+	nop
+
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MachFlushWindowsToStackTrap --
+ *
+ *	A trap requesting that all our windows be flushed to the stack has
+ *	occured.  Bump up our return pc, since we don't want to re-execute
+ *	the trap, and then call the appropriate routine.
+ *
+ * Results:
+ *	Returns to MachReturnFromTrap, rather than our caller.
+ *
+ * Side effects:
+ *	Register windows will be flushed to the stack and the invalid
+ *	window mask will be set to point to the window before us.
+ *
+ * ----------------------------------------------------------------------
+ */
+.global	MachFlushWindowsToStackTrap
+MachFlushWindowsToStackTrap:
+	mov	%NEXT_PC_REG, %CUR_PC_REG
+	add	%NEXT_PC_REG, 4, %NEXT_PC_REG
+	call	_Mach_FlushWindowsToStack
+	nop
+	set	_MachReturnFromTrap, %VOL_TEMP1
+	jmp	%VOL_TEMP1
+	nop
+@
+
+
+9.14
+log
+@Added nop in delay slot after jump.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/Cvsroot/kernel/mach/sun4.md/machTrap.s,v 9.13 91/10/18 01:24:42 dlong Exp $ SPRITE (Berkeley)"
+d1649 1
+d1651 1
+@
+
+
+9.13
+log
+@sun4c/sun4c2 merge
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 9.12 91/08/02 18:41:59 mgbaker Exp $ SPRITE (Berkeley)"
+d1420 1
+@
+
+
+9.12
+log
+@Sped up underflow trap handler.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 9.11 91/07/26 17:04:17 shirriff Exp $ SPRITE (Berkeley)"
+d352 2
+a353 2
+	set	_machSpecialHandlingOffset, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2
+d381 1
+a381 1
+	MACH_UNDERFLOW_TEST(testModuloLabel)
+d440 7
+a446 7
+        set     _machGenFlagsOffset, %o1 
+        ld      [%o1], %o1
+        add     %o0, %o1, %o1
+        ld      [%o1], %o1
+        set     _machForeignFlag, %o2
+        ld      [%o2], %o2
+        andcc   %o1, %o2, %o1                   /* Is this a migrated proc? */
+d543 2
+a544 2
+        set     _machSpecialHandlingOffset, %VOL_TEMP2
+        ld      [%VOL_TEMP2], %VOL_TEMP2
+d687 3
+a689 2
+	set	_machCurStatePtr, %g4
+	st	%g3, [%g4]			/* update it */
+d694 2
+a695 2
+	set	_machCurStatePtr, %g3
+	ld	[%g3], %g3
+d703 2
+a704 2
+	set	_machSpecialHandlingOffset, %g4
+	ld	[%g4], %g4
+d706 1
+a706 1
+	set	0x1, %g4
+d712 2
+a713 2
+	set	_machCurStatePtr, %g3
+	ld	[%g3], %g3
+d725 2
+a726 2
+	set	_machCurStatePtr, %g3
+	ld	[%g3], %g3
+d859 1
+a859 1
+	set	0x1, %g3		/* Mark why we will save state */
+d917 2
+a918 2
+	set	_machGenFlagsOffset, %o1
+	ld	[%o1], %o1
+d921 2
+a922 2
+	set	_machForeignFlag, %o2
+	ld	[%o2], %o2
+d1061 3
+a1063 2
+	set	_machDebugStackStart, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* base of stack */
+d1072 2
+a1073 2
+	set	_machSavedRegisterState, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %fp
+d1087 1
+a1087 1
+	MACH_RETREAT_WIM(%VOL_TEMP1, %VOL_TEMP2, underflowLabel)
+d1143 2
+a1144 2
+	set	_machSavedRegisterState, %VOL_TEMP1
+	st	%sp, [%VOL_TEMP1]
+d1152 4
+a1155 1
+	set	(MACH_NUM_WINDOWS - 1), %g1
+d1161 1
+a1161 1
+	set	(MACH_NUM_WINDOWS - 1), %g1
+d1167 1
+d1169 3
+a1171 2
+	set	_machDebugStackStart, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* stack base */
+d1178 2
+a1179 2
+	set	_machSavedRegisterState, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %o1
+d1199 2
+a1200 2
+	set	_machSavedRegisterState, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %sp
+@
+
+
+9.11
+log
+@Large install for unix compatibility
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach.ken/sun4c.md/RCS/machTrap.s,v 1.1 91/05/15 13:16:29 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)"
+a142 4
+#ifdef NOTDEF
+        set     _machCurStatePtr, %VOL_TEMP1
+        ld      [%VOL_TEMP1], %VOL_TEMP2 		/* get machStatePtr */
+#endif NOTDEF
+a685 4
+#ifdef NOTDEF
+	set	_machCurStatePtr, %g3
+	ld	[%g3], %g3
+#endif NOTDEF
+d828 5
+a832 5
+	 * by parameters to Vm_PageIn, etc.
+	 * It turns out we also need 2 more globals for checking whether
+	 * the stack will cause a fault.  There's no other place to save them
+	 * except in some per-process space, so I save g2 and g5 into
+	 * a per-process place.
+d836 2
+a837 15
+
+	MACH_GET_CUR_PROC_PTR(%g3)
+	cmp	%g3, -1
+	be	Dontsave1			/* If no proc, don't save.  */
+	nop
+	st	%g2, [%g3+MACH_PROC_REGS_OFFSET]
+	st	%g5, [%g3+MACH_PROC_REGS_OFFSET+4]
+	b	Save1
+
+Dontsave1:
+	set	_machTmpRegsStore, %g3
+	st	%g2, [%g3]			/* save %g2 */
+	st	%g5, [%g3+4]			/* save %g5 */
+        
+Save1:
+d843 1
+a903 13
+	MACH_GET_CUR_PROC_PTR(%g3)
+	cmp	%g3, -1
+	be	Dontsave2			/* If no proc, don't save.  */
+	nop
+	ld	[%g3+MACH_PROC_REGS_OFFSET],%g2
+	ld	[%g3+MACH_PROC_REGS_OFFSET+4],%g5
+	b	Save2
+Dontsave2:
+	set	_machTmpRegsStore, %g3
+	ld	[%g3], %g2
+	ld	[%g3+4], %g5
+        
+Save2:
+d907 2
+a966 13
+	MACH_GET_CUR_PROC_PTR(%g3)
+	cmp	%g3, -1
+	be	Dontsave3			/* If no proc, don't save.  */
+	nop
+	ld	[%g3+MACH_PROC_REGS_OFFSET],%g2
+	ld	[%g3+MACH_PROC_REGS_OFFSET+4],%g5
+	b	Save3
+Dontsave3:
+	set	_machTmpRegsStore, %g3
+	ld	[%g3], %g2
+	ld	[%g3+4], %g5
+Save3:
+        
+d969 2
+d992 1
+a992 13
+	MACH_GET_CUR_PROC_PTR(%g3)
+	cmp	%g3, -1
+	be	Dontsave4			/* If no proc, don't save.  */
+	nop
+	ld	[%g3+MACH_PROC_REGS_OFFSET],%g2
+	ld	[%g3+MACH_PROC_REGS_OFFSET+4],%g5
+Dontsave4:
+	set	_machTmpRegsStore, %g3
+	ld	[%g3], %g2
+	ld	[%g3+4], %g5
+Save4:
+
+	mov	%SAFE_TEMP, %g3			/* restore g3 and g4 */
+d994 2
+a1231 4
+#ifdef NOTDEF
+	set	_machCurStatePtr, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+#endif NOTDEF
+a1444 4
+#ifdef NOTDEF
+	set	_machCurStatePtr, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+#endif NOTDEF
+@
+
+
+9.10
+log
+@Added trap handler for Unix system calls.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 9.9 90/10/12 17:41:31 mendel Exp $ SPRITE (Berkeley)"
+d221 4
+d369 3
+d379 5
+d835 6
+a840 1
+	 * %o5 also appears to be safe here.
+d845 15
+d886 1
+a886 1
+	MACH_CHECK_STACK_FAULT(%fp, %o0, %g3, %o1, UndflFault1, UndflFault2)
+d923 18
+a940 2
+	mov	%SAFE_TEMP, %g3		/* Need I restore these really? */
+	mov	%o5, %g4
+d996 16
+a1011 1
+	mov	%SAFE_TEMP, %g3			/* restore globals */
+d1013 1
+d1019 5
+d1029 2
+d1032 15
+a1046 1
+	mov	%SAFE_TEMP, %g3			/* restore globals */
+d1443 30
+d1542 4
+d1562 3
+d1618 14
+a1631 1
+	
+@
+
+
+9.9
+log
+@Changed call to _Mach_FlushWindowsToStack to match new name.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 9.8 90/09/10 12:22:33 mendel Exp Locker: mendel $ SPRITE (Berkeley)"
+d196 1
+d217 4
+d1355 142
+@
+
+
+9.8
+log
+@Changed routine MachHandleWeirdoInstruction to be named MachHandleTrap.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 9.7 90/03/26 12:13:58 mgbaker Exp Locker: mendel $ SPRITE (Berkeley)"
+d1452 1
+a1452 1
+	call	_MachFlushWindowsToStack
+@
+
+
+9.7
+log
+@Added ability to kill processes set up for debugging due to bad
+stacks in underflow handler code.
+.`
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 9.6 90/01/31 18:07:42 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d225 1
+a225 1
+	be	_MachHandleWeirdoInstruction		/* C routine */
+d233 1
+a233 1
+	be	_MachHandleWeirdoInstruction		/* C routine */
+d241 1
+a241 1
+	be	_MachHandleWeirdoInstruction		/* C routine */
+d249 1
+a249 1
+	be	_MachHandleWeirdoInstruction		/* C routine */
+d257 1
+a257 1
+	be	_MachHandleWeirdoInstruction		/* C routine */
+d265 1
+a265 1
+	be	_MachHandleWeirdoInstruction		/* C routine */
+@
+
+
+9.7.1.1
+log
+@Contains asplos statistics-gathering code.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach.mgb/sun4.md/RCS/machTrap.s,v 1.1 90/06/29 17:40:01 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+a106 7
+	 * Set temporary variables for getting asplos statistics.
+	 */
+	set	_inTrapOverflows, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2
+	add	%VOL_TEMP2, 1, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+	/*
+a367 7
+	/*
+	 * Set temporary variables for asplos statistics.  This one says
+	 * whether we had to take a page fault here or not.  We clear it first.
+	 */
+	set	_hadToFault, %VOL_TEMP1
+	st	%g0, [%VOL_TEMP1]
+
+a371 7
+	 * Set temporary variables for getting asplos statistics.
+	 */
+	set	_inTrapUnderflows, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2
+	add	%VOL_TEMP2, 1, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+	/*
+a387 1
+
+a391 7
+	 * Set temporary variables for asplos statistics.  This one says
+	 * whether we had to take a page fault here or not.
+	 */
+	set	_hadToFault, %VOL_TEMP1
+	set	1, %o0	/* We overwrite this anyway below */
+	st	%o0, [%VOL_TEMP1]
+	/*
+a409 8
+	/*
+	 * Set temporary variables for asplos statistics.  This one says
+	 * whether we had to take a page fault here or not.
+	 */
+	set	_hadToFault, %VOL_TEMP1
+	set	1, %o1	/* We overwrite this anyway below */
+	st	%o1, [%VOL_TEMP1]
+
+a455 14
+	/*
+	 * Set temporary variables for asplos statistics.  This one says
+	 * whether we had to take a page fault here or not.
+	 */
+	set	_hadToFault, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	tst	%VOL_TEMP1
+	be	DontAdd
+	nop
+	set	_faultInTrapUnderflows, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2
+	add	%VOL_TEMP2, 1, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+DontAdd:
+a536 9
+
+	/*
+	 * Set temporary data structures for asplos statistics.
+	 */
+	set	_slowOverflows, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2
+	add	%VOL_TEMP2, 1, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+
+a602 64
+	 * Set temporary variables for getting asplos statistics.
+	 */
+	set	_mach_inContextSwitch, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	tst	%VOL_TEMP1
+	be	GoOn1
+	nop
+	/* We're in a context switch. */
+	set	_contextSwitchOverflows, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2
+	add	%VOL_TEMP2, 1, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+GoOn1:
+	set	_mach_inPageValid, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	tst	%VOL_TEMP1
+	be	GoOn2
+	nop
+	/* We're in a page validation. */
+	set	_pageValidOverflows, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2
+	add	%VOL_TEMP2, 1, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+GoOn2:
+	set	_mach_AtInterruptLevel, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	tst	%VOL_TEMP1
+	be	GoOn3
+	nop
+	/* We're in an interrupt handler. */
+	set	_interruptOverflows, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2
+	add	%VOL_TEMP2, 1, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+GoOn3:
+	set	_mach_inSysCall, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	tst	%VOL_TEMP1
+	be	GoOn4
+	nop
+	/* We're in a sys call. */
+	set	_mach_whichSysCall, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	sll	%VOL_TEMP1, 2, %VOL_TEMP1	/* offset into array */
+	set	_machSysOverflows, %VOL_TEMP2
+	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2	/* address of counter */
+	ld	[%VOL_TEMP2], %VOL_TEMP1
+	add	%VOL_TEMP1, 1, %VOL_TEMP1
+	st	%VOL_TEMP1, [%VOL_TEMP2]
+GoOn4:
+	/*
+	 * Set temporary variables for getting asplos statistics.
+	 * Test if we came from user mode.
+	 */
+	set	_itWasUser, %VOL_TEMP1			/* clear flag */
+	st	%g0, [%VOL_TEMP1]
+	andcc	%CUR_PSR_REG, MACH_PS_BIT, %g0
+	bne	CameFromKernel
+	nop
+	set	1, %VOL_TEMP2				/* set user flag */
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+CameFromKernel:			/* Temporary for asplos! */
+	
+	/*
+a627 8
+	/*
+	 * Set temporary variables for getting asplos statistics.
+	 */
+	set	_kernelOverflows, %g3
+	ld	[%g3], %g4
+	add	%g4, 1, %g4
+	st	%g4, [%g3]
+
+a646 26
+	 * Set temporary variables for getting asplos statistics.
+	 * Test if we came from user mode.
+	 */
+	set	_itWasUser, %g3
+	ld	[%g3], %g3
+	tst	%g3
+	bne	CameFromUser
+	nop
+	/* Came from kernel */
+	set	_userFromKernelOverflows, %g3
+	ld	[%g3], %g4
+	add	%g4, 1, %g4
+	st	%g4, [%g3]
+	b	DoneAsplos
+	nop
+CameFromUser:			/* Temporary for asplos! */
+	/*
+	 * Set temporary variables for getting asplos statistics.
+	 */
+	set	_userFromUserOverflows, %g3
+	ld	[%g3], %g4
+	add	%g4, 1, %g4
+	st	%g4, [%g3]
+DoneAsplos:			/* Temporary for asplos! */
+
+	/*
+a672 7
+	/*
+	 * Set temporary variables for getting asplos statistics.
+	 */
+	set	_bufferOverflows, %g3
+	ld	[%g3], %g4
+	add	%g4, 1, %g4
+	st	%g4, [%g3]
+d825 1
+a825 1
+	be	SetUserUnderflow	/* Temporary for asplos! */
+a827 19
+	 * Set temporary data structures for asplos statistics.
+	 */
+	set	_kernelUnderflows, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2
+	add	%VOL_TEMP2, 1, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+	b	NormalUnderflow
+	nop
+
+SetUserUnderflow:
+	/*
+	 * Set temporary data structures for asplos statistics.
+	 */
+	set	_userUnderflows, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2
+	add	%VOL_TEMP2, 1, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+
+	/*
+a855 7
+	 * Set temporary data structures for asplos statistics.
+	 */
+	set	_slowUnderflows, %o0
+	ld	[%o0], %o1
+	add	%o1, 1, %o1
+	st	%o1, [%o0]
+	/*
+a937 9
+	 * Set temporary data structures for asplos statistics.  This assumes
+	 * that the only reasons we had to save state were killing the proc
+	 * or a page-in.  This is assumed in the code here anyway.
+	 */
+	set	_faultUnderflows, %g3
+	ld	[%g3], %g4
+	add	%g4, 1, %g4
+	st	%g4, [%g3]
+	/*
+a1013 51
+	 * Set temporary data structures for asplos statistics.
+	 */
+	set	_mach_inPageValid, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	tst	%VOL_TEMP1
+	be	Onwards1
+	nop
+	/* We're in a page validation. */
+	set	_pageValidUnderflows, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2
+	add	%VOL_TEMP2, 1, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+Onwards1:
+	set	_mach_inContextSwitch, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	tst	%VOL_TEMP1
+	be	Onwards2
+	nop
+	/* We're in a context switch. */
+	set	_contextSwitchUnderflows, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2
+	add	%VOL_TEMP2, 1, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+Onwards2:
+	set	_mach_AtInterruptLevel, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	tst	%VOL_TEMP1
+	be	Onwards3
+	nop
+	/* We're in an interrupt handler. */
+	set	_interruptUnderflows, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2
+	add	%VOL_TEMP2, 1, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+Onwards3:
+	set	_mach_inSysCall, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	tst	%VOL_TEMP1
+	be	Onwards4
+	nop
+	/* We're in a sys call. */
+	set	_mach_whichSysCall, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	sll	%VOL_TEMP1, 2, %VOL_TEMP1	/* offset into array */
+	set	_machSysUnderflows, %VOL_TEMP2
+	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2	/* address of counter */
+	ld	[%VOL_TEMP2], %VOL_TEMP1
+	add	%VOL_TEMP1, 1, %VOL_TEMP1
+	st	%VOL_TEMP1, [%VOL_TEMP2]
+Onwards4:
+	/*
+a1181 15
+	 * Set temporary data structures for asplos statistics.
+	 */
+	set	_mach_inSysCall, %VOL_TEMP1
+	set	1, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+	set	_mach_whichSysCall, %VOL_TEMP1
+	st	%g1, [%VOL_TEMP1]
+	sll	%g1, 2, %VOL_TEMP1
+	set	_sys_NumCalls, %VOL_TEMP2
+	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2
+	add	%VOL_TEMP2, 1, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+
+	/*
+a1343 5
+	/*
+	 * Set temporary data structures for asplos statistics.
+	 */
+	set	_mach_inSysCall, %VOL_TEMP1
+	st	%g0, [%VOL_TEMP1]
+@
+
+
+9.6
+log
+@Fixed bug in window underflow handler that caused some processes to
+infinite loop.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 9.5 90/01/26 19:30:26 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d442 4
+a449 1
+KeepSuspended:
+d452 1
+a452 1
+	ba	KeepSuspended
+d909 4
+a916 1
+KeepFromContinuing:
+d919 1
+a919 1
+	ba	KeepFromContinuing
+@
+
+
+9.5
+log
+@Maybe we've fixed the MachWindowUnderflow: Killing process
+problem.  An underflow that finds the user's stack page non-resident
+will just act like a page fault.  Then when the user restore instruction
+is re-executed, you get the real underflow.
+
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 9.4 90/01/11 10:39:54 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d867 1
+a867 1
+	and	%g3, 0x2, %g0
+d917 1
+a917 1
+	and	%g3, 0x4, %g0		/* See if second address would fault */
+@
+
+
+9.4
+log
+@*** empty log message ***
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 9.3 89/12/12 18:01:27 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d792 7
+d809 11
+a819 1
+	clr	%SAFE_TEMP	/* used to mark whether we saved state */
+d836 4
+a839 1
+	bne,a	KillTheProc
+d842 6
+a847 8
+	MACH_CHECK_FOR_FAULT(%fp, %o0)
+	bne,a	MustSaveState
+	save			/* back to trap window - only if branching!! */
+
+	/* Check other extreme of addresses we'd touch */
+	add	%fp, (MACH_SAVED_WINDOW_SIZE - 4), %o1
+	MACH_CHECK_FOR_FAULT(%o1, %o0)
+	save					/* back to trap window */
+d849 1
+a849 1
+	nop
+d854 2
+a855 1
+	 * This state-saving enables traps.
+d861 2
+a862 2
+	 * We came back from saving state.  Mark the fact we had to so we can
+	 * restore state and then handle underflow.
+d864 5
+a868 15
+	set	0x11111111, %SAFE_TEMP
+	/*
+	 * Call	Vm_PageIn stuff and deal with faulting starting at this window.
+	 * We can't do it from actual underflow routine, since that's in the
+	 * wrong window and calls to the vm stuff would overwrite this window
+	 * where we had to save stuff so that MachReturnFromTrap could restore
+	 * stuff correctly and return from the correct window.  So we move
+	 * back a window, check if first address faulted.  If so, get its
+	 * value and move here again and page it it.  Then move back again and
+	 * check second address.  If it is still bad, we move here again and
+	 * page it in.  Otherwise, we just move here again.
+	 */
+	restore
+	MACH_CHECK_FOR_FAULT(%fp, %o0)
+	be	CheckNextUnderflow		/* this one okay, goto next */
+d870 1
+a870 2
+	mov	%fp, %o0			/* do the page in for first */
+	save					/* back to trap window */
+d872 2
+a873 2
+		/* Address that would fault is in %i0 now. */
+	mov	%i0, %o0
+d879 3
+a881 2
+	be,a	CheckNextUnderflow		/* succeeded, try next */
+	restore		/* back to window to check in, only if branching!! */
+d883 2
+d917 2
+a918 4
+	add	%fp, (MACH_SAVED_WINDOW_SIZE - 4), %o1
+	MACH_CHECK_FOR_FAULT(%o1, %o0)
+	save					/* back to trap window */
+	be	NormalUnderflow			/* we were okay here */
+d921 2
+a922 2
+	/* Address that would fault is in %i1 now. */
+	mov	%i1, %o0
+d930 11
+a942 2
+	mov	%g3, %VOL_TEMP1			/* clear out globals */
+	mov	%g4, %VOL_TEMP2
+d950 2
+a951 2
+	mov	%VOL_TEMP1, %g3			/* restore globals */
+	mov	%VOL_TEMP2, %g4
+a952 11
+	set	0x11111111, %VOL_TEMP1
+	cmp	%SAFE_TEMP, %VOL_TEMP1		/* did we have to save state? */
+	bne	NormalUnderflowReturn		/* we were okay */
+	nop
+	/*
+	 * We had to save state, so now we have to restore it.
+	 * This state-restoring with disable traps.
+	 */
+	call	_MachReturnFromTrap
+	nop
+NormalUnderflowReturn:
+@
+
+
+9.3
+log
+@Took out lots of debugging.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 9.2 89/11/29 20:08:51 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d426 11
+a436 2
+#ifdef NOTDEF
+	set	PROC_TERM_DESTROYED, %o0
+d441 1
+a441 2
+#else
+	MACH_GET_CUR_PROC_PTR(%o0)		/* procPtr in %o0 */
+d446 1
+d449 2
+a450 1
+#endif /* NOTDEF */
+d879 11
+a889 2
+#ifdef NOTDEF
+	set	PROC_TERM_DESTROYED, %o0
+d894 1
+a894 2
+#else
+	MACH_GET_CUR_PROC_PTR(%o0)		/* procPtr in %o0 */
+d899 1
+d902 3
+a904 1
+#endif /* NOTDEF */
+@
+
+
+9.2
+log
+@Bad stack now causes call to _Proc_SuspendProcess. Also debugging flushes
+for sun4c.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 9.1 89/11/27 14:51:51 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+a191 4
+#ifdef sun4c
+	call	_MachFlushWindowsToStack
+	nop
+#endif /* sun4c */
+a195 7
+#ifdef sun4c
+	cmp	%VOL_TEMP1, MACH_TRAP_SYSCALL		/* system call */
+	bne	GoOn
+	nop
+	call	_MachFlushWindowsToStack
+	nop
+#endif /* sun4c */
+a198 1
+GoOn:
+a394 4
+#ifdef sun4c
+	call	_MachFlushWindowsToStack
+	nop
+#endif /* sun4c */
+a409 4
+#ifdef sun4c
+	call	_MachFlushWindowsToStack
+	nop
+#endif /* sun4c */
+a852 4
+#ifdef sun4c
+	call	_MachFlushWindowsToStack
+	nop
+#endif /* sun4c */
+a889 4
+#ifdef sun4c
+	call	_MachFlushWindowsToStack
+	nop
+#endif /* sun4c */
+@
+
+
+9.1
+log
+@Notdef'ing debug stuff.
+floating point additions to state structure.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.42 89/09/08 16:21:19 mgbaker Exp $ SPRITE (Berkeley)"
+d192 4
+a199 1
+#ifdef NOTDEF
+a206 1
+#endif NOTDEF
+d407 4
+d426 4
+d446 1
+d452 10
+d873 4
+d893 1
+d899 9
+d914 4
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.42 89/09/08 16:21:19 mgbaker Exp Locker: douglis $ SPRITE (Berkeley)"
+d171 1
+a171 1
+	
+d174 1
+d196 9
+d208 1
+a262 4
+#ifdef FP_ENABLED
+	set	_machSavedFsr, %o0			/* save fp state reg */
+	st	%fsr, [%o0]
+#endif FP_ENABLED
+d1179 3
+a1181 2
+	 * Sun3 stuff saves sys call # in a lastSysCall field in state
+	 * struct. Why?
+d1183 5
+@
+
+
+1.42
+log
+@Preparing for next install.  (More _ASM inclusions.)
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.41 89/08/17 15:19:21 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+@
+
+
+1.41
+log
+@tmp checkin
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.40 89/08/09 12:34:00 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d21 1
+@
+
+
+1.40
+log
+@Stable kernel.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.39 89/05/21 18:24:45 mgbaker Exp $ SPRITE (Berkeley)"
+d424 1
+d856 1
+@
+
+
+1.39
+log
+@checkin before spring cleaning
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.38 89/05/02 23:26:21 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d397 1
+a397 1
+	QUICK_ENABLE_INTR()
+d402 1
+a402 1
+	QUICK_DISABLE_INTR()
+d412 1
+a412 1
+	QUICK_ENABLE_INTR()
+d416 1
+a416 1
+	QUICK_DISABLE_INTR()
+d843 1
+a843 1
+	QUICK_ENABLE_INTR()
+d849 1
+a849 1
+	QUICK_DISABLE_INTR()
+d869 1
+a869 1
+	QUICK_ENABLE_INTR()
+d875 1
+a875 1
+	QUICK_DISABLE_INTR()
+d1265 2
+d1271 2
+a1272 5
+	/* Disable interrupts.  (Is this necessary?  Sun3 does it.) */
+	mov	%psr, %VOL_TEMP1
+	or	%VOL_TEMP1, MACH_DISABLE_INTR, %VOL_TEMP1
+	mov	%VOL_TEMP1, %psr
+	MACH_WAIT_FOR_STATE_REGISTER()
+d1310 17
+d1330 1
+d1332 4
+a1336 2
+	ld	[%VOL_TEMP1], %o1
+	/* Write the address register to clear it */
+d1338 1
+d1341 1
+d1344 1
+d1355 1
+d1357 2
+d1361 3
+@
+
+
+1.38
+log
+@New interrupts, device interface, etc.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.37 89/04/29 19:51:49 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d250 13
+a262 1
+	cmp	%VOL_TEMP1, MACH_FP_EXCEP		/* fp unit off */
+@
+
+
+1.37
+log
+@Caching of kernel stacks now works.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.36 89/04/25 15:28:40 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+a169 8
+/* FOR DEBUGGING */
+#ifdef NOTDEF
+	set	0x11111111, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, EnteredTrap0, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, EnteredTrap1, %CUR_TBR_REG)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, EnteredTrap2, %CUR_PC_REG)
+#endif NOTDEF
+/* END FOR DEBUGGING */
+d181 2
+a182 2
+	cmp	%VOL_TEMP1, MACH_TRAP_SYSCALL		/* system call */
+	be	MachSyscallTrap
+d184 7
+a190 4
+
+	cmp	%VOL_TEMP1, MACH_LEVEL10_INT		/* clock interrupt */
+	set	_Timer_TimerServiceInterrupt, %o0
+	be	MachHandleInterrupt
+d193 3
+a195 69
+	cmp	%VOL_TEMP1, MACH_LEVEL14_INT		/* unused clock level */
+	set	_Timer_TimerServiceInterrupt, %o0
+	be	MachHandleInterrupt
+	nop
+
+	cmp	%VOL_TEMP1, MACH_LEVEL12_INT		/* keyboard interrupt */
+	set	_Dev_KbdServiceInterrupt, %o0
+	be	MachHandleInterrupt
+	nop
+
+	cmp	%VOL_TEMP1, MACH_LEVEL6_INT		/* ether interrupt */
+	set	_Net_Intr, %o0
+	be	MachHandleInterrupt
+	nop
+
+	/* level 8 autovector is video - later */
+
+	/* levels 1, 4 and 6 are software, 6 is also ether */
+
+	/* levels 2, 3, 5, 7, 9, 11 and 13 are vme bus */
+
+	cmp	%VOL_TEMP1, 0x100			/* level 0 int - none */
+	set	_MachNoLevel0Interrupt, %o0
+	be	MachHandleInterrupt
+	nop
+
+	cmp	%VOL_TEMP1, MACH_LEVEL1_INT		/* not yet */
+	set	_MachIntrNotHandledYet, %o0
+	be	MachHandleInterrupt
+	nop
+
+	cmp	%VOL_TEMP1, MACH_LEVEL2_INT		/* not yet */
+	set	_MachIntrNotHandledYet, %o0
+	be	MachHandleInterrupt
+	nop
+
+	cmp	%VOL_TEMP1, MACH_LEVEL3_INT		/* not yet */
+	set	_MachIntrNotHandledYet, %o0
+	be	MachHandleInterrupt
+	nop
+
+	cmp	%VOL_TEMP1, MACH_LEVEL4_INT		/* not yet */
+	set	_MachIntrNotHandledYet, %o0
+	be	MachHandleInterrupt
+	nop
+
+	cmp	%VOL_TEMP1, MACH_LEVEL5_INT		/* not yet */
+	set	_MachIntrNotHandledYet, %o0
+	be	MachHandleInterrupt
+	nop
+
+	cmp	%VOL_TEMP1, MACH_LEVEL7_INT		/* not yet */
+	set	_MachIntrNotHandledYet, %o0
+	be	MachHandleInterrupt
+	nop
+
+	cmp	%VOL_TEMP1, MACH_LEVEL9_INT		/* not yet */
+	set	_MachIntrNotHandledYet, %o0
+	be	MachHandleInterrupt
+	nop
+
+	cmp	%VOL_TEMP1, MACH_LEVEL11_INT		/* not yet */
+	set	_MachIntrNotHandledYet, %o0
+	be	MachHandleInterrupt
+	nop
+
+	cmp	%VOL_TEMP1, MACH_LEVEL13_INT		/* not yet */
+	set	_MachIntrNotHandledYet, %o0
+	be	MachHandleInterrupt
+d276 1
+a276 1
+	be	MachHandleDebugTrap
+d279 1
+a279 1
+	b	MachHandleDebugTrap		/* all  others to debugger */
+a385 13
+/* FOR_DEBUGGING */
+#ifdef NOTDEF
+	set	0x34343434, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToVmPage2, %OUT_TEMP1)
+	MACH_GET_CUR_PROC_PTR(%VOL_TEMP1)
+	set	_MachPIDOffset, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2
+	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, GivePID0, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, NeedToUnderflow2, %fp)
+#endif NOTDEF
+/* END FOR_DEBUGGING */
+a400 8
+/* FOR_DEBUGGING */
+#ifdef NOTDEF
+	set	0x43434343, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToVmPage3, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, NeedToUnderflow3, %o0)
+	/* addr still in %o0 */
+#endif NOTDEF
+/* END  FOR_DEBUGGING */
+a423 16
+/* FOR DEBUGGING */
+#ifdef NOTDEF
+	andcc	%CUR_PSR_REG, MACH_PS_BIT, %g0
+	bne	UnderflowOkay
+	nop
+	set	0x17171717, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, IsFpOkayStill0, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, IsFpOkayStill1, %fp)
+	MACH_GET_CUR_PROC_PTR(%VOL_TEMP1)
+	set	_MachPIDOffset, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2
+	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, PidForOkayness, %OUT_TEMP1)
+#endif NOTDEF
+/* END FOR DEBUGGING */
+d425 1
+a425 1
+	MACH_DISABLE_TRAPS()
+a511 24
+/* FOR_DEBUGGING */
+#ifdef NOTDEF
+	set	0x44444444, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverWithSaved0, %OUT_TEMP1)
+	mov	%psr, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverWithSaved1, %OUT_TEMP1)
+	mov	%wim, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverWithSaved2, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverWithSaved3, %CUR_PSR_REG)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverWithSaved4, %CUR_PC_REG)
+	MACH_GET_CUR_PROC_PTR(%VOL_TEMP1)
+	set	_MachPIDOffset, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2
+	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverWithSaved5, %OUT_TEMP1)
+	MACH_GET_CUR_STATE_PTR(%VOL_TEMP1, %VOL_TEMP2)	/* machStatePtr %1 */
+	add	%VOL_TEMP1, MACH_SAVED_MASK_OFFSET, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverWithSaved6, %OUT_TEMP1)
+	set	0x55555555, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverWithSaved7, %OUT_TEMP1)
+#endif NOTDEF
+/*END  FOR_DEBUGGING */
+a607 3
+	set	0x99999999, %i0
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BadOverflowStack0, %i0)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BadOverflowStack1, %sp)
+a615 9
+/* FOR DEBUGGING */
+	be	blick
+	nop
+	set	0x97979797, %i0
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BadOverflowStack2, %i0)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BadOverflowStack3, %sp)
+blick:
+	andcc	%sp, 0x7, %g0
+/* END FOR DEBUGGING */
+a652 16
+/* FOR DEBUGGING */
+#ifdef NOTDEF
+	/* This just uses g6 without even saving it! */
+	MACH_DEBUG_BUF(%g3, %g6, SavedMask0, %g4)
+	mov	%wim, %g4
+	MACH_DEBUG_BUF(%g3, %g6, SavedMask1, %g4)
+	MACH_GET_CUR_PROC_PTR(%g3)
+	set	_MachPIDOffset, %g4
+	ld	[%g4], %g4
+	add	%g3, %g4, %g3
+	ld	[%g3], %g4
+	MACH_DEBUG_BUF(%g3, %g6, SavedMask2, %g4)
+	set	0x90909090, %g4
+	MACH_DEBUG_BUF(%g3, %g6, SavedMask3, %g4)
+#endif NOTDEF
+/* END FOR DEBUGGING */
+a831 13
+/* FOR_DEBUGGING */
+#ifdef NOTDEF
+	set	0x23232323, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToVmPage0, %OUT_TEMP1)
+	MACH_GET_CUR_PROC_PTR(%VOL_TEMP1)
+	set	_MachPIDOffset, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2
+	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, GivePID1, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToVmPage0a, %i0)
+#endif NOTDEF
+/*END  FOR_DEBUGGING */
+d858 1
+a858 8
+/* FOR_DEBUGGING */
+#ifdef NOTDEF
+	set	0x32323232, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToVmPage1, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToVmPage1a, %i1)
+#endif NOTDEF
+/*END  FOR_DEBUGGING */
+		/* Address that would fault is in %i1 now. */
+a954 21
+/* FOR_DEBUGGING */
+#ifdef NOTDEF
+	mov	%psr, %VOL_TEMP1
+	set	MACH_ENABLE_TRAP_BIT, %VOL_TEMP2
+	andcc	%VOL_TEMP1, %VOL_TEMP2, %g0
+	be	ThingsAreOkay
+	nop
+	set	MACH_DISABLE_INTR, %VOL_TEMP2
+	and	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
+	cmp	%VOL_TEMP1, %VOL_TEMP2		/* interrupts totally off? */
+	be	ThingsAreOkay
+	nop
+	mov	%psr, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, PrintNastyPsr0, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, PrintNastyPsr1, %CUR_PC_REG)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, PrintNastyPsr2, %RETURN_ADDR_REG)
+	ta	MACH_CALL_DBG_TRAP		/* interrupts should be off! */
+	nop
+ThingsAreOkay:
+#endif NOTDEF
+/* END FOR_DEBUGGING */
+d1016 2
+a1017 2
+.global	MachHandleDebugTrap
+MachHandleDebugTrap:
+a1118 13
+/* FOR_DEBUGGING */
+#ifdef NOTDEF
+	set	0x22222222, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, InSysCall0, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, InSysCall1, %g1)
+	MACH_GET_CUR_PROC_PTR(%VOL_TEMP1)
+	set	_MachPIDOffset, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2
+	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, InSysCall2, %OUT_TEMP1)
+#endif NOTDEF
+/* END FOR_DEBUGGING */
+@
+
+
+1.36
+log
+@Caching kernel text and heap segments works!
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.35 89/04/23 16:31:02 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d171 1
+d176 1
+d458 1
+d468 1
+d486 1
+d491 1
+d517 1
+d530 1
+d621 1
+d642 1
+d798 1
+d811 1
+d993 1
+d1003 1
+d1032 1
+d1036 1
+d1136 1
+d1154 1
+d1321 1
+d1331 1
+@
+
+
+1.35
+log
+@Fixed bug that caused some exec'd processes to have a bad tbr register.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.34 89/04/21 23:14:59 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d543 7
+a549 1
+ *	Trap entrance to the window overflow handler.  This sets up a return
+d551 2
+a552 1
+ *	returns from the trap.
+d554 11
+a564 3
+ *	This is set up so that we can just call the
+ *	overflow handler even if it's not from a trap, and the right thing
+ *	should happen.
+d571 1
+a571 1
+ *	and its stack isn't resident so that we need to save windows to
+d578 3
+d585 4
+a588 5
+	 * If returning to user mode, check special handling flags here.
+	 * We only need to check for the condition that we need to copy user
+	 * window overflow values from where they were saved
+	 * in the process state buffer out to the user stack, because the
+	 * user stack wasn't resident.
+d590 1
+a590 2
+	/* Are we a user or kernel process? */
+        andcc   %CUR_PSR_REG, MACH_PS_BIT, %g0
+d603 1
+a603 1
+	 * We need to save state and put space on the stack pointer, etc.
+d605 3
+a607 2
+	 * will then return us to here, where we'll call MachUserAction
+	 * to take care of the special action.
+a610 8
+	/*
+	 * Now we must restore state, take stuff off the stack, etc.
+	 * The easy way to do this is go through the regular return from
+	 * trap sequence, and this will do the handling of the special
+	 * user action stuff for us.  I could just call MachReturnFromTrap
+	 * directly from MachTrap for this trap case, but this looks better
+	 * here.  Maybe?
+	 */
+d634 5
+d656 3
+a658 3
+ *	Window overflow handler.  It's set up so that it can be called as a
+ *	result of a window overflow trap or as a result of moving into an
+ *	invalid window as a result of some other trap or interrupt.
+d666 3
+a668 3
+ *	trap, but with traps turned off...
+ *	Note that %sp should point to highest (on stack, lowest in memory)
+ *	usable word in the current stack frame.  %fp is the %sp of the
+d677 1
+a677 1
+ *	Returns to the address in %SAFE_TEMP + 8.
+d682 2
+a683 1
+ *	into it if it's a user window and the stack isn't resident.
+d703 2
+a704 1
+	 * save to buffers.
+d727 2
+a728 2
+	 * will die a terrible death later.  We just return to take over the
+	 * window, since we've already advanced the %wim.
+d737 2
+a738 3
+	 * If alignment is bad, what should we do?  As above, since it's a
+	 * user stack pointer, we just take over the window and assume the
+	 * user process will die a horrible death later on.
+d741 1
+d749 1
+d753 1
+d765 3
+a767 6
+	 * It wasn't resident, so we must save to internal buffer and set
+	 * special handling.
+	 */
+
+	/*
+	 * Update the saved mask to show that this window had to be saved
+d843 1
+a843 1
+	 * save this window to stack - save locals and ins to top 16 words
+@
+
+
+1.34
+log
+@Twentieth Kernel: Maybe, finally, we have squished this bug???!!!!
+It was the difference between a "bg" and a "bgu" in VmMachSegMapCopy()...
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.32 89/04/19 23:20:32 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d32 10
+a41 13
+ *	Jump to system trap table or my traps.
+ *	NOTE:  This will change when I handle all the traps.  Then window
+ *	overflow and underflow will go directly from trap vector to their
+ *	routines, and this won't need the first few lines for overflow and
+ *	underflow. Also, currently this saves only the psr for window overflow
+ *	and underflow traps.  If they end up doing multiplies, I'll need to
+ *	save the y register.  I've coded them to avoid globals and in registers,
+ *	so I don't need to save that.  This should make overflow and underflow
+ *	as fast as possible.  Window overflow and underflow are constrained
+ *	to keep traps off the whole time, then.
+ *
+ *	The old system %tbr has been stored in %TBR_REG, a global register,
+ *	temporarily for borrowing prom trap routines I haven't written yet..
+d43 1
+a43 2
+ *	The scheme of things (except for overflow, underflow, and other "fast"
+ *	stuff):
+d56 7
+a62 7
+ *	saved as a part of the normal window overflow and underflow.  If this
+ *	is a debugger trap or context switch, then we must make sure they
+ *	are saved, however, since they will be needed.  This is done as a
+ *	a set of saves and restores across the windows.
+ *	4) Re-enable traps, so that if we get another overflow or underflow,
+ *	we'll be able to deal with it.  MAYBE THIS IS A BAD IDEA?  Maybe this
+ *	should be up to the handlers?  I'll find out soon enough.
+d65 2
+a66 1
+ *	The handler must call our return from trap post-amble.
+d68 14
+a81 5
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+d89 7
+a95 10
+	 * to local registers.
+	 * The pc and npc were saved into their regs as part of the trap
+	 * instruction.  NOTE that we cannot trash %g1, even after saving
+	 * the global state, since it contains the system call number if this
+	 * trap is due to a syscall.  Or, we could trash it, but we'd have
+	 * to retrieve it from the saved global state in the machState
+	 * structure in that case...
+	 */
+	/*
+	 * The psr was saved into %CUR_PSR_REG in delay slot in trap table.
+d100 1
+a100 1
+	 * Are we in an invalid window? If so, deal with it.
+d106 2
+a107 1
+	 * Deal with window overflow - put return addr in SAFE_TEMP.
+d119 4
+a122 3
+	 * Now that our out registers are safe to use, update our stack
+	 * pointer.  If coming from user mode, I need to get kernel sp from
+	 * state structure instead.  If we came from kernel
+d129 8
+a136 5
+	 * We must give the stack a whole full state frame so that routines
+	 * we call will have space to store their arguments.  System calls,
+	 * for example!  NOTE: The amount we bump up the stack by here must
+	 * agree with the test in the window underflow routine, so that bad
+	 * things don't happen as we return from the debugger!!!!!
+d159 1
+a159 1
+	andn	%sp, 0x7, %sp	/* double-word aligned - should already be ok */
+d164 4
+d170 7
+a176 1
+
+a178 6
+/* FOR DEBUGGING */
+	call	_MachFlushWindowsToStack
+	nop
+	MACH_RESTORE_GLOBAL_STATE()
+/* END FOR DEBUGGING */
+
+d357 2
+a358 2
+ *	Go through the inverse of MachTrap.  Handlers cannot return to where
+ *	they were called.  They must return here to get trap postamble.
+d360 35
+a394 14
+ *	1) Disable traps.  This means the handler we've return from mustn't
+ *	have them disabled already.
+ *	2) Check for window underflow.  Deal with it if necessary.
+ *	3) Restore the trap state.
+ *	4) Then jump to where we were when we got a trap, re-enabling traps.
+ *	NOTE: this restores old psr to what it was, except for its current
+ *	window pointer bits.  These we take from the current psr, in case
+ *	we're in a different window now (which can happen after context
+ *	switches).
+ *
+ * Results:
+ *	None.
+ * * Side effects:
+ *	None.
+a399 17
+	/* Returning to user mode?  If not, goto NormalReturn. */
+	/*
+	 * If returning to user mode, check special handling flags here.
+	 * These may indicate a need to (in some order)
+	 * 1) take a context switch
+	 * 2) copy user window overflow values from where they were saved
+	 * in the process state buffer out to the user stack, because the
+	 * user stack wasn't resident.
+	 * 3) deal with a signal.
+	 * 4) deal with a bad return value from a user trap that involves
+	 * doing something to the user process.
+	 */
+	/* Look at return values */
+	/* Look at context switches */
+	/* Look at signal stuff */
+	/* Look at window overflow stuff */
+
+a439 7
+/* FOR_DEBUGGING */
+#ifdef NOTDEF
+	set	0x30303030, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, NeedToUnderflow0, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, NeedToUnderflow1, %fp)
+#endif NOTDEF
+/*END  FOR_DEBUGGING */
+d452 1
+a452 1
+	 * the window we restore..
+a513 9
+	MACH_GET_CUR_PROC_PTR(%VOL_TEMP1)
+	set	_MachPIDOffset, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2
+	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %OUT_TEMP1
+	set	0x4310c, %VOL_TEMP1
+	cmp	%OUT_TEMP1, %VOL_TEMP1
+	bne	UnderflowOkay
+	nop
+a836 5
+/* FOR DEBUGGING */
+#ifdef NOTDEF
+	mov	%l3, %g5
+#endif NOTDEF
+/* END FOR DEBUGGING */
+d1187 12
+d1287 11
+@
+
+
+1.33
+log
+@Same bug.
+@
+text
+@d502 12
+a513 1
+#ifdef NOTDEF
+a522 1
+#endif NOTDEF
+@
+
+
+1.32
+log
+@Consistent buggy state.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.31 89/04/09 13:23:53 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d456 1
+a457 5
+	call	_VmMachGetPageMap, 1
+	nop
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, GetRealPTE, %o0)
+/*END  FOR_DEBUGGING */
+	mov	%fp, %o0
+d477 1
+a477 4
+	call	_VmMachGetPageMap, 1
+	nop
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, GetRealPTE2, %o0)
+/*END  FOR_DEBUGGING */
+d501 13
+@
+
+
+1.31
+log
+@Seems to have fixed some interrupt problems, but now there's seg fault
+problems that don't print anything, so I'm removing some printf's to
+see what happens and I'm removing and changing some stuff that gets
+put into the debug buffer.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.30 89/04/06 20:34:16 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d161 5
+a165 9
+/* FOR_DEBUGGING */
+	set	0x66666666, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, GotTrap0, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, GotTrap1, %CUR_TBR_REG)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, GotTrap2, %CUR_PSR_REG)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, GotTrap3, %CUR_PC_REG)
+	set	0x77777777, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, GotTrap4, %OUT_TEMP1)
+/* END FOR_DEBUGGING */
+d307 8
+d322 2
+a323 1
+	 * special
+d336 1
+a336 1
+	be	MachHandleDebugTrap		/* all  others to debugger */
+a382 15
+/* FOR_DEBUGGING */
+	set	0x88888888, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BeginRet0, %OUT_TEMP1)
+	mov	%tbr, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BeginRet1, %OUT_TEMP1)
+	mov	%psr, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BeginRet2, %OUT_TEMP1)
+	mov	%wim, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BeginRet3, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BeginRet4, %CUR_TBR_REG)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BeginRet5, %CUR_PSR_REG)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BeginRet6, %CUR_PC_REG)
+	set	0x999999999, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BeginRet7, %OUT_TEMP1)
+/*END  FOR_DEBUGGING */
+d424 7
+d449 11
+d471 1
+a471 1
+	add	%fp, MACH_SAVED_WINDOW_SIZE, %o0
+d479 5
+d496 3
+a513 16
+/* FOR_DEBUGGING */
+	set	0x81818181, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToReturn0, %OUT_TEMP1)
+	mov	%tbr, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToReturn1, %OUT_TEMP1)
+	mov	%psr, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToReturn2, %OUT_TEMP1)
+	mov	%wim, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToReturn3, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToReturn4, %CUR_TBR_REG)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToReturn5, %CUR_PSR_REG)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToReturn6, %CUR_PC_REG)
+	set	0x91919191, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, AboutToReturn7, %OUT_TEMP1)
+/*END  FOR_DEBUGGING */
+
+d596 10
+d607 1
+a607 1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverWithSaved5, %OUT_TEMP1)
+a673 14
+#ifdef NOTDEF
+	/*
+	 * Old stack-checking code.
+	 */
+	set	MACH_MAX_USER_STACK_ADDR, %g3	/* %sp in user space? */
+	subcc	%g3, %sp, %g0
+	bgu	UserStack
+	nop
+	set	MACH_KERN_END, %g3		/* %sp <= top kernel addr? */
+	subcc	%sp, %g3, %g0
+	bleu	NormalOverflow			/* is kernel sp */
+	nop
+	/* BAD STACK! */
+#endif NOTDEF
+d698 3
+d710 7
+d725 1
+a725 1
+	add	%sp, MACH_SAVED_WINDOW_SIZE, %g4
+d756 14
+d821 5
+d917 1
+a917 1
+	add	%fp, MACH_SAVED_WINDOW_SIZE, %o1
+d957 7
+d976 3
+d985 1
+a985 1
+	add	%fp, MACH_SAVED_WINDOW_SIZE, %o1
+d994 1
+a1265 7
+/* FOR DEBUGGING */
+	set	0x11111111, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, SysStuff0, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, SysStuff1, %CUR_PC_REG)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, SysStuff2, %g1)
+/* END FOR DEBUGGING */
+
+d1290 1
+a1290 1
+	bge	GoodSysCall
+@
+
+
+1.30
+log
+@Paranoia checkin.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.29 89/04/05 10:46:54 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d378 15
+d448 5
+a452 1
+/* TURN ON INTERRUPTS */
+d457 1
+a457 1
+/* TURN OFF INTERRUPTS */
+d467 5
+d475 1
+d499 1
+a499 1
+	set	0x88888888, %OUT_TEMP1
+d510 1
+a510 1
+	set	0x999999999, %OUT_TEMP1
+d587 12
+d928 5
+d935 1
+a935 1
+	set	0x1, %o1			/* also check protection???? */
+d938 1
+d955 5
+d962 1
+a962 1
+	set	0x1, %o1			/* also check protection???? */
+d965 1
+d1059 4
+d1068 5
+a1072 2
+#ifdef NOTDEF
+	ta	MACH_CALL_DBG_TRAP
+a1073 6
+#endif NOTDEF
+	mov	%psr, %VOL_TEMP1
+	set	MACH_DISABLE_INTR, %VOL_TEMP2
+	or	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1
+	mov	%VOL_TEMP1, %psr
+	MACH_WAIT_FOR_STATE_REGISTER()
+@
+
+
+1.29
+log
+@Can fork and exec user processes and run csh.
+There's still an intermittent problem that causes a watchdog reset.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.28 89/03/31 11:59:04 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d161 9
+d433 1
+d435 1
+a435 1
+	set	0x1, %o1		/* also check for protection????? */
+d438 1
+d448 1
+a448 1
+	set	0x1, %o1
+d472 17
+d1008 18
+@
+
+
+1.28
+log
+@Eighteenth Kernel:  it executes a signal.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.27 89/03/30 23:24:36 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d79 1
+a79 1
+.globl	_MachTrap
+d262 4
+d351 1
+a351 1
+.globl	_MachReturnFromTrap
+d492 1
+a492 1
+.globl	MachHandleWindowOverflowTrap
+d581 1
+a581 1
+.globl	MachWindowOverflow
+d800 1
+a800 1
+.globl	MachHandleWindowUnderflowTrap
+d969 1
+a969 1
+.globl	MachWindowUnderflow
+d1041 1
+a1041 1
+.globl	MachHandleDebugTrap
+d1125 1
+a1125 1
+.globl	MachSyscallTrap
+d1127 13
+a1282 7
+	 * So that we don't re-execute the trap instruction when we
+	 * return from the system call trap via the return trap procedure,
+	 * we increment the return pc and npc here.
+	 */
+	add	%CUR_PC_REG, 0x4, %CUR_PC_REG
+	add	%NEXT_PC_REG, 0x4, %NEXT_PC_REG
+	/*
+d1343 29
+@
+
+
+1.27
+log
+@Paranoia checkin.  Lots of new signal code.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.26 89/03/28 16:09:20 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+a419 5
+/* FOR DEBUGGING */
+	set	0x11111111, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, PageOne, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, TheFp, %fp)
+/* END FOR DEBUGGING */
+a432 5
+/* FOR DEBUGGING */
+	set	0x22222222, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, PageTwo, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, TheFp2, %o0)
+/* END FOR DEBUGGING */
+a442 4
+/* FOR DEBUGGING */
+	set	0x33333333, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, BadUser, %OUT_TEMP1)
+/* END FOR DEBUGGING */
+a512 4
+/* FOR DEBUGGING */
+	set	0x44444444, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverflowAction, %OUT_TEMP1)
+/* END FOR DEBUGGING */
+a529 4
+/* FOR DEBUGGING */
+	set	0x55555555, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, OverflowReturnAction, %OUT_TEMP1)
+/* END FOR DEBUGGING */
+a626 3
+/* FOR DEBUGGING */
+	MACH_DEBUG_BUF(%g3, %g4, IckyStack, %sp)
+/* END FOR DEBUGGING */
+a717 4
+/* FOR DEBUGGING */
+	MACH_DEBUG_BUF(%g3, %g4, OverflowToBuf, %sp)
+	MACH_DEBUG_BUF(%g3, %g4, OverflowToBuf1, %sp)
+/* END FOR DEBUGGING */
+a829 5
+	
+/* FOR DEBUGGING */
+	set	0x77777777, %OUT_TEMP1
+	MACH_DEBUG_BUF(%o0, %o1, WillHaveToSaveState, %OUT_TEMP1)
+/* END FOR DEBUGGING */
+a840 4
+/* FOR DEBUGGING */
+	set	0x88888888, %OUT_TEMP1
+	MACH_DEBUG_BUF(%o0, %o1, HadToSaveState, %OUT_TEMP1)
+/* END FOR DEBUGGING */
+a868 4
+/* FOR DEBUGGING */
+	set	0x99999999, %OUT_TEMP1
+	MACH_DEBUG_BUF(%o0, %o1, HaveToKillProc, %OUT_TEMP1)
+/* END FOR DEBUGGING */
+a909 4
+/* FOR DEBUGGING */
+	set	0xaaaaaaaa, %OUT_TEMP1
+	MACH_DEBUG_BUF(%o0, %o1, GoingToDoReturn, %OUT_TEMP1)
+/* END FOR DEBUGGING */
+a982 5
+/* FOR DEBUGGING */
+	set	0xdddddddd, %OUT_TEMP1
+	MACH_DEBUG_BUF(%o0, %o1, DebugReturnThing, %OUT_TEMP1)
+/* END FOR DEBUGGING */
+
+a1128 5
+/* FOR DEBUGGING */
+	set	0xeeeeeeee, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, GotASysCall, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, TheSysArg, %g1)
+/* END FOR DEBUGGING */
+a1264 5
+/* FOR DEBUGGING */
+	set	0xffffffff, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RetFromASysCall, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, TheValue, %RETURN_VAL_REG)
+/* END FOR DEBUGGING */
+a1333 7
+/* FOR DEBUGGING */
+	set	0x01010101, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RetFromPgFault0, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RetFromPgFault1, %CUR_PSR_REG)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RetFromPgFault2, %CUR_PC_REG)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, RetFromPgFault3, %NEXT_PC_REG)
+/* END FOR DEBUGGING */
+@
+
+
+1.26
+log
+@User printf's work now!  And the debugger returns without havoc since
+I'm now starting the base of the debugger stack on the correct side
+of its array!
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.25 89/03/26 20:16:50 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d258 40
+d381 1
+a381 1
+	/* Must we handle a signal? */
+d383 8
+a390 1
+	bne	NormalReturn
+a391 1
+
+d1395 7
+@
+
+
+1.25
+log
+@Seventeenth Kernel.  It executes its first system call: Sys_Shutdown().
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.24 89/03/24 15:39:39 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d976 4
+a979 1
+	set	_mach_DebugStack - MACH_FULL_STACK_FRAME, %VOL_TEMP1
+d1072 4
+a1075 1
+	set	_mach_DebugStack - MACH_FULL_STACK_FRAME, %sp
+d1137 1
+d1278 1
+@
+
+
+1.24
+log
+@Trying to get user procs to work.  I've just changed some stack-checking
+code.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.23 89/03/22 14:07:40 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d133 1
+a133 7
+	set	_proc_RunningProcesses, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* ptr to ptr to proc */
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* procPtr */
+	set	_machStatePtrOffset, %VOL_TEMP2
+	ld	[%VOL_TEMP2], %VOL_TEMP2		/* offset to machPtr */
+	add	%VOL_TEMP1, %VOL_TEMP2, %VOL_TEMP1	/* &procPtr->machPtr */
+	ld	[%VOL_TEMP1], %VOL_TEMP2		/* procPtr->machPtr */
+d331 1
+a331 3
+	set	_proc_RunningProcesses, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* ptr to ptr to proc */
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* procPtr */
+d374 5
+d392 5
+d407 4
+d473 1
+a473 3
+        set     _proc_RunningProcesses, %VOL_TEMP1
+        ld      [%VOL_TEMP1], %VOL_TEMP1                /* ptr to ptr to proc */
+        ld      [%VOL_TEMP1], %VOL_TEMP1                /* procPtr */
+d481 4
+d502 4
+d595 1
+a595 1
+	subcc	%sp, MACH_STACK_BOTTOM, %g0	/* need sp >= lowest addr */
+d603 3
+d612 2
+a613 2
+	 ba	ReturnFromOverflow
+	 nop
+d616 3
+a618 2
+	 * If alignment is bad, what should we do?
+	 * I just clear the last bits if it's a user stack pointer!
+d620 3
+a622 1
+	and	%sp, ~(0x7), %sp
+d645 1
+d648 4
+d664 1
+a664 3
+	set	_proc_RunningProcesses, %g3
+	ld	[%g3], %g3			/* ptr to ptr to proc */
+	ld	[%g3], %g3			/* procPtr */
+d697 4
+d794 2
+a795 2
+	 * If alignment is bad, what should we do?
+	 * I just clear the last bits if it's a user stack pointer!
+d797 4
+a800 1
+	and	%fp, ~(0x7), %fp
+d813 5
+d829 4
+d861 4
+d906 4
+d976 1
+a976 1
+	set	_mach_DebugStack - MACH_SAVED_STATE_FRAME, %VOL_TEMP1
+d980 5
+d1128 6
+d1136 1
+d1252 1
+a1252 3
+	set	_proc_RunningProcesses, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* ptr to ptr to proc */
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* procPtr */
+d1268 4
+@
+
+
+1.23
+log
+@User process starts and gets successful page fault on its stack.
+I don't think it's returning to the user process correctly, though.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.22 89/03/18 15:40:52 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d133 9
+a141 1
+        set     _machCurStatePtr, %VOL_TEMP1 		/* was user mode */
+d143 1
+d338 2
+a339 1
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* ptr to PCB */
+d468 2
+a469 1
+        ld      [%VOL_TEMP1], %VOL_TEMP1                /* ptr to PCB */
+d559 5
+a563 1
+	set	MACH_KERN_START, %g3		/* %sp lower than kernel? */
+d571 28
+d642 2
+a643 1
+	ld	[%g3], %g3
+a846 1
+	mov	%CUR_PSR_REG, %g4
+d1196 2
+a1197 1
+	ld	[%VOL_TEMP1], %VOL_TEMP1		/* ptr to PCB */
+d1263 2
+a1264 4
+#ifdef NOTDEF
+	/* have to write to memory error address reg to clear the error */
+	st	%g0, [%VOL_TEMP1]
+#endif NOTDEF
+d1269 11
+@
+
+
+1.22
+log
+@Kernel processes work again, with a lot of user support.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.21 89/03/17 14:51:37 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+a969 1
+	MACH_DEBUG_BUF(%g2, %g3, g1Debug1, %g1)
+a971 1
+	MACH_DEBUG_BUF(%g2, %g3, g1Debug2, %g1)
+d1219 1
+d1222 1
+@
+
+
+1.21
+log
+@Interrim checkin.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.20 89/03/17 12:32:37 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d92 1
+a92 1
+	 * The psr was saved into %CUR_PSR_REG in delay slot in trap table. */
+d137 2
+a138 1
+        add     %sp, (MACH_KERN_STACK_SIZE - MACH_SAVED_STATE_FRAME), %sp 
+d168 1
+a168 1
+	be	MachSysCallTrap
+d264 1
+a264 1
+	be	MachReturnFromOverflowWithSavedState
+d268 1
+a268 1
+	be	MachReturnFromUnderflowWithSavedState
+d336 1
+d340 1
+a340 1
+	tst	%RET_VAL_REG
+d342 1
+d366 1
+a366 1
+	be	CheckNext
+d379 1
+a379 1
+CheckNext:
+d465 1
+d482 1
+a482 1
+MachReturnFromOverflowWithSavedState:
+d632 2
+a633 1
+	jmp	ReturnFromOverflow
+d714 1
+a714 1
+	andcc	%CUR_SER_REG, MACH_PS_BIT, %g0
+d716 1
+d766 1
+a766 1
+	be	CheckNext			/* this one okay, goto next */
+d776 1
+a776 1
+	be,a	CheckNext			/* succeeded, try next */
+d785 1
+a785 1
+CheckNext:
+d814 2
+a815 1
+	cmp	%SAFE_TEMP, 0x11111111		/* did we have to save state? */
+a896 1
+	nop
+d1060 2
+a1061 1
+	jmp	ReturnFromSyscall
+d1165 1
+d1168 1
+a1168 1
+	or	%VOL_TEMP1, MACH_DISABLE_INTERRUPTS, %VOL_TEMP1
+d1170 1
+a1170 1
+	WAIT_FOR_STATE_REGISTER
+@
+
+
+1.20
+log
+@another paranoia checkin.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.19 89/03/17 00:39:43 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d512 4
+d573 55
+a627 1
+	XXXXX
+d737 1
+d774 5
+a778 3
+	How???
+	XXX
+
+d813 1
+@
+
+
+1.19
+log
+@Another interrim checkin due to paranoia
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.17 89/03/09 17:08:29 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d362 2
+a363 17
+	mov	%fp, %o0
+	call	_VmMachGetPageMap
+	nop
+	srl	%o0, VMMACH_PAGE_PROT_SHIFT, %o0
+	cmp	%o0, VMMACH_PTE_OKAY_VALUE
+	bne	CallPageIn
+	nop
+	/*
+	 * Check the other extreme of the area we'd be touching on the stack.
+	 */
+	mov	%fp, %o0
+	add	%o0, MACH_SAVED_WINDOW_SIZE, %o0
+	call	_VmMachGetPageMap
+	nop
+	srl	%o0, VMMACH_PAGE_PROT_SHIFT, %o0
+	cmp	%o0, VMMACH_PTE_OKAY_VALUE
+	be	CallUnderflow			/* both addrs okay */
+a364 2
+	
+CallPageIn:
+d374 12
+d553 4
+a556 2
+	cmp	%sp, 0x7, %g0
+	be	ContinueTesting
+a557 1
+	and	%sp, ~(0x7), %sp
+d559 3
+a561 11
+	/*
+	 * I can't just call the Vm routine to test residence as I do
+	 * in the underflow stuff, 'cause it would user output registers
+	 * that aren't available here, so I have to do the same work in-line.
+	 * GROSS.
+	 */
+	set	VMMACH_PAGE_MAP_MASK, %g3
+	and	%sp, %g3, %g3
+	lda	[%g3] VMMACH_PAGE_MAP_SPACE, %g3
+	srl	%g3, VMMACH_PAGE_PROT_SHIFT, %g3
+	cmp	%g3, VMMACH_PTE_OKAY_VALUE
+d611 28
+d660 13
+a672 1
+	MACH_NEED_TO_PAGE_IN_USER_STACK()
+d674 3
+a676 2
+	/* back again - in delay slot of branch */
+	save
+d678 1
+a678 1
+	 * We need to save state.  
+d693 5
+a697 1
+	 * stuff correctly and return from the correct window.
+d699 33
+a731 2
+	/* Call vm stuff */
+	XXX Call vm stuff XXX
+@
+
+
+1.18
+log
+@Interrim checkin, just because I'm nervous.
+@
+text
+@d335 1
+a335 1
+	call	_Mach_UserAction
+d349 2
+a350 1
+	 * window and overwrite it!
+d356 27
+d386 16
+a401 1
+	XXX Call vm code. XXX
+d470 1
+a470 1
+	 * will then return us to here, where we'll call Mach_UserAction
+d473 1
+a473 1
+	call	MachTrap
+d484 1
+a484 1
+	call	MachReturnFromTrap
+d541 45
+a589 6
+	/*
+	 * If this is a user window, then see if stack space is resident.
+	 * If it is, go ahead, but if not, then set special handling and
+	 * save to buffers.
+	 */
+	XXX Do testing stuff XXX
+d591 1
+d651 1
+a651 1
+	call	MachTrap
+d689 1
+a689 1
+	call	MachReturnFromTrap
+@
+
+
+1.17
+log
+@Keyboard interrupts work.  Checking in before I've made too many
+further changes.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.16 89/03/06 12:01:53 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+a83 2
+	 * The psr is saved here for now, but maybe it should be saved in
+	 * delay slot of the trap table??
+d85 5
+a89 1
+	 * instruction.
+d91 3
+a93 1
+	mov	%psr, %CUR_PSR_REG
+d102 8
+a109 1
+	/* deal with window overflow - put return addr in SAFE_TEMP */
+d116 33
+a148 7
+	 * pointer.  If coming from user mode, I need to get sp from state
+	 * instead.  I don't do that yet.
+	 */
+	add	%fp, -MACH_SAVED_STATE_FRAME, %sp
+	andn	%sp, 0x7, %sp			/* double-word aligned */
+
+
+d150 2
+a151 3
+	 * For now, this only saves the globals to the stack.  The locals
+	 * and ins make it there through normal overflow and underflow.  If
+	 * that turns out nasty, then make this macro save them explicitly.
+d154 4
+d159 4
+a162 2
+	 * If we came from user mode, put a pointer to our saved stack from
+	 * into the state structure.  I don't do this yet.
+a163 1
+	MACH_SR_HIGHPRIO()	/* traps on, maskable interrupts off */
+d166 4
+d191 1
+d193 1
+d195 1
+d246 22
+a267 3
+	cmp	%VOL_TEMP1, MACH_TRAP_SYSCALL		/* system call */
+	/* change return pc here so it doesn't re-execute instr? */
+	be	MachSysCallTrap
+d305 37
+a341 1
+	MACH_DISABLE_TRAPS()
+d345 15
+d361 1
+a361 1
+	jmpl	%VOL_TEMP1, %SAFE_TEMP
+d364 1
+d393 3
+a395 1
+ *	None.
+d404 44
+a460 1
+ *	The address of the calling instruction is stored in %SAFE_TEMP.
+d475 1
+a475 1
+ *	None.
+d479 2
+d502 6
+d537 1
+a537 1
+ *	routine expects its return address in %SAFE_TEMP, so this is the
+d544 1
+a544 1
+ *	None.
+d550 37
+d589 1
+d591 1
+a591 1
+	mov	%SAFE_TEMP, %g3			/* put safe_temp in global */
+d593 1
+a593 1
+	jmpl	%g4, %SAFE_TEMP
+d595 1
+a595 1
+	mov	%g3, %SAFE_TEMP			/* restore safe_temp */
+d599 10
+d623 2
+a624 1
+ *	The address of the calling instruction is stored in %SAFE_TEMP.
+d669 2
+d672 1
+a672 1
+	set	_mach_DebugStack - MACH_FULL_STACK_FRAME, %VOL_TEMP1
+d685 4
+d692 1
+a692 1
+	 * same!  That would be dumb anyway.
+d696 4
+a699 2
+	restore				/* move to window to restore */
+	/* restore data from stack to window */
+d706 1
+a706 1
+	jmp	%SAFE_TEMP + 8
+a797 1
+#ifdef NOTDEF
+d803 2
+a804 1
+ *	This is the code to handle system call traps.
+d816 199
+a1014 1
+#endif NOTDEF
+@
+
+
+1.16
+log
+@Sixteenth Kernel.  Kernel processes work and play tag over a monitor
+lock.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.15 89/03/02 00:21:27 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d108 1
+a108 3
+	mov	%fp, %sp
+	set	MACH_SAVED_STATE_FRAME, %VOL_TEMP1
+	sub	%sp, %VOL_TEMP1, %sp
+d198 5
+a454 1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, UnderDebug1, %g0)
+a457 1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, UnderDebug2, %fp)
+a460 1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, UnderDebug3, %fp)
+a509 3
+	set	0x111, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugDebug1, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugDebug2, %sp)
+d526 1
+d529 1
+a540 1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugDebug3, %o1);
+a561 3
+	set	0x222, %OUT_TEMP1
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugDebug4, %OUT_TEMP1)
+	MACH_DEBUG_BUF(%VOL_TEMP1, %VOL_TEMP2, DebugDebug5, %sp)
+d567 21
+@
+
+
+1.15
+log
+@Kernel procs exist now, but it deadlocks.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.14 89/02/28 12:49:51 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+a91 24
+#ifdef NOTDEF
+    /* for debugging - circular buffer */
+	set	_debugCounter, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	set	500, %VOL_TEMP2
+	subcc	%VOL_TEMP2, %VOL_TEMP1, %g0
+	bg	DebugReady
+	nop
+	set	_debugCounter, %VOL_TEMP1	/* set counter back to 0 */
+	st	%g0, [%VOL_TEMP1]
+	clr	%VOL_TEMP1
+DebugReady:
+	sll	%VOL_TEMP1, 2, %VOL_TEMP1
+	set	_debugSpace, %VOL_TEMP2
+	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2
+	st	%CUR_TBR_REG, [%VOL_TEMP2]
+	st	%CUR_PSR_REG, [%VOL_TEMP2 + 4]
+	set	_debugCounter, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2
+	add	%VOL_TEMP2, 2, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+    /* done debugging */
+#endif NOTDEF
+
+a276 24
+#ifdef NOTDEF
+    /* for debugging - circular buffer */
+	set	_debugCounter, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	set	500, %VOL_TEMP2
+	subcc	%VOL_TEMP2, %VOL_TEMP1, %g0
+	bg	DebugReadyOverflow
+	nop
+	set	_debugCounter, %VOL_TEMP1	/* set counter back to 0 */
+	st	%g0, [%VOL_TEMP1]
+	clr	%VOL_TEMP1
+DebugReadyOverflow:
+	sll	%VOL_TEMP1, 2, %VOL_TEMP1
+	set	_debugSpace, %VOL_TEMP2
+	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2
+	st	%g0, [%VOL_TEMP2]
+	st	%CUR_PSR_REG, [%VOL_TEMP2 + 4]
+	set	_debugCounter, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2
+	add	%VOL_TEMP2, 2, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+    /* done debugging */
+#endif NOTDEF
+
+a374 24
+#ifdef NOTDEF
+    /* for debugging - circular buffer */
+	set	_debugCounter, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	set	500, %VOL_TEMP2
+	subcc	%VOL_TEMP2, %VOL_TEMP1, %g0
+	bg	DebugReadyUnderflow
+	nop
+	set	_debugCounter, %VOL_TEMP1	/* set counter back to 0 */
+	st	%g0, [%VOL_TEMP1]
+	clr	%VOL_TEMP1
+DebugReadyUnderflow:
+	sll	%VOL_TEMP1, 2, %VOL_TEMP1
+	set	_debugSpace, %VOL_TEMP2
+	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2
+	st	%CUR_PSR_REG, [%VOL_TEMP2]
+	st	%CUR_PSR_REG, [%VOL_TEMP2 + 4]
+	set	_debugCounter, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2
+	add	%VOL_TEMP2, 2, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+    /* done debugging */
+#endif NOTDEF
+
+d446 1
+a446 1
+	set	_mach_DebugStack, %VOL_TEMP1
+d452 1
+d456 1
+d460 1
+d510 3
+d535 1
+a535 1
+	set	_mach_DebugStack, %sp
+d542 1
+d553 2
+a554 1
+	 * stack if I took another trap?
+d564 3
+@
+
+
+1.14
+log
+@Added more interrupt-handling support.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.13 89/02/24 21:57:28 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d92 1
+d114 1
+d143 1
+a143 1
+	MACH_SAVE_TRAP_STATE()
+d267 1
+a267 1
+	MACH_RESTORE_TRAP_STATE()
+d301 1
+d323 1
+d423 1
+d445 1
+@
+
+
+1.13
+log
+@Fourteenth Kernel.  Debugger works, uses mem module and stdlib.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.12 89/02/24 16:38:35 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d148 1
+d150 2
+a151 1
+	be	MachHandleTimerInterrupt
+d153 4
+a156 2
+	cmp	%VOL_TEMP1, MACH_LEVEL14_INT
+	be	MachHandleTimerInterrupt
+d158 6
+d165 2
+a166 1
+	be	MachHandleEtherInterrupt
+d168 7
+a174 2
+	cmp	%VOL_TEMP1, 0x100			/* level 0 int */
+	be	MachHandleLevel0Interrupt
+d176 46
+d225 1
+@
+
+
+1.12
+log
+@Thirteenth Kernel.  sun4 finishes vm init now.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.11 89/02/05 17:33:07 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d449 1
+a449 1
+	set	MACH_DEBUG_STACK_START, %VOL_TEMP1
+d532 1
+a532 1
+	set	MACH_DEBUG_STACK_START, %sp
+@
+
+
+1.11
+log
+@Twelfth Kernel.  It uses only my trap table now.  The net module
+and the debugger work, plus it's taking timer and ethernet interrupts.
+Although it seems interrupts are disabled, I don't think they are.  It's
+just that I don't do keyboard interrupts yet.
+Because it uses my trap table, I've rearranged things so there's one
+less indirection.  Window overflow and underflow traps are direct now.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.10 89/01/31 14:04:09 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d92 1
+a92 1
+    /* for debugging */
+d97 1
+a97 1
+	ble	FinishedDebugging
+d99 4
+d106 2
+a107 4
+	st	%g0, [%VOL_TEMP2]
+	st	%CUR_TBR_REG, [%VOL_TEMP2 + 4]
+	st	%CUR_PC_REG, [%VOL_TEMP2 + 8]
+	st	%fp, [%VOL_TEMP2 + 12]
+d110 1
+a110 1
+	add	%VOL_TEMP2, 4, %VOL_TEMP2
+d112 2
+a113 1
+FinishedDebugging:
+d236 1
+a236 1
+    /* for debugging */
+d241 1
+a241 1
+	ble	FinishedDebugging1
+d243 4
+d250 2
+a251 2
+	st	%CUR_PC_REG, [%VOL_TEMP2]
+	st	%fp, [%VOL_TEMP2 + 4]
+d256 2
+a257 1
+FinishedDebugging1:
+d356 1
+a356 1
+    /* for debugging */
+d361 1
+a361 1
+	ble	FinishedDebugging2
+d363 4
+d370 2
+a371 2
+	st	%CUR_PC_REG, [%VOL_TEMP2]
+	st	%fp, [%VOL_TEMP2 + 4]
+d376 2
+a377 1
+FinishedDebugging2:
+a460 17
+    /* for debugging */
+	set	_debugCounter, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP1
+	set	500, %VOL_TEMP2
+	subcc	%VOL_TEMP2, %VOL_TEMP1, %g0
+	ble	FinishedDebugging4
+	nop
+	sll	%VOL_TEMP1, 2, %VOL_TEMP1
+	set	_debugSpace, %VOL_TEMP2
+	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2
+	st	%g0, [%VOL_TEMP2]
+	st	%fp, [%VOL_TEMP2 + 4]
+	set	_debugCounter, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2
+	add	%VOL_TEMP2, 2, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+FinishedDebugging4:
+@
+
+
+1.10
+log
+@Eleventh Kernel.  The debugger single steps, calls functions, etc.
+This means that state saving and restoring and stack switching works.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.9 89/01/29 17:21:56 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d82 6
+a87 5
+	 * This test is here right now just because overflow and underflow
+	 * are still jumping from here.  Later they will go directly from
+	 * vector table.   They restore their psr's themselves and do not
+	 * return to MachReturnFromTrap.  I read psr here, since compares
+	 * below change its condition codes!!!
+d91 7
+a97 9
+	and	%CUR_TBR_REG, MACH_TRAP_TYPE_MASK, %VOL_TEMP1 /* get trap */
+
+	/*
+	 * For now these are here.  They should be direct entries in the
+	 * vector table, with psr saved.  All the rest should go through
+	 * this trap preamble.
+	 */
+	cmp	%VOL_TEMP1, MACH_WINDOW_OVERFLOW	/* my overflow */
+	be	MachHandleWindowOverflowTrap
+d99 12
+a110 18
+	cmp	%VOL_TEMP1, MACH_WINDOW_UNDERFLOW	/* my underflow */
+	be	MachHandleWindowUnderflowTrap
+	nop
+	cmp	%VOL_TEMP1, MACH_LEVEL10_INT		/* clock interrupt */
+	be	WeHandleIt
+	nop
+	cmp	%VOL_TEMP1, MACH_LEVEL6_INT		/* ether interrupt */
+	be	WeHandleIt
+	nop
+	cmp	%VOL_TEMP1, MACH_TRAP_DEBUGGER
+	be	WeHandleIt
+	nop
+							/* no - their stuff */
+	add	%VOL_TEMP1, %TBR_REG, %VOL_TEMP1 /* add t.t. to real tbr */
+	jmp	%VOL_TEMP1		/* jmp (non-pc-rel) to real tbr */
+	nop
+
+WeHandleIt:
+a111 12
+	 * The others that should go through this trap preamble follow.
+	 */
+	/*
+	 * Save the state registers.  This is safe, since we're saving them
+	 * to local registers.
+	 * The psr is saved above for now, since the compares above would change
+	 * its condition codes otherwise.
+	 * The tbr is also saved above for now for compares.
+	 */
+	mov	%y, %CUR_Y_REG
+	/* pc and npc were saved into their regs as part of trap instruction */
+	/*
+d130 1
+d132 1
+a143 1
+	/* well, we've already determined this, but later there'll be more */
+d146 1
+a146 1
+	be	MachHandleInterrupt
+d148 3
+d152 1
+a152 1
+	be	MachHandleInterrupt
+d154 3
+d160 2
+a163 3
+
+
+
+d233 17
+d346 1
+a346 1
+.globl	MachHandleWindowOverflowTrap
+d348 17
+a428 1
+#ifndef NOTDEF
+d430 5
+a434 3
+	 * wait - I can't do that! - Debugger restores from debug window t
+	 * debug window, too, of course.  So, if we're in debug window, fp
+	 * should be debug stack base.  Check that.
+a439 1
+	/* Deal with restoring regular stack */
+a440 23
+#else	NOTDEF
+	/*
+	 * Check value of sp - is it in debugger range?  If so, we're returning
+	 * from the debugger and must switch stacks.
+	 * MACH_KERN_START < debugSP <= MACH_DEBUG_STACK_START
+	 */
+	set	MACH_DEBUG_STACK_START, %VOL_TEMP1
+	subcc	%VOL_TEMP1, %sp, %g0
+	bl	RegularStack
+	nop
+	set	MACH_KERN_START, %VOL_TEMP1
+	subcc	%sp, %VOL_TEMP1, %g0
+	bg	DealWithDebugStack
+	nop
+	/* We're in trouble - the stack pointer is bogus */
+	/* For now I deal with this for debugging by infinite looping. */
+BogusStackPtr:
+	set	BogusStackPtr, %VOL_TEMP2
+	jmp	%VOL_TEMP2
+	nop
+
+#endif NOTDEF
+
+d448 17
+@
+
+
+1.9
+log
+@Tenth Kernel.  Net module works for receiving, and I seem to set up
+state and enter the debugger from a debugger trap correctly.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.8 89/01/29 13:10:19 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d408 1
+d410 41
+d528 13
+@
+
+
+1.8
+log
+@Putting in net module and debugger.  There are still problems,
+but this is progress.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.7 89/01/25 22:52:26 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d109 3
+a148 1
+	/* for debugging */
+a149 1
+
+d169 3
+d425 72
+@
+
+
+1.7
+log
+@Ninth Kernel.  Timer interrupts and overflow and underflow traps still
+are all it does functionally, but now I save and restore state in a fancy
+way that will allow nested interrupts, avoids duplicating saved state,
+and works the same way for the debugger.  See README and the code for
+details.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.6 89/01/23 17:55:27 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d106 3
+d165 4
+@
+
+
+1.6
+log
+@Eigth Kernel.  It now takes interrupts and traps correctly.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.5 89/01/23 00:06:42 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d30 216
+d269 1
+a269 1
+ *	The stack grows.
+d285 1
+a285 1
+	MACH_ADVANCE_WIM(%g3, %g4)	/* reset %wim to past current window */
+d302 46
+d349 1
+d355 4
+a358 1
+ *	Window underflow trap handler.
+d360 9
+a368 10
+ *	Unlike MachWindowOverflow, this routine can only be entered as a
+ *	result of taking an underflow trap.  This is because we can check for
+ *	an overflow condition on traps and deal with it in the same way we
+ *	do when we get a real overflow trap, but the underflow situation is not
+ *	symmetrical.  On an underflow trap we enter 2 windows away from
+ *	the window that is invalid.  When returning from traps we must check
+ *	for an underflow condition, but we'll only be one window away from
+ *	the invalid window.  For that situation, we have another routine.
+ *	Maybe I should combine them and flag the difference inside the routine,
+ *	but I didn't.
+d370 1
+a370 4
+ *	For an underflow, we tried to retreat to an invalid window and couldn't,
+ *	so we trapped.  Trapping advances the current window, so we are 2
+ *	windows away from the invalid window.  We want to restore that invalid
+ *	window.  First we mark the window behind the invalid window as the
+d373 1
+a373 1
+ *	to our trap window, 2 windows away again.  Note that we first mark
+d378 3
+a380 4
+ *	For the window to restore, the %sp should be good since it's the %fp
+ *	of the window it called.  I hope I can count on this...  (This won't
+ *	be true with system and user windows mixed, but this is just for system
+ *	code right now.)
+d391 1
+a391 1
+ *	The stack shrinks.
+d401 1
+a401 1
+	 * same!
+d404 1
+a404 1
+	MACH_RETREAT_WIM(%VOL_TEMP1, %VOL_TEMP2, UnderflowLabel)
+a405 1
+	restore
+d408 1
+a408 1
+	/* Move back to trap window with 2 saves.  Clear registers too??? */
+d410 4
+a413 4
+	save
+	/* jump to return from trap routine */
+	set	_MachReturnFromTrap, %VOL_TEMP1
+	jmp	%VOL_TEMP1
+a414 144
+
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MachDealWithWindowUnderflow --
+ *
+ *	Deal with a window underflow condition on returning from traps.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The window invalid mask changes.
+ *
+ * ----------------------------------------------------------------------
+ */
+.globl	MachDealWithWindowUnderflow
+MachDealWithWindowUnderflow:
+
+	/* mark new invalid window */
+	MACH_RETREAT_WIM(%VOL_TEMP1, %VOL_TEMP2, DealUnderflowLabel)
+	restore
+	/* restore data from stack to window */
+	MACH_RESTORE_WINDOW_FROM_STACK()
+	save
+	/* return to where we were. */
+	retl
+	nop
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MachTrap --
+ *
+ *	Jump to system trap table.
+ *
+ *	Use of registers:  %VOL_TEMP1 is trap type and then the place to jump
+ *	to.  %VOL_TEMP2 is the address of my trap table to reset the %tbr with.
+ *
+ *	The old system %tbr has been stored in %TBR_REG.
+ *	
+ *	Currently this does a bunch of compares to see where to go.  When I
+ *	fill out the real trap table, that won't be necessary.  Instead, I
+ *	can jump directly to the handlers, or I can make this more of a
+ *	generic preamble.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------
+ */
+.globl	_MachTrap
+_MachTrap:
+	rd	%tbr, %VOL_TEMP1
+	and	%VOL_TEMP1, MACH_TRAP_TYPE_MASK, %VOL_TEMP1 /* get trap type */
+
+	cmp	%VOL_TEMP1, MACH_WINDOW_OVERFLOW	/* my overflow? */
+	be	MachHandleWindowOverflowTrap
+	rd	%psr, %CUR_PSR_REG
+	cmp	%VOL_TEMP1, MACH_WINDOW_UNDERFLOW	/* my underflow? */
+	be	MachWindowUnderflow
+	rd	%psr, %CUR_PSR_REG
+	cmp	%VOL_TEMP1, MACH_LEVEL10_INT		/* clock interrupt */
+	be	MachHandleInterrupt
+	rd	%psr, %CUR_PSR_REG
+							/* no - their stuff */
+	add	%VOL_TEMP1, %TBR_REG, %VOL_TEMP1 /* add t.t. to real tbr */
+	jmp	%VOL_TEMP1		/* jmp (non-pc-rel) to real tbr */
+	nop
+
+
+
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MachReturnFromTrap --
+ *
+ *	Restore old %psr from %CUR_PSR_REG.   Then jump
+ *	to where we were when we got a trap, re-enabling traps.
+ *	NOTE: this restores old psr to what it was, except for its current
+ *	window pointer bits.  These we take from the current psr, in case
+ *	we're in a different window now (which can happen after context
+ *	switches).
+ *
+ * Results:
+ *	None.
+ * * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------
+ */
+.globl	_MachReturnFromTrap
+_MachReturnFromTrap:
+	MACH_UNDERFLOW_TEST()
+	be	UnderflowOkay
+	nop
+	call	MachDealWithWindowUnderflow
+	nop
+UnderflowOkay:
+	/* restore psr */
+	mov	%CUR_PSR_REG, %VOL_TEMP2;	/* get old psr */
+	set	(~MACH_CWP_BITS), %VOL_TEMP1;	/* clear only its cwp bits */
+	and	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2;
+	mov	%psr, %VOL_TEMP1;		/* get current psr */
+	and	%VOL_TEMP1, MACH_CWP_BITS, %VOL_TEMP1;	/* take only its cwp */
+	or	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2;	/* put cwp on old psr */
+	mov	%VOL_TEMP2, %psr
+	MACH_WAIT_FOR_STATE_REGISTER()
+	jmp	%CUR_PC_REG
+	rett	%NEXT_PC_REG
+	nop
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * MachHandleWindowOverflowTrap --
+ *
+ *	Trap entrance to the window overflow handler.  This sets up a return
+ *	address, calls the overflow handler, and then goes to
+ *	MachReturnFromTrap.  This is set up so that we can just call the
+ *	overflow handler even if it's not from a trap, and the right thing
+ *	should happen.
+ *
+ * Results:
+ *	None.
+ * * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------
+ */
+.globl	MachHandleWindowOverflowTrap
+MachHandleWindowOverflowTrap:
+	set	MachWindowOverflow, %VOL_TEMP1
+	jmpl	%VOL_TEMP1, %SAFE_TEMP
+	nop
+	set	_MachReturnFromTrap, %VOL_TEMP1
+	jmp	%VOL_TEMP1
+	nop
+
+@
+
+
+1.5
+log
+@Seventh kernel.  Clock interrupt level is now at 10.  Interrupts work for
+>> what I have, but I'm not printing anything, which didn't work before,
+>> so I must try that again.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.4 89/01/22 23:45:00 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d267 1
+@
+
+
+1.4
+log
+@Interrupts seem to work again, but I've got lots of debugging
+code in here.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.3 89/01/22 20:33:21 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+a258 24
+	set	_saveCounter, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2
+	mov	1000, %VOL_TEMP1
+	cmp	%VOL_TEMP1, %VOL_TEMP2
+	be	finished3
+	nop
+	sll	%VOL_TEMP2, 0x2, %VOL_TEMP2	/* get array offset */
+	set	_saveBuffer, %VOL_TEMP1
+	add	%VOL_TEMP2, %VOL_TEMP1, %VOL_TEMP2	/* add to array */
+	mov	0x3, %VOL_TEMP1
+	st	%VOL_TEMP1, [%VOL_TEMP2]
+	add	%VOL_TEMP2, 4, %VOL_TEMP2
+	mov	%psr, %VOL_TEMP1
+	st	%VOL_TEMP1, [%VOL_TEMP2]
+	add	%VOL_TEMP2, 4, %VOL_TEMP2
+	st	%l0, [%VOL_TEMP2]
+	add	%VOL_TEMP2, 4, %VOL_TEMP2
+	mov	%wim, %VOL_TEMP1
+	st	%VOL_TEMP1, [%VOL_TEMP2]
+	set	_saveCounter, %VOL_TEMP1
+	ld	[%VOL_TEMP1], %VOL_TEMP2
+	add	%VOL_TEMP2, 4, %VOL_TEMP2
+	st	%VOL_TEMP2, [%VOL_TEMP1]
+finished3:
+@
+
+
+1.3
+log
+@Checkpoint.  Traps work and interrupts remain enabled correctly.
+>> I've #ifdef'd out the code where I start the timer and try to take
+>> timer interrupts.  When I do that, interrupts get permanently disabled,
+>> somehow.
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/machTrap.s,v 1.2 89/01/17 18:41:54 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d221 1
+a221 2
+#ifdef NOTDEF
+	cmp	%VOL_TEMP1, MACH_LEVEL14_INT		/* clock interrupt */
+a223 1
+#endif NOTDEF
+d253 30
+a290 6
+	MACH_UNDERFLOW_TEST()
+	be	UnderflowOkay
+	nop
+	call	MachDealWithWindowUnderflow
+	nop
+UnderflowOkay:
+@
+
+
+1.2
+log
+@Checking in before making some register changes.
+@
+text
+@d2 1
+a2 1
+ * trap.s --
+d17 1
+a17 1
+.asciz	"$Header: /sprite/src/kernel/mach/sun4.md/RCS/traps.s,v 1.1 89/01/17 14:55:03 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)"
+d32 5
+a36 2
+ *	Window overflow trap handler.  It assumes it's called with the %psr
+ *	read into %l0.
+d63 2
+a64 1
+	 * use locals in window we move to before calling macros.
+d66 2
+a67 2
+	mov	%g3, %l3
+	mov	%g4, %l4
+d69 1
+a69 1
+	MACH_ADVANCE_WIM(%g3, %g4)	/* reset %wim to one current window */
+d77 7
+a83 5
+	mov	%l3, %g3		/* restore global registers */
+	mov	%l4, %g4
+	/* jump to return from trap routine */
+	set	_MachReturnFromTrap, %l3
+	jmp	%l3
+d92 1
+a92 2
+ *	Window underflow trap handler.  It assumes it's called with the %psr
+ *	read into %l0.
+d94 11
+d142 2
+a143 1
+	MACH_RETREAT_WIM(%l3, %l4)	/* mark new invalid window */
+d152 2
+a153 2
+	set	_MachReturnFromTrap, %l3
+	jmp	%l3
+d157 17
+d175 10
+d192 2
+a193 4
+ *	Use of registers:  %l3 is trap type and then the place to jump to.
+ *	%l4 is the address of my trap table to reset the %tbr with.
+ *	Note that this code cannot use %l1 or %l2 since that's where the pc
+ *	and npc are written on a trap.
+d195 6
+a200 1
+ *	The old system %tbr has been stored in %g6.
+d212 2
+a213 2
+	rd	%tbr, %l3
+	and	%l3, MACH_TRAP_TYPE_MASK, %l3		/* get trap type */
+d215 4
+a218 4
+	cmp	%l3, MACH_WINDOW_OVERFLOW		/* my overflow? */
+	be	MachWindowOverflow
+	rd	%psr, %l0
+	cmp	%l3, MACH_WINDOW_UNDERFLOW		/* my underflow? */
+d220 6
+a225 2
+	rd	%psr, %l0
+
+d227 2
+a228 2
+	add	%l3, %g6, %l3			/* add t.t. to real tbr */
+	jmp	%l3			/* jmp (non-pc-rel) to real tbr */
+d239 6
+a244 2
+ *	Restore old %psr from %l0 and re-enable traps.  Then jump to where
+ *	we were when we got a trap.
+d255 10
+a264 4
+	/* restore psr and re-enable traps. */
+	mov	%l0, %psr
+	jmp	%l1
+	rett	%l2
+d266 34
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+.asciz	"$Header: /sprite/lib/forms/proto.s,v 1.1 88/12/29 16:45:55 ouster Exp $ SPRITE (Berkeley)"
+a74 4
+#ifdef NOTDEF
+	/* clear used locals and outs? */
+	MACH_CLEAR_WINDOW()
+#endif /* NOTDEF */
+a75 1
+	/* Phooey - use up a clean register */
+a132 3
+#ifdef NOTDEF
+	MACH_CLEAR_WINDOW()
+#endif /* NOTDEF */
+a133 3
+#ifdef NOTDEF
+	MACH_CLEAR_WINDOW()
+#endif /* NOTDEF */
+a134 1
+	/* Phooey - use a clean register */
+a200 3
+#ifdef NOTDEF
+	or	%l0, MACH_ENABLE_TRAP_BIT, %l0
+#endif /* NOTDEF */
+@

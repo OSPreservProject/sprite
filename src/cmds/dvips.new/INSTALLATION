@@ -1,0 +1,18 @@
+All information is now in the dvips manual.  This file is supplied as
+dvips.tex; a PostScript version should be available where you got the
+main dvips distribution.  Installation instructions are in that file.
+Failing that, you can follow the brief instructions below.
+
+To install this version of dvips:
+
+	Update Makefile, in particular, the paths.
+	Check file name definitions in MakeTeXPK.
+		(If you don't have MF installed, don't
+		install MakeTeXPK either.)
+	Check the configuration parameters in config.ps.
+		(Send the mem.ps file below to figure
+		the memory in your PostScript printer for
+		the `m' line in config.ps.)
+	Run "make".
+	Run "make install" if all went well.
+

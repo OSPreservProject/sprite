@@ -1,0 +1,6 @@
+#!/bin/sh
+
+while read short long
+do
+	ln -s $long.tfm $short.tfm
+done <font-table

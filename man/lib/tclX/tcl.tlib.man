@@ -1,0 +1,187 @@
+.TH "tcl.tlib" TCL "" "Tcl"
+.ad b
+.SH NAME
+Extended Tcl - Tcl procedure library
+'
+.SH "INTRODUCTION"
+.PP
+This manual page contains documentation for all of the procedures in
+the standard Tcl source library, \fItcl.tlib\fR.  Commands from the library,
+and any Tcl source library along your Tcl search path, \fRTCLPATH\fR,
+that contain properly formatted \fI#@package\fR definition
+comments, are automatically loaded the first time they are executed.  See 
+the \fITcl Shell\fR documentation for more details.
+'
+'@help: tcl.tlib/assign_fields
+'@brief: Assign successive elements in a list to specified variables.
+.TP
+.B assign_fields \fIlist var\fR [\fIvar\fR...]
+.br
+Assign successive elements in a list to specified variables.
+Any leftover fields are discarded.  When there are more variable
+names than fields, the remaining variables are set to the
+empty string.
+.sp
+For example,
+.sp
+.nf
+   assign_fields {dave 100 200 "Dave Foo"} name uid gid longName
+.fi
+.sp
+Assigns \fIname\fR to ``dave'', \fIuid\fR to ``100'', \fIgid\fR to ``200'',
+and \fIlongName\fR to ``Dave Foo''.
+'@endhelp
+'
+'@help: tcl.tlib/dirs
+'@brief: List the directories in the directory stack.
+.TP
+.B dirs
+List the directories in the directory stack.
+'@endhelp
+'
+'@help: tcl.tlib/edprocs
+'@brief: Edit named procs, or all procs.
+.TP
+.B edprocs [\fIproc\fR...]
+.br
+Writes the named procedures, or all currently defined procedures, to
+a temporary file, then calls an editor on it (as specified by the
+\fBEDITOR\fR environment variable, or \fBvi\fR
+if none is specified), then sources the file back in if it was changed.
+'@endhelp
+'
+'@help: tcl.tlib/for_array_keys
+'@brief: Do a foreach-style loop on each key in an array.
+.TP
+.B for_array_keys \fIvar array_name code\fR
+.br
+Perform a foreach-style loop for each key in the named array.  The \fBbreak\fR
+and \fBcontinue\fR statements work as with \fBforeach\fR.
+'@endhelp
+'@help: tcl.tlib/for_file
+'@brief: Do a foreach-style loop on each line in a file.
+.TP
+.B for_file \fIvar filename { code }\fR
+.br
+For each line in \fIfilename\fR, sets
+\fIvar\fR to the line and executes \fIcode\fR.
+.sp
+The \fBbreak\fR and \fBcontinue\fR commands work as with foreach.
+.sp
+For example, the command
+.sp
+.nf
+	\fBfor_file line /etc/passwd {echo $line}\fR
+.fi
+.sp
+would echo all the lines in the password file.
+'@endhelp
+'@help: tcl.tlib/for_recursive_glob
+'@brief: Perform a foreach-style loop for all globbed files and directories.
+.TP
+.B for_recursive_glob \fIvar globlist code\fR
+.br
+Performs a foreach-style loop for each file and directory that recursively
+matched one or more patterns specified in the call to
+\fBfor_recursive_glob\fR, setting \fIvar\fR to the matching file or directory,
+and calling \fIcode\fR.  The \fBbreak\fR and \fBcontinue\fR statements work as
+expected.
+'@endhelp
+'@help: tcl.tlib/intersect
+'@brief: Return a list containing every element present in both lists.
+.TP
+.B intersect \fIlista listb\fR
+.br
+Return the logical intersection of two lists.
+'@endhelp
+'@help: tcl.tlib/intersect3
+'@brief: Return three lists from an intersection of two lists.
+.TP
+.B intersect3 \fIlista listb\fR
+.br
+Performs the intersecting of the two lists, returning a list containing
+three lists.  The first list returned is everything in the first list
+that wasn't in the second.  The second list contains the intersection
+of the two lists, and the third list contains all the elements that
+were in the second list but weren't in the first.
+'@endhelp
+'@help: tcl.tlib/lrmdups
+'@brief: Given a list, remove all of the duplicated elements.
+.TP
+.B lrmdups \fIlist\fR
+.br
+Remove duplicate elements from a list.
+Sorts the specified list, removes any duplicate elements, and returns
+the result.
+'@endhelp
+'@help: tcl.tlib/popd
+'@brief: Pop a directory from a stack of directories and cd to it.
+.TP
+.B popd
+.br
+Pop the top directory entry from the directory stack and make it the current
+directory.
+'@endhelp
+'@help: tcl.tlib/pushd
+'@brief: Push a directory to a stack of directories.
+.TP
+.B pushd [\fIdir\fR]
+.br
+Push the current directory onto the directory stack and \fBcd\fR to the specified
+directory.  If the directory is not specified, then the current directory is
+pushed, but remains unchanged.
+'@endhelp
+'@help: tcl.tlib/read_file
+'@brief: Read in a file to a string (less overhead than "exec cat").
+.TP
+.B read_file \fIfileName\fR
+.br
+Read the named file and returns the contents as a string.
+'@endhelp
+'@help: tcl.tlib/recursive_glob
+'@brief: Do filename globbing, recursively descending all matched directories.
+.TP
+.B recursive_glob \fIgloblist\fR
+.br
+Does the same thing as glob, except that it recursively descends all the
+matched subdirectories, returning a list of all the files that matched all
+pattern in the list \fIgloblist\fR.
+'@endhelp
+'@help: tcl.tlib/saveprocs
+'@brief: Save named procs to a file, or all procs.
+.TP
+.B saveprocs \fIfileName\fR [\fIproc\fR...]
+.br
+Save the definition of the named procedure, or all currently
+defined procedures if none is specified, to the named file.
+'@endhelp
+'@help: tcl.tlib/showproc
+'@brief: List the definition of the named procedure.
+.TP
+.B showproc \fIprocname\fR
+.br
+List the definition of the named procedure, loading it if it is not already
+loaded.
+'@endhelp
+'@help: tcl.tlib/showprocs
+'@brief: List the definition of the named, or all, procedures.
+.TP
+.B showprocs [\fIprocname\fR...]
+.br
+List the definition of all of the named procedures, or 
+all defined procedures if none are specified.
+'@endhelp
+'@help: tcl.tlib/union
+'@brief: Return the logical union of two lists.
+.TP
+.B union \fIlista listb\fR
+Return the logical union of the two specified lists.  Any duplicate elements
+are removed.
+'@endhelp
+'@help: tcl.tlib/write_file
+'@brief: Write a string out as a file.
+.TP
+.B write_file \fIfileName stringVar\fR
+.br
+Writes the specified string to the named file.
+'@endhelp

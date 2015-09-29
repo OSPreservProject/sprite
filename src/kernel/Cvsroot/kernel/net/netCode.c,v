@@ -1,0 +1,2461 @@
+head     9.11;
+branch   ;
+access   ;
+symbols  ds3100:9.11 sun3:9.11 sun4nw:9.8 symm:9.8 spur:9.8 sprited:9.7.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.11
+date     92.06.03.22.47.50;  author voelker;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     92.04.14.16.57.03;  author jhh;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     91.11.15.21.01.01;  author kupfer;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     91.09.10.18.40.24;  author rab;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     91.03.15.15.47.07;  author jhh;  state Exp;
+branches 9.7.1.1;
+next     9.6;
+
+9.6
+date     90.11.05.18.06.16;  author jhh;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.10.19.15.50.14;  author rab;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.10.19.13.22.37;  author jhh;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.09.12.17.10.18;  author jhh;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.11.16.15.14.57;  author rab;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.31.08.55.37;  author mendel;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.12.48;  author douglis;  state Stable;
+branches ;
+next     8.9;
+
+8.9
+date     89.07.21.12.08.27;  author jhh;  state Exp;
+branches ;
+next     8.8;
+
+8.8
+date     89.07.10.19.45.07;  author nelson;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.06.08.09.07.10;  author mendel;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.06.02.12.58.10;  author mendel;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.02.24.13.52.35;  author brent;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.02.14.13.10.25;  author jhh;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.01.31.15.22.22;  author mendel;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.01.05.15.32.22;  author mendel;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.22.19.31.05;  author jhh;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.26.17;  author douglis;  state Stable;
+branches ;
+next     6.3;
+
+6.3
+date     88.11.11.17.56.23;  author brent;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.10.24.11.05.43;  author mendel;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.26.16.09.12;  author mendel;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.19.46;  author brent;  state Stable;
+branches ;
+next     5.10;
+
+5.10
+date     88.08.01.17.15.57;  author mendel;  state Exp;
+branches ;
+next     5.9;
+
+5.9
+date     88.07.15.17.32.28;  author mendel;  state Exp;
+branches ;
+next     5.8;
+
+5.8
+date     88.06.27.10.43.10;  author mendel;  state Exp;
+branches ;
+next     5.7;
+
+5.7
+date     88.06.21.11.13.15;  author mendel;  state Exp;
+branches ;
+next     5.6;
+
+5.6
+date     88.06.20.09.47.14;  author brent;  state Exp;
+branches ;
+next     5.5;
+
+5.5
+date     88.06.14.15.57.02;  author brent;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     88.05.05.17.58.23;  author brent;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     87.10.04.15.53.47;  author brent;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.10.04.14.02.42;  author brent;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.09.17.12.02.39;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.46.07;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.7.1.1
+date     91.10.22.14.57.34;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.11
+log
+@FDDI implementation
+@
+text
+@/* 
+ * netCode.c --
+ *
+ *	Various routines for initialzation, input and output.
+ *
+ *
+ * Copyright 1987 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/voelker/net/RCS/netCode.c,v 1.1 92/05/28 17:58:12 voelker Exp Locker: voelker $ SPRITE (Berkeley)";
+#endif
+
+#include <sprite.h>
+#include <list.h>
+#include <net.h>
+#include <netInt.h>
+#include <devNet.h>
+#include <string.h>
+#include <sync.h>
+#include <dbg.h>
+#include <machMon.h>
+#include <netInet.h>
+
+/*
+ * Network configuration table defined by machine dependent code.
+ */
+extern Net_Interface	netConfigInterfaces[];
+extern int		netNumConfigInterfaces;
+Net_Interface		*netInterfaces[NET_MAX_INTERFACES];
+int			netNumInterfaces;
+
+Net_Address 		netZeroAddress;
+int			net_NetworkHeaderSize[NET_NUM_NETWORK_TYPES];
+
+#define	INC_BYTES_SENT(gatherPtr, gatherLength) { \
+	register	Net_ScatterGather	*gathPtr; \
+	int					i; \
+	net_EtherStats.bytesSent += sizeof(Net_EtherHdr); \
+	for (i = gatherLength, gathPtr = gatherPtr; i > 0; i--, gathPtr++) { \
+	    net_EtherStats.bytesSent += gathPtr->length; \
+	} \
+    }
+/*
+ * Macro to swap the fragOffset field.
+ */
+#define SWAP_FRAG_OFFSET_HOST_TO_NET(ptr) { \
+    unsigned short	*shortPtr; \
+    shortPtr = ((unsigned short *)&ptr->ident) + 1; \
+    *shortPtr = Net_HostToNetShort(*shortPtr); \
+} 
+
+#define SWAP_FRAG_OFFSET_NET_TO_HOST(ptr) { \
+    unsigned short	*shortPtr; \
+    shortPtr = ((unsigned short *)&ptr->ident) + 1; \
+    *shortPtr = Net_NetToHostShort(*shortPtr); \
+} 
+
+int netDebug = FALSE;
+/* Boolean	ultra = FALSE; */
+
+static void NetAddStats _ARGS_((Net_Stats *aPtr, Net_Stats *bPtr, 
+		    Net_Stats *sumPtr));
+static void EnterDebugger _ARGS_((Net_Interface *interPtr, Address packetPtr,
+				int packetLength));
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_Init --
+ *
+ *	Initialize the network module data structures.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Net_Init()
+{
+    register int i;
+    char buffer[100];
+    ReturnStatus status;
+    int		counter[NET_NUM_NETWORK_TYPES];
+    Net_Interface	*interPtr;
+    int			j;
+
+    NetEtherInit();
+
+    for (i = 0; i < NET_NUM_NETWORK_TYPES; i++) {
+	counter[i] = 0;
+    }
+
+    /*
+     * Determine the number and kind of network interfaces by calling
+     * each network interface initialization procedure.
+     */
+    bzero((char *) &netZeroAddress, sizeof(Net_Address));
+    netNumInterfaces = 0;
+    for (i = 0 ; i<netNumConfigInterfaces ; i++) {
+	interPtr = &netConfigInterfaces[i];
+	interPtr->flags = 0;
+	for (j = 0; j < NET_MAX_PROTOCOLS; j++) {
+	    bzero((char *) &interPtr->netAddress[j], sizeof(Net_Address));
+	}
+	(void) sprintf(buffer, "NetOutputMutex:%d", i);
+	Sync_SemInitDynamic(&interPtr->syncOutputMutex, 
+			    strdup(buffer));
+	(void) sprintf(buffer, "NetMutex:%d", i);
+	Sync_SemInitDynamic(&interPtr->mutex, strdup(buffer));
+	status = (interPtr->init)(interPtr);
+	if (status == SUCCESS) {
+	    netInterfaces[netNumInterfaces] = interPtr;
+	    netNumInterfaces++;
+	    interPtr->packetProc = NILPROC;
+	    interPtr->devNetData = (ClientData) NIL;
+	    interPtr->number = counter[interPtr->netType];
+	    counter[interPtr->netType]++;
+	} 
+    }
+    net_NetworkHeaderSize[NET_NETWORK_ETHER] = sizeof(Net_EtherHdr);
+    net_NetworkHeaderSize[NET_NETWORK_ULTRA] = sizeof(Net_UltraHeader);
+    net_NetworkHeaderSize[NET_NETWORK_FDDI] = sizeof(Net_FDDIHdr);
+    Net_ArpInit();
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_Bin --
+ *
+ *	Bin various memory sizes allocated by the net module.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Calls Mem_Bin to optimize memory allocation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Net_Bin()
+{
+    register int inter;
+    for (inter = 0 ; inter < netNumInterfaces ; inter++) {
+	Mem_Bin(netInterfaces[inter]->maxBytes);
+    }
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_GatherCopy --
+ *
+ *	Copy all of the data pointed to by the scatter/gather array into
+ *	the destination.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Net_GatherCopy(scatterGatherPtr, scatterGatherLength, destAddr)
+    register	Net_ScatterGather *scatterGatherPtr;
+    int		  		  scatterGatherLength;
+    register	Address		  destAddr;
+{
+    int i;
+    int soFar = 0;
+
+    for (i = 0; i < scatterGatherLength; i++, scatterGatherPtr++) {
+	if (scatterGatherPtr->length == 0) {
+	    continue;
+	}
+
+	bcopy((Address) scatterGatherPtr->bufAddr, 
+	     (Address) &(destAddr[soFar]), 
+	     scatterGatherPtr->length);
+	soFar += scatterGatherPtr->length;
+    }
+    return;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_Reset --
+ *
+ *	Reset the network interface.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Reinitializes the network controller..
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Net_Reset(interPtr)
+    Net_Interface	*interPtr;
+{
+    interPtr->reset(interPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_Output --
+ *
+ *	Send a packet to a host identified by a Sprite Host ID.
+ *
+ * Results:
+ *	SUCCESS 	- the operation was successful.
+ *	FAILURE		- there was no route to the host or 
+ *			  the Sprite host ID was bad or 
+ *			  an unknown route type was found.
+ *
+ * Side effects:
+ *	Sends the packet.
+ *	If no route has been established to the SpriteID then the
+ *	Address Resolution Protocol (ARP) is invoked to find the
+ *	physical address corresponding to the SpriteID.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Net_Output(spriteID, gatherPtr, gatherLength, mutexPtr, routePtr)
+    int spriteID;			/* Host to which to send the packet */
+    Net_ScatterGather *gatherPtr;	/* Specifies buffers containing the
+					 * pieces of the packet The first
+					 * element of gatherPtr is assumed to 
+					 * be a buffer large enought to 
+					 * format any protocol headers
+					 * we need. */
+    int gatherLength;			/* Number of elements in gatherPtr[] */
+    Sync_Semaphore *mutexPtr;		/* Mutex that is released during the
+					 * ARP transaction (if needed).  This
+					 * doesn't mess up the caller because
+					 * its packet isn't output until
+					 * the ARP completes anyway */
+    Net_Route	*routePtr;		/* If non-NIL then used as the route
+					 * to send the packet. */
+{
+    Net_Interface	*interPtr;
+    Boolean		ourRoute = FALSE;
+    ReturnStatus	status;
+
+    if (spriteID < 0 || spriteID >= NET_NUM_SPRITE_HOSTS) {
+	return(NET_UNREACHABLE_NET);
+    }
+
+    /*
+     * Check for a route to the indicated host.  Use ARP to find it if needed.
+     */
+    if (routePtr == (Net_Route *) NIL) {
+	ourRoute = TRUE;
+	routePtr = Net_IDToRoute(spriteID, 0, TRUE, mutexPtr, 0);
+	if (routePtr == (Net_Route *)NIL) {
+	    return(NET_UNREACHABLE_NET);
+	}
+    }
+    interPtr = routePtr->interPtr;
+    switch(routePtr->protocol) {
+	case NET_PROTO_RAW : {
+		/*
+		 * The first gather buffer contains the protocol header for
+		 * which we have none for the ethernet.
+		 */
+		gatherPtr->length = 0; 	
+		gatherPtr->done = FALSE;
+		gatherPtr->mutexPtr = mutexPtr;
+		status = (interPtr->output) (interPtr, 
+		    routePtr->headerPtr[NET_PROTO_RAW], 
+		    gatherPtr, gatherLength, TRUE, &status);
+		if (status == SUCCESS) {
+		    while (!gatherPtr->done && 
+			mutexPtr != (Sync_Semaphore *)NIL) {
+			(void) Sync_SlowMasterWait((unsigned int)mutexPtr, 
+				mutexPtr, 0);
+		    }
+		}
+		break;
+	    }
+	case NET_PROTO_INET: {
+		/*
+		 * For the INET routes we must fill in the ipHeader in the 
+		 * first buffer of the gather array. 
+		 */
+		register Net_IPHeader		*ipHeaderPtr;
+		register unsigned int length;
+		register Net_ScatterGather	*gathPtr;
+		register int	 i; 
+
+		/*
+		 * Compute the length of the gather vector. 
+		 */
+		length = sizeof(Net_IPHeader);
+		gathPtr = gatherPtr + 1;
+		for (i = 1; i < gatherLength;  i++, gathPtr++){
+		    length += gathPtr->length; 
+		}
+
+
+		/*
+		 * Fill the  ipHeader into the first element of the 
+		 * scatter/gather from the template stored in the route
+		 * data.
+		 */
+		gatherPtr->length = sizeof(Net_IPHeader);
+		ipHeaderPtr = (Net_IPHeader *) gatherPtr->bufAddr;
+		gatherPtr->done = FALSE;
+		gatherPtr->mutexPtr = mutexPtr;
+
+		*ipHeaderPtr = *(Net_IPHeader *) 
+				    routePtr->headerPtr[NET_PROTO_INET];
+		/*
+		 * Update length and checksum. The template 
+		 * ipHeaderPtr->checksum should contain the 16 bit sum of 
+		 * the IP header with totalLen set to zero. We add the
+		 * new total length and convert into one-complement.
+		 * See Net_InetChecksum().
+		 */
+		length = Net_HostToNetShort(length);
+		ipHeaderPtr->totalLen = length;
+
+		length = ipHeaderPtr->checksum + length;
+		ipHeaderPtr->checksum = ~(length + (length >> 16));
+
+		status = (interPtr->output)(interPtr, 
+		    routePtr->headerPtr[NET_PROTO_RAW], gatherPtr, 
+		    gatherLength, FALSE, &status);
+		if (status == SUCCESS) {
+		    while (!gatherPtr->done && 
+			mutexPtr != (Sync_Semaphore *)NIL) {
+			(void) Sync_SlowMasterWait((unsigned int)mutexPtr, 
+				    mutexPtr, 0);
+		    }
+		}
+		break;
+	    }
+	default:
+	    printf("Warning: Net_Output: unsupported route protocol: %x\n", 
+			routePtr->protocol);
+	    panic(NIL);
+	    status = FAILURE;
+    }
+    if (ourRoute) {
+	Net_ReleaseRoute(routePtr);
+    }
+    return status;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_RawOutput --
+ *
+ *	Send a packet directly onto the network.
+ *
+ * Results:
+ *	SUCCESS if the packet made it as far as the network interface,
+ *	a failure code otherwise.  SUCCESS does not imply that the
+ *	packet was actually sent because the interface could have
+ *	rejected it.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Net_RawOutput(interPtr, headerPtr, gatherPtr, gatherLength)
+    Net_Interface	*interPtr;	/* The network interface. */
+    Address		headerPtr;	/* Packet header. */
+    Net_ScatterGather	*gatherPtr;	/* Specifies buffers containing the
+					 * pieces of the packet */
+    int 		gatherLength;	/* Number of elements in gatherPtr[] */
+{
+    return (interPtr->output)(interPtr, headerPtr, gatherPtr, gatherLength, 
+		FALSE, (ReturnStatus *) NIL);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_RecvPoll --
+ *
+ *	See if a packet has come in.  If one has come in then it is assumed
+ *	that the packet processing routine will get called.  Thus this routine
+ *	does not return any value; it is up to the packet processing routine
+ *	to set some global state.  This is intended to be used by the
+ *	debugger.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Net_RecvPoll(interPtr)
+    Net_Interface	*interPtr;	/* Network interface. */
+{
+    if (netDebug) {
+	printf("Net_RecvPoll\n");
+    }
+    (interPtr->intr)(interPtr, TRUE);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_RawOutputSync --
+ *
+ * 	Send a packet on the network. Does not return until the packet
+ *	is actually sent.
+ *
+ * Results:
+ *	SUCCESS if the packet was sent correctly, otherwise a standard
+ *	Sprite return status.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Net_RawOutputSync(interPtr, headerPtr, gatherPtr, gatherLength)
+    Net_Interface	*interPtr;	/* Network interface. */
+    Address		headerPtr;	/* Packet header. */
+    Net_ScatterGather 	*gatherPtr;	/* Specifies buffers containing the
+					 * pieces of the packet */
+    int 		gatherLength;	/* Number of elements in gatherPtr[] */
+{
+    ReturnStatus	status;
+
+    gatherPtr->mutexPtr = &(interPtr->syncOutputMutex);
+    gatherPtr->done = FALSE;
+
+    MASTER_LOCK(&(interPtr->syncOutputMutex));
+
+    status = (interPtr->output)(interPtr, headerPtr, gatherPtr, gatherLength, 
+	FALSE, &status);
+    if (status == SUCCESS) {
+	while (!gatherPtr->done) {
+	    (void) Sync_SlowMasterWait(
+			(unsigned int)&(interPtr->syncOutputMutex), 
+			&(interPtr->syncOutputMutex), FALSE);
+	}
+    }
+    MASTER_UNLOCK(&(interPtr->syncOutputMutex));
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetOutputWakeup --
+ *
+ *	Called to notify a waiter that a packet has been sent.  This is
+ *	hacked up now, as the argument is really a mutexPtr which
+ *	has been used as a raw event to wait on.  We have to use
+ *	the raw SlowBroadcast procedure because of this.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NetOutputWakeup(mutexPtr)
+    Sync_Semaphore	*mutexPtr;	/* Mutex from scatter/gather struct */
+{
+    int waiting;
+
+    /*
+     * FIX THIS.
+     */
+    if (dbg_UsingNetwork) {
+	return;
+    }
+
+#if (MACH_MAX_NUM_PROCESSORS == 1) /* uniprocessor implementation */
+    (void) Sync_SlowBroadcast((unsigned int)mutexPtr, &waiting);
+#else 	/* Mutiprocessor implementation */
+   /*
+    * Because the packet sent interrupt may come in before Net_Output
+    * has a chance to MasterWait and after Net_Output has checked the
+    * gatherPtr->done flag, the code should syncronize with the caller
+    * by obtaining the master lock.
+    */
+    MASTER_LOCK(mutexPtr);
+    (void) Sync_SlowBroadcast((unsigned int) mutexPtr, &waiting);	
+    MASTER_UNLOCK(mutexPtr);
+#endif
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_Intr --
+ *
+ *	The interrupt routine which is called when the ethernet chip 
+ *	interrupts the processor.  All this routine does is to branch
+ *	to the interrupt handler for the type of ethernet device
+ *	present on the machine.  The device driver, in turn, eventually
+ *	calls Net_Input to pass the packet to the correct protocol handler.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Net_Intr(interPtr)
+    Net_Interface	*interPtr;	/* Network interface. */
+{
+    if (netDebug) {
+	printf("Received an interrupt on interface %s\n", interPtr->name);
+    }
+    (interPtr->intr)(interPtr, FALSE);
+    return 1;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_Input --
+ *
+ *	A stub called by device drivers to pass off packets to protocols.
+ *	This could be a macro.
+ *
+ *	The packet handler called must copy the packet to private buffers.
+ *
+ *	TODO:
+ *		This routine, and the ones it calls, should not assume
+ *		that there is a packet header at the start of the
+ *		packet.  The header should be passed separately.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.  
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Net_Input(interPtr, packetPtr, packetLength)
+    Net_Interface *interPtr;	/* Network interface. */
+    Address packetPtr;		/* The packet. */
+    int packetLength;		/* The length of the packet. */
+{
+    int		headerSize;
+    int		packetType = NET_PACKET_UNKNOWN;
+
+#if 0
+    printf("in Net_Input\n");
+    printf("Net_Input(0x%x, 0x%x, 0x%x)\n", interPtr, packetPtr, packetLength);
+    printf("netType = %08x\n", interPtr->netType);
+#endif
+
+    if (netDebug) {
+	printf("Net_Input(0x%x, 0x%x, 0x%x) netType = %08x\n",
+	    interPtr, packetPtr, packetLength, interPtr->netType);
+    }
+    switch(interPtr->netType) {
+	case NET_NETWORK_ETHER : {
+	    Net_EtherHdr *etherHdrPtr;
+	    int		type;
+	    etherHdrPtr = (Net_EtherHdr *)packetPtr;
+	    type = Net_NetToHostShort((unsigned short)
+			NET_ETHER_HDR_TYPE(*etherHdrPtr));
+	    switch(type) {
+		case NET_ETHER_SPRITE:
+		    packetType = NET_PACKET_SPRITE;
+		    break;
+		case NET_ETHER_ARP:
+		    packetType = NET_PACKET_ARP;
+		    break;
+		case NET_ETHER_REVARP:
+		    packetType = NET_PACKET_RARP;
+		    break;
+		case NET_ETHER_SPRITE_DEBUG:
+		    packetType = NET_PACKET_DEBUG;
+		    break;
+		case NET_ETHER_IP:
+		    packetType = NET_PACKET_IP;
+		    break;
+		default:
+		    packetType = NET_PACKET_UNKNOWN;
+		    break;
+	    }
+	    break;
+	}
+	case NET_NETWORK_ULTRA: {
+	    Net_UltraHeader	*ultraHdrPtr;
+	    ultraHdrPtr = (Net_UltraHeader *) packetPtr;
+	    if ((ultraHdrPtr->localAddress.tsapSize == 2) &&
+		(ultraHdrPtr->localAddress.tsap[0] == (unsigned char) 0xff) &&
+		(ultraHdrPtr->localAddress.tsap[1] == (unsigned char) 0xff)) {
+		packetType = NET_PACKET_SPRITE;
+	    } else {
+		packetType = NET_PACKET_UNKNOWN;
+	    }
+	    break;
+	}
+	case NET_NETWORK_FDDI: {     /***/
+	    Net_FDDIHdr *fddiHdrPtr;
+
+	    fddiHdrPtr = (Net_FDDIHdr *)packetPtr;
+	    if (fddiHdrPtr->frameControl == NET_FDDI_SPRITE) {
+		packetType = NET_PACKET_SPRITE;
+	    } else {
+		packetType = NET_PACKET_UNKNOWN;
+	    }
+	    break;
+	}
+	default: 
+	    printf("Net_Input: invalid net type %d\n", interPtr->netType);
+    }
+    headerSize = net_NetworkHeaderSize[interPtr->netType];
+    if (dbg_UsingNetwork) {
+	/*
+	 * If the kernel debugger is running it gets all the packets. We
+	 * process ARP requests to allow hosts to talk to the debugger.
+	 */
+	if (packetType == NET_PACKET_ARP) {
+            NetArpInput(interPtr, packetPtr, packetLength);
+	} else { 
+	    Dbg_InputPacket(interPtr, packetPtr, packetLength);
+	}
+	return;
+    }
+    switch(packetType) {
+        case NET_PACKET_SPRITE:
+	    if (netDebug) {
+		printf("Received a Sprite packet, calling Rpc_Dispatch\n");
+	    }
+            Rpc_Dispatch(interPtr, NET_PROTO_RAW, packetPtr, 
+		     (Address) (((char *) packetPtr) + headerSize), 
+		     packetLength - headerSize);
+            break;
+
+        case NET_PACKET_ARP:
+	case NET_PACKET_RARP:
+	    /*
+	     * The kernel gets first shot at ARP packets and then they are
+	     * forward to tbe /dev/net device.
+	     */
+	    if (netDebug) {
+		if (packetType == NET_PACKET_ARP) {
+		    printf("Received an ARP packet.\n");
+		} else {
+		    printf("Received a RARP packet.\n");
+		}
+	    }
+            NetArpInput(interPtr, packetPtr, packetLength);
+	    if (interPtr->packetProc != NILPROC) {
+		(interPtr->packetProc)(interPtr, packetLength, packetPtr);
+	    }
+	    break;
+
+        case NET_PACKET_DEBUG:
+	    if (netDebug) {
+		printf("Received a debug packet.\n");
+	    }
+            EnterDebugger(interPtr, packetPtr, packetLength);
+            break;
+
+	case NET_PACKET_IP: {
+	    register Net_IPHeader *ipHeaderPtr = 
+			(Net_IPHeader *) (packetPtr + headerSize);
+	    /*
+	     * The kernel steals IP packets with the Sprite RPC protocol number.
+	     */
+	    if (netDebug) {
+		printf("Received an IP packet.\n");
+	    }
+	    if ( (packetLength > sizeof(Net_IPHeader)+headerSize) && 
+	         (ipHeaderPtr->protocol == NET_IP_PROTOCOL_SPRITE)) {
+		int    headerLenInBytes;
+		int    totalLenInBytes;
+		headerLenInBytes = ipHeaderPtr->headerLen * 4;
+		totalLenInBytes = Net_NetToHostShort(ipHeaderPtr->totalLen);
+		/*
+		 * Validate the packet. We toss out the following cases:
+		 * 1) Runt packets.
+		 * 2) Bad checksums.
+		 * 3) Fragments.
+		 * Since we sent the packets with dont fragment set we 
+		 * shouldn't get any fragments.
+		 */
+		if ((headerLenInBytes >= sizeof(Net_IPHeader)) &&
+		     (totalLenInBytes > headerLenInBytes) &&
+		     (totalLenInBytes <= (packetLength-headerSize)) &&
+		     (Net_InetChecksum(headerLenInBytes, (Address)ipHeaderPtr)
+		                        == 0)) {
+
+		    SWAP_FRAG_OFFSET_NET_TO_HOST(ipHeaderPtr);
+		    if((!(ipHeaderPtr->flags & NET_IP_MORE_FRAGS)) &&
+		      (ipHeaderPtr->fragOffset == 0)) {
+			if (netDebug) {
+			    printf(
+			"Received a Sprite IP packet, calling Rpc_Dispatch\n");
+			}
+			Rpc_Dispatch(interPtr, NET_PROTO_INET, packetPtr, 
+		           (Address)(((char *) ipHeaderPtr) + headerLenInBytes),
+				     totalLenInBytes-headerLenInBytes);
+		     }
+		}
+
+	    } else {
+
+		if (interPtr->packetProc != NILPROC) {
+		    (interPtr->packetProc)(interPtr, packetLength, packetPtr);
+		}
+	    }
+	    break;
+	}
+	default:
+	    if (netDebug) {
+		printf("Received a packet with unknown type 0x%x.\n",
+		    packetType);
+	    }
+	    if (interPtr->packetProc != NILPROC) {
+		(interPtr->packetProc)(interPtr, packetLength, packetPtr);
+	    }
+	    break;
+    }
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * EnterDebugger --
+ *
+ *	Processes the special NET_ETHER_SPRITE_DEBUG packet type.
+ *	Prints the data in the packet (which is the hostname of the sender)
+ *	and then enters the debugger. The format of data in the packet is:
+ *	 1) size of sender's name in bytes (4 bytes),
+ *	 2) the sender's name (max 100 bytes).
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Enters the debugger.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+static void
+EnterDebugger(interPtr, packetPtr, packetLength)
+    Net_Interface	*interPtr;
+    Address packetPtr;
+    int packetLength;
+{
+    char *name;
+    unsigned int  len;
+
+    packetPtr += net_NetworkHeaderSize[interPtr->netType];
+    /*
+     * Copy the length out of the packet into a correctly aligned integer.
+     * Correct its byte order.
+     */
+    bcopy( packetPtr, (Address) &len, sizeof(len));
+
+    len = Net_NetToHostInt(len);
+
+    /*
+     * Validate the data length and make sure the name is null-terminated.
+     */
+    if (len < 100) {
+	name = (char *) (packetPtr + sizeof(len));
+	name[len] = '\0';
+	printf("\n*** Got a debugger packet from %s ***\n", name);
+    } else {
+	printf("\n*** Got a debugger packet ***\n");
+    }
+
+    DBG_CALL;
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_GetInterface --
+ *
+ *	Returns a pointer to the interface structure with the
+ *	given number and type.
+ *
+ * Results:
+ *	A pointer to a Net_Interface if one with the given number
+ *	exists, NIL otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Net_Interface *
+Net_GetInterface(netType, number)
+    Net_NetworkType	netType;	/* Type of interface. */
+    int			number;		/* Number of interface. */
+{
+    Net_Interface	*interPtr;
+    register int	i;
+
+    interPtr = (Net_Interface *) NIL;
+    for (i = 0; i < netNumInterfaces; i++) {
+	if (netInterfaces[i]->netType == netType &&
+	    netInterfaces[i]->number == number) {
+	    interPtr = netInterfaces[i];
+	    break;
+	}
+    }
+    return interPtr;
+}
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_GetInterfaceByAddr --
+ *
+ *	Returns a pointer to the interface whose address matches the 
+ * 	given address. If the address is an IP address then the IP
+ *	address for the interface had better be set.
+ *
+ * Results:
+ *	A pointer to the desired Net_Interface if one is found, NIL
+ *	otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Net_Interface *
+Net_GetInterfaceByAddr(netAddressPtr)
+    Net_Address		*netAddressPtr;	/* Address to use. */
+{
+    register int	i, j;
+
+    for (i = 0; i < netNumInterfaces; i++) {
+	for (j = 0; j < NET_MAX_PROTOCOLS; j++) {
+	    if (!Net_AddrCmp(netAddressPtr, &netInterfaces[i]->netAddress[j])) {
+		return netInterfaces[i];
+	    }
+	}
+    }
+    return (Net_Interface *) NIL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_NextInterface --
+ *
+ * 	This routine can be used to iterate through all network
+ *	interfaces, regardless of type.  The parameter 'index'
+ *	is used to keep track of where we are in the interaction.
+ *	A pointer will be returned to first interface whose index
+ *	is equal to or greater than 'index' and that is running.
+ *	The 'index' parameter will be set to the index of the
+ *	interface upon return.  
+ *
+ * Results:
+ *	A pointer to the first interface whose number if greater than
+ *	or equal to the contents of indexPtr and is running. NIL
+ *	if no such interface exists.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Net_Interface *
+Net_NextInterface(running, indexPtr)
+    Boolean		running;	/* TRUE => returned interface	
+					 * must be in running state. */
+    int			*indexPtr;	/* Ptr to index to use. */
+{
+    register int	i;
+
+    for (i = *indexPtr; i < netNumInterfaces; i++) {
+	if (netDebug) {
+	    printf("i = %d, name = %s, running = %d\n", i, 
+		netInterfaces[i]->name, 
+		netInterfaces[i]->flags & NET_IFLAGS_RUNNING);
+	}
+	if (!running || netInterfaces[i]->flags & NET_IFLAGS_RUNNING) {
+	    *indexPtr = i;
+	    return netInterfaces[i];
+	}
+    }
+    return (Net_Interface *) NIL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_SetPacketHandler --
+ *
+ *	Routine to register a callback for each packet received
+ *	on a particular network interface.
+ *	Right now the Net_Input routine knows about the different
+ * 	types of packets and knows which routines to call.  This
+ *	routine is used to set the callback for generic packets
+ *	so that the dev module sees them. 
+ *
+ *	The handler parameter should have the following definition:
+ *		void	handler(interPtr, packetPtr, size)
+ *			Net_Interface	*interPtr; 
+ *			Address		packetPtr; 
+ *			int		size;	   
+ *
+ *	TODO:  It would probably be nice to classify packets (rpc, ip,
+ *		ether, etc) and register interest in the different
+ *		classifications. That would make Net_Input more
+ *		general.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The function parameter will be called for all 'normal' network
+ *	packets.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Net_SetPacketHandler(interPtr, handler)
+    Net_Interface	*interPtr;	/* The interface. */
+    void		(*handler)();	/* Packet handling routine. */
+{
+    interPtr->packetProc = handler;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_RemovePacketHandler --
+ *
+ *	Routine to remove a packet handler callback procedure.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Net_RemovePacketHandler(interPtr)
+    Net_Interface	*interPtr;	/* The interface. */
+{
+    interPtr->packetProc = NILPROC;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_GetStats --
+ *
+ *	Returns the event statistics for the various network 
+ *	interfaces.  The sum of the stats for all interfaces of the
+ *	given type is returned.
+ *
+ * Results:
+ *	SUCCESS if the statistics are returned, an error code otherwise
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Net_GetStats(netType, statPtr)
+    Net_NetworkType	netType; 	/* Type of interfaces to get stats
+					 * for. */
+    Net_Stats		*statPtr;	/* Statistics to fill in. */ 
+{
+    int			i;
+    ReturnStatus	status = SUCCESS;
+    Net_Stats		tmpStats;
+
+    bzero((char *) statPtr, sizeof(Net_Stats));
+    for (i = 0; i < netNumInterfaces; i++) {
+	if ((netInterfaces[i]->flags & NET_IFLAGS_RUNNING) &&
+	    (netInterfaces[i]->netType == netType)) {
+	    status = (netInterfaces[i]->getStats)(netInterfaces[i], &tmpStats);
+	    if (status != SUCCESS) {
+		break;
+	    }
+	    NetAddStats(&tmpStats, statPtr, statPtr);
+	}
+    }
+    return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetAddStats --
+ *
+ *	Add two stats structures together. This routine assumes that
+ *	the structures are composed of only integers.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+NetAddStats(aPtr, bPtr, sumPtr)
+    Net_Stats *aPtr;			/* First addend. */
+    Net_Stats *bPtr;			/* Second addend. */
+    Net_Stats *sumPtr;			/* The sum of the two. */
+{
+    Net_Stats		tmp;
+    int			i;
+
+    bzero((char *) &tmp, sizeof(tmp));
+    for (i = 0; i < sizeof(Net_Stats) / sizeof(int); i++) {
+	((int *) &tmp)[i] = ((int *) aPtr)[i] + ((int *) bPtr)[i];
+    }
+    bcopy((char *) &tmp, (char *) sumPtr, sizeof(Net_Stats));
+}
+
+@
+
+
+9.10
+log
+@Changed definition of Net_Address and added Net_UserRoute.  
+Added Net_DeleteRoute and Net_GetRoute system calls.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/net/netCode.c,v 9.9 91/11/15 21:01:01 kupfer Exp $ SPRITE (Berkeley)";
+d135 1
+d653 12
+a664 1
+	default : 
+@
+
+
+9.9
+log
+@Initialize interface semaphores before they're used.  Recognize that 
+Sync_SemInitDynamic doesn't make a copy of the semaphore name.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/net/netCode.c,v 9.8 91/09/10 18:40:24 rab Exp $ SPRITE (Berkeley)";
+d98 1
+d115 3
+d857 34
+@
+
+
+9.8
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netCode.c,v 9.7 91/03/15 15:47:07 jhh Exp Locker: rab $ SPRITE (Berkeley)";
+d26 1
+d112 8
+a119 2
+	netConfigInterfaces[i].flags = 0;
+	status = (netConfigInterfaces[i].init)(&(netConfigInterfaces[i]));
+d121 1
+a121 2
+	    netInterfaces[netNumInterfaces] = &netConfigInterfaces[i];
+	    interPtr = netInterfaces[netNumInterfaces];
+a126 5
+	    (void) sprintf(buffer, "NetOutputMutex:%d", i);
+	    Sync_SemInitDynamic(&interPtr->syncOutputMutex, 
+		buffer);
+	    (void) sprintf(buffer, "NetMutex:%d", i);
+	    Sync_SemInitDynamic(&interPtr->mutex, buffer);
+@
+
+
+9.7
+log
+@changed printf during initialization
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netCode.c,v 9.6 90/11/05 18:06:16 jhh Exp $ SPRITE (Berkeley)";
+d66 1
+a66 1
+Boolean	ultra = FALSE;
+d121 1
+a121 1
+	    sprintf(buffer, "NetOutputMutex:%d", i);
+d124 1
+a124 1
+	    sprintf(buffer, "NetMutex:%d", i);
+a594 1
+    Boolean	ultra = FALSE;
+a632 1
+	    ultra = FALSE;
+a637 1
+	    ultra = TRUE;
+@
+
+
+9.7.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netCode.c,v 9.7 91/03/15 15:47:07 jhh Exp $ SPRITE (Berkeley)";
+@
+
+
+9.6
+log
+@output routines return a status, ultranet changes
+@
+text
+@a5 3
+ *	TODO: This needs to be fixed to handle more than one interface.
+ *	Update the route table accessed by spriteID to include a
+ *	interface 
+d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netCode.c,v 9.5 90/10/19 15:50:14 rab Exp $ SPRITE (Berkeley)";
+a120 4
+	    Mach_MonPrintf("%s net interface %d at 0x%x\n",
+		interPtr->name,
+		interPtr->number,
+		interPtr->ctrlAddr);
+@
+
+
+9.5
+log
+@Move verbose netDebug messages.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netCode.c,v 9.4 90/10/19 13:22:37 jhh Exp Locker: rab $ SPRITE (Berkeley)";
+d299 1
+a299 1
+		(interPtr->output) (interPtr, 
+d301 5
+a305 3
+		    gatherPtr, gatherLength);
+		while (!gatherPtr->done && mutexPtr != (Sync_Semaphore *)NIL) {
+		    (void) Sync_SlowMasterWait((unsigned int)mutexPtr, 
+d307 1
+a308 1
+		status = SUCCESS;
+d356 1
+a356 1
+		(interPtr->output)(interPtr, 
+d358 7
+a364 4
+		    gatherLength);
+		while (!gatherPtr->done && mutexPtr != (Sync_Semaphore *)NIL) {
+		    (void) Sync_SlowMasterWait((unsigned int)mutexPtr, 
+				mutexPtr, 0);
+a365 1
+		status = SUCCESS;
+d390 4
+a393 1
+ *	None.
+d401 1
+a401 1
+void
+d409 2
+a410 1
+    (interPtr->output)(interPtr, headerPtr, gatherPtr, gatherLength);
+d450 3
+d454 2
+a455 1
+ *	None.
+d462 1
+a462 1
+void
+d470 1
+d477 8
+a484 4
+    (interPtr->output)(interPtr, headerPtr, gatherPtr, gatherLength);
+    while (!gatherPtr->done) {
+	(void) Sync_SlowMasterWait((unsigned int)&(interPtr->syncOutputMutex), 
+				    &(interPtr->syncOutputMutex), FALSE);
+a485 1
+
+d487 1
+a487 1
+    return;
+d645 2
+d648 7
+a654 1
+	    packetType = NET_PACKET_SPRITE;
+@
+
+
+9.4
+log
+@Updated net module with lots of changes.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netCode.c,v 9.3 90/09/12 17:10:18 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d588 6
+d595 2
+a596 1
+	printf("Net_Input\n");
+@
+
+
+9.3
+log
+@fixed include statements
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netCode.c,v 9.2 89/11/16 15:14:57 rab Exp Locker: jhh $ SPRITE (Berkeley)";
+a24 1
+
+a30 1
+
+a31 1
+
+a33 5
+Net_EtherStats	net_EtherStats;
+NetEtherFuncs	netEtherFuncs;
+static	Sync_Semaphore	outputMutex;
+static void	EnterDebugger();
+
+d37 7
+a43 2
+extern NetInterface	netInterface[];
+extern int		numNetInterfaces;
+d68 2
+d71 4
+d95 11
+a105 6
+    register int inter;
+
+    /*
+     * Zero out the statistics struct.
+     */
+    bzero((Address) &net_EtherStats, sizeof(net_EtherStats));
+d111 22
+a132 8
+    for (inter = 0 ; inter<numNetInterfaces ; inter++) {
+	if ((*netInterface[inter].init)(netInterface[inter].name,
+					netInterface[inter].number,
+					netInterface[inter].ctrlAddr)) {
+	    Mach_MonPrintf("%s-%d net interface at 0x%x\n",
+		netInterface[inter].name,
+		netInterface[inter].number,
+		netInterface[inter].ctrlAddr);
+d135 3
+a137 1
+    Sync_SemInitDynamic(&outputMutex, "Net:outputMutex");
+d160 4
+a163 1
+    Mem_Bin(NET_ETHER_MAX_BYTES);
+d213 1
+a213 1
+ *	Reset the network controllers.
+d219 1
+a219 1
+ *	Reinitializes the the ethernet chips.
+d224 2
+a225 1
+Net_Reset()
+d227 1
+a227 2
+    netEtherFuncs.reset();
+    return;
+d254 1
+a254 1
+Net_Output(spriteID, gatherPtr, gatherLength, mutexPtr)
+d268 2
+d271 3
+a273 1
+    register Net_Route *routePtr;
+d282 3
+a284 3
+    routePtr = netRouteArray[spriteID];
+    if (routePtr == (Net_Route *)NIL) {
+	routePtr = Net_Arp(spriteID, mutexPtr);
+d289 3
+a291 8
+
+    switch(routePtr->type) {
+	case NET_ROUTE_ETHER: {
+
+		/*
+		 * Still need to decide which interface to use on a 
+		 * machine with more than one...
+		 */
+d294 1
+a294 1
+		 * which we have none for NET_ROUTE_ETHER.
+a296 1
+		INC_BYTES_SENT(gatherPtr, gatherLength);
+d299 3
+a301 2
+		(netEtherFuncs.output)((Net_EtherHdr *)routePtr->data, 
+					    gatherPtr, gatherLength);
+d303 2
+a304 1
+		    (void) Sync_SlowMasterWait((unsigned int)mutexPtr, mutexPtr, 0);
+d306 2
+a307 1
+		return(SUCCESS);
+d309 1
+a309 1
+	case NET_ROUTE_INET: {
+d320 1
+a320 3
+		 * Compute the legnth of the gather vector. We can skip
+		 * vector zero because we know its size will be 
+		 * sizeof(Net_IPHeader).
+a328 1
+		net_EtherStats.bytesSent += length + sizeof(Net_EtherHdr);
+d340 1
+a340 1
+			    (((char *)routePtr->data)+sizeof(Net_EtherHdr));
+d354 3
+a356 2
+		(netEtherFuncs.output)((Net_EtherHdr *)routePtr->data, 
+						gatherPtr, gatherLength);
+d358 2
+a359 1
+		    (void) Sync_SlowMasterWait((unsigned int)mutexPtr, mutexPtr, 0);
+d361 2
+a362 1
+		return(SUCCESS);
+d365 7
+a371 3
+	    printf("Warning: Net_Output: unsupported route type: %x\n", 
+			routePtr->type);
+	    return(FAILURE);
+d373 1
+d381 1
+a381 1
+ * Net_OutputRawEther --
+d383 1
+a383 1
+ *	Send a packet directly onto the ethernet.
+d395 3
+a397 2
+Net_OutputRawEther(etherHdrPtr, gatherPtr, gatherLength)
+    Net_EtherHdr	*etherHdrPtr;	/* Ethernet header. */
+d402 1
+a402 2
+    INC_BYTES_SENT(gatherPtr, gatherLength);
+    (netEtherFuncs.output)(etherHdrPtr, gatherPtr, gatherLength);
+d427 2
+a428 1
+Net_RecvPoll()
+d430 4
+a433 2
+    netEtherFuncs.intr(TRUE);
+    return;
+d440 1
+a440 4
+ * Net_EtherOutputSync --
+ *
+ *	Send a packet to a host identified by a Sprite Host ID and wait
+ *	for the packet to be sent.
+d451 3
+a453 2
+Net_EtherOutputSync(etherHdrPtr, gatherPtr, gatherLength)
+    Net_EtherHdr	*etherHdrPtr;	/* Pointer to ethernet header. */
+d459 1
+a459 1
+    gatherPtr->mutexPtr = &outputMutex;
+d462 1
+a462 1
+    MASTER_LOCK(&outputMutex);
+d464 1
+a464 2
+    INC_BYTES_SENT(gatherPtr, gatherLength);
+    netEtherFuncs.output(etherHdrPtr, gatherPtr, gatherLength);
+d466 2
+a467 2
+	(void) Sync_SlowMasterWait((unsigned int)&outputMutex, 
+					&outputMutex, FALSE);
+d470 1
+a470 1
+    MASTER_UNLOCK(&outputMutex);
+d499 3
+d544 2
+a545 1
+Net_Intr()
+d547 4
+a550 1
+    (netEtherFuncs.intr)(FALSE);
+d564 5
+d579 4
+a582 3
+Net_Input(packetPtr, packetLength)
+    Address packetPtr;
+    int packetLength;
+d584 46
+a629 6
+    register Net_EtherHdr *etherHdrPtr;
+    int		type;
+
+    etherHdrPtr = (Net_EtherHdr *)packetPtr;
+    type = Net_NetToHostShort((unsigned short)NET_ETHER_HDR_TYPE(*etherHdrPtr));
+
+d635 2
+a636 2
+	if (type == NET_ETHER_ARP) {
+            NetArpInput(packetPtr, packetLength);
+d638 1
+a638 1
+	    Dbg_InputPacket(packetPtr, packetLength);
+d642 8
+a649 6
+    switch(type) {
+        case NET_ETHER_SPRITE:
+	    net_EtherStats.bytesReceived += packetLength;
+            Rpc_Dispatch(NET_ROUTE_ETHER, packetPtr, 
+			 (packetPtr + sizeof(Net_EtherHdr)), 
+			packetLength - sizeof(Net_EtherHdr));
+d652 2
+a653 2
+        case NET_ETHER_ARP:
+	case NET_ETHER_REVARP:
+d658 12
+a669 3
+            NetArpInput(packetPtr, packetLength);
+	    DevNetEtherHandler(packetPtr, packetLength);
+            break;
+d671 5
+a675 2
+        case NET_ETHER_SPRITE_DEBUG:
+            EnterDebugger(packetPtr, packetLength);
+d678 1
+a678 1
+	case NET_ETHER_IP: {
+d680 1
+a680 1
+			(Net_IPHeader *) (packetPtr + sizeof(Net_EtherHdr));
+d684 4
+a687 1
+	    if ( (packetLength > sizeof(Net_IPHeader)+sizeof(Net_EtherHdr)) && 
+d703 1
+a703 1
+		     (totalLenInBytes <= (packetLength-sizeof(Net_EtherHdr))) &&
+d710 6
+a715 3
+			net_EtherStats.bytesReceived += packetLength;
+			Rpc_Dispatch(NET_ROUTE_ETHER, packetPtr, 
+		          (((char *) ipHeaderPtr) + headerLenInBytes),
+d721 4
+a724 1
+		DevNetEtherHandler(packetPtr, packetLength);
+d729 7
+a735 1
+	    DevNetEtherHandler(packetPtr, packetLength);
+d764 2
+a765 1
+EnterDebugger(packetPtr, packetLength)
+d772 1
+a772 4
+    /*
+     * Skip over the Ethernet header.
+     */
+    packetPtr += sizeof(Net_EtherHdr);
+d795 224
+@
+
+
+9.2
+log
+@Checked volatiles.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netCode.c,v 9.1 89/10/31 08:55:37 mendel Exp Locker: rab $ SPRITE (Berkeley)";
+d24 1
+a24 1
+#include "sprite.h"
+d26 6
+a31 6
+#include "list.h"
+#include "net.h"
+#include "netInt.h"
+#include "devNet.h"
+#include "sync.h"
+#include "dbg.h"
+d33 1
+a33 1
+#include "machMon.h"
+d35 1
+a35 1
+#include "netInet.h"
+@
+
+
+9.1
+log
+@Removed lint.
+@
+text
+@d21 2
+a22 2
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netCode.c,v 8.9 89/07/21 12:08:27 jhh Exp $ SPRITE (Berkeley)";
+#endif not lint
+d114 1
+d137 1
+d176 1
+d200 1
+d397 1
+d438 1
+d483 1
+d623 1
+d680 1
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netCode.c,v 8.9 89/07/21 12:08:27 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d60 2
+a61 2
+    short	*shortPtr; \
+    shortPtr = ((short *)&ptr->ident) + 1; \
+d66 2
+a67 2
+    short	*shortPtr; \
+    shortPtr = ((short *)&ptr->ident) + 1; \
+d273 1
+a273 1
+		    Sync_SlowMasterWait((unsigned int)mutexPtr, mutexPtr, 0);
+d328 1
+a328 1
+		    Sync_SlowMasterWait((unsigned int)mutexPtr, mutexPtr, 0);
+d428 2
+a429 1
+	Sync_SlowMasterWait(&outputMutex, &outputMutex, FALSE);
+d465 1
+a465 1
+    Sync_SlowBroadcast((unsigned int)mutexPtr, &waiting);
+d474 1
+a474 1
+    Sync_SlowBroadcast((unsigned int) mutexPtr, &waiting);	
+d500 1
+a500 1
+void
+d504 1
+d535 1
+a535 1
+    type = Net_NetToHostShort(NET_ETHER_HDR_TYPE(*etherHdrPtr));
+d553 1
+a553 1
+			packetPtr + sizeof(Net_EtherHdr), 
+d602 1
+a602 1
+				     ((char *) ipHeaderPtr) + headerLenInBytes, 
+d646 1
+a646 1
+    int  len;
+@
+
+
+8.9
+log
+@rcp using ip protocol now works on little-endian machines
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netCode.c,v 8.8 89/07/10 19:45:07 nelson Exp $ SPRITE (Berkeley)";
+@
+
+
+8.8
+log
+@Moved call to Net_RouteInit into the main program to allow the network
+initalization routine to be called earlier in the boot sequence on the pmax.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netCode.c,v 8.7 89/06/08 09:07:10 mendel Exp $ SPRITE (Berkeley)";
+d56 15
+d319 1
+d580 1
+a580 1
+		totalLenInBytes = ipHeaderPtr->totalLen;
+d589 1
+a589 1
+		 if ((headerLenInBytes >= sizeof(Net_IPHeader)) &&
+d593 4
+a596 2
+		                        == 0)	&&
+		     !(ipHeaderPtr->flags & NET_IP_MORE_FRAGS) &&
+d602 2
+a603 1
+		 }
+@
+
+
+8.7
+log
+@Contrary to the comments in netInet.h, ipHeaderPtr->totalLen is in bytes
+and not words. 
+	Mendel
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netCode.c,v 8.6 89/06/02 12:58:10 mendel Exp $ SPRITE (Berkeley)";
+d33 2
+d92 1
+a92 1
+	    printf("%s-%d net interface at 0x%x\n",
+a98 4
+    /*
+     * Pre-load some addresses, including the broadcast address.
+     */
+    Net_RouteInit();
+d442 5
+@
+
+
+8.6
+log
+@Changed Sprite ARP to used real ARP. Added IP routes.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netCode.c,v 8.5 89/02/24 13:52:35 brent Exp Locker: mendel $ SPRITE (Berkeley)";
+a284 12
+		/* 
+		 * IP packets must be a multiple of 4 bytes in length. We
+		 * grow the last gather element to accomblish this. Thie could
+		 * cause a bus error if adding 1 to 3 bytes causes the
+		 * packet to grow into an invalid page. This restriction
+		 * should probably be passed up to the RPC system.
+		 */
+		if (length & 0x3) { 
+		    int	grow = 0x4 - (length & 0x3);
+		    gatherPtr[gatherLength-1].length += grow;
+		    length += grow;
+		}
+a305 1
+		length = length/4;
+d561 1
+a561 1
+		totalLenInBytes = ipHeaderPtr->totalLen*4;
+d571 1
+a571 1
+		     (totalLenInBytes > ipHeaderPtr->headerLen) &&
+@
+
+
+8.5
+log
+@Cleaned up the mutex used to synchronize output
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netCode.c,v 8.4 89/02/14 13:10:25 jhh Exp $ SPRITE (Berkeley)";
+d33 2
+d213 5
+a217 1
+					 * pieces of the packet */
+d249 5
+a253 1
+
+d264 67
+a417 1
+    Sync_Condition	condition;
+d526 3
+d530 9
+a538 1
+	Dbg_InputPacket(packetPtr, packetLength);
+a540 2
+    etherHdrPtr = (Net_EtherHdr *)packetPtr;
+    type = Net_NetToHostShort(NET_ETHER_HDR_TYPE(*etherHdrPtr));
+d544 3
+a546 1
+            Rpc_Dispatch(packetPtr, packetLength);
+d549 6
+a554 1
+        case NET_ETHER_SPRITE_ARP:
+d556 1
+d563 38
+@
+
+
+8.4
+log
+@Updated Sync_Lock initialization and registration
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netCode.c,v 8.3 89/01/31 15:22:22 mendel Exp Locker: jhh $ SPRITE (Berkeley)";
+d246 1
+a246 1
+		gatherPtr->conditionPtr = (Sync_Condition *)mutexPtr;
+d343 1
+a343 1
+    gatherPtr->conditionPtr = (Sync_Condition *)&outputMutex;
+d377 2
+a378 2
+NetOutputWakeup(conditionPtr)
+    Sync_Condition	*conditionPtr;		/* not really! */
+d382 1
+a382 1
+    Sync_SlowBroadcast((unsigned int)conditionPtr, &waiting);
+d390 3
+a392 6
+    {
+	Sync_Semaphore *mutexPtr = (Sync_Semaphore *) conditionPtr;
+	MASTER_LOCK(mutexPtr);
+        Sync_SlowBroadcast((unsigned int) mutexPtr, &waiting);	
+	MASTER_UNLOCK(mutexPtr);
+    }
+@
+
+
+8.3
+log
+@Added Net_Bit()
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netCode.c,v 8.2 89/01/05 15:32:22 mendel Exp $ SPRITE (Berkeley)";
+d35 1
+a35 1
+static	Sync_Semaphore	outputMutex = SYNC_SEM_INIT_STATIC("outputMutex");
+d94 1
+@
+
+
+8.2
+log
+@For multiprocessor, grab master lock during wakeup.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netCode.c,v 8.1 88/11/22 19:31:05 jhh Exp $ SPRITE (Berkeley)";
+d30 1
+d98 22
+@
+
+
+8.1
+log
+@net semaphore definition
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netCode.c,v 8.0 88/11/11 18:26:17 douglis Stable Locker: jhh $ SPRITE (Berkeley)";
+d357 1
+d359 14
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netCode.c,v 6.3 88/11/11 17:56:23 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d34 1
+a34 1
+static	int	outputMutex = 0;
+d189 1
+a189 1
+    int *mutexPtr;			/* Mutex that is released during the
+d225 1
+a225 1
+		while (!gatherPtr->done && mutexPtr != (int *)NIL) {
+d322 1
+a322 1
+    MASTER_LOCK(outputMutex);
+d330 1
+a330 1
+    MASTER_UNLOCK(outputMutex);
+@
+
+
+6.3
+log
+@This is John checking this in for Brent and I don't know exactly what 
+the changes are.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/RCS/netCode.c,v 6.2 88/10/24 11:05:43 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+6.2
+log
+@Converted to use the new c library naming.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: netCode.c,v 6.1 88/08/26 16:09:12 mendel Exp $ SPRITE (Berkeley)";
+d221 2
+d225 3
+a309 1
+
+d319 1
+a319 1
+    gatherPtr->conditionPtr = &condition;
+d327 1
+a327 1
+	Sync_MasterWait(&condition, &outputMutex, FALSE);
+a331 1
+
+d338 4
+a341 2
+ *	Send a packet to a host identified by a Sprite Host ID and wait
+ *	for the packet to be sent.
+d354 1
+a354 1
+    Sync_Condition	*conditionPtr;
+d356 2
+a357 3
+    MASTER_LOCK(outputMutex);
+    Sync_MasterBroadcast(conditionPtr);
+    MASTER_UNLOCK(outputMutex);
+@
+
+
+6.1
+log
+@Fixed bug with "l1d" handling and cleaned some lint.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: netCode.c,v 6.0 88/08/11 12:19:46 brent Stable $ SPRITE (Berkeley)";
+a25 1
+#include "sys.h"
+a29 1
+#include "byte.h"
+d77 1
+a77 1
+    Byte_Zero(sizeof(net_EtherStats), (Address) &net_EtherStats);
+a83 4
+	Sys_Printf("Probing %s-%d net interface at 0x%x ...\n",
+		netInterface[inter].name,
+		netInterface[inter].number,
+		netInterface[inter].ctrlAddr);
+d87 1
+a87 1
+	    Sys_Printf("%s-%d net interface at 0x%x\n",
+d130 3
+a132 3
+	Byte_Copy(scatterGatherPtr->length,
+		  (Address) scatterGatherPtr->bufAddr, 
+		  (Address) &(destAddr[soFar]));
+d226 2
+a227 2
+	    Sys_Panic(SYS_WARNING, 
+		"Net_Output: unsupported route type: %x\n", routePtr->type);
+d474 1
+a474 1
+    Byte_Copy(sizeof(len), packetPtr, (Address) &len);
+d484 1
+a484 1
+	Sys_Printf("\n*** Got a debugger packet from %s ***\n", name);
+d486 1
+a486 1
+	Sys_Printf("\n*** Got a debugger packet ***\n");
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: netCode.c,v 5.10 88/08/01 17:15:57 mendel Exp $ SPRITE (Berkeley)";
+d463 1
+d480 1
+a480 1
+    Byte_Copy(packetPtr, (Address) &len, sizeof(len));
+@
+
+
+5.10
+log
+@Added support for SPUR's wierd ethernet header declarations.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: netCode.c,v 5.9 88/07/15 17:32:28 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+5.9
+log
+@Moved net device code to dev module.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: netCode.c,v 5.8 88/06/27 10:43:10 mendel Exp $ SPRITE (Berkeley)";
+d414 1
+d421 2
+a422 1
+    switch(etherHdrPtr->type) {
+d475 5
+d481 1
+a481 1
+    len = *(int *) packetPtr;
+@
+
+
+5.8
+log
+@Updated Copyright notice.
+@
+text
+@d21 1
+a21 1
+static char rcsid[] = "$Header: netCode.c,v 5.7 88/06/21 11:13:15 mendel Exp $ SPRITE (Berkeley)";
+d30 1
+d435 1
+a435 1
+	    NetEtherHandler(packetPtr, packetLength);
+@
+
+
+5.7
+log
+@Completed removal for machine dependent code.
+@
+text
+@a17 1
+ * All rights reserved.
+d21 1
+a21 1
+static char rcsid[] = "$Header: netCode.c,v 5.6 88/06/20 09:47:14 brent Exp $ SPRITE (Berkeley)";
+a73 1
+    register int machineType;
+@
+
+
+5.6
+log
+@Partially backed out probing stuff.  This is still broken
+@
+text
+@d22 1
+a22 1
+static char rcsid[] = "$Header: netCode.c,v 5.5 88/06/14 15:57:02 brent Exp $ SPRITE (Berkeley)";
+a81 3
+#ifdef notdef
+    /* Probing seems to cause bus errors even on existing interfaces. */
+
+d98 1
+a98 1
+	}
+a99 43
+#endif notdef
+    /*
+     * Set up the struct of functions to be called depending on the 
+     * machine type.
+     */
+    machineType = Mach_GetMachineType();
+    switch(machineType) {
+	case SYS_SUN_2_120: {
+	    extern Boolean Net3CInit();
+	    extern void    Net3COutput();
+	    extern void    Net3CIntr();
+	    extern void    Net3CRestart();
+
+	    netEtherFuncs.init   = Net3CInit;
+	    netEtherFuncs.output = Net3COutput;
+	    netEtherFuncs.intr   = Net3CIntr;
+	    netEtherFuncs.reset  = Net3CRestart;
+	    break;
+	}
+	case SYS_SUN_2_50:   /* SYS_SUN_2_160 has the same value */
+	case SYS_SUN_3_75: { /* SYS_SUN_3_160 has the same value */
+	    extern Boolean NetIEInit();
+	    extern void    NetIEOutput();
+	    extern void    NetIEIntr();
+	    extern void    NetIERestart();
+
+	    netEtherFuncs.init   = NetIEInit;
+	    netEtherFuncs.output = NetIEOutput;
+	    netEtherFuncs.intr   = NetIEIntr;
+	    netEtherFuncs.reset  = NetIERestart;
+	    break;
+	}
+	default:
+	    Sys_Panic(SYS_FATAL, 
+			"Net_Init: unknown machine type: %d\n", machineType);
+	    break;
+    }
+
+    /*
+     * Call the initialization routine.
+     */
+    (netEtherFuncs.init)();
+
+@
+
+
+5.5
+log
+@Almost added code to probe for different ethernet interfaces
+@
+text
+@d22 1
+a22 1
+static char rcsid[] = "$Header: netCode.c,v 5.4 88/05/05 17:58:23 brent Exp $ SPRITE (Berkeley)";
+d75 1
+d82 3
+a88 1
+#ifdef notdef
+d110 6
+a115 1
+	case SYS_SUN_2_120:
+d121 7
+a128 2
+	case SYS_SUN_2_50: /* SYS_SUN_2_160 has the same value */
+	case SYS_SUN_3_75: /* SYS_SUN_3_160 has the same value */
+d134 1
+a134 1
+
+@
+
+
+5.4
+log
+@Conversion to use Mach module
+@
+text
+@d6 12
+a17 1
+ * Copyright 1985 Regents of the University of California
+d22 1
+a22 1
+static char rcsid[] = "$Header: netCode.c,v 5.3 87/10/04 15:53:47 brent Exp $ SPRITE (Berkeley)";
+d39 6
+a57 39
+ * Net_GatherCopy --
+ *
+ *	Copy all of the data pointed to by the scatter/gather array into
+ *	the destination.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Net_GatherCopy(scatterGatherPtr, scatterGatherLength, destAddr)
+    register	Net_ScatterGather *scatterGatherPtr;
+    int		  		  scatterGatherLength;
+    register	Address		  destAddr;
+{
+    int i;
+    int soFar = 0;
+
+    for (i = 0; i < scatterGatherLength; i++, scatterGatherPtr++) {
+	if (scatterGatherPtr->length == 0) {
+	    continue;
+	}
+
+	Byte_Copy(scatterGatherPtr->length,
+		  (Address) scatterGatherPtr->bufAddr, 
+		  (Address) &(destAddr[soFar]));
+	soFar += scatterGatherPtr->length;
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+d74 1
+a74 1
+    int machineType;
+d82 20
+d138 39
+@
+
+
+5.3
+log
+@Final touches on ARP re. recovery.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: netCode.c,v 5.2 87/10/04 14:02:42 brent Exp $ SPRITE (Berkeley)";
+a14 1
+#include "machine.h"
+@
+
+
+5.2
+log
+@Added warning statement
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: netCode.c,v 5.1 87/09/17 12:02:39 nelson Exp $ SPRITE (Berkeley)";
+d210 1
+a210 1
+	routePtr = NetArp(spriteID, mutexPtr);
+a211 2
+	    Sys_Panic(SYS_WARNING, "Net_Output: ARP failed for spriteID %d\n",
+				    spriteID);
+d425 1
+a425 1
+            Net_ArpInput(packetPtr, packetLength);
+@
+
+
+5.1
+log
+@Added ability to reset 3Com and Intel chips.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: netCode.c,v 5.0 87/08/11 10:46:07 sprite Exp $ SPRITE (Berkeley)";
+d212 2
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: netCode.c,v 4.7 87/07/30 12:54:55 nelson Exp $ SPRITE (Berkeley)";
+d76 1
+a101 1
+
+a107 1
+
+d114 1
+d122 1
+a133 1
+
+d140 22
+@

@@ -1,0 +1,210 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     92.06.09.20.53.05;  author jhh;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     92.03.02.17.45.28;  author voelker;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.08.31.15.05.44;  author jhh;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.06.28.15.18.59;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.06.09.18.02.23;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.5
+log
+@uses address-specific conversion routines
+@
+text
+@/* 
+ * Net_StringToAddr.c --
+ *
+ *	Convert a string to an address.
+ *
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/net/RCS/Net_StringToAddr.c,v 1.4 92/03/02 17:45:28 voelker Exp Locker: jhh $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include "sprite.h"
+#include "net.h"
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Net_StringToAddr --
+ *
+ *	This routine takes a string form of a network address and
+ *	converts it to the Net_Address form. The string must be
+ *	null-terminated.
+ *
+ * Results:
+ *	Standard Sprite return status.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Net_StringToAddr(buffer, type, addressPtr)
+    register char 	*buffer;
+    Net_AddressType	type;
+    Net_Address 	*addressPtr;
+{
+    ReturnStatus	status = SUCCESS;
+    int			addr[10];
+
+    switch(type) {
+	case NET_ADDRESS_ETHER : {
+	    Net_StringToEtherAddr(buffer, (Net_EtherAddress *) addr);
+	    break;
+	}
+	case NET_ADDRESS_ULTRA: {
+	    Net_StringToUltraAddr(buffer, (Net_UltraAddress *) addr);
+	    break;
+	}
+	case NET_ADDRESS_FDDI: {
+	    Net_StringToFDDIAddr(buffer, (Net_FDDIAddress *) addr);
+	    break;
+	}
+	case NET_ADDRESS_INET : {
+	    addr[0] = Net_StringToInetAddr(buffer);
+	    break;
+	}
+	default:
+	    return FAILURE;
+    }
+    status = Net_SetAddress(type, (Address) addr, addressPtr); 
+    return status;
+}
+@
+
+
+1.4
+log
+@added fddi (checked in by jhh)
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/lib/net/RCS/Net_StringToAddr.c,v 1.3 90/08/31 15:05:44 jhh Exp Locker: voelker $ SPRITE (Berkeley)";
+d24 2
+d46 1
+a46 1
+Net_StringToAddr(buffer, protocol, netType, addressPtr)
+d48 1
+a48 2
+    int			protocol;
+    Net_NetworkType	netType;
+d52 1
+d54 7
+a60 23
+    switch(protocol) {
+	case NET_PROTO_RAW : {
+	    switch(netType) {
+		case NET_NETWORK_ETHER:
+		    Net_StringToEtherAddr(buffer, &addressPtr->ether);
+		    break;
+		case NET_NETWORK_ULTRA: {
+		    int	group;
+		    int unit;
+		    int n;
+		    n = sscanf(buffer, "%d/%d", &group, &unit);
+		    if (n != 2) {
+			return FAILURE;
+		    }
+		    Net_UltraAddressSet(&addressPtr->ultra, group, unit);
+		    break;
+		}
+		case NET_NETWORK_FDDI:
+		    Net_StringToEtherAddr(buffer, &addressPtr->fddi);
+		    break;
+		default:
+		    return FAILURE;
+	    }
+d63 2
+a64 2
+	case NET_PROTO_INET : {
+	    addressPtr->inet = Net_StringToInetAddr(buffer);
+d67 6
+d74 1
+a76 1
+
+@
+
+
+1.3
+log
+@new ultra address format
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/lib/net/RCS/Net_StringToAddr.c,v 1.2 90/06/28 15:18:59 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d69 3
+@
+
+
+1.2
+log
+@fixed a typo
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/lib/net/RCS/Net_StringToEtherAddr.c,v 1.2 88/11/21 09:28:33 mendel Exp $ SPRITE (Berkeley)";
+d66 1
+a66 2
+		    addressPtr->ultra.group = group;
+		    addressPtr->ultra.unit = unit;
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d68 1
+d73 2
+@

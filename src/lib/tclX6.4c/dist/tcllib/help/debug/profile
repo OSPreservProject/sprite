@@ -1,0 +1,32 @@
+
+
+          profile [-commands] on
+               profile off arrayVar
+               This command is used to collect a performance profile
+               of a Tcl script.  It collects data at the Tcl procedure
+               level. The number of calls to a procedure, and the
+               amount of real and CPU time is collected. Time is also
+               collected for the global context.  The procedure data
+               is collected by bucketing it based on the procedure
+               call stack, this allows determination of how much time
+               is spent in a particular procedure in each of it's
+               calling contexts.
+
+               The on option enables profile data collection. If the
+               -commands option is specifed, data on all commands
+               within a procedure is collected as well a procedures.
+               Multiple occurrences of a command within a procedure
+               are not distinguished, but this data may still be
+               useful for analysis.
+
+               The off option turns off profiling and moves the data
+               collected to the array arrayVar.  The array is address
+               by a list containing the procedure call stack.  Element
+               zero is the top of the stack, the procedure that the
+               data is for.  The data in each entry is a list
+               consisting of the procedure call count and the real
+               time and CPU time in milliseconds spent in the
+               procedure (and all procedures it called). The list is
+               in the form {count real cpu}.  A Tcl procedure profrep
+               is supplied for reducing the data and producing a
+               report (see Tcl Package Library Procedures section).

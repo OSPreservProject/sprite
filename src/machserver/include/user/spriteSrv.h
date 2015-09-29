@@ -1,0 +1,1 @@
+../../src/sprited/sys/spriteSrv.h

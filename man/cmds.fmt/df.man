@@ -1,0 +1,68 @@
+
+
+
+DF                   UNKNOWN SECTION (prog)                    DF
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     df - Print information about disk free space
+
+SSYYNNOOPPSSIISS
+     ddff [_f_i_l_e _f_i_l_e ...]
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This command will print information about  disk  utilization
+     and  free  space for some or all of the file system domains.
+     If no arguments are given, it prints out information for all
+     the  domains  in  the current host's prefix table (i.e., all
+     the domains that have  been  accessed  since  the  host  was
+     booted).   If  one  or more _f_i_l_e arguments is given, then ddff
+     will print out information for the domains containing  those
+     files.
+
+
+SSEEEE AALLSSOO
+     prefix
+
+
+KKEEYYWWOORRDDSS
+     disk, free space, utilization
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  April 24, 1989                    1
+
+
+

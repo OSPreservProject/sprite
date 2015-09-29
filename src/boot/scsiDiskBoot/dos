@@ -1,0 +1,3 @@
+#!/bin/csh
+size sun3.md/*.o | sort -r -n  | awk -f a
+size sun3.md/scsiDiskBoot

@@ -1,0 +1,18 @@
+     GROUPING ARGUMENTS WITH DOUBLE-QUOTES
+          Normally each argument field ends at the next  white  space,
+          but  double-quotes  may  be  used  to  create arguments with
+          embedded space.  If an argument field begins with a  double-
+          quote,  then  the  argument  isn't terminated by white space
+          (including  newlines)  or  a  semi-colon  (see   below   for
+          information  on  semi-colons);  instead  it ends at the next
+          double-quote character.  The double-quotes are not  included
+          in the resulting argument.  For example, the command
+
+               set a "This is a single argument"
+
+          will pass two arguments to set:  a  and  This  is  a  single
+          argument.    Within  double-quotes,  command  substitutions,
+          variable substitutions, and  backslash  substitutions  still
+          occur,  as  described  below.   If  the first character of a
+          command field is not a quote, then quotes receive no special
+          interpretation in the parsing of that field.

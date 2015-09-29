@@ -1,0 +1,66 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     90.12.08.00.03.25;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.11.15.13.33.36;  author rab;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Put ifdef around typedef of va_list, because it is also typedefed in
+stdio.h for prototypes.
+@
+text
+@/* $Copyright:	$
+ * Copyright (c) 1984, 1985 Sequent Computer Systems, Inc.
+ * All rights reserved
+ *  
+ * This software is furnished under a license and may be used
+ * only in accordance with the terms of that license and with the
+ * inclusion of the above copyright notice.   This software may not
+ * be provided or otherwise made available to, or used by, any
+ * other person.  No title to or ownership of the software is
+ * hereby transferred.
+ */
+
+/* $Header: /sprite/src/lib/include/symm.md/RCS/varargs.h,v 1.1 90/11/15 13:33:36 rab Exp Locker: rab $ */
+
+#ifndef _VA_LIST
+#define _VA_LIST
+typedef char *va_list;
+#endif
+
+# define va_dcl int va_alist;
+# define va_start(list) list = (char *) &va_alist
+# define va_end(list)
+# define va_arg(list,mode) ((mode *)(list += sizeof(mode)))[-1]
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d13 1
+a13 1
+/* $Header: varargs.h 2.0 86/01/28 $ */
+d15 2
+d18 2
+@

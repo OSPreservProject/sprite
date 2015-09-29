@@ -1,0 +1,8 @@
+#!/bin/csh -f
+set fileList = ()
+foreach host (paprika murder fenugreek thyme sage mace)
+    if (-e /sprite/admin/fsstats/$host/last) then
+	set fileList = ($fileList  /sprite/admin/fsstats/$host/last)
+    endif
+end
+awk -f fsstats.awk $fileList

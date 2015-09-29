@@ -1,0 +1,41 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @# @;
+
+
+1.1
+date     89.06.23.15.48.46;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@AWK script to help generate the print statements for this program
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@BEGIN { inTypedef = 0  }
+/typedef/ { inTypedef = 1; printf ("\n") }
+
+/^}/	{ n = split($0, line, ";") ;
+	  n = split(line[1], token, " ") ;
+	  printf( "\t%s *X;\n", token[n] ) ;
+	  inTypedef = 0;
+	}
+
+/;/	{ if (inTypedef) {
+		n = split($0, line, ";") ;
+	        n = split(line[1], token, " ") ;
+		printf ( "\tZeroPrint(\"%-14s %%8d\\n\", X->%s);\n", token[n], token[n] )
+	    }
+	 }
+@

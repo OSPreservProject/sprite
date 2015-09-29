@@ -1,0 +1,590 @@
+head     1.8;
+branch   ;
+access   ;
+symbols  srv030:1.8 srv028:1.8 srv027:1.8 srv026:1.8 srv024:1.8 srv023:1.7.1 srv022:1.7 srv021:1.7 srv019:1.7 srv018:1.6 srv016:1.6 srv015:1.6 srv014:1.6 srv012:1.6 srv011:1.6 srv010:1.6 srv008:1.6 srv007:1.5 srv006:1.5 srv005:1.5 srv004:1.5 srv003:1.5 srv002:1.5 srv001:1.5;
+locks    ; strict;
+comment  @ * @;
+
+
+1.8
+date     92.07.07.15.56.42;  author kupfer;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     92.06.29.16.13.22;  author kupfer;  state Exp;
+branches 1.7.1.1;
+next     1.6;
+
+1.6
+date     92.06.02.14.59.39;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     92.04.16.11.21.52;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     92.01.21.17.08.46;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.12.18.23.33.46;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.11.14.10.03.27;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.09.23.14.33.49;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+1.7.1.1
+date     92.07.07.15.55.28;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Routines for dealing with message request queues.
+@
+
+
+1.8
+log
+@Get rid of VM_INSTRUMENT cruft.
+@
+text
+@/* 
+ * vmMsgQueue.c --
+ *
+ *	Routines for queueing and initiating processing of VM request 
+ *	messages. 
+ *
+ * Copyright 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmMsgQueue.c,v 1.7 92/06/29 16:13:22 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <mach.h>
+#include <mach_error.h>
+#include <spriteTime.h>
+
+#include <proc.h>
+#include <sync.h>
+#include <sys.h>
+#include <vm.h>
+#include <vmInt.h>
+#include <user/vmStat.h>
+
+/* 
+ * This flag enables some debug printf's in the code path for enqueueing VM 
+ * requests. 
+ */
+Boolean vmRequestDebug = FALSE;
+
+/* 
+ * Keep track of how many threads are currently processing memory object 
+ * requests.
+ */
+static Sync_Lock requestCountLock = Sync_LockInitStatic("vm:requestCountLock");
+static int vmThreadsActive = 0;
+
+/* 
+ * This is the maximum number of requests that we will queue up for a 
+ * single segment.  Once this limit is reached, the segment is removed from
+ * the system request port set until all the segment's requests are 
+ * processed. 
+ */
+int vm_MaxPendingRequests = 5;	/* untuned */
+
+/* 
+ * This declaration really oughta be gotten from a Mach header file 
+ * somewhere... 
+ */
+extern boolean_t memory_object_server _ARGS_((mach_msg_header_t *requestPtr,
+			mach_msg_header_t *replyPtr));
+
+/* Forward declarations: */
+static ReturnStatus DequeueBuffers _ARGS_((Vm_Segment *segPtr, 
+			Sys_MsgBuffer **requestPtrPtr, 
+			Sys_MsgBuffer **replyPtrPtr));
+static void EnqueueBuffers _ARGS_((Vm_Segment *segPtr,
+			Sys_MsgBuffer *requestPtr,
+			Sys_MsgBuffer *replyPtr));
+extern void VmDoRequests _ARGS_((ClientData clientData,
+			Proc_CallInfo *callInfoPtr));
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_EnqueueRequest --
+ *
+ *	Enqueue a request for the given segment, and hand it off to a 
+ *	server process, starting a new process if necessary.  The server
+ * 	process eventually sends a reply and frees the message buffers for 
+ * 	the request.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ * 	Removes the segment from the system request port set if it has too
+ * 	many pending requests.
+ *
+ *----------------------------------------------------------------------
+ */
+    
+void
+Vm_EnqueueRequest(segPtr, requestPtr, replyPtr)
+    Vm_Segment *segPtr;		/* the segment that the request is for */
+    Sys_MsgBuffer *requestPtr;	/* the request buffer */
+    Sys_MsgBuffer *replyPtr;	/* the reply buffer */
+{
+    kern_return_t kernStatus;
+
+    if (vmRequestDebug) {
+	printf("Enqueue %s...", Vm_SegmentName(segPtr));
+    }
+    VmSegmentLock(segPtr);
+    EnqueueBuffers(segPtr, requestPtr, replyPtr);
+    if (segPtr->queueSize > vm_MaxPendingRequests) {
+	if (vmRequestDebug) {
+	    printf("Queue overflow for %s...", Vm_SegmentName(segPtr));
+	}
+	vmStat.queueOverflows++;
+	kernStatus = mach_port_move_member(mach_task_self(),
+					   segPtr->requestPort,
+					   MACH_PORT_NULL);
+	if (kernStatus == KERN_SUCCESS) {
+	    segPtr->flags |= VM_SEGMENT_NOT_IN_SET;
+	} else {
+	    printf("%s: couldn't remove segment %s from request set: %s.\n",
+		   "Vm_EnqueueRequest", Vm_SegmentName(segPtr),
+		   mach_error_string(kernStatus));
+	}
+    }
+    if (!(segPtr->flags & VM_SEGMENT_ACTIVE)) {
+	segPtr->flags |= VM_SEGMENT_ACTIVE;
+	segPtr->refCount++;
+	if (vmRequestDebug) {
+	    printf("starting thread...");
+	}
+	Proc_CallFunc(VmDoRequests, (ClientData)segPtr, time_ZeroSeconds);
+    }
+    VmSegmentUnlock(segPtr);
+    if (vmRequestDebug) {
+	printf("enqueued\n");
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmDoRequests --
+ *
+ *	Run a segment's requests through the VM code.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Sends the replies and frees the message buffers.  When there are no 
+ *	more messages, clears the "active" flag in the segment and frees 
+ *	its reference to the segment.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+/* static */ void
+VmDoRequests(clientData, callInfoPtr)
+    ClientData clientData;	/* which segment */
+    Proc_CallInfo *callInfoPtr;	/* unused */
+{
+    Boolean msgAccepted;	/* did the server code accept the msg */
+    Vm_Segment *segPtr = (Vm_Segment *)clientData;
+    Sys_MsgBuffer *requestPtr;	/* the buffer with the request message */
+    Sys_MsgBuffer *replyPtr;	/* the buffer to hold the reply */
+    kern_return_t kernStatus;
+
+    Sync_GetLock(&requestCountLock);
+    vmThreadsActive++;
+    Sync_Unlock(&requestCountLock);
+
+    for (;;) {
+	VmSegmentLock(segPtr);
+	if (DequeueBuffers(segPtr, &requestPtr, &replyPtr) != SUCCESS) {
+	    segPtr->flags &= ~VM_SEGMENT_ACTIVE;
+
+	    Sync_GetLock(&requestCountLock);
+	    vmThreadsActive--;
+	    if (vmRequestDebug) {
+		printf("done processing %s; %d VM threads active\n",
+		       Vm_SegmentName(segPtr), vmThreadsActive);
+	    }
+	    Sync_Unlock(&requestCountLock);
+
+	    if (segPtr->flags & VM_SEGMENT_NOT_IN_SET) {
+		if (vmRequestDebug) {
+		    printf("re-enabling requests for segment %s\n",
+			   Vm_SegmentName(segPtr));
+		}
+		kernStatus = mach_port_move_member(mach_task_self(),
+						   segPtr->requestPort,
+						   sys_RequestPort);
+		if (kernStatus == KERN_SUCCESS) {
+		    segPtr->flags &= ~VM_SEGMENT_NOT_IN_SET;
+		} else {
+		    printf("%s: can't move segment %s to port set: %s\n",
+			   "VmDoRequests", Vm_SegmentName(segPtr), 
+			   mach_error_string(kernStatus));
+		}
+	    }
+	    VmSegmentUnlock(segPtr);
+	    Vm_SegmentRelease(segPtr);
+	    return;
+	}
+	VmSegmentUnlock(segPtr);
+	msgAccepted = memory_object_server(&requestPtr->bufPtr->Head,
+					   &replyPtr->bufPtr->Head);
+	if (!msgAccepted) {
+	    printf("VmDoRequests: bogus pager request.\n");
+	}
+	Sys_ReplyAndFree(requestPtr, replyPtr);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * EnqueueBuffers --
+ *
+ *	Put the message buffers on the segment's queue.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The message buffers are put at the send of the segment's request 
+ *	list. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+EnqueueBuffers(segPtr, requestPtr, replyPtr)
+    Vm_Segment *segPtr;		/* segment whose queue to used; locked */
+    Sys_MsgBuffer *requestPtr;	/* request buffer */
+    Sys_MsgBuffer *replyPtr;	/* reply buffer */
+{
+    List_Insert((List_Links *)requestPtr, LIST_ATREAR(segPtr->requestList));
+    List_Insert((List_Links *)replyPtr, LIST_ATREAR(segPtr->requestList));
+    segPtr->queueSize++;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DequeueBuffers --
+ *
+ *	Get the request and reply buffers for the next VM request.
+ *
+ * Results:
+ *	If there messages in the queue, fills in the pointers to the 
+ *	request and reply buffers and returns SUCCESS.  Otherwise returns
+ *	FAILURE.
+ *
+ * Side effects:
+ *	The message are removed from the segment's queue.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+DequeueBuffers(segPtr, requestPtrPtr, replyPtrPtr)
+    Vm_Segment *segPtr;		/* segment whose queue to check; locked */
+    Sys_MsgBuffer **requestPtrPtr; /* OUT: request buffer */
+    Sys_MsgBuffer **replyPtrPtr; /* OUT: reply buffer */
+{
+    if (List_IsEmpty(segPtr->requestList)) {
+	return FAILURE;
+    }
+
+    *requestPtrPtr = (Sys_MsgBuffer *)
+		List_First((List_Links *)segPtr->requestList);
+    List_Remove((List_Links *)*requestPtrPtr);
+    if (List_IsEmpty(segPtr->requestList)) {
+	panic("DequeueBuffers: corrupted request list.\n");
+    }
+    *replyPtrPtr = (Sys_MsgBuffer *)
+		List_First((List_Links *)segPtr->requestList);
+    List_Remove((List_Links *)*replyPtrPtr);
+    segPtr->queueSize--;
+
+    return SUCCESS;
+}
+@
+
+
+1.7
+log
+@Temporary hack instrumentation to find where VmDoRequests is spending
+its time.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmMsgQueue.c,v 1.6 92/06/02 14:59:39 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a32 6
+/* temporary instrumentation */
+#ifdef VM_INSTRUMENT
+static Time m_o_Time;		/* time spent in memory_object_server */
+static Time replyTime;		/* time spent in Sys_ReplyAndFree */
+#endif
+
+a164 3
+#ifdef VM_INSTRUMENT
+    Time startTime, endTime;	/* temp instrumentation */
+#endif
+a203 3
+#ifdef VM_INSTRUMENT
+	Timer_GetTimeOfDay(&startTime, NULL, NULL);
+#endif
+a205 5
+#ifdef VM_INSTRUMENT
+	Timer_GetTimeOfDay(&endTime, NULL, NULL);
+	Time_Subtract(endTime, startTime, &endTime);
+	Time_Add(endTime, m_o_Time, &m_o_Time);
+#endif
+a208 3
+#ifdef VM_INSTRUMENT
+	Timer_GetTimeOfDay(&startTime, NULL, NULL);
+#endif
+a209 5
+#ifdef VM_INSTRUMENT
+	Timer_GetTimeOfDay(&endTime, NULL, NULL);
+	Time_Subtract(endTime, startTime, &endTime);
+	Time_Add(endTime, replyTime, &replyTime);
+#endif
+@
+
+
+1.7.1.1
+log
+@Hack instrumentation to track down VM request overhead.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmMsgQueue.c,v 1.7 92/06/29 16:13:22 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d34 4
+a37 5
+Time vmDoReqTime;		/* time spent in VmDoRequests */
+Time vmGetReqTime;		/* time to lock segment, get a request */
+Time m_o_Time;			/* time spent in memory_object_server */
+Time vmReplyTime;		/* time spent in Sys_ReplyAndFree */
+Time vmWorkTime;		/* time up to pt where we're out of requests */
+d171 1
+d173 1
+a173 2
+    Time startSubTime, endSubTime; /* temp */
+    ReturnStatus status;	/* temp */
+a174 6
+    if (sys_CallProfiling) {
+	Timer_GetTimeOfDay(&startTime, (int *)NULL, (Boolean *)NULL);
+    } else {
+	startTime = time_ZeroSeconds;
+    }
+
+a179 5
+	if (sys_CallProfiling) {
+	    Timer_GetTimeOfDay(&startSubTime, (int *)NULL, (Boolean *)NULL);
+	} else {
+	    startSubTime = time_ZeroSeconds;
+	}
+d181 1
+a181 2
+	status = DequeueBuffers(segPtr, &requestPtr, &replyPtr);
+	if (status != SUCCESS) {
+a207 5
+	    if (sys_CallProfiling && !Time_EQ(startTime, time_ZeroSeconds)) {
+		Timer_GetTimeOfDay(&endTime, (int *)NULL, (Boolean *)NULL);
+		Time_Subtract(endTime, startTime, &endTime);
+		Time_Add(endTime, vmWorkTime, &vmWorkTime);
+	    }
+a209 5
+	    if (sys_CallProfiling && !Time_EQ(startTime, time_ZeroSeconds)) {
+		Timer_GetTimeOfDay(&endTime, (int *)NULL, (Boolean *)NULL);
+		Time_Subtract(endTime, startTime, &endTime);
+		Time_Add(endTime, vmDoReqTime, &vmDoReqTime);
+	    }
+d213 3
+a215 10
+	if (sys_CallProfiling && !Time_EQ(startSubTime, time_ZeroSeconds)) {
+	    Timer_GetTimeOfDay(&endSubTime, (int *)NULL, (Boolean *)NULL);
+	    Time_Subtract(endSubTime, startSubTime, &endSubTime);
+	    Time_Add(endSubTime, vmGetReqTime, &vmGetReqTime);
+	}
+	if (sys_CallProfiling) {
+	    Timer_GetTimeOfDay(&startSubTime, (int *)NULL, (Boolean *)NULL);
+	} else {
+	    startSubTime = time_ZeroSeconds;
+	}
+d218 5
+a222 5
+	if (sys_CallProfiling && !Time_EQ(startSubTime, time_ZeroSeconds)) {
+	    Timer_GetTimeOfDay(&endSubTime, (int *)NULL, (Boolean *)NULL);
+	    Time_Subtract(endSubTime, startSubTime, &endSubTime);
+	    Time_Add(endSubTime, m_o_Time, &m_o_Time);
+	}
+d226 3
+a228 5
+	if (sys_CallProfiling) {
+	    Timer_GetTimeOfDay(&startSubTime, (int *)NULL, (Boolean *)NULL);
+	} else {
+	    startSubTime = time_ZeroSeconds;
+	}
+d230 5
+a234 5
+	if (sys_CallProfiling && !Time_EQ(startSubTime, time_ZeroSeconds)) {
+	    Timer_GetTimeOfDay(&endSubTime, (int *)NULL, (Boolean *)NULL);
+	    Time_Subtract(endSubTime, startSubTime, &endSubTime);
+	    Time_Add(endSubTime, vmReplyTime, &vmReplyTime);
+	}
+@
+
+
+1.6
+log
+@Make VmDoRequests extern, for the Proc_ServerProc instrumentation.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmMsgQueue.c,v 1.5 92/04/16 11:21:52 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d33 6
+d171 3
+d213 3
+d218 5
+d226 3
+d230 5
+@
+
+
+1.5
+log
+@Add instrumentation.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmMsgQueue.c,v 1.4 92/01/21 17:08:46 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d68 1
+a68 1
+static void VmDoRequests _ARGS_((ClientData clientData,
+d155 1
+a155 1
+static void
+@
+
+
+1.4
+log
+@Limit the length of a segment's request queue.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmMsgQueue.c,v 1.3 91/12/18 23:33:46 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d31 1
+d109 1
+@
+
+
+1.3
+log
+@Add printf tracing for VM requests.  Keep count of active threads
+processing VM requests.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmMsgQueue.c,v 1.2 91/11/14 10:03:27 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d22 2
+d46 8
+d76 4
+a79 1
+ *	Hand a VM request off to a server process.
+d85 2
+a86 4
+ * 	The message is put on a the queue for the given segment.  If there
+ * 	isn't already a process for the segment, one is started, with its 
+ * 	own reference to the segment.  The server process eventually sends
+ * 	a reply and frees the message buffers.
+d97 2
+d104 15
+d162 1
+d181 16
+d237 1
+d278 1
+@
+
+
+1.2
+log
+@Snapshot. net, rpc, recov modules added.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmMsgQueue.c,v 1.1 91/09/23 14:33:49 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d25 1
+d31 13
+d86 3
+d94 3
+d100 3
+d135 4
+d143 9
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.5 91/02/09 13:24:44 ouster Exp $ SPRITE (Berkeley)";
+d22 1
+d77 1
+a77 1
+	Proc_CallFunc(VmDoRequests, (ClientData)segPtr, 0);
+d101 1
+d104 2
+a105 2
+    ClientData clientData;
+    Proc_CallInfo *callInfoPtr;
+@

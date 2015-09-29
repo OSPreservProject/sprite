@@ -1,0 +1,134 @@
+
+
+
+KGDB                      User Commands                      KGDB
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     kgdb - A kernel debugger based on GDB
+
+SSYYNNOOPPSSIISS
+     kkggddbb [-_m_t_m] [_g_d_b _o_p_t_i_o_n_s] [_k_e_r_n_e_l]
+
+OOPPTTIIOONNSS
+     --mmttmm          Invoke the debugger  for  the  target  machine
+                   given  by  tm.  If specified, this option must
+                   proceed all other options. The list of  avail-
+                   able target machines include sun2, sun3, sun4,
+                   and spur.
+
+     See the GNU GDB documentation for information about the rest
+     of the available options.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     KKggddbb is a version of the GNU gdb debugger modified to  debug
+     Sprite  kernels.   This manual page only describes the parts
+     of kkggddbb that differ from ggddbb. The reader is referred to  the
+     GNU  GDB  documentation  and  gdb manual page for a complete
+     description of ggddbb.
+
+DDIIFFFFEERREENNCCEESS FFRROOMM GGDDBB
+     The "attach" and "detach" commands of kkggddbb differ from those
+     of ggddbb.
+
+     aattttaacchh machine
+          The attach command of kkggddbb takes  as  an  argument  the
+          hostname  or  internet  address  of a Sprite machine to
+          debug. The command assumes that the  specified  machine
+          is  in  the kernel debugging stub and will wait for the
+          machine to enter the debugger.  Once the connection  to
+          the  machine is established, the trap condition and any
+          unprinted syslog messages are displayed.
+
+     ddeettaacchh [cont]
+          The detach command breaks the connection  between  kkggddbb
+          and the currently attached machine.  If any argument is
+          specified, the machine is continued before the  connec-
+          tion is detached.  When used with the "attach" command,
+          the "detach" command allows debugging multiple machines
+          from the same kkggddbb session.
+
+AADDDDIITTIIOONNSS TTOO GGDDBB
+     KKggddbb supports several commands not found in ggddbb.   The  com-
+     mands are:
+
+     ppiidd proc-id
+
+
+
+Sprite v.1.0       Printed:  December 13, 1990                  1
+
+
+
+
+
+
+KGDB                      User Commands                      KGDB
+
+
+
+          The pid command sets the focus of the debugger  on  the
+          process  whose process id is proc-id. Once a process is
+          choosen with the pid command, all stack reference  com-
+          mands  such  as  "backtrace" and "frame" will reference
+          this process's stack.  For example,  the  command  "pid
+          0xa1139"  followed  by  the  "backtrace"  command  will
+          display a stack backtrace of the process  with  pid  of
+          0xa1139.  Note  that proc-id can be any expression sup-
+          ported by kkggddbb.
+
+     rreebboooott [string]
+          The  reboot  command  reboots  the   current   attached
+          machine.  The optional argument string is passed to the
+          kernel routine Mach_MonReboot.  Note that this  command
+          is  the  same  as typing "print Mach_MonReboot(string)"
+          followed by a break and a detach  command  except  that
+          the reboot command will work even if no symbol table is
+          loaded.
+
+     vveerrssiioonn
+          The version command prints the kernel version string of
+          the  attached  machine.  This  command outputs the same
+          information as the command "print SpriteVersion()"  but
+          like  the  "reboot"  command  doesn't  require a symbol
+          table to be loaded.
+
+     ddeebbuugg hostname
+          The debug command is  similar  to  the  attach  command
+          differing  only  in the case when the specified machine
+          is not already in the debugging stub. Rather than wait-
+          ing  for  the  machine  to  enter the debugger like the
+          attach  command,  the  debug  command  will  force  the
+          machine  into  the  debugger using the kkmmssgg program. In
+          order for this command to work, the kkmmssgg  program  must
+          be  available  in  the  current  search  path  of kkggddbb.
+          Because of its  anti-social  possiblities,  caution  is
+          urged in the use of the debug command.
+
+DDEELLEETTIIOONNSS FFRROOMM GGDDBB
+     Several features of ggddbb are not available  in  kkggddbb  because
+     they  don't  apply  to  kernel  debugging.  Missing features
+     include the ability to start  and  kill  programs  with  the
+     "run"  and "kill" commands; to change the program's environ-
+     ment  and  terminal  characteristics  with  the   "set-env",
+     "unset-env",  "set-args", and "tty" commands; and  to handle
+     signals with "handle" and  "signal"  commands.  Additionaly,
+     ggddbb's core file processing such as the ccoorree command are also
+     not available in kkggddbb.
+
+
+KKEEYYWWOORRDDSS
+     gdb, kernel, debugging, kmsg
+
+
+
+Sprite v.1.0       Printed:  December 13, 1990                  2
+
+
+

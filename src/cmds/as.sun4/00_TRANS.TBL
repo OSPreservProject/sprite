@@ -1,0 +1,40 @@
+L APP.C;1                           	app.c	../as/sprite/app.c
+L APPEND.C;1                        	append.c	../as/dist/append.c
+L AS.C;1                            	as.c	../as/sprite/as.c
+L ATOF_GEN.C;1                      	atof-generic.c	../as/dist/atof-generic.c
+L ATOF_M68.C;1                      	atof-m68k.c	../as/dist/atof-m68k.c
+L BIGNUM_C.C;1                      	bignum-copy.c	../as/dist/bignum-copy.c
+D DS3100_M                          	ds3100.md
+L EXPR.C;1                          	expr.c	../as/dist/expr.c
+L FLONUM_0.C;1                      	flonum-const.c	../as/dist/flonum-const.c
+L FLONUM_1.C;1                      	flonum-copy.c	../as/dist/flonum-copy.c
+L FLONUM_2.C;1                      	flonum-mult.c	../as/dist/flonum-mult.c
+L FRAGS.C;1                         	frags.c	../as/dist/frags.c
+L GDB.C;1                           	gdb.c	../as/dist/gdb.c
+L GDB_BLOC.C;1                      	gdb-blocks.c	../as/dist/gdb-blocks.c
+L GDB_FILE.C;1                      	gdb-file.c	../as/dist/gdb-file.c
+L GDB_LINE.C;1                      	gdb-lines.c	../as/dist/gdb-lines.c
+L GDB_SYMB.C;1                      	gdb-symbols.c	../as/dist/gdb-symbols.c
+L HASH.C;1                          	hash.c	../as/dist/hash.c
+L HEX_VALU.C;1                      	hex-value.c	../as/dist/hex-value.c
+L INPUT_FI.C;1                      	input-file.c	../as/dist/input-file.c
+L INPUT_SC.C;1                      	input-scrub.c	../as/dist/input-scrub.c
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+L MESSAGES.C;1                      	messages.c	../as/sprite/messages.c
+L OBSTACK.C;1                       	obstack.c	../as/dist/obstack.c
+L OUTPUT_F.C;1                      	output-file.c	../as/dist/output-file.c
+D RCS                               	RCS
+L READ.C;1                          	read.c	../as/dist/read.c
+L SPARC.C;1                         	sparc.c	../as/sprite/sparc.c
+F SPARC_C.FOO;1                     	sparc.c.foobar
+L STRSTR.C;1                        	strstr.c	../as/dist/strstr.c
+L SUBSEGS.C;1                       	subsegs.c	../as/dist/subsegs.c
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md
+L SYMBOLS.C;1                       	symbols.c	../as/dist/symbols.c
+D TEST                              	test
+L VERSION.C;1                       	version.c	../as/dist/version.c
+L WRITE.C;1                         	write.c	../as/sprite/write.c
+L XMALLOC.C;1                       	xmalloc.c	../as/dist/xmalloc.c
+L XREALLOC.C;1                      	xrealloc.c	../as/dist/xrealloc.c

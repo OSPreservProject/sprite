@@ -1,0 +1,132 @@
+
+
+
+selection                 User Commands                 selection
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     selection - Manipulate the X selection
+
+SSYYNNOOPPSSIISS
+     sseelleeccttiioonn ggeett ?_t_y_p_e?
+
+     sseelleeccttiioonn hhaannddllee _w_i_n_d_o_w _c_o_m_m_a_n_d ?_t_y_p_e? ?_f_o_r_m_a_t?
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This command provides a Tcl interface  to  the  X  selection
+     mechanism  and  implements  the full selection functionality
+     described in the X  Inter-Client  Communication  Conventions
+     Manual  (ICCCM),  except  that  it supports only the primary
+     selection.
+
+     The sseelleeccttiioonn ggeett form of the command retrieves the value of
+     the  primary  selection  and  returns  it as a result.  TTyyppee
+     specifies the form in which the selection is to be  returned
+     (the  desired  ``target'' for conversion, in ICCCM terminol-
+     ogy),  and  should  be  an  atom  name  such  as  STRING  or
+     FILE_NAME;   see  the Inter-Client Communication Conventions
+     Manual for complete details.  TTyyppee defaults to STRING.   The
+     selection owner may choose to return the selection in any of
+     several different representation formats,  such  as  STRING,
+     ATOM,  INTEGER,  etc.  (this  format  is  different than the
+     selection  type;   see  the  ICCCM  for  all  the  confusing
+     details).  If the selection is returned in a non-string for-
+     mat, such as INTEGER or ATOM, the sseelleeccttiioonn command converts
+     it  to  string format as a collection of fields separated by
+     spaces:  atoms are converted to  their  textual  names,  and
+     anything else is converted to hexadecimal integers.
+
+     The sseelleeccttiioonn hhaannddllee command creates a handler for selection
+     requests:  it  arranges  for _c_o_m_m_a_n_d to be executed whenever
+     the  primary  selection  is  owned  by  _w_i_n_d_o_w  and  someone
+     attempts to retrieve it in the form given by _t_y_p_e (e.g. _t_y_p_e
+     is specified in the sseelleeccttiioonn ggeett command).   _T_y_p_e  defaults
+     to STRING.
+
+     When the retrieval occurs, two additional  numbers  will  be
+     appended to _c_o_m_m_a_n_d (with space separators), and the result-
+     ing string will be executed as a Tcl command.  The two addi-
+     tional  numbers are _o_f_f_s_e_t and _m_a_x_B_y_t_e_s:  _o_f_f_s_e_t specifies a
+     starting character position in the  selection  and  _m_a_x_B_y_t_e_s
+     gives  the maximum number of bytes to retrieve.  The command
+     should return a value consisting of at most _m_a_x_B_y_t_e_s of  the
+     selection,  starting  at  position  _o_f_f_s_e_t.   For very large
+     selections (larger than  _m_a_x_B_y_t_e_s)  the  selection  will  be
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+selection                 User Commands                 selection
+
+
+
+     retrieved using several invocations of _c_o_m_m_a_n_d with increas-
+     ing _o_f_f_s_e_t values.  If _c_o_m_m_a_n_d returns a string whose length
+     is  less  than  _m_a_x_B_y_t_e_s,  the  return  value  is assumed to
+     include all of the  remainder  of  the  selection;   if  the
+     length of _c_o_m_m_a_n_d's result is equal to _m_a_x_B_y_t_e_s then _c_o_m_m_a_n_d
+     will be invoked again, until it eventually returns a  result
+     shorter than _m_a_x_B_y_t_e_s.  The value of _m_a_x_B_y_t_e_s will always be
+     relatively large (thousands of bytes).
+
+     The _f_o_r_m_a_t argument specifies the representation that should
+     be  used  to  transmit  the  selection to the requester (the
+     second column of Table 2 of  the  ICCCM),  and  defaults  to
+     STRING.   If  _f_o_r_m_a_t is STRING, the selection is transmitted
+     as 8-bit ASCII characters (i.e.  just in the  form  returned
+     by  _c_o_m_m_a_n_d).  If _f_o_r_m_a_t is ATOM, then the return value from
+     _c_o_m_m_a_n_d is divided into fields  separated  by  white  space;
+     each  field  is  converted to its atom value, and the 32-bit
+     atom value is transmitted instead of the atom name.  For any
+     other  _f_o_r_m_a_t, the return value from _c_o_m_m_a_n_d is divided into
+     fields separated by white space and each field is  converted
+     to a 32-bit integer;  an array of integers is transmitted to
+     the selection requester.
+
+     The _f_o_r_m_a_t argument is needed only  for  compatibility  with
+     selection  requesters  that don't use Tk.  If the Tk toolkit
+     is being used to retrieve the selection then  the  value  is
+     converted  back to a string at the requesting end, so _f_o_r_m_a_t
+     is irrelevant.
+
+     If no handler has been declared for  type  TARGETS  or  type
+     TIMESTAMP,   Tk  will  automatically  respond  to  selection
+     requests for these types.
+
+
+KKEEYYWWOORRDDSS
+     format, handler, ICCCM, selection, target, type
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     2
+
+
+

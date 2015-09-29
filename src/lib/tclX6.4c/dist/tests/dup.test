@@ -1,0 +1,84 @@
+#
+# dup.test
+#
+# Tests for the dup command.
+#---------------------------------------------------------------------------
+# Copyright 1992 Karl Lehenbauer and Mark Diekhans.
+#
+# Permission to use, copy, modify, and distribute this software and its
+# documentation for any purpose and without fee is hereby granted, provided
+# that the above copyright notice appear in all copies.  Karl Lehenbauer and
+# Mark Diekhans make no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without express or
+# implied warranty.
+#------------------------------------------------------------------------------
+# $Id: dup.test,v 2.0 1992/10/16 04:49:38 markd Rel $
+#------------------------------------------------------------------------------
+#
+
+if {[info procs test] != "test"} then {source testlib.tcl}
+
+
+# Create a test file
+
+catch {unlink {DUP.TMP}}
+
+set testFH [open DUP.TMP w]
+for {set cnt 0} {$cnt < 100} {incr cnt} {
+     puts $testFH [GenRec $cnt]
+}
+close $testFH
+
+test iocmds-2.1 {dup tests} {
+    set testFH [open DUP.TMP]
+    set testFH2 [dup $testFH]
+    gets $testFH2 testRec
+    close $testFH
+    close $testFH2
+    set testRec
+} [GenRec 0]
+
+set data {{now is the time}    {for all good programmers} 
+          {to come to the aid} {of their software}}
+set inFH [open INCMDS.TMP w]
+catch {unlink OUTPUT.TMP}
+foreach line $data {
+    puts $inFH "puts stdout \"$line\""
+}
+puts $inFH {flush stdout}
+puts $inFH {exit 0}
+close $inFH
+
+flush stdout
+flush stderr
+
+if {[set childPid [fork]] == 0} {
+    set inFH  [open INCMDS.TMP r]
+    set outFH [open OUTPUT.TMP w]
+
+    close stdin
+    dup $inFH stdin
+    close $inFH
+
+    close stdout
+    dup $outFH stdout
+    close $outFH
+        
+    execl ../tcl [list -qc {commandloop {return ""} {return ""}}]
+    error "Should never make it here"
+}
+
+test iocmds-2.2 {dup tests} {
+    wait $childPid
+} "$childPid EXIT 0"
+
+set outFH [open OUTPUT.TMP r]
+foreach line $data {
+    test iocmds-2.3 {dup tests} {
+        gets $outFH
+    } $line
+}
+close $outFH
+
+catch {unlink {DUP.TMP}}
+

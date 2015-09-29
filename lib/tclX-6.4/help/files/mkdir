@@ -1,0 +1,8 @@
+
+
+          mkdir [-path] dirList
+               Create each of the directories in the list dirList.
+               The mode on the new directories is 777, modified by the
+               umask.  If -path is specified, then any non-existent
+               parent directories in the specified path(s) are also
+               created.

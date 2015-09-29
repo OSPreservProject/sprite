@@ -1,0 +1,134 @@
+
+
+
+Hash_EnumFirst        C Library Procedures         Hash_EnumFirst
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Hash_EnumFirst, Hash_EnumNext - step through all the entries
+     in a hash table
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<hhaasshh..hh>>
+
+     Hash_Entry *
+     HHaasshh__EEnnuummFFiirrsstt(_t_a_b_l_e_P_t_r, _s_e_a_r_c_h_P_t_r)
+
+     Hash_Entry *
+     HHaasshh__EEnnuummNNeexxtt(_s_e_a_r_c_h_P_t_r)
+
+AARRGGUUMMEENNTTSS
+     Hash_Table    *_t_a_b_l_e_P_t_r    (in)      Hash    table     whose
+                                          entries   are   to   be
+                                          enumerated.
+
+     Hash_Search   *_s_e_a_r_c_h_P_t_r   (in)      Structure   in    which
+                                          information    can   be
+                                          stored about the  state
+                                          of  the  search between
+                                          calls to HHaasshh__EEnnuummFFiirrsstt
+                                          and/or HHaasshh__EEnnuummNNeexxtt.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     HHaasshh__EEnnuummFFiirrsstt and HHaasshh__EEnnuummNNeexxtt permit each of the  entries
+     in  a  hash  table  to be examined in order.  HHaasshh__EEnnuummFFiirrsstt
+     returns the first entry in the given hash table and sets  up
+     the  Hash_Search  structure  at *_s_e_a_r_c_h_P_t_r;  if the table is
+     empty it returns NULL.  HHaasshh__EEnnuummNNeexxtt returns the next entry
+     in the table using the information stored in *_s_e_a_r_c_h_P_t_r, and
+     updates the contents of *_s_e_a_r_c_h_P_t_r;  when the  entire  table
+     has  been scanned, it returns NULL.  Entries are returned in
+     order of their position in the table's buckets,  which  does
+     not usually make any sense to the caller.
+
+     A typical usage of these procedures is:
+
+          Hash_Search search;
+          Hash_Entry *entryPtr;
+          Hash_Table table;
+
+           ...
+
+          for (entryPtr = Hash_EnumFirst(&table, &search);
+               entryPtr != NULL; entryPtr = Hash_EnumNext(&search)) {
+              ...
+          }
+
+
+
+Sprite v.1.0        Printed:  March 21, 1989                    1
+
+
+
+
+
+
+Hash_EnumFirst        C Library Procedures         Hash_EnumFirst
+
+
+
+KKEEYYWWOORRDDSS
+     enumerate, hash table
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  March 21, 1989                    2
+
+
+

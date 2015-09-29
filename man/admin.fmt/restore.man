@@ -1,0 +1,68 @@
+
+
+
+RESTORE                   User Commands                   RESTORE
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     restore - Restore a file,  or  set  of  files  from  a  dump
+     archive.
+
+SSYYNNOOPPSSIISS
+     rreessttoorree [_o_p_t_i_o_n_s] _p_a_t_h_1 _p_a_t_h_2 ...
+
+OOPPTTIIOONNSS
+     --ff _f_i_l_e_n_a_m_e    Use _f_i_l_e_n_a_m_e as the name of the dump  archive
+                    instead of the default.
+
+     --hheellpp          Print a help message.
+
+     --nn ffiilleennuummbbeerr  If there are multiple files in  the  archive,
+                    use file number ffiilleennuummbbeerr.
+
+     --rr             Restore using relative pathnames.  The  lead-
+                    ing '/' is stripped off.
+
+     --tt             Print the table  of  contents  for  the  dump
+                    archive.
+
+     --vv             Verbose.  The name of each file is listed  as
+                    it is dumped.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The rreessttoorree command is used to restore  a  file  or  set  of
+     files  from  a dump archive.  The dump archive is created by
+     the dduummpp command.  If a specified path  is  a  single  file,
+     then that file is restored.  If it is a directory, all files
+     contained in that directory will  be  recursively  restored.
+     If  the  path is a shell syntax regular expression, then all
+     files in the dump archive matching the  expression  will  be
+     restored.
+
+     All the specified paths  should  be  absolute,  hard  paths.
+     I.e.,  they should start with the root directory, and should
+     not contain any symbolic links.  Be especially careful  when
+     restoring something to your home directory because most home
+     directories on Sprite are symbolic  links  from  the  /users
+     directory.
+
+
+KKEEYYWWOORRDDSS
+     dump, restore, tape, backup, tar
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  July 9, 1990                     1
+
+
+

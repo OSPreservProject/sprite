@@ -1,0 +1,112 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     90.11.27.11.05.41;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.09.11.14.25.07;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.20.09.27.25;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@Eliminated inclusion of <sys.h> (didn't work for user programs
+anyway), add explicit declaration for panic.
+@
+text
+@/* 
+ * List_Init.c --
+ *
+ *	Source code for the List_Init library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/list/RCS/List_Init.c,v 1.2 90/09/11 14:25:07 kupfer Exp Locker: ouster $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <stdio.h>
+#include "list.h"
+
+extern void panic();
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * List_Init --
+ *
+ *	Initialize a header pointer to point to an empty list.  The List_Links
+ *	structure must already be allocated.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The header's pointers are modified to point to itself.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+List_Init(headerPtr)
+    register List_Links *headerPtr;  /* Pointer to a List_Links structure 
+					to be header */
+{
+    if (headerPtr == (List_Links *) NIL || !headerPtr) {
+	panic("List_Init: invalid header pointer.\n");
+    }
+    headerPtr->nextPtr = headerPtr;
+    headerPtr->prevPtr = headerPtr;
+}
+@
+
+
+1.2
+log
+@Lint.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/list/RCS/List_Init.c,v 1.1 88/06/20 09:27:25 ouster Exp Locker: kupfer $ SPRITE (Berkeley)";
+a20 1
+#include <sys.h>
+d23 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: proto.c,v 1.2 88/03/11 08:39:08 ouster Exp $ SPRITE (Berkeley)";
+d21 1
+@

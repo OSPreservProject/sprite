@@ -1,0 +1,258 @@
+\documentstyle[tables]{article}
+% Note : This is not the original document TABLEDOC.TEX.  It has been 
+%        re-typed using a hardcopy of the original by Atul Kacker
+%
+\def\bs{\char'134}
+\def\vbar{\char'174}
+\def\and{\char'046}
+\def\tc#1{\hbox{\tt \bs #1}}
+\def\ctr#1{\quad #1 \hfil}
+\font\sl=cmsl10
+\setlength{\textwidth}{433pt}
+\setlength{\oddsidemargin}{0pt}
+\setlength{\marginparwidth}{72pt}
+\setlength{\topmargin}{0pt}
+\setlength{\textheight}{555pt}
+%
+\begin{document}
+\centerline{\framebox{\large Making Tables with Macros}}
+\vbox{\vskip 0.5in}
+\centerline{Ray F. Cowan}
+\centerline{22 February 1985}
+\vbox{\vskip 0.5in}
+Tables have traditionally been difficult to make using \TeX\ -- especially
+ruled tables.  The file {\tt \hbox{TABLES.TEX}} contains macros designed to
+prepare both ruled and unruled tables with considerably less effort.  Note that
+\hbox{\tt TABLES.TEX} can be used with any macro set; it does not depend on
+prior loading of \hbox{\tt PHYZZX} or any other macro set, for example. One of
+the main advantages of this macro set is that you no longer need to design a
+preamble for the table; the macros will scan your table entries and construct a
+suitable preamble for you.  To access the macros, say \hbox{\tt `\bs input
+TABLES'} in your \TeX\ file, somewhere before you first use them.  The macros
+available are listed in Table~\ref{tab:one} and Table~\ref{tab:two}.
+
+\vbox{\vskip 0.5in}
+\begin{table}[h]
+\begintable
+{\sl Macro name} | {\sl Description} \cr
+\tc{begintable} | \para{Indicates the start of a new table} \cr
+\tc{endtable}   | \para{Ends the current table.  Must be used in
+                        the place of the last \tc{cr}.}\cr 
+\tc{cr}         | \para{Ends the current row, and starts the next 
+                        one.  The completed row will be separated 
+                        from the next with a thin horizontal rule.}\cr 
+\tc{crthick}    | \para{Similar to \tc{cr}, but the rows will be 
+                         separated with a thick horizontal rule.} \cr 
+\tc{crnorule} or \tc{nr}
+                | \para{Similar to \tc{cr}, but the rows will not be 
+                        separated by any rule.}\cr 
+{\tt \hbox{\vbar}} (vertical bar) or \tc{vb} 
+                | \para{Separates one column from the next, and 
+                        puts a vertical rule between them.} \cr 
+{\tt \hbox{\and}} or \tc{novb} 
+                | \para{Same as {\tt \hbox{\vbar}}, but does not 
+                        put in the vertical rule between the columns.} \cr
+{\tt \hbox{\vbar}} 
+                | \para{Same as {\tt \hbox{\vbar}}, but puts in a 
+                        thick vertical rule.} 
+\endtable
+\caption{Description of simple table macros}\label{tab:one}
+\end{table}
+\clearpage
+\begin{table}[h]
+\begintable
+\tc{thicksize}={\em dimen}
+                | \para{This dimension specifies the thickness of the thick 
+                        rules in the table.  The default size is 1.5 
+                        points.} \cr
+\tc{thinsize}={\em dimen}
+                | \para{This dimension specifies the thickness of thin rules
+                        in the table.  The default size is 0.8 points.} \cr
+\tc{tablewidth}={\em dimen}
+                | \para{Specifies how wide to make the next table.  If not
+                        specified, the table is made to its natural width.  
+                        This value is reset following the construction of
+                        each table.} \cr
+\tc{multispan}{\tt \{}{\em n}{\tt \}}
+                | \para{Makes the next entry span the next {\em n} columns,
+                        where {\em n} is an integer, {\em n} $>$ 0.  See other
+                        notes on \tc{multispan} below.} \cr
+\tc{omit}       | \para{This \TeX\ primitive causes the normal template for
+                        its entry to be omitted, allowing the user to do
+                        something else with this entry.} \cr
+\tc{para}{\tt \{}{\em paragraph text}{\tt \}}
+                | \para{Turns an entry into a neat little paragraph like this 
+                        one.  The width of the paragraph is determined by the
+                        dimension \tc{parasize}.  The default is 4 inches.} \cr
+\tc{parasize}={\em dimen}
+                | \para{Sets the width of paragraphs produced with the \tc{para}
+                        macro.} \cr
+\tc{ctr}{\tt \{\#\}} 
+                | \para{Used in the standard template, this macro centers 
+                        its argument in the column.  The user can redefine it 
+                        for special effects.  The default definition is}
+                        \crnorule
+                | \qquad\tc{def}\tc{ctr}{\tt \#1\{}\tc{hfil}{\tt 
+                       \bs\ \#1\bs\ }\tc{hfil}{\tt \}}\cr
+\tc{vctr}{\tt \{\#\}}
+                | \para{Centers an entry vertically.  The vertical center of the
+                        entry is placed on the baseline of the row containing
+                        it.  The intended use is to center an entry between two
+                        rows.} \cr
+\tc{centeredtables}
+                | \para{Turns table centering on.  Each table will be centered 
+                        left-to-right on the page.  This is the default.} \cr
+\tc{noncenteredtables}
+                | \para{Turns table centering off. Each table is returned as an
+                        \tc{hbox}, and it is up to the user to place it as 
+                        desired.} \cr
+\tc{tableinfotrue}
+                | \para{Turns on the diagnostic message telling you how many
+                        rows and columns were found in the table.  This is the
+                        default.} \cr
+\tc{tableinfofalse}
+                | \para{Turns off the diagnostic messages concerning rows and 
+                        columns.}
+\endtable
+\caption{Description of extended table macros}\label{tab:two}
+\end{table}
+\clearpage
+The general idea is that you start your table with the command \tc{begintable},
+type your entries in one row at a time, then finish with the command
+\tc{endtable}.  To specify a row, enter the individual entries into your \TeX\
+file, separating each column entry with a {\tt \hbox{\vbar}}, an {\tt
+\hbox{\and}}, or a {\tt \hbox{\bs\vbar}}.  A {\tt \hbox{\vbar}} will separate
+the adjoining columns with a thin vertical rule, an {\tt \hbox{\and}} will
+leave out the vertical rule, and a {\tt \hbox{\bs\vbar}} will separate the
+columns with a thick vertical rule.  To end one row and start another, use
+either a \tc{cr}, a \tc{crnorule}, or a \tc{crthick}.  A \tc{cr} separates the
+rows with a thin horizontal rule; a \tc{crnorule} leaves out the horizontal
+rule, while \tc{crthick} inserts a thick horizontal rule.  Then end the last
+row with an \tc{endtable}. 
+
+Each row of the table must contain the same number of columns, otherwise 
+unpredictable things will happen.  Again the {\em last row} must {\em not} 
+end with \tc{cr...}, but {\em must} end with an \tc{endtable}.  If you put a 
+\tc{cr} and an \tc{endtable} both on the last row, you won't like what 
+happens.
+
+Each entry will be centered in it's column (unless you use \tc{omit}, a 
+\TeX\ primitive, or \tc{multispan}.  See notes below).  The table will be 
+centered in a \tc{hbox} of width \tc{hsize}, unless you have turned table 
+centering off (see the commands \tc{centeredtables} and 
+\tc{noncenteredtables}).
+
+Each time a new table is encountered, a message similar to {\tt `[Nrows=xx,
+Ncols=yy]'} is printed on your terminal, where {\tt xx} is the number of rows
+and {\tt yy} the number of columns discovered in your table.  If you think they
+are incorrect, you may have left out some {\tt \hbox{\vbar}}'s or {\tt
+\hbox{\and}}'s or \tc{cr}'s.  This diagnostic feature can be disabled by saying
+\tc{tableinfofalse} (and restarted by saying \tc{tableinfotrue}).
+
+\vbox{\vskip 0.3truein}
+{\em An example}
+
+A simple 3-row, 2-column table with a header spanning two columns could be 
+specified as (see notes 3 and 4 below on the use of \tc{multispan}):
+\begin{verbatim}
+       \begintable
+       \multispan{2}\tstrut\hfil The Top Line\hfil\crthick
+       Entry 1 | Entry 2 \cr
+       Entry 3 | Entry 4 \endtable
+\end{verbatim}
+These commands produce Table~\ref{tab:three}.
+\begin{table}[h]
+       \begintable
+		\multispan{2}\tstrut\hfill The Top Line\hfill\crthick
+		Entry 1 | Entry 2 \cr
+		Entry 3 | Entry 4 \endtable
+\caption{A sample table}\label{tab:three}
+\end{table}
+\clearpage
+
+\vbox{\vskip 0.3truein}
+{\em An example of non-centered tables}
+
+Two or more tables can be placed side-by-side by using the
+\tc{noncenteredtables} command.  Consider the two tables here
+(Table~\ref{tab:four}): 
+
+\begin{table}[h]
+       \noncenteredtables
+       \tableline{
+       \begintable
+       Item ABC | Item DEF \cr
+       Item GHI | Item JKL \endtable
+       \hfil
+       \begintable
+       Data 111 | Data 222 \cr
+       Data 333 | Data 444 \cr
+       Data 555 | Data 666 \endtable
+       }
+\caption{Two non-centered tables aligned side-by-side}\label{tab:four}
+\end{table}
+
+These were produced by saying
+\begin{verbatim}
+       \noncenteredtables
+       \line{
+       \begintable
+       Item ABC | Item DEF \cr
+       Item GHI | Item JKL \endtable
+       \hfil
+       \begintable
+       Data 111 | Data 222 \cr
+       Data 333 | Data 444 \cr
+       Data 555 | Data 666 \endtable
+       }
+\end{verbatim}
+Notice that tables of unequal height are aligned at the bottom.
+
+\vbox{\vskip 0.5truein}
+{\large Usage notes:}
+
+\begin{enumerate}
+\item[1.] Vertical spacing is done with a strut, called \tc{tstrut}, which 
+is initially defined as 3.1ex high and 1.2ex deep.  If you don't like the 
+way it looks, you can redefine \tc{tstrut} to your own liking:
+\begin{verbatim}
+       \def\tstrut{\vrule height hh depth dd width 0pt}
+\end{verbatim}
+where you specify your desired height {\tt hh} and depth {\tt dd}.
+\item[2.] You can control the thickness of the thin and thick rules through
+the use of \tc{thicksize} and \tc{thinsize}.  You can turn off the rules 
+entirely by saying
+\begin{verbatim}
+       \thinsize=0pt
+       \thicksize=0pt
+\end{verbatim}
+for example
+\item[3.] If you use a \tc{multispan} or an \tc{omit} in the first column of 
+a row, you will lose the effect of the \tc{tstrut} within that row and must 
+specify it yourself.  See the example above.
+\item[4.] Use of \tc{multispan} and \tc{omit} will cause the default 
+centering of the entry to be lost; if you want it centered, put an \tc{hfil} 
+on each side of the entry, as in the example above.
+\item[5.] To override the default centering action, include an \tc{hfill} on 
+the left or right as desired; the \tc{hfill} will override the default 
+\tc{hfil}.
+\end{enumerate}
+
+\vbox{\vskip 0.3truein}
+{\large Local modifications for use with \LaTeX :}
+
+\vbox{\vskip 0.1truein}
+This macro package was originally written for use with plain \TeX.  Bob Taylor
+has made changes for it to be used as a style option in \LaTeX.  The plain
+\TeX\ command \tc{line} has been replaced with \tc{tableline}, with 
+\tc{tableline} being defined as 
+\begin{verbatim}
+       \def\tableline{\hbox to \hsize}
+\end{verbatim}
+
+The \tc{documentstyle} command in your \LaTeX\ file should look something like:
+\begin{verbatim}
+       \documentstyle[tables]{article}
+\end{verbatim}
+
+\end{document}

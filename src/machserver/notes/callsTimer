@@ -1,0 +1,440 @@
+TIMER_CALLBACK_INTERVAL_APPROX	# (effective resolution of clock, in
+				# microseconds?) delete.
+	proc/procTimer.c
+	sched/schedule.c
+	timer/sun3.md/timerMach.h
+	timer/sun3.md/timerIntersil.c
+	timer/sun4.md/timerMach.h
+	timer/sun4.md/timerIntersil.c
+	timer/sun4c.md/timerMach.h
+	timer/sun4c.md/timerSun4c.c
+	timer/ds3100.md/timerMach.h
+	timer/symm.md/timerMach.h
+TIMER_CALLBACK_ROUTINE
+	prof/sun3.md/timer.h
+TIMER_CALLBACK_TIMER
+	prof/sun3.md/timer.h
+TIMER_PROFILE_ROUTINE
+	prof/sun3.md/timer.h
+TIMER_PROFILE_TIMER
+	prof/sun3.md/timer.h
+	prof/sun3.md/profSubr.c
+	prof/sun4.md/profSubr.c
+	prof/sun4nw.md/profSubr.c
+	prof/sun4c.md/profSubr.c
+	prof/ds3100.md/profSubr.c
+	prof/ds5000.md/profSubr.c
+TimerClock_Init			# delete.
+TimerHardwareUniversalTimeInit	# keep (though useless?).
+	timer/sun3.md/timerIntersil.c
+	timer/timerInt.h
+	timer/sun4.md/timerIntersil.c
+	timer/sun4c.md/timerSun4c.c
+	timer/ds3100.md/timerMC.c
+	timer/symm.md/timerSym.c
+	timer/timerClock.c
+TimerSetHardwareUniversalTime	# keep (though useless?).
+	timer/sun3.md/timerIntersil.c
+	timer/timerInt.h
+	timer/sun4.md/timerIntersil.c
+	timer/sun4c.md/timerSun4c.c
+	timer/ds3100.md/timerMC.c
+	timer/timerClock.c
+TimerTicksInit			# (initializes ticks counts for 1 second, one
+				# hour, etc.)  keep.
+	timer/sun3.md/timerTick.c
+	timer/timerInt.h
+	timer/sun4c.md/timerTick.c
+	timer/ds3100.md/timerTick.c
+	timer/symm.md/timerTick.c
+	timer/timerQueue.c
+Timer_AddIntervalToTicks	# keep.
+	rpc/rpcCall.c
+	sched/schedule.c
+	sync/syncSleep.c
+Timer_AddTicks			# keep.
+	fs/fsSelect.c
+	proc/{procExit,procTimer,procMigrate,procRpc}.c
+	sync/syncSleep.c
+Timer_AdjtimeStub		# no-op initially
+	sys/sysUnixSyscall.c
+Timer_CallBack			# rewrite to use msg timeout trick from UX
+				# callback queue.
+	prof/sun3.md/timer.h
+Timer_CounterInit		# delete.
+	timer/sun3.md/timerIntersil.c
+	timer/timerInt.h
+	timer/sun4.md/timerIntersil.c
+	timer/sun4c.md/timerSun4c.c
+	timer/ds3100.md/timerMC.c
+	timer/symm.md/timerSym.c
+	timer/timerClock.c
+Timer_DescheduleRoutine		# keep.  Don't bother rescheduling the timer
+				# thread, it can just wake up and find that
+				# there's nothing to process.
+	mach/symm.md/machArchdep.c
+	dev/devDiskStats.c
+	fs/fsSelect.c
+	fsconsist/fsconsistCache.c
+	net/netArp.c
+	proc/procServer.c
+	prof/sun3.md/timer.h
+	prof/profProfil.c
+	rpc/rpcClient.c
+	rpc/rpcDaemon.c
+	sched/schedule.c
+	sync/syncSleep.c
+Timer_DumpQueue			# keep.
+	prof/sun3.md/timer.h
+	utils/dump.c
+Timer_DumpStats			# keep.
+	prof/sun3.md/timer.h
+	utils/dump.c
+Timer_GetCurrentTicks		# If timer is mapped (e.g., sun3), read it 
+				# inside a loop (recheck high-order word after
+				# reading low-order word).  Need to use
+				# "check_seconds"?  Note that kernel provides
+				# seconds/microseconds, not, e.g., Intersil
+				# counter format.
+	fs/fsSelect.c
+	fs/fsCommand.c
+	fslcl/fslclLookup.c
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+	proc/procTimer.c
+	recov/recovery.c
+	rpc/rpcTest.c
+	rpc/rpcInit.c
+	rpc/rpcTrace.c
+	rpc/rpcCall.c
+	rpc/rpcServer.c
+	rpc/rpcHistogram.c
+	sync/syncSleep.c
+	utils/trace.c
+	utils/traceLog.c
+Timer_GetRealTimeFromTicks	# keep.
+	prof/sun3.md/timer.h
+	recov/recovery.c
+	rpc/rpcServer.c
+Timer_GetRealTimeOfDay		# call Timer_GetTimeOfDay.
+	mach/ds5000.md/machUNIXSyscall.c
+	mach/ds3100.md/machUNIXSyscall.c
+	dev/ds5000.md/devGraphics.c
+	dev/sun3.md/devMouse.c
+	dev/sun4.md/devMouse.c
+	dev/ds3100.md/devGraphics.c
+	dev/sun4c.md/devMouse.c
+	prof/sun3.md/timer.h
+	rpc/rpcHistogram.c
+	sync/syncSysV.c
+	sys/sysCalls.c
+	utils/dump.c
+	utils/traceLog.c
+Timer_GetTimeOfDay		# read the clock device or ask the Mach host.
+	dev/devTty.c
+	dev/ds5000.md/devDC7085.c
+	dev/ds3100.md/devDC7085.c
+	proc/procMigrate.c
+	prof/sun3.md/timer.h
+	recov/recovery.c
+	rpc/rpcStubs.c
+	sys/sysCalls.c
+	sys/sysCode.c
+	utils/dump.c
+	vm/vmPage.c
+Timer_GetUniversalTimeInSeconds	# call Timer_GetTimeOfDay and return the
+				# seconds portion.
+	fsutil/fsutil.h
+	prof/sun3.md/timer.h
+Timer_GettimeofdayStub		# keep.
+	sys/sysUnixSyscall.c
+Timer_Init			# delete calls to initialize & start hardware
+				# timer; fork off timer thread and initialize
+				# callback stuff as in UX (bsd/mach_clock.c).
+				# map hardware timer into server address space
+				# if the timer supports it.
+	main/sun4c.md/mainInit.c
+	main/sun3.md/mainInit.c
+	main/sun4.md/mainInit.c
+	main/ds3100.md/mainInit.c
+	main/sun4nw.md/mainInit.c
+	main/symm.md/mainInit.c
+	main/ds5000.md/mainInit.c
+	prof/sun3.md/timer.h
+Timer_PerProcessorInterrupt	# (symm only)
+	mach/symm.md/machAutoconf.c
+Timer_QueueElement		# keep.
+	mach/symm.md/machMemory.c
+	mach/symm.md/machArchdep.c
+	dev/devDiskStats.c
+	fs/fsInit.c
+	fs/fsSelect.c
+	fsconsist/fsconsistCache.c
+	net/netArp.h
+	net/symm.md/netScedEther.c
+	proc/procServer.h
+	prof/sun3.md/timer.h
+	prof/profProfil.c
+	raid/devDebug.c
+	recov/recovProc.c
+	rpc/rpcInt.h
+	rpc/rpcClient.h
+	rpc/rpcServer.h
+	rpc/rpcDaemon.c
+	sched/schedule.c
+	sync/syncSleep.c
+Timer_ScheduleRoutine		# send message notifying timer thread to
+				# reschedule. 
+	mach/symm.md/machMemory.c
+	mach/symm.md/machArchdep.c
+	dev/devDiskStats.c
+	fs/fsSelect.c
+	fsconsist/fsconsistCache.c
+	net/netArp.c
+	net/symm.md/netScedEther.c
+	proc/procServer.c
+	prof/sun3.md/timer.h
+	prof/profProfil.c
+	raid/devDebug.c
+	recov/recovProc.c
+	rpc/rpcClient.c
+	rpc/rpcDaemon.c
+	sched/schedule.c
+	sync/syncSleep.c
+Timer_SetTimeOfDay		# notify timer thread to reschedule, at least
+				# if time is set forward.
+	mach/ds5000.md/machUNIXSyscall.c
+	mach/ds3100.md/machUNIXSyscall.c
+	prof/sun3.md/timer.h
+	rpc/rpcInit.c
+	sys/sysCalls.c
+Timer_SettimeofdayStub		# keep.
+	sys/sysUnixSyscall.c
+Timer_StartRTClock		# (symm only)
+	mach/symm.md/machCode.c
+Timer_Statistics		# eventually rewrite to track the new timer
+				# scheme (e.g., wakeups, noopWakeups,
+				# schedules, deschedules).
+	prof/sun3.md/timer.h
+Timer_SubtractTicks		# see Timer_AddTicks
+	fs/fsSelect.c
+	fs/fsCommand.c
+	fslcl/fslclLookup.c
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+	proc/procExit.c
+	proc/procTimer.c
+	proc/procMigrate.c
+	rpc/rpcTest.c
+	rpc/rpcTrace.c
+	rpc/rpcHistogram.c
+	utils/traceLog.c
+Timer_TickEQ			# see Timer_AddTicks
+	proc/procTimer.c
+Timer_TickGE			# see Timer_AddTicks
+	rpc/rpcCall.c
+Timer_TickGT			# see Timer_AddTicks
+Timer_TickLE			# see Timer_AddTicks
+Timer_TickLT			# see Timer_AddTicks
+	sync/syncSleep.c
+Timer_Ticks			# Make equivalent to Time (that's what the
+				# kernel provides).
+	dev/devDiskStats.h
+	dev/devDiskStats.c
+	fs/fsSelect.c
+	fs/fsCommand.c
+	fsconsist/fsconsistCache.c
+	fslcl/fslclLookup.c
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+	net/netUltraInt.h
+	net/netArp.c
+	net/symm.md/netScedEther.c
+	proc/procExit.c
+	proc/procInt.h
+	proc/proc.h
+	proc/procTimer.c
+	proc/procRpc.c
+	proc/procTypes.h
+	proc/procMigrate.c
+	proc/procServer.c
+	proc/procRemote.c
+	prof/sun3.md/timer.h
+	prof/profProfil.c
+	raid/devDebug.c
+	recov/recovery.c
+	recov/recovProc.c
+	rpc/rpc.h
+	rpc/rpcInt.h
+	rpc/rpcClient.c
+	rpc/rpcTest.c
+	rpc/rpcInit.c
+	rpc/rpcDaemon.c
+	rpc/rpcTrace.c
+	rpc/rpcCall.c
+	rpc/rpcServer.c
+	rpc/rpcHistogram.c
+	sched/sched.h
+	sched/schedule.c
+	sync/syncSleep.c
+	sync/sync.h
+	sys/sysCalls.c
+	utils/trace.c
+	utils/traceLog.c
+	vm/vm.h
+	vm/vmTrace.c
+Timer_TicksToInterval		# keep.
+Timer_TicksToTime		# keep.
+	fs/fsSelect.c
+	fs/fsCommand.c
+	net/sun3.md/netUltra.c
+	net/sun4.md/netUltra.c
+	proc/procExit.c
+	proc/procTimer.c
+	proc/procMisc.c
+	proc/procMigrate.c
+	proc/procStubs.c
+	rpc/rpcTest.c
+	rpc/rpcInit.c
+	rpc/rpcTrace.c
+	rpc/rpcHistogram.c
+	sched/schedule.c
+	sys/sysCalls.c
+	utils/trace.c
+Timer_TimeToTicks		# keep.
+	fs/fsSelect.c
+	proc/procTimer.c
+	sync/syncSleep.c
+Timer_TimerExamineStatus	# delete.
+Timer_TimerGetInfo		# delete.
+	prof/sun3.md/timer.h
+	utils/dump.c
+Timer_TimerGetStatus		# delete.
+Timer_TimerInactivate		# delete?
+	prof/sun3.md/timer.h
+	prof/sun3.md/profSubr.c
+	prof/sun4.md/profSubr.c
+	prof/sun4nw.md/profSubr.c
+	prof/sun4c.md/profSubr.c
+	prof/ds3100.md/profSubr.c
+	prof/ds5000.md/profSubr.c
+Timer_TimerInit			# delete.
+	prof/sun3.md/timer.h
+	prof/sun3.md/profSubr.c
+	prof/sun4.md/profSubr.c
+	prof/sun4c.md/profSubr.c
+	timer/sun3.md/timerIntersil.c
+	timer/sun4.md/timerIntersil.c
+	timer/timer.h
+	timer/sun4c.md/timerSun4c.c
+	timer/ds3100.md/timerMC.c
+	timer/symm.md/timerSym.c
+	timer/timerQueue.c
+Timer_TimerServiceInterrupt	# delete.
+	mach/ds3100.md/machCode.c
+	mach/symm.md/machAutoconf.c
+Timer_TimerStart		# delete.
+	prof/sun3.md/timer.h
+	prof/sun3.md/profSubr.c
+	prof/sun4.md/profSubr.c
+	prof/sun4nw.md/profSubr.c
+	prof/sun4c.md/profSubr.c
+	prof/ds3100.md/profSubr.c
+	prof/ds5000.md/profSubr.c
+profTimer_QueueElement
+	prof/profProfil.c
+timer_ClockMutex
+	prof/sun3.md/timer.h
+timer_IntOneHour		# keep.
+	timer/sun3.md/timerTick.h
+	timer/sun3.md/timerTick.c
+	timer/sun4c.md/timerTick.c
+	timer/sun4c.md/timerTick.h
+	timer/ds3100.md/timerTick.c
+	timer/ds3100.md/timerTick.h
+	timer/symm.md/timerTick.h
+	timer/symm.md/timerTick.c
+timer_IntOneMillisecond		# keep.
+	net/netArp.c
+	prof/profProfil.c
+	rpc/rpcInit.c
+	sched/schedule.c
+	timer/sun3.md/timerTick.h
+	timer/sun3.md/timerTick.c
+	timer/sun4c.md/timerTick.c
+	timer/sun4c.md/timerTick.h
+	timer/ds3100.md/timerTick.c
+	timer/ds3100.md/timerTick.h
+	timer/symm.md/timerTick.h
+	timer/symm.md/timerTick.c
+timer_IntOneMinute		# keep.
+	fsconsist/fsconsistCache.c
+	fsutil/fsutilHandleScavenge.c
+	recov/recovery.c
+	timer/sun3.md/timerTick.h
+	timer/sun3.md/timerTick.c
+	timer/sun4c.md/timerTick.c
+	timer/sun4c.md/timerTick.h
+	timer/ds3100.md/timerTick.c
+	timer/ds3100.md/timerTick.h
+	timer/symm.md/timerTick.h
+	timer/symm.md/timerTick.c
+timer_IntOneSecond		# keep.
+	mach/symm.md/{machMemory,machArchdep}.c
+	dev/devDiskStats.c
+	fsutil/fsutilSync.c
+	lfs/lfsMain.c
+	net/symm.md/netScedEther.c
+	proc/procExit.c
+	recov/recovProc.c
+	rpc/{rpcInit,rpcDaemon,rpcCall}.c
+	sched/schedule.c
+	timer/sun3.md/timerTick.h
+	timer/sun3.md/timerTick.c
+	timer/sun4c.md/timerTick.c
+	timer/sun4c.md/timerTick.h
+	timer/ds3100.md/timerTick.c
+	timer/ds3100.md/timerTick.h
+	timer/symm.md/timerTick.h
+	timer/symm.md/timerTick.c
+	timer/timerClock.c
+	vm/{vmPage,vmSwapDir,vmSysCall}.c
+timer_IntZeroSeconds		# keep.
+	timer/sun3.md/timerTick.h
+	timer/sun3.md/timerTick.c
+	timer/sun4c.md/timerTick.c
+	timer/sun4c.md/timerTick.h
+	timer/ds3100.md/timerTick.c
+	timer/ds3100.md/timerTick.h
+	timer/symm.md/timerTick.h
+	timer/symm.md/timerTick.c
+timer_MaxIntervalTime		# keep.
+	timer/sun3.md/timerTick.h
+	timer/sun3.md/timerTick.c
+	timer/sun4c.md/timerTick.h
+	timer/ds3100.md/timerTick.h
+	timer/symm.md/timerTick.h
+timer_Statistics		# keep.
+	prof/sun3.md/timer.h
+	timer/sun4.md/timerIntersil.c
+	timer/timer.h
+	timer/sun4c.md/timerSun4c.c
+	timer/timerQueue.c
+timer_TicksZeroSeconds		# keep.
+	proc/{procTable,procTimer,procFork,procMigrate,procRpc}.c
+	rpc/rpcCall.c
+	timer/sun3.md/timerTick.h
+	timer/sun3.md/timerTick.c
+	timer/sun4c.md/timerTick.c
+	timer/sun4c.md/timerTick.h
+	timer/ds3100.md/timerTick.c
+	timer/ds3100.md/timerTick.h
+	timer/symm.md/timerTick.h
+	timer/symm.md/timerTick.c
+timer_UniversalApprox		# delete (ask the kernel).
+	prof/sun3.md/timer.h
+
+Local Variables:
+mode: xref
+fill-column: 78
+End:

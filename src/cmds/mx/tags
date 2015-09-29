@@ -1,0 +1,2 @@
+MainSignalProc	mx.c	/^MainSignalProc(sigNum, sigCode)$/
+Mmx	mx.c	/^main(argc, argv)$/

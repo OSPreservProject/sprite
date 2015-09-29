@@ -1,0 +1,44 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     91.07.02.22.58.06;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.07.02.22.30.26;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Sprite doesn't have siginterrupt
+@
+text
+@#define DECSTATION
+#define HAVE_VPRINTF
+#ifdef sprite
+#define NO_SIGINTERRUPT
+#endif
+#include "m-mips.h"
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d3 3
+@

@@ -1,0 +1,298 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     89.06.14.17.14.38;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.06.14.15.53.32;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Upgraded to new md organization plus new library.
+@
+text
+@/*
+ * open.c --
+ *	Test of the open system call.  This does timing tests or
+ *	error condition testing.
+ */
+
+#include <sprite.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/time.h>
+#include <sys/file.h>
+#include <sys/stat.h>
+#include <option.h>
+
+Boolean timing = FALSE;
+Boolean errorTest = FALSE;
+
+Option optionArray[] = {
+    {OPT_TRUE, "t", (char *) &timing, "Do timing test"},
+    {OPT_TRUE, "e", (char *) &errorTest, "Do error tests"},
+};
+
+#define NAME_SIZE	10 * 1024
+char name[NAME_SIZE];
+
+main(argc, argv)
+    int argc;
+    char **argv;
+{
+    argc = Opt_Parse(argc, argv, optionArray, Opt_Number(optionArray), 0);
+
+    if (timing) {
+	DoTiming(argc, argv);
+    }
+    if (errorTest) {
+	DoOpenErrors(argc, argv);
+    }
+}
+
+/*
+ * DoTiming --
+ *	Time the cost of an open/close pair.
+ */
+DoTiming(argc, argv)
+    int argc;
+    char *argv[];
+{
+    int count, index, i;
+    char name[200];
+    FILE *f;
+    double cost;
+    struct timeval before, after;
+    struct timezone foo;
+
+    if (argc < 2) {
+	count = 100;
+    } else {
+	count = atoi(argv[1]);
+    }
+    if (argc == 3) {
+	sprintf(name, "%s/.FooA", argv[2]);
+    }  else {
+	strcpy(name, ".FooA");
+    }
+    index = strlen(name) - 1;
+
+    /*
+     * Create 20 files in the given directory with names like ".FooA"
+     * etc.
+     */
+
+    for (i = 0; i < 20; i++) {
+	name[index] = 'A' + i;
+	f = fopen(name, "w");
+	if (f == NULL) {
+	    fprintf(stderr, "Couldn't create %s.\n", name);
+	    exit(1);
+	}
+	fclose(f);
+    }
+
+    /*
+     * Time the opens and closes.
+     */
+
+    gettimeofday(&before, &foo);
+    for (i = 0; i < count; i++) {
+	name[index] = 'A' + i%20;
+	f = fopen(name, "r");
+	fclose(f);
+    }
+    gettimeofday(&after, &foo);
+    cost = after.tv_sec - before.tv_sec;
+    cost += (after.tv_usec - before.tv_usec)*.000001;
+    cost /= count;
+    cost *= 1000;
+    printf("%d opens and closes at %.2f msec each.\n", count, cost);
+
+    /*
+     * Remove all the temporary files that were created.
+     */
+
+    for (count = 0; count < 20; count++) {
+	name[index] = 'A' + count;
+	unlink(name);
+    }
+}
+
+/*
+ * DoOpenErrors --
+ *	Attempt to generate all errors associated with open.
+ */
+DoOpenErrors(argc, argv)
+    int argc;
+    char *argv[];
+{
+    printf("Open Error Tests\n");
+    printf("	ERROR: indicates failure case did not work\n");
+    printf("	otherwise perror() is used to print system error\n\n");
+    /*
+     * Test bad pathname argument.
+     */
+    {
+	int fd;
+	struct stat statb;
+
+	if ((fd = open(-1, 0, 0)) >= 0) {
+	    printf("ERROR: open(-1, 0, 0) succeeded!\n");
+	    if (fstat(fd, &statb) < 0) {
+		perror("but fstat failed");
+	    } else {
+		printf("-1 found file <%d,%d>\n", statb.st_dev, statb.st_ino);
+		close(fd);
+	    }
+	} else {
+	    perror("open(-1, 0, 0) (bad pathname)");
+	}
+	if ((fd = open(15, 0, 0)) >= 0) {
+	    printf("ERROR: open(15, 0, 0) succeeded!\n");
+	    if (fstat(fd, &statb) < 0) {
+		perror("but fstat failed");
+	    } else {
+		printf("15 found file <%d,%d>\n", statb.st_dev, statb.st_ino);
+		close(fd);
+	    }
+	} else {
+	    perror("open(15, 0, 0) (bad pathname)");
+	}
+    }
+    /*
+     * Test too long a pathname.
+     */
+    {
+	register char *cPtr;
+	register int i;
+
+	for (cPtr = name, i=0 ; i < NAME_SIZE ; ) {
+	    *cPtr++ = 'a'; i++ ;
+	    *cPtr++ = 'a'; i++ ;
+	    *cPtr++ = 'a'; i++ ;
+	    *cPtr++ = 'a'; i++ ;
+	    *cPtr++ = 'a'; i++ ;
+	    *cPtr++ = 'a'; i++ ;
+	    *cPtr++ = 'a'; i++ ;
+	    *cPtr++ = 'a'; i++ ;
+	    *cPtr++ = 'a'; i++ ;
+	    *cPtr++ = 'a'; i++ ;
+	}
+	if (open(name, 0, 0) >= 0) {
+	    printf("ERROR: open(tooLongName, 0, 0) succeeded!\n");
+	} else {
+	    perror("open(tooLongName, 0, 0)");
+	}
+    }
+    /*
+     *  Do various permission checks.  This checks against violations
+     *	of the following conditions:
+     *		Exclusive open
+     *		read permission
+     *		write permission
+     *		busy file
+     *		writing a directory
+     */
+    {
+	char *name = "./FooA";
+	int fd, fd2;
+
+	/*
+	 * Test open-unlink-close
+	 */
+	if ((fd = open(name, O_CREAT, 0444)) < 0) {
+	    perror("Can't create ./FooA");
+	} else {
+	    if ((fd2 = open(name, O_RDONLY)) >= 0) {
+		close(fd2);
+	    } else {
+		perror("Can't open readable file");
+	    }
+	    unlink(name);
+	    close(fd);
+	}
+	/*
+	 * Test permission checking.
+	 */
+	if ((fd = open(name, O_CREAT, 0)) < 0) {
+	    perror("Can't create ./FooA");
+	} else {
+	    if ((fd2 = open(name, O_CREAT|O_EXCL, 0)) >= 0) {
+		printf("ERROR: exclusive open of existing file succeeded!\n");
+		if (chmod(name, 0) < 0) {
+		    perror("Can't chmod file");
+		}
+		close(fd2);
+	    } else {
+		perror("open exclusive");
+	    }
+	    if (open(name, O_RDONLY) >= 0) {
+		printf("ERROR: opened with no read permission!\n");
+	    } else {
+		perror("read when mode == 0");
+	    }
+	    chmod(name, 0444);
+	    if (open(name, O_WRONLY) >= 0) {
+		printf("ERROR: opened with no write permission!\n");
+	    } else {
+		perror("write when mode == read only");
+	    }
+	    if (open("/sprite/cmds/csh", O_WRONLY) >= 0) {
+		printf("ERROR: opened executing program (csh) for writing!\n");
+	    } else {
+		perror("open active file");
+	    }
+	    if (open(".", O_WRONLY) >= 0) {
+		printf("ERROR: opened directory for writing!\n");
+	    } else {
+		perror("write directory");
+	    }
+	    if (unlink(name) < 0) {
+		perror("Can't remove test file");
+	    }
+	    /*
+	     * Test closing closed file.
+	     */
+	    close(fd);
+	    if (close(fd) < 0)  {
+		perror("close of closed file");
+	    } else {
+		printf("ERROR: closed a closed file descriptor!\n");
+	    }
+	}
+    }
+}
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d6 2
+d13 4
+d18 4
+a21 2
+extern timing;
+extern errorTest;
+d30 1
+a30 1
+    GetOptions(&argc, argv);
+@

@@ -1,0 +1,89 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ds3100:1.1 sun3:1.1 sun4nw:1.1 symm:1.1 spur:1.1 sprited:1.1.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     92.10.28.18.31.38;  author mgbaker;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.10.09.15.49.01;  author mendel;  state Exp;
+branches 1.1.1.1;
+next     ;
+
+1.1.1.1
+date     91.10.28.14.32.49;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Defines of fsio RPC routines.
+@
+
+
+1.2
+log
+@Got rid of unused functions are variables.
+@
+text
+@/*
+ * fsioRpc.h --
+ *
+ *	Declarations of RPC calls for the fsio module.
+ *
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/fsio/fsioRpc.h,v 1.1 90/10/09 15:49:01 mendel Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _FSIORPC
+#define _FSIORPC
+
+#include <rpc.h>
+
+/* procedures */
+
+extern ReturnStatus Fsio_RpcStreamMigCloseNew _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+
+#endif /* _FSIORPC */
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.5 90/01/12 12:03:25 douglis Exp $ SPRITE (Berkeley)
+a24 2
+extern ReturnStatus Fsio_RpcStreamMigClose _ARGS_((ClientData srvToken, 
+		int clientID, int command, Rpc_Storage *storagePtr));
+@
+
+
+1.1.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/fsio/RCS/fsioRpc.h,v 1.1 90/10/09 15:49:01 mendel Exp $ SPRITE (Berkeley)
+@

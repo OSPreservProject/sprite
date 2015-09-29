@@ -1,0 +1,68 @@
+' Copyright 1989 Regents of the University of California
+' Permission to use, copy, modify, and distribute this
+' documentation for any purpose and without fee is hereby
+' granted, provided that this notice appears in all copies.
+' The University of California makes no representations about
+' the suitability of this material for any purpose.  It is
+' provided "as is" without express or implied warranty.
+' 
+' $Header: /sprite/src/lib/c/string/RCS/mem.man,v 1.2 89/02/09 10:27:17 ouster Exp $ SPRITE (Berkeley)
+' 
+.so \*(]ltmac.sprite
+.HS mem lib
+.BS
+.SH NAME
+memchr, memcmp, memcpy, memset \- Operations on byte arrays
+.SH SYNOPSIS
+.nf
+\fB#include <string.h>
+
+\fBchar *
+\fBmemchr(\fIs\fB, \fIc\fB, \fIn\fB)
+
+\fBint
+\fBmemcmp(\fIs\fB, \fIs2\fB, \fIn\fB)
+
+\fBchar *
+\fBmemcpy(\fIdest\fB, \fIsource\fB, \fIn\fB)
+
+\fBchar *
+\fBmemset(\fIdest\fB, \fIc\fB, \fIn\fB)
+.SH ARGUMENTS
+.AS char source
+.AP char *s in
+Pointer to array of characters.
+.AP char *source in
+Pointer to array of characters to copy.
+.AP char *dest out
+Pointer to array of characters to modify.
+.AP int c in
+Value to search for (\fBmemchr\fR), or value to set to (\fBmemset\fR).
+.AP int n in
+Count of number of characters to test, copy, or set.
+.BE
+
+.SH DESCRIPTION
+These procedures manipulate memory as counted arrays of bytes.
+.PP
+The \fBmemchr\fR procedure searches for the first occurrence of \fIc\fR
+in the \fIn\fR bytes starting at \fIs\fR, and returns the address of the
+first such occurrence.  If the value \fIc\fR is not found, then \fBNULL\fR
+is returned.
+.PP
+\fBMemcmp\fR compares two arrays of bytes, \fIs\fR and \fIs2\fR, in
+order, until a difference is found or \fIn\fR bytes have been compared.
+It returns a value greater than zero if, in the first differing byte,
+the value \fIs\fR is greater than the value in \fIs2\fR.  If the value
+in \fIs\fR is less than the value in \fIs2\fR, then a value less than
+zero is returned.  If the two arrays are identical in their first \fIn\fR
+bytes, then zero is returned.  Signed character comparison is used.
+.PP
+\fBMemcpy\fR copies \fIn\fR bytes from \fIsource\fR to \fIdest\fR and
+returns \fIdest\fR as its result.
+.PP
+\fBMemset\fR stores the value \fIc\fR in each of the \fIn\fR bytes starting
+at \fIdest\fR, and returns \fIdest\fR as its result.
+
+.SH KEYWORDS
+characters, copy, memory, set, test

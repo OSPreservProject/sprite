@@ -1,0 +1,416 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     89.10.10.13.17.09;  author douglis;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.02.02.15.05.21;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.11.14.15.14.07;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.11.14.15.12.50;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.11.02.12.42.51;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Routines to interface to the Sun Mount protocol
+@
+
+
+1.5
+log
+@Changed void * to VoidPtr to remove lint
+@
+text
+@/*
+ * mount.c --
+ * 
+ *	Utility procedures for using the Sun Mount protocol.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+#ifndef lint
+static char rcsid[] = "$Header: /a/newcmds/nfsmount/RCS/mount.c,v 1.4 89/02/02 15:05:21 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "stdio.h"
+
+#include "nfs.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Nfs_MountInitClient --
+ *
+ *	Set up the CLIENT data structure needed to do SUN RPC to the
+ *	mount program running on a particular host.
+ * 
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Calls clnt_create which sets up sockets and other related state.
+ *
+ *----------------------------------------------------------------------
+ */
+CLIENT *
+Nfs_MountInitClient(host)
+    char *host;
+{
+    register CLIENT *clnt;
+    int voidArg;
+    VoidPtr voidRes;
+
+    clnt = clnt_create(host, MOUNTPROG, MOUNTVERS, "udp");
+    if (clnt == (CLIENT *)NULL) {
+	clnt_pcreateerror(host);
+    } else {
+	clnt->cl_auth = authunix_create_default();
+	voidRes = mountproc_null_1(&voidArg, clnt);
+	if (voidRes == (VoidPtr)NULL) {
+	    clnt_perror(clnt, "mountproc_null_1");
+	} else if (pdev_Trace) {
+	    printf("Null RPC to Mount service at %s succeeded\n", host);
+	}
+    }
+    return(clnt);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Nfs_MountTest --
+ *
+ *	Test the mount protocol by making a null rpc to the mount server.
+ * 
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints an error and exits the process if the RPC fails.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Nfs_MountTest(clnt, host)
+    CLIENT *clnt;
+    char *host;
+{
+    char voidArg;
+    VoidPtr voidRes;
+
+    voidRes = mountproc_null_1(&voidArg, clnt);
+    if (voidRes == (VoidPtr)NULL) {
+	clnt_perror(clnt, "mountproc_null_1");
+	exit(1);
+    } else {
+	extern int pdev_Trace;
+	if (pdev_Trace) {
+	    printf("Null RPC to MOUNTPROG at %s succeeded\n", host);
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Nfs_Mount --
+ *
+ *	Called to mount a NFS filesystem.  This does a mount RPC and returns
+ *	the nfs_fh that is returned from the NFS server.
+ * 
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None here, but the server does remember that we've mounted from it.
+ *
+ *----------------------------------------------------------------------
+ */
+nfs_fh *
+Nfs_Mount(clnt, rfs)
+    CLIENT *clnt;
+    dirpath rfs;
+{
+    register fhstatus *statusPtr;
+    register nfs_fh *handlePtr;
+
+    statusPtr = mountproc_mnt_1(&rfs, clnt);
+    if (statusPtr == (fhstatus *)NULL) {
+	clnt_perror(clnt, "mountproc_mnt_1");
+	handlePtr = (nfs_fh *)NULL;
+    } else if (statusPtr->fhs_status != 0) {
+	errno = statusPtr->fhs_status;
+	perror(rfs);
+	handlePtr = (nfs_fh *)NULL;
+    } else {
+	/*
+	 * The mount.x protocol definition and the nfs_prot.x protocol def
+	 * have slightly different ways of defining a "file handle".  Both
+	 * are FHSIZE bytes of opaque data, however, so we can safely copy
+	 * the "fhandle" returned by the mount in to a "nfs_fh" used
+	 * by the nfs routines.
+	 */
+	handlePtr = (nfs_fh *)malloc(sizeof(nfs_fh));
+	bcopy((char *)statusPtr->fhstatus_u.fhs_fhandle, (char *)handlePtr,
+		FHSIZE);
+    }
+
+    return(handlePtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Nfs_MountDump --
+ *
+ *	This dumps out what filesystems have been mounted by the client.
+ *	To find out, this does an RPC to the server to which we are bound.
+ * 
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Print statements.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Nfs_MountDump(clnt)
+    CLIENT *clnt;
+{
+    register mountlist *listPtr;
+    VoidPtr voidArg;
+
+    listPtr = mountproc_dump_1(&voidArg, clnt);
+    if (listPtr == (mountlist *)NULL) {
+	clnt_perror(clnt, "mountproc_dump_1");
+	return;
+    }
+    printf("Mount List\n");
+    do {
+	printf("%s:%s\n", listPtr->ml_hostname, listPtr->ml_directory);
+	listPtr = listPtr->ml_next;
+    } while (listPtr);
+
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Nfs_Exports --
+ *
+ *	This dumps out what filesystems are exported by the server
+ *	to which we are bound.
+ * 
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Print statements.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Nfs_Exports(clnt, host)
+    CLIENT *clnt;
+    char *host;
+{
+    register exports listPtr, *listPtrPtr;
+    register groups groupPtr;
+    VoidPtr voidArg;
+
+    listPtrPtr = mountproc_export_1(&voidArg, clnt);
+    if (listPtrPtr == (exports *)NULL) {
+	clnt_perror(clnt, "mountproc_export_1");
+	return;
+    }
+    listPtr = *listPtrPtr;
+    printf("Export List of %s\n", host);
+    do {
+	printf("%s exported to: ", listPtr->ex_dir);
+	groupPtr = listPtr->ex_groups;
+	while(groupPtr) {
+	    printf("%s ", groupPtr->gr_name);
+	    groupPtr = groupPtr->gr_next;
+	}
+	printf("\n");
+	listPtr = listPtr->ex_next;
+    } while (listPtr);
+
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Nfs_UnmountAll --
+ *
+ *	Called to unmount all our NFS filesystems..
+ * 
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Ideally invalidates our fhandles for mounted filesystems,
+ *	but probably just erases our name from a list on the server.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Nfs_UnmountAll(clnt)
+    CLIENT *clnt;
+{
+    char voidArg;
+    VoidPtr voidRes;
+
+    voidRes = mountproc_null_1(&voidArg, clnt);
+    if (voidRes == (VoidPtr)NULL) {
+	clnt_perror(clnt, "mountproc_umntall_1");
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Nfs_Unmount --
+ *
+ *	Called to unmount a NFS filesystem.
+ * 
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Nuke ourselves from the server's mount list.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Nfs_Unmount(clnt, rfs)
+    CLIENT *clnt;
+    dirpath rfs;
+{
+    VoidPtr voidRes;
+
+    voidRes = mountproc_umnt_1(&rfs, clnt);
+    if (voidRes == (VoidPtr)NULL) {
+	clnt_perror(clnt, "mountproc_umnt_1");
+    }
+}
+@
+
+
+1.4
+log
+@Fixed use of tracing variable
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /a/newcmds/nfssrv/RCS/mount.c,v 1.3 88/11/14 15:14:07 brent Exp $ SPRITE (Berkeley)";
+d46 1
+a46 1
+    void *voidRes;
+d54 1
+a54 1
+	if (voidRes == (void *)NULL) {
+d84 1
+a84 1
+    void *voidRes;
+d87 1
+a87 1
+    if (voidRes == (void *)NULL) {
+d167 1
+a167 1
+    void *voidArg;
+d206 1
+a206 1
+    void *voidArg;
+d250 1
+a250 1
+    void *voidRes;
+d253 1
+a253 1
+    if (voidRes == (void *)NULL) {
+d278 1
+a278 1
+    void *voidRes;
+d281 1
+a281 1
+    if (voidRes == (void *)NULL) {
+@
+
+
+1.3
+log
+@Took out print statements
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /a/newcmds/nfssrv/RCS/mount.c,v 1.2 88/11/14 15:12:50 brent Exp $ SPRITE (Berkeley)";
+d56 1
+a56 1
+	} else if (pdevTrace) {
+d91 2
+a92 2
+	extern int pdevTrace;
+	if (pdevTrace) {
+@
+
+
+1.2
+log
+@Took out print statements
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: /a/newcmds/nfssrv/RCS/mount.c,v 1.1 88/11/02 12:42:51 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d56 1
+a56 1
+	} else {
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: fsPfs.c,v 6.0 88/10/11 15:52:49 brent Exp $ SPRITE (Berkeley)";
+d91 4
+a94 1
+	printf("Null RPC to MOUNTPROG at %s succeeded\n", host);
+@

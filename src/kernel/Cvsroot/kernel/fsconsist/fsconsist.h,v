@@ -1,0 +1,722 @@
+head     9.9;
+branch   ;
+access   ;
+symbols  ds3100:9.9 sun3:9.9 sun4nw:9.8 symm:9.8 spur:9.8 sprited:9.7.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.9
+date     92.08.10.17.23.57;  author mgbaker;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     91.09.10.18.49.33;  author rab;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.12.06.21.57.02;  author jhh;  state Exp;
+branches 9.7.1.1;
+next     9.6;
+
+9.6
+date     90.10.10.11.01.44;  author mendel;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.10.08.12.16.46;  author mendel;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.05.03.19.25.48;  author douglis;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     89.10.30.18.05.46;  author shirriff;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.26.18.44.49;  author brent;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.23.13.47.35;  author brent;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.04.39;  author douglis;  state Stable;
+branches ;
+next     8.3;
+
+8.3
+date     89.08.21.15.24.50;  author mendel;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.08.15.18.42.29;  author rab;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.02.09.09.08.52;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.18.41;  author douglis;  state Stable;
+branches ;
+next     7.0;
+
+7.0
+date     88.11.07.14.47.12;  author brent;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.09.09.14.44.40;  author brent;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.31.09.51.29;  author brent;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.24.14.55.30;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.15.14;  author brent;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.04.10.30.59;  author brent;  state Exp;
+branches ;
+next     ;
+
+9.7.1.1
+date     91.10.28.14.31.23;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Definitions for the cache consistency module
+@
+
+
+9.9
+log
+@Changes for transparent server recovery.
+
+@
+text
+@/*
+ * fsconsist.h --
+ *
+ *	Declarations for cache consistency routines.
+ *
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/fsconsist/fsconsist.h,v 9.8 91/09/10 18:49:33 rab Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _FSCONSIST
+#define _FSCONSIST
+
+#ifdef KERNEL
+#include <fs.h>
+#include <fsio.h>
+#include <rpc.h>
+#else
+#include <kernel/fs.h>
+#include <kernel/fsio.h>
+#include <kernel/rpc.h>
+#endif
+/*
+ * Flags to determine what type of consistency operation is required.
+ *
+ *    	FSCONSIST_WRITE_BACK_BLOCKS	Write back all dirty blocks.
+ *    	FSCONSIST_INVALIDATE_BLOCKS	Invalidate all block in the cache for this
+ *				file.  This means that the file is no longer
+ *				cacheable.
+ *    	FSCONSIST_DELETE_FILE		Delete the file from the local cache and
+ *				the file handle table.
+ *    	FSCONSIST_CANT_CACHE_NAMED_PIPE	The named pipe is no longer read cacheable
+ *				on the client.  This would happen if two
+ *				separate clients tried to read the named pipe
+ *				at the same time.
+ *	FSCONSIST_WRITE_BACK_ATTRS	Write back the cached attributes.
+ *	FSCONSIST_MIGRATION	Consistency operation is due to migration
+ *				(for statistics purposes).
+ */
+
+#define	FSCONSIST_WRITE_BACK_BLOCKS		0x01
+#define	FSCONSIST_INVALIDATE_BLOCKS		0x02
+#define	FSCONSIST_DELETE_FILE			0x04
+#define	FSCONSIST_CANT_CACHE_NAMED_PIPE		0x08
+#define	FSCONSIST_WRITE_BACK_ATTRS		0x10
+#define	FSCONSIST_MIGRATION			0x200
+
+/*
+ * The client use state needed to allow remote client access and to
+ * enforce network cache consistency.  A list of state for each client
+ * using the file is kept, including the name server itself.  This
+ * is used to determine what cache consistency actions to take.
+ * There is synchronization over this list between subsequent open
+ * operations and the cache consistency actions themselves.
+ */
+
+typedef struct Fsconsist_Info {
+    Sync_Lock	lock;		/* Monitor lock used to synchronize access
+				 * to cache consistency routines and the
+				 * consistency list. */
+    int		flags;		/* Flags defined in fsCacheConsist.c */
+    int		lastWriter;	/* Client id of last client to have it open
+				   for write caching. */
+    int		openTimeStamp;	/* Generated on the server when the file is
+				 * opened.  Checked on clients to catch races
+				 * between open replies and consistency
+				 * messages */
+    Fs_HandleHeader *hdrPtr;	/* Back pointer to handle header needed to
+				 * identify the file. */
+    List_Links	clientList;	/* List of clients of this file.  Scanned
+				 * to determine cachability conflicts */
+    List_Links	msgList;	/* List of outstanding cache
+				 * consistency messages. */
+    Sync_Condition consistDone;	/* Opens block on this condition
+				 * until ongoing cache consistency
+				 * actions have completed */
+    Sync_Condition repliesIn;	/* This condition is notified after
+				 * all the clients told to take
+				 * consistency actions have replied. */
+} Fsconsist_Info;
+
+/*
+ * Structure to contain information for each client that is using a file.
+ */
+
+typedef struct Fsconsist_ClientInfo {
+    List_Links	links;		/* This hangs in a list off the I/O handle */
+    int		clientID;	/* The sprite ID of this client. */
+    Fsio_UseCounts use;		/* Usage info for the client.  Used to clean
+				 * up summary counts when client crashes. */
+    /*
+     * The following fields are only used by regular files.
+     */
+    Boolean	cached;		/* TRUE if the file is cached on this client. */
+    int		openTimeStamp;	/* The most recent open of this file. */
+    Boolean	locked;		/* TRUE when a pointer is held to this client
+				 * list element.  It is not appropriate to
+				 * garbage collect the element when set. */
+    Boolean	mapped;		/* TRUE if the client is mapping the
+				 * file into memory. */
+} Fsconsist_ClientInfo;
+
+/*
+ * INSERT_CLIENT takes care of initializing a new client list entry.
+ */
+#define INSERT_CLIENT(clientList, clientPtr, clientID) \
+    fs_Stats.object.fileClients++;		\
+    clientPtr = mnew(Fsconsist_ClientInfo);	\
+    clientPtr->clientID = clientID;		\
+    clientPtr->use.ref = 0;			\
+    clientPtr->use.write = 0;			\
+    clientPtr->use.exec = 0;			\
+    clientPtr->openTimeStamp = 0;		\
+    clientPtr->cached = FALSE;			\
+    clientPtr->locked = FALSE;			\
+    clientPtr->mapped = FALSE;			\
+    List_InitElement((List_Links *)clientPtr);	\
+    List_Insert((List_Links *) clientPtr, LIST_ATFRONT(clientList));
+
+/*
+ * REMOVE_CLIENT takes care of removing a client list entry.
+ */
+#define REMOVE_CLIENT(clientPtr) \
+	fs_Stats.object.fileClients--;		\
+	List_Remove((List_Links *) clientPtr);	\
+	free((Address) clientPtr);
+
+#ifdef KERNEL
+/*
+ * This header file (fsioFile.h) is needed to define Fsio_FileIOHandle for the
+ * function prototypes below. It must occur after Fsconsist_Info is defined.
+ */
+#include <fsioFile.h>
+/*
+ * Client list routines.
+ */
+extern void Fsconsist_ClientInit _ARGS_((void));
+extern Fsconsist_ClientInfo *Fsconsist_IOClientOpen _ARGS_((
+			List_Links *clientList, int clientID, int useFlags,
+			Boolean cached));
+extern void Fsconsist_IOClientAdd _ARGS_((
+			List_Links *clientList, int clientID, Boolean cached));
+extern Boolean Fsconsist_IOClientReopen _ARGS_((List_Links *clientList, 
+			int clientID, Fsio_UseCounts *usePtr));
+extern Boolean Fsconsist_IOClientClose _ARGS_((List_Links *clientList, 
+			int clientID, int flags, Boolean *cachePtr));
+extern Boolean Fsconsist_IOClientRemoveWriter _ARGS_((List_Links *clientList,
+			int clientID));
+extern void Fsconsist_IOClientKill _ARGS_((List_Links *clientList, int clientID,
+			int *refPtr, int *writePtr, int *execPtr));
+extern void Fsconsist_IOClientStatus _ARGS_((List_Links *clientList, 
+			int clientID, Fsio_UseCounts *clientUsePtr));
+
+
+
+/*
+ * Cache consistency routines.
+ */
+extern void Fsconsist_Init _ARGS_(( Fsconsist_Info *consistPtr,
+			Fs_HandleHeader *hdrPtr));
+extern void Fsconsist_SyncLockCleanup _ARGS_((Fsconsist_Info *consistPtr));
+extern ReturnStatus Fsconsist_MappedConsistency _ARGS_((
+			Fsio_FileIOHandle *handlePtr, int clientID, 
+			int isMapped));
+extern ReturnStatus Fsconsist_FileConsistency _ARGS_((
+			Fsio_FileIOHandle *handlePtr, int clientID, 
+			int useFlags, Boolean *cacheablePtr, 
+			int *openTimeStampPtr));
+
+extern void Fsconsist_ReopenClient _ARGS_((Fsio_FileIOHandle *handlePtr, 
+			int clientID, Fsio_UseCounts use, 
+			Boolean haveDirtyBlocks));
+extern ReturnStatus Fsconsist_ReopenConsistency _ARGS_((
+			Fsio_FileIOHandle *handlePtr, int clientID, 
+			Fsio_UseCounts use, int swap, Boolean *cacheablePtr, 
+			int *openTimeStampPtr));
+extern ReturnStatus Fsconsist_MigrateConsistency _ARGS_((
+			Fsio_FileIOHandle *handlePtr, int srcClientID, 
+			int dstClientID, int useFlags, Boolean closeSrc, 
+			Boolean *cacheablePtr, int *openTimeStampPtr));
+extern void Fsconsist_GetClientAttrs _ARGS_((Fsio_FileIOHandle *handlePtr, 
+			int clientID, Boolean *isExecedPtr));
+extern Boolean Fsconsist_Close _ARGS_((register Fsconsist_Info *consistPtr, 
+			int clientID, int flags, Boolean *wasCachedPtr));
+
+extern void Fsconsist_DeleteLastWriter _ARGS_((Fsconsist_Info *consistPtr, 
+			int clientID));
+extern void Fsconsist_ClientRemoveCallback _ARGS_((Fsconsist_Info *consistPtr,
+			int clientID));
+extern void Fsconsist_Kill _ARGS_((Fsconsist_Info *consistPtr, int clientID, 
+			int *refPtr, int *writePtr, int *execPtr));
+extern void Fsconsist_GetAllDirtyBlocks _ARGS_((int domain, Boolean invalidate));
+extern void Fsconsist_FetchDirtyBlocks _ARGS_((Fsconsist_Info *consistPtr, 
+			Boolean invalidate));
+
+extern ReturnStatus Fsconsist_RpcConsist _ARGS_((ClientData srvToken, 
+			int clientID, int command, Rpc_Storage *storagePtr));
+extern ReturnStatus Fsconsist_RpcConsistReply _ARGS_((ClientData srvToken, 
+			int clientID, int command, Rpc_Storage *storagePtr));
+
+extern int Fsconsist_NumClients _ARGS_((Fsconsist_Info *consistPtr));
+
+extern void Fsconsist_AddClient _ARGS_((int clientID));
+
+extern void Fsconsist_UpdateFileConsistencyList _ARGS_((Fsio_FileIOHandle *handlePtr, int clientID, int useFlags, Boolean cacheable));
+
+#endif
+
+#endif /* _FSCONSIST */
+@
+
+
+9.8
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fsconsist/RCS/fsconsist.h,v 9.7 90/12/06 21:57:02 jhh Exp Locker: rab $ SPRITE (Berkeley)
+d149 2
+d212 2
+@
+
+
+9.7
+log
+@Added sosp tracing code
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fsconsist/RCS/fsconsist.h,v 9.6 90/10/10 11:01:44 mendel Exp Locker: jhh $ SPRITE (Berkeley)
+a44 1
+ *	FSCONSIST_DEBUG	Forces machine into debugger
+a53 1
+#define FSCONSIST_DEBUG				0x100
+a206 5
+
+#ifdef SOSP91
+extern int Fsconsist_NumClients _ARGS_((Fsconsist_Info *consistPtr,
+					int *numReadPtr, int *numWritePtr));
+#else
+a207 1
+#endif
+d213 1
+a213 1
+#endif _FSCONSIST
+@
+
+
+9.7.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fsconsist/RCS/fsconsist.h,v 9.7 90/12/06 21:57:02 jhh Exp $ SPRITE (Berkeley)
+@
+
+
+9.6
+log
+@Fixed include files for user programs.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fsconsist/RCS/fsconsist.h,v 9.5 90/10/08 12:16:46 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d209 5
+d215 2
+@
+
+
+9.5
+log
+@Fixed include files to use <> rather than "". Added function prototypes.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fs.mendel/RCS/fsconsist.h,v 1.1 90/01/16 17:12:02 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d22 1
+d26 5
+a30 1
+
+d138 1
+d212 1
+@
+
+
+9.4
+log
+@added FSCONSIST_MIGRATION flag.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fd.fsconsist/RCS/fsconsist.h,v 9.3 89/10/30 18:05:46 shirriff Exp Locker: douglis $ SPRITE (Berkeley)
+d22 3
+a24 2
+#include "fs.h"
+#include "fsio.h"
+d94 1
+a94 1
+    Fsutil_UseCounts use;		/* Usage info for the client.  Used to clean
+d134 5
+d141 14
+a154 6
+extern void		Fsconsist_ClientInit();
+extern Fsconsist_ClientInfo	*Fsconsist_IOClientOpen();
+extern Boolean		Fsconsist_IOClientClose();
+extern Boolean		Fsconsist_IOClientRemoveWriter();
+extern void		Fsconsist_IOClientKill();
+extern void		Fsconsist_IOClientStatus();
+a156 1
+extern void		Fsconsist_ClientScavenge();
+d161 44
+a204 16
+extern void		Fsconsist_Init();
+extern void		Fsconsist_SyncLockCleanup();
+extern ReturnStatus	Fsconsist_FileConsistency();
+extern void		Fsconsist_ReopenClient();
+extern ReturnStatus	Fsconsist_ReopenConsistency();
+extern ReturnStatus	Fsconsist_MigrateConsistency();
+extern void		Fsconsist_GetClientAttrs();
+extern Boolean		Fsconsist_Close();
+extern void		Fsconsist_DeleteLastWriter();
+extern void		Fsconsist_ClientRemoveCallback();
+extern void		Fsconsist_Kill();
+extern void		Fsconsist_GetAllDirtyBlocks();
+extern void		Fsconsist_FetchDirtyBlocks();
+
+extern ReturnStatus	Fsconsist_RpcConsist();
+extern ReturnStatus	Fsconsist_RpcConsistReply();
+a205 3
+extern int Fsconsist_NumClients();
+extern Boolean		Fsconsist_IOClientReopen();
+extern void Fsconsist_AddClient();
+@
+
+
+9.3
+log
+@Added clientPtr->mapped, for later mapped page stuff.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fsconsist/RCS/fsconsist.h,v 9.2 89/10/26 18:44:49 brent Exp Locker: shirriff $ SPRITE (Berkeley)
+d40 2
+d49 2
+a50 1
+#define FSCONSIST_DEBUG		0x100
+@
+
+
+9.2
+log
+@Added macros to initialize and remove client list entries
+so proper bookkeeping is always done.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fsconsist/RCS/fsconsist.h,v 9.1 89/10/23 13:47:35 brent Exp Locker: brent $ SPRITE (Berkeley)
+d100 2
+d117 1
+@
+
+
+9.1
+log
+@Moved Fsconsist_Stats to Fs_Stats.consist
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fsconsist/RCS/fsconsist.h,v 8.3 89/08/21 15:24:50 mendel Exp $ SPRITE (Berkeley)
+d102 23
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fsconsist/RCS/fsconsist.h,v 8.3 89/08/21 15:24:50 mendel Exp Locker: douglis $ SPRITE (Berkeley)
+a82 15
+/*
+ * Cache conistency statistics.
+ */
+typedef struct Fsconsist_Stats {
+    int numConsistChecks;	/* The number of times consistency was checked*/
+    int numClients;		/* The number of clients considered */
+    int notCaching;		/* # of other clients that weren't caching */
+    int readCaching;		/* # of other clients that were read caching */
+    int writeCaching;		/* # of lastWriters that re-opened  */
+    int writeBack;		/* # of lastWriters forced to write-back */
+    int readInvalidate;		/* # of readers forced to stop caching */
+    int writeInvalidate;	/* # of writers forced to stop caching */
+} Fsconsist_Stats;
+
+extern Fsconsist_Stats fsconsist_Stats;
+@
+
+
+8.3
+log
+@Break up fs into many modules.    
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsConsist.h,v 8.1 89/02/09 09:08:52 brent Exp $ SPRITE (Berkeley)
+@
+
+
+8.2
+log
+@Commented #endif labels.
+@
+text
+@d2 1
+a2 1
+ * fsConsist.h --
+d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsConsist.h,v 8.1 89/02/09 09:08:52 brent Exp Locker: rab $ SPRITE (Berkeley)
+d22 2
+a23 1
+#include "fsClient.h"
+d28 2
+a29 2
+ *    	FS_WRITE_BACK_BLOCKS	Write back all dirty blocks.
+ *    	FS_INVALIDATE_BLOCKS	Invalidate all block in the cache for this
+d32 1
+a32 1
+ *    	FS_DELETE_FILE		Delete the file from the local cache and
+d34 1
+a34 1
+ *    	FS_CANT_READ_CACHE_PIPE	The named pipe is no longer read cacheable
+d38 2
+a39 2
+ *	FS_WRITE_BACK_ATTRS	Write back the cached attributes.
+ *	FS_DEBUG_CONSIST	Forces machine into debugger
+d42 6
+a47 6
+#define	FS_WRITE_BACK_BLOCKS		0x01
+#define	FS_INVALIDATE_BLOCKS		0x02
+#define	FS_DELETE_FILE			0x04
+#define	FS_CANT_READ_CACHE_PIPE		0x08
+#define	FS_WRITE_BACK_ATTRS		0x10
+#define FS_DEBUG_CONSIST		0x100
+d50 34
+d86 1
+a86 1
+typedef struct FsCacheConsistStats {
+d95 6
+a100 1
+} FsCacheConsistStats;
+d102 14
+a115 1
+extern FsCacheConsistStats fsConsistStats;
+d117 14
+d134 20
+a153 16
+extern void		FsConsistInit();
+extern void		FsConsistSyncLockCleanup();
+extern ReturnStatus	FsFileConsistency();
+extern void		FsReopenClient();
+extern ReturnStatus	FsReopenConsistency();
+extern ReturnStatus	FsMigrateConsistency();
+extern void		FsGetClientAttrs();
+extern Boolean		FsConsistClose();
+extern void		FsDeleteLastWriter();
+extern void		FsClientRemoveCallback();
+extern void		FsConsistKill();
+extern void		FsGetAllDirtyBlocks();
+extern void		FsFetchDirtyBlocks();
+
+extern ReturnStatus	Fs_RpcConsist();
+extern ReturnStatus	Fs_RpcConsistReply();
+d155 1
+a155 1
+#endif /* _FSCONSIST */
+@
+
+
+8.1
+log
+@Added FsConsistSyncLockCleanup
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsConsist.h,v 8.0 88/11/11 18:18:41 douglis Stable Locker: brent $ SPRITE (Berkeley)
+d84 1
+a84 1
+#endif _FSCONSIST
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsConsist.h,v 7.0 88/11/07 14:47:12 brent Exp Locker: douglis $ SPRITE (Berkeley)
+d68 1
+@
+
+
+7.0
+log
+@New version for conversion to new C library
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsConsist.h,v 6.3 88/09/09 14:44:40 brent Exp Locker: brent $ SPRITE (Berkeley)
+@
+
+
+6.3
+log
+@Added a routine which is monitored by the per file cache lock
+that takes cache consistency actions.
+@
+text
+@d16 1
+a16 1
+ * $Header: fsConsist.h,v 6.2 88/08/31 09:51:29 brent Exp $ SPRITE (Berkeley)
+@
+
+
+6.2
+log
+@fixed extern
+@
+text
+@d16 1
+a16 1
+ * $Header: fsConsist.h,v 6.1 88/08/24 14:55:30 brent Exp $ SPRITE (Berkeley)
+d23 24
+@
+
+
+6.1
+log
+@added extern
+@
+text
+@d16 1
+a16 1
+ * $Header: fsConsist.h,v 6.0 88/08/11 12:15:14 brent Stable $ SPRITE (Berkeley)
+d45 1
+a45 1
+extern void		FsReopenHandle();
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+ * $Header: fsConsist.h,v 1.1 88/04/04 10:30:59 brent Exp $ SPRITE (Berkeley)
+d45 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+ * $Header: fsFile.h,v 5.7 87/11/02 10:43:56 brent Exp $ SPRITE (Berkeley)
+@

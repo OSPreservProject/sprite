@@ -1,0 +1,37 @@
+Following stuff is contained in this package:
+1. epic.sty	documentstyle option for "Enhancements to Picture
+		Environment". In its present form, will only work
+		with LaTeX.
+2. misc.sty 	documentstyle option containing miscalleneous macros.
+		In particular, one for printing files verbatim.
+		used by picman.tex; quite useful otherwise.
+3. picman.tex	manual for epic.
+4. picman-fig*.tex manual related files.
+5. sqrt.tex	appendix to manual.
+
+Run the manual in the directory as the one where all the files are. To run
+it, say "latex picman.tex".
+
+As is discussed on the first page of the manual, there are two ways
+of going about making the macro files acessible to users via the option
+mechanism of \documentstyle command:
+
+1. simplest is to put a copy in the directory where all such things
+reside (typically /usr/lib/tex/macros).
+
+2. keep the files somewhere in your area, and have all the users
+declare a shell environment variable TEXINPUTS (typically done in
+the ~/.cshrc file); something like:
+
+setenv TEXINPUTS .:/usr/lilb/tex/macros:/users/yourself/texlib
+
+Otherwise the files can be explicitly \input with full path name
+and the .sty extension:
+\input{/..../epic.sty}
+
+You might wish to move the manual files to a subdirectory "man";
+mkdir man
+mv picman* man
+
+Have fun.
+sunil podar

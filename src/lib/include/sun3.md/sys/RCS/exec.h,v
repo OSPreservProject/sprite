@@ -1,0 +1,137 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     91.03.29.18.07.16;  author shirriff;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.12.07.23.50.22;  author rab;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.05.09.00.14.42;  author rab;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.07.02.17.05.00;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.07.02.15.41.48;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.5
+log
+@Added dynamic linking flag.
+@
+text
+@/*
+ * Copyright (c) 1982, 1986 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@@(#)exec.h	7.1 (Berkeley) 6/4/86
+ */
+
+#ifndef _EXEC
+#define _EXEC
+
+/*
+ * Header prepended to each a.out file.
+ */
+struct exec {
+    unsigned int	a_dynamic	:1;
+    unsigned int	a_toolversion	:7;
+    unsigned char	a_machtype;	/* machine type */
+    unsigned short	a_magic;	/* magic number */
+    unsigned long	a_text;		/* size of text segment */
+    unsigned long	a_data;		/* size of initialized data */
+    unsigned long	a_bss;		/* size of uninitialized data */
+    unsigned long	a_syms;		/* size of symbol table */
+    unsigned long	a_entry;	/* entry point */
+    unsigned long	a_trsize;	/* size of text relocation */
+    unsigned long	a_drsize;	/* size of data relocation */
+};
+
+/*
+ * Magic numbers currently defined:
+ */
+
+#define	OMAGIC	0407		/* old impure format */
+#define	NMAGIC	0410		/* read-only text */
+#define	ZMAGIC	0413		/* demand load format */
+
+#define	SPRITE_ZMAGIC	0414		/* Uses Sprite pmegs */
+#define	UNIX_ZMAGIC	0415		/* Unix binary compatible */
+
+/*
+ * Machine types currently defined.  Warning:  if you add new machine
+ * types or change old ones, be sure to update the information in the
+ * library file a.out.c.
+ */
+
+#define M_68010		1
+#define M_68020		2
+#define M_SPARC         3
+
+#endif /* _EXEC */
+@
+
+
+1.4
+log
+@Unix compatibility.
+@
+text
+@d16 3
+a18 1
+    unsigned short	a_machtype;	/* machine type */
+@
+
+
+1.3
+log
+@*** empty log message ***
+@
+text
+@d35 3
+@
+
+
+1.2
+log
+@Better documentation.
+@
+text
+@d43 1
+d45 1
+a45 1
+#endif _EXEC
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d36 3
+a38 1
+ * Machine types currently defined:
+@

@@ -1,0 +1,12 @@
+#! /bin/sh
+# Find machine-dependent references to the named module in the Sprite
+# sources. 
+
+if [ $# != 1 ] ; then
+	echo "usage: mdrefs module_name"
+	exit 1
+fi
+
+module=$1
+
+aid $module | egrep "$module/(sun3|sun4|ds3100|symm).md" | grep -i "^$module"

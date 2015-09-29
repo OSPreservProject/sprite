@@ -1,0 +1,1388 @@
+
+
+
+MX                        User Commands                        MX
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     mx - Mouse-oriented editor for X
+
+SSYYNNOOPPSSIISS
+     mmxx [_o_p_t_i_o_n_s]  [_f_i_l_e _f_i_l_e _f_i_l_e ...]
+     mmxxssyynncc [_o_p_t_i_o_n_s]  [_f_i_l_e _f_i_l_e _f_i_l_e ...]
+
+OOPPTTIIOONNSS
+     --bbdd _c_o_l_o_r      Use _c_o_l_o_r as the border color for the window.
+                    If  this  switch isn't given then the bboorrddeerr--
+                    CCoolloorr X default is used.  If it  isn't  given
+                    either, then the foreground color is used.
+
+     --bbgg _c_o_l_o_r      Use _c_o_l_o_r as the  background  color  for  the
+                    window.   If this switch isn't given then the
+                    bbaacckkggrroouunndd X default is used.   If  it  isn't
+                    given  either,  or if the display is a black-
+                    and-white one, then White is used.
+
+     --DD             Causes mmxx  not  to  detach  itself  from  its
+                    parent  process.   Useful  when  mmxx is invoke
+                    from programs that wait  for  it  to  finish,
+                    like  mail  programs.  If mmxx is invoked under
+                    the name mmxxssyynncc  then  mmxx  acts  as  if  this
+                    switch had been given.
+
+     --ddiissppllaayy _h_o_s_t::_d_i_s_p_l_a_y
+                    Use _h_o_s_t and _d_i_s_p_l_a_y as an indication of  the  |
+                    display  on  which  to  open the window.  The  |
+                    display defaults to the one specified in  the  |
+                    DDIISSPPLLAAYY environment variable.                  |
+
+     --ff                                                                 ||
+                    Treat  all remaining arguments as file names.  |
+                    This option must be used to edit  a  file  if  |
+                    its  name starts with ``-'' or ``='' or ``+''  |
+                    or contains a ``:'' character.
+
+     --ffgg _c_o_l_o_r      Use _c_o_l_o_r as the  foreground  color  for  the
+                    window.   If this switch isn't given then the
+                    ffoorreeggrroouunndd X default is used.   If  it  isn't
+                    given  either,  or if the display is a black-
+                    and-white one, then Black is used.
+
+     --ffnn _f_o_n_t       Use _f_o_n_t as the font for the window.  If this
+                    switch  isn't  given, then the ffoonntt X default
+                    is used as  the  font.   If  it  isn't  given
+                    either, then the Sx default font is used.
+
+     --ggeeoommeettrryy _g_e_o_m_e_t_r_y
+
+
+
+Sprite v.1.0        Printed:  April 19, 1990                    1
+
+
+
+
+
+
+MX                        User Commands                        MX
+
+
+
+                    Use _g_e_o_m_e_t_r_y as the geometry for the  window.  |
+                    If  no  geometry  is specified on the command  |
+                    line, it the geometry defaults to  the  value  |
+                    of  the ggeeoommeettrryy X default.  If no default is  |
+                    specified, then mmxx picks a geometry.           |
+
+     --hheellpp                                                              ||
+                    Print  out a list of the command-line options  |
+                    (and brief descriptions of  their  functions)  |
+                    and exit without opening a window.             |
+
+     --iiccoonn _f_i_l_e                                                         ||
+                    _F_i_l_e  is the name of a file in bitmap format.  |
+                    Read the file and use it as the icon for  the  |
+                    window.    If  _f_i_l_e  is  llooccaallhhoosstt,  then  mmxx  |
+                    chooses the default icon  file  corresponding  |
+                    to the local host.                             |
+
+     --iixx _x_c_o_o_r_d                                                         ||
+                    Display the icon at x-coordinate _x_c_o_o_r_d.       |
+
+     --iiyy _y_c_o_o_r_d                                                         ||
+                    Display the icon at y-coordinate _y_c_o_o_r_d.
+
+     --ssbb _c_o_l_o_r      Use _c_o_l_o_r as the  background  color  for  the
+                    window's  scrollbar.   If  this  switch isn't
+                    given then the ssccrroollllbbaarr..bbaacckkggrroouunndd X default
+                    is  used.  If it isn't given either, then the
+                    background color for the text window is used.
+
+     --ssff _c_o_l_o_r      Use _c_o_l_o_r as the  foreground  color  for  the
+                    window's  scrollbar.   If  this  switch isn't
+                    given then the ssccrroollllbbaarr..ffoorreeggrroouunndd X default
+                    is  used.  If it isn't given either, then the
+                    foreground color for the text window is used.
+
+     --ssee _c_o_l_o_r      Use _c_o_l_o_r  as  the  color  for  the  window's
+                    scrollbar  elevator.   If  this  switch isn't
+                    given then the ssccrroollllbbaarr..eelleevvaattoorr  X  default
+                    is  used.  If it isn't given either, then the
+                    background color for the text window is used.
+
+     --sshhoowwttiittllee     Display a title bar at the top of the window.  |
+                    Mx  normally  assumes  that  a window manager  |
+                    will display a title  bar;   if  your  window  |
+                    manager  doesn't,  you  may  wish to use this  |
+                    switch.  If this switch isn't specified, then  |
+                    Mx  checks  for  a sshhoowwTTiittllee X default; if it  |
+                    exists and contains the string ``yes'',  then  |
+                    a title bar will be displayed.
+
+     --tt _t_a_g         Look up _t_a_g in the tags file of  the  current
+
+
+
+Sprite v.1.0        Printed:  April 19, 1990                    2
+
+
+
+
+
+
+MX                        User Commands                        MX
+
+
+
+                    directory,  open  its file in the new window,
+                    and go to the line of the tag.
+
+     --ttbb _c_o_l_o_r      Use _c_o_l_o_r as the  background  color  for  the
+                    window's  title  bar.   If  this switch isn't
+                    given then the ttiittllee..bbaacckkggrroouunndd X default  is
+                    used.   If  it  isn't  given either, then the
+                    background color for the text window is used.
+                    This option is ignored if Mx isn't displaying
+                    a title bar.
+
+     --ttff _c_o_l_o_r      Use _c_o_l_o_r as the  foreground  color  for  the
+                    window's  title  bar.   If  this switch isn't
+                    given then the ttiittllee..ffoorreeggrroouunndd X default  is
+                    used.   If  it  isn't  given either, then the
+                    foreground color for the text window is used.
+                    This option is ignored if Mx isn't displaying
+                    a title bar.
+
+     --ttss _c_o_l_o_r      Use _c_o_l_o_r as the color for the window's title
+                    stripes.  If this switch isn't given then the
+                    itle.stripe X default is used.  If  it  isn't
+                    given  either,  then the foreground color for
+                    the text window  is  used.   This  option  is
+                    ignored if Mx isn't displaying a title bar.
+
+     ++              Position the file so its last line is visible
+                    in the window.
+
+     ++_l_i_n_e_N_u_m_b_e_r    After opening  the  file,  select  the  first
+                    character  of  line "_l_i_n_e_N_u_m_b_e_r and make that
+                    line visible in the window.  For this switch,
+                    line  1  corresponds to the first line of the
+                    file.
+
+     ++_s_e_a_r_c_h_P_a_t_t_e_r_n After opening the file, search for _s_e_a_r_c_h_P_a_t_-
+                    _t_e_r_n,  just  as  if a sseeaarrcchh command had been
+                    invoked.  If the  first  character  of  _s_e_a_r_-
+                    _c_h_P_a_t_t_e_r_n  is  a  slash  then  the  slash  is
+                    ignored (this is for vi compatibility and  to
+                    permit  search  patterns  that  begin  with a
+                    digit).
+
+     ==_g_e_o_m_e_t_r_y      Use _g_e_o_m_e_t_r_y as the  geometry  specifier  for
+                    the  window  (same  effect  as  the --ggeeoommeettrryy
+                    ooppttiioonn))..
+
+     _h_o_s_t:_d_i_s_p_l_a_y   Use this argument to select  the  display  on
+                    which  to  create  the window (same effect as
+                    the --ddiissppllaayy option).
+
+_________________________________________________________________
+
+
+
+
+
+Sprite v.1.0        Printed:  April 19, 1990                    3
+
+
+
+
+
+
+MX                        User Commands                        MX
+
+
+
+IINNTTRROODDUUCCTTIIOONN
+     MMxx is a mouse-oriented editor that uses  the  facilities  of
+     the  X  window system, the Sx supplementary library, and the
+     Tcl command interpreter.  It displays  a  window  containing  |
+     the  first _f_i_l_e argument and permits _f_i_l_e to be edited using  |
+     the commands defined below.  If no _f_i_l_e is  specified,  then  |
+     mmxx displays a file containing a tutorial introduction to mmxx.  |
+     If _f_i_l_e is specified as an empty string, then mmxx  creates  a  |
+     scratch  window without any particular file association.  MMxx  |
+     normally detaches itself from its  parent  (as  far  as  its  |
+     parent is concerned, mmxx will have exited);  if the --DD switch  |
+     is given, or if mmxx is invoked under the name mmxxssyynncc, then mmxx  |
+     doesn't detach itself from its parent.
+
+     Almost all mmxx actions are invoked using Tcl  commands.   See
+     the  Tcl  documentation for information on the basic command
+     syntax and the built-in Tcl commands.  MMxx  extends  the  Tcl
+     built-in commands with additional commands for file editing;
+     the mmxx commands are described in the COMMANDS section below.
+     Commands  may  be invoked in any of three ways:  the command
+     subwindow, pull-down menus,  and  keystroke  bindings.   The
+     command  subwindow is a small entry window that is displayed
+     at the bottom of the mmxx window.  When it is displayed,  com-
+     mands may be entered there.  Pull-down menus appear in a bar
+     at the top of the mmxx window, and may be invoked by  pressing
+     a  mouse  button over the menu name and releasing it over an
+     entry in the menu.  Each menu entry has a command associated
+     with it;  when the entry is invoked, the command is executed
+     (see the mmeennuu command for information on how to  create  and
+     modify  menus).   The  third command invocation mechanism is
+     through keystroke bindings:  certain keystrokes, or combina-
+     tions  of  keystrokes,  have  commands associated with them.
+     When the keystroke sequence is typed, the associated command
+     is  executed  (see the bbiinndd command for details).  For exam-
+     ple, the ``a'' key is normally bound to the  command  iinnsseerrtt
+     aa,  which causes character ``a'' to be inserted at the caret
+     location.
+
+     Many commands may be invoked either through a menu entry  or
+     a  keystroke  binding;   for  these  commands, the keystroke
+     sequence bound to the command appears at the right  side  of
+     the menu entry.
+
+
+..MMXX FFIILLEESS
+     After processing command line options, opening  the  window,
+     and  reading  in  the file, mmxx checks for the existence of a
+     file ..mmxx in your home  directory  (which  is  given  by  the
+     environment variable HOME).  If the file exists, mmxx reads it
+     in and processes it as a command file, just as  if  it  were
+     read  with  the  ssoouurrccee  command.  Then it checks for an ..mmxx
+     file in the  current  directory,  and  processes  it  if  it
+
+
+
+Sprite v.1.0        Printed:  April 19, 1990                    4
+
+
+
+
+
+
+MX                        User Commands                        MX
+
+
+
+     exists.
+
+
+CCAARREETT AANNDD SSEELLEECCTTIIOONN
+     The mouse may be used to position the caret  (the  insertion
+     point) and to select ranges of text.  The same actions apply
+     both to the file or to the search  and  command  subwindows.
+     Left-clicking on a character positions the caret just before
+     that character.  Right-clicking will select all of the char-
+     acters  from  the  caret  up  to and including the character
+     under the pointer.  If the left button is clicked  twice  in
+     quick  succession  without moving the mouse, it invokes word
+     selection:  the word  containing  the  character  under  the
+     pointer  is  selected,  the  caret is positioned at the left
+     side of the word, and future right clicks will  select  only
+     full  words.   If  the  left  button is triple-clicked, line
+     selection will be invoked.  If the control key is held  down
+     while  left-  and  right-clicking, the selection will be set
+     without changing the caret or input focus.
+
+
+VVAARRIIAABBLLEESS
+     There are several Tcl global variables that are set or  used
+     by mmxx in some situations:
+
+          ffiillee Set by mmxx to the name of the file  loaded  in  the
+               window (which is the first name in $$ffiilleess.          |
+
+          ffiilleess                                                         ||
+               Set  by  mmxx  to  a  list of all the _f_i_l_e arguments  |
+               specified on the command  line  that  created  the  |
+               window.
+
+          ggeeoommeettrryy
+               Geometry to use when creating new windows, if none
+               is  given  as  part  of the ooppeenn command.  See the
+               ooppeenn command for details.
+
+          hheeiigghhtt
+               Set by mmxx to indicate the height of the window, in
+               lines  of text.  If the last line appearing in the
+               window  is  only  partially  visible,  it  doesn't
+               count.
+
+          hheellppDDiirr
+               MMxx presets this variable to the  location  of  the
+               directory  containing help information such as the
+               tutorials.
+
+          hhiissttoorryy
+               MMxx automatically changes  this  variable  on  each
+               mouse  click  to  hold  information  about all the
+
+
+
+Sprite v.1.0        Printed:  April 19, 1990                    5
+
+
+
+
+
+
+MX                        User Commands                        MX
+
+
+
+               recently-executed  commands.    Several   of   the
+               default  key  bindings  and  menu entries also set
+               this variable.  See the HISTORY  section  and  the
+               hhiissttoorryy command for more information.
+
+          nneewwWWiinnddooww
+               During the ooppeenn command, mmxx sets this global vari-
+               able to hold the id of the newly-created window.
+
+          nnooRReeggEExxppss
+               If this variable is set  to  ``1'',  searches  and
+               replaces will use plain strings.  By default, pat-
+               tern matching takes place  with  vi-style  regular
+               expressions.
+
+          rreeppllaacceeCCmmdd
+               When  the  middle  button  is   clicked   in   the
+               ``Replace''  string entry, or when carriage-return
+               is typed there, the contents of this variable  are
+               executed as a command.
+
+          rreeppllaacceeSSttrriinngg
+               Set by mmxx to hold the contents of the  replacement
+               entry subwindow.
+
+          sseeaarrcchhCCmmdd
+               When  the  middle  button  is   clicked   in   the
+               ``Search''  string  entry, or when carriage-return
+               is typed there, the contents of this variable  are
+               executed as a command.
+
+          sseeaarrcchhSSttrriinngg
+               Set by mmxx to hold the contents of the search entry
+               subwindow.
+
+          ttaaggFFiilleess
+               List of  tags  files  to  check  in  ttaagg  command,
+               separated by white space.  See the ttaagg command for
+               details.  This variable is  read  by  mmxx  but  not
+               written.
+
+          vveerrssiioonn
+               Set by mmxx to hold a version  number  in  the  form  |
+               _x._y,  where changes in _x correspond to major revi-  |
+               sions with probable incompatibilities, and changes  |
+               in  _y  represent small bug fixes and upgrades that  |
+               should not cause substantial  compatibility  prob-  |
+               lems.
+
+          wwiiddtthh
+               The width of the window, in  characters.   If  the
+               last character position is only partially-visible,
+
+
+
+Sprite v.1.0        Printed:  April 19, 1990                    6
+
+
+
+
+
+
+MX                        User Commands                        MX
+
+
+
+               then it doesn't count.  If a  variable-width  font
+               is  being used, the average character size is used
+               in computing the window's width.
+
+
+MMAARRKKSS
+     A mark is a string that identifies a position in  the  file.
+     It has the format
+
+          _l_i_n_e.._c_h_a_r
+     where _l_i_n_e is a line number in the file and _c_h_a_r is a  posi-
+     tion within that line.  For historical reasons, lines number
+     from 1 and characters number from 0.
+
+     Most commands that deal with positions in the file, such  as
+     sseeee  and  ddeelleettee, take marks as arguments.  Typically, marks
+     are stored as the values of  variables,  although  they  may
+     also  be  typed  in directly.  The mmaarrkk command provides for
+     simple mark arithmetic.  The position indicated  in  a  mark
+     need  not  actually exist in the file;  at the time the mark
+     is used it is rounded off to the closest actual position  in
+     the  file.  For example, if the line number doesn't exist in
+     the file then it is changed to the last line;  if the  char-
+     acter  position  would like off the end of the line, then it
+     is rounded to the position of  the  last  character  in  the
+     line.
+
+     When a command specifies that one of its arguments must be a
+     mark, the mark may either be specified in the _l_i_n_e._c_h_a_r form
+     (either directly or through command  or  variable  substitu-
+     tion),  or it may be specified symbolically using one of the
+     following names, which refer to special locations:
+
+     bboottttoomm
+          This special mark refers to the character that  appears
+          in the bottom left corner of the window.
+
+     ccaarreett
+          The special mark ccaarreett  corresponds  to  the  character
+          just to the right of the caret position.
+
+     cceenntteerr
+          The leftmost character on the center line of  the  win-
+          dow.
+
+     eeooff  The last character in the file (which is always a  new-
+          line character).
+
+     sseell..lleefftt
+          The leftmost selected character.  This form of mark may
+          only  be used if the selection is in the file that's in
+          this window.
+
+
+
+Sprite v.1.0        Printed:  April 19, 1990                    7
+
+
+
+
+
+
+MX                        User Commands                        MX
+
+
+
+     sseell..rriigghhtt
+          The rightmost selected character.  This  form  of  mark
+          may only be used if the selection is in the file that's
+          in this window.
+
+     ttoopp  The character that appears in the top  left  corner  of
+          the window.
+
+
+HHIISSTTOORRYY
+     Under normal circumstances, MMxx continuously records all  the
+     top-level  commands  being  executed, including those coming
+     from keystrokes, menu entries, and the command, search,  and
+     replace  subwindows.   On each button click, undo, or search
+     operation, all of the recorded commands  are  saved  in  the
+     variable  hhiissttoorryy  and the record is cleared.  Thus the hhiiss--
+     ttoorryy variable describes all the  commands  executed  between
+     the  last  two  events  in  the above group.  It may then be
+     invoked as a command to repeat recent actions.
+
+     Under normal circumstances, mmxx does not  record  information
+     about  mouse  clicks,   searching,  undoing, or hhiissttoorryy com-
+     mands.  In  addition,  changes  of  focus  to  the  command,
+     search,  or  replace  subwindows  are not normally recorded.
+     Having these commands included in the hhiissttoorryy variable turns
+     out  to cause more trouble than good.  However, much of this
+     behavior is enforced by using the hhiissttoorryy command in the key
+     bindings  and  menus  established by the mmxx startup file, so
+     you can change  it  if  you  wish.   Only  the  mouse  click
+     behavior  and  mmxx's  refusal  to record hhiissttoorryy commands are
+     hard-wired.  See the hhiissttoorryy command for information on  how
+     to control command recording.
+
+
+CCOOMMMMAANNDDSS
+     The mmxx built-in commands are described below.   In  addition
+     to these commands, any of the Tcl built-in commands may also
+     be used.  Whenever a top-level command is invoked  (i.e.  in
+     response to a keystroke or menu selection, as opposed to the
+     execution of a command procedure), if it returns a non-empty
+     result  then  the result is displayed in the message window.
+     If the command returns an error then the  error  message  is
+     displayed in the message window.
+
+     bbiinndd [_s_e_q_u_e_n_c_e [_c_o_m_m_a_n_d]]
+          If the _s_e_q_u_e_n_c_e and _c_o_m_m_a_n_d arguments are  given,  this
+          command associates the keystroke sequence _s_e_q_u_e_n_c_e with
+          _c_o_m_m_a_n_d and returns an  empty  string.   From  now  on,
+          whenever  _s_e_q_u_e_n_c_e  is  typed  in  the  window, the Tcl
+          interpreter will be invoked  to  execute  _c_o_m_m_a_n_d.   If
+          _s_e_q_u_e_n_c_e  is  already  bound to a command, then _c_o_m_m_a_n_d
+          replaces the previous binding.  If there are two  bound
+
+
+
+Sprite v.1.0        Printed:  April 19, 1990                    8
+
+
+
+
+
+
+MX                        User Commands                        MX
+
+
+
+          sequences  of  which one is a prefix of the other, then
+          the shorter sequence will always match in preference to
+          the  longer  one.   If _c_o_m_m_a_n_d is an empty string, then
+          the binding for _s_e_q_u_e_n_c_e (if any) is  deleted,  leaving
+          _s_e_q_u_e_n_c_e unbound.
+
+          If the first character of _c_o_m_m_a_n_d is ``!'',  it  signi-
+          fies that no undo marks are to be generated around this
+          command;  the ``!'' is stripped from the command before
+          executing  it.   If  several  key bindings in a row are
+          invoked and each had the ``!'' prefix, then all of  the
+          invocations  will  be undone together as a single unit.
+          If _c_o_m_m_a_n_d consists of nothing but the character  ``@@''
+          (optionally  preceded  by  ``!''),  then  whenever this
+          binding is invoked the command ``iinnsseerrtt _k_e_y''  will  be
+          executed,  where  _k_e_y is the last key typed on the key-
+          board.  ``!!@@'' is typically used as the binding for all
+          the standard ASCII characters.
+
+          If _c_o_m_m_a_n_d  isn't  specified,  then  the  _b_i_n_d  command
+          returns  the current binding for _s_e_q_u_e_n_c_e, or the empty
+          string if there is no binding for _s_e_q_u_e_n_c_e.  If neither
+          _s_e_q_u_e_n_c_e  or  _c_o_m_m_a_n_d is given, then bbiinndd returns a Tcl
+          list whose elements are the _s_e_q_u_e_n_c_es  associated  with
+          all known keystroke bindings.
+
+     ccaarreett _m_a_r_k
+
+     ccaarreett ddiissppllaayy _t_y_p_e
+          In the single-argument form of this command, the  caret  |
+          is  moved  to just before the character at the position  |
+          given by _m_a_r_k.  The two-argument form is used to change  |
+          the  way  the  caret position is displayed.  If _t_y_p_e is  |
+          ccaarreett, the caret position  will  always  be  marked  by  |
+          displaying a caret just before the caret character.  If  |
+          _t_y_p_e is bblloocckk, the caret position  will  be  marked  by  |
+          displaying  the  caret  character in reverse video.  If  |
+          _t_y_p_e is ooffff, then the caret position will not be marked  |
+          with  any  sort of special display.  Finally, a _t_y_p_e of  |
+          vviibblloocckk marks the caret position with a block  when  in  |
+          vi  mode  and with a caret otherwise (this mode is only  |
+          relevant for ttxx).  The ccaarreett command returns  an  empty  |
+          string.
+
+     cclleeaann
+          Pretend that the contents  of  this  window  were  just
+          written  to  disk  (but don't actually write anything).
+          Until the next time  the  file  is  modified,  mmxx  will
+          assume  that  the  window  is ``clean'':  if you invoke
+          commands like qquuiitt or sswwiittcchh then mmxx will happily  dis-
+          card  the contents of the window without warning you or
+          giving you a chance to abort the command.
+
+
+
+Sprite v.1.0        Printed:  April 19, 1990                    9
+
+
+
+
+
+
+MX                        User Commands                        MX
+
+
+
+     ccoolluummnn _m_a_r_k
+          Return the column corresponding to the left edge of the
+          character at the position indicated by _m_a_r_k.  _M_a_r_k must
+          be a valid mark.  Columns are computed by treating nor-
+          mal  characters  as one column wide, control characters
+          as two columns wide, and tabs as wide enough to  extend
+          up  to  the  next  8-column boundary.  Character 0 of a
+          line is at column 0.
+
+     ccoonnttrrooll _o_p_t_i_o_n _s_t_r_i_n_g
+          This command performs control-character  processing  on
+          _s_t_r_i_n_g, depending on the value of ooppttiioonn (abbreviations
+          are OK):
+
+          ccoonnttrrooll bbaacckkssllaasshh _s_t_r_i_n_g
+               Returns a  string  that  is  identical  to  _s_t_r_i_n_g
+               except  that  non-printing characters are replaced
+               with backslash  sequences.   The  newline  control
+               character  is  replaced  with  \\nn, tab is replaced
+               with \\tt, backspace is replaced with  \\bb,  and  any
+               other non-printing character is replaced with \\_d_d_d
+               where _d_d_d gives the octal value of the character.
+
+          ccoonnttrrooll bbiinnddiinngg _s_t_r_i_n_g
+               This command is used primarily to produce a print-
+               able  description  of a keystroke sequence that is
+               bound to a command.  It returns a string  consist-
+               ing of space-separated fields corresponding to the
+               characters of _s_t_r_i_n_g.  If a  _s_t_r_i_n_g  character  is
+               space,  its  corresponding field is ``SPACE'';  if
+               the _s_t_r_i_n_g character is a normal printing  charac-
+               ter then the field is just that character;  if the
+               _s_t_r_i_n_g character is rubout (1778) the  correspond-
+               ing field is ``DEL''; if the _s_t_r_i_n_g character is a
+               control character, the corresponding field  is  of
+               the  form ``C-a''; if the _s_t_r_i_n_g character has its
+               high-order bit set (2008), then the field  is  the
+               same as if the high-order bit were not set, except
+               that ``M-'' is prepended (3018 translates to  ``M-
+               A'').
+
+          ccoonnttrrooll mmaakkee _s_t_r_i_n_g
+               Returns a string of the  same  length  as  _s_t_r_i_n_g.
+               Each  character  in  the  result  is  the  control
+               equivalent of the _s_t_r_i_n_g  character  (e.g.,  ``a''
+               and  ``A''  convert  to control-A).  The character
+               ``?'' converts to rubout (1778).  You may not  use
+               this command to generate a null character (0).
+
+     ddeelleettee _m_a_r_k_1 [_m_a_r_k_2 [nnoovviieewwcchhaannggee]]
+          Delete all of the characters between _m_a_r_k_1  and  _m_a_r_k_2,
+          inclusive.   If  _m_a_r_k_2 isn't specified, then delete the
+
+
+
+Sprite v.1.0        Printed:  April 19, 1990                   10
+
+
+
+
+
+
+MX                        User Commands                        MX
+
+
+
+          single character  at  _m_a_r_k_1.   Normally,  this  command
+          changes  the  view in the window if necessary to ensure
+          that  the  point  of  the  deletion  is  visible;    if
+          nnoovviieewwcchhaannggee  is  specified then the view in the window
+          will not be changed.  Returns an empty string.
+
+     eexxttrraacctt _m_a_r_k_1 [_m_a_r_k_2]
+          Return as result all of  the  characters  in  the  file
+          between  the  two  marks  _m_a_r_k_1 and _m_a_r_k_2.  If _m_a_r_k_2 is
+          omitted, then return the single character at _m_a_r_k_1.
+
+     ffooccuuss _w_i_n_d_o_w [cclleeaarr]
+          Arrange for all future keyboard input to be directed to
+          _w_i_n_d_o_w,  regardless of the mouse position.  _W_i_n_d_o_w must
+          have one of the following values (or a unique abbrevia-
+          tion for it):
+
+          ccoommmmaanndd
+               The command window that appears at the  bottom  of
+               the file.
+
+          ffiillee The main window, which  displays  the  file  being
+               edited.
+
+          rreeppllaaccee
+               The  replace  entry,  which   is   part   of   the
+               search/replace window that appears just underneath
+               the menu bar.
+
+          sseeaarrcchh
+               The search entry in the search/replace window.
+
+          If _w_i_n_d_o_w isn't displayed when this command is invoked,
+          mmxx  displays  it.   Ifthe cclleeaarr option is specified (or
+          any abbreviation of cclleeaarr) then  the  contents  of  the
+          given  window are cleared.  The cclleeaarr option is ignored
+          if _w_i_n_d_o_w is ffiillee.  If input focussing  has  been  dis-
+          abled  by  the  .Xdefaults  file,  then ffooccuuss will open
+          and/or clear _w_i_n_d_o_w, but will not focus on it.  Returns
+          an empty string.
+
+     ggeeoommeettrryy _s_p_e_c
+          Set the size and/or location of the window according to
+          the  information  in _s_p_e_c.  _S_p_e_c should be in the stan-
+          dard format for X geometry specifications (==8800xx2244,  for
+          example).  Returns an empty string.
+
+     hhiissttoorryy _o_p_t_i_o_n [_a_r_g]
+          Control the history recording process.  The exact func-
+          tion  depends  on  _o_p_t_i_o_n  (which  may  be  abbreviated
+          uniquely):
+
+
+
+
+Sprite v.1.0        Printed:  April 19, 1990                   11
+
+
+
+
+
+
+MX                        User Commands                        MX
+
+
+
+          hhiissttoorryy aadddd _i_n_f_o
+               Append _i_n_f_o to the current history record as if it
+               had  been  invoked as a command.  Returns an empty
+               string.
+
+          hhiissttoorryy cclleeaarr
+               Discard all of the information in the current his-
+               tory record.  Returns an empty string.
+
+          hhiissttoorryy iiggnnoorree _c_o_m_m_a_n_d
+               Execute _c_o_m_m_a_n_d but don't record it in the history
+               record.   Note  that  no hhiissttoorryy commands are ever
+               recorded, even if they don't appear as the _c_o_m_m_a_n_d
+               argument  to  hhiissttoorryy  iiggnnoorree.   Returns  an empty
+               string.
+
+          hhiissttoorryy iinnffoo
+               Returns the current history record, with  commands
+               separated by newlines.
+
+          hhiissttoorryy nneexxtt _v_a_r_N_a_m_e [_c_o_m_m_a_n_d]
+               Store the current history record in  the  variable
+               _v_a_r_N_a_m_e,  then  clear  the  history record.  After
+               clearing the history record, if _c_o_m_m_a_n_d is  speci-
+               fied then execute it but don't record it.  Returns
+               an empty string.
+
+          hhiissttoorryy ooffff
+               Disable history recording.  Invocations of hhiissttoorryy
+               ooffff  nest:   recording  will  not  resume until an
+               equal number of  hhiissttoorryy  oonn  commands  have  been
+               invoked.  Returns an empty string.
+
+          hhiissttoorryy oonn
+               Re-enable  history  recording  if  the  cumulative
+               number  of  hhiissttoorryy oonn commands is greater than or
+               equal to the number of hhiissttoorryy ooffff commands.  This
+               command is ignored if history recording is already
+               enabled.  Returns an empty string.
+
+     iinnddeenntt _m_a_r_k_1 _m_a_r_k_2 [++|--] _a_m_o_u_n_t
+          Change the indentation of all the lines  between  _m_a_r_k_1
+          and _m_a_r_k_2, inclusive.  If no sign is given, then _a_m_o_u_n_t
+          specifies an absolute indentation:   for  each  of  the
+          lines,  the  indentation  will  be  set  to _a_m_o_u_n_t.  If
+          _a_m_o_u_n_t is preceded by a minus (plus) argument, then the
+          indentation of each line will be reduced (increased) by
+          _a_m_o_u_n_t units.  To set the indentation for a line to  _i,
+          mmxx deletes all the leading blanks and tabs in the line,
+          then inserts _i/8 tabs followed by  (_i  mod  8)  spaces.
+          Returns an empty string.
+
+
+
+
+Sprite v.1.0        Printed:  April 19, 1990                   12
+
+
+
+
+
+
+MX                        User Commands                        MX
+
+
+
+     iinnsseerrtt _b_y_t_e_s [_m_a_r_k]
+          If _m_a_r_k is specified, it contains a mark;  iinnsseerrtt  will
+          insert  the  contents of the _b_y_t_e_s argument just before
+          the character at position _m_a_r_k.  Otherwise the  command
+          will  insert  _b_y_t_e_s  at  the  position  of  the  caret.
+          Returns an empty string.
+
+     mmaarrkk _s_r_c _o_p _a_r_g_s
+          Return a position in the file in  the  form  _l_i_n_e._c_h_a_r,
+          where  _l_i_n_e is a line in the file and _c_h_a_r is a charac-
+          ter in the line (lines number from 1,  characters  from
+          0).  _S_r_c must be a valid mark; the return value is com-
+          puted by performing  some  operation  on  the  position
+          given by _s_r_c, depending on _o_p and _a_r_g_s:
+
+          mmaarrkk _s_r_c
+               Return the value of mark _s_r_c.  This form  is  used
+               to  retrieve  the value of a built-in mark such as
+               sseell..lleefftt.
+
+          mmaarrkk _s_r_c _d_i_r_e_c_t_i_o_n _a_m_o_u_n_t _u_n_i_t_s
+               Return the position of the character _a_m_o_u_n_t  _u_n_i_t_s
+               away  from _s_r_c.  _S_r_c must be a valid mark.  _D_i_r_e_c_-
+               _t_i_o_n must be ffoorrwwaarrdd  or  bbaacckkwwaarrdd;  it  indicates
+               which  direction  to  move  from _s_r_c.  _A_m_o_u_n_t is a
+               decimal number indicating how  far  to  move,  and
+               _u_n_i_t_s  indicates  the  units  for  motion:  cchhaarrss,
+               wwoorrddss, or lliinneess.  For example, mmaarrkk $$bb  ffoorrwwaarrdd  11
+               wwoorrdd will set variable aa to point to the beginning
+               of the word just  after  the  one  containing  the
+               position indicated by variable bb.
+
+          mmaarrkk _s_r_c cchhaarr _i_n_d_e_x
+               Return the position of the _i_n_d_e_x'th  character  in
+               the  line  given by _s_r_c.  If _i_n_d_e_x is -1, then _d_s_t
+               will refer to the last character on _s_r_c's line.
+
+          mmaarrkk _s_r_c ccoolluummnn _i_n_d_e_x
+               Return the position of the character  that  covers
+               column  _i_n_d_e_x on the line containing _s_r_c.  Columns
+               are computed by treating normal characters as  one
+               space wide, control characters as two spaces wide,
+               tabs as wide enough to extend up to  the  next  8-
+               column boundary, and the newline at the end of the
+               line as infinitely wide.  Columns number from 0.
+
+          mmaarrkk _s_r_c lliinnee _i_n_d_e_x
+               Return the position whose line number is _i_n_d_e_x but
+               whose character position is the same as _s_r_c's.
+
+          mmaarrkk _s_r_c ppaarreenntthheessiiss [_v_a_r_N_a_m_e]
+               Return the position of the first character of  the
+
+
+
+Sprite v.1.0        Printed:  April 19, 1990                   13
+
+
+
+
+
+
+MX                        User Commands                        MX
+
+
+
+               parenthesis  that  matches  the  one pointed to by
+               _s_r_c.  If _s_r_c doesn't point to a parenthesis,  then
+               return  _s_r_c.   If  _v_a_r_N_a_m_e  is  specified, then it
+               names a variable that is set to refer to the  last
+               character   of   the  matching  parenthesis  (this
+               feature is only useful for  parentheses  that  are
+               more than one character long).
+
+          mmaarrkk _s_r_c sseeaarrcchh _d_i_r_e_c_t_i_o_n _p_a_t_t_e_r_n [_v_a_r_N_a_m_e]
+               Search for _p_a_t_t_e_r_n and return the position of  the
+               first character of the matching range.  If _v_a_r_N_a_m_e
+               is given, it names a variable that is set  to  the
+               last  character of the matching range.  The search
+               starts at the position given by _s_r_c and  continues
+               in  _d_i_r_e_c_t_i_o_n,  which  must  be  either ffoorrwwaarrdd or
+               bbaacckkwwaarrdd.  The search is circular:  if  a  forward
+               search reaches the end of the file then it contin-
+               ues  at  the  beginning;   if  a  backward  search
+               reaches  the beginning of the file then it contin-
+               ues at the end.  If no match is found, then _s_r_c is
+               returned (and stored in the variable named by _v_a_r_-
+               _N_a_m_e, if specified).
+
+     mmeennuu _o_p_t_i_o_n [args]
+          The mmeennuu command is used to  manipulate  the  pull-down
+          menus  displayed  at  the  top  of  the window.  It has
+          several forms, depending on _o_p_t_i_o_n:
+
+          mmeennuu aappppeenndd _n_a_m_e _l_e_f_t_T_e_x_t _c_e_n_t_e_r_T_e_x_t _r_i_g_h_t_T_e_x_t _c_o_l_o_r _c_m_d
+               Append  a  new  entry  onto  menu _n_a_m_e, which must
+               already  exist.   The  _l_e_f_t_T_e_x_t,  _c_e_n_t_e_r_T_e_x_t,  and
+               _r_i_g_h_t_T_e_x_t  arguments  give strings to be displayed
+               left-justified,  centered,   and   right-justified
+               (respectively)  in  the menu entry.  If any of the
+               arguments is an empty string or the single charac-
+               ter ``-'', then no text is displayed in that posi-
+               tion.  _C_o_l_o_r gives the background color to use for
+               the entry;  if it is an empty string or ``-'' then
+               the standard background color for  the  window  is
+               used.   _C_m_d  is  a  command to invoke whenever the
+               menu entry is invoked.  Returns an empty string.
+
+          _l_e_f_t_T_e_x_t ...
+          mmeennuu ccrreeaattee _n_a_m_e _l_e_f_t_T_e_x_t  _c_e_n_t_e_r_T_e_x_t  _r_i_g_h_t_T_e_x_t  _c_o_l_o_r  _c_m_d
+               Create  a new menu, which will be displayed to the
+               right of any existing menus in the menu bar.   The
+               new menu's name will be _n_a_m_e.  If there is already
+               a menu named _n_a_m_e, then it will be  replaced  (the
+               new menu will occupy the same position in the menu
+               bar as the old menu).  Following the _n_a_m_e argument
+               are  any  number of groups of five arguments, with
+               each group describing one entry in  the  new  menu
+
+
+
+Sprite v.1.0        Printed:  April 19, 1990                   14
+
+
+
+
+
+
+MX                        User Commands                        MX
+
+
+
+               from  top  down.  The five arguments for each menu
+               entry have the same meaning as  for  mmeennuu  aappppeenndd.
+               Returns an empty string.
+
+          mmeennuu ddeelleettee _n_a_m_e
+               Delete the menu named _n_a_m_e  and  return  an  empty
+               string.
+
+          mmeennuu iinnffoo
+               Return a Tcl list whose entries are the  names  of
+               the menus for this window, in order.
+
+          mmeennuu iinnffoo _n_a_m_e
+               Returns a Tcl list  containing  information  about
+               menu  _n_a_m_e.  Each entry in the list corresponds to
+               one entry in the menu, in  order  from  top  down.
+               Each entry is itself a Tcl list with four entries,
+               which are the _l_e_f_t_T_e_x_t, _c_e_n_t_e_r_T_e_x_t, _r_i_g_h_t_T_e_x_t, and
+               _c_m_d values from mmeennuu ccrreeaattee or mmeennuu aappppeenndd.
+
+          _c_o_l_o_r _c_m_d
+          mmeennuu mmooddiiffyy _n_a_m_e _e_n_t_r_y_I_n_d_e_x  _l_e_f_t_T_e_x_t  _c_e_n_t_e_r_T_e_x_t  _r_i_g_h_t_T_e_x_t
+               Change  the  _e_n_t_r_y_I_n_d_e_x'th  entry  in menu _n_a_m_e as
+               indicated by arguments _l_e_f_t_T_e_x_t through _c_m_d.  Each
+               of these five arguments has the same meaning as in
+               mmeennuu aappppeenndd.  Entry 0 is the topmost entry in  the
+               menu.  Returns an empty string.
+
+     mmeessssaaggee _s_t_r_i_n_g                                                     ||
+          Display _s_t_r_i_n_g in the message subwindow.
+
+     nneewwlliinnee
+          Insert a newline  character  at  the  position  of  the
+          caret,  and adjust indentation.  If the caret's initial
+          line consists of nothing but space, then all the  space
+          on  the  line  is deleted.  If the caret's initial line
+          contains leading space, it is reorganized to consist of
+          zero  or more tabs followed by zero or more space char-
+          acters, such that the total width of white space is the
+          same after the change as before (a tab counts for eight
+          characters).  Tabs  and  spaces  are  inserted  on  the
+          caret's  new  line  to  match  the  indentation  of the
+          caret's initial line.
+
+     ooppeenn [_o_p_t_i_o_n_s] _f_i_l_e _f_i_l_e ...
+          Open a new window.   _O_p_t_i_o_n_s  and  _f_i_l_e  arguments  are  |
+          treated  just  the same as they are treated on the com-  |
+          mand line, except for the following exceptions.  The --DD  |
+          option is not permitted, nor are options that specify a  |
+          display.  If _f_i_l_e is not specified,  a  new  window  is  |
+          opened  on  the same file as the current window.  If no  |
+          geometry specification is given  in  _o_p_t_i_o_n_s,  then  mmxx  |
+
+
+
+Sprite v.1.0        Printed:  April 19, 1990                   15
+
+
+
+
+
+
+MX                        User Commands                        MX
+
+
+
+          uses  the contents of the global variable ggeeoommeettrryy as a  |
+          default geometry;  if no ggeeoommeettrryy variable exists, then  |
+          mmxx  picks  a  default geometry.  Other options, such as  |
+          foreground color and font, default to the  values  from  |
+          the   invoking   window,  rather  than  looking  for  X  |
+          defaults.  OOppeenn sets the global variable  nneewwWWiinnddooww  in  |
+          the invoking window to hold the id of the newly-created  |
+          window.  This may be used in conjunction with the  sseenndd  |
+          command  to  issue  commands  to  the  new window.  The  |
+          return value is always an empty string.
+
+     qquuiitt Destroy the window.  If this is the last remaining win-
+          dow on its file and if the file has been modified since
+          the last time it was written, then the user is notified
+          and  given  a chance to save the file or abort the com-
+          mand.  This command always returns an error,  in  order
+          to  abort  any  partially-executed commands that are in
+          progress (execution of further commands on  the  window
+          could cause a core dump).
+
+     qquuoottee
+          Quote the next input character.  The  mapping  for  the  |
+          next  character  will be ignored and the character will  |
+          be inserted.  The  return  value  is  always  an  empty  |
+          string.
+
+     rreeaadd _f_i_l_e
+          Read _f_i_l_e and  insert  its  contents  just  before  the
+          caret.
+
+     rreeppllaaccee [_o_p_t_i_o_n _a_r_g_s]
+          Replace the selection,  as  determined  by  _o_p_t_i_o_n  and
+          _a_r_g_s:
+
+          rreeppllaaccee
+               If no _o_p_t_i_o_n is given, then replace the  selection
+               by the value of the rreeppllaacceeSSttrriinngg global variable.
+               If the search subwindow isn't  visible,  don't  do
+               any  replacement but open the search subwindow and
+               focus input on the replacement string entry.
+
+          rreeppllaaccee rraannggee _s_t_a_r_t _s_t_o_p [_p_a_t_t_e_r_n _s_t_r_i_n_g]
+               Search the range of text between the  marks  _s_t_a_r_t
+               and  _s_t_o_p,  inclusive  for occurrences of _p_a_t_t_e_r_n.
+               Replace each occurrence with _s_t_r_i_n_g.   If  _p_a_t_t_e_r_n
+               and  _s_t_r_i_n_g  aren't specified, then they are taken
+               from the  sseeaarrcchhSSttrriinngg  and  rreeppllaacceeSSttrriinngg  global
+               variables.  If the search subwindow isn't visible,
+               don't do  any  replacement  but  open  the  search
+               subwindow  and  focus  input  on  the  replacement
+               string  entry.   By  default,   vi-style   regular  |
+               expressions   are   used   for   the  pattern  and  |
+
+
+
+Sprite v.1.0        Printed:  April 19, 1990                   16
+
+
+
+
+
+
+MX                        User Commands                        MX
+
+
+
+               replacement  strings.   If  the  variable  ``noRe-  |
+               gExps''  is  set to ``1'', only simple matching is  |
+               done: there are no wild cards.   Matches  must  be  |
+               within a single line of the file.
+
+          rreeppllaaccee sseelleeccttiioonn _s_t_r_i_n_g
+               Delete the selection  and  insert  _s_t_r_i_n_g  in  its
+               place.
+     The rreeppllaaccee command always returns an empty string.
+
+     rreesseett
+          Discard the version  of  the  file  that  is  currently  |
+          loaded  in  memory  and  re-load the file from its disk  |
+          version.  Any changes that have  been  made  since  the  |
+          last  time  the file was saved will be lost (but you'll  |
+          be warned in this case and given a chance to  skip  the  |
+          command).   This command will affect all of the windows  |
+          open on the file.
+
+     sseeaarrcchh [_d_i_r_e_c_t_i_o_n [_p_a_t_t_e_r_n]]
+          Search for a  pattern.   The  search  starts  from  the
+          beginning  of the selection (if there is a selection in
+          the window's file), or from the  caret  if  there's  no
+          selection.   _D_i_r_e_c_t_i_o_n  indicates  which  direction  to
+          search, and must be either  ffoorrwwaarrdd  or  bbaacckkwwaarrdd.   If
+          omitted,  it defaults to ffoorrwwaarrdd.  _P_a_t_t_e_r_n gives a text
+          string to search for;  if not given, it defaults to the
+          global  variable sseeaarrcchhSSttrriinngg.  If the search subwindow
+          isn't visible, don't do  any  searching  but  open  the
+          search  subwindow  and focus input on the search string
+          entry.  By default, vi-style  regular  expressions  are  |
+          used  for  the pattern and replacement strings.  If the  |
+          variable ``noRegExps'' is set  to  ``1'',  only  simple  |
+          matching  is  done:  there  are no wild cards.  Matches  |
+          must be within a single line of the file.  If  a  match
+          is  found, the matching range is selected and the caret
+          is set to the beginning of the range.  Returns an empty
+          string.
+
+     sseeee _m_a_r_k [[ttoopp|cceenntteerr|bboottttoomm]
+          Adjust the view in the window so that the character  at
+          _m_a_r_k  is  visible in the window.  If a ttoopp or cceenntteerr or
+          bboottttoomm option is given, then the mark  will  appear  at
+          the  given  position  in the window.  If no position is
+          given, then mmxx will check to see  if  _m_a_r_k  is  already
+          visible.   If  so,  it  does  nothing.  If not, it will
+          center _m_a_r_k in the window.  Returns an empty string.
+
+     sseelleeccttiioonn _o_p_t_i_o_n [_a_r_g ...]
+          This command performs one of several  selection-related
+          operations, depending on _o_p_t_i_o_n:
+
+
+
+
+Sprite v.1.0        Printed:  April 19, 1990                   17
+
+
+
+
+
+
+MX                        User Commands                        MX
+
+
+
+          sseelleeccttiioonn
+
+          sseelleeccttiioonn ggeett
+               If sseelleeccttiioonn is invoked  with  no  _o_p_t_i_o_n,  or  if
+               _o_p_t_i_o_n  is  ggeett, then the command returns the con-
+               tents  of  the  selection.   An  error  occurs  if
+               there's  nothing  selected.  The command sseelleeccttiioonn
+               is different from  the  command  _e_x_t_r_a_c_t  _s_e_l._l_e_f_t
+               _s_e_l._r_i_g_h_t:  sseelleeccttiioonn  will return the contents of
+               the selection even if the selection is in  another
+               window,  but  eexxttrraacctt  sseell..lleefftt sseell..rriigghhtt can only
+               return information from this window.
+
+          sseelleeccttiioonn cclleeaarr
+               If there is something selected in this window, the  |
+               selection is cleared, so nothing will be selected.  |
+               If there is nothing selected in this window, there  |
+               is no effect.  Returns an empty string.
+
+          sseelleeccttiioonn hheerree
+               Returns 11 if there is something  selected  in  the
+               file  in  this  window.   Returns 00 if there is no
+               selection or if  the  selection  is  not  in  this
+               window's file.
+
+          sseelleeccttiioonn sseett _m_a_r_k_1 [_m_a_r_k_2]
+               Change the selection to consist of the  characters
+               between  _m_a_r_k_1  and  _m_a_r_k_2,  inclusive.   If _m_a_r_k_2
+               isn't specified, then select the single  character
+               at _m_a_r_k_1.  Returns an empty string.
+
+     sseenndd _w_i_n_d_o_w _c_o_m_m_a_n_d
+          _W_i_n_d_o_w must be the id of another window owned  by  this
+          mmxx  process  (such  as  a  value placed in nneewwWWiinnddooww by
+          ooppeenn).  The sseenndd command will  invoke  the  Tcl  inter-
+          preter  to  process  _c_o_m_m_a_n_d  in the context of _w_i_n_d_o_w,
+          rather than the window from which the sseenndd command  was
+          issued.   SSeenndd will return the result of executing _c_o_m_-
+          _m_a_n_d in _w_i_n_d_o_w.
+
+     sswwiittcchh _f_i_l_e_N_a_m_e
+          Change the window to display _f_i_l_e_N_a_m_e instead of what's
+          there  currently.   If the file currently in the window
+          has been modified, and if this is the  only  window  on
+          the file, then a notifier is popped up to warn the user
+          and give him/her a chance to abort the command.
+
+     ttaaggiinnffoo _n_a_m_e
+          Look up _n_a_m_e in the tags file(s).  If it is found, then
+          return  a Tcl list whose first element is the file con-
+          taining _n_a_m_e and whose second element is a search  pat-
+          tern  identifying  the  tag's location in the file.  If
+
+
+
+Sprite v.1.0        Printed:  April 19, 1990                   18
+
+
+
+
+
+
+MX                        User Commands                        MX
+
+
+
+          the global variable ttaaggFFiilleess is defined, it  must  con-
+          tain  a  list of tags files to check.  Those files will
+          be checked for _n_a_m_e in order.  If no ttaaggFFiilleess  variable
+          exists,  then the file ttaaggss in the current directory is
+          searched.
+
+     uunnddoo [mmoorree]
+
+     uunnddoo rreeccoovveerr _f_i_l_e_N_a_m_e
+          Undo recent edits.  If  uunnddoo  is  invoked  without  any
+          arguments,  the most recent modification to the file is
+          undone;  multiple invocations will toggle  the  change.
+          If  the  mmoorree argument is given, successive undo's work
+          back through history;  successive  uunnddoo  mmoorree  commands
+          will  undo  every  change  back to the beginning of the
+          edit session.  Modifications are undone in groups  del-
+          imited  by  marks  in an undo log;  normally, a mark is
+          placed in the log before and  after  each  user-invoked
+          action  (button  click,  menu  selection, or keystroke)
+          that modifies the file.  Exceptions to this rule  occur
+          for  keystrokes  whose  bindings have the ``!'' prefix:
+          no marks are placed  in  the  log  for  these  actions.
+          Returns  an  empty  string.   If  the rreeccoovveerr option is
+          given, then _f_i_l_e_N_a_m_e must be the address of a  mmxx  log.
+          This   command  will  read  _f_i_l_e_N_a_m_e,  which  describes
+          changes made in a  previous  edit  session,  and  apply
+          those changes to the current file.
+
+     uuppddaattee
+          Force the screen to get updated.  Normally  the  screen
+          is  updated  only  at  the end of processing a command,
+          just before waiting for more input from the user.  This
+          command  will  force  any pending redisplays to be per-
+          formed immediately.  It's used  mostly  for  debugging.
+          Returns an empty string.
+
+     wwrriittee [_f_i_l_e_N_a_m_e]
+          Write the file to disk.  If _f_i_l_e_N_a_m_e is given then  the
+          file  is written there;  otherwise it is written to the
+          place from which it was read (i.e. the  name  displayed
+          in the window's title bar).  Returns a message contain-
+          ing the file's name and number of lines.
+
+
+CCOOMMMMAANNDD PPRROOCCEEDDUURREESS
+     In addition to the  built-in  commands  described  above,  a
+     number  of Tcl command procedures are created by the default
+     mmxx startup file.  They may be  invoked  just  like  built-in
+     commands, and are described below.
+
+     ccaarreettiinnffoo
+          Returns  a  string  containing  information  about  the
+
+
+
+Sprite v.1.0        Printed:  April 19, 1990                   19
+
+
+
+
+
+
+MX                        User Commands                        MX
+
+
+
+          file's length and the position of the caret.
+
+     lliinnee _i
+          Selects line number _i and adjusts the view in the  win-
+          dow  so  that  the  line number is visible.  Returns an
+          empty string.
+
+     mmoovvee This command moves the contents of the selection to the
+          caret position.  Returns an empty string.
+
+     nneexxtt This command switches to the next _f_i_l_e of those  speci-  |
+          fied  on the command line by deleting the first element  |
+          of the variable $$ffiilleess and switching the window to  the  |
+          new first element of $$ffiilleess.
+
+     sshhoowwBBiinnddiinnggss _b_i_n_d_i_n_g _b_i_n_d_i_n_g ...
+          Open a scratch window  and  display  information  about
+          keystroke  bindings  in  it.  If no _b_i_n_d_i_n_g argument is
+          given, then display information about all of the  keys-
+          troke  bindings  that are currently defined.  If one or
+          more _b_i_n_d_i_n_g arguments are  given,  then  just  display
+          information  for  the given bindings.  Returns an empty
+          string.
+
+     sshhoowwMMeennuuss _n_a_m_e _n_a_m_e ...
+          Open a scratch window  and  display  information  about
+          menus  in  it.   If  no  _n_a_m_e  argument  is given, then
+          display  information  for  all  the  menus   that   are
+          currently  defined.   If one or more _n_a_m_e arguments are
+          given, then just  display  information  for  the  named
+          menus.  Returns an empty string.
+
+     sshhoowwPPrrooccss _n_a_m_e _n_a_m_e ...
+          Open a scratch window and display procedure information
+          in  it.   If  no  _n_a_m_e  argument is given, then display
+          information about all the procedures that are currently
+          defined.  If one or more _n_a_m_e arguments are given, then
+          just display  information  for  the  named  procedures.
+          Returns an empty string.
+
+     sshhoowwVVaarrss _n_a_m_e _n_a_m_e ...
+          Open a scratch window and display  variable  values  in  |
+          it.   If  no  _n_a_m_e  argument is given, then display the  |
+          values of all variables known in  the  context  of  the  |
+          caller  of sshhoowwVVaarrss.  If one or more _n_a_m_e arguments are  |
+          given, then just show the values  of  those  variables.  |
+          Returns an empty string.
+
+     ttaagg _n_a_m_e
+          Invoke the ttaaggiinnffoo command to look up _n_a_m_e, then open a
+          new  window on its file, select the definition of _n_a_m_e,
+          and make the selected line visible in the  new  window.
+
+
+
+Sprite v.1.0        Printed:  April 19, 1990                   20
+
+
+
+
+
+
+MX                        User Commands                        MX
+
+
+
+          Returns an empty string.
+
+     wwhheerree
+          Open a scratch window  and  display  information  about  |
+          where  the  last error occurred.  The error information  |
+          is taken from the eerrrroorrIInnffoo global variable.
+
+
+CCOOMMMMAANNDD SSUUBBWWIINNDDOOWW
+     The  command  subwindow  allows  commands  to  be  typed  in
+     directly,  instead  of invoking them through keystroke bind-
+     ings or menus.  When active, it appears at the bottom of the
+     mmxx  window.   It  can be activated with the ccoommmmaanndd or ffooccuuss
+     commands.  Commands may be entered and edited in the command
+     subwindow,  and  are invoked by typing carriage-return or by
+     middle-clicking in the window.  When a command  is  invoked,
+     it  is  not  deleted from the command subwindow, in order to
+     permit it to be re-invoked easily.  The  command  window  is
+     de-activated by typing ^^QQ in it.
+
+
+SSEEAARRCCHH SSUUBBWWIINNDDOOWW
+     The search subwindow is used to enter search and replacement
+     strings.   When active, it appears at the top of the mmxx win-
+     dow, just underneath the menu bar.  If it isn't active and a
+     search  or  replacement command is invoked that requires one
+     of its entries, then the window is activated.  It  may  also
+     be  activated using the ffooccuuss command.  The top entry in the
+     window is used to enter a  search  pattern  and  the  bottom
+     entry  is used to enter a replacement string.  The values of
+     these two entries are always available in  the  sseeaarrcchhSSttrriinngg
+     and   rreeppllaacceeSSttrriinngg   global  variables,  respectively.   If
+     carriage-return is typed in the ``Search:'' entry, or if the
+     middle  mouse  button  is clicked in the entry, then the the
+     contents of the global variable sseeaarrcchhCCmmdd are invoked  as  a
+     Tcl   command.    If   carriage-return   is   typed  in  the
+     ``Replace:'' entry, or if it is  middle-buttoned,  then  the
+     contents  of the global variable rreeppllaacceeCCmmdd are invoked as a
+     Tcl command.  The search subwindow  can  be  deactivated  by
+     typing ^^QQ in it.
+
+
+KKEEYYWWOORRDDSS
+     editor, mouse, window
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  April 19, 1990                   21
+
+
+

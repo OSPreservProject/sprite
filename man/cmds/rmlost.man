@@ -1,0 +1,33 @@
+' $Header: /sprite/src/cmds/rmlost/RCS/rmlost.man,v 1.0 91/07/08 10:30:21 mottsmth Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS RMLOST cmds
+.BS
+.SH NAME
+rmlost \- a perl script to clean lost+found directories
+.SH SYNOPSIS
+\fBrmlost\fR  [\fB\-v\fR] [\fb\-i\fR] [\fb\-v\fR] [\fb\-a\fR] [\fIfilesystems\fR]
+.SH OPTIONS
+.IP "\fB\-i\fR" 14
+Interactive option. rmlost asks for confirmation for each
+group of files found in a filesystem before it deletes them.
+.IP "\fB\-v\fR" 14
+Verbose option. Prints helpful messages as it proceeds.
+.IP "\fB\-a\fR" 14
+Examine all filesystems. This can be a lengthy process.
+.BE
+.SH INTRODUCTION
+.PP
+\fBRmlost\fP cleans out a user's files in the lost+found directories.
+With no arguments, /lost+found is checked, otherwise the specified
+filesystems are checked.  If the \fB\-a\fR option is given, all
+the filesystems generated with the \fBdf\fR command are examined.
+.PP
+For each filesystem, all the files owned by the user are
+removed.  If the \fB\-i\fR option is given, confirmation is
+requested before the deletion is performed.
+.SH BUGS
+Perl doesn't seem to let you ^C the script. To kill the
+thing, type ^Z and issue a KILL to the process
+.SH KEYWORDS
+lost+found
+

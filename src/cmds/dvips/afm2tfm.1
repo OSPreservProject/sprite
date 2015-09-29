@@ -1,0 +1,196 @@
+.\" man page for afm2tfm
+.TH DVIPS 1 "30 December 1989"
+.SH NAME
+afm2tfm \- convert Adode font metrics to TeX font metrics
+.SH SYNOPSIS
+.B afm2tfm
+.IR foo1[.afm]
+[
+.B -e
+.I ratio
+]
+[
+.B -s
+.I slant
+]
+[
+.B -v
+.IR bar[.vpl]
+|
+.B -V
+.IR bar[.vpl]
+]
+[
+.IR foo2[.tfm]
+]
+.br
+.SH DESCRIPTION
+PostScript fonts are (or should be) accompanied by font metric files
+such as
+.B Times-Roman.afm,
+which describes the characteristics of the font called Times-Roman.
+To use such fonts with TeX, we need TFM files that contain similar
+information. The command
+.sp
+.ce
+afm2tfm Times-Roman.afm Times-Roman.tfm
+.sp
+(which can be reduced to simply
+.sp
+.ce
+afm2tfm Times-Roman
+.sp
+by taking default shortcuts) will create the necessary file
+.B Times-Roman.tfm,
+which can then be moved to the directory where TeX normally looks for
+font metric information. The PostScript conversion program
+.B dvips
+will also treat Times-Roman as a resident PostScript font if you
+include the line
+.sp
+.ce
+Times-Roman
+.sp
+in the file
+.I psfonts.map.
+
+PostScript fonts have a different encoding scheme from that of plain
+TeX. Although both schemes are based on ASCII, special characters such as
+ligatures and accents are handled quite differently. Therefore we obtain
+best results by using a "virtual font" interface, which makes TeX act
+as if the PostScript font had a standard TeX encoding. Such a virtual
+font can be obtained, for example, by the command
+.sp
+.ce
+afm2tfm Times-Roman -v times
+.sp
+or, more fully, by:
+.sp
+.ce
+afm2tfm Times-Roman.afm -v times.vpl Times-Roman.tfm
+.sp
+This produces two outputs, namely the "virtual property list" file
+.B times.vpl
+and the TeX font metric file
+.B Times-Roman.tfm.
+The latter file describes an "actual font" on which the virtual font is based.
+
+To use the font in TeX, you should first run
+.sp
+.ce
+vptovf times.vpl times.vf times.tfm
+.sp
+then install the file
+.B times.vf
+in the directory for virtual fonts and install
+.B times.tfm
+in the directory for TeX font metrics. (You can also make more complex
+virtual fonts by editing
+.B times.vpl
+first.) Once this has been done, you're all set. You can use
+code like this in TeX henceforth:
+.sp
+.nf
+.na
+        \efont\emyfont=times at 10pt
+        \emyfont
+        Hello, I am being typeset in Times-Roman.
+.fi
+.ad
+.sp
+
+Note that there are two fonts, one actual (`Times-Roman',
+which is analogous to a raw piece of hardware) and
+one virtual (`times', which
+has typesetting knowhow added). You could also say
+`\efont\eTR=Times-Roman at 10pt' and typeset directly with that, but then you
+would have no ligatures or kerning, and you would have to use Adobe
+character positions for special letters like \eae. The virtual font
+called
+.B
+times
+not only has ligatures and kerning, and most of the standard
+accent conventions of TeX, it also has a few additional features
+not present in the Computer Modern fonts. For example, it includes all
+the Adobe characters (such as the Polish ogonek and the French
+guillemots). It also allows you to type 58 accented letters
+from `Aacute' to `zcaron' as if they were ligatures --- namely
+as `acute' followed by `A', etc., where you can get `acute'
+(\echar 19) by defining a suitable control sequence. (The 58
+constructed characters are found in the AFM file, and constructed
+as specified by Adobe; you may wish to adjust the spacing and/or
+add additional accent combinations by editing the VPL file.)
+The only things you lose from ordinary TeX text fonts are
+the dotless j (which can be hacked into the VPL file with
+literal PostScript specials if you have the patience) and
+uppercase Greek letters (which just don't exist unless you buy
+them separately).
+.sp
+These fonts can be scaled to any size.
+Go wild!
+Note, however, that using PostScript fonts does
+use up the printer's virtual memory and it does take time.
+You may find
+downloading the Computer Modern fonts to be faster than using
+the built-in PostScript fonts!
+.sp     
+.SH OPTIONS
+Special effects are also obtainable, with commands such as
+.sp
+.ce
+afm2tfm Times-Roman -s .167 -v timessl Times-Slanted
+.sp
+which create
+.B timessl.vpl
+and
+.B Times-Slanted.tfm.
+To use this, proceed as above but put the line
+.sp
+Times-Slanted "/Times-Roman .167 SlantFont"
+.sp
+into
+.I psfonts.map.
+Then
+.B Times-Slanted
+will act as if it were a resident font, although it is actually
+constructed from Times-Roman by PostScript hackery. 
+(It's an oblique version of Times-Roman, obtained by slanting
+everything 1/6 to the right.)
+Similarly, you can get an extended font by
+.sp
+.ce
+afm2tfm Times-Extended -e 1.2 -v timesx Times-Extended
+.sp
+and by recording the pseudo-resident font
+.sp
+Times-Extended "/Times-Roman 1.2 ExtendFont"
+.sp
+The command line switches are:
+.IP "\fB-e\fP \fIratio\fP"
+All characters are stretched horizontally by the stated
+.I ratio;
+if it is less than 1.0, you get a condensed font.
+.IP "\fB-s\fP \fIslant\fP"
+All characters are slanted to the right by the stated
+.I slant;
+if it is negative, the letters slope to the left (or they might be
+upright if you start with an italic font).
+.IP "\fB-v\fP \fIfile\fP[.\fIvpl\fP]"
+Generate a virtual property list (VPL) file as well as a TFM file.
+.IP "\fB-V\fP \fIfile\fP[.\fIvpl\fP]"
+Same as -v, but the virtual font generated is a caps-and-small-caps font obtained
+by scaling uppercase letters by .8 to typeset lowercase. This font
+handles accented letters and retains proper kerning.
+.SH FILES
+.I psfonts.map
+in the config directory used by dvips (update this).
+.br
+.I ../afm/Makefile
+in the dvips sources (look at this for examples).
+.SH "SEE ALSO"
+dvips(1), tex(1), vptovf(1)
+.SH BUGS
+An option to add letterspacing to the virtual font was rejected by Knuth
+because it would make the fi and fl ligatures break the normal rhythmic pattern.
+.SH AUTHORS
+Tomas Rokicki <rokicki@neon.stanford.edu> and Don Knuth

@@ -1,0 +1,450 @@
+/Mfontsize	7 def
+/Mdeffont	{ Plain } def
+/Mlmarg		0 72 mul def
+/Mrmarg		0 72 mul def
+/Mbmarg		0 72 mul def
+/Mtmarg		0 72 mul def
+/Mtransform	{  } bind def
+%%
+/Mpstart {
+MathPictureStart
+} bind def
+/Mpend {
+MathPictureEnd
+} bind def
+/Mscale {
+0 1 0 1
+5 -1 roll
+MathScale
+} bind def
+/Plain
+/Courier findfont
+def
+/Bold
+/Courier-Bold findfont
+def
+/Italic
+/Courier-Oblique findfont
+def
+/MathPictureStart {
+gsave
+Mtransform
+Mlmarg
+Mbmarg
+translate
+/Mtmatrix
+matrix currentmatrix
+def
+Mdeffont
+Mfontsize scalefont
+setfont
+} bind def
+/MathPictureEnd {
+grestore
+%%showpage
+} bind def
+/Mdot {
+moveto
+0 0 rlineto
+stroke
+} bind def
+/Mtetra {
+moveto
+lineto
+lineto
+lineto
+fill
+} bind def
+/Metetra {
+moveto
+lineto
+lineto
+lineto
+closepath
+gsave
+fill
+grestore
+0 setgray
+stroke
+} bind def
+/Mistroke {
+flattenpath
+0 0 0
+{
+4 2 roll
+pop pop
+}
+{
+4 -1 roll
+2 index
+sub dup mul
+4 -1 roll
+2 index
+sub dup mul
+add sqrt
+4 -1 roll
+add
+3 1 roll
+}
+{
+stop
+}
+{
+stop
+}
+pathforall
+pop pop
+currentpoint
+stroke
+moveto
+currentdash
+3 -1 roll
+add
+setdash
+} bind def
+/Mfstroke {
+stroke
+currentdash
+pop 0
+setdash
+} bind def
+/Msboxa {
+newpath
+5 -1 roll
+Mvboxa
+pop
+6 -1 roll
+5 -1 roll
+4 -1 roll
+Msboxa1
+5 -3 roll
+Msboxa1
+[
+7 -2 roll
+2 copy
+[
+3 1 roll
+10 -1 roll
+9 -1 roll
+]
+6 1 roll
+5 -2 roll
+]
+} bind def
+/Msboxa1 {
+sub
+2 div
+dup
+2 index
+1 add
+mul
+3 -1 roll
+-1 add
+3 -1 roll
+mul
+} bind def
+/Mvboxa {
+gsave
+newpath
+[ true
+3 -1 roll
+{
+Mbbox
+5 -1 roll
+{
+0
+5 1 roll
+}
+{
+7 -1 roll
+exch sub
+(m) stringwidth pop
+.3 mul
+sub
+7 1 roll
+6 -1 roll
+4 -1 roll
+Mmin
+3 -1 roll
+5 index
+add
+5 -1 roll
+4 -1 roll
+Mmax
+4 -1 roll
+}
+ifelse
+false
+}
+forall
+{ stop } if
+counttomark
+1 add
+4 roll
+]
+grestore
+} bind def
+/Mbbox {
+0 0 moveto
+false charpath
+flattenpath
+pathbbox
+newpath
+} bind def
+/Mmin {
+2 copy
+gt
+{ exch } if
+pop
+} bind def
+/Mmax {
+2 copy
+lt
+{ exch } if
+pop
+} bind def
+/Mshowa {
+4 -2 roll
+moveto
+2 index
+Mtmatrix setmatrix
+Mvboxa
+7 1 roll
+6 -1 roll
+5 -1 roll
+4 -1 roll
+Mshowa1
+4 1 roll
+Mshowa1
+rmoveto
+currentpoint
+0 1
+4 index length
+-1 add
+{
+2 index
+4 index
+2 index
+get
+3 index
+add
+moveto
+4 index
+exch get
+show
+} for
+pop pop pop pop
+Mgmatrix setmatrix
+} bind def
+/Mshowa1 {
+2 copy
+add
+4 1 roll
+sub
+mul
+sub
+-2 div
+} bind def
+/MathScale {
+Mwidth
+Mlmarg Mrmarg add
+sub
+Mheight
+Mbmarg Mtmarg add
+sub
+0 0 moveto
+1 index 0
+lineto
+2 copy
+lineto
+0 1 index
+lineto
+clip newpath
+Mlp
+translate
+scale
+pop pop pop pop
+/Mgmatrix
+matrix currentmatrix
+def
+} bind def
+/Mlp {
+3 copy
+Mlpfirst
+{
+Mnodistort
+{
+Mmin
+dup
+} if
+4 index
+2 index
+2 index
+Mlprun
+11 index
+11 -1 roll
+10 -4 roll
+Mlp1
+8 index
+9 -5 roll
+Mlp1
+4 -1 roll
+and
+{ exit } if
+3 -1 roll
+pop pop
+} loop
+exch
+3 1 roll
+7 -3 roll
+pop pop pop
+} bind def
+/Mlpfirst {
+3 -1 roll
+dup length
+2 copy
+-2 add
+get
+aload
+pop pop pop
+4 -2 roll
+-1 add
+get
+aload
+pop pop pop
+6 -1 roll
+3 -1 roll
+5 -1 roll
+sub
+div
+4 1 roll
+exch sub
+div
+} bind def
+/Mlprun {
+2 copy
+4 index
+0 get
+dup
+4 1 roll
+Mlprun1
+3 copy
+8 -2 roll
+9 -1 roll
+{
+3 copy
+Mlprun1
+3 copy
+11 -3 roll
+/gt Mlpminmax
+8 3 roll
+11 -3 roll
+/lt Mlpminmax
+8 3 roll
+} forall
+pop pop pop pop
+3 1 roll
+pop pop
+aload pop
+5 -1 roll
+aload pop
+exch
+6 -1 roll
+Mlprun2
+8 2 roll
+4 -1 roll
+Mlprun2
+6 2 roll
+3 -1 roll
+Mlprun2
+4 2 roll
+exch
+Mlprun2
+6 2 roll
+} bind def
+/Mlprun1 {
+aload pop
+exch
+6 -1 roll
+5 -1 roll
+mul add
+4 -2 roll
+mul
+3 -1 roll
+add
+} bind def
+/Mlprun2 {
+2 copy
+add 2 div
+3 1 roll
+exch sub
+} bind def
+/Mlpminmax {
+cvx
+2 index
+6 index
+2 index
+exec
+{
+7 -3 roll
+4 -1 roll
+} if
+1 index
+5 index
+3 -1 roll
+exec
+{
+4 1 roll
+pop
+5 -1 roll
+aload
+pop pop
+4 -1 roll
+aload pop
+[
+8 -2 roll
+pop
+5 -2 roll
+pop
+6 -2 roll
+pop
+5 -1 roll
+]
+4 1 roll
+pop
+}
+{
+pop pop pop
+} ifelse
+} bind def
+/Mlp1 {
+5 index
+3 index	sub
+5 index
+2 index mul
+1 index
+le
+1 index
+0 le
+or
+dup
+not
+{
+1 index
+3 index	div
+.99999 mul
+8 -1 roll
+pop
+7 1 roll
+}
+if
+8 -1 roll
+2 div
+7 -2 roll
+pop sub
+5 index
+6 -3 roll
+pop pop
+mul sub
+exch
+} bind def

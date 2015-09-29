@@ -1,0 +1,504 @@
+% -*-LaTeX-*-
+% <BEEBE.F77ANA>PAGE.LTX.22, 16-Oct-86 14:13:02, Edit by BEEBE
+% <BEEBE.F77ANA>PAGE.LTX.1, 13-Oct-86 17:04:39, Edit by BEEBE
+% Make pictures showing LaTeX page layouts
+%-----------------------------------------------------------------------
+% EVERYTHING TO THE RIGHT OF A  %  IS A REMARK TO YOU AND IS IGNORED BY
+% LaTeX.
+%
+% WARNING!  DO NOT TYPE ANY OF THE FOLLOWING 10 CHARACTERS AS NORMAL TEXT
+% CHARACTERS:
+%                &   $   #   %   _    {   }   ^   ~   \
+%
+% The following seven are printed by typing a backslash in front of them:
+%  \$  \&  \#  \%  \_  \{  and  \}.
+%-----------------------------------------------------------------------
+\newcommand{\X}[1]{{#1}\index{{#1}}}
+\documentstyle[draft,ifthen]{article}
+
+% ----------------------------------------------------------------------
+%
+% TIME OF DAY
+%
+\newcount\hh
+\newcount\mm
+\mm=\time
+\hh=\time
+\divide\hh by 60
+\divide\mm by 60
+\multiply\mm by 60
+\mm=-\mm
+\advance\mm by \time
+\def\hhmm{\number\hh:\ifnum\mm<10{}0\fi\number\mm}
+
+% NB: For computed dimension parameters, we cannot use
+% \newcommand{}, because this expands to a TeX \def which does
+% not evaluate the definition before assigning it to the control
+% sequence name; we use \xdef directly to force evaluation
+\newcount\T      % temporary counter for arithmetic calculations
+\T=0
+
+% **********************************************************************
+% WARNING: Do not insert ANY aditional whitespace in these
+% macros--otherwise it ends up in the TeX boxes and ruins the
+% positioning, sigh....
+% **********************************************************************
+
+% NAMEBOX{x}{y}{dx}{dy}{width}{height}{pos}{label} -- framed label with
+% box lower-left corner at (x+dx,y+dy)
+\newcommand{\NAMEBOX}[8]{\put(#1,#2){\begin{picture}(0,0)(-#3,-#4)\ignorespaces
+    \framebox(#5,#6)[#7]{#8}\end{picture}}}
+
+% HARROW{x}{y}{dx}{dy}{length}{side}{pos}{label} -- horizontal
+% labeled arrow with left point at (x+dx,y+dy), label on bottom
+% (side=b) or top (side=t) of arrow, in makebox[pos]
+\newcommand{\HARROW}[8]{\put(#1,#2){\begin{picture}(0,0)(-#3,-#4)\ignorespaces
+    \put(0,0){\vector(1,0){#5}}\ignorespaces
+    \put(#5,0){\vector(-1,0){#5}}\ignorespaces
+    \ifthenelse{\equal{#6}{b}}{\ignorespaces
+      \put(0,-\TAD){\makebox(#5,0)[#7]{#8}}
+    }{\ignorespaces
+    \ifthenelse{\equal{#6}{t}}{}{\ignorespaces
+      \typeout{Side #6 must be ``b'' or ``t''--``t'' assumed}}\ignorespaces
+      \put(0,\TAD){\makebox(#5,0)[#7]{#8}}
+    }
+    \end{picture}}}
+
+% VARROW{x}{y}{dx}{dy}{length}{side}{pos}{label} -- vertical
+% labeled arrow with left point at (x+dx,y+dy), label on left
+% (side=l) or right (side=r) of arrow, in makebox[pos]
+\newcommand{\VARROW}[8]{\put(#1,#2){\begin{picture}(0,0)(-#3,-#4)\ignorespaces
+    \put(0,0){\vector(0,1){#5}}\ignorespaces
+    \put(0,#5){\vector(0,-1){#5}}\ignorespaces
+    \ifthenelse{\equal{#6}{l}}{\ignorespaces
+      \put(-\TAD,0){\makebox(0,#5)[#7]{#8}}
+    }{\ignorespaces
+      \ifthenelse{\equal{#6}{r}}{}{\ignorespaces
+        \typeout{Side #6 must be ``r'' or ``l''--``r'' assumed}}\ignorespaces
+        \put(\TAD,0){\makebox(0,#5)[#7]{#8}}
+    }
+    \end{picture}}}
+
+% VRULE{x}{y}{dx}{dy}{length}{side}{pos}{label} -- vertical
+% rule with left point at (x+dx,y+dy), label on left
+% (side=l) or right (side=r) of rule, in makebox[pos]
+\newcommand{\VRULE}[8]{\put(#1,#2){\begin{picture}(0,0)(-#3,-#4)\ignorespaces
+    \put(0,0){\line(0,1){#5}}\ignorespaces
+    \ifthenelse{\equal{#6}{l}}{\ignorespaces
+      \put(0,0){\makebox(0,#5)[#7]{$\rightarrow${}#8}}
+    }{\ignorespaces
+      \ifthenelse{\equal{#6}{r}}{}{\ignorespaces
+        \typeout{Side #6 must be ``r'' or ``l''--``r'' assumed}}\ignorespaces
+        \put(0,0){\makebox(0,#5)[#7]{$\leftarrow${}#8}}
+    }
+  \end{picture}}}
+% **********************************************************************
+% If you wish to change any of these values:
+%       * definitions are mostly in alphabetical order
+%       * remember units are in centipoints for accurate
+%         positioning
+%       * most parameters are taken directly from values in
+%         BK11.STY, but in order to improve the appearance of the
+%         figure, a few have been increased to avoid overlap of
+%         labels and/or boxes, or to loosen up the figure
+%       * ALL parameters which depend on others are defined by
+%         computation and \xdef's below; they must NEVER be
+%         changed
+%
+% For 11pt BOOK style, \textwidth / \pagewidth(8.5in) = 0.5294
+% Anything larger than this will generate an overfull box.  We
+% choose 0.50 since that makes scaling trivial for the reader
+\newcommand{\UNITLENGTH}{0.005pt}
+\newcommand{\SCALEFACTOR}{50\%}
+%
+% US papersize...
+%
+\newcommand{\PAGEHEIGHT}{79497}         % 11in in centipoints
+\newcommand{\PAGEWIDTH}{61430}          % 8.5in in centipoints
+%
+% Typical dimensions from BK10.DOC
+%
+\newcommand{\BASELINESKIP}{2000}        % really 1000, but this is
+                                        % too tight for the figure
+\newcommand{\COLUMNSEP}{1000}
+\newcommand{\COLUMNSEPRULE}{0}
+
+% DVI drivers put top left corner at (1in,1in) from physical page
+% left corner
+\newcommand{\DVIXOFFSET}{7227}
+\newcommand{\DVIYOFFSET}{7227}
+
+\newcommand{\EVENSIDEMARGIN}{10841}
+
+\newcommand{\FOOTHEIGHT}{2400} % really 1200, but too tight
+\newcommand{\FOOTNOTESEP}{665}
+\newcommand{\FOOTSKIP}{4207}    % really 2529, but too tight; for symmetry,
+                                % make FOOTSKIP=HEADSEP+FOOTHEIGHT
+\newcommand{\HEADHEIGHT}{2400}  % really 1200, but too tight
+\newcommand{\HEADSEP}{1807}
+
+\newcommand{\MARGINPARPUSH}{2000}       % really 500, but too tight
+\newcommand{\MARGINPARSEP}{2800}        % really 700, but too tight
+\newcommand{\MARGINPARWIDTH}{7227}
+\newcommand{\MARGINNOTEHEIGHT}{4000}    % arbitrary value (holds
+                                        % ``Margin Note A'' on
+                                        % 2 lines)
+
+\newcommand{\ODDSIDEMARGIN}{3613}
+%
+% Upper left page corner (0,0) is at (1in,1in) on physical page
+% for DVI drivers.  Position the LOWER left corner at
+% (\PAGEXORIGIN,\PAGEYORIGIN), where \PAGEYORIGIN is computed
+% below
+\newcommand{\PAGEXORIGIN}{\DVIXOFFSET}
+
+\newcommand{\TAD}{800}     % how far to move labels from their arrows
+\newcommand{\TEXTHEIGHT}{50400}
+\newcommand{\TEXTWIDTH}{32522}
+\newcommand{\TOPMARGIN}{5420}
+
+% **********************************************************************
+% DO NOT CHANGE any of these computed parameters
+%
+
+%
+\T=\TEXTWIDTH
+\advance\T by -\COLUMNSEP
+\divide\T by 2
+\xdef\COLUMNWIDTH{\the\T}
+
+\T=\TEXTWIDTH
+\divide\T by 2
+\advance\T by \ODDSIDEMARGIN
+\xdef\COLUMNXMIDDLE{\the\T}     % 0.5*TEXTWIDTH+ODDSIDEMARGIN
+
+\T=\COLUMNWIDTH
+\advance\T by \ODDSIDEMARGIN
+\advance\T by \COLUMNSEP
+\xdef\COLUMNTWOX{\the\T}        % COLUMNWIDTH+COLUMNSEP+ODDSIDEMARGIN
+
+\T=\FOOTSKIP
+\advance\T by \TEXTHEIGHT
+\advance\T by \HEADSEP
+\xdef\HEADYORIGIN{\the\T}           % FOOTSKIP+TEXTHEIGHT+HEADSEP
+%
+% Inner TeX page dimensions are (\INNERWIDTH,\INNERHEIGHT).  All TeX
+% coordinates are relative to (0,0) at upper-left corner of this
+% page, although for the figures, we put (0,0) at lower-left
+% corner.
+%
+\T=\TOPMARGIN
+\advance\T by \HEADHEIGHT
+\advance\T by \HEADSEP
+\advance\T by \TEXTHEIGHT
+\advance\T by \FOOTSKIP
+% INNERHEIGHT=TOPMARGIN+HEADHEIGHT+HEADSEP+TEXTHEIGHT+FOOTSKIP
+\xdef\INNERHEIGHT{\the\T}
+
+\T=\ODDSIDEMARGIN
+\advance\T by \TEXTWIDTH
+\advance\T by \EVENSIDEMARGIN
+\xdef\INNERWIDTH{\the\T}  % ODDSIDEMARGIN+TEXTWIDTH+EVENSIDEMARGIN
+
+\T=\ODDSIDEMARGIN
+\advance\T by \TEXTWIDTH
+\advance\T by \MARGINPARSEP
+\xdef\MARGINNOTEXORIGIN{\the\T} % ODDSIDEMARGIN+TEXTWIDTH+MARGINPARSEP
+
+\T=\TEXTHEIGHT
+\multiply\T by 75
+\divide\T by 100
+\advance\T by \FOOTSKIP
+\xdef\MARGINNOTEYA{\the\T}      % .75*TEXTHEIGHT+FOOTSKIP
+
+\T=\MARGINNOTEYA
+\advance\T by -\MARGINNOTEHEIGHT
+\advance\T by -\MARGINPARPUSH
+\xdef\MARGINNOTEYB{\the\T}      % MARGINNOTEYA-MARGINNOTEHEIGHT-MARGINPARPUSH
+
+\T=\MARGINNOTEYA
+\advance\T by \MARGINNOTEHEIGHT
+\xdef\MARGINNOTEYC{\the\T}      % MARGINNOTEYA+MARGINNOTEHEIGHT
+
+\T=\PAGEHEIGHT
+\advance\T by -\DVIYOFFSET
+\xdef\PAGEYTOP{\the\T}          % PAGEHEIGHT-DVIYOFFSET
+
+\T=\PAGEYTOP
+\advance\T by -\INNERHEIGHT
+\xdef\PAGEYORIGIN{\the\T}       % PAGEYTOP-INNERHEIGHT
+
+\T=\ODDSIDEMARGIN
+\advance\T by \TEXTWIDTH
+\xdef\RIGHTEDGE{\the\T}         % ODDSIDEMARGIN+TEXTWIDTH
+
+\T=\TEXTHEIGHT
+\multiply\T by 4
+\divide\T by 10
+\xdef\TEXTY{\the\T}             % TEXTY = 0.4*TEXTHEIGHT (we put
+                                % sample text here)
+
+\T=\TEXTHEIGHT
+\divide\T by 3
+\xdef\TEXTWIDTHY{\the\T}        % TEXTWIDTHY = TEXTHEIGHT/3 (we
+                                % put \textwidth label here)
+\begin{document}
+  \begin{figure}
+ \caption[\string\LaTeX{} single-column page layout]{\LaTeX{}
+ single-column page layout.  The actual proportions correspond to
+ parameter values in the 11pt BOOK document style.
+ Note that standard-conforming DVI drivers are required to place
+ the \TeX{} upper-left page corner one inch over and down from
+ the corner of the physical output page.
+ This figure is scaled to \SCALEFACTOR{} of actual page size.
+ It was produced on \today{} at \hhmm.}
+    \begin{center}
+      \begin{small}       % make text somewhat smaller
+      \setlength{\unitlength}{\UNITLENGTH}
+        \begin{picture}(\PAGEWIDTH,\PAGEHEIGHT)   % sizes in centipoints
+
+%
+          \NAMEBOX{0}{0}{0}{0}{\PAGEWIDTH}{\PAGEHEIGHT}{}{}
+%
+          \HARROW{0}{\PAGEYTOP}{0}{0}{\PAGEXORIGIN}{b}{}{1in}
+%
+          \VARROW{\PAGEXORIGIN}{\PAGEYTOP}{0}{0}{\DVIYOFFSET}{r}{l}{1in}
+%
+          \put(\PAGEXORIGIN,\PAGEYORIGIN){
+          \begin{picture}(\INNERWIDTH,\INNERHEIGHT)
+            % Draw 3-sided inner page frame--no bottom side
+            % because it is not significant for dimensioning
+            \put(0,0){\line(0,1){\INNERHEIGHT}}
+            \put(0,\INNERHEIGHT){\line(1,0){\INNERWIDTH}}
+            \put(\INNERWIDTH,0){\line(0,1){\INNERHEIGHT}}
+%
+            \NAMEBOX{\ODDSIDEMARGIN}{\TEXTY}{0}{0}{\TEXTWIDTH}{
+                \BASELINESKIP}{l}{A line of text\ldots}
+            \NAMEBOX{\ODDSIDEMARGIN}{\TEXTY}{0}{-\BASELINESKIP}{
+                \TEXTWIDTH}{\BASELINESKIP}{l}{Next line of text\ldots}
+%
+            \VARROW{\COLUMNXMIDDLE}{\TEXTY}{0}{-\BASELINESKIP}{
+              \BASELINESKIP}{r}{l}{\tt\string\baselinestretch
+              $\times$\string\baselineskip}
+%
+            \HARROW{0}{\TEXTHEIGHT}{0}{0}{\ODDSIDEMARGIN}{t}{}{
+              \tt\string\oddsidemargin}
+            \HARROW{0}{\TEXTHEIGHT}{0}{0}{\ODDSIDEMARGIN}{b}{}{
+              \tt\string\evensidemargin}
+            %
+            % Page text label
+            \NAMEBOX{\ODDSIDEMARGIN}{\FOOTSKIP}{0}{0}{\TEXTWIDTH}{
+              \TEXTHEIGHT}{}{Page Text}
+            % Page footer box, arrow, and label
+            \NAMEBOX{\ODDSIDEMARGIN}{0}{0}{0}{\TEXTWIDTH}{
+              \FOOTHEIGHT}{}{Page Footer}
+            %
+            \VARROW{\ODDSIDEMARGIN}{0}{-\TAD}{0}{\FOOTHEIGHT}{l}{r}{
+              \tt\string\footheight}
+            %
+            % Footskip arrow and label
+            \VARROW{\RIGHTEDGE}{0}{\TAD}{0}{\FOOTSKIP}{r}{l}{
+              \tt\string\footskip}
+            %
+            \HARROW{\ODDSIDEMARGIN}{\TEXTWIDTHY}{0}{0}{\TEXTWIDTH}{b}{}{
+              \tt\string\textwidth}
+            %
+            \VARROW{\ODDSIDEMARGIN}{\FOOTSKIP}{-\TAD}{0}{
+              \TEXTHEIGHT}{l}{r}{\tt\string\textheight$\rightarrow$}
+            %
+            \VARROW{\ODDSIDEMARGIN}{\HEADYORIGIN}{-\TAD}{0}{
+              \HEADHEIGHT}{l}{r}{\tt\string\headheight}
+            %
+            \VARROW{\RIGHTEDGE}{\HEADYORIGIN}{\TAD}{-\HEADSEP}{
+              \HEADSEP}{r}{l}{\tt\string\headsep}
+            %
+            \VARROW{\RIGHTEDGE}{\INNERHEIGHT}{\TAD}{-\TOPMARGIN}{
+              \TOPMARGIN}{r}{l}{\tt\string\topmargin}
+            %
+            \NAMEBOX{\ODDSIDEMARGIN}{\HEADYORIGIN}{0}{0}{\TEXTWIDTH}{
+              \HEADHEIGHT}{}{Page Header}
+            %
+            \NAMEBOX{\MARGINNOTEXORIGIN}{\MARGINNOTEYA}{0}{0}{
+              \MARGINPARWIDTH}{\MARGINNOTEHEIGHT}{}{\shortstack{
+              Margin\\note A}}
+            %
+            \VARROW{\MARGINNOTEXORIGIN}{\MARGINNOTEYA}{-\TAD}{
+              -\MARGINPARPUSH}{\MARGINPARPUSH}{l}{r}{
+            \tt\string\marginparpush}
+            %
+            \NAMEBOX{\MARGINNOTEXORIGIN}{\MARGINNOTEYB}{0}{0}{
+              \MARGINPARWIDTH}{\MARGINNOTEHEIGHT}{}{\shortstack{Margin\\note B}
+}
+            %
+            \HARROW{\MARGINNOTEXORIGIN}{\MARGINNOTEYB}{0}{-\TAD}{
+              \MARGINPARWIDTH}{b}{}{\tt\string\marginparwidth}
+            %
+            \HARROW{\MARGINNOTEXORIGIN}{\MARGINNOTEYC}{
+              -\MARGINPARSEP}{\TAD}{\MARGINPARSEP}{t}{}{
+              \tt\string\marginparsep}
+            %
+          \end{picture}}
+        \end{picture}
+      \end{small}
+    \end{center}
+  \end{figure}
+            \clearpage
+  \begin{figure}
+ \caption[\string\LaTeX{} double-column page layout]{\LaTeX{}
+ double-column page layout.  The actual proportions correspond to
+ parameter values in the 11pt BOOK document style.
+ Note that standard-conforming DVI drivers are required to place
+ the \TeX{} upper-left page corner one inch over and down from
+ the corner of the physical output page.
+ This figure is scaled to \SCALEFACTOR{} of actual page size.
+ It was produced on \today{} at \hhmm.}
+    \begin{center}
+      \begin{small}       % make text somewhat smaller
+      \setlength{\unitlength}{\UNITLENGTH}
+        \begin{picture}(\PAGEWIDTH,\PAGEHEIGHT)   % sizes in centipoints
+            \NAMEBOX{0}{0}{0}{0}{\PAGEWIDTH}{\PAGEHEIGHT}{}{}
+            %
+            \HARROW{0}{\PAGEYTOP}{0}{0}{\PAGEXORIGIN}{b}{}{1in}
+            %
+            \VARROW{\PAGEXORIGIN}{\PAGEYTOP}{0}{0}{\DVIYOFFSET}{r}{l}{1in}
+            %
+            \put(\PAGEXORIGIN,\PAGEYORIGIN){
+          \begin{picture}(\INNERWIDTH,\INNERHEIGHT)
+            %
+            % Draw 3-sided inner page frame--no bottom side
+            % because it is not significant for dimensioning
+            \put(0,0){\line(0,1){\INNERHEIGHT}}
+            \put(0,\INNERHEIGHT){\line(1,0){\INNERWIDTH}}
+            \put(\INNERWIDTH,0){\line(0,1){\INNERHEIGHT}}
+            %
+            \NAMEBOX{\ODDSIDEMARGIN}{\TEXTY}{0}{0}{\COLUMNWIDTH}{
+              \BASELINESKIP}{l}{A line of text\ldots}
+            \NAMEBOX{\ODDSIDEMARGIN}{\TEXTY}{0}{-\BASELINESKIP}{
+              \COLUMNWIDTH}{\BASELINESKIP}{l}{Next line of text\ldots}
+            %
+            \HARROW{0}{\TEXTHEIGHT}{0}{0}{\ODDSIDEMARGIN}{t}{}{
+              \tt\string\oddsidemargin}
+            \HARROW{0}{\TEXTHEIGHT}{0}{0}{\ODDSIDEMARGIN}{b}{}{
+              \tt\string\evensidemargin}
+            %
+            % Page text label
+            %
+            \NAMEBOX{\ODDSIDEMARGIN}{\FOOTSKIP}{0}{0}{\COLUMNWIDTH}{
+              \TEXTHEIGHT}{}{}
+            %
+            \NAMEBOX{\COLUMNTWOX}{\FOOTSKIP}{0}{0}{\COLUMNWIDTH}{
+              \TEXTHEIGHT}{}{}
+            %
+            \VRULE{\COLUMNXMIDDLE}{\FOOTSKIP}{0}{0}{\TEXTHEIGHT}{r}{l}{
+              rule width is \tt\string\columnseprule}
+            %
+            \VARROW{\COLUMNXMIDDLE}{\TEXTY}{-\COLUMNSEP}{
+              -\BASELINESKIP}{\BASELINESKIP}{r}{l}{
+              \tt\string\baselinestretch $\times$\string\baselineskip}
+            %
+            \HARROW{\COLUMNTWOX}{\FOOTSKIP}{-\COLUMNSEP}{-\TAD}{\COLUMNSEP}{b}{
+}{
+              \tt\string\columnsep}
+            %
+            % Page footer box, arrow, and label
+            \NAMEBOX{\ODDSIDEMARGIN}{0}{0}{0}{\TEXTWIDTH}{
+              \FOOTHEIGHT}{}{Page Footer}
+            %
+            \VARROW{\ODDSIDEMARGIN}{0}{-\TAD}{0}{
+              \FOOTHEIGHT}{l}{r}{\tt\string\footheight}
+            %
+            % Footskip arrow and label
+            \VARROW{\RIGHTEDGE}{0}{\TAD}{0}{\FOOTSKIP}{r}{l}{
+              \tt\string\footskip}
+            %
+            \HARROW{\ODDSIDEMARGIN}{\TEXTWIDTHY}{0}{0}{\TEXTWIDTH}{b}{}{
+              \tt\string\textwidth}
+            %
+            \VARROW{\ODDSIDEMARGIN}{\FOOTSKIP}{-\TAD}{0}{
+              \TEXTHEIGHT}{l}{r}{\tt\string\textheight$\rightarrow$}
+            %
+            \VARROW{\ODDSIDEMARGIN}{\HEADYORIGIN}{-\TAD}{0}{
+              \HEADHEIGHT}{l}{r}{\tt\string\headheight}
+            %
+            \VARROW{\RIGHTEDGE}{\HEADYORIGIN}{\TAD}{-\HEADSEP}{
+              \HEADSEP}{r}{l}{\tt\string\headsep}
+            %
+            \VARROW{\RIGHTEDGE}{\INNERHEIGHT}{\TAD}{-\TOPMARGIN}{
+              \TOPMARGIN}{r}{l}{\tt\string\topmargin}
+            %
+            \NAMEBOX{\ODDSIDEMARGIN}{\HEADYORIGIN}{0}{0}{\TEXTWIDTH}{
+              \HEADHEIGHT}{}{Page Header}
+            %
+            \NAMEBOX{\MARGINNOTEXORIGIN}{\MARGINNOTEYA}{0}{0}{
+              \MARGINPARWIDTH}{\MARGINNOTEHEIGHT}{}{\shortstack{
+              Margin\\note A}}
+            %
+            \VARROW{\MARGINNOTEXORIGIN}{\MARGINNOTEYA}{-\TAD}{
+              -\MARGINPARPUSH}{\MARGINPARPUSH}{l}{r}{
+              \tt\string\marginparpush}
+            %
+            \NAMEBOX{\MARGINNOTEXORIGIN}{\MARGINNOTEYB}{0}{0}{
+              \MARGINPARWIDTH}{\MARGINNOTEHEIGHT}{}{\shortstack{
+              Margin\\note B}}
+            %
+            \HARROW{\MARGINNOTEXORIGIN}{\MARGINNOTEYB}{0}{-\TAD}{
+              \MARGINPARWIDTH}{b}{}{\tt\string\marginparwidth}
+            %
+            \HARROW{\MARGINNOTEXORIGIN}{\MARGINNOTEYC}{
+              -\MARGINPARSEP}{\TAD}{\MARGINPARSEP}{t}{}{
+              \tt\string\marginparsep}
+            %
+          \end{picture}}
+        \end{picture}
+      \end{small}
+    \end{center}
+  \end{figure}
+  \clearpage
+ \begin{figure}
+   \caption{Page layout parameters (in centipoints) for preceding figures.
+   It was produced on \today{} at \hhmm.}
+%
+   \begin{center}
+     \begin{tabular}{|l|r|}
+        \hline
+        {\tt\string\BASELINESKIP}       & \BASELINESKIP\\
+        {\tt\string\COLUMNSEPRULE}      & \COLUMNSEPRULE\\
+        {\tt\string\COLUMNSEP}          & \COLUMNSEP\\
+        {\tt\string\COLUMNTWOX}         & \COLUMNTWOX\\
+        {\tt\string\COLUMNXMIDDLE}      & \COLUMNXMIDDLE\\
+        {\tt\string\DVIXOFFSET}         & \DVIXOFFSET\\
+        {\tt\string\DVIYOFFSET}         & \DVIYOFFSET\\
+        {\tt\string\EVENSIDEMARGIN}     & \EVENSIDEMARGIN\\
+        {\tt\string\FOOTHEIGHT}         & \FOOTHEIGHT\\
+        {\tt\string\FOOTNOTESEP}        & \FOOTNOTESEP\\
+        {\tt\string\FOOTSKIP}           & \FOOTSKIP\\
+        {\tt\string\HEADHEIGHT}         & \HEADHEIGHT\\
+        {\tt\string\HEADSEP}            & \HEADSEP\\
+        {\tt\string\HEADYORIGIN}        & \HEADYORIGIN\\
+        {\tt\string\INNERHEIGHT}        & \INNERHEIGHT\\
+        {\tt\string\INNERWIDTH}         & \INNERWIDTH\\
+        {\tt\string\MARGINNOTEHEIGHT}   & \MARGINNOTEHEIGHT\\
+        {\tt\string\MARGINNOTEXORIGIN}  & \MARGINNOTEXORIGIN\\
+        {\tt\string\MARGINNOTEYA}       & \MARGINNOTEYA\\
+        {\tt\string\MARGINNOTEYB}       & \MARGINNOTEYB\\
+        {\tt\string\MARGINPARPUSH}      & \MARGINPARPUSH\\
+        {\tt\string\MARGINPARSEP}       & \MARGINPARSEP\\
+        {\tt\string\MARGINPARWIDTH}     & \MARGINPARWIDTH\\
+        {\tt\string\ODDSIDEMARGIN}      & \ODDSIDEMARGIN\\
+        {\tt\string\PAGEHEIGHT}         & \PAGEHEIGHT\\
+        {\tt\string\PAGEWIDTH}          & \PAGEWIDTH\\
+        {\tt\string\PAGEXORIGIN}        & \PAGEXORIGIN\\
+        {\tt\string\PAGEYORIGIN}        & \PAGEYORIGIN\\
+        {\tt\string\PAGEYTOP}           & \PAGEYTOP\\
+        {\tt\string\RIGHTEDGE}          & \RIGHTEDGE\\
+        {\tt\string\TAD}                & \TAD\\
+        {\tt\string\TEXTHEIGHT}         & \TEXTHEIGHT\\
+        {\tt\string\TEXTWIDTH}          & \TEXTWIDTH\\
+        {\tt\string\TEXTWIDTHY}         & \TEXTWIDTHY\\
+        {\tt\string\TOPMARGIN}          & \TOPMARGIN\\
+        \hline
+     \end{tabular}
+   \end{center}
+ \end{figure}
+\clearpage
+\end{document}

@@ -1,0 +1,135 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.4
+date     90.11.27.11.06.34;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.09.11.14.25.09;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.04.12.11.56.28;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.20.09.27.29;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.4
+log
+@Eliminated inclusion of <sys.h> (didn't work for user programs
+anyway), add explicit declaration for panic.
+@
+text
+@/* 
+ * List_Remove.c --
+ *
+ *	Source code for the List_Remove library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/list/RCS/List_Remove.c,v 1.3 90/09/11 14:25:09 kupfer Exp Locker: ouster $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <stdio.h>
+#include "list.h"
+
+extern void panic();
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * List_Remove --
+ *
+ *	Remove a list element from the list in which it is contained.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The given structure is removed from its containing list.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+List_Remove(itemPtr)
+    register	List_Links *itemPtr;	/* list element to remove */
+{
+    if (itemPtr == (List_Links *) NIL || !itemPtr ||
+	itemPtr == itemPtr->nextPtr) {
+	panic("List_Remove: invalid item to remove.\n");
+    }
+    if (itemPtr->prevPtr->nextPtr != itemPtr ||
+	itemPtr->nextPtr->prevPtr != itemPtr) {
+	panic("List_Remove: item's pointers are invalid.\n");
+    }
+    itemPtr->prevPtr->nextPtr = itemPtr->nextPtr;
+    itemPtr->nextPtr->prevPtr = itemPtr->prevPtr;
+}
+@
+
+
+1.3
+log
+@Lint.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/list/RCS/List_Remove.c,v 1.2 90/04/12 11:56:28 douglis Exp Locker: kupfer $ SPRITE (Berkeley)";
+a20 1
+#include <sys.h>
+d22 2
+@
+
+
+1.2
+log
+@check for itemPtr==0 before dereferencing it rather than after.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/list/RCS/List_Remove.c,v 1.1 88/06/20 09:27:29 ouster Exp Locker: douglis $ SPRITE (Berkeley)";
+d21 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: proto.c,v 1.2 88/03/11 08:39:08 ouster Exp $ SPRITE (Berkeley)";
+d42 2
+a43 2
+    if (itemPtr == (List_Links *) NIL || itemPtr == itemPtr->nextPtr
+	    || !itemPtr) {
+@

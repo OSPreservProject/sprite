@@ -1,0 +1,16 @@
+512 Bytes (sync)
+[1] 32651
+Slave: 0.000u 0.000s 4.130
+[1]  +  32651 Done                     pdevtest.new -M 1 >& /dev/null
+[1] 32655
+Slave: 0.000u 0.000s 4.130
+[1]  +  32655 Done                     pdevtest.new -M 1 >& /dev/null
+[1] 32659
+Slave: 0.000u 0.000s 4.140
+[1]  +  32659 Done                     pdevtest.new -M 1 >& /dev/null
+[1] 3265d
+Slave: 0.000u 0.000s 4.130
+[1]  +  3265d Done                     pdevtest.new -M 1 >& /dev/null
+[1] 32661
+Slave: 0.000u 0.000s 4.120
+[1]  +  32661 Done                     pdevtest.new -M 1 >& /dev/null

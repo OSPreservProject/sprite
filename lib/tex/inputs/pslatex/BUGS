@@ -1,0 +1,43 @@
+BUG List
+--------
+
+17 May 88	aftopl: fixed width fonts:
+		spaces were 1.1x wider than other characters,
+		extraspace was space/3
+
+18 May 88	Added \@dononsf to convert \registered, etc, back
+		within \rm, \bf, etc.  Fixed bug in \@getfam which was
+		expanding the \CMND parameter.
+
+26 May 88	Accent characters \' \` and \= did not work within
+		certain environments due to reassignment.  Added
+		assignments to \@acci \@accii and \@acciii in
+		pslplain.tex.
+
+27 May 88	\em didn't work in italic; incorrect calculation of
+		SLANT in aftopl.
+
+5 Sep 88	Bug in mk-sc: wasn't appending ";" at end of lines for
+		lower-case letters.
+		Also: aftopl was ignoring the fact that smallcaps
+		fonts don't ligature fi and fl.  The AFM files were
+		right, but aftopl added the LIGs anyway (reported by
+		Nick North).
+
+18 Oct 88	Bug in \_ and \AA; no space between the final digit
+		and the closing right brace (Alasdair Rawsthorne).
+
+8 Dec 88	Bug in \vec; wrong value of mathaccent being used (7,
+		not 0) (Ralf Kneuper, via Graham Gough).
+
+11 Feb 89	\frtnsl mistyped as \frntsl.
+
+6 Jul 89	Added \@fixf to ensure that font switches within
+		mathmode left the "f" in the right font (John
+		Fitzgerald). 
+
+31 Aug 89	Use of \a' \a` \a= in tabbing environments didn't work
+		(Jon Warbrick).
+
+3 Oct 89	Use of \$ in non-math mode swallowed up a following
+		space (Robert Brown).

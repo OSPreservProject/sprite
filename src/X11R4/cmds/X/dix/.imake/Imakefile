@@ -1,0 +1,60 @@
+#include <Server.tmpl>
+
+SRCS = atom.c colormap.c cursor.c devices.c dispatch.c dixutils.c events.c \
+	extension.c gc.c globals.c glyphcurs.c grabs.c \
+	main.c property.c resource.c swaprep.c swapreq.c \
+	tables.c window.c initatoms.c dixfonts.c
+OBJS = atom.o colormap.o cursor.o devices.o dispatch.o dixutils.o events.o \
+	extension.o gc.o globals.o glyphcurs.o grabs.o \
+	main.o property.o resource.o swaprep.o swapreq.o \
+	tables.o window.o initatoms.o dixfonts.o
+
+    INCLUDES = -I. -I../include -I$(INCLUDESRC)
+    LINTLIBS = ../ddx/snf/llib-lsnf.ln ../os/4.2bsd/llib-los.ln
+
+/*
+ * The following configuration parameters may be set in the appropriate
+ * .macros files or site.def in the directory util/imake.includes/:
+ *
+ *     DefaultFontPath                COMPILEDDEFAULTFONTPATH
+ *     DefaultRGBDatabase             RGB_DB
+ *
+ * The sample util/imake.includes/Imake.tmpl will provide generic defaults.
+ * The values in site.h are simply a last line of defense and should not be
+ * changed.
+ */
+
+#ifdef DefaultFontPath
+SITE_FONT_PATH = -DCOMPILEDDEFAULTFONTPATH=\"DefaultFontPath\"
+#else
+SITE_FONT_PATH = /* as nothing */
+#endif
+
+#ifdef DefaultRGBDatabase
+   SITE_RGB_DB = -DRGB_DB=\"DefaultRGBDatabase\"
+#else
+   SITE_RBB_DB = /* as nothing */
+#endif
+
+#ifdef DefaultDisplayClass
+   SITE_DISPLAY_CLASS = -DCOMPILEDDISPLAYCLASS=\"DefaultDisplayClass\"
+#else
+   SITE_DISPLAY_CLASS = /* as nothing */
+#endif
+
+SITE_DEFINES = $(SITE_FONT_PATH) $(SITE_RGB_DB) $(SITE_DISPLAY_CLASS)
+
+
+NormalLibraryObjectRule()
+NormalLibraryTarget(dix,$(OBJS))
+LintLibraryTarget(dix,$(SRCS))
+NormalLintTarget($(SRCS))
+
+SpecialObjectRule(globals.o, $(IRULESRC)/Imake.tmpl, $(SITE_DEFINES))
+
+#if HasSaberC
+saber_src:
+	/**/#load $(CFLAGS) $(SITE_DEFINES) $(SRCS)
+#endif
+
+DependTarget()

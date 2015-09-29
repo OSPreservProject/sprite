@@ -1,0 +1,407 @@
+head     9.1;
+branch   ;
+access   ;
+symbols  ds3100:9.1 sun3:9.1 sun4nw:9.1 symm:9.1 spur:9.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @# @;
+
+
+9.1
+date     90.02.12.11.11.18;  author rab;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.55.26;  author douglis;  state Stable;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.07.07;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.10.21;  author brent;  state Stable;
+branches ;
+next     5.3;
+
+5.3
+date     88.06.30.15.41.12;  author mendel;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     88.05.04.16.53.25;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.12.12.16.32.36;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.38.31;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.1
+log
+@Coverted local labels to gnu syntax.
+@
+text
+@|* dbgTrap.s -
+|*
+|*     Contains the routine which will initialize things and call the main
+|*     debugger routine.
+|*
+|* Copyright (C) 1985 Regents of the University of California
+|* All rights reserved.
+|*
+
+	.data
+	.asciz "$Header: /sprite/src/kernel/dbg/sun3.md/RCS/dbgTrap.s,v 9.0 89/09/12 14:55:26 douglis Stable Locker: rab $ SPRITE (Berkeley)"
+	.even
+	.text
+
+#include "machConst.h"
+#include "dbgAsm.h"
+#include "machAsmDefs.h"
+
+| ***********************************************************************
+|
+| _Dbg_Trap --
+|
+|     Call the main debugger routine.  There is a division of labor between
+|     the original trap handler that called us, this routine and the main 
+|     debugger routine.  The trap handler has put the stack in the following
+|     state:
+|
+|		------------
+|		|          |    Trap type (4 bytes)
+|		------------
+|		|          |	Bus error register (4 bytes)
+|		------------
+|		|          |	Status register (2 bytes)
+|		------------
+|		|          | 	Program counter where trap occured (4 bytes)
+|		------------
+|		|	   |	Vector offset register (2 bytes)
+|		------------
+|		|          |	Bus error stuff if a bus error.
+|		------------
+|
+|     The bottom part of the stack (status register, PC, VOR, Bus error
+|     stuff) is the exception stack which was created by the 68000 when
+|     the trap occured. This routine is responsible for changing the 
+|     function codes to user data, changing the context to
+|     the kernel context, locking out interrupts, and saving registers.  It
+|     then calls the |     main debugger routine.  The main debugger routine
+|     is responsible for dealing with the stack.  When this routine is 
+|     returned to it is responsible for restoring the context, function codes, 
+|     and registers.  The PC and status register are restored automatically 
+|     when this routine does its return from exception.
+|
+|     This debugger code is non reentrant.  Therefore before this routine 
+|     will do the things listed above it checks to make sure that the 
+|     debugger is not already active.  If it is then this routine will
+|     restore registers, set a flag to reenter the debugger as soon as it
+|     returns, and return.  If it isn't active it marks itself as active and
+|     does the above.
+|
+| Return value:
+|     None.
+|
+| Side effects:
+|     The flag dbgInDebugger is modified to indicate that the debugger is 
+|     active, dbgTermReason is modified to indicate why we are in the debugger,
+|     and dbgMonPC is cleared if it is set.
+|
+
+	.text
+	.globl	_Dbg_Trap
+_Dbg_Trap:
+	movw	#MACH_SR_HIGHPRIO,sr 		| Lock out interrupts
+
+| Check to see if we are already in the debugger.  If we are then we can't
+| enter it again so complain, mark an interrupt as pending, 
+| and return.
+
+	tstl	_dbgInDebugger			| This flag should not be set.
+	beqs	2f				| If it isn't then go ahead
+
+	jsr	_DbgComplain			| If it is set then complain.
+
+| If _dbgMonPC is non-zero then it contains the real PC
+
+	tstl	_dbgMonPC			| Check if monitor PC is set.
+	beqs	1f				| If zero don't do anything
+						| Move the PC onto the stack
+	movl	_dbgMonPC, sp@@(MACH_PC_OFFSET + MACH_TRAP_INFO_SIZE)
+	clrl	_dbgMonPC			| Clear out the PC for next time
+1:
+	movl	#1, _dbgIntPending		| We leave an interrupt pending
+						| marker.
+	addl	#MACH_TRAP_INFO_SIZE, sp	| Blow off trap type and bus
+						|    error register
+	rte					| Return to where called from.
+
+2:
+	movl	#1, _dbgInDebugger		| Set the flag to indicate
+						| that we are in the debugger.
+
+| If _dbgMonPC is non-zero then it contains the real PC
+
+	tstl	_dbgMonPC
+	beqs	3f				| If zero don't do anything
+
+						| Move the PC onto the stack
+	movl	_dbgMonPC, sp@@(MACH_PC_OFFSET + MACH_TRAP_INFO_SIZE) 
+	clrl	_dbgMonPC			| Clear out the PC for next time
+
+						| Also in this case this was
+						| an interrupt, not a trap
+	movl	#DBG_INTERRUPT_SIG, _dbgTermReason	
+	bras	4f
+3:
+
+| Otherwise, the reason is some sort of trap.  We will determine the reason in
+| the main debugger routine.
+
+	movl	#DBG_NO_REASON_SIG, _dbgTermReason
+
+4:
+	moveml	#0xffff, sp@@-		| Save all of the gprs
+
+| Save the function code registers.
+
+	movc	sfc, d0
+	movl	d0, _dbgSfcReg
+	movc	dfc, d0
+	movl	d0, _dbgDfcReg
+
+| Save user and kernel context registers
+
+        jsr 	_VmMachGetUserContext
+	movl	d0, _dbgUserContext
+        jsr 	_VmMachGetKernelContext
+	movl	d0, _dbgKernelContext
+
+| Call the debugger routine
+
+callDbg:
+
+	subl	#DBG_STACK_HOLE, sp 	| Put a hole in the stack so that 
+					| kdbx can play with its concept of 
+					| the stack.
+
+	jsr	_Dbg_Main		| Call the debugger
+
+	movl	_dbgSavedSP, sp		| Set the sp pointer to the right
+					| value so it can get at the saved regs
+
+| See if we have an interrupt pending.  If so then check for exception type
+| of bus error or address error.  If one of these then ignore the interrupt.
+| Otherwise give our reason as interrupted and go back in.
+
+	tstl	_dbgIntPending
+	beqs	5f
+	clrl	_dbgIntPending
+	cmpl	#MACH_BUS_ERROR, sp@@
+	beqs	5f
+	cmpl	#MACH_ADDRESS_ERROR, sp@@
+	beqs	5f
+	movl	#DBG_INTERRUPT_SIG, _dbgTermReason
+	bras	callDbg
+
+5:
+	moveml	sp@@+, #0xffff		| Restore all registers.
+	addl	#MACH_TRAP_INFO_SIZE, sp | Blow off bus error reg and
+					 |   and trap type.
+
+| Return from the exception
+
+	clrl	_dbgInDebugger		| Clear the flag which indicates
+					| that we are in the debugger.
+
+	rte
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+	.asciz "$Header: /sprite/src/kernel/dbg/sun3.md/RCS/dbgTrap.s,v 8.0 88/11/11 18:07:07 douglis Stable Locker: douglis $ SPRITE (Berkeley)"
+d79 1
+a79 1
+	beqs	2$				| If it isn't then go ahead
+d86 1
+a86 1
+	beqs	1$				| If zero don't do anything
+d90 1
+a90 1
+1$:
+d97 1
+a97 1
+2$:
+d104 1
+a104 1
+	beqs	3$				| If zero don't do anything
+d113 2
+a114 2
+	bras	4$
+3$:
+d121 1
+a121 1
+4$:
+d156 1
+a156 1
+	beqs	5$
+d159 1
+a159 1
+	beqs	5$
+d161 1
+a161 1
+	beqs	5$
+d165 1
+a165 1
+5$:
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+	.asciz "$Header: /sprite/src/kernel/dbg/sun2.md/RCS/dbgTrap.s,v 6.0 88/08/11 12:10:21 brent Stable Locker: douglis $ SPRITE (Berkeley)"
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+	.asciz "$Header: dbgTrap.s,v 5.3 88/06/30 15:41:12 mendel Exp $ SPRITE (Berkeley)"
+@
+
+
+5.3
+log
+@Modified to include asmDefs.h under its new name of machAsmDefs.h.
+@
+text
+@d11 1
+a11 1
+	.asciz "$Header: dbgTrap.s,v 5.2 88/05/04 16:53:25 nelson Exp $ SPRITE (Berkeley)"
+@
+
+
+5.2
+log
+@Handles new trap handling stuff.
+@
+text
+@d11 1
+a11 1
+	.asciz "$Header: dbgTrap.s,v 5.1 87/12/12 16:32:36 nelson Exp $ SPRITE (Berkeley)"
+d17 1
+a17 1
+#include "asmDefs.h"
+@
+
+
+5.1
+log
+@Handles moving of hardware dependencies from vm to sun.
+@
+text
+@d1 1
+a1 1
+|* dbgCall.s -
+d11 1
+a11 1
+	.asciz "$Header: dbgTrap.s,v 5.0 87/08/11 10:38:31 sprite Exp $ SPRITE (Berkeley)"
+d15 1
+a15 2
+#include "machineConst.h"
+#include "excAsm.h"
+d31 1
+a31 1
+|		|          |	Bus error register (2 bytes)
+a32 4
+|		|          |	User stack pointer (4 bytes)
+|		------------
+|		|          |	General regs (16 * 4 = 64 bytes)
+|		------------
+d46 5
+a50 5
+|     the kernel context, and locking out interrupts.  It then calls the
+|     main debugger routine.  The main debugger routine is responsible for
+|     dealing with the stack.  When this routine is returned to
+|     it is responsible for restoring the context, function codes, and 
+|     registers.  The PC and status register are restored automatically 
+d72 1
+a72 1
+	movw	#SUN_SR_HIGHPRIO,sr 		| Lock out interrupts
+d75 1
+a75 1
+| enter it again so complain, restore registers, mark an interrupt as pending, 
+a80 1
+	movl	sp@@, _dbgExcType
+a82 2
+	RestoreTrapRegs()			| Restore registers
+
+d87 2
+a88 1
+	movl	_dbgMonPC, sp@@(EXC_PC_OFFSET)	| Move the PC onto the stack
+d93 2
+d107 1
+a107 1
+	movl	_dbgMonPC, sp@@(EXC_TRAP_STACK_SIZE + EXC_PC_OFFSET) 
+d122 1
+d158 1
+a158 1
+	cmpl	#EXC_BUS_ERROR, sp@@
+d160 1
+a160 1
+	cmpl	#EXC_ADDRESS_ERROR, sp@@
+d166 3
+a168 4
+
+| Restore all registers.
+
+	RestoreTrapRegs()
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d11 1
+a11 1
+	.asciz "$Header: dbgTrap.s,v 1.9 86/09/17 12:43:39 nelson Exp $ SPRITE (Berkeley)"
+d137 1
+a137 1
+        jsr 	_Vm_GetUserContext
+d139 1
+a139 1
+        jsr 	_Vm_GetKernelContext
+@

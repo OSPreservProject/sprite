@@ -1,0 +1,68 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ds3100:1.1 sun3:1.1 sun4nw:1.1 symm:1.1 spur:1.1 sprited:1.1.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     90.09.11.10.45.16;  author shirriff;  state Exp;
+branches 1.1.1.1;
+next     ;
+
+1.1.1.1
+date     91.08.22.13.00.16;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/*
+ * vmSwapDir.h --
+ *
+ *	Definitions for the swap directory monitor.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/vm/RCS/lock.h,v 9.1 89/10/22 23:24:40 shirriff Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _VMSWAPDIR
+#define _VMSWAPDIR
+
+/*
+ * The name of the swap directory.
+ */
+#define	VM_SWAP_DIR_NAME	"/swap/"
+
+extern void Vm_OpenSwapDirectory _ARGS_((ClientData data, Proc_CallInfo *callInfoPtr));
+extern void VmReopenSwapDirectory _ARGS_((void));
+extern Fs_Stream *VmGetSwapStreamPtr _ARGS_((void));
+extern void VmDoneWithSwapStreamPtr _ARGS_((void));
+extern Boolean VmSwapStreamOk _ARGS_((void));
+
+#endif /* _VMSWAPDIR */
+@
+
+
+1.1.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/vm/RCS/vmSwapDir.h,v 1.1 90/09/11 10:45:16 shirriff Exp $ SPRITE (Berkeley)
+@

@@ -1,0 +1,134 @@
+
+
+
+RPCSTAT                   User Commands                   RPCSTAT
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     rpcstat - Print out statistics about the RPC system
+
+SSYYNNOOPPSSIISS
+     rrppccssttaatt  -[ptions]
+
+OOPPTTIIOONNSS
+     --ttrraaccee        Print out the RPC trace.
+
+     --cciinnffoo        Print client-side RPC system statistics.
+
+     --ssiinnffoo        Print server-side RPC system statistics.
+
+     --cchhaann         Print the state of the client RPC channels.
+
+     --ssrrvvrr         Print the state of the RPC server processees.
+
+     --ccaallllss        Print the number of RPC calls made.
+
+     --rrppccss         Print the number of RPC calls serviced.
+
+     --zzeerroo         Print the zero valued counts.
+
+     --nnoohhoossttddbb     Do not search the host database file.
+
+_________________________________________________________________
+
+IINNTTRROODDUUCCTTIIOONN
+     This command is used to get statistics and trace information
+     about the Sprite kernel-to-kernel RPC system.
+
+RRPPCC TTRRAACCEE
+     The RPC trace has a record for the last 100 packets sent  or
+     received  in  the  RPC  network protocol.  The trace has the
+     following fields:
+
+          IIDD ccooddee ttiimmee ffllaagg ccoommmmnndd cclliieenntt sseerrvveerr ppssiizzee ddssiizzee ddooffff ffrraaggmmeenntt
+
+     IIDD        The RPC sequence number.  A new  ID  is  generated
+               for each RPC, and all packets involved with an RPC
+               contain this ID.
+
+     ccooddee      Either "in"  or  "out"  to  mean  the  packet  was
+               transmitted or received.
+
+     ttiimmee      Seconds since last packet.  Sun3 clock granularity
+               is too low (10 msec) for this to be meaningful.
+
+     ffllaagg
+
+               QQ reQuest packet.
+               QQpp reQuest with please acknowledge bit set.
+
+
+
+Sprite v.1.0       Printed:  February 11, 1991                  1
+
+
+
+
+
+
+RPCSTAT                   User Commands                   RPCSTAT
+
+
+
+               AA Acknowledgment packet.
+               RR Reply packet.
+               RRee Error reply; command field contains error code.
+               AAcc Close acknowledgment sent to close client/server binding.
+
+     ccoommmmaanndd   The RPC name.  If this is a number  and  the  flag
+               field  is  "Re",  then  this is the returned error
+               code.
+
+     cclliieenntt    Two numbers  identify  the  client  host  and  the
+               client channel number.
+
+     sseerrvveerr    Two numbers  identify  the  server  host  and  the
+               server process number.
+
+     ppssiizzee     The size of the parameter area of the packet.
+
+     ddssiizzee     The size of the data area of the packet
+
+     ddooffff      The offset of the data area.  Used when  fragment-
+               ing large data blocks.
+
+     ffrraaggmmeenntt  Two numbers are the number of  fragments  and  the
+               fragment bitmask.
+
+CCLLIIEENNTT RRPPCC
+     The client half of the RPC system maintains statistics about
+     the number of timeouts, retransmissions, etc.  The output of
+     the --CC option is (nearly) self-explanitory.  There are  also
+     a  set  of  _c_h_a_n_n_e_l_s  used  by the client side of RPC.  Each
+     channel  is  dynamically  bound  to  a   particular   server
+     host/process  pair,  and  the  kernel  attempts to reuse the
+     channel for successive RPCs to that server.  The  --cc  option
+     prints  out  the state of the client channels, what they are
+     bound to, what RPC is in progress, etc.  The binding is  not
+     hard,  but  is used to optimize away explicit acknowledgment
+     packets.
+
+SSEERRVVEERR RRPPCC
+     The server half of the RPC system maintains statistics about
+     the  number  of  requests  it  has  received,  the number of
+     requests that implicitly acknowledged a previous reply, etc.
+     The  output  of  the --SS option is (nearly) self-explanitory.
+     There are also a pool of kernel RPC server  processes.   The
+     --ss  option  prints  out  the  state  of  each, their current
+     client, the current RPC, etc.
+
+KKEEYYWWOORRDDSS
+     rpc, server, client, channel
+
+
+
+
+
+
+Sprite v.1.0       Printed:  February 11, 1991                  2
+
+
+

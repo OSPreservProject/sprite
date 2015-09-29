@@ -1,0 +1,336 @@
+head     1.8;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.8
+date     91.10.20.12.38.26;  author mottsmth;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     90.01.25.17.19.57;  author brent;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.06.30.10.28.59;  author brent;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.06.16.08.50.21;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.02.02.16.35.19;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.02.02.15.03.32;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.11.14.15.14.42;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.11.02.12.43.43;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Main global definitions for the Sprite to NFS gateway
+@
+
+
+1.8
+log
+@Add remote mount points to support the mounting
+of one NFS filesystem within another.
+@
+text
+@/*
+ * nfs.h --
+ *	Definitions for the Sprite user-level NFS interface.  A Sprite process
+ *	runs as the server of a Sprite pseudo-filesystem that provides
+ *	access to a remote NFS filesystem.
+ *
+ * Copyright (C) 1987 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ * $Header: /sprite/src/cmds/nfsmount/RCS/nfs.h,v 1.7 90/01/25 17:19:57 brent Exp Locker: mottsmth $ SPRITE (Berkeley)
+ */
+
+#include "sys/time.h"
+#include "rpc/rpc.h"
+#include "mount.h"
+#include "nfs_prot.h"
+#include "errno.h"
+
+#undef SUCCESS
+#include "status.h"
+#include <kernel/fs.h>
+#include "pfs.h"
+#include "pdev.h"
+
+extern char myhostname[];
+
+/*
+ * Top-level state.  This has a NFS handle for the mount point,
+ * and state for the naming request-response protocol with the
+ * Sprite kernel.
+ */
+typedef struct {
+    char	*host;			/* Hostname of NFS server */
+    char	*nfsName;		/* NFS directory being mounted */
+    char	*prefix;		/* Prefix for pseudo-filesystem */
+    Pfs_Token	pfsToken;		/* Handle for Pfs library package */
+    CLIENT	*mountClnt;		/* Handle for SUN RPC to mount prog. */
+    nfs_fh	*mountHandle;		/* NFS handle from mount protocol */
+    CLIENT	*nfsClnt;		/* Handle for SUN RPC to nfs server */
+} NfsState;
+
+/*
+ * Timeout period for SUN RPC.
+ */
+extern struct timeval nfsTimeout;
+
+/*
+ * Open file table.
+ */
+typedef struct {
+    nfs_fh *handlePtr;		/* NFS file handle */
+    AUTH *authPtr;		/* NFS authentication */
+    int openFlags;		/* Saved open flags so we can remember
+				 * to do append-mode writes */
+} NfsOpenFile;
+
+extern NfsOpenFile **nfsFileTable;
+extern NfsOpenFile **nextFreeSlot;
+extern int nfsFileTableSize;
+
+/*
+ * Type mappings
+ */
+extern int nfsToSpriteFileType[];
+extern int spriteToNfsModeType[];
+
+/*
+ * Internal types needed to differentiate between the NFS root,
+ * directories, regular files, and links.  The lookup routines have to
+ * recognize the root, and the read routine has to recognize directories,
+ * files, and links.
+ * This type is kept in the type field of the fileIDs we pass to the
+ * kernel each time an NFS file is opened.
+ *	TYPE_ROOT has to be zero because the Sprite kernel sets up the
+ *	fileID of our root to have all zero fields.
+ */
+#define TYPE_ROOT	0x0
+#define TYPE_DIRECTORY	0x1
+#define TYPE_FILE	0x2
+#define TYPE_SYMLINK	0x4
+
+/*
+ * Macro to map Unix errno to Sprite int
+ */
+extern int nfsStatusMap[];
+
+#define NfsStatusMap(errno) \
+    ((errno >= 0 && errno < sys_nerr) ? nfsStatusMap[errno] : errno)
+
+/*
+ * Write-behind flag for testing.
+ */
+extern int nfs_PdevWriteBehind;
+
+extern CLIENT *Nfs_MountInitClient();
+extern void Nfs_MountTest();
+extern void Nfs_MountDump();
+extern void Nfs_Unmount();
+
+extern CLIENT *Nfs_InitClient();
+extern Pfs_CallBacks nfsNameService;
+extern Pdev_CallBacks nfsFileService;
+extern int BadProc();
+
+extern int NfsOpen();
+extern int NfsClose();
+extern int NfsRead();
+extern int NfsWrite();
+extern int NfsIoctl();
+extern int NfsGetAttrStream();
+extern int NfsSetAttrStream();
+extern int NfsGetAttrPath();
+extern int NfsSetAttrPath();
+extern int NfsMakeDevice();
+extern int NfsMakeDir();
+extern int NfsRemove();
+extern int NfsRemoveDir();
+extern int NfsRename();
+extern int NfsHardLink();
+extern int NfsSymLink();
+extern int NfsDomainInfo();
+
+extern void Nfs_UnmountAll();
+extern void Nfs_Exports();
+extern nfs_fh *Nfs_Mount();
+
+extern int NfsRecordMountPointProc();
+
+/*
+ * Attribute handling.
+ */
+extern void NfsToSpriteAttr();
+extern void SpriteToNfsAttr();
+extern void NfsToSpriteDirectory();
+extern void NfsFindCookie();
+
+@
+
+
+1.7
+log
+@Added nfs_PdevWriteBehind flag
+@
+text
+@d18 1
+a18 1
+ * $Header: /a/newcmds/nfsmount/RCS/nfs.h,v 1.6 89/06/30 10:28:59 brent Exp Locker: douglis $ SPRITE (Berkeley)
+d134 2
+@
+
+
+1.6
+log
+@Added openFlags to the open file state so append-mode writes can work.
+@
+text
+@d18 1
+a18 1
+ * $Header: /a/newcmds/nfsmount/RCS/nfs.h,v 1.5 89/06/16 08:50:21 brent Exp $ SPRITE (Berkeley)
+d97 5
+@
+
+
+1.5
+log
+@Added extern
+@
+text
+@d18 1
+a18 1
+ * $Header: /a/newcmds/nfsmount/RCS/nfs.h,v 1.4 89/02/02 16:35:19 brent Exp $ SPRITE (Berkeley)
+a29 1
+#include "/sprite/src/kernel/fs.new/fsNameOps.h"
+d61 2
+@
+
+
+1.4
+log
+@Fixed readlink()
+@
+text
+@d18 1
+a18 1
+ * $Header: /a/newcmds/nfsmount/RCS/nfs.h,v 1.3 89/02/02 15:03:32 brent Exp Locker: brent $ SPRITE (Berkeley)
+d29 2
+d123 1
+a123 1
+
+@
+
+
+1.3
+log
+@Changed ReturnStatus to int.  Updated to new pfs package
+@
+text
+@d18 1
+a18 1
+ * $Header: /a/newcmds/nfssrv/RCS/nfs.h,v 1.2 88/11/14 15:14:42 brent Exp $ SPRITE (Berkeley)
+d74 4
+a77 3
+ * directories, and regular files.  The lookup routines have to
+ * recognize the root, and the read routine has to recognize directories.
+ * This type is found in the type field of the fileIDs we pass to the
+d82 4
+a85 3
+#define TYPE_ROOT	0
+#define TYPE_DIRECTORY	1
+#define TYPE_FILE	2
+@
+
+
+1.2
+log
+@Added user authentication
+@
+text
+@d18 1
+a18 1
+ * $Header: /sprite/users/brent/nfstest/RCS/nfs.h,v 1.1 88/11/02 12:43:43 brent Exp $ SPRITE (Berkeley)
+d29 1
+d43 1
+d86 1
+a86 1
+ * Macro to map Unix errno to Sprite ReturnStatus
+d88 1
+a88 1
+extern ReturnStatus nfsStatusMap[];
+d99 3
+a101 3
+extern IntProc nfsNameService[];
+extern IntProc nfsFileService[];
+extern ReturnStatus BadProc();
+d103 16
+a118 15
+extern ReturnStatus NfsOpen();
+extern ReturnStatus NfsClose();
+extern ReturnStatus NfsRead();
+extern ReturnStatus NfsWrite();
+extern ReturnStatus NfsIoctl();
+extern ReturnStatus NfsGetAttrStream();
+extern ReturnStatus NfsSetAttrStream();
+extern ReturnStatus NfsGetAttrPath();
+extern ReturnStatus NfsSetAttrPath();
+extern ReturnStatus NfsMakeDevice();
+extern ReturnStatus NfsMakeDir();
+extern ReturnStatus NfsRemove();
+extern ReturnStatus NfsRemoveDir();
+extern ReturnStatus NfsRename();
+extern ReturnStatus NfsHardLink();
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d18 1
+a18 1
+ * $Header: /sprite/src/kernel/fs/RCS/fs.h,v 6.12 88/10/22 14:24:01 brent Exp $ SPRITE (Berkeley)
+d31 2
+d55 8
+a62 2
+extern nfs_fh **nfsHandleTable;
+extern int nfsHandleTableSize;
+@

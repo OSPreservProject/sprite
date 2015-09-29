@@ -1,0 +1,98 @@
+head     9.0;
+branch   ;
+access   ;
+symbols  ds3100:9.0 sun3:9.0 sun4nw:9.0 symm:9.0 spur:9.0 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @@;
+
+
+9.0
+date     89.09.12.14.51.38;  author douglis;  state Stable;
+branches ;
+next     8.1;
+
+8.1
+date     89.06.21.15.05.28;  author ouster;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.05.04;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.10.15;  author brent;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     88.06.15.14.56.07;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.15.14.55.10;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@#
+# This file is used automatically by mkmf to massage md.mk, in order
+# to guarantee that bootSysAsm.o is the first object file in the list.
+# It must eventually be the first file in the linked kernel.
+#
+/^OBJS/s|= \(.*\) \([^/ ]*\)/bootSysAsm.o|= \2/bootSysAsm.o \1|
+@
+
+
+8.1
+log
+@Extra blank line made sed unhappy.
+@
+text
+@@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@a5 1
+
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@@
+
+
+1.2
+log
+@Better comments.
+@
+text
+@@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d4 1
+@

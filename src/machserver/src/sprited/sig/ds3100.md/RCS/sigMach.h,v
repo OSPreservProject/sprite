@@ -1,0 +1,88 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  srv030:1.2 srv028:1.2 srv027:1.2 srv026:1.2 srv024:1.2 srv022:1.2 srv021:1.2 srv019:1.2 srv018:1.2 srv016:1.2 srv015:1.2 srv014:1.2 srv012:1.2 srv011:1.2 srv010:1.2 srv008:1.2 srv007:1.2 srv006:1.2 srv005:1.2 srv004:1.2 srv003:1.2 srv002:1.2 srv001:1.2;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     92.03.12.17.50.10;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     92.02.28.20.00.52;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@DECstation-specific declarations.
+@
+
+
+1.2
+log
+@User signal handlers now work.  
+@
+text
+@/*
+ * sigMach.h --
+ *
+ *	Declarations of machine-dependent signals routines.
+ *
+ * Copyright 1992 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /user5/kupfer/spriteserver/src/sprited/sig/ds3100.md/RCS/sigMach.h,v 1.1 92/02/28 20:00:52 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+ */
+
+#ifndef _SIGMACH
+#define _SIGMACH
+
+#include <cfuncproto.h>
+#include <sprite.h>
+#include <procTypes.h>
+#include <sigTypes.h>
+
+extern char *mach_mips_exception_string(); /* XXX */
+
+#define SigMach_ExceptionString(a, b, c) \
+    mach_mips_exception_string((a), (b), (c))
+
+extern void SigMach_ExcToSig _ARGS_((int exceptionType, int exceptionCode, 
+			int exceptionSubcode, int *sigNumPtr, int *codePtr,
+			Address *sigAddrPtr));
+extern ReturnStatus SigMach_RestoreState _ARGS_((Proc_LockedPCB *procPtr,
+			Sig_Context *sigContextPtr));
+extern ReturnStatus SigMach_SetSignalState _ARGS_((Proc_LockedPCB *procPtr,
+			Sig_Stack *sigStackPtr, Address pc));
+
+#endif /* _SIGMACH */
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d6 1
+a6 1
+ * Copyright 1991 Regents of the University of California
+d15 1
+a15 1
+ * $Header: /user5/kupfer/spriteserver/src/sprited/sig/sun3.md/RCS/sigMach.h,v 1.1 92/02/27 17:22:13 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d34 4
+a37 3
+extern void SigMach_SetUpHandler _ARGS_((Proc_LockedPCB *procPtr, 
+			Boolean suspended, Sig_Stack *sigStackPtr, 
+			Address pc));
+@

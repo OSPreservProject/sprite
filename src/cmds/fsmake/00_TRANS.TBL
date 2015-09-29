@@ -1,0 +1,21 @@
+L DISKHEAD.C;1                      	diskHeader.c	../../lib/disk/diskHeader.c
+L DISKIO.C;1                        	diskIO.c	../../lib/disk/diskIO.c
+F DISKLABE.C;1                      	disklabel.c
+L DISKPRIN.C;1                      	diskPrint.c	../../lib/disk/diskPrint.c
+D DS3100_M                          	ds3100.md
+F FSMAKE.C;1                        	fsmake.c
+F FSMAKE.H;1                        	fsmake.h
+F FSMAKE.MAN;1                      	fsmake.man
+L HOSTINT.H;1                       	hostInt.h	../../lib/c/host/hostInt.h
+L HOST_BYI.C;1                      	Host_ByID.c	../../lib/c/host/Host_ByID.c
+L HOST_BYN.C;1                      	Host_ByName.c	../../lib/c/host/Host_ByName.c
+L HOST_END.C;1                      	Host_End.c	../../lib/c/host/Host_End.c
+L HOST_NEX.C;1                      	Host_Next.c	../../lib/c/host/Host_Next.c
+L HOST_STA.C;1                      	Host_Start.c	../../lib/c/host/Host_Start.c
+F MAKEFILE.;1                       	Makefile
+F MAKEFILE.UNI;1                    	Makefile.UNIX
+L OPTION.C;1                        	option.c	../../lib/c/etc/option.c
+D RCS                               	RCS
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md
+F TAGS.;1                           	tags

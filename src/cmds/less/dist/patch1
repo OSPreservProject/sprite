@@ -1,0 +1,34 @@
+From agate!bionet!snorkelwacker.mit.edu!spool.mu.edu!mips!pacbell.com!pacbell!pyramid!ctnews!unix386!mark Thu Mar  7 10:07:20 1991
+Article: 3463 of alt.sources
+Path: agate!bionet!snorkelwacker.mit.edu!spool.mu.edu!mips!pacbell.com!pacbell!pyramid!ctnews!unix386!mark
+From: mark@unix386.Convergent.COM (Mark Nudelman)
+Newsgroups: alt.sources
+Subject: less, patch 1
+Message-ID: <6501@unix386.Convergent.COM>
+Date: 7 Mar 91 00:51:12 GMT
+Organization: Unisys/Convergent, San Jose, CA
+Lines: 21
+
+As a number of people have pointed out, a bug in less causes
+a core dump when "less -?" is invoked.  Here is a quick fix
+in ifile.c:
+
+*** ifile.c.170	Wed Mar  6 16:15:03 1991
+--- ifile.c.171	Wed Mar  6 16:15:08 1991
+***************
+*** 153,158 ****
+--- 153,160 ----
+  get_filename(ifile)
+  	IFILE ifile;
+  {
++ 	if (ifile == NULL)
++ 		return (NULL);
+  	return (int_ifile(ifile)->h_filename);
+  }
+  
+My apologies for any inconvenience this may have caused.
+
+Mark Nudelman
+{uunet,sun,decwrl,hplabs}!pyramid!ctnews!unix386!mark
+
+

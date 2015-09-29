@@ -1,0 +1,21 @@
+.\" @(#)rdate.8 1.1 86/07/10 SMI; from UCB 4.2
+.TH RDATE 8 "1 February 1985"
+.SH NAME
+rdate \- set system date from a remote host
+.SH SYNOPSIS
+\fBrdate\fP  hostname
+.SH DESCRIPTION
+.IX  "rdate command"  ""  "\fLrdate\fP \(em remote date"
+.LP
+\fIRdate\fP sets the local date and time
+from the \fIhostname\fP given as argument.
+You must be super-user on the local system.
+Typically \fIrdate\fP can be inserted as part of
+your \fI/etc/rc.local\fP startup script.
+.SH "SEE ALSO"
+timed(8C)
+.SH BUGS
+.LP
+Could be modified to accept a list of hostnames and
+try each until a valid date returned.  Better yet
+would be to write a real date server that accepted broadcast requests.

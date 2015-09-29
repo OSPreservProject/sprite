@@ -1,0 +1,134 @@
+
+
+
+SHUTDOWN                  User Commands                  SHUTDOWN
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     shutdown - shutdown and possibly reboot the system
+
+SSYYNNOOPPSSIISS
+     sshhuuttddoowwnn [--hhSSrrddffqq] [--RR _r_e_b_o_o_t_S_t_r] [--SS _s_l_e_e_p_T_i_m_e]
+
+OOPPTTIIOONNSS
+     --dd                Enter the debugger after shutting the sys-
+                       tem down.
+
+     --ff                Don't  check  the  disks  when  rebooting.
+                       Unless  the --dd or --hh options are specified
+                       then --ff implies --rr.
+
+     --hh                Force the system to  halt.   This  is  the
+                       default  unless  the  --ff or --ss options are
+                       used.
+
+     --rr                Reboot instead of  halt.   This  will  use
+                       whatever  is  the default reboot string of
+                       the hardware.
+
+     --RR _r_e_b_o_o_t_S_t_r      Reboot the system with  _r_e_b_o_o_t_S_t_r  as  the
+                       string to reboot with.
+
+     --ww                Don't write the file system cache back  to
+                       disk  or to the server.  The default is to
+                       write it back.
+
+     --ss                Reboot single user mode. Unless the --dd  or
+                       --hh  options  are specified then --ss implies
+                       --rr.
+
+     --cc                Reboot a fileserver  as  a  client.   This
+                       causes  a  fileserver  to ignore the /boot
+                       directory on its local root partition. See
+                       the bboooott man page for more details.
+
+     --xx                Causes a fileserver to run rroooottccmmddss before
+                       ddiisskkccmmddss on reboot.
+
+     --qq                Do not use _w_a_l_l to announce  the  shutdown
+                       and do not pause before shutting down.
+
+     --SS _s_l_e_e_p_T_i_m_e      Sleep  _s_l_e_e_p_T_i_m_e  seconds  after   running
+                       _w_a_l_l.
+
+_________________________________________________________________
+
+
+IINNTTRROODDUUCCTTIIOONN
+     This command shuts down the operating  system.   By  default
+
+
+
+Sprite v.1.0       Printed:  November 29, 1989                  1
+
+
+
+
+
+
+SHUTDOWN                  User Commands                  SHUTDOWN
+
+
+
+     the  system  is  halted.  However  the system can be made to
+     reboot or enter  the  debugger  by  specifying  the  correct
+     options.   By  default,  the  shutdown  is announced (on the
+     local host only) using _w_a_l_l and the shutdown is  delayed  by
+     several seconds to give people a chance to complain.
+
+KKEEYYWWOORRDDSS
+     halt, reboot, shutdown, fastboot, boot
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  November 29, 1989                  2
+
+
+

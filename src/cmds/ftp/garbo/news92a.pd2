@@ -1,0 +1,783 @@
+University of Vaasa, Finland, Sun IPX sparcstation garbo.uwasa.fi,
+node number 128.214.87.1, has a large collection of PD and shareware
+programs which are available by anonymous ftp (file transfer
+program).  This /pc/pd2/news-pd2 file contains selected news and
+reviews about the MsDos programs in the /pc directories.  (There are
+more news in /pc/ts/0news-ts and /pc/pd2/post*.zip.)
+..................................................................
+Prof. Timo Salmi
+Moderating at garbo.uwasa.fi anonymous FTP archives 128.214.87.1
+Faculty of Accounting & Industrial Management; University of Vaasa
+Internet: ts@uwasa.fi Bitnet: salmi@finfun   ; SF-65101, Finland
+..................................................................
+
+     N e w s   o f   1 9 9 2   f r o m   1-Jan to 30-Jun
+
+Thu 25-Jun-92: I have updated the list of PD & shareware authors
+reachable by email on and from internet.  The list now contains 66
+authors.  It is 
+ 12848 Jun 25 04:49 garbo.uwasa.fi:/pc/pd2/author09.zip
+
+Sun 21-Jun-92: Downloaded from the cbip binary postings and made
+them available at garbo.uwasa.fi archives.
+ 62394 May  4 13:46 garbo.uwasa.fi:/pc/filecopy/docp11.zip
+ 90411 Apr 29 20:00 garbo.uwasa.fi:/pc/filefind/fdf101.zip
+ 11364 Feb 16 11:55 garbo.uwasa.fi:/pc/keyboard/gold22.zip
+/pc/filecopy
+docp11.zip      A Directory-Oriented CoPy processed by R.Bixler w/C
+                Comes with many optional switches and is definitely
+                worth a closer look.
+/pc/filefind
+fdf101.zip      Find duplicate files processed by R.Bixler w/C.
+                A duplicate finder as any, but the competiotion is
+                this field is tough with such an excellent utility
+                around as cudup21.zip, and I am not discounting even
+                my own modest attempt in tsutlc17.zip.
+/pc/keyboard
+gold22.zip      TSR to simulate GOLD key with Num Lock (VTxxx) (w ASM)
+                This is a newer version than what we had.  I did not
+                take a closer look since I no longer use the EDT VMS
+                editor but MicroEMACS so that I have the same editor
+                on all the platforms even if I am not an Emacs fan.
+
+Sun 21-Jun-92: Acquired from a Finnish BBS
+92426 Jul 29  1991 garbo.uwasa.fi:/pc/turbopas/tpsbk100.zip
+TurboPascal SoundBlaster Toolkit for TP 6.0.  I just scanned it, but did
+not test it in any way since I am not familiar with SoundBlaster myself.
+
+Fri 19-Jun-92: I have updated the users' program review file
+17944 Jun 19 23:42 garbo.uwasa.fi:/pc/pd2/review06.zip
+The current items are
+ 1   Dec 31 Timo Salmi         (24)   /pc/pd2/review.txt file description
+ 2   Jun 19 Peter Breuer       (172)  TSCHEK, Review of spell checkers
+ 3   Jun 9  NiteLine           (34)   Review: PED text editor
+ 4   Jun 8  Peter Breuer       (186)  TSpell, REVIEW of spell checkers
+ 5   Jun 8  Peter Breuer       (158)  EZSpell, REVIEW of spell checkers
+ 6   Jun 7  Peter Breuer       (31)   Forthcoming REVIEWS of spellcheckers
+ 7   May 19 Jonathan Rice      (253)  Reviews of programs in the archives
+ 8   May 15 Marshall G. Flax   (84)   A review of "redirect output" progra
+ 9   May 14 Michael Favor      (84)   A review of "move file" programs on
+
+Fri 19-Jun-92: I have updated the list of MsDos & Windows FTP sites
+and moderators.  This is a minor update bringing some information up
+to date.  8198 Jun 19 09:02 garbo.uwasa.fi:/pc/pd2/moder11.zip
+
+Wed 17-Jun-92: Acquired from a Finnish BBS:
+A full screen Environment Editor by Eric C. Weaver
+59731 May  5 20:47 garbo.uwasa.fi:/pc/envutil/ev12.zip
+
+Tue 16-Jun-92: Updated the upload instructions for our archives
+/pc/UPLOAD.INF.  It is an ordinary ascii file.
+
+Mon 15-Jun-92: The (next) garbo.uwasa.fi feedback and information
+file 36530 Jun 15 08:24 garbo.uwasa.fi:/pc/pd2/post09.zip is now
+complete.  The contents of all these files can be seen from
+8239 Jun 15 08:29 garbo.uwasa.fi:/pc/pd2/post00.zip.
+
+Tue 9-Jun-92: I have updated the statement of our policy about the
+default public nature of email sent to us by the users.
+2605 Jun 9 18:17 garbo.uwasa.fi:/pc/pd2/private.txt
+
+Sun 7-Jun-92: Acquired /pc/comm/zip151.zip from SIMTEL20.  It is a
+fast serial cable file transfer utility between two PCs.  It has no
+bells and whistles, but it gets done the file transfers effectively.
+Once one becomes familiar with it, zip has a useful file server mode
+which means that once you have called zip at both machines, you can
+make all the rest of the operations from one end of the connection.
+It is shareware.
+
+Sat 6-Jun-92: Rhys Weatherley and I have updated the list of MsDos &
+Windows FTP sites by adding two new sites and additional information
+on archie servers kindly provided to us.  The current version is
+8091 Jun 6 17:35 garbo.uwasa.fi:/pc/pd2/moder07.zip
+
+Sat 6-Jun-92: I have updated the list of the email addresses of
+PD & shareware MsDos authors.  It is now
+  12114 Jun 6 00:12 garbo.uwasa.fi:/pc/pd2/author08.zip
+The file also contains an invitation to those not already on the
+list.  There are currently 61 authors listed.
+
+Tue 26-May-92: Got /pc/format/fm45.zip Menu driven FormatMaster
+from Keith from SIMTEL20.  Handy, indeed.  Epilogue: Was very soon
+updated to fm46.zip.
+
+Sat 23-May-92: Garbo has some directories like /pc/miscutil and
+/pc/unix which include assortments of utilities.  It is often
+difficult to guess by the package names only what is in them.  I
+therefore listed the contents of all the .zip packages in the said
+two and a couple of other directories.  The lists are available (in
+ascii) as
+  34976 May 23 09:05 garbo.uwasa.fi:/pc/miscutil/0miscuti.dir
+  45800 May 23 09:06 garbo.uwasa.fi:/pc/unix/0unix.dir
+ 110681 May 23 10:11 garbo.uwasa.fi:/pc/pcmag/0pcmag.dir
+ 148659 May 23 10:12 garbo.uwasa.fi:/pc/turbopas/0turbopa.dir
+I cannot guarantee that they will be updated on a regular basis, but
+they'll be useful anyway since they give the broad outlines on what
+is in the assortments.  - There is, in fact, another such contents
+file
+ 17584 May 21 15:53 garbo.uwasa.fi:/pc/INDEXTS.ZIP
+which gives the annotated contents of all the files in the /pc/ts
+directory, but that list is updated on a regular basis.
+
+Fri 22-May-92: Got Stan Brown's comp.os.msdos.programmer Frequently
+asked questions:
+ 33519 May 20 18:16 garbo.uwasa.fi:/pc/doc-net/faqp9205.zip
+
+Wed 20-May-92: Acquired the file list of a large Finnish BBS.
+The reason for having a couple of good BBS filelists on garbo is to
+have the information what can be available even if garbo carries
+only a subset of the same files.
+666152 May 19 04:27 garbo.uwasa.fi:/pc/bbs/cbbs_dos.zip
+
+Wed 20-May-92: Acquired from a Finnish BBS a command line
+function evaluator update.  Slight nag.  Replaces eval104.zip.
+30584 Apr  9 01:06 garbo.uwasa.fi:/pc/math/eval106.zip
+
+Tue 19-May-92: Jonathan Rice kindly sent me copies of his
+cbip.archives reviews which I did no longer have.  They are on color
+DIR replacements and on date/time stamp utilities.  I have included
+the material into the update
+7950 May 19 22:47 garbo.uwasa.fi:/pc/pd2/review02.zip
+
+Tue 19-May-92: I have updated my subjective list of the best PD and
+shareware programs. It is now
+6016 May 19 07:16 garbo.uwasa.fi:/pc/pd2/bestpr24.zip
+
+Sun 17-May-92: I have updated the list of MsDos PD and shareware
+authors with addresses on or reachable from InterNet.  There are
+currently 55 entries on the list which is now
+11252 May 17 22:40 garbo.uwasa.fi:/pc/pd2/author07.zip
+
+Sat 16-May-92: To encourage the gentle users to write program
+reviews about the MsDos programs at garbo.uwasa.fi and SIMTEL20 to
+comp.binaries.ibm.pc.archives I started a new collection
+/pc/pd2/review01.zip with two reviews in it to get things going.
+(My own reviews are in the /pc/pd2/news files which you are
+currently reading).
+
+Sat 16-May-92: Rhys Weatherley and I have updated the list of MsDos
+& Windows FTP sites & moderators by adding the frequently asked
+information about the comp.binaries.ibm.pc binary postings missing
+parts server.  I also did some minor editing and changed the order
+of the North American sites. The list is now
+   7643 May 16 04:56 garbo.uwasa.fi:/pc/pd2/moder06.zip
+
+Mon 11-May-92: Acquired /pc/pcmag/vol11n06.zip. For one it contains
+Michael Mefford's PCUNZP.COM which "Provides a smaller, no-cost
+alternative to the shareware utility PKUNZIP.EXE for decompressing
+.ZIP files".
+  Also acquired /pc/pcmag/vol11n07.zip. It contains Douglas Boling's
+DOSCLIP.COM which is "A TSR utility that provides Windows-like
+cut-and-paste facilities to applications running under DOS". I like
+this. This TSR clipboard is very handy for cutting material from one
+application to another. I also use it for cutting and pasting
+commands and data when being connected, using MsKemit or Telnet, to
+your Unix hosts garbo and chyde. Definitely the utility to get and
+it will be making my bestpr*.zip list next update.
+
+Fri 1-May-92: I have updated the list of MsDos SW & PD authors with
+reachable email addresses on and from InterNet. The list now
+includes fifty authors. The list is available as
+9836 May 1 16:31 garbo.uwasa.fi:/pc/pd2/author06.zip
+
+Thu 30-Apr-92: Acquired printer and port redirection utility update
+35905 Mar 25 08:02 garbo.uwasa.fi:/pc/printer/prndi802.zip
+
+Thu 30-Apr-92: Update of Stan Browns programmers' FAQ
+32388 Apr 30 06:58 garbo.uwasa.fi:/pc/doc-net/faqmsdos.zip
+Stored with PC eolns so if you unzip it on Unix apply
+ unzip -a faqmsdos.zip
+I have processed the file so that you can read the extracted file
+also with elm on Unix.
+
+Thu 30-Apr-92: The list of MsDos & Windows FTP sites has been
+updated: 7260 Apr 30 05:38 garbo.uwasa.fi:/pc/pd2/moder05.zip
+
+Wed 29-Apr-92: Acquired File and Directory Editor update
+207177 Mar 7 06:03 garbo.uwasa.fi:/pc/dirutil/eddy6c1.zip
+
+Tue 21-Apr-92: The list of MsDos & Windows FTP sites has been
+updated to 7215 Apr 21 14:28 garbo.uwasa.fi:/pc/pd2/moder03.zip. I
+got some useful information of achie sites from Frederic Chapman,
+and after looking into it decided to include Frederic's note as
+such.  There are no changes in moder.lst.
+ Length  Method   Size  Ratio   Date    Time   Name ("^" ==> case
+ ------  ------   ----  -----   ----    ----   ----   conversion)
+   5938  Implode   2882  51%  04-17-92  23:31  chapman.txt
+  11271  Implode   3849  66%  04-21-92  14:28  moder.lst
+ ------          ------  ---                   -------
+  17209            6731  61%                              2
+
+Tue 21-Apr-92: The list of PD & SW MsDos authors reachable from
+internet has been updated.  There are now 48 entries, and Keith
+(Petersen) gave my some useful corrections.  The authors interested
+in getting on this list, please see the full instructions at the end
+of 9247 Apr 21 13:46 garbo.uwasa.fi:/pc/pd2/author05.zip.
+
+Mon 20-Apr-92: Acquired the following diskutility update from
+SIMTEL20 and took a closer look.
+/pc/diskutil
+mega113.zip     MegaBack Hard Drive Backup System, Patri-Soft, SW.
+                Beta test 1.13 version, but this I got to work
+                properly contrary to 1.11.
+
+Sat 18-Apr-92: Acquired the following utility programs from SIMTEL20
+and took a closer look.
+/pc/format
+fm42.zip        FormatMaster Menu Driven Floppy Disk Formatter, SW.
+                A versatile shareware utility from New-Ware with an
+                excellent user interface. One of those few utilities
+                that has been written the way a utility should be
+                written. A tip. If you for some reason have problems
+                with the MsDos format command when you have an upper
+                memory manager loaded (I do) try FormatMaster. (For
+                me this is one to adopt, and to register).
+/pc/diskutil
+mega111.zip     MegaBack Hard Drive Backup System, Patri-Soft, SW.
+                Beta version 1.11 of a "Comprehensive Backup for PC
+                Systems". A very professional looking utility as we
+                have come to expect from Patriquin, but not nearly
+                as intuitive as could and should be. In fact
+                somewhat bewildering. Also the program was stymied
+                when I threw at it a substitued drive to backup.
+                (Ok, you may ask, how do I back up then. I use pkzip
+                driven by batches I've customized).
+/pc/fileutil
+prune22.zip     Overwrite unallocated "Tail End" of files, Sydex.
+                The name of this specialized utility is somewhat
+                misleading, because what this utility does is that
+                it overwrites with a repeated character the
+                unallocated tail end of a file that when the file
+                size is not an exact multiple of the cluster size.
+                It does not actually "prune" anything (or perhaps
+                this is my English acting up again). The purpose of
+                this trick is security, and it can be useful. I
+                actually checked using Duncan Murdoch's excellent
+                showf214.zip direct disk read program that this
+                utility really delivers.
+/pc/diskutil
+safpak10.zip    "The Safe Shareware Disk Defragmentation Program".
+                Didn't have a testbench machine at hand and it did
+                not work on a ramdisk so I left it untested.
+                Experiences, anyone?
+/pc/printer
+printp63.zip    Print-Plus, The "Print Control Center", Shareware.
+                Seems to have quite a set of useful options, but
+                after trusting me with the final shareware screen
+                left me with a black background and black text :-(.
+/pc/arcutil
+zcm12.zip       Zip CommentMaster to edit zip comments, New-Ware, SW.
+                Convenient for performing the said task.  The only
+                snag was that it obviously clashes with the
+                lastybyte uppper memory manager.
+
+Sat 18-Apr-92: Acquired the following mathematics programs from
+SIMTEL20 and took a closer look.
+/pc/math
+cla20.zip       Calculate many characteristics for a square matrix.
+                Showy if not outright flashy, but a good program for
+                calculating several properties of a square matrix
+                including Determinant & rank, Inverse, Triangular
+                form, Eigenvalues, Characteristic polynomial,
+                Minimal polynomial, Real eigenvectors, and Jordan
+                form.
+/pc/math
+linsys10.zip    Solve simultaneous linear equations witn N < 21.
+                Solves simultaneous linear equations of up to 20
+                variables. Nothing particular in that. The neat
+                twist is that linsys can solve homogenous equations.
+                Furthermore it can give the solution the fractional
+                (p/q) format. But it is one more program that
+                certainly could do with a little less cryptic user
+                interface. For example requires break to end, would
+                you believe. Does not check for input errors but
+                crashes with a run-time error if something goes
+                wrong.
+/pc/math
+solveq10.zip    Find the roots of a polynomial up to degree of 30.
+                Nothing unique. Solves the real and complex roots.
+                Part of the same Computational Linear Algebra
+                Project as the other two. The project is at Federal
+                University of Paraiba, Brazil, and the programs are
+                by obviously by Lenimar Nunes de Andrade.
+
+Sat 18-Apr-92: Acquired the following files from a Finnish BBS to
+garbo.uwasa.fi MsDos FTP archives.
+/pc/doc-soft
+batsec.zip      Batch secrets, elementary color & key text advice.
+                A bit a dime a dozen.
+/pc/sysinfo
+jconfig.zip     A Belgian PC Config, Disk Info, TSR Info, Benchmark.
+                It is natural that also system information programs
+                abound. If you like sysinfo programs this one is
+                worth a look. Has all the basic ingredients plus a
+                some more in a nicely displayed text format even if
+                the name System Information Center is a bit too
+                grand. Shareware from Jerome Chome.
+/pc/filefind
+snif134.zip     "The ultimate file-finder" by C.Declerck, freeware.
+                A file finding utility, and not a bad one either.
+                From the documents: "SNiF is a program that allows
+                you to find files across one or more harddisks
+                (floppies). It is operated from the DOS command line
+                and offers many options which may affect the
+                'sniffing' (searching) of files."
+ 12495 Mar  4 01:16 garbo.uwasa.fi:/pc/doc-soft/batsec.zip
+ 33839 Feb  8 12:22 garbo.uwasa.fi:/pc/sysinfo/jconfig.zip
+ 36303 Mar 16 21:57 garbo.uwasa.fi:/pc/filefind/snif134.zip
+
+Sat 18-Apr-92: I updated all the garbo feedback and information
+"post" files this time by putting an subject index to each of them.
+ 16951 Apr 18 16:23 garbo.uwasa.fi:/pc/pd2/post01.zip
+ 22145 Apr 18 16:22 garbo.uwasa.fi:/pc/pd2/post02.zip
+ 26620 Apr 18 16:21 garbo.uwasa.fi:/pc/pd2/post03.zip
+ 24477 Apr 18 16:20 garbo.uwasa.fi:/pc/pd2/post04.zip
+ 23837 Apr 18 16:18 garbo.uwasa.fi:/pc/pd2/post05.zip
+ 23599 Apr 18 16:17 garbo.uwasa.fi:/pc/pd2/post06.zip
+ 26910 Apr 18 16:15 garbo.uwasa.fi:/pc/pd2/post07.zip
+ 27580 Apr 18 16:12 garbo.uwasa.fi:/pc/pd2/post08.zip
+
+Fri 17-Apr-92: I have updated the list of MsDos PD & SW utilities
+authors reachable by email on InterNet by adding eight new entries
+which brings the total up to 42. It is availabe as
+8145 Apr 17 20:34 garbo.uwasa.fi:/pc/pd2/author04.zip
+
+Fri 17-Apr-92: Acquired the following files from a Finnish BBS to
+garbo.uwasa.fi MsDos FTP archives.
+/pc/connect
+lap101.zip      LapView PC-to-PC linking, shareware, nagware.
+                Performs functions similar to the commercial Laplink
+                program but is par from par. Works however fairly
+                enough and is worth a look. Using it is not quite as
+                intuitive as it could. Eg getting files copied
+                across the connection for the first time takes a bit
+                of experimenting and reading the slightly ambiguous
+                document.
+/pc/education
+typdos40.zip    A beginner's type-it quiz to MsDos with 66 tasks.
+/pc/dirutil
+tdir92.zip      TreeDir jump to directories from a menu (w asm).
+                Seems a bit unfinished. Cannot jump to the root,
+                search line editing makes information disappear and
+                the seach bar can go beyond the listed directories.
+                But it is freeware.
+
+Fri 17-Apr-92: I have updated garbo.uwasa.fi:/pc/pd2/bestpr22.zip.
+It is my subjective choice as the most useful PD & SW utilities.  I
+have added one item, updated the version numbers, and rewrote a bit.
+
+Thu 16-Apr-92: Acquired the following files from a Finnish BBS to
+garbo.uwasa.fi MsDos FTP archives.
+/pc/dirutil
+dired306.zip    DIREDIT Directory Editor by P. R. Fletcher.
+                This shareware utility can be used to change the
+                order of a directory. A bit drab and not an entirely
+                finished product. For example when I tried to sort a
+                ram disk directory I had to use a third party screen
+                capture buffer to see the error message that flashed
+                by.
+/pc/doshelp
+dossum20.zip    DOS Summary hypertext tutorial and reference (good).
+                Shareware. From its documents: "DOS Summary is a
+                hypertext tutorial and reference product which
+                covers all DOS commands and drivers through MS-DOS
+                version 5.0. Also added are tutorials covering
+                memory management and how DOS starts. The program
+                can be used in standalone or resident mode."
+
+Thu 16-Apr-92: Acquired the following files from SIMTEL20 and took a
+brief closer look.  Why are the other users so shy of writing these
+reviews to comp.binaries.ibm.pc.archives? We most often have the
+author's comments from the upload announcements.  But how about a
+bit more of the users' views?
+/pc/filecopy
+a-ren301.zip    eXceptional REName, move&rename file, directory.
+                Move files from one directory to another, and can
+                renames while moving. Does not work across drives.
+                No option for asking confirmation. Includes an
+                option for directory renaming. Curiously the archive
+                is called a-ren301.zip instead of the more obvious
+                xren301.zip. PD/SW status not defined but solicits a
+                tiny offering. By James Ritterbusch.
+/pc/unix
+bm_rm.zip       Remove files and/or directory subtrees (w C & asm).
+                The umpteenth of the theme of an Unix like rm for
+                MsDos. Quite a good rendition so if you are looking
+                for a rm for MsDos, this is one option to look at.
+                By Brian McGuinness. GNUish.
+/pc/filefind
+fff38.zip       File Finder Pack by Jim Derr (author of Shez).
+                Basically takes you conveniently to the directory
+                where the file is that you want to find. Can also
+                perform fuzzy searches. From documentation:
+                "Beginning with this release, you can also perform a
+                fuzzy search. This is useful if you are trying to
+                locate a file but don't know the exact filename. The
+                fuzzy search routine will attempt to locate files
+                that sound like the filename entered on the command
+                line."
+
+Wed 15-Apr-92: Updated the list of MsDos & windows FTP sites to
+bring CICA windows site information up to date.
+4234 Apr 15 14:04 garbo.uwasa.fi:/pc/pd2/moder02.zip
+
+Tue 14-Apr-92: Got updates of two of my long-time favorites:
+381296 Apr 13 12:44 garbo.uwasa.fi:/pc/memutil/tlb-v200.zip
+This is an upper memory manager by Dan Lewis.  I use it extensively
+(if you pardon the pun).  The second is Jim Derr's Compression
+Companion.  I had the pleasure of being able to help testing to get
+a crippling bug removed from version 7.0.
+193459 Apr 12 22:55 garbo.uwasa.fi:/pc/arcutil/shez71.zip
+
+Mon 13-Apr-92: Updated again the list of MsDos PD & SW authors
+reachable on InterNet email:
+6983 Apr 13 23:53 garbo.uwasa.fi:/pc/pd2/author03.zip
+
+Mon 13-Apr-92: I am not publicizing this on the news although this
+information is not confidential.  Following a suggestion from Rhys
+Weatherley we have made a new directory /pc/link and for better or
+worse linked four fairly frequently updated files in there.  Thus
+the users can obtain these particular files also without knowing
+their current version numbers should s/he so choose.  The files are
+ author.zip  List of PD & SW authors on InterNet (/pc/pd2/author02.zip)
+ moder.zip   List of MsDos sites & moderators (/pc/pd2/moder001.zip)
+ pd2ans.txt  Canned garbo instructions (/pc/pd2/pd2ans059.txt)
+ tsans.txt   Questions about ts-progs (/pc/ts/tsans059.txt)
+ INDEXTS.ZIP List of contents of TS-programs in /pc/ts
+The last of these files is in the /pc main directory.  The others
+(as said above) in the /pc/link directory.
+
+Sun 12-Apr-92: I have already updated the list of major MsDos PD &
+SW authors reachable by email on internet.  The list is now
+garbo.uwasa.fi:/pc/pd2/author02.zip.
+
+Sun 12-Apr-92: I am starting a new list on garbo.uwasa.fi archives.
+A list of PD & SW utilities authors at MsDos FTP archives reachable
+by email from InterNet.  The list is garbo.uwasa.fi:/pc/pd2/
+author*.zip.  I will include a version number in the future
+releases, that is author02.zip, author03.zip, etc.  If you are an
+author interested on submitting your information.  Please see
+/pc/pd2/post08.txt for more on this.
+
+Sun 12-Apr-92: I am changing the naming convention of the
+garbo.uwasa.fi:/pc/pd2/moder.lst list of MsDos FTP sites and
+moderators which I maintain together with Rhys Weatherley.  I'll
+make it a .zip file, and include a version number from now on.  Thus
+I have changed it now to be moder001.zip.  There are no changes in
+the text this time.  The file uses PC eolns so that if you wish to
+unzip it on your Unix host, apply unzip -a moder001.zip.
+
+Fri 10-Apr-92: Acquired to garbo.uwasa.fi archives from a Finnish
+BBS:
+/pc/printer
+prn2fil3.zip    Direct printer also to a file, with sound (w asm).
+                This has been modified from the original asm sources
+                in the PC magazine first by Mel Brown and now by
+                John Durso. Adds a sound as a reminder to the user
+                that printer traffic is being redirected to a disk
+                file by this program.  Also says to correct several
+                logic errors in the original version of the program.
+                I retained the previous prn2file.zip since I am far
+                from convinced that this works quite as intended.
+/pc/printer
+psprnt11.zip    Print a regular ASCII file on a Postscript printer.
+                I have not tested this shareware program from Star
+                Graphics since I do not have a postscript printer
+                available at the moment. Someone please write us a
+                review to cbip.archives.
+/pc/unix
+tail20.zip      Displays the tail of a text file, by Miles Levy.
+                Solicited as being fast. Does not quite use the Unix
+                syntax.
+/pc/math
+xcal41.zip      Extensible, programmable, double precision calculator
+                Yet another command line calculator. This one has
+                quite a plethora of functions. Worth a look.
+
+Mon 6-Apr-92: I have updated the list of MsDos FTP sites
+garbo.uwasa.fi:/pc/pd2/moder.lst which I moderate togerther with
+Rhys Weatherley.
+
+Mon 6-Apr-92: I got shez70.zip compression companion to replace the
+earlier /pc/arcutil/shez65.zip version, but unfortunately the new
+version refused to run on the machines I tried.  I have been in
+contact with the author Jim Derr and I am retaining the old version
+on our archives for the time being.  Incidentally if you do not have
+Shez and use various archivers, this is definitely the utility to
+download.
+
+Mon 6-Apr-92: Received from the author Norbert Juffa Turbo Pascal
+TPL run-time replacement:
+ 114858 Apr 1 16:39 garbo.uwasa.fi:/pc/turbopas/tpl60n11.zip
+
+Thu 2-Apr-92: Acquired from SIMTEL20 to garbo.uwasa.fi archives
+269011 Mar 16 00:00 garbo.uwasa.fi:/pc/screen/tdraw450.zip
+tdraw450.zip    TheDraw Color Screen Image Generator & Editor (good).
+                This is a very nice program for drawing eg the ansi
+                graphics screens so familiar as the opening screen
+                of many BBSes. If you like devising graphics screens
+                this is your obvious choice. (The std disclaimer
+                applies). I particularly liked the fact that even
+                though this is a program with very many features, I
+                got started with it within a minute of unpacking it.
+                A depressing number of authors do not realize how
+                important this is for their utilities to prosper.
+
+Mon 30-Mar-92: Rhys Wheatherley and I added three new MsDos sites to
+our list of MsDos sites and moderators.  Two in Germany, one in
+Hawaii.  10272 Mar 30 10:53 garbo.uwasa.fi:/pc/pd2/moder.lst
+
+Sun 29-Mar-92: I see from our system logs that some users have
+downloaded material directly from our /pc/incoming directory.
+Please do not do that.  The incoming directories are _strictly_ for
+uploads only.  At garbo.uwasa.fi they are not for downloading, and
+they are not for users' exchanges.  If this continues we (as the
+first step) will have to remove the read option from the incoming
+directories.  This would be very inconvenient for our kind uploaders
+because they would not be able to check that their upload got there.
+(Uploading itself would not be prevented by this removal).  Please
+do not force us to do this.  Be also aware that each FTP upload and
+download at garbo can be traced from our logs, if something really
+out-of-line or malevolent would take place with regard to the usage
+of our incoming directories.  But I am trustful that we don't ever
+have to go that far.
+
+Fri 27-Mar-92: Acquired to garbo.uwasa.fi MsDos archives
+/pc/educgames
+adq.zip         Advanced Dos Quiz by Steve Mount.
+                Neat idea and good questions, but a bit too drab for
+                my taste.
+/pc/unix
+tee9201.zip     Tee fork for MsDos w asm (eg dir | tee > dir.txt)
+                This is potentially quite a useful little utility.
+/pc/cmdutil
+cmded2e5.zip    Command line edit & completion update based on PC Mag
+
+Sun 22-Mar-92: Added an Australian virus site to the list of MsDos
+FTP sites garbo.uwasa.fi:/pc/pd2/moder.lst.
+
+Sun 22-Mar-92: Update of the Finnish BBS list.  The one you can't
+wait to get your hands on :-).
+ 22170 Mar 17 19:49 garbo.uwasa.fi:/pc/bbs/fi920317.zip
+
+Sat 21-Mar-92: Obtained from SIMTEL20 beav132.zip binary editor and
+viewer by Peter Reilley.  Resembles MicroEMACS.  Nice.
+  73499 Nov 26 16:13 garbo.uwasa.fi:/pc/binedit/beav132.zip
+ 134795 Mar 18 12:39 garbo.uwasa.fi:/pc/source/beav132s.zip
+
+Fri 20-Mar-92: Obtained for a Finnish BBS:
+/pc/sysinfo
+pcdoc310.zip    Menued system information, reqs mouse, R.Leinecker
+                One of the many. Has one interesting feature. Finds
+                out approximate clock speed. Without a mouse you
+                will finally get stock and will have to reboot. (I
+                have no mouse on my system).
+
+Thu 19-mar-92: Obtained from a Finnish BBS:
+/pc/math
+math23.zip      Mathematical expressions calculator, Greg Kochaniak
+                One of the many. Works both as a command line
+                calculator and in interactive mode.
+
+Thu 19-Mar-92: This is for our Finnish students of Accounting and
+and Business Finance.  The questions and answers to the exam on Levy
+& Sarnat's Capital Investment and Financial Decisions are now
+available as garbo.uwasa.fi:/pc/exam/yitten34.zip and yitrat34.zip,
+or they can be copied directly from me at my reception times (Tue
+12:30-14:00) if you bring a proberly _formatted_ 3.5" or 5.25"
+diskette with you.  Please first, however, read carefully the note
+on the second floor bulletin board.
+
+Tue 17-Mar-92: The garbo.uwasa.fi:/pc/pd2/post07.zip garbo
+information and feedback file has now the full 30 items, and is thus
+complete.  It is readable on Unix eg by elm or any browser or
+editor.  On Unix apply unzip -a post07.zip to extract with proper
+eolns.  On MsDos it is readable with ReadMail /pc/mail/rmail401.zip
+or any browser or editor.  On MsDos extract with PKUNZIP version
+1.10.  The earlier PKUNZIP versions fill report bogus CRC errors.
+(This goes for a great number of zipped files on the FTP archives).
+
+Wed 11-Mar-92: With the natural exception of the self-extracting
+archivers and execompressors I have converted our self-extracting
+.exe files into .zip files.  I have also zipped the raw .exe
+executables on our archives as a matter of general policy.
+Fortunately there weren't that many.
+
+Sun 8-Mar-92: Acquired from a Finnish BBS the following function
+evaluator.
+   30698 Feb  6 01:04 garbo.uwasa.fi:/pc/math/eval104.zip
+Writing a function evaluator is a challenging, but a standard
+programming task.  The central problem in the programming is writing
+a routine to parse the function given in string fromat in order to
+evaluate it.  I have even written such a program myself (how else;
+/pc/ts/tsfunc13.zip).
+
+Sat 7-Mar-92: There is a new directory /ql (and subdirectories) for
+the Sinclair QL users.  See /ql/0news-ql for more information.
+
+Thu 5-Mar-92: As you know Rhys Weatherley rhys@cs.uq.oz.au from the
+University of Queensland, Australia, is maintaining garbo.uwasa.fi:
+/pc/pd2/moder.lst list of FTP sites and moderators jointly with me.
+Rhys has come up with much new useful information.  He has filled in
+the "Main indexes" item, and added new MsDos virus utilities sites
+on the list.  This version's date stamp is Thu 5-Mar-92 13:05.  (The
+stamp is always given at the beginning of the moder.lst list).
+
+Wed 4-Mar-92: garbo.uwasa.fi:/pc/pd2/moder.lst list of MsDos FTP
+sites and moderators has been updated again.  No new sites have been
+added, but a co-moderator change at umich has been noted, the
+Australian archie.au & rana information has been updated, and a new
+item "Main indexes" has been added, but only for garbo and SIMTEL20
+for the time being.
+
+Tue 3-Mar-92: Acquired from a Finnish BBS
+ 77649 Jan 8 18:19 garbo.uwasa.fi:/pc/dirutil/daag303.zip
+Disk-at-a-Glance directory information & change.  Nagware.
+
+Mon 2-Mar-92: The list of FTP sites and moderators garbo.uwasa.fi:
+/pc/pd2/moder.lst has been updated again.  This time the Australian
+garbo and SIMTEL20 mirror site has been updated.  The site has
+moved.  I have also updated the reference to the comprehensive FTP
+site list take over by Tom Czarnik.
+
+Sun 1-Mar-92: I have zipped all the /pc/pd2/post*.txt (* =
+01,02,03,04,05,06,07) information and feedback files to save you
+download time and disk space.  Thus they now are /pc/pd2/post*.zip.
+The files come with PC eolns so that if you unzip them on your unix
+host with /unix/arcers/unzip41.tar.Z apply the -a switch.
+
+Sat 29-Feb-92: I have updated my list of MsDos FTP sites and
+moderators garbo.uwasa.fi:/pc/pd2/moder.lst by adding the
+information on OAK.Oakland.Edu and by editing the SIMTEL20
+information.
+
+Fri 28-Feb-92: Acquired from a Finnish BBS the following shareware
+nonlinear regression analysis program by Phillip Sherrod:
+ 159764 Jan 2 08:15 garbo.uwasa.fi:/pc/stat/nonlin10.zip
+
+Fri 28-Feb-92: Acquired from a Finnish BBS:
+ 241051 Jan 12 00:04 garbo.uwasa.fi:/pc/programming/dosref22.zip
+It is an update of the Programmer's Technical Reference for MsDos
+and the IBM PC by Dave Williams.  Shareware.
+
+Wed 19-Feb-92.  Mathematical function plotting, not easy:
+105727 Jan 1 07:25 garbo.uwasa.fi:/pc/plot/mathpl20.zip
+
+Sun 9-Feb-92: Obtained Texas Zmodem from SIMTEL20
+40027 Dec 30 10:04 garbo.uwasa.fi:/pc/termutil/txzm214.zip
+It is a nice Zmodem transfer program which is certainly worth a look.
+
+Sun 9-Feb-92: Obtained compressed executables detector update from
+SIMTEL20. 18388 Jan 5 09:01 garbo.uwasa.fi:/pc/execomp/chk4c360.zip.
+Below is a extract from the documentation.
+  3.50  -- Changed algorithm for determining version number of PKLITE
+           files; now also notes PKLITE files with extra compression.
+  3.55  -- Changed algorithm for determining major and minor version
+           number of PKLITE files; now also notes files having the
+           "large extractor" flag set.
+  3.60  -- Added detection for OPTLINK (used by NORTON UTILITIES).
+
+Tue 4-Feb-92: This information is above all directed to
+long-standing users of garbo.uwasa.fi, preferably with an upload
+record, or some other background of mutually useful communication
+with garbo moderators.  If you are interested in having your email
+address added to the garbo-infolist upload accouncement, download
+statistics, etc news list you are welcome to email me an
+"application".  For more please see /pc/pd2/infolist.txt.
+
+Sat 1-Feb-92: Obtained /pc/virus/scanv86b.zip McAfee virus scanner
+directly from the author.
+
+Mon 27-Jan-92: Keith and I obtained CompuShow GIF viewer new version
+directly for the author Bob Berry.  The file is available from both
+sites and the mirrors as usual.  At garbo it is
+ 136108 Jan 20 12:00 garbo.uwasa.fi:/pc/gifutil/cshw841a.zip
+
+Tue 21-Jan-92: Obtained from a Finnish BBS an update of the Equation
+solver based on Borland's Eureca.  Definitely worth a look if you
+use programs like Mathematica etc.  Available as
+  296060 Jul 1 1991 garbo.uwasa.fi:/pc/math/mrcry206.zip
+
+Mon 20-Jan-92: Captured Stan Brown's FAQ from the news for
+comp.os.msdos.programmers with Stan's kind permission to store it at
+garbo.uwasa.fi.
+
+Sun 19-Jan-92: The garbo MsDos INDEX, that is the annotated file
+list of our /pc directories is how available also in the .zip format
+as garbo.uwasa.fi:/pc/filelist/garboidx.zip.  Especially if you
+download our INDEX often, preferably use garboidx.zip because it is
+compresses to less than half the size of the original.  The zipped
+file comes with MsDos eolns (end of lines) so if you wish to unzip
+on Unix apply unzip -a garboidx.zip (unzip is from garbo.uwasa.fi:
+/unix/arcers/unzip401.tar.Z).
+
+Sun 19-Jan-92: Acquired garbo.uwasa.fi:/pc/math/finan10.zip, The
+Financial Analyzer by Ray Zimmerman.  One of the many of its kind
+making basic financial calculations, but a nice rendition.  But
+before one can fully utilize any financial calculations program, one
+will have to have some rudiments of financial mathematics under
+one's belt.  Well, anyone having a set of loans and a mortgage is
+soon bound to :-).
+
+Sat 18-Jan-92: The update maintenance of garbo.uwasa.fi is about
+complete.  Garbo formerly run on a MIPS 2030 workstation, and that
+has now been replaced by a Sun IPX workstation.  We decided to
+retain the established garbo name and IP number to make the
+transition smooth for you kind users.  If you notice any such
+irregularities that seem to have come about during the last week,
+please report to hv@uwasa.fi, or to me so I'll forward if necessary.
+
+Sat 18-Jan-92: Acquired the following files to our archives
+ 5952 Jul 14  1988 garbo.uwasa.fi/pc/doc-soft/useansi.zip
+ 5849 Nov  4 02:15 garbo.uwasa.fi/pc/editor/qeditq&a.zip
+The former contains a fairly useful, if oldish documentation of ansi
+codes. The latter contains QEdit editor messages hopefully of
+interest to QEdit users.
+
+Wed 15-Jan-92: Acquired from a Finnish BBS:
+/pc/memutil
+shrom18j.zip    Swap to disk when shelling from an application. One
+                of the big problems with many programs that allow
+                the user to shell to Dos, is that the user is left
+                with little memory. This very useful utility
+                remedies that by swapping the application to dos
+                when the application shells. Turbo Pascal is the
+                only important application I have found so far that
+                is not amenable to SHell ROOM.
+
+Wed 8-Jan-92: I have again updated the list of MsDos FTP sites and
+their moderators.  Rhys Weatherley rhys@cs.uq.oz.au is kindly
+maintaining this list jointly with me from 8-Jan-92 on.  The list
+6597 Jan 8 06:12 garbo.uwasa.fi:/pc/pd2/moder.lst is an ascii file.
+
+Fri 3-Jan-92: The list of MsDos FTP sites and moderators
+garbo.uwasa.fi:/pc/pd2/moder.lst (ascii file) has been updated.
+This update is due to Rhys Weatherley rhys@cs.uq.oz.au who
+introduced a new item for each site and gathered the information.
+This additional item is "Directories:" and it gives the major
+directories at each site in a one-line format.  Thus the current
+information for each site is now
+ Site:
+ IP:
+ Location:
+ Main areas:
+ Directories:
+ Moderator(s):
+
+Thu 2-Jan-92: Keith got us (SIMTEL20 and garbo) a more recent
+version /pc/arcutil/ac151.zip of an archive converter from a US BBS.
+If you have an earlier version, you should update.  The
+configuration program of the 150a version was prohibitevely buggy,
+but the update seems quite useful and is worth a closer look.
+
+Wed 1-Jan-92: Acquired from a Finnish BBS the following update of an
+archive converter:
+ 39345 Dec  1 11:35 garbo.uwasa.fi:/pc/arcutil/ac150a.zip
+and retained for the time being
+ 26477 Nov 13 01:42 garbo.uwasa.fi:/pc/goldies/ac142.zip
+because the configuration program made a buggy and confusing
+impression in my quick and dirtyy 15 minutes test.
+
+Wed 1-Jan-92: The 1991 selected garbo.uwasa.fi news for MsDos
+material can be found as /pc/pd2/news91a.pd2 and news91b.pd2.  There
+is also news for 1991 in /pc/ts/0news91.ts.

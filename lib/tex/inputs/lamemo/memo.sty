@@ -1,0 +1,1634 @@
+\typeout{Document Style 'memo'. Released March 28, 1990}
+\def\thebibliography#1{%
+\par%
+\vspace{\baselineskip}%
+REFERENCES%
+\list%
+{[\arabic{enumi}]}{\settowidth\labelwidth{[#1]}\leftmargin\labelwidth
+\advance\leftmargin\labelsep
+\usecounter{enumi}}%
+\def\newblock{\hskip .11em plus .33em minus -.07em}%
+\sloppy\clubpenalty4000\widowpenalty4000
+\sfcode`\.=1000\relax}%
+\let\endthebibliography=\endlist
+\setcounter{topnumber}{2}
+\def\topfraction{.7}
+\setcounter{bottomnumber}{1}
+\def\bottomfraction{.3}
+\setcounter{totalnumber}{3}
+\def\textfraction{.2}
+\def\floatpagefraction{.5}
+\setcounter{dbltopnumber}{2}
+\def\dbltopfraction{.7}
+\def\dblfloatpagefraction{.5}
+\long\def\@makecaption#1#2{%
+\vskip 10pt 
+\setbox\@tempboxa\hbox{#1: #2}%
+\ifdim \wd\@tempboxa >\hsize %
+#1: #2\par %
+\else %
+\hbox to\hsize{\hfil\box\@tempboxa\hfil}%
+\fi
+}%
+\newcounter{figure}
+\def\thefigure{\@arabic\c@figure}
+\def\fps@figure{tbp}
+\def\ftype@figure{1}
+\def\ext@figure{lof}
+\def\fnum@figure{Figure \thefigure}
+\def\figure{\@float{figure}}
+\let\endfigure\end@float
+\@namedef{figure*}{\@dblfloat{figure}}
+\@namedef{endfigure*}{\end@dblfloat}
+\newcounter{table}
+\def\thetable{\@arabic\c@table}
+\def\fps@table{tbp}
+\def\ftype@table{2}
+\def\ext@table{lot}
+\def\fnum@table{Table \thetable}
+\def\table{\@float{table}}
+\let\endtable\end@float
+\@namedef{table*}{\@dblfloat{table}}
+\@namedef{endtable*}{\end@dblfloat}
+\def\@ptsize{0} %
+\@namedef{ds@11pt}{\def\@ptsize{1}} %
+\@namedef{ds@12pt}{\def\@ptsize{2}} %
+\@twosidefalse
+\def\ds@draft{\overfullrule 5pt} %
+\@options
+\lineskip 1pt %
+\normallineskip 1pt
+\def\baselinestretch{1}
+\ifcase \@ptsize\relax %
+\def\@normalsize{\@setsize\normalsize{12pt}\xpt\@xpt 
+\abovedisplayskip 10pt plus2pt minus5pt%
+\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip \z@ plus3pt%
+\belowdisplayshortskip 6pt plus3pt minus3pt%
+\let\@listi\@listI} %
+\def\small{\@setsize\small{11pt}\ixpt\@ixpt
+\abovedisplayskip 8.5pt plus 3pt minus 4pt%
+\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip \z@ plus2pt%
+\belowdisplayshortskip 4pt plus2pt minus 2pt%
+\def\@listi{\leftmargin\leftmargini %
+\topsep 4pt plus 2pt minus 2pt\parsep 2pt plus 1pt minus 1pt
+\itemsep \parsep}}
+\def\footnotesize{\@setsize\footnotesize{9.5pt}\viiipt\@viiipt
+\abovedisplayskip 6pt plus 2pt minus 4pt%
+\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip \z@ plus 1pt%
+\belowdisplayshortskip 3pt plus 1pt minus 2pt%
+\def\@listi{\leftmargin\leftmargini %
+\topsep 3pt plus 1pt minus 1pt\parsep 2pt plus 1pt minus 1pt
+\itemsep \parsep}}
+\def\scriptsize{\@setsize\scriptsize{8pt}\viipt\@viipt}
+\def\tiny{\@setsize\tiny{6pt}\vpt\@vpt}
+\def\large{\@setsize\large{14pt}\xiipt\@xiipt}
+\def\Large{\@setsize\Large{18pt}\xivpt\@xivpt}
+\def\LARGE{\@setsize\LARGE{22pt}\xviipt\@xviipt}
+\def\huge{\@setsize\huge{25pt}\xxpt\@xxpt}
+\def\Huge{\@setsize\Huge{30pt}\xxvpt\@xxvpt}
+\or %
+\def\@normalsize{\@setsize\normalsize{13.6pt}\xipt\@xipt
+\abovedisplayskip 11pt plus3pt minus6pt%
+\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip \z@ plus3pt%
+\belowdisplayshortskip 6.5pt plus3.5pt minus3pt%
+\let\@listi\@listI} %
+\def\small{\@setsize\small{12pt}\xpt\@xpt
+\abovedisplayskip 10pt plus2pt minus5pt%
+\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip \z@ plus3pt%
+\belowdisplayshortskip 6pt plus3pt minus3pt%
+\def\@listi{\leftmargin\leftmargini %
+\topsep 6pt plus 2pt minus 2pt\parsep 3pt plus 2pt minus 1pt
+\itemsep \parsep}}
+\def\footnotesize{\@setsize\footnotesize{11pt}\ixpt\@ixpt
+\abovedisplayskip 8pt plus 2pt minus 4pt%
+\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip \z@ plus 1pt%
+\belowdisplayshortskip 4pt plus 2pt minus 2pt%
+\def\@listi{\leftmargin\leftmargini %
+\topsep 4pt plus 2pt minus 2pt\parsep 2pt plus 1pt minus 1pt
+\itemsep \parsep}}
+\def\scriptsize{\@setsize\scriptsize{9.5pt}\viiipt\@viiipt}
+\def\tiny{\@setsize\tiny{7pt}\vipt\@vipt}
+\def\large{\@setsize\large{14pt}\xiipt\@xiipt}
+\def\Large{\@setsize\Large{18pt}\xivpt\@xivpt}
+\def\LARGE{\@setsize\LARGE{22pt}\xviipt\@xviipt}
+\def\huge{\@setsize\huge{25pt}\xxpt\@xxpt}
+\def\Huge{\@setsize\Huge{30pt}\xxvpt\@xxvpt}
+\or %
+\def\@normalsize{\@setsize\normalsize{15pt}\xiipt\@xiipt
+\abovedisplayskip 12pt plus3pt minus7pt%
+\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip \z@ plus3pt%
+\belowdisplayshortskip 6.5pt plus3.5pt minus3pt%
+\let\@listi\@listI} %
+\def\small{\@setsize\small{13.6pt}\xipt\@xipt
+\abovedisplayskip 11pt plus3pt minus6pt%
+\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip \z@ plus3pt%
+\belowdisplayshortskip 6.5pt plus3.5pt minus3pt%
+\def\@listi{\leftmargin\leftmargini %
+\parsep 4.5pt plus 2pt minus 1pt
+\itemsep \parsep
+\topsep 9pt plus 3pt minus 5pt}}
+\def\footnotesize{\@setsize\footnotesize{12pt}\xpt\@xpt
+\abovedisplayskip 10pt plus2pt minus5pt%
+\belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip \z@ plus3pt%
+\belowdisplayshortskip 6pt plus3pt minus3pt%
+\def\@listi{\leftmargin\leftmargini %
+\topsep 6pt plus 2pt minus 2pt\parsep 3pt plus 2pt minus 1pt
+\itemsep \parsep}}
+\def\scriptsize{\@setsize\scriptsize{9.5pt}\viiipt\@viiipt}
+\def\tiny{\@setsize\tiny{7pt}\vipt\@vipt}
+\def\large{\@setsize\large{18pt}\xivpt\@xivpt}
+\def\Large{\@setsize\Large{22pt}\xviipt\@xviipt}
+\def\LARGE{\@setsize\LARGE{25pt}\xxpt\@xxpt}
+\def\huge{\@setsize\huge{30pt}\xxvpt\@xxvpt}
+\let\Huge=\huge
+\fi
+\normalsize %
+\marginparwidth 90pt %
+\marginparsep 11pt %
+\marginparpush 5pt %
+\footheight 12pt %
+\footskip 25pt %
+\footnotesep 12pt %
+\skip\footins 10pt plus 2pt minus 4pt %
+\floatsep 12pt plus 2pt minus 2pt
+\textfloatsep 20pt plus 2pt minus 4pt
+\intextsep 12pt plus 2pt minus 2pt
+\@maxsep 20pt
+\@fptop 0pt plus 1fil
+\@fpsep 8pt plus 2fil
+\@fpbot 0pt plus 1fil
+\parindent 0pt %
+\partopsep 0pt %
+\@lowpenalty 51 %
+\@medpenalty 151 %
+\@highpenalty 301 %
+\@beginparpenalty -\@lowpenalty %
+\@endparpenalty -\@lowpenalty %
+\@itempenalty -\@lowpenalty %
+\def\theequation{\arabic{equation}}
+\arraycolsep 5pt %
+\arrayrulewidth .4pt %
+\doublerulesep 2pt %
+\skip\@mpfootins = \skip\footins
+\fboxsep = 3pt %
+\fboxrule = .4pt %
+\def\footnoterule{\kern-1\p@ 
+\hrule width .4\columnwidth 
+\kern .6\p@} %
+\long\def\@makefntext#1{\noindent %
+\hangindent 5pt\hbox 
+to 5pt{\hss $^{\@thefnmark}$}#1}
+\def\today{\ifcase\month\or
+January\or February\or March\or April\or May\or June\or
+July\or August\or September\or October\or November\or December\fi
+\space\number\day, \number\year}
+\pagenumbering{arabic} %
+\onecolumn %
+\@fileswtrue
+\newlength{\@lengthlabel}
+\newlength{\@lengthrule}
+\newlength{\@lengthdate}
+\newlength{\@lengthname}
+\newcounter{@countlist}
+\newcount\@countverticalposition
+\newcount\@countclasssep
+\newcount\@counttemp
+\newcount\@counttemptwo
+\newcount\@countto
+\newcount\@countfrom
+\newcount\@countthru
+\newcount\@countcy
+\newcount\@countattachments
+\newcount\@countreference
+\newcount\@countenc
+\newcount\@countdistribution
+\newcount\@countleftcolon
+\newcount\@countrightcolon
+\newcount\@countleftheader
+\newcount\@countrightheader
+\newcount\@countmemolist
+\newtoks\@toksto
+\newtoks\@toksfrom
+\newtoks\@toksthru
+\newtoks\@tokscy
+\newtoks\@toksattachments
+\newtoks\@toksenc
+\newtoks\@toksreference
+\newtoks\@toksdistribution
+\newtoks\@toksheaderone
+\newtoks\@toksheadertwo
+\newtoks\@toksbeforenewline
+\newtoks\@toksafternewline
+\newtoks\@toksbeforecomma
+\newtoks\@toksempty
+\newtoks\@toksblank
+\newtoks\@toksnewline
+\newtoks\@toksremaining
+\newtoks\@toksmultipleto
+\newtoks\@toksitem
+\newsavebox{\@boxtemp}
+\newsavebox{\@boxclasspage}
+\newsavebox{\@boxpagetwoheader}
+\newdimen\@dimentoppagetwo
+\newdimen\@dimenspacetosubject
+\newdimen\@dimenpagetwoheader
+\newdimen\@dimenfirstpageleftheader
+\newdimen\@dimenwdtt
+\newdimen\@dimenmemopaperhcorr
+\newdimen\@dimenmemopapervcorr
+\newdimen\@dimenspaceaftercolon
+\newdimen\descriptionmargin
+\newdimen\@dimenversemargin
+\newdimen\@dimentemp
+\newskip\@parskipsave
+\newif\if@comma
+\newif\if@newline
+\newif\if@notvoidtoks
+\newif\if@toksnotequal
+\newif\if@beenhere
+\newif\if@somethingbefore
+\newif\if@continueloop
+\newif\if@cmfonts
+\newif\if@closing
+\clubpenalty=10000
+\widowpenalty=10000
+\textheight 724pt
+\topmargin -72pt%
+\topskip 0pt
+\headheight 0pt
+\headsep 0pt
+\footskip 43pt
+\textwidth 432pt
+\@countverticalposition 0
+\@countclasssep 24 %
+\@toksempty={}
+\@toksblank={ }
+\@toksnewline={\\}
+\@dimenpagetwoheader 180pt
+\@dimenfirstpageleftheader 220pt
+\@dimenmemopaperhcorr 0pt
+\@dimenmemopapervcorr 0pt
+\@dimenspaceaftercolon 12pt
+\def\@blank{ }%
+\def\@tt{tt}\def\@rm{rm}%
+\def\@texfonts{texfonts}%
+\def\@lafonts{lafonts}\def\@postscript{postscript}%
+\def\@memopaper{memopaper}%
+\def\@standard{standard}%
+\def\@short{short}\def\@long{long}\def\@underscore{underscore}%
+\def\@ibmpc{ibmpc}\def\@vaxvms{vaxvms}\def\@vaxunix{vaxunix}%
+\def\@sununix{sununix}\def\@apollo{apollo}%
+\def\to#1{\@toksinput{to}{#1}}%
+\def\from#1{\@toksinput{from}{#1}}%
+\def\cy#1{\@toksinput{cy}{#1}}%
+\def\thru#1{\@toksinput{thru}{#1}}%
+\def\attachments#1{\@toksinput{attachments}{#1}}%
+\def\reference#1{\@toksinput{reference}{#1}}%
+\def\distribution#1{\@toksinput{distribution}{#1}}%
+\def\enc#1{\@toksinput{enc}{#1}}%
+\def\typeface#1{\def\@typeface{#1}%
+\@unspaceleft\@typeface \@unspaceright\@typeface}%
+\def\headerfonts#1{\def\@headerfonts{#1}%
+\@unspaceleft\@headerfonts \@unspaceright\@headerfonts}%
+\def\bodyfonts#1{\def\@bodyfonts{#1}%
+\@unspaceleft\@bodyfonts \@unspaceright\@bodyfonts
+\ifx\@bodyfonts\@postscript \@psdefclasslabel\fi}%
+\def\subject#1{%
+\def\@subject{#1}%
+\@upperunspaceleft\@subject}%
+\def\symbol#1{\def\@symbol{#1}\@unspaceright\@symbol}%
+\def\serialnumber#1{\def\@serialnumber{#1}\@unspaceleft\@serialnumber
+\@unspaceright\@serialnumber}%
+\def\mailstop#1{\def\@mailstop{#1}\@unspaceright\@mailstop}%
+\def\telephone#1{\def\@telephone{#1}\@unspaceleft\@telephone}%
+\def\date#1{\def\@date{#1}\@unspaceright\@date}%
+\def\shortmemostyle{\def\@shortmemostyle{}}%
+\def\signer#1{%
+\def\@signer{#1}%
+\@unspaceright\@signer
+\@upperunspaceleft\@signer}%
+\def\originator#1{%
+\def\@originator{#1}%
+\@unspaceright\@originator
+\@upperunspaceleft\@originator}%
+\def\typist#1{%
+\def\@typist{#1}%
+\ifx\@typist\@empty
+\else
+\ifx\@typist\@blank
+\def\@typist{}%
+\else
+\def\@typist{\lowercase{\ignorespaces#1}}%
+\fi \fi
+}%
+\def\memopaperhcorr#1{\@ifnoinfo{#1}%
+{\@dimenmemopaperhcorr=0pt}{\@dimenmemopaperhcorr=#1}}%
+\def\memopapervcorr#1{\@ifnoinfo{#1}%
+{\@dimenmemopapervcorr=0pt}{\@dimenmemopapervcorr=#1}}%
+\def\signature#1{\def\@signature{#1}}%
+\def\approval#1{\def\@approval{#1}}%
+\def\cypagebreak{\def\@cypagebreak{}}%
+\def\attachmentspagebreak{\def\@attachmentspagebreak{}}%
+\def\encpagebreak{\def\@encpagebreak{}}%
+\def\distributionpagebreak{\def\@distributionpagebreak{}}%
+\def\encas{\def\@encas{}}%
+\def\attachmentas{\def\@attachmentas{}}%
+\def\attachmentsas{\def\@attachmentsas{}}%
+\def\encpagebreak{\def\@encpagebreak{}}%
+\def\classlabel#1{%
+\begingroup
+\def\@unspacedclasslabel{#1}%
+\@unspaceleft{\@unspacedclasslabel}%
+\@unspaceright{\@unspacedclasslabel}%
+\@ifundefined{@classlabel}%
+{}{\gdef\@todieornottodie{\@errortwoclasses\@exit}}%
+\def\@secret{s}\def\@confidential{c}\def\@unclassified{u}%
+\ifx \@unspacedclasslabel \@secret%
+\gdef\@classlabel{SECRET}%
+\typeout{^^JThis memo will be marked SECRET.^^J}%
+\else \ifx \@unspacedclasslabel \@confidential%
+\gdef\@classlabel{CONFIDENTIAL}%
+\typeout{^^JThis memo will be marked CONFIDENTIAL.^^J}%
+\else \ifx \@unspacedclasslabel \@unclassified%
+\gdef\@classlabel{UNCLASSIFIED}%
+\typeout{^^JThis memo will be marked UNCLASSIFIED.^^J}%
+\else \ifx \@unspacedclasslabel \@empty%
+\gdef\@classlabel{}%
+\else 
+\gdef\@todieornottodie{%
+\gdef\@classlabel{#1}%
+\@errorclassargument
+\@exit
+}%
+\fi \fi \fi \fi
+\endgroup
+\@todieornottodie
+}%
+\def\@toksinput#1#2{%
+\def\@toksname{\csname @toks#1\endcsname}%
+\def\@countname{\csname @count#1\endcsname}%
+\@toksnotequal\@toksname\@toksempty
+\if@toksnotequal
+\@addtotoks\@toksname\\
+\fi
+\@beenherefalse
+\@toksremaining={#2}%
+\loop
+\@tonewlinepull\@toksremaining
+\@somethingbeforefalse
+\@toksnotequal\@toksbeforenewline\@toksempty
+\if@toksnotequal
+\@toksnotequal\@toksbeforenewline\@toksblank
+\if@toksnotequal
+\@somethingbeforetrue
+\fi
+\fi
+\if@somethingbefore
+\if@beenhere
+\@addtotoks\@toksname\\
+\else
+\@beenheretrue
+\fi
+\@addtokstotoks\@toksname\@toksbeforenewline
+\@continuelooptrue
+\advance\@countname by 1
+\else
+\@toksnotequal\@toksafternewline\@toksempty%
+\if@toksnotequal
+\@toksnotequal\@toksafternewline\@toksnewline%
+\if@toksnotequal
+\@continuelooptrue%
+\else
+\@continueloopfalse%
+\fi
+\else
+\@continueloopfalse%
+\fi
+\fi
+\if@continueloop
+\@toksremaining=\@toksafternewline
+\repeat
+}%
+\def\opening
+{%
+\@checkinput
+\@choosefonts
+\@initializefontvariables
+\@initializeheadervariables
+\@makepagetwoheader
+\@printfirstpageheader
+\@beginmemo
+}%
+\def\closing
+{%
+\normalsize
+\@closingtrue
+\@endmemo
+\@clearclosing
+\@printsignature
+\@printoriginatorline
+\@printapproval
+\@printenc
+\@printattachments
+\@printdistribution
+\@printcy
+}%
+\def\@checkinput{%
+\ifnum\@countto=0\@errorundeclared{\to}%
+\@errorshowexample{\to}{George Benford, EX-4, MS M775}\fi
+\ifnum\@countfrom=0\@errorundeclared{\from}%
+\@errorshowexample{\from}{Ann Turner, AB-DO, MS D405}\fi
+\@ifemptyorundefined{@symbol}%
+{\def\@symbol{}\@errorundeclared{\symbol}%
+\@errorshowexample{\symbol}{C-2}}{}%
+\@ifemptyorundefined{@subject}%
+{\def\@subject{}\@errorundeclared{\subject}%
+\@errorshowexample{\subject}{Building Schedule}}{}%
+\@ifemptyorundefined{@originator}%
+{\def\@originator{}\@errorundeclared{\originator}%
+\@errorshowexample{\originator}{BJD}}{}%
+\@ifundefined{@signer}%
+{\def\@signer{}}{}%
+\@ifundefined{@typist}%
+{\def\@typist{}}{}%
+\@ifemptyorundefined{@mailstop}%
+{\def\@mailstop{}\@errorundeclared{\mailstop}%
+\@errorshowexample{\mailstop}{B233}}{}%
+\@ifemptyorundefined{@telephone}%
+{\def\@telephone{}\@errorundeclared{\telephone}%
+\@errorshowexample{\telephone}{7-1102}}{}%
+\@ifemptyorundefined{@date}{\def\@date{\today}}{}%
+\@ifundefined{@serialnumber}%
+{\def\@serialnumber{}}{}%
+\def\@symbolserialnumber{%
+\@symbol
+\ifx\@symbol\@empty
+\else
+\ifx\@serialnumber\@empty
+\else
+-\relax
+\fi\fi
+\@serialnumber\ }%
+\@ifemptyorundefined{@typeface}{\def\@typeface{tt}}{}%
+\@ifemptyorundefined{@headerfonts}{\def\@headerfonts{texfonts}}{}%
+\@ifemptyorundefined{@bodyfonts}{\def\@bodyfonts{texfonts}}{}%
+}%
+\def\@choosefonts
+{%
+\@amorcm
+\@getpostscriptnames
+\@chooseheaderfonts
+\@choosebodyfonts
+}%
+\def\@amorcm{{%
+\edef\a{\csname cmr10\endcsname}%
+\edef\b{\csname\fontname\tenrm\endcsname}%
+\ifx\a\b \global\@cmfontstrue \else \global\@cmfontsfalse \fi
+}}%
+\def\@getpostscriptnames{%
+\def\@cmhelv{psmhlv }%
+\def\@cmhelvb{psmhlvb }%
+\def\@cmtimer{psmtimr }%
+\def\@cmtimei{psmtimi }%
+\def\@cmtimeb{psmtimb }%
+\def\@cmcour{psmcou }%
+\def\@cmcouro{psmcouo }%
+\def\@cmcourb{psmcoub }%
+}%
+\def\@chooseheaderfonts
+{%
+\ifx\@headerfonts\@memopaper%
+\else\ifx\@headerfonts\@lafonts
+\font\@booksix=book6%
+\font\@memotwentyeight=memo28%
+\font\@latwentyeight=la28%
+\font\@spectwelve=spec12%
+\else\ifx\@headerfonts\@texfonts
+\if@cmfonts
+\font\@booksix=cmr6%
+\font\@latwentyeight=cmbx10 scaled\magstep5%
+\font\@memotwentyeight=cmbx10 scaled\magstep5%
+\font\@spectwelve=cmss10 scaled\magstep1%
+\else
+\font\@booksix=amr6%
+\font\@latwentyeight=ambx10 scaled\magstep5%
+\font\@memotwentyeight=ambx10 scaled \magstep5%
+\font\@spectwelve=amss10 scaled\magstep1%
+\fi
+\else\ifx\@headerfonts\@postscript
+\font\@booksix=\@cmhelv at 6pt%
+\font\@latwentyeight=\@cmhelvb at 29pt%
+\font\@memotwentyeight=\@cmhelvb at 28pt%
+\font\@spectwelve=\@cmhelv at 10.5pt%
+\else%
+\def\@todieornottodie{\@errorillegalheaderfont\@exit}%
+\fi\fi\fi\fi
+\@todieornottodie
+}%
+\def\@choosebodyfonts
+{%
+\ifx\@typeface\@tt
+\else\ifx\@typeface\@rm
+\else
+\def\@todieornottodie{\@errorillegaltypeface\@exit}%
+\fi\fi
+\@todieornottodie
+\ifx\@bodyfonts\@texfonts
+\if@cmfonts
+\font\@classfont=cmss10 scaled \magstep5%
+\else
+\font\@classfont=amssmc40
+\fi
+\else\ifx\@bodyfonts\@postscript
+\ifcase \@ptsize\relax %
+\font\tenrm = \@cmtimer at 10pt %
+\font\tentt = \@cmcour at 10pt %
+\ifx\@typeface\@tt
+\font\tenit = \@cmcouro at 10pt %
+\font\tenbf = \@cmcourb at 10pt %
+\else\ifx\@typeface\@rm
+\font\tenit = \@cmtimei at 10pt %
+\font\tenbf = \@cmtimeb at 10pt %
+\fi \fi
+\or %
+\font\elvrm = \@cmtimer at 11pt %
+\font\elvtt = \@cmcour at 11pt %
+\ifx\@typeface\@tt
+\font\elvit = \@cmcouro at 11pt %
+\font\elvbf = \@cmcourb at 11pt %
+\else\ifx\@typeface\@rm
+\font\elvit = \@cmtimei at 11pt %
+\font\elvbf = \@cmtimeb at 11pt %
+\fi \fi
+\or %
+\font\twlrm = \@cmtimer at 12pt %
+\font\twltt = \@cmcour at 12pt %
+\ifx\@typeface\@tt
+\font\twlit = \@cmcouro at 12pt %
+\font\twlbf = \@cmcourb at 12pt %
+\else\ifx\@typeface\@rm
+\font\twlit = \@cmtimei at 12pt %
+\font\twlbf = \@cmtimeb at 12pt %
+\fi \fi
+\fi
+\else
+\def\@todieornottodie{\@errorillegalbodyfont\@exit}%
+\fi\fi
+\@todieornottodie
+}%
+\def\@initializefontvariables
+{%
+\raggedbottom
+\@kernheaderwords
+\@initializetypefacedependencies
+\edef\normalsize
+{%
+\ifx \@currsize \normalsize
+\ifx \@typeface \@tt
+\tt
+\else \ifx \@typeface \@rm
+\rm
+\fi \fi
+\else 
+\@normalsize
+\fi
+}%
+\def\pem{%
+\ifdim \fontdimen \@ne \font >\z@
+\csname\@typeface\endcsname 
+\else
+\it
+\fi
+}%
+}%
+\def\@kernheaderwords{%
+\ifx \@headerfonts \@texfonts
+\def\@lanl{%
+\raise 1pt\hbox{%
+\def\@kern{\kern -.5pt}%
+L\@kern o\@kern s\ \kern -2.5pt A\@kern l\@kern a\@kern m\@kern
+o\@kern s\ \kern -2pt N\@kern a\@kern t\@kern i\@kern o\@kern
+n\@kern a\@kern l\ \kern -3pt L\@kern a\@kern b\@kern o\@kern
+r\@kern a\@kern t\@kern o\@kern r\@kern y%
+}%
+}%
+\def\@lanm{%
+\def\@kern{\kern -.5pt}%
+L\@kern o\@kern s\kern -2.5pt\ A\@kern l\@kern a\@kern m\@kern
+o\@kern s\kern -1pt ,\kern -4.5pt\ New\kern -3pt\ Mexico\kern -3pt
+\ 87545%
+}%
+\def\@losalamos{%
+Los Alamos%
+}%
+\def\@memorandum{%
+memorandum%
+}%
+\else \ifx \@headerfonts \@lafonts
+\@spectwelve {\setbox0=\hbox{L}\global\@dimentemp=\wd0}%
+\ifdim \@dimentemp=5.33684pt
+\def\@lanl{%
+L\kern -.4pt o\kern .35pt s\ \kern -.8pt 
+A\kern .6pt l\kern .1pt a\kern .6pt m\kern .1pt o\kern .35pt s%
+\def\@kern{\kern .22pt}%
+\ N\@kern a\@kern t\@kern i\@kern o\@kern n\@kern a\kern .47pt
+l\ \kern -.2pt 
+\def\@kern{\kern .03pt}%
+L\@kern a\kern .43pt b\@kern o\@kern r\@kern a\@kern
+t\kern -.22pt o\@kern r\@kern y}%
+\def\@lanm{%
+L\kern -.4pt o\kern .35pt s\ \kern -.8pt 
+\def\@kern{\kern .35pt}%
+A\kern .6pt l\kern .1pt a\kern .6pt m\kern .1pt o\kern .35pt s,%
+\ \kern -1.5pt 
+N\kern -.2pt ew\ \kern -.1pt 
+\def\@kern{\kern .15pt}%
+M\kern -.05pt e\@kern x\@kern i\@kern c\@kern o\ \kern -.1pt 
+8\kern -.65pt 7\kern -.9pt 54\kern -.7pt 5}%
+\def\@losalamos{%
+\kern -1.2pt L\kern 0pt o\kern -.75pt s\ \kern -6.7pt 
+A\kern .25pt l\kern 1.25pt a\kern -.85pt m\kern -.65pt
+o\kern -.75pt s}%
+\def\@memorandum{memorandum}%
+\else
+\def\@lanl{%
+\raise .3pt\hbox{%
+L\kern -.6pt os\ \kern -1.3pt 
+\def\@kern{\kern .11pt}%
+A\@kern l\@kern a\@kern m\@kern o\@kern s\ National\ %
+\def\@kern{\kern -.2pt}%
+L\@kern a\@kern b\@kern o\@kern
+r\@kern a\@kern t\@kern o\@kern r\@kern y%
+}%
+}%
+\def\@lanm{%
+L\kern -.6pt os\ \kern -1.3pt 
+\def\@kern{\kern .11pt}%
+A\@kern l\@kern a\@kern m\@kern o\@kern s%
+\kern -.5pt,\ \kern -1.44pt New \kern -.5pt
+\def\@kern{\kern -.2pt}%
+M\@kern e\@kern x\@kern i\@kern c\@kern o\ \kern -.5pt 8\@kern
+7\@kern 5\@kern 4\@kern 5%
+}%
+\def\@losalamos{%
+\def\@kern{\kern -.9pt}%
+\kern -1.2pt L\kern -.65pt o\@kern s\kern 5pt 
+A\kern -.4pt l\kern .3pt a\@kern m\@kern o\@kern s%
+}%
+\def\@memorandum{%
+\def\@kern{\kern -.25pt}%
+m\@kern e\@kern m\@kern o\@kern r\kern -.5pt a\@kern n\@kern
+d\@kern u\@kern m%
+}%
+\fi
+\else \ifx \@headerfonts \@postscript
+\def\@lanl{%
+\raise .5pt\hbox{%
+Los\kern -2pt\ Alamos\kern -1.5pt\ National\kern -2pt
+\ Laboratory%
+}%
+}%
+\def\@lanm{%
+\def\@kern{\kern .57pt}%
+Los\kern -2pt\ Alamos\kern -1pt,\kern -3.5pt\ N\@kern e\@kern
+w\kern -2pt\ M\@kern e\@kern x\@kern i\@kern c\@kern
+o\kern -2pt\ 87545%
+}%
+\def\@PSlosalamos##1##2{%
+\@psdeflosalamos
+\special{ps:: ##1 ##2 @LOSALAMOS1 @LOSALAMOS2 @LOSALAMOS3}}%
+\def\@memorandum{%
+\def\@kern{\kern -2pt}%
+m\@kern e\@kern m\@kern o\@kern r\kern 1pt \@kern 
+a\@kern n\@kern d\@kern u\@kern m%
+}%
+\fi \fi \fi
+}%
+\def\@initializetypefacedependencies{%
+\ifx \@typeface \@tt
+\rightskip=0pt plus 3.6em%
+\@rightskip=\rightskip
+\hyphenchar\nintt=\defaulthyphenchar
+\hyphenchar\tentt=\defaulthyphenchar
+\hyphenchar\elvtt=\defaulthyphenchar
+\hyphenchar\twltt=\defaulthyphenchar
+\ifx \@bodyfonts \@texfonts
+\def\@bullet{\leavevmode\raise-.22ex\hbox to 0pt{+\hss}o}%
+\else \ifx \@bodyfonts \@postscript
+\def\@bullet{\leavevmode\raise-.19ex\hbox to 0pt{+\hss}o}%
+\fi \fi
+\fi
+\@initializelists
+}%
+\def\@initializelists{%
+\ifx \@typeface \@tt
+\parskip=\baselineskip
+{\setbox0=\hbox{\tt x}\global\@dimenwdtt=\wd0}%
+\leftmargini 4\@dimenwdtt
+\leftmarginii 4\@dimenwdtt
+\leftmarginiii 4\@dimenwdtt
+\leftmarginiv 4\@dimenwdtt
+\leftmarginv 4\@dimenwdtt
+\leftmarginvi 4\@dimenwdtt
+\leftmargin\leftmargini
+\labelwidth\leftmargini\advance\labelwidth-\labelsep
+\labelsep=\@dimenwdtt
+\parsep=\baselineskip
+\topsep 0pt
+\itemsep 0pt
+\descriptionmargin=5\@dimenwdtt
+\@dimentemp=\@dimenwdtt
+\else\ifx \@typeface \@rm
+\parskip=.7em
+\def\@bullet{$\bullet$}%
+\leftmargini 2.5em
+\leftmarginii 2.2em %
+\leftmarginiii 1.87em %
+\leftmarginiv 1.7em %
+\leftmarginv 1em
+\leftmarginvi 1em
+\leftmargin\leftmargini
+\labelwidth\leftmargini\advance\labelwidth-\labelsep
+\labelsep 5pt
+\topsep .4em
+\parsep .4em
+\itemsep .2em
+\descriptionmargin=3em
+\@dimentemp=5pt
+\fi \fi
+\listparindent=0pt
+\let\@listi\relax
+\def\@listii{\leftmargin\leftmarginii
+\labelwidth\leftmarginii\advance\labelwidth-\labelsep}%
+\def\@listiii{\leftmargin\leftmarginiii
+\labelwidth\leftmarginiii\advance\labelwidth-\labelsep
+\ifx \@typeface \@rm
+\topsep .2em 
+\itemsep \topsep
+\fi}%
+\def\@listiv{\leftmargin\leftmarginiv
+\labelwidth\leftmarginiv\advance\labelwidth-\labelsep}%
+\def\@listv{\leftmargin\leftmarginv
+\labelwidth\leftmarginv\advance\labelwidth-\labelsep}%
+\def\@listvi{\leftmargin\leftmarginvi
+\labelwidth\leftmarginvi\advance\labelwidth-\labelsep}%
+\@dimenversemargin=3\@dimentemp
+\def\verse{\let\\=\@centercr
+\list{}{\itemsep\z@ \itemindent -\@dimenversemargin \listparindent \itemindent
+\rightmargin\leftmargin\advance\leftmargin \@dimenversemargin}\item[]}%
+\let\endverse\endlist
+\def\quotation{\list{}{%
+\rightmargin\leftmargin}\item[]}%
+\let\endquotation=\endlist
+\tabcolsep \@dimentemp %
+\tabbingsep \labelsep %
+\def\labelenumi{\arabic{enumi}.}%
+\def\theenumi{\arabic{enumi}}%
+\def\labelenumii{\alph{enumii}.}%
+\def\theenumii{\alph{enumii}}%
+\def\p@enumii{\theenumi}%
+\def\labelenumiii{(\arabic{enumiii})}%
+\def\theenumiii{\roman{enumiii}}%
+\def\p@enumiii{\theenumi(\theenumii)}%
+\def\labelenumiv{(\alph{enumiv})}%
+\def\theenumiv{\Alph{enumiv}}%
+\def\p@enumiv{\p@enumiii\theenumiii}%
+\def\labelitemi{\@bullet}%
+\def\labelitemii{-}%
+\def\labelitemiii{*}%
+\def\labelitemiv{+}%
+\def\quote{\list{}{\rightmargin\leftmargin}\item[]}%
+\let\endquote=\endlist
+\def\descriptionlabel##1{\hspace\labelsep \it ##1}%
+\def\description{\list{}{\labelwidth\z@ \itemindent-\leftmargin
+\let\makelabel\descriptionlabel}}%
+\let\enddescription\endlist
+}%
+\def\@initializeheadervariables{%
+\let\@texttop=\relax
+\def\ps@firstpage{\let\@mkboth\@gobbletwo
+\def\@oddhead{\@makeclassheader\@printclasspage}%
+\def\@oddfoot{}}%
+\def\ps@pagetwo{\let\@mkboth\@gobbletwo
+\def\@oddhead{%
+\@printpagetwoheader\@printpagenum\@printclasspage}%
+\def\@oddfoot{}}%
+\thispagestyle{firstpage}%
+\pagestyle{pagetwo}%
+\ifnum\@countthru=0
+\@countleftcolon=77
+\@countrightcolon=406
+\else
+\@countleftcolon=80
+\@countrightcolon=404
+\fi
+\ifnum\@countthru=0 \@dimenspacetosubject=209pt
+\else \@dimenspacetosubject=233pt
+\fi
+\@advcountbydimen\@countverticalposition\@dimenmemopapervcorr
+\advance\@dimenspacetosubject by \@dimenmemopapervcorr
+\@advcountbydimen\@countleftcolon\@dimenmemopaperhcorr
+\@advcountbydimen\@countrightcolon\@dimenmemopaperhcorr
+\@countleftheader=\@countleftcolon
+\@countrightheader=\@countrightcolon
+\@advcountbydimen\@countleftheader\@dimenspaceaftercolon
+\@advcountbydimen\@countrightheader\@dimenspaceaftercolon
+\oddsidemargin=\@countleftcolon pt
+\advance \oddsidemargin by -1in
+\advance \oddsidemargin by \@dimenspaceaftercolon
+\evensidemargin=\oddsidemargin
+}%
+\def\@makeclassheader
+{%
+\@ifundefined{@classlabel}{\gdef\@classlabel{}}{}%
+\ifx\@bodyfonts\@postscript
+\@makePSclassheader
+\else
+\ifx \@classlabel \@empty
+\global\setbox\@boxclasspage=\hbox{\hbox to 0pt{\hss\hss}}%
+\else
+\global\setbox\@boxclasspage=\hbox{\hbox to 0pt{\hss
+\begin{picture}(0,0)(\@countleftheader,0)%
+{%
+\@classfont
+\@counttemp=-\@countclasssep
+\put (0,\@counttemp)%
+{\makebox(0,0)[tl]{\hbox to 8.5in{\hfil\@classlabel\hfil}}}%
+\advance\@counttemp by 795 %
+\put (0,-\@counttemp)%
+{\makebox(0,0)[bl]{\hbox to 8.5in{\hfil\@classlabel\hfil}}}%
+}%
+\end{picture}%
+\hss}}%
+\fi \fi
+}%
+\gdef\@psdeflosalamos{%
+\special{ps::[local]%
+/@LOSALAMOS1 {
+/VirginState save def
+/Helvetica-Bold findfont [ 27.7 0 0 29 0 0 ] makefont setfont
+/YC exch neg def %
+/XC exch def %
+} def
+}%
+\special{ps::[local]%
+/@LOSALAMOS2 {
+/MV {moveto} def
+/SO {false charpath stroke} def
+.5 setlinewidth
+XC 87.8 add YC 721 add translate
+} def
+}%
+\special{ps::[local]%
+/@LOSALAMOS3 {
+0 0 MV (L) SO
+15.9 0 MV (o) SO
+31.8 0 MV (s) SO
+51.3 0 MV (A) SO
+70.2 0 MV (l) SO
+77 0 MV (a) SO
+91.4 0 MV (m) SO
+115 0 MV (o) SO
+130.9 0 MV (s) SO
+VirginState restore
+} def
+}%
+}%
+\def\@psdefclasslabel{%
+\specialbop{ps::[global]%
+/@CLASSOVERLAY1 {
+/VirginState save def
+dup (SECRET) eq
+{/Dist 36 def /Space 3.5 def /X 272 def } %
+{/Dist 24 def /Space 3 def /X 242 def } %
+ifelse
+/Label exch def
+} def
+}%
+\specialbop{ps::[global]%
+/@CLASSOVERLAY2 {
+/Print { gsave Space 0 Label ashow grestore } def
+/DoubPrint { Print StrikeWidth 0 rmoveto Print } def
+/Scale .415888 def %
+/StrikeWidth 1.5 def %
+} def
+}%
+\specialbop{ps::[global]%
+/@CLASSOVERLAY3 {
+/Helvetica-Bold findfont [29 Scale mul 0 0 29 0 0] makefont setfont
+X 770 Dist sub moveto
+DoubPrint
+X Dist moveto
+DoubPrint
+VirginState restore
+} def
+}%
+}%
+\def\@makePSclassheader{%
+\gdef\@PSclasslabel##1{%
+\special{ps:: ##1 @CLASSOVERLAY1 @CLASSOVERLAY2 @CLASSOVERLAY3}}%
+}%
+\def\@makepagetwoheader
+{%
+\@pullpagetwoheader{\@toksto}%
+\savebox{\@boxpagetwoheader}%
+{%
+\begin{minipage}[b]{\textwidth}%
+\normalsize
+\rule{0pt}{72pt}\rule{0pt}{-\ht\strutbox}%
+\parbox[t]{\@dimenpagetwoheader}%
+{%
+\the\@toksheaderone\copy\strutbox
+\@notvoidtoks\@toksheadertwo
+\if@notvoidtoks \newline \the\@toksheadertwo\copy\strutbox \fi
+\ifx \@serialnumber \@empty
+\else
+\ifhmode \newline \fi \@symbolserialnumber\copy\strutbox
+\fi
+}%
+\copy\strutbox\hfill
+\makebox[\@dimenpagetwoheader][r]{\hfil\@date}%
+\end{minipage}%
+}%
+\@dimentoppagetwo=\ht\@boxpagetwoheader
+\advance\@dimentoppagetwo by 4\baselineskip
+\advance\@dimentoppagetwo by -\dp\strutbox
+}%
+\def\@printclasspage{%
+\ifx\@bodyfonts\@postscript
+\ifx \@classlabel \@empty
+\else
+\@PSclasslabel{(\@classlabel)}%
+\fi
+\vbox to 0in{}\hss
+\else
+\vbox to 0in{\hbox to 0pt{\usebox{\@boxclasspage}\hss}\vss}\hss
+\fi
+}%
+\def\@printpagetwoheader{%
+\vbox to 0in{\hbox to 0pt{\usebox{\@boxpagetwoheader}\hss}\vss}%
+}%
+\def\@printpagenum{%
+\vbox to 0pt{\hbox to 0pt{%
+\begin{minipage}[b]{\textwidth}%
+\normalsize
+\rule{0pt}{72pt}\rule{0pt}{-\ht\strutbox}%
+\hfil{- \thepage\ -}\hfil
+\end{minipage}%
+\hss}\vss}%
+}%
+\def\@pullpagetwoheader#1{\begingroup
+\@gettoksheader{#1}%
+\global\@toksheaderone=\expandafter{\the\@toksbeforecomma}%
+\if@newline
+\@toksremaining=\@toksafternewline
+\@gettoksheader{\@toksremaining}%
+\global\@toksheadertwo=\expandafter{\the\@toksbeforecomma}%
+\fi
+\endgroup
+}%
+\def\@gettoksheader#1{\@tonewlinepull{#1}%
+\if@newline\@tocommapull{\@toksbeforenewline}%
+\else \@tocommapull{#1}\fi}%
+\def\@beginmemo{%
+\@ifundefined{@shortmemostyle}%
+{%
+\ifnum \@countreference = 0
+\@dimentemp=2\baselineskip
+\advance\@dimentemp by -\parskip
+{\parskip=\@dimentemp \leavevmode \par \leavevmode}%
+\fi
+\par
+}%
+{%
+\ifx \@typeface \@tt
+\topsep=\baselineskip
+\baselineskip=2\baselineskip
+\parindent=5\@dimenwdtt
+\leftmargini=7\@dimenwdtt
+\else \ifx \@typeface \@rm
+\@parskipsave=\parskip
+\advance\baselineskip by \parskip
+\parindent=2.5em
+\leftmargini=3.5em
+\topsep=1.2em
+\parsep=.6em
+\itemsep=.6em
+\fi \fi
+\parskip=0pt
+\leftmargin=\leftmargini
+\par\leavevmode
+\par
+}%
+}%
+\def\@clearclosing{%
+\edef\@tempa{\@toplist\@botlist\@deferlist}%
+\ifx\@tempa\@empty\else\clearpage\fi
+}%
+\def\@endmemo{%
+\@ifundefined{@shortmemostyle}%
+{}%
+{%
+\par
+\ifnum \thepage > 1
+\@errorshortmemo
+\fi
+\parindent=0em
+\ifx \@typeface \@tt
+\baselineskip=.5\baselineskip
+\parskip=\baselineskip
+\else \ifx \@typeface \@rm
+\parskip=\@parskipsave
+\advance\baselineskip by -\parskip
+\fi \fi
+\leavevmode \par
+}%
+\topsep=0pt
+\itemsep=0pt
+\parsep=0pt
+}%
+\def\@printfirstpageheader
+{%
+\normalsize
+\begin {picture}(0,0)(\@countleftheader,\@countverticalposition)%
+\ifx\@headerfonts\@memopaper
+\else
+\@printmemopaper
+\fi
+\@printfirstpageheaderinfo
+\end{picture}%
+\normalsize
+\@printsubject
+\@printreference
+}%
+\def\@printmemopaper
+{%
+\ifx\@headerfonts\@postscript
+\@dimentemp=\@dimenmemopaperhcorr
+\ifnum\@countthru=0\else\advance\@dimentemp by 3pt\fi
+\@counttemp=\@dimentemp
+\divide\@counttemp by 65536
+\@counttemptwo=\@dimenmemopapervcorr
+\divide\@counttemptwo by 65536
+\@PSlosalamos{\the\@counttemp }{\the\@counttemptwo }%
+\else
+\@latwentyeight
+\put (\@countleftheader,-71){\@losalamos}%
+\fi
+\@spectwelve
+\put (\@countleftheader,-88){\@lanl}%
+\put (\@countleftheader,-98){\@lanm}%
+\@memotwentyeight
+\put (524,-98){\makebox(0,0)[br]{\@memorandum}}%
+\put (0,-105){\line(1,0){614}}%
+\@booksix
+\put (\@countleftcolon,-138){\makebox(0,0)[br]{TO:}}%
+\put (\@countrightcolon,-138){\makebox(0,0)[br]{DATE:}}%
+\put (\@countrightcolon,-162){\makebox(0,0)[br]{MAIL STOP/TELEPHONE:}}%
+\ifnum\@countthru=0
+{%
+\put (\@countleftcolon,-162){\makebox(0,0)[br]{FROM:}}%
+\put (\@countleftcolon,-186){\makebox(0,0)[br]{SYMBOL:}}%
+\put (\@countleftcolon,-210){\makebox(0,0)[br]{SUBJECT:}}%
+}%
+\else
+{%
+\put (\@countleftcolon,-162){\makebox(0,0)[br]{THRU:}}%
+\put (\@countleftcolon,-210){\makebox(0,0)[br]{FROM:}}%
+\put (\@countleftcolon,-234){\makebox(0,0)[br]{SUBJECT:}}%
+\put (\@countrightcolon,-210){\makebox(0,0)[br]{SYMBOL:}}%
+}%
+\fi
+}%
+\def\@printfirstpageheaderinfo
+{%
+\normalsize
+\sbox{\@boxtemp}%
+{\begin{minipage}[t]{\@dimenfirstpageleftheader}%
+\raggedright \baselineskip=12pt \the\@toksto \end{minipage}}%
+\put(\@countleftheader,-138){\usebox{\@boxtemp}}%
+\ifdim\dp\@boxtemp > 18pt
+\@erroroverfull{TO}{2}%
+\fi
+\put (\@countrightheader,-138){\@date{}}%
+\put (\@countrightheader,-162){%
+\@mailstop
+\ifx\@mailstop\@empty
+\else
+\ifx\@telephone\@empty
+\else
+/\relax
+\fi \fi
+\@telephone}%
+\ifnum\@countthru=0
+\sbox{\@boxtemp}%
+{\begin{minipage}[t]{\@dimenfirstpageleftheader}%
+\raggedright \baselineskip=12pt \the\@toksfrom
+\end{minipage}}%
+\put (\@countleftheader,-162){\usebox{\@boxtemp}}%
+\ifdim\dp\@boxtemp > 18pt
+\@erroroverfull{FROM}{2}%
+\fi
+\put (\@countleftheader,-186){\@symbolserialnumber}%
+\else
+\sbox{\@boxtemp}%
+{\begin{minipage}[t]{\@dimenfirstpageleftheader}%
+\raggedright \baselineskip=12pt\the\@toksthru
+\end{minipage}}%
+\put (\@countleftheader,-162){\usebox{\@boxtemp}}%
+\ifdim\dp\@boxtemp > 42pt
+\@erroroverfull{THRU}{4}%
+\fi
+\sbox{\@boxtemp}%
+{\begin{minipage}[t]{\@dimenfirstpageleftheader}%
+\raggedright \baselineskip=12pt\the\@toksfrom
+\end{minipage}}%
+\put (\@countleftheader,-210){\usebox{\@boxtemp}}%
+\ifdim\dp\@boxtemp > 18pt
+\@erroroverfull{FROM}{2}%
+\fi
+\put (\@countrightheader,-210){\@symbolserialnumber}%
+\fi
+}%
+\def\@printsubject{%
+\newline
+\vrule height\the\@dimenspacetosubject width0pt
+\@subject
+\ifnum\@countreference=0
+\else
+\leavevmode \par
+\fi
+}%
+\def\@printreference
+{%
+\ifnum\@countreference=0
+\else
+\ifnum \@countreference=1
+REFERENCE:\relax
+\else
+REFERENCES:\relax
+\fi
+\par\vspace{-\baselineskip}%
+\begin{list}{\ifnum \@countreference=1\else\arabic{@countlist}.\fi}%
+{%
+\topsep=0pt
+\itemsep=0pt
+\parsep=0pt
+\ifnum \@countreference=1
+\settowidth\leftmargin{REFERENCE\@: }%
+\else
+\settowidth\leftmargin{REFERENCES\@: }%
+\fi
+\@setnumdefaults\@countreference
+}%
+\@printnumberedlist{\@toksreference}%
+\end{list}%
+\fi
+}%
+\def\@printsignature
+{%
+\par
+\@ifemptyorundefined{@signature}{}%
+{%
+{\parskip=0pt\par\ }%
+\vspace*{2\baselineskip}\newline
+\@signature
+}%
+}%
+\def\@printoriginatorline
+{%
+\@ifemptyorundefined{@signature}{\nopagebreak}{}%
+\par
+\ifx\@signer\@empty
+\else
+\@signer
+\ifx\@originator\@empty
+\ifx\@typist\@empty \else :\relax \fi
+\else
+-\relax
+\fi
+\fi
+\ifx\@originator\@empty
+\else
+\@originator
+\ifx\@typist\@empty \else :\relax \fi
+\fi
+\ifx\@typist\@empty
+\else
+\@typist
+\fi
+}%
+\def\@printapproval
+{%
+\@ifemptyorundefined{@approval}{}%
+{%
+{%
+\samepage
+\settowidth\@lengthlabel{APPROVED BY:}%
+\addtolength\@lengthlabel\labelsep%
+\@lengthrule=\textwidth
+\addtolength\@lengthrule{-\@lengthlabel}%
+\addtolength\@lengthrule{-30pt}%
+\settowidth\@lengthdate{date}%
+\addtolength\@lengthdate{60pt}%
+\@lengthname=\@lengthrule%
+\addtolength\@lengthname{-\@lengthdate}%
+{\parskip=0pt\par\ }%
+\vspace*{2\baselineskip}\newline
+\relax APPROVED BY:\hskip\labelsep
+\rule{\@lengthrule}{0.4pt}%
+\copy\strutbox
+{\offinterlineskip\newline}%
+\hspace*{\@lengthlabel}\parbox[t]{\@lengthname}%
+{\@approval\ \copy\strutbox}%
+\makebox[\@lengthdate][c]{date}%
+\par
+}%
+}%
+}%
+\def\@printenc
+{%
+\@ifundefined{@encas}{}{%
+\ifnum\@countenc=0
+\par Enc.\ a/s%
+\else \@erroras\enc\encas{Enc. a/s}%
+\fi}%
+\ifnum\@countenc=0
+\else
+\par
+\@ifundefined{@encpagebreak}{}{\pagebreak}%
+\ifnum\@countenc=1
+Enclosure:\relax
+\else
+Enc.\relax
+\fi
+\nopagebreak
+\par\vspace{-\baselineskip}%
+\@countmemolist=\@countenc
+\begin{list}{\ifnum \@countenc=1\else\arabic{@countlist}.\fi}%
+{%
+\ifnum\@countenc=1
+\settowidth\leftmargin{Enclosure: }%
+\else
+\settowidth\leftmargin{Enc.\ }%
+\fi
+\@setnumdefaults\@countenc
+}%
+\@printnumberedlist{\@toksenc}%
+\end{list}%
+\fi
+}%
+\def\@printattachments
+{%
+\@ifundefined{@attachmentas}%
+{\@ifundefined{@attachmentsas}{}%
+{\ifnum\@countattachments=0
+\par Attachments a/s%
+\else \@erroras\attachments\attachmentsas{Attachments a/s}\fi}}%
+{\@ifundefined{@attachmentsas}%
+{\ifnum\@countattachments=0
+\par Attachment a/s%
+\else\@erroras\attachments\attachmentas{Attachment a/s}\fi}%
+{\par Attachments a/s%
+\@erroras\attachmentas\attachmentsas{Attachment a/s}}}%
+\ifnum\@countattachments=0
+\else
+\par
+\@ifundefined{@attachmentspagebreak}{}{\pagebreak}%
+\ifnum\@countattachments=1
+Attachment:\relax
+\else
+Attachments:\relax
+\fi
+\@countmemolist=\@countattachments
+\begin{list}{\ifnum \@countattachments=1\else\arabic{@countlist}.\fi}%
+{%
+\leftmargin=0pt
+\@setnumdefaults\@countattachments
+}%
+\@printnumberedlist{\@toksattachments}%
+\end{list}%
+\fi
+}%
+\def\@printdistribution
+{%
+\ifnum\@countdistribution=0
+\else
+\par
+\@ifundefined{@distributionpagebreak}{}{\pagebreak}%
+{\offinterlineskip Distribution:\copy\strutbox}%
+\@countmemolist=\@countdistribution
+\begin{list}{}%
+{%
+\parskip=0pt
+\labelwidth=0pt
+\labelsep=0pt
+\leftmargin=0pt
+}%
+\item\the\@toksdistribution
+\end{list}%
+\fi
+}%
+\def\@printcy
+{%
+\ifnum\@countcy=0
+\else
+\pagebreak[0]%
+\par
+\@ifundefined{@cypagebreak}{}{\pagebreak}%
+\begin{list}{Cy:\hfill}%
+{%
+\settowidth\labelwidth{Cy: }%
+\leftmargin=\labelwidth
+\labelsep=0pt
+}%
+\item\the\@tokscy
+\end{list}%
+\fi
+}%
+\def\@setnumdefaults#1{%
+\ifnum #1=1
+\labelwidth=0pt%
+\labelsep=0pt
+\else
+\usecounter{@countlist}%
+\ifnum #1<10
+\settowidth\labelwidth{8.}%
+\else
+\settowidth\labelwidth{88.}%
+\fi\fi
+\addtolength\leftmargin\labelwidth
+\addtolength\leftmargin\labelsep
+\parskip=0pt
+}%
+\def\@printnumberedlist#1%
+{%
+\@toksremaining=#1%
+\loop
+\@tonewlinepull{\@toksremaining}%
+\@toksnotequal\@toksbeforenewline\@toksempty
+\if@toksnotequal
+\@toksitem=\@toksbeforenewline
+\@toksremaining=\@toksafternewline
+\ifx #1\@toksreference%
+\item\uppercase\expandafter{\the\@toksitem}%
+\else
+\item\the\@toksitem
+\fi
+\repeat
+}%
+\def\@tonewlinepull#1{\begingroup\let\\=\relax
+\expandafter\@tonewlinepullone\the#1\\\@empty
+\if@newline\expandafter\@tonewlinepullthree\the#1\@empty
+\else\fi\endgroup}%
+\def\@tonewlinepullone#1\\{\global\@toksbeforenewline={#1}%
+\futurelet\next\@tonewlinepulltwo}%
+\def\@tonewlinepulltwo#1\@empty{\global\@toksafternewline={#1}%
+\ifx\@empty\next\global\@newlinefalse
+\else\global\@newlinetrue\fi}%
+\def\@tonewlinepullthree#1\\{\global\@toksbeforenewline={#1}%
+\futurelet\next\@tonewlinepullfour}%
+\def\@tonewlinepullfour#1\@empty{\global\@toksafternewline={#1}%
+\ifx\@empty\next\global\@newlinefalse
+\else\global\@newlinetrue\fi}%
+\def\@tocommapull#1{\expandafter\@tocommapullone\the#1,\@empty}%
+\def\@tocommapullone#1,{\@toksbeforecomma={#1}%
+\futurelet\next\@tocommapulltwo}%
+\def\@tocommapulltwo#1\@empty{\ifx\@empty\next \@commafalse
+\else \@commatrue \fi}%
+\def\@unspaceleft#1{{%
+\def\@macroname{#1}%
+\ifx #1\@empty 
+\else
+\ifx #1\@blank
+\global\expandafter\def\@macroname{}%
+\else
+\expandafter\@unspaceleftone#1\relax\relax\@empty
+\fi \fi
+}}%
+\def\@unspaceleftone#1#2\relax{%
+\global\expandafter\def\@macroname{#1#2}%
+\@unspacelefttwo}%
+\def\@unspacelefttwo#1\@empty{}%
+\def\@upperunspaceleft#1{{%
+\def\@macroname{#1}%
+\ifx #1\@empty 
+\else
+\ifx #1\@blank
+\global\expandafter\def\@macroname{}%
+\else
+\expandafter\@upperunspaceleftone#1\relax\relax\@empty
+\fi \fi
+}}%
+\def\@upperunspaceleftone#1#2\relax{%
+\global\expandafter\def\@macroname{\uppercase{#1#2}}%
+\@unspacelefttwo}%
+\def\@unspaceright#1{{%
+\def\@macroname{#1}%
+\edef\@temp{#1}%
+\expandafter\@unspacerightone#1\relax{} \relax\@empty
+}}%
+\def\@unspacerightone#1 \relax{%
+\global\expandafter\edef\@macroname{#1}%
+\futurelet\next\@unspacerighttwo}%
+\def\@unspacerighttwo#1\@empty{%
+\ifx \@empty\next
+\global\expandafter\edef\@macroname{\@temp}%
+\fi
+}%
+\def\@addtotoks#1#2{#1=\expandafter{\the#1#2}}%
+\def\@addtokstotoks#1#2{{\edef\deftemp{\the#1\the#2}%
+\global#1=\expandafter{\deftemp}}}%
+\long\def\@ifemptyorundefined#1#2#3{%
+\expandafter\ifx\csname#1\endcsname\relax#2
+\else\expandafter\ifx\csname#1\endcsname\@empty#2
+\else\expandafter\ifx\csname#1\endcsname\@blank#2
+\else#3\fi\fi\fi}
+\def\@ifnoinfo#1#2#3{\def\@deftemp{#1}%
+\ifx\@deftemp\@empty#2\else\ifx\@deftemp\@blank#2\else#3\fi\fi}
+\def\@toksnotequal#1#2{\begingroup \edef\one{\the#1} \edef\two{\the#2}%
+\ifx\one\two\global\@toksnotequalfalse\else\global\@toksnotequaltrue\fi
+\endgroup}%
+\def\@advcountbydimen#1#2{\@counttemp=#2%
+\divide\@counttemp by 65536 \advance#1by \@counttemp}%
+\def\@notvoidtoks#1{\@addtotoks{#1}{\@empty}%
+\expandafter\@notvoidtoksone\the#1}%
+\def\@notvoidtoksone{\futurelet\next\@notvoidtokstwo}%
+\def\@notvoidtokstwo#1\@empty{\ifx \@empty\next \@notvoidtoksfalse
+\else \@notvoidtokstrue \fi}%
+\def\@eightspaces{\space\space\space\space\space\space\space\space}%
+\def\@errorundeclared#1{\typeout{^^JWarning: you have not called \protect #1
+before calling \protect\opening.^^J}%
+}%
+\def\@errorserialnosymbol{\typeout{^^JWarning: you have called 
+\protect\serialnumber, but you have not called \protect\symbol.^^J}%
+\@errorshowexample{\symbol}{C-2}}%
+\def\@erroroverfull#1#2{\typeout{^^JWarning: You have printed more than #2
+lines in the #1 portion ^^J
+\@eightspaces of the memo header.^^J}}%
+\def\@errorshowexample#1#2{\typeout{\@eightspaces\space For example, use^^J^^J
+\@eightspaces\protect #1{#2}^^J}}%
+\def\@errorclassargument{%
+\typeout{^^JFatal error: \protect\classlabel{\@classlabel} 
+calls for an invalid classification label.^^J}%
+\@errorclassmessage
+}%
+\def\@errortwoclasses{%
+\typeout{^^JFatal error: you have called \protect\classlabel \space
+more than once.^^J^^J
+\space You are only allowed to declare one classification label
+per memo.^^J}%
+\@errorclassmessage
+}%
+\def\@errorclassmessage{%
+\typeout{%
+\space\space To print CONFIDENTIAL on the top and bottom
+of your memo,^^J
+\space use \protect\classlabel{c}^^J^^J
+\space To print SECRET on the top and bottom
+of your memo,^^J
+\space use \protect\classlabel{s}^^J^^J
+\space To print UNCLASSIFIED on the top and bottom
+of your memo,^^J
+\space use \protect\classlabel{u}^^J^^J
+\space If you do not want a classification label on your memo,^^J
+\space use \protect\classlabel{}^^J
+\space or do not use the \protect\classlabel\space command.^^J^^J
+\space Change your file, and rerun LaTeX.^^J}%
+}%
+\def\@errorillegaltypeface{%
+\typeout{^^JFatal error: \protect\typeface{\@typeface} calls for an invalid
+typeface.^^J^^J
+\space Use \protect\typeface{tt} or \protect\typeface{rm}^^J^^J
+\space Change your file, and rerun LaTeX.^^J}}%
+\def\@errorillegalheaderfont{\def\@fontcommand{\protect\headerfonts}%
+\def\@fontarg{\@headerfonts}%
+\typeout{^^JFatal error: \@fontcommand{\@fontarg} calls for 
+an invalid font.^^J^^J
+\space Use \@fontcommand{lafonts}, \@fontcommand{texfonts},^^J
+\space or \@fontcommand{postscript}\space
+depending on what fonts^^J \space are available on your machine.^^J^^J
+\space Using \@fontcommand{} will give you the default fonts.^^J^^J
+\space Use \@fontcommand{memopaper} if you wish to print your memo^^J
+\space on pre-printed memo paper.^^J^^J
+\space Change your file, and rerun LaTeX.^^J}}%
+\def\@errorillegalbodyfont{\def\@fontcommand{\protect\bodyfonts}%
+\def\@fontarg{\@bodyfonts}%
+\typeout{^^JFatal error: \@fontcommand{\@fontarg} calls 
+for an invalid font.^^J^^J
+\space Use \@fontcommand{texfonts} or \@fontcommand{postscript}^^J
+\space depending on what fonts are available on your machine.^^J^^J
+\space Using \@fontcommand{} will give you the default fonts.^^J^^J
+\space Change your file, and rerun LaTeX.^^J}}%
+\def\@errorshortmemo{%
+\typeout{^^JWarning: Use of the \protect\shortmemostyle\space macro
+is intended^^J
+\@eightspaces for use with memos of ten lines or less.^^J^^J}%
+}%
+\def\@erroras#1#2#3{%
+\typeout{^^JWarning: You have used both \protect#1\space and
+\protect#2.^^J
+\@eightspaces Use one or the other but not both.^^J
+\@eightspaces "#3" will not be printed on this memo.^^J^^J}%
+}%
+\def\@todieornottodie{\relax}%
+\def\@exit{\@fileswfalse\end{document}}%
+\def\@item[#1]{%
+\if@noparitem \@donoparitem
+\else \if@inlabel \indent \par \fi
+\ifhmode \unskip\unskip \par \fi 
+\if@newlist \if@nobreak \@nbitem \else
+{%
+\if@closing
+\@beginparpenalty=10000
+\fi
+\addpenalty\@beginparpenalty
+}%
+\addvspace\@topsep \addvspace{-\parskip}\fi
+\else 
+{%
+\if@closing
+\ifnum \c@@countlist = 1 
+\@itempenalty=10000
+\fi
+\advance \@countmemolist by -1
+\ifnum \c@@countlist = \@countmemolist
+\@itempenalty=10000
+\fi
+\fi
+\addpenalty\@itempenalty 
+}%
+\addvspace\itemsep 
+\fi 
+\global\@inlabeltrue 
+\fi
+\everypar{\global\@minipagefalse\global\@newlistfalse 
+\if@inlabel\global\@inlabelfalse \hskip -\parindent \box\@labels
+\penalty\z@ \fi
+\everypar{}}\global\@nobreakfalse
+\if@noitemarg\@noitemargfalse \if@nmbrlist\refstepcounter{\@listctr}\fi\fi
+\setbox\@tempboxa\hbox{\makelabel{#1}}%
+\global\setbox\@labels
+\hbox{\unhbox\@labels \hskip \itemindent
+\hskip -\labelwidth \hskip -\labelsep 
+\ifdim \wd\@tempboxa >\labelwidth 
+\box\@tempboxa
+\else \hbox to\labelwidth {\makelabel{#1}}\fi
+\hskip \labelsep}\ignorespaces
+}%
+\def\@outputpage{\begingroup\catcode`\ =10 
+\let\-\@dischyph \let\'\@acci \let\`\@accii \let\=\@acciii
+\if@specialpage
+\global\@specialpagefalse\@nameuse{ps@\@specialstyle}\fi
+\if@twoside
+\ifodd\count\z@ \let\@thehead\@oddhead \let\@thefoot\@oddfoot
+\let\@themargin\oddsidemargin
+\else \let\@thehead\@evenhead
+\let\@thefoot\@evenfoot \let\@themargin\evensidemargin
+\fi\fi
+\shipout
+\vbox{\normalsize \baselineskip\z@ \lineskip\z@
+\let\par\@@par %
+\@specialbopemit%
+\vskip \topmargin \moveright\@themargin
+\vbox{\setbox\@tempboxa
+\vbox to\headheight{\vfil \hbox to\textwidth{\@thehead}}%
+\dp\@tempboxa\z@
+\box\@tempboxa
+\vskip \headsep
+\box\@outputbox
+\baselineskip\footskip
+\hbox to\textwidth{\@thefoot}}}\global\@colht\textheight
+\endgroup
+\ifnum\c@page=1%
+\global\topskip=\ht\strutbox%
+\global\headsep=\@dimentoppagetwo%
+\global\advance\headsep by -\topskip%
+\global\advance\textheight by -\headsep%
+\fi%
+\stepcounter{page}%
+\let\firstmark\botmark}%
+\def\@specialbopempty{}%
+\let\@specialboptext=\@specialbopempty
+\def\specialbop#1{%
+\xdef\@specialboptext{%
+\@specialboptext 
+\special{#1}%
+}%
+}%
+\def\@specialbopemit{%
+\ifx\@specialboptext\@specialbopempty
+\else
+\@specialboptext
+\global\let\@specialboptext=\@specialbopempty
+\fi
+}%

@@ -1,0 +1,840 @@
+head     1.9;
+branch   ;
+access   ;
+symbols  srv030:1.9 srv028:1.9 srv027:1.9 srv026:1.9 srv024:1.9 srv022:1.9 srv021:1.9 srv019:1.9 srv018:1.9 srv016:1.9 srv015:1.9 srv014:1.8 srv012:1.8 srv011:1.8 srv010:1.8 srv008:1.8 srv007:1.8 srv006:1.8 srv005:1.8 srv004:1.8 srv003:1.7 srv002:1.7 srv001:1.7;
+locks    ; strict;
+comment  @ * @;
+
+
+1.9
+date     92.06.12.14.16.09;  author kupfer;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     92.05.08.12.55.07;  author kupfer;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     92.01.21.17.07.46;  author kupfer;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     91.12.01.22.00.40;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.11.14.10.03.24;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.10.18.18.28.57;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.09.23.14.20.13;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.09.02.22.56.16;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.09.01.21.07.06;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.9
+log
+@Don't keep the swap file open for an inactive (sticky) code segment.
+Flush VM_SWAP_FILE_OPENED.
+@
+text
+@/* 
+ * vmSwapDir.c --
+ *
+ *	This file synchronizes opening and reopening of the VM swap
+ *	directory.  The swap directory is used for error recovery.
+ *	It provides a FS handle on which the VM module can wait.
+ *	During error conditions the swap directory is reopened,
+ *	and this needs to be synchronized so more than one process
+ *	doesn't attempt to do it.
+ *
+ *	The routines that create and remove swap files are also in
+ *	this module as they are one of the primary uses of the monitored
+ *	set of procedures.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmSwapDir.c,v 1.8 92/05/08 12:55:07 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <ckalloc.h>
+#include <spriteTime.h>
+#include <status.h>
+#include <stdio.h>
+#include <string.h>
+
+#include <user/fs.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <proc.h>
+#include <user/sync.h>
+#include <sync.h>
+#include <sys.h>
+#include <utils.h>
+#include <vm.h>
+#include <vmInt.h>
+#include <vmSwapDir.h>
+
+static Sync_Lock vmSwapDirLock = Sync_LockInitStatic("vmSwapDirLock");
+#define LOCKPTR &vmSwapDirLock
+
+/*
+ * This is the variable for which access needs to be synchronized.
+ */
+Fs_Stream	*vmSwapStreamPtr = (Fs_Stream *)NIL;
+
+/*
+ * This is a reference count to the swap stream.  It can't be reopened
+ * while someone is using it for recovery.
+ */
+static int swapStreamUsers = 0;
+
+/*
+ * This indicates if a reopen is in progress.  Only one reopen at a time
+ * is allowed.
+ */
+static Boolean reopenInProgress = FALSE;
+
+Boolean vmSwapFileDebug = FALSE;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_OpenSwapDirectory --
+ *
+ *	Open the swap directory for this machine.  This is used to
+ *	optimize naming operations on the swap file, and, more importantly,
+ *	this open directory gives VM a handle on which to wait for recovery.
+ *	This routine will retry periodically until it successfully opens
+ *	the swap directory.  This handles multiple invocations, and it
+ *	takes care of closing the existing stream to the directory
+ *	if needed.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Swap directory stream pointer is set.
+ *
+ *----------------------------------------------------------------------
+ */
+/* ARGSUSED */
+ENTRY void
+Vm_OpenSwapDirectory(data, callInfoPtr)
+    ClientData		data;	
+    Proc_CallInfo	*callInfoPtr;
+{
+    char		number[34];
+    char		fileName[FS_MAX_PATH_NAME_LENGTH];
+    ReturnStatus	status;
+
+    LOCK_MONITOR;
+
+    /*
+     * Synchronize with processes using the swap stream pointer for recovery.
+     * We just try again later, instead of blocking this Proc_ServerProc
+     * on a condition variable.
+     */
+    if (swapStreamUsers > 0) {
+	Time_Multiply(time_OneSecond, 20, &callInfoPtr->interval);
+	UNLOCK_MONITOR;
+	return;
+    }
+
+    if (vmSwapStreamPtr != (Fs_Stream *) NIL) {
+	(void) Fs_Close(vmSwapStreamPtr);
+	vmSwapStreamPtr = (Fs_Stream *) NIL;
+	printf("Reopening swap directory.\n");
+    }
+
+    (void)strcpy(fileName, VM_SWAP_DIR_NAME);
+    (void)sprintf(number, "%u", (unsigned) Sys_GetHostId());
+    (void)strcat(fileName, number);
+    status = Fs_Open(fileName, FS_FOLLOW, FS_DIRECTORY, 0,
+		     &vmSwapStreamPtr);
+    if (status != SUCCESS) {
+	/*
+	 * It didn't work, retry in 20 seconds.
+	 */
+	Time_Multiply(time_OneSecond, 20, &callInfoPtr->interval);
+	vmSwapStreamPtr = (Fs_Stream *)NIL;
+    } else {
+	reopenInProgress = FALSE;
+    }
+
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmOpenSwapFile --
+ *
+ *	Open a swap file for this segment.  Store the name of the swap
+ *	file with the segment.  Tries to recover from RPC errors, but might 
+ *	not always be able to.
+ *
+ * Results:
+ *	SUCCESS unless swap file could not be opened.
+ *
+ * Side effects:
+ *	Swap file pointer is set in the segment's data struct.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+VmOpenSwapFile(segPtr)
+    register	Vm_Segment	*segPtr; /* locked segment */
+{
+    int				status;
+    Proc_ControlBlock		*procPtr;
+    int				origID = NIL;
+    char			fileName[FS_MAX_PATH_NAME_LENGTH];
+    char			*swapFileNamePtr;
+    Fs_Stream			*swapDirPtr;
+    Fs_Stream			*origCwdPtr = (Fs_Stream *)NIL;
+    Boolean			retry;
+    Fs_Attributes		fileAttributes;
+
+    if (segPtr->swapFileName == (char *) NIL) {
+	segPtr->swapFileName = VmMakeSwapFileName(segPtr);
+    }
+#ifdef SWAP_FILE_DEBUG
+    printf("Opening swap file %s.\n", segPtr->swapFileName);
+#endif /* SWAP_FILE_DEBUG */
+    procPtr = Proc_GetEffectiveProc();
+    if (procPtr->effectiveUserID != PROC_SUPER_USER_ID) {
+	origID = procPtr->effectiveUserID;
+	procPtr->effectiveUserID = PROC_SUPER_USER_ID;
+    }
+    /*
+     * We want the swap file open to happen relative to the swap directory
+     * for this machine if possible.  This is so that if the swap directory
+     * is a symbolic link and the swap open fails we know that it failed
+     * because the swap server is down, not the server of the symbolic link.
+     * (Also, we may use the swap directory for recovery, below.)
+     */
+    swapDirPtr = VmGetSwapStreamPtr();
+    if (swapDirPtr != (Fs_Stream *)NIL) {
+	origCwdPtr = procPtr->fsPtr->cwdPtr;
+	procPtr->fsPtr->cwdPtr = swapDirPtr;
+	(void)sprintf(fileName, "%x", segPtr);
+	swapFileNamePtr = fileName;
+    } else {
+	swapFileNamePtr = segPtr->swapFileName;
+    }
+
+    /* 
+     * Open the file.  If there is a recoverable error and we have a stream 
+     * handle to recover on, do it.  Otherwise, let the caller deal with 
+     * any errors.
+     */
+    do {
+	retry = FALSE;
+	status = Fs_Open(swapFileNamePtr, 
+			 FS_READ | FS_WRITE | FS_CREATE | FS_TRUNC | FS_SWAP,
+			 FS_FILE, 0660, &segPtr->swapFilePtr);
+	if (status != SUCCESS && Fsutil_RecoverableError(status) 
+		&& !sys_ShuttingDown && swapDirPtr != (Fs_Stream *)NIL) {
+	    status = Fsutil_WaitForHost(swapDirPtr, 0, status);
+	    if (status == SUCCESS) {
+		retry = TRUE;
+	    } else {
+		printf("VmOpenSwapFile: recovery failed for %s: %s\n",
+		       Fsutil_GetFileName(swapDirPtr),
+		       Stat_GetMsg(status));
+	    }
+	}
+    } while (retry);
+
+    if (origID != NIL) {
+	procPtr->effectiveUserID = origID;
+    }
+    if (swapDirPtr != (Fs_Stream *)NIL) {
+	procPtr->fsPtr->cwdPtr = origCwdPtr;
+	VmDoneWithSwapStreamPtr();
+    }
+    if (status == SUCCESS) {
+	segPtr->swapFileHandle = Fs_GetFileHandle(segPtr->swapFilePtr);
+    } else {
+	printf("%s VmOpenSwapFile: Could not open swap file %s: %s\n", 
+		"Warning:", segPtr->swapFileName, Stat_GetMsg(status));
+	return(status);
+    }
+
+    status = VmGetAttrStream(segPtr->swapFilePtr, &fileAttributes);
+    if (status != SUCCESS) {
+	panic("VmOpenSwapFile: can't get attributes for %s: %s\n",
+	      Vm_SegmentName(segPtr), Stat_GetMsg(status));
+    }
+    segPtr->swapFileServer = fileAttributes.serverID;
+    segPtr->swapFileDomain = fileAttributes.domain;
+    segPtr->swapFileNumber = fileAttributes.fileNumber;
+#if VM_KNOWS_SWAP_FILE_SIZE
+    segPtr->swapFileSize = fileAttributes.size;
+#endif
+
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmMakeSwapFileName --
+ *
+ *	Cons up the swap file name for the given VM segment.
+ *
+ * Results:
+ *	Returns a string, which should be eventually deallocated.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+VmMakeSwapFileName(segPtr)
+    Vm_Segment *segPtr;		/* the segment that gets the file name */
+{
+    char buffer[FS_MAX_PATH_NAME_LENGTH];
+
+    (void)sprintf(buffer, "%s%u/%x", VM_SWAP_DIR_NAME,
+		  (unsigned)Sys_GetHostId(), segPtr);
+    return ckstrdup(buffer);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * VmSwapFileRemove --
+ *
+ *	Remove the swap file for the given segment.
+ *
+ *	NOTE: This does not have to be synchronized because it is assumed
+ *	      that it is called after the memory for the process has already
+ *	      been freed thus the swap file can't be messed with.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The swap file is removed.  
+ *----------------------------------------------------------------------
+ */
+void
+VmSwapFileRemove(swapFileName)
+    char	*swapFileName;
+{
+    Proc_ControlBlock	*procPtr;
+    int			origID = NIL;
+    ReturnStatus	status;
+
+    procPtr = Proc_GetEffectiveProc();
+    if (procPtr->effectiveUserID != PROC_SUPER_USER_ID) {
+	origID = procPtr->effectiveUserID;
+	procPtr->effectiveUserID = PROC_SUPER_USER_ID;
+    }
+    if (swapFileName != (char *) NIL) {
+	if (vmSwapFileDebug) {
+	    status = SUCCESS;
+	    printf("VmSwapFileRemove: not removing swap file %s.\n",
+		       swapFileName);
+	} else {
+	    status = Fs_Remove(swapFileName);
+	}
+	if (status != SUCCESS) {
+	    printf("VmSwapFileRemove: couldn't remove %s: %s.\n",
+		      swapFileName, Stat_GetMsg(status));
+	    if (status == FS_FILE_NOT_FOUND) {
+		/*
+		 * This can happen if the swap file itself is removed,
+		 * or if the directory gets changed.  Reopen the directory
+		 * to make sure.
+		 */
+		VmReopenSwapDirectory();
+	    }
+	}
+    }
+
+    if (origID != NIL) {
+	procPtr->effectiveUserID = origID;
+    }
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmReopenSwapDirectory --
+ *
+ *	Reopen the swap stream that is used for recovery.
+ *	
+ * Results:
+ *	None.  
+ *
+ * Side effects:
+ *	Enqueues a callback to do the real work of the reopen.
+ *	Sets reopenInProgress so only one re-open of the swap directory occurs.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+VmReopenSwapDirectory()
+{
+    LOCK_MONITOR;
+    if (!reopenInProgress) {
+	reopenInProgress = TRUE;
+	Proc_CallFunc(Vm_OpenSwapDirectory, (ClientData) NIL,
+		      time_ZeroSeconds);
+    }
+    UNLOCK_MONITOR;
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmGetSwapStreamPtr --
+ *
+ *	Return the swap stream pointer.  This has to be followed by
+ *	a call to VmDoneWithSwapStreamPtr if NIL is not returned.
+ *	
+ *
+ * Results:
+ *	NIL or a valid swap stream pointer.  
+ *
+ * Side effects:
+ *	Increments the count of users of the swap stream.
+ *
+ * ----------------------------------------------------------------------------
+ */
+Fs_Stream *
+VmGetSwapStreamPtr()
+{
+    Fs_Stream *streamPtr;
+
+    LOCK_MONITOR;
+    streamPtr = vmSwapStreamPtr;
+    if (streamPtr != (Fs_Stream *)NIL) {
+	swapStreamUsers++;
+    }
+    UNLOCK_MONITOR;
+    return(streamPtr);
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * VmDoneWithSwapStreamPtr --
+ *
+ *	This is called after the swap stream has been used, either to
+ *	open a swap file or to wait for recovery.
+ *	
+ *
+ * Results:
+ *	None.  
+ *
+ * Side effects:
+ *	Decrements the number of users of the swap stream.
+ *
+ * ----------------------------------------------------------------------------
+ */
+void
+VmDoneWithSwapStreamPtr()
+{
+    LOCK_MONITOR;
+    swapStreamUsers--;
+    UNLOCK_MONITOR;
+}
+@
+
+
+1.8
+log
+@Split out VmMakeSwapFileName.  Note that VmOpenSwapFile takes a locked
+segment.
+@
+text
+@d26 1
+a26 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vmSwapDir.c,v 1.7 92/01/21 17:07:46 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d229 3
+a231 1
+    if (status != SUCCESS) {
+a236 1
+    segPtr->flags |= VM_SWAP_FILE_OPENED;
+@
+
+
+1.7
+log
+@Change VM code to use Sprite FS instead of UNIX.  
+@
+text
+@d26 1
+a26 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmSwapDir.c,v 1.6 91/12/01 22:00:40 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d159 1
+a159 1
+    register	Vm_Segment	*segPtr;
+d172 1
+a172 7
+	/*
+	 * There is no swap file yet so open one.  This may entail assembling 
+	 * the file name first.
+	 */
+	(void)sprintf(fileName, "%s%u/%x", VM_SWAP_DIR_NAME,
+		      (unsigned) Sys_GetHostId(), segPtr);
+	segPtr->swapFileName = ckstrdup(fileName);
+d249 28
+@
+
+
+1.6
+log
+@Snapshot.  FS appears to work.
+@
+text
+@d26 1
+a26 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmSwapDir.c,v 1.5 91/11/14 10:03:24 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d37 4
+a42 2
+#include <tempFs.h>
+#include <user/sync.h>
+d44 1
+a47 1
+#ifdef SPRITED_REALFS
+a49 1
+#endif
+d54 1
+a54 3
+#ifdef SPRITED_REALFS
+TempFs_Stream	*vmSwapStreamPtr = (TempFs_Stream *)NIL;
+#endif
+a59 1
+#ifdef SPRITED_REALFS
+a67 2
+#endif /* SPRITED_REALFS */
+
+a97 1
+#ifdef SPRITED_REALFS
+d115 3
+a117 3
+    if (vmSwapStreamPtr != (TempFs_Stream *) NIL) {
+	(void) TempFs_Close(vmSwapStreamPtr);
+	vmSwapStreamPtr = (TempFs_Stream *) NIL;
+d124 2
+a125 2
+    status = TempFs_Open(fileName, FS_FOLLOW, FS_DIRECTORY, 0,
+			 &vmSwapStreamPtr);
+d131 1
+a131 1
+	vmSwapStreamPtr = (TempFs_Stream *)NIL;
+a136 1
+#endif /* SPRITED_REALFS */
+d146 2
+a147 1
+ *	file with the segment.
+a161 1
+#ifdef SPRITED_REALFS
+a163 1
+#endif
+d166 4
+a169 4
+#ifdef SPRITED_REALFS
+    TempFs_Stream		*swapDirPtr;
+    TempFs_Stream		*origCwdPtr = (TempFs_Stream *)NIL;
+#endif
+d176 2
+a177 1
+	VmMakeSwapName(segPtr, fileName);
+a182 1
+#ifdef SPRITED_REALFS
+d193 1
+d196 1
+a196 1
+    if (swapDirPtr != (TempFs_Stream *)NIL) {
+d199 1
+a199 1
+	(void)sprintf(fileName, "%u", (unsigned) segPtr->segNum);
+d204 24
+a227 7
+#else /* SPRITED_REALFS */
+    swapFileNamePtr = segPtr->swapFileName;
+#endif /* SPRITED_REALFS */
+    status = TempFs_Open(swapFileNamePtr, 
+		     FS_READ | FS_WRITE | FS_CREATE | FS_TRUNC | FS_SWAP,
+		     FS_FILE, 0660, &segPtr->swapFilePtr);
+#ifdef SPRITED_REALFS
+d231 1
+a231 1
+    if (swapDirPtr != (TempFs_Stream *)NIL) {
+a234 1
+#endif /* SPRITED_REALFS */
+d242 11
+a260 33
+ * VmMakeSwapName --
+ *
+ *	Given a buffer to hold the name of the swap file, return the
+ *	name corresponding to the given segment.  FileName is assumed to
+ *	hold a string long enough for the maximum swap file name.
+ *
+ * Results:
+ *	The pathname is returned in fileName.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+VmMakeSwapName(segPtr, fileName)
+    Vm_Segment *segPtr;		/* segment for which to create name */ 
+    char *fileName;		/* pointer to area to hold name */
+{
+    char number[34];
+
+    (void)strcpy(fileName, VM_SWAP_DIR_NAME);
+    (void)sprintf(number, "%u", (unsigned) Sys_GetHostId());
+    (void)strcat(fileName, number);
+    (void)strcat(fileName, "/");
+    (void)sprintf(number, "%x", segPtr);
+    (void)strcat(fileName, number);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+a279 1
+#ifdef SPRITED_REALFS
+a281 1
+#endif
+a283 1
+#ifdef SPRITED_REALFS
+a288 1
+#endif
+d295 1
+a295 1
+	    status = TempFs_Remove(swapFileName);
+a305 1
+#ifdef SPRITED_REALFS
+a306 4
+#else
+		printf("VmSwapFileRemove: I was supposed to reopen the");
+		printf(" swap directory.\n");
+#endif
+d310 1
+a310 1
+#ifdef SPRITED_REALFS
+d314 60
+a373 1
+#endif
+d376 25
+@
+
+
+1.5
+log
+@Snapshot. net, rpc, recov modules added.
+@
+text
+@d26 1
+a26 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmSwapDir.c,v 1.4 91/10/18 18:28:57 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a30 1
+#include <libc.h>
+d33 1
+a34 1
+#include <user/sync.h>
+d36 1
+d40 1
+@
+
+
+1.4
+log
+@Use ckalloc package for memory allocation.  Let the caller close the
+swap file (VmSwapFileRemove).  Use Stat_GetMsg for error messages.
+@
+text
+@d26 1
+a26 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmSwapDir.c,v 1.3 91/09/23 14:20:13 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d32 1
+d44 1
+d47 1
+d52 1
+d54 1
+a61 1
+#endif
+d69 2
+d101 1
+a107 1
+#if SPRITED_REALFS
+d114 1
+a114 1
+	callInfoPtr->interval = 20 * timer_IntOneSecond;
+a117 1
+#endif /* SPRITED_REALFS */
+a130 1
+#ifdef SPRITED_REALFS
+d134 1
+a134 1
+	callInfoPtr->interval = 20 * timer_IntOneSecond;
+a135 3
+#else
+	panic("Vm_OpenSwapDirectory failed.\n");
+#endif
+d139 1
+d141 1
+@
+
+
+1.3
+log
+@Snapshot.  Server is multithreaded internally.
+@
+text
+@d26 1
+a26 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vmSwapDir.c,v 1.2 91/09/02 22:56:16 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d30 1
+d180 1
+a180 1
+	segPtr->swapFileName = strdup(fileName);
+d281 1
+a281 2
+ *	The swap file is removed.  The given file name string is 
+ *	freed. 
+d285 1
+a285 2
+VmSwapFileRemove(swapStreamPtr, swapFileName)
+    TempFs_Stream	*swapStreamPtr;
+a293 1
+    (void)TempFs_Close(swapStreamPtr);
+d310 2
+a311 2
+	    printf("Warning: VmSwapFileRemove: Fs_Remove(%s) returned %x.\n",
+		      swapFileName, status);
+a325 1
+	free(swapFileName);
+@
+
+
+1.2
+log
+@Changes for module-based source organization.
+@
+text
+@d26 1
+a26 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/sprited/vm/RCS/vmSwapDir.c,v 1.1 91/09/01 21:07:06 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d54 1
+a54 1
+#if 0
+d100 1
+a100 1
+#if 0
+d111 1
+a111 1
+#endif /* 0 */
+d125 1
+a125 1
+#if 0
+d132 1
+a132 1
+	panic("Vm_OpenSwapDirectory failed.");
+d162 1
+a162 1
+#if 0
+d168 1
+a168 1
+#if 0
+d184 1
+a184 1
+#if 0
+d205 1
+a205 1
+#else /* 0 */
+d207 1
+a207 1
+#endif /* 0 */
+d211 1
+a211 1
+#if 0
+d219 1
+a219 1
+#endif /* 0 */
+d289 1
+a289 1
+#if 0
+d296 1
+a296 1
+#if 0
+d320 1
+a320 1
+#if 0
+d330 1
+a330 1
+#if 0
+@
+
+
+1.1
+log
+@Snapshot.  Full VM support.
+@
+text
+@d26 1
+a26 1
+static char rcsid[] = "$Header: /sprite/src/kernel/vm/RCS/vmSwapDir.c,v 1.6 90/09/12 13:36:44 shirriff Exp $ SPRITE (Berkeley)";
+d34 7
+a40 6
+#include "sync.h"
+#include "sys.h"
+#include "tempFs.h"
+#include "util.h"
+#include "vmInt.h"
+#include "vmSwapDir.h"
+@

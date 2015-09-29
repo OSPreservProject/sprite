@@ -1,0 +1,112 @@
+head     9.1;
+branch   ;
+access   ;
+symbols  ds3100:9.1 sun3:9.1 sprited:9.1.1 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.1
+date     91.11.04.14.09.03;  author mgbaker;  state Exp;
+branches 9.1.1.1;
+next     9.0;
+
+9.0
+date     89.09.12.15.00.49;  author douglis;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.14.15.35.52;  author ouster;  state Exp;
+branches ;
+next     ;
+
+9.1.1.1
+date     92.03.17.15.22.42;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.1
+log
+@More externs.
+@
+text
+@/*
+ * ttyAttach.h --
+ *
+ *	Declarations for things exported by devTtyAttach.c to the rest
+ *	of the device module.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/dev.jo/sun3.md/RCS/ttyAttach.h,v 1.1 89/07/14 15:35:52 ouster Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _DEVTTYATTACH
+#define _DEVTTYATTACH
+
+#ifndef _DEVTTY
+#include "tty.h"
+#endif
+#ifndef _DEVZ8530
+#include "z8530.h"
+#endif
+
+extern DevZ8530 *DevGrabKeyboard _ARGS_((void (*inputProc)(), ClientData inputData, int (*outputProc)(), ClientData outputData));
+extern void DevReleaseKeyboard _ARGS_((void));
+extern DevTty *DevTtyAttach _ARGS_((int unit));
+extern void DevTtyInit _ARGS_((void));
+
+#endif /* _DEVTTYATTACH */
+@
+
+
+9.1.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/dev/sun3.md/ttyAttach.h,v 9.1 91/11/04 14:09:03 mgbaker Exp $ SPRITE (Berkeley)
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/dev/sun3.md/RCS/ttyAttach.h,v 1.1 89/07/14 15:35:52 ouster Exp Locker: douglis $ SPRITE (Berkeley)
+d29 4
+a32 4
+extern DevZ8530	*	DevGrabKeyboard();
+extern void		DevReleaseKeyboard();
+extern DevTty *		DevTtyAttach();
+extern void		DevTtyInit();
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/dev.jo/sun2.md/RCS/ttyAttach.h,v 1.4 89/06/30 17:18:31 ouster Exp $ SPRITE (Berkeley)
+@

@@ -1,0 +1,15 @@
+BEGIN { size = -1 ; numFields = 0}
+/Bytes/ {
+	if (numFields > 0) {
+	    avg = sum / numFields ;
+	    printf ("%d bytes avg %f us each\n", size, avg);
+	}
+	size = $1 ; numFields = 0 ; sum = 0;
+    }
+/Slave/ {
+	sum += $4 ;
+	numFields++ ;
+    }
+END {   avg = sum / numFields ;
+	printf ("%d bytes avg %f ms each\n", size, avg);
+ }

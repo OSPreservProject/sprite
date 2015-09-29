@@ -1,0 +1,235 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     90.09.17.11.05.25;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.07.17.16.06.15;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@brought it up-to-date with standard kernel sources
+@
+text
+@/* 
+ * devSunProm.c --
+ *
+ *	Routines that access the Sun PROM device drivers.  This code is
+ *	based on SunOS bootstrap code in boot/os/devio.c
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifdef notdef
+static char rcsid[] = "$Header: /sprite/src/boot/sunprom/RCS/devSunProm.c,v 1.1 90/07/17 16:06:15 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+
+#include "sprite.h"
+#include "user/fs.h"
+#include "dev.h"
+#include "devFsOpTable.h"
+#include "boot.h"
+#include "machMon.h"
+#include "fs.h"
+
+#define DEV_BSIZE DEV_BYTES_PER_SECTOR
+
+#define READ 1
+#define WRITE 2
+
+/*
+ * Our stand-alone I/O request block.
+ */
+MachMonIORequest *saioPtr;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SunPromDevOpen --
+ *
+ *	Open the device used for booting.  This depends on the initialization
+ *	of the devicePtr->data field done in Dev_Config.
+ *
+ * Results:
+ *	SUCCESS or FAILURE.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+SunPromDevOpen(devicePtr)
+    Fs_Device	*devicePtr;	/* Sprite device description */
+{
+    MachMonBootParam *paramPtr = (MachMonBootParam *)devicePtr->data;
+    MachMonDevInfo *devInfoPtr;
+    char *buffer;
+
+    devInfoPtr = paramPtr->bootDevice->b_devinfo;
+    /*
+     * Setup the I/O request block;
+     */
+    saioPtr = (MachMonIORequest *)malloc(sizeof(MachMonIORequest));
+    saioPtr->si_flgs = 0;
+    saioPtr->si_boottab = paramPtr->bootDevice;
+    saioPtr->si_devdata = (char *)0;
+    saioPtr->si_ctlr = paramPtr->ctlrNum;
+    saioPtr->si_unit = paramPtr->unitNum;
+    saioPtr->si_boff = paramPtr->partNum;
+    saioPtr->si_cyloff = 0;
+    saioPtr->si_offset = 0;
+    saioPtr->si_bn = 0;
+    saioPtr->si_ma = (char *)0;
+    saioPtr->si_cc = 0;
+    saioPtr->si_sif = (struct saif *)0;
+    saioPtr->si_devaddr = (char *)0;
+    saioPtr->si_dmaaddr = (char *)0;
+
+    if (devInfoPtr) {
+	/*
+	 * The dev info describes how to map the device in, how much
+	 * DMA space to set up, and how much local memory the device needs.
+	 * Assume that the PROM device is already all set up.
+	 */
+#ifdef notdef
+	Mach_MonPrintf("devInfoPtr: dma %d lcl %d max %d\n",
+	    devInfoPtr->d_dmabytes, devInfoPtr->d_localbytes,
+	    devInfoPtr->d_maxiobytes);
+#endif
+	if (devInfoPtr->d_dmabytes > 0) {
+	    /*
+	     * Allocate space for DMA, then map it into the DMA region of VM.
+	     */
+	    buffer = malloc(devInfoPtr->d_dmabytes);
+	    buffer = VmMach_DMAAlloc(devInfoPtr->d_dmabytes, buffer);
+	    saioPtr->si_dmaaddr = buffer;
+	}
+	if (devInfoPtr->d_localbytes > 0) {
+	    saioPtr->si_devdata = malloc(devInfoPtr->d_localbytes);
+	}
+    }
+    if ( (paramPtr->bootDevice->b_open)(saioPtr) == 0) {
+	return(SUCCESS);
+    } else {
+	return(FAILURE);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SunPromDevRead --
+ *
+ *	Read from the boot device used for booting.
+ *
+ * Results:
+ *	SUCCESS or FAILURE.
+ *
+ * Side effects:
+ *	The read operation.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+SunPromDevRead(devicePtr, ioPtr, replyPtr)
+    Fs_Device	*devicePtr;	/* Sprite device description */
+    Fs_IOParam  *ioPtr;
+    Fs_IOReply  *replyPtr;
+{
+    register int numBytes;
+    register int totalBytes;
+    register int maxlen;
+    register int len;
+
+    saioPtr->si_bn = ioPtr->offset / DEV_BSIZE;
+    saioPtr->si_ma = ioPtr->buffer;
+
+    if (saioPtr->si_boottab->b_devinfo) {
+	maxlen = saioPtr->si_boottab->b_devinfo->d_maxiobytes;
+    } else {
+	maxlen = DEV_BSIZE;
+    }
+    /*
+     * Break the I/O in to chunks that are edible by the device.
+     */
+    totalBytes = 0;
+    len = ioPtr->length;
+    while (len > 0) {
+	if (len > maxlen) {
+	    saioPtr->si_cc = maxlen;
+	} else {
+	    saioPtr->si_cc = len;
+	}
+	numBytes = (*saioPtr->si_boottab->b_strategy)(saioPtr, READ);
+	if (numBytes <= 0) {
+	    break;
+	}
+	saioPtr->si_ma += numBytes;
+	saioPtr->si_bn += numBytes / DEV_BSIZE;
+	len -= numBytes;
+	totalBytes += numBytes;
+    }
+    replyPtr->length = totalBytes;
+    if (numBytes < 0) {
+	return(FAILURE);
+    } else {
+	return(SUCCESS);
+    }
+}
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devBlockDevice.c,v 1.1 89/05/01 15:32:32 mendel Exp Locker: brent $ SPRITE (Berkeley)";
+d28 1
+d132 1
+a132 1
+SunPromDevRead(devicePtr, offset, len, buffer, numBytesPtr)
+d134 2
+a135 4
+    int offset;			/* Byte offset */
+    int len;			/* Byte count;
+    char *buffer;		/* Address to read into */
+    int *numBytesPtr;		/* Return, the amount actually read */
+d140 1
+d142 2
+a143 2
+    saioPtr->si_bn = offset / DEV_BSIZE;
+    saioPtr->si_ma = (char *)buffer;
+d154 1
+d170 1
+a170 1
+    *numBytesPtr = totalBytes;
+@

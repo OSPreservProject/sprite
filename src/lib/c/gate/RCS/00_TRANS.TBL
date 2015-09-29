@@ -1,0 +1,8 @@
+F GATEINT.H_V;1                     	gateInt.h,v
+F GATE_BYD.C_V;1                    	Gate_ByDesc.c,v
+F GATE_BYI.C_V;1                    	Gate_ByInetAddr.c,v
+F GATE_BYN.C_V;1                    	Gate_ByNetAddr.c,v
+F GATE_END.C_V;1                    	Gate_End.c,v
+F GATE_NEX.C_V;1                    	Gate_Next.c,v
+F GATE_SET.C_V;1                    	Gate_SetFile.c,v
+F GATE_STA.C_V;1                    	Gate_Start.c,v

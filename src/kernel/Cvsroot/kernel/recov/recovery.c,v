@@ -1,0 +1,6225 @@
+head     9.27;
+branch   ;
+access   ;
+symbols  ds3100:9.26 sun3:9.26 sprited:9.19.1 sun4nw:9.20 symm:9.20 spur:9.20 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.27
+date     92.12.13.18.20.14;  author mgbaker;  state Exp;
+branches ;
+next     9.26;
+
+9.26
+date     92.10.26.14.36.56;  author mgbaker;  state Exp;
+branches ;
+next     9.25;
+
+9.25
+date     92.08.10.20.47.24;  author mgbaker;  state Exp;
+branches ;
+next     9.24;
+
+9.24
+date     92.08.10.15.57.58;  author mgbaker;  state Exp;
+branches ;
+next     9.23;
+
+9.23
+date     92.08.04.15.29.26;  author mgbaker;  state Exp;
+branches ;
+next     9.22;
+
+9.22
+date     92.08.04.11.56.47;  author mgbaker;  state Exp;
+branches ;
+next     9.21;
+
+9.21
+date     92.04.22.15.20.35;  author mgbaker;  state Exp;
+branches ;
+next     9.20;
+
+9.20
+date     91.09.10.18.42.26;  author rab;  state Exp;
+branches ;
+next     9.19;
+
+9.19
+date     90.10.11.14.10.41;  author kupfer;  state Exp;
+branches 9.19.1.1;
+next     9.18;
+
+9.18
+date     90.10.09.18.31.41;  author mendel;  state Exp;
+branches ;
+next     9.17;
+
+9.17
+date     90.10.09.11.56.19;  author jhh;  state Exp;
+branches ;
+next     9.16;
+
+9.16
+date     90.09.11.14.55.24;  author mendel;  state Exp;
+branches ;
+next     9.15;
+
+9.15
+date     90.08.29.18.01.08;  author mgbaker;  state Exp;
+branches ;
+next     9.14;
+
+9.14
+date     90.05.14.20.17.48;  author mgbaker;  state Exp;
+branches ;
+next     9.13;
+
+9.13
+date     90.05.14.14.43.47;  author mgbaker;  state Exp;
+branches ;
+next     9.12;
+
+9.12
+date     90.04.30.19.58.54;  author mgbaker;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     90.04.18.17.28.47;  author mgbaker;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     90.04.11.15.00.17;  author mgbaker;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     90.03.26.09.52.42;  author brent;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     90.03.13.16.30.23;  author brent;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.03.01.12.29.21;  author brent;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.02.20.15.01.37;  author brent;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.01.15.16.32.13;  author mgbaker;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.01.05.11.58.32;  author mgbaker;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     89.11.07.10.57.21;  author brent;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.12.14.05.50;  author brent;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.12.12.05.50;  author brent;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.17.04;  author douglis;  state Stable;
+branches ;
+next     8.6;
+
+8.6
+date     89.08.30.10.13.40;  author brent;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.05.24.07.59.28;  author rab;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.05.18.17.59.54;  author rab;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.02.19.22.10.33;  author jhh;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.01.06.11.23.37;  author jhh;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.12.04.15.24.18;  author ouster;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.33.52;  author douglis;  state Stable;
+branches ;
+next     6.9;
+
+6.9
+date     88.11.11.14.52.54;  author mlgray;  state Exp;
+branches ;
+next     6.8;
+
+6.8
+date     88.10.28.18.53.56;  author mlgray;  state Exp;
+branches ;
+next     6.7;
+
+6.7
+date     88.10.20.23.03.33;  author douglis;  state Exp;
+branches ;
+next     6.6;
+
+6.6
+date     88.10.03.14.53.12;  author brent;  state Exp;
+branches ;
+next     6.5;
+
+6.5
+date     88.09.23.14.31.53;  author brent;  state Exp;
+branches ;
+next     6.4;
+
+6.4
+date     88.09.15.10.24.54;  author brent;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.09.06.11.12.26;  author brent;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.29.13.46.44;  author brent;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.26.11.50.17;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.23.57;  author brent;  state Stable;
+branches ;
+next     1.12;
+
+1.12
+date     88.07.18.17.39.53;  author douglis;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     88.03.24.17.49.46;  author brent;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     88.01.22.15.13.19;  author nelson;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     87.12.02.13.13.09;  author brent;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     87.11.18.13.29.50;  author brent;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     87.11.17.15.22.18;  author brent;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     87.10.21.12.16.43;  author brent;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     87.10.14.11.17.20;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     87.10.13.16.25.11;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     87.10.13.15.46.11;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     87.10.13.10.33.09;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     87.10.08.16.33.42;  author brent;  state Exp;
+branches ;
+next     ;
+
+9.19.1.1
+date     91.11.13.20.23.16;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Moved the recovery code from RPC to its own module
+@
+
+
+9.27
+log
+@Code for server-driven recovery.
+@
+text
+@/* 
+ * recovery.c --
+ *
+ *	The routines here maintain up/down state about other hosts.
+ *	Other modules register as clients of the recovery module,
+ *	and can then ask to be called back when some other host crashes
+ *	or reboots.  Modules always get called back when someone crashes,
+ *	and then they have the option of being called back when the
+ *	host reboots.  Regular message traffic plus explicit pinging
+ *	are used to track the state of the other hosts.  Pinging is
+ *	only done if some module is explicitly interested in a host.
+ *
+ *	Recov_HostAlive and Recov_HostDead are used by RPC to tell us when
+ *	a messages have arrived, or if transactions have timed out.
+ *	Recov_IsHostDown is used to query the state of another host,
+ *	Recov_RebootCallBack is used to get a callback upon a reboot, and
+ *	Recov_WaitForHost is used to block a process until a host reboots.
+ *	(Recov_WaitForHost isn't used much.  Instead, modules rely on the
+ *	recovery callbacks to indicate that a host is back to life, and
+ *	they block processes in their own way.)
+ *
+ *	Note: A synchronization hook is provided by Recov_HostAlive;  its
+ *	caller can be blocked if crash recovery actions are in progress.
+ *
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/recov/recovery.c,v 9.26 92/10/26 14:36:56 mgbaker Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+
+#include <sprite.h>
+#include <recov.h>
+#include <sync.h>
+#include <net.h>
+#include <rpc.h>
+#include <hash.h>
+#include <stdlib.h>
+#include <trace.h>
+#include <fsutil.h>
+#include <bstring.h>
+#include <stdio.h>
+#include <devClientDev.h>
+
+/*
+ * Other kernel modules arrange call-backs when a host crashes or reboots.
+ * The following list structure is used to keep these.  The calling
+ * sequence of the callbacks is as follows:
+ *	(*proc)(spriteID, clientData)
+ * Use Recov_CrashRegister and Recov_RebootRegister to set up the call backs.
+ */
+
+typedef struct {
+    List_Links	links;
+    void	(*proc)();
+    int		refCount;
+    ClientData	data;
+} NotifyElement;
+
+/*
+ * There is a single list of crash call backs, it isn't per machine
+ * like the reboot callbacks.
+ */
+static List_Links	crashCallBackList;
+
+/*
+ * recov_CrashDelay is the grace period given when another host
+ * is apparently down.  Reboots are still detected so that
+ * the crash callbacks will get called to clean up.
+ */
+unsigned int recov_CrashDelay;
+
+/*
+ * Statistics about the recovery module.
+ */
+Recov_Stats recov_Stats;
+
+/*
+ * For per-client statistics about recovery on the server.
+ * This is only used for getting stats, and isn't used for keeping
+ * track of client state.
+ * This amounts to a per-host list, in array form.
+ * Each host has numTries elements in the array.  The spriteID and numTries
+ * fields are only initialized in the first element.
+ */
+typedef	struct	RecovPerHostInfo {
+    int		spriteID;	/* Sprite ID of client. */
+    Time	start;		/* First recovery attempt. */
+    Time	finished;	/* First recovery attempt finished. */
+    int		numTries;	/* Number of recovery attempts. */
+    int		numHandles;	/* Number of reopens requested. */
+    int		numSuccessful;	/* Handles successfully recovered. */
+} RecovPerHostInfo;
+
+
+
+/*
+ * The state of other hosts is kept in a hash table keyed on SpriteID.
+ * This state is maintained by Recov_HostAlive and Recov_HostDead, which are
+ * called in turn after packet reception or RPC timeout, respectively.
+ * Recov_HostDead is also called by the Rpc_Daemon if it can't get an
+ * explicit acknowledgment from a client.
+ */
+static Hash_Table	recovHashTableStruct;
+static Hash_Table	*recovHashTable = &recovHashTableStruct;
+
+typedef	struct	RecovStampList {
+    List_Links	timeStampList;
+    Timer_Ticks	start;
+    Timer_Ticks	finished;
+    int		numHandles;		/* Handles since last time. */
+    int		numSuccessful;		/* Successful last time. */
+} RecovStampList;
+
+typedef struct RecovHostState {
+    int			state;		/* flags defined in .h file */
+    int			clientState;	/* flags defined in recov.h */
+    int			spriteID;	/* Sprite Host ID */
+    unsigned int	bootID;		/* Boot timestamp from RPC header */
+    Time		time;		/* Time of last message */
+    Sync_Condition	alive;		/* Notified when host comes up */
+    Sync_Condition	recovery;	/* Notified when recovery is complete */
+    List_Links		rebootList;	/* List of callbacks for when this
+					 * host reboots. */
+    int			numFailures;	/* Times a failure occurs during the
+					 * reboot callbacks.  Such a failure
+					 * triggers a retry of the reboot
+					 * callbacks. */
+    /*
+     * The following fields are used in the tracing of the recovery module.
+     */
+    Timer_Ticks		start;		/* Time that recovery is started. */
+    Timer_Ticks		finished;	/* Time recovery attempt  finishes. */
+    int			numTries;	/* Number of times recov attempted. */
+    int			numHandles;	/* Handles requested. */
+    int			numSuccessful;	/* Successful handles. */
+    int			currentHandles;	/* Temporary info. */
+    int			currentSuccessful;
+    List_Links		timeStampList;	/* List of time stamps for recovery. */
+    int			oldState;	/* Used for screening out trace recs. */
+    ClientData		callToken;	/* Token for timeout callback to
+					 * do recovery with server if server
+					 * didn't contact us.  We must be
+					 * able to deschedule the callback, so
+					 * that's what this token is for. */
+    Sync_Condition	waitForServer;	/* Waiting for server-driven recovery
+					 * to wake us.  Or else for our
+					 * timeout to wake us.
+					 */
+} RecovHostState;
+
+#define RECOV_INIT_HOST(hostPtr, zspriteID, zstate, zbootID) \
+    hostPtr = (RecovHostState *) malloc(sizeof (RecovHostState)); \
+    (void)bzero((Address)hostPtr, sizeof(RecovHostState)); \
+    List_Init(&(hostPtr)->rebootList); \
+    List_Init(&(hostPtr)->timeStampList);\
+    (hostPtr)->spriteID = zspriteID; \
+    (hostPtr)->state = zstate; \
+    (hostPtr)->bootID = zbootID; \
+    (hostPtr)->numFailures = 0; \
+    (hostPtr)->oldState = 0; \
+    (hostPtr)->callToken = (ClientData) NIL;
+
+/*
+ * Access to the hash table is monitored.
+ */
+static Sync_Lock recovLock;
+#define LOCKPTR (&recovLock)
+
+
+/*
+ * recov_PrintLevel defines how noisey we are about other hosts.
+ *	Values for the print level should be defined in increasing order.
+ */
+int recov_PrintLevel = RECOV_PRINT_REBOOT;
+
+#define RecovHostPrint(level, spriteID, message) \
+	if (recov_PrintLevel >= level) { \
+	    Sys_HostPrint(spriteID, message); \
+	}
+
+Trace_Header recovTraceHdr;
+Trace_Header *recovTraceHdrPtr = &recovTraceHdr;
+int recovTraceLength = 200;
+Boolean recovTracing = TRUE;
+
+/*
+ * TRUE if we're using transparent server recovery (using recovery box).
+ */
+#ifdef RECOV_TRANSPARENT
+Boolean	recov_Transparent = TRUE;
+#else
+Boolean	recov_Transparent = FALSE;
+#endif /* RECOV_TRANSPARENT */
+
+/*
+ * True if we should batch together multiple reopens in an rpc.
+ */
+Boolean	recov_BulkHandles = TRUE;
+
+/*
+ * TRUE if the clients should ignore the fact that a server is able to
+ * do transparent recovery.  This will be FALSE except for some testing.
+ */
+Boolean recov_ClientIgnoreTransparent = FALSE;
+/*
+ * This one should usually be true: okay to do fast reboot as far as
+ * reusing text and initialized heap, but this doesn't have to include
+ * using the recovery box.
+ */
+#ifdef RECOV_NOCOPY
+Boolean	recov_DoInitDataCopy = FALSE;
+#else
+Boolean	recov_DoInitDataCopy = TRUE;
+#endif /* RECOV_NOCOPY */
+
+/*
+ * TRUE if we're recovering using server-driven method.
+ * This is set to true by an initialization routine that is called
+ * as a result of the user-level daemon contacting the kernel.
+ */
+Boolean	recov_ServerDriven = FALSE;
+
+/*
+ * TRUE if the clients should ignore server-driven recovery.
+ */
+Boolean recov_ClientIgnoreServerDriven = TRUE;
+/*
+ * Don't bother to reopen files that only have clean blocks in the cache.
+ * Invalidate their clean cache blocks and scavenge the handles.
+ * This variable and recov_SkipCleanFiles should never both be set true!
+ */
+Boolean	recov_IgnoreCleanFiles = FALSE;
+
+/*
+ * Don't bother to reopen files that only have clean blocks in the cache.
+ * Just leave alone their cache blocks and handles.
+ * This variable and recov_IgnoreCleanFiles should never both be set true!
+ */
+Boolean	recov_SkipCleanFiles = TRUE;
+
+/*
+ * Are we blocking out some rpc's because server-driven recovery is
+ * in progress?
+ */
+Boolean	recov_BlockingRpcs = FALSE;
+
+/*
+ * Forward declarations.
+ */
+
+static void CrashCallBacks _ARGS_((ClientData data, Proc_CallInfo *callInfoPtr));
+static void CallBacksDone _ARGS_((int spriteID));
+static void MarkRecoveryComplete _ARGS_((int spriteID));
+static void GetRebootList _ARGS_((List_Links *notifyListHdr, int spriteID));
+static char *GetState _ARGS_((int state));
+static void PrintExtraState _ARGS_((RecovHostState *hostPtr));
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_Init --
+ *
+ *	Set up the data structures used by the recovery module.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Recov_Init()
+{
+    Sync_LockInitDynamic(&recovLock, "Recov:recovLock");
+    Hash_Init(recovHashTable, 8, HASH_ONE_WORD_KEYS);
+    List_Init(&crashCallBackList);
+    Trace_Init(recovTraceHdrPtr, recovTraceLength,
+		sizeof(RecovTraceRecord), 0);
+    Fsutil_InitBulkReopenTables();
+    recov_CrashDelay = (unsigned int)(timer_IntOneMinute);
+    RecovPingInit();
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_CrashRegister --
+ *
+ *	This procedure is used to register a crash callback procedure.
+ *	This is typically done once at boot time by each module that
+ *	is interested in learning about the failure of other hosts.
+ *	When other hosts are (apparently) down the recovery module
+ *	calls back to other modules that have registered via this procedure.
+ *	This allows those other modules to clean up any state associated
+ *	with the crashed host.
+ *	
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Callback entry added to the crash call-back list.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Recov_CrashRegister(crashCallBackProc, crashData)
+    void	(*crashCallBackProc)();
+    ClientData	crashData;
+{
+    register	NotifyElement	*notifyPtr;
+
+    notifyPtr = (NotifyElement *) malloc(sizeof (NotifyElement));
+    notifyPtr->proc = crashCallBackProc;
+    notifyPtr->data = crashData;
+    List_InitElement((List_Links *) notifyPtr);
+    List_Insert((List_Links *) notifyPtr, LIST_ATREAR(&crashCallBackList));
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_RebootRegister --
+ *
+ *	Schedule a callback for when a particular host reboots.
+ *	To make sure we detect a crash, the recovery module has to
+ *	periodically check on the state of the target host.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	This initiate a background callback to check-up on the host's state.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+Recov_RebootRegister(spriteID, rebootCallBackProc, rebootData)
+    int spriteID;
+    void (*rebootCallBackProc)();
+    ClientData rebootData;
+{
+    Hash_Entry *hashPtr;
+    RecovHostState *hostPtr;
+    register NotifyElement *notifyPtr;
+    Boolean found = FALSE;
+
+    LOCK_MONITOR;
+
+    if (spriteID <= 0 || spriteID == rpc_SpriteID) {
+	panic("Recov_RebootRegister, bad hostID %d\n", spriteID);
+    } else {
+	hashPtr = Hash_Find(recovHashTable, (Address)spriteID);
+	if (hashPtr->value == (Address)NIL) {
+	    RECOV_INIT_HOST(hostPtr, spriteID, RECOV_STATE_UNKNOWN, 0);
+	    hashPtr->value = (Address)hostPtr;
+	    RECOV_TRACE(spriteID, RECOV_STATE_UNKNOWN, RECOV_CUZ_INIT);
+	} else {
+	    hostPtr = (RecovHostState *)hashPtr->value;
+	}
+	/*
+	 * Save the callback while avoiding duplications.
+	 */
+	LIST_FORALL(&hostPtr->rebootList, (List_Links *)notifyPtr) {
+	    if (notifyPtr->proc == rebootCallBackProc &&
+		notifyPtr->data == rebootData) {
+		found = TRUE;
+		break;
+	    }
+	}
+	if (!found) {
+	    notifyPtr = (NotifyElement *) malloc(sizeof (NotifyElement));
+	    notifyPtr->proc = rebootCallBackProc;
+	    notifyPtr->data = rebootData;
+	    notifyPtr->refCount = 1;
+	    List_InitElement((List_Links *)notifyPtr);
+	    List_Insert((List_Links *)notifyPtr,
+			LIST_ATFRONT(&hostPtr->rebootList));
+	} else {
+	    notifyPtr->refCount++;
+	}
+	/*
+	 * Mark the host as being interesting, and add it to the ping
+	 * list if necessary.
+	 */
+	hostPtr->state |= RECOV_PINGING_HOST;
+	RecovAddHostToPing(spriteID);
+    }
+    UNLOCK_MONITOR;
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_RebootUnRegister --
+ *
+ *	Remove a callback for when a particular host reboots.  This is
+ *	used after we are no longer interested in a host rebooting.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Nukes the reboot procedure.  If all interested parties remove their
+ *	reboot callbacks then the periodic check of the other host is
+ *	stopped.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+Recov_RebootUnRegister(spriteID, rebootCallBackProc, rebootData)
+    int spriteID;
+    void (*rebootCallBackProc)();
+    ClientData rebootData;
+{
+    Hash_Entry *hashPtr;
+    RecovHostState *hostPtr;
+    register NotifyElement *notifyPtr;
+    Boolean found = FALSE;
+
+    LOCK_MONITOR;
+
+    if (spriteID <= 0 || spriteID == rpc_SpriteID) {
+	panic("Recov_RebootUnRegister, bad hostID %d\n", spriteID);
+    } else {
+	hashPtr = Hash_Find(recovHashTable, (Address)spriteID);
+	if (hashPtr->value == (Address)NIL) {
+	    RECOV_INIT_HOST(hostPtr, spriteID, RECOV_STATE_UNKNOWN, 0);
+	    hashPtr->value = (Address)hostPtr;
+	    RECOV_TRACE(spriteID, RECOV_STATE_UNKNOWN, RECOV_CUZ_INIT);
+	} else {
+	    hostPtr = (RecovHostState *)hashPtr->value;
+	}
+	/*
+	 * Look for the matching callback.
+	 */
+	LIST_FORALL(&hostPtr->rebootList, (List_Links *)notifyPtr) {
+	    if (notifyPtr->proc == rebootCallBackProc &&
+		notifyPtr->data == rebootData) {
+		found = TRUE;
+		break;
+	    }
+	}
+	if (found) {
+	    notifyPtr->refCount--;
+	    if (notifyPtr->refCount <= 0) {
+		int		num;
+		/*
+		 * Mousetrap for debugging recovery reference count problem.
+		 */
+		if (notifyPtr->proc == (void((*)())) Fsutil_Reopen) {
+
+		    if (recov_PrintLevel >= RECOV_PRINT_CRASH) {
+			printf(
+		"Recov: deleting Fsutil_Reopen for server %d ref count %d\n",
+			    spriteID, notifyPtr->refCount);
+		    }
+		    /*
+		     * We want to panic if we still have handles for
+		     * this server.
+		     */
+		    num = Fsutil_TestForHandles(spriteID);
+		    /*
+		     * This routine is called before the handle is removed,
+		     * so we must take into account the fact that it still
+		     * exists in the handle table.
+		     */
+		    if (num > 1) {
+			printf("%d file and device handles remain\n", num);
+			panic("Shouldn't have deleted it - handles remain!\n");
+		    }
+		}
+		List_Remove((List_Links *)notifyPtr);
+		free((Address)notifyPtr);
+	    }
+	}
+    }
+    UNLOCK_MONITOR;
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_HostAlive --
+ *
+ *	Mark the host as being alive.  This is called when we've received
+ *	a message from the host.  It uses state from the host table and
+ *	the bootID parameter to detect reboots.  If a reboot is detected,
+ *	but we thought the host was up, then the Crash call-backs are invoked.
+ *	In any case, a reboot invokes the Reboot call-backs, if any.
+ *
+ *	This procedure is called from client RPC upon successful completion
+ *	of an RPC, and by server RPC upon reciept of a client request.
+ *	These two cases are identified by the 'asyncRecovery' parameter.
+ *	Servers want synchronous recovery so they don't service anything
+ *	until state associated with that client has been cleaned up via
+ *	the Crash call-backs.  So Recov_HostAlive blocks (if !asyncRecovery)
+ *	until the crash call-backs are complete.  Clients don't have the
+ *	same worries so they let the crash call-backs complete in the
+ *	background (asyncRecovery is TRUE).
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Updates the boot timestamp of the other host.  Procedures installed
+ *	with Recov_CrashRegister are called when the bootID changes.  A
+ *	timestamp of when this message was received is obtained from the
+ *	"cheap" clock so we can tell later if there has been recent message
+ *	traffic.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive, recovType)
+    int spriteID;		/* Host ID of the message sender */
+    unsigned int bootID;	/* Boot time stamp from message header */
+    Boolean asyncRecovery;	/* TRUE means do recovery call-backs in
+				 * the background. FALSE causes the process
+				 * to wait until crash recovery is complete. */
+    Boolean rpcNotActive;	/* This is a flag propogated from the rpc
+				 * packet header.  If set it means the RPC
+				 * system on the remote host isn't fully
+				 * turned on.  Reboot recovery is delayed
+				 * until this changes. */
+    unsigned int recovType;	/* Whether the host that's alive went through
+				 * a fast boot or is doing server-driven
+				 * recovery or not. */
+{
+    register	Hash_Entry *hashPtr;
+    register	RecovHostState *hostPtr;
+    int		hostState = -1;
+
+    LOCK_MONITOR;
+    if (spriteID == NET_BROADCAST_HOSTID || bootID == 0 || sys_ShuttingDown) {
+	/*
+	 * Don't track the broadcast address.  Also ignore zero valued
+	 * bootIDs.  These come from hosts at early boot time, or
+	 * in certain error conditions like trying to send too much
+	 * data in a single RPC.  Also don't bother to check things
+	 * where we are shutting down the system because we don't want 
+	 * RPCs for the cache data to get blocked.
+	 */
+	UNLOCK_MONITOR;
+	return;
+    }
+
+    recov_Stats.packets++;
+    hashPtr = Hash_Find(recovHashTable, (Address)spriteID);
+    if (hashPtr->value == (Address)NIL) {
+	/*
+	 * Initialize the host's state. This is the first time we've talked
+	 * to it since we've been up, so take no action.
+	 */
+	RECOV_INIT_HOST(hostPtr, spriteID, RECOV_HOST_ALIVE, bootID);
+	hashPtr->value = (Address)hostPtr;
+
+	RecovHostPrint(RECOV_PRINT_IF_UP, spriteID, "is up\n");
+	RECOV_TRACE(spriteID, RECOV_HOST_ALIVE, RECOV_CUZ_INIT);
+	hostState = DEV_CLIENT_STATE_NEW_HOST;
+    } else {
+	hostPtr = (RecovHostState *)hashPtr->value;
+    }
+    /*
+     * Have to read the clock in order to suppress repeated pings,
+     * see Recov_GetHostState and Recov_IsHostDown.
+     */
+    Timer_GetTimeOfDay(&hostPtr->time, (int *)NIL, (Boolean *)NIL);
+    /*
+     * Check for a rebooted peer by comparing boot time stamps.
+     */
+    if (hostPtr->bootID != bootID) {
+	if (hostPtr->bootID != 0) {
+	    RecovHostPrint(RECOV_PRINT_REBOOT, spriteID, "rebooted\n");
+	} else {
+	    /*
+	     * We initialized state before talking to the host the first time.
+	     * The state is 'unknown' so we won't do crash call-backs.
+	     */
+	}
+	hostPtr->bootID = bootID;
+	RECOV_TRACE(spriteID, hostPtr->state, RECOV_CUZ_REBOOT);
+	if (hostPtr->state &
+		(RECOV_HOST_ALIVE|RECOV_HOST_BOOTING)) {
+		RecovHostPrint(RECOV_PRINT_ALL, spriteID,
+			"Undetected crash occurred.\n");
+	    /*
+	     * A crash occured un-detected.  We do the crash call-backs
+	     * first, and block server processes in the meantime.
+	     * RECOV_CRASH_CALLBACKS flag is cleared by CrashCallBacks.
+	     */
+	    hostPtr->state &= ~(RECOV_HOST_ALIVE|RECOV_HOST_DEAD);
+	    hostPtr->state |= RECOV_HOST_BOOTING;
+	    RECOV_TRACE(spriteID, hostPtr->state, RECOV_CUZ_CRASH_UNDETECTED);
+	    if ((hostPtr->state & RECOV_CRASH_CALLBACKS) == 0) {
+		hostPtr->state |= RECOV_CRASH_CALLBACKS;
+		RECOV_TRACE(spriteID, hostPtr->state, RECOV_CUZ_CRASH_UNDETECTED);
+		Proc_CallFunc(CrashCallBacks, (ClientData)spriteID, 0);
+	    }
+	}
+    } else  if ( ! (hostPtr->state &
+	    (RECOV_CRASH_CALLBACKS|RECOV_WANT_RECOVERY)) &&
+	    (hostPtr->state & RECOV_HOST_ALIVE)) {
+	/*
+	 * Fast path.  We already think the other host is up, it didn't
+	 * reboot, we don't want recovery, and there are no pending
+	 * crash call-backs to synchronize with.
+	 */
+	goto exit;
+    }
+    /*
+     * Block servers until crash recovery actions complete.
+     * This prevents servicing requests from clients until after the
+     * recovery actions complete.
+     */
+    if (! asyncRecovery) {
+	RecovHostPrint(RECOV_PRINT_ALL, spriteID, "Async recovery false.\n");
+	while (hostPtr->state & RECOV_CRASH_CALLBACKS) {
+	    (void)Sync_Wait(&hostPtr->recovery, FALSE);
+	    if (sys_ShuttingDown) {
+		UNLOCK_MONITOR;
+		Proc_Exit(1);
+	    }
+	}
+    }
+    /*
+     * Now that we've taken care of crash recovery, we see if the host
+     * is newly up.  If so, invoke any reboot call-backs and notify
+     * waiting processes. This means clientA (us) may start
+     * re-opening files from serverB (the other guy) at the same time
+     * as clientA (us) is closing files that serverB had had open.
+     * ie. both the crash and reboot call backs may proceed in parallel.
+     */
+    switch(hostPtr->state &
+       (RECOV_HOST_ALIVE|RECOV_HOST_BOOTING|RECOV_HOST_DEAD)) {
+        case RECOV_STATE_UNKNOWN:	/* This is zero, no bits set */
+	    /*
+	     * We have uninitialized state for the host, mark it alive.
+	     */
+	    RecovHostPrint(RECOV_PRINT_IF_UP, spriteID, "is up\n");
+	    if (rpcNotActive) {
+		hostPtr->state |= RECOV_HOST_BOOTING;
+	    } else {
+		hostPtr->state |= RECOV_HOST_ALIVE;
+		hostState = DEV_CLIENT_STATE_NEW_HOST;
+	    }
+	    break;
+	case RECOV_HOST_ALIVE:
+	    /*
+	     * Host already alive.  We may still want recovery at this
+	     * point.  See CallBacksDone.
+	     */
+	    RecovHostPrint(RECOV_PRINT_ALL, spriteID, "Already up.\n");
+	    break;
+	case RECOV_HOST_BOOTING:
+	    /*
+	     * See if a booting host is ready yet.
+	     */
+	    RecovHostPrint(RECOV_PRINT_ALL, spriteID, "Booting, set recov.\n");
+	    if (! rpcNotActive) {
+		hostPtr->state &= ~RECOV_HOST_BOOTING;
+		hostPtr->state |= RECOV_HOST_ALIVE|RECOV_WANT_RECOVERY;
+		hostState = DEV_CLIENT_STATE_NEW_HOST;
+		RECOV_TRACE(spriteID, hostPtr->state, RECOV_CUZ_WAS_BOOTING);
+		RecovHostPrint(RECOV_PRINT_ALL, spriteID,
+			"Booting, set alive, recov.\n");
+	    }
+	    break;
+	case RECOV_HOST_DEAD:
+	    /*
+	     * See if the host is newly booting or back from a net partition.
+	     */
+	    if (rpcNotActive) {
+		hostPtr->state |= RECOV_HOST_BOOTING;
+		RECOV_TRACE(spriteID, hostPtr->state, RECOV_CUZ_NOW_BOOTING);
+		RecovHostPrint(RECOV_PRINT_ALL, spriteID,
+			"Dead or dying, set booting.\n");
+	    } else {
+		hostPtr->state |= (RECOV_HOST_ALIVE|RECOV_WANT_RECOVERY);
+		hostState = DEV_CLIENT_STATE_NEW_HOST;
+		RECOV_TRACE(spriteID, hostPtr->state, RECOV_CUZ_WAS_DEAD);
+		RecovHostPrint(RECOV_PRINT_ALL, spriteID,
+			"Dead, dying, set want recov.\n");
+	    }
+	    hostPtr->state &= ~(RECOV_HOST_DEAD);
+	    break;
+	default:
+	    printf("Unexpected recovery state <%x> for ", hostPtr->state);
+	    Sys_HostPrint(spriteID, "\n");
+	    break;
+    }
+    if (recovType & RECOV_FAST_BOOT) {
+	if (!(hostPtr->state & RECOV_FAST_BOOT)) {
+	    printf("Recov_HostAlive: setting state for host %d to FAST_BOOT\n",
+		    spriteID);
+	}
+	hostPtr->state |= RECOV_FAST_BOOT;
+    } else {
+	if ((hostPtr->state & RECOV_FAST_BOOT)) {
+	    printf("Recov_HostAlive: removing FAST_BOOT state for host %d\n",
+		    spriteID);
+	}
+	hostPtr->state &= ~RECOV_FAST_BOOT;
+    }
+    /* Test whether it's trying to do more than one kind of recovery? XXX */
+    if (recovType & RECOV_SERVER_DRIVEN) {
+	if (!(hostPtr->state & RECOV_SERVER_DRIVEN)) {
+	    printf(
+		"Recov_HostAlive: setting state for host %d to SERVER_DRIVEN\n",
+		spriteID);
+	}
+	hostPtr->state |= RECOV_SERVER_DRIVEN;
+    } else {
+	if ((hostPtr->state & RECOV_SERVER_DRIVEN)) {
+	    printf(
+		"Recov_HostAlive: removing SERVER_DRIVEN state for host %d\n",
+		spriteID);
+	}
+	hostPtr->state &= ~RECOV_SERVER_DRIVEN;
+    }
+    /*
+     * After a host comes up enough to support RPC service, we
+     * initiate reboot recovery if needed.
+     */
+    if ((hostPtr->state & RECOV_WANT_RECOVERY) &&
+	(hostPtr->state & RECOV_HOST_ALIVE) &&
+	((hostPtr->state & RECOV_REBOOT_CALLBACKS) == 0)) {
+	hostPtr->state &= ~RECOV_WANT_RECOVERY;
+	hostPtr->state |= RECOV_REBOOT_CALLBACKS;
+	RECOV_TRACE(spriteID, hostPtr->state, RECOV_CUZ_SCHED_CALLBACK);
+	RecovHostPrint(RECOV_PRINT_ALL, spriteID,
+		"Want recov, etc, callbacks.\n");
+	Proc_CallFunc(RecovRebootCallBacks, (ClientData)spriteID, 0);
+    }
+exit:
+    if (hostState == DEV_CLIENT_STATE_NEW_HOST) {
+	/*
+	 * Only call into device module if this isn't a client we're
+	 * doing server-driven recovery with at this very moment.
+	 */
+	if ((hostPtr->clientState & CLT_DOING_SRV_RECOV) == 0) {
+	    Dev_ClientHostUp(spriteID);
+	}
+    }
+    UNLOCK_MONITOR;
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_HostDead --
+ *
+ *	Change the host's state to "dead".  This is called from client RPC
+ *	when an RPC timed out with no response.  It is also called by the
+ *	Rpc_Daemon when it can't recontact a client to get an explicit
+ *	acknowledgment.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	If the host was previously thought up, this sets the state in
+ *	the host state table to dead and invokes the crash callbacks.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+Recov_HostDead(spriteID)
+    int spriteID;
+{
+    register	Hash_Entry *hashPtr;
+    register	RecovHostState *hostPtr;
+    int		hostState = -1;
+
+    LOCK_MONITOR;
+    if (spriteID == NET_BROADCAST_HOSTID || rpc_NoTimeouts) {
+	/*
+	 * If rpcNoTimeouts is set the Rpc_Daemon may still call us if
+	 * it can't get an acknowledgment from a host to close down
+	 * a connection.  We ignore this so that we don't take action
+	 * against the offending host (who is probably in the debugger)
+	 * (Hmm, it doesn't look like Rpc_Daemon calls this procedure.)
+	 */
+	UNLOCK_MONITOR;
+	return;
+    }
+
+    recov_Stats.timeouts++;
+    hashPtr = Hash_Find(recovHashTable, (Address)spriteID);
+    if (hashPtr->value == (Address)NIL) {
+	RECOV_INIT_HOST(hostPtr, spriteID, RECOV_HOST_DEAD, 0);
+	hashPtr->value = (Address)hostPtr;
+	RECOV_TRACE(spriteID, RECOV_HOST_DEAD, RECOV_CUZ_INIT);
+	hostState = DEV_CLIENT_STATE_DEAD_HOST;
+    } else {
+	hostPtr = (RecovHostState *)hashPtr->value;
+    }
+    switch(hostPtr->state &
+	    (RECOV_HOST_ALIVE|RECOV_HOST_BOOTING|RECOV_HOST_DEAD)) {
+	case RECOV_HOST_DEAD:
+	    /*
+	     * Host already dead.
+	     */
+	    break;
+	case RECOV_STATE_UNKNOWN:
+	case RECOV_HOST_BOOTING:
+	case RECOV_HOST_ALIVE:
+	    hostState = DEV_CLIENT_STATE_DEAD_HOST;
+	    hostPtr->state &=
+		~(RECOV_HOST_ALIVE|RECOV_HOST_BOOTING);
+	    /*
+	     * Special handling if we abort during the recovery protocol.
+	     * In this case it is possible for the other host to go from
+	     * alive to dead and back to alive before the recovery protocol
+	     * finally terminates.  If that happens we could loose a reboot
+	     * event and fail to initiate recovery again.  We mark the
+	     * host specially so the reboot callbacks are retried.
+	     */
+	    if (hostPtr->state & RECOV_REBOOT_CALLBACKS) {
+		hostPtr->state |= RECOV_FAILURE;
+	    }
+	    hostPtr->state |= RECOV_HOST_DEAD|RECOV_CRASH_CALLBACKS;
+	    RecovHostPrint(RECOV_PRINT_CRASH, spriteID,
+		    "crash call-backs made\n");
+	    RECOV_TRACE(spriteID, hostPtr->state, RECOV_CUZ_CRASH);
+	    Proc_CallFunc(CrashCallBacks, (ClientData)spriteID, 0);
+	    break;
+    }
+    if (hostState == DEV_CLIENT_STATE_DEAD_HOST) {
+	/*
+	 * Only call into device module if this isn't a client we're
+	 * doing server-driven recovery with at this very moment.
+	 */
+	if ((hostPtr->clientState & CLT_DOING_SRV_RECOV) == 0) {
+	    Dev_ClientHostDown(spriteID);
+	}
+    }
+    UNLOCK_MONITOR;
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_IsHostDown --
+ *
+ *	This decides if the specified host is down.  If the host is known
+ *	to be down this routine	returns FAILURE.  SUCCESS is returned if
+ *	the host is alive, and RPC_SERVICE_DISABLED is returned if the
+ *	host is in its boot sequence and can't service RPC's yet.  If there
+ *	hasn't been recent (within the last 10 seconds) message traffic
+ *	this this pings the host to find out for sure its state.
+ *
+ * Results:
+ *	SUCCESS if the host is up, FAILURE if it doesn't respond to
+ *	pings or is known to be down, and RPC_SERVICE_DISABLED if
+ *	the host says so.
+ *
+ * Side effects:
+ *	May do a ping.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Recov_IsHostDown(spriteID)
+    int spriteID;
+{
+    register ReturnStatus status = SUCCESS;
+
+    if (spriteID == NET_BROADCAST_HOSTID) {
+	printf("Warning: Recov_IsHostDown, got broadcast address\n");
+	return(SUCCESS);
+    }
+    switch (Recov_GetHostState(spriteID)) {
+	case RECOV_STATE_UNKNOWN:
+	    RECOV_TRACE(spriteID, RECOV_STATE_UNKNOWN, RECOV_CUZ_PING_ASK);
+	    recov_Stats.pings++;
+	    status = Rpc_Ping(spriteID);
+	    break;
+	case RECOV_HOST_BOOTING:
+	case RECOV_HOST_ALIVE: 	/* fake it to allow for the grace period */
+	    recov_Stats.pingsSuppressed++;
+	    status = SUCCESS;
+	    break;
+	case RECOV_HOST_DEAD:
+	    status = FAILURE;
+	    break;
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_HostTrace --
+ *
+ *	Add an entry to the recovery trace.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+Recov_HostTrace(spriteID, event)
+    int spriteID;
+    int event;
+{
+    /*
+     * No monitor lock needed here, since Trace_Insert does its own
+     * synchronization.
+     */
+    RECOV_TRACE(spriteID, RECOV_STATE_UNKNOWN, event);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_GetClientState --
+ *
+ *	Return the client state associated with a host.  The recovery host
+ *	table is a convenient object keyed on spriteID.  Other modules can
+ *	set their own state in the table (beyond the simple up/down state
+ *	mainted by the rest of this module), and retrieve it with this call.
+ *
+ * Results:
+ *	A copy of the clientState field.  0 is returned if there is no
+ *	host table entry.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY int
+Recov_GetClientState(spriteID)
+    int spriteID;
+{
+    Hash_Entry *hashPtr;
+    RecovHostState *hostPtr;
+    int stateBits = 0;
+
+    LOCK_MONITOR;
+
+    hashPtr = Hash_LookOnly(recovHashTable, (Address)spriteID);
+    if (hashPtr != (Hash_Entry *)NIL) {
+	hostPtr = (RecovHostState *)hashPtr->value;
+	if (hostPtr != (RecovHostState *)NIL) {
+	    stateBits = hostPtr->clientState;
+	}
+    }
+    UNLOCK_MONITOR;
+    return(stateBits);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_SetClientState --
+ *
+ *	Set a client state bit.  This or's the parameter into the
+ *	client state word.  The previous value of the client state
+ *	word is returned so this procedure can be used like test-and-set.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Sets bits in the clientState field of the host state.  This will add
+ *	an entry to the host table if one doesn't alreay exist.  Its RPC
+ *	up/down state is set to "unknown" in this case.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY int
+Recov_SetClientState(spriteID, stateBits)
+    int spriteID;
+    int stateBits;
+{
+    Hash_Entry *hashPtr;
+    RecovHostState *hostPtr;
+    register oldState;
+    RecovStampList	*stampPtr;
+
+
+    LOCK_MONITOR;
+
+    hashPtr = Hash_Find(recovHashTable, (Address)spriteID);
+    hostPtr = (RecovHostState *)hashPtr->value;
+    if (hostPtr == (RecovHostState *)NIL) {
+	RECOV_INIT_HOST(hostPtr, spriteID, RECOV_STATE_UNKNOWN, 0);
+	hashPtr->value = (Address)hostPtr;
+	RECOV_TRACE(spriteID, RECOV_STATE_UNKNOWN, RECOV_CUZ_INIT);
+    }
+    if ((stateBits & CLT_RECOV_IN_PROGRESS) != 0) {
+	/*
+	 * This is a test to see if we get potential inconsistency from lacking
+	 * backwards compatibility with old kernels on clients and new server-
+	 * driven recovery.  It can go away when everybody is running a kernel
+	 * with the new recovery stuff in it.  - Mary 11/10/92.
+	 */
+	if ((hostPtr->clientState & CLT_OLD_RECOV) && !recov_BlockingRpcs) {
+	    printf("Recov_SetClient: got late recovery from old client %d.\n",
+		    spriteID);
+	}
+
+	if (hostPtr->numTries == 0) {
+	    /* First recovery attempt */
+	    if ((hostPtr->clientState & CLT_RECOV_IN_PROGRESS) != 0) {
+		printf("No recovery attempt yet, but marked as in progress.");
+	    }
+	    Timer_GetCurrentTicks(&hostPtr->start);
+	} else {
+	    /* Add a time-stamp to the recovery list. */
+	    stampPtr = (RecovStampList *) malloc(sizeof (RecovStampList));
+	    Timer_GetCurrentTicks(&stampPtr->start);
+	    List_InitElement((List_Links *) stampPtr);
+	    List_Insert((List_Links *) stampPtr,
+		    LIST_ATREAR(&hostPtr->timeStampList));
+	    /*
+	     * Clear handle count for this round.
+	     */
+	    hostPtr->currentHandles = 0;
+	    hostPtr->currentSuccessful = 0;
+	}
+	hostPtr->numTries++;
+    }
+
+    oldState = hostPtr->clientState;
+    hostPtr->clientState |= stateBits;
+    UNLOCK_MONITOR;
+    return(oldState);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_ClearClientState --
+ *
+ *	Clear client state bits.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Clears bits in the clientState field of the host state.  This does
+ *	nothing if the state doesn't exist.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+Recov_ClearClientState(spriteID, stateBits)
+    int spriteID;
+    int stateBits;
+{
+    register Hash_Entry		*hashPtr;
+    register RecovHostState	*hostPtr = (RecovHostState *) NIL;
+    RecovStampList		*stampPtr;
+
+    LOCK_MONITOR;
+
+    hashPtr = Hash_LookOnly(recovHashTable, (Address)spriteID);
+    if (hashPtr != (Hash_Entry *)NIL) {
+	hostPtr = (RecovHostState *)hashPtr->value;
+	if (hostPtr != (RecovHostState *)NIL) {
+	    hostPtr->clientState &= ~stateBits;
+	}
+    }
+    /* End of recovery? */
+    if ((hostPtr != (RecovHostState *) NIL) &&
+	    (stateBits & CLT_RECOV_IN_PROGRESS) != 0) {
+	/* End of 1st recovery try? */
+	if (hostPtr->numTries <= 1) {
+	    Timer_GetCurrentTicks(&hostPtr->finished);
+	    /* Final count of handles recovered is in hostPtr. */
+	    hostPtr->numHandles = hostPtr->currentHandles;
+	    hostPtr->numSuccessful = hostPtr->currentSuccessful;
+	} else {
+	    if (List_IsEmpty(&hostPtr->timeStampList)) {
+		printf("Recov_ClearClientState: timeStampList is empty!\n");
+		hostPtr->numSuccessful = 0;	/* signal the error */
+	    } else {
+		stampPtr = (RecovStampList *)
+			List_Last((List_Links *) &hostPtr->timeStampList);
+		Timer_GetCurrentTicks(&stampPtr->finished);
+		stampPtr->numHandles = hostPtr->currentHandles;
+		stampPtr->numSuccessful = hostPtr->currentSuccessful;
+	    }
+	}
+    }
+    UNLOCK_MONITOR;
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_AddHandleCountToClientState --
+ *
+ *	Increment count of handles reopened from this client.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Data in per-host recovery info updated.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY void
+Recov_AddHandleCountToClientState(type, clientID, status)
+    int			type;		/* Type of handle being reopened. */
+    int			clientID;	/* Id of client requesting reopen. */
+    ReturnStatus	status;		/* Whether the reopen succeeded. */
+{
+    register Hash_Entry *hashPtr;
+    register RecovHostState *hostPtr = (RecovHostState *) NIL;
+
+    LOCK_MONITOR;
+
+    hashPtr = Hash_LookOnly(recovHashTable, (Address)clientID);
+    if (hashPtr != (Hash_Entry *)NIL) {
+	hostPtr = (RecovHostState *)hashPtr->value;
+	if (hostPtr != (RecovHostState *)NIL) {
+	    hostPtr->currentHandles++;
+	    if (status == SUCCESS) {
+		hostPtr->currentSuccessful++;
+	    }
+	}
+    }
+    UNLOCK_MONITOR;
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_DumpClientRecovInfo --
+ *
+ *	Dump out some of the recovery statistics in the per-host info.
+ *
+ * Results:
+ *	Returns FAILURE if recovery still in progress.  Returns SUCCESS
+ *	otherwise.
+ *
+ * Side effects:
+ *	Info copied into buffer.  Size of needed buffer also copied out.
+ *
+ *----------------------------------------------------------------------
+ */
+ENTRY ReturnStatus
+Recov_DumpClientRecovInfo(length, resultPtr, lengthNeededPtr)
+    int			length;			/* size of data buffer */
+    Address		resultPtr;		/* Array of info structs. */
+    int			*lengthNeededPtr;	/* to return space needed */
+{
+    Hash_Entry		*hashPtr;
+    RecovHostState	*hostPtr;
+    Hash_Search		hashSearch;
+    RecovPerHostInfo	*infoPtr;
+    int			numNeeded;
+    int			numAvail;
+
+    LOCK_MONITOR;
+
+    /*
+     * If recovery still going on, return FAILURE.
+     * NOTE: This isn't a sure-fire test.  I'm not sure there is one right now.
+     */
+    if (fsutil_NumRecovering >= 1) {
+	UNLOCK_MONITOR;
+	return FAILURE;
+    }
+    if (resultPtr != (Address) NIL) {
+	bzero(resultPtr, length);
+    }
+    numNeeded = 0;
+    numAvail = length / sizeof (RecovPerHostInfo);
+
+    infoPtr = (RecovPerHostInfo *) resultPtr;
+    Hash_StartSearch(&hashSearch);
+    for (hashPtr = Hash_Next(recovHashTable, &hashSearch);
+	    hashPtr != (Hash_Entry *) NIL;
+	    hashPtr = Hash_Next(recovHashTable, &hashSearch)) {
+	hostPtr = (RecovHostState *)hashPtr->value;
+
+	/*
+	 * We need one slot for each host, whether numTries is 0 or 1, plus
+	 * additional slots for each numTries over 1.
+	 */
+	numNeeded++;
+	if (hostPtr->numTries > 1) {
+	    numNeeded += (hostPtr->numTries - 1);
+	}
+	if (numNeeded > numAvail) {
+	    continue;
+	}
+	/* Why didn't Brent use GetValue()??? */
+	if (hostPtr != (RecovHostState *) NIL) {
+	    RecovStampList	*stampPtr;
+
+	    /* Copy info into buffer */
+	    infoPtr->spriteID = hostPtr->spriteID;
+	    infoPtr->numTries = hostPtr->numTries;
+	    Timer_GetRealTimeFromTicks(hostPtr->start,
+		    &(infoPtr->start), (int *) NIL, (Boolean *) NIL);
+	    Timer_GetRealTimeFromTicks(hostPtr->finished,
+		    &(infoPtr->finished), (int *)NIL, (Boolean *) NIL);
+	    infoPtr->numHandles = hostPtr->numHandles;
+	    infoPtr->numSuccessful = hostPtr->numSuccessful;
+	    LIST_FORALL(&hostPtr->timeStampList, (List_Links *) stampPtr) {
+		infoPtr++;
+		Timer_GetRealTimeFromTicks(stampPtr->start,
+			&infoPtr->start, (int *) NIL, (Boolean *) NIL);
+		Timer_GetRealTimeFromTicks(stampPtr->finished,
+			&infoPtr->finished, (int *) NIL, (Boolean *) NIL);
+		infoPtr->numHandles = stampPtr->numHandles;
+		infoPtr->numSuccessful = stampPtr->numSuccessful;
+	    }
+	}
+	infoPtr++;
+    }
+    *lengthNeededPtr = numNeeded * sizeof (RecovPerHostInfo);
+    UNLOCK_MONITOR;
+
+    return SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RecovRebootCallBacks --
+ *
+ *	This calls the call-back procedures installed by other modules
+ *	via Recov_RebootRegister.  It is invoked asynchronously from
+ *	Recov_HostAlive when that procedure detects a reboot.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Invoke the call-backs.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+void
+RecovRebootCallBacks(data, callInfoPtr)
+    ClientData data;
+    Proc_CallInfo *callInfoPtr;
+{
+    List_Links notifyList;
+    register NotifyElement *notifyPtr;
+    register int spriteID = (int)data;
+
+printf("RecovRebootCallBacks called for %d\n", spriteID);
+    GetRebootList(&notifyList, spriteID);
+    RECOV_TRACE(spriteID, RECOV_STATE_UNKNOWN, RECOV_CUZ_DOING_CALLBACKS);
+    recov_Stats.reboots++;
+    while (!List_IsEmpty(&notifyList)) {
+	notifyPtr = (NotifyElement *)List_First(&notifyList);
+	(*notifyPtr->proc)(spriteID, notifyPtr->data);
+	List_Remove((List_Links *)notifyPtr);
+	free((Address)notifyPtr);
+    }
+    CallBacksDone(spriteID);
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetRebootList --
+ *
+ *	Copy out the list of reboot callbacks.  The list is protected by
+ * 	a monitor, but we don't want to call any recovery procedures from
+ *	inside that monitor so we make a copy.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Copy the reboot list off the host state table and return it
+ *	to our caller who should free up the copied elements.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY static void
+GetRebootList(notifyListHdr, spriteID)
+    List_Links *notifyListHdr;
+    int spriteID;
+{
+    register Hash_Entry *hashPtr;
+    register RecovHostState *hostPtr;
+    register NotifyElement *notifyPtr;
+    register NotifyElement *newNotifyPtr;
+
+    LOCK_MONITOR;
+
+    hashPtr = Hash_LookOnly(recovHashTable, (Address)spriteID);
+    hostPtr = (RecovHostState *)hashPtr->value;
+    List_Init(notifyListHdr);
+    LIST_FORALL(&hostPtr->rebootList, (List_Links *)notifyPtr) {
+	newNotifyPtr = (NotifyElement *) malloc(sizeof (NotifyElement));
+	newNotifyPtr->proc = notifyPtr->proc;
+	newNotifyPtr->data = notifyPtr->data;
+	List_InitElement((List_Links *)newNotifyPtr);
+	List_Insert((List_Links *)newNotifyPtr, LIST_ATREAR(notifyListHdr));
+    }
+    UNLOCK_MONITOR;
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CallBacksDone --
+ *
+ *	Clear the internal state bit that says callbacks are in progress.
+ *	This checks to see if there was a communication failure during
+ *	the reboot callbacks.  If so, the WANT_RECOVERY bit is set
+ *	to ensure that another set of reboot callbacks are made.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Clears RECOV_REBOOT_CALLBACKS and RECOV_FAILURE.  May set
+ *	RECOV_WANT_RECOVERY if RECOV_FAILURE was set.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY static void
+CallBacksDone(spriteID)
+    int spriteID;
+{
+    register Hash_Entry *hashPtr;
+    register RecovHostState *hostPtr;
+
+    LOCK_MONITOR;
+
+    hashPtr = Hash_LookOnly(recovHashTable, (Address)spriteID);
+    hostPtr = (RecovHostState *)hashPtr->value;
+    hostPtr->state &= ~RECOV_REBOOT_CALLBACKS;
+    RECOV_TRACE(spriteID, hostPtr->state, RECOV_CUZ_DONE_CALLBACKS);
+    if (hostPtr->state & (RECOV_FAILURE)) {
+	/*
+	 * There has been a communication failure during the reboot callbacks.
+	 */
+	hostPtr->numFailures++;
+	hostPtr->state &= ~RECOV_FAILURE;
+	hostPtr->state |= RECOV_WANT_RECOVERY;
+	RECOV_TRACE(spriteID, hostPtr->state, RECOV_CUZ_FAILURE);
+    } else {
+	hostPtr->numFailures = 0;
+    }
+    UNLOCK_MONITOR;
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CrashCallBacks --
+ *
+ *	Invoked asynchronously so that other modules
+ *	can clean up behind the crashed host.  When done the host
+ *	is marked as having recovery complete.  This unblocks server
+ *	processes stalled in Recov_HostAlive.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Invoke the crash call-backs.
+ *	Clears the recovery in progress flag checked in Recov_HostAlive.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+CrashCallBacks(data, callInfoPtr)
+    ClientData data;
+    Proc_CallInfo *callInfoPtr;
+{
+    register NotifyElement *notifyPtr;
+    register int spriteID = (int)data;
+
+    recov_Stats.crashes++;
+    LIST_FORALL(&crashCallBackList, (List_Links *)notifyPtr) {
+	if (notifyPtr->proc != (void (*)())NIL) {
+	    (*notifyPtr->proc)(spriteID, notifyPtr->data);
+	 }
+    }
+    MarkRecoveryComplete(spriteID);
+    RECOV_TRACE(spriteID, RECOV_CRASH, RECOV_CUZ_DONE);
+    callInfoPtr->interval = 0;	/* Don't call again */
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MarkRecoveryComplete --
+ *
+ *	The recovery call-backs have completed, and this procedure's
+ *	job is to mark that fact in the host hash table and to notify
+ *	any processes that are blocked in Recov_HostAlive waiting for this.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Sets the state, if any, in the host state table.
+ *	Notifies the hostPtr->recovery condition
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY static void
+MarkRecoveryComplete(spriteID)
+    int	spriteID;
+{
+    register Hash_Entry *hashPtr;
+    register RecovHostState *hostPtr;
+
+    LOCK_MONITOR;
+
+    hashPtr = Hash_LookOnly(recovHashTable, (Address)spriteID);
+    if (hashPtr != (Hash_Entry *)NIL) {
+	hostPtr = (RecovHostState *)hashPtr->value;
+	if (hostPtr != (RecovHostState *)NIL) {
+	    hostPtr->state &= ~RECOV_CRASH_CALLBACKS;
+	    Sync_Broadcast(&hostPtr->recovery);
+	}
+    }
+    UNLOCK_MONITOR;
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_GetHostState --
+ *
+ *	This looks into	the host table to see and provides a guess
+ *	as to the host's current state.  It uses a timestamp kept in
+ *	the host state to see if there's been recent message traffic.
+ *	If so, RECOV_HOST_ALIVE is returned.  If not, RECOV_STATE_UNKNOWN
+ *	is returned and the caller should ping to make sure.  Finally,
+ *	if it is known that the host is down already, then RECOV_HOST_DEAD
+ *	is returned.
+ *
+ * Results:
+ *	RECOV_STATE_UNKNOWN if the caller should ping to make sure.
+ *	RECOV_HOST_ALIVE if the host is up (recent message traffic).
+ *	RECOV_HOST_DEAD if the host is down (recent timeouts).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY int
+Recov_GetHostState(spriteID)
+    int spriteID;
+{
+    register Hash_Entry *hashPtr;
+    register RecovHostState *hostPtr;
+    register int state = RECOV_STATE_UNKNOWN;
+    Time time;
+
+    LOCK_MONITOR;
+
+    hashPtr = Hash_LookOnly(recovHashTable, (Address)spriteID);
+    if (hashPtr != (Hash_Entry *)NIL) {
+	hostPtr = (RecovHostState *)hashPtr->value;
+	if (hostPtr != (RecovHostState *)NIL) {
+	    state = hostPtr->state &
+	 (RECOV_HOST_ALIVE|RECOV_HOST_BOOTING|RECOV_HOST_DEAD);
+	    if (state & (RECOV_HOST_ALIVE|RECOV_HOST_BOOTING)) {
+		/*
+		 * Check for recent message traffic before admitting
+		 * that the other machine is up.
+		 */
+		Timer_GetTimeOfDay(&time, (int *)NIL, (Boolean *)NIL);
+		Time_Subtract(time, hostPtr->time, &time);
+		if (Time_GT(time, time_TenSeconds)) {
+		    state = RECOV_STATE_UNKNOWN;
+		}
+	    }
+	}
+    }
+    UNLOCK_MONITOR;
+    return(state);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_GetHostOldState --
+ *
+ *	This looks into	the host table to see what was the host's old
+ *	state the last time it was pinged.
+ *
+ * Results:
+ *	RECOV_STATE_UNKNOWN if unsure.
+ *	RECOV_HOST_ALIVE if the host was up (recent message traffic).
+ *	RECOV_HOST_DEAD if the host was down (recent timeouts).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY int
+Recov_GetHostOldState(spriteID)
+    int spriteID;
+{
+    register Hash_Entry *hashPtr;
+    register RecovHostState *hostPtr;
+    register int oldState = RECOV_STATE_UNKNOWN;
+
+    LOCK_MONITOR;
+
+    hashPtr = Hash_LookOnly(recovHashTable, (Address)spriteID);
+    if (hashPtr != (Hash_Entry *)NIL) {
+	hostPtr = (RecovHostState *)hashPtr->value;
+	if (hostPtr != (RecovHostState *)NIL) {
+	    oldState = hostPtr->oldState &
+	 (RECOV_HOST_ALIVE|RECOV_HOST_BOOTING|RECOV_HOST_DEAD);
+	}
+    }
+    UNLOCK_MONITOR;
+    return(oldState);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_SetHostOldState --
+ *
+ *	This sets the oldState of the host to what it was when pinged
+ *	this time, for reference the next time it's pinged.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Sets oldState in host info.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+Recov_SetHostOldState(spriteID, state)
+    int spriteID;
+    int	state;
+{
+    register Hash_Entry *hashPtr;
+    register RecovHostState *hostPtr;
+
+    LOCK_MONITOR;
+
+    hashPtr = Hash_LookOnly(recovHashTable, (Address)spriteID);
+    if (hashPtr != (Hash_Entry *)NIL) {
+	hostPtr = (RecovHostState *)hashPtr->value;
+	if (hostPtr != (RecovHostState *)NIL) {
+	    hostPtr->oldState = state;
+	}
+    }
+    UNLOCK_MONITOR;
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RecovGetLastHostState --
+ *
+ *	This looks into	the host table to pass back the
+ *	host's current state.  It just uses whatever state the
+ *	host has marked currently, and does no further interpretation.
+ *
+ * Results:
+ *	hostPtr->state
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY int
+RecovGetLastHostState(spriteID)
+    int spriteID;
+{
+    register Hash_Entry *hashPtr;
+    register RecovHostState *hostPtr;
+    register int state = RECOV_STATE_UNKNOWN;
+
+    LOCK_MONITOR;
+
+    hashPtr = Hash_LookOnly(recovHashTable, (Address)spriteID);
+    if (hashPtr != (Hash_Entry *)NIL) {
+	hostPtr = (RecovHostState *)hashPtr->value;
+	if (hostPtr != (RecovHostState *)NIL) {
+	    state = hostPtr->state;
+	}
+    }
+    UNLOCK_MONITOR;
+    return(state);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RecovCheckHost --
+ *
+ *	This decides if we should check up on a host.  If there has
+ *	been recent message traffic there is no need to ping now,
+ *	but we should check again later.  If there has been no
+ *	message traffic our caller should ping.  Finally, if
+ *	there are no reboot callbacks associated with the host,
+ *	then we are not interested anymore.  Thus there are three
+ *	values to return.
+ *
+ * Results:
+ *	-1 if we are no longer interested in the host.
+ *	0 if the host is presumably up and we don't have to ping.
+ *	1 if our caller should ping.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY int
+RecovCheckHost(spriteID)
+    int	spriteID;
+{
+    register Hash_Entry *hashPtr;
+    register RecovHostState *hostPtr = (RecovHostState *)NIL;
+    register int check = -1;	/* forget about the host */
+    register int state;
+
+    LOCK_MONITOR;
+
+    hashPtr = Hash_LookOnly(recovHashTable, (Address)spriteID);
+    if (hashPtr != (Hash_Entry *)NIL) {
+	hostPtr = (RecovHostState *)hashPtr->value;
+	if ((hostPtr != (RecovHostState *)NIL) &&
+	    (!List_IsEmpty(&hostPtr->rebootList))) {
+	    state = hostPtr->state &
+	 (RECOV_HOST_ALIVE|RECOV_HOST_BOOTING|RECOV_HOST_DEAD);
+	    if (state & (RECOV_HOST_ALIVE|RECOV_HOST_BOOTING)) {
+		/*
+		 * Check for recent message traffic before admitting
+		 * that the other machine is up.
+		 */
+		Time time;
+		Timer_GetTimeOfDay(&time, (int *)NIL, (Boolean *)NIL);
+		Time_Subtract(time, hostPtr->time, &time);
+		if (Time_GT(time, time_TenSeconds)) {
+		    check = 1;	/* ping the host now */
+		} else {
+		    check = 0;	/* ping the host maybe next time */
+		}
+	    } else if (state & RECOV_HOST_DEAD) {
+		check = 1;	/* ping the host now */
+	    }
+	}
+    }
+    if (check < 0 && hostPtr != (RecovHostState *)NIL) {
+	hostPtr->state &= ~RECOV_PINGING_HOST;
+    }
+    UNLOCK_MONITOR;
+    return(check);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_GetStats --
+ *
+ *	Return the Recov_Stats to user-level, and perhaps more information
+ *	about our internal opinion of other hosts.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Copies data out to user-space.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Recov_GetStats(size, userAddr)
+    int size;
+    Address userAddr;
+{
+    ReturnStatus status;
+#ifdef notdef    
+    int extraSpace = -1;
+#endif
+    if (size <= 0) {
+	return(GEN_INVALID_ARG);
+    }
+    /*
+     * See if the caller wants more than just statistics.
+     */
+    if (size > sizeof(Recov_Stats)) {
+#ifdef notdef	
+	extraSpace = size - sizeof(Recov_Stats);
+#endif	
+	size = sizeof(Recov_Stats);
+    }
+    status = Vm_CopyOut(size, (Address)&recov_Stats, userAddr);
+
+#ifdef notdef
+    if (extraSpace > sizeof(int)) {
+	/*
+	 * Fill the user-space buffer with a count of hosts,
+	 * and then information about each host.
+	 */
+	userAddr += sizeof(Recov_Stats);
+	status = Recov_DumpState(extraSpace, userAddr);
+    }
+#endif notdef
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_DumpState --
+ *
+ *	Dump internal state to user-level.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Copies data out to user-space.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Recov_DumpState(size, userAddr)
+    int size;
+    Address userAddr;
+{
+    ReturnStatus status = SUCCESS;
+    int numHosts, maxHosts;
+    int *countPtr;
+    int spriteID;
+    Recov_State recovState;
+
+    /*
+     * We return a count, plus count number of Recov_State structures.
+     */
+    maxHosts = (size - sizeof(int)) / sizeof(Recov_State);
+    countPtr = (int *)userAddr;
+    if ((maxHosts == 0) && (size > sizeof(int))) {
+	status = Vm_CopyOut(sizeof(int), (Address)&maxHosts, (Address)countPtr);
+	return(status);
+    }
+     userAddr += sizeof(int);
+    /*
+     * Brute force.  Run through til MAX_HOSTS and try to grab
+     * the state from the hash table.
+     */
+    numHosts = 0;
+    for (spriteID = 1 ; spriteID < NET_NUM_SPRITE_HOSTS ; spriteID++) {
+	if (Recov_GetHostInfo(spriteID, &recovState)) {
+	    status = Vm_CopyOut(sizeof(recovState), (Address)&recovState,
+			    userAddr);
+	    if (status != SUCCESS) {
+		return(status);
+	    }
+	    userAddr += sizeof(recovState);
+	    numHosts++;
+	    if (numHosts >= maxHosts) {
+		break;
+	    }
+	}
+    }
+
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_GetHostInfo --
+ *
+ *	Get the internal state about a host.
+ *
+ * Results:
+ *	Fills in a Recov_State structure and returns TRUE,
+ *	otherwise, if we don't know about the host, returns FALSE
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY Boolean
+Recov_GetHostInfo(spriteID, recovStatePtr)
+    int spriteID;
+    Recov_State *recovStatePtr;
+{
+    Hash_Entry *hashPtr;
+    RecovHostState *hostPtr;
+    Boolean found = FALSE;
+
+    LOCK_MONITOR;
+
+    if (spriteID <= 0 || spriteID == rpc_SpriteID) {
+	goto exit;
+    } else {
+	hashPtr = Hash_LookOnly(recovHashTable, (Address)spriteID);
+	if (hashPtr == (Hash_Entry *)NULL || hashPtr->value == (Address)NIL) {
+	    goto exit;
+	} else {
+	    hostPtr = (RecovHostState *)hashPtr->value;
+	}
+	recovStatePtr->spriteID = spriteID;
+	recovStatePtr->state = hostPtr->state;
+	recovStatePtr->clientState = hostPtr->clientState;
+	recovStatePtr->bootID = hostPtr->bootID;
+	recovStatePtr->time = hostPtr->time;
+	found = TRUE;
+    }
+exit:
+    UNLOCK_MONITOR;
+    return(found);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_PrintTraceRecord --
+ *
+ *	Format and print the client data part of a recovery trace record.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	printf to the display.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Recov_PrintTraceRecord(clientData, event, printHeaderFlag)
+    ClientData clientData;	/* Client data in the trace record */
+    int event;			/* Type, or event, from the trace record */
+    Boolean printHeaderFlag;	/* If TRUE, a header line is printed */
+{
+    RecovTraceRecord *recPtr = (RecovTraceRecord *)clientData;
+    char name[128];
+    if (printHeaderFlag) {
+	/*
+	 * Print column headers and a newline.
+	 */
+	printf("%10s %10s %17s\n", "Host", "State", "Event ");
+    }
+    if (clientData != (ClientData)NIL) {
+	Net_SpriteIDToName(recPtr->spriteID, 128, name);
+	if (*name == '\0') {
+	    printf("%10d ", recPtr->spriteID);
+	} else {
+	    printf("%10s ", name);
+	}
+	printf("%-8s", GetState(recPtr->state));
+	printf("%3s", (recPtr->state & RECOV_CRASH_CALLBACKS) ?
+			    " C " : "   ");
+	printf("%3s", (recPtr->state & RECOV_PINGING_HOST) ?
+			    " P " : "   ");
+	printf("%3s", (recPtr->state & RECOV_REBOOT_CALLBACKS) ?
+			    " R " : "   ");
+	printf("%3s", (recPtr->state & RECOV_WANT_RECOVERY) ?
+			    " W " : "   ");
+	printf("%3s", (recPtr->state & RECOV_FAILURE) ?
+			    " F " : "   ");
+	switch(event) {
+	    case RECOV_CUZ_WAIT:
+		printf("waiting");
+		break;
+	    case RECOV_CUZ_WAKEUP:
+		printf("wakeup");
+		break;
+	    case RECOV_CUZ_INIT:
+		printf("init");
+		break;
+	    case RECOV_CUZ_REBOOT:
+		printf("reboot");
+		break;
+	    case RECOV_CUZ_CRASH:
+		printf("crash");
+		break;
+	    case RECOV_CUZ_CRASH_UNDETECTED:
+		printf("crash undetected");
+		break;
+	    case RECOV_CUZ_DONE:
+		printf("done");
+		break;
+	    case RECOV_CUZ_PING_ASK:
+		printf("ping (ask)");
+		break;
+	    case RECOV_CUZ_PING_CHK:
+		printf("ping (check)");
+		break;
+	    case RECOV_TRACE_FS_STALE:
+		printf("stale FS handle");
+		break;
+	    case RECOV_CUZ_SCHED_CALLBACK:
+		printf("scheduled callback");
+		break;
+	    case RECOV_CUZ_DONE_CALLBACKS:
+		printf("done callbacks");
+		break;
+	    case RECOV_CUZ_FAILURE:
+		printf("failure during callbacks");
+		break;
+	    case RECOV_CUZ_WAS_BOOTING:
+		printf("was booting");
+		break;
+	    case RECOV_CUZ_NOW_BOOTING:
+		printf("now booting");
+		break;
+	    case RECOV_CUZ_WAS_DEAD:
+		printf("was dead");
+		break;
+	    case RECOV_CUZ_DOING_CALLBACKS:
+		printf("doing callbacks");
+		break;
+	    case RECOV_CUZ_START:
+		printf("start-up");
+		break;
+	    default:
+		printf("(%x)", event);
+		break;
+	}
+	/* Our caller prints a newline */
+    }
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_PrintTrace --
+ *
+ *	Dump out the recovery trace.  Called via a console L1 keystroke.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints to the console.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Recov_PrintTrace(clientData)
+    ClientData clientData;
+{
+    int numRecs = (int)clientData;
+
+    if (numRecs <= 0 || numRecs > recovTraceLength) {
+	numRecs = recovTraceLength;
+    }
+    printf("RECOVERY TRACE\n");
+    (void)Trace_Print(recovTraceHdrPtr, numRecs, Recov_PrintTraceRecord);
+    Recov_PrintState();
+    RecovPrintPingList();
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_PrintState --
+ *
+ *	Dump out the recovery state.  Called via a console L1 keystroke.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints to the console.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Recov_PrintState()
+{
+    Hash_Search			hashSearch;
+    register Hash_Entry		*hashEntryPtr;
+    register RecovHostState	*hostPtr;
+    char			hostName[128];
+    Time_Parts			timeParts;
+    Time			bootTime;
+    int				localOffset; /* minute offset for our tz */
+    Time			currentTime;
+
+    printf("RECOVERY STATE\n");
+    Hash_StartSearch(&hashSearch);
+    for (hashEntryPtr = Hash_Next(recovHashTable, &hashSearch);
+	 hashEntryPtr != (Hash_Entry *)NIL;
+	 hashEntryPtr = Hash_Next(recovHashTable, &hashSearch)) {
+	hostPtr = (RecovHostState *)hashEntryPtr->value;
+	if (hostPtr != (RecovHostState *)NIL) {
+
+	    Net_SpriteIDToName(hostPtr->spriteID, 128, hostName);
+	    printf("%-14s %-8s", hostName, GetState(hostPtr->state));
+	    printf(" bootID 0x%8x", hostPtr->bootID);
+
+	    /*
+	     * Print out boot time in our timezone.
+	     */
+	    Timer_GetTimeOfDay(&currentTime, &localOffset, (Boolean *) NIL);
+	    bootTime.seconds = hostPtr->bootID;
+	    bootTime.microseconds = 0;
+	    bootTime.seconds += (localOffset * 60);
+	    Time_ToParts(bootTime.seconds, FALSE, &timeParts);
+	    timeParts.month++;	/* So Jan is 1, not 0 */
+	    printf(" %d/%d/%d %d:%02d:%02d ", timeParts.month,
+		    timeParts.dayOfMonth,
+		    timeParts.year, timeParts.hours, timeParts.minutes,
+		    timeParts.seconds);
+
+	    /*
+	     * Print seconds ago we last heard from host.
+	     */
+	    printf("    %d ", currentTime.seconds - hostPtr->time.seconds);
+	    PrintExtraState(hostPtr);
+	    printf("\n");
+	}
+    }
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetState --
+ *
+ *	Return a printable string for the host's state.
+ *
+ * Results:
+ *	A pointer to a string.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static char *
+GetState(state)
+    int state;
+{
+    switch(state & (RECOV_HOST_ALIVE|RECOV_HOST_DEAD|RECOV_HOST_BOOTING)) {
+	default:
+	case RECOV_STATE_UNKNOWN:
+	    return("Unknown");
+	case RECOV_HOST_ALIVE:
+	    return("Alive");
+	case RECOV_HOST_BOOTING:
+	    return("Booting");
+	case RECOV_HOST_DEAD:
+	    return("Dead");
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RecovExtraState --
+ *
+ *	Prints out strings for various auxilliary state bits.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints out stuff.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+PrintExtraState(hostPtr)
+    RecovHostState *hostPtr;
+{
+    if (hostPtr->state & RECOV_CRASH_CALLBACKS) {
+	printf("Crash callbacks ");
+    }
+    if (hostPtr->state & RECOV_WANT_RECOVERY) {
+	printf("Want recovery ");
+    }
+    if (hostPtr->state & RECOV_REBOOT_CALLBACKS) {
+	printf("Reboot callbacks ");
+    }
+    if (hostPtr->state & RECOV_FAILURE) {
+	printf("Failure ");
+    }
+    if (hostPtr->clientState & CLT_RECOV_IN_PROGRESS) {
+	printf("Clt-inprogress ");
+    }
+    if (hostPtr->clientState & SRV_RECOV_IN_PROGRESS) {
+	printf("Srv-inprogress ");
+    }
+}
+
+
+void
+Recov_ChangePrintLevel(newLevel)
+    int	newLevel;
+{
+    recov_PrintLevel = newLevel;
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_InitServerDriven --
+ *
+ *	Initialize system to use server-driven recovery.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Turns on this kind of server recovery.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Recov_InitServerDriven()
+{
+    recov_ServerDriven = TRUE;
+    printf("Recov_InitServerDriven called.\n");
+    if (recov_ServerDriven && recov_Transparent) {
+	printf("Recov_InitServerDriven: can't do transparent recovery too.\n");
+	printf("\tTurning it off!\n");
+	recov_Transparent = FALSE;
+    }
+
+    return;
+}
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_StopServerDriven --
+ *
+ *	Stop system from using server-driven recovery.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Turns off this kind of server recovery.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Recov_StopServerDriven()
+{
+    recov_ServerDriven = FALSE;
+    printf("Recov_StopServerDriven called.\n");
+
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_StartServerDrivenRecovery --
+ *
+ *	Kick off server-driven recovery on client.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Starts recovery.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Recov_StartServerDrivenRecovery(serverID)
+    int		serverID;	/* ID of server requesting recovery. */
+{
+    Hash_Entry		*hashPtr;
+    RecovHostState	*hostPtr;
+
+    LOCK_MONITOR;
+    /* Set flag saying server-driven recovery is in progress. */
+    hashPtr = Hash_Find(recovHashTable, (Address) serverID);
+    if (hashPtr->value == (Address) NIL) {
+	/*
+	 * Client may have been rebooted during server crash, so it may
+	 * not know about server when server contacts it for recovery.
+	 * That's why this isn't a panic.
+	 */
+	printf("Recov_StartServerDrivenRecovery: don't know about server %d\n",
+		serverID);
+	printf("\tBut probably I should since it's trying to recover with me!");
+	RECOV_INIT_HOST(hostPtr, serverID, RECOV_HOST_ALIVE, 0);
+	hashPtr->value = (Address) hostPtr;
+	RECOV_TRACE(serverID, RECOV_HOST_ALIVE, RECOV_CUZ_INIT);
+    }
+    hostPtr = (RecovHostState *)hashPtr->value;
+    if (hostPtr->state & SRV_DRIVEN_IN_PROGRESS) {
+	UNLOCK_MONITOR;
+	panic("Server called us for server-driven recovery more than once.\n");
+    }
+    hostPtr->state |= SRV_DRIVEN_IN_PROGRESS;
+    /* XX Test if client already blocked.   If not, panic.  XX */
+    Sync_Broadcast(&hostPtr->waitForServer);
+    UNLOCK_MONITOR;
+
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_ServerStartingRecovery --
+ *
+ *	Mark that server-driven recovery has started, so that we
+ *	can block out various rpc's.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Blocks some rpcs.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Recov_ServerStartingRecovery()
+{
+    LOCK_MONITOR;
+    if (!recov_ServerDriven) {
+	UNLOCK_MONITOR;
+	panic("Recov_ServerStartingRecovery: server-driven not true!");
+    }
+    recov_BlockingRpcs = TRUE;
+    UNLOCK_MONITOR;
+
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_ServerFinishedRecovery --
+ *
+ *	Mark that server-driven recovery is finished, so that we
+ *	can unblock various rpc's.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Unblocks some rpcs.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Recov_ServerFinishedRecovery()
+{
+    LOCK_MONITOR;
+    if (!recov_ServerDriven) {
+	UNLOCK_MONITOR;
+	panic("Recov_ServerFinishedRecovery: server-driven not true!");
+    }
+    recov_BlockingRpcs = FALSE;
+    /*
+     * Before turning off blocking, we should check if all up clients have
+     * recovered.  The "old" clients may not have.  If their state
+     * is marked CLT_RECOV_IN_PROGRESS, or if their finished is not after
+     * their start, then we're waiting for them to go through regular
+     * recovery with us.  We should have a condition that client recovery
+     * wakes up to check if it can turn off blocking.  But since we don't want
+     * to wait forever, we'd have to have a timeout also.  But maybe the
+     * easiest thing is to reboot everybody and not worry about backwards
+     * compatibility??
+     */
+
+    UNLOCK_MONITOR;
+
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_HoldForRecovery --
+ *
+ *	Are we blocking rpc's and is this an rpc that should be blocked out?
+ *	This is called from Rpc_Dispatch, which means it's called at
+ *	interrupt level, which means we can't grab a monitor lock, but
+ *	that this should be okay.
+ *
+ * Results:
+ *	True or false.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+Boolean
+Recov_HoldForRecovery(clientID, command)
+    int			clientID;
+    int			command;
+{
+    Hash_Entry		*hashPtr;
+    RecovHostState	*hostPtr;
+
+    if (!recov_BlockingRpcs) {
+	return FALSE;
+    }
+    switch (command) {
+    case RPC_FS_PREFIX:
+    case RPC_FS_OPEN:
+    case RPC_FS_READ:
+    case RPC_FS_WRITE:
+    case RPC_FS_CLOSE:
+    case RPC_FS_UNLINK:
+    case RPC_FS_RENAME:
+    case RPC_FS_MKDIR:
+    case RPC_FS_RMDIR:
+    case RPC_FS_MKDEV:
+    case RPC_FS_LINK:
+    case RPC_FS_SYM_LINK:
+    case RPC_FS_GET_ATTR:
+    case RPC_FS_SET_ATTR:
+    case RPC_FS_GET_ATTR_PATH:
+    case RPC_FS_SET_ATTR_PATH:
+    case RPC_FS_GET_IO_ATTR:
+    case RPC_FS_SET_IO_ATTR:
+    case RPC_FS_DEV_OPEN:
+    case RPC_FS_SELECT:
+    case RPC_FS_IO_CONTROL:
+    /* Leave consistency rpc's unblocked for recovery. */
+    case RPC_FS_MIGRATE:
+    case RPC_FS_RELEASE:
+    case RPC_PROC_MIG_COMMAND:
+    case RPC_PROC_REMOTE_CALL:
+    case RPC_PROC_REMOTE_WAIT:
+    case RPC_FS_RELEASE_NEW:
+	return TRUE;
+	break;
+    default:
+	break;
+    }
+    /*
+     * If host is not marked doing recovery right now, then ignore it.
+     * We do this to avoid race conditions and deadlocks with some new
+     * hosts trying to talk to the server while we're recovering old hosts.
+     */
+    if (!Mach_AtInterruptLevel()) {
+	LOCK_MONITOR;
+    }
+    hashPtr = Hash_Find(recovHashTable, (Address) clientID);
+    if (hashPtr->value == (Address) NIL) {
+	RECOV_INIT_HOST(hostPtr, clientID, RECOV_STATE_UNKNOWN, 0);
+	hashPtr->value = (Address) hostPtr;
+	RECOV_TRACE(clientID, RECOV_STATE_UNKNOWN, RECOV_CUZ_INIT);
+/* No, don't ignore it?? */
+	if (!Mach_AtInterruptLevel()) {
+	    UNLOCK_MONITOR;
+	}
+	return TRUE;
+    }
+    hostPtr = (RecovHostState *)hashPtr->value;
+    if ((hostPtr->clientState & CLT_DOING_SRV_RECOV) == 0) {
+	if (!Mach_AtInterruptLevel()) {
+	    UNLOCK_MONITOR;
+	}
+	return TRUE;
+    }
+
+    if (!Mach_AtInterruptLevel()) {
+	UNLOCK_MONITOR;
+    }
+    return FALSE;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_MarkOldClient --
+ *
+ *	Mark this client as one running an old kernel, and thus unable
+ *	to allow server-drivven recovery.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Marks state of client.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Recov_MarkOldClient(clientID)
+    int			clientID;
+{
+    Hash_Entry		*hashPtr;
+    RecovHostState	*hostPtr;
+
+    LOCK_MONITOR;
+    hashPtr = Hash_Find(recovHashTable, (Address) clientID);
+    if (hashPtr->value == (Address) NIL) {
+	RECOV_INIT_HOST(hostPtr, clientID, RECOV_STATE_UNKNOWN, 0);
+	hashPtr->value = (Address) hostPtr;
+	RECOV_TRACE(clientID, RECOV_STATE_UNKNOWN, RECOV_CUZ_INIT);
+    }
+    hostPtr = (RecovHostState *)hashPtr->value;
+    hostPtr->clientState |= CLT_OLD_RECOV;
+
+    UNLOCK_MONITOR;
+
+    return;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_WaitForServerDriven --
+ *
+ *	Make client wait for rpc from server telling it to start recovery.
+ *	Also set a timeout in case server gets hosed and forgets us.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Makes us wait for recovery.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Recov_WaitForServerDriven(serverID)
+    int			serverID;
+{
+    Hash_Entry		*hashPtr;
+    RecovHostState	*hostPtr;
+
+    LOCK_MONITOR;
+    /*
+     * Set something saying client is waiting for server, so that server
+     * rpc can check this to make sure client is already waiting when
+     * it wakes it?  For now, the client checks to see if server thing
+     * already tried to wake it.  XXX  This isn't good enough, though, if
+     * server recovery finishes and then client recovery tries again and sees
+     * nothing going.
+     */
+    hashPtr = Hash_Find(recovHashTable, (Address) serverID);
+    if (hashPtr->value == (Address) NIL) {
+	panic("Recov_WaitForServer: should already know about this server.");
+    }
+    hostPtr = (RecovHostState *) hashPtr->value;
+    /* Also set timeout so that if server forgets us, we'll be okay. XX */
+    while ((hostPtr->state & SRV_DRIVEN_IN_PROGRESS) == 0) {
+	(void) Sync_Wait(&hostPtr->waitForServer, FALSE);
+    }
+
+    UNLOCK_MONITOR;
+
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_GetCurrentHostStates --
+ *
+ *	Get the current state of hosts we know about as a server.
+ *
+ * Results:
+ *	Number of hosts in list.  A negative number if there wasn't enough
+ *	buffer space.
+ *
+ * Side effects:
+ *	Fills in buffer with hosts and their state.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Recov_GetCurrentHostStates(infoBuffer, bufEntries)
+    Dev_ClientInfo	*infoBuffer;	/* The array of info entries to fill. */
+    int			bufEntries;	/* Number of available entries. */
+{
+    Hash_Entry		*hashPtr;
+    RecovHostState	*hostPtr;
+    Hash_Search		hashSearch;
+    int			i;
+
+    i = 0;
+    Hash_StartSearch(&hashSearch);
+    for (hashPtr = Hash_Next(recovHashTable, &hashSearch);
+	    hashPtr != (Hash_Entry *) NIL;
+	    hashPtr = Hash_Next(recovHashTable, &hashSearch)) {
+	hostPtr = (RecovHostState *)hashPtr->value;
+	if (hostPtr->state & RECOV_HOST_DEAD) {
+	     continue;
+	}
+	infoBuffer[i].hostNumber = hostPtr->spriteID;
+	infoBuffer[i].hostState = DEV_CLIENT_STATE_NEW_HOST;
+	i++;
+	if (i >= bufEntries) {
+	    return -1;
+	}
+    }
+
+    return i;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_MarkDoingServerRecovery --
+ *
+ *	Mark client state as doing server recovery.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Marked.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Recov_MarkDoingServerRecovery(clientID)
+    int		clientID;	/* The client. */
+{
+    Hash_Entry		*hashPtr;
+    RecovHostState	*hostPtr;
+
+    LOCK_MONITOR;
+    hashPtr = Hash_Find(recovHashTable, (Address) clientID);
+    if (hashPtr->value == (Address) NIL) {
+	RECOV_INIT_HOST(hostPtr, clientID, RECOV_STATE_UNKNOWN, 0);
+	hashPtr->value = (Address) hostPtr;
+	RECOV_TRACE(clientID, RECOV_STATE_UNKNOWN, RECOV_CUZ_INIT);
+    }
+    hostPtr = (RecovHostState *)hashPtr->value;
+    hostPtr->clientState |= CLT_DOING_SRV_RECOV;
+
+    UNLOCK_MONITOR;
+
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_UnmarkDoingServerRecovery --
+ *
+ *	Mark client state as not doing server recovery.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Marked.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Recov_UnmarkDoingServerRecovery(clientID)
+    int		clientID;	/* The client. */
+{
+    Hash_Entry		*hashPtr;
+    RecovHostState	*hostPtr;
+
+    LOCK_MONITOR;
+    hashPtr = Hash_Find(recovHashTable, (Address) clientID);
+    if (hashPtr->value == (Address) NIL) {
+	printf("Recov_UnmarkDoingServerRecovery: don't know about client %d\n",
+		clientID);
+	RECOV_INIT_HOST(hostPtr, clientID, RECOV_STATE_UNKNOWN, 0);
+	hashPtr->value = (Address) hostPtr;
+	RECOV_TRACE(clientID, RECOV_STATE_UNKNOWN, RECOV_CUZ_INIT);
+    }
+    hostPtr = (RecovHostState *)hashPtr->value;
+    hostPtr->clientState &= ~(CLT_DOING_SRV_RECOV);
+
+    UNLOCK_MONITOR;
+
+    return;
+}
+@
+
+
+9.26
+log
+@Support for bulk reopen rpcs and for ignoring files with no dirty cache
+blocks during recovery.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/recov/recovery.c,v 9.25 92/08/10 20:47:24 mgbaker Exp $ SPRITE (Berkeley)";
+a44 1
+#ifdef NOTDEF		/* Wait for future install to get this stuff working. */
+a45 2
+#endif /* NOTDEF */
+#include <hostd.h>
+d82 2
+d118 1
+a118 1
+    int			state;		/* flags defined below */
+d143 9
+d163 2
+a164 1
+    (hostPtr)->oldState = 0;
+d220 11
+d245 6
+a261 1
+
+d287 1
+d529 1
+a529 1
+Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive, fastBoot)
+d540 3
+a542 2
+    Boolean fastBoot;		/* Whether the host that's alive went through
+				 * a fast boot or not. */
+d706 1
+a706 1
+    if (fastBoot) {
+d719 16
+a750 1
+#ifdef NOTDEF
+d752 2
+a753 1
+	 * Wait for future install to get this stuff working.
+d755 3
+a757 2
+	Dev_ClientHostUp(spriteID);
+#endif /* NOTDEF */
+a845 1
+#ifdef NOTDEF
+d847 2
+a848 1
+	 * Wait for future install to get this stuff working.
+d850 3
+a852 2
+	Dev_ClientHostDown(spriteID);
+#endif /* NOTDEF */
+d1008 1
+d1019 11
+d1282 1
+a2128 1
+
+d2159 481
+@
+
+
+9.25
+log
+@Changes for transparent server recovery.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/recov/recovery.c,v 9.24 92/08/10 15:57:58 mgbaker Exp $ SPRITE (Berkeley)";
+d45 4
+d190 5
+d211 14
+d517 3
+a519 2
+    register Hash_Entry *hashPtr;
+    register RecovHostState *hostPtr;
+d547 1
+d632 1
+d650 1
+d667 1
+d707 8
+d743 3
+a745 2
+    register Hash_Entry *hashPtr;
+    register RecovHostState *hostPtr;
+d766 1
+d780 1
+d800 8
+@
+
+
+9.24
+log
+@Fixed glitch.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/recov/recovery.c,v 9.23 92/08/04 15:29:26 mgbaker Exp $ SPRITE (Berkeley)";
+d177 1
+a177 1
+ * TRUE if we're using transparent server recovery.
+d179 3
+d183 1
+d190 10
+d480 1
+a480 1
+Recov_HostAlive(spriteID, bootID, asyncRecovery, rpcNotActive)
+d491 2
+d650 13
+@
+
+
+9.23
+log
+@Fixed spelling problem.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/recov/recovery.c,v 9.22 92/08/04 11:56:47 mgbaker Exp $ SPRITE (Berkeley)";
+d180 6
+@
+
+
+9.22
+log
+@Added other part of transparent flag.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/recov/recovery.c,v 9.21 92/04/22 15:20:35 mgbaker Exp $ SPRITE (Berkeley)";
+d179 1
+a179 1
+Boolean	recov_transparent = FALSE;
+@
+
+
+9.21
+log
+@Added more logging of recovery events and removed "DYING" state.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/recov/recovery.c,v 9.20 91/09/10 18:42:26 rab Exp $ SPRITE (Berkeley)";
+d175 5
+@
+
+
+9.20
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovery.c,v 9.19 90/10/11 14:10:41 kupfer Exp Locker: rab $ SPRITE (Berkeley)";
+d139 1
+d150 2
+a151 1
+    (hostPtr)->numFailures = 0;
+d173 1
+a173 1
+int recovTraceLength = 50;
+a180 4
+#ifdef dying_state
+static void DelayedCrashCallBacks _ARGS_((ClientData data, Proc_CallInfo *callInfoPtr));
+static void MarkHostDead _ARGS_((int spriteID));
+#endif /* dying_state */
+d293 1
+d368 1
+d519 1
+a519 1
+		(RECOV_HOST_ALIVE|RECOV_HOST_DYING|RECOV_HOST_BOOTING)) {
+d527 1
+a527 2
+	    hostPtr->state &=
+		    ~(RECOV_HOST_ALIVE|RECOV_HOST_DYING|RECOV_HOST_DEAD);
+d570 1
+a570 1
+       (RECOV_HOST_ALIVE|RECOV_HOST_BOOTING|RECOV_HOST_DEAD|RECOV_HOST_DYING)) {
+d597 1
+a601 1
+	case RECOV_HOST_DYING:
+d608 1
+d613 1
+d617 1
+a617 1
+	    hostPtr->state &= ~(RECOV_HOST_DEAD|RECOV_HOST_DYING);
+d630 1
+a630 1
+	(hostPtr->state & RECOV_REBOOT_CALLBACKS) == 0) {
+d633 1
+d688 1
+a694 1
+	case RECOV_HOST_DYING:
+d696 1
+a696 1
+	     * Host already dead or dying.
+a714 12
+	    /*
+	     * After an RPC timeout (which is already logged by RPC to syslog)
+	     * make the crash call backs.  These are made after a delay
+	     * if dying_state is defined.  This helps smooth over temporary
+	     * communication failures.
+	     *
+	     */
+#ifdef dying_state
+	    hostPtr->state |= RECOV_HOST_DYING;
+	    Proc_CallFunc(DelayedCrashCallBacks, (ClientData)spriteID,
+			    recov_CrashDelay);
+#else
+a719 1
+#endif
+d766 1
+a766 2
+	case RECOV_HOST_ALIVE:
+	case RECOV_HOST_DYING:	/* fake it to allow for the grace period */
+d883 1
+d1139 1
+d1228 1
+d1236 1
+a1282 1
+#ifdef dying_state
+d1287 1
+a1287 1
+ * DelayedCrashCallBacks --
+d1289 3
+a1291 5
+ *	Invoked asynchronously from Recov_HostDead.  This is called after
+ *	a grace period defined by recov_CrashDelay so that, for example,
+ *	clients can be debugged without having the server close all
+ *	their files.  When a client reboots, hoever, the crash callbacks
+ *	will be sure to be called so other modules can clean up.
+d1297 2
+a1298 2
+ *	Invoke the crash call-backs.
+ *	Clears the recovery in progress flag checked in Recov_HostAlive.
+d1303 3
+a1305 4
+static void
+DelayedCrashCallBacks(data, callInfoPtr)
+    ClientData data;
+    Proc_CallInfo *callInfoPtr;
+d1307 4
+a1310 3
+    register NotifyElement *notifyPtr;
+    register int spriteID = (int)data;
+    int state;
+d1312 6
+a1317 10
+    state = Recov_GetHostState(spriteID);
+    if (state & RECOV_HOST_DYING) {
+	RecovHostPrint(RECOV_PRINT_CRASH, spriteID,
+	    "crash call-backs being made\n");
+	recov_Stats.crashes++;
+	MarkHostDead(spriteID);
+	LIST_FORALL(&crashCallBackList, (List_Links *)notifyPtr) {
+	    if (notifyPtr->proc != (void (*)())NIL) {
+		(*notifyPtr->proc)(spriteID, notifyPtr->data);
+	     }
+a1318 3
+	MarkRecoveryComplete(spriteID);
+    } else if ((state & RECOV_HOST_DEAD) == 0) {
+	recov_Stats.nonCrashes++;
+d1320 1
+a1320 1
+    callInfoPtr->interval = 0;	/* Don't call again */
+a1322 1
+#endif /* dying_state */
+d1327 1
+a1327 1
+ * MarkRecoveryComplete --
+d1329 7
+a1335 3
+ *	The recovery call-backs have completed, and this procedure's
+ *	job is to mark that fact in the host hash table and to notify
+ *	any processes that are blocked in Recov_HostAlive waiting for this.
+d1338 3
+a1340 1
+ *	None.
+d1343 1
+a1343 2
+ *	Sets the state, if any, in the host state table.
+ *	Notifies the hostPtr->recovery condition
+d1348 3
+a1350 3
+ENTRY static void
+MarkRecoveryComplete(spriteID)
+    int	spriteID;
+d1354 2
+d1363 13
+a1375 2
+	    hostPtr->state &= ~RECOV_CRASH_CALLBACKS;
+	    Sync_Broadcast(&hostPtr->recovery);
+d1379 1
+a1379 1
+    return;
+a1380 1
+#ifdef dying_state
+d1385 1
+a1385 1
+ * MarkHostDead --
+d1387 2
+a1388 3
+ *	Monitored procedure to change a host's state from dying to dead.
+ *	This is done after the grace period has expired and we are
+ *	about to call the crash callbacks.
+d1391 3
+a1393 1
+ *	None.
+d1396 1
+a1396 1
+ *	Set the state to RECOV_HOST_DEAD
+d1401 3
+a1403 3
+ENTRY static void
+MarkHostDead(spriteID)
+    int	spriteID;
+d1407 1
+d1415 2
+a1416 2
+	    hostPtr->state &= ~RECOV_HOST_DYING;
+	    hostPtr->state |= RECOV_HOST_DEAD;
+d1420 1
+a1420 1
+    return;
+a1421 1
+#endif
+d1426 1
+a1426 1
+ * Recov_GetHostState --
+d1428 2
+a1429 7
+ *	This looks into	the host table to see and provides a guess
+ *	as to the host's current state.  It uses a timestamp kept in
+ *	the host state to see if there's been recent message traffic.
+ *	If so, RECOV_HOST_ALIVE is returned.  If not, RECOV_STATE_UNKNOWN
+ *	is returned and the caller should ping to make sure.  Finally,
+ *	if it is known that the host is down already, then RECOV_HOST_DEAD
+ *	is returned.
+d1432 1
+a1432 3
+ *	RECOV_STATE_UNKNOWN if the caller should ping to make sure.
+ *	RECOV_HOST_ALIVE if the host is up (recent message traffic).
+ *	RECOV_HOST_DEAD if the host is down (recent timeouts).
+d1435 1
+a1435 1
+ *	None.
+d1440 2
+a1441 2
+ENTRY int
+Recov_GetHostState(spriteID)
+d1443 1
+a1446 2
+    register int state = RECOV_STATE_UNKNOWN;
+    Time time;
+d1454 1
+a1454 13
+	    state = hostPtr->state &
+	 (RECOV_HOST_ALIVE|RECOV_HOST_BOOTING|RECOV_HOST_DYING|RECOV_HOST_DEAD);
+	    if (state & (RECOV_HOST_ALIVE|RECOV_HOST_BOOTING)) {
+		/*
+		 * Check for recent message traffic before admitting
+		 * that the other machine is up.
+		 */
+		Timer_GetTimeOfDay(&time, (int *)NIL, (Boolean *)NIL);
+		Time_Subtract(time, hostPtr->time, &time);
+		if (Time_GT(time, time_TenSeconds)) {
+		    state = RECOV_STATE_UNKNOWN;
+		}
+	    }
+d1458 1
+a1458 1
+    return(state);
+d1541 1
+a1541 1
+	 (RECOV_HOST_ALIVE|RECOV_HOST_BOOTING|RECOV_HOST_DYING|RECOV_HOST_DEAD);
+d1555 1
+a1555 1
+	    } else if (state & (RECOV_HOST_DEAD|RECOV_HOST_DYING)) {
+d1773 2
+d1806 24
+d1956 1
+a1956 2
+    switch(state & (RECOV_HOST_ALIVE|RECOV_HOST_DYING|RECOV_HOST_DEAD|
+		    RECOV_HOST_BOOTING)) {
+a1963 2
+	case RECOV_HOST_DYING:
+	    return("Dying");
+@
+
+
+9.19
+log
+@Recov_PrintTrace should take a ClientData.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovery.c,v 9.18 90/10/09 18:31:41 mendel Exp Locker: kupfer $ SPRITE (Berkeley)";
+d1610 1
+d1612 1
+a1612 1
+
+d1620 1
+d1622 1
+@
+
+
+9.19.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/recov/recovery.c,v 9.19 90/10/11 14:10:41 kupfer Exp $ SPRITE (Berkeley)";
+@
+
+
+9.18
+log
+@Fixed include to use <> rather than "".
+Removed lint.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovery.c,v 9.17 90/10/09 11:56:19 jhh Exp Locker: mendel $ SPRITE (Berkeley)";
+d1848 2
+a1849 2
+Recov_PrintTrace(numRecs)
+    int numRecs;
+d1851 2
+@
+
+
+9.17
+log
+@new net module
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovery.c,v 9.16 90/09/11 14:55:24 mendel Exp Locker: jhh $ SPRITE (Berkeley)";
+d44 1
+d179 4
+a182 1
+extern void DelayedCrashCallBacks _ARGS_((ClientData data, Proc_CallInfo *callInfoPtr));
+a184 1
+static void MarkHostDead _ARGS_((int spriteID));
+d1291 1
+d1341 1
+d1382 1
+d1422 1
+d1657 1
+a1657 1
+    ReturnStatus status;
+d1669 1
+a1669 1
+	status = Vm_CopyOut(sizeof(int), (Address)&maxHosts, countPtr);
+@
+
+
+9.16
+log
+@Removed some lint caused by prototyping.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovery.c,v 9.15 90/08/29 18:01:08 mgbaker Exp $ SPRITE (Berkeley)";
+d34 10
+a43 10
+#include "sprite.h"
+#include "recov.h"
+#include "sync.h"
+#include "net.h"
+#include "rpc.h"
+#include "hash.h"
+#include "stdlib.h"
+#include "trace.h"
+#include "fsutil.h"
+#include "bstring.h"
+d1754 1
+a1754 1
+void
+d1761 1
+a1761 1
+    char *name;
+d1769 2
+a1770 2
+	Net_SpriteIDToName(recPtr->spriteID, &name);
+	if (name == (char *)NIL) {
+d1821 1
+a1821 1
+    return;
+d1876 1
+a1876 1
+    char			*hostName;
+d1890 1
+a1890 1
+	    Net_SpriteIDToName(hostPtr->spriteID, &hostName);
+@
+
+
+9.15
+log
+@Done 1st pass of prototyping.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovery.c,v 9.14 90/05/14 20:17:48 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d1096 1
+a1096 1
+		    &(infoPtr->start), NIL, NIL);
+d1098 1
+a1098 1
+		    &(infoPtr->finished), NIL, NIL);
+d1104 1
+a1104 1
+			&infoPtr->start, NIL, NIL);
+d1106 1
+a1106 1
+			&infoPtr->finished, NIL, NIL);
+d1897 1
+a1897 1
+	    Timer_GetTimeOfDay(&currentTime, &localOffset, NIL);
+@
+
+
+9.14
+log
+@Fixed type-cast error.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovery.c,v 9.13 90/05/14 14:43:47 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d42 2
+d177 10
+a186 13
+extern void Recov_PrintState();
+extern void RecovPrintExtraState();
+extern void RecovPrintPingList();
+extern void RecovRebootCallBacks();
+extern void RecovCrashCallBacks();
+extern void RecovDelayedCrashCallBacks();
+extern char *RecovState();
+
+static void CallBacksDone();
+static void MarkRecoveryComplete();
+static void MarkHostDead();
+static void GetRebootList();
+static void CheckHost();
+a381 1
+		extern void	Fsutil_Reopen();
+a386 1
+		    extern int	Fsutil_TestForHandles();
+d522 1
+a522 1
+	     * RECOV_CRASH_CALLBACKS flag is cleared by RecovCrashCallBacks.
+d531 1
+a531 1
+		Proc_CallFunc(RecovCrashCallBacks, (ClientData)spriteID, 0);
+d719 1
+a719 1
+	    Proc_CallFunc(RecovDelayedCrashCallBacks, (ClientData)spriteID,
+d726 1
+a726 1
+	    Proc_CallFunc(RecovCrashCallBacks, (ClientData)spriteID, 0);
+d1044 1
+a1044 1
+    RecovPerHostInfo	*resultPtr;		/* Array of info structs. */
+a1052 1
+    extern		int	fsutil_NumRecovering;
+a1053 1
+
+d1064 1
+a1064 1
+    if (resultPtr != (RecovPerHostInfo *) NIL) {
+d1070 1
+a1070 1
+    infoPtr = resultPtr;
+d1252 1
+a1252 1
+ * RecovCrashCallBacks --
+d1269 2
+a1270 2
+void
+RecovCrashCallBacks(data, callInfoPtr)
+d1292 1
+a1292 1
+ * RecovDelayedCrashCallBacks --
+d1310 2
+a1311 2
+void
+RecovDelayedCrashCallBacks(data, callInfoPtr)
+d1359 1
+d1398 1
+d1540 1
+d1775 1
+a1775 1
+	printf("%-8s", RecovState(recPtr->state));
+d1891 1
+a1891 1
+	    printf("%-14s %-8s", hostName, RecovState(hostPtr->state));
+d1912 1
+a1912 1
+	    RecovPrintExtraState(hostPtr);
+d1922 1
+a1922 1
+ * RecovState --
+d1935 2
+a1936 2
+char *
+RecovState(state)
+d1971 2
+a1972 2
+void
+RecovPrintExtraState(hostPtr)
+@
+
+
+9.13
+log
+@Added tracing and mousetrap to catch extra recovery unregisters.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovery.c,v 9.12 90/04/30 19:58:54 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d388 1
+a388 1
+		if (notifyPtr->proc == Fsutil_Reopen) {
+@
+
+
+9.12
+log
+@More recovery info-gathering.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovery.c,v 9.11 90/04/18 17:28:47 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d383 28
+@
+
+
+9.11
+log
+@Added hooks for printing recovery state.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovery.c,v 9.10 90/04/11 15:00:17 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d177 1
+d1824 1
+d1852 3
+d1868 8
+a1875 1
+	    Time_ToParts(hostPtr->bootID, FALSE, &timeParts);
+d1881 5
+@
+
+
+9.10
+log
+@Attempt to fix a long-standing bug in Recov_HostAlive that might prevent
+a machine from recvoering sometimes.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovery.c,v 9.9 90/03/26 09:52:42 brent Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d491 2
+a497 1
+	    RECOV_TRACE(spriteID, RECOV_CRASH, RECOV_CUZ_REBOOT);
+d501 1
+d504 1
+d524 1
+d559 1
+d565 1
+d569 2
+d580 2
+d584 2
+d603 2
+d697 2
+a698 1
+	RecovHostPrint(RECOV_PRINT_CRASH, spriteID, "crash call-backs made\n");
+d1297 2
+a1298 1
+	RecovHostPrint(RECOV_PRINT_CRASH, spriteID, "crash call-backs made\n");
+d1452 39
+a1685 1
+    register NotifyElement *notifyPtr;
+d1773 3
+d1952 8
+@
+
+
+9.9
+log
+@Simplified/fixed retry of recovery after a failure during recovery.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovery.c,v 9.8 90/03/13 16:30:23 brent Exp $ SPRITE (Berkeley)";
+a439 1
+    register state;
+a469 1
+    state = hostPtr->state;
+d488 3
+a490 2
+	RECOV_TRACE(spriteID, state, RECOV_CUZ_REBOOT);
+	if (state & (RECOV_HOST_ALIVE|RECOV_HOST_DYING|RECOV_HOST_BOOTING)) {
+d497 5
+a501 4
+	    state &= ~(RECOV_HOST_ALIVE|RECOV_HOST_DYING|RECOV_HOST_DEAD);
+	    state |= RECOV_HOST_BOOTING;
+	    if ((state & RECOV_CRASH_CALLBACKS) == 0) {
+		state |= RECOV_CRASH_CALLBACKS;
+d505 3
+a507 2
+    } else  if ( ! (state & (RECOV_CRASH_CALLBACKS|RECOV_WANT_RECOVERY)) &&
+		(state & RECOV_HOST_ALIVE)) {
+a520 1
+	hostPtr->state = state;
+a528 1
+    state = hostPtr->state;
+d537 1
+a537 1
+    switch(state &
+d545 1
+a545 1
+		state |= RECOV_HOST_BOOTING;
+d547 1
+a547 1
+		state |= RECOV_HOST_ALIVE;
+d561 2
+a562 2
+		state &= ~RECOV_HOST_BOOTING;
+		state |= RECOV_HOST_ALIVE|RECOV_WANT_RECOVERY;
+d571 1
+a571 1
+		state |= RECOV_HOST_BOOTING;
+d573 1
+a573 1
+		state |= (RECOV_HOST_ALIVE|RECOV_WANT_RECOVERY);
+d575 1
+a575 1
+	    state &= ~(RECOV_HOST_DEAD|RECOV_HOST_DYING);
+d578 1
+a578 1
+	    printf("Unexpected recovery state <%x> for ", state);
+d586 5
+a590 5
+    if ((state & RECOV_WANT_RECOVERY) &&
+	(state & RECOV_HOST_ALIVE) &&
+	(state & RECOV_REBOOT_CALLBACKS) == 0) {
+	state &= ~RECOV_WANT_RECOVERY;
+	state |= RECOV_REBOOT_CALLBACKS;
+a592 1
+    hostPtr->state = state;
+@
+
+
+9.8
+log
+@Fixed the race introduced last time that allowed multiple processes
+to be doing the reboot callbacks.  The RECOV_FAILED bit was added
+to account for failures during the reboot callbacks.  This causes
+the reboot callbacks to be retried (if a failure occurs during them).
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovery.c,v 9.7 90/03/01 12:29:21 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d182 1
+a182 1
+static ReturnStatus CallBacksDone();
+d505 1
+a505 1
+    } else  if ( !(state & RECOV_CRASH_CALLBACKS) &&
+d509 2
+a510 2
+	 * reboot, and there are no pending crash call-backs to 
+	 * synchronize with.
+d553 2
+a554 1
+	     * Host already alive.
+d588 1
+a1108 1
+retry:
+d1117 2
+a1118 6
+    if (CallBacksDone(spriteID) == SUCCESS) {
+	return;
+    } else {
+	printf("RecovRebootCallBacks: failure during recovery, retrying\n");
+	goto retry;
+    }
+d1172 3
+d1177 1
+a1177 4
+ *	Returns TRUE if the recovery callbacks seem to have completed ok.
+ *	Otherwise, if there has been a communication failure during the
+ *	recovery callbacks, we return FAILURE as an indication that our
+ *	caller should retry the recovery callbacks.
+d1179 3
+a1181 2
+ * Side effects:
+ *	Clears RECOV_REBOOT_CALLBACKS.
+d1186 1
+a1186 1
+ENTRY static ReturnStatus
+a1191 1
+    ReturnStatus status;
+d1197 1
+d1204 1
+a1204 6
+	if (hostPtr->numFailures > 10) {
+	    printf("CallBacksDone: too many failures ( > 10 ) of recovery\n");
+	    status = SUCCESS;	/* to prevent a retry */
+	} else {
+	    status = FAILURE;	/* to force a retry */
+	}
+a1205 3
+	status = SUCCESS;
+    }
+    if (status == SUCCESS) {
+a1206 1
+	hostPtr->state &= ~RECOV_REBOOT_CALLBACKS;
+d1209 1
+a1209 1
+    return(status);
+@
+
+
+9.7
+log
+@Fixed typo so recovery is initiated after a network partition ends.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovery.c,v 9.6 90/02/20 15:01:37 brent Exp $ SPRITE (Berkeley)";
+d121 7
+d145 2
+a146 1
+    (hostPtr)->bootID = zbootID;
+d176 1
+d182 1
+a182 1
+static void CallBacksDone();
+a315 11
+#ifdef no_recov_proc
+	/*
+	 * Start a perpetual call back so we note crashes.  This will get
+	 * canceled if all interested parties use Recov_RebootUnRegister.
+	 * See REcovCheckHost for the cancelation code.
+	 */
+	if ((hostPtr->state & RECOV_PINGING_HOST) == 0) {
+	    hostPtr->state |= RECOV_PINGING_HOST;
+	    Proc_CallFunc(CheckHost, (ClientData)spriteID, 0);
+	}
+#else
+a321 1
+#endif
+d498 1
+a498 1
+	    state &= ~(RECOV_HOST_ALIVE|RECOV_HOST_DYING);
+a658 1
+	    hostPtr->state |= RECOV_HOST_DYING;
+d664 2
+a665 3
+	     * event and fail to initiate recovery again.  We also have to
+	     * clear the file system's recovery bit so it doesn't defeat
+	     * our efforts to invoke the recovery protocol again.
+d668 1
+a668 2
+		hostPtr->state &= ~RECOV_REBOOT_CALLBACKS;
+		hostPtr->clientState &= ~SRV_RECOV_IN_PROGRESS;
+d678 1
+d1107 1
+a1107 1
+    /* GetRebootList copies out list under locking, so we're okay here. */
+d1116 50
+a1165 1
+    CallBacksDone(spriteID);
+d1172 54
+a1448 44
+ * CheckHost --
+ *
+ *	This is a periodic check on the state of another host.  This pings
+ *	the remote host if it's down or there hasn't been recent traffic.
+ *	A side effect of a successful ping is a call to Recov_HostAlive which
+ *	triggers the recovery actions.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	This will pings the host unless there has been recent message
+ *	traffic.  It reschedules itself perpetually.
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef no_recov_proc
+static void
+CheckHost(data, callInfoPtr)
+    ClientData data;
+    Proc_CallInfo *callInfoPtr;
+{
+    register int spriteID = (int)data;
+    register int check;
+
+    check = RecovCheckHost(spriteID);
+    if (check < 0) {
+	callInfoPtr->interval = 0;
+    } else {
+	if (check) {
+	    RECOV_TRACE(spriteID, RECOV_STATE_UNKNOWN, RECOV_CUZ_PING_CHK);
+	    recov_Stats.pings++;
+	    Rpc_Ping(spriteID);
+	} else {
+	    recov_Stats.pingsSuppressed++;
+	}
+	callInfoPtr->interval = recovPingSeconds * timer_IntOneSecond;
+    }
+}
+#endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+a1514 77
+ * GetRebootList --
+ *
+ *	Copy out the list of reboot callbacks.  The list is protected by
+ * 	a monitor, but we don't want to call any recovery procedures from
+ *	inside that monitor so we make a copy.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Copy the reboot list off the host state table and return it
+ *	to our caller who should free up the copied elements.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY static void
+GetRebootList(notifyListHdr, spriteID)
+    List_Links *notifyListHdr;
+    int spriteID;
+{
+    register Hash_Entry *hashPtr;
+    register RecovHostState *hostPtr;
+    register NotifyElement *notifyPtr;
+    register NotifyElement *newNotifyPtr;
+
+    LOCK_MONITOR;
+
+    hashPtr = Hash_LookOnly(recovHashTable, (Address)spriteID);
+    hostPtr = (RecovHostState *)hashPtr->value;
+    List_Init(notifyListHdr);
+    LIST_FORALL(&hostPtr->rebootList, (List_Links *)notifyPtr) {
+	newNotifyPtr = (NotifyElement *) malloc(sizeof (NotifyElement));
+	newNotifyPtr->proc = notifyPtr->proc;
+	newNotifyPtr->data = notifyPtr->data;
+	List_InitElement((List_Links *)newNotifyPtr);
+	List_Insert((List_Links *)newNotifyPtr, LIST_ATREAR(notifyListHdr));
+    }
+    UNLOCK_MONITOR;
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CallBacksDone --
+ *
+ *	Clear the internal state bit that says callbacks are in progress.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	As above.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY static void
+CallBacksDone(spriteID)
+    int spriteID;
+{
+    register Hash_Entry *hashPtr;
+    register RecovHostState *hostPtr;
+
+    LOCK_MONITOR;
+
+    hashPtr = Hash_LookOnly(recovHashTable, (Address)spriteID);
+    hostPtr = (RecovHostState *)hashPtr->value;
+    hostPtr->state &= ~RECOV_REBOOT_CALLBACKS;
+    UNLOCK_MONITOR;
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+d1825 1
+d1852 2
+a1853 2
+    switch(state & ~(RECOV_CRASH_CALLBACKS|RECOV_PINGING_HOST|
+		     RECOV_REBOOT_CALLBACKS|RECOV_WANT_RECOVERY)) {
+d1859 2
+d1865 40
+a1904 4
+	case RECOV_CRASH:
+	    return("Crash callbacks");
+	case RECOV_REBOOT:
+	    return("Reboot callbacks");
+@
+
+
+9.6
+log
+@Patched Host_Dead to clear RECOV_REBOOT_CALLBACKS state bit
+which otherwise prevents a subsequent reboot event from being
+suppressed (if it occurs before the reboot callbacks complete)
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovery.c,v 9.5 90/01/15 16:32:13 mgbaker Exp Locker: brent $ SPRITE (Berkeley)";
+d576 1
+a576 2
+		hostPtr->state |= RECOV_HOST_ALIVE;
+		state |= RECOV_WANT_RECOVERY;
+d589 1
+a589 2
+    if ((state & RECOV_HOST_ALIVE) &&
+	(state & RECOV_WANT_RECOVERY) &&
+@
+
+
+9.5
+log
+@Added finish times to recovery attempt info.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovery.c,v 9.4 90/01/05 11:58:32 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d666 14
+a679 1
+	     * After an RPC timeout (which is already logged by RPC)
+a1531 3
+    if ((hostPtr->state & RECOV_REBOOT_CALLBACKS) == 0) {
+	printf("Warning: RecovCallBacksDone found bad state\n");
+    }
+@
+
+
+9.4
+log
+@Added new server recovery information gathering.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov.mgb/RCS/recovery.c,v 1.3 90/01/02 15:21:51 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d78 3
+a80 5
+ * This amounts to a per-host list, in array form, where the first element in
+ * each list is the RecovPerHostFirstInfo, and all the following items are
+ * time-stamps, but they are defined as a union since both types of elements
+ * must be the same size when copied out to the user.  Each host has a
+ * RecovPerHostFirstInfo, followed by (numTries - 1) time-stamps.
+d82 1
+a82 1
+typedef	struct	RecovPerHostFirstInfo {
+d84 2
+a85 2
+    Time	firstTry;	/* First recovery attempt. */
+    Time	finished;	/* Last recovery attempt finished. */
+d89 1
+a89 8
+} RecovPerHostFirstInfo;
+
+typedef	struct	RecovStamp {
+    Time	timeStamp;			/* Time of a recov attempt. */
+    int		numHandles;			/* Handles since last time. */
+    int		numSuccessful;			/* Successful last time. */
+} RecovStamp;
+
+a90 4
+typedef	union	RecovPerHostInfo {
+    RecovPerHostFirstInfo	info;		/* Above structure. */
+    RecovStamp			stamp;		/* Above structure. */
+} RecovPerHostInfo;
+d105 2
+a106 1
+    Timer_Ticks	timeStamp;
+d121 2
+a122 2
+    Timer_Ticks		firstTry;	/* Time that recovery is started. */
+    Timer_Ticks		finished;	/* Time last try finishes. */
+d124 4
+a127 2
+    int			numHandles;	/* Handles since last time. */
+    int			numSuccessful;	/* Successful last time. */
+d852 1
+a852 1
+	    Timer_GetCurrentTicks(&hostPtr->firstTry);
+d856 1
+a856 6
+	    Timer_GetCurrentTicks(&stampPtr->timeStamp);
+	    /*
+	     * Handles recovered since last recovery attempt initiated.
+	     */
+	    stampPtr->numHandles = hostPtr->numHandles;
+	    stampPtr->numSuccessful = hostPtr->numSuccessful;
+d863 2
+a864 2
+	    hostPtr->numHandles = 0;
+	    hostPtr->numSuccessful = 0;
+d897 3
+a899 2
+    register Hash_Entry *hashPtr;
+    register RecovHostState *hostPtr = (RecovHostState *) NIL;
+d910 1
+d913 18
+a930 3
+	/* End of recovery */
+	Timer_GetCurrentTicks(&hostPtr->finished);
+	/* Final count of handles recovered is in hostPtr. */
+d967 1
+a967 1
+	    hostPtr->numHandles++;
+d969 1
+a969 1
+		hostPtr->numSuccessful++;
+d1048 4
+a1051 4
+	    infoPtr->info.spriteID = hostPtr->spriteID;
+	    infoPtr->info.numTries = hostPtr->numTries;
+	    Timer_GetRealTimeFromTicks(hostPtr->firstTry,
+		    &(infoPtr->info.firstTry), NIL, NIL);
+d1053 3
+a1055 3
+		    &(infoPtr->info.finished), NIL, NIL);
+	    infoPtr->info.numHandles = hostPtr->numHandles;
+	    infoPtr->info.numSuccessful = hostPtr->numSuccessful;
+d1058 6
+a1063 4
+		Timer_GetRealTimeFromTicks(stampPtr->timeStamp,
+			&infoPtr->stamp.timeStamp, NIL, NIL);
+		infoPtr->stamp.numHandles = stampPtr->numHandles;
+		infoPtr->stamp.numSuccessful = stampPtr->numSuccessful;
+@
+
+
+9.3
+log
+@Added Recov_DumpState and Recov_GetHostInfo.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovery.c,v 9.2 89/10/12 14:05:50 brent Exp $ SPRITE (Berkeley)";
+d76 29
+d116 7
+d133 6
+d145 1
+d846 1
+d856 28
+d913 1
+a913 1
+    register RecovHostState *hostPtr;
+d924 47
+d973 95
+@
+
+
+9.2
+log
+@Changed the dying grace period from 10 minutes to 1.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovery.c,v 9.1 89/10/12 12:05:50 brent Exp $ SPRITE (Berkeley)";
+a71 17
+ * recov_PrintLevel defines how noisey we are about other hosts.
+ *	Values for the print level should be defined in increasing order.
+ */
+#define RECOV_PRINT_NONE	0
+#define RECOV_PRINT_REBOOT	1
+#define RECOV_PRINT_IF_UP	2
+#define RECOV_PRINT_CRASH	2
+#define RECOV_PRINT_ALL		10
+
+int recov_PrintLevel = RECOV_PRINT_REBOOT;
+
+#define RecovHostPrint(level, spriteID, message) \
+	if (recov_PrintLevel >= level) { \
+	    Sys_HostPrint(spriteID, message); \
+	}
+
+/*
+d76 1
+d113 11
+a123 1
+
+a493 1
+		printf("Rpc_Server exiting in Recov_HostAlive\n");
+d1314 2
+a1315 1
+ *	Return the Recov_Stats to user-level.
+d1331 1
+d1336 3
+d1340 1
+d1344 70
+d1420 51
+a1569 1
+    Recov_PrintState();
+d1602 1
+d1611 1
+d1614 12
+a1625 4
+	    printf(" clt bits 0x%x\n", hostPtr->clientState);
+	}
+    }
+    return;
+a1658 2
+	case RECOV_WAITING:
+	    return("Waiting");
+@
+
+
+9.1
+log
+@Quit using Proc_CallFunc to do pings.
+Now use Recov_Proc instead.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovery.c,v 8.6 89/08/30 10:13:40 brent Exp $ SPRITE (Berkeley)";
+d177 1
+a177 1
+    recov_CrashDelay = (unsigned int)(10 * timer_IntOneMinute);
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovery.c,v 8.6 89/08/30 10:13:40 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d89 1
+a89 2
+ * When a crash call back is avoided because the host didn't really go
+ * down we increment the following counter.
+d91 1
+a91 1
+int recovNumNonCrashes = 0;
+d129 1
+a129 5
+/*
+ * A host is "pinged" (to see when it reboots) at an interval determined by
+ * rpcPingSeconds.
+ */
+int recovPingSeconds = 30;
+a130 31
+
+
+/*
+ * A trace is kept for debugging/understanding the host state transisions.
+ */
+typedef struct RecovTraceRecord {
+    int		spriteID;		/* Host ID whose state changed */
+    int		state;			/* Their new state */
+} RecovTraceRecord;
+
+/*
+ * Tracing events, these describe the trace record.
+ *
+ *	RECOV_CUZ_WAIT		Wait in Rpc_WaitForHost
+ *	RECOV_CUZ_WAKEUP	Wakeup in Rpc_WaitForHost
+ *	RECOV_CUZ_INIT		First time we were interested in the host
+ *	RECOV_CUZ_REBOOT	We detected a reboot
+ *	RECOV_CUZ_CRASH		We detected a crash
+ *	RECOV_CUZ_DONE		Recovery actions completed
+ *	RECOV_CUZ_PING_CHK	We are pinging the host to check it out
+ *	RECOV_CUZ_PING_ASK	We are pinging the host because we were asked
+ */
+#define RECOV_CUZ_WAIT		0x1
+#define RECOV_CUZ_WAKEUP	0x2
+#define RECOV_CUZ_INIT		0x4
+#define RECOV_CUZ_REBOOT	0x8
+#define RECOV_CUZ_CRASH		0x10
+#define RECOV_CUZ_DONE		0x20
+#define RECOV_CUZ_PING_CHK	0x40
+#define RECOV_CUZ_PING_ASK	0x80
+
+a135 14
+#ifndef CLEAN
+
+#define RECOV_TRACE(zspriteID, zstate, event) \
+    if (recovTracing) {\
+	RecovTraceRecord rec;\
+	rec.spriteID = zspriteID;\
+	rec.state = zstate;\
+	Trace_Insert(recovTraceHdrPtr, event, (ClientData)&rec);\
+    }
+#else
+
+#define RECOV_TRACE(zspriteID, zstate, event)
+
+#endif /* not CLEAN */
+a150 1
+static int CheckHostInt();
+d178 1
+d221 149
+d432 1
+d617 1
+d697 1
+d703 1
+a715 140
+ * Recov_RebootRegister --
+ *
+ *	Schedule a callback for when a particular host reboots.
+ *	To make sure we detect a crash, the recovery module has to
+ *	periodically check on the state of the target host.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	This initiate a background callback to check-up on the host's state.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+Recov_RebootRegister(spriteID, rebootCallBackProc, rebootData)
+    int spriteID;
+    void (*rebootCallBackProc)();
+    ClientData rebootData;
+{
+    Hash_Entry *hashPtr;
+    RecovHostState *hostPtr;
+    register NotifyElement *notifyPtr;
+    Boolean found = FALSE;
+
+    LOCK_MONITOR;
+
+    if (spriteID <= 0 || spriteID == rpc_SpriteID) {
+	panic("Recov_RebootRegister, bad hostID %d\n", spriteID);
+    } else {
+	hashPtr = Hash_Find(recovHashTable, (Address)spriteID);
+	if (hashPtr->value == (Address)NIL) {
+	    RECOV_INIT_HOST(hostPtr, spriteID, RECOV_STATE_UNKNOWN, 0);
+	    hashPtr->value = (Address)hostPtr;
+	} else {
+	    hostPtr = (RecovHostState *)hashPtr->value;
+	}
+	/*
+	 * Save the callback while avoiding duplications.
+	 */
+	LIST_FORALL(&hostPtr->rebootList, (List_Links *)notifyPtr) {
+	    if (notifyPtr->proc == rebootCallBackProc &&
+		notifyPtr->data == rebootData) {
+		found = TRUE;
+		break;
+	    }
+	}
+	if (!found) {
+	    notifyPtr = (NotifyElement *) malloc(sizeof (NotifyElement));
+	    notifyPtr->proc = rebootCallBackProc;
+	    notifyPtr->data = rebootData;
+	    notifyPtr->refCount = 1;
+	    List_InitElement((List_Links *)notifyPtr);
+	    List_Insert((List_Links *)notifyPtr,
+			LIST_ATFRONT(&hostPtr->rebootList));
+	} else {
+	    notifyPtr->refCount++;
+	}
+	/*
+	 * Start a perpetual call back so we note crashes.  This will get
+	 * canceled if all interested parties use Recov_RebootUnRegister.
+	 * See CheckHostInt for the cancelation code.
+	 */
+	if ((hostPtr->state & RECOV_PINGING_HOST) == 0) {
+	    hostPtr->state |= RECOV_PINGING_HOST;
+	    Proc_CallFunc(CheckHost, (ClientData)spriteID, 0);
+	}
+    }
+    UNLOCK_MONITOR;
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_RebootUnRegister --
+ *
+ *	Remove a callback for when a particular host reboots.  This is
+ *	used after we are no longer interested in a host rebooting.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Nukes the reboot procedure.  If all interested parties remove their
+ *	reboot callbacks then the periodic check of the other host is
+ *	stopped.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+Recov_RebootUnRegister(spriteID, rebootCallBackProc, rebootData)
+    int spriteID;
+    void (*rebootCallBackProc)();
+    ClientData rebootData;
+{
+    Hash_Entry *hashPtr;
+    RecovHostState *hostPtr;
+    register NotifyElement *notifyPtr;
+    Boolean found = FALSE;
+
+    LOCK_MONITOR;
+
+    if (spriteID <= 0 || spriteID == rpc_SpriteID) {
+	panic("Recov_RebootUnRegister, bad hostID %d\n", spriteID);
+    } else {
+	hashPtr = Hash_Find(recovHashTable, (Address)spriteID);
+	if (hashPtr->value == (Address)NIL) {
+	    RECOV_INIT_HOST(hostPtr, spriteID, RECOV_STATE_UNKNOWN, 0);
+	    hashPtr->value = (Address)hostPtr;
+	} else {
+	    hostPtr = (RecovHostState *)hashPtr->value;
+	}
+	/*
+	 * Look for the matching callback.
+	 */
+	LIST_FORALL(&hostPtr->rebootList, (List_Links *)notifyPtr) {
+	    if (notifyPtr->proc == rebootCallBackProc &&
+		notifyPtr->data == rebootData) {
+		found = TRUE;
+		break;
+	    }
+	}
+	if (found) {
+	    notifyPtr->refCount--;
+	    if (notifyPtr->refCount <= 0) {
+		List_Remove((List_Links *)notifyPtr);
+		free((Address)notifyPtr);
+	    }
+	}
+    }
+    UNLOCK_MONITOR;
+    return;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+d892 1
+d931 1
+d976 1
+d985 1
+a985 1
+	recovNumNonCrashes++;
+d1145 1
+a1145 1
+
+d1154 1
+a1154 1
+    check = CheckHostInt(spriteID);
+d1160 1
+d1162 2
+d1168 1
+d1173 1
+a1173 1
+ * CheckHostInt --
+d1194 2
+a1195 2
+static ENTRY int
+CheckHostInt(spriteID)
+d1314 32
+@
+
+
+8.6
+log
+@Tweaked print statements.
+Added Recov_RebootUnRegister
+Changed the delayed crash callbacks to use MarkRecoveryComplete
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovery.c,v 8.5 89/05/24 07:59:28 rab Exp $ SPRITE (Berkeley)";
+@
+
+
+8.5
+log
+@*** empty log message ***
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovery.c,v 8.4 89/05/18 17:59:54 rab Exp Locker: rab $ SPRITE (Berkeley)";
+d54 1
+d72 17
+d147 1
+a147 2
+ * Tracing events, these describe the trace record.  Note that some
+ *	trace types are defined in rpc.h for use with Rpc_HostTrace.
+d201 1
+d342 1
+a342 1
+	Sys_HostPrint(spriteID, "is up\n");
+d358 1
+a358 1
+	    Sys_HostPrint(spriteID, "rebooted\n");
+d400 1
+a400 1
+		printf("Warning: Server exiting Recov_HostAlive\n");
+d421 1
+a421 1
+	    Sys_HostPrint(spriteID, "is up\n");
+d511 1
+d539 4
+a542 1
+	     * No printf because RPC is noisey about time-ed out calls.
+a543 1
+	     * Sys_HostPrint(spriteID, "is apparently down\n")
+d545 1
+d548 1
+a548 1
+#ifdef no_grace_period
+d550 1
+a550 1
+	    Sys_HostPrint(spriteID, "is down\n");
+d665 1
+d669 2
+d673 3
+a675 1
+	 * Start a perpetual call back so we note crashes.
+d689 64
+d1010 1
+a1010 1
+	Sys_HostPrint(spriteID, "considered dead\n");
+d1017 1
+d1186 44
+d1232 29
+a1260 10
+    state = Recov_GetHostState(spriteID);
+    switch (state) {
+	case RECOV_HOST_DEAD:
+	case RECOV_HOST_BOOTING:
+	case RECOV_STATE_UNKNOWN:
+	    RECOV_TRACE(spriteID, state, RECOV_CUZ_PING_CHK);
+	    (void) Rpc_Ping(spriteID);
+	    break;
+	case RECOV_HOST_ALIVE:
+	    break;
+d1262 2
+a1263 2
+    callInfoPtr->interval = recovPingSeconds * timer_IntOneSecond;
+    return;
+d1273 1
+a1273 1
+ *	inside that monitor.
+@
+
+
+8.4
+log
+@Added forward declarations for static functions.
+@
+text
+@d30 2
+a31 2
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovery.c,v 8.3 89/02/19 22:10:33 jhh Exp Locker: rab $ SPRITE (Berkeley)";
+#endif not lint
+d168 1
+a168 1
+#endif not CLEAN
+d179 1
+a179 1
+extern void CallBacksDone();
+d182 1
+a182 1
+extern void GetRebootList();
+d1130 1
+a1130 1
+ENTRY void
+d1172 1
+a1172 1
+ENTRY void
+@
+
+
+8.3
+log
+@Changes due to lock registration
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovery.c,v 8.2 89/01/06 11:23:37 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+a171 10
+void Recov_PrintState();
+void RecovRebootCallBacks();
+void RecovCrashCallBacks();
+void RecovDelayedCrashCallBacks();
+void CallBacksDone();
+void MarkRecoveryComplete();
+void MarkHostDead();
+void GetRebootList();
+void CheckHost();
+char *RecovState();
+d173 12
+d211 1
+d247 1
+d456 1
+d535 1
+d656 1
+d806 1
+d845 1
+d884 1
+d930 1
+d969 1
+d1007 1
+d1108 1
+d1153 1
+d1188 1
+d1206 1
+a1206 1
+int
+d1270 1
+d1300 1
+d1339 1
+@
+
+
+8.2
+log
+@New Sync_Lock definition
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovery.c,v 8.1 88/12/04 15:24:18 ouster Exp Locker: jhh $ SPRITE (Berkeley)";
+d109 1
+a109 1
+static Sync_Lock recovLock = SYNC_LOCK_INIT_STATIC();
+d203 1
+@
+
+
+8.1
+log
+@Stop using obsolete header files.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovery.c,v 6.9 88/11/11 14:52:54 mlgray Exp $ SPRITE (Berkeley)";
+d109 1
+a109 1
+static Sync_Lock recovLock = {0, 0};
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovery.c,v 6.9 88/11/11 14:52:54 mlgray Exp Locker: douglis $ SPRITE (Berkeley)";
+d40 1
+a40 1
+#include "mem.h"
+a41 1
+#include "byte.h"
+@
+
+
+6.9
+log
+@new C library conversion.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovery.c,v 6.8 88/10/28 18:53:56 mlgray Exp Locker: mlgray $ SPRITE (Berkeley)";
+@
+
+
+6.8
+log
+@More conversion to new C library.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: /sprite/src/kernel/recov/RCS/recovery.c,v 6.7 88/10/20 23:03:33 douglis Exp Locker: mlgray $ SPRITE (Berkeley)";
+d100 1
+a100 1
+    hostPtr = (RecovHostStat *) malloc(sizeof (RecovHostStat)); \
+@
+
+
+6.7
+log
+@moved recovery state declarations out into recov.h, made GetHostState
+be external. Also includes mary's changes for function names.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: recovery.c,v 6.6 88/10/03 14:53:12 brent Exp $ SPRITE (Berkeley)";
+d100 1
+a100 1
+    hostPtr = Mem_New(RecovHostState); \
+d239 1
+a239 1
+    notifyPtr = Mem_New(NotifyElement);
+d378 1
+a378 1
+		Sys_Printf("Warning, Server exiting Recov_HostAlive\n");
+d434 1
+a434 2
+	    Sys_Panic(SYS_WARNING, "Unexpected recovery state <%x> for ",
+		    state);
+d562 1
+a562 1
+	Sys_Panic(SYS_WARNING, "Recov_IsHostDown, got broadcast address\n");
+d614 1
+a614 1
+	Sys_Panic(SYS_FATAL, "Recov_RebootRegister, bad hostID %d\n", spriteID);
+d634 1
+a634 1
+	    notifyPtr = Mem_New(NotifyElement);
+d673 4
+a676 2
+    LOCK_MONITOR;
+
+a677 2
+
+    UNLOCK_MONITOR;
+d1132 1
+a1132 1
+	newNotifyPtr = Mem_New(NotifyElement);
+d1169 1
+a1169 1
+	Sys_Panic(SYS_WARNING, "RecovCallBacksDone found bad state\n");
+d1186 1
+a1186 1
+ *	Sys_Printf to the display.
+d1202 1
+a1202 1
+	Sys_Printf("%10s %10s %17s\n", "Host", "State", "Event ");
+d1207 1
+a1207 1
+	    Sys_Printf("%10d ", recPtr->spriteID);
+d1209 1
+a1209 1
+	    Sys_Printf("%10s ", name);
+d1211 2
+a1212 2
+	Sys_Printf("%-8s", RecovState(recPtr->state));
+	Sys_Printf("%3s", (recPtr->state & RECOV_CRASH_CALLBACKS) ?
+d1214 1
+a1214 1
+	Sys_Printf("%3s", (recPtr->state & RECOV_PINGING_HOST) ?
+d1216 1
+a1216 1
+	Sys_Printf("%3s", (recPtr->state & RECOV_REBOOT_CALLBACKS) ?
+d1218 1
+a1218 1
+	Sys_Printf("%3s", (recPtr->state & RECOV_WANT_RECOVERY) ?
+d1222 1
+a1222 1
+		Sys_Printf("waiting");
+d1225 1
+a1225 1
+		Sys_Printf("wakeup");
+d1228 1
+a1228 1
+		Sys_Printf("init");
+d1231 1
+a1231 1
+		Sys_Printf("reboot");
+d1234 1
+a1234 1
+		Sys_Printf("crash");
+d1237 1
+a1237 1
+		Sys_Printf("done");
+d1240 1
+a1240 1
+		Sys_Printf("ping (ask)");
+d1243 1
+a1243 1
+		Sys_Printf("ping (check)");
+d1246 1
+a1246 1
+		Sys_Printf("stale FS handle");
+d1249 1
+a1249 1
+		Sys_Printf("(%x)", event);
+d1280 1
+a1280 1
+    Sys_Printf("RECOVERY TRACE\n");
+d1309 1
+a1309 1
+    Sys_Printf("RECOVERY STATE\n");
+d1317 2
+a1318 2
+	    Sys_Printf("%-14s %-8s", hostName, RecovState(hostPtr->state));
+	    Sys_Printf(" clt bits 0x%x\n", hostPtr->clientState);
+@
+
+
+6.6
+log
+@Removed "is back again" print statement
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: recovery.c,v 6.5 88/09/23 14:31:53 brent Exp $ SPRITE (Berkeley)";
+d101 1
+a101 1
+    (void)Byte_Zero(sizeof(RecovHostState), (Address)hostPtr); \
+a113 36
+ * Host state:
+ *	RECOV_STATE_UNKNOWN	Initial state.
+ *	RECOV_HOST_ALIVE	Set when we receive a message from the host
+ *	RECOV_HOST_DYING	Set when an RPC times out.
+ *	RECOV_HOST_DEAD		Set when crash callbacks have been started.
+ *	RECOV_HOST_BOOTING	Set in the limbo period when a host is booting
+ *				and talking to the world, but isn't ready
+ *				for full recovery actions yet.
+ *
+ *	RECOV_CRASH_CALLBACKS	Set during the crash call-backs, this is used
+ *				to block RPC server processes until the
+ *				crash recovery actions have completed.
+ *	RECOV_WANT_RECOVERY	Set if another module wants a callback at reboot
+ *	RECOV_PINGING_HOST	Set while we ping a host to see when it reboots
+ *	RECOV_REBOOT_CALLBACKS	Set while reboot callbacks are pending.	
+ *
+ *	RECOV_WAITING		artificial state to trace Rpc_WaitForHost
+ *	RECOV_CRASH		artificial state to trace RecovCrashCallBacks
+ *	RECOV_REBOOT		artificial state to trace RecovRebootCallBacks
+ */
+#define RECOV_STATE_UNKNOWN	0x0
+#define RECOV_HOST_ALIVE	0x1
+#define RECOV_HOST_DYING	0x2
+#define RECOV_HOST_DEAD		0x4
+#define RECOV_HOST_BOOTING	0x10
+
+#define RECOV_CRASH_CALLBACKS	0x0100
+#define RECOV_WANT_RECOVERY	0x0200
+#define RECOV_PINGING_HOST	0x0400
+#define RECOV_REBOOT_CALLBACKS	0x0800
+
+#define RECOV_WAITING		0x10
+#define RECOV_CRASH		0x20
+#define RECOV_REBOOT		0x40
+
+/*
+a179 1
+int  GetHostState();
+d328 1
+a328 1
+     * see GetHostState and Recov_IsHostDown.
+d566 1
+a566 1
+    switch (GetHostState(spriteID)) {
+d829 1
+d835 1
+a835 1
+	Mem_Free((Address)notifyPtr);
+d908 1
+a908 1
+    state = GetHostState(spriteID);
+d1001 1
+a1001 1
+ * GetHostState --
+d1023 1
+a1023 1
+GetHostState(spriteID)
+d1084 1
+a1084 1
+    state = GetHostState(spriteID);
+@
+
+
+6.5
+log
+@Nuked "apparently down" message because RPC already complains.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: recovery.c,v 6.4 88/09/15 10:24:54 brent Exp $ SPRITE (Berkeley)";
+a331 1
+    Boolean reboot = FALSE;	/* Used to control print statements at reboot */
+a373 1
+	    reboot = TRUE;
+a461 3
+	    if ( !reboot ) {
+		Sys_HostPrint(spriteID, "is back again\n");
+	    }
+@
+
+
+6.4
+log
+@Changed client recovery flags and the SetClientBit interface
+so it behaves like set-and-test
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: recovery.c,v 6.3 88/09/06 11:12:26 brent Exp $ SPRITE (Berkeley)";
+d557 5
+a561 1
+	    Sys_HostPrint(spriteID, "is apparently down\n");
+d564 1
+a564 1
+#ifdef the_old_way
+d569 1
+a569 1
+#endif the_old_way
+@
+
+
+6.3
+log
+@Added Recov_PrintState to dump out host state table.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: recovery.c,v 6.2 88/08/29 13:46:44 brent Exp $ SPRITE (Berkeley)";
+d110 1
+a110 1
+static Sync_Lock recovLock;
+d766 2
+a767 1
+ *	client state word.
+d780 1
+a780 1
+ENTRY void
+d787 1
+d797 1
+d800 1
+@
+
+
+6.2
+log
+@Changed bootID from int to unsigned int
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: recovery.c,v 6.1 88/08/26 11:50:17 brent Exp $ SPRITE (Berkeley)";
+d209 1
+d219 1
+d1245 1
+a1245 25
+	switch(recPtr->state &
+		    ~(RECOV_CRASH_CALLBACKS|RECOV_PINGING_HOST|
+		      RECOV_REBOOT_CALLBACKS|RECOV_WANT_RECOVERY)) {
+	    case RECOV_STATE_UNKNOWN:
+		Sys_Printf("%-8s", "Unknown");
+		break;
+	    case RECOV_HOST_ALIVE:
+		Sys_Printf("%-8s ", "Alive");
+		break;
+	    case RECOV_HOST_DYING:
+		Sys_Printf("%-8s ", "Dying");
+		break;
+	    case RECOV_HOST_DEAD:
+		Sys_Printf("%-8s ", "Dead");
+		break;
+	    case RECOV_WAITING:
+		Sys_Printf("%-8s ", "Waiting");
+		break;
+	    case RECOV_CRASH:
+		Sys_Printf("%-8s ", "Crash callbacks");
+		break;
+	    case RECOV_REBOOT:
+		Sys_Printf("%-8s ", "Reboot callbacks");
+		break;
+	}
+d1310 1
+d1316 1
+d1318 79
+@
+
+
+6.1
+log
+@Shorted dying grace period from one hour to ten minutes
+Initiate recovery after leaving dying state so clients
+recover from the file server being in the debugger better.
+removed lint.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: recovery.c,v 6.0 88/08/11 12:23:57 brent Stable $ SPRITE (Berkeley)";
+d91 1
+a91 1
+    int			bootID;		/* Boot timestamp from RPC header */
+d318 1
+a318 1
+    int bootID;			/* Boot time stamp from message header */
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: recovery.c,v 1.12 88/07/18 17:39:53 douglis Exp $ SPRITE (Berkeley)";
+d42 1
+d69 1
+a69 1
+int recov_CrashDelay;
+d101 1
+a101 1
+    Byte_Zero(sizeof(RecovHostState), (Address)hostPtr); \
+d199 1
+a199 1
+	Trace_Insert(recovTraceHdrPtr, event, &rec);\
+d243 1
+a243 1
+    recov_CrashDelay = timer_IntOneHour;
+d347 1
+a347 1
+    hashPtr = Hash_Find(recovHashTable, spriteID);
+d356 1
+a356 1
+	Net_HostPrint(spriteID, "is up\n");
+d372 1
+a372 1
+	    Net_HostPrint(spriteID, "rebooted\n");
+d393 1
+a393 1
+		Proc_CallFunc(RecovCrashCallBacks, spriteID, 0);
+d413 1
+a413 1
+	    Sync_Wait(&hostPtr->recovery, FALSE);
+d436 1
+a436 1
+	    Net_HostPrint(spriteID, "is up\n");
+d463 1
+a463 1
+		Net_HostPrint(spriteID, "is back again\n");
+d469 1
+a469 3
+		if (reboot || (hostPtr->state & RECOV_HOST_DEAD)) {
+		    state |= RECOV_WANT_RECOVERY;
+		}
+d476 1
+a476 1
+	    Net_HostPrint(spriteID, "\n");
+d488 1
+a488 1
+	Proc_CallFunc(RecovRebootCallBacks, spriteID, 0);
+d534 1
+a534 1
+    hashPtr = Hash_Find(recovHashTable, spriteID);
+d555 2
+a556 2
+	    Net_HostPrint(spriteID, "is apparently down\n");
+	    Proc_CallFunc(RecovDelayedCrashCallBacks, spriteID,
+d560 1
+a560 1
+	    Net_HostPrint(spriteID, "is down\n");
+d562 1
+a562 1
+	    Proc_CallFunc(RecovCrashCallBacks, spriteID, 0);
+d653 1
+a653 1
+	hashPtr = Hash_Find(recovHashTable, spriteID);
+d683 1
+a683 1
+	    Proc_CallFunc(CheckHost, spriteID, 0);
+d747 1
+a747 1
+    hashPtr = Hash_LookOnly(recovHashTable, spriteID);
+d787 1
+a787 1
+    hashPtr = Hash_Find(recovHashTable, spriteID);
+d824 1
+a824 1
+    hashPtr = Hash_LookOnly(recovHashTable, spriteID);
+d851 1
+a851 1
+
+a856 1
+    ReturnStatus status;
+d865 2
+a866 2
+	List_Remove(notifyPtr);
+	Mem_Free(notifyPtr);
+d941 1
+a941 1
+	Net_HostPrint(spriteID, "considered dead\n");
+d981 1
+a981 1
+    hashPtr = Hash_LookOnly(recovHashTable, spriteID);
+d1018 1
+a1018 1
+    hashPtr = Hash_LookOnly(recovHashTable, spriteID);
+d1064 1
+a1064 1
+    hashPtr = Hash_LookOnly(recovHashTable, spriteID);
+d1160 1
+a1160 1
+    hashPtr = Hash_LookOnly(recovHashTable, spriteID);
+d1198 1
+a1198 1
+    hashPtr = Hash_LookOnly(recovHashTable, spriteID);
+d1336 1
+a1336 1
+    Trace_Print(recovTraceHdrPtr, numRecs, Recov_PrintTraceRecord);
+@
+
+
+1.12
+log
+@changed calls to Net_HostPrint to pass in \n.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: recovery.c,v 1.11 88/03/24 17:49:46 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+1.11
+log
+@Added List_InitElement before List_Insert.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: recovery.c,v 1.10 88/01/22 15:13:19 nelson Exp $ SPRITE (Berkeley)";
+d355 1
+a355 1
+	Net_HostPrint(spriteID, "is up");
+d371 1
+a371 1
+	    Net_HostPrint(spriteID, "rebooted");
+d435 1
+a435 1
+	    Net_HostPrint(spriteID, "is up");
+d462 1
+a462 1
+		Net_HostPrint(spriteID, "is back again");
+d477 1
+a477 1
+	    Net_HostPrint(spriteID, "");
+d556 1
+a556 1
+	    Net_HostPrint(spriteID, "is apparently down");
+d561 1
+a561 1
+	    Net_HostPrint(spriteID, "is down");
+d943 1
+a943 1
+	Net_HostPrint(spriteID, "considered dead");
+@
+
+
+1.10
+log
+@Doesn't do recovery stuff during shutdown.  Also release the monitor
+lock before exiting.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: recovery.c,v 1.9 87/12/02 13:13:09 brent Exp $ SPRITE (Berkeley)";
+d675 1
+@
+
+
+1.9
+log
+@Tuned Recov_HostAlive a bit.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: recovery.c,v 1.8 87/11/18 13:29:50 brent Exp $ SPRITE (Berkeley)";
+d333 1
+a333 1
+    if (spriteID == NET_BROADCAST_HOSTID || bootID == 0) {
+d338 3
+a340 1
+	 * data in a single RPC.
+d415 1
+@
+
+
+1.8
+log
+@Forgot to declare a variable...
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: recovery.c,v 1.7 87/11/17 15:22:18 brent Exp $ SPRITE (Berkeley)";
+d330 1
+d358 1
+d378 2
+a379 3
+	RECOV_TRACE(spriteID, hostPtr->state, RECOV_CUZ_REBOOT);
+	if (hostPtr->state & (RECOV_HOST_ALIVE|RECOV_HOST_DYING|
+			      RECOV_HOST_BOOTING)) {
+d386 4
+a389 4
+	    hostPtr->state &= ~(RECOV_HOST_ALIVE|RECOV_HOST_DYING);
+	    hostPtr->state |= RECOV_HOST_BOOTING;
+	    if ((hostPtr->state & RECOV_CRASH_CALLBACKS) == 0) {
+		hostPtr->state |= RECOV_CRASH_CALLBACKS;
+d393 8
+d408 1
+d417 1
+d426 1
+a426 1
+    switch(hostPtr->state &
+d434 1
+a434 1
+		hostPtr->state |= RECOV_HOST_BOOTING;
+d436 1
+a436 1
+		hostPtr->state |= RECOV_HOST_ALIVE;
+d449 2
+a450 2
+		hostPtr->state &= ~RECOV_HOST_BOOTING;
+		hostPtr->state |= RECOV_HOST_ALIVE|RECOV_WANT_RECOVERY;
+d462 1
+a462 1
+		hostPtr->state |= RECOV_HOST_BOOTING;
+d466 1
+a466 1
+		    hostPtr->state |= RECOV_WANT_RECOVERY;
+d469 1
+a469 1
+	    hostPtr->state &= ~(RECOV_HOST_DEAD|RECOV_HOST_DYING);
+d473 1
+a473 1
+		    hostPtr->state);
+d481 5
+a485 5
+    if ((hostPtr->state & RECOV_HOST_ALIVE) &&
+	(hostPtr->state & RECOV_WANT_RECOVERY) &&
+	(hostPtr->state & RECOV_REBOOT_CALLBACKS) == 0) {
+	hostPtr->state &= ~RECOV_WANT_RECOVERY;
+	hostPtr->state |= RECOV_REBOOT_CALLBACKS;
+d488 2
+@
+
+
+1.7
+log
+@Added a "dying" state that essentially gives clients a grace period
+before being considered dead.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: recovery.c,v 1.6 87/10/21 12:16:43 brent Exp $ SPRITE (Berkeley)";
+d69 6
+@
+
+
+1.6
+log
+@Added check against spawning multiple crash call-backs.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: recovery.c,v 1.5 87/10/14 11:17:20 brent Exp $ SPRITE (Berkeley)";
+d61 1
+a61 1
+List_Links	crashCallBackList;
+d64 7
+d110 2
+a111 1
+ *	RECOV_HOST_DEAD		Set when an RPC times out.
+d129 3
+a131 2
+#define RECOV_HOST_DEAD		0x2
+#define RECOV_HOST_BOOTING	0x4
+d204 1
+d207 1
+d236 1
+d371 2
+a372 1
+	if (hostPtr->state & (RECOV_HOST_ALIVE|RECOV_HOST_BOOTING)) {
+d379 1
+a379 1
+	    hostPtr->state &= ~RECOV_HOST_ALIVE;
+d410 1
+a410 1
+	   (RECOV_HOST_ALIVE|RECOV_HOST_BOOTING|RECOV_HOST_DEAD)) {
+d436 1
+a443 1
+	    hostPtr->state &= ~RECOV_HOST_DEAD;
+d447 4
+a450 1
+		hostPtr->state |= RECOV_HOST_ALIVE|RECOV_WANT_RECOVERY;
+d452 1
+d523 1
+d525 1
+a525 1
+	     * Host already dead.
+d533 5
+d542 1
+d586 1
+d588 1
+d855 1
+a855 1
+ *	Invoked asynchronously from Recov_HostDead so that other modules
+d891 45
+d974 37
+d1048 1
+a1048 1
+		 (RECOV_HOST_ALIVE|RECOV_HOST_BOOTING|RECOV_HOST_DEAD);
+d1230 3
+@
+
+
+1.5
+log
+@General tidy up, plus fixed some errors due to the
+addition of the 'booting' state.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: recovery.c,v 1.4 87/10/13 16:25:11 brent Exp $ SPRITE (Berkeley)";
+d367 5
+a371 2
+	    hostPtr->state |= (RECOV_HOST_BOOTING | RECOV_CRASH_CALLBACKS);
+	    Proc_CallFunc(RecovCrashCallBacks, spriteID, 0);
+@
+
+
+1.4
+log
+@Minor fix, took out ifdef notdef'ed routines.
+@
+text
+@d11 1
+a11 1
+ *	only done if some module is explicitely interested in a host.
+d30 1
+a30 1
+static char rcsid[] = "$Header: recovery.c,v 1.2 87/10/13 10:33:09 brent Exp $ SPRITE (Berkeley)";
+d57 4
+d139 1
+a139 7
+/*
+ * After a host reboots we pause a bit before attempting recovery.  This
+ * allows a host to complete boot-time start up.  If we don't pause the
+ * ping done by the recovery call backs may fail and we may erroneously
+ * think that the other guy crashed right away.
+ */
+int recovPause = 30;	/* Seconds */
+d198 1
+a198 2
+void  GetRebootList();
+void StartPinging();
+a199 1
+void StopPinging();
+d233 2
+d244 1
+a244 1
+ *	Callback entry added to notify list.
+d269 3
+a271 5
+ *	the bootID parameter to detect reboots.  If a reboot is detected
+ *	but we thought the host was up then the Crash call-backs are invoked.
+ *	In any case, a reboot invokes the Reboot call-backs.  (Call-backs
+ *	are installed with Recov_Notify. The Recov module is clever enough
+ *	to wait for the host to be fully up before invoking reboot callbacks.)
+d288 4
+a291 3
+ *	with Rpc_HostNotify are called when the bootID changes.  A timestamp
+ *	of when this message was received is obtained from the "cheap" clock
+ *	so we can tell later if there has been recent message traffic.
+d348 9
+a356 1
+	Net_HostPrint(spriteID, "rebooted");
+a357 1
+	reboot = TRUE;
+d395 11
+d435 1
+a435 1
+	    Sys_Panic(SYS_WARNING, "Unexpected state <%x> for ",
+d468 2
+a469 3
+ *	Sets the state in the host state table to dead.  Pings are not
+ *	initiated here because we may or may not be interested in
+ *	the other host.  See Rpc_HostIsDown.
+d574 3
+a576 6
+ *	Schedule a callback for when a particular host reboots.  If the host is
+ *	already alive this does nothing but save the call-back for later.
+ *	After the host goes down the recovery module will ping the host
+ *	to find out when it comes up, and then call-back to the procedure
+ *	installed here.  To make sure we detect a crash the recovery
+ *	module will periodically check on the state of the target host.
+d739 1
+a739 1
+	hostPtr = Mem_New(RecovHostState);
+a740 4
+
+	Byte_Zero(sizeof(RecovHostState), (Address)hostPtr);
+	hostPtr->state = RECOV_STATE_UNKNOWN;
+	hostPtr->spriteID = spriteID;
+d751 1
+a751 1
+ *	Clear a client state bit.  .
+d789 2
+a790 4
+ *	via Rpc_HostNotify.  It is invoked asynchronously from Recov_HostAlive
+ *	when that procedure detects a reboot.  It does an explict ping
+ *	of the other host to make sure it is ready for our recovery actions.
+ *	This will reschedule itself for later if the host isn't ready.
+d938 1
+a938 1
+	    if (state == RECOV_HOST_ALIVE) {
+a957 36
+ * StartPinging --
+ *
+ *	Make sure there is a background pinging process for the host.
+ *	The state bit used to indicate pinging is reset by RpcHostCheck
+ *	after it finally gets in a good ping.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Starts the pinging callback if not already in progress.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+StartPinging(spriteID)
+    int spriteID;
+{
+    register Hash_Entry *hashPtr;
+    register RecovHostState *hostPtr;
+
+    LOCK_MONITOR;
+
+    hashPtr = Hash_LookOnly(recovHashTable, spriteID);
+    hostPtr = (RecovHostState *)hashPtr->value;
+    if ((hostPtr->state & RECOV_PINGING_HOST) == 0) {
+	hostPtr->state |= RECOV_PINGING_HOST;
+	Proc_CallFunc(CheckHost, spriteID, 0);
+    }
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+d986 1
+a999 34
+ * StopPinging --
+ *
+ *	Clear the internal state bit that says we are pinging.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	As above.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+StopPinging(spriteID)
+    int spriteID;
+{
+    register Hash_Entry *hashPtr;
+    register RecovHostState *hostPtr;
+
+    LOCK_MONITOR;
+
+    hashPtr = Hash_LookOnly(recovHashTable, spriteID);
+    hostPtr = (RecovHostState *)hashPtr->value;
+    if ((hostPtr->state & RECOV_PINGING_HOST) == 0) {
+	Sys_Panic(SYS_WARNING, "StopPinging found bad state\n");
+    }
+    hostPtr->state &= ~RECOV_PINGING_HOST;
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+d1011 1
+a1011 1
+ *	to our caller.  It should free up the copied elements.
+d1069 1
+a1069 1
+	Sys_Panic(SYS_WARNING, "StopPinging found bad state\n");
+@
+
+
+1.3
+log
+@New version with host-specific reboot callbacks.
+@
+text
+@d617 1
+a617 1
+	 * Mark the host as being one we want to watch.
+a618 1
+	hostPtr->state |= RECOV_WANT_RECOVERY;
+a625 169
+#ifdef notdef
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_RebootCallback --
+ *
+ *	Schedule a callback for when a host reboots.  If the host is
+ *	already alive, the reboot callback is called right away.  If
+ *	the host isn't yet up, this routine makes sure that a background
+ *	pinging process will notice when the host does boot.  The calling
+ *	module needs a token obtained from Recov_Register;  we use this
+ *	to ensure only one callback per module.
+ *	
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	This will initiate pinging on the target host; it will recieve
+ *	at least on ping RPC before we invoke the reboot callbacks.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+Recov_RebootCallBack(spriteID, rebootCallBackProc, rebootData)
+    int spriteID;
+    void (*rebootCallBackProc)();
+    ClientData rebootData;
+{
+    Hash_Entry *hashPtr;
+    RecovHostState *hostPtr;
+    register NotifyElement *notifyPtr;
+    Boolean found = FALSE;
+
+    LOCK_MONITOR;
+
+    if (spriteID <= 0 || spriteID == rpc_SpriteID) {
+	Sys_Panic(SYS_FATAL, "Recov_RebootCallBack, bad hostID %d\n", spriteID);
+    } else {
+	hashPtr = Hash_Find(recovHashTable, spriteID);
+	if (hashPtr->value == (Address)NIL) {
+	    RECOV_INIT_HOST(hostPtr, spriteID, RECOV_STATE_UNKNOWN, 0);
+	    hashPtr->value = (Address)hostPtr;
+	} else {
+	    hostPtr = (RecovHostState *)hashPtr->value;
+	}
+	/*
+	 * Save the callback while avoiding duplications.
+	 */
+	LIST_FORALL(&hostPtr->rebootList, (List_Links *)notifyPtr) {
+	    if (notifyPtr->proc == rebootCallBackProc &&
+		notifyPtr->data == rebootData) {
+		found = TRUE;
+		break;
+	    }
+	}
+	if (!found) {
+	    notifyPtr = Mem_New(NotifyElement);
+	    notifyPtr->proc = rebootCallBackProc;
+	    notifyPtr->data = rebootData;
+	    List_Insert((List_Links *)notifyPtr,
+			LIST_ATFRONT(&hostPtr->rebootList));
+	}
+	/*
+	 * Initiate pinging so we find out when the host reboots.  Setting
+	 * the 'want recovery' bit means the reboot callbacks will get
+	 * called the next time the host becomes fully active.
+	 */
+	hostPtr->state |= RECOV_WANT_RECOVERY;
+	if ((hostPtr->state & RECOV_PINGING_HOST) == 0) {
+	    hostPtr->state |= RECOV_PINGING_HOST;
+	    Proc_CallFunc(CheckHost, spriteID, 0);
+	}
+    }
+    UNLOCK_MONITOR;
+}
+#endif notdef
+#ifdef notdef
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_WaitForHost --
+ *
+ *	Block the current process (at an interruptable priority) until
+ *	the given host comes back up.  This is used when retrying
+ *	filesystem operations when a fileserver goes down, for example.
+ *
+ * Results:
+ *	TRUE if the wait was interrupted.
+ *
+ * Side effects:
+ *	The current process is blocked
+ *	until messages from the host indicate it is up.
+ *
+ *----------------------------------------------------------------------
+ */
+Boolean
+Recov_WaitForHost(spriteID)
+    int spriteID;			/* Host to monitor */
+{
+    /*
+     * Set up the hosts state (dead or alive) by pinging it.
+     * If it's down we drop into a monitored routine to do 
+     * the actual waiting.  It will check again to make sure
+     * we don't sleep on an alive host.
+     */
+    if (Recov_IsHostDown(spriteID, TRUE) == FAILURE) {
+	RECOV_TRACE(spriteID, RECOV_STATE_UNKNOWN, RECOV_CUZ_WAIT);
+	return(WaitForHostInt(spriteID));
+    } else {
+	return(FALSE);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WaitForHostInt --
+ *
+ *	Block the current process (at an interruptable priority) until
+ *	the given host comes back up.  Our caller should have already
+ *	probed to host with Recov_IsHostDown so that pinging is already
+ *	initiated.
+ *
+ * Results:
+ *	TRUE is the wait was interrupted by a signal.
+ *
+ * Side effects:
+ *	If the host is thought down, the current process is blocked
+ *	until messages from the host indicate it is up.
+ *
+ *----------------------------------------------------------------------
+ */
+static ENTRY Boolean
+WaitForHostInt(spriteID)
+    int spriteID;			/* Host to monitor */
+{
+    Hash_Entry *hashPtr;
+    RecovHostState *hostPtr;
+    Boolean sigPending = FALSE;
+
+    LOCK_MONITOR;
+
+    if (spriteID <= 0 || spriteID == rpc_SpriteID) {
+	Sys_Panic(SYS_FATAL, "WaitForHostInt, bad hostID %d\n", spriteID);
+	UNLOCK_MONITOR;
+	return(FALSE);
+    }
+
+    hashPtr = Hash_Find(recovHashTable, spriteID);
+    if (hashPtr->value == (Address)NIL) {
+	Sys_Panic(SYS_FATAL, "WaitForHostInt, no host state\n");
+	UNLOCK_MONITOR;
+	return(FALSE);
+    } else {
+	hostPtr = (RecovHostState *)hashPtr->value;
+    }
+    while (!sigPending && (hostPtr->state & RECOV_HOST_DEAD)) {
+	sigPending = Sync_Wait(&hostPtr->alive, TRUE);
+    }
+    RECOV_TRACE(hostPtr->spriteID, hostPtr->state, RECOV_CUZ_WAKEUP);
+
+    UNLOCK_MONITOR;
+    return(sigPending);
+}
+#endif notdef
+@
+
+
+1.2
+log
+@Changed reboot callback interface so that modules have to
+ask on each failure to be called back at reboot.
+@
+text
+@d30 1
+a30 1
+static char rcsid[] = "$Header: recovery.c,v 1.1 87/10/08 16:33:42 brent Exp $ SPRITE (Berkeley)";
+d47 2
+a48 3
+ *	(*proc)(spriteID, clientData, when)
+ * where 'when' is RECOV_WHEN_HOST_DOWN or RECOV_WHEN_HOST_REBOOTS (never both).
+ * Use Recov_Register and Recov_RebootCallBack to set up the call backs.
+d234 1
+a234 1
+ * Recov_Register --
+d251 1
+a251 1
+Recov_Register(crashCallBackProc, crashData)
+d404 1
+d558 74
+d705 1
+d977 5
+a981 2
+    LIST_FORALL(&notifyList, (List_Links *)notifyPtr) {
+	(*notifyPtr->proc)(spriteID, notifyPtr->data, RECOV_WHEN_HOST_REBOOTS);
+d1000 1
+a1000 1
+ *	Invoke the call-backs with the RECOV_WHEN_HOST_DOWN flag.
+d1016 1
+a1016 1
+	    (*notifyPtr->proc)(spriteID, notifyPtr->data, RECOV_WHEN_HOST_DOWN);
+d1161 1
+a1161 2
+ *	This is the call back setup when a host is detected as crashed
+ *	and we want to find out when it comes back up.  This pings
+d1171 1
+a1171 1
+ *	traffic.  It reschedules itself if the ping fails.
+a1182 1
+    ReturnStatus status = SUCCESS;
+d1189 1
+a1189 1
+	    status = Rpc_Ping(spriteID);
+d1194 1
+a1194 9
+    if (status != SUCCESS) {
+	/*
+	 * Try again later if the host is still down.
+	 */
+	callInfoPtr->interval = recovPingSeconds * timer_IntOneSecond;
+    } else {
+	StopPinging(spriteID);
+	callInfoPtr->interval = 0;
+    }
+d1244 2
+a1245 2
+ *	Take the reboot list off the host state table and return it
+ *	to our caller.  They have to free it up.
+d1258 1
+d1265 6
+a1270 4
+    while (!List_IsEmpty(&hostPtr->rebootList)) {
+	notifyPtr = (NotifyElement *)List_First(&hostPtr->rebootList);
+	List_Remove((List_Links *)notifyPtr);
+	List_Insert((List_Links *)notifyPtr, LIST_ATREAR(notifyListHdr));
+d1400 1
+a1400 1
+	    case RPC_RECOV_TRACE_STALE:
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d5 9
+a13 5
+ *	Recovery actions that are registered via Recov_HostNotify are
+ *	called-back when a host crashes and when it reboots.
+ *	Regular message	traffic plus explicit pings are used to determine
+ *	the state of other hosts.  The external procedures are
+ *	Recov_HostAlive and Recov_HostDead, used by RPC to tell us when
+d15 3
+a17 2
+ *	Recov_IsHostDown, used to query the state of another host, and
+ *	Recov_WaitForHost, used to block a process until a host reboots.
+d30 1
+a30 1
+static char rcsid[] = "$Header: recovery.c,v 5.8 87/10/04 16:00:38 brent Exp $ SPRITE (Berkeley)";
+d44 17
+d74 1
+a74 1
+    int			bootID;		/* Timestamp from RPC header */
+d78 2
+d82 8
+d101 3
+d108 2
+a109 1
+ *	RECOV_HOST_PINGING	Set while there are pinging call-backs scheduled
+d119 1
+d122 3
+a124 2
+#define RECOV_HOST_PINGING	0x0200
+#define RECOV_REBOOT_CALLBACKS	0x0400
+d126 3
+a128 3
+#define RECOV_WAITING		0x4
+#define RECOV_CRASH		0x8
+#define RECOV_REBOOT		0x10
+a144 17
+ * Other kernel modules can arrange call-backs when a host reboots.
+ * The following list structure is used to keep these.  The calling
+ * sequence of the callback is as follows:
+ *	(*proc)(spriteID, clientData, when)
+ * where 'when' is RECOV_WHEN_HOST_DOWN or RECOV_WHEN_HOST_REBOOTS (never both).
+ */
+
+typedef struct {
+    List_Links	links;
+    void	(*proc)();
+    int		flags;	/* RECOV_WHEN_HOST_DOWN, RECOV_WHEN_HOST_REBOOTS */
+    ClientData	clientData;
+} NotifyElement;
+
+List_Links	recovNotifyList;
+
+/*
+d201 1
+d227 1
+a227 1
+    List_Init(&recovNotifyList);
+d235 1
+a235 1
+ * Recov_Notify --
+d237 5
+a241 7
+ *	Add a call-back for other modules to use when a host crashes/reboots.
+ *	The 'when' parameter specifies when to callback the client procedure.
+ *	If RECOV_WHEN_HOST_DOWN then the procedure is called when the RPC
+ *	module has gotten a timeout trying to reach the host.  If it is
+ *	RECOV_WHEN_HOST_REBOOTS then the call-back is made when the RPC
+ *	module detects a reboot due to the bootID changing.  If both
+ *	are specified then the call-back is made at both times.
+d247 1
+a247 1
+ *	Entry added to notify list.
+d252 3
+a254 4
+Recov_Notify(proc, clientData, when)
+    void	(*proc)();
+    ClientData	clientData;
+    int		when;	/* RECOV_WHEN_HOST_DOWN, RECOV_WHEN_HOST_REBOOTS */
+d258 3
+a260 4
+    notifyPtr = (NotifyElement *) Mem_Alloc(sizeof(NotifyElement));
+    notifyPtr->proc = proc;
+    notifyPtr->clientData = clientData;
+    notifyPtr->flags = when;
+d262 1
+a262 1
+    List_Insert((List_Links *) notifyPtr, LIST_ATREAR(&recovNotifyList));
+d268 242
+d512 6
+a517 11
+ *	This decides if the specified host is down, and will make sure
+ *	that the host is being "pinged" if the caller wants to find
+ *	out (via the callbacks setup in Recov_HostNotify) when the host
+ *	comes back to life.  If the host is known to be down this routine
+ *	returns TRUE and makes sure pinging is initiated (if needed).
+ *	Otherwise, if there hasn't been recent message traffic 
+ *	(within the last 10 seconds) then this will ping the host to find
+ *	out if it's still up.  There are two cases then, the host isn't
+ *	up, or it is booting but it's RPC service is not ready yet.
+ *	We return FALSE so that our caller doesn't think the host
+ *	has crashed
+d525 1
+a525 2
+ *	May do a ping.  If the 'ping' parameter is TRUE this will make
+ *	sure that pinging is in progress if the host is down.
+d531 1
+a531 1
+Recov_IsHostDown(spriteID, ping)
+a532 2
+    Boolean ping;	/* If TRUE, we make sure the host is being pinged
+			 * if it is down now */
+a551 3
+    if (status != SUCCESS && ping) {
+	StartPinging(spriteID);
+    }
+d558 1
+a558 1
+ * Recov_Pending --
+d560 6
+a565 5
+ *	This returns TRUE if the reboot call-backs for this host are
+ *	scheduled but haven't happened yet.  This is used by other modules
+ *	to decide if they should try recovery actions now, or wait until
+ *	regularly scheduled recovery call-backs are made.  If the other
+ *	host is not up now this returns TRUE.
+d569 1
+a569 1
+ *	TRUE if recovery actions are scheduled for this host.
+d572 2
+a573 1
+ *	This will start pinging if the host is currently thought down.
+d578 2
+a579 2
+ENTRY Boolean
+Recov_Pending(spriteID)
+d581 2
+d586 2
+a587 1
+    Boolean pending = FALSE;
+d592 1
+a592 1
+	Sys_Panic(SYS_FATAL, "Recov_Pending, bad hostID %d\n", spriteID);
+d594 5
+a598 2
+	hashPtr = Hash_LookOnly(recovHashTable, spriteID);
+	if (hashPtr != (Hash_Entry *)NIL) {
+d600 9
+a608 9
+	    if (hostPtr != (RecovHostState *)NIL) {
+		pending = (hostPtr->state & RECOV_REBOOT_CALLBACKS);
+		if (hostPtr->state & RECOV_HOST_DEAD) {
+		    pending = TRUE;
+		    if ((hostPtr->state & RECOV_HOST_PINGING) == 0) {
+			hostPtr->state |= RECOV_HOST_PINGING;
+			Proc_CallFunc(CheckHost, spriteID, 0);
+		    }
+		}
+d611 17
+a629 1
+    return(pending);
+d631 1
+d720 1
+d727 1
+a727 1
+ *	Add an entry to the rpc recovery trace.
+a873 234
+ * Recov_HostAlive --
+ *
+ *	Mark the host as being alive.  This is called when we've received
+ *	a message from the host.  It uses state from the host table and
+ *	the bootID parameter to detect reboots.  If a reboot is detected
+ *	but we thought the host was up then the Crash call-backs are invoked.
+ *	In any case, a reboot invokes the Reboot call-backs.  (Call-backs
+ *	are installed with Recov_Notify.)  Finally, a time stamp is
+ *	kept so we can check when we last got a message from a host.
+ *
+ *	This procedure is called from client RPC upon successful completion
+ *	of an RPC, and by server RPC upon reciept of a client request.
+ *	These two cases are identified by the 'asyncRecovery' parameter.
+ *	Servers want synchronous recovery so they don't service anything
+ *	until state associated with that client has been cleaned up via
+ *	the Crash call-backs.  So Recov_HostAlive blocks (if !asyncRecovery)
+ *	until the crash call-backs are complete.  Clients don't have the
+ *	same worries so they let the crash call-backs complete in the
+ *	background (asyncRecovery is TRUE).
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Updates the boot timestamp of the other host.  Procedures installed
+ *	with Rpc_HostNotify are called when the bootID changes.  A timestamp
+ *	of when this message was received is obtained from the "cheap" clock
+ *	so we can tell later if there has been recent message traffic.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+Recov_HostAlive(spriteID, bootID, asyncRecovery)
+    int spriteID;		/* Host ID of the message sender */
+    int bootID;			/* Boot time stamp from message header */
+    Boolean asyncRecovery;	/* TRUE means do recovery call-backs in
+				 * the background. FALSE causes the process
+				 * to wait until crash recovery is complete. */
+{
+    register Hash_Entry *hashPtr;
+    register RecovHostState *hostPtr;
+    Boolean reboot = FALSE;	/* Used to control print statements at reboot */
+
+    LOCK_MONITOR;
+    if (spriteID == NET_BROADCAST_HOSTID || bootID == 0) {
+	/*
+	 * Don't track the broadcast address.  Also ignore zero valued
+	 * bootIDs.  These come from hosts at early boot time, or
+	 * in certain error conditions like trying to send too much
+	 * data in a single RPC.
+	 */
+	UNLOCK_MONITOR;
+	return;
+    }
+
+    hashPtr = Hash_Find(recovHashTable, spriteID);
+    if (hashPtr->value == (Address)NIL) {
+	/*
+	 * Initialize the host's state. This is the first time we've talked
+	 * to it since we've been up, so take no action.
+	 */
+	hostPtr = Mem_New(RecovHostState);
+	hashPtr->value = (Address)hostPtr;
+
+	Byte_Zero(sizeof(RecovHostState), (Address)hostPtr);
+	hostPtr->state = RECOV_HOST_ALIVE;
+	hostPtr->spriteID = spriteID;
+	hostPtr->bootID = bootID;
+
+	Net_HostPrint(spriteID, "is up");
+	RECOV_TRACE(spriteID, RECOV_HOST_ALIVE, RECOV_CUZ_INIT);
+    } else {
+	hostPtr = (RecovHostState *)hashPtr->value;
+    }
+    if (hostPtr != (RecovHostState *)NIL) {
+	/*
+	 * Have to read the clock in order to suppress repeated pings,
+	 * see GetHostState and Rpc_HostIsDown.
+	 */
+	Timer_GetTimeOfDay(&hostPtr->time, (int *)NIL, (Boolean *)NIL);
+	/*
+	 * Check for a rebooted peer by comparing boot time stamps.
+	 * The first process to detect this initiates recovery actions.
+	 */
+	if (hostPtr->bootID != bootID) {
+	    Net_HostPrint(spriteID, "rebooted");
+	    hostPtr->bootID = bootID;
+	    reboot = TRUE;
+	    RECOV_TRACE(spriteID, hostPtr->state, RECOV_CUZ_REBOOT);
+	    if (hostPtr->state & RECOV_HOST_ALIVE) {
+		/*
+		 * A crash occured un-detected.  We do the crash call-backs
+		 * first, and block server processes in the meantime.
+		 * RECOV_CRASH_CALLBACKS flag is reset by RecovCrashCallBacks.
+		 * The host is marked dead here so we fall into the
+		 * switch below and call the reboot callbacks.
+		 */
+		RECOV_TRACE(spriteID, RECOV_CRASH, RECOV_CUZ_REBOOT);
+		hostPtr->state &= ~RECOV_HOST_ALIVE;
+		hostPtr->state |= (RECOV_HOST_DEAD | RECOV_CRASH_CALLBACKS);
+		Proc_CallFunc(RecovCrashCallBacks, spriteID, 0);
+	    }
+	}
+	/*
+	 * Block servers until crash recovery actions complete.
+	 * Servers are synchronous with respect to reboot recovery.
+	 * This blocks requests from clients until after the
+	 * recovery actions complete.
+	 */
+	if (! asyncRecovery) {
+	    while (hostPtr->state & RECOV_CRASH_CALLBACKS) {
+		Sync_Wait(&hostPtr->recovery, FALSE);
+		if (sys_ShuttingDown) {
+		    Sys_Printf("Warning, Server exiting Recov_HostAlive\n");
+		    Proc_Exit(1);
+		}
+	    }
+	}
+	/*
+	 * Now that we've taken care of crash recovery, we see if the host
+	 * is newly up.  If so, invoke the reboot call-backs and then notify
+	 * waiting processes. This means clientA (us) may start
+	 * re-opening files from serverB (the other guy) at the same time
+	 * as clientA (us) is closing files that serverB had had open.
+	 * ie. both the crash and reboot call backs may proceed in parallel.
+	 */
+	switch(hostPtr->state & (RECOV_HOST_ALIVE|RECOV_HOST_DEAD)) {
+	    case RECOV_HOST_ALIVE:
+		/*
+		 * Host already alive.
+		 */
+		break;
+	    case RECOV_HOST_DEAD: {
+		register int wait;
+		/*
+		 * Notify interested parties that the host is up.  If the host
+		 * has done a full reboot we wait a bit before pounding on
+		 * it with our re-open requests.  This gives it a chance
+		 * to create RPC server processes, etc. so we don't think
+		 * it crashed because we tried to talk to it too soon.
+		 */
+		if ( !reboot ) {
+		    Net_HostPrint(spriteID, "is back again");
+		    wait = 0;
+		} else {
+		    wait = timer_IntOneSecond * recovPause;
+		}
+		hostPtr->state &= ~RECOV_HOST_DEAD;
+		hostPtr->state |= RECOV_HOST_ALIVE;
+		if ((hostPtr->state & RECOV_REBOOT_CALLBACKS) == 0) {
+		    hostPtr->state |= RECOV_REBOOT_CALLBACKS;
+		    Proc_CallFunc(RecovRebootCallBacks, spriteID, wait);
+		}
+		break;
+	    default:
+		Sys_Panic(SYS_WARNING, "Unexpected state <%x> for ",
+			hostPtr->state);
+		Net_HostPrint(spriteID, "");
+		break;
+	    }
+	}
+    }
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Recov_HostDead --
+ *
+ *	Change the host's state to "dead".  This is called from client RPC
+ *	when an RPC timed out with no response.  It is also called by the
+ *	Rpc_Daemon when it can't recontact a client to get an explicit
+ *	acknowledgment.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Sets the state in the host state table to dead.  Pings are not
+ *	initiated here because we may or may not be interested in
+ *	the other host.  See Rpc_HostIsDown.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+Recov_HostDead(spriteID)
+    int spriteID;
+{
+    register Hash_Entry *hashPtr;
+    register RecovHostState *hostPtr;
+
+    LOCK_MONITOR;
+    if (spriteID == NET_BROADCAST_HOSTID || rpc_NoTimeouts) {
+	/*
+	 * If rpcNoTimeouts is set the Rpc_Daemon may still call us if
+	 * it can't get an acknowledgment from a host to close down
+	 * a connection.  We ignore this so that we don't take action
+	 * against the offending host (who is probably in the debugger)
+	 */
+	UNLOCK_MONITOR;
+	return;
+    }
+
+    hashPtr = Hash_LookOnly(recovHashTable, spriteID);
+    if (hashPtr != (Hash_Entry *)NIL) {
+	hostPtr = (RecovHostState *)hashPtr->value;
+	if (hostPtr != (RecovHostState *)NIL) {
+	    switch(hostPtr->state & ~(RECOV_CRASH_CALLBACKS|
+				      RECOV_HOST_PINGING)) {
+		case RECOV_HOST_DEAD:
+		    /*
+		     * Host already dead.
+		     */
+		    break;
+		case RECOV_STATE_UNKNOWN:
+		case RECOV_HOST_ALIVE:
+		    hostPtr->state &= ~(RECOV_HOST_ALIVE|RECOV_STATE_UNKNOWN);
+		    hostPtr->state |= RECOV_HOST_DEAD|RECOV_CRASH_CALLBACKS;
+		    Net_HostPrint(spriteID, "is down");
+		    RECOV_TRACE(spriteID, hostPtr->state, RECOV_CUZ_CRASH);
+		    Proc_CallFunc(RecovCrashCallBacks, spriteID, 0);
+		    break;
+	    }
+	}
+    }
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+d897 1
+d901 3
+a903 21
+    status = Rpc_Ping(spriteID);
+    switch(status) {
+	case RPC_SERVICE_DISABLED:
+	    Net_HostPrint(spriteID, "still booting");
+	    callInfoPtr->interval = recovPause * timer_IntOneSecond;
+	    break;
+	case RPC_TIMEOUT:
+	    Net_HostPrint(spriteID, "not responding");
+	    callInfoPtr->interval = recovPause * timer_IntOneSecond;
+	    break;
+	case SUCCESS:
+	    LIST_FORALL(&recovNotifyList, (List_Links *)notifyPtr) {
+		if (notifyPtr->flags & RECOV_WHEN_HOST_REBOOTS) {
+		    (*notifyPtr->proc)(spriteID, notifyPtr->clientData,
+						 RECOV_WHEN_HOST_REBOOTS);
+		 }
+	    }
+	    CallBacksDone(spriteID);
+	    RECOV_TRACE(spriteID, RECOV_REBOOT, RECOV_CUZ_DONE);
+	    callInfoPtr->interval = 0;	/* Don't call again */
+	    break;
+d905 1
+d936 3
+a938 4
+    LIST_FORALL(&recovNotifyList, (List_Links *)notifyPtr) {
+	if (notifyPtr->flags & RECOV_WHEN_HOST_DOWN) {
+	    (*notifyPtr->proc)(spriteID, notifyPtr->clientData,
+					 RECOV_WHEN_HOST_DOWN);
+d1024 1
+a1024 1
+	    ~(RECOV_CRASH_CALLBACKS|RECOV_HOST_PINGING|RECOV_REBOOT_CALLBACKS);
+d1071 2
+a1072 2
+    if ((hostPtr->state & RECOV_HOST_PINGING) == 0) {
+	hostPtr->state |= RECOV_HOST_PINGING;
+d1156 1
+a1156 1
+    if ((hostPtr->state & RECOV_HOST_PINGING) == 0) {
+d1159 1
+a1159 1
+    hostPtr->state &= ~RECOV_HOST_PINGING;
+d1166 41
+d1274 3
+a1276 1
+	switch(recPtr->state & ~(RECOV_CRASH_CALLBACKS|RECOV_HOST_PINGING)) {
+d1298 1
+a1298 1
+	Sys_Printf("%3s", (recPtr->state & RECOV_HOST_PINGING) ?
+d1300 4
+@

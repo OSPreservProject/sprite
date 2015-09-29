@@ -1,0 +1,216 @@
+head     9.4;
+branch   ;
+access   ;
+symbols  ds3100:9.4 sun3:9.4 sprited:9.4.1 sun4nw:9.4 symm:9.4 spur:9.4 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.4
+date     90.10.08.16.08.07;  author mendel;  state Exp;
+branches 9.4.1.1;
+next     9.3;
+
+9.3
+date     90.07.03.16.25.57;  author jhh;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.23.12.32.40;  author brent;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.02.23.17.13;  author jhh;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.05.15;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     89.08.21.15.25.25;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.08.21.11.03.56;  author mendel;  state Exp;
+branches ;
+next     ;
+
+9.4.1.1
+date     91.11.15.15.49.26;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Internal local disk routines.
+@
+
+
+9.4
+log
+@Major change: New domain independent interface. Removed OFS code from
+module. 
+Fixed include files to use <> rather than "".
+Added function prototyping.  
+Modified to use new cache backend interface.
+Changed file name to start with "fsdm".
+@
+text
+@/*
+ * fsdmInt.h --
+ *
+ *	Definitions related to the storage of a filesystem on a disk.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ * $Header: /sprite/src/kernel/fs.mendel/RCS/fsdmInt.h,v 1.1 90/01/16 17:12:04 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+ */
+
+#ifndef _FSDMINT
+#define _FSDMINT
+
+#include <stdio.h>
+/*
+ * Structure to keep information about each fragment.
+ */
+
+typedef struct FsdmFragment {
+    List_Links	links;		/* Links to put in list of free fragments of 
+				   this size. */
+    int		blockNum;	/* Block that this fragment comes from. */
+} FsdmFragment;
+
+
+/*
+ * A table of domains.  This is used to go from domain number
+ * to the state for the domain.
+ *
+ * FSDM_MAX_LOCAL_DOMAINS defines how many local domains a server can keep
+ *      track of.
+ */
+#define FSDM_MAX_LOCAL_DOMAINS    20
+extern Fsdm_Domain *fsdmDomainTable[];
+
+
+#endif /* _FSDMINT */
+
+@
+
+
+9.4.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/fsdm/fsdmInt.h,v 9.4 90/10/08 16:08:07 mendel Exp $ SPRITE (Berkeley)
+@
+
+
+9.3
+log
+@increased number of local domains, fixed bug when limit is exceeded
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fsdm/RCS/fsdmInt.h,v 9.2 89/10/23 12:32:40 brent Exp Locker: jhh $ SPRITE (Berkeley)
+d22 1
+a42 14
+
+
+extern ReturnStatus	FsdmFileDescAllocInit();
+extern ReturnStatus	FsdmWriteBackFileDescBitmap();
+extern	ReturnStatus	FsdmBlockAllocInit();
+extern	ReturnStatus	FsdmWriteBackDataBlockBitmap();
+
+extern	void		FsdmBlockFind();
+extern	void		FsdmBlockFree();
+extern	void		FsdmFragFind();
+extern	void		FsdmFragFree();
+
+extern  int		FsdmBlockRealloc();
+extern  ReturnStatus	FsdmWriteBackSummaryInfo();
+@
+
+
+9.2
+log
+@Nuked extern
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fsdm/RCS/fsdmInt.h,v 9.1 89/10/02 23:17:13 jhh Exp Locker: brent $ SPRITE (Berkeley)
+d40 1
+a40 1
+#define FSDM_MAX_LOCAL_DOMAINS    10
+@
+
+
+9.1
+log
+@New scsi disk mapping
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fsdm/RCS/fsdmInt.h,v 9.0 89/09/12 15:05:15 douglis Stable Locker: jhh $ SPRITE (Berkeley)
+a54 1
+extern  void	 	FsdmRecordDeletionStats();
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fsdm/RCS/fsdmInt.h,v 1.2 89/08/21 15:25:25 mendel Exp Locker: douglis $ SPRITE (Berkeley)
+a20 6
+
+/*
+ * The lost and found directory is preallocated and is of a fixed size. Define
+ * its size in 4K blocks here.
+ */
+#define	FSDM_NUM_LOST_FOUND_BLOCKS	2
+@
+
+
+1.2
+log
+@Break up fs into many modules.    
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fsdm/RCS/fsdmInt.h,v 1.1 89/08/21 11:03:56 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsDisk.h,v 8.4 89/07/18 13:11:35 jhh Exp $ SPRITE (Berkeley)
+@

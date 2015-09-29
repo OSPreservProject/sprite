@@ -1,0 +1,13 @@
+F FDOPEN.C_V;1                      	fdopen.c,v
+F FILEINT.H_V;1                     	fileInt.h,v
+F FOPEN.C_V;1                       	fopen.c,v
+F FPUTS.C_V;1                       	fputs.c,v
+F FREAD.C_V;1                       	fread.c,v
+F FREOPEN.C_V;1                     	freopen.c,v
+F FWRITE.C_V;1                      	fwrite.c,v
+F PERROR.C_V;1                      	perror.c,v
+F STDIOFI0.C_V;1                    	StdioFileCloseProc.c,v
+F STDIOFI1.C_V;1                    	StdioFileOpenMode.c,v
+F STDIOFI2.C_V;1                    	StdioFileReadProc.c,v
+F STDIOFI3.C_V;1                    	StdioFileWriteProc.c,v
+F TMPNAM.C_V;1                      	tmpnam.c,v

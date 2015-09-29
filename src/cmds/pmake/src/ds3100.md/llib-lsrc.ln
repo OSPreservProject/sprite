@@ -1,0 +1,861 @@
+512
+llib-lsrc:arch.c 2
+2
+3 105 36 0 0
+Arch_ParseArchive
+82 0 0
+24 0 5900
+24 576 11087
+16
+0 330 4 0 0
+Arch_ParseArchive
+2
+1 654 32 0 0
+Arch_Touch
+24 576 11087
+2
+1 687 32 0 0
+Arch_TouchLib
+24 576 11087
+2
+1 722 36 0 0
+Arch_MTime
+24 576 11087
+16
+0 737 4 0 0
+Arch_MTime
+2
+1 756 36 0 0
+Arch_MemMTime
+24 576 11087
+16
+0 797 4 0 0
+Arch_MemMTime
+2
+2 823 32 0 0
+Arch_FindLib
+24 576 11087
+24 0 5900
+2
+1 875 36 0 0
+Arch_LibOODate
+24 576 11087
+16
+0 908 4 0 0
+Arch_LibOODate
+2
+0 925 32 0 0
+Arch_Init
+512
+llib-lsrc:compat.c 2
+512
+llib-lsrc:compat.c
+2
+1 548 32 0 0
+Compat_Run
+24 0 5900
+512
+llib-lsrc:cond.c 2
+2
+1 1002 36 0 0
+Cond_Eval
+18 0 0
+16
+0 1176 4 0 0
+Cond_Eval
+2
+0 1193 32 0 0
+Cond_End
+512
+llib-lsrc:dir.c 2
+2
+0 136 24 0 5900
+dirSearchPath
+2
+0 183 32 0 0
+Dir_Init
+2
+1 241 36 0 0
+Dir_HasWildcards
+18 0 0
+16
+0 254 4 0 0
+Dir_HasWildcards
+2
+3 497 32 0 0
+Dir_Expand
+18 0 0
+24 0 5900
+24 0 5900
+2
+2 608 98 0 0
+Dir_FindFile
+18 0 0
+24 0 5900
+512
+llib-lsrc:dir.c
+16
+0 895 18 0 0
+Dir_FindFile
+2
+1 916 36 0 0
+Dir_MTime
+24 576 11087
+16
+0 959 4 0 0
+Dir_MTime
+2
+2 981 32 0 0
+Dir_AddDir
+24 0 5900
+18 0 0
+2
+1 1053 100 0 0
+Dir_CopyDir
+24 288 15433
+16
+0 1057 20 0 0
+Dir_CopyDir
+2
+2 1080 98 0 0
+Dir_MakeFlags
+18 0 0
+24 0 5900
+16
+0 1098 18 0 0
+Dir_MakeFlags
+2
+1 1118 32 0 0
+Dir_Destroy
+24 288 15433
+2
+1 1150 32 0 0
+Dir_ClearPath
+24 0 5900
+2
+2 1177 32 0 0
+Dir_Concat
+24 0 5900
+24 0 5900
+2
+0 1192 36 0 0
+Dir_PrintDirectories
+2
+1 1215 36 0 0
+Dir_PrintPath
+24 0 5900
+512
+llib-lsrc:job.c
+2
+0 135 4 0 0
+errors
+2
+0 136 4 0 0
+aborting
+2
+0 210 24 352 7448
+commandShell
+2
+0 215 18 0 0
+shellPath
+2
+0 217 18 0 0
+shellName
+2
+0 222 4 0 0
+nJobs
+2
+0 223 4 0 0
+nLocal
+2
+0 224 24 0 5900
+jobs
+2
+0 225 4 0 0
+jobFull
+2
+0 235 24 576 11087
+lastNode
+2
+0 237 18 0 0
+targFmt
+2
+0 248 24 0 5900
+stoppedJobs
+2
+2 670 32 0 0
+JobFinish
+24 8512 5722
+9 32 2558
+2
+2 988 32 0 0
+Job_Touch
+24 576 11087
+4 0 0
+2
+2 1060 36 0 0
+Job_CheckCommands
+24 576 11087
+144 0 0
+16
+0 1102 4 0 0
+Job_CheckCommands
+2
+2 1939 32 0 0
+JobDoOutput
+24 8512 5722
+4 0 0
+2
+1 2193 32 0 0
+Job_CatchChildren
+4 0 0
+2
+0 2283 32 0 0
+Job_CatchOutput
+2
+1 2371 32 0 0
+Job_Make
+24 576 11087
+2
+2 2393 32 0 0
+Job_Init
+4 0 0
+4 0 0
+2
+0 2511 36 0 0
+Job_Full
+16
+0 2513 4 0 0
+Job_Full
+2
+0 2533 36 0 0
+Job_Empty
+16
+0 2549 4 0 0
+Job_Empty
+2
+1 2640 36 0 0
+Job_ParseShell
+18 0 0
+16
+0 2758 4 0 0
+Job_ParseShell
+2
+0 2945 36 0 0
+Job_End
+16
+0 2963 4 0 0
+Job_End
+2
+0 2981 32 0 0
+Job_Wait
+2
+0 3008 32 0 0
+Job_AbortAll
+2
+1 3082 32 0 0
+JobFlagForMigration
+4 0 0
+2
+0 3249 32 0 0
+Job_RestartJobs
+512
+llib-lsrc:main.c 2
+2
+0 83 24 0 5900
+create
+2
+0 84 5 0 0
+now
+2
+0 85 4 0 0
+homeHost
+2
+0 86 24 576 11087
+DEFAULT
+2
+0 87 4 0 0
+allPrecious
+2
+0 94 4 0 0
+maxJobs
+2
+0 96 4 0 0
+debug
+2
+0 97 4 0 0
+amMake
+2
+0 98 4 0 0
+noWarnings
+2
+0 100 4 0 0
+noExecute
+2
+0 101 4 0 0
+keepgoing
+2
+0 102 4 0 0
+queryFlag
+2
+0 103 4 0 0
+touchFlag
+2
+0 104 4 0 0
+usePipes
+2
+0 105 4 0 0
+backwards
+2
+0 106 4 0 0
+ignoreErrors
+2
+0 107 4 0 0
+beSilent
+2
+0 108 4 0 0
+verboseRemigrates
+2
+0 109 4 0 0
+sysVmake
+2
+0 110 4 0 0
+oldVars
+2
+0 111 4 0 0
+checkEnvFirst
+2
+0 113 4 0 0
+noExport
+2
+0 114 4 0 0
+background
+2
+0 116 4 0 0
+runLocalFirst
+2
+1 273 32 0 0
+Main_ParseArgLine
+18 0 0
+2
+2 490 36 0 0
+main
+4 0 0
+82 0 0
+2
+-1 1040 32 0 0
+Error
+18 0 0
+2
+-1 1070 32 0 0
+Fatal
+18 0 0
+2
+-1 1102 32 0 0
+Punt
+18 0 0
+2
+0 1122 32 0 0
+DieHorribly
+2
+1 1149 32 0 0
+Finish
+4 0 0
+512
+llib-lsrc:main.c
+512
+llib-lsrc:make.c 2
+2
+2 78 36 0 0
+Make_TimeStamp
+24 576 11087
+24 576 11087
+16
+0 83 4 0 0
+Make_TimeStamp
+2
+1 106 36 0 0
+Make_OODate
+24 576 11087
+16
+0 224 4 0 0
+Make_OODate
+2
+2 277 36 0 0
+Make_HandleUse
+24 576 11087
+24 576 11087
+16
+0 319 4 0 0
+Make_HandleUse
+2
+1 349 32 0 0
+Make_Update
+24 576 11087
+512
+llib-lsrc:make.c
+2
+1 585 32 0 0
+Make_DoAllVar
+24 576 11087
+2
+1 762 36 0 0
+Make_Run
+24 0 5900
+16
+0 858 4 0 0
+Make_Run
+512
+llib-lsrc:buf.c
+2
+2 75 32 0 0
+Buf_AddByte
+24 0 14700
+14 0 0
+2
+3 107 32 0 0
+Buf_AddBytes
+24 0 14700
+4 0 0
+28 0 0
+2
+2 138 32 0 0
+Buf_UngetByte
+24 0 14700
+14 0 0
+2
+3 189 32 0 0
+Buf_UngetBytes
+24 0 14700
+4 0 0
+28 0 0
+2
+1 232 36 0 0
+Buf_GetByte
+24 0 14700
+16
+0 247 4 0 0
+Buf_GetByte
+2
+3 267 36 0 0
+Buf_GetBytes
+24 0 14700
+4 0 0
+28 0 0
+16
+0 281 4 0 0
+Buf_GetBytes
+2
+2 300 108 0 0
+Buf_GetAll
+24 0 14700
+20 0 0
+16
+0 308 28 0 0
+Buf_GetAll
+2
+2 327 32 0 0
+Buf_Discard
+24 0 14700
+4 0 0
+2
+1 355 36 0 0
+Buf_Size
+24 0 14700
+16
+0 357 4 0 0
+Buf_Size
+2
+1 377 104 0 14700
+Buf_Init
+4 0 0
+16
+0 391 24 0 14700
+Buf_Init
+2
+2 410 32 0 0
+Buf_Destroy
+24 0 14700
+4 0 0
+512
+llib-lsrc:parse.c 2
+2
+0 96 24 0 5900
+parseIncPath
+2
+0 97 24 0 5900
+sysIncPath
+2
+0 139 10 0 0
+specType
+2
+-1 255 32 0 0
+Parse_Error
+4 0 0
+2
+0 285 36 0 0
+Parse_AnyExport
+16
+0 287 4 0 0
+Parse_AnyExport
+2
+1 1126 36 0 0
+Parse_IsVar
+18 0 0
+16
+0 1183 4 0 0
+Parse_IsVar
+2
+2 1210 32 0 0
+Parse_DoVar
+18 0 0
+24 576 11087
+2
+1 1505 32 0 0
+Parse_AddIncludeDir
+18 0 0
+2
+2 2039 32 0 0
+Parse_File
+18 0 0
+24 384 23058
+2
+0 2207 36 0 0
+Parse_Init
+2
+0 2251 104 0 5900
+Parse_MainName
+16
+0 2264 24 0 5900
+Parse_MainName
+512
+llib-lsrc:str.c 2
+2
+3 56 98 0 0
+Str_Concat
+18 0 0
+18 0 0
+4 0 0
+16
+0 101 18 0 0
+Str_Concat
+2
+1 118 98 0 0
+Str_New
+18 0 0
+16
+0 124 18 0 0
+Str_New
+2
+4 164 354 0 0
+Str_BreakString
+18 0 0
+18 0 0
+18 0 0
+20 0 0
+16
+0 269 82 0 0
+Str_BreakString
+2
+2 289 32 0 0
+Str_FreeVec
+4 0 0
+82 0 0
+2
+2 318 98 0 0
+Str_FindSubstring
+18 0 0
+18 0 0
+16
+0 344 18 0 0
+Str_FindSubstring
+2
+2 373 36 0 0
+Str_Match
+18 0 0
+18 0 0
+16
+0 478 4 0 0
+Str_Match
+512
+llib-lsrc:suff.c 2
+2
+2 187 36 0 0
+SuffSuffIsSuffixP
+24 224 14051
+18 0 0
+16
+0 189 4 0 0
+SuffSuffIsSuffixP
+2
+0 349 32 0 0
+Suff_ClearSuffixes
+2
+1 454 36 0 0
+Suff_IsTransform
+18 0 0
+16
+0 458 4 0 0
+Suff_IsTransform
+2
+1 477 104 576 11087
+Suff_AddTransform
+18 0 0
+16
+0 520 24 576 11087
+Suff_AddTransform
+2
+1 542 36 0 0
+Suff_EndTransform
+24 576 11087
+16
+0 581 4 0 0
+Suff_EndTransform
+2
+1 672 32 0 0
+Suff_AddSuffix
+18 0 0
+2
+1 713 104 0 5900
+Suff_GetPath
+18 0 0
+16
+0 724 24 0 5900
+Suff_GetPath
+2
+0 746 32 0 0
+Suff_DoPaths
+2
+1 813 32 0 0
+Suff_AddInclude
+18 0 0
+2
+1 843 32 0 0
+Suff_AddLib
+18 0 0
+2
+1 1991 32 0 0
+Suff_FindDeps
+24 576 11087
+2
+1 2058 32 0 0
+Suff_SetNull
+18 0 0
+2
+0 2093 32 0 0
+Suff_Init
+2
+0 2176 36 0 0
+Suff_PrintAll
+512
+llib-lsrc:targ.c 2
+2
+0 79 32 0 0
+Targ_Init
+2
+1 100 104 576 11087
+Targ_NewGN
+18 0 0
+16
+0 126 24 576 11087
+Targ_NewGN
+2
+2 147 104 576 11087
+Targ_FindNode
+18 0 0
+4 0 0
+16
+0 170 24 576 11087
+Targ_FindNode
+2
+2 192 104 0 5900
+Targ_FindList
+24 0 5900
+4 0 0
+16
+0 222 24 0 5900
+Targ_FindList
+2
+1 239 36 0 0
+Targ_Ignore
+24 576 11087
+16
+0 245 4 0 0
+Targ_Ignore
+2
+1 262 36 0 0
+Targ_Silent
+24 576 11087
+16
+0 268 4 0 0
+Targ_Silent
+2
+1 285 36 0 0
+Targ_Precious
+24 576 11087
+16
+0 291 4 0 0
+Targ_Precious
+2
+1 312 32 0 0
+Targ_SetMain
+24 576 11087
+512
+llib-lsrc:targ.c
+2
+1 339 36 0 0
+Targ_PrintCmd
+18 0 0
+16
+0 342 4 0 0
+Targ_PrintCmd
+2
+1 361 98 0 0
+Targ_FmtTime
+4 0 0
+16
+0 375 18 0 0
+Targ_FmtTime
+2
+1 392 32 0 0
+Targ_PrintType
+4 0 0
+2
+1 562 36 0 0
+Targ_PrintGraph
+4 0 0
+512
+llib-lsrc:var.c 2
+2
+0 69 50 0 0
+var_Error
+2
+0 76 50 0 0
+varNoError
+2
+0 94 24 576 11087
+VAR_GLOBAL
+2
+0 95 24 576 11087
+VAR_CMD
+2
+2 327 32 0 0
+Var_Delete
+18 0 0
+24 576 11087
+2
+3 370 32 0 0
+Var_Set
+18 0 0
+18 0 0
+24 576 11087
+2
+3 444 32 0 0
+Var_Append
+18 0 0
+18 0 0
+24 576 11087
+2
+2 490 36 0 0
+Var_Exists
+18 0 0
+24 576 11087
+16
+0 502 4 0 0
+Var_Exists
+2
+2 520 98 0 0
+Var_Value
+18 0 0
+24 576 11087
+16
+0 529 18 0 0
+Var_Value
+2
+5 1042 98 0 0
+Var_Parse
+18 0 0
+24 576 11087
+4 0 0
+20 0 0
+20 0 0
+16
+0 1700 18 0 0
+Var_Parse
+2
+3 1721 98 0 0
+Var_Subst
+18 0 0
+24 576 11087
+4 0 0
+16
+0 1817 18 0 0
+Var_Subst
+2
+1 1836 98 0 0
+Var_GetTail
+18 0 0
+16
+0 1838 18 0 0
+Var_GetTail
+2
+1 1858 98 0 0
+Var_GetHead
+18 0 0
+16
+0 1860 18 0 0
+Var_GetHead
+2
+0 1876 32 0 0
+Var_Init
+2
+1 1899 36 0 0
+Var_Dump
+24 576 11087
+512
+llib-lsrc:rmt.c 2
+2
+0 88 32 0 0
+Rmt_Init
+2
+1 115 32 0 0
+Rmt_AddServer
+18 0 0
+2
+3 178 36 0 0
+Rmt_Begin
+18 0 0
+82 0 0
+24 576 11087
+16
+0 228 4 0 0
+Rmt_Begin
+2
+3 253 32 0 0
+Rmt_Exec
+18 0 0
+82 0 0
+4 0 0
+2
+3 301 36 0 0
+Rmt_ReExport
+14 0 0
+24 576 11087
+20 0 0
+16
+0 371 4 0 0
+Rmt_ReExport
+2
+1 390 36 0 0
+Rmt_LastID
+14 0 0
+16
+0 395 4 0 0
+Rmt_LastID
+2
+2 415 32 0 0
+Rmt_Done
+4 0 0
+24 576 11087
+512
+llib-lsrc:rmt.c

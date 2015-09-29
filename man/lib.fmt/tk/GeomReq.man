@@ -1,0 +1,132 @@
+
+
+
+Tk_GeometryRequest    C Library Procedures     Tk_GeometryRequest
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tk_GeometryRequest, Tk_SetInternalBorder -  specify  desired
+     geometry or internal border for a window
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttkk..hh>>
+
+     TTkk__GGeeoommeettrryyRReeqquueesstt(_t_k_w_i_n, _r_e_q_W_i_d_t_h, _r_e_q_H_e_i_g_h_t)
+
+     TTkk__SSeettIInntteerrnnaallBBoorrddeerr(_t_k_w_i_n, _w_i_d_t_h)
+
+AARRGGUUMMEENNTTSS
+     Tk_Window    _t_k_w_i_n        (in)      Window     for     which
+                                         geometry     is    being
+                                         requested.
+
+     int          _r_e_q_W_i_d_t_h     (in)      Desired width for _t_k_w_i_n,
+                                         in pixel units.
+
+     int          _r_e_q_H_e_i_g_h_t    (in)      Desired    height    for
+                                         _t_k_w_i_n, in pixel units.
+
+     int          _w_i_d_t_h        (in)      Space   to   leave   for
+                                         internal    border   for
+                                         _t_k_w_i_n, in pixel units.
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     TTkk__GGeeoommeettrryyRReeqquueesstt is called by widget code to indicate  its
+     preference  for  the dimensions of a particular window.  The
+     arguments to TTkk__GGeeoommeettrryyRReeqquueesstt are made  available  to  the
+     geometry  manager  for the window, which then decides on the
+     actual geometry for the window.  Although geometry  managers
+     generally     try    to    satisfy    requests    made    to
+     TTkk__GGeeoommeettrryyRReeqquueesstt, there is no  guarantee  that  this  will
+     always  be  possible.   Widget code should not assume that a
+     geometry request will be satisfied until it receives a  CCoonn--
+     ffiigguurreeNNoottiiffyy  event  indicating that the geometry change has
+     occurred.  Widget code should  never  call  procedures  like
+     TTkk__RReessiizzeeWWiinnddooww   directly.    Instead,   it  should  invoke
+     TTkk__GGeeoommeettrryyRReeqquueesstt and leave the final geometry decisions to
+     the geometry manager.
+
+     If _t_k_w_i_n is a top-level window, then the  geometry  informa-
+     tion will be passed to the window manager using the standard
+     ICCCM protocol.
+
+     TTkk__SSeettIInntteerrnnaallBBoorrddeerr is called by widget  code  to  indicate
+     that the widget has an internal border.  This means that the
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+Tk_GeometryRequest    C Library Procedures     Tk_GeometryRequest
+
+
+
+     widget draws a decorative border inside the  window  instead
+     of  using  the standard X borders, which are external to the
+     window's area.  For example, internal borders  are  used  to
+     draw  3-D  effects.  _W_i_d_t_h specifies the width of the border
+     in pixels.  Geometry managers will use this  information  to
+     avoid  placing  any children of _t_k_w_i_n overlapping the outer-
+     most _w_i_d_t_h pixels of _t_k_w_i_n's area.
+
+     The information specified in calls to TTkk__GGeeoommeettrryyRReeqquueesstt and
+     TTkk__SSeettIInntteerrnnaallBBoorrddeerr  can  be  retrieved  using  the  macros
+     TTkk__RReeqqWWiiddtthh, TTkk__RReeqqHHeeiigghhtt, and TTkk__IInntteerrnnaallBBoorrddeerrWWiiddtthh.   See
+     the TTkk__WWiinnddoowwIIdd manual entry for details.
+
+
+KKEEYYWWOORRDDSS
+     geometry, request
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     2
+
+
+

@@ -1,0 +1,2 @@
+TDEFINES = -DDEFAULT_VECTOR=host_aout_little_vec -DPAGE_SIZE=1024
+TDEPFILES= host-aout.o

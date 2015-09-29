@@ -1,0 +1,6 @@
+
+
+          chgrp group filelist
+               Set the group id of each file in the list filelist to
+               group, which can be either a group name or a numeric
+               group id.

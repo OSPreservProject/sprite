@@ -1,0 +1,30 @@
+#!/bin/csh -f
+if ($#argv < 1) then
+    set prog=ds3100
+else
+    set prog=$1
+endif
+if ($#argv < 2) then
+    set machine=kvetching
+else
+    set machine=$2
+endif
+set KDBX=kdbx
+if ($#argv < 3) then
+    set version=`echo $prog | sed -e 's/[a-z0-9]*\.//'`
+    if ("$version" !~ 1.*) set version=""
+else
+    set version=$3
+endif
+
+if ($3 =~ *$user*) then
+    set machType = $1:r
+    set machType = $machine:r
+else
+    set machType = $1
+endif
+
+echo debugging $prog version \"$version\" at host $machine
+rm .dbxinit
+ln -s .dbxinit.$machType .dbxinit
+$KDBX -r -sprite $machine $prog

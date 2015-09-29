@@ -1,0 +1,48 @@
+' $Header: /sprite/src/cmds/kmsg/RCS/kmsg.man,v 1.3 91/03/01 22:41:17 kupfer Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS KMSG cmds
+.BS
+.SH NAME
+kmsg \- Manipulate a remote Sprite kernel
+.SH SYNOPSIS
+\fBkmsg\fR \fIoption machine\fR
+.SH OPTIONS
+.IP "\fB\-c\fR" 15
+Cause \fImachine\fR to leave the debugger and continue normal
+processing.  \fIMachine\fR must currently be in the debugger.
+.IP "\fB\-d\fR" 15
+Cause \fImachine\fR to suspend normal processing and enter the
+debugger.
+.IP "\fB\-r\fR" 15
+Cause \fImachine\fR to reboot, using the default boot source.
+\fIMachine\fR must currently be in the debugger.
+.IP "\fB\-R\fI string\fR" 15
+Cause \fImachine\fR to reboot, using \fIstring\fR as the boot
+source.  \fIMachine\fR must currently be in the debugger.
+.IP "\fB\-s\fI string\fR" 15
+Print out the version string of the kernel being run by \fImachine\fR.
+Exit with a 0 status if the version string matches \fIstring\fR,
+and exit with a non-zero status if it doesn't match.
+\fIMachine\fR must currently be in the debugger.
+.IP "\fB\-v\fR" 15
+Print out the version string of the kernel being run by \fImachine\fR.
+\fIMachine\fR must currently be in the debugger.
+.BE
+
+.SH INTRODUCTION
+.PP
+The \fBkmsg\fR command is used to assist in debugging and rebooting
+remote Sprite kernels.  \fIMachine\fR is the name of a machine
+running Sprite, and \fIoption\fR specifies what sort of operation
+to perform on that machine.  \fBKmsg\fR will open a special network
+port to the specified kernel and send it messages to carry out the
+specified operation.
+
+.SH BUGS
+The type (or at least byte-order?) of the target machine must match
+that of the machine that
+.B kmsg
+is run on.
+
+.SH KEYWORDS
+debug, kernel, reboot, version

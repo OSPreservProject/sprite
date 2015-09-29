@@ -1,0 +1,12 @@
+utlbFaultCount 125106
+utlbHitCount 119787
+modFaultCount 7513
+modHitCount 7510
+ktlbFaultCount 125482
+slowModCount 2447
+numInserts 11119
+numCollisions 1029
+numProbes 5842
+numFound 5266
+numHashFlushPID 116
+numHashFlushPIDLoop 2993

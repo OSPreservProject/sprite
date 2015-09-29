@@ -1,0 +1,105 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)signal.3c	6.4 (Berkeley) 5/20/86
+.\"
+.TH SIGNAL 3C "May 20, 1986"
+.UC 4
+.ie t .ds d \(dg
+.el .ds d \z'|+'
+.ie t .ds b \(bu
+.el .ds b @
+.SH NAME
+signal \- simplified software signal facilities
+.SH SYNOPSIS
+.nf
+.B #include <signal.h>
+.PP
+.B (*signal(sig, func))()
+.B int (*func)();
+.fi
+.SH DESCRIPTION
+.I Signal
+is a simplified interface to the more general
+.IR sigvec (2)
+facility.  See the \fIsigvec(2)\fR manual entry for complete
+details on how signals are handled.
+.PP
+If
+.I func
+is SIG_DFL, the default action
+for signal
+.I sig
+is reinstated.
+If
+.I func
+is SIG_IGN the signal is subsequently ignored
+and pending instances of the signal are discarded.
+Otherwise, when the signal occurs
+further occurrences of the signal are
+automatically blocked and
+.I func
+is called.
+.PP
+A return from the function unblocks
+the handled signal and
+continues the process at the point it was interrupted.
+\fBUnlike previous signal facilities, the handler \fIfunc\fP
+remains installed after a signal has been delivered.\fP
+.PP
+If a caught signal occurs
+during certain system calls, causing
+the call to terminate prematurely, the call
+is automatically restarted.
+In particular this can occur
+during a
+.I read
+or
+.IR write (2)
+on a slow device (such as a terminal; but not a file)
+and during a
+.IR wait (2).
+.PP
+The value of
+.I signal
+is the previous (or initial)
+value of
+.I func
+for the particular signal.
+.PP
+After a
+.IR fork (2)
+or
+.IR vfork (2)
+the child inherits
+all signals.
+.IR  Execve (2)
+resets all caught signals to the default action;
+ignored signals remain ignored.
+.SH "RETURN VALUE
+The previous action is returned on a successful call.
+Otherwise, \-1 is returned and 
+.I errno
+is set to indicate the error.
+.SH ERRORS
+.I Signal
+will fail and no action will take place if one of the
+following occur:
+.TP 15
+[EINVAL]
+.I Sig
+is not a valid signal number.
+.TP 15
+[EINVAL]
+An attempt is made to ignore or supply a handler for SIGKILL
+or SIGSTOP.
+.TP 15
+[EINVAL]
+An attempt is made to ignore SIGCONT (by default SIGCONT
+is ignored).
+.SH "SEE ALSO"
+kill(1),
+ptrace(2), kill(2),
+sigvec(2), sigblock(2), sigsetmask(2), sigpause(2),
+sigstack(2), setjmp(3), tty(4)

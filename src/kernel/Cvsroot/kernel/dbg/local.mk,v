@@ -1,0 +1,86 @@
+head     9.1;
+branch   ;
+access   ;
+symbols  ds3100:9.1 sun3:9.1 sun4nw:9.1 symm:9.1 spur:9.1 Summer89:9.0;
+locks    ; strict;
+comment  @@;
+
+
+9.1
+date     91.08.09.16.26.49;  author jhh;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.55.22;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     89.05.26.08.56.11;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.05.26.08.46.16;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.1
+log
+@Added -DKDBX flag to make dbx support optional.
+(Checked in by shirriff)
+@
+text
+@#
+# This file is included by Makefile.  Makefile is generated automatically
+# by mkmf, and this file provides additional local personalization.  The
+# variable SYSMAKEFILE is provided by Makefile;  it's a system Makefile
+# that must be included to set up various compilation stuff.
+#
+
+NOOPTIMIZATION	= no -O please
+
+#
+# Define this flag until kdbx is no longer needed.
+#
+
+#if !empty(TM:Mds5000) || !empty(TM:Mds3100)
+CFLAGS += -DKDBX
+#endif
+
+#include	<$(SYSMAKEFILE)>
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d10 8
+@
+
+
+1.2
+log
+@Changed mechanism for turning off optimization.
+@
+text
+@@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d8 2
+a9 1
+CFLAGS		= -g
+@

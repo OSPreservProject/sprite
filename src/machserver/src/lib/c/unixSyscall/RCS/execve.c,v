@@ -1,0 +1,184 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  srv030:1.4 srv028:1.4 srv027:1.4 srv026:1.4 srv024:1.4 srv022:1.4 srv021:1.4 srv019:1.4 srv018:1.4 srv016:1.4 srv014:1.4 srv010:1.3 srv008:1.3 srv007:1.3 srv006:1.3 srv005:1.3 srv004:1.3 srv003:1.3 srv002:1.3 srv001:1.3;
+locks    ; strict;
+comment  @ * @;
+
+
+1.4
+date     92.06.10.15.19.36;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     92.03.12.19.22.34;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.10.04.12.03.38;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.09.30.20.49.51;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.4
+log
+@Go through Proc_ExecEnv, rather than calling the MIG stub directly.
+@
+text
+@/* 
+ * execve.c --
+ *
+ *	Procedure to emulate the UNIX execve kernel call under Sprite.
+ *
+ * Copyright (C) 1986 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/lib/c/emulator/RCS/execve.c,v 1.3 92/03/12 19:22:34 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <proc.h>
+
+#include "compatInt.h"
+
+/*
+ * The variable below is a secret trap door that can be set
+ * to non-zero to force the next exec to put the process into
+ * the debugger before it executes its first instruction.
+ */
+
+int _execDebug = 0;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * execve --
+ *
+ *	Procedure to map from Unix execve system call to Sprite Proc_ExecEnv.
+ *
+ * Results:
+ *	execve() should never return.  If it does, however, UNIX_ERROR is
+ *	returned.
+ *
+ * Side effects:
+ *	Any open streams are closed, then the process invoking execve() is
+ *	terminated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+execve(name, argv, envp)
+    char *name;			/* name of file to exec */
+    char *argv[];		/* array of arguments */
+    char *envp[];		/* array of environment pointers */
+{
+    ReturnStatus status;	/* result returned by Sprite system calls  */
+
+    status = Proc_ExecEnv(name, argv, envp, _execDebug);
+
+    /*
+     * We should never reach this point, regardless of status value.
+     */
+
+    errno = Compat_MapCode(status);
+    return(UNIX_ERROR);
+}
+@
+
+
+1.3
+log
+@Add sigPending parameter to Sprite calls.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/lib/c/emulator/RCS/execve.c,v 1.2 91/10/04 12:03:38 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a20 2
+#include <mach.h>
+#include <mach/message.h>
+a21 4
+#include <spriteEmuInt.h>
+#include <spriteSrv.h>
+#include <status.h>
+#include <string.h>
+a58 2
+    kern_return_t kernStatus;
+    Boolean sigPending;
+d60 6
+a65 12
+    kernStatus = Proc_ExecEnvStub(SpriteEmu_ServerPort(), name,
+				  (mach_msg_type_number_t)strlen(name)+1,
+				  (vm_address_t)argv, (vm_address_t)envp,
+				  _execDebug, &status, &sigPending);
+
+    /* We should only get here if there was an error. */
+    if (kernStatus != KERN_SUCCESS) {
+	status = Utils_MapMachStatus(kernStatus);
+    }
+    if (sigPending) {
+	SpriteEmu_TakeSignals();
+    }
+@
+
+
+1.2
+log
+@Convert for use with Sprite server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/lib/c/emulator/RCS/execve.c,v 1.1 91/09/30 20:49:51 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d66 1
+d71 1
+a71 1
+				  _execDebug, &status);
+d76 3
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/unixSyscall/RCS/execve.c,v 1.2 88/10/28 08:58:01 ouster Exp $ SPRITE (Berkeley)";
+d20 8
+a27 2
+#include "sprite.h"
+#include "proc.h"
+d65 1
+d67 4
+a70 1
+    status = Proc_ExecEnv(name, argv, envp, _execDebug);
+d72 4
+a75 4
+    /*
+     * We should never reach this point, regardless of status value.
+     */
+
+@

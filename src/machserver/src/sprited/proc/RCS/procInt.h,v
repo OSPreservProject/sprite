@@ -1,0 +1,364 @@
+head     1.11;
+branch   ;
+access   ;
+symbols  srv030:1.11 srv028:1.11 srv027:1.11 srv026:1.11 srv024:1.11 srv022:1.11 srv021:1.11 srv019:1.11 srv018:1.11 srv016:1.11 srv015:1.11 srv014:1.11 srv012:1.11 srv011:1.11 srv010:1.11 srv008:1.11 srv007:1.11 srv006:1.11 srv005:1.11 srv004:1.11 srv003:1.10 srv002:1.10 srv001:1.10;
+locks    ; strict;
+comment  @ * @;
+
+
+1.11
+date     92.05.08.15.06.14;  author kupfer;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     92.03.12.17.36.47;  author kupfer;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     92.02.27.16.28.55;  author kupfer;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     92.01.21.16.04.51;  author kupfer;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     91.11.14.10.02.28;  author kupfer;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     91.09.23.14.19.50;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.09.02.22.53.58;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.09.01.21.02.54;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.08.19.12.17.10;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.08.15.14.42.57;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.07.19.15.27.44;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Internal declarations for proc module.
+@
+
+
+1.11
+log
+@Don't keep PCB locked so long during Proc_NewProc, and don't lock the
+parent at all.
+@
+text
+@/*
+ * procInt.h.h --
+ *
+ *	Declarations internal to the proc module.
+ *
+ * Copyright 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /user5/kupfer/spriteserver/src/sprited/proc/RCS/procInt.h,v 1.10 92/03/12 17:36:47 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+ */
+
+#ifndef _PROCINT
+#define _PROCINT
+
+#include <sprite.h>
+#include <spriteTime.h>
+#include <mach.h>
+
+#include <fs.h>
+#include <procMach.h>
+#include <procTypes.h>
+
+/*
+ * Information used by the Proc_Wait command for child termination information.
+ */
+
+typedef struct {
+    Proc_PID 			processID;
+    int 			termReason;
+    int 			termStatus;
+    int 			termCode;
+    int				numQuantumEnds;
+    int				numWaitEvents;
+    Time			kernelCpuUsage;
+    Time			userCpuUsage;
+    Time			childKernelCpuUsage;
+    Time			childUserCpuUsage;
+} ProcChildInfo;
+
+/* 
+ * This is the process table index for the main thread.
+ */
+#define PROC_MAIN_PROC_SLOT 0
+
+
+/*
+ * Procedures internal to the proc module.
+ */
+
+extern void		ProcExitInit _ARGS_((void));
+extern void 		ProcExitProcess _ARGS_((register 
+				Proc_ControlBlock *exitProcPtr, int reason, 
+				int status, int code, Boolean thisProcess));
+extern void 		ProcFamilyHashInit _ARGS_((void));
+extern void 		ProcDebugInit _ARGS_((void));
+extern void		ProcDebugWakeup _ARGS_((void));
+extern void 		ProcRecovInit _ARGS_((void));
+extern void 		ProcFamilyRemove _ARGS_((Proc_ControlBlock *procPtr));
+extern ReturnStatus 	ProcFamilyInsert _ARGS_((Proc_ControlBlock *procPtr, 
+				int familyID));
+extern	ReturnStatus	ProcChangeTimer _ARGS_((int timerType, 
+				Proc_TimerInterval *newTimerPtr,
+				Proc_TimerInterval *oldTimerPtr));
+extern	void		ProcDeleteTimers _ARGS_((Proc_LockedPCB *procPtr));
+extern  ReturnStatus	ProcRemoteWait _ARGS_((Proc_ControlBlock *procPtr,
+				int flags, int numPids, Proc_PID pidArray[],
+				ProcChildInfo *childInfoPtr));
+#ifdef SPRITED_MIGRATION
+extern	ReturnStatus	ProcRemoteFork
+				_ARGS_((Proc_ControlBlock *parentProcPtr,
+				Proc_ControlBlock *childProcPtr));
+#else
+#define ProcRemoteFork(a, b)	(FAILURE)
+#endif
+extern void 		ProcInitMainEnviron
+    				_ARGS_((Proc_ControlBlock *procPtr));
+extern void 		ProcSetupEnviron _ARGS_((Proc_ControlBlock *procPtr));
+extern void 		ProcDecEnvironRefCount _ARGS_((
+				Proc_EnvironInfo *environPtr));
+extern	void		ProcAddToGroupList _ARGS_((Proc_LockedPCB *procPtr,
+				int gid));
+extern	void		ProcInitTable _ARGS_((void));
+extern	Proc_LockedPCB	*ProcGetUnusedPCB _ARGS_((void));
+extern	void		ProcFreePCB _ARGS_((Proc_LockedPCB *procPtr));
+extern	int		ProcTableMatch _ARGS_((unsigned int maxPids,
+				Boolean (*booleanFuncPtr)
+					(Proc_ControlBlock *pcbPtr),
+				Proc_PID *pidArray));
+extern 	int		ProcGetObjInfo _ARGS_((Fs_Stream *filePtr,
+				ProcExecHeader *execPtr,
+				Proc_ObjInfo *objInfoPtr));
+
+extern void		ProcDestroyServicePort _ARGS_((mach_port_t *portPtr));
+extern void		ProcFreeTaskThread _ARGS_((
+				Proc_LockedPCB *procPtr));
+extern void		ProcKillThread _ARGS_((Proc_LockedPCB *procPtr));
+extern mach_port_t	ProcMakeServicePort _ARGS_((mach_port_t name));
+extern ReturnStatus	ProcMakeTaskThread _ARGS_((Proc_ControlBlock *procPtr,
+				Proc_ControlBlock *parentProcPtr));
+extern ProcTaskInfo	*ProcNewTaskInfo _ARGS_((void));
+extern void		ProcReleaseTaskInfo _ARGS_((
+				Proc_LockedPCB *procPtr));
+extern void		ProcTaskThreadInit _ARGS_((void));
+
+#endif /* _PROCINT */
+@
+
+
+1.10
+log
+@Enable interval timers.
+@
+text
+@d15 1
+a15 1
+ * $Header: /user5/kupfer/spriteserver/src/sprited/proc/RCS/procInt.h,v 1.9 92/02/27 16:28:55 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d104 2
+a105 2
+extern ReturnStatus	ProcMakeTaskThread _ARGS_((Proc_LockedPCB *procPtr,
+				Proc_LockedPCB *parentProcPtr));
+@
+
+
+1.9
+log
+@Snapshot.  Can kill, suspend, and resume processes.
+@
+text
+@d15 1
+a15 1
+ * $Header: /user5/kupfer/spriteserver/src/sprited/proc/RCS/procInt.h,v 1.8 92/01/21 16:04:51 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d67 4
+@
+
+
+1.8
+log
+@Change VM code to use Sprite FS instead of UNIX.  Add
+ProcTaskThreadInit.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/proc/RCS/procInt.h,v 1.7 91/11/14 10:02:28 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d101 1
+a101 1
+				Proc_ControlBlock *parentProcPtr));
+@
+
+
+1.7
+log
+@Snapshot. net, rpc, recov modules added.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/proc/RCS/procInt.h,v 1.6 91/09/23 14:19:50 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d25 1
+a27 1
+#include <tempFs.h>
+d91 1
+a91 1
+extern 	int		ProcGetObjInfo _ARGS_((TempFs_Stream *filePtr,
+d105 1
+@
+
+
+1.6
+log
+@Snapshot.  Server is multithreaded internally.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/proc/RCS/procInt.h,v 1.5 91/09/02 22:53:58 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d87 1
+a87 1
+extern	int		ProcTableMatch _ARGS_((int maxPids,
+@
+
+
+1.5
+log
+@Changes for module-based source organization.
+@
+text
+@d15 1
+a15 1
+ * $Header: /user6/kupfer/spriteserver/src/sprited/proc/RCS/procInt.h,v 1.4 91/09/01 21:02:54 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d22 1
+d29 22
+a50 1
+/* constants */
+d52 39
+a90 1
+extern void ProcDestroyServicePort _ARGS_((mach_port_t *portPtr));
+d94 11
+a104 6
+extern	Proc_ControlBlock *ProcGetUnusedPCB _ARGS_((void));
+extern	void		ProcInitTable _ARGS_((void));
+extern mach_port_t ProcMakeServicePort _ARGS_((Proc_ControlBlock *procPtr,
+					       mach_port_t name));
+extern ProcTaskInfo *ProcNewTaskInfo _ARGS_((void));
+extern ProcTaskInfo *ProcReleaseTaskInfo _ARGS_((ProcTaskInfo *taskInfoPtr));
+@
+
+
+1.4
+log
+@Snapshot.  Full VM support.
+@
+text
+@d15 1
+a15 1
+ * $Header: /user6/kupfer/spriteserver/src/printfd/RCS/procInt.h,v 1.3 91/08/19 12:17:10 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d23 4
+a26 3
+#include "procMach.h"
+#include "procTypes.h"
+#include "tempFs.h"
+@
+
+
+1.3
+log
+@Snapshot: Code reorg. and locking for processes & segments.
+@
+text
+@d15 1
+a15 1
+ * $Header: /user6/kupfer/spriteserver/src/printfd/RCS/procInt.h,v 1.2 91/08/15 14:42:57 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+a28 17
+/*
+ * Machine independent object file information.
+ */
+typedef struct {
+    Address	codeLoadAddr;	/* Address in user memory to load code. */
+    unsigned	codeFileOffset;	/* Offset in obj file to load code from.*/
+    unsigned	codeSize;	/* Size of code segment. */
+    Address	heapLoadAddr;	/* Address in user memory to load heap. */
+    unsigned	heapFileOffset;	/* Offset in obj file to load initialized heap
+				 * from . */
+    unsigned	heapSize;	/* Size of heap segment. */
+    Address	bssLoadAddr;	/* Address in user memory to load bss. */
+    unsigned	bssSize;	/* Size of bss segment. */
+    Address	entry;		/* Entry point to start execution. */
+    Boolean	unixCompat;	/* True if running unix compat. mode */
+} ProcObjInfo;
+
+d32 1
+a32 1
+				ProcObjInfo *objInfoPtr));
+@
+
+
+1.2
+log
+@Snapshot.  Read-write mapped files work.
+@
+text
+@d15 1
+a15 1
+ * $Header: /user6/kupfer/spriteserver/src/printfd/RCS/procInt.h,v 1.1 91/07/19 15:27:44 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d21 2
+d24 2
+d46 1
+d50 6
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.7 91/02/09 13:24:52 ouster Exp $ SPRITE (Berkeley)
+d42 1
+a42 1
+extern 	int		ProcGetObjInfo _ARGS_((Fs_Stream *filePtr,
+@

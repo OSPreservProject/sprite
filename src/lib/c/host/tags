@@ -1,0 +1,8 @@
+Host_ByID	Host_ByID.c	/^Host_ByID(id)$/
+Host_ByInetAddr	Host_ByInetAddr.c	/^Host_ByInetAddr(inetAddr)$/
+Host_ByName	Host_ByName.c	/^Host_ByName(name)$/
+Host_ByNetAddr	Host_ByNetAddr.c	/^Host_ByNetAddr(addrType, addrPtr)$/
+Host_End	Host_End.c	/^Host_End()$/
+Host_Next	Host_Next.c	/^Host_Next()$/
+Host_SetFile	Host_SetFile.c	/^Host_SetFile(fileName)$/
+Host_Start	Host_Start.c	/^Host_Start()$/

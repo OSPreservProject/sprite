@@ -1,0 +1,100 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  srv030:1.1 srv028:1.1 srv027:1.1 srv026:1.1 srv024:1.1 srv022:1.1 srv021:1.1 srv019:1.1 srv018:1.1 srv016:1.1 srv015:1.1 srv014:1.1 srv012:1.1 srv011:1.1 srv010:1.1 srv008:1.1 srv007:1.1 srv006:1.1 srv005:1.1 srv004:1.1 srv003:1.1 srv002:1.1 srv001:1.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     91.11.14.10.17.46;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Declarations for random DECstation support.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/*
+ * utilsMach.h --
+ *
+ *	Declarations for random DECstation-dependent stuff.
+ *
+ * Copyright 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /r3/kupfer/spriteserver/src/sprited/utils/sun3.md/RCS/utilsMach.h,v 1.4 91/09/04 15:29:36 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+ */
+
+#ifndef _UTILSMACH
+#define _UTILSMACH
+
+#include <sprite.h>
+
+extern Address UtilsMach_GetPC();
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UtilsMach_GetCallerPC --
+ *
+ *	Supposed to return the PC of the caller of the current routine.
+ *	The MIPS machines don't have a frame pointer, so punt.
+ *
+ * Results:
+ *	Returns 0.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#define UtilsMach_GetCallerPC() 	0
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UtilsMach_Delay --
+ *
+ *	Delay for N microseconds.  This is currently the same for both the 
+ *	ds3100 and ds5000.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+    
+#define	UtilsMach_Delay(n) \
+	{ register int N = (n) * 6; while (N > 0) {N--;} }
+
+/* 
+ * The cc 1.31 optimizer for the DECstation optimizes away static functions 
+ * that are passed to Proc_NewProc, unless the function is preceded by the 
+ * following cast, which protects it.
+ */
+
+#define UTILSMACH_MAGIC_CAST	(unsigned)(void (*)())
+
+#endif /* _UTILSMACH */
+@

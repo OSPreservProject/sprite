@@ -1,0 +1,76 @@
+
+
+     TCL PACKAGE LIBRARIES
+          Package libraries work like autoload, except that a package
+          library file can contain multiple independent Tcl packages.
+          A package is a collection of related Tcl procedures.
+
+          The package library file is just a regular Unix text file,
+          editable with your favorite text editor, containing packages
+          of Tcl source code. The package library file name must have
+          the suffix .tlib.  An index file with the suffix created by
+          Tcl whenever it is out of date.
+
+          The start of a package is delimited by:
+
+               #@package: package_name proc1 [..procN]
+
+          These lines must start in column one.  Everything between
+          the #@package: keyword and the next #@package: keyword or a
+          #@packend keyword, or the end of the file, becomes part of
+          the named package. The specified procedures, proc1..procN,
+          are the entry points of the package.  When a command named
+          in a package specification is executed and detected as an
+          unknown command, all code in the specified package will be
+          sourced.  This package should define all of the procedures
+          named on the package line, define any support procedures
+          required by the package and do any package-specific
+          initialization.  The #@packend keyword is useful to make
+          sure only the minimum required section of code is sourced.
+          Thus for example a large comment block at the beginning of
+          the next file won't be loaded.
+
+          Care should be taken in defining package_name, as the first
+          package found in the path by with a given name is loaded.
+          This can be useful in developing new version of packages
+          installed on the system.
+
+          For example, in a package source file, the presence of the
+          following line:
+
+               #@package: directory_stack pushd popd dirs
+
+          says that the text lines following that line in the package
+          file up to the next package line or the end of the file is a
+          package named directory_stack and that an attempt to execute
+          either pushd, popd or dirs when the routine is not already
+          defined will cause the directory_stack portion of the
+          package file to be loaded.
+
+        PACKAGE INDEX FILES
+          A package library file has associated with it an index file
+          called a .tndx file.  The .tndx file contains the names of
+          the packages in the .tlib file, their addresses and lengths
+          within the .tlib file and the names of the functions that
+          are to cause the various packages to be autoloaded when an
+          attempt is made to execute them.
+
+          The first time Tcl tries to execute a procedure where the
+          procedure doesn't exist and isn't an autoload, Tcl will
+          search along TCLPATH looking for any files ending in .tlib.
+          For each one it finds, it checks to see if there is a
+          corresponding file in the same directory ending in .tndx.
+          If the .tndx file doesn't exist, or if its date of last
+          modification is older than that of the .tlib file, the .tndx
+          is automatically (re)generated if possible.  If Tcl can't
+          regenerate the file (most likely due to file or directory
+          permission problems), an error occurs.  A .tndx file may
+          also be explicitly built with the buildpackageindex
+          procedure.
+
+          Demand loading is also supported from indexes build by the
+          mkindex.tcl program, supplied with standard Tcl.  However,
+          init.tcl is not loaded.  Note that the info library command
+          is not used to locate libraries by this shell; the TCLPATH
+          variable is set by the default file and is used to locate
+          the libraries.

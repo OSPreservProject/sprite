@@ -1,0 +1,68 @@
+
+
+
+PRINTENV                  User Commands                  PRINTENV
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     printenv - Print out values of environment variables.
+
+SSYYNNOOPPSSIISS
+     pprriinntteennvv [ nnaammee ]
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This program prints out the names and values of all environ-
+     ment  variables  that are currently defined, in alphabetical
+     order.  If a name is specified, only the value of the speci-
+     fied environment variable is returned.
+
+
+KKEEYYWWOORRDDSS
+     environment, print, variable
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  January 18, 1990                   1
+
+
+

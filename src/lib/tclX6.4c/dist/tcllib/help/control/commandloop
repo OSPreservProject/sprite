@@ -1,0 +1,22 @@
+
+
+          commandloop [prompt] [prompt2]
+               Create an interactive command loop for the current TCL
+               interpreter.  This command receives commands from stdin
+               and executes them.  It is useful TCL scripts that do
+               not normally converse interactively with a user through
+               a Tcl command interpreter, but which sometimes want to
+               enter this mode.
+
+               Prompt is a Tcl command string that is evaluated to
+               determine the text of the prompt string.  Prompt2 is a
+               command string that is evaluated to determine the
+               ``downlevel prompt'', which is the prompt which is
+               issued for continuation input.  When the command
+               terminates, the variables for the prompt hooks will be
+               set to their old value.  If these arguments are not
+               specified, the prompt hooks use their current value.
+               Prompt hooks are TCL code that return as their result
+               the prompt to output.  The result of the last command
+               executed in the command string (which may be a return)
+               will be used as the prompt.

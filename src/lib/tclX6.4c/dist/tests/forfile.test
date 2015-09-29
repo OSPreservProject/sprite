@@ -1,0 +1,44 @@
+#
+# forfile.test
+#
+# Tests for tcl.tlib for_file routine.
+#---------------------------------------------------------------------------
+# Copyright 1992 Karl Lehenbauer and Mark Diekhans.
+#
+# Permission to use, copy, modify, and distribute this software and its
+# documentation for any purpose and without fee is hereby granted, provided
+# that the above copyright notice appear in all copies.  Karl Lehenbauer and
+# Mark Diekhans make no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without express or
+# implied warranty.
+#------------------------------------------------------------------------------
+# $Id: forfile.test,v 2.0 1992/10/16 04:49:49 markd Rel $
+#------------------------------------------------------------------------------
+#
+
+if {[info procs test] == ""} then {source testlib.tcl}
+
+rename SAVED_UNKNOWN unknown
+
+set outfp [open FORFILE.TMP w]
+puts $outfp line1
+puts $outfp line2
+puts $outfp line3
+close $outfp
+unset outfp
+
+test for_file-1.1 {for_file command} {
+    for_file line FORFILE.TMP {lappend result $line}
+    list $result
+} {{line1 line2 line3}}
+
+test for_file-1.2 {errors in for_file command} {
+    string tolower [list [catch {for_file line _non_existent_ {echo $line}} \
+       msg] $msg $errorCode]
+} {1 {couldn't open "_non_existent_": no such file or directory} \
+{unix enoent {no such file or directory}}}
+
+catch {unlink FORFILE.TMP}
+
+unset result
+rename unknown SAVED_UNKNOWN

@@ -1,0 +1,30 @@
+
+
+		Gremlin  to  PostScript  Converter
+		----------------------------------
+
+     This program converts a gremlin file (produced by the original
+version that runs on the AED displays or the newer version for the
+Sun workstation) into a PostScript file which can be printed on
+printers which support this page description language, such as the
+Apple LaserWriter.
+
+     The code in gr2ps.c was written by John Coker, and is copyrighted
+by the Regents of the University of California.  Distribution and use of
+this code is subject to licensing restrictions.
+
+     The code in curve.c comes from the original Gremlin source and
+was modified by Peehong Chen for this program.  This code is protected
+by the Berkeley UNIX license agreement as well as the protections
+for the author mentioned above.
+
+     See the file PSinTeX for a description of how this software can
+be used for PS illustrations in TeX documents and SCALING for a start
+at semi-automatic placement of the figures.
+
+
+				John Coker
+				john@renoir.Berkeley.EDU
+
+				Peehong Chen
+				phc@renoir.Berkeley.EDU

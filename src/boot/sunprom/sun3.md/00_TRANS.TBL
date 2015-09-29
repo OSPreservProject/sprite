@@ -1,0 +1,15 @@
+F DEPENDEN.MK;1                     	dependencies.mk
+F DEVCONFI.STR;1                    	devConfig.c.strip
+F DEVFSOPT.C;1                      	devFsOpTable.c
+F MACHMON.H;1                       	machMon.h
+F MD.MK;1                           	md.mk
+D RCS                               	RCS
+F SCSIDISK.;1                       	scsiDiskBoot
+F SCSIDISK.NM;1                     	scsiDiskBoot.new.nm
+F SCSIDISK.SCS;1                    	scsiDiskBoot.scsi3_onboard
+F START.S;1                         	start.s
+F SUNPROM.;1                        	sunprom
+F SUNPROM.OK;1                      	sunprom.ok
+F VM.C;1                            	vm.c
+L VMMACHIN.H;1                      	vmMachInt.h	../../../kernel/vm/sun3.md/vmMachInt.h
+F VMSUNASM.S;1                      	vmSunAsm.s

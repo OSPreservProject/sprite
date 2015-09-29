@@ -1,0 +1,172 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     92.03.27.13.37.07;  author rab;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.09.11.14.18.33;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.09.06.16.08.42;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@frexp math routine: express the argument as a multiplier and a power of
+two.
+@
+
+
+1.3
+log
+@Fixed some lint errors.
+@
+text
+@/* 
+ * frexp.c --
+ *
+ *	frexp math routine..
+ *
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/etc/RCS/frexp.c,v 1.2 90/09/11 14:18:33 kupfer Exp Locker: rab $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <math.h>
+
+/* 
+ * math.h provides inline definitions for using the 68881 coprocessor 
+ * on a sun3.  frexp is one of the functions that gets inlined.
+ */
+
+#if defined(__STDC__) && defined(sun3) && !defined(__STRICT_ANSI__) \
+  && !defined(__SOFT_FLOAT__)
+
+/* use the inline definition */
+
+#else
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * frexp --
+ *
+ *	Describe the given argument as two numbers, x and i, where 
+ *	arg = x * (2**i).
+ *
+ * Results:
+ *	Returns the multiplier "x", which is always less than 1.0 in 
+ *	absolute value.
+ *
+ * Side effects:
+ *	Stores the integer exponent "i" at the address pointed to.
+ *
+ *----------------------------------------------------------------------
+ */
+
+double
+frexp(x, i)
+    double x;
+    int *i;
+{
+    int neg, j;
+
+    j = 0;
+    neg = 0;
+    if (x < 0) {
+	x = -x;
+	neg = 1;
+    }
+    if (x > 1.0) {
+	while (x > 1) {
+	    ++j;
+	    x /= 2;
+	}
+    } else if (x < 0.5) {
+	while(x < 0.5) {
+	    --j;
+	    x *= 2;
+	}
+    }
+    *i = j;
+    return neg ? -x : x;
+}
+
+#endif /* inline test */
+@
+
+
+1.2
+log
+@Fix comments, add rcsid. Don't compile if using coprocessor.
+@
+text
+@d9 1
+a9 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.3 90/01/12 12:03:36 douglis Exp $ SPRITE (Berkeley)";
+d44 1
+a44 1
+    
+d47 2
+a48 2
+        double x;
+        int *i;
+d50 1
+a50 1
+        int neg, j;
+d52 19
+a70 20
+        j = 0;
+        neg = 0;
+        if (x<0) {
+                x = -x;
+                neg = 1;
+        }
+        if (x>1.0)
+                while (x>1) {
+                        j = j+1;
+                        x = x/2;
+                }
+        else if (x<0.5)
+                while(x<0.5) {
+                        j = j-1;
+                        x = 2*x;
+                }
+        *i = j;
+        if(neg)
+                x = -x;
+        return (x);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 17
+d19 8
+d28 15
+a42 6
+ * the call
+ *      x = frexp(arg,&exp);
+ * must return a double fp quantity x which is <1.0
+ * and the corresponding binary exponent "exp".
+ * such that
+ *      arg = x*2^exp
+d44 1
+d73 2
+@

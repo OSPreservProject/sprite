@@ -1,0 +1,519 @@
+\def\@fmtname{lplain}% FONT-CUSTOMIZING
+\newfam\amssyfam	% the Y series of AMS fonts
+\iffalse		% change to \ifx\fmtname\@fmtname if you have them
+	\gdef\amssy{\protect\pamssy} % \amssy will change font just like \bf
+	\def\@addto#1#2{\ifx#1\undefined % do nothing
+	    		\else	\toks0=\expandafter{#1}\toks1={#2}%
+				\global\edef#1{\the\toks0 \the\toks1 }\fi}
+	\@addto\vpt{\def\pamssy{\@getfont\pamssy\amssyfam\@vpt{msym5}}}
+	\@addto\vpt{\def\pamssy{\@getfont\pamssy\amssyfam\@vpt{msym5}}}
+	\@addto\vipt{\def\pamssy{\@getfont\pamssy\amssyfam\@vipt{msym6}}}
+	\@addto\viipt{\def\pamssy{\@getfont\pamssy\amssyfam\@viipt{msym7}}}
+	\@addto\viiipt{\def\pamssy{\@getfont\pamssy\amssyfam\@viiipt{msym8}}}
+	\@addto\ixpt{\def\pamssy{\@getfont\pamssy\amssyfam\@ixpt{msym9}}}
+	\@addto\xpt{\def\pamssy{\@getfont\pamssy\amssyfam\@xpt{msym10}}}
+	\@addto\xipt{\def\pamssy{\@getfont\pamssy\amssyfam\@xipt{msym10\@halfmag}}}
+	\@addto\xiipt{\def\pamssy
+		{\@getfont\pamssy\amssyfam\@xiipt{msym10\@magscale1}}}
+	\@addto\xivpt{\def\pamssy
+		{\@getfont\pamssy\amssyfam\@xivpt{msym10\@magscale2}}}
+	\@addto\xviipt{\def\pamssy
+		{\@getfont\pamssy\amssyfam\@xviipt{msym10\@magscale3}}}
+	\@addto\xxpt{\def\pamssy{\@getfont\pamssy\amssyfam\@xxpt{msym10\@magscale4}}}
+	\@addto\xxvpt{\def\pamssy
+		{\@getfont\pamssy\amssyfam\@xxvpt{msym10\@magscale5}}}
+\else
+	\global\let\amssy=\bf
+\fi
+\newenvironment{vdm}{\@beginvdm}{\@endvdm}
+\def\@beginvdm{\@changeMathmodeCatcodes}
+\def\@endvdm{\global\everypar={{\setbox0=\lastbox}%
+			\global\everypar={}%
+			\global\let\par=\@@par}
+	\global\let\par=\@undonoindent}
+\def\@undonoindent{\global\everypar={}\global\let\par=\@@par\@@par}
+\def\@beginVerticalVDM{\@changeLeftMargin\@changeBaselineskip}
+\newcount\@mathFamily  \@mathFamily=\itfam
+\everymath=\expandafter{\the\everymath\fam\@mathFamily
+	\@changeMathmodeCatcodes}
+\everydisplay=\expandafter{\the\everydisplay\fam\@mathFamily
+	\@changeMathmodeCatcodes}
+\mathcode`\0="0030
+\mathcode`\1="0031
+\mathcode`\2="0032
+\mathcode`\3="0033
+\mathcode`\4="0034
+\mathcode`\5="0035
+\mathcode`\6="0036
+\mathcode`\7="0037
+\mathcode`\8="0038
+\mathcode`\9="0039
+\def\defaultMathcodes{\@mathFamily=-1}
+\def\@changeOtherMathcodes{%
+	\mathcode`\:="603A
+	\mathcode`\-="042D
+	\mathcode`\|="326A
+	\mathchardef\Or="325F % this is a rel to get 5mu spacing
+}
+\def\@VDMunderscore{\leavevmode\kern.06em
+	\vbox{\hrule height.2ex width.3em}\hskip0.1em}
+{\catcode`\_=\active \catcode`\"=\active
+\gdef\@changeGlobalCatcodes{% make _ a normal char
+	\catcode`\_=\active \let_=\@VDMunderscore}
+\gdef\@changeMathmodeCatcodes{% make ~ mean \hook, " do text, @ mean subscript
+	\let~=\hook
+	\catcode`\@=8
+	\catcode`\"=\active  \let"=\@mathText}
+\gdef\underscoreoff{% make _ a normal char
+	\catcode`\_=\active \let_=\@VDMunderscore}
+\gdef\underscoreon{% restore underscore to usual meaning
+	\catcode`\_=8}
+\gdef\@mathText#1"{\hbox{\mathTextFont #1\/}}}
+\def\mathTextFont{\rm}
+\newdimen\VDMindent \VDMindent=\parindent
+\def\VDMbaselineskip{\baselineskip}
+\def\@changeLeftMargin{\leftskip=\VDMindent}
+\def\@changeBaselineskip{\baselineskip=\VDMbaselineskip}
+\ifx\fmtname\@fmtname
+	\def\keywordFontBeginSequence{\small\sf}%	user-definable
+\else
+	\def\keywordFontBeginSequence{\bf}%	good for SliTeX
+\fi
+\def\kw#1{\hbox{\keywordFontBeginSequence #1\/}}
+\def\makeNewKeyword#1#2{%
+	\newcommand{#1}{\hbox{\keywordFontBeginSequence #2\/}}}
+\makeNewKeyword{\nil}{nil}
+\makeNewKeyword{\True}{true}
+\makeNewKeyword{\true}{true}
+\makeNewKeyword{\False}{false}
+\makeNewKeyword{\false}{false}
+\def\where{\par\moveright\VDMindent\hbox{\keywordFontBeginSequence where\/}}
+\def\newMonadicOperator#1#2{\newcommand{#1}{\kw{#2\kern.16667em}\nobreak}}
+\def\Bool{\hbox{\amssy B\/}}
+\def\Nat{\hbox{\amssy N\/}}
+\def\Nati{\hbox{$\hbox{\amssy N}_1$}}
+\let\Natone=\Nati % just for an alternative
+\def\Int{\hbox{\amssy Z\/}}
+\def\Real{\hbox{\amssy R\/}}
+\def\Rat{\hbox{\amssy Q\/}}
+\newenvironment{op}{\@beginVDMoperation}{\@endVDMoperation}
+\newenvironment{vdmop}{\@beginvdm\@beginVDMoperation}%
+	{\@endVDMoperation\@endvdm}
+\newbox\@operationNameBox
+\newif\ifArgumentListEncountered@
+\newtoks\@argumentListTokens
+\newtoks\@resultNameAndTypeTokens
+\newbox\@externalsBox
+\newbox\@preConditionBox
+\newbox\@postConditionBox
+\def\@beginVDMoperation{% clear temporaries, deal with optional arg
+	\setbox\@operationNameBox=\hbox{}
+	\@argumentListTokens={} \ArgumentListEncountered@false
+	\@resultNameAndTypeTokens={}
+	\setbox\@externalsBox=\box\voidb@x
+	\setbox\@preConditionBox=\box\voidb@x
+	\setbox\@postConditionBox=\box\voidb@x
+	\vskip\preOperationSkip
+	\@beginVerticalVDM
+	\bgroup
+	\advance\hsize by-\leftskip \leftskip=0pt %for inner constructions
+	\preOperationHook
+	\@ifnextchar [{\@opname}{}}
+\newcount\preOperationPenalty \preOperationPenalty=0
+\newcount\preExternalPenalty \preExternalPenalty=2000
+\newcount\prePreConditionPenalty \prePreConditionPenalty=800
+\newcount\prePostConditionPenalty \prePostConditionPenalty=500
+\newcount\postOperationPenalty \postOperationPenalty=-500
+\newskip\preOperationSkip \preOperationSkip=2ex plus 0.5ex minus 0.2ex
+\newskip\postOperationSkip \postOperationSkip=2ex plus 0.5ex minus 0.2ex
+\newskip\postHeaderSkip \postHeaderSkip=.5ex plus .2ex minus .2ex
+\newskip\postExternalsSkip \postExternalsSkip=.5ex plus .2ex minus .2ex
+\newskip\postPreConditionSkip \postPreConditionSkip=.5ex plus .2ex minus .2ex
+\def\@endVDMoperation{% make up operation
+	\@setOperationHeader
+	\egroup % matches the \bgroup in \@beginVDMoperation
+	\vskip\postHeaderSkip
+	\betweenHeaderAndExternalsHook
+	\ifvoid\@externalsBox
+	\else \moveright\VDMindent\box\@externalsBox
+	      \vskip\postExternalsSkip
+	\fi
+	\betweenExternalsAndPreConditionHook
+	\ifvoid\@preConditionBox
+	\else \moveright\VDMindent\box\@preConditionBox
+	      \vskip\postPreConditionSkip
+	\fi
+	\betweenPreAndPostConditionHook
+	\ifvoid\@postConditionBox
+	\else \moveright\VDMindent\box\@postConditionBox
+	      \vskip\postOperationSkip
+	\fi
+	\postOperationHook}
+\def\preOperationHook{\penalty\preOperationPenalty }
+\def\betweenHeaderAndExternalsHook{\penalty\preExternalPenalty }
+\def\betweenExternalsAndPreConditionHook{\penalty\prePreConditionPenalty }
+\def\betweenPreAndPostConditionHook{\penalty\prePostConditionPenalty }
+\def\postOperationHook{\penalty\postOperationPenalty }
+\def\@setOperationHeader{%
+	\ifArgumentListEncountered@
+		\setbox\@operationNameBox=
+			\hbox{\unhbox\@operationNameBox\ (}\fi
+	\dimen255=\hsize \advance\dimen255 by-\wd\@operationNameBox
+ 	\noindent\kern-.05em\box\@operationNameBox
+	\vtop{\@raggedRight \hsize=\dimen255 \noindent
+		$\ifArgumentListEncountered@\the\@argumentListTokens)\fi
+		\ \the\@resultNameAndTypeTokens$}}
+\def\opname#1{\@opname[#1]}
+\def\@opname[#1]{\setbox\@operationNameBox=\hbox{$\relax#1$\ }}
+\def\args{\ArgumentListEncountered@true\@argumentListTokens=}
+\def\res{\@resultNameAndTypeTokens=}
+\newenvironment{externals}{\@beginExternals}{\@endExternals}
+\def\ext{\bgroup\@makeColonActive\@ext}
+\def\@ext#1{\@beginExternals#1\@endExternals\egroup}
+\def\@beginExternals{\global\setbox\@externalsBox=%
+	\@beginIndentedPara{\hsize}{ext }{\@setUpExternals}}
+\def\@endExternals{\@endIndentedPara{\@endAlignment}}
+\def\@setUpExternals{\@makeColonActive
+	\@changeLineSeparator\@beginAlignment}
+{\catcode`\:=\active
+ \gdef\@makeColonActive{\catcode`\:=\active \let:=&}}
+\def\@changeLineSeparator{\let\\=\cr} % for usr within \halign
+\def\@beginAlignment{\expandafter\halign\expandafter\bgroup
+	\the\@extAlign\strut\enspace&:\enspace$##$\hfil\cr}
+\def\@endAlignment{\crcr\egroup}
+\newtoks\@extAlign
+\def\leftExternals{\@extAlign={$##$\hfil}}
+\def\rightExternals{\@extAlign={\hfil$##$}}
+\leftExternals
+\makeNewKeyword{\Rd}{rd } \makeNewKeyword{\Wr}{wr }
+\newenvironment{precond}{\@beginPre}{\@endPre}
+\def\pre#1{\@beginPre#1\@endPre}
+\def\@beginPre{\global\setbox\@preConditionBox=%
+	\@beginMathIndentedPara{\hsize}{pre }}
+\def\@endPre{\@endMathIndentedPara}
+\newenvironment{postcond}{\@beginPost}{\@endPost}
+\def\post#1{\@beginPost#1\@endPost}
+\def\@beginPost{\global\setbox\@postConditionBox=%
+	\@beginMathIndentedPara{\hsize}{post }}
+\def\@endPost{\@endMathIndentedPara}
+\def\@beginIndentedPara#1#2#3{\hbox to #1\bgroup \setbox0=\kw{#2}%
+	\copy0 \strut \vtop\bgroup \advance\hsize by -\wd0 #3}
+\def\@endIndentedPara#1{\strut#1\egroup\hss\egroup}
+\def\@raggedRight{\rightskip=0pt plus 1fil \@setUpPenalties}
+\def\@beginMathIndentedPara#1#2{\@beginIndentedPara{#1}{#2}%
+	{\@raggedRight\noindent$\relax}}
+\def\@endMathIndentedPara{\@endIndentedPara{\relax$}}
+\def\@setUpPenalties{\hyphenpenalty=-100 \linepenalty=200
+	\binoppenalty=10000 \relpenalty=10000 \pretolerance=-1}
+\def\@belowAndIndent#1#2{% place body in a separate box below and to the right
+	#1\hfil\break
+	\@beginMathIndentedPara{\hsize}{\qquad}#2\@endMathIndentedPara}
+\def\If#1\Then#2\Else#3\Fi{\vtop{%
+	\@beginMathIndentedPara{0pt}{if }#1\@endMathIndentedPara
+	\@beginMathIndentedPara{0pt}{then }#2\@endMathIndentedPara
+	\@beginMathIndentedPara{0pt}{else }#3\@endMathIndentedPara}}
+\def\SIf#1\Then#2\Else#3\Fi{\hbox to 0pt{\vtop{\@raggedRight\noindent$%
+	\kw{if }\nobreak#1\hskip 0.5em\penalty0
+	\kw{then }\nobreak#2\hskip 0.5em\penalty-100 % break here OK
+	\kw{else }\nobreak#3$}\hss}\hfil\break}
+\def\Let#1\In{\vtop{%
+	\@beginMathIndentedPara{0pt}{let }#1\hskip 0.5em
+	\kw{in}\@endMathIndentedPara}\hfil\break}
+\def\SLet#1\In#2{\hbox to 0pt{\vtop{\noindent$\kw{let }\nobreak#1\hskip 0.5em
+	\kw{in }\penalty-200 #2\relax$}\hss}\hfil\break}
+\newif\ifOtherwiseEncountered@
+\newtoks\@OtherwiseTokens
+\def\Cases#1{\hbox to 0pt\bgroup \vtop\bgroup
+		\@beginMathIndentedPara{\hsize}{cases }\strut
+			#1\hskip 0.5em\strut\kw{of}%
+		\@endMathIndentedPara
+		\bgroup % we might be in a nested case, so we have to
+		\OtherwiseEncountered@false \@changeLineSeparator 
+		\@beginCasesAlignment}
+\newtoks\@casesDef
+\def\leftCases{\@casesDef={$##$\hfil}}
+\def\rightCases{\@casesDef={\hfil$##$}}
+\rightCases
+\def\@beginCasesAlignment{\expandafter\halign\expandafter\bgroup
+	\the\@casesDef&$\,\rightarrow##$\hfil\cr}
+\def\Otherwise{\global\OtherwiseEncountered@true \global\@OtherwiseTokens=}
+\def\Endcases{\@endCasesAlignment \@setOtherwise \egroup \@setEndcases}
+\def\@endCasesAlignment{\crcr\egroup}
+\def\@setOtherwise{\ifOtherwiseEncountered@ % have an otherwise clause
+	\@beginMathIndentedPara{\hsize}{otherwise }%
+	\strut\the\@OtherwiseTokens\strut
+	\@endMathIndentedPara
+	\fi}
+\def\@setEndcases{\noindent
+	\strut\kw{end}\@ifnextchar [{\@unbracket}{\@finalCaseEnd}}
+\def\@unbracket[#1]{$#1$\@finalCaseEnd}
+\def\@finalCaseEnd{\egroup\hss\egroup\hfil\break}
+\def\DEF{\raise.5ex
+	\hbox{\footnotesize\underline{$\cal4$}}}% \cal4 is a \triangle
+\let\x=\times
+\def\Iff{\penalty-50\mskip 7mu plus 2mu minus 2mu
+	\Leftrightarrow\mskip 7mu plus 2mu minus 2mu}
+\let\iff=\Iff
+\def\Implies{\penalty-35\mskip 6mu plus 2mu minus 1mu \Rightarrow
+	\mskip 6mu plus 2mu minus 1mu}
+\let\implies=\Implies
+\let\And=\land
+\let\and=\And
+\let\Not=\neg
+\mathchardef\Exists="0239
+\mathchardef\Forall="0238
+\def\suchthat{\mathchar"2201 }
+\def\exists{\@ifstar{\@splitExists}{\@normalExists}}
+\def\nexists{\@ifstar{\@splitNExists}{\@normalNExists}}
+\def\forall{\@ifstar{\@splitForall}{\@normalForall}}
+\def\unique{\@ifstar{\@splitUnique}{\@normalUnique}}
+\def\@normalExists#1#2{{\Exists#1}\suchthat #2}
+\def\@normalNExists#1#2{\hbox to 0pt{\raise0.15ex
+	\hbox{/}\hss}{\Exists#1}\suchthat #2}
+\def\@normalForall#1#2{{\Forall#1}\suchthat #2}
+\def\@normalUnique#1#2{{\Exists!\,#1}\suchthat #2}
+\def\@splitExists#1{\@belowAndIndent{\Exists#1\suchthat}}
+\def\@splitNExists#1{\@belowAndIndent
+	{\hbox to 0pt{\raise0.15ex\hbox{/}\hss}\Exists#1\suchthat}}
+\def\@splitForall#1{\@belowAndIndent{\Forall#1\suchthat}}
+\def\@splitUnique#1{\@belowAndIndent{\Exists!\,#1\suchthat}}
+\def\term#1{[\mkern-\thinmuskip[#1\relax]\mkern-\thinmuskip]}
+\let\compf=\circ
+\newenvironment{fn}{\parens@true\@beginVDMfunction}{\@endVDMfunction}
+\newenvironment{fn*}{\parens@false\@beginVDMfunction}{\@endVDMfunction}
+\newenvironment{vdmfn}{\@beginvdm\parens@true
+	\@beginVDMfunction}{\@endVDMfunction\@endvdm}
+\newenvironment{vdmfn*}{\@beginvdm\parens@false
+	\@beginVDMfunction}{\@endVDMfunction\@endvdm}
+\newbox\@fnNameBox
+\newif\ifsignatureEncountered@
+\newtoks\@signatureTokens
+\newbox\@fnDefnBox
+\newif\ifparens@
+\def\@beginVDMfunction#1#2{%
+	\setbox\@fnNameBox=\hbox{$#1$}%
+	\setbox\@preConditionBox=\box\voidb@x % for people who want to do
+	\setbox\@postConditionBox=\box\voidb@x% implicit defns
+	\@signatureTokens={}\signatureEncountered@false
+	\ifparens@
+		\@argumentListTokens={(#2)}
+	\else
+		\@argumentListTokens={#2}
+	\fi
+	\vskip\preFunctionSkip
+	\@beginVerticalVDM 
+	\bgroup
+	\advance\hsize by-\leftskip \leftskip=0pt % see \@beginVDMOperation
+	\preFunctionHook
+	\@beginFnDefn}
+\def\signature{\global\signatureEncountered@true \global\@signatureTokens=}
+\def\@beginFnDefn{\global\setbox\@fnDefnBox=\vtop\bgroup
+	\@raggedRight \hangindent=2em \hangafter=1
+	\noindent$\copy\@fnNameBox \the\@argumentListTokens 
+	\quad\DEF\quad\penalty-100 }
+\newskip\preFunctionSkip \preFunctionSkip=2ex plus .5ex minus .2ex
+\newskip\postFunctionSkip \postFunctionSkip=2ex plus .5ex minus .2ex
+\newskip\betweenSignatureAndBodySkip
+\betweenSignatureAndBodySkip=1.2ex plus .3ex minus .2ex
+\def\@endVDMfunction{%
+	$\egroup  % this ends the vtop we started in \@beginFnDefn
+	\ifsignatureEncountered@
+		\setbox0=\hbox{\unhbox\@fnNameBox$\;\mathpunct:\,$}%
+		\dimen255=\wd0 \noindent \box0
+		\vtop{\advance\hsize by-\dimen255 \@raggedRight
+			\noindent$\relax\the\@signatureTokens\relax$}%
+		\egroup % this matches the bgroup in \@beginVDMfunction
+		\vskip\betweenSignatureAndBodySkip
+		\betweenSignatureAndBodyHook
+	\else	\egroup % this matches the bgroup in \@beginVDMfunction
+	\fi
+	\moveright\VDMindent\box\@fnDefnBox
+	\vskip\postFunctionSkip
+	\ifvoid\@preConditionBox
+	\else \moveright\VDMindent\box\@preConditionBox
+	      \vskip\postPreConditionSkip
+	\fi
+	\betweenPreAndPostConditionHook
+	\ifvoid\@postConditionBox
+	\else \moveright\VDMindent\box\@postConditionBox
+	      \vskip\postOperationSkip
+	\fi
+	\postFunctionHook}
+\newcount\preFunctionPenalty \preFunctionPenalty=0
+\newcount\betweenSignatureAndBodyPenalty \betweenSignatureAndBodyPenalty=500
+\newcount\postFunctionPenalty \postFunctionPenalty=-500
+\def\preFunctionHook{\penalty\preFunctionPenalty }
+\def\betweenSignatureAndBodyHook{\penalty\betweenSignatureAndBodyPenalty }
+\def\postFunctionHook{\penalty\postFunctionPenalty }
+\def\to{\penalty-100\rightarrow}
+\def\LambdaFn{\@ifstar{\@splitLambdaFn}{\@normalLambdaFn}}
+\def\@normalLambdaFn#1#2{{\lambda#1}\suchthat#2}
+\def\@splitLambdaFn#1#2{% place body in a separate box below and to the right
+	{\lambda#1}\suchthat\hfil\break
+	\@beginMathIndentedPara{\hsize}{\qquad}#2\@endMathIndentedPara}
+\def\setof#1{\kw{set of }#1}
+\def\set#1{\{#1\}}
+\def\emptyset{\{\,\}}
+\let\inter=\cap \let\intersection=\inter
+\let\Inter=\bigcap \let\Intersection=\Inter
+\let\union=\cup
+\let\Union=\bigcup
+\mathchardef\minus="2200
+\def\diff{\minus} \let\difference=\diff
+\newMonadicOperator{\card}{card}
+\newMonadicOperator{\Min}{min}
+\newMonadicOperator{\Max}{max}
+\def\mapof#1#2{\kw{map }\nobreak#1\penalty-50\hskip .5em \kw{to }\nobreak#2}
+\def\mapinto#1#2{\kw{map }\nobreak#1\penalty-50
+	\hskip .5em \kw{into }\nobreak#2}
+\def\map#1{\{#1\}}
+\def\emptymap{\{\,\}}
+\def\owr{\dagger}
+\let\dres=\lhd
+\let\rres=\rhd % the right hand version
+\def\dsub{\hbox{$\rlap{$\lhd$}\minus$}}
+\def\rsub{\hbox{$\rlap{$\rhd$}\kern.23em\minus$}}
+\newMonadicOperator{\dom}{dom}
+\newMonadicOperator{\rng}{rng}
+\def\seqof#1{\kw{seq of }#1}
+\def\seq#1{[#1]}
+\def\emptyseq{[\,]}
+\newMonadicOperator{\len}{len}
+\newMonadicOperator{\hd}{hd}
+\newMonadicOperator{\tl}{tl}
+\newMonadicOperator{\elems}{elems}
+\newMonadicOperator{\inds}{inds}
+\def\sconc{\mathbin{\hbox{\raise1ex\hbox{$\frown$}\kern-0.47em
+	\raise0.2ex\hbox{\it\char"12}}}}
+\def\type#1#2{{\vskip\preTypeSkip \@beginVerticalVDM
+	\advance\hsize by-\leftskip \leftskip=0pt % see \@beginVDMoperation
+	\moveright\VDMindent\vtop{\noindent$#1=#2$}
+	\vskip\postTypeSkip}}
+\newskip\preTypeSkip \preTypeSkip=1.2ex plus .5ex minus .3ex
+\newskip\postTypeSkip \postTypeSkip=1.2ex plus .5ex minus .3ex
+\newenvironment{composite}[1]{\@beginComposite{#1}}{\@endComposite}
+\newenvironment{composite*}[1]{\@beginSComposite{#1}}{\@endSComposite}
+\def\@beginSComposite#1{\vskip\preCompositeSkip
+    \noindent\hbox\bgroup
+	\kw{compose }$\relax#1\relax$\kw{ of }$\relax}
+\def\@endSComposite{\relax$\kw{ end}\egroup
+	\vskip\postCompositeSkip}
+\def\@beginComposite#1{\bgroup\vskip\preCompositeSkip
+    \@beginVerticalVDM
+    \advance\hsize by-\leftskip \leftskip=0pt % see \@beginVDMoperation
+    \moveright\VDMindent\vtop\bgroup
+	\noindent\kw{compose }$\relax#1\relax$\kw{ of}%\hfil\break
+	\@makeColonActive\@changeLineSeparator
+	\expandafter\halign\expandafter\bgroup\expandafter\qquad
+		\the\@recordAlign\strut\enspace&:\enspace$##$\hfil\cr}
+\def\@endComposite{\crcr\egroup % closes \halign
+	\kw{end}\egroup % ends the \vtop
+	\vskip\postCompositeSkip\egroup}
+\def\scompose#1#2{\@beginSComposite{#1}{#2}\@endSComposite}
+\newskip\preCompositeSkip \preCompositeSkip=1.2ex plus .5ex minus .3ex
+\newskip\postCompositeSkip \postCompositeSkip=1.2ex plus .5ex minus .3ex
+\newenvironment{record}{\@beginRecord}{\@endRecord}
+\def\@beginRecord#1{%
+	\vskip\preRecordSkip
+	\@beginVerticalVDM
+	\preRecordHook
+	\moveright\VDMindent\hbox\bgroup
+		\setbox0=\hbox{$#1$\enspace::\enspace}%
+		\@makeColonActive\@changeLineSeparator
+		\advance\hsize by-\wd0 \box0
+		\advance\hsize by-\leftskip
+			\leftskip=0pt % see \@beginVDMOperation
+		\vtop\bgroup\expandafter\halign\expandafter\bgroup
+			\the\@recordAlign\strut\enspace&:\enspace$##$\hfil\cr}
+\def\@endRecord{\crcr\egroup% closes halign
+	\egroup% closes vtop
+	\egroup% closes hbox
+	\vskip\postRecordSkip
+	\postRecordHook}
+\newtoks\@recordAlign
+\def\leftRecord{\@recordAlign={$##$\hfil}}
+\def\rightRecord{\@recordAlign={\hfil$##$}}
+\rightRecord
+\def\defrecord{\bgroup\@makeColonActive\@defrecord}
+\def\@defrecord#1#2{\@beginRecord{#1}#2\@endRecord\egroup}
+\newskip\preRecordSkip \preRecordSkip=.75ex plus .3ex minus .2ex
+\newskip\postRecordSkip \postRecordSkip=.75ex plus .3ex minus .2ex
+\newcount\preRecordPenalty \preRecordPenalty=0
+\newcount\postRecordPenalty \postRecordPenalty=-100
+\def\preRecordHook{\penalty\preRecordPenalty }
+\def\postRecordHook{\penalty\postRecordPenalty }
+\def\chg#1#2#3{\mu(#1,#2\mapsto#3)}
+\def\@mAth{\mathsurround=0pt} % p.353, \m@th
+\def\leftharpoonupfill{$\@mAth \mathord\leftharpoonup \mkern-6mu
+  \cleaders\hbox{$\mkern-2mu \mathord\minus \mkern-2mu$}\hfill
+  \mkern-6mu \mathord\minus$}  % p.357, \leftarrowfill
+\def\overleftharpoonup#1{{%
+  \boxmaxdepth=\maxdimen % this fixes Lamport's figures
+  \vbox{\ialign{##\crcr % p.359, \overleftarrow
+    \leftharpoonupfill\crcr\noalign{\kern-1pt \nointerlineskip}
+    $\hfil\displaystyle{#1}\hfil$\crcr}}}}
+\let\hook=\overleftharpoonup  % c'est simple comme bonjour
+\newenvironment{formula}{\@beginFormula}{\@endFormula}
+\def\form#1{\@beginFormula #1\@endFormula}
+\def\@beginFormula{\vskip\preFormulaSkip
+	\@beginVerticalVDM
+	\preFormulaHook
+	\bgroup
+	\advance\hsize by-\leftskip \leftskip=0pt % see \@beginVDMoperation
+	\moveright\VDMindent\vtop\bgroup\noindent$\displaystyle}
+\def\@endFormula{$\egroup % ends the vtop
+	\egroup % ends the overall group
+	\vskip\postFormulaSkip
+	\postFormulaHook}
+\newskip\preFormulaSkip \preFormulaSkip=1.2ex plus .5ex minus .3ex
+\newskip\postFormulaSkip \postFormulaSkip=1.2ex plus .5ex minus .3ex
+\newcount\preFormulaPenalty \preFormulaPenalty=0
+\newcount\postFormulaPenalty \postFormulaPenalty=-100
+\def\preFormulaHook{\penalty\preFormulaPenalty }
+\def\postFormulaHook{\penalty\postFormulaPenalty }
+\def\constantFont{\sc}
+\def\const#1{\hbox{\constantFont #1\/}}
+\def\T#1{\\\hbox to #1em{}}
+\newdimen\ProofIndent \ProofIndent=\VDMindent
+\newdimen\ProofNumberWidth \ProofNumberWidth=\parindent
+\newenvironment{proof}{\@beginProof}{\@endProof}
+\def\@beginProof{\vskip\preProofSkip
+	\preProofHook
+	\let\&=\@proofLine
+	\moveright\ProofIndent\vtop\bgroup
+		\advance\linewidth by-\ProofIndent
+		\begin{tabbing}%
+		\hbox to\ProofNumberWidth{}\=\kill}	% template line
+\def\@endProof{\end{tabbing}\advance\linewidth by\ProofIndent
+	\egroup % ends the \vtop
+	\vskip\postProofSkip
+	\postProofHook}
+\newskip\preProofSkip \preProofSkip=1.2ex plus .5ex minus .3ex
+\newskip\postProofSkip \postProofSkip=1.2ex plus .5ex minus .3ex
+\newcount\preProofPenalty \preProofPenalty=-100
+\newcount\postProofPenalty \postProofPenalty=0
+\def\preProofHook{\penalty\preProofPenalty }
+\def\postProofHook{\penalty\postProofPenalty }
+
+\def\From{\@indentProof\kw{from }\=%
+	\global\advance\@indentLevel by 1
+	\@enterMathMode}
+\def\Infer{\global\advance\@indentLevel by-1
+	\@indentProof\kw{infer }\@enterMathMode}
+\def\@proofLine{\@indentProof\@enterMathMode}
+\def\by{\`}
+\newcount\@indentLevel \@indentLevel=1
+\newcount\@indentCount
+\def\@indentProof{% do \>, \@indentLevel times
+	\global\@indentCount=\@indentLevel
+	\@gloop \>\global\advance\@indentCount by-1
+	\ifnum\@indentCount>0
+	\repeat}
+\def\@gloop#1\repeat{\gdef\@body{#1}\@giterate}
+\def\@giterate{\@body \global\let\@gloopNext=\@giterate
+	\else \global\let\@gloopNext=\relax \fi \@gloopNext}
+\def\@enterMathMode{\def\@stopfield{$\egroup}$}
+\def\VDMauthor{M.Wolczko,
+CS Dept., Univ. of Manchester, UK. miw@uk.ac.man.cs.ux}
+\def\VDMversion{2.3}
+\@changeOtherMathcodes \@changeGlobalCatcodes

@@ -1,0 +1,17 @@
+/dev/rvj10c:UsageArray: FreeBlocks wrong; is 1054532 should be 1055121
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 666 is wrong; is 8704 should be 8192
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 758 is wrong; is 317568 should be 317056
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 1023 is wrong; is 24832 should be 24320
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 1346 is wrong; is 31744 should be 31232
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 1350 is wrong; is 76032 should be 75008
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 1731 is wrong; is 128896 should be 137088
+/dev/rvj10c:CheckUsageArray: Active bytes for seg 1733 is wrong; is 16384 should be 29056
+File 75166 is unreferenced
+1 unreferenced files
+09:12:00.370:Read LFS checkpoint from /dev/rvj10c
+09:12:14.290:Checking files
+09:25:59.540:Checking usage array
+09:25:59.580:Checking directory tree
+09:29:05.010:Checking summary regions
+09:34:09.700:Reporting errors
+/dev/rvj10c: 2 major errors 6 minor errors

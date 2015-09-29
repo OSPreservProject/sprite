@@ -1,0 +1,132 @@
+
+
+
+Tcl_ExprLong          C Library Procedures           Tcl_ExprLong
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tcl_ExprLong, Tcl_ExprDouble, Tcl_ExprBool, Tcl_ExprString -
+     evaluate an expression
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttccll..hh>>
+
+     int                                                           |
+     TTccll__EExxpprrLLoonngg(_i_n_t_e_r_p, _s_t_r_i_n_g, _l_o_n_g_P_t_r)                         |
+
+     int                                                           |
+     TTccll__EExxpprrDDoouubbllee(_i_n_t_e_r_p, _s_t_r_i_n_g, _d_o_u_b_l_e_P_t_r)                     |
+
+     int                                                           |
+     TTccll__EExxpprrBBoooolleeaann(_i_n_t_e_r_p, _s_t_r_i_n_g, _b_o_o_l_e_a_n_P_t_r)                   |
+
+     int                                                           |
+     TTccll__EExxpprrSSttrriinngg(_i_n_t_e_r_p, _s_t_r_i_n_g)                                |
+
+AARRGGUUMMEENNTTSS                                                          |
+     Tcl_Interp   *_i_n_t_e_r_p   (in)                                        ||
+                                      Interpreter in whose con-    |
+                                      text to evaluate _s_t_r_i_n_g.     |
+
+     char         *_s_t_r_i_n_g   (in)                                        ||
+                                      Expression to be evaluated.  |
+
+     long         *_l_o_n_g_P_t_r  (out)                                       ||
+                                      Pointer to location in       |
+                                      which to store the integer   |
+                                      value of the expression.     |
+
+     int          *_d_o_u_b_l_e_P_t_r(out)                                       ||
+                                      Pointer to location in       |
+                                      which to store the           |
+                                      floating-point value of the  |
+                                      expression.                  |
+
+     int          *_b_o_o_l_e_a_n_P_t_r(out)                                      ||
+                                      Pointer to location in       |
+                                      which to store the 0/1       |
+                                      boolean value of the         |
+                                      expression.                  |
+_________________________________________________________________  |
+
+
+DDEESSCCRRIIPPTTIIOONN                                                        |
+     These four procedures all evaluate a string expression,       |
+     returning the result in one of four different forms.  The     |
+     expression is given by the _s_t_r_i_n_g argument, and it can have   |
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+Tcl_ExprLong          C Library Procedures           Tcl_ExprLong
+
+
+
+     any of the forms accepted by the eexxpprr command.  The _i_n_t_e_r_p    |
+     argument refers to an interpreter used to evaluate the        |
+     expression (e.g. for variables and nested Tcl commands) and   |
+     to return error information.  _I_n_t_e_r_p->_r_e_s_u_l_t is assumed to    |
+     be initialized in the standard fashion when any of the pro-   |
+     cedures are invoked.                                          |
+
+     For all of these procedures the return value is a standard    |
+     Tcl result:  TTCCLL__OOKK means the expression was succesfully      |
+     evaluated, and TTCCLL__EERRRROORR means that an error occurred while   |
+     evaluating the expression.  If TTCCLL__EERRRROORR is returned then     |
+     _i_n_t_e_r_p->_r_e_s_u_l_t will hold a message describing the error.  If  |
+     an error occurs while executing a Tcl command embedded in     |
+     _s_t_r_i_n_g, then that error will be returned.                     |
+
+     If the expression is successfully evaluated, then its value   |
+     will be returned in one of four forms, depending on which     |
+     procedure is invoked.  TTccll__EExxpprrLLoonngg stores an integer value   |
+     at *_l_o_n_g_P_t_r.  If the expression's actual value was a          |
+     floating-point number, then it is truncated to an integer.    |
+     If the expression's actual value was a non-numeric string     |
+     then an error is returned.                                    |
+
+     TTccll__EExxpprrDDoouubbllee stores a floating-point value at *_d_o_u_b_l_e_P_t_r.   |
+     If the expression's actual value was an integer, it is con-   |
+     verted to floating-point.  If the expression's actual value   |
+     was a non-numeric string then an error is returned.           |
+
+     TTccll__EExxpprrBBoooolleeaann stores a 0/1 integer value at *_b_o_o_l_e_a_n_P_t_r.    |
+     If the expression's actual value was an integer or            |
+     floating-point number, then TTccll__EExxpprrBBoooolleeaann stores 0 at       |
+     *_b_o_o_l_e_a_n_P_t_r if the value was zero and 1 otherwise.  If the    |
+     expression's actual value was a non-numeric string then an    |
+     error is returned.                                            |
+
+     TTccll__EExxpprrSSttrriinngg returns the value of the expression as a       |
+     string stored in _i_n_t_e_r_p->_r_e_s_u_l_t.  If the expression's actual  |
+     value was an integer or floating-point number, then           |
+     TTccll__EExxpprrSSttrriinngg converts it to string (using sspprriinnttff with a    |
+     ``%d'' or ``%g'' converter).                                  |
+
+
+KKEEYYWWOORRDDSS                                                           |
+     boolean, double, evaluate, expression, integer, string
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     2
+
+
+

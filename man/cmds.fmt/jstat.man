@@ -1,0 +1,132 @@
+
+
+
+jstat                     User Commands                     jstat
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     jstat - Inquire into the state of the Jaquith archive system
+
+SSYYNNOOPPSSIISS
+     jjssttaatt  [--sseerrvveerr _h_o_s_t_n_a_m_e] [--ppoorrtt _p_o_r_t] [--ddeevviicceess]  [--qquueeuueess]
+     [--aarrcchhlliisstt]]
+
+OOPPTTIIOONNSS
+     --sseerrvveerr _h_o_s_t_n_a_m_e
+                   Specifies host where Jaquith  server  is  run-
+                   ning.  Defaults  to  the  environment variable
+                   JSERVER.
+
+     --ppoorrtt _p_o_r_t    Specifies port number where Jaquith server  is
+                   running.  Defaults to the environment variable
+                   JPORT, or 10001 (decimal) if JPORT unset.
+
+     --ddeevviicceess      Report device status information.
+
+     --qquueeuueess       Report device queue information.
+
+     --aarrcchh _a_r_c_h_i_v_e Name of archive  for  which  device  or  queue
+                   information is
+
+     --aarrcchhlliisstt     Report list of logical archives.
+_________________________________________________________________
+
+DDEESSCCRRIIPPTTIIOONN
+     JJssttaatt reports the state of various Jaquith information.
+
+
+     The status of all the physical devices can be obtained  with
+     the  --ddeevviicceess  option.  The  status  of the jukebox's client
+     queue can be obtained with --qquueeuueess. A list  of  the  logical
+     archives  known  to  Jaquith can be obtained with --aarrcchhlliisstt.
+     At least one of the options must be given.
+
+
+     For the --ddeevviicceess and --qquueeuueess options, a jukebox manager must
+     be  specified.  Strangely  enough this is done by giving the
+     name of a  logical  archive,  not  the  name  of  a  jukebox
+     manager.   Jaquith  will  look  up  the  jmgr  for the given
+     archive and contact it for the device or queue information.
+
+
+     For each device being controlled by the jukebox manager  the
+     following is listed:
+
+          _d_e_v_i_c_e-_n_a_m_e _c_u_r_r_e_n_t-_v_o_l_u_m_e _c_u_r_r_e_n_t-_o_w_n_e_r
+
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+jstat                     User Commands                     jstat
+
+
+
+     The status of the client queue  can  be  obtained  with  the
+     --qquueeuueess option. The following is given for each waiter:
+
+
+          _r_e_q_u_e_s_t_o_r-_n_a_m_e _d_e_s_i_r_e_d-_v_o_l_u_m_e
+
+
+BBUUGGSS
+     The queue information is for devices only; Clients which are
+     waiting for write access to a logical archive (and therefore
+     don't yet know what device they need) are not reported.
+
+
+SSEEEE AALLSSOO
+     jaquith jmgr jls jput jget jctrl jcopy jclean jbuild
+
+
+KKEEYYWWOORRDDSS
+     jaquith archive
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     2
+
+
+

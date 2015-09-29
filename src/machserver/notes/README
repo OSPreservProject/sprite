@@ -1,0 +1,66 @@
+file		comments
+-----		-----
+andrew		profiling information and summary of bottlenecks for
+		the Andrew benchmark: native Sprite and sprited.
+
+callee		script to generate a list of files that use a
+		named module. 
+
+caller		script to generate a list of files that a named module
+		calls. 
+
+calls*		"callee" output for various modules
+
+changes		Overview of changes that were made going from native
+		Sprite to sprited.
+
+echotimes*	Output from RPC echo test; sprited<->native and
+		native<->native.
+
+ifdefs		List of which ifdefs were (and still are) used to
+		disable code according to various features (e.g.,
+		accounting, local disk, general local device access).
+
+lineCounts	Overview, using sources lines, of what was kept,
+		thrown away, or rewritten going from native Sprite to
+		sprited.
+
+mdSizes		Sizes (lines of sources) of machine-dependent code,
+		per module.
+
+mdrefs		Script (possibly broken) for finding machine-dependent
+		references to a named module.
+
+moduleSizes	Sizes of the different modules, for comparing native
+		Sprite with sprited.  Primarily for comparing source
+		lines (also contains old .o sizes).
+
+native		Partial list of sizes (wc output) for native Sprite,
+		with comments giving sizes of code chunks not
+		implemented by sprited (e.g., process migration
+		support).
+
+notes		Random comments, plans for the future.
+
+perf		Ideas, comments related to performance tuning of
+		sprited.
+
+problemAreas	Summary of what was hard going from native Sprite to
+		sprited.
+
+procStates.idraw
+		State transition diagram for user processes under
+		sprited (idraw format).
+
+sendtimes*	Results from RPC send test.  (This is like the echo
+		test, except the contents of the RPC aren't included
+		in the response.)
+
+sprited		Partial list of sizes (wc output) for sprited,
+		with comments giving sizes of code chunks that are
+		ifdef'd out (e.g., process migration support).
+
+tests		Ideas for tests.
+
+user-include	List of Sprite kernel files that include user header
+		files.

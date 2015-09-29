@@ -1,0 +1,5 @@
+# Extended Tcl 6.4c default file
+
+set TCLINIT /sprite/lib/tclX-6.4/TclInit.tcl
+
+set TCLPATH /sprite/lib/tclX-6.4

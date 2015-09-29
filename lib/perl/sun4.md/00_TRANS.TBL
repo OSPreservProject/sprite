@@ -1,0 +1,12 @@
+F ALLOCA.PH;1                       	alloca.ph
+F A_OUT.PH;1                        	a.out.ph
+F LIMITS.PH;1                       	limits.ph
+F MACHPARA.PH;1                     	machparam.ph
+F OLDVARAR.PH;1                     	oldvarargs.ph
+F REG.PH;1                          	reg.ph
+F SETJMP.PH;1                       	setjmp.ph
+F SIGMACH.PH;1                      	sigMach.ph
+F STDARG.PH;1                       	stdarg.ph
+F VARARGS.PH;1                      	varargs.ph
+F VMMACH.PH;1                       	vmMach.ph
+F VMPARAM.PH;1                      	vmparam.ph

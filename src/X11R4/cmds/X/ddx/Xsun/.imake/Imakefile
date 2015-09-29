@@ -1,0 +1,59 @@
+#include <Server.tmpl>
+
+SRCS1 =	\
+	sunInit.c \
+	sunBW2.c \
+	sunCursor.c \
+	sunIo.c \
+	sunKbd.c \
+	sunMouse.c \
+	sunUtils.c \
+	sunCG2C.c \
+	sunCG2M.c \
+	sunCG3C.c \
+	sunCG4C.c \
+	sunCG6C.c \
+	sunKeyMap.c
+
+SRCS =	$(SRCS1) kbd_mode.c constype.c 
+
+OFILES = sunInit.o
+
+OBJS = \
+	sunBW2.o \
+	sunCursor.o \
+	sunIo.o \
+	sunKbd.o \
+	sunMouse.o \
+	sunUtils.o \
+	sunCG2C.o \
+	sunCG2M.o \
+	sunCG3C.o \
+	sunCG4C.o \
+	sunCG6C.o \
+	sunKeyMap.o
+
+   INCLUDES = -I. -I../mfb -I../mi -I../../include -I$(INCLUDESRC)
+   LINTLIBS = ../../dix/llib-ldix.ln ../../os/4.2bsd/llib-los.ln \
+	      ../mfb/llib-lmfb.ln ../mi/llib-lmi.ln ../cfb/llib-lcfb.ln
+
+NormalLibraryObjectRule()
+
+all:: $(OFILES) kbd_mode constype
+
+lintlib:
+
+NormalLibraryTarget(sun,$(OBJS))
+NormalLintTarget($(SRCS1))
+SingleProgramTarget(kbd_mode, kbd_mode.o,,)
+SingleProgramTarget(constype, constype.o,,)
+InstallProgram(kbd_mode,$(BINDIR))
+InstallProgram(constype,$(BINDIR))
+InstallManPage(kbd_mode,$(MANDIR))
+InstallManPage(constype,$(MANDIR))
+InstallManPage(Xsun,$(MANDIR))
+
+saber_src:
+	#load $(CFLAGS) $(SRCS1)
+
+DependTarget()

@@ -1,0 +1,1 @@
+#define VERSION "SPRITE VERSION 1.117 (sun4) (14 Dec 92 13:42:27)"

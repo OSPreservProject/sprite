@@ -1,0 +1,30 @@
+# DO NOT DELETE THIS LINE -- make depend depends on it.
+
+sun3.md/portmap.o: portmap.c
+sun3.md/portmap.o: /sprite/lib/include/rpc/rpc.h
+sun3.md/portmap.o: /sprite/lib/include/rpc/types.h
+sun3.md/portmap.o: /sprite/lib/include/sys/types.h
+sun3.md/portmap.o: /sprite/lib/include/netinet/in.h
+sun3.md/portmap.o: /sprite/lib/include/sun3.md/machparam.h
+sun3.md/portmap.o: /sprite/lib/include/sun3.md/limits.h
+sun3.md/portmap.o: /sprite/lib/include/rpc/xdr.h
+sun3.md/portmap.o: /sprite/lib/include/rpc/auth.h
+sun3.md/portmap.o: /sprite/lib/include/rpc/clnt.h
+sun3.md/portmap.o: /sprite/lib/include/rpc/rpc_msg.h
+sun3.md/portmap.o: /sprite/lib/include/rpc/auth_unix.h
+sun3.md/portmap.o: /sprite/lib/include/rpc/svc.h
+sun3.md/portmap.o: /sprite/lib/include/rpc/svc_auth.h
+sun3.md/portmap.o: /sprite/lib/include/rpc/netdb.h
+sun3.md/portmap.o: /sprite/lib/include/rpc/pmap_prot.h
+sun3.md/portmap.o: /sprite/lib/include/stdio.h
+sun3.md/portmap.o: /sprite/lib/include/cfuncproto.h
+sun3.md/portmap.o: /sprite/lib/include/netdb.h
+sun3.md/portmap.o: /sprite/lib/include/sys/socket.h
+sun3.md/portmap.o: /sprite/lib/include/sys/time.h
+sun3.md/portmap.o: /sprite/lib/include/time.h
+sun3.md/portmap.o: /sprite/lib/include/sys/ioctl.h
+sun3.md/portmap.o: /sprite/lib/include/sys/ttychars.h
+sun3.md/portmap.o: /sprite/lib/include/sys/ttydev.h
+sun3.md/portmap.o: /sprite/lib/include/sys/fb.h
+sun3.md/portmap.o: /sprite/lib/include/sys/wait.h
+sun3.md/portmap.o: /sprite/lib/include/sun3.md/machine/machparam.h

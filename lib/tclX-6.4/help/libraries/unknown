@@ -1,0 +1,19 @@
+          unknown cmdName ?arg arg ...?
+               This command doesn't actually exist as part of Tcl, but
+               Tcl will invoke it  if  it  does  exist.   If  the  Tcl
+               interpreter  encounters  a command name for which there
+               is not a defined  command,  then  Tcl  checks  for  the
+               existence  of  a command named unknown.  If there is no
+               such command, then the interpeter returns an error.  If
+               the  unknown  command  exists,  then it is invoked with
+               arguments consisting of the fully-substituted name  and
+               arguments  for  the original non-existent command.  The
+               unknown command typically does  things  like  searching
+               through  library  directories  for  a command procedure
+               with the name cmdName, or expanding abbreviated command
+               names   to   full-length,  or  automatically  executing
+               unknown commands as UNIX sub-processes.  In some  cases
+               (such  as  expanding abbreviations) unknown will change
+               the original command slightly and then (re-)execute it.
+               The result of the unknown command is used as the result
+               for the original non-existent command.

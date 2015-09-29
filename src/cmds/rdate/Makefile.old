@@ -1,0 +1,54 @@
+# rdate Makefile
+
+# --- Uncomment one set of the following flag definitions ---
+
+# For SunOS, Ultrix, HP/UX, or generic BSD
+
+CFLAGS = -O
+LDFLAGS =
+
+# For Sequent Dynix
+
+# CFLAGS = -O
+# LDFLAGS = -lseq
+
+# For other BSD which have adjtime(2)
+
+# CFLAGS = -O -DHAS_ADJTIME
+# LDFLAGS =
+
+# For AIX, generic System V
+
+# CFLAGS = -O -DSYSV
+# LDFLAGS =
+
+# For Unisys U6000
+
+# CFLAGS = -O -DSYSV
+# LDFLAGS = -lsocket
+
+# For Interactive 386/ix
+
+# CFLAGS = -O -DSYSV -D386IX
+# LDFLAGS = -linet
+
+# --- Define the installation parameters ---
+
+BINDIR = /usr/local/bin
+MANEXT = 8
+MANDIR = /usr/man/man$(MANEXT)
+
+# --- The following should not need to be changed ---
+
+RDATE_OBJS = rdate.o port.o sockio.o
+
+all: rdate
+
+rdate: $(RDATE_OBJS)
+	cc $(CFLAGS) -o rdate $(RDATE_OBJS) $(LDFLAGS)
+
+rdate.o port.o: $($@:.o=.c) rdate.h
+
+install:
+	cp rdate $(BINDIR)
+	cp rdate.8 $(MANDIR)/rdate.$(MANEXT)

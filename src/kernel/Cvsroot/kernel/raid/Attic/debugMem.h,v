@@ -1,0 +1,72 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     89.09.27.17.14.11;  author eklee;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.08.30.11.29.36;  author eklee;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.27.13.04.55;  author eklee;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@
+@
+text
+@/* 
+ * devDebugMem.h --
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/dev.new/RCS/devBlockDevice.h,v 1.1 89/05/01 15:27:18 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+ */
+
+extern void InitDebugMem();
+extern char *Malloc();
+extern void Free();
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@a15 3
+#include "sync.h"
+#include "hash.h"
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@@

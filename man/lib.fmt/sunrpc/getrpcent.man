@@ -1,0 +1,132 @@
+
+
+
+GETRPCENT             C Library Procedures              GETRPCENT
+
+
+
+NNAAMMEE
+     getrpcent, getrpcbyname, getrpcbynumber - get RPC entry
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<nneettddbb..hh>>
+
+     ssttrruucctt rrppcceenntt **ggeettrrppcceenntt(())
+
+     ssttrruucctt rrppcceenntt **ggeettrrppccbbyynnaammee((nnaammee))
+     cchhaarr **nnaammee;;
+
+     ssttrruucctt rrppcceenntt **ggeettrrppccbbyynnuummbbeerr((nnuummbbeerr))
+     iinntt nnuummbbeerr;;
+
+     sseettrrppcceenntt ((ssttaayyooppeenn))
+     iinntt ssttaayyooppeenn
+
+     eennddrrppcceenntt (())
+
+DDEESSCCRRIIPPTTIIOONN
+     ggeettrrppcceenntt, ggeettrrppccbbyynnaammee, and ggeettrrppccbbyynnuummbbeerr each return a
+     pointer to an object with the following structure containing
+     the broken-out fields of a line in the rpc program number
+     data base, //eettcc//rrppcc.
+
+          ssttrruucctt    rrppcceenntt {{
+               cchhaarr **rr__nnaammee;;  //** nnaammee ooff sseerrvveerr ffoorr tthhiiss rrppcc pprrooggrraamm **//
+               cchhaarr ****rr__aalliiaasseess;;   //** aalliiaass lliisstt **//
+               lloonngg rr__nnuummbbeerr;; //** rrppcc pprrooggrraamm nnuummbbeerr **//
+          }};;
+
+     The members of this structure are:
+          rr__nnaammee              The name of the server for this rpc
+                              program.
+          rr__aalliiaasseess           A zero terminated list of alternate
+                              names for the rpc program.
+          rr__nnuummbbeerr            The rpc program number for this
+                              service.
+
+     ggeettrrppcceenntt reads the next line of the file, opening the file
+     if necessary.
+
+     ggeettrrppcceenntt opens and rewinds the file.  If the _s_t_a_y_o_p_e_n flag
+     is non-zero, the net data base will not be closed after each
+     call to ggeettrrppcceenntt (either directly, or indirectly through
+     one of the other "getrpc" calls).
+
+     eennddrrppcceenntt closes the file.
+
+     ggeettrrppccbbyynnaammee and ggeettrrppccbbyynnuummbbeerr sequentially search from the
+     beginning of the file until a matching rpc program name or
+     program number is found, or until EOF is encountered.
+
+
+
+Sprite v1.0              6 October 1987                         1
+
+
+
+
+
+
+GETRPCENT             C Library Procedures              GETRPCENT
+
+
+
+FFIILLEESS
+     //eettcc//rrppcc
+
+SSEEEE AALLSSOO
+     rrppcc(5), rrppcciinnffoo(8),
+
+DDIIAAGGNNOOSSTTIICCSS
+     Null pointer ((00)) returned on EOF or error.
+
+BBUUGGSS
+     All information is contained in a static area so it must be
+     copied if it is to be saved.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0              6 October 1987                         2
+
+
+

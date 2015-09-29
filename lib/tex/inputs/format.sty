@@ -1,0 +1,28 @@
+% Written by Charles Karney (Karney%PPC.MFENET@NMFECC.ARPA) 1986/04/29.
+% Format is a style option which allows the printing of floating point
+% numbers in fixed format.  The argument is the counter to use.  The
+% optional first argument if the power of ten to multiply counter by.  The
+% default is 0.  An integer is produced if power is nonnegative.
+% Otherwise, at least one digit appears before decimal point and exactly
+% -power digits after decimal point.  Restriction: abs(power)<=6.
+% 
+% Example: label an axis with -1.0, -0.8, -0.6, ... 1.0
+%     \newcounter{axis} \setcounter{axis}{-10}
+%     \multiput(...)(...){11}{\format[-1]{axis}\addtocounter{axis}{2}}
+
+\def\format{\@ifnextchar[{\format@}{\format@[0]}}
+\def\format@[#1]#2{\@tempcnta#1 \@format{\@nameuse{c@#2}}}
+\def\@format#1{\hbox{$
+    \ifnum #1<0 - #1-#1\fi % Here's where to insert a +
+    \ifnum\@tempcnta<0
+        \@tempcnta-\@tempcnta
+        \@tempcnta\ifcase\@tempcnta\or 10 \or 100 \or 1000 \or
+                                    10000 \or 100000 \else 1000000 \fi
+        \@tempcntb#1 \divide\@tempcntb \@tempcnta
+        \number\@tempcntb . \multiply\@tempcntb \@tempcnta
+        \advance\@tempcntb -#1 \advance\@tempcnta -\@tempcntb
+        \expandafter\@gobble\number\@tempcnta
+    \else
+        \number #1
+        \ifcase\@tempcnta\or 0\or 00\or 000\or
+                         0000\or 00000\else 000000\fi\fi$}}

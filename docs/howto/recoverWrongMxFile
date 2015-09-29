@@ -1,0 +1,46 @@
+From: jhh@sprite.Berkeley.EDU (John H. Hartman)
+Date: Fri, 4 May 90 16:59:35 PDT
+X-Mailer: Mail User's Shell (7.0.4 1/31/90)
+To: sprite@sprite.Berkeley.EDU
+Subject: how to recover a file
+
+
+This is a brief tutorial on how to recover a file from an Mx log,
+just in case any of you have to do it.  I had started editing the
+file with mx on wednesday morning.  On Thursday evening the
+file had zero length.  I was still in the original editing session,
+however, so I had the log.  In order to reconstruct the file
+you must have a snapshot of the log and the file.  I was able to
+get these from Wednesday evening's dump.  Then you have to fiddle
+with the magic numbers at the top of the log.  The first line in
+the log file looks like this:
+
+f -1       netRoute.c     9a1d 2640d646    29416
+
+where the first two fields have unknown meaning, the third is the 
+filename, the fourth is the inode number, the fifth is the time
+when the log was created (I think) and the last is the offset
+into the log the last time the file was written out.  What you
+need to do is to copy the offset from the snapshot of the log
+into the current copy of the log.  This won't work if you were
+unlucky enough to write out the file inbetween the time when the
+log was dumped and when the file was dumped. Then you have to
+determine the inode number of the restored file and change
+the inode field of the log. Run mx on the file and type
+"undo recover <log>" at the command line. If you get the
+inode number wrong then mx will silently ignore the undo
+command.  If you get the offset wrong then mx may go into
+the debugger.  If everything goes correctly then you
+get your file back.
+
+If you don't have a snapshot of the log then you need to
+get a snapshot of the file prior to the start of the
+editing session.  Change the inode number in the log,
+then change the offset to be the start of the log.  
+This is offset 218 and can be determined by starting an
+mx session and looking at the log.  Then use the undo
+command to role forward.
+
+Hope this is helpful.
+
+John

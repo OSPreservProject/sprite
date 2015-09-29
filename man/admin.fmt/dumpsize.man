@@ -1,0 +1,68 @@
+
+
+
+DUMPSIZE                  User Commands                  DUMPSIZE
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     dumpsize - Calculate size of dumps on a tape
+
+SSYYNNOOPPSSIISS
+     dduummppssiizzee _t_a_p_e_N_u_m _d_a_t_e_s_F_i_l_e
+
+OOPPTTIIOONNSS
+     _t_a_p_e_N_u_m        The number of the tape in question.
+
+     _d_a_t_e_s_F_i_l_e      The path of the dduummppddaatteess file.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This script grovels over the dduummppddaatteess file  and  calculates
+     how  much  space  on  the  tape  is taken by the dumps, file
+     marks, etc.  The tape number is the first  argument.   (Each
+     dump tape has a number, which is written on the tape and its
+     case.)  The second argument is the  path  of  the  dduummppddaatteess
+     file, usually //sspprriittee//aaddmmiinn//dduummpp//dduummppddaatteess.
+
+     The output from the script gives how much space is taken for
+     each  day's  dumps  (including a guess at how much is needed
+     for file marks) and the total space taken on the tape.  This
+     lets  you  guess  how  much space will be needed for another
+     day's dumps and whether it  will  fit  on  the  given  tape.
+     (Allow 2 gigabytes for an Exabyte cassette.)
+
+
+KKEEYYWWOORRDDSS
+     dump, tape, backup, restore
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  December 24, 1990                  1
+
+
+

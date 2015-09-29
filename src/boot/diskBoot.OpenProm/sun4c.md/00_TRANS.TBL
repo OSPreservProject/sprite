@@ -1,0 +1,7 @@
+F DEPENDEN.MK;1                     	dependencies.mk
+F DEVFSOPT.C;1                      	devFsOpTable.c
+F DEVSUNPR.C;1                      	devSunProm.c
+F INSTALL.EXA;1                     	install.example
+F MD.MK;1                           	md.mk
+D RCS                               	RCS
+F START.S;1                         	start.s

@@ -1,0 +1,68 @@
+
+
+
+Time_ToAscii          C Library Procedures           Time_ToAscii
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Time_ToAscii, Time_FromAscii, Time_ToParts, Time_FromParts -
+     time conversion routines
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<sspprriitteeTTiimmee..hh>>
+
+     TTiimmee__TTooAAsscciiii(_s_e_c_o_n_d_s, _i_s_I_n_t_e_r_v_a_l, _b_u_f_f_e_r_P_t_r)
+
+     TTiimmee__FFrroommAAsscciiii(_b_u_f_f_e_r_P_t_r, _t_i_m_e_P_t_r)
+
+     TTiimmee__TTooPPaarrttss(_s_e_c_o_n_d_s, _i_s_I_n_t_e_r_v_a_l, _p_a_r_t_s_P_t_r)
+
+     TTiimmee__FFrroommPPaarrttss(_p_a_r_t_s_P_t_r, _i_s_I_n_t_e_r_v_a_l, _s_e_c_o_n_d_s_P_t_r)
+
+AARRGGUUMMEENNTTSS
+     int       _s_e_c_o_n_d_s        (in)      A time value  in  seconds
+                                        to be converted to Ascii.
+
+     Boolean   _i_s_I_n_t_e_r_v_a_l     (in)      If  TRUE,  interpret  the
+                                        time as a time interval.
+
+     char      *_b_u_f_f_e_r_P_t_r     (out,in)  A buffer to hold the con-
+                                        verted time.
+
+     Time      *_t_i_m_e_P_t_r       (out)     Buffer  to  hold  a  time
+                                        value    converted   from
+                                        Ascii.
+
+     Time_Parts               _p_a_r_t_s_P_t_r(in/out)
+                                        Buffer  to  contain   the
+                                        decomposed time values.
+
+     int       *_s_e_c_o_n_d_s_P_t_r    (out)     Place to store time value
+                                        converted from parts.
+
+
+_________________________________________________________________
+
+DDEESSCCRRIIPPTTIIOONN
+     The TTiimmee__TTooAAsscciiii and  TTiimmee__FFrroommAAsscciiii  procedures  convert  a
+     time  value  in seconds to and from Ascii. TTiimmee__TTooPPaarrttss con-
+     verts a time value in seconds into the year, month,  day  of
+     year,  day  of  month,m  day  of  week,  hours, minutes, and
+     seconds. TTiimmee__FFrroommPPaarrttss converts a time value from its parts
+     to seconds.  Don't give it a date before January 1, 1970 and
+     make sure that the day of year corresponds to the month  and
+     day  of month values.  An interval is the difference between
+     two times.
+
+KKEEYYWWOORRDDSS
+     ascii, time
+
+
+
+Sprite v.1.0       Printed:  November 29, 1990                  1
+
+
+

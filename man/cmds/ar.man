@@ -1,0 +1,165 @@
+'\" Copyright 1990 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/cmds/ar/RCS/ar.man,v 1.1 90/11/12 11:14:43 kupfer Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS AR cmds
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+ar \- archive maintenance 
+.SH SYNOPSIS
+\fBar\fR \fIflags\fR [\fIposname\fR] \fIarchive\fR [\fIname name ...\fR]
+.SH OPTIONS
+.IP "\fBa\fR" 15
+Position the named files after
+.IR posname .
+.IP "\fBb\fR" 15
+Position the named files before
+.IR posname .
+.IP "\fBc\fR" 15
+If creating an archive for the first time, do it silently.  
+.IP "\fBd\fR" 15
+Command: delete the named files from the archive.
+.IP "\fBi\fR" 15
+Position the named files before
+.IR posname .
+.IP "\fBl\fR" 15
+Ignored.  This flag is kept for compatibility with the UNIX 
+.BR ar .
+.IP "\fBm\fR" 15
+Command: move the named files to a different location in the archive.
+.IP "\fBo\fR" 15
+When extracting a file from the archive, give it the last-modified
+time that is recorded in the archive.  The default is to give it the
+current time.
+.IP "\fBp\fR" 15
+Command: print out the named files.  If no files are named, print out
+all files in the archive.
+.IP "\fBq\fR" 15
+Command: quickly append the named files to the archive.  If the named
+files already exist, the archive will end up with duplicates.  This
+command is intended for creating a new archive with lots of files with
+one invocation of
+.BR ar .
+.IP "\fBr\fR" 15
+Command: replace the named files in the archive.  If a named file
+isn't already in the archive, it is added.
+.IP "\fBs\fR" 15
+Create a
+.B __.SYMDEF
+file for the archive.  This flag may be used as a command or as a
+modifier to other commands.
+.IP "\fBt\fR" 15
+Command: list the named files in the archive.  If no files are named,
+the table of contents for the entire archive is listed.
+.IP "\fBu\fR" 15
+If replacing files, only replace a file if it is newer than the
+version in the archive (or if there is no version in the archive at
+all).
+.IP "\fBv\fR" 15
+Turn on the ``verbose'' flag.
+.IP "\fBx\fR" 15
+Command: extract the named files from the archive.  If no files are
+named, extract all files in the archive.
+.BE
+
+.SH DESCRIPTION
+.PP
+.B Ar
+maintains archive files, which are collections of other files.  An
+archive file is usually used as a library of object files, for use
+with
+.BR ld .
+.PP
+Each invocation of
+.B ar
+always takes one command flag and an archive name.  It may also take
+modifier flags, which appear with the command letter.  For example, 
+.B tv
+specifies the ``table-of-contents''
+command, with the ``verbose'' flag
+turned on.  It is equivalent to 
+.BR vt .  
+If you specify any of the 
+.BR a ,
+.BR b ,
+or
+.B i
+flags (for the
+.B m
+or
+.B r
+commands), you must also specify 
+.IR posname ,
+which is the name of a file in the archive that other files will be
+positioned relative to.  The default is to place the files at the end
+of the archive.  Finally, most commands require that you specify one
+or more file names.  These names refer to files in the archive, files
+outside the archive, or both, depending on the command.
+.PP
+You may specify a complete path for any file name.  
+.B Ar
+will remove leading path information and truncate the file name to 15
+characters to get the name of the file as it is stored in the archive.
+However, the full given path will be used when referring to files
+outside the archive for the
+.BR q , 
+.BR r ,
+and
+.B x
+commands.
+.PP
+Some UNIX linkers require that an object file library have a
+.B __.SYMDEF
+file, which contains a string table that the linker
+.B ld
+uses to resolve external references.  This version of
+.B ar
+maintains the
+.B __.SYMDEF 
+file automatically, once it exists, and it will create the
+.B __.SYMDEF 
+file if the 
+.B s
+flag is specified.  Thus,
+.BR ranlib ,
+which is the program usually used to maintain the 
+.B __.SYMDEF 
+file, is not needed with this version of
+.BR ar .
+.PP
+The
+.B v
+flag has a varied effect, depending on the command involved.  For most
+commands, specifying the 
+.B v
+flag merely causes
+.B ar
+to tell you what it's doing as it does it.  For the 
+.B t
+command, the
+.B v
+flag causes information about each file (other than just its name) to
+be printed.  This additional information consists of 
+.TP 
+\(bu	the permissions associated with the file (as displayed by
+.BR ls )
+.TP 
+\(bu	the file's owner and group (displayed as integers)
+.TP 
+\(bu	the file's length in bytes
+.TP 
+\(bu	the last-modified time of the file
+
+.SH SEE ALSO
+ranlib, ld, ls
+
+.SH KEYWORDS
+archive, library

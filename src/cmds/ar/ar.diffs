@@ -1,0 +1,2549 @@
+*** /tmp/,RCSt1532831	Thu Nov 15 22:29:13 1990
+--- ar.c	Mon Nov 12 11:08:49 1990
+***************
+*** 15,25 ****
+--- 15,32 ----
+     along with this program; if not, write to the Free Software
+     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
+  
++ #ifndef lint
++ static char rcsid[] = "$Header: /sprite/src/cmds/ar/RCS/ar.c,v 1.6 90/11/12 11:08:45 kupfer Exp $";
++ #endif
++ 
+  #include <stdio.h>
+  #include <ar.h>
+  #include <errno.h>
+  #include <sys/types.h>
+  #include <sys/stat.h>
++ #include <string.h>
++ #include <bstring.h>
++ #include <assert.h>
+  
+  #if !defined(A_OUT) && !defined(MACH_O)
+  #define A_OUT
+***************
+*** 64,76 ****
+  #define	bzero(s, size)			memset((s), 0, (size))
+  #endif
+  
+! /* Locking is normally disabled because fcntl hangs on the Sun
+     and it isn't supported properly across NFS anyway.  */
+  #ifdef LOCKS
+  /* You might need to compile with -I/usr/include/sys if your fcntl.h
+     isn't in /usr/include (which is where it should be according to POSIX).  */
+  #include <fcntl.h>
+! #endif
+  
+  /* This structure is used internally to represent the info
+     on a member of an archive.  This is to make it easier to change format.  */
+--- 71,118 ----
+  #define	bzero(s, size)			memset((s), 0, (size))
+  #endif
+  
+! /* If LOCKS is defined, locking is enabled.  If LOCK_FLOCK is defined,
+!    then BSD-style flock() is used.  Otherwise, fcntl() is used.  If
+!    LOCKS is not defined, LOCK_FLOCK is irrelevant.
+! 
+!    Locking is normally disabled because fcntl hangs on the Sun
+     and it isn't supported properly across NFS anyway.  */
++ 
+  #ifdef LOCKS
++ 
++ /* This flag tells whether the archive was opened read-only or
++    read-write.  It is used for a sanity check before trying to write a
++    new archive.  It is also temporarily as a workaround for a Sprite
++    bug that requires flock() to pass in the type of lock that is being
++    unlocked.  */
++ 
++ int open_flags;				/* O_RDONLY or O_RDWRITE */
++ 
++ #ifndef LOCK_FLOCK
+  /* You might need to compile with -I/usr/include/sys if your fcntl.h
+     isn't in /usr/include (which is where it should be according to POSIX).  */
+  #include <fcntl.h>
+! #endif /* LOCK_FLOCK */
+! 
+! void lock_a_file (), unlock_a_file ();
+! #endif /* LOCKS */
+! 
+! /* This structure represents member names.  It is here to simplify 
+!    dealing with different truncation schemes and with names that the
+!    user specifies as paths.  Operations deal with the `stored' name,
+!    except we maintain a mapping to the name the user gave for
+!    reading/writing the member.   If the user didn't specify a name
+!    that matches the `stored' name, the `given' name is NULL.  For
+!    names provided by the user, the `stored' name is computed
+!    immediately, so all member_name objects should have a non-null
+!    `stored' name.  */
+! 
+! struct member_name {
+!   char *given;				/* name given by the user */
+!   char *stored;				/* name as stored in the ar header */
+! };
+! 
+! #define Empty_Name(name)	((name)->stored == NULL)
+  
+  /* This structure is used internally to represent the info
+     on a member of an archive.  This is to make it easier to change format.  */
+***************
+*** 77,84 ****
+  
+  struct member_desc
+    {
+!     /* Name of member.  */
+!     char *name;
+  
+      /* The following fields are stored in the member header as decimal or octal
+         numerals, but in this structure they are stored as machine numbers.  */
+--- 119,128 ----
+  
+  struct member_desc
+    {
+!     /* `given' will be zero if the user didn't specifically name this
+!        member.  The name will be empty if this member is marked for
+!        deletion.  */
+!     struct member_name name;
+  
+      /* The following fields are stored in the member header as decimal or octal
+         numerals, but in this structure they are stored as machine numbers.  */
+***************
+*** 112,121 ****
+      unsigned long int offset;
+    };
+  
+! /* Nonzero means it's the name of an existing member;
+     position new or moved files with respect to this one.  */
+  
+! char *posname;
+  
+  
+  /* How to use `posname':
+--- 156,165 ----
+      unsigned long int offset;
+    };
+  
+! /* Nonzero means that it's the name of an existing member;
+     position new or moved files with respect to this one.  */
+  
+! struct member_name *posname;
+  
+  
+  /* How to use `posname':
+***************
+*** 158,173 ****
+  
+  char *archive;
+  
+! /* Descriptor on which we have locked the original archive file,
+!    or -1 if this has not been done.  */
+  
+! int lock_indesc;
+  
+! /* Pointer to tail of `argv', at first subfile name argument,
+!  or zero if no such were specified.  */
+  
+! char **files;
+  
+  /* Nonzero means write a __.SYMDEF member into the modified archive.  */
+  
+  int symdef_flag;
+--- 202,230 ----
+  
+  char *archive;
+  
+! /* Descriptor for the archive file.  This descriptor is used for
+!    locking the archive.  -1 if the archive is not yet opened.  */
+  
+! int arcfd;
+  
+! /* File pointer for the archive, used only for reading the archive.  0 
+!    if the archive hasn't been opened yet.  */
+! 
+! FILE *arcstream;
+! 
+! /* (Pointer to) an array of file names specified by the user.  The 
+!    last element is a dummy, with an "empty" name.  The remaining
+!    elements have both `given' and `header' filled in.  Zero if the
+!    user didn't specify any file names.  */
+! 
+! struct member_name *file_args;
+! 
+! /* *** Lots of globals related to the __.SYMDEF member.***  */
+  
+! /* Name "__.SYMDEF", converted to "member_name" form. */
+  
++ struct member_name symdef_name;
++ 
+  /* Nonzero means write a __.SYMDEF member into the modified archive.  */
+  
+  int symdef_flag;
+***************
+*** 212,217 ****
+--- 269,287 ----
+  
+  unsigned long int new_strings_size;
+  
++ /* ***End of __.SYMDEF globals.*** */
++ 
++ /* Controls the way in which long names are truncated.  If non-zero,
++    SomeVeryLongName.o is converted to SomeVeryLongN.o.  Otherwise, it
++    is converted to SomeVeryLongNam (which is compatible with the BSD
++    ar).  */
++ 
++ #ifndef GNU_TRUNCATION
++ #define GNU_TRUNCATION	1
++ #endif
++ 
++ int gnu_truncation = GNU_TRUNCATION;
++ 
+  /* An archive map is a chain of these structures.
+    Each structure describes one member of the archive.
+    The chain is in the same order as the members are.  */
+***************
+*** 249,259 ****
+--- 319,342 ----
+  void two_operations ();
+  void usage (), fatal (), error (), error_with_file ();
+  void perror_with_name (), pfatal_with_name ();
++ void open_archive ();
+  void write_archive ();
+  void touch_symdef_member ();
+  void update_symdefs ();
+  void delete_members (), move_members (), replace_members ();
+  void quick_append ();
++ void init_elt (), mark_as_deleted ();
++ int marked_for_deletion ();
++ int name_match ();
++ void init_name (), free_name_strings ();
++ int move_in_map ();
++ int filter_symbols ();
++ char *user_to_header ();
++ struct member_name *make_file_args ();
++ void verify_is_archive ();
++ #if DEBUG
++ void verify_symdefs ();
++ #endif
+  
+  /* Output BYTES of data at BUF to the descriptor DESC.
+     FILE is the name of the file (for error messages).  */
+***************
+*** 291,302 ****
+    posname = 0;
+    postype = POS_DEFAULT;
+    preserve_dates = 0;
+    symdef_flag = 0;
+    symdef_exists = 0;
+    ignore_symdef = 0;
+    symdef_mapelt = 0;
+!   files = 0;
+!   lock_indesc = -1;
+  
+    if (argc < 2)
+      usage ("too few command arguments", 0);
+--- 374,387 ----
+    posname = 0;
+    postype = POS_DEFAULT;
+    preserve_dates = 0;
++   init_name (&symdef_name, "__.SYMDEF");
+    symdef_flag = 0;
+    symdef_exists = 0;
+    ignore_symdef = 0;
+    symdef_mapelt = 0;
+!   file_args = 0;
+!   arcfd = -1;
+!   arcstream = 0;
+  
+    if (argc < 2)
+      usage ("too few command arguments", 0);
+***************
+*** 359,365 ****
+  	    break;
+  
+  	  case 'r':
+! 	    if (operation)
+  	      two_operations ();
+  	    operation = REPLACE;
+  	    break;
+--- 444,450 ----
+  	    break;
+  
+  	  case 'r':
+! 	    if (operation && operation != REPLACE)
+  	      two_operations ();
+  	    operation = REPLACE;
+  	    break;
+***************
+*** 375,380 ****
+--- 460,467 ----
+  	    break;
+  
+  	  case 'u':
++ 	    if (operation && operation != REPLACE)
++ 	      two_operations ();
+  	    operation = REPLACE;
+  	    newer_only = 1;
+  	    break;
+***************
+*** 402,414 ****
+    i = 2;
+  
+    if (postype != POS_DEFAULT)
+!     posname = argv[i++];
+  
+    archive = argv[i++];
+  
+    if (i < argc)
+      {
+!       files = &argv[i];
+        while (i < argc)
+  	if (!strcmp (argv[i++], "__.SYMDEF"))
+  	  {
+--- 489,501 ----
+    i = 2;
+  
+    if (postype != POS_DEFAULT)
+!     posname = make_file_args(&argv[i++], 1);
+  
+    archive = argv[i++];
+  
+    if (i < argc)
+      {
+!       file_args = make_file_args(&argv[i], argc - i);
+        while (i < argc)
+  	if (!strcmp (argv[i++], "__.SYMDEF"))
+  	  {
+***************
+*** 432,453 ****
+  	break;
+  
+      case DELETE:
+! 	if (files != 0)
+  	  delete_members ();
+  	break;
+  
+      case MOVE:
+! 	if (files != 0)
+  	  move_members ();
+  	break;
+  
+      case REPLACE:
+! 	if (files != 0 || symdef_flag)
+  	  replace_members ();
+  	break;
+  
+      case QUICK_APPEND:
+! 	if (files != 0)
+  	  quick_append ();
+  	break;
+  
+--- 519,540 ----
+  	break;
+  
+      case DELETE:
+! 	if (file_args != 0)
+  	  delete_members ();
+  	break;
+  
+      case MOVE:
+! 	if (file_args != 0)
+  	  move_members ();
+  	break;
+  
+      case REPLACE:
+! 	if (file_args != 0 || symdef_flag)
+  	  replace_members ();
+  	break;
+  
+      case QUICK_APPEND:
+! 	if (file_args != 0)
+  	  quick_append ();
+  	break;
+  
+***************
+*** 465,476 ****
+    usage ("two different operation switches specified", 0);
+  }
+  
+  void
+  scan (function, crflag)
+       void (*function) ();
+       int crflag;
+  {
+!   FILE *arcstream = fopen (archive, "r");
+  
+    if (arcstream == 0 && crflag)
+      /* Creation-warning, if desired, will happen later.  */
+--- 552,566 ----
+    usage ("two different operation switches specified", 0);
+  }
+  
++ /* Apply the given function to all members in the archive.  */
++ 
+  void
+  scan (function, crflag)
+       void (*function) ();
+       int crflag;
+  {
+!   if (arcstream == 0)
+!     open_archive (O_RDONLY);
+  
+    if (arcstream == 0 && crflag)
+      /* Creation-warning, if desired, will happen later.  */
+***************
+*** 477,492 ****
+      return;
+  
+    if (arcstream == 0)
+!     {
+!       perror_with_name (archive);
+!       exit (1);
+!     }
+!   {
+!     char buf[SARMAG];
+!     int nread = fread (buf, 1, SARMAG, arcstream);
+!     if (nread != SARMAG || bcmp (buf, ARMAG, SARMAG))
+!       fatal ("file %s not a valid archive", archive);
+!   }
+  
+    /* Now find the members one by one.  */
+    {
+--- 567,574 ----
+      return;
+  
+    if (arcstream == 0)
+!     pfatal_with_name (archive);
+!   verify_is_archive (arcfd);
+  
+    /* Now find the members one by one.  */
+    {
+***************
+*** 510,515 ****
+--- 592,599 ----
+  	    || bcmp (member_header.ar_fmag, ARFMAG, 2))
+  	  fatal ("file %s not a valid archive", archive);
+  	bcopy (member_header.ar_name, name, sizeof member_header.ar_name);
++ 
++ 	/* remove trailing blanks */
+  	{
+  	  char *p = name + sizeof member_header.ar_name;
+  	  *p = '\0';
+***************
+*** 516,522 ****
+  	  while (p > name && *--p == ' ')
+  	    *p = '\0';
+  	}
+! 	member_desc.name = name;
+  	sscanf (member_header.ar_mode, "%o", &member_desc.mode);
+  	member_desc.date = atoi (member_header.ar_date);
+  	member_desc.size = atoi (member_header.ar_size);
+--- 600,611 ----
+  	  while (p > name && *--p == ' ')
+  	    *p = '\0';
+  	}
+! 
+! 	/* Make a safe copy of the name, so that `function' can just 
+! 	   make a copy of `member_desc'.  */
+! 	member_desc.name.stored = concat (name, "", "");
+! 	member_desc.name.given = NULL;
+! 
+  	sscanf (member_header.ar_mode, "%o", &member_desc.mode);
+  	member_desc.date = atoi (member_header.ar_date);
+  	member_desc.size = atoi (member_header.ar_size);
+***************
+*** 540,548 ****
+  	  ++member_offset;
+        }
+    }
+- 
+-   
+-   fclose (arcstream);
+  }
+  
+  void print_modes ();
+--- 629,634 ----
+***************
+*** 554,560 ****
+    char *timestring;
+    if (!verbose)
+      {
+!       puts (member.name);
+        return;
+      }
+    print_modes (member.mode);
+--- 640,646 ----
+    char *timestring;
+    if (!verbose)
+      {
+!       puts (member.name.stored);
+        return;
+      }
+    print_modes (member.mode);
+***************
+*** 562,568 ****
+    printf (" %2d/%2d %6d %12.12s %4.4s %s\n",
+  	  member.uid, member.gid,
+  	  member.size, timestring + 4, timestring + 20,
+! 	  member.name);
+  }
+  
+  void
+--- 648,654 ----
+    printf (" %2d/%2d %6d %12.12s %4.4s %s\n",
+  	  member.uid, member.gid,
+  	  member.size, timestring + 4, timestring + 20,
+! 	  member.name.stored);
+  }
+  
+  void
+***************
+*** 589,605 ****
+  {
+    int ncopied = 0;
+    FILE *ostream;
+  
+    fseek (istream, member.data_offset, 0);
+!   ostream = fopen (member.name, "w");
+    if (!ostream)
+      {
+!       perror_with_name (member.name);
+        return;
+      }
+  
+    if (verbose)
+!     printf ("x - %s\n", member.name);
+  
+    while (ncopied < member.size)
+      {
+--- 675,693 ----
+  {
+    int ncopied = 0;
+    FILE *ostream;
++   char *filename;			/* name to store file into */
+  
+    fseek (istream, member.data_offset, 0);
+!   filename = (member.name.given ? member.name.given : member.name.stored);
+!   ostream = fopen (filename, "w");
+    if (!ostream)
+      {
+!       perror_with_name (filename);
+        return;
+      }
+  
+    if (verbose)
+!     printf ("x - %s\n", filename);
+  
+    while (ncopied < member.size)
+      {
+***************
+*** 615,626 ****
+      }
+  
+  #ifdef USG
+!   chmod (member.name, member.mode);
+  #else
+    fchmod (fileno (ostream), member.mode);
+  #endif
+    if (ferror (ostream) || fclose (ostream) != 0)
+!     error ("%s: I/O error", member.name);
+  
+    if (preserve_dates)
+      {
+--- 703,714 ----
+      }
+  
+  #ifdef USG
+!   chmod (filename, member.mode);
+  #else
+    fchmod (fileno (ostream), member.mode);
+  #endif
+    if (ferror (ostream) || fclose (ostream) != 0)
+!     error ("%s: I/O error", filename);
+  
+    if (preserve_dates)
+      {
+***************
+*** 628,634 ****
+        long tv[2];
+        tv[0] = member.date;
+        tv[1] = member.date;
+!       utime (member.name, tv);
+  #else
+        struct timeval tv[2];
+        tv[0].tv_sec = member.date;
+--- 716,722 ----
+        long tv[2];
+        tv[0] = member.date;
+        tv[1] = member.date;
+!       utime (filename, tv);
+  #else
+        struct timeval tv[2];
+        tv[0].tv_sec = member.date;
+***************
+*** 635,641 ****
+        tv[0].tv_usec = 0;
+        tv[1].tv_sec = member.date;
+        tv[1].tv_usec = 0;
+!       utimes (member.name, tv);
+  #endif
+      }
+  }
+--- 723,729 ----
+        tv[0].tv_usec = 0;
+        tv[1].tv_sec = member.date;
+        tv[1].tv_usec = 0;
+!       utimes (filename, tv);
+  #endif
+      }
+  }
+***************
+*** 650,656 ****
+    fseek (istream, member.data_offset, 0);
+  
+    if (verbose)
+!   printf ("\n<member %s>\n\n", member.name);
+  
+    while (ncopied < member.size)
+      {
+--- 738,744 ----
+    fseek (istream, member.data_offset, 0);
+  
+    if (verbose)
+!     printf ("\n<member %s>\n\n", member.name.stored);
+  
+    while (ncopied < member.size)
+      {
+***************
+*** 690,697 ****
+       struct member_desc member;
+  {
+    struct mapelt *mapelt = (struct mapelt *) xmalloc (sizeof (struct mapelt));
+    mapelt->info = member;
+-   mapelt->info.name = concat (mapelt->info.name, "", "");
+    maplast->next = mapelt;
+    mapelt->next = 0;
+    maplast = mapelt;
+--- 778,785 ----
+       struct member_desc member;
+  {
+    struct mapelt *mapelt = (struct mapelt *) xmalloc (sizeof (struct mapelt));
++ 
+    mapelt->info = member;
+    maplast->next = mapelt;
+    mapelt->next = 0;
+    maplast = mapelt;
+***************
+*** 721,756 ****
+    return 0;
+  }
+  
+! /* Return the element of the specified map which has the specified name.  */
+  
+  struct mapelt *
+  find_mapelt_noerror (map, name)
+       struct mapelt *map;
+!      register char *name;
+  {
+    register struct mapelt *tail;
+-   unsigned int len = strlen (name);
+-   int dot_o = name[len - 2] == '.' && name[len - 1] == 'o';
+  
+    for (tail = map; tail != 0; tail = tail->next)
+      {
+!       if (tail->info.name == 0)
+  	continue;
+!       if (!strncmp (tail->info.name, name, 13))
+! 	{
+! 	  unsigned int eltlen = strlen (tail->info.name);
+! 	  if (len <= 13 || eltlen <= 13)
+! 	    return tail;
+! 	  else
+! 	    {
+! 	      char *p = tail->info.name + 13;
+! 	      if (dot_o && p[0] == '.' && p[1] == 'o' && p[2] == '\0')
+! 		return tail;
+! 	      else if (!strncmp (p, name + 13,
+! 				 (len > eltlen ? len : eltlen) - 13))
+! 		return tail;
+! 	    }
+! 	}
+      }
+  
+    return 0;
+--- 809,832 ----
+    return 0;
+  }
+  
+! /* Return the element of the specified map which has the specified 
+!    name.  Possible side effect: if NAME or the matching element has a
+!    known `given' (user) name, that name is propagated so that both
+!    NAME and the matching element have it.  */
+  
+  struct mapelt *
+  find_mapelt_noerror (map, name)
+       struct mapelt *map;
+!      struct member_name *name;
+  {
+    register struct mapelt *tail;
+  
+    for (tail = map; tail != 0; tail = tail->next)
+      {
+!       if (marked_for_deletion (tail))
+  	continue;
+!       if (name_match (&tail->info.name, name))
+! 	return tail;
+      }
+  
+    return 0;
+***************
+*** 759,878 ****
+  struct mapelt *
+  find_mapelt (map, name)
+       struct mapelt *map;
+!      char *name;
+  {
+    register struct mapelt *found = find_mapelt_noerror (map, name);
+    if (found == 0)
+!     error ("no member named `%s'", name);
+    return found;
+  }
+  
+! /* Before looking at the archive, if we are going to update it
+!    based on looking at its current contents, make an exclusive lock on it.
+!    The lock is released when `write_archive' is called.  */
+  
+  void
+! lock_for_update ()
+! {
+!   /* Open the existing archive file; if that fails, create an empty one.  */
+! 
+!   lock_indesc = open (archive, O_RDWR, 0);
+  
+!   if (lock_indesc < 0)
+!     {
+!       int outdesc;
+  
+        if (!silent_create)
+  	printf ("Creating archive file `%s'\n", archive);
+!       outdesc = open (archive, O_WRONLY | O_APPEND | O_CREAT, 0666);
+!       if (outdesc < 0)
+! 	pfatal_with_name (archive);
+!       mywrite (outdesc, ARMAG, SARMAG, archive);
+!       close (outdesc);
+  
+!       /* Now we had better be able to open for update!  */
+  
+!       lock_indesc = open (archive, O_RDWR, 0);
+!       if (lock_indesc < 0)
+! 	pfatal_with_name (archive);
+!     }
+  
+! #ifdef LOCKS
+!   /* Lock the old file so that it won't be updated by two programs at once.
+!      This uses the fcntl locking facility found on Sun systems
+!      which is also in POSIX.  (Perhaps it comes from sysV.)
+  
+!      Note that merely reading an archive does not require a lock,
+!      because we use `rename' to update the whole file atomically.  */
+  
+    {
+      struct flock lock;
+  
+!     lock.l_type = F_WRLCK;
+      lock.l_whence = 0;
+      lock.l_start = 0;
+      lock.l_len = 0;
+  
+!     while (1)
+!       {
+! 	int value = fcntl (lock_indesc, F_SETLKW, &lock);
+! 	if (value >= 0)
+! 	  break;
+! 	else if (errno == EINTR)
+! 	  continue;
+! 	else
+! 	  pfatal_with_name ("locking archive");
+!       }
+    }
+! #endif
+  }
+  
+  /* Unlock archive and close the file descriptor.  */
+  
+  void
+  close_archive ()
+  {
+! #ifdef LOCKS
+!   {
+!     struct flock lock;
+! 
+!     /* Unlock the old archive.  */
+! 
+!     lock.l_type = F_UNLCK;
+!     lock.l_whence = 0;
+!     lock.l_start = 0;
+!     lock.l_len = 0;
+! 
+!     fcntl (lock_indesc, F_SETLK, &lock);
+!   }
+  #endif
+  
+!   /* Close the archive.  If we renamed a new one, the old one disappears.  */
+!   close (lock_indesc);
+  }
+  
+  /* Write a new archive file from a given map.  */
+  /* When a map is used as the pattern for a new archive,
+!  each element represents one member to put in it, and
+!  the order of elements controls the order of writing.
+! 
+!  Ordinarily, the element describes a member of the old
+!  archive, to be copied into the new one.
+! 
+!  If the `offset' field of the element's info is 0,
+!  then the element describes a file to be copied into the
+!  new archive.  The `name' field is the file's name.
+! 
+!  If the `name' field of an element is 0, the element is ignored.
+!  This makes it easy to specify deletion of archive members.
+  
+!  Every operation that will eventually call `write_archive'
+!  should call `lock_for_update' before beginning
+!  to do any I/O on the archive file.
+  */
+  
+  char *make_tempname ();
+  void copy_out_member ();
+  
+  void
+  write_archive (map, appendflag)
+--- 835,1093 ----
+  struct mapelt *
+  find_mapelt (map, name)
+       struct mapelt *map;
+!      struct member_name *name;
+  {
+    register struct mapelt *found = find_mapelt_noerror (map, name);
+    if (found == 0)
+!     error ("no member named `%s'", name->stored);
+    return found;
+  }
+  
+! /* Open the archive, either read-only or read-write, using the global
+!    name "archive".  The archive is locked at this time to protect
+!    against a concurrent writer.  This lock will be released when the
+!    archive is closed.  This routine should only be called once--no
+!    upgrading of access from read-only to read-write is allowed.
+! 
+!    Side effects:
+!    - If opening read-write and the archive doesn't exist, create it.
+!    - arcfd and arctream are set to mean the opened archive.  If the
+!      archive doesn't exist and can't be created, they are left as
+!      meaning "unopened".  */
+! 
+! void
+! open_archive (how)
+!      int how;				/* O_RDONLY or O_RDWR */
+! {
+!   void open_for_reading (), open_for_update ();
+!   if (arcfd != -1 || arcstream != 0)
+!     fatal ("opening archive twice");
+! 
+!   switch (how)
+!     {
+!     case O_RDONLY:
+!       open_for_reading ();
+!       break;
+!     case O_RDWR:
+!       open_for_update ();
+!       break;
+!     default:
+!       fatal ("bogus flag passed to open_archive");
+!     }
+! }
+! 
+! /* Open the archive for read-only access.  If the archive doesn't
+!    exist, just quit.  */
+! 
+! void
+! open_for_reading ()
+! {
+!   arcfd = open (archive, O_RDONLY, 0);
+!   if (arcfd < 0 && errno != ENOENT)
+!     pfatal_with_name (archive);
+!   if (arcfd < 0)
+!     return;
+! 
+!   lock_a_file (arcfd, O_RDONLY);
+  
++   arcstream = fdopen (arcfd, "r");
++   if (arcstream == 0)
++     fatal ("can't make stream for archive");
++ }
++ 
++ /* Open the archive for read-write access.  If it doesn't exist,
++    create it.  The order of creates and opens and locks is to keep
++    competing ar's (spawned by pmake) from tripping on each other.  */
++ 
+  void
+! open_for_update ()
+! {
+!   struct stat statbuf;
+  
+!   /* Assume that the archive doesn't exist, and try to create it.  If 
+!      it does exist, just open it normally.  */
+!   arcfd = open (archive, O_RDWR | O_CREAT | O_EXCL, 0666);
+!   if (arcfd < 0 && errno != EEXIST)
+!     pfatal_with_name (archive);
+  
++   if (arcfd >= 0)
++     {
+        if (!silent_create)
+  	printf ("Creating archive file `%s'\n", archive);
+!     }
+!   else
+!     arcfd = open (archive, O_RDWR, 0);
+  
+!   /* If the file suddenly doesn't exist, punt.  Some user must have
+!      manually deleted the file.  */
+!   if (arcfd < 0)
+!     pfatal_with_name (archive);
+! 
+!   lock_a_file (arcfd, O_RDWR);
+! 
+!   /* Whew.  Now that we've got the file and it's locked, check whether
+!      it's really an archive or just an empty shell, created either by
+!      us or by a competing ar.  */
+! 
+!   fstat (arcfd, &statbuf);
+!   if (statbuf.st_size == 0)
+!     mywrite (arcfd, ARMAG, SARMAG, archive);
+!   else
+!     verify_is_archive (arcfd);
+  
+!   arcstream = fdopen (arcfd, "r+");
+!   if (arcstream == 0)
+!     fatal ("can't create stream for archive");
+! }
+  
+! #ifndef LOCKS
+  
+! void
+! lock_a_file (fd, how)
+!      int fd, how;
+! {
+! }
+! 
+! void
+! unlock_a_file (fd)
+!      int fd;
+! {
+! }
+! 
+! #else /* LOCKS */
+! 
+! /* Lock the old file so that it won't be written while there are
+!    readers or another writer.
+!    Non-sprite systems use the fcntl locking facility found on Sun
+!    systems, which is also in POSIX.  (Perhaps it comes from sysV.)  */
+! 
+! #ifndef LOCK_FLOCK
+! 
+! void
+! lock_a_file (fd, how)
+!      int fd;
+!      int how;				/* read/write flag */
+! {
+!   struct flock lock;
+! 
+!   lock.l_type = (how == O_RDONLY ? F_RDLCK : F_WRLCK);
+!   lock.l_whence = 0;
+!   lock.l_start = 0;
+!   lock.l_len = 0;
+! 
+!   while (1)
+!     {
+!       int value = fcntl (fd, F_SETLKW, &lock);
+!       if (value >= 0)
+! 	break;
+!       else if (errno == EINTR)
+! 	continue;
+!       else
+! 	pfatal_with_name ("locking archive");
+!     }
+! }
+  
++ void
++ unlock_a_file (fd)
++      int fd;
+    {
+      struct flock lock;
+  
+!     /* Unlock the old archive.  */
+! 
+!     lock.l_type = F_UNLCK;
+      lock.l_whence = 0;
+      lock.l_start = 0;
+      lock.l_len = 0;
+  
+!     fcntl (fd, F_SETLK, &lock);
+    }
+! 
+! #else /* LOCK_FLOCK */
+! 
+! void
+! lock_a_file (fd, how)
+!      int fd;
+!      int how;				/* read/write flag */
+! {
+!   int lock_type = (how == O_RDONLY ? LOCK_SH : LOCK_EX);
+! 
+!   open_flags = how;
+!   if (flock (fd, lock_type) < 0)
+!     pfatal_with_name (archive);
+! }
+! 
+! /* Putting lock_flags in the flock() call is a workaround for a bug in 
+!    Sprite's flock() emulation.  -mdk 19-Oct-90 */
+! 
+! void
+! unlock_a_file (fd)
+!      int fd;
+! {
+!   int lock_type = (open_flags == O_RDONLY ? LOCK_SH : LOCK_EX);
+! 
+!   if (flock (fd, LOCK_UN | lock_type) < 0)
+!     pfatal_with_name (archive);
+  }
+  
++ #endif /* LOCK_FLOCK */
++ #endif /* LOCKS */
++ 
+  /* Unlock archive and close the file descriptor.  */
+  
+  void
+  close_archive ()
+  {
+! #ifndef USG
+!   fsync (arcfd);
+  #endif
++   unlock_a_file (arcfd);
++   if (close (arcfd) < 0)
++     {
++       perror_with_name (archive);
++       exit (1);
++     }
++ }
++ 
++ /* Ensure that the given file is an archive.  Side effect: repositions
++    the archive.  After calling this routine, you should do a seek.  */
+  
+! void
+! verify_is_archive (fd)
+!      int fd;
+! {
+!   char buf[SARMAG];
+!   int nread;
+! 
+!   lseek (fd, 0, L_SET);
+!   nread = read (fd, buf, sizeof (buf));
+!   if (nread != SARMAG || bcmp (buf, ARMAG, SARMAG) != 0)
+!     fatal ("file %s not a valid archive", archive);
+  }
+  
+  /* Write a new archive file from a given map.  */
+  /* When a map is used as the pattern for a new archive,
+!    each element represents one member to put in it, and
+!    the order of elements controls the order of writing.
+!   
+!    Ordinarily, the element describes a member of the old
+!    archive, to be copied into the new one.
+!   
+!    If, however, the `offset' field of the element's info is 0,
+!    then the element describes a file to be copied into the
+!    new archive.
+  
+!    The archive is updated by writing a new file and then copying the
+!    new file onto the old one.  We don't use rename, because if some
+!    other "ar" has the archive open and is waiting to obtain the lock,
+!    it would end up with the old file, not the new one.  There can
+!    never be two ar's writing the new file simultaneously, because of
+!    the lock on the archive.
+  */
+  
+  char *make_tempname ();
+  void copy_out_member ();
++ void copy_file ();
+  
+  void
+  write_archive (map, appendflag)
+***************
+*** 880,900 ****
+       int appendflag;
+  {
+    char *tempname = make_tempname (archive);
+!   int indesc = lock_indesc;
+    int outdesc;
+    char *outname;
+    struct mapelt *tail;
+  
+    /* Now open the output.  */
+  
+    if (!appendflag)
+      {
+!       /* Updating an existing archive normally.
+! 	 Write output as TEMPNAME and rename at the end.
+! 	 There can never be two invocations trying to do this at once,
+! 	 because of the lock made on the old archive file.  */
+  
+!       outdesc = open (tempname, O_WRONLY | O_CREAT, 0666);
+        if (outdesc < 0)
+  	pfatal_with_name (tempname);
+        outname = tempname;
+--- 1095,1117 ----
+       int appendflag;
+  {
+    char *tempname = make_tempname (archive);
+!   int indesc = arcfd;
+    int outdesc;
+    char *outname;
+    struct mapelt *tail;
+  
++   /* Sanity check */
++ 
++   if (open_flags == O_RDONLY)
++     fatal ("want to update archive after declaring read-only");
++ 
+    /* Now open the output.  */
+  
+    if (!appendflag)
+      {
+!       /* Write the revised archive to TEMPNAME, then copy it back. */
+  
+!       outdesc = open (tempname, O_RDWR | O_CREAT, 0666);
+        if (outdesc < 0)
+  	pfatal_with_name (tempname);
+        outname = tempname;
+***************
+*** 921,927 ****
+  	{
+  	  struct mapelt *this = (struct mapelt *)
+  	    xmalloc (sizeof (struct mapelt));
+! 	  this->info.name = "__.SYMDEF";
+  	  this->info.offset = SARMAG;
+  	  this->info.data_offset = SARMAG + sizeof (struct ar_hdr);
+  	  this->info.new_offset = 0;
+--- 1138,1144 ----
+  	{
+  	  struct mapelt *this = (struct mapelt *)
+  	    xmalloc (sizeof (struct mapelt));
+! 	  init_name (&this->info.name, "__.SYMDEF");
+  	  this->info.offset = SARMAG;
+  	  this->info.data_offset = SARMAG + sizeof (struct ar_hdr);
+  	  this->info.new_offset = 0;
+***************
+*** 947,954 ****
+  
+    for (tail = map; tail != 0; tail = tail->next)
+      {
+!       if ((symdef_flag || symdef_exists) && tail->info.name
+! 	  && !strcmp (tail->info.name, "__.SYMDEF")
+  #if 0
+  	  && tail->info.date==0
+  #endif
+--- 1164,1171 ----
+  
+    for (tail = map; tail != 0; tail = tail->next)
+      {
+!       if ((symdef_flag || symdef_exists) && !marked_for_deletion(tail)
+! 	  && name_match (&tail->info.name, &symdef_name)
+  #if 0
+  	  && tail->info.date==0
+  #endif
+***************
+*** 985,1028 ****
+    if (symdef_mapelt != 0)
+      touch_symdef_member (outdesc, outname);
+  
+!   /* Install the new output under the intended name.  */
+! 
+! #ifndef USG
+!   fsync (outdesc);
+! #endif
+    close (outdesc);
+- 
+    if (!appendflag)
+!     if (rename (tempname, archive))
+!       pfatal_with_name (tempname);
+  
+    close_archive ();
+  }
+  
+  void
+  header_from_map (header, mapelt)
+       struct ar_hdr *header;
+       struct mapelt *mapelt;
+  {
+-   unsigned int namelen;
+- 
+    /* Zero the header, then store in the data as text.  */
+    bzero ((char *) header, sizeof (*header));
+  
+!   strncpy (header->ar_name, mapelt->info.name, sizeof (header->ar_name));
+!   namelen = strlen (mapelt->info.name);
+!   if (namelen >= sizeof (header->ar_name))
+!     {
+!       if (mapelt->info.name[namelen - 2] == '.' &&
+! 	  mapelt->info.name[namelen - 1] == 'o')
+! 	{
+! 	  header->ar_name[sizeof (header->ar_name) - 3] = '.';
+! 	  header->ar_name[sizeof (header->ar_name) - 2] = 'o';
+! 	}
+!       header->ar_name[sizeof (header->ar_name) - 1] = '\0';
+!       error ("member name `%s' truncated to `%s'",
+! 	     mapelt->info.name, header->ar_name);
+!     }
+  
+    sprintf (header->ar_date, "%ld", mapelt->info.date);
+    sprintf (header->ar_size, "%d", mapelt->info.size);
+--- 1202,1254 ----
+    if (symdef_mapelt != 0)
+      touch_symdef_member (outdesc, outname);
+  
+!   if (!appendflag)
+!     copy_file (outdesc, tempname, arcfd, archive);
+    close (outdesc);
+    if (!appendflag)
+!     unlink (tempname);
+  
+    close_archive ();
+  }
+  
++ /* Copy all of fromfd to tofd.  The file names are passed in for error
++    reporting.  */
++ 
++ void
++ copy_file (from_fd, from_name, to_fd, to_name)
++      int from_fd, to_fd;
++      char *from_name, *to_name;
++ {
++   char buf[8192];
++   int nchars;
++ 
++   lseek (from_fd, 0, L_SET);
++   lseek (to_fd, 0, L_SET);
++   if (ftruncate (to_fd, 0) < 0)
++     pfatal_with_name (to_name);
++ 
++   while ((nchars = read (from_fd, buf, sizeof (buf))) > 0)
++     {
++       if (write (to_fd, buf, nchars) != nchars) 
++ 	pfatal_with_name (to_name);
++     }
++   if (nchars < 0)
++     pfatal_with_name (from_name);
++ }
++ 
++ /* Fill in an ar header for an element of the archive.  */
++ 
+  void
+  header_from_map (header, mapelt)
+       struct ar_hdr *header;
+       struct mapelt *mapelt;
+  {
+    /* Zero the header, then store in the data as text.  */
+    bzero ((char *) header, sizeof (*header));
+  
+!   assert (mapelt->info.name.stored != NULL);
+!   assert (strlen (mapelt->info.name.stored) < sizeof (header->ar_name));
+!   strcpy (header->ar_name, mapelt->info.name.stored);
+  
+    sprintf (header->ar_date, "%ld", mapelt->info.date);
+    sprintf (header->ar_size, "%d", mapelt->info.size);
+***************
+*** 1047,1062 ****
+       struct mapelt *mapelt;
+       int archive_indesc;
+       int outdesc;
+  {
+    struct ar_hdr header;
+    int indesc;
+  
+!   if (mapelt->info.name == 0)
+!     /* This element was cancelled.  */
+      return;
+  
+    header_from_map (&header, mapelt);
+  
+    if (mapelt->info.offset != 0)
+      {
+        indesc = archive_indesc;
+--- 1273,1290 ----
+       struct mapelt *mapelt;
+       int archive_indesc;
+       int outdesc;
++      char *outname;
+  {
+    struct ar_hdr header;
+    int indesc;
+  
+!   if (marked_for_deletion (mapelt))
+      return;
+  
+    header_from_map (&header, mapelt);
+  
++   /* Either copy the member from the (old) archive, or copy it from 
++      the user-named filed.  */
+    if (mapelt->info.offset != 0)
+      {
+        indesc = archive_indesc;
+***************
+*** 1064,1073 ****
+      }
+    else
+      {
+!       indesc = open (mapelt->info.name, 0, 0);
+        if (indesc < 0)
+  	{
+! 	  perror_with_name (mapelt->info.name);
+  	  return;
+  	}
+      }
+--- 1292,1302 ----
+      }
+    else
+      {
+!       assert (mapelt->info.name.given != NULL);
+!       indesc = open (mapelt->info.name.given, O_RDONLY, 0);
+        if (indesc < 0)
+  	{
+! 	  perror_with_name (mapelt->info.name.given);
+  	  return;
+  	}
+      }
+***************
+*** 1134,1158 ****
+  void
+  delete_members ()
+  {
+!   struct mapelt *map = make_map (0);
+!   struct mapelt *tail;
+    struct mapelt mapstart;
+!   char **p;
+  
+!   mapstart.info.name = 0;
+    mapstart.next = map;
+    map = &mapstart;
+  
+!   lock_for_update ();
+! 
+!   if (files)
+!     for (p = files; *p; p++)
+        {
+  	/* If user says to delete the __.SYMDEF member,
+  	   don't make a new one to replace it.  */
+! 	if (!strcmp (*p, "__.SYMDEF"))
+  	  symdef_exists = 0;
+! 	delete_from_map (*p, map);
+        }
+  
+    write_archive (map->next, 0);
+--- 1363,1387 ----
+  void
+  delete_members ()
+  {
+!   struct mapelt *map;
+    struct mapelt mapstart;
+!   struct member_name *name;
+  
+!   open_archive (O_RDWR);
+! 
+!   map = make_map (0);
+!   init_elt (&mapstart);
+    mapstart.next = map;
+    map = &mapstart;
+  
+!   if (file_args)
+!     for (name = file_args; !Empty_Name(name); name++)
+        {
+  	/* If user says to delete the __.SYMDEF member,
+  	   don't make a new one to replace it.  */
+! 	if (name_match (name, &symdef_name))
+  	  symdef_exists = 0;
+! 	delete_from_map (name, map);
+        }
+  
+    write_archive (map->next, 0);
+***************
+*** 1160,1191 ****
+  
+  void
+  delete_from_map (name, map)
+!      char *name;
+       struct mapelt *map;
+  {
+    struct mapelt *this = find_mapelt (map, name);
+  
+    if (!this) return;
+!   this->info.name = 0;
+    if (verbose)
+!     printf ("d - %s\n", name);
+  }
+  
+  void
+  move_members ()
+  {
+!   struct mapelt *map = make_map (0);
+!   char **p;
+    struct mapelt *after_mapelt;
+    struct mapelt mapstart;
+    struct mapelt *change_map;
+  
+!   mapstart.info.name = 0;
+    mapstart.next = map;
+    change_map = &mapstart;
+  
+-   lock_for_update ();
+- 
+    switch (postype)
+      {
+      case POS_DEFAULT:
+--- 1389,1421 ----
+  
+  void
+  delete_from_map (name, map)
+!      struct member_name *name;
+       struct mapelt *map;
+  {
+    struct mapelt *this = find_mapelt (map, name);
+  
+    if (!this) return;
+!   mark_as_deleted (this);
+    if (verbose)
+!     printf ("d - %s\n", name->stored);
+  }
+  
+  void
+  move_members ()
+  {
+!   struct mapelt *map;
+!   struct member_name *name;
+    struct mapelt *after_mapelt;
+    struct mapelt mapstart;
+    struct mapelt *change_map;
+  
+!   open_archive (O_RDWR);
+! 
+!   map = make_map (0);
+!   init_elt (&mapstart);
+    mapstart.next = map;
+    change_map = &mapstart;
+  
+    switch (postype)
+      {
+      case POS_DEFAULT:
+***************
+*** 1197,1203 ****
+        break;
+  
+      case POS_BEFORE:
+!       after_mapelt = prev_mapelt (change_map, find_mapelt (map, posname));
+      }
+  
+    /* Failure to find specified "before" or "after" member
+--- 1427,1439 ----
+        break;
+  
+      case POS_BEFORE:
+!       after_mapelt = prev_mapelt (change_map, find_mapelt (map,
+! 							   posname));
+!       break;
+! 
+!     default:
+!       after_mapelt = 0;			/* lint */
+!       fatal ("bogus position type");	/* "can't happen" */
+      }
+  
+    /* Failure to find specified "before" or "after" member
+***************
+*** 1205,1230 ****
+  
+    if (!after_mapelt) exit (1);
+  
+!   if (files)
+!     for (p = files; *p; p++)
+        {
+! 	if (move_in_map (*p, change_map, after_mapelt))
+  	  after_mapelt = after_mapelt->next;
+        }
+  
+!   write_archive (map, 0);
+  }
+  
+  int
+  move_in_map (name, map, after)
+!      char *name;
+       struct mapelt *map, *after;
+  {
+    struct mapelt *this = find_mapelt (map, name);
+    struct mapelt *prev;
+  
+!   if (!this) return 0;
+    prev = prev_mapelt (map, this);
+    prev->next = this->next;
+    this->next = after->next;
+    after->next = this;
+--- 1441,1469 ----
+  
+    if (!after_mapelt) exit (1);
+  
+!   if (file_args)
+!     for (name = file_args; !Empty_Name(name); name++)
+        {
+! 	if (move_in_map (name, change_map, after_mapelt))
+  	  after_mapelt = after_mapelt->next;
+        }
+  
+!   write_archive (change_map->next, 0);
+  }
+  
+  int
+  move_in_map (name, map, after)
+!      struct member_name *name;
+       struct mapelt *map, *after;
+  {
+    struct mapelt *this = find_mapelt (map, name);
+    struct mapelt *prev;
+  
+!   if (!this)
+!     return 0;
+    prev = prev_mapelt (map, this);
++   if (this == after || prev == after)
++     return 1;				/* no-op */
+    prev->next = this->next;
+    this->next = after->next;
+    after->next = this;
+***************
+*** 1236,1254 ****
+  void
+  replace_members ()
+  {
+!   struct mapelt *map = make_map (1);
+    struct mapelt mapstart;
+    struct mapelt *after_mapelt;
+    struct mapelt *change_map;
+!   char **p;
+    int changed;
+  
+!   mapstart.info.name = 0;
+    mapstart.next = map;
+    change_map = &mapstart;
+  
+-   lock_for_update ();
+- 
+    switch (postype)
+      {
+      case POS_DEFAULT:
+--- 1475,1494 ----
+  void
+  replace_members ()
+  {
+!   struct mapelt *map;
+    struct mapelt mapstart;
+    struct mapelt *after_mapelt;
+    struct mapelt *change_map;
+!   struct member_name *name;
+    int changed;
+  
+!   open_archive (O_RDWR);
+! 
+!   map = make_map (1);
+!   init_elt (&mapstart);
+    mapstart.next = map;
+    change_map = &mapstart;
+  
+    switch (postype)
+      {
+      case POS_DEFAULT:
+***************
+*** 1261,1266 ****
+--- 1501,1511 ----
+  
+      case POS_BEFORE:
+        after_mapelt = prev_mapelt (change_map, find_mapelt (map, posname));
++       break;
++ 
++     default:
++       after_mapelt = 0;			/* lint */
++       fatal ("bogus position type");	/* "can't happen" */
+      }
+  
+    /* Failure to find specified "before" or "after" member
+***************
+*** 1269,1288 ****
+      exit (1);
+  
+    changed = 0;
+!   if (files != 0)
+!     for (p = files; *p != 0; ++p)
+!       if (insert_in_map (*p, change_map, after_mapelt))
+  	{
+  	  after_mapelt = after_mapelt->next;
+  	  changed = 1;
+  	}
+  
+-   change_map = change_map->next;
+    if (!changed && (!symdef_flag || symdef_exists))
+      /* Nothing changed.  */
+!     close_archive (change_map);
+    else
+!     write_archive (change_map, 0);
+  }
+  
+  /* Handle the "quick insert" operation.  */
+--- 1514,1532 ----
+      exit (1);
+  
+    changed = 0;
+!   if (file_args)
+!     for (name = file_args; !Empty_Name(name); ++name)
+!       if (insert_in_map (name, change_map, after_mapelt))
+  	{
+  	  after_mapelt = after_mapelt->next;
+  	  changed = 1;
+  	}
+  
+    if (!changed && (!symdef_flag || symdef_exists))
+      /* Nothing changed.  */
+!     close_archive ();
+    else
+!     write_archive (change_map->next, 0);
+  }
+  
+  /* Handle the "quick insert" operation.  */
+***************
+*** 1293,1314 ****
+    struct mapelt *map;
+    struct mapelt *after;
+    struct mapelt mapstart;
+!   char **p;
+  
+!   mapstart.info.name = 0;
+    mapstart.next = 0;
+    map = &mapstart;
+    after = map;
+  
+!   lock_for_update ();
+  
+    /* Insert the specified files into the "map",
+       but is a map of the inserted files only,
+       and starts out empty.  */
+!   if (files)
+!     for (p = files; *p; p++)
+        {
+! 	if (insert_in_map (*p, map, after))
+  	  after = after->next;
+        }
+  
+--- 1537,1558 ----
+    struct mapelt *map;
+    struct mapelt *after;
+    struct mapelt mapstart;
+!   struct member_name *name;
+  
+!   init_elt (&mapstart);
+    mapstart.next = 0;
+    map = &mapstart;
+    after = map;
+  
+!   open_archive (O_RDWR);
+  
+    /* Insert the specified files into the "map",
+       but is a map of the inserted files only,
+       and starts out empty.  */
+!   if (file_args)
+!     for (name = file_args; !Empty_Name(name); name++)
+        {
+! 	if (insert_in_map (name, map, after))
+  	  after = after->next;
+        }
+  
+***************
+*** 1317,1350 ****
+    write_archive (map->next, 1);
+  }
+  
+! /* Insert an entry for name NAME into the map MAP after the map entry AFTER.
+!    Delete an old entry for NAME.
+     MAP is assumed to start with a dummy entry, which facilitates
+     insertion at the beginning of the list.
+!    Return 1 if successful, 0 if did nothing because file NAME doesn't
+!    exist or (optionally) is older.  */
+  
+  int
+! insert_in_map (name, map, after)
+!      char *name;
+       struct mapelt *map, *after;
+  {
+!   struct mapelt *old = find_mapelt_noerror (map, name);
+    struct mapelt *this;
+    struct stat status;
+  
+!   if (stat (name, &status))
+      {
+!       perror_with_name (name);
+        return 0;
+      }
+    if (old && newer_only && status.st_mtime <= old->info.date)
+      return 0;
+!   if (old)
+!     /* Delete the old one.  */
+!     old->info.name = 0;
+    this = (struct mapelt *) xmalloc (sizeof (struct mapelt));
+!   this->info.name = name;
+    this->info.offset = 0;
+    this->info.data_offset = 0;
+    this->info.date = status.st_mtime;
+--- 1561,1597 ----
+    write_archive (map->next, 1);
+  }
+  
+! /* Insert an entry for REQUESTED_NAME into the map MAP after the map
+!    entry AFTER. 
+!    Deletes any old entry for REQUESTED_NAME.
+     MAP is assumed to start with a dummy entry, which facilitates
+     insertion at the beginning of the list.
+!    Return 1 if successful, 0 if did nothing because file
+!    REQUESTED_NAME doesn't exist or (optionally) is older.  */
+  
+  int
+! insert_in_map (requested_name, map, after)
+!      struct member_name *requested_name;
+       struct mapelt *map, *after;
+  {
+!   struct mapelt *old = find_mapelt_noerror (map, requested_name);
+    struct mapelt *this;
+    struct stat status;
+  
+!   assert (requested_name->given != NULL);
+!   if (stat (requested_name->given, &status))
+      {
+!       perror_with_name (requested_name->given);
+        return 0;
+      }
+    if (old && newer_only && status.st_mtime <= old->info.date)
+      return 0;
+! 
+    this = (struct mapelt *) xmalloc (sizeof (struct mapelt));
+!   if (old)
+!     mark_as_deleted (old);
+! 
+!   this->info.name = *requested_name;
+    this->info.offset = 0;
+    this->info.data_offset = 0;
+    this->info.date = status.st_mtime;
+***************
+*** 1356,1362 ****
+    after->next = this;
+  
+    if (verbose)
+!     printf ("%c - %s\n", old == 0 ? 'a' : 'r', this->info.name);
+  
+    return 1;
+  }
+--- 1603,1609 ----
+    after->next = this;
+  
+    if (verbose)
+!     printf ("%c - %s\n", old == 0 ? 'a' : 'r', this->info.name.stored);
+  
+    return 1;
+  }
+***************
+*** 1369,1378 ****
+       void (*function) ();
+  {
+    struct mapelt *map;
+!   FILE *arcstream;
+!   char **p;
+  
+!   if (!files)
+      {
+        /* Handle case where we want to operate on every member.
+  	 No need to make a map and search it for this.  */
+--- 1616,1624 ----
+       void (*function) ();
+  {
+    struct mapelt *map;
+!   struct member_name *name;
+  
+!   if (!file_args)
+      {
+        /* Handle case where we want to operate on every member.
+  	 No need to make a map and search it for this.  */
+***************
+*** 1380,1398 ****
+        return;
+      }
+  
+!   arcstream = fopen (archive, "r");
+!   if (!arcstream)
+      fatal ("failure opening archive %s for the second time", archive);
+    map = make_map (0);
+  
+!   for (p = files; *p; p++)
+      {
+!       struct mapelt *this = find_mapelt (map, *p);
+        if (!this) continue;
+        function (this->info, arcstream);
+      }
+- 
+-   fclose (arcstream);
+  }
+  
+  /* Write the __.SYMDEF member from data in core.  OUTDESC and OUTNAME
+--- 1626,1644 ----
+        return;
+      }
+  
+!   if (arcstream == 0)
+!     open_archive (O_RDONLY);
+!   if (arcstream == 0)
+      fatal ("failure opening archive %s for the second time", archive);
++   verify_is_archive (arcfd);
+    map = make_map (0);
+  
+!   for (name = file_args; !Empty_Name(name); name++)
+      {
+!       struct mapelt *this = find_mapelt (map, name);
+        if (!this) continue;
+        function (this->info, arcstream);
+      }
+  }
+  
+  /* Write the __.SYMDEF member from data in core.  OUTDESC and OUTNAME
+***************
+*** 1406,1417 ****
+       char *outname;
+  {
+    struct ar_hdr header;
+-   int indesc;
+    struct mapelt *mapptr;
+    unsigned long int symdefs_size;
+  
+!   if (mapelt->info.name == 0)
+!     /* This element was cancelled.  */
+      return;
+  
+    header_from_map (&header, mapelt);
+--- 1652,1662 ----
+       char *outname;
+  {
+    struct ar_hdr header;
+    struct mapelt *mapptr;
+    unsigned long int symdefs_size;
++   int symdef_sanity_count;
+  
+!   if (marked_for_deletion (mapelt))
+      return;
+  
+    header_from_map (&header, mapelt);
+***************
+*** 1420,1426 ****
+  
+    mywrite (outdesc, &header, sizeof (header), outname);
+  
+!   /* Write the number of symdefs.  */
+    symdefs_size = nsymdefs * sizeof (struct symdef);
+    mywrite (outdesc, &symdefs_size, sizeof symdefs_size, outname);
+  
+--- 1665,1671 ----
+  
+    mywrite (outdesc, &header, sizeof (header), outname);
+  
+!   /* Write the number of bytes taken by the symdef table.  */
+    symdefs_size = nsymdefs * sizeof (struct symdef);
+    mywrite (outdesc, &symdefs_size, sizeof symdefs_size, outname);
+  
+***************
+*** 1427,1439 ****
+    /* Write symdefs surviving from old archive.  */
+    mywrite (outdesc, old_symdefs, num_old_symdefs * sizeof (struct symdef),
+  	   outname);
+  
+    /* Write symdefs for new members.  */
+    for (mapptr = map; mapptr != 0; mapptr = mapptr->next)
+      if (mapptr->info.nsymdefs != 0)
+!       write (outdesc, mapptr->info.symdefs,
+! 	     mapptr->info.nsymdefs * sizeof (struct symdef));
+  
+    /* Write the string table size.  */
+    mywrite (outdesc, &new_strings_size, sizeof new_strings_size, outname);
+  
+--- 1672,1699 ----
+    /* Write symdefs surviving from old archive.  */
+    mywrite (outdesc, old_symdefs, num_old_symdefs * sizeof (struct symdef),
+  	   outname);
++   symdef_sanity_count = num_old_symdefs;
++ 
++ #if DEBUG
++   verify_symdefs (map, old_symdefs, num_old_symdefs, new_strings);
++ #endif
+  
+    /* Write symdefs for new members.  */
+    for (mapptr = map; mapptr != 0; mapptr = mapptr->next)
+      if (mapptr->info.nsymdefs != 0)
+!       {
+! 	write (outdesc, mapptr->info.symdefs,
+! 	       mapptr->info.nsymdefs * sizeof (struct symdef));
+! #if DEBUG
+! 	verify_symdefs (map, mapptr->info.symdefs, mapptr->info.nsymdefs,
+! 			new_strings);
+! #endif
+! 	symdef_sanity_count += mapptr->info.nsymdefs;
+!       }
+  
++   if (symdef_sanity_count != nsymdefs)
++     fatal ("bug: wrote wrong number of symdefs");
++ 
+    /* Write the string table size.  */
+    mywrite (outdesc, &new_strings_size, sizeof new_strings_size, outname);
+  
+***************
+*** 1444,1449 ****
+--- 1704,1764 ----
+      mywrite (outdesc, "", 1, outname);
+  }
+  
++ #if DEBUG
++ 
++ /* Verify that the given symdefs point to the right place.  Treat the
++    symbol as the name of a .o file and look it up.  If we find it,
++    make sure we are pointing to it and not to some other .o file.  */
++ 
++ void
++ verify_symdefs (map, symdefs, numsymdefs, string_table)
++      struct mapelt *map;
++      struct symdef *symdefs;
++      unsigned int numsymdefs;
++      char *string_table;
++ {
++   struct symdef *sym;
++   struct member_name file_name;
++   struct mapelt *member;
++   char *tmp_name;
++ 
++   for (sym = symdefs; sym < symdefs+numsymdefs; ++sym)
++     {
++       tmp_name = concat (string_table + sym->s.stringoffset, ".o", "");
++       init_name (&file_name, (tmp_name[0] == '_' ? tmp_name+1 : tmp_name));
++       member = find_mapelt_noerror (map, &file_name);
++       if (member)
++ 	{
++ 	  if (member->info.new_offset)
++ 	    {
++ 	      if (member->info.new_offset != sym->offset)
++ 		{
++ 		  printf ("Symbol %s points to 0x%x, which doesn't match \
++ 0x%x (old 0x%x)\n",
++ 			  string_table + sym->s.stringoffset,
++ 			  sym->offset,
++ 			  member->info.new_offset,
++ 			  member->info.offset);
++ 		  abort ();
++ 		}
++ 	    }
++ 	  /* else no new offset, so check the old one */
++ 	  else if (member->info.offset != sym->offset)
++ 	    {
++ 	      printf ("Symbol %s points to 0x%x, which doesn't match 0x%x\n",
++ 		      string_table + sym->s.stringoffset,
++ 		      sym->offset,
++ 		      member->info.offset);
++ 	      abort();
++ 	    }
++ 	}
++       free_name_strings (&file_name);
++       free (tmp_name);
++     }
++ }
++ 
++ #endif /* DEBUG */
++ 
+  void
+  read_old_symdefs (map, archive_indesc)
+       struct mapelt *map;
+***************
+*** 1451,1474 ****
+  {
+    struct mapelt *mapelt;
+    char *data;
+-   int val;
+    int symdefs_size;
+  
+!   mapelt = find_mapelt_noerror (map, "__.SYMDEF");
+    if (!mapelt)
+      abort ();			/* Only call here if an old one exists */
+  
+    data  = (char *) xmalloc (mapelt->info.size);
+    lseek (archive_indesc, mapelt->info.data_offset, 0);
+!   val = read (archive_indesc, data, mapelt->info.size);
+  
+    symdefs_size = *(unsigned long int *) data;
+    original_num_symdefs = symdefs_size / sizeof (struct symdef);
+    old_symdefs = (struct symdef *) (data + sizeof (symdefs_size));
+-   old_strings = ((char *) (old_symdefs + original_num_symdefs)
+- 		 + sizeof (symdefs_size));
+    old_strings_size
+      = *(unsigned long int *) (old_symdefs + original_num_symdefs);
+  }
+  
+  /* Read various information from the header of an object file.
+--- 1766,1793 ----
+  {
+    struct mapelt *mapelt;
+    char *data;
+    int symdefs_size;
+  
+!   mapelt = find_mapelt_noerror (map, &symdef_name);
+    if (!mapelt)
+      abort ();			/* Only call here if an old one exists */
+  
+    data  = (char *) xmalloc (mapelt->info.size);
+    lseek (archive_indesc, mapelt->info.data_offset, 0);
+!   if (read (archive_indesc, data, mapelt->info.size) !=
+!       mapelt->info.size)
+!     pfatal_with_name (archive);
+  
+    symdefs_size = *(unsigned long int *) data;
+    original_num_symdefs = symdefs_size / sizeof (struct symdef);
+    old_symdefs = (struct symdef *) (data + sizeof (symdefs_size));
+    old_strings_size
+      = *(unsigned long int *) (old_symdefs + original_num_symdefs);
++   old_strings = ((char *) (old_symdefs + original_num_symdefs)
++ 		 + sizeof (old_strings_size));
++ #if DEBUG
++   verify_symdefs (map, old_symdefs, original_num_symdefs, old_strings);
++ #endif
+  }
+  
+  /* Read various information from the header of an object file.
+***************
+*** 1475,1481 ****
+     Return 0 for failure or 1 for success.  */
+  
+  int
+! read_header_info (mapelt, desc, offset, syms_offset, syms_size, strs_offset, strs_size)
+       struct mapelt *mapelt;
+       int desc;
+       long int offset;
+--- 1794,1801 ----
+     Return 0 for failure or 1 for success.  */
+  
+  int
+! read_header_info (mapelt, desc, offset, syms_offset, syms_size, strs_offset,
+! 		  strs_size)
+       struct mapelt *mapelt;
+       int desc;
+       long int offset;
+***************
+*** 1563,1569 ****
+       int archive_indesc;
+  {
+    int indesc;
+-   char *name = mapelt->info.name;
+    long int syms_offset, strs_offset;
+    unsigned int syms_size, strs_size;
+    struct nlist *symbols;
+--- 1883,1888 ----
+***************
+*** 1572,1581 ****
+    register unsigned int i;
+    unsigned long int offset;
+  
+!   if (name == 0)
+!     /* Deleted member.  */
+!     abort ();
+  
+    if (mapelt->info.offset != 0)
+      {
+        indesc = archive_indesc;
+--- 1891,1902 ----
+    register unsigned int i;
+    unsigned long int offset;
+  
+!   if (marked_for_deletion (mapelt))
+!     fatal ("trying to make symdefs for deleted member");
+  
++   /* Either use an existing member from the archive, or use the 
++      user-specified file.  */
++ 
+    if (mapelt->info.offset != 0)
+      {
+        indesc = archive_indesc;
+***************
+*** 1584,1599 ****
+      }
+    else
+      {
+!       indesc = open (mapelt->info.name, 0, 0);
+        if (indesc < 0)
+  	{
+! 	  perror_with_name (mapelt->info.name);
+  	  return;
+  	}
+        offset = 0;
+      }
+  
+!   if (!read_header_info (mapelt, indesc, offset, &syms_offset, &syms_size, &strs_offset, &strs_size))
+      {
+        if (mapelt->info.offset == 0)
+  	close (indesc);
+--- 1905,1922 ----
+      }
+    else
+      {
+!       assert (mapelt->info.name.given != NULL);
+!       indesc = open (mapelt->info.name.given, O_RDONLY, 0);
+        if (indesc < 0)
+  	{
+! 	  perror_with_name (mapelt->info.name.given);
+  	  return;
+  	}
+        offset = 0;
+      }
+  
+!   if (!read_header_info (mapelt, indesc, (long) offset, &syms_offset,
+! 			 &syms_size, &strs_offset, &strs_size))
+      {
+        if (mapelt->info.offset == 0)
+  	close (indesc);
+***************
+*** 1641,1647 ****
+      (void) close (indesc);
+  
+    /* Discard the symbols we don't want to mention; compact the rest down.  */
+!   symcount = filter_symbols (symbols, symcount);
+  
+    mapelt->info.symdefs = (struct symdef *)
+      xmalloc (symcount * sizeof (struct symdef));
+--- 1964,1970 ----
+      (void) close (indesc);
+  
+    /* Discard the symbols we don't want to mention; compact the rest down.  */
+!   symcount = filter_symbols (symbols, (unsigned) symcount);
+  
+    mapelt->info.symdefs = (struct symdef *)
+      xmalloc (symcount * sizeof (struct symdef));
+***************
+*** 1699,1704 ****
+--- 2022,2028 ----
+    unsigned int len;
+    struct symdef *s;
+    unsigned long int deleted_strings_size = 0;
++   unsigned long *newoffsets = 0;
+  
+    nsymdefs = original_num_symdefs;
+    num_old_symdefs = original_num_symdefs;
+***************
+*** 1708,1721 ****
+      {
+        /* We already had a __.SYMDEF member, so just update it.  */
+  
+!       /* Mark as canceled any old symdefs for members being deleted.  */
+  
+        for (tail = map; tail != 0; tail = tail->next)
+  	{
+! 	  if (tail->info.name == 0)
+  	    {
+  	      /* Old member being deleted.  Delete its symdef entries too.  */
+! 	      for (i = 0; i < nsymdefs; i++)
+  		if (old_symdefs[i].offset == tail->info.offset)
+  		  {
+  		    old_symdefs[i].offset = 0;
+--- 2032,2046 ----
+      {
+        /* We already had a __.SYMDEF member, so just update it.  */
+  
+!       /* Mark as cancelled any old symdefs for members being deleted.  */
+  
+        for (tail = map; tail != 0; tail = tail->next)
+  	{
+! 	  if (marked_for_deletion (tail))
+  	    {
++ 	      assert (tail->info.offset != 0);
+  	      /* Old member being deleted.  Delete its symdef entries too.  */
+! 	      for (i = 0; i < original_num_symdefs; i++)
+  		if (old_symdefs[i].offset == tail->info.offset)
+  		  {
+  		    old_symdefs[i].offset = 0;
+***************
+*** 1744,1751 ****
+        for (tail = map; tail != 0; tail = tail->next)
+  	{
+  	  if (tail->info.offset != 0
+! 	      || tail->info.name == 0
+! 	      || !strcmp (tail->info.name, "__.SYMDEF"))
+  	    continue;
+  	  make_new_symdefs (tail, archive_indesc);
+  	  nsymdefs += tail->info.nsymdefs;
+--- 2069,2076 ----
+        for (tail = map; tail != 0; tail = tail->next)
+  	{
+  	  if (tail->info.offset != 0
+! 	      || marked_for_deletion (tail)
+! 	      || name_match (&tail->info.name, &symdef_name))
+  	    continue;
+  	  make_new_symdefs (tail, archive_indesc);
+  	  nsymdefs += tail->info.nsymdefs;
+***************
+*** 1758,1765 ****
+  
+        for (tail = map; tail != 0; tail = tail->next)
+  	{
+! 	  if (tail->info.name == 0
+! 	      || !strcmp (tail->info.name, "__.SYMDEF"))
+  	    continue;
+  	  make_new_symdefs (tail, archive_indesc);
+  	  nsymdefs += tail->info.nsymdefs;
+--- 2083,2090 ----
+  
+        for (tail = map; tail != 0; tail = tail->next)
+  	{
+! 	  if (marked_for_deletion (tail)
+! 	      || name_match (&tail->info.name, &symdef_name))
+  	    continue;
+  	  make_new_symdefs (tail, archive_indesc);
+  	  nsymdefs += tail->info.nsymdefs;
+***************
+*** 1770,1779 ****
+    new_strings_size -= deleted_strings_size;
+    old_strings_size -= deleted_strings_size;
+  
+    /* Now we know the size of __.SYMDEF,
+       so assign the positions of all the members.  */
+  
+!   tail = find_mapelt_noerror (map, "__.SYMDEF");
+    tail->info.size = (sizeof (nsymdefs) + (nsymdefs * sizeof (struct symdef))
+  		     + sizeof (new_strings_size) + new_strings_size);
+    symdef_mapelt = tail;
+--- 2095,2108 ----
+    new_strings_size -= deleted_strings_size;
+    old_strings_size -= deleted_strings_size;
+  
++ #if DEBUG
++   verify_symdefs (map, old_symdefs, num_old_symdefs, old_strings);
++ #endif
++ 
+    /* Now we know the size of __.SYMDEF,
+       so assign the positions of all the members.  */
+  
+!   tail = find_mapelt_noerror (map, &symdef_name);
+    tail->info.size = (sizeof (nsymdefs) + (nsymdefs * sizeof (struct symdef))
+  		     + sizeof (new_strings_size) + new_strings_size);
+    symdef_mapelt = tail;
+***************
+*** 1781,1788 ****
+    pos = SARMAG;
+    for (tail = map; tail != 0; tail = tail->next)
+      {
+!       if (tail->info.name == 0)
+! 	/* Ignore deleted members.  */
+  	continue;
+        tail->info.new_offset = pos;
+        pos += sizeof (struct ar_hdr) + tail->info.size;
+--- 2110,2116 ----
+    pos = SARMAG;
+    for (tail = map; tail != 0; tail = tail->next)
+      {
+!       if (marked_for_deletion (tail))
+  	continue;
+        tail->info.new_offset = pos;
+        pos += sizeof (struct ar_hdr) + tail->info.size;
+***************
+*** 1790,1815 ****
+  	++pos;
+      }
+  
+!   /* Now update the offsets in the symdef data
+!      to be the new offsets rather than the old ones.  */
+  
+    for (tail = map; tail != 0; tail = tail->next)
+      {
+!       if (tail->info.name == 0)
+  	continue;
+        if (tail->info.symdefs == 0)
+! 	/* Member without new symdef data.
+! 	   Check the old symdef data; it may be included there. */
+! 	for (i = 0; i < num_old_symdefs; i++)
+! 	  {
+! 	    if (old_symdefs[i].offset == tail->info.offset)
+! 	      old_symdefs[i].offset = tail->info.new_offset;
+! 	  }
+        else
+  	for (i = 0; i < tail->info.nsymdefs; i++)
+  	  tail->info.symdefs[i].offset = tail->info.new_offset;
+      }
+  
+    /* Generate new, combined string table and put each string's offset into the
+       symdef that refers to it.  Note that old symdefs ref their strings by
+       offsets into old_strings but new symdefs contain addresses of strings.  */
+--- 2118,2166 ----
+  	++pos;
+      }
+  
+!   /* Now update the offsets in the symdef data to be the new offsets
+!      rather than the old ones.  We can't update the old symdefs in
+!      place, because the new offset for one member might match the old
+!      offset for another member.  So for the old symdefs we mark in a
+!      separate array what the new offsets are and then update the
+!      symdefs after going through all the members.  */
+! 
+!   newoffsets =
+!     (unsigned long *)xmalloc (num_old_symdefs * sizeof(unsigned long));
+!   bzero (newoffsets, num_old_symdefs * sizeof (unsigned long));
+  
+    for (tail = map; tail != 0; tail = tail->next)
+      {
+!       if (marked_for_deletion (tail))
+  	continue;
+        if (tail->info.symdefs == 0)
+! 	{
+! 	  /* Member without new symdef data.
+! 	     Check the old symdef data; it may be included there. */
+! 	  assert (tail->info.offset != 0);
+! 	  for (i = 0; i < num_old_symdefs; i++)
+! 	    {
+! 	      if (old_symdefs[i].offset == tail->info.offset)
+! 		newoffsets[i] = tail->info.new_offset;
+! 	    }
+! 	}
+        else
+  	for (i = 0; i < tail->info.nsymdefs; i++)
+  	  tail->info.symdefs[i].offset = tail->info.new_offset;
+      }
+  
++   /* Actually update any old symdefs that have new offsets. */
++   for (i = 0; i < num_old_symdefs; i++)
++     if (newoffsets[i] != 0)
++       old_symdefs[i].offset = newoffsets[i];
++ 
++   free (newoffsets);
++   newoffsets = 0;
++ 
++ #if DEBUG
++   verify_symdefs (map, old_symdefs, num_old_symdefs, old_strings);
++ #endif
++ 
+    /* Generate new, combined string table and put each string's offset into the
+       symdef that refers to it.  Note that old symdefs ref their strings by
+       offsets into old_strings but new symdefs contain addresses of strings.  */
+***************
+*** 1863,1869 ****
+  {
+    error (s1, s2);
+    fprintf (stderr, "\
+! Usage: ar [d|m|p|q|r|t|x [[abi [position-name] [cilouv]] archive file...\n");
+    exit (1);
+  }
+  
+--- 2214,2220 ----
+  {
+    error (s1, s2);
+    fprintf (stderr, "\
+! Usage: ar d|m|p|q|r|t|x [abiclouv] [position-name] archive file...\n");
+    exit (1);
+  }
+  
+***************
+*** 1896,1904 ****
+    fprintf (stderr, "ar: ");
+    fprintf (stderr, string);
+    if (mapelt->info.offset != 0)
+!     fprintf (stderr, "%s(%s)", archive, mapelt->info.name);
+    else
+!     fprintf (stderr, "%s", mapelt->info.name);
+    fprintf (stderr, "\n");
+  }
+  
+--- 2247,2261 ----
+    fprintf (stderr, "ar: ");
+    fprintf (stderr, string);
+    if (mapelt->info.offset != 0)
+!     {
+!       assert (mapelt->info.name.stored != NULL);
+!       fprintf (stderr, "%s(%s)", archive, mapelt->info.name.stored);
+!     }
+    else
+!     {
+!       assert (mapelt->info.name.given != NULL);
+!       fprintf (stderr, "%s", mapelt->info.name.given);
+!     }
+    fprintf (stderr, "\n");
+  }
+  
+***************
+*** 1975,1990 ****
+    return result;
+  }
+  
+! #ifdef	USG
+  int
+! rename (from, to)
+!      char *from, *to;
+  {
+!   (void)unlink (to);
+!   if (link (from, to) < 0
+!       || unlink (from) < 0)
+!     return -1;
+!   else
+      return 0;
+  }
+! #endif
+--- 2332,2478 ----
+    return result;
+  }
+  
+! 
+! /* Operations on member_names: */
+! 
+! /* Convert USER_NAME, possibly a path, into the name that goes into
+!    the archive header.  This involves stripping off leading path
+!    information and truncating the final name according to the desired
+!    rules.  The caller is responsible for freeing the returned string. */
+! 
+! char *
+! user_to_header(user_name)
+!      char *user_name;
+! {
+!   int namelen;
+!   struct ar_hdr dummy_hdr;
+!   char *result;
+!   char *tmp;
+!   char *file_name;		/* user name after removing initial path */
+! 
+!   /* Make a clean copy of the user name.  Bump the pointer past any
+!      leading path information.  */
+! 
+!   tmp = concat(user_name, "", "");
+! 
+!   user_name = rindex(tmp, '/');
+!   user_name = (user_name ? user_name + 1 : tmp);
+! 
+!   /* Save a copy of the file name, in case we need it for an error
+!      message later. */
+!   file_name = concat (user_name, "", "");
+! 
+!   /* Truncate the name to fit the ar header size. */
+!   namelen = strlen (user_name);
+!   if (namelen >= sizeof (dummy_hdr.ar_name))
+!     {
+!       if (gnu_truncation
+! 	  && user_name[namelen - 2] == '.'
+! 	  && user_name[namelen - 1] == 'o')
+! 	{
+! 	  user_name[sizeof (dummy_hdr.ar_name) - 3] = '.';
+! 	  user_name[sizeof (dummy_hdr.ar_name) - 2] = 'o';
+! 	}
+!       user_name[sizeof (dummy_hdr.ar_name) - 1] = '\0';
+!       error ("Using member name `%s' for filename `%s'", user_name, file_name);
+!     }
+! 
+!   /* Now make a fresh copy to return to the user. */
+!   result = concat (user_name, "", "");
+! 
+!   free (tmp);
+!   free (file_name);
+!   return result;
+! }
+! 
+! /* Return non-zero if the member names match.  As a side effect, 
+!    propogates user names.  This side-effect is important for, e.g.,
+!    extracting named members.  */ 
+! 
+  int
+! name_match(name1, name2)
+!      struct member_name *name1, *name2;
+  {
+!   if (strcmp(name1->stored, name2->stored) !=0)
+      return 0;
++ 
++   /* They match. */
++   if (name1->given && !name2->given)
++     name2->given = concat (name1->given, "", "");
++   if (name2->given && !name1->given)
++     name1->given = concat (name2->given, "", "");
++ 
++   return 1;
+  }
+! 
+! /* Return an array of member names, from an argv-type array of user 
+!    names. */
+! 
+! struct member_name *
+! make_file_args (argvp, num_files)
+!      char **argvp;
+!      int num_files;			/* number of elements in argvp array */
+! {
+!   struct member_name *result, *name;
+! 
+!   result = (struct member_name *)xmalloc ((num_files + 1) *
+! 					  sizeof (struct member_name));
+!   for (name = result; name < result + num_files; ++name, ++argvp)
+!     init_name (name, *argvp);
+! 
+!   name->given = NULL;
+!   name->stored = NULL;
+! 
+!   return result;
+! }
+! 
+! /* Initialize a member_name.  The caller is responsible for eventually
+!    freeing the allocated strings.  */
+! 
+! void
+! init_name (name_ptr, user_name)
+!      struct member_name *name_ptr;
+!      char *user_name;
+! {
+!   name_ptr->given = concat (user_name, "", "");
+!   name_ptr->stored = user_to_header (user_name);
+! }
+! 
+! void
+! free_name_strings (name_ptr)
+!      struct member_name *name_ptr;
+! {
+!   if (name_ptr->given)
+!     free (name_ptr->given);
+!   if (name_ptr->stored)
+!     free (name_ptr->stored);
+!   name_ptr->given = name_ptr->stored = NULL;
+! }
+! 
+! /* Methods for managing mapelt's. */
+! 
+! /* Initialize a map element: make sure the name is empty. */
+! 
+! void
+! init_elt (elt)
+!      struct mapelt *elt;
+! {
+!   elt->info.name.stored = elt->info.name.given = NULL;
+! }
+! 
+! /* Mark a map element for deletion by making the name empty.
+!    XXX - leaks some memory here. */
+! 
+! void
+! mark_as_deleted (elt)
+!      struct mapelt *elt;
+! {
+!   elt->info.name.stored = elt->info.name.given = NULL;
+! }
+! 
+! int
+! marked_for_deletion (elt)
+!      struct mapelt *elt;
+! {
+!   return Empty_Name(&elt->info.name);
+! }

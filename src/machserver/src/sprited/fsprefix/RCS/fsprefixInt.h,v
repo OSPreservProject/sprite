@@ -1,0 +1,85 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  srv030:1.2 srv028:1.2 srv027:1.2 srv026:1.2 srv024:1.2 srv022:1.2 srv021:1.2 srv019:1.2 srv018:1.2 srv016:1.2 srv015:1.2 srv014:1.2 srv012:1.2 srv011:1.2 srv010:1.2 srv008:1.2 srv007:1.2 srv006:1.2 srv005:1.2 srv004:1.2 srv003:1.2 srv002:1.2 srv001:1.2;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     91.12.01.21.58.57;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.11.19.12.53.51;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Snapshot.  FS appears to work.
+@
+text
+@/*
+ * prefixInt.h --
+ *
+ *	Declarations of data structures and variables private to the 
+ *	fsprefix module.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /r3/kupfer/spriteserver/src/sprited/fsprefix/RCS/fsprefixInt.h,v 1.1 91/11/19 12:53:51 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+ */
+
+#ifndef _FSPREFIXINT
+#define _FSPREFIXINT
+
+#include <fsprefix.h>
+
+/* constants */
+
+/* data structures */
+
+/*
+ * A list of hosts that can use a domain is kept for exported prefixes.
+ */
+typedef struct FsprefixExport {
+    List_Links	links;
+    int		spriteID;
+} FsprefixExport;
+
+/* procedures */
+
+extern void FsprefixDone _ARGS_((Fsprefix *prefixPtr));
+extern void FsprefixHandleCloseInt _ARGS_((Fsprefix *prefixPtr, int flags));
+extern void FsprefixIterate _ARGS_((Fsprefix **prefixPtrPtr));
+
+#endif /* _FSPREFIXINT */
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fsprefix/RCS/fsprefixInt.h,v 9.1 90/10/08 12:50:49 mendel Exp $ SPRITE (Berkeley)
+a21 1
+#include <stdio.h>
+@

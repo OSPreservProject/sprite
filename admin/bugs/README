@@ -1,0 +1,9 @@
+bugs.new: collection of last week's bug reports (temporary file).
+
+bugs.archive*: copy of bug reports, with some filtering (e.g., to weed
+out duplicate complaints about the same problem).
+
+bugs.active: bugs that we intend to devote resources to soon.  A
+subset of bugs.archive.*.
+
+bugs.spring: bugs for Spring Cleaning.  A subset of bugs.archive.*.

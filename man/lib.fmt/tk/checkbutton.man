@@ -1,0 +1,266 @@
+
+
+
+checkbutton               User Commands               checkbutton
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     checkbutton - Create and manipulate check-button widgets
+
+SSYYNNOOPPSSIISS
+     cchheecckkbbuuttttoonn _p_a_t_h_N_a_m_e [_o_p_t_i_o_n_s]
+
+SSTTAANNDDAARRDD OOPPTTIIOONNSS
+     aaccttiivveeBBaacckkggrroouunndd               bboorrddeerrWWiiddtthh     ppaaddxxtteexxtt
+     aaccttiivveeFFoorreeggrroouunndd               ffoonntt            ppaaddyy
+     bbaacckkggrroouunndd      ffoorreeggrroouunndd     rreelliieeff
+
+     See the ``options'' manual entry for details on the standard
+     options.
+
+WWIIDDGGEETT--SSPPEECCIIFFIICC OOPPTTIIOONNSS
+     Name:           ccoommmmaanndd
+     Class:          CCoommmmaanndd
+     Command-Line Switch:--ccoommmmaanndd
+
+          Specifies a Tcl command to associate with  the  button.
+          This  command  is typically invoked when mouse button 1
+          is released over the button window.
+
+     Name:           ooffffVVaalluuee
+     Class:          VVaalluuee
+     Command-Line Switch:--ooffffvvaalluuee
+
+          Specifies value to store  in  the  button's  associated
+          variable  whenever this button is deselected.  Defaults
+          to ``0''.
+
+     Name:           oonnVVaalluuee
+     Class:          VVaalluuee
+     Command-Line Switch:--oonnvvaalluuee
+
+          Specifies value to store  in  the  button's  associated
+          variable whenever this button is selected.  Defaults to
+          ``1''.
+
+     Name:           sseelleeccttoorr
+     Class:          FFoorreeggrroouunndd
+     Command-Line Switch:--sseelleeccttoorr
+
+          Specifies the color to draw in the selector  when  this
+          button is selected.
+
+     Name:           vvaarriiaabbllee
+     Class:          VVaarriiaabbllee
+     Command-Line Switch:--vvaarriiaabbllee
+
+
+
+
+Sprite v.1.0         Printed:  April 7, 1992                    1
+
+
+
+
+
+
+checkbutton               User Commands               checkbutton
+
+
+
+          Specifies name of global variable to  set  to  indicate
+          whether  or  not  this button is selected.  Defaults to
+          the name of the button.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The cchheecckkbbuuttttoonn command creates a new window (given  by  the
+     _p_a_t_h_N_a_m_e  argument) and makes it into a check-button widget.
+     Additional options, described above, may be specified on the
+     command  line or in the option database to configure aspects
+     of the check button such as its colors, font, text, and ini-
+     tial  relief.   The cchheecckkbbuuttttoonn command returns its _p_a_t_h_N_a_m_e
+     argument.  At the time this command is invoked,  there  must
+     not  exist  a  window  named _p_a_t_h_N_a_m_e, but _p_a_t_h_N_a_m_e's parent
+     must exist.
+
+     A check button is a widget that displays  a  textual  string
+     and  a  square called a _s_e_l_e_c_t_o_r.  A check button has all of
+     the behavior of a simple button, including the following: it
+     can   display   itself  in  either  of  two  color  schemes,
+     ``active'' or ``normal'';  it can be made to appear  raised,
+     sunken,  or  flat; it can be made to flash; and it invokes a
+     Tcl command whenever mouse button  1  is  clicked  over  the
+     check  button.  In addition, it can be _s_e_l_e_c_t_e_d.  If a check
+     button is selected then a special highlight appears  in  the
+     selector,  and a Tcl variable associated with the check but-
+     ton is set to a particular value (normally 1).  If the check
+     button is not selected, then the selector is drawn in a dif-
+     ferent fashion and the associated variable is set to a  dif-
+     ferent  value  (typically  0).   By default, the name of the
+     variable associated with a check button is the same  as  the
+     _n_a_m_e  used  to  create the check button.  The variable name,
+     and the ``on'' and ``off'' values stored in it, may be modi-
+     fied with options on the command line or in the option data-
+     base.  By default a check button is configured to select and
+     deselect itself on alternate button clicks.
+
+
+WWIIDDGGEETT CCOOMMMMAANNDD
+     The cchheecckkbbuuttttoonn command creates a new Tcl command whose name
+     is  _p_a_t_h_N_a_m_e.   This  command  may be used to invoke various
+     operations on the widget.   It  has  the  following  general
+     form:
+
+          _p_a_t_h_N_a_m_e _o_p_t_i_o_n [_a_r_g]
+     _O_p_t_i_o_n and _a_r_g determine the exact behavior of the  command.
+     The  following  commands are possible for check-button widg-
+     ets:
+
+     _p_a_t_h_N_a_m_e aaccttiivvaattee
+          Redisplay the check button using its active  foreground
+          and background colors instead of normal colors.
+
+
+
+Sprite v.1.0         Printed:  April 7, 1992                    2
+
+
+
+
+
+
+checkbutton               User Commands               checkbutton
+
+
+
+     _p_a_t_h_N_a_m_e ccoonnffiigguurree [_o_p_t_i_o_n [_v_a_l_u_e _o_p_t_i_o_n _v_a_l_u_e ...]]
+          Query  or  modify  the  configuration  options  of  the
+          widget.   If  no  _o_p_t_i_o_n  is  specified, returns a list
+          describing all of the available  options  for  _p_a_t_h_N_a_m_e
+          (see  TTkk__CCoonnffiigguurreeIInnffoo for information on the format of
+          this list).  If _o_p_t_i_o_n is specified with no _v_a_l_u_e, then
+          the  command  returns  a  list describing the one named
+          option (this list will be identical to the  correspond-
+          ing  sublist  of  the  value  returned  if no _o_p_t_i_o_n is
+          specified).  If one  or  more  _o_p_t_i_o_n-_v_a_l_u_e  pairs  are
+          specified,  then  the command modifies the given widget
+          option(s) to have the given value(s);  in this case the
+          command  returns  an empty string.  _O_p_t_i_o_n may have any
+          of the values accepted by the cchheecckkbbuuttttoonn command.
+
+     _p_a_t_h_N_a_m_e ddeeaaccttiivvaattee
+          Redisplay the check button using its normal  foreground
+          and background colors instead of active colors.
+
+     _p_a_t_h_N_a_m_e ddeesseelleecctt
+          Deselect the check  button:   redisplay  it  without  a
+          highlight  in the selector and set the associated vari-
+          able to its ``off'' value.
+
+     _p_a_t_h_N_a_m_e ffllaasshh
+          Flash  the  check  button.   This  is  accomplished  by
+          redisplaying  the check button several times, alternat-
+          ing between active and normal colors.  At  the  end  of
+          the  flash  the  check  button  is  left  in  the  same
+          normal/active state as when the command was invoked.
+
+     _p_a_t_h_N_a_m_e iinnvvookkee
+          Does just what would have happened if the user  invoked  |
+          the  check  button with the mouse: toggle the selection  |
+          state of the button and invoke the Tcl command  associ-  |
+          ated  with  the  check  button,  if  there is one.  The  |
+          return value is the return value from the Tcl  command,  |
+          or  an  empty  string if there is no command associated  |
+          with the check button.
+
+     _p_a_t_h_N_a_m_e sseelleecctt
+          Select the check button:  display it with a highlighted
+          selector  and set the associated variable to its ``on''
+          value.
+
+     _p_a_t_h_N_a_m_e ttooggggllee
+          Toggle the selection state of the button,  redisplaying
+          it and modifying its associated variable to reflect the
+          new state.
+
+
+
+
+
+
+Sprite v.1.0         Printed:  April 7, 1992                    3
+
+
+
+
+
+
+checkbutton               User Commands               checkbutton
+
+
+
+BBIINNDDIINNGGSS
+     When a new check button is created, it is given the  follow-
+     ing initial behavior by default:
+
+     <<EEnntteerr>>             Activate.
+
+     <<LLeeaavvee>>             Deactivate.
+
+     <<BBuuttttoonnPPrreessss--11>>     Change relief to sunken.
+
+     <<BBuuttttoonnRReelleeaassee--11>>   Change relief to raised.  If the release
+                         occurred  over  the  area  of the button
+                         window, then toggle the  check  button's
+                         selection  state and invoke the button's
+                         command (if there is one).  If the mouse
+                         left  the button window before releasing
+                         the mouse button, then don't change  the
+                         selection  state  or invoke the button's
+                         command.
+
+
+KKEEYYWWOORRDDSS
+     check button, widget
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  April 7, 1992                    4
+
+
+

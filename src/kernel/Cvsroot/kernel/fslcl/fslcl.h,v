@@ -1,0 +1,294 @@
+head     9.6;
+branch   ;
+access   ;
+symbols  ds3100:9.6 sun3:9.6 sprited:9.5.1 sun4nw:9.5 symm:9.5 spur:9.5 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.6
+date     92.08.10.17.28.29;  author mgbaker;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.10.19.15.46.15;  author mendel;  state Exp;
+branches 9.5.1.1;
+next     9.4;
+
+9.4
+date     90.10.10.11.10.39;  author mendel;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.10.08.15.17.34;  author mendel;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.23.12.34.08;  author brent;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.09.21.10.39.29;  author brent;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.07.33;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     89.08.21.15.27.18;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.08.21.11.07.02;  author mendel;  state Exp;
+branches ;
+next     ;
+
+9.5.1.1
+date     91.11.15.16.11.24;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Local naming routines exported.
+@
+
+
+9.6
+log
+@Changes for transparent server recovery.
+@
+text
+@/*
+ * fslcl.h --
+ *
+ *	Definitions of the parameters required for Local Domain operations.
+ *
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/fslcl/fslcl.h,v 9.5 90/10/19 15:46:15 mendel Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _FSLCL
+#define _FSLCL
+
+
+/*
+ * A directory entry:  Note that this is compatible with 4.3BSD 'struct direct'
+ */
+typedef struct Fslcl_DirEntry {
+    int fileNumber;		/* Index of the file descriptor for the file. */
+    short recordLength;		/* How many bytes this directory entry is */
+    short nameLength;		/* The length of the name in bytes */
+    char fileName[FS_MAX_NAME_LENGTH+1];	/* The name itself */
+} Fslcl_DirEntry;
+/*
+ *	FSLCL_DIR_BLOCK_SIZE	Directory's grow in multiples of this constant,
+ *		and records within a directory don't cross directory blocks.
+ *	FSLCL_DIR_ENTRY_HEADER	The size of the header of a FslclDirEntry;
+ *	FSLCL_REC_LEN_GRAIN	The number of bytes in a directory record
+ *				are rounded up to a multiple of this constant.
+ */
+#define FSLCL_DIR_BLOCK_SIZE	512
+#define FSLCL_DIR_ENTRY_HEADER	(sizeof(int) + 2 * sizeof(short))
+#define FSLCL_REC_LEN_GRAIN	4
+
+#ifdef KERNEL
+#include <fscache.h>
+#include <fsio.h>
+#include <fsconsist.h>
+#include <fsioFile.h>
+#else
+#include <fs.h>
+#endif
+
+/*
+ * Fslcl_DirRecLength --
+ *	This computes the number of bytes needed for a directory entry.
+ *	The argument should be the return of the String_Length function,
+ *	ie, not include the terminating null in the count.
+ */
+#define Fslcl_DirRecLength(stringLength) \
+    (FSLCL_DIR_ENTRY_HEADER + \
+    ((stringLength / FSLCL_REC_LEN_GRAIN) + 1) * FSLCL_REC_LEN_GRAIN)
+
+#ifdef KERNEL
+/*
+ * Misc. routines.
+ */
+extern void Fslcl_DomainInit _ARGS_((void));
+extern ReturnStatus Fslcl_DeleteFileDesc _ARGS_((Fsio_FileIOHandle *handlePtr));
+extern void Fslcl_NameInitializeOps _ARGS_((void));
+extern void Fslcl_NameHashInit _ARGS_((void));
+void Fslcl_CheckDirLog _ARGS_((Fsio_FileIOHandle *parentHandlePtr,
+	List_Links *dirLogList));
+
+#endif /* KERNEL */
+
+#endif /* _FSLCL */
+@
+
+
+9.5
+log
+@Added ifdef KERNEL so that the file can be included in user programs.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/fslcl/RCS/fslcl.h,v 9.4 90/10/10 11:10:39 mendel Exp $ SPRITE (Berkeley)
+a20 8
+#ifdef KERNEL
+#include <fscache.h>
+#include <fsio.h>
+#include <fsconsist.h>
+#include <fsioFile.h>
+#else
+#include <fs.h>
+#endif
+d42 9
+d69 2
+@
+
+
+9.5.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/fslcl/fslcl.h,v 9.5 90/10/19 15:46:15 mendel Exp $ SPRITE (Berkeley)
+@
+
+
+9.4
+log
+@Fixed include file to work with user programs.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/fslcl/RCS/fslcl.h,v 9.3 90/10/08 15:17:34 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d27 1
+a27 4
+#include <kernel/fscache.h>
+#include <kernel/fsio.h>
+#include <kernel/fsconsist.h>
+#include <kernel/fsioFile.h>
+d60 1
+d68 2
+@
+
+
+9.3
+log
+@Fixed includes to use <> rather than "", added functions prototypes, and
+removed lint.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/fs.mendel/RCS/fslcl.h,v 1.1 90/01/16 17:12:08 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d21 1
+d26 6
+a31 1
+
+@
+
+
+9.2
+log
+@Added extern
+@
+text
+@d2 1
+a2 1
+ * fsLocalDomain.h --
+d6 8
+a13 2
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+d15 1
+a15 2
+ *
+ * $Header: /sprite/src/kernel/fslcl/RCS/fslcl.h,v 9.1 89/09/21 10:39:29 brent Exp Locker: brent $ SPRITE (Berkeley)
+d21 4
+a24 2
+#include "fscache.h"
+#include "fsio.h"
+d60 4
+a63 4
+extern void		Fslcl_DomainInit();
+extern ReturnStatus	Fslcl_DeleteFileDesc();
+extern void 		Fslcl_NameInitializeOps();
+extern void 		Fslcl_NameHashInit();
+@
+
+
+9.1
+log
+@Changed private FslclDirEntry to exported Fslcl_DirEntry
+FsDirRecLength => Fslcl_DirRecLength
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/fslcl/RCS/fslcl.h,v 9.0 89/09/12 15:07:33 douglis Stable Locker: brent $ SPRITE (Berkeley)
+d53 4
+a56 5
+extern void	     Fslcl_DomainInit();
+extern ReturnStatus  Fslcl_DeleteFileDesc();
+extern void Fslcl_NameInitializeOps();
+
+
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/fslcl/RCS/fslcl.h,v 1.2 89/08/21 15:27:18 mendel Exp Locker: douglis $ SPRITE (Berkeley)
+d19 30
+@
+
+
+1.2
+log
+@Break up fs into many modules.    
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/fslcl/RCS/fslcl.h,v 1.1 89/08/21 11:07:02 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsLocalDomain.h,v 8.1 89/02/04 14:12:58 brent Exp $ SPRITE (Berkeley)
+@

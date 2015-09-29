@@ -1,0 +1,119 @@
+#include <Server.tmpl>
+
+/*
+ * If you have any extra files to be put into the library, define them here.
+ * Note that System V boxes should use os/sysV to get Berklib.c.
+ */
+
+#ifdef HPArchitecture
+#define OtherSources hpsocket.c 
+#define OtherObjects hpsocket.o dbm.o 
+#endif
+
+/*
+ * do not modify the following two definitions
+ */
+
+#ifndef OtherSources
+#define OtherSources
+#endif
+
+#ifndef OtherObjects
+#define OtherObjects
+#endif
+
+#if HasDESLibrary
+DESDEFS = -DHASDES
+DESOBJS = xdmauth.o
+DESSRCS = xdmauth.c
+#else
+DESDEFS = 
+DESOBJS =
+DESSCRS =
+#endif
+
+BOOTSTRAPCFLAGS = 
+           SRCS = WaitFor.c access.c connection.c fonttype.c io.c oscolor.c \
+                  osfonts.c osinit.c utils.c auth.c mitauth.c $(DESSRCS) \
+ 		  xdmcp.c OtherSources
+           OBJS = WaitFor.o access.o connection.o fonttype.o io.o oscolor.o \
+                  osfonts.o osinit.o utils.o auth.o mitauth.o $(DESOBJS) \
+ 		  xdmcp.o OtherObjects
+   FONT_DEFINES = FontDefines FontFilters
+#if SpecialMalloc
+     OS_DEFINES = -DSPECIAL_MALLOC
+#else
+     OS_DEFINES =
+#endif /* SpecialMalloc */
+    DBM_DEFINES = NdbmDefines
+        DEFINES = ConnectionFlags $(OS_DEFINES) $(DESDEFS)
+       INCLUDES = -I.  -I../../include -I$(INCLUDESRC) -I$(TOP)/lib/Xau
+    EXT_DEFINES = ExtensionDefines
+       LINTLIBS = ../../dix/llib-ldix.ln
+
+#ifdef HPArchitecture
+         DBMLIB = /usr/lib/libdbm.a
+    XLIBSYSVDIR = $(TOP)/lib/X/sysV
+#endif /* HPArchitecture */
+
+#ifdef NEED_ALLOCA_FROM_LIBPW
+          PWLIB = /lib/libPW.a
+#endif /* NEED_ALLOCA_FROM_LIBPW */
+
+NormalLibraryObjectRule()
+NormalLibraryTarget(os,$(OBJS))
+LintLibraryTarget(os,$(SRCS))
+NormalLintTarget($(SRCS))
+
+# these depend on ConnectionFlags
+access.o: $(ICONFIGFILES)
+connection.o: $(ICONFIGFILES)
+
+#ifdef HPArchitecture
+/**/#
+/**/# The following kludge is necessary because dbm already has a global 
+/**/# routine named "bcopy" that is implemented in a silly way.  So, we have to 
+/**/# extract the objects from the library, force the bcopy routine to be 
+/**/# local to the one file, put the result into a temporary file, rename the 
+/**/# temporary file to its proper name, and link it together with everything
+/**/# else to form the object file that we link into the server.
+/**/#
+#ifdef hp9000s300
+dbm.o:  $(DBMLIB)
+	rm -f dbm.o
+	if [ ! -d dbm ]; then $(RM) -r dbm; mkdir dbm; else /bin/true; fi
+	(cd dbm; rm -f *.o; ar -x $(DBMLIB); \
+	ld -r -o a.out.o -h _bcopy ndbm.o; \
+	mv a.out.o ndbm.o; ld -r -o ../dbm.o *.o)
+#else
+dbm.o:  $(DBMLIB)
+        rm -f dbm.o
+        if [ ! -d dbm ]; then $(RM) -r dbm; mkdir dbm; else /bin/true; fi
+        (cd dbm; rm -f *.o; ar -x $(DBMLIB); \
+        ld -r -o a.out.o -h bcopy ndbm.o; \
+        mv a.out.o ndbm.o; ld -r -o ../dbm.o *.o)
+#endif /* hp9000s300 */
+#endif /* HPArchitecture */
+
+#ifdef NEED_ALLOCA_FROM_LIBPW
+/**/#
+/**/# And this one is to get the version of alloca that lives in /lib/libPW.a
+/**/# without getting all of the rest of the stuff in there.
+/**/#
+alloca.o:  $(PWLIB)
+	rm -f alloca.o
+	ar x $(PWLIB) alloca.o
+#endif /* NEED_ALLOCA_FROM_LIBPW */
+
+SpecialObjectRule(osinit.o, $(ICONFIGFILES), -DADMPATH=\"$(ADMDIR)/X\%smsgs\" $(DBM_DEFINES))
+SpecialObjectRule(WaitFor.o, $(ICONFIGFILES), $(EXT_DEFINES))
+SpecialObjectRule(fonttype.o, $(ICONFIGFILES), $(FONT_DEFINES))
+SpecialObjectRule(oscolor.o, $(ICONFIGFILES), $(DBM_DEFINES))
+
+#if HasSaberC
+saber_src:
+	/**/#load $(CFLAGS) -DADMPATH=\"$(ADMDIR)/X\%smsgs\" $(EXT_DEFINES) \
+		$(FONT_DEFINES) $(SRCS)
+#endif
+
+DependTarget()

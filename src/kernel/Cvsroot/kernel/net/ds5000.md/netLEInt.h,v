@@ -1,0 +1,1062 @@
+head     9.9;
+branch   ;
+access   ;
+symbols  ds3100:9.9 sun3:9.9 sun4nw:9.8 symm:9.8 spur:9.8 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.9
+date     92.05.13.14.45.33;  author jhh;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     91.09.17.12.26.35;  author jhh;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     91.03.19.14.04.05;  author jhh;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     91.03.15.16.23.26;  author jhh;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.11.05.21.26.05;  author jhh;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.10.19.15.47.30;  author jhh;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     89.12.21.09.56.34;  author mendel;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.11.16.15.17.39;  author rab;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.11.05.12.25.47;  author rab;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.13.31;  author douglis;  state Stable;
+branches ;
+next     8.2;
+
+8.2
+date     89.08.10.17.37.07;  author mendel;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.05.24.07.58.30;  author rab;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.27.41;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.20.46;  author brent;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     88.06.27.10.46.24;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.22.16.24.42;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@External definitions for the Am7990 (LANCE) ethernet controller.
+@
+
+
+9.9
+log
+@Reduced number of error messages printed to syslog.
+@
+text
+@/*
+ * netLEInt.h --
+ *
+ *	External definitions for the Am7990 (LANCE) ethernet controller.
+ * The description of the definitions here come from AMD Am7990 LANCE
+ * data sheet (Publication 05698 Rev B) and the Am7990 Techincal Manual.
+
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/net/sun3.md/netLEInt.h,v 9.8 91/09/17 12:26:35 jhh Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _NETLEINT
+#define _NETLEINT
+
+#include <netInt.h>
+#include <mach.h>
+#include <netLEMachInt.h>
+
+/*
+ * Defined constants:
+ *
+ * NET_LE_NUM_RECV_BUFFERS  	The number of buffers that we have to receive
+ *			   	packets in. Also, number of receive ring 
+ *				descriptors. It must be between 1 and 128 and
+ *				be a power of TWO.
+ * NET_LE_NUM_RECV_BUFFERS_LOG2	log base 2 of NET_LE_NUM_RECV_BUFFERS.
+ * NET_LE_NUM_XMIT_BUFFERS  	The number of buffer descriptors that are used
+ *			   	for a transmitted packet.  Also, number of xmit
+ *				ring descriptors. It must be between 1 and 
+ *				128 and	be a power of TWO.
+ * NET_LE_NUM_XMIT_BUFFERS_LOG2	log base 2 of NET_LE_NUM_XMIT_BUFFERS.
+ * NET_LE_RECV_BUFFER_SIZE  	The size of each receive buffer. We make the
+ *				buffer big enough to hold the maximum size
+ *				ethernet packet + CRC check. This is 1514 +
+ *				4 = 1518 bytes. We round it to the nears 1/2 K
+ *				boundry to get 1536.
+ *			
+ * NET_LE_MIN_FIRST_BUFFER_SIZE	The smallest buffer that can be used for the
+ *				first element of a chain transmission.
+ *				If the first piece of a message is smaller than  *				this then it gets copied to other storage and
+ *				made the minimum size.
+ * NET_LE_NUM_XMIT_ELEMENTS 	The number of elements to preallocate for the 
+ *			   	retransmission queue.
+ */
+
+#define	NET_LE_NUM_RECV_BUFFERS_LOG2	4
+#define	NET_LE_NUM_RECV_BUFFERS		(1 << NET_LE_NUM_RECV_BUFFERS_LOG2)
+
+#define	NET_LE_NUM_XMIT_BUFFERS_LOG2	5
+#define	NET_LE_NUM_XMIT_BUFFERS		(1 << NET_LE_NUM_XMIT_BUFFERS_LOG2)
+
+
+#define	NET_LE_RECV_BUFFER_SIZE		1536
+#define NET_LE_MIN_FIRST_BUFFER_SIZE	100
+
+#define	NET_LE_NUM_XMIT_ELEMENTS	32
+
+/*
+ * The LANCE chip has four control and status registers that are selected by a
+ * register address port (RAP) register. The top 14 bits of RAP are reserved
+ * and read as zeros. The register accessable in the register data port (RDP)
+ * is selected by the value of the RAP. (page 15)
+ *
+ */
+
+typedef NetLEMach_Reg NetLE_Reg;
+
+#define AddrPort	0x0e02
+#define DataCSR0	0x0010
+#define DataCSR1	0x0010
+#define DataCSR2	0x0808
+#define DataCSR3	0x0d03
+
+/*
+ * Possible RAP values. (page15)
+ */ 
+
+#define	NET_LE_CSR0_ADDR	0x0
+#define	NET_LE_CSR1_ADDR	0x1
+#define	NET_LE_CSR2_ADDR	0x2
+#define	NET_LE_CSR3_ADDR	0x3
+
+/*
+ * Control and status register defintions.
+ *
+ * CSR0 - Register 0.
+ * Note that CSR0 is updated by ORing the previous and present value.
+ * See (page 16-17) for description of these bits.
+ * Bits of CSR0 fall into the following groups:
+ * (R0) - Read only - writing does nothing.
+ * (RC)	- Read and clear by writing a one - Writing zero does nothing.
+ * (RW) - Read and Write.
+ * (RW1) - Read and write with one only. 
+ */
+
+/*
+ * Error bits
+ * NET_LE_CSR0_ERROR = BABBLE|COLLISION_ERROR|MISSED_PACKET|MEMORY_ERROR
+ */
+
+#define	NET_LE_CSR0_ERROR		0x8000	/* Error summary - R0 */
+#define	NET_LE_CSR0_BABBLE		0x4000	/* Transmitter babble - RC */
+#define	NET_LE_CSR0_COLLISION_ERROR	0x2000	/* Late collision - RC */
+#define	NET_LE_CSR0_MISSED_PACKET	0x1000	/* Miss a packet - RC */
+#define	NET_LE_CSR0_MEMORY_ERROR	0x0800	/* Memory error - RC */
+/*
+ * Interrupt bits.
+ * NET_LE_CSR_INTR = RECV_INTR|XMIT_INTR|INIT_DONE|ERROR
+ */
+#define	NET_LE_CSR0_RECV_INTR		0x0400 	/* Receiver interrupt - RC */
+#define	NET_LE_CSR0_XMIT_INTR		0x0200	/* Trasmit interrupt - RC */
+#define	NET_LE_CSR0_INIT_DONE		0x0100	/* Initialization done - RC */
+#define	NET_LE_CSR0_INTR		0x0080	/* Interrupt Summary - R0 */
+/*
+ * Enable bits.
+ */
+#define	NET_LE_CSR0_INTR_ENABLE		0x0040	/* Interrupt enable - RW */
+#define	NET_LE_CSR0_RECV_ON		0x0020	/* Receiver on - R0 */
+#define	NET_LE_CSR0_XMIT_ON		0x0010	/* Transmitter on - R0 */
+#define	NET_LE_CSR0_XMIT_DEMAND		0x0008	/* Sent now flag. - RW1 */
+#define	NET_LE_CSR0_STOP		0x0004	/* Stop and reset - RW1 */
+#define	NET_LE_CSR0_START		0x0002	/* (Re)Start after stop - RW1*/
+#define	NET_LE_CSR0_INIT		0x0001	/* Initialize - RW1 */
+
+/*
+ * Control and status register 1 (CSR1) (page 18)
+ * CSR1 is the low order 16 bits of the address of the Initialization block.
+ * Note that the LSB must be zero.
+ */
+
+/*
+ * Control and status register (CSR2) (page 18)
+ * CSR2 is the high order 16 bits of address of the Initialization block.
+ * Note that the top 8 bits are reserved and must be zero.
+ */
+
+/*
+ * Control and status register (CSR3) (page 18)
+ * CSR3 defines the Bus Master interface.
+ */
+#define	NET_LE_CSR3_BYTE_SWAP		0x0004	/* Byte swap for us. - RW */
+#define	NET_LE_CSR3_ALE_CONTROL		0x0002	/* Signals active low - RW */
+#define	NET_LE_CSR3_BYTE_CONTROL	0x0001	/* Byte control - RW */
+
+/*
+ * Define the value for csr3 for the different machine types.
+ */
+#if defined(sun4c)
+#define NET_LE_CSR3_VALUE \
+    (NET_LE_CSR3_BYTE_SWAP | NET_LE_CSR3_ALE_CONTROL | NET_LE_CSR3_BYTE_CONTROL)
+#else 
+
+#if defined(ds5000)
+#define NET_LE_CSR3_VALUE  0
+#else
+#define NET_LE_CSR3_VALUE NET_LE_CSR3_BYTE_SWAP
+#endif
+
+#endif
+
+/*
+ * First in the mode register.
+ *
+ *typedef struct NetLEModeReg {
+ *    unsigned int	promiscuous	:1;	Read all incoing packets.  
+ *    unsigned int			:8;	Reserved  
+ *    unsigned int        internalLoop	:1;	Internal if lookBack.  
+ *    unsigned int	disableRetry	:1;	Disable collision retry.  
+ *    unsigned int	forceCollision	:1;	Force collision.	 
+ *    unsigned int	disableCRC	:1;	Disable transmit CRC.  
+ *    unsigned int	loopBack	:1;	Loop back mode.  
+ *    unsigned int	disableXmit	:1;	Disable the transmitter.  
+ *    unsigned int	disableRecv	:1;	Disable the receiver.  
+ *} NetLEModeReg;
+ */
+
+typedef unsigned short NetLEModeReg[1];
+
+#define Promiscuous               0x0001
+#define InternalLoop              0x0901
+#define DisableRetry              0x0a01
+#define ForceCollision            0x0b01
+#define DisableCRC                0x0c01
+#define LoopBack                  0x0d01
+#define DisableXmit               0x0e01
+#define DisableRecv               0x0f01
+
+
+/*
+ *  Descriptor Ring Pointer (page 21) (Byte swapped. )
+ *
+ *typedef struct NetLERingPointer {
+ *    unsigned short	ringAddrLow	:16;	  Low order ring address.
+ *						 * Must be quad word aligned. 
+ *						  
+ *    unsigned int	logRingLength	:3;	  log2 of ring length.  
+ *    unsigned int			:5;	  Reserved  
+ *    unsigned int	ringAddrHigh	:8;	  High order ring address.  
+ *} NetLERingPointer;
+ */
+
+typedef unsigned short NetLERingPointer[2];
+
+#define RingAddrLow               0x0010
+#define LogRingLength             0x1003
+#define RingAddrHigh              0x1808
+
+/*
+ * LE Initialization block. (Page 19)
+ */
+
+typedef struct NetLEInitBlock {
+    NetLEModeReg	mode;			/* Mode register */
+    /*
+     * It looks like the ethernet address needs to be byte swapped.
+     * Also, lowest-order bit must be zero.
+     */
+    Net_EtherAddress	etherAddress;		/* The ethernet address. */
+    unsigned short	multiCastFilter[4];	/* Logical address filter. */
+    NetLERingPointer	recvRing;		/* Receive ring buffers. */
+    NetLERingPointer	xmitRing;		/* Transmit ring buffers. */
+} NetLEInitBlock;
+
+/*
+ * LE Net Recv messages descriptors
+ * 
+ * typedef struct NetLERecvMsgDesc {
+ *     unsigned short	bufAddrLow;	  Low order 16 addr bits of buffer.  
+ *     unsigned int	chipOwned	:1;	  Buffer is owned by LANCE.  
+ *     unsigned int	error		:1;	  Error summary  
+ *     unsigned int	framingError	:1;	  Framing Error occured.   
+ *     unsigned int	overflowError	:1;	  Packet overflowed.  
+ *     unsigned int	crcError	:1;	  CRC error.  
+ *     unsigned int	bufferError	:1;	  Buffer error.  
+ *     unsigned int	startOfPacket	:1;	  First buffer of packet.  
+ *     unsigned int	endOfPacket	:1;	  Last buffer of packet.  
+ *     unsigned char	bufAddrHigh;	  High order 8 addr bits of buffer.  
+ *     short	        bufferSize;	  Size of buffer in bytes. This 
+ * 					 * has to be the 2's complement of
+ * 					 * the buffer size.
+ * 					  
+ *     short	packetSize;		  Size of the packet (bytes).  
+ * } NetLERecvMsgDesc;
+ */
+
+typedef struct NetLERecvMsgDesc {
+    unsigned short	bufAddrLow;	/* Low order 16 addr bits of buffer. */
+#ifdef ds5000
+    unsigned char	bufAddrHigh;	/* High order 8 addr bits of buffer. */
+    unsigned char	bits[1];	/* Control bits. */
+#else
+    unsigned char	bits[1];	/* Control bits. */
+    unsigned char	bufAddrHigh;	/* High order 8 addr bits of buffer. */
+#endif
+    short	        bufferSize;	/* Size of buffer in bytes. This 
+					 * has to be the 2's complement of
+					 * the buffer size.
+					 */
+    short	packetSize;		/* Size of the packet (bytes). */
+} NetLERecvMsgDesc;
+
+#define ChipOwned                 0x0001
+#define Error                     0x0101
+#define FramingError              0x0201
+#define OverflowError             0x0301
+#define CrcError                  0x0401
+#define RecvBufferError           0x0501
+#define StartOfPacket             0x0601
+#define EndOfPacket               0x0701
+
+/*
+ * LE Net Xmit messages descriptors (page 23-23)
+ * 
+ * typedef struct NetLEXmitMsgDesc {
+ *     unsigned short  bufAddrLow;	  Low order 16 addr bits of buffer. 
+ *     unsigned int    chipOwned	    :1;	  Buffer owned by the LANCE  
+ *     unsigned int    error	    :1;	  Error summary  
+ *     unsigned int		    :1;	  Reserved.   
+ *     unsigned int    retries	    :1;	  More than one retry was needed.   
+ *     unsigned int    oneRetry	    :1;	  Exactly one retry was needed.  
+ *     unsigned int    deferred	    :1;	  Transmission deferred.  
+ *     unsigned int    startOfPacket   :1;	  First buffer of packet.  
+ *     unsigned int    endOfPacket     :1;	  Last buffer of packet.  
+ *     unsigned char   bufAddrHigh;	  High order 8 addr bits of buffer.  
+ *     short           bufferSize;	  Signed size of buffer in bytes. This 
+ * 					 * has to be the 2's complement of
+ * 					 * the buffer size.
+ * 					 * Note that the first buffer in a
+ * 					 * chain must have at least 100 bytes.
+ * 					  
+ *     unsigned int    bufferError	    :1;	  Buffering error.  
+ *     unsigned int    underflowError  :1;	  Underflow error.  
+ *     unsigned int		    :1;	  Reserved.  
+ *     unsigned int    lateCollision   :1;	  Late collision error.  
+ *     unsigned int    lostCarrier	    :1;	  Loss of carrier error.  
+ *     unsigned int    retryError	    :1;	  Too many collision.  
+ *     unsigned int    tdrCounter   :10;  Time Domain Reflectometry counter.  
+ * } NetLEXmitMsgDesc;
+ */
+typedef struct NetLEXmitMsgDesc {
+    unsigned short  bufAddrLow;	/* Low order 16 addr bits of buffer.*/
+#ifdef ds5000
+    unsigned char   bufAddrHigh;	/* High order 8 addr bits of buffer. */
+    unsigned char   bits1[1];	/* Control bits. See below. */
+#else
+    unsigned char   bits1[1];	/* Control bits. See below. */
+    unsigned char   bufAddrHigh;	/* High order 8 addr bits of buffer. */
+#endif
+    short           bufferSize;		/* Signed size of buffer in bytes. This 
+					 * has to be the 2's complement of
+					 * the buffer size.
+					 * Note that the first buffer in a
+					 * chain must have at least 100 bytes.
+					 */
+    unsigned short   bits2[1];	/* Control bits. See below. */
+} NetLEXmitMsgDesc;
+
+#define ChipOwned                 0x0001
+#define Error                     0x0101
+#define Retries                   0x0301
+#define OneRetry                  0x0401
+#define Deferred                  0x0501
+#define StartOfPacket             0x0601
+#define EndOfPacket               0x0701
+
+#define XmitBufferError           0x0001
+#define UnderflowError            0x0101
+#define LateCollision             0x0301
+#define LostCarrier               0x0401
+#define RetryError                0x0501
+#define TdrCounter                0x060a
+
+
+
+/*
+ * Structure to hold all state information associated with one of these
+ * chips.
+ */
+
+typedef struct {
+    volatile NetLE_Reg	    *regPortPtr;    /* Port to chip's registers. */
+    volatile NetLEInitBlock *initBlockPtr;  /* Chip initialization block. */
+    /*
+     * Pointers for ring of receive buffers. 
+     */
+    volatile NetLERecvMsgDesc	*recvDescFirstPtr;
+                                            /* Ring of receive desc start.*/
+    volatile NetLERecvMsgDesc	*recvDescNextPtr;
+                                            /* Next recv desc to be filled. */
+    volatile NetLERecvMsgDesc	*recvDescLastPtr;
+                                            /* Ring of recv descriptors end. */
+    /*
+     * Pointers for ring of transmit buffers. 
+     */
+    volatile NetLEXmitMsgDesc	*xmitDescFirstPtr;
+                                            /* Ring of xmit descriptors start.*/
+    volatile NetLEXmitMsgDesc	*xmitDescNextPtr;
+                                            /* Next xmit desc to be filled. */
+    volatile NetLEXmitMsgDesc	*xmitDescLastPtr;
+                                            /* Ring of xmit descriptors end. */
+
+    List_Links		xmitListHdr;	/* List of packets to be transmited. */
+    List_Links		*xmitList;	/* Pointer to the front of the list of
+					   packets to be transmited. */
+    List_Links		xmitFreeListHdr; /* List of unused packets. */
+    List_Links      	*xmitFreeList;	/* Pointer to a list of unused 
+					   transmission queue elements. */
+    Boolean		transmitting;	/* Set if are currently transmitting a
+					   packet. */
+    Boolean		running;	/* Is the chip currently active. */
+    Net_EtherAddress	etherAddressBackward;	/* The ethernet address in 
+						 * reverse byte order. */
+    Net_EtherAddress	etherAddress;	/* The ethernet address */
+    Address		recvDataBuffer[NET_LE_NUM_RECV_BUFFERS]; /* Receive
+							* data buffers. */
+    Boolean		recvMemInitialized;	/* Flag for initializing
+						 * kernel memory. */
+    Boolean		recvMemAllocated;	/* Flag for allocating
+						 * memory for ring buffers. */
+    Net_ScatterGather 	*curScatGathPtr;  /* Pointer to scatter gather element 
+					   * for current packet being sent. */
+    char            	loopBackBuffer[NET_ETHER_MAX_BYTES]; /* Buffer for the
+						  * loopback address. */
+    char		*firstDataBuffer; /* Buffer used to ensure that
+					   * first element is of a minimum
+					   * size. */
+    Boolean		xmitMemInitialized; /* Flag to note if xmit memory
+					     * has been initialized. */
+    Boolean		xmitMemAllocated; /* Flag to note if xmit memory
+					   * has been allocated. */
+    Net_Interface	*interPtr;	/* Pointer back to network interface. */
+    Net_EtherStats	stats;		/* Performance statistics. */
+    int			numResets;	/* Number of times the chip has
+					 * been reset. */
+    Boolean		resetPending;	/* TRUE => chip should be reset when
+					 * current transmit is done. */
+    int			lastRecvCnt;	/* Number of packets done during
+					 * last receive interrupt. */
+    int			lateCollisions;	/* Number of transmit late collision
+					 * errors. */
+#ifdef ds5000
+    char		*bufAddr;	/* Network buffer. */
+    char		*bufAllocPtr;	/* Current allocation address in
+					 * network buffer. */
+    int			bufSize;	/* Size of the network buffer. */
+#endif
+} NetLEState;
+
+
+/*
+ * General routines.
+ */
+
+extern	ReturnStatus	NetLEInit _ARGS_((Net_Interface *interPtr));
+extern	ReturnStatus	NetLEOutput _ARGS_((Net_Interface *interPtr,
+			    Address hdrPtr,Net_ScatterGather *scatterGatherPtr,
+			    int scatterGatherLength, Boolean rpc,
+			    ReturnStatus *statusPtr));
+extern	void		NetLEIntr _ARGS_((Net_Interface *interPtr, 
+			    Boolean polling));
+extern ReturnStatus 	NetLEIOControl _ARGS_((Net_Interface *interPtr, 
+			    Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
+extern	void		NetLERestart _ARGS_((Net_Interface *interPtr));
+extern	void		NetLEReset _ARGS_((Net_Interface *interPtr));
+extern	ReturnStatus	NetLEGetStats _ARGS_((Net_Interface *interPtr, 
+			    Net_Stats *statPtr));
+extern Address		NetLEMemAlloc _ARGS_((NetLEState *statePtr, 
+			    int numBytes));
+extern	ReturnStatus	NetLEMachInit _ARGS_ ((Net_Interface *interPtr,
+				NetLEState *statePtr));
+
+/*
+ * Routines for transmitting.
+ */
+
+extern	void		NetLEXmitInit _ARGS_((NetLEState *statePtr));
+extern	ReturnStatus	NetLEXmitDone _ARGS_((NetLEState *statePtr));
+extern	void		NetLEXmitRestart _ARGS_((NetLEState *statePtr));
+extern	void		NetLEXmitDrop _ARGS_((NetLEState *statePtr));
+
+/*
+ * Routines for the receive unit.
+ */
+
+extern	void		NetLERecvInit _ARGS_((NetLEState *statePtr));
+extern	ReturnStatus	NetLERecvProcess _ARGS_((Boolean dropPackets,
+			    NetLEState *statePtr));
+
+
+extern	NetLEState	netLEDebugState;
+extern	NetLERecvMsgDesc netLEDebugRecv[];
+extern	NetLEXmitMsgDesc netLEDebugXmit[];
+extern	int		netLEDebugCount;
+extern	unsigned short	netLEDebugCsr0;
+extern	char		netLEDebugBuffer[];
+
+#endif /* _NETLEINT */
+@
+
+
+9.8
+log
+@ioctl routine didn't exist
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/net/sun3.md/RCS/netLEInt.h,v 9.7 91/03/19 14:04:05 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+d407 2
+@
+
+
+9.7
+log
+@same lance driver for sun3, sun4c, and ds5000.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/net/ds5000.md/RCS/netLEInt.h,v 1.3 91/03/19 10:49:06 jhh Exp $ SPRITE (Berkeley)
+d427 2
+@
+
+
+9.6
+log
+@started merging with ds5000 sources
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/net/sun3.md/RCS/netLEInt.h,v 9.5 90/11/05 21:26:05 jhh Exp $ SPRITE (Berkeley)
+d161 1
+a161 1
+#if (defined(ds5000) || defined(sun3))
+d433 2
+a435 2
+extern ReturnStatus	NetLEMachInit _ARGS_((Net_Interface *interPtr,
+			    NetLEState *statePtr));
+@
+
+
+9.5
+log
+@network output routines return a status
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/net/sun3.md/RCS/netLEInt.h,v 9.4 90/10/19 15:47:30 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+d24 2
+a29 2
+ * NET_LE_CONTROL_REG_ADDR	The address of the control register for the 
+ *				ethernet chip.
+a52 5
+#ifdef sun4
+#define NET_LE_CONTROL_REG_ADDR		0xffd10000
+#else
+#define NET_LE_CONTROL_REG_ADDR		0xfe10000
+#endif
+a66 14
+ * Macros for converting chip to cpu and cpu to chip address.
+ * We always deal with chip addresses in two parts, the lower 16 bits
+ * and the upper 8 bits.
+ */
+#ifdef sun4
+#define	NET_LE_SUN_FROM_CHIP_ADDR(high,low)	\
+		((Address) (0xff000000 + ((high) << 16) + (low)))
+#else
+#define	NET_LE_SUN_FROM_CHIP_ADDR(high,low)	\
+		((Address) (0xf000000 + ((high) << 16) + (low)))
+#endif
+#define	NET_LE_SUN_TO_CHIP_ADDR_HIGH(a) ( (((unsigned int) (a)) >> 16) & 0xff)
+#define	NET_LE_SUN_TO_CHIP_ADDR_LOW(a) ( ((unsigned int) (a)) & 0xffff)
+/*
+d74 1
+a74 4
+typedef struct NetLE_Reg {
+	unsigned short	dataPort;	/* RDP */
+        unsigned short	addrPort[1];	/* RAP */
+} NetLE_Reg;
+d77 4
+d154 16
+d210 1
+a210 1
+typedef unsigned int NetLERingPointer[1];
+d256 4
+d262 1
+d310 4
+d316 1
+d334 1
+a334 1
+#define XmitBufferError              0x0001
+d401 12
+d431 2
+d434 2
+d452 8
+@
+
+
+9.4
+log
+@Rewrite to support multiple interfaces and the Ultranet
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/net.jhh/sun3.md/RCS/netLEInt.h,v 9.5 90/09/20 21:13:46 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+d401 1
+a401 1
+extern	void		NetLEOutput _ARGS_((Net_Interface *interPtr,
+d403 2
+a404 1
+			    int scatterGatherLength));
+@
+
+
+9.3
+log
+@Changed the spelling of framming to framing to make fred and mary happy.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/net/sun3.md/RCS/netLEInt.h,v 9.2 89/11/16 15:17:39 rab Exp Locker: mendel $ SPRITE (Berkeley)
+d23 1
+a23 3
+#include "netEther.h"
+#include "net.h"
+#include "netInt.h"
+a90 3
+ * The sun4 compiler generates byte loads and stores for short bit fields but
+ * the hardware doesn't support byte access to the the LE registers.  Making
+ * addrPort a short will cause the compiler to use sth/lduh instructions.
+d95 1
+a95 6
+#ifdef sun4
+        unsigned short	addrPort;	/* RAP */
+#else
+        unsigned int        	: 14;	/* Reserved - must be zero */
+	unsigned int	addrPort: 2;	/* RAP */
+#endif
+d98 2
+d173 24
+a196 1
+ */
+a197 11
+typedef struct NetLEModeReg {
+    unsigned int	promiscuous	:1;	/* Read all incoing packets. */
+    unsigned int			:8;	/* Reserved */
+    unsigned int        internalLoop	:1;	/* Internal if lookBack. */
+    unsigned int	disableRetry	:1;	/* Disable collision retry. */
+    unsigned int	forceCollision	:1;	/* Force collision.	*/
+    unsigned int	disableCRC	:1;	/* Disable transmit CRC. */
+    unsigned int	loopBack	:1;	/* Loop back mode. */
+    unsigned int	disableXmit	:1;	/* Disable the transmitter. */
+    unsigned int	disableRecv	:1;	/* Disable the receiver. */
+} NetLEModeReg;
+d201 16
+a216 10
+ *  Also, 
+ */
+typedef struct NetLERingPointer {
+    unsigned short	ringAddrLow	:16;	/* Low order ring address.
+						 * Must be quad word aligned. 
+						 */
+    unsigned int	logRingLength	:3;	/* log2 of ring length. */
+    unsigned int			:5;	/* Reserved */
+    unsigned int	ringAddrHigh	:8;	/* High order ring address. */
+} NetLERingPointer;
+d236 18
+d258 1
+a258 8
+    unsigned int	chipOwned	:1;	/* Buffer is owned by LANCE. */
+    unsigned int	error		:1;	/* Error summary */
+    unsigned int	framingError	:1;	/* Framing Error occured.  */
+    unsigned int	overflowError	:1;	/* Packet overflowed. */
+    unsigned int	crcError	:1;	/* CRC error. */
+    unsigned int	bufferError	:1;	/* Buffer error. */
+    unsigned int	startOfPacket	:1;	/* First buffer of packet. */
+    unsigned int	endOfPacket	:1;	/* Last buffer of packet. */
+d267 8
+d278 26
+a304 1
+
+d307 1
+a307 8
+    unsigned int    chipOwned	    :1;	/* Buffer owned by the LANCE */
+    unsigned int    error	    :1;	/* Error summary */
+    unsigned int		    :1;	/* Reserved.  */
+    unsigned int    retries	    :1;	/* More than one retry was needed.  */
+    unsigned int    oneRetry	    :1;	/* Exactly one retry was needed. */
+    unsigned int    deferred	    :1;	/* Transmission deferred. */
+    unsigned int    startOfPacket   :1;	/* First buffer of packet. */
+    unsigned int    endOfPacket	    :1;	/* Last buffer of packet. */
+d315 1
+a315 7
+    unsigned int    bufferError	    :1;	/* Buffering error. */
+    unsigned int    underflowError  :1;	/* Underflow error. */
+    unsigned int		    :1;	/* Reserved. */
+    unsigned int    lateCollision   :1;	/* Late collision error. */
+    unsigned int    lostCarrier	    :1;	/* Loss of carrier error. */
+    unsigned int    retryError	    :1;	/* Too many collision. */
+    unsigned int    tdrCounter	    :10;/* Time Domain Reflectometry counter. */
+d318 15
+d334 1
+d362 1
+d365 1
+d374 19
+a394 5
+/*
+ * The state of all of the interfaces. 
+ */
+
+extern	NetLEState	netLEState;
+a395 1
+
+d400 10
+a409 6
+extern	Boolean	NetLEInit();
+extern	void	NetLEOutput();
+extern	void	NetLEIntr();
+extern	void	NetLERestart();
+
+extern	void	NetLEReset();
+d415 4
+a418 3
+extern	void	NetLEXmitInit();
+extern	ReturnStatus	NetLEXmitDone();
+extern	void	NetLEXmitRestart();
+d424 3
+a426 2
+extern	void	NetLERecvInit();
+extern	ReturnStatus	NetLERecvProcess();
+@
+
+
+9.2
+log
+@Checked volatiles.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/net/sun3.md/RCS/netLEInt.h,v 9.1 89/11/05 12:25:47 rab Exp $ SPRITE (Berkeley)
+d232 1
+a232 1
+    unsigned int	frammingError	:1;	/* Framing Error occured.  */
+@
+
+
+9.1
+log
+@Changed all bit fields to unsigned ints.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/net/sun3.md/RCS/netLEInt.h,v 9.0 89/09/12 15:13:31 douglis Stable Locker: rab $ SPRITE (Berkeley)
+d289 6
+a294 3
+    NetLERecvMsgDesc	*recvDescFirstPtr;/* Ring of receive desc start.*/
+    NetLERecvMsgDesc	*recvDescNextPtr; /* Next receive desc to be filled. */
+    NetLERecvMsgDesc	*recvDescLastPtr; /* Ring of receive descriptors end. */
+d298 6
+a303 3
+    NetLEXmitMsgDesc	*xmitDescFirstPtr;/* Ring of xmit descriptors start.*/
+    NetLEXmitMsgDesc	*xmitDescNextPtr; /* Next xmit desc to be filled. */
+    NetLEXmitMsgDesc	*xmitDescLastPtr; /* Ring of xmit descriptors end. */
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/net/sun3.md/RCS/netLEInt.h,v 8.2 89/08/10 17:37:07 mendel Exp Locker: douglis $ SPRITE (Berkeley)
+d103 2
+a104 2
+        unsigned short		: 14;	/* Reserved - must be zero */
+	unsigned short	addrPort: 2;	/* RAP */
+d184 9
+a192 9
+    int			promiscuous	:1;	/* Read all incoing packets. */
+    int					:8;	/* Reserved */
+    int			internalLoop	:1;	/* Internal if lookBack. */
+    int			disableRetry	:1;	/* Disable collision retry. */
+    int			forceCollision	:1;	/* Force collision.	*/
+    int			disableCRC	:1;	/* Disable transmit CRC. */
+    int			loopBack	:1;	/* Loop back mode. */
+    int			disableXmit	:1;	/* Disable the transmitter. */
+    int			disableRecv	:1;	/* Disable the receiver. */
+d205 1
+a205 1
+    unsigned char	ringAddrHigh	:8;	/* High order ring address. */
+d230 8
+a237 8
+    int		chipOwned	:1;	/* Buffer is owned by LANCE. */
+    int		error		:1;	/* Error summary */
+    int		frammingError	:1;	/* Framing Error occured.  */
+    int		overflowError	:1;	/* Packet overflowed. */
+    int		crcError	:1;	/* CRC error. */
+    int		bufferError	:1;	/* Buffer error. */
+    int		startOfPacket	:1;	/* First buffer of packet. */
+    int		endOfPacket	:1;	/* Last buffer of packet. */
+d239 1
+a239 1
+    short	bufferSize;		/* Size of buffer in bytes. This 
+d252 11
+a262 11
+    unsigned short	bufAddrLow;	/* Low order 16 addr bits of buffer.*/
+    int		chipOwned	:1;	/* Buffer owned by the LANCE */
+    int		error		:1;	/* Error summary */
+    int				:1;	/* Reserved.  */
+    int		retries		:1;	/* More than one retry was needed.  */
+    int		oneRetry	:1;	/* Exactly one retry was needed. */
+    int		deferred	:1;	/* Transmission deferred. */
+    int		startOfPacket	:1;	/* First buffer of packet. */
+    int		endOfPacket	:1;	/* Last buffer of packet. */
+    unsigned char	bufAddrHigh;	/* High order 8 addr bits of buffer. */
+    short	bufferSize;		/* Signed size of buffer in bytes. This 
+d268 7
+a274 7
+    int		bufferError	:1;	/* Buffering error. */
+    int		underflowError	:1;	/* Underflow error. */
+    int				:1;	/* Reserved. */
+    int		lateCollision	:1;	/* Late collision error. */
+    int		lostCarrier	:1;	/* Loss of carrier error. */
+    int		retryError	:1;	/* Too many collision. */
+    int		tdrCounter	:10;	/* Time Domain Reflectometry counter. */
+d314 1
+a314 1
+  
+@
+
+
+8.2
+log
+@Added support for sun4c.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/net/sun3.md/RCS/netLEInt.h,v 8.1 89/05/24 07:58:30 rab Exp Locker: mendel $ SPRITE (Berkeley)
+@
+
+
+8.1
+log
+@Changes to allow optimization.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/net/sun3.md/RCS/netLEInt.h,v 8.0 88/11/11 18:27:41 douglis Stable Locker: rab $ SPRITE (Berkeley)
+d55 3
+a57 1
+
+d59 1
+d78 4
+a81 1
+
+d84 1
+a84 1
+
+d92 4
+d100 4
+a103 1
+	unsigned short		: 14;	/* Reserved - must be zero */
+d105 1
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/net/sun3.md/RCS/netLEInt.h,v 6.0 88/08/11 12:20:46 brent Stable Locker: douglis $ SPRITE (Berkeley)
+d270 2
+a271 2
+    NetLE_Reg		*regPortPtr;	/* Port to chip's registers. */
+    NetLEInitBlock	*initBlockPtr;	/* Chip initialization block. */
+d330 1
+a330 7
+
+
+#endif _NETLEINT
+
+
+
+
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+ * $Header: netLEInt.h,v 1.2 88/06/27 10:46:24 mendel Exp $ SPRITE (Berkeley)
+@
+
+
+1.2
+log
+@Updated copyright notice and cleaned up comment typos.
+@
+text
+@d17 1
+a17 1
+ * $Header: netLEInt.h,v 1.1 88/06/22 16:24:42 mendel Exp $ SPRITE (Berkeley)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d2 1
+a2 1
+ * netLE.h --
+d8 8
+a15 2
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+d17 1
+a17 2
+ *
+ * $Header: netIE.h,v 5.2 87/09/17 12:02:17 nelson Exp $ SPRITE (Berkeley)
+d20 2
+a21 2
+#ifndef _NETLE
+#define _NETLE
+d43 4
+a46 3
+ *				buffer big enought to hold the maximum size
+ *				ethernet packet + it's ethernet header +
+ *				CRC check + some slop for dma overruns.
+d48 1
+a48 1
+ * NET_LE_MIN_FIRST_BUFFER_SIZE	The smallest buffer that can be use for the
+d50 1
+a50 2
+ *				If a piece of a message is smaller than this
+ *				then it gets copied to other storage and
+d64 2
+a65 1
+#define	NET_LE_RECV_BUFFER_SIZE		1600
+d82 1
+a82 1
+ * The LANCE chip has four control and status registers that are selected a
+d84 2
+a85 2
+ * and read as zeros. The contents of register data port (RDP) are selected
+ * by the RAP. (page 15)
+d147 2
+a148 2
+ * CSR1 is the low order 16 bits of the first word of the Initialization block.
+ * Not that the LSB must be zero.
+d153 2
+a154 2
+ * CSR2 is the high order 16 bits of the first word of the Initialization block.
+ * Not that the top 8 bits are reserved and must be zero.
+a170 4
+    /*
+     * WARRNING - the Sun header file only has 7 reserved bits but the 
+     * documentation (and common sense) has says it should have 8.
+     */
+d202 1
+a202 1
+     * Also, lowest order bit must be zero.
+d218 1
+a218 1
+    int		frammingError	:1;	/* Framming Error occured.  */
+a302 4
+/*
+ * Pointer to scatter gather element for current packet being sent.
+ */
+extern Net_ScatterGather *curScatGathPtr;
+d327 1
+a327 1
+extern	void	NetLERecvUnitInit();
+d332 1
+a332 1
+#endif _NETLE
+@

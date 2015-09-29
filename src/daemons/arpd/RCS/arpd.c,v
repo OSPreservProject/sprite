@@ -1,0 +1,1210 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     92.06.16.21.17.19;  author jhh;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.01.03.09.50.51;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.01.02.17.38.34;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.12.14.16.59.27;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.11.28.10.54.32;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.5
+log
+@port to new Host library
+uses standard Net stuff
+@
+text
+@/* 
+ * arpd.c --
+ *
+ *	A program to reply to ARP and RARP requests.  This program
+ *	only translates between Internet and Ethernet addresses.  See
+ *	RFC826 for details of the ARP protocol, and RFC903 for details
+ *	of the RARP protocol.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/daemons/arpd/RCS/arpd.c,v 1.4 90/01/03 09:50:51 ouster Exp Locker: jhh $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <host.h>
+#include <option.h>
+#include <sys/socket.h>
+#include <net/if_arp.h>
+#include <netinet/if_ether.h>
+#include <netinet/in.h>
+#include <sys/file.h>
+#include <sys/param.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/types.h>
+
+/*
+ * Command line options.
+ */
+
+static int verbose = 0;
+static char *hostFile = NULL;
+
+static Option optionArray[] = {
+    {OPT_TRUE,   "v", (char *) &verbose, "Turn on informational output"},
+    {OPT_STRING, "f", (char *) &hostFile, "Name of host database file"},
+};
+static int numOptions = sizeof(optionArray) / sizeof(Option);
+
+/*
+ * One structure of the following type is created for each entry
+ * in the host table.  This saves us from having to regenerate the
+ * host table except when it changes.
+ */
+
+typedef struct HostInfo {
+    char *name;			/* Textual name for this host. */
+    Net_InetAddress inetAddr;	/* Internet address for this host. */
+    Net_EtherAddress etherAddr;	/* Ethernet address for this host. */
+    struct HostInfo *nextPtr;	/* Next in list of all known hosts (NULL
+				 * for end of list). */
+} HostInfo;
+
+HostInfo *hostList = NULL;	/* First in list of all known hosts. */
+int modTime = -1;		/* The information in memory corresponds to
+				 * this modify time on the host file. */
+
+/*
+ * The ARP/RARP packet size is defined below.  Because of structure
+ * alignment differences between machines, it isn't safe to use
+ * sizeof with the structure.
+ */
+
+#define ARP_PACKET_SIZE 42
+
+/*
+ * The variable below holds the name of the host on which this program
+ * is running, and a pointer to the corresponding entry from the hosts
+ * file (NULL means no corresponding entry could be found in the hosts
+ * file).
+ */
+
+char myName[MAXHOSTNAMELEN+1];
+HostInfo *myInfoPtr = NULL;
+
+static void		DoArp();
+static void		DoRarp();
+static void		UpdateTable();
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	The main loop of the ARP request handler. Packets are 
+ *	read from the netwok and examined to see if we can make a 
+ *	reply.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+main(argc, argv)
+    int		argc;
+    char	**argv;
+{
+    int			arpID, rarpID;
+
+    if (Opt_Parse(argc, argv,  optionArray, numOptions, 0) > 1) {
+	printf("arpd ignoring extra arguments\n");
+    }
+
+    if (hostFile != NULL) {
+	if (Host_SetFile(hostFile)) {
+	    perror("arpd couldn't set host file to \"%s\"", hostFile);
+	    exit(1);
+	}
+    }
+
+    /*
+     * Open the network devices, and read in the host database.  If
+     * either of these fails, then just quit right now.
+     */
+
+    arpID = open("/dev/etherARP", O_RDWR, 0600); 
+    if (arpID < 0) {
+	perror("arpd couldn't open /dev/etherARP");
+	exit(1);
+    }
+    rarpID = open("/dev/etherRARP", O_RDWR, 0600); 
+    if (rarpID < 0) {
+	perror("arpd couldn't open /dev/etherRARP");
+	exit(1);
+    }
+    if (gethostname(myName, MAXHOSTNAMELEN+1) < 0) {
+	perror("arpd couldn't get host name from gethostname()");
+	exit(1);
+    }
+    UpdateTable();
+    if (modTime == -1) {
+	exit(1);
+    }
+
+    /*
+     * Enter an infinite loop servicing ARP and RARP requests.
+     */
+
+    while (1) {
+	int readMask, numReady;
+
+	readMask = (1 << arpID) | (1 << rarpID);
+	numReady = select(rarpID+1, &readMask, (int *) NULL,
+		(int *) NULL, (struct timeval *) NULL);
+	if ((numReady < 0) && (errno != EINTR)) {
+	    printf("arpd couldn't select on network devices: %s\n",
+		    strerror(errno));
+	    exit(1);
+	}
+
+	if (readMask & (1 << arpID)) {
+	    DoArp(arpID);
+	}
+	if (readMask & (1 << rarpID)) {
+	    DoRarp(rarpID);
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DoArp --
+ *
+ *	Handle an ARP request.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	A response is transmitted for the ARP request.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+DoArp(streamID)
+    int streamID;		/* Integer stream # for ARP device. */
+{
+    struct {
+	struct ether_header hdr;
+	struct ether_arp arp;
+    } packet;
+    int bytesRead, bytesWritten, etherType, protocolType, hardwareType, arpOp;
+    unsigned long senderAddr, targetAddr;
+    register HostInfo *infoPtr;
+
+    /*
+     * Read and validate the ARP packet.
+     */
+
+    bytesRead = read(streamID, (char *) &packet, ARP_PACKET_SIZE);
+    if (bytesRead < 0) {
+	printf("arpd couldn't read ARP packet: %s\n",
+		strerror(errno));
+	return;
+    }
+    if (bytesRead < ARP_PACKET_SIZE) {
+	printf("arpd got short ARP packet: only %d bytes\n",
+		bytesRead);
+	return;
+    }
+    etherType = ntohs(packet.hdr.ether_type);
+    if (etherType != ETHERTYPE_ARP) {
+	printf("arpd got ARP packet with ether_type 0x%x\n",
+		etherType);
+	return;
+    }
+    arpOp = ntohs(packet.arp.ea_hdr.ar_op);
+    if (arpOp != ARPOP_REQUEST) {
+	if (verbose) {
+	    printf("arpd got ARP packet with unknown op %d\n",
+		    arpOp);
+	}
+	return;
+    }
+    hardwareType = ntohs(packet.arp.ea_hdr.ar_hrd);
+    if (hardwareType != ARPHRD_ETHER) {
+	if (verbose) {
+	    printf("arpd got ARP packet with unknown hardware type 0x%x\n",
+		    hardwareType);
+	}
+	return;
+    }
+    protocolType = ntohs(packet.arp.ea_hdr.ar_pro);
+    if (protocolType != ETHERTYPE_IP) {
+	if (verbose) {
+	    printf("arpd got ARP packet with unknown protocol type 0x%x\n",
+		    protocolType);
+	}
+	return;
+    }
+    UpdateTable();
+
+    /*
+     * Look for an entry in our host database that matches the given
+     * protocol address.  The bcopy calls below are needed because
+     * integers may not be properly aligned in the packet.
+     */
+
+    bcopy((char *) packet.arp.arp_spa, (char *) &senderAddr,
+	    sizeof(senderAddr));
+    bcopy((char *) packet.arp.arp_tpa, (char *) &targetAddr,
+	    sizeof(targetAddr));
+    if (verbose) {
+	struct timeval time;
+	char *string;
+	char buffer1[32];
+	char buffer2[32];
+
+	gettimeofday(&time, (struct timezone *) NULL);
+	string = ctime(&time.tv_sec);
+	string[24] = 0;
+	printf("ARP at %s from %s for %s", string, 
+	    Net_InetAddrToString(senderAddr, buffer1), 
+	    Net_InetAddrToString(targetAddr, buffer2));
+    }
+    for (infoPtr = hostList; infoPtr != NULL; infoPtr = infoPtr->nextPtr) {
+	if (infoPtr->inetAddr == targetAddr) {
+	    break;
+	}
+    }
+    if (infoPtr == NULL) {
+	if (verbose) {
+	    printf(": unknown target\n");
+	}
+	return;
+    }
+    if (verbose) {
+	char	buffer[20];
+	printf(": %s\n", Net_EtherAddrToString(&infoPtr->etherAddr, buffer));
+    }
+
+    /*
+     * Reverse sender and target fields, and respond with the appropriate
+     * Ethernet address.  No need to fill in the source in the packet
+     * header:  the kernel automatically overwrites it.
+     */
+
+    bcopy((char *) &targetAddr, (char *) packet.arp.arp_spa,
+	    sizeof(targetAddr));
+    bcopy((char *) &senderAddr, (char *) packet.arp.arp_tpa,
+	    sizeof(senderAddr));
+    bcopy((char *) packet.arp.arp_sha, (char *) packet.arp.arp_tha,
+	    sizeof(Net_EtherAddress));
+    bcopy((char *) &infoPtr->etherAddr, (char *) packet.arp.arp_sha,
+	    sizeof(Net_EtherAddress));
+    packet.arp.ea_hdr.ar_op = htons(ARPOP_REPLY);
+    bcopy((char *) packet.hdr.ether_shost, (char *) packet.hdr.ether_dhost,
+	    sizeof(Net_EtherAddress));
+    bytesWritten = write(streamID, (char *) &packet, ARP_PACKET_SIZE);
+    if (bytesWritten < 0) {
+	printf("arpd couldn't send ARP response: %s\n",
+		strerror(errno));
+	return;
+    }
+    if (bytesWritten != ARP_PACKET_SIZE) {
+	printf("arpd short write of ARP response: %d bytes\n",
+		bytesWritten);
+	return;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DoRarp --
+ *
+ *	Handle a RARP request.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	A response is transmitted for the RARP request.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+DoRarp(streamID)
+    int streamID;		/* Integer stream # for ARP device. */
+{
+    struct {
+	struct ether_header hdr;
+	struct ether_arp arp;
+    } packet;
+    int bytesRead, bytesWritten, etherType, protocolType, hardwareType, arpOp;
+    unsigned long senderAddr, targetAddr;
+    register HostInfo *infoPtr;
+
+    /*
+     * Read and validate the ARP packet.
+     */
+
+    bytesRead = read(streamID, (char *) &packet, ARP_PACKET_SIZE);
+    if (bytesRead < 0) {
+	printf("arpd couldn't read RARP packet: %s\n",
+		strerror(errno));
+	return;
+    }
+    if (bytesRead < ARP_PACKET_SIZE) {
+	printf("arpd got short RARP packet: only %d bytes\n",
+		bytesRead);
+	return;
+    }
+    etherType = ntohs(packet.hdr.ether_type);
+    if (etherType != ETHERTYPE_RARP) {
+	printf("arpd got ARP packet with ether_type 0x%x\n",
+		etherType);
+	return;
+    }
+    arpOp = ntohs(packet.arp.ea_hdr.ar_op);
+    if (arpOp != REVARP_REQUEST) {
+	if (verbose) {
+	    printf("arpd got RARP packet with unknown op %d\n", arpOp);
+	}
+	return;
+    }
+    hardwareType = ntohs(packet.arp.ea_hdr.ar_hrd);
+    if (hardwareType != ARPHRD_ETHER) {
+	if (verbose) {
+	    printf("arpd got RARP packet with unknown hardware type 0x%x\n",
+		    hardwareType);
+	}
+	return;
+    }
+    protocolType = ntohs(packet.arp.ea_hdr.ar_pro);
+    if (protocolType != ETHERTYPE_IP) {
+	if (verbose) {
+	    printf("arpd got RARP packet with unknown protocol type 0x%x\n",
+		    protocolType);
+	}
+	return;
+    }
+    UpdateTable();
+
+    /*
+     * Look for an entry in our host database that matches the given
+     * protocol address.  The bcopy calls below are needed because
+     * integers may not be properly aligned in the packet.
+     */
+
+    if (verbose) {
+	struct timeval time;
+	char *string;
+	char ether1[20];
+	char ether2[20];
+
+	gettimeofday(&time, (struct timezone *) NULL);
+	string = ctime(&time.tv_sec);
+	string[24] = 0;
+	printf("RARP at %s from %s for %s", string, 
+		Net_EtherAddrToString((Net_EtherAddress *) packet.arp.arp_sha,
+		    ether1),
+		Net_EtherAddrToString((Net_EtherAddress *) packet.arp.arp_tha,
+		    ether2));
+    }
+    for (infoPtr = hostList; infoPtr != NULL; infoPtr = infoPtr->nextPtr) {
+	if (Net_EtherAddrCmpPtr((Net_EtherAddress *) packet.arp.arp_sha, 
+		&infoPtr->etherAddr) == 0) {
+	    break;
+	}
+    }
+    if (infoPtr == NULL) {
+	if (verbose) {
+	    printf(": unknown target\n");
+	}
+	return;
+    }
+    targetAddr = infoPtr->inetAddr;
+    if (verbose) {
+	char	inet[32];
+	printf(": %s\n", Net_InetAddrToString((Net_InetAddress) targetAddr,
+		    inet));
+    }
+
+    /*
+     * Reverse sender and target fields, and respond with the appropriate
+     * Internet address.  No need to fill in the source in the packet
+     * header:  the kernel automatically overwrites it.
+     */
+
+    bcopy((char *) packet.arp.arp_sha, (char *) packet.arp.arp_tha,
+	    sizeof(Net_EtherAddress));
+    bcopy((char *) &targetAddr, (char *) packet.arp.arp_tpa,
+	    sizeof(targetAddr));
+    if (myInfoPtr != NULL) {
+	bcopy((char *) &myInfoPtr->etherAddr, (char *) packet.arp.arp_sha,
+		sizeof(Net_EtherAddress));
+	senderAddr = myInfoPtr->inetAddr;
+	bcopy((char *) &senderAddr, (char *) packet.arp.arp_spa,
+		sizeof(senderAddr));
+    } else {
+	bzero((char *) packet.arp.arp_sha, sizeof(Net_EtherAddress));
+	bzero((char *) packet.arp.arp_spa, sizeof(senderAddr));
+    }
+    packet.arp.ea_hdr.ar_op = htons(REVARP_REPLY);
+    bcopy((char *) packet.hdr.ether_shost, (char *) packet.hdr.ether_dhost,
+	    sizeof(Net_EtherAddress));
+    bytesWritten = write(streamID, (char *) &packet, ARP_PACKET_SIZE);
+    if (bytesWritten < 0) {
+	printf("arpd couldn't send RARP response: %s\n",
+		strerror(errno));
+	return;
+    }
+    if (bytesWritten != ARP_PACKET_SIZE) {
+	printf("arpd short write of RARP response: %d bytes\n",
+		bytesWritten);
+	return;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UpdateTable --
+ *
+ *	Make sure that the host information in memory is up-to-date.
+ *	If not, throw away what we've got and read in fresh stuff.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The information in the list pointed to by hostList is
+ *	potentially modified, as is the modTime variable.  The pointer
+ *	myInfoPtr is (re-)set to point to the information for the
+ *	host named "myName".
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+UpdateTable()
+{
+    struct stat buf;
+    register HostInfo *infoPtr;
+    register Host_Entry *hostPtr;
+    int			i;
+    ReturnStatus	status;
+
+    /*
+     * See if the current database is up-to-date.  If so,
+     * then just return.
+     */
+
+    if (Host_Stat(&buf) != 0) {
+	printf("arpd couldn't stat host file: %s\n", strerror(errno));
+	return;
+    }
+    if (buf.st_mtime == modTime) {
+	return;
+    }
+
+    /*
+     * Throw away everything that's currently in memory.
+     */
+
+    while (hostList != NULL) {
+	infoPtr = hostList;
+	hostList = infoPtr->nextPtr;
+	free(infoPtr->name);
+	free((char *) infoPtr);
+    }
+
+    /*
+     * Rebuild the database from the host database file.
+     */
+
+    if (verbose) {
+	char *timeString;
+	timeString = ctime(&buf.st_mtime);
+	timeString[24] = 0;
+	printf("arpd reloading database from host file (modified %s)\n",
+	    timeString);
+    }
+
+    if (Host_Start() != 0) {
+	printf("arpd: Host_Start failed : %s\n", strerror(errno));
+	return;
+    }
+
+    myInfoPtr = NULL;
+    for (hostPtr = Host_Next(); hostPtr != NULL; hostPtr = Host_Next()) {
+	for (i = 0; i < hostPtr->numNets; i++) {
+	    if (hostPtr->nets[i].netAddr.type == NET_ADDRESS_ETHER) {
+		infoPtr = (HostInfo *) malloc(sizeof(HostInfo));
+		infoPtr->name = malloc((unsigned) (strlen(hostPtr->name) + 1));
+		strcpy(infoPtr->name, hostPtr->name);
+		infoPtr->inetAddr = hostPtr->nets[i].inetAddr;
+		status = Net_GetAddress(&hostPtr->nets[i].netAddr, 
+			    &infoPtr->etherAddr);
+		if (status != SUCCESS) {
+		    printf("arpd: Net_GetAddress failed\n");
+		    goto done;
+		}
+		infoPtr->nextPtr = hostList;
+		hostList = infoPtr;
+		if (strcmp(myName, infoPtr->name) == 0) {
+		    myInfoPtr = infoPtr;
+		}
+		break;
+	    }
+	}
+    }
+done:
+    Host_End();
+    modTime = buf.st_mtime;
+}
+@
+
+
+1.4
+log
+@Lint cleanup and make all messages go to stdout.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/daemons/arpd/RCS/arpd.c,v 1.3 90/01/02 17:38:34 ouster Exp Locker: ouster $ SPRITE (Berkeley)";
+d45 1
+a45 1
+static char *hostFile = "/etc/spritehosts";
+d61 2
+a62 3
+    unsigned long inetAddr;	/* Internet address for this host. */
+    unsigned char etherAddr[HOST_ETHER_ADDRESS_SIZE];
+				/* Ethernet address for this host. */
+d121 7
+a259 1
+    senderAddr = ntohl((unsigned long) senderAddr);
+a261 1
+    targetAddr = ntohl(targetAddr);
+d265 2
+d271 3
+a273 5
+	printf("ARP at %s from %d.%d.%d.%d for %d.%d.%d.%d", string,
+		(senderAddr >> 24) & 0xff, (senderAddr >> 16) & 0xff,
+		(senderAddr >> 8) & 0xff, senderAddr & 0xff,
+		(targetAddr >> 24) & 0xff, (targetAddr >> 16) & 0xff,
+		(targetAddr >> 8) & 0xff, targetAddr & 0xff);
+d287 2
+a288 4
+	printf(": %x:%x:%x:%x:%x:%x\n",
+		infoPtr->etherAddr[0], infoPtr->etherAddr[1],
+		infoPtr->etherAddr[2], infoPtr->etherAddr[3],
+		infoPtr->etherAddr[4], infoPtr->etherAddr[5]);
+a296 1
+    targetAddr = htonl(targetAddr);
+a298 1
+    senderAddr = htonl(senderAddr);
+d302 3
+a304 3
+	    HOST_ETHER_ADDRESS_SIZE);
+    bcopy((char *) infoPtr->etherAddr, (char *) packet.arp.arp_sha,
+	    HOST_ETHER_ADDRESS_SIZE);
+d307 1
+a307 1
+	    HOST_ETHER_ADDRESS_SIZE);
+d404 2
+d410 5
+a414 8
+	printf("RARP at %s from %x:%x:%x:%x:%x:%x for %x:%x:%x:%x:%x:%x",
+		string,
+		packet.arp.arp_sha[0], packet.arp.arp_sha[1],
+		packet.arp.arp_sha[2], packet.arp.arp_sha[3],
+		packet.arp.arp_sha[4], packet.arp.arp_sha[5],
+		packet.arp.arp_tha[0], packet.arp.arp_tha[1],
+		packet.arp.arp_tha[2], packet.arp.arp_tha[3],
+		packet.arp.arp_tha[4], packet.arp.arp_tha[5]);
+d417 2
+a418 6
+	if ((packet.arp.arp_sha[5] == infoPtr->etherAddr[5])
+		&& (packet.arp.arp_sha[4] == infoPtr->etherAddr[4])
+		&& (packet.arp.arp_sha[3] == infoPtr->etherAddr[3])
+		&& (packet.arp.arp_sha[2] == infoPtr->etherAddr[2])
+		&& (packet.arp.arp_sha[1] == infoPtr->etherAddr[1])
+		&& (packet.arp.arp_sha[0] == infoPtr->etherAddr[0])) {
+d430 3
+a432 3
+	printf(": %d.%d.%d.%d\n",
+		(targetAddr >> 24) & 0xff, (targetAddr >> 16) & 0xff,
+		(targetAddr >> 8) & 0xff, targetAddr & 0xff);
+d442 1
+a442 2
+	    HOST_ETHER_ADDRESS_SIZE);
+    targetAddr = htonl(targetAddr);
+d446 3
+a448 3
+	bcopy((char *) myInfoPtr->etherAddr, (char *) packet.arp.arp_sha,
+		HOST_ETHER_ADDRESS_SIZE);
+	senderAddr = htonl(myInfoPtr->inetAddr);
+d452 1
+a452 1
+	bzero((char *) packet.arp.arp_sha, HOST_ETHER_ADDRESS_SIZE);
+d457 1
+a457 1
+	    HOST_ETHER_ADDRESS_SIZE);
+d497 2
+d505 2
+a506 2
+    if (stat(hostFile, &buf) != 0) {
+	printf("arpd couldn't stat \"%s\": %s\n", hostFile, strerror(errno));
+d532 2
+a533 2
+	printf("arpd reloading database from \"%s\" (modified %s)\n",
+	    hostFile, timeString);
+d536 2
+a537 2
+    if (Host_SetFile(hostFile) != 0) {
+	printf("arpd couldn't access \"%s\" : %s", hostFile, strerror(errno));
+d543 18
+a560 11
+	if (hostPtr->netType == HOST_ETHER) {
+	    infoPtr = (HostInfo *) malloc(sizeof(HostInfo));
+	    infoPtr->name = malloc((unsigned) (strlen(hostPtr->name) + 1));
+	    strcpy(infoPtr->name, hostPtr->name);
+	    infoPtr->inetAddr = *((int *) &hostPtr->inetAddr);
+	    bcopy((char *) hostPtr->netAddr.etherAddr,
+		    (char *) infoPtr->etherAddr, HOST_ETHER_ADDRESS_SIZE);
+	    infoPtr->nextPtr = hostList;
+	    hostList = infoPtr;
+	    if (strcmp(myName, infoPtr->name) == 0) {
+		myInfoPtr = infoPtr;
+d564 1
+@
+
+
+1.3
+log
+@Added RARP protocol.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/daemons/arpd/RCS/arpd.c,v 1.2 89/12/14 16:59:27 ouster Exp $ SPRITE (Berkeley)";
+d61 1
+a61 1
+    int inetAddr;		/* Internet address for this host. */
+d119 1
+a119 1
+	fprintf(stderr, "arpd ignoring extra arguments\n");
+d157 1
+a157 1
+	    fprintf(stderr, "arpd couldn't select on network devices: %s\n",
+d196 1
+a196 2
+    int senderAddr, targetAddr;
+    short shortTmp;
+d205 1
+a205 1
+	fprintf(stderr, "arpd couldn't read ARP packet: %s\n",
+d210 1
+a210 1
+	fprintf(stderr, "arpd got short ARP packet: only %d bytes\n",
+d216 1
+a216 1
+	fprintf(stderr, "arpd got ARP packet with ether_type 0x%x\n",
+d222 4
+a225 2
+	fprintf(stderr, "arpd got ARP packet with unknown op %d\n",
+		arpOp);
+d230 4
+a233 2
+	fprintf(stderr, "arpd got ARP packet with unknown hardware type 0x%x\n",
+		hardwareType);
+d238 4
+a241 2
+	fprintf(stderr, "arpd got ARP packet with unknown protocol type 0x%x\n",
+		protocolType);
+d254 1
+a254 1
+    senderAddr = ntohl(senderAddr);
+d301 1
+a301 1
+    bcopy(packet.arp.arp_sha, packet.arp.arp_tha,
+d303 1
+a303 1
+    bcopy(infoPtr->etherAddr, packet.arp.arp_sha,
+d306 1
+a306 1
+    bcopy(packet.hdr.ether_shost, packet.hdr.ether_dhost,
+d308 1
+a308 1
+    bytesWritten = write(streamID, &packet, ARP_PACKET_SIZE);
+d310 1
+a310 1
+	fprintf(stderr, "arpd couldn't send ARP response: %s\n",
+d315 1
+a315 1
+	fprintf(stderr, "arpd short write of ARP response: %d bytes\n",
+d346 1
+a346 1
+    int senderAddr, targetAddr;
+a347 1
+    char tmp[HOST_ETHER_ADDRESS_SIZE];
+d355 1
+a355 1
+	fprintf(stderr, "arpd couldn't read RARP packet: %s\n",
+d360 1
+a360 1
+	fprintf(stderr, "arpd got short RARP packet: only %d bytes\n",
+d366 1
+a366 1
+	fprintf(stderr, "arpd got ARP packet with ether_type 0x%x\n",
+d372 3
+a374 2
+	fprintf(stderr, "arpd got RARP packet with unknown op %d\n",
+		arpOp);
+d379 4
+a382 3
+	fprintf(stderr,
+		"arpd got RARP packet with unknown hardware type 0x%x\n",
+		hardwareType);
+d387 4
+a390 3
+	fprintf(stderr,
+		"arpd got RARP packet with unknown protocol type 0x%x\n",
+		protocolType);
+d462 1
+a462 1
+    bcopy(packet.hdr.ether_shost, packet.hdr.ether_dhost,
+d464 1
+a464 1
+    bytesWritten = write(streamID, &packet, ARP_PACKET_SIZE);
+d466 1
+a466 1
+	fprintf(stderr, "arpd couldn't send RARP response: %s\n",
+d471 1
+a471 1
+	fprintf(stderr, "arpd short write of RARP response: %d bytes\n",
+d510 1
+a510 2
+	fprintf(stderr, "arpd couldn't stat \"%s\": %s\n",
+		hostFile, strerror(errno));
+d541 1
+a541 2
+	fprintf(stderr, "arpd couldn't access \"%s\" : %s",
+	    hostFile, strerror(errno));
+@
+
+
+1.2
+log
+@Showing some signs of life (ARP only, though).
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/daemons/arpd/RCS/arpd.c,v 1.1 89/11/28 10:54:32 ouster Exp Locker: ouster $ SPRITE (Berkeley)";
+d35 1
+d80 10
+d137 4
+d156 1
+a156 1
+	if (numReady < 0) {
+d166 1
+a166 1
+	    /* DoRarp(rarpID); */
+d187 1
+a187 1
+void
+d197 1
+d239 1
+d243 2
+a244 1
+     * protocol address.
+d247 6
+a252 2
+    senderAddr = ntohl(*((int*) packet.arp.arp_spa));
+    targetAddr = ntohl(*((int*) packet.arp.arp_tpa));
+d290 10
+a299 4
+    *((int *) packet.arp.arp_spa) = htonl(targetAddr);
+    *((int *) packet.arp.arp_tpa) = htonl(senderAddr);
+    bcopy(packet.arp.arp_sha, packet.arp.arp_tha, HOST_ETHER_ADDRESS_SIZE);
+    bcopy(infoPtr->etherAddr, packet.arp.arp_sha, HOST_ETHER_ADDRESS_SIZE);
+d319 154
+d483 3
+a485 1
+ *	potentially modified, as is the modTime variable.
+d540 1
+d547 1
+a547 1
+	    bcopy((char *) &hostPtr->netAddr.etherAddr,
+d551 3
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d2 1
+a2 1
+ * rarp.c --
+d4 4
+a7 1
+ *	A program to reply to RARP requests. 
+d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/users/reeves/rarp/rarp/RCS/rarp.c,v 1.7 89/04/05 15:46:57 reeves Exp $ SPRITE (Berkeley)";
+d25 1
+a27 2
+#include <sprite.h>
+#include <net.h>
+a28 3
+#include <fs.h>
+#include <proc.h>
+#include <hash.h>
+d30 4
+d36 1
+a37 1
+#include <sys/param.h>
+d43 2
+a44 2
+static Boolean debug = FALSE;
+static char *hostFile = (char *)NULL;
+d47 2
+a48 2
+    {OPT_TRUE,   "d", (Address)&debug, "Turn on debugging output"},
+    {OPT_STRING, "f", (Address)&hostFile, "Name of host database file"},
+d52 5
+d58 20
+a77 7
+static Hash_Table	table;
+static Boolean		firstInit = TRUE;
+static char		regHostFile[] = "/etc/spritehosts";
+static Boolean		UpdateModifyTime();
+static Boolean		Lookup();
+static void		InitTable();
+static void		EtherAddrCopy();
+d79 3
+a100 1
+
+d105 4
+a108 23
+    int			streamID;
+    int			amt;
+    char		stringBuf[20];
+    char		hostName[MAXHOSTNAMELEN + 1];
+    Net_ArpPacket	packet;
+    Net_InetAddress     inetAddr;
+    Host_Entry 		hostEntry;
+    time_t		lastModifyTime;
+
+    if (sizeof(Net_ArpPacket) != 42) {
+	panic("RARP: RARP protocol header wrong size.\n");
+    }
+
+    if (Opt_Parse(argc, argv,  optionArray, numOptions, 0) > 0) {
+	printf("Unknown arguments ignored\n");
+    }
+
+    if (!debug) {
+	Proc_Detach(0);
+    }
+
+    if (hostFile == (char *) NULL) {
+	hostFile = regHostFile;
+d111 13
+a123 3
+    streamID = open("/dev/etherRARP", O_RDWR, 0600); 
+    if (streamID < 0) {
+	perror("Couldn't open /dev/etherRARP");
+d126 2
+a127 4
+
+    UpdateModifyTime(hostFile, &lastModifyTime);
+    if (gethostname(hostName, MAXHOSTNAMELEN + 1) < 0) {
+	perror("RARP - Couldn't get host name:");
+a129 4
+    bcopy ((char *)Host_ByName(hostName), (char *)&hostEntry,
+	(int)sizeof(Host_Entry));
+    InitTable(hostFile);
+    firstInit = FALSE;
+d131 13
+a143 4
+    while (TRUE) {
+	amt = read(streamID, (char *)&packet, sizeof(packet));
+	if (amt < 0) {
+	    perror("Read error in RARP");
+d146 6
+a151 3
+	if (amt != sizeof(packet)) {
+	    fprintf(stderr, "Warning: RARP: short read of packet: %d\n", amt);
+	    continue;
+a152 49
+	if ((Net_NetToHostShort(packet.hardwareType) != NET_ARP_TYPE_ETHER) ||
+	    (packet.hardwareAddrLen != sizeof(Net_EtherAddress))) { 
+	    continue;
+	}
+	if ((Net_NetToHostShort(packet.protocolType) != NET_ETHER_IP) ||
+	    (packet.opcode != NET_RARP_REQUEST)) {
+	    continue;
+	}
+	if (UpdateModifyTime(hostFile, &lastModifyTime) == TRUE) {
+	    (void)Hash_DeleteTable(&table);
+	    InitTable(hostFile);
+	    bcopy ((char *)Host_ByName(hostName), (char *)&hostEntry,
+		(int)sizeof(Host_Entry));
+	}
+	if (!Lookup(&packet.targetEtherAddr, &inetAddr)) {
+	    continue;
+	}
+	if (debug == TRUE) {
+	    Net_EtherAddrToString(&packet.targetEtherAddr, stringBuf);
+	    printf("Request for RARP from ether: %s \n", stringBuf);
+	    Net_InetAddrToString(inetAddr, stringBuf);
+	    printf("...Responding with inet: %s \n\n", stringBuf);
+	}
+
+	/*
+	 * Create the reply packet, filling in needed data.
+	 */
+
+	bcopy ((char *)&hostEntry.netAddr.etherAddr, 
+	    (char *)&packet.senderEtherAddr, (int)sizeof(Net_EtherAddress));
+	packet.senderProtAddr = 
+		*(Net_InetAddress *)&(hostEntry.inetAddr);
+	packet.targetProtAddr = inetAddr;
+	packet.opcode = Net_NetToHostShort(NET_RARP_REPLY);
+
+	/*
+	 * The packet.header.source is filled by the kernel.
+	 */
+	packet.header.destination = packet.header.source;
+
+	amt = write(streamID, (char *)&packet, sizeof(packet));
+	if (amt < 0) {
+	    perror("Failed write to /dev/etherRARP");
+	    exit(1);
+	} 
+	if (amt != sizeof(packet)) {
+	    fprintf(stderr,"Warning: RARP: short write of packet: %d\n",
+	        amt);
+	} 
+a154 1
+
+a155 1
+
+d159 1
+a159 1
+ * InitTable --
+d161 1
+a161 2
+ *	Initializes the lookup table using the entries in the Host
+ *	database 'configFile', if given.
+d167 1
+a167 1
+ *	The hash table is initialzied and loaded with data.
+d172 3
+a174 3
+static void
+InitTable(configFile)
+    char	*configFile;
+d176 109
+a284 27
+    Host_Entry	*host;
+    Hash_Entry	*entryPtr;
+    Host_Entry	*newPtr;
+    Boolean	newEntry;
+    int		etherValue[2];
+
+    /* We hash on 2 words because of Ethernet address length */
+    Hash_InitTable(&table, 0, 2);
+
+    if (Host_SetFile(configFile) != 0) {
+	fprintf(stderr, "RARP couldn't access hostfile \"%s\" : %s",
+	    configFile, strerror(errno));
+	exit(1);
+    }
+
+    while ((host = Host_Next()) != (Host_Entry *)NULL) {
+	if (host->netType == HOST_ETHER) {
+	    newPtr = (Host_Entry *) malloc((unsigned)sizeof(Host_Entry));
+	    if (newPtr == (Host_Entry *) NULL) { 	
+		panic("RARP: Out of memory \n");
+	    }
+	    bcopy ((char *)host, (char *)newPtr, sizeof(Host_Entry));
+	    EtherAddrCopy(newPtr->netAddr.etherAddr, (short *)etherValue);
+	    entryPtr = Hash_CreateEntry(&table, (Address) etherValue,
+		    &newEntry);
+	    Hash_SetValue(entryPtr, (ClientData) &newPtr->inetAddr);
+	}
+a285 3
+    if (debug) {
+	printf("Done with initialization\n\n");
+    }
+a287 1
+
+d291 1
+a291 1
+ * Lookup --
+d293 2
+a294 2
+ *	Looks up the request ethernet address to see if there's a
+ *	corresponding Inet address.
+d297 1
+a297 3
+ *	TRUE	- the ethernet address was found and *inetPtrPtr points
+ *		   to the buffer containing the Inet address.
+ *	FALSE	- the ethernet address was not in the table.
+d300 2
+a301 1
+ *	None.
+d306 2
+a307 5
+static Boolean
+Lookup(etherAddr, inetAddrPtr)
+    Net_EtherAddress    *etherAddr;
+    Net_InetAddress	*inetAddrPtr;
+
+d309 3
+a311 2
+    Hash_Entry	*entryPtr;
+    int		etherValue[2];
+d313 35
+a347 4
+    EtherAddrCopy(etherAddr, (short *)etherValue);
+    entryPtr = Hash_FindEntry(&table, (Address) etherValue);
+    if (entryPtr == (Hash_Entry  *) NULL) {
+	return(FALSE);
+a348 30
+    bcopy ((char *) Hash_GetValue(entryPtr), (char *)inetAddrPtr,
+	    sizeof(Net_InetAddress));
+    return(TRUE);
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * UpdateModifyTime --
+ *
+ *	Checks to see if the "hosts" file has been modified.
+ *
+ * Results:
+ *	Sets "lastModified" to most current value, if the file has
+ *      been changed, and returns FALSE.  Else returns TRUE.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */ 
+
+Boolean
+UpdateModifyTime(hostFile, lastModified)
+    char 	*hostFile;
+    time_t	*lastModified;
+{
+    struct stat		statStuff;
+d350 2
+a351 2
+    if (stat(hostFile, &statStuff) != 0) {
+	fprintf(stderr, "RARP couldn't stat hostfile \"%s\" : %s",
+d353 1
+a353 1
+	exit(1);
+d356 10
+a365 5
+    if (*lastModified < statStuff.st_mtime) {
+	if (debug == TRUE) {
+	    printf("Changing host file modify time...\n");
+	    printf("Current modify time: %lx \n", *lastModified);
+	    printf("New modify time:     %lx \n\n", statStuff.st_mtime);
+a366 2
+	*lastModified = statStuff.st_mtime;
+	return (TRUE);
+d368 2
+a369 31
+    return (FALSE);
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * EtherAddrCopy --
+ *
+ *	Copies the Ethernet address, ensuring that the last
+ *      half-word (16 bits) is zero.
+ *
+ * Results:
+ *	"toEther" contains the correct Ethernet addresss.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+EtherAddrCopy(fromEther, toEther)
+    short *fromEther;
+    short *toEther;
+{
+    toEther[0] = fromEther[0];
+    toEther[1] = fromEther[1];
+    toEther[2] = fromEther[2];
+    toEther[3] = 0;
+a370 1
+
+@

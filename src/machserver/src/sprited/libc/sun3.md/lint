@@ -1,0 +1,31 @@
+List_Init.c:
+List_Insert.c:
+List_ListInsert.c:
+List_Move.c:
+List_Remove.c:
+compatMapCode.c:
+status.c:
+Net_AddrToString.c:
+Net_EtherAddrToString.c:
+Net_HostToNetInt.c:
+Net_HostToNetShort.c:
+Net_InetAddrToString.c:
+Net_InetChecksum.c:
+Net_NetToHostInt.c:
+Net_NetToHostShort.c:
+Rpc_GetName.c:
+Time_Add.c:
+Time_Divide.c:
+Time_Multiply.c:
+Time_Subtract.c:
+Time_ToAscii.c:
+Time_ToParts.c:
+ckalloc.c:
+ctypeBits.c:
+errno.c:
+strerror.c:
+timeConstants.c:
+printf value declared inconsistently	llib-lsys:sysPrintf.c(126)  ::  compatMapCode.c 2(269)
+sprintf: variable # of args.	Net_AddrToString.c 2(58)  ::  Net_EtherAddrToString.c 2(55)
+sprintf, arg. 3 used inconsistently	Net_AddrToString.c 2(58)  ::  Net_EtherAddrToString.c 2(55)
+sprintf, arg. 4 used inconsistently	Net_AddrToString.c 2(58)  ::  Net_EtherAddrToString.c 2(55)

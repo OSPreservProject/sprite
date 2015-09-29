@@ -1,0 +1,20 @@
+          format formatString ?arg arg ...?
+               This command generates a formatted string in  the  same
+               way  as the C sprintf procedure (it uses sprintf in its
+               implementation).  FormatString indicates how to  format
+               the  result,  using  %  fields  as  in sprintf, and the
+               additional arguments, if  any,  provide  values  to  be
+               substituted  into  the  result.   All  of  the  sprintf
+               options  are  valid;  see  the  sprintf  man  page  for
+               details.   Each  arg  must match the expected type from
+               the  %  field  in  formatString;  the  format   command
+               converts  each  argument to the correct type (floating,
+               integer,  etc.)  before  passing  it  to  sprintf   for
+               formatting.   The only unusual conversion is for %c; in
+               this case the argument must be a decimal string,  which
+               will  then  be  converted  to  the  corresponding ASCII
+               character value.  Format does backslash substitution on
+               its  formatString  argument,  so backslash sequences in
+               formatString will be  handled  correctly  even  if  the
+               argument is in braces.  The return value from format is
+               the formatted string.

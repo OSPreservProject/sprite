@@ -1,0 +1,12 @@
+F FILE1.;1                          	file1
+F FILE2.;1                          	file2
+F FILE3.;1                          	file3
+F FILE4.;1                          	file4
+F FILE5.;1                          	file5
+F FILE6.;1                          	file6
+F FILE7.;1                          	file7
+F FILE8.;1                          	file8
+F HOST.C;1                          	host.c
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+D SUN3_MD                           	sun3.md

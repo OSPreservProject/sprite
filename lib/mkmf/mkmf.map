@@ -1,0 +1,134 @@
+#
+# $Header: /sprite/lib/mkmf/RCS/mkmf.map,v 1.66 92/06/10 12:44:01 kupfer Exp $ (SPRITE) Berkeley
+#
+# This file is an awk script that returns information about how to
+# run Mkmf in a directory, based on the name of the directory.  Each
+# line contains a pattern and a single print statement, followed by an
+# exit.  The patterns are applied against stdin, which contains a single
+# line containing a directory name.  The first matching line determines
+# output, which is in the following form
+#	"<mkmf-script> <makeRCS?> <makeDepend?> <makeMd?> <subType>"
+# The fields in the line have the following meanings:
+#	mkmf-script	The "type" of directory that this is:  kernel, library
+#			etc.  This selects a type-specific Mkmf script and
+#			prototype Makefile.
+#	makeRCS		"yes" means make an RCS subdirectory here if one
+#			doesn't already exist.
+#	makeDepend	"yes" means regenerate dependencies at the end of
+#			Mkmf by running "pmake dependall".
+#	makeMd		"yes" means make a default .md subdirectory if
+#			there aren't already .md subdirectories in this
+#			directory.
+#	subType		This is an additional field passed to the type-specific
+#			Mkmf script.  It's most common use is to indicate
+#			where to install things, for example "sprite" for
+#			the Sprite system area.
+#
+# Be careful:  the first matching pattern wins!
+#
+/sprite\/src\/lib\/include/	{ print "hdrs yes no no sprite"; exit }
+/\.md$/				{ print "md no no no sprite"; exit }
+/\/sprite\/src\/attcmds\/rcs\/lib$/ { print "library no yes yes none"; exit}
+/\/sprite\/src\/attcmds\/rpn$/	    { print "bigcmdtop no no yes sprite"; exit}
+/\/sprite\/src\/attcmds\/rpn\//	    { print "bigcmd yes yes yes sprite"; exit}
+/\/sprite\/src\/attcmds\/[^/]*$/    { print "command yes yes yes sprite"; exit }
+/\/sprite\/src\/attcmds$/	    { print "top no no no sprite"; exit }
+/\/sprite\/src\/benchmarks\/[^/]*$/ { print "command yes yes yes test"; exit }
+/\/sprite\/src\/benchmarks$/	    { print "top no no no test"; exit }
+/\/sprite\/src\/cmds\/pmake$/       { print "bigcmdtop no no yes sprite"; exit}
+/\/sprite\/src\/cmds\/pmake\//      { print "bigcmd yes yes yes sprite"; exit}
+/\/sprite\/src\/cmds\/[^/]*$/       { print "command yes yes yes sprite"; exit }
+/\/sprite\/src\/cmds$/	            { print "top no no no sprite"; exit }
+/\/local\/src\/cmds\/[^/]*$/        { print "command yes yes yes local"; exit }
+/\/local\/src\/cmds$/	            { print "top no no no local"; exit }
+/\/local\/src\/lib\/[^/]*$/         { print "library yes yes yes local"; exit }
+/\/local\/src\/lib$/                { print "top no no no local"; exit}
+/\/sprite\/src\/daemons\/[^/]*$/    { print "command yes yes yes daemon"; exit }
+/\/sprite\/src\/daemons$/	    { print "top no no no daemon"; exit }
+/\/sprite\/src\/adobecmds\/[^/]*$/  { print "command yes yes yes sprite"; exit }
+/\/sprite\/src\/adobecmds$/	    { print "top no no no sprite"; exit }
+/\/kernel\/Installed\/[0-9]\.[0-9]+\/[^/]*$/{ print "snapkernel no yes no kernel"; exit }
+/\/kernel\/Installed\/[0-9]\.[0-9]+$/{ print "top no no no sprite"; exit }
+/\/src\/kernel$/		{ print "top no no no sprite"; exit }
+# It's okay to put an RCS directory in a private kernel directory, but
+# the installed source directories should not have an RCS directory.
+/\/src\/kernel\/[^/]*$/		{ print "kernel no yes yes kernel"; exit }
+/\/src\/kernel/			{ print "kernel yes yes yes kernel"; exit }
+/sprite\/src\/lib\/[^/]*\/[^/]*$/ { print "biglib yes yes yes sprite"; exit }
+/sprite\/src\/lib\/c$/		{ print "biglibtop no no yes sprite"; exit }
+/sprite\/src\/lib$/		{ print "top no no no sprite"; exit }
+/sprite\/src\/lib\//		{ print "library yes yes yes sprite"; exit }
+/sprite\/src$/                  { print "top no no no sprite"; exit }
+/X11\/R4$/			{ print "top no no no none"; exit }
+/X11\/R4\/src$/			{ print "top no no no none"; exit }
+/X11\/R4\/src\/lib\/X11\/[^/]*$/ { print "biglib no yes yes none"; exit }
+/X11\/R4\/src\/lib\/X11$/	{ print "biglibtop no no yes none"; exit }
+/X11\/R4\/src\/lib$/		{ print "top no no no none"; exit }
+/X11\/R4\/src\/lib\//		{ print "library yes yes no none"; exit }
+/X11\/R4\/src\/cmds$/		{ print "top no no no none"; exit }
+/X11\/R4\/src\/cmds\/X\// 	{ print "bigcmd yes yes no X11R4"; exit }
+/X11\/R4\/src\/cmds\/Xsun$/	{ print "bigcmdtop no no no X11R4"; exit }
+/X11\/R4\/src\/cmds\/Xmfbpmax$/	{ print "bigcmdtop no no no X11R4"; exit }
+/X11\/R4\/src\/cmds\/Xcfbpmax$/	{ print "bigcmdtop no no no X11R4"; exit }
+/X11\/R4\/src\/cmds\/bitmap$/	{ print "top no no no none"; exit }
+/X11\/R4\/src\/cmds\/font$/	{ print "top no no no none"; exit }
+/X11\/R4\/lib\/fonts.X11R4$/		{ print "top no no no X11R4"; exit }
+/X11\/R4\/src\/cmds\//		{ print "command yes yes no X11R4"; exit }
+/X11\/R4\/lib$/			{ print "top no no no none"; exit }
+/X11\/R4\/lib\/rgb/		{ print "command yes yes no none"; exit }
+/X11\/R4\/lib\/fonts$/		{ print "top no no no none"; exit }
+/X11\/R4\/lib\/fonts\//		{ print "top no no no none"; exit }
+/X11\/R5$/			{ print "top no no no none"; exit }
+/X11\/R5\/src$/			{ print "top no no no none"; exit }
+/X11\/R5\/src\/lib\/X11\/[^/]*$/ { print "biglib no yes yes none"; exit }
+/X11\/R5\/src\/lib\/X11$/	{ print "biglibtop no no yes none"; exit }
+/X11\/R5\/src\/lib$/		{ print "top no no no none"; exit }
+/X11\/R5\/src\/lib\//		{ print "library yes yes no none"; exit }
+/X11\/R5\/src\/cmds$/		{ print "top no no no none"; exit }
+/X11\/R5\/src\/cmds\/X\// 	{ print "bigcmd yes yes no X11R5"; exit }
+/X11\/R5\/src\/cmds\/Xsun$/	{ print "bigcmdtop no no no X11R5"; exit }
+/X11\/R5\/src\/cmds\/Xmfbpmax$/	{ print "bigcmdtop no no no X11R5"; exit }
+/X11\/R5\/src\/cmds\/Xcfbpmax$/	{ print "bigcmdtop no no no X11R5"; exit }
+/X11\/R5\/src\/cmds\/bitmap$/	{ print "top no no no none"; exit }
+/X11\/R5\/src\/cmds\/font$/	{ print "top no no no none"; exit }
+/X11\/R5\/lib\/fonts.X11R5$/		{ print "top no no no X11R5"; exit }
+/X11\/R5\/src\/cmds\//		{ print "command yes yes no X11R5"; exit }
+/X11\/R5\/lib$/			{ print "top no no no none"; exit }
+/X11\/R5\/lib\/rgb/		{ print "command yes yes no none"; exit }
+/X11\/R5\/lib\/fonts$/		{ print "top no no no none"; exit }
+/X11\/R5\/lib\/fonts\//		{ print "top no no no none"; exit }
+/emacs\/src\/cmds$/		{ print "top no no no emacs"; exit }
+/emacs\/src\/cmds\//		{ print "command yes yes yes emacs"; exit }
+/emacs\/src$/			{ print "top no no no emacs"; exit }
+/sprite\/users\/[^/]*\/src\/cmds\// { print "command no yes yes personal";exit}
+/sprite\/users\/[^/]*\/src\/cmds$/  { print "top no no no personal"; exit }
+/sprite\/users\/[^/]*\/src\/lib\//  { print "library no yes yes personal";exit}
+/sprite\/users\/[^/]*\/src\/lib$/   { print "top no no no personal"; exit }
+/user[0-9]+\/[^/]*\/src\/cmds\// { print "command no yes yes personal";exit}
+/user[0-9]+\/[^/]*\/src\/cmds$/  { print "top no no no personal"; exit }
+/user[0-9]+\/[^/]*\/src\/lib\//  { print "library no yes yes personal";exit}
+/user[0-9]+\/[^/]*\/src\/lib$/   { print "top no no no personal"; exit }
+/mic\/[^/]*\/src\/cmds$/  { print "top no no no personal"; exit }
+/mic\/[^/]*\/src\/cmds\// { print "command no yes yes personal";exit}
+/mic\/[^/]*\/src\/lib$/   { print "top no no no personal"; exit }
+/mic\/[^/]*\/src\/lib\//  { print "library no yes yes personal";exit}
+/mic\/guest\/.*\/src\/cmds$/  { print "top no no no personal"; exit }
+/mic\/guest\/.*\/src\/cmds\// { print "command no yes yes personal";exit}
+/mic\/guest\/.*\/src\/lib$/   { print "top no no no personal"; exit }
+/mic\/guest\/.*\/src\/lib\//  { print "library no yes yes personal";exit}
+/\/src\/cmds$/			{ print "top no no no sprite"; exit }
+/\/src\/daemons$/		{ print "top no no no daemon"; exit }
+/\/src\/daemons\/[^/]*$/	{ print "command yes yes yes daemon"; exit }
+/\/src\/tests\//		{ print "command yes yes yes test"; exit }
+/\/src\/tests$/			{ print "top no no no test"; exit }
+/\/src\/cmds\//			{ print "command yes yes yes sprite"; exit }
+/\/src\/admin$/                 { print "top no no no admin"; exit }
+/\/src\/admin\//		{ print "command yes yes yes admin"; exit }
+/\/src\/boot\//			{ print "boot yes yes no boot"; exit }
+/\/src\/boot$/			{ print "top no no no boot"; exit }
+/\/src\/man$/                   { print "top no no no sprite"; exit }
+/\/src\/man\//			{ print "man no no no sprite"; exit }
+#
+# Default: Must be last pattern in file
+#
+/./				{ print "command no yes yes personal" }

@@ -1,0 +1,34 @@
+
+
+            How to fix the printer queue
+
+Sometimes the printer queue gets stuck and files start piling
+up in the spool directory.  When this happens, here are some
+things that you can try to get things working again.
+
+1.  Check the ownership of the spool directory.  It should be
+    owned by `daemon'.  If is owned by root or a user, then the
+    daemon may not have permission to create files there.
+
+2.  Check the permissions on the lock file.  If the group execute
+    bit is set, the queue is disabled.
+
+3.  If the printer is on a remote machine, you should make sure
+    that machine is up.  If you look in /etc/printcap, the `rm' field
+    will tell you what machine it is being forwarded to, and the `rp'
+    field will tell you the name of the printer on the remote machine.
+
+    Make sure that your machine is listed in /etc/host.equiv and 
+    /etc/hosts.lpd on the remote machine.
+
+4.  Kill the printer daemon (lpd) and delete all the files in the
+    queue.  Then restart the daemon.
+
+5.  Get some incense, and a live chicken.  Dim the lights,
+    and light the incense.  Slaughter the chicken on top of the
+    printer, while chanting `postscript, postscript, ...'  Let
+    the chicken blood drip onto the printer, while you power
+    cycle it repeatedly.  Resubmit your print job.  If the queue is
+    still stuck, repeat this step using a lamb or a goose instead of
+    a chicken.
+

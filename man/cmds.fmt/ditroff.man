@@ -1,0 +1,330 @@
+
+
+
+DITROFF                   User Commands                   DITROFF
+
+
+
+NNAAMMEE
+     ditroff - text formatting and typesetting
+
+SSYYNNOOPPSSIISS
+     ddiittrrooffff [ option ] ...  [ file ] ...
+
+DDEESSCCRRIIPPTTIIOONN
+     _D_i_t_r_o_f_f formats text in the named _f_i_l_e_s for printing on the
+     printer selected.  Different output devices may be selected
+     with the environment variables TYPESETTER and PRINTER or
+     with the -P option.  Output will be processed as specified
+     in the _d_i_t_c_a_p file, for the particular printer selected.
+     The companion preprocessors, pic, ideal, deqn, tbl and grn
+     all accept the TYPESETTER and PRINTER environment variables,
+     have the -P option, and access the ditcap file.   _T_r_o_f_f''ss
+     capabilities are described in the _N_r_o_f_f/_T_r_o_f_f _u_s_e_r'_s _m_a_n_u_a_l.
+
+     It is a good idea to specify a printer using one of the
+     environment variables (PRINTER or TYPESETTER), or by using
+     the --PP_p_r_i_n_t_e_r option for ditroff and each of its preproces-
+     sors.  This is advisable since each preprocessor selects a
+     different default device if none is specified.  The device
+     independent troff (troff_p) and its associated preprocessors
+     (eqn, grn, tbl, ideal, pic,  ...) access the environment
+     variables (TYPESETTER and PRINTER), support the --PP_p_r_i_n_t_e_r
+     option, and access the _d_i_t_c_a_p file when processing troff
+     files.
+
+     If no _f_i_l_e argument is present, the standard input is read.
+     An argument consisting of a single minus (--) is taken to be
+     a file name corresponding to the standard input.  The
+     options are:
+
+     Troff options:
+
+     --PP_d_e_v   Prepare output for typesetter _d_e_v.  If no printer is
+             specified, the default is the Laser Writer (lw).
+             The environment variable PRINTER will override the
+             default, and the environment variable TYPESETTER
+             overrides PRINTER.  A -P option will override all
+             else.  The _d_i_t_c_a_p file is searched for this printer,
+             and the printer type and other options are set from
+             this file.
+
+     --TT_t_y_p   Change the printer type to _t_y_p , and don't read the
+             printer type from the ditcap file.
+
+     --FF_d_i_r   Use font directory _d_i_r instead of
+             /sprite/lib/ditroff.  This overrides the (fd)
+             characteristic if it is set in the _d_i_t_c_a_p file.
+
+     --DD_e_n_t   Use the ditcap entry for _e_n_t , rather than the
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+DITROFF                   User Commands                   DITROFF
+
+
+
+             ditcap entry for _d_e_v . Thus the ditcap characteris-
+             tics are read from the ditcap entry _e_n_t , and the
+             output is sent to _d_e_v .
+
+     --tt      Send the troff_p output to standard output.  If the
+             (ft) characteristic is set in the ditcap file, then
+             pass the output through this filter before sending
+             it to standard output.
+
+     --aa      Send a printable ASCII approximation of the results
+             to the standard output.  If the (fa) characteristic
+             is set in the ditcap file, then pass the output
+             through this filter before sending it to standard
+             output.
+
+     --oo_l_i_s_t  Print only pages whose page numbers appear in the
+             comma-separated _l_i_s_t of numbers and ranges.  A range
+             _N--_M means pages _N through _M; an initial -_N means
+             from the beginning to page _N; and a final _N- means
+             from _N to the end.
+
+     --nn_N     Number first generated page _N.
+
+     --mm_n_a_m_e  Prepend the macro file //sspprriittee//lliibb//ddiittrrooffff//ttmmaacc.._n_a_m_e
+             to the input _f_i_l_e_s.
+
+     --rr_a_N    Set register _a (one-character) to _N.
+
+     --ii      Read standard input after the input files are
+             exhausted.
+
+     --qq      Disable echoing during a ..rrdd request.
+
+     --ddeebbuugg  Print the lines that ditroff would run, rather than
+             making system calls.
+
+     Preprocessing options:
+
+     --ttbbll   Pipe through tbl.
+
+     --eeqqnn   Pipe through eqn.
+
+     --sseeqqnn  Pipe through eqn using the special characters (in
+            /sprite/lib/ditroff/eqnxxxxx).
+
+     --ggrrnn   Pipe through grn.
+
+     --ppiicc   Pipe through pic.
+
+     --rreeffeerr Pipe through refer.
+
+     --iiddeeaall Pipe through ideal.
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+DITROFF                   User Commands                   DITROFF
+
+
+
+     Spooling options:
+
+     --hh     Don't print the burst page.
+
+     --mm     Send mail upon completion of the printing job.
+
+     --CC_n_a_m_e Set the classname on the burst page to _n_a_m_e .
+
+     --JJ_n_a_m_e Set the jobname on the burst page to _n_a_m_e .
+
+     --##_N    Print _N copies of the job.
+
+     Some options of _t_r_o_f_f only apply if you have a C/A/T
+     typesetter attached to your system.  These options are here
+     for historical reasons:
+
+     --ss_N  Stop every _N pages.  _t_r_o_f_f stops the phototypesetter
+          every _N pages, produces a trailer to allow changing
+          cassettes, and resumes when the typesetter's start but-
+          ton is pressed.
+
+     --ff   Refrain from feeding out paper and stopping photo-
+          typesetter at the end of the run.
+
+     --ww   Wait until phototypesetter is available, if currently
+          busy.
+
+     --bb   Report whether the phototypesetter is busy or avail-
+          able.  No text processing is done.
+
+     --ppN  Print all characters in point size _N while retaining
+          all prescribed spacings and motions, to reduce photo-
+          typesetter elapsed time.
+
+PPRROOCCEESSSSIINNGG
+     The following details are only important to the user who
+     wants to set the environment variable DITCAP and change
+     ditcap entries.
+     The details of how files are processed is as follows:
+     ( (xx) indicates ditcap characteristics and [ ] indicates
+     optional parts )
+
+     First all files are run through the preprocessors specified.
+     (we show all preprocessors, but only a few would be used
+     together) The first processor receives all the files as
+     input - note that this could be troff_p.  This part of the
+     command line is assembled as follows.
+
+       PRE = refer SFILES | tbl | grn TYFT | \
+             pic TYFT | ideal TYFT | eqn TYFT |
+
+           Where SFILES = "[(se)] files" the (se) string being
+
+
+
+Sprite v1.0                                                     3
+
+
+
+
+
+
+DITROFF                   User Commands                   DITROFF
+
+
+
+           prepended if the --sseeqqnn option is selected and if the
+           (se) characteristic is specified in the ditcap file.
+           And TYFT = " -T _t_y_p [-F _d_i_r ] " _t_y_p is either speci-
+           fied in the ditcap file (ty), or using the --TT option;
+           _d_i_r is used if it is specified by the -_F option or if
+           the (fd) characteristic is specified in the ditcap
+           file.
+
+     NOTE:  The preprocessors above and troff_p below would be
+            the default ones given in the ditcap(5) documenta-
+            tion, unless appropriate ditcap characteristic are
+            specified in the ditcap file.
+
+     I    Standard troff job directed to a printer (-a , -t
+          options not set)
+
+          %  PRE  troff_p  TYFT  [(ol)] [troff options] \
+             [ | (f1) ] [ | (f2) ] [ | (f3) ] [ | (f4) ] \
+             | lpr -Pdev [spooling options] [(lo)]
+
+     II   Using a previewer (as specified in the ditcap file)
+
+          %  PRE  troff_p  TYFT  [(op)] [troff options] \
+             [ | (fp) ] > /tmp/dit$$
+
+          %  (pv) /tmp/dit$$
+
+          %  /bin/rm -f /tmp/dit$$
+
+     III  Using the -t option
+
+          %  PRE  troff_p TYFT  -t [(ot)] [troff options] \
+             [ | (ft) ] > standard output
+
+     IV   Using the -a option
+
+          %  PRE  troff_p TYFT  -a [(oa)] [troff options] \
+             [ | (fa) ] > standard output
+
+
+
+FFIILLEESS
+     /sprite/lib/ditroff/ditcap  printer specific info
+     /sprite/lib/ditroff/tmac.*  standard macro files
+     /sprite/lib/ditroff/dev*    font width tables
+
+BBUUGGSS
+     The --FF option is not very useful since the same directory
+     must be available on the machine that drives the printer.
+
+SSEEEE AALLSSOO
+     ditcap(5)
+
+
+
+Sprite v1.0                                                     4
+
+
+
+
+
+
+DITROFF                   User Commands                   DITROFF
+
+
+
+     trchange(1) for a list of differences, in _d_i_t_r_o_f_f, to TROFF
+     commands
+     J. F. Ossanna, _N_r_o_f_f/_T_r_o_f_f _u_s_e_r'_s _m_a_n_u_a_l
+     B. W. Kernighan, _A _T_R_O_F_F _T_u_t_o_r_i_a_l
+     eqn(1), grn(1), ideal(1), pic(1), refer(1),
+     tbl(1), dterm(1), lpr(1), font(1)
+
+AAUUTTHHOORR
+     Greg Heinzinger
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     5
+
+
+

@@ -1,0 +1,462 @@
+
+
+
+Tk_ParseArgv          UNKNOWN SECTION (tk)           Tk_ParseArgv
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tk_ParseArgv - process command-line options
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttkk..hh>>
+
+     int
+     TTkk__PPaarrsseeAArrggvv(_i_n_t_e_r_p, _t_k_w_i_n, _a_r_g_c_P_t_r, _a_r_g_v, _a_r_g_T_a_b_l_e, _f_l_a_g_s)
+
+AARRGGUUMMEENNTTSS
+     Tcl_Interp    *_i_n_t_e_r_p     (in)      Interpreter to  use  for
+                                         returning   error   mes-
+                                         sages.
+
+     Tk_Window     _t_k_w_i_n       (in)      Window to use when argu-
+                                         ments     specify     Tk
+                                         options.  If NULL,  then
+                                         no  Tk  options  will be
+                                         processed.
+
+     int           _a_r_g_c_P_t_r     (in/out)  Pointer  to  number   of
+                                         arguments in argv;  gets
+                                         modified to hold  number
+                                         of unprocessed arguments
+                                         that  remain  after  the
+                                         call.
+
+     char          **_a_r_g_v      (in/out)  Command  line  arguments
+                                         passed  to main program.
+                                         Modified to hold  unpro-
+                                         cessed   arguments  that
+                                         remain after the call.
+
+     Tk_ArgvInfo   *_a_r_g_T_a_b_l_e   (in)      Array    of     argument
+                                         descriptors,  terminated
+                                         by  element  with   type
+                                         TK_ARGV_END.
+
+     int           _f_l_a_g_s       (in)      If  non-zero,  then   it
+                                         specifies  one  or  more
+                                         flags that  control  the
+                                         parsing   of  arguments.
+                                         Different flags  may  be
+                                         OR'ed together.  The
+                                         flags currently defined
+                                         are
+                                         TK_ARGV_DONT_SKIP_FIRST_ARG,
+                                         TK_ARGV_NO_ABBREV,
+                                         TK_ARGV_NO_LEFTOVERS,
+                                         and TK_ARGV_NO_DEFAULTS.
+
+
+
+Sprite v.1.0       Printed:  November 13, 1991                  1
+
+
+
+
+
+
+Tk_ParseArgv          UNKNOWN SECTION (tk)           Tk_ParseArgv
+
+
+
+_________________________________________________________________
+
+DDEESSCCRRIIPPTTIIOONN
+     TTkk__PPaarrsseeAArrggvv processes an array  of  command-line  arguments
+     according  to a table describing the kinds of arguments that
+     are expected.  Each of the arguments in _a_r_g_v is processed in
+     turn:   if  it  matches  one of the entries in _a_r_g_T_a_b_l_e, the
+     argument is processed according to that entry and discarded.
+     The  arguments  that  do  not match anything in _a_r_g_T_a_b_l_e are
+     copied down to the beginning of _a_r_g_v (retaining their origi-
+     nal  order)  and  returned to the caller.  At the end of the
+     call TTkk__PPaarrsseeAArrggvv sets *_a_r_g_c_P_t_r to hold the number of  argu-
+     ments  that  are  left in _a_r_g_v, and _a_r_g_v[*_a_r_g_c_P_t_r] will hold
+     the value NULL.  Normally, TTkk__PPaarrsseeAArrggvv assumes that _a_r_g_v[_0]
+     is  a  command  name, so it is treated like an argument that
+     doesn't match _a_r_g_T_a_b_l_e and returned to the caller;  however,
+     if  the TK_ARGV_DONT_SKIP_FIRST_ARG bit is set in _f_l_a_g_s then
+     _a_r_g_v[_0] will be processed just like the  other  elements  of
+     _a_r_g_v.
+
+     TTkk__PPaarrsseeAArrggvv normally returns the value TCL_OK.  If an error
+     occurs  while  parsing  the  arguments,  then  TCL_ERROR  is
+     returned and TTkk__PPaarrsseeAArrggvv will leave  an  error  message  in
+     _i_n_t_e_r_p->_r_e_s_u_l_t in the standard Tcl fashion.  In the event of
+     an error return, *_a_r_g_v_P_t_r will not have been  modified,  but
+     _a_r_g_v  could  have  been  partially  modified.   The possible
+     causes of errors are explained below.
+
+     The _a_r_g_T_a_b_l_e array specifies the kinds of arguments that are
+     expected;  each of its entries has the following structure:
+
+          ttyyppeeddeeff ssttrruucctt {
+              cchhaarr*_k_e_y;
+              iinntt _t_y_p_e;
+              cchhaarr*_s_r_c;
+              cchhaarr*_d_s_t;
+              cchhaarr*_h_e_l_p;
+          }} TTkk__AArrggvvIInnffoo;;
+
+     The _k_e_y field is a string such as  ``-display''  or  ``-bg''
+     that  is  compared  with the values in _a_r_g_v.  _T_y_p_e indicates
+     how to process an argument that matches _k_e_y  (more  on  this
+     below).   _S_r_c and _d_s_t are additional values used in process-
+     ing the argument.  Their exact usage depends  on  _t_y_p_e,  but
+     typically  _s_r_c  indicates a value and _d_s_t indicates where to
+     store the value.  The cchhaarr ** declarations for  _s_r_c  and  _d_s_t
+     are  placeholders:   the  actual  types  may  be  different.
+     Lastly, _h_e_l_p is a string giving a brief description of  this
+     option;   this  string  is  printed  when users ask for help
+     about command-line options.
+
+     When processing an argument in _a_r_g_v,  TTkk__PPaarrsseeAArrggvv  compares
+
+
+
+Sprite v.1.0       Printed:  November 13, 1991                  2
+
+
+
+
+
+
+Tk_ParseArgv          UNKNOWN SECTION (tk)           Tk_ParseArgv
+
+
+
+     the argument to each of the _k_e_y's in _a_r_g_T_a_b_l_e.  TTkk__PPaarrsseeAArrggvv
+     selects the first specifier whose _k_e_y matches  the  argument
+     exactly, if such a specifier exists.  Otherwise TTkk__PPaarrsseeAArrggvv
+     selects a specifier for  which  the  argument  is  a  unique
+     abbreviation.   If the argument is a unique abbreviation for
+     more than one specifier, then  an  error  is  returned.   If
+     there is no matching entry in _a_r_g_T_a_b_l_e, then the argument is
+     skipped and returned to the caller.
+
+     Once a matching argument specifier  is  found,  TTkk__PPaarrsseeAArrggvv
+     processes  the  argument  according to the _t_y_p_e field of the
+     specifier.  The argument that matched _k_e_y  is  called  ``the
+     matching  argument''  in the descriptions below.  As part of
+     the processing, TTkk__PPaarrsseeAArrggvv may also use the next  argument
+     in  _a_r_g_v  after the matching argument, which is called ``the
+     following argument''.  The legal values for  _t_y_p_e,  and  the
+     processing that they cause, are as follows:
+
+     TTKK__AARRGGVV__EENNDD
+          Marks the end of the table.  The last entry in _a_r_g_T_a_b_l_e
+          must  have  this  type;   all  of  its other fields are
+          ignored and it will never match any arguments.
+
+     TTKK__AARRGGVV__CCOONNSSTTAANNTT
+          _S_r_c is treated as an integer and _d_s_t is  treated  as  a
+          pointer  to  an  integer.   _S_r_c is stored at *_d_s_t.  The
+          matching argument is discarded.
+
+     TTKK__AARRGGVV__IINNTT
+          The following argument must contain an  integer  string
+          in the format accepted by ssttrrttooll (e.g. ``0'' and ``0x''
+          prefixes may be used to specify  octal  or  hexadecimal
+          numbers, respectively).  _D_s_t is treated as a pointer to
+          an integer;  the following argument is converted to  an
+          integer value and stored at *_d_s_t.  _S_r_c is ignored.  The
+          matching and following  arguments  are  discarded  from
+          _a_r_g_v.
+
+     TTKK__AARRGGVV__FFLLOOAATT
+          The following argument must  contain  a  floating-point
+          number  in  the  format  accepted  by  ssttrrttooll.   _D_s_t is
+          treated as the address of an double-precision  floating
+          point  value;  the following argument is converted to a
+          double-precision value and stored at *_d_s_t.  The  match-
+          ing and following arguments are discarded from _a_r_g_v.
+
+     TTKK__AARRGGVV__SSTTRRIINNGG
+          In this form, _d_s_t is treated as a pointer  to  a  (char
+          *);  TTkk__PPaarrsseeAArrggvv  stores at *_d_s_t a pointer to the fol-
+          lowing argument, and discards the matching and  follow-
+          ing arguments from _a_r_g_v.  _S_r_c is ignored.
+
+
+
+
+Sprite v.1.0       Printed:  November 13, 1991                  3
+
+
+
+
+
+
+Tk_ParseArgv          UNKNOWN SECTION (tk)           Tk_ParseArgv
+
+
+
+     TTKK__AARRGGVV__UUIIDD
+          This form is similar to TK_ARGV_STRING, except that the
+          argument  is turned into a Tk_Uid by calling TTkk__GGeettUUiidd.
+          _D_s_t is treated as a pointer to a  Tk_Uid;  TTkk__PPaarrsseeAArrggvv
+          stores  at *_d_s_t the Tk_Uid corresponding to the follow-
+          ing argument, and discards the matching  and  following
+          arguments from _a_r_g_v.  _S_r_c is ignored.
+
+     TTKK__AARRGGVV__CCOONNSSTT__OOPPTTIIOONN
+          This form causes a Tk option  to  be  set  (as  if  the
+          ooppttiioonn  command  had  been  invoked).  The _s_r_c field is
+          treated as a pointer to a string giving the value of an
+          option,  and _d_s_t is treated as a pointer to the name of
+          the option.  The matching argument  is  discarded.   If
+          _t_k_w_i_n  is  NULL,  then argument specifiers of this type
+          are ignored (as if they did not exist).
+
+     TTKK__AARRGGVV__OOPPTTIIOONN__VVAALLUUEE
+          This form is similar  to  TK_ARGV_CONST_OPTION,  except
+          that  the value of the option is taken from the follow-
+          ing argument instead of from _s_r_c.  _D_s_t is used  as  the
+          name  of the option.  _S_r_c is ignored.  The matching and
+          following arguments are discarded.  If _t_k_w_i_n  is  NULL,
+          then  argument  specifiers of this type are ignored (as
+          if they did not exist).
+
+     TTKK__AARRGGVV__OOPPTTIIOONN__NNAAMMEE__VVAALLUUEE
+          In this case the following argument  is  taken  as  the
+          name  of  a  Tk  option  and the argument after that is
+          taken as the value for that option.  Both _s_r_c  and  _d_s_t
+          are  ignored.   All  three arguments are discarded from
+          _a_r_g_v.  If _t_k_w_i_n is NULL, then  argument  specifiers  of
+          this type are ignored (as if they did not exist).
+
+     TTKK__AARRGGVV__HHEELLPP
+          When this kind of option is  encountered,  TTkk__PPaarrsseeAArrggvv
+          uses  the  _h_e_l_p  fields of _a_r_g_T_a_b_l_e to format a message
+          describing all the valid  arguments.   The  message  is
+          placed   in  _i_n_t_e_r_p->_r_e_s_u_l_t  and  TTkk__PPaarrsseeAArrggvv  returns
+          TCL_ERROR.  When  this  happens,  the  caller  normally
+          prints  the  help message and aborts.  If the _k_e_y field
+          of a TK_ARGV_HELP specifier is NULL, then the specifier
+          will  never  match  any  arguments;   in  this case the
+          specifier simply provides  extra  documentation,  which
+          will  be  included  when  some other TK_ARGV_HELP entry
+          causes help information to be returned.
+
+     TTKK__AARRGGVV__RREESSTT
+          This option is used by programs or commands that  allow
+          the last several of their options to be the name and/or
+          options for some  other  program.   If  a  TTKK__AARRGGVV__RREESSTT
+          argument  is  found,  then TTkk__PPaarrsseeAArrggvv doesn't process
+
+
+
+Sprite v.1.0       Printed:  November 13, 1991                  4
+
+
+
+
+
+
+Tk_ParseArgv          UNKNOWN SECTION (tk)           Tk_ParseArgv
+
+
+
+          any of the remaining arguments;  it returns them all at
+          the beginning of _a_r_g_v (along with any other unprocessed
+          arguments).  In addition, TTkk__PPaarrsseeAArrggvv  treats  _d_s_t  as
+          the address of an integer value, and stores at *_d_s_t the
+          index of the first of the TTKK__AARRGGVV__RREESSTT options  in  the
+          returned  _a_r_g_v.  This allows the program to distinguish
+          the TTKK__AARRGGVV__RREESSTT options from other unprocessed options
+          that preceeded the TTKK__AARRGGVV__RREESSTT.
+
+     TTKK__AARRGGVV__FFUUNNCC
+          For this kind  of  argument,  _s_r_c  is  treated  as  the
+          address of a procedure, which is invoked to process the
+          following argument.  The procedure should have the fol-
+          lowing structure:
+
+          iinntt
+          _f_u_n_c(_d_s_t, _k_e_y, _n_e_x_t_A_r_g)
+              cchhaarr    *_d_s_t;
+              cchhaarr    *_k_e_y;
+              cchhaarr    *_n_e_x_t_A_r_g;
+          {
+          }
+
+          The _d_s_t and _k_e_y parameters will contain the correspond-
+          ing  fields  from  the _a_r_g_T_a_b_l_e entry, and _n_e_x_t_A_r_g will
+          point to the following argument from _a_r_g_v (or  NULL  if
+          there aren't any more arguments left in _a_r_g_v).  If _f_u_n_c
+          uses _n_e_x_t_A_r_g (so that TTkk__PPaarrsseeAArrggvv should discard  it),
+          then  it should return 1.  Otherwise it should return 0
+          and TTkkPPaarrsseeAArrggvv will process the following argument  in
+          the normal fashion.  In either event the matching argu-
+          ment is discarded.
+
+     TTKK__AARRGGVV__GGEENNFFUUNNCC
+          This form provides a more  general  procedural  escape.
+          It treats _s_r_c as the address of a procedure, and passes
+          that procedure all of  the  remaining  arguments.   The
+          procedure should have the following form:
+
+          iinntt
+          _g_e_n_f_u_n_c(_d_s_t, _i_n_t_e_r_p, _k_e_y, _a_r_g_c, _a_r_g_v)
+              cchhaarr    *_d_s_t;
+              TTccll__IInntteerrpp  *_i_n_t_e_r_p;
+              cchhaarr    *_k_e_y;
+              iinntt _a_r_g_c;
+              cchhaarr    **_a_r_g_v;
+          {
+          }
+
+          The _d_s_t and _k_e_y parameters will contain the correspond-
+          ing fields from the _a_r_g_T_a_b_l_e entry.  _I_n_t_e_r_p will be the
+          same as the _i_n_t_e_r_p argument to TTccll__PPaarrsseeAArrggvv.  _A_r_g_c and
+
+
+
+Sprite v.1.0       Printed:  November 13, 1991                  5
+
+
+
+
+
+
+Tk_ParseArgv          UNKNOWN SECTION (tk)           Tk_ParseArgv
+
+
+
+          _a_r_g_v  refer  to  all  of the options after the matching
+          one.  _G_e_n_f_u_n_c should behave in  a  fashion  similar  to
+          TTkk__PPaarrsseeAArrggvv:  parse as many of the remaining arguments
+          as it can, then return any that are left by  compacting
+          them  to  the  beginning of _a_r_g_v (starting at _a_r_g_v[0]).
+          _G_e_n_f_u_n_c should return a count of how many arguments are
+          left  in _a_r_g_v; TTkk__PPaarrsseeAArrggvv will process them.  If _g_e_n_-
+          _f_u_n_c encounters an error then it should leave an  error
+          message  in  _i_n_t_e_r_p->_r_e_s_u_l_t,  in the usual Tcl fashion,
+          and return -1;  when  this  happens  TTkk__PPaarrsseeAArrggvv  will
+          abort its processing and return TCL_ERROR.
+
+
+FFLLAAGGSS
+     TTKK__AARRGGVV__DDOONNTT__SSKKIIPP__FFIIRRSSTT__AARRGG
+          TTkk__PPaarrsseeAArrggvv normally treats _a_r_g_v[_0] as  a  program  or
+          command  name,  and returns it to the caller just as if
+          it hadn't matched _a_r_g_T_a_b_l_e.  If  this  flag  is  given,
+          then _a_r_g_v[_0] is not given special treatment.
+
+     TTKK__AARRGGVV__NNOO__AABBBBRREEVV
+          Normally, TTkk__PPaarrsseeAArrggvv accepts unique abbreviations for
+          _k_e_y  values  in  _a_r_g_T_a_b_l_e.   If this flag is given then
+          only exact matches will be acceptable.
+
+     TTKK__AARRGGVV__NNOO__LLEEFFTTOOVVEERRSS
+          Normally, TTkk__PPaarrsseeAArrggvv returns  unrecognized  arguments
+          to  the  caller.   If  this  bit  is  set in _f_l_a_g_s then
+          TTkk__PPaarrsseeAArrggvv will return an error if it encounters  any
+          argument  that doesn't match _a_r_g_T_a_b_l_e.  The only excep-
+          tion to this rule is _a_r_g_v[_0], which will be returned to
+          the    caller    with    no    errors    as   long   as
+          TK_ARGV_DONT_SKIP_FIRST_ARG isn't specified.
+
+     TTKK____NNOO__DDEEFFAAUULLTTSS
+          Normally, TTkk__PPaarrsseeAArrggvv searches an  internal  table  of
+          standard  argument  specifiers in addition to _a_r_g_T_a_b_l_e.
+          If this bit is set in _f_l_a_g_s, then TTkk__PPaarrsseeAArrggvv will use
+          only _a_r_g_T_a_b_l_e and not its default table.
+
+
+EEXXAAMMPPLLEE
+     Here is an example definition of an _a_r_g_T_a_b_l_e and some sample
+     command lines that use the options.  Note the effect on _a_r_g_c
+     and _a_r_g_v;  arguments processed  by  TTkk__PPaarrsseeAArrggvv  are  elim-
+     inated  from  _a_r_g_v,  and  _a_r_g_c is updated to reflect reduced
+     number of arguments.
+
+          /*
+           * Define and set default values for globals.
+           */
+          int debugFlag = 0;
+
+
+
+Sprite v.1.0       Printed:  November 13, 1991                  6
+
+
+
+
+
+
+Tk_ParseArgv          UNKNOWN SECTION (tk)           Tk_ParseArgv
+
+
+
+          int numReps = 100;
+          char defaultFileName[] = "out";
+          char *fileName = defaultFileName;
+          Boolean exec = FALSE;
+
+          /*
+           * Define option descriptions.
+           */
+          Tk_ArgvInfo argTable[] = {
+              {"-X", TK_ARGV_CONSTANT, (char *) 1, (char *) &debugFlag,
+                  "Turn on debugging printfs"},
+              {"-N", TK_ARGV_INT, (char *) NULL, (char *) &numReps,
+                  "Number of repetitions"},
+              {"-of", TK_ARGV_STRING, (char *) NULL, (char *) &fileName,
+                  "Name of file for output"},
+              {"x", TK_ARGV_REST, (char *) NULL, (char *) &exec,
+                  "File to exec, followed by any arguments (must be last argument)."},
+              {(char *) NULL, TK_ARGV_END, (char *) NULL, (char *) NULL,
+                  (char *) NULL}
+          };
+
+          main(argc, argv)
+              int argc;
+              char *argv[];
+          {
+              ...
+
+              if (Tk_ParseArgv(interp, tkwin, &argc, argv, argTable, 0) != TCL_OK) {
+                  fprintf(stderr, "%s0, interp->result);
+                  exit(1);
+              }
+
+              /*
+               * Remainder of the program.
+               */
+          }
+
+     Note that default values can be assigned to variables  named
+     in  _a_r_g_T_a_b_l_e:  the variables will only be overwritten if the
+     particular arguments are present in  _a_r_g_v.   Here  are  some
+     example command lines and their effects.
+
+          prog -N 200 infile      # just sets the numReps variable to 200
+          prog -of out200 infile  # sets fileName to reference "out200"
+          prog -XN 10 infile      # sets the debug flag, also sets numReps
+     In  all  of  the  above  examples,  _a_r_g_c  will  be  set   by
+     TTkk__PPaarrsseeAArrggvv to 2, _a_r_g_v[0] will be ``prog'', _a_r_g_v[1] will be
+     ``infile'', and _a_r_g_v[2] will be NULL.
+
+
+KKEEYYWWOORRDDSS
+     arguments, command line, options
+
+
+
+Sprite v.1.0       Printed:  November 13, 1991                  7
+
+
+

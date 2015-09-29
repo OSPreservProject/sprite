@@ -1,0 +1,9 @@
+D DS3100_M                          	ds3100.md
+L GETOPT.C;1                        	getopt.c	../dist/libiberty/getopt.c
+L GETOPT1.C;1                       	getopt1.c	../dist/libiberty/getopt1.c
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+L MKMF.LOC;1                        	mkmf.local	/sprite/lib/mkmf/mkmf.library
+L OBSTACK.C;1                       	obstack.c	../dist/libiberty/obstack.c
+D RCS                               	RCS
+D SUN4_MD                           	sun4.md

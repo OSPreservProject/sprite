@@ -1,0 +1,1403 @@
+\documentstyle[vdm]{article}
+
+\title{Typesetting VDM with \LaTeX}
+\author{Mario Wolczko\\
+Dept. of Computer Science\\
+The University\\
+Manchester M13 9PL\\
+U.K.\\
+\verb;mario@uk.ac.man.cs.r5;, {\tt ...!mcvax!ukc!man.cs.r5!mario}}
+\date{March 1988}
+
+\newcommand{\Vdm}{{\tt vdm\/}}
+
+\newenvironment{dangerous}{\endgraf\vspace{5pt}\bgroup\small}%
+			  {\endgraf\egroup\vspace{5pt}}
+
+\newlength{\righthalf} \setlength{\righthalf}{0.5\textwidth}
+\newlength{\lefthalf}  \setlength{\lefthalf}{0.4\textwidth}
+\newenvironment{leftside}{\noindent\hspace{0.1\textwidth}%
+			  \parbox[t]{\lefthalf}\bgroup\vspace{10pt}%
+			  \noindent\begin{vdm}\leftskip=0pt\VDMindent=0pt}%
+			 {\end{vdm}\egroup}
+\newenvironment{rightside}{\parbox[t]{\righthalf}\bgroup\begin{verbatim}}%
+			  {\egroup}
+
+\renewcommand{\^}[1]{$\langle${\rm #1\/}$\rangle$}
+
+\newcommand{\mmexp}{\^{math-mode-expression}}
+\newcommand{\cs}[1]{{\tt \string#1}}
+
+\setlength{\VDMindent}{3\parindent}
+
+\setlength{\preOperationSkip}{0pt}
+\setlength{\preFunctionSkip}{0pt}
+\setlength{\preTypeSkip}{0pt}
+\setlength{\preCompositeSkip}{0pt}
+\setlength{\preRecordSkip}{0pt}
+\setlength{\preFormulaSkip}{0pt}
+
+\begin{document}
+\maketitle
+
+\tableofcontents
+
+This document describes a new style option, \Vdm, for use with
+\LaTeX.  The purpose of \Vdm\ is to make the typesetting of VDM
+specifications easy.  Other goals are:
+\begin{itemize}
+\item	To enable users of \Vdm\ to communicate their specifications
+	to others, possibly in a variety of concrete syntaxes, without
+	having to change their source files
+\item	To help the VDM community standardise on a particular form of VDM.
+	This, of course, is in direct contradiction to the first
+	aim
+\item	To enable a user of \Vdm\ to concentrate on his%
+	\footnote{Read `his/her' for every occurence of `his'.}
+	specifications, and ignore the detailed layout as much as
+	possible.  A side effect of this is that the effort required
+	to improve layout is concentrated in one place, within the
+	\Vdm\ macros.
+\end{itemize}
+
+But enough evangelising.  Let's get to the the real meat.  This
+document is broken up into the following sections:
+\begin{itemize}
+\item	General points about using \Vdm
+\item	Typesetting formulas
+\item	How to typeset data types
+\item	How to typeset functions
+\item	How to typeset operations
+\item	How to typeset proofs
+\item	How to tailor/extend the system for your own
+	application.
+\end{itemize}
+You should definitely read the first two sections---then you'll know
+roughly what you're in for, and whether you want to continue.  The
+remaining sections can be read as and when you need them.
+
+\begin{dangerous}
+In keeping with the best traditions of \TeX\ documentation, paragraphs
+that contain material that is not essential for novices, but vital if
+you want to parameterise or extend the system, are in smaller type,
+like this one.
+\end{dangerous}
+
+Just to give a preliminary example, here is some output from \Vdm, and
+the corresponding input:
+
+\begin{vdm}
+\begin{fn}{dec}{ptrs,om} \\
+\signature{
+	 \setof{Oop} \x \mapof{Oop}{Object} \to \mapof{Oop}{Object} 
+}
+\If ptrs = \emptyset
+\Then om
+\Else 	\Let gone = \set{p \in ptrs | RC(om(p)) = 1} \In
+	\Let om' = gone \dsub om \In
+	\Let om'' = om' \owr
+		\map{p \mapsto \chg{om'(p)}{RC}{RC\minus 1}\T3
+			| p \in ptrs \diff gone} \In
+	dec(\Union\set{\elems{BODY(om(p))} | p \in gone}, om'')
+\Fi
+\end{fn}
+
+\begin{op}[DESTROYPTR]\label{op-ex}
+\args{ Obj, Ptr : Oop }
+\ext{ \Wr OM : \mapof{Oop}{Basic_Object} }
+\pre{ ptr \in  \elems{BODY(om(obj))} }
+\post{ om = ~{om} \owr \map{ obj \mapsto 
+		\chg{om(obj)}{BODY}{BODY \diff \set{ptr}}}}
+\end{op}
+\end{vdm}
+
+% this is verbatim input
+\begin{verbatim}
+\begin{vdm}
+\begin{fn}{dec}{ptrs,om} \\
+\signature{
+      \setof{Oop} \x \mapof{Oop}{Object} \to \mapof{Oop}{Object} 
+}
+\If ptrs = \emptyset
+\Then om
+\Else   \Let gone = \set{p \in ptrs | RC(om(p)) = 1} \In
+        \Let om' = gone \dsub om \In
+        \Let om'' = om' \owr
+                \map{p \mapsto \chg{om'(p)}{RC}{RC\minus 1}
+                        | p \in ptrs \diff gone} \In
+        dec(\Union\set{\elems{BODY(om(p))} | p \in gone}, om'')
+\Fi
+\end{fn}
+
+\begin{op}[DESTROYPTR]
+\args{ Obj, Ptr : Oop }
+\ext{ \Wr OM : \mapof{Oop}{Basic_Object} }
+\pre{ ptr \in  \elems{BODY(om(obj))} }
+\post{ om = ~{om} \owr \map{ obj \mapsto 
+                \chg{om(obj)}{BODY}{BODY \diff \set{ptr}}}}
+\end{op}
+\end{vdm}
+
+\end{verbatim}
+
+\noindent
+Impressed, huh?  Read on...
+
+
+\section*{Using \Vdm---General Points}
+
+To get at \Vdm, include {\tt vdm\/} as a document style option, e.g.:
+\begin{verbatim}
+        \documentstyle[12pt,vdm]{report}
+\end{verbatim}
+\begin{dangerous}
+To the best of my knowledge, the use of \Vdm\ does not conflict with
+any of the other document styles, except when something has been
+redefined.   An attempt will be made to document all such redefinitions.
+\end{dangerous}
+Once \Vdm\ has been included, you can then use the {\tt vdm\/}
+environment.  For example,
+\begin{verbatim}
+         \begin{vdm}
+            ....
+         \end{vdm}
+\end{verbatim}
+All specification material should be placed within the {\tt vdm\/}
+environment.  The use of \Vdm\ only affects text within the {\tt vdm\/}
+environment, except for the following global changes (which are only
+relevant when in math or display math mode):
+\begin{enumerate}
+\item	The mathcodes of a\dots z and A\dots Z have been changed.  In
+	plain English, this means that when you type letters in math
+	mode the inter-letter spacing is different than it would be
+	had you not included \Vdm\ as an option.\footnote{This is not
+	the case if you are using PS\LaTeX.}  This is because
+	\LaTeX\ math mode is usually tuned for single letter
+	identifiers, as used by mathematicians for millenia.  However,
+	you and I both know that most meaningful identifiers have more
+	than one letter in them, so \Vdm\ provides better spacing for
+	them.  As an example, if you type \verb;$identifier$;, \LaTeX\
+	would normally print {\defaultMathcodes$identifier$}, whereas
+	the use of \Vdm\ will yield $identifier$.
+	\begin{dangerous}\indent If you really want to use the
+	`normal' inter-letter spacing, say \cs\defaultMathcodes.
+	\end{dangerous}
+\item	Underscore gives you an underscore, and not a subscript.  If
+	you want a subscript use \verb;@;, e.g.,~$x@0$ is typed
+	\verb;x@0;, or use \TeX's \cs\sb\ macro.  An \verb;@; is still an
+	@ when not in math mode.  Occasionally you may find that an @
+	in math mode {\em doesn't\/} give you a subscript.  Should
+	this happen, you are advised to use \TeX's \cs\sb\ macro,
+	e.g.,~\verb;$x\sb0$;. 
+	\begin{dangerous}
+	\indent If you don't use
+	underscores much, and you want to use \verb;_; for subscripts,
+	you can say \cs\underscoreon\ (and \cs\underscoreoff\ to
+	make it revert to its usual meaning in \Vdm).
+	\end{dangerous}
+\item	\verb;-; typesets a hyphen, and not a minus sign.  VDM specifications
+	usually contain a lot more
+	\begin{vdm}$long-identifiers$\end{vdm} than subtractions, so
+	on the whole this alteration should save effort.  If you really want
+	to do a subtraction, use \cs\minus.
+\item	\verb;|; gives you a \begin{vdm}$|$\end{vdm}, and not a $\vert$.
+	Do you see the difference?  No?  The former goes between things,
+	e.g., \begin{vdm}$\set{x|p(x)}$\end{vdm}, while the latter is
+	a delimiter, e.g.,~$|x|$.
+	Most people use the former more than the latter, so again this
+	seems reasonable.  If you really want a $|$ (the second kind),
+	say \cs\vert. 
+\item	In \TeX\ and \LaTeX\ \verb;~; has always been a tie.  Well
+	in \Vdm\ it isn't.  \verb;~x; will give you a
+	\begin{vdm}$~x$\end{vdm}.  For long identifiers, such as
+	\begin{vdm}$~{long}$\end{vdm}, say
+	\verb;~{long};.  {\em Note that this only applies in math
+	mode; elsewhere a \verb;~; is still a tie.} 
+\item	In math mode, the double quote character \verb;"; is actually
+	a macro.  Placing text between pairs of double quotes causes
+	that text to be set in the normal text font.  For example,
+	\verb;$x="a variable"$; gives you $x="a variable"$.  
+	\begin{dangerous}
+	\indent If you want to change the font used for text placed between
+	quotes, redefine the command \cs\mathTextFont.  By default
+	it is defined to be \cs\rm.
+	\end{dangerous}
+\item	The following macros have been altered in a non-trivial way:
+	\cs\forall, \cs\exists.
+\end{enumerate}
+
+\begin{dangerous}
+When you typeset some VDM within the {\tt vdm\/} environment, by
+default it is set in from the left margin by an amount equal to
+\cs\parindent, the indentation at the beginning of each paragraph.
+If you want to change this, change the value of \cs\VDMindent, e.g.:
+\begin{verbatim}
+        \setlength{\VDMindent}{0cm}
+\end{verbatim}
+will make your specs come out flush left.  This document has been
+typeset with \cs\VDMindent\ equal to $3\times \cs\parindent$.
+
+Similarly, the right hand margin is controlled by a parameter called
+\cs\VDMrindent.  By default it is also set to \cs\parindent.
+\end{dangerous}
+
+\begin{dangerous}
+Similarly, you can have a particular line spacing in force within the
+{\tt vdm} environment.
+%  However, you have to tread carefully here.
+%\TeX\ {\em always\/} enforces a single line spacing within a
+%particular paragraph, and the value used is the value current at the
+%{\em end\/} of the paragraph.  So to make the material within a {\tt
+%vdm} environment have a different spacing from that surrounding it,
+%you must always put it in a separate paragraph, by placing a blank
+%line before and after it, otherwise strange things will happen.  
+The spacing within a {\tt vdm} environment is dictated by the
+\cs\VDMbaselineskip\ command.  Note that this is {\em not\/} a
+length, but a command.  By default it expands to \cs\baselineskip\
+so that the line spacing is that of the surrounding text, whatever 
+size that may be.  To make it smaller, you may want to say
+\begin{verbatim}
+    \renewcommand{\VDMbaselineskip}{0.8\baselineskip}
+\end{verbatim}
+for example.
+\end{dangerous}
+
+
+\section*{Typesetting formulas}
+
+Most of the text you enter within {\tt vdm\/} environments will be in
+\TeX's math mode, but VDM does its best to conceal this fact from you,
+so that you should rarely, if ever, have to type a dollar sign.
+However, several new features have been provided for the typesetting
+of logical formulas.  Firstly, operators with sensible names have been
+provided: use \cs\Iff, \cs\Implies, \cs\Or, \cs\And\
+and \cs\Not\ for the operators~\begin{vdm}%
+$\Iff,\Implies,\Or,\And,\Not$\end{vdm}.
+(To retain compatibility with a previous version, \cs\iff,
+\cs\implies, \cs\and\ and \cs\neg\ are still provided, but
+\cs\or\ is not.)
+
+A major change has come in the area of quantified expressions.  They
+have very well-defined forms, so the \LaTeX\ sequences \cs\forall\
+and \cs\exists\ have been re-defined to take arguments.  For
+example, to get
+\begin{vdm}
+\begin{formula}
+\exists{x \in S}{p(x)}
+\end{formula}
+\end{vdm}
+\noindent type
+\begin{verbatim}
+        \exists{x \in S}{p(x)}
+\end{verbatim}
+Note the separating dot that was put in auto\-matically.  If you want
+one of these dots by itself, you can have one by saying
+\cs\suchthat.
+
+In addition, two new quantifiers, \cs\unique\ and \cs\nexists, have
+been added: 
+
+\begin{leftside}
+\begin{formula}
+\unique{x \in S}{p(x)}
+\end{formula}
+\begin{formula}
+\nexists{x \in S}{p(x)}
+\end{formula}
+\end{leftside}\begin{rightside}
+\unique{x \in S}{p(x)}
+\nexists{x \in S}{p(x)}
+\end{verbatim}\end{rightside}
+
+Additionally, to complement \cs\unique, there is \cs\uniqueval.  This
+is the so-called ``iota-function'' that returns the unique value, if
+there is one:
+
+\begin{leftside}
+\begin{formula}
+\uniqueval{x \in S}{p(x)}
+\end{formula}
+\end{leftside}\begin{rightside}
+\uniqueval{x \in S}{p(x)}
+\end{verbatim}\end{rightside}
+
+
+\begin{dangerous}
+If you want to use the old versions of \cs\forall\ and
+\cs\exists\ they are available under the pseudonyms of
+\cs\Forall\ and \cs\Exists.
+\end{dangerous}
+
+If you find that the body of the quantified expression is too long to
+fit comfortably on a line, there are *-forms of the above commands
+that place the body of the quantified expression on a new line,
+slightly indented.  For example,
+
+\begin{vdm}
+\begin{formula}
+\exists*{x \in S}{
+	p(x) \And q(x) \Or \Not p(x) \Implies r(x) \And S(x)}
+\end{formula}
+\end{vdm}
+
+\noindent can be obtained with
+\begin{verbatim}
+      \exists*{x \in S}{p(x) \And q(x) \Or \Not p(x)
+                        \Implies r(x) \And S(x)}
+\end{verbatim}
+
+If you need ``Strachey'' brackets, e.g., $M\term{e}$, place the
+material to appear within the brackets within \verb;\term{ ... };,
+thus: \verb;$M\term{e}$;.
+
+A special control sequence, \cs\const, is available for constants.
+To get, for example, $\const{Yes}|\const{No}$, type
+\verb;\const{Yes}|\const{No};.
+\begin{dangerous}
+If you don't like the font that constants are set in, you can change
+them by redefining the command \cs\constantFont.  By
+default it expands to \cs\sc.
+\end{dangerous}
+
+\subsection*{The {\tt formula} Environment}
+
+Occasionally you may want a formula on its own, between paragraphs of
+text, say.  Normally, the provided environments and commands suffice,
+but sometimes they don't.  If you need an odd equation to stand on its
+own, use the {\tt formula} environment:
+\begin{verbatim}
+       \begin{formula}
+       x = 10
+       \Or  \forall{i \in \Nat}{i \ne 10 \Implies i \ne x}
+       \end{formula}
+\end{verbatim}
+\sloppy
+The {\tt formula} environment is similar to displayed math mode,
+except: formulas are indented by \cs\VDMindent, not
+\cs\mathindent, and line breaks can be made using \cs\\.
+Also, within the {\tt formula} environment everything appears flush
+left, as opposed to being centred. 
+
+\subsection*{Constructions}
+
+A particularly nice feature of \Vdm\ is that you can typeset multi-line
+constructions such as those in the earlier example without having to
+worry about, say, lining up ``thens'' and ``elses'' with ``ifs''.
+In the following definitions, whenever you see the term \mmexp, you
+should type an expression as if in math mode, but you needn't put
+dollar signs in.  All of the constructions described below can be used
+where a \mmexp\ is required.  Each construction is shown by example;
+the output on the left results from the input on the right.
+Also note that each macro name begins with an upper-case letter.
+\TeX\ and \LaTeX\ frequently use the lower-case variants for
+completely unrelated things.  Naturally, chaos will ensue if you mix
+the names up.
+
+Typesetting an \kw{if} is done using \cs\If\ \mmexp \cs\Then\ \mmexp
+\cs\Else\ \mmexp \cs\Fi.
+
+\begin{leftside}
+  \begin{formula}
+    \If x\in S
+    \Then S \diff x
+    \Else \emptyset
+    \Fi
+  \end{formula}
+\end{leftside}%
+\begin{rightside}
+\If x\in S
+\Then S \diff x
+\Else \emptyset
+\Fi
+\end{verbatim}
+\end{rightside}
+
+If you nest \cs\If{}s then you must enclose inner \cs\If{}s within
+braces:
+
+\begin{leftside}
+  \begin{formula}
+        \If \ldots
+        \Then{
+                \If \ldots
+                \Then \ldots
+                \Else \ldots
+                \Fi
+        }\Else
+        \Fi
+  \end{formula}
+\end{leftside}\begin{rightside}
+\If ... 
+\Then{
+        \If ...
+        \Then ...
+        \Else ...
+        \Fi
+}\Else
+\Fi
+\end{verbatim}\end{rightside}
+
+You are advised to place the extra braces exactly as above; don't let
+extraneous spaces intervene between the keywords and the braces.
+
+The \cs\If\ macro always starts a new line for the \kw{then} and
+\kw{else} parts.  If you want \TeX\ to try to choose line breaks, use
+\cs\SIf\ instead:
+
+\begin{leftside}
+  \begin{formula}
+    \SIf a=b
+    \Then c=d+e
+    \Else p=q+r+s+t+u
+    \Fi
+  \end{formula}
+\end{leftside}%
+\begin{rightside}
+\SIf a=b
+\Then c=d+e
+\Else p=q+r+s+t+u
+\Fi
+\end{verbatim}
+\end{rightside}
+
+\mbox{\kw{let}\dots\kw{in}} constructions are done in a similar way:
+\cs\Let{} \mmexp{} \cs\In{} \mmexp, and \cs\SLet{} \mmexp{} 
+\cs\In{} \mmexp. 
+
+\begin{leftside}
+  \begin{formula}
+    \Let x=f(y,z) \In
+    g(x)+h(x)
+  \end{formula}
+\end{leftside}%
+\begin{rightside}
+\Let x=f(y,z) \In
+g(x)+h(x)
+\end{verbatim}
+\end{rightside}
+ 
+\begin{leftside}
+  \begin{formula}
+    \SLet x=f(y,z) \In{
+      g(x)+h(x)
+    }
+  \end{formula}
+\end{leftside}%
+\begin{rightside}
+\SLet x=f(y,z) \In{
+g(x)+h(x)
+}
+\end{verbatim}
+\end{rightside}
+
+Notice that \cs\SLet\ takes a second argument, which is part of the
+same `paragraph', where \cs\Let\ does not.
+
+The typesetting of a \kw{cases} clause is more complicated.  It takes
+the form:
+\begin{verse}
+\verb;\Cases{; \mmexp \verb;}; \\
+from-\mmexp \verb;&; to-\mmexp \cs\\ \\
+from-\mmexp \verb;&; to-\mmexp \cs\\ \\
+\dots \\
+\verb;\Otherwise{; \mmexp \verb;}; \\
+\verb;\Endcases;
+\end{verse}
+
+The \cs\Otherwise\ field is optional.  This construction follows a
+general pattern that is common in \Vdm\ input:  lists of things are
+separated by \cs\\s, and subfields are separated by \verb;&;s or
+\verb;:;s. 
+\begin{dangerous}
+In reality, there is another, optional argument, after the
+\cs\Endcases.  If you were to try typesetting something like
+\begin{verbatim}
+        (... var = \Cases ...
+                   \Endcases)
+\end{verbatim}
+you'd find the closing right parenthesis in an unexpected place (on
+the same line as the $=$, in fact).  To get text to the right of the
+\cs\Endcases\ you can place an optional argument within brackets
+after it:
+\begin{verbatim}
+        (... var = \Cases ...
+                   \Endcases[)]
+\end{verbatim}
+Admittedly, this looks a little strange, but it does work.
+\end{dangerous}
+
+Here is an example of \cs\Cases\ in action:
+
+\begin{formula}
+  \Cases{ select(x) }
+  \nil            & \emptyset \\
+  mk-Lst(hd,tl)  & \set{hd} \union elems(tl)
+  \Otherwise{ x }
+  \Endcases
+\end{formula}
+
+\begin{verbatim}
+     \Cases{ select(x) }
+     \nil            & \emptyset \\
+     mk-Lst(hd,tl)  & \set{hd} \union elems(tl)
+     \Otherwise{ x }
+     \Endcases
+\end{verbatim}
+
+Note the \cs\\ is a {\em separator\/} and not a {\em
+terminator\/}---you don't need one after the last item.  Also, the
+\cs\Otherwise\ can appear anywhere between the \verb;\Cases{}; and the
+\cs\Endcases, but it will always be typeset last.
+\begin{dangerous}
+Some people prefer the selectors to appear lined up on the left, some
+on the right.  If you want them to appear on the left, say
+\cs\leftCases; if you want them on the right, say
+\cs\rightCases.  The scope of the \cs\leftCases\ and
+\cs\rightCases\ commands is the current group.  By default, you
+get \cs\rightCases.
+\end{dangerous}
+
+\subsubsection*{The {\tt formbox} Environment}
+
+Occasionally you might find that you want to put a line break in a
+place that can't handle \cs\\.  For example, if you have a \cs\Cases\
+command and the rhs of a particular case is too big, you can't use
+\cs\\ to break the line directly, as it will be interpreted as the
+separator between cases.  Then you must the {\tt formbox} environment.
+It is similar to the {\tt formula} environment in that you can put all
+sorts of things in it, but it can be used within other constructions,
+unlike the {\tt formula} environment, which can only be used at the
+outermost level.
+
+This example should convey the general idea:
+\begin{verbatim}
+        \Cases{ f(x) }
+        mk-Very_long_constructor(foo,bar) &
+            {\begin{formbox}
+            long_predicate_with(foo) \\
+              \And long_predicate_with(bar)
+            \end{formbox}}
+        ...
+\end{verbatim}
+\begin{formula}
+        \Cases{ f(x) }
+        mk-Very_long_constructor(foo,bar) &
+            {\begin{formbox}
+            long_predicate_with(foo) \\
+              \And long_predicate_with(bar)
+            \end{formbox}}
+        \ldots
+	\Endcases
+\end{formula}
+Note the extras braces around the {\tt formbox}; these are required to
+``hide'' the \cs\\ from the \cs\Cases.
+
+\subsection*{Other General Points about Formulas}
+
+\cs\\ will%
+\footnote{For `will' read `should'.} 
+{\em always\/}
+start a new line.  Sometimes this is done in addition to some other
+function (as in the \cs\Cases\ macro, where it delimits a
+particular case), but you should be able to use \cs\\ almost
+anywhere to force a line break.  Indeed, sooner or later you'll want
+to typeset a long formula and \TeX\ will not be able to break the line
+sensibly, or will choose an unpleasant break.  In this case you'll
+have to use \cs\\.
+
+Frequently you need to indent things within multi-line formulas.  To
+help you do this, a command is provided which breaks a line, and
+indents the next line by an amount which you can supply (in units of
+{\tt ems}).  The \cs\T\ command takes a single argument that controls
+how much the next line will be indented:
+
+\begin{leftside}
+\begin{formula}
+a \And b \T2
+\Implies b \And a \T1
+\Or d \And e
+\end{formula}
+\end{leftside}\begin{rightside}
+a \And b \T2
+\Implies b \And a \T1
+\Or d \And e
+\end{verbatim}\end{rightside}
+
+Along similar lines is the \cs\R\ command.  This does a line break,
+like \cs\\, but then pushes the formula on the next line as far to the
+right as it can:
+\begin{leftside}
+\begin{formula}
+(a \And b \Implies b \And a) \R
+\Or d \And e
+\end{formula}
+\end{leftside}\begin{rightside}
+(a \And b \Implies b \And a) \R
+\Or d \And e
+\end{verbatim}\end{rightside}
+
+Beware: it may end up pushing it further to the right than you
+expected!  This is {\sc A Bug}, and {\sc Will Not Be Fixed}, so you'll
+have to work around it.
+
+The \cs\If, \cs\Let, etc., constructions are all unusual in
+that it's impossible to typeset something sensibly to the right of
+them.  For example, if you try
+\begin{verbatim}
+        \exists{x \in S}{
+           \If x=0 \Then S=Q \Else S=P \Fi}
+        \Or S=\emptyset
+\end{verbatim}
+then you'll get
+
+\begin{vdm}
+  \begin{formula}
+    \exists{x \in S}{\If x=0 \Then S=Q \Else S=P \Fi} \Or S=\emptyset
+  \end{formula}
+\end{vdm}
+
+\noindent which is unlikely to be what you wanted.
+
+You should also remember that where \Vdm\ wants a \mmexp, \TeX\ will
+be placed in math mode.  This is usually the right thing to do, but
+occasionally you might want a natural language comment to appear
+there.
+In this case you'll have to insert an \cs\mbox\ or a \cs\parbox\
+depending on whether your comment might span one or more lines:
+
+\begin{leftside}
+  \begin{formula}
+    \If \mbox{the condition is true}
+    \Then \mbox{do the true part}
+    \Else "do the false part"
+    \Fi
+  \end{formula}
+\end{leftside}%
+\begin{rightside}
+\If \mbox{the condition is true}
+\Then \mbox{do the true part}
+\Else "do the false part"
+\Fi
+\end{verbatim}\end{rightside}
+The else-part illustrates how quotes can be used an an abbreviation
+for \verb;\mbox{...}; within math mode.
+
+Finally, all the constructions above will not break at a page
+boundary.  This means that you're in big trouble if you want to
+typeset a three-page \cs\Cases.  The only statement I can make to
+mitigate this is: you shouldn't have expressions that complicated in
+the first place---who do you expect to read them?  Remember: ``truth
+is beauty'', so if your formulas are not beautiful, then chances are
+they're not true either.
+
+
+
+
+
+\section*{Typesetting data types}
+
+The following table lists the primitive types and values available:
+
+\begin{center}
+\begin{tabular}{|l|l|l|}
+\hline
+$\set{0,1,\dots}$	& $\Nat$	& \cs\Nat 	\\
+$\set{1,2,\dots}$	& $\Natone$	& \cs\Natone,\cs\Nati	\\
+$\set{\dots,\minus1,0,1,\dots}$& $\Int$	& \cs\Int	\\
+Rationals		& $\Rat$	& \cs\Rat	\\
+Real numbers		& $\Real$	& \cs\Real	\\
+$\set{\true,\false}$	& $\Bool$	& \cs\Bool	\\
+Truth			& $\true$	& \cs\true,\cs\True \\
+Falsehood		& $\false$	& \cs\false,\cs\False\\
+Nil			& $\nil$	& \cs\nil	\\
+\hline
+\end{tabular}
+\end{center}
+
+If you need a new keyword, you can create one easily.  For example, if
+your favourite brand of logic has ``maybe'' as a value, you can say
+\begin{verbatim}
+        \makeNewKeyword{\maybe}{maybe}
+\end{verbatim}
+and henceforth \cs\maybe\ is a valid control sequence that produces
+the text \kw{maybe}.  The text of the second argument to
+\cs\makeNewKeyword\ can be anything; it doesn't have to match your
+control sequence name.
+\begin{dangerous}
+If you don't like the font that keywords are set in, you can change
+it by redefining the command \cs\keywordFontBeginSequence.  By
+default it expands to \cs\small\cs\sf.
+\end{dangerous}
+
+The following type-related commands are provided:
+
+\begin{center}
+\begin{tabular}{|l|l|l|}
+\hline
+Output		& Input			& \\
+\hline
+$\setof{x}$	& \verb;\setof{x};	& set type constructor \\
+$\set{a,b,c}$	& \verb;\set{a,b,c};	& set enumeration \\
+$\emptyset$	& \cs\emptyset		& the empty set \\
+$\seqof{x}$	& \verb;\seqof{x};	& seq. type constructor\\
+$\seq{a,b,a,c}$	& \verb;\seq{a,b,a,c};	& seq. enumeration\\
+$\emptyseq$	& \cs\emptyseq	& the empty sequence \\
+$\mapof{x}{y}$	& \verb;\mapof{x}{y};	& map type constructor \\
+$\mapinto{x}{y}$& \verb;\mapinto{x}{y};	& one-one map type \\
+$\map{p\mapsto x}$
+		& \verb;\map{p\mapsto x}; & map enumeration\\
+$\emptymap$	& \cs\emptymap	& the empty map \\
+\hline
+\end{tabular}
+\end{center}
+
+\noindent Here are the relevant operators:
+
+\begin{center}\small
+\begin{tabular}{llllll}
+$\in$		& \cs\in	&
+	$\owr$	& \cs\owr	&
+		$\sconc$	& \cs\sconc	\\
+$\notin$	& \cs\notin	&
+	$\dres$	& \cs\dres	&
+		$\len{l}$	& \verb;\len{l};\\
+$\subset$	& \cs\subset&
+	$\rres$	& \cs\rres	&
+		$\hd{l}$	& \verb;\hd{l};	\\
+$\subseteq$	& \cs\subseteq&
+	$\dsub$	& \cs\dsub	&
+		$\tl{l}$	& \verb;\tl{l};	\\
+$\inter$	& \cs\inter,\cs\intersection;&
+	$\rsub$	& \cs\rsub	&
+		$\elems{l}$	& \verb;\elems{l};\\
+$\Inter$	& \cs\Inter,\cs\Intersection;&
+	$\dom{m}$&\verb;\dom{m};&
+		$\inds{l}$	& \verb;\inds{l};\\
+$\union$	& \cs\union	&
+	$\rng{m}$&\verb;\rng{m};&
+		$\Conc{l}$	& \verb;\Conc{l};\\
+$\Union$	& \cs\Union	&
+	$\Min{s}$& \verb;\Min{s};&
+		$\cons{h,t}$	& \verb;\cons{h,t};\\
+$\diff$		& \cs\diff,\cs\difference;&
+	$\Max{s}$& \verb;\Max{s};&	
+				&	\\
+$\card{s}$	& \verb;\card{s};&
+		&		&
+				&
+\end{tabular}
+\end{center}
+
+\noindent
+(\inds{} and \elems{} are not, strictly speaking, part of VDM any
+more; use \dom{} and \rng{}.)
+
+\begin{dangerous}
+If you invent a new monadic keyword operator (like \dom{}, etc.),
+then you can have \Vdm\ define for you a control sequence which
+switches font, and puts the right spacing in.  For example,
+\begin{verbatim}
+        \newMonadicOperator{\inv}{inv}
+\end{verbatim}
+will define the \cs\inv\ control sequence to print
+{\keywordFontBeginSequence inv\/}.  Henceforth you can say, e.g.,
+\verb;\inv{Foo};.  All such sequences take one argument (they are
+monadic, after all).
+\end{dangerous}
+
+You can define a new type using
+\verb;\type{;type-name\verb;}{;type\verb;};:
+
+\begin{leftside}
+  \type{Complex}{\Real\x \Real}
+\end{leftside}%
+\begin{rightside}
+\type{Complex}{\Real\x \Real}
+\end{verbatim}\end{rightside}
+
+Composites types can be typeset using the {\tt composite} environment:
+
+\begin{leftside}
+  \begin{composite}{Datec}
+    day:\set{1,\ldots,366}, \\
+    year:\set{1583,\ldots,2599}
+  \end{composite}
+\end{leftside}%
+\begin{rightside}
+\begin{composite}{Datec}
+  day :\set{1,\ldots,366}, \\
+  year:\set{1583,\ldots,2599}
+\end{composite}
+\end{verbatim}\end{rightside}
+
+There is also a {\tt composite*} environment (and an equivalent
+\cs\scompose\ control sequence) that places the entire composite
+type on a single line:
+
+\begin{leftside}
+  \begin{composite*}{Celsius}
+    \Real
+  \end{composite*}
+\end{leftside}%
+\begin{rightside}
+\begin{composite*}{Celsius}
+  \Real
+\end{composite*}
+\end{verbatim}\end{rightside}
+
+\begin{leftside}
+  \scompose{Celsius}{\Real}
+\end{leftside}%
+\begin{rightside}
+\scompose{Celsius}{\Real}
+\end{verbatim}\end{rightside}
+
+`Records' can be defined using the {\tt record\/} environment:
+
+\begin{verse}
+\verb;\begin{record}{;record-type-name\verb;}; \\
+field-name \verb;:; field-type \cs\\ \\
+\dots \\
+\verb;\end{record};
+\end{verse}
+The colons are used as sub-field separators.
+
+\begin{leftside}
+  \begin{record}{PERSON}
+    NM : \seqof{Char} \\
+    FEM : \Bool
+  \end{record}
+\end{leftside}%
+\begin{rightside}
+    \begin{record}{PERSON}
+      NM : \seqof{Char} \\
+      FEM : \Bool
+    \end{record}
+\end{verbatim}\end{rightside}
+
+If the definition is short, you may prefer to use a short form:
+\begin{verbatim}
+        \defrecord{PERSON}{
+          NM : \seqof{Char} \\
+          FEM : \Bool
+        }
+\end{verbatim}
+
+\begin{dangerous}
+Some people prefer the field names to appear lined up on the left, some
+on the right.  If you want them to appear on the left, say
+\cs\leftRecord; if you want them on the right, say
+\cs\rightRecord.  The scope of the \cs\leftRecord\ and
+\cs\rightRecord\ commands are the current group.  By default, you
+get \cs\rightRecord.
+\end{dangerous}
+
+Updating fields of composites using the $\mu$-function can be
+specified using \cs\chg:
+
+\begin{leftside}
+  \begin{formula}
+    \chg{p}{FEM}{\Not man(q)}
+  \end{formula}
+\end{leftside}%
+\begin{rightside}
+\chg{p}{FEM}{\Not man(q)}
+\end{verbatim}\end{rightside}
+
+Notice that the $\mu$, parentheses, comma and $\mapsto$ were inserted
+automatically.
+
+
+
+\section*{How to Typeset Functions}
+
+Typesetting $\lambda$-expressions is easy:
+
+\begin{leftside}
+  \begin{formula}
+    \LambdaFn{x,y}{x^2+y^2}
+  \end{formula}
+\end{leftside}%
+\begin{rightside}
+\LambdaFn{x,y}{x^2+y^2}
+\end{verbatim}\end{rightside}
+
+As with \cs\forall, \cs\exists\ and \cs\unique,
+\cs\LamdbaFn\ has a *-form that places the body of the function
+below and to the right:
+
+\begin{leftside}
+  \begin{formula}
+    \LambdaFn*{x,y,z}{
+      (x^2+y^2+z^2)^{\frac12}}
+  \end{formula}
+\end{leftside}%
+\begin{rightside}
+\LambdaFn*{x,y,z}{
+  (x^2+y^2+z^2)^{\frac12}}
+\end{verbatim}\end{rightside}
+
+There is also a {\tt fn\/} (function) environment for defining named
+functions.  It has the following structure:
+\begin{verse}
+\verb;\begin{fn}{;name-of-function\verb;}{; argument-list \verb;}; \\
+\verb;\signature{;signature-of-function\verb;}; \\
+\^{optional precondition}\\
+\^{optional postcondition}\\
+ body of function (a \mmexp) \\
+\verb;\end{fn};
+\end{verse}
+
+See the first page for an example.  The \cs\signature\ is optional
+and can be placed anywhere within the body---it will always be typeset
+before the body.  Useful macros within the \cs\signature\ are:
+\cs\x\ and \cs\to, which yield $\x$ and~$\to$.  Note that you can also
+enter functions defined implicitly with pre- and post-conditions; see the
+next section on how to enter them.
+
+All of the material in the section on formulas is relevant within the
+body of the function.
+
+\sloppy\sloppy
+If you frequently intersperse your function definitions with text (and you
+should), you can save some typing by using the {\tt vdmfn\/} environment.
+\cs\begin\verb;{vdmfn}; \dots \cs\end\verb;{vdmfn}; is equivalent to
+\cs\begin\verb;{vdm};\cs\begin\verb;{fn}; \dots
+\cs\end\verb;{fn};\cs\end\verb;{vdm};.
+
+The {\tt fn} environment also has a *-form that omits inserting
+parentheses around the argument list.  For example:
+
+
+\begin{leftside}
+\begin{fn*}{MP}{\term{p}\rho\sigma}
+\ldots
+\end{fn*}
+\end{leftside}\begin{rightside}
+\begin{fn*}{MP}{
+  \term{p}\rho\sigma}
+...
+\end{fn*}
+\end{verbatim}\end{rightside}
+
+If you require the $\DEF$ symbol by itself (for example, in a
+footnote), then you can get it by saying \cs\DEF.
+
+\subsection*{Invariants}
+
+To typeset an invariant on a composite object, use the following
+structure:
+
+\begin{leftside}
+\begin{record}{D}
+  day : Day \\
+  year : Year
+\end{record}
+\where
+\begin{fn}{inv-D}{mk-D(d,y)}
+  is-leapyr(y) \Or d \le 365
+\end{fn}
+\end{leftside}\begin{rightside}
+\begin{record}{D}
+  day : Day \\
+  year : Year
+\end{record}
+\where
+\begin{fn}{inv-D}{mk-D(d,y)}
+  is-leapyr(y) \Or d \le 365
+\end{fn}
+\end{verbatim}\end{rightside}
+
+
+\section*{How to Typeset Operations}
+
+Operations are typeset within the {\tt op\/} environment.
+The general structure is:
+
+\begin{verse}
+\verb;\begin{op}[;\^{name-of-operation}\verb;]; \\
+\verb;\args{;\^{list-of-arguments}\verb;}; \\
+\verb;\res{;\^{result(s)}\verb;}; \\
+\verb;\ext{;\^{list-of-externals}\verb;}; \\
+\^{pre-condition} \\
+\^{post-condition} \\
+\verb;\end{op};
+\end{verse}
+
+The order of the various parts within the {\tt op} environment is not
+important; they will always be printed in a canonical style (see
+page~\pageref{op-ex} for an example).
+
+Any of \cs\args, \cs\res, \cs\ext, \^{pre-condition} or
+\^{post-condition} may be omitted.  \verb;\begin{vdmop}; is an
+abbreviation for \verb;\begin{vdm}\begin{op};;  \verb;\end{vdmop}; is an
+abbreviation for \verb;\end{op}\end{vdm};.
+
+The \^{name-of-operation} can be any one-line expression; it is
+typeset in math mode.  An alternative way of specifying the name of
+the operation is to omit the optional argument (within \verb;[];), and
+use \verb;\opname{;\^{name-of-operation}\verb;};, anywhere within the
+body of the {\tt op} environment.
+
+The \^{list-of-arguments} is a \mmexp\ that can span multiple lines;
+force a newline with \cs\\.  If present it is placed within
+parentheses.
+
+The \^{result(s)} is also any \mmexp.  It is typeset to the right of
+any arguments.
+
+The \^{list-of-externals} takes the following form:
+\begin{verse}
+\verb;\ext{;	\\
+\quad $\langle$optional \cs\Rd\ or \cs\Wr$\rangle$
+	\^{external-name(s)} {\tt :\/} \^{external-types} \cs\\ \\
+\quad $\langle$optional \cs\Rd\ or \cs\Wr$\rangle$
+	\^{external-name(s)} {\tt :\/} \^{external-types} \cs\\ \\
+\dots \\
+\verb;};
+\end{verse}
+Alternatively, if the list of externals is long (say, more than five
+lines) the {\tt externals\/} environmment can be used:
+\begin{verse}
+\verb;\begin{externals};	\\
+\quad $\langle$optional \cs\Rd\ or \cs\Wr$\rangle$
+	\^{external-name(s)} {\tt :\/} \^{external-types} \cs\\ \\
+\quad $\langle$optional \cs\Rd\ or \cs\Wr$\rangle$
+	\^{external-name(s)} {\tt :\/} \^{external-types} \cs\\ \\
+\dots \\
+\verb;\end{externals};
+\end{verse}
+\begin{dangerous}
+Some people prefer the externals identifiers to appear lined up on the
+left, some on the right.  If you want them to appear on the left, say
+\cs\leftExternals; if you want them on the right, say
+\cs\rightExternals.  The scope of the \cs\leftExternals\ and
+\cs\rightExternals\ commands are the current group.  By default,
+you get \cs\leftExternals.
+\end{dangerous}
+
+
+The \^{pre-condition} and \^{post-condition} take similar forms:
+\begin{verse}
+\verb;\pre{;\mmexp\verb;}; \\
+\end{verse}
+or
+\begin{verse}
+\verb;\begin{precond}; \\
+\mmexp \\
+\verb;\end{precond};
+\end{verse}
+and
+\begin{verse}
+\verb;\post{;\mmexp\verb;}; \\
+\end{verse}
+or
+\begin{verse}
+\verb;\begin{postcond}; \\
+\mmexp \\
+\verb;\end{postcond};
+\end{verse}
+Use the \cs\begin\dots\cs\end\ style if the \mmexp\ is longer
+than a few lines.
+All of the constructs mentioned in the section on formulas can be used
+within pre- and post-conditions.
+
+\section*{Proofs}
+
+Here's an example of typesetting proofs in the ``natural deduction''
+style. 
+
+\begin{proof}
+  \From E@1 \Or E@2 	\\
+1   \From E@1	\\
+    \Infer E@2 \Or E@1	\` $\vee$-I(h1) \\
+2   \From E@2		\\
+    \Infer E@2 \Or E@1	\` $\vee$-I(h2) \\
+  \Infer E@2 \Or E@1	\` $\vee$-E(h,1,2)\\
+\end{proof}
+\begin{verbatim}
+        \begin{proof}
+            \From E@1 \Or E@2                           \\
+        1       \From E@1                               \\
+                \Infer E@2 \Or E@1  \by $\vee$-I(h1)    \\
+        2       \From E@2                               \\
+                \Infer E@2 \Or E@1  \by $\vee$-I(h2)    \\
+            \Infer E@2 \Or E@1      \by $\vee$-E(h,1,2) \\
+        \end{proof}
+\end{verbatim}
+
+Proofs are embedded within the {\tt proof} environment.  (A proof does
+not have to be within a {\tt vdm} environment.)  Each line of the
+proof ends with \cs\\.  Lines that begin a subproof
+have \cs\From\ after the equation number.  Lines that end a
+subproof have \cs\Infer\ after the equation number.  Other lines
+have \cs\& after the equation number (see next example).  If you
+don't need an equation number, just omit it,  but you must have one of
+either \cs\From, \cs\Infer\ or \cs\& on each proof line.
+If you want to include a justification of a particular proof line at
+the right hand end of the line, type it after a \cs\by.  \cs\by\
+is optional; you needn't include it if you don't need a justification.
+
+Points worth bearing in mind:
+\begin{itemize}
+\item	You are automatically placed in math mode after the
+	\cs\From, \cs\Infer\ or \cs\&; the math mode ends
+	at the next \cs\by\ or \cs\\.
+\item	You {\em cannot} break a line in the middle simply by using
+	\cs\\ before \cs\by; you must use separate proof lines
+	to split a formula.
+\item	You are within a {\tt tabbing} environment within a proof, so
+	you can use all the usual {\tt tabbing} commands (\cs\=,
+	\cs\>, etc.) to line things up across proof lines.  Note
+	that you will explicitly have to enter math mode again after
+	any of these commands though.
+\end{itemize}
+
+Here's another example:
+
+\begin{proof}
+  \From \forall{x\in X}{E(x); s\in X}	\\
+1 \&	\Not\exists{x\in X}{\Not E(x)}	\` $\Forall$-defn(h)\\
+2 \&	\Not\Not E(s/x)	\` $\Not\Exists$-E(1,h)\\
+  \Infer E(s/x)				\\
+\end{proof}
+\begin{verbatim}
+\begin{proof}
+  \From \forall{x\in X}{E(x); s\in X}                       \\
+1 \&    \Not\exists{x\in X}{\Not E(x)} \by $\Forall$-defn(h)\\
+2 \&    \Not\Not E(s/x)             \by $\Not\Exists$-E(1,h)\\
+  \Infer E(s/x)                                             \\
+\end{proof}
+\end{verbatim}
+
+\begin{dangerous}
+The amount of space used by the proof number can be changed by
+changing the length \cs\ProofNumberWidth.  The distance from the
+left margin to the proof number is dictated by \cs\ProofIndent.
+\end{dangerous}
+
+
+\section*{Customising the Style}
+
+{\em Some people are never satisfied.}  We all know that it's true.
+In order to cater for those who aren't satisfied with the output from
+\Vdm, some attempt has been made to allow a limited degree of
+customisation by the user.  In particular, you can alter some of the
+internal spacing chosen by \Vdm, and even have your own macros called
+at chosen places within \Vdm's macros.  Naturally, you are not advised
+to try this unless you feel you have some idea of what you want, and
+what you are doing.  In this section we list the things that you can
+change, in order of increasing difficulty.
+
+\subsection*{Changing the Spacing}
+
+In several places, essentially arbitrary spacings have been chosen by
+the author.  The dimensions of these spaces are given by {\em rubber
+lengths.}\footnote{See the \LaTeX\ book for an explanation of rubber
+lengths}  If you want to change any of them, use \LaTeX's
+\cs\setlength\ or \cs\addtolength\ commands.
+For example,
+\begin{verbatim}
+        \setlength{\postHeaderSkip}{13.33pt plus 2pt minus 1pt}
+\end{verbatim}
+
+\begin{dangerous}
+The {\tt plus} and {\tt minus} parts of a length let you say how much
+that length can grow or shrink by.  For example, {\tt 12pt plus 2pt
+minus 1pt} means that the length will be in the range 11--14pt, with
+12pt as its ``natural'' length.
+\end{dangerous}
+
+The spaces in question all appear around \Vdm\ items such as
+operations, and in between major parts of such items.  The names of
+the lengths should convey where they apply.  The following table lists
+all the lengths, and their default settings.  Note that an {\tt ex} is
+about the height of an ``x'' in the current font, and an {\tt em} is
+about the width of an ``M'' in the current font.
+
+\begin{center}
+\begin{tabular}{|l|l|l|}
+\hline
+\em Length		&\em Default size &\em Used within	\\
+\hline
+\cs\preOperationSkip	&2ex $+$ 0.5ex $\minus$ 0.2ex & {\tt op} env	\\
+\cs\postOperationSkip	&2ex $+$ 0.5ex $\minus$ 0.2ex	&\\
+\cs\postHeaderSkip		&.5ex $+$ .2ex $\minus$ .2ex	&\\
+\cs\postExternalsSkip	&.5ex $+$ .2ex $\minus$ .2ex	&\\
+\cs\postPreConditionSkip	&.5ex $+$ .2ex $\minus$ .2ex	&\\
+\hline
+\cs\preFunctionSkip	&2ex $+$ .5ex $\minus$ .2ex & {\tt fn} env	\\
+\cs\postFunctionSkip	&2ex $+$ .5ex $\minus$ .2ex	&\\
+\cs\betweenSignatureAndBodySkip&1.2ex $+$ .3ex $\minus$ .2ex	&\\
+\cs\betweenFunctionAndPreSkip&1.2ex $+$ .3ex $\minus$ .2ex	&\\
+\hline
+\cs\preTypeSkip	&1.2ex $+$ .5ex $\minus$ .3ex & {\tt type} command	\\
+\cs\postTypeSkip	&1.2ex $+$ .5ex $\minus$ .3ex	&\\
+\hline
+\cs\preCompositeSkip	&1.2ex $+$ .5ex $\minus$ .3ex & {\tt
+composite} env	\\
+\cs\postCompositeSkip	&1.2ex $+$ .5ex $\minus$ .3ex	&\\
+\hline
+\cs\preRecordSkip		&.75ex $+$ .3ex $\minus$ .2ex & {\tt
+record} env	\\
+\cs\postRecordSkip		&.75ex $+$ .3ex $\minus$ .2ex	&\\
+\hline
+\cs\preFormulaSkip		&1.2ex $+$ .5ex $\minus$ .3ex & {\tt
+formula} env \\
+\cs\postFormulaSkip		&1.2ex $+$ .5ex $\minus$ .3ex	&\\
+\hline
+\cs\preProofSkip		&.75ex $+$ .3ex $\minus$ .2ex & {\tt
+proof} env	\\
+\cs\postProofSkip		&.75ex $+$ .3ex $\minus$ .2ex	&\\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection*{Controlling Line and Paragraph Breaks}
+
+\TeX\ uses the notion of {\em penalties\/} to decide where line and
+page breaks go.  Various values of penalty are used at places within
+\Vdm\ to control breaks.  To fully understand how to choose breaks,
+read {\em The \TeX{}book}.  However, put simply, penalties are whole
+numbers in the range $\minus10000$~to $10000$.  A value of $10000$
+means ``never break here,'' and a value of $\minus10000$ means
+``always break here.''  Values in between penalise or encourage
+breaking proportionally, so that, e.g.,~a value of $\minus500$
+encourages a break, but by no means forces it.
+
+To assign to a penalty~\cs\p, write {\tt \cs\p=1000}, for example.
+The table below list the penalties used by \Vdm, and their default
+values.
+
+\begin{center}
+\begin{tabular}{|l|l|l|}
+\hline
+\em Penalty Name & Default Value & Where Used \\
+\hline
+\cs\preOperationPenalty	& 0	& {\tt op} env \\
+\cs\preExternalPenalty	& 2000	& \\
+\cs\prePreConditionPenalty	& 800	& \\
+\cs\prePostConditionPenalty	& 500	& \\
+\cs\postOperationPenalty	& -500	& \\
+\hline
+\cs\preFunctionPenalty	& 0	& {\tt fn} env \\
+\cs\betweenSignatureAndBodyPenalty&500&\\
+\cs\betweenFunctionAndPrePenalty&1000&\\
+\cs\postFunctionPenalty	& -500	& \\
+\hline
+\cs\preRecordPenalty	& 0	& {\tt record} env\\
+\cs\postRecordPenalty	& -100	& \\
+\hline
+\cs\preProofPenalty	& -100	& {\tt proof} env\\
+\cs\postProofPenalty	& 0	& \\
+\hline
+\cs\preFormulaPenalty	& -100	& {\tt formula} env\\
+\cs\postFormulaPenalty	& 0	& \\
+\hline
+\end{tabular}
+\end{center}
+
+
+\subsection*{Unforeseen Changes}
+
+It is a truism that no matter how good the designer of a piece of
+software is, he can never foresee all of its uses.  In this case, the
+author is quite certain that people will use \Vdm\ for all sorts of
+things apart from typesetting VDM specifications.  To cater for those
+who find that \Vdm\ does almost, but not quite, what they want, a
+number of {\em hooks\/} have been left in place.  These hooks are
+macros, which at the moment do little or nothing, but which can be
+redefined by users to change the basic operation of \Vdm.  Needless to
+say, anyone wishing to redefine a hook should already be competent in
+the ways of \LaTeX\ at least, and probably \TeX\ as well.  Rather than
+trying to explain what the hooks do, and where they do it, the user
+should look through the commented version of \Vdm\ (usually stored as
+{\tt vdm.doc}) and figure it out for himself.  Below are listed all
+the provided hooks, their default definitions, and where they are used.
+
+\begin{center}\footnotesize
+\begin{tabular}{|l|l|}
+\hline
+\em Name of hook & \em Default definition \\
+\hline
+\multicolumn{2}{|c|}{{\tt op} environment} \\
+\hline
+\cs\preOperationHook
+	&\verb*;\penalty\preOperationPenalty ;\\
+\cs\betweenHeaderAndExternalsHook
+	&\verb*;\penalty\preExternalPenalty ;\\
+\cs\betweenExternalsAndPreConditionHook
+	&\verb*;\penalty\prePreConditionPenalty ;\\
+\cs\betweenPreAndPostConditionHook
+	&\verb*;\penalty\prePostConditionPenalty ;\\
+\cs\postOperationHook
+	&\verb*;\penalty\postOperationPenalty ;\\
+\hline
+\multicolumn{2}{|c|}{{\tt fn} environment} \\
+\hline
+\cs\preFunctionHook
+		&\verb*;\penalty\preFunctionPenalty ;\\
+\cs\betweenSignatureAndBodyHook
+		&\verb*;\penalty\betweenSignatureAndBodyPenalty ; \\
+\cs\betweenFunctionAndPreHook&\verb*;\vskip-\lastskip ;\\
+		&\verb;\vskip\betweenFunctionAndPreSkip ;\\
+		&\verb*;\penalty\betweenSignatureAndBodyPenalty ; \\
+\cs\postFunctionHook
+		&\verb*;\penalty\postFunctionPenalty ; \\
+\hline
+\multicolumn{2}{|c|}{{\tt record} environment} \\
+\hline
+\cs\preRecordHook
+		&\verb*;\penalty\preRecordPenalty ;\\
+\cs\postRecordHook
+		&\verb*;\penalty\postRecordPenalty ; \\
+\hline
+\multicolumn{2}{|c|}{{\tt proof} environment} \\
+\hline
+\cs\preProofHook
+		&\verb*;\penalty\preProofPenalty ;\\
+\cs\postProofHook
+		&\verb*;\penalty\postProofPenalty ; \\
+\hline
+\multicolumn{2}{|c|}{{\tt formula} environment} \\
+\hline
+\cs\preFormulaHook
+		&\verb*;\penalty\preFormulaPenalty ;\\
+\cs\postFormulaHook
+		&\verb*;\penalty\postFormulaPenalty ; \\
+\hline
+\end{tabular}
+\end{center}
+
+
+\section*{Installing the \Vdm\ files}
+
+Place the files {\tt vdm.sty} and {\tt vdm.doc} in your standard directory
+for \LaTeX\ style files (your system administrator will know where this
+is).  If you have the AMS fonts, change the appropriate line in {\tt
+vdm.doc} (see instructions at the head of the file) and make the
+corresponding change in {\tt vdm.sty}.  If you're on a UNIX\footnote{UNIX
+is a trademark of AT\&T} system, you can make the {\tt .sty} file from
+the {\tt .doc} file with the command:
+\begin{verbatim}
+   sed -e '/^[ 	]*%/d' -e 's/%.*/%/' -e '/^$/d' vdm.doc > vdm.sty
+\end{verbatim}
+There are two characters between the square brackets: a tab and a
+space.  If you're on some other system, figure out an equivalent
+command, or make the two files the same.
+
+If you want to keep up with changes to the \Vdm\ style, send a message
+to the e-mail address on the front cover, and your name will be added
+to a mailing list, so that you can be provided with updates.
+
+
+\section*{Acknowledgements}
+
+Many people have passed on useful suggestions and comments about \Vdm\
+and this documentation; many thanks to all of them.  In particular I
+would like to acknowledge the extensive testing done by Lynn Marshall
+while preparing her thesis, and her helpful comments and ideas, and
+the numerous worthwhile discussions with Cliff Jones.
+
+\end{document}
+

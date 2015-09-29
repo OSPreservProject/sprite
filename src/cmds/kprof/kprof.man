@@ -1,0 +1,28 @@
+' $Header: /a/newcmds/prefix/RCS/prefix.man,v 1.2 88/12/30 10:08:40 ouster Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS PROF cmds
+.BS
+.SH NAME
+kprof \- Control kernel profiling
+.SH SYNOPSIS
+\fBkprof\fR [\fBstart\fR] [\fBend\fR]
+.br
+\fBkprof\fR \fBdump \fIfilename\fR
+.SH "OPTIONS"
+.IP "\fBstart\fR" 14
+Begin kernel profiling.
+.IP "\fBend\fR" 14
+End profiling.
+.IP "\fBdump \fIfilename\fR" 14
+Write out the profiling data to the specified file.
+.BE
+
+.SH DESCRIPTION
+.PP
+Kprof is used to start and stop kernel profiling and to
+dump out the profile data to a file.  The kernel must have been
+generated with profiling hooks (the \fB-p\fP option to the compiler).
+The output data file can be processed using \fBgprof\fP.
+.DE
+.SH KEYWORDS
+profile, trace

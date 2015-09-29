@@ -1,0 +1,13 @@
+F FIG1.PS;1                         	fig1.ps
+F IND.BBL;1                         	ind.bbl
+F IND.DVI;1                         	ind.dvi
+F IND.LOG;1                         	ind.log
+F IND.PS;1                          	ind.ps
+F IND.TEX;1                         	ind.tex
+F IND_0.TEX;1                       	ind+.tex
+F IND_1.TEX;1                       	ind-.tex
+F LOGO.TEX;1                        	logo.tex
+F PSFIG.TEX;1                       	psfig.tex
+F README.;1                         	README
+F REGMAR.STY;1                      	regmar.sty
+F UNDHEAD.STY;1                     	undhead.sty

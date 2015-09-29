@@ -1,0 +1,1726 @@
+head     9.8;
+branch   ;
+access   ;
+symbols  ds3100:9.8 sun3:9.8 sun4nw:9.7 symm:9.7 spur:9.7 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.8
+date     92.04.14.16.57.50;  author jhh;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     91.09.10.18.41.03;  author rab;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     91.02.12.14.14.34;  author jhh;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.11.05.21.26.02;  author jhh;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.10.19.15.47.27;  author jhh;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     89.11.16.15.17.23;  author rab;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.11.08.09.49.24;  author brent;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.11.05.12.26.42;  author brent;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.13.27;  author douglis;  state Stable;
+branches ;
+next     8.8;
+
+8.8
+date     89.07.05.12.33.49;  author brent;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.06.08.09.10.24;  author mendel;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.05.24.07.58.25;  author rab;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.03.15.15.58.33;  author brent;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.01.31.14.02.08;  author mendel;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     88.12.12.14.51.57;  author nelson;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.11.30.11.50.49;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.13.11.23.50;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.27.34;  author douglis;  state Stable;
+branches ;
+next     6.4;
+
+6.4
+date     88.10.13.13.26.49;  author mendel;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.09.22.14.06.14;  author brent;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.09.06.09.48.49;  author brent;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.09.05.16.25.17;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.20.41;  author brent;  state Stable;
+branches ;
+next     5.4;
+
+5.4
+date     88.06.27.10.46.08;  author mendel;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     88.05.05.17.58.45;  author brent;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.09.17.12.02.54;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.09.16.11.31.50;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.46.24;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.8
+log
+@Uses new Net_Address definition.
+@
+text
+@/* 
+ * netIEXmit.c --
+ *
+ *	Routines to transmit packets on the Intel interface.
+ *
+ * Copyright 1985, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/net/sun3.md/netIEXmit.c,v 9.7 91/09/10 18:41:03 rab Exp $ SPRITE (Berkeley)";
+#endif
+
+#include <sprite.h>
+#include <netIEInt.h>
+#include <sys.h>
+#include <list.h>
+#include <vmMach.h>
+#include <sync.h>
+
+/*
+ * Extra bytes for short packets.
+ */
+char	*netIEXmitFiller;
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * OutputPacket --
+ *
+ *	Assemble and output the packet in the given scatter/gather element.
+ *	The ethernet header contains the address of the destination host
+ *	and the higher level protocol type already.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Transmit command list is modified to contain the packet.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength, statePtr)
+    Net_EtherHdr                        *etherHdrPtr;
+    register	Net_ScatterGather   	*scatterGatherPtr;
+    int					scatterGatherLength;
+    NetIEState				*statePtr;
+{
+    register	volatile NetIETransmitBufDesc	*xmitBufDescPtr;
+    register	volatile NetIETransmitCB   	*xmitCBPtr;
+    register int			bufCount;
+    int					totalLength;
+    register int			length;
+    register Address			bufAddr;
+#define VECTOR_LENGTH	20
+    int					borrowedBytes[VECTOR_LENGTH];
+    int					*borrowedBytesPtr;
+    char				*tmpBuffer;
+    int					tmpBufSize;
+#if defined(sun3) || defined(sun4) 
+    Net_ScatterGather			newScatGathArr[NET_IE_NUM_XMIT_BUFFERS];
+#endif
+
+    statePtr->transmitting = TRUE;
+    statePtr->curScatGathPtr = scatterGatherPtr;
+#if defined(sun3) || defined(sun4) 
+    /*
+     * Remap the packet into network addressible memory.
+     */
+    VmMach_NetMapPacket(scatterGatherPtr, scatterGatherLength, newScatGathArr);
+    scatterGatherPtr = newScatGathArr;
+#endif
+
+    /*
+     * There is already a prelinked command list.  A pointer to the list
+     * and the array of buffer headers is gotten here.
+     */
+
+    xmitCBPtr = statePtr->xmitCBPtr;
+    xmitBufDescPtr = statePtr->xmitBufAddr;
+
+    totalLength = sizeof(Net_EtherHdr);
+
+    /*
+     * If vector elements are two small we borrow bytes from the next
+     * element.  The borrowedBytes array is used to remember this.  We
+     * can't side-effect the main scatter-gather vector becuase that
+     * screws up retransmissions.
+     */
+    borrowedBytesPtr = borrowedBytes;
+    *borrowedBytesPtr = 0;
+    tmpBuffer = statePtr->netIEXmitTempBuffer;
+    tmpBufSize = XMIT_TEMP_BUFSIZE;
+    /*
+     * Put all of the pieces of the packet into the linked list of xmit
+     * buffers.
+     */
+    for (bufCount = 0 ; bufCount < scatterGatherLength ;
+	 bufCount++, scatterGatherPtr++, borrowedBytesPtr++) {
+
+	/*
+	 * If is an empty buffer then skip it.  Length might even be negative
+	 * if we have borrowed bytes from it to pad out to NET_IE_MIN_DMA_SIZE.
+	 */
+	borrowedBytesPtr[1] = 0;
+	length = scatterGatherPtr->length - *borrowedBytesPtr;
+	if (length <= 0) {
+	    continue;
+	}
+	bufAddr = scatterGatherPtr->bufAddr + *borrowedBytesPtr;
+	/*
+	 * If the buffer is too small then it needs to be made bigger
+	 * or the DMA hardware will overrun.  Also, check for buffers
+	 * that start at odd addresses.  If one does, then it needs
+	 * to be copied to another buffer with an even address.
+	 * NB: There is only one temporary buffer.  Bad things will happen
+	 * if more than one message uses this temporary buffer at once.
+	 */
+	if ((length < NET_IE_MIN_DMA_SIZE) || ((int)bufAddr & 0x1)) {
+
+	    if (length > tmpBufSize) {
+		statePtr->transmitting = FALSE;
+		ENABLE_INTR();
+
+		panic("IE OutputPacket: Odd addressed buffer too large.");
+		return;
+	    }
+	    bcopy(bufAddr, tmpBuffer, length);
+	    if (length < NET_IE_MIN_DMA_SIZE) {
+		/*
+		 * This element of the scatter/gather vector is too small;
+		 * the controller DMA has to copy a minimum number of bytes.
+		 * We take some bytes from the next non-zero sized element(s)
+		 * to pad this one out.
+		 */
+		register int numBorrowedBytes;
+		register int numAvailableBytes;
+		while (bufCount < scatterGatherLength - 1) {
+		    numBorrowedBytes = NET_IE_MIN_DMA_SIZE - length;
+		    numAvailableBytes = scatterGatherPtr[1].length -
+					borrowedBytesPtr[1];
+		    if (numBorrowedBytes > numAvailableBytes) {
+			numBorrowedBytes = numAvailableBytes;
+		    }
+		    if (numBorrowedBytes > 0) {
+			bcopy(scatterGatherPtr[1].bufAddr,
+			     &tmpBuffer[length], numBorrowedBytes);
+			borrowedBytesPtr[1] = numBorrowedBytes;
+			length += numBorrowedBytes;
+		    }
+		    if (length == NET_IE_MIN_DMA_SIZE) {
+			break;
+		    } else {
+			bufCount++;
+			scatterGatherPtr++;
+			borrowedBytesPtr++;
+			borrowedBytesPtr[1] = 0;
+		    }
+		}
+		length = NET_IE_MIN_DMA_SIZE;
+	    }
+
+	    NET_IE_ADDR_FROM_SUN_ADDR(
+		 (int) (tmpBuffer), (int) (xmitBufDescPtr->bufAddr));
+	    /*
+	     * Set up tmpBuffer for the next short segment.
+	     */
+	    tmpBuffer += length;
+	    tmpBufSize -= length;
+	    if ((int)tmpBuffer & 0x1) {
+		tmpBuffer++;
+		tmpBufSize--;
+	    }
+	} else {
+	    NET_IE_ADDR_FROM_SUN_ADDR(
+		 (int) (bufAddr), (int) (xmitBufDescPtr->bufAddr));
+	}
+	NetBfShortSet(xmitBufDescPtr->bits, Eof, 0);
+	NetBfShortSet(xmitBufDescPtr->bits, CountLow, length & 0xFF);
+	NetBfShortSet(xmitBufDescPtr->bits, CountHigh, length >> 8);
+
+	totalLength += length;
+	xmitBufDescPtr = (volatile NetIETransmitBufDesc *)
+	    ((int) xmitBufDescPtr + NET_IE_CHUNK_SIZE);
+    }
+
+    /*
+     * If the packet was too short, then hang some extra storage off of the
+     * end of it.
+     */
+
+    if (totalLength < NET_ETHER_MIN_BYTES) {
+        NET_IE_ADDR_FROM_SUN_ADDR((int) netIEXmitFiller, 
+			            (int) xmitBufDescPtr->bufAddr); 
+	length = NET_ETHER_MIN_BYTES - totalLength;
+	if (length < MIN_XMIT_BUFFER_SIZE) {
+	    length = MIN_XMIT_BUFFER_SIZE;
+	}
+	NetBfShortSet(xmitBufDescPtr->bits, CountLow, length & 0xFF);
+	NetBfShortSet(xmitBufDescPtr->bits, CountHigh, length >> 8);
+    } else {
+	xmitBufDescPtr = (volatile NetIETransmitBufDesc *)
+	    ((int) xmitBufDescPtr - NET_IE_CHUNK_SIZE);
+    }
+
+    /*
+     * Finish off the packet.
+     */
+
+    NetBfShortSet(xmitBufDescPtr->bits, Eof, 1);
+    xmitCBPtr->destEtherAddr = etherHdrPtr->destination;
+    xmitCBPtr->type = etherHdrPtr->type;
+
+    /*
+     * Append the command onto the command queue.
+     */
+
+    *(short *) xmitCBPtr = 0;      /* Clear the status bits. */
+    NetBfWordSet(xmitCBPtr->bits, EndOfList, 1);
+    NetBfWordSet(xmitCBPtr->bits, Interrupt, 1);
+
+
+    /*
+     * Make sure that the last command was accepted and then
+     * start the command unit.
+     */
+
+    NET_IE_CHECK_SCB_CMD_ACCEPT(statePtr->scbPtr);
+    NetBfShortSet(statePtr->scbPtr->cmdWord, CmdUnitCmd, NET_IE_CUC_START);
+    NET_IE_CHANNEL_ATTENTION(statePtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetIEXmitInit --
+ *
+ *	Initialize the transmission queue structures.  This includes setting
+ *	up a template transmission command block and then if any packets are
+ *	ready starting to transmit.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The transmission command block is initialized.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NetIEXmitInit(statePtr)
+    NetIEState		*statePtr;
+{
+    register volatile NetIETransmitCB	    *xmitCBPtr;
+    register volatile NetIETransmitBufDesc  *xmitBufDescPtr;
+    volatile NetIETransmitBufDesc	    *newXmitBufDescPtr;
+    volatile NetXmitElement	            *xmitElementPtr;
+    int	     i;
+
+    /*
+     * Initialize the transmit command header.
+     */
+
+    xmitCBPtr = (NetIETransmitCB *) statePtr->cmdBlockPtr;
+    statePtr->xmitCBPtr = xmitCBPtr;
+    NetBfWordSet(xmitCBPtr->bits, CmdNumber, NET_IE_TRANSMIT);
+    NetBfWordSet(xmitCBPtr->bits, Suspend, 0);
+
+    /*
+     * Now link in all of the buffer headers.
+     */
+
+    xmitBufDescPtr = (volatile NetIETransmitBufDesc *) NIL;
+    for (i = 0; i < NET_IE_NUM_XMIT_BUFFERS; i++) {
+	newXmitBufDescPtr = (volatile NetIETransmitBufDesc *) 
+				NetIEMemAlloc(statePtr);
+	if (newXmitBufDescPtr == (volatile NetIETransmitBufDesc *) NIL) {
+	    panic( "Intel: No memory for the xmit buffers.\n");
+	}
+
+	if (i == 0) {
+	    statePtr->xmitBufAddr = newXmitBufDescPtr;
+	    xmitCBPtr->bufDescOffset = 
+			NetIEOffsetFromSUNAddr((int) newXmitBufDescPtr,
+				statePtr);
+	} else {
+	    xmitBufDescPtr->nextTBD = 
+			NetIEOffsetFromSUNAddr((int) newXmitBufDescPtr,
+				statePtr);
+	}
+
+	xmitBufDescPtr = newXmitBufDescPtr;
+    }
+
+    /*
+     * If there are packets on the queue then go ahead and send 
+     * the first one.
+     */
+
+    if (!List_IsEmpty(statePtr->xmitList)) {
+	xmitElementPtr = (NetXmitElement *) List_First(statePtr->xmitList);
+	OutputPacket(xmitElementPtr->etherHdrPtr,
+		     xmitElementPtr->scatterGatherPtr,
+		     xmitElementPtr->scatterGatherLength, statePtr);
+	List_Move((List_Links *) xmitElementPtr, 
+		  LIST_ATREAR(statePtr->xmitFreeList));
+    } else {
+	statePtr->transmitting = FALSE;
+	statePtr->curScatGathPtr = (Net_ScatterGather *) NIL;
+    }
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetIEXmitDone --
+ *
+ *	This routine will process a completed transmit command.  It will
+ *	remove the command from the front of the transmit queue, 
+ *	and wakeup any waiting process.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NetIEXmitDone(statePtr)
+    NetIEState	*statePtr;
+{
+    register	volatile NetXmitElement     *xmitElementPtr;
+    register	volatile NetIETransmitCB    *cmdPtr;
+    Net_ScatterGather	*curScatGathPtr;
+
+    /*
+     * If there is nothing that is currently being sent then something is
+     * wrong.
+     */
+    if (statePtr->curScatGathPtr == (Net_ScatterGather *) NIL) {
+#ifndef sun4
+	/*
+	 * Need to fix this for the sun4.
+	 */
+	printf( "NetIEXmitDone: No current packet\n.");
+#endif
+	return;
+    }
+    curScatGathPtr = statePtr->curScatGathPtr;
+
+    statePtr->stats.packetsSent++;
+
+    /*
+     * Mark the packet as done.
+     */
+    curScatGathPtr->done = TRUE;
+    if (curScatGathPtr->mutexPtr != (Sync_Semaphore *) NIL) {
+	NetOutputWakeup(curScatGathPtr->mutexPtr);
+    }
+
+    /*
+     * Record statistics about the packet.
+     */
+    cmdPtr = statePtr->xmitCBPtr;
+    if (NetBfWordTest(cmdPtr->bits, TooManyCollisions, 1)) {
+	statePtr->stats.xmitCollisionDrop++;
+	statePtr->stats.collisions += 16;
+    } else {
+	statePtr->stats.collisions += NetBfWordGet(cmdPtr->bits, NumCollisions);
+    }
+    if (NetBfWordTest(cmdPtr->bits, CmdOK, 0)) {
+	statePtr->stats.xmitPacketsDropped++;
+    }
+
+    /*
+     * If there are more packets to send then send the first one on
+     * the queue.  Otherwise there is nothing being transmitted.
+     */
+    if (!List_IsEmpty(statePtr->xmitList)) {
+	xmitElementPtr = (NetXmitElement *) List_First(statePtr->xmitList);
+	OutputPacket(xmitElementPtr->etherHdrPtr,
+		     xmitElementPtr->scatterGatherPtr,
+		     xmitElementPtr->scatterGatherLength, statePtr);
+	List_Move((List_Links *) xmitElementPtr, 
+		  LIST_ATREAR(statePtr->xmitFreeList));
+    } else {
+	statePtr->transmitting = FALSE;
+	statePtr->curScatGathPtr = (Net_ScatterGather *) NIL;
+    }
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetIEOutput --
+ *
+ *	Output a packet.  The procedure is to either put the packet onto the 
+ *	queue of outgoing packets if packets are already being sent, or 
+ *	otherwise to send the packet directly.  The elements of the scatter 
+ *	array which come into this routine must satisfy the following two 
+ *	properties:
+ *
+ *	1) No buffer must be below the size MIN_XMIT_BUFFER_SIZE.  If one is
+ *	   then a warning will be printed and there is a good chance that
+ *	   the packet will not make it.
+ *	2) No buffer can start on an odd boundary.  It appears that the Intel
+ *	   chip drops the low order bit of the address.  Thus if a buffer
+ *	   begins on an odd boundary the actual buffer sent will have one
+ *	   extra byte at the front.  If a buffer does begin on an odd 
+ *	   boundary then a warning message is printed and the packet is
+ *	   sent anyway.
+ *
+ *	In theory the statusPtr argument should be filled in by NetIEXmitDone
+ *	when the command completes.  We fill it in here because a 
+ *	mechansism doesn't exist for getting the pointer to NetIEXmitDone,
+ *	and because it doesn't appear that NetIEXmitDone would ever
+ *	return anything other than SUCCESS.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Queue of packets modified.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+NetIEOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength, rpc,
+	    statusPtr)
+    Net_Interface			*interPtr;
+    Address				hdrPtr;
+    register	Net_ScatterGather	*scatterGatherPtr;
+    int					scatterGatherLength;
+    Boolean				rpc;		/* Is this an rpc? */
+    ReturnStatus			*statusPtr;  /* Return status. */
+{
+    register volatile NetXmitElement    *xmitPtr;
+    NetIEState				*statePtr;
+    int					i;
+    Net_ScatterGather			*gathPtr;
+    Net_EtherHdr			*etherHdrPtr = (Net_EtherHdr *) hdrPtr;
+
+    statePtr = (NetIEState *) interPtr->interfaceData;
+    DISABLE_INTR();
+
+    statePtr->stats.packetsOutput++;
+
+    /*
+     * Verify that the scatter gather array is not too large.  There is a fixed
+     * upper bound because the list of transmit buffers is preallocated.
+     */
+
+    if (scatterGatherLength >= NET_IE_NUM_XMIT_BUFFERS) {
+	scatterGatherPtr->done = TRUE;
+
+	printf("Intel: Packet in too many pieces\n");
+	ENABLE_INTR();
+	return FAILURE;
+    }
+    statePtr->stats.bytesSent += sizeof(Net_EtherHdr);
+    for (i = scatterGatherLength, gathPtr = scatterGatherPtr; 
+	 i > 0; 
+	 i--, gathPtr++) { 
+	statePtr->stats.bytesSent += gathPtr->length; 
+    } 
+
+    /*
+     * See if the packet is for us.  In this case just copy in the packet
+     * and call the higher level routine.
+     */
+
+    if (!Net_EtherAddrCmp(statePtr->etherAddress, etherHdrPtr->destination)) {
+	int i, length;
+
+        length = sizeof(Net_EtherHdr);
+        for (i = 0; i < scatterGatherLength; i++) {
+            length += scatterGatherPtr[i].length;
+        }
+
+        if (length <= NET_ETHER_MAX_BYTES) {
+	    register Address bufPtr;
+
+	    etherHdrPtr->source = statePtr->etherAddress;
+
+	    bufPtr = (Address)statePtr->loopBackBuffer;
+	    bcopy((Address)etherHdrPtr, bufPtr, sizeof(Net_EtherHdr));
+	    bufPtr += sizeof(Net_EtherHdr);
+            Net_GatherCopy(scatterGatherPtr, scatterGatherLength, bufPtr);
+
+	    Net_Input(interPtr, (Address)statePtr->loopBackBuffer, 
+		    length);
+        }
+
+        scatterGatherPtr->done = TRUE;
+	if (statusPtr != (ReturnStatus *) NIL) {
+	    *statusPtr = SUCCESS;
+	}
+	ENABLE_INTR();
+	return SUCCESS;
+    }
+
+    /*
+     * If no packet is being sent then go ahead and send this one.
+     */
+
+    if (!statePtr->transmitting) {
+	OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength,
+		statePtr);
+	if (statusPtr != (ReturnStatus *) NIL) {
+	    *statusPtr = SUCCESS;
+	}
+	ENABLE_INTR();
+	return SUCCESS;
+    }
+
+    /*
+     * There is a packet being sent so this packet has to be put onto the
+     * transmission queue.  Get an element off of the transmission free list.  
+     * If none available then drop the packet.
+     */
+
+    if (List_IsEmpty(statePtr->xmitFreeList)) {
+        scatterGatherPtr->done = TRUE;
+	ENABLE_INTR();
+	return FAILURE;
+    }
+
+    xmitPtr = (volatile NetXmitElement *)
+	List_First((List_Links *) statePtr->xmitFreeList);
+
+    List_Remove((List_Links *) xmitPtr);
+
+    /*
+     * Initialize the list element.
+     */
+
+    xmitPtr->etherHdrPtr = etherHdrPtr;
+    xmitPtr->scatterGatherPtr = scatterGatherPtr;
+    xmitPtr->scatterGatherLength = scatterGatherLength;
+
+    /* 
+     * Put onto the transmission queue.
+     */
+
+    List_Insert((List_Links *) xmitPtr, LIST_ATREAR(statePtr->xmitList)); 
+
+    if (statusPtr != (ReturnStatus *) NIL) {
+	*statusPtr = SUCCESS;
+    }
+    ENABLE_INTR();
+    return SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetIEXmitDrop --
+ *
+ *	This drops the current output packet by marking its scatter/gather
+ *	vector as DONE and notifying the process waiting for its
+ *	output to complete.  This is called in the beginning of the
+ *	Restart sequence.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Resets curScatGathPtr and notifies any process waiting on output.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NetIEXmitDrop(statePtr)
+    NetIEState		*statePtr;
+{
+    if (statePtr->curScatGathPtr != (Net_ScatterGather *) NIL) {
+	statePtr->curScatGathPtr->done = TRUE;
+	if (statePtr->curScatGathPtr->mutexPtr != (Sync_Semaphore *) NIL) {
+	    NetOutputWakeup(statePtr->curScatGathPtr->mutexPtr);
+	}
+	statePtr->curScatGathPtr = (Net_ScatterGather *) NIL;
+    }
+    return;
+}
+@
+
+
+9.7
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIEXmit.c,v 9.6 91/02/12 14:14:34 jhh Exp Locker: rab $ SPRITE (Berkeley)";
+d493 1
+a493 1
+    if (NET_ETHER_COMPARE(statePtr->etherAddress, etherHdrPtr->destination)) {
+@
+
+
+9.6
+log
+@Added RPC sanity checking
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIEXmit.c,v 9.5 90/11/05 21:26:02 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d216 1
+a220 8
+    if (rpc_SanityCheck && (etherHdrPtr->type == NET_ETHER_SPRITE)) {
+	ReturnStatus 	status;
+	status = Rpc_SanityCheck(scatterGatherLength, 
+		    statePtr->curScatGathPtr, totalLength);
+	if (status != SUCCESS) {
+	    panic("Sanity check failed on outgoing packet.\n");
+	}
+    }
+@
+
+
+9.5
+log
+@network output routines return a status
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIEXmit.c,v 9.4 90/10/19 15:47:27 jhh Exp $ SPRITE (Berkeley)";
+d220 8
+@
+
+
+9.4
+log
+@Rewrite to support multiple interfaces and the Ultranet
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net.jhh/sun3.md/RCS/netIEXmit.c,v 9.6 90/09/20 21:13:45 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d432 6
+d447 3
+a449 2
+void
+NetIEOutput(interPtr, hdrPtr, scatterGatherPtr, scatterGatherLength)
+d454 2
+d478 1
+a478 1
+	return;
+d515 3
+a517 1
+
+d519 1
+a519 1
+	return;
+d529 3
+d533 1
+a533 1
+	return;
+d545 1
+a545 1
+	return;
+d567 3
+d571 1
+a571 1
+    return;
+@
+
+
+9.3
+log
+@Checked volatiles.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIEXmit.c,v 9.2 89/11/08 09:49:24 brent Exp Locker: rab $ SPRITE (Berkeley)";
+d21 6
+a26 19
+#include "sprite.h"
+#include "netIEInt.h"
+#include "net.h"
+#include "netInt.h"
+#include "sys.h"
+#include "list.h"
+#include "vmMach.h"
+
+#include "sync.h"
+
+/*
+ * Pointer to scatter gather element for current packet being sent.
+ */
+static Net_ScatterGather *curScatGathPtr = (Net_ScatterGather *) NIL;
+
+/*
+ * The address of the array of buffer descriptor headers.
+ */
+volatile static	NetIETransmitBufDesc *xmitBufAddr;
+a32 19
+/*
+ * Buffer for pieces of a packet that are too small or that start
+ * on an odd boundary.  XMIT_TEMP_BUFSIZE limits how big a thing can
+ * be and start on an odd address.
+ */
+#define XMIT_TEMP_BUFSIZE	(NET_ETHER_MAX_BYTES + 2)
+char	*netIEXmitTempBuffer;
+
+/*
+ * Define the minimum size allowed for a piece of a transmitted packet.
+ * There is a minimum size because the Intel chip has problems if the pieces
+ * are too small.
+ */
+#define MIN_XMIT_BUFFER_SIZE	12
+
+/*
+ * A buffer that is used when handling loop back packets.
+ */
+static  char            loopBackBuffer[NET_ETHER_MAX_BYTES];
+d54 1
+a54 1
+OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
+d58 1
+d75 2
+a76 2
+    netIEState.transmitting = TRUE;
+    curScatGathPtr = scatterGatherPtr;
+d90 2
+a91 2
+    xmitCBPtr = netIEState.xmitCBPtr;
+    xmitBufDescPtr = xmitBufAddr;
+d103 1
+a103 1
+    tmpBuffer = netIEXmitTempBuffer;
+d133 1
+a133 1
+		netIEState.transmitting = FALSE;
+d189 3
+a192 4
+	xmitBufDescPtr->eof = 0;
+	xmitBufDescPtr->countLow = length & 0xFF;
+	xmitBufDescPtr->countHigh = length >> 8;
+
+d210 2
+a211 2
+	xmitBufDescPtr->countLow = length & 0xFF;
+	xmitBufDescPtr->countHigh = length >> 8;
+a215 1
+
+d220 1
+a220 1
+    xmitBufDescPtr->eof = 1;
+d229 3
+a231 3
+    xmitCBPtr->endOfList = 1;      /* Mark this as the end of the list. */
+    xmitCBPtr->interrupt = 1;      /* Have the command unit interrupt us when
+                                      it is done. */
+d238 3
+a240 3
+    NET_IE_CHECK_SCB_CMD_ACCEPT(netIEState.scbPtr);
+    netIEState.scbPtr->cmdWord.cmdUnitCmd = NET_IE_CUC_START;
+    NET_IE_CHANNEL_ATTENTION;
+d263 2
+a264 1
+NetIEXmitInit()
+d276 4
+a279 4
+    xmitCBPtr = (NetIETransmitCB *) netIEState.cmdBlockPtr;
+    netIEState.xmitCBPtr = xmitCBPtr;
+    xmitCBPtr->cmdNumber = NET_IE_TRANSMIT;
+    xmitCBPtr->suspend = 0;
+a284 1
+#ifdef	lint
+a285 2
+#endif
+
+d287 2
+a288 1
+	newXmitBufDescPtr = (volatile NetIETransmitBufDesc *) NetIEMemAlloc();
+d294 1
+a294 1
+	    xmitBufAddr = newXmitBufDescPtr;
+d296 2
+a297 1
+			NetIEOffsetFromSUNAddr((int) newXmitBufDescPtr);
+d300 2
+a301 1
+			NetIEOffsetFromSUNAddr((int) newXmitBufDescPtr);
+d312 2
+a313 2
+    if (!List_IsEmpty(netIEState.xmitList)) {
+	xmitElementPtr = (NetXmitElement *) List_First(netIEState.xmitList);
+d316 1
+a316 1
+		     xmitElementPtr->scatterGatherLength);
+d318 1
+a318 1
+		  LIST_ATREAR(netIEState.xmitFreeList));
+d320 2
+a321 2
+	netIEState.transmitting = FALSE;
+	curScatGathPtr = (Net_ScatterGather *) NIL;
+d346 2
+a347 1
+NetIEXmitDone()
+d351 1
+d357 1
+a357 1
+    if (curScatGathPtr == (Net_ScatterGather *) NIL) {
+d366 1
+d368 1
+a368 1
+    net_EtherStats.packetsSent++;
+d381 4
+a384 4
+    cmdPtr = netIEState.xmitCBPtr;
+    if (cmdPtr->tooManyCollisions) {
+	net_EtherStats.xmitCollisionDrop++;
+	net_EtherStats.collisions += 16;
+d386 1
+a386 1
+	net_EtherStats.collisions += cmdPtr->numCollisions;
+d388 2
+a389 3
+
+    if (!cmdPtr->cmdOK) {
+	net_EtherStats.xmitPacketsDropped++;
+d396 2
+a397 2
+    if (!List_IsEmpty(netIEState.xmitList)) {
+	xmitElementPtr = (NetXmitElement *) List_First(netIEState.xmitList);
+d400 1
+a400 1
+		     xmitElementPtr->scatterGatherLength);
+d402 1
+a402 1
+		  LIST_ATREAR(netIEState.xmitFreeList));
+d404 2
+a405 2
+	netIEState.transmitting = FALSE;
+	curScatGathPtr = (Net_ScatterGather *) NIL;
+d442 3
+a444 2
+NetIEOutput(etherHdrPtr, scatterGatherPtr, scatterGatherLength)
+    Net_EtherHdr			*etherHdrPtr;
+d449 4
+d454 1
+d457 1
+a457 1
+    net_EtherStats.packetsOutput++;
+d471 6
+a476 1
+
+d483 1
+a483 1
+    if (NET_ETHER_COMPARE(netIEState.etherAddress, etherHdrPtr->destination)) {
+d494 1
+a494 1
+	    etherHdrPtr->source = netIEState.etherAddress;
+d496 1
+a496 1
+	    bufPtr = (Address)loopBackBuffer;
+d501 2
+a502 1
+	    Net_Input((Address)loopBackBuffer, length);
+d515 3
+a517 2
+    if (!netIEState.transmitting) {
+	OutputPacket(etherHdrPtr, scatterGatherPtr, scatterGatherLength);
+d528 1
+a528 1
+    if (List_IsEmpty(netIEState.xmitFreeList)) {
+d535 1
+a535 1
+	List_First((List_Links *) netIEState.xmitFreeList);
+d551 1
+a551 1
+    List_Insert((List_Links *) xmitPtr, LIST_ATREAR(netIEState.xmitList)); 
+d577 2
+a578 1
+NetIEXmitDrop()
+d580 4
+a583 4
+    if (curScatGathPtr != (Net_ScatterGather *) NIL) {
+	curScatGathPtr->done = TRUE;
+	if (curScatGathPtr->mutexPtr != (Sync_Semaphore *) NIL) {
+	    NetOutputWakeup(curScatGathPtr->mutexPtr);
+d585 1
+a585 44
+	curScatGathPtr = (Net_ScatterGather *) NIL;
+    }
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetIEXmitRestart --
+ *
+ *	Restart transmission of packets.  This is called at the
+ *	end of the restart sequence, after the chip has been
+ *	reinitialized.  THIS IS NOT NEEDED.  NetIEReset will
+ *	restart the output queue by calling NetIEXmitInit
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Current scatter gather pointer is reset and new packets may be
+ *	sent out.
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef not_needed
+void
+NetIEXmitRestart()
+{
+    volatile NetXmitElement     *xmitElementPtr;
+
+    /*
+     * Start output if there are any packets queued up.
+     */
+    if (!List_IsEmpty(netIEState.xmitList)) {
+	xmitElementPtr = (NetXmitElement *) List_First(netIEState.xmitList);
+	OutputPacket(xmitElementPtr->etherHdrPtr,
+		     xmitElementPtr->scatterGatherPtr,
+		     xmitElementPtr->scatterGatherLength);
+	List_Move((List_Links *) xmitElementPtr, 
+		  LIST_ATREAR(netIEState.xmitFreeList));
+    } else {
+	netIEState.transmitting = FALSE;
+	curScatGathPtr = (Net_ScatterGather *) NIL;
+a588 1
+#endif
+@
+
+
+9.2
+log
+@Tweaked NetIEXmitDrop so it resets curScatGathPtr.
+@
+text
+@d18 2
+a19 2
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIEXmit.c,v 9.1 89/11/05 12:26:42 brent Exp $ SPRITE (Berkeley)";
+#endif not lint
+d226 2
+a227 2
+	xmitBufDescPtr = 
+	 (NetIETransmitBufDesc *) ((int) xmitBufDescPtr + NET_IE_CHUNK_SIZE);
+d245 2
+a246 2
+	xmitBufDescPtr = 
+	 (NetIETransmitBufDesc *) ((int) xmitBufDescPtr - NET_IE_CHUNK_SIZE);
+d318 1
+a318 1
+    xmitBufDescPtr = (NetIETransmitBufDesc *) NIL;
+d322 2
+a323 2
+	newXmitBufDescPtr = (NetIETransmitBufDesc *) NetIEMemAlloc();
+	if (newXmitBufDescPtr == (NetIETransmitBufDesc *) NIL) {
+d355 1
+d437 1
+d551 2
+a552 1
+    xmitPtr = (NetXmitElement *) List_First((List_Links *) netIEState.xmitFreeList);
+d571 1
+d603 1
+d646 1
+@
+
+
+9.1
+log
+@Fixed NetIERestart so the process transmitting the current
+packet isn't wedged by a reset.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIEXmit.c,v 9.0 89/09/12 15:13:27 douglis Stable Locker: brent $ SPRITE (Berkeley)";
+d592 6
+a597 6
+    if (curScatGathPtr == (Net_ScatterGather *) NIL) {
+	return;
+    }
+    curScatGathPtr->done = TRUE;
+    if (curScatGathPtr->mutexPtr != (Sync_Semaphore *) NIL) {
+	NetOutputWakeup(curScatGathPtr->mutexPtr);
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIEXmit.c,v 8.8 89/07/05 12:33:49 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+a493 40
+    /*
+     * Now make sure that each element in the scatter/gather is big enough.
+     * There is a problem with the Intel chip that if the buffers are too 
+     * small it will overrun memory.  The first buffer is a special case
+     * because it contains the ethernet header which is removed before 
+     * sending.  Also make sure that none of the buffers begin on odd 
+     * boundaries.
+     */
+
+#ifdef not_used
+    {
+	register	Net_ScatterGather	*tmpPtr;
+	register	int			i;
+
+	if (scatterGatherPtr->length > sizeof(Net_EtherHdr) &&
+	    scatterGatherPtr->length - sizeof(Net_EtherHdr) < 
+							MIN_XMIT_BUFFER_SIZE) {
+	     printf( 
+		"NetIEXmit: Scatter/gather element too small (1)\n");
+	}
+	if ((int) (scatterGatherPtr->bufAddr) & 0x1) {
+	    printf( 
+		      "NetIEXmit: Ethernet Header begins on odd boundary %x\n",
+		      (int) (scatterGatherPtr->bufAddr));
+	}
+
+	for (i = 1; i < scatterGatherLength; i++) {
+	    tmpPtr = &(scatterGatherPtr[i]);
+	    if (tmpPtr->length > 0 && tmpPtr->length  < MIN_XMIT_BUFFER_SIZE) {
+		printf( 
+			"NetIEXmit: Scatter/gather element too small (2)\n");
+	    }
+	    if (tmpPtr->length > 0 && (int) (tmpPtr->bufAddr) & 0x1) {
+		printf( 
+			  "NetIEXmit: Buffer begins on odd boundary %x\n",
+			  (int) (tmpPtr->bufAddr));
+	    }
+	}
+    }
+#endif not_used
+d569 31
+d607 4
+a610 1
+ *	Restart transmission of packets after a chip reset.
+d621 1
+a627 10
+     * Drop the current outgoing packet.
+     */    
+    if (curScatGathPtr != (Net_ScatterGather *) NIL) {
+	curScatGathPtr->done = TRUE;
+	if (curScatGathPtr->mutexPtr != (Sync_Semaphore *) NIL) {
+	    NetOutputWakeup(curScatGathPtr->mutexPtr);
+	}
+    }
+
+    /*
+d642 1
+@
+
+
+8.8
+log
+@Fixed use of temporary Xmit buffer so more than one segment
+of a packet can be short (i.e. need to be copied to the tmp buffer)
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIEXmit.c,v 8.7 89/06/08 09:10:24 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+8.7
+log
+@Modification to allow the sun4 to use the same VM mapping calls as the
+sun3.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIEXmit.c,v 8.6 89/05/24 07:58:25 rab Exp Locker: mendel $ SPRITE (Berkeley)";
+d100 2
+d134 2
+d163 1
+a163 1
+	    if (length > XMIT_TEMP_BUFSIZE) {
+d170 1
+a170 1
+	    bcopy(bufAddr, netIEXmitTempBuffer, length);
+d189 1
+a189 1
+			     &netIEXmitTempBuffer[length], numBorrowedBytes);
+d206 10
+a215 1
+		 (int) (netIEXmitTempBuffer), (int) (xmitBufDescPtr->bufAddr));
+@
+
+
+8.6
+log
+@Changes to allow optimization.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIEXmit.c,v 8.5 89/03/15 15:58:33 brent Exp Locker: rab $ SPRITE (Berkeley)";
+d100 1
+a100 1
+#ifdef sun3
+d106 1
+a106 1
+#ifdef sun3
+d374 4
+d379 1
+@
+
+
+8.5
+log
+@Changed scatter/gather type a bit
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIEXmit.c,v 8.4 89/01/31 14:02:08 mendel Exp Locker: brent $ SPRITE (Berkeley)";
+d39 1
+a39 1
+static	NetIETransmitBufDesc *xmitBufAddr;
+d87 1
+a87 1
+    Net_EtherHdr			*etherHdrPtr;
+d91 2
+a92 2
+    register	NetIETransmitBufDesc	*xmitBufDescPtr;
+    register	NetIETransmitCB   	*xmitCBPtr;
+d285 5
+a289 5
+    register	NetIETransmitCB		*xmitCBPtr;
+    register	NetIETransmitBufDesc	*xmitBufDescPtr;
+    NetIETransmitBufDesc		*newXmitBufDescPtr;
+    NetXmitElement	                *xmitElementPtr;
+    int					i;
+d366 2
+a367 2
+    register	NetXmitElement	*xmitElementPtr;
+    register	NetIETransmitCB	*cmdPtr;
+d457 1
+a457 1
+    register	NetXmitElement		*xmitPtr;
+d612 1
+a612 1
+    NetXmitElement	*xmitElementPtr;
+@
+
+
+8.4
+log
+@Modifications for the sun4.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIEXmit.c,v 8.3 88/12/12 14:51:57 nelson Exp Locker: mendel $ SPRITE (Berkeley)";
+d384 2
+a385 2
+    if (curScatGathPtr->conditionPtr != (Sync_Condition *) NIL) {
+	NetOutputWakeup(curScatGathPtr->conditionPtr);
+d619 2
+a620 2
+	if (curScatGathPtr->conditionPtr != (Sync_Condition *) NIL) {
+	    NetOutputWakeup(curScatGathPtr->conditionPtr);
+@
+
+
+8.3
+log
+@Changed to allocate memory and remap packets into high memory on a sun3.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIEXmit.c,v 8.2 88/11/30 11:50:49 brent Exp $ SPRITE (Berkeley)";
+d201 1
+a201 1
+	    NET_IE_ADDR_FROM_68000_ADDR(
+d204 1
+a204 1
+	    NET_IE_ADDR_FROM_68000_ADDR(
+d223 1
+a223 1
+        NET_IE_ADDR_FROM_68000_ADDR((int) netIEXmitFiller, 
+d317 1
+a317 1
+			NetIEOffsetFrom68000Addr((int) newXmitBufDescPtr);
+d320 1
+a320 1
+			NetIEOffsetFrom68000Addr((int) newXmitBufDescPtr);
+@
+
+
+8.2
+log
+@Sys_Printf => printf   Sys_Panic => panic
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIEXmit.c,v 8.1 88/11/13 11:23:50 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d27 1
+d44 1
+a44 1
+static	char	xmitFiller[NET_ETHER_MIN_BYTES];
+d52 1
+a52 1
+static char	xmitTempBuffer[XMIT_TEMP_BUFSIZE];
+d100 3
+d106 7
+d163 1
+a163 2
+		panic(
+			  "IE OutputPacket: Odd addressed buffer too large.");
+d166 1
+a166 1
+	    bcopy(bufAddr, xmitTempBuffer, length);
+d185 1
+a185 1
+			     &xmitTempBuffer[length], numBorrowedBytes);
+d202 1
+a202 1
+		 (int) (xmitTempBuffer), (int) (xmitBufDescPtr->bufAddr));
+d223 1
+a223 1
+        NET_IE_ADDR_FROM_68000_ADDR((int) xmitFiller, 
+@
+
+
+8.1
+log
+@Changed handling of short scatter/gather elements so that
+the orignial scatter/gather vector is not side-effected.
+I had been altering the element from which bytes where borrowed,
+but that screwed up the packet the next time it was retransmitted.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: netIEXmit.c,v 6.4 88/10/13 13:26:49 mendel Exp $ SPRITE (Berkeley)";
+d152 1
+a152 1
+		Sys_Panic(SYS_FATAL,
+d301 1
+a301 1
+	    Sys_Panic(SYS_FATAL, "Intel: No memory for the xmit buffers.\n");
+d364 1
+a364 1
+	Sys_Panic(SYS_WARNING, "NetIEXmitDone: No current packet\n.");
+d461 1
+a461 1
+	Sys_Printf("Intel: Packet in too many pieces\n");
+d483 1
+a483 1
+	     Sys_Panic(SYS_WARNING, 
+d487 1
+a487 1
+	    Sys_Panic(SYS_WARNING, 
+d495 1
+a495 1
+		Sys_Panic(SYS_WARNING, 
+d499 1
+a499 1
+		Sys_Panic(SYS_WARNING, 
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIEXmit.c,v 6.4 88/10/13 13:26:49 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d92 1
+a92 1
+    int					bufCount;
+d94 5
+a98 1
+    int					length;
+d114 8
+a124 1
+
+d126 1
+a126 1
+	 bufCount++, scatterGatherPtr++) {
+d132 2
+a133 2
+
+	length = scatterGatherPtr->length;
+d137 1
+a137 1
+
+d146 1
+a147 3
+	if ((length < NET_IE_MIN_DMA_SIZE) ||
+	    ((int)(scatterGatherPtr->bufAddr) & 0x1)) {
+
+d156 1
+a156 1
+	    bcopy(scatterGatherPtr->bufAddr, xmitTempBuffer, length);
+d165 1
+d168 4
+a171 2
+		    if (numBorrowedBytes > scatterGatherPtr[1].length) {
+			numBorrowedBytes = scatterGatherPtr[1].length;
+d176 1
+a176 2
+			scatterGatherPtr[1].length -= numBorrowedBytes;
+			scatterGatherPtr[1].bufAddr += numBorrowedBytes;
+d184 2
+d192 1
+a192 2
+		 (int) (xmitTempBuffer), 
+		 (int) (xmitBufDescPtr->bufAddr));
+d195 1
+a195 2
+		 (int) (scatterGatherPtr->bufAddr), 
+		 (int) (xmitBufDescPtr->bufAddr));
+@
+
+
+6.4
+log
+@Removed references to Byte_ routines.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: netIEXmit.c,v 6.3 88/09/22 14:06:14 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+6.3
+log
+@Upped size of buffer used for odd addressed buffers.  Made it so that it
+handle the largest ethernet packet.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: netIEXmit.c,v 6.2 88/09/06 09:48:49 brent Exp $ SPRITE (Berkeley)";
+a26 1
+#include "byte.h"
+d147 1
+a147 1
+	    Byte_Copy(length, scatterGatherPtr->bufAddr, xmitTempBuffer);
+d162 2
+a163 2
+			Byte_Copy(numBorrowedBytes, scatterGatherPtr[1].bufAddr,
+				    &xmitTempBuffer[length]);
+d515 1
+a515 1
+	    Byte_Copy(sizeof(Net_EtherHdr), (Address)etherHdrPtr, bufPtr);
+@
+
+
+6.2
+log
+@Fixed bug (thanks lint!)
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: netIEXmit.c,v 6.1 88/09/05 16:25:17 brent Exp $ SPRITE (Berkeley)";
+d49 1
+a49 2
+ * be and start on an odd address.  Odd addresses come up with pathnames,
+ * so this doesn't need to be huge.
+d51 1
+a51 1
+#define XMIT_TEMP_BUFSIZE	256
+d141 4
+a144 1
+		Sys_Panic(SYS_WARNING,
+@
+
+
+6.1
+log
+@Fixed padding bug.  Now bytes are taken from subsequent elements
+of the scatter/gether list instead of introducing extra bytes
+into the middle of a packet.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: netIEXmit.c,v 6.0 88/08/11 12:20:41 brent Stable $ SPRITE (Berkeley)";
+d162 1
+a162 1
+				    xmitTempBuffer[length]);
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: netIEXmit.c,v 5.4 88/06/27 10:46:08 mendel Exp $ SPRITE (Berkeley)";
+a108 1
+    bufCount = 0;
+d116 2
+a117 1
+    while (bufCount < scatterGatherLength) {
+d120 2
+a121 1
+	 * If is an empty buffer then skip it.
+d125 1
+a125 3
+	if (length == 0) {
+	    bufCount++;
+	    scatterGatherPtr++;
+d148 26
+a190 2
+	bufCount++;
+	scatterGatherPtr++;
+@
+
+
+5.4
+log
+@Updated copyright notice and cleaned up comment typos.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: netIEXmit.c,v 5.3 88/05/05 17:58:45 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+5.3
+log
+@Conversion to use Mach module
+@
+text
+@d6 9
+a14 2
+ * Copyright 1985 Regents of the University of California
+ * All rights reserved.
+d18 1
+a18 1
+static char rcsid[] = "$Header: netIEXmit.c,v 5.2 87/09/17 12:02:54 nelson Exp $ SPRITE (Berkeley)";
+d22 1
+a22 1
+#include "netIE.h"
+d34 1
+a34 1
+Net_ScatterGather *curScatGathPtr = (Net_ScatterGather *) NIL;
+d258 4
+@
+
+
+5.2
+log
+@Added ability to reset 3Com and Intel chips.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: netIEXmit.c,v 5.1 87/09/16 11:31:50 nelson Exp $ SPRITE (Berkeley)";
+a14 1
+#include "machine.h"
+@
+
+
+5.1
+log
+@Added ability to reinitialize the intel chiop.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: netIEXmit.c,v 5.0 87/08/11 10:46:24 sprite Exp $ SPRITE (Berkeley)";
+d28 1
+a28 1
+Net_ScatterGather *netIECurScatGathPtr = (Net_ScatterGather *) NIL;
+d93 1
+a93 1
+    netIECurScatGathPtr = scatterGatherPtr;
+d285 1
+a285 1
+	netIECurScatGathPtr = (Net_ScatterGather *) NIL;
+d318 1
+a318 2
+
+    if (netIECurScatGathPtr == (Net_ScatterGather *) NIL) {
+d328 3
+a330 4
+
+    netIECurScatGathPtr->done = TRUE;
+    if (netIECurScatGathPtr->conditionPtr != (Sync_Condition *) NIL) {
+	NetOutputWakeup(netIECurScatGathPtr->conditionPtr);
+a335 1
+
+a351 1
+
+d361 1
+a361 1
+	netIECurScatGathPtr = (Net_ScatterGather *) NIL;
+d535 48
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: netIEXmit.c,v 4.5 87/06/08 15:49:13 nelson Exp $ SPRITE (Berkeley)";
+d28 1
+a28 1
+static	Net_ScatterGather	*curScatGathPtr = (Net_ScatterGather *) NIL;
+d93 1
+a93 1
+    curScatGathPtr = scatterGatherPtr;
+d285 1
+a285 1
+	curScatGathPtr = (Net_ScatterGather *) NIL;
+d319 1
+a319 1
+    if (curScatGathPtr == (Net_ScatterGather *) NIL) {
+d330 3
+a332 3
+    curScatGathPtr->done = TRUE;
+    if (curScatGathPtr->conditionPtr != (Sync_Condition *) NIL) {
+	NetOutputWakeup(curScatGathPtr->conditionPtr);
+d365 1
+a365 1
+	curScatGathPtr = (Net_ScatterGather *) NIL;
+@

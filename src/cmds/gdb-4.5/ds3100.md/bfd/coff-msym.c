@@ -1,0 +1,1 @@
+../../dist/bfd/coff-msym.c

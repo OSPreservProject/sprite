@@ -1,0 +1,10 @@
+          lindex list index
+               Treats  list  as  a  Tcl  list and returns the index'th
+               element from it (0 refers to the first element  of  the
+               list).   In extracting the element, lindex observes the
+               same rules concerning braces and quotes and backslashes
+               as  the  Tcl  command  interpreter;  however,  variable
+               substitution and command substitution do not occur.  If
+               index  is  negative  or  greater  than  or equal to the
+               number of elements in value, then an  empty  string  is
+               returned.

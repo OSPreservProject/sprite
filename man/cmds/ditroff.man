@@ -1,0 +1,324 @@
+.TH DITROFF 1 
+.UC 1
+.SH NAME
+ditroff \- text formatting and typesetting
+.SH SYNOPSIS
+.B ditroff
+[ option ] ...
+[ file ] ...
+.SH DESCRIPTION
+.I Ditroff
+formats text in the named
+.I files
+for printing on the printer selected.
+Different output devices may be selected with the
+environment variables TYPESETTER and PRINTER or
+with the \-P option.
+Output will be processed as specified in the
+.I ditcap
+file, for the particular printer selected.
+The companion preprocessors, pic, ideal, deqn,
+tbl and grn all accept the TYPESETTER and PRINTER environment
+variables,
+have the \-P option,
+and access the ditcap file.
+.BR 
+.IB Troff 's
+capabilities are described in the
+.I Nroff/Troff user's manual.
+.PP
+It is a good idea to specify a printer 
+using one of the environment variables (PRINTER or TYPESETTER),
+or by using the
+.BI \-P printer
+option for ditroff and each of its preprocessors.
+This is advisable since each preprocessor selects a different default
+device if none is specified.
+The device independent troff (troff_p) and its associated preprocessors
+(eqn, grn, tbl, ideal, pic,  ...)
+access the environment variables (TYPESETTER and PRINTER),
+support the 
+.BI \-P printer
+option,
+and access the
+.I ditcap 
+file when processing troff files.
+.PP
+If no
+.I file
+argument is present, the standard input is read.
+An argument consisting of a single minus
+.RB ( \- )
+is taken to be
+a file name corresponding to the standard input.
+The options are:
+.LP
+Troff options:
+.TP "\w'\f3\-m\f1name  'u"
+.BI \-P dev
+Prepare output for typesetter
+.IR dev .
+If no printer is specified, the default is the Laser Writer (lw).
+The environment variable PRINTER will override the default, and
+the environment variable TYPESETTER overrides PRINTER.
+A \-P option will override all else.
+The 
+.I ditcap
+file is searched for this printer,
+and the printer type and other options are set from this file.
+.TP
+.BI \-T typ
+Change the printer type to
+.I typ ,
+and don't read the printer type from the ditcap file.
+.TP
+.BI \-F dir
+Use font directory
+.I dir
+instead of /sprite/lib/ditroff.
+This overrides the (fd) characteristic if it is set in the
+.I ditcap
+file.
+.TP
+.BI \-D ent
+Use the ditcap entry for 
+.I ent ,
+rather than the ditcap entry for 
+.I dev .
+Thus the ditcap characteristics are read from the ditcap
+entry
+.I ent ,
+and the output is sent to 
+.I dev .
+.TP
+.B \-t
+Send the troff_p output to standard output.
+If the (ft) characteristic is set in the ditcap file,
+then pass the output through this filter before sending it to 
+standard output.
+.TP
+.B \-a
+Send a printable ASCII approximation
+of the results to the standard output.
+If the (fa) characteristic is set in the ditcap file,
+then pass the output through this filter before sending it to 
+standard output.
+.TP
+.BI \-o list
+Print only pages whose page numbers appear in the comma-separated \fIlist\fP
+of numbers and ranges.  A range
+.IB N \- M
+means pages \fIN\fP through
+.IR M ;
+an initial \fI\-N\fP means from the beginning to page
+.IR N ;
+and a final
+.IR N \-
+means from \fIN\fP to the end.
+.TP
+.BI \-n N
+Number first generated page
+.IR N .
+.TP
+.BI \-m name
+Prepend the macro file
+.BI /sprite/lib/ditroff/tmac. name
+to the input
+.IR files .
+.TP
+.BI \-r aN
+Set register \fIa\fP (one-character) to
+.IR N .
+.TP
+\fB\-i\fP
+Read standard input after the input files are exhausted.
+.TP
+\fB\-q\fP
+Disable echoing during a \fB.rd\fP request.
+.TP
+.BI \-debug
+Print the lines that ditroff would run,
+rather than making system calls.
+.LP
+Preprocessing options:
+.TP "\w'\f3\-m\f1name 'u"
+.BI \-tbl
+Pipe through tbl.
+.TP
+.BI \-eqn
+Pipe through eqn.
+.TP
+.BI \-seqn
+Pipe through eqn
+using the special characters (in /sprite/lib/ditroff/eqnxxxxx).
+.TP
+.BI \-grn
+Pipe through grn.
+.TP
+.BI \-pic
+Pipe through pic.
+.TP
+.BI \-refer
+Pipe through refer.
+.TP
+.BI \-ideal
+Pipe through ideal.
+.LP
+Spooling options:
+.TP "\w'\f3\-m\f1name 'u"
+.BI \-h 
+Don't print the burst page.
+.TP
+.BI \-m
+Send mail upon completion of the printing job.
+.TP
+.BI \-C name
+Set the classname on the burst page to
+.I name .
+.TP
+.BI \-J name
+Set the jobname on the burst page to
+.I name .
+.TP
+.BI \-# N
+Print 
+.I N
+copies of the job.
+.LP
+Some options of 
+.I troff 
+only apply if you have a C/A/T typesetter attached to your system.
+These options are here for historical reasons:
+.TP
+.BI \-s N
+Stop every \fIN\fP pages.  \fItroff\fP
+stops the phototypesetter every \fIN\fP pages, produces a trailer to allow
+changing cassettes, and resumes when the typesetter's start button is pressed.
+.TP
+\fB\-f\fP
+Refrain from feeding out paper and stopping
+phototypesetter at the end of the run.
+.TP
+\fB\-w\fP
+Wait until phototypesetter is available, if currently busy.
+.TP
+\fB\-b\fP
+Report whether the phototypesetter is busy or available.
+No text processing is done.
+.TP
+.BR \-p N
+Print all characters in point size\fI N\fP
+while retaining all prescribed spacings and motions,
+to reduce phototypesetter elapsed time.
+.SH PROCESSING
+.LP
+The following details are only important to the user who
+wants to set the environment variable DITCAP
+and change ditcap entries.
+.br
+The details of how files are processed is as follows:
+.br
+( (xx) indicates ditcap characteristics and [ ] indicates
+optional parts )
+.LP
+First all files are run through the preprocessors specified.
+(we show all preprocessors, but only a few would be used together)
+The first
+processor receives all the files as input - note that this could be troff_p.
+This part of the command line is assembled as follows.
+.IP "  PRE = " 8
+refer SFILES | tbl | grn TYFT | \\
+.br
+pic TYFT | ideal TYFT | eqn TYFT |
+.IP " " 6
+Where SFILES = "[(se)] files"
+the (se) string being prepended 
+if the 
+.BI \-seqn
+option is selected and
+if the (se) characteristic is specified in 
+the ditcap file.
+.br
+And TYFT = " -T
+.I typ
+[-F
+.I dir
+] "
+.I typ
+is either specified
+in the ditcap file (ty),
+or using the
+.BI \-T 
+option;
+.I dir
+is used if it is specified by the
+.IB \-F
+option or if the (fd) characteristic is specified in the ditcap file.
+.IP "NOTE:" 7
+The preprocessors above and troff_p below
+would be the default ones given in the ditcap(5) documentation,
+unless appropriate ditcap characteristic are specified in the ditcap file.
+.IP I 5
+Standard troff job directed to a printer (\-a , \-t options not set)
+.IP "     %" 8
+PRE  troff_p  TYFT  [(ol)] [troff options] \\
+.br
+[ | (f1) ] [ | (f2) ] [ | (f3) ] [ | (f4) ] \\
+.br
+| lpr -Pdev [spooling options] [(lo)]
+.IP II 5
+Using a previewer (as specified in the ditcap file)
+.IP "     %" 8
+PRE  troff_p  TYFT  [(op)] [troff options] \\
+.br
+[ | (fp) ] > /tmp/dit$$
+.IP "     %" 8
+(pv) /tmp/dit$$
+.IP "     %" 8
+/bin/rm -f /tmp/dit$$
+.IP III 5
+Using the -t option
+.IP "     %" 8
+PRE  troff_p TYFT  -t [(ot)] [troff options] \\
+.br
+[ | (ft) ] > standard output
+.IP IV 5
+Using the -a option
+.IP "     %" 8
+PRE  troff_p TYFT  -a [(oa)] [troff options] \\
+.br
+[ | (fa) ] > standard output
+.IP " " 5
+.SH FILES
+.ta \w'/sprite/lib/ditroff/tmac.*  'u
+.br
+/sprite/lib/ditroff/ditcap	printer specific info
+.br
+/sprite/lib/ditroff/tmac.*	standard macro files
+.br
+/sprite/lib/ditroff/dev*	font width tables
+.SH BUGS
+.PP
+The
+.B \-F
+option is not very useful since the same directory
+must be available on the machine that drives the printer.
+.SH "SEE ALSO"
+ditcap(5)
+.br
+trchange(1) for a list of differences, in
+.IR ditroff ,
+to TROFF commands
+.br
+J. F. Ossanna,
+.I Nroff/Troff user's manual
+.br
+B. W. Kernighan,
+.I
+A TROFF Tutorial
+.br
+eqn(1), grn(1), ideal(1), pic(1), refer(1),
+.br
+tbl(1), dterm(1), lpr(1), font(1)
+.SH AUTHOR
+Greg Heinzinger

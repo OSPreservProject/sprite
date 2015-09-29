@@ -1,0 +1,65 @@
+#
+# CVS Modules file for Sprite kernel sources
+# $Id: modules,v 1.13 92/08/04 12:28:26 jhh Exp $
+#
+# Three differnt line formats are valid:
+#	key     -a    aliases...
+#	key [options] directory
+#	key [options] directory files...
+#
+# Where "options" are composed of:
+#	-i prog		Run "prog" on checkin of files
+#	-o prog		Run "prog" on "checkout" of files
+#	-t prog		Run "prog" on tagging of files
+#
+
+# Convenient aliases
+world		-a .
+
+# CVSROOT.adm support
+#CVSROOT		-i /local/cmds/mkmodules CVSROOT.adm
+#CVSROOT.adm	-i /local/cmds/mkmodules CVSROOT.adm
+#modules		-i /local/cmds/mkmodules CVSROOT.adm modules
+#loginfo		-i /local/cmds/mkmodules CVSROOT.adm loginfo
+
+modules		CVSROOT.adm modules
+loginfo		CVSROOT.adm loginfo
+
+mach		kernel/mach
+dbg		kernel/dbg
+dev		kernel/dev
+fs		kernel/fs
+fscache		kernel/fscache
+fsconsist 	kernel/fsconsist
+fsdm 		kernel/fsdm
+fsio 		kernel/fsio
+fslcl		kernel/fslcl
+fspdev 		kernel/fspdev
+fsprefix 	kernel/fsprefix
+fsrecov		kernel/fsrecov
+fsrmt		kernel/fsrmt
+fsutil		kernel/fsutil
+libc		kernel/libc
+lfs		kernel/lfs
+main		kernel/main
+mem		kernel/mem
+net		kernel/net
+ofs		kernel/ofs
+proc		kernel/proc
+prof		kernel/prof
+raid		kernel/raid
+raid.null	kernel/raid.null
+recov		kernel/recov
+rpc		kernel/rpc
+sched		kernel/sched
+sig		kernel/sig
+sync		kernel/sync
+sys		kernel/sys
+timer		kernel/timer
+utils		kernel/utils
+vm		kernel/vm
+zss		kernel/zss
+
+# For testing and debugging scvs et al.
+
+Test		Test

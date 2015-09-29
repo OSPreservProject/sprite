@@ -1,0 +1,132 @@
+
+
+
+jmgr                      User Commands                      jmgr
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     jmgr - Robot manager for the Jaquith system
+
+SSYYNNOOPPSSIISS
+     jjmmggrr  [--ppoorrtt _p_o_r_t]  [--llooggffiillee  _l_o_g_f_i_l_e]  [--llooggddeettaaiill  _l_e_v_e_l]
+     [--ddeevvffiillee   _f_i_l_e]   [--vvoollffiillee   _f_i_l_e]  [--ddeevviiccee  _d_e_v_i_c_e]  [--
+     sskkiippllaabbeell]
+
+OOPPTTIIOONNSS
+     --ppoorrtt _p_o_r_t    Port  where  robot  manager   should   listen.
+                   Defaults to 20001 (decimal).
+
+     --llooggffiillee _l_o_g_f_i_l_e
+                   Enable activity logging to specified file
+
+     --llooggddeettaaiill _d_e_t_a_i_l
+                   Amount of logging information. There are  four
+                   levels,  with  high levels including the lower
+                   ones.  0x0 == None.  0x01  =  errors.  0x02  =
+                   major  events.   0x04  =  minor events. 0x08 =
+                   code tracing.
+
+     --vvoollffiillee _f_i_l_e Name of volume configuration file.  Each  line
+                   of  the  file  lists the volume number and the
+                   slot location in the robot, separated by  whi-
+                   tespace.
+
+     --ddeevvffiillee _f_i_l_e Name of device configuration file.  Each  line
+                   of  the file lists the device pathname and the
+                   slot location in the robot, separated by  whi-
+                   tespace.
+
+     --ddeevviiccee _d_e_v_i_c_e
+                   The pathname of the robot device.
+
+     --sskkiippllaabbeell    Don't verify the volume label  before  loading
+                   volume for use.
+_________________________________________________________________
+
+DDEESSCCRRIIPPTTIIOONN
+     JJmmggrr controls access to the physical storage manager for the
+     Jaquith system.
+
+     Clients do not connect to jmgr  directly;  they  connect  to
+     Jaquith which will spawn a process to handle their request.
+
+     DDeevvccoonnffiigg contains the list of device names to be controlled
+     by  the  jukebox  manager. Format is device name followed by
+     its slot in the jukebox.  vvoollccoonnffiigg  contains  the  list  of
+     volumes  and  their slot locations in the jukebox. Format is
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+jmgr                      User Commands                      jmgr
+
+
+
+     the volume name followed by its slot in  the  jukebox.   See
+     the  Jaquith  man page for the other files maintained by the
+     Jaquith system.
+
+
+BBUUGGSS
+     Jmgr makes  a  bunch  of  assumptions  about  the  style  of
+     jukebox.
+
+
+SSEEEE AALLSSOO
+     jaquith jls jstat jput jget jctrl jcopy jclean jbuild
+
+
+KKEEYYWWOORRDDSS
+     jaquith archive
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     2
+
+
+

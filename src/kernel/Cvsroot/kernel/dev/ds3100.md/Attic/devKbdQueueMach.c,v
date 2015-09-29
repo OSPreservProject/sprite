@@ -1,0 +1,97 @@
+head     9.0;
+branch   ;
+access   ;
+symbols  Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.0
+date     89.09.12.15.01.31;  author douglis;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.10.19.51.58;  author nelson;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@First code from DECWRL.
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@/* 
+ * devKbdQueueMach.c --
+ *
+ *	Machine-dependent routines for the keyboard queue.  This handles
+ *	the mapping between raw key codes and Ascii.
+ *
+ *	Copyright (C) 1989 Digital Equipment Corporation.
+ *	Permission to use, copy, modify, and distribute this software and
+ *	its documentation for any purpose and without fee is hereby granted,
+ *	provided that the above copyright notice appears in all copies.  
+ *	Digital Equipment Corporation makes no representations about the
+ *	suitability of this software for any purpose.  It is provided "as is"
+ *	without express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/ds3100.md/RCS/devKbdQueueMach.c,v 1.1 89/07/10 19:51:58 nelson Exp Locker: douglis $ SPRITE (DECWRL)";
+#endif not lint
+
+
+#include "sprite.h"
+#include "dev.h"
+#include "devKbdQueue.h"
+#include "kbdMap.h"
+#include "kbdMapMach.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevKbdQueueMachInit --
+ *
+ *	Machine-dependent initialization for the keyboard queue.
+ *	Since we don't have a console, we have nothing to set up.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+DevKbdQueueMachInit()
+{
+    /*
+     * Set up the choice of arrays to map raw key codes into Ascii.
+     */
+
+    devKbdShiftedAscii		= devKbdPmaxToShiftedAscii;
+    devKbdUnshiftedAscii	= devKbdPmaxToUnshiftedAscii;
+}
+
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: devKbdQueueMach.c,v 1.2 89/06/29 09:49:27 mnelson Exp $ SPRITE (DECWRL)";
+@

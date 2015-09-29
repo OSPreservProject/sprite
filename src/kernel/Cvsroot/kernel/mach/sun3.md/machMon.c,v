@@ -1,0 +1,990 @@
+head     9.6;
+branch   ;
+access   ;
+symbols  ds3100:9.6 sun3:9.6 sun4nw:9.6 symm:9.6 spur:9.6 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.6
+date     91.10.18.01.25.08;  author dlong;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     91.09.10.18.16.49;  author rab;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     91.08.14.14.20.58;  author dlong;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.10.03.13.52.40;  author mgbaker;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.09.11.15.04.16;  author mendel;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.07.30.11.34.37;  author shirriff;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.51.41;  author douglis;  state Stable;
+branches ;
+next     8.4;
+
+8.4
+date     89.03.07.22.53.57;  author mgbaker;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     88.12.04.14.04.41;  author ouster;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.11.30.11.27.10;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.15.12.40.46;  author rab;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.04.10;  author douglis;  state Stable;
+branches ;
+next     6.2;
+
+6.2
+date     88.10.17.12.56.13;  author mendel;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.27.19.33.57;  author nelson;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.09.36;  author brent;  state Stable;
+branches ;
+next     5.7;
+
+5.7
+date     88.05.05.17.54.47;  author nelson;  state Exp;
+branches ;
+next     5.6;
+
+5.6
+date     88.05.04.17.37.32;  author nelson;  state Exp;
+branches ;
+next     5.5;
+
+5.5
+date     88.05.04.17.33.25;  author nelson;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     88.05.04.15.53.53;  author nelson;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     87.12.15.15.28.59;  author nelson;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.12.12.16.30.57;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.10.08.13.27.54;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.50.39;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.6
+log
+@sun4c/sun4c2 merge
+@
+text
+@/* 
+ * machMon.c --
+ *
+ *     Routines to access the sun prom monitor.
+ *
+ * Copyright 1985 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/mach/sun3.md/RCS/machMon.c,v 9.5 91/09/10 18:16:49 rab Exp Locker: dlong $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+#include "machMon.h"
+#include "machConst.h"
+#include "machInt.h"
+#include "ctype.h"
+#include "mach.h"
+#include "vmMach.h"
+#include "sys.h"
+#ifdef sun4c
+#include <string.h>
+#endif
+
+extern int VmMachGetKernelContext _ARGS_ ((void));
+extern void VmMachSetKernelContext _ARGS_((int value));
+
+#ifdef sun2
+static	int	(*savedNmiVec)() = (int (*)()) 0;
+#endif
+extern	int	MachMonNmiNop();
+static	Boolean	stoppedNMI = FALSE;
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_MonPutChar --
+ *
+ *     Call the monitor put character routine
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+void
+Mach_MonPutChar(ch)
+    int		ch;
+{
+    int		oldContext;
+
+    if (!isascii(ch)) {
+	return;
+    }
+    DISABLE_INTR();
+    oldContext = VmMachGetKernelContext();
+    VmMachSetKernelContext(VMMACH_KERN_CONTEXT);
+    romVectorPtr->putChar(ch);
+    VmMachSetKernelContext(oldContext);
+    ENABLE_INTR();
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_MonMayPut --
+ *
+ *     	Call the monitor put may put character routine.  This will return
+ *	-1 if it couldn't put out the character.
+ *
+ * Results:
+ *     -1 if couldn't emit the character.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+int
+Mach_MonMayPut(ch)
+    int		ch;
+{
+    int		oldContext;
+    int		retValue;
+
+    DISABLE_INTR();
+    oldContext = VmMachGetKernelContext();
+    VmMachSetKernelContext(VMMACH_KERN_CONTEXT);
+    retValue = romVectorPtr->mayPut(ch);
+    VmMachSetKernelContext(oldContext);
+    ENABLE_INTR();
+    return(retValue);
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_MonAbort --
+ *
+ *     	Abort to the monitor.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+void
+Mach_MonAbort()
+{
+    int	oldContext;
+
+    DISABLE_INTR();
+    oldContext = VmMachGetKernelContext();
+    VmMachSetKernelContext(VMMACH_KERN_CONTEXT);
+    Mach_MonTrap((Address) (romVectorPtr->abortEntry));
+    VmMachSetKernelContext(oldContext);
+    ENABLE_INTR();
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_MonReboot --
+ *
+ *     	Reboot the system.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     System rebooted.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+void
+Mach_MonReboot(rebootString)
+    char	*rebootString;
+{
+    DISABLE_INTR();
+    (void)VmMachGetKernelContext();
+    VmMachSetKernelContext(VMMACH_KERN_CONTEXT);
+    Mach_MonStartNmi();
+    romVectorPtr->reBoot(rebootString);
+    /*
+     * If we reach this far something went wrong.
+     */
+    panic("Mach_MonReboot: Reboot failed (I'm still alive aren't I?)\n");
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_MonStartNmi --
+ *
+ *	Allow the non-maskable (level 7) interrupts from the clock chip
+ *	so the monitor can read the keyboard.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *	Non-maskable interrupts are allowed. On the Sun-2, the 
+ *	trap vector is modified. 
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+void
+Mach_MonStartNmi()
+{
+    if (stoppedNMI) {
+#ifdef sun2
+	if (savedNmiVec != 0) {
+	    machVectorTablePtr->autoVec[6] = savedNmiVec;
+	}
+#endif
+#ifdef sun3
+	*Mach_InterruptReg |= MACH_ENABLE_LEVEL7_INTR;
+#endif
+#ifdef sun4
+	*Mach_InterruptReg |= MACH_ENABLE_ALL_INTERRUPTS;
+#endif
+	stoppedNMI = FALSE;
+    }
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Mach_MonStopNmi --
+ *
+ * 	Disallow the non-maskable (level 7) interrupts.  
+ *	On the Sun-2, this entails redirecting the interrupt. 
+ *	On the Sun-3, the bit in the interrupt register for nmi's is 
+ *	turned off.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *	Non-maskable interrupts are disallowed. On the Sun-2, the trap 
+ *	vector is modified.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+void
+Mach_MonStopNmi()
+{
+    extern Boolean main_AllowNMI;
+
+    /*
+     * For debugging purposes, NMI's may need to be enabled.
+     * If NMI's are disabled and the kernel goes into an infinite loop, 
+     * then getting back to the monitor via L1-A is impossible 
+     * However, if NMI's are enabled, level-7 interrupts are caused 
+     * and it is possible that characters may be stolen by the monitor.
+     * Also, spurious exceptions may occur.
+     */
+    if (!main_AllowNMI) {
+	stoppedNMI = TRUE;
+#ifdef sun2
+	savedNmiVec = machVectorTablePtr->autoVec[6];
+	machVectorTablePtr->autoVec[6] = MachMonNmiNop;
+#endif
+#ifdef sun3
+	*Mach_InterruptReg &= ~MACH_ENABLE_LEVEL7_INTR;
+#endif
+#ifdef sun4
+	*Mach_InterruptReg &= ~MACH_ENABLE_ALL_INTERRUPTS;
+#endif
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_MonTraverseDevTree --
+ *
+ *	Traverse the device tree, and call the given function
+ *	for each node found.  To start at the root of the tree,
+ *	the node argument should be set to 0.
+ *
+ * Results:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+#ifdef sun4c
+void
+Mach_MonTraverseDevTree(node, func, clientData)
+    unsigned	int	node;
+    int		(*func)();
+    Address     clientData;
+{
+    unsigned	int		newNode;
+    char 	name[64];
+    int		length;
+    struct	config_ops	*configPtr;
+
+    configPtr = romVectorPtr->v_config_ops;
+    if (node == 0) {
+	node = configPtr->devr_next(0);
+    }
+    while (node != 0) {
+	length = configPtr->devr_getproplen(node, "name");
+	if (length > 0) {
+	    if (length > sizeof (name)) {
+		panic("Mach_MonTraverseDevTree: buffer too small.\n");
+	    }
+	    configPtr->devr_getprop(node, "name", name);
+	    if ((*func)(node, name, clientData))
+		return;
+	}
+	if (newNode = configPtr->devr_child(node)) {
+	    Mach_MonTraverseDevTree(newNode, func, clientData);
+	}
+	node = configPtr->devr_next(node);
+    }
+}
+
+
+static int
+PrintNode(node, name, clientData)
+    unsigned	int	node;
+    char		*name;
+    void		*clientData;
+{
+    struct	config_ops	*configPtr;
+    char	*prop;
+
+    configPtr = romVectorPtr->v_config_ops;
+    prop = 0;
+    while (1) {
+	prop = (char *)configPtr->devr_nextprop(node, prop);
+	if (prop && *prop) {
+	    Mach_MonPrintf("%s: %s\n", name, prop);
+	} else {
+	    break;
+	}
+    }
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_MonTraverseAndPrintDevTree --
+ *
+ *	Traverse the device tree, and display the attributes
+ *	of each node found.
+ *
+ * Results:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Mach_MonTraverseAndPrintDevTree()
+{
+    Mach_MonTraverseDevTree(0, PrintNode, 0);
+}
+
+
+struct ConfigBuf {
+    char	*name;
+    char	*attr;
+    char	*buf;
+    int		buflen;
+    int		length;
+};
+
+static int
+CheckNode(node, name, clientData)
+    unsigned	int		node;
+    char			*name;
+    struct	ConfigBuf	*clientData;
+{
+    int		length;
+    struct	config_ops	*configPtr;
+
+    configPtr = romVectorPtr->v_config_ops;
+    if (strcmp(name, clientData->name) == 0
+	    || strcmp(clientData->name, "*") == 0) {
+	length = configPtr->devr_getproplen(node, clientData->attr);
+	if (length <= 0) {
+	    return 0;
+	} else if (length > clientData->buflen) {
+	    Mach_MonPrintf("Data size (%d) is greater than buffer size (%d)\n",
+		length, clientData->buflen);
+	} else {
+	    configPtr->devr_getprop(node, clientData->attr, clientData->buf);
+	}
+	clientData->length = length;
+	return 1;
+    }
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mach_MonSearchProm --
+ *
+ *	Search through the prom devices to find out system attributes.
+ *	If attr is given, and name is "*", the info will be retrieved
+ *	from the first node with that attribute, otherwise the name
+ *	must match exactly.
+ *
+ * Results:
+ *	length of info retrieved.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Mach_MonSearchProm(name, attr, buf, buflen)
+    char	*name;
+    char	*attr;
+    char	*buf;
+    int		buflen;
+{
+    struct ConfigBuf data;
+
+    data.length = -1;
+    data.name = name;
+    data.attr = attr;
+    data.buf = buf;
+    data.buflen = buflen;
+    Mach_MonTraverseDevTree(0, CheckNode, (Address)&data);
+    return data.length;
+}
+#endif /* sun4c */
+@
+
+
+9.5
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/mach/sun3.md/RCS/machMon.c,v 9.4 91/08/14 14:20:58 dlong Exp Locker: rab $ SPRITE (Berkeley)";
+d23 1
+a23 2
+#include "stdio.h"
+#include "string.h"
+d314 1
+a314 1
+	    printf("%s: %s\n", name, prop);
+d367 1
+a367 1
+	    printf("Data size (%d) is greater than buffer size (%d)\n",
+d402 1
+a402 1
+    data.length = 0;
+d407 1
+a407 1
+    Mach_MonTraverseDevTree(0, CheckNode, &data);
+@
+
+
+9.4
+log
+@added code to traverse device tree for sun4c
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/mach/sun3.md/RCS/machMon.c,v 9.3 90/10/03 13:52:40 mgbaker Exp Locker: dlong $ SPRITE (Berkeley)";
+d27 3
+d272 1
+a272 1
+    void	*clientData;
+@
+
+
+9.3
+log
+@Prototyping.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/mach/sun3.md/RCS/machMon.c,v 9.2 90/09/11 15:04:16 mendel Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d22 4
+d248 161
+@
+
+
+9.2
+log
+@Added include vmMach.h
+@
+text
+@d2 1
+a2 1
+ * mon.c --
+d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/mach/sun3.md/RCS/machMon.c,v 9.1 90/07/30 11:34:37 shirriff Exp $ SPRITE (Berkeley)";
+d122 1
+a122 1
+    Mach_MonTrap(romVectorPtr->abortEntry);
+@
+
+
+9.1
+log
+@Removed vmMachInt.h include.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/mach/sun3.md/RCS/machMon.c,v 9.0 89/09/12 14:51:41 douglis Stable Locker: shirriff $ SPRITE (Berkeley)";
+d20 1
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/mach/sun3.md/RCS/machMon.c,v 8.4 89/03/07 22:53:57 mgbaker Exp Locker: douglis $ SPRITE (Berkeley)";
+a18 1
+#include "vmMachInt.h"
+@
+
+
+8.4
+log
+@More monitor routines for the sun4.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/mach/sun2.md/RCS/machMon.c,v 8.3 88/12/04 14:04:41 ouster Exp Locker: mgbaker $ SPRITE (Berkeley)";
+@
+
+
+8.3
+log
+@Eliminate usage of char.h.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/mach/sun2.md/RCS/machMon.c,v 8.2 88/11/30 11:27:10 brent Exp $ SPRITE (Berkeley)";
+d189 3
+d238 3
+@
+
+
+8.2
+log
+@Sys_Panic => panic
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/mach/sun2.md/RCS/machMon.c,v 8.1 88/11/15 12:40:46 rab Exp Locker: brent $ SPRITE (Berkeley)";
+d18 1
+a18 1
+#include "char.h"
+d52 1
+a52 1
+    if (!Char_IsAscii(ch)) {
+@
+
+
+8.1
+log
+@changed SUN to sun
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/mach/sun2.md/RCS/machMon.c,v 8.0 88/11/11 18:04:10 douglis Stable Locker: rab $ SPRITE (Berkeley)";
+d155 1
+a155 1
+    Sys_Panic(SYS_FATAL, "Mach_MonReboot: Reboot failed (I'm still alive aren't I?)\n");
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/mach/sun2.md/RCS/machMon.c,v 6.2 88/10/17 12:56:13 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d23 1
+a23 1
+#ifdef SUN2
+d181 1
+a181 1
+#ifdef SUN2
+d186 1
+a186 1
+#ifdef SUN3
+d229 1
+a229 1
+#ifdef SUN2
+d232 2
+a233 2
+#endif SUN2
+#ifdef SUN3
+d235 1
+a235 1
+#endif SUN3
+@
+
+
+6.2
+log
+@Removed reference to devTimer.h.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: machMon.c,v 6.1 88/08/27 19:33:57 nelson Exp $ SPRITE (Berkeley)";
+@
+
+
+6.1
+log
+@Fixed lint errors.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: machMon.c,v 5.7 88/05/05 17:54:47 nelson Exp $ SPRITE (Berkeley)";
+a17 1
+#include "devTimer.h"
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d24 1
+d26 1
+@
+
+
+5.7
+log
+@Handles move of functionality from sys to mach.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: mon.c,v 5.6 88/05/04 17:37:32 nelson Exp $ SPRITE (Berkeley)";
+@
+
+
+5.6
+log
+@Added missing include.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: mon.c,v 5.5 88/05/04 17:33:25 nelson Exp $ SPRITE (Berkeley)";
+d15 1
+a15 2
+#include "sunMon.h"
+#include "sys.h"
+d22 1
+d25 1
+a25 1
+extern	int	MonNmiNop();
+d32 1
+a32 1
+ * Mon_PutChar --
+d46 1
+a46 1
+Mon_PutChar(ch)
+d66 1
+a66 1
+ * Mon_MayPut --
+d81 1
+a81 1
+Mon_MayPut(ch)
+d100 1
+a100 1
+ * Mon_Abort --
+d114 1
+a114 1
+Mon_Abort()
+d121 1
+a121 1
+    Mon_Trap(romVectorPtr->abortEntry);
+d129 1
+a129 1
+ * Mon_Reboot --
+d143 1
+a143 1
+Mon_Reboot(rebootString)
+d149 1
+a149 1
+    Mon_StartNmi();
+d154 1
+a154 1
+    Sys_Panic(SYS_FATAL, "Mon_Reboot: Reboot failed (I'm still alive aren't I?)\n");
+d161 1
+a161 1
+ * Mon_StartNmi --
+d177 1
+a177 1
+Mon_StartNmi()
+d196 1
+a196 1
+ * Mon_StopNmi --
+d214 1
+a214 1
+Mon_StopNmi()
+d230 1
+a230 1
+	machVectorTablePtr->autoVec[6] = MonNmiNop;
+@
+
+
+5.5
+log
+@Name change.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: mon.c,v 5.4 88/05/04 15:53:53 nelson Exp $ SPRITE (Berkeley)";
+d22 1
+@
+
+
+5.4
+log
+@New trap handling code with machine state struct per proc.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: mon.c,v 5.3 87/12/15 15:28:59 nelson Exp $ SPRITE (Berkeley)";
+d185 1
+a185 1
+	*SunInterruptReg |= MACH_ENABLE_LEVEL7_INTR;
+d232 1
+a232 1
+	*SunInterruptReg &= ~MACH_ENABLE_LEVEL7_INTR;
+@
+
+
+5.3
+log
+@Fixed lint errors.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: mon.c,v 5.2 87/12/12 16:30:57 nelson Exp $ SPRITE (Berkeley)";
+d17 2
+a18 3
+#include "machine.h"
+#include "machineConst.h"
+#include "exc.h"
+d181 1
+a181 1
+	    exc_VectorTablePtr->autoVec[6] = savedNmiVec;
+d185 1
+a185 1
+	*SunInterruptReg |= SUN_ENABLE_LEVEL7_INTR;
+d228 2
+a229 2
+	savedNmiVec = exc_VectorTablePtr->autoVec[6];
+	exc_VectorTablePtr->autoVec[6] = MonNmiNop;
+d232 1
+a232 1
+	*SunInterruptReg &= ~SUN_ENABLE_LEVEL7_INTR;
+@
+
+
+5.2
+log
+@More work on moving rest of machine dependencies here.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: mon.c,v 5.1 87/10/08 13:27:54 nelson Exp $ SPRITE (Berkeley)";
+d22 1
+@
+
+
+5.1
+log
+@Made turning on and off of non-maskable interrupts work for Sun-2 as well
+as Sun-3.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: mon.c,v 5.0 87/08/11 10:50:39 sprite Exp $ SPRITE (Berkeley)";
+d18 1
+d54 2
+a55 2
+    oldContext = Vm_GetKernelContext();
+    Vm_SetKernelContext(VM_KERN_CONTEXT);
+d57 1
+a57 1
+    Vm_SetKernelContext(oldContext);
+d87 2
+a88 2
+    oldContext = Vm_GetKernelContext();
+    Vm_SetKernelContext(VM_KERN_CONTEXT);
+d90 1
+a90 1
+    Vm_SetKernelContext(oldContext);
+d118 2
+a119 2
+    oldContext = Vm_GetKernelContext();
+    Vm_SetKernelContext(VM_KERN_CONTEXT);
+d121 1
+a121 1
+    Vm_SetKernelContext(oldContext);
+a144 2
+    int	oldContext;
+
+d146 2
+a147 2
+    oldContext = Vm_GetKernelContext();
+    Vm_SetKernelContext(VM_KERN_CONTEXT);
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: mon.c,v 4.1 87/06/12 17:48:42 nelson Exp $ SPRITE (Berkeley)";
+d22 3
+a24 2
+static	int (*savedNmiVec)() = (int (*)()) 0;
+extern	int MonNmiNop();
+d179 1
+d181 3
+a183 3
+    if (savedNmiVec != 0) {
+	exc_VectorTablePtr->autoVec[6] = savedNmiVec;
+    }
+a184 1
+
+d186 1
+a186 1
+    *SunInterruptReg |= SUN_ENABLE_LEVEL7_INTR;
+d188 2
+a217 6
+#ifdef SUN2
+    savedNmiVec = exc_VectorTablePtr->autoVec[6];
+    exc_VectorTablePtr->autoVec[6] = MonNmiNop;
+#endif SUN2
+
+#ifdef SUN3
+d219 1
+a219 1
+     * For debugging purposes, NMI's must be enabled.
+d227 6
+d234 1
+a235 1
+#endif SUN3
+@

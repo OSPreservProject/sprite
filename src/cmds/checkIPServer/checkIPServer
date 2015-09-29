@@ -1,0 +1,28 @@
+#!/bin/csh -f
+#
+# checkIPServer: Script to check up on a hosts ipServer, and restart
+# it if needed.
+#
+# $Header: /sprite/src/admin/checkIPServer/RCS/checkIPServer,v 1.2 90/11/12 17:44:41 kupfer Exp $
+
+# See if it's in the debugger.
+set pid=`ps -ad | egrep ipServer | awk '{print $1}'`
+if (X$pid == "X") then
+# See if it went away completely.
+    set pid=`ps -a | egrep ipServer | sed '/egrep/d' | awk '{print $1}'`
+    if (X$pid != "X") then
+        exit
+    endif
+endif
+
+echo "IPSERVER found DEAD at `date`" > /dev/syslog
+set host=`hostname`
+if (-e /hosts/$host/restartIPServer) then
+    /hosts/$host/restartIPServer >& /dev/syslog
+else
+    /sprite/admin.$MACHINE/restartIPServer >& /dev/syslog
+endif
+
+if ($#argv > 0) then
+    echo "IPServer on $host died and was restarted" | mail spriters
+endif

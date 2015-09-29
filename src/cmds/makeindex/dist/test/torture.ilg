@@ -1,0 +1,47 @@
+This is makeindex, portable version 2.4 [20-Mar-88].
+Scanning input file torture.idx...
+!! Input index error (file = torture.idx, line = 1):
+   -- Illegal null field.
+!! Input index error (file = torture.idx, line = 2):
+   -- Illegal null field.
+!! Input index error (file = torture.idx, line = 3):
+   -- Extra `@' at position 14 of first argument.
+!! Input index error (file = torture.idx, line = 4):
+   -- Extra `!' at position 18 of first argument.
+!! Input index error (file = torture.idx, line = 5):
+   -- Extra `|' at position 15 of first argument.
+.done (29 entries accepted, 5 rejected).
+Sorting entries....done (135 comparisons).
+Generating output file torture.ind....
+## Warning (input = torture.idx, line = 23; output = torture.ind, line = 3):
+   -- Range closing operator has an inconsitent encapsulator iii.
+
+## Warning (input = torture.idx, line = 26; output = torture.ind, line = 8):
+   -- Inconsistent page encapsulator ii within range.
+
+## Warning (input = torture.idx, line = 30; output = torture.ind, line = 9):
+   -- Inconsistent page encapsulator ii within range.
+
+## Warning (input = torture.idx, line = 7; output = torture.ind, line = 10):
+   -- Conflicting entries: multiple encaps for the same page under same key.
+
+## Warning (input = torture.idx, line = 14; output = torture.ind, line = 14):
+   -- Unmatched range closing operator ).
+
+## Warning (input = torture.idx, line = 15; output = torture.ind, line = 15):
+   -- Unmatched range opening operator (.
+
+## Warning (input = torture.idx, line = 34; output = torture.ind, line = 16):
+   -- Illegal range formation: starting & ending pages are of different types.
+
+## Warning (input = torture.idx, line = 38; output = torture.ind, line = 17):
+   -- Illegal range formation: starting & ending pages are of different types.
+
+## Warning (input = torture.idx, line = 42; output = torture.ind, line = 18):
+   -- Inconsistent page encapsulator xx within range.
+
+## Warning (input = torture.idx, line = 43; output = torture.ind, line = 18):
+   -- Illegal range formation: starting & ending pages are of different types.
+done (24 lines written, 10 warnings).
+Output written in torture.ind.
+Transcript written in torture.ilg.

@@ -1,0 +1,205 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.5
+date     91.09.28.15.57.30;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.09.28.15.54.39;  author shirriff;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.08.29.18.42.54;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.08.29.18.28.29;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.12.17.18.19.17;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Man page for script to do daily dumps.
+@
+
+
+1.5
+log
+@Store the name of the host running the dumps in the .active file.
+@
+text
+@'\" Copyright 1990 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/admin/dailydump/RCS/dailydump.man,v 1.4 91/09/28 15:54:39 shirriff Exp Locker: kupfer $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS DAILYDUMP cmds
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+dailydump \- Script to do daily dumps
+.SH SYNOPSIS
+\fBdailydump\fR [\fB\-i\fR] [\fIstartFs\fR]
+.IP "\fIstartFs\fR" 15
+Start dumping with the named filesystem.
+.IP "\-i" 15
+Initialize the tape drive, remove the weekly dump lock file, and exit.
+.BE
+
+.SH DESCRIPTION
+.PP
+This script does a level-1 dump of all filesystems that are normally
+backed up.  (A level-1 dump captures all changes since the previous
+level-0 dump for the given filesystem.)  It is normally invoked in the
+wee hours of the morning by
+.BR cron .
+.PP
+When the script has completed, it sends mail to the current dumper
+(see the man page for
+.BR weeklydump ), 
+giving the amount of free space left on the current tape.
+If there are detectable errors, mail is sent to the dumper with an error
+message.
+.PP
+There are normally two reasons for manually invoking
+.BR dailydump .
+The first is to re-enable the daily dumps after the weekly dumps have
+completed.  This is what the
+.B \-i
+option is for.  It ensures that the lock file used by the weekly dumps
+is gone, and it initializes the tape currently in the drive.  (The dumps won't
+actually commence until invoked by
+.BR cron ).
+.PP
+The other reason for invoking 
+.B dailydump
+by hand is to restart the dumps if the machine running them crashed
+before the dumps could finish.  In this case the user should specify the
+filesystem that was being dumped when the machine crashed.  The dumps
+will begin immediately.
+.PP
+When invoking 
+.BR dailydump , 
+be sure you're running as root.
+
+.SH FILES
+All of the following files are in /sprite/admin/dump:
+.IP doingdaily.active 15
+status file used to detect crashes.  Contains the name of the host
+running the dumps.
+.IP doingweekly 15
+lock file to prevent daily dump from running
+.IP dumpdates 15
+list of filesystems dumped, at what time, what tape, etc.
+.IP dumplist 15
+list of filesystems to dump
+.IP dumplog 15
+very large status log from the dump programs
+.IP tapelist 15
+list of tape devices to use.  Dailydump uses the first drive on the list.
+
+.SH KEYWORDS
+dump, tape, backup
+@
+
+
+1.4
+log
+@Documented tapelist file.
+@
+text
+@d9 1
+a9 1
+'\" $Header: /sprite/src/admin/dailydump/RCS/dailydump.man,v 1.3 91/08/29 18:42:54 kupfer Exp Locker: shirriff $ SPRITE (Berkeley)
+d64 2
+a65 1
+status file used to detect crashes
+@
+
+
+1.3
+log
+@Fix the way the files are listed so that they look better when nroff'd.
+@
+text
+@d9 1
+a9 1
+'\" $Header: /sprite/src/admin/dailydump/RCS/dailydump.man,v 1.2 91/08/29 18:28:29 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d46 1
+a46 1
+is gone, and it initializes the tape currently in the drive.  (The dumps don't
+d73 2
+@
+
+
+1.2
+log
+@Add info about command line options.  Fix description about error
+handling.  Add list of magic dump-related files.
+@
+text
+@d9 1
+a9 1
+'\" $Header: /sprite/src/admin/dailydump/RCS/dailydump.man,v 1.1 90/12/17 18:19:17 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d63 10
+a72 11
+.ta \w'doingdaily.active....'u
+.PP
+doingdaily.active	status file used to detect crashes
+.br
+doingweekly	lock file to prevent daily dump from running
+.br
+dumpdates	list of filesystems dumped, at what time, what tape, etc.
+.br
+dumplist	list of filesystems to dump
+.br
+dumplog	very large status log from the dump programs
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d9 1
+a9 1
+'\" $Header: /sprite/lib/forms/RCS/cmd.man,v 1.2 90/02/20 17:11:01 douglis Exp $ SPRITE (Berkeley)
+d18 5
+a22 1
+\fBdailydump\fR 
+d33 6
+a38 6
+This script does no error checking.  After it has run, you should
+check
+.B /sprite/admin/dump/dumplog
+and perhaps
+.B /sprite/admin/dump/dumpdates
+to make sure everything worked correctly.
+d40 34
+a73 4
+The script appends each night's dumps to the end of the currently
+loaded dump tape.  Run
+.B dumpsize
+to see if there is enough room on the tape for another set of dumps.
+@

@@ -1,0 +1,20 @@
+#!/bin/sh
+
+echo 'This script will convert all the TFM files in this directory'
+echo 'from a design size of 1pt to a design size of 10pt.'
+echo
+echo -n 'Hit return to contine, ^C to abort > '
+read reply
+
+for i in *.tfm
+do
+	BASE=`basename $i .tfm`
+	echo Doing $BASE
+	tftopl $i $BASE.pl
+	ed - $BASE.pl <<\xxx
+g/(DESIGNSIZE R 1.0)/s//(DESIGNSIZE R 10.0)/
+w
+q
+xxx
+	pltotf $BASE.pl $i
+done

@@ -1,0 +1,4 @@
+
+#include <$(SYSMAKEFILE)>
+
+.PATH.h:	..

@@ -1,0 +1,153 @@
+.TH TRCHANGES 1
+.de P1
+.nf
+.ta 5 10 15 20 25 30 35 40 45 50 55 60
+.sp 1
+..
+.de P2
+.fi
+.sp 1
+..
+.hy 14	\"2=not last lines; 4= no -xx; 8=no xx-
+.SH COMMAND LINE ARGUMENTS
+.PP
+The argument
+.BI \-P xxx
+loads parameters and character definitions for typesetter
+.IR xxx ,
+which at the moment is typically one of
+.IR psc " (PostScript),"
+.IR ip " (imagen),"
+.IR va " (varian),"
+.IR vp " (versatec)"
+or
+.IR ter " (terminal or printer)."
+.PP
+.BI -F yyy
+causes font information to be loaded from directory
+.I yyy
+instead of the default
+.BI /sprite/lib/ditroff/dev xxx.
+.SH GRAPHICS COMMANDS
+.PP
+The most significant new facility is the ability to draw
+simple graphical objects  
+\(em diagonal lines, circles, ellipses, arcs, splines, and filled polygons \(em
+in TROFF .
+.PP
+The new graphical commands are
+.P1
+.ta 1i
+\eD'l\f2 dh dv\fP'
+	draw line from current position by \f2dh, dv\fP
+\eD'c\f2 d\fP'
+	draw circle of diameter \f2d\fP with left side at current position
+\eD'e\f2 d1 d2\fP'
+	draw ellipse of diameters \f2d1 d2\fP
+\eD'a\f2 dh1 dv1 dh2 dv2\fP'
+	draw arc counter-clockwise from current position to \f2dh1+dh2
+	dv1+dv2\fP, with center at \f2dh1 dv1\fP from current position
+\eD'~\f2 dh1 dv1 dh2 dv2 ...\fP'
+	draw B-spline from current position by \f2dh1 dv1\fP
+	then by \f2dh2, dv2\fP, then by \f2dh3, dv3\fP, then ...
+\eD'g\f2 dh1 dv1 dh2 dv2 ...\fP'
+	same as \eD'~\f2 dh1 ...\fP' except the gremlin spline
+	algorithm is used.
+\eD'p\f2 n dh1 dv1 dh2 dv2 ...\fP'
+	draw polygon using stipple \f2n\fP from current stipple font
+	starting at current position by \f2dh1 dv1\fP then by \f2dh2, dv2\fP,
+	then by \f2dh3, dv3\fP, then ...
+\eD'P\f2 n dh1 dv1 dh2 dv2 ...\fP'
+	same as \eD'p\f2 n dh1 ...\fP' except no border is printed.
+\eD't\f2 d\fP'
+	set line thickness to \f2d\fP (set to 3 units at startup).
+	The default units are ems, so \f2d\fP must be given in \f2u\fP
+	units if a number of pixels is needed.
+\eD's\f2 d\fP'
+	set line style to \f2d\fP (set to -1 at startup).  The value is
+	taken as a coordinate mask on the individual bits of the line.
+	The default units are ems, so \f2d\fP must be given in \f2u\fP units.
+.P2
+The position after a graphical object has been drawn is
+at its ``end'', where for circles and ellipses, the end
+is at the right side.
+As with other commands,
+default units are ems horizontally and line spaces vertically.
+.PP
+Realistically, these commands are not intended for direct use,
+but for preprocessors like PIC, IDEAL, and GRN.
+.SH Other new commands
+.PP
+.BI .sy " commandline"
+executes the command, then returns.
+Output is not captured anyplace.
+.PP
+.BI .cf " file"
+copies
+.I file
+into the TROFF output file at this point, uninterpreted.
+Havoc ensues unless the motions in the file
+restore current horizontal and vertical position.
+This command hasn't been used much,
+and is probably a bad idea anyway.
+.PP
+.BI .pi " program"
+(pipe the output into
+.IR program )
+now works in TROFF as well as NROFF,
+since it makes somewhat more sense to allow it.
+.PP
+.BI .st " stipple_font"
+loads
+.I stipple_font
+as the current font used to fill polygons, with each
+polygon command selecting one pattern number from the font.
+The available stipple fonts are listed in the "font" manual page.
+.PP
+The number register
+.B $$
+contains the process id of the TROFF process.
+.PP
+The string
+.B .T
+contains the name of the current typesetter
+(e.g.,
+.IR psc ,
+.IR va ,
+.IR vp ,
+.IR ip ).
+.PP
+The
+.B .ft
+command causes the named font to be loaded on font position 0
+(which is in all other ways inaccessible) if the font exists
+and is not currently mounted by default or by a
+.B .fp
+command.
+The font must be still or again in position 0 when the line is printed.
+.PP
+Transparent mode (\e!) has been fixed so that transparent
+output actually appears in the output;
+thus special commands can be passed through to postprocessors
+by witchcraft like
+.P1
+\&.if "\e*(.T"psc" \e!x ...
+.P2
+(If this makes no sense to you,
+you shouldn't be using it anyway.)
+.SH Deletions
+.PP
+The
+.B .fz
+and
+.B .li
+commands are no more.
+The
+.BR -p ,
+.B -g
+and
+.B +n
+command line arguments have also been eliminated,
+as has the
+.B hp
+number register.

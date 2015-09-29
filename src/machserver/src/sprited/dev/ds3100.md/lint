@@ -1,0 +1,9 @@
+ds3100.md/devFsOpTable.c:
+devTty.c:
+devNull.c:
+devMachKern.c:
+devUnixConsole.c:
+devSyslog.c:
+Td_GetCooked, arg. 2 used inconsistently	llib-llibc:ttyDriver.c 2(456)  ::  devTty.c 2(192)
+Td_GetCooked, arg. 3 used inconsistently	llib-llibc:ttyDriver.c 2(456)  ::  devTty.c 2(192)
+Dev_ConsoleWrite returns value which is always ignored

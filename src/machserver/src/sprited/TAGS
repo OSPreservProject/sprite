@@ -1,0 +1,2649 @@
+
+sys/sysCode.c,180
+SysGetHostInfo(120,2858
+Sys_GetHostId(191,4575
+Sys_GetMachineArch(214,4969
+Sys_GetMachineType(237,5333
+Sys_GetNumProcessors(260,5733
+Sys_HostPrint(286,6216
+Sys_Init(68,1521
+
+sys/sysCalls.c,404
+GetSchedStats(940,22825
+KillServerProcesses(1032,25277
+KillUserProcesses(1008,24778
+    *pendingSigPtr = Sig_Pending(141,3925
+typedef int (*SysKillProc)64,1734
+Sys_GetMachineInfoStub(1056,25785
+Sys_OutputNumCalls(1106,27306
+Sys_SetTimeOfDayStub(165,4406
+Sys_Shutdown(240,6311
+Sys_ShutdownStub(206,5469
+Sys_Stats(381,9542
+Sys_StatsStub(344,8536
+static 66,1807
+static 67,1852
+static 69,1900
+
+sys/user/spriteSrvUser.c,893
+62,1369
+180,4299
+298,7233
+416,10186
+543,13487
+691,17256
+839,21019
+1001,25137
+1254,31734
+1503,38142
+1724,43788
+1977,50297
+2295,58619
+2516,64293
+2769,70761
+3055,78388
+3288,84459
+3557,91543
+3756,96714
+4018,103728
+4258,110029
+4518,116905
+4751,123055
+5043,130819
+5332,138449
+5529,143605
+5728,148819
+5969,155129
+6260,162774
+6528,169881
+6719,174827
+6941,180670
+7162,186358
+7415,192915
+7753,201623
+8033,208863
+8284,215275
+8564,222560
+8812,228970
+9008,234164
+9405,244693
+9683,251963
+9904,257673
+10155,264387
+10410,271069
+10695,278494
+10822,281610
+11218,291962
+11379,296175
+11600,301859
+11854,308448
+12220,318065
+12440,323687
+12660,329384
+12880,335098
+13102,340922
+13351,347495
+13552,352805
+13980,365104
+14172,370055
+14423,376460
+14701,383755
+14889,388627
+14957,390249
+15236,397564
+15382,401255
+15470,403466
+15558,405677
+15650,407961
+
+sys/sys.h,50
+} Sys_CallCount;52,1550
+} Sys_MsgBuffer;42,1240
+
+sys/sysPrintf.c,220
+void Sys_Fprintf(285,6297
+Sys_Fprintf(291,6406
+WriteProc(84,2117
+_cleanup(323,6926
+void panic(193,4659
+panic(198,4710
+perror(345,7231
+void printf(246,5716
+printf(251,5768
+int vprintf(123,3101
+vprintf(142,3530
+
+sys/spriteSrv.h,0
+
+sys/sysInt.h,0
+
+sys/sysSysCall.c,456
+DemuxRequest(300,9942
+DoReturn1(974,29106
+DoReturn2(1012,30116
+HealthyProc(458,14794
+InitPorts(869,26402
+typedef boolean_t (*MigDemuxProc)107,3761
+SysBufferStats(949,28588
+SysFreeMsgBuffer(831,25524
+SysGetMsgBuffer(769,23887
+SysInitSysCall(188,6617
+SysNewServiceThread(363,11775
+SysSetUpReply(904,27248
+Sys_ReplyAndFree(685,21682
+Sys_ServerLoop(222,7439
+} UserThreadInfo;122,4386
+UserThreadInit(510,16280
+					  mach_msg_header_t 108,3834
+
+sys/spriteSrvServer.c,966
+69,1688
+133,3356
+197,5020
+261,6692
+309,8024
+400,10550
+491,13072
+585,15603
+756,20276
+930,25157
+1077,29228
+1251,34115
+1474,40518
+1621,44591
+1795,49430
+2006,55679
+2149,59698
+2312,64463
+2423,67555
+2592,72451
+2724,76305
+2894,81222
+3037,85315
+3233,90990
+3429,96625
+3540,99725
+3651,102819
+3783,106663
+3980,112350
+4143,117147
+4263,120434
+4408,124431
+4554,128421
+4729,133275
+4984,140594
+5184,146217
+5358,151077
+5558,156740
+5732,161637
+5852,165056
+6161,174031
+6362,179812
+6509,183901
+6682,188898
+6853,193575
+7050,199268
+7114,200938
+7419,209583
+7513,212196
+7659,216181
+7834,221041
+8115,229226
+8262,233283
+8409,237400
+8556,241509
+8702,245582
+8875,250527
+8994,253768
+9225,261926
+9345,265205
+9519,270042
+9719,275759
+9839,279044
+9903,280784
+10101,286279
+10192,288769
+10229,289659
+10266,290547
+10303,291427
+10552,297204
+10605,298778
+#define MACH_MSGH_BITS_REPLY(51,1199
+#define MACH_MSGH_BITS_REQUEST(49,1093
+
+sys/sysTestCall.c,308
+Test_GetStringStub(326,6640
+Test_MemCheckStub(387,7862
+Test_PutDecimalStub(53,1281
+Test_PutHexStub(107,2234
+Test_PutMessageStub(134,2702
+Test_PutOctalStub(80,1760
+Test_PutStringStub(212,4184
+Test_PutStringStub(268,5346
+Test_PutTimeStub(161,3204
+Test_Return1Stub(426,8640
+Test_Return2Stub(454,9092
+
+sys/spriteSrvServer.h,0
+
+sys/sysCallNums.h,0
+
+dev/dev.h,0
+
+dev/ds3100.md/devFsOpTable.c,75
+NoDevice(229,6258
+NullProc(222,6200
+int devNumDevices = sizeof(218,6113
+
+dev/sun3.md/devFsOpTable.c,37
+int devNumDevices = sizeof(259,8449
+
+dev/devTypes.h,0
+
+dev/devDiskLabel.h,241
+#define	DISK_IS_PARTITIONED(181,6373
+#define	DISK_PARTITION(182,6437
+} Dec_BootMap;105,3767
+} Dec_DiskBoot;148,5191
+} Dec_DiskLabel;132,4557
+} Dec_DiskMap;100,3621
+} DevDiskMap;194,6953
+} Sun_DiskLabel;63,2482
+} Sun_DiskMap;34,1026
+
+dev/devFsOpTable.h,58
+#define	DEV_TYPE_INDEX(163,6714
+} DevFsTypeOps;153,6501
+
+dev/devBlockDevice.h,145
+} DevBlockDeviceHandle;120,5092
+} DevBlockDeviceRequest;83,3415
+#define	Dev_BlockDeviceIO(213,8877
+#define	Dev_BlockDeviceIOControl(216,8991
+
+dev/devTty.c,322
+CookedProc(424,12347
+DevTtyClose(375,11059
+DevTtyIOControl(288,8639
+DevTtyInputChar(536,15623
+DevTtyOpen(96,3007
+DevTtyOutputChar(673,19228
+DevTtyRead(180,5461
+DevTtySelect(331,9930
+DevTtyWrite(220,6656
+RawProc(480,13986
+Signal(819,22785
+Transfer(755,21225
+TransferInProc(588,16948
+TransferOutProc(713,20240
+
+dev/tty.h,56
+#define DEV_TTY_IS_CONTROL(143,5484
+} DevTty;115,4716
+
+dev/devNull.c,96
+Dev_NullIOControl(94,2175
+Dev_NullRead(39,870
+Dev_NullSelect(127,2961
+Dev_NullWrite(65,1453
+
+dev/devInt.h,0
+
+dev/devMachKern.c,18
+Dev_Init(52,1271
+
+dev/devUnixConsole.c,182
+} DebugInfo;79,2151
+DevConsoleActivateProc(193,5079
+DevConsoleRawProc(242,6692
+DevConsoleReadLoop(309,8455
+DevTtyAttach(118,3362
+Dev_ConsoleWrite(356,9694
+#define min(42,1240
+
+dev/devSyslog.c,304
+Dev_SyslogClose(359,8891
+Dev_SyslogDebug(502,11967
+Dev_SyslogDisable(569,13355
+Dev_SyslogIOControl(403,9898
+Dev_SyslogOpen(72,1784
+Dev_SyslogPutChar(326,8285
+Dev_SyslogRead(156,4210
+Dev_SyslogReopen(113,2920
+Dev_SyslogReturnBuffer(539,12743
+Dev_SyslogSelect(457,10924
+Dev_SyslogWrite(226,5907
+
+dev/devSyslog.h,0
+
+dev/devNull.h,0
+
+fs/fsInit.c,266
+Fs_Bin(231,5695
+Fs_CloseOnExec(598,16092
+Fs_CloseState(638,17291
+Fs_InheritState(491,12969
+void Fs_Init(99,2521
+Fs_InitData(120,2911
+Fs_InitNameSpace(193,4801
+Fs_ProcInit(266,6498
+#define	SCSI_MAKE_DEVICE_TYPE(53,1335
+#define	SCSI_MAKE_DEVICE_UNIT(55,1439
+
+fs/fsNameOps.c,319
+Fs_ChangeDir(444,13665
+Fs_GetAttributes(568,16745
+Fs_HardLink(721,21824
+Fs_MakeDevice(352,10734
+Fs_MakeDir(401,12294
+Fs_Open(62,1821
+Fs_Remove(276,8637
+Fs_RemoveDir(314,9690
+Fs_Rename(761,22980
+Fs_SetAttributes(643,19312
+Fs_SetIDs(216,7058
+Fs_SymLink(801,24161
+Fs_Trunc(486,14691
+Fs_TruncStream(521,15545
+
+fs/fsOpTable.c,52
+Fs_InstallDomainLookupOps(116,3268
+NoProc(94,2879
+
+fs/fsSelect.c,227
+Fs_NewSelectStub(272,8558
+Fs_Select(402,12543
+Fs_SelectStub(145,4666
+#define Mach_SetErrno(65,2230
+#define Mach_SetErrno(70,2459
+TimeoutProc(729,22343
+} WakeupInfo;97,3062
+readInMasks(740,22654
+writeOutMasks(786,23824
+
+fs/fsSysCall.c,675
+Fs_AccessStub(1452,42107
+Fs_AttachDiskStub(64,1790
+Fs_ChangeDirStub(629,17994
+Fs_CheckAccess(740,21128
+Fs_CloseStub(239,6979
+Fs_CommandStub(426,12301
+Fs_CreatePipeStub(1382,40278
+Fs_GetAttributesIDStub(820,23168
+Fs_GetAttributesStub(702,20047
+Fs_GetNewIDStub(665,19011
+Fs_HardLinkStub(997,28462
+Fs_IOControlStub(1201,34886
+Fs_MakeDeviceStub(480,13741
+Fs_MakeDirStub(518,14878
+Fs_OpenStub(162,4784
+Fs_ReadLinkStub(1118,32302
+Fs_ReadStub(310,8815
+Fs_RemoveDirStub(591,16899
+Fs_RemoveStub(555,15917
+Fs_RenameStub(1036,29648
+Fs_SetAttrIDStub(901,25555
+Fs_SetAttrStub(863,24321
+Fs_SetDefPermStub(954,27110
+Fs_SymLinkStub(1075,30747
+Fs_WriteStub(368,10508
+
+fs/sun3.md/fsMach.h,0
+
+fs/sun3.md/fsMach.c,0
+
+fs/fs.h,311
+#define FsSetIOParam(306,12815
+} Fs_HandleHeader;112,4190
+} Fs_IOCParam;365,15065
+} Fs_IOParam;301,12736
+} Fs_IOReply;334,13979
+} Fs_NameInfo;137,5163
+typedef Address Fs_NotifyToken;390,15687
+} Fs_PageType;382,15459
+} Fs_ProcessState;80,2833
+} Fs_Stream;175,6941
+#define LRU_LINKS_TO_HANDLE(114,4210
+
+fs/fsTopStream.c,124
+Fs_ClearStreamID(139,3987
+Fs_GetNewID(295,9196
+Fs_GetStreamID(66,1901
+Fs_GetStreamPtr(235,7012
+GrowStreamList(173,5085
+
+fs/fsAttributes.c,53
+Fs_GetAttrStream(64,2045
+Fs_SetAttrStream(157,5039
+
+fs/fsCommand.c,112
+Fs_Cat(396,10016
+Fs_Command(72,1863
+Fs_Copy(451,11092
+#define SWAP_TO_BUFFER(44,1144
+ZeroFsStats(526,12757
+
+fs/fsPageOps.c,66
+Fs_PageCopy(202,6594
+Fs_PageRead(58,1481
+Fs_PageWrite(153,4849
+
+fs/fsNameOps.h,443
+} Fs_2PathData;232,7818
+} Fs_2PathParams;227,7685
+} Fs_2PathRedirectInfo;267,9278
+} Fs_2PathReply;240,8145
+} Fs_AttrOps;92,3032
+} Fs_AttrOps;101,3315
+} Fs_DomainLookupOps;311,11502
+} Fs_GetAttrResults;191,6916
+} Fs_GetAttrResultsParam;202,7166
+} Fs_LookupArgs;183,6707
+} Fs_MakeDeviceArgs;219,7528
+} Fs_OpenArgs;143,4982
+} Fs_OpenArgsSOSP;158,5649
+} Fs_OpenResults;170,6160
+} Fs_RedirectInfo;254,8686
+} Fs_SetAttrArgs;211,7375
+
+fs/fsStat.h,559
+} Fs_AllocStats;228,9417
+} Fs_BlockCacheStats;202,8350
+} Fs_ConsistStats;361,15311
+} Fs_GeneralStats;64,2604
+} Fs_HandleStats;271,11397
+} Fs_HistGroupInfo;483,20672
+} Fs_LookupStats;304,12907
+} Fs_MigStats;429,18339
+} Fs_NameCacheStats;239,9774
+} Fs_NameOpStats;41,1567
+} Fs_NewStats;594,23855
+} Fs_ObjectStats;323,13581
+} Fs_PrefixStats;286,12028
+} Fs_RecoveryStats;342,14402
+} Fs_RemoteIOStats;394,16861
+} Fs_SospMigStats;559,22879
+#define Fs_StatAdd(547,22553
+} Fs_Stats;453,19461
+} Fs_TypeStats;535,22192
+} Fs_WriteBackStats;371,15639
+
+fs/fsStreamOps.c,219
+Fs_CheckSetID(791,24559
+Fs_Close(708,21846
+Fs_FileBeingMapped(932,28703
+Fs_FileWriteBackStub(853,26358
+Fs_GetFileHandle(972,29724
+Fs_GetSegPtr(997,30219
+Fs_IOControl(393,12461
+Fs_Read(79,2281
+Fs_Write(254,7788
+
+fs/ds3100.md/fsMach.c,0
+
+fs/ds3100.md/fsMach.h,0
+
+fs/fsTopMigrate.c,137
+#define DEBUG(44,1555
+Fs_DeencapFileState(326,9639
+Fs_EncapFileState(176,5101
+Fs_GetEncapSize(149,4544
+Fs_InitiateMigration(72,2283
+
+fs/fsUnixStubs.h,0
+
+fscache/fscacheOps.c,433
+#define	BLOCK_ALIGNED(43,1231
+Fscache_BlockRead(1140,34593
+Fscache_CheckVersion(404,12271
+Fscache_Consist(473,14314
+Fscache_GetCachedAttr(327,10007
+Fscache_OkToScavenge(443,13477
+Fscache_Read(553,16668
+Fscache_Trunc(1332,40141
+Fscache_UpdateAttrFromCache(288,8854
+Fscache_UpdateAttrFromClient(195,6026
+Fscache_UpdateCachedAttr(357,10864
+Fscache_UpdateDirSize(254,7806
+Fscache_UpdateFile(77,2183
+Fscache_Write(759,22653
+
+fscache/fscache.h,494
+#define FSCACHE_DEBUG_PRINT(426,16295
+#define FSCACHE_DEBUG_PRINT(443,16728
+#define FSCACHE_DEBUG_PRINT1(430,16383
+#define FSCACHE_DEBUG_PRINT2(434,16484
+#define FSCACHE_DEBUG_PRINT2(445,16807
+#define FSCACHE_DEBUG_PRINT3(438,16597
+} Fscache_Attributes;49,1510
+} Fscache_Backend;405,15609
+} Fscache_BackendRoutines;391,15115
+} Fscache_Block;227,8465
+#define	Fscache_BlockAddress(303,11561
+} Fscache_ExtraStats;188,6814
+} Fscache_FileInfo;84,3122
+} Fscache_ReadAheadInfo;421,16202
+
+fscache/fscacheBlocks.h,111
+#define DIRTY_LINKS_TO_BLOCK(39,1184
+#define FILE_LINKS_TO_BLOCK(44,1339
+#define USE_LINKS_TO_BLOCK(41,1247
+
+fscache/fscacheBlocks.c,1821
+} BlockHashKey;176,6881
+CacheFileInvalidate(1051,33620
+CacheWriteBack(1679,51339
+CreateBlock(1918,57828
+DeleteBlock(3328,96217
+DeleteBlockFromDirtyList(1123,35706
+DestroyBlock(1994,60037
+FetchBlock(2133,64097
+FetchBlock(2140,64335
+FscacheAllBlocksInCache(2925,85740
+FscacheBackendIdle(2695,80146
+FscacheBlockOkToScavenge(3054,88873
+FscacheBlocksUnneeded(1496,46627
+FscacheFinishRealloc(2725,80710
+Fscache_AddBlockToStats(3564,103229
+Fscache_AddCleanStats(3635,105417
+Fscache_AllowWriteBacks(2812,83069
+Fscache_BlockTrunc(954,30922
+Fscache_BlocksUnneeded(1440,44973
+Fscache_CheckFragmentation(3450,100230
+Fscache_CountBlocks(3513,101965
+Fscache_DumpStats(3367,97162
+Fscache_Empty(1623,49970
+Fscache_FetchBlock(557,18794
+Fscache_FileInfoInit(359,12809
+Fscache_FileInfoSyncLockCleanup(3106,90254
+Fscache_FileInvalidate(1009,32413
+Fscache_FileWriteBack(1214,38213
+Fscache_GetDirtyBlock(2279,68221
+Fscache_GetDirtyFile(2530,75559
+Fscache_GetPageFromFS(1879,56837
+Fscache_IODone(781,25782
+Fscache_InfoSyncLockCleanup(406,14463
+Fscache_Init(260,9633
+Fscache_PreventWriteBacks(2770,82071
+Fscache_PutFileOnDirtyList(2846,83858
+Fscache_RegisterBackend(432,14999
+Fscache_ReleaseReserveBlocks(3022,88117
+Fscache_RemoveFileFromDirtyList(2875,84453
+Fscache_ReserveBlocks(2971,86825
+Fscache_ReturnDirtyBlock(2386,71204
+Fscache_ReturnDirtyFile(2641,78733
+Fscache_SetMaxSize(1827,55581
+Fscache_SetMinSize(1771,54075
+Fscache_UnlockBlock(809,26384
+Fscache_UnregisterBackend(473,16084
+Fscache_WriteBack(1594,49170
+Fscache_ZeroStats(3697,106695
+#define GET_OTHER_BLOCK(203,7807
+GetUnlockedBlock(3274,94877
+PutBlockOnDirtyList(3238,93926
+PutFileOnDirtyList(3186,92377
+PutOnFreeList(3141,91114
+#define	SET_BLOCK_HASH_KEY(177,6897
+StartBackendWriteback(2245,67272
+StartFileSync(1161,36795
+
+fscache/fscacheReadAhead.c,278
+DecReadAheadCount(347,8798
+DoReadAhead(211,5566
+FscacheReadAhead(109,2630
+Fscache_AllowReadAhead(287,7508
+Fscache_ReadAheadInit(62,1541
+Fscache_ReadAheadSyncLockCleanup(87,2181
+Fscache_WaitForReadAhead(256,6875
+IncReadAheadCount(316,8141
+} ReadAheadCallBackData;39,960
+
+fsconsist/fsconsistIOClient.c,331
+} ClientItem;50,1694
+Fsconsist_AddClient(466,13665
+Fsconsist_ClientInit(73,2096
+Fsconsist_ClientScavenge(333,9973
+Fsconsist_IOClientClose(206,6208
+Fsconsist_IOClientKill(372,10969
+Fsconsist_IOClientOpen(103,3030
+Fsconsist_IOClientRemoveWriter(285,8655
+Fsconsist_IOClientReopen(155,4538
+Fsconsist_IOClientStatus(429,12707
+
+fsconsist/fsconsist.h,123
+} Fsconsist_ClientInfo;113,4335
+} Fsconsist_Info;92,3495
+#define INSERT_CLIENT(118,4436
+#define REMOVE_CLIENT(135,5044
+
+fsconsist/fsconsistCache.c,980
+ClientCommand(1746,57681
+} ConsistItem;1718,56752
+} ConsistMsg;96,3190
+} ConsistMsgInfo;117,3642
+} ConsistReply;107,3468
+ConsistTimeout(749,24642
+ConsistTimeoutIntr(738,24309
+ConsistType(2327,77579
+EndConsistency(674,22256
+Fsconsist_ClientRemoveCallback(1445,47712
+Fsconsist_Close(1237,41880
+Fsconsist_DeleteLastWriter(1380,45703
+Fsconsist_FetchDirtyBlocks(1630,53730
+Fsconsist_FileConsistency(288,8960
+Fsconsist_GetAllDirtyBlocks(1588,52413
+Fsconsist_GetClientAttrs(1127,37855
+Fsconsist_Init(167,5186
+Fsconsist_Kill(1536,50890
+Fsconsist_MappedConsistency(226,6709
+Fsconsist_MigrateConsistency(1027,34255
+Fsconsist_NumClients(1286,43324
+Fsconsist_NumClients(1294,43606
+Fsconsist_ReopenClient(811,26750
+Fsconsist_ReopenConsistency(919,30900
+Fsconsist_RpcConsist(1909,63026
+Fsconsist_RpcConsistReply(2135,70804
+Fsconsist_SyncLockCleanup(201,6131
+ProcessConsist(2037,67714
+ProcessConsistReply(2208,73908
+StartConsistency(346,11014
+UpdateList(608,19919
+
+fsio/fsioClientList.c,96
+Fsio_StreamClientClose(113,3308
+Fsio_StreamClientFind(147,4159
+Fsio_StreamClientOpen(58,1840
+
+fsio/fsioFile.c,712
+Fsio_FileBlockCopy(1383,44362
+Fsio_FileClientKill(860,27398
+Fsio_FileClose(608,19705
+Fsio_FileClose(611,19796
+Fsio_FileCloseInt(748,23750
+Fsio_FileIOControl(1462,46705
+Fsio_FileIoOpen(554,17744
+Fsio_FileMigClose(985,31260
+Fsio_FileMigOpen(1017,32229
+Fsio_FileMigrate(1072,34289
+Fsio_FileNameOpen(239,7065
+Fsio_FileRead(1165,37370
+Fsio_FileRecovTestNumCacheBlocks(1826,56084
+Fsio_FileRecovTestNumDirtyCacheBlocks(1850,56587
+Fsio_FileRecovTestUseCount(1802,55620
+Fsio_FileReopen(432,13353
+Fsio_FileScavenge(899,28483
+Fsio_FileSelect(1740,54015
+Fsio_FileSyncLockCleanup(206,5847
+Fsio_FileTrunc(1698,52978
+Fsio_FileWrite(1264,40437
+Fsio_LocalFileHandleInit(70,1902
+IncVersionNumber(1771,54913
+
+fsio/fsioPipe.c,789
+Fsio_CreatePipe(120,3546
+Fsio_PipeClientKill(1088,32196
+Fsio_PipeClose(271,7734
+Fsio_PipeClose(274,7825
+Fsio_PipeGetIOAttr(819,23750
+Fsio_PipeHandleInit(217,6244
+Fsio_PipeIOControl(650,19075
+Fsio_PipeMigClose(882,25392
+Fsio_PipeMigOpen(996,29173
+Fsio_PipeMigrate(915,26503
+Fsio_PipeRead(395,11610
+Fsio_PipeRecovTestUseCount(1161,34135
+Fsio_PipeReopen(1036,30378
+Fsio_PipeScavenge(1121,33089
+Fsio_PipeSelect(757,21884
+Fsio_PipeSetIOAttr(856,24825
+Fsio_PipeWrite(520,15376
+GetFileID(184,5503
+#define PIPE_CLOSE(64,1659
+#define PIPE_CREATED(53,1265
+#define PIPE_CREATED(93,2877
+#define PIPE_MIG_1(72,2010
+#define PIPE_MIG_1(95,2966
+#define PIPE_MIG_2(79,2344
+#define PIPE_MIG_3(83,2544
+#define PIPE_MIG_3(97,3068
+#define PIPE_MIG_END(87,2661
+PipeCloseInt(326,9373
+
+fsio/fsioLock.c,167
+} FsLockOwner;50,1645
+Fsio_IocLock(98,2765
+Fsio_Lock(159,4618
+Fsio_LockClientKill(409,12235
+Fsio_LockClose(364,10884
+Fsio_LockInit(69,1975
+Fsio_Unlock(251,7421
+
+fsio/fsioOps.c,135
+Fsio_Bin(182,5808
+Fsio_InitializeOps(151,5246
+static int numIoOpenOps = sizeof(65,2052
+static int numIoStreamOps = sizeof(130,4757
+
+fsio/fsioStreamOpTable.c,164
+Fsio_InstallSrvOpenOp(214,7812
+Fsio_InstallStreamOps(184,6916
+Fsio_NoHandle(308,9574
+Fsio_NoProc(261,8740
+Fsio_NullClientKill(284,9109
+Fsio_NullProc(239,8350
+
+fsio/fsioStream.c,608
+} FsStreamReleaseParam;331,11483
+} FsStreamReleaseReply;335,11593
+} FsStreamReleaseReplyNew;340,11768
+Fsio_RpcStreamMigClose(436,14461
+Fsio_RpcStreamMigCloseNew(505,16921
+Fsio_StreamAddClient(157,4956
+Fsio_StreamClientKill(854,28734
+Fsio_StreamClientVerify(777,26098
+Fsio_StreamCopy(749,25316
+Fsio_StreamCreate(88,2943
+Fsio_StreamCreateID(696,23871
+Fsio_StreamDestroy(896,29802
+Fsio_StreamMigClient(227,7718
+Fsio_StreamMigClose(578,19764
+Fsio_StreamMigCloseNew(638,21952
+Fsio_StreamReopen(1004,32931
+Fsio_StreamScavenge(952,31476
+StreamMigCallback(360,12216
+} StreamReopenParams;978,32120
+
+fsio/fsio.h,282
+} FsioStreamClient;377,16900
+#define Fsio_MapLclToRmtType(114,4494
+#define Fsio_MapRmtToLclType(121,4777
+} Fsio_MigInfo;35,1218
+} Fsio_RecovTestInfo;409,17746
+typedef struct Fsio_Request *Fsio_RequestToken;396,17346
+} Fsio_StreamTypeOps;370,16686
+} Fsio_UseCounts;390,17278
+
+fsio/fsioDevice.h,89
+} Fsio_DeviceIOHandle;50,1903
+} Fsio_DeviceMigData;57,2058
+} Fsio_DeviceState;67,2424
+
+fsio/fsioFile.h,114
+} Fsio_FileIOHandle;103,3907
+} Fsio_FileReopenParams;63,2258
+} Fsio_FileState;52,1812
+} Fsio_OpenOps;138,5270
+
+fsio/fsioLock.h,26
+} Fsio_LockState;32,1150
+
+fsio/fsioPipe.h,62
+} Fsio_PipeIOHandle;41,1529
+} Fsio_PipeReopenParams;52,1881
+
+fsio/fsioRpc.h,0
+
+fsio/fsioMigrate.c,141
+#define DEBUG(44,1540
+Fsio_DeencapStream(146,4838
+Fsio_EncapStream(74,2383
+Fsio_MigrateClient(391,13489
+Fsio_MigrateUseCounts(322,11334
+
+fsio/fsioDevice.c,823
+ExceptionNotify(1234,38840
+FsioDeviceCloseInt(413,13600
+FsioDeviceHandleInit(96,3020
+Fsio_BootTimeTtyOpen(1290,40372
+Fsio_DevNotifyException(1221,38514
+Fsio_DevNotifyReader(1115,35399
+Fsio_DevNotifyWriter(1166,36896
+Fsio_DeviceClientKill(458,14906
+Fsio_DeviceClose(349,11693
+Fsio_DeviceClose(352,11777
+Fsio_DeviceGetIOAttr(1035,32907
+Fsio_DeviceIOControl(981,31303
+Fsio_DeviceIoOpen(257,8488
+Fsio_DeviceMigClose(582,18161
+Fsio_DeviceMigOpen(698,22077
+Fsio_DeviceMigrate(617,19359
+Fsio_DeviceMmap(1346,42078
+Fsio_DeviceNameOpen(156,5043
+Fsio_DeviceRead(735,23185
+Fsio_DeviceRecovTestUseCount(1260,39446
+Fsio_DeviceScavenge(502,16106
+Fsio_DeviceSelect(923,29481
+Fsio_DeviceSetIOAttr(1075,34136
+Fsio_DeviceWrite(828,26215
+Fsio_VanillaDevReopen(544,17222
+ReadNotify(1132,35927
+WriteNotify(1184,37434
+
+fspdev/fspdevOps.c,176
+FspdevPassStream(316,11056
+Fspdev_Bin(286,10375
+Fspdev_InitializeOps(253,9695
+static int numPdevOpenOps = sizeof(55,1696
+static int numPdevFileStreamOps = sizeof(232,9251
+
+fspdev/fspdevPfs.c,573
+FspdevPfs2Path(1163,41186
+FspdevPfsDomainInfo(403,15049
+FspdevPfsExport(311,12057
+FspdevPfsGetAttrPath(750,27186
+FspdevPfsHardLink(1129,39878
+FspdevPfsIoOpen(182,7413
+FspdevPfsMakeDevice(943,33918
+FspdevPfsMakeDir(892,32349
+FspdevPfsNamingIoOpen(361,13838
+FspdevPfsOpen(461,16927
+FspdevPfsOpenConnection(565,20709
+FspdevPfsRemove(994,35536
+FspdevPfsRemoveDir(1045,37103
+FspdevPfsRename(1095,38659
+FspdevPfsSetAttrPath(819,29882
+FspdevPfsStreamIoOpen(665,24359
+FspdevRmtLinkNameOpen(89,3516
+FspdevRmtPfsStreamIoOpen(718,26187
+PfsGetUserLevelIDs(526,19296
+
+fspdev/fspdevSrv.c,801
+FspdevPdevServerOK(1414,48852
+FspdevPseudoGetAttr(1689,57849
+FspdevPseudoSetAttr(1759,60183
+FspdevPseudoStream2Path(1615,55502
+FspdevPseudoStreamCloseInt(2508,83851
+FspdevPseudoStreamGetIOAttr(1824,62302
+FspdevPseudoStreamIOControl(2252,76524
+FspdevPseudoStreamLookup(1524,52406
+FspdevPseudoStreamOpen(1449,49773
+FspdevPseudoStreamRead(1919,65679
+FspdevPseudoStreamSelect(2406,80951
+FspdevPseudoStreamSetIOAttr(1867,63722
+FspdevPseudoStreamWrite(2093,71472
+FspdevServerStreamClose(1303,45275
+FspdevServerStreamClose(1307,45394
+FspdevServerStreamCreate(418,15953
+FspdevServerStreamIOControl(676,24915
+FspdevServerStreamRead(568,20928
+FspdevServerStreamSelect(522,19445
+FspdevSignalOwner(1246,43514
+PdevClientNotify(2473,82992
+PdevClientWakeup(1374,47489
+RequestResponse(152,5839
+
+fspdev/fspdevControl.c,411
+FspdevControlClientKill(636,19519
+FspdevControlClose(568,17505
+FspdevControlClose(572,17618
+FspdevControlGetIOAttr(346,10071
+FspdevControlHandleInit(50,1448
+FspdevControlIOControl(255,7731
+FspdevControlIoOpen(98,2850
+FspdevControlRead(188,5761
+FspdevControlReopen(483,14776
+FspdevControlScavenge(669,20399
+FspdevControlSelect(145,4281
+FspdevControlSetIOAttr(389,11403
+FspdevControlVerify(434,12983
+
+fspdev/fspdevTrace.c,79
+Fspdev_PrintRec(83,2110
+Fspdev_PrintTrace(242,5991
+Fspdev_TraceInit(59,1645
+
+fspdev/fspdevSetup.c,384
+FspdevConnect(383,14529
+FspdevNameOpen(69,2430
+FspdevPseudoStreamClose(522,19670
+FspdevPseudoStreamClose(525,19761
+FspdevPseudoStreamIoOpen(233,8970
+FspdevPseudoStreamMigClose(595,21893
+FspdevPseudoStreamMigOpen(790,28827
+FspdevPseudoStreamMigrate(632,23099
+FspdevRmtPseudoStreamIoOpen(469,17789
+FspdevRmtPseudoStreamMigrate(724,26576
+FspdevRmtPseudoStreamVerify(840,30351
+
+fspdev/fspdev.h,157
+} Fspdev_CircBuffer;118,5055
+} Fspdev_ClientIOHandle;194,8790
+} Fspdev_ControlIOHandle;104,4441
+} Fspdev_ServerIOHandle;182,8399
+} Fspdev_State;59,2332
+
+fspdev/fspdevInt.h,444
+#define DBG_PRINT(146,4951
+#define DBG_PRINT(180,5999
+} FspdevControlReopenParams;58,2307
+} FspdevNotify;70,2674
+	       PDEVT_SELECT} FspdevTraceRecType 80,3070
+} FspdevTraceRecord;95,3368
+#define PDEV_REPLY(116,3919
+#define PDEV_REQUEST(107,3630
+#define PDEV_REQUEST(183,6060
+#define PDEV_REQUEST_PRINT(148,5010
+#define PDEV_TRACE(99,3405
+#define PDEV_TSELECT(125,4189
+#define PDEV_TSELECT(185,6147
+#define PDEV_WAKEUP(137,4625
+
+fsprefix/fsprefix.h,20
+} Fsprefix;69,2926
+
+fsprefix/fsprefixInt.h,25
+} FsprefixExport;34,957
+
+fsprefix/fsprefixOps.c,836
+DumpExportList(2214,67362
+FsprefixDone(2025,62230
+FsprefixHandleCloseInt(1387,44173
+FsprefixIterate(1985,61191
+FsprefixLookupRedirect(562,19161
+Fsprefix_AllowOpens(1858,57788
+Fsprefix_Clear(1234,39781
+Fsprefix_Dump(2054,62763
+Fsprefix_DumpExport(2169,66180
+Fsprefix_Export(1177,38179
+Fsprefix_FromFileID(1896,58806
+Fsprefix_HandleClose(1359,43435
+Fsprefix_Init(726,23507
+Fsprefix_Install(747,23907
+Fsprefix_Load(790,25127
+Fsprefix_Lookup(980,31464
+Fsprefix_LookupOperation(116,3976
+Fsprefix_OpenCheck(1707,53782
+Fsprefix_OpenDone(1766,55298
+Fsprefix_OpenInProgress(1939,59916
+Fsprefix_RecoveryCheck(1814,56568
+Fsprefix_Reopen(1614,51208
+Fsprefix_TwoNameOperation(317,11260
+GetNilPrefixes(1664,52628
+GetPrefix(1514,48206
+LocatePrefix(1464,46564
+NameOp(679,22518
+PrefixInsert(838,26346
+PrefixUpdate(911,29285
+
+fsrmt/fsrmtFile.c,739
+BlockMatch(1720,51312
+FileMatch(1744,51796
+FsRmtFileHandleInit(97,2861
+FsrmtCleanBlocks(1633,48979
+FsrmtFileBlockAllocate(1287,39460
+FsrmtFileBlockRead(1144,35218
+FsrmtFileBlockWrite(1219,37520
+FsrmtFileClose(367,11628
+FsrmtFileClose(370,11719
+FsrmtFileGetIOAttr(1519,45927
+FsrmtFileIOControl(1346,41071
+FsrmtFileIoOpen(179,5438
+FsrmtFileMigClose(549,17140
+FsrmtFileMigOpen(585,18101
+FsrmtFileMigrate(625,19487
+FsrmtFilePageRead(853,26392
+FsrmtFilePageWrite(1095,33770
+FsrmtFileRead(683,21375
+FsrmtFileReopen(241,7360
+FsrmtFileScavenge(451,14293
+FsrmtFileSetIOAttr(1554,46978
+FsrmtFileTrunc(1318,40370
+FsrmtFileVerify(494,15550
+FsrmtFileWrite(780,24257
+FsrmtReallocBlock(1696,50756
+FsrmtStartWriteBack(1589,47957
+
+fsrmt/fsrmtIO.c,464
+} FsDomainInfoResults;1267,40085
+} FsRemoteSelectParams;655,21112
+} FsRemoteSelectResults;661,21275
+FsrmtRpcCacheUnlockBlock(402,12805
+Fsrmt_BlockCopy(1151,36191
+Fsrmt_DomainInfo(1284,40405
+Fsrmt_IOControl(833,26583
+Fsrmt_Read(71,1998
+Fsrmt_RpcBlockCopy(1214,38205
+Fsrmt_RpcDomainInfo(1368,43020
+Fsrmt_RpcIOControl(892,28500
+Fsrmt_RpcRead(217,6716
+Fsrmt_RpcSelectStub(755,24066
+Fsrmt_RpcWrite(559,17805
+Fsrmt_Select(680,21686
+Fsrmt_Write(430,13469
+
+fsrmt/fsrmtOps.c,230
+Fsrmt_Bin(141,4048
+Fsrmt_FileRecovTestNumCacheBlocks(188,4987
+Fsrmt_FileRecovTestNumDirtyCacheBlocks(212,5514
+Fsrmt_FileRecovTestUseCount(164,4486
+Fsrmt_InitializeOps(111,3481
+static int numRmtFileStreamOps = sizeof(90,3044
+
+fsrmt/fsrmtPipe.c,337
+FsrmtPipeMigrate(117,3979
+FsrmtPipeReopen(225,7234
+FsrmtPipeVerify(173,5737
+#define PIPE_CLOSE(53,1530
+#define PIPE_CREATED(42,1136
+#define PIPE_CREATED(82,2748
+#define PIPE_MIG_1(61,1881
+#define PIPE_MIG_1(84,2837
+#define PIPE_MIG_2(68,2215
+#define PIPE_MIG_3(72,2415
+#define PIPE_MIG_3(86,2939
+#define PIPE_MIG_END(76,2532
+
+fsrmt/fsrmtAttributes.c,478
+} FsRemoteGetAttrResults;62,2055
+} FsRemoteSetAttrParams;587,20463
+FsrmtGetAttr(429,15129
+FsrmtGetAttr(436,15424
+FsrmtGetAttrPath(85,2685
+FsrmtSetAttr(609,20945
+FsrmtSetAttr(618,21177
+FsrmtSetAttrPath(268,9324
+Fsrmt_GetIOAttr(757,25434
+Fsrmt_RpcGetAttr(508,17855
+Fsrmt_RpcGetAttrPath(164,5579
+Fsrmt_RpcGetIOAttr(838,28296
+Fsrmt_RpcSetAttr(678,22886
+Fsrmt_RpcSetAttrPath(334,11637
+Fsrmt_RpcSetIOAttr(983,33263
+Fsrmt_SetIOAttr(915,30872
+VerifyIOHandle(1060,36078
+
+fsrmt/fsrmt.h,56
+} Fsrmt_FileIOHandle;64,2233
+} Fsrmt_IOHandle;46,1553
+
+fsrmt/fsrmtDomain.h,453
+#define FSRMT_RPC_DEBUG_PRINT(86,2465
+#define FSRMT_RPC_DEBUG_PRINT(107,3040
+#define FSRMT_RPC_DEBUG_PRINT1(90,2554
+#define FSRMT_RPC_DEBUG_PRINT2(94,2656
+#define FSRMT_RPC_DEBUG_PRINT2(109,3123
+#define FSRMT_RPC_DEBUG_PRINT3(98,2770
+#define FSRMT_RPC_DEBUG_PRINT4(102,2896
+#define FSRMT_RPC_DEBUG_PRINT4(111,3231
+} FsrmtRemoteBlockCopyParams;78,2387
+} FsrmtRemoteIOCParam;69,2132
+} FsrmtRemoteIOParam;42,1209
+} FsrmtSpriteIOCParams;58,1791
+
+fsrmt/fsrmtInt.h,429
+#define FSRMT_RPC_DEBUG_PRINT(80,2373
+#define FSRMT_RPC_DEBUG_PRINT(101,2948
+#define FSRMT_RPC_DEBUG_PRINT1(84,2462
+#define FSRMT_RPC_DEBUG_PRINT2(88,2564
+#define FSRMT_RPC_DEBUG_PRINT2(103,3031
+#define FSRMT_RPC_DEBUG_PRINT3(92,2678
+#define FSRMT_RPC_DEBUG_PRINT4(96,2804
+#define FSRMT_RPC_DEBUG_PRINT4(105,3139
+} FsrmtBlockCopyParam;73,2309
+} FsrmtIOCParam;53,1733
+} FsrmtIOCParamNew;64,2064
+} FsrmtIOParam;36,1137
+
+fsrmt/fsrmtNameOpsInt.h,58
+} FsrmtOpenResultsParam;39,1054
+} FsrmtUnionData;33,910
+
+fsrmt/fsrmtRpcStubs.h,0
+
+fsrmt/fsrmtDevice.c,405
+} FsDeviceRemoteOpenParam;56,1667
+} FsRmtDeviceReopenParams;391,13407
+FsrmtDeviceIoOpen(83,2392
+FsrmtDeviceMigrate(500,16638
+FsrmtDeviceReopen(412,13853
+FsrmtDeviceVerify(609,20022
+Fsrmt_DeviceOpen(183,5911
+Fsrmt_DeviceReopen(664,21545
+Fsrmt_IOClose(315,10759
+Fsrmt_IOClose(319,10876
+Fsrmt_IOHandleInit(131,4088
+Fsrmt_IOMigClose(457,15197
+Fsrmt_IOMigOpen(556,18388
+Fsrmt_RpcDevOpen(239,7954
+
+fsrmt/fsrmtDomain.c,609
+} FsCloseData;613,21577
+} FsPrefixReplyParam;60,1803
+} FsRemoteCloseParams;632,22258
+} FsRemoteCloseParamsSOSP;644,22700
+FsrmtHardLink(1549,52910
+FsrmtImport(92,2913
+FsrmtMakeDevice(1199,40771
+FsrmtMakeDir(1069,36429
+FsrmtOpen(277,9484
+FsrmtRemove(883,30217
+FsrmtRemoveDir(933,31878
+FsrmtRename(1514,51702
+FsrmtReopen(489,17419
+Fsrmt_Close(668,23325
+Fsrmt_Rpc2Path(1394,47723
+Fsrmt_RpcClose(747,25844
+Fsrmt_RpcMakeDev(1251,42576
+Fsrmt_RpcMakeDir(1121,38205
+Fsrmt_RpcOpen(369,12802
+Fsrmt_RpcPrefix(174,5754
+Fsrmt_RpcRemove(984,33675
+Fsrmt_RpcReopen(536,18957
+TwoNameOperation(1321,45039
+
+fsutil/fsutilNotify.c,199
+Fsutil_FastWaitListInsert(108,2976
+Fsutil_FastWaitListNotify(204,5512
+Fsutil_WaitListDelete(285,7493
+Fsutil_WaitListInsert(53,1464
+Fsutil_WaitListNotify(154,4206
+Fsutil_WaitListRemove(245,6444
+
+fsutil/fsutilHandleScavenge.c,113
+DoneScavenge(204,5308
+Fsutil_HandleScavenge(110,2863
+Fsutil_HandleScavengeStub(70,1812
+OkToScavenge(174,4739
+
+fsutil/fsutil.h,394
+} Fsutil_FsRecovNamedStats;99,3466
+#define Fsutil_HandleDupType(130,4201
+#define Fsutil_HandleFetchType(127,4108
+#define Fsutil_HandleLock(133,4309
+#define Fsutil_HandleName(145,4725
+#define Fsutil_HandleRelease(139,4509
+#define Fsutil_HandleRemove(142,4626
+#define Fsutil_HandleUnlock(136,4404
+} Fsutil_RecoveryInfo;85,2942
+#define	Fsutil_StringNCopy(120,3907
+#define mnew(151,4975
+
+fsutil/fsutilSync.c,117
+Fsutil_Sync(115,2804
+Fsutil_SyncProc(76,1918
+Fsutil_SyncStub(174,4281
+SyncCallBack(198,4749
+#define min(57,1558
+
+fsutil/fsutilTrace.c,161
+} FsTracePrintTable;50,1465
+Fsutil_PrintTrace(243,7810
+Fsutil_PrintTraceRecord(154,5435
+Fsutil_TraceInit(108,3777
+static int numTraceTypes = sizeof(88,3250
+
+fsutil/fsutilSubr.c,211
+Fsutil_DomainInfo(60,1249
+Fsutil_FileError(121,2830
+Fsutil_FileTypeToString(206,4642
+Fsutil_GetFileName(307,6746
+Fsutil_PrintStatus(154,3618
+Fsutil_RecoverableError(365,7991
+Fsutil_TimeInSeconds(337,7384
+
+fsutil/fsutilTrace.h,510
+#define FSUTIL_TRACE(106,2993
+#define FSUTIL_TRACE(165,4993
+#define FSUTIL_TRACE_BLOCK(143,4251
+#define FSUTIL_TRACE_IO(111,3124
+#define FSUTIL_TRACE_NAME(122,3500
+#define FSUTIL_TRACE_NAME(127,3665
+#define FSUTIL_TRACE_NAME(167,5081
+#define	FSUTIL_TRACE_READ_AHEAD(154,4704
+#define	FSUTIL_TRACE_READ_AHEAD(169,5170
+} Fsutil_TraceBlockRec;90,2719
+} Fsutil_TraceHdrRec;84,2601
+} Fsutil_TraceIORec;78,2482
+		FST_HANDLE, FST_RA, FST_BLOCK } Fsutil_TraceRecType 72,2332
+} Fsutil_TraceRecord;100,2924
+
+fsutil/fsutilRecovery.c,686
+FsRecoveryStarting(916,26252
+Fsutil_AttemptRecovery(501,15184
+Fsutil_ClientCrashed(844,24366
+Fsutil_FsRecovInfo(1048,29999
+Fsutil_RecoveryInit(339,10859
+Fsutil_RecoveryNeeded(722,21378
+Fsutil_RecoverySyncLockCleanup(365,11514
+Fsutil_RemoteHandleScavenge(778,22703
+Fsutil_RemoveClient(882,25439
+Fsutil_Reopen(104,3565
+Fsutil_RpcRecovery(998,28416
+Fsutil_TestForHandles(1145,32691
+Fsutil_WaitForHost(426,13035
+Fsutil_WaitForRecovery(543,16476
+Fsutil_WantRecovery(463,14098
+OkToScavenge(811,23499
+RecoveryComplete(642,19462
+RecoveryDone(955,27266
+RecoveryFailed(749,21998
+RecoveryNotify(691,20670
+RecoveryWait(597,18106
+RemoteHandle(389,12124
+ReopenHandles(178,5790
+
+fsutil/fsutilHandle.c,1020
+DoneLRU(1169,34506
+Fsutil_GetNextHandle(1056,31563
+Fsutil_HandleAttemptRemove(1007,30047
+Fsutil_HandleDecRefCount(727,22518
+Fsutil_HandleDescWriteBack(1256,36863
+Fsutil_HandleDup(757,23179
+Fsutil_HandleFetch(553,17957
+Fsutil_HandleFetchNoWait(613,19703
+Fsutil_HandleIncRefCount(696,21797
+Fsutil_HandleInit(238,7849
+Fsutil_HandleInstall(279,9321
+Fsutil_HandleInvalidate(1205,35448
+Fsutil_HandleLockHdr(668,21227
+Fsutil_HandleReleaseHdr(854,25461
+Fsutil_HandleRemoveHdr(976,29099
+Fsutil_HandleRemoveInt(915,27324
+Fsutil_HandleUnlockHdr(817,24528
+Fsutil_HandleValid(788,23781
+Fsutil_ZeroHandleStats(1336,38849
+GetNextLRUHandle(1113,33121
+#define HANDLE_TRACE(205,7028
+#define HANDLE_TRACE(213,7325
+#define HDR_FILE_NAME(197,6850
+HandleInstallInt(421,13735
+#define		LIMIT_INC(86,3444
+#define	LOCK_HANDLE(125,4903
+#define LOCK_HANDLE(133,5110
+#define MOVE_HANDLE(188,6617
+#define REMOVE_HANDLE(172,6145
+#define		THREASHOLD(88,3538
+#define	UNLOCK_HANDLE(152,5600
+#define	UNLOCK_HANDLE(158,5721
+
+libc/List_Init.c,19
+List_Init(42,1166
+
+libc/List_Insert.c,21
+List_Insert(43,1282
+
+libc/List_ListInsert.c,25
+List_ListInsert(43,1203
+
+libc/List_Move.c,19
+List_Move(41,1090
+
+libc/List_Remove.c,21
+List_Remove(41,1143
+
+libc/compatInt.h,0
+
+libc/compatMapCode.c,176
+Compat_MapCode(144,4649
+Compat_MapToSprite(210,6380
+#define NUM_INTS(107,3362
+} StatusMappings;49,1357
+#define fprintf(42,1123
+static int maxNumModules = sizeof(121,4097
+
+libc/status.c,87
+Stat_GetMsg(251,9724
+} StatusMsgs;29,856
+static int maxNumModules = sizeof(227,9173
+
+libc/Time_Add.c,18
+Time_Add(41,1015
+
+libc/timeConstants.c,0
+
+libc/strerror.c,51
+int sys_nerr = sizeof(107,4434
+strerror(128,4967
+
+libc/ckalloc.c,295
+Mem_Ckalloc 471,13010
+Mem_Ckfree 494,13573
+Mem_Ckstrdup(520,14020
+Mem_DbCkalloc(286,8113
+Mem_DbCkfree(383,10910
+Mem_DbCkstrdup(443,12271
+Mem_DumpActiveMemory 234,6584
+Mem_ValidateAllMemory 210,5929
+#define Sync_LockInitStatic(55,1373
+ValidateMemory 139,3786
+dump_memory_info(111,2851
+
+libc/ctypeBits.c,0
+
+libc/Net_AddrToString.c,26
+Net_AddrToString(41,1080
+
+libc/Net_EtherAddrToString.c,31
+Net_EtherAddrToString(43,1141
+
+libc/Net_HostToNetInt.c,26
+Net_HostToNetInt(42,1116
+
+libc/Net_HostToNetShort.c,28
+Net_HostToNetShort(42,1154
+
+libc/errno.c,0
+
+libc/Net_InetAddrToString.c,30
+Net_InetAddrToString(46,1182
+
+libc/Net_NetToHostInt.c,26
+Net_NetToHostInt(41,1120
+
+libc/Net_NetToHostShort.c,28
+Net_NetToHostShort(41,1150
+
+libc/Time_Divide.c,21
+Time_Divide(50,1389
+
+libc/Time_Multiply.c,23
+Time_Multiply(50,1336
+
+libc/Time_Subtract.c,23
+Time_Subtract(41,1045
+
+libc/Time_ToAscii.c,44
+ConvertToNum(50,1257
+Time_ToAscii(89,2096
+
+libc/Time_ToParts.c,67
+Time_FromParts(197,4073
+Time_ToParts(80,1731
+YearLength(44,1094
+
+libc/Net_InetChecksum.c,26
+Net_InetChecksum(46,1278
+
+libc/Rpc_GetName.c,59
+Rpc_GetName(93,2198
+static int numNames = sizeof(73,1803
+
+libc/fmt.c,381
+#define AlignPointer(134,4782
+CalcComplexAlign(1054,31136
+ConvertByte(702,21314
+ConvertDoubleWord(955,28385
+ConvertHalfWord(777,23382
+ConvertSequence(343,11350
+ConvertStruct(520,16141
+ConvertUnion(607,18667
+ConvertWord(865,25833
+Fmt_Convert(175,5939
+Fmt_Size(251,8169
+} FormatInfo;62,2190
+#define MAX(144,5022
+} State;94,3340
+static int formatCount = sizeof(79,2654
+
+libc/strncpy.c,17
+strncpy(43,1302
+
+libc/strtoul.c,17
+strtoul(62,1968
+
+libc/ttyDriver.c,484
+FormatInput(1080,30701
+FormatOutput(1201,33159
+#define NEXT(189,6687
+#define PREV(195,6798
+TdBackspace(1840,49702
+TdEcho(1757,47693
+TdFlushInput(1951,52425
+TdFlushOutput(1981,53202
+TdPutChar(1677,45702
+TdRetypeInput(1805,48734
+Td_Close(403,12771
+Td_ControlCooked(648,20160
+Td_ControlRaw(1626,44288
+Td_Create(243,8211
+Td_Delete(327,10751
+Td_GetCooked(440,13899
+Td_GetRaw(1307,35620
+Td_Open(363,11779
+Td_PutCooked(569,17577
+Td_PutRaw(1357,37173
+} Terminal;143,5486
+
+libc/compatSig.c,176
+Compat_GetSigHoldMask(202,4258
+Compat_SpriteSigMaskToUnix(159,3413
+Compat_SpriteSignalToUnix(80,1790
+Compat_UnixSigMaskToSprite(112,2435
+Compat_UnixSignalToSprite(49,1129
+
+libc/compatSig.h,0
+
+libc/Stdio_Setup.c,21
+Stdio_Setup(44,1386
+
+libc/fflush.c,16
+fflush(40,1094
+
+libc/fgetc.c,15
+fgetc(44,1313
+
+libc/fgets.c,15
+fgets(44,1331
+
+libc/fputc.c,15
+fputc(43,1269
+
+libc/fileInt.h,0
+
+libc/fprintf.c,34
+fprintf(44,1173
+fprintf(62,1565
+
+libc/fscanf.c,32
+fscanf(45,1211
+fscanf(64,1620
+
+libc/sprintf.c,60
+StringWriteProc(51,1309
+sprintf(78,1922
+sprintf(101,2515
+
+libc/sscanf.c,57
+StringReadProc(52,1298
+sscanf(80,1911
+sscanf(102,2509
+
+libc/ungetc.c,16
+ungetc(47,1537
+
+libc/vfprintf.c,54
+CvtFtoA(175,4429
+CvtUtoA(66,1765
+vfprintf(368,9125
+
+libc/vfscanf.c,17
+vfscanf(61,1632
+
+libc/isnan.c,15
+isnan(53,1265
+
+libc/isinf.c,15
+isinf(53,1255
+
+libc/fputs.c,15
+fputs(41,1168
+
+libc/iszero.c,106
+int isnormal(88,2077
+int issubnormal(65,1628
+int iszero(111,2504
+parts(163,3557
+int signbit(134,2958
+
+main/main.h,0
+
+main/mainInit.c,60
+CheckArguments(260,6523
+StartInit(337,8318
+main(101,2493
+
+net/net.h,0
+
+net/netTypes.h,192
+} Net_EtherStats;106,3624
+} Net_GenStats;137,4686
+} Net_Interface;230,7945
+typedef int Net_PacketType;55,1395
+} Net_ScatterGather;74,1975
+} Net_Stats;148,4843
+} Net_UltraStats;120,4113
+
+net/netRoute.h,45
+} NetHostInfo;112,3834
+} Net_Route;74,2670
+
+net/netRoute.c,428
+FillRouteInfo(1002,27673
+Net_AddrToID(734,21297
+Net_DeleteRoute(560,16915
+Net_HdrDestString(845,24105
+Net_HdrToID(784,22724
+Net_HostPrint(975,27182
+Net_IDToRoute(671,19590
+Net_IDToRouteStub(598,17754
+Net_InstallRoute(233,6575
+Net_InstallRouteStub(159,4572
+Net_ReleaseRoute(522,16095
+Net_RouteInit(106,3278
+Net_SpriteIDToMachType(943,26477
+Net_SpriteIDToName(911,25681
+#define SWAP_FRAG_OFFSET_HOST_TO_NET(75,2517
+
+net/netMach.c,236
+ByteSwap(688,19816
+MakeFilter(338,10060
+NetInitDevice(181,4893
+NetMachGetStats(573,16572
+NetMachInit(112,3504
+NetMachIoControl(542,15766
+NetMachOutput(403,12019
+NetMachReset(513,15165
+PrintBytes(147,4243
+ReadPortSet(604,17279
+
+net/netInt.h,302
+#define NetBfByteGet(47,1335
+#define NetBfByteSet(41,1129
+#define NetBfByteTest(44,1231
+#define NetBfShortGet(56,1639
+#define NetBfShortSet(50,1423
+#define NetBfShortTest(53,1530
+#define NetBfWordGet(65,1938
+#define NetBfWordSet(59,1732
+#define NetBfWordTest(62,1834
+} NetXmitElement;79,2372
+
+net/netUltraInt.h,677
+} EventEnum;72,2100
+#define NEXT_TRACE(84,2319
+} NetUltraDMAInfo;245,8951
+} NetUltraDatagramRequest;361,13478
+} NetUltraDiagCommand;544,20760
+} NetUltraExtDiagCommand;585,22022
+} NetUltraGoCommand;627,23118
+typedef NetUltraDiagCommand NetUltraInfoCommand;561,21200
+} NetUltraInitCommand;518,19850
+} NetUltraLoadCommand;611,22744
+} NetUltraRequest;465,17579
+} NetUltraRequestHdr;294,10949
+} NetUltraStartRequest;412,15716
+} NetUltraState;154,5436
+} NetUltraStopRequest;422,15911
+} NetUltraTraceInfo;80,2273
+} NetUltraXRBInfo;214,7693
+#define 494,18701
+#define 495,18751
+#define 496,18802
+#define 497,18856
+#define 498,18908
+#define 499,18972
+} 482,18297
+
+net/netEther.c,115
+NetEtherGetPacketType(126,3409
+NetEtherInit(45,1124
+NetEtherInitInterface(70,1651
+NetEtherMergePacket(182,4819
+
+net/netArp.c,208
+NetArpHandler(607,18333
+NetArpInput(390,11756
+NetArpOutput(701,21128
+NetDoArp(237,6714
+NetFillInArpRequest(800,23873
+Net_Arp(115,3102
+Net_ArpInit(86,2367
+Net_ArpTimeout(766,23104
+Net_RevArp(182,5027
+
+net/netCode.c,497
+EnterDebugger(639,17624
+#define	INC_BYTES_SENT(49,1301
+NetAddStats(892,23977
+Net_Bin(160,4210
+Net_GatherCopy(189,4735
+Net_GetInterface(693,18838
+Net_GetStats(850,22981
+Net_Init(99,2577
+Net_Input(451,11818
+Net_NextInterface(736,20064
+Net_Output(258,6292
+Net_RawOutput(389,10087
+Net_RawOutputSync(419,10961
+Net_RemovePacketHandler(821,22266
+Net_Reset(228,5553
+Net_SetPacketHandler(792,21636
+#define SWAP_FRAG_OFFSET_HOST_TO_NET(60,1641
+#define SWAP_FRAG_OFFSET_NET_TO_HOST(66,1826
+
+net/sun3.md/netConfig.c,20
+	    sizeof(29,999
+
+net/ds3100.md/netConfig.c,21
+	    sizeof(31,1097
+
+net/netArp.h,272
+#define ARP_SRC_ETHER_ADDR(51,1882
+#define ARP_SRC_PROTO_ADDR(52,1956
+#define	ARP_TARGET_ETHER_ADDR(54,2052
+#define	ARP_TARGET_PROTO_ADDR(58,2209
+} ArpInputQueue;117,4068
+} ArpOutputQueue;104,3760
+} ArpState;78,2923
+} ArpStatistics;91,3342
+} NetSpriteArp;41,1516
+
+proc/proc.h,455
+#define PROC_GET_VALID_PCB(56,1469
+#define Proc_AssertLocked(131,3644
+#define Proc_ComparePIDs(48,1190
+#define	Proc_GetActualProc(69,1902
+#define Proc_GetCurrentLock(89,2487
+#define Proc_GetEffectiveProc(169,5255
+#define	Proc_GetHostID(66,1779
+#define Proc_GetPCB(50,1239
+#define			Proc_MigUpdateInfo(208,7103
+#define Proc_SetState(105,2918
+#define	Proc_UseRpcBuffer(79,2242
+#define Proc_UseRpcBuffer(81,2284
+#define Proc_ValidatePID(52,1306
+
+proc/procDebug.c,305
+AddToDebugList(638,17928
+HandleStackFault(812,22936
+ProcDebugInit(91,2738
+ProcDebugWakeup(484,14162
+ProcGetNextDebug(585,16682
+ProcGetThisDebug(513,14780
+Proc_Debug(120,3460
+Proc_ResumeProcess(414,12075
+Proc_SuspendProcess(313,9104
+RemoveFromDebugList(667,18534
+catch_exception_raise(699,19186
+
+proc/procExec.c,476
+} ArgListElement;73,2174
+DoCode(1564,50450
+DoExec(1029,33568
+DoHeap(1637,52483
+DoStack(1748,56152
+} ExecEncapHeader;100,3410
+} ExecEncapState;114,3728
+GrabArgArray(819,27265
+HeapStart(2089,66459
+InstrumentSwapSegments(1995,63793
+Proc_Exec(377,13469
+Proc_ExecEnvStub(281,9797
+Proc_KernExec(504,16844
+Proc_OldExecEnvStub(226,7896
+SetupArgs(562,18977
+SetupCode(1314,42675
+SetupInterpret(1876,60692
+SetupVM(1491,48300
+StackStart(2065,65950
+} UserArgs;132,4518
+
+proc/procExit.c,586
+CheckPidArray(1466,43941
+DoWait(1145,34100
+ExitProcessInt(382,11265
+FindExitingChild(1289,38378
+LookForAnyChild(1389,41645
+ProcExitInit(208,6976
+ProcExitProcess(590,17715
+ProcPutOnDeadList(1555,46085
+ProcRemoteWait(1243,37165
+Proc_Detach(916,26832
+Proc_DetachInt(767,23254
+Proc_Exit(284,8800
+Proc_ExitInt(317,9548
+Proc_InformParent(827,24618
+Proc_Kill(1628,48089
+Proc_RawExitStub(234,7561
+Proc_Reaper(730,22414
+Proc_Wait(1021,30339
+Proc_WaitStub(961,27827
+SendSigChild(890,26218
+UpdateChildCpuUsage(1584,46834
+WakeupMigratedParent(1527,45571
+#define min(138,4886
+
+proc/procFork.c,163
+ProcMakeServerThread(342,10364
+ProcSetUserState(456,13271
+Proc_ForkStub(505,14826
+Proc_NewProc(95,3016
+} ServerThreadInfo;56,1768
+ServerThreadInit(388,11516
+
+proc/procInt.h,57
+} ProcChildInfo;44,1177
+#define ProcRemoteFork(79,2384
+
+proc/procUnixStubs.h,0
+
+proc/procTypes.h,323
+typedef int ProcExitFlags;94,2749
+} ProcTaskInfo;179,5227
+} Proc_CallInfo;121,3471
+} Proc_ControlBlock;475,15680
+} Proc_EnvironInfo;132,3759
+} Proc_LockStackElement;165,4780
+} Proc_LockedPCB;489,16117
+} Proc_ObjInfo;508,16866
+} Proc_PCBLink;147,4178
+typedef void (*Proc_ProcessRoot)107,3101
+} Proc_Time;160,4675
+
+proc/ds3100.md/procMach.h,188
+#define PROC_CODE_FILE_OFFSET(116,3470
+#define PROC_DATA_FILE_OFFSET(123,3752
+} ProcAOUTHeader;81,2526
+} ProcExecHeader;105,3249
+} ProcFileHeader;63,1827
+} ProcSectionHeader;97,3096
+
+proc/ds3100.md/procMach.c,107
+ProcGetObjInfo(139,3617
+ProcMachGetUserRegs(209,5980
+ProcMachInit(64,1657
+ProcMachSetRegisters(89,2230
+
+proc/ds3100.md/migVersion.h,0
+
+proc/sun3.md/procMach.c,107
+ProcGetObjInfo(140,3628
+ProcMachGetUserRegs(222,6105
+ProcMachInit(65,1673
+ProcMachSetRegisters(89,2174
+
+proc/sun3.md/procMach.h,328
+#define	PROC_BAD_MAGIC_NUMBER(81,2511
+#define PROC_BASEADDR(91,2804
+#define PROC_BSS_LOAD_ADDR(103,3242
+#define	PROC_CODE_FILE_OFFSET(84,2602
+#define PROC_CODE_LOAD_ADDR(99,3023
+#define	PROC_DATA_FILE_OFFSET(88,2729
+#define PROC_DATA_LOAD_ADDR(100,3068
+#define PROC_SUN_DATA_LOAD_ADDR(105,3308
+} ProcExecHeader;66,1944
+
+proc/sun3.md/procMachInt.h,0
+
+proc/procMisc.c,420
+FillPCBInfo(395,10816
+GetRemotePCB(306,8432
+Proc_ContextSwitch(909,24542
+Proc_DoForEveryProc(804,21743
+Proc_GetHostIDsStub(861,23386
+Proc_GetPCBInfo(114,3135
+Proc_GetRemoteSegInfo(351,9714
+Proc_HasPermission(764,20404
+Proc_Init(76,2029
+Proc_KillAllProcesses(654,17609
+Proc_SetPriority(539,14676
+Proc_StateName(475,13523
+Proc_WakeupAllProcesses(723,19447
+SpritePriorityToMach(601,16388
+#define min(43,1190
+
+proc/procID.c,151
+#define Min(43,1347
+ProcAddToGroupList(304,8095
+Proc_GetGroupIDs(185,5091
+Proc_GetIDsStub(64,1781
+Proc_SetGroupIDs(232,6332
+Proc_SetIDs(126,3566
+
+proc/procTable.c,351
+AddPCBs(244,7409
+InitPCB(149,4516
+ProcFreePCB(654,17316
+ProcGetUnusedPCB(562,14859
+ProcInitTable(99,3355
+ProcTableMatch(683,17964
+Proc_GetCurrentProc(763,19828
+Proc_InitMainProc(277,8180
+Proc_Lock(422,11635
+Proc_LockPID(357,10291
+Proc_SetCurrentProc(800,20636
+Proc_SetState(729,18986
+Proc_Unlock(466,12454
+Proc_UnlockAndSwitch(502,13244
+
+proc/procEnviron.c,257
+DecEnvironRefCount(262,7042
+DoCopyEnviron(162,4196
+FreeEnviron(220,6015
+ProcDecEnvironRefCount(289,7616
+} ProcEnvironVar;48,1308
+ProcInitMainEnviron(84,2231
+ProcSetupEnviron(126,3289
+Proc_CopyEnvironStub(442,11278
+Proc_GetEnvironRangeStub(321,8392
+
+proc/procFamily.c,214
+} FamilyHeader;54,1657
+ProcFamilyHashInit(74,2010
+ProcFamilyInsert(100,2691
+ProcFamilyRemove(167,4494
+Proc_GetFamilyID(320,8233
+Proc_LockFamily(219,5781
+Proc_SetFamilyID(371,9594
+Proc_UnlockFamily(275,7127
+
+proc/procMigrate.h,407
+#define PROC_GET_MIG_PCB(54,1559
+#define PROC_MIG_DEC_STAT(260,8230
+#define PROC_MIG_INC_STAT(258,8128
+#define PROC_MIG_TIME_FOR_STATS(182,5084
+} Proc_CommandTrace;141,4016
+} Proc_DestroyMigProcData;273,8647
+} Proc_MigBuffer;83,2399
+} Proc_MigStats;252,8046
+} Proc_MigVarStats;210,6291
+} Proc_ParamInfo;73,2180
+} Proc_RemoteCall;99,2802
+} Proc_SysCallTrace;136,3942
+} Proc_TraceRecord;152,4185
+
+proc/procRpc.c,366
+} CallBack;83,2930
+typedef ReturnStatus ((*PRS)60,1898
+Proc_ByteCopy(734,25649
+Proc_MakeStringAccessible(825,28281
+Proc_MakeUnaccessible(891,30360
+Proc_RpcMigCommand(1016,34165
+Proc_RpcRemoteCall(1195,39873
+Proc_RpcRemoteWait(927,31280
+Proc_StringNCopy(773,26730
+RpcProcExec(525,19740
+RpcProcExit(429,17177
+RpcProcFork(595,21569
+RpcRemoteCall(250,11910
+
+proc/migrate.h,113
+} ProcMigCmd;71,2453
+} ProcMigInitiateCmd;85,2918
+} ProcRecordUsageType;106,3452
+} ProcRemoteWaitCmd;32,1021
+
+proc/procTimer.c,199
+GetCurrentTimer(138,3953
+ProcChangeTimer(236,6748
+ProcDeleteTimers(465,13296
+} ProcIntTimerInfo;46,1538
+Proc_GetIntervalTimer(86,2603
+Proc_SetIntervalTimer(204,5801
+SendTimerSigFunc(375,10917
+
+proc/procTaskThread.c,314
+ProcDestroyServicePort(348,8510
+ProcFreeTaskThread(389,9561
+ProcKillThread(431,10782
+ProcMakeServicePort(302,7264
+ProcMakeTaskThread(468,11754
+ProcNewTaskInfo(157,3892
+ProcReleaseTaskInfo(98,2533
+ProcTaskThreadInit(60,1615
+Proc_ExceptionToPCB(193,4634
+Proc_MakeReady(233,5584
+Proc_SyscallToPCB(270,6582
+
+proc/procServer.c,300
+CallFunc(510,14706
+CallFuncFromTimer(465,13599
+Proc_CallFunc(128,4276
+Proc_CallFuncAbsTime(185,6226
+Proc_CancelCallFunc(223,7409
+Proc_ServerInit(253,8085
+Proc_ServerProc(286,8769
+Proc_ServerProcTimes(656,18380
+Proc_ZeroServerProcTimes(711,19825
+ScheduleFunc(414,12084
+UpdateTime(596,16861
+
+proc/procServer.h,94
+} FuncInfo;49,1372
+} ProcFcnCallTime;113,3260
+} QueueElement;62,1783
+} ServerInfo;83,2328
+
+proc/procMigrate.c,1351
+AbortMigration(883,26070
+AccessStats(2306,65464
+AddMigrateTime(2167,61861
+#define COPY_STATE(1052,30921
+DeencapProcState(1285,38016
+} EncapCallback;155,5159
+EncapProcState(1154,33511
+} EncapState;1050,30906
+EvictionStarted(2731,75684
+GetProcEncapSize(1106,32217
+ProcInitiateMigration(1883,54907
+ProcMigCommand(1961,56790
+ProcMigEncapCallback(1748,51160
+ProcMigEvictionComplete(2831,78066
+ProcMigGetSuspend(1706,50053
+ProcMigGetUpdate(1517,44755
+ProcMigKillRemoteCopy(1781,52118
+ProcMigReceiveProcess(923,27242
+ProcMigWakeupWaiters(2401,67377
+ProcRecordUsage(2253,63850
+ProcRemoteSuspend(1556,45873
+Proc_DestroyMigratedProc(2473,68949
+Proc_EvictForeignProcs(2590,72059
+Proc_EvictProc(2682,74407
+Proc_FlagMigration(1832,53425
+Proc_GetEffectiveProc(2918,80358
+Proc_IsEvictable(2647,73520
+Proc_MigAddToCounter(2215,63057
+Proc_MigGetStats(2340,66236
+Proc_MigInit(248,8452
+Proc_MigResetStats(2375,66882
+Proc_MigUpdateInfo(1463,43343
+Proc_Migrate(286,9581
+Proc_MigrateStartTracing(2431,67854
+Proc_MigrateTrap(478,14421
+Proc_NeverMigrate(2871,79040
+Proc_SetEffectiveProc(2952,81236
+Proc_WaitForMigration(2073,59730
+#define SQUARE_TIME(215,7589
+SuspendCallback(1624,47889
+} SuspendCallbackInfo;1085,31770
+} SuspendInfo;1076,31566
+} UpdateEncapState;1065,31275
+WaitForEviction(2769,76453
+WaitForMigration(2134,61241
+
+proc/procSysCall.c,276
+Proc_DetachStub(47,1371
+Proc_GetFamilyIDStub(79,2167
+Proc_GetGroupIDsStub(116,3270
+Proc_GetIntervalTimerStub(340,9901
+Proc_GetPCBInfoStub(157,4491
+Proc_SetFamilyIDStub(201,5937
+Proc_SetGroupIDsStub(235,6886
+Proc_SetIDsStub(270,7855
+Proc_SetIntervalTimerStub(304,8793
+
+proc/ds3100.md/procMachInt.h,0
+
+proc/sun3.md/migVersion.h,0
+
+recov/recovery.c,1138
+CallBacksDone(1232,37502
+CrashCallBacks(1278,38658
+DelayedCrashCallBacks(1320,39892
+GetRebootList(1186,36116
+GetState(1954,55906
+MarkHostDead(1408,42151
+MarkRecoveryComplete(1368,41218
+} NotifyElement;62,2124
+PrintExtraState(1990,56615
+#define RECOV_INIT_HOST(144,5069
+RecovCheckHost(1551,46003
+RecovGetLastHostState(1506,44782
+#define RecovHostPrint(167,5779
+} RecovHostState;142,5050
+} RecovPerHostInfo;95,3168
+RecovRebootCallBacks(1146,35038
+} RecovStampList;115,3847
+Recov_AddHandleCountToClientState(1009,31113
+Recov_ChangePrintLevel(2015,57183
+Recov_ClearClientState(949,29400
+Recov_CrashRegister(246,7970
+Recov_DumpClientRecovInfo(1050,32204
+Recov_DumpState(1662,48724
+Recov_GetClientState(844,26600
+Recov_GetHostInfo(1723,50210
+Recov_GetHostState(1454,43449
+Recov_GetStats(1610,47661
+Recov_HostAlive(458,14248
+Recov_HostDead(667,21494
+Recov_HostTrace(812,25754
+Recov_Init(212,6934
+Recov_IsHostDown(767,24754
+Recov_PrintState(1889,54084
+Recov_PrintTrace(1857,53400
+Recov_PrintTraceRecord(1771,51309
+Recov_RebootRegister(279,8895
+Recov_RebootUnRegister(353,10902
+Recov_SetClientState(885,27660
+
+recov/recovProc.c,220
+Deactivate(345,8244
+FirstHostToCheck(238,6211
+NextHostToCheck(271,6778
+PingInterval(94,2867
+RecovAddHostToPing(302,7339
+} RecovPing;61,2105
+RecovPingInit(134,3723
+RecovPrintPingList(360,8435
+Recov_Proc(171,4594
+
+recov/recov.h,135
+#define RECOV_TRACE(166,5561
+#define RECOV_TRACE(175,5780
+} RecovTraceRecord;139,4708
+} Recov_State;36,983
+} Recov_Stats;194,6557
+
+rpc/rpcDebug.c,120
+Rpc_GetStats(197,5155
+Rpc_NotImplemented(640,16890
+Rpc_SanityCheck(517,13634
+Test_Rpc(88,1938
+Test_RpcStub(55,1137
+
+rpc/rpc.h,24
+} Rpc_ReplyMem;51,1396
+
+rpc/rpcInt.h,0
+
+rpc/rpcClient.h,49
+} RpcClientChannel;169,5388
+} RpcConst;73,2327
+
+rpc/rpcServer.h,164
+typedef ReturnStatus (*IntProc)205,6623
+} NackData;148,4429
+#define	RPC_IS_BROADCAST(227,7159
+} RpcServerState;135,3876
+} RpcService;210,6811
+			int 206,6699
+
+rpc/rpcTrace.h,233
+#define RPC_NIL_TRACE(46,1050
+#define RPC_NIL_TRACE(55,1284
+#define RPC_TRACE(50,1162
+#define RpcTrace(38,843
+} Rpc_Trace;67,1719
+typedef Rpc_TraceHdr2 Rpc_TraceFileHdr;89,2141
+} Rpc_TraceHdr1;76,1885
+} Rpc_TraceHdr2;87,2123
+
+rpc/rpcTypes.h,81
+} RpcBufferSet;44,1479
+} RpcServerUserStateInfo;56,1747
+} Rpc_Storage;91,3129
+
+rpc/rpcTest.c,124
+Rpc_Echo(288,7442
+Rpc_EchoTest(113,2849
+Rpc_GetTime(46,1093
+Rpc_Ping(331,8500
+Rpc_Send(369,9392
+Rpc_SendTest(205,5288
+
+rpc/rpcSrvStat.h,0
+
+rpc/rpcCltStat.h,0
+
+rpc/sun3.md/rpcDelays.c,28
+RpcGetMachineDelay(44,1110
+
+rpc/rpcStubs.c,79
+RpcEcho(173,5788
+RpcGetTime(228,7740
+RpcNull(138,4786
+Rpc_FreeMem(106,4097
+
+rpc/rpcCall.h,0
+
+rpc/rpcPacket.h,40
+} RpcHdr;79,3069
+} RpcHdrNew;136,5591
+
+rpc/rpcOutput.c,19
+RpcOutput(75,2472
+
+rpc/rpcCall.c,376
+#define CHAN_TRACE(363,11920
+#define CHAN_TRACE(373,12180
+GetChannelAllocState(395,12617
+#define INC(353,11660
+RpcChanAlloc(546,16361
+RpcChanClose(756,22212
+RpcChanFree(715,21176
+RpcInitServerChannelState(829,24356
+RpcSetup(271,8979
+Rpc_Call(126,4167
+SetChannelAllocState(437,13566
+SetChannelAllocStateInt(470,14237
+} UnhappyServer;84,2470
+} debugElem;359,11838
+
+rpc/rpcServer.c,470
+NegAckFunc(428,13219
+RpcAck(1050,31826
+RpcAddServerTrace(1173,35537
+RpcInitServerTraces(1337,39661
+RpcProbe(1140,34808
+RpcReclaimServers(312,9774
+RpcResend(1091,32832
+RpcServerDispatch(494,15335
+} RpcServerStateInfo;104,3096
+} RpcServerTraces;112,3271
+RpcSetNackBufs(1363,40151
+RpcSrvInitHdr(937,28695
+Rpc_DumpServerTraces(1290,38311
+Rpc_ErrorReply(883,27136
+Rpc_FreeTraces(1259,37632
+Rpc_OkayToTrace(1225,36929
+Rpc_Reply(979,29794
+Rpc_Server(149,4374
+
+rpc/rpcClient.c,168
+#define CHAN_TRACE(60,1538
+#define CHAN_TRACE(76,1919
+#define INC(46,1190
+RpcClientDispatch(451,14666
+RpcDoCall(106,2691
+Rpc_Timeout(656,21535
+} dbgElem;54,1399
+
+rpc/rpcDispatch.c,124
+RpcScatter(314,9708
+Rpc_Dispatch(100,3196
+ValidateClient(416,13132
+VersionMismatch(492,15298
+} VersionRecord;485,15181
+
+rpc/rpcDaemon.c,208
+RpcCrashCallBack(366,11205
+RpcDaemonWait(437,13076
+RpcDaemonWakeup(479,14159
+RpcResetNoServers(410,12401
+RpcServerAlloc(211,6782
+RpcServerInstall(317,9742
+Rpc_CreateServer(153,5010
+Rpc_Daemon(94,3265
+
+rpc/rpcInit.c,117
+RpcBufferInit(284,9435
+RpcInitServerState(345,11513
+Rpc_Init(70,1981
+Rpc_MaxSizes(516,16790
+Rpc_Start(418,13875
+
+rpc/rpcTrace.c,72
+Rpc_DumpTrace(256,6841
+Rpc_PrintTrace(71,1927
+Rpc_StampTest(349,9638
+
+rpc/rpcByteSwap.c,139
+RpcByteSwapBuffer(52,1445
+RpcByteSwapInComing(100,2863
+RpcPrintHdr(169,4866
+RpcSetTestByteSwap(184,5345
+RpcUnsetTestByteSwap(191,5414
+
+rpc/ds3100.md/rpcDelays.c,28
+RpcGetMachineDelay(44,1196
+
+rpc/rpcCltStat.c,173
+RpcResetCltStat(117,3493
+Rpc_EnterProcess(85,2820
+Rpc_LeaveProcess(159,4643
+Rpc_PrintCallCount(257,7592
+Rpc_PrintCltStat(191,5132
+static int numStats = sizeof(43,1584
+
+rpc/rpcSrvStat.c,176
+RpcResetSrvStat(112,3244
+Rpc_EndSrvTrace(152,4291
+Rpc_PrintServiceCount(238,6912
+Rpc_PrintSrvStat(182,4778
+Rpc_StartSrvTrace(79,2579
+static int numStats = sizeof(41,1539
+
+rpc/rpcHistogram.h,183
+#define RPC_CALL_TIMING_END(62,2126
+#define RPC_CALL_TIMING_START(58,1994
+#define RPC_SERVICE_TIMING_END(70,2395
+#define RPC_SERVICE_TIMING_START(66,2254
+} Rpc_Histogram;41,1462
+
+rpc/rpcHistogram.c,139
+Rpc_HistDump(225,6120
+Rpc_HistEnd(179,4793
+Rpc_HistInit(49,1215
+Rpc_HistPrint(258,6864
+Rpc_HistReset(114,3205
+Rpc_HistStart(150,4026
+
+sig/sig.h,29
+#define Sig_Pending(46,1056
+
+sig/sigInt.h,0
+
+sig/sigTypes.h,43
+} Sig_Context;32,810
+} Sig_Stack;46,1312
+
+sig/ds3100.md/sigTypesMach.h,27
+} SigMach_Context;33,1230
+
+sig/ds3100.md/sigMach.c,90
+SigMach_ExcToSig(185,5724
+SigMach_RestoreState(301,8648
+SigMach_SetSignalState(54,1471
+
+sig/ds3100.md/sigMach.h,40
+#define SigMach_ExceptionString(28,846
+
+sig/sun3.md/sigTypesMach.h,26
+} SigMach_Context;30,969
+
+sig/sun3.md/sigMach.c,117
+SigMach_ExcToSig(196,5915
+SigMach_RestoreState(255,7285
+SigMach_SetSignalState(62,1698
+} TrampolineStack;39,1162
+
+sig/sun3.md/sigMach.h,40
+#define SigMach_ExceptionString(28,844
+
+sig/sigStubs.c,156
+Sig_GetSignalStub(261,6892
+Sig_PauseStub(47,1181
+Sig_ReturnStub(198,5063
+Sig_SendStub(81,2000
+Sig_SetActionStub(118,3023
+Sig_SetHoldMaskStub(164,4195
+
+sig/signals.c,586
+AsynchHandlerOkay(1399,41520
+LocalSend(351,10087
+SigClearPendingMask(1096,32338
+#define	SigGetBitMask(65,2257
+} SigParms;717,21976
+SigSendRemoteSignal(736,22334
+SigUpdateHoldMask(874,26098
+Sig_AllowMigration(1368,40691
+Sig_ChangeState(287,8358
+Sig_ExcToSig(1440,42663
+Sig_Exec(244,7359
+Sig_Fork(198,5976
+Sig_Handle(1126,33243
+Sig_Init(105,3205
+Sig_Pause(1024,30199
+Sig_ProcInit(166,5125
+Sig_RestoreAfterSignal(1604,47148
+Sig_RpcSend(787,23680
+Sig_Send(598,18790
+Sig_SendProc(497,15464
+Sig_SetAction(909,27059
+Sig_SetHoldMask(834,25164
+Sig_SetUpHandler(1509,44238
+
+sync/sync.h,939
+#define SyncDeadlockPanic(504,13864
+#define SyncDeadlockPanic(510,14000
+#define SyncDeleteCurrent(474,13240
+#define SyncDeleteCurrent(479,13365
+#define SyncMergePrior(443,12564
+#define SyncMergePrior(449,12729
+#define Sync_AddPrior(412,11920
+#define Sync_AddPrior(419,12110
+#define Sync_IsRegistered(317,10076
+#define Sync_IsRegistered(322,10172
+#define Sync_LockClear(379,11321
+#define Sync_LockClear(388,11470
+#define Sync_LockInitStatic(266,8831
+#define Sync_LockInitStatic(273,8969
+#define Sync_LockInitStatic(282,9201
+#define Sync_LockInitStatic(289,9414
+#define Sync_LockRegister(346,10703
+#define Sync_LockRegister(355,10870
+#define Sync_MasterWait(97,3097
+#define Sync_RecordHit(538,14674
+#define Sync_RecordHit(542,14728
+#define Sync_RecordMiss(565,15161
+#define Sync_RecordMiss(569,15216
+#define Sync_StoreDbgInfo(595,15927
+#define Sync_StoreDbgInfo(599,16007
+#define UNLOCK_MONITOR_AND_SWITCH(205,7003
+
+sync/syncLock.c,526
+CheckUnlock(698,18823
+SyncBroadcastInt(837,22297
+Sync_Broadcast(797,21372
+Sync_ConditionFree(868,22955
+Sync_ConditionInit(753,20277
+Sync_GetConditionName(900,23707
+Sync_GetLock(168,4393
+Sync_GetWaitToken(422,11078
+Sync_Init(99,2842
+Sync_LockInitDynamic(127,3371
+Sync_ProcWait(498,13070
+Sync_ProcWakeup(578,15502
+Sync_RemoteNotify(617,16533
+Sync_RemoteNotifyStub(651,17339
+Sync_SetWaitToken(461,11972
+Sync_SlowWait(258,6423
+Sync_Unlock(222,5504
+Sync_UnlockAndSwitch(331,8455
+Sync_WakeWaitingProcess(383,9870
+
+sync/syncSleep.c,158
+Sync_Sleep(200,4672
+Sync_WaitTime(47,1035
+Sync_WaitTimeInTicks(83,1804
+Sync_WaitTimeInterval(113,2459
+Sync_WakeupProcess(236,5403
+WaitTimeSubr(150,3374
+
+sync/syncTypes.h,265
+} Sync_ListInfo;100,3445
+typedef Sync_KernelLock Sync_Lock;134,4368
+typedef int Sync_PCBFlags;68,2016
+} Sync_RegElement;157,5252
+} Sync_RemoteWaiter;175,5694
+typedef Sync_Lock Sync_Semaphore;138,4456
+typedef struct semid_ds Sync_SysVSem;163,5319
+} 130,4332
+
+timer/timer.h,110
+#define Timer_GetCurrentTicks(99,3220
+#define Timer_GetRealTimeOfDay(101,3325
+} Timer_QueueElement;89,3046
+
+timer/timerTick.h,591
+#define Timer_AddIntervalToTicks(71,1902
+#define Timer_AddTicks(42,1055
+#define Timer_AddTicks(49,1304
+#define Timer_SubtractTicks(45,1170
+#define Timer_SubtractTicks(50,1355
+#define Timer_TickEQ(100,2673
+#define Timer_TickEQ(106,2984
+#define Timer_TickGE(101,2745
+#define Timer_TickGE(107,3023
+#define Timer_TickGT(102,2817
+#define Timer_TickGT(108,3062
+#define Timer_TickLE(99,2601
+#define Timer_TickLE(105,2945
+#define Timer_TickLT(98,2529
+#define Timer_TickLT(104,2906
+typedef Time Timer_Ticks;34,974
+#define Timer_TicksToTime(57,1500
+#define Timer_TimeToTicks(58,1542
+
+timer/timerInt.h,0
+
+timer/timerQueue.c,399
+GetSchedInfo(888,24210
+#define INC(108,3092
+InitTimerQueue(218,5512
+#define TIMER_TRACE(118,3344
+#define TIMER_TRACE(129,3607
+TimeToMs(440,12052
+} TimerDebugElt;113,3245
+TimerDumpElement(776,21799
+TimerThread(288,7541
+Timer_DescheduleRoutine(675,19735
+Timer_DumpQueue(731,20910
+Timer_DumpStats(806,22408
+Timer_Init(176,4716
+Timer_IsScheduled(851,23404
+Timer_ScheduleRoutine(518,14534
+
+timer/timerStat.h,28
+} Timer_Statistics;47,1706
+
+timer/timerClock.c,118
+TimerClock_Init(97,2920
+} TimerMappedTime;43,1301
+Timer_GetRealTimeFromTicks(162,4903
+Timer_GetTimeOfDay(202,5912
+
+utils/byte.h,97
+#define Byte_AlignAddr(41,1137
+#define Byte_EmptyBuffer(31,825
+#define Byte_FillBuffer(27,713
+
+utils/utilsMisc.c,62
+Utils_MapSpriteProtect(57,1438
+Utils_UnixPidToTask(107,2591
+
+utils/utils.h,0
+
+utils/sun3.md/utilsMach.h,211
+#define	UtilsMach_Delay(97,1987
+#define	UtilsMach_Delay(100,2078
+#define UtilsMach_GetCallerPC(69,1523
+#define UtilsMach_GetCallerPC(71,1564
+#define UtilsMach_GetPC(41,1025
+#define UtilsMach_GetPC(43,1060
+
+utils/trace.h,48
+} Trace_Header;34,1170
+} Trace_Record;56,1717
+
+utils/hash.c,237
+ChainSearch(182,4274
+Hash(130,3330
+Hash_Delete(374,8895
+Hash_Find(277,6439
+Hash_Init(62,1459
+Hash_Kill(621,14865
+Hash_LookOnly(250,5742
+Hash_Next(551,12957
+Hash_StartSearch(524,12300
+Hash_Stats(472,11180
+RebuildTable(406,9569
+
+utils/trace.c,86
+Trace_Dump(184,5020
+Trace_Init(67,1895
+Trace_Insert(119,3250
+Trace_Print(320,8418
+
+utils/bf.h,1333
+#define BfByteQx(310,7558
+#define BfByteRx(289,7107
+#define BfByteSetx(405,9595
+#define BfByteSx(201,5269
+#define BfByteTestx(445,10618
+#define BfByteVx(331,8045
+#define BfByteZx(379,8973
+#define BfDx(155,4189
+#define BfHalfwordQx(311,7626
+#define BfHalfwordRx(290,7164
+#define BfHalfwordSetx(412,9809
+#define BfHalfwordSx(204,5379
+#define BfHalfwordTestx(448,10711
+#define BfHalfwordVx(335,8164
+#define BfHalfwordZx(382,9066
+#define BfIx(360,8659
+#define BfMask(136,3894
+#define BfMin(116,3510
+#define BfS0(174,4566
+#define BfS1(176,4623
+#define BfS2(178,4701
+#define BfS3(180,4779
+#define BfS4(182,4857
+#define BfSumByteSx(260,6528
+#define BfSumHalfwordSx(265,6653
+#define BfSumS0(228,5877
+#define BfSumS1(231,5921
+#define BfSumS2(234,5981
+#define BfSumS3(237,6044
+#define BfSumS4(240,6107
+#define BfSumWordSx(269,6747
+#define BfWordQx(312,7704
+#define BfWordRx(291,7229
+#define BfWordSetx(419,10035
+#define BfWordSx(207,5464
+#define BfWordTestx(451,10816
+#define BfWordVx(339,8299
+#define BfWordZx(385,9168
+#define Bf_ByteGet(552,13320
+#define Bf_ByteSet(471,11235
+#define Bf_ByteTest(512,12224
+#define Bf_HalfwordGet(561,13704
+#define Bf_HalfwordSet(481,11489
+#define Bf_HalfwordTest(522,12579
+#define Bf_WordGet(567,13970
+#define Bf_WordSet(488,11674
+#define Bf_WordTest(528,12786
+
+utils/hash.h,181
+} Hash_Bucket;26,548
+} Hash_Entry;49,1228
+#define Hash_GetValue(107,3050
+} Hash_Search;96,2959
+#define Hash_SetValue(115,3162
+#define	Hash_Size(121,3300
+} Hash_Table;82,2439
+
+utils/ds3100.md/utilsMach.h,72
+#define	UtilsMach_Delay(63,1514
+#define UtilsMach_GetCallerPC(43,1141
+
+utils/dump.h,0
+
+utils/mapStatus.c,49
+Utils_MapMachStatus(83,2734
+    sizeof(61,2213
+
+vm/vm.h,184
+#define Vm_BootAlloc(123,2890
+#define Vm_ByteToPage(52,1350
+#define Vm_PageToByte(74,1904
+#define Vm_RawAlloc(124,2937
+#define Vm_RoundPage(94,2306
+#define Vm_TruncPage(116,2764
+
+vm/vmInt.h,0
+
+vm/vmOps.c,836
+AddMappedRange(706,20402
+CopyInInbandTest(2099,62175
+CopyInOutTest(1909,57590
+CopyOutInbandTest(2137,63112
+CopyRegion(1533,47057
+FindMappedSegment(669,19591
+GetMemorySize(140,4158
+GetStackOffset(959,28316
+MakeAccessibleTest(1954,58628
+MakeCopyTestBuffer(2012,60025
+MapHeapPage(1746,53426
+MapIntoProcess(1483,45602
+NoteMappedSegment(611,17916
+OkayToExtendStack(877,25598
+RememberSpecialSegment(749,21576
+UnmapPages(555,16187
+VmAddrParse(1008,29950
+VmAddrRegion(1104,32986
+VmCmdInband(2048,60914
+VmGetAttrStream(1803,55079
+VmSegByName(1598,49091
+Vm_CleanupSharedFile(483,14188
+Vm_CleanupTask(373,11346
+Vm_Cmd(1849,56208
+Vm_CreateVA(1636,50069
+Vm_ExtendStack(795,22954
+Vm_Fork(1210,36407
+Vm_Init(115,3769
+Vm_MapFile(187,5555
+Vm_MapSegment(273,8342
+Vm_NewProcess(398,11830
+Vm_ReleaseMappedSegments(432,12738
+
+vm/vmPager.c,609
+ControlPortOkay(1013,29955
+FillBuffer(766,23033
+IsFatalError(955,28635
+VmCleanSegPages(875,26417
+VmPagerInit(984,29265
+Vm_Recovery(1497,44073
+WhichFile(1057,31401
+WhichHeapFile(1126,33551
+WhichStackFile(1225,36456
+WriteBack(241,7295
+memory_object_change_completed(1463,43331
+memory_object_copy(590,18036
+memory_object_data_request(326,9817
+memory_object_data_return(1327,39167
+memory_object_data_unlock(625,18973
+memory_object_data_write(203,6261
+memory_object_init(99,3060
+memory_object_lock_completed(675,20469
+memory_object_supply_completed(1291,38297
+memory_object_terminate(466,14083
+
+vm/vmSegment.c,722
+FixFsSegPtr(627,18746
+} VmCleaningElement;47,1226
+VmCopyFileMap(1270,34608
+VmFreeFileMap(1245,34163
+VmNewFileMap(1199,33023
+VmSegFindHelper(720,21359
+VmSegStateString(996,27430
+VmSegmentCleanup(519,15691
+VmSegmentCopy(1370,37210
+VmSegmentDestroy(458,13983
+VmSegmentFind(664,19836
+VmSegmentInit(139,4484
+VmSegmentLock(972,27015
+VmSegmentNew(280,8245
+VmSegmentReleaseInt(890,25275
+VmSegmentUnlock(948,26619
+Vm_AddHeapInfo(1302,35281
+Vm_FileChanged(1499,40870
+Vm_GetCodeSegment(1044,28570
+Vm_GetSharedSegment(213,6249
+Vm_GetSwapSegment(1153,31913
+Vm_PortToSegment(786,23081
+Vm_SegmentAddRef(825,23797
+Vm_SegmentName(1339,36521
+Vm_SegmentRelease(858,24584
+Vm_Shutdown(164,5000
+Vm_SyncAll(1548,41971
+
+vm/vmSwapDir.c,209
+VmDoneWithSwapStreamPtr(418,11427
+VmGetSwapStreamPtr(386,10786
+VmMakeSwapFileName(270,7897
+VmOpenSwapFile(158,4435
+VmReopenSwapDirectory(357,10105
+VmSwapFileRemove(300,8679
+Vm_OpenSwapDirectory(94,2758
+
+vm/vmSwapDir.h,0
+
+vm/vmTypes.h,356
+} VmCodeSegInfo;142,5178
+} VmFileMap;60,1847
+} VmHeapSegInfo;119,4388
+} VmMappedSegment;338,13899
+} VmPerTypeInfo;152,5372
+} VmStackSegInfo;132,4878
+typedef int Vm_Accessibility;358,14702
+} Vm_Segment;286,11318
+typedef int Vm_SegmentFlags;197,7139
+typedef int Vm_SegmentState;166,5840
+typedef int Vm_SegmentType;95,3586
+} Vm_TaskInfo;347,14349
+
+vm/sun3.md/vmMachStat.h,24
+} VmMachDepStat;25,604
+
+vm/vmSubr.c,192
+VmCopy(295,8782
+Vm_CopyIn(189,5633
+Vm_CopyInProc(52,1322
+Vm_CopyOut(242,7262
+Vm_CopyOutProc(118,3366
+Vm_MakeAccessible(486,15450
+Vm_MakeUnaccessible(626,19852
+Vm_StringNCopy(659,20585
+
+vm/vmFsCache.c,118
+Vm_FsCacheSize(185,4417
+Vm_GetPageSize(160,3964
+Vm_GetRefTime(53,1556
+Vm_MapBlock(83,2261
+Vm_UnmapBlock(123,3193
+
+vm/vmSysCall.c,98
+Vm_CmdInbandStub(180,5208
+Vm_CmdStub(143,4153
+Vm_CreateVAStub(108,3206
+Vm_MapFileStub(56,1584
+
+vm/ds3100.md/vmMachStat.h,24
+} VmMachDepStat;27,872
+
+vm/vmMsgQueue.c,100
+DequeueBuffers(262,7488
+EnqueueBuffers(232,6592
+VmDoRequests(156,4465
+Vm_EnqueueRequest(93,2704

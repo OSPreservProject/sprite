@@ -1,0 +1,182 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.3
+date     90.10.18.12.21.03;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.05.03.14.43.59;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.01.24.16.39.13;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Man page for kgdb.
+@
+
+
+1.3
+log
+@Minor grammatical fixes.
+@
+text
+@' Copyright 1989 Regents of the University of California
+' Permission to use, copy, modify, and distribute this
+' documentation for any purpose and without fee is hereby
+' granted, provided that this notice appears in all copies.
+' The University of California makes no representations about
+' the suitability of this material for any purpose.  It is
+' provided "as is" without express or implied warranty.
+' 
+' $Header: /sprite/src/cmds/kgdb/RCS/kgdb.man,v 1.2 90/05/03 14:43:59 mendel Exp Locker: kupfer $ SPRITE (Berkeley)
+' 
+.so \*(]ltmac.sprite
+.HS KGDB cmds
+.BS
+.SH NAME
+kgdb \- A kernel debugger based on GDB
+.SH SYNOPSIS
+.nf
+\fBkgdb\fR [\fI-mtm\fR]\ [\fIgdb options\fR] [\fIkernel\fR]
+.SH OPTIONS
+.IP "\fB\-mtm\fR" 14
+Invoke the debugger for the target machine given by tm.  If specified, this
+option must proceed all other options. The list of available target machines
+include sun2, sun3, sun4, and spur.
+.LP
+See the GNU GDB documentation for information about the rest of the available
+options.
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBKgdb\fR is a version of the GNU gdb debugger modified to debug Sprite
+kernels.
+This manual page only describes the parts of \fBkgdb\fR that differ 
+from \fBgdb\fR.  
+The reader is referred to the GNU GDB documentation and gdb manual page for a
+complete description of \fBgdb\fR.
+.SH "DIFFERENCES FROM GDB"
+.LP
+The "attach" and "detach" commands of \fBkgdb\fR differ from those of 
+\fBgdb\fR.  
+.IP "\fBattach\fR machine"
+The attach command of \fBkgdb\fR takes as an argument the hostname or 
+internet address of a Sprite machine to debug.  
+The command assumes that the specified machine is in the kernel 
+debugging stub and will wait for the machine to
+enter the debugger.  Once the connection to the machine is 
+established,
+the trap condition and any unprinted syslog messages are displayed.
+.IP "\fBdetach\fR [cont]"
+The detach command breaks the connection between \fBkgdb\fR and the
+currently attached machine.  If any argument is specified, the machine
+is continued before the connection is detached.  When used with the 
+"attach" command, the "detach" command allows debugging multiple machines 
+from the same \fBkgdb\fR session.
+.SH "ADDITIONS TO GDB"
+\fBKgdb\fR supports several commands not found in \fBgdb\fR.  The commands
+are:
+.IP "\fBpid\fR proc-id"
+The pid command sets the focus of the debugger on the  process whose
+process id is proc-id. 
+Once a process is choosen with the pid command,
+all stack reference commands such as "backtrace" and "frame" will reference
+this process's stack.  For example, the command "pid 0xa1139" followed
+by the "backtrace" command will display a stack backtrace of the process
+with pid of 0xa1139. Note that proc-id can be any expression supported by
+\fBkgdb\fR.
+.IP "\fBreboot\fR [string]"
+The reboot command reboots the current attached machine. The optional
+argument string is passed to the kernel routine Mach_MonReboot.  Note 
+that this command is the same as typing "print Mach_MonReboot(string)" followed
+by a break and a detach command except that the reboot command will work 
+even if no symbol table is loaded.
+.IP "\fBversion\fR"
+The version command prints the kernel version string of the 
+attached machine. This command outputs the same information as the
+command "print SpriteVersion()" but like the "reboot" command doesn't
+require a symbol table to be loaded.
+.IP "\fBdebug\fR hostname"
+The debug command is similar to the attach command differing only
+in the case when the specified machine is not already in the debugging stub.  
+Rather than waiting
+for the machine to enter the debugger like the attach command, the
+debug command will force the machine into the debugger using 
+the \fBkmsg\fR program. 
+In order for this command to work, 
+the \fBkmsg\fR program must be available in the current
+search path of \fBkgdb\fR. Because of its anti-social possiblities, 
+caution is urged in the use of the debug command.
+.SH "DELETIONS FROM GDB"
+.LP
+Several features of \fBgdb\fR are not available in \fBkgdb\fR because 
+they don't apply to kernel debugging.
+Missing features include the ability to start and kill programs with the 
+"run"
+and "kill" commands; to change the program's environment and
+terminal characteristics with the
+"set-env", "unset-env", "set-args", and "tty" commands;  
+and  to handle signals with
+"handle" and "signal" commands.  
+Additionaly, \fBgdb\fR's core file processing such as the 
+.B core
+command are also 
+not available in \fBkgdb\fR.
+
+.SH KEYWORDS
+gdb, kernel, debugging, kmsg
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d9 1
+a9 1
+' $Header: /sprite/src/cmds/kgdb/RCS/kgdb.man,v 1.1 89/01/24 16:39:13 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+d12 1
+a12 1
+.HS <KGDB> cmds
+d25 1
+a25 1
+See the GNU GDB documentation for information about rest of the available
+d43 2
+a44 2
+internet address of Sprite machine to debug.  
+The commands assumes that the specified machine is in the kernel 
+d47 1
+a47 1
+successful established,
+d100 3
+a102 1
+Additionaly, \fBgdb\fR's core file processing such as "core" command are also 
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d9 1
+a9 1
+' $Header: /sprite/lib/forms/RCS/proto.man,v 1.3 89/01/09 11:43:01 ouster Exp $ SPRITE (Berkeley)
+d92 1
+a92 1
+either they don't apply to kernel debugging.
+@

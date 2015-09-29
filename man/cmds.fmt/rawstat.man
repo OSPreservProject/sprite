@@ -1,0 +1,68 @@
+
+
+
+RAWSTAT                   User Commands                   RAWSTAT
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     rawstat - Print kernel statistics in a  raw  format:  <field
+     value>
+
+SSYYNNOOPPSSIISS
+     rraawwssttaatt [_o_p_t_i_o_n_s]
+
+OOPPTTIIOONNSS
+     --aallll      Dump all the following stats.
+
+     --ffss       Dump FS stats defined in <kernel/fsStat.h>.
+
+     --pprroocc     Dump     migration      stats      defined      in
+               <kernel/procMigrate.h>.
+
+     --rreeccoovv    Dump recovery stats defined in <kernel/recov.h>.
+
+     --rrppcc      Dump RPC stats defined in <rpc.h>.
+
+     --vvmm       Dump VM stats defined in <vmStat.h>.
+
+     --zzeerroo     Print out zero valued fields, too.
+
+     --nnooiiddllee   Don't dump idle ticks.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This program prints out kernel statistics in a raw, uninter-
+     preted  format.   This  allows  all the counters kept by the
+     kernel to be dumped and processed later.  The program  first
+     prints  a  line  containing  the host's name and the current
+     time.  Then, if  --nnooiiddllee  is  not  specified,  the  kernel's
+     Sched_Instruments information is printed.  This includes the
+     idle time of the host (see  <kernel/sched.h>).   Then  other
+     statistics  are  printed  depending on the options.  See the
+     indicated header files for further documentation.  If  --zzeerroo
+     is  specified then all fields, even those with a zero valued
+     counter, are printed.
+
+     This program is semi-automatically generated with  the  help
+     of  the  printFields  awk  script that is kept in the source
+     directory.
+
+
+KKEEYYWWOORRDDSS
+     statistics
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  July 9, 1991                     1
+
+
+

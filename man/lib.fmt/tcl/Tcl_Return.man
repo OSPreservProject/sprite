@@ -1,0 +1,134 @@
+
+
+
+Tcl_Return        Tcl Command Language Library         Tcl_Return
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tcl_Return - set up a Tcl result string
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttccll..hh>>
+
+     TTccll__RReettuurrnn(_i_n_t_e_r_p, _s_t_r_i_n_g, _s_t_a_t_u_s)
+
+AARRGGUUMMEENNTTSS
+     Tcl_Interp               *_i_n_t_e_r_p(out)
+                                        Interpreter for  which  a
+                                        return  value  is  to  be
+                                        established.
+
+     char      *_s_t_r_i_n_g        (in)      String   value   to    be
+                                        returned, or NNUULLLL.
+
+     int       _s_t_a_t_u_s         (in)      Indicates the  nature  of
+                                        _s_t_r_i_n_g.   Must  be either
+                                        TTCCLL__SSTTAATTIICC,  TTCCLL__DDYYNNAAMMIICC,
+                                        or TTCCLL__VVOOLLAATTIILLEE.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     TTccll__RReettuurrnn is a convenience routine used by several  of  the
+     Tcl  commands.   It  arranges  for  _s_t_r_i_n_g  to be the return
+     string for the current Tcl command in _i_n_t_e_r_p.  If _s_t_a_t_u_s  is
+     TTCCLL__SSTTAATTIICC  it means that _s_t_r_i_n_g refers to an area of static
+     storage that is guaranteed  to  remain  untouched  until  at
+     least  the  next call to TTccll__EEvvaall.  If _s_t_a_t_u_s is TTCCLL__DDYYNNAAMMIICC
+     it means that _s_t_r_i_n_g was allocated with a call  to  mmaalllloocc(())
+     and  is now the property of the Tcl system.  TTccll__RReettuurrnn will
+     arrange for the string's storage to be released  by  calling
+     ffrreeee(())  when  it is no longer needed.  The third possibility
+     is for _s_t_a_t_u_s to be TTCCLL__VVOOLLAATTIILLEE.  This  means  that  _s_t_r_i_n_g
+     points to an area of memory that is likely to be overwritten
+     when TTccll__RReettuurrnn returns.  In this case  TTccll__RReettuurrnn  makes  a
+     copy  of  the  string  and  arranges  for the copy to be the
+     return string for the current Tcl command.
+
+     If _s_t_r_i_n_g is NNUULLLL, then _s_t_a_t_u_s  is  ignored  and  TTccll__RReettuurrnn
+     re-initializes _i_n_t_e_r_p's result to point to the pre-allocated
+     result area, with an empty string in the result area.
+
+     In any of the above cases, if _i_n_t_e_r_p  holds  a  dynamically-
+     allocated result at the time of the TTccll__RReettuurrnn call, the old
+     result's storage is released by calling ffrreeee(()).
+
+
+
+
+
+
+Sprite v.1.0        Printed:  April 26, 1990                    1
+
+
+
+
+
+
+Tcl_Return        Tcl Command Language Library         Tcl_Return
+
+
+
+KKEEYYWWOORRDDSS
+     command, result, return value, interpreter
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  April 26, 1990                    2
+
+
+

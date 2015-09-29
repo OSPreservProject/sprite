@@ -1,0 +1,80 @@
+XCOMM platform:  $XConsortium: sun.cf,v 1.69 91/09/09 18:23:59 rws Exp $
+
+#define OSName            SunOS 4.1.1
+XCOMM operating system:  OSName
+#define OSMajorVersion    4
+#define OSMinorVersion    1
+
+#if OSMajorVersion < 4 || (OSMajorVersion == 4 && OSMinorVersion < 1)
+/* We do not guarantee this will work */
+#define BootstrapCFlags   -DNOSTDHDRS
+#define StandardDefines   -DNOSTDHDRS
+#endif
+
+#ifdef sprite
+  #define HasSaberC	  NO
+  #define HasNdbm	  NO
+  #define HasShm	  NO
+  #define HasSecureRPC	  NO
+  #define SetTtyGroup	  NO
+#else
+  #define HasSaberC	  YES
+  #define HasNdbm	  YES
+  #define HasShm	  YES
+  #define HasSecureRPC	  YES
+  #define SetTtyGroup	  YES
+#endif
+
+#define HasPutenv	  YES
+#define XsunServer	  YES		/* has color and mono support */
+#define XsunMonoServer	  YES		/* monochrome only */
+#define BuildPexExt	  XsunServer
+
+#ifdef sparc
+#undef sparc
+#define SparcArchitecture
+#endif
+#ifdef sun386
+#undef sun386
+#define i386Architecture
+#endif
+
+#include <sunLib.rules>
+
+#if HasGcc
+
+#define SharedLibraryCcCmd cc
+#define ExtraLoadFlags -B/usr/bin/
+#define AllocateLocalDefines /**/
+
+.c.o:
+	$(CC) -c $(CFLAGS) $*.c
+
+#else
+
+#define AllocateLocalDefines -DINCLUDE_ALLOCA_H
+
+#ifdef mc68000
+#define DefaultCCOptions -f68881
+#else
+#define DefaultCCOptions
+#endif
+
+#define PexCCOptions DefaultCCOptions
+
+#endif
+
+#define SharedAllocateLocalDefines -DINCLUDE_ALLOCA_H
+#define LibraryCCOptions /* don't want special floating point */
+
+#ifndef UseSunWindowsInServer
+#define UseSunWindowsInServer	NO	/* link in SunWindows support? */
+#endif
+
+#if UseSunWindowsInServer
+#define SunWindowsDefines -DSUN_WINDOWS
+#else
+#define SunWindowsDefines /* as nothing */
+#endif
+
+#define ServerOSDefines SunWindowsDefines AllocateLocalDefines

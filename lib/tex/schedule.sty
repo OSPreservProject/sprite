@@ -1,0 +1,266 @@
+%
+% File: schedule.sty
+% Author: Frank Pfenning (fp@cs.cmu.edu)
+%
+% Defines macros to draw a schedule.
+% Documentation is in schedule.doc
+%
+% Use this as an option to another documentstyle.
+
+\def\singlepagestyle{\topmargin 0pt\pagestyle{empty}\thispagestyle{empty}}
+
+  % The indented stuff following allows gray levels on postscript devices.
+  % It may only work at this installation (CMU).
+  % Is there a reliable way to tell whether the output device is
+  % postscript?
+  \newif\ifPS
+  \expandafter\ifx\csname PostScript\endcsname\relax
+	\PSfalse
+      \else
+	\PStrue
+      \fi
+
+  \ifPS 
+      \def\setgray #1{\special{"#1 setgray"}}
+	% Changes the gray level of the "pen" on the PostScript device
+	%  #1 should be a number between 0 and 
+	%  0 is black         1 is white 
+	% NB Remember to reset the gray level to black.
+      \def\Dark{\def\backgroundgray{\setgray{0.8}}}
+      \def\dark{\def\backgroundgray{\setgray{0.9}}}
+      \def\light{\def\backgroundgray{\setgray{0.95}}}
+      \def\Light{\def\backgroundgray{\setgray{0.99}}}
+      \def\white{\def\backgroundgray{\setgray{1}}}
+  \else
+      \def\Dark{} \def\dark{} \def\light{} \def\Light{} \def\white{}
+  \fi
+
+\def\backgrounddefault{\light}
+
+\newdimen\schedunitlength \schedunitlength=1.1pt
+
+\newcount\hourlength
+\newcount\daywidth
+\def\portrait{\hourlength=60 \daywidth=80}
+\def\landscape{\hourlength=40 \daywidth=120}
+\portrait
+
+\newcount\startday \startday=8
+\newcount\endday \endday=5
+
+\newcount\firstday \firstday=0
+\newcount\lastday \lastday=4
+
+\newcount\schedtopsep \schedtopsep=40
+\newcount\schedbotsep \schedbotsep=40
+
+\newcount\dday \dday=1
+\newcount\mmonth \mmonth=0
+
+\newcount\ypos \newcount\xpos \newcount\ylength
+
+\newcount\tempa \newcount\tempb \newcount\tempc \newcount\tempd
+
+\newcount\schedtop
+
+\newcount\schedwidth \newcount\hschedwidth
+
+\newcount\firstdayoffset
+\newcount\numdays
+
+\def\preamble#1{\gdef\preambletext{#1}}
+\def\beginpreamble#1\endpreamble{\gdef\preambletext{#1}}
+
+\def\postamble#1{\gdef\postambletext{#1}}
+\def\beginpostamble#1\endpostamble{\gdef\postambletext{#1}}
+
+\def\markhours{\gdef\hourlengthmarks{T}}
+\def\nomarkhours{\gdef\hourlengthmarks{N}}
+
+\def\showdates{\gdef\showdatesflag{T}}
+\def\shownodates{\gdef\showdatesflag{N}}
+
+\def\beginweek#1/{\mmonth #1\dday }
+\def\firstdate{\beginweek}
+
+\preamble{}
+\postamble{}
+\nomarkhours
+\shownodates
+
+\def\initdimen{\unitlength=\schedunitlength
+\ypos=0 \xpos=0
+\ylength=0 \tempa=0 \tempb=0 \tempc=0 \tempd=0
+\ifnum \endday<8 \advance\endday by 12\fi
+\ifnum \startday<8 \advance\startday by 12\fi
+\schedtop=\endday \advance\schedtop by -\startday
+\multiply\schedtop by\hourlength
+\firstdayoffset=\firstday \multiply\firstdayoffset by\daywidth
+\numdays=\lastday \advance\numdays by -\firstday
+\schedwidth=\numdays \advance\schedwidth by 1
+  \multiply\schedwidth by\daywidth
+\hschedwidth=\schedwidth \divide\hschedwidth by 2
+}
+
+\def\class#1{\framebox(\daywidth,\ylength){\begin{tabular}{c}
+  \commaparse#1,,\end{tabular}}}
+
+\def\commaparse#1,{\@ifnextchar ,{#1\ignorechar}{#1\\[1.3em]\commaparse}}
+\def\ignorechar#1{}
+
+\def\timeclass#1#2{\put(\xpos,\ypos){\timeboxbegin{#1}}%
+  \put(\xpos,\ypos){\timeboxend{#2}}}
+
+\def\grayput{%
+   \put(\xpos,\ypos){\backgroundgray
+        \rule{\daywidth\unitlength}{\ylength\unitlength}%
+	\black}}
+
+\def\classput#1;{%
+   \put(\xpos,\ypos){\class{#1}}%
+   \@ifnextchar [{\optone}{\relax}%]
+   }
+
+\def\optone[#1]{\put(\xpos,\ypos){\righttopbox{#1}}%
+   \@ifnextchar [{\opttwo}{\relax}%]
+   }
+
+\def\opttwo[#1]{\put(\xpos,\ypos){\rightbotbox{#1}}}
+
+\def\timeboxbegin#1{\makebox(\daywidth,\ylength)[tl]{%
+   \scriptsize{\raisebox{0em}[0.85em]{\scriptsize{\hskip 0.2em #1}}}}}
+
+\def\righttopbox#1{\makebox(\daywidth,\ylength)[tr]{%
+   \scriptsize{\raisebox{0em}[0.85em]{\scriptsize{#1\hskip 0.2em}}}}}
+
+\def\timeboxend#1{\makebox(\daywidth,\ylength)[bl]{%
+   \scriptsize{\raisebox{0.2em}{\scriptsize{\hskip 0.2em #1}}}}}
+
+\def\rightbotbox#1{\makebox(\daywidth,\ylength)[br]{%
+   \scriptsize{\raisebox{0.2em}{\scriptsize{#1\hskip 0.2em}}}}}
+
+\def\daywidthxpos#1{%
+	\advance \xpos by -\firstdayoffset
+   \if M#1\else \advance\xpos by\daywidth
+   \if T#1\else \advance\xpos by\daywidth
+   \if W#1\else \advance\xpos by\daywidth
+   \if H#1\else \advance\xpos by\daywidth
+   \if F#1\else \advance\xpos by\daywidth
+   \if S#1\else \advance\xpos by\daywidth
+   \if U#1\else \advance\xpos by\daywidth\fi\fi\fi\fi\fi\fi\fi}
+
+\def\cD{\Dark\cdefault}
+\def\cd{\dark\cdefault}
+\def\cl{\light\cdefault}
+\def\cL{\Light\cdefault}
+\def\cw{\white\cdefault}
+\def\c{\backgrounddefault\cdefault}
+
+\def\cdefault#1 #2:#3-#4:#5 {%
+      %% First convert time to 24hour clock
+      \ypos=-#2 \ifnum \ypos>-8 \advance\ypos by -12\fi
+      \ylength=#4 \ifnum \ylength<8 \advance\ylength by 12\fi
+      %% Now calculate the length of the entry: hours
+      \advance\ylength by \ypos \multiply\ylength by\hourlength
+      %% Calculate the beginning of the entry in hours
+      \advance\ypos by\startday
+      \multiply\ypos by\hourlength
+      \advance\ypos by\schedtop
+      %% Add the minutes
+      \tempa=#3 \multiply\tempa by\hourlength \divide\tempa by 60
+      \advance\ypos by -\tempa
+      %% Add minutes to length.
+      \tempa=#5 \advance\tempa by -#3
+      \multiply\tempa by\hourlength \divide\tempa by 60
+      \advance\ylength by\tempa
+      %% The lower left corner is at beginning of entry - length of entry
+      \advance\ypos by -\ylength
+      \xpos=0 \daywidthxpos{#1}%
+      \ifPS \grayput\fi
+      \timeclass{#2:#3}{#4:#5}
+      \classput}
+
+
+\def\putday#1{\ifnum \firstday<\tempc \ifnum \tempc<\tempd
+	   \put(\tempa,\schedtop){\makebox(\daywidth,20){#1}}%
+	   \if T\showdatesflag
+	       \put(\tempa,-20){\makebox(\daywidth,20){\the\mmonth/\the\dday}}%
+	       \increaseday \fi
+           \advance\tempa by\daywidth \fi \fi
+	   \advance\tempc by 1}
+
+\def\nextmonth{\advance\mmonth by 1\dday 1}
+
+\def\increaseday{\advance\dday by 1
+  \ifnum \dday=29\ifnum \mmonth=2\nextmonth\fi\fi
+  \ifnum \dday=31\ifcase \mmonth \or \or \or \or \nextmonth
+				 \or \or \nextmonth \or \or
+				 \or \nextmonth \or \or \nextmonth
+				 \or \fi\fi
+  \ifnum \dday=32\ifcase \mmonth \or \nextmonth \or \or \nextmonth
+				 \or \or \nextmonth \or \or \nextmonth
+				 \or \nextmonth \or \or \nextmonth
+				 \or \or \mmonth 1\dday 1\fi\fi}
+
+\def\schedule{
+
+\initdimen
+
+\begin{center}
+
+\begin{picture}(\schedwidth,\schedtop)(0,0)
+\tempa=\schedtop \advance\tempa by\schedtopsep
+\put(\hschedwidth,\tempa){\makebox(0,0)[b]{\preambletext}}
+\put(0,0){\framebox(\schedwidth,\schedtop){}}
+
+%% One more time stamp than there are hours.
+\tempa=\startday \advance\tempa by -1
+
+\xpos=\startday \ypos=\schedtop
+\loop \ifnum \xpos>12 \advance\xpos by -12\fi
+      \put(0,\ypos){\makebox(0,0)[r]{\the\xpos :00\hskip 1.7em}}%
+      \advance\ypos by -\hourlength \advance\tempa by 1
+      \advance\xpos by 1
+      \ifnum \tempa<\endday \repeat
+
+\tempa=\endday \advance\tempa by -\startday \advance\tempa by 1
+\multiput(0,\schedtop)(0,-\hourlength){\tempa}{%
+   \makebox(0,0)[r]{\vrule height 0.4pt width 1.5em}}
+
+\if T\hourlengthmarks
+  \multiput(\daywidth,\schedtop)(\daywidth,0){\numdays}{%
+      \makebox(0,0)[t]{\vrule height 0.3em width 0.4pt}}
+  \multiput(\daywidth,0)(\daywidth,0){\numdays}{%
+      \makebox(0,0)[b]{\vrule height 0.3em width 0.4pt}}
+  \advance\tempa by -2
+  \tempd=\schedtop \advance\tempd by -\hourlength
+  \tempb=\daywidth \tempc=0
+  \multiput(0,\tempd)(0,-\hourlength){\tempa}{%
+      \makebox(0,0)[l]{\vrule height 0.4pt width 0.3em}}
+  \loop \multiput(\tempb,\tempd)(0,-\hourlength){\tempa}{%
+           \makebox(0,0)[c]{\vrule height 0.2pt depth 0.2pt width 0.3em 
+                            \vrule height 0.3em depth 0.3em width 0.4pt
+			    \vrule height 0.2pt depth 0.2pt width 0.3em}}
+        \advance\tempb by \daywidth	  
+        \advance\tempc by 1
+        \ifnum \tempc<\numdays \repeat
+  \multiput(\tempb,\tempd)(0,-\hourlength){\tempa}{%
+      \makebox(0,0)[r]{\vrule height 0.4pt width 0.3em}}
+  \fi
+
+\tempa=0 \tempc=1 \tempd=\lastday \advance\tempd by 2
+\putday{Monday}
+\putday{Tuesday}
+\putday{Wednesday}
+\putday{Thursday}
+\putday{Friday}
+\putday{Saturday}
+\putday{Sunday}
+\put(0,-\schedbotsep){\makebox(0,0)[tl]{\postambletext}}
+}
+
+\def\endschedule{
+\end{picture}
+
+\end{center}
+}

@@ -1,0 +1,109 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.3
+date     90.04.13.11.53.38;  author rab;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.02.05.13.31.41;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.10.28.14.14.46;  author rab;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@Moved X from /b to /X11.
+@
+text
+@#
+# mkmf.dist
+#
+# This file is an awk script that returns the default distribution
+# directory.
+#
+
+#
+#   Stuff in /sprite/src/cmds.ancient is not included in ditribution.
+#
+
+/^\/sprite\/src\/cmds.ancient\//    { print "" ; exit }
+/^\/sprite\/src\/adobecmds\//       { print "" ; exit }
+
+#
+#   Stuff in /sprite/src/* is put in /dist/sprite/src/*
+#
+/^\/sprite\/src\//  { print "/dist" $1 }
+
+
+/^\/X11\/R3\/src\//    {
+    print replace($1, "/X11/R3/src/", "/dist/X11/R3/src/") ; exit }
+
+#
+#   Programs in /a/newcmds/* are put in /dist/sprite/src/cmds/*
+#
+/^\/a\/newcmds\// {
+    print replace($1, "/a/newcmds/", "/dist/sprite/src/cmds/") ; exit }
+
+#
+#   Programs in /a/attcmds are put in /dist/sprite/src/attcmds/*
+#
+/^\/a\/attcmds\// {
+        printf replace($1, "/a/attcmds/", "/dist/sprite/src/attcmds/") ; exit }
+
+#
+#   Stuff in /a/adobecmds/* and private directories
+#   is not included in the distribution.
+#
+    { print "" ; exit }
+
+    function replace(s, s1, s2) { return s2 substr(s, length(s1) + 1) }
+
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@a19 1
+/^\/b\/X\/src\//    { print replace($1, "/b/X/", "/dist/X/") ; exit }
+d21 2
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@a10 1
+/^\/sprite\/src\/cmds.ancient\//    { print "" }
+d12 3
+d20 3
+d26 2
+a27 1
+/^\/a\/newcmds\// { print replace($1, "/a/newcmds/", "/dist/sprite/src/cmds/") }
+d33 1
+a33 1
+        printf replace($1, "/a/attcmds/", "/dist/sprite/src/attcmds/") }
+d39 1
+a39 1
+    { print "" }
+@

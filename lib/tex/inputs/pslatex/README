@@ -1,0 +1,181 @@
+The files in this directory constitute the distribution of PSLaTeX, a
+set of extensions and changes to LaTeX to make it PostScript-based.
+
+Before beginning, you need to obtain a set of TFM files for the fonts
+resident in the PostScript device you intend to use.  (The default
+configuration assumes you have the "standard" 13 fonts, namely the
+Times, Courier, Helvetica and Symbol families.)  A set of these files
+is distributed as part of the standard UNIX TeX distribution.
+Additionally, they can be found on the Aston TeX archive server in the
+UK, and on june.cs.washington.edu in the US.  You will probably need
+to do a little work on these fonts before they can be used with
+PSLaTeX; see the section below.  If you were using an old version of
+PSLaTeX, then the fonts that you used with that will be fine.  As a
+last resort, a set of ready-to-use fonts can be obtained from the
+author at the address below.
+
+Short instructions
+~~~~~~~~~~~~~~~~~~
+Once you have got the fonts, and unpacked PSLaTeX (by executing the
+shar file), you should convert the .pl files distributed with PSLaTeX
+to .tfm files (using pltotf, part of the standard TeX distribution),
+and place them into your standard TFM directory (usually
+/usr/lib/tex/fonts).  Then build PSLaTeX.  Instructions can be found
+in pslatex.tex; a short form (for UNIX sites) is given below.  LaTeX
+and print pslatex.tex, then, after installing PSLaTeX, process
+pslatex.tex with PSLaTeX.
+
+To print DVI files produced by PSLaTeX you must have a DVI to
+PostScript processor capable of using unmapped device-resident fonts.
+Additionally, you must modify the header file downloaded to your
+PostScript device as per the instructions below.  (If you don't have a
+DVI->PostScript program, you can get one (for BSD UNIX) from the
+address below.)
+
+------------------------------------------------------------------------
+Summary of files
+
+README 		this file
+
+lfonts.tex	} PSLaTeX itself
+pslplain.tex	}
+fntchoice-t.tex } rename to fntchoice.tex, if not using the Makefile.
+
+fntchoice-[bhnp].tex
+		Alternative versions of fntchoice for Bookman,
+		Helvetica, NewCentury-Schoolbook and Palatino.
+		All require a LaserWriter Plus, except Helvetica.
+
+
+pslatex.tex 	documentation for PSLaTeX
+
+*.pl		PL files for "derived" PostScript fonts
+
+makefonts.ps	PostScript code to create derived fonts
+
+font-table	establishes the correspondence between TFM files and
+		PostScript fonts
+
+Other files
+
+BUGS
+Makefile
+fonts.tex 	contains some information about the choice of fonts used by
+		PSLaTeX. 
+
+Utilities to help with installation at UNIX sites:
+cnvfonts	converts font metric files from 1pt design size to 10pt.
+long2sh		create short-name links to long-name TFM files.
+------------------------------------------------------------------------
+
+
+
+Mario Wolczko
+
+   ______      Dept. of Computer Science    Internet:   mario%ux.cs.man.ac.uk
+ /~      ~\    The University               USENET: mcvax!ukc!man.cs.ux!mario
+(    __    )   Manchester M13 9PL           JANET:      mario@uk.ac.man.cs.ux
+ `-':  :`-'    U.K.                         Tel:    +44-61-275 2000 extn 6146
+____;  ;_____________the mushroom project____________________________________
+
+The programs used to create the TFM files can also be obtained from
+the above address.
+
+Trademarks, etc, can be found in pslatex.tex.
+
+
+------------------------------------------------------------------------
+	Installing PSLaTeX under UNIX (assuming you are running the
+		standard (UofW) distribution)
+
+1. If you have not already done so, unpack PSLaTeX by running /bin/sh
+   on the shar file.  Convert each .pl file, into a .tfm file by typing
+	make tfms
+   Put the .tfm files in your standard tfm directory (usually
+   /usr/lib/tex/fonts; if so
+   	make install-tfms
+   will do the job.)
+
+2. Get hold of the TFMs for the fonts resident in your PostScript
+   device.  For the default setup, you will need at least the following:
+   	Times-Roman, Times-Italic, Times-Bold, Times-Oblique,
+   	Symbol and Symbol-Oblique.
+   Check the design size of these fonts (convert one TFM file to PL
+   format using tftopl, and look for the line containing the word
+   DESIGNSIZE).  They should be at size 10pt, ie the line should read
+	(DESIGNSIZE R 10.0)
+   If they are at 1.0pt, you need to convert them to 10pt.  A shell
+   script (cnvfonts) is provided that will do this for you.
+
+3. Modify fntchoice.tex for the names of the TFM files to use for \rm,
+   etc.  (If you accept the setup as distributed, you don't need to
+   make any modifications.)  You may have to do this for one of two
+   reasons: 
+    a) if you have a version of dvi2ps that relies on specific types
+       of names for PostScript fonts, e.g., that they begin with "PS".
+       If this is so, you will also have to rename the TFM files
+       accordingly. 
+    b) The TFM files you use have names of the long form (eg
+       Times-Roman), and you don't want to change them.  As
+       distributed, PSLaTeX assumes you will use short names (eg
+       t-rom), as these are more portable amongst different operating
+       systems.   The correspondence between short and long names can
+       be found in the file font-table.
+   If you don't modify fntchoice.tex but have TFM files with long
+   names (eg Times-Roman.tfm), then you'll have to make equivalent TFM
+   files with short names, by copying or linking.  The shell script
+   long2sh will create links based on the names in font-table.
+
+4. Build the pslplain.fmt file:
+	$ initex
+	This is TeX, Version 2.0 for Berkeley UNIX (INITEX)
+	**pslplain \dump
+	(pslplain.tex
+	...
+	\font\tencirc=circle10
+	\font\tencircw=circlew10
+	36832 words of font info for 108 preloaded fonts
+	14 hyphenation exceptions
+	Hyphenation trie of length 5942 has 181 ops
+	No pages of output.
+   This will use the files lplain.tex, hyphen.tex and latex.tex that
+   came with your standard LaTeX, but will substitute a new version of
+   lfonts.tex.
+
+5. Copy pslplain.fmt to your "standard" area for format files
+   (/usr/lib/tex/macros, more often than not).
+
+6. If you want, you can build a "preloaded" PSLaTeX (see instructions
+   that accompanied your TeX distribution).
+
+------------------------------------------------------------------------
+	Hints on DVI->PostScript convertors
+
+There are many, many DVI to PostScript convertors available now, each
+with a different set of features.  To guide you in choosing one to use
+with PSLaTeX, you should bear the following in mind:
+ - LaTeX uses the Computer Modern (CM) fonts, for which PK, GF, or PXL
+   files are provided as part of the TeX distribution.  The files
+   contain the bitmaps used to print each glyph in a font.  PSLaTeX
+   uses fonts resident within the PostScript printing engine, and does
+   not need bitmaps for these fonts, only width information in the
+   form of a TeX Metric File (TFM).  Indeed, bitmaps for these fonts
+   are not generally available.
+   Therefore, a convertor to be used with PSLaTeX must recognise that
+   some fonts are resident within the printing engine, and not attempt
+   to download bitmaps.
+ - As mentioned in the document that describes font usage in PSLaTeX,
+   some of the fonts used are derived (by simple geometric
+   transformations, implemented in PostScript) from the existing
+   fonts.  Oblique fonts are made by "sloping" an upright font,
+   SmallCaps fonts contain the upper-case glyphs from an existing font
+   reduced by 20%, etc.  It would be nice if such fonts had been
+   designed from scratch and made available to the general public, but
+   they haven't been, and we're stuck with the situation.  Hence some
+   PostScript needs to be sent to the printer to "generate" these
+   fonts.  Suitable PostScript can be found in makefonts.ps, and this
+   can be tacked onto the end of any existing header file that your
+   convertor uses.
+------------------------------------------------------------------------
+More information, and a guide to possible problems, is in pslatex.tex.
+------------------------------------------------------------------------

@@ -1,0 +1,24 @@
+This directory contains a paper which describes design tradeoffs of
+MakeIndex.  It is written in LaTeX and contains a figure in PostScript
+specifed in the psfig format.  Run LaTeX on the file ind.tex to obtain
+a DVI file.  All style files involved are included in this directory.
+To print it, you need to have a PostScript-based printer and the
+DVI-to-PostScript driver must understand the psfig format.  A
+PostScipt version of this paper, ind.ps, can be printed directly to a
+PostScript printer.
+
+This paper will appear in Software: Practice and Experience, 1988.  A
+more complete version is available as Computer Science Tech. Report
+87/347, University of California, Berkeley, March 1987.
+
+
+							Pehong Chen
+							phc@renoir.berkeley.edu
+							3/20/1988
+P.S.
+For the benefit of sites which do not have a DVI driver capable of 
+supporting the figure insertion, I have prepared a PostScript 
+printer-ready file in ind.ps.
+							Nelson H.F. Beebe
+							Beebe@science.utah.edu
+							20-Jan-88

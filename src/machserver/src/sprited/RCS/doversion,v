@@ -1,0 +1,117 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  srv030:1.2 srv028:1.2 srv027:1.2 srv026:1.2 srv024:1.2 srv022:1.2 srv021:1.2 srv019:1.2 srv018:1.2 srv016:1.2 srv015:1.2 srv014:1.2 srv012:1.2 srv011:1.2 srv010:1.2 srv008:1.2 srv007:1.2 srv006:1.2 srv005:1.2 srv004:1.2 srv003:1.2 srv002:1.2 srv001:1.2;
+locks    ; strict;
+comment  @# @;
+
+
+1.2
+date     92.04.07.13.30.59;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     92.04.05.22.51.02;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Changes for sprited.
+@
+text
+@#! /sprite/cmds/csh -f
+#
+#	Usage: doversion versionInfo
+#	versionInfo controls the minor number of the version. If it is
+#	TRUE then the version is incremented from the last build, if
+#	it is FALSE it is not incremented, and any other value is taken
+#	to be the version number to use.
+#
+# $Header: /user5/kupfer/spriteserver/src/sprited/RCS/doversion,v 1.1 92/04/05 22:51:02 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+#
+# Copyright 1989 Regents of the University of California
+# Permission to use, copy, modify, and distribute this
+# software and its documentation for any purpose and without
+# fee is hereby granted, provided that the above copyright
+# notice appear in all copies.  The University of California
+# makes no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without
+# express or implied warranty.
+#
+
+onintr bailout
+
+set log = "no"
+
+if ($#argv >= 1) then
+    set versionInfo = $1
+else
+    set versionInfo = "TRUE"
+endif
+
+if (-e version) then
+    set version = `cat version`
+else
+    set version = 0
+    set log = "yes"
+endif
+
+switch ($versionInfo)
+    case "TRUE":
+	@@ version++
+	echo $version > version
+	set log = "yes"
+	breaksw
+    case "FALSE":
+	breaksw
+    default:
+	set version = $versionInfo
+	set log = "yes"
+	breaksw
+endsw
+
+echo $version >! version
+if ($version < 10 ) then
+    set version = "00"$version
+else if ($version < 100) then
+    set version = "0"$version
+endif
+
+if ($log == "yes") then
+    echo "" >> versionLog
+    echo "srv.$version" >> versionLog
+    echo "Remember to log message for version srv.$version in versionLog"
+endif
+mkversion -p "SPRITE VERSION srv.$version (MACHINE)" > version.h.template
+exit 0
+
+bailout:
+exit 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@a3 1
+#	releaseNumber is the major number for the version (currently 1)
+d9 1
+a9 1
+# $Header: /sprite/lib/forms/RCS/proto.csh,v 1.2 89/01/16 11:13:37 ouster Exp $ SPRITE (Berkeley)
+d61 2
+a62 2
+    echo "MDK.$version" >> versionLog
+    echo "Remember to log message for kernel version MDK.$version in versionLog"
+d64 1
+a64 1
+mkversion -p "SPRITE VERSION MDK.$version (MACHINE)" > version.h.template
+@

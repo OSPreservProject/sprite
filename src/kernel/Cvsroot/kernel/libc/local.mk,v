@@ -1,0 +1,69 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ds3100:1.3 sun3:1.3;
+locks    ; strict;
+comment  @@;
+
+
+1.3
+date     92.04.14.17.14.46;  author jhh;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     92.04.14.16.49.18;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.12.13.12.03.16;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@NEW_NET is now in kernel.mk.
+@
+text
+@#
+# This file is included by Makefile.  Makefile is generated automatically
+# by mkmf, and this file provides additional local personalization.  The
+# variable SYSMAKEFILE is provided by Makefile;  it's a system Makefile
+# that must be included to set up various compilation stuff.
+#
+
+#
+# When we take a snapshot follow the symbolic links in this module because
+# they point off into various libraries and we want our snapshot to be
+# self-contained.
+#
+SNAPFLAGS	+= -l
+
+#include	<$(SYSMAKEFILE)>
+
+@
+
+
+1.2
+log
+@Added NEW_NET flag so it uses the new network definitions.
+@
+text
+@a13 1
+CFLAGS 		+= -DNEW_NET
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d14 1
+@

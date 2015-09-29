@@ -1,0 +1,68 @@
+
+
+
+installboot          Administrative Commands          installboot
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     installboot - Installs boot program on disk.
+
+SSYYNNOOPPSSIISS
+     iinnssttaallllbboooott [--uu] --DD _d_e_v_i_c_e  _b_o_o_t__p_r_o_g_r_a_m
+
+OOPPTTIIOONNSS
+     --uu        Indicates the boot file has no a.out header  (unix
+               style).
+
+     --DD _d_e_v_i_c_e Uses the specified device (sample  names:  "rsd0",
+               "rxy1").
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     iinnssttaallllbboooott copies the specified boot program onto  a  disk,
+     removing the a.out header as it does so.
+
+
+SSEEEE AALLSSOO
+     makeboot
+
+
+FFIILLEESS
+     /sprite/boot   - Directory containing per-machine TFTP  boot
+     files.   These  are  typically  symbolic  links  to machine-
+     dependent boot programs.
+     /sprite/boot.$MACHINE    - Home for  the  machine  dependent
+     boot programs.
+
+
+KKEEYYWWOORRDDSS
+     boot, a.out
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  February 17, 1990                  1
+
+
+

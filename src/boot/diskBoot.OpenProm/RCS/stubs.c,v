@@ -1,0 +1,167 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.6
+date     91.01.06.00.18.40;  author dlong;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     90.07.17.15.42.28;  author mendel;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.01.06.08.14.47;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     87.05.08.17.48.07;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     86.07.21.09.37.33;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     86.07.18.09.34.15;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Stubs for the boot program.
+@
+
+
+1.6
+log
+@changed return type of panic() from int to void
+@
+text
+@#include "sprite.h"
+#include "machMon.h"
+
+printf(format, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10)
+    char *format;
+    Address arg1;
+    Address arg2;
+    Address arg3;
+    Address arg4;
+    Address arg5;
+    Address arg6;
+    Address arg7;
+    Address arg8;
+    Address arg9;
+    Address arg10;
+{
+#ifndef NO_PRINTF
+    Mach_MonPrintf(format, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9,
+		       arg10);
+#endif
+}
+
+void panic(string)
+    char *string;
+{
+#ifndef NO_PRINTF
+    Mach_MonPrintf("Panic: %s\n", string);
+#endif
+    (romVectorPtr->abortEntry)();
+
+}
+@
+
+
+1.5
+log
+@*** empty log message ***
+@
+text
+@d23 1
+a23 1
+panic(string)
+@
+
+
+1.4
+log
+@New include files and constants due to source reorganization
+@
+text
+@d4 1
+a4 1
+Sys_Printf(format, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10)
+d17 1
+d20 1
+d23 1
+a23 2
+Sys_Panic(type, string)
+    int type;
+d26 1
+d28 3
+a30 1
+    Mach_MonTrap(romVectorPtr->abortEntry);
+@
+
+
+1.3
+log
+@Had to fix Mon_Abort, no longer a macro
+@
+text
+@d2 1
+a2 1
+#include "sunMon.h"
+d17 1
+a17 1
+    Mon_Printf(format, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9,
+d25 2
+a26 2
+    Mon_Printf("Panic: %s\n", string);
+    Mon_Trap(romVectorPtr->abortEntry);
+@
+
+
+1.2
+log
+@Only has Sys_Printf and Sys_Panic now.
+@
+text
+@d26 1
+a26 1
+    Mon_Abort();
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@a3 5
+FsFileBlockIO()
+{
+    return;
+}
+
+a26 10
+}
+
+Fs_AttachDisk()
+{
+    return;
+}
+
+Fs_BlocksToSectors()
+{
+    return;
+@

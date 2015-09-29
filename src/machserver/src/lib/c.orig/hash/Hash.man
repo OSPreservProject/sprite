@@ -1,0 +1,49 @@
+' $Header: /sprite/src/lib/c/hash/RCS/Hash.man,v 1.1 88/12/30 15:05:14 ouster Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS Hash lib
+.BS
+.SH NAME
+Hash \- overview of routines to manipulate hash tables
+.BE
+
+.PP
+The Hash_ routines provide mechanisms for manipulating hash
+tables.  A hash table is a data structure that stores any
+number of entries, each of which is a <key, value> pair.
+Given the key for a particular entry, the
+Hash_ routines can very quickly find the entry (and hence the
+associated value).  There can be at most one entry with a given
+key in a hash table at a time, but many entries may have the
+same value.
+.PP
+This library provides two unusual features.  First, hash tables
+can grow gracefully.  In most hash table implementations
+the  number of buckets in the table is fixed;  if the number of
+entries in the table becomes substantially larger than the number
+of buckets, the performance of the table degrades.  In contrast,
+this implementation automatically re-allocates the bucket memory
+as the table grows.  As a result, hash tables can become arbitrarily
+large without overloading the buckets.  An initial number of buckets
+may be provided when tables are initialized, but it will change later
+(automatically) if necessary to guarantee efficient operation.
+.PP
+The second unusual feature of the Hash_ routines is that they allow
+keys to be expressed in several forms.  Keys may either be variable-length
+NULL-terminated strings, or single-word values, or multi-word records
+of any length (in the latter case, all keys in the table must be the
+same length).  See Hash_InitTable for deatils on the different key types.
+.PP
+Hash tables are initialized by calling \fBHash_InitTable\fR.  New entries
+are added with \fBHash_CreateEntry\fR, and existing entries may be located
+with either \fBHash_CreateEntry\fR or \fBHash_FindEntry\fR.  The values stored
+in entries are manipulated with \fBHash_GetValue\fR and Hash_SetValue
+(values may be arbitrary one-word values; they are stored in entries
+and retrieved from them using the type ``ClientData'').  An entry
+can be deleted from the table by calling \fBHash_DeleteEntry\fR;  the entire
+table can be released by calling \fBHash_DeleteTable\fR.  \fBHash_EnumFirst\fR
+and \fBHash_EnumNext\fR provide a facility for stepping through all the
+entries in a table.  Finally, \fBHash_PrintStats\fR can be invoked to print
+out some usage information about a hash table.
+
+.SH KEYWORDS
+hash table, key, value

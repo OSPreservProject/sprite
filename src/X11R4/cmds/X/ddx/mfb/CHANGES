@@ -1,0 +1,6 @@
+The following changes have been made to this directory since R3:
+
+     o  Optimizations.  Text speed, blt speed, pushpixels,
+     	dashed zero-width lines, zero-width arcs, filled arcs.
+
+     o  Various R4isms

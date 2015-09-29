@@ -1,0 +1,62 @@
+This is Common TeX, Version 2.9 (preloaded format=lplain 89.9.18) 22 JUL 1991 11:53
+**&lplain refbase.tex 
+(./refbase.tex
+LaTeX Version 2.09 - Released 27 October 1986
+(./refbase.sty
+Document Style 'perlref' Version 4.1.8
+(/sprite/lib/tex/article.sty
+Document Style `article'. Released 4 September 1986.
+(/sprite/lib/tex/art10.sty)
+\c@part=\count78
+\c@section=\count79
+\c@subsection=\count80
+\c@subsubsection=\count81
+\c@paragraph=\count82
+\c@subparagraph=\count83
+\c@figure=\count84
+\c@table=\count85
+) (/sprite/lib/tex/art11.sty)
+Configuring for dvips 5.47 and PostScript fonts
+(/sprite/lib/tex/psfonts.sty
+\@cmrfam=\fam11
+\@cmrscale=\count86
+)
+\@xli=\skip41
+\@xlj=\skip42
+)
+No file refbase.aux.
+! Font \\prm11=ptmr scaled 1100 not loadable: Metric (TFM) file not foun
+d.
+<to be read again> 
+                   \relax 
+\@ifundefined ...sname \relax #2
+                                \else #3\fi 
+\@@getfont ...ale {#5}\relax }{}
+                                \@ifundefined {\string #1\str...
+\@setsize ...ip \baselineskip #3
+                                #4
+\@normalsize ...pt}\xipt \@xipt 
+                                \abovedisplayskip 11pt plus3p...
+\document ...xpand \@normalsize 
+                                \everypar {}
+l.29 \begin{document}
+                     
+? 
+! Emergency stop.
+<to be read again> 
+                   \relax 
+\@ifundefined ...sname \relax #2
+                                \else #3\fi 
+\@@getfont ...ale {#5}\relax }{}
+                                \@ifundefined {\string #1\str...
+\@setsize ...ip \baselineskip #3
+                                #4
+\@normalsize ...pt}\xipt \@xipt 
+                                \abovedisplayskip 11pt plus3p...
+\document ...xpand \@normalsize 
+                                \everypar {}
+l.29 \begin{document}
+                     
+! End of file on the terminal
+
+No pages of output.

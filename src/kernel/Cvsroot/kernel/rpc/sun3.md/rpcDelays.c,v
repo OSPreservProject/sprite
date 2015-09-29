@@ -1,0 +1,158 @@
+head     9.0;
+branch   ;
+access   ;
+symbols  ds3100:9.0 sun3:9.0 sun4nw:9.0 symm:9.0 spur:9.0 sprited:1.1.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.0
+date     89.09.12.15.18.51;  author douglis;  state Stable;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.36.45;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.26.06;  author brent;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.22.11.42.12;  author mendel;  state Exp;
+branches 1.1.1.1;
+next     ;
+
+1.1.1.1
+date     91.10.22.15.36.47;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Routine to set machine dependent RPC delays.
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@/* 
+ * rpcDelay.c --
+ *
+ *	Get perferred machine dependent inter-packet delays for rpcs.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/sun3.md/RCS/rpcDelays.c,v 8.0 88/11/11 18:36:45 douglis Stable Locker: douglis $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include "sprite.h"
+#include "mach.h"
+#include "sys.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RpcGetMachineDelay --
+ *
+ *	Get preferred inter-fragment delay for input and output packets.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+RpcGetMachineDelay(myDelayPtr, outputRatePtr)
+	unsigned short	*myDelayPtr;	/* Preferred delay in microseconds
+					 * between successive input packets.
+					 */
+	unsigned short	*outputRatePtr;	/* Delay in microseconds between
+					 * successive output packets.
+					 */
+{
+
+     switch(Mach_GetMachineType()) {
+	default:
+	case SYS_SUN_2_120:
+	    *myDelayPtr = 2000;
+	    *outputRatePtr = 2000;
+	    break;
+	case SYS_SUN_2_50:	/* Same as SYS_SUN_2_160 */
+	    *myDelayPtr = 1000;
+	    *outputRatePtr = 1000;
+	    break;
+	case SYS_SUN_3_60:
+	case SYS_SUN_3_75:	/* Same as SYS_SUN_3_160 */
+	    *myDelayPtr = 500;
+	    *outputRatePtr = 500;
+	    break;
+    }
+}
+
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/sun3.md/RCS/rpcDelays.c,v 6.0 88/08/11 12:26:06 brent Stable Locker: douglis $ SPRITE (Berkeley)";
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: rpcDelays.c,v 1.1 88/06/22 11:42:12 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: proto.c,v 1.2 88/03/11 08:39:08 ouster Exp $ SPRITE (Berkeley)";
+@
+
+
+1.1.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/rpc/sun3.md/RCS/rpcDelays.c,v 1.1 88/06/22 11:42:12 mendel Exp $ SPRITE (Berkeley)";
+@

@@ -1,0 +1,170 @@
+ANYSET	WaitFor.c	/^ANYSET(src)$/
+AbortServer	utils.c	/^AbortServer()$/
+AccessUsingXdmcp	access.c	/^AccessUsingXdmcp ()$/
+AddEnabledDevice	connection.c	/^AddEnabledDevice(fd)$/
+AddFileEntry	fontdir.c	/^int AddFileEntry(table, name, isAlias)$/
+AddFileNameAliases	osfonts.c	/^AddFileNameAliases(table, path)$/
+AddFontPathElement	osfonts.c	/^AddFontPathElement(path, element, length, fontDir)/
+AddHost	access.c	/^AddHost (client, family, length, pAddr)$/
+AddLocalHosts	access.c	/^AddLocalHosts ()$/
+AddNameEntry	fontdir.c	/^int AddNameEntry(table, name, index)$/
+AllocateInputBuffer	io.c	/^AllocateInputBuffer()$/
+AllocateOutputBuffer	io.c	/^AllocateOutputBuffer()$/
+AttendClient	connection.c	/^AttendClient (client)$/
+AugmentSelf	access.c	/^AugmentSelf(fd)$/
+AuthenticationFuncsPtr	xdmcp.c	/^} AuthenticationFuncsRec, *AuthenticationFuncsPtr;/
+AuthorizedClient	access.c	/^AuthorizedClient(client)$/
+AutoResetServer	utils.c	/^AutoResetServer ()$/
+CCID	connection.c	/^typedef long CCID;      \/* mask of indices into c/
+ChangeAccessControl	access.c	/^ChangeAccessControl(client, fEnabled)$/
+CheckAddr	access.c	/^CheckAddr (family, pAddr, length)$/
+CheckConnections	connection.c	/^CheckConnections()$/
+CheckNode	utils.c	/^CheckNode(ptr)$/
+ClientAuthorized	connection.c	/^ClientAuthorized(client, proto_n, auth_proto, stri/
+CloseDownConnection	connection.c	/^CloseDownConnection(client)$/
+CloseDownFileDescriptor	connection.c	/^CloseDownFileDescriptor(oc)$/
+CloseFontFile	osfonts.c	/^CloseFontFile(fp, pid)$/
+ConvertAddr	access.c	/^ConvertAddr (saddr, len, addr)$/
+CreateWellKnownSockets	connection.c	/^CreateWellKnownSockets()$/
+DefineSelf	access.c	/^DefineSelf (fd)$/
+DontListenToAnybody	connection.c	/^DontListenToAnybody()$/
+DumpMemoryInUse	utils.c	/^DumpMemoryInUse (time)$/
+DumpMemorySince	utils.c	/^DumpMemorySince ()$/
+EnableLocalHost	access.c	/^EnableLocalHost ()$/
+Error	utils.c	/^Error(str)$/
+ErrorConnMax	connection.c	/^ErrorConnMax(fd)$/
+ErrorF	utils.c	/^ErrorF( f, s0, s1, s2, s3, s4, s5, s6, s7, s8, s9)/
+EstablishNewConnections	connection.c	/^EstablishNewConnections()$/
+ExpandFontNamePattern	osfonts.c	/^ExpandFontNamePattern(lenpat, countedPattern, maxN/
+FamilyMap	access.c	/^} FamilyMap;$/
+FatalError	utils.c	/^FatalError(f, s0, s1, s2, s3, s4, s5, s6, s7, s8, /
+FindFileType	osfonts.c	/^FindFileType(name)$/
+FindFontFile	osfonts.c	/^FindFontFile(path, fontname, depth, followAliases,/
+FindNameInFontTable	fontdir.c	/^int FindNameInFontTable(table, name, found)$/
+FindNormalNameInFontTable	fontdir.c	/^static int FindNormalNameInFontTable(table, name, /
+FindWildNameInFontTable	fontdir.c	/^static int FindWildNameInFontTable(table, pat, fir/
+FlushAllOutput	io.c	/^FlushAllOutput()$/
+FlushClient	io.c	/^FlushClient(who, oc, extraBuf, extraCount)$/
+FlushIfCriticalOutputPending	io.c	/^FlushIfCriticalOutputPending()$/
+FontFileLoad	osfonts.c	/^FontFileLoad(fontname, length)$/
+FontFilePropLoad	osfonts.c	/^FontFilePropLoad(fontname, length, font, fi, props/
+FontFileRead	osfonts.c	/^FontFileRead(buf, itemsize, nitems, fid)$/
+FontFileSkip	osfonts.c	/^FontFileSkip(bytes, fid)$/
+FontFilter	osfonts.c	/^FontFilter(fp, filter)$/
+FontUnload	osfonts.c	/^void FontUnload(font)$/
+FreeFontPath	osfonts.c	/^FreeFontPath(path)$/
+FreeFontRecord	osfonts.c	/^FreeFontRecord(pFP)$/
+FreeFontTable	fontdir.c	/^void FreeFontTable(table)$/
+FreeOsBuffers	io.c	/^FreeOsBuffers(oc)$/
+GetFontPath	osfonts.c	/^GetFontPath()$/
+GetHosts	access.c	/^GetHosts (data, pnHosts, pLen, pEnabled)$/
+GetTimeInMillis	utils.c	/^GetTimeInMillis()$/
+GiveUp	utils.c	/^GiveUp()$/
+HOST	access.c	/^} HOST;$/
+Header	utils.c	/^#define Header(ptr)	((MallocHeaderPtr) (((char *) /
+IgnoreClient	connection.c	/^IgnoreClient (client)$/
+InsertFakeRequest	io.c	/^InsertFakeRequest(client, data, count)$/
+InsertIOV	io.c	/^#define InsertIOV(pointer, length) \\$/
+InvalidHost	access.c	/^InvalidHost (saddr, len)$/
+ListenToAllClients	connection.c	/^ListenToAllClients()$/
+MakeCopy	fontdir.c	/^static char *MakeCopy(orig)$/
+MakeFontPathRecord	osfonts.c	/^MakeFontPathRecord(size)$/
+MakeFontTable	fontdir.c	/^MakeFontTable(directory, size)$/
+MallocHeaderPtr	utils.c	/^typedef struct _MallocHeader	*MallocHeaderPtr;$/
+MallocHeaderRec	utils.c	/^} MallocHeaderRec;$/
+MallocTrailerPtr	utils.c	/^} MallocTrailerRec, *MallocTrailerPtr;$/
+MarkMemoryTime	utils.c	/^MarkMemoryTime ()$/
+Match	fontdir.c	/^int Match(string, pat, head, tail, plen)$/
+NewHost	access.c	/^NewHost (family, addr, len)$/
+OnlyListenToOneClient	connection.c	/^OnlyListenToOneClient(client)$/
+OpenFontFile	osfonts.c	/^OpenFontFile(table, name, typeIndex, pid)$/
+OsInit	osinit.c	/^OsInit()$/
+OsLookupColor	oscolor.c	/^OsLookupColor(screen, name, len, pred, pgreen, pbl/
+PayAttentionToClientsAgain	connection.c	/^PayAttentionToClientsAgain()$/
+ProcessCommandLine	utils.c	/^ProcessCommandLine ( argc, argv )$/
+ReadFontAlias	osfonts.c	/^ReadFontAlias(directory, isFile, ptable, path)$/
+ReadFontDir	osfonts.c	/^ReadFontDir(directory, ptable, path)$/
+ReadRequestFromClient	io.c	/^ReadRequestFromClient(client)$/
+RemoveEnabledDevice	connection.c	/^RemoveEnabledDevice(fd)$/
+RemoveHost	access.c	/^RemoveHost (client, family, length, pAddr)$/
+ResetCurrentRequest	io.c	/^ResetCurrentRequest(client)$/
+ResetHosts	access.c	/^ResetHosts (display)$/
+ResetOsBuffers	io.c	/^ResetOsBuffers()$/
+ResetWellKnownSockets	connection.c	/^ResetWellKnownSockets ()$/
+SearchDirectory	osfonts.c	/^SearchDirectory(index, pat, fontList, limit)$/
+SetCriticalOutputPending	io.c	/^SetCriticalOutputPending()$/
+SetDefaultFontPath	osfonts.c	/^SetDefaultFontPath(name)$/
+SetFontPath	osfonts.c	/^SetFontPath(client, npaths, countedStrings)$/
+SetupBlock	utils.c	/^SetupBlock(ptr, amount)$/
+SetupWildMatch	fontdir.c	/^int SetupWildMatch(table, pat, firstWild, phead, p/
+Trailer	utils.c	/^#define Trailer(ptr)	((MallocTrailerPtr) (((char */
+UnixFamily	access.c	/^static int UnixFamily(xf)$/
+UseMsg	utils.c	/^void UseMsg()$/
+ValidateAllActiveMemory	utils.c	/^ValidateAllActiveMemory ()$/
+WaitForSomething	WaitFor.c	/^WaitForSomething(pClientsReady)$/
+WriteToClient	io.c	/^WriteToClient (who, count, buf)$/
+XFamily	access.c	/^static int XFamily(af)$/
+Xalloc	utils.c	/^Xalloc (amount)$/
+Xcalloc	utils.c	/^Xcalloc (amount)$/
+XdmcpAddAuthorization	xdmcp.c	/^XdmcpAddAuthorization (name, data)$/
+XdmcpAddHost	xdmcp.c	/^XdmcpAddHost(from, fromlen, AuthenticationName, ho/
+XdmcpBlockHandler	xdmcp.c	/^XdmcpBlockHandler(data, wt, LastSelectMask)$/
+XdmcpCheckAuthentication	xdmcp.c	/^XdmcpCheckAuthentication (Name, Data, packet_type)/
+XdmcpCloseDisplay	xdmcp.c	/^XdmcpCloseDisplay(sock)$/
+XdmcpDeadSession	xdmcp.c	/^XdmcpDeadSession (reason)$/
+XdmcpFatal	xdmcp.c	/^XdmcpFatal (type, status)$/
+XdmcpInit	xdmcp.c	/^XdmcpInit()$/
+XdmcpOpenDisplay	xdmcp.c	/^XdmcpOpenDisplay(sock)$/
+XdmcpOptions	xdmcp.c	/^XdmcpOptions(argc, argv, i)$/
+XdmcpRegisterAuthentication	xdmcp.c	/^XdmcpRegisterAuthentication (name, namelen, data, /
+XdmcpRegisterAuthorization	xdmcp.c	/^XdmcpRegisterAuthorization (name, namelen)$/
+XdmcpRegisterAuthorizations	xdmcp.c	/^XdmcpRegisterAuthorizations ()$/
+XdmcpRegisterBroadcastAddress	xdmcp.c	/^XdmcpRegisterBroadcastAddress (addr)$/
+XdmcpRegisterConnection	xdmcp.c	/^XdmcpRegisterConnection (type, address, addrlen)$/
+XdmcpRegisterDisplayClass	xdmcp.c	/^XdmcpRegisterDisplayClass (name, length)$/
+XdmcpRegisterManufacturerDisplayID	xdmcp.c	/^XdmcpRegisterManufacturerDisplayID (name, length)$/
+XdmcpReset	xdmcp.c	/^XdmcpReset ()$/
+XdmcpSelectHost	xdmcp.c	/^XdmcpSelectHost(host_sockaddr, host_len, Authentic/
+XdmcpSetAuthentication	xdmcp.c	/^XdmcpSetAuthentication (name)$/
+XdmcpUseMsg	xdmcp.c	/^XdmcpUseMsg ()$/
+XdmcpWakeupHandler	xdmcp.c	/^XdmcpWakeupHandler(data, i, LastSelectMask)$/
+XdmcpWarning	xdmcp.c	/^XdmcpWarning(str)$/
+Xfree	utils.c	/^Xfree(ptr)$/
+Xrealloc	utils.c	/^Xrealloc (ptr, amount)$/
+YieldControl	io.c	/^#define YieldControl()				\\$/
+YieldControlDeath	io.c	/^#define YieldControlDeath()			\\$/
+YieldControlNoInput	io.c	/^#define YieldControlNoInput()			\\$/
+acmp	access.c	/^#define acmp(a1, a2, len) bcmp((char *)(a1), (char/
+acopy	access.c	/^#define acopy(a1, a2, len) bcopy((char *)(a1), (ch/
+addrEqual	access.c	/^#define addrEqual(fam, address, length, host) \\$/
+alloca	genalloca.c	/^alloca (size)			\/* returns pointer to storage *\//
+find_stack_direction	genalloca.c	/^find_stack_direction (\/* void *\/)$/
+get_manager_by_name	xdmcp.c	/^get_manager_by_name(argc, argv, i)$/
+get_xdmcp_sock	xdmcp.c	/^get_xdmcp_sock()$/
+getpeername	access.c	/^#define getpeername(fd, from, fromlen)	hpux_getpee/
+header	genalloca.c	/^} header;$/
+hpux_getpeername	connection.c	/^hpux_getpeername(fd, from, fromlen)$/
+lexAlias	osfonts.c	/^lexAlias (file, lexToken)$/
+lexc	osfonts.c	/^lexc (file)$/
+open_dnet_socket	connection.c	/^open_dnet_socket ()$/
+open_tcp_socket	connection.c	/^open_tcp_socket ()$/
+open_unix_socket	connection.c	/^open_unix_socket ()$/
+pointer	genalloca.c	/^typedef void	*pointer;		\/* generic pointer type */
+receive_packet	xdmcp.c	/^receive_packet()$/
+recv_accept_msg	xdmcp.c	/^recv_accept_msg(length)$/
+recv_alive_msg	xdmcp.c	/^recv_alive_msg (length)$/
+recv_decline_msg	xdmcp.c	/^recv_decline_msg(length)$/
+recv_failed_msg	xdmcp.c	/^recv_failed_msg(length)$/
+recv_refuse_msg	xdmcp.c	/^recv_refuse_msg(length)$/
+recv_willing_msg	xdmcp.c	/^recv_willing_msg(from, fromlen, length)$/
+request	utils.c	/^#define request(amount)	((amount) + sizeof (Malloc/
+request_length	io.c	/^#define request_length(req, cli) ((cli->swapped ? /
+restart	xdmcp.c	/^restart()$/
+send_keepalive_msg	xdmcp.c	/^send_keepalive_msg()$/
+send_manage_msg	xdmcp.c	/^send_manage_msg()$/
+send_packet	xdmcp.c	/^send_packet()$/
+send_query_msg	xdmcp.c	/^send_query_msg()$/
+send_request_msg	xdmcp.c	/^send_request_msg()$/
+state	osfonts.c	/^	enum state { Begin, Normal, Quoted } state;$/
+timeout	xdmcp.c	/^timeout()$/
+vfork	osfonts.c	/^#define vfork() fork()$/

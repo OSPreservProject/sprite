@@ -1,0 +1,35 @@
+
+
+          dup filehandle [stdhandle]
+               Duplicate an open file.  A file handle is created that
+               addresses the same file as filehandle.
+
+               A special case is allowed for duping files to stdin,
+               stdout or stderr.  If stdhandle is specified, then it
+               must contain either stdin, stdout, or stderr.  In this
+               form, the file corresponding to stdhandle is closed,
+               and the dup is performed from filehandle with the
+               result going to stdhandle.
+
+               The procedure shown below will create a child process
+               and set its standard input and output filehandles to a
+               pair of pipe filehandles we pass as arguments.  Finally
+               the program does an execl of a specified command, with
+               the program's stdin and stdout coming from and going to
+               our pair of pipes.
+
+                   proc ChildProcess {cmd inPipe outPipe} {
+                       if {[set childPid [fork]] == 0} {
+                           close stdin
+                           dup $inPipe stdin
+                           close $inPipe
+
+                           close stdout
+                           dup $outPipe stdout
+                           close $outPipe
+
+                           execl $cmd
+                           # will never make it here...
+                       }
+                       return $childPid
+                   }

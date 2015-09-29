@@ -1,0 +1,16 @@
+F CHANGES.;1                        	changes
+F CHECKDIR.C;1                      	checkdir.c
+D DS3100_M                          	ds3100.md
+F FSCHECK.C;1                       	fscheck.c
+F FSCHECK.H;1                       	fscheck.h
+F FSCHECK.MAN;1                     	fscheck.man
+F FSCHECK.TES;1                     	fscheck.test
+F FSCHECK_.BAD;1                    	fscheck.c.bad
+F FSUTILS.C;1                       	fsUtils.c
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+F SAVE.;1                           	save
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md
+F TAGS.;1                           	tags

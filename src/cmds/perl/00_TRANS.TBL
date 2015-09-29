@@ -1,0 +1,76 @@
+L ARG.H;1                           	arg.h	dist/arg.h
+L ARRAY.C;1                         	array.c	dist/array.c
+L ARRAY.H;1                         	array.h	dist/array.h
+F CFLAGS.;1                         	cflags
+L CFLAGS.SH;1                       	cflags.SH	dist/cflags.SH
+L CMD.C;1                           	cmd.c	dist/cmd.c
+L CMD.H;1                           	cmd.h	dist/cmd.h
+L CONFIG.SH;1                       	config.sh	$MACHINE.md/config.sh
+L CONFIGUR.;1                       	Configure	dist/Configure
+L CONFIG_H.SH;1                     	config_h.SH	sprite/config_h.SH
+F CONFIG_S.SAV;1                    	config.sh.save
+L CONS.C;1                          	cons.c	dist/cons.c
+L CONSARG.C;1                       	consarg.c	dist/consarg.c
+F CPPSTDIN.;1                       	cppstdin
+D DIST                              	dist
+L DOARG.C;1                         	doarg.c	dist/doarg.c
+D DOC                               	doc
+D DOC_NEW                           	doc.new
+L DOIO.C;1                          	doio.c	sprite/doio.c
+L DOLIST.C;1                        	dolist.c	dist/dolist.c
+L DOSH.;1                           	doSH	dist/doSH
+L DS3100.MD;1                       	ds3100.md	ds5000.md
+D DS5000_M                          	ds5000.md
+L DUMP.C;1                          	dump.c	dist/dump.c
+L EG.;1                             	eg	dist/eg
+L EVAL.C;1                          	eval.c	dist/eval.c
+L EXTERN.H;1                        	EXTERN.h	dist/EXTERN.h
+L FORM.C;1                          	form.c	dist/form.c
+L FORM.H;1                          	form.h	dist/form.h
+F H2PH.;1                           	h2ph
+L H2PH.SH;1                         	h2ph.SH	dist/h2ph.SH
+L HANDY.H;1                         	handy.h	dist/handy.h
+L HASH.C;1                          	hash.c	dist/hash.c
+L HASH.H;1                          	hash.h	dist/hash.h
+L HINTS.;1                          	hints	dist/hints
+L INTERN.H;1                        	INTERN.h	dist/INTERN.h
+L LIB.;1                            	lib	dist/lib
+F LOCAL.MK;1                        	local.mk
+F MAKEDEPE.;1                       	makedepend
+L MAKEDEPE.SH;1                     	makedepend.SH	dist/makedepend.SH
+F MAKEDIR.;1                        	makedir
+L MAKEDIR.SH;1                      	makedir.SH	dist/makedir.SH
+F MAKEFILE.;1                       	Makefile
+F MAKEFILE.SAV;1                    	Makefile.save
+L MAKEFILE.SH;1                     	Makefile.SH	dist/Makefile.SH
+F OUT.;1                            	out
+L PATCHLEV.H;1                      	patchlevel.h	dist/patchlevel.h
+L PERL.C;1                          	perl.c	sprite/perl.c
+L PERL.H;1                          	perl.h	sprite/perl.h
+L PERL.MAN;1                        	perl.man	dist/perl.man
+F PERLY.C;1                         	perly.c
+L PERLY.FIX;1                       	perly.fixer	dist/perly.fixer
+F PERLY.H;1                         	perly.h
+L PERLY.Y;1                         	perly.y	dist/perly.y
+D RCS                               	RCS
+F README.SPR;1                      	README.sprite
+L REGCOMP.C;1                       	regcomp.c	dist/regcomp.c
+L REGCOMP.H;1                       	regcomp.h	dist/regcomp.h
+L REGEXEC.C;1                       	regexec.c	dist/regexec.c
+L REGEXP.H;1                        	regexp.h	dist/regexp.h
+L SPAT.H;1                          	spat.h	dist/spat.h
+D SPRITE                            	sprite
+L STAB.C;1                          	stab.c	dist/stab.c
+L STAB.H;1                          	stab.h	dist/stab.h
+L STR.C;1                           	str.c	dist/str.c
+L STR.H;1                           	str.h	dist/str.h
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md
+D T                                 	t
+F TAGS0.;1                          	TAGS
+F TAGS1.;1                          	tags
+L TOKE.C;1                          	toke.c	dist/toke.c
+L USERSUB.C;1                       	usersub.c	dist/usersub.c
+L UTIL.C;1                          	util.c	dist/util.c
+L UTIL.H;1                          	util.h	dist/util.h
+F X2P.;1                            	x2p

@@ -1,0 +1,68 @@
+
+
+
+FSINDEX                   User Commands                   FSINDEX
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     fsindex - Print the block index map for a file.
+
+SSYYNNOOPPSSIISS
+     ffssiinnddeexx -ddeevv _d_e_v_i_c_e -ppaarrtt _p_a_r_t_i_t_i_o_n _f_i_l_e_1 _f_i_l_e_2 ...
+     ffssiinnddeexx -ddeevv _d_e_v_i_c_e -ppaarrtt _p_a_r_t_i_t_i_o_n -iinnuumm _n_u_m_1 _n_u_m_2 ...
+
+OOPPTTIIOONNSS
+     --ddeevv _d_e_v_i_c_e    The name of the device  file  one  which  the
+                    files  live.   Typical  names  are  ``rsd00''
+                    (SCSI hba 0 target 0) and ``rxy0''  (Xylogics
+                    controller  0).   For  SCSI  disks,  the  two
+                    digits represent the HBA index and the target
+                    ID, respectively.
+
+     --ppaarrtt _p_a_r_t_i_t_i_o_n
+                    Where partition is one of `a', `b', ... up to
+                    `h'.   The  device  and  partition are conca-
+                    tinated to create the complete  device  name,
+                    i.e. ``rxy0g''.
+
+     --iinnuumm          This option causes the remaining arguments to
+                    be  interpreted  as  inode numbers instead of
+                    file names.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This dumps out the block indexes of a file.  It is meant  as
+     a  simple  tool  for examining the layout of a file on disk.
+     You    can    consult     a     server's     mount     table
+     (/hosts/_h_o_s_t_n_a_m_e/mount)   to   determine   the  device  that
+     corresponds to a particular file system.
+
+EEXXAAMMPPLLEESS
+          fsindex -dev rxy0 -part g file1 dir/file2 file3
+          fsindex -dev rsd00 -part c -inum 53900 4681
+
+BBUUGGSS
+     The syntax for specifying the device is baroque.
+
+KKEEYYWWOORRDDSS
+     block layout, disk, file
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0      Printed:  September 14, 1990                  1
+
+
+

@@ -1,0 +1,42 @@
+bench /bin/rcp /tmp/1Meg allspice:/tmp/1Meg.cp2 
+0.060u 0.760s 19.300
+Idle ticks 560008/641765 =  87.26% Idle, Context Sw. 2159 inv 5 full 782, Elapsed time 19.300
+Cache blocks max 32 min 136 number 6017/6017 free 1155/1155 limit 1650
+Bytes read 262+0 remote 0 disk 0+0
+Bytes written 0+0 remote 0 disk 0+2370
+Dev bytes read 0 written 0
+Zero Fills read 3 write1 0 write2 0 frag 0
+Appends 0 Overwrites 0 Failed Reads 2
+Cache reads 0 hits: dirty 0 clean 0 other 0
+Cache writes 0 hits 0 misses 0 thru 0
+Write thru 0 data 0 indirect 0 desc 0 dir 0
+Cache blocks created 286, alloc from free 0 part 0 lru 0
+Disk blocks alloc 1 free 0 search 0/0 hash 0
+Fragments alloc 0 free 0 upgrade 0 blocks made 0 used 0, bad hints 0
+Handles 0 created 0 installed 0 hits 0 old 0 version 0 flush 1
+	fetched 1 hits 16 released 5 locks 18/18 wait 7
+Segments fetched 0 hits 1
+Lookup relative 1 absolute 2 redirect 1 found 0 loops 0 timeouts 10 stale 1
+Kernel VM Pages: 105 (Code+Data=0 Stacks=105)
+User VM Pages:   4926 (Free=3942 Dirty=0 Res=3 Alloc-list=981)
+Modified pages: Total=143 %Tot-dirty=2.90 %Inuse-dirty=14.58
+FS Pages: Current=1155 Max=1155 Min=1155
+Faults:       50 (Zero=20 FS=28 Swap=0 Quick=2 Coll=0)
+              50 (Code=21 Heap=25 Stack=4)
+Mod page stats:  Pot-mod=0 Not-mod=0 Not-hard-mod=0
+COW: Heap (0/0)=0% Stk (0/0)=0% Tot (0/0)=0%
+     Quick (0/0)=0%
+COR: Heap (0/0)=0% Stk (0/0)=0% Tot (0/0)=0%
+COR-mod: Heap(0/0)=0% Stk (0/0)=0% Tot (0/0)=0%
+Swap pages copied: 0
+Vm allocs: 70 (Free=70 From-FS=0 From-alloc-list=0)
+VM-FS stats: Asked=0 Free-pages=0 Allocs=0 Frees=0
+Alloc-list searches: 0 (Free=0 In-use=0)
+Extra-searches: 0 (Lock=0 Ref=0 Dirty=0)
+Pages written 0
+Contexts stolen 0 pmegs stolen 0
+Network stats: Bytes received 1315466 bytes sent 1369420
+U  0.000 S  0.040 Rpc_Server
+U  0.000 S  0.060 Rpc_Server
+U  0.000 S  0.080 bench -c /bin/rcp /tmp/1Meg allspice:/tmp/1Meg.cp2 
+Total User      0.000000 Total Kernel      0.180000

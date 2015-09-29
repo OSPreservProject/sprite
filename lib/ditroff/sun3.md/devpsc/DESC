@@ -1,0 +1,41 @@
+# ditroff device description for PostScript
+# PostScript is a trademark of Adobe Systems Incorporated
+fonts 10 R I B BI H HB C CB S SS
+stipples 3 cf ug mg
+sizes 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 32 34 36 38 40 45 50 55 60 65 70 72 75 80 90 100 102 108 0
+res 576
+hor 1
+vert 1
+unitwidth 25
+paperwidth 4896
+paperlength 6336
+charset
+!! != !m !s $D $J **
+*A *B *C *D *E *F *G *H *I *K *L *M *N *O *P *Q *R *S *T *U *W *X *Y *Z
+*a *b *c *d *e *f *g *h *i *k *l *m *n *o *p *q *r *s *t *u *w *x *y *z
++- -> .. 
+12 13 14 18 23 34 38 58 78 
+:> <- <: <= <> == >= ?? 
+AE Fi Fl I! I? O/ OE PL Pl 
+\& \' \- \^ \_ \` \|
+a+ aa ae al an ap ax
+be br bs bt bu bv bx 
+ca cd ci cm co cr ct cu
+d< d> da dd de dg di dm dt
+em en eq es 
+fa ff fi fl fm 
+ga gr
+hc hy 
+ib if im io ip is 
+l< la lb lc lf lh lk lo lq lt
+m. ma mc mi mo mt mu 
+n' no
+o/ ob oe og or 
+pd pl pm po pp ps pt 
+r> rb rc rf rg rh ri rk rn rq rt ru
+sb sc sd sl sp sq sr ss 
+te tf tm ts
+ua uc ui ul um
+vr 
+yi yn 
+~= ~~

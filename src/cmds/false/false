@@ -1,0 +1,2 @@
+#!/sprite/cmds.$MACHINE/sh -
+exit 1

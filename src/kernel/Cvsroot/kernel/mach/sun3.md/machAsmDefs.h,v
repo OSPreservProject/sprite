@@ -1,0 +1,830 @@
+head     9.0;
+branch   ;
+access   ;
+symbols  ds3100:9.0 sun3:9.0 sun4nw:9.0 symm:9.0 spur:9.0 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.0
+date     89.09.12.14.51.27;  author douglis;  state Stable;
+branches ;
+next     8.7;
+
+8.7
+date     89.09.11.23.43.23;  author rab;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.07.20.07.06.41;  author rab;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.06.16.13.06.11;  author rab;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.03.02.17.13.20;  author rab;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     88.12.13.16.02.53;  author jhh;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.11.18.15.25.58;  author jhh;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.15.12.41.46;  author rab;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.03.56;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.09.26;  author brent;  state Stable;
+branches ;
+next     5.4;
+
+5.4
+date     88.05.05.17.54.31;  author nelson;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     88.05.04.15.52.15;  author nelson;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     88.04.13.11.25.10;  author ouster;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.12.11.14.17.47;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.50.14;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@/*
+ * machAsmDefs.h --
+ *
+ *	Macros used when writing assembler programs.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/mach/sun3.md/RCS/machAsmDefs.h,v 8.7 89/09/11 23:43:23 rab Exp Locker: douglis $ SPRITE (Berkeley)
+ */
+
+#ifndef _MACHASMDEFS
+#define _MACHASMDEFS
+
+#include "machConst.h"
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * ENTRY --
+ *
+ *      Define an entry point for an assembler function.  This should be
+ *      the first line in any assembler function.  It provides the same
+ *      prolog that all C functions use.  name is the name of the
+ *      function,  numRegsToSave is the number of general purpose
+ *      registers (d0-d7, a0-a7) to save and regSaveMask is the mask which is
+ *      provided to the moveml instruction to save registers on the
+ *      stack.  See the 68000 manual for a description of how to formulate
+ *      the mask.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+#define ENTRY(name, numRegsToSave, regSaveMask) \
+	.text ; .globl _/**/name ; _/**/name: ; \
+	NUMREGS  = numRegsToSave ;\
+	SAVEMASK = regSaveMask ;\
+	link a6,#-(NUMREGS*4); moveml #SAVEMASK, sp@@;
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * RETURN --
+ *
+ *      Return from an assembly language function.  To be used in conjunction
+ *	with ENTRY.  This should be the last statement to appear in any 
+ *	assembly language function.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+#define RETURN \
+	moveml  a6@@(-(NUMREGS*4)),#SAVEMASK ; unlk a6 ; rts ;
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Call Interrupt Handler --
+ *
+ *      Call an interrupt handler.  The temporary registers d0, d1, a0 and a1
+ *	are saved first, then interrupts are disabled and an "At Interrupt 
+ *	Level" flag is set so the handler can determine that it is running a
+ *	interrupt level.  The registers are restored at the end.
+ *	This code assumes that if the interrupt occured in user mode, and if
+ *	the specialHandling flag is set on the way back to user mode, then
+ *	a context switch is desired. Note that schedFlags is not checked.
+ *
+ *  Algorithm:
+ *	Save temporary registers
+ *	Determine if interrupt occured while in kernel mode or user mode
+ *	Call routine
+ *	if interrupt occured while in user mode.
+ *	    if specialHandling is set for the current process 
+ *    	        Set the old status register trace mode bit on.
+ *	        Clear the specialHandling flag.
+ *	    endif
+ *	endif
+ *	restore registers
+ *		
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+#define	INTR_SR_OFFSET	16
+
+#define CallInterruptHandler(routine) \
+	moveml	#0xC0C0, sp@@-; \
+	movw	#MACH_SR_HIGHPRIO, sr ; \
+	movw	sp@@(INTR_SR_OFFSET), d0; \
+	andl	#MACH_SR_SUPSTATE, d0; \
+	movl	d0, _mach_KernelMode; \
+	movl	#1, _mach_AtInterruptLevel ; \
+	\
+	jsr	routine; \
+	\
+	clrl	_mach_AtInterruptLevel ; \
+	tstl	_mach_KernelMode; \
+	bne	1f; \
+	\
+	movl	_proc_RunningProcesses, a0; \
+	movl	a0@@, a1; \
+	movl	_machSpecialHandlingOffset, d1;\
+	tstl	a1@@(0,d1:l); \
+	beq	1f; \
+	\
+	clrl	a1@@(0,d1:l); \
+	movw	sp@@(INTR_SR_OFFSET), d0; \
+	orw	#MACH_SR_TRACEMODE, d0; \
+	movw	d0, sp@@(INTR_SR_OFFSET); \
+	\
+1:	moveml	sp@@+, #0x0303; \
+    	rte ;
+
+
+#ifdef sun3
+#define BUS_ERROR_MOVS movsb
+#else 
+#define BUS_ERROR_MOVS movsw
+#endif
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * RestoreUserFpuState --
+ *
+ *      Restore the floating point registers from the process state.
+ *
+ * ----------------------------------------------------------------------------
+ */
+#ifdef sun3
+#define RestoreUserFpuState() \
+        tstl        _mach68881Present; \
+	beq         2f; \
+	movl        _machCurStatePtr, a0; \
+	tstb        a0@@(MACH_TRAP_FP_STATE_OFFSET); \
+	beq         1f; \
+	fmovem      a0@@(MACH_TRAP_FP_CTRL_REGS_OFFSET), fpc/fps/fpi; \
+	fmovem      a0@@(MACH_TRAP_FP_REGS_OFFSET), #0xff; \
+1: \
+	frestore    a0@@(MACH_TRAP_FP_STATE_OFFSET); \
+2:
+#else
+#define RestoreUserFpuState()
+#endif
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * RestoreUserRegs --
+ *
+ *      Restore the user stack pointer and the general purpose registers from
+ *	the process state.
+ *
+ * ----------------------------------------------------------------------------
+ */
+#define RestoreUserRegs() \
+	movl	_machCurStatePtr, a0; \
+	movl	a0@@(MACH_USER_SP_OFFSET), a1; \
+	movc	a1, usp; \
+	moveml	a0@@(MACH_TRAP_REGS_OFFSET), #0xffff
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * SaveUserFpuState --
+ *
+ *      Restore the floating point registers from the process state.
+ *      The address of machCurStatePtr must already be in register a0.
+ *
+ * ----------------------------------------------------------------------------
+ */
+#ifdef sun3
+#define SaveUserFpuState() \
+        tstl        _mach68881Present; \
+	beq         1f; \
+	fsave       a0@@(MACH_TRAP_FP_STATE_OFFSET); \
+	tstb        a0@@(MACH_TRAP_FP_STATE_OFFSET); \
+	beq         1f; \
+	fmovem      fpc/fps/fpi, a0@@(MACH_TRAP_FP_CTRL_REGS_OFFSET); \
+	fmovem      #0xff, a0@@(MACH_TRAP_FP_REGS_OFFSET); \
+	frestore    _mach68881NullState; \
+1:
+#else
+#define SaveUserFpuState()
+#endif
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * SaveUserRegs --
+ *
+ *      Restore the user stack pointer and the general purpose registers from
+ *	the process state.
+ *
+ * ----------------------------------------------------------------------------
+ */
+#define SaveUserRegs() \
+	movl	_machCurStatePtr, a0; \
+	movc    usp, a1; \
+	movl	a1, a0@@(MACH_USER_SP_OFFSET); \
+	moveml	#0xffff, a0@@(MACH_TRAP_REGS_OFFSET);
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Call Trap Handler --
+ *
+ * Go through the following steps:
+ * 
+ *   1) Determine if are in kernel or user mode.  If kernel mode then just
+ *	put d0, d1, a0, a1, bus error reg and trap type onto stack and
+ *	call trap handler.
+ *
+ *   Otherwise:
+ *
+ *   1) Grab a pointer to the current processes state structure.
+ *	If the state structure does not exist then call the debugger directly.
+ *      Since it requires a temporary register to get a pointer to the
+ *	state structure a0 is saved on the stack.
+ *   2) Save the normal registers (a0-a7,d0-d6) into the state struct.
+ *   3) Copy the saved value of a0 from the stack into the state struct.
+ *   4) Copy the true value of the stack pointer into the state struct.
+ *   5) Make room on the stack for the registers that would have been saved
+ *	(a0, a1, d0, and d1) if we had been in kernel mode.
+ *   6) Save the bus error register on the stack.
+ *   7) Push the trap type on the stack.
+ *   8) Call the trap handler.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#define CallTrapHandler(type) \
+	.globl	_proc_RunningProcesses, _machStatePtrOffset; \
+	movl	d0, sp@@-; \
+	movw	sp@@(4), d0; \
+	andl	#MACH_SR_SUPSTATE, d0; \
+	beq	9f; \
+	movl	sp@@+, d0; \
+	moveml	#0xC0C0, sp@@-; \
+	BUS_ERROR_MOVS VMMACH_BUS_ERROR_REG, d0; \
+        movl    d0, sp@@-; \
+	movl	#type, sp@@-; \
+        jsr 	_MachTrap; \
+	jra	MachReturnFromKernTrap; \
+	\
+9:      movl	sp@@+, d0; \
+	cmpl	#0xffffffff, _machCurStatePtr; \
+	bne	8f; \
+	\
+	subl	#16, sp; \
+	BUS_ERROR_MOVS VMMACH_BUS_ERROR_REG,d0; \
+        movl	d0, sp@@-; \
+	movl	#type, sp@@-; \
+	jra	_Dbg_Trap; \
+	\
+8:	movl	a0, sp@@-; \
+	movl	_machCurStatePtr, a0; \
+	moveml	#0x7fff, a0@@(MACH_TRAP_REGS_OFFSET); \
+	SaveUserFpuState(); \
+	movl	sp@@+, a0@@(MACH_TRAP_REGS_OFFSET + 32); \
+	movl	sp, a0@@(MACH_TRAP_REGS_OFFSET + 60); \
+	movc	usp, a1; \
+	movl	a1, a0@@(MACH_USER_SP_OFFSET); \
+	movl	sp, a0@@(MACH_EXC_STACK_PTR_OFFSET); \
+	subl	#16, sp; \
+	BUS_ERROR_MOVS VMMACH_BUS_ERROR_REG,d0; \
+        movl    d0, sp@@-; \
+	movl	#type, sp@@-; \
+        jsr 	_MachTrap; \
+	jra	MachReturnFromUserTrap;
+
+#endif /* _MACHASMDEFS */
+@
+
+
+8.7
+log
+@Changes to fix floating point migration.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun3.md/RCS/machAsmDefs.h,v 8.6 89/07/20 07:06:41 rab Exp Locker: rab $ SPRITE (Berkeley)
+@
+
+
+8.6
+log
+@Fixed support for mc68881
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun3.md/RCS/machAsmDefs.h,v 8.5 89/06/16 13:06:11 rab Exp Locker: rab $ SPRITE (Berkeley)
+a114 28
+/*
+ *----------------------------------------------------------------------
+ *
+ * Call Trap Handler --
+ *
+ * Go through the following steps:
+ * 
+ *   1) Determine if are in kernel or user mode.  If kernel mode then just
+ *	put d0, d1, a0, a1, bus error reg and trap type onto stack and
+ *	call trap handler.
+ *
+ *   Otherwise:
+ *
+ *   1) Grab a pointer to the current processes state structure.
+ *	If the state structure does not exist then call the debugger directly.
+ *      Since it requires a temporary register to get a pointer to the
+ *	state structure a0 is saved on the stack.
+ *   2) Save the normal registers (a0-a7,d0-d6) into the state struct.
+ *   3) Copy the saved value of a0 from the stack into the state struct.
+ *   4) Copy the true value of the stack pointer into the state struct.
+ *   5) Make room on the stack for the registers that would have been saved
+ *	(a0, a1, d0, and d1) if we had been in kernel mode.
+ *   6) Save the bus error register on the stack.
+ *   7) Push the trap type on the stack.
+ *   8) Call the trap handler.
+ *
+ *----------------------------------------------------------------------
+ */
+d133 2
+a134 2
+        tstw        fpu_present; \
+	beq         1f; \
+a135 1
+	frestore    a0@@(MACH_TRAP_FP_STATE_OFFSET); \
+d138 1
+d140 3
+a142 2
+	fmovem      a0@@(MACH_TRAP_FP_CTRL_REGS_OFFSET), fpc/fps/fpi; \
+1:
+d175 1
+a175 1
+        tstw        fpu_present; \
+d180 1
+d182 1
+a182 1
+	fmovem      fpc/fps/fpi, a0@@(MACH_TRAP_FP_CTRL_REGS_OFFSET); \
+d203 30
+@
+
+
+8.5
+log
+@*** empty log message ***
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun3.md/RCS/machAsmDefs.h,v 8.4 89/03/02 17:13:20 rab Exp Locker: rab $ SPRITE (Berkeley)
+d146 15
+a160 1
+#define SAVE_FP_STATE(FP_STATE_OFFSET, FP_REGS_OFFSET, FP_CTRL_REGS_OFFSET) \
+d163 3
+a165 2
+	fsave       a0@@(FP_STATE_OFFSET); \
+	tstb        a0@@(FP_STATE_OFFSET); \
+d167 2
+a168 2
+	fmovem      #0xff, a0@@(FP_REGS_OFFSET); \
+	fmovem      fpc/fps/fpi, a0@@(FP_CTRL_REGS_OFFSET); \
+d170 19
+d190 12
+a201 1
+#define RESTORE_FP_STATE(FP_STATE_OFFSET, FP_REGS_OFFSET, FP_CTRL_REGS_OFFSET)\
+d203 10
+a212 7
+	beq         2f; \
+	frestore    a0@@(FP_STATE_OFFSET); \
+	tstb        a0@@(FP_STATE_OFFSET); \
+	beq         2f; \
+	fmovem      a0@@(FP_REGS_OFFSET), #0xff; \
+	fmovem      a0@@(FP_CTRL_REGS_OFFSET), fpc/fps/fpi; \
+2:
+d214 15
+a228 5
+#else 
+#define BUS_ERROR_MOVS movsw
+#define SAVE_FP_STATE(FP_STATE_OFFSET, FP_REGS_OFFSET, FP_CTRL_REGS_OFFSET)
+#define RESTORE_FP_STATE(FP_STATE_OFFSET, FP_REGS_OFFSET, FP_CTRL_REGS_OFFSET)
+#endif
+d244 1
+a244 1
+9:   movl	sp@@+, d0; \
+d257 1
+a257 2
+	SAVE_FP_STATE(MACH_TRAP_FP_STATE_OFFSET, \
+	    MACH_TRAP_FP_REGS_OFFSET, MACH_TRAP_FP_CTRL_REGS_OFFSET) \
+@
+
+
+8.4
+log
+@*** empty log message ***
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun2.md/RCS/machAsmDefs.h,v 8.3 88/12/13 16:02:53 jhh Exp Locker: rab $ SPRITE (Berkeley)
+d99 1
+a99 1
+	bne	1$; \
+d105 1
+a105 1
+	beq	1$; \
+d112 1
+a112 1
+1$:	moveml	sp@@+, #0x0303; \
+d146 20
+d168 2
+d177 1
+a177 1
+	beq	9$; \
+d186 1
+a186 1
+9$:   movl	sp@@+, d0; \
+d188 1
+a188 1
+	bne	8$; \
+d196 1
+a196 1
+8$:	movl	a0, sp@@-; \
+d199 2
+d213 1
+a213 1
+#endif _MACHASMDEFS
+@
+
+
+8.3
+log
+@fixed bug in interrupt handler, specialHandling wasn't checked correctly.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun2.md/RCS/machAsmDefs.h,v 8.2 88/11/18 15:25:58 jhh Exp Locker: rab $ SPRITE (Berkeley)
+d155 1
+a155 1
+	beq	101$; \
+d164 1
+a164 1
+101$:   movl	sp@@+, d0; \
+d166 1
+a166 1
+	bne	100$; \
+d174 1
+a174 1
+100$:	movl	a0, sp@@-; \
+@
+
+
+8.2
+log
+@changed CallTrapHandler macro so it uses specialHandling field of pcb,
+rather than sched_DoContextSwitch
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun2.md/RCS/machAsmDefs.h,v 8.1 88/11/15 12:41:46 rab Exp Locker: jhh $ SPRITE (Berkeley)
+d99 1
+a99 1
+	bne 	1$; \
+d102 4
+a105 5
+	movl	a0@@, d1; \
+	addl	_machSpecialHandlingOffset, d1;\
+	movl	d1, a1; \
+	tstl	a1@@; \
+	bne	1$; \
+d107 1
+a107 1
+	clrl	a1@@; \
+@
+
+
+8.1
+log
+@changed SUN to sun
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun2.md/RCS/machAsmDefs.h,v 8.0 88/11/11 18:03:56 douglis Stable Locker: rab $ SPRITE (Berkeley)
+d65 3
+d73 5
+a77 3
+ *	If a context switch is wanted then
+ *	    Set the old status register trace mode bit on.
+ *	    Clear the "context switch is wanted" flag.
+d98 2
+a99 2
+	tstl	_sched_DoContextSwitch; \
+	beq 	1$; \
+d101 8
+a108 1
+	clrl	_sched_DoContextSwitch; \
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: /sprite/src/kernel/mach/sun2.md/RCS/machAsmDefs.h,v 6.0 88/08/11 12:09:26 brent Stable Locker: douglis $ SPRITE (Berkeley)
+d133 1
+a133 1
+#ifdef SUN3
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d10 1
+a10 1
+ * $Header: machAsmDefs.h,v 5.4 88/05/05 17:54:31 nelson Exp $ SPRITE (Berkeley)
+@
+
+
+5.4
+log
+@Handles move of functionality from sys to mach.
+@
+text
+@d10 1
+a10 1
+ * $Header: machAsmDefs.h,v 5.3 88/05/04 15:52:15 nelson Exp $ SPRITE (Berkeley)
+@
+
+
+5.3
+log
+@New trap handling code with machine state struct per proc.
+@
+text
+@d2 1
+a2 1
+ * asmDefs.h --
+d10 1
+a10 1
+ * $Header: asmDefs.h,v 5.2 88/04/13 11:25:10 ouster Exp $ SPRITE (Berkeley)
+d13 2
+a14 2
+#ifndef _ASMDEFS
+#define _ASMDEFS
+d87 2
+a88 2
+	movl	d0, _sys_KernelMode; \
+	movl	#1, _sys_AtInterruptLevel ; \
+d92 1
+a92 1
+	clrl	_sys_AtInterruptLevel ; \
+d178 1
+a178 1
+#endif _ASMDEFS
+@
+
+
+5.2
+log
+@Changes to make system calls much faster.
+@
+text
+@d10 1
+a10 1
+ * $Header: asmDefs.h,v 5.1 87/12/11 14:17:47 nelson Exp $ SPRITE (Berkeley)
+d16 1
+a16 2
+#include "vmSunConst.h"
+#include "sunSR.h"
+a58 49
+ * SaveRegs --
+ *
+ *      Save all general purpose registers and the user stack pointer on the
+ *	stack.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+#define SaveRegs() \
+	moveml 	#0xFFFF, sp@@- ; \
+	movc	usp, d0; \
+	movl	d0, sp@@- ;
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * RestoreRegs --
+ *
+ *      Restore the user stack pointer and the general purpose registers from
+ *	of the stack.  To be used in conjuction with SaveRegs.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+#define RestoreRegs() \
+	movl	sp@@+, d0 ; \
+	movc	d0, usp ; \
+	moveml 	sp@@+, #0xFFFF ;
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * RestoreTrapRegs --
+ *
+ *      Restore the user stack pointer and the general purpose registers from
+ *	the stack after a call to the C trap routine.  6 is added to the stack
+ *      pointer first to get past the trap code and bus error register which
+ *	were pushed onto the stack by CallTrapHandler.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+#define RestoreTrapRegs() \
+	addl	#6, sp ; \
+	RestoreRegs();
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+d61 4
+a64 4
+ *      Call an interrupt handler.  The registers are saved first, 
+ *	interrupts are disabled and a "At Interrupt Level" flag is set so 
+ *	the handler can determine that it is running at interrupt level. 
+ *	The registers are restored at the end.
+d67 1
+a67 1
+ *	Save registers
+d80 1
+a80 1
+#define	INTR_SR_OFFSET	68
+d83 2
+a84 3
+	SaveRegs(); \
+	\
+	movw	#SUN_SR_HIGHPRIO, sr ; \
+d86 1
+a86 1
+	andl	#SUN_SR_SUPSTATE, d0; \
+d98 1
+a98 1
+	orw	#SUN_SR_TRACEMODE, d0; \
+d101 1
+a101 1
+1$:	RestoreRegs(); \
+d111 3
+a113 6
+ *   1) Save the normal registers (a0-a7,d0-d7 and usp) on the stack.
+ *   2) Save the bus error register on the stack.
+ *   3) Push the trap type on the stack.
+ *   4) Call the trap handler.
+ *   5) Return from the trap handler.
+ *   6) Call routine to handle return from trap.
+d115 15
+d140 9
+a148 4
+        SaveRegs(); \
+        movc    sfc, a0; \
+        BUS_ERROR_MOVS VMMACH_BUS_ERROR_REG,d0; \
+        movw    d0, sp@@-; \
+d150 28
+a177 11
+        jsr 	_Exc_Trap; \
+	jra	ExcReturnFromTrap;
+ 
+#define SysCallHandler() \
+        SaveRegs(); \
+	clrw	sp@@-; \
+	movl	#EXC_SYSCALL_TRAP, sp@@-; \
+        jsr 	_Sys_SysCall; \
+	RestoreTrapRegs(); \
+        rte
+ 
+@
+
+
+5.1
+log
+@Define name change.
+@
+text
+@d10 1
+a10 1
+ * $Header: asmDefs.h,v 5.0 87/08/11 10:50:14 sprite Exp $ SPRITE (Berkeley)
+a104 21
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * RestoreMigTrapRegs --
+ *
+ *      Restore the user stack pointer and the general purpose registers from
+ *	the stack after a call to the C trap routine.  6 is added to the stack
+ *      pointer first to get past the trap code and bus error register which
+ *	were pushed onto the stack by CallTrapHandler.  The stack pointer
+ *	is not restored here because it is from a different machine.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+#define RestoreMigTrapRegs() \
+	addql	#6, sp ; \
+	movl	sp@@+, d0 ; \
+	movc	d0, usp ; \
+	moveml 	sp@@+, #0x7FFF ; \
+	addql	#4, sp
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d10 1
+a10 1
+ * $Header: asmDefs.h,v 4.2 87/02/26 11:52:39 nelson Exp $ SPRITE (Berkeley)
+d202 1
+a202 4
+        movl    #VM_MMU_SPACE,d0; \
+        movc    d0, sfc; \
+        BUS_ERROR_MOVS VM_BUS_ERROR_REG,d0; \
+        movc    a0, sfc; \
+@

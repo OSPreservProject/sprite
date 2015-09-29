@@ -1,0 +1,4 @@
+#! /bin/csh -f
+foreach printer (lps lps40 ms `egrep '^lw' /etc/printcap | sed 's/[|].*//'`)
+	echo "o \!lpr -P$printer" >config.$printer
+end

@@ -1,0 +1,36 @@
+Steps for VM replacement:
+
+(1) Study Sprite VM interface.
+
+(2) Determine mapping of (1) onto Mach VM interface (including mapping
+of return values).
+
+(3) Determine which pagers are needed, or at least understand how the
+different pagers are used.
+
+(4) Write stubs for lock, spl calls.
+
+(5) Write stubs for task/thread management.
+
+(6) put 3.0 pager back into kernel (merge server/vm/inode_pager and
+kernel/boot_ufs code, I guess).
+
+(7) Teach default pager about Sprite FS interface.
+
+(8) Study default exception handler, decide whether to keep or whether
+to write a stub for thread_doexception that uses signals.
+
+(9) Merge Sprite and Mach trap handlers.
+
+(10) Write memory management stubs, using Sprite malloc/free
+
+(11) Build with VM; migration turned off.
+
+(12) Add encapsulation/decapsulation routines for process migration.
+Re-enable migration.
+
+(13) Write queue package stubs?
+
+(13) Rewrite pageout code to cooperate with file system.  Is there a
+limit on the file cache size?  Does the inode pager support sticky
+segments?

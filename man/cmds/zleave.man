@@ -1,0 +1,109 @@
+.\"	$Source: /afs/athena.mit.edu/astaff/project/zephyr/src/man/man1/RCS/zleave.1,v $
+.\"	$Author: jtkohl $
+.\"	$Header: /afs/athena.mit.edu/astaff/project/zephyr/src/man/man1/RCS/zleave.1,v 1.8 89/05/11 14:07:26 jtkohl Exp $
+.\"
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"
+.TH ZLEAVE 1 "July 1, 1988" "MIT Project Athena"
+.ds ]W MIT Project Athena
+.SH NAME
+zleave \- notify you via Zephyr when you have to leave 
+.SH SYNOPSIS
+.B zleave
+[ 
+.RI [+] hhmm
+[
+.I -m "Reminder Message"
+] ]
+.br
+.B zleave 
+.I can\fR[\fIcel\fR]
+.SH DESCRIPTION
+.I Zleave
+waits until the specified time, then reminds you that you
+have to leave, using the \fIZephyr(1)\fR Notification Service.
+You are reminded 5 minutes and 1 minute before the actual
+time, at the time, and every minute thereafter.
+When you log off,
+.I zleave
+exits just before it would have sent the next message.
+.PP
+The time of day is in the form hhmm where hh is a time in
+hours (on a 12 or 24 hour clock).
+All times are converted to a 12 hour clock, and assumed to
+be in the next 12 hours.
+.PP
+If the time is preceded by `+', the alarm will go off in hours and minutes
+from the current time.
+.PP
+If no argument is given,
+.I zleave
+prompts with "When do you
+have to leave?". A reply of newline causes
+.I zleave
+to exit,
+otherwise the reply is assumed to be a time.
+This form is suitable for inclusion in a
+.I .login
+or
+.I .profile.
+.PP
+The
+.I cancel
+option cancels the currently running \fIzleave\fR.  If another
+.I zleave
+is running, it is automatically killed when a new time to leave is
+set.  The process id is stored in the file /tmp/zleave.\fIuid\fR, where
+\fIuid\fR is the user's UNIX uid.
+.PP
+If the
+.I -m
+argument is specified, the next argument
+is appended to the standard message 
+(a sentence describing how much time remains until the appointed hour)
+sent at appropriate times.
+If you want to append a multiple-word message, you normally must quote it with
+double quotes (") (This is necessary for users of
+.IR csh (1)
+and
+.IR sh (1).)
+.PP
+.I Zleave
+automatically subscribes you to Zephyr class "MESSAGE",
+instance "LEAVE".  You do not have to add anything to your
+default subscriptions file (see 
+.IR zctl (1)).
+The reminder message is displayed by the WindowGram client (usually
+.IR zwgc (1)).
+.PP
+If Zephyr is unavailable,
+.I zleave 
+acts essentially like 
+.IR leave (1).
+.PP
+Zleave ignores SIGINT, SIGQUIT, and SIGTERM.
+To get rid of it you should either log off or use the
+.I cancel
+option.
+.SH FILES
+/tmp/zleave.\fIuid\fR
+/tmp/wg.*
+.SH SEE ALSO
+calendar(1), zephyr(1), leave(1), zwgc(1), zctl(1), csh(1), sh(1)
+.br
+Project Athena Technical Plan Section E.4.1, `Zephyr Notification
+Service'
+.SH RESTRICTIONS
+Copyright (c) 1980,  Regents of the University of California.
+All rights reserved.
+Redistribution and use in source and binary forms are permitted
+provided that this notice is preserved and that due credit is given
+to the University of California at Berkeley. The name of the University
+may not be used to endorse or promote products derived from this
+software without specific written prior permission. This software
+is provided ``as is'' without express or implied warranty.
+.sp
+Copyright (c) 1987,1988 by the Massachusetts Institute of Technology.

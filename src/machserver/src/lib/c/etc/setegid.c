@@ -1,0 +1,1 @@
+../../c.orig/etc/setegid.c

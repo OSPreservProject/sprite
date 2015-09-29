@@ -1,0 +1,332 @@
+
+
+
+man                       File Formats                        man
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     man - Ditroff macros for writing manual entries
+
+_________________________________________________________________
+
+
+IINNTTRROODDUUCCTTIIOONN
+     Manual entries in Sprite are formatted with the ddiittrrooffff pro-
+     gram  using  the  --mmaann macros.  This manual entry summarizes
+     the features provided by the --mmaann macros.  For more  general
+     information on how to write manual entries for Sprite, refer
+     to _T_h_e  _S_p_r_i_t_e  _E_n_g_i_n_e_e_r_i_n_g  _M_a_n_u_a_l.   Templates  of  manual
+     entries for programs and library procedures are available in
+     //sspprriittee//lliibb//ffoorrmmss//ccmmdd..mmaann   and    //sspprriittee//lliibb//ffoorrmmss//lliibb..mmaann
+     respectively.
+
+
+MMAACCRROOSS
+     The --mmaann macros are:
+
+     ..AAPP _t_y_p_e _n_a_m_e _i_n_O_u_t [_i_n_d_e_n_t]
+          Argument paragraph.  The _t_y_p_e, _n_a_m_e,  and  _i_n_O_u_t  argu-
+          ments  give information about this argument:  its type,
+          its name, and a string indicating how the  argument  is
+          used.  _I_n_O_u_t must be either iinn (meaning the argument is
+          used by the procedure but is not used to modify  infor-
+          mation  in the caller's memory), oouutt (meaning the argu-
+          ment points to information in the caller's memory which
+          the procedure modifies without ever reading), or iinn//oouutt
+          (meaning the argument  points  to  information  in  the
+          caller's  memory  which is both read and written by the
+          procedure).  Text following the  ..AAPP  line  provides  a
+          short  description of the argument: it will be indented
+          to appear to the right of _t_y_p_e, _n_a_m_e,  and  _i_n_O_u_t.   If
+          _i_n_d_e_n_t  is  specified, it determines the indentation of
+          the following text in ens;  however, this  argument  is
+          normally omitted, in which case a reasonable default is
+          picked.  In a sequence of argument  descriptions,  each
+          with  its  own  ..AAPP  call,  the  _t_y_p_e, _n_a_m_e, _i_n_O_u_t, and
+          description parts will be lined up in columns.  The ..AASS
+          macro may be used to size the columns.
+
+     ..AASS _t_y_p_e _n_a_m_e
+          Set argument sizes for ..AAPP.  _T_y_p_e and _n_a_m_e specify  the
+          largest such arguments that will be used in a following
+          series of ..AAPP calls;  tab stops are set for the follow-
+          ing  calls  so that the _t_y_p_e and _n_a_m_e columns will line
+          up with adequate  spacing.   If  this  macro  is  never
+          invoked,  then  default  field  widths  will be chosen,
+          which are valid for small arguments.
+
+     ..BB [_a_r_g_s]
+
+
+
+Sprite v.1.0            February 17, 1989                       1
+
+
+
+
+
+
+man                       File Formats                        man
+
+
+
+          Print in boldface.  If any _a_r_g_s are given, then all  of
+          the  arguments  are  printed  in boldface (up to six of
+          them).  Otherwise, everything on the next line of input
+          is  printed  in  boldface.   In  either  case, the font
+          reverts to roman after the arguments or following  line
+          have been printed.
+
+     ..BBEE  End boxed text.  Close off  a  box  started  previously
+          with ..BBSS.
+
+     ..BBSS  Start boxed text.  Everything up to  the  matching  ..BBEE
+          macro  will be enclosed in a box.  This is used for the
+          summary boxes at the tops of manual entries.
+
+     ..DDEE  End a display:  cancel the effects of the previous  ..DDSS
+          macro, returning to normal indentation and fill mode.
+
+     ..DDSS  Start a display.  All lines up until the next ..DDEE macro
+          will be indented and output in no-fill mode.
+
+     ..DDTT  Reset tabs to default spacings (every half-inch).
+
+     ..IIPP _t_a_g [_i_n_d_e_n_t]
+          This is identical to ..IIPP in the --mmss macros.  It  starts
+          an  indented  paragraph  with ttaagg (if given) as an out-
+          dented tag.  If _i_n_d_e_n_t is given, it specifies how  much
+          the paragraph will be indented, in ens.
+
+     ..HHPP  Start a paragraph with a hanging indent (the first line
+          will  be  outdented  relative  to the rest of the para-
+          graph).
+
+     ..HHSS _s_e_c_t_i_o_n [_d_a_t_e [_v_e_r_s_i_o_n]]
+          Header for Sprite.  This macro should be used in  place
+          of ..TTHH for all Sprite manual entries.  It should be the
+          first thing in the entry's source file.  _S_e_c_t_i_o_n  indi-
+          cates  which  section  of the manual this entry belongs
+          to, and should be one of:
+
+          aaddmmiinn       The manual entry describes  an  administra-
+                      tive  program  (i.e.  one  whose  binary is
+                      under //sspprriittee//aaddmmiinn).  Administrative  pro-
+                      grams are not used by normal users.
+
+          ccmmddss        The manual  entry  describes  a  user-level
+                      application   program.    This  section  is
+                      equivalent to section 1 of UNIX manuals.
+
+          ddaaeemmoonnss     The manual entry describes  a  daemon  pro-
+                      gram.   Daemons  are  programs  that run in
+                      background to provide various  system  ser-
+                      vices,  such  as  iinneettdd  or  llppdd.  They are
+
+
+
+Sprite v.1.0            February 17, 1989                       2
+
+
+
+
+
+
+man                       File Formats                        man
+
+
+
+                      normally invoked automatically at boot-time
+                      or  when needed, and aren't usually visible
+                      to ordinary users.
+
+          ddeevv         The manual entry describes the characteris-
+                      tics  of a particular type of I/O device or
+                      pseudo-device, along with the I/O  controls
+                      that  may  be  applied  to  devices of that
+                      type.  This section is equivalent  to  sec-
+                      tion 4 of UNIX manuals.
+
+          ffiilleess       The manual entry describes the format of  a
+                      particular file or file type.  For example,
+                      the manual entry you are reading is in  the
+                      ffiilleess  section.  This section is equivalent
+                      to section 5 of UNIX manuals.
+
+          lliibb         The manual entry describes one or more pro-
+                      cedures in one of the standard C libraries.
+                      This section is equivalent to the  combina-
+                      tion of sections 2 and 3 of UNIX manuals.
+
+          ttccll         The manual entry describes one or more pro-
+                      cedures   from  the  Tcl  command  language
+                      library.
+
+          The _d_a_t_e argument to ..HHSS is optional and specifies  the
+          date  on which the entry (or its corresponding program)
+          was last modified.  The _v_e_r_s_i_o_n  argument  is  optional
+          and  specifies  the Sprite version number corresponding
+          to this version  of  the  manual  entry.   The  current
+          default is ``1.0''.
+
+     ..II [_a_r_g_s]
+          Print in italics.  If any _a_r_g_s are given, then  all  of
+          the  arguments  are  printed  in  italics (up to six of
+          them).  Otherwise, everything on the next line of input
+          is  printed  in  italics.   In  either  case,  the font
+          reverts to roman after the arguments or following  line
+          have been printed.
+
+     ..LLGG [_a_r_g_s]
+          Print in a larger font.  If any _a_r_g_s  are  given,  then
+          all  of  the arguments are printed in a larger font (up
+          to six of them).  Otherwise,  everything  on  the  next
+          line  of  input is printed in a larger font.  In either
+          case, the font reverts to normal size after  the  argu-
+          ments or following line have been printed.
+
+     ..LLPP  Start a new paragraph.  Same as ..PPPP.
+
+     ..PPDD _d_i_s_t_a_n_c_e
+
+
+
+Sprite v.1.0            February 17, 1989                       3
+
+
+
+
+
+
+man                       File Formats                        man
+
+
+
+          Set the spacing between paragraphs to _d_i_s_t_a_n_c_e.
+
+     ..PPPP  Start a new paragraph.
+
+     ..RREE [_l_e_v_e_l]
+          End right-shifted text, moving  the  indentation  level
+          back  to  its previous level.  Normally, each ..RRSS moves
+          the indentation back one level (in the case  of  nested
+          ..RRSS  calls).   However, if _l_e_v_e_l is specified, it gives
+          the index of the nesting level from  which  to  return.
+          For  example,  ..RRSS  33  says  to return from 3 levels of
+          nesting to 2 levels (when this call is  invoked,  there
+          better  be  at least three nested ..RRSS calls in effect).
+          ..RRSS 00 says to return from all nested ..RRSS calls.
+
+     ..RRSS [_i_n_d_e_n_t]
+          Right shift.  From now on, indent all future  text  (up
+          to  the  matching ..RREE) by an additional amount equal to
+          _i_n_d_e_n_t ens.  If _i_n_d_e_n_t isn't specified,  then  use  the
+          current  indentation  (from the last ..TTPP or ..IIPP) as the
+          amount of additional indentation.  Pairs of ..RRSS and ..RREE
+          calls  may be nested.  The ..SSHH macro cancels all active
+          ..RRSS calls.
+
+     ..SSHH _n_a_m_e [_m_o_r_e_N_a_m_e ...]
+          Start a new section named _n_a_m_e.  The _n_a_m_e may  actually
+          consist of up to six distinct arguments.
+
+     ..SSSS _n_a_m_e [_m_o_r_e_N_a_m_e ... ]
+          Start a new subsection named _n_a_m_e.  The _n_a_m_e may  actu-
+          ally consist of up to six distinct arguments.
+
+     ..SSMM [_a_r_g_s]
+          Print in a smaller font.  If any _a_r_g_s are  given,  then
+          all  of the arguments are printed in a smaller font (up
+          to six of them).  Otherwise,  everything  on  the  next
+          line  of input is printed in a smaller font.  In either
+          case, the font reverts to normal size after  the  argu-
+          ments or following line have been printed.
+
+     ..TTHH _n_a_m_e _s_e_c_t_i_o_n [_d_a_t_e [_v_e_r_s_i_o_n]]
+          Set title and heading.  This macro is obsolete.  It  is
+          used  for  old  UNIX manual pages only.  For Sprite man
+          pages, the ..HHSS macro  should  be  used  instead.   _N_a_m_e
+          gives the name of the manual page, which will appear in
+          the upper-right and upper-left corners  of  each  page.
+          _S_e_c_t_i_o_n  gives  the  section  number.   _D_a_t_e  gives the
+          last-modified-time for the program;  if not  specified,
+          it defaults to blank.  _V_e_r_s_i_o_n gives the operating sys-
+          tem version that this manual entry corresponds to.  The
+          default  for  _v_e_r_s_i_o_n  varies in time;  see the ttmmaacc..aann
+          source file for the current value.
+
+
+
+Sprite v.1.0            February 17, 1989                       4
+
+
+
+
+
+
+man                       File Formats                        man
+
+
+
+     ..TTPP [_i_n_d_e_n_t]
+          Start a tagged paragraph.  The following line  contains
+          a  tag, and everything after that contains the contents
+          of the paragraph.  The tag will be printed outdented to
+          the  normal  left  margin,  and  the  paragraph will be
+          indented relative to the tag.  If _i_n_d_e_n_t is  specified,
+          then  the indent distance is changed to _i_n_d_e_n_t ens (the
+          indent distance is sticky across calls to ..TTPP  and  ..IIPP
+          but gets reset to a default value by ..PPPP and ..SSHH).  For
+          example, each of the macro descriptions in this partic-
+          ular manual entry was formatted using the ..TTPP macro.
+
+     ..VVEE  End vertical sidebar.  Starting with  the  output  line
+          following  the current one, do not print vertical side-
+          bars.
+
+     ..VVSS  Start vertical sidebar.  From now on, starting with the
+          current  output line, a vertical bar will appear at the
+          right side of all output  lines.   This  will  continue
+          until  the  next  ..VVEE call.  Sidebars should be used to
+          indicate recent changes in the manual entry.
+
+
+KKEEYYWWOORRDDSS
+     ditroff, format, macros, -man, manual entry
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0            February 17, 1989                       5
+
+
+

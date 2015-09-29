@@ -1,0 +1,33 @@
+F ADDSUB.C;1                        	addsub.c
+F BOOTSYSA.S;1                      	bootSysAsm.s
+F COMPARE.C;1                       	compare.c
+F DEPENDEN.MK;1                     	dependencies.mk
+F DIV.C;1                           	div.c
+F FPU_SIMU.C;1                      	fpu_simulator.c
+F FPU_SIMU.H;1                      	fpu_simulator.h
+F GLOBALS.H;1                       	globals.h
+F IEEE.H;1                          	ieee.h
+F IU_SIMUL.C;1                      	iu_simulator.c
+F MACH.H;1                          	mach.h
+F MACHASM.S;1                       	machAsm.s
+F MACHASMD.H;1                      	machAsmDefs.h
+F MACHCODE.C;1                      	machCode.c
+F MACHCONS.H;1                      	machConst.h
+F MACHFPUG.C;1                      	machFPUGlue.c
+F MACHINT.H;1                       	machInt.h
+F MACHINTR.S;1                      	machIntr.s
+F MACHMIGR.C;1                      	machMigrate.c
+F MACHMON.C;1                       	machMon.c
+F MACHMON.H;1                       	machMon.h
+F MACHSIG.H;1                       	machSig.h
+F MACHTRAP.S;1                      	machTrap.s
+F MACHTYPE.H;1                      	machTypes.h
+F MD.MK;1                           	md.mk
+L MD_MK.SED;1                       	md.mk.sed	../sun4.md/md.mk.sed
+F MUL.C;1                           	mul.c
+F PACK.C;1                          	pack.c
+L SUN4.;1                           	sun4	../sun4.md/sun4
+L SYS.;1                            	sys	../sun4.md/sys
+F UNPACK.C;1                        	unpack.c
+F UTILITY.C;1                       	utility.c
+F UWORD.C;1                         	uword.c

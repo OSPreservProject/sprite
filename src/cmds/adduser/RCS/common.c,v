@@ -1,0 +1,675 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     91.06.10.12.08.33;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.06.04.16.51.44;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.06.03.17.08.54;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.03.21.11.05.11;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.03.01.12.21.12;  author rab;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.5
+log
+@Set the real uid to root early on, rather than trying to figure out
+which subprocesses (e.g., rsh) need to have real uid == effective uid.
+@
+text
+@/* 
+ * common.c --
+ *
+ *	Collect infomation on a new account request.
+ *      Make sure the information is valid.  Then mail it
+ *      to the staff.
+ *
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/admin/adduser/RCS/common.c,v 1.4 91/06/04 16:51:44 kupfer Exp Locker: kupfer $";
+#endif
+
+#include "common.h"
+#include <sprite.h>
+#include <ctype.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/ioctl.h>
+#include <sys/param.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <time.h>
+#include <unistd.h>
+
+/* Forward references: */
+#if 0
+static void mail _ARGS_((CONST char *whom, CONST char *msg));
+#endif
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * raw_getchar --
+ *
+ *	Get a character in cbreak mode, without waiting for a carriage
+ *      return.
+ *
+ * Results:
+ *	Returns the character read, or EOF if no more input is available.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+raw_getchar()
+{
+    struct sgttyb sgtty_buf;
+    int c;
+
+    ioctl(fileno(stdin), TIOCGETP, &sgtty_buf);
+    sgtty_buf.sg_flags |= CBREAK;
+    ioctl(fileno(stdin), TIOCSETP, &sgtty_buf);
+    c = getchar();
+    sgtty_buf.sg_flags &= ~CBREAK;
+    ioctl(fileno(stdin), TIOCSETP, &sgtty_buf);
+    return c;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * yes --
+ *
+ *	Get a yes/no response from the user.
+ *
+ * Results:
+ *	1 if the user said yes, 0 if no.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+yes(prompt)
+    char *prompt;
+{
+    int x;
+
+    for (;;) {
+	printf("\n%s  (y or n) ", prompt);
+	x = raw_getchar();
+	printf("\n");
+	switch (x) {
+
+	case 'y':
+	case 'Y':
+	    x = 1;
+	    break;
+
+	case 'n':
+	case 'N':
+	    x = 0;
+	    break;
+
+	default:
+	    continue;
+	}
+	break;
+    }
+    return x;
+}
+
+void
+getString(forbid, prompt, string)
+    CONST char *forbid;
+    CONST char *prompt;
+    char *string;
+{
+    char buffer[BUFFER_SIZE];
+    CONST char *f;
+
+    for (;;) {
+	printf(string[0] ? "%s(%s): " : "%s: ", prompt, string);
+	fgets(buffer, BUFFER_SIZE - 1, stdin);
+	if (buffer[strlen(buffer) - 1] == '\n') {
+	    buffer[strlen(buffer) - 1] = '\0';
+	}
+	if (buffer[0] != '\0') {
+	    strcpy(string, buffer);
+	}
+	for (f = forbid;; ++f) {
+	    if (*f == '\0') {
+		return;
+	    }
+	    if (strchr(buffer, *f)) {
+		fprintf(stderr, "This entry cannot contain a `%c'!\n", *f);
+		break;
+	    }
+	}
+    }
+}
+
+void
+getPasswd(p)
+    char *p;
+{
+    char passwd1[BUFFER_SIZE];
+    char passwd2[BUFFER_SIZE];
+    static char salt_chars[] = 
+      "./abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    static char salt[3];
+    int c;
+    struct sgttyb sgtty_buf;
+
+    printf("Press 1 to enter an encrypted passwd\n");
+    printf("Press 2 to enter a plaintext passwd\n");
+    printf("Press 3 to leave this field blank\n");
+    for (;;) {
+	printf("Please enter 1, 2 or 3: ");
+	c = raw_getchar();
+	printf("\n");
+	switch (c) {
+
+	case '1':
+	    getString("", "Enter encrypted passwd", p);
+	    if ((strlen(p) != 13) || strspn(p, salt_chars) != 13) {
+		printf("%s is not a valid encrypted password!\n", passwd1);
+		printf("Please try again.\n");
+		continue;
+	    }
+	    return;
+
+	case '2':
+	    passwd1[0] = '\0';
+	    passwd2[0] = '\0';
+	    ioctl(0, TIOCGETP, &sgtty_buf);
+	    sgtty_buf.sg_flags &= ~ECHO;
+	    ioctl(0, TIOCSETP, &sgtty_buf);
+	    getString("", "Password", passwd1);
+	    printf("\n");
+	    getString("", "Retype passwd", passwd2);
+	    printf("\n");
+	    if (*passwd1 == '\0' || strcmp(passwd1, passwd2) != 0) {
+		printf("Sorry, try again\n");
+		continue;
+	    }
+	    sgtty_buf.sg_flags |= ECHO;
+	    ioctl(0, TIOCSETP, &sgtty_buf);
+	    srandom(time(0));
+	    salt[0] = salt_chars[random() % sizeof(salt_chars)];
+	    salt[1] = salt_chars[random() % sizeof(salt_chars)];
+	    strcpy(p, crypt(passwd1, salt));
+	    return;
+
+	case '3':
+	    strcpy(p, "*");
+	    return;
+
+	default:
+	    continue;
+	}
+    }
+}
+
+char *
+getShell()
+{
+    int c;
+
+    printf("Please select a shell\n");
+    printf("\t1  csh (default)\n");
+    printf("\t2  tcsh\n");
+    printf("\t3  sh\n");
+    for (;;) {
+	printf("Please enter 1, 2 or 3: ");
+	c = raw_getchar();
+	printf("\n");
+	switch (c) {
+
+	case '1':
+	case '\n':
+	    return "/sprite/cmds/csh";
+
+	case '2':
+	    return "/sprite/cmds/tcsh";
+
+	case '3':
+	    return "/sprite/cmds/sh";
+
+	default:
+	    continue;
+	}
+    }
+}
+
+#if 0
+static void
+mail(whom, msg)
+    CONST char *whom;
+    CONST char *msg;
+{
+    int pipeFd[2];
+    int childPid;
+    int w;
+
+    pipe(pipeFd);
+    switch (childPid = fork()) {
+
+    case -1:
+	fprintf(stderr, "Cannot fork: %s\n", strerror(errno));
+	exit(1);
+
+    case 0: /* child */
+	close(pipeFd[1]);
+	dup2(pipeFd[0], 0);
+	execlp("mail", "mail", whom, NULL);
+	fprintf(stderr, "Can't exec mail: %s\n", strerror(errno));
+	exit(1);
+
+    default: /* parent */
+        close(pipeFd[0]);
+	if (write(pipeFd[1], msg, strlen(msg)) != strlen(msg)) {
+	    fprintf(stderr, "Error writing to pipe: %s\n", strerror(errno));
+	    exit(1);
+	}
+	close(pipeFd[1]);
+	while ((w = wait(0)) > 0 && w != childPid) {
+	    continue;
+	}
+	printf("done sending mail\n");
+	break;
+    }
+    return;
+}
+#endif /* 0 */
+
+void
+getNumber(prompt, buf)
+    CONST char *prompt;
+    char *buf;
+{
+
+    for (;;) {
+	getString("", prompt, buf);
+	if (checkNumber(buf)) {
+	    return;
+	}
+	fprintf(stderr, "Only digits [0-9] should be used!\n");
+	*buf = '\0';
+    }
+}
+
+int
+checkNumber(buf)
+    char *buf;
+{
+    int i;
+
+    for (i = strlen(buf); --i >= 0;) {
+	if (!isascii(buf[i]) || !isdigit(buf[i])) {
+	    return 0;
+	}
+    }
+    return 1;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * makedb --
+ *
+ *	Regenerate the hashed password file.
+ *
+ * Results:
+ *	0 for success, an exit status otherwise.
+ *
+ * Side effects:
+ *	Creates the .dir and .pag files to match the plain-text 
+ *	password file.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+makedb(file)
+    char *file;
+{
+    int status, pid, w;
+    
+    if (!(pid = vfork())) {
+	execl(_PATH_MKPASSWD, "mkpasswd", "-p", file, NULL);
+	(void) fprintf(stderr, "Can't exec %s: %s\n",
+		       _PATH_MKPASSWD, strerror(errno));
+	_exit(127);
+    }
+    while ((w = wait(&status)) != pid && w != -1) {
+	continue;
+    }
+    return(w == -1 || status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * rcsCheckOut --
+ *
+ *	Check out a file.
+ *
+ * Results:
+ *	Returns the exit status of the "co" invocation, or -1 if there 
+ *	was a system error (and co couldn't be run).
+ *
+ * Side effects:
+ *	Checks out the file.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+rcsCheckOut(file)
+    char *file;
+{
+    int child;
+    union wait ws;
+    int w;
+
+    switch (child = fork()) {
+
+    case -1:
+	fprintf(stderr, "Fork failed: %s\n", strerror(errno));
+	return -1;
+    case 0:
+	execlp("co", "co", "-l", file, NULL);
+	fprintf(stderr, "Cannot exec co: %s\n", strerror(errno));
+	exit(EXIT_FAILURE);
+    default:
+	while ((w = wait(&ws)) > 0 && w != child) {
+	    continue;
+	}
+	return ws.w_retcode;
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * rcsCheckIn --
+ *
+ *	Check in a file.
+ *
+ * Results:
+ *	Returns the exit code of the "ci" invocation, or -1 if there 
+ *	was a system error (and ci couldn't be run).
+ *
+ * Side effects:
+ *	Checks in the file, whether or not it had actually changed.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+rcsCheckIn(file, logMsg)
+    char *file;			/* file to check in */
+    char *logMsg;		/* message for the RCS log, with 
+				 * leading -m */
+{
+    int child;
+    union wait ws;
+    int w;
+
+    switch (child = fork()) {
+    case -1:
+	fprintf(stderr, "Fork failed: %s\n", strerror(errno));
+	return -1;
+    case 0:
+	dup2(open("/dev/null", O_RDONLY), 0);
+	execlp("ci", "ci", logMsg, "-f", "-u", file, NULL);
+	fprintf(stderr, "Cannot exec ci: %s\n", strerror(errno));
+	exit(EXIT_FAILURE);
+    default:
+	while ((w = wait(&ws)) > 0 && w != child) {
+	    continue;
+	}
+	return ws.w_retcode;
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SecurityCheck --
+ *
+ *	Verify that we're running as root.  Make the real ID and 
+ *	effective ID both be root.
+ *	
+ *	The real ID is made root to avoid problems with subprocesses 
+ *	that exec random programs and act differently if the effective 
+ *	ID is different from the real ID.  This is not a security 
+ *	problem, because the program is installed so that only root or 
+ *	wheels can run it.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Exits if any of the checks fail.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+SecurityCheck()
+{
+    if (setreuid(0, 0) < 0) {
+	perror("Can't setuid to root");
+	fprintf(stderr,
+		"Check whether the program was correctly installed.\n");
+	exit(EXIT_FAILURE);
+    }
+}
+@
+
+
+1.4
+log
+@Make sure the invoking user is in the wheel group.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/admin/adduser/RCS/common.c,v 1.3 91/06/03 17:08:54 kupfer Exp Locker: kupfer $";
+a26 1
+#include <grp.h>
+d444 8
+a451 2
+ *	Verify that we're running as root and that the user is in the 
+ *	wheel group.
+d465 2
+a466 23
+    int groupList[NGROUPS];	/* groups that the user belongs to */
+    int numGroups;		/* number of groups the user is in */
+    struct group *wheel;	/* info about the wheel group */
+    int group;			/* index into groupList */
+
+    if (geteuid() != 0) {
+	fprintf(stderr,
+"Not running as root.  Check whether the program was correctly installed.\n");
+	exit(EXIT_FAILURE);
+    }
+
+    wheel = getgrnam("wheel");
+    if (wheel == NULL) {
+	fprintf(stderr, "No wheel group?!\n");
+	exit(EXIT_FAILURE);
+    }
+    numGroups = getgroups(NGROUPS, groupList);
+    for (group = 0; group < numGroups; group++) {
+	if (groupList[group] == wheel->gr_gid) {
+	    break;
+	}
+    }
+    if (group == numGroups) {
+d468 1
+a468 1
+		"Sorry, you must be in the wheel group to run this program.\n");
+@
+
+
+1.3
+log
+@More routines shared with deleteuser.  Check whether the RCS checkout
+succeeded.  Lint.  Better support for testing.  Give an RCS log
+message when checking a file in.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/admin/adduser/RCS/common.c,v 1.2 90/03/21 11:05:11 rab Exp Locker: kupfer $";
+d27 1
+d32 2
+d436 50
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/admin/adduser/RCS/common.c,v 1.1 90/03/01 12:21:12 rab Exp $";
+d22 5
+d31 3
+d35 3
+a37 2
+#ifndef __STDC__
+#define const
+d40 17
+a56 1
+#define BUFFER_SIZE     0x100
+a57 8
+extern int errno;
+extern char *crypt();
+
+extern int  yes();
+extern void getString();
+extern void getPasswd();
+extern void mail();
+
+d64 1
+a64 1
+    ioctl(0, TIOCGETP, &sgtty_buf);
+d66 1
+a66 1
+    ioctl(0, TIOCSETP, &sgtty_buf);
+d69 1
+a69 1
+    ioctl(0, TIOCSETP, &sgtty_buf);
+d73 17
+d122 2
+a123 2
+    const char *forbid;
+    const char *prompt;
+d127 1
+a127 1
+    const char *f;
+d243 2
+a244 1
+void
+d246 2
+a247 1
+    const char *msg;
+d282 1
+d284 1
+a284 1
+int
+d286 1
+a286 1
+    const char *prompt;
+d307 1
+a307 1
+	if (!isdigit(buf[i])) {
+d314 121
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header$";
+d38 1
+a38 1
+extern char *getPasswd();
+d116 3
+a118 2
+char *
+getPasswd()
+a131 2
+	passwd1[0] = '\0';
+	passwd2[0] = '\0';
+d138 2
+a139 2
+	    getString("", "Enter encrypted passwd", passwd1);
+	    if ((strlen(passwd1) != 13) || strspn(passwd1, salt_chars) != 13) {
+d144 1
+a144 1
+	    return passwd1;
+d147 2
+d165 2
+a166 1
+	    return crypt(passwd1, salt);
+d169 2
+a170 1
+	    return "*";
+@

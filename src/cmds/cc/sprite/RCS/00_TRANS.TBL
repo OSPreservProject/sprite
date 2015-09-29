@@ -1,0 +1,13 @@
+F CCCP.C_V;1                        	cccp.c,v
+F CONFIG.GCC;1                      	config.gcc,v
+F FINAL.C_V;1                       	final.c,v
+F GCC.C_V;1                         	gcc.c,v
+F OUT_SPAR.C_V;1                    	out-sparc.c,v
+F SPECS.H_V;1                       	specs.h,v
+F TM_I386.H_V;1                     	tm-i386.h,v
+F TM_M68K.H_V;1                     	tm-m68k.h,v
+F TM_MIPS.H_V;1                     	tm-mips.h,v
+F TM_SPARC.H_V;1                    	tm-sparc.h,v
+F TOPLEV.C_V;1                      	toplev.c,v
+F VARARGS.H_V;1                     	varargs.h,v
+F XM_M68K.H_V;1                     	xm-m68k.h,v

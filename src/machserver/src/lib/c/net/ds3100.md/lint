@@ -1,0 +1,3 @@
+swap.c:
+rcmd.c:
+fclose returns value which is always ignored

@@ -1,0 +1,6 @@
+F LD.C;1                            	ld.c
+F LD.NEW;1                          	ld.new
+F LD_C.ORI;1                        	ld.c.orig
+F LD_C.REJ;1                        	ld.c.rej
+F LD_DIFFS.;1                       	ld.diffs
+F LD_PATCH.;1                       	ld.patch

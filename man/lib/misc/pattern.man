@@ -1,0 +1,85 @@
+'\" Copyright 1991 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/lib/forms/RCS/lib.man,v 1.3 91/01/07 17:55:52 mottsmth Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS pattern lib
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+Pattern_Match \- Do csh-style pattern matching and more.
+.SH SYNOPSIS
+.nf
+\fB#include <pattern.h>\fR
+.sp
+int
+\fBPattern_Match\fR(\fIpattern, name\fP)
+.SH ARGUMENTS
+.AS biggestType biggestName
+.AP char *pattern in
+Pattern to try matching.
+.AP char *name in
+Name to try matching against \fIpattern\fR.
+.BE
+
+.SH DESCRIPTION
+.PP
+The \fIPattern_Match\fR procedure provides pattern-matching
+capabilities for strings.  It understands \fIcsh\fR-style patterns, and
+logical \fIand\fR's, \fIor\fR's, and \fInot\fR's with arbitrary levels
+of grouping.  To use this procedure,
+pass it a string describing the pattern you are trying to match
+and a string to test against this pattern.
+.PP
+If the \fIname\fR argument successfully matches the \fIpattern\fR, the routine
+returns the value 0.  If the pattern does not match, it returns 1.  If an
+error occurs parsing the pattern, the routine returns -1.
+.PP
+Pattern_Match uses the following special characters:
+.sp
+* matches against any number of characters.
+.sp
+? matches against any single character.
+.sp
+[] allows matching against a list of characters enclosed in the []'s, or
+against a range of characters as in [a-z].
+.sp
+\\ allows turning off the magic properties of the special characters
+.sp
+&& requires a match against two patterns
+.sp
+|| allows a match against either of two patterns
+.sp
+! forbids a match against the following string
+.sp
+() allows levels of grouping
+.sp
+Examples:
+.br
+"Alice" matches "A*"
+.br
+"d[efg]" matches "df"
+.br
+"d[a-z]" matches "dq"
+.br
+"f?ddle" matches "fiddle"
+.br
+"f\\?ddle" matches "f\?ddle" but not "fiddle"
+.br
+"x || y" matches "y"
+.br
+"x* && *y" matches "xy" but not "frilly"
+.br
+"(x* && *y) || (frilly) matches "xy" and also "frilly"
+.br
+"!x* && *y" matches "frilly" but not "xy"
+.br
+
+.SH KEYWORDS
+pattern, matching, string, compare

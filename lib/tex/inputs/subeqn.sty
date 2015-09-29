@@ -1,0 +1,54 @@
+% subeqn.sty  13 Feb 90
+% subequations environment: changes the numbering from 1, 2, 3 to 4a, 4b, 4c.
+%
+% This style option is designed to work with LaTeX version 2.09.  Use
+% \documentstyle[subeqn]{article}
+
+% Copyright (c) 1990 by Stephen Gildea
+% Permission to copy all or part of this work is granted, provided
+% that the copies are not made or distributed for resale, and that
+% the copyright notice and this notice are retained.
+% 
+% THIS WORK IS PROVIDED ON AN "AS IS" BASIS.  THE AUTHOR PROVIDES NO
+% WARRANTY WHATSOEVER, EITHER EXPRESS OR IMPLIED, REGARDING THE WORK,
+% INCLUDING WARRANTIES WITH RESPECT TO ITS MERCHANTABILITY OR FITNESS
+% FOR ANY PARTICULAR PURPOSE.
+%
+% If you make any improvements, I'd like to hear about them.
+%
+% Stephen Gildea
+% MIT Earth Resources Lab
+% Cambridge, Mass. 02139
+% mit-erl!gildea
+% gildea@erl.mit.edu
+
+% Original version by mit-erl!gildea August 1986.
+% @ignoretrue fix from Johannes Braams <BRAAMS%HLSDNL5.BITNET> 16 Jan 89
+% use refstepcounter from Rick Zaccone <zaccone@rigel.bucknell.edu> 13 Feb 90
+
+% Within the subequations environment, the only change is that
+% equations are labeled differently.  The number stays the same,
+% and lower case letters are appended.  For example, if after doing
+% three equations, numbered 1, 2, and 3, you start a subequations
+% environmment and do three more equations, they will be numbered
+% 4a, 4b, and 4c.  After you end the subequations environment, the
+% next equation will be numbered 5.
+%
+% Both text and equations can be put inside the subequations environment.
+%
+% Of course, you can use this idea to create your own subfigures and
+% subtables environments, too.
+
+\newtoks\@stequation
+
+\def\subequations{\refstepcounter{equation}%
+  \edef\@savedequation{\the\c@equation}%
+  \@stequation=\expandafter{\theequation}%   %only want \theequation
+  \edef\@savedtheequation{\the\@stequation}% % expanded once
+  \edef\oldtheequation{\theequation}%
+  \setcounter{equation}{0}%
+  \def\theequation{\oldtheequation\alph{equation}}}
+
+\def\endsubequations{\setcounter{equation}{\@savedequation}%
+  \@stequation=\expandafter{\@savedtheequation}%
+  \edef\theequation{\the\@stequation}\global\@ignoretrue}

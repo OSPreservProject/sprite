@@ -1,0 +1,1045 @@
+512
+llib-ltclx:strftime.c 2
+2
+4 54 36 0 0
+strftime
+18 0 0
+4 0 0
+18 0 0
+24 352 1037
+16
+0 284 4 0 0
+strftime
+512
+llib-ltclx:tclBasic.c 2
+2
+0 135 104 96 2461
+Tcl_CreateInterp
+16
+0 201 24 96 2461
+Tcl_CreateInterp
+2
+1 225 32 0 0
+Tcl_DeleteInterp
+24 96 2461
+2
+5 344 32 0 0
+Tcl_CreateCommand
+24 96 2461
+18 0 0
+148 0 0
+20 0 0
+144 0 0
+2
+2 393 36 0 0
+Tcl_DeleteCommand
+24 96 2461
+18 0 0
+16
+0 409 4 0 0
+Tcl_DeleteCommand
+2
+4 444 36 0 0
+Tcl_Eval
+24 96 2461
+18 0 0
+4 0 0
+82 0 0
+16
+0 802 4 0 0
+Tcl_Eval
+2
+4 855 100 0 0
+Tcl_CreateTrace
+24 96 2461
+4 0 0
+144 0 0
+20 0 0
+16
+0 867 20 0 0
+Tcl_CreateTrace
+2
+2 891 32 0 0
+Tcl_DeleteTrace
+24 96 2461
+20 0 0
+2
+2 935 32 0 0
+Tcl_AddErrorInfo
+24 96 2461
+18 0 0
+2
+-2 993 36 0 0
+Tcl_VarEval
+24 96 2461
+18 0 0
+16
+0 1043 4 0 0
+Tcl_VarEval
+512
+llib-ltclx:chmod.c 2
+2
+2 186 36 0 0
+Tcl_ConvAbsMode
+18 0 0
+4 0 0
+16
+0 194 4 0 0
+Tcl_ConvAbsMode
+2
+4 214 36 0 0
+Tcl_ChmodCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 272 4 0 0
+Tcl_ChmodCmd
+2
+4 293 36 0 0
+Tcl_ChownCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 388 4 0 0
+Tcl_ChownCmd
+2
+4 408 36 0 0
+Tcl_ChgrpCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 446 4 0 0
+Tcl_ChgrpCmd
+512
+llib-ltclx:clock.c 2
+2
+4 44 36 0 0
+Tcl_GetclockCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 52 4 0 0
+Tcl_GetclockCmd
+2
+4 72 36 0 0
+Tcl_FmtclockCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 113 4 0 0
+Tcl_FmtclockCmd
+512
+llib-ltclx:cmdloop.c 2
+2
+0 26 148 0 0
+tclShellCmdEvalProc
+2
+4 238 32 0 0
+Tcl_CommandLoop
+24 96 2461
+24 384 23058
+24 384 23058
+4 0 0
+2
+4 347 36 0 0
+Tcl_CommandloopCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 382 4 0 0
+Tcl_CommandloopCmd
+512
+llib-ltclx:createExtd.c 2
+2
+0 37 104 96 2461
+Tcl_CreateExtendedInterp
+16
+0 244 24 96 2461
+Tcl_CreateExtendedInterp
+512
+llib-ltclx:debug.c 2
+2
+1 338 32 0 0
+Tcl_InitDebug
+24 96 2461
+512
+llib-ltclx:extendUtil.c 2
+2
+3 54 36 0 0
+Tcl_StrToLong
+18 0 0
+4 0 0
+21 0 0
+16
+0 67 4 0 0
+Tcl_StrToLong
+2
+3 92 36 0 0
+Tcl_StrToInt
+18 0 0
+4 0 0
+20 0 0
+16
+0 105 4 0 0
+Tcl_StrToInt
+2
+3 130 36 0 0
+Tcl_StrToUnsigned
+18 0 0
+4 0 0
+30 0 0
+16
+0 143 4 0 0
+Tcl_StrToUnsigned
+2
+2 162 36 0 0
+Tcl_StrToDouble
+18 0 0
+23 0 0
+16
+0 176 4 0 0
+Tcl_StrToDouble
+2
+2 201 98 0 0
+Tcl_DownShift
+18 0 0
+18 0 0
+16
+0 214 18 0 0
+Tcl_DownShift
+2
+2 238 98 0 0
+Tcl_UpShift
+18 0 0
+18 0 0
+16
+0 251 18 0 0
+Tcl_UpShift
+2
+1 296 32 0 0
+Tcl_DynBufInit
+24 2144 27529
+2
+1 316 32 0 0
+Tcl_DynBufFree
+24 2144 27529
+2
+2 335 32 0 0
+Tcl_DynBufReturn
+24 96 2461
+24 2144 27529
+2
+2 356 32 0 0
+Tcl_DynBufAppend
+24 2144 27529
+18 0 0
+2
+2 387 36 0 0
+Tcl_DynamicFgets
+24 2144 27529
+24 384 23058
+16
+0 409 4 0 0
+Tcl_DynamicFgets
+2
+3 435 36 0 0
+Tcl_GetLong
+24 96 2461
+18 0 0
+21 0 0
+16
+0 450 4 0 0
+Tcl_GetLong
+2
+3 476 36 0 0
+Tcl_GetUnsigned
+24 96 2461
+18 0 0
+30 0 0
+16
+0 491 4 0 0
+Tcl_GetUnsigned
+2
+2 510 36 0 0
+Tcl_ConvertFileHandle
+24 96 2461
+18 0 0
+16
+0 528 4 0 0
+Tcl_ConvertFileHandle
+2
+2 549 36 0 0
+Tcl_System
+24 96 2461
+18 0 0
+16
+0 587 4 0 0
+Tcl_System
+512
+llib-ltclx:filescan.c 2
+2
+1 560 32 0 0
+Tcl_InitFilescan
+24 96 2461
+512
+llib-ltclx:fmath.c
+2
+2 123 36 0 0
+Tcl_MathError
+18 0 0
+4 0 0
+16
+0 133 4 0 0
+Tcl_MathError
+2
+4 199 36 0 0
+Tcl_AcosCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 201 4 0 0
+Tcl_AcosCmd
+2
+4 221 36 0 0
+Tcl_AsinCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 223 4 0 0
+Tcl_AsinCmd
+2
+4 243 36 0 0
+Tcl_AtanCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 245 4 0 0
+Tcl_AtanCmd
+2
+4 265 36 0 0
+Tcl_CosCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 267 4 0 0
+Tcl_CosCmd
+2
+4 287 36 0 0
+Tcl_SinCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 289 4 0 0
+Tcl_SinCmd
+2
+4 309 36 0 0
+Tcl_TanCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 311 4 0 0
+Tcl_TanCmd
+2
+4 331 36 0 0
+Tcl_CoshCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 333 4 0 0
+Tcl_CoshCmd
+2
+4 353 36 0 0
+Tcl_SinhCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 355 4 0 0
+Tcl_SinhCmd
+2
+4 375 36 0 0
+Tcl_TanhCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 377 4 0 0
+Tcl_TanhCmd
+2
+4 397 36 0 0
+Tcl_ExpCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 399 4 0 0
+Tcl_ExpCmd
+2
+4 419 36 0 0
+Tcl_LogCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 421 4 0 0
+Tcl_LogCmd
+2
+4 441 36 0 0
+Tcl_Log10Cmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 443 4 0 0
+Tcl_Log10Cmd
+2
+4 463 36 0 0
+Tcl_SqrtCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 465 4 0 0
+Tcl_SqrtCmd
+2
+4 485 36 0 0
+Tcl_FabsCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 487 4 0 0
+Tcl_FabsCmd
+2
+4 507 36 0 0
+Tcl_FloorCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 509 4 0 0
+Tcl_FloorCmd
+2
+4 529 36 0 0
+Tcl_CeilCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 531 4 0 0
+Tcl_CeilCmd
+2
+4 551 36 0 0
+Tcl_FmodCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 574 4 0 0
+Tcl_FmodCmd
+2
+4 594 36 0 0
+Tcl_PowCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 617 4 0 0
+Tcl_PowCmd
+512
+llib-ltclx:general.c 2
+2
+0 22 18 0 0
+tclxVersion
+2
+0 23 18 0 0
+tclxPatchlevel
+2
+0 25 18 0 0
+tclAppName
+2
+0 26 18 0 0
+tclAppLongname
+2
+0 27 18 0 0
+tclAppVersion
+2
+4 48 36 0 0
+Tcl_EchoCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 58 4 0 0
+Tcl_EchoCmd
+2
+4 75 36 0 0
+Tcl_InfoxCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 99 4 0 0
+Tcl_InfoxCmd
+2
+4 119 36 0 0
+Tcl_LoopCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 170 4 0 0
+Tcl_LoopCmd
+512
+llib-ltclx:handles.c 2
+2
+3 233 100 0 0
+Tcl_HandleTblInit
+18 0 0
+4 0 0
+4 0 0
+16
+0 256 20 0 0
+Tcl_HandleTblInit
+2
+2 273 36 0 0
+Tcl_HandleTblUseCount
+20 0 0
+4 0 0
+16
+0 278 4 0 0
+Tcl_HandleTblUseCount
+2
+1 292 32 0 0
+Tcl_HandleTblRelease
+20 0 0
+2
+2 318 100 0 0
+Tcl_HandleAlloc
+20 0 0
+18 0 0
+16
+0 328 20 0 0
+Tcl_HandleAlloc
+2
+3 347 100 0 0
+Tcl_HandleXlate
+24 96 2461
+20 0 0
+18 0 0
+16
+0 365 20 0 0
+Tcl_HandleXlate
+2
+2 385 100 0 0
+Tcl_HandleWalk
+20 0 0
+20 0 0
+16
+0 405 20 0 0
+Tcl_HandleWalk
+2
+3 423 32 0 0
+Tcl_WalkKeyToHandle
+20 0 0
+4 0 0
+18 0 0
+2
+2 443 32 0 0
+Tcl_HandleFree
+20 0 0
+20 0 0
+512
+llib-ltclx:id.c 2
+2
+4 143 36 0 0
+Tcl_IdCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 323 4 0 0
+Tcl_IdCmd
+512
+llib-ltclx:iocmds.c 2
+2
+4 361 36 0 0
+Tcl_BsearchCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 405 4 0 0
+Tcl_BsearchCmd
+2
+4 582 36 0 0
+Tcl_DupCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 661 4 0 0
+Tcl_DupCmd
+2
+4 684 36 0 0
+Tcl_PipeCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 747 4 0 0
+Tcl_PipeCmd
+2
+4 767 36 0 0
+Tcl_CopyfileCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 812 4 0 0
+Tcl_CopyfileCmd
+2
+4 828 36 0 0
+Tcl_FstatCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 921 4 0 0
+Tcl_FstatCmd
+512
+llib-ltclx:iocmds.c
+2
+4 1103 36 0 0
+Tcl_FcntlCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 1123 4 0 0
+Tcl_FcntlCmd
+2
+4 1272 36 0 0
+Tcl_SelectCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 1377 4 0 0
+Tcl_SelectCmd
+512
+llib-ltclx:list.c 2
+2
+4 203 36 0 0
+Tcl_GetKeyedListField
+24 96 2461
+18 0 0
+18 0 0
+82 0 0
+16
+0 246 4 0 0
+Tcl_GetKeyedListField
+2
+4 272 98 0 0
+Tcl_SetKeyedListField
+24 96 2461
+18 0 0
+18 0 0
+18 0 0
+16
+0 325 18 0 0
+Tcl_SetKeyedListField
+2
+3 350 98 0 0
+Tcl_DeleteKeyedListField
+24 96 2461
+18 0 0
+18 0 0
+16
+0 389 18 0 0
+Tcl_DeleteKeyedListField
+2
+4 409 36 0 0
+Tcl_KeyldelCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 433 4 0 0
+Tcl_KeyldelCmd
+2
+4 453 36 0 0
+Tcl_KeylgetCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 526 4 0 0
+Tcl_KeylgetCmd
+2
+4 546 36 0 0
+Tcl_KeylsetCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 566 4 0 0
+Tcl_KeylsetCmd
+2
+4 586 36 0 0
+Tcl_LvarpopCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 642 4 0 0
+Tcl_LvarpopCmd
+2
+4 662 36 0 0
+Tcl_LemptyCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 677 4 0 0
+Tcl_LemptyCmd
+512
+llib-ltclx:math.c 2
+2
+4 55 36 0 0
+Tcl_MaxCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 76 4 0 0
+Tcl_MaxCmd
+2
+4 96 36 0 0
+Tcl_MinCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 116 4 0 0
+Tcl_MinCmd
+2
+4 165 36 0 0
+Tcl_RandomCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 207 4 0 0
+Tcl_RandomCmd
+512
+llib-ltclx:regexputil.c 2
+2
+1 260 32 0 0
+Tcl_RegExpClean
+24 96 32649
+2
+4 340 36 0 0
+Tcl_RegExpCompile
+24 96 2461
+24 96 32649
+18 0 0
+4 0 0
+16
+0 402 4 0 0
+Tcl_RegExpCompile
+2
+4 430 36 0 0
+Tcl_RegExpExecute
+24 96 2461
+24 96 32649
+18 0 0
+18 0 0
+16
+0 475 4 0 0
+Tcl_RegExpExecute
+512
+llib-ltclx:signal.c 2
+2
+1 146 36 0 0
+Tcl_SigNameToNum
+18 0 0
+16
+0 170 4 0 0
+Tcl_SigNameToNum
+512
+llib-ltclx:signal.c
+2
+0 372 32 0 0
+Tcl_ResetSignals
+2
+2 413 36 0 0
+Tcl_CheckForSignal
+24 96 2461
+4 0 0
+16
+0 467 4 0 0
+Tcl_CheckForSignal
+2
+1 698 32 0 0
+Tcl_InitSignalHandling
+24 96 2461
+512
+llib-ltclx:string.c 2
+2
+4 45 36 0 0
+Tcl_CindexCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 63 4 0 0
+Tcl_CindexCmd
+2
+4 83 36 0 0
+Tcl_ClengthCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 94 4 0 0
+Tcl_ClengthCmd
+2
+4 114 36 0 0
+Tcl_CrangeCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 164 4 0 0
+Tcl_CrangeCmd
+2
+4 185 36 0 0
+Tcl_ReplicateCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 213 4 0 0
+Tcl_ReplicateCmd
+2
+4 266 36 0 0
+Tcl_TranslitCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 314 4 0 0
+Tcl_TranslitCmd
+2
+4 341 36 0 0
+Tcl_CtypeCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 491 4 0 0
+Tcl_CtypeCmd
+512
+llib-ltclx:tclstartup.c 2
+2
+4 398 32 0 0
+Tcl_Startup
+24 96 2461
+4 0 0
+82 0 0
+18 0 0
+512
+llib-ltclx:unixcmds.c 2
+2
+4 37 36 0 0
+Tcl_ExecvpCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 54 4 0 0
+Tcl_ExecvpCmd
+2
+4 74 36 0 0
+Tcl_ForkCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 91 4 0 0
+Tcl_ForkCmd
+2
+4 111 36 0 0
+Tcl_KillCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 154 4 0 0
+Tcl_KillCmd
+2
+4 174 36 0 0
+Tcl_AlarmCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 189 4 0 0
+Tcl_AlarmCmd
+2
+4 209 36 0 0
+Tcl_SleepCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 224 4 0 0
+Tcl_SleepCmd
+2
+4 244 36 0 0
+Tcl_SystemCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 258 4 0 0
+Tcl_SystemCmd
+2
+4 278 36 0 0
+Tcl_TimesCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 300 4 0 0
+Tcl_TimesCmd
+2
+4 320 36 0 0
+Tcl_UmaskCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 344 4 0 0
+Tcl_UmaskCmd
+2
+4 364 36 0 0
+Tcl_LinkCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 378 4 0 0
+Tcl_LinkCmd
+2
+4 398 36 0 0
+Tcl_UnlinkCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 422 4 0 0
+Tcl_UnlinkCmd
+2
+4 442 36 0 0
+Tcl_MkdirCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 498 4 0 0
+Tcl_MkdirCmd
+2
+4 518 36 0 0
+Tcl_RmdirCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 542 4 0 0
+Tcl_RmdirCmd
+2
+4 562 36 0 0
+Tcl_WaitCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 606 4 0 0
+Tcl_WaitCmd

@@ -1,0 +1,34 @@
+# DO NOT DELETE THIS LINE -- make depend depends on it.
+
+sun3.md/main.o: main.c
+sun3.md/main.o: /sprite/lib/include/sprite.h
+sun3.md/main.o: /sprite/lib/include/cfuncproto.h
+sun3.md/main.o: /sprite/lib/include/stdio.h
+sun3.md/main.o: /sprite/lib/include/stdlib.h
+sun3.md/main.o: /sprite/lib/include/string.h
+sun3.md/main.o: /sprite/lib/include/ctype.h
+sun3.md/main.o: /sprite/lib/include/fcntl.h
+sun3.md/main.o: /sprite/lib/include/signal.h
+sun3.md/main.o: /sprite/lib/include/machSignal.h
+sun3.md/main.o: /sprite/lib/include/time.h
+sun3.md/main.o: /sprite/lib/include/pwd.h
+sun3.md/main.o: /sprite/lib/include/unistd.h
+sun3.md/main.o: /sprite/lib/include/sys/types.h
+sun3.md/main.o: /sprite/lib/include/sys/stat.h
+sun3.md/main.o: /sprite/lib/include/sys/wait.h
+sun3.md/main.o: /sprite/lib/include/sun3.md/machine/machparam.h
+sun3.md/main.o: /sprite/lib/include/sys/param.h
+sun3.md/main.o: /sprite/lib/include/sun3.md/machparam.h
+sun3.md/main.o: /sprite/lib/include/sys/dir.h
+sun3.md/main.o: /sprite/lib/include/option.h
+sun3.md/main.o: /sprite/lib/include/fs.h
+sun3.md/main.o: /sprite/lib/include/spriteTime.h
+sun3.md/main.o: /sprite/lib/include/kernel/procTypes.h
+sun3.md/main.o: /sprite/lib/include/dev/tape.h
+sun3.md/main.o: /sprite/lib/include/status.h
+sun3.md/main.o: /sprite/lib/include/sun3.md/varargs.h
+sun3.md/main.o: /sprite/lib/include/assert.h
+sun3.md/main.o: /sprite/lib/include/dev/exabyte.h
+sun3.md/main.o: /sprite/lib/include/sys/scsi.h
+sun3.md/main.o: /sprite/lib/include/bstring.h
+sun3.md/main.o: /sprite/lib/include/sys/errno.h

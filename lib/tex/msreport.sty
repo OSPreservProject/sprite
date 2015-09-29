@@ -1,0 +1,60 @@
+% msreport.sty (installed 12/14/90 by elm)
+%
+% This is the style page for a standard UC Berkeley
+% masters' report (Plan II).  It came from Kathryn Crabtree.
+%
+\def\maketitle{
+
+\begin{titlepage}
+    \let\footnotesize\small
+    \let\footnoterule\relax
+    \setcounter{page}{0}
+
+    \null\vfil
+	\begin{center}
+	    {\large \@author \par}
+	    \vskip 1.5em
+	    Department of Electrical Engineering and Computer Science\par
+	    Computer Science Division\par
+	    University of California, Berkeley\par
+	    \vskip 1.5em
+	    {\LARGE \@title \par}
+	    \vskip 1.5em
+	    {\large \@date \par}
+	    \vskip 1.5em
+	    RESEARCH PROJECT\par
+	    \vskip 0.5em
+	    Submitted to the Department of Electrical Engineering and\par
+	    Computer Sciences, University of California, Berkeley,\par
+	    in partial satisfaction of the requirements for the degree\par
+	    of Master of Science, Plan II.\par
+	\end{center}
+	\vskip 1.5em
+	Approval for the Report and Comprehensive Examination:\par
+	\vskip 1.5em
+	\begin{center}
+	\begin{tabular}{l@{ \protect\underline{\hskip 3in} }l}
+	    Committee:  & Research Advisor \\[0.5em]
+			& Date \\[1.5em]
+			& Second Reader \\[0.5em]
+			& Date
+	\end{tabular}
+	\end{center}\par
+	\vskip .5in
+	\@thanks
+    \vfil\null
+\end{titlepage}
+
+\setcounter{footnote}{0}
+\let\thanks\relax
+\gdef\@thanks{}
+\gdef\@author{}
+\gdef\@title{}
+\let\maketitle\relax}
+
+\def\abstract{\titlepage
+\null\vfil
+\begin{center}
+{\bf Abstract}
+\end{center}}
+\def\endabstract{\par\vfil\null\endtitlepage}

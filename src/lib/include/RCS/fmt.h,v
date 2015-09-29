@@ -1,0 +1,202 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  sprited:1.5.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     90.09.11.14.40.17;  author kupfer;  state Exp;
+branches 1.5.1.1;
+next     1.4;
+
+1.4
+date     90.07.24.15.57.34;  author shirriff;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.02.20.18.14.20;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.10.12.12.14.19;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.06.05.12.35.22;  author jhh;  state Exp;
+branches ;
+next     ;
+
+1.5.1.1
+date     91.11.03.14.50.20;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.5
+log
+@Use function prototypes.
+@
+text
+@/*
+ * fmt.h --
+ *
+ *	Declarations for the Fmt package.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/lib/include/RCS/fmt.h,v 1.4 90/07/24 15:57:34 shirriff Exp Locker: kupfer $ SPRITE (Berkeley)
+ */
+
+#ifndef _FMT
+#define _FMT
+
+#include <cfuncproto.h>
+
+/*
+ * Return values
+ */
+#define FMT_OK			0
+#define FMT_CONTENT_ERROR	1
+#define FMT_INPUT_TOO_SMALL	2
+#define FMT_OUTPUT_TOO_SMALL	3
+#define FMT_ILLEGAL_FORMAT	4
+
+/*
+ * Different data formats.
+ */
+typedef int Fmt_Format;
+
+/*
+ * For now we or in a high bit so we can be backwards compatible with
+ * Swap_Buffer constants. Later on we'll get rid of this.
+ */
+
+#define FMT_68K_FORMAT		((Fmt_Format) 0x1000 | 1)
+#define FMT_VAX_FORMAT		((Fmt_Format) 0x1000 | 2)
+#define FMT_SPUR_FORMAT		((Fmt_Format) 0x1000 | 3)
+#define FMT_MIPS_FORMAT		((Fmt_Format) 0x1000 | 4)
+#define FMT_SPARC_FORMAT	((Fmt_Format) 0x1000 | 5)
+#define FMT_SYM_FORMAT		((Fmt_Format) 0x1000 | 6)
+
+/*
+ * Define FMT_MY_FORMAT to be the "native" format
+ */
+#if defined(sun3) || defined(sun2)
+#define FMT_MY_FORMAT	FMT_68K_FORMAT
+#endif
+#if defined(sun4)
+#define FMT_MY_FORMAT	FMT_SPARC_FORMAT
+#endif
+#if defined(ds3100) || defined(mips)
+#define FMT_MY_FORMAT	FMT_MIPS_FORMAT
+#endif
+#if defined(spur)
+#define FMT_MY_FORMAT	FMT_SPUR_FORMAT
+#endif
+#if defined(vax)
+#define FMT_MY_FORMAT	FMT_VAX_FORMAT
+#endif
+#if defined(sequent)
+#define FMT_MY_FORMAT	FMT_SYM_FORMAT
+#endif
+
+/* procedures */
+
+extern int Fmt_Convert _ARGS_((char *contents, Fmt_Format inFormat,
+			       int *inSizePtr, char *inBuf,
+			       Fmt_Format outFormat, int *outSizePtr,
+			       char *outBuf));
+extern int Fmt_Size _ARGS_((char *contents, Fmt_Format inFormat,
+			    int *inSizePtr, Fmt_Format outFormat,
+			    int *outSizePtr));
+
+#endif /* _FMT */
+
+@
+
+
+1.5.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/fmt.h,v 1.5 90/09/11 14:40:17 kupfer Exp $ SPRITE (Berkeley)
+@
+
+
+1.4
+log
+@Sequent format information added.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/fmt.h,v 1.3 90/02/20 18:14:20 brent Exp $ SPRITE (Berkeley)
+d21 2
+d73 7
+a79 2
+extern int	Fmt_Convert();
+extern int	Fmt_Size();
+@
+
+
+1.3
+log
+@Added FMT_MY_FORMAT
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/fmt.h,v 1.2 89/10/12 12:14:19 jhh Exp Locker: brent $ SPRITE (Berkeley)
+d45 1
+d64 3
+@
+
+
+1.2
+log
+@made format constants different to allow backwards compatiblity in 
+the kernels.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/fmt.h,v 1.1 89/06/05 12:35:22 jhh Exp $ SPRITE (Berkeley)
+d45 19
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.2 89/01/07 04:12:44 rab Exp $ SPRITE (Berkeley)
+d35 10
+a44 5
+#define FMT_68K_FORMAT		((Fmt_Format) 1)
+#define FMT_VAX_FORMAT		((Fmt_Format) 2)
+#define FMT_SPUR_FORMAT		((Fmt_Format) 3)
+#define FMT_MIPS_FORMAT		((Fmt_Format) 4)
+#define FMT_SPARC_FORMAT	((Fmt_Format) 5)
+@

@@ -1,0 +1,198 @@
+
+
+
+jput                      User Commands                      jput
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     jput - Store files in a Jaquith archive.
+
+SSYYNNOOPPSSIISS
+     jjppuutt [--aarrcchh _a_r_c_h_i_v_e] [--sseerrvveerr _h_o_s_t_n_a_m_e] [--ppoorrtt _p_o_r_t]
+     [--aabbss _t_e_x_t] [--aabbssffiilltteerr _p_r_o_g_r_a_m] [--aabbssffiilltteerroopptt _o_p_t_i_o_n_s]  [--
+     mmoodd  _m_o_d-_d_a_t_e] [--ddiirr] [--lliinnkk] [--ssyynncc] [--ffoorrccee]  [--vv] [--pprruunnee
+     _e_x_p_r_e_s_s_i_o_n] [--pprruunneeffuullll _e_x_p_r_e_s_s_i_o_n] [--iiggnnoorree _e_x_p_r_e_s_s_i_o_n]
+     [--mmaaiill _m_a_i_l_a_d_d_r] [--nneewwvvooll] [--ccrroossssrreemmoottee]  [--aacckkffrreeqq  _c_o_u_n_t]
+     [--llooccaall] _f_i_l_e_n_a_m_e_s
+
+OOPPTTIIOONNSS
+     --aarrcchh _a_r_c_h_i_v_e Name of logical archive.  If  none  is  speci-
+                   fied,  the  environment  variable  JARCHIVE is
+                   used, if defined, else the default archive  is
+                   used.
+
+     --sseerrvveerr _h_o_s_t_n_a_m_e
+                   Specifies host where Jaquith  server  is  run-
+                   ning.  Defaults  to  the  environment variable
+                   JSERVER.
+
+     --ppoorrtt _p_o_r_t    Specifies port number where Jaquith server  is
+                   running.  Defaults to the environment variable
+                   JPORT.
+
+     --mmoodd _d_a_t_e     Dump files modified since specified date.
+
+     --aabbss _t_e_x_t     Put _t_e_x_t in the abstract line for each file.
+
+     --aabbssffiilltteerr _p_r_o_g_r_a_m
+                   Invoke _p_r_o_g_r_a_m to generate abstract  for  each
+                   file. The utility _f_i_l_e is a good choice.
+
+     --aabbssffiilltteerroopptt _o_p_t_i_o_n_s
+                   Option string to be passed to  _a_b_s_f_i_l_t_e_r  pro-
+                   gram.  Must  be  enclosed in quotes if it con-
+                   tains spaces. ie. "-a -l".
+
+     --lliinnkk         Follow symbolic links. By default, the link is
+                   saved, not the file it points to.
+
+     --ssyynncc         Write data  synchronously  to  tape.  Normally
+                   data  is  buffered  on disk. There is a severe
+                   performance penalty with this option.
+
+     --ffoorrccee        Force files to be archived, even if an  up-to-
+                   date copy already exists on the archive.
+
+     --vv            Verbose  mode.  Show  filenames  as  they  are
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+jput                      User Commands                      jput
+
+
+
+                   processed.
+
+     --ddiirr          Put the directory and top level contents only.
+                   By default jput is recursive.
+
+     --mmaaiill _m_a_i_l_a_d_d_r
+                   Send response by mail to _m_a_i_l_a_d_d_r when  opera-
+                   tion is complete.
+
+     --nneewwvvooll       Force data  onto  a  new  volume.   The  -sync
+                   option is also required.
+
+     --pprruunnee _e_x_p_r_e_s_s_i_o_n
+                   Subtrees with simple names  matching  globbing
+                   expression  _e_x_p_r_e_s_s_i_o_n  will  not be archived,
+                   but their  names  will  still  appear  in  the
+                   parent directory list. Default is NULL expres-
+                   sion.
+
+     --pprruunneeffuullll _e_x_p_r_e_s_s_i_o_n
+                   Subtrees with  absolute  path  names  matching
+                   globbing  expression  _e_x_p_r_e_s_s_i_o_n  will  not be
+                   archived, but their names will still appear in
+                   the  parent  directory  list.  Default is NULL
+                   expression.
+
+     --iiggnnoorree _e_x_p_r_e_s_s_i_o_n
+                   Files  with  simple  names  matching  globbing
+                   expression _e_x_p_r_e_s_s_i_o_n will not be archived and
+                   their names will not be listed in  the  parent
+                   directory.  Default is '{#*#,*~}'.
+
+     --ccrroossss        Sprite only: Enable crossing of remote  links.
+                   By  default  jput  stays within the filesystem
+                   containing the files on the command line.
+
+     --aacckkffrreeqq _c_o_u_n_t
+                   Server should acknowledge every _c_o_u_n_t file.
+
+     --llooccaall        Sprite only: The files are local to the server
+                   so  don't  send the data over the net. This is
+                   strictly a Sprite performance hack  for  large
+                   backups. Invoker must be login id 'root'.
+_________________________________________________________________
+
+DDEESSCCRRIIPPTTIIOONN
+     JJppuutt stores a directory subtree onto an archive system  con-
+     trolled  by  the  Jaquith server.  The filenames which match
+     _f_i_l_e_n_a_m_e_s are stored on the archive if they have been  modi-
+     fied  since  the  last  time  they  were archived, or if the
+     --ffoorrccee option is used.
+
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+jput                      User Commands                      jput
+
+
+
+     The argument _f_i_l_e_p_a_t_h is interpreted as it would  be  for  a
+     standard ls command, i.e., it is interpreted relative to the
+     current working directory, unless it begins with '/'.
+
+     A plain file is considered to be modified if the last modif-
+     ication  time/date  as  reported by ssttaatt is more recent than
+     the date/time the file was archived, or if  the  permissions
+     have  changed.   A  directory  is considered modified if the
+     list of files in it has changed since it was last  archived,
+     or if the permissions have changed.
+
+     The list of  filenames  is  filtered  (using  Unix  globbing
+     rules,  but  see  BUGS below) by the --pprruunnee, --pprruunneeffuullll, and
+     --iiggnnoorree expressions. Any filename which matches any of these
+     expressions  is  silently  skipped.  The options are similar
+     except that pruned filenames will  appear  in  their  parent
+     directory's list whereas ignored files will not.
+
+     _d_a_t_e is of the form _D_a_t_e_S_p_e_c[:_T_i_m_e_S_p_e_c]. _T_i_m_e_S_p_e_c is of  the
+     form   [hh[:mm[:ss]]],   and   _D_a_t_e_S_p_e_c   is   of  the  form
+     dd-month[-yyyy]. Month is the first 3 letters of the  month;
+     all  others  are  numbers. The '/' character is a substitute
+     for '-' and '.' may be used instead of ':'.
+
+BBUUGGSS
+     Files are stored and indexed by their  current  pathname  so
+     there is no way to store file _f_o_o as _b_a_r.
+
+     There is currently no support for hard links.
+
+     Unlike the shell, the Jaquith globbing  characters  '*'  and
+     '?' match a '.' in the first position.
+
+     An abstract must be less than 16 kilobytes long.
+
+
+SSEEEE AALLSSOO
+     jaquith jmgr jls jstat jget jctrl jcopy jclean jbuild
+
+
+KKEEYYWWOORRDDSS
+     jaquith archive
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     3
+
+
+

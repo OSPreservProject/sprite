@@ -1,0 +1,221 @@
+head     1.10;
+branch   ;
+access   ;
+symbols  ds3100:1.10 sun3:1.10 sun4nw:1.10 symm:1.10 spur:1.10;
+locks    ; strict;
+comment  @ * @;
+
+
+1.10
+date     91.09.24.17.35.41;  author rab;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     91.08.09.16.22.27;  author mgbaker;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     91.07.26.17.10.51;  author shirriff;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     91.06.29.16.34.10;  author mgbaker;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     91.06.27.12.09.27;  author mgbaker;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     90.07.30.16.16.03;  author douglis;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.07.30.16.03.27;  author douglis;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.07.15.13.32.58;  author shirriff;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.06.22.11.33.55;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.11.27.10.33.46;  author shirriff;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.10
+log
+@Incremented migration version number.
+@
+text
+@/*
+ * migVersion.h --
+ *
+ *	Define the migration version, which is machine-dependent.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/proc/sun4c.md/RCS/migVersion.h,v 1.9 91/08/09 16:22:27 mgbaker Exp Locker: rab $ SPRITE (Berkeley)
+ */
+
+/*
+ * Set the migration version number.  Machines can only migrate to other
+ * machines of the same architecture and version number.
+ */
+#ifndef PROC_MIGRATE_VERSION
+#define PROC_MIGRATE_VERSION 20
+#endif /* PROC_MIGRATE_VERSION */
+
+@
+
+
+1.9
+log
+@New version so that sparc2's and 1's can migrate to each other.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/proc/sun4c.md/RCS/migVersion.h,v 1.8 91/07/26 17:10:51 shirriff Exp Locker: mgbaker $ SPRITE (Berkeley)
+d23 1
+a23 1
+#define PROC_MIGRATE_VERSION 19
+@
+
+
+1.8
+log
+@Large install for unix compatibility.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/proc/sun4c.md/RCS/migVersion.h,v 1.7 91/06/29 16:34:10 mgbaker Exp Locker: shirriff $ SPRITE (Berkeley)
+d23 1
+a23 1
+#define PROC_MIGRATE_VERSION 18
+@
+
+
+1.7
+log
+@Moving kernel back up, so migVersion doesn't need to change, but it
+was already bumped up to 17 and I don't know why.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/proc/sun4c.md/RCS/migVersion.h,v 1.6 91/06/27 12:09:27 mgbaker Exp Locker: mgbaker $ SPRITE (Berkeley)
+d23 1
+a23 1
+#define PROC_MIGRATE_VERSION 17
+@
+
+
+1.6
+log
+@Moving kernel down.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/proc/sun4c.md/RCS/migVersion.h,v 1.5 90/07/30 16:16:03 douglis Exp $ SPRITE (Berkeley)
+d23 1
+a23 1
+#define PROC_MIGRATE_VERSION 18
+@
+
+
+1.5
+log
+@incremented migration version
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/proc/sun4c.md/RCS/migVersion.h,v 1.4 90/07/30 16:03:27 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+d23 1
+a23 1
+#define PROC_MIGRATE_VERSION 16
+@
+
+
+1.4
+log
+@incremented migration version.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/proc/sun4c.md/migVersion.h,v 1.3 90/07/15 13:32:58 shirriff Exp Locker: douglis $ SPRITE (Berkeley)
+d23 1
+a23 1
+#define PROC_MIGRATE_VERSION 15
+@
+
+
+1.3
+log
+@Bumped migration version number because I changed Proc_ControlBlock.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/proc/sun4c.md/migVersion.h,v 1.2 90/06/22 11:33:55 douglis Exp Locker: shirriff $ SPRITE (Berkeley)
+d23 1
+a23 1
+#define PROC_MIGRATE_VERSION 14
+@
+
+
+1.2
+log
+@bumped migration version number
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/fd.proc/sun4c.md/migVersion.h,v 1.1 89/11/27 10:33:46 shirriff Exp Locker: douglis $ SPRITE (Berkeley)
+d23 1
+a23 1
+#define PROC_MIGRATE_VERSION 13
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/proc/sun4.md/migVersion.h,v 1.1 89/09/08 11:32:16 douglis Exp Locker: shirriff $ SPRITE (Berkeley)
+d23 1
+a23 1
+#define PROC_MIGRATE_VERSION 99
+@

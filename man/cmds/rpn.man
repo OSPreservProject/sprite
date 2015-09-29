@@ -1,0 +1,222 @@
+' Copyright 1989 Regents of the University of California
+' Permission to use, copy, modify, and distribute this
+' documentation for any purpose and without fee is hereby
+' granted, provided that this notice appears in all copies.
+' The University of California makes no representations about
+' the suitability of this material for any purpose.  It is
+' provided "as is" without express or implied warranty.
+' 
+' $Header: /sprite/lib/forms/RCS/proto.man,v 1.3 119/01/09 11:43:01 ouster Exp $ SPRITE (Berkeley)
+' 
+.so \*(]ltmac.sprite
+.HS RPN cmds
+.BS
+.SH NAME
+rpn \- reverse polish notation visual desk calculator
+.SH SYNOPSIS
+.nf
+\fBrpn\fR
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBRpn\fP is a stack-based desk calculator with a screen-oriented front end.
+This calculator is very similar, in many respects, to old
+Hewlett-Packard scientific calculators.
+The available commands are listed in a menu at the top of the
+screen.
+the first few elements of its computation stack are listed next.
+At the bottom of the screen is a data entry area.
+\fBRpn\fP uses ``reverse polish notation'', or stack-oriented commands.
+Thus the basic syntax is
+.DS
+\fIarg\fR \fIarg\fR \fIop\fR
+For example: 47 358 +
+.DE
+.PP
+This command pushes two values on the stack (47 and 358),
+then applies the operation (+) to those two values.
+Operands are popped from the stack and replaced by the result of the operation.
+Items can be pushed onto the stack one at a time,
+or more complicated expressions can be entered all on one line:
+.DS
+For example: 47 179 2 * +
+or: 47 179 * 2 +
+.DE
+.PP
+Note that the previous two examples are different and produce different
+answers.
+.SH "ARITHMETIC OPERATIONS"
+.IP + 11
+Addition
+.IP - 11
+Subtraction
+.IP * 11
+Multiplication
+.IP / 11
+Division
+.IP mod 11
+Modulo
+.IP ** 11
+Exponentiation
+.IP +- 11
+Negation
+.IP 1/x 11
+Inverse
+.IP min 11
+Minimum of two arguments
+.IP max 11
+Maximum of two arguments
+.IP abs 11
+Absolute value
+.IP maxuint 11
+Generates the maximum unsigned integer
+.IP maxint 11
+Generates the maximum signed integer
+.SH "LOGICAL OPERATIONS"
+.IP "and (&)" 11
+.IP "or (|)" 11
+.IP "xor (^)" 11
+.IP "not (~)" 11
+.IP "shr (>>)" 11
+Shift right
+.IP "shl (<<)" 11
+Shift left
+.SH "STACK OPERATIONS"
+.IP xy 11
+Swap top two stack elements
+.IP copy 11
+Pushes a copy of the top of stack
+.IP clrx 11
+Clear x, the top of the stack
+.IP y 11
+Clear y, the next to top of the stack
+.IP clrs 11
+Clear the whole stack
+.IP "clrm \fIN\fP" 11
+Clear register number N
+.IP "sto \fIN\fP" 11
+Store to register number N
+.IP "sto+ \fIN\fP" 11
+Add to register number N
+.IP "sto- \fIN\fP" 11
+Subtract from register number N
+.IP "rcl \fIN\fP" 11
+Recall register number N to top of stack
+.IP "disp \fID\fP" 11
+Display D places before decimal point.
+Rpn uses exponential notation if a number can't be display in this field width.
+.IP oct 11
+Display stack in octal
+.IP nooct 11
+Remove octal stack display
+.IP hex 11
+Display stack in hexadecimal
+.IP nohex 11
+Remove hexadecimal stack display
+.IP signed 11
+(unknown function)
+.IP unsigned 11
+(unknown function)
+.IP deg 11
+Degree mode
+.IP rad 11
+Radian mode
+.SH "TRIG FUNCTIONS"
+.IP sin 11
+Sine
+.IP cos 11
+Cosine
+.IP tan 11
+Tangent
+.IP sinh 11
+Hyperbolic sine
+.IP cosh 11
+Hyperbolic cosine
+.IP tanh 11
+Hyperbolic tangent
+.IP asin 11
+Arcsine
+.IP acos 11
+Arccosine
+.IP atan 11
+Arctangent
+.IP asnh 11
+Arc-hyperbolic sine
+.IP acnh 11
+Arc-hyperbolic cosine
+.IP atnh 11
+Arc-hyperbolic tangent
+.IP pi 11
+Generate the constant pi
+.SH "LOGARITHMIC FUNCTIONS"
+.IP "ln" 11
+Natural log
+.IP "log" 11
+Base-10 log
+.IP "lg2" 11
+Base-2 log
+.IP exp 11
+Exponential
+.IP alog 11
+Base-10 exponential
+.IP alg2 11
+Base-2 exponential
+.SH "STATISTICAL FUNCTIONS"
+.IP s+ 11
+Statistical accumulation.
+This accumulates statistical data on two variables, X and Y, into numbered
+registers.  The functions var, sd and rms use this data.  Given a
+series of n correlated X and Y pairs, enter each pair in the x and y
+registers, and execute s+.  The data is accumulated as follows:
+.DS
+sto 10		n
+sto 9		sum XY
+sto 8		sum Y**2
+sto 7		sum Y
+sto 6		sum X**2
+sto 5		sum X
+.DE
+.IP s- 11
+This is the inverse of s+ and is used to remove incorrectly entered X-Y pairs.
+.IP var 11
+The variance of X and Y is computed in registers x and y,
+and also in registers 3 and 4.
+.IP sd 11
+Standard deviation of X and Y is computed in registers x and y,
+and also in registers 3 and 4.
+.IP rms 11
+Root-mean squared of X and Y is computed in registers x and y,
+and also in registers 3 and 4.
+.SH "MISCELLANEOUS FUNCTIONS"
+.IP sqrt 11
+Square root
+.IP gcdv 11
+Greatest common divisor
+.IP comb 11
+Combinatorial ??
+.IP fact 11
+Factorial
+.IP lrgn 11
+Lagrange ??
+.IP trun 11
+Truncate
+.IP roun 11
+Round
+.IP rand 11
+Generate a random number
+.SH "CONVERSION FUNCTIONS"
+.IP d-r 11
+Degrees to radians
+.IP r-d 11
+Radians to degrees
+.IP r-p 11
+Rectangular to polar (two dimensions)
+.IP p-r 11
+Polar to rectangular
+.IP r-s 11
+Rectangular to spherical (three dimensions)
+.IP s-r 11
+Spherical to rectangular
+.SH KEYWORDS
+calculator, stack, reverse polish notation

@@ -1,0 +1,90 @@
+.TH GETOPT 1 LOCAL
+.SH NAME
+getopt \- format flags for shell scripts
+.SH SYNOPSIS
+.B getopt
+flag_spec argument ...
+.SH DESCRIPTION
+.I Getopt
+is a program intended to be called by scripts to ``canonicalize'' their
+arguments before processing them, just as the
+.IR getopt (3)
+routine does for C programs.
+(This need for scripts is usually most noticeable in the way
+.IR lint (1)
+handles the
+.B \-n
+flag.)
+.PP
+The following two examples provide the initial parsing for a script
+which takes two flags,
+.B \-a
+and
+.BR \-b ,
+the second of which takes an argument.
+.RS
+.ta +4n +4n +4n +4n
+.nf
+# For /bin/csh...
+set argv = (`getopt "ab:" $*`)
+if ( $status ) then
+	echo "Read the documentation and try again." >/dev/tty
+	exit 1
+endif
+set Aflag=0
+set Name=NONE
+while "$1" != "--"
+	switch ("$1")
+		case '-a':
+			set Aflag=1
+			breaksw
+		case '-b':
+			shift
+			set Name=$1
+			breaksw
+	endsw
+	shift
+end
+shift
+echo Aflag=$Aflag / Name=$Name / Remaining args are $*
+
+# For /bin/sh...
+set -- `getopt "d:s" $@`
+if test $? != 0 ; then
+	echo "Read the documentation and try again."
+	exit 1
+fi
+Aflag=0
+Name=NONE
+for f
+do
+	case "$f" in
+		-a)	Aflag=1
+			;;
+		-b)	shift
+			Name=$2
+			;;
+		--)	break
+			;;
+	esac
+	shift
+done
+shift
+echo Aflag=$Aflag / Name=$Name / Remaining args are $*
+.fi
+.RE
+.SH DIAGNOSTICS
+The program burps the standard
+.IR getopt (3)
+diagnostics to standard error, and exits with a non-zero status if an
+error occurs.
+It is arguable wrong that the diagnostics imply that the program
+is named ``getopt'' rather than the real name of the script.
+It is undeniably AT&T\-compatible to do this, however.
+.SH "SEE ALSO"
+csh(1), sh(1), getopt(3)
+.SH AUTHOR
+.nf
+Rich $alz
+Mirror Systems
+(mirror!rs, rs@mirror.TMC.COM)

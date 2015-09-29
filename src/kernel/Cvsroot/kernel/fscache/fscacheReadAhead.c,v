@@ -1,0 +1,916 @@
+head     9.7;
+branch   ;
+access   ;
+symbols  ds3100:9.7 sun3:9.7 sprited:9.5.1 sun4nw:9.6 symm:9.6 spur:9.6 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.7
+date     92.06.01.15.31.39;  author kupfer;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     91.09.10.18.25.18;  author rab;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.12.11.00.17.03;  author mgbaker;  state Exp;
+branches 9.5.1.1;
+next     9.4;
+
+9.4
+date     90.10.08.16.20.08;  author mendel;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.02.15.09.27.38;  author brent;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.12.11.17.39.20;  author brent;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.26.18.46.52;  author brent;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.04.10;  author douglis;  state Stable;
+branches ;
+next     8.5;
+
+8.5
+date     89.08.21.15.24.23;  author mendel;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.05.30.16.11.47;  author jhh;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.02.19.22.04.11;  author jhh;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.02.09.09.20.09;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.01.06.11.20.01;  author jhh;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.21.41;  author douglis;  state Stable;
+branches ;
+next     7.0;
+
+7.0
+date     88.11.11.15.32.41;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.17.16;  author brent;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.04.10.39.52;  author brent;  state Exp;
+branches ;
+next     ;
+
+9.5.1.1
+date     91.11.15.15.22.23;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@The read ahead module
+@
+
+
+9.7
+log
+@Lint.
+@
+text
+@/* 
+ * fsReadAhead.c 
+ *
+ *	Routines to implement read ahead.  Read ahead is synchronized
+ *	with regular writes to a file to avoid inconsistencies.
+ *
+ * Copyright 1986 Regents of the University of California.
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fscache/fscacheReadAhead.c,v 9.6 91/09/10 18:25:18 rab Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <fs.h>
+#include <fsutil.h>
+#include <fsio.h>
+#include <fsStat.h>
+#include <fscache.h>
+#include <fsNameOps.h>
+#include <fsdm.h>
+#include <fsrmt.h>
+#include <fscacheBlocks.h>
+
+/* 
+ * Number of blocks to read ahead.  Zero turns off read ahead.
+ */
+Boolean	fscache_NumReadAheadBlocks = 0;
+
+#define	LOCKPTR	(&readAheadPtr->lock)
+typedef struct {
+    Fscache_FileInfo	*cacheInfoPtr;
+    Fscache_ReadAheadInfo	*readAheadPtr;
+    Fscache_Block	*blockPtr;
+    int			blockNum;
+} ReadAheadCallBackData;
+
+static void DoReadAhead _ARGS_((ClientData data, Proc_CallInfo *callInfoPtr));
+static void IncReadAheadCount _ARGS_((Fscache_ReadAheadInfo *readAheadPtr));
+static void DecReadAheadCount _ARGS_((Fscache_ReadAheadInfo *readAheadPtr));
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fscache_ReadAheadInit --
+ *
+ *	Read ahead the next block in the cache
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Read ahead process may be started.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Fscache_ReadAheadInit(readAheadPtr)
+    register	Fscache_ReadAheadInfo *readAheadPtr;
+{
+    bzero((Address) readAheadPtr, sizeof(Fscache_ReadAheadInfo));
+    Sync_LockInitDynamic(&readAheadPtr->lock, "Fs:readAheadLock");
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fscache_ReadAheadSyncLockCleanup --
+ *
+ *	Clean up the Sync_Lock tracing info for the read ahead lock.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	As above.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+void
+Fscache_ReadAheadSyncLockCleanup(readAheadPtr)
+    Fscache_ReadAheadInfo *readAheadPtr;
+{
+    Sync_LockClear(&readAheadPtr->lock);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FscacheReadAhead --
+ *
+ *	Read ahead the next block in the cache
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Read ahead process may be started.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+FscacheReadAhead(cacheInfoPtr, blockNum)
+    register	Fscache_FileInfo *cacheInfoPtr;
+    int				blockNum;
+{
+    int				i;
+    ReadAheadCallBackData	*callBackData;
+    Fscache_ReadAheadInfo		*readAheadPtr;
+    Boolean			openForWriting;
+    Fscache_Block		*blockPtr;
+    Boolean			found;
+
+    switch (cacheInfoPtr->hdrPtr->fileID.type) {
+	case FSIO_LCL_FILE_STREAM: {
+	    register Fsio_FileIOHandle *handlePtr =
+		    (Fsio_FileIOHandle *)cacheInfoPtr->hdrPtr;
+	    openForWriting = (handlePtr->use.write > 0);
+	    readAheadPtr = &handlePtr->readAhead;
+	    break;
+	}
+	case FSIO_RMT_FILE_STREAM: {
+	    register Fsrmt_FileIOHandle *rmtHandlePtr =
+		    (Fsrmt_FileIOHandle *)cacheInfoPtr->hdrPtr;
+	    openForWriting = (rmtHandlePtr->rmt.recovery.use.write > 0);
+	    readAheadPtr = &rmtHandlePtr->readAhead;
+	    break;
+	}
+	default:
+	    panic("FscacheReadAhead, bad stream type <%d>\n",
+		cacheInfoPtr->hdrPtr->fileID.type);
+	    return;
+    }
+
+    if (fscache_NumReadAheadBlocks == 0 || openForWriting > 0 ||
+        FscacheAllBlocksInCache(cacheInfoPtr)) {
+	/*
+	 * Don't do read ahead if there is no read ahead, the file is
+	 * open for writing, or all the blocks are already in the cache.
+	 * Read ahead is disallowed if the file is open for writing because
+	 * read ahead is done without the handle locked and it is unsafe to
+	 * be reading and writing a file at the same time.
+	 */
+	return;
+    }
+    for (i = blockNum; i < blockNum + fscache_NumReadAheadBlocks; i++) {
+	if (i * FS_BLOCK_SIZE > cacheInfoPtr->attr.lastByte) {
+	    return;
+	}
+	Fscache_FetchBlock(cacheInfoPtr, i,
+	      FSCACHE_DATA_BLOCK | FSCACHE_DONT_BLOCK | FSCACHE_READ_AHEAD_BLOCK,
+	      &blockPtr, &found);
+	if (found) {
+	    if (blockPtr != (Fscache_Block *) NIL) {
+		Fscache_UnlockBlock(blockPtr, (time_t)0, -1, 0, 0);
+	    }
+	    continue;
+	}
+
+	fs_Stats.blockCache.readAheads++;
+	IncReadAheadCount(readAheadPtr);
+	callBackData = mnew(ReadAheadCallBackData);
+	callBackData->cacheInfoPtr = cacheInfoPtr;
+	callBackData->readAheadPtr = readAheadPtr;
+	callBackData->blockNum = i;
+	callBackData->blockPtr = blockPtr;
+	Proc_CallFunc(DoReadAhead, (ClientData) callBackData, 0);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DoReadAhead --
+ *
+ *	Actually read ahead the given block.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The given block is read in.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+DoReadAhead(data, callInfoPtr)
+    ClientData		data;
+    Proc_CallInfo	*callInfoPtr;
+{
+    register	Fscache_FileInfo *cacheInfoPtr;
+    register	ReadAheadCallBackData *callBackData;
+    register	Fscache_Block	*blockPtr;
+    ReturnStatus		status;
+
+    callBackData = (ReadAheadCallBackData *) data;
+
+    cacheInfoPtr = callBackData->cacheInfoPtr;
+    blockPtr = callBackData->blockPtr;
+
+    status = (cacheInfoPtr->backendPtr->ioProcs.blockRead)
+		(cacheInfoPtr->hdrPtr, blockPtr, (Sync_RemoteWaiter *)NIL);
+    if (status != SUCCESS) {
+	fs_Stats.blockCache.domainReadFails++;
+	Fscache_UnlockBlock(blockPtr, (time_t)0, -1, 0, FSCACHE_DELETE_BLOCK);
+    } else {
+	Fscache_UnlockBlock(blockPtr, (time_t)0, -1, 0, 0);
+    }
+    DecReadAheadCount(callBackData->readAheadPtr);
+    free((Address) callBackData);
+    callInfoPtr->interval = 0;	/* don't call us again */
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * Fscache_WaitForReadAhead --
+ *
+ *	Block the caller until the read ahead count on this handle goes to
+ *	zero.  Called before a write.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Blocks read-ahead until FscacheAllowReadAhead is called.
+ *
+ *----------------------------------------------------------------------------
+ *
+ */
+ENTRY void
+Fscache_WaitForReadAhead(readAheadPtr)
+    Fscache_ReadAheadInfo *readAheadPtr;
+{
+    LOCK_MONITOR;
+
+    while (readAheadPtr->count > 0) {
+	(void) Sync_Wait(&readAheadPtr->done, FALSE);
+    }
+    readAheadPtr->blocked = TRUE;
+
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * Fscache_AllowReadAhead --
+ *
+ *	Indicate that it is ok to initiate read ahead.  Called when a
+ *	write completes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Notifies the okToRead condition.
+ *
+ *----------------------------------------------------------------------------
+ *
+ */
+ENTRY void
+Fscache_AllowReadAhead(readAheadPtr)
+    Fscache_ReadAheadInfo *readAheadPtr;
+{
+    LOCK_MONITOR;
+
+    readAheadPtr->blocked = FALSE;
+    Sync_Broadcast(&readAheadPtr->okToRead);
+
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * IncReadAheadCount --
+ *
+ *	Increment the number of read aheads on this file.  This will block
+ *	if read aheads are blocked because of a write.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Increment the number of read aheads on the file.
+ *
+ *----------------------------------------------------------------------------
+ *
+ */
+static void
+IncReadAheadCount(readAheadPtr)
+    Fscache_ReadAheadInfo *readAheadPtr;
+{
+    LOCK_MONITOR;
+
+    while (readAheadPtr->blocked) {
+	(void) Sync_Wait(&readAheadPtr->okToRead, FALSE);
+    }
+    readAheadPtr->count++;
+
+    UNLOCK_MONITOR;
+}
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * DecReadAheadCount --
+ *
+ *	Decrement the number of read aheads on this file.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Read ahead count is decremented and if it goes to zero a broadcast 
+ *	is done on the handles condition.
+ *
+ *----------------------------------------------------------------------------
+ *
+ */
+static void
+DecReadAheadCount(readAheadPtr)
+    Fscache_ReadAheadInfo *readAheadPtr;
+{
+    LOCK_MONITOR;
+
+    readAheadPtr->count--;
+    if (readAheadPtr->count == 0) {
+	Sync_Broadcast(&readAheadPtr->done);
+    }
+
+    UNLOCK_MONITOR;
+}
+@
+
+
+9.6
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fscache/RCS/fscacheReadAhead.c,v 9.5 90/12/11 00:17:03 mgbaker Exp Locker: rab $ SPRITE (Berkeley)";
+d158 1
+a158 1
+		Fscache_UnlockBlock(blockPtr, 0, -1, 0, 0);
+d208 1
+a208 1
+	Fscache_UnlockBlock(blockPtr, 0, -1, 0, FSCACHE_DELETE_BLOCK);
+d210 1
+a210 1
+	Fscache_UnlockBlock(blockPtr, 0, -1, 0, 0);
+@
+
+
+9.5
+log
+@Sosp counters
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fscache/RCS/fscacheReadAhead.c,v 9.4 90/10/08 16:20:08 mendel Exp Locker: mgbaker $ SPRITE (Berkeley)";
+a29 1
+Boolean	fscache_RATracing = TRUE;
+a30 1
+
+a115 3
+#ifdef SOSP91
+    Boolean		isForeign = FALSE;	/* Due to migration? */
+#endif SOSP91
+a116 9
+#ifdef SOSP91
+    if (proc_RunningProcesses[0] != (Proc_ControlBlock *) NIL) {
+	if ((proc_RunningProcesses[0]->state == PROC_MIGRATED) ||
+		(proc_RunningProcesses[0]->genFlags &
+		(PROC_FOREIGN | PROC_MIGRATING))) {
+	    isForeign = TRUE;
+	}
+    }
+#endif SOSP91
+a163 5
+#ifdef SOSP91
+	if (isForeign) {
+	    fs_SospMigStats.blockCache.readAheads++;
+	}
+#endif SOSP91
+@
+
+
+9.5.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fscache/fscacheReadAhead.c,v 9.5 90/12/11 00:17:03 mgbaker Exp $ SPRITE (Berkeley)";
+@
+
+
+9.4
+log
+@Major changes:
+Changed file names to start with "fscache".
+Added new cache backend interface. 
+Added function prototypes and new include format.
+Removed old traceing code.
+Added locking/unlocking of cache blocks.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs.mendel/RCS/fsReadAhead.c,v 1.1 90/01/16 17:11:24 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d118 3
+d122 9
+d178 5
+@
+
+
+9.3
+log
+@Removed lint
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fscache/RCS/fsReadAhead.c,v 9.2 89/12/11 17:39:20 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d15 10
+a24 9
+#include "sprite.h"
+#include "fs.h"
+#include "fsutil.h"
+#include "fsio.h"
+#include "fsStat.h"
+#include "fscache.h"
+#include "fsNameOps.h"
+#include "fsdm.h"
+#include "fsrmt.h"
+d41 3
+a43 3
+static void	IncReadAheadCount();
+static void	DecReadAheadCount();
+static void	DoReadAhead();
+d84 1
+d206 1
+a206 1
+    status = (cacheInfoPtr->ioProcsPtr->blockRead)
+@
+
+
+9.2
+log
+@Fixed up interface to block I/O routines
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fscache/RCS/fsReadAhead.c,v 9.1 89/10/26 18:46:52 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d85 1
+a85 1
+    register	Fscache_ReadAheadInfo *readAheadPtr;
+@
+
+
+9.1
+log
+@Name changes to preserve modularity
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fscache/RCS/fsReadAhead.c,v 9.0 89/09/12 15:04:10 douglis Stable Locker: brent $ SPRITE (Berkeley)";
+a196 2
+    int				amountRead;
+    int				blockOffset;
+a197 1
+    int				blockNum;
+a200 1
+    blockNum = callBackData->blockNum;
+a202 2
+    blockOffset = blockNum * FS_BLOCK_SIZE;
+    amountRead = FS_BLOCK_SIZE;
+d205 1
+a205 2
+		(cacheInfoPtr->hdrPtr, 0, blockPtr->blockAddr, &blockOffset,
+		&amountRead, (Sync_RemoteWaiter *)NIL);
+a209 9
+	if (amountRead < FS_BLOCK_SIZE) {
+	    /*
+	     * We always must make sure that every cache block is filled
+	     * with zeroes.  Since we didn't read a full block zero fill
+	     * the rest.
+	     */
+	    fs_Stats.blockCache.readZeroFills++;
+	    bzero(blockPtr->blockAddr + amountRead, FS_BLOCK_SIZE - amountRead);
+	}
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fscache/RCS/fsReadAhead.c,v 8.5 89/08/21 15:24:23 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+a18 1
+#include "fsReadAheadInt.h"
+d40 2
+a41 2
+static void	FsIncReadAheadCount();
+static void	FsDecReadAheadCount();
+d164 1
+a164 1
+	FsIncReadAheadCount(readAheadPtr);
+d228 1
+a228 1
+    FsDecReadAheadCount(callBackData->readAheadPtr);
+d236 1
+a236 1
+ * FscacheWaitForReadAhead --
+d251 1
+a251 1
+FscacheWaitForReadAhead(readAheadPtr)
+d267 1
+a267 1
+ * FscacheAllowReadAhead --
+d282 1
+a282 1
+FscacheAllowReadAhead(readAheadPtr)
+d296 1
+a296 1
+ * FsIncReadAheadCount --
+d311 1
+a311 1
+FsIncReadAheadCount(readAheadPtr)
+d327 1
+a327 1
+ * FsDecReadAheadCount --
+d342 1
+a342 1
+FsDecReadAheadCount(readAheadPtr)
+@
+
+
+8.5
+log
+@Break up fs into many modules.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsReadAhead.c,v 8.4 89/05/30 16:11:47 jhh Exp $ SPRITE (Berkeley)";
+@
+
+
+8.4
+log
+@Removed call to Sync_LockRegister
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsReadAhead.c,v 8.3 89/02/19 22:04:11 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d17 3
+a19 3
+#include "fsInt.h"
+#include "fsFile.h"
+#include "fsReadAhead.h"
+d21 4
+a24 2
+#include "fsBlockCache.h"
+#include "fsOpTable.h"
+d29 2
+a30 2
+Boolean	fsReadAheadBlocks = 0;
+Boolean	fsRATracing = TRUE;
+d35 3
+a37 3
+    FsCacheFileInfo	*cacheInfoPtr;
+    FsReadAheadInfo	*readAheadPtr;
+    FsCacheBlock	*blockPtr;
+d41 3
+a43 3
+void	FsIncReadAheadCount();
+void	FsDecReadAheadCount();
+void	DoReadAhead();
+d49 1
+a49 1
+ * FsReadAheadInit --
+d62 2
+a63 2
+FsReadAheadInit(readAheadPtr)
+    register	FsReadAheadInfo *readAheadPtr;
+d65 1
+a65 1
+    bzero((Address) readAheadPtr, sizeof(FsReadAheadInfo));
+d72 1
+a72 1
+ * FsReadAheadSyncLockCleanup --
+d85 2
+a86 2
+FsReadAheadSyncLockCleanup(readAheadPtr)
+    register	FsReadAheadInfo *readAheadPtr;
+d94 1
+a94 1
+ * FsReadAhead --
+d107 2
+a108 2
+FsReadAhead(cacheInfoPtr, blockNum)
+    register	FsCacheFileInfo *cacheInfoPtr;
+d113 1
+a113 1
+    FsReadAheadInfo		*readAheadPtr;
+d115 1
+a115 1
+    FsCacheBlock		*blockPtr;
+d119 3
+a121 3
+	case FS_LCL_FILE_STREAM: {
+	    register FsLocalFileIOHandle *handlePtr =
+		    (FsLocalFileIOHandle *)cacheInfoPtr->hdrPtr;
+d126 3
+a128 3
+	case FS_RMT_FILE_STREAM: {
+	    register FsRmtFileIOHandle *rmtHandlePtr =
+		    (FsRmtFileIOHandle *)cacheInfoPtr->hdrPtr;
+d134 1
+a134 1
+	    panic("FsReadAhead, bad stream type <%d>\n",
+d139 2
+a140 2
+    if (fsReadAheadBlocks == 0 || openForWriting > 0 ||
+        FsAllInCache(cacheInfoPtr)) {
+d150 1
+a150 1
+    for (i = blockNum; i < blockNum + fsReadAheadBlocks; i++) {
+d154 2
+a155 2
+	FsCacheFetchBlock(cacheInfoPtr, i,
+	      FS_DATA_CACHE_BLOCK | FS_CACHE_DONT_BLOCK | FS_READ_AHEAD_BLOCK,
+d158 2
+a159 2
+	    if (blockPtr != (FsCacheBlock *) NIL) {
+		FsCacheUnlockBlock(blockPtr, 0, -1, 0, 0);
+d164 1
+a164 1
+	fsStats.blockCache.readAheads++;
+d190 1
+a190 1
+void
+d195 1
+a195 1
+    register	FsCacheFileInfo *cacheInfoPtr;
+d197 1
+a197 1
+    register	FsCacheBlock	*blockPtr;
+d211 1
+a211 1
+    status = (*fsStreamOpTable[cacheInfoPtr->hdrPtr->fileID.type].blockRead)
+d215 2
+a216 2
+	fsStats.blockCache.domainReadFails++;
+	FsCacheUnlockBlock(blockPtr, 0, -1, 0, FS_DELETE_BLOCK);
+d224 1
+a224 1
+	    fsStats.blockCache.readZeroFills++;
+d227 1
+a227 1
+	FsCacheUnlockBlock(blockPtr, 0, -1, 0, 0);
+d237 1
+a237 1
+ * FsWaitForReadAhead --
+d246 1
+a246 1
+ *	Blocks read-ahead until FsAllowReadAhead is called.
+d252 2
+a253 2
+FsWaitForReadAhead(readAheadPtr)
+    FsReadAheadInfo *readAheadPtr;
+d268 1
+a268 1
+ * FsAllowReadAhead --
+d283 2
+a284 2
+FsAllowReadAhead(readAheadPtr)
+    FsReadAheadInfo *readAheadPtr;
+d311 1
+a311 1
+ENTRY void
+d313 1
+a313 1
+    FsReadAheadInfo *readAheadPtr;
+d342 1
+a342 1
+ENTRY void
+d344 1
+a344 1
+    FsReadAheadInfo *readAheadPtr;
+@
+
+
+8.3
+log
+@Changes due to lock registration
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsReadAhead.c,v 8.2 89/02/09 09:20:09 brent Exp $ SPRITE (Berkeley)";
+a64 1
+    Sync_LockRegister(&readAheadPtr->lock);
+@
+
+
+8.2
+log
+@Added  FsReadAheadSyncLockCleanup
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsReadAhead.c,v 8.1 89/01/06 11:20:01 jhh Exp Locker: brent $ SPRITE (Berkeley)";
+d65 1
+@
+
+
+8.1
+log
+@new Sync_Lock definition
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsReadAhead.c,v 7.0 88/11/11 15:32:41 brent Exp $ SPRITE (Berkeley)";
+d64 23
+a86 1
+    SYNC_LOCK_INIT_DYNAMIC(&(readAheadPtr->lock));
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsReadAhead.c,v 7.0 88/11/11 15:32:41 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d64 1
+@
+
+
+7.0
+log
+@New version for conversion to new C library
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsReadAhead.c,v 6.0 88/08/11 12:17:16 brent Stable Locker: brent $ SPRITE (Berkeley)";
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: fsReadAhead.c,v 1.1 88/04/04 10:39:52 brent Exp $ SPRITE (Berkeley)";
+d63 1
+a63 1
+    Byte_Zero(sizeof(FsReadAheadInfo), (Address) readAheadPtr);
+d109 1
+a109 1
+	    Sys_Panic(SYS_FATAL, "FsReadAhead, bad stream type <%d>\n",
+d141 1
+a141 1
+	callBackData = Mem_New(ReadAheadCallBackData);
+d200 1
+a200 2
+	    Byte_Zero(FS_BLOCK_SIZE - amountRead,
+		      blockPtr->blockAddr + amountRead);
+d205 1
+a205 1
+    Mem_Free((Address) callBackData);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: fsReadAhead.c,v 5.0 87/08/11 10:44:13 sprite Exp $ SPRITE (Berkeley)";
+@

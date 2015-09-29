@@ -1,0 +1,66 @@
+
+
+
+spritehosts               File Formats                spritehosts
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     /etc/spritehosts - file containing Sprite host information
+
+DDEESSCCRRIIPPTTIIOONN
+     The file //eettcc//sspprriitteehhoossttss is used to keep  host  information
+     for  hosts in the Sprite network.  It contains the following
+     fields:
+
+     spriteID      A small integer  used  to  identify  the  host
+                   internally.
+
+     netType       The type of the physical network for the  fol-
+                   lowing nneettAAddddrr field.
+
+     netAddr       The physical network address of the host.
+
+     inetAddr      The Internet address of the host.
+
+     machType      The machine type of  the  host.   This  string
+                   will   be   substituted   for  occurrences  of
+                   $$MMAACCHHIINNEE that occur  in  pathnames  opened  by
+                   this host.
+
+     name          The official Internet name of this host.
+
+     aliases       Zero or more aliases, typically  shorter  than
+                   the official Internet name.
+
+     This file is read during startup by the nneettrroouuttee program  to
+     initialize  the  kernel's  internal  route table.  Actually,
+     routing will be done successfully without  this  initializa-
+     tion.   However,  the initialization is needed on servers so
+     they know the machine type of their  clients.   Also,  error
+     messages  from  the kernel will use the host name instead of
+     the spriteID if the initialization has been done.
+
+SSEEEE AALLSSOO
+     netroute
+
+KKEEYYWWOORRDDSS
+     host, spriteID
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  January 28, 1990                   1
+
+
+

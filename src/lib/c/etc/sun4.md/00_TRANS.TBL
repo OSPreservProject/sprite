@@ -1,0 +1,3 @@
+F DEPENDEN.MK;1                     	dependencies.mk
+F MD.MK;1                           	md.mk
+L NLIST.C;1                         	nlist.c	../sun3.md/nlist.c

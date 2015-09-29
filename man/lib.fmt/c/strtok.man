@@ -1,0 +1,66 @@
+
+
+
+STRTOK                C Library Procedures                 STRTOK
+
+
+
+NNAAMMEE
+     strtok, strsep - string token operations
+
+SSYYNNOOPPSSIISS
+     cchhaarr **ssttrrttookk((ssttrr,, sseepp))
+     cchhaarr **ssttrr,, **sseepp;;
+
+     cchhaarr **ssttrrsseepp((ssttrr,, sseepp))
+     cchhaarr **ssttrr,, **sseepp;;
+
+     _S_t_r_t_o_k is used to isolate sequential tokens in a null-
+     terminated string, _s_t_r.  These tokens are separated in the
+     string by oonnee oorr mmoorree of the characters in _s_e_p.  The first
+     time that _s_t_r_t_o_k is called, _s_t_r should be specified; subse-
+     quent calls, wishing to obtain further tokens from the same
+     string, should pass a null pointer instead.  The separator
+     string, _s_e_p, must be supplied each time, and may change
+     between calls.  _S_t_r_t_o_k returns a pointer to the start of
+     each subsequent token in the string, after replacing the
+     token itself with a NUL character.  When no more tokens
+     remain, a null pointer is returned.
+
+     _S_t_r_s_e_p behaves similarly to _s_t_r_t_o_k with the exception that
+     the tokens in the string are separated by single occurrences
+     of separator characters.  This routine was added to allow
+     handling blank fields.
+
+BBUUGGSS
+     There is no way to get tokens from multiple strings simul-
+     taneously.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0             November 14, 1988                       1
+
+
+

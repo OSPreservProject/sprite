@@ -1,0 +1,158 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     89.08.15.19.55.55;  author rab;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.03.23.09.07.57;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.02.21.10.05.48;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.08.16.11.22.17;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.27.09.02.13;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@UDP Protocol defs
+@
+
+
+1.5
+log
+@Commented #endif labels.
+@
+text
+@/*
+ * udp.h --
+ *
+ *	Declarations of external UDP-related routines.
+ *
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ * $Header: /sprite/src/daemons/ipServer/RCS/udp.h,v 1.4 89/03/23 09:07:57 brent Exp Locker: rab $ SPRITE (Berkeley)
+ */
+
+#ifndef _IPS_UDP
+#define _IPS_UDP
+
+#include "sprite.h"
+
+/*
+ * UDP_MAX_DATAGRAM_SIZE defines how big a datagram can be sent via UDP.
+ * It has to be at least a bit over 8K to allow NFS to send 8K of data
+ * plus some header information.
+ * UDP_REQUEST_BUF_SIZE defines the size of the pseudo-device request buffer.
+ * It is made large enough to hold the datagram, plus pseudo-device
+ * header, plus a UDP/IP header.  This way we can assemble (and fragment)
+ * datagrams as they sit in the pseudo-device request buffer.
+ */
+#define UDP_MAX_DATAGRAM_SIZE	9000
+#define UDP_REQUEST_BUF_SIZE	(UDP_MAX_DATAGRAM_SIZE)
+
+/*
+ * UDP_WRITE_BEHIND - if this is TRUE then asynchronous writes are allowed
+ * to the UDP request buffer.
+ */
+#define UDP_WRITE_BEHIND	TRUE
+
+extern void		UDP_Init();
+extern void		UDP_RequestHandler();
+extern ReturnStatus	UDP_SocketOpen();
+extern ReturnStatus	UDP_SocketClose();
+extern ReturnStatus	UDP_SocketRead();
+extern ReturnStatus	UDP_SocketWrite();
+extern int		UDP_SocketSelect();
+extern ReturnStatus	UDP_SocketBind();
+extern ReturnStatus	UDP_SocketConnect();
+extern ReturnStatus	UDP_SocketShutdown();
+extern void		UDP_SocketInput();
+
+#endif /* _IPS_UDP */
+@
+
+
+1.4
+log
+@Eliminated sizeof(Pdev_Request) from buffer sizes.  That extra
+amount is handled in main.c so these are not so knowledgable
+about the pseudo-device interface.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/daemons/ipServer/RCS/udp.h,v 1.3 89/02/21 10:05:48 brent Exp Locker: brent $ SPRITE (Berkeley)
+d55 1
+a55 1
+#endif _IPS_UDP
+@
+
+
+1.3
+log
+@Added constants used for the pseudo-device request buffer
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/daemons/ipServer/RCS/udp.h,v 1.2 88/08/16 11:22:17 mendel Exp Locker: brent $ SPRITE (Berkeley)
+d35 1
+a35 2
+#define UDP_REQUEST_BUF_SIZE	(UDP_MAX_DATAGRAM_SIZE + sizeof(Pdev_Request) \
+				+ IPS_ROOM_FOR_HEADERS)
+d41 1
+a41 1
+#define UDP_WRITE_BEHIND	FALSE
+@
+
+
+1.2
+log
+@Converted to new lib.a.
+@
+text
+@d17 1
+a17 1
+ * $Header: udp.h,v 1.1 88/04/27 09:02:13 brent Exp $ SPRITE (Berkeley)
+d25 19
+d45 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+ * $Header: udp.h,v 6.0 87/09/08 15:58:22 andrew Stable $ SPRITE (Berkeley)
+@

@@ -1,0 +1,464 @@
+
+
+
+VMSTAT                    User Commands                    VMSTAT
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     vmstat - print virtual memory stats
+
+SSYYNNOOPPSSIISS
+     vvmmssttaatt [--ssvvmmPP] [--tt _i_n_t_e_r_v_a_l] [--TT _m_a_x_S_k_i_p]  [--ll  _l_i_n_e_s]  [--ffpp
+     _t_h_r_e_s_h_o_l_d]
+
+OOPPTTIIOONNSS
+     --ss            Print out statistics about all in-use segments
+                   instead of overall vm stats.
+
+     --vv            Print  out  extra  information  when  printing
+                   overall vm stats.
+
+     --tt _i_n_t_e_r_v_a_l   Print out a  line  of  terse  vm  stats  every
+                   _i_n_t_e_r_v_a_l seconds.  If _i_n_t_e_r_v_a_l is specified as
+                   0 then only a single line is printed.
+
+     --mm            Print out the number of modified pages instead
+                   of  kernel  stack  pages  when  using  the  --tt
+                   option.
+
+     --ll _n_u_m_L_i_n_e_s   Print out _n_u_m_L_i_n_e_s lines before  printing  the
+                   header  again  when  using the --tt option.  The
+                   default is 25 lines.
+
+     --ff _t_h_r_e_s_h_o_l_d  Number of page faults per second before should
+                   print  out stats with the --tt option.  No lines
+                   will be printed  unless  more  than  _t_h_r_e_s_h_o_l_d
+                   page  faults occur or the --pp or --TT options are
+                   in effect.
+
+     --pp _t_h_r_e_s_h_o_l_d  Number of page-outs per second  before  should
+                   print  out stats with the --tt option.  No lines
+                   will be printed  unless  more  than  _t_h_r_e_s_h_o_l_d
+                   page-outs occur or the --ff or --TT options are in
+                   effect.
+
+     --TT _m_a_x_S_k_i_p    Maximum number of times to skip  printing  out
+                   statistics because of the --ff and --pp options.
+
+     --PP            Print out statistics since the last time  that
+                   they  were  printed, not since the last inter-
+                   val.  Used with the --tt option.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This command prints out virtual  memory  statistics.   There
+     are three possible formats and types of information that are
+     printed.  The default is to  print  overall  virtual  memory
+
+
+
+Sprite v.1.0         Printed:  July 30, 1990                    1
+
+
+
+
+
+
+VMSTAT                    User Commands                    VMSTAT
+
+
+
+     statistics;  the  volume  of  statistics that are printed is
+     controlled by the --vv option.  If the --ss option is  specified
+     then statistics about all actively used segments are printed
+     instead.  If the --tt option is specified then a terse line of
+     information  is  printed  at regular intervals;  the --TTllffppPPmm
+     options control how the data is formatted and how  often  it
+     is  printed.   The  next  three  sections describe the three
+     printing formats in more detail.
+
+GGEENNEERRAALL SSTTAATTIISSTTIICCSS
+     By default vvmmssttaatt prints out general  statistics  about  the
+     virtual  memory  system.  If the --vv option is specified then
+     more detailed statistics will be printed.  The normal infor-
+     mation  that  is  printed is divided into 5 sections: memory
+     use, segment use, page fault statistics, page-out statistics
+     and  copy-on-write  activity.   The  memory  use  section is
+     titled ``MEMORY STATS'' and contains 6 lines of  information
+     with the following titles and information:
+
+     _P_a_g_e _S_i_z_e      The logical page size; this is a multiple  of
+                    the physical page size.
+
+     _M_e_m_o_r_y _S_i_z_e    The amount of physical memory in Kbytes  that
+                    is available on the machine.
+
+     _K_e_r_n_e_l _M_e_m_o_r_y  The amount of memory in Kbytes that is  being
+                    used by the kernel.  There are four pieces of
+                    information  on  this  line  (from  left   to
+                    right):  the  total  amount of memory used by
+                    the kernel, the portion of the total that  is
+                    used  for  kernel  code and data, the portion
+                    used for kernel stacks and the  portion  that
+                    is kept in emergency reserve.
+
+     _U_s_e_r _M_e_m_o_r_y    The amount of memory in Kbytes that is  being
+                    used  by  user processes.  There are 3 pieces
+                    of information on this  line  (from  left  to
+                    right):  the  total  amount of memory used by
+                    user processes, the portion of the total that
+                    is dirty and the portion that is clean.
+
+     _F_S _M_e_m_o_r_y      The amount of memory in Kbytes that is  being
+                    used  by  the  file  system.  The 3 pieces of
+                    information on this line are  (from  left  to
+                    right):  the  total  amount of memory used by
+                    the file system, the minimum amount of memory
+                    that  has  ever  been  used  and  the maximum
+                    amount that has been used.
+
+     _F_r_e_e _M_e_m_o_r_y    The amount of memory in Kbytes  that  is  not
+                    being used by anyone.
+
+
+
+
+Sprite v.1.0         Printed:  July 30, 1990                    2
+
+
+
+
+
+
+VMSTAT                    User Commands                    VMSTAT
+
+
+
+     The second  section  of  statistics  is  entitled  ``SEGMENT
+     STATS''.   This  section contains four lines of information,
+     one each for active code segments, inactive  code  segments,
+     heap  segments and stack segments.  Each contains the number
+     of segments of the given type and the amount  of  memory  in
+     Kbytes that is being used by the particular type of segment.
+
+     The third section of statistics is entitled ``FAULT STATS''.
+     The  first  line  contains  the total number of faults.  The
+     second line divides the total faults into  the  7  different
+     types of faults:
+
+     _Z_e_r_o      Pages that are filled with zeroes.
+
+     _F_S        Pages that are filled from an object file  in  the
+               file system.
+
+     _S_w_a_p      Pages that are filled from a swap file.
+
+     _Q_u_i_c_k     Page faults that were handled merely by validating
+               the page in hardware.
+
+     _C_O_W       Copy-on-write faults.
+
+     _C_O_R       Copy-on-reference faults.
+
+     _C_O_R-_m_o_d   Faults that occured because pages that were filled
+               because of copy-on-reference faults were marked as
+               read-only.   This  is  done  to  compare  copy-on-
+               reference   to   copy-on-write   (see   _v_m_c_m_d  for
+               details).
+
+     The third line divides the faults into  the  different  seg-
+     ments  that  the  faults  occured  in.  The last line is the
+     number of faults that collided with another process faulting
+     on the same page.
+
+     The fourth section which is entitled ``PAGE-OUTS''  contains
+     the number of pages that were written to swap space.
+
+     The last section is entitled ``COPY-ON-WRITE'' and  contains
+     statistics   about   copy-on-write   and   copy-on-reference
+     behavior.  The information in this section is  presented  as
+     the  number  of faults that occured divided by the number of
+     copy-on-write or copy-on-reference  pages.   Statistics  are
+     presented  for  both heap and stack segments separately (the
+     entries are labeled _H_e_a_p and _S_t_a_c_k respectively) and for the
+     sum  of  the  heap  and stack statistics (labeled _T_o_t).  The
+     first two  lines  contain  information  about  copy-on-write
+     (COW) behavior, the second two about copy-on-reference (COR)
+     behavior and the last two about the percentage of pages that
+     were  copied  because  of copy-on-reference faults that were
+
+
+
+Sprite v.1.0         Printed:  July 30, 1990                    3
+
+
+
+
+
+
+VMSTAT                    User Commands                    VMSTAT
+
+
+
+     eventually modified (COR-mod).  The  information  about  COW
+     behavior  contains  an  additional  statistic  labeled _Q_u_i_c_k
+     which is the number of copy-on-write faults that  were  han-
+     dled   by  merely  changing  the  protection;  no  copy  was
+     required.
+
+     When the --vv  option  is  specified  additional  results  are
+     presented.   These results are more obscure and are probably
+     only of interest to those who understand  the  internals  of
+     the  Sprite  virtual  memory  system.   The first additional
+     statistic is a measurement of the need for modify  bits  and
+     is  given  under the ``MEMORY STATS'' section.  This line of
+     statistics which is labeled _M_o_d _p_a_g_e _s_t_a_t_s gives three  bits
+     of  information.   The  first entry (labeled _P_o_t-_m_o_d) is the
+     number of page frames that were being actively used by  heap
+     and stack segments that were taken away from the segment and
+     given to another segment; since these segments are writable,
+     the  pages  in these segments are potentially modified.  The
+     second entry (labeled _N_o_t-_m_o_d) is the number of  potentially
+     modified  pages  that  were  clean.  The last entry (labeled
+     _N_o_t-_h_a_r_d-_m_o_d) is the number of  potentially  modified  pages
+     that  did not have the hardware modify bit set; pages can be
+     marked as modified by the virtual memory system (e.g.  zero-
+     filled  pages)  even  though they do not have the modify bit
+     set by the hardware.
+
+     The second extra set of  statistics  is  under  the  ``PAGE-
+     OUTS''  section.   The  first  extra  line  which is labeled
+     _C_l_e_a_n-_w_a_i_t is the number of times that processes  that  were
+     exiting  had  to  wait because a page that they were freeing
+     was being cleaned.  The second line labeled  _C_l_e_a_n_e_r  _s_t_a_r_t_s
+     is the number of times that a page cleaner was started up to
+     write out pages.
+
+     The remaining extra statistics that are printed with the  --vv
+     option  are  under  entirely  different sections.  The first
+     section which is entitled ``ALLOCATION STATS'' gives statis-
+     tics  about  the allocation of memory.  The first line which
+     is labeled _V_m _a_l_l_o_c_s gives the following  information  (from
+     left  to  right):  the total number of pages that were allo-
+     cated, the portion of this total that  came  from  the  free
+     list,  the  portion  that  came from the file system and the
+     portion that came from the allocate list.  The  second  line
+     which is labeled _V_M-_F_S _s_t_a_t_s gives statistics about the vir-
+     tual memory and file  system  negotiation.   The  first  two
+     entries  give the number of times that the file system asked
+     the virtual memory system for the age  of  its  oldest  page
+     (labeled _F_S-_a_s_k_e_d) and the number of these times that a free
+     page was available (labeled _H_a_d-_f_r_e_e-_p_a_g_e).  The second  two
+     entries  give the number of pages that the file system added
+     to its cache and the number of pages that  it  deleted  from
+     its cache (labeled _F_S-_m_a_p and _F_S-_u_n_m_a_p respectively).
+
+
+
+Sprite v.1.0         Printed:  July 30, 1990                    4
+
+
+
+
+
+
+VMSTAT                    User Commands                    VMSTAT
+
+
+
+     The next two lines  of  statistics  under  the  ``ALLOCATION
+     STATS''  section  contains  information  about searching the
+     memory lists.  The first line gives how many times that  the
+     lists  were searched for pages and how many times the memory
+     was found on the free list and how many times it  was  found
+     on  the  allocation  list  (labeled  _F_r_e_e and _I_n-_u_s_e respec-
+     tively).  The second line gives information about why multi-
+     ple  iterations  through  the allocation list were required;
+     most of the time the first element on the list can be  used.
+     This  line  contains  the following information from left to
+     right: the total number of extra searches,  the  portion  of
+     extra searches that were required because the page frame was
+     locked  (labeled  _L_o_c_k),  the  page  frame  was   referenced
+     (_l_a_b_e_l_e_d _R_e_f) or the page frame was dirty (_D_i_r_t_y).
+
+     The next section of statistics is entitled  ``LIST  STATS''.
+     This  section  gives the current number of pages that are on
+     each of the four memory list.
+
+     The next section is labeled ``PAGE  MAPPING  STATS''.   This
+     section  gives  the  number  of  times a process had to wait
+     because the fixed number of slots that are used to map  user
+     pages  into  the kernel's virtual address spacce were all in
+     use.
+
+     The last section is entitled ``HARDWARE STATS'' and contains
+     information  that depends on the hardware.  For Sun worksta-
+     tions it contains statistics about many times one of  the  8
+     hardware  contexts had to be taken away from one process and
+     given to another and the number of  times  that  a  hardware
+     PMEG  had  to  be  taken  away from one segment and given to
+     another. For MIPS R2000/R3000 based machines such as DecSta-
+     tions,  the number of times TLB pids were stolen from active
+     processes is reported.
+
+SSEEGGMMEENNTT SSTTAATTIISSTTIICCSS
+     When the -_s option is given to vvmmssttaatt then statistics  about
+     all  in  use  segments  are printed.  There are 6 columns of
+     information:
+
+     _S_E_G-_N_U_M             The segment number.
+
+     _T_Y_P_E                The type of segment.  The  segment  type
+                         can  be  _I_n_a_c_t_i_v_e for inactive code seg-
+                         ments or _C_o_d_e, _H_e_a_p  or  _S_t_a_c_k  for  the
+                         other three types of segments.
+
+     _S_I_Z_E                The total size of the segment's  virtual
+                         addres space in Kbytes.
+
+     _R_E_S-_S_I_Z_E            The amount of physical  memory  occupied
+                         by the segment in Kbytes.
+
+
+
+Sprite v.1.0         Printed:  July 30, 1990                    5
+
+
+
+
+
+
+VMSTAT                    User Commands                    VMSTAT
+
+
+
+     _N_U_M-_R_E_F_S            The  number  of   processes   that   are
+                         actively using this segment.
+
+     _O_B_J_E_C_T-_F_I_L_E-_N_A_M_E    The name of the  object  file  that  the
+                         code  segment  is  being  demand  loaded
+                         from.
+
+     After the  information  about  each  individual  segment  is
+     printed a summary of the segment information is printed.
+
+SSTTAATTIISSTTIICCSS AATT RREEGGUULLAARR IINNTTEERRVVAALLSS
+     If the --tt _i_n_t_e_r_v_a_l option is given to vvmmssttaatt then a line  of
+     terse  statistics  is  printed out at regular intervals.  If
+     _i_n_t_e_r_v_a_l is 0 then only  a  single  line  of  statistics  is
+     printed.   If  _i_n_t_e_r_v_a_l  is  greater  than  0 then a line of
+     statistics is printed out every _i_n_t_e_r_v_a_l seconds.  If the --ff
+     _f_a_u_l_t_T_h_r_e_s_h_o_l_d  and/or  --pp _p_a_g_e_o_u_t_T_h_r_e_s_h_o_l_d options are used
+     then statistics will be checked every _i_n_t_e_r_v_a_l  seconds  but
+     only will be printed out if the number of page faults in the
+     last interval is greater than _f_a_u_l_t_T_h_r_e_s_h_o_l_d or  the  number
+     of  pageouts  is  greater  than _p_a_g_e_o_u_t_T_h_r_e_s_h_o_l_d.  If the --TT
+     _m_a_x_S_k_i_p option is used then statistics will be  printed  out
+     at  least  every _m_a_x_S_k_i_p intervals regardless whether or not
+     enough page-outs or page faults have occured.
+
+     All memory use statistics  are  printed  in  units  of  1024
+     bytes.  Each line contains 10 columns of information:
+
+     _A_V_A_I_L     The total amount of physical memory available.
+
+     _F_R_E_E      The amount of memory that is  not  being  used  by
+               anyone.
+
+     _U_S_E_R      The amount of memory that is being  used  by  user
+               processes.
+
+     _K_M_E_M      The amount of memory that is  being  used  by  the
+               kernel for code and data.
+
+     _K_S_T_K      The amount of memory that is being used for kernel
+               stacks.
+
+     _F_S$       The size of the file system cache.
+
+     _P_F-_N_U_M    The number of page faults that have occured.
+
+     _P_F-_S_W_P    The number of page faults that  were  filled  from
+               swap space.
+
+     _P_F-_F_S     The number of page faults that  were  filled  from
+               the file system.
+
+
+
+
+Sprite v.1.0         Printed:  July 30, 1990                    6
+
+
+
+
+
+
+VMSTAT                    User Commands                    VMSTAT
+
+
+
+     _P_O_U_T_S     The number of pages  that  were  written  to  swap
+               space.
+
+     If the --mm option is specified then the _K_S_T_K column  will  be
+     replaced by a column labeled _M_O_D% which contains the percen-
+     tage of user memory that is modified.  The number of  kernel
+     stack pages will be added into the statistics under the _K_M_E_M
+     column.
+
+     By default a new column header line will be printed after 25
+     lines  of  output.  The --ll _l_i_n_e_s option can be used to force
+     the header line to be printed after _l_i_n_e_s  lines  of  output
+     are printed.
+
+     The number of page faults and page-outs that are printed are
+     by  default  the  number  since the last interval.  However,
+     many intervals can be skipped  because  of  the  --ff  and  --pp
+     options.   The  --PP option will force vvmmssttaatt to print out the
+     number of faults and pageouts since the  last  time  that  a
+     line was printed instead of since the last interval.
+
+KKEEYYWWOORRDDSS
+     virtual memory, statistics
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  July 30, 1990                    7
+
+
+

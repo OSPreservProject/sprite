@@ -1,0 +1,4508 @@
+# 1 "rcp.c"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+char copyright[] =
+"@(#) Copyright (c) 1983, 1990 The Regents of the University of California.\n\
+ All rights reserved.\n";
+
+
+
+static char sccsid[] = "@(#)rcp.c	5.32 (Berkeley) 2/25/91";
+
+
+
+
+
+
+# 1 "/sprite/lib/include/sys/param.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/sys/types.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef	unsigned char	u_char;
+typedef	unsigned short	u_short;
+typedef	unsigned int	u_int;
+typedef	unsigned long	u_long;
+typedef	unsigned short	ushort;		
+
+# 46 "/sprite/lib/include/sys/types.h"
+
+# 52 "/sprite/lib/include/sys/types.h"
+
+
+
+typedef struct  _physadr { int r[1]; } *physadr;
+typedef struct  label_t {
+        int     val[12];
+} label_t;
+
+
+
+
+
+typedef struct _quad {long val[2]; } quad;
+typedef	struct	_uquad {unsigned long val[2]; } u_quad;
+
+typedef	long	daddr_t;
+typedef	char *	caddr_t;
+typedef	long *	qaddr_t;	
+typedef	u_long	ino_t;
+typedef	long	swblk_t;
+
+
+typedef	unsigned short  mode_t;
+
+
+
+typedef	int	size_t;
+
+
+
+typedef	long	time_t;
+
+
+
+typedef	long	clock_t;
+
+typedef	short	dev_t;
+typedef	long	off_t;
+typedef	short	uid_t;
+typedef	short	gid_t;
+
+
+
+
+
+
+
+typedef int	pid_t;
+
+typedef long	key_t;		
+
+
+
+
+
+
+
+
+
+
+
+
+typedef long	fd_mask;
+
+
+
+
+
+typedef	struct fd_set {
+	fd_mask	fds_bits[	(((256)+(( (sizeof(fd_mask) * 8		)	)-1))/( (sizeof(fd_mask) * 8		)	))];
+} fd_set;
+
+
+
+
+
+
+
+# 27 "/sprite/lib/include/sys/param.h"
+
+# 1 "/sprite/lib/include/signal.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 44 "/sprite/lib/include/cfuncproto.h"
+
+
+# 52 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+
+# 59 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+# 65 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+# 71 "/sprite/lib/include/cfuncproto.h"
+
+typedef char *_VoidPtr;
+
+
+
+
+
+# 14 "/sprite/lib/include/signal.h"
+
+# 1 "/sprite/lib/include/machSignal.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct	sigcontext {
+	int	sc_onstack;		
+	int	sc_mask;		
+	int	sc_pc;			
+	
+
+
+	int	sc_regs[32];	
+	int	sc_mdlo;	
+	int	sc_mdhi;	
+	
+
+
+	int	sc_ownedfp;	
+	int	sc_fpregs[32];	
+	int	sc_fpc_csr;	
+	int	sc_fpc_eir;	
+	
+
+
+
+	
+
+
+	int	sc_cause;	
+	int	sc_badvaddr;	
+	int	sc_badpaddr;	
+};
+
+# 15 "/sprite/lib/include/signal.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern void (*signal 
+	()) 	();
+
+extern int sigblock 	();
+extern int sigpause 	();
+extern int sigsetmask 	();
+
+
+
+
+
+struct	sigvec {
+	void	(*sv_handler)();	
+	int	sv_mask;		
+	int	sv_flags;		
+};
+
+
+
+
+
+
+
+struct	sigstack {
+	char	*ss_sp;			
+	int	ss_onstack;		
+};
+
+
+
+
+
+
+
+
+
+
+
+# 117 "/sprite/lib/include/signal.h"
+
+
+
+
+
+
+# 126 "/sprite/lib/include/signal.h"
+
+
+
+
+
+
+
+
+
+# 28 "/sprite/lib/include/sys/param.h"
+
+# 1 "/sprite/lib/include/machparam.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/machine/limits.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 39 "/sprite/lib/include/machparam.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 29 "/sprite/lib/include/sys/param.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 48 "rcp.c"
+
+# 1 "/sprite/lib/include/sys/stat.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 76 "/sprite/lib/include/cfuncproto.h"
+
+
+# 14 "/sprite/lib/include/sys/stat.h"
+
+struct	stat
+{
+	dev_t	st_dev;
+	ino_t	st_ino;
+	unsigned short st_mode;
+	short	st_nlink;
+	uid_t	st_uid;
+	gid_t	st_gid;
+	dev_t	st_rdev;
+	off_t	st_size;
+	time_t	st_atime;
+	int	st_spare1;
+	time_t	st_mtime;
+	int	st_spare2;
+	time_t	st_ctime;
+	int	st_spare3;
+	long	st_blksize;
+	long	st_blocks;
+	long	st_serverID;
+	long	st_version;
+	long	st_userType;
+	long	st_devServerID;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern int fstat 	();
+extern int lstat 	();
+extern int stat 	();
+
+extern int mkdir 	();
+
+
+# 49 "rcp.c"
+
+# 1 "/sprite/lib/include/sys/time.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 76 "/sprite/lib/include/cfuncproto.h"
+
+
+# 14 "/sprite/lib/include/sys/time.h"
+
+
+
+
+
+struct timeval {
+	long	tv_sec;		
+	long	tv_usec;	
+};
+
+struct timezone {
+	int	tz_minuteswest;	
+	int	tz_dsttime;	
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 44 "/sprite/lib/include/sys/time.h"
+
+
+
+
+
+
+
+
+
+
+
+struct	itimerval {
+	struct	timeval it_interval;	
+	struct	timeval it_value;	
+};
+
+
+
+# 1 "/sprite/lib/include/time.h"
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 76 "/sprite/lib/include/cfuncproto.h"
+
+
+# 13 "/sprite/lib/include/time.h"
+
+# 17 "/sprite/lib/include/time.h"
+
+# 21 "/sprite/lib/include/time.h"
+
+
+
+
+
+struct tm {
+	int	tm_sec;
+	int	tm_min;
+	int	tm_hour;
+	int	tm_mday;
+	int	tm_mon;
+	int	tm_year;
+	int	tm_wday;
+	int	tm_yday;
+	int	tm_isdst;
+	long	tm_gmtoff;
+	char	*tm_zone;
+};
+
+        extern clock_t clock 	();
+        extern time_t time 	();
+        extern time_t mktime 	();
+        extern double difftime 	();
+        extern struct tm *gmtime 	();
+        extern struct tm *localtime 	();
+        extern char *asctime 	();
+        extern char *ctime 	();
+        extern int strftime 
+	();
+
+
+# 62 "/sprite/lib/include/sys/time.h"
+
+
+        extern int	getitimer 	();
+        extern int	gettimeofday 
+	();
+        extern int	settimeofday 
+	();
+        extern int	setitimer 
+	();
+        extern int	utimes 
+	();
+
+
+# 50 "rcp.c"
+
+# 1 "/sprite/lib/include/sys/ioctl.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/sys/ttychars.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct ttychars {
+	char	tc_erase;	
+	char	tc_kill;	
+	char	tc_intrc;	
+	char	tc_quitc;	
+	char	tc_startc;	
+	char	tc_stopc;	
+	char	tc_eofc;	
+	char	tc_brkc;	
+	char	tc_suspc;	
+	char	tc_dsuspc;	
+	char	tc_rprntc;	
+	char	tc_flushc;	
+	char	tc_werasc;	
+	char	tc_lnextc;	
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 15 "/sprite/lib/include/sys/ioctl.h"
+
+
+
+# 1 "/sprite/lib/include/sys/ttydev.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 18 "/sprite/lib/include/sys/ioctl.h"
+
+
+
+
+# 1 "/sprite/lib/include/sys/fb.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct	fbtype {
+	int	fb_type;	
+	int	fb_height;	
+	int	fb_width;	
+	int	fb_depth;	
+	int	fb_cmsize;	
+	int	fb_size;	
+} fbtype;
+
+
+
+
+
+
+typedef struct	fbinfo {
+	int		fb_physaddr;	
+	int		fb_hwwidth;	
+	int		fb_hwheight;	
+	int		fb_addrdelta;	
+	unsigned char	*fb_ropaddr;	
+	int		fb_unit;	
+} fbinfo;
+
+
+
+
+
+
+typedef struct	fbcmap {
+	int		index;		
+	int		count;		
+	unsigned char	*red;		
+	unsigned char	*green;		
+	unsigned char	*blue;		
+} fbcmap;
+
+
+typedef struct fbsattr {
+	int	flags;			
+
+
+	int	emu_type;		
+	int	dev_specific[8	];	
+} fbsattr;
+
+
+typedef struct fbgattr {
+	int	real_type;		
+	int	owner;			
+	struct	fbtype fbtype;		
+	struct	fbsattr sattr;		
+	int	emu_types[4	];	
+						
+} fbgattr;
+
+struct	fbpixrect {
+    struct pixrect	*fbpr_pixrect;	
+};
+
+
+
+
+# 22 "/sprite/lib/include/sys/ioctl.h"
+
+
+
+# 1 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 76 "/sprite/lib/include/cfuncproto.h"
+
+
+# 25 "/sprite/lib/include/sys/ioctl.h"
+
+
+
+
+
+struct tchars {
+	char	t_intrc;	
+	char	t_quitc;	
+	char	t_startc;	
+	char	t_stopc;	
+	char	t_eofc;		
+	char	t_brkc;		
+};
+struct ltchars {
+	char	t_suspc;	
+	char	t_dsuspc;	
+	char	t_rprntc;	
+	char	t_flushc;	
+	char	t_werasc;	
+	char	t_lnextc;	
+};
+
+
+
+
+
+
+
+struct sgttyb {
+	char	sg_ispeed;		
+	char	sg_ospeed;		
+	char	sg_erase;		
+	char	sg_kill;		
+	short	sg_flags;		
+};
+
+
+
+
+
+
+
+
+
+
+struct winsize {
+	unsigned short	ws_row;			
+	unsigned short	ws_col;			
+	unsigned short	ws_xpixel;		
+	unsigned short	ws_ypixel;		
+};
+
+
+
+
+struct ttysize {
+	unsigned short	ts_lines;
+	unsigned short	ts_cols;
+	unsigned short	ts_xxx;
+	unsigned short	ts_yyy;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 280 "/sprite/lib/include/sys/ioctl.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern int ioctl 	();
+
+
+# 51 "rcp.c"
+
+# 1 "/sprite/lib/include/sys/socket.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct	linger {
+	int	l_onoff;		
+	int	l_linger;		
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct sockaddr {
+	u_short	sa_family;		
+	char	sa_data[14];		
+};
+
+
+
+
+
+struct sockproto {
+	u_short	sp_family;		
+	u_short	sp_protocol;		
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct msghdr {
+	caddr_t	msg_name;		
+	int	msg_namelen;		
+	struct	iovec *msg_iov;		
+	int	msg_iovlen;		
+	caddr_t	msg_accrights;		
+	int	msg_accrightslen;
+};
+
+
+
+
+
+
+
+
+# 52 "rcp.c"
+
+# 1 "/sprite/lib/include/sys/wait.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/machine/machparam.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 77 "/sprite/lib/include/machine/machparam.h"
+
+# 22 "/sprite/lib/include/sys/wait.h"
+
+
+
+
+
+
+union wait	{
+	int	w_status;		
+	
+
+
+	struct {
+
+		unsigned int	w_Termsig:7;	
+		unsigned int	w_Coredump:1;	
+		unsigned int	w_Retcode:8;	
+
+# 44 "/sprite/lib/include/sys/wait.h"
+
+	} w_T;
+	
+
+
+
+
+	struct {
+
+		unsigned int	w_Stopval:8;	
+		unsigned int	w_Stopsig:8;	
+# 59 "/sprite/lib/include/sys/wait.h"
+
+	} w_S;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 85 "/sprite/lib/include/sys/wait.h"
+
+
+# 87 "/sprite/lib/include/sys/wait.h"
+
+
+
+
+
+extern int wait();
+extern int wait3();
+
+
+# 53 "rcp.c"
+
+# 1 "/sprite/lib/include/netinet/in.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 20 "/sprite/lib/include/netinet/in.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct in_addr {
+	u_long s_addr;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct sockaddr_in {
+	short	sin_family;
+	u_short	sin_port;
+	struct	in_addr sin_addr;
+	char	sin_zero[8];
+};
+
+
+
+
+
+
+
+
+
+
+# 127 "/sprite/lib/include/netinet/in.h"
+
+unsigned short  ntohs(), htons();
+unsigned long   ntohl(), htonl();
+
+
+
+# 54 "rcp.c"
+
+# 1 "/sprite/lib/include/netinet/in_systm.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef u_short n_short;		
+typedef u_long	n_long;			
+
+typedef	u_long	n_time;			
+
+# 38 "/sprite/lib/include/netinet/in_systm.h"
+
+
+
+# 55 "rcp.c"
+
+# 1 "/sprite/lib/include/netinet/ip.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct ip {
+
+	u_char	ip_hl:4,		
+		ip_v:4;			
+
+# 39 "/sprite/lib/include/netinet/ip.h"
+
+	u_char	ip_tos;			
+	short	ip_len;			
+	u_short	ip_id;			
+	short	ip_off;			
+
+
+	u_char	ip_ttl;			
+	u_char	ip_p;			
+	u_short	ip_sum;			
+	struct	in_addr ip_src,ip_dst;	
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct	ip_timestamp {
+	u_char	ipt_code;		
+	u_char	ipt_len;		
+	u_char	ipt_ptr;		
+
+	u_char	ipt_flg:4,		
+		ipt_oflw:4;		
+
+# 98 "/sprite/lib/include/netinet/ip.h"
+
+	union ipt_timestamp {
+		n_long	ipt_time[1];
+		struct	ipt_ta {
+			struct in_addr ipt_addr;
+			n_long ipt_time;
+		} ipt_ta[1];
+	} ipt_timestamp;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 56 "rcp.c"
+
+# 1 "/sprite/lib/include/dirent.h"
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/sys/types.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 129 "/sprite/lib/include/sys/types.h"
+
+# 13 "/sprite/lib/include/dirent.h"
+
+
+
+
+
+struct dirent {
+    off_t	d_off;		
+    u_long	d_fileno;	
+    u_short	d_reclen;	
+    u_short	d_namlen;	
+    char	d_name[255+1];
+};
+
+
+# 57 "rcp.c"
+
+# 1 "/sprite/lib/include/fcntl.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 76 "/sprite/lib/include/cfuncproto.h"
+
+
+# 14 "/sprite/lib/include/fcntl.h"
+
+
+
+
+
+
+
+
+
+					
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern int open 	();
+
+
+# 58 "rcp.c"
+
+# 1 "/sprite/lib/include/signal.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 134 "/sprite/lib/include/signal.h"
+
+# 59 "rcp.c"
+
+# 1 "/sprite/lib/include/pwd.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct passwd {
+	char	*pw_name;			
+	char	*pw_passwd;			
+	int	pw_uid;				
+	int	pw_gid;				
+	long	pw_change;			
+	char	*pw_class;			
+	char	*pw_gecos;			
+	char	*pw_dir;			
+	char	*pw_shell;			
+	long	pw_expire;			
+};
+
+struct passwd *getpwent(), *getpwuid(), *getpwnam();
+void endpwent(), setpwfile();
+int setpassent(), setpwent();
+
+
+# 60 "rcp.c"
+
+# 1 "/sprite/lib/include/netdb.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct	hostent {
+	char	*h_name;	
+	char	**h_aliases;	
+	int	h_addrtype;	
+	int	h_length;	
+	char	**h_addr_list;	
+
+};
+
+
+
+
+
+struct	netent {
+	char		*n_name;	
+	char		**n_aliases;	
+	int		n_addrtype;	
+	unsigned long	n_net;		
+};
+
+struct	servent {
+	char	*s_name;	
+	char	**s_aliases;	
+	int	s_port;		
+	char	*s_proto;	
+};
+
+struct	protoent {
+	char	*p_name;	
+	char	**p_aliases;	
+	int	p_proto;	
+};
+
+struct hostent	*gethostbyname(), *gethostbyaddr(), *gethostent();
+struct netent	*getnetbyname(), *getnetbyaddr(), *getnetent();
+struct servent	*getservbyname(), *getservbyport(), *getservent();
+struct protoent	*getprotobyname(), *getprotobynumber(), *getprotoent();
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 61 "rcp.c"
+
+# 1 "/sprite/lib/include/errno.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern int	errno;		
+
+extern int	sys_nerr;	
+extern char	*sys_errlist[];	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 62 "rcp.c"
+
+# 1 "/sprite/lib/include/unistd.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 76 "/sprite/lib/include/cfuncproto.h"
+
+
+# 22 "/sprite/lib/include/unistd.h"
+
+# 1 "/sprite/lib/include/sys/types.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 129 "/sprite/lib/include/sys/types.h"
+
+# 23 "/sprite/lib/include/unistd.h"
+
+# 26 "/sprite/lib/include/unistd.h"
+
+
+
+
+# 32 "/sprite/lib/include/unistd.h"
+
+
+# 37 "/sprite/lib/include/unistd.h"
+
+
+
+
+
+
+
+extern void  _exit 	();
+extern int access 	();
+extern int chdir 	();
+extern int chown 	();
+extern int close 	();
+extern int dup 	();
+extern int dup2 	();
+extern int execl 	();
+extern int execle 	();
+extern int execlp 	();
+extern int execv 	();
+extern int execve 	();
+extern int execvp 	();
+extern int fork 	();
+extern char *getcwd 	();
+extern gid_t getegid 	();
+extern uid_t geteuid 	();
+extern gid_t getgid 	();
+extern int getgroups 	();
+extern int getpid 	();
+extern uid_t getuid 	();
+extern int isatty 	();
+extern long lseek 	();
+extern int pipe 	();
+extern int read 	();
+extern int setgid 	();
+extern int setuid 	();
+extern unsigned sleep 	();
+extern char *ttyname 	();
+extern int unlink 	();
+extern int write 	();
+
+
+extern char *crypt 	();
+extern int fchown 	();
+extern int flock 	();
+extern int ftruncate 	();
+extern int readlink 	();
+extern int setegid 	();
+extern int seteuid 	();
+extern int setreuid 	();
+extern int symlink 	();
+extern int ttyslot 	();
+extern int truncate 	();
+extern int umask 	();
+extern _VoidPtr	valloc 	();
+extern int vfork 	();
+
+
+
+
+# 63 "rcp.c"
+
+# 1 "/sprite/lib/include/stdio.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 76 "/sprite/lib/include/cfuncproto.h"
+
+
+# 31 "/sprite/lib/include/stdio.h"
+
+# 34 "/sprite/lib/include/stdio.h"
+
+
+
+
+
+
+# 42 "/sprite/lib/include/stdio.h"
+
+
+
+typedef int *ClientData;
+
+
+
+
+
+typedef char *va_list;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct _file {
+    unsigned char *lastAccess;	
+
+
+    int readCount;		
+
+
+    int writeCount;		
+
+
+
+
+
+    unsigned char *buffer;	
+
+    int bufSize;		
+
+
+    void (*readProc)	();
+				
+    void (*writeProc)	();
+				
+    int (*closeProc)	();
+				
+
+    ClientData clientData;	
+
+
+    int status;			
+
+
+    int flags;			
+
+    struct _file *nextPtr;	
+
+
+
+
+} FILE;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 201 "/sprite/lib/include/stdio.h"
+
+
+
+
+
+
+
+# 208 "/sprite/lib/include/stdio.h"
+
+# 212 "/sprite/lib/include/stdio.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern FILE stdioInFile, stdioOutFile, stdioErrFile;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        extern void	clearerr 	();
+        extern int	fclose 	();
+        extern FILE *	fdopen 	();
+        extern int	fflush 	();
+        extern int	fgetc 	();
+        extern char *	fgets 	();
+        extern int	fileno 	();
+        extern FILE *	fopen 	();
+        extern int	fputc 	();
+        extern int	fputs 	();
+        extern int	fread 
+	();
+        extern FILE *	freopen 
+	();
+        extern long	fseek 	();
+        extern long	ftell 	();
+        extern int	fwrite 
+	();
+        extern char *	gets 	();
+        extern int	getw 	();
+        extern void	perror 	();
+        extern FILE *	popen 	();
+        extern int	pclose 	();
+        extern int      remove 	();
+        extern int      rename 	();
+
+
+
+
+
+
+# 336 "/sprite/lib/include/stdio.h"
+
+
+
+
+
+
+
+
+        extern int	printf 	();
+        extern int	fprintf 	();
+        extern int	scanf 	();
+        extern char *	sprintf 	();
+        extern int	sscanf 	();
+        extern int	fscanf 	();
+        extern int	vfprintf 
+	();
+        extern int	vfscanf 
+	();
+        extern int	vprintf 	();
+        extern char *	vsprintf 
+	();
+
+
+        extern int	puts 	();
+        extern int	putw 	();
+        extern void	rewind 	();
+        extern void	setbuf 	();
+        extern void	setbuffer 	();
+        extern void	setlinebuf 	();
+        extern int	setvbuf 	();
+        extern FILE *	tmpfile 	();
+        extern char *	tmpnam 	();
+        extern char *	tempnam 	();
+        extern int	ungetc 	();
+        extern void	_cleanup 	();
+
+        extern void	Stdio_Setup 
+
+
+
+
+	();
+
+
+# 64 "rcp.c"
+
+# 1 "/sprite/lib/include/stdlib.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 76 "/sprite/lib/include/cfuncproto.h"
+
+
+# 32 "/sprite/lib/include/stdlib.h"
+
+# 36 "/sprite/lib/include/stdlib.h"
+
+
+
+
+
+# 45 "/sprite/lib/include/stdlib.h"
+
+
+
+
+
+
+
+
+        extern double	 atof 	();
+        extern int	 atoi 	();
+        extern long int atol 	();
+        extern double	 strtod 	();
+        extern long int strtol 	();
+        extern unsigned long int
+		strtoul 	();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 95 "/sprite/lib/include/stdlib.h"
+
+
+        extern _VoidPtr	malloc 	();
+        extern int	free 	();
+
+
+
+        extern _VoidPtr calloc 	();
+        extern _VoidPtr	realloc 	();
+        extern void	Mem_Bin 	();
+        extern char *	Mem_CallerPC();
+        extern void	Mem_DumpTrace 	();
+        extern void	Mem_PrintConfig 	();
+        extern void	Mem_PrintInUse 	();
+        extern void	Mem_PrintStats 	();
+        extern void	Mem_PrintStatsInt 	();
+
+
+
+
+        extern void	Mem_SetPrintProc 	();
+        extern int	Mem_Size 	();
+
+
+
+
+
+typedef struct {
+    int		size;	
+    int		flags;	
+} Mem_TraceInfo;
+
+        extern void	Mem_SetTraceSizes 
+	();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern int	mem_SmallMinNum;
+extern int	mem_LargeMinNum;
+extern int	mem_LargeMaxSize;
+
+
+
+
+
+extern int	mem_NumAllocs;
+extern int	mem_NumFrees;
+
+
+
+
+
+
+
+
+typedef struct div_t {
+    int quot;
+    int rem;
+} div_t;
+
+typedef struct {
+    long int quot;
+    long int rem;
+} ldiv_t;
+
+        extern int	abs 	();
+        extern div_t	div 	();
+        extern long int labs 	();
+        extern ldiv_t	ldiv 	();
+
+
+
+
+
+
+
+        extern void	abort 	();
+        extern int	atexit 	();
+        extern _VoidPtr bsearch 
+
+	();
+        extern int	exit 	();
+        extern char *	getenv 	();
+        extern void	qsort 
+	();
+        extern int	rand 	();
+        extern long	random 	();
+        extern int	srand 	();
+        extern int	srandom 	();
+        extern int	system 	();
+
+
+# 65 "rcp.c"
+
+# 1 "/sprite/lib/include/string.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 76 "/sprite/lib/include/cfuncproto.h"
+
+
+# 22 "/sprite/lib/include/string.h"
+
+extern _VoidPtr	memchr 	();
+extern int	memcmp 	();
+extern _VoidPtr	memcpy 	();
+extern _VoidPtr	memmove 	();
+extern _VoidPtr	memset 	();
+
+extern int	strcasecmp 	();
+extern char *	strcat 	();
+extern char *	strchr 	();
+extern int	strcmp 	();
+extern char *	strcpy 	();
+extern int	strcspn 	();
+extern char *	strdup 	();
+extern char *	strerror 	();
+extern int	strlen 	();
+extern int	strncasecmp 	();
+extern char *	strncat 	();
+extern int	strncmp 	();
+extern char *	strncpy 	();
+extern char *	strpbrk 	();
+extern char *	strrchr 	();
+extern int	strspn 	();
+extern char *	strstr 	();
+extern char *	strtok 	();
+
+
+
+
+
+extern char *	index 	();
+extern char *	rindex 	();
+
+
+# 66 "rcp.c"
+
+# 1 "/sprite/lib/include/ctype.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 1 "/sprite/lib/include/cfuncproto.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 76 "/sprite/lib/include/cfuncproto.h"
+
+
+# 23 "/sprite/lib/include/ctype.h"
+
+# 26 "/sprite/lib/include/ctype.h"
+
+
+        extern int	isalnum 	();
+        extern int	isalpha 	();
+        extern int	isascii 	();
+        extern int	iscntrl 	();
+        extern int	isdigit 	();
+        extern int	isgraph 	();
+        extern int	islower 	();
+        extern int	isprint 	();
+        extern int	ispunct 	();
+        extern int	isspace 	();
+        extern int	isupper 	();
+        extern int	isxdigit 	();
+        extern int	tolower 	();
+        extern int	toupper 	();
+
+
+
+# 45 "/sprite/lib/include/ctype.h"
+
+
+
+# 48 "/sprite/lib/include/ctype.h"
+
+
+
+# 51 "/sprite/lib/include/ctype.h"
+
+
+
+# 54 "/sprite/lib/include/ctype.h"
+
+
+
+# 57 "/sprite/lib/include/ctype.h"
+
+
+
+# 60 "/sprite/lib/include/ctype.h"
+
+
+
+# 63 "/sprite/lib/include/ctype.h"
+
+
+
+# 66 "/sprite/lib/include/ctype.h"
+
+
+
+# 69 "/sprite/lib/include/ctype.h"
+
+
+
+# 72 "/sprite/lib/include/ctype.h"
+
+
+
+# 75 "/sprite/lib/include/ctype.h"
+
+
+
+# 78 "/sprite/lib/include/ctype.h"
+
+
+
+
+
+
+
+
+
+
+
+extern char _ctype_bits[];
+
+# 67 "rcp.c"
+
+# 1 "./pathnames.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 68 "rcp.c"
+
+# 84 "rcp.c"
+
+
+
+
+struct passwd *pwd;
+u_short	port;
+uid_t	userid;
+int errs, rem;
+int pflag, iamremote, iamrecursive, targetshouldbedirectory;
+
+
+char cmd[64];		
+
+typedef struct _buf {
+	int	cnt;
+	char	*buf;
+} BUF;
+
+void lostconn();
+
+main(argc, argv)
+	int argc;
+	char **argv;
+{
+	extern int optind;
+	extern char *optarg;
+	struct servent *sp;
+	int ch, fflag, tflag;
+	char *targ, *shell, *colon();
+
+	fflag = tflag = 0;
+	while ((ch = getopt(argc, argv, "dfprt")) != (-1))
+		switch(ch) {
+		
+		case 'p':			
+			++pflag;
+			break;
+		case 'r':
+			++iamrecursive;
+			break;
+# 135 "rcp.c"
+
+		
+		case 'd':
+			targetshouldbedirectory = 1;
+			break;
+		case 'f':			
+			iamremote = 1;
+			fflag = 1;
+			break;
+		case 't':			
+			iamremote = 1;
+			tflag = 1;
+			break;
+
+		case '?':
+		default:
+			usage();
+		}
+	argc -= optind;
+	argv += optind;
+
+# 171 "rcp.c"
+
+	sp = getservbyname(shell = "shell", "tcp");
+
+	if (sp == 0) {
+		(void)fprintf((&stdioErrFile), "rcp: %s/tcp: unknown service\n", shell);
+		exit(1);
+	}
+	port = sp->s_port;
+
+	if (!(pwd = getpwuid(userid = getuid()))) {
+		(void)fprintf((&stdioErrFile), "rcp: unknown user %d.\n", (int)userid);
+		exit(1);
+	}
+
+	if (fflag) {
+		
+		(void)response();
+		(void)setuid(userid);
+		source(argc, argv);
+		exit(errs);
+	}
+
+	if (tflag) {
+		
+		(void)setuid(userid);
+		sink(argc, argv);
+		exit(errs);
+	}
+
+	if (argc < 2)
+		usage();
+	if (argc > 2)
+		targetshouldbedirectory = 1;
+
+	rem = -1;
+	
+# 216 "rcp.c"
+
+	(void)snprintf(cmd, sizeof(cmd), "rcp%s%s%s",
+	    iamrecursive ? " -r" : "", pflag ? " -p" : "",
+	    targetshouldbedirectory ? " -d" : "");
+
+
+	(void)signal(13	, lostconn);
+
+	if (targ = colon(argv[argc - 1]))
+		toremote(targ, argc, argv);	
+	else {
+		tolocal(argc, argv);		
+		if (targetshouldbedirectory)
+			verifydir(argv[argc - 1]);
+	}
+	exit(errs);
+}
+
+toremote(targ, argc, argv)
+	char *targ;
+	int argc;
+	char **argv;
+{
+	int i, len, tos;
+	char *bp, *host, *src, *suser, *thost, *tuser;
+	char *colon();
+
+	*targ++ = 0;
+	if (*targ == 0)
+		targ = ".";
+
+	if (thost = index(argv[argc - 1], '@')) {
+		
+		*thost++ = 0;
+		tuser = argv[argc - 1];
+		if (*tuser == '\0')
+			tuser = 0;
+		else if (!okname(tuser))
+			exit(1);
+	} else {
+		thost = argv[argc - 1];
+		tuser = 0;
+	}
+
+	for (i = 0; i < argc - 1; i++) {
+		src = colon(argv[i]);
+		if (src) {			
+			*src++ = 0;
+			if (*src == 0)
+				src = ".";
+			host = index(argv[i], '@');
+			len = strlen("/usr/bin/rsh") + strlen(argv[i]) +
+			    strlen(src) + (tuser ? strlen(tuser) : 0) +
+			    strlen(thost) + strlen(targ) + 64 + 20;
+			if (!(bp = malloc(len)))
+				nospace();
+			if (host) {
+				*host++ = 0;
+				suser = argv[i];
+				if (*suser == '\0')
+					suser = pwd->pw_name;
+				else if (!okname(suser))
+					continue;
+				(void)snprintf(bp, len,
+				    "%s %s -l %s -n %s %s '%s%s%s:%s'",
+				    "/usr/bin/rsh", host, suser, cmd, src,
+				    tuser ? tuser : "", tuser ? "@" : "",
+				    thost, targ);
+			} else
+				(void)snprintf(bp, len,
+				    "%s %s -n %s %s '%s%s%s:%s'",
+				    "/usr/bin/rsh", argv[i], cmd, src,
+				    tuser ? tuser : "", tuser ? "@" : "",
+				    thost, targ);
+			(void)susystem(bp);
+			(void)free(bp);
+		} else {			
+			if (rem == -1) {
+				len = strlen(targ) + 64 + 20;
+				if (!(bp = malloc(len)))
+					nospace();
+				(void)snprintf(bp, len, "%s -t %s", cmd, targ);
+				host = thost;
+# 305 "rcp.c"
+
+					rem = rcmd(&host, port, pwd->pw_name,
+					    tuser ? tuser : pwd->pw_name,
+					    bp, 0);
+				if (rem < 0)
+					exit(1);
+				tos = IPTOS_THROUGHPUT;
+				if (setsockopt(rem, 	0		, IP_TOS,
+				    (char *)&tos, sizeof(int)) < 0)
+					perror("rcp: setsockopt TOS (ignored)");
+				if (response() < 0)
+					exit(1);
+				(void)free(bp);
+				(void)setuid(userid);
+			}
+			source(1, argv+i);
+		}
+	}
+}
+
+tolocal(argc, argv)
+	int argc;
+	char **argv;
+{
+	int i, len, tos;
+	char *bp, *host, *src, *suser;
+	char *colon();
+
+	for (i = 0; i < argc - 1; i++) {
+		if (!(src = colon(argv[i]))) {	
+			len = strlen("/bin/cp") + strlen(argv[i]) +
+			    strlen(argv[argc - 1]) + 20;
+			if (!(bp = malloc(len)))
+				nospace();
+			(void)snprintf(bp, len, "%s%s%s %s %s", "/bin/cp",
+			    iamrecursive ? " -r" : "", pflag ? " -p" : "",
+			    argv[i], argv[argc - 1]);
+			(void)susystem(bp);
+			(void)free(bp);
+			continue;
+		}
+		*src++ = 0;
+		if (*src == 0)
+			src = ".";
+		host = index(argv[i], '@');
+		if (host) {
+			*host++ = 0;
+			suser = argv[i];
+			if (*suser == '\0')
+				suser = pwd->pw_name;
+			else if (!okname(suser))
+				continue;
+		} else {
+			host = argv[i];
+			suser = pwd->pw_name;
+		}
+		len = strlen(src) + 64 + 20;
+		if (!(bp = malloc(len)))
+			nospace();
+		(void)snprintf(bp, len, "%s -f %s", cmd, src);
+# 369 "rcp.c"
+
+			rem = rcmd(&host, port, pwd->pw_name, suser, bp, 0);
+		(void)free(bp);
+		if (rem < 0)
+			continue;
+		(void)seteuid(userid);
+		tos = IPTOS_THROUGHPUT;
+		if (setsockopt(rem, 	0		, IP_TOS,
+		    (char *)&tos, sizeof(int)) < 0)
+			perror("rcp: setsockopt TOS (ignored)");
+		sink(1, argv + argc - 1);
+		(void)seteuid(0);
+		(void)close(rem);
+		rem = -1;
+	}
+}
+
+verifydir(cp)
+	char *cp;
+{
+	struct stat stb;
+
+	if (stat(cp, &stb) >= 0) {
+		if ((stb.st_mode & 0170000		) == 0040000	)
+			return;
+		errno = 	20;
+	}
+	error("rcp: %s: %s.\n", cp, strerror(errno));
+	exit(1);
+}
+
+char *
+colon(cp)
+	register char *cp;
+{
+	for (; *cp; ++cp) {
+		if (*cp == ':')
+			return(cp);
+		if (*cp == '/')
+			return(0);
+	}
+	return(0);
+}
+
+okname(cp0)
+	char *cp0;
+{
+	register char *cp = cp0;
+	register int c;
+
+	do {
+		c = *cp;
+		if (c & 0200)
+			goto bad;
+		if (!     ((_ctype_bits+1)[c] & (0x01|0x02)) && !     ((_ctype_bits+1)[c] & 0x04) && c != '_' && c != '-')
+			goto bad;
+	} while (*++cp);
+	return(1);
+bad:
+	(void)fprintf((&stdioErrFile), "rcp: invalid user name %s\n", cp0);
+	return(0);
+}
+
+susystem(s)
+	char *s;
+{
+	int status, pid, w;
+	register sig_t istat, qstat;
+
+	if ((pid = vfork()) == 0) {
+		(void)setuid(userid);
+		execl(_PATH_BSHELL, "sh", "-c", s, (char *)0);
+		_exit(127);
+	}
+	istat = signal(2	, 	(void (*)())1);
+	qstat = signal(3	, 	(void (*)())1);
+	while ((w = wait(&status)) != pid && w != -1)
+		;
+	if (w == -1)
+		status = -1;
+	(void)signal(2	, istat);
+	(void)signal(3	, qstat);
+	return(status);
+}
+
+source(argc, argv)
+	int argc;
+	char **argv;
+{
+	struct stat stb;
+	static BUF buffer;
+	BUF *bp;
+	off_t i;
+	int x, readerr, f, amt;
+	char *last, *name, buf[		4096];
+	BUF *allocbuf();
+
+	for (x = 0; x < argc; x++) {
+		name = argv[x];
+		if ((f = open(name, 000		, 0)) < 0) {
+			error("rcp: %s: %s\n", name, strerror(errno));
+			continue;
+		}
+		if (fstat(f, &stb) < 0)
+			goto notreg;
+		switch (stb.st_mode&0170000		) {
+
+		case 0100000	:
+			break;
+
+		case 0040000	:
+			if (iamrecursive) {
+				(void)close(f);
+				rsource(name, &stb);
+				continue;
+			}
+			
+		default:
+notreg:			(void)close(f);
+			error("rcp: %s: not a plain file\n", name);
+			continue;
+		}
+		last = rindex(name, '/');
+		if (last == 0)
+			last = name;
+		else
+			last++;
+		if (pflag) {
+			
+
+
+
+			(void)snprintf(buf, sizeof(buf),
+			    "T%ld 0 %ld 0\n", stb.st_mtime, stb.st_atime);
+			(void)write(rem, buf, (int)strlen(buf));
+			if (response() < 0) {
+				(void)close(f);
+				continue;
+			}
+		}
+		(void)snprintf(buf, sizeof(buf),
+		    "C%04o %ld %s\n", stb.st_mode&07777, stb.st_size, last);
+		(void)write(rem, buf, (int)strlen(buf));
+		if (response() < 0) {
+			(void)close(f);
+			continue;
+		}
+		if ((bp = allocbuf(&buffer, f, 		4096)) == 0) {
+			(void)close(f);
+			continue;
+		}
+		readerr = 0;
+		for (i = 0; i < stb.st_size; i += bp->cnt) {
+			amt = bp->cnt;
+			if (i + amt > stb.st_size)
+				amt = stb.st_size - i;
+			if (readerr == 0 && read(f, bp->buf, amt) != amt)
+				readerr = errno;
+			(void)write(rem, bp->buf, amt);
+		}
+		(void)close(f);
+		if (readerr == 0)
+			(void)write(rem, "", 1);
+		else
+			error("rcp: %s: %s\n", name, strerror(readerr));
+		(void)response();
+	}
+}
+
+rsource(name, statp)
+	char *name;
+	struct stat *statp;
+{
+	DIR *dirp;
+	struct dirent *dp;
+	char *last, *vect[1], path[     1024];
+
+	if (!(dirp = opendir(name))) {
+		error("rcp: %s: %s\n", name, strerror(errno));
+		return;
+	}
+	last = rindex(name, '/');
+	if (last == 0)
+		last = name;
+	else
+		last++;
+	if (pflag) {
+		(void)snprintf(path, sizeof(path),
+		    "T%ld 0 %ld 0\n", statp->st_mtime, statp->st_atime);
+		(void)write(rem, path, (int)strlen(path));
+		if (response() < 0) {
+			closedir(dirp);
+			return;
+		}
+	}
+	(void)snprintf(path, sizeof(path),
+	    "D%04o %d %s\n", statp->st_mode&07777, 0, last);
+	(void)write(rem, path, (int)strlen(path));
+	if (response() < 0) {
+		closedir(dirp);
+		return;
+	}
+	while (dp = readdir(dirp)) {
+		if (dp->d_ino == 0)
+			continue;
+		if (!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, ".."))
+			continue;
+		if (strlen(name) + 1 + strlen(dp->d_name) >=      1024 - 1) {
+			error("%s/%s: name too long.\n", name, dp->d_name);
+			continue;
+		}
+		(void)snprintf(path, sizeof(path), "%s/%s", name, dp->d_name);
+		vect[0] = path;
+		source(1, vect);
+	}
+	closedir(dirp);
+	(void)write(rem, "E\n", 2);
+	(void)response();
+}
+
+response()
+{
+	register char *cp;
+	char ch, resp, rbuf[		4096];
+
+	if (read(rem, &resp, sizeof(resp)) != sizeof(resp))
+		lostconn();
+
+	cp = rbuf;
+	switch(resp) {
+	case 0:				
+		return(0);
+	default:
+		*cp++ = resp;
+		
+	case 1:				
+	case 2:				
+		do {
+			if (read(rem, &ch, sizeof(ch)) != sizeof(ch))
+				lostconn();
+			*cp++ = ch;
+		} while (cp < &rbuf[		4096] && ch != '\n');
+
+		if (!iamremote)
+			(void)write(2, rbuf, cp - rbuf);
+		++errs;
+		if (resp == 1)
+			return(-1);
+		exit(1);
+	}
+	
+}
+
+void
+lostconn()
+{
+	if (!iamremote)
+		(void)fprintf((&stdioErrFile), "rcp: lost connection\n");
+	exit(1);
+}
+
+sink(argc, argv)
+	int argc;
+	char **argv;
+{
+	register char *cp;
+	static BUF buffer;
+	struct stat stb;
+	struct timeval tv[2];
+	enum { YES, NO, DISPLAYED } wrerr;
+	BUF *bp, *allocbuf();
+	off_t i, j;
+	char ch, *targ, *why;
+	int amt, count, exists, first, mask, mode;
+	int ofd, setimes, size, targisdir;
+	char *np, *vect[1], buf[		4096];
+
+
+
+
+
+	setimes = targisdir = 0;
+	mask = umask(0);
+	if (!pflag)
+		(void)umask(mask);
+	if (argc != 1) {
+		error("rcp: ambiguous target\n");
+		exit(1);
+	}
+	targ = *argv;
+	if (targetshouldbedirectory)
+		verifydir(targ);
+	(void)write(rem, "", 1);
+	if (stat(targ, &stb) == 0 && (stb.st_mode & 0170000		) == 0040000	)
+		targisdir = 1;
+	for (first = 1;; first = 0) {
+		cp = buf;
+		if (read(rem, cp, 1) <= 0)
+			return;
+		if (*cp++ == '\n')
+				{ why = "unexpected <newline>"; goto screwup; };
+		do {
+			if (read(rem, &ch, sizeof(ch)) != sizeof(ch))
+					{ why = "lost connection"; goto screwup; };
+			*cp++ = ch;
+		} while (cp < &buf[		4096 - 1] && ch != '\n');
+		*cp = 0;
+
+		if (buf[0] == '\01' || buf[0] == '\02') {
+			if (iamremote == 0)
+				(void)write(2, buf + 1, (int)strlen(buf + 1));
+			if (buf[0] == '\02')
+				exit(1);
+			errs++;
+			continue;
+		}
+		if (buf[0] == 'E') {
+			(void)write(rem, "", 1);
+			return;
+		}
+
+		if (ch == '\n')
+			*--cp = 0;
+
+
+		cp = buf;
+		if (*cp == 'T') {
+			setimes++;
+			cp++;
+			 (tv[1].tv_sec) = 0; while (     ((_ctype_bits+1)[*cp] & 0x04)) (tv[1].tv_sec) = (tv[1].tv_sec) * 10 + (*cp++ - '0');;
+			if (*cp++ != ' ')
+					{ why = "mtime.sec not delimited"; goto screwup; };
+			 (tv[1].tv_usec) = 0; while (     ((_ctype_bits+1)[*cp] & 0x04)) (tv[1].tv_usec) = (tv[1].tv_usec) * 10 + (*cp++ - '0');;
+			if (*cp++ != ' ')
+					{ why = "mtime.usec not delimited"; goto screwup; };
+			 (tv[0].tv_sec) = 0; while (     ((_ctype_bits+1)[*cp] & 0x04)) (tv[0].tv_sec) = (tv[0].tv_sec) * 10 + (*cp++ - '0');;
+			if (*cp++ != ' ')
+					{ why = "atime.sec not delimited"; goto screwup; };
+			 (tv[0].tv_usec) = 0; while (     ((_ctype_bits+1)[*cp] & 0x04)) (tv[0].tv_usec) = (tv[0].tv_usec) * 10 + (*cp++ - '0');;
+			if (*cp++ != '\0')
+					{ why = "atime.usec not delimited"; goto screwup; };
+			(void)write(rem, "", 1);
+			continue;
+		}
+		if (*cp != 'C' && *cp != 'D') {
+			
+
+
+
+
+
+
+			if (first) {
+				error("%s\n", cp);
+				exit(1);
+			}
+				{ why = "expected control record"; goto screwup; };
+		}
+		mode = 0;
+		for (++cp; cp < buf + 5; cp++) {
+			if (*cp < '0' || *cp > '7')
+					{ why = "bad mode"; goto screwup; };
+			mode = (mode << 3) | (*cp - '0');
+		}
+		if (*cp++ != ' ')
+				{ why = "mode not delimited"; goto screwup; };
+		size = 0;
+		while (     ((_ctype_bits+1)[*cp] & 0x04))
+			size = size * 10 + (*cp++ - '0');
+		if (*cp++ != ' ')
+				{ why = "size not delimited"; goto screwup; };
+		if (targisdir) {
+			static char *namebuf;
+			static int cursize;
+			size_t need;
+
+			need = strlen(targ) + strlen(cp) + 250;
+			if (need > cursize) {
+				if (!(namebuf = malloc(need)))
+					error("out of memory\n");
+			}
+			(void)snprintf(namebuf, need, "%s%s%s", targ,
+			    *targ ? "/" : "", cp);
+			np = namebuf;
+		}
+		else
+			np = targ;
+		exists = stat(np, &stb) == 0;
+		if (buf[0] == 'D') {
+			if (exists) {
+				if ((stb.st_mode&0170000		) != 0040000	) {
+					errno = 	20;
+					goto bad;
+				}
+				if (pflag)
+					(void)chmod(np, mode);
+			} else if (mkdir(np, mode) < 0)
+				goto bad;
+			vect[0] = np;
+			sink(1, vect);
+			if (setimes) {
+				setimes = 0;
+				if (utimes(np, tv) < 0)
+				    error("rcp: can't set times on %s: %s\n",
+					np, strerror(errno));
+			}
+			continue;
+		}
+		if ((ofd = open(np, 001		|		01000				, mode)) < 0) {
+bad:			error("rcp: %s: %s\n", np, strerror(errno));
+			continue;
+		}
+		if (exists && pflag)
+			(void)fchmod(ofd, mode);
+		(void)write(rem, "", 1);
+		if ((bp = allocbuf(&buffer, ofd, 		4096)) == 0) {
+			(void)close(ofd);
+			continue;
+		}
+		cp = bp->buf;
+		count = 0;
+		wrerr = NO;
+		for (i = 0; i < size; i += 		4096) {
+			amt = 		4096;
+			if (i + amt > size)
+				amt = size - i;
+			count += amt;
+			do {
+				j = read(rem, cp, amt);
+				if (j <= 0) {
+					error("rcp: %s\n",
+					    j ? strerror(errno) :
+					    "dropped connection");
+					exit(1);
+				}
+				amt -= j;
+				cp += j;
+			} while (amt > 0);
+			if (count == bp->cnt) {
+				if (wrerr == NO &&
+				    write(ofd, bp->buf, count) != count)
+					wrerr = YES;
+				count = 0;
+				cp = bp->buf;
+			}
+		}
+		if (count != 0 && wrerr == NO &&
+		    write(ofd, bp->buf, count) != count)
+			wrerr = YES;
+		if (ftruncate(ofd, size)) {
+			error("rcp: can't truncate %s: %s\n", np,
+			    strerror(errno));
+			wrerr = DISPLAYED;
+		}
+		(void)close(ofd);
+		(void)response();
+		if (setimes && wrerr == NO) {
+			setimes = 0;
+			if (utimes(np, tv) < 0) {
+				error("rcp: can't set times on %s: %s\n",
+				    np, strerror(errno));
+				wrerr = DISPLAYED;
+			}
+		}
+		switch(wrerr) {
+		case YES:
+			error("rcp: %s: %s\n", np, strerror(errno));
+			break;
+		case NO:
+			(void)write(rem, "", 1);
+			break;
+		case DISPLAYED:
+			break;
+		}
+	}
+screwup:
+	error("rcp: protocol screwup: %s\n", why);
+	exit(1);
+}
+
+BUF *
+allocbuf(bp, fd, blksize)
+	BUF *bp;
+	int fd, blksize;
+{
+	struct stat stb;
+	size_t size;
+
+	if (fstat(fd, &stb) < 0) {
+		error("rcp: fstat: %s\n", strerror(errno));
+		return(0);
+	}
+	size = 	((((stb.st_blksize) + (( blksize) -1))/( blksize))*( blksize));
+	if (size == 0)
+		size = blksize;
+	if (bp->cnt < size) {
+		if (bp->buf != 0)
+			free(bp->buf);
+		bp->buf = malloc(size);
+		if (!bp->buf) {
+			error("rcp: malloc: out of memory\n");
+			return(0);
+		}
+	}
+	bp->cnt = size;
+	return(bp);
+}
+
+
+error(fmt, a1, a2, a3)
+	char *fmt;
+	int a1, a2, a3;
+{
+	static FILE *fp;
+
+	++errs;
+	if (!fp && !(fp = fdopen(rem, "w")))
+		return;
+	(void)fprintf(fp, "%c", 0x01);
+	(void)fprintf(fp, fmt, a1, a2, a3);
+	(void)fflush(fp);
+	if (!iamremote)
+		(void)fprintf((&stdioErrFile), fmt, a1, a2, a3);
+}
+
+nospace()
+{
+	(void)fprintf((&stdioErrFile), "rcp: out of memory.\n");
+	exit(1);
+}
+
+
+usage()
+{
+# 913 "rcp.c"
+
+	(void)fprintf((&stdioErrFile),
+	    "usage: rcp [-p] f1 f2; or: rcp [-rp] f1 ... fn directory\n");
+
+	exit(1);
+}
+
+# 984 "rcp.c"
+

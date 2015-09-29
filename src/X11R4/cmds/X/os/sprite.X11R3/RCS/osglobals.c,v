@@ -1,0 +1,131 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.4
+date     89.10.08.17.03.30;  author tve;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.10.04.19.17.41;  author tve;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     87.06.30.19.08.58;  author deboor;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     87.06.11.17.47.20;  author deboor;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Global variables for the sprite OS layer
+@
+
+
+1.4
+log
+@added definition of allStreams
+@
+text
+@/*-
+ * osglobals.c --
+ *	Declarations of variables global to the os layer.
+ *
+ * Copyright (c) 1987 by the Regents of the University of California
+ * Copyright (c) 1987 by Adam de Boor, UC Berkeley
+ *
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ */
+#ifndef lint
+static char rcsid[] =
+"$Header: /mic/X11R3/src/cmds/Xsprite/os/sprite/RCS/osglobals.c,v 1.3 89/10/04 19:17:41 tve Exp $ SPRITE (Berkeley)";
+#endif lint
+
+#include    "spriteos.h"
+
+/*
+ * Bit masks for Fs_Select in scheduler
+ */
+int	*ClientsWithInputMask,	/* Clients with input waiting in their
+				 * buffers */
+	*LastSelectMask,    	/* Result of last Fs_Select call */
+	*EnabledDevicesMask,	/* All enabled devices */
+	*SavedAllClientsMask,	/* AllClients mask during grab */
+	*AllClientsMask,    	/* All active clients */
+	*SavedAllStreamsMask,	/* AllStreams mask during grab */
+	*AllStreamsMask;    	/* All active streams (includes devices) */
+
+int	NumActiveStreams,   	/* Number of active streams */
+	MaxClients = MAXCLIENTS,
+	PseudoDevice;	    	/* Stream ID of X pseudo-device */
+
+char	whichByteIsFirst;	/* Local byte order ('l' or 'B') */
+
+Bool	GrabDone = FALSE;   	/* TRUE if listening to only one client */
+ClientPtr grabbingClient;
+List_Links	allStreams;	/* All open streams */
+@
+
+
+1.3
+log
+@init allStreams in OsInit function
+@
+text
+@d20 1
+a20 1
+"$Header: osglobals.c,v 1.2 87/06/30 19:08:58 deboor Exp $ SPRITE (Berkeley)";
+d45 1
+@
+
+
+1.2
+log
+@Adapted to beta-1 and its ClientPtrs
+@
+text
+@d20 1
+a20 1
+"$Header: osglobals.c,v 1.1 87/06/11 17:47:20 deboor Exp $ SPRITE (Berkeley)";
+a44 2
+
+Lst	allStreams = NILLST;	/* List of all open streams */
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d20 1
+a20 1
+"$Header$ SPRITE (Berkeley)";
+a37 2
+	FirstClient = 1,    	/* First foreign client */
+	LastClient,	    	/* Last client registered */
+d44 1
+a44 1
+int	grabbingClientID;
+d46 1
+a46 1
+int	*StreamToClient;
+@

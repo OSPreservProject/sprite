@@ -1,0 +1,93 @@
+'\" Copyright 1989 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/man/dev/RCS/mouse.man,v 1.2 89/06/25 17:11:24 ouster Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS MOUSE dev
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+mouse \- Devices used to read mouse and keyboard events for window systems
+.SH SYNOPSIS
+\fB#include <dev/mouse.h>\fR
+.BE
+
+.SH DESCRIPTION
+.PP
+Mouse devices are used by window systems to communicate with the
+raw keyboard and mouse.  Each \fBread\fR kernel call
+on a mouse device returns one or more structures of the following format:
+.DS
+\fCtypedef struct {
+    int flags;
+    int key;
+    int deltaX;
+    int deltaY;
+    unsigned int time;
+} Mouse_Event;\fR
+.DE
+The buffer specified to a \fBread\fR kernel call must be large
+enough to hold at least one \fBMouse_Event\fR.
+The \fIflags\fR field is an OR-ed combination of the following bit masks:
+.IP \fBMOUSE_EVENT\fR 25
+Means that a mouse button was pressed or released, or the mouse moved.
+.IP \fBKEYBOARD_EVENT\fR 25
+Means that a key was pressed or released on the keyboard.  Only one
+of \fBMOUSE_EVENT\fR or \fBKEYBOARD_EVENT\fR will be set in any
+particular event.
+.IP \fBKEY_UP\fR 25
+This bit is only relevant for keyboard events.  If set, it implies that
+the key was released;  otherwise, the key was pressed.
+.PP
+For mouse events, the \fIkey\fR field contains a bit mask indicating
+which mouse buttons are currently depressed.  The \fIdeltaX\fR and
+\fIdeltaY\fR fields indicate how much the mouse has moved (in
+pixels) since the
+last mouse-related event.  The \fItime\fR field gives the value of
+a free-running millisecond clock at the time the event occurred.
+The \fItime\fR value has no absolute significance, but is useful
+in comparing times from different events.
+.PP
+For keyboard events, the \fIkey\fR field gives the number of a
+key on the keyboard.  The numbers are keyboard-specific, and are
+usually different than the ASCII values represented by the keys.
+The \fBKEY_UP\fR mask bit indicates whether the given key just went
+up or down.  For ideal keyboards, such as those on most Sun
+workstations, separate up and down events occur for each key.
+For less-than-ideal keyboards, such as DEC's LK201, down events
+occur for all keys, but up events only occur for a few keys such
+as shift.  The \fIdeltaX\fR and \fIdeltaY\fR fields have no
+significance for keyboard events, and \fItime\fR is the same as
+for mouse events.
+.PP
+Writing to a mouse device has machine-specific effects.  On Suns,
+characters written to a mouse device are transmitted to the keyboard
+and perform the following special functions, depending on the value
+of the character:
+.TP 25
+\fBKBD_RESET (1)\fR
+Reset the keyboard.
+.TP 25
+\fBKBD_BELL_ON (2)\fR
+Turn on the bell.  It will stay on until the \fBKBD_BELL_OFF\fR
+character is transmitted.
+.TP 25
+\fBKBD_BELL_OFF (3)\fR
+Turn off the bell.
+.TP 25
+\fBKBD_CLICK_ON (10) \fR
+Generate a click on each keystroke.
+.TP 25
+\fBKBD_CLICK_OFF (11) \fR
+Stop clicking on each keystroke.
+.PP
+No device-specific IO-control operations are defined for mouse devices.
+
+.SH KEYWORDS
+event, keyboard, mouse, window system

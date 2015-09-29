@@ -1,0 +1,42 @@
+'\" Copyright 1989 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/lib/forms/RCS/cmd.man,v 1.1 89/02/23 13:08:24 ouster Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS installboot admin
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+installboot \- Installs boot program on disk.
+.SH SYNOPSIS
+\fBinstallboot\fR [\fB-u\fR] \fB-D \fIdevice\fR  \fIboot_program\fR
+.SH OPTIONS
+.IP "\fB\-u\fR" 10
+Indicates the boot file has no a.out header (unix style).
+.IP "\fB\-D \fIdevice\fR" 10
+Uses the specified device (sample names: "rsd0", "rxy1").
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBinstallboot\fP copies the specified boot program onto a disk, removing the
+a.out header as it does so.
+
+.SH SEE ALSO
+makeboot
+
+.SH FILES
+/sprite/boot	- Directory containing per-machine TFTP boot files.
+These are typically symbolic links to machine-dependent boot programs.
+.br
+/sprite/boot.$MACHINE	- Home for the machine dependent boot programs.
+
+.SH KEYWORDS
+boot, a.out 
+

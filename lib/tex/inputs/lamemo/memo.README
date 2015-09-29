@@ -1,0 +1,136 @@
+MEMO.STY
+
+This is a LaTeX style that is used at the Los Alamos National
+Laboratory to format memos in accordance with rules established in
+the Laboratory's "Office Procedures Manual."  There is a choice of
+Computer Modern fonts or PostScript fonts.  Memos can be printed
+in Roman or typewriter typefaces.  A "THRU" or a "THRULESS" header
+can be called for.  The following features can be included in a
+memo: a subject line, a reference line, a signature line, an
+approval line, an enclosures list, an attachments list, a copy
+list, or a distribution list.
+
+For more information read the "1989 Conference Proceedings" issue
+of "TUGBOAT."  Or read the accompanying "LaTeX Memo Reference"
+in the file memo.ref.
+
+
+THE FILES
+
+There are four files that have to do with the LaTeX memo style
+at Los Alamos National Laboratory.
+
+memo.doc	is the commented style file.
+memo.sty	is the uncommented style file.
+memo.ref	is an ASCII version of the memo manual.
+memotest.tex	is a test file for memo.sty that can also be used
+		as a template for users' own memos.
+
+
+ALTERING THE STYLE FILE
+
+If you need to adapt the style file to your own institution's
+memos, you should first run memotest.tex through latex and print
+the dvi file.  Then read memo.ref to get a feel for the variety of
+output that can be expected.
+
+The easiest way to change the header is to design a memo header
+for your organization that will fit in place of
+
+  Los Alamos
+  Los Alamos National Laboratory
+  Los Alamos, New Mexico 87545
+
+You can then alter the commands that change the fonts (search for
+\@latwentyeight and \@spectwelve), and alter the \put commands in
+\@printletterpaper that print out the header.
+
+Your company's style may demand that you alter the part of the
+header that prints the date, mail stop, telephone, and so forth.
+In that case you will have to change the relevant \put statements
+in \@printmemopaper, as well as those in
+\@printfirstpageheaderinfo. 
+
+The numbers in the parentheses in the \put statements are in
+points to the right from the left edge of the paper and down from
+the top edge of the paper.
+
+You may need to mess around with the value of
+\@dimenspacetosubject.  This is the distance between the top of
+the page and the bottom of the SUBJECT line.
+
+Hopefully, you can live with most of our memo's style, such as the
+way initials and distribution lists are done.  I tried to make the
+code as modular as possible for the sake of my own sanity, but I'm
+sure that I missed a lot of opportunities to make it easy to alter
+the style for new stylistic requirements.
+
+To use PostScript fonts with memo.sty, you must be using
+ArborText's DVIPS.  If you are using another PostScript device
+driver, you will have to alter the appropriate \font commands in
+\@chooseheaderfonts and \@choosebodyfonts.  You will have to make
+fancier changes if you are using classification labels.  
+
+At the end of memo.doc, there is a list of all the variables and
+macros used in memo.sty that are not defined in LaTeX.  Search for
+"END OF MEMO.DOC".  There are also two lists of the more important
+macros defined in memo.doc.  One is sorted alphabetically, and the
+other is sorted by line number.
+
+
+CHANGING THE .DOC FILE INTO A .STY FILE
+
+I use sed (a UNIX utility) to turn my memo.doc file into a
+memo.sty file.  If you put the commands below into a file
+named sedfile, run 
+  
+  sed -f sedfile memo.doc > memo.sty
+
+s/%.*/%/g
+s/[ 	][ 	]*/ /g
+s/^ //
+/^[ 	]*%/d
+/^[ 	]*$/d
+//d
+
+The parts of the lines that read [ 	] are actually square
+brackets enclosing a blank and a tab character.
+
+Line 1 removes everything that follows %s.
+Line 2 converts multiple blanks into single spaces.
+Line 3 gets rid of blanks at the beginning of lines.
+Line 4 gets rid of lines containing only blanks and comments.
+Line 5 gets rid of lines containing only blanks.
+Line 6 gets rid of lines containing Control-L characters.
+
+This script only works because I follow certain conventions when I
+write TeX code.  For example, if you use a blank line instead of
+an explicit \par token, the sed script will fail.
+
+\def\x{abc
+
+def}
+
+  is NOT the same as
+
+\def\x{abc
+def}
+
+There may be other constructions that don't work with this sed
+script, so be careful.  It IS really nice to have a commented doc
+file as well as its quicker running sty file, so it may be worth
+the extra care that it takes.
+
+
+WHERE I AM
+
+Feel free to write e-mail (sxs@lanl.gov) or phone (505-667-5460)
+or write a letter:
+
+  Steve Sydoriak
+  Los Alamos National Laboratory
+  Group C-2, MS B253
+  Los Alamos, New Mexico 87545
+
+I might be able to help you stumble through some awkward piece of
+code. 

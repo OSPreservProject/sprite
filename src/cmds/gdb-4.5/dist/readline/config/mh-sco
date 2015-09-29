@@ -1,0 +1,5 @@
+# Define USG as -DUSG if you are using a System V operating system.
+USG = -DUSG -D_POSIX_SOURCE=1
+RANLIB = echo >/dev/null
+INSTALL_PROG = cp
+

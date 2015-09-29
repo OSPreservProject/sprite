@@ -1,0 +1,3059 @@
+#! /bin/sh
+# This is a shell archive, meaning:
+# 1. Remove everything above the #! /bin/sh line.
+# 2. Save the resulting text in a file.
+# 3. Execute the file with /bin/sh (not csh) to create:
+#	Makefile
+#	README
+#	doc.pl
+#	docmac.tex
+#	dvidoc.1
+#	dvidoc.sty
+#	dvityext.c
+#	dvityext.h
+#	texpaths.h
+#	dvidoc.c
+# This archive created: Tue Jul  7 00:39:54 1987
+# By:	Ken Yap ()
+export PATH; PATH=/bin:/usr/bin:$PATH
+echo shar: "extracting 'Makefile'" '(732 characters)'
+if test -f 'Makefile'
+then
+	echo shar: "will not over-write existing file 'Makefile'"
+else
+cat << \SHAR_EOF > 'Makefile'
+DEST=/usr/local/bin
+LIB=/usr/lib/tex/fonts
+MACROS=/usr/lib/tex/macros
+
+CFLAGS=-g
+PFLAGS=-g
+LDFLAGS=-g
+
+.SUFFIXES:
+.SUFFIXES: .web .p .o .dvi .pl .tfm
+
+all:	dvidoc doc.tfm dvidoc.dvi
+
+.web.p:
+	tangle $<
+	pxp -O -f $*.p > tmp
+	mv tmp $*.p
+
+.p.o:
+	$(PC) -c $(PFLAGS) $*.p
+
+.web.dvi:
+	weave $<
+	tex $*.tex
+	rm $*.tex
+
+.pl.tfm:
+	pltotf $< $*.tfm
+
+dvidoc.p:	dvidoc.web
+
+dvidoc.o:	dvidoc.p
+
+dvityext.o:	dvityext.c
+	$(CC) -c $(CFLAGS) dvityext.c
+
+dvidoc: dvidoc.o dvityext.o
+	$(PC) -o $@ $(LDFLAGS) dvidoc.o dvityext.o
+
+install: all
+	install -m 644 doc.tfm $(LIB)
+	install -m 755 dvidoc $(DEST)
+	install -m 644 -c docmac.tex $(MACROS)
+
+clean:
+	-rm -f *.o dvidoc.p dvidoc dvidoc.log dvidoc.tex dvidoc.pool \
+	CONTENTS.tex dvidoc.dvi doc.tfm
+SHAR_EOF
+if test 732 -ne "`wc -c < 'Makefile'`"
+then
+	echo shar: "error transmitting 'Makefile'" '(should have been 732 characters)'
+fi
+fi
+echo shar: "extracting 'README'" '(1585 characters)'
+if test -f 'README'
+then
+	echo shar: "will not over-write existing file 'README'"
+else
+cat << \SHAR_EOF > 'README'
+DVIDOC is a postprocessor for TeX DVI files that generates output for
+character devices like terminals and line printers.
+
+- It isn't really a previewer because the output may not have line and
+page breaks in the same place as the high resolution version.  It
+however does get interword spacing right. It might be useful for
+documents that need to be generated in two versions, for
+high-resolution devices and for line printers. You put \input docmac at
+the top of the file before TeXing.  (The macro file tells TeX to use a
+fixed width font everywhere.) For LaTeX you include the document style
+dvidoc.  You remove this command before you do the high resolution
+version.
+
+- It was modified from its last incarnation as a Pyramid version.  The
+comments indicate that it originated from OSU in 1983. The original is
+based on Dvitype.
+
+- It has only been tested in 4.3 BSD and Sun 3.2 systems. It should not
+be difficult to figure out what changes need to be made for your local
+environment.  You will need the following programs: tangle, pxp (if
+your Pascal doesn't have an otherwise clause for case statements), pc,
+pltotf (to generate the tfm file), weave and tex (if you want to read
+the documentation).
+
+- Since this was a learning experience in WEB for me, I won't be good
+at answering questions about the innards. But I will receive bug
+reports and fixes gratefully.
+
+- The program is based largely on the work of Don Knuth, David Fuchs
+and Howard Trickey. If anything broke, it was probably my hack.
+
+	Ken
+	ken@rochester.arpa or ken@cs.rochester.edu
+	..!rochester!ken
+	July 1987
+SHAR_EOF
+if test 1585 -ne "`wc -c < 'README'`"
+then
+	echo shar: "error transmitting 'README'" '(should have been 1585 characters)'
+fi
+fi
+echo shar: "extracting 'doc.pl'" '(9813 characters)'
+if test -f 'doc.pl'
+then
+	echo shar: "will not over-write existing file 'doc.pl'"
+else
+cat << \SHAR_EOF > 'doc.pl'
+(FAMILY UNSPECIFIED)
+(FACE F MRR)
+(CODINGSCHEME UNSPECIFIED)
+(DESIGNSIZE R 10.0)
+(COMMENT DOC FONT DERIVED FROM CMTT10)
+(COMMENT DESIGNSIZE IS IN POINTS)
+(COMMENT OTHER SIZES ARE MULTIPLES OF DESIGNSIZE)
+(CHECKSUM O 0)
+(SEVENBITSAFEFLAG TRUE)
+(FONTDIMEN
+   (SLANT R 0.0)
+   (SPACE R 0.524996)
+   (STRETCH R 1.049991)
+   (SHRINK R 0.0)
+   (XHEIGHT R 0.430555)
+   (QUAD R 0.524996)
+   (EXTRASPACE R 0.524996)
+   )
+(LIGTABLE
+   (LABEL O 41)
+   (LIG O 140 O 16)
+   (STOP)
+   (LABEL O 77)
+   (LIG O 140 O 17)
+   (STOP)
+   )
+(CHARACTER O 0
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER O 1
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER O 2
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER O 3
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER O 4
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER O 5
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER O 6
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER O 7
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER O 10
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER O 11
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER O 12
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER O 13
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER O 14
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER O 15
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER O 16
+   (CHARWD R 0.524996)
+   (CHARHT R 0.388888)
+   (CHARDP R 0.222223)
+   )
+(CHARACTER O 17
+   (CHARWD R 0.524996)
+   (CHARHT R 0.388888)
+   (CHARDP R 0.222223)
+   )
+(CHARACTER O 20
+   (CHARWD R 0.524996)
+   (CHARHT R 0.430555)
+   )
+(CHARACTER O 21
+   (CHARWD R 0.524996)
+   (CHARHT R 0.430555)
+   (CHARDP R 0.222223)
+   )
+(CHARACTER O 22
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER O 23
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER O 24
+   (CHARWD R 0.524996)
+   (CHARHT R 0.565973)
+   )
+(CHARACTER O 25
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER O 26
+   (CHARWD R 0.524996)
+   (CHARHT R 0.565555)
+   )
+(CHARACTER O 27
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER O 30
+   (CHARWD R 0.524996)
+   (CHARDP R 0.194446)
+   )
+(CHARACTER O 31
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER O 32
+   (CHARWD R 0.524996)
+   (CHARHT R 0.430555)
+   )
+(CHARACTER O 33
+   (CHARWD R 0.524996)
+   (CHARHT R 0.430555)
+   )
+(CHARACTER O 34
+   (CHARWD R 0.524996)
+   (CHARHT R 0.541667)
+   (CHARDP R 0.111112)
+   )
+(CHARACTER O 35
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER O 36
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER O 37
+   (CHARWD R 0.524996)
+   (CHARHT R 0.666667)
+   (CHARDP R 0.055555)
+   )
+(CHARACTER O 40
+   (CHARWD R 0.524996)
+   (CHARHT R 0.219444)
+   (CHARDP R 0.111112)
+   )
+(CHARACTER O 41
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   (COMMENT
+      (LIG O 140 O 16)
+      )
+   )
+(CHARACTER O 42
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER O 43
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER O 44
+   (CHARWD R 0.524996)
+   (CHARHT R 0.694445)
+   (CHARDP R 0.083333)
+   )
+(CHARACTER O 45
+   (CHARWD R 0.524996)
+   (CHARHT R 0.694445)
+   (CHARDP R 0.083333)
+   )
+(CHARACTER O 46
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER O 47
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER O 50
+   (CHARWD R 0.524996)
+   (CHARHT R 0.694445)
+   (CHARDP R 0.083331)
+   )
+(CHARACTER O 51
+   (CHARWD R 0.524996)
+   (CHARHT R 0.694445)
+   (CHARDP R 0.083331)
+   )
+(CHARACTER O 52
+   (CHARWD R 0.524996)
+   (CHARHT R 0.520834)
+   )
+(CHARACTER O 53
+   (CHARWD R 0.524996)
+   (CHARHT R 0.530554)
+   (CHARDP R -0.080557)
+   )
+(CHARACTER O 54
+   (CHARWD R 0.524996)
+   (CHARHT R 0.125)
+   (CHARDP R 0.138888)
+   )
+(CHARACTER O 55
+   (CHARWD R 0.524996)
+   (CHARHT R 0.530554)
+   (CHARDP R -0.080557)
+   )
+(CHARACTER O 56
+   (CHARWD R 0.524996)
+   (CHARHT R 0.125)
+   )
+(CHARACTER O 57
+   (CHARWD R 0.524996)
+   (CHARHT R 0.694445)
+   (CHARDP R 0.083331)
+   )
+(CHARACTER C 0
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C 1
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C 2
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C 3
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C 4
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C 5
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C 6
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C 7
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C 8
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C 9
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER O 72
+   (CHARWD R 0.524996)
+   (CHARHT R 0.430555)
+   )
+(CHARACTER O 73
+   (CHARWD R 0.524996)
+   (CHARHT R 0.430555)
+   (CHARDP R 0.138888)
+   )
+(CHARACTER O 74
+   (CHARWD R 0.524996)
+   (CHARHT R 0.555555)
+   (CHARDP R -0.055555)
+   )
+(CHARACTER O 75
+   (CHARWD R 0.524996)
+   (CHARHT R 0.415624)
+   (CHARDP R -0.195488)
+   )
+(CHARACTER O 76
+   (CHARWD R 0.524996)
+   (CHARHT R 0.555555)
+   (CHARDP R -0.055555)
+   )
+(CHARACTER O 77
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   (COMMENT
+      (LIG O 140 O 17)
+      )
+   )
+(CHARACTER O 100
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C A
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C B
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C C
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C D
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C E
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C F
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C G
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C H
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C I
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C J
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C K
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C L
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C M
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C N
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C O
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C P
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C Q
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   (CHARDP R 0.138888)
+   )
+(CHARACTER C R
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C S
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C T
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C U
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C V
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C W
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C X
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C Y
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C Z
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER O 133
+   (CHARWD R 0.524996)
+   (CHARHT R 0.694445)
+   (CHARDP R 0.083331)
+   )
+(CHARACTER O 134
+   (CHARWD R 0.524996)
+   (CHARHT R 0.694445)
+   (CHARDP R 0.083331)
+   )
+(CHARACTER O 135
+   (CHARWD R 0.524996)
+   (CHARHT R 0.694445)
+   (CHARDP R 0.083331)
+   )
+(CHARACTER O 136
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER O 137
+   (CHARWD R 0.524996)
+   (CHARDP R 0.095136)
+   )
+(CHARACTER O 140
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C a
+   (CHARWD R 0.524996)
+   (CHARHT R 0.430555)
+   )
+(CHARACTER C b
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C c
+   (CHARWD R 0.524996)
+   (CHARHT R 0.430555)
+   )
+(CHARACTER C d
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C e
+   (CHARWD R 0.524996)
+   (CHARHT R 0.430555)
+   )
+(CHARACTER C f
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C g
+   (CHARWD R 0.524996)
+   (CHARHT R 0.430555)
+   (CHARDP R 0.222223)
+   )
+(CHARACTER C h
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C i
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C j
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   (CHARDP R 0.222223)
+   )
+(CHARACTER C k
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C l
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER C m
+   (CHARWD R 0.524996)
+   (CHARHT R 0.430555)
+   )
+(CHARACTER C n
+   (CHARWD R 0.524996)
+   (CHARHT R 0.430555)
+   )
+(CHARACTER C o
+   (CHARWD R 0.524996)
+   (CHARHT R 0.430555)
+   )
+(CHARACTER C p
+   (CHARWD R 0.524996)
+   (CHARHT R 0.430555)
+   (CHARDP R 0.222223)
+   )
+(CHARACTER C q
+   (CHARWD R 0.524996)
+   (CHARHT R 0.430555)
+   (CHARDP R 0.222223)
+   )
+(CHARACTER C r
+   (CHARWD R 0.524996)
+   (CHARHT R 0.430555)
+   )
+(CHARACTER C s
+   (CHARWD R 0.524996)
+   (CHARHT R 0.430555)
+   )
+(CHARACTER C t
+   (CHARWD R 0.524996)
+   (CHARHT R 0.5535755)
+   )
+(CHARACTER C u
+   (CHARWD R 0.524996)
+   (CHARHT R 0.430555)
+   )
+(CHARACTER C v
+   (CHARWD R 0.524996)
+   (CHARHT R 0.430555)
+   )
+(CHARACTER C w
+   (CHARWD R 0.524996)
+   (CHARHT R 0.430555)
+   )
+(CHARACTER C x
+   (CHARWD R 0.524996)
+   (CHARHT R 0.430555)
+   )
+(CHARACTER C y
+   (CHARWD R 0.524996)
+   (CHARHT R 0.430555)
+   (CHARDP R 0.222223)
+   )
+(CHARACTER C z
+   (CHARWD R 0.524996)
+   (CHARHT R 0.430555)
+   )
+(CHARACTER O 173
+   (CHARWD R 0.524996)
+   (CHARHT R 0.694445)
+   (CHARDP R 0.083331)
+   )
+(CHARACTER O 174
+   (CHARWD R 0.524996)
+   (CHARHT R 0.694445)
+   (CHARDP R 0.083331)
+   )
+(CHARACTER O 175
+   (CHARWD R 0.524996)
+   (CHARHT R 0.694445)
+   (CHARDP R 0.083331)
+   )
+(CHARACTER O 176
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+(CHARACTER O 177
+   (CHARWD R 0.524996)
+   (CHARHT R 0.611112)
+   )
+SHAR_EOF
+if test 9813 -ne "`wc -c < 'doc.pl'`"
+then
+	echo shar: "error transmitting 'doc.pl'" '(should have been 9813 characters)'
+fi
+fi
+echo shar: "extracting 'docmac.tex'" '(665 characters)'
+if test -f 'docmac.tex'
+then
+	echo shar: "will not over-write existing file 'docmac.tex'"
+else
+cat << \SHAR_EOF > 'docmac.tex'
+\baselineskip=12pt
+\font\docfont=doc
+\textfont0=\docfont \scriptfont0=\docfont \scriptscriptfont0=\docfont
+\def\rm{\fam0\docfont}
+\textfont1=\docfont \scriptfont1=\docfont \scriptscriptfont1=\docfont
+\def\mit{\fam1} \def\oldstyle{\fam1\docfont}
+\def\it{\fam\itfam\docfont} % \it is family 4
+\textfont\itfam=\docfont
+\def\sl{\fam\slfam\docfont} % \sl is family 5
+\textfont\slfam=\docfont
+\def\bf{\fam\bffam\docfont} % \bf is family 6
+\textfont\bffam=\docfont \scriptfont\bffam=\docfont
+\scriptscriptfont\bffam=\docfont
+\def\tt{\fam\ttfam\docfont} % \tt is family 7
+\textfont\ttfam=\docfont
+\def\TeX{TeX}
+\def\LaTeX{LaTeX}
+\def\SliTeX{SliTeX}
+\def\BibTeX{BibTeX}
+\rm
+SHAR_EOF
+if test 665 -ne "`wc -c < 'docmac.tex'`"
+then
+	echo shar: "error transmitting 'docmac.tex'" '(should have been 665 characters)'
+fi
+fi
+echo shar: "extracting 'dvidoc.1'" '(1803 characters)'
+if test -f 'dvidoc.1'
+then
+	echo shar: "will not over-write existing file 'dvidoc.1'"
+else
+cat << \SHAR_EOF > 'dvidoc.1'
+.\" $Header
+.if t .ds TX T\h'-.1667m'\v'.22m'E\h'-.125m'\v'-.22m'X
+.if n .ds TX TeX
+.if t .ds LX L\v'-.22m'a\v'.22m'T\h'-.1667m'\v'.22m'E\h'-.125m'\v'-.22m'X
+.if n .ds LX LaTeX
+.TH DVIDOC 1
+.UC
+.SH NAME
+dvidoc \- display \*(TX DVI files on character devices
+.SH SYNOPSIS
+.B dvidoc
+[
+.B -e
+] [
+.B -sstartpage
+] [
+.B -mmaxpages
+] dvifile
+.SH DESCRIPTION
+.I Dvidoc
+attempts to display the contents of a DVI file on a character device,
+e.g. a tty.
+The output will not be an exact representation of the DVI file
+since \*(TX output is designed for high-resolution devices.
+Math mode and tables are not handled well.
+Also, line and page breaks will be different when output to a
+high-resolution device.
+.PP
+The
+.I -e
+flag produces an error report on
+.I file.err
+where file is the basename of the DVI file.
+.PP
+The
+.I -s
+flag allows a starting page to be specified in
+the form \\count0[.\\count1[.\\count2]]. * is a wildcard.
+Remember to escape metacharacters.
+.PP
+The
+.I -m
+flag allows the number of pages to output to be specified.
+.PP
+The suffix
+.I .dvi
+is optional in the file spec.
+.PP
+To use 
+.I dvidoc
+you must 
+.I \input
+the macro file
+.I docmac.tex
+at the beginning of your \*(TX document or
+include the style option
+.I dvidoc
+in the \\documentstyle
+line of your \*(LX document.
+This file redefines the width of the roman, italic, boldface and typewriter
+fonts as well as some key parameters.
+When you wish to output the final document to the laser printer or other
+high resolution device you should remove the includes
+and reprocess your document.
+.SH FILES
+.nf
+.ta \w'/usr/lib/tex/macros/docmac.tex   'u
+/usr/lib/tex/macros/docmac.tex	Input macro package for \*(TX
+.sp
+.ta \w'/usr/lib/tex/macros/dvidoc.sty   'u
+/usr/lib/tex/macros/dvidoc.sty	Style option for \*(LX
+.fi
+.SH SEE ALSO
+tex(1), latex(1)
+SHAR_EOF
+if test 1803 -ne "`wc -c < 'dvidoc.1'`"
+then
+	echo shar: "error transmitting 'dvidoc.1'" '(should have been 1803 characters)'
+fi
+fi
+echo shar: "extracting 'dvidoc.sty'" '(637 characters)'
+if test -f 'dvidoc.sty'
+then
+	echo shar: "will not over-write existing file 'dvidoc.sty'"
+else
+cat << \SHAR_EOF > 'dvidoc.sty'
+% This was sort of cribbed from lfonts.tex.
+% I have no idea how close to correctness it is.
+% However, it has worked on some files at 10pt.
+%
+% Unfortunately, I think that there is some kind of rounding
+% problem in dvidoc itself.
+%
+% John Pavel, March 1987
+%
+\makeatletter
+\def\rm{\protect\pdoc}
+\def\it{\protect\pdoc}
+\def\bf{\protect\pdoc}
+\def\sl{\protect\pdoc}
+\def\sf{\protect\pdoc}
+\def\sc{\protect\pdoc}
+\def\tt{\protect\pdoc}
+\newfam\docfam
+\def\pdoc{\@getfont\pdoc\docfam\@xpt{doc}}
+\makeatother
+\baselineskip 12pt
+\oddsidemargin 0pt \evensidemargin 0pt
+\def\TeX{TeX}
+\def\LaTeX{LaTeX}
+\def\SliTeX{SliTeX}
+\def\BibTeX{BibTeX}
+SHAR_EOF
+if test 637 -ne "`wc -c < 'dvidoc.sty'`"
+then
+	echo shar: "error transmitting 'dvidoc.sty'" '(should have been 637 characters)'
+fi
+fi
+echo shar: "extracting 'dvityext.c'" '(6497 characters)'
+if test -f 'dvityext.c'
+then
+	echo shar: "will not over-write existing file 'dvityext.c'"
+else
+cat << \SHAR_EOF > 'dvityext.c'
+/*
+	External procedures for use with dvidoc.
+	Adapted from those used in dvip.
+	Written by H. Trickey, 9/3/83.
+	
+	Implement the following procedures (as declared in Pascal)
+
+	procedure opendvifile;
+	function getbyte: integer;
+	function signedbyte: integer;
+	function gettwobytes: integer;
+	function signedpair: integer;
+	function getthreebytes: integer;
+	function signedtrio: integer;
+	function signedquad: integer;
+	function curpos(var f:bytefile):integer;
+	procedure setpos(var f:bytefile;n:integer);
+	procedure setpaths;
+	function testaccess(accessmode:integer; filepath:integer):boolean;
+
+	Declaration for eofdvifile changed from int to char to match
+	Pascal boolean, otherwise fails on 68000's (byte ordering problem).
+
+	Ken Yap, Feb 1986
+*/
+
+#include <stdio.h>
+#include <strings.h>
+#include "texpaths.h"
+
+static FILE *dvif;
+
+extern char eofdvifile; /* needs to be set true when this happens */
+extern int curloc; /* needs to be incremented by getbyte, signedbyte */
+
+#define namelength 100   /* should agree with dvitype.ch */
+extern char curname[],realnameoffile[]; /* these have size namelength */
+
+/* open the dvifile, using the name in realnameoffile */
+opendvifile()
+{
+	register int i;
+
+	for (i = namelength - 1; i >= 0; --i)
+		if (realnameoffile[i] == ' ')
+			realnameoffile[i] = '\0';
+		else
+			break;
+	if (!(dvif=fopen(realnameoffile,"r")))
+		eofdvifile = 1;
+	else
+		eofdvifile = 0;
+}
+
+/* return unsigned version of next byte in dvifile */
+int getbyte()
+{
+	register int c;
+	if ((c = getc(dvif))==EOF) {
+		eofdvifile = 1;
+		return(0);
+		}
+	curloc++;
+	return(c);
+}
+
+/* return signed version of next byte in dvifile */
+int signedbyte()
+{	register int c;
+	if ((c = getc(dvif))==EOF) {
+		eofdvifile = 1;
+		return(0);
+		}
+	curloc++;
+	if (c>127) return(c-256);
+	return(c);
+}
+
+/* return unsigned value of next two bytes (high order first) */
+int gettwobytes()
+{
+	register int a,b;
+	a = getc(dvif);
+	eofdvifile = ((b = getc(dvif))==EOF);
+	curloc += 2;
+	return((a << 8) | b);
+}
+
+/* return signed value of next two bytes (high order first) */
+int signedpair()
+{
+	register int a,b;
+	if ( (a = getc(dvif)) > 127) a -= 256; /* sign extend */
+	eofdvifile = ((b = getc(dvif))==EOF);
+	curloc += 2;
+	return((a << 8) | b);
+}
+
+/* return unsigned value of next three bytes */
+int getthreebytes()
+{
+	register int a,b,c;
+	a = getc(dvif);
+	b = getc(dvif);
+	eofdvifile = ((c = getc(dvif))==EOF);
+	curloc +=3;
+	return((a << 16) | (b << 8) | c);
+}
+
+/* return signed value of next three bytes */
+int signedtrio()
+{
+	register int a,b,c;
+	if ( (a = getc(dvif)) > 127) a -= 256;
+	b = getc(dvif);
+	eofdvifile = ((c = getc(dvif))==EOF);
+	curloc +=3;
+	return((a << 16) | (b << 8) | c);
+}
+
+/* return value of next four bytes */
+int signedquad()
+{
+	register int a,b,c,d;
+	a = getc(dvif);
+	b = getc(dvif);
+	c = getc(dvif);
+	eofdvifile = ((d = getc(dvif))==EOF);
+	curloc += 4;
+	return((a << 24) | (b << 16) | (c << 8) | d);
+}
+
+/* seek to byte n of file f: actually, assume f is for dvifile */
+setpos(f,n)
+	int f; /* not really, but we ignore it */
+	int n;
+{
+	if (n>=0) {
+	    fseek(dvif,(long) n,0); 
+	    eofdvifile = 0;
+	    }
+	else {
+	    fseek(dvif, (long) n, 2);
+	    eofdvifile = 1;
+	    }
+}
+
+/* return current byte offset in file f (again, assume dvifile) */
+int curpos(f)
+	int f;
+{
+	return((int) ftell(dvif));
+}
+
+char *fontpath;
+
+char *getenv();
+
+/*
+ * setpaths is called to set up the pointer fontpath
+ * as follows:  if the user's environment has a value for TEXFONTS
+ * then use it;  otherwise, use defaultfontpath.
+ */
+setpaths()
+{
+	register char *envpath;
+	
+	if ((envpath = getenv("TEXFONTS")) != NULL)
+	    fontpath = envpath;
+	else
+	    fontpath = defaultfontpath;
+}
+
+/*
+ *	testaccess(amode,filepath)
+ *
+ *  Test whether or not the file whose name is in the global curname
+ *  can be opened for reading (if mode=READACCESS)
+ *  or writing (if mode=WRITEACCESS).
+ *
+ *  The filepath argument is one of the ...FILEPATH constants defined below.
+ *  If the filename given in curname does not begin with '/', we try 
+ *  prepending all the ':'-separated areanames in the appropriate path to the
+ *  filename until access can be made, if it ever can.
+ *
+ *  The realnameoffile global array will contain the name that yielded an
+ *  access success.
+ */
+
+#define READACCESS 4
+#define WRITEACCESS 2
+
+#define NOFILEPATH 0
+#define FONTFILEPATH 3
+
+typedef enum {FALSE, TRUE} bool;
+
+bool
+testaccess(amode,filepath)
+    int amode,filepath;
+{
+    register bool ok;
+    register char *p;
+    char *curpathplace;
+    int f;
+    
+    switch(filepath) {
+	case NOFILEPATH: curpathplace = NULL; break;
+	case FONTFILEPATH: curpathplace = fontpath; break;
+	}
+    if (curname[0]=='/')	/* file name has absolute path */
+	curpathplace = NULL;
+    do {
+	packrealnameoffile(&curpathplace);
+	if (amode==READACCESS)
+	    /* use system call "access" to see if we could read it */
+	    if (access(realnameoffile,READACCESS)==0) ok = TRUE;
+	    else ok = FALSE;
+	else {
+	    /* WRITEACCESS: use creat to see if we could create it, but close
+	    the file again if we're OK, to let pc open it for real */
+	    f = creat(realnameoffile,0666);
+	    if (f>=0) ok = TRUE;
+	    else ok = FALSE;
+	    if (ok)
+		close(f);
+	    }
+    } while (!ok && curpathplace != NULL);
+    if (ok) {  /* pad realnameoffile with blanks, as Pascal wants */
+	for (p = realnameoffile; *p != '\0'; p++)
+	    /* nothing: find end of string */ ;
+	while (p < &(realnameoffile[namelength]))
+	    *p++ = ' ';
+	}
+    return (ok);
+}
+
+/*
+ * packrealnameoffile(cpp) makes realnameoffile contain the directory at *cpp,
+ * followed by '/', followed by the characters in curname up until the
+ * first blank there, and finally a '\0'.  The cpp pointer is left pointing
+ * at the next directory in the path.
+ * But: if *cpp == NULL, then we are supposed to use curname as is.
+ */
+packrealnameoffile(cpp)
+    char **cpp;
+{
+    register char *p,*realname;
+    
+    realname = realnameoffile;
+    if ((p = *cpp)!=NULL) {
+	while ((*p != ':') && (*p != '\0')) {
+	    *realname++ = *p++;
+	    if (realname == &(realnameoffile[namelength-1]))
+		break;
+	    }
+	if (*p == '\0') *cpp = NULL; /* at end of path now */
+	else *cpp = p+1; /* else get past ':' */
+	*realname++ = '/';  /* separate the area from the name to follow */
+	}
+    /* now append curname to realname... */
+    p = curname;
+    while (*p != ' ') {
+	if (realname >= &(realnameoffile[namelength-1])) {
+	    fprintf(stderr,"! Full file name is too long\n");
+	    break;
+	    }
+	*realname++ = *p++;
+	}
+    *realname = '\0';
+}
+SHAR_EOF
+if test 6497 -ne "`wc -c < 'dvityext.c'`"
+then
+	echo shar: "error transmitting 'dvityext.c'" '(should have been 6497 characters)'
+fi
+fi
+echo shar: "extracting 'dvityext.h'" '(577 characters)'
+if test -f 'dvityext.h'
+then
+	echo shar: "will not over-write existing file 'dvityext.h'"
+else
+cat << \SHAR_EOF > 'dvityext.h'
+procedure opendvifile;
+	external;
+function getbyte: integer;
+	external;
+function signedbyte: integer;
+	external;
+function gettwobytes: integer;
+	external;
+function signedpair: integer;
+	external;
+function getthreebytes: integer;
+	external;
+function signedtrio: integer;
+	external;
+function signedquad: integer;
+	external;
+function curpos(var f:bytefile):integer;
+	external;
+procedure setpos(var f:bytefile;n:integer);
+	external;
+procedure setpaths;
+	external;
+function testaccess(accessmode:integer; filepath:integer): boolean;
+	external;
+procedure exit(i:integer);
+	external;
+SHAR_EOF
+if test 577 -ne "`wc -c < 'dvityext.h'`"
+then
+	echo shar: "error transmitting 'dvityext.h'" '(should have been 577 characters)'
+fi
+fi
+echo shar: "extracting 'texpaths.h'" '(853 characters)'
+if test -f 'texpaths.h'
+then
+	echo shar: "will not over-write existing file 'texpaths.h'"
+else
+cat << \SHAR_EOF > 'texpaths.h'
+/*
+ * This file defines the default paths that will be used for TeX software.
+ * (These paths are used if the user's environment doesn't specify paths.)
+ *
+ * Paths should be colon-separated and no longer than MAXINPATHCHARS-1
+ * (for defaultinputpath) or MAXOTHPATHCHARS (for other default paths).
+ */
+
+#define MAXINPATHCHARS  700	/* maximum number of chars in an input path */
+
+#define defaultinputpath  ".:/usr/lib/tex/macros"
+    /* this should always start with "." */
+
+#define MAXOTHPATHCHARS 100     /* other paths should be much shorter */
+
+#define defaultfontpath   "/usr/lib/tex/fonts"
+    /* it is probably best not to include "." here to prevent confusion
+       by spooled device drivers that think they know where the fonts
+       really are */
+#define defaultformatpath ".:/usr/lib/tex/macros"
+#define defaultpoolpath   ".:/usr/lib/tex"
+
+SHAR_EOF
+if test 853 -ne "`wc -c < 'texpaths.h'`"
+then
+	echo shar: "error transmitting 'texpaths.h'" '(should have been 853 characters)'
+fi
+fi
+echo shar: "extracting 'dvidoc.c'" '(41656 characters)'
+if test -f 'dvidoc.c'
+then
+	echo shar: "will not over-write existing file 'dvidoc.c'"
+else
+cat << \SHAR_EOF > 'dvidoc.c'
+/*
+** The TeX text files device driver DVIDOC.WEB was originally written
+** at OSU in April, 1983, by modifying the utility DVItype.
+** Ken Yap (ken@cs.rochester.edu) modified it to work under 4.3 BSD.
+** In January 1988 Neta Amit (amit@umn-cs.cs.umn.edu) tangle'd version-2
+** (of July 1987). A little Icon program helped modify the resulting
+** dvidoc.p into something acceptable to p2c, a Pascal-to-C transformer. 
+** Dvidoc.c contained 3 errors that were fixed manually. 
+**
+** Although the program was not tested extensively, theoretically it
+** should behave just like the original dvidoc.
+*/
+extern void	exit();
+/*
+**	Definitions for i/o
+*/
+# include <stdio.h>
+typedef struct {
+	FILE	*fp;
+	unsigned short	eoln:1,
+			eof:1,
+			out:1,
+			init:1,
+			:12;
+	char	buf;
+} 	text;
+text	input = { stdin, 0, 0 };
+text	output = { stdout, 0, 0 };
+# define Fread(x, f) fread((char *)&x, sizeof(x), 1, f)
+# define Get(f) Fread((f).buf, (f).fp)
+# define Getx(f) (f).init = 1, (f).eoln = (((f).buf = fgetc((f).fp)) == '\n') ? (((f).buf = ' '), 1) : 0
+# define Getchr(f) (f).buf, Getx(f)
+static FILE	*Tmpfil;
+static long	Tmplng;
+static double	Tmpdbl;
+# define Fscan(f) (f).init ? ungetc((f).buf, (f).fp) : 0, Tmpfil = (f).fp
+# define Scan(p, a) Scanck(fscanf(Tmpfil, p, a))
+void	Scanck();
+# define Fwrite(x, f) fwrite((char *)&x, sizeof(x), 1, f)
+# define Put(f) Fwrite((f).buf, (f).fp)
+# define Putx(f) (f).eoln = ((f).buf == '\n'), (void)fputc((f).buf, (f).fp)
+# define Putchr(c, f) (f).buf = (c), Putx(f)
+# define Putl(f, v) (f).eoln = v
+# define Finish(f) ((f).out && !(f).eoln) ? (Putchr('\n', f), 0) : 0, rewind((f).fp)
+# ifdef READONLY
+static char	Rmode[] = "r";
+# else
+static char	Rmode[] = "r+";
+# endif
+# define Reset(f, n) (f).init = (f).init ? rewind((f).fp) : (((f).fp = Fopen(n, Rmode)), 1), (f).eof = (f).out = 0, Get(f)
+# define Resetx(f, n) (f).init = (f).init ? (Finish(f)) : (((f).fp = Fopen(n, Rmode)), 1), (f).eof = (f).out = 0, Getx(f)
+# ifdef WRITEONLY
+static char	Wmode[] = "w";
+# else
+static char	Wmode[] = "w+";
+# endif
+# define Rewrite(f, n) (f).init = (f).init ? rewind((f).fp) : (((f).fp = Fopen(n, Wmode)), 1), (f).out = (f).eof = 1
+# define Rewritex(f, n) (f).init = (f).init ? (Finish(f)) : (((f).fp = Fopen(n, Wmode)), 1), (f).out = (f).eof = (f).eoln = 1
+FILE	*Fopen();
+# define MAXFILENAME 256
+/*
+**	Definitions for case-statements
+**	and for non-local gotos
+*/
+# define Line __LINE__
+void	Caseerror();
+# include <setjmp.h>
+static struct Jb { jmp_buf	jb; } J[1];
+/*
+**	Definitions for standard types
+*/
+typedef char	boolean;
+# define false (boolean)0
+# define true (boolean)1
+extern char	*Bools[];
+typedef int	integer;
+typedef double	real;
+extern double fabs();
+extern char *strncpy();
+/*
+**	Definitions for argv-operations
+*/
+int	argc;
+char	**argv;
+ void
+Argvgt(n, cp, l)
+int	n;
+register int	l;
+register char	*cp;
+{
+	register char	*sp;
+
+	for (sp = argv[n]; l > 0 && *sp; l--)
+		*cp++ = *sp++;
+	while (l-- > 0)
+		*cp++ = ' ';
+}
+/*
+**	Start of program definitions
+*/
+# define maxfonts 100
+# define maxwidths 10000
+# define terminallinelength 150
+# define stacksize 100
+# define namesize 1000
+# define namelength 100
+# define pagewidthmax 132
+# define pagelengthmax 88
+typedef unsigned char	asciicode;
+typedef struct {
+	FILE	*fp;
+	unsigned short	eoln:1,
+			eof:1,
+			out:1,
+			init:1,
+			:12;
+	char	buf;
+} 	textfile;
+typedef integer	eightbits;
+typedef struct {
+	FILE	*fp;
+	unsigned short	eoln:1,
+			eof:1,
+			out:1,
+			init:1,
+			:12;
+	char	buf;
+} 	bytefile;
+typedef struct { asciicode	A[128]; }	T59;
+typedef struct { char	A[255 + 1]; }	T60;
+typedef struct { char	A[namelength - 1 + 1]; }	T61;
+typedef struct { integer	A[maxfonts + 1]; }	T62;
+typedef struct { unsigned short	A[maxfonts + 1]; }	T63;
+typedef struct { asciicode	A[namesize + 1]; }	T64;
+typedef struct { integer	A[maxfonts + 1]; }	T65;
+typedef struct { integer	A[maxfonts + 1]; }	T66;
+typedef struct { integer	A[maxfonts + 1]; }	T67;
+typedef struct { integer	A[maxfonts + 1]; }	T68;
+typedef struct { integer	A[maxfonts + 1]; }	T69;
+typedef struct { integer	A[maxfonts + 1]; }	T70;
+typedef struct { integer	A[maxfonts + 1]; }	T71;
+typedef struct { integer	A[maxwidths + 1]; }	T72;
+typedef struct { integer	A[255 + 1]; }	T73;
+typedef struct { integer	A[maxwidths + 1]; }	T74;
+typedef struct { integer	A[9 + 1]; }	T75;
+typedef struct { boolean	A[9 + 1]; }	T76;
+typedef struct { integer	A[9 + 1]; }	T77;
+typedef struct { asciicode	A[terminallinelength + 1]; }	T78;
+typedef struct { char	A[9 - 1 + 1]; }	T79;
+typedef struct { struct { asciicode	A[pagelengthmax - 1 + 1]; }	A[pagewidthmax - 1 + 1]; }	T80;
+typedef struct { unsigned char	A[pagelengthmax - 1 + 1]; }	T81;
+typedef struct { integer	A[stacksize + 1]; }	T82;
+typedef struct { integer	A[stacksize + 1]; }	T83;
+T59	xord;
+T60	xchr;
+bytefile	dvifile;
+boolean	eofdvifile;
+bytefile	tfmfile;
+integer	curloc;
+T61	basename, curname, realnameoffile;
+eightbits	b0, b1, b2, b3;
+T62	fontnum;
+T63	fontname;
+T64	names;
+T65	fontchecksum;
+T66	fontscaledsize;
+T67	fontdesignsize;
+T68	fontspace;
+T69	fontbc;
+T70	fontec;
+T71	widthbase;
+T72	width;
+unsigned char	nf;
+unsigned short	widthptr;
+T73	inwidth;
+integer	tfmchecksum;
+T74	pixelwidth;
+real	horizconv;
+real	vertconv;
+real	truehorizconv;
+real	truevertconv;
+integer	numerator, denominator;
+integer	mag;
+integer	maxpages;
+real	horizresolution;
+real	vertresolution;
+integer	newmag;
+T75	startcount;
+T76	startthere;
+unsigned char	startvals;
+T77	count;
+T78	buffer;
+unsigned char	bufptr;
+boolean	inpostamble;
+T79	defaultdirectory;
+unsigned char	i;
+boolean	logerrors;
+textfile	errfile;
+T80	pagebuffer;
+T81	linehwm;
+unsigned char	pagehwm;
+integer	h, v, w, x, y, z,
+	hh, vv;
+T82	hstack, vstack, wstack, xstack, ystack, zstack;
+T83	hhstack, vvstack;
+integer	maxv;
+integer	maxh;
+integer	maxs;
+integer	maxvsofar, maxhsofar, maxssofar;
+integer	totalpages;
+integer	pagecount;
+integer	s;
+integer	ss;
+integer	curfont;
+integer	oldbackpointer;
+integer	newbackpointer;
+boolean	started;
+integer	postloc;
+integer	firstbackpointer;
+integer	startloc;
+integer	k, m, n, p, q;
+
+extern void opendvifile();
+
+extern integer getbyte();
+
+extern integer signedbyte();
+
+extern integer gettwobytes();
+
+extern integer signedpair();
+
+extern integer getthreebytes();
+
+extern integer signedtrio();
+
+extern integer signedquad();
+
+extern integer curpos();
+
+extern void setpos();
+
+extern void setpaths();
+
+extern boolean testaccess();
+
+extern void exit();
+
+ void
+initialize()
+{
+	register integer	i;
+
+	setpaths();
+	{
+		integer	B1 = 0,
+			B2 = 31;
+
+		if (B1 <= B2)
+			for (i = B1; ; i++) {
+				xchr.A[i] = '?';
+				if (i == B2) break;
+			}
+	}
+	xchr.A[32] = ' ';
+	xchr.A[33] = '!';
+	xchr.A[34] = '"';
+	xchr.A[35] = '#';
+	xchr.A[36] = '$';
+	xchr.A[37] = '%';
+	xchr.A[38] = '&';
+	xchr.A[39] = '\'';
+	xchr.A[40] = '(';
+	xchr.A[41] = ')';
+	xchr.A[42] = '*';
+	xchr.A[43] = '+';
+	xchr.A[44] = ',';
+	xchr.A[45] = '-';
+	xchr.A[46] = '.';
+	xchr.A[47] = '/';
+	xchr.A[48] = '0';
+	xchr.A[49] = '1';
+	xchr.A[50] = '2';
+	xchr.A[51] = '3';
+	xchr.A[52] = '4';
+	xchr.A[53] = '5';
+	xchr.A[54] = '6';
+	xchr.A[55] = '7';
+	xchr.A[56] = '8';
+	xchr.A[57] = '9';
+	xchr.A[58] = ':';
+	xchr.A[59] = ';';
+	xchr.A[60] = '<';
+	xchr.A[61] = '=';
+	xchr.A[62] = '>';
+	xchr.A[63] = '?';
+	xchr.A[64] = '@';
+	xchr.A[65] = 'A';
+	xchr.A[66] = 'B';
+	xchr.A[67] = 'C';
+	xchr.A[68] = 'D';
+	xchr.A[69] = 'E';
+	xchr.A[70] = 'F';
+	xchr.A[71] = 'G';
+	xchr.A[72] = 'H';
+	xchr.A[73] = 'I';
+	xchr.A[74] = 'J';
+	xchr.A[75] = 'K';
+	xchr.A[76] = 'L';
+	xchr.A[77] = 'M';
+	xchr.A[78] = 'N';
+	xchr.A[79] = 'O';
+	xchr.A[80] = 'P';
+	xchr.A[81] = 'Q';
+	xchr.A[82] = 'R';
+	xchr.A[83] = 'S';
+	xchr.A[84] = 'T';
+	xchr.A[85] = 'U';
+	xchr.A[86] = 'V';
+	xchr.A[87] = 'W';
+	xchr.A[88] = 'X';
+	xchr.A[89] = 'Y';
+	xchr.A[90] = 'Z';
+	xchr.A[91] = '[';
+	xchr.A[92] = '\\';
+	xchr.A[93] = ']';
+	xchr.A[94] = '^';
+	xchr.A[95] = '_';
+	xchr.A[96] = '`';
+	xchr.A[97] = 'a';
+	xchr.A[98] = 'b';
+	xchr.A[99] = 'c';
+	xchr.A[100] = 'd';
+	xchr.A[101] = 'e';
+	xchr.A[102] = 'f';
+	xchr.A[103] = 'g';
+	xchr.A[104] = 'h';
+	xchr.A[105] = 'i';
+	xchr.A[106] = 'j';
+	xchr.A[107] = 'k';
+	xchr.A[108] = 'l';
+	xchr.A[109] = 'm';
+	xchr.A[110] = 'n';
+	xchr.A[111] = 'o';
+	xchr.A[112] = 'p';
+	xchr.A[113] = 'q';
+	xchr.A[114] = 'r';
+	xchr.A[115] = 's';
+	xchr.A[116] = 't';
+	xchr.A[117] = 'u';
+	xchr.A[118] = 'v';
+	xchr.A[119] = 'w';
+	xchr.A[120] = 'x';
+	xchr.A[121] = 'y';
+	xchr.A[122] = 'z';
+	xchr.A[123] = '{';
+	xchr.A[124] = '|';
+	xchr.A[125] = '}';
+	xchr.A[126] = '~';
+	{
+		integer	B3 = 127,
+			B4 = 255;
+
+		if (B3 <= B4)
+			for (i = B3; ; i++) {
+				xchr.A[i] = '?';
+				if (i == B4) break;
+			}
+	}
+	{
+		integer	B5 = 0,
+			B6 = 127;
+
+		if (B5 <= B6)
+			for (i = B5; ; i++) {
+				xord.A[i] = 32;
+				if (i == B6) break;
+			}
+	}
+	{
+		integer	B7 = 32,
+			B8 = 126;
+
+		if (B7 <= B8)
+			for (i = B7; ; i++) {
+				xord.A[xchr.A[i]] = i;
+				if (i == B8) break;
+			}
+	}
+	nf = 0;
+	widthptr = 0;
+	fontname.A[0] = 0;
+	fontspace.A[0] = 0;
+	maxpages = 1000000;
+	startvals = 0;
+	startthere.A[0] = false;
+	inpostamble = false;
+	(void)strncpy(defaultdirectory.A, "TeXfonts:", sizeof(defaultdirectory.A));
+	maxv = 2147483548;
+	maxh = 2147483548;
+	maxs = stacksize + 1;
+	maxvsofar = 0;
+	maxhsofar = 0;
+	maxssofar = 0;
+	pagecount = 0;
+	oldbackpointer = -1;
+	started = false;
+}
+
+ void
+jumpout()
+{
+	longjmp(J[0].jb, 9999);
+}
+
+ void
+opentfmfile()
+{
+	if (testaccess(4, 3))
+		Resetx(tfmfile, realnameoffile.A);
+	else {
+		(void)fprintf(errfile.fp, "TFM file not found\n"), Putl(errfile, 1);
+		longjmp(J[0].jb, 30);
+	}
+}
+
+ void
+readtfmword()
+{
+	char	byte;
+
+	byte = Getchr(tfmfile);
+	b0 = (unsigned)(byte);
+	if (b0 < 0)
+		b0 = b0 + 256;
+	byte = Getchr(tfmfile);
+	b1 = (unsigned)(byte);
+	if (b1 < 0)
+		b1 = b1 + 256;
+	byte = Getchr(tfmfile);
+	b2 = (unsigned)(byte);
+	if (b2 < 0)
+		b2 = b2 + 256;
+	byte = Getchr(tfmfile);
+	b3 = (unsigned)(byte);
+	if (b3 < 0)
+		b3 = b3 + 256;
+}
+
+ integer
+dvilength()
+{
+	register integer	R93;
+
+	setpos(&dvifile, -1);
+	R93 = curpos(&dvifile);
+	return R93;
+}
+
+ void
+movetobyte(n)
+	integer	n;
+{
+	setpos(&dvifile, n);
+	curloc = n;
+}
+
+ void
+printfont(f)
+	integer	f;
+{
+	register unsigned short	k;
+
+	if (f == nf)
+		(void)fprintf(errfile.fp, "UNDEFINED!"), Putl(errfile, 0);
+	else {
+		{
+			unsigned short	B9 = fontname.A[f],
+				B10 = fontname.A[f + 1] - 1;
+
+			if (B9 <= B10)
+				for (k = B9; ; k++) {
+					Putchr(xchr.A[names.A[k]], errfile);
+					if (k == B10) break;
+				}
+		}
+	}
+}
+
+ boolean
+intfm(z)
+	integer	z;
+{
+	register boolean	R94;
+	register integer	k;
+	integer	lh;
+	integer	nw;
+	unsigned short	wp;
+	integer	alpha, beta;
+
+	readtfmword();
+	lh = b2 * 256 + b3;
+	readtfmword();
+	fontbc.A[nf] = b0 * 256 + b1;
+	fontec.A[nf] = b2 * 256 + b3;
+	if (fontec.A[nf] < fontbc.A[nf])
+		fontbc.A[nf] = fontec.A[nf] + 1;
+	if (widthptr + fontec.A[nf] - fontbc.A[nf] + 1 > maxwidths) {
+		(void)fprintf(errfile.fp, "---not loaded, DVIDOC needs larger width table\n"), Putl(errfile, 1);
+		goto L9998;
+	}
+	wp = widthptr + fontec.A[nf] - fontbc.A[nf] + 1;
+	readtfmword();
+	nw = b0 * 256 + b1;
+	if ((nw == 0) || (nw > 256))
+		goto L9997;
+	{
+		integer	B11 = 1,
+			B12 = 3 + lh;
+
+		if (B11 <= B12)
+			for (k = B11; ; k++) {
+				if (eofdvifile)
+					goto L9997;
+				readtfmword();
+				if (k == 4)
+					if (b0 < 128)
+						tfmchecksum = ((b0 * 256 + b1) * 256 + b2) * 256 + b3;
+					else
+						tfmchecksum = (((b0 - 256) * 256 + b1) * 256 + b2) * 256 + b3;
+				if (k == B12) break;
+			}
+	}
+	if (wp > 0)
+		{
+			integer	B13 = widthptr,
+				B14 = wp - 1;
+
+			if (B13 <= B14)
+				for (k = B13; ; k++) {
+					readtfmword();
+					if (b0 > nw)
+						goto L9997;
+					width.A[k] = b0;
+					if (k == B14) break;
+				}
+		}
+	{
+		alpha = 16 * z;
+		beta = 16;
+		while (z >= 8388608) {
+			z = z / 2;
+			beta = beta / 2;
+		}
+	}
+	{
+		integer	B15 = 0,
+			B16 = nw - 1;
+
+		if (B15 <= B16)
+			for (k = B15; ; k++) {
+				readtfmword();
+				inwidth.A[k] = (((((b3 * z) / 256) + (b2 * z)) / 256) + (b1 * z)) / beta;
+				if (b0 > 0)
+					if (b0 < 255)
+						goto L9997;
+					else
+						inwidth.A[k] = inwidth.A[k] - alpha;
+				if (k == B16) break;
+			}
+	}
+	widthbase.A[nf] = widthptr - fontbc.A[nf];
+	if (wp > 0)
+		{
+			integer	B17 = widthptr,
+				B18 = wp - 1;
+
+			if (B17 <= B18)
+				for (k = B17; ; k++) {
+					width.A[k] = inwidth.A[width.A[k]];
+					pixelwidth.A[k] = Round(horizconv * (width.A[k]));
+					if (k == B18) break;
+				}
+		}
+	widthptr = wp;
+	R94 = true;
+	goto L9999;
+L9997:
+	(void)fprintf(errfile.fp, "---not loaded, TFM file is bad\n"), Putl(errfile, 1);
+L9998:
+	R94 = false;
+L9999:
+	;
+	return R94;
+}
+
+ boolean
+startmatch()
+{
+	register boolean	R95;
+	register unsigned char	k;
+	boolean	match;
+
+	match = true;
+	{
+		unsigned char	B19 = 0,
+			B20 = startvals;
+
+		if (B19 <= B20)
+			for (k = B19; ; k++) {
+				if (startthere.A[k] && (startcount.A[k] != count.A[k]))
+					match = false;
+				if (k == B20) break;
+			}
+	}
+	R95 = match;
+	return R95;
+}
+
+ void
+copyln()
+{
+	unsigned char	k;
+
+	k = 2;
+	while ((k < namelength) && (curname.A[k - 1] != ' ')) {
+		buffer.A[k - 3] = xord.A[curname.A[k - 1]];
+		k = k + 1;
+	}
+	buffer.A[k - 3] = xord.A[' '];
+}
+
+ integer
+getinteger()
+{
+	register integer	R96;
+	integer	x;
+	boolean	negative;
+
+	if (buffer.A[bufptr] == 45) {
+		negative = true;
+		bufptr = bufptr + 1;
+	} else
+		negative = false;
+	x = 0;
+	while ((buffer.A[bufptr] >= 48) && (buffer.A[bufptr] <= 57)) {
+		x = 10 * x + buffer.A[bufptr] - 48;
+		bufptr = bufptr + 1;
+	}
+	if (negative)
+		R96 = -x;
+	else
+		R96 = x;
+	return R96;
+}
+
+ void
+options()
+{
+	integer	j, k;
+
+	logerrors = false;
+	startvals = 0;
+	startthere.A[0] = false;
+	maxpages = 1000000;
+	horizresolution = 13.76582;
+	vertresolution = 6.0225;
+	newmag = 0;
+	basename.A[1 - 1] = ' ';
+	j = 1;
+	while (j < argc) {
+		Argvgt(j, curname.A, sizeof(curname.A));
+		if (curname.A[1 - 1] == '-') {
+			if (curname.A[2 - 1] == 'e')
+				logerrors = true;
+			else
+				if (curname.A[2 - 1] == 's') {
+					copyln();
+					bufptr = 0;
+					k = 0;
+					if (buffer.A[0] != 32)
+						do {
+							if (buffer.A[bufptr] == 42) {
+								startthere.A[k] = false;
+								bufptr = bufptr + 1;
+							} else {
+								startthere.A[k] = true;
+								startcount.A[k] = getinteger();
+							}
+							if ((k < 9) && (buffer.A[bufptr] == 46)) {
+								k = k + 1;
+								bufptr = bufptr + 1;
+							} else
+								if (buffer.A[bufptr] == 32)
+									startvals = k;
+								else {
+									(void)fprintf(stderr, "1.*.-5 specifies first page with \\count0=1, \\count2=-5.\n"), Putl(output, 1);
+									longjmp(J[0].jb, 30);
+								}
+						} while (!(startvals == k));
+				} else
+					if (curname.A[2 - 1] == 'm') {
+						copyln();
+						bufptr = 0;
+						if (buffer.A[0] != 32) {
+							maxpages = getinteger();
+							if (maxpages <= 0) {
+								(void)fprintf(stderr, "Maxpages should be a positive number.\n"), Putl(output, 1);
+								longjmp(J[0].jb, 30);
+							}
+						}
+					} else {
+						(void)fprintf(stderr, "Usage: dvidoc [-e] [-s<start page spec>] [-m<maxpages>] <dvi-file>\n"), Putl(output, 1);
+						longjmp(J[0].jb, 30);
+					}
+		} else
+			if (basename.A[1 - 1] == ' ')
+				Argvgt(j, basename.A, sizeof(basename.A));
+			else {
+				(void)fprintf(stderr, "Only one input file please\n"), Putl(output, 1);
+				longjmp(J[0].jb, 30);
+			}
+		j = j + 1;
+	}
+	if (basename.A[1 - 1] == ' ') {
+		(void)fprintf(stderr, "No input file specified\n"), Putl(output, 1);
+		longjmp(J[0].jb, 30);
+	}
+}
+
+ void
+definefont(e)
+	integer	e;
+{
+	unsigned char	f;
+	integer	p;
+	integer	n;
+	integer	c, q, d;
+	unsigned char	r;
+	unsigned short	j;
+	register unsigned short	k;
+	boolean	mismatch;
+
+	if (nf == maxfonts) {
+		(void)fprintf(stderr, " DVIDOC capacity exceeded (max fonts=%1d)!\n", maxfonts), Putl(output, 1);
+		jumpout();
+	}
+	fontnum.A[nf] = e;
+	f = 0;
+	while (fontnum.A[f] != e)
+		f = f + 1;
+	c = signedquad();
+	fontchecksum.A[nf] = c;
+	q = signedquad();
+	fontscaledsize.A[nf] = q;
+	d = signedquad();
+	fontdesignsize.A[nf] = d;
+	p = getbyte();
+	n = getbyte();
+	if (fontname.A[nf] + n + p > namesize) {
+		(void)fprintf(stderr, " DVIDOC capacity exceeded (name size=%1d)!\n", namesize), Putl(output, 1);
+		jumpout();
+	}
+	fontname.A[nf + 1] = fontname.A[nf] + n + p;
+	(void)fprintf(errfile.fp, "Font %1d: ", e), Putl(errfile, 0);
+	if (n + p == 0)
+		(void)fprintf(errfile.fp, "null font name!"), Putl(errfile, 0);
+	else
+		{
+			unsigned short	B21 = fontname.A[nf],
+				B22 = fontname.A[nf + 1] - 1;
+
+			if (B21 <= B22)
+				for (k = B21; ; k++) {
+					names.A[k] = getbyte();
+					if (k == B22) break;
+				}
+		}
+	nf = nf + 1;
+	printfont(nf - 1);
+	nf = nf - 1;
+	if (inpostamble) {
+		if (f < nf)
+			(void)fprintf(errfile.fp, "---this font was already defined!\n"), Putl(errfile, 1);
+	} else {
+		if (f == nf)
+			(void)fprintf(errfile.fp, "---this font wasn't loaded before!\n"), Putl(errfile, 1);
+	}
+	if (f == nf) {
+		{
+			unsigned short	B23 = 1,
+				B24 = namelength;
+
+			if (B23 <= B24)
+				for (k = B23; ; k++) {
+					curname.A[k - 1] = ' ';
+					if (k == B24) break;
+				}
+		}
+		r = 0;
+		{
+			unsigned short	B25 = fontname.A[nf],
+				B26 = fontname.A[nf + 1] - 1;
+
+			if (B25 <= B26)
+				for (k = B25; ; k++) {
+					r = r + 1;
+					if (r + 4 > namelength) {
+						(void)fprintf(stderr, " DVIDOC capacity exceeded (max font name length=%1d)!\n", namelength), Putl(output, 1);
+						jumpout();
+					}
+					curname.A[r - 1] = xchr.A[names.A[k]];
+					if (k == B26) break;
+				}
+		}
+		curname.A[r + 1 - 1] = '.';
+		curname.A[r + 2 - 1] = 't';
+		curname.A[r + 3 - 1] = 'f';
+		curname.A[r + 4 - 1] = 'm';
+		opentfmfile();
+		if (eofdvifile)
+			(void)fprintf(errfile.fp, "---not loaded, TFM file can't be opened!"), Putl(errfile, 0);
+		else {
+			if ((q <= 0) || (q >= 134217728))
+				(void)fprintf(errfile.fp, "---not loaded, bad scale (%1d)!", q), Putl(errfile, 0);
+			else
+				if ((d <= 0) || (d >= 134217728))
+					(void)fprintf(errfile.fp, "---not loaded, bad design size (%1d)!", d), Putl(errfile, 0);
+				else
+					if (intfm(q)) {
+						fontspace.A[nf] = q / 6;
+						if ((c != 0) && (tfmchecksum != 0) && (c != tfmchecksum)) {
+							(void)fprintf(errfile.fp, "---beware: check sums do not agree!\n"), Putl(errfile, 1);
+							(void)fprintf(errfile.fp, "   (%1d vs. %1d)\n", c, tfmchecksum), Putl(errfile, 1);
+							(void)fprintf(errfile.fp, "   "), Putl(errfile, 0);
+						}
+						(void)fprintf(errfile.fp, "---loaded at size %1d DVI units", q), Putl(errfile, 0);
+						d = Round((100.0 * horizconv * q) / ((real)(truehorizconv * d)));
+						if (d != 100) {
+							Putchr(' ', errfile),Putchr('\n', errfile);
+							(void)fprintf(errfile.fp, " (this font is magnified %1d%%)", d), Putl(errfile, 0);
+						}
+						nf = nf + 1;
+						fontspace.A[nf] = 0;
+					}
+		}
+		Putchr(' ', errfile),Putchr('\n', errfile);
+	} else {
+		if (fontchecksum.A[f] != c)
+			(void)fprintf(errfile.fp, "---check sum doesn't match previous definition!\n"), Putl(errfile, 1);
+		if (fontscaledsize.A[f] != q)
+			(void)fprintf(errfile.fp, "---scaled size doesn't match previous definition!\n"), Putl(errfile, 1);
+		if (fontdesignsize.A[f] != d)
+			(void)fprintf(errfile.fp, "---design size doesn't match previous definition!\n"), Putl(errfile, 1);
+		j = fontname.A[f];
+		k = fontname.A[nf];
+		mismatch = false;
+		while (j < fontname.A[f + 1]) {
+			if (names.A[j] != names.A[k])
+				mismatch = true;
+			j = j + 1;
+			k = k + 1;
+		}
+		if (k != fontname.A[nf + 1])
+			mismatch = true;
+		if (mismatch)
+			(void)fprintf(errfile.fp, "---font name doesn't match previous definition!\n"), Putl(errfile, 1);
+		Putchr(' ', errfile),Putchr('\n', errfile);
+	}
+}
+
+ void
+flushpage()
+{
+	register unsigned char	i;
+	register unsigned char	j;
+
+	{
+		unsigned char	B27 = 1,
+			B28 = pagehwm;
+
+		if (B27 <= B28)
+			for (j = B27; ; j++) {
+				{
+					unsigned char	B29 = 1,
+						B30 = linehwm.A[j - 1];
+
+					if (B29 <= B30)
+						for (i = B29; ; i++) {
+							Putchr(xchr.A[pagebuffer.A[i - 1].A[j - 1]], output);
+							if (i == B30) break;
+						}
+				}
+				Putchr('\n', output);
+				if (j == B28) break;
+			}
+	}
+	Putchr(12, output);
+}
+
+ void
+emptypage()
+{
+	pagehwm = 0;
+}
+
+ void
+outchar(p, hh, vv)
+	integer	p, hh, vv;
+{
+	unsigned char	i;
+	unsigned char	j;
+	register integer	k;
+	asciicode	c;
+
+	if ((p > 32) && (p <= 126))
+		c = p;
+	else
+		c = xord.A['?'];
+	if ((hh > pagewidthmax - 1) || (vv > pagelengthmax - 1)) {
+		Putchr(' ', errfile),Putchr('\n', errfile);
+		(void)fprintf(errfile.fp, "Character \"%c\" set at column %1d", xchr.A[c], hh + 1), Putl(errfile, 0);
+		(void)fprintf(errfile.fp, " and row %1d,\n", vv + 1), Putl(errfile, 1);
+		(void)fprintf(errfile.fp, "outside the range of DVIDOC ("), Putl(errfile, 0);
+		(void)fprintf(errfile.fp, "%1d,%1d).", pagewidthmax, pagelengthmax), Putl(errfile, 0);
+		Putchr(' ', errfile),Putchr('\n', errfile);
+	} else {
+		i = hh + 1;
+		j = vv + 1;
+		if (j > pagehwm) {
+			{
+				integer	B31 = pagehwm + 1,
+					B32 = j;
+
+				if (B31 <= B32)
+					for (k = B31; ; k++) {
+						linehwm.A[k - 1] = 0;
+						if (k == B32) break;
+					}
+			}
+			pagehwm = j;
+		}
+		if (i > linehwm.A[j - 1]) {
+			{
+				integer	B33 = linehwm.A[j - 1] + 1,
+					B34 = i;
+
+				if (B33 <= B34)
+					for (k = B33; ; k++) {
+						pagebuffer.A[k - 1].A[j - 1] = xord.A[' '];
+						if (k == B34) break;
+					}
+			}
+			linehwm.A[j - 1] = i;
+		}
+		pagebuffer.A[i - 1].A[j - 1] = c;
+	}
+}
+
+ integer
+firstpar(o)
+	eightbits	o;
+{
+	register integer	R97;
+
+	switch (o) {
+	  case 0:  case 1:  case 2:  case 3:
+	  case 4:  case 5:  case 6:  case 7:
+	  case 8:  case 9:  case 10:  case 11:
+	  case 12:  case 13:  case 14:  case 15:
+	  case 16:  case 17:  case 18:  case 19:
+	  case 20:  case 21:  case 22:  case 23:
+	  case 24:  case 25:  case 26:  case 27:
+	  case 28:  case 29:  case 30:  case 31:
+	  case 32:  case 33:  case 34:  case 35:
+	  case 36:  case 37:  case 38:  case 39:
+	  case 40:  case 41:  case 42:  case 43:
+	  case 44:  case 45:  case 46:  case 47:
+	  case 48:  case 49:  case 50:  case 51:
+	  case 52:  case 53:  case 54:  case 55:
+	  case 56:  case 57:  case 58:  case 59:
+	  case 60:  case 61:  case 62:  case 63:
+	  case 64:  case 65:  case 66:  case 67:
+	  case 68:  case 69:  case 70:  case 71:
+	  case 72:  case 73:  case 74:  case 75:
+	  case 76:  case 77:  case 78:  case 79:
+	  case 80:  case 81:  case 82:  case 83:
+	  case 84:  case 85:  case 86:  case 87:
+	  case 88:  case 89:  case 90:  case 91:
+	  case 92:  case 93:  case 94:  case 95:
+	  case 96:  case 97:  case 98:  case 99:
+	  case 100:  case 101:  case 102:  case 103:
+	  case 104:  case 105:  case 106:  case 107:
+	  case 108:  case 109:  case 110:  case 111:
+	  case 112:  case 113:  case 114:  case 115:
+	  case 116:  case 117:  case 118:  case 119:
+	  case 120:  case 121:  case 122:  case 123:
+	  case 124:  case 125:  case 126:  case 127:
+		R97 = o - 0;
+		break ;
+	  case 128:  case 133:  case 235:  case 239:
+	  case 243:
+		R97 = getbyte();
+		break ;
+	  case 129:  case 134:  case 236:  case 240:
+	  case 244:
+		R97 = gettwobytes();
+		break ;
+	  case 130:  case 135:  case 237:  case 241:
+	  case 245:
+		R97 = getthreebytes();
+		break ;
+	  case 143:  case 148:  case 153:  case 157:
+	  case 162:  case 167:
+		R97 = signedbyte();
+		break ;
+	  case 144:  case 149:  case 154:  case 158:
+	  case 163:  case 168:
+		R97 = signedpair();
+		break ;
+	  case 145:  case 150:  case 155:  case 159:
+	  case 164:  case 169:
+		R97 = signedtrio();
+		break ;
+	  case 131:  case 132:  case 136:  case 137:
+	  case 146:  case 151:  case 156:  case 160:
+	  case 165:  case 170:  case 238:  case 242:
+	  case 246:
+		R97 = signedquad();
+		break ;
+	  case 138:  case 139:  case 140:  case 141:
+	  case 142:  case 247:  case 248:  case 249:
+	  case 250:  case 251:  case 252:  case 253:
+	  case 254:  case 255:
+		R97 = 0;
+		break ;
+	  case 147:
+		R97 = w;
+		break ;
+	  case 152:
+		R97 = x;
+		break ;
+	  case 161:
+		R97 = y;
+		break ;
+	  case 166:
+		R97 = z;
+		break ;
+	  case 171:  case 172:  case 173:  case 174:
+	  case 175:  case 176:  case 177:  case 178:
+	  case 179:  case 180:  case 181:  case 182:
+	  case 183:  case 184:  case 185:  case 186:
+	  case 187:  case 188:  case 189:  case 190:
+	  case 191:  case 192:  case 193:  case 194:
+	  case 195:  case 196:  case 197:  case 198:
+	  case 199:  case 200:  case 201:  case 202:
+	  case 203:  case 204:  case 205:  case 206:
+	  case 207:  case 208:  case 209:  case 210:
+	  case 211:  case 212:  case 213:  case 214:
+	  case 215:  case 216:  case 217:  case 218:
+	  case 219:  case 220:  case 221:  case 222:
+	  case 223:  case 224:  case 225:  case 226:
+	  case 227:  case 228:  case 229:  case 230:
+	  case 231:  case 232:  case 233:  case 234:
+		R97 = o - 171;
+		break ;
+	  default:
+		Caseerror(Line);
+	}
+	return R97;
+}
+
+ integer
+horizrulepixels(x)
+	integer	x;
+{
+	register integer	R98;
+	integer	n;
+
+	n = Trunc(horizconv * x);
+	if (n < horizconv * x)
+		R98 = n + 1;
+	else
+		R98 = n;
+	return R98;
+}
+
+ integer
+vertrulepixels(x)
+	integer	x;
+{
+	register integer	R99;
+	integer	n;
+
+	n = Trunc(vertconv * x);
+	if (n < vertconv * x)
+		R99 = n + 1;
+	else
+		R99 = n;
+	return R99;
+}
+
+ boolean
+specialcases(o, p, a)
+	eightbits	o;
+	integer	p, a;
+{
+	register boolean	R100;
+	integer	q;
+	register integer	k;
+	boolean	badchar;
+	boolean	pure;
+	integer	vvv;
+
+	pure = true;
+	switch (o) {
+	  case 133:  case 134:  case 135:  case 136:
+		goto L30;
+		break ;
+	  case 157:  case 158:  case 159:  case 160:
+		if (abs(p) >= 5 * fontspace.A[curfont])
+			vv = Round(vertconv * (v + p));
+		else
+			vv = vv + Round(vertconv * (p));
+		goto L44;
+		break ;
+	  case 161:  case 162:  case 163:  case 164:
+	  case 165:
+		y = p;
+		if (abs(p) >= 5 * fontspace.A[curfont])
+			vv = Round(vertconv * (v + p));
+		else
+			vv = vv + Round(vertconv * (p));
+		goto L44;
+		break ;
+	  case 166:  case 167:  case 168:  case 169:
+	  case 170:
+		z = p;
+		if (abs(p) >= 5 * fontspace.A[curfont])
+			vv = Round(vertconv * (v + p));
+		else
+			vv = vv + Round(vertconv * (p));
+		goto L44;
+		break ;
+	  case 171:  case 172:  case 173:  case 174:
+	  case 175:  case 176:  case 177:  case 178:
+	  case 179:  case 180:  case 181:  case 182:
+	  case 183:  case 184:  case 185:  case 186:
+	  case 187:  case 188:  case 189:  case 190:
+	  case 191:  case 192:  case 193:  case 194:
+	  case 195:  case 196:  case 197:  case 198:
+	  case 199:  case 200:  case 201:  case 202:
+	  case 203:  case 204:  case 205:  case 206:
+	  case 207:  case 208:  case 209:  case 210:
+	  case 211:  case 212:  case 213:  case 214:
+	  case 215:  case 216:  case 217:  case 218:
+	  case 219:  case 220:  case 221:  case 222:
+	  case 223:  case 224:  case 225:  case 226:
+	  case 227:  case 228:  case 229:  case 230:
+	  case 231:  case 232:  case 233:  case 234:
+		goto L46;
+		break ;
+	  case 235:  case 236:  case 237:  case 238:
+		goto L46;
+		break ;
+	  case 243:  case 244:  case 245:  case 246:
+		definefont(p);
+		goto L30;
+		break ;
+	  case 239:  case 240:  case 241:  case 242:
+		(void)fprintf(errfile.fp, "xxx'"), Putl(errfile, 0);
+		badchar = false;
+		{
+			integer	B35 = 1,
+				B36 = p;
+
+			if (B35 <= B36)
+				for (k = B35; ; k++) {
+					q = getbyte();
+					if ((q < 32) || (q > 126))
+						badchar = true;
+					Putchr(xchr.A[q], errfile);
+					if (k == B36) break;
+				}
+		}
+		Putchr('\'', errfile);
+		if (badchar)
+			(void)fprintf(errfile.fp, "non-ASCII character in xxx command!\n"), Putl(errfile, 1);
+		goto L30;
+		break ;
+	  case 247:
+		(void)fprintf(errfile.fp, "preamble command within a page!\n"), Putl(errfile, 1);
+		goto L9998;
+		break ;
+	  case 248:  case 249:
+		(void)fprintf(errfile.fp, "postamble command within a page!\n"), Putl(errfile, 1);
+		goto L9998;
+		break ;
+	  default:
+{
+			(void)fprintf(errfile.fp, "undefined command %1d!\n", o), Putl(errfile, 1);
+			goto L30;
+		}
+	}
+L44:
+	if ((v > 0) && (p > 0))
+		if (v > 2147483647 - p) {
+			(void)fprintf(errfile.fp, "arithmetic overflow! parameter changed from %1d to %1d\n", p, 2147483647 - v), Putl(errfile, 1);
+			p = 2147483647 - v;
+		}
+	if ((v < 0) && (p < 0))
+		if (-v > p + 2147483647) {
+			(void)fprintf(errfile.fp, "arithmetic overflow! parameter changed from %1d to %1d\n", p, (-v) - 2147483647), Putl(errfile, 1);
+			p = (-v) - 2147483647;
+		}
+	vvv = Round(vertconv * (v + p));
+	if (abs(vvv - vv) > 2)
+		if (vvv > vv)
+			vv = vvv - 2;
+		else
+			vv = vvv + 2;
+	v = v + p;
+	if (abs(v) > maxvsofar) {
+		if (abs(v) > maxv + 99) {
+			(void)fprintf(errfile.fp, "warning: |v|>%1d!\n", maxv), Putl(errfile, 1);
+			maxv = abs(v);
+		}
+		maxvsofar = abs(v);
+	}
+	goto L30;
+L46:
+	fontnum.A[nf] = p;
+	curfont = 0;
+	while (fontnum.A[curfont] != p)
+		curfont = curfont + 1;
+	goto L30;
+L9998:
+	pure = false;
+L30:
+	R100 = pure;
+	return R100;
+}
+
+ boolean
+dopage()
+{
+	register boolean	R101;
+	eightbits	o;
+	integer	p, q;
+	integer	a;
+	register integer	j;
+	register integer	i;
+	integer	hhh;
+
+	emptypage();
+	curfont = nf;
+	s = 0;
+	h = 0;
+	v = 0;
+	w = 0;
+	x = 0;
+	y = 0;
+	z = 0;
+	hh = 0;
+	vv = 0;
+	while (true) {
+		a = curloc;
+		o = getbyte();
+		p = firstpar(o);
+		if (eofdvifile) {
+			(void)fprintf(stderr, " Bad DVI file: the file ended prematurely!\n"), Putl(output, 1);
+			jumpout();
+		}
+		if (o < 128) {
+			outchar(p, hh, vv);
+		} else
+			switch (o) {
+			  case 128:  case 129:  case 130:  case 131:
+				outchar(p, hh, vv);
+				goto L41;
+				break ;
+			  case 132:
+				goto L42;
+				break ;
+			  case 137:
+				goto L42;
+				break ;
+			  case 138:
+				goto L30;
+				break ;
+			  case 139:
+				(void)fprintf(errfile.fp, "bop occurred before eop!\n"), Putl(errfile, 1);
+				goto L9998;
+				break ;
+			  case 140:
+				if (s != 0)
+					(void)fprintf(errfile.fp, "stack not empty at end of page (level %1d)!\n", s), Putl(errfile, 1);
+				R101 = true;
+				flushpage();
+				goto L9999;
+				break ;
+			  case 141:
+				if (s == maxssofar) {
+					maxssofar = s + 1;
+					if (s == maxs)
+						(void)fprintf(errfile.fp, "deeper than claimed in postamble!\n"), Putl(errfile, 1);
+					if (s == stacksize) {
+						(void)fprintf(errfile.fp, "DVIDOC capacity exceeded (stack size=%1d)\n", stacksize), Putl(errfile, 1);
+						goto L9998;
+					}
+				}
+				hstack.A[s] = h;
+				vstack.A[s] = v;
+				wstack.A[s] = w;
+				xstack.A[s] = x;
+				ystack.A[s] = y;
+				zstack.A[s] = z;
+				hhstack.A[s] = hh;
+				vvstack.A[s] = vv;
+				s = s + 1;
+				ss = s - 1;
+				goto L45;
+				break ;
+			  case 142:
+				if (s == 0)
+					(void)fprintf(errfile.fp, "Pop illegal at level zero!\n"), Putl(errfile, 1);
+				else {
+					s = s - 1;
+					hh = hhstack.A[s];
+					vv = vvstack.A[s];
+					h = hstack.A[s];
+					v = vstack.A[s];
+					w = wstack.A[s];
+					x = xstack.A[s];
+					y = ystack.A[s];
+					z = zstack.A[s];
+				}
+				ss = s;
+				goto L45;
+				break ;
+			  case 143:  case 144:  case 145:  case 146:
+				if (abs(p) >= fontspace.A[curfont]) {
+					hh = Round(horizconv * (h + p));
+				} else
+					hh = hh + Round(horizconv * (p));
+				q = p;
+				goto L43;
+				break ;
+			  case 147:  case 148:  case 149:  case 150:
+			  case 151:
+				w = p;
+				if (abs(p) >= fontspace.A[curfont]) {
+					hh = Round(horizconv * (h + p));
+				} else
+					hh = hh + Round(horizconv * (p));
+				q = p;
+				goto L43;
+				break ;
+			  case 152:  case 153:  case 154:  case 155:
+			  case 156:
+				x = p;
+				if (abs(p) >= fontspace.A[curfont]) {
+					hh = Round(horizconv * (h + p));
+				} else
+					hh = hh + Round(horizconv * (p));
+				q = p;
+				goto L43;
+				break ;
+			  default:
+				if (specialcases(o, p, a))
+					goto L30;
+				else
+					goto L9998;
+			}
+	L41:
+		if (p < 0)
+			p = 255 - ((-1 - p) % 256);
+		else
+			if (p >= 256)
+				p = p % 256;
+		if ((p < fontbc.A[curfont]) || (p > fontec.A[curfont]))
+			q = 2147483647;
+		else
+			q = width.A[widthbase.A[curfont] + p];
+		if (q == 2147483647) {
+			(void)fprintf(errfile.fp, "character %1d invalid in font \n", p), Putl(errfile, 1);
+			printfont(curfont);
+			if (curfont != nf)
+				Putchr('!', errfile);
+		}
+		if (o >= 133)
+			goto L30;
+		if (q == 2147483647)
+			q = 0;
+		else
+			hh = hh + pixelwidth.A[widthbase.A[curfont] + p];
+		goto L43;
+	L42:
+		q = signedquad();
+		if ((p > 0) && (q > 0))
+			{
+				integer	B37 = hh,
+					B38 = hh + horizrulepixels(q) - 1;
+
+				if (B37 <= B38)
+					for (i = B37; ; i++) {
+						{
+							integer	B39 = vv,
+								B40 = vv - vertrulepixels(p) + 1;
+
+							if (B39 >= B40)
+								for (j = B39; ; j--) {
+									outchar(xord.A['-'], i, j);
+									if (j == B40) break;
+								}
+						}
+						if (i == B38) break;
+					}
+			}
+		if (o == 137)
+			goto L30;
+		hh = hh + horizrulepixels(q);
+		goto L43;
+	L43:
+		if ((h > 0) && (q > 0))
+			if (h > 2147483647 - q) {
+				(void)fprintf(errfile.fp, "arithmetic overflow! parameter changed from %1d to %1d\n", q, 2147483647 - h), Putl(errfile, 1);
+				q = 2147483647 - h;
+			}
+		if ((h < 0) && (q < 0))
+			if (-h > q + 2147483647) {
+				(void)fprintf(errfile.fp, "arithmetic overflow! parameter changed from %1d to %1d\n", q, (-h) - 2147483647), Putl(errfile, 1);
+				q = (-h) - 2147483647;
+			}
+		hhh = Round(horizconv * (h + q));
+		if (abs(hhh - hh) > 2)
+			if (hhh > hh)
+				hh = hhh - 2;
+			else
+				hh = hhh + 2;
+		h = h + q;
+		if (abs(h) > maxhsofar) {
+			if (abs(h) > maxh + 99) {
+				(void)fprintf(errfile.fp, "warning: |h|>%1d!\n", maxh), Putl(errfile, 1);
+				maxh = abs(h);
+			}
+			maxhsofar = abs(h);
+		}
+		goto L30;
+	L45:
+		;
+	L30:
+		;
+	}
+L9998:
+	Putchr('!', errfile),Putchr('\n', errfile);
+	R101 = false;
+L9999:
+	;
+	return R101;
+}
+
+ void
+readpostamble()
+{
+	integer	k;
+	integer	p, q, m;
+
+	postloc = curloc - 5;
+	if (signedquad() != numerator)
+		(void)fprintf(errfile.fp, "numerator doesn't match the preamble!\n"), Putl(errfile, 1);
+	if (signedquad() != denominator)
+		(void)fprintf(errfile.fp, "denominator doesn't match the preamble!\n"), Putl(errfile, 1);
+	if (signedquad() != mag)
+		if (newmag == 0)
+			(void)fprintf(errfile.fp, "magnification doesn't match the preamble!\n"), Putl(errfile, 1);
+	maxv = signedquad();
+	maxh = signedquad();
+	maxs = gettwobytes();
+	totalpages = gettwobytes();
+	do {
+		k = getbyte();
+		if ((k >= 243) && (k < 247)) {
+			p = firstpar(k);
+			definefont(p);
+			Putchr(' ', errfile),Putchr('\n', errfile);
+			k = 138;
+		}
+	} while (!(k != 138));
+	if (k != 249)
+		(void)fprintf(errfile.fp, "byte %1d is not postpost!\n", curloc - 1), Putl(errfile, 1);
+	q = signedquad();
+	if (q != postloc)
+		(void)fprintf(errfile.fp, "bad postamble pointer in byte %1d!\n", curloc - 4), Putl(errfile, 1);
+	m = getbyte();
+	if (m != 2)
+		(void)fprintf(errfile.fp, "identification in byte %1d should be %1d!\n", curloc - 1, 2), Putl(errfile, 1);
+	k = curloc;
+	m = 223;
+	while ((m == 223) && !eofdvifile)
+		m = getbyte();
+	if (!eofdvifile) {
+		(void)fprintf(stderr, " Bad DVI file: signature in byte %1d should be 223!\n", curloc - 1), Putl(output, 1);
+		jumpout();
+	} else
+		if (curloc < k + 4)
+			(void)fprintf(errfile.fp, "not enough signature bytes at end of file (%1d)\n", curloc - k), Putl(errfile, 1);
+}
+
+/*
+**	Start of program code
+*/
+main(_ac, _av)
+int	_ac;
+char	*_av[];
+{
+
+	argc = _ac;
+	argv = _av;
+	switch (setjmp(J[0].jb)) {
+	  case 0:
+		break;
+	  case 9999:
+		goto L9999;
+	  case 30:
+		goto L30;
+	  default:
+		Caseerror(Line);
+	}
+	initialize();
+	options();
+	i = 1;
+	while ((i < namelength) && (basename.A[i - 1] != ' '))
+		i = i + 1;
+	if (i < 5) {
+		basename.A[i - 1] = '.';
+		basename.A[i + 1 - 1] = 'd';
+		basename.A[i + 2 - 1] = 'v';
+		basename.A[i + 3 - 1] = 'i';
+		basename.A[i + 4 - 1] = ' ';
+	}
+	if ((i >= 5) && (i < namelength - 4) && ((basename.A[i - 4 - 1] != '.') || (basename.A[i - 3 - 1] != 'd') || (basename.A[i - 2 - 1] != 'v') || (basename.A[i - 1 - 1] != 'i'))) {
+		basename.A[i - 1] = '.';
+		basename.A[i + 1 - 1] = 'd';
+		basename.A[i + 2 - 1] = 'v';
+		basename.A[i + 3 - 1] = 'i';
+		basename.A[i + 4 - 1] = ' ';
+	}
+	curname = basename;
+	if (testaccess(4, 0)) {
+		opendvifile();
+		if (eofdvifile) {
+			(void)fprintf(stderr, "Input file not found\n"), Putl(output, 1);
+			goto L30;
+		}
+	} else {
+		(void)fprintf(stderr, "Cannot open input file\n"), Putl(output, 1);
+		goto L30;
+	}
+	if (logerrors) {
+		curname = basename;
+		i = 1;
+		while ((i <= namelength) && (curname.A[i - 1] != ' '))
+			i = i + 1;
+		curname.A[i - 3 - 1] = 'e';
+		curname.A[i - 2 - 1] = 'r';
+		curname.A[i - 1 - 1] = 'r';
+		if (testaccess(2, 0))
+			Rewritex(errfile, curname.A);
+		else {
+			(void)fprintf(stderr, "Cannot create error file\n"), Putl(output, 1);
+			goto L30;
+		}
+	} else {
+		(void)strncpy(curname.A, "/dev/null", sizeof(curname.A));
+		if (testaccess(2, 0))
+			Rewritex(errfile, curname.A);
+		else {
+			(void)fprintf(stderr, "Somebody stole /dev/null!\n"), Putl(output, 1);
+			goto L30;
+		}
+	}
+	p = getbyte();
+	if (p != 247) {
+		(void)fprintf(stderr, " Bad DVI file: First byte isn't start of preamble!!\n"), Putl(output, 1);
+		jumpout();
+	}
+	p = getbyte();
+	if (p != 2)
+		(void)fprintf(errfile.fp, "identification in byte 1 should be %1d!\n", 2), Putl(errfile, 1);
+	numerator = signedquad();
+	denominator = signedquad();
+	if (numerator <= 0) {
+		(void)fprintf(stderr, " Bad DVI file: numerator is %1d!\n", numerator), Putl(output, 1);
+		jumpout();
+	}
+	if (denominator <= 0) {
+		(void)fprintf(stderr, " Bad DVI file: denominator is %1d!\n", denominator), Putl(output, 1);
+		jumpout();
+	}
+	horizconv = (numerator / ((real)254000.0)) * (horizresolution / ((real)denominator));
+	vertconv = (numerator / ((real)254000.0)) * (vertresolution / ((real)denominator));
+	mag = signedquad();
+	if (newmag > 0)
+		mag = newmag;
+	else
+		if (mag <= 0) {
+			(void)fprintf(stderr, " Bad DVI file: magnification is %1d!\n", mag), Putl(output, 1);
+			jumpout();
+		}
+	truehorizconv = horizconv;
+	horizconv = truehorizconv * (mag / ((real)1000.0));
+	truevertconv = vertconv;
+	vertconv = truevertconv * (mag / ((real)1000.0));
+	p = getbyte();
+	Putchr('\'', errfile);
+	while (p > 0) {
+		p = p - 1;
+		Putchr(xchr.A[getbyte()], errfile);
+	}
+	Putchr('\'', errfile),Putchr('\n', errfile);
+	n = dvilength();
+	if (n < 53) {
+		(void)fprintf(stderr, " Bad DVI file: only %1d bytes long!\n", n), Putl(output, 1);
+		jumpout();
+	}
+	m = n - 4;
+	do {
+		if (m == 0) {
+			(void)fprintf(stderr, " Bad DVI file: all 223s!\n"), Putl(output, 1);
+			jumpout();
+		}
+		movetobyte(m);
+		k = getbyte();
+		m = m - 1;
+	} while (!(k != 223));
+	if (k != 2) {
+		(void)fprintf(stderr, " Bad DVI file: ID byte is %1d!\n", k), Putl(output, 1);
+		jumpout();
+	}
+	movetobyte(m - 3);
+	q = signedquad();
+	if ((q < 0) || (q > m - 33)) {
+		(void)fprintf(stderr, " Bad DVI file: post pointer %1d at byte %1d!\n", q, m - 3), Putl(output, 1);
+		jumpout();
+	}
+	movetobyte(q);
+	k = getbyte();
+	if (k != 248) {
+		(void)fprintf(stderr, " Bad DVI file: byte %1d is not post!\n", q), Putl(output, 1);
+		jumpout();
+	}
+	postloc = q;
+	firstbackpointer = signedquad();
+	inpostamble = true;
+	readpostamble();
+	inpostamble = false;
+	q = postloc;
+	p = firstbackpointer;
+	startloc = -1;
+	if (p >= 0)
+		do {
+			if (p > q - 46) {
+				(void)fprintf(stderr, " Bad DVI file: page link %1d after byte %1d!\n", p, q), Putl(output, 1);
+				jumpout();
+			}
+			q = p;
+			movetobyte(q);
+			k = getbyte();
+			if (k == 139)
+				pagecount = pagecount + 1;
+			else {
+				(void)fprintf(stderr, " Bad DVI file: byte %1d is not bop!\n", q), Putl(output, 1);
+				jumpout();
+			}
+			{
+				integer	B41 = 0,
+					B42 = 9;
+
+				if (B41 <= B42)
+					for (k = B41; ; k++) {
+						count.A[k] = signedquad();
+						if (k == B42) break;
+					}
+			}
+			if (startmatch())
+				startloc = q;
+			p = signedquad();
+		} while (!(p < 0));
+	if (startloc < 0) {
+		(void)fprintf(stderr, " starting page number could not be found!\n"), Putl(output, 1);
+		jumpout();
+	}
+	movetobyte(startloc + 1);
+	oldbackpointer = startloc;
+	{
+		integer	B43 = 0,
+			B44 = 9;
+
+		if (B43 <= B44)
+			for (k = B43; ; k++) {
+				count.A[k] = signedquad();
+				if (k == B44) break;
+			}
+	}
+	p = signedquad();
+	started = true;
+	if (!inpostamble) {
+		while (maxpages > 0) {
+			maxpages = maxpages - 1;
+			(void)fprintf(errfile.fp, "Page "), Putl(errfile, 0);
+			{
+				integer	B45 = 0,
+					B46 = startvals;
+
+				if (B45 <= B46)
+					for (k = B45; ; k++) {
+						(void)fprintf(errfile.fp, "%1d", count.A[k]), Putl(errfile, 0);
+						if (k < startvals)
+							Putchr('.', errfile);
+						else
+							Putchr(' ', errfile),Putchr('\n', errfile);
+						if (k == B46) break;
+					}
+			}
+			if (!dopage()) {
+				(void)fprintf(stderr, " Bad DVI file: page ended unexpectedly!\n"), Putl(output, 1);
+				jumpout();
+			}
+			do {
+				k = getbyte();
+				if ((k >= 243) && (k < 247)) {
+					p = firstpar(k);
+					definefont(p);
+					k = 138;
+				}
+			} while (!(k != 138));
+			if (k == 248) {
+				inpostamble = true;
+				goto L30;
+			}
+			if (k != 139) {
+				(void)fprintf(stderr, " Bad DVI file: byte %1d is not bop!\n", curloc - 1), Putl(output, 1);
+				jumpout();
+			}
+			newbackpointer = curloc - 1;
+			pagecount = pagecount + 1;
+			{
+				integer	B47 = 0,
+					B48 = 9;
+
+				if (B47 <= B48)
+					for (k = B47; ; k++) {
+						count.A[k] = signedquad();
+						if (k == B48) break;
+					}
+			}
+			if (signedquad() != oldbackpointer)
+				(void)fprintf(errfile.fp, "backpointer in byte %1d should be %1d!\n", curloc - 4, oldbackpointer), Putl(errfile, 1);
+			oldbackpointer = newbackpointer;
+		}
+	L30:
+		;
+	}
+L9999:
+	;
+	exit(0);
+}
+/*
+**	End of program code
+*/
+
+static FILE *
+Fopen(n, m)
+char	*n, *m;
+{
+	FILE		*f;
+	register char	*s;
+	static char	ch = 'A';
+	static char	tmp[MAXFILENAME];
+	extern int	unlink();
+
+	if (n == NULL)
+		sprintf(tmp, "/tmp/ptc%d%c", getpid(), ch++);
+	else {
+		strncpy(tmp, n, sizeof(tmp));
+		for (s = &tmp[sizeof(tmp)-1]; *s == ' ' || *s == '\0'; )
+			*s-- = '\0';
+		if (tmp[sizeof(tmp)-1]) {
+			(void)fprintf(stderr, "Too long filename '%s'\n", n);
+			exit(1);
+		}
+	}
+	s = tmp;
+	if ((f = fopen(s, m)) == NULL) {
+		(void)fprintf(stderr, "Cannot open: %s\n", s);
+		exit(1);
+	}
+	if (n == NULL)
+		unlink(tmp);
+	return (f);
+}
+extern int	rewind();
+
+static void
+Caseerror(n)
+	int	n;
+{
+	(void)fprintf(stderr, "Missing case limb: line %d\n", n);
+	exit(1);
+}
+static int
+Trunc(f)
+real	f;
+{
+	return f;
+}
+static int
+Round(f)
+real	f;
+{
+	extern double floor();
+	return floor((double)(0.5+f));
+}
+SHAR_EOF
+if test 41656 -ne "`wc -c < 'dvidoc.c'`"
+then
+	echo shar: "error transmitting 'dvidoc.c'" '(should have been 41656 characters)'
+fi
+fi
+exit 0
+#	End of shell archive

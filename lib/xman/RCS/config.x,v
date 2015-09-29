@@ -1,0 +1,32 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    douglis:1.1; strict;
+comment  @@;
+
+
+1.1
+date     88.12.29.14.46.49;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@ X Window System
+/X/man/
+nroff -man -Tcrt %s > %s
+#
+Commands
+cmds
+cmds.fmt
+@

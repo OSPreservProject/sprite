@@ -1,0 +1,16 @@
+F CCCP.C;1                          	cccp.c
+F DUMMY.H;1                         	dummy.h
+F FINAL.C;1                         	final.c
+F GCC.C;1                           	gcc.c
+F OUT_SPAR.C;1                      	out-sparc.c
+D RCS                               	RCS
+F SPECS.H;1                         	specs.h
+F SPECS_H.RAB;1                     	specs.h.rab
+F TM_I386.H;1                       	tm-i386.h
+F TM_M68K.H;1                       	tm-m68k.h
+F TM_MIPS.H;1                       	tm-mips.h
+F TM_SPARC.H;1                      	tm-sparc.h
+F TM_SPUR.H;1                       	tm-spur.h
+F TM_SUN3.H;1                       	tm-sun3.h
+F TM_SUN3_.H;1                      	tm-sun3-nfp.h
+F TOPLEV.C;1                        	toplev.c

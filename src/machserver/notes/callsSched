@@ -1,0 +1,123 @@
+# For context switch to WAITING, Sync_Wait will mark the process as
+# waiting/ready before/after calling condition_wait.
+
+RememberUsage			# (record CPU usage for scheduling) delete.
+	sched/schedule.c
+SCHED_CONTEXT_SWITCH_PENDING	# (schedules a context switch if we can't just
+				# do it right now) delete.
+	mach/sun3.md/machCode.c
+	mach/sun4.md/machCode.c
+	mach/ds3100.md/machCode.c
+	mach/ds5000.md/machCode.c
+	mach/symm.md/machTrap.c
+	proc/procMigrate.c
+SCHED_STACK_IN_USE		# (a processor is using this process's 
+				# stack) delete.
+	main/symm.md/mainInit.c
+	proc/{procExit,procMigrate}.c
+SchedPrintSchedStats		# print whatever stats the kernel provides
+Sched_ContextSwitch		# (context switch to another process, leaving
+				# the current process in the given state)
+				# READY: call cthread_yield to do a context
+				# switch.
+				# WAITING: shouldn't happen
+				# MIGRATED, EXITING, DEAD: exit; be sure to
+				# zero out the thread's name.
+				# SUSPENDED: punt.  (would sit in a loop,
+				# waiting for the state to change, but getting
+				# the synchronization right for access to the
+				# pcb state seems hard.)
+				# in all cases, also set state variable in pcb
+				# Rename to Proc_ContextSwitch.
+	fs/fsCommand.c
+	proc/{procDebug,procExit,procMigrate}.c
+	sys/sysCalls.c
+Sched_ContextSwitchInt		# (internal context switch routine)  Keep if
+				# sched_MutexPtr is kept.  See
+				# Sched_ContextSwitch.
+	sync/syncLock.c
+Sched_DumpReadyQueue		# make no-op (or print some message)
+	utils/dump.c
+Sched_ForgetUsage		# (forget some CPU usage for all processes)
+				# delete.
+	sched/sched.h
+	sched/schedule.c
+Sched_GatherProcessInfo		# (get utilization info) delete
+	timer/timerQueue.c
+Sched_IdleProcessor		# (disable a processor) no-op initially; use
+				# processor_exit() (?) to disable the
+				# processor (see DLB's paper or ask the
+				# mailing list if this is correct); need a
+				# check for disabling the processor you're on?
+	mach/symm.md/machSyscallTrace.c
+	sys/sysSysCall.c
+Sched_Init			# init. sched_mutexPtr; init instrumentation
+				# numbers (if any)
+	main/sun4c.md/mainInit.c
+	main/sun3.md/mainInit.c
+	main/sun4.md/mainInit.c
+	main/ds3100.md/mainInit.c
+	main/sun4nw.md/mainInit.c
+	main/symm.md/mainInit.c
+Sched_InsertInQueue		# delete
+	sync/syncLock.c
+Sched_Instrument		# keep initially, zeroing out numbers that
+				# aren't kept by Mach; if we want to keep these
+				# numbers, may have to add our own
+				# instrumentation to Mach.
+	sys/sysCalls.c
+Sched_LockAndSwitch		# (goes with SCHED_CONTEXT_SWITCH_PENDING)
+				# delete
+	mach/sun3.md/machCode.c
+	mach/sun4.md/machCode.c
+	mach/ds3100.md/machCode.c
+	mach/ds5000.md/machCode.c
+	mach/symm.md/machTrap.c
+Sched_MakeReady			# Rename to Proc_MakeReady (see callsProc
+				# list).
+	proc/{procDebug,procFork,procRemote}.c
+Sched_PrintStat			# print whatever stats the kernel can provide
+	sys/sysCalls.c
+Sched_SetClearUsageFlag		# (set flag so that usage information is
+				# zeroed, for kernel worker processes)
+				# no-op; eventually delete.
+	proc/procServer.c
+Sched_SetState			# (new) set process state; verify that
+				# transition is okay (paranoia check).
+Sched_StartKernProc		# (start kernel process) tentatively don't
+				# need this, because Proc_NewProc will get
+				# rewritten.
+	proc/procFork.c
+Sched_StartProcessor		# (inverse of Sched_IdleProcess) see its
+				# notes.
+	mach/symm.md/machSyscallTrace.c
+	sys/sysSysCall.c
+Sched_StartSchedStats		# keep
+	sys/sysCalls.c
+Sched_StartUserProc		# (starts user process) See
+				# Sched_StartKernProc.
+	proc/procFork.c
+Sched_StopSchedStats		# keep
+	sys/sysCalls.c
+Sched_TimeTicks			# (count for 5 seconds to calibrate the clock)
+				# delete.
+	main/sun4c.md/mainInit.c
+	main/sun3.md/mainInit.c
+	main/sun4.md/mainInit.c
+	main/ds3100.md/mainInit.c
+	main/sun4nw.md/mainInit.c
+	main/symm.md/mainInit.c
+ScheduleFunc			# keep
+	proc/procServer.c
+sched_Instrument		# see Sched_Instrument.
+	sys/sysCalls.c
+sched_MutexPtr			# keep.  (Eventually delete?  Are there any
+				# data structures it is needed to protect,
+				# what with Mach doing actual scheduling?)
+	proc/{procTable,procRemote}.c
+	sync/{syncSleep,syncLock,syncUser}.c
+
+Local Variables:
+mode: xref
+fill-column: 78
+End:

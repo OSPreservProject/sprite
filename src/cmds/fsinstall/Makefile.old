@@ -1,0 +1,11 @@
+
+
+SRCS = diskFragIO.c diskHeader.c diskIO.c diskPrint.c fsmake.c option.c
+OBJS = diskFragIO.o diskHeader.o diskIO.o diskPrint.o fsmake.o option.o
+
+CFLAGS = -g -I. -I/usr/include -I/sprite/lib/include \
+  -I/sprite/lib/include/ds3100.md -I/sprite/lib/include/kernel \
+  -I/sprite/lib/include/kernel/ds3100.md
+
+fsinstall : ${OBJS}
+	cc -g -o fsinstall ${OBJS}

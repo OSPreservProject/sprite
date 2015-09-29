@@ -1,0 +1,744 @@
+head     9.12;
+branch   ;
+access   ;
+symbols  ds3100:9.12 sun3:9.12 sun4nw:9.9 symm:9.9 spur:9.9 sprited:9.9.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.12
+date     92.08.03.17.41.49;  author mgbaker;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     92.06.15.22.29.21;  author jhh;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     92.06.01.14.37.01;  author kupfer;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     91.07.26.17.00.48;  author shirriff;  state Exp;
+branches 9.9.1.1;
+next     9.8;
+
+9.8
+date     91.05.06.14.53.14;  author kupfer;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.10.05.12.23.29;  author jhh;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.09.12.13.40.50;  author shirriff;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.09.11.10.51.05;  author shirriff;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.09.02.13.47.03;  author shirriff;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.09.01.14.50.50;  author eklee;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.11.07.14.45.42;  author brent;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.30.18.07.25;  author shirriff;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.20.42;  author douglis;  state Stable;
+branches ;
+next     8.6;
+
+8.6
+date     89.09.02.13.13.40;  author mgbaker;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.08.17.17.35.33;  author jhh;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.04.14.02.48.47;  author rab;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.04.14.02.47.23;  author rab;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.12.15.10.03.31;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.30.13.31.42;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.38.55;  author douglis;  state Stable;
+branches ;
+next     6.2;
+
+6.2
+date     88.10.28.19.05.30;  author mlgray;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.24.16.56.38;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.27.45;  author brent;  state Stable;
+branches ;
+next     5.3;
+
+5.3
+date     88.05.05.18.01.14;  author nelson;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     88.05.04.17.23.34;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     88.04.13.11.32.40;  author ouster;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.51.12;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.9.1.1
+date     91.08.22.13.20.00;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.12
+log
+@Added variable to turn off printing to console -- useful for making booting
+go faster.
+@
+text
+@/*
+ * sys.h --
+ *
+ *     Routines and types for the sys module.
+ *
+ * Copyright 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/sys/sys.h,v 9.11 92/06/15 22:29:21 jhh Exp $ SPRITE (Berkeley)
+ *
+ */
+
+#ifndef _SYS
+#define _SYS
+
+#ifndef _ASM
+
+#ifdef KERNEL
+#include <user/sys.h>
+#include <sprite.h>
+#include <status.h>
+#include <spriteTime.h>
+#else /* KERNEL */
+#include <sys.h>
+#include <sprite.h>
+#include <status.h>
+#include <spriteTime.h>
+#endif /* KERNEL */
+
+#endif /* _ASM */
+
+/*
+ * Stuff for system calls.
+ *
+ * SYS_ARG_OFFSET	Where the system calls arguments begin.
+ * SYS_MAX_ARGS		The maximum number of arguments possible to be passed
+ *			    to a system call.
+ * SYS_ARG_SIZE		The size in bytes of each argument.
+ */
+
+#define	SYS_ARG_OFFSET	8
+#define	SYS_MAX_ARGS	10
+#define	SYS_ARG_SIZE	4
+
+#ifndef _ASM
+#ifdef KERNEL
+
+extern	Boolean	sys_ShuttingDown;	/* Set when halting */
+extern	Boolean	sys_ErrorShutdown;	/* Set after a bad trap or error */
+extern	Boolean	sys_ErrorSync;		/* Set while syncing disks */
+extern	Boolean sys_CallProfiling;	/* Set if timing system calls */
+extern	int	sys_NumCalls[];
+extern	char	sys_HostName[];		/* The name of this host. */
+extern	Boolean	sys_DontPrint;		/* Turn off printing to console. */
+
+extern void	Sys_Init _ARGS_((void));
+extern void	Sys_SyncDisks _ARGS_((int trapType));
+extern int	Sys_GetHostId _ARGS_((void));
+extern void	Sys_HostPrint _ARGS_((int spriteID, char *string));
+extern ReturnStatus Sys_GetTimeOfDay _ARGS_((Time *timePtr,
+		    int *localOffsetPtr, Boolean *DSTPtr));
+extern ReturnStatus Sys_SetTimeOfDay _ARGS_((Time *timePtr, int localOffset,
+		    Boolean DST));
+extern void	Sys_RecordCallStart _ARGS_((void));
+extern void	Sys_RecordCallFinish _ARGS_((int callNum));
+extern ReturnStatus Sys_GetHostName _ARGS_((char *name));
+extern ReturnStatus Sys_SetHostName _ARGS_((char *name));
+
+extern int	vprintf _ARGS_(());
+extern void	panic _ARGS_(());
+
+/* Temporary declaration until prototyping is done */
+extern ReturnStatus Proc_RemoteDummy();
+
+typedef struct unixSyscallEntry {
+    int (*func)();
+    int numArgs;
+} unixSyscallEntry;
+
+extern unixSyscallEntry sysUnixSysCallTable[];
+
+#else
+
+/*
+ *  Declarations of system call stubs, which happen to have the
+ *  same name as the user-visible routines.
+ */
+
+extern ReturnStatus Sys_GetTimeOfDay();
+extern ReturnStatus Sys_SetTimeOfDay();
+extern ReturnStatus Sys_DoNothing();
+extern ReturnStatus Sys_Shutdown();
+extern ReturnStatus Sys_GetMachineInfo();
+extern ReturnStatus Sys_GetMachineInfoNew();
+extern ReturnStatus Sys_GetHostName();
+extern ReturnStatus Sys_SetHostName();
+
+#endif /* KERNEL */
+#endif /* _ASM */
+#endif /* _SYS */
+@
+
+
+9.11
+log
+@Added Sys_GetHostName and Sys_SetHostName system calls.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/sys/sys.h,v 9.10 92/06/01 14:37:01 kupfer Exp $ SPRITE (Berkeley)
+d54 1
+@
+
+
+9.10
+log
+@Add support for system call timing.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/sys/sys.h,v 9.9 91/07/26 17:00:48 shirriff Exp $ SPRITE (Berkeley)
+d53 1
+d65 2
+d94 2
+@
+
+
+9.9
+log
+@Large install for unix compatibility
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/sys/RCS/sys.h,v 9.8 91/05/06 14:53:14 kupfer Exp $ SPRITE (Berkeley)
+d51 1
+d62 2
+@
+
+
+9.9.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/sys/RCS/sys.h,v 9.9 91/07/26 17:00:48 shirriff Exp $ SPRITE (Berkeley)
+@
+
+
+9.8
+log
+@Include spriteTime.h instead of timer.h.  (The latter is unneeded, and
+it introduces a header file loop.)
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/sys/RCS/sys.h,v 9.7 90/10/05 12:23:29 jhh Exp Locker: kupfer $ SPRITE (Berkeley)
+d67 7
+@
+
+
+9.7
+log
+@fixed problem with including this file in a user program
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/sys/RCS/sys.h,v 9.6 90/09/12 13:40:50 shirriff Exp Locker: jhh $ SPRITE (Berkeley)
+d22 1
+a22 1
+#include <timer.h>
+d27 1
+a27 1
+#include <kernel/timer.h>
+@
+
+
+9.6
+log
+@Changed includes to angle brackets.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/sys/RCS/sys.h,v 9.5 90/09/11 10:51:05 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+d17 2
+d23 7
+@
+
+
+9.5
+log
+@Added function prototyping.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/sys.ken/RCS/sys.h,v 9.4 90/09/02 13:47:03 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)
+d17 4
+a20 4
+#include "user/sys.h"
+#include "sprite.h"
+#include "status.h"
+#include "timer.h"
+@
+
+
+9.4
+log
+@Added declaration of sysPanicOK.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/sys/RCS/sys.h,v 9.3 90/09/01 14:50:50 eklee Exp Locker: shirriff $ SPRITE (Berkeley)
+d20 1
+a41 1
+extern	int	sysPanicOK;		/* Set by main when ok to panic */
+d44 14
+a57 4
+extern	void	Sys_Init();
+extern  void     printf _ARGS_((char *format, ...));
+extern	void	panic();
+extern	int	vprintf();
+d59 1
+a59 2
+extern  ReturnStatus	Sys_OutputNumCalls();
+extern	void		Sys_HostPrint();
+a60 2
+#endif /* KERNEL */
+
+d66 6
+a71 6
+extern	ReturnStatus	Sys_GetTimeOfDay();
+extern	ReturnStatus	Sys_SetTimeOfDay();
+extern	ReturnStatus	Sys_DoNothing();
+extern	ReturnStatus	Sys_Shutdown();
+extern	ReturnStatus	Sys_GetMachineInfo();
+extern	ReturnStatus	Sys_GetMachineInfoNew();
+d73 1
+@
+
+
+9.3
+log
+@prototyped printf (temporary fix until everything is prototyped)
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/sys/RCS/sys.h,v 9.2 89/11/07 14:45:42 brent Exp Locker: eklee $ SPRITE (Berkeley)
+d41 1
+@
+
+
+9.2
+log
+@Added sys_ErrorSync, which is checked by the rpc module.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/sys/RCS/sys.h,v 9.1 89/10/30 18:07:25 shirriff Exp Locker: brent $ SPRITE (Berkeley)
+d44 1
+a44 1
+extern	void	printf();
+@
+
+
+9.1
+log
+@Lint fix.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/sys/RCS/sys.h,v 9.0 89/09/12 15:20:42 douglis Stable Locker: shirriff $ SPRITE (Berkeley)
+d38 3
+a40 2
+extern	Boolean	sys_ShuttingDown;
+extern	Boolean	sys_ErrorShutdown;
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/sys/RCS/sys.h,v 8.6 89/09/02 13:13:40 mgbaker Exp Locker: douglis $ SPRITE (Berkeley)
+d48 1
+@
+
+
+8.6
+log
+@Added _ASM so this header file can be included from assembly sources.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/sys/RCS/sys.h,v 8.5 89/08/17 17:35:33 jhh Exp Locker: mgbaker $ SPRITE (Berkeley)
+@
+
+
+8.5
+log
+@Changed arguments to Sys_GetMachineInfo
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/sys/RCS/sys.h,v 8.4 89/04/14 02:48:47 rab Exp $ SPRITE (Berkeley)
+d16 1
+d20 1
+d35 1
+d63 1
+@
+
+
+8.4
+log
+@*** empty log message ***
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/sys/RCS/sys.h,v 8.3 89/04/14 02:47:23 rab Exp Locker: rab $ SPRITE (Berkeley)
+d58 1
+@
+
+
+8.3
+log
+@*** empty log message ***
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/sys/RCS/sys.h,v 8.2 88/12/15 10:03:31 brent Exp Locker: rab $ SPRITE (Berkeley)
+d46 1
+a46 1
+#endif KERNEL
+@
+
+
+8.2
+log
+@Added extern for vprintf()
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/sys/RCS/sys.h,v 8.1 88/11/30 13:31:42 brent Exp Locker: brent $ SPRITE (Berkeley)
+d59 1
+a59 1
+#endif _SYS
+@
+
+
+8.1
+log
+@Nuked Sys_Printf, Sys_Panic
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/sys/RCS/sys.h,v 8.0 88/11/11 18:38:55 douglis Stable Locker: brent $ SPRITE (Berkeley)
+d42 1
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/sys/RCS/sys.h,v 6.2 88/10/28 19:05:30 mlgray Exp Locker: douglis $ SPRITE (Berkeley)
+a39 8
+extern	void	Sys_Printf();
+#define Sys_SafePrintf	Sys_Printf
+#ifdef NOTDEF
+/* No one calls this one anyway. */
+extern	void	Sys_UnSafePrintf();
+#endif /* NOTDEF */
+extern	void	Sys_HostPrint();
+extern	void	Sys_Panic();
+@
+
+
+6.2
+log
+@Conversion to new C library.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/sys/RCS/sys.h,v 6.1 88/08/24 16:56:38 brent Exp Locker: mlgray $ SPRITE (Berkeley)
+@
+
+
+6.1
+log
+@Moved Sys_HostPrint here from Net_HostPrin
+@
+text
+@d9 1
+a9 1
+ * $Header: sys.h,v 6.0 88/08/11 12:27:45 brent Stable $ SPRITE (Berkeley)
+d33 2
+d41 3
+a43 1
+extern	void	Sys_SafePrintf();
+d45 1
+d48 2
+d51 4
+d56 2
+a57 1
+ *  Declarations of system calls.
+a64 2
+
+extern  ReturnStatus	Sys_OutputNumCalls();
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d9 1
+a9 1
+ * $Header: sys.h,v 5.3 88/05/05 18:01:14 nelson Exp $ SPRITE (Berkeley)
+d41 1
+@
+
+
+5.3
+log
+@Handles move of functionality from sys to mach.
+@
+text
+@d9 1
+a9 1
+ * $Header: sys.h,v 5.2 88/05/04 17:23:34 nelson Exp $ SPRITE (Berkeley)
+@
+
+
+5.2
+log
+@Changed to handle new structure of mach module.
+@
+text
+@d9 1
+a9 1
+ * $Header: sys.h,v 5.1 88/04/13 11:32:40 ouster Exp $ SPRITE (Berkeley)
+a17 1
+#include "machConst.h"
+a20 6
+ *  Flags for Sys_SetIntrLevel.
+ */
+#define SYS_INTR_DISABLE	MACH_SR_PRIO_7
+#define SYS_INTR_ENABLE		MACH_SR_PRIO_0
+
+/*
+a32 28
+typedef enum {
+    SYS_GATHER_PROCESS_INFO
+} Sys_InterruptCodes;
+
+typedef enum {
+    SYS_USER,
+    SYS_KERNEL
+} Sys_ProcessorStates;
+
+/*
+ * Structure for a Sys_SetJump and Sys_LongJump.
+ */
+
+typedef struct {
+    int		pc;
+    int		regs[12];
+} Sys_SetJumpState;
+
+/*
+ * Macros
+ */
+
+#define	Sys_GetProcessorNumber() 	0
+
+extern	Boolean	sys_KernelMode;
+extern	int	sys_NumProcessors;
+extern	Boolean	sys_AtInterruptLevel;
+extern	int	*sys_NumDisableIntrsPtr;
+a36 8
+/*
+ * Procedure headers.
+ */
+
+extern	ReturnStatus	Sys_SetJump();
+extern	void		Sys_UnsetJump();
+extern	ReturnStatus	Sys_LongJump();
+
+a41 2
+extern	void	Sys_InterruptProcessor();
+extern	Sys_ProcessorStates	Sys_ProcessorState();
+a53 35
+
+/*
+ *  The following routines are machine-dependent. They
+ *  can be found in sunSubr.s.
+ */
+extern int  Sys_SetIntrLevel();
+
+#define DISABLE_INTR() \
+    if (!sys_AtInterruptLevel) { \
+	asm("movw #0x2700,sr"); \
+	if (sys_NumDisableIntrsPtr[0] < 0) { \
+	    Sys_Panic(SYS_FATAL, "Negative interrupt count.\n"); \
+	} \
+	sys_NumDisableIntrsPtr[0]++; \
+    }
+
+#define ENABLE_INTR() \
+    if (!sys_AtInterruptLevel) { \
+	sys_NumDisableIntrsPtr[0]--; \
+	if (sys_NumDisableIntrsPtr[0] < 0) { \
+	    Sys_Panic(SYS_FATAL, "Negative interrupt count.\n"); \
+	} \
+	if (sys_NumDisableIntrsPtr[0] == 0) { \
+	    asm("movw #0x2000,sr"); \
+	} \
+    }
+
+#define	Sys_DisableIntr() \
+	asm("movw #0x2700,sr")
+    
+#define	Sys_EnableIntr() \
+	asm("movw #0x2000,sr")
+
+#define	Sys_SetJump(setJumpPtr) \
+    SysSetJump((Proc_GetCurrentProc(Sys_GetProcessorNumber()))->setJumpStatePtr = setJumpPtr)
+@
+
+
+5.1
+log
+@Changes to make kernel calls much faster.
+@
+text
+@d9 1
+a9 1
+ * $Header: sys.h,v 5.0 87/08/11 10:51:12 sprite Exp $ SPRITE (Berkeley)
+d18 1
+a18 1
+#include "sunSR.h"
+d24 2
+a25 2
+#define SYS_INTR_DISABLE	SUN_SR_PRIO_7
+#define SYS_INTR_ENABLE		SUN_SR_PRIO_0
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d9 1
+a9 1
+ * $Header: sys.h,v 3.3 86/12/01 11:12:09 nelson Exp $ SPRITE (Berkeley)
+d70 1
+a86 1
+extern	ReturnStatus	Sys_SysCall();
+@

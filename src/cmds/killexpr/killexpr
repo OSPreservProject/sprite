@@ -1,0 +1,74 @@
+#! /sprite/cmds/perl
+#
+# This perl script kills all processes that have any of the pattern
+# arguments in their command line.  The processes are first sent a 
+# SIGTERM, then a SIGKILL.  There is a race condition due to a process
+# exiting between the time it is found and the signal is sent.  This
+# will cause the kill to fail.
+#
+# $Header: /sprite/src/cmds/killexpr/RCS/killexpr,v 1.1 90/02/28 23:00:59 jhh Exp $ SPRITE (Berkeley)
+#
+# Copyright 1990 Regents of the University of California
+# Permission to use, copy, modify, and distribute this
+# software and its documentation for any purpose and without
+# fee is hereby granted, provided that the above copyright
+# notice appear in all copies.  The University of California
+# makes no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without
+# express or implied warranty.
+#
+
+$name = $0;
+
+require 'getopts.pl';
+do Getopts('h:');
+
+if ((defined($opt_h)) && ($opt_h eq '')) {
+    $error = 1;
+}
+
+if ($#ARGV < 0) {
+    $error = 1;
+}
+if ($error == 1) {
+    printf("Usage: %s [-h host] word1 word2 ...\n",$name);
+    exit(1);
+}
+
+$count = 0;
+$pattern = join('|',@ARGV);
+if (defined($opt_h)) {
+    open(INPUT, "f =ps@$opt_h |") || print("Open failed: $@\n");
+    $remote = 1;
+} else {
+    open(INPUT, "ps |") || print("Open failed: $@\n");
+}
+if (defined($remote)) {
+    $user = `whoami`;
+    chop($user);
+}
+while(<INPUT>) {
+    if (defined($remote)) {
+	($userName, $pid, $d1, $d2, $d3, $d4, $d5, $d6, $command) = 
+	    split(' ',$_,9);
+    } else {
+	($pid, $d1, $d2, $command) = split(' ',$_,4);
+    }
+    if ($command =~ /$pattern/o) {
+	if (defined($remote)) {
+	    if ($userName ne $user) {
+		next;
+	    }
+	}
+	if (($pid =~ /[0-9a-f]+/) && (hex($pid) != $$)) {
+	    $#goners++;
+	    $goners[$#goners] = hex($pid);
+	    print "$pid ";
+	}
+    }
+}
+if ($#goners >= 0) {
+    print "\n";
+    kill (15, @goners) || print("Kill failed: $!\n");
+    kill (9, @goners) || print("Kill failed: $!\n");
+}

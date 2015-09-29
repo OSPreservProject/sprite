@@ -1,0 +1,10 @@
+#!/bin/csh
+if ($#argv < 1) then
+    echo "Give a file name"
+    exit 1
+endif
+cat /dev/null > $1
+foreach size (1 128 256 512 1024 2048 3072 4096 6144 8192 10240 12288 16384)
+echo $size Bytes >> $1
+egrep Slave write.$size >> $1
+end

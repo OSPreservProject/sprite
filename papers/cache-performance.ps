@@ -1,0 +1,13764 @@
+%!PS-Adobe-1.0
+%%Creator: corvina:welch (Brent Welch, 812-4405)
+%%Title: stdin
+%%CreationDate: Tue Jan  7 09:18:17 1992
+%%DocumentFonts: Times-Roman Times-Italic Times-Bold Symbol Times-Roman DIThacks
+%%Pages: (atend)
+%%EndComments
+% Start of pscat.pro -- prolog for troff translator
+% Copyright (c) 1985,1987 Adobe Systems Incorporated. All Rights Reserved. 
+% GOVERNMENT END USERS: See Notice file in TranScript library directory
+% -- probably /usr/lib/ps/Notice
+% RCS: $Header: pscat.pro,v 2.2 87/11/17 16:40:32 byron Rel $
+save /pscatsave exch def
+/$pscat 50 dict def
+$pscat begin
+/fm [1 0 0 1 0 0] def
+/xo 0 def /yo 0 def
+/M /moveto load def
+/R /show load def
+/S {exch currentpoint exch pop moveto show}def
+/T {exch currentpoint pop exch moveto show}def
+/U {3 1 roll moveto show}def
+/siz 0 def
+/font 0 def
+/Z {/siz exch def SF}def
+/F {/font exch def SF}def
+/SF{font 0 ne
+    {catfonts font 1 sub get fm 0 siz put fm 3 siz neg put 
+     fm makefont setfont}if}def
+/BP{save/catsv exch def 0 792 translate 72 432 div dup neg scale 
+  xo yo translate 0 0 moveto}def
+/EP{catsv restore showpage}def
+
+% definitions for PPROC callback functions
+% each PPROC is called with the following number on the stack:
+% pointsize charcode railmag pswidth pschar x y wid
+/$pprocs 50 dict def
+/fractm [.65 0 0 .6 0 0] def
+% fractions
+/PS1{gsave $pprocs begin
+    /wid exch def pop pop pop pop pop /ch exch def /size exch def
+    /pair $pprocs ch get def /cf currentfont def
+    cf fractm makefont setfont
+    0 .3 size mul 6 mul 2 copy neg rmoveto pair 0 get show rmoveto
+    currentfont cf setfont (\244) show setfont
+    pair 1 get show grestore wid .06 div 0 rmoveto end}def
+$pprocs begin
+8#34 [(1)(4)] def
+8#36 [(1)(2)] def
+8#46 [(3)(4)] def
+end
+% DIThacks fonts for some special chars
+50 dict dup begin
+/FontType 3 def
+/FontName /DIThacks def
+/FontMatrix [.001 0.0 0.0 .001 0.0 0.0] def
+/FontBBox [-220 -280 900 900] def% a lie but ...
+/Encoding 256 array def
+0 1 255{Encoding exch /.notdef put}for
+Encoding
+ dup 8#040/space put %space
+ dup 8#110/rc put %right ceil
+ dup 8#111/lt put %left  top curl
+ dup 8#112/bv put %bold vert
+ dup 8#113/lk put %left  mid curl
+ dup 8#114/lb put %left  bot curl
+ dup 8#115/rt put %right top curl
+ dup 8#116/rk put %right mid curl
+ dup 8#117/rb put %right bot curl
+ dup 8#120/rf put %right floor
+ dup 8#121/lf put %left  floor
+ dup 8#122/lc put %left  ceil
+ dup 8#140/sq put %square
+ dup 8#141/bx put %box
+ dup 8#142/ci put %circle
+ dup 8#143/br put %box rule
+ dup 8#144/rn put %root extender
+ dup 8#145/vr put %vertical rule
+ dup 8#146/ob put %outline bullet
+ dup 8#147/bu put %bullet
+ dup 8#150/ru put %rule
+ dup 8#151/ul put %underline
+ pop
+/DITfd 100 dict def
+/BuildChar{0 begin
+ /cc exch def /fd exch def
+ /charname fd /Encoding get cc get def
+ /charwid fd /Metrics get charname get def
+ /charproc fd /CharProcs get charname get def
+ charwid 0 fd /FontBBox get aload pop setcachedevice
+ 40 setlinewidth
+ newpath 0 0 moveto gsave charproc grestore
+ end}def
+/BuildChar load 0 DITfd put
+%/UniqueID 5 def
+/CharProcs 50 dict def
+CharProcs begin
+/space{}def
+/.notdef{}def
+/ru{500 0 rls}def
+/rn{0 750 moveto 500 0 rls}def
+/vr{20 800 moveto 0 -770 rls}def
+/bv{20 800 moveto 0 -1000 rls}def
+/br{20 770 moveto 0 -1040 rls}def
+/ul{0 -250 moveto 500 0 rls}def
+/ob{200 250 rmoveto currentpoint newpath 200 0 360 arc closepath stroke}def
+/bu{200 250 rmoveto currentpoint newpath 200 0 360 arc closepath fill}def
+/sq{80 0 rmoveto currentpoint dround newpath moveto
+    640 0 rlineto 0 640 rlineto -640 0 rlineto closepath stroke}def
+/bx{80 0 rmoveto currentpoint dround newpath moveto
+    640 0 rlineto 0 640 rlineto -640 0 rlineto closepath fill}def
+/ci{355 333 rmoveto currentpoint newpath 333 0 360 arc
+    50 setlinewidth stroke}def
+
+/lt{20 -200 moveto 0 550 rlineto currx 800 2cx s4 add exch s4 a4p stroke}def
+/lb{20 800 moveto 0 -550 rlineto currx -200 2cx s4 add exch s4 a4p stroke}def
+/rt{20 -200 moveto 0 550 rlineto currx 800 2cx s4 sub exch s4 a4p stroke}def
+/rb{20 800 moveto 0 -500 rlineto currx -200 2cx s4 sub exch s4 a4p stroke}def
+/lk{20 800 moveto 20 300 -280 300 s4 arcto pop pop 1000 sub
+    currentpoint stroke moveto
+    20 300 4 2 roll s4 a4p 20 -200 lineto stroke}def
+/rk{20 800 moveto 20 300 320 300 s4 arcto pop pop 1000 sub
+    currentpoint stroke moveto
+    20 300 4 2 roll s4 a4p 20 -200 lineto stroke}def
+/lf{20 800 moveto 0 -1000 rlineto s4 0 rls}def
+/rf{20 800 moveto 0 -1000 rlineto s4 neg 0 rls}def
+/lc{20 -200 moveto 0 1000 rlineto s4 0 rls}def
+/rc{20 -200 moveto 0 1000 rlineto s4 neg 0 rls}def
+end
+
+/Metrics 50 dict def Metrics begin
+/.notdef 0 def
+/space 500 def
+/ru 500 def
+/br 0 def
+/lt 250 def
+/lb 250 def
+/rt 250 def
+/rb 250 def
+/lk 250 def
+/rk 250 def
+/rc 250 def
+/lc 250 def
+/rf 250 def
+/lf 250 def
+/bv 250 def
+/ob 350 def
+/bu 350 def
+/ci 750 def
+/bx 750 def
+/sq 750 def
+/rn 500 def
+/ul 500 def
+/vr 0 def
+end
+
+DITfd begin
+/s2 500 def /s4 250 def /s3 333 def
+/a4p{arcto pop pop pop pop}def
+/2cx{2 copy exch}def
+/rls{rlineto stroke}def
+/currx{currentpoint pop}def
+/dround{transform round exch round exch itransform} def
+end
+end
+/DIThacks exch definefont pop
+/catfonts [
+	/Times-Roman findfont
+	/Times-Italic findfont
+	/Times-Bold findfont
+	/Symbol findfont
+	/Times-Roman findfont
+	/DIThacks findfont
+	] def
+%%EndProlog
+%%Page: ? 1
+BP
+3 F
+96 Z
+984 573(Measured)U
+1427(Performance)S
+1994(of)S
+2106(Caching)S
+2479(in)S
+2591(the)S
+1275 684(Sprite)U
+1558(Network)S
+1947(File)S
+2135(System)S
+1 F
+72 Z
+1621 939(Brent)U
+1805(B.)S
+1895(Welch)S
+1508 1107(3)U
+1656 1023(Xerox)U
+1860(PARC)S
+1544 1107(333)U
+1676(Coyote)S
+1908(Hill)S
+2044(Road)S
+1509 1359(w)U
+1548 1191(Palo)U
+1700(Alto)S
+1852(CA)S
+1976(94304)S
+1561 1359(elch)U
+5 F
+(@)R
+1 F
+(parc.xerox.com)R
+66 Z
+556 1968(T)U
+3 F
+72 Z
+1718 1866(Abstract)U
+1 F
+66 Z
+596 1968(his)U
+700(paper)S
+873(reports)S
+1083(on)S
+1176(the)S
+1283(effectivene)S
+1574(ss)S
+1653(of)S
+1735(the)S
+1842(caching)S
+2073(strategy)S
+2308(used)S
+2456(in)S
+2533(the)S
+2639(Sprite)S
+2822(network)S
+3064(\256le)S
+3131 2046(.)U
+556 2124(M)U
+556 2046(system)U
+773(based)S
+957(on)S
+1057(data)S
+1200(taken)S
+1375(over)S
+1525(several)S
+1744(weeks)S
+1942(of)S
+2030(day-to-day)S
+2348(usage)S
+2531(by)S
+2630(a)S
+2692(variety)S
+2907(of)S
+2995(users)S
+615 2124(easurements)U
+969(include)S
+1190(cache)S
+1367(consistency)S
+1702(activity,)S
+1943(long)S
+2088(term)S
+2236(I/O)S
+2352(traf\256c)S
+2537(rates,)S
+2706(long)S
+2851(term)S
+2999(cache)S
+556 2280(t)U
+556 2202(hit)U
+657(rates,)S
+830(and)S
+957(the)S
+1069(averages)S
+1331(and)S
+1458(variations)S
+1749(in)S
+1832(the)S
+1943(size)S
+2076(of)S
+2162(the)S
+2273(variable-size)S
+2608(d)S
+2672(caches.)S
+2917(Network)S
+574 2280(raf\256c)U
+744(is)S
+819(compared)S
+1109(with)S
+1257(traf\256c)S
+1445(to)S
+1527(the)S
+1638(local)S
+1796(cache,)S
+1993(and)S
+2119(the)S
+2230(effects)S
+2436(of)S
+2522(paging)S
+2732(traf\256c)S
+2920(are)S
+3031(con-)S
+556 2436(o)U
+556 2358(sidered.)U
+813(The)S
+943(overall)S
+1153(conclusion)S
+1466(is)S
+1538(that)S
+1664(the)S
+1771(caching)S
+2002(system)S
+2212(is)S
+2283(quite)S
+2441(effective)S
+2697(and)S
+2819(poses)S
+2993(a)S
+3049(low)S
+589 2436(verhead.)U
+863(Using)S
+1048(a)S
+1104(delayed)S
+1335(write)S
+1497(strategy,)S
+1749(40%)S
+1897(to)S
+1974(50%)S
+2121(of)S
+2202(the)S
+2308(data)S
+2443(written)S
+2655(to)S
+2732(client)S
+2903(caches)S
+3104(is)S
+556 2592(i)U
+556 2514(never)U
+729(written)S
+942(through)S
+1174(to)S
+1252(a)S
+1307(server,)S
+1511(and)S
+1632(less)S
+1757(than)S
+1896(1%)S
+2010(of)S
+2091(the)S
+2197(open)S
+2351(operations)S
+2651(by)S
+2743(clients)S
+2940(resulted)S
+574 2592(n)U
+629(cache)S
+800(consistency)S
+1129(actions)S
+1337(by)S
+1425(a)S
+1476(server.)S
+1676(\262)S
+3 F
+556 3099(1)U
+1 F
+556 2841(July)U
+688(19,)S
+793(1991)S
+3 F
+589 3099(.)U
+650(Introduction)S
+1 F
+706 3201(T)U
+(his)R
+855(paper)S
+1033(presents)S
+1281(performance)S
+1645(measurements)S
+2053(of)S
+2140(the)S
+2252(caching)S
+2488(subsystem)S
+2794(of)S
+2880(the)S
+2991(Sprite)S
+556 3357(d)U
+556 3279(distributed)U
+872(\256le)S
+991(system)S
+1208([Ousterhout88].)S
+1684(In)S
+1773(a)S
+1836(Sprite)S
+2027(network,)S
+2294(client)S
+2473(workstations)S
+2844(are)S
+2958(usually)S
+589 3357(iskless,)U
+811(and)S
+935(the)S
+1044(\256le)S
+1157(servers)S
+1373(implement)S
+1682(different)S
+1937(parts)S
+2094(of)S
+2178(a)S
+2236(uniformly)S
+2527(shared)S
+2727(\256le)S
+2839(system)S
+3050(that)S
+556 3513(c)U
+556 3435(provides)U
+818(the)S
+933(semantics)S
+1227(of)S
+1317(a)S
+1381(4.3)S
+1499(BSD)S
+1663(UNIX)S
+1864(timesharing)S
+2209(system.)S
+2465(Both)S
+2627(clients)S
+2832(and)S
+2961(servers)S
+585 3513(ache)U
+739(\256le)S
+856(data)S
+998(in)S
+1082(their)S
+1235(main)S
+1399(memories)S
+1691(to)S
+1775(optimize)S
+2037(I/O)S
+2158(operations[Nelson88b].)S
+2834(Cache)S
+3031(con-)S
+556 3669(\256)U
+556 3591(sistency)U
+793(is)S
+862(provided)S
+1121(so)S
+1205(that)S
+1328(a)S
+1382(read)S
+1520(returns)S
+1728(the)S
+1833(most)S
+1986(recently)S
+2221(written)S
+2431(data)S
+2564(regardless)S
+2855(of)S
+2934(the)S
+3038(way)S
+593 3669(les)U
+690(are)S
+794(shared.)S
+1029(A)S
+1101(delayed)S
+1329(write)S
+1488(policy)S
+1676(is)S
+1744(used)S
+1889(on)S
+1979(the)S
+2083(clients)S
+2277(and)S
+2395(servers,)S
+2622(and)S
+2740(it)S
+2799(provides)S
+3049(two)S
+6 F
+60 Z
+556 3738(h)U
+580(hhhhhhhhhhhhhhhhhhhhhhhhhhhh)S
+1 F
+685 3822(\262)U
+735(This)S
+862(paper)S
+1016(will)S
+1130(appear)S
+1311(in)S
+2 F
+1378(Computing)S
+1665(Systems)S
+1 F
+(,)R
+1890(the)S
+1984(Journal)S
+2181(of)S
+2251(the)S
+2345(USENIX)S
+2584(Association.)S
+3128 3960(-)U
+556 4029(p)U
+556 3960(Part)U
+674(of)S
+745(this)S
+853(work)S
+997(was)S
+1111(done)S
+1249(while)S
+1404(the)S
+1499(author)S
+1674(was)S
+1788(at)S
+1853(the)S
+1948(University)S
+2222(of)S
+2292(California,)S
+2572(Berkeley,)S
+2825(and)S
+2932(was)S
+3045(sup)S
+586 4029(orted)U
+735(in)S
+807(part)S
+926(by)S
+1011(the)S
+1110(Defense)S
+1332(Advanced)S
+1601(Research)S
+1847(Projects)S
+2066(Agency)S
+2278(under)S
+2440(contract)S
+2660(N00039-85-C-0269,)S
+556 4167(C)U
+556 4098(in)U
+629(part)S
+749(by)S
+835(the)S
+935(National)S
+1168(Science)S
+1381(Foundation)S
+1680(under)S
+1842(grant)S
+1991(ECS-8351961,)S
+2371(and)S
+2483(in)S
+2555(part)S
+2674(by)S
+2759(General)S
+2975(Motors)S
+596 4167(orporation.)U
+EP
+%%Page: ? 2
+BP
+1 F
+66 Z
+556 660(b)U
+(ene\256ts.)R
+823(First,)S
+984(applicati)S
+1209(ons)S
+1324(do)S
+1413(not)S
+1520(have)S
+1667(to)S
+1741(wait)S
+1876(for)S
+1975(the)S
+2077(relativel)S
+2291(y)S
+2346(slow)S
+2493(network)S
+2731(and)S
+2848(disk)S
+2980(opera-)S
+3126 738(-)U
+556 816(t)U
+556 738(tions)U
+710(because)S
+944(writes)S
+1131(occur)S
+1303(in)S
+1380(the)S
+1486(background.)S
+1862(Second,)S
+2099(the)S
+2205(delay)S
+2373(period)S
+2567(means)S
+2761(that)S
+2885(data)S
+3020(writ)S
+574 816(en)U
+670(by)S
+770(applicati)S
+995(ons)S
+1121(can)S
+1246(be)S
+1342(deleted)S
+1565(or)S
+1654(overwritten)S
+1991(without)S
+2226(being)S
+2406(written)S
+2626(through)S
+2865(to)S
+2950(the)S
+3064(\256le)S
+556 894(servers.)U
+706 996(The)U
+836(main)S
+995(results)S
+1195(presented)S
+1474(in)S
+1552(this)S
+1674(paper)S
+1847(are)S
+1954(summarized)S
+2302(in)S
+2380(Table)S
+2556(1)S
+2616(and)S
+2738(Table)S
+2914(2.)S
+3013(They)S
+556 1152(o)U
+556 1074(were)U
+708(obtained)S
+958(by)S
+1048(monitoring)S
+1364(the)S
+1468(Sprite)S
+1649(network)S
+1889(for)S
+1990(a)S
+2043(period)S
+2235(of)S
+2314(several)S
+2524(months.)S
+2780(Less)S
+2924(than)S
+3060(1%)S
+589 1152(f)U
+642(the)S
+753(\256les)S
+894(opened)S
+1115(triggered)S
+1383(server)S
+1575(consistency)S
+1913(actions,)S
+2147(which)S
+2339(indicates)S
+2603(that)S
+2731(the)S
+2841(consistency)S
+3126 1230(-)U
+556 1308(c)U
+556 1230(scheme)U
+779(imposes)S
+1021(low)S
+1146(overhead.)S
+1452(Concurrent)S
+1774(read)S
+1913(sharing)S
+2133(is)S
+2203(quite)S
+2360(common,)S
+2632(mainly)S
+2839(due)S
+2959(to)S
+3035(exe)S
+585 1308(utable)U
+768(\256les.)S
+940(The)S
+1065(variable-size)S
+1400(d)S
+1456(caches)S
+1654(adapt)S
+1819(to)S
+1893(the)S
+1996(different)S
+2245(needs)S
+2418(of)S
+2495(clients)S
+2688(and)S
+2805(servers,)S
+3031(with)S
+3130 1386(t)U
+556 1464(c)U
+556 1386(servers)U
+777(using)S
+954(more)S
+1123(memory)S
+1376(for)S
+1486(their)S
+1639(\256le)S
+1756(cache)S
+1938(than)S
+2084(clients.)S
+2327(The)S
+2462(read)S
+2608(miss)S
+2762(rate)S
+2893(for)S
+3003(clien)S
+585 1464(aches)U
+757(is)S
+827(good,)S
+1002(but)S
+1112(the)S
+1218(low)S
+1343(client)S
+1514(write)S
+1675(traf\256c)S
+1858(ratio)S
+2004(is)S
+2074(even)S
+2224(more)S
+2385(signi\256cant.)S
+2724(40%)S
+2871(to)S
+2947(50%)S
+3093(of)S
+556 1620(o)U
+556 1542(the)U
+659(data)S
+790(written)S
+998(by)S
+1086(applicati)S
+1311(ons)S
+1425(is)S
+1491(never)S
+1659(written)S
+1867(through)S
+2094(to)S
+2167(the)S
+2269(\256le)S
+2375(servers.)S
+2623(This)S
+2762(data)S
+2893(is)S
+2959(deleted)S
+589 1620(r)U
+633(overwritten)S
+958(within)S
+1148(the)S
+1250(30-second)S
+1543(delay)S
+1707(period.)S
+706 1722(T)U
+(hese)R
+896(results)S
+1100(are)S
+1212(based)S
+1394(on)S
+1492(statistics)S
+1750(taken)S
+1924(from)S
+2084(our)S
+2204(Sprite)S
+2393(network)S
+2641(from)S
+2801(July)S
+2943(through)S
+3119 1800(e)U
+556(December,)S
+872(1989,)S
+1050(and)S
+1174(a)S
+1232(follow)S
+1433(up)S
+1528(study)S
+1700(made)S
+1871(in)S
+1950(March)S
+2150(and)S
+2273(April)S
+2440(1991.)S
+2639(At)S
+2733(the)S
+2841(time)S
+2985(of)S
+3068(th)S
+6 F
+1024 1908(i)U
+1030(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1024 1992(i)U
+1 F
+1223 1986(Summary)U
+1501(of)S
+1578(Caching)S
+1819(Measurements)S
+2225(\(Fall)S
+2371('89\))S
+6 F
+1030 1992(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+1024 2004(i)U
+1030(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+1057 2154(F)U
+1057 2076(Files)U
+1207(requiring)S
+1470(consistency)S
+1799(callbacks)S
+4 F
+2259(<)S
+1 F
+2318(1%)S
+2428(opens)S
+1094 2154(iles)U
+1207(uncachable)S
+1524(due)S
+1641(to)S
+1714(sharing)S
+2318(7.5%)S
+2478(opens)S
+6 F
+1024 2244(i)U
+1 F
+2232(Files)T
+1207(concurrently)S
+1561(read)S
+1696(shared)S
+2285(37%)S
+2428(opens)S
+6 F
+1030 2244(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+1 F
+1057 2400(A)U
+1057 2322(Average)U
+1302(client)S
+1469(cache)S
+1640(sizes)S
+2142(17%-35%)S
+2428(memory)S
+1105 2400(verage)U
+1302(server)S
+1485(cache)S
+1656(sizes)S
+2142(25%-61%)S
+2428(memory)S
+6 F
+2647 2412(i)U
+1024(i)S
+1030(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+1057 2490(Average)U
+1302(client)S
+1469(read)S
+1604(miss)S
+1747(ratios)S
+2285(35%)S
+2428(bytes)S
+2541 2568(s)U
+6 F
+1024 2580(i)U
+1 F
+2568(Average)T
+1302(client)S
+1469(write)S
+1626(traf\256c)S
+1805(ratios)S
+2285(52%)S
+2428(byte)S
+6 F
+1030 2580(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+1024(c)S
+2568(c)T
+2502(c)T
+2436(c)T
+2370(c)T
+2304(c)T
+2238(c)T
+2172(c)T
+2106(c)T
+2040(c)T
+1974(c)T
+2680 2580(c)U
+2568(c)T
+2502(c)T
+2436(c)T
+2370(c)T
+2304(c)T
+2238(c)T
+2172(c)T
+2106(c)T
+2040(c)T
+1974(c)T
+1 F
+60 Z
+3011 2697(t)U
+676 2766(p)U
+676 2697(Table)U
+841(1.)S
+913(Summary)S
+1174(of)S
+1251(results)S
+1435(from)S
+1579(the)S
+1680(initial)S
+1849(study)S
+2006(made)S
+2164(during)S
+2348(the)S
+2449(fall)S
+2557(of)S
+2634(1989.)S
+2815(The)S
+2935(\256rs)S
+706 2766(art)U
+799(of)S
+878(the)S
+981(table)S
+1128(contains)S
+1358(cache)S
+1525(consistency)S
+1835(related)S
+2029(\256gures)S
+2221(based)S
+2387(on)S
+2475(open)S
+2620(operations.)S
+2934(The)S
+3005 2835(s)U
+676 2904(\256)U
+676 2835(second)U
+877(part)S
+1005(contains)S
+1240(gives)S
+1401(average)S
+1623(cache)S
+1795(sizes.)S
+1981(The)S
+2108(third)S
+2255(part)S
+2382(gives)S
+2542(cache)S
+2713(effective)S
+2925(nes)S
+709 2904(gures)U
+859(based)S
+1016(on)S
+1096(I/O)S
+1196(rates.)S
+6 F
+66 Z
+1024 3036(i)U
+1030(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1024 3120(i)U
+1 F
+1107 3114(Summary)U
+1385(of)S
+1462(Caching)S
+1703(Measurements)S
+2109(\(March-April)S
+2486('91\))S
+6 F
+1030 3120(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+1024 3132(i)U
+1030(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+1057 3282(F)U
+1057 3204(Files)U
+1207(requiring)S
+1470(consistency)S
+1799(callbacks)S
+4 F
+2259(<)S
+1 F
+2318(1%)S
+2428(opens)S
+1094 3282(iles)U
+1207(uncachable)S
+1524(due)S
+1641(to)S
+1714(sharing)S
+4 F
+2259(<)S
+1 F
+2318(1%)S
+2428(opens)S
+2556 3360(s)U
+6 F
+1024 3372(i)U
+1 F
+3360(Files)T
+1207(concurrently)S
+1561(read)S
+1696(shared)S
+2285(51%)S
+2428(open)S
+6 F
+1030 3372(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+1 F
+1057 3528(A)U
+1057 3450(Average)U
+1302(client)S
+1469(cache)S
+1640(sizes)S
+2175(7%-33%)S
+2428(memory)S
+1105 3528(verage)U
+1302(server)S
+1485(cache)S
+1656(sizes)S
+2142(40%-73%)S
+2428(memory)S
+6 F
+2647 3540(i)U
+1024(i)S
+1030(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+1057 3618(Average)U
+1302(client)S
+1469(read)S
+1604(miss)S
+1747(ratios)S
+2285(39%)S
+2428(bytes)S
+2541 3696(s)U
+6 F
+1024 3708(i)U
+1 F
+3696(Average)T
+1302(client)S
+1469(write)S
+1626(traf\256c)S
+1805(ratios)S
+2285(62%)S
+2428(byte)S
+6 F
+1030 3708(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+1024(c)S
+3696(c)T
+3630(c)T
+3564(c)T
+3498(c)T
+3432(c)T
+3366(c)T
+3300(c)T
+3234(c)T
+3168(c)T
+3102(c)T
+2680 3708(c)U
+3696(c)T
+3630(c)T
+3564(c)T
+3498(c)T
+3432(c)T
+3366(c)T
+3300(c)T
+3234(c)T
+3168(c)T
+3102(c)T
+1 F
+60 Z
+3011 3825(t)U
+676 3894(d)U
+676 3825(Table)U
+839(2.)S
+909(Summary)S
+1168(of)S
+1243(results)S
+1425(from)S
+1566(a)S
+1617(follow-up)S
+1878(study)S
+2032(made)S
+2187(in)S
+2258(the)S
+2356(Spring)S
+2540(of)S
+2614(1991.)S
+2793(The)S
+2911(mos)S
+706 3894(ramatic)U
+912(change)S
+1106(is)S
+1169(the)S
+1266(reduction)S
+1517(in)S
+1587(the)S
+1684(number)S
+1891(of)S
+1964(uncachabl)S
+2209(e)S
+2259(\256les)S
+2382(due)S
+2492(to)S
+2562(the)S
+2659(replace)S
+2834(ment)S
+2978(of)S
+676 3963(a)U
+723(network-wide)S
+1077(shared)S
+1254(database)S
+1482(\256le)S
+1579(with)S
+1706(a)S
+1753(server-based)S
+2077(impleme)S
+2289(ntation.)S
+EP
+%%Page: ? 3
+BP
+3 F
+66 Z
+556 444(S)U
+(prite)R
+750(Caching)S
+1 F
+556 660(o)U
+(riginal)R
+784(study,)S
+968(the)S
+1072(Sprite)S
+1253(network)S
+1492(was)S
+1618(composed)S
+1908(of)S
+1986(four)S
+2119(\256le)S
+2226(servers)S
+2436(\(one)S
+2576(Sun-4/280,)S
+2891(2)S
+2947(Sun-3s,)S
+556 816(t)U
+556 738(and)U
+675(1)S
+732(DECstation)S
+1063(3100\))S
+1241(and)S
+1360(about)S
+1529(30)S
+1618(client)S
+1786(workstations)S
+2146(\(11)S
+2257(Sun-3s,)S
+2481(4)S
+2537(Sun-4s,)S
+2761(and)S
+2879(15)S
+2968(DECs-)S
+574 816(ation)U
+730(3100s\).)S
+974(One)S
+1109(year)S
+1247(later)S
+1388(the)S
+1493(network)S
+1733(had)S
+1852(around)S
+2059(36)S
+2149(clients)S
+2344(\(6)S
+2423(Sun-3s,)S
+2648(13)S
+2738(Sun-4s,)S
+2963(and)S
+3082(17)S
+3126 894(r)U
+556 972(e)U
+556 894(DECstation)U
+886(3100s\),)S
+1106(the)S
+1209(two)S
+1331(Sun-3)S
+1512(servers)S
+1722(were)S
+1873(retired)S
+2067(and)S
+2185(another)S
+2404(Sun-4)S
+2584(server)S
+2767(was)S
+2892(added)S
+3071(fo)S
+585 972(xperiments.)U
+938(Table)S
+1109(3)S
+1164(lists)S
+1292(the)S
+1394(characteri)S
+1652(stics)S
+1791(of)S
+1868(the)S
+1970(\256le)S
+2076(servers)S
+2285(measured)S
+2559(in)S
+2632(the)S
+2734(study.)S
+3130 1074(t)U
+556 1152(w)U
+706 1074(The)U
+833(results)S
+1030(were)S
+1183(obtained)S
+1434(from)S
+1587(raw)S
+1711(data)S
+1845(in)S
+1921(the)S
+2026(form)S
+2178(of)S
+2257(about)S
+2427(450)S
+2550(different)S
+2800(statistics)S
+3050(tha)S
+604 1152(ere)U
+707(maintaine)S
+965(d)S
+1021(in)S
+1095(the)S
+1198(kernel)S
+1385(and)S
+1503(periodicall)S
+1783(y)S
+1838(sampled.)S
+2118(File)S
+2242(servers)S
+2451(were)S
+2601(sampled)S
+2842(hourly,)S
+3053(and)S
+3122 1230(s)U
+556 1308(w)U
+556 1230(clients)U
+755(were)S
+911(sampled)S
+1158(5)S
+1219(times)S
+1389(each)S
+1537(day)S
+1660(\(at)S
+1757(8am,)S
+1915(11am,)S
+2106(2pm,)S
+2268(5pm,)S
+2430(and)S
+2553(8pm\).)S
+2759(Some)S
+2936(change)S
+604 1308(ere)U
+709(made)S
+876(to)S
+952(the)S
+1057(system)S
+1264(after)S
+1408(the)S
+1512(original)S
+1740(study,)S
+1924(and)S
+2043(a)S
+2096(second)S
+2303(set)S
+2400(of)S
+2479(measurements)S
+2879(was)S
+3006(taken)S
+556 1464(w)U
+556 1386(to)U
+629(determine)S
+913(the)S
+1015(effects)S
+1212(of)S
+1289(the)S
+1391(changes)S
+1625(on)S
+1713(the)S
+1815(system's)S
+2068(behavior.)S
+2359(\(A)S
+2451(6th)S
+2557(sample)S
+2765(taken)S
+2929(at)S
+2998(11pm)S
+604 1464(as)U
+681(also)S
+809(added)S
+988(during)S
+1182(the)S
+1284(second)S
+1489(study)S
+1654(period.\))S
+706 1566(S)U
+(prite)R
+900(is)S
+981(4.3)S
+1101(BSD)S
+1267(UNIX)S
+1470(compatible)S
+1761(,)S
+1815(although)S
+2081(the)S
+2197(operating)S
+2481(system)S
+2700(kernel)S
+2900(has)S
+3024(been)S
+3115 1644(g)U
+556 1722(n)U
+556 1644(implement)U
+836(ed)S
+922(from)S
+1074(scratch.)S
+1322(During)S
+1532(the)S
+1635(study,)S
+1818(Sprite)S
+1998(was)S
+2124(used)S
+2268(for)S
+2368(all)S
+2456(the)S
+2559(day-to-day)S
+2867(computin)S
+589 1722(eeds)U
+734(of)S
+817(twenty)S
+1024(or)S
+1107(more)S
+1270(graduate)S
+1524(students,)S
+1785(a)S
+1842(few)S
+1968(professors,)S
+2284(and)S
+2406(a)S
+2462(couple)S
+2664(of)S
+2746(staff)S
+2890(members.)S
+556 1878(t)U
+556 1800(There)U
+737(were)S
+893(about)S
+1067(a)S
+1124(dozen)S
+1309(more)S
+1472(occasional)S
+1777(users..)S
+1997(The)S
+2127(workload)S
+2403(consisted)S
+2675(of)S
+2757(large)S
+2915(compila-)S
+574 1878(ion)U
+682(jobs,)S
+833(word)S
+993(processing,)S
+1315(electronic)S
+1596(mail,)S
+1752(simulation)S
+2052(studies,)S
+2275(and)S
+2393(other)S
+2551(assorted)S
+2790(programming)S
+3131 1956(.)U
+556 2034(E)U
+556 1956(tasks.)U
+759(Perhaps)S
+1000(the)S
+1112(heaviest)S
+1359(load)S
+1504(on)S
+1602(the)S
+1714(system)S
+1929(stemmed)S
+2197(from)S
+2356(development)S
+2726(of)S
+2812(Sprite)S
+3000(itself)S
+596 2034(specially)U
+864(during)S
+1071(the)S
+1186(initial)S
+1373(study,)S
+1568(Sprite)S
+1760(was)S
+1897(undergoing)S
+2231(considerable)S
+2597(tuning,)S
+2816(performance)S
+3126 2112(-)U
+556 2190(p)U
+556 2112(enhancement)U
+902(s,)S
+970(and)S
+1090(bug)S
+1214(\256xes.)S
+1403(Process)S
+1630(migration)S
+1910(was)S
+2038(used)S
+2184(extensively)S
+2508(to)S
+2584(distribute)S
+2857(large)S
+3013(com)S
+589 2190(ilation)U
+780(jobs)S
+914(among)S
+1117(idle)S
+1239(workstations.)S
+1639(With)S
+1794(migration,)S
+2090(recompiling)S
+2431(a)S
+2484(large)S
+2639(module)S
+2860(of)S
+2939(the)S
+3042(ker-)S
+556 2268(nel)U
+658(\(e.g.,)S
+815(the)S
+917(VM)S
+1046(system)S
+1251(or)S
+1328(the)S
+1430(\256le)S
+1536(system\))S
+1763(was)S
+1888(fast)S
+2005(enough)S
+2221(that)S
+2341(it)S
+2399(was)S
+2524(done)S
+2674(rather)S
+2849(frequently.)S
+706 2370(The)U
+835(remainder)S
+1128(of)S
+1210(this)S
+1332(paper)S
+1505(is)S
+1575(organized)S
+1860(as)S
+1941(follows.)S
+2204(Section)S
+2427(2)S
+2486(reviews)S
+2717(the)S
+2823(Sprite)S
+3006(cach-)S
+556 2526(r)U
+556 2448(ing)U
+664(system)S
+871(and)S
+990(the)S
+1094(algorithm)S
+1373(used)S
+1517(to)S
+1591(maintain)S
+1843(consistency)S
+2173(of)S
+2251(client)S
+2419(caches.)S
+2656(Section)S
+2876(3)S
+2932(presents)S
+578 2526(esults)U
+781(on)S
+900(the)S
+1033(cache)S
+1235(consistency)S
+1595(overhead.)S
+1928(Section)S
+2178(4)S
+2264(presents)S
+2533(measurements)S
+2961(of)S
+3068(the)S
+556 2682(v)U
+556 2604(effectivene)U
+847(ss)S
+936(of)S
+1028(the)S
+1145(caching)S
+1386(system)S
+1606(during)S
+1815(normal)S
+2038(system)S
+2258(activity.)S
+2530(Section)S
+2763(5)S
+2832(shows)S
+3034(how)S
+589 2682(ariable-size)U
+891(d)S
+949(caches)S
+1149(dynamicall)S
+1440(y)S
+1498(adapt)S
+1665(to)S
+1741(clients)S
+1937(and)S
+2057(servers)S
+2268(of)S
+2347(different)S
+2597(memory)S
+2840(sizes.)S
+3031(Sec-)S
+556 2760(tion)U
+680(6)S
+735(describes)S
+1002(related)S
+1202(work.)S
+1399(Section)S
+1618(7)S
+1673(concludes)S
+1958(the)S
+2060(paper.)S
+6 F
+808 3030(i)U
+817(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+808 3114(i)U
+1 F
+1592 3108(File)U
+1716(Server)S
+1910(Pro\256les)S
+6 F
+817 3114(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+808 3126(i)U
+817(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+808 3210(i)U
+1 F
+3198(Name)T
+1167(CPU)S
+1490(Memory)S
+1824(Files)S
+6 F
+817 3210(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+1 F
+841 3366(O)U
+841 3288(Mint)U
+1167(Sun-3)S
+1516(16)S
+1604(Meg)S
+1824(Root,)S
+1991(commands,)S
+2315(libraries)S
+889 3366(regano)U
+1167(Sun-3)S
+1516(16)S
+1604(Meg)S
+1824(/tmp,)S
+1983(commands,)S
+2307(sources,)S
+2544(users)S
+2837 3444(s)U
+841 3522(A)U
+841 3444(Allspice)U
+1167(Sun-4)S
+1483(128)S
+1604(Meg)S
+1824(Root,)S
+1991(commands,)S
+2315(swap,)S
+2490(sources,)S
+2727(user)S
+889 3522(ssault)U
+1167(DS3100)S
+1516(24)S
+1604(Meg)S
+1824(Users)S
+2141 3600(l)U
+6 F
+808 3612(i)U
+1 F
+3600(Anise)T
+1167(Sun-4)S
+1516(32)S
+1604(Meg)S
+1824(Expermenta)S
+6 F
+817 3612(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+808(c)S
+3558(c)T
+3492(c)T
+3426(c)T
+3360(c)T
+3294(c)T
+3228(c)T
+3162(c)T
+3096(c)T
+2896 3612(c)U
+3558(c)T
+3492(c)T
+3426(c)T
+3360(c)T
+3294(c)T
+3228(c)T
+3162(c)T
+3096(c)T
+1 F
+60 Z
+3008 3729(-)U
+676 3798(t)U
+676 3729(Table)U
+836(3.)S
+903(A)S
+968(pro\256le)S
+1147(of)S
+1219(the)S
+1315(\256le)S
+1413(servers)S
+1604(measured)S
+1856(in)S
+1924(the)S
+2019(two)S
+2130(studies.)S
+2353(The)S
+2468(memory)S
+2690(size)S
+2805(is)S
+2866(the)S
+2961(to)S
+693 3798(al)U
+761(physical)S
+986(memory,)S
+1226(not)S
+1327(the)S
+1425(cache)S
+1587(size.)S
+1740(Mint)S
+1881(was)S
+1998(the)S
+2096(root)S
+2217(server)S
+2388(in)S
+2459(the)S
+2557(\256rst)S
+2673(study.)S
+2861(By)S
+2954(the)S
+3008 3867(r)U
+676 3936(m)U
+676 3867(time)U
+807(of)S
+880(the)S
+977(second)S
+1167(study,)S
+1335(Mint)S
+1475(and)S
+1585(Oregano)S
+1815(had)S
+1925(been)S
+2062(retired)S
+2243(and)S
+2353(Allspice)S
+2577(was)S
+2693(the)S
+2789(server)S
+2958(fo)S
+723 3936(ost)U
+815(\256les.)S
+972(Assault)S
+1174(continued)S
+1434(to)S
+1503(service)S
+1696(a)S
+1745(few)S
+1857(user)S
+1978(directorie)S
+2210(s,)S
+2269(and)S
+2377(Anise)S
+2538(was)S
+2652(used)S
+2783(for)S
+2874(exper-)S
+676 4005(ments)U
+840(and)S
+947(scratch)S
+1138(space.)S
+3 F
+66 Z
+1791 4470(-)U
+1835(2)S
+1890(-)S
+EP
+%%Page: ? 4
+BP
+3 F
+66 Z
+556 660(2)U
+556 444(Sprite)U
+750(Caching)S
+589 660(.)U
+650(The)S
+782(Sprite)S
+976(Caching)S
+1233(System)S
+1 F
+706 762(T)U
+(his)R
+849(section)S
+1061(reviews)S
+1292(the)S
+1398(Sprite)S
+1581(caching)S
+1811(system)S
+2019(originally)S
+2299(described)S
+2576(in)S
+2652([Nelson88b].)S
+3046(The)S
+3119 840(e)U
+556 918(t)U
+556 840(important)U
+840(properties)S
+1132(of)S
+1216(Sprite's)S
+1450(caching)S
+1683(system)S
+1895(are:)S
+2022(1\))S
+2106(diskless)S
+2344(clients)S
+2544(of)S
+2628(the)S
+2737(\256le)S
+2849(system)S
+3060(us)S
+574 918(heir)U
+705(main)S
+865(memories)S
+1153(to)S
+1233(cache)S
+1411(data;)S
+1567(2\))S
+1651(clients)S
+1851(use)S
+1968(a)S
+2026(delayed-writing)S
+2471(policy)S
+2664(so)S
+2752(that)S
+2878(temporary)S
+3122 996(s)U
+556 1074(g)U
+556 996(data)U
+690(does)S
+836(not)S
+945(have)S
+1094(to)S
+1170(be)S
+1257(written)S
+1468(to)S
+1544(the)S
+1649(server;)S
+1853(and)S
+1973(3\))S
+2053(the)S
+2158(servers)S
+2369(guarantee)S
+2648(that)S
+2770(clients)S
+2965(alway)S
+589 1074(et)U
+658(data)S
+789(that)S
+909(is)S
+975(consistent)S
+1260(with)S
+1399(activity)S
+1617(by)S
+1705(other)S
+1862(clients,)S
+2072(regardless)S
+2361(of)S
+2438(how)S
+2574(\256les)S
+2706(are)S
+2808(being)S
+2976(shared)S
+3131 1152(,)U
+556 1230(a)U
+556 1152(throughout)U
+868(the)S
+971(network.)S
+1249(Servers)S
+1470(also)S
+1599(cache)S
+1771(data)S
+1903(in)S
+1977(their)S
+2120(main)S
+2274(memory)S
+2516(and)S
+2634(use)S
+2744(delayed)S
+2970(writes)S
+585 1230(nd)U
+673(the)S
+775(implement)S
+1055(ation)S
+1208(of)S
+1285(the)S
+1387(client)S
+1554(and)S
+1671(server)S
+1854(caches)S
+2051(is)S
+2117(basically)S
+2372(the)S
+2474(same.)S
+3115 1332(n)U
+556 1410(a)U
+706 1332(The)U
+835(key)S
+957(characteri)S
+1215(stics)S
+1359(of)S
+1441(the)S
+1548(Sprite)S
+1732(consistency)S
+2066(scheme)S
+2290(are:)S
+2415(1\))S
+2497(the)S
+2604(server)S
+2792(sees)S
+2929(all)S
+3020(ope)S
+585 1410(nd)U
+683(close)S
+850(operations)S
+1156(by)S
+1254(clients;)S
+1475(2\))S
+1562(a)S
+1622(version)S
+1847(number)S
+2079(is)S
+2154(associated)S
+2455(with)S
+2603(each)S
+2754(\256le)S
+2869(and)S
+2995(incre-)S
+556 1566(c)U
+556 1488(mented)U
+778(when)S
+950(a)S
+1008(\256le)S
+1121(is)S
+1194(opened)S
+1413(for)S
+1519(writing;)S
+1756(and)S
+1880(3\))S
+1964(a)S
+2022(\256le)S
+2135(is)S
+2207(not)S
+2319(cachable)S
+2576(on)S
+2670(clients)S
+2869(when)S
+3040(it)S
+3104(is)S
+585 1566(oncurrently)U
+918(open)S
+1075(for)S
+1181(writing)S
+1400(on)S
+1495(one)S
+1619(client)S
+1793(and)S
+1917(for)S
+2023(reading)S
+2249(and/or)S
+2446(writing)S
+2665(on)S
+2760(another)S
+2986(client.)S
+556 1722(w)U
+556 1644(The)U
+691(last)S
+814(point)S
+981(is)S
+1057(a)S
+1118(key)S
+1245(simpli\256cation)S
+1638(in)S
+1721(the)S
+1833(Sprite)S
+2022(caching)S
+2258(system:)S
+2491(if)S
+2563(a)S
+2624(\256le)S
+2740(is)S
+2816(concurrently)S
+604 1722(rite-shared)U
+915(by)S
+1011(different)S
+1267(clients,)S
+1485(I/O)S
+1603(operations)S
+1907(on)S
+2003(that)S
+2131(\256le)S
+2245(bypass)S
+2455(the)S
+2565(client)S
+2740(caches)S
+2944(and)S
+3068(are)S
+556 1800(serialized)U
+829(in)S
+902(the)S
+1004(server)S
+1187(cache.)S
+706 1902(In)U
+791(order)S
+960(to)S
+1041(provide)S
+1272(a)S
+1331(consistent)S
+1624(view)S
+1782(of)S
+1866(\256le)S
+1979(data,)S
+2134(the)S
+2243(\256le)S
+2356(servers)S
+2572(track)S
+2732(open)S
+2889(and)S
+3013(close)S
+3119 1980(e)U
+556 2058(c)U
+556 1980(operations)U
+864(and)S
+993(keep)S
+1151(state)S
+1305(about)S
+1485(how)S
+1633(their)S
+1787(\256les)S
+1931(are)S
+2045(being)S
+2225(cached)S
+2441(by)S
+2541(clients.)S
+2785(Servers)S
+3016(issu)S
+585 2058(ache)U
+733(control)S
+947(messages)S
+1224(to)S
+1303(clients)S
+1501(at)S
+1575(open)S
+1730(time,)S
+1890(if)S
+1957(needed,)S
+2187(so)S
+2273(that)S
+2398(clients)S
+2596(always)S
+2806(get)S
+2913(the)S
+3020(most)S
+556 2214(o)U
+556 2136(up-to-date)U
+853(\256le)S
+964(system)S
+1174(data.)S
+1349(A)S
+1424(\256le)S
+1535(server)S
+1722(issues)S
+1906(a)S
+1961(write-back)S
+2268(command)S
+2553(to)S
+2630(client-A)S
+2871(if)S
+2937(client-B)S
+589 2214(pens)U
+733(a)S
+785(\256le)S
+892(and)S
+1010(client-A)S
+1248(has)S
+1359(the)S
+1462(most)S
+1613(recent)S
+1795(version)S
+2011(of)S
+2088(the)S
+2190(\256le)S
+2296(still)S
+2416(dirty)S
+2562(in)S
+2635(its)S
+2719(cache.)S
+2929(Because)S
+556 2370(b)U
+556 2292(clients)U
+754(use)S
+869(a)S
+925(delayed)S
+1156(write)S
+1318(policy,)S
+1526(this)S
+1648(can)S
+1766(occur)S
+1939(if)S
+2006(a)S
+2061(\256le)S
+2171(is)S
+2241(generated)S
+2522(on)S
+2614(one)S
+2735(client)S
+2906(and)S
+3027(used)S
+589 2370(y)U
+646(another)S
+867(within)S
+1059(the)S
+1163(30-second)S
+1458(aging)S
+1628(period.)S
+1858(A)S
+1929(\256le)S
+2036(server)S
+2220(issues)S
+2401(a)S
+2453(disable)S
+2662(caching)S
+2889(command)S
+3126 2448(f)U
+556 2526(a)U
+556 2448(to)U
+630(client-A)S
+868(if)S
+931(client-B)S
+1165(opens)S
+1342(a)S
+1394(\256le)S
+1501(for)S
+1601(writing)S
+1814(and)S
+1932(client-A)S
+2170(still)S
+2291(has)S
+2402(the)S
+2505(\256le)S
+2612(open.)S
+2801(The)S
+2925(result)S
+3093(o)S
+585 2526(n)U
+643(open)S
+796(operation)S
+1069(indicates)S
+1327(to)S
+1403(the)S
+1507(opening)S
+1743(client)S
+1912(whether)S
+2148(or)S
+2227(not)S
+2335(it)S
+2395(can)S
+2510(cache)S
+2683(the)S
+2787(\256le.)S
+2934(In)S
+3013(addi-)S
+556 2682(c)U
+556 2604(tion,)U
+702(servers)S
+916(increment)S
+1205(a)S
+1261(per-\256le)S
+1478(version)S
+1699(number)S
+1927(each)S
+2073(time)S
+2215(the)S
+2321(\256le)S
+2431(is)S
+2501(opened)S
+2717(for)S
+2820(writing,)S
+3053(and)S
+585 2682(lients)U
+749(use)S
+859(the)S
+961(version)S
+1177(number)S
+1400(to)S
+1473(detect)S
+1651(stale)S
+1793(data)S
+1924(in)S
+1997(their)S
+2139(cache.)S
+3131 2784(,)U
+556 2862(a)U
+706 2784(The)U
+842(caching)S
+1080(scheme)S
+1311(is)S
+1389(based)S
+1573(on)S
+1673(the)S
+1787(assumption)S
+2121(that)S
+2253(concurrent)S
+2568(write-sharing)S
+2952(is)S
+3029(rare)S
+585 2862(lthough)U
+816(there)S
+977(was)S
+1109(one)S
+1233(heavily)S
+1455(shared)S
+1656(\256le)S
+1769(in)S
+1849(our)S
+1966(network.)S
+2250(A)S
+2327(host)S
+2466(load)S
+2608(database)S
+2863(was)S
+2995(main-)S
+3126 2940(-)U
+556 3018(b)U
+556 2940(tained)U
+742(using)S
+911(a)S
+966(shared)S
+1164(\256le)S
+1274(for)S
+1377(the)S
+1483(database.)S
+1774(A)S
+1848(daemon)S
+2082(process)S
+2306(on)S
+2398(each)S
+2544(host)S
+2679(updated)S
+2912(the)S
+3017(data)S
+589 3018(ase)U
+704(once)S
+859(a)S
+919(minute)S
+1132(with)S
+1280(the)S
+1391(host's)S
+1580(weighted)S
+1852(load)S
+1996(average)S
+2231(and)S
+2357(the)S
+2468(time)S
+2615(since)S
+2781(last)S
+2903(keyboard)S
+3122 3096(s)U
+556 3174(m)U
+556 3096(input.)U
+763(The)S
+898(database)S
+1157(was)S
+1293(consulted)S
+1578(in)S
+1662(order)S
+1834(to)S
+1918(choose)S
+2134(idle)S
+2265(hosts)S
+2434(for)S
+2544(the)S
+2656(targets)S
+2863(of)S
+2950(proces)S
+607 3174(igration.)U
+879(Because)S
+1127(the)S
+1236(database)S
+1491(was)S
+1622(continuously)S
+1990(open)S
+2146(for)S
+2251(writing)S
+2469(by)S
+2563(a)S
+2620(daemon)S
+2856(process)S
+3082(on)S
+3119 3252(e)U
+556 3330(f)U
+556 3252(every)U
+730(client,)S
+920(it)S
+984(was)S
+1115(in)S
+1194(an)S
+1284(uncachable)S
+1606(state.)S
+1792(This)S
+1936(was)S
+2066(done)S
+2221(by)S
+2314(design)S
+2513(to)S
+2591(prevent)S
+2815(the)S
+2922(databas)S
+578 3330(rom)U
+708(moving)S
+933(among)S
+1136(client)S
+1304(caches)S
+1502(in)S
+1576(response)S
+1830(to)S
+1904(updates)S
+2128(and)S
+2246(queries.)S
+2498(The)S
+2623(effects)S
+2821(of)S
+2899(this)S
+3017(data-)S
+556 3408(base)U
+695(will)S
+819(be)S
+903(described)S
+1177(in)S
+1250(Sections)S
+1495(3)S
+1550(and)S
+1667(4.)S
+706 3510(The)U
+834(use)S
+948(of)S
+1029(delayed)S
+1259(writes)S
+1446(re\257ects)S
+1662(a)S
+1717(tradeoff)S
+1951(between)S
+2196(reliabili)S
+2399(ty)S
+2475(and)S
+2595(performance.)S
+2991(Sprite)S
+3119 3588(e)U
+556 3666(r)U
+556 3588(has)U
+671(a)S
+727(recovery)S
+984(system)S
+1193(that)S
+1317(recovers)S
+1566(from)S
+1720(server)S
+1907(and)S
+2028(client)S
+2199(failures)S
+2422([Welch89].)S
+2768(A)S
+2842(cooperativ)S
+578 3666(ecovery)U
+810(protocol)S
+1052(is)S
+1119(used)S
+1263(after)S
+1406(a)S
+1458(server)S
+1642(reboots)S
+1859(in)S
+1933(which)S
+2117(clients)S
+2311(help)S
+2447(the)S
+2550(server)S
+2734(rebuild)S
+2943(its)S
+3028(state)S
+3126 3744(-)U
+556 3822(t)U
+556 3744(about)U
+730(\256les)S
+868(cached)S
+1078(on)S
+1172(the)S
+1280(clients.)S
+1518(Under)S
+1711(normal)S
+1925(circumstance)S
+2271(s,)S
+2342(processes)S
+2622(on)S
+2715(clients)S
+2913(can)S
+3031(con)S
+574 3822(inue)U
+716(to)S
+796(use)S
+913(open)S
+1070(\256les)S
+1209(after)S
+1358(the)S
+1467(recovery)S
+1726(protocol)S
+1973(completes.)S
+2306(Network)S
+2565(partitions)S
+2841(can)S
+2960(lead)S
+3097(to)S
+3119 3900(e)U
+556 3978(c)U
+556 3900(diabolical)U
+842(con\257ict)S
+1067(cases,)S
+1251(but)S
+1363(these)S
+1526(are)S
+1634(detected)S
+1880(by)S
+1974(the)S
+2082(recovery)S
+2339(protocol.)S
+2624(With)S
+2782(delayed)S
+3013(writ)S
+585 3978(aching,)U
+803(however,)S
+1073(a)S
+1128(power)S
+1319(failure)S
+1515(on)S
+1606(a)S
+1660(client)S
+1830(can)S
+1946(result)S
+2117(in)S
+2193(the)S
+2298(loss)S
+2426(of)S
+2506(recently)S
+2742(generated)S
+3022(data.)S
+556 4134(p)U
+556 4056(This)U
+700(is)S
+771(no)S
+863(worse)S
+1047(than)S
+1186(a)S
+1241(timeshared)S
+1555(UNIX)S
+1747(system)S
+1956(because)S
+2190(UNIX)S
+2382(also)S
+2514(uses)S
+2654(a)S
+2709(30-second)S
+3006(delay)S
+589 4134(eriod)U
+748(before)S
+940(writing)S
+1154(data)S
+1286(to)S
+1360(the)S
+1463(local)S
+1613(disk.)S
+1785(To)S
+1881(guard)S
+2054(against)S
+2263(this,)S
+2398(our)S
+2509(editors)S
+2711(and)S
+2829(source)S
+3024(code)S
+3119 4212(a)U
+556 4290(l)U
+556 4212(control)U
+769(programs)S
+1045(use)S
+1160(a)S
+1216(system)S
+1426(call)S
+1547(to)S
+1625(force)S
+1786(\256les)S
+1922(through)S
+2153(to)S
+2230(the)S
+2336(server's)S
+2571(disk.)S
+2746(There)S
+2925(is)S
+2995(still)S
+574 4290(arge)U
+722(amount)S
+953(of)S
+1042(temporary)S
+1346(data)S
+1489(that)S
+1621(is)S
+1699(deleted)S
+1922(before)S
+2124(being)S
+2304(written)S
+2524(back)S
+2682(to)S
+2767(the)S
+2881(server,)S
+3093(as)S
+3 F
+1791 4470(-)U
+1835(3)S
+1890(-)S
+EP
+%%Page: ? 5
+BP
+1 F
+66 Z
+556 660(s)U
+3 F
+556 444(Sprite)U
+750(Caching)S
+1 F
+582 660(hown)U
+751(in)S
+824(Section)S
+1043(4.)S
+3 F
+556 888(3)U
+(.)R
+650(Sharing)S
+896(and)S
+1025(Consistency)S
+1385(Overhead)S
+1685(Measurements)S
+1 F
+3119 990(e)U
+556 1068(s)U
+706 990(The)U
+838(amount)S
+1065(of)S
+1150(\256le)S
+1264(sharing)S
+1488(and)S
+1613(the)S
+1723(consistency-relat)S
+2168(ed)S
+2260(traf\256c)S
+2447(was)S
+2579(measured)S
+2860(on)S
+2955(the)S
+3064(\256l)S
+582 1068(ervers)U
+773(by)S
+869(instrumenting)S
+1263(the)S
+1372(procedure)S
+1664(that)S
+1791(checks)S
+1999(cache)S
+2177(consistency)S
+2513(and)S
+2637(issues)S
+2824(callbacks)S
+3097(to)S
+3115 1146(d)U
+556 1224(t)U
+556 1146(clients.)U
+791(The)S
+918(results)S
+1115(from)S
+1268(the)S
+1373(initial)S
+1550(36-day)S
+1758(study)S
+1926(are)S
+2030(given)S
+2200(in)S
+2275(Table)S
+2448(4.)S
+2544(The)S
+2670(table)S
+2821(is)S
+2889(organize)S
+574 1224(o)U
+631(show)S
+795(both)S
+936(hourly)S
+1132(rates)S
+1280(and)S
+1399(per-server)S
+1690(rates.)S
+1877(The)S
+2003(tables)S
+2179(are)S
+2282(broken)S
+2488(down)S
+2658(into)S
+2783(different)S
+3032(time)S
+3119 1302(e)U
+556 1380(p)U
+556 1302(periods)U
+779(based)S
+958(on)S
+1053(the)S
+1162(time)S
+1307(data)S
+1445(was)S
+1577(collecte)S
+1780(d,)S
+1859(where)S
+2049(each)S
+2198(row)S
+2330(indicates)S
+2591(the)S
+2699(activity)S
+2923(over)S
+3068(th)S
+589 1380(receding)U
+841(interval)S
+1067(\(e.g.)S
+1211(8pm)S
+1354(to)S
+1431(8am,)S
+1587(8am)S
+1726(to)S
+1803(11am,)S
+1992(and)S
+2113(so)S
+2198(on\).)S
+2350(The)S
+2477(per-server)S
+2769(and)S
+2889(combined)S
+3130 1458(t)U
+556 1536(n)U
+556 1458(rows)U
+713(shows)S
+907(the)S
+1015(results)S
+1215(averaged)S
+1480(over)S
+1624(the)S
+1731(whole)S
+1919(study)S
+2089(period.)S
+2323(The)S
+2452(large)S
+2610(number)S
+2838(of)S
+2920(opens)S
+3101(a)S
+589 1536(ight)U
+715(result)S
+884(from)S
+1035(the)S
+1138(nightly)S
+1347(dumps.)S
+1585(The)S
+1710(various)S
+1927(cases)S
+2089(in)S
+2163(the)S
+2266(table)S
+2416(are)S
+2519(explained)S
+2797(below.)S
+3020(Note)S
+3126 1614(-)U
+556 1692(u)U
+556 1614(that)U
+677(the)S
+780(measurements)S
+1179(in)S
+1253(this)S
+1371(section)S
+1580(are)S
+1683(in)S
+1757(terms)S
+1926(of)S
+2004(\256les)S
+2137(opened,)S
+2367(not)S
+2474(bytes)S
+2636(transferred.)S
+2983(Meas)S
+589 1692(rements)U
+829(presented)S
+1113(in)S
+1195(the)S
+1306(next)S
+1450(section)S
+1667(indicate)S
+1905(how)S
+2050(much)S
+2227(I/O)S
+2346(traf\256c)S
+2534(there)S
+2696(is)S
+2771(to)S
+2853(uncachable)S
+556 1872(N)U
+556 1770(\256les)U
+688(and)S
+805(what)S
+955(the)S
+1057(cache)S
+1228(hit)S
+1319(ratios)S
+1487(are.)S
+604 1872(on-File)U
+721 1950(T)U
+(his)R
+866(value)S
+1035(indicates)S
+1295(the)S
+1402(number)S
+1630(of)S
+1712(directories,)S
+2033(symbolic)S
+2301(links,)S
+2473(and)S
+2595(swap)S
+2758(\256les)S
+2895(that)S
+3020(were)S
+721 2106(p)U
+721 2028(opened.)U
+973(These)S
+1153(\256les)S
+1286(are)S
+1389(not)S
+1496(cached)S
+1701(on)S
+1790(the)S
+1893(clients.)S
+2126(Swap)S
+2296(\256les)S
+2428(are)S
+2530(not)S
+2636(cached)S
+2840(so)S
+2921(that)S
+3041(VM)S
+754 2106(ages)U
+899(really)S
+1076(leave)S
+1242(the)S
+1350(machine)S
+1600(upon)S
+1760(page-out.)S
+2057(Directories)S
+2377(and)S
+2500(links)S
+2655(are)S
+2762(not)S
+2873(cached)S
+3082(on)S
+556 2286(C)U
+721 2184(clients)U
+914(because)S
+1144(servers)S
+1353(do)S
+1441(all)S
+1528(pathname)S
+1805(evaluation)S
+2100([Welch86].)S
+600 2286(an't)U
+724(Cache)S
+721 2364(T)U
+(his)R
+875(value)S
+1054(indicates)S
+1324(the)S
+1441(percentage)S
+1762(of)S
+1854(\256les)S
+2001(opened)S
+2228(that)S
+2362(could)S
+2544(have)S
+2704(been)S
+2864(cached)S
+3082(on)S
+6 F
+748 2472(i)U
+778(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+1041 2550(File)U
+1165(Sharing)S
+1392(and)S
+1509(Cache)S
+1695(Consistency)S
+2039(Actions)S
+2266(\(Nov-Dec)S
+2552('89\))S
+6 F
+2923 2568(i)U
+748(i)S
+778(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+2556(i)T
+748(i)S
+778(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+811 2640(Hour)U
+969(or)S
+1237(Num)S
+1485(Non-)S
+1683(Can't)S
+1926(Read)S
+2158(Last)S
+2441(Server)S
+2635(Action)S
+2894 2718(e)U
+6 F
+748 2730(i)U
+1 F
+832 2718(Server)U
+1218(Opens)S
+1502(File)S
+1674(Cache)S
+1891(Sharing)S
+2129(Writer)S
+2333(Write-back)S
+2661(Invalidat)S
+6 F
+778 2730(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+1 F
+781 2886(1)U
+781 2808(8)U
+1187(6,932,578)S
+1492(35%)S
+1687(7.18%)S
+1933(39%)S
+2154(12%)S
+2395(0.34%)S
+2706(0.14%)S
+814 2886(1)U
+1187(1,252,039)S
+1492(20%)S
+1687(8.71%)S
+1933(34%)S
+2187(9%)S
+2395(0.19%)S
+2706(0.13%)S
+2822 2964(%)U
+781 3042(1)U
+781 2964(14)U
+1187(1,800,274)S
+1492(17%)S
+1687(7.86%)S
+1933(40%)S
+2154(10%)S
+2395(0.35%)S
+2706(0.22)S
+814 3042(7)U
+1187(2,857,620)S
+1492(19%)S
+1687(7.45%)S
+1933(34%)S
+2154(10%)S
+2395(0.42%)S
+2706(0.31%)S
+2822 3120(%)U
+6 F
+748 3126(i)U
+1 F
+3120(20)T
+1187(1,940,819)S
+1492(17%)S
+1687(7.85%)S
+1933(30%)S
+2154(13%)S
+2395(0.26%)S
+2706(0.20)S
+6 F
+778 3126(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+748 3138(i)U
+778(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+781 3288(A)U
+781 3210(Mint)U
+1187(6,976,180)S
+1492(10%)S
+1654(14.69%)S
+1933(44%)S
+2154(12%)S
+2395(0.17%)S
+2706(0.07%)S
+829 3288(llspice)U
+1187(4,784,280)S
+1492(46%)S
+1687(0.04%)S
+1933(27%)S
+2154(12%)S
+2395(0.58%)S
+2706(0.01%)S
+2822 3366(%)U
+781 3444(A)U
+781 3366(Oregano)U
+1187(1,746,430)S
+1492(38%)S
+1687(0.98%)S
+1933(67%)S
+2187(9%)S
+2395(0.03%)S
+2706(0.89)S
+829 3444(ssault)U
+1237(486,320)S
+1492(34%)S
+1687(0.33%)S
+1933(17%)S
+2187(3%)S
+2395(1.52%)S
+2706(0.08%)S
+6 F
+2923 3462(i)U
+748(i)S
+778(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+3450(i)T
+748(i)S
+778(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+781 3534(Combined)U
+1154(13,993,210)S
+1492(27%)S
+1687(7.47%)S
+1933(37%)S
+2154(11%)S
+2395(0.34%)S
+2706(0.15%)S
+6 F
+2923 3546(i)U
+748 2538(c)U
+2604(c)T
+2670(c)T
+2736(c)T
+2802(c)T
+2868(c)T
+2934(c)T
+3000(c)T
+3066(c)T
+3132(c)T
+3198(c)T
+3264(c)T
+3330(c)T
+3396(c)T
+3462(c)T
+3528(c)T
+3546(ci)T
+778(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1104(c)S
+3492(c)T
+3426(c)T
+3360(c)T
+3294(c)T
+3228(c)T
+3162(c)T
+3096(c)T
+3030(c)T
+2964(c)T
+2898(c)T
+2832(c)T
+2766(c)T
+2700(c)T
+2634(c)T
+1468 3546(c)U
+3492(c)T
+3426(c)T
+3360(c)T
+3294(c)T
+3228(c)T
+3162(c)T
+3096(c)T
+3030(c)T
+2964(c)T
+2898(c)T
+2832(c)T
+2766(c)T
+2700(c)T
+2634(c)T
+1637 3546(c)U
+3492(c)T
+3426(c)T
+3360(c)T
+3294(c)T
+3228(c)T
+3162(c)T
+3096(c)T
+3030(c)T
+2964(c)T
+2898(c)T
+2832(c)T
+2766(c)T
+2700(c)T
+2634(c)T
+1874 3546(c)U
+3492(c)T
+3426(c)T
+3360(c)T
+3294(c)T
+3228(c)T
+3162(c)T
+3096(c)T
+3030(c)T
+2964(c)T
+2898(c)T
+2832(c)T
+2766(c)T
+2700(c)T
+2634(c)T
+2112 3546(c)U
+3492(c)T
+3426(c)T
+3360(c)T
+3294(c)T
+3228(c)T
+3162(c)T
+3096(c)T
+3030(c)T
+2964(c)T
+2898(c)T
+2832(c)T
+2766(c)T
+2700(c)T
+2634(c)T
+2316 3546(c)U
+3492(c)T
+3426(c)T
+3360(c)T
+3294(c)T
+3228(c)T
+3162(c)T
+3096(c)T
+3030(c)T
+2964(c)T
+2898(c)T
+2832(c)T
+2766(c)T
+2700(c)T
+2634(c)T
+2956 3546(c)U
+3528(c)T
+3462(c)T
+3396(c)T
+3330(c)T
+3264(c)T
+3198(c)T
+3132(c)T
+3066(c)T
+3000(c)T
+2934(c)T
+2868(c)T
+2802(c)T
+2736(c)T
+2670(c)T
+2604(c)T
+2538(c)T
+1 F
+60 Z
+3001 3663(e)U
+676 3732(o)U
+676 3663(Table)U
+835(4.)S
+920(Cache)S
+1091(consistency)S
+1392(statistics)S
+1620(including)S
+1868(the)S
+1962(number)S
+2166(of)S
+2236(\256les)S
+2356(opened,)S
+2565(read)S
+2689(sharing,)S
+2901(reus)S
+706 3732(f)U
+749(dirty)S
+886(\256les,)S
+1024(and)S
+1134(cache)S
+1295(consistency)S
+1599(actions.)S
+1828(The)S
+1945(top-half)S
+2159(of)S
+2231(the)S
+2327(table)S
+2467(gives)S
+2616(an)S
+2695(hourly)S
+2874(break-)S
+676 3870(t)U
+676 3801(down)U
+836(of)S
+913(all)S
+1001(the)S
+1102(servers)S
+1299(combined.)S
+1599(Each)S
+1747(row)S
+1867(summarizes)S
+2182(the)S
+2282(activit)S
+2434(y)S
+2490(in)S
+2563(the)S
+2663(interval)S
+2874(before)S
+693 3870(he)U
+772(time)S
+902(listed)S
+1055(in)S
+1124(the)S
+1220(\256rst)S
+1335(column.)S
+1573(The)S
+1689(bottom)S
+1882(half)S
+1998(gives)S
+2146(the)S
+2241(total)S
+2370(breakdown)S
+2658(for)S
+2749(each)S
+2881(server)S
+3008 3939(-)U
+676 4008(t)U
+676 3939(individuall)U
+938(y.)S
+1024(The)S
+1139(last)S
+1244(row)S
+1358(has)S
+1459(the)S
+1554(totals)S
+1706(for)S
+1797(all)S
+1879(the)S
+1973(servers)S
+2163(combined,)S
+2436(which)S
+2603(represents)S
+2867(the)S
+2961(to)S
+693 4008(al)U
+757(\256le)S
+854(system)S
+1041(traf\256c.)S
+1240(The)S
+1354(data)S
+1475(was)S
+1588(taken)S
+1739(over)S
+1866(a)S
+1913(36-day)S
+2100(period)S
+2274(in)S
+2341(the)S
+2435(fall)S
+2536(of)S
+2606(1989.)S
+3 F
+66 Z
+1791 4470(-)U
+1835(4)S
+1890(-)S
+EP
+%%Page: ? 6
+BP
+3 F
+66 Z
+556 444(Sprite)U
+750(Caching)S
+1 F
+721 660(clients)U
+918(but)S
+1028(were)S
+1182(not)S
+1292(cachable)S
+1547(because)S
+1781(of)S
+1862(concurrent)S
+2169(write)S
+2330(sharing.)S
+2588(The)S
+2715(large)S
+2871(amount)S
+3093(of)S
+3126 738(r)U
+721 816(s)U
+721 738(sharing)U
+949(measured)S
+1235(on)S
+1335(Mint,)S
+1513(15%,)S
+1684(is)S
+1761(due)S
+1889(to)S
+1973(the)S
+2086(shared)S
+2291(host)S
+2434(load)S
+2580(database.)S
+2878(The)S
+3013(othe)S
+747 816(ervers)U
+930(see)S
+1036(very)S
+1175(few)S
+1296(concurrently)S
+1650(write)S
+1807(shared)S
+2001(\256les.)S
+556 918(Read)U
+713(Sharing)S
+721 996(This)U
+864(value)S
+1032(counts)S
+1230(the)S
+1335(number)S
+1561(of)S
+1641(\256les)S
+1776(that)S
+1899(were)S
+2052(open)S
+2205(for)S
+2307(reading)S
+2529(by)S
+2620(more)S
+2780(than)S
+2918(one)S
+3038(pro-)S
+3130 1074(t)U
+721 1152(b)U
+721 1074(cess)U
+861(at)S
+938(a)S
+997(time,)S
+1160(either)S
+1339(on)S
+1435(the)S
+1545(same)S
+1710(or)S
+1795(different)S
+2051(clients.)S
+2291(This)S
+2438(case)S
+2580(is)S
+2653(relativel)S
+2867(y)S
+2929(frequen)S
+754 1152(ecause)U
+954(of)S
+1034(shared)S
+1231(executable)S
+1535(\256les;)S
+1687(it)S
+1747(happens)S
+1987(in)S
+2062(about)S
+2232(37%)S
+2377(of)S
+2456(the)S
+2560(cases.)S
+2762(It)S
+2826(is)S
+2894(more)S
+3053(fre-)S
+721 1230(quent)U
+889(on)S
+977(Mint)S
+1127(and)S
+1244(Oregano,)S
+1510(the)S
+1612(servers)S
+1821(for)S
+1920(the)S
+2022(commands)S
+2329(directories.)S
+840 1332(r)U
+556(Last)S
+691(Write)S
+721 1410(This)U
+867(value)S
+1038(counts)S
+1238(the)S
+1346(\256les)S
+1484(that)S
+1610(were)S
+1766(written)S
+1980(to)S
+2059(a)S
+2116(client's)S
+2337(cache)S
+2514(and)S
+2637(then)S
+2778(re-read)S
+2992(or)S
+3075(re-)S
+721 1566(s)U
+721 1488(written)U
+945(by)S
+1049(the)S
+1167(same)S
+1340(client)S
+1523(before)S
+1729(the)S
+1847(30-second)S
+2155(delayed)S
+2396(write)S
+2568(period)S
+2773(expired.)S
+3046(File)S
+747 1566(ervers)U
+943(do)S
+1044(not)S
+1163(issue)S
+1330(write-back)S
+1646(commands)S
+1966(in)S
+2052(this)S
+2182(case.)S
+2369(Each)S
+2535(of)S
+2625(the)S
+2739(servers,)S
+2977(except)S
+721 1722(q)U
+721 1644(Assault,)U
+966(sees)S
+1106(a)S
+1165(signi\256cant)S
+1469(amount)S
+1696(of)S
+1781(this)S
+1906(case,)S
+2066(about)S
+2242(11%)S
+2393(overall.)S
+2644(This)S
+2791(percentage)S
+3104(is)S
+754 1722(uite)U
+878(close)S
+1039(to)S
+1116(the)S
+1222(percentage)S
+1532(of)S
+1613(\256les)S
+1749(open)S
+1903(for)S
+2006(writing)S
+2222(and)S
+2343(suggests)S
+2593(that)S
+2717(most)S
+2871(data)S
+3006(is)S
+3075(re-)S
+721 1878(w)U
+721 1800(read)U
+862(or)S
+945(re-written)S
+1232(shortly)S
+1443(after)S
+1591(it)S
+1655(is)S
+1727(generated.)S
+2049(\(During)S
+2286(this)S
+2409(period,)S
+2622(85.2%)S
+2820(of)S
+2902(all)S
+2994(opens)S
+769 1878(ere)U
+873(read-only,)S
+1166(9.3%)S
+1328(of)S
+1407(all)S
+1496(opens)S
+1674(were)S
+1826(write-only,)S
+2140(and)S
+2258(5.5%)S
+2419(of)S
+2497(all)S
+2585(opens)S
+2762(were)S
+2913(for)S
+3013(read-)S
+721 2034(t)U
+721 1956(write)U
+886(access.)S
+1101(See)S
+1226([Welch90])S
+1536(Appendix)S
+1825(B,)S
+1915(Table)S
+2093(B-3.\))S
+2260(Mint,)S
+2434(for)S
+2540(example,)S
+2808(has)S
+2925(log)S
+3038(\256les)S
+739 2034(hat)U
+849(can)S
+970(be)S
+1062(repeatedly)S
+1365(updated)S
+1603(by)S
+1699(the)S
+1808(same)S
+1972(client.)S
+2185(Oregano)S
+2441(serves)S
+2635(``/tmp'',)S
+2889(and)S
+3013(com-)S
+721 2190(s)U
+721 2112(piler)U
+867(and)S
+987(editor)S
+1165(temporaries)S
+1500(account)S
+1729(for)S
+1831(the)S
+1936(reuse)S
+2100(of)S
+2180(dirty)S
+2329(\256les.)S
+2503(Allspice)S
+2747(has)S
+2860(the)S
+2965(system)S
+747 2190(ource)U
+918(directories,)S
+1237(and)S
+1357(compiler)S
+1615(output)S
+1808(usually)S
+2023(gets)S
+2154(re-read)S
+2364(by)S
+2454(the)S
+2558(linker.)S
+2774(Assault)S
+2996(is)S
+3064(too)S
+556 2370(S)U
+721 2268(lightly)U
+914(loaded)S
+1111(to)S
+1184(experience)S
+1490(much)S
+1658(of)S
+1735(this)S
+1852(behavior.)S
+593 2370(erver)U
+750(Action)S
+721 2448(T)U
+(his)R
+883(value)S
+1070(indicates)S
+1348(how)S
+1507(often)S
+1687(the)S
+1812(servers)S
+2044(had)S
+2184(to)S
+2280(issue)S
+2457(cache)S
+2651(control)S
+2882(messages.)S
+721 2604(s)U
+721 2526(``Write-back'')U
+1127(indicates)S
+1383(how)S
+1519(many)S
+1687(times)S
+1851(the)S
+1953(last)S
+2066(writer)S
+2245(of)S
+2322(a)S
+2373(\256le)S
+2479(was)S
+2604(told)S
+2728(to)S
+2801(write)S
+2958(its)S
+3042(ver-)S
+747 2604(ion)U
+858(back)S
+1009(to)S
+1086(the)S
+1192(\256le)S
+1302(server.)S
+1528(``Invalidate'')S
+1904(indicates)S
+2163(how)S
+2303(many)S
+2475(clients)S
+2672(had)S
+2793(to)S
+2870(stop)S
+3006(cach-)S
+3130 2682(t)U
+721 2760(w)U
+721 2682(ing)U
+835(a)S
+893(\256le)S
+1006(they)S
+1148(were)S
+1305(actively)S
+1541(using)S
+1713(because)S
+1950(it)S
+2015(became)S
+2244(concurrently)S
+2605(write-shared)S
+2963(after)S
+3112(i)S
+769 2760(as)U
+859(opened.)S
+1123(Write-backs)S
+1479(happen)S
+1704(in)S
+1790(less)S
+1924(than)S
+2072(1%)S
+2195(of)S
+2284(the)S
+2398(cases,)S
+2588(which)S
+2783(indicates)S
+3050(that)S
+721 2916(t)U
+721 2838(sequential)U
+1010(write-sharing)S
+1383(\(within)S
+1595(the)S
+1697(delay)S
+1861(period\))S
+2073(between)S
+2314(clients)S
+2507(is)S
+2573(rather)S
+2748(rare.)S
+2911(Invalida-)S
+739 2916(ions)U
+872(are)S
+975(also)S
+1104(rare,)S
+1246(except)S
+1440(on)S
+1529(Oregano)S
+1779(as)S
+1856(described)S
+2130(below.)S
+2352(These)S
+2531(measurements)S
+2929(are)S
+3031(con-)S
+721 3072(w)U
+721 2994(sistent)U
+921(with)S
+1069(trace)S
+1227(data)S
+1367(studied)S
+1588(by)S
+1685(Thompson)S
+1998([Thompson87])S
+2421(who)S
+2566(found)S
+2751(relativel)S
+2965(y)S
+3029(little)S
+769 3072(rite)U
+878(sharing)S
+1094(among)S
+1295(different)S
+1543(users.)S
+706 3174(T)U
+(wo)R
+852(anomalies)S
+1143(stand)S
+1307(out)S
+1416(in)S
+1492(Table)S
+1666(4.)S
+1763(The)S
+1890(\256rst)S
+2017(is)S
+2085(that)S
+2207(almost)S
+2406(15%)S
+2551(of)S
+2630(the)S
+2734(\256les)S
+2868(opened)S
+3082(on)S
+3126 3252(-)U
+556 3330(b)U
+556 3252(Mint)U
+709(were)S
+862(uncachable)S
+1182(\256les.)S
+1356(After)S
+1520(some)S
+1684(sleuthing,)S
+1967(this)S
+2087(value)S
+2254(was)S
+2382(traced)S
+2567(to)S
+2642(the)S
+2746(host)S
+2880(load)S
+3017(data)S
+589 3330(ase.)U
+738(While)S
+924(the)S
+1030(daemons)S
+1290(that)S
+1414(periodicall)S
+1694(y)S
+1753(update)S
+1954(the)S
+2060(database)S
+2312(keep)S
+2462(the)S
+2568(\256le)S
+2678(open,)S
+2849(some)S
+3013(other)S
+556 3408(process)U
+776(apparently)S
+1075(opens)S
+1251(the)S
+1353(database)S
+1601(periodicall)S
+1881(y)S
+1936(as)S
+2013(part)S
+2137(of)S
+2214(a)S
+2265(query.)S
+706 3510(The)U
+835(second)S
+1045(anomaly)S
+1298(in)S
+1376(Table)S
+1551(4)S
+1610(is)S
+1680(the)S
+1786(relativel)S
+2000(y)S
+2059(large)S
+2216(number)S
+2443(of)S
+2524(invalidati)S
+2771(on)S
+2863(commands)S
+556 3666(t)U
+556 3588(issued)U
+745(by)S
+835(Oregano.)S
+1125(These)S
+1306(are)S
+1410(due)S
+1529(to)S
+1604(a)S
+1657(temporary)S
+1950(\256le)S
+2057(used)S
+2201(by)S
+2290(pmake,)S
+2505(our)S
+2616(parallel)S
+2835(compilati)S
+3082(on)S
+574 3666(ool)U
+686(that)S
+812(uses)S
+954(process)S
+1180(migration.)S
+1502(Pmake)S
+1709(generates)S
+1985(a)S
+2042(temporary)S
+2340(\256le)S
+2452(containing)S
+2756(the)S
+2863(commands)S
+3131 3744(.)U
+556 3822(D)U
+556 3744(to)U
+638(be)S
+731(executed)S
+995(on)S
+1092(the)S
+1203(remote)S
+1416(host.)S
+1596(Initially,)S
+1850(this)S
+1975(\256le)S
+2089(is)S
+2163(cached)S
+2375(on)S
+2471(the)S
+2581(host)S
+2721(running)S
+2956(pmake)S
+604 3822(uring)U
+768(migration)S
+1048(it)S
+1109(is)S
+1178(open)S
+1331(by)S
+1422(both)S
+1564(the)S
+1668(parent)S
+1856(\(pmake\))S
+2099(and)S
+2218(the)S
+2322(child)S
+2477(\(a)S
+2552(shell)S
+2700(that)S
+2822(will)S
+2948(execute)S
+3119 3900(e)U
+556 3978(p)U
+556 3900(the)U
+668(commands)S
+985(on)S
+1083(the)S
+1195(remote)S
+1409(host\).)S
+1611(These)S
+1799(processes)S
+2083(share)S
+2253(a)S
+2313(read-write)S
+2614(I/O)S
+2733(stream)S
+2939(that)S
+3068(th)S
+589 3978(arent)U
+747(used)S
+895(to)S
+973(write)S
+1134(the)S
+1240(\256le)S
+1350(and)S
+1471(the)S
+1577(child)S
+1734(will)S
+1862(use)S
+1976(to)S
+2053(read)S
+2192(it.)S
+2293(When)S
+2476(the)S
+2582(child)S
+2739(migrates)S
+2991(to)S
+3068(the)S
+3126 4056(-)U
+556 4134(b)U
+556 4056(remote)U
+762(host)S
+896(the)S
+1000(\256le)S
+1108(server)S
+1293(detects)S
+1499(this)S
+1617(as)S
+1695(a)S
+1747(case)S
+1883(of)S
+1961(concurrent)S
+2265(write)S
+2423(sharing)S
+2640(and)S
+2758(issues)S
+2939(a)S
+2991(write)S
+589 4134(ack)U
+708(and)S
+831(invalidate)S
+1117(command)S
+1403(to)S
+1481(the)S
+1588(host)S
+1725(running)S
+1957(pmake.)S
+2198(If)S
+2269(the)S
+2376(parent)S
+2567(closed)S
+2762(the)S
+2869(\256le)S
+2980(before)S
+3126 4212(')U
+556 4290(c)U
+556 4212(the)U
+659(migration)S
+937(this)S
+1055(would)S
+1243(appear)S
+1441(as)S
+1519(sequential)S
+1808(write)S
+1966(sharing)S
+2183(and)S
+2301(contribute)S
+2590(to)S
+2663(the)S
+2765(``Write-back')S
+585 4290(olumn)U
+775(instead.)S
+3 F
+1791 4470(-)U
+1835(5)S
+1890(-)S
+EP
+%%Page: ? 7
+BP
+3 F
+66 Z
+556 444(Sprite)U
+750(Caching)S
+1 F
+706 660(Since)U
+881(the)S
+990(\256rst)S
+1122(study)S
+1294(was)S
+1426(made,)S
+1614(the)S
+1723(function)S
+1971(of)S
+2055(the)S
+2164(load)S
+2306(average)S
+2539(database)S
+2794(was)S
+2926(reimple-)S
+3130 738(t)U
+556 816(r)U
+556 738(mented)U
+778(by)S
+873(an)S
+964(active)S
+1149(server)S
+1339(process,)S
+1583(or)S
+1667(pseudo-device.)S
+2115(A)S
+2191(pseudo-device)S
+2599(is)S
+2671(a)S
+2728(special)S
+2938(\256le)S
+3050(tha)S
+578 816(epresents)U
+847(a)S
+900(server)S
+1085(process;)S
+1325(all)S
+1414(\256le)S
+1521(operations)S
+1818(on)S
+1907(the)S
+2010(pseudo-device)S
+2413(are)S
+2516(forwarded)S
+2810(to)S
+2884(the)S
+2987(server)S
+3131 894(,)U
+556 972(p)U
+556 894(process)U
+779(by)S
+870(the)S
+975(kernel)S
+1164([Welch88].)S
+1509(The)S
+1636(server)S
+1822(can)S
+1938(make)S
+2105(more)S
+2265(intellige)S
+2479(nt)S
+2554(choices)S
+2775(for)S
+2876(migration)S
+589 972(lus)U
+696(its)S
+788(interface)S
+1047(is)S
+1121(more)S
+1286(ef\256cient)S
+1531([Douglis90].)S
+1918(Previously)S
+2229(a)S
+2287(process)S
+2514(had)S
+2638(to)S
+2718(fetch)S
+2878(the)S
+2987(whole)S
+3122 1050(s)U
+556 1128(u)U
+556 1050(database)U
+809(over)S
+953(the)S
+1059(network)S
+1301(in)S
+1378(order)S
+1543(to)S
+1620(select)S
+1795(a)S
+1850(host)S
+1986(for)S
+2089(migration)S
+2370(\(recall)S
+2563(that)S
+2687(the)S
+2793(database)S
+3045(wa)S
+589 1128(ncachable\).)U
+941(With)S
+1101(a)S
+1159(centraliz)S
+1384(ed)S
+1475(server)S
+1665(making)S
+1891(host)S
+2030(selections,)S
+2335(host)S
+2473(selection)S
+2734(only)S
+2879(requires)S
+3119(a)S
+3122 1206(s)U
+556 1284(t)U
+556 1206(single)U
+746(query.)S
+967(Furthermore,)S
+1345(the)S
+1457(server)S
+1650(selects)S
+1857(the)S
+1969(same)S
+2136(idle)S
+2266(hosts)S
+2434(again)S
+2608(and)S
+2735(again,)S
+2926(and)S
+3053(thi)S
+574 1284(ends)U
+728(to)S
+812(increase)S
+1060(the)S
+1173(effectivene)S
+1464(ss)S
+1549(of)S
+1637(those)S
+1809(clients')S
+2035(\256le)S
+2151(caches.)S
+2397(Table)S
+2578(5)S
+2643(shows)S
+2841(consistency)S
+3131 1362(.)U
+556 1440(T)U
+556 1362(related)U
+768(statistics)S
+1028(after)S
+1182(this)S
+1311(change.)S
+1570(There)S
+1757(is)S
+1835(still)S
+1966(a)S
+2028(small)S
+2203(rate)S
+2334(of)S
+2422(opens)S
+2609(to)S
+2693(uncachable)S
+3021(\256les)S
+596 1440(hese)U
+737(are)S
+840(from)S
+991(other)S
+1149(shared)S
+1344(databases)S
+1619(such)S
+1763(as)S
+1841(the)S
+1944(user)S
+2077(login)S
+2235(database,)S
+2501(and)S
+2619(from)S
+2770(shared)S
+2965(system)S
+3 F
+556 1746(4)U
+1 F
+556 1518(log)U
+662(\256les)S
+794(that)S
+914(occasionally)S
+1264(get)S
+1366(appended)S
+1640(to)S
+1713(by)S
+1801(multiple)S
+2041(clients)S
+2234(simultaneously.)S
+3 F
+589 1746(.)U
+650(Measured)S
+954(Effectiveness)S
+1342(of)S
+1419(Sprite)S
+1613(File)S
+1740(Caches)S
+1 F
+706 1848(T)U
+(his)R
+854(section)S
+1071(presents)S
+1318(results)S
+1521(on)S
+1618(the)S
+1729(I/O)S
+1848(traf\256c)S
+2036(of)S
+2121(the)S
+2231(clients)S
+2432(and)S
+2557(servers,)S
+2791(and)S
+2916(it)S
+2982(shows)S
+556 2004(c)U
+556 1926(how)U
+698(effective)S
+955(the)S
+1063(caches)S
+1266(are)S
+1374(during)S
+1573(normal)S
+1786(system)S
+1996(use.)S
+2150(Traf\256c)S
+2356(between)S
+2602(applicati)S
+2827(ons)S
+2946(and)S
+3068(the)S
+585 2004(ache)U
+734(is)S
+806(compared)S
+1093(with)S
+1238(network)S
+1482(traf\256c,)S
+1684(a)S
+1741(breakdown)S
+2062(of)S
+2145(the)S
+2253(network)S
+2497(traf\256c)S
+2682(is)S
+2754(given,)S
+2945(and)S
+3068(the)S
+3 F
+556 2310(4)U
+1 F
+556 2082(traf\256c)U
+735(to)S
+808(the)S
+910(servers')S
+1141(caches)S
+1338(is)S
+1404(compared)S
+1685(with)S
+1824(the)S
+1926(servers')S
+2157(traf\256c)S
+2336(to)S
+2409(their)S
+2551(disks.)S
+3 F
+589 2310(.1.)U
+700(Client)S
+894(Read)S
+1063(Traf\256c)S
+1 F
+706 2412(T)U
+(his)R
+847(section)S
+1057(compares)S
+1333(I/O)S
+1445(traf\256c)S
+1626(from)S
+1778(applicati)S
+2003(ons)S
+2119(to)S
+2194(the)S
+2298(cache)S
+2471(with)S
+2612(network)S
+2851(traf\256c)S
+3031(gen-)S
+556 2490(erated)U
+745(by)S
+840(the)S
+949(clients.)S
+1188(The)S
+1319(tables)S
+1501(present)S
+1720(I/O)S
+1837(rates)S
+1990(in)S
+2070(bytes)S
+2238(per)S
+2351(second,)S
+2580(the)S
+2688(miss)S
+2837(ratio)S
+2985(of)S
+3068(the)S
+6 F
+764 2598(i)U
+794(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+764 2682(i)U
+1 F
+971 2676(New)U
+1118(File)S
+1242(Sharing)S
+1469(and)S
+1586(Cache)S
+1772(Consistency)S
+2116(Actions)S
+2343(\(Mar-Apr)S
+2622('91\))S
+6 F
+794 2682(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+764 2694(i)U
+794(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+827 2766(Hour)U
+985(or)S
+1253(Num)S
+1501(Non-)S
+1682(Can't)S
+1909(Read)S
+2141(Last)S
+2424(Server)S
+2618(Action)S
+848 2844(Server)U
+1234(Opens)S
+1518(File)S
+1673(Cache)S
+1874(Sharing)S
+2112(Writer)S
+2316(Write-back)S
+2644(Invalidate)S
+6 F
+2906 2856(i)U
+764(i)S
+794(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+797 2934(8)U
+1203(5,071,637)S
+1508(30%)S
+1670(0.13%)S
+1916(44%)S
+2153(1%)S
+2378(0.61%)S
+2689(0.07%)S
+2805 3012(%)U
+797 3090(1)U
+797 3012(11)U
+1203(1,256,606)S
+1508(16%)S
+1670(0.26%)S
+1916(54%)S
+2153(3%)S
+2378(0.52%)S
+2689(0.08)S
+830 3090(4)U
+1203(2,209,775)S
+1508(13%)S
+1670(0.43%)S
+1916(53%)S
+2153(6%)S
+2378(0.68%)S
+2689(0.23%)S
+2805 3168(%)U
+797 3246(2)U
+797 3168(17)U
+1203(2,200,846)S
+1508(14%)S
+1670(0.63%)S
+1916(46%)S
+2153(5%)S
+2378(0.74%)S
+2689(0.28)S
+830 3246(0)U
+1203(1,964,212)S
+1508(11%)S
+1670(0.44%)S
+1916(48%)S
+2153(5%)S
+2378(0.70%)S
+2689(0.25%)S
+2805 3324(%)U
+6 F
+764 3330(i)U
+1 F
+3324(23)T
+1203(1,937,916)S
+1541(9%)S
+1670(0.33%)S
+1916(54%)S
+2153(3%)S
+2378(0.37%)S
+2689(0.18)S
+6 F
+794 3330(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+764 3342(i)U
+794(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+797 3492(A)U
+797 3414(Allspice)U
+1170(11,175,500)S
+1508(13%)S
+1670(0.33%)S
+1916(55%)S
+2153(2%)S
+2378(0.42%)S
+2689(0.17%)S
+845 3492(nise)U
+1253(896,419)S
+1508(37%)S
+1670(0.02%)S
+1949(4%)S
+2153(9%)S
+2378(1.78%)S
+2689(0.01%)S
+2805 3570(%)U
+6 F
+764 3576(i)U
+1 F
+3570(Assault)T
+1203(1,004,500)S
+1508(49%)S
+1670(0.14%)S
+1916(35%)S
+2153(9%)S
+2378(1.43%)S
+2689(0.03)S
+6 F
+794 3576(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+764 3588(i)U
+794(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+764 3672(i)U
+1 F
+3660(Combined)T
+1170(13,076,419)S
+1508(18%)S
+1670(0.30%)S
+1916(51%)S
+2153(3%)S
+2378(0.59%)S
+2689(0.15%)S
+6 F
+794 3672(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+764(c)S
+3654(c)T
+3588(c)T
+3522(c)T
+3456(c)T
+3390(c)T
+3324(c)T
+3258(c)T
+3192(c)T
+3126(c)T
+3060(c)T
+2994(c)T
+2928(c)T
+2862(c)T
+2796(c)T
+2730(c)T
+2664(c)T
+1120 3672(c)U
+3618(c)T
+3552(c)T
+3486(c)T
+3420(c)T
+3354(c)T
+3288(c)T
+3222(c)T
+3156(c)T
+3090(c)T
+3024(c)T
+2958(c)T
+2892(c)T
+2826(c)T
+2760(c)T
+1484 3672(c)U
+3618(c)T
+3552(c)T
+3486(c)T
+3420(c)T
+3354(c)T
+3288(c)T
+3222(c)T
+3156(c)T
+3090(c)T
+3024(c)T
+2958(c)T
+2892(c)T
+2826(c)T
+2760(c)T
+1653 3672(c)U
+3618(c)T
+3552(c)T
+3486(c)T
+3420(c)T
+3354(c)T
+3288(c)T
+3222(c)T
+3156(c)T
+3090(c)T
+3024(c)T
+2958(c)T
+2892(c)T
+2826(c)T
+2760(c)T
+1857 3672(c)U
+3618(c)T
+3552(c)T
+3486(c)T
+3420(c)T
+3354(c)T
+3288(c)T
+3222(c)T
+3156(c)T
+3090(c)T
+3024(c)T
+2958(c)T
+2892(c)T
+2826(c)T
+2760(c)T
+2095 3672(c)U
+3618(c)T
+3552(c)T
+3486(c)T
+3420(c)T
+3354(c)T
+3288(c)T
+3222(c)T
+3156(c)T
+3090(c)T
+3024(c)T
+2958(c)T
+2892(c)T
+2826(c)T
+2760(c)T
+2299 3672(c)U
+3618(c)T
+3552(c)T
+3486(c)T
+3420(c)T
+3354(c)T
+3288(c)T
+3222(c)T
+3156(c)T
+3090(c)T
+3024(c)T
+2958(c)T
+2892(c)T
+2826(c)T
+2760(c)T
+2939 3672(c)U
+3654(c)T
+3588(c)T
+3522(c)T
+3456(c)T
+3390(c)T
+3324(c)T
+3258(c)T
+3192(c)T
+3126(c)T
+3060(c)T
+2994(c)T
+2928(c)T
+2862(c)T
+2796(c)T
+2730(c)T
+2664(c)T
+1 F
+60 Z
+2998 3789(h)U
+676 3858(a)U
+676 3789(Table)U
+837(5.)S
+925(Consistency)S
+1242(data)S
+1366(from)S
+1506(Allspice,)S
+1745(Assault,)S
+1962(and)S
+2071(Anise)S
+2233(during)S
+2412(a)S
+2461(36-day)S
+2650(study)S
+2802(in)S
+2871(Marc)S
+703 3858(nd)U
+785(April)S
+934(1991.)S
+1111(Allspice)S
+1334(is)S
+1396(the)S
+1492(primary)S
+1705(server,)S
+1889(while)S
+2045(Assault)S
+2247(and)S
+2356(Anise)S
+2518(store)S
+2657(user)S
+2778(\256les.)S
+2934(The)S
+3001 3927(e)U
+676 3996(l)U
+676 3927(top)U
+775(half)S
+891(of)S
+963(the)S
+1059(table)S
+1199(summarizes)S
+1509(the)S
+1604(activit)S
+1756(y)S
+1807(for)S
+1898(all)S
+1980(servers)S
+2171(during)S
+2349(the)S
+2444(interval)S
+2650(before)S
+2825(the)S
+2920(tim)S
+693 3996(isted)U
+829(in)S
+897(the)S
+992(\256rst)S
+1106(column.)S
+1343(The)S
+1458(bottom)S
+1650(half)S
+1765(summarizes)S
+2074(the)S
+2169(activit)S
+2321(y)S
+2372(for)S
+2463(each)S
+2595(server)S
+2763(individual-)S
+676 4065(ly.)U
+778(The)S
+892(last)S
+996(row)S
+1109(has)S
+1209(the)S
+1303(totals)S
+1454(for)S
+1544(all)S
+1625(the)S
+1719(servers)S
+1909(combined.)S
+3 F
+66 Z
+1791 4470(-)U
+1835(6)S
+1890(-)S
+EP
+%%Page: ? 8
+BP
+1 F
+66 Z
+556 660(c)U
+3 F
+556 444(Sprite)U
+750(Caching)S
+1 F
+585 660(ache,)U
+749(and)S
+870(a)S
+925(breakdown)S
+1244(of)S
+1325(the)S
+1431(network)S
+1673(traf\256c)S
+1856(in)S
+1933(terms)S
+2105(of)S
+2186(cache)S
+2361(misses,)S
+2580(uncachable)S
+2901(data,)S
+3053(and)S
+3115 738(g)U
+556 816(s)U
+556 738(paging)U
+765(data)S
+903(from)S
+1060(the)S
+1169(VM)S
+1305(system.)S
+1556(Regular)S
+1793(\256les)S
+1932(on)S
+2027(the)S
+2136(\256le)S
+2249(server)S
+2439(are)S
+2548(used)S
+2698(for)S
+2804(VM)S
+2940(backin)S
+582 816(tore,)U
+726(but)S
+835(paging)S
+1039(traf\256c)S
+1221(on)S
+1312(the)S
+1417(client)S
+1587(bypasses)S
+1847(the)S
+1952(client's)S
+2170(\256le)S
+2278(system)S
+2485(cache)S
+2658(so)S
+2741(that)S
+2863(data)S
+2996(is)S
+3064(not)S
+556 972(c)U
+556 894(cached)U
+762(by)S
+852(both)S
+992(the)S
+1095(VM)S
+1225(system)S
+1431(and)S
+1549(the)S
+1652(\256le)S
+1759(system.)S
+2004(There)S
+2180(are)S
+2283(two)S
+2405(percentages)S
+2738(associated)S
+3031(with)S
+585 972(ache)U
+727(misses.)S
+964(The)S
+1088(\256rst)S
+1213(percentage)S
+1519(is)S
+1585(the)S
+1687(miss)S
+1830(ratio,)S
+1989(which)S
+2172(is)S
+2238(computed)S
+2519(as)S
+2596(follows:)S
+6 F
+60 Z
+1933 1092(h)U
+1947(hhhhhh)S
+2 F
+2075 1074(U)U
+1942(M)S
+4 F
+2022(+)S
+2 F
+2070 1152(U)U
+1 F
+66 Z
+556 1254(W)U
+2 F
+60 Z
+1570 1110(Miss)U
+1713(Ratio)S
+4 F
+1874(=)S
+2 F
+1947 1152(C)U
+4 F
+2017(+)S
+1 F
+66 Z
+618 1254(here)U
+2 F
+760(M)S
+1 F
+844(is)S
+917(the)S
+1026(rate)S
+1153(that)S
+1280(data)S
+1418(is)S
+1491(fetched)S
+1713(into)S
+1843(the)S
+1951(cache)S
+2128(because)S
+2364(of)S
+2447(misses,)S
+2 F
+2668(U)S
+1 F
+2744(is)S
+2816(the)S
+2924(rate)S
+3050(that)S
+556 1410(f)U
+556 1332(uncachable)U
+874(data)S
+1006(is)S
+1073(read,)S
+1226(and)S
+2 F
+1344(C)S
+1 F
+1411(is)S
+1478(the)S
+1581(rate)S
+1702(that)S
+1823(data)S
+1955(is)S
+2022(read)S
+2157(from)S
+2307(the)S
+2409(cache)S
+2580(by)S
+2668(applicati)S
+2893(ons.)S
+3046(The)S
+578 1410(act)U
+682(that)S
+2 F
+808(C)S
+1 F
+880(does)S
+1029(not)S
+1141(include)S
+2 F
+1362(U)S
+1 F
+1438(is)S
+1509(because)S
+1744(uncachable)S
+2066(traf\256c)S
+2250(bypasses)S
+2512(the)S
+2619(cache)S
+2795(and)S
+2917(the)S
+3024(rates)S
+3122 1488(s)U
+556 1566(f)U
+556 1488(were)U
+707(monitored)S
+1000(separately.)S
+1328(In)S
+1406(the)S
+1509(tables)S
+1685(below,)S
+1886(the)S
+1989(I/O)S
+2100(rate)S
+2221(in)S
+2295(the)S
+2398(column)S
+2618(labeled)S
+2830(``Cache'')S
+3104(i)S
+578 1566(or)U
+2 F
+655(C)S
+1 F
+(,)R
+738(not)S
+2 F
+844(\(C+U\))S
+1 F
+(.)R
+706 1668(T)U
+(he)R
+838(second)S
+1051(percentage)S
+1365(associated)S
+1665(with)S
+1812(cache)S
+1991(misses)S
+2197(is)S
+2271(its)S
+2362(contribution)S
+2712(to)S
+2792(the)S
+2901(total)S
+3046(net-)S
+556 1746(work)U
+714(traf\256c:)S
+2 F
+60 Z
+1479 1884(Miss)U
+1622(Tra)S
+1713(f)S
+1745(f)S
+1772(ic)S
+4 F
+1846(=)S
+2 F
+1914 1926(M)U
+4 F
+1994(+)S
+2 F
+2047(U)S
+4 F
+2120(+)S
+2 F
+2173(V)S
+6 F
+1905 1866(h)U
+2 F
+2037 1848(M)U
+6 F
+1919 1866(hhhhhhhhhh)U
+1 F
+66 Z
+3126 2028(f)U
+556 2106(n)U
+556 2028(where)U
+2 F
+742(V)S
+1 F
+807(represents)S
+1099(paging)S
+1303(traf\256c)S
+1484(from)S
+1636(the)S
+1740(VM)S
+1871(system.)S
+2117(The)S
+2243(tables)S
+2420(also)S
+2550(give)S
+2687(the)S
+2791(proportion)S
+3093(o)S
+589 2106(etwork)U
+803(traf\256c)S
+991(made)S
+1164(up)S
+1261(by)S
+1358(uncachable)S
+1684(data)S
+1824(and)S
+1950(VM)S
+2088(data,)S
+2245(as)S
+2330(well)S
+2473(as)S
+2558(the)S
+2668(total)S
+2814(network)S
+3060(I/O)S
+556 2184(rates.)U
+706 2286(Tables)U
+905(6)S
+962(through)S
+1191(8)S
+1248(give)S
+1385(the)S
+1489(read)S
+1625(traf\256c)S
+1805(for)S
+1905(the)S
+2008(DECstation)S
+2338(and)S
+2456(Sun-3)S
+2637(clients.)S
+2870(The)S
+2995(tables)S
+556 2442(r)U
+556 2364(are)U
+662(broken)S
+871(down)S
+1044(into)S
+1172(different)S
+1424(time)S
+1566(periods)S
+1786(based)S
+1962(on)S
+2054(the)S
+2160(time)S
+2302(data)S
+2436(was)S
+2564(collecte)S
+2767(d,)S
+2842(where)S
+3028(each)S
+578 2442(ow)U
+686(indicates)S
+946(the)S
+1053(activity)S
+1276(over)S
+1420(the)S
+1527(preceding)S
+1813(interval)S
+2040(\(e.g.)S
+2185(8pm)S
+2329(to)S
+2407(8am,)S
+2563(8am)S
+2702(to)S
+2779(11am,)S
+2968(and)S
+3089(so)S
+3126 2520(')U
+556 2598(c)U
+556 2520(on\).)U
+709(The)S
+837(bottom)S
+1049(row)S
+1178(shows)S
+1370(the)S
+1476(results)S
+1674(averaged)S
+1936(over)S
+2078(the)S
+2183(whole)S
+2369(study)S
+2537(period.)S
+2769(The)S
+2896(``Cache')S
+585 2598(olumn)U
+784(gives)S
+954(the)S
+1065(read)S
+1209(rate)S
+1338(from)S
+1497(the)S
+1608(cache)S
+1788(\(not)S
+1925(counting)S
+2186(reads)S
+2356(to)S
+2438(uncachable)S
+2764(data\),)S
+2943(and)S
+3068(the)S
+6 F
+864 2706(i)U
+893(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+895 2784(DS3100)U
+1134(Client)S
+1316(Read)S
+1473(Traf\256c)S
+1674(\(Bytes/Seconds)S
+2106(and)S
+2223(ratios\))S
+2413(\(Nov-Dec)S
+2699('89\))S
+6 F
+2807 2802(i)U
+864(i)S
+893(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+2790(i)T
+864(i)S
+893(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+924 2874(Hr)U
+1076(Cache)S
+1483(Misses)S
+1933(Uncached)S
+2363(PageIn)S
+2669(Total)S
+6 F
+2807 2892(i)U
+864(i)S
+893(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+2880(i)T
+864(i)S
+893(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+959 2964(8)U
+1119(286)S
+1317(21%)S
+1570(52)S
+1713(28%)S
+1960(10)S
+2130(5%)S
+2317(124)S
+2493(66%)S
+2699(188)S
+2765 3042(9)U
+926 3120(1)U
+926 3042(11)U
+1119(469)S
+1317(62%)S
+1537(289)S
+1713(65%)S
+1960(10)S
+2130(2%)S
+2317(139)S
+2493(31%)S
+2699(43)S
+959 3120(4)U
+1119(490)S
+1317(37%)S
+1537(173)S
+1713(40%)S
+1960(16)S
+2130(3%)S
+2317(239)S
+2493(55%)S
+2699(430)S
+2765 3198(8)U
+926 3276(2)U
+926 3198(17)U
+1119(897)S
+1317(27%)S
+1537(232)S
+1713(58%)S
+1960(26)S
+2130(6%)S
+2317(138)S
+2493(34%)S
+2699(39)S
+959 3276(0)U
+1119(988)S
+1317(47%)S
+1537(463)S
+1713(83%)S
+1960(12)S
+2130(2%)S
+2350(81)S
+2493(14%)S
+2699(557)S
+6 F
+2807 3288(i)U
+864(i)S
+893(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+919 3366(TL)U
+1119(570)S
+1317(34%)S
+1537(188)S
+1713(62%)S
+1960(12)S
+2130(4%)S
+2317(100)S
+2493(33%)S
+2699(302)S
+6 F
+2807 3378(i)U
+864 2772(c)U
+2838(c)T
+2904(c)T
+2970(c)T
+3036(c)T
+3102(c)T
+3168(c)T
+3234(c)T
+3300(c)T
+3366(c)T
+3384(c)T
+3378(i)T
+893(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1037 3372(c)U
+3330(c)T
+3264(c)T
+3198(c)T
+3132(c)T
+3066(c)T
+3000(c)T
+2934(c)T
+2868(c)T
+1278 3372(c)U
+3330(c)T
+3264(c)T
+3198(c)T
+3132(c)T
+3066(c)T
+3000(c)T
+2934(c)T
+2868(c)T
+1476 3372(c)U
+3354(c)T
+3288(c)T
+3222(c)T
+3156(c)T
+3090(c)T
+3024(c)T
+2958(c)T
+1872 3372(c)U
+3330(c)T
+3264(c)T
+3198(c)T
+3132(c)T
+3066(c)T
+3000(c)T
+2934(c)T
+2868(c)T
+2256 3372(c)U
+3330(c)T
+3264(c)T
+3198(c)T
+3132(c)T
+3066(c)T
+3000(c)T
+2934(c)T
+2868(c)T
+2652 3372(c)U
+3330(c)T
+3264(c)T
+3198(c)T
+3132(c)T
+3066(c)T
+3000(c)T
+2934(c)T
+2868(c)T
+2840 3384(c)U
+3366(c)T
+3300(c)T
+3234(c)T
+3168(c)T
+3102(c)T
+3036(c)T
+2970(c)T
+2904(c)T
+2838(c)T
+2772(c)T
+1 F
+60 Z
+3013 3495(.)U
+676 3564(T)U
+676 3495(Table)U
+836(6.)S
+903(Hourly)S
+1095(read)S
+1221(traf\256c)S
+1387(for)S
+1479(DECstation)S
+1782(3100)S
+1924(clients,)S
+2118(which)S
+2286(have)S
+2421(24)S
+2502(Meg)S
+2633(main)S
+2775(memories)S
+713 3564(he)U
+797(\256rst)S
+917(column)S
+1125(indicate)S
+1317(s)S
+1367(the)S
+1468(time)S
+1603(of)S
+1680(day)S
+1794(data)S
+1922(was)S
+2042(taken,)S
+2215(and)S
+2328(the)S
+2428(other)S
+2578(columns)S
+2808(have)S
+2948(I/O)S
+3013 3633(.)U
+676 3702(I)U
+676 3633(rates)U
+817(and)S
+931(relative)S
+1140(percenta)S
+1345(ges.)S
+1487(The)S
+1608(last)S
+1719(row)S
+1839(averages)S
+2077(the)S
+2178(data)S
+2306(over)S
+2440(the)S
+2541(whole)S
+2715(trace)S
+2859(period)S
+696 3702(/O)U
+777(rates)S
+912(are)S
+1007(given)S
+1162(in)S
+1230(bytes/second.)S
+1597(The)S
+1712(\256rst)S
+1826(percenta)S
+2031(ge)S
+2108(in)S
+2175(the)S
+2269(``Misses'')S
+2535(column)S
+2736(is)S
+2796(the)S
+2890(cache)S
+3008 3771(r)U
+676 3840(s)U
+676 3771(miss)U
+817(rate.)S
+974(The)S
+1099(second)S
+1297(percenta)S
+1502(ge)S
+1590(is)S
+1661(the)S
+1766(relative)S
+1979(proportion)S
+2264(of)S
+2345(cache)S
+2513(miss)S
+2653(traf\256c)S
+2827(to)S
+2904(othe)S
+699 3840(ources)U
+879(of)S
+952(network)S
+1172(traf\256c.)S
+1374(The)S
+1491(``Uncached'')S
+1834(and)S
+1943(``PageIn'')S
+2212(columns)S
+2438(gives)S
+2587(rates)S
+2723(for)S
+2815(traf\256c)S
+2981(to)S
+3008 3909(-)U
+676 3978(c)U
+676 3909(uncachabl)U
+921(e)S
+969(\256les)S
+1090(and)S
+1198(traf\256c)S
+1363(to)S
+1431(swap)S
+1575(\256les,)S
+1711(respective)S
+1956(ly.)S
+2059(The)S
+2174(percenta)S
+2379(ges)S
+2479(in)S
+2546(these)S
+2690(columns)S
+2914(indi)S
+703 3978(ate)U
+797(their)S
+931(relative)S
+1136(proportion)S
+1412(of)S
+1484(the)S
+1580(total)S
+1710(network)S
+1929(read)S
+2055(traf\256c.)S
+2256(The)S
+2372(``Total'')S
+2602(column)S
+2805(gives)S
+2954(the)S
+676 4047(total)U
+804(network)S
+1021(read)S
+1145(traf\256c.)S
+3 F
+66 Z
+1791 4470(-)U
+1835(7)S
+1890(-)S
+EP
+%%Page: ? 9
+BP
+3 F
+66 Z
+556 444(Sprite)U
+750(Caching)S
+6 F
+756 690(i)U
+770(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+756 774(i)U
+1 F
+787 768(Sun-3)U
+967(\(12)S
+1077(Meg\))S
+1242(Client)S
+1424(Read)S
+1581(Traf\256c)S
+1782(\(Bytes/Seconds)S
+2214(and)S
+2331(ratios\))S
+2521(\(Nov-Dec)S
+2807('89\))S
+6 F
+770 774(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+756 786(i)U
+770(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+756 864(i)U
+1 F
+828 858(Hr)U
+1004(Cache)S
+1459(Misses)S
+1969(Uncached)S
+2447(PageIn)S
+2777(Total)S
+6 F
+770 864(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+756 876(i)U
+770(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+830 1026(1)U
+948(8)T
+1047(132)S
+1269(21%)S
+1546(23)S
+1713(24%)S
+2017(6)S
+2178(6%)S
+2422(64)S
+2589(68%)S
+2840(94)S
+863 1026(1)U
+1047(566)S
+1269(22%)S
+1513(104)S
+1713(24%)S
+1984(29)S
+2178(6%)S
+2389(290)S
+2589(68%)S
+2807(425)S
+2873 1104(4)U
+830 1182(1)U
+830 1104(14)U
+1047(887)S
+1269(32%)S
+1513(270)S
+1713(46%)S
+1984(30)S
+2178(5%)S
+2389(280)S
+2589(47%)S
+2807(58)S
+863 1182(7)U
+1047(969)S
+1269(25%)S
+1513(229)S
+1713(56%)S
+1984(20)S
+2178(5%)S
+2389(153)S
+2589(37%)S
+2807(405)S
+2873 1260(8)U
+6 F
+756 1272(i)U
+1 F
+830 1260(20)U
+1047(678)S
+1269(23%)S
+1513(147)S
+1713(51%)S
+1984(14)S
+2178(5%)S
+2389(126)S
+2589(43%)S
+2807(28)S
+6 F
+770 1272(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+756 1362(i)U
+1 F
+823 1350(TL)U
+1047(434)S
+1269(35%)S
+1513(144)S
+1713(43%)S
+1984(15)S
+2178(4%)S
+2389(167)S
+2589(51%)S
+2807(328)S
+6 F
+770 1362(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+756 1368(c)U
+1350(c)T
+1284(c)T
+1218(c)T
+1152(c)T
+1086(c)T
+1020(c)T
+954(c)T
+888(c)T
+822(c)T
+756(c)T
+953 1356(c)U
+1314(c)T
+1248(c)T
+1182(c)T
+1116(c)T
+1050(c)T
+984(c)T
+918(c)T
+852(c)T
+1218 1356(c)U
+1314(c)T
+1248(c)T
+1182(c)T
+1116(c)T
+1050(c)T
+984(c)T
+918(c)T
+852(c)T
+1440 1356(c)U
+1338(c)T
+1272(c)T
+1206(c)T
+1140(c)T
+1074(c)T
+1008(c)T
+942(c)T
+1884 1356(c)U
+1314(c)T
+1248(c)T
+1182(c)T
+1116(c)T
+1050(c)T
+984(c)T
+918(c)T
+852(c)T
+2316 1356(c)U
+1314(c)T
+1248(c)T
+1182(c)T
+1116(c)T
+1050(c)T
+984(c)T
+918(c)T
+852(c)T
+2760 1356(c)U
+1314(c)T
+1248(c)T
+1182(c)T
+1116(c)T
+1050(c)T
+984(c)T
+918(c)T
+852(c)T
+2948 1368(c)U
+1350(c)T
+1284(c)T
+1218(c)T
+1152(c)T
+1086(c)T
+1020(c)T
+954(c)T
+888(c)T
+822(c)T
+756(c)T
+1 F
+60 Z
+676 1479(Table)U
+834(7.)S
+899(Hourly)S
+1089(read)S
+1213(traf\256c)S
+1377(for)S
+1467(Sun-3)S
+1630(clients)S
+1808(with)S
+1935(12)S
+2015(Meg)S
+2145(main)S
+2286(memory.)S
+6 F
+66 Z
+769 1611(i)U
+790(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+769 1695(i)U
+1 F
+803 1689(Sun-3)U
+983(\(8)S
+1060(Meg\))S
+1225(Client)S
+1407(Read)S
+1564(Traf\256c)S
+1765(\(Bytes/Seconds)S
+2197(and)S
+2314(ratios\))S
+2504(\(Nov-Dec)S
+2790('89\))S
+6 F
+790 1695(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+769 1707(i)U
+790(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+769 1785(i)U
+1 F
+839 1779(Hr)U
+1012(Cache)S
+1462(Misses)S
+1964(Uncached)S
+2437(PageIn)S
+2764(Total)S
+6 F
+790 1785(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+769 1797(i)U
+790(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+841 1947(1)U
+1869(8)T
+1055(145)S
+1274(45%)S
+1548(57)S
+1712(40%)S
+1975(15)S
+2139(10%)S
+2413(68)S
+2577(47%)S
+2794(142)S
+874 1947(1)U
+1055(205)S
+1274(43%)S
+1548(77)S
+1712(21%)S
+1975(23)S
+2172(6%)S
+2380(249)S
+2577(69%)S
+2794(360)S
+2860 2025(5)U
+841 2103(1)U
+841 2025(14)U
+1055(485)S
+1274(40%)S
+1515(179)S
+1712(37%)S
+1975(25)S
+2172(5%)S
+2380(262)S
+2577(55%)S
+2794(47)S
+874 2103(7)U
+1055(725)S
+1274(41%)S
+1515(283)S
+1712(36%)S
+1975(25)S
+2172(3%)S
+2380(410)S
+2577(52%)S
+2794(778)S
+2860 2181(6)U
+6 F
+769 2193(i)U
+1 F
+841 2181(20)U
+1055(522)S
+1274(42%)S
+1515(215)S
+1712(46%)S
+1975(14)S
+2172(3%)S
+2380(228)S
+2577(49%)S
+2794(46)S
+6 F
+790 2193(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+769 2283(i)U
+1 F
+834 2271(TL)U
+1055(322)S
+1274(40%)S
+1515(122)S
+1712(37%)S
+1975(14)S
+2172(4%)S
+2380(185)S
+2577(55%)S
+2794(330)S
+6 F
+790 2283(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+769 2289(c)U
+2271(c)T
+2205(c)T
+2139(c)T
+2073(c)T
+2007(c)T
+1941(c)T
+1875(c)T
+1809(c)T
+1743(c)T
+1677(c)T
+963 2277(c)U
+2235(c)T
+2169(c)T
+2103(c)T
+2037(c)T
+1971(c)T
+1905(c)T
+1839(c)T
+1773(c)T
+1225 2277(c)U
+2235(c)T
+2169(c)T
+2103(c)T
+2037(c)T
+1971(c)T
+1905(c)T
+1839(c)T
+1773(c)T
+1444 2277(c)U
+2259(c)T
+2193(c)T
+2127(c)T
+2061(c)T
+1995(c)T
+1929(c)T
+1863(c)T
+1882 2277(c)U
+2235(c)T
+2169(c)T
+2103(c)T
+2037(c)T
+1971(c)T
+1905(c)T
+1839(c)T
+1773(c)T
+2309 2277(c)U
+2235(c)T
+2169(c)T
+2103(c)T
+2037(c)T
+1971(c)T
+1905(c)T
+1839(c)T
+1773(c)T
+2747 2277(c)U
+2235(c)T
+2169(c)T
+2103(c)T
+2037(c)T
+1971(c)T
+1905(c)T
+1839(c)T
+1773(c)T
+2935 2289(c)U
+2271(c)T
+2205(c)T
+2139(c)T
+2073(c)T
+2007(c)T
+1941(c)T
+1875(c)T
+1809(c)T
+1743(c)T
+1677(c)T
+1 F
+556 2574(`)U
+60 Z
+676 2400(Table)U
+834(8.)S
+899(Hourly)S
+1089(read)S
+1213(traf\256c)S
+1377(for)S
+1467(Sun-3)S
+1630(clients)S
+1808(with)S
+1935(8)S
+1985(Meg)S
+2115(main)S
+2256(memory.)S
+66 Z
+578 2574(`Misses'')U
+858(column)S
+1085(gives)S
+1254(the)S
+1364(rate)S
+1492(at)S
+1569(which)S
+1760(the)S
+1870(cache)S
+2049(requested)S
+2331(data)S
+2470(from)S
+2627(a)S
+2685(server.)S
+2914(The)S
+3045(\256rst)S
+556 2730(r)U
+556 2652(percentage)U
+864(under)S
+1038(``Misses'')S
+1334(is)S
+1402(the)S
+1506(miss)S
+1651(ratio)S
+1795(de\256ned)S
+2013(above,)S
+2211(while)S
+2381(the)S
+2485(second)S
+2692(percentage)S
+3000(is)S
+3068(the)S
+578 2730(atio)U
+706(of)S
+791(cache)S
+970(misses)S
+1175(to)S
+1255(all)S
+1349(network)S
+1594(read)S
+1736(traf\256c.)S
+1961(The)S
+2092(other)S
+2256(two)S
+2384(primary)S
+2621(sources)S
+2848(of)S
+2932(network)S
+3126 2808(')U
+556 2886(a)U
+556 2808(read)U
+700(traf\256c,)S
+905(uncachable)S
+1231(\256les)S
+1372(and)S
+1498(page)S
+1653(faults,)S
+1847(are)S
+1958(listed)S
+2131(in)S
+2213(the)S
+2324(columns)S
+2578(labeled)S
+2797(``Uncached')S
+585 2886(nd)U
+676(``PageIn''.)S
+1011(The)S
+1138(last)S
+1254(column)S
+1476(gives)S
+1640(the)S
+1745(total)S
+1886(network)S
+2127(I/O)S
+2240(traf\256c.)S
+2461(Some)S
+2636(of)S
+2716(the)S
+2820(network)S
+3060(I/O)S
+3130 2964(t)U
+556 3042(s)U
+556 2964(traf\256c)U
+745(\(up)S
+865(to)S
+948(1%)S
+1068(or)S
+1155(2%\))S
+1297(is)S
+1373(due)S
+1500(to)S
+1583(remote)S
+1796(device)S
+1998(and)S
+2124(remote)S
+2337(window)S
+2581(access,)S
+2797(which)S
+2989(is)S
+3064(no)S
+582 3042(hown)U
+751(in)S
+824(the)S
+926(table.)S
+706 3144(T)U
+(he)R
+836(overall)S
+1045(read)S
+1185(miss)S
+1333(rates)S
+1484(are)S
+1591(around)S
+1801(35%,)S
+1966(with)S
+2110(the)S
+2217(8)S
+2277(Meg)S
+2425(Sun-3s)S
+2636(slightly)S
+2860(worse)S
+3045(at)S
+3119(a)S
+3126 3222(-)U
+556 3300(c)U
+556 3222(40%)U
+702(miss)S
+848(rate.)S
+1010(The)S
+1136(hourly)S
+1332(average)S
+1560(miss)S
+1705(rates)S
+1853(range)S
+2023(from)S
+2175(about)S
+2345(20%)S
+2490(to)S
+2565(60%,)S
+2727(with)S
+2868(lower)S
+3042(per)S
+585 3300(entages)U
+812(indicating)S
+1104(more)S
+1269(effective)S
+1528(caches.)S
+1772(Note)S
+1929(that)S
+2056(VM)S
+2192(paging)S
+2400(traf\256c)S
+2586(accounts)S
+2845(for)S
+2951(slightly)S
+556 3456(i)U
+556 3378(more)U
+716(network)S
+957(read)S
+1095(traf\256c)S
+1277(than)S
+1415(cache)S
+1589(misses.)S
+1829(The)S
+1956(VM)S
+2088(traf\256c)S
+2270(includes)S
+2514(page)S
+2663(faults)S
+2834(on)S
+2925(program)S
+574 3456(mage)U
+741(\256les,)S
+893(as)S
+972(well)S
+1109(as)S
+1188(faults)S
+1358(on)S
+1448(swap)S
+1608(\256les.)S
+1781(The)S
+1907(DECstations,)S
+2281(which)S
+2466(all)S
+2555(have)S
+2703(24)S
+2793(Meg)S
+2938(of)S
+3017(main)S
+3119 3534(e)U
+556 3612(l)U
+556 3534(memory,)U
+816(have)S
+964(the)S
+1068(lowest)S
+1264(paging)S
+1467(traf\256c.)S
+1687(Note)S
+1839(that)S
+1961(the)S
+2065(workstations)S
+2426(with)S
+2566(larger)S
+2742(memories)S
+3024(hav)S
+574 3612(arger)U
+737(read)S
+878(rates)S
+1030(to)S
+1109(their)S
+1257(cache,)S
+1451(but)S
+1563(all)S
+1656(the)S
+1764(workstations)S
+2129(have)S
+2281(about)S
+2454(the)S
+2561(same)S
+2723(overall)S
+2932(network)S
+3119 3690(e)U
+556 3768(c)U
+556 3690(read)U
+706(traf\256c.)S
+939(The)S
+1078(larger)S
+1268(memories)S
+1564(reduce)S
+1776(paging)S
+1992(and)S
+2124(allow)S
+2307(for)S
+2421(larger,)S
+2628(more)S
+2799(effective)S
+3064(\256l)S
+585 3768(aches.)U
+706 3870(I)U
+(nitial)R
+890(measurements)S
+1294(of)S
+1377(the)S
+1485(read)S
+1626(traf\256c)S
+1811(highlighted)S
+2138(a)S
+2195(number)S
+2424(of)S
+2507(clients)S
+2705(with)S
+2849(abnormally)S
+3126 3948(r)U
+556 4026(m)U
+556 3948(high)U
+702(traf\256c)S
+888(to)S
+968(uncachable)S
+1292(data.)S
+1469(The)S
+1600(traf\256c)S
+1786(for)S
+1892(these)S
+2056(clients)S
+2255(is)S
+2327(given)S
+2501(in)S
+2580(Table)S
+2757(9.)S
+2857(Their)S
+3027(poo)S
+607 4026(iss)U
+702(rate,)S
+842(almost)S
+1042(60%,)S
+1205(was)S
+1333(due)S
+1453(to)S
+1529(an)S
+1616(X)S
+1688(widget)S
+1891(applicati)S
+2116(on)S
+2206(that)S
+2328(displayed)S
+2604(the)S
+2708(number)S
+2933(of)S
+3012(hosts)S
+3130 4104(t)U
+556 4182(u)U
+556 4104(currently)U
+820(available)S
+1083(for)S
+1187(migration.)S
+1508(Every)S
+1692(15)S
+1785(seconds)S
+2021(the)S
+2128(entire)S
+2304(database)S
+2557(was)S
+2687(scanned)S
+2925(to)S
+3002(coun)S
+589 4182(p)U
+646(the)S
+749(available)S
+1008(hosts,)S
+1184(and)S
+1302(the)S
+1405(effect)S
+1577(on)S
+1666(network)S
+1905(traf\256c)S
+2085(was)S
+2211(signi\256cant.)S
+2547(The)S
+2672(process)S
+2893(migration)S
+3119 4260(a)U
+556(system)S
+767(has)S
+883(been)S
+1035(changed)S
+1282(to)S
+1361(use)S
+1477(a)S
+1534(server)S
+1723(process)S
+1948(to)S
+2026(manage)S
+2257(host)S
+2394(selection)S
+2654(instead)S
+2867(of)S
+2949(using)S
+3 F
+1791 4470(-)U
+1835(8)S
+1890(-)S
+EP
+%%Page: ? 10
+BP
+3 F
+66 Z
+556 444(Sprite)U
+750(Caching)S
+6 F
+835 690(i)U
+855(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+835 774(i)U
+1 F
+869 768(Abnormal)U
+1158(Client)S
+1340(Read)S
+1497(Traf\256c)S
+1698(\(Bytes/Seconds)S
+2130(and)S
+2247(ratios\))S
+2437(\(Nov-Dec)S
+2723('89\))S
+6 F
+855 774(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+835 786(i)U
+855(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+835 864(i)U
+1 F
+897 858(Hr)U
+1054(Cache)S
+1472(Misses)S
+1940(Uncached)S
+2386(PageIn)S
+2697(Total)S
+6 F
+855 864(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+835 876(i)U
+855(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+899 1026(1)U
+948(8)T
+1103(265)S
+1300(62%)S
+1558(55)S
+1706(13%)S
+1931(290)S
+2112(70%)S
+2370(66)S
+2518(15%)S
+2733(414)S
+932 1026(1)U
+1103(653)S
+1300(48%)S
+1525(164)S
+1706(20%)S
+1931(293)S
+2112(36%)S
+2337(336)S
+2518(42%)S
+2733(797)S
+2799 1104(5)U
+899 1182(1)U
+899 1104(14)U
+1103(609)S
+1300(52%)S
+1525(170)S
+1706(23%)S
+1931(306)S
+2112(42%)S
+2337(244)S
+2518(33%)S
+2733(72)S
+932 1182(7)U
+1070(1625)S
+1300(34%)S
+1525(345)S
+1706(24%)S
+1931(336)S
+2112(24%)S
+2337(705)S
+2518(50%)S
+2700(1391)S
+2799 1260(8)U
+6 F
+835 1272(i)U
+1 F
+899 1260(20)U
+1103(980)S
+1300(49%)S
+1525(332)S
+1706(42%)S
+1931(294)S
+2112(37%)S
+2337(158)S
+2518(20%)S
+2733(78)S
+6 F
+855 1272(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+835 1362(i)U
+1 F
+892 1350(TL)U
+1103(516)S
+1300(57%)S
+1525(143)S
+1706(22%)S
+1931(358)S
+2112(56%)S
+2337(128)S
+2518(20%)S
+2733(633)S
+6 F
+855 1362(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+835 1368(c)U
+1350(c)T
+1284(c)T
+1218(c)T
+1152(c)T
+1086(c)T
+1020(c)T
+954(c)T
+888(c)T
+822(c)T
+756(c)T
+1013 1356(c)U
+1314(c)T
+1248(c)T
+1182(c)T
+1116(c)T
+1050(c)T
+984(c)T
+918(c)T
+852(c)T
+1259 1356(c)U
+1314(c)T
+1248(c)T
+1182(c)T
+1116(c)T
+1050(c)T
+984(c)T
+918(c)T
+852(c)T
+1462 1356(c)U
+1338(c)T
+1272(c)T
+1206(c)T
+1140(c)T
+1074(c)T
+1008(c)T
+942(c)T
+1868 1356(c)U
+1314(c)T
+1248(c)T
+1182(c)T
+1116(c)T
+1050(c)T
+984(c)T
+918(c)T
+852(c)T
+2274 1356(c)U
+1314(c)T
+1248(c)T
+1182(c)T
+1116(c)T
+1050(c)T
+984(c)T
+918(c)T
+852(c)T
+2680 1356(c)U
+1314(c)T
+1248(c)T
+1182(c)T
+1116(c)T
+1050(c)T
+984(c)T
+918(c)T
+852(c)T
+2868 1368(c)U
+1350(c)T
+1284(c)T
+1218(c)T
+1152(c)T
+1086(c)T
+1020(c)T
+954(c)T
+888(c)T
+822(c)T
+756(c)T
+1 F
+60 Z
+2998 1479(y)U
+676 1548(h)U
+676 1479(Table)U
+835(9.)S
+900(Hourly)S
+1090(read)S
+1214(traf\256c)S
+1378(for)S
+1468(a)S
+1515(collect)S
+1677(ion)S
+1774(of)S
+1844(DS3100)S
+2060(and)S
+2167(Sun-3)S
+2330(clients)S
+2508(that)S
+2619(have)S
+2753(abnormall)S
+706 1548(igh)U
+810(read)S
+941(traf\256c)S
+1112(to)S
+1186(uncachabl)S
+1431(e)S
+1485(data.)S
+1648(The)S
+1768(traf\256c)S
+1938(stems)S
+2101(from)S
+2244(an)S
+2327(applicat)S
+2519(ion)S
+2622(that)S
+2739(periodical)S
+2981(ly)S
+66 Z
+556 1791(s)U
+60 Z
+676 1617(scans)U
+826(a)S
+873(heavily)S
+1071(shared)S
+1248(\(and)S
+1375(therefore)S
+1613(uncached\))S
+1881(database.)S
+66 Z
+582 1791(hared)U
+758(\256le.)S
+911(The)S
+1043(server)S
+1234(can)S
+1355(return)S
+1542(the)S
+1652(number)S
+1883(of)S
+1968(available)S
+2234(hosts)S
+2400(with)S
+2547(a)S
+2606(single,)S
+2810(small)S
+2981(query.)S
+556 1947(s)U
+556 1869(Table)U
+736(10)S
+833(shows)S
+1030(the)S
+1141(read)S
+1285(traf\256c)S
+1473(for)S
+1581(a)S
+1641(collecti)S
+1833(on)S
+1930(of)S
+2015(DECstation)S
+2352(and)S
+2477(Sun-4)S
+2665(clients)S
+2866(during)S
+3068(the)S
+582 1947(econd)U
+765(study,)S
+951(after)S
+1097(this)S
+1218(change)S
+1430(was)S
+1559(made.)S
+1766(There)S
+1945(is)S
+2015(almost)S
+2215(no)S
+2306(read)S
+2444(traf\256c)S
+2626(to)S
+2702(uncachable)S
+3022(data,)S
+556 2103(c)U
+556 2025(and)U
+677(VM)S
+810(paging)S
+1015(traf\256c)S
+1198(dominates)S
+1494(the)S
+1600(network.)S
+1881(The)S
+2009(increase)S
+2250(in)S
+2326(page-in)S
+2548(traf\256c)S
+2730(was)S
+2858(traced)S
+3043(to)S
+3119(a)S
+585 2103(hange)U
+775(in)S
+859(the)S
+972(way)S
+1115(initiali)S
+1285(zed)S
+1409(data)S
+1551(pages)S
+1734(of)S
+1822(executable)S
+2135(programs)S
+2417(are)S
+2530(handled.)S
+2809(These)S
+2998(pages)S
+556 2259(s)U
+556 2181(have)U
+703(to)S
+777(be)S
+862(reloaded)S
+1111(each)S
+1254(time)S
+1393(a)S
+1445(program)S
+1691(is)S
+1758(executed.)S
+2052(Previously)S
+2356(they)S
+2491(were)S
+2641(copied)S
+2838(into)S
+2962(the)S
+3064(\256le)S
+582 2259(ystem)U
+767(cache)S
+944(at)S
+1019(the)S
+1127(time)S
+1271(they)S
+1412(were)S
+1568(\256rst)S
+1699(faulted)S
+1908(into)S
+2037(memory)S
+2283(so)S
+2369(that)S
+2494(future)S
+2678(executions)S
+2986(of)S
+3068(the)S
+556 2415(a)U
+556 2337(same)U
+720(program)S
+972(would)S
+1166(\256nd)S
+1298(the)S
+1407(initiali)S
+1577(zed)S
+1697(data)S
+1835(in)S
+1915(the)S
+2024(local)S
+2180(cache.)S
+2397(This)S
+2543(feature)S
+2754(was)S
+2885(simpli\256ed)S
+585 2415(way,)U
+741(but)S
+854(because)S
+1091(it)S
+1156(causes)S
+1357(a)S
+1415(signi\256cant)S
+1718(increase)S
+1962(in)S
+2042(page-in)S
+2268(traf\256c)S
+2454(it)S
+2519(has)S
+2636(since)S
+2799(been)S
+2951(reintro-)S
+3 F
+556 2721(4)U
+1 F
+556 2493(duced.)U
+3 F
+589 2721(.2.)U
+700(Client)S
+894(Write)S
+1080(Traf\256c)S
+1 F
+706 2823(T)U
+(ables)R
+904(11)S
+993(through)S
+1221(13)S
+1310(give)S
+1446(the)S
+1549(write)S
+1707(traf\256c)S
+1887(for)S
+1987(the)S
+2089(DECstation)S
+2418(and)S
+2535(Sun3)S
+2693(clients.)S
+2925(The)S
+3049(for-)S
+556 2901(mat)U
+678(of)S
+757(the)S
+861(tables)S
+1038(is)S
+1106(similar)S
+1312(to)S
+1387(those)S
+1550(for)S
+1651(read)S
+1788(traf\256c.)S
+2007(Hourly)S
+2217(breakdowns)S
+2559(are)S
+2662(given,)S
+2848(and)S
+2966(remote)S
+6 F
+912 3009(i)U
+943(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+912 3093(i)U
+1 F
+944 3087(New)U
+1091(Client)S
+1273(Read)S
+1430(Traf\256c)S
+1631(\(Bytes/Seconds)S
+2063(and)S
+2180(ratios\))S
+2370(\(Mar-Apr)S
+2649('91\))S
+6 F
+943 3093(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+912 3105(i)U
+943(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+912 3183(i)U
+1 F
+965 3177(Hr)U
+1103(Cache)S
+1482(Misses)S
+1906(Uncached)S
+2322(PageIn)S
+2620(Total)S
+6 F
+943 3183(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+912 3195(i)U
+943(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+967 3345(1)U
+3267(8)T
+1152(115)S
+1330(40%)S
+1569(45)S
+1698(15%)S
+1959(1)S
+2055(0.7%)S
+2289(242)S
+2451(83%)S
+2656(290)S
+1000 3345(1)U
+1152(257)S
+1330(38%)S
+1569(93)S
+1731(6%)S
+1959(9)S
+2055(0.7%)S
+2256(1310)S
+2451(92%)S
+2623(1413)S
+2722 3423(9)U
+967 3501(1)U
+967 3423(14)U
+1152(593)S
+1330(40%)S
+1536(235)S
+1698(15%)S
+1926(12)S
+2055(0.8%)S
+2256(1241)S
+2451(83%)S
+2623(148)S
+1000 3501(7)U
+1119(1093)S
+1330(45%)S
+1536(490)S
+1698(24%)S
+1926(15)S
+2055(0.8%)S
+2256(1456)S
+2451(74%)S
+2623(1962)S
+2722 3579(5)U
+967 3657(2)U
+967 3579(20)U
+1152(695)S
+1330(41%)S
+1536(282)S
+1698(19%)S
+1959(7)S
+2055(0.5%)S
+2256(1165)S
+2451(80%)S
+2623(145)S
+1000 3657(3)U
+1152(475)S
+1330(42%)S
+1536(198)S
+1698(11%)S
+1959(8)S
+2055(0.5%)S
+2256(1519)S
+2451(88%)S
+2623(1725)S
+6 F
+2758 3669(i)U
+912(i)S
+943(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+960 3747(TL)U
+1152(301)S
+1330(39%)S
+1536(117)S
+1698(14%)S
+1959(4)S
+2055(0.6%)S
+2289(673)S
+2451(84%)S
+2656(794)S
+6 F
+2758 3759(i)U
+912 3075(c)U
+3141(c)T
+3207(c)T
+3273(c)T
+3339(c)T
+3405(c)T
+3471(c)T
+3537(c)T
+3603(c)T
+3669(c)T
+3735(c)T
+3759(ci)T
+943(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1071(c)S
+3699(c)T
+3633(c)T
+3567(c)T
+3501(c)T
+3435(c)T
+3369(c)T
+3303(c)T
+3237(c)T
+3171(c)T
+1298 3759(c)U
+3699(c)T
+3633(c)T
+3567(c)T
+3501(c)T
+3435(c)T
+3369(c)T
+3303(c)T
+3237(c)T
+3171(c)T
+1482 3759(c)U
+3723(c)T
+3657(c)T
+3591(c)T
+3525(c)T
+3459(c)T
+3393(c)T
+3327(c)T
+3261(c)T
+1850 3759(c)U
+3699(c)T
+3633(c)T
+3567(c)T
+3501(c)T
+3435(c)T
+3369(c)T
+3303(c)T
+3237(c)T
+3171(c)T
+2224 3759(c)U
+3699(c)T
+3633(c)T
+3567(c)T
+3501(c)T
+3435(c)T
+3369(c)T
+3303(c)T
+3237(c)T
+3171(c)T
+2603 3759(c)U
+3699(c)T
+3633(c)T
+3567(c)T
+3501(c)T
+3435(c)T
+3369(c)T
+3303(c)T
+3237(c)T
+3171(c)T
+2791 3759(c)U
+3735(c)T
+3669(c)T
+3603(c)T
+3537(c)T
+3471(c)T
+3405(c)T
+3339(c)T
+3273(c)T
+3207(c)T
+3141(c)T
+3075(c)T
+1 F
+60 Z
+3008 3876(-)U
+676 3945(b)U
+676 3876(Table)U
+838(10.)S
+937(Read)S
+1085(traf\256c)S
+1253(for)S
+1347(a)S
+1398(collect)S
+1560(ion)S
+1661(of)S
+1735(DECstation)S
+2039(and)S
+2149(Sun-4)S
+2315(clients)S
+2496(after)S
+2630(the)S
+2727(shared)S
+2907(data)S
+706 3945(ase)U
+806(was)S
+922(replace)S
+1120(by)S
+1203(a)S
+1252(server)S
+1421(process.)S
+1658(There)S
+1821(is)S
+1883(almost)S
+2066(no)S
+2148(read)S
+2274(traf\256c)S
+2440(to)S
+2509(uncachabl)S
+2754(e)S
+2803(data,)S
+2941(and)S
+676 4014(VM)U
+792(paging)S
+976(traf\256c)S
+1140(dominates)S
+1408(the)S
+1502(network)S
+1719(traf\256c.)S
+3 F
+66 Z
+1791 4470(-)U
+1835(9)S
+1890(-)S
+EP
+%%Page: ? 11
+BP
+3 F
+66 Z
+556 444(Sprite)U
+750(Caching)S
+6 F
+855 690(i)U
+868(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+855 774(i)U
+1 F
+768(DS3100)T
+1127(Client)S
+1309(Write)S
+1480(Traf\256c)S
+1681(\(Bytes/Seconds)S
+2113(and)S
+2230(ratios\))S
+2420(\(Nov-Dec)S
+2706('89\))S
+6 F
+868 774(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+855 786(i)U
+868(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+855 864(i)U
+1 F
+916 858(Hr)U
+1071(Cache)S
+1435(WriteBack)S
+1942(Uncached)S
+2351(PageOut)S
+2677(Total)S
+6 F
+868 864(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+855 876(i)U
+868(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+918 1026(1)U
+948(8)T
+1114(146)S
+1315(48%)S
+1571(63)S
+1717(49%)S
+1962(14)S
+2108(11%)S
+2353(48)S
+2499(38%)S
+2707(127)S
+951 1026(1)U
+1114(174)S
+1315(41%)S
+1571(69)S
+1717(46%)S
+1995(5)S
+2141(3%)S
+2353(74)S
+2499(49%)S
+2707(150)S
+2773 1104(2)U
+918 1182(1)U
+918 1104(14)U
+1114(270)S
+1315(55%)S
+1538(146)S
+1717(65%)S
+1995(5)S
+2141(2%)S
+2353(69)S
+2499(31%)S
+2707(22)S
+951 1182(7)U
+1114(530)S
+1315(44%)S
+1538(230)S
+1717(73%)S
+1995(6)S
+2141(2%)S
+2353(74)S
+2499(23%)S
+2707(314)S
+2773 1260(0)U
+6 F
+855 1272(i)U
+1 F
+918 1260(20)U
+1114(333)S
+1315(47%)S
+1538(154)S
+1717(80%)S
+1995(5)S
+2141(3%)S
+2353(29)S
+2499(15%)S
+2707(19)S
+6 F
+868 1272(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+855 1362(i)U
+1 F
+911 1350(TL)U
+1114(244)S
+1315(51%)S
+1538(120)S
+1717(63%)S
+1962(10)S
+2141(5%)S
+2353(57)S
+2499(30%)S
+2707(189)S
+6 F
+868 1362(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+855(c)S
+1350(c)T
+1284(c)T
+1218(c)T
+1152(c)T
+1086(c)T
+1020(c)T
+954(c)T
+888(c)T
+822(c)T
+756(c)T
+1031 1362(c)U
+1314(c)T
+1248(c)T
+1182(c)T
+1116(c)T
+1050(c)T
+984(c)T
+918(c)T
+852(c)T
+1275 1362(c)U
+1314(c)T
+1248(c)T
+1182(c)T
+1116(c)T
+1050(c)T
+984(c)T
+918(c)T
+852(c)T
+1476 1362(c)U
+1338(c)T
+1272(c)T
+1206(c)T
+1140(c)T
+1074(c)T
+1008(c)T
+942(c)T
+1878 1362(c)U
+1314(c)T
+1248(c)T
+1182(c)T
+1116(c)T
+1050(c)T
+984(c)T
+918(c)T
+852(c)T
+2269 1362(c)U
+1314(c)T
+1248(c)T
+1182(c)T
+1116(c)T
+1050(c)T
+984(c)T
+918(c)T
+852(c)T
+2660 1362(c)U
+1314(c)T
+1248(c)T
+1182(c)T
+1116(c)T
+1050(c)T
+984(c)T
+918(c)T
+852(c)T
+2848 1362(c)U
+1350(c)T
+1284(c)T
+1218(c)T
+1152(c)T
+1086(c)T
+1020(c)T
+954(c)T
+888(c)T
+822(c)T
+756(c)T
+1 F
+60 Z
+3005 1479(s)U
+676 1548(t)U
+676 1479(Table)U
+837(11.)S
+935(Hourly)S
+1128(write)S
+1275(traf\256c)S
+1442(for)S
+1535(all)S
+1619(the)S
+1716(DECstation)S
+2020(3100)S
+2163(clients.)S
+2379(The)S
+2496(format)S
+2680(of)S
+2752(the)S
+2848(table)S
+2988(i)S
+693 1548(he)U
+774(same)S
+921(as)S
+994(Table)S
+1155(6.)S
+1243(An)S
+1339(uncached)S
+1590(database)S
+1821(is)S
+1884(updated)S
+2098(once)S
+2235(a)S
+2285(minute)S
+2476(by)S
+2559(each)S
+2693(host,)S
+2831(and)S
+2941(this)S
+3013 1617(,)U
+676 1686(m)U
+676 1617(create)U
+821(s)S
+865(a)S
+913(small)S
+1065(amount)S
+1267(of)S
+1337(uncachabl)S
+1582(e)S
+1629(I/O)S
+1729(traf\256c.)S
+1928(Note)S
+2065(that)S
+2176(the)S
+2270(overall)S
+2458(write)S
+2602(miss)S
+2732(rate)S
+2843(is)S
+2903(51%)S
+723 1686(eaning)U
+904(that)S
+1015(half)S
+1129(the)S
+1223(data)S
+1344(written)S
+1535(to)S
+1602(the)S
+1696(cache)S
+1854(is)S
+1914(not)S
+2011(written)S
+2202(out.)S
+6 F
+66 Z
+2923 1818(i)U
+747(i)S
+778(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+780 1896(Sun-3)U
+960(\(12)S
+1070(Meg\))S
+1235(Client)S
+1417(Write)S
+1588(Traf\256c)S
+1789(\(Bytes/Seconds)S
+2221(and)S
+2338(ratios\))S
+2528(\(Nov-Dec)S
+2814('89\))S
+6 F
+2923 1914(i)U
+747(i)S
+778(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1902(i)T
+747(i)S
+778(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+820 1986(Hr)U
+999(Cache)S
+1411(WriteBack)S
+1978(Uncached)S
+2435(PageOut)S
+2785(Total)S
+6 F
+2923 2004(i)U
+747(i)S
+778(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1992(i)T
+747(i)S
+778(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+855 2076(8)U
+1075(69)S
+1267(52%)S
+1547(30)S
+1717(53%)S
+1986(11)S
+2156(20%)S
+2425(13)S
+2595(23%)S
+2848(57)S
+2881 2154(3)U
+822 2232(1)U
+822 2154(11)U
+1042(148)S
+1267(50%)S
+1547(71)S
+1717(49%)S
+2019(7)S
+2189(5%)S
+2425(61)S
+2595(43%)S
+2815(14)S
+855 2232(4)U
+1042(267)S
+1267(57%)S
+1514(150)S
+1717(54%)S
+2019(8)S
+2189(3%)S
+2425(79)S
+2595(28%)S
+2815(273)S
+2881 2310(1)U
+822 2388(2)U
+822 2310(17)U
+1042(327)S
+1267(53%)S
+1514(170)S
+1717(67%)S
+2019(7)S
+2189(3%)S
+2425(70)S
+2595(28%)S
+2815(25)S
+855 2388(0)U
+1042(239)S
+1267(37%)S
+1547(84)S
+1717(55%)S
+2019(7)S
+2189(4%)S
+2425(56)S
+2595(37%)S
+2815(151)S
+6 F
+2923 2400(i)U
+747(i)S
+778(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+815 2478(TL)U
+1042(148)S
+1267(52%)S
+1547(74)S
+1717(53%)S
+2019(8)S
+2189(6%)S
+2425(45)S
+2595(32%)S
+2815(140)S
+6 F
+2923 2490(i)U
+747 1884(c)U
+1950(c)T
+2016(c)T
+2082(c)T
+2148(c)T
+2214(c)T
+2280(c)T
+2346(c)T
+2412(c)T
+2478(c)T
+2490(ci)T
+778(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+947(c)S
+2442(c)T
+2376(c)T
+2310(c)T
+2244(c)T
+2178(c)T
+2112(c)T
+2046(c)T
+1980(c)T
+1215 2490(c)U
+2442(c)T
+2376(c)T
+2310(c)T
+2244(c)T
+2178(c)T
+2112(c)T
+2046(c)T
+1980(c)T
+1440 2490(c)U
+2466(c)T
+2400(c)T
+2334(c)T
+2268(c)T
+2202(c)T
+2136(c)T
+2070(c)T
+1890 2490(c)U
+2442(c)T
+2376(c)T
+2310(c)T
+2244(c)T
+2178(c)T
+2112(c)T
+2046(c)T
+1980(c)T
+2329 2490(c)U
+2442(c)T
+2376(c)T
+2310(c)T
+2244(c)T
+2178(c)T
+2112(c)T
+2046(c)T
+1980(c)T
+2768 2490(c)U
+2442(c)T
+2376(c)T
+2310(c)T
+2244(c)T
+2178(c)T
+2112(c)T
+2046(c)T
+1980(c)T
+2956 2490(c)U
+2478(c)T
+2412(c)T
+2346(c)T
+2280(c)T
+2214(c)T
+2148(c)T
+2082(c)T
+2016(c)T
+1950(c)T
+1884(c)T
+1 F
+60 Z
+2998 2607(o)U
+676 2676(t)U
+676 2607(Table)U
+836(12.)S
+933(Hourly)S
+1125(write)S
+1271(traf\256c)S
+1437(for)S
+1529(all)S
+1612(the)S
+1708(12)S
+1790(Meg)S
+1922(Sun-3)S
+2087(clients.)S
+2302(The)S
+2418(write)S
+2564(traf\256c)S
+2730(is)S
+2792(similar)S
+2981(t)S
+693 2676(hat)U
+787(of)S
+857(the)S
+951(DECstation)S
+1252(clients.)S
+6 F
+66 Z
+764 2808(i)U
+794(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+764 2892(i)U
+1 F
+796 2886(Sun-3)U
+976(\(8)S
+1053(Meg\))S
+1218(Client)S
+1400(Write)S
+1571(Traf\256c)S
+1772(\(Bytes/Seconds)S
+2204(and)S
+2321(ratios\))S
+2511(\(Nov-Dec)S
+2797('89\))S
+6 F
+794 2892(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+764 2904(i)U
+794(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+764 2982(i)U
+1 F
+835 2976(Hr)U
+1009(Cache)S
+1410(WriteBack)S
+1965(Uncached)S
+2418(PageOut)S
+2768(Total)S
+6 F
+794 2982(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+764 2994(i)U
+794(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+837 3144(1)U
+3066(8)T
+1085(86)S
+1272(53%)S
+1547(38)S
+1712(46%)S
+1976(15)S
+2141(19%)S
+2416(27)S
+2581(33%)S
+2831(83)S
+870 3144(1)U
+1052(134)S
+1272(61%)S
+1547(77)S
+1712(46%)S
+1976(11)S
+2174(6%)S
+2416(77)S
+2581(46%)S
+2798(167)S
+2864 3222(0)U
+837 3300(1)U
+837 3222(14)U
+1052(186)S
+1272(53%)S
+1547(94)S
+1712(49%)S
+1976(11)S
+2174(6%)S
+2416(82)S
+2581(43%)S
+2798(19)S
+870 3300(7)U
+1052(354)S
+1272(69%)S
+1514(244)S
+1712(67%)S
+2009(9)S
+2174(2%)S
+2383(104)S
+2581(29%)S
+2798(360)S
+2864 3378(6)U
+6 F
+764 3390(i)U
+1 F
+837 3378(20)U
+1052(172)S
+1272(59%)S
+1547(98)S
+1712(41%)S
+2009(9)S
+2174(3%)S
+2383(125)S
+2581(53%)S
+2798(23)S
+6 F
+794 3390(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+764 3480(i)U
+1 F
+830 3468(TL)U
+1052(154)S
+1272(59%)S
+1547(85)S
+1712(49%)S
+1976(12)S
+2174(7%)S
+2416(73)S
+2581(42%)S
+2798(173)S
+6 F
+794 3480(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+764(c)S
+3468(c)T
+3402(c)T
+3336(c)T
+3270(c)T
+3204(c)T
+3138(c)T
+3072(c)T
+3006(c)T
+2940(c)T
+2874(c)T
+959 3480(c)U
+3432(c)T
+3366(c)T
+3300(c)T
+3234(c)T
+3168(c)T
+3102(c)T
+3036(c)T
+2970(c)T
+1222 3480(c)U
+3432(c)T
+3366(c)T
+3300(c)T
+3234(c)T
+3168(c)T
+3102(c)T
+3036(c)T
+2970(c)T
+1442 3480(c)U
+3456(c)T
+3390(c)T
+3324(c)T
+3258(c)T
+3192(c)T
+3126(c)T
+3060(c)T
+1882 3480(c)U
+3432(c)T
+3366(c)T
+3300(c)T
+3234(c)T
+3168(c)T
+3102(c)T
+3036(c)T
+2970(c)T
+2311 3480(c)U
+3432(c)T
+3366(c)T
+3300(c)T
+3234(c)T
+3168(c)T
+3102(c)T
+3036(c)T
+2970(c)T
+2751 3480(c)U
+3432(c)T
+3366(c)T
+3300(c)T
+3234(c)T
+3168(c)T
+3102(c)T
+3036(c)T
+2970(c)T
+2939 3480(c)U
+3468(c)T
+3402(c)T
+3336(c)T
+3270(c)T
+3204(c)T
+3138(c)T
+3072(c)T
+3006(c)T
+2940(c)T
+2874(c)T
+1 F
+60 Z
+2998 3597(y)U
+676 3666(w)U
+676 3597(Table)U
+837(13.)S
+935(Hourly)S
+1128(write)S
+1275(traf\256c)S
+1442(for)S
+1535(all)S
+1618(the)S
+1714(8)S
+1766(Meg)S
+1898(Sun-3)S
+2063(clients.)S
+2278(The)S
+2394(write)S
+2540(miss)S
+2672(rate)S
+2785(is)S
+2847(slightl)S
+719 3666(orse)U
+839(\(higher\))S
+1053(in)S
+1120(comparison)S
+1421(with)S
+1548(the)S
+1642(DECstation)S
+1943(and)S
+2050(12)S
+2130(Meg)S
+2260(Sun-3)S
+2423(clients.)S
+66 Z
+3119 3840(e)U
+556 3918(e)U
+556 3840(traf\256c)U
+747(is)S
+825(divided)S
+1056(among)S
+1269(cache)S
+1452(misses,)S
+1679(uncachable)S
+2008(data,)S
+2168(and)S
+2297(writes)S
+2492(due)S
+2621(to)S
+2706(page)S
+2864(outs.)S
+3046(Th)S
+585 3918(ffectiveness)U
+921(of)S
+998(the)S
+1100(cache)S
+1271(in)S
+1344(trapping)S
+1585(short)S
+1739(lived)S
+1892(data)S
+2023(is)S
+2089(given)S
+2257(by)S
+2345(the)S
+2447(traf\256c)S
+2626(ratio:)S
+6 F
+60 Z
+1974 4038(h)U
+1988(hhhhhh)S
+2 F
+2116 4020(U)U
+1983(W)S
+4 F
+2063(+)S
+2 F
+2111 4098(U)U
+1 F
+66 Z
+556 4200(W)U
+2 F
+60 Z
+1530 4056(Tra)U
+1621(f)S
+1653(f)S
+1680(ic)S
+1754(Ratio)S
+4 F
+1915(=)S
+2 F
+1988 4098(C)U
+4 F
+2058(+)S
+1 F
+66 Z
+618 4200(here)U
+2 F
+758(W)S
+1 F
+840(is)S
+911(the)S
+1018(amount)S
+1242(of)S
+1324(data)S
+1460(written)S
+1673(out)S
+1784(of)S
+1866(the)S
+1973(cache)S
+2149(to)S
+2227(a)S
+2283(server,)S
+2 F
+2488(C)S
+1 F
+2559(is)S
+2629(the)S
+2735(amount)S
+2958(of)S
+3039(data)S
+556 4278(written)U
+764(into)S
+888(the)S
+990(cache)S
+1161(by)S
+1249(applicati)S
+1474(ons,)S
+1605(and)S
+2 F
+1722(U)S
+1 F
+1792(is)S
+1858(the)S
+1960(amount)S
+2179(of)S
+2256(data)S
+2387(written)S
+2595(to)S
+2668(uncachable)S
+2985(\256les.)S
+3 F
+1775 4470(-)U
+1819(10)S
+1907(-)S
+EP
+%%Page: ? 12
+BP
+3 F
+66 Z
+556 444(Sprite)U
+750(Caching)S
+1 F
+706 660(The)U
+834(most)S
+988(notable)S
+1207(result)S
+1379(in)S
+1456(the)S
+1562(tables)S
+1741(is)S
+1811(that)S
+1935(the)S
+2041(writeback)S
+2325(traf\256c)S
+2507(ratio)S
+2652(ranges)S
+2849(from)S
+3002(about)S
+556 816(t)U
+556 738(40%)U
+704(to)S
+782(60%,)S
+947(averaging)S
+1233(52%)S
+1381(overall.)S
+1629(This)S
+1773(means)S
+1968(that)S
+2092(about)S
+2264(half)S
+2392(the)S
+2498(data)S
+2633(written)S
+2845(by)S
+2937(applica-)S
+574 816(ions)U
+713(was)S
+845(removed)S
+1104(or)S
+1188(overwritten)S
+1520(in)S
+1600(the)S
+1709(30)S
+1804(second)S
+2016(aging)S
+2191(period.)S
+2427(Traf\256c)S
+2635(to)S
+2715(uncachable)S
+3039(data)S
+556 972(b)U
+556 894(accounts)U
+811(for)S
+913(only)S
+1055(a)S
+1109(few)S
+1233(percent)S
+1451(of)S
+1531(the)S
+1636(network)S
+1877(traf\256c,)S
+2076(although)S
+2331(it)S
+2392(does)S
+2538(increase)S
+2778(the)S
+2883(miss)S
+3028(ratio)S
+589 972(y)U
+645(a)S
+697(couple)S
+895(percent.)S
+1150(Page)S
+1300(out)S
+1406(traf\256c)S
+1585(accounts)S
+1837(for)S
+1936(less)S
+2057(than)S
+2192(half)S
+2316(the)S
+2418(network)S
+2656(traf\256c,)S
+2852(and)S
+2969(it)S
+3027(is)S
+3093(as)S
+3126 1050(r)U
+556 1128(t)U
+556 1050(low)U
+684(as)S
+768(30%)S
+918(of)S
+1001(the)S
+1109(traf\256c)S
+1294(from)S
+1450(the)S
+1558(DECstation)S
+1893(3100s.)S
+2118(Table)S
+2295(14)S
+2389(shows)S
+2583(more)S
+2746(recent)S
+2934(data)S
+3071(fo)S
+574 1128(he)U
+662(Sprite)S
+845(network,)S
+1104(after)S
+1250(the)S
+1355(uncachable)S
+1675(host)S
+1810(load)S
+1948(database)S
+2199(was)S
+2327(replaced)S
+2574(with)S
+2716(a)S
+2770(server.)S
+2995(There)S
+3131 1206(.)U
+556 1284(S)U
+556 1206(is)U
+623(still)S
+744(evidence)S
+1000(of)S
+1078(some)S
+1240(shared)S
+1435(\256les)S
+1568(that)S
+1689(are)S
+1792(updated)S
+2023(steadily,)S
+2266(but)S
+2372(the)S
+2474(I/O)S
+2584(rate)S
+2704(is)S
+2770(much)S
+2938(smaller)S
+593 1284(hared)U
+766(\256les)S
+903(are)S
+1010(still)S
+1135(used)S
+1283(to)S
+1361(record)S
+1556(user)S
+1692(logins)S
+1879(and)S
+2000(to)S
+2077(log)S
+2187(system)S
+2396(events.)S
+2629(Note)S
+2783(that)S
+2907(the)S
+3013(write)S
+3119 1362(e)U
+556 1440(I)U
+556 1362(traf\256c)U
+737(ratio)S
+881(is)S
+949(62%,)S
+1111(which)S
+1296(is)S
+1364(worse)S
+1546(than)S
+1683(the)S
+1787(50%)S
+1932(found)S
+2110(in)S
+2184(the)S
+2287(initial)S
+2462(study.)S
+2667(Note)S
+2818(also)S
+2947(that)S
+3068(th)S
+578 1440(/O)U
+669(rates)S
+818(to)S
+894(the)S
+999(cache)S
+1173(are)S
+1278(lower)S
+1453(during)S
+1650(this)S
+1770(study,)S
+1955(suggesting)S
+2262(that)S
+2385(the)S
+2490(network)S
+2730(was)S
+2857(being)S
+3027(used)S
+3131 1518(,)U
+556 1596(a)U
+556 1518(less)U
+682(intensively.)S
+1036(The)S
+1165(initial)S
+1344(study)S
+1513(was)S
+1642(made)S
+1810(during)S
+2008(an)S
+2096(intense)S
+2308(period)S
+2502(of)S
+2583(system)S
+2792(development)S
+585 1596(nd)U
+683(large)S
+846(compilati)S
+1093(on)S
+1191(jobs)S
+1333(generated)S
+1620(much)S
+1798(of)S
+1885(the)S
+1997(I/O)S
+2117(traf\256c.)S
+2345(Compiler)S
+2625(temporary)S
+2927(\256les)S
+3068(are)S
+3119 1674(c)U
+556 1752(r)U
+556 1674(created)U
+774(and)S
+898(deleted)S
+1116(before)S
+1313(being)S
+1488(written)S
+1703(out,)S
+1833(so)S
+1921(they)S
+2063(contribute)S
+2358(favorably)S
+2639(to)S
+2719(the)S
+2828(write)S
+2991(traf\256)S
+578 1752(atio.)U
+737(Traf\256c)S
+938(ratios)S
+1106(as)S
+1183(low)S
+1304(as)S
+1381(30%)S
+1524(have)S
+1670(been)S
+1816(observed)S
+2076(during)S
+2270(large)S
+2423(compilati)S
+2670(ons.)S
+3 F
+556 1980(4.3.)U
+700(Server)S
+908(I/O)S
+1025(Traf\256c)S
+1 F
+706 2082(This)U
+846(section)S
+1055(presents)S
+1294(the)S
+1397(I/O)S
+1508(traf\256c)S
+1688(from)S
+1839(the)S
+1942(standpoint)S
+2239(of)S
+2317(the)S
+2420(\256le)S
+2527(servers.)S
+2776(In)S
+2854(the)S
+2957(case)S
+3093(of)S
+556 2238(m)U
+556 2160(a)U
+611(\256le)S
+721(server)S
+908(it)S
+970(is)S
+1040(interesting)S
+1343(to)S
+1420(compare)S
+1672(the)S
+1778(traf\256c)S
+1961(to)S
+2038(its)S
+2126(cache)S
+2301(to)S
+2377(the)S
+2482(traf\256c)S
+2664(to)S
+2740(its)S
+2827(disks.)S
+3027(Two)S
+607 2238(etrics)U
+781(are)S
+893(given,)S
+1088(the)S
+1200(``File)S
+1377(Traf\256c'')S
+1631(and)S
+1757(the)S
+1868(``MetaData)S
+2202(Traf\256c.'')S
+2 F
+2473(Metadata)S
+1 F
+2756(is)S
+2831(data)S
+2971(on)S
+3068(the)S
+3119 2316(e)U
+556 2394(\256)U
+556 2316(disk)U
+689(that)S
+810(describes)S
+1078(a)S
+1130(\256le)S
+1237(and)S
+1355(where)S
+1539(it)S
+1598(lives)S
+1745(on)S
+1834(disk.)S
+2005(This)S
+2144(includes)S
+2385(the)S
+2487(descriptor)S
+2772(that)S
+2892(stores)S
+3068(th)S
+593 2394(le's)U
+713(attributes,)S
+999(and)S
+1119(the)S
+1224(index)S
+1395(blocks)S
+1592(used)S
+1737(for)S
+1838(the)S
+1942(\256le)S
+2050(map.)S
+2226(The)S
+2352(``File)S
+2522(Traf\256c'')S
+2769(represents)S
+3060(I/O)S
+3115 2472(d)U
+556 2550(m)U
+556 2472(to)U
+632(\256le)S
+741(data)S
+875(blocks)S
+1072(as)S
+1151(opposed)S
+1395(to)S
+1470(the)S
+1574(metadata)S
+1834(information.)S
+2207(The)S
+2333(combination)S
+2685(of)S
+2764(\256le)S
+2872(traf\256c)S
+3053(an)S
+607 2550(etadata)U
+828(traf\256c)S
+1021(gives)S
+1196(the)S
+1312(total)S
+1464(disk)S
+1610(traf\256c)S
+1803(for)S
+1916(the)S
+2031(\256le)S
+2150(server.)S
+2385(Three)S
+2573(ratios)S
+2754(are)S
+2869(given)S
+3050(that)S
+6 F
+904 2658(i)U
+918(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+937 2736(New)U
+1084(Client)S
+1266(Write)S
+1437(Traf\256c)S
+1638(\(Bytes/Seconds)S
+2070(and)S
+2187(ratios\))S
+2377(\(Mar-Apr)S
+2656('91\))S
+6 F
+2754(i)T
+904(i)S
+918(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+2742(i)T
+904(i)S
+918(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+958 2826(Hr)U
+1099(Cache)S
+1435(WriteBack)S
+1916(Uncached)S
+2311(PageOut)S
+2628(Total)S
+6 F
+2766 2844(i)U
+904(i)S
+918(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+2832(i)T
+904(i)S
+918(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+993 2916(8)U
+1175(36)S
+1329(96%)S
+1571(34)S
+1703(62%)S
+1967(1)S
+2066(2.6%)S
+2325(15)S
+2457(28%)S
+2691(55)S
+2724 2994(8)U
+960 3072(1)U
+960 2994(11)U
+1142(160)S
+1329(50%)S
+1571(79)S
+1703(42%)S
+1967(1)S
+2066(0.8%)S
+2325(65)S
+2457(34%)S
+2658(18)S
+993 3072(4)U
+1142(174)S
+1329(74%)S
+1538(129)S
+1703(46%)S
+1967(1)S
+2066(0.5%)S
+2292(107)S
+2457(38%)S
+2658(276)S
+2724 3150(7)U
+960 3228(2)U
+960 3150(17)U
+1142(350)S
+1329(74%)S
+1538(260)S
+1703(52%)S
+1934(10)S
+2066(2.0%)S
+2292(178)S
+2457(35%)S
+2658(49)S
+993 3228(0)U
+1142(233)S
+1329(79%)S
+1538(185)S
+1703(58%)S
+1967(1)S
+2066(0.4%)S
+2292(104)S
+2457(32%)S
+2658(318)S
+2724 3306(4)U
+6 F
+904 3318(i)U
+1 F
+960 3306(23)U
+1142(170)S
+1329(85%)S
+1538(145)S
+1703(54%)S
+1967(1)S
+2066(0.5%)S
+2325(95)S
+2457(36%)S
+2658(26)S
+6 F
+918 3318(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+904 3408(i)U
+1 F
+953 3396(TL)U
+1142(122)S
+1329(62%)S
+1571(75)S
+1703(55%)S
+1967(1)S
+2066(1.4%)S
+2325(45)S
+2457(33%)S
+2658(134)S
+6 F
+918 3408(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+904(c)S
+3384(c)T
+3318(c)T
+3252(c)T
+3186(c)T
+3120(c)T
+3054(c)T
+2988(c)T
+2922(c)T
+2856(c)T
+2790(c)T
+2724(c)T
+1066 3408(c)U
+3348(c)T
+3282(c)T
+3216(c)T
+3150(c)T
+3084(c)T
+3018(c)T
+2952(c)T
+2886(c)T
+2820(c)T
+1296 3408(c)U
+3348(c)T
+3282(c)T
+3216(c)T
+3150(c)T
+3084(c)T
+3018(c)T
+2952(c)T
+2886(c)T
+2820(c)T
+1483 3408(c)U
+3372(c)T
+3306(c)T
+3240(c)T
+3174(c)T
+3108(c)T
+3042(c)T
+2976(c)T
+2910(c)T
+1857 3408(c)U
+3348(c)T
+3282(c)T
+3216(c)T
+3150(c)T
+3084(c)T
+3018(c)T
+2952(c)T
+2886(c)T
+2820(c)T
+2237 3408(c)U
+3348(c)T
+3282(c)T
+3216(c)T
+3150(c)T
+3084(c)T
+3018(c)T
+2952(c)T
+2886(c)T
+2820(c)T
+2611 3408(c)U
+3348(c)T
+3282(c)T
+3216(c)T
+3150(c)T
+3084(c)T
+3018(c)T
+2952(c)T
+2886(c)T
+2820(c)T
+2799 3408(c)U
+3384(c)T
+3318(c)T
+3252(c)T
+3186(c)T
+3120(c)T
+3054(c)T
+2988(c)T
+2922(c)T
+2856(c)T
+2790(c)T
+2724(c)T
+1 F
+60 Z
+3008 3525(r)U
+676 3594(p)U
+676 3525(Table)U
+839(14.)S
+939(Hourly)S
+1134(write)S
+1283(traf\256c)S
+1452(after)S
+1588(the)S
+1687(shared)S
+1869(host)S
+1993(load)S
+2121(database)S
+2353(was)S
+2470(replace)S
+2645(d)S
+2699(with)S
+2830(a)S
+2881(serve)S
+706 3594(rocess.)U
+915(The)S
+1033(clients)S
+1215(are)S
+1313(a)S
+1364(collect)S
+1526(ion)S
+1626(of)S
+1699(Sun-4s)S
+1888(and)S
+1998(DECstations.)S
+2360(The)S
+2477(rate)S
+2591(of)S
+2664(I/O)S
+2767(to)S
+2837(uncach-)S
+676 3732(s)U
+676 3663(able)U
+801(\256les)S
+925(has)S
+1029(dropped)S
+1249(signi\256cantly,)S
+1585(but)S
+1685(there)S
+1829(is)S
+1892(still)S
+2006(evidence)S
+2244(of)S
+2317(uncachabl)S
+2562(e)S
+2612(\256les,)S
+2750(most)S
+2890(likely)S
+699 3732(ystem)U
+871(log)S
+976(\256les)S
+1104(and)S
+1219(the)S
+1321(user)S
+1449(login)S
+1601(database.)S
+1872(There)S
+2041(are)S
+2143(two)S
+2261(anomalie)S
+2483(s)S
+2534(in)S
+2609(this)S
+2723(table.)S
+2903(First,)S
+676 3870(m)U
+676 3801(there)U
+820(was)S
+936(one)S
+1046(spike)S
+1196(of)S
+1269(uncachabl)S
+1514(e)S
+1564(traf\256c)S
+1731(on)S
+1814(three)S
+1958(clients)S
+2139(which)S
+2309(shows)S
+2481(up)S
+2564(under)S
+2723(hour)S
+2855(17)S
+2937(that)S
+723 3870(ay)U
+803(been)S
+940(an)S
+1020(arti\256cial)S
+1245(test.)S
+1387(Second,)S
+1601(the)S
+1697(percenta)S
+1902(ges)S
+2004(only)S
+2133(total)S
+2263(approximate)S
+2565(ly)S
+2634(90%)S
+2766(of)S
+2838(the)S
+2934(net-)S
+3008 3939(r)U
+676 4008(p)U
+676 3939(work)U
+830(traf\256c.)S
+1040(The)S
+1164(missing)S
+1381(data)S
+1512(stems)S
+1679(from)S
+1826(remote)S
+2024(access)S
+2208(to)S
+2285(devices)S
+2496(and)S
+2613(user-level)S
+2881(serve)S
+706 4008(rocesses.)U
+963(In)S
+1035(particula)S
+1247(r,)S
+1304(one)S
+1413(user-level)S
+1673(server)S
+1842(acts)S
+1958(as)S
+2030(a)S
+2078(gateway)S
+2300(to)S
+2368(remote)S
+2557(NFS)S
+2687(servers,)S
+2893(and)S
+3001(a)S
+676 4077(number)U
+880(of)S
+950(long-running)S
+1284(simulations)S
+1582(directed)S
+1797(their)S
+1928(output)S
+2102(to)S
+2169(NFS)S
+2298(\256les.)S
+3 F
+66 Z
+1775 4470(-)U
+1819(11)S
+1907(-)S
+EP
+%%Page: ? 13
+BP
+1 F
+66 Z
+556 660(c)U
+3 F
+556 444(Sprite)U
+750(Caching)S
+1 F
+585 660(ompare)U
+804(cache)S
+975(traf\256c)S
+1154(to)S
+1227(disk)S
+1359(traf\256c:)S
+2 F
+60 Z
+1533 798(File)U
+1661(Tra)S
+1752(f)S
+1784(f)S
+1811(ic)S
+1885(Ratio)S
+4 F
+2046(=)S
+2 F
+2114 840(C)U
+2116 762(F)U
+6 F
+2106 780(h)U
+2134(h)S
+2205 984(h)U
+2167(h)S
+2175(h)S
+2 F
+2176 966(M)U
+2181 1044(C)U
+1454 1206(T)U
+1462 1002(Metadata)U
+1723(Tra)S
+1814(f)S
+1846(f)S
+1873(ic)S
+1947(Ratio)S
+4 F
+2108(=)S
+2 F
+1487 1206(otal)U
+1611(Tra)S
+1702(f)S
+1734(f)S
+1761(ic)S
+1835(Ratio)S
+4 F
+1996(=)S
+2 F
+2129 1248(C)U
+2064 1170(M)U
+4 F
+2144(+)S
+2 F
+2197(F)S
+6 F
+2055 1188(h)U
+2063(hhhhhh)S
+2 F
+66 Z
+3104 1350(C)U
+1 F
+556 1428(i)U
+556 1350(Where)U
+2 F
+755(F)S
+1 F
+819(is)S
+887(the)S
+991(disk)S
+1125(traf\256c)S
+1306(from)S
+1458(the)S
+1562(cache)S
+1735(to)S
+1810(\256le)S
+1918(data,)S
+2 F
+2068(M)S
+1 F
+2147(is)S
+2215(the)S
+2319(disk)S
+2453(traf\256c)S
+2634(to)S
+2709(metadata)S
+2945(,)S
+2986(and)S
+574 1428(s)U
+636(the)S
+752(traf\256c)S
+945(between)S
+1200(applicati)S
+1425(ons)S
+1552(and)S
+1682(the)S
+1797(cache.)S
+2020(There)S
+2208(are)S
+2323(no)S
+2424(uncachable)S
+2754(\256les)S
+2899(on)S
+3000(a)S
+3064(\256le)S
+3122 1506(s)U
+556 1584(i)U
+556 1506(server.)U
+779(The)S
+904(\256le)S
+1011(traf\256c)S
+1191(ratio)S
+1333(ignores)S
+1549(the)S
+1651(effects)S
+1848(of)S
+1925(metadata)S
+2161(,)S
+2200(while)S
+2368(the)S
+2470(total)S
+2608(traf\256c)S
+2787(ratio)S
+2929(include)S
+574 1584(t.)U
+706 1686(The)U
+841(server)S
+1035(I/O)S
+1156(traf\256c)S
+1346(from)S
+1507(a)S
+1569(20-day)S
+1784(study)S
+1959(period,)S
+2176(October)S
+2420(29)S
+2518(through)S
+2755(November)S
+3065(19,)S
+556 1842(a)U
+556 1764(1989,)U
+728(is)S
+795(given)S
+964(in)S
+1038(Tabled)S
+1243(15)S
+1332(and)S
+1450(16.)S
+1578(Figure)S
+1773(1)S
+1829(shows)S
+2018(the)S
+2121(server)S
+2304(I/O)S
+2414(traf\256c)S
+2593(for)S
+2692(a)S
+2743(combination)S
+3093(of)S
+585 1842(ll)U
+646(servers)S
+858(averaged)S
+1120(over)S
+1262(a)S
+1316(6-month)S
+1564(study)S
+1732(period,)S
+1942(from)S
+2095(July)S
+2230(to)S
+2306(December)S
+2601(1989.)S
+2797(Servers)S
+3020(were)S
+3119 1920(e)U
+556 1998(f)U
+556 1920(sampled)U
+802(every)S
+975(hour,)S
+1140(24)S
+1233(hours)S
+1407(a)S
+1463(day.)S
+1624(The)S
+1753(graphs)S
+1956(indicate)S
+2190(that)S
+2315(the)S
+2422(server)S
+2610(caches)S
+2812(are)S
+2919(effectiv)S
+578 1998(or)U
+666(reads)S
+838(during)S
+1043(peak)S
+1200(usage)S
+1382(hours.)S
+1600(The)S
+1734(server)S
+1927(caches)S
+2134(are)S
+2246(less)S
+2377(effective)S
+2638(for)S
+2747(writes)S
+2940(because)S
+3130 2076(t)U
+556 2154(o)U
+556 2076(client)U
+724(caches)S
+922(trap)S
+1046(out)S
+1152(most)S
+1302(of)S
+1379(the)S
+1481(short-lived)S
+1788(data.)S
+1958(The)S
+2082(write)S
+2239(graph)S
+2411(highlights)S
+2696(the)S
+2798(large)S
+2951(amoun)S
+589 2154(f)U
+635(write)S
+794(traf\256c)S
+975(to)S
+1050(metadata)S
+1286(.)S
+1349(File)S
+1475(descriptors)S
+1788(have)S
+1936(to)S
+2011(be)S
+2096(updated)S
+2327(with)S
+2467(access)S
+2658(and)S
+2776(modify)S
+2989(times,)S
+556 2310(1)U
+556 2232(so)U
+645(just)S
+770(reading)S
+997(a)S
+1056(\256le)S
+1170(ultimate)S
+1384(ly)S
+1465(causes)S
+1666(its)S
+1757(descriptor)S
+2049(to)S
+2129(be)S
+2220(written)S
+2435(to)S
+2515(disk.)S
+2693(Furthermore,)S
+3068(the)S
+589 2310(28-byte)U
+832(descriptors)S
+1163(are)S
+1285(written)S
+1513(32)S
+1621(at)S
+1709(time)S
+1866(in)S
+1958(4K)S
+2080(blocks)S
+2293(so)S
+2393(there)S
+2565(is)S
+2650(extra)S
+2822(traf\256c)S
+3020(from)S
+3126 2388(r)U
+556 2466(p)U
+556 2388(unmodi\256ed)U
+882(descriptors.)S
+1236(The)S
+1364(large)S
+1521(amount)S
+1744(of)S
+1825(metadata)S
+2087(traf\256c)S
+2270(at)S
+2343(2am)S
+2481(is)S
+2550(because)S
+2783(the)S
+2888(UNIX)S
+3079(ta)S
+589 2466(rogram)U
+806(is)S
+877(used)S
+1025(for)S
+1129(our)S
+1243(nightly)S
+1455(dumps,)S
+1674(and)S
+1795(it)S
+1857(changes)S
+2095(the)S
+2201(access)S
+2395(time)S
+2537(of)S
+2618(every)S
+2790(directory)S
+3053(and)S
+3115 2544(y)U
+556(any)S
+708(\256les)S
+875(that)S
+1030(were)S
+1215(dumped.)S
+1522(The)S
+1680(effect)S
+1885(of)S
+1996(metadata)S
+2288(changes)S
+2556(has)S
+2700(been)S
+2880(noted)S
+3082(b)S
+6 F
+784 2652(i)U
+808(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+784 2724(i)U
+1 F
+60 Z
+1309 2721(Server)U
+1486(I/O)S
+1586(Traf\256c)S
+1770(\(Bytes/Second\))S
+2161(\(Fall)S
+2295('89\))S
+6 F
+66 Z
+808 2724(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+784 2736(i)U
+808(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+60 Z
+930 2868(H)U
+1235 2799(Cache)U
+1406(Traf\256c)S
+1721(File)S
+1835(Traf\256c)S
+2126(MetaData)S
+2384(Traf\256c)S
+2614(Total)S
+2762(Disk)S
+973 2868(ost)U
+1198(bytes/s)S
+1447(\(dev\))S
+1656(bytes/s)S
+1905(\(dev\))S
+2149(bytes/s)S
+2417(\(dev\))S
+2661(bytes/s)S
+6 F
+66 Z
+2887 2877(i)U
+784(i)S
+808(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+60 Z
+817 2946(Mint)U
+1137(r)S
+1244(8601)S
+1453(\(9321\))S
+1702(3427)S
+1911(\(7876\))S
+2208(283)S
+2437(\(982\))S
+2707(3710)S
+2797 3015(6)U
+6 F
+66 Z
+784 3024(i)U
+1 F
+60 Z
+1114 3015(w)U
+1274(921)S
+1483(\(640\))S
+1732(863)S
+1941(\(507\))S
+2178(4133)S
+2407(\(1913\))S
+2707(499)S
+6 F
+66 Z
+808 3024(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+1 F
+60 Z
+817 3093(Oregano)U
+1137(r)S
+1244(4421)S
+1453(\(9129\))S
+1702(3201)S
+1911(\(8242\))S
+2208(453)S
+2407(\(1101\))S
+2707(3654)S
+1114 3162(w)U
+1274(932)S
+1453(\(3163\))S
+1732(804)S
+1911(\(2994\))S
+2178(1295)S
+2407(\(1295\))S
+2707(2099)S
+6 F
+66 Z
+2887 3171(i)U
+784(i)S
+808(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+60 Z
+817 3240(Allspice)U
+1137(r)S
+1214(11478)S
+1423(\(18313\))S
+1702(5970)S
+1881(\(16398\))S
+2208(520)S
+2407(\(2062\))S
+2707(6490)S
+2797 3309(0)U
+6 F
+66 Z
+784 3318(i)U
+1 F
+60 Z
+1114 3309(w)U
+1244(5174)S
+1453(\(9495\))S
+1702(3838)S
+1911(\(6142\))S
+2178(1692)S
+2407(\(2013\))S
+2707(553)S
+6 F
+66 Z
+808 3318(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+1 F
+60 Z
+817 3387(Assault)U
+1137(r)S
+1244(1808)S
+1453(\(7342\))S
+1702(1481)S
+1911(\(7128\))S
+2208(180)S
+2437(\(604\))S
+2707(1661)S
+1114 3456(w)U
+1274(529)S
+1453(\(3081\))S
+1732(291)S
+1911(\(1385\))S
+2208(350)S
+2437(\(676\))S
+2737(641)S
+6 F
+66 Z
+2887 3465(i)U
+784(i)S
+808(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+60 Z
+817 3534(combined)U
+1137(r)S
+1214(25946)S
+1500(-)S
+1672(13932)S
+1958(-)S
+2178(1433)S
+2471(-)S
+2677(15515)S
+2797 3603(6)U
+6 F
+66 Z
+784 3615(i)U
+1 F
+60 Z
+1114 3603(w)U
+1244(7305)S
+1500(-)S
+1702(5620)S
+1958(-)S
+2178(7481)S
+2471(-)S
+2677(1326)S
+6 F
+66 Z
+808 3615(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+784(c)S
+3576(c)T
+3510(c)T
+3444(c)T
+3378(c)T
+3312(c)T
+3246(c)T
+3180(c)T
+3114(c)T
+3048(c)T
+2982(c)T
+2916(c)T
+2850(c)T
+2784(c)T
+2718(c)T
+1173 3615(c)U
+3603(c)T
+3537(c)T
+3471(c)T
+3405(c)T
+3339(c)T
+3273(c)T
+3207(c)T
+3141(c)T
+3075(c)T
+3009(c)T
+2943(c)T
+2877(c)T
+2811(c)T
+1631 3615(c)U
+3603(c)T
+3537(c)T
+3471(c)T
+3405(c)T
+3339(c)T
+3273(c)T
+3207(c)T
+3141(c)T
+3075(c)T
+3009(c)T
+2943(c)T
+2877(c)T
+2811(c)T
+2089 3615(c)U
+3603(c)T
+3537(c)T
+3471(c)T
+3405(c)T
+3339(c)T
+3273(c)T
+3207(c)T
+3141(c)T
+3075(c)T
+3009(c)T
+2943(c)T
+2877(c)T
+2811(c)T
+2585 3615(c)U
+3603(c)T
+3537(c)T
+3471(c)T
+3405(c)T
+3339(c)T
+3273(c)T
+3207(c)T
+3141(c)T
+3075(c)T
+3009(c)T
+2943(c)T
+2877(c)T
+2811(c)T
+2920 3615(c)U
+3576(c)T
+3510(c)T
+3444(c)T
+3378(c)T
+3312(c)T
+3246(c)T
+3180(c)T
+3114(c)T
+3048(c)T
+2982(c)T
+2916(c)T
+2850(c)T
+2784(c)T
+2718(c)T
+1 F
+60 Z
+3008 3732(-)U
+676 3801(v)U
+676 3732(Table)U
+841(15.)S
+943(I/O)S
+1050(traf\256c)S
+1221(on)S
+1308(the)S
+1409(\256le)S
+1513(servers)S
+1710(over)S
+1844(a)S
+1898(20-day)S
+2092(period)S
+2273(from)S
+2416(October)S
+2636(29)S
+2722(through)S
+2935(No)S
+706 3801(ember)U
+884(19,)S
+986(1989.)S
+1167(The)S
+1287(upper)S
+1450(row)S
+1569(for)S
+1665(each)S
+1802(server)S
+1975(gives)S
+2128(read)S
+2258(I/O)S
+2364(rates,)S
+2519(the)S
+2619(lower)S
+2782(row)S
+2901(gives)S
+676 3939(f)U
+676 3870(write)U
+823(rates.)S
+995(The)S
+1112(average)S
+1323(and)S
+1433(standard)S
+1659(deviation)S
+1906(are)S
+2002(given)S
+2158(for)S
+2250(the)S
+2346(bytes/sec)S
+2589(transferred)S
+2872(to)S
+2941(and)S
+696 3939(rom)U
+817(the)S
+915(cache)S
+1077(\(``Cache''\),)S
+1387(\256le)S
+1488(data)S
+1613(blocks)S
+1794(on)S
+1878(disk)S
+2002(\(``File''\),)S
+2255(from)S
+2396(\256le)S
+2497(descriptors)S
+2784(and)S
+2894(index)S
+676 4008(blocks)U
+853(on)S
+933(disk)S
+1053(\(``MetaData''\),)S
+1446(and)S
+1553(the)S
+1647(total)S
+1775(traf\256c)S
+1939(to)S
+2006(the)S
+2100(disk)S
+2220(\(``Total''\).)S
+3 F
+66 Z
+1775 4470(-)U
+1819(12)S
+1907(-)S
+EP
+%%Page: ? 14
+BP
+3 F
+66 Z
+556 444(Sprite)U
+750(Caching)S
+6 F
+989 690(i)U
+999(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+989 762(i)U
+1 F
+60 Z
+1329 759(Server)U
+1506(I/O)S
+1606(Traf\256c)S
+1790(\(Megabytes)S
+2094(and)S
+2201(Ratios\))S
+6 F
+66 Z
+999 762(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+989 774(i)U
+999(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+989 846(i)U
+1 F
+60 Z
+1135 837(Host)U
+1402(Cache)S
+1705(File)S
+2002(MetaData)S
+2375(Total)S
+2523(Disk)S
+6 F
+66 Z
+999 846(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+1 F
+60 Z
+1022 915(Mint)U
+1342(r)S
+1410(15172)S
+1638(6046)S
+1797(40%)S
+2020(500)S
+2212(3%)S
+2375(6546)S
+2567(43%)S
+1319 984(w)U
+1440(1624)S
+1638(1523)S
+1797(94%)S
+1990(7291)S
+2152(449%)S
+2375(8814)S
+2537(542%)S
+6 F
+66 Z
+2682 993(i)U
+989(i)S
+999(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+60 Z
+1022 1062(Allspice)U
+1342(r)S
+1410(18861)S
+1638(9811)S
+1797(52%)S
+2020(854)S
+2212(5%)S
+2345(10665)S
+2567(57%)S
+2627 1131(%)U
+6 F
+66 Z
+989 1140(i)U
+1 F
+60 Z
+1319 1131(w)U
+1440(8503)S
+1638(6307)S
+1797(74%)S
+1990(2781)S
+2182(33%)S
+2375(9088)S
+2537(107)S
+6 F
+66 Z
+999 1140(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+1 F
+60 Z
+1022 1209(Oregano)U
+1342(r)S
+1440(8199)S
+1638(5937)S
+1797(72%)S
+2020(839)S
+2182(10%)S
+2375(6776)S
+2567(83%)S
+1319 1278(w)U
+1440(1729)S
+1638(1491)S
+1797(86%)S
+1990(2402)S
+2152(139%)S
+2375(3893)S
+2537(225%)S
+6 F
+66 Z
+2682 1287(i)U
+989(i)S
+999(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+60 Z
+1022 1356(Assault)U
+1342(r)S
+1440(3131)S
+1638(2565)S
+1797(82%)S
+2020(311)S
+2182(10%)S
+2375(2876)S
+2567(92%)S
+2627 1425(%)U
+6 F
+66 Z
+989 1434(i)U
+1 F
+60 Z
+1319 1425(w)U
+1470(917)S
+1668(505)S
+1797(55%)S
+2020(606)S
+2182(66%)S
+2375(1111)S
+2537(121)S
+6 F
+66 Z
+999 1434(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+1 F
+60 Z
+1022 1503(combined)U
+1342(r)S
+1410(45364)S
+1608(24358)S
+1797(54%)S
+1990(2505)S
+2212(6%)S
+2345(26863)S
+2567(59%)S
+1319 1572(w)U
+1410(12772)S
+1638(9826)S
+1797(77%)S
+1960(13080)S
+2152(102%)S
+2345(22906)S
+2537(179%)S
+6 F
+66 Z
+2682 1584(i)U
+989 756(c)U
+822(c)T
+888(c)T
+954(c)T
+1020(c)T
+1086(c)T
+1152(c)T
+1218(c)T
+1284(c)T
+1350(c)T
+1416(c)T
+1482(c)T
+1548(c)T
+1584(ci)T
+999(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1378(c)S
+1575(c)T
+1509(c)T
+1443(c)T
+1377(c)T
+1311(c)T
+1245(c)T
+1179(c)T
+1113(c)T
+1047(c)T
+981(c)T
+915(c)T
+849(c)T
+1576 1584(c)U
+1575(c)T
+1509(c)T
+1443(c)T
+1377(c)T
+1311(c)T
+1245(c)T
+1179(c)T
+1113(c)T
+1047(c)T
+981(c)T
+915(c)T
+849(c)T
+1928 1584(c)U
+1575(c)T
+1509(c)T
+1443(c)T
+1377(c)T
+1311(c)T
+1245(c)T
+1179(c)T
+1113(c)T
+1047(c)T
+981(c)T
+915(c)T
+849(c)T
+2313 1584(c)U
+1575(c)T
+1509(c)T
+1443(c)T
+1377(c)T
+1311(c)T
+1245(c)T
+1179(c)T
+1113(c)T
+1047(c)T
+981(c)T
+915(c)T
+849(c)T
+2715 1584(c)U
+1548(c)T
+1482(c)T
+1416(c)T
+1350(c)T
+1284(c)T
+1218(c)T
+1152(c)T
+1086(c)T
+1020(c)T
+954(c)T
+888(c)T
+822(c)T
+756(c)T
+1 F
+60 Z
+3001 1701(e)U
+676 1770(p)U
+676 1701(Table)U
+835(16.)S
+951(This)S
+1079(gives)S
+1227(the)S
+1322(total)S
+1451(megabytes)S
+1730(transferred)S
+2012(for)S
+2102(the)S
+2196(results)S
+2373(given)S
+2527(in)S
+2594(Table)S
+2752(14,)S
+2847(and)S
+2954(th)S
+706 1770(ercenta)U
+881(ge)S
+959(that)S
+1071(this)S
+1178(is)S
+1238(of)S
+1308(the)S
+1402(megabytes)S
+1680(transferred)S
+1961(to)S
+2028(or)S
+2098(from)S
+2235(the)S
+2329(cache.)S
+2522(The)S
+2636(total)S
+2764(disk)S
+2884(traf\256c)S
+66 Z
+556 2013(H)U
+60 Z
+676 1839(can)U
+780(be)S
+857(greater)S
+1045(than)S
+1169(100%)S
+1329(of)S
+1399(the)S
+1493(cache)S
+1651(traf\256c)S
+1815(because)S
+2026(of)S
+2096(metadat)S
+2288(a)S
+2335(traf\256c.)S
+66 Z
+604 2013(agmann[Hagmann87],)U
+1224(who)S
+1367(converted)S
+1655(the)S
+1764(Cedar)S
+1950(\256le)S
+2063(system)S
+2275(to)S
+2354(log)S
+2466(metadata)S
+2730(changes,)S
+2987(which)S
+3126 2091(-)U
+556 2169(s)U
+556 2091(reduced)U
+797(metadata)S
+1066(traf\256c)S
+1256(considerably.)S
+1664(Current)S
+1898(research)S
+2150(in)S
+2234(the)S
+2347(Sprite)S
+2537(group)S
+2724(involves)S
+2980(a)S
+3042(log)S
+582 2169(tructured)U
+856(\256le)S
+977(system)S
+1197(where)S
+1395(all)S
+1497(data,)S
+1660(\256le)S
+1781(and)S
+1913(metadata)S
+2149(,)S
+2203(is)S
+2284(logged)S
+2500([Ousterhout89])S
+2939([Rosen-)S
+556 2247(blum91].)U
+706 2349(The)U
+834(tables)S
+1013(show)S
+1179(that)S
+1303(the)S
+1409(cache)S
+1584(on)S
+1676(Mint,)S
+1847(the)S
+1953(root)S
+2084(server,)S
+2287(is)S
+2356(effective)S
+2610(in)S
+2686(eliminat)S
+2900(ing)S
+3009(reads)S
+556 2505(t)U
+556 2427(\(40%)U
+722(\256le)S
+829(traf\256c)S
+1009(in)S
+1083(the)S
+1186(20-day)S
+1392(study\),)S
+1596(but)S
+1702(not)S
+1808(as)S
+1885(good)S
+2039(at)S
+2108(eliminat)S
+2322(ing)S
+2428(writes)S
+2611(\(94%)S
+2776(traf\256c)S
+2955(ratio)S
+3097(in)S
+574 2505(he)U
+660(20-day)S
+867(study\).)S
+1095(Its)S
+1184(read)S
+1320(hits)S
+1438(occur)S
+1607(on)S
+1696(frequently-used)S
+2132(program)S
+2378(images)S
+2587(and)S
+2705(the)S
+2808(load)S
+2944(average)S
+3126 2583(-)U
+556 2661(t)U
+556 2583(database.)U
+844(The)S
+969(steady)S
+1160(updates)S
+1384(to)S
+1458(this)S
+1576(\256le)S
+1683(and)S
+1801(other)S
+1959(logs)S
+2092(trigger)S
+2289(a)S
+2340(steady)S
+2530(update)S
+2727(of)S
+2804(disk)S
+2936(descrip)S
+574 2661(ors,)U
+694(which)S
+877(explains)S
+1118(Mint's)S
+1316(high)S
+1455(metadata)S
+1713(traf\256c.)S
+706 2763(P)U
+(reliminary)R
+1039(server)S
+1223(traf\256c)S
+1403(data)S
+1535(showed)S
+1760(that)S
+1881(Mint)S
+2032(had)S
+2150(a)S
+2202(traf\256c)S
+2382(ratio)S
+2524(of)S
+2601(only)S
+2740(50%,)S
+2900(while)S
+3068(the)S
+556 2919(a)U
+556 2841(other)U
+714(servers)S
+924(had)S
+1042(write)S
+1200(traf\256c)S
+1379(ratios)S
+1547(of)S
+1624(70%)S
+1767(to)S
+1840(80%)S
+1983(or)S
+2060(more.)S
+2256(Mint's)S
+2454(low)S
+2575(traf\256c)S
+2754(ratio)S
+2896(prompted)S
+616 2919(search)U
+815(for)S
+923(a)S
+983(bug)S
+1113(in)S
+1195(the)S
+1306(cache)S
+1486(write-back)S
+1798(code,)S
+1970(and)S
+2096(indeed)S
+2302(it)S
+2368(turned)S
+2566(out)S
+2680(that)S
+2808(continuously)S
+3122 2997(s)U
+556 3075(w)U
+556 2997(updated)U
+794(\256les)S
+934(were)S
+1092(never)S
+1268(being)S
+1444(written)S
+1660(out)S
+1774(to)S
+1855(disk!)S
+2039(The)S
+2171(20-day)S
+2384(study)S
+2557(reported)S
+2806(in)S
+2886(the)S
+2995(table)S
+604 3075(as)U
+682(made)S
+847(after)S
+990(this)S
+1108(bug)S
+1230(was)S
+1356(\256xed.)S
+1550(Mint's)S
+1749(traf\256c)S
+1929(ratio)S
+2072(changed)S
+2314(from)S
+2465(50%)S
+2608(to)S
+2681(94%,)S
+2841(which)S
+3024(indi-)S
+556 3231(d)U
+556 3153(cates)U
+715(that)S
+841(almost)S
+1044(half)S
+1174(the)S
+1282(data)S
+1419(written)S
+1633(to)S
+1712(it)S
+1776(is)S
+1848(to)S
+1927(continuously)S
+2294(updated)S
+2529(\256les,)S
+2683(i.e.)S
+2791(the)S
+2898(host)S
+3035(load)S
+589 3231(atabase.)U
+845(The)S
+971(6)S
+1028(month)S
+1220(study)S
+1387(graphed)S
+1623(in)S
+1698(Figure)S
+1894(1,)S
+1968(however,)S
+2235(includes)S
+2477(both)S
+2617(versions)S
+2860(of)S
+2938(the)S
+3041(sys-)S
+556 3387(d)U
+556 3309(tem)U
+682(so)S
+769(there)S
+928(actually)S
+1163(should)S
+1366(have)S
+1517(been)S
+1668(slightly)S
+1892(more)S
+2054(\256le)S
+2165(write)S
+2327(traf\256c)S
+2511(to)S
+2589(update)S
+2791(the)S
+2898(host)S
+3035(load)S
+589 3387(atabase.)U
+706 3489(A)U
+(llspice)R
+954(and)S
+1078(Oregano)S
+1334(are)S
+1443(directly)S
+1672(comparable)S
+2007(because)S
+2244(they)S
+2386(store)S
+2543(the)S
+2651(same)S
+2814(type)S
+2955(of)S
+3038(\256les)S
+3122 3567(s)U
+556 3645(c)U
+556 3567(\(many)U
+748(\256les)S
+882(were)S
+1034(shifted)S
+1237(from)S
+1389(Oregano)S
+1640(to)S
+1715(Allspice)S
+1958(during)S
+2154(the)S
+2257(20-day)S
+2463(study)S
+2629(period\).)S
+2881(Allspice')S
+585 3645(ache)U
+733(is)S
+805(about)S
+979(10)S
+1073(times)S
+1243(the)S
+1351(size)S
+1481(of)S
+1564(Oregano's)S
+1867(and)S
+1990(it)S
+2054(is)S
+2126(clearly)S
+2332(more)S
+2495(effective.)S
+2791(This)S
+2936(is)S
+3008(to)S
+3086(be)S
+3119 3723(e)U
+556 3801(\256)U
+556 3723(expected)U
+815(because)S
+1048(the)S
+1153(server's)S
+1387(cache)S
+1561(is)S
+1630(a)S
+1684(second-level)S
+2041(cache,)S
+2232(with)S
+2374(the)S
+2479(clients')S
+2697(caches)S
+2897(being)S
+3068(th)S
+593 3801(rst)U
+690(level.)S
+887(The)S
+1019(server's)S
+1258(caches)S
+1463(have)S
+1617(to)S
+1698(be)S
+1790(much)S
+1966(larger)S
+2149(than)S
+2292(the)S
+2402(client's)S
+2625(caches)S
+2830(because)S
+3068(the)S
+556 3879(locality)U
+774(of)S
+851(references)S
+1143(to)S
+1216(their)S
+1358(cache)S
+1529(is)S
+1595(not)S
+1701(as)S
+1778(good.)S
+706 3981(It)U
+773(is)S
+844(also)S
+976(interesting)S
+1279(to)S
+1356(see)S
+1466(how)S
+1606(the)S
+1712(caches)S
+1913(skew)S
+2075(the)S
+2181(disk)S
+2317(traf\256c)S
+2500(towards)S
+2735(writes.)S
+2961(During)S
+3115 4059(o)U
+556 4137(t)U
+556 4059(the)U
+663(20-day)S
+872(study)S
+1041(period,)S
+1252(the)S
+1358(traf\256c)S
+1541(to)S
+1618(the)S
+1724(server)S
+1911(caches)S
+2112(was)S
+2241(about)S
+2413(22%)S
+2560(writes.)S
+2786(The)S
+2914(traf\256c)S
+3097(t)S
+574 4137(he)U
+670(server)S
+865(disks)S
+1035(was)S
+1172(26%)S
+1327(metadata)S
+1597(writes)S
+1792(and)S
+1921(20%)S
+2076(data)S
+2219(writes.)S
+2453(If)S
+2531(the)S
+2645(metadata)S
+2914(traf\256c)S
+3104(is)S
+556 4215(discounted)U
+865(as)S
+944(an)S
+1030(artifact,)S
+1256(then)S
+1393(the)S
+1497(data)S
+1630(writes)S
+1815(accounted)S
+2105(for)S
+2206(40%)S
+2351(of)S
+2430(the)S
+2534(disk)S
+2668(traf\256c.)S
+2887(The)S
+3012(skew)S
+3 F
+1775 4470(-)U
+1819(13)S
+1907(-)S
+EP
+%%Page: ? 15
+BP
+6 F
+66 Z
+556 693(h)U
+3 F
+556 444(Sprite)U
+750(Caching)S
+6 F
+563 693(hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh)U
+%!
+%%Title: read.write.all.g.orig
+%%Creator: gr2ps (Gremlin to PostScript)
+%%BoundingBox: 51 191.2 554.33 467.34
+%%DocumentFonts: Times-Roman Times-Italic Times-Bold Courier-Bold
+%%Pages: 1
+%%EndComments
+
+gsave
+%%EndProlog
+
+%% Undo the scaling by ptroff
+432 72 div dup neg scale
+0 792 neg translate
+
+%% Shift up towards the top of the page
+0 280 translate
+
+%% shrink from 7 inches to 6 inches
+6 7.3 div dup scale
+
+%% shove over out of the margin
+80 0 translate
+
+
+/Times-Roman findfont 8 scalefont setfont
+454.67 232.77 moveto
+(Write Traffic) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+324 280.5 moveto
+(d) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+324 294.5 moveto
+(n) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+324 308.5 moveto
+(o) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+324 322.5 moveto
+(c) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+324 336.5 moveto
+(e) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+324 350.5 moveto
+(S) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+324 364.5 moveto
+(/) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+324 378.5 moveto
+(s) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+324 392.5 moveto
+(e) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+324 406.5 moveto
+(t) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+324 420.5 moveto
+(y) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+324 434.5 moveto
+(B) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+457.33 245.77 moveto
+(Hour of Day) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+360 452.62 moveto
+(40000) dup stringwidth pop -1 mul -7 rmoveto show
+
+[1.0 1.6] 0 setdash
+0.3 setlinewidth
+newpath
+    365.33 448.92 moveto
+    549.33 448.92 lineto
+stroke
+
+[] 0 setdash 1.4 setlinewidth
+newpath
+    365.33 448.92 moveto
+    362.67 448.92 lineto
+stroke
+
+360 429.14 moveto
+(35000) dup stringwidth pop -1 mul -7 rmoveto show
+
+[1.0 1.6] 0 setdash
+0.3 setlinewidth
+newpath
+    365.33 425.43 moveto
+    549.33 425.43 lineto
+stroke
+
+[] 0 setdash 1.4 setlinewidth
+newpath
+    365.33 425.43 moveto
+    362.67 425.43 lineto
+stroke
+
+360 405.65 moveto
+(30000) dup stringwidth pop -1 mul -7 rmoveto show
+
+[1.0 1.6] 0 setdash
+0.3 setlinewidth
+newpath
+    365.33 401.98 moveto
+    549.33 401.98 lineto
+stroke
+
+[] 0 setdash 1.4 setlinewidth
+newpath
+    365.33 401.98 moveto
+    362.67 401.98 lineto
+stroke
+
+360 382.18 moveto
+(25000) dup stringwidth pop -1 mul -7 rmoveto show
+
+[1.0 1.6] 0 setdash
+0.3 setlinewidth
+newpath
+    365.33 378.49 moveto
+    549.33 378.49 lineto
+stroke
+
+[] 0 setdash 1.4 setlinewidth
+newpath
+    365.33 378.49 moveto
+    362.67 378.49 lineto
+stroke
+
+360 358.69 moveto
+(20000) dup stringwidth pop -1 mul -7 rmoveto show
+
+[1.0 1.6] 0 setdash
+0.3 setlinewidth
+newpath
+    365.33 355 moveto
+    549.33 355 lineto
+stroke
+
+[] 0 setdash 1.4 setlinewidth
+newpath
+    365.33 355 moveto
+    362.67 355 lineto
+stroke
+
+360 335.21 moveto
+(15000) dup stringwidth pop -1 mul -7 rmoveto show
+
+[1.0 1.6] 0 setdash
+0.3 setlinewidth
+newpath
+    365.33 331.51 moveto
+    549.33 331.51 lineto
+stroke
+
+[] 0 setdash 1.4 setlinewidth
+newpath
+    365.33 331.51 moveto
+    362.67 331.51 lineto
+stroke
+
+360 311.73 moveto
+(10000) dup stringwidth pop -1 mul -7 rmoveto show
+
+[1.0 1.6] 0 setdash
+0.3 setlinewidth
+newpath
+    365.33 308.06 moveto
+    549.33 308.06 lineto
+stroke
+
+[] 0 setdash 1.4 setlinewidth
+newpath
+    365.33 308.06 moveto
+    362.67 308.06 lineto
+stroke
+
+360 288.25 moveto
+(5000) dup stringwidth pop -1 mul -7 rmoveto show
+
+[1.0 1.6] 0 setdash
+0.3 setlinewidth
+newpath
+    365.33 284.57 moveto
+    549.33 284.57 lineto
+stroke
+
+[] 0 setdash 1.4 setlinewidth
+newpath
+    365.33 284.57 moveto
+    362.67 284.57 lineto
+stroke
+
+360 264.77 moveto
+(0) dup stringwidth pop -1 mul -7 rmoveto show
+
+[1.0 1.6] 0 setdash
+0.3 setlinewidth
+newpath
+    365.33 261.08 moveto
+    549.33 261.08 lineto
+stroke
+
+[] 0 setdash 1.4 setlinewidth
+newpath
+    365.33 261.08 moveto
+    362.67 261.08 lineto
+stroke
+
+549.33 256.46 moveto
+(24) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+[1.0 1.6] 0 setdash
+0.3 setlinewidth
+newpath
+    549.33 261.08 moveto
+    549.33 448.92 lineto
+stroke
+
+[] 0 setdash 1.4 setlinewidth
+newpath
+    549.33 261.08 moveto
+    549.33 259.23 lineto
+stroke
+
+518.67 256.46 moveto
+(20) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+[1.0 1.6] 0 setdash
+0.3 setlinewidth
+newpath
+    518.67 261.08 moveto
+    518.67 448.92 lineto
+stroke
+
+[] 0 setdash 1.4 setlinewidth
+newpath
+    518.67 261.08 moveto
+    518.67 259.23 lineto
+stroke
+
+488 256.46 moveto
+(16) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+[1.0 1.6] 0 setdash
+0.3 setlinewidth
+newpath
+    488 261.08 moveto
+    488 448.92 lineto
+stroke
+
+[] 0 setdash 1.4 setlinewidth
+newpath
+    488 261.08 moveto
+    488 259.23 lineto
+stroke
+
+457.33 256.46 moveto
+(12) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+[1.0 1.6] 0 setdash
+0.3 setlinewidth
+newpath
+    457.33 261.08 moveto
+    457.33 448.92 lineto
+stroke
+
+[] 0 setdash 1.4 setlinewidth
+newpath
+    457.33 261.08 moveto
+    457.33 259.23 lineto
+stroke
+
+426.67 256.46 moveto
+(8) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+[1.0 1.6] 0 setdash
+0.3 setlinewidth
+newpath
+    426.67 261.08 moveto
+    426.67 448.92 lineto
+stroke
+
+[] 0 setdash 1.4 setlinewidth
+newpath
+    426.67 261.08 moveto
+    426.67 259.23 lineto
+stroke
+
+396 256.46 moveto
+(4) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+[1.0 1.6] 0 setdash
+0.3 setlinewidth
+newpath
+    396 261.08 moveto
+    396 448.92 lineto
+stroke
+
+[] 0 setdash 1.4 setlinewidth
+newpath
+    396 261.08 moveto
+    396 259.23 lineto
+stroke
+
+365.33 256.46 moveto
+(0) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+[1.0 1.6] 0 setdash
+0.3 setlinewidth
+newpath
+    365.33 261.08 moveto
+    365.33 448.92 lineto
+stroke
+
+[] 0 setdash 1.4 setlinewidth
+newpath
+    365.33 261.08 moveto
+    365.33 259.23 lineto
+stroke
+
+newpath
+    365.33 261.08 moveto
+    365.33 448.92 lineto
+stroke
+
+newpath
+    365.33 261.08 moveto
+    549.33 261.08 lineto
+stroke
+
+0.3 setlinewidth
+newpath
+    365.33 292.05 moveto
+    373 282.63 lineto
+    380.67 273.08 lineto
+    388.33 269.8 lineto
+    396 272.43 lineto
+    403.67 269.71 lineto
+    411.33 274.32 lineto
+    419 267.08 lineto
+    426.67 273.63 lineto
+    434.33 276.91 lineto
+    442 290.52 lineto
+    449.67 301.18 lineto
+    457.33 307.78 lineto
+    465 326.38 lineto
+    472.67 313.74 lineto
+    480.33 338.48 lineto
+    488 319.92 lineto
+    495.67 346.09 lineto
+    503.33 336.35 lineto
+    511 309.22 lineto
+    518.67 299.85 lineto
+    526.33 306.26 lineto
+    534 302.38 lineto
+    541.67 306.63 lineto
+    549.33 292.05 lineto
+stroke
+
+[1.0 1.6] 0 setdash
+newpath
+    365.33 262.05 moveto
+    373 262.6 lineto
+    380.67 261.35 lineto
+    388.33 261.4 lineto
+    396 261.45 lineto
+    403.67 261.4 lineto
+    411.33 264.86 lineto
+    419 261.35 lineto
+    426.67 261.45 lineto
+    434.33 261.86 lineto
+    442 261.86 lineto
+    449.67 261.86 lineto
+    457.33 261.82 lineto
+    465 262.23 lineto
+    472.67 261.91 lineto
+    480.33 263.15 lineto
+    488 262 lineto
+    495.67 264.22 lineto
+    503.33 261.68 lineto
+    511 261.91 lineto
+    518.67 261.63 lineto
+    526.33 261.4 lineto
+    534 261.58 lineto
+    541.67 263.98 lineto
+    549.33 262.05 lineto
+stroke
+
+[1.0 1.6 3.5 1.6] 0 setdash newpath
+    365.33 283.51 moveto
+    373 276.91 lineto
+    380.67 269.62 lineto
+    388.33 267.31 lineto
+    396 269.29 lineto
+    403.67 265.92 lineto
+    411.33 267.86 lineto
+    419 264.31 lineto
+    426.67 270.26 lineto
+    434.33 273.77 lineto
+    442 277.55 lineto
+    449.67 292.65 lineto
+    457.33 302.34 lineto
+    465 314.52 lineto
+    472.67 305.38 lineto
+    480.33 318.95 lineto
+    488 310.42 lineto
+    495.67 322.69 lineto
+    503.33 321.22 lineto
+    511 298.6 lineto
+    518.67 288.82 lineto
+    526.33 290.75 lineto
+    534 288.91 lineto
+    541.67 296.02 lineto
+    549.33 283.51 lineto
+stroke
+
+[3.5 3.0] 0 setdash newpath
+    365.33 294.08 moveto
+    373 307.18 lineto
+    380.67 305.2 lineto
+    388.33 284.43 lineto
+    396 281.8 lineto
+    403.67 280.14 lineto
+    411.33 278.75 lineto
+    419 279.35 lineto
+    426.67 280.69 lineto
+    434.33 284.89 lineto
+    442 286.46 lineto
+    449.67 293.11 lineto
+    457.33 301.55 lineto
+    465 300.72 lineto
+    472.67 300.68 lineto
+    480.33 305.38 lineto
+    488 304.88 lineto
+    495.67 304.51 lineto
+    503.33 307.46 lineto
+    511 294.58 lineto
+    518.67 285.4 lineto
+    526.33 287.11 lineto
+    534 292.6 lineto
+    541.67 292.88 lineto
+    549.33 294.08 lineto
+stroke
+
+[1.0 1.6] 0 setdash
+newpath
+    352 192 moveto
+    384 192 lineto
+stroke
+
+[3.5 3.0] 0 setdash newpath
+    352 208 moveto
+    384 208 lineto
+stroke
+
+[1.0 1.6 3.5 1.6] 0 setdash newpath
+    192 192 moveto
+    224 192 lineto
+stroke
+
+[] 0 setdash newpath
+    192 208 moveto
+    224 208 lineto
+stroke
+
+[3.5 3.0] 0 setdash newpath
+    97.33 268.92 moveto
+    105 297.4 lineto
+    112.67 285.63 lineto
+    120.33 267.26 lineto
+    128 266.52 lineto
+    135.67 265.37 lineto
+    143.33 264.08 lineto
+    151 264.54 lineto
+    158.67 266.43 lineto
+    166.33 266.02 lineto
+    174 265.32 lineto
+    181.67 269.15 lineto
+    189.33 268.88 lineto
+    197 267.68 lineto
+    204.67 266.94 lineto
+    212.33 268.92 lineto
+    220 268.09 lineto
+    227.67 268.55 lineto
+    235.33 268 lineto
+    243 265.05 lineto
+    250.67 263.85 lineto
+    258.33 265 lineto
+    266 266.11 lineto
+    273.67 267.17 lineto
+    281.33 268.92 lineto
+stroke
+
+392.67 207.25 moveto
+0 -3 rmoveto (metaDataBytes) show
+
+[1.0 1.6 3.5 1.6] 0 setdash newpath
+    97.33 368.62 moveto
+    105 357.91 lineto
+    112.67 353.43 lineto
+    120.33 364.74 lineto
+    128 354.49 lineto
+    135.67 336.35 lineto
+    143.33 339.08 lineto
+    151 326.43 lineto
+    158.67 316.46 lineto
+    166.33 317.71 lineto
+    174 314.15 lineto
+    181.67 320.75 lineto
+    189.33 335.52 lineto
+    197 330.35 lineto
+    204.67 330.77 lineto
+    212.33 341.94 lineto
+    220 341.75 lineto
+    227.67 344.48 lineto
+    235.33 343.42 lineto
+    243 309.4 lineto
+    250.67 299.38 lineto
+    258.33 298.23 lineto
+    266 310 lineto
+    273.67 334.74 lineto
+    281.33 368.62 lineto
+stroke
+
+232.67 194.94 moveto
+0 -3 rmoveto (fileBytes) show
+
+[1.0 1.6] 0 setdash
+newpath
+    97.33 263.89 moveto
+    105 263.98 lineto
+    112.67 265.88 lineto
+    120.33 262.78 lineto
+    128 261.86 lineto
+    135.67 262.09 lineto
+    143.33 261.63 lineto
+    151 261.68 lineto
+    158.67 263.94 lineto
+    166.33 263.52 lineto
+    174 263.89 lineto
+    181.67 266.52 lineto
+    189.33 266.66 lineto
+    197 265.65 lineto
+    204.67 267.22 lineto
+    212.33 267.95 lineto
+    220 267.31 lineto
+    227.67 266.02 lineto
+    235.33 264.72 lineto
+    243 264.31 lineto
+    250.67 263.38 lineto
+    258.33 267.03 lineto
+    266 265.05 lineto
+    273.67 266.89 lineto
+    281.33 263.89 lineto
+stroke
+
+392.67 194.2 moveto
+0 -3 rmoveto (remoteBytes) show
+
+[] 0 setdash newpath
+    97.33 422.06 moveto
+    105 397.83 lineto
+    112.67 381.54 lineto
+    120.33 390.49 lineto
+    128 377.34 lineto
+    135.67 358.09 lineto
+    143.33 355.37 lineto
+    151 343.69 lineto
+    158.67 335.8 lineto
+    166.33 347.29 lineto
+    174 360.72 lineto
+    181.67 376.74 lineto
+    189.33 406.88 lineto
+    197 409.46 lineto
+    204.67 404.85 lineto
+    212.33 426.03 lineto
+    220 428.2 lineto
+    227.67 462.68 lineto
+    235.33 467.34 lineto
+    243 398.98 lineto
+    250.67 361.14 lineto
+    258.33 375.86 lineto
+    266 373.18 lineto
+    273.67 392.62 lineto
+    281.33 422.06 lineto
+stroke
+
+232.67 208.39 moveto
+0 -3 rmoveto (cacheBytes) show
+
+1.4 setlinewidth
+newpath
+    97.33 261.08 moveto
+    281.33 261.08 lineto
+stroke
+
+newpath
+    97.33 261.08 moveto
+    97.33 448.92 lineto
+stroke
+
+newpath
+    97.33 261.08 moveto
+    97.33 259.23 lineto
+stroke
+
+[1.0 1.6] 0 setdash
+0.3 setlinewidth
+newpath
+    97.33 261.08 moveto
+    97.33 448.92 lineto
+stroke
+
+97.33 256.46 moveto
+(0) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+[] 0 setdash 1.4 setlinewidth
+newpath
+    128 261.08 moveto
+    128 259.23 lineto
+stroke
+
+[1.0 1.6] 0 setdash
+0.3 setlinewidth
+newpath
+    128 261.08 moveto
+    128 448.92 lineto
+stroke
+
+128 256.46 moveto
+(4) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+[] 0 setdash 1.4 setlinewidth
+newpath
+    158.67 261.08 moveto
+    158.67 259.23 lineto
+stroke
+
+[1.0 1.6] 0 setdash
+0.3 setlinewidth
+newpath
+    158.67 261.08 moveto
+    158.67 448.92 lineto
+stroke
+
+158.67 256.46 moveto
+(8) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+[] 0 setdash 1.4 setlinewidth
+newpath
+    189.33 261.08 moveto
+    189.33 259.23 lineto
+stroke
+
+[1.0 1.6] 0 setdash
+0.3 setlinewidth
+newpath
+    189.33 261.08 moveto
+    189.33 448.92 lineto
+stroke
+
+189.33 256.46 moveto
+(12) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+[] 0 setdash 1.4 setlinewidth
+newpath
+    220 261.08 moveto
+    220 259.23 lineto
+stroke
+
+[1.0 1.6] 0 setdash
+0.3 setlinewidth
+newpath
+    220 261.08 moveto
+    220 448.92 lineto
+stroke
+
+220 256.46 moveto
+(16) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+[] 0 setdash 1.4 setlinewidth
+newpath
+    250.67 261.08 moveto
+    250.67 259.23 lineto
+stroke
+
+[1.0 1.6] 0 setdash
+0.3 setlinewidth
+newpath
+    250.67 261.08 moveto
+    250.67 448.92 lineto
+stroke
+
+250.67 256.46 moveto
+(20) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+[] 0 setdash 1.4 setlinewidth
+newpath
+    281.33 261.08 moveto
+    281.33 259.23 lineto
+stroke
+
+[1.0 1.6] 0 setdash
+0.3 setlinewidth
+newpath
+    281.33 261.08 moveto
+    281.33 448.92 lineto
+stroke
+
+281.33 256.46 moveto
+(24) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+[] 0 setdash 1.4 setlinewidth
+newpath
+    97.33 261.08 moveto
+    94.67 261.08 lineto
+stroke
+
+[1.0 1.6] 0 setdash
+0.3 setlinewidth
+newpath
+    97.33 261.08 moveto
+    281.33 261.08 lineto
+stroke
+
+92 264.77 moveto
+(0) dup stringwidth pop -1 mul -7 rmoveto show
+
+[] 0 setdash 1.4 setlinewidth
+newpath
+    97.33 284.57 moveto
+    94.67 284.57 lineto
+stroke
+
+[1.0 1.6] 0 setdash
+0.3 setlinewidth
+newpath
+    97.33 284.57 moveto
+    281.33 284.57 lineto
+stroke
+
+92 288.25 moveto
+(5000) dup stringwidth pop -1 mul -7 rmoveto show
+
+[] 0 setdash 1.4 setlinewidth
+newpath
+    97.33 308.06 moveto
+    94.67 308.06 lineto
+stroke
+
+[1.0 1.6] 0 setdash
+0.3 setlinewidth
+newpath
+    97.33 308.06 moveto
+    281.33 308.06 lineto
+stroke
+
+92 311.73 moveto
+(10000) dup stringwidth pop -1 mul -7 rmoveto show
+
+[] 0 setdash 1.4 setlinewidth
+newpath
+    97.33 331.51 moveto
+    94.67 331.51 lineto
+stroke
+
+[1.0 1.6] 0 setdash
+0.3 setlinewidth
+newpath
+    97.33 331.51 moveto
+    281.33 331.51 lineto
+stroke
+
+92 335.21 moveto
+(15000) dup stringwidth pop -1 mul -7 rmoveto show
+
+[] 0 setdash 1.4 setlinewidth
+newpath
+    97.33 355 moveto
+    94.67 355 lineto
+stroke
+
+[1.0 1.6] 0 setdash
+0.3 setlinewidth
+newpath
+    97.33 355 moveto
+    281.33 355 lineto
+stroke
+
+92 358.69 moveto
+(20000) dup stringwidth pop -1 mul -7 rmoveto show
+
+[] 0 setdash 1.4 setlinewidth
+newpath
+    97.33 378.49 moveto
+    94.67 378.49 lineto
+stroke
+
+[1.0 1.6] 0 setdash
+0.3 setlinewidth
+newpath
+    97.33 378.49 moveto
+    281.33 378.49 lineto
+stroke
+
+92 382.18 moveto
+(25000) dup stringwidth pop -1 mul -7 rmoveto show
+
+[] 0 setdash 1.4 setlinewidth
+newpath
+    97.33 401.98 moveto
+    94.67 401.98 lineto
+stroke
+
+[1.0 1.6] 0 setdash
+0.3 setlinewidth
+newpath
+    97.33 401.98 moveto
+    281.33 401.98 lineto
+stroke
+
+92 405.65 moveto
+(30000) dup stringwidth pop -1 mul -7 rmoveto show
+
+[] 0 setdash 1.4 setlinewidth
+newpath
+    97.33 425.43 moveto
+    94.67 425.43 lineto
+stroke
+
+[1.0 1.6] 0 setdash
+0.3 setlinewidth
+newpath
+    97.33 425.43 moveto
+    281.33 425.43 lineto
+stroke
+
+92 429.14 moveto
+(35000) dup stringwidth pop -1 mul -7 rmoveto show
+
+[] 0 setdash 1.4 setlinewidth
+newpath
+    97.33 448.92 moveto
+    94.67 448.92 lineto
+stroke
+
+[1.0 1.6] 0 setdash
+0.3 setlinewidth
+newpath
+    97.33 448.92 moveto
+    281.33 448.92 lineto
+stroke
+
+92 452.62 moveto
+(40000) dup stringwidth pop -1 mul -7 rmoveto show
+
+189.33 245.77 moveto
+(Hour of Day) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+54 434.5 moveto
+(B) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+54 420.5 moveto
+(y) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+54 406.5 moveto
+(t) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+54 392.5 moveto
+(e) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+54 378.5 moveto
+(s) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+54 364.5 moveto
+(/) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+54 350.5 moveto
+(S) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+54 336.5 moveto
+(e) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+54 322.5 moveto
+(c) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+54 308.5 moveto
+(o) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+54 294.5 moveto
+(n) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+54 280.5 moveto
+(d) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+189.33 232.77 moveto
+(Read Traffic) dup stringwidth pop 2.0 div -1 mul -7 rmoveto show
+
+%%Trailer
+grestore
+
+3071 2163(h)U
+556(h)S
+563(hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh)S
+1 F
+60 Z
+676 2295(Figure)U
+855(1.)S
+922(Server)S
+1101(I/O)S
+1203(traf\256c)S
+1369(averaged)S
+1609(from)S
+1748(July)S
+1870(8)S
+1922(to)S
+1991(December)S
+2261(22,)S
+2358(1989.)S
+2535(The)S
+2651(left-hand)S
+2891(graph)S
+3005 2364(s)U
+676 2433(t)U
+676 2364(has)U
+781(read)S
+910(traf\256c)S
+1079(and)S
+1191(the)S
+1290(write-hand)S
+1576(graph)S
+1738(has)S
+1843(write)S
+1992(traf\256c.)S
+2196(``cacheByt)S
+2461(es'')S
+2576(are)S
+2675(\256le)S
+2776(data)S
+2901(byte)S
+693 2433(ransferred)U
+961(between)S
+1186(the)S
+1284(cache)S
+1446(and)S
+1557(remote)S
+1749(clients)S
+1930(or)S
+2003(server-resident)S
+2384(applicat)S
+2576(ions.)S
+2734(``\256leBytes'')S
+676 2571(b)U
+676 2502(are)U
+777(\256le)S
+881(data)S
+1008(bytes)S
+1161(transferred)S
+1448(between)S
+1675(the)S
+1775(disk)S
+1901(and)S
+2014(the)S
+2114(cache.)S
+2313(``remoteByte)S
+2635(s'')S
+2724(are)S
+2824(\256le)S
+2927(data)S
+706 2571(ytes)U
+824(accessed)S
+1056(remotely)S
+1292(by)S
+1373(server-resident)S
+1752(applicat)S
+1944(ions.)S
+2099(``metaData)S
+2371(Bytes'')S
+2568(are)S
+2662(metadat)S
+2854(a)S
+2901(bytes)S
+3008 2640(-)U
+676 2709(D)U
+676 2640(transferred)U
+960(to)S
+1030(and)S
+1140(from)S
+1280(the)S
+1377(disk.)S
+1535(The)S
+1652(total)S
+1783(disk)S
+1906(traf\256c)S
+2073(is)S
+2135(the)S
+2231(sum)S
+2353(of)S
+2425(``\256leBytes'')S
+2741(and)S
+2850(``meta)S
+719 2709(ataBytes''.)U
+66 Z
+556 2883(t)U
+(owards)R
+790(writes)S
+976(at)S
+1048(the)S
+1153(disk)S
+1288(level)S
+1440(should)S
+1641(continue)S
+1892(as)S
+1972(server)S
+2158(caches)S
+2358(get)S
+2463(larger)S
+2641(and)S
+2760(more)S
+2919(effective)S
+3 F
+556 3189(5)U
+1 F
+556 2961(at)U
+625(trapping)S
+866(reads.)S
+3 F
+589 3189(.)U
+650(Variable-Sized)S
+1089(Caches)S
+1 F
+706 3291(A)U
+(n)R
+811(important)S
+1090(feature)S
+1296(of)S
+1375(Sprite)S
+1556(caches)S
+1755(is)S
+1823(that)S
+1944(they)S
+2080(vary)S
+2220(in)S
+2294(size)S
+2419(in)S
+2493(order)S
+2655(to)S
+2729(make)S
+2894(use)S
+3005(of)S
+3083(all)S
+556 3447(\256)U
+556 3369(available)U
+823(memory.)S
+1112(Nelson[Nelson88a])S
+1656(explored)S
+1916(ways)S
+2082(of)S
+2167(trading)S
+2383(memory)S
+2632(between)S
+2881(the)S
+2991(Sprite)S
+593 3447(le)U
+668(system)S
+879(and)S
+1002(the)S
+1110(virtual)S
+1309(memory)S
+1556(system,)S
+1784(which)S
+1973(needs)S
+2151(memory)S
+2398(to)S
+2477(run)S
+2593(user)S
+2731(programs.)S
+3046(The)S
+3126 3525(-)U
+556 3603(e)U
+556 3525(basic)U
+714(approach)S
+978(Nelson)S
+1187(developed)S
+1479(was)S
+1604(to)S
+1677(compare)S
+1925(LRU)S
+2079(times)S
+2243(\(estimated)S
+2538(ages\))S
+2699(between)S
+2940(the)S
+3042(old)S
+585 3603(st)U
+660(page)S
+815(in)S
+897(the)S
+1008(FS)S
+1113(cache)S
+1293(and)S
+1419(the)S
+1530(oldest)S
+1718(VM)S
+1856(page)S
+2011(and)S
+2137(pick)S
+2281(the)S
+2392(oldest)S
+2579(one)S
+2704(for)S
+2811(replaceme)S
+3080(nt.)S
+556 3759(m)U
+556 3681(Thus)U
+724(the)S
+840(\256le)S
+960(system)S
+1179(cache)S
+1364(size)S
+1502(will)S
+1639(grow)S
+1810(or)S
+1900(shrink)S
+2100(depending)S
+2409(on)S
+2510(\256le)S
+2629(system)S
+2847(and)S
+2977(virtual)S
+607 3759(emory)U
+797(activity.)S
+706 3861(N)U
+(elson)R
+918(found)S
+1097(that)S
+1220(it)S
+1281(was)S
+1409(better)S
+1583(to)S
+1659(bias)S
+1790(in)S
+1866(favor)S
+2030(of)S
+2110(the)S
+2215(VM)S
+2347(system)S
+2555(in)S
+2631(order)S
+2794(to)S
+2869(reduce)S
+3068(the)S
+3119 3939(a)U
+556 4017(b)U
+556 3939(page)U
+706(fault)S
+852(rate)S
+976(and)S
+1097(provide)S
+1324(a)S
+1379(good)S
+1537(interacti)S
+1751(ve)S
+1839(environment.)S
+2236(The)S
+2364(bias)S
+2496(is)S
+2566(achieved)S
+2824(by)S
+2915(adding)S
+589 4017(ias)U
+685(to)S
+759(the)S
+862(LRU)S
+1017(time)S
+1156(of)S
+1234(the)S
+1336(VM)S
+1465(system)S
+1670(so)S
+1751(that)S
+1871(its)S
+1955(pages)S
+2127(appear)S
+2324(to)S
+2397(be)S
+2481(referenced)S
+2780(more)S
+2937(recently)S
+3131 4095(.)U
+556 4173(A)U
+556 4095(than)U
+693(they)S
+830(really)S
+1003(were.)S
+1194(We)S
+1309(have)S
+1457(arbitrarily)S
+1743(chosen)S
+1950(a)S
+2002(bias)S
+2131(against)S
+2340(the)S
+2443(\256le)S
+2550(system)S
+2756(of)S
+2834(20)S
+2923(minutes)S
+604 4173(ny)U
+702(VM)S
+841(page)S
+997(referenced)S
+1306(within)S
+1506(the)S
+1618(last)S
+1741(20)S
+1839(minutes)S
+2079(will)S
+2213(never)S
+2391(be)S
+2484(replaced)S
+2737(by)S
+2834(a)S
+2894(FS)S
+2999(cache)S
+556 4251(page.)U
+744(This)S
+886(policy)S
+1075(is)S
+1144(applied)S
+1362(uniformly)S
+1650(on)S
+1741(all)S
+1831(hosts,)S
+2009(and)S
+2129(it)S
+2190(adapts)S
+2383(naturally)S
+2641(to)S
+2717(both)S
+2858(clients)S
+3053(and)S
+3 F
+1775 4470(-)U
+1819(14)S
+1907(-)S
+EP
+%%Page: ? 16
+BP
+1 F
+66 Z
+556 660(s)U
+3 F
+556 444(Sprite)U
+750(Caching)S
+1 F
+582 660(ervers.)U
+811(Servers)S
+1038(use)S
+1155(most)S
+1312(of)S
+1396(their)S
+1545(memory)S
+1793(for)S
+1899(a)S
+1957(\256le)S
+2070(cache,)S
+2264(while)S
+2438(active)S
+2622(clients)S
+2821(use)S
+2937(most)S
+3093(of)S
+556 816(i)U
+556 738(their)U
+700(memory)S
+943(to)S
+1018(run)S
+1130(user)S
+1264(programs.)S
+1576(Idle)S
+1702(clients)S
+1897(become)S
+2124(hosts)S
+2283(for)S
+2383(process)S
+2604(migration,)S
+2899(and)S
+3017(large)S
+574 816(dle)U
+680(programs)S
+955(\(i.e.)S
+1084(the)S
+1190(window)S
+1429(system\))S
+1660(tend)S
+1799(to)S
+1876(get)S
+1981(paged)S
+2163(out)S
+2272(and)S
+2392(replaced)S
+2639(by)S
+2730(more)S
+2890(\256le)S
+2999(cache)S
+3 F
+556 1122(5)U
+1 F
+556 894(as)U
+633(well)S
+768(as)S
+845(the)S
+947(migrating)S
+1224(applicati)S
+1449(ons.)S
+3 F
+589 1122(.1.)U
+700(Measured)S
+1004(Cache)S
+1202(Sizes)S
+1 F
+706 1224(T)U
+(able)R
+889(17)S
+989(gives)S
+1162(the)S
+1276(average)S
+1514(and)S
+1643(maximum)S
+1943(cache)S
+2126(sizes)S
+2288(as)S
+2377(measured)S
+2662(over)S
+2812(the)S
+2925(6-month)S
+3131 1302(.)U
+556 1380(T)U
+556 1302(study)U
+728(made)S
+899(in)S
+979(1989.)S
+1179(Table)S
+1357(18)S
+1452(gives)S
+1620(the)S
+1729(same)S
+1893(measurements)S
+2298(taken)S
+2469(during)S
+2669(the)S
+2777(second)S
+2988(study)S
+596 1380(he)U
+684(\256le)S
+794(servers)S
+1007(are)S
+1113(listed)S
+1280(individually,)S
+1639(and)S
+1759(the)S
+1864(clients)S
+2060(are)S
+2165(grouped)S
+2406(according)S
+2690(to)S
+2766(the)S
+2871(amount)S
+3093(of)S
+556 1536(c)U
+556 1458(physical)U
+798(memory)S
+1040(they)S
+1176(have.)S
+1362(The)S
+1487(adaptive)S
+1732(nature)S
+1919(of)S
+1997(the)S
+2100(cache)S
+2271(sizes)S
+2421(is)S
+2487(evident)S
+2702(when)S
+2867(comparing)S
+585 1536(lients)U
+750(and)S
+868(servers)S
+1078(with)S
+1218(the)S
+1321(same)S
+1479(memory)S
+1721(size;)S
+1864(the)S
+1967(\256le)S
+2074(servers)S
+2283(devote)S
+2480(more)S
+2637(of)S
+2714(their)S
+2856(memory)S
+3097(to)S
+3130 1614(t)U
+556 1692(m)U
+556 1614(the)U
+660(\256le)S
+768(cache.)S
+980(This)S
+1121(difference)S
+1411(is)S
+1479(not)S
+1587(achieved)S
+1844(via)S
+1948(any)S
+2067(special)S
+2273(cases)S
+2436(in)S
+2510(the)S
+2613(implement)S
+2893(ation,)S
+3064(bu)S
+607 1692(erely)U
+774(by)S
+876(the)S
+992(uniform)S
+1240(applicati)S
+1465(on)S
+1567(of)S
+1658(the)S
+1774(20-minute)S
+2080(bias)S
+2222(against)S
+2444(the)S
+2559(\256le)S
+2678(system)S
+2896(described)S
+556 1770(above.)U
+706 1872(The)U
+837(cache)S
+1015(occupies)S
+1274(a)S
+1332(larger)S
+1514(percentage)S
+1827(of)S
+1911(main)S
+2071(memory)S
+2319(as)S
+2403(the)S
+2512(memory)S
+2760(size)S
+2890(increases,)S
+556 2028(t)U
+556 1950(indicating)U
+844(that)S
+968(the)S
+1074(extra)S
+1231(memory)S
+1475(is)S
+1544(being)S
+1715(utilized)S
+1936(more)S
+2096(by)S
+2187(the)S
+2292(\256le)S
+2401(cache)S
+2575(than)S
+2713(by)S
+2804(the)S
+2909(VM)S
+3041(sys-)S
+574 2028(em.)U
+721(Consider)S
+987(the)S
+1095(Sun3)S
+1259(clients)S
+1458(in)S
+1537(the)S
+1645(\256rst)S
+1776(study.)S
+1986(Doubling)S
+2263(the)S
+2371(physical)S
+2617(memory)S
+2863(on)S
+2956(a)S
+3012(Sun3)S
+3119 2106(e)U
+556 2184(p)U
+556 2106(client)U
+732(quadruples)S
+1051(the)S
+1161(average)S
+1395(cache)S
+1574(size)S
+1706(on)S
+1802(the)S
+1912(client;)S
+2105(it)S
+2171(increases)S
+2442(from)S
+2600(17%)S
+2751(to)S
+2832(34%)S
+2983(of)S
+3068(th)S
+589 2184(hysical)U
+800(memory.)S
+1083(In)S
+1163(the)S
+1268(second)S
+1476(study)S
+1644(the)S
+1749(average)S
+1978(cache)S
+2152(size)S
+2279(as)S
+2359(a)S
+2413(percentage)S
+2722(of)S
+2802(memory)S
+3046(size)S
+556 2262(increases)U
+819(with)S
+958(memory)S
+1199(size.)S
+6 F
+1080 2466(i)U
+1105(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1080 2550(i)U
+1 F
+1385 2544(Cache)U
+1571(Size)S
+1706(\(Megabytes\))S
+2061(\(Fall)S
+2207('89\))S
+6 F
+1105 2550(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+1080 2562(i)U
+1105(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1080 2646(i)U
+1 F
+2634(Host)T
+1476(Mem)S
+1671(Average)S
+1992(Std)S
+2102(Dev)S
+2301(Maximum)S
+6 F
+1105 2646(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+1 F
+1113 2802(A)U
+1113 2724(Allspice*)U
+1496(128)S
+1648(67.8)S
+1797(52%)S
+1951(22.14)S
+2133(17%)S
+2287(78.13)S
+2469(61%)S
+1161 2802(ssault**)U
+1529(24)S
+1681(7.5)S
+1797(31%)S
+1984(4.55)S
+2133(19%)S
+2287(16.50)S
+2469(69%)S
+2535 2880(%)U
+1113 2958(O)U
+1113 2880(Mint)U
+1529(16)S
+1681(9.0)S
+1797(56%)S
+1984(1.23)S
+2166(8%)S
+2287(11.80)S
+2469(74)S
+1161 2958(regano)U
+1529(16)S
+1681(8.6)S
+1797(54%)S
+1984(1.77)S
+2133(11%)S
+2287(12.06)S
+2469(75%)S
+6 F
+2970(i)T
+1080(i)S
+1105(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+1113 3048(Sun3)U
+1562(8)S
+1681(1.4)S
+1797(17%)S
+1984(0.96)S
+2133(12%)S
+2320(4.42)S
+2469(55%)S
+2535 3126(%)U
+1113 3204(S)U
+1113 3126(Sun3)U
+1529(12)S
+1681(3.2)S
+1797(27%)S
+1984(1.76)S
+2133(15%)S
+2320(7.88)S
+2469(66)S
+1150 3204(un3)U
+1529(16)S
+1681(5.5)S
+1797(34%)S
+1984(2.86)S
+2133(18%)S
+2287(12.22)S
+2469(76%)S
+6 F
+3216(i)T
+1080(i)S
+1105(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1 F
+1113 3294(Sun4)U
+1529(12)S
+1681(2.1)S
+1797(17%)S
+1984(1.73)S
+2133(14%)S
+2320(6.87)S
+2469(57%)S
+2535 3372(%)U
+6 F
+1080 3384(i)U
+1 F
+3372(Sun4)T
+1529(24)S
+1681(6.0)S
+1797(25%)S
+1984(3.70)S
+2133(15%)S
+2287(13.43)S
+2469(56)S
+6 F
+1105 3384(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+1080 3474(i)U
+1 F
+3462(DS3100)T
+1529(24)S
+1681(6.3)S
+1797(26%)S
+1984(2.27)S
+2166(9%)S
+2287(10.36)S
+2469(43%)S
+6 F
+1105 3474(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+1080(c)S
+3456(c)T
+3390(c)T
+3324(c)T
+3258(c)T
+3192(c)T
+3126(c)T
+3060(c)T
+2994(c)T
+2928(c)T
+2862(c)T
+2796(c)T
+2730(c)T
+2664(c)T
+2598(c)T
+2532(c)T
+1631 3474(c)U
+3420(c)T
+3354(c)T
+3288(c)T
+3222(c)T
+3156(c)T
+3090(c)T
+3024(c)T
+2958(c)T
+2892(c)T
+2826(c)T
+2760(c)T
+2694(c)T
+2628(c)T
+1934 3474(c)U
+3420(c)T
+3354(c)T
+3288(c)T
+3222(c)T
+3156(c)T
+3090(c)T
+3024(c)T
+2958(c)T
+2892(c)T
+2826(c)T
+2760(c)T
+2694(c)T
+2628(c)T
+2270 3474(c)U
+3420(c)T
+3354(c)T
+3288(c)T
+3222(c)T
+3156(c)T
+3090(c)T
+3024(c)T
+2958(c)T
+2892(c)T
+2826(c)T
+2760(c)T
+2694(c)T
+2628(c)T
+2623 3474(c)U
+3456(c)T
+3390(c)T
+3324(c)T
+3258(c)T
+3192(c)T
+3126(c)T
+3060(c)T
+2994(c)T
+2928(c)T
+2862(c)T
+2796(c)T
+2730(c)T
+2664(c)T
+2598(c)T
+2532(c)T
+1 F
+60 Z
+3008 3591(r)U
+676 3660(t)U
+676 3591(Table)U
+839(17.)S
+939(Cache)S
+1115(sizes)S
+1257(as)S
+1332(a)S
+1384(function)S
+1609(of)S
+1683(main)S
+1828(memory)S
+2053(size)S
+2171(and)S
+2282(processor)S
+2536(type,)S
+2679(averaged)S
+2921(ove)S
+693 3660(he)U
+772(6-month)S
+998(1989)S
+1140(study)S
+1292(period.)S
+1503(The)S
+1619(average,)S
+1844(standard)S
+2070(deviation,)S
+2332(and)S
+2441(maximum)S
+2708(values)S
+2883(of)S
+2954(the)S
+676 3798(s)U
+676 3729(observed)U
+922(cache)S
+1089(sizes)S
+1235(are)S
+1338(given.)S
+1536(The)S
+1659(sizes)S
+1805(are)S
+1908(megabytes)S
+2195(and)S
+2310(percenta)S
+2515(ge)S
+2600(of)S
+2678(main)S
+2827(memory)S
+699 3798(ize.)U
+834(The)S
+957(\256le)S
+1063(servers)S
+1262(are)S
+1365(listed)S
+1524(individuall)S
+1786(y.)S
+1879(The)S
+2001(rest)S
+2116(of)S
+2194(the)S
+2296(clients)S
+2482(are)S
+2584(averaged)S
+2830(together)S
+676 3936(*)U
+676 3867(based)U
+833(on)S
+913(CPU)S
+1049(type)S
+1173(and)S
+1280(memory)S
+1501(size.)S
+726 3936(Allspice's)U
+990(cache)S
+1148(was)S
+1261(limite)S
+1403(d)S
+1453(to)S
+1520(at)S
+1584(most)S
+1721(78.13)S
+1876(Mbytes.)S
+2362 4005(.)U
+676(**)S
+756(Assault's)S
+999(cache)S
+1157(was)S
+1270(limite)S
+1412(d)S
+1462(to)S
+1529(8.7)S
+1624(Meg)S
+1754(during)S
+1931(most)S
+2068(of)S
+2138(the)S
+2232(study)S
+3 F
+66 Z
+1775 4470(-)U
+1819(15)S
+1907(-)S
+EP
+%%Page: ? 17
+BP
+3 F
+66 Z
+556 444(Sprite)U
+750(Caching)S
+6 F
+1119 690(i)U
+1132(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1119 774(i)U
+1 F
+1270 768(Cache)U
+1456(Size)S
+1591(\(Megabytes\))S
+1946(\(March-April)S
+2323('91\))S
+6 F
+1132 774(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+1119 786(i)U
+1132(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)S
+1119 870(i)U
+1 F
+858(Host)T
+1470(Mem)S
+1665(Average)S
+1970(Std)S
+2080(Dev)S
+2262(Maximum)S
+6 F
+1132 870(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+1 F
+1152 1026(A)U
+1152 948(Allspice)U
+1490(128)S
+1642(93.8)S
+1791(73%)S
+1945(15.1)S
+2094(12%)S
+2248(106.4)S
+2430(83%)S
+1200 1026(nise)U
+1523(32)S
+1642(17.9)S
+1791(56%)S
+1978(2.5)S
+2127(8%)S
+2281(22.2)S
+2430(70%)S
+2496 1104(%)U
+6 F
+1119 1116(i)U
+1 F
+1104(Assault)T
+1523(24)S
+1675(9.5)S
+1791(40%)S
+1978(2.3)S
+2094(10%)S
+2281(14.0)S
+2430(58)S
+6 F
+1132 1116(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+1 F
+1152 1194(Clients)U
+1556(8)S
+1675(0.5)S
+1824(7%)S
+1978(0.4)S
+2127(5%)S
+2314(1.6)S
+2430(20%)S
+1523 1272(16)U
+1675(1.7)S
+1791(11%)S
+1978(1.5)S
+2094(10%)S
+2314(7.7)S
+2430(48%)S
+2496 1350(%)U
+1523 1428(2)U
+1523 1350(24)U
+1675(4.8)S
+1791(20%)S
+1978(3.0)S
+2094(12%)S
+2281(12.7)S
+2430(53)S
+1556 1428(8)U
+1675(6.8)S
+1791(24%)S
+1978(3.6)S
+2094(13%)S
+2281(16.3)S
+2430(58%)S
+2496 1506(%)U
+6 F
+1119 1518(i)U
+1 F
+1523 1506(32)U
+1642(10.5)S
+1791(33%)S
+1978(3.7)S
+2094(12%)S
+2281(15.2)S
+2430(48)S
+6 F
+1132 1518(iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii)U
+1119(c)S
+1482(c)T
+1416(c)T
+1350(c)T
+1284(c)T
+1218(c)T
+1152(c)T
+1086(c)T
+1020(c)T
+954(c)T
+888(c)T
+822(c)T
+756(c)T
+1625 1518(c)U
+1512(c)T
+1446(c)T
+1380(c)T
+1314(c)T
+1248(c)T
+1182(c)T
+1116(c)T
+1050(c)T
+984(c)T
+918(c)T
+852(c)T
+1928 1518(c)U
+1512(c)T
+1446(c)T
+1380(c)T
+1314(c)T
+1248(c)T
+1182(c)T
+1116(c)T
+1050(c)T
+984(c)T
+918(c)T
+852(c)T
+2231 1518(c)U
+1512(c)T
+1446(c)T
+1380(c)T
+1314(c)T
+1248(c)T
+1182(c)T
+1116(c)T
+1050(c)T
+984(c)T
+918(c)T
+852(c)T
+2584 1518(c)U
+1482(c)T
+1416(c)T
+1350(c)T
+1284(c)T
+1218(c)T
+1152(c)T
+1086(c)T
+1020(c)T
+954(c)T
+888(c)T
+822(c)T
+756(c)T
+1 F
+60 Z
+3008 1635(r)U
+676 1704(t)U
+676 1635(Table)U
+839(18.)S
+939(Cache)S
+1115(sizes)S
+1257(as)S
+1332(a)S
+1384(function)S
+1609(of)S
+1683(main)S
+1828(memory)S
+2053(size)S
+2171(and)S
+2282(processor)S
+2536(type,)S
+2679(averaged)S
+2921(ove)S
+693 1704(he)U
+775(March-April)S
+1104('91)S
+1209(study)S
+1364(period.)S
+1578(The)S
+1697(average,)S
+1925(standard)S
+2154(deviation,)S
+2419(and)S
+2531(maximum)S
+2800(values)S
+2978(of)S
+676 1842(s)U
+676 1773(the)U
+772(observed)S
+1011(cache)S
+1171(sizes)S
+1310(are)S
+1406(given.)S
+1596(The)S
+1711(sizes)S
+1849(are)S
+1944(megabytes)S
+2223(and)S
+2331(percenta)S
+2536(ge)S
+2614(of)S
+2685(main)S
+2827(memory)S
+699 1842(ize.)U
+834(The)S
+957(\256le)S
+1063(servers)S
+1262(are)S
+1365(listed)S
+1524(individuall)S
+1786(y.)S
+1879(The)S
+2001(rest)S
+2116(of)S
+2194(the)S
+2296(clients)S
+2482(are)S
+2584(averaged)S
+2830(together)S
+676 1911(based)U
+833(on)S
+913(memory)S
+1134(size.)S
+1283(There)S
+1444(were)S
+1581(no)S
+1661(limits)S
+1819(on)S
+1899(cache)S
+2057(sizes)S
+2194(during)S
+2371(this)S
+2478(study.)S
+66 Z
+706 2085(The)U
+838(variabilit)S
+1074(y)S
+1137(of)S
+1222(the)S
+1331(client)S
+1505(caches)S
+1709(is)S
+1782(indicated)S
+2051(by)S
+2146(the)S
+2255(standard)S
+2507(deviation)S
+2780(and)S
+2904(the)S
+3013(max-)S
+556 2241(t)U
+556 2163(imum)U
+735(observed)S
+998(values.)S
+1230(The)S
+1357(variabilit)S
+1593(y)S
+1651(tends)S
+1815(to)S
+1891(increase)S
+2131(as)S
+2211(the)S
+2316(memory)S
+2560(gets)S
+2691(larger,)S
+2886(indicating)S
+574 2241(hat)U
+686(the)S
+798(cache)S
+979(is)S
+1055(trading)S
+1273(more)S
+1440(memory)S
+1691(with)S
+1840(the)S
+1952(VM)S
+2091(system.)S
+2345(The)S
+2479(DECstations)S
+2843(have)S
+2998(lower)S
+3126 2319(-)U
+556 2397(t)U
+556 2319(variabilit)U
+792(y)S
+852(in)S
+930(the)S
+1037(initial)S
+1216(study)S
+1386(because)S
+1621(their)S
+1768(cache)S
+1944(was)S
+2074(limited)S
+2286(to)S
+2364(about)S
+2536(8.7)S
+2645(Meg.)S
+2831(This)S
+2974(limita)S
+574 2397(ion)U
+684(was)S
+813(a)S
+868(software)S
+1121(limit)S
+1270(that)S
+1394(was)S
+1523(removed)S
+1779(before)S
+1973(the)S
+2079(second)S
+2288(study)S
+2457(was)S
+2586(made,)S
+2770(and)S
+2890(the)S
+2995(varia-)S
+556 2475(bility)U
+716(was)S
+841(slightly)S
+1060(higher)S
+1250(during)S
+1444(the)S
+1546(second)S
+1751(study)S
+1916(period.)S
+706 2577(The)U
+832(results)S
+1028(from)S
+1180(the)S
+1283(servers)S
+1493(show)S
+1656(that)S
+1777(Mint)S
+1928(and)S
+2046(Oregano)S
+2296(could)S
+2465(only)S
+2605(devote)S
+2803(on)S
+2892(average)S
+3119(a)S
+3122 2655(s)U
+556 2733(3)U
+556 2655(little)U
+700(over)S
+842(half)S
+969(their)S
+1114(memory)S
+1358(to)S
+1434(their)S
+1579(\256le)S
+1688(cache,)S
+1879(yet)S
+1984(their)S
+2128(maximum)S
+2418(cache)S
+2591(size)S
+2717(was)S
+2844(as)S
+2923(much)S
+3093(a)S
+589 2733(/4)U
+664(of)S
+743(their)S
+887(memory.)S
+1169(Similarly,)S
+1454(during)S
+1650(the)S
+1753(second)S
+1959(study,)S
+2142(Allspice's)S
+2432(cache)S
+2604(averaged)S
+2864(73%)S
+3008(of)S
+3086(its)S
+556 2889(a)U
+556 2811(memory,)U
+824(while)S
+1002(its)S
+1096(maximum)S
+1394(was)S
+1529(83%.\262)S
+1732(The)S
+1865(server)S
+2057(caches)S
+2263(ramp)S
+2429(up)S
+2526(to)S
+2608(a)S
+2668(maximum)S
+2965(shortly)S
+585 2889(fter)U
+700(booting,)S
+942(and)S
+1061(then)S
+1198(gradually)S
+1470(decline)S
+1683(in)S
+1758(size)S
+1884(as)S
+1963(the)S
+2066(kernel)S
+2253(builds)S
+2437(up)S
+2526(state)S
+2669(information)S
+3002(about)S
+556 3045(s)U
+556 2967(how)U
+693(its)S
+778(\256les)S
+911(are)S
+1014(being)S
+1183(used.)S
+1366(There)S
+1542(are)S
+1645(no)S
+1734(\256xed)S
+1888(sized)S
+2045(tables)S
+2220(in)S
+2293(the)S
+2395(implement)S
+2675(ation,)S
+2845(and)S
+2962(the)S
+3064(\256le)S
+582 3045(ystem)U
+768(data)S
+906(structures)S
+1191(have)S
+1344(not)S
+1456(been)S
+1608(tuned)S
+1782(to)S
+1861(reduce)S
+2064(their)S
+2212(space.)S
+2425(The)S
+2555(servers)S
+2770(also)S
+2904(grow)S
+3068(the)S
+3126 3123(-)U
+556 3201(a)U
+556 3123(number)U
+789(of)S
+876(RPC)S
+1033(server)S
+1226(threads)S
+1448(they)S
+1593(keep,)S
+1766(and)S
+1893(each)S
+2045(thread)S
+2241(has)S
+2361(a)S
+2422(signi\256cant)S
+2728(amount)S
+2956(of)S
+3042(pre)S
+585 3201(llocated)U
+822(buffer)S
+1013(space)S
+1189(as)S
+1274(well)S
+1417(as)S
+1502(a)S
+1561(kernel)S
+1755(stack.)S
+1959(Thus)S
+2121(the)S
+2230(\256le)S
+2343(servers)S
+2559(need)S
+2712(large)S
+2872(memories,)S
+556 3357(o)U
+556 3279(both)U
+707(to)S
+792(increase)S
+1040(their)S
+1193(cache)S
+1375(sizes)S
+1536(and)S
+1664(to)S
+1748(accommodat)S
+2083(e)S
+2145(the)S
+2258(data)S
+2400(structures)S
+2689(they)S
+2835(maintain)S
+3097(in)S
+589 3357(rder)U
+717(to)S
+790(manage)S
+1016(their)S
+1158(cache)S
+1329(and)S
+1446(those)S
+1607(of)S
+1684(their)S
+1826(clients.)S
+3 F
+556 3585(6.)U
+650(Related)S
+888(Work)S
+1 F
+706 3687(The)U
+859(Sprite)S
+1067(caching)S
+1322(system)S
+1556(was)S
+1710(initiall)S
+1880(y)S
+1964(studied)S
+2205(by)S
+2321(Nelson)S
+2558(for)S
+2685(his)S
+2812(thesis)S
+3012(work)S
+3130 3765(t)U
+6 F
+60 Z
+556 3834(h)U
+1 F
+66 Z
+556 3765([Nelson88a].)U
+950(He)S
+1056(compared)S
+1343(9)S
+1404(different)S
+1658(client)S
+1831(writing)S
+2049(policies)S
+2281(in)S
+2360(combination)S
+2716(with)S
+2861(4)S
+2922(differen)S
+6 F
+60 Z
+580 3834(hhhhhhhhhhhhhhhhhhhhhhhhhhhh)U
+1 F
+685 3918(\262)U
+745(During)S
+944(the)S
+1047(initial)S
+1218(study)S
+1377(Allspice's)S
+1650(cache)S
+1817(size)S
+1940(was)S
+2062(limite)S
+2204(d)S
+2263(due)S
+2379(to)S
+2455(a)S
+2511(poor)S
+2650(interact)S
+2832(ion)S
+2938(with)S
+3074(the)S
+3121 3987(e)U
+556 4056(c)U
+556 3987(memory)U
+779(mapping)S
+1012(hardware)S
+1258(on)S
+1340(the)S
+1436(Sun4.)S
+1616(The)S
+1732(\256le)S
+1831(cache)S
+1991(used)S
+2123(up)S
+2205(hardware)S
+2451(page)S
+2586(map)S
+2711(entries,)S
+2908(and)S
+3016(if)S
+3074(th)S
+583 4056(ache)U
+723(got)S
+829(too)S
+935(large)S
+1085(it)S
+1148(would)S
+1327(cause)S
+1490(extreme)S
+1714(contention)S
+1997(for)S
+2095(the)S
+2197(few)S
+2315(remaining)S
+2588(hardware)S
+2840(map)S
+2972(entries.)S
+556 4194(h)U
+556 4125(The)U
+672(problem)S
+895(was)S
+1010(\256xed)S
+1152(by)S
+1234(the)S
+1330(time)S
+1460(the)S
+1556(second)S
+1745(study)S
+1896(was)S
+2010(made)S
+2162(by)S
+2243(allowing)S
+2475(the)S
+2570(MMU)S
+2740(manager)S
+2969(to)S
+3037(steal)S
+586 4194(ardware)U
+800(map)S
+924(entries)S
+1105(associated)S
+1373(with)S
+1500(cache)S
+1658(blocks.)S
+3 F
+66 Z
+1775 4470(-)U
+1819(16)S
+1907(-)S
+EP
+%%Page: ? 18
+BP
+1 F
+66 Z
+556 660(s)U
+3 F
+556 444(Sprite)U
+750(Caching)S
+1 F
+582 660(erver)U
+747(writing)S
+967(policies)S
+1201(on)S
+1296(a)S
+1354(set)S
+1456(of)S
+1540(benchmarks.)S
+1926(He)S
+2032(found)S
+2215(that)S
+2342(using)S
+2514(a)S
+2572(delay)S
+2743(policy)S
+2936(on)S
+3031(both)S
+3126 738(-)U
+556 816(t)U
+556 738(clients)U
+756(and)S
+880(servers)S
+1096(minimize)S
+1343(d)S
+1405(I/O)S
+1521(traf\256c)S
+1706(and)S
+1829(provided)S
+2091(the)S
+2199(best)S
+2333(client)S
+2506(response)S
+2765(time.)S
+2948(In)S
+3031(con)S
+574 816(rast,)U
+718(a)S
+5 F
+779(")S
+1 F
+(write)R
+974(through)S
+1211(on)S
+1309(close)S
+5 F
+(")R
+1 F
+1504(policy,)S
+1717(which)S
+1910(is)S
+1986(used)S
+2139(in)S
+2222(NFS,)S
+2393(increases)S
+2665(network)S
+2912(and)S
+3038(disk)S
+556 894(traf\256c)U
+735(and)S
+852(causes)S
+1046(clients)S
+1239(to)S
+1312(wait)S
+1447(at)S
+1516(close)S
+1673(time.)S
+706 996(AFS)U
+854(uses)S
+994(a)S
+1049(hybrid)S
+1247(strategy)S
+1481(of)S
+1562(caching)S
+1792(temporary)S
+2088(\256les)S
+2224(\(those)S
+2411(under)S
+5 F
+2587(")S
+1 F
+(/tmp)R
+5 F
+(")R
+1 F
+(\))R
+2810(with)S
+2952(a)S
+3006(delay)S
+3119 1074(e)U
+556 1152(S)U
+556 1074(policy,)U
+762(but)S
+871(writing)S
+1086(through)S
+1316(other)S
+1476(\256les)S
+1611(at)S
+1683(close.)S
+1882(Nelson)S
+2094(found)S
+2273(this)S
+2393(to)S
+2469(be)S
+2555(almost)S
+2754(as)S
+2833(good)S
+2989(as)S
+3068(th)S
+593 1152(prite)U
+747(policy)S
+945(in)S
+1030(terms)S
+1209(of)S
+1297(network)S
+1546(bandwidth)S
+1857(reduction,)S
+2155(although)S
+2418(signi\256cant)S
+2725(delays)S
+2926(can)S
+3050(still)S
+556 1308(t)U
+556 1230(occur)U
+730(when)S
+901(non-temporary)S
+1320(data)S
+1457(is)S
+1528(written)S
+1741(through)S
+1973(to)S
+2051(the)S
+2158(server.)S
+2385(AFS)S
+2534(caches)S
+2736(remote)S
+2945(\256les)S
+3082(on)S
+574 1308(he)U
+662(local)S
+815(disk,)S
+968(in)S
+1044(contrast)S
+1277(to)S
+1353(Sprite's)S
+1583(use)S
+1696(of)S
+1776(main)S
+1932(memory.)S
+2215(Howard)S
+2453(found)S
+2632(a)S
+2686(read)S
+2824(miss)S
+2970(rate)S
+3093(of)S
+556 1464(t)U
+556 1386(about)U
+727(20%)S
+873(on)S
+964(the)S
+1069(AFS)S
+1216(client)S
+1386(caches)S
+1586([Howard88],)S
+1951(which)S
+2137(is)S
+2206(better)S
+2380(than)S
+2518(the)S
+2623(miss)S
+2769(rates)S
+2918(found)S
+3097(in)S
+574 1464(his)U
+681(study.)S
+893(The)S
+1025(better)S
+1204(miss)S
+1355(rate)S
+1483(in)S
+1564(AFS)S
+1716(is)S
+1790(because)S
+2027(the)S
+2136(disk-based)S
+2447(caches)S
+2651(of)S
+2735(AFS)S
+2886(are)S
+2995(larger)S
+556 1620(r)U
+556 1542(than)U
+694(the)S
+799(main)S
+955(memory)S
+1199(caches)S
+1399(in)S
+1475(Sprite)S
+1657(\(AFS)S
+1825(clients)S
+2020(usually)S
+2234(have)S
+2382(20)S
+2472(or)S
+2551(40)S
+2641(Meg)S
+2786(caches\).)S
+3046(The)S
+578 1620(esponse)U
+831(time)S
+991(and)S
+1130(server)S
+1335(CPU)S
+1508(utilizat)S
+1689(ion)S
+1817(of)S
+1916(NFS,)S
+2099(AFS,)S
+2282(and)S
+2421(Sprite)S
+2622(were)S
+2794(compared)S
+3097(in)S
+3126 1698(r)U
+556 1776(t)U
+556 1698([Nelson88b].)U
+957(Sprite)S
+1146(provided)S
+1412(the)S
+1524(best)S
+1662(response)S
+1925(time)S
+2073(\(25%)S
+2248(faster)S
+2426(than)S
+2571(AFS)S
+2724(and)S
+2850(35%)S
+3002(faste)S
+574 1776(han)U
+701(NFS\),)S
+894(while)S
+1072(AFS)S
+1226(had)S
+1352(better)S
+1532(\(i.e.)S
+1666(lower\))S
+1869(server)S
+2061(utilizat)S
+2242(ion)S
+2357(\(16%)S
+2531(server)S
+2723(CPU)S
+2883(utilizat)S
+3064(ion)S
+3115 1854(n)U
+556 1932(S)U
+556 1854(under)U
+739(load)S
+885(for)S
+995(AFS)S
+1150(vs.)S
+1281(38%)S
+1435(for)S
+1545(Sprite)S
+1735(and)S
+1863(80%)S
+2017(for)S
+2127(NFS\).)S
+2342(Another)S
+2590(comparison)S
+2929(betwee)S
+593 1932(prite)U
+742(and)S
+866(NFS)S
+1017(can)S
+1137(be)S
+1228(found)S
+1411(in)S
+1491([Srinivasan89],)S
+1925(in)S
+2005(which)S
+2195(the)S
+2303(addition)S
+2546(of)S
+2629(the)S
+2737(Sprite)S
+2922(delayed-)S
+556 2010(write)U
+713(policy)S
+899(and)S
+1016(consistency)S
+1345(mechanism)S
+1666(to)S
+1739(an)S
+1823(NFS)S
+1967(system)S
+2172(improved)S
+2446(performance)S
+2800(signi\256cantly.)S
+706 2112(Earlier)U
+915(studies)S
+1129(of)S
+1215(I/O)S
+1334(traf\256c)S
+1522(include)S
+1746(Ousterhout's)S
+2118(measurements)S
+2524(of)S
+2609(timesharing)S
+2949(VAXes)S
+556 2268(w)U
+556 2190(running)U
+784(4.2)S
+889(BSD)S
+1040(UNIX)S
+1228([Ousterhout85],)S
+1670(which)S
+1853(reported)S
+2094(per-user)S
+2332(I/O)S
+2442(rates)S
+2588(of)S
+2665(300-600)S
+2907(bytes/sec)S
+604 2268(hen)U
+728(averaged)S
+994(over)S
+1139(10)S
+1233(minute)S
+1443(intervals,)S
+1714(and)S
+1837(rates)S
+1989(of)S
+2072(1400)S
+2232(to)S
+2311(1800)S
+2471(bytes/sec)S
+2740(when)S
+2911(averaged)S
+3119 2346(e)U
+556 2424(u)U
+556 2346(over)U
+704(10)S
+801(second)S
+1015(intervals.)S
+1311(These)S
+1499(rates)S
+1654(do)S
+1751(not)S
+1866(include)S
+2090(paging)S
+2300(traf\256c,)S
+2505(and)S
+2631(they)S
+2775(are)S
+2885(for)S
+2992(activ)S
+589 2424(sers)U
+722(only.)S
+908(Rates)S
+1084(are)S
+1194(higher)S
+1391(over)S
+1537(shorter)S
+1749(intervals)S
+2004(because)S
+2241(there)S
+2401(are)S
+2510(fewer)S
+2689(active)S
+2874(users)S
+3039(in)S
+3119(a)S
+556 2580(a)U
+556 2502(shorter)U
+765(interval.)S
+1030(The)S
+1158(rates)S
+1307(obtained)S
+1558(for)S
+1660(Sprite)S
+1842(clients,)S
+2055(about)S
+2226(1500)S
+2383(bytes/sec)S
+2649(for)S
+2751(combined)S
+3035(read)S
+585 2580(nd)U
+680(write)S
+844(traf\256c)S
+1030(in)S
+1110(the)S
+1219(mid-afternoon,)S
+1641(are)S
+1750(averaged)S
+2016(over)S
+2162(180)S
+2290(minutes)S
+2527(and)S
+2650(include)S
+2871(periods)S
+3093(of)S
+556 2736(i)U
+556 2658(inactivit)U
+770(y.)S
+868(Ousterhout)S
+1187(and)S
+1308(his)S
+1411(students)S
+1653(have)S
+1803(recently)S
+2039(taken)S
+2206(trace)S
+2358(data)S
+2492(from)S
+2645(the)S
+2750(Sprite)S
+2932(network)S
+574 2736(n)U
+633(order)S
+798(to)S
+875(make)S
+1043(similar)S
+1251(measurements)S
+1653(as)S
+1734(those)S
+1899(of)S
+1979(his)S
+2081(original)S
+2310(study,)S
+2495(and)S
+2615(these)S
+2775(results)S
+2972(should)S
+556 2814(be)U
+640(published)S
+918(this)S
+1035(year)S
+1170([Baker91].)S
+706 2916(Kent)U
+861(also)S
+994(took)S
+1138(trace)S
+1291(data)S
+1426(from)S
+1580(a)S
+1635(timesharing)S
+1971(UNIX)S
+2163(system)S
+2372(and)S
+2493(used)S
+2640(the)S
+2746(data)S
+2881(to)S
+2958(drive)S
+3119(a)S
+556 3072(k)U
+556 2994(simulation)U
+874(of)S
+969(a)S
+1038(network)S
+1294(\256le)S
+1418(cache)S
+1607([Kent87].)S
+1924(Kent)S
+2092(found)S
+2286(per-user)S
+2542(I/O)S
+2670(rates)S
+2834(of)S
+2929(about)S
+3115(2)S
+589 3072(bytes/sec,)U
+877(which)S
+1068(is)S
+1142(slightly)S
+1369(higher)S
+1567(than)S
+1710(the)S
+1820(rates)S
+1974(found)S
+2158(by)S
+2254(Ousterhout)S
+2 F
+2577(et)S
+2654(al)S
+1 F
+2735(because)S
+2972(Kent's)S
+556 3150(measurements)U
+954(included)S
+1202(paging)S
+1403(requests.)S
+706 3252(Floyd)U
+884(studied)S
+1098(\256le)S
+1206(and)S
+1325(directory)S
+1586(access)S
+1778(patterns)S
+2009(in)S
+2083(the)S
+2186(UNIX)S
+2375(environment)S
+2730([Floyd86].)S
+3056(His)S
+556 3408(d)U
+556 3330(focus)U
+734(was)S
+872(not)S
+991(on)S
+1092(I/O)S
+1215(rates,)S
+1391(but)S
+1510(on)S
+1611(the)S
+1726(rate)S
+1859(that)S
+1992(\256les)S
+2137(were)S
+2300(opened,)S
+2541(\256le)S
+2659(lifetime)S
+2862(s,)S
+2939(and)S
+3068(the)S
+589 3408(ifference)U
+850(in)S
+929(use)S
+1045(of)S
+1128(different)S
+1381(classes)S
+1591(of)S
+1673(\256les.)S
+1849(Floyd)S
+2030(found,)S
+2228(for)S
+2332(example,)S
+2598(that)S
+2723(most)S
+2878(temporary)S
+3115 3486(y)U
+556 3564(\256)U
+556 3486(\256les)U
+691(live)S
+814(less)S
+938(than)S
+1076(one)S
+1196(minute.)S
+1442(The)S
+1569(faster)S
+1740(workstations)S
+2102(used)S
+2248(today)S
+2419(should)S
+2620(consume)S
+2878(temporar)S
+593 3564(les)U
+688(at)S
+757(a)S
+808(faster)S
+976(rate,)S
+1113(suggesting)S
+1417(that)S
+1537(the)S
+1639(30)S
+1727(second)S
+1932(delay)S
+2096(period)S
+2286(used)S
+2429(in)S
+2502(Sprite)S
+2681(is)S
+2747(appropriate.)S
+3126 3666(-)U
+556 3744(u)U
+706 3666(One)U
+843(common)S
+1100(difference)S
+1393(between)S
+1639(the)S
+1746(trace)S
+1900(driven)S
+2094(studies)S
+2303(described)S
+2581(above)S
+2764(and)S
+2885(the)S
+2991(meas)S
+589 3744(rements)U
+820(presented)S
+1094(here)S
+1229(is)S
+1295(that)S
+1415(the)S
+1517(trace)S
+1666(driven)S
+1856(studies)S
+2061(predicted)S
+2327(lower)S
+2499(cache)S
+2670(miss)S
+2813(ratios.)S
+3020(Kent)S
+556 3900(s)U
+556 3822(simulated)U
+842(combined)S
+1132(read-write)S
+1433(miss)S
+1585(ratios)S
+1762(that)S
+1891(varied)S
+2086(from)S
+2244(32%)S
+2395(down)S
+2572(to)S
+2653(11%)S
+2804(as)S
+2889(the)S
+2999(cache)S
+582 3900(ize)U
+683(increased)S
+956(from)S
+1108(256)S
+1231(kbytes)S
+1427(to)S
+1502(8)S
+1559(mbytes)S
+1773(\(see)S
+1903(Table)S
+2076(5-1)S
+2188(in)S
+2263([Kent87]\).)S
+2586(Ousterhout's)S
+2951(simula-)S
+556 4056(i)U
+556 3978(tions)U
+709(showed)S
+936(a)S
+990(combined)S
+1274(read-write)S
+1569(miss)S
+1715(ratio)S
+1860(that)S
+1983(varied)S
+2172(from)S
+2325(49%)S
+2470(to)S
+2545(25%)S
+2690(as)S
+2769(the)S
+2873(cache)S
+3046(size)S
+574 4056(ncreased)U
+832(from)S
+988(390)S
+1114(kbytes)S
+1313(to)S
+1391(16)S
+1484(mbytes.)S
+1740(The)S
+1869(combined)S
+2155(miss)S
+2303(ratios)S
+2476(measured)S
+2755(here)S
+2895(are)S
+3002(about)S
+556 4212(d)U
+556 4134(40%.)U
+742(Part)S
+874(of)S
+955(the)S
+1061(difference)S
+1353(is)S
+1423(probably)S
+1683(due)S
+1804(to)S
+1880(the)S
+1985(variable)S
+2221(sized)S
+2381(caches,)S
+2598(and)S
+2718(part)S
+2845(is)S
+2914(probably)S
+589 4212(ue)U
+689(to)S
+778(changing)S
+1057(workloads.)S
+1409(The)S
+1549(bias)S
+1693(against)S
+1916(the)S
+2033(\256le)S
+2154(system)S
+2374(in)S
+2462(the)S
+2579(variable)S
+2827(sized)S
+2999(cache)S
+3119 4290(e)U
+556(mechanism)S
+881(means)S
+1075(that)S
+1199(cache)S
+1374(miss)S
+1521(rates)S
+1671(may)S
+1810(increase)S
+2051(while)S
+2223(page)S
+2373(fault)S
+2519(rates)S
+2669(are)S
+2774(reduced.)S
+3046(Th)S
+3 F
+1775 4470(-)U
+1819(17)S
+1907(-)S
+EP
+%%Page: ? 19
+BP
+1 F
+66 Z
+556 660(\256)U
+3 F
+556 444(Sprite)U
+750(Caching)S
+1 F
+593 660(le)U
+663(system)S
+869(cache)S
+1041(may)S
+1177(not)S
+1284(perform)S
+1519(as)S
+1597(well,)S
+1750(but)S
+1857(the)S
+1960(system)S
+2166(feels)S
+2313(faster)S
+2482(to)S
+2556(to)S
+2630(user.)S
+2801(There)S
+2976(is)S
+3042(also)S
+3126 738(-)U
+556 816(t)U
+556 738(a)U
+609(difference)S
+899(in)S
+974(workload)S
+1247(between)S
+1490(a)S
+1543(timeshared)S
+1854(VAX)S
+2021(11-780)S
+2231(and)S
+2349(a)S
+2401(network)S
+2640(of)S
+2718(personal)S
+2964(works)S
+574 816(ations)U
+762(that)S
+891(are)S
+1002(each)S
+1153(10)S
+1250(times)S
+1423(as)S
+1509(fast)S
+1635(as)S
+1721(a)S
+1781(VAX.)S
+1995(Window)S
+2252(systems)S
+2491(invite)S
+2670(users)S
+2836(to)S
+2917(do)S
+3013(more)S
+3122 894(s)U
+556 972(s)U
+556 894(things)U
+741(at)S
+812(once,)S
+977(and)S
+1096(the)S
+1200(guaranteed)S
+1512(CPU)S
+1665(power)S
+1854(of)S
+1933(a)S
+1985(personal)S
+2231(workstation)S
+2565(encourages)S
+2884(large)S
+3038(job)S
+582 972(uch)U
+699(a)S
+750(system)S
+955(recompilat)S
+1235(ion.)S
+1380(As)S
+1476(a)S
+1527(result,)S
+1712(the)S
+1814(workload)S
+2085(applied)S
+2300(to)S
+2373(the)S
+2475(\256le)S
+2581(system)S
+2786(has)S
+2896(scaled)S
+3082(up)S
+3 F
+556 1278(7)U
+1 F
+556 1050(considerably.)U
+3 F
+589 1278(.)U
+650(Conclusion)S
+1 F
+706 1380(T)U
+(his)R
+847(paper)S
+1017(has)S
+1129(reviewed)S
+1394(the)S
+1498(Sprite)S
+1679(caching)S
+1907(system)S
+2114(and)S
+2233(reported)S
+2476(on)S
+2565(its)S
+2650(performance)S
+3005(when)S
+3122 1458(s)U
+556 1536(h)U
+556 1458(supporting)U
+871(day-to-day)S
+1189(work)S
+1357(in)S
+1440(our)S
+1560(user)S
+1702(community.)S
+2072(Measurements)S
+2488(from)S
+2648(two)S
+2779(study)S
+2954(period)S
+589 1536(ave)U
+710(been)S
+864(presented.)S
+1185(The)S
+1317(\256rst)S
+1450(study)S
+1623(was)S
+1756(made)S
+1928(in)S
+2009(the)S
+2119(fall)S
+2236(of)S
+2320(1989,)S
+2498(shortly)S
+2710(after)S
+2859(Sprite)S
+3045(was)S
+556 1692(m)U
+556 1614(made)U
+728(available)S
+994(to)S
+1075(users)S
+1241(outside)S
+1461(the)S
+1570(development)S
+1938(team,)S
+2111(while)S
+2286(the)S
+2395(second)S
+2607(study)S
+2779(was)S
+2911(made)S
+3082(16)S
+607 1692(onths)U
+782(later.)S
+969(There)S
+1153(are)S
+1264(a)S
+1324(number)S
+1556(of)S
+1642(signi\256cant)S
+1947(results.)S
+2189(Client)S
+2380(write)S
+2546(traf\256c)S
+2734(ratios)S
+2911(averaged)S
+3122 1770(s)U
+556 1848(w)U
+556 1770(52%)U
+704(and)S
+826(62%)S
+974(in)S
+1052(the)S
+1159(two)S
+1285(studies,)S
+1512(meaning)S
+1764(that)S
+1888(almost)S
+2089(half)S
+2217(the)S
+2323(data)S
+2458(generated)S
+2739(by)S
+2831(applicati)S
+3056(on)S
+604 1848(as)U
+688(never)S
+863(written)S
+1078(through)S
+1312(to)S
+1392(the)S
+1501(server)S
+1691(because)S
+1928(it)S
+1993(was)S
+2125(deleted)S
+2342(or)S
+2425(overwritten)S
+2756(before)S
+2952(the)S
+3060(30-)S
+3131 1926(,)U
+556 2004(i)U
+556 1926(second)U
+769(aging)S
+945(period)S
+1143(expired.)S
+1409(Client)S
+1599(read)S
+1742(miss)S
+1893(rates)S
+2047(were)S
+2205(35%)S
+2356(and)S
+2481(39%)S
+2631(in)S
+2711(the)S
+2820(two)S
+2948(studies)S
+574 2004(ndicating)U
+844(reasonable)S
+1151(effectivene)S
+1442(ss.)S
+1559(There)S
+1738(was)S
+1867(low)S
+1992(overhead)S
+2259(from)S
+2413(consistency-relat)S
+2858(ed)S
+2945(actions.)S
+556 2160(m)U
+556 2082(In)U
+638(less)S
+764(than)S
+904(1%)S
+1019(of)S
+1101(open)S
+1256(operations)S
+1557(did)S
+1667(the)S
+1773(server)S
+1960(have)S
+2110(to)S
+2187(issue)S
+2345(cache)S
+2520(control)S
+2732(messages.)S
+3046(The)S
+607 2160(ost)U
+713(interesting)S
+1019(negative)S
+1270(result)S
+1445(is)S
+1518(that)S
+1645(the)S
+1754(shared)S
+1955(database)S
+2210(used)S
+2360(to)S
+2440(record)S
+2637(host)S
+2776(load)S
+2918(averages)S
+556 2316(r)U
+556 2238(accounted)U
+851(for)S
+957(approximatel)S
+1303(y)S
+1364(10%)S
+1513(of)S
+1596(the)S
+1704(network)S
+1948(write)S
+2111(traf\256c)S
+2296(and)S
+2419(up)S
+2513(to)S
+2592(60%)S
+2741(of)S
+2824(the)S
+2932(network)S
+578 2316(ead)U
+693(traf\256c)S
+874(for)S
+975(some)S
+1137(clients.)S
+1370(This)S
+1510(problem)S
+1752(has)S
+1863(been)S
+2010(cured)S
+2179(by)S
+2268(replacing)S
+2535(this)S
+2653(heavily)S
+2869(shared)S
+3064(\256le)S
+3119 2394(e)U
+556 2472(s)U
+556 2394(with)U
+696(a)S
+748(network)S
+987(server)S
+1171(process)S
+1392(and)S
+1510(tuning)S
+1701(the)S
+1804(interface)S
+2056(to)S
+2130(it.)S
+2228(The)S
+2353(result)S
+2522(is)S
+2589(that)S
+2710(concurrent)S
+3013(writ)S
+582 2472(haring,)U
+797(which)S
+988(causes)S
+1190(\256les)S
+1330(to)S
+1411(be)S
+1503(uncacheable)S
+1857(on)S
+1953(clients,)S
+2171(occurs)S
+2373(in)S
+2454(less)S
+2583(than)S
+2726(1%)S
+2844(of)S
+2929(the)S
+3038(\256les)S
+556 2628(t)U
+556 2550(opened.)U
+819(There)S
+1006(is)S
+1084(very)S
+1235(little)S
+1388(consistency-relat)S
+1833(ed)S
+1929(traf\256c)S
+2119(between)S
+2371(the)S
+2484(servers)S
+2704(and)S
+2832(clients,)S
+3053(and)S
+574 2628(here)U
+709(is)S
+775(very)S
+914(little)S
+1055(data)S
+1186(traf\256c)S
+1365(to)S
+1438(uncachable)S
+1755(data.)S
+3 F
+556 2778(Acknowledgements)U
+1 F
+706 2880(I)U
+756(would)S
+948(like)S
+1073(to)S
+1151(thank)S
+1324(Prof.)S
+1482(Ousterhout)S
+1802(and)S
+1924(the)S
+2031(other)S
+2193(members)S
+2461(of)S
+2543(the)S
+2650(Sprite)S
+2834(team,)S
+3005(Mary)S
+3115 2958(d)U
+556 3036(c)U
+556 2958(Baker,)U
+756(Fred)S
+903(Douglis,)S
+1154(John)S
+1304(Hartmann,)S
+1609(Mendel)S
+1835(Rosenblum,)S
+2177(and)S
+2297(Ken)S
+2432(Shirriff,)S
+2668(for)S
+2770(their)S
+2915(help)S
+3053(an)S
+585 3036(ooperation)U
+897(as)S
+983(I)S
+1036(continued)S
+1326(this)S
+1452(study)S
+1626(after)S
+1777(my)S
+1891(graduation.)S
+2241(I)S
+2293(would)S
+2488(also)S
+2624(like)S
+2752(to)S
+2833(thank)S
+3009(Gene)S
+556 3192(t)U
+556 3114(Spafford)U
+810(for)S
+910(this)S
+1028(opportunity)S
+1358(to)S
+1432(publish)S
+1649(this)S
+1767(paper)S
+1936(outside)S
+2149(the)S
+2252(initial)S
+2427(workshop)S
+2710(it)S
+2768(was)S
+2893(originally)S
+574 3192(argeted)U
+792(for,)S
+911(and)S
+1031(to)S
+1107(thank)S
+1278(all)S
+1368(the)S
+1473(outside)S
+1688(reviewers)S
+1969(for)S
+2071(their)S
+2216(feedback)S
+2478(on)S
+2569(initial)S
+2745(versions)S
+2989(of)S
+3068(the)S
+3 F
+556 3498(R)U
+1 F
+556 3270(paper.)U
+3 F
+604 3498(eferences)U
+1 F
+556 3600(B)U
+(aker91.)R
+1066(M.)S
+1198(Baker,)S
+1428(J.)S
+1527(Hartman,)S
+1830(M.)S
+1962(Kupfer,)S
+2221(K.)S
+2341(Shirriff)S
+2590(and)S
+2740(J.)S
+2838(Ousterhout,)S
+3131 3678(,)U
+1066 3756(F)U
+1066 3678(``Measurements)U
+1527(of)S
+1615(a)S
+1677(Distributed)S
+2006(File)S
+2141(System'',)S
+2 F
+2428(Submitted)S
+2723(for)S
+2832(publication)S
+1 F
+1103 3756(eb.)U
+1204(1991.)S
+556 3858(D)U
+(ouglis90.)R
+1066(F.)S
+1158(Douglis,)S
+1422(``Transparent)S
+1818(Process)S
+2058(Migration)S
+2358(for)S
+2472(Personal)S
+2736(Workstations'',)S
+556 4038(F)U
+1066 3936(PhD)U
+1206(Thesis,)S
+1417(Sep.)S
+1555(1990.)S
+1748(University)S
+2048(of)S
+2125(California,)S
+2430(Berkeley.)S
+593 4038(loyd86.)U
+1066(R.)S
+1157(Floyd,)S
+1358(``Short-Term)S
+1739(File)S
+1871(Reference)S
+2167(Patterns)S
+2409(in)S
+2490(a)S
+2549(UNIX)S
+2744(Environment'',)S
+1066 4116(Technical)U
+1346(Report)S
+1547(Tech.)S
+1717(Rep.)S
+1862(177,)S
+2000(University)S
+2300(of)S
+2377(Rochester,)S
+2679(Mar.)S
+2828(1986.)S
+3 F
+1775 4470(-)U
+1819(18)S
+1907(-)S
+EP
+%%Page: ? 20
+BP
+1 F
+66 Z
+556 660(H)U
+3 F
+556 444(Sprite)U
+750(Caching)S
+1 F
+604 660(agmann87.)U
+1066(R.)S
+1156(Hagmann,)S
+1458(``Reimpleme)S
+1804(nting)S
+1968(the)S
+2077(Cedar)S
+2263(File)S
+2394(System)S
+2616(Using)S
+2802(Logging)S
+3053(and)S
+3131 738(.)U
+1066 816(1)U
+1066 738(Group)U
+1261(Commit'',)S
+2 F
+1563(Proc.)S
+1734(of)S
+1811(the)S
+1917(11th)S
+2060(Symp.)S
+2246(on)S
+2337(Operating)S
+2633(System)S
+2841(Prin.)S
+1 F
+(,)R
+3017(Nov)S
+1099 816(987,)U
+1237(155-162.)S
+556 918(H)U
+(oward88.)R
+1066(J.)S
+1165(H.)S
+1286(Howard,)S
+1572(M.)S
+1704(L.)S
+1817(Kazar,)S
+2047(S.)S
+2157(G.)S
+2278(Menees,)S
+2555(D.)S
+2675(A.)S
+2795(Nichols,)S
+3072(M.)S
+1066 1074(i)U
+1066 996(Satyanarayanan,)U
+1522(R.)S
+1606(N.)S
+1694(Sidebotham)S
+2031(and)S
+2149(M.)S
+2248(J.)S
+2313(West,)S
+2487(``Scale)S
+2695(and)S
+2812(Performance)S
+1084 1074(n)U
+1146(a)S
+1204(Distributed)S
+1529(File)S
+1660(System'',)S
+2 F
+1943(Trans.)S
+2143(Computer)S
+2435(Systems)S
+2672(6)S
+1 F
+(,)R
+2750(1)S
+2811(\(Feb.)S
+2977(1988\),)S
+556 1254(K)U
+1066 1152(51-81.)U
+604 1254(ent87.)U
+1066(C.)S
+1164(Kent,)S
+1346(``Cache)S
+1591(Coherence)S
+1909(in)S
+1997(Distributed)S
+2329(Systems'',)S
+2646(PhD)S
+2800(Thesis,)S
+3025(Dec.)S
+556 1434(N)U
+1066 1332(1987.)U
+1259(Purdue)S
+1468(University.)S
+604 1434(elson88a.)U
+1066(M.)S
+1179(N.)S
+1281(Nelson,)S
+1521(``Physical)S
+1824(Memory)S
+2087(Management)S
+2466(in)S
+2553(a)S
+2618(Network)S
+2885(Operating)S
+556 1614(N)U
+1066 1512(System'',)U
+1343(PhD)S
+1483(Thesis,)S
+1694(Nov.)S
+1847(1988.)S
+2040(University)S
+2340(of)S
+2417(California,)S
+2722(Berkeley.)S
+604 1614(elson88b.)U
+1066(M.)S
+1173(Nelson,)S
+1408(B.)S
+1500(Welch)S
+1702(and)S
+1828(J.)S
+1902(Ousterhout,)S
+2243(``Caching)S
+2537(in)S
+2619(the)S
+2730(Sprite)S
+2917(Network)S
+556 1794(O)U
+1066 1692(File)U
+1190(System'',)S
+2 F
+1467(Trans.)S
+1661(Computer)S
+1947(Systems)S
+2178(6)S
+1 F
+(,)R
+2250(1)S
+2305(\(Feb.)S
+2465(1988\),)S
+2658(134-154.)S
+604 1794(usterhout85.)U
+1066(J.)S
+1150(Ousterhout,)S
+1501(H.)S
+1607(D.)S
+1713(Costa,)S
+1921(D.)S
+2027(Harrison,)S
+2315(J.)S
+2398(Kunze,)S
+2627(M.)S
+2743(Kupfer)S
+2970(and)S
+3105(J.)S
+3131 1872(,)U
+2 F
+1066 1950(P)U
+1 F
+1066 1872(Thompson,)U
+1389(``A)S
+1505(Trace-Driven)S
+1883(Analysis)S
+2138(of)S
+2217(the)S
+2321(UNIX)S
+2510(4.2)S
+2616(BSD)S
+2768(File)S
+2893(System'')S
+2 F
+1106 1950(roc.)U
+1235(10th)S
+1376(Symp.)S
+1560(on)S
+1650(Operating)S
+1945(System)S
+2152(Prin.,)S
+2327(Operating)S
+2621(Systems)S
+2853(Review)S
+3065(19)S
+1 F
+(,)R
+556 2130(O)U
+1066 2028(5)U
+1121(\(December)S
+1435(1985\),)S
+1628(15-24.)S
+604 2130(usterhout88.)U
+1066(J.)S
+1140(Ousterhout,)S
+1481(A.)S
+1576(Cherenson,)S
+1905(F.)S
+1989(Douglis,)S
+2245(M.)S
+2351(Nelson)S
+2568(and)S
+2693(B.)S
+2784(Welch,)S
+3002(``The)S
+3126 2208(-)U
+1066 2286(3)U
+1066 2208(Sprite)U
+1249(Network)S
+1506(Operating)S
+1795(System'',)S
+2 F
+2076(IEEE)S
+2244(Computer)S
+2534(21)S
+1 F
+(,)R
+2643(2)S
+2701(\(Feb.)S
+2864(1988\),)S
+3060(23)S
+1099 2286(6.)U
+556 2388(O)U
+(usterhout89.)R
+1066(J.)S
+1147(Ousterhout)S
+1478(and)S
+1611(F.)S
+1703(Douglis,)S
+1966(``Beating)S
+2251(the)S
+2368(I/O)S
+2493(bottleneck:)S
+2821(A)S
+2906(Case)S
+3071(for)S
+3131 2466(,)U
+1066 2544(1)U
+1066 2466(Log-Structured)U
+1492(File)S
+1618(Systems'',)S
+2 F
+1923(Operating)S
+2218(Systems)S
+2451(Review)S
+2664(23)S
+1 F
+(,)R
+2771(1)S
+2827(\(Jan.)S
+2977(1989\))S
+1099 2544(1-28.)U
+556 2646(R)U
+(osenblum91.)R
+1066(M.)S
+1176(Rosenblum)S
+1509(and)S
+1637(J.)S
+1713(Ousterhout,)S
+2056(``The)S
+2235(Design)S
+2455(and)S
+2583(Implementa)S
+2896(tion)S
+3031(of)S
+3119(a)S
+556 2826(S)U
+1066 2724(Log-Structured)U
+1490(File)S
+1614(System'',)S
+2 F
+1891(Submitted)S
+2176(for)S
+2275(publication)S
+1 F
+(,)R
+2613(Feb.)S
+2751(1991.)S
+593 2826(rinivasan89.)U
+1066(V.)S
+1174(Srinivasan)S
+1495(and)S
+1633(J.)S
+1718(Mogul,)S
+1953(``Spritely)S
+2247(NFS:)S
+2429(Experiments)S
+2803(with)S
+2962(Cache-)S
+2 F
+3131 2904(,)U
+1066 2982(O)U
+1 F
+1066 2904(Consistency)U
+1433(Protocols'',)S
+2 F
+1788(Proc.)S
+1978(12th)S
+2140(Symp.)S
+2345(on)S
+2455(Operating)S
+2770(System)S
+2997(Prin.)S
+1114 2982(perating)U
+1359(Systems)S
+1590(Review)S
+1801(23)S
+1 F
+(,)R
+1906(5)S
+1961(\(December)S
+2275(1989\),)S
+2468(45-57.)S
+3131 3084(.)U
+556(Thompson87.)S
+1066(J.)S
+1135(Thompson,)S
+1460(``Ef\256cient)S
+1756(Analysis)S
+2012(of)S
+2092(Caching)S
+2336(Systems'',)S
+2642(PhD)S
+2785(Thesis,)S
+2999(1987)S
+1066 3162(University)U
+1366(of)S
+1443(California,)S
+1748(Berkeley.)S
+3097 3264(m)U
+556(Welch86.)S
+1066(B.)S
+1158(B.)S
+1250(Welch)S
+1452(and)S
+1578(J.)S
+1652(K.)S
+1748(Ousterhout,)S
+2089(``Pre\256x)S
+2322(Tables:)S
+2546(A)S
+2625(Simple)S
+2841(Mechanis)S
+1066 3342(for)U
+1176(Locating)S
+1442(Files)S
+1602(in)S
+1685(a)S
+1746(Distributed)S
+2074(Filesystem'',)S
+2 F
+2452(Proc.)S
+2629(of)S
+2712(the)S
+2824(6th)S
+2940(ICDCS)S
+1 F
+(,)R
+556 3522(W)U
+1066 3420(May)U
+1209(1986,)S
+1380(184-189.)S
+618 3522(elch88.)U
+1066(B.)S
+1150(B.)S
+1234(Welch)S
+1428(and)S
+1546(J.)S
+1612(K.)S
+1700(Ousterhout,)S
+2032(``Pseudo-Devices:)S
+2541(User-Level)S
+2859(Extensions)S
+1066 3678(1)U
+1066 3600(to)U
+1143(the)S
+1249(Sprite)S
+1431(File)S
+1558(System'',)S
+2 F
+1838(Proc.)S
+2008(of)S
+2084(the)S
+2189(1988)S
+2346(Summer)S
+2588(USENIX)S
+2840(Conf.)S
+1 F
+(,)R
+3027(June)S
+1099 3678(988,)U
+1237(184-189.)S
+556 3780(W)U
+(elch89.)R
+1066(B.)S
+1170(Welch,)S
+1401(M.)S
+1520(Baker,)S
+1737(F.)S
+1833(Douglis,)S
+2101(J.)S
+2186(Hartmann,)S
+2508(M.)S
+2626(Rosenblum)S
+2968(and)S
+3105(J.)S
+1066 3936(R)U
+1066 3858(Ousterhout,)U
+1412(``Sprite)S
+1649(Position)S
+1900(Statement:)S
+2215(Use)S
+2353(Distributed)S
+2684(State)S
+2850(for)S
+2962(Failure)S
+1110 3936(ecovery'',)U
+2 F
+1426(Proc.)S
+1618(of)S
+1716(the)S
+1843(Second)S
+2080(Workshop)S
+2395(on)S
+2508(Workstation)S
+2877(Operating)S
+1 F
+556 4116(W)U
+2 F
+1066 4014(Systems)U
+1297(\(WWOS-II\))S
+1 F
+(,)R
+1637(Sep.)S
+1775(1989,)S
+1946(130-133.)S
+618 4116(elch90.)U
+1066(B.)S
+1158(B.)S
+1250(Welch,)S
+1469(``Naming,)S
+1773(State)S
+1935(Management,)S
+2326(and)S
+2452(User-Level)S
+2778(Extensions)S
+3097(in)S
+3126 4194(f)U
+1066 4272(C)U
+1066 4194(the)U
+1189(Sprite)S
+1389(Distributed)S
+1728(File)S
+1872(System'',)S
+2169(PhD)S
+2329(Thesis,)S
+2560(1990.)S
+2773(University)S
+3093(o)S
+1110 4272(alifornia,)U
+1371(Berkeley.)S
+3 F
+1775 4470(-)U
+1819(19)S
+1907(-)S
+EP
+%%Trailer
+pscatsave end restore
+%%Pages: 20

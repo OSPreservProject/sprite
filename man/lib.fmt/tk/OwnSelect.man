@@ -1,0 +1,66 @@
+
+
+
+Tk_OwnSelection       C Library Procedures        Tk_OwnSelection
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tk_OwnSelection - make a window the  owner  of  the  primary
+     selection
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttkk..hh>>
+
+     TTkk__OOwwnnSSeelleeccttiioonn(_t_k_w_i_n, _p_r_o_c, _c_l_i_e_n_t_D_a_t_a)
+
+AARRGGUUMMEENNTTSS
+     Tk_Window        _t_k_w_i_n        (in)      Window  that  is  to
+                                             become new selection
+                                             owner.
+
+     Tk_LostSelProc   *_p_r_o_c        (in)      Procedure to  invoke
+                                             when   _t_k_w_i_n   loses
+                                             selection  ownership
+                                             later.
+
+     ClientData       _c_l_i_e_n_t_D_a_t_a   (in)      Arbitrary   one-word
+                                             value   to  pass  to
+                                             _p_r_o_c.
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     TTkk__OOwwnnSSeelleeccttiioonn arranges for _t_k_w_i_n to become the  new  owner
+     of the primary selection.  After this call completes, future
+     requests for the selection  will  be  directed  to  handlers
+     created  for  _t_k_w_i_n  using  TTkk__CCrreeaatteeSSeellHHaannddlleerr.  When _t_k_w_i_n
+     eventually loses  the  selection  ownership,  _p_r_o_c  will  be
+     invoked  so  that  the  window  can clean itself up (e.g. by
+     unhighlighting the selection).  _P_r_o_c should  have  arguments
+     and result that match the type TTkk__LLoossttSSeellPPrroocc:
+          typedef void Tk_LostSelProc(ClientData _c_l_i_e_n_t_D_a_t_a);
+     The _c_l_i_e_n_t_D_a_t_a parameter to _p_r_o_c is a copy of the _c_l_i_e_n_t_D_a_t_a
+     argument  given to TTkk__OOwwnnSSeelleeccttiioonn, and is usually a pointer
+     to a data structure containing application-specific informa-
+     tion about _t_k_w_i_n.
+
+     Once a window has become selection  owner,  it  will  remain
+     owner until either the window is deleted or until some other
+     window claims ownership.  There is no way for  a  window  to
+     disavow ownership of the selection once it has received it.
+
+
+KKEEYYWWOORRDDSS
+     own, selection owner
+
+
+
+
+
+Sprite v1.0                                                     1
+
+
+

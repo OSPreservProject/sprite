@@ -1,0 +1,1699 @@
+head     9.16;
+branch   ;
+access   ;
+symbols  ds3100:9.16 sun3:9.16 sun4nw:9.14 symm:9.14 spur:9.14 sprited:9.12.1 Summer89:9.0 newlib:8.0 Summer88:6.0 argString:5.3;
+locks    ; strict;
+comment  @ * @;
+
+
+9.16
+date     92.01.06.15.03.44;  author kupfer;  state Exp;
+branches ;
+next     9.15;
+
+9.15
+date     91.11.15.21.09.41;  author kupfer;  state Exp;
+branches ;
+next     9.14;
+
+9.14
+date     91.09.10.18.28.56;  author rab;  state Exp;
+branches ;
+next     9.13;
+
+9.13
+date     91.09.04.20.14.02;  author kupfer;  state Exp;
+branches ;
+next     9.12;
+
+9.12
+date     91.05.16.14.06.39;  author kupfer;  state Exp;
+branches 9.12.1.1;
+next     9.11;
+
+9.11
+date     91.05.06.14.37.41;  author kupfer;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     90.10.01.18.55.31;  author mendel;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     90.09.12.13.58.23;  author jhh;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     90.09.06.17.58.11;  author jhh;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.09.04.23.44.45;  author jhh;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.08.09.11.45.43;  author douglis;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.07.30.15.47.35;  author douglis;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.06.22.11.32.12;  author douglis;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     89.12.14.12.28.29;  author douglis;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.11.27.09.51.19;  author douglis;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.23.17.04.08;  author jhh;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.15.53;  author douglis;  state Stable;
+branches ;
+next     8.12;
+
+8.12
+date     89.08.17.17.29.20;  author jhh;  state Exp;
+branches ;
+next     8.11;
+
+8.11
+date     89.08.10.17.17.04;  author douglis;  state Exp;
+branches ;
+next     8.10;
+
+8.10
+date     89.07.29.21.30.03;  author jhh;  state Exp;
+branches ;
+next     8.9;
+
+8.9
+date     89.07.10.19.11.43;  author nelson;  state Exp;
+branches ;
+next     8.8;
+
+8.8
+date     89.06.22.17.20.35;  author douglis;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.05.30.16.13.18;  author jhh;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.03.03.06.08.56;  author rab;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.02.19.22.08.46;  author jhh;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.01.06.11.22.55;  author jhh;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     88.12.24.15.22.33;  author mendel;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.12.09.08.48.36;  author mendel;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.22.19.33.07;  author jhh;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.32.09;  author douglis;  state Stable;
+branches ;
+next     6.2;
+
+6.2
+date     88.10.27.20.05.00;  author mlgray;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.25.12.10.06;  author nelson;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.23.08;  author brent;  state Stable;
+branches ;
+next     5.9;
+
+5.9
+date     88.05.10.14.05.02;  author brent;  state Exp;
+branches ;
+next     5.8;
+
+5.8
+date     88.05.05.17.58.46;  author nelson;  state Exp;
+branches ;
+next     5.7;
+
+5.7
+date     88.05.04.16.48.13;  author nelson;  state Exp;
+branches ;
+next     5.6;
+
+5.6
+date     88.04.18.09.10.42;  author ouster;  state Exp;
+branches ;
+next     5.5;
+
+5.5
+date     88.04.13.11.27.20;  author ouster;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     88.03.08.14.15.22;  author douglis;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     88.03.02.12.00.43;  author douglis;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.12.12.16.40.10;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.10.22.15.00.30;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.47.54;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.12.1.1
+date     91.08.15.21.29.43;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.16
+log
+@Add Proc_UnlockAndSwitch.
+@
+text
+@/* 
+ * procTable.c --
+ *
+ *	Routines to manage the process table.  This maintains a monitor
+ *	that synchronizes access to PCB's.
+ *
+ * Copyright 1985, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/proc/procTable.c,v 9.15 91/11/15 21:09:41 kupfer Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <mach.h>
+#include <proc.h>
+#include <procInt.h>
+#include <sync.h>
+#include <sched.h>
+#include <timer.h>
+#include <list.h>
+#include <vm.h>
+#include <sys.h>
+#include <stdlib.h>
+#include <rpc.h>
+
+static Sync_Lock	tableLock;
+#define	LOCKPTR &tableLock
+
+static Proc_ControlBlock  *RunningProcesses[MACH_MAX_NUM_PROCESSORS];
+Proc_ControlBlock  **proc_RunningProcesses = RunningProcesses;
+Proc_ControlBlock **proc_PCBTable;
+
+#define PROC_MAX_PROCESSES 256
+#define PROC_PCB_NUM_ALLOC 16
+int proc_MaxNumProcesses;
+
+int procLastSlot = 0;	/* Circular index into proctable for choosing slots */
+static int realMaxProcesses;	/* The absolute number of process table
+				 * entries, not necessarily allocated yet. */
+static int entriesInUse = 0;	/* Number of PCB's in use. */
+
+static void 	InitPCB _ARGS_((Proc_ControlBlock *pcbPtr, int i));
+static void	AddPCBs _ARGS_((Proc_ControlBlock **procPtrPtr));
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * ProcInitTable --
+ *
+ *	Initializes the PCB table and running process table.  Must be called
+ *	at initialization time with interrupts off.  Initializes an array
+ *	of PROC_MAX_PROCESSES pointers to PCB's but only allocates
+ *	PROC_PCB_NUM_ALLOC entries at first.  The rest are done dynamically.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The PCB table is initialized.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+void
+ProcInitTable()
+{
+    register	int 		  i;
+    register	Proc_ControlBlock *pcbPtr;
+    int 	maxRunningProcesses;
+
+    maxRunningProcesses = MACH_MAX_NUM_PROCESSORS;
+    proc_MaxNumProcesses     = PROC_PCB_NUM_ALLOC;
+    realMaxProcesses         = PROC_MAX_PROCESSES;
+
+    proc_PCBTable = (Proc_ControlBlock **)
+        Vm_BootAlloc(realMaxProcesses * sizeof(pcbPtr));
+
+    for (i = 0; i < proc_MaxNumProcesses; i++) {
+	pcbPtr = (Proc_ControlBlock *) Vm_BootAlloc(sizeof(Proc_ControlBlock));
+	proc_PCBTable[i] = pcbPtr;
+	InitPCB(pcbPtr, i);
+    }
+
+    /*
+     * Set the rest of the proc table to catch any misuse of nonexistent
+     * entries.
+     */
+
+    for (i = proc_MaxNumProcesses; i < realMaxProcesses; i++) {
+	proc_PCBTable[i] = (Proc_ControlBlock *) NIL;
+    }
+
+    for (i = 0; i < maxRunningProcesses; i++) {
+        proc_RunningProcesses[i] = (Proc_ControlBlock *) NIL;
+    }
+    Sync_LockInitDynamic(&tableLock, "Proc:tableLock");
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * InitPCB --
+ *
+ *	Initializes a process control block.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static void
+InitPCB(pcbPtr, i)
+    Proc_ControlBlock *pcbPtr;
+    int i;
+{
+    List_InitElement((List_Links *)pcbPtr);
+    pcbPtr->state		= PROC_UNUSED;
+    pcbPtr->processID	= i;
+    pcbPtr->genFlags	= 0;
+
+    /*
+     *  Initialize the pointers to the list headers and the
+     *  PCB entry. These values do not change when the PCB
+     *  entry is re-used.
+     */
+    pcbPtr->childList	= &(pcbPtr->childListHdr);
+    pcbPtr->siblingElement.procPtr	= pcbPtr;
+    pcbPtr->familyElement.procPtr	= pcbPtr;
+
+    /*
+     *  Set the links to NIL to catch any invalid uses of
+     *  the lists before they are properly initialized.
+     *  These pointers change whenever the PCB entry is re-used.
+     */
+    pcbPtr->childListHdr.nextPtr	= (List_Links *) NIL;
+    pcbPtr->childListHdr.prevPtr	= (List_Links *) NIL;
+
+    List_InitElement((List_Links *)&pcbPtr->siblingElement);
+    List_InitElement((List_Links *)&pcbPtr->familyElement);
+
+    pcbPtr->eventHashChain.procPtr = pcbPtr;
+    List_InitElement((List_Links *)&pcbPtr->eventHashChain);
+    pcbPtr->event = NIL;
+
+    pcbPtr->peerHostID = NIL;
+    pcbPtr->peerProcessID = (Proc_PID) NIL;
+    pcbPtr->remoteExecBuffer = (Address) NIL;
+    pcbPtr->migCmdBuffer = (Address) NIL;
+    pcbPtr->migCmdBufSize = 0;
+    pcbPtr->migFlags = 0;
+    pcbPtr->argString = (char *) NIL;
+#ifdef LOCKDEP
+    pcbPtr->lockStackSize = 0;
+#endif
+    pcbPtr->vmPtr = (Vm_ProcInfo *)NIL;
+    pcbPtr->fsPtr = (Fs_ProcessState *)NIL;
+    pcbPtr->rpcClientProcess = (Proc_ControlBlock *) NIL;
+
+    pcbPtr->waitToken = 0;
+    pcbPtr->timerArray = (struct ProcIntTimerInfo *) NIL;
+
+    pcbPtr->kcallTable = mach_NormalHandlers;
+    pcbPtr->specialHandling = 0;
+    pcbPtr->machStatePtr = (struct Mach_State *)NIL;
+#ifndef CLEAN_LOCK
+    Sync_SemInitDynamic(&pcbPtr->lockInfo, "Proc:perPCBlock");
+#endif
+#ifdef LOCKREG
+    Sync_LockRegister(&pcbPtr->lockInfo);
+#endif
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ *  AddPCBs --
+ *
+ *	Add new proc_ControlBlocks with sched_Mutex locked.  This avoids
+ *	conflicts accessing the proc_MaxNumProcesses variable, such as in
+ *	the Sched_ForgetUsage routine.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The global array of process control blocks is updated to point
+ *	to the PCB's pointed to by procPtrPtr, and the count of useable entries
+ *	is updated.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+static void
+AddPCBs(procPtrPtr)
+    Proc_ControlBlock **procPtrPtr;
+{
+    register int i;
+    
+    /*
+     *  Gain exclusive access to the process table.
+     */
+    MASTER_LOCK(sched_MutexPtr);
+
+    for (i = 0; i < PROC_PCB_NUM_ALLOC; i++) {
+	proc_PCBTable[proc_MaxNumProcesses] = *procPtrPtr;
+	procPtrPtr++;
+	proc_MaxNumProcesses++;
+    }
+
+    MASTER_UNLOCK(sched_MutexPtr);
+}
+    
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Proc_InitMainProc --
+ *
+ *	Finish initializing the process table by making a proc table entry
+ *	for the main process.  Called with interrupts disabled.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The first element of the proc table is modified, and the count of
+ *	used entries is set to 1.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+void
+Proc_InitMainProc()
+{
+    register	Proc_ControlBlock *procPtr;
+
+#define MAIN_PID 0
+
+    entriesInUse = 1;
+    
+    procPtr = proc_PCBTable[MAIN_PID];
+
+    /*
+     *  Initialize the main process.
+     */
+    procPtr->state		= PROC_RUNNING;
+    procPtr->genFlags		= PROC_KERNEL;
+    procPtr->syncFlags		= 0;
+    procPtr->schedFlags		= 0;
+    procPtr->processID	 	= MAIN_PID | (1 << PROC_GEN_NUM_SHIFT) | 
+					(rpc_SpriteID << PROC_ID_NUM_SHIFT);
+    procPtr->parentID		= procPtr->processID;
+    procPtr->billingRate 	= PROC_NORMAL_PRIORITY;
+    procPtr->recentUsage 	= 0;
+    procPtr->weightedUsage 	= 0;
+    procPtr->unweightedUsage 	= 0;
+    procPtr->kernelCpuUsage.ticks     = timer_TicksZeroSeconds;
+    procPtr->userCpuUsage.ticks       = timer_TicksZeroSeconds;
+    procPtr->childKernelCpuUsage.ticks = timer_TicksZeroSeconds;
+    procPtr->childUserCpuUsage.ticks  = timer_TicksZeroSeconds;
+    procPtr->numQuantumEnds 	= 0;
+    procPtr->numWaitEvents 	= 0;
+
+    procPtr->Prof_Buffer        = (short *) NIL;
+    procPtr->Prof_BufferSize    = 0;
+    procPtr->Prof_Offset        = 0;
+    procPtr->Prof_Scale         = 0;
+    procPtr->Prof_PC            = 0;
+
+    Mach_InitFirstProc(procPtr);
+    Vm_ProcInit(procPtr);
+    (void) VmMach_SetupContext(procPtr);
+
+    procPtr->familyID 		= PROC_NO_FAMILY;	/* not in a family */
+    
+    List_Init(procPtr->childList);
+
+    procPtr->userID		= 0;
+    procPtr->effectiveUserID	= 0;
+
+    Sig_ProcInit(procPtr);
+
+    procPtr->processor = Mach_GetProcessorNumber();
+    Proc_SetCurrentProc(procPtr);
+
+    ProcInitMainEnviron(procPtr);
+
+    ProcFamilyHashInit();
+
+    procPtr->peerProcessID = (Proc_PID) NIL;
+    procPtr->peerHostID = (int) NIL;
+    procPtr->remoteExecBuffer = (Address) NIL;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Proc_LockPID --
+ *
+ *	Determine the validity of the given pid and if valid return a pointer
+ *	to the proc table entry.  The proc table entry is returned locked.
+ *
+ * Results:
+ *	Pointer to proc table entry.
+ *
+ * Side effects:
+ *	Proc table entry is locked.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+ENTRY Proc_ControlBlock *
+Proc_LockPID(pid)
+    Proc_PID	pid;
+{
+    register	Proc_ControlBlock *procPtr;
+#ifndef CLEAN_LOCK
+    register	Sync_Semaphore	  *lockPtr;
+#endif
+
+    LOCK_MONITOR;
+
+    if (Proc_PIDToIndex(pid) >= proc_MaxNumProcesses) {
+	UNLOCK_MONITOR;
+	return((Proc_ControlBlock *) NIL);
+    }
+    procPtr = proc_PCBTable[Proc_PIDToIndex(pid)];
+#ifndef CLEAN_LOCK
+    lockPtr = &(procPtr->lockInfo);
+#endif
+
+    while (TRUE) {
+	if (procPtr->state == PROC_UNUSED || procPtr->state == PROC_DEAD) {
+	    procPtr = (Proc_ControlBlock *) NIL;
+	    break;
+	}
+
+	if (procPtr->genFlags & PROC_LOCKED) {
+	    do {
+		Sync_RecordMiss(lockPtr);
+		(void) Sync_Wait(&procPtr->lockedCondition, FALSE);
+	    } while (procPtr->genFlags & PROC_LOCKED);
+	} else {
+	    if (!Proc_ComparePIDs(procPtr->processID, pid)) {
+		procPtr = (Proc_ControlBlock *) NIL;
+	    } else {
+		procPtr->genFlags |= PROC_LOCKED;
+		Sync_RecordHit(lockPtr);
+		Sync_StoreDbgInfo(lockPtr, FALSE);
+		Sync_AddPrior(lockPtr);
+	    }
+	    break;
+	}
+    }
+
+    UNLOCK_MONITOR;
+    return(procPtr);
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Proc_Lock --
+ *
+ *	Lock the proc table entry.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Proc table entry is locked.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+ENTRY void
+Proc_Lock(procPtr)
+    register	Proc_ControlBlock *procPtr;
+{
+#ifndef CLEAN_LOCK
+    register	Sync_Semaphore	  *lockPtr;
+#endif
+
+    LOCK_MONITOR;
+
+#ifndef CLEAN_LOCK
+    lockPtr = &(procPtr->lockInfo);
+#endif
+
+    while (procPtr->genFlags & PROC_LOCKED) {
+	Sync_RecordMiss(lockPtr);
+	(void) Sync_Wait(&procPtr->lockedCondition, FALSE);
+    }
+    procPtr->genFlags |= PROC_LOCKED;
+
+    Sync_RecordHit(lockPtr);
+    Sync_StoreDbgInfo(lockPtr, FALSE);
+    Sync_AddPrior(lockPtr);
+
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Proc_Unlock --
+ *
+ *	Unlock the proc table entry.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Proc table entry is unlocked.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+ENTRY void
+Proc_Unlock(procPtr)
+    register	Proc_ControlBlock *procPtr;
+{
+    LOCK_MONITOR;
+
+    if (!(procPtr->genFlags & PROC_LOCKED)) {
+	panic("Proc_Unlock: PCB not locked.\n");
+    }
+    procPtr->genFlags &= ~PROC_LOCKED;
+    Sync_Broadcast(&procPtr->lockedCondition);
+
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_UnlockAndSwitch --
+ *
+ *	Unlock a PCB and perform a context switch to the given state.  
+ *	This is done atomically: no other process can lock the PCB before 
+ *	this process context switches.  
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Proc_UnlockAndSwitch(procPtr, state)
+    Proc_ControlBlock *procPtr;	/* the PCB to unlock */
+    Proc_State state;		/* the state to context switch to */
+{
+    LOCK_MONITOR;
+
+    if (!(procPtr->genFlags & PROC_LOCKED)) {
+	panic("Proc_Unlock: PCB not locked.\n");
+    }
+    procPtr->genFlags &= ~PROC_LOCKED;
+    Sync_Broadcast(&procPtr->lockedCondition);
+
+    Sync_UnlockAndSwitch(LOCKPTR, state);
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * ProcGetUnusedPCB --
+ *
+ *	Return the first unused PCB.
+ *
+ * Results:
+ *	Pointer to PCB.
+ *
+ * Side effects:
+ *	Proc table entry is locked and marked as PROC_NEW.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+ENTRY Proc_ControlBlock *
+ProcGetUnusedPCB()
+{
+    register	Proc_ControlBlock 	**procPtrPtr;
+    register	Proc_ControlBlock 	*procPtr;
+    Proc_ControlBlock 			*pcbArray[PROC_PCB_NUM_ALLOC];
+    register	int 			i;
+    int					generation;
+
+    LOCK_MONITOR;
+
+
+
+    /* 
+     * See if we need to allocate more process table entries.
+     */
+    if (entriesInUse == proc_MaxNumProcesses) {
+	if (proc_MaxNumProcesses > realMaxProcesses - PROC_PCB_NUM_ALLOC) {
+	    panic("ProcGetUnusedPCB: PCB table full!!\n");
+	}
+	for (i = 0; i < PROC_PCB_NUM_ALLOC; i++) {
+	    pcbArray[i] = (Proc_ControlBlock *)
+		    Vm_RawAlloc(sizeof(Proc_ControlBlock));
+	    InitPCB(pcbArray[i], proc_MaxNumProcesses + i);
+	}
+	AddPCBs(pcbArray);
+    }
+
+	
+	
+    /*
+     * Scan the proc table looking for an unused slot.  The search is
+     * circular, starting just after the last slot chosen.  This is done
+     * so that slots are not re-used often so the generation number of
+     * each slot can just be a few bits wide.
+     */
+    for (i = procLastSlot, procPtrPtr = &proc_PCBTable[procLastSlot]; ; ) {
+	if ((*procPtrPtr)->state == PROC_UNUSED) {
+	    break;
+	}
+	i++;
+	procPtrPtr++;
+	if (i >= proc_MaxNumProcesses) {
+	    i = 0;
+	    procPtrPtr = &proc_PCBTable[0];
+	}
+	/*
+	 * Shouldn't hit this, but check to avoid infinite loop.
+	 */
+	if (i == procLastSlot) {
+	    panic("ProcGetUnusedPCB: PCB table full!!\n");
+	}
+    }
+
+    procLastSlot = i+1;
+    if (procLastSlot >= proc_MaxNumProcesses) {
+	procLastSlot = 0;
+    }
+    procPtr = *procPtrPtr;
+    procPtr->genFlags = PROC_LOCKED;
+    procPtr->migFlags = 0;
+    procPtr->state = PROC_NEW;
+    /*
+     *  The PCB entry has a generation number that is incremented each time
+     *  the entry is re-used. The low-order bits are in index into
+     *  the PCB table.
+     */
+    generation = (procPtr->processID & PROC_GEN_NUM_MASK) >> PROC_GEN_NUM_SHIFT;
+    generation += 1;
+    generation = (generation << PROC_GEN_NUM_SHIFT) & PROC_GEN_NUM_MASK;
+    procPtr->processID = i | generation | (rpc_SpriteID << PROC_ID_NUM_SHIFT);
+
+    entriesInUse++;
+
+    UNLOCK_MONITOR;
+
+    return(procPtr);
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * ProcFreePCB --
+ *
+ *	Mark the given PCB as unused.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Proc table entry marked as PROC_UNUSED.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+ENTRY void
+ProcFreePCB(procPtr)
+    register	Proc_ControlBlock 	*procPtr;
+{
+#ifdef LOCKREG
+    register	Sync_Semaphore	  *lockPtr;
+#endif
+
+    LOCK_MONITOR;
+
+#ifdef LOCKREG
+    lockPtr = &(procPtr->lockInfo);
+#endif
+
+    while (procPtr->genFlags & PROC_LOCKED) {
+#ifdef LOCKREG
+	Sync_RecordMiss(lockPtr);
+#endif
+	(void) Sync_Wait(&procPtr->lockedCondition, FALSE);
+    }
+    procPtr->state = PROC_UNUSED;
+    procPtr->genFlags = 0;
+    entriesInUse--;
+
+#ifdef LOCKREG
+    Sync_RecordHit(lockPtr);
+#endif
+
+    UNLOCK_MONITOR;
+}
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * ProcTableMatch --
+ *
+ *	Go through the process table and return an array of process
+ *	IDs for which the specified function returns TRUE.
+ *
+ * Results:
+ *	The array of PIDs and the number of matches are returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+
+ENTRY int
+ProcTableMatch(maxPids, booleanFuncPtr, pidArray)
+    int maxPids;			/* size of pidArray */
+    Boolean (*booleanFuncPtr) _ARGS_((Proc_ControlBlock *pcbPtr));
+					/* function to match */
+    Proc_PID *pidArray;			/* array to store results */
+{
+    Proc_ControlBlock *pcbPtr;
+    int i;
+    int matched = 0;
+    
+    LOCK_MONITOR;
+
+    for (i = 0; i < proc_MaxNumProcesses && matched < maxPids; i++) {
+	pcbPtr = proc_PCBTable[i];
+	if (pcbPtr->state == PROC_UNUSED) {
+	    continue;
+	}
+	if ((*booleanFuncPtr)(pcbPtr)) {
+	    pidArray[matched] = pcbPtr->processID;
+	    matched++;
+	}
+    }
+    UNLOCK_MONITOR;
+    return(matched);
+}
+@
+
+
+9.15
+log
+@Remove unneeded ifdef's.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/proc/procTable.c,v 9.14 91/09/10 18:28:56 rab Exp $ SPRITE (Berkeley)";
+d449 35
+@
+
+
+9.14
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procTable.c,v 9.13 91/09/04 20:14:02 kupfer Exp Locker: rab $ SPRITE (Berkeley)";
+a354 1
+#ifndef CLEAN_LOCK
+a355 1
+#endif
+a362 1
+#ifndef CLEAN_LOCK
+a365 1
+#endif
+a406 2
+
+#ifndef CLEAN_LOCK
+a407 1
+#endif
+a411 1
+#ifndef CLEAN_LOCK
+a414 2
+    Sync_AddPrior(lockPtr);
+#endif
+@
+
+
+9.13
+log
+@Make "tableLock" static.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procTable.c,v 9.12 91/05/16 14:06:39 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a167 1
+    pcbPtr->locksHeld = 0;
+@
+
+
+9.12
+log
+@Add comment that ProcGetUnusedPCB returns a locked PCB.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procTable.c,v 9.11 91/05/06 14:37:41 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d34 1
+a34 1
+Sync_Lock	tableLock;
+@
+
+
+9.12.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procTable.c,v 9.12 91/05/16 14:06:39 kupfer Exp $ SPRITE (Berkeley)";
+@
+
+
+9.11
+log
+@Add "locksHeld" field to Proc_ControlBlock.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procTable.c,v 9.10 90/10/01 18:55:31 mendel Exp Locker: kupfer $ SPRITE (Berkeley)";
+d474 1
+a474 1
+ *	Proc table entry marked as PROC_NEW.
+@
+
+
+9.10
+log
+@Added function prototypes for CallFunc routines and data structures.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procTable.c,v 9.9 90/09/12 13:58:23 jhh Exp $ SPRITE (Berkeley)";
+d168 1
+@
+
+
+9.9
+log
+@changed format of #includes to use <>
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procTable.c,v 9.8 90/09/06 17:58:11 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d626 2
+a627 1
+    Boolean (*booleanFuncPtr)();	/* function to match */
+@
+
+
+9.8
+log
+@First pass at function prototypes
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procTable.c,v 9.7 90/09/04 23:44:45 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d21 12
+a32 12
+#include "sprite.h"
+#include "mach.h"
+#include "proc.h"
+#include "procInt.h"
+#include "sync.h"
+#include "sched.h"
+#include "timer.h"
+#include "list.h"
+#include "vm.h"
+#include "sys.h"
+#include "stdlib.h"
+#include "rpc.h"
+@
+
+
+9.7
+log
+@new format for Sync_StoreDbgInfo
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procTable.c,v 9.6 90/08/09 11:45:43 douglis Exp Locker: jhh $ SPRITE (Berkeley)";
+d50 2
+a51 1
+static void InitPCB();
+d207 1
+a207 1
+void
+@
+
+
+9.6
+log
+@reinitialize migFlags when creating a new process.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procTable.c,v 9.5 90/07/30 15:47:35 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d366 1
+a366 1
+		Sync_StoreDbgInfo(lockPtr);
+d420 1
+a420 1
+    Sync_StoreDbgInfo(lockPtr);
+@
+
+
+9.5
+log
+@start using migFlags in addition to genFlags.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procTable.c,v 9.4 90/06/22 11:32:12 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d537 1
+@
+
+
+9.4
+log
+@initialize migCmd* fields that are used for multi-RPC migration messages.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fd.proc/RCS/procTable.c,v 9.3 89/12/14 12:28:29 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d162 1
+@
+
+
+9.3
+log
+@initialize event to NIL
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procTable.c,v 9.2 89/11/27 09:51:19 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d160 2
+@
+
+
+9.2
+log
+@removed some lint
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procTable.c,v 9.1 89/10/23 17:04:08 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d155 1
+@
+
+
+9.1
+log
+@fixed lint problems, changes for new sync routine names.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procTable.c,v 9.0 89/09/12 15:15:53 douglis Stable $ SPRITE (Berkeley)";
+d281 1
+a281 1
+    VmMach_SetupContext(procPtr);
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procTable.c,v 8.12 89/08/17 17:29:20 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d327 1
+d329 1
+d350 3
+a352 1
+		SyncRecordMiss(lockPtr);
+d360 5
+a364 3
+		SyncRecordHit(lockPtr);
+		SyncStoreDbgInfo(lockPtr);
+		SyncAddPrior(lockPtr);
+d395 1
+d397 1
+d407 3
+a409 1
+	SyncRecordMiss(lockPtr);
+d414 6
+a419 4
+    SyncRecordHit(lockPtr);
+    SyncStoreDbgInfo(lockPtr);
+    SyncAddPrior(lockPtr);
+    SyncAddPrior(lockPtr);
+d572 1
+d574 1
+d583 3
+a585 1
+	SyncRecordMiss(lockPtr);
+d592 3
+a594 1
+    SyncRecordHit(lockPtr);
+@
+
+
+8.12
+log
+@fixed lint complaint
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procTable.c,v 8.11 89/08/10 17:17:04 douglis Exp $ SPRITE (Berkeley)";
+@
+
+
+8.11
+log
+@initialize remoteExecBuffer to NIL
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procTable.c,v 8.10 89/07/29 21:30:03 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d564 1
+a564 1
+#ifndef CLEAN_LOCK
+@
+
+
+8.10
+log
+@added lock info to pcb's
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procTable.c,v 8.6 89/03/03 06:08:56 rab Exp $ SPRITE (Berkeley)";
+d158 1
+@
+
+
+8.9
+log
+@Incorporated changes from DECWRL.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procTable.c,v 8.8 89/06/22 17:20:35 douglis Exp $ SPRITE (Berkeley)";
+d100 1
+a100 1
+    
+d159 1
+d161 1
+d172 7
+a178 1
+}
+d326 1
+d335 3
+d347 1
+d355 3
+d388 2
+d392 4
+d397 2
+d403 5
+d559 2
+d563 4
+d568 1
+d574 2
+@
+
+
+8.8
+log
+@initialize migration-related fields in a new process entry.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procTable.c,v 8.7 89/05/30 16:13:18 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d271 2
+a280 1
+    Vm_ProcInit(procPtr);
+@
+
+
+8.7
+log
+@Removed call to Sync_LockRegister
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procTable.c,v 8.6 89/03/03 06:08:56 rab Exp Locker: jhh $ SPRITE (Berkeley)";
+d288 4
+@
+
+
+8.6
+log
+@*** empty log message ***
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procTable.c,v 8.5 89/02/19 22:08:46 jhh Exp Locker: rab $ SPRITE (Berkeley)";
+a436 1
+    Sync_LockRegister(LOCKPTR);
+@
+
+
+8.5
+log
+@Changes due to lock registration
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procTable.c,v 8.4 89/01/06 11:22:55 jhh Exp $ SPRITE (Berkeley)";
+d263 6
+@
+
+
+8.4
+log
+@New Sync_Lock definition
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procTable.c,v 8.3 88/12/24 15:22:33 mendel Exp $ SPRITE (Berkeley)";
+d31 1
+a31 1
+#include "mem.h"
+d34 1
+a34 1
+Sync_Lock	tableLock = SYNC_LOCK_INIT_STATIC();
+d56 1
+a56 1
+ * Proc_InitTable --
+d73 1
+a73 1
+Proc_InitTable()
+d104 1
+a104 2
+
+    ProcDebugInit();
+d159 1
+d430 2
+@
+
+
+8.3
+log
+@Statically allocate proc_RunningProcesses so that MASTER_LOCK() can
+access it before the proc module is initialized.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procTable.c,v 8.2 88/12/09 08:48:36 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d34 1
+a34 1
+Sync_Lock	tableLock = {0, 0};
+@
+
+
+8.2
+log
+@Got rid of proc_MaxRunningProcesses which was being used to incorrectly
+initialize tables.  
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procTable.c,v 8.1 88/11/22 19:33:07 jhh Exp Locker: mendel $ SPRITE (Berkeley)";
+d37 2
+d40 1
+a40 1
+Proc_ControlBlock  **proc_RunningProcesses = (Proc_ControlBlock **)NIL;
+a100 3
+    proc_RunningProcesses = (Proc_ControlBlock **)
+        Vm_BootAlloc(maxRunningProcesses * sizeof(pcbPtr));
+
+@
+
+
+8.1
+log
+@new semaphore definition
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procTable.c,v 8.0 88/11/11 18:32:09 douglis Stable Locker: jhh $ SPRITE (Berkeley)";
+a41 1
+int proc_MaxRunningProcesses;
+d75 1
+d77 1
+a77 1
+    proc_MaxRunningProcesses = mach_NumProcessors;
+d100 1
+a100 1
+        Vm_BootAlloc(proc_MaxRunningProcesses * sizeof(pcbPtr));
+d102 1
+a102 1
+    for (i = 0; i < proc_MaxRunningProcesses; i++) {
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procTable.c,v 6.2 88/10/27 20:05:00 mlgray Exp Locker: douglis $ SPRITE (Berkeley)";
+d203 1
+a203 1
+    MASTER_LOCK(sched_Mutex);
+d211 1
+a211 1
+    MASTER_UNLOCK(sched_Mutex);
+@
+
+
+6.2
+log
+@1st pass at multi-processor, conversion to new C library.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procTable.c,v 6.1 88/08/25 12:10:06 nelson Exp Locker: mlgray $ SPRITE (Berkeley)";
+@
+
+
+6.1
+log
+@Changed to make cpu usage be represented in a format such that both the
+kernel and user programs can use time.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: procTable.c,v 6.0 88/08/11 12:23:08 brent Stable $ SPRITE (Berkeley)";
+d277 1
+d396 1
+a396 1
+	Sys_Panic(SYS_FATAL, "Proc_Unlock: PCB not locked.\n");
+d438 1
+a438 1
+	    Sys_Panic(SYS_FATAL, "ProcGetUnusedPCB: PCB table full!!\n");
+d470 1
+a470 1
+	    Sys_Panic(SYS_FATAL, "ProcGetUnusedPCB: PCB table full!!\n");
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: procTable.c,v 5.9 88/05/10 14:05:02 brent Exp $ SPRITE (Berkeley)";
+d258 4
+a261 4
+    procPtr->kernelCpuUsage     = timer_TicksZeroSeconds;
+    procPtr->userCpuUsage       = timer_TicksZeroSeconds;
+    procPtr->childKernelCpuUsage = timer_TicksZeroSeconds;
+    procPtr->childUserCpuUsage  = timer_TicksZeroSeconds;
+@
+
+
+5.9
+log
+@Changed process table so file system state is referenced
+through a single pointer, instead of embedding things.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: procTable.c,v 5.8 88/05/05 17:58:46 nelson Exp $ SPRITE (Berkeley)";
+@
+
+
+5.8
+log
+@Handles move of functionality from sys to mach.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: procTable.c,v 5.7 88/05/04 16:48:13 nelson Exp $ SPRITE (Berkeley)";
+a154 2
+    pcbPtr->numGroupIDs	= 0;
+    pcbPtr->groupIDs	= (int *) NIL;
+d162 1
+a263 1
+    procPtr->cwdPtr		= (Fs_Stream *) NIL;
+a272 3
+    procPtr->numGroupIDs	= 1;
+    procPtr->groupIDs 		= (int *) Mem_Alloc(1 * sizeof(int));
+    procPtr->groupIDs[0]	= 0;
+@
+
+
+5.7
+log
+@Uses new mach module stuff.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: procTable.c,v 5.6 88/04/18 09:10:42 ouster Exp $ SPRITE (Berkeley)";
+d77 1
+a77 1
+    proc_MaxRunningProcesses = sys_NumProcessors;
+a265 1
+    procPtr->setJumpStatePtr	= (Sys_SetJumpState *) NIL;
+d282 1
+a282 1
+    Proc_SetCurrentProc(Sys_GetProcessorNumber(), procPtr);
+@
+
+
+5.6
+log
+@Lint cleanup, change copyright notices.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: procTable.c,v 5.5 88/04/13 11:27:20 ouster Exp $ SPRITE (Berkeley)";
+d22 1
+a30 1
+#include "machine.h"
+a32 1
+#include "exc.h"
+d38 1
+a38 1
+Proc_ControlBlock  **proc_RunningProcesses;
+a163 1
+    pcbPtr->trapStackPtr = (Exc_TrapStack *) NIL;
+d169 1
+a169 1
+    pcbPtr->kcallTable = exc_NormalHandlers;
+d171 1
+d268 1
+a268 1
+    procPtr->stackStart 	= (int)mach_StackBottom;
+@
+
+
+5.5
+log
+@Changes to make kernel calls much faster.
+@
+text
+@d7 8
+a14 2
+ * Copyright 1985 Regents of the University of California
+ * All rights reserved.
+d18 1
+a18 1
+static char rcsid[] = "$Header: procTable.c,v 5.4 88/03/08 14:15:22 douglis Exp $ SPRITE (Berkeley)";
+@
+
+
+5.4
+log
+@Allocated PCB's dynamically.  Of course, since kernel stacks are
+currently allocated statically, this won't help when we run into the
+64-process limit imposed by stacks, but at least it doesn't pin more
+physical memory than needed.  Use the sched_Mutex master lock to access
+the array of PCB pointers and count of valid entries.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: procTable.c,v 5.2 87/12/12 16:40:10 nelson Exp $ SPRITE (Berkeley)";
+d27 1
+d164 3
+@
+
+
+5.3
+log
+@Changed codeFileName to argString, a pointer which is initialized to NIL.
+@
+text
+@d33 2
+a34 1
+#define PROC_MAX_PROCESSES 128
+d39 3
+d43 2
+d52 3
+a54 1
+ *	at initialization time with interrupts off.
+d72 2
+a73 1
+    proc_MaxNumProcesses     = PROC_MAX_PROCESSES;
+d76 1
+a76 1
+        Vm_BootAlloc(proc_MaxNumProcesses * sizeof(pcbPtr));
+d80 3
+a82 1
+	proc_PCBTable[i] = pcbPtr; 
+d84 4
+a87 4
+	List_InitElement((List_Links *)pcbPtr);
+        pcbPtr->state		= PROC_UNUSED;
+	pcbPtr->processID	= i;
+	pcbPtr->genFlags	= 0;
+d89 2
+a90 34
+	/*
+	 *  Initialize the pointers to the list headers and the
+	 *  PCB entry. These values do not change when the PCB
+	 *  entry is re-used.
+	 */
+	pcbPtr->childList	= &(pcbPtr->childListHdr);
+        pcbPtr->siblingElement.procPtr	= pcbPtr;
+        pcbPtr->familyElement.procPtr	= pcbPtr;
+
+	/*
+	 *  Set the links to NIL to catch any invalid uses of
+	 *  the lists before they are properly initialized.
+	 *  These pointers change whenever the PCB entry is re-used.
+	 */
+        pcbPtr->childListHdr.nextPtr	= (List_Links *) NIL;
+        pcbPtr->childListHdr.prevPtr	= (List_Links *) NIL;
+
+	List_InitElement((List_Links *)&pcbPtr->siblingElement);
+	List_InitElement((List_Links *)&pcbPtr->familyElement);
+
+	pcbPtr->numGroupIDs	= 0;
+	pcbPtr->groupIDs	= (int *) NIL;
+	pcbPtr->eventHashChain.procPtr = pcbPtr;
+	List_InitElement((List_Links *)&pcbPtr->eventHashChain);
+
+	pcbPtr->peerHostID = NIL;
+	pcbPtr->peerProcessID = (Proc_PID) NIL;
+	pcbPtr->argString = (char *) NIL;
+	pcbPtr->vmPtr = (Vm_ProcInfo *)NIL;
+	pcbPtr->trapStackPtr = (Exc_TrapStack *) NIL;
+	pcbPtr->rpcClientProcess = (Proc_ControlBlock *) NIL;
+
+	pcbPtr->waitToken = 0;
+	pcbPtr->timerArray = (struct ProcIntTimerInfo *) NIL;
+d107 103
+d219 2
+a220 1
+ *	The first element of the proc table is modified.
+d232 2
+d422 1
+d428 18
+d462 3
+d487 2
+d522 1
+@
+
+
+5.2
+log
+@Handles moving of hardware dependencies from vm to sun.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: procTable.c,v 5.1 87/10/22 15:00:30 nelson Exp $ SPRITE (Berkeley)";
+d105 1
+a105 1
+	pcbPtr->codeFileName[0] = '\0';
+@
+
+
+5.1
+log
+@Changed VM to only contain a single pointer.
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: procTable.c,v 5.0 87/08/11 10:47:54 sprite Exp $ SPRITE (Berkeley)";
+d174 1
+a174 1
+    procPtr->stackStart 	= MACH_STACK_BOTTOM;
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d12 1
+a12 1
+static char rcsid[] = "$Header: procTable.c,v 4.8 87/08/04 10:56:06 andrew Exp $ SPRITE (Berkeley)";
+d106 1
+a153 1
+
+a157 1
+    procPtr->vmFlags            = 0;
+d186 1
+@

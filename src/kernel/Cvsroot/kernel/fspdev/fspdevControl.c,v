@@ -1,0 +1,2036 @@
+head     9.6;
+branch   ;
+access   ;
+symbols  ds3100:9.6 sun3:9.6 sprited:9.3.1 sun4nw:9.4 symm:9.4 spur:9.4 Summer89:9.0 newlib:8.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.6
+date     92.10.26.14.05.46;  author mgbaker;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     92.08.10.17.29.56;  author mgbaker;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     91.09.10.18.28.22;  author rab;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     91.06.26.01.07.12;  author mottsmth;  state Exp;
+branches 9.3.1.1;
+next     9.2;
+
+9.2
+date     90.12.06.21.56.35;  author jhh;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.10.08.12.46.57;  author mendel;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.08.15;  author douglis;  state Stable;
+branches ;
+next     8.13;
+
+8.13
+date     89.08.29.15.24.39;  author jhh;  state Exp;
+branches ;
+next     8.12;
+
+8.12
+date     89.08.21.15.27.50;  author mendel;  state Exp;
+branches ;
+next     8.11;
+
+8.11
+date     89.08.17.17.22.07;  author jhh;  state Exp;
+branches ;
+next     8.10;
+
+8.10
+date     89.08.12.10.44.25;  author jhh;  state Exp;
+branches ;
+next     8.9;
+
+8.9
+date     89.07.18.13.08.45;  author jhh;  state Exp;
+branches ;
+next     8.8;
+
+8.8
+date     89.06.16.12.07.56;  author brent;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.06.15.09.21.49;  author brent;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.02.28.08.49.13;  author brent;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.01.30.14.05.30;  author brent;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.01.30.09.25.18;  author brent;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.01.29.14.39.01;  author brent;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     89.01.25.09.54.59;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.12.21.10.18.14;  author brent;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.25.03;  author douglis;  state Stable;
+branches ;
+next     7.0;
+
+7.0
+date     88.11.11.15.35.48;  author brent;  state Exp;
+branches ;
+next     6.4;
+
+6.4
+date     88.10.20.15.50.30;  author brent;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.10.16.11.42.13;  author brent;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.10.14.12.19.28;  author brent;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.10.14.10.41.20;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.10.11.16.18.59;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.10.03.09.05.07;  author brent;  state Exp;
+branches ;
+next     ;
+
+9.3.1.1
+date     91.11.15.16.29.06;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Pseudo-device control stream routines.
+@
+
+
+9.6
+log
+@Support for bulk reopen rpcs.
+@
+text
+@/* 
+ * fsPdev.c --  
+ *
+ * Copyright 1987, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fspdev/fspdevControl.c,v 9.5 92/08/10 17:29:56 mgbaker Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <fs.h>
+#include <fsconsist.h>
+#include <fsutil.h>
+#include <fspdev.h>
+#include <fspdevInt.h>
+#include <fsNameOps.h>
+#include <fsio.h>
+#include <fsioLock.h>
+#include <fsStat.h>
+#include <proc.h>
+#include <rpc.h>
+#include <fsrecov.h>
+#include <recov.h>
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * FspdevControlHandleInit --
+ *
+ *	Fetch and initialize a control handle for a pseudo-device.
+ *
+ * Results:
+ *	A pointer to the control stream I/O handle.  The found parameter is
+ *	set to TRUE if the handle was already found, FALSE if we created it.
+ *
+ * Side effects:
+ *	Initializes and installs the control handle.
+ *
+ *----------------------------------------------------------------------------
+ *
+ */
+Fspdev_ControlIOHandle *
+FspdevControlHandleInit(fileIDPtr, name)
+    Fs_FileID *fileIDPtr;
+    char *name;
+{
+    register Boolean found;
+    register Fspdev_ControlIOHandle *ctrlHandlePtr;
+    Fs_HandleHeader *hdrPtr;
+
+    found = Fsutil_HandleInstall(fileIDPtr, sizeof(Fspdev_ControlIOHandle), name,
+			    FALSE, &hdrPtr);
+    ctrlHandlePtr = (Fspdev_ControlIOHandle *)hdrPtr;
+    if (!found) {
+	ctrlHandlePtr->serverID = NIL;
+	List_Init(&ctrlHandlePtr->queueHdr);
+	ctrlHandlePtr->seed = 0;
+	List_Init(&ctrlHandlePtr->readWaitList);
+	Fsio_LockInit(&ctrlHandlePtr->lock);
+	Fsutil_RecoveryInit(&ctrlHandlePtr->rmt.recovery);
+	ctrlHandlePtr->accessTime = 0;
+	ctrlHandlePtr->modifyTime = 0;
+	ctrlHandlePtr->owner.id = (Proc_PID)NIL;
+	ctrlHandlePtr->owner.procOrFamily = 0;
+	ctrlHandlePtr->prefixPtr = (Fsprefix *)NIL;
+	fs_Stats.object.controls++;
+    }
+    return(ctrlHandlePtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FspdevControlIoOpen --
+ *
+ *	Complete setup of the server's control stream.  Called from
+ *	Fs_Open on the host running the server.  We mark the Control
+ *	I/O handle as having a server (us).
+ * 
+ * Results:
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	Installs the Control I/O handle and keeps a reference to it.
+ *	Marks the process as not suitable for migration.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+FspdevControlIoOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
+		 ioHandlePtrPtr)
+    register Fs_FileID	*ioFileIDPtr;	/* I/O fileID */
+    int			*flagsPtr;	/* FS_READ | FS_WRITE ... */
+    int			clientID;	/* Host doing the open */
+    ClientData		streamData;	/* NIL. */
+    char		*name;		/* File name for error msgs */
+    Fs_HandleHeader	**ioHandlePtrPtr;/* Return - a locked handle set up for
+					 * I/O to a control stream, or NIL */
+{
+    register Fspdev_ControlIOHandle	*ctrlHandlePtr;
+
+    ctrlHandlePtr = FspdevControlHandleInit(ioFileIDPtr, name);
+    if (!List_IsEmpty(&ctrlHandlePtr->queueHdr)) {
+	panic( "FsControlStreamCltOpen found control msgs\n");
+    }
+    ctrlHandlePtr->serverID = clientID;
+    *ioHandlePtrPtr = (Fs_HandleHeader *)ctrlHandlePtr;
+    /*
+     * Can't migrate pseudo-device servers.
+     */
+    Proc_NeverMigrate(Proc_GetCurrentProc());
+    Fsutil_HandleUnlock(ctrlHandlePtr);
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FspdevControlSelect --
+ *
+ *	Select on the server's control stream.  This returns readable
+ *	if there are control messages in the queue.
+ *
+ * Results:
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	Puts the caller on the handle's read wait list if the control
+ *	stream isn't selectable.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+FspdevControlSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
+    Fs_HandleHeader	*hdrPtr;	/* Handle on device to select */
+    Sync_RemoteWaiter	*waitPtr;	/* Process info for remote waiting */
+    int 		*readPtr;	/* Bit to clear if non-readable */
+    int 		*writePtr;	/* Bit to clear if non-writeable */
+    int 		*exceptPtr;	/* Bit to clear if non-exceptable */
+{
+    register Fspdev_ControlIOHandle *ctrlHandlePtr =
+	    (Fspdev_ControlIOHandle *)hdrPtr;
+
+    Fsutil_HandleLock(ctrlHandlePtr);
+    if (List_IsEmpty(&ctrlHandlePtr->queueHdr)) {
+	if (waitPtr != (Sync_RemoteWaiter *)NIL) {
+	    Fsutil_FastWaitListInsert(&ctrlHandlePtr->readWaitList, waitPtr);
+	}
+	*readPtr = 0;
+    }
+    *writePtr = *exceptPtr = 0;
+    Fsutil_HandleUnlock(ctrlHandlePtr);
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FspdevControlRead --
+ *
+ *	Read from the server's control stream.  The server learns of new
+ *	clients by reading this stream.  Internally the stream is a list
+ *	of addresses of streams created for the server.  This routine maps
+ *	those addresses to streamIDs for the user level server process and
+ *	returns them to the reader.
+ *
+ * Results:
+ *	SUCCESS, FS_WOULD_BLOCK,
+ *	or an error code from setting up a new stream ID.
+ *
+ * Side effects:
+ *	The server's list of stream ptrs in the process table is updated.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+FspdevControlRead(streamPtr, readPtr, waitPtr, replyPtr)
+    Fs_Stream 		*streamPtr;	/* Control stream */
+    Fs_IOParam		*readPtr;	/* Read parameter block. */
+    Sync_RemoteWaiter	*waitPtr;	/* Process info for remote waiting */
+    Fs_IOReply		*replyPtr;	/* Signal to return, if any,
+					 * plus the amount read. */
+{
+    ReturnStatus 		status;
+    register Fspdev_ControlIOHandle *ctrlHandlePtr =
+	    (Fspdev_ControlIOHandle *)streamPtr->ioHandlePtr;
+    Pdev_Notify			notify;		/* Message returned to
+						 * user-level server proc */
+
+    Fsutil_HandleLock(ctrlHandlePtr);
+
+    if (List_IsEmpty(&ctrlHandlePtr->queueHdr)) {
+	/*
+	 * No control messages ready.
+	 */
+	Fsutil_FastWaitListInsert(&ctrlHandlePtr->readWaitList, waitPtr);
+	replyPtr->length = 0;
+	status = FS_WOULD_BLOCK;
+    } else {
+	register FspdevNotify *notifyPtr;		/* Internal message */
+	notifyPtr = (FspdevNotify *)List_First(&ctrlHandlePtr->queueHdr);
+	List_Remove((List_Links *)notifyPtr);
+	notify.magic = PDEV_NOTIFY_MAGIC;
+	status = Fs_GetStreamID(notifyPtr->streamPtr, &notify.newStreamID);
+	if (status != SUCCESS) {
+	    replyPtr->length = 0;
+	} else {
+	    if (readPtr->flags & FS_USER) {
+		status = Vm_CopyOut(sizeof(notify), (Address) &notify,
+				    readPtr->buffer);
+		/*
+		 * No need to close on error because the stream is already
+		 * installed in the server process's state.  It'll be
+		 * closed automatically when the server exits.
+		 */
+	    } else {
+		bcopy((Address)&notify, readPtr->buffer, sizeof(notify));
+	    }
+	    replyPtr->length = sizeof(notify);
+	}
+	free((Address)notifyPtr);
+    }
+    Fsutil_HandleUnlock(ctrlHandlePtr);
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FspdevControlIOControl --
+ *
+ *	IOControls for the control stream.
+ *
+ * Results:
+ *	An error code.
+ *
+ * Side effects:
+ *	Command dependent.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+FspdevControlIOControl(streamPtr, ioctlPtr, replyPtr)
+    Fs_Stream *streamPtr;		/* I/O handle */
+    Fs_IOCParam *ioctlPtr;		/* I/O Control parameter block */
+    Fs_IOReply *replyPtr;		/* Return length and signal */
+{
+    register Fspdev_ControlIOHandle *ctrlHandlePtr =
+	    (Fspdev_ControlIOHandle *)streamPtr->ioHandlePtr;
+    register ReturnStatus status;
+
+    if (ioctlPtr->format != mach_Format) {
+	panic("FsControlIOControl: wrong format\n");
+    }
+    switch(ioctlPtr->command) {
+	case IOC_PDEV_SIGNAL_OWNER:
+	    status = FspdevSignalOwner(ctrlHandlePtr, ioctlPtr);
+	    break;
+	case IOC_REPOSITION:
+	    status = SUCCESS;
+	    break;
+	case IOC_GET_FLAGS:
+	    if (ioctlPtr->outBufSize >= sizeof(int)) {
+		*(int *)ioctlPtr->outBuffer = 0;
+		replyPtr->length = sizeof(int);	/* to quiet lint */
+	    }
+	    status = SUCCESS;
+	    break;
+	case IOC_SET_FLAGS:
+	case IOC_SET_BITS:
+	case IOC_CLEAR_BITS:
+	    status = SUCCESS;
+	    break;
+	case IOC_TRUNCATE:
+	    status = SUCCESS;
+	    break;
+	case IOC_LOCK:
+	case IOC_UNLOCK:
+	    Fsutil_HandleLock(ctrlHandlePtr);
+	    status = Fsio_IocLock(&ctrlHandlePtr->lock, ioctlPtr,
+			    &streamPtr->hdr.fileID);
+	    Fsutil_HandleUnlock(ctrlHandlePtr);
+	    break;
+	case IOC_NUM_READABLE: {
+	    register int bytesAvailable;
+
+	    if (ioctlPtr->outBufSize < sizeof(int)) {
+		return(GEN_INVALID_ARG);
+	    }
+	    Fsutil_HandleLock(ctrlHandlePtr);
+	    if (List_IsEmpty(&ctrlHandlePtr->queueHdr)) {
+		bytesAvailable = 0;
+	    } else {
+		bytesAvailable = sizeof(Pdev_Notify);
+	    }
+	    Fsutil_HandleUnlock(ctrlHandlePtr);
+	    status = SUCCESS;
+	    *(int *)ioctlPtr->outBuffer = bytesAvailable;
+	    break;
+	}
+	case IOC_SET_OWNER:
+	case IOC_GET_OWNER:
+	case IOC_MAP:
+	    status = GEN_NOT_IMPLEMENTED;
+	    break;
+	case IOC_PREFIX:
+	    status = SUCCESS;
+	    break;
+	default:
+	    status = GEN_INVALID_ARG;
+	    break;
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FspdevControlGetIOAttr --
+ *
+ *	Called from Fs_GetAttrStream to get the I/O attributes of a
+ *	pseudo-device.  The access and modify times of the pseudo-device
+ *	are obtained from the internal pdev state.
+ *
+ * Results:
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+FspdevControlGetIOAttr(fileIDPtr, clientID, attrPtr)
+    register Fs_FileID		*fileIDPtr;	/* Identfies pdev connection */
+    int				clientID;	/* Host ID of process asking
+						 * for the attributes */
+    register Fs_Attributes	*attrPtr;	/* Return - the attributes */
+{
+    Fspdev_ControlIOHandle		*ctrlHandlePtr;
+
+    ctrlHandlePtr = Fsutil_HandleFetchType(Fspdev_ControlIOHandle, fileIDPtr);
+    if (ctrlHandlePtr == (Fspdev_ControlIOHandle *)NIL) {
+	printf( "FspdevControlGetIOAttr, no %s handle <%d,%x,%x> client %d\n",
+	    Fsutil_FileTypeToString(fileIDPtr->type), fileIDPtr->serverID,
+	    fileIDPtr->major, fileIDPtr->minor, clientID);
+	return(FS_FILE_NOT_FOUND);
+    }
+
+    if (ctrlHandlePtr->accessTime > 0) {
+	attrPtr->accessTime.seconds = ctrlHandlePtr->accessTime;
+    }
+    if (ctrlHandlePtr->modifyTime > 0) {
+	attrPtr->dataModifyTime.seconds = ctrlHandlePtr->modifyTime;
+    }
+
+    Fsutil_HandleRelease(ctrlHandlePtr, TRUE);
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FspdevControlSetIOAttr --
+ *
+ *	Set the IO attributes of a pseudo-device.
+ *
+ * Results:
+ *	An error code.
+ *
+ * Side effects:
+ *	Updates the access and modify times kept in the pdev state.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+FspdevControlSetIOAttr(fileIDPtr, attrPtr, flags)
+    register Fs_FileID		*fileIDPtr;	/* Identfies pdev connection */
+    register Fs_Attributes	*attrPtr;	/* Return - the attributes */
+    int				flags;		/* Tells which attrs to set */
+{
+    Fspdev_ControlIOHandle		*ctrlHandlePtr;
+
+    ctrlHandlePtr = Fsutil_HandleFetchType(Fspdev_ControlIOHandle, fileIDPtr);
+    if (ctrlHandlePtr == (Fspdev_ControlIOHandle *)NIL) {
+	printf( "FspdevControlSetIOAttr, no handle <%d,%d,%x,%x>\n",
+	    fileIDPtr->serverID, fileIDPtr->type,
+	    fileIDPtr->major, fileIDPtr->minor);
+	return(FS_FILE_NOT_FOUND);
+    }
+    if (flags & FS_SET_TIMES) {
+	ctrlHandlePtr->accessTime = attrPtr->accessTime.seconds;
+	ctrlHandlePtr->modifyTime = attrPtr->dataModifyTime.seconds;
+    }
+    Fsutil_HandleRelease(ctrlHandlePtr, TRUE);
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FspdevControlVerify --
+ *
+ *	This is called during recovery.
+ *	When the server at a remote site reopens its control stream it
+ *	contacts the file server to re-establish itself as the server.
+ *	This procedure is called from Fsio_StreamReopen to get the control
+ *	handle associated with the top-level shadow stream here at the
+ *	file server.
+ *
+ * Results:
+ *	A pointer to the control I/O handle, or NIL if the server is bad.
+ *
+ * Side effects:
+ *	The handle is returned locked and with its refCount incremented.
+ *	It should be released with Fsutil_HandleRelease.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Fs_HandleHeader *
+FspdevControlVerify(fileIDPtr, pdevServerHostID, domainTypePtr)
+    Fs_FileID	*fileIDPtr;		/* control I/O file ID */
+    int		pdevServerHostID;	/* Host ID of the client */
+    int         *domainTypePtr; 	/* Return - FS_PSEUDO_DOMAIN */
+{
+    register Fspdev_ControlIOHandle	*ctrlHandlePtr;
+    int serverID = -1;
+
+    ctrlHandlePtr = Fsutil_HandleFetchType(Fspdev_ControlIOHandle, fileIDPtr);
+    if (ctrlHandlePtr != (Fspdev_ControlIOHandle *)NIL) {
+	if (ctrlHandlePtr->serverID != pdevServerHostID) {
+	    serverID = ctrlHandlePtr->serverID;
+	    Fsutil_HandleRelease(ctrlHandlePtr, TRUE);
+	    ctrlHandlePtr = (Fspdev_ControlIOHandle *)NIL;
+	}
+    }
+    if (ctrlHandlePtr == (Fspdev_ControlIOHandle *)NIL) {
+	printf("FspdevControlVerify, server mismatch (%d not %d) for %s <%x,%x>\n",
+	    pdevServerHostID, serverID, Fsutil_FileTypeToString(fileIDPtr->type),
+	    fileIDPtr->major, fileIDPtr->minor);
+    }
+    if (domainTypePtr != (int *)NIL) {
+	*domainTypePtr = FS_PSEUDO_DOMAIN;
+    }
+    return((Fs_HandleHeader *)ctrlHandlePtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FspdevControlReopen --
+ *
+ *	Reopen a control stream.  A control handle is kept on both the
+ *	file server as well as the pseudo-device server's host.  If the
+ *	file server reboots a reopen has to be done in order to set
+ *	the serverID field on the file server so subsequent client opens work.
+ *	Thus this is called on a remote client to contact the file server,
+ *	and then on the file server from the RPC stub.
+ *
+ * Results:
+ *	SUCCESS if there is no conflict with the server reopening.
+ *
+ * Side effects:
+ *	On the file server the serverID field is set.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+FspdevControlReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
+    Fs_HandleHeader	*hdrPtr;
+    int			clientID;		/* ID of pdev server's host */
+    ClientData		inData;			/* FspdevControlReopenParams */
+    int			*outSizePtr;		/* IGNORED */
+    ClientData		*outDataPtr;		/* IGNORED */
+
+{
+    register Fspdev_ControlIOHandle *ctrlHandlePtr;
+    register FspdevControlReopenParams *reopenParamsPtr;
+    register ReturnStatus status = SUCCESS;
+    Fsrecov_HandleState	recovInfo;
+
+    if (hdrPtr != (Fs_HandleHeader *)NIL) {
+	/*
+	 * Called on the pdev server's host to contact the remote
+	 * file server and re-establish state.
+	 */
+	Fspdev_ControlIOHandle *ctrlHandlePtr;
+	FspdevControlReopenParams params;
+	int outSize = 0;
+
+	ctrlHandlePtr = (Fspdev_ControlIOHandle *)hdrPtr;
+	reopenParamsPtr = &params;
+	reopenParamsPtr->fileID = hdrPtr->fileID;
+	reopenParamsPtr->serverID = ctrlHandlePtr->serverID;
+	reopenParamsPtr->seed = ctrlHandlePtr->seed;
+	status = FsrmtReopen(hdrPtr, sizeof(FspdevControlReopenParams),
+		(Address)reopenParamsPtr, &outSize, (Address)NIL);
+    } else {
+	/*
+	 * Called on the file server to re-establish a control handle
+	 * that corresponds to a control handle on the pdev server's host.
+	 */
+
+	reopenParamsPtr = (FspdevControlReopenParams *)inData;
+	ctrlHandlePtr = FspdevControlHandleInit(&reopenParamsPtr->fileID,
+					    (char *)NIL);
+
+	/*
+	 * If we're the name server and we're not the client trying to
+	 * reopen its control stream, then this is a control stream that
+	 * we should have in the recovery box.  In this case, clientID is
+	 * the ID of the machine running the pdev server.  The second case
+	 * here (after the ||) is due to network partition and we still think
+	 * we know who the pdev server machine should be.
+	 */
+	if (fsrecov_AlreadyInit && clientID != rpc_SpriteID) {
+	    Fs_FileID	fid;
+
+	    fid = reopenParamsPtr->fileID;
+	    /* Get info from recov box. */
+	    printf("FspdevControlReopen: checking control %d.%d.%d.%d\n",
+		    fid.type, fid.serverID, fid.major, fid.minor);
+	    if (Fsrecov_GetHandle(fid, clientID, &recovInfo, TRUE) != SUCCESS) {
+		panic(
+		"FspdevControlReopen: couldn't get recov info for handle.");
+	    }
+	    /* Test for sameness. */
+	    if ((recovInfo.fileID.major != fid.major) ||
+		    (recovInfo.fileID.minor != fid.minor)) {
+		panic(
+		"FspdevControlReopen: major or minor numbers disagree.");
+	    }
+	    if (recovInfo.info != reopenParamsPtr->serverID) {
+		if (reopenParamsPtr->serverID == NIL) {
+		    panic(
+		    "FspdevControlReopen: serverID disagrees - now NIL.\n");
+		    /* XXX Update handle here if I get rid of code below. */
+		} else {
+		    panic("FspdevControlReopen: serverID disagrees.");
+		}
+	    }
+	    if (recovInfo.clientData != reopenParamsPtr->seed) {
+		panic("FspdevControlReopen: seed disagrees.");
+	    }
+	    /*
+	     * If we're supposed to have recovered everything from the
+	     * recov box, then just return here.
+	     */
+	    if (fsrecov_FromBox) {
+		return SUCCESS;
+	    }
+	}
+
+	if (reopenParamsPtr->serverID != NIL) {
+	    /*
+	     * The remote host thinks it is running the pdev server process.
+	     */
+	    if (ctrlHandlePtr->serverID == NIL) {
+		ctrlHandlePtr->serverID = reopenParamsPtr->serverID;
+		ctrlHandlePtr->seed = reopenParamsPtr->seed;
+	    } else if (ctrlHandlePtr->serverID != clientID) {
+		printf(
+		    "PdevControlReopen conflict, %d lost to %d, %s <%x,%x>\n",
+		    clientID, ctrlHandlePtr->serverID,
+		    Fsutil_FileTypeToString(ctrlHandlePtr->rmt.hdr.fileID.type),
+		    ctrlHandlePtr->rmt.hdr.fileID.major,
+		    ctrlHandlePtr->rmt.hdr.fileID.minor);
+		status = FS_FILE_BUSY;
+	    }
+	} else if (ctrlHandlePtr->serverID == clientID) {
+	    /*
+	     * The pdev server closed while we were down or unable
+	     * to communicate.
+	     */
+	    ctrlHandlePtr->serverID = NIL;
+
+	    if (fsrecov_AlreadyInit && clientID != rpc_SpriteID) {
+		recovInfo.info = NIL;
+		if (Fsrecov_UpdateHandle(reopenParamsPtr->fileID, clientID,
+			&recovInfo) != SUCCESS) {
+		    panic("FspdevControlReopen: couldn't update handle.");
+		}
+	    }
+	}
+	if (recov_Transparent && !fsrecov_AlreadyInit &&
+		clientID != rpc_SpriteID) {
+	    Fs_FileID	fid;
+
+	    fid = reopenParamsPtr->fileID;
+	    printf(
+	    "FspdevControlReopen: installing control stream %d.%d.%d.%d\n",
+		    fid.type, fid.serverID, fid.major, fid.minor);
+	    if (Fsrecov_AddHandle((Fs_HandleHeader *) ctrlHandlePtr,
+		    (Fs_FileID *) NIL,
+		    clientID, ctrlHandlePtr->serverID == NIL ? NIL : 0,
+		    ctrlHandlePtr->seed, TRUE) != SUCCESS) {
+		/* We'll have to do better than this! */
+		panic("FspdevControlReopen: couldn't add handle to recov box.");
+	    }
+	    /* Stream is added in stream reopen procedure. */
+	}
+	Fsutil_HandleRelease(ctrlHandlePtr, TRUE);
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FspdevControlClose --
+ *
+ *	Close a server process's control stream.  After this the pseudo-device
+ *	is no longer active and client operations will fail.
+ *
+ * Results:
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	Reset the control handle's serverID.
+ *	Clears out the state for the control message queue.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+FspdevControlClose(streamPtr, clientID, procID, flags, size, data)
+    Fs_Stream		*streamPtr;	/* Control stream */
+    int			clientID;	/* HostID of client closing */
+    Proc_PID		procID;		/* ID of closing process */
+    int			flags;		/* Flags from the stream being closed */
+    int			size;		/* Should be zero */
+    ClientData		data;		/* IGNORED */
+{
+    register Fspdev_ControlIOHandle *ctrlHandlePtr =
+	    (Fspdev_ControlIOHandle *)streamPtr->ioHandlePtr;
+    register FspdevNotify *notifyPtr;
+    int extra = 0;
+    Fsrecov_HandleState	recovInfo;
+
+    /*
+     * Close any server streams that haven't been given to
+     * the master process yet.
+     */
+    while (!List_IsEmpty(&ctrlHandlePtr->queueHdr)) {
+	notifyPtr = (FspdevNotify *)List_First(&ctrlHandlePtr->queueHdr);
+	List_Remove((List_Links *)notifyPtr);
+	extra++;
+	(void)Fs_Close(notifyPtr->streamPtr);
+	free((Address)notifyPtr);
+    }
+    if (extra) {
+	printf( "FspdevControlClose found %d left over messages\n",
+			extra);
+    }
+    /*
+     * Reset the pseudo-device server ID, both here and at the name server.
+     */
+    ctrlHandlePtr->serverID = NIL;
+    if (ctrlHandlePtr->rmt.hdr.fileID.serverID != rpc_SpriteID) {
+	(void)Fsrmt_Close(streamPtr, rpc_SpriteID, procID, 0, 0,
+		(ClientData)NIL);
+    } else {
+	/*
+	 * We're the name server and if we weren't the machine running the
+	 * pdev server process, we must update recov box.
+	 */
+	if (recov_Transparent && clientID != rpc_SpriteID) {
+	    if (fsrecov_DebugLevel <= 2) {
+		printf("FspdevControlClose: closing ctrl handle %d.%d.%d.%d ",
+			((Fs_HandleHeader *) ctrlHandlePtr)->fileID.type,
+			((Fs_HandleHeader *) ctrlHandlePtr)->fileID.serverID,
+			((Fs_HandleHeader *) ctrlHandlePtr)->fileID.major,
+			((Fs_HandleHeader *) ctrlHandlePtr)->fileID.minor);
+		printf("for client %d with serverID %d\n", clientID,
+			ctrlHandlePtr->serverID);
+	    }
+	    /*
+	     * XXX It seems like we should delete the ctrl handle in the
+	     * recov box, but we don't since the close doesn't delete
+	     * it from the handle table.  Is this a bug, or should I
+	     * continue to mimic it?
+	     */
+#ifdef DONT_MIMIC_PDEV_BUG
+	    if (Fsrecov_DeleteHandle((Fs_HandleHeader *) ctrlHandlePtr,
+		    clientID, 0) != SUCCESS) {
+		/* We'll have to do better than this! */
+		panic(
+		"FspdevControlClose: couldn't remove handle from recov box.");
+	    }
+#else
+	    /* Update serverID to be NIL so it matches what's done above. */
+	    if (Fsrecov_GetHandle(ctrlHandlePtr->rmt.hdr.fileID, clientID,
+		    &recovInfo, FALSE) != SUCCESS) {
+		panic(
+		"FspdevControlClose: couldn't get recov info for handle.");
+	    }
+	    recovInfo.info = NIL;
+	    if (Fsrecov_UpdateHandle(ctrlHandlePtr->rmt.hdr.fileID, clientID,
+		    &recovInfo) != SUCCESS) {
+		panic("FspdevControlClose: couldn't update handle.");
+	    }
+#endif DONT_MIMIC_PDEV_BUG
+	    /* Still allow the stream to close since that's done elsewhere. */
+	    if (Fsrecov_DeleteHandle((Fs_HandleHeader *) streamPtr, clientID,
+		    streamPtr->flags) != SUCCESS) {
+		panic(
+		"FspdevControlClose: couldn't remove stream from recov box.");
+	    }
+	}
+    }
+    Fsutil_WaitListDelete(&ctrlHandlePtr->readWaitList);
+    Fsutil_HandleRelease(ctrlHandlePtr, TRUE);
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FspdevControlClientKill --
+ *
+ *	See if a crashed client was running a pseudo-device master.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Clears the serverID field if it matches the crashed host's ID.
+ *	This unlocks the handle before returning.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+void
+FspdevControlClientKill(hdrPtr, clientID)
+    Fs_HandleHeader *hdrPtr;	/* File being killed */
+    int		clientID;	/* Client ID to kill. */
+{
+    register Fspdev_ControlIOHandle *ctrlHandlePtr =
+	    (Fspdev_ControlIOHandle *)hdrPtr;
+
+    if (ctrlHandlePtr->serverID == clientID) {
+	ctrlHandlePtr->serverID = NIL;
+	if (ctrlHandlePtr->rmt.hdr.fileID.serverID == rpc_SpriteID) {
+	    /*
+	     * We're the file server and must update recov box if we
+	     * weren't the machine running the pdev server process.
+	     */
+	    if (recov_Transparent && clientID != rpc_SpriteID) {
+		if (fsrecov_DebugLevel <= 2) {
+		    printf("FspdevControlClientKill: killing ctrl handle ");
+		    printf("%d.%d.%d.%d for clientID %d\n",
+			    ((Fs_HandleHeader *) ctrlHandlePtr)->fileID.type,
+			    ((Fs_HandleHeader *) ctrlHandlePtr)->fileID.serverID
+			    , ((Fs_HandleHeader *) ctrlHandlePtr)->fileID.major,
+			    ((Fs_HandleHeader *) ctrlHandlePtr)->fileID.minor,
+			    clientID);
+		}
+		if (Fsrecov_DeleteHandle((Fs_HandleHeader *) ctrlHandlePtr,
+			clientID, 0) != SUCCESS) {
+		    /* We'll have to do better than this! */
+		    panic(
+	    "FspdevControlClientKill: couldn't remove handle from recov box.");
+		}
+	    }
+	}
+	Fsutil_RecoverySyncLockCleanup(&ctrlHandlePtr->rmt.recovery);
+	Fsutil_HandleRemove(ctrlHandlePtr);
+	fs_Stats.object.controls--;
+    } else {
+        Fsutil_HandleUnlock(ctrlHandlePtr);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FspdevControlScavenge --
+ *
+ *	See if this control stream handle is still needed.
+ *
+ * Results:
+ *	TRUE if the handle was removed.
+ *
+ * Side effects:
+ *	Will remove the handle if there is no server.
+ *
+ *----------------------------------------------------------------------
+ */
+Boolean
+FspdevControlScavenge(hdrPtr)
+    Fs_HandleHeader *hdrPtr;	/* File being encapsulated */
+{
+    register Fspdev_ControlIOHandle *ctrlHandlePtr = (Fspdev_ControlIOHandle *)hdrPtr;
+
+    if (ctrlHandlePtr->serverID == NIL) {
+	Fsutil_RecoverySyncLockCleanup(&ctrlHandlePtr->rmt.recovery);
+	Fsutil_HandleRemove(ctrlHandlePtr);
+	fs_Stats.object.controls--;
+	return(TRUE);
+    } else {
+        Fsutil_HandleUnlock(ctrlHandlePtr);
+	return(FALSE);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fspdev_ControlRecovTestUseCount --
+ *
+ *	For recovery testing, return the use count on the stream's iohandle.
+ *
+ * Results:
+ *	Use count.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Fspdev_ControlRecovTestUseCount(handlePtr)
+    Fspdev_ControlIOHandle	 *handlePtr;
+{
+    return handlePtr->rmt.recovery.use.ref;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fspdev_ControlSetupHandle --
+ *
+ *	Given a pdev control stream recovery object, setup the necessary handle
+ *	state for it.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	A handle is created in put in the handle table.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+Fspdev_ControlSetupHandle(recovInfoPtr)
+    Fsrecov_HandleState	*recovInfoPtr;
+{
+    Fs_FileID			fileID;
+    int				clientID;
+    Fspdev_ControlIOHandle	*ctrlHandlePtr;
+
+    if (!recov_Transparent) {
+	panic("Fspdev_ControlSetupHandle: shouldn't have been called.");
+    }
+    clientID = recovInfoPtr->fileID.serverID;
+    fileID = recovInfoPtr->fileID;
+    fileID.serverID = rpc_SpriteID;
+    ctrlHandlePtr = FspdevControlHandleInit(&fileID, (char *) NIL);
+    ctrlHandlePtr->serverID = recovInfoPtr->info;
+    ctrlHandlePtr->seed = recovInfoPtr->clientData;
+    Fsutil_HandleRelease(ctrlHandlePtr, TRUE);
+
+    return SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FspdevSetupControlReopen --
+ *
+ *	Set up the data for an RPC to reopen a control handle.
+ *
+ * Results:
+ *	Return status.
+ *
+ * Side effects:
+ *	Data structure set up.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+FspdevSetupControlReopen(hdrPtr, paramsPtr)
+    Fs_HandleHeader	*hdrPtr;
+    Address		paramsPtr;
+{
+    Fspdev_ControlIOHandle *ctrlHandlePtr;
+    FspdevControlReopenParams *reopenParamsPtr;
+
+    if (hdrPtr != (Fs_HandleHeader *)NIL) {
+	/*
+	 * Called on the pdev server's host to contact the remote
+	 * file server and re-establish state.
+	 */
+	ctrlHandlePtr = (Fspdev_ControlIOHandle *)hdrPtr;
+	reopenParamsPtr = (FspdevControlReopenParams *) paramsPtr;
+	reopenParamsPtr->fileID = hdrPtr->fileID;
+	reopenParamsPtr->serverID = ctrlHandlePtr->serverID;
+	reopenParamsPtr->seed = ctrlHandlePtr->seed;
+    } else {
+	panic("FspdevSetupControlReopen called on file server.");
+    }
+    return SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FspdevFinishControlReopen --
+ *
+ *	Do post-processing for a device handle after bulk reopen.  There is
+ *	none for a pseudo device.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+FspdevFinishControlReopen(hdrPtr, statePtr, status)
+    Fs_HandleHeader	*hdrPtr;
+    Address		statePtr;
+    ReturnStatus	status;
+{
+    return;
+}
+@
+
+
+9.5
+log
+@Changes for transparent server recovery.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fspdev/fspdevControl.c,v 9.4 91/09/10 18:28:22 rab Exp $ SPRITE (Berkeley)";
+d879 64
+@
+
+
+9.4
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fspdev/RCS/fspdevControl.c,v 9.3 91/06/26 01:07:12 mottsmth Exp Locker: rab $ SPRITE (Berkeley)";
+d30 2
+d493 1
+d520 47
+d589 25
+d616 1
+a616 1
+     }
+d651 1
+d675 48
+d756 23
+d817 62
+@
+
+
+9.3
+log
+@ Allow execution of PFS files
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fspdev/RCS/fspdevControl.c,v 9.2 90/12/06 21:56:35 jhh Exp $ SPRITE (Berkeley)";
+a562 1
+#ifdef SOSP91
+a563 4
+FspdevControlClose(streamPtr, clientID, procID, flags, size, data, offsetPtr,
+    rwFlagsPtr)
+#else
+ReturnStatus
+a564 1
+#endif
+a570 4
+#ifdef SOSP91
+    int			*offsetPtr;	/* Not used. */
+    int			*rwFlagsPtr;	/* Not used. */
+#endif
+@
+
+
+9.3.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/fspdev/fspdevControl.c,v 9.3 91/06/26 01:07:12 mottsmth Exp $ SPRITE (Berkeley)";
+@
+
+
+9.2
+log
+@Added sosp tracing code
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fspdev/RCS/fspdevControl.c,v 9.1 90/10/08 12:46:57 mendel Exp $ SPRITE (Berkeley)";
+d48 1
+a48 1
+FspdevControlIOHandle *
+d54 1
+a54 1
+    register FspdevControlIOHandle *ctrlHandlePtr;
+d57 1
+a57 1
+    found = Fsutil_HandleInstall(fileIDPtr, sizeof(FspdevControlIOHandle), name,
+d59 1
+a59 1
+    ctrlHandlePtr = (FspdevControlIOHandle *)hdrPtr;
+d107 1
+a107 1
+    register FspdevControlIOHandle	*ctrlHandlePtr;
+d149 2
+a150 2
+    register FspdevControlIOHandle *ctrlHandlePtr =
+	    (FspdevControlIOHandle *)hdrPtr;
+d193 2
+a194 2
+    register FspdevControlIOHandle *ctrlHandlePtr =
+	    (FspdevControlIOHandle *)streamPtr->ioHandlePtr;
+d257 2
+a258 2
+    register FspdevControlIOHandle *ctrlHandlePtr =
+	    (FspdevControlIOHandle *)streamPtr->ioHandlePtr;
+d349 1
+a349 1
+    FspdevControlIOHandle		*ctrlHandlePtr;
+d351 2
+a352 2
+    ctrlHandlePtr = Fsutil_HandleFetchType(FspdevControlIOHandle, fileIDPtr);
+    if (ctrlHandlePtr == (FspdevControlIOHandle *)NIL) {
+d391 1
+a391 1
+    FspdevControlIOHandle		*ctrlHandlePtr;
+d393 2
+a394 2
+    ctrlHandlePtr = Fsutil_HandleFetchType(FspdevControlIOHandle, fileIDPtr);
+    if (ctrlHandlePtr == (FspdevControlIOHandle *)NIL) {
+d436 1
+a436 1
+    register FspdevControlIOHandle	*ctrlHandlePtr;
+d439 2
+a440 2
+    ctrlHandlePtr = Fsutil_HandleFetchType(FspdevControlIOHandle, fileIDPtr);
+    if (ctrlHandlePtr != (FspdevControlIOHandle *)NIL) {
+d444 1
+a444 1
+	    ctrlHandlePtr = (FspdevControlIOHandle *)NIL;
+d447 1
+a447 1
+    if (ctrlHandlePtr == (FspdevControlIOHandle *)NIL) {
+d488 1
+a488 1
+    register FspdevControlIOHandle *ctrlHandlePtr;
+d497 1
+a497 1
+	FspdevControlIOHandle *ctrlHandlePtr;
+d501 1
+a501 1
+	ctrlHandlePtr = (FspdevControlIOHandle *)hdrPtr;
+d582 2
+a583 2
+    register FspdevControlIOHandle *ctrlHandlePtr =
+	    (FspdevControlIOHandle *)streamPtr->ioHandlePtr;
+d637 2
+a638 2
+    register FspdevControlIOHandle *ctrlHandlePtr =
+	    (FspdevControlIOHandle *)hdrPtr;
+d669 1
+a669 1
+    register FspdevControlIOHandle *ctrlHandlePtr = (FspdevControlIOHandle *)hdrPtr;
+@
+
+
+9.1
+log
+@Fixed include files to use <> rather than "">
+Added function prototypes.
+Fixed lint.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs.mendel/RCS/fsPdevControl.c,v 1.1 90/01/16 17:11:12 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d563 1
+d565 4
+d570 1
+d577 4
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fspdev/RCS/fsPdevControl.c,v 8.13 89/08/29 15:24:39 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d18 12
+a29 12
+#include "sprite.h"
+#include "fs.h"
+#include "fsutil.h"
+#include "fspdev.h"
+#include "fspdevInt.h"
+#include "fsNameOps.h"
+#include "fsio.h"
+#include "fsconsist.h"
+#include "fsioLock.h"
+#include "fsStat.h"
+#include "proc.h"
+#include "rpc.h"
+d58 1
+a58 1
+			    &hdrPtr);
+d431 1
+a431 1
+FspdevControlVerify(fileIDPtr, pdevServerHostID)
+d434 1
+d452 3
+d624 2
+a625 1
+    Fs_HandleHeader *hdrPtr;	/* File being encapsulated */
+@
+
+
+8.13
+log
+@fixed a couple of places where recovery locks were freed without being
+cleaned up first.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fspdev/RCS/fsPdevControl.c,v 8.12 89/08/21 15:27:50 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+8.12
+log
+@Break up fs into many modules.    
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPdevControl.c,v 8.10 89/08/12 10:44:25 jhh Exp $ SPRITE (Berkeley)";
+d627 1
+d657 1
+@
+
+
+8.11
+log
+@Changed to use Fmt_Convert
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPdevControl.c,v 8.10 89/08/12 10:44:25 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d20 7
+a26 7
+#include "fsInt.h"
+#include "fsPdev.h"
+#include "fsOpTable.h"
+#include "fsStream.h"
+#include "fsClient.h"
+#include "fsLock.h"
+#include "fsRecovery.h"
+d34 1
+a34 1
+ * FsControlHandleInit --
+d48 2
+a49 2
+PdevControlIOHandle *
+FsControlHandleInit(fileIDPtr, name)
+d54 2
+a55 2
+    register PdevControlIOHandle *ctrlHandlePtr;
+    FsHandleHeader *hdrPtr;
+d57 1
+a57 1
+    found = FsHandleInstall(fileIDPtr, sizeof(PdevControlIOHandle), name,
+d59 1
+a59 1
+    ctrlHandlePtr = (PdevControlIOHandle *)hdrPtr;
+d65 2
+a66 2
+	FsLockInit(&ctrlHandlePtr->lock);
+	FsRecoveryInit(&ctrlHandlePtr->rmt.recovery);
+d71 2
+a72 2
+	ctrlHandlePtr->prefixPtr = (FsPrefix *)NIL;
+	fsStats.object.controls++;
+d80 1
+a80 1
+ * FsControlCltOpen --
+d97 1
+a97 1
+FsControlCltOpen(ioFileIDPtr, flagsPtr, clientID, streamData, name,
+d104 1
+a104 1
+    FsHandleHeader	**ioHandlePtrPtr;/* Return - a locked handle set up for
+d107 1
+a107 1
+    register PdevControlIOHandle	*ctrlHandlePtr;
+d109 1
+a109 1
+    ctrlHandlePtr = FsControlHandleInit(ioFileIDPtr, name);
+d114 1
+a114 1
+    *ioHandlePtrPtr = (FsHandleHeader *)ctrlHandlePtr;
+d119 1
+a119 1
+    FsHandleUnlock(ctrlHandlePtr);
+d126 1
+a126 1
+ * FsControlSelect --
+d142 2
+a143 2
+FsControlSelect(hdrPtr, waitPtr, readPtr, writePtr, exceptPtr)
+    FsHandleHeader	*hdrPtr;	/* Handle on device to select */
+d149 2
+a150 2
+    register PdevControlIOHandle *ctrlHandlePtr =
+	    (PdevControlIOHandle *)hdrPtr;
+d152 1
+a152 1
+    FsHandleLock(ctrlHandlePtr);
+d155 1
+a155 1
+	    FsFastWaitListInsert(&ctrlHandlePtr->readWaitList, waitPtr);
+d160 1
+a160 1
+    FsHandleUnlock(ctrlHandlePtr);
+d167 1
+a167 1
+ * FsControlRead --
+d185 1
+a185 1
+FsControlRead(streamPtr, readPtr, waitPtr, replyPtr)
+d193 2
+a194 2
+    register PdevControlIOHandle *ctrlHandlePtr =
+	    (PdevControlIOHandle *)streamPtr->ioHandlePtr;
+d198 1
+a198 1
+    FsHandleLock(ctrlHandlePtr);
+d204 1
+a204 1
+	FsFastWaitListInsert(&ctrlHandlePtr->readWaitList, waitPtr);
+d208 2
+a209 2
+	register PdevNotify *notifyPtr;		/* Internal message */
+	notifyPtr = (PdevNotify *)List_First(&ctrlHandlePtr->queueHdr);
+d212 1
+a212 1
+	status = FsGetStreamID(notifyPtr->streamPtr, &notify.newStreamID);
+d231 1
+a231 1
+    FsHandleUnlock(ctrlHandlePtr);
+d238 1
+a238 1
+ * FsControlIOControl --
+d252 1
+a252 1
+FsControlIOControl(streamPtr, ioctlPtr, replyPtr)
+d257 2
+a258 2
+    register PdevControlIOHandle *ctrlHandlePtr =
+	    (PdevControlIOHandle *)streamPtr->ioHandlePtr;
+d266 1
+a266 1
+	    status = FsPdevSignalOwner(ctrlHandlePtr, ioctlPtr);
+d288 2
+a289 2
+	    FsHandleLock(ctrlHandlePtr);
+	    status = FsIocLock(&ctrlHandlePtr->lock, ioctlPtr,
+d291 1
+a291 1
+	    FsHandleUnlock(ctrlHandlePtr);
+d299 1
+a299 1
+	    FsHandleLock(ctrlHandlePtr);
+d305 1
+a305 1
+	    FsHandleUnlock(ctrlHandlePtr);
+d328 1
+a328 1
+ * FsControlGetIOAttr --
+d343 1
+a343 1
+FsControlGetIOAttr(fileIDPtr, clientID, attrPtr)
+d349 1
+a349 1
+    PdevControlIOHandle		*ctrlHandlePtr;
+d351 4
+a354 4
+    ctrlHandlePtr = FsHandleFetchType(PdevControlIOHandle, fileIDPtr);
+    if (ctrlHandlePtr == (PdevControlIOHandle *)NIL) {
+	printf( "FsControlGetIOAttr, no %s handle <%d,%x,%x> client %d\n",
+	    FsFileTypeToString(fileIDPtr->type), fileIDPtr->serverID,
+d366 1
+a366 1
+    FsHandleRelease(ctrlHandlePtr, TRUE);
+d373 1
+a373 1
+ * FsControlSetIOAttr --
+d386 1
+a386 1
+FsControlSetIOAttr(fileIDPtr, attrPtr, flags)
+d391 1
+a391 1
+    PdevControlIOHandle		*ctrlHandlePtr;
+d393 3
+a395 3
+    ctrlHandlePtr = FsHandleFetchType(PdevControlIOHandle, fileIDPtr);
+    if (ctrlHandlePtr == (PdevControlIOHandle *)NIL) {
+	printf( "FsControlSetIOAttr, no handle <%d,%d,%x,%x>\n",
+d404 1
+a404 1
+    FsHandleRelease(ctrlHandlePtr, TRUE);
+d411 1
+a411 1
+ * FsControlVerify --
+d416 1
+a416 1
+ *	This procedure is called from FsStreamReopen to get the control
+d425 1
+a425 1
+ *	It should be released with FsHandleRelease.
+d430 2
+a431 2
+FsHandleHeader *
+FsControlVerify(fileIDPtr, pdevServerHostID)
+d435 1
+a435 1
+    register PdevControlIOHandle	*ctrlHandlePtr;
+d438 2
+a439 2
+    ctrlHandlePtr = FsHandleFetchType(PdevControlIOHandle, fileIDPtr);
+    if (ctrlHandlePtr != (PdevControlIOHandle *)NIL) {
+d442 2
+a443 2
+	    FsHandleRelease(ctrlHandlePtr, TRUE);
+	    ctrlHandlePtr = (PdevControlIOHandle *)NIL;
+d446 3
+a448 3
+    if (ctrlHandlePtr == (PdevControlIOHandle *)NIL) {
+	printf("FsControlVerify, server mismatch (%d not %d) for %s <%x,%x>\n",
+	    pdevServerHostID, serverID, FsFileTypeToString(fileIDPtr->type),
+d451 1
+a451 1
+    return((FsHandleHeader *)ctrlHandlePtr);
+d457 1
+a457 1
+ * FsControlReopen --
+d476 2
+a477 2
+FsControlReopen(hdrPtr, clientID, inData, outSizePtr, outDataPtr)
+    FsHandleHeader	*hdrPtr;
+d479 1
+a479 1
+    ClientData		inData;			/* PdevControlReopenParams */
+d484 2
+a485 2
+    register PdevControlIOHandle *ctrlHandlePtr;
+    register PdevControlReopenParams *reopenParamsPtr;
+d488 1
+a488 1
+    if (hdrPtr != (FsHandleHeader *)NIL) {
+d493 2
+a494 2
+	PdevControlIOHandle *ctrlHandlePtr;
+	PdevControlReopenParams params;
+d497 1
+a497 1
+	ctrlHandlePtr = (PdevControlIOHandle *)hdrPtr;
+d502 1
+a502 1
+	status = FsSpriteReopen(hdrPtr, sizeof(PdevControlReopenParams),
+d510 2
+a511 2
+	reopenParamsPtr = (PdevControlReopenParams *)inData;
+	ctrlHandlePtr = FsControlHandleInit(&reopenParamsPtr->fileID,
+d524 1
+a524 1
+		    FsFileTypeToString(ctrlHandlePtr->rmt.hdr.fileID.type),
+d536 1
+a536 1
+	FsHandleRelease(ctrlHandlePtr, TRUE);
+d544 1
+a544 1
+ * FsControlClose --
+d560 1
+a560 1
+FsControlClose(streamPtr, clientID, procID, flags, size, data)
+d568 3
+a570 3
+    register PdevControlIOHandle *ctrlHandlePtr =
+	    (PdevControlIOHandle *)streamPtr->ioHandlePtr;
+    register PdevNotify *notifyPtr;
+d578 1
+a578 1
+	notifyPtr = (PdevNotify *)List_First(&ctrlHandlePtr->queueHdr);
+d585 1
+a585 1
+	printf( "FsControlClose found %d left over messages\n",
+d593 1
+a593 1
+	(void)FsRemoteClose(streamPtr, rpc_SpriteID, procID, 0, 0,
+d596 2
+a597 2
+    FsWaitListDelete(&ctrlHandlePtr->readWaitList);
+    FsHandleRelease(ctrlHandlePtr, TRUE);
+d604 1
+a604 1
+ * FsControlClientKill --
+d619 2
+a620 2
+FsControlClientKill(hdrPtr, clientID)
+    FsHandleHeader *hdrPtr;	/* File being encapsulated */
+d622 2
+a623 2
+    register PdevControlIOHandle *ctrlHandlePtr =
+	    (PdevControlIOHandle *)hdrPtr;
+d627 2
+a628 2
+	FsHandleRemove(ctrlHandlePtr);
+	fsStats.object.controls--;
+d630 1
+a630 1
+        FsHandleUnlock(ctrlHandlePtr);
+d637 1
+a637 1
+ * FsControlScavenge --
+d650 2
+a651 2
+FsControlScavenge(hdrPtr)
+    FsHandleHeader *hdrPtr;	/* File being encapsulated */
+d653 1
+a653 1
+    register PdevControlIOHandle *ctrlHandlePtr = (PdevControlIOHandle *)hdrPtr;
+d656 2
+a657 2
+	FsHandleRemove(ctrlHandlePtr);
+	fsStats.object.controls--;
+d660 1
+a660 1
+        FsHandleUnlock(ctrlHandlePtr);
+@
+
+
+8.10
+log
+@Added IOC_PREFIX handler
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPdevControl.c,v 8.9 89/07/18 13:08:45 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d261 2
+a262 2
+    if (ioctlPtr->byteOrder != mach_ByteOrder) {
+	panic("FsControlIOControl: wrong byte order\n");
+@
+
+
+8.9
+log
+@Added IOC_PREFIX ioctl
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPdevControl.c,v 8.8 89/06/16 12:07:56 brent Exp $ SPRITE (Berkeley)";
+d315 1
+a315 9
+	case IOC_PREFIX:{
+	    FsPrefix	*prefixPtr;
+	    prefixPtr = streamPtr->nameInfoPtr->prefixPtr;
+	    if (ioctlPtr->outBufSize < prefixPtr->prefixLength) {
+		status = GEN_INVALID_ARG;
+		break;
+	    }
+	    strcpy(ioctlPtr->outBuffer, prefixPtr->prefix);
+	    replyPtr->length = prefixPtr->prefixLength;
+a317 1
+	}
+@
+
+
+8.8
+log
+@Updated I/O Control interface
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPdevControl.c,v 8.7 89/06/15 09:21:49 brent Exp $ SPRITE (Berkeley)";
+d315 12
+@
+
+
+8.7
+log
+@Updated read procedures to use Fs_IOParam and Fs_IOReply
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPdevControl.c,v 8.6 89/02/28 08:49:13 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d252 1
+a252 1
+FsControlIOControl(streamPtr, command, byteOrder, inBufPtr, outBufPtr)
+d254 2
+a255 5
+    int command;			/* File specific I/O control */
+    int byteOrder;			/* Client byte order, should be same */
+    Fs_Buffer *inBufPtr;		/* Command inputs */
+    Fs_Buffer *outBufPtr;		/* Buffer for return parameters */
+
+d261 2
+a262 2
+    if (byteOrder != mach_ByteOrder) {
+	panic( "FsControlIOControl: wrong byte order\n");
+d264 1
+a264 1
+    switch(command) {
+d266 1
+a266 1
+	    status = FsPdevSignalOwner(ctrlHandlePtr, inBufPtr);
+d272 3
+a274 3
+	    if ((outBufPtr->size >= sizeof(int)) &&
+		(outBufPtr->addr != (Address)NIL)) {
+		*(int *)outBufPtr->addr = 0;
+d289 2
+a290 2
+	    status = FsIocLock(&ctrlHandlePtr->lock, command, byteOrder,
+			       inBufPtr, &streamPtr->hdr.fileID);
+d296 1
+a296 1
+	    if (outBufPtr->size < sizeof(int)) {
+d307 1
+a307 1
+	    *(int *)outBufPtr->addr = bytesAvailable;
+@
+
+
+8.6
+log
+@Changed object-specific select routines to handle NIL waitPtr information
+so they can avoid setting up wait lists.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPdevControl.c,v 8.5 89/01/30 14:05:30 brent Exp $ SPRITE (Berkeley)";
+a183 1
+/*ARGSUSED*/
+d185 6
+a190 7
+FsControlRead(streamPtr, flags, buffer, offsetPtr, lenPtr, waitPtr)
+    Fs_Stream 	*streamPtr;	/* Control stream */
+    int		flags;		/* FS_USER is checked */
+    Address 	buffer;		/* Where to read into. */
+    int		*offsetPtr;	/* IGNORED */
+    int 	*lenPtr;	/* In/Out length parameter */
+    Sync_RemoteWaiter *waitPtr;	/* Info for waiting */
+d192 1
+a192 1
+    ReturnStatus 		status = SUCCESS;
+d195 2
+a196 1
+    Pdev_Notify			notify;		/* Message returned */
+d205 1
+a205 1
+	*lenPtr = 0;
+d208 1
+a208 1
+	register PdevNotify *notifyPtr;
+d214 1
+a214 1
+	    *lenPtr = 0;
+d216 3
+a218 2
+	    if (flags & FS_USER) {
+		status = Vm_CopyOut(sizeof(notify), (Address) &notify, buffer);
+d225 1
+a225 1
+		bcopy((Address)&notify, buffer, sizeof(notify));
+d227 1
+a227 1
+	    *lenPtr = sizeof(notify);
+@
+
+
+8.5
+log
+@Added object stats
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPdevControl.c,v 8.4 89/01/30 09:25:18 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d154 3
+a156 1
+	FsFastWaitListInsert(&ctrlHandlePtr->readWaitList, waitPtr);
+d291 1
+d294 1
+d596 1
+@
+
+
+8.4
+log
+@Changed scavenge routine to a Boolean
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPdevControl.c,v 8.3 89/01/29 14:39:01 brent Exp $ SPRITE (Berkeley)";
+d27 1
+d72 1
+d623 1
+d652 2
+d656 1
+@
+
+
+8.3
+log
+@Added IOC_PDEV_SIGNAL_OWNER
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPdevControl.c,v 8.2 89/01/25 09:54:59 brent Exp $ SPRITE (Berkeley)";
+d634 1
+a634 1
+ *	None.
+d637 1
+a637 1
+ *	None.
+d641 1
+a641 2
+/*ARGSUSED*/
+void
+@
+
+
+8.2
+log
+@Added control get/set IO attr routines because the access and modify
+times are kept in the control handle.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPdevControl.c,v 8.1 88/12/21 10:18:14 brent Exp $ SPRITE (Berkeley)";
+d68 2
+d264 3
+@
+
+
+8.1
+log
+@Double migration bug fix
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPdevControl.c,v 7.0 88/11/11 15:35:48 brent Exp $ SPRITE (Berkeley)";
+d66 2
+d317 83
+d402 6
+a407 2
+ *	Verify that the remote server is known for the pseudo-device,
+ *	and return a locked pointer to the control I/O handle.
+d436 1
+a436 2
+	printf(
+	    "FsControlVerify, server mismatch (%d not %d) for %s <%x,%x>\n",
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPdevControl.c,v 7.0 88/11/11 15:35:48 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d85 1
+d109 4
+@
+
+
+7.0
+log
+@New version for conversion to new C library
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPdevControl.c,v 6.4 88/10/20 15:50:30 brent Exp Locker: brent $ SPRITE (Berkeley)";
+@
+
+
+6.4
+log
+@removed lint
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fs/RCS/fsPdevControl.c,v 6.3 88/10/16 11:42:13 brent Exp $ SPRITE (Berkeley)";
+d104 1
+a104 1
+	Sys_Panic(SYS_FATAL, "FsControlStreamCltOpen found control msgs\n");
+d212 1
+a212 1
+		Byte_Copy(sizeof(notify), (Address)&notify, buffer);
+d216 1
+a216 1
+	Mem_Free((Address)notifyPtr);
+d252 1
+a252 1
+	Sys_Panic(SYS_FATAL, "FsControlIOControl: wrong byte order\n");
+d342 1
+a342 1
+	Sys_Panic(SYS_WARNING,
+d417 1
+a417 1
+		Sys_Panic(SYS_WARNING,
+d478 1
+a478 1
+	Mem_Free((Address)notifyPtr);
+d481 1
+a481 1
+	Sys_Panic(SYS_WARNING, "FsControlClose found %d left over messages\n",
+d489 1
+a489 1
+	(void)FsSpriteClose(streamPtr, rpc_SpriteID, procID, 0, 0,
+@
+
+
+6.3
+log
+@Added initialization of new field.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: fsPdevControl.c,v 6.2 88/10/14 12:19:28 brent Exp $ SPRITE (Berkeley)";
+d21 1
+d26 1
+a28 1
+#include "fsPdev.h"
+@
+
+
+6.2
+log
+@FsFileID FsUserID change
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: fsPdevControl.c,v 6.1 88/10/14 10:41:20 brent Exp $ SPRITE (Berkeley)";
+d65 1
+@
+
+
+6.1
+log
+@Removed found parameter from FsControlHandleInit
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: fsPdevControl.c,v 6.0 88/10/11 16:18:59 brent Exp $ SPRITE (Berkeley)";
+d48 1
+a48 1
+    FsFileID *fileIDPtr;
+d90 1
+a90 1
+    register FsFileID	*ioFileIDPtr;	/* I/O fileID */
+d325 1
+a325 1
+    FsFileID	*fileIDPtr;		/* control I/O file ID */
+@
+
+
+6.0
+log
+@Fiddled with print statements, updated version number to 6.
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: fsPdevControl.c,v 1.1 88/10/03 09:05:07 brent Exp $ SPRITE (Berkeley)";
+d47 1
+a47 1
+FsControlHandleInit(fileIDPtr, name, foundPtr)
+a49 1
+    Boolean *foundPtr;
+a65 1
+    *foundPtr = found;
+a98 1
+    Boolean		found;
+d100 2
+a101 2
+    ctrlHandlePtr = FsControlHandleInit(ioFileIDPtr, name, &found);
+    if (found && !List_IsEmpty(&ctrlHandlePtr->queueHdr)) {
+a402 1
+	Boolean found;
+d406 1
+a406 1
+					    (char *)NIL, &found);
+d411 1
+a411 1
+	    if (!found || ctrlHandlePtr->serverID == NIL) {
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+static char rcsid[] = "$Header: fsPdev.c,v 6.15 88/09/28 15:24:19 douglis Exp $ SPRITE (Berkeley)";
+d344 3
+a346 2
+	    "FsControlVerify, server mismatch (%d not %d) for pdev <%x,%x>\n",
+	    pdevServerHostID, serverID, fileIDPtr->major, fileIDPtr->minor);
+d420 1
+a420 1
+		    "PdevControlReopen conflict, %d lost to %d, pdev <%x,%x>\n",
+d422 1
+@

@@ -1,0 +1,4 @@
+F FCNTL.C_V;1                       	fcntl.c,v
+F IOCTL.C_V;1                       	ioctl.c,v
+F SIGNALS.C_V;1                     	signals.c,v
+F SOCKET.C_V;1                      	socket.c,v

@@ -1,0 +1,116 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% FNPARA.TEX  based on D. E. Knuth's "Dirty Tricks" macros from pages
+% 398--400 of The TeXbook.
+% Dominik Wujastyk, September 15, 1988.
+%
+% Set the footnote text font here:
+%
+\font\footnotesize=cmr8
+%
+% Set the font for the footnote numbers at the bottom of the page here
+%
+\font\footnumberfont=cmbx8
+%
+% Set any text to follow each footnote here:
+%
+\def\endnotetext,$\parallel$\hskip.5em-
+%
+% Switch off above endnote text, for comparison:
+%
+\let\endnotetext=\relax
+%
+% Normal @-character macro lock:
+%
+\catcode`\@=11
+%
+% Initialize counters:
+%
+\newcount\footno
+\footno=0
+%
+% Clever code for \getfactor (The TeXbook, p.375):
+%
+,\catcode`p=12 \catcode`t=12 \gdef\\#1pt,#1--
+\let\getfactor=\\
+%
+% Set space to follow footnote text:
+%
+\newskip\footglue \footglue=1em plus.3em minus.3em
+%
+% Set leading of footnotes:
+%
+\newdimen\footnotebaselineskip \footnotebaselineskip=10pt
+%
+% Calculate \fudgefactor (ratio of \baselineskip to \hsize):
+%
+\dimen0=\footnotebaselineskip \multiply\dimen0 by 1024
+\divide \dimen0 by \hsize \multiply\dimen0 by 64
+\xdef\fudgefactor,\expandafter\getfactor\the\dimen0 -
+%
+% Redefine footnotes to be automatically numbered:
+%
+\def\footnote,\global\advance\footno by 1
+  \let\@sf=\empty%
+  \ifhmode\edef\@sf,\spacefactor=\the\spacefactor-\/\fi%
+$N,\the\footno-$\@sf\vfootnote-
+\def\vfootnote#1,\insert\footins,\floatingpenalty=20000
+  \footnotesize \setbox0=\hbox,%
+    ,\footnumberfont \the\footno\penalty10000\hskip.5em-#1%
+\penalty-10\hskip\footglue\endnotetext-
+  \dp0=0pt \ht0=\fudgefactor\wd0 \box0--
+%
+% Assume \plainoutput routine, but change \pagecontents:
+%
+\def\pagecontents,\ifvoid\topins\else\unvbox\topins\fi
+  \dimen@=\dp\@cclv \unvbox\@cclv % open up \box255
+  \ifvoid\footins\else % footnote info is present
+    \vskip\skip\footins
+    \footnoterule
+    \global\setbox1=\vbox,\makefootnoteparagraph-\unvbox1\fi
+  \ifr@ggedbottom \kern-\dimen@ \vfil \fi-
+\def\footnoterule,\kern-3\p@
+  \hrule width 2truein \kern 2.6\p@- % the \hrule is .4pt high
+%
+% Box manipulation code from The TeXbook, p.399:
+%
+\def\makefootnoteparagraph,\unvbox\footins \makehboxofhboxes
+  \setbox0=\hbox,\unhbox0 \removehboxes-
+  \baselineskip=\footnotebaselineskip\noindent\unhbox0\par -
+\def\makehboxofhboxes,\setbox0=\hbox,-
+  \loop\setbox2=\lastbox
+  \ifhbox2 \setbox0=\hbox,\box2\unhbox0-\repeat-
+\def\removehboxes,\setbox0=\lastbox
+  \ifhbox0,\removehboxes-\unhbox0 \fi-
+%
+% Reimpose @-lock.
+%
+\catcode`\@=12
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%Sample text:
+%
+\vsize 6in
+\voffset 2in
+\hsize 4in
+\hoffset 1in
+
+The entire set of footnotes could be combined into a single paragraph, with
+generous spacing between the individual items. For example, the ten footnotes
+we have been considering might appear as follows:\footnote,First footnote.-
+And some more.\footnote,Second footnote. (Every once in a~while a long
+  footnote might occur, just to make things difficult.)-
+And some more.
+And some more.\footnote,Third footnote.-$N,$\footnote,Fourth footnote.-
+And some more.
+And some more.\footnote,Fifth footnote.
+  (This is incredibly boring, but it's just an
+example.)-$N,$\footnote,Another.-
+And some more.
+And some more.
+And some more.\footnote,And another.-$N,$\footnote,Ho
+hum.-$N,$\footnote,Umpteenth
+footnote.-$N,$\footnote,Oodles of them.-
+
+\bye
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

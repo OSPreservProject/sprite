@@ -1,0 +1,343 @@
+head     2.3;
+branch   ;
+access   ;
+symbols  no-auto-remigrate:2.1 installed:2.0;
+locks    ; strict;
+comment  @ * @;
+
+
+2.3
+date     90.09.24.14.46.46;  author douglis;  state Exp;
+branches ;
+next     2.2;
+
+2.2
+date     90.06.26.18.43.48;  author douglis;  state Exp;
+branches ;
+next     2.1;
+
+2.1
+date     90.06.22.14.58.16;  author douglis;  state Exp;
+branches ;
+next     2.0;
+
+2.0
+date     90.03.10.13.12.34;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     90.02.28.10.56.04;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.02.16.14.27.17;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Confirm that a host is available.
+@
+
+
+2.3
+log
+@added callback flag to MigHostCache to make it easier to flag all hosts as reclaimed after error
+@
+text
+@/* 
+ * Mig_ConfirmIdle.c --
+ *
+ *	Confirm that a host is available.
+ *
+ * Copyright 1988, 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/lib/c/mig/RCS/Mig_ConfirmIdle.c,v 2.2 90/06/26 18:43:48 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+
+#include <stdio.h>
+#include <sprite.h>
+#include <status.h>
+#include <bit.h>
+#include <mig.h>
+#include <kernel/net.h>
+#include <sys/time.h>
+#include <sysStats.h>
+#include <host.h>
+#include <errno.h>
+#include "migInt.h"
+
+/* 
+ * Keep track of whether we should get new hosts, or whether we know none
+ * are available.  Defaults to asking, of course.  Set to 0 if too few
+ * hosts are available.
+ */
+int migGetNewHosts = 1;
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Mig_ConfirmIdle --
+ *
+ *	Double-check that a host is still accepting migration.  Otherwise
+ *	we could keep migrating to a host that is no longer idle.  We check
+ *	to see if the stream is selectable, in which case we get
+ *	any updates to host availability and modify our cache, and in any
+ *	case we then check the host cache.  The same logic is used to
+ *	check for msgs indicating a host is now available, in which
+ * 	case a hostID  of 0 is used.
+ *
+ * Results:
+ *	TRUE if the host is still available (or a new host is available,
+ *	if hostID == 0), FALSE otherwise or if an error occurs.
+ *
+ * Side effects:
+ *	May do ioctl to server.
+ *
+ *----------------------------------------------------------------------
+ */
+Boolean
+Mig_ConfirmIdle(hostID)
+    int hostID;			/* ID of host to confirm availability of */
+{
+    static int *bitArray = NULL;
+    static int bitSize = 0;
+    int numReady;
+    int status;
+    int msgHostID;
+    struct timeval time;
+    int retries = 0;
+    
+#ifdef DEBUG
+    fprintf(stderr, "Mig_ConfirmIdle(%d) called.\n", hostID);
+#endif /* DEBUG */
+
+    if (mig_GlobalPdev < 0) {
+#ifdef DEBUG
+	fprintf(stderr, "Mig_ConfirmIdle: no pdev connection.\n");
+#endif /* DEBUG */
+	return(FALSE);
+    }
+    if (bitSize <= mig_GlobalPdev) {
+	bitArray = Bit_Expand(mig_GlobalPdev + 1, bitSize, bitArray);
+	bitSize = mig_GlobalPdev + 1;
+    }
+	    
+    while (1) {
+	Bit_Set(mig_GlobalPdev, bitArray);
+	time.tv_sec = 0;
+	time.tv_usec = 0;
+#ifdef DEBUG
+    fprintf(stderr, "Mig_ConfirmIdle: calling select.\n");
+#endif /* DEBUG */
+	numReady = select(bitSize, bitArray, (int *) NULL, (int *) NULL,
+		 &time);
+#ifdef DEBUG
+    fprintf(stderr, "Mig_ConfirmIdle: select returned %d.\n", numReady);
+#endif /* DEBUG */
+	if (numReady <= 0) {
+	    break;
+	} else {
+#ifdef DEBUG
+	    fprintf(stderr, "Mig_ConfirmIdle: calling Fs_IOControl.\n");
+#endif /* DEBUG */
+	    if (MigSetAlarm() < 0) {
+		fprintf(stderr,
+			"Error setting alarm for contact with migd.\n");
+		return(FALSE);
+	    }
+	    status = Fs_IOControl(mig_GlobalPdev, IOC_MIG_GET_UPDATE,
+				  0, (char *) NULL, sizeof(int),
+				  (char *) &msgHostID);
+	    if (MigClearAlarm() < 0) {
+		fprintf(stderr,
+			"Error clearing alarm for contact with migd.\n");
+	    }
+		
+		
+#ifdef DEBUG
+	    fprintf(stderr, "Mig_ConfirmIdle: Fs_IOControl returned %x.\n",
+		   status);
+#endif /* DEBUG */
+	    if (status != SUCCESS) {
+		fprintf(stderr,
+		       "Mig_ConfirmIdle: error during ioctl to global master: %s\n",
+		       Stat_GetMsg(status));
+		if (status & 0xf0000 || status == GEN_ABORTED_BY_SIGNAL) {
+		    /*
+		     * fs/dev/... error, or timeout,
+		     * rather than FAILURE or INVALID_ARG.
+		     */
+		    close(mig_GlobalPdev);
+		    mig_GlobalPdev = 0;
+		    if (retries > 0 || MigOpenPdev(TRUE) < 0) {
+			return(FALSE);
+		    }
+		    retries = 1;
+		} else {
+		    return(FALSE);
+		}
+		continue;
+	    }
+	    if (msgHostID == 0) {
+#ifdef DEBUG
+		fprintf(stderr, "Mig_ConfirmIdle: new host(s) available.\n");
+#endif /* DEBUG */
+		migGetNewHosts = 1;
+		if (migCallBackPtr != NULL) {
+		    (*migCallBackPtr)(msgHostID);
+		}
+	    } else 
+#ifdef DEBUG
+		fprintf(stderr, "Mig_ConfirmIdle: host %d unavailable.\n",
+		       msgHostID);
+#endif /* DEBUG */
+		(void) MigHostCache(msgHostID, MIG_CACHE_REMOVE, TRUE);
+	}
+    }
+    if (hostID == 0) {
+#ifdef DEBUG
+	fprintf(stderr, "Mig_ConfirmIdle: returning %d.\n", migGetNewHosts);
+#endif /* DEBUG */
+	return(migGetNewHosts);
+    }
+#ifdef DEBUG
+    fprintf(stderr, "Mig_ConfirmIdle: returning %d.\n",
+	   MigHostCache(hostID, MIG_CACHE_VERIFY, FALSE));
+#endif /* DEBUG */
+    return(MigHostCache(hostID, MIG_CACHE_VERIFY, FALSE));
+}
+@
+
+
+2.2
+log
+@call back on evictions too, and pass hostID.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/mig/RCS/Mig_ConfirmIdle.c,v 2.1 90/06/22 14:58:16 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d150 3
+d158 1
+a158 4
+		(void) MigHostCache(msgHostID, MIG_CACHE_REMOVE);
+	}
+	if (migCallBackPtr != NULL) {
+	    (*migCallBackPtr)(msgHostID);
+d169 1
+a169 1
+	   MigHostCache(hostID, MIG_CACHE_VERIFY));
+d171 1
+a171 1
+    return(MigHostCache(hostID, MIG_CACHE_VERIFY));
+@
+
+
+2.1
+log
+@changes for alarms for timeouts with migd and for printing to stderr instead of syslog
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/mig/RCS/Mig_ConfirmIdle.c,v 2.0 90/03/10 13:12:34 douglis Stable Locker: douglis $ SPRITE (Berkeley)";
+a149 3
+		if (migCallBackPtr != NULL) {
+		    (*migCallBackPtr)();
+		}
+d156 3
+@
+
+
+2.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/mig/RCS/Mig_ConfirmIdle.c,v 1.2 90/02/28 10:56:04 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d23 1
+a27 1
+#include <syslog.h>
+d75 1
+a75 1
+    syslog(LOG_INFO, "Mig_ConfirmIdle(%d) called.\n", hostID);
+d80 1
+a80 1
+	syslog(LOG_INFO, "Mig_ConfirmIdle: no pdev connection.\n");
+d94 1
+a94 1
+    syslog(LOG_INFO, "Mig_ConfirmIdle: calling select.\n");
+d99 1
+a99 1
+    syslog(LOG_INFO, "Mig_ConfirmIdle: select returned %d.\n", numReady);
+d105 1
+a105 1
+	    syslog(LOG_INFO, "Mig_ConfirmIdle: calling Fs_IOControl.\n");
+d107 5
+d115 6
+d122 1
+a122 1
+	    syslog(LOG_INFO, "Mig_ConfirmIdle: Fs_IOControl returned %x.\n",
+d126 1
+a126 1
+		syslog(LOG_WARNING,
+d129 1
+a129 1
+		if (status & 0xf0000) {
+d131 2
+a132 1
+		     * fs/dev/... error rather than FAILURE or INVALID_ARG.
+d147 1
+a147 1
+		syslog(LOG_INFO, "Mig_ConfirmIdle: new host(s) available.\n");
+d155 1
+a155 1
+		syslog(LOG_INFO, "Mig_ConfirmIdle: host %d unavailable.\n",
+d163 1
+a163 1
+	syslog(LOG_INFO, "Mig_ConfirmIdle: returning %d.\n", migGetNewHosts);
+d168 1
+a168 1
+    syslog(LOG_INFO, "Mig_ConfirmIdle: returning %d.\n",
+@
+
+
+1.2
+log
+@added migCallBackPtr use.  changed Mig_OpenPdev to internal Mig routine.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/mig/RCS/Mig_ConfirmIdle.c,v 1.1 90/02/16 14:27:17 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user2/douglis/pdev_mig/mig_p/RCS/Mig_ConfirmIdle.c,v 1.2 90/02/13 10:07:20 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d124 1
+a124 1
+		    if (retries > 0 || Mig_OpenPdev(TRUE) < 0) {
+d138 3
+@

@@ -1,0 +1,1731 @@
+This file describes differences between TeX82, which is the portable standard
+definition of TeX in PASCAL, and the TeX systems written in SAIL.  (The SAIL
+version will NOT be brought up to date to make it compatible with TeX82; its use
+should gradually die away as more people take advantage of the new features
+available in the PASCAL version.)
+
+* TeX82 does all its calculations that affect line breaking and page breaking
+using fixed-point integer arithmetic of limited (i.e., 32-bit) precision,
+instead of with floating-point computations, since different machines differ so
+widely in the results you get with floating point.
+
+Dimensions are integers in units of 2^(-16) points, limited in magnitude to 2^14
+points (which is 18.89 feet).  This applies to all dimensions (e.g., the heights
+and widths and depths of boxes, the amounts by which you \raise or \lower a box,
+\varunits, etc.), except for the dimensions of stretching and shrinking.
+
+Something different had to be done with respect to the dimensions of stretching
+and shrinking, since for example the old TeX defined \hfill to be a stretch of
+10^10 points, and that number has more than 32 bits to the left of its binary
+point. After considering various alternatives, the solution introduced by the
+designers of MESA-TeX in 1979 has been adopted for TeX82. Each stretch or shrink
+dimension is specified by a fixed point integer that is either in units of
+2^(-16)pt or 2^(-16)fil or 2^(-16)fill or 2^(-16)filll.  Here pt is, of course,
+one point; the other units are three orders of infinity, essentially infinity
+and infinity^2 and infinity^3. To add together such units of stretching or
+shrinking, one simply adds the individual components having the same order of
+infinity, and then uses the nonzero component having the highest order.
+
+Thus, when one says "\hskip <a>pt plus <b>fil minus <c>filll", the numbers <a>,
+<b>, <c> are rounded to the nearest multiple of 2^(-16), and their magnitudes
+should be less than 2^(14). The stretch component is <b> times infinity, and the
+shrink component is <c> times infinity cubed.
+
+* The shrink component of all glue used in a paragraph should be finite.
+Something like "\hskip 20pt minus 2fil" actually makes no sense in a paragraph,
+since the paragraph would fit on a single line no matter what. Infinite
+shrinkage does make sense in a simple \hbox, of course.
+
+* Identifiers for control sequences in TeX82 are letter strings of any length,
+with upper and lower case letters treated as distinct even when they aren't the
+first letter. For example, \TeX is not the same as \TEX, and \GAMMA is not the
+same as \Gamma.  Any character that is regarded as a letter (this means the 52
+letters, initially, plus others that are \chcoded to 11) can appear in such
+control sequences. Of course, the one-character non-letter control sequences
+still exist as well.
+
+* Characters by themselves can no longer masquerade as numbers. Thus, you
+shouldn't say "\chcode A" any more; this has caused more mysterious errors than
+it was worth, and anyway there will be a macro for defining fonts symbolically
+in TeX82. Instead, one can use a left quote in front of a character to get its
+ascii code; e.g., `A is '101, and `^^A is 1.  Furthermore you can use an escape
+in front of the character, e.g., `\A or `\% (these macros will not be expanded),
+so that we avoid the problem in TeX80 that you couldn't say "\chcode %" when %
+had already been chcoded.
+
+* Hexadecimal constants are allowed, using a prefixed ". For example, "DF = '337
+= 223.
+
+* \uccode <char number> is the character code to use when converting to upper
+case in the \uppercase function. For example, \uccode`a =`A.  (Probably nobody
+will change the default values unless a foreign alphabet is being used.)
+Characters whose uccode is zero will not be changed by the \uppercase function.
+
+* \lccode <char number> is the character code to use when converting to lower
+case in the \lowercase function or when trying to hyphenate a word that contains
+upper case letters. For example, \lccode`A =`a. Characters whose lccode is zero
+will not be changed by the \lowercase function.  The lccode is also used for
+hyphenation; a character whose lccode is zero will be regarded as a nonletter
+(e.g., punctuation), and not part of a hyphenatable word, while a character
+whose lccode is identical to the character itself will be considered a lower
+case letter. For example, \lccode`a =`a.
+
+* If \uchyph is nonzero, a word whose first letter is upper case will be subject
+to hyphenation. (This means a word whose first letter has lccode nonzero and
+lccode not equal to the character itself.) Words whose first letter is lower
+case will always be subject to hyphenation even if they contain upper case
+letters further on.
+
+* Both \looseness and \parshape are now reset to their default values after each
+paragraph, as \hangindent always was. They are also reset at the beginning
+of a \vbox.
+
+* Font codes are now control sequences instead of letters, so there is
+no longer a 64-font restriction. For example, one says "\font\ff=cmr10 at 12pt"
+to load the font identified by \ff. A subsequent appearance of the control
+sequence \ff will select this font. (The \: control sequence is no longer
+present in TeX82.) Font control sequence names must have length 2 or more.
+
+* New input capabilities greatly expand the class of potential applications:
+
+\openin n=filename, where the = is optional and where the stream number n
+is between 0 and 15, designates a text file that can be read
+concurrently with other input. If a file has already been opened for
+the same number n, it is closed first. If the file doesn't exist, no
+file will be opened.
+
+\closein n simply closes stream n.
+
+\ifeof n ... \else ... \fi tests if input stream n is either not open
+or has been fully read.
+
+\read n to\cs and \global\read n to\cs: These are the important new commands.
+They define control sequence \cs to be the contents of the next line from
+input stream n, reading that line in the normal way: the current catcodes
+are used, spaces are ignored at the beginning of the line, a blank line
+comes through as \par, etc. If input stream n has not been opened, or if
+an opened file has been fully input, or if n is negative or greater than 15,
+a line is read from the terminal instead; the user is prompted "\cs=" in
+this case. The latter feature allows convenient interactive routines, e.g.,
+        \message{Please type your name:}
+        \read-1 to\myname
+        \message{Hello, \myname!}
+
+* The previous commands \open and \send are renamed \openout and \write,
+to show their similarity to \openin and \read.
+
+\closeout <number> will close a file so that your TeX program can eventually
+input it. (Previously you could only do this by, e.g., \openout 0=empty0.tmp,
+cluttering up the disk with an empty file.)
+
+\write, \openout, and \closeout will be ignored if they occur within a \leaders
+construction. (Reason: The number of times a leader box occurs might be 0 or 1
+depending on floating-point rounding. This restriction keeps the language
+independent of floating point.)
+
+* \ifx now allows comparison of any two tokens, not just control sequences.
+A non-control-sequence matches only another non-control-sequence that
+has the same catcode and represents the same character.
+
+* New feature \expandafter t, where t is any token (usually a control sequence):
+If the token following t is a macro, it is expanded as if t were not there.
+Then t is put back in front of the result. For example,
+        \def\a{\x\y\z} \def\b#1\z{#1} \expandafter\b\a
+yields \b\x\y\z which yields \x\y. (It used to be possible to do this only
+with trickery/hackery.)
+
+* \chpar has been abolished. In its place, all of the integer parameters have
+names instead of numbers. (Thus at last they become consistent with the
+dimension parameters \hsize, etc., and with the glue parameters \baselineskip,
+etc. My only excuse for bad design in the first place was that the integer
+parameters were afterthoughts, stuck in after TeX was first up and running; it
+was the easiest way to vary some of the originally fixed constants. I wanted to
+finish TeX in a year and get on to writing Volume 4! That is still my wish.)
+
+Here are the names of the integer parameters:
+\tolerance      (formerly \chpar1=)     badness tolerance after hyphenation
+\pretolerance   (formerly \chpar15=)    badness tolerance before hyphenation
+\hyphenpenalty  (formerly \chpar2=)     hyphenation penalty
+\finalhyphendemerits                    penultimate line hyphenation demerits
+                (formerly half of \chpar3=)
+\doublehyphendemerits                   double-hyphen demerits
+                (formerly half of \chpar3=)
+\widowpenalty   (formerly \chpar4=)     widow line penalty
+\brokenpenalty  (formerly \chpar5=)     broken line at page end penalty
+\binoppenalty   (formerly \chpar6=)     math binary op break penalty
+\relpenalty     (formerly \chpar7=)     math relation break penalty
+\predisplaypenalty  (formerly \chpar9=) penalty for breaking before a display
+\mag            (formerly \chpar12=)    1000 x magnification ratio
+\adjdemerits    (formerly \chpar13=)    adjacent incompatibility demerits
+\looseness      (formerly \chpar14=)    change in paragraph length
+\uchyph         (formerly \chpar16=)    uppercase hyphenation
+\exhyphenpenalty  (formerly \chpar17=)  explicit hyphenation penalty
+\day            (new)                   initialized to current day of month
+\month          (new)                   initialized to current month of year
+\year           (new)                   initialized to current year
+\time           (new)                   initialized to minutes since midnight
+\interlinepenalty    (new)              see below
+\postdisplaypenalty  (new)              see below
+\displaywidowpenalty (new)              see below
+
+The former \chpar10 (dump window) is no longer needed, since TeX82 has better
+ways to display token lists.  The former \chpar11 (\radsign) goes away in favor
+of the new \radical primitive.  The former \chpar18, \chpar19, \chpar20, once
+"reserved for extensions", are gone too, since it is now best for a TeX extender
+to give names to whatever new parameters are needed. Similarly, \x is gone.
+
+* The \tracing parameter disappears, and its various components each have their
+own names.  They are as follows:
+
+\showboxbreadth (nodes per level when a box is being exhibited)
+\showboxdepth (maximum level shown when a box is being exhibited)
+\pausing (if nonzero, lines from a file are displayed as they appear)
+\tracingonline (if nonzero, diagnostic info goes to terminal as well as to file)
+\tracingmacros (if nonzero, shows macros as they are being expanded)
+\tracingstats (if nonzero, shows memory usage when TeX has recorded it)
+\tracingoutput (if nonzero, shows boxes when they are shipped out)
+\tracinglostchars (if nonzero, shows chars dropped because they aren't in font)
+\hfuzz (a dimen parameter; hboxes are reported if more overfull than this)
+\vfuzz (a dimen parameter; vboxes are reported if more overfull than this)
+\hbadness (under/overfull hboxes exceeding this (integer) badness are reported)
+\vbadness (under/overfull vboxes exceeding this (integer) badness are reported)
+
+* The new \tolerance and \pretolerance are devalued by a factor of 100 from the
+old \jpar and \jjpar.  In other words, the default is now \tolerance 200 and
+\pretolerance 200, so that it is a true "badness tolerance", i.e., the badness
+should not exceed 200. Any value of 10000 or more is equivalent to an infinite
+value, in which glue can stretch arbitrarily far.
+
+* Furthermore, \codeval and \parval are eliminated. In their place is a much
+more powerful operator called \the. For example, what used to be "\codeval5" is
+now "\the\catcode5"; what used to be "\parval2" is now "\the\hyphenpenalty". You
+can even say "\the\hsize" to get the current \hsize as a dimension,
+"\the\baselineskip" to get the current \baselineskip as a glue value; and
+you can say things like "\vbox to \the\baselineskip", which makes a vbox
+whose height is the normal amount of baselineskip (exclusive of stretching
+and shrinking). When expanding macros, you can say "\the\font" to get the
+current font identifier (e.g., "\ff"), as well as "\the\ff" to get the
+corresponding font name, as well as "\the\output" and "\the\everypar".
+In the latter cases, macros inside the current output or everypar routines
+are not further expanded.
+
+* Things like \count and \dimen and \skip should not appear except in the
+context of numbers, dimens, and glue; for example, you shouldn't say "\dimen 5"
+or even "\count 5" in the midst of a paragraph. But if you say "\the\count5",
+the paragraph will get the (signed decimal) value of the counter; if you say
+"\the\dimen10" you will get text like "3.14159pt"; and "\the\skip12" yields text
+like "-5.00000pt plus 3.40001fil".  In \xdef and \write, TeX82 will expand
+occurrences of \the, using the current values, but \count and \dimen and
+\skip will not be expanded. This gives you a little more control over what
+gets expanded.
+
+* \thebox is changed to \lastbox (avoids confusion with \the).
+
+* \minusthe is like \the, but gives the negative value.
+
+* An array of 256 dimension values is introduced, called \dimen0 to \dimen255.
+Furthermore `3.5dm8' is a dimension equal to 3.5 times \dimen8.  These join
+\count0 to \count255 and \skip0 to \skip255, so we now have 256 of each basic
+quantity (instead of 10, as in TeX80).  This applies to \count, \dimen, \skip,
+\write, and \box.  PLAIN.TEX contains macros for allocating a new \count or
+\dimen, etc.
+
+* mu-glue and ordinary glue are unmixable, since the rules are so much cleaner
+and clearer this way: There are 256 \muskip registers, which take glue whose
+units are mu (instead of pt, etc.).  It is now illegal to do things like
+\hskip\the\thinmskip or \mskip\the\baselineskip.
+
+* Operations on \count, \dimen, \skip, and \muskip are extended, so that we now
+have a complete set:
+
+        \setcount <digit> [=] <number>
+        \advcount <digit> by <number>
+        \multcount <digit> by <number>
+        \divcount <digit> by <number>
+
+        \setdimen <digit> [=] <dimen>
+        \advdimen <digit> by <dimen>
+        \multdimen <digit> by <number>
+        \divdimen <digit> by <number>
+
+        \setskip <digit> [=] <glue>
+        \advskip <digit> by <glue>
+        \multskip <digit> by <number>
+        \divskip <digit> by <number>
+
+        \setmuskip <digit> [=] <mathglue>
+        \advmuskip <digit> by <mathglue>
+        \multmuskip <digit> by <number>
+        \divmuskip <digit> by <number>
+
+Note that \specskip has changed its name to \setskip. The division operations
+truncate towards zero.  The = sign in \setcount, \setdimen, \setskip, \catcode,
+\font, \openout, \let, and in other similar things, is now optional.
+Furthermore an equals sign is optionally allowed now after \tolerance,
+\hsize, \baselineskip, \setbox (the new name for \save), etc.
+
+* If you put \global in front of \def or \let or \catcode or \tolerance or
+\baselineskip or even \parshape or \hangindent or a font identifier, the
+definition will now be global. Otherwise the definition is local (except
+for \gdef and \xdef).  This is a change in the case of dimension
+parameters:  \varunit, \parindent, \lineskiplimit, \mathsurround,
+\maxdepth, \topbaseline, \hsize, \vsize; you should put \global in front
+of these to get the former behavior. You probably wanted the former
+behavior only when changing \hsize or \vsize in an \output routine.
+
+* \edef is a local \xdef. Both \edef and \xdef can now take arguments like \def
+and \gdef.
+
+* Two other modifiers can be placed in front of \def, \gdef, \edef and \xdef:
+        \long means that the arguments to the macro are allowed to contain
+                \par tokens; formerly this was always allowed, but now it
+                is permitted only for "long" macros. Otherwise TeX will now
+                stop when it sees \par going into an argument, presuming
+                that a right brace was forgotten. This detects one of the
+                most frequent errors made by TeX users, before it propagates
+                to overflow the memory.
+        \outer means that the macro being defined is not allowed to appear
+                subsequently either in an argument or in the right-hand side
+                of a definition or write text, or in the preamble of an
+                alignment. In other words, the macro should appear only at
+                "quiet" times. This is another way to catch missing braces
+                before too much damage is done. It used to be applied at the
+                end of  every page, but most TeX users don't use a page-oriented
+                editor like E; therefore TeX82 does not treat file pages as
+                an integral part of its control structure.
+
+* \begingroup and \endgroup provide an alternate way to enter and leave groups
+for locally defined values. A \begingroup will not match a }, nor will { match
+\endgroup; the former gives the message "Missing \endgroup inserted" when the }
+occurs, and the latter inserts a "missing" }. Note that you can introduce
+\begingroup in one macro and \endgroup in another.
+
+* If you say \message{text}, the terminal will display " text" immediately.  For
+example, the new version of PLAIN.TEX contains message statements so that
+when INITEX inputs the file your screen looks something like this:
+        (PLAIN.TEX preloading macros, fonts, codes, hyphenation)
+instead of "(plain.tex 1 2 3 4 5 6)". (Note that you don't say \input basic any
+more, and PLAIN.TEX is already preloaded when you run TeX, as explained below.)
+
+Here's an example macro that displays names of sections when you get to them in
+a paper you are TeXing:
+  \outer\def\section#1{\vfill\eject\message{#1}\centerline{\bf#1}}
+
+* You can also say \errmessage{text}, which causes a TeX error message like
+        ! text.
+
+* \catcode<n> replaces \chcode <n>. \mathcode<n> replaces \chcode <n+128>.
+
+* A new catcode value 14 denotes a character that is better for comments than
+the old code 5. A character of code 14 denotes end of the current line (i.e.,
+ignore the remainder of that line), without inserting a blank space, and without
+considering that line to be all blank.  Thus, if % is assigned type 14, you can
+have lines that are completely comments by starting them with %, without having
+this line come out as \par; and you can also end a line with % without having a
+blank space inserted there.
+
+* Another new catcode value, 15, denotes an invalid character. When such a
+character is input, TeX82 issues an error message.
+
+* Here's something that was NOT put into TeX82: It wouldn't be hard to make TeX
+understand \escape to mean 0, \opengroup to mean 1, ..., \active to mean 13,
+\comment to mean 14, and \invalid to mean 15; then you could say, e.g.,
+\catcode'14=\active in the example above. But it seems wrong to make
+\catcode too easy, since that will only encourage more people to fiddle
+with the \catcode table. Let's leave this a black art, to be resorted to
+only with reluctance in times of emergency.
+
+* You CAN do certain things now in horizontal mode, e.g., \vfill; TeX82 will
+silently insert the \par you forgot.
+
+* \discretionary{#1}{#2}{#3} makes discretionary characters other than hyphens.
+It means the text should either contain #3 without a break, or else it should
+contain #1, then a break, and then #2. For example, \- is equivalent to
+\discretionary{-}{}{}. The parameters #1, #2, and #3 may not contain anything
+but letters and otherchars (not spaces or penalties, etc.); they need not all be
+in the same font, and TeX will insert ligatures and kerns within them if
+necessary. For example, the correct way to specify the hyphenation of
+"difficult" is "di\discretionary{f-}{fi}{ffi}\-cult". In German, the correct way
+to specify hyphenation of "backen" is "ba\discretionary{k-}{k}{ck}en";
+presumably if we were doing a lot of these we would define a \ck macro so that
+one could type "ba\ck en" or "ba{\ck}en".  The third part of a \discretionary
+must be empty, in math mode.
+
+* The internal character set used by TeX82 is the same regardless of the
+external character set. There is no longer a difference like "\catcode'176" for
+right brace that applies only at SAIL! Right braces and underlines and tildes
+and notequals and a few others have been a source of problems that have now gone
+away. Furthermore there is now a way to input an ascii control character to any
+version of TeX82 by typing, e.g., ^^A.
+
+TeX82 assumes that all of the standard ascii characters, shown in positions 040
+through 176 below, are available; these characters are always converted to their
+standard ascii codes. For example, a TeX user who types A is asking for
+character 65 of the current font, even though the A might have entered the
+computer in EBCDIC or some other code. Non-standard-ascii characters might also
+be readable on some implementations of TeX. In such cases they should have the
+significance stated below, for best results; and all characters that cannot be
+converted to a compatible TeX code should be converted to 177.
+        ascii   TeX     description     catcode mathcode (plain TeX)
+        000     ^^@     null            ignore  bin401
+        001     ^^A     downarrow       submark rel443
+        002     ^^B     alpha           other   ord213
+        003     ^^C     beta            other   ord214
+        004     ^^D     and             other   bin536
+        005     ^^E     not             other   ord472
+        006     ^^F     epsilon         other   ord217
+        007     ^^G     pi              other   ord231
+        010     ^^H     backspace,lambda ignore ord225
+        011     ^^I     tab,gamma       space   ord215
+        012     ^^J     linefeed,delta  ignore  ord216
+        013     ^^K     uparrow         supmark rel442
+        014     ^^L     formfeed,+/-    endline bin406
+        015     ^^M     carriage-return endline bin410
+        016     ^^N     infinity        other   ord461
+        017     ^^O     partial         other   ord245
+        020     ^^P     subset          other   rel432
+        021     ^^Q     superset        other   rel433
+        022     ^^R     intersection    other   bin534
+        023     ^^S     union           other   bin533
+        024     ^^T     for-all         other   ord470
+        025     ^^U     there-exists    other   ord471
+        026     ^^V     circle-times    other   bin412
+        027     ^^W     leftrightarrow  other   rel444
+        030     ^^X     leftarrow       other   rel440
+        031     ^^Y     rightarrow      other   rel441
+        032     ^^Z     notequal        other   rel434
+        033     ^^[     escape,diamond  action  bin567
+        034     ^^\     less-or-equal   other   rel424
+        035     ^^]     greater-or-equal other  rel425
+        036     ^^^     equivalence     other   rel421
+        037     ^^_    or              other   bin537
+        040             space           space   ord464
+        041     !       exclamation     other   close041
+        042     "       double-quote    other   active ^{\prime\prime}
+        043     #       hashmark        param   ord561
+        044     $       dollar-sign     math    ord577
+        045     %       percent-sign    comment ord045
+        046     &       ampersand       align   ord046
+        047     '       apostrophe      other   active ^\prime
+        050     (       left-parenthesis other  open050
+        051     )       right-parenthesis other close051
+        052     *       asterisk        other   ord052
+        053     +       plus-sign       other   bin053
+        054     ,       comma           other   punct054
+        055     -       hyphen,minus-sign other bin400
+        056     .       period          other   ord056
+        057     /       slash           other   ord057
+        060     0       zero            other   var060
+           . . .
+        071     9       nine            other   var071
+        072     :       colon           other   rel072
+        073     ;       semicolon       other   punct073
+        074     <       less-than-sign  other   rel074
+        075     =       equal-sign      other   rel075
+        076     >       greater-than-sign other rel076
+        077     ?       question-mark   other   close077
+        100     @       at-sign         other   ord574
+        101     A       uppercase-A     letter  var301
+           . . .
+        132     Z       uppercase-Z     letter  var332
+        133     [       left-bracket    other   open133
+        134     \       backslash       control bin404
+        135     ]       right-bracket   other   close135
+        136     ^       caret           supmark ord017
+        137     _      underline       submark ord465
+        140     `       reverse-apostrophe other open140
+        141     a       lowercase-a     letter  var341
+           . . .
+        172     z       lowercase-z     letter  var372
+        173     {       left-brace      open    open546
+        174     |       vertical-line   other   ord552
+        175     }       right-brace     close   close547
+        176     ~      tilde           other   rel430
+        177     ^^?     invalid         invalid ord573
+
+As before, the mathcodes (which replace Appendix F8 of the old TeX manual)
+are relevant only when the catcode is letter or other. (See below for the
+new catcode values.) Two possibilities are given for codes 010, 011, 012,
+014, 033, 055; at most one of these should be chosen, and if both are
+present on some system keyboards the other should probably be disallowed
+for TeX input (mapped into 177). However, since a user can change any
+catcode and any math code, strict conformity with these interpretations
+isn't absolutely necessary. To convert a file into a format that all TeXes
+can read, one should change null into ^^@, downarrow into ^^A, and so on.
+If a character set contains uparrow but not caret (e.g., the SAIL system
+falls into this category), the uparrow should be considered an ascii
+caret; code 013 will be used only if both uparrow and caret are present,
+as they are at MIT.  Incidentally, this internal coding scheme is based on
+a scheme used at MIT, since the MIT code is faithful to ascii while
+allowing additional visible characters that are extremely convenient.
+
+An appearance of ^^A is equivalent to an appearance of ascii code 001, if the
+current catcode of ^ is supmark. In particular, if somebody in a foreign country
+with more than 26 letters in the local alphabet wants to make \catcode ^^A =
+letter, then control sequences like \a^^A^^Ab (a four letter word) are
+permissible.
+
+TeX82 puts 015 (ascii carriage-return) at the end of each line, except for the
+lines that are inserted with "i" after error messages. If the final character of
+the line is currently catcoded to be an escape character (e.g., if you end an
+error-insertion with \, or if you do \catcode'15=0), the result is equivalent
+to \csname\endcsname (control sequence of length zero).
+
+Of course, users are expected to type \ne instead of ^^Z if their system's
+character set doesn't contain a not-equal sign; TeX82 recognizes ^^Z as ascii
+032 primarily to make it possible for straightforward translation of TeX files
+from one system so that they will work on another.
+
+Some files contain ascii 014 (form-feed) characters as page marks. Such
+characters are ordinarily treated like carriage-returns, since the initial
+catcode for 014 is carret. In order to get TeX82 to do the error checking at the
+end of a page, as the old TeX did, you can say
+        \catcode'14=13 \outer\def^^L{\par}
+
+* Note that the backslash character is now predefined as an escape character
+when TeX82 begins. The old idea about letting the user's first nonblank
+character be the escape has been abandoned. Furthermore TEXPRE has been replaced
+by a version of TeX called INITEX that allows an entire macro package to be
+preloaded; this macro package can define its own catcodes and mathcodes. The
+normal version of TeX already has "PLAIN.TEX" preloaded; the normal version of
+AmSTeX already has the AmSTeX macros and fonts preloaded.
+
+The new rule for starting TeX is this:  When you're running INITEX or a version
+of TeX that has a preloaded format, you can request format file f.fmt by typing
+`&f' after the ** prompt. When you're running VIRTEX, format file plain.fmt will
+be loaded unless you type `&somenonplainformatname' after the ** prompt.  Thus,
+for example, the following ways of starting TeX are equivalent at SAIL and
+similar sites:
+        tex paper
+                        r tex;paper
+                                        r tex
+                                        ** paper
+                                                        r tex
+                                                        **\input paper
+(The asterisks here are TeX's prompt character. On TOPS-20 what used to be
+"@tex paper/", indicating batch mode, is now "@tex \batchmode\input paper".)
+
+* There are four new primitives \batchmode, \nonstopmode, \scrollmode,
+\errorstopmode that represent increasing amounts of interaction. \batchmode and
+\nonstopmode will never stop for any reason; \batchmode omits printing anything
+on the terminal (but the .log file gets everything, as usual).  These nonstop
+options are intended for overnight batch processing.  \scrollmode doesn't stop
+for error messages, but it does stop if files can't be found, or if \pausing is
+nonzero. \errorstopmode is the default. If you aren't in \errorstopmode, your
+.log file will contain "help" messages for all of your errors. These modes are
+global (they don't revert at end of group).  They can be set in a format file;
+thus you can have a format that implies batch processing. But you could override
+that, e.g. by running "batchtex \errorstopmode \input paper". (This example
+assumes that batchtex is a program representing "virtex&batch", i.e., a virgin
+TeX with batch.fmt loaded and then the core image saved.)
+
+* \dump will save TeX's current memory contents.  \dump is essentially like \end
+(it's the last thing you do with INITEX), and you don't specify a file name. If
+your input was named foo, your output file will be named foo.fmt. Such files are
+now called format files.  This is allowed in INITEX only, and only at very quiet
+times (i.e., at group level 0 in vertical mode with nothing on the current page,
+etc.).  The file name will be printed later when these memory contents are
+loaded in a production version of TeX; for example, if you say "\dump" on
+March 1, 1982, the TeX that uses the dumped file might begin with the line
+        This is TeX, Version 1 (format=plain 82.3.1)
+
+* Actually the program name TeX now stands only for versions of TeX82 that have
+PLAIN.TEX preloaded. Other preloaded versions (e.g. AMSTEX) will usually exist
+too. If your operating system does not allow a program to start with its memory
+preloaded, you will have to call a "virgin TeX" program VIRTEX that first wants
+to see the name of a format-dump file (e.g., PLAIN or AMSTEX).  In this case a
+typical calling sequence might be "@virtex &amstex paper".   If no format
+is given, "&plain" is assumed. If your operating system is nice enough to
+allow preloaded programs, a typical way to create the program TeX would be
+to say "@virtex &plain" followed by something like "control-C" and "save tex".
+
+
+* \indent takes you from vertical mode to horizontal mode and indents the
+paragraph; this can be used if the first item in the paragraph is in an
+\hbox or \vbox. You can also use \indent in horizontal mode to stand for
+"\hbox to\the\parindent{}".
+
+* If you end the parameter part of a definition with an additional #, the
+argument-matching process will terminate on the next left brace.  For example,
+in
+        \def\chop to #1#{\chopp{#1}}
+the call "\chop to 2in{x}" will expand to "\chopp{2in}{x}". The definition
+        \def\mac#{why}
+will subsequently issue an error message if "\mac" is not followed by "{".
+
+* The "texinfo" that is given with each font (see Appendix F of the METAFONT
+manual) can now be changed by a TeX user program; there was no way to do this
+before except by making a new TFM file. Say
+        \texinfo <font><parameternumber>=<dimen>
+For example, \texinfo\ff3=4pt sets the stretch component of spacing to 4pt in
+font \ff. (Parameter 1, the "slant", is unitless but you should give its
+value in units of points.) You can use this feature to adjust math-mode
+positioning of subscripts, etc., by changing the parameters in mathsy and
+mathex fonts. Note that texinfo is global, it does not get reset at the
+end of a group. You can also say \the\texinfo<font><parameternumber>.
+
+* New dimension parameters \hfuzz and \vfuzz specify the tolerance for printing
+a diagnostic message about overfull boxes. If the box is overfull by this amount
+or less, no message is printed. Default is ".1pt", which was the old TeX
+standard. If you say \hfuzz 8000pt, you probably won't see any overfull boxes.
+If you say \hfuzz 0pt, you will see all of them, including a few that you didn't
+know about last year.
+
+* Another new dimension parameter \overfullrule specifies the width of a rule
+that is added at the right end of overfull hboxes. This rule has the height and
+depth of the box. If \overfullrule is zero or negative, or if the amount of
+overfullness does not exceed \hfuzz, no rule will appear.  Default is 5pt, which
+gives a big black mark to help you spot overfull boxes.
+
+* The "overfull box" warning messages will be given in a new form that simply
+gives the characters in the box; for example,
+        Overfull \hbox, 3.3326 points too wide (in paragraph of lines 210--216):
+        \ff This is the text of a line that was over-full for some rea-son.
+Discretionary hyphens are shown as real hyphens, so that you can see what
+hyphenation TeX was trying.  The error-transcript file gets both this message
+and an old-style description of the overfull box in detailed diagnostic dump
+format.
+
+* Another new control sequence, \relax, does nothing at all. Thus, if you want
+to disable the action of a control sequence, you can \let it be \relax.
+
+* Up to 256 fonts may be used, and each font may contain up to 256 characters.
+(Characters numbered 128 to 255 can be accessed either via ligatures or
+charlists or with the \char command.)
+
+* \leftskip and \rightskip specify glue to be placed at the left and right of
+each line of a paragraph. This provides better ways to do ragged right setting,
+and it makes changes to \hsize less necessary.
+
+* \lastskip gives the value of the previous item in the current horizontal or
+vertical list, if that item was glue, otherwise it yields the value 0pt. Thus,
+to get the effect of \unskip in vertical mode, say
+"\penalty100000\vskip\minusthe\lastskip".
+You can also do things like "\ifdim\the\lastskip > 5pt ... \else ... \fi",
+so that one macro can make decisions about spacing based on what has gone
+before.  (This finally solves the long-standing problem about spacing
+after theorems that end with a displayed equation.) Note that
+\the\lastskip is permitted, except in \write statements.
+
+* \sqrt signs in TeX82 are positioned differently in their boxes:  The baseline
+now comes exactly at the bottom of the place where the vinculum (i.e., the rule
+over the operand of \sqrt) is to be joined.  This means that no rounding errors
+will be possible and perfect alignment will be obtained at all resolutions.
+Pre-82 versions of TeX will still work (subject to rounding) if the height of
+the box is the thickness of the rule.
+
+* The error transcript files are no longer called "errors.tmp". Your output file
+and transcript file will be "paper.dvi" and "paper.log" if your first line of
+TeX input specifies \input paper. The default name "texput" is used whenever no
+other appropriate name has occurred before TeX reads line two of its input. (TeX
+can't wait any longer, since line one has to be put into the transcript file,
+and the transcript file has to have a name before it gets information.)
+
+* \hyphenation{word list} can be used to override TeX's hyphenation algorithm;
+for example, to specify hyphenation of the words "hyphenation" and
+"exceptions" one can write
+        \hyphenation{hy-phen-a-tion ex-cep-tions}
+A new hyphenation algorithm devised by Frank Liang is used in TeX82; this one
+extends much more readily to other languages. Words containing ligatures can now
+be hyphenated automatically, even difficult words like "difficult".
+
+* If two fonts are specified with the same name and point size, only one will be
+loaded.
+
+* \sfcode <char number> is the spacefactor code for that character, times 1000.
+For example, the spacefactor code for period and question mark is normally 3000,
+for comma 1250, for right parenthesis 0 (meaning do not change the space
+factor), and for most characters it is 1000. In TeX82, you also say
+"\spacefactor 1234" instead of "\spacefactor 1.234".
+
+* TeX82 has a new "help" facility available on error messages. If you type "h"
+after an error, you will (usually) get further explanation of what the error
+means, together with suggestions about how to proceed.
+
+* \^^\ and \^^] have gone away, to the delight of people who don't have nice
+ways to type ascii control characters. Instead, \nonscript in math mode precedes
+a space of any other type, making that space zero in subscript styles. Thus, the
+conditional thin space is now "\nonscript\mskip\the\thinmuskip", and conditional
+negative thin space is "\nonscript\mskip\minusthe\thinmuskip".
+
+* \thinmuskip, \medmuskip, \thickmuskip are now definable like other glue
+parameters such as \baselineskip. The units should be in mu. For example, one of
+the defaults is \thickmuskip 5mu plus 5mu.  The old "mathspace" parameter in
+symbol fonts (see METAFONT manual p99) is no longer used.
+
+* There's a new way to get up to 4096 more math symbols in all three sizes, by
+defining font families 0 to 15. For example, suppose that fonts \fA, \fD, and
+\fF are Fraktur alphabets in 10pt, 7pt, and 5pt sizes. Then you can say
+        \textfont 5=\fA \scriptfont 5=\fD \scriptscriptfont 5=\fF
+which is something like the code "\mathrm adf" in the old basic.tex. Now if you
+say "\fam5" in math mode, you get characters from font \fA, \fD, or \fF,
+depending on the size. For example, "{\fam5 B_b}" would give Fraktur B in
+10pt with a subscript Fraktur b in 7pt. The rule is that a family
+specification overrides the normal family for symbols of class var (see below).
+
+Note that we can now say \def\rm{\fam0\ff} together with
+        \textfont 0=\ff \scriptfont 0=\fg \scriptscriptfont 0=\fh
+and then it's possible to say, e.g., "\def\max{\mathop{\rm max}}" instead
+of resorting to "{\char`m \char`a \char`x}" in order to achieve size-switching.
+This extension also makes ligatures and kerning available in math mode.
+
+* The use of certain families is predefined.  Family 2 specifies the `mathsy'
+fonts used for symbols; family 3 specifies the `mathex' fonts used for large
+delimiters; and the other 14 families can be used in any desired fashion.
+Instead of `\mathsy uxz' one now says
+        \textfont 2=\u \scriptfont 2=\x \scriptscriptfont 2=\z
+and these assignments are local (they go away at the end of a containing group).
+You must have \textfont2, \scriptfont2, \scriptscriptfont2, \textfont3,
+\scriptfont3, and \scriptscriptfont3 defined before using math mode, since the
+parameters of these fonts contain the values TeX needs for math spacing.
+(\scriptfont3 and \scriptscriptfont3 are now supposed to be math extension
+fonts, as well as \textfont3, because TeX82 will use smaller extension-type
+features in script and scriptscript styles; for example, the default rule
+thickness in a subscript is a parameter to \scriptfont3, while TeX80 had only
+one extension font for all three sizes.)
+
+* The \mathcode now has a 15-bit number as its value. The first three bits
+specify ord, op, bin, rel, open, close, punct, and var (where var is like ord
+but it subsitutes the "current" family for the stated one).  The other twelve
+bits specify a "math character", with four bits for the family and eight for the
+character. For example, character '100 in family 5 is '2500; of course, this
+reads a little better in hexadecimal:  character "40 in family 5 is "540.
+
+You can say \mathchar followed by such a 15-bit code, to get the equivalent of
+typing a character with that math code. Thus, one can now say, e.g.,
+        \def\cdot{\mathchar '10001 }
+instead of \def\cdot{\mathop{\char1}} as formerly. The control sequence \char
+is no longer allowed to take values greater than 255.
+
+* If the first three bits of a mathcode are 7 (case "var"), it's the same as 0
+except that the current value of integer parameter \fam replaces the
+family specification (if it is between 0 and 15). The current family is
+set to -1 whenever math mode is entered.
+
+* A \mathcode can also be '100000; this causes the corresponding character to
+behave as if it had catcode 13 (if it is a letter or otherchar).
+For example, plain TeX defines the mathcode of ' to be '100000,
+and control sequence ' is defined to be ^\prime,
+so that you can say f'(x) instead of f^\prime(x). In this way
+you can have characters that are active only in math mode. (Furthermore,
+an octal constant like '77777 will still be acceptable in math mode.)
+
+* New primitive \mathchardef will save lots of memory if you have lots of
+control sequences for math things like \alpha, etc.:
+        \mathchardef\cs[=]<fifteen bit number>
+will have the effect of
+        \def\cs{\mathchar <fifteen bit number> }
+and it will use none of TeX's memsize. (By contrast,
+        \def\cs{\mathchar "1234 }
+takes up 9 words of memory!)
+
+* The \radsign parameter goes away. Instead, one says \radical followed by a
+delimiter code. Delimiter codes may be used also after the control sequence
+`\delimiter' in connection with \left and \right and \atopwithdelims.
+
+A delimiter code is a somewhat esoteric 24-bit number. The first twelve bits
+specify a `small' character, and the last twelve bits specify a `large' one.
+When TeX chooses a delimiter, it searches in the following way until finding the
+first one large enough: First it looks at the `small' character in the current
+size of the family, then (if the current size isn't text size) it looks at the
+small character in the next larger size, and so on until coming to text size. If
+a suitable delimiter has still not been found, the same search is carried out
+starting at the `large' character. If any of the characters looked at is part of
+a "charlist", the list is searched before moving on. If the small or large
+character is zero, it is ignored; thus, you can't use character 0 in family 0 as
+a delimiter.
+
+For example, \sqrt is equivalent to \radical '11601560 in the Computer Modern
+fonts; the 1160 specifies \fam2\char'160, and the 1560 specifies \fam3\char'160.
+Since '160="70, we can also write this as \radical "270370.
+
+If \delimiter <delimiter code> appears in a formula in some place not
+controlled by \left or \right or \atopwithdelims, it is actually a 27-bit
+code. The least significant 12 bits are ignored, and the leading 15 bits
+are used like a \mathchar (thus, they specify a category as well as a
+family and character). The reason is that one can now say, e.g.,
+        \def\lfloor{\delimiter '411421404 }
+so that one can say both \left\lfloor and simply \lfloor.
+
+A \delcode is also given for letters; \left and \right and \atopwithdelims will
+use this code as a delimiter code if they are followed by an "otherchar".  For
+example, the Computer Modern fonts use \delcode`(='501400, assuming that family
+0 contains the ordinary roman alphabets.  Initially, \delcode is negative for
+all characters; this denotes an invalid delimiter.
+
+All this bit hackery is, of course, unfriendly looking, but the goal is to make
+it possible for macro packages to define the friendly codes without taking up
+much memory space inside of TeX. All of the TeX control sequences that used to
+be predefined for Computer Modern are now unbundled so that arbitrary encodings
+can be used. One of the embarrassing limitations of TeX80 was that it could
+handle delimiters only between '142 and '153 in the symbols font, and it
+insisted that these `small' delimiters had corresponding `large' ones in
+positions '004--'015 of the mathex font!
+
+* The spacing in math formulas is unbundled too; there are three parameters
+\thinmuskip, \medmuskip, \thickmuskip to specify the spacing in formulas like
+$x\log x$, $x+x$, and $x=x$, respectively. One defines these using "mu" units,
+e.g. `\medmuskip = 4mu plus 2mu'. The control sequences `\,' `\>' and `\;' in
+math mode yield spaces of these three varieties. (These are now defined in
+PLAIN, not TeX primitives. The previous meaning of \> is now rendered
+`\nonscript\>'.)
+
+The following example shows a feature that is NOT allowed:
+$a \save1\hbox to 18mu{}
+        \ifdim 1wd1=10pt{\gdef\x{\over b} \else{\def\x{}}
+        \x$
+Whoever wrote this was trying to be clever and discover whether TeX was
+in \textstyle. But the program is self-contradictory, because if the "a" is in
+10pt text style the formula changes itself to $a\over b$ where the "a" is in
+script style, so the formula changes itself to $a$ where the "a" is in text
+style, so... Constructions like this show why TeX does not allow variable
+dimensions like mu except in very restricted ways like \mskip.
+
+* New dimension parameters
+        \scriptspace  {this amount is placed at the right of all subscripts
+                        and superscripts; TeX80 used about .45pt always}
+        \nulldelimiterspace {this amount is used before and after all fractions
+                        defined by \atop, \over, \above, and for all
+                        "." delimiters}
+        \delimitershortfall {see the next parameter}
+
+* New integer parameter \delimiterfactor. When TeX computes the size of
+\left and \right delimiters, it computes delta1=twice the maximum distance
+of the enclosed formula from the "axis". (The axis is where the fraction
+line would go.)  Let delta2=delta1*(delimiterfactor/1000) and
+delta3=delta1-delimitershortfall.  The delimiters will be as small as
+possible provided that their height+depth exceeds both delta2 and delta3.
+(TeX80 took delimiterfactor=900 and delimitershortfall=1ex; TeX82 lets the
+user twiddle with these magic numbers.)
+
+* When unscripted letters occur in math mode, they now are adjusted for
+ligatures and kerns. This means, for example, that "df" will be spaced better,
+once appropriate kerning information has been added to the math italic fonts.
+The (new) rules for spacing are this: If there's no kerning specified, add the
+italic correction to every symbol in math mode; otherwise use the kern (without
+the italic correction). However, a subscript is moved left by the amount of
+italic correction. In formulas like $P_2^2$, the 2's will no longer be directly
+above each other (the sub-2 will be to the left of the sup-2 by the amount of
+the italic correction).  TeX80 put them above each other, thereby following a
+long-standing convention (cf. Oxford book by Chaundy et al.), but this usually
+turned out to be undesirable, so people started to write $P^2_{\!2}$ all the
+time.  If anybody really wants it the old way, they can get it by
+$\hbox{$P$}^2_2$.
+
+* "\comb" is changed to "\atopwithdelims". There's also "\overwithdelims" and
+"\abovewithdelims".
+For example, {1\overwithdelims[]2} is sort of like \left[1\over2\right].
+And "\abovewithdelims.." is equivalent to "\above".
+
+* The maximum penalty has been raised from 1000 to 10000; thus, "\penalty 1000"
+no longer absolutely prohibits a break, but "\penalty 10000" does.  This number
+10000 is being used elsewhere in TeX82 also: For example, \tolerance or
+\pretolerance of 10000 is equivalent to saying "use all possible line breaks,
+regardless of how much stretching is necessary."  A \penalty of -10000 (or less)
+is equivalent to the old \eject in vertical mode, and to the old \linebreak in
+horizontal mode. These are no longer primitives of TeX82.
+
+* The \pagebreak feature is also eliminated, in favor of a much more general
+feature. You can say \vadjust{vertical list} in the midst of any paragraph, and
+whatever is in the specified vertical list will be placed immediately following
+the box for its line when the paragraph has been made. For example, \pagebreak
+is now written \vadjust{\penalty-10000}. You can use this feature to do things
+like insert extra space between lines of a paragraph, something like \noalign
+does for alignments.
+
+* \ifvoid n tests if \box n is not present. All boxes are initially void;
+a null box (made e.g. by \hbox{}) is empty but nonvoid. A box becomes void
+after it is used.
+
+* \topbaseline has changed to \topskip; thus glue is allowed at the top of a
+page. This makes it easy to "bottom justify", for example.  (The old \topskip
+and \botskip are no longer used.)
+
+* \vtop is now allowed in any mode, just like \vbox.
+
+* \special{keyword arg} is a general extension feature. The keywords are system
+dependent, but TeX copies "keyword arg" into the DVI file so that any device
+driver that knows your keywords will do the right thing with them. Users should
+get together if they want to standardize on various keywords. Examples:
+\special{halftone fig22} could mean "insert a halftone from file fig22, with its
+reference point at the current reference point"; \special{leftend 2} and a later
+appearance of \special{rightend 2} could mean "draw a straight line from
+the left reference point to the right one" (the "2" is an identifier to
+distinguish this line from another one); \special{message Foo} could mean
+"display `Foo' on the console of the printing device"; and so on.
+Semantically, \special acts like a box of height, width, and depth zero,
+as far as TeX is concerned; the argument in braces is sent to the DVI file
+where it is associated with the current reference point.
+The length of "keyword arg" must be at most 255 characters.
+
+* \ragged is no longer implemented, since \rightskip does ragged right setting
+so much better.
+
+* \ifcase <number> case0 \or case1 \or case2 \else remaining cases \fi
+illustrates a new way to choose between more than two alternatives without
+too many nested brackets. Any number of cases can be given (but TeX has
+to scan by them each time, so it's best to define them as control sequences
+if they are long). The \else is optional.
+
+* Major changes have been made to the \output conventions, so that it will be
+easier to produce balanced columns and various other things.  The old ideas of
+\topinsert, \botinsert, \topsep, \botsep are eliminated!
+
+In their place one says \insert n, where n is a box number, e.g. "\insert 250".
+Different numbers correspond to different classes of insertions; for example,
+one might want to have figures as well as footnotes inserted at the bottom of
+pages, and TeX80 used to use the same treatment for both. Under the new
+conventions, all \insert 250's that go on a page will appear in \box 250 when
+the \output routine starts.
+
+The old idea of "\page" is gone too, and the meaning of \output has changed, so
+read carefully: The contents of an accumulated page, exclusive of inserts, is
+placed into \box 255, so that the output routine can place this material
+together in whatever way it wants. (\insert 255 is not legal.)  A new TeX
+primitive called \shipout, followed by a box specification (e.g.,
+"\shipout\vbox{\box255\box250}") is what actually produces output.  Note that
+\ifvoid 250 can be used to test whether any \insert 250's have been gathered
+for a page.  The \shipout command can be used anywhere, not just in \output.
+Incidentally, \shipout prevents the old anomalies about the values of \counts
+being different from what people thought they would be when \writing
+table-of-contents or index data to a file. The default \output routine in TeX82,
+if none is specified, is "\output{\shipout\box255}".
+
+Another new primitive, \vsplit, is handy for multi-column input.  The command
+"\setbox 2=\vsplit 250 to 100pt" will, for example, make \box2 a box whose
+height is 100pt, by extracting 100pt worth of material out of \box250. The depth
+of \box2 will be at most \splitmaxdepth (using the rules that TeX used for
+\page); \vsplit extracts the optimum initial segment of \box250, in the sense
+that badness+penalty is minimized and the segment is as long as possible subject
+to this condition. After \vsplit has acted, \box250 will contain the residual,
+as if a page break had occurred; thus, glue and penalties will be eliminated
+following the break, and the first box or rule (if any) will then be preceded by
+sufficient glue to position its top baseline (based on \splittopskip).
+
+The main idea of \vsplit is to make it easier for an \output routine to produce
+multiple column format. For example, if \box255 is 300pt high, one can get
+triple columns by
+        \setbox 1=\vsplit 255 to 100pt
+        \setbox 2=\vsplit 255 to 100pt
+        \setbox 3=\vsplit 255 to 100pt
+(Actually it is safer to use slightly less than 100pt here, but the exact
+measurements depend on the top baseline and other things.) The remaining
+material in box 255, if any, can be put back onto the following page, as we will
+see momentarily; and boxes 1,2,3 can be positioned as desired before they are
+shipped out.
+
+The \vsplit routine also looks at \marks in the contained box. It sets
+\splitfirstmark and \splitbotmark to the topmost and bottommost contained marks;
+otherwise it sets these to null strings.
+
+Of course you can't apply \vsplit to a box that was constructed as an \hbox.
+There is no \hsplit.
+
+The old \output routine defined a sequence of items in restricted vertical mode,
+with the meaning that this sequence would be vboxed and shipped out.  The new
+\output routine defines a sequence of items in restricted vertical mode, with
+the meaning that this sequence will be placed in front of whatever TeX has
+accumulated for the following page, including whatever caused a break on the
+current page. Thus, if you write "\output{\unvbox255}" you are in serious
+danger of getting in an infinite loop.
+
+Consider, for example, what happens if a page break occurs at some glue.  If the
+output routine leaves some of the tail end of the material from \box 255 in its
+vertical list, this material will fit perfectly before the glue that caused the
+previous break, since the glue following a break is not eliminated when \box255
+was made; glue is simply discarded when it appears at the top of the new page
+that is started after \output finishes.
+
+Consider also what happens if a page break occurs at "\penalty-10000". If you
+understand what has just been said, you will see that this would cause repeated
+looping if the \output routine places something back for the next page, and this
+might be a problem. Therefore TeX will change the penalty to +10000 at a break,
+and it also sets \outputpenalty to the value of the penalty that actually caused
+the break. (\outputpenalty is set to 10000 if it was glue that caused the
+break.) Thus, you can restore the effect of a penalty by putting
+"\penalty\outputpenalty" at the end of your output routine.
+
+But how does TeX figure out what to put in box 255 and how much of the
+insertions to put into other boxes, before it calls on your output routine?  The
+rules are slightly complicated, but they have been devised to handle a wide
+variety of situations, including situations where some inserts span several
+columns. It should be possible to do things like put footnotes in two columns
+beneath single-column text, or to put single-column footnotes beneath
+double-column text, etc. Here's how:  We associate \skip n, \dimen n, and \count
+n and \box n with \insert n.  (a) \count n gives a magnification ratio of
+\insert n with respect to ordinary text. For example, if two-column footnotes go
+with one-column text, and if footnotes are inserted with \insert250, then
+\count250 should be 500. If single-column footnotes or page-wide figures are
+being inserted with double-column text, the magnification ratio should be 2000.
+(b) \dimen n gives a maximum length of inserts for box n; subsequent inserts
+will be carried over to a following page. (c) \skip n gives a correction term
+when there is at least one insertion for box n.
+
+The total length of inserts is figured as the sum, over all n such that \insert
+n appears on a page, of the \skip n plus (\count n over 1000) times the total
+natural height plus depth of all \insert n's, including the original contents of
+box n before any inserts were made. The badness of a page is computed from the
+amount of the text on the page plus the total length of inserts, and TeX breaks
+the page so that badness is minimized. The \vsize is the total of text plus
+insertions; if you are using double-column text, your \vsize should be about
+twice the actual page height.
+
+If this isn't complicated enough, there is also a rule for splitting inserts, so
+that long footnotes can be broken between pages and so that large figures can be
+carried over to subsequent pages. Here's the idea: When we are deciding whether
+to perform an \insert n or not, we first look to see if previous \insert n's
+have all been completed without splitting.  If not, this one is carried over to
+the next page. If so, this one is put on the current page, if it does not cause
+the page to overflow and if it does not cause the maximum (\dimen n) to be
+exceeded. In the latter cases, the insertion is \vsplit to the maximum size that
+would not cause such overflow. For example, suppose we get to an insertion at
+magnification 500 when \vsize minus the current amount of text and the previous
+total amount of insertions leaves only 50pt of vertical space left. Suppose the
+insertion takes 150pt of vertical space, so that it would take 75pt after
+scaling; and suppose that 150pt would not exceed the maximum total size of
+insertions for this box. Then we essentially \vsplit the insertion list to 100pt
+(this will scale down to 50pt), after which the actual length of the insertion
+will be computed as its natural height plus depth (which might be different from
+100pt). The remaining part of the insertion will be corrected for top baseline,
+etc., as in an ordinary \vsplit, if this broken insertion is actually chosen.
+But TeX will use broken insertions only if they lead to the minimum badness for
+the resulting page.
+
+If several \insert n's appear on the same page they are concatenated together
+with no baselineskip correction between them. So you should use struts to
+produce the correct positioning.
+
+Insertions are treated the same whether they appear in horizontal or vertical
+mode. A "floating" insertion turns out to be a special case of a broken
+insertion, whose first component is a null box.
+
+TeX doesn't put waiting insertions into \box255, it leaves them on the list for
+the subsequent page. If insertions appear in a box that is being vsplit, they
+are ignored.
+
+It's too bad that these rules came out so complicated, but in simple cases the
+output routines will now be quite simple, and the manual will have enough
+examples to make things clear (I hope). Nothing simpler than this seems to
+provide the other features that people have been demanding, and the total amount
+of programming for the TeX82 page builder is not much more than there was in
+TeX80.
+
+* In vertical mode, you can say \prevdepth=3pt to make TeX82 act as if the
+previous box had a depth of 3pt, when computing the glue between boxes to
+achieve the baselineskip. If you set \prevdepth to a value less than or equal
+to -1000pt, the baselineskip calculation will not be made. (This is the
+case at the beginning of a vbox, or just following an hrule.)
+
+* You can say \the\spacefactor and \the\prevdepth, if you are in horizontal or
+vertical mode, respectively.
+
+* New diagnostic features: "\showbox 10" will display the current contents of
+\box10 on the terminal. There's also \showthe as in "\showthe\count 5" and
+"\showthe\baselineskip". Also "\show\cs" to give a symbolic display of the
+current meaning of the control sequence \cs.  The present \ddt is deleted, and
+\showlists exhibits the current activities the way \ddt used to.  If you are
+trying to diagnose some mysterious behavior, you can say, for example,
+"\showthe\texinfo\ff 40" and you will get an error message like "\font \ff has 7
+texinfo parameters" (if it has fewer than 40). Incidentally, if your error
+message was "\font\fg has 7 texinfo parameters", you would know that fonts
+\ff and \fg are being treated identically. (TeX loads only one copy of a
+font that you mention twice. If you want to load two distinct copies, so
+that you can diddle their parameters independently, you can try something
+like this:  "\font \ff=cmr10 at 10pt \font \fg=cmr10 at 10.00002pt".)
+
+* If you use a \skip parameter in the context of a dimension, the natural width
+is used. For example, \setdimen 5=\the\baselineskip. If you use a \dimen
+parameter in the context of an integer, the conversion is in units of sp (scaled
+points, 2^{-16} of a pt). For example, \setcount 10= 1truept would set \count 10
+equal to 65536000 divided by \mag.
+
+* When you use \advskip, infinite glue wipes out finite glue.
+For example, "\setskip 2=5pt plus 2pt minus 1fill
+              \advskip 2 by 3pt plus 1fil minus 1fil"
+is equivalent to "\setskip 2=8pt plus 1fil minus 1fill".
+
+* \linepenalty is yet another parameter to control line breaking. TeX82 adds
+this to the badness before squaring to get demerits. (Previously, I had
+\linepenalty=1 always; by setting it a bit higher, like maybe 7 or 8, you tend
+to get paragraphs that are set tighter when a line can be saved.  I don't think
+it's a good idea to make \linepenalty real large, and it would be foolhardy but
+weird to make \linepenalty = -10000; this apparently would minimize the number
+of lines but maximize the badness!)
+
+* Macro parameters are now delimited by strings instead of single items.
+For example, \def\a#1ab{...} followed by \a acaab will set #1 to "aca";
+\def\a b#12#{foo#1} followed by \a bbar2baz2{8} will expand to foobar2baz{8};
+the latter followed by \a 2... will give an error message (\a not followed
+by b). You get the error message only if there's a string before the
+first parameter.
+
+* Characters catcoded 13 are not equivalent to one-letter control
+sequences. They act like control sequences (e.g., you can use them after
+\def and \let), but & and \& will be distinct.
+
+* \everypar{...} inserts its argument into TeX's scanner at the moment TeX has
+changed from vertical to horizontal mode. The paragraph indentation will already
+appear in the paragraph, unless of course the transition to horizontal mode was
+due to \noindent.
+
+* Spanned and omitted columns in alignments: If an entry in an alignment is
+`\omit', the preamble text for the column is omitted in this row.  The control
+sequence \span can be used in place of a tab mark, and the result is that the
+surrounding entries are combined together.  You can use \omit only as the first
+item of a column. If you use \cr in place of a tab mark, the effect is as if
+all further columns in that row are omitted; thus, your preamble can specify
+more columns than are actually used.
+
+Example: \tabskip 1em plus 1em
+         \halign to 20em{\ctr{#}&\rt{#}&\lft{#}\cr
+                                AAA&B&C\cr
+                                DDDDDDD\span\omit&EE\cr
+                                \omit\span FFFFF\span\omit\cr
+                                G&\omit H\span III\cr}
+where all the letters are 1em wide, say. Let wij be the maximum width of the
+entries that span columns i thru j.  The first line "AAA&B&C" implies that
+w11>=3, w22>=1, w33>=1. The second line says that w12>=7 and w33>=2, and so on;
+we find that w11=3, w12=7, w13=5, w22=1, w23=4, w33=2. Column widths are
+now assigned from left to right, as follows:
+        c1=w11
+        c2=max(w22,w12-t1-c1)
+        c3=max(w33,w23-t2-c2,w13-t1-c1-t2-c2)
+where ti is the natural width of tabskip between columns i and i+1.  In this
+case t1=t2=1, so c1=3, c2=3, c3=2. This means the natural width of the lines
+will be 1+3+1+3+1+2+1=12 ems, so the glue will be stretching to make up the
+additional 8ems; each unit of stretch is doubled. When columns are spanned,
+however, TeX justifies the material into a box having the appropriate width for
+the tabskip glue that was omitted; for example, an entry that spans columns 1
+and 2 will be justified to width c1+t1+sf*s1+c2, where s1 is the stretchability
+between columns 1 and 2, and sf=2 in this case since the glue is being doubly
+stretched. (If the tabskip glue shirinks, we would of course use shrinkability
+instead; in this case spanned columns might actually get smaller than their
+natural size.)
+
+The result of the above example, taking account of which parts of the preamble
+are omitted by the \omit operations, is therefore
+        |   AAA     B   C    |
+        |    DDDDDDD    EE   |  (columns 1 and 2 spanned and centered)
+        |            FFFFF   |  (columns 1 to 3 spanned, flush right)
+        |    G   HIII        |  (columns 2 and 3 spanned, flush left)
+Restriction: A single entry can span at most 256 columns.
+
+* Spaces are ignored after tab marks in alignments.
+
+* If every entry in an alignment that uses column j also spans column j+1,
+the tabskip glue between columns j and j+1 is effectively eliminated.
+Similarly, if column j never appears (because each row had \cr before
+getting to that column), the tabskip glue after it is eliminated.
+
+* \hbox par is eliminated! Instead of "\hbox par 100pt{...}", one now says
+"\vbox{\hsize 100pt ...}" and the effect is almost the same. The only difference
+is that the paragraph or paragraphs in the \vbox will have both their hanging
+indentation and looseness (and perhaps also their baselineskip) specified inside
+the vbox; this is, of course, more logical than the old rule.
+
+Restricted vertical mode is no longer restricted; it's called "internal vertical
+mode". It differs from vertical mode only in not going through the page builder,
+and in allowing \unskip as well as \vskip with infinite shrinkability.
+
+* To have the paragrapher work on inserted text (e.g., in footnotes), one writes
+"\insert 250{\hsize 200pt ...}", perhaps using the \interlinepenalty parameter
+that adds to the penalty between lines of a paragraph (whether in inserts or
+not).
+
+* Three new dimension parameters \displaywidth, \displayindent, and
+\predisplaysize are assigned values at the beginning of every displayed formula:
+(1) displaywidth is the length of the line that will contain the formula before
+it is centered; this is usually equal to \hsize, except when hanging indentation
+or \parshape are being employed in a paragraph.  (2) \displayindent is the
+amount by which that line is indented.  (3) \predisplaysize is the amount of
+copy on the line preceding the displayed formula; this is what is used to decide
+between \dispskip or \dispaskip.  If the display immediately follows \noindent
+or another display, \predisplaysize will be -(2^{30}-1) sp (the smallest legal
+dimension in TeX). Otherwise, if the position of the last box on the previous
+line is affected by glue stretching or shrinking, \predisplaysize is set to
++(2^{30}-1) sp. Otherwise \predisplaysize is set to the natural width that the
+preceding line would have if all glue were removed at its right end, plus the
+amount of indentation of that line, plus 2ems.
+
+* \setcount, \setdimen, \setskip, \setbox, \output, and \everypar are local
+definitions unless specified global. Likewise the results of \advcount, etc.
+
+* The { } in \output still defines grouping (it would be too dangerous to
+leave it out, since \output occurs asynchronously), but the { } in \everypar
+does not. Grouping is now independent of \if tests, as explained later.
+
+* All of TeX's primitives now mean the same thing in all modes. The control
+sequences that were exceptions to this rule have been dealt with as follows:
+\  (control space) now means a text space, even in math mode.
+\quad is no longer a primitive (PLAIN defines it as \hskip 1em).
+\! is no longer a primitive (PLAIN defines it for math mode only)
+and \ignorespaces is a new primitive that gobbles spaces.
+\- is always a discretionary hyphen; its previously advertised mathmode
+function has been taken over by the new \nonscript primitive.
+
+* \accent is allowed only in horizontal mode; \mathaccent only in math mode.
+The latter takes a 15-bit math code, the former an 8-bit character code; it's
+like the difference between \char and \mathchar.
+
+The \mathaccent primitive will make use of a charlist of characters to choose
+the first accent of a list whose successor is either nonexistent or wider than
+the formula being accented. Thus, you can have a list of longer and longer
+tildes or hats, etc.
+
+* Spacing in math is slightly different: Fractions and \left...\right
+subformulas are given type Inner, so there are eight types instead of seven.
+(Previously Inner was treated like Ord.) The spacing matrix entries are set so
+that there's at least a thin space between Inner and its neighbors, except
+in the pairs Open Inner and Inner Close. There's a new primitive \mathinner
+analogous to \mathpunct, etc.
+
+* "\vcenter to 100pt" is now allowed in math mode, if anybody wants it.
+
+* "\ifdimen" is renamed "\ifdim" and there's also "\ifnum" replacing "\ifpos".
+Examples: \ifnum\count1>5...\else...\fi; \ifdim\dimen3<1.5wd2...\else...\fi.
+
+* "\ifinner" is true if the current mode is internal-vertical,
+restricted-horizontal, or non-display-math. Combining this with \ifvmode,
+\ifhmode, \ifmmode makes it possible to determine exactly what mode you are in.
+
+* New primitive \kern allows you to specify unbreakable space (without
+stretching or shrinking). Thus, "\kern -1pt" is something like
+"\penalty10000\hskip-1pt". There's also "\mkern 3mu" in math mode.  You are
+allowed to use \kern but not \hskip in \discretionary lists.  A \kern in a word
+does not upset the hyphenation algorithm.  You can use \kern in vertical as well
+as horizontal lists.  It is legal to break at a kern if it is immediately
+followed by glue or leaders, provided that it is not preceded by glue, kern, or
+penalty.
+
+* New debugging facility \tracingcommands, if nonzero, gives a symbolic
+indication of what commands are being obeyed by TeX's main control routine.
+
+* New integer parameter \maxdeadcycles gives an upper limit on how many
+consecutive invocations of \output do not cause at least one \shipout.  This is
+intended to catch unintended loops. Default is 25.
+
+* If \tracingstats > 0, you get to see how close you came to TeX's current
+table capacities, in a list of statistics printed at the end of your run.
+If \tracingstats > 1, you also get to see the current memory usage
+every time you do a \shipout.
+
+* If \tracingparagraphs > 0, you get a huge amount of inscrutable printout
+about what the line-breaking algorithm thinks it is doing.
+
+* If \tracingpages > 0, you get similarly inscrutable printout
+about what the page-breaking algorithm thinks it is doing.
+
+* But \tracingstats, \tracingparagraphs, and \tracingpages are ignored
+unless TeX has been compiled in a "slow version" that actually maintains
+these statistics.  (The SAIL version of TeX is currently "slow" in this way.)
+
+* \string replaces the next token by its text, with all characters regarded
+as type otherchar (except that a space will be of type spacer; it's possible
+but not easy to get a space here). For example, \string\abc results in four
+characters \, a, b, c. This expansion occurs just as for \number, i.e., when
+\string occurs in \xdefs or in horizontal or math mode. (The most common
+use of \string is to follow it with a macro parameter.) Caution:
+If characters in a control sequence name are nonstandard in ascii, they
+will be converted differently at different installations.
+
+* Here is an extension to the language intended to placate people who
+have objected to the fact that \write (and \openout and \closeout) only
+cause action at the time of the next \shipout. Some applications
+call for immediate output, hence a new feature: \immediate followed by
+\openout or \write or \closeout causes the output action to take place
+without delay. For example, \immediate\write0{x} is equivalent to
+\shipout\vbox{\write0{x}} except that the latter also puts an empty
+page into the DVI file.
+
+* New parameter \boxmaxdepth affects \vbox: If the depth of the box
+would exceed \boxmaxdepth according to the normal rules, the box contents
+are shifted up so that the depth is exactly \boxmaxdepth, before setting
+the glue. The same applies to \vtop, before adjusting its depth.
+The default setting is \boxmaxdepth='7777777777sp (the maximum dimension).
+
+* You can now use \let with non-control-sequences after the = sign.
+For example, \let\zero=0 makes the control sequence \zero behave something
+like the digit zero; but if you want to make the constant 100 by saying
+"1\zero 0" you still have to \def\zero{0}. Thus, this new extension isn't
+a big breakthrough, but it does save a bit of space and time inside TeX.
+(Incidentally, after \let\zero=0, \zero will not expand to 0 in xdefs.)
+
+* Popular demand wins again: You can now say \csname <string>\endcsname
+to manufacture a control sequence name. For example, \csname foo \endcsname
+is essentially identical to a control sequence named "\foo " (note that
+the space is part of that name!) and \csname foo\endcsname is like "\foo"
+and, after \def\zero{0}\def\test{zero}, it follows that
+\csname\csname\test\endcsname\endcsname is like "\0". The conversion
+from token list to control sequence occurs as if \csname were a
+macro being expanded. If the control sequence hasn't been defined before,
+it will behave as if it were "\relax".
+
+* In the preamble to \halign or \valign, the primitive \span would normally
+make no sense. But it causes TeX to expand the following token, instead of
+just copying it, before inserting that token in the preamble.
+(Previously this was possible only with a dirty "\tabskip" trick, since
+TeX expands whatever follows "\tabskip 0pt" looking for "plus".)
+
+* Syntactic conditionals!
+For years people have been asking for TeX to treat conditionals in its
+"mouth" rather than in its "stomach", and I have been fending them
+off. But starting with Version 0.8 of TeX82, \if tests are made at the
+time of macro expansion rather than as part of the semantic processing in
+horizontal or vertical or math mode.
+
+Instead of writing \if...{..a..}\else{..b..} the new syntax is
+        \if... ..a..\else..b..\fi
+(with \else optional if ..b.. is empty).
+
+Whenever TeX is reading material in a mode where macros are now expanded,
+it will process conditionals somewhat as though they were macros. Namely,
+\if... results in evaluating the condition and skipping code if the condition
+isn't true (skipping to the next \else that isn't enclosed by \if..\fi
+brackets); \else, \or, and \fi switch in the appropriate way between
+reading and not reading text.
+
+Braces need not be properly nested inside the conditionals, nor do \if...\fi's
+need to be properly nested in the replacement texts of macros.
+(Having these two types of nesting independent of each other has proved
+to be important in many existing macro processors. Caveat implementor.)
+
+People who try things like \expandafter\else\if... should be shot.
+(Unless it turns out that this is useful?)
+
+* Another token-list parameter \tokens is definable like \everypar.
+Its only use is for things like \the\tokens (which, in an \xdef,
+emits the current value of \tokens without further macro expansion).
+
+* Another test, \ifcat, is like \if but it tests the catcodes of the
+characters, not their ascii codes.
+
+* \everymath{...} inserts its tokens into TeX's scanner just when
+non-display math mode has been entered. \everydisplay{...} does likewise, but
+for displays. For example, \everymath{\fam0} sets up family 0 instead of
+family-1 as the default for letters; you can also use \everymath
+to redefine active characters that you want to behave differently
+in math mode.
+
+* \futurelet\a followed by tokens b and c has the effect of "\let\a= c"
+followed by tokens b and c. You can use this to look ahead at the
+next token after a macro; it's for hackers. (I put it in because it
+is easy and because it might allow me to solve some problem next year.)
+
+* \prevgraf is an internal state variable something like \prevdepth and
+\spacefactor. It represents the number of lines in the most recently
+completed paragraph or partial paragraph. You can use it to provide
+"memory" between paragraphs with respect to \parshape and \hangindent.
+For example, if you say "\indent \prevgraf=15 This new paragraph..."
+the new paragraph will be formatted as if 15 lines had already been
+completed. You can look at \the\prevgraf to see how big the last
+paragraph was.
+
+* \endinput (in any mode) forces end-of-file whenever the next line of
+\input has been fully read. This omits the all-blank line that is normally
+appended at the end of a file that terminates normally. \input is now
+allowed in any mode, not just vertical mode.
+
+* \hangindent <dimen> no longer looks for keywords "for" and "after"; it's
+just like all of TeX's dimen parameters. \hangafter is another parameter
+that provides the missing information. Suppose \hangafter equals n.
+If n is nonnegative, hanging indentation applies to lines n+1, n+2, ...;
+otherwise hanging indentation aplies to lines 1, ..., |n|.
+For example, the old "\hangindent 10pt for 2" now becomes
+"\hangindent=10pt \hangafter=-2". The old "\hangindent 20pt" (without
+"for" or "after") is unchanged, because TeX sets \hangafter=1 after
+each paragraph and whenever entering internal vertical mode.
+[Reason for this change: It became all too obvious that the old system
+was a kludge, when I tried to describe it in the new manual.]
+
+* \clubpenalty (a new parameter) applies after the first line
+of a paragraph; \widowpenalty before the last line. (These used to
+both be called \widowpenalty. Geoffrey Glaister, U. of Calif. Press 1979,
+Glossary of the Book, distinguishes in this way between "club lines"
+and "widow lines". The TeX manual sets \clubpenalty=10000 to suppress
+breaks after the first line of paragraphs that have dangerous bend
+on their first two lines.)
+
+* \jobname returns the name of this TeX job. For example, if the output
+goes to file foo.dvi, \jobname is "foo".
+
+* \pagetotal and \pagegoal are internal dimensions representing the
+natural height and goal height of the current page. Previously you
+could see these only as a result of \showlists; now you can even
+set them. If a page is empty, \the\pagetotal is 0pt and \the\pagegoal
+is -1000pt. Setting \pagegoal has no effect on an empty page, since
+\pagegoal gets set to \vsize as soon as the page gains its first item.
+Besides \pagetotal, there is also \pagestretch, \pagefilstretch,
+\pagefillstretch, \pagefilllstretch, and \pageshrink, denoting the total
+flexibility of glue on the current page; and \pagedepth is the depth.
+
+* \deadcycles is an internal integer that is set to zero on each \shipout
+and increased by 1 each time your \output routine is invoked. At the \end,
+null boxes will be ejected until the current page and recent contributions
+are empty and \deadcycles=0. Thus, you should set \deadcycles=0 yourself
+if you have an unusual output routine.
+
+* \insertpenalties is the sum of penalties from split insertions and
+floating insertions. \floatingpenalty is the amount added to \insertpenalties
+when an insertion is being held over following one that is split.
+\insertpenalties is the number of heldover insertions during the time an
+\output routine is active.
+(All of this should become clear in the new user manual...)
+
+* New integer parameter \globaldefs (is normally zero). If positive, all
+definitions are global; if negative, all definitions are local
+even when they are prefixed by \global. (Of course, some definitions
+are inherently global and will stay that way: \texinfo is global,
+and so are things like \prevdepth, \spacefactor, \pagegoal, \deadcycles.)
+Example of use: \def\GLOBAL#1{\begingroup\globaldefs=1 #1\endgroup}
+allows you to say \GLOBAL\tracingall.
+
+* \mathchoice{D text}{T text}{S text}{SS text}, where the texts are
+arbitrary math mode formulas, is now allowed in math mode. TeX will use
+whatever text fits the style that eventually governs this part
+of the formula.
+
+* \limitswitch is replaced by three primitives \displaylimits, \nolimits,
+\limits.  The last of these takes the superscript and subscript and puts
+them as limits above and below the operator; the first (which is the
+default) does this in display style only; \nolimits gives ordinary
+subscripts and superscripts.  (Now for the first time you can display
+limits in superscripts, using \scriptfont3, if you really want to.)  To
+change old files, you probably need only to replace \limitswitch by \nolimits;
+also redefine \int and \oint to include \nolimits.
+
+* \chardef is analogous to \mathchardef: instead of saying
+\def\foo{\char<number>} you can say \chardef\foo.
+Furthermore, both \chardef and \mathchardef define control sequences
+that can be used as integers. For example, the allocation command
+\newcount\exno in plain TeX used to produce \def\exno{28 } (for example),
+but now it produces \chardef\exno=28. This is more efficient in both
+time and space. A \chardef is limited to the range 0..255; \mathchardef
+has the range 0..32767.
+
+* \input is treated in the syntax level, so you can say
+\expandafter\foo\input bar (in case you want to input a file that
+doesn't start with any particular macro). But recursive use
+(e.g. \input\input f to get one file name from another) isn't allowed.
+
+* \unbox becomes \unhbox and \unvbox (which are capable of unboxing
+only hboxes and vboxes, respectively). Previously you could say
+\unbox in either horizontal or vertical mode, but you had to be in
+the right mode to match the box; now if you say \unhbox in vertical mode,
+or \unvbox in horizontal mode, TeX switches to the correct mode
+before doing the unboxing. (The reason the new syntax is needed is that
+TeX couldn't otherwise provide this feature without parsing the number
+that follows the \unbox, but then when switching to horizontal mode would
+have to insert \everypar before the stuff that was already parsed; it
+gets pointlessly complicated that way.)
+
+* \unhcopy <number> and \unvcopy <number> are added too; they produce a
+copy of the inside of a box.  One application is that \struts are now more
+efficient: You can define a strut box that contains a \vrule, and
+"\def\strut{\unhcopy\strutbox}". Previously, TeX had to scan the
+keywords "height" "width" and "depth" and their dimensions whenever it
+appended a rule; but rules of width zero make good struts since they take
+less memory than boxes. Furthermore, with this new system you can use a
+strut to begin a paragraph (even if a box comes first in the paragraph),
+instead of saying "\ \unskip" or "\hskip0pt".
+
+(the following changes have been introduced in version 0.96)
+
+* Blank space is no longer ignored after a control sequence name of the form
+<escape character><nonletter>. For example, this applies to \/ and \\
+and \" and \' and \`. However, any blank spaces after <escape character><space>
+are ignored, as part of the general rule that consecutive blanks are treated
+as single blanks.
+
+* \crcr acts like \cr except if it appears at the very beginning of an
+alignment line; in the latter case it is ignored. Thus, if you're writing
+a macro that generates alignment, you can put in an \crcr, which will cover
+for users who forgot the final \cr in their argument to the macro.
+
+* Trailing blanks are removed from all input lines. This makes TeX fully
+compatible between IBM-like installations (where lines have fixed width)
+and DEC-like ones (where lines are terminated by carriage returns).
+
+* The glue above and below displayed equations no longer needs to be the
+same. (And it shouldn't be, because a change to \baselineskip inside
+the $$'s will affect the top distance but not the bottom one...)
+\abovedisplayskip and \belowdisplayskip take the place of \dispskip.
+\abovedisplayshortskip and \belowdisplayshortskip take the place of
+\dispaskip and \dispbskip.
+
+* \postdisplaypenalty is the penalty for page breaking after a display
+(just before the \belowdisplayskip glue). \predisplaypenalty is
+the penalty for break before a display (just before the \abovedisplayskip
+glue). \displaywidowpenalty is the penalty for breaking between
+lines of a paragraph in such a way that there's just one line before a display.
+
+* \tracingrestores=1 will print a symbolic indication of what values
+have been restored at the end of a group, on your log file, if
+TeX has been compiled with its "stats" switch on. For example,
+consider `\lineskip=3pt{\lineskip=4pt.....}'; when the } is sensed,
+your log file will say `{restoring \lineskip=3.0pt}'.
+
+* \iftrue and \iffalse are new conditional tests that always go
+one way or the other. To use them, you can say, e.g.,
+        \let\iftitlepage=\iftrue
+and later on make tests like
+        \iftitlepage ... \else ... \fi.
+Plain TeX provides a macro \newswitch such that, e.g., \newswitch{titlepage}
+defines two new control sequences \titlepagetrue and \titlepagefalse;
+the first of these expands to \let\iftitlepage=\iftrue.
+You should use this convention instead of saying "\let\iftitlepage=\iftrue"
+explicitly in your manuscript, because the "\iftrue" in the latter will
+get TeX mixed up if it is skipping over unexecuted conditional text.
+
+* \everyvbox{...} specifies a list of tokens to be inserted just after
+the opening left brace of \vbox, \vtop, and \vcenter. Similarly,
+\everyhbox{...} specifies a token list for the beginning of \hbox.
+One use of these might be to "shut off" macros that were "turned on"
+by \everymath and \everydisplay.
+
+* \romannumeral <number> joins \string<cs> and \number<number> and \jobname as
+ways to emit text. For example, \romannumeral 324 comes through TeX's
+scanner as "cccxxiv" (unless macros are not being expanded);
+if \count5=-123, \number\count5 comes through as "-123".
+If the number is zero or negative, \romannumeral emits no text.
+
+Some new macros of PLAIN.TEX
+
+The following macros are superior to their "basic.tex" counterparts,
+and they are going to be explained in the new manual. Meanwhile,
+until you see the new manual, the only way to figure out how to
+best use them is to look at the way they are defined in plain.tex...
+
+* Instead of \ldotss use just \ldots, if followed by something
+other than a closing delimiter inside a formula; instead of
+$\ldotss$, use \dots; instead of $<something>\ldotss<something>$ in
+other cases, use "\ldots\,".
+
+* Instead of \twoline, use \displaylines.
+
+* Instead of \chop, use \smash.
+
+* Instead of \cpile, use \matrix.
+
+(the following changes have been introduced in version 0.97)
+
+* Undelimited macro parameters will not be set to "space" unless
+you explicitly say "{ }". For example, in \def\a#1#2#3.#4{...},
+parameters #1, #2, and #4 are undelimited, while #3 is delimited by a period.
+In TeX80, if you said "\a x y z. w" the result was #1=x, #2=space,
+#3=y z, and #4=space; this caused confusion. Similarly if you
+said \a{...} at the end of a line, you got a space for #2 because
+of the carriage return. In TeX82 versions >0.96, you will get
+#1=x, #2=y, #3= z (including the space), #4=w.
+
+* \everyjob{<tokens>} specifies something that will be put into TeX's
+scanner at the beginning of every job. (This is useful only in a
+format that is \dump ed, because otherwise the job has already started!)
+
+* \ifeven disappears; \ifodd<number> takes its place, where <number>
+is the number being tested (not the number of a count register).
+Thus, where you used to say
+        \ifeven n  alpha \else beta \fi
+you now say
+        \ifodd\count n beta \else alpha \fi
+
+* \if and \ifcat no longer give error messages in cases like "\if\par\let";
+unexpandable control sequences are regarded as having character code 256
+and category code 16. Thus, you can use \if without fear of an error
+stop when the user's input is unexpected.
+
+* \leaders will align from the left of the smallest enclosing box, rather
+than from the largest. Thus, for example, if you \moveright a box
+that contains leaders, the leaders will move right with it.
+
+* If you say && in the preamble to \halign and \valign, the preamble
+will infinitely repeat the material to its right. For example,
+\halign{\indent#\hfil&&\hfil#\hfil&#&\cr is like
+\halign{\indent#\hfil&\hfil#\hfil&#&\hfil#\hfil&#&\hfil#\hfil...\cr
+for as many columns as are actually used. This makes it possible
+to write, e.g., a \matrix macro that has no maximum number of columns.
+(If you say && twice in the same preamble, the second && is erroneous.)
+
+* \read will read several lines, if necessary, until the number of
+left braces equals the number of right braces. "\outer" control sequences
+should not appear in the input.
+
+* \uppercase and \lowercase now apply to all character tokens in the token list,
+including active characters. (Previously they applied only to characters
+of categories 11 and 12.)
+
+(updates to the April 1983 manual)
+(these changes were insalled in version 0.98)
+
+* \read n to \cs will not print an explicit prompt message if n<0.
+\write n {...} will print only on the log file (not the terminal) if n<0.
+
+* New parameters \hoffset and \voffset will offset the output position.
+For example, \hoffset=.5in shifts subsequent output right by half an inch;
+\voffset=1.5in shifts it down 1.5in with respect to its normal position.
+(The \shipout command adds these offsets to all coordinates of things
+that it is shipping out.)
+
+* Here is a fairly major change with respect to TeX macro programs.
+The notation for parameters and registers is unified and made more efficient.
+1) You don't need \the anymore when using a parameter in an expression.
+Thus, \hbox to\hsize works. (So does \hbox to\the\hsize, since a redundant
+\the is allowed.) Same for \the\texinfo, \the\lastskip, etc.; \the is
+mainly to be used inside \xdef and such things, now. \minusthe disappears.
+2) \setcount is eliminated, you just write \count. Similarly \setdimen
+and \setskip and \setmuskip are eliminated.
+3) \advcount, \advdimen, etc. are now \advance\count, \advance\dimen, etc.;
+similarly there is \multiply and \divide. These will work with
+parameters as well as registers; e.g., "\advance\abovedisplayskip by 3pt".
+4) To compensate for the extra token (\advcount split into two), there
+are new commands \countdef, \dimendef, \skipdef, and \muskipdef
+(analogous to \chardef and \mathchardef). For example,
+\countdef\c=5 makes \c a shorthand for "\count5".
+5) "dm" is eliminated as a unit, but instead you can write .5\hsize
+or .5\dimen<number>. "vu" and \varunit are also eliminated, as they
+are now unnecessary.
+
+The \newcount...\newmuskip macros now give their results in terms of
+\countdef...\muskipdef, not \chardef.  One consequence is that \dimendef
+makes a control sequence behave syntactically like a new dimen parameter.
+For example, it would now be possible to say "\newdimen\hoffset" and to
+incorporate \hoffset in one's \output routine, thereby making the new
+\hoffset parameter unnecessary. Previously, you would have had to tell
+users to give values to symbolic dimensions by constructions like
+"\def\hoffset{.5in}" because of the incompatibility between register
+syntax and parameter syntax. (I apologize for letting this shameful
+incompatibility creep in, years ago. Soon it will be gone forever.)
+
+* Here's a simple way to update old macros so that they work with version 0.98:
+Case (1), you have not used \newcount, \newdimen, etc.:
+Replace \setcount by \count, \setdimen by \dimen, \setskip by \skip,
+and \setmuskip by \muskip.
+Replace \advcount by \advance\count, \advdimen by \advance\dimen,
+\advskip by \advance\skip, \advmuskip by \advance\muskip.
+Replace \multcount by \multiply\count, \multdimen by \multiply\dimen,
+\multskip by \multiply\skip, \multmuskip by \multiply\muskip.
+Replace \divcount by \divide\count, \divdimen by \divide\dimen,
+\divskip by \divide\skip, \divmuskip by \divide\muskip.
+[That doesn't give the most efficient programs, but it will tide you
+over until you have time to rewrite things.]
+
+Case (2), you have used, e.g., \newcount\foo:
+Replace \setcount\foo by \foo, \the\count\foo by \the\foo,
+\advcount\foo by \advance\foo, \multcount\foo by \multiply\foo,
+\divcount\foo by \divide\foo. Similarly for \newdimen et al.
+
+* \everycr{...} inserts its tokens just after TeX has processed \cr or \crcr.
+(Except if the \crcr was ignored because it came right after \cr.)
+
+* \hyphenchar<font>=<number> defines the character to be used for
+hyphens in that font. If the number is negative or greater than 255,
+no hyphenation will be done. Default is '55.
+
+* \skewchar<font>=<number> defines a character to be used to position
+accents in math mode. (This makes it unnecessary for a user to refer
+to a long, horrible "\skew" table like that in the April draft of the manual!)
+When TeX puts a math accent over a character, it shifts the accent to the
+right by the amount of kern between that character and the skew character.
+Default is -1.
+
+* Furthermore, when a single character is accented, the subscripts and
+superscripts of the accented combination are now attached exactly as they
+would have been without the accent. (Previously, "\hat A^2" put the 2 too
+high, and "\hat P_2" put the 2 too far away from the P; now both
+cases have been fixed.)
+
+* New syntax: \texinfo<font><number> becomes \fontdimen<number><font>.
+This means that you can define, e.g., \fontspace to be an abbreviation for
+"\fontdimen2" and then you can set \fontspace<font>=10pt (analogous to
+\skewchar).
+
+* \meaning and \noexpand are new primitives that affect macro expansion:
+
+\meaning<token> expands to the sequence of characters that would be
+displayed on the terminal by the existing commands
+        \let \test = <token> \show\test
+For example, "\meaning A" expands to "the letter A" (a sequence of twelve
+character tokens, all type otherchar except the spaces). After
+\def\A#1B{\C}, "\meaning\A" will expand to "macro:#1B->\C " (a sequence
+of fourteen tokens). You can use this in an emergency when \if and
+\ifcat and \ifx don't tell you what you need to know about a token.
+
+\noexpand<token> produces the token, but changes its meaning to the
+meaning of TeX's \relax primitive if that token would ordinarily
+be expanded. Thus, it's now easier to suppress macro expansion;
+and you can use \noexpand fruitfully after \if or \ifcat when you
+are testing the nature of an unknown token (e.g., a token that
+has been found by \futurelet).
+Note the following: \catcode`\~=13 \ifcat\noexpand@\noexpand~true\fi
+yields "true", but \ifcat\relax\noexpand~true\fi doesn't;
+i.e., the TeXbook's conceptual model of token lists, in which an active
+character carries category code 13 as a "subscript", is now implemented.
+
+* \afterassignment<token> saves the token and reinserts it into TeX's input
+mechanism after the next assignment has been performed. An assignment is a
+\def or \let or a command that assigns a value to a control sequence or
+internal register; a complete list of assignments will appear in Chapter 24
+of The TeXbook. The main intended use of \afterassignment is this: If a the
+replacement text of a macro ends with "\afterassignment\continue \dimen0=",
+then TeX will assign to \dimen0 whatever <dimen> follows the macro, after
+which it will perform \continue. Similarly, you can end with an assignment
+that causes TeX to parse <glue> or a font name or even a \parshape.
+
+Changes to PLAIN.TEX conventions since the April manual:
+
+* The \openup macro now takes a decimal argument, not a dimension; the
+decimal number is multiplied by \openupdimen, which plain TeX sets to 3pt.
+Thus, where the manual says "\openup{3pt}", you now say "\openup1"; where
+it says "\openup{-3pt}", you now say "\openup{-1}"; and fractional amounts
+like "\openup{.5}" are legit.
+
+* The character for "ties" between words has been changed from @ to ~. The
+next generation of fonts will have an at sign in the normal ascii place,
+so @ will not be mentioned specifically as a special character in the
+TeXbook. But for the time being (until we have the new fonts), you still need
+to say \@ to get an at sign from the math symbols font. Some day there won't
+be an at sign in that font, but you'll have bold and italic at signs in
+your bold and italic fonts!
+
+Incidentally, although this doesn't affect users, PLAIN and LATEX and AMSTEX
+will be using @ as a letter in the names of control sequences that aren't
+supposed to be easily redefinable.
+
+* In math formulas, " is no longer used for double prime; the notation is
+f''(x) instead of f"(x), and f'''(x) will also work. In other words, " is
+now unconstrained, while a sequence of n apostrophes is converted into
+^{\prime...\prime}   (there are n occurrences of \prime).
+
+(changes installed in version 0.99)
+
+Version 1.0 is almost here! Just a few more touchups...
+
+* "wd", "ht", and "dp" are changed to \wd, \ht, and \dp. (This is something
+like the recent change where "dm" was changed to \dimen.) That means you
+don't have to say "1wd0" to get the width of \box0, you just say "\wd0".
+Furthermore, you can now assign new dimensions to a box, instead of
+relying on trickery: For example, \ht0=2pt changes the height of \box0
+to 2pt, independent of what the height was formerly. (But it has no
+effect if \box0 is void. The prefix \global is ignored if you happen
+to say \global\ht0=2pt.)
+
+* \tokens is being generalized to a set of 256 registers called \toks0
+through \toks255. And there is "\toksdef". Plain TeX will contain
+a \newtoks allocation macro, of course. (Thus you get symbolic names
+for lists of tokens that are unlike macros since you can insert
+them into edefs and messages with one-level expansion only.)
+[Note: Say "\toksdef\tokens=0" to make your previous programs work.]
+
+* \insert, \vadjust, and \mark are allowed in restricted horizontal mode
+and in math mode. However, they won't always migrate outside their boxes
+into the main vertical list; migration from an hbox happens only if the
+hbox was typeset on the outer level of a vertical list (most uses of
+\centerline fit this description) or if the hbox was formed for an
+\halign entry.  Migration from math mode happens only if the item is on
+the outer level of a math formula (not in a subformula) and if the formula
+is displayed or if it appears in a paragraph or hbox that allows
+migration.  Otherwise you to unbox them if you really want to use them.
+This makes \hbox and \vbox work approximately the same.
+
+* \font is now acceptable as a font identifier in contexts like
+"\fontdimen6\font" and "\hyphenchar\font" and "\textfont0=\font".
+It denotes the current font.

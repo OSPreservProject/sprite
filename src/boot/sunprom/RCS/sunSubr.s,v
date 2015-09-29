@@ -1,0 +1,345 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @# @;
+
+
+1.3
+date     89.01.06.08.12.34;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     87.05.08.17.42.23;  author brent;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     87.05.08.12.07.12;  author brent;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Low level support
+@
+
+
+1.3
+log
+@VM_MACH => VMMACH
+@
+text
+@|* sunSubr.s --
+|*
+|*     Contains misc. assembler routines for the SUN.
+|*
+|* Copyright (C) 1985 Regents of the University of California
+|* All rights reserved.
+|*
+|* rcs = $Header: sunSubr.s,v 1.2 87/05/08 17:42:23 brent Exp $ SPRITE (Berkeley)
+|*
+
+#include "machConst.h"
+#include "vmSunConst.h"
+#include "machAsmDefs.h"
+
+|*---------------------------------------------------------------------
+|*
+|* Sys_SetIntrLevel  --
+|*     
+|*	Enables interrupts of a certain level and above.
+|*	Input is a mask which specifies the interrupt level.
+|*
+|* Results:
+|*	The mask of the interrupt level
+|*
+|* Side effects:
+|*	Interrupts may be enabled or disabled.
+|*	Trace bit is always set to 0.
+|*
+|*---------------------------------------------------------------------
+
+	.text
+	.globl	_Sys_SetIntrLevel
+_Sys_SetIntrLevel:
+	link	a6,#0
+	movl	a6@@(8),d1		| copy argument to d1
+
+    					| input error check:
+	andw	#MACH_SR_INTMASK,d1	| make sure the arg. has just
+					| the interrupt bits set.
+
+	orw	#MACH_SR_SUPSTATE,d1	| set the supervisor state bit
+
+	clrl	d0
+	movw	sr,d0			| save status register in d0
+	andw	#MACH_SR_INTMASK,d0	| return previous interrupt level mask
+
+	movw	d1,sr			| put new value in status register
+	unlk	a6
+	rts
+
+|*---------------------------------------------------------------------
+|*
+|* Sys_EnableIntr --
+|*     
+|*	Enables all classes of interrupts.
+|*
+|* Results:
+|*	None.
+|*
+|* Side effects:
+|*      Interrupts are enabled.
+|*	Trace bit is always set to 0
+|*
+|*---------------------------------------------------------------------
+
+	.text
+	.globl	_Sys_EnableIntr
+_Sys_EnableIntr:
+	link	a6,#0
+	movw	#MACH_SR_LOWPRIO,sr	| enable all interrupts
+	unlk	a6
+	rts
+
+|*---------------------------------------------------------------------
+|*
+|* Sys_DisableIntr --
+|*
+|*	Disables interrupt levels 1-6.
+|*
+|* Results:
+|*	None.
+|*
+|* Side effects:
+|*      Interrupts are disabled.
+|*	Trace bit is always set to 0
+|*
+|*---------------------------------------------------------------------
+
+	.text
+	.globl	_Sys_DisableIntr
+_Sys_DisableIntr:
+	link	a6,#0
+	movw	#MACH_SR_HIGHPRIO,sr	| disable all interrupts
+	unlk	a6
+	rts
+
+|*---------------------------------------------------------------------
+|*
+|* Sun_GetEtherAddress -
+|*
+|*	Copies the ethernet address from the id prom into the
+|*	argument structure.  The prom is mapped funny, so the
+|*	loop increments the pointer into the prom as specified in
+|*	the sun-2 architecture manual, section 4.8
+|*
+|*	Sun_GetEtherAddress(etherAddressPtr)
+|*	    EtherAddress *etherAddressPtr;	destination of copy
+|*
+|* Results:
+|*     The argument struct has the prom's ethernet address.
+|*
+|* Side effects:
+|*	None.
+|*
+|*---------------------------------------------------------------------
+#ifdef notdef
+    .text
+    .globl	_Sun_GetEtherAddress
+_Sun_GetEtherAddress:
+    movc	sfc,d1			| Save source function code
+    movl	#VMMACH_MMU_SPACE,d0	| Get function code in a reg
+    movc	d0,sfc			| Set source function code
+
+    movl	sp@@(4),a0		| Get pointer to target ethernet address
+    movl	d2,sp@@-			| save d2
+
+    movl	#6,d0			| loop counter
+    movl	#VMMACH_ETHER_ADDR,a1	| The Prom address of the ethernet addr
+etherloop:
+    movsb	a1@@,d2			| Copy one byte of the ethernet address
+    movb	d2,a0@@			|   from prom to the target address.
+    addql	#1,a0			| bump target pointer
+    addl	#VMMACH_IDPROM_INC,a1	| bump prom address, as per sec 4.8
+    subl	#1,d0			| decrement loop counter
+    bne		etherloop		| loop 6 times
+
+    movc	d1,sfc			| Restore source function code
+    movl	sp@@+,d2			| Restore d2
+
+    rts					| Return
+#endif
+|*---------------------------------------------------------------------
+|*
+|* Sun_TestAndSet --
+|*
+|*	int Sun_TestAndSet(intPtr)
+|*	    int *intPtr;
+|*
+|*     	Test and set an operand.
+|*
+|* Results:
+|*     	Returns 0 if *intPtr was zero and 1 if *intPtr was non-zero.  Also
+|*	in all cases *intPtr is set to a non-zero value.
+|*
+|* Side effects:
+|*     None.
+|*
+|*---------------------------------------------------------------------
+#ifdef notdef
+    .globl _Sun_TestAndSet
+_Sun_TestAndSet:
+    clrl	d0		| Set the return register to 0.
+
+    movl	sp@@(4), a0	| Move the address of the operand to a0.
+    tas		a0@@		| Test and set the operand.
+
+    beq		1$		| If it wasn't set then just return 0.
+
+    moveq	#1, d0		| Otherwise return 1.
+
+1$: rts
+#endif notdef
+|*---------------------------------------------------------------------
+|*
+|* Mach_GetMachineType -
+|*
+|*	Returns the type of machine that is stored in the id prom.
+|*
+|*	int	Sun_GetMachineType()
+|*
+|* Results:
+|*     The type of machine (1 or 2).
+|*
+|* Side effects:
+|*	None.
+|*
+|*---------------------------------------------------------------------
+    .text
+    .globl	_Mach_GetMachineType
+_Mach_GetMachineType:
+    movc	sfc,d1			| Save source function code
+    movl	#VMMACH_MMU_SPACE,d0	| Get function code in a reg
+    movc	d0,sfc			| Set source function code
+
+    clrl	d0			| Clear the return register
+
+    movl	#VMMACH_MACH_TYPE_ADDR, a0 | Get the address of the machine type
+					|     in a register.
+    movsb	a0@@,d0			| Store the machine type in the return
+					|     register.
+
+    movc	d1,sfc			| Restore source function code
+
+    rts
+
+|*
+|* ----------------------------------------------------------------------
+|*
+|* Mach_MonTrap --
+|*
+|*	Trap to the monitor.  This involves dummying up a trap stack for the
+|*	monitor, allowing non-maskable interrupts and then jumping to the
+|*	monitor trap routine.  When it returns, non-maskable interrupts are
+|*	enabled and we return.
+|*
+|* Results:
+|*	None.
+|*
+|* Side effects:
+|*	None.
+|*
+|* ----------------------------------------------------------------------
+|*
+
+	.globl	_Mach_MonTrap
+_Mach_MonTrap:
+	movl	sp@@(4), a0		| Address to trap to.
+	clrw	sp@@-			| Put on a dummy vector offset register.
+	movl	#1$, sp@@-		| Put the return address onto the stack.
+	movw	sr, sp@@-		| Push the current status register.
+	jra	a0@@			| Trap
+1$:	rts
+
+@
+
+
+1.2
+log
+@Changed name to Mach_
+@
+text
+@d8 1
+a8 1
+|* rcs = $Header: sunSubr.s,v 1.1 87/05/08 12:07:12 brent Exp $ SPRITE (Berkeley)
+d11 1
+a11 1
+#include "sunSR.h"
+d13 1
+a13 2
+#include "machineConst.h"
+#include "asmDefs.h"
+d38 1
+a38 1
+	andw	#SUN_SR_INTMASK,d1	| make sure the arg. has just
+d41 1
+a41 1
+	orw	#SUN_SR_SUPSTATE,d1	| set the supervisor state bit
+d45 1
+a45 1
+	andw	#SUN_SR_INTMASK,d0	| return previous interrupt level mask
+d70 1
+a70 1
+	movw	#SUN_SR_LOWPRIO,sr	| enable all interrupts
+d93 1
+a93 1
+	movw	#SUN_SR_HIGHPRIO,sr	| disable all interrupts
+d121 1
+a121 1
+    movl	#VM_MMU_SPACE,d0	| Get function code in a reg
+d128 1
+a128 1
+    movl	#VM_ETHER_ADDR,a1	| The Prom address of the ethernet addr
+d133 1
+a133 1
+    addl	#VM_IDPROM_INC,a1	| bump prom address, as per sec 4.8
+d192 1
+a192 1
+    movl	#VM_MMU_SPACE,d0	| Get function code in a reg
+d197 1
+a197 1
+    movl	#VM_MACH_TYPE_ADDR, a0	| Get the address of the machine type
+d209 1
+a209 1
+|* Mon_Trap --
+d225 2
+a226 2
+	.globl	_Mon_Trap
+_Mon_Trap:
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d8 1
+a8 1
+|* rcs = $Header: sunSubr.s,v 1.13 86/06/06 11:51:29 nelson Exp $ SPRITE (Berkeley)
+d176 1
+a176 1
+|* Sun_GetMachineType -
+a188 1
+#ifdef notdef
+d190 2
+a191 2
+    .globl	_Sun_GetMachineType
+_Sun_GetMachineType:
+a205 1
+#endif notdef
+@

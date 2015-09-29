@@ -1,0 +1,76 @@
+.TH xbuscmd 1 "11 December 1992" ""
+.SH NAME
+xbuscmd \- diagnostic program for the RAID project's XBUS board
+.SH SYNOPSIS
+.B xbuscmd
+[ options ]
+.SH DESCRIPTION
+.I xbuscmd
+provides a clean interface for functions provided by the RAID project's
+XBUS board (via its driver).  These functions include controlling the
+XOR engine and HIPPI FIFOs on the board.  Additionally, this command
+can reset the XBUS board and read or write individual board registers.
+.SH OPTIONS
+In general,
+.I xbuscmd
+can only be used to do one operation at a time.  Thus, the user may
+chose to do an XOR or a HIPPI buffer request; she may not do both with
+a single invocation of the program.
+.TP
+.B \-help
+.TP
+.B \-?
+Provide a list of valid options for the program.
+.TP
+.B \-reset
+Reset the xbus board.  If the xbus board is
+.I really
+hung, it might be necessary to push the onboard reset switch first.
+.I xbuscmd
+must always be run with this option immediately after the pushbutton
+reset switch is used.
+.TP
+.BI \-debug "\ on|off"
+Turn XBUS driver debugging
+\fBON\fR or \fBOFF\fR.
+.TP
+.BI \-parity "\ on|off"
+Turn on-board parity checking
+\fBON\fR or \fBOFF\fR.
+.TP
+.BI \-vmeBoard "\ boardNumber"
+Tell the XBUS board driver to lock the appropriate VME link device.  This
+is necessary to prevent deadlocking for access over the VME link.  The
+\fIboardNumber\fR should correspond to the VME link board configured to
+pass XBUS register reads and writes.  If no board number has been set (or
+it's set to -1), no locking is done.
+.TP
+.BI \-device "\ device"
+Act on XBUS device \fIdevice\fR.  The default is \fB/dev/xbus0\fR.
+.PP
+.BI \-xorSize "\ numBytes"
+.br
+.BI \-xorDest "\ xbusDstAddr"
+.br
+.BI \-xorSrc "\ xbusSrcAddr1 [ xbusSrcAddr2 ... ]"
+.IP
+These options run an XOR operation on the XBUS board.  All of the source
+buffers (of length \fInumBytes\fR) are XORed together into the destination
+buffer at \fIxbusDstAddr\fR.  There can be no more than about 100 source
+buffers.  All addresses are XBUS addresses; thus, they may start at 0.
+.PP
+.B \-send
+.br
+.B \-recv
+.br
+.BI \-bufAddr "\ address"
+.br
+.BI \-bufSize "\ numBytes"
+.IP
+\fB-send\fR and \fB-recv\fR queue up a buffer for the XBUS to TMC bus
+and TMC bus to XBUS interfaces, respectively.  The buffer is
+\fInumBytes\fR long and starts at XBUS address \fIaddress\fR.
+.SH FILES
+/dev/xbus*	XBUS device.
+.SH AUTHORS
+Ethan Miller (elm@cs)

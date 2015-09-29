@@ -1,0 +1,113 @@
+512
+llib-lsosp:getrec.c 2
+2
+0 34 5 0 0
+startSec
+2
+0 34 5 0 0
+startUsec
+2
+0 36 4 0 0
+version
+2
+0 40 18 0 0
+extraBuf
+2
+0 67 54 0 0
+offsetTable
+2
+0 83 4 0 0
+numMachineEntries
+2
+0 84 56 832 28415
+machineEntries
+2
+0 86 4 0 0
+minTime
+2
+0 86 4 0 0
+maxTime
+2
+0 90 8 640 18154
+initHdr
+2
+0 92 52 0 0
+hdrBootTime
+2
+4 110 36 0 0
+initRead
+18 0 0
+4 0 0
+82 0 0
+88 640 18154
+16
+0 292 4 0 0
+initRead
+2
+1 297 36 0 0
+migrateChildren
+4 0 0
+16
+0 302 4 0 0
+migrateChildren
+2
+1 374 36 0 0
+getNextRecordMerge
+82 0 0
+512
+llib-lsosp:getrec.c
+16
+0 424 4 0 0
+getNextRecordMerge
+2
+2 442 36 0 0
+getHeader
+24 192 512
+24 640 18154
+16
+0 512 4 0 0
+getHeader
+2
+2 700 36 0 0
+getNextRecord
+24 192 512
+18 0 0
+16
+0 712 4 0 0
+getNextRecord
+512
+llib-lsosp:process.c 2
+2
+1 29 36 0 0
+dorec
+24 128 19982
+2
+0 184 50 0 0
+buf
+2
+0 186 114 0 0
+opnames
+2
+1 191 98 0 0
+opname
+4 0 0
+16
+0 198 18 0 0
+opname
+2
+1 202 98 0 0
+status
+4 0 0
+16
+0 214 18 0 0
+status
+2
+0 216 114 0 0
+types
+2
+1 222 98 0 0
+filetype
+4 0 0
+16
+0 229 18 0 0
+filetype

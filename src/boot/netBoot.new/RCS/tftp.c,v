@@ -1,0 +1,1241 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     90.10.10.15.16.13;  author mendel;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.06.19.19.33.28;  author deboor;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.05.12.20.35.09;  author deboor;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@*** empty log message ***
+@
+text
+@/*
+ * tftp.c
+ *
+ * @@(#)tftp.c 1.9 88/02/08 Copyr 1986 Sun Micro
+ * Copyright (c) 1986 by Sun Microsystems, Inc.
+ *
+ * Standalone network boot via TFTP
+ */
+#ifdef sun4
+#define	SUN4
+#endif
+#ifdef sun3
+#define	SUN3
+#endif
+#include "machparam.h"
+#include "boot.h"
+#include "saio.h"
+#include "socket.h"
+#include "if.h"
+#include "in.h"
+#include "if_ether.h"
+#include "in_systm.h"
+#include "ip.h"
+#include "udp.h"
+#include "sainet.h"
+#include "sunromvec.h"
+#include "cpu.addrs.h"
+#include    <sys/exec.h>
+
+#undef DEV_BSIZE
+#undef MAX
+#include "tftp.h"
+
+#ifdef notdef
+#include "globram.h"
+#endif
+
+#ifdef notdef
+#define millitime() (gp->g_nmiclock)
+#else
+#define millitime() (*romp->v_nmiclock)
+#endif
+					/* tftp error messages */
+char	*tftp_errs[] = {
+	"not defined",
+	"file not found",
+	"access violation",
+	"disk full or allocation exceeded",
+	"illegal TFTP operation",
+	"unknown transfer ID",
+	"file already exists",
+	"no such user"
+};
+
+					/* TFTP packet */
+struct tftp_pack {
+	/* struct ether_header tf_ether; */	/* Ethernet header */
+	struct ip tf_ip;		/* IP header */
+	struct udphdr tf_udp;		/* UDP header */
+	struct tftphdr tf_tftp;		/* TFTP header */
+	char tftp_data[SEGSIZE];	/* TFTP data beyond header */
+};
+/*
+ * Size of Headers in TFTP DATA packet
+ */
+#define TFTPHDRLEN	(sizeof (struct ether_header) + sizeof (struct ip) + \
+			 sizeof (struct udphdr) + 4)
+
+struct tftpglob {
+	struct tftp_pack tf_out;	/* outgoing TFTP packet */
+	struct sainet tf_inet;		/* Internet state */
+	struct ether_header in_etherheader; 
+	char	tf_tmpbuf[1600];	/* tmp for incoming packets */
+	int	tf_block;		/* current block number */
+	char	*tf_data;		/* current load pointer */
+};
+
+#if defined(SUN4) && defined(CACHE)		    /* for loading into cache */
+#define LOADADDR 0x20000
+#define TFTPBASE ((struct tftpglob *) 0xFFDC0300)
+#else CACHE
+#define LOADADDR 0x4000
+#define TFTPBASE	((struct tftpglob *)0x3000)
+#endif SUN4 && CACHE
+
+#define	REXMIT_MSEC	4000		/* 4 seconds between retransmits */
+
+/*
+ * Description: Entry point for initializing the ethernet during boot.
+ *
+ * Synopsis:	status = etheropen(sip)
+ *		status	:(int) 0 command complete
+ *		sip	:(char *) pointer to saioreq structure
+ *
+ * Routines:	bzero, inet_init
+ */
+etheropen(sip)
+	register struct saioreq *sip;
+{
+	register struct tftpglob *tf = TFTPBASE;
+
+	bzero((caddr_t)tf, sizeof(*tf));	/* clear tftp work space */
+
+	inet_init(sip, &tf->tf_inet, tf->tf_tmpbuf); /* get internet address */
+	return (0);
+}
+
+#ifdef SUN2
+etherstrategy(sip, rw)
+	register struct saioreq *sip;
+	int rw;
+{
+	printf("tftp: random access attempted - code error.\n");
+	return(-1);
+}
+#endif SUN2
+
+/*
+ * Description: Loads the boot routine across the ethernet
+ *
+ * Synopsis:	status = tftpload(sip)
+ *		status	:(int)    load address
+ *				  -1 error
+ *		sip	:(char *) pointer to saioreq structure
+ *
+ * Routines:	bzero
+ *
+ * Variables:	locked	:(int) lock in host and server
+ *		firsttry:(int) first try flag for autoboot
+ */
+tftpload(sip, bp)
+	register struct saioreq *sip;
+	    struct bootparam   *bp ;
+{
+	register struct tftpglob    *tf = TFTPBASE;
+	register struct tftp_pack   *out = &tf->tf_out;
+	register struct tftp_pack   *in = (struct tftp_pack *)tf->tf_tmpbuf;
+	register char		    *p, *q, *x;
+	register short		    i, len;
+	int			    autoboot = 0;
+	int			    firsttry = 0;
+	int			    feedback = 0;
+	int finished = 0;
+	int			    delay = REXMIT_MSEC;
+	int			    time, xcount, locked, retry;
+	char			    *ind = "-=-=";
+#ifdef SUN4
+        u_long			    temp=0;
+#endif SUN4
+	struct exec *header;
+						/* if unit # is 0, this is
+						 * an autoboot */
+	if (sip->si_unit == 0)
+                autoboot = 1;
+top:
+						/* Initialize IP header */
+	out->tf_ip.ip_v = IPVERSION;		/* IP version number */
+	out->tf_ip.ip_hl = sizeof(struct ip) / 4;/* header length */
+	out->tf_ip.ip_ttl = MAXTTL;		/* time to live */
+	out->tf_ip.ip_p = IPPROTO_UDP;		/* type of protocol */
+
+						/* set source address */
+
+	bcopy(&tf->tf_inet.sain_myaddr, &out->tf_ip.ip_src, sizeof(out->tf_ip.ip_src));
+	 
+						/* set destination address,
+						 * Dst host is argument with
+						 * our net number plugged in */
+	if (autoboot && firsttry == 0) {
+						/* send to host from revarp */
+
+#ifdef SUN4
+        	out->tf_ip.ip_dst.S_un.S_un_b.s_b1=
+                  tf->tf_inet.sain_hisaddr.S_un.S_un_b.s_b1;
+        	out->tf_ip.ip_dst.S_un.S_un_b.s_b2=
+                  tf->tf_inet.sain_hisaddr.S_un.S_un_b.s_b2;
+        	out->tf_ip.ip_dst.S_un.S_un_b.s_b3=
+                  tf->tf_inet.sain_hisaddr.S_un.S_un_b.s_b3;
+        	out->tf_ip.ip_dst.S_un.S_un_b.s_b4=
+                  tf->tf_inet.sain_hisaddr.S_un.S_un_b.s_b4;
+#else SUN4
+		out->tf_ip.ip_dst.s_addr = tf->tf_inet.sain_hisaddr.s_addr;
+#endif SUN4
+		firsttry = 1;
+	} else if (autoboot && firsttry > 0) {
+						/* broadcast? */
+#ifdef SUN4
+		out->tf_ip.ip_dst.S_un.S_un_b.s_b1=(-1);
+		out->tf_ip.ip_dst.S_un.S_un_b.s_b2=(-1);
+		out->tf_ip.ip_dst.S_un.S_un_b.s_b3=(-1);
+		out->tf_ip.ip_dst.S_un.S_un_b.s_b4=(-1);
+#else SUN4
+		out->tf_ip.ip_dst.s_addr = -1;
+#endif SUN4
+	} else {
+						/* unit specified */
+
+#ifdef SUN4
+		struct in_addr  in;
+		bcopy(&out->tf_ip.ip_src.s_addr, &in, sizeof(in));
+		temp = in.s_addr;
+		temp -= in_lnaof(in);
+		temp += sip->si_unit;
+		bcopy(&temp, &out->tf_ip.ip_dst.s_addr, sizeof(temp));
+#else SUN4
+		out->tf_ip.ip_dst.s_addr = out->tf_ip.ip_src.s_addr +
+				sip->si_unit  - in_lnaof(out->tf_ip.ip_src);
+#endif SUN4
+	}
+
+						/* initialize UDP header */
+
+	out->tf_udp.uh_sport =  (millitime() & 1023) + 1024;/* source post */
+	out->tf_udp.uh_dport =  IPPORT_TFTP;	/* destination port */
+	out->tf_udp.uh_sum =  0;		/* no checksum */
+
+						/* set tftpglob structure */
+	tf->tf_block = 1;
+	tf->tf_data = (char *)KERNEL_START;
+						/* Create the TFTP Read Request
+						 * packet */
+	out->tf_tftp.th_opcode = RRQ;
+						/* load internet address */
+	q = bp->bp_name;
+	p = out->tf_tftp.th_stuff;
+	while (*q && *q != ' ') {
+		*(p++) = *(q++);
+	}
+	*p++ = 0;
+        q = "octet";
+        while (*p++ = *q++)
+                ;
+                                                /* fill UDP packet */
+	out->tf_udp.uh_ulen = sizeof (struct udphdr) + 2 + 
+			(p - out->tf_tftp.th_stuff);
+						/* fill ip packet */
+
+	out->tf_ip.ip_len = sizeof (struct ip) + out->tf_udp.uh_ulen;
+
+						/* init. transmit status */
+	locked = 0;
+	retry = 0;
+	time = millitime();
+						/* transmit loop */
+	for (xcount = 0; xcount < 5;) {		/* try to xmit 5 times */
+		if (millitime() >= time) {
+			time = millitime() + delay;
+
+						/* limit delay to 64 sec */
+			delay = delay < 64000 ? delay * 2 : 64000;
+
+						/* show activity */
+			printf("%c\b", ind[feedback++ % 4]);
+
+						/* transmit */
+
+			if (ip_output(sip, 
+				((caddr_t)out) - sizeof (struct ether_header) ,
+				out->tf_ip.ip_len + sizeof (struct ether_header), 
+				&tf->tf_inet, tf->tf_tmpbuf))
+				printf("X\b");
+						/* 5 times if not locked */
+			if (locked == 0 || retry > 15)
+				xcount++;
+			else 
+				retry++;
+		}
+						/* get input IP packet */
+
+		len = ip_input(sip,((caddr_t)in) - sizeof(struct ether_header),
+			&tf->tf_inet);
+
+						/* check length of packet */
+		if (len < TFTPHDRLEN) {
+#ifdef debugjl
+/*printf(" not tftp packet\n");*/
+#endif debugjl
+			continue;
+		}
+						/* check packet type */
+
+		if (in->tf_ip.ip_p != IPPROTO_UDP ||
+		    in->tf_udp.uh_dport != out->tf_udp.uh_sport)  {
+#ifdef debugjl
+printf(" wrong packet type = %x\n",in->tf_ip.ip_p);
+#endif debugjl
+			continue;
+		    }
+						/* dst has been locked in */
+#ifdef SUN4
+		if ( locked &&
+                    ( (out->tf_ip.ip_dst.S_un.S_un_b.s_b1 != 
+                      in->tf_ip.ip_src.S_un.S_un_b.s_b1) ||      
+                     (out->tf_ip.ip_dst.S_un.S_un_b.s_b2 != 
+                      in->tf_ip.ip_src.S_un.S_un_b.s_b2) ||      
+                     (out->tf_ip.ip_dst.S_un.S_un_b.s_b3 != 
+                      in->tf_ip.ip_src.S_un.S_un_b.s_b3) ||      
+                     (out->tf_ip.ip_dst.S_un.S_un_b.s_b4 != 
+                      in->tf_ip.ip_src.S_un.S_un_b.s_b4)) )
+#else SUN4
+		if (locked &&
+                    out->tf_ip.ip_dst.s_addr != in->tf_ip.ip_src.s_addr)
+#endif SUN4
+#ifdef debugjl
+		    { 
+			printf(" not locked address = %x%x%x%x\n",
+			out->tf_ip.ip_dst.S_un.S_un_b.s_b1,
+			out->tf_ip.ip_dst.S_un.S_un_b.s_b2,
+			out->tf_ip.ip_dst.S_un.S_un_b.s_b3,
+			out->tf_ip.ip_dst.S_un.S_un_b.s_b4);
+			continue;
+		    }
+#else
+			continue;
+#endif debugjl
+						/* error */
+
+		if (in->tf_tftp.th_opcode == ERROR) {
+			if (autoboot && tf->tf_block == 1)
+				continue;
+			if (in->tf_tftp.th_code < 0 ||
+			    in->tf_tftp.th_code > sizeof(tftp_errs)/sizeof(char *)){
+				printf("tftp: Unknown error 0x%x\n",
+					in->tf_tftp.th_code);
+			} else {
+				printf("tftp: %s @@ block %d\n",
+					tftp_errs[in->tf_tftp.th_code], tf->tf_block);
+			}
+						/* for autoboot, keep looping */
+			if (autoboot)
+				goto top;
+			return (-1);
+		}
+						/* we are looking for data */
+
+		if (in->tf_tftp.th_opcode != DATA ||
+		    in->tf_tftp.th_block  != tf->tf_block) 
+#ifdef debugjl
+		    { 
+			printf(" not data packet");
+			continue;
+		    }
+#else
+			continue;
+#endif debugjl
+						/* in sequence DATA packet */
+		if (tf->tf_block == 1) {	
+						/* lock onto server port */
+
+			out->tf_udp.uh_dport = in->tf_udp.uh_sport;
+
+						/* for autoboot, get address */
+			if (autoboot) 
+				bcopy(&(in->tf_ip.ip_src),&(out->tf_ip.ip_dst),
+					sizeof(in->tf_ip.ip_src));
+
+						/* print server found */
+
+			printf("Booting from tftp server at "); 
+                        inet_print(out->tf_ip.ip_dst);
+			locked = 1;
+		}
+						/* calc. data length */
+
+		len = in->tf_udp.uh_ulen - (sizeof(struct udphdr) + 4);
+
+						/* copy data to load point */
+		if (len) {
+			bcopy(in->tf_tftp.th_data, tf->tf_data, len);
+			if (tf->tf_block == 1) {
+			    header = (struct exec *)tf->tf_data;
+			    printf("Size: %d", header->a_text);
+			}
+			tf->tf_data += len;
+			if (header->a_text) {
+			    header->a_text -= len;
+			    if (tf->tf_block == 1) {
+				/*
+				 * If on first block, don't count header size against the
+				 * text size.
+				 */
+				header->a_text += sizeof(struct exec);
+			    }
+			    if ((int)header->a_text <= 0) {
+				printf("+%d", header->a_data);
+				header->a_data += header->a_text;
+				header->a_text = 0;
+			    }
+			} else {
+			    header->a_data -= len;
+			    if ((int)header->a_data <= 0) {
+				printf("+%d\n", header->a_bss);
+				finished = 1;
+			    }
+			}
+		}
+						/* send ACK (acknowledge) */
+		out->tf_tftp.th_opcode = ACK;
+		out->tf_tftp.th_block = tf->tf_block++;
+		out->tf_udp.uh_ulen = sizeof (struct udphdr) + 4;
+		out->tf_ip.ip_len = sizeof (struct ip) + out->tf_udp.uh_ulen;
+
+	    					/* transmit */
+
+		if (ip_output(sip, (caddr_t)out - sizeof(struct ether_header),
+			out->tf_ip.ip_len +
+		    sizeof (struct ether_header), &tf->tf_inet,
+		    tf->tf_tmpbuf))
+			printf("X\b");
+						/* reset count and retry */
+		xcount = 0;
+		retry = 0;
+		printf("%c\b", ind[feedback++ % 4]);	/* Show activity */
+
+						/* reset delay */
+		delay = REXMIT_MSEC;
+		time = millitime()+delay;
+						/* check if end of file */
+		if ((len < SEGSIZE)  || finished) {
+#ifndef sun4
+		    /*
+		     * Zero out the uninitialized data, since Sprite
+		     * doesn't do it for
+		     * itself...
+		     */
+		    tf->tf_data += (int)header->a_data;
+		    bzero(tf->tf_data, header->a_bss);
+#endif	    
+			printf("Downloaded %d bytes from tftp server.\n\n",
+				tf->tf_data - KERNEL_START);
+			return (KERNEL_START + sizeof(struct exec));
+		}
+	}
+	printf("tftp: time-out.\n");
+						/* for autoboot, loop forever */
+	if (autoboot)
+		goto top;
+						/* error return */
+	return (-1);
+}
+
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@a0 1
+
+d2 3
+a4 1
+ * @@(#)tftp.c 1.1 86/09/27
+d6 1
+a6 3
+ */
+
+/*
+d9 8
+a16 2
+#include    "boot.h"
+
+d28 2
+d34 3
+a36 1
+#include    <sys/exec.h>
+d38 6
+d55 3
+a57 4
+#define millitime() (*romp->v_nmiclock)
+
+struct tftp_pack {	/* TFTP packet */
+	struct ether_header tf_ether;	/* Ethernet header */
+a62 1
+
+d72 1
+d78 7
+a84 1
+#define TFTPBASE	((struct tftpglob *)(BOOT_START + 0x3000))
+d86 4
+a89 240
+#define	REXMIT_MSEC	4000	/* 4 seconds between retransmits */
+
+tftpload(sip, bp)
+    register struct saioreq *sip;
+    struct bootparam *bp;
+{
+    register struct tftpglob *tf = TFTPBASE;
+    register struct tftp_pack *out = &tf->tf_out;
+    register struct tftp_pack *in = (struct tftp_pack *)tf->tf_tmpbuf;
+    register char *p, *q, *x;
+    register short i, len;
+    int autoboot = 0;
+    int firsttry = 0;
+    int feedback = 0;
+    int finished = 0;
+    int time, xcount, locked, retry;
+    struct exec *header;
+    char	  *ind = "-=";
+    
+#if 0
+    if (sip->si_unit == 0)
+	autoboot = 1;	/* if unit # is 0, this is an autoboot */
+    top:
+#endif
+    /*
+     * Initialize IP and UDP headers
+     */
+    out->tf_ip.ip_v = IPVERSION;
+    out->tf_ip.ip_hl = sizeof (struct ip) / 4;
+    out->tf_ip.ip_ttl = MAXTTL;
+    out->tf_ip.ip_p = IPPROTO_UDP;
+    out->tf_udp.uh_sport =  (millitime() & 1023) + 1024;
+    out->tf_udp.uh_dport =  IPPORT_TFTP;
+    out->tf_udp.uh_sum =  0;		/* no checksum */
+    
+    /* 
+     * Set src and dst host addresses
+     * Dst host is argument with our net number plugged in
+     */
+    out->tf_ip.ip_src = tf->tf_inet.sain_myaddr;
+    
+#if 0
+    /*
+     * Since the tftpglob at TFTPBASE has been copied, we assume the
+     * destination address is all set up
+     */
+    if (autoboot && firsttry == 0) {
+	out->tf_ip.ip_dst.s_addr = tf->tf_inet.sain_hisaddr.s_addr;
+    } else if (autoboot && firsttry > 0) {
+	out->tf_ip.ip_dst.s_addr = -1;
+    } else {
+	out->tf_ip.ip_dst.s_addr = out->tf_ip.ip_src.s_addr +
+	    sip->si_unit  - in_lnaof(out->tf_ip.ip_src);
+    }
+#else
+    printf("Downloading \"%s\" from tftp server at ", bp->bp_name); 
+    inet_print(out->tf_ip.ip_dst);
+#endif
+    
+    ++firsttry;
+    locked = 0;
+    retry = 0;
+    tf->tf_block = 1;
+    tf->tf_data = (char *)KERNEL_START - sizeof(struct exec);;
+    
+    /*
+     * Create the TFTP Read Request packet 
+     */
+    out->tf_tftp.th_opcode = RRQ;
+    p = out->tf_tftp.th_stuff;
+    q = bp->bp_name;
+    while (*p++ = *q++) {
+	/* void */ ;
+    }
+    q = "octet";
+    while (*p++ = *q++)
+	;
+    out->tf_udp.uh_ulen = sizeof (struct udphdr) + 2 +
+	(p - out->tf_tftp.th_stuff);
+    out->tf_ip.ip_len = sizeof (struct ip) +
+	out->tf_udp.uh_ulen;
+    
+    time = 0;
+    for (xcount = 0; xcount < 5;) {
+	if (millitime() - time >= REXMIT_MSEC) {
+	    time = millitime();
+	    /*
+	     * Show activity
+	     */
+	    printf("X\b?\b");
+	    if (ip_output(sip, (caddr_t)out, out->tf_ip.ip_len +
+			  sizeof (struct ether_header), &tf->tf_inet,
+			  tf->tf_tmpbuf))
+		printf("X\b");
+	    if (locked == 0 || retry > 15)
+		xcount++;
+	    else 
+		retry++;
+	}
+	len = ip_input(sip, (caddr_t)in, &tf->tf_inet);
+	if (len < TFTPHDRLEN)
+	    continue;
+	if (in->tf_ip.ip_p != IPPROTO_UDP ||
+	    in->tf_udp.uh_dport != out->tf_udp.uh_sport) 
+	    continue;
+	if (locked &&
+	    out->tf_ip.ip_dst.s_addr != in->tf_ip.ip_src.s_addr)
+	{
+	    printf("bogus packet from ");
+	    inet_print(in->tf_ip.ip_src);
+	    continue;
+	}
+	if (in->tf_tftp.th_opcode == ERROR) {
+	    if (autoboot && tf->tf_block == 1)
+		continue;
+	    if (in->tf_tftp.th_code < 0 ||
+		in->tf_tftp.th_code > sizeof(tftp_errs)/sizeof(char *)){
+		    printf("tftp: Unknown error 0x%x\n",
+			   in->tf_tftp.th_code);
+	    } else {
+		printf("tftp: %s @@ block %d\n",
+		       tftp_errs[in->tf_tftp.th_code], tf->tf_block);
+	    }
+#if 0
+	    if (autoboot)
+		goto top;
+#endif
+	    return (-1);
+	}
+	if (in->tf_tftp.th_opcode != DATA) {
+	    printf("unhandled opcode %d\n", in->tf_tftp.th_opcode);
+	    continue;
+	} else if (in->tf_tftp.th_block != tf->tf_block) {
+	    printf("expected block %d, got %d\n", tf->tf_block,
+		   in->tf_tftp.th_block);
+	    /*
+	     * If the block is one behind what we expect, acknowledge the block
+	     * anyway so we get the next one.
+	     */
+	    if (in->tf_tftp.th_block == tf->tf_block - 1) {
+		xcount = retry = 0;
+		out->tf_tftp.th_opcode = ACK;
+		out->tf_tftp.th_block = in->tf_tftp.th_block;
+		out->tf_udp.uh_ulen = sizeof(struct udphdr) + 4;
+		out->tf_ip.ip_len = sizeof(struct ip) + out->tf_udp.uh_ulen;
+		time = millitime();
+		if (ip_output(sip, (caddr_t)out,
+			      out->tf_ip.ip_len + sizeof(struct ether_header),
+			      &tf->tf_inet, tf->tf_tmpbuf))
+		{
+		    printf("X\b");
+		}
+	    }
+	    continue;
+	}
+	
+	/*
+	 * Here if we have an in-sequence DATA packet
+	 */
+	if (tf->tf_block == 1) {	/* lock on to server and port */
+	    out->tf_udp.uh_dport = in->tf_udp.uh_sport;
+#if 0
+	    if (autoboot)
+		out->tf_ip.ip_dst = in->tf_ip.ip_src;
+#endif
+	    locked = 1;
+	}
+	/*
+	 * Swallow data
+	 */
+	len = in->tf_udp.uh_ulen - (sizeof(struct udphdr) + 4);
+	if (len) {
+	    bcopy(in->tf_tftp.th_data, tf->tf_data, len);
+	    if (tf->tf_block == 1) {
+		header = (struct exec *)tf->tf_data;
+		printf("Size: %d", header->a_text);
+	    }
+	    tf->tf_data += len;
+
+	    if (header->a_text) {
+		header->a_text -= len;
+		if (tf->tf_block == 1) {
+		    /*
+		     * If on first block, don't count header size against the
+		     * text size.
+		     */
+		    header->a_text += sizeof(struct exec);
+		}
+		if ((int)header->a_text <= 0) {
+		    printf("+%d", header->a_data);
+		    header->a_data += header->a_text;
+		    header->a_text = 0;
+		}
+	    } else {
+		header->a_data -= len;
+		if ((int)header->a_data <= 0) {
+		    printf("+%d\n", header->a_bss);
+		    finished = 1;
+		}
+	    }
+	}
+	if ((tf->tf_block & 0xf) == 1) {
+	    printf("%c\b", ind[feedback++ & 1]);	/* Show activity */
+	}
+	/*
+	 * Send ACK if still expect more data, else send ERROR.
+	 */
+	xcount = 0;
+	retry = 0;
+	out->tf_tftp.th_opcode = (!finished ? ACK : ERROR);
+	out->tf_tftp.th_block = tf->tf_block++;
+	out->tf_udp.uh_ulen = sizeof (struct udphdr) + 4;
+	out->tf_ip.ip_len = sizeof (struct ip) + out->tf_udp.uh_ulen;
+	time = millitime();
+	if (ip_output(sip, (caddr_t)out, out->tf_ip.ip_len +
+		      sizeof (struct ether_header), &tf->tf_inet,
+		      tf->tf_tmpbuf))
+	    printf("X\b");
+	if ((len < SEGSIZE) || finished) {	/* end of file */
+	    /*
+	     * Zero out the uninitialized data, since Sprite doesn't do it for
+	     * itself...
+	     */
+	    tf->tf_data += (int)header->a_data;
+	    bzero(tf->tf_data, header->a_bss);
+	    
+	    printf("Downloaded %d bytes from tftp server.\n\n",
+		   tf->tf_data - KERNEL_START);
+	    return (KERNEL_START);
+	}
+    }
+    printf("tftp: time-out.\n");
+#if 0
+    if (autoboot)
+	goto top;
+#endif
+    return (-1);
+}
+
+/***********************************************************************
+d91 3
+a93 1
+ *	    	  	    IP CODE
+d95 1
+a95 19
+ **********************************************************************/
+
+struct ether_addr etherbroadcastaddr = { 
+	0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+};
+
+struct arp_packet {
+	struct ether_header	arp_eh;
+	struct ether_arp	arp_ea;
+#define	used_size (sizeof (struct ether_header)+sizeof(struct ether_arp))
+	char	filler[ETHERMIN - sizeof(struct ether_arp)];
+};
+
+#define WAITCNT	2	/* 4 seconds before bitching about arp/revarp */
+
+/*
+ * arp
+ * Broadcasts to determine Ethernet address given IP address
+ * See RFC 826
+d97 1
+a97 1
+arp(sip, sain, tmpbuf)
+a98 2
+	register struct sainet *sain;
+	char *tmpbuf;
+d100 1
+a100 1
+	struct arp_packet out;
+d102 1
+a102 11
+	if (in_lnaof(sain->sain_hisaddr) == INADDR_ANY ||
+	    (in_lnaof(sain->sain_hisaddr) & INADDR1_ANY) == INADDR1_ANY) {
+		sain->sain_hisether = etherbroadcastaddr;
+		return;
+	}
+	out.arp_eh.ether_type = ETHERPUP_ARPTYPE;
+	out.arp_ea.arp_op = ARPOP_REQUEST;
+	arp_tha(&out.arp_ea) = etherbroadcastaddr;	/* what we want */
+	arp_tpa(&out.arp_ea).s_addr = sain->sain_hisaddr.s_addr;
+	comarp(sip, sain, &out, tmpbuf);
+}
+d104 2
+a105 89
+/*
+ * Common ARP code 
+ * Broadcast the packet and wait for the right response.
+ * Fills in *sain with the results
+ */
+comarp(sip, sain, out, tmpbuf)
+	register struct saioreq *sip;
+	register struct sainet *sain;
+	register struct arp_packet *out;
+	char *tmpbuf;
+{
+	register struct arp_packet *in = (struct arp_packet *)tmpbuf;
+	register int e, count, time, feedback,len, delay = 2;
+	char    *ind = "-\\|/";
+
+	out->arp_eh.ether_dhost = etherbroadcastaddr;
+	out->arp_eh.ether_shost = sain->sain_myether;
+	out->arp_ea.arp_hrd =  ARPHRD_ETHER;
+	out->arp_ea.arp_pro = ETHERPUP_IPTYPE;
+	out->arp_ea.arp_hln = sizeof(struct ether_addr);
+	out->arp_ea.arp_pln = sizeof(struct in_addr);
+	arp_sha(&out->arp_ea) = sain->sain_myether;
+	arp_spa(&out->arp_ea).s_addr = sain->sain_myaddr.s_addr;
+	feedback = 0;
+
+	for (count=0; ; count++) {
+		if (count == WAITCNT) {
+			if (out->arp_ea.arp_op == ARPOP_REQUEST) {
+				printf("Requesting Ethernet address for ");
+				inet_print(arp_tpa(&out->arp_ea));
+			} else {
+				printf("Requesting Internet address for ");
+				ether_print(&arp_tha(&out->arp_ea));
+			}
+		}
+		e = (*sip->si_sif->sif_xmit)(sip->si_devdata, (caddr_t)out,
+			sizeof *out);
+		
+		time = millitime() + (delay * 1000);	/* broadcast delay */
+		printf("%c\b", ind[feedback++ % 4]);    /* Show activity */
+
+		while (millitime() <= time) {
+			len = (*sip->si_sif->sif_poll)(sip->si_devdata, tmpbuf);
+			if (len < used_size)
+				continue;
+			if (in->arp_ea.arp_pro != ETHERPUP_IPTYPE)
+				continue;
+			if (out->arp_ea.arp_op == ARPOP_REQUEST) {
+				if (in->arp_eh.ether_type != ETHERPUP_ARPTYPE)
+					continue;
+				if (in->arp_ea.arp_op != ARPOP_REPLY)
+					continue;
+				if (arp_spa(&in->arp_ea).s_addr !=
+				    arp_tpa(&out->arp_ea).s_addr)
+					continue;
+				if (count >= WAITCNT) {
+					printf("Found at ");
+					ether_print(&arp_sha(&in->arp_ea));
+				}
+				sain->sain_hisether = arp_sha(&in->arp_ea);
+				return;
+			} else {		/* Reverse ARP */
+				if (in->arp_eh.ether_type !=ETHERPUP_REVARPTYPE)
+					continue;
+				if (in->arp_ea.arp_op != REVARP_REPLY)
+					continue;
+				if (bcmp((caddr_t)&arp_tha(&in->arp_ea),
+				    (caddr_t)&arp_tha(&out->arp_ea), 
+				    sizeof (struct ether_addr)) != 0)
+					continue;
+
+				printf("Using IP Address ");
+				inet_print(arp_tpa(&in->arp_ea));
+
+				sain->sain_myaddr = arp_tpa(&in->arp_ea);
+				/* short circuit first ARP */
+				sain->sain_hisaddr = arp_spa(&in->arp_ea);
+				sain->sain_hisether = arp_sha(&in->arp_ea);
+				return;
+			}
+		}
+		delay = delay * 2;	/* Double the request delay */
+
+		if (delay > 64)		/* maximum delay is 64 seconds */
+			delay = 64;
+
+		(*sip->si_sif->sif_reset)(sip->si_devdata);
+	}
+	/* NOTREACHED */
+d107 3
+a109 6
+
+/*
+ * Output an IP packet
+ * Cause ARP to be invoked if necessary
+ */
+ip_output(sip, buf, len, sain, tmpbuf)
+d111 1
+a111 3
+	caddr_t buf, tmpbuf;
+	short len;
+	register struct sainet *sain;
+d113 2
+a114 18
+	register struct ether_header *eh;
+	register struct ip *ip;
+
+	eh = (struct ether_header *)buf;
+	ip = (struct ip *)(buf + sizeof(struct ether_header));
+	if (ip->ip_dst.s_addr != sain->sain_hisaddr.s_addr) {
+		sain->sain_hisaddr.s_addr = ip->ip_dst.s_addr;
+		arp(sip, sain, tmpbuf);
+	}
+	eh->ether_type = ETHERPUP_IPTYPE;
+	eh->ether_shost = sain->sain_myether;
+	eh->ether_dhost = sain->sain_hisether;
+	/* checksum the packet */
+	ip->ip_sum = 0;
+	ip->ip_sum = ipcksum((caddr_t)ip, sizeof (struct ip));
+	if (len < ETHERMIN+sizeof(struct ether_header))
+		len = ETHERMIN+sizeof(struct ether_header);
+	return (*sip->si_sif->sif_xmit)(sip->si_devdata, buf, len);
+d116 2
+a117 1
+
+d119 11
+a129 4
+ * Check incoming packets for IP packets
+ * addressed to us. Also, respond to ARP packets
+ * that wish to know about us.
+ * Returns a length for any IP packet addressed to us, 0 otherwise.
+d131 1
+a131 1
+ip_input(sip, buf, sain)
+d133 1
+a133 2
+	caddr_t buf;
+	register struct sainet *sain;
+d135 102
+a236 4
+	register short len;
+	register struct ether_header *eh;
+	register struct ip *ip;
+	register struct ether_arp *ea;
+d238 1
+a238 32
+	len = (*sip->si_sif->sif_poll)(sip->si_devdata, buf);
+	eh = (struct ether_header *)buf;
+	if (eh->ether_type == ETHERPUP_IPTYPE &&
+	    len >= sizeof(struct ether_header)+sizeof(struct ip)) {
+		ip = (struct ip *)(buf + sizeof(struct ether_header));
+		if (ip->ip_dst.s_addr != sain->sain_myaddr.s_addr) 
+			return (0);
+		return (len);
+	}
+	if (eh->ether_type == ETHERPUP_ARPTYPE &&
+	    len >= sizeof(struct ether_header)+sizeof(struct ether_arp)) {
+		ea = (struct ether_arp *)(buf + sizeof(struct ether_header));
+		if (ea->arp_pro != ETHERPUP_IPTYPE) 
+			return (0);
+		if (arp_spa(ea).s_addr == sain->sain_hisaddr.s_addr)
+			sain->sain_hisether = arp_sha(ea);
+		if (ea->arp_op == ARPOP_REQUEST &&
+		    arp_tpa(ea).s_addr == sain->sain_myaddr.s_addr) {
+			ea->arp_op = ARPOP_REPLY;
+			eh->ether_dhost = arp_sha(ea);
+			eh->ether_shost = sain->sain_myether;
+			arp_tha(ea) = arp_sha(ea);
+			arp_tpa(ea) = arp_spa(ea);
+			arp_sha(ea) = sain->sain_myether;
+			arp_spa(ea) = sain->sain_myaddr;
+			(*sip->si_sif->sif_xmit)(sip->si_devdata, buf, 
+						sizeof(struct arp_packet));
+		}
+		return (0);
+	}
+	return (0);
+}
+d240 8
+a247 7
+/*
+ * Return the host portion of an internet address.
+ */
+in_lnaof(in)
+	struct in_addr in;
+{
+	register u_long i = ntohl(in.s_addr);
+d249 68
+a316 7
+	if (IN_CLASSA(i))
+		return ((i)&IN_CLASSA_HOST);
+	else if (IN_CLASSB(i))
+		return ((i)&IN_CLASSB_HOST);
+	else
+		return ((i)&IN_CLASSC_HOST);
+}
+d318 84
+a401 11
+/*
+ * Compute one's complement checksum
+ * for IP packet headers 
+ */
+ipcksum(cp, count)
+	caddr_t	cp;
+	register unsigned short	count;
+{
+	register unsigned short	*sp = (unsigned short *)cp;
+	register unsigned long	sum = 0;
+	register unsigned long	oneword = 0x00010000;
+d403 29
+a431 6
+	count >>= 1;
+	while (count--) {
+		sum += *sp++;
+		if (sum >= oneword) {		/* Wrap carries into low bit */
+			sum -= oneword;
+			sum++;
+d434 6
+a439 16
+	return (~sum);
+}
+
+inet_print(s)
+	struct in_addr s;
+{
+	int	len = 2;
+
+	printf("%d.%d.%d.%d = ", s.S_un.S_un_b.s_b1, s.S_un.S_un_b.s_b2,
+		s.S_un.S_un_b.s_b3, s.S_un.S_un_b.s_b4);
+
+	printhex(s.S_un.S_un_b.s_b1, len);
+	printhex(s.S_un.S_un_b.s_b2, len);
+	printhex(s.S_un.S_un_b.s_b3, len);
+	printhex(s.S_un.S_un_b.s_b4, len);
+	printf("\n");
+a441 7
+ether_print(ea)
+	struct ether_addr *ea;
+{
+	register u_char *p = &ea->ether_addr_octet[0];
+
+	printf("%x:%x:%x:%x:%x:%x\n", p[0], p[1], p[2], p[3], p[4], p[5]);
+}
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d12 11
+a22 11
+#include "dev/saio.h"
+#include "h/socket.h"
+#include "dev/if.h"
+#include "h/in.h"
+#include "dev/if_ether.h"
+#include "h/in_systm.h"
+#include "h/ip.h"
+#include "h/udp.h"
+#include "h/sainet.h"
+#include "h/sunromvec.h"
+#include "sun3/cpu.addrs.h"
+d25 1
+a25 1
+#include "h/tftp.h"
+d27 2
+d69 2
+a70 2
+	register struct saioreq *sip;
+	struct bootparam *bp;
+d72 150
+a221 14
+	register struct tftpglob *tf = TFTPBASE;
+	register struct tftp_pack *out = &tf->tf_out;
+	register struct tftp_pack *in = (struct tftp_pack *)tf->tf_tmpbuf;
+	register char *p, *q, *x;
+	register short i, len;
+	int autoboot = 0;
+	int firsttry = 0;
+	int feedback = 0;
+	int time, xcount, locked, retry;
+	char    *ind = "-\\|/";
+
+	if (sip->si_unit == 0)
+                autoboot = 1;	/* if unit # is 0, this is an autoboot */
+top:
+d223 1
+a223 13
+	 * Initialize IP and UDP headers
+	 */
+	out->tf_ip.ip_v = IPVERSION;
+	out->tf_ip.ip_hl = sizeof (struct ip) / 4;
+	out->tf_ip.ip_ttl = MAXTTL;
+	out->tf_ip.ip_p = IPPROTO_UDP;
+	out->tf_udp.uh_sport =  (millitime() & 1023) + 1024;
+	out->tf_udp.uh_dport =  IPPORT_TFTP;
+	out->tf_udp.uh_sum =  0;		/* no checksum */
+	 
+	/* 
+	 * Set src and dst host addresses
+	 * Dst host is argument with our net number plugged in
+d225 2
+a226 2
+	out->tf_ip.ip_src = tf->tf_inet.sain_myaddr;
+
+d228 4
+a231 11
+	/*
+	 * Since the tftpglob at TFTPBASE has been copied, we assume the
+	 * destination address is all set up
+	 */
+	if (autoboot && firsttry == 0) {
+        	out->tf_ip.ip_dst.s_addr = tf->tf_inet.sain_hisaddr.s_addr;
+	} else if (autoboot && firsttry > 0) {
+		out->tf_ip.ip_dst.s_addr = -1;
+	} else {
+		out->tf_ip.ip_dst.s_addr = out->tf_ip.ip_src.s_addr +
+				sip->si_unit  - in_lnaof(out->tf_ip.ip_src);
+a232 11
+#else
+	printf("Downloading \"%s\" from tftp server at ", bp->bp_name); 
+	inet_print(out->tf_ip.ip_dst);
+#endif
+
+	++firsttry;
+	locked = 0;
+	retry = 0;
+	tf->tf_block = 1;
+	tf->tf_data = (char *)KERNEL_START;
+
+d234 1
+a234 1
+	 * Create the TFTP Read Request packet 
+d236 17
+a252 27
+	out->tf_tftp.th_opcode = RRQ;
+	p = out->tf_tftp.th_stuff;
+	q = bp->bp_name;
+	while (*p++ = *q++) {
+	    /* void */ ;
+	}
+	q = "octet";
+	while (*p++ = *q++)
+		;
+	out->tf_udp.uh_ulen = sizeof (struct udphdr) + 2 +
+		(p - out->tf_tftp.th_stuff);
+	out->tf_ip.ip_len = sizeof (struct ip) +
+		out->tf_udp.uh_ulen;
+	
+	time = 0;
+	for (xcount = 0; xcount < 5;) {
+		if (millitime() - time >= REXMIT_MSEC) {
+			time = millitime();
+			printf("%c\b", ind[feedback++ % 4]); /* Show activity */
+			if (ip_output(sip, (caddr_t)out, out->tf_ip.ip_len +
+			    sizeof (struct ether_header), &tf->tf_inet,
+			    tf->tf_tmpbuf))
+				printf("X\b");
+			if (locked == 0 || retry > 15)
+				xcount++;
+			else 
+				retry++;
+d254 4
+a257 22
+		len = ip_input(sip, (caddr_t)in, &tf->tf_inet);
+		if (len < TFTPHDRLEN)
+			continue;
+		if (in->tf_ip.ip_p != IPPROTO_UDP ||
+		    in->tf_udp.uh_dport != out->tf_udp.uh_sport) 
+			continue;
+		if (locked &&
+                    out->tf_ip.ip_dst.s_addr != in->tf_ip.ip_src.s_addr)                                continue;
+		if (in->tf_tftp.th_opcode == ERROR) {
+			if (autoboot && tf->tf_block == 1)
+				continue;
+			if (in->tf_tftp.th_code < 0 ||
+				in->tf_tftp.th_code > sizeof(tftp_errs)/sizeof(char *)){
+				printf("tftp: Unknown error 0x%x\n",
+					in->tf_tftp.th_code);
+			} else {
+				printf("tftp: %s @@ block %d\n",
+					tftp_errs[in->tf_tftp.th_code], tf->tf_block);
+			}
+			if (autoboot)
+				goto top;
+			return (-1);
+d259 5
+a263 11
+		if (in->tf_tftp.th_opcode != DATA ||
+		    in->tf_tftp.th_block != tf->tf_block) 
+			continue;
+		/*
+		 * Here if we have an in sequence DATA packet
+		 */
+		if (tf->tf_block == 1) {	/* lock on to server and port */
+			out->tf_udp.uh_dport = in->tf_udp.uh_sport;
+			if (autoboot) 
+				out->tf_ip.ip_dst = in->tf_ip.ip_src;
+			locked = 1;
+d265 30
+a294 28
+		/*
+		 * Swallow data
+		 */
+		len = in->tf_udp.uh_ulen - (sizeof(struct udphdr) + 4);
+		if (len) {
+			bcopy(in->tf_tftp.th_data, tf->tf_data, len);
+			tf->tf_data += len;
+		}
+		/*
+		 * Send ACK 
+		 */
+		xcount = 0;
+		retry = 0;
+		out->tf_tftp.th_opcode = ACK;
+		out->tf_tftp.th_block = tf->tf_block++;
+		out->tf_udp.uh_ulen = sizeof (struct udphdr) + 4;
+		out->tf_ip.ip_len = sizeof (struct ip) + out->tf_udp.uh_ulen;
+		time = millitime();
+		printf("%c\b", ind[feedback++ % 4]);	/* Show activity */
+		if (ip_output(sip, (caddr_t)out, out->tf_ip.ip_len +
+		    sizeof (struct ether_header), &tf->tf_inet,
+		    tf->tf_tmpbuf))
+			printf("X\b");
+		if (len < SEGSIZE) { 	/* end of file */
+			printf("Downloaded %d bytes from tftp server.\n\n",
+				tf->tf_data - KERNEL_START);
+			return (KERNEL_START);
+		}
+d296 7
+a302 4
+	printf("tftp: time-out.\n");
+	if (autoboot)
+		goto top;
+	return (-1);
+@

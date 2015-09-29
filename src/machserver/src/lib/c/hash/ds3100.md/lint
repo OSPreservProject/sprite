@@ -1,0 +1,12 @@
+Hash.c:
+HashChainSearch.c:
+Hash_CreateEntry.c:
+Hash_DeleteEntry.c:
+Hash_DeleteTable.c:
+Hash_EnumFirst.c:
+Hash_EnumNext.c:
+Hash_FindEntry.c:
+Hash_InitTable.c:
+Hash_PrintStats.c:
+sprintf returns value which is always ignored
+strcpy returns value which is always ignored

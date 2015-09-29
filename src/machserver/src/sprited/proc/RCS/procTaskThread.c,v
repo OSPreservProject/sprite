@@ -1,0 +1,1113 @@
+head     1.16;
+branch   ;
+access   ;
+symbols  srv030:1.16 srv028:1.16 srv027:1.16 srv026:1.16 srv024:1.16 srv022:1.16 srv021:1.16 srv019:1.16 srv018:1.16 srv016:1.16 srv015:1.16 srv014:1.16 srv012:1.16 srv011:1.16 srv010:1.16 srv008:1.16 srv007:1.16 srv006:1.16 srv005:1.16 srv004:1.15 srv003:1.14 srv002:1.13 srv001:1.13;
+locks    ; strict;
+comment  @ * @;
+
+
+1.16
+date     92.05.12.11.58.33;  author kupfer;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     92.05.08.15.06.15;  author kupfer;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     92.04.29.22.01.00;  author kupfer;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     92.03.12.17.37.26;  author kupfer;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     92.02.27.16.28.57;  author kupfer;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     92.01.21.16.05.17;  author kupfer;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     91.12.01.21.59.30;  author kupfer;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     91.11.14.10.02.30;  author kupfer;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     91.10.18.18.00.26;  author kupfer;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     91.10.08.17.29.47;  author kupfer;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     91.10.04.11.37.40;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.09.26.23.10.32;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.09.23.14.19.52;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.09.04.14.19.20;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.09.02.22.54.01;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.08.19.12.27.21;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Routines for dealing with Mach tasks, threads, and ports.
+@
+
+
+1.16
+log
+@Add a comment about machid_mach_register.
+@
+text
+@/* 
+ * procTaskThread.c --
+ *
+ *	Routines for dealing with Mach tasks, threads, and ports.
+ *
+ * Copyright 1991, 1992 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/proc/RCS/procTaskThread.c,v 1.15 92/05/08 15:06:15 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <ckalloc.h>
+#include <mach.h>
+#include <mach_error.h>
+#include <servers/machid.h>
+#include <servers/machid_lib.h>
+#include <servers/netname.h>
+
+#include <main.h>		/* for debug flag */
+#include <procInt.h>
+#include <sig.h>
+#include <sync.h>
+#include <sys.h>
+#include <utils.h>
+#include <vm.h>
+
+/* 
+ * This is the request port for the MachID server.  We record user 
+ * processes with MachID so that we can look at them with ms, vminfo, etc.
+ */
+static mach_port_t machIdServer = MACH_PORT_NULL;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcTaskThreadInit --
+ *
+ *	Initialization for dealing with Mach task/thread interface.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Gets the request port for the MachID server.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+ProcTaskThreadInit()
+{
+    kern_return_t kernStatus;
+    char *hostname = "";
+
+    kernStatus = netname_look_up(name_server_port, hostname, "MachID",
+				 &machIdServer);
+    /* 
+     * If it didn't work, it's not the end of the world, so don't panic. 
+     */
+    if (kernStatus != KERN_SUCCESS) {
+	printf("Couldn't get MachID server port: %s\n",
+	       mach_error_string(kernStatus));
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcReleaseTaskInfo --
+ *
+ *	Decrement the reference count for a process's per-task 
+ *	information.  If this is the last reference, kill the task and 
+ *	free the data structure.  The process should already be 
+ *	locked.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Might kill the task and free some memory.  Nulls out the pointer in 
+ *	the PCB.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+ProcReleaseTaskInfo(procPtr)
+    Proc_LockedPCB *procPtr;
+{
+    kern_return_t kernStatus;
+    ProcTaskInfo *taskInfoPtr = procPtr->pcb.taskInfoPtr;
+
+    if (taskInfoPtr == NULL) {
+	return;
+    }
+
+    if (taskInfoPtr->refCount <= 0) {
+	panic("ReleaseTaskInfo: bogus reference count.\n");
+    }
+    taskInfoPtr->refCount--;
+
+    if (taskInfoPtr->refCount == 0) {
+	if (taskInfoPtr->task != MACH_PORT_NULL) {
+	    /* 
+	     * Kill the task and get rid of our send right for it.
+	     */
+	    kernStatus = task_terminate(taskInfoPtr->task);
+	    if (kernStatus != KERN_SUCCESS &&
+	    	    kernStatus != KERN_INVALID_ARGUMENT &&
+	            kernStatus != MACH_SEND_INVALID_DEST) {
+		printf("ReleaseTaskInfo: can't kill task: %s\n",
+		       mach_error_string(kernStatus));
+	    }
+	    (void)mach_port_deallocate(mach_task_self(),
+				       taskInfoPtr->task);
+	}
+	taskInfoPtr->task = MACH_PORT_NULL;
+
+	Vm_CleanupTask(procPtr);
+
+	ckfree(taskInfoPtr);
+    }
+
+    procPtr->pcb.taskInfoPtr = NULL;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcNewTaskInfo --
+ *
+ *	Create a new TaskInfo object.
+ *
+ * Results:
+ *	Returns a pointer to an initialized ProcTaskInfo, with a 
+ *	reference count of 1.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ProcTaskInfo *
+ProcNewTaskInfo()
+{
+    ProcTaskInfo *infoPtr;
+
+    infoPtr = (ProcTaskInfo *)ckalloc(sizeof(ProcTaskInfo));
+    if (infoPtr == NULL) {
+	panic("NewTaskInfo: out of memory.\n");
+    }
+
+    infoPtr->refCount = 1;
+    infoPtr->task = MACH_PORT_NULL;
+    Vm_NewProcess(&infoPtr->vmInfo);
+
+    return infoPtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_ExceptionToPCB --
+ *
+ *	Map an exception port to a PCB.
+ *
+ * Results:
+ *	Returns a pointer to the PCB for the given exception port.
+ *	Returns NULL if there was a problem getting the PCB for the
+ *	exception port.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Proc_ControlBlock *
+Proc_ExceptionToPCB(port)
+    mach_port_t port;
+{
+    Proc_ControlBlock *procPtr;
+
+    /* 
+     * Because all of our ports point to allocated memory, it's okay 
+     * to indirect once.  However, before indirecting again (to check 
+     * the magic number), make sure the back pointer really does point 
+     * to the start of a PCB.
+     */
+    procPtr = *(Proc_ControlBlock **)port;
+    if (&procPtr->backPtr != (Proc_ControlBlock **)port) {
+	procPtr = NULL;
+    } else if (procPtr->magic != PROC_PCB_MAGIC_NUMBER) {
+	procPtr = NULL;
+    }
+
+    return procPtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_MakeReady --
+ *
+ *	Starts a process running.
+ *
+ * Results:
+ *	status code.
+ *
+ * Side effects:
+ *	Sets the state variable in the PCB.  For user processes, makes the 
+ *	thread runnable (the task is already).
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Proc_MakeReady(procPtr)
+    Proc_LockedPCB *procPtr;	/* the locked process to start */
+{
+    kern_return_t kernStatus;
+
+    Proc_SetState((Proc_ControlBlock *)procPtr, PROC_READY);
+    Sync_Broadcast(&procPtr->pcb.resumeCondition);
+    if (procPtr->pcb.genFlags & PROC_USER) {
+	kernStatus = thread_resume(procPtr->pcb.thread);
+	if (kernStatus != KERN_SUCCESS) {
+	    printf("Proc_MakeReady: couldn't start pid %x: %s\n",
+		   procPtr->pcb.processID, mach_error_string(kernStatus));
+	    (void)Sig_SendProc(procPtr, SIG_KILL, TRUE, SIG_NO_CODE,
+			       (Address)0);
+	}
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_SyscallToPCB --
+ *
+ *	Map a system call request port to a PCB.
+ *
+ * Results:
+ *	Returns a pointer to the PCB for the given system call port.  
+ *	Returns NULL if there was a problem getting the PCB.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Proc_ControlBlock *
+Proc_SyscallToPCB(syscallPort)
+    mach_port_t syscallPort;
+{
+    Proc_ControlBlock *procPtr;
+
+    procPtr = (Proc_ControlBlock *)syscallPort;
+    if (procPtr->magic != PROC_PCB_MAGIC_NUMBER) {
+	procPtr = NULL;
+    }
+
+    return procPtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcMakeServicePort --
+ *
+ *	Create a service port for a process, using the given name.
+ *
+ * Results:
+ *	Returns the given name.
+ *
+ * Side effects:
+ *	Creates the port and allocates a send right for it.  Adds the 
+ *	service port to the system request port set.
+ *
+ *----------------------------------------------------------------------
+ */
+
+mach_port_t
+ProcMakeServicePort(newPort)
+    mach_port_t newPort;	/* the name to give the port */
+{
+    kern_return_t kernStatus;
+
+    kernStatus = mach_port_allocate_name(mach_task_self(),
+					 MACH_PORT_RIGHT_RECEIVE,
+					 newPort);
+    if (kernStatus != KERN_SUCCESS) {
+	panic("ProcMakeServicePort couldn't allocate service port: %s\n",
+	       mach_error_string(kernStatus));
+    }
+    kernStatus = mach_port_insert_right(mach_task_self(), newPort, newPort,
+					MACH_MSG_TYPE_MAKE_SEND);
+    if (kernStatus != KERN_SUCCESS) {
+	panic("%s couldn't create send right for service port: %s\n",
+	       "ProcMakeServicePort", mach_error_string(kernStatus));
+    }
+    kernStatus = mach_port_move_member(mach_task_self(), newPort,
+				       sys_RequestPort);
+    if (kernStatus != KERN_SUCCESS) {
+	panic("ProcMakeServicePort can't move service port to port set: %s\n",
+	       mach_error_string(kernStatus));
+    }
+
+    return newPort;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcDestroyServicePort --
+ *
+ *	Destroy the given port.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Nils out the place where the port was named.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+ProcDestroyServicePort(portPtr)
+    mach_port_t *portPtr;	/* IN: the port to free; OUT: set to nil */
+{
+    kern_return_t kernStatus;
+
+    if (*portPtr == MACH_PORT_NULL) {
+	return;
+    }
+
+    kernStatus = mach_port_destroy(mach_task_self(), *portPtr);
+    if (kernStatus != KERN_SUCCESS) {
+	printf("ProcDestroyServicePort: can't destroy port: %s\n",
+	       mach_error_string(kernStatus));
+    }
+
+    *portPtr = MACH_PORT_NULL;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcFreeTaskThread --
+ *
+ *	Blow away the Mach resources held by the given locked process.  
+ *	Because the process's VM resources are tied to the task, this also 
+ *	frees the process's VM resources.
+ *
+ * Results:
+ *	None.  (If something goes wrong, what else is there to do except 
+ *	complain?)
+ *
+ * Side effects:
+ *	Destroys the process's thread and cleans up the procPtr
+ *	structure.  Kills the task if this is the last process using
+ *	it.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+ProcFreeTaskThread(procPtr)
+    Proc_LockedPCB *procPtr;	/* the process to kill */
+{
+    /* 
+     * Vm_Copy{In,Out} (and possibly other routines) need the task
+     * information, but we don't have any good way to synchronize with
+     * them.  If the process is voluntarily exiting, then that's not a
+     * problem.  If the process is being killed by some other process, make
+     * sure it doesn't have a thread handling a request for it.
+     */
+    if ((Proc_ControlBlock *)procPtr != Proc_GetCurrentProc() &&
+		procPtr->pcb.genFlags & PROC_BEING_SERVED) {
+	panic("ProcFreeTaskThread: potential race.\n");
+    }
+
+#ifdef SPRITED_ACCOUNTING
+    UndefinedProcedure();
+#endif
+    ProcKillThread(procPtr);
+    ProcReleaseTaskInfo(procPtr);
+    ProcDestroyServicePort(&procPtr->pcb.syscallPort);
+    ProcDestroyServicePort(&procPtr->pcb.exceptionPort);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcKillThread --
+ *
+ *	Kill a user process's Mach thread and release our reference to it.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Destroys the thread and deallocates our copy of the name.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+ProcKillThread(procPtr)
+    Proc_LockedPCB *procPtr;	/* the process, should be locked. */
+{
+    kern_return_t kernStatus;
+
+    if (procPtr->pcb.thread != MACH_PORT_NULL) {
+	kernStatus = thread_terminate(procPtr->pcb.thread);
+	if (kernStatus != KERN_SUCCESS &&
+	    	kernStatus != KERN_INVALID_ARGUMENT &&
+	        kernStatus != MACH_SEND_INVALID_DEST) {
+	    printf("ProcFreeTaskThread: can't kill thread: %s\n",
+		   mach_error_string(kernStatus));
+	}
+	(void)mach_port_deallocate(mach_task_self(), procPtr->pcb.thread);
+    }
+    procPtr->pcb.thread = MACH_PORT_NULL;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcMakeTaskThread --
+ *
+ *	Make the Mach task, thread, and ports for a user process.
+ *
+ * Results:
+ *	Returns a status code.
+ *
+ * Side effects:
+ *	Fills in the given PCB with information about the created 
+ *	objects. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+ProcMakeTaskThread(procPtr, parentProcPtr)
+    Proc_ControlBlock *procPtr;	/* the process being created */
+    Proc_ControlBlock *parentProcPtr; /* the currently executing process */
+{
+    kern_return_t kernStatus;
+    mach_port_t parentTask;	/* parent task for the new task */
+    ReturnStatus status = SUCCESS;
+    
+    Proc_Lock(procPtr);
+
+    procPtr->taskInfoPtr = ProcNewTaskInfo();
+
+    parentTask = (parentProcPtr->genFlags & PROC_KERNEL) ?
+	mach_task_self() : parentProcPtr->taskInfoPtr->task;
+    kernStatus = task_create(parentTask, FALSE,
+			     &procPtr->taskInfoPtr->task);
+    if (kernStatus != KERN_SUCCESS) {
+	printf("ProcMakeTaskThread: couldn't create child task: %s\n",
+	       mach_error_string(kernStatus));
+	status = Utils_MapMachStatus(kernStatus);
+	goto done;
+    }
+    kernStatus = thread_create(procPtr->taskInfoPtr->task,
+			       &procPtr->thread);
+    if (kernStatus != KERN_SUCCESS) {
+	printf("ProcMakeTaskThread: couldn't create child thread: %s\n",
+	       mach_error_string(kernStatus));
+	ProcReleaseTaskInfo(Proc_AssertLocked(procPtr));
+	status = Utils_MapMachStatus(kernStatus);
+	goto done;
+    }
+
+    /* 
+     * Register the task with the MachID server.  This lets us use tools 
+     * like vminfo to poke around inside user processes.
+     * XXX The authorization port (mach_task_self currently) appears to be 
+     * ignored by machid_mach_register.
+     */
+    if (machIdServer != MACH_PORT_NULL) {
+	kernStatus = machid_mach_register(machIdServer, mach_task_self(),
+					  procPtr->taskInfoPtr->task,
+					  MACH_TYPE_TASK,
+					  &procPtr->taskInfoPtr->machId);
+	if (kernStatus != KERN_SUCCESS) {
+	    printf("%s: couldn't register pid %x with MachID server: %s\n",
+		   "ProcMakeTaskThread", procPtr->processID,
+		   mach_error_string(kernStatus));
+	}
+    }
+
+    /* 
+     * Set up the exception and system call request ports for the 
+     * process.
+     */
+    
+    procPtr->syscallPort = ProcMakeServicePort((mach_port_t)procPtr);
+    procPtr->exceptionPort = ProcMakeServicePort(
+					(mach_port_t)&procPtr->backPtr);
+    kernStatus = task_set_bootstrap_port(procPtr->taskInfoPtr->task,
+					 procPtr->syscallPort);
+    if (kernStatus != KERN_SUCCESS) {
+	panic("%s: can't install system call request port: %s\n",
+	      "ProcMakeTaskThread", mach_error_string(kernStatus));
+    }
+    kernStatus = thread_set_exception_port(procPtr->thread,
+					   procPtr->exceptionPort);
+    if (kernStatus != KERN_SUCCESS) {
+	panic("ProcMakeTaskThread: can't install exception port: %s\n",
+	       mach_error_string(kernStatus));
+    }
+
+    /* 
+     * Null out the exception port for the task, so that if we bobble the
+     * thread exception message, gdb won't get the exception message and
+     * get thoroughly confused.  A possible alternative would be to tie the
+     * task error port to a simple routine that always causes the thread to
+     * get terminated.
+     */
+    kernStatus = task_set_exception_port(procPtr->taskInfoPtr->task,
+					 MACH_PORT_NULL);
+    if (kernStatus != KERN_SUCCESS) {
+	panic("ProcMakeTaskThread: can't install task exception port: %s\n",
+	       mach_error_string(kernStatus));
+    }
+
+ done:
+    Proc_Unlock(Proc_AssertLocked(procPtr));
+    return status;
+}
+@
+
+
+1.15
+log
+@Don't keep PCB locked so long during Proc_NewProc, and don't lock the
+parent at all.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/proc/RCS/procTaskThread.c,v 1.14 92/04/29 22:01:00 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d503 2
+@
+
+
+1.14
+log
+@Include <servers/machid_lib.h>.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/proc/RCS/procTaskThread.c,v 1.13 92/03/12 17:37:26 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d469 2
+a470 2
+    Proc_LockedPCB *procPtr;	/* the process being created */
+    Proc_LockedPCB *parentProcPtr; /* the currently executing process */
+d474 1
+d476 1
+a476 1
+    procPtr->pcb.taskInfoPtr = ProcNewTaskInfo();
+d478 4
+a481 2
+    parentTask = (parentProcPtr->pcb.genFlags & PROC_KERNEL) ?
+	mach_task_self() : parentProcPtr->pcb.taskInfoPtr->task;
+d483 1
+a483 1
+			     &procPtr->pcb.taskInfoPtr->task);
+d487 2
+a488 1
+	return Utils_MapMachStatus(kernStatus);
+d490 2
+a491 2
+    kernStatus = thread_create(procPtr->pcb.taskInfoPtr->task,
+			       &procPtr->pcb.thread);
+d495 3
+a497 2
+	ProcReleaseTaskInfo(procPtr);
+	return Utils_MapMachStatus(kernStatus);
+d506 1
+a506 1
+					  procPtr->pcb.taskInfoPtr->task,
+d508 1
+a508 1
+					  &procPtr->pcb.taskInfoPtr->machId);
+d511 1
+a511 1
+		   "ProcMakeTaskThread", procPtr->pcb.processID,
+d521 5
+a525 5
+    procPtr->pcb.syscallPort = ProcMakeServicePort((mach_port_t)procPtr);
+    procPtr->pcb.exceptionPort = ProcMakeServicePort(
+					(mach_port_t)&procPtr->pcb.backPtr);
+    kernStatus = task_set_bootstrap_port(procPtr->pcb.taskInfoPtr->task,
+					 procPtr->pcb.syscallPort);
+d530 2
+a531 2
+    kernStatus = thread_set_exception_port(procPtr->pcb.thread,
+					   procPtr->pcb.exceptionPort);
+d544 1
+a544 1
+    kernStatus = task_set_exception_port(procPtr->pcb.taskInfoPtr->task,
+d551 3
+a553 1
+    return SUCCESS;
+@
+
+
+1.13
+log
+@Include a useful code when doing a SIG_KILL.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/proc/RCS/procTaskThread.c,v 1.12 92/02/27 16:28:57 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d25 1
+@
+
+
+1.12
+log
+@Snapshot.  Can kill, suspend, and resume processes.
+@
+text
+@d6 1
+a6 1
+ * Copyright 1991 Regents of the University of California
+d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/proc/RCS/procTaskThread.c,v 1.11 92/01/21 16:05:17 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d244 2
+a245 1
+	    (void)Sig_SendProc(procPtr, SIG_KILL, TRUE, 0, (Address)0);
+@
+
+
+1.11
+log
+@Add ProcTaskThreadInit.  In ProcMakeTaskThread register user processes
+with the MachID server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/proc/RCS/procTaskThread.c,v 1.10 91/12/01 21:59:30 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d29 2
+d238 1
+d242 1
+a242 1
+	    printf("Proc_MakeReady: couldn't start pid %x : %s\n",
+d244 1
+a244 1
+	    Proc_Kill(procPtr);
+d468 1
+a468 1
+    Proc_ControlBlock *parentProcPtr; /* the currently executing process */
+d475 2
+a476 2
+    parentTask = (parentProcPtr->genFlags & PROC_KERNEL) ?
+	mach_task_self() : parentProcPtr->taskInfoPtr->task;
+@
+
+
+1.10
+log
+@Snapshot.  FS appears to work.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/proc/RCS/procTaskThread.c,v 1.9 91/11/14 10:02:30 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d24 2
+d33 40
+d488 16
+@
+
+
+1.9
+log
+@Snapshot. net, rpc, recov modules added.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/proc/RCS/procTaskThread.c,v 1.8 91/10/18 18:00:26 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a21 1
+#include <libc.h>
+@
+
+
+1.8
+log
+@Use ckalloc/ckfree rather than malloc/free.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/proc/RCS/procTaskThread.c,v 1.7 91/10/08 17:29:47 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d117 1
+a117 1
+    infoPtr = ckalloc(sizeof(ProcTaskInfo));
+@
+
+
+1.7
+log
+@Put in code so that when process accounting is turned on, the server
+won't link.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/proc/RCS/procTaskThread.c,v 1.6 91/10/04 11:37:40 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d21 1
+d88 1
+a88 1
+	free(taskInfoPtr);
+d117 1
+a117 1
+    infoPtr = malloc(sizeof(ProcTaskInfo));
+@
+
+
+1.6
+log
+@Snapshot.  fork/exec work.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/proc/RCS/procTaskThread.c,v 1.5 91/09/26 23:10:32 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a336 2
+ *	XXX Should save resource information about the task and thread 
+ *	before nuking them.
+d357 3
+@
+
+
+1.5
+log
+@Tweak some error printf's.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/proc/RCS/procTaskThread.c,v 1.4 91/09/23 14:19:52 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d74 3
+a76 1
+	    if (kernStatus != KERN_SUCCESS) {
+d85 1
+a85 1
+	Vm_CleanupTask(&taskInfoPtr->vmInfo);
+d391 2
+a392 1
+	    	kernStatus != KERN_INVALID_ARGUMENT) {
+@
+
+
+1.4
+log
+@Snapshot.  Server is multithreaded internally.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/proc/RCS/procTaskThread.c,v 1.3 91/09/04 14:19:20 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d431 1
+a431 1
+	printf("Couldn't create child task: %s\n",
+d438 1
+a438 1
+	printf("Couldn't create child thread: %s\n",
+d455 2
+a456 2
+	panic("Proc_NewProc can't install system call request port: %s\n",
+	       mach_error_string(kernStatus));
+d461 1
+a461 1
+	panic("Proc_NewProc can't install exception port: %s\n",
+d475 1
+a475 1
+	panic("Proc_NewProc can't install task exception port: %s\n",
+@
+
+
+1.3
+log
+@Better port management.  Take Proc_Kill from ProcExit.c.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/sprited/proc/RCS/procTaskThread.c,v 1.2 91/09/02 22:54:01 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d25 1
+a25 1
+#include <main.h>
+d27 1
+d43 1
+a43 1
+ *	Returns a NULL pointer, to nil out the pointer in the pcb.
+d46 2
+a47 1
+ *	Might kill the task and free some memory.
+d52 3
+a54 3
+ProcTaskInfo *
+ProcReleaseTaskInfo(taskInfoPtr)
+    ProcTaskInfo *taskInfoPtr;
+d57 5
+d64 1
+a64 1
+	panic("ReleaseTaskInfo: bogus reference count.");
+d88 1
+a88 1
+    return NULL;
+d116 1
+a116 1
+	panic("NewTaskInfo: out of memory.");
+d171 1
+a171 1
+ * Proc_Start --
+d173 1
+a173 1
+ *	Starts a user process running.
+d179 2
+a180 1
+ *	Makes the thread runnable (the task is already).
+d185 3
+a187 3
+ReturnStatus
+Proc_Start(procPtr)
+    Proc_ControlBlock *procPtr;	/* the locked process to start */
+d191 8
+a198 5
+    kernStatus = thread_resume(procPtr->thread);
+    if (kernStatus != KERN_SUCCESS) {
+	printf("Couldn't start the thread: %s\n",
+	       mach_error_string(kernStatus));
+	return Utils_MapMachStatus(kernStatus);
+a199 2
+
+    return SUCCESS;
+d230 1
+d253 1
+a253 2
+ProcMakeServicePort(procPtr, newPort)
+    Proc_ControlBlock *procPtr;	/* the process that gets the port */
+d262 1
+a262 1
+	printf("couldn't allocate service port: %s\n",
+a263 1
+	panic("ProcMakeServicePort");
+d268 2
+a269 3
+	printf("Couldn't create send right for service port: %s\n",
+	       mach_error_string(kernStatus));
+	panic("ProcMakeServicePort");
+d272 1
+a272 1
+				       main_RequestPort);
+d274 1
+a274 1
+	printf("can't move service port to port set: %s\n",
+a275 1
+	panic("ProcMakeServicePort");
+d304 4
+d321 1
+a321 1
+ * Proc_Kill --
+d323 4
+a326 2
+ *	Blow away the given locked process.
+ *
+d328 2
+a329 1
+ *	status code.
+d335 77
+d417 3
+a419 2
+Proc_Kill(procPtr)
+    Proc_ControlBlock *procPtr;	/* the process to kill */
+d422 42
+a463 1
+    ReturnStatus status = SUCCESS;
+d466 5
+a470 1
+     * Kill off the thread and release our send right to it.
+d472 2
+a473 4
+    /* XXX set process state? */
+    /* Be careful to handle case where, e.g., is in system call.  Just
+       get rid of the tasks and mark as dead? */
+    kernStatus = thread_terminate(procPtr->thread);
+d475 3
+a477 11
+	printf("Can't kill thread: %s\n",
+	       mach_error_string(kernStatus));
+	status = Utils_MapMachStatus(kernStatus);
+    }
+    (void)mach_port_deallocate(mach_task_self(), procPtr->thread);
+    procPtr->thread = MACH_PORT_NULL;
+
+    procPtr->taskInfoPtr = ProcReleaseTaskInfo(procPtr->taskInfoPtr);
+
+    ProcDestroyServicePort(&procPtr->syscallPort);
+    ProcDestroyServicePort(&procPtr->exceptionPort);
+d479 1
+a479 1
+    return status;
+a480 1
+
+@
+
+
+1.2
+log
+@Changes for module-based source organization.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/sprited/proc/RCS/procTaskThread.c,v 1.1 91/08/19 12:27:21 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d63 3
+a70 5
+	    /* 
+	     * XXX I'm not entirely sure this is necessary, but I 
+	     * suppose it can't hurt.  See the UX code for an example 
+	     * where this is done.
+	     */
+d233 1
+a233 1
+ *	Returns the created port.
+d236 2
+a237 2
+ *	Allocates a send right for the port.  Adds the service port to 
+ *	the system request port set.
+d243 1
+a243 1
+ProcMakeServicePort(procPtr, name)
+d245 1
+a245 1
+    mach_port_t name;		/* the name to give the port */
+a246 1
+    mach_port_t newPort;	/* the newly created port */
+d249 3
+a251 3
+    kernStatus = mach_port_allocate(mach_task_self(),
+				    MACH_PORT_RIGHT_RECEIVE,
+				    &newPort);
+a256 8
+    kernStatus = mach_port_rename(mach_task_self(), newPort,
+				  (mach_port_t)name);
+    if (kernStatus != KERN_SUCCESS) {
+	printf("can't rename service port: %s\n",
+	       mach_error_string(kernStatus));
+	panic("ProcMakeServicePort");
+    }
+    newPort = name;
+d298 1
+a298 1
+    kernStatus = mach_port_deallocate(mach_task_self(), *portPtr);
+d300 1
+a300 1
+	printf("ProcDestroyServicePort: can't deallocate port: %s\n",
+d306 50
+@
+
+
+1.1
+log
+@Snapshot: Code reorg. and locking for processes & segments.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.5 91/02/09 13:24:44 ouster Exp $ SPRITE (Berkeley)";
+a23 4
+#include "main.h"
+#include "procInt.h"
+#include "util.h"
+#include "vm.h"
+d25 5
+d189 1
+a189 1
+	return Util_MapMachStatus(kernStatus);
+@

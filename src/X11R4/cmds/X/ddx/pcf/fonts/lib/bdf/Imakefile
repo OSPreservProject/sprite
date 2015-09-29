@@ -1,0 +1,17 @@
+#
+# Makefile for bdf read/write(someday) routines
+#
+
+     CDEBUGFLAGS = -g
+        INCLUDES = -I. -I../../include -I$(TOP)
+         HEADERS = 
+            SRCS = bdfread.c bdfutils.c
+            OBJS = bdfread.o bdfutils.o
+
+NormalLibraryObjectRule()
+NormalLibraryTarget(bdf,$(OBJS))
+
+NormalLintTarget($(SRCS))
+
+DependTarget()
+

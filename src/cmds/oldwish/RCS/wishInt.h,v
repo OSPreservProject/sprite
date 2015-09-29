@@ -1,0 +1,676 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.4
+date     89.01.11.11.58.53;  author mlgray;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.11.03.19.45.37;  author mlgray;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.11.02.14.52.37;  author mlgray;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.10.03.12.49.03;  author mlgray;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@X11: works pretty much now.
+@
+
+
+1.4
+log
+@Temporary checkin
+@
+text
+@/*
+ * wishInt.h --
+ *
+ *	Internal declarations for wish display.
+ *
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /a/newcmds/wish/RCS/wishInt.h,v 1.3 88/11/03 19:45:37 mlgray Exp Locker: mlgray $ SPRITE (Berkeley)
+ */
+
+#ifndef _WISHINT
+#define _WISHINT
+
+#include <sys/param.h>
+#ifndef AllPlanes
+#include <X11/Xlib.h>
+#endif
+#ifndef USPosition
+#include <X11/Xutil.h>
+#endif
+#include "cmd.h"
+#include "mx.h"
+#include "tcl.h"
+
+#ifndef Boolean
+#define Boolean	int
+#define FALSE	0
+#define TRUE	1
+#endif /* Boolean */
+
+
+/*
+ * Largest number of ASCII characters required to represent an integer.
+ */
+#define CVT_INT_BUF_SIZE 34
+
+#define	WISH_ROW_SPACING	1	/* a pleasant amount */
+#define	WISH_COLUMN_SPACING	15	/* another pleasant amount */
+#define UNINITIALIZED		-1	/* number of elements uninitialized */
+
+/*
+ * To get a control character.
+ */
+#define	ctrl(c)	(c - 'a' + 1)
+
+/*
+ * To determine whether finding file system attributes for a file is necessary.
+ */
+#define WISH_ATTR_NECESSARY_P\
+    ((aWindow->displayInstructions & ~WISH_NAME_FIELD) != 0) || \
+    ((aWindow->sortingInstructions & ~WISH_ALPHA_SORT) != 0) ? TRUE : FALSE
+
+#define WISH_CHAR_TO_WIDTH(numChars, fontPtr)\
+    ((numChars) * XTextWidth(fontPtr, "W", 1))
+
+/*
+ * Sorting flags are a bitwise and of one of the methods
+ * with or without "reverse."
+ */
+/* methods */ 
+#define	WISH_ALPHA_SORT	0x01	/* by alphabetical order */
+#define	WISH_ATIME_SORT	0x02	/* by access time */
+#define	WISH_MTIME_SORT	0x04	/* by data modify time */
+#define	WISH_DTIME_SORT	0x08	/* by descriptor modify time */
+#define	WISH_SIZE_SORT	0x10	/* by size */
+/* reverse */
+#define	WISH_REVERSE_SORT	0x20	/* whether to show in reverse order */
+
+/*
+ * Display flags show which fields should be present in the display.
+ */
+#define	WISH_NAME_FIELD	0x001	/* name of the file */
+#define	WISH_FULLNAME_FIELD	0x002	/* full pathname to the file */
+#define	WISH_ATIME_FIELD	0x004	/* access time */
+#define	WISH_MTIME_FIELD	0x008	/* data modify time */
+#define	WISH_DTIME_FIELD	0x010	/* descriptor modify time */
+#define	WISH_SIZE_FIELD	0x020	/* size of the file in bytes */
+#define	WISH_DEVICE_FIELD	0x040	/* major and minor device numbers */
+#define	WISH_PERM_FIELD	0x080	/* permissions, owner and group */
+#define	WISH_TYPE_FIELD	0x100	/* directory? link? ascii? etc.... */
+
+#define	WISH_LEFT_BUTTON	0x01
+#define	WISH_MIDDLE_BUTTON	0x02
+#define	WISH_RIGHT_BUTTON	0x04
+#define	WISH_META_BUTTON	0x08
+#define	WISH_SHIFT_BUTTON	0x10
+
+#define	WISH_MAX_RULE_LENGTH	(2 * 1024)	/* for now the max length
+						 * of a rule stored in a
+						 * .wish file is twice
+						 * the max length of a path.
+						 * No good reason, just easy. */
+/* typedefs for use below */
+typedef	struct WishFile	WishFile;
+typedef	struct WishGroup	WishGroup;
+typedef	struct WishColumn	WishColumn;
+typedef	struct WishWindow	WishWindow;
+typedef	struct WishSelection	WishSelection;
+typedef	struct WishGroupBinding	WishGroupBinding;
+
+/*
+ * Stuff we need to know about particular file entries.
+ * This will contain more information along the lines of a struct	direct
+ * soon.  For now, we only keep the name.
+ */
+struct WishFile {
+    char	*name;		/* Name of the file */
+    struct stat	*attrPtr;	/* file attributes */
+    int		length;		/* length of name in pixels */
+    int		x;		/* x and y coords of file name */
+    int		y;
+    int		myColumn;	/* which column the file is in */
+    Boolean	selectedP;	/* is the file selected? */
+    Boolean	lineP;		/* is whole line selected? */
+    Boolean	highlightP;	/* whether or not it is highlighted */
+    WishGroup	*myGroupPtr;	/* ptr back to my group */
+    struct	WishFile	*nextPtr;	/* the next one */
+};
+
+/*
+ * Each group has a selection rule associated with it, and the files selected
+ * by that rule.
+ */
+#define	COMPARISON	0
+#define	PROC		1
+struct WishGroup {
+    int		myColumn;		/* which column I'm in */
+    Window	headerWindow;		/* window for header */
+    int		x;			/* x and y coords of group header */
+    int		y;
+    int		width;			/* width and height of header */
+    int		height;
+    int		entry_x;		/* coords of old entry window */
+    int		entry_y;
+    int		entry_width;
+    WishFile	*fileList;		/* list of selected files */
+    int		defType;		/* type of rule, tcl proc or pattern */
+    char	*rule;			/* selection rule */
+    WishGroupBinding	*groupBindings;	/* mouse button/command bindings */
+    int		length;			/* length of rule or name in pixels */
+    char	editHeader[WISH_MAX_RULE_LENGTH];	/* for entry window */
+    Boolean	selectedP;		/* is the group selected? */
+    Boolean	highlightP;		/* whether or not it is highlighted */
+    struct	WishGroup	*nextPtr;	/* the next one in list */
+};
+
+/*
+ * Per-column information.  This data structure could be extended to point to
+ * the first file name and group appearing in the column so that redraw
+ * could be done be region, perhaps just columns.  Things seem fast enough
+ * for now, though, so I won't bother.
+ */
+struct WishColumn {
+    int		x;		/* x coordinate of left side of column */
+};
+
+/*
+ * For each browser instance, there is a structure of this sort stored
+ * in the WishWindowTable.  The structure contains information about
+ * the window that the file system client wants to keep.
+ */
+struct WishWindow {
+    Window	surroundingWindow;		/* the surrounding window in
+						 * which the subwindows are
+						 * packed */
+    Window	titleWindow;			/* displays the full pathname
+						 * of the current directory and
+						 * is editable for people to
+						 * type in new desired dir */
+    Window	divider1Window;			/* thin window for a border
+						 * between title and menu */
+    Window	menuBar;			/* menu window under title */
+    Window	divider2Window;			/* thin window for a border
+						 * between menu and sort */
+    Window	sortWindow;			/* displays sorting method */
+    Window	divider3Window;			/* thin window for a border
+						 * between sort and fields */
+    Window	fieldsWindow;			/* window listing fields in
+						 * display (time, size, etc) */
+    Window	divider4Window;			/* thin window for a border
+						 * between fields and display */
+    Window	scrollWindow;			/* scrollbar window */
+    Window	divider5Window;			/* thin window for a border
+						 * between scrollbar and
+						 * display */
+    Window	txOutsideWindow;		/* tx window */
+    Window	divider6Window;			/* thin window for a border
+						 * between tx and display */
+    Window	displayWindow;			/* the display window */
+    int		windowHeight;			/* height of display window */
+    int		windowWidth;			/* width of display window */
+    Boolean	resizeP;			/* can we change geometry? */
+    Boolean	pickSizeP;			/* size window initially */
+    int		foreground;			/* foreground color */
+    int		background;			/* background color */
+    int		border;				/* border color */
+    int		selection;			/* selection color */
+    int		borderWidth;			/* width of surrounding border,
+						 * not really used, maybe... */
+    XFontStruct	*fontPtr;			/* font used for display */
+    GC		textGc;
+    GC		reverseGc;
+    int		titleForeground;
+    int		titleBackground;
+    int		titleBorder;
+    XFontStruct	*titleFontPtr;			/* font used for title */
+    int		txForeground;
+    int		txBackground;
+    int		txBorder;
+    int		menuForeground;
+    int		menuBackground;
+    int		menuBorder;
+    int		sortForeground;
+    int		sortBackground;
+    int		fieldsForeground;
+    int		fieldsBackground;
+    int		entryForeground;
+    int		entryBackground;
+    int		scrollForeground;
+    int		scrollBackground;
+    int		scrollElevator;
+    char	*geometry;			/* window geometry */
+    char	dir[MAXPATHLEN+1];	/* The current dir of the
+						 * display.  This is the full
+						 * pathname of the top node
+						 * in the display. */
+    char	editDir[MAXPATHLEN+1];	/* Contains dir
+						 * name too, but is meant for
+						 * editing in the title window.
+						 * By having both dir and
+						 * editDir, we don't lose the
+						 * actual dir when users type
+						 * in a potential new dir. */
+    int		displayInstructions;		/* display field flags */
+    int		sortingInstructions;		/* sorting flags */
+    int		maxNameLength;			/* strln of longest name */
+    int		maxEntryWidth;			/* longest entry width in chars,
+						 * not window units */
+    int		numElements;			/* total number of files */
+    int		numGroups;			/* number of groups */
+    int		numHiddenGroups;		/* number of groups hidden
+						 * because they are empty. */
+    Boolean	hideEmptyGroupsP;		/* whether or not to display
+						 * headers for empty groups. */
+    int		totalDisplayEntries;		/* total # of files + headers
+						 * plus spaces to display. */
+    int		numRows;			/* number of rows in display */
+    int		rowHeight;			/* height in pixels of rows */
+    int		firstElement;			/* first visible element */
+    int		lastElement;			/* last visible element */
+    int		columnWidth;			/* width of columns in pixels */
+    WishColumn	*columns;		/* dynamic array of columns */
+    int		usedCol;			/* index of last column in
+						 * display currently used */
+    int		maxColumns;			/* max # of columns allocated */
+    WishGroup	*groupList;			/* list of groups */
+    WishSelection	*selectionList;		/* list of selected stuff */
+    Cmd_Table	cmdTable;			/* window command interface */
+    Tcl_Interp	*interp;			/* tcl interpreter */
+#ifdef NOTDEF
+    char	*cmdString;			/* command in a cmd window */
+#endif NOTDEF
+    Boolean	dontDisplayChangesP;		/* to keep commands from
+						 * attempting redisplay while
+						 * we're building the
+						 * display from sourced
+						 * startup files. */
+    Boolean	notifierP;			/* prevent redisplay during
+						 * Sx_Notifies. */
+};
+
+/*
+ * For keeping lists of selected stuff.
+ */
+struct WishSelection {
+    Boolean		fileP;		/* if false, it's a group */
+    Boolean		lineP;		/* if true, then the whole line */
+    union {
+	WishFile	*filePtr;
+	WishGroup	*groupPtr;
+    } selected;
+    struct WishSelection	*nextPtr;
+};
+
+struct WishGroupBinding {
+    int		button;
+    char	*command;
+    struct WishGroupBinding	*nextPtr;
+};
+
+/* Structure used to build command tables. */
+typedef	struct	{
+    char	*name;			/* command name */
+    int		(*proc)();		/* procedure to process command */
+} CmdInfo;
+
+
+/* externs */
+
+extern	XContext	wishWindowContext;	/* table of window data */
+extern	XContext	wishGroupWindowContext;/* table of group data */
+extern	int		wishWindowCount;	/* reference count of windows */
+							/* error reporting */
+extern	char		wishErrorMsg[/* (2*MAXPATHLEN + 50) */];
+extern	Boolean		wishDebugP;		/* whether debugging is on */
+extern	Boolean		wishResizeP;		/* can application resize? */
+extern	Boolean		wishPickSizeP;	/* can appl. pick size? */
+extern	Display		*wishDisplay;		/* the display */
+extern	Boolean		wishShowEmptyGroupsP;	/* show headers with no files */
+extern	int		wishRootHeight;	/* info about root window */
+extern	int		wishRootWidth;
+extern	char		*wishApplication;	/* application name */
+extern	char		wishCurrentDirectory[];	/* keep track of
+							 * current directory */
+
+/*	Commands in manual page. */
+extern	int	WishQuitCmd();
+extern	int	WishToggleSelectionCmd();
+extern	int	WishToggleSelEntryCmd();
+extern	int	WishCloseCmd();
+extern	int	WishRedrawCmd();
+extern	int	WishSelectionCmd();
+extern	int	WishChangeDirCmd();
+extern	int	WishMenuCmd();
+extern	int	WishSortFilesCmd();
+extern	int	WishChangeFieldsCmd();
+extern	int	WishChangeGroupCmd();
+extern	int	WishDefineGroupCmd();
+extern	int	WishOpenCmd();
+extern	int	WishExecCmd();
+extern	int	WishBindCmd();
+extern	int	WishGroupBindCmd();
+extern	int	WishResizeCmd();
+extern	int	WishPatternCompareCmd();
+
+/* Other externs. */
+extern	void	WishEditDir();
+extern	void	WishEditRule();
+extern	void	WishSelectDir();
+extern	void	WishScroll();
+extern	WishWindow	*WishCreate();
+extern	void	WishInit();
+extern	int	WishGatherNames();
+extern	int	WishGatherSingleGroup();
+extern	void	WishSetPositions();
+extern	void	WishRedraw();
+extern	void	WishRedrawFile();
+extern	void	WishGetFileFields();
+extern	void	WishRedrawGroup();
+extern	void	WishSetWindowAndRowInfo();
+extern	void	WishHandleDrawingEvent();
+extern	void	WishHandleDestructionEvent();
+extern	void	WishHandleMonitorUpdates();
+extern	void	WishMouseEvent();
+extern	void	WishHighlightMovement();
+extern	void	WishHandleEnterEvent();
+extern	char	*WishCanonicalDir();
+extern	void	WishGarbageCollect();
+extern	void	WishChangeSelection();
+extern	void	WishClearWholeSelection();
+extern	WishGroup	*WishMapCoordsToGroup();
+extern	WishFile	*WishMapCoordsToFile();
+extern	void	WishCmdTableInit();
+extern	void	WishAddGroupBinding();
+extern	void	WishDeleteGroupBindings();
+extern	char	*WishGetGroupBinding();
+extern	int	WishDoCmd();
+extern	void	WishChangeDir();
+extern	void	WishSourceConfig();
+extern	void	Cmd_BindingCreate();
+extern	char	*Cmd_BindingGet();
+extern	void	Cmd_BindingDelete();
+extern	Boolean	Cmd_EnumBindings();
+extern	int	Cmd_MapKey();
+extern	Cmd_Table	Cmd_TableCreate();
+extern	void	Cmd_TableDelete();
+extern	void	WishCvtToPrintable();
+extern	void	WishKeyProc();
+extern	void	WishMenuProc();
+extern	void	WishMenuEntryProc();
+extern	void	WishSetSort();
+extern	void	WishGetCompareProc();
+extern	void	WishGarbageGroup();
+extern	int	WishDoTclSelect();
+extern	void	WishDumpState();
+
+/* should be in string.h! */
+extern	char	*index();
+
+#endif _WISHINT
+@
+
+
+1.3
+log
+@Fixed many bugs - notifiers no longer trash the display.
+@
+text
+@d16 1
+a16 1
+ * $Header: /a/newcmds/wish/RCS/wishInt.h,v 1.2 88/11/02 14:52:37 mlgray Exp Locker: mlgray $ SPRITE (Berkeley)
+@
+
+
+1.2
+log
+@changed fsflat to wish
+@
+text
+@d16 1
+a16 1
+ * $Header: wishInt.h,v 1.1 88/10/03 12:49:03 mlgray Exp $ SPRITE (Berkeley)
+d19 2
+a20 2
+#ifndef _FSFLATINT
+#define _FSFLATINT
+d45 2
+a46 2
+#define	FSFLAT_ROW_SPACING	1	/* a pleasant amount */
+#define	FSFLAT_COLUMN_SPACING	15	/* another pleasant amount */
+d57 3
+a59 3
+#define FSFLAT_ATTR_NECESSARY_P\
+    ((aWindow->displayInstructions & ~FSFLAT_NAME_FIELD) != 0) || \
+    ((aWindow->sortingInstructions & ~FSFLAT_ALPHA_SORT) != 0) ? TRUE : FALSE
+d61 1
+a61 1
+#define FSFLAT_CHAR_TO_WIDTH(numChars, fontPtr)\
+d69 5
+a73 5
+#define	FSFLAT_ALPHA_SORT	0x01	/* by alphabetical order */
+#define	FSFLAT_ATIME_SORT	0x02	/* by access time */
+#define	FSFLAT_MTIME_SORT	0x04	/* by data modify time */
+#define	FSFLAT_DTIME_SORT	0x08	/* by descriptor modify time */
+#define	FSFLAT_SIZE_SORT	0x10	/* by size */
+d75 1
+a75 1
+#define	FSFLAT_REVERSE_SORT	0x20	/* whether to show in reverse order */
+d80 9
+a88 9
+#define	FSFLAT_NAME_FIELD	0x001	/* name of the file */
+#define	FSFLAT_FULLNAME_FIELD	0x002	/* full pathname to the file */
+#define	FSFLAT_ATIME_FIELD	0x004	/* access time */
+#define	FSFLAT_MTIME_FIELD	0x008	/* data modify time */
+#define	FSFLAT_DTIME_FIELD	0x010	/* descriptor modify time */
+#define	FSFLAT_SIZE_FIELD	0x020	/* size of the file in bytes */
+#define	FSFLAT_DEVICE_FIELD	0x040	/* major and minor device numbers */
+#define	FSFLAT_PERM_FIELD	0x080	/* permissions, owner and group */
+#define	FSFLAT_TYPE_FIELD	0x100	/* directory? link? ascii? etc.... */
+d90 5
+a94 5
+#define	FSFLAT_LEFT_BUTTON	0x01
+#define	FSFLAT_MIDDLE_BUTTON	0x02
+#define	FSFLAT_RIGHT_BUTTON	0x04
+#define	FSFLAT_META_BUTTON	0x08
+#define	FSFLAT_SHIFT_BUTTON	0x10
+d96 1
+a96 1
+#define	FSFLAT_MAX_RULE_LENGTH	(2 * 1024)	/* for now the max length
+d149 1
+a149 1
+    char	editHeader[FSFLAT_MAX_RULE_LENGTH];	/* for entry window */
+d276 2
+d393 1
+d398 1
+a398 1
+#endif _FSFLATINT
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d2 1
+a2 1
+ * fsflatInt.h --
+d4 1
+a4 1
+ *	Internal declarations for fsflat display.
+d16 1
+a16 1
+ * $Header: fsflatInt.h,v 1.16 88/06/10 13:15:47 mlgray Exp $ SPRITE (Berkeley)
+d98 1
+a98 1
+						 * .fsflat file is twice
+d102 6
+a107 6
+typedef	struct FsflatFile	FsflatFile;
+typedef	struct FsflatGroup	FsflatGroup;
+typedef	struct FsflatColumn	FsflatColumn;
+typedef	struct FsflatWindow	FsflatWindow;
+typedef	struct FsflatSelection	FsflatSelection;
+typedef	struct FsflatGroupBinding	FsflatGroupBinding;
+d114 1
+a114 1
+struct FsflatFile {
+d124 2
+a125 2
+    FsflatGroup	*myGroupPtr;	/* ptr back to my group */
+    struct	FsflatFile	*nextPtr;	/* the next one */
+d134 1
+a134 1
+struct FsflatGroup {
+d144 1
+a144 1
+    FsflatFile	*fileList;		/* list of selected files */
+d147 1
+a147 1
+    FsflatGroupBinding	*groupBindings;	/* mouse button/command bindings */
+d152 1
+a152 1
+    struct	FsflatGroup	*nextPtr;	/* the next one in list */
+d161 1
+a161 1
+struct FsflatColumn {
+d167 1
+a167 1
+ * in the FsflatWindowTable.  The structure contains information about
+d170 1
+a170 1
+struct FsflatWindow {
+d260 1
+a260 1
+    FsflatColumn	*columns;		/* dynamic array of columns */
+d264 2
+a265 2
+    FsflatGroup	*groupList;			/* list of groups */
+    FsflatSelection	*selectionList;		/* list of selected stuff */
+d281 1
+a281 1
+struct FsflatSelection {
+d285 2
+a286 2
+	FsflatFile	*filePtr;
+	FsflatGroup	*groupPtr;
+d288 1
+a288 1
+    struct FsflatSelection	*nextPtr;
+d291 1
+a291 1
+struct FsflatGroupBinding {
+d294 1
+a294 1
+    struct FsflatGroupBinding	*nextPtr;
+d306 3
+a308 3
+extern	XContext	fsflatWindowContext;	/* table of window data */
+extern	XContext	fsflatGroupWindowContext;/* table of group data */
+extern	int		fsflatWindowCount;	/* reference count of windows */
+d310 10
+a319 10
+extern	char		fsflatErrorMsg[/* (2*MAXPATHLEN + 50) */];
+extern	Boolean		fsflatDebugP;		/* whether debugging is on */
+extern	Boolean		fsflatResizeP;		/* can application resize? */
+extern	Boolean		fsflatPickSizeP;	/* can appl. pick size? */
+extern	Display		*fsflatDisplay;		/* the display */
+extern	Boolean		fsflatShowEmptyGroupsP;	/* show headers with no files */
+extern	int		fsflatRootHeight;	/* info about root window */
+extern	int		fsflatRootWidth;
+extern	char		*fsflatApplication;	/* application name */
+extern	char		fsflatCurrentDirectory[];	/* keep track of
+d323 18
+a340 18
+extern	int	FsflatQuitCmd();
+extern	int	FsflatToggleSelectionCmd();
+extern	int	FsflatToggleSelEntryCmd();
+extern	int	FsflatCloseCmd();
+extern	int	FsflatRedrawCmd();
+extern	int	FsflatSelectionCmd();
+extern	int	FsflatChangeDirCmd();
+extern	int	FsflatMenuCmd();
+extern	int	FsflatSortFilesCmd();
+extern	int	FsflatChangeFieldsCmd();
+extern	int	FsflatChangeGroupCmd();
+extern	int	FsflatDefineGroupCmd();
+extern	int	FsflatOpenCmd();
+extern	int	FsflatExecCmd();
+extern	int	FsflatBindCmd();
+extern	int	FsflatGroupBindCmd();
+extern	int	FsflatResizeCmd();
+extern	int	FsflatPatternCompareCmd();
+d343 33
+a375 33
+extern	void	FsflatEditDir();
+extern	void	FsflatEditRule();
+extern	void	FsflatSelectDir();
+extern	void	FsflatScroll();
+extern	FsflatWindow	*FsflatCreate();
+extern	void	FsflatInit();
+extern	int	FsflatGatherNames();
+extern	int	FsflatGatherSingleGroup();
+extern	void	FsflatSetPositions();
+extern	void	FsflatRedraw();
+extern	void	FsflatRedrawFile();
+extern	void	FsflatGetFileFields();
+extern	void	FsflatRedrawGroup();
+extern	void	FsflatSetWindowAndRowInfo();
+extern	void	FsflatHandleDrawingEvent();
+extern	void	FsflatHandleDestructionEvent();
+extern	void	FsflatHandleMonitorUpdates();
+extern	void	FsflatMouseEvent();
+extern	void	FsflatHighlightMovement();
+extern	void	FsflatHandleEnterEvent();
+extern	char	*FsflatCanonicalDir();
+extern	void	FsflatGarbageCollect();
+extern	void	FsflatChangeSelection();
+extern	void	FsflatClearWholeSelection();
+extern	FsflatGroup	*FsflatMapCoordsToGroup();
+extern	FsflatFile	*FsflatMapCoordsToFile();
+extern	void	FsflatCmdTableInit();
+extern	void	FsflatAddGroupBinding();
+extern	void	FsflatDeleteGroupBindings();
+extern	char	*FsflatGetGroupBinding();
+extern	int	FsflatDoCmd();
+extern	void	FsflatChangeDir();
+extern	void	FsflatSourceConfig();
+d383 8
+a390 8
+extern	void	FsflatCvtToPrintable();
+extern	void	FsflatKeyProc();
+extern	void	FsflatMenuProc();
+extern	void	FsflatMenuEntryProc();
+extern	void	FsflatSetSort();
+extern	void	FsflatGetCompareProc();
+extern	void	FsflatGarbageGroup();
+extern	int	FsflatDoTclSelect();
+@

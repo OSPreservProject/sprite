@@ -1,0 +1,68 @@
+
+
+
+Tcl_Expr          Tcl Command Language Library           Tcl_Expr
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tcl_Expr - evaluate an expression
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttccll..hh>>
+
+     int
+     TTccll__EExxpprr(_i_n_t_e_r_p, _s_t_r_i_n_g, _v_a_l_u_e_P_t_r)
+
+AARRGGUUMMEENNTTSS
+     Tcl_Interp   *_i_n_t_e_r_p   (in)      Interpreter in  whose  con-
+                                      text to evaluate _s_t_r_i_n_g.
+
+     char         *_s_t_r_i_n_g   (in)      Expression to be evaluated.
+
+     int          *_v_a_l_u_e_P_t_r (out)     The expression's  (integer)
+                                      value will be stored here.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     TTccll__EExxpprr is a utility procedure used by several of  the  Tcl
+     commands.   Given  a string whose contents are an expression
+     of the form accepted by the  eexxpprr  command,  this  procedure
+     evaluates  the  expression and returns the integer result in
+     *_v_a_l_u_e_P_t_r.  Normally TTccll__EExxpprr returns TTCCLL__OOKK as its  result.
+     However,  if  the  expression  contains  a syntax error then
+     Tcl_Expr returns TTCCLL__EERRRROORR and sets _i_n_t_e_r_p->_r_e_s_u_l_t to  point
+     to an error message in the usual fashion.  TTccll__EExxpprr may make
+     nested calls to TTccll__EEvvaall while parsing the  expression;   if
+     any  of  these  calls  returns  an  error then TTccll__EExxpprr will
+     return  that  same  error  information.   If  an  error   is
+     returned, then *_v_a_l_u_e_P_t_r will not be modified.
+
+
+KKEEYYWWOORRDDSS
+     evaluate, expression
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  July 18, 1990                    1
+
+
+

@@ -1,0 +1,181 @@
+root:DD7T2qZNqsPlU:0:1:The Sprite God:/:/sprite/cmds/csh
+daemon:*:1:1::/:
+nobody:*:-2:-2::/:
+sys:*:2:2::/:/sprite/cmds/csh
+bin:*:3:3::/bin:
+ftp:*:4:5:File Transfer Protocol Program:/users/ftp:
+guest:*:5:5:Guest account::/local/cmds/guestshell
+newuser:*:9998:255:Prototype for new users:/users/newuser:/sprite/cmds/csh
+clear:*:100:100:Clear screen program:/sprite/cmds:/sprite/cmds/blackscreen
+andrew:*:543:155:& Cherenson,608-4E,8282,5282639:/users/andrew:/sprite/cmds/csh
+boothe:*:1491:116:bob boothe,508-16E,23631,5282548:/users/boothe:/bin/csh
+bostic:*:1547:21:Keith &,459E,4156428524,4155491145:/users/bostic:/sprite/cmds/csh
+brent:*:1251:155:Brent Welch,608-2E,8282,:/users/brent:/sprite/cmds/csh
+darrell:*:3908:1200:& Long,Santa Cruz,,:/users/darrell:/sprite/cmds/csh
+david:*:449:92:& A. Wood,608-8E,8248,5272761:/users/david:/sprite/cmds/csh
+fwo:*:576:46:Fred W. Obermeier,608-8E,8248,2377339:/users/fwo:/sprite/cmds/csh
+deboor:*:2099:155:Adam de Boor,608-4E,8282,5492264:/users/deboor:/sprite/cmds/csh
+dougj:*:2621:92:Doug Johnson,568C,3-8135,,DAP:/users/dougj:/sprite/cmds/csh
+douglis:*:1172:155:Fred Douglis,,,:/users/douglis:/sprite/cmds/tcsh
+dsouza:*:201:1200:Roy DSouza,Hewlett-Packard,4087465848:/users/dsouza:/sprite/cmds/csh
+garys:*:501:92:Gary Shea:/users/garys:/sprite/cmds/csh
+gedye:*:1421:155:David M. &,,,:/users/gedye:/sprite/cmds/csh
+gibson:*:238:1201:Garth &,547E,6421845,8490304,:/users/gibson:/sprite/cmds/csh
+hilfingr:*:291:89:Paul Hilfinger,515E,8401,8415476:/users/hilfingr:/sprite/cmds/csh
+ho:*:586:46:Kinson Ho,608-1E,6428290,5492326:/users/ho:/sprite/cmds/csh
+jhh:*:2465:155:John H. Hartman,477E,6429669,6588451:/users/jhh:/sprite/cmds/tcsh
+luigi:*:572:92:& Semenzato,608-1E,8290,5481462:/users/luigi:/sprite/cmds/csh
+margo:*:2697:116:Margo Seltzer,608-13E,8072,5491145:/users/margo:/sprite/cmds/csh
+mgbaker:*:1471:155:Mary Baker,477E,9669,548-6875:/users/mgbaker:/sprite/cmds/csh
+mendel:*:950:155:& Rosenblum,477E,9669,7754121:/users/mendel:/sprite/cmds/csh
+nelson:*:755:155:Michael Nelson,DEC-WRL,8536651,5697751:/users/nelson:/sprite/cmds/csh
+octtools:*:3002:106:Oct VLSI Software:/users/octtools:/sprite/cmds/csh
+ouster:*:341:155:John Ousterhout,525E,0865,5476132:/users/ouster:/sprite/cmds/csh
+pattrsn:*:483:1201:Dave Patterson,527E,6587,:/users/pattrsn:/sprite/cmds/csh
+rab:*:2995:155:Robert A. Bruce,608-2E,6428282,8456549:/users/rab:/sprite/cmds/tcsh
+sklower:*:354:10:Keith &,,9587,:/users/sklower:/sprite/cmds/csh
+sprite:*:1200:155:Sprite OS, Prof. Ousterhout:/users/sprite:/sprite/cmds/csh
+mogul:*:1202:21:Jeffrey Mogul,WRL,8536643,4941070:/users/mogul:/sprite/cmds/csh
+zorn:*:675:92:Ben &,608-1E,8290,:/users/zorn:/sprite/cmds/csh
+lutz:*:442:1201:Ken Lutz,524C,37803,:/users/lutz:/sprite/cmds/csh
+cori:*:957:92:Corinna Lee,547E,1845,5272511:/users/cori:/sprite/cmds/csh
+rege:*:2481:116:Ashutosh G. &,477E,6429669,8453164:/users/rege:/sprite/cmds/csh
+shirriff:*:2487:116:Ken Shirriff,608-2 Evans,6428282,6588451:/users/shirriff:/sprite/cmds/csh
+stolcke:*:2983:116:Andreas Stolcke,642 ICSI,642-4274 x126,528-1224:/users/stolcke:/sprite/cmds/tcsh
+marc:*:2435:10:Marc Teitelbaum,457E,36448,8416880:/users/marc:/sprite/cmds/csh
+anpc:*:2060:76:Antony Ng,,,:/users/anpc:/sprite/cmds/csh
+pmchen:*:2456:1201:Peter M. Chen,508-5E,6421845,6538952:/users/pmchen:/sprite/cmds/csh
+eklee:*:2474:1201:Edward K. Lee,508-5E,6421845,2227794:/users/eklee:/sprite/cmds/csh
+drewes:*:3379:1201:Richard Drewes,,,:/users/drewes:/sprite/cmds/csh
+alc:*:2458:1201:Ann L. Chervenak,508-5,642-1845,:/users/alc:/sprite/cmds/csh
+zimet:*:3471:10:Martha Zimet,519 Evans,,:/users/zimet:/sprite/cmds/csh
+randy:*:542:1201:& Katz,507E,,,:/users/randy:/sprite/cmds/csh
+bmiller:*:2843:92:Bob Miller,533E,6037,:/users/bmiller:/sprite/cmds/csh
+culler:*:3541:122:David Culler,529B Evans,6437572,5289305:/users/culler:/sprite/cmds/csh
+johnw:*:2855:106:John Wawrzynek,523 Evans,6439434,:/users/johnw:/sprite/cmds/csh
+tve:*:2984:106:Thorsten von Eicken,444E,6421266,8490429:/users/tve:/sprite/cmds/csh
+wlo:*:3136:106:William Lo,444E,6421266,:/users/wlo:/sprite/admin/accountgone
+dedood:*:2837:106:Paul de Dood,508-3E,6427233,5288657:/users/dedood:/sprite/cmds/csh
+elm:*:2971:1201:ethan miller,608-8 evans,6428248,5486033:/users/elm:/sprite/cmds/tcsh
+dillon:*:1703:6:Matt &,,,5253604:/users/dillon:/sprite/cmds/csh
+leong:*:1120:1201:Peter Leong,,,8452619:/users/leong:/sprite/cmds/csh
+phil:*:2215:116:Phil Lapsley,,,:/users/phil:/sprite/cmds/csh
+sahay:*:951:116:Abhijit Sahay,477E,6429669,5256964:/users/sahay:/sprite/cmds/csh
+rbk:*:3801:155:Bob Beck,Sequent....E,5036279809,:/users/rbk:/bin/csh
+fubar:*:3802:155:Jay Vosburgh,Sequent....E,5035784543,5036499692:/users/fubar:/bin/csh
+schauser:*:3676:116:Klaus Erik Schauser,444E,6421266,5263187 :/users/schauser:/sprite/cmds/tcsh
+taylor:*:566:92:George &,508-7E,9716,5275558:/users/taylor:/bin/csh
+smiller:*:3856:1200:Steve Miller,2141 AVW UMd,301-454-1808,301-948-3023:/users/smiller:/bin/csh
+anthony:*:3869:1200:Anthony Mutiso,Univ of Alberta,403-492-2821,403-433-7693:/users/anthony:/sprite/cmds/tcsh
+gunjan:*:3900:1200:Gunjan Sinha,UCSC,,:/users/gunjan:/bin/csh
+noshpitz:*:3901:1200:Claude Noshpitz,UCSC,,:/users/noshpitz:/bin/csh
+hong:*:2469:6:Wei &,608-3 Evans,642-1863,524-0354:/users/hong:/sprite/cmds/csh
+heatherh:*:3917:122:Heather Hatakeyama,,,:/users/heatherh:/bin/csh
+glass:*:3918:1200:Adam Glass,238 Evans,2-7453,845-9760:/users/glass:/bin/tcsh
+postgres:*:6:6:Paul &:/users/postgres:/bin/csh
+schloss:*:3482:6:Gary Schloss,,,:/users/schloss:/bin/csh
+cimarron:*:2359:6:& Taylor,608-3E,1863,8453586:/users/cimarron:/bin/csh
+goh:*:1994:6:Jeffrey &,608-3E,1863,8435501:/users/goh:/bin/csh
+jhingran:*:943:6:Anant &,275MC,,8450799:/users/jhingran:/bin/csh
+mao:*:1806:6:Mike Olson,608-3E,6421863,:/users/mao:/bin/csh
+mike:*:799:6:& Stonebraker,549E,5799,4871:/users/mike:/bin/csh
+ong:*:2802:6:Lay-Peng &,608-3E,1863,8435501:/users/ong:/bin/csh
+sp:*:1511:6:Spyros Potamianos,608-17E,6428149,6432714:/users/sp:/bin/csh
+sullivan:*:1517:6:Mark &,,,:/users/sullivan:/bin/csh
+wensel:*:1604:6:Sharon &,521E,6424662,:/users/wensel:/bin/csh
+larry:*:2311:183:& Rowe,501E,5117:/users/larry:/bin/csh
+luis:*:1074:183:& Miguel,440E,9585,5482740:/users/luis:/bin/csh
+ywang:*:973:183:Yongdong Wang,,,8411848:/users/ywang:/bin/csh
+kemnitz:*:3491:6:Greg &,,,:/users/kemnitz:/bin/csh
+choi:*:3898:6:Ron Choi,Evans 608-3,2-1863,:/users/choi:/bin/csh
+jeffk:*:3930:1200:Jeff Keller,,,:/users/jeffk:/bin/csh
+golding:*:3935:1200:Richard Golding,,,4582124:/users/golding:/bin/csh
+vojin:*:2879:106:Vojin Oklobdzija,475Evans,6436764,5264405:/users/vojin:/bin/csh
+ss:*:3845:40:Srinivasan Seshan,608-8 Evans,642-8248,841-1635:/users/ss:/sprite/cmds/tcsh
+chiueh:*:3062:40:Tzi-cker Chiueh,608-8,6428248,6443956:/users/chiueh:/bin/csh
+postgres:*:3965:224:  Postgres,608-3E,6421863,:/users/postgres:/bin/csh
+hchang:*:2174:107:Henry Chang,550-C4 Cory,6427156,9344625:/users/hchang:/sprite/cmds/csh
+mitch:*:1297:107:Mitch Igusa,550D,6423234,7957182,ASV:/users/mitch:/sprite/admin/accountgone
+beards:*:1834:107:Mark Beardslee,550,6425048,6535367,ASV:/users/beards:/sprite/cmds/csh
+gino:*:591:107:Gino Cheng,479E,6428299,5409204:/users/gino:/sprite/admin/accountgone
+casotto:*:1005:107:Andrea Casotto,550-D,6423234,5493649,ASV:/users/casotto:/sprite/cmds/csh
+slee:*:6391:107:Seungjun Lee,,,8499908:/users/slee:/sprite/admin/accountgone
+sah:*:3674:116:Anurag Sah,442E,6437566,6432999:/users/sah:/bin/csh
+kriguer:*:2966:116:Marc Kriguer,410 Evans,642-9583,548-8249:/users/kriguer:/sprite/cmds/csh
+funk:*:3659:116:Thomas A. Funkhouser,,,:/users/funk:/bin/csh
+rap:*:2841:116:Rusell A. Pflughaupt,,,848-0664:/users/rap:/sprite/cmds/csh
+sonia:*:3667:116:Sonia Marx,340 Davis,x3-6228,548-7523:/users/sonia:/sprite/cmds/tcsh
+chou:*:2814:76:Pai Chou,340Davis,,8203116:/users/chou:/sprite/cmds/csh
+hohmeyer:*:2468:116:Michael E. Hohmeyer,508-7 Evans,642-9716,339-6523:/users/hohmeyer:/sprite/cmds/csh
+fmeyer:*:3947:116:Fred Meyer,,,:/users/fmeyer:/bin/csh
+bsmith:*:2628:1200:Brian Smith,,,:/users/bsmith:/sprite/cmds/csh
+aho:*:3330:76:alex ho,290C,27346,6490437:/users/aho:/bin/csh
+seth:*:2488:116:& J. Teller,,,:/users/seth:/bin/csh
+tockey:*:3690:1200:Barbara Tockey,444 Evans,,:/users/tockey:/sprite/cmds/csh
+fixen:*:3631:1200:CSSG vaxenfixen,,,:/users/fixen:/sprite/cmds/csh
+ph:*:2467:116:Paul Heckbert,508-7E,6429716,8412088:/users/ph:/sprite/cmds/csh
+af:*:3998:1200:Alessandro Forin,CMU,,:/users/af:/sprite/cmds/csh
+jamin:*:2731:10:Sugih &,usc.edu ,,2132696709:/users/jamin:/bin/tcsh
+rothman:*:3118:116:Jeffrey Rothman,47 Campbell Hall,6435425,527-2529:/users/rothman:/sprite/cmds/csh
+randi:*:4040:1200:Randi Weinstein,121 LSA,2-9896,652-7128:/users/randi:/sprite/cmds/csh
+krste:*:3650:116:Krste Asanovic,525 ISCI,642-4274 x143,:/users/krste:/sprite/cmds/tcsh
+whitcomb:*:619:107:Gregory Whitcomb,,(919) 549-3669,:/users/whitcomb:/sprite/admin/accountgone
+dlx:*:4051:1200:DLX simulator account,608-8E,642-8248,:/users/dlx:/sprite/cmds/csh
+lsiadmin:*:4057:155:LSI Admin,608-2E,642-8282,:/users/lsiadmin:/sprite/cmds/tcsh
+pfile:*:4058:1200:Rob Pfile,2520F Ridge,848-9462,848-9462:/users/pfile:/bin/tcsh
+threadid:*:4067:245:Threaded Id Compiler,444E,2-1266,:/users/threadid:/sprite/cmds/csh
+rafael:*:996:1200:& Saavedra-Barrera,,,6432718:/users/rafael:/sprite/cmds/csh
+cheriton:*:4072:1200:David Cheriton,,,:/users/cheriton:/sprite/cmds/csh
+cad:*:95:1100:Computer Aided Design:/users/cad:/bin/csh
+rquiros:*:4104:1201:Rob Quiros,524 Cory,,:/users/rquiros:/sprite/cmds/tcsh
+bedk:*:3663:107:Brian Kingsbury,444E,6424274,5284734:/users/bedk:/bin/csh
+kupfer:*:891:155:Mike Kupfer,,6428282,5285229:/users/kupfer:/sprite/cmds/tcsh
+lucco:*:649:1200:Steven E. &,,,:/users/lucco:/sprite/cmds/csh
+klier:*:2470:116:Peter &,,,:/users/klier:/sprite/cmds/csh
+msilva:*:4300:116:Mario J. Silva,550-F,2-3626,:/users/msilva:/sprite/cmds/tcsh
+rohit:*:4172:92:Rohit Chandra,,,:/users/rohit:/sprite/cmds/csh
+bks:*:203:10:Brian K. Shiratsuki,461E,36447,:/users/bks:/sprite/cmds/csh
+aws:*:3917:122:Anthony Stevenson,512 Evans,642-4600,:/users/aws:/sprite/cmds/csh
+joel:*:4238:116:Joel A. Fine,508-5 Evans,642-1845,793-6985:/users/joel:/sprite/cmds/tcsh
+tonys:*:3917:92:Anthony Stevenson,512 Evans,642-4600,:/users/tonys:/sprite/cmds/csh
+dingle:*:4233:116:Adam T. Dingle,444,642-1266,524-5257:/users/dingle:/sprite/cmds/tcsh
+strange:*:4304:116:Steve Strange,608-8 Evans,642-8248,524-5104 :/users/strange:/sprite/cmds/tcsh
+barsky:*:673:122:Brian A. Barsky,505E,642-9838,4820700:/users/barsky:/sprite/cmds/csh
+ddgarcia:*:4241:116:Daniel D. Garcia,I-House 338,643-2636,643-2636:/users/ddgarcia:/sprite/cmds/csh
+flaster:*:4239:116:Michael E. Flaster,,,524-3726:/users/flaster:/sprite/cmds/csh
+dc:*:4621:1200:David Chenevert,Sun MTV23-41,336-1715,408/459-8336:/users/dc:/sprite/cmds/csh
+tandrews:*:4305:1200:Tony Andrews,,,:/users/tandrews:/sprite/cmds/csh
+konig:*:3921:1200:Yochai  Konig,,,528-5247 :/user1/252/konig:/sprite/cmds/csh
+cpwen:*:3922:1200:Chih-Po Wen,608-15 Evans,,486-0439 :/user1/252/cpwen:/sprite/cmds/csh
+decman:*:3648:116:Meltin Bell,442 Evans,6437566,5494486:/users/decman:/bin/csh
+bertrand:*:4662:106:Bertrand Irissou,508-3 Evans,642-7233,845-9409:/users/bertrand:/sprite/cmds/csh
+dekai:*:2100:76:& Wu,508-18E,9076,3439318:/users/dekai:/bin/csh
+hzhang:*:3994:1200:Hui Zhang,466 Evans,2-8905,841-0245:/users/hzhang:/sprite/cmds/csh
+daniels:*:3995:1200:Daniel Sagalowitz,,,:/users/daniels:/sprite/cmds/csh
+asw:*:2540:1200:Alexander Wong,550-MC,6429646,4152338685:/users/asw:/sprite/cmds/csh
+tadros:*:3550:1200:Karim H. Tadros,550-C10,(415) 642-8897,(415) 524-9864:/users/tadros:/sprite/cmds/csh
+mottsmth:*:4277:155:Jim Mott-Smith,608-2 Evans ,642-8282,none :/users/mottsmth:/sprite/cmds/tcsh
+sethg:*:4245:116:Seth Copen Goldstein,442 Evans,643-7566,:/users/sethg:/sprite/cmds/csh
+wallack:*:4311:116:Aaron S. Wallack,,,:/users/wallack:/sprite/cmds/csh
+mib:*:4732:1200:Michael I Bushnell,FSF,,:/users/mib:/sprite/cmds/csh
+oscarsso:*:4745:1200:Dan Oscarsson,,,:/users/oscarsso:/bin/csh
+negri:*:4746:1200:Marco Negri,,,:/users/negri:/sprite/cmds/csh
+jon:*:4747:1200:Jon Hale,,,:/users/jon:/sprite/cmds/csh
+horizon:*:4748:1200:Greg Carleu,,,:/users/horizon:/sprite/cmds/csh
+dlong:*:4749:1200:Dean Long,,,:/users/dlong:/sprite/cmds/tcsh
+anvari:*:3238:122:Morteza Anvari,475 Evans,643-6764,:/users/anvari:/bin/csh
+slater:*:4722:122:Mel Slater,475 Evans,415-643-6764,:/users/slater:/sprite/cmds/csh
+doong:*:398:116:Jessie Doong,Evans 608-15,642-8248,644-3956:/users/doong:/sprite/cmds/csh
+andre:*:4750:1200:Andre' Burgoyne,,,:/users/andre:/sprite/cmds/tcsh
+manocha:*:2969:116:Dinesh Manocha,333 Cory Hall,643-5795,643-2845:/users/manocha:/sprite/cmds/csh
+dfb:*:4214:116:David F. Bacon,508-20Evans,642-9542,:/users/dfb:/sprite/cmds/csh
+flb:*:4734:1200:Frederick Burghardt,,,:/users/flb:/sprite/cmds/csh
+jclee:*:5074:1200:James C. Lee,,,:/users/jclee:/sprite/cmds/csh
+gunter:*:5075:1200:Michial Gunter,,,549-6102:/users/gunter:/sprite/cmds/tcsh
+vahdat:*:4070:1200:Amin Vahdat,,,:/users/vahdat:/sprite/cmds/csh
+mani:*:5076:1200:Mani Varadarajan,,,548-9063:/users/mani:/sprite/cmds/tcsh
+dan:*:5095:1200:Dan Walsh,,,:/users/dan:/sprite/cmds/csh
+torek:*:2282:76:Chris &,,,:/users/torek:/sprite/cmds/csh
+dumper:*:28:155:Dumper,477 Evans,642-9669,:/users/dumper:/sprite/cmds/csh
+kyi:*:4267:116:Theodore Kyi,442/4 Evans,(415)643-7566,(415)548-8510:/users/kyi:/sprite/cmds/tcsh
+hunt:*:3425:116:C. D. "Chip" Hunt,,,:/users/hunt:/sprite/cmds/csh

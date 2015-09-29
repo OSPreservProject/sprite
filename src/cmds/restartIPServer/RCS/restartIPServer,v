@@ -1,0 +1,225 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @# @;
+
+
+1.6
+date     92.07.17.11.55.58;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     92.07.17.11.48.24;  author mottsmth;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.08.14.14.46.10;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.08.11.14.27.54;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.11.12.12.11.58;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.11.09.14.10.24;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Common code to kill off and restart the IP server and any dependent
+daemons.  Originally /hosts/allspice/restartIPServer.
+@
+
+
+1.6
+log
+@Don't start up bootp on the root server.
+@
+text
+@#!/bin/csh -f
+#
+# Script to kill off and restart the IP server and any dependent
+# daemons.
+#
+# Usage: restartIPServer [ -r ]
+#
+# where "-r" means to start up processes that run only on the root
+# 	     server.
+#
+# $Header: /sprite/src/admin/restartIPServer/RCS/restartIPServer,v 1.5 92/07/17 11:48:24 mottsmth Exp Locker: kupfer $
+
+# This script is a bit ugly, because it could conceivably kill processes
+# that happen to have server names in the command line.
+
+set rootFlag="no"
+
+set args = `getopt "r" $*`
+while ("X$args[1]" != "X--")
+	switch ($args[1])
+	case '-r':
+		set rootFlag="yes"
+		breaksw
+	endsw
+	shift args
+end
+
+# If the user didn't ask for root server daemons, try to deduce
+# whether we're running on the root server anyway.
+# Remove domain stuff from host names when comparing them.
+
+set rootServer=`prefix -p | grep "/ " | awk '{ print $2 }' | sed -e s/\\..\*//`
+set ourName=`hostname | sed -e s/\\..\*//`
+if ($rootServer == $ourName) then
+	set rootFlag="yes"
+endif
+
+# Use /sprite/cmds/kill instead of the builtin "kill".  If we use the
+# builtin and then clients go away before we can kill them (easy to do
+# if any clients depend on other clients), the script exits right
+# there.
+
+set pid=`ps -a | egrep ipServer | awk '{print $1}'`
+set clients=`ps -a | egrep 'portmap|unfsd|sendmail|inetd|tftpd|bootp|lpd' | awk '{print $1}'`
+if ("X$pid" != "X" || "X$clients" != "X") then
+	echo "Killing ipServer ($pid) and clients ($clients)" > /dev/syslog
+	/sprite/cmds/kill -KILL $clients $pid
+endif
+
+# Restart the servers that were killed off above.  
+#
+# This code is cloned from /boot/bootcmds.  It would be better if both
+# scripts shared a common "start servers" script.
+
+set host = `hostname`
+echo -n "Restarting server daemons: "
+
+echo -n "IP server "
+rm -f /hosts/$host/{X0,netIP,netUDP,netTCP,debug}
+if (-e /hosts/$host/ipStart) then
+    /hosts/$host/ipStart
+else
+    if ($rootFlag == "yes") then
+        /sprite/daemons/ipServer.dbg >>& /hosts/$host/ip.out
+    else
+        /sprite/daemons/ipServer >>& /hosts/$host/ip.out
+    endif
+endif
+rm -f /hosts/$host/rlogin* >& /dev/null
+sleep 2
+
+echo -n "inetd "
+/sprite/daemons/inetd /sprite/daemons/inetd.conf
+
+echo -n "sendmail "
+if ($rootFlag == "yes") then
+	sendmail -bd -q15m
+else
+	sendmail -bd
+endif
+
+echo -n "lpd "
+/sprite/daemons/lpd
+
+if ($rootFlag == "yes") then
+	# There shouldn't be any need to restart arpd.
+	# bootp is now running on lust.
+
+	echo -n "tftp "
+	/sprite/daemons/tftpd
+    
+endif
+
+echo "."
+
+if (-e /hosts/$host/nfs) then
+	echo "NFS/Sprite gateway: "
+	/hosts/$host/nfs
+endif
+@
+
+
+1.5
+log
+@temporary debugging stuff
+@
+text
+@d11 1
+a11 1
+# $Header: /sprite/src/admin/restartIPServer/RCS/restartIPServer,v 1.4 91/08/14 14:46:10 kupfer Exp Locker: mottsmth $
+d87 1
+a91 3
+	echo -n "bootp "
+	rm -f /usr/adm/bootplog
+	/sprite/daemons/bootp
+@
+
+
+1.4
+log
+@nfsmount nows knows what to do when the IP server dies, so don't kill it.
+@
+text
+@d11 1
+a11 1
+# $Header: /sprite/src/admin/restartIPServer/RCS/restartIPServer,v 1.3 91/08/11 14:27:54 kupfer Exp Locker: kupfer $
+d63 5
+a67 1
+    /sprite/daemons/ipServer >>& /hosts/$host/ip.out
+@
+
+
+1.3
+log
+@Running on the root server implies "-r".
+@
+text
+@d11 1
+a11 1
+# $Header: /sprite/src/admin/restartIPServer/RCS/restartIPServer,v 1.2 90/11/12 12:11:58 kupfer Exp Locker: kupfer $
+d44 1
+a44 1
+set clients=`ps -a | egrep 'nfsmount|portmap|unfsd|sendmail|inetd|tftpd|bootp|lpd' | awk '{print $1}'`
+@
+
+
+1.2
+log
+@Remove outdated comments about (non-existent) -n switch.
+@
+text
+@d11 1
+a11 1
+# $Header: /sprite/src/admin/restartIPServer/RCS/restartIPServer,v 1.1 90/11/09 14:10:24 kupfer Exp Locker: kupfer $
+d13 1
+a13 1
+# This is a bit ugly, because it could conceivably catch processes
+d27 10
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d6 1
+a6 1
+# Usage: restartIPServer [ -rn ]
+a9 1
+#       "-n" means to export the Sprite filesystem to NFS.
+d11 1
+a11 1
+# $Header: /hosts/allspice.Berkeley.EDU/RCS/restartIPServer,v 1.2 90/10/17 12:34:21 kupfer Exp Locker: kupfer $
+@

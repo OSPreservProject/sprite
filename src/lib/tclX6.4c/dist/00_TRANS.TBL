@@ -1,0 +1,17 @@
+F CHANGES.;1                        	CHANGES
+D CONFIG                            	config
+F CONFIG.MK;1                       	Config.mk
+D EXPERIME                          	experimental
+F MAKEFILE.;1                       	Makefile
+D MAN                               	man
+F MANIFEST.;1                       	MANIFEST
+D OSSUPPOR                          	osSupport
+D RCS                               	RCS
+F README.EXT;1                      	README.EXTD
+D SRC                               	src
+D TCLLIB                            	tcllib
+D TCLSRC                            	tclsrc
+D TESTS                             	tests
+D TKSRC                             	tksrc
+D TKUCBSRC                          	tkucbsrc
+D UCBSRC                            	ucbsrc

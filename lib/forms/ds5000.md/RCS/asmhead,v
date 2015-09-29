@@ -1,0 +1,42 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @# @;
+
+
+1.1
+date     91.11.08.14.30.29;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Prototype header for a DECstation assembly language function.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@
+/*
+ * ----------------------------------------------------------------------
+ *
+ * <procName> --
+ *
+ *	<description>
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------
+ */
+@

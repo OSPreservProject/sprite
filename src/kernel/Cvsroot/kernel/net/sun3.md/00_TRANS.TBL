@@ -1,0 +1,16 @@
+F NETCONFI.C_V;1                    	netConfig.c,v
+F NETIE.C_V;1                       	netIE.c,v
+F NETIECMD.C_V;1                    	netIECmd.c,v
+F NETIEINT.H_V;1                    	netIEInt.h,v
+F NETIEMEM.C_V;1                    	netIEMem.c,v
+F NETIEREC.C_V;1                    	netIERecv.c,v
+F NETIESUB.C_V;1                    	netIESubr.c,v
+F NETIEXMI.C_V;1                    	netIEXmit.c,v
+F NETLE.C_V;1                       	netLE.c,v
+F NETLEINT.H_V;1                    	netLEInt.h,v
+F NETLEMAC.C_V;1                    	netLEMach.c,v
+F NETLEMAC.H_V;1                    	netLEMachInt.h,v
+F NETLEREC.C_V;1                    	netLERecv.c,v
+F NETLEXMI.C_V;1                    	netLEXmit.c,v
+F NETULTRA.C_V;1                    	netUltra.c,v
+D SCVS                              	SCVS

@@ -1,0 +1,435 @@
+head     9.2;
+branch   ;
+access   ;
+symbols  ds3100:9.2 sun3:9.2 sun4nw:9.2 symm:9.2 spur:9.2 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.2
+date     90.10.19.15.47.25;  author jhh;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.11.16.15.17.18;  author rab;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.13.23;  author douglis;  state Stable;
+branches ;
+next     8.1;
+
+8.1
+date     89.01.31.14.02.06;  author mendel;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.27.30;  author douglis;  state Stable;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.20.38;  author brent;  state Stable;
+branches ;
+next     5.2;
+
+5.2
+date     88.06.27.10.46.06;  author mendel;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     88.05.05.17.58.42;  author brent;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.46.22;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.2
+log
+@Rewrite to support multiple interfaces and the Ultranet
+@
+text
+@/* netIESubr.c -
+ *
+ * Subroutines for the intel device driver.  These routines are to convert 
+ * SUN addresses to/from Intel address and offsets into Intel memory.
+ *
+ * Copyright 1985, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/net.jhh/sun3.md/RCS/netIESubr.c,v 9.3 90/09/20 21:13:44 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+#endif
+
+#include <sprite.h>
+#include <sys.h>
+#include <list.h>
+#include <vm.h>
+#include <netIEInt.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetIEAddrFromSUNAddr --
+ *
+ *	Change 24-bit SUN address to Intel 24-bit address.
+ *
+ * Results:
+ *	The modified address.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NetIEAddrFromSUNAddr(addr)
+    int	addr;
+{
+    union {
+	int 	i;
+	char	ch[4];
+    } addrTo, addrFrom;
+
+    addrFrom.i = addr;
+
+    addrTo.ch[0] = addrFrom.ch[3];
+    addrTo.ch[1] = addrFrom.ch[2];
+    addrTo.ch[2] = addrFrom.ch[1];
+    addrTo.ch[3] = 0;
+
+    return(addrTo.i);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetIEAddrToSUNAddr --
+ *
+ *	Change 24-bit Intel address to a SUN address.
+ *
+ * Results:
+ *	The modified address.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NetIEAddrToSUNAddr(addr)
+    int	addr;
+{
+    union {
+	int 	i;
+	char	ch[4];
+    } addrTo, addrFrom;
+
+    addrFrom.i = addr;
+
+    addrTo.ch[0] = 0;
+    addrTo.ch[1] = addrFrom.ch[2];
+    addrTo.ch[2] = addrFrom.ch[1];
+    addrTo.ch[3] = addrFrom.ch[0];
+
+    return(addrTo.i);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetIEOffsetFromSUNAddr --
+ *
+ *	Change 24-bit SUN address to Intel 16-bit offset into
+ *	Intel memory.
+ *
+ * Results:
+ *	The Intel offset .
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NetIEOffsetFromSUNAddr(addr, statePtr)
+    int		addr;
+    NetIEState	*statePtr;
+{
+    union {
+	short 	s;
+	char	ch[2];
+    } offsetTo, offsetFrom;
+
+    offsetFrom.s = (short) (addr - statePtr->memBase);
+
+    offsetTo.ch[0] = offsetFrom.ch[1];
+    offsetTo.ch[1] = offsetFrom.ch[0];
+
+    return(offsetTo.s);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetIEOffsetToSUNAddr --
+ *
+ *	Change 16 bit Intel offset into Intel memory to 24 bit SUN address.
+ *
+ * Results:
+ *	The SUN address.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NetIEOffsetToSUNAddr(offset, statePtr)
+    int		offset;
+    NetIEState	*statePtr;
+{
+    union {
+	short 	s;
+	char	ch[2];
+    } offsetTo, offsetFrom;
+
+    offsetFrom.s = offset;
+
+    offsetTo.ch[0] = offsetFrom.ch[1];
+    offsetTo.ch[1] = offsetFrom.ch[0];
+
+    return(statePtr->memBase + offsetTo.s);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NetIEShortFromSUNShort --
+ *
+ *	Change a short on the SUN to a short on the intel.
+ *
+ * Results:
+ *	The Intel short .
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NetIEShortSwap(num)
+    int	num;
+{
+    union {
+	short 	s;
+	char	ch[2];
+    } shortFrom, shortTo;
+
+    shortFrom.s = (short) (num);
+
+    shortTo.ch[0] = shortFrom.ch[1];
+    shortTo.ch[1] = shortFrom.ch[0];
+
+    return(shortTo.s);
+}
+@
+
+
+9.1
+log
+@Checked volatiles.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIESubr.c,v 9.0 89/09/12 15:13:23 douglis Stable Locker: rab $ SPRITE (Berkeley)";
+d21 5
+a25 7
+#include "sprite.h"
+#include "sys.h"
+#include "list.h"
+#include "vm.h"
+#include "netIEInt.h"
+#include "net.h"
+#include "netInt.h"
+d118 3
+a120 2
+NetIEOffsetFromSUNAddr(addr)
+    int	addr;
+d127 1
+a127 1
+    offsetFrom.s = (short) (addr - netIEState.memBase);
+d153 3
+a155 2
+NetIEOffsetToSUNAddr(offset)
+    int	offset;
+d167 1
+a167 1
+    return(netIEState.memBase + offsetTo.s);
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d18 2
+a19 2
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIESubr.c,v 8.1 89/01/31 14:02:06 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+#endif not lint
+@
+
+
+8.1
+log
+@Modifications for the sun4.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIESubr.c,v 8.0 88/11/11 18:27:30 douglis Stable Locker: mendel $ SPRITE (Berkeley)";
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d4 1
+a4 1
+ * 68000 addresses to/from Intel address and offsets into Intel memory.
+d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/net/sun3.md/RCS/netIESubr.c,v 6.0 88/08/11 12:20:38 brent Stable Locker: douglis $ SPRITE (Berkeley)";
+d33 1
+a33 1
+ * NetIEAddrFrom68000Addr --
+d35 1
+a35 1
+ *	Change 24-bit 68000 address to Intel 24-bit address.
+d47 1
+a47 1
+NetIEAddrFrom68000Addr(addr)
+d69 1
+a69 1
+ * NetIEAddrTo68000Addr --
+d71 1
+a71 1
+ *	Change 24-bit Intel address to a 68000 address.
+d83 1
+a83 1
+NetIEAddrTo68000Addr(addr)
+d105 1
+a105 1
+ * NetIEOffsetFrom68000Addr --
+d107 1
+a107 1
+ *	Change 24-bit 68000 address to Intel 16-bit offset into
+d120 1
+a120 1
+NetIEOffsetFrom68000Addr(addr)
+d140 1
+a140 1
+ * NetIEOffsetTo68000Addr --
+d142 1
+a142 1
+ *	Change 16 bit Intel offset into Intel memory to 24 bit 68000 address.
+d145 1
+a145 1
+ *	The 68000 address.
+d154 1
+a154 1
+NetIEOffsetTo68000Addr(offset)
+d174 1
+a174 1
+ * NetIEShortFrom68000Short --
+d176 1
+a176 1
+ *	Change a short on the 68000 to a short on the intel.
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: netIESubr.c,v 5.2 88/06/27 10:46:06 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+5.2
+log
+@Updated copyright notice and cleaned up comment typos.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: netIESubr.c,v 5.1 88/05/05 17:58:42 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+5.1
+log
+@Conversion to use Mach module
+@
+text
+@d6 9
+a14 2
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+d18 1
+a18 1
+static char rcsid[] = "$Header: netIESubr.c,v 5.0 87/08/11 10:46:22 sprite Exp $ SPRITE (Berkeley)";
+d25 1
+a25 1
+#include "netIE.h"
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: netIESubr.c,v 1.2 85/08/16 18:48:49 nelson Exp $ SPRITE (Berkeley)";
+a14 1
+#include "machine.h"
+@

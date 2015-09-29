@@ -1,0 +1,2512 @@
+head     2.4;
+branch   ;
+access   ;
+symbols  before_fairness_changes:2.0 ckpt1:1.3;
+locks    ; strict;
+comment  @ * @;
+
+
+2.4
+date     90.10.17.08.44.21;  author ouster;  state Exp;
+branches ;
+next     2.3;
+
+2.3
+date     90.09.24.14.45.13;  author douglis;  state Exp;
+branches ;
+next     2.2;
+
+2.2
+date     90.07.05.18.35.41;  author douglis;  state Exp;
+branches ;
+next     2.1;
+
+2.1
+date     90.07.05.13.20.05;  author douglis;  state Exp;
+branches ;
+next     2.0;
+
+2.0
+date     90.06.30.17.10.13;  author douglis;  state Stable;
+branches ;
+next     1.11;
+
+1.11
+date     90.06.26.22.09.24;  author douglis;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     90.05.28.17.08.01;  author douglis;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     90.05.14.21.31.58;  author douglis;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     90.05.02.12.31.52;  author douglis;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     90.04.27.00.59.20;  author douglis;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     90.04.24.18.00.44;  author douglis;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     90.04.03.11.09.49;  author douglis;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.03.14.12.50.36;  author douglis;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.03.12.13.45.49;  author douglis;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.02.28.10.51.47;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.02.15.19.19.26;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Routines to manage duties of the host-specific load average daemon.
+This includes supporting the host-specific pdev, and tracking load
+average and idle time.
+@
+
+
+2.4
+log
+@Increased thresholds so that a migrated simulation won't block out
+migrated compiles.
+@
+text
+@/* 
+ * migd.c --
+ *
+ *	Routines to manage duties of the host-specific load average daemon.
+ *	This includes supporting the host-specific pdev, and tracking load
+ *	average and idle time.
+ *
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/daemons/migd/RCS/migd.c,v 2.3 90/09/24 14:45:13 douglis Exp Locker: ouster $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <signal.h>
+#include <setjmp.h>
+#include <fs.h>
+#include <option.h>
+#include <syslog.h>
+#include <status.h>
+#include <sysStats.h>
+#include <host.h>
+#include <sys/stat.h>
+#include <sys/file.h>
+#include <sys/signal.h>
+#include <sys/wait.h>
+#include <sys/time.h>
+#include <sys/resource.h>
+#include <kernel/sched.h>
+#include <kernel/procMigrate.h>
+#include <bit.h>
+#include <pwd.h>
+#include "migd.h"
+#include "migPdev.h"
+#include "global.h"
+
+/*
+ * Indication of whether this process is the global master or
+ * a per-host daemon.
+ */
+
+int migd_GlobalMaster = 0;
+
+
+int migd_Debug = 0;		/* Enable debugging info? */
+int migd_Quit = 0;		/* Flag to indicate we should quit */
+
+Fs_TimeoutHandler migd_TimeoutToken; /* Token for current timeout. */
+
+static int migdGlobalDesc = -1;	/* Descriptor for communications with
+				   global server. */
+
+static Mig_Info currentInfo;	/* Current load info, passed to server */
+static Mig_LoadVector *curVecPtr; /* Pointer into part of currentInfo that
+				   * is periodically updated. */
+
+int migd_AlwaysAccept = 0;	/* Override defaults for accepting processes? */
+int migd_NeverAccept = 0;	/* Likewise. */
+
+#define HIGH_TO_LOW_TICKS ((unsigned)0xffffffff)
+
+/*
+ * Minimum queue length that we can store.
+ */
+#define MIN_LENGTH 0.00001
+
+/*
+ * Scheduler statistics at some instant in time (saved until next set of
+ * statistics is obtained).
+ */
+
+typedef struct {
+    int 	lowTicks;
+    int 	highTicks;
+    int		queueLength;
+    int		pad;
+    struct timeval time;
+} Stats;
+
+/*
+ * Keep track of both utilization and ready-queue length when load
+ * averages are used.
+ */
+
+typedef struct {
+    double 	utilization;
+    double	queueLength;
+} Load;
+
+/*
+ * Constants specific to gathering load average statistics.  (The
+ * weights may be modified with -D options but are not
+ * user-specifiable on the command line.)  The load interval is the
+ * number of seconds between sampling the utilization and ready queue
+ * lengths, and the write interval is the maximum number of seconds
+ * that may pass between updating the global daemon.  These constants
+ * are defined in mig.h
+ */
+
+
+#define WEIGHT1 0.9200444146293232     /* exp(-1/12) */
+#define WEIGHT2 0.9834714538216174     /* exp(-1/60) */
+#define WEIGHT3 0.9944598480048967     /* exp(-1/180) */
+
+double migd_Weights[] = {WEIGHT1, WEIGHT2, WEIGHT3};
+int migd_Verbose = 1;
+int migd_LoadInterval = MIG_LOAD_INTERVAL;
+int migd_WriteInterval = MIG_GLOBAL_UPDATE_INTERVAL;
+
+/*
+ * Define global variables used for debugging & statistics gathering.
+ */
+int migd_LogToFiles = 0;
+int migd_DontFork = 0;
+int migd_DoStats = 1;
+int migd_NeverEvict = 0;
+int migd_NeverRunGlobal = 0;
+
+/*
+ * Define arbitrary thresholds (see loadavg.h).
+ *
+ * All load values must be below their corresponding THRESHOLD_LOW* to
+ * start accepting foreign processes, but once they are being accepted,
+ * there are different thresholds (THRESHOLD_HIGH*) for each average: if
+ * any one of them is exceeded, stop accepting foreign processes.  (This
+ * really needs to be generalized to handle a multiprocessor.)
+ *
+ * INPUT_THRESHOLD is the number of seconds that a node must
+ * be idle for it to accept migrated processes.  
+ */
+
+#define THRESHOLD_LOW0 0.75
+#define THRESHOLD_LOW1 1.0
+#define THRESHOLD_LOW2 1.5
+#define THRESHOLD_HIGH0 2.5
+#define THRESHOLD_HIGH1 2.75
+#define THRESHOLD_HIGH2 3.0
+#ifndef INPUT_THRESHOLD
+#define INPUT_THRESHOLD 30
+#endif
+
+/* 
+ * Initialize our parameters.  Fill in 0 for the things we have to get
+ * at run time.
+ */
+Mig_SystemParms migd_Parms = {
+    0,				   /* criteria, obtained from kernel */
+    0,				   /* version, obtained from kernel  */
+    INPUT_THRESHOLD,					/* noInput   */
+    0,							/* pad       */
+    {THRESHOLD_LOW0, THRESHOLD_LOW1, THRESHOLD_LOW2},   /* minThresh */
+    {THRESHOLD_HIGH0, THRESHOLD_HIGH1, THRESHOLD_HIGH2}	/* maxThresh */
+};
+
+/*
+ * Set the default timeout for eviction, in seconds.  
+ */
+#ifndef EVICT_TIMEOUT
+#define EVICT_TIMEOUT 300
+#endif /* EVICT_TIMEOUT */
+
+/*
+ * Set the default write timeout, in seconds.
+ */
+#ifndef WRITE_TIMEOUT
+#define WRITE_TIMEOUT 10
+#endif /* WRITE_TIMEOUT */
+
+/*
+ * Set the number of times we'll try to contact the global daemon before
+ * giving up.
+ */
+#ifndef MAX_GLOBAL_CONTACTS
+#define MAX_GLOBAL_CONTACTS 100
+#endif /* MAX_GLOBAL_CONTACTS */
+
+
+static unsigned int maxIdle;	/* maximum idle ticks per unit time */
+static int refuseMigration;	/* whether kernel is refusing migrations */
+
+static int ignoreInput;		/* whether we should ignore input time when
+				   deciding when to accept migration */
+static int ignoreLoad;		/* ditto for load average */
+static int writeRate;		/* number of iterations before updating global
+				   server */
+
+static int numLowPris = 0;	/* Number of low-priority processes on this
+				   host.  XXX Set by searching process
+				   table. */
+
+static Stats stats[2];		/* statistics -- current and last -- initialized
+				 * once and then reset each callback.
+				 */
+
+static	jmp_buf	writejmp;		/* Used for timeouts on writes. */
+static  struct itimerval timeOutTimer; 	/* Set to WRITE_TIME_OUT. */
+static  struct itimerval noTimer;	/* Set to 0. */
+
+static int Reap();
+static int AlarmHandler();
+static int WriteAlarm();
+static void CalculateLoads();
+static void GetStats();
+static void OutputLoads();
+static void ParseMigStatus();
+static int  CheckMessages();
+
+static int ContactGlobal();
+static int CreateGlobal();
+static void GetNewParms();
+#ifdef FAST_SELECT
+static void HandleException();
+#endif /* FAST_SELECT */
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Migd_Init --
+ *
+ *	Initialize data structures for a per-host migration daemon.
+ * 
+ * Results:
+ *	0 for success, or a sprite ReturnStatus for failure.
+ *
+ * Side effects:
+ *	The pseudo-device to talk to the master is opened.  If no
+ *	master exists, this process tries to create a master.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Migd_Init()
+{
+    int realErrno;
+    char fileName[FS_MAX_NAME_LENGTH];
+    int status;
+    struct stat atts;
+    Time	period;
+    struct timeval time;
+
+    if (migd_Debug > 0) {
+	fprintf(stderr, "Migd_Init -\n");
+    }
+
+    signal(SIGCHLD, Reap);
+
+    ParseMigStatus();
+    
+    /*
+     * Set up the initial Mig_Info structure, and variables we're going
+     * to access periodically.  By default, we're active when we
+     * start up, but later there's a check for idleTime being less
+     * than the threshold if it's also equal to the time since we booted.
+     */
+    curVecPtr = &currentInfo.loadVec;
+    bzero((char *) &currentInfo, sizeof(Mig_Info));
+    currentInfo.hostID = migd_HostID;
+    currentInfo.migVersion = migd_Parms.version;
+    currentInfo.maxProcs = 1;	/* XXX number of processors */
+    curVecPtr->allowMigration = migd_AlwaysAccept;
+    currentInfo.state = refuseMigration ?  MIG_HOST_REFUSES : MIG_HOST_ACTIVE;
+
+    status = gettimeofday(&time, (struct timezone *) NULL);
+    if (status == -1) {
+	SYSLOG1(LOG_ERR, "Error in gettimeofday: %s", strerror(errno));
+	exit(1);
+    }
+    curVecPtr->timestamp = time.tv_sec;
+
+    /*
+     * Get bootstamp.  Note, this should be a kernel call instead of a
+     * check on the file, but this will do for the "moment".
+     */
+    (void) sprintf(fileName, "/hosts/%s/boottime", migd_HostName);
+
+    status = stat(fileName, &atts);
+    if (status == 0) {
+	currentInfo.bootTime = atts.st_mtime;
+    } else {
+	SYSLOG2(LOG_ERR, "Error getting boot time from %s: %s\n", fileName,
+	       strerror(errno));
+	currentInfo.bootTime = 0;
+    }
+
+
+    /*
+     * Check to see if the global daemon is prohibited.
+     */
+    if (!migd_NeverRunGlobal) {
+	(void) sprintf(fileName, 
+		       "/hosts/%s/global-migd-prohibited", migd_HostName);
+	status = stat(fileName, &atts);
+	if (status == 0) {
+	    syslog(LOG_INFO, "We will not run the global master.\n");
+	    migd_NeverRunGlobal = 1;
+	}
+    }
+
+
+    writeRate = migd_WriteInterval / migd_LoadInterval;
+    
+    GetStats(&stats[0], &curVecPtr->noInput,
+	     &curVecPtr->foreignProcs);
+    curVecPtr->timestamp = stats[0].time.tv_sec;
+    
+
+    if (ContactGlobal() < 0) {
+	realErrno = errno;
+	fprintf(stderr, "Migd_Init - Unable to contact global daemon: %s\n",
+	       strerror(errno));
+	errno = realErrno;
+	return(-1);
+    }
+    if (MigPdev_OpenMaster() < 0) {
+	realErrno = errno;
+	fprintf(stderr, "Migd_Init - Unable to initialize pdev %s: %s\n",
+	       migd_LocalPdevName, strerror(errno));
+	errno = realErrno;
+	return(-1);
+    }
+
+    syslog(LOG_INFO, "running.");
+    period.seconds = migd_LoadInterval;
+    period.microseconds = 0;
+
+    /*
+     * Set up timeout for writes.
+     */
+    timeOutTimer.it_interval.tv_sec = 0;
+    timeOutTimer.it_interval.tv_usec = 0;
+    timeOutTimer.it_value.tv_sec = WRITE_TIMEOUT;
+    timeOutTimer.it_value.tv_usec = 0;
+    noTimer.it_interval.tv_sec = 0;
+    noTimer.it_interval.tv_usec = 0;
+    noTimer.it_value.tv_sec = 0;
+    noTimer.it_value.tv_usec = 0;
+
+
+    migd_TimeoutToken = Fs_TimeoutHandlerCreate(period, TRUE, Migd_GatherLoad,
+						(ClientData) NULL);
+
+
+    if (migd_Debug > 0) {
+	fprintf(stderr, "Migd_Init - returning 0\n");
+    }
+
+    return(0);
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Migd_End --
+ *
+ *	Terminate service of the master end of a host-specific pdev.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The pdev is removed and closed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Migd_End()
+{
+    if (migd_Debug > 0) {
+	fprintf(stderr, "Migd_End -\n");
+    }
+
+    MigPdev_End();
+
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ParseMigStatus --
+ *
+ *	Parse the kernel status by checking individual bits.  This
+ *	is performed at start-up and anytime the migd_Parms structure
+ *	is updated.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	File-global variables are updated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ParseMigStatus()
+{
+    int kernelState = migd_Parms.criteria;
+    
+    if ((kernelState & PROC_MIG_IMPORT_ALL) != PROC_MIG_IMPORT_ALL) {
+	refuseMigration = 1;
+    } else {
+	refuseMigration = 0;
+    }
+    ignoreLoad = kernelState & PROC_MIG_IMPORT_ANYLOAD;
+    ignoreInput = kernelState & PROC_MIG_IMPORT_ANYINPUT;
+}
+
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ContactGlobal --
+ *
+ *	Open up the global pseudo-device as a client, and inform
+ *	the master that we are a daemon.  If we can't open it, we sleep
+ *	a random period of time and try again before returning an error.
+ *	This reduces the likelihood of many hosts trying to open the
+ *	pdev as a master when one fails.
+ *
+ * Results:
+ *	0 for successful completion, -1 for error, in which case
+ *	errno indicates the nature of the error.  The special errno
+ *	ENODEV indicates that the master is nonexistent.
+ *
+ * Side effects:
+ *	Opens pseudo-device as client.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ContactGlobal()
+{
+    int sleepTime;
+    int status;
+    int retries;
+    int ioctlRetries;
+    int realErrno;
+    int success = 0;
+    static int firstContact = 1; /* First time we are trying to reach the
+				    global daemon? */
+    int first;			 /* Value of firstContact at time of call. */
+    int t;
+    
+    t = time(0);
+    if (migd_Debug > 1) {
+	fprintf(stderr, "ContactGlobal - %s\n", ctime(&t));
+    }
+
+    /*
+     * Set a temporary variable to track firstContact, and reset it so
+     * any subsequent calls have the updated value.  This avoids the
+     * need to reset it before every return statement.
+     */
+    first = firstContact;
+    if (firstContact) {
+	/*
+	 * First time we've been called. Set up seed for random
+	 * numbers.
+	 */
+	srandom(getpid());
+	firstContact = 0;
+    } 
+
+    /*
+     * Clean up any old descriptor.
+     */
+    if (migdGlobalDesc >= 0) {
+	Fs_EventHandlerDestroy(migdGlobalDesc);
+	(void) close(migdGlobalDesc);
+    }
+    
+    sleepTime = (random() & 07) + 1;
+    for (retries = 1;
+	 retries <= MAX_GLOBAL_CONTACTS && !migd_Quit && !success;
+	 retries++) {
+	migdGlobalDesc = open(migd_GlobalPdevName, O_RDWR, 0);
+	if (migdGlobalDesc < 0) {
+	    if (migd_Debug > 2) {
+		fprintf(stderr, "ContactGlobal - sleeping %d seconds\n",
+		       sleepTime);
+	    }
+	    sleep(sleepTime);
+	    sleepTime *= 2;
+	    migdGlobalDesc = open(migd_GlobalPdevName, O_RDWR, 0);
+	}
+	if (migdGlobalDesc < 0) {
+	    if (migd_Debug > 0) {
+		fprintf(stderr,
+		       "ContactGlobal: couldn't open %s: %s\n",
+		       migd_GlobalPdevName, strerror(errno));
+	    }
+	    /*
+	     * If errno is ENOENT, there is not currently a master, anywhere.
+	     * (When the master exits it removes the pdev.)  EIO 
+	     * may mean the daemon crashed.  EINVAL may mean the daemon's host
+	     * crashed.  We special case EIO due to a race condition
+	     * between recovery and starting daemons.
+	     */
+	    if (errno == ENOENT || errno == EIO || errno == EINVAL) {
+		if (retries == MAX_GLOBAL_CONTACTS - 1 && errno != ENOENT) {
+		    /*
+		     * We're getting desperate here.  We can't open
+		     * the file, but we should be able to.  Remove
+		     * the pdev and try one last time to create the
+		     * master, since it may be that the host running
+		     * the master has crashed and the name server
+		     * is continually returning a bad status to us.
+		     * We risk clobbering someone else who has successfully
+		     * opened the pdev just before us, but there's a small
+		     * window of vulnerability and by this time we're sleeping
+		     * a long time.  
+		     */
+		    (void) unlink(migd_GlobalPdevName);
+		}
+		if (!migd_NeverRunGlobal) {
+		    if (CreateGlobal() < 0) {
+			return(-1);
+		    }
+		}
+		/*
+		 * Go to start of for loop, trying to open pdev.
+		 */
+		continue;
+	    } else {
+		realErrno = errno;
+		fprintf(stderr, "Migd_Init - Unable to contact master of global pdev: %s\n",
+		       strerror(errno));
+		errno = realErrno;
+		return(-1);
+	    }
+	} else {
+	    /*
+	     * We've successfully opened the pdev.
+	     * Try to tell the global master that we're a daemon.  It may say
+	     * DEV_BUSY, which means that there is already a daemon.  In that
+	     * case, it tells the other daemon to go away, and we will keep
+	     * trying.  In some cases we may get an error doing the ioctl,
+	     * such as a stale handle, in which case we close the file and
+	     * go to the top again.
+	     */
+	    for (ioctlRetries = 1; ioctlRetries <= MAX_GLOBAL_CONTACTS;
+		 ioctlRetries++) {
+		status = Fs_IOControl(migdGlobalDesc, IOC_MIG_DAEMON, sizeof(Mig_Info),
+				      (char *) &currentInfo,
+				      0, (char *) NULL);
+		if (status == DEV_BUSY) {
+		    if (migd_Debug > 0) {
+			fprintf(stderr, "ContactGlobal - ioctl returned busy.\n");
+		    }
+		    sleepTime = ((random() & 07) + 1) * ioctlRetries;
+		    if (migd_Debug > 2) {
+			fprintf(stderr, "ContactGlobal - sleeping %d seconds\n",
+			       sleepTime);
+		    }
+		    sleep(sleepTime);
+		} else {
+		    /*
+		     * An error we can't deal with, or SUCCESS.
+		     */
+		    break;
+		}
+	    }
+	    if (status != SUCCESS) {
+		SYSLOG1(LOG_ERR,
+		       "ContactGlobal: warning: error during ioctl to global master: %s\n",
+		       Stat_GetMsg(status));
+		errno = Compat_MapCode(status);
+		close(migdGlobalDesc);
+	    } else {
+		/*
+		 * We did it!  Break out of the inner for loop, and the
+		 * success flag will break us out of the outer loop.
+		 */
+		success = 1;
+		break;
+	    }
+	}
+    }
+    if (!success) {
+	realErrno = errno;
+	SYSLOG0(LOG_ERR, "unable to contact master; giving up.\n");
+	errno = realErrno;
+	return(-1);
+    }
+
+#ifdef FAST_SELECT
+    Fs_EventHandlerCreate(migdGlobalDesc, FS_READ|FS_EXCEPTION,
+			  HandleException, (ClientData) NULL);
+#endif /* FAST_SELECT */
+
+    if (migd_Debug > 1) {
+	fprintf(stderr, "ContactGlobal - completed successfully\n");
+    }
+
+    return (0);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Reap --
+ *
+ *	Reap any exited child processes to make sure they don't stick
+ *	around.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+Reap()
+{
+    union wait status;
+
+    if (migd_Debug > 3) {
+	fprintf(stderr, "Reap - \n");
+    }
+	
+    while (wait3(&status, WNOHANG, (struct rusage *) NULL) > 0) {
+    }
+    return(0);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WriteAlarm --
+ *
+ *	Routine to service a SIGALRM signal during a write, which
+ *	requires that we longjmp to interrupt the write.
+ *	This routine also disables the alarm, letting the caller reenable
+ *	it when appropriate.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The alarm is disabled.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+WriteAlarm()
+{
+    
+    alarm(0);
+    syslog(LOG_INFO, "Write to global daemon timed out.");
+    (void) signal (SIGALRM, SIG_IGN);
+    longjmp(writejmp, 1);
+    /* THIS DOES NOT RETURN. */
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CreateGlobal --
+ *
+ *	Fork off a process to try and become the global master.  
+ *
+ * Results:
+ *	0 for successful completion, -1 for error, in which case
+ *	errno indicates the nature of the error.  The parent
+ *	will return success as long as it can successfully fork.  That
+ * 	doesn't necessarily mean the master side of the global pdev
+ *	has been opened, at least by the child, but the parent will go
+ * 	ahead and try to contact the master once again in any case.
+ *
+ * Side effects:
+ *	A new process is created.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+CreateGlobal()
+{
+    int pid;
+    
+    if (migd_Debug > 2) {
+	fprintf(stderr, "CreateGlobal -\n");
+    }
+
+    if (migd_DontFork) {
+	fprintf(stderr, "CreateGlobal - becoming master; start a new child.\n");
+	pid = 0;
+    } else {
+	pid = fork();
+	if (pid < 0) {
+	    fprintf(stderr, "CreateGlobal - couldn't fork\n");
+	    return(-1);
+	}
+    }
+    if (pid > 0) {
+	/*
+	 * Give the child a chance to set things up.  We should be awakened
+	 * by a signal if the child should exit prematurely.
+	 */
+	sleep(5);
+	return(0);
+    }
+
+    /*
+     * We are the child, and will try to become the global master.
+     */
+    (void) signal(SIGCHLD, SIG_DFL);
+    MigPdev_CloseAllStreams();
+
+    if (Global_Init() < 0) {
+	exit(1);
+    }
+	
+    if (migd_Debug > 0) {
+	fprintf(stderr, "CreateGlobal - we are the global master, pid %x\n",
+	       getpid());
+    }
+
+    Migd_HandleRequests();
+
+    /*
+     * If we reach this point we were signalled or in some other way
+     * told to exit.
+     */
+
+    Global_End();
+    DATE();
+    exit(0);
+
+#ifdef lint
+    return(0); /* keep lint happy */
+#endif
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Migd_HandleRequests --
+ *
+ *	Main loop to call Fs_Dispatch; used by both per-host daemons and
+ * 	global master.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Calls to Fs_Dispatch invoke callbacks.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Migd_HandleRequests()
+{
+    while(1) {
+	if (migd_Quit && !migd_GlobalMaster) {
+	    break;
+	}
+	Fs_Dispatch();
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Migd_GatherLoad --
+ *
+ *	Update the current load averages and report them to the master
+ *	daemon.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Writes to master daemon.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Migd_GatherLoad()
+{
+    int oldAllow;
+    int	oldInput;
+    int	oldForeign;
+    static int nextStat = 1;
+    static int iteration = 0;
+    int numWritten;
+    int error;
+    int status;
+    
+    
+    oldAllow = curVecPtr->allowMigration;
+    oldInput = curVecPtr->noInput;
+    oldForeign = curVecPtr->foreignProcs;
+    if (migd_Debug > 2) {
+	fprintf(stderr, "Migd_GatherLoad - time %d, oldAllow %d, oldInput %d\n",
+	       time((int *) NULL), oldAllow, oldInput);
+    }
+    GetStats(&stats[nextStat], &curVecPtr->noInput, &curVecPtr->foreignProcs);
+    curVecPtr->timestamp = stats[nextStat].time.tv_sec;
+    nextStat = (nextStat + 1) % 2;
+    CalculateLoads(stats, nextStat, curVecPtr);
+
+    if ((oldInput > migd_Parms.noInput) &&
+	(curVecPtr->noInput < migd_Parms.noInput) &&
+	!ignoreInput && !migd_NeverEvict && !refuseMigration) {
+	Migd_Evict(TRUE);
+    }
+
+    /*
+     * Send the new load vector to the global daemon periodically,
+     * or if our migration status changes, or if the number of
+     * foreign processes goes from zero to non-zero or vice-versa.
+     * This way the global daemon can track things like the last use
+     * of a machine by a process that won't release the host when it
+     * finishes.
+     */
+    if (iteration == 0 || (oldAllow != curVecPtr->allowMigration) ||
+	(oldForeign > 0 && curVecPtr->foreignProcs == 0) ||
+	(oldForeign == 0 && curVecPtr->foreignProcs > 0)) {
+	if (migd_Debug > 2) {
+	    fprintf(stderr,
+		   "Notifying global server, iteration %d, oldAllow %d, newAllow %d, oldForeign %d, newForeign %d.\n",
+		   iteration, oldAllow, curVecPtr->allowMigration,
+		   oldForeign, curVecPtr->foreignProcs);
+	}
+	iteration = 0;
+
+	/*
+	 * Get the kernel's variable determining whether to refuse
+	 * migrations.  We keep rechecking periodically in case it changes.
+	 */
+
+	status = Sys_Stats(SYS_PROC_MIGRATION, SYS_PROC_MIG_GET_STATE,
+			   (Address) &migd_Parms.criteria);
+	if (status != SUCCESS) {
+	    SYSLOG1(LOG_ERR, "Error in Sys_Stats getting migration state: %s.\n",
+		    Stat_GetMsg(status));
+	    exit(Compat_MapCode(status));
+	}
+	ParseMigStatus();
+
+	if (curVecPtr->lengths[1] >= 1.0)  {
+	    struct timeval tv;
+	    struct timeval curTime;
+	    
+	    /*
+	     * The 5-minute load average is over 1.  This could
+	     * happen if there is a long-running process but it
+	     * also seems to happen without anything running.
+	     * Sleep a short period of time to try to
+	     * keep from being in lock-step with someone else.  There's
+	     * nothing too magical about the number except that it's
+	     * intended to be something that other processes are unlikely
+	     * to sleep for.  
+	     */
+	    tv.tv_sec = 0;
+	    tv.tv_usec = ((random() % 999) + 1) * 1000;
+;
+	    if (migd_Debug > 2) {
+		if (gettimeofday(&curTime,
+				 (struct timezone *) NULL) < 0) {
+		    perror("Error in gettimeofday");
+		    exit(1);
+		}
+		fprintf(stderr,
+			"Sleeping %d usec to avoid lock step, time %d.%d.\n",
+			tv.tv_usec, curTime.tv_sec, curTime.tv_usec);
+	    }
+	    if (select(0, (int *) NULL, (int *) NULL, (int *) NULL,
+			  &tv) < 0) {
+		if (migd_Debug > 2) {
+		    perror("select");
+		}
+	    }
+	    if (migd_Debug > 2) {
+		if (gettimeofday(&curTime,
+				 (struct timezone *) NULL) < 0) {
+		    perror("Error in gettimeofday");
+		    exit(1);
+		}
+		fprintf(stderr, "Time is now %d.%d.\n", curTime.tv_sec,
+			curTime.tv_usec);
+	    }
+	}
+	if (migd_Debug > 3) {
+	    fprintf(stderr, "Writing vector to global daemon.\n");
+	}
+
+	/*
+	 * OK, here's the tricky part.  We don't want our write to wait
+	 * indefinitely, so we set an alarm.  But just waking up won't
+	 * cause Fs_Write to return an error, so we have to longjmp.
+	 * So we set the signal handler, set the timer, and setjmp, then
+	 * after the write we reverse the process.
+	 */
+	if (setjmp(writejmp)) {
+	    numWritten = -1;
+	    errno = EIO;
+	} else {
+	    if ((int) signal(SIGALRM, WriteAlarm) < 0) {
+		syslog(LOG_ERR, "Error setting signal handler: %s.\n",
+		       strerror(errno));
+		exit(1);
+	    }
+	    if (setitimer(ITIMER_REAL, &timeOutTimer,
+			  (struct itimerval *) NULL) == -1) {
+		syslog(LOG_ERR, "Error setting interval timer: %s.\n",
+		       strerror(errno));
+		exit(1);
+	    }
+	    numWritten = write(migdGlobalDesc, (char *) curVecPtr,
+			       sizeof(Mig_LoadVector));
+	}
+	error = errno;
+	if (setitimer(ITIMER_REAL, &noTimer,
+		      (struct itimerval *) NULL) == -1) {
+	    syslog(LOG_ERR, "Error disabling interval timer: %s.\n",
+		   strerror(errno));
+	    exit(1);
+	}
+	(void) signal(SIGALRM, SIG_IGN);
+	errno = error;
+
+	/*
+	 * Now we're back to where we would be if all we'd done was
+	 * write(), with errno and numWritten set to appropriate values.
+	 */
+
+	if (migd_Debug > 3) {
+	    fprintf(stderr, "Write returned value %d.\n", numWritten);
+	}
+	if (numWritten < 0) {
+	    if (migd_Debug > 0) {
+		fprintf(stderr, "Error %d writing to global daemon: %s.\n",
+		       error, strerror(error));
+	    }
+	    close(migdGlobalDesc);
+	    if (migd_Quit || ContactGlobal() < 0) {
+		fprintf(stderr, "Exiting.\n");
+		exit(1);
+	    }
+	} else if (numWritten != sizeof(Mig_LoadVector)) {
+	    SYSLOG2(LOG_WARNING, "short write to global daemon of %d/%d bytes.\n",
+		   numWritten, sizeof(Mig_LoadVector));
+	}
+	iteration = 0;
+
+	/*
+	 * Check on currentInfo.state in case we have to reconnect to the
+	 * global daemon or a user process reads the Mig_Info struct from
+	 * us.
+	 */
+	if (curVecPtr->allowMigration &&
+	    currentInfo.state == MIG_HOST_ACTIVE) {
+	    currentInfo.state = MIG_HOST_IDLE;
+	} else if (!curVecPtr->allowMigration &&
+		   currentInfo.state == MIG_HOST_IDLE) {
+	    currentInfo.state = refuseMigration ?
+		MIG_HOST_REFUSES : MIG_HOST_ACTIVE;
+	}
+
+	if (CheckMessages() >= 0) {
+	    if (migd_Debug > 0) {
+		fprintf(stderr,
+			"This host is being reclaimed by order of global migration daemon.\n");
+	    }
+	    Migd_Evict(FALSE);
+	}
+
+    }
+
+    iteration = (iteration + 1) % writeRate;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CalculateLoads --
+ *
+ *	Given the number of idle ticks at two different times, calculate
+ *	the utilization of the computer during that period of time and
+ *	average with weighted values of utilization over different times.
+ *
+ *	The same calculation is performed for ready queue length.
+ *
+ * Results:
+ *	The calculated utilization & average queue lengths are returned in
+ *	*curVecPtr.  
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+CalculateLoads(stats, nextStat, curVecPtr)
+    Stats stats[];
+    int nextStat;
+    Mig_LoadVector *curVecPtr;
+{
+    double currentLoad;
+    register Stats *oldStatsPtr;
+    register Stats *newStatsPtr;
+    unsigned lowTicks;
+    double lowNormal;
+    double actualTime;
+    int i;
+    static int init = 0;
+
+    if (!init) {
+	init = 1;
+	for (i = 0; i < MIG_NUM_LOAD_VALUES; i++) {
+	    curVecPtr->utils[i] = 0;
+	    curVecPtr->lengths[i] = 0;
+	}
+    }
+    
+    if (nextStat == 0) {
+	oldStatsPtr = stats;
+	newStatsPtr = &(stats[1]);
+    } else {
+	newStatsPtr = stats;
+	oldStatsPtr = &(stats[1]);
+    }
+    if (newStatsPtr->highTicks != oldStatsPtr->highTicks) {
+	lowTicks =  HIGH_TO_LOW_TICKS - oldStatsPtr->lowTicks +
+		newStatsPtr->lowTicks;
+    } else {
+	lowTicks = newStatsPtr->lowTicks - oldStatsPtr->lowTicks;
+    }
+
+#define TV_TO_FLOAT(t) \
+    (((double) (t).tv_sec) + ((double) (t).tv_usec) / 1000000)
+
+    actualTime = TV_TO_FLOAT(newStatsPtr->time) -
+	TV_TO_FLOAT(oldStatsPtr->time);
+    lowNormal = ((double) lowTicks) * migd_LoadInterval / actualTime;
+    if (migd_Debug > 3) {
+	(void) fprintf(stderr,
+		       "Lowticks=%u, actualTime = %f, lowNormal = %.0f.\n",
+		       lowTicks, actualTime, lowNormal);
+    }
+
+    /*
+     * It is possible to fluctuate a bit and wind up with
+     * lowTicks > maxIdle.  Correct if so.
+     */
+
+    if (lowNormal > maxIdle) {
+	currentLoad = 0.;
+    } else {
+	currentLoad = 100 * (1 - lowNormal/maxIdle);
+    }
+
+    if (migd_Debug > 3) {
+	(void) fprintf(stderr,
+		       "OldStatsPtr->lowTicks=%u, newStatsPtr->lowTicks=%u.\n",
+		       oldStatsPtr->lowTicks, newStatsPtr->lowTicks);
+	(void) fprintf(stderr,
+		       "Idle ticks %u/%u => %6.2f%% Utilization, Queue length %d.\n",
+		       lowTicks,
+		       maxIdle,
+		       currentLoad,
+		       newStatsPtr->queueLength);
+	(void) fprintf(stderr, "allowMigration %d noInput %d\n",
+		       curVecPtr->allowMigration, curVecPtr->noInput);
+	fflush(stderr);
+    }
+
+    for (i = 0; i < MIG_NUM_LOAD_VALUES; i++) {
+	curVecPtr->utils[i] = migd_Weights[i] * curVecPtr->utils[i] +
+		(1 - migd_Weights[i]) * currentLoad;
+	curVecPtr->lengths[i] = migd_Weights[i] * curVecPtr->lengths[i] +
+		(1 - migd_Weights[i]) * newStatsPtr->queueLength;
+	if (curVecPtr->lengths[i] < MIN_LENGTH) {
+	    curVecPtr->lengths[i] = 0;
+	}
+	if (migd_Debug > 3) {
+	    fprintf(stderr, "index %d util %d length %.2f\n",
+		    i, curVecPtr->utils[i], curVecPtr->lengths[i]);
+	}
+    }
+    if (migd_Debug > 1) {
+	(void) fflush(stderr);
+    }
+
+    /*
+     * Check for our state changing from nonmigratable to migratable or
+     * vice-versa.
+     */
+
+    if (!migd_AlwaysAccept) {
+	if (curVecPtr->allowMigration) {
+	    if ((((curVecPtr->noInput < migd_Parms.noInput) &&
+		  (curVecPtr->noInput <
+		   curVecPtr->timestamp - currentInfo.bootTime - migd_LoadInterval)) &&
+		 !ignoreInput) ||
+		refuseMigration) {
+		curVecPtr->allowMigration = 0;
+		if (refuseMigration) {
+		    currentInfo.state = MIG_HOST_REFUSES;
+		} else {
+		    currentInfo.state = MIG_HOST_ACTIVE;
+		}
+	    } else if (!ignoreLoad){
+		for (i = 0; i < MIG_NUM_LOAD_VALUES; i++) {
+		    /*
+		     * Compare the load to the threshold, ignoring
+		     * low-priority processes.
+		     */
+		    if (curVecPtr->lengths[i] - numLowPris >
+			migd_Parms.maxThresh[i]) {
+			if (migd_Debug > 3) {
+			    fprintf(stderr, "Load too high\n");
+			}
+			curVecPtr->allowMigration = 0;
+			break;
+		    } else if (migd_Debug > 3 && curVecPtr->lengths[i] >
+			       migd_Parms.maxThresh[i]) {
+			fprintf(stderr, "Load low enough because of %d low priority processes\n",
+				numLowPris);
+		    }
+		}
+	    }
+	    /*
+	     * Allow migration if we're ignoring input or we've been
+	     * idle for a while or we've been idle as long as we've been up.
+	     * Don't allow it if overridden by a flag, though.
+	     */
+	} else if ((! curVecPtr->allowMigration) &&
+		   (ignoreInput || (curVecPtr->noInput >= migd_Parms.noInput) ||
+		    (curVecPtr->noInput >=
+		     curVecPtr->timestamp - currentInfo.bootTime - migd_LoadInterval)) &&
+		   !refuseMigration) {
+	    curVecPtr->allowMigration = 1;
+	    currentInfo.state = MIG_HOST_IDLE;
+	    if (!ignoreLoad) {
+		for (i = 0; i < MIG_NUM_LOAD_VALUES; i++) {
+		    if (curVecPtr->lengths[i] > migd_Parms.minThresh[i]) {
+			curVecPtr->allowMigration = 0;
+			currentInfo.state = MIG_HOST_ACTIVE;
+		    }
+		}
+	    }
+	}
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetStats --
+ *
+ *	Get the current number of idle ticks and the length of the
+ *	ready queue.
+ *
+ * Results:
+ * 	The number of ticks and length of the ready queue are
+ *	returned in *statsPtr.  The current time, time since last user
+ *	input, and foreign process count are also returned.
+ *
+ * Side effects:
+ *	The global variable 'maxIdle' is initialized to
+ *	idleTicksPerSecond * MIG_LOAD_INTERVAL.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+GetStats(statsPtr, noInputPtr, foreignPtr)
+    Stats *statsPtr;
+    int *noInputPtr;
+    int *foreignPtr;
+{
+    Sched_Instrument stats;
+    static int init = 0;
+    int status;
+    Proc_MigStats migStats;
+
+    Sys_Stats(SYS_SCHED_STATS, 0, (Address) &stats);
+    statsPtr->lowTicks = stats.processor[0].idleTicksLow;
+    statsPtr->highTicks = stats.processor[0].idleTicksOverflow;
+    statsPtr->queueLength = stats.numReadyProcesses;
+
+    *noInputPtr = stats.noUserInput.seconds;
+    if (migd_Debug > 3) {
+	fprintf(stderr, "GetStats: no input in %d seconds.\n",
+	       stats.noUserInput.seconds);
+    }
+    /*
+     * Check for bogus idle time.
+     */
+    if (*noInputPtr < 0) {
+	*noInputPtr = 0;
+    }
+
+    status = gettimeofday(&statsPtr->time, (struct timezone *) NULL);
+    if (status == -1) {
+	perror("Error in gettimeofday");
+	exit(1);
+    }
+
+    if (!init) {
+	maxIdle = stats.processor[0].idleTicksPerSecond * migd_LoadInterval;
+	init = 1;
+    }
+
+    /*
+     * Get a copy of the proc statistics record.  Make sure it's zeroed in
+     * case the kernel provides us with a shorter (older) structure.
+     */
+
+    bzero((Address) &migStats, sizeof(migStats));
+    status = Sys_Stats(SYS_PROC_MIGRATION, SYS_PROC_MIG_GET_STATS,
+		       (Address) &migStats);
+    if (status != SUCCESS) {
+	SYSLOG1(LOG_ERR, "Error from Sys_Stats: %s.\n", Stat_GetMsg(status));
+	exit(1);
+    }
+    *foreignPtr = migStats.foreign;
+
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Migd_GetLocalLoad --
+ *
+ *	Return the current migInfo structure -- this is used by anyone
+ *	contacting the local daemon and using read to get the local
+ *	load.
+ *
+ * Results:
+ *	Fills buffer with Mig_Info struct.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Migd_GetLocalLoad(buffer)
+    char *buffer;
+{
+    Mig_Info *infoPtr;
+
+    infoPtr = (Mig_Info *) buffer;
+
+    *infoPtr = currentInfo;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HandleException --
+ *
+ *	Do something when the migdGlobalDesc becomes selectable.  This
+ *	can happen if the stream gets an error of some sort, or
+ *	if it becomes readable (meaning we should contact the daemon about
+ * 	something).
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The daemon may be contacted, or the stream to it reopened.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+#ifdef FAST_SELECT
+static void
+HandleException(clientData, streamID, eventMask)
+    ClientData clientData;
+    int streamID;
+    int eventMask;
+{
+    if (migd_Debug > 0) { 
+	fprintf(stderr, "HandleException -\n");
+    }
+    if (eventMask & FS_EXCEPTION) {
+	fprintf(stderr,
+	       "Exception occurred talking to global daemon.  Reopening contact.\n");
+	(void) close(streamID);
+	if (migd_Quit || ContactGlobal() < 0) {
+	    DATE();
+	    SYSLOG0(LOG_ERR, "Exiting.\n");
+	    exit(1);
+	}
+    }
+    if (eventMask & FS_READ) {
+	GetNewParms();
+    }
+}
+#endif /* FAST_SELECT */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetNewParms --
+ *
+ *	Get new parameters from the global daemon.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The migd_Parms structure is updated, and global variables
+ *	are reset accordingly.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+static void
+GetNewParms(clientData, streamID, eventMask)
+    ClientData clientData;
+    int streamID;
+    int eventMask;
+{
+    fprintf(stderr, "GetNewParms called, doing nothing yet.\n");
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Migd_SetParms --
+ *
+ *	Set the parameters used by this daemon (only).
+ *
+ * Results:
+ *	0 for success, or an errno indicating the error.
+ *
+ * Side effects:
+ *	The migd_Parms structure is updated, and global variables
+ *	are reset accordingly.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+int
+Migd_SetParms(cltPtr, command, inBuffer, inBufSize, outBuffer,
+	       outBufSizePtr)
+    Migd_OpenStreamInfo *cltPtr;/* Information about the client making
+				   the request. */
+    int command;		/* Ignored. */
+    char *inBuffer;		/* Buffer to get arguments from. */
+    int inBufSize;		/* Size of the input buffer. */
+    char *outBuffer;		/* Buffer to place results, not used. */
+    int *outBufSizePtr;		/* Size of the output buffer, set to 0. */
+{
+    if (migd_Debug > 1) {
+	fprintf(stderr, "Migd_SetParms called.\n");
+    }
+
+    /*
+     * XXX need to add this here.
+     */
+    return(EINVAL);
+}
+    
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Migd_GetParms --
+ *
+ *	Get the parameters used by this daemon.
+ *
+ * Results:
+ *	0 for success, or an errno indicating the error.
+ *	The parameters structure, and the size of the buffer, are returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+int
+Migd_GetParms(cltPtr, command, inBuffer, inBufSize, outBuffer,
+	       outBufSizePtr)
+    Migd_OpenStreamInfo *cltPtr;/* Information about the client making
+				   the request. */
+    int command;		/* Ignored. */
+    char *inBuffer;		/* Not used. */
+    int inBufSize;		/* Not used. */
+    char *outBuffer;		/* Buffer to place results. */
+    int *outBufSizePtr;		/* Size of the output buffer. */
+{
+    if (migd_Debug > 1) {
+	fprintf(stderr, "Migd_GetParms called.\n");
+    }
+
+    /*
+     * XXX need to add this here.
+     */
+    return(EINVAL);
+}
+    
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AlarmHandler --
+ *
+ *	Routine to service a SIGALRM signal for eviction.
+ *	This routine disables
+ *	the alarm (letting the caller reenable it when appropriate).
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The alarm is disabled.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+AlarmHandler()
+{
+    
+    alarm(0);
+    if (migd_Debug > 0) {
+	SYSLOG0(LOG_INFO, "Eviction didn't finish in a timely fashion.");
+    }
+    (void) signal (SIGALRM, SIG_IGN);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Migd_Evict --
+ *
+ *	Perform a system call to evict foreign processes, with an
+ *	appropriate timeout to ensure we don't block forever.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Forks a process to perform the eviction.  If the global
+ *	migd_Verbose variable is set, information about each process
+ *	evicted is printed on the syslog.  If notify is set, it does
+ *	an ioctl to tell the global daemon; if not, then that means we're
+ *	evicting on orders of the global daemon.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Migd_Evict(notify)
+    int notify;			/* Whether to notify global daemon  */
+{
+    ReturnStatus status;
+    struct itimerval itimer, oldItimer;
+    int (*oldHandler) ();
+#define NUM_PCBS 256
+    Proc_PCBInfo infos[NUM_PCBS];
+    register Proc_PCBInfo *infoPtr;
+    int pcbsUsed;
+    int i;
+    int pid;
+    Host_Entry *hostPtr;
+    struct passwd *pwPtr;
+    int state;
+    int numEvicted = 0;
+
+
+    if (migd_Debug > 1) {
+	fprintf(stderr, "Migd_Evict -\n");
+    }
+    pid = fork();
+    if (pid < 0) {
+	fprintf(stderr, "Migd_Evict - couldn't fork\n");
+	return;
+    } else if (pid > 0) {
+	return;
+    }
+
+    if (migd_Verbose) {
+	/*
+	 * Dump the entire process table into our memory.
+	 */
+
+	status = Proc_GetPCBInfo(0, NUM_PCBS-1, PROC_MY_HOSTID,
+				 sizeof(Proc_PCBInfo),
+				 infos, (Proc_PCBArgString *) NULL, &pcbsUsed);
+	if (status != SUCCESS) {
+	    fprintf(stderr, "Couldn't read process table: %s\n",
+		   Stat_GetMsg(status));
+	    exit(1);
+	}
+
+	for (i = 0, infoPtr = infos; i < pcbsUsed;
+	     i++, infoPtr++) {
+	    if ((infoPtr->genFlags & PROC_FOREIGN) &&
+		!(infoPtr->genFlags & PROC_DONT_MIGRATE)) {
+		switch (infoPtr->state) {
+		    case PROC_RUNNING:
+		    case PROC_READY:
+		    case PROC_WAITING:
+		    case PROC_SUSPENDED: {
+			hostPtr = Host_ByID(infoPtr->peerHostID);
+			pwPtr = getpwuid(infoPtr->userID);
+			if (hostPtr != (Host_Entry *) NULL &&
+			    pwPtr != (struct passwd *) NULL) {
+			    syslog(LOG_INFO,
+				   "Evicting process %x (%s@@%s)",
+				   infoPtr->peerProcessID, pwPtr->pw_name,
+				   hostPtr->name);
+			    numEvicted++;
+			}
+		    }
+		    break;
+		    default: {
+			break;
+		    }
+		}
+	    }
+	}
+	Host_End();
+	endpwent();
+    }
+    /*
+     * At this point, make the kernel call to get
+     * all processes at this point in time.  They may be slightly
+     * different from the ones we found using "ps"-like calls,
+     * but that was just for information anyway -- this is the real
+     * mccoy.  (For this reason, often there will be no processes evicted.)
+     * We also set up a timer in case we block too long.
+     */
+    itimer.it_interval.tv_sec = 0;
+    itimer.it_interval.tv_usec = 0;
+    itimer.it_value.tv_sec = EVICT_TIMEOUT;
+    itimer.it_value.tv_usec = 0;
+
+    if ((int) signal(SIGALRM, AlarmHandler) < 0) {
+	syslog(LOG_ERR, "Error setting signal handler: %s.\n",
+	       strerror(errno));
+	exit(1);
+    }
+    if (setitimer(ITIMER_REAL, &itimer,
+		  (struct itimerval *) NULL) == -1) {
+	syslog(LOG_ERR, "Error setting interval timer: %s.\n",
+	       strerror(errno));
+	exit(1);
+    }
+    status = Proc_Migrate(PROC_ALL_PROCESSES, 0);
+    if (status != SUCCESS && status != GEN_ABORTED_BY_SIGNAL) {
+	syslog(LOG_ERR, "Error evicting foreign processes: %s\n",
+	       Stat_GetMsg(status));
+    } else if (migd_Verbose && numEvicted > 0) {
+	syslog(LOG_INFO, "Evicted %d processes.\n", numEvicted);
+    }
+    (void) setitimer(ITIMER_REAL, &noTimer, (struct itimerval *) NULL);
+    (void) signal(SIGALRM, SIG_IGN);
+
+    if (notify) {
+	/*
+	 * Notify the global daemon that eviction has occurred.
+	 */
+	state = MIG_HOST_ACTIVE;
+	status = Fs_IOControl(migdGlobalDesc, IOC_MIG_CHANGE, sizeof(int),
+			      (char *) &state,
+			      0, (char *) NULL);
+	if (status != SUCCESS) {
+	    if (migd_Debug > 0) {
+		fprintf(stderr,
+			"Error doing MIG_CHANGE ioctl with global daemon: %s.\n",
+			Stat_GetMsg(status));
+	    }
+	}
+    }
+
+
+    exit(0);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Migd_EvictIoctl --
+ *
+ *	Ioctl interface to Migd_Evict routine.  May be called by user
+ *	program to force an eviction.
+ *
+ * Results:
+ *	0 is returned as the value of the ioctl.  The number of foreign
+ *	processes on the machine is returned in outBuffer.
+ *
+ * Side effects:
+ *	Any foreign processes are evicted.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+int
+Migd_EvictIoctl(cltPtr, command, inBuffer, inBufSize, outBuffer,
+	       outBufSizePtr)
+    Migd_OpenStreamInfo *cltPtr;/* Information about the client making
+				   the request. */
+    int command;		/* Ignored. */
+    char *inBuffer;		/* Not used. */
+    int inBufSize;		/* Not used. */
+    char *outBuffer;		/* Buffer to place results. */
+    int *outBufSizePtr;		/* Size of the output buffer. */
+{
+    int *intPtr;
+    
+    if (migd_Debug > 1) {
+	fprintf(stderr, "Migd_EvictIoctl called.\n");
+    }
+
+    if (*outBufSizePtr < sizeof(int)) {
+	if (migd_Debug > 0) {
+	    SYSLOG2(LOG_WARNING,
+		   "Migd_EvictIoctl: bad output buffer size (%d) from process %x\n",
+		   *outBufSizePtr, cltPtr->processID);
+	}
+	return(EINVAL);
+    }
+    if (migd_GlobalMaster) {
+	return(EINVAL);
+    }
+
+    intPtr = (int *) outBuffer;
+    *intPtr = curVecPtr->foreignProcs;
+    *outBufSizePtr = sizeof(int);
+    
+    Migd_Evict(TRUE);
+    return(0);
+}
+
+	
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CheckMessages --
+ *
+ *	Check for messages from the global daemon.  
+ *
+ * Results:
+ *	-1 if no messages or on error.  Otherwise returns the value of the
+ *	message, which is an integer.
+ *	Obtains at most one message per call.
+ *
+ * Side effects:
+ *	May do ioctl to server.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+CheckMessages()
+{
+    static int *bitArray = NULL;
+    static int bitSize = 0;
+    int numReady;
+    int status;
+    int msgHostID;
+    struct timeval time;
+    
+#ifdef DEBUG
+    fprintf(stderr, "CheckMessages called.\n");
+#endif				/* DEBUG */
+
+    if (migdGlobalDesc < 0) {
+#ifdef DEBUG
+	fprintf(stderr, "CheckMessages: no pdev connection.\n");
+#endif				/* DEBUG */
+	return(-1);
+    }
+    if (bitSize <= migdGlobalDesc) {
+	bitArray = Bit_Expand(migdGlobalDesc + 1, bitSize, bitArray);
+	bitSize = migdGlobalDesc + 1;
+    }
+	    
+    Bit_Set(migdGlobalDesc, bitArray);
+    time.tv_sec = 0;
+    time.tv_usec = 0;
+#ifdef DEBUG
+    fprintf(stderr, "CheckMessages: calling select.\n");
+#endif				/* DEBUG */
+    numReady = select(bitSize, bitArray, (int *) NULL, (int *) NULL,
+		      &time);
+#ifdef DEBUG
+    fprintf(stderr, "CheckMessages: select returned %d.\n", numReady);
+#endif				/* DEBUG */
+    if (numReady <= 0) {
+	return(-1);
+    } else {
+#ifdef DEBUG
+	fprintf(stderr, "CheckMessages: calling Fs_IOControl.\n");
+#endif				/* DEBUG */
+	if (MigSetAlarm() < 0) {
+	    fprintf(stderr,
+		    "Error setting alarm for contact with global migd.\n");
+	    return(FALSE);
+	}
+	status = Fs_IOControl(migdGlobalDesc, IOC_MIG_GET_UPDATE,
+			      0, (char *) NULL, sizeof(int),
+			      (char *) &msgHostID);
+	if (MigClearAlarm() < 0) {
+	    fprintf(stderr,
+		    "Error clearing alarm for contact with migd.\n");
+	}
+		
+		
+#ifdef DEBUG
+	fprintf(stderr, "CheckMessages: Fs_IOControl returned %x.\n",
+		status);
+#endif				/* DEBUG */
+	if (status != SUCCESS) {
+	    fprintf(stderr,
+		    "CheckMessages: error during ioctl to global master: %s\n",
+		    Stat_GetMsg(status));
+	    return(-1);
+	}
+	return(msgHostID);
+    }
+}
+@
+
+
+2.3
+log
+@added migd_NeverRunGlobal flag.  changed thresholds so long-running jobs
+are less likely to cause host to be marked as unusable.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/daemons/migd/RCS/migd.c,v 2.2 90/07/05 18:35:41 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d147 3
+a149 3
+#define THRESHOLD_HIGH0 1.5
+#define THRESHOLD_HIGH1 1.75
+#define THRESHOLD_HIGH2 2.0
+@
+
+
+2.2
+log
+@don't mention foreign processes that are flagged as unmigratable when
+doing evictions.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/daemons/migd/RCS/migd.c,v 2.1 90/07/05 13:20:05 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d129 1
+d135 4
+a138 4
+ * start accepting foreign processes, but once they are being
+ * accepted, there are different thresholds for each average: if any
+ * one of them is exceeded, stop aceepting foreign processes.
+ * (This really needs to be generalized to handle a multiprocessor.)
+a143 1
+
+d147 3
+a149 3
+#define THRESHOLD_HIGH0 1.0
+#define THRESHOLD_HIGH1 1.5
+#define THRESHOLD_HIGH2 1.75
+d186 1
+a186 1
+#define MAX_GLOBAL_CONTACTS 5
+d299 14
+d535 4
+a538 2
+		if (CreateGlobal() < 0) {
+		    return(-1);
+@
+
+
+2.1
+log
+@when stream to global migd is selectable, read a message.  it should
+be a 0, which says to evict processes for fairness reasons.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/daemons/migd/RCS/migd.c,v 2.0 90/06/30 17:10:13 douglis Stable Locker: douglis $ SPRITE (Berkeley)";
+d1523 2
+a1524 1
+	    if (infoPtr->genFlags & PROC_FOREIGN) {
+@
+
+
+2.0
+log
+@Changing version numbers.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/daemons/migd/RCS/migd.c,v 1.11 90/06/26 22:09:24 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d43 1
+d218 1
+d820 1
+a820 1
+	Migd_Evict();
+d976 8
+d1470 3
+a1472 2
+ *	evicted is printed on the syslog.
+ *
+d1478 2
+a1479 1
+Migd_Evict()
+d1584 14
+a1597 11
+    /*
+     * Notify the global daemon that eviction has occurred.
+     */
+    state = MIG_HOST_ACTIVE;
+    status = Fs_IOControl(migdGlobalDesc, IOC_MIG_CHANGE, sizeof(int),
+			  (char *) &state,
+			  0, (char *) NULL);
+    if (status != SUCCESS) {
+	if (migd_Debug > 0) {
+	    fprintf(stderr, "Error doing MIG_CHANGE ioctl with global daemon: %s.\n",
+		   Stat_GetMsg(status));
+d1658 1
+a1658 1
+    Migd_Evict();
+d1663 87
+@
+
+
+1.11
+log
+@notify about eviction after it completes and the processes have moved.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/daemons/migd/RCS/migd.c,v 1.10 90/05/28 17:08:01 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+@
+
+
+1.10
+log
+@sleep random amt of time each time when have lock step.  don't set state to
+ACTIVE when it should be REFUSES.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/daemons/migd/RCS/migd.c,v 1.9 90/05/14 21:31:58 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+a1486 15
+    state = MIG_HOST_ACTIVE;
+    status = Fs_IOControl(migdGlobalDesc, IOC_MIG_CHANGE, sizeof(int),
+			  (char *) &state,
+			  0, (char *) NULL);
+    if (status != SUCCESS) {
+	if (migd_Debug > 0) {
+	    fprintf(stderr, "Error doing MIG_CHANGE ioctl with global daemon: %s.\n",
+		   Stat_GetMsg(status));
+	}
+	close(migdGlobalDesc);
+	if (migd_Quit || ContactGlobal() < 0) {
+	    fprintf(stderr, "Exiting.\n");
+	    exit(1);
+	}
+    }
+d1571 16
+@
+
+
+1.9
+log
+@fixed bugs, including List_Remove problem due to wrong state variable getting
+reset if host was only claiming to be idle.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/daemons/migd/RCS/migd.c,v 1.8 90/05/02 12:31:52 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d856 2
+d859 1
+a859 1
+	     * The 10-minute load average is over 1.  This could
+d869 27
+a895 3
+	    tv.tv_usec = 451000;
+	    (void) select(0, (int *) NULL, (int *) NULL, (int *) NULL,
+			  &tv);
+d970 2
+a971 1
+	    currentInfo.state = MIG_HOST_ACTIVE;
+@
+
+
+1.8
+log
+@fixed bug causing eviction calls on machines that are refusing migration,
+then causing hosts to appear to be active rather than refusing.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/daemons/migd/RCS/migd.c,v 1.7 90/04/27 00:59:20 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d139 1
+a139 2
+ * be idle for it to accept migrated processes.  (Set to a low value for
+ * testing.)
+d1079 5
+d1115 1
+d1120 1
+@
+
+
+1.7
+log
+@changes for statistics gathering.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/daemons/migd/RCS/migd.c,v 1.6 90/04/24 18:00:44 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d818 1
+a818 1
+	!ignoreInput && !migd_NeverEvict) {
+@
+
+
+1.6
+log
+@intermediate checkpoint
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/daemons/migd/RCS/migd.c,v 1.5 90/04/03 11:09:49 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d816 6
+a948 5
+    if ((oldInput > migd_Parms.noInput) &&
+	(curVecPtr->noInput < migd_Parms.noInput) &&
+	!ignoreInput && curVecPtr->foreignProcs > 0 && !migd_NeverEvict) {
+	Migd_Evict();
+    }
+d1447 2
+d1454 15
+a1468 1
+    
+d1507 1
+d1525 2
+a1526 1
+     * mccoy.  We also set up a timer in case we block too long.
+d1548 2
+a1549 2
+    } else if (migd_Verbose) {
+	syslog(LOG_INFO, "Eviction complete.\n");
+@
+
+
+1.5
+log
+@get the state of the kernel every so often rather than just at program
+start time.  also changed the time that migd sleeps if load is high, to
+try to keep it from being too round a number and continuing to be in
+lock-step.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/daemons/migd/RCS/migd.c,v 1.4 90/03/14 12:50:36 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d121 3
+d126 2
+a504 16
+		if (errno == EIO) {
+		/*
+		 * The file exists, but the name server thinks there is
+		 * no pdev master.  Let's be conservative about this:
+		 * If we just started, wait a long time to see
+		 * if the global master returns.  This is especially necessary
+		 * if the name server for the pdev crashes and reboots
+		 * and then doesn't know about the master at the time
+		 * migd is run.
+		 */
+		    if (first) {
+			sleep(60);
+			first = 0;
+			continue;
+		    }
+		}
+d945 1
+a945 1
+	!ignoreInput && curVecPtr->foreignProcs > 0) {
+@
+
+
+1.4
+log
+@if error during ioctl to master, close the file and start over, instead
+of just returning error.  we can get a stale handle and exit otherwise.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/daemons/migd/RCS/migd.c,v 1.3 90/03/12 13:45:49 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d555 1
+a555 1
+	    for (ioctlRetries = 0; ioctlRetries <= MAX_GLOBAL_CONTACTS;
+d812 1
+d846 14
+d867 4
+a870 1
+	     * keep from being in lock-step with someone else.
+d873 1
+a873 1
+	    tv.tv_usec = 250000;
+@
+
+
+1.3
+log
+@print pid's before messages in global log file; print dates here and
+there; open files in append mode; changed file names to be in admin
+subdir.  [this is a recording. beep!]
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/daemons/migd/RCS/migd.c,v 1.2 90/02/28 10:51:47 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d436 1
+d438 1
+a438 3
+#ifdef USE_PDEV_SIGNALS
+    Ioc_Owner owner;
+#endif
+d474 1
+a474 1
+	 retries <= MAX_GLOBAL_CONTACTS && !migd_Quit;
+d533 4
+a536 1
+		}	
+a537 2
+
+		    
+d546 45
+a590 1
+	    break;
+d593 1
+a593 1
+    if (retries > MAX_GLOBAL_CONTACTS) {
+d595 1
+a595 1
+	SYSLOG0(LOG_ERR, "Migd_Init - Unable to create master; giving up.\n");
+a599 54
+    /*
+     * Set the owner of the pdev so that the master can signal us
+     * asynchronously.  (This really shouldn't be needed, but is currently.)
+     */
+#ifdef USE_PDEV_SIGNALS
+    owner.id = getpid();
+    owner.procOrFamily = IOC_OWNER_PROC;
+    status = Fs_IOControl(migdGlobalDesc, IOC_SET_OWNER, sizeof(Ioc_Owner),
+			  (char *) &owner,
+			  0, (char *) NULL);
+    if (status != SUCCESS) {
+	SYSLOG1(LOG_ERR,
+	       "ContactGlobal: error setting pdev owner: %s\n",
+	       Stat_GetMsg(status));
+	errno = Compat_MapCode(status);
+	return(-1);
+    }
+#endif /* USE_PDEV_SIGNALS */
+
+
+    /*
+     * Try to tell the global master that we're a daemon.  It may say
+     * DEV_BUSY, which means that there is already a daemon.  In that
+     * case, it tells the other daemon to go away, and we will keep
+     * trying.  Pick up the retry count where we left off.
+     */
+    for (; retries <= MAX_GLOBAL_CONTACTS; retries++) {
+	status = Fs_IOControl(migdGlobalDesc, IOC_MIG_DAEMON, sizeof(Mig_Info),
+			      (char *) &currentInfo,
+			      0, (char *) NULL);
+	if (status == DEV_BUSY) {
+	    if (migd_Debug > 0) {
+		fprintf(stderr, "ContactGlobal - ioctl returned busy.\n");
+	    }
+	    sleepTime = ((random() & 07) + 1) * retries;
+	    if (migd_Debug > 2) {
+		fprintf(stderr, "ContactGlobal - sleeping %d seconds\n",
+		       sleepTime);
+	    }
+	    sleep(sleepTime);
+	} else {
+	    /*
+	     * An error we can't deal with, or SUCCESS.
+	     */
+	    break;
+	}
+    }
+    if (status != SUCCESS) {
+	SYSLOG1(LOG_ERR,
+	       "ContactGlobal: error during ioctl to global master: %s\n",
+	       Stat_GetMsg(status));
+	errno = Compat_MapCode(status);
+	return(-1);
+    }
+@
+
+
+1.2
+log
+@print msgs to both syslog & error log when appropriate.  
+time out and longjmp if a write gets hung awaiting recovery.  retry
+ioctl to contact global daemon if EBUSY since it's trying to kill off
+a previous daemon on our host.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/daemons/migd/RCS/migd.c,v 1.1 90/02/15 19:19:26 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d181 1
+a181 1
+#define MAX_GLOBAL_CONTACTS 4
+d315 1
+d443 1
+d445 1
+d447 1
+a447 1
+	fprintf(stderr, "ContactGlobal -\n");
+d473 1
+a478 1
+	    sleepTime = ((random() & 07) + 1) * retries;
+d484 1
+d756 1
+d855 1
+a855 1
+	if (curVecPtr->lengths[2] >= 1.0)  {
+d858 1
+a858 1
+	     * The long-term load average is over 1.  This could
+d922 1
+a922 2
+	    if ((error != EIO && error != EPIPE && error != EINVAL)
+		|| migd_Quit || ContactGlobal() < 0) {
+d1267 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /user2/douglis/pdev_mig/migd/RCS/migd.c,v 2.3 90/02/13 10:04:30 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d28 1
+d145 1
+a145 3
+#ifdef USE_HIGH_INPUT_THRESHOLD
+#define INPUT_THRESHOLD 300
+#else
+d166 1
+a166 1
+#define EVICT_TIMEOUT 30
+d169 11
+d181 1
+a181 1
+#define MAX_GLOBAL_CONTACTS 2
+d202 3
+d206 3
+a208 1
+static void Reap();
+d217 1
+d219 1
+d249 1
+a249 1
+	syslog(LOG_INFO, "Migd_Init -\n");
+d272 1
+a272 1
+	syslog(LOG_ERR, "Error in gettimeofday: %s", strerror(errno));
+d287 1
+a287 1
+	syslog(LOG_ERR, "Error getting boot time from %s: %s\n", fileName,
+d302 1
+a302 1
+	syslog(LOG_ERR, "Migd_Init - Unable to contact global daemon: %s\n",
+d309 1
+a309 1
+	syslog(LOG_ERR, "Migd_Init - Unable to initialize pdev %s: %s\n",
+d317 14
+d336 1
+a336 1
+	syslog(LOG_INFO, "Migd_Init - returning 0\n");
+d364 1
+a364 1
+	syslog(LOG_INFO, "Migd_End -\n");
+d438 4
+a441 1
+#endif    
+d443 2
+a444 2
+    if (migd_Debug > 2) {
+	syslog(LOG_INFO, "ContactGlobal -\n");
+d448 3
+a450 1
+     * Clean up any old descriptor.
+d452 2
+a453 4
+    if (migdGlobalDesc >= 0) {
+	Fs_EventHandlerDestroy(migdGlobalDesc);
+	(void) close(migdGlobalDesc);
+    } else {
+d459 9
+d477 1
+a477 1
+		syslog(LOG_INFO, "ContactGlobal - sleeping %d seconds\n",
+d485 1
+a485 1
+		syslog(LOG_WARNING,
+d489 9
+a497 1
+	    if (errno == EIO || errno == ENOENT) {
+d499 7
+a505 1
+		 * This means there is not currently a master.
+d507 21
+d532 2
+d536 1
+a536 1
+		syslog(LOG_ERR, "Migd_Init - Unable to contact master of global pdev: %s\n",
+d547 1
+a547 1
+	syslog(LOG_ERR, "Migd_Init - Unable to create master; giving up.\n");
+d563 1
+a563 1
+	syslog(LOG_ERR,
+d572 27
+a598 3
+    status = Fs_IOControl(migdGlobalDesc, IOC_MIG_DAEMON, sizeof(Mig_Info),
+			  (char *) &currentInfo,
+			  0, (char *) NULL);
+d600 1
+a600 1
+	syslog(LOG_ERR,
+d606 1
+a606 1
+
+d609 1
+d611 2
+a612 2
+    if (migd_Debug > 2) {
+	syslog(LOG_INFO, "ContactGlobal - completed successfully\n");
+d636 1
+a636 1
+static void
+d642 1
+a642 1
+	syslog(LOG_INFO, "Reap - \n");
+d647 1
+d654 29
+d707 1
+a707 1
+	syslog(LOG_INFO, "CreateGlobal -\n");
+d711 1
+a711 1
+	syslog(LOG_INFO, "CreateGlobal - becoming master; start a new child.\n");
+d716 1
+a716 1
+	    syslog(LOG_ERR, "CreateGlobal - couldn't fork\n");
+d740 1
+a740 1
+	syslog(LOG_INFO, "CreateGlobal - we are the global master, pid %x\n",
+d816 1
+d823 1
+a823 1
+	syslog(LOG_INFO, "Migd_GatherLoad - time %d, oldAllow %d, oldInput %d\n",
+d843 1
+a843 1
+	    syslog(LOG_INFO,
+d865 1
+a865 1
+	    syslog(LOG_INFO, "Writing vector to global daemon.\n");
+d867 41
+a907 2
+	numWritten = write(migdGlobalDesc, (char *) curVecPtr,
+			   sizeof(Mig_LoadVector));
+d909 1
+a909 1
+	    syslog(LOG_INFO, "Write returned value %d.\n", numWritten);
+d913 2
+a914 2
+		syslog(LOG_ERR, "Error %d writing to global daemon: %s.\n",
+		       errno, strerror(errno));
+d917 1
+a917 1
+	    if ((errno != EIO && errno != EPIPE)
+d919 1
+a919 1
+		syslog(LOG_ERR, "Exiting.\n");
+d923 1
+a923 1
+	    syslog(LOG_WARNING, "short write to global daemon of %d/%d bytes.\n",
+d927 14
+d1159 1
+a1159 1
+	syslog(LOG_INFO, "GetStats: no input in %d seconds.\n",
+d1189 1
+a1189 1
+	syslog(LOG_ERR, "Error from Sys_Stats: %s.\n", Stat_GetMsg(status));
+d1248 1
+d1256 1
+a1256 1
+	syslog(LOG_INFO, "HandleException -\n");
+d1259 1
+a1259 1
+	syslog(LOG_WARNING,
+d1263 1
+a1263 1
+	    syslog(LOG_ERR, "Exiting.\n");
+d1271 1
+d1298 1
+a1298 1
+    syslog(LOG_INFO, "GetNewParms called, doing nothing yet.\n");
+d1332 1
+a1332 1
+	syslog(LOG_INFO, "Migd_SetParms called.\n");
+d1372 1
+a1372 1
+	syslog(LOG_INFO, "Migd_GetParms called.\n");
+d1387 2
+a1388 1
+ *	Routine to service a SIGALRM signal.  This routine disables
+d1405 1
+a1405 1
+	syslog(LOG_INFO, "Eviction didn't finish in a timely fashion.");
+d1447 1
+a1447 1
+	syslog(LOG_INFO, "Migd_Evict -\n");
+d1452 1
+a1452 1
+	syslog(LOG_ERR, "Migd_Evict - couldn't fork\n");
+d1467 1
+a1467 1
+	    syslog(LOG_ERR, "Couldn't read process table: %s\n",
+d1512 3
+a1514 3
+    oldHandler = (int (*)()) signal(SIGALRM, AlarmHandler);
+    if (oldHandler == (int (*)()) -1) {
+	syslog(LOG_ERR, "Error setting signal handler.");
+d1517 4
+a1520 2
+    if (setitimer(ITIMER_REAL, &itimer, &oldItimer) == -1) {
+	syslog(LOG_ERR, "Error setting interval timer.");
+d1530 2
+a1531 2
+    (void) setitimer(ITIMER_REAL, &oldItimer, (struct itimerval *) NULL);
+    (void) signal(SIGALRM, oldHandler);
+d1569 1
+a1569 1
+	syslog(LOG_INFO, "Migd_EvictIoctl called.\n");
+d1574 1
+a1574 1
+	    syslog(LOG_WARNING,
+@

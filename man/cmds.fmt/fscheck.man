@@ -1,0 +1,464 @@
+
+
+
+FSCHECK                   User Commands                   FSCHECK
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     fscheck - perform consistency check on file system
+
+SSYYNNOOPPSSIISS
+     ffsscchheecckk --ddeevv _d_e_v_i_c_e --ppaarrtt _p_a_r_t_i_t_i_o_n [[_o_p_t_i_o_n_s]
+
+OOPPTTIIOONNSS
+     --ddeevv _d_e_v_i_c_e   _D_e_v_i_c_e is the root  name  of  a  device,  i.e.
+                   rxy0, rsd1, rsb0
+
+     --ppaarrtt _p_a_r_t_i_t_i_o_n
+                   _P_a_r_t_i_t_i_o_n is a letter indicating a  partition,
+                   i.e. a, b, c, d, e, f, g.
+
+     --ddiirr _d_e_v_D_i_r   _D_e_v_D_i_r is an alternate directory in  which  to
+                   find  the  device  file named by concatenating
+                   _D_e_v_i_c_e and _P_a_r_t_i_t_i_o_n.  The  default  directory
+                   name is ``/dev/``.
+
+     --iinniittiiaallPPaarrtt _f_i_r_s_t_P_a_r_t_N_a_m_e
+                   _f_i_r_s_t_P_a_r_t_N_a_m_e is the name of the initial  par-
+                   tition  on  the disk which contains basic disk
+                   geometry information.  The default  is  parti-
+                   tion ``a''.
+
+     --wwrriittee        Write the disk when errors are encountered and
+                   fixed.  The default is to not write the disk.
+
+     --ssiilleenntt       Don't say anything unless there is an error.
+
+     --vveerrbboossee      Output verbose information about errors.   The
+                   default is to print out terse information.
+
+     --iinnccVVeerrssiioonn   If the domain was not written back properly on
+                   system  shutdown then all version numbers will
+                   be incremented.
+
+     --ffiixxRRoooott      Re-create a missing or corrupted  root  direc-
+                   tory.
+
+     --cclleeaarr        Clear the domain number field  stored  in  the
+                   summary sector.
+
+     --hhoossttIIDD _i_d    Update the host ID in the disk header.  If  _i_d
+                   is not 0 then it is used as the host id to put
+                   in the header. If _i_d equals 0 then one of  two
+                   values are used as the host id.  If the device
+                   server is the local  host  then  the  kernel's
+                   internal  idea  of its host id is used, other-
+                   wise the device server's id is used.
+
+
+
+Sprite v.1.0        Printed:  March 19, 1990                    1
+
+
+
+
+
+
+FSCHECK                   User Commands                   FSCHECK
+
+
+
+     --bbaaddBBlloocckk     Initialize the bad block file descriptor.
+
+     --oouuttppuuttFFiillee _o_u_t_p_u_t_F_i_l_e
+                   All  output  to  stdout  and  stderr  is  also
+                   appended to _o_u_t_p_u_t_F_i_l_e.
+
+     --bbuuffffeerrSSiizzee _s_i_z_e
+                   Set the size of  the  buffer  associated  with
+                   _o_u_t_p_u_t_F_i_l_e  to  _s_i_z_e bytes.  Default is to use
+                   whatever  buffer  is  provided  by  the  stdio
+                   library.   This  option  has  no effect if the
+                   --oouuttppuuttFFiillee option is not used.
+
+     --rroooottPPaarrtt     This option controls the output to a file.  If
+                   the  --oouuttppuuttFFiillee option is not given then this
+                   option has no effect. Otherwise, the output is
+                   stored  in  a  buffer  and only written to the
+                   file when the program exits.  This allows  the
+                   output  to  be written to a file on the parti-
+                   tion being  checked  (usually  the  output  is
+                   written  to  the root partition).  The file IO
+                   in this case is very  primative  and  restric-
+                   tive.  The  output  file  must  be in the root
+                   directory and  must  exist  prior  to  running
+                   ffsscchheecckk.   If  the  size of the output exceeds
+                   the size of the file or if it exceeds the size
+                   of  the  direct  data  blocks  then it will be
+                   truncated. If the output exceeds the  size  of
+                   the  internal buffer it will be truncated (see
+                   --bbuuffffeerrSSiizzee ).  If the output is smaller  than
+                   the  size  of  the file, the remaining part of
+                   the file will be filled with null  characters.
+                   Any  file  produced by this option will have a
+                   decimal  number  in  the  first   line   which
+                   represents  the  number  of bytes in the file.
+                   This is  used  by  ffsscchheecckk  to  calculate  the
+                   starting point for appending.  The output file
+                   can be  reset  by  either  setting  the  first
+                   number  to  0  or by overwriting the file with
+                   null characters.
+
+     --hheeaappLLiimmiitt _s_i_z_e
+                   Program will not allocate more than _s_i_z_e bytes
+                   of  memory.  Default is to allocate as much as
+                   is needed.
+
+     --ddeelleettee       If a data block is shared  by  more  than  one
+                   file, delete it from all but one of the files.
+                   The default is to make a copy of the block for
+                   each file sharing the original.
+
+     --rreeaaddBBlloocckk _c_o_u_n_t
+
+
+
+Sprite v.1.0        Printed:  March 19, 1990                    2
+
+
+
+
+
+
+FSCHECK                   User Commands                   FSCHECK
+
+
+
+                   Read count blocks at a time when  reading  the
+                   file descriptors. Currently this does not pro-
+                   vide better performance due to limitations  in
+                   the disk interface library.
+
+     --ddeebbuugg        Print out debugging information.
+
+     --bbiittmmaappVVeerrbboossee
+                   Print out lots and lots of  information  about
+                   errors in the bitmaps.
+
+     --nnuummRReebboooott _c_o_u_n_t
+                   Number of consecutive times to  reboot  before
+                   returning a warning indication.
+
+     --cclleeaarrFFiixxCCoouunntt
+                   Clear consecutive fix counter.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This program will perform a consistency check on a file sys-
+     tem.   By  default  it will report inconsistencies but won't
+     repair them.  If the --wwrriittee option  is  used  then  it  will
+     repair  any  inconsistencies by modifying the disk as neces-
+     sary.
+
+     This program performs the following consistency checks:
+
+     1.   It makes sure that the file descriptor  allocation  bit
+          map  agrees  with  the  status information kept in each
+          file descriptor.  If necessary it will correct the  bit
+          map.
+
+     2.   It confirms that data-block and indirect-block pointers
+          are valid.  If a pointer is invalid then the pointer is
+          set to NIL and the file size is adjusted  as  necessary
+          to reflect the new size of the file.
+
+     3.   It recreates the data block allocation bit map based on
+          information   in  the  file  descriptors  and  indirect
+          blocks.
+
+     4.   It checks for blocks that are allocated  to  more  than
+          one  file. If a block is multiply allocated then copies
+          of the block are made and all but one of the  files  is
+          corrected  to  use  a  copy.   If the --ddeelleettee option is
+          given, or if only a subset of the fragments in a  block
+          are  shared, then the block is given to the lowest num-
+          bered file descriptor and it is removed from all  other
+          files  that  reference  it.   A special case is made of
+          block 0. This block belongs to the root  directory  and
+          is  copied (or deleted) for all other files even if the
+
+
+
+Sprite v.1.0        Printed:  March 19, 1990                    3
+
+
+
+
+
+
+FSCHECK                   User Commands                   FSCHECK
+
+
+
+          root directory is corrupted or doesn't exist.
+
+     5.   It verifies that directories are of the proper  format.
+          In  order  to  patch a directory, names may be deleted,
+          the directory may be truncated, or in  the  worst  case
+          the directory may be turned into a normal file.
+
+     6.   It puts unreferenced files into the  lost+found  direc-
+          tory.   The  name of each file in the lost+found direc-
+          tory is the file's file descriptor number.
+
+     7.   It corrects link counts and block counts in  each  file
+          descriptor.
+
+     8.   It checks that indirect blocks contain valid  pointers.
+          If  the pointers are invalid and the block is part of a
+          file then a hole is created, otherwise if the block  is
+          part of a directory then the directory is truncated.
+
+     9.   It checks that each file descriptor  contains  a  valid
+          magic  number.  If  this  is not the case then the file
+          descriptor is cleared and marked as unused in the  bit-
+          map.
+
+     10.  It recreates the root directory if it is corrupted  and
+          the --ffiixxRRoooott option is given.
+
+     By default only terse information is given about the  errors
+     in  the  file  system.   Only  the  first  error per file is
+     reported.  If the --vveerrbboossee option is given then more verbose
+     information  will be given.  If the --bbiittmmaappVVeerrbboossee option is
+     given then differences between the bitmaps on disk  and  the
+     recreated bitmaps are printed. Since the bitmaps on disk are
+     not kept current use of this option  is  likely  to  produce
+     lots of output.
+
+     The ffsscchheecckk program will also perform other actions  depend-
+     ing  on  the options that are specified.  If the --iinnccVVeerrssiioonn
+     option is given then flags in the  file  system  header  are
+     checked  to  see  if the file system was safely written back
+     when it was detached or the system  went  down.   If  it  is
+     determined  that the file system was not safely written back
+     then the version numbers for all files in  the  file  system
+     are  incremented.   This  will  cause  all  reopens of files
+     because of recovery to fail.
+
+     If the --ffiixxRRoooott option is given the root directory  will  be
+     recreated  if  it  has  become  corrupted.   If  the root is
+     recreated, then any directories that have the root directory
+     as  their  parent  will be inserted into the root with their
+     file descriptor number as their name.  Any files  that  used
+     to  be  in  the root directory will be placed in lost+found.
+
+
+
+Sprite v.1.0        Printed:  March 19, 1990                    4
+
+
+
+
+
+
+FSCHECK                   User Commands                   FSCHECK
+
+
+
+     FFsscchheecckk assumes that data block 0 belongs to the root direc-
+     tory  and  will  allocate  this  block to the directory when
+     reconstructing it.  The --ffiixxRRoooott option requires reading the
+     root  directory  twice,  hence it cannot be used without the
+     --wwrriittee option.
+
+     The --cclleeaarr option should be used if the domain number  field
+     should be cleared from the summary sector.  Each file system
+     that is attached is given a domain number under which it can
+     be  identified.   When a file system is attached, the system
+     will try to attach it with the same domain  number  that  it
+     was  attached  under  last  time.  This is required to allow
+     clients of the file system to recover when the  file  system
+     is  reattached.   If the domain number field is cleared from
+     the summary sector, then the system  will  attach  the  file
+     system under a domain number of the system's choosing.
+
+     The --hhoossttIIDD option will force the system to update the  host
+     id in the file system header.  If the device under which the
+     file system is being attached is generic then the id of  the
+     host on which ffsscchheecckk is run is used.  Otherwise the host id
+     specified by the device file is used.  The default is not to
+     modify the host id.
+
+     The --bbaaddBBlloocckk option will  initialize  the  file  descriptor
+     which points to bad disk blocks.  Initializing it will clear
+     out any pointers to bad blocks that  are  currently  in  the
+     file descriptor.
+
+     The --hheeaappLLiimmiitt option can be used to place an upper limit on
+     the  size  of  the program heap. This can be used to prevent
+     paging, since paging cannot be done at the point in the boot
+     sequence  when  ffsscchheecckk  is run.  If ffsscchheecckk cannot complete
+     checking the disk because of the limit then it  will  do  as
+     much  as  it can. This should allow multiple runs of ffsscchheecckk
+     to completely check the disk.  The limit is only an approxi-
+     mation  of  how  large  ffsscchheecckk will grow, since the program
+     stack is not restricted. Therefore the limit should  be  set
+     as high as possible but it should not be set to the boundary
+     at which paging will occur. If it  is  set  too  small  then
+     ffsscchheecckk may not be able to run at all. Note that the bbuuffffeerr--
+     SSiizzee and rreeaaddBBlloocckk options will affect the  amount  of  heap
+     required.   As  a  rule  of  thumb, the amount of heap space
+     needed by ffsscchheecckk is proportional to the disk size  and  the
+     amount of errors on the disk. A heap limit of 1 Mb should be
+     sufficient for all but the most extreme cases.
+
+     Each time ffsscchheecckk runs and finds an error in a partition,  a
+     counter on disk is incremented. The value of this counter is
+     the number of consecutive times ffsscchheecckk has run on the  par-
+     tition  and  corrected  an error. If the counter exceeds the
+     value given by the --nnuummRReebboooott  option  (default  4)  and  if
+
+
+
+Sprite v.1.0        Printed:  March 19, 1990                    5
+
+
+
+
+
+
+FSCHECK                   User Commands                   FSCHECK
+
+
+
+     ffsscchheecckk   corrects   an  error,  then  ffsscchheecckk  will  return
+     EXIT_NOREBOOT instead of the standard soft error indication.
+     This  allows  higher level software to avoid infinite reboot
+     loops.
+
+     The --cclleeaarrFFiixxCCoouunntt option resets the consecutive counter  to
+     0.
+
+     Finally, the --oouuttppuutt, --bbuuffffeerrSSiizzee and --nnooFFlluusshh options  con-
+     trol  the output from fscheck. The --oouuttppuutt option allows the
+     output from fscheck to be put into a file as well as printed
+     on  stdout and stderr.  The --bbuuffffeerrSSiizzee option sets the size
+     of the IO buffer  associated  with  the  output  file.   The
+     --nnooFFlluusshh option prevents the buffer from being flushed until
+     the disk has been checked and  corrected.  This  allows  the
+     output to be written to the disk being checked.  If the out-
+     put exceeds the size of the buffer then it is  truncated  to
+     the buffer size.  If the buffer size is exceeded in the mid-
+     dle of an output string, then remainder of the  string  will
+     wrap over the beginning of the buffer.
+
+EEXXIITT CCOODDEESS
+     FFsscchheecckk has a large number of exit  codes.  Positive  values
+     indicate  that  some  sort  of  error occurred that requires
+     ffsscchheecckk be run again, although an exit code of  1  indicates
+     that  the  filesystem  was  corrupted  but  was successfully
+     corrected.  Negative error codes  indicate  that  a  serious
+     error  occurred that requires user action before fscheck can
+     be run again.
+
+     0    No errors occurred and no  errors  were  fixed  in  the
+          filesystem.
+
+     1    Errors were fixed in the filesystem.
+
+     2    FFsscchheecckk ran out of memory before it was  able  to  com-
+          pletely  check  the  disk. Rerunning with the same heap
+          limit should allow ffsscchheecckk to finish.
+
+     3    Errors were fixed in the filesystem and the  number  of
+          consecutive  times  ffsscchheecckk  has  fixed  this partition
+          exceeds the limit.
+
+     -1   An unspecified hard error occurred.
+
+     -2   A disk read failed.
+
+     -3   A disk write failed.
+
+     -4   There was a problem with one of the arguments.
+
+     -5   The heap limit is too small for  ffsscchheecckk  to  run.  The
+
+
+
+Sprite v.1.0        Printed:  March 19, 1990                    6
+
+
+
+
+
+
+FSCHECK                   User Commands                   FSCHECK
+
+
+
+          heap   limit  must  be  made  larger  before  rerunning
+          ffsscchheecckk.
+
+     -6   The disk is full so that  duplicate  blocks  cannot  be
+          copied.  Either  delete  some  stuff or rerun using the
+          --ddeelleettee option.
+
+BBUUGGSS//FFEEAATTUURREESS
+     Indirect blocks are always marked as in use in  the  bitmap,
+     even  if  they  contain invalid entries. This is because the
+     block may be in use by another file and cannot be marked  as
+     free.
+
+     The --ffiixxRRoooott  option  cannot  be  used  without  the  --wwrriittee
+     option.
+
+KKEEYYWWOORRDDSS
+     file system, disk
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  March 19, 1990                    7
+
+
+

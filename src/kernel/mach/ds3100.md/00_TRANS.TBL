@@ -1,0 +1,25 @@
+L COMPATMA.C;1                      	compatMapCode.c	../ds5000.md/compatMapCode.c
+L COMPATSI.C;1                      	compatSig.c	../ds5000.md/compatSig.c
+L COMPATSI.H;1                      	compatSig.h	../ds5000.md/compatSig.h
+D CVS_ADM                           	CVS.adm
+L CVTSTAT.C;1                       	cvtStat.c	../ds5000.md/cvtStat.c
+F LOMEM.S;1                         	loMem.s
+F MACH.H;1                          	mach.h
+F MACHADDR.H;1                      	machAddrs.h
+F MACHASM.S;1                       	machAsm.s
+L MACHASMD.H;1                      	machAsmDefs.h	../ds5000.md/machAsmDefs.h
+F MACHCODE.C;1                      	machCode.c
+F MACHCONS.H;1                      	machConst.h
+L MACHDIS.C;1                       	machDis.c	../ds5000.md/machDis.c
+F MACHINT.H;1                       	machInt.h
+L MACHMIGR.C;1                      	machMigrate.c	../ds5000.md/machMigrate.c
+F MACHMON.C;1                       	machMon.c
+F MACHMON.H;1                       	machMon.h
+F MACHTYPE.H;1                      	machTypes.h
+L MACHUNIX.C;1                      	machUNIXSyscall.c	../ds5000.md/machUNIXSyscall.c
+F MD_MK.SED;1                       	md.mk.sed
+D SCVS                              	SCVS
+L SOFTFP.O;1                        	softfp.o	../ds5000.md/softfp.o
+L STAT.H;1                          	stat.h	../ds5000.md/stat.h
+L SYSINFO.H;1                       	sysinfo.h	../ds5000.md/sysinfo.h
+L ULTRIXSI.H;1                      	ultrixSignal.h	../ds5000.md/ultrixSignal.h

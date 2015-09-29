@@ -1,0 +1,7 @@
+hp.awk is a quick-and-dirty awk script to help you debug hard-params.
+(hard-params runs itself through cpp a few times, which makes it hard
+to specify breakpoints.)
+
+If you need to debug hard-params, run the source file through cpp (by
+hand, sigh), then filter that output with awk.  Compile the resulting
+file and use it when dealing with the debugger.

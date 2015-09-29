@@ -1,0 +1,93 @@
+head     9.0;
+branch   ;
+access   ;
+symbols  ds3100:9.0 sun3:9.0 sun4nw:9.0 symm:9.0 spur:9.0 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.0
+date     89.09.12.14.59.27;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     89.05.24.07.51.43;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.05.23.10.42.00;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@SCSI Tape drives configured in system.
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@/* 
+ * devScsiTapeConfig.c --
+ *
+ *	Configuration file for SCSI tape drives. This file initializes the
+ *	data structure containing the list of available SCSI Tape drive 
+ *	drivers available in the system.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devScsiTapeConfig.c,v 1.2 89/05/24 07:51:43 rab Exp Locker: douglis $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include "sprite.h"
+#include  "scsiTape.h"
+#include "exabyteTape.h"
+#include "emulexTape.h"
+#include "sysgenTape.h"
+
+ReturnStatus ((*devSCSITapeAttachProcs[])()) = {
+    DevExabyteAttach,
+    DevEmulexAttach,
+    DevSysgenAttach,
+ };
+
+int devNumSCSITapeTypes = sizeof(devSCSITapeAttachProcs) / 
+				sizeof(devSCSITapeAttachProcs[0]);
+
+@
+
+
+1.2
+log
+@Changes to allow optimization.
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/sun3.md/RCS/devScsiTapeConfig.c,v 1.1 89/05/23 10:42:00 mendel Exp Locker: rab $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.2 89/01/07 04:12:18 rab Exp $ SPRITE (Berkeley)";
+@

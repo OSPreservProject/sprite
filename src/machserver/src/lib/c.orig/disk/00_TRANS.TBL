@@ -1,0 +1,13 @@
+F DEPENDEN.MK;1                     	dependencies.mk
+F DISK.H;1                          	disk.h
+F DISK.MAN;1                        	Disk.man
+F DISKFRAG.C;1                      	diskFragIO.c
+F DISKHEAD.8;1                      	diskHeader.c.1.8
+F DISKHEAD.C;1                      	diskHeader.c
+F DISKIO.C;1                        	diskIO.c
+F DISKPRIN.C;1                      	diskPrint.c
+D DS3100_M                          	ds3100.md
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+D SUN3_MD                           	sun3.md
+F TAGS.;1                           	TAGS

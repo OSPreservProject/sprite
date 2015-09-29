@@ -1,0 +1,563 @@
+#!/sprite/cmds/perl
+#
+# fsmount: 
+#   Check and attach file systems found on disk devices.
+#
+#
+# $Header $
+#
+    require("/sprite/lib/perl/sprite.ph");
+    require("/sprite/lib/perl/sys/wait.ph");
+    require("/sprite/src/admin/fsmount/option.pl");
+    require("/sprite/src/admin/fsmount/constants.ph");
+
+#
+# some global declarations
+#
+    $false = 0;
+    $true = 1;
+    $empty_prefix = "(none)";
+    $fscheckOutputFile = ".fscheck.out";
+    $globalRetCode = $OK;
+    $typeOFS = "ofs";
+    $typeLFS = "lfs";
+    $reboot = 0;
+    $rootDev = "";
+    %prefixTab = ();
+    %typeTab = ();
+    %statusTab = ();
+
+    $condCheck = $false;
+    $devDir = '/dev/';
+    $fastboot = $false;
+    $fscheck = 'fscheck';
+    $spriteID = -1;
+    $noMount = $false;
+    $printOnly = $false;
+    $quiet = $false;
+    $writeDisk = $true;
+    
+    @optionArray = 
+      ('c', $OPT_TRUE, *condCheck, 
+         'Conditionally check the disks (do not recheck).',
+       'd', $OPT_STRING, *devDir, 'Device Directory.',
+       'f', $OPT_TRUE, *fastboot, 'Do not check disks.',
+       'fscheck', $OPT_STRING, *fscheck, 'fscheck program.',
+       'i', $OPT_INT, *spriteID, 
+         'Preload prefix table with ourself as server of prefixes we export.',
+       'n', $OPT_TRUE, *noMount, 'Do not mount.',
+       'p', $OPT_TRUE, *printOnly, 
+          'Do not do anything.  Just print out what would be done.',
+       'q', $OPT_TRUE, *quiet, 'Quiet.  Only report errors.',
+       'W', $OPT_FALSE, *writeDisk, 'Do not let fscheck write to the disks.'
+      );
+
+###########################
+
+#
+# run the program, and exit
+#
+    &Fsmount;
+    exit($globalRetCode);
+
+###########################
+
+#
+#----------------------------------------------------------------------
+#
+# Fsmount --
+# 
+#      Main program for `fsmount'.  Scans attached disks for filesystems,
+#   checks them for errors, and then attaches them.  
+#
+# Results:
+#      If successful, filesystems on disks are attached and exported.
+#
+# Side effects:
+#      Side effects are those produced by running `fscheck' and `prefix'.
+#
+#----------------------------------------------------------------------
+#
+sub Fsmount {
+
+    &Opt_Parse(*ARGV, *optionArray, 0);
+#
+# open()ing a piped result on Sprite seems to return a non-negative result
+# regardless of whether the pipe was formed.  oh well.
+#
+    $cmd = join('', ("fsinfo -verbose ", $devDir, "rsd00* |"));
+    if (!$quiet || $printOnly) {
+	print "[fsmount] Looking...\n";
+	print "[fsmount]  $cmd\n";
+    }
+    open(FILESYS, $cmd);
+    if (eof(FILESYS)) {
+	die("[fsmount]  cannot get the list of file systems using fsinfo\n");
+    }
+
+#
+# chop off the header
+#
+    $header = <FILESYS>;
+if ($header eq "") {
+  print "nothing found\n";
+}
+
+#
+# store the prefix and fs type indexed by device name if:
+#  - the prefix is not the empty prefix ($empty_prefix);
+#  - the prefix starts with '/'
+#  - the partition has positive (non-zero) length
+#  - the file system type is not valid (not $typeOFS or $typeLFS)
+#
+# if the root partition is found, its device name is stored in $rootDev
+#
+    while(<FILESYS>) {
+    #
+    # remove the newline, and split on whitespace
+    #
+        chop $_;   
+        ($dev_name, $fs_type, $prefix, $dom_num, $SID, $start_cyl, $end_cyl) =
+	    split(/\s+/, $_);  
+
+	next if (($prefix =~ /.*$empty_prefix.*/) ||
+	     ($prefix !~ m#^/#) ||
+	     ($start_cyl >= $end_cyl) ||
+	     (($fs_type ne $typeOFS) && ($fs_type ne $typeLFS)));
+
+	if (!$quiet || $printOnly) {
+	    print "[fsmount]  found $prefix ($fs_type) on $dev_name \n";
+	}
+	if ($prefix =~ m#^\s*/\s*$#) {
+	    if ($rootDev ne "") {
+		print STDERR "[fsmount]  uh oh: a second root partition found.\n";
+		print STDERR "           The first was found on $rootDev, ",
+		             " and this one on $dev_name\n";
+		exit($NOREBOOT);
+	    }
+	    $rootDev = $dev_name;
+	    if (!$quiet || $printOnly) {
+		print "[fsmount]  whoa! root partition found on: $dev_name\n";
+	    }
+	} else {
+	    $typeTab{$dev_name} = $fs_type;
+	    $prefixTab{$dev_name} = $prefix;
+	    if ($fs_type eq $typeLFS) {
+		$statusTab{$dev_name} = $CHILD_CHECKED;
+	    } else {
+		$statusTab{$dev_name} = $CHILD_OK;
+	    }
+	}
+    }
+
+#
+# we need to close the pipe, or else we get goofy return values from fork()ing
+#
+    close(FILESYS);
+
+    if (!$quiet || $printOnly) {
+	$numFound = &AssocLength(%prefixTab);
+	print "[fsmount]  found $numFound file systems.\n";
+    }
+    if ($numFound <= 0) {
+        exit($globalReturnCode);
+    }
+#
+# preload the prefix table
+#
+    if (!$quiet || $printOnly) {
+	print "[fsmount] Preloading prefix table...\n";
+    }
+
+    if ($spriteID >= 0) {
+        &PreloadPrefixTable($spriteID);
+    }
+#
+# check the file systems
+#
+    if (!$fastboot) {
+        if (!$quiet || $printOnly) {
+	    print "[fsmount] Checking...\n";
+        }
+        &CacheWriteBack(0);
+        &CheckFilesystems;
+        if ($reboot) {
+  	    exit($REBOOT);
+        } else {
+	    &CacheWriteBack(1);
+        }
+    }
+#
+# attach the disks that were successfully checked
+#
+    if (!$noMount) {
+        if (!$quiet || $printOnly) {
+	    print "[fsmount] Attaching...\n";
+        }
+        &PrefixFilesystems;
+    }
+
+    exit($globalRetCode);
+}
+
+#
+#----------------------------------------------------------------------
+#
+# AssocLength --
+# 
+#      Returns the number of (key, value) pairs in the passed
+#    associative array.
+#
+# Results:
+#      The number of pairs.
+#
+# Side effects:
+#      None.
+#
+#----------------------------------------------------------------------
+#
+# &AssocLength(%assocArray);
+#
+sub AssocLength {
+    local (%huh) = @_;
+    local ($num, $key, $value);
+    $num = 0;
+    while (($key, $value) = each %huh) {
+	$num++;
+    }
+    return $num;
+}
+
+#
+#----------------------------------------------------------------------
+#
+# CacheWriteBack --
+# 
+#      Changes the state of the cache write-back for this client.
+#    If the numeric argument is zero, then cache write-back is
+#    turned off;  otherwise, it is turned on.
+#
+# Results:
+#      None.
+#
+# Side effects:
+#      The cache write-back status is changed.
+#
+#----------------------------------------------------------------------
+#
+# &CacheWriteBack($numericFlag);
+#
+sub CacheWriteBack {
+    local($flag) = @_;
+    local($cmd, $msg);
+    if ($flag) {
+	$cmd = "fscmd -s 1";
+	$msg = "on";
+    } else {
+	$cmd = "fscmd -s 0";
+	$msg = "off";
+    }
+    if (!$quiet) {
+	print "[fsmount]  changing cache write-back to $msg:\t$cmd\n";
+    }
+    if (!$printOnly) {
+	system($cmd);
+	if (&w_retcode($?) != 0) {
+	    print "[fsmount]  failed turning cache write-back $msg.\n";
+	    exit($HARDERROR);
+	}
+    }
+}
+
+#
+#----------------------------------------------------------------------
+#
+# PreloadPrefixTable --
+# 
+#    Load the prefix table with the given sprite ID as the server of
+#    all the prefixes that we export.  This eliminates the problem
+#    of broadcasting for them while the disks are checked.
+#
+# Results:
+#      None.
+#
+# Side effects:
+#      Exported prefixes are loaded into the prefix table.
+#
+#----------------------------------------------------------------------
+#
+# &PreloadPrefixTable($spriteID);
+#
+sub PreloadPrefixTable {
+    local($spriteID) = @_;
+    local($dev, $prefix, $cmd);
+
+    while (($dev, $prefix) = each %prefixTab) {
+	$cmd = "prefix -a $prefix -s $spriteID";
+	if (!$quiet) {
+	    print "[fsmount]  $cmd\n";
+	}
+	if (!$printOnly) {
+	    system($cmd);
+	    if (&w_retcode($?) != 0) {
+		print STDERR "[fsmount]  failed loading prefix $prefix ",
+		             "into table.\n";
+	    }
+	}
+    }
+}
+
+#
+#----------------------------------------------------------------------
+#
+# CheckFilesystems --
+# 
+#    Check file systems for validity.  fscheck processes are forked
+#    off sequentially to do the checking on OFSs.  Nothing is done
+#    to LSFs for now.
+#
+# Results:
+#      None.
+#
+# Side effects:
+#      Success or degree of failure is recorded in $globalReturnCode
+#
+#----------------------------------------------------------------------
+#
+# &CheckFilesystems();
+#
+sub CheckFilesystems {
+    $noMoreLeft = 9999;
+    while (1) {
+	($retVal, $devChecked) = (&FscheckNextPartition);
+	if ($retVal == $noMoreLeft) {
+	    last;
+	}
+	if ($retVal == &FAILURE) {
+	    $globalRetCode = $HARDERROR;
+	    $statusTab{$devChecked} = $CHILD_FAILURE;
+	    next;
+	}
+	if ($printOnly) {
+	    $statusTab{$devChecked} = $CHILD_CHECKED;
+	    return;
+	}
+	$childPid = wait;
+	$returnCode = &w_retcode($?);
+#
+# we get unsigned ints, so turn it into the value of a signed char
+#
+	if ($returnCode > 127) {
+	    $returnCode = -((~($returnCode | 0xFFFFFF00)) + 1);
+	}
+	if (&WIFEXITED($?) && $returnCode == $FSCHECK_OUT_OF_MEMORY) {
+	    &FscheckError($devChecked, $returnCode);
+	    next;
+	}
+	if (&WIFSIGNALED($?) || &WIFSTOPPED($?)) {
+	    print STDERR "[fsmount]  checking $devChecked did not finish.\n";
+	    $globalRetCode = $HARDERROR;
+	    $statusTab{$devChecked} = $CHILD_FAILURE;
+	} elsif ($returnCode == $EXEC_FAILED) {
+	    $globalRetCode = $HARDERROR;
+	    $statusTab{$devChecked} = $CHILD_FAILURE;
+	} else {
+	    $statusTab{$devChecked} = $CHILD_CHECKED;
+	    &FscheckError($devChecked, $returnCode);
+	    if ($returnCode < 0) {
+		$statusTab{$devChecked} = $CHILD_FAILURE;
+		$globalRetCode = $HARDERROR;
+	    } elsif ($returnCode > 0) {
+		if ($returnCode == $FSCHECK_REBOOT) {
+		    print STDERR "[fsmount]  going to have to reboot.\n";
+		    $reboot = 1;
+		}
+		if ($globalRetCode == $OK) {
+		    $globalRetCode = $SOFTERROR;
+		}
+	    } else {
+		$statusTab{$devChecked} = $CHILD_CHECKED;
+	    }
+	}
+    }
+}
+
+#
+#
+#----------------------------------------------------------------------
+#
+# FscheckNextPartition --
+# 
+#    Find an OFS partition in the global table that has not been checked
+#    yet and fork an fscheck process to check it.
+#
+# Results:
+#      The first value is $SUCCESS if the fork worked, and $FAILURE otherwise;
+#      The second value is the name of the device that was checked.
+#
+# Side effects:
+#      A partition gets fschecked.
+#
+#----------------------------------------------------------------------
+#
+# &FscheckNextPartition();
+#
+sub FscheckNextPartition {
+    $foundNone = 1;
+    $count = 0;
+    local($devDirec, $devName, $prefix);
+    local($key, $value);
+#
+# explicitly reset the iterator: solves some goofy bugs
+#
+    while (($key, $value) = each %statusTab) {
+	next;
+    }
+    while (($key, $value) = each %statusTab) {
+	if ($value == $CHILD_OK) {
+	    ($nothing, $devDirec, $dev) = split(m#/#, $key);
+	    $devName = $key;
+	    $prefix = $value;
+	    $part = substr($dev, length($dev) - 1, 1);
+	    $dev = substr($dev, 0, length($dev) - 1);
+	    $foundNone = 0;
+	    last;
+	}
+    }
+    if ($foundNone) {
+	return ($noMoreLeft, "");
+    }
+#
+# have to incorporate switches to fsmount into switches for fscheck
+#
+    local(@fscheckArg);
+    @fscheckArg = ();
+    push(@fscheckArg, $fscheck);
+    push(@fscheckArg, " -dev $dev");
+    push(@fscheckArg, " -part $part");
+    push(@fscheckArg, " -dir $devDir");
+    if (!$quiet) {
+	push(@fscheckArg, " -verbose");
+    }
+    if ($condCheck) {
+        push(@fscheckArg, " -cond -setCheck");
+    }
+    push(@fscheckArg, " -outputFile $fscheckOutputFile");
+    push(@fscheckArg, " -rawOutput");
+
+    if (!$quiet || $printOnly) {
+	print "[fsmount]  ", @fscheckArg, "\n";
+    }
+#    @fscheckArg = ();
+#    push(@fscheckArg, "myfscheck.pl ");
+
+    if ($printOnly) {
+	return (&SUCCESS, $devName);
+    }
+#
+# fork it now
+#
+    $pid = fork();
+    if ($pid == 0) {
+        exec(join($",@fscheckArg));
+        print STDERR "[fsmount]  exec failed on: ", @fscheckArg, "\n";
+	print STDERR "[fsmount]  --> ", $!, "\n";
+	exit($EXEC_FAILED);
+    }
+    if ($pid < 0) {
+	print STDERR "[fsmount]  fork failed on: ", @fscheckArg, "\n";
+	print STDERR "[fsmount]  --> ", $!, "\n";
+	return (&FAILURE, $devName);
+    }
+#    $hexPid = sprintf("%x",$pid);
+#    print "pid $hexPid\n";
+#    system("kill -11 $hexPid");
+#    system("kill -15 $hexPid");
+#    system("kill -19 $hexPid");
+    return (&SUCCESS, $devName);
+}
+
+#
+#
+#----------------------------------------------------------------------
+#
+# PrefixFilesystems --
+# 
+#      Mounts all partitions that checked correctly into the prefix table.
+#
+# Results:
+#      None.
+#    
+# Side effects:
+#      The partition prefixes are added to the system prefix table.
+#
+#----------------------------------------------------------------------
+#
+# &PrefixFilesystems();
+#
+sub PrefixFilesystems {
+    while (($device, $prefix) = each %prefixTab) {
+	$status = $statusTab{$device};
+	if ($status == $CHILD_CHECKED) {
+	    @prefixArg = ();
+	    push(@prefixArg, "prefix ");
+	    push(@prefixArg, "-M $device ");
+	    push(@prefixArg, "-L ");
+	    push(@prefixArg, "-l $prefix ");
+	    if (!$quiet || $printOnly) {
+		print "[fsmount]  ", @prefixArg, "\n";
+	    }
+	    if ($printOnly) {
+		next;
+	    }
+#	    @prefixArg = ();
+#	    push(@prefixArg, "pwd ");
+	    system(join($", @prefixArg));
+	    if (&w_retcode($?) != 0) {
+		print STDERR "[fsmount]  prefix error mounting ",
+                             "$prefix on $device\n";
+	    }
+        }
+    }
+}
+
+#
+#
+#----------------------------------------------------------------------
+#
+# FscheckError --
+# 
+#      Report a meaningful error depending on the return value of fscheck.
+#
+# Results:
+#      None.
+#    
+# Side effects:
+#      None.
+#
+#----------------------------------------------------------------------
+#
+# &PrefixFilesystems();
+#
+sub FscheckError {
+    local($dev, $retCode) = @_;
+    local($error);
+    @softerrors = ('No errors', 'Correctable error', 'Exceeded heap limit',
+	'No reboot', 'Reboot');
+
+    @harderrors = ('(hard error)', 'Read of device failed', 
+	'Write to device failed', 'Bad argument', 'Heap limit too small', 
+        'Disk is full');
+
+    if ($retCode >= 0 && $retCode < @softerrors) {
+	$error = $softerrors[$retCode];
+    } else {
+	if ((-$retCode) < (@harderrors + 1)) {
+	    $error = $harderrors[(-$retCode) - 1];
+	} else {
+	    $error = "(unknown return code)";
+	}
+    }
+    print STDERR "[fsmount]  fscheck of $dev returned ($retCode): ",
+                 $error, ".\n";
+}

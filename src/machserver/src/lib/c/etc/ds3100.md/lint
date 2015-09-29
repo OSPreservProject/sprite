@@ -1,0 +1,88 @@
+status.c:
+Rpc_GetName.c:
+alarm.c:
+crypt.c:
+ecvt.c:
+fmt.c:
+frexp.c:
+fsDispatch.c:
+ftime.c:
+gcvt.c:
+getgrent.c:
+getgrgid.c:
+getgrnam.c:
+getlogin.c:
+getopt.c:
+getpass.c:
+getpwent.c:
+getwd.c:
+gtty.c:
+initgroups.c:
+insque.c:
+isatty.c:
+isinf.c:
+isnan.c:
+iszero.c:
+ldexp.c:
+mktemp.c:
+ndbm.c:
+ndbm.c(420): static variable hashinc unused
+option.c:
+panic.c:
+pause.c:
+pdev.c:
+pfs.c:
+popen.c:
+regex.c:
+setegid.c:
+seteuid.c:
+setgid.c:
+setruid.c:
+setuid.c:
+signal.c:
+statusPrint.c:
+stty.c:
+swapBuffer.c:
+syslog.c:
+syslog.c(57): static variable ctty unused
+ttyDriver.c:
+ttyname.c:
+utime.c:
+valloc.c:
+bcopy value declared inconsistently	llib-lc:bcopy.c 2(69)  ::  getpwent.c(268)
+Fs_IOControl, arg. 4 used inconsistently	llib-lc:Fs_IOControl.c(54)  ::  getwd.c(61)
+Fs_IOControl, arg. 6 used inconsistently	llib-lc:Fs_IOControl.c(54)  ::  getwd.c(61)
+bzero value declared inconsistently	llib-lc:bzero.c 2(58)  ::  getwd.c(221)
+ioctl, arg. 3 used inconsistently	llib-lc:ioctl.c(79)  ::  gtty.c(46)
+bzero value declared inconsistently	llib-lc:bzero.c 2(58)  ::  ndbm.c(337)
+bcopy value declared inconsistently	llib-lc:bcopy.c 2(69)  ::  ndbm.c(514)
+PdevDefaultOpen, arg. 5 used inconsistently	pdev.c(1173)  ::  pdev.c(651)
+bzero value declared inconsistently	llib-lc:bzero.c 2(58)  ::  pdev.c(1314)
+bcopy value declared inconsistently	llib-lc:bcopy.c 2(69)  ::  pdev.c(924)
+Fs_IOControl, arg. 4 used inconsistently	llib-lc:Fs_IOControl.c(54)  ::  pfs.c(675)
+Fs_IOControl, arg. 4 used inconsistently	llib-lc:Fs_IOControl.c(54)  ::  pfs.c(720)
+Fs_IOControl, arg. 6 used inconsistently	llib-lc:Fs_IOControl.c(54)  ::  pfs.c(720)
+bcopy value declared inconsistently	llib-lc:bcopy.c 2(69)  ::  pfs.c(152)
+_exit value declared inconsistently	llib-lc:_exit.c(43)  ::  popen.c(62)
+ioctl, arg. 3 used inconsistently	llib-lc:ioctl.c(79)  ::  stty.c(45)
+signal returns value which is sometimes ignored
+Fs_GetAttributesID returns value which is always ignored
+execl returns value which is always ignored
+ioctl returns value which is sometimes ignored
+getgrent.c(42):grskip returns value which is sometimes ignored
+fcntl returns value which is always ignored
+select returns value which is sometimes ignored
+fstat returns value which is sometimes ignored
+strcat returns value which is always ignored
+Fs_IOControl returns value which is sometimes ignored
+strcpy returns value which is always ignored
+fchmod returns value which is always ignored
+close returns value which is always ignored
+dup2 returns value which is always ignored
+fclose returns value which is always ignored
+fflush returns value which is always ignored
+fprintf returns value which is always ignored
+fputc returns value which is always ignored
+fputs returns value which is always ignored
+printf returns value which is always ignored
+sprintf returns value which is always ignored

@@ -1,0 +1,32 @@
+' Copyright 1989 Regents of the University of California
+' Permission to use, copy, modify, and distribute this
+' documentation for any purpose and without fee is hereby
+' granted, provided that this notice appears in all copies.
+' The University of California makes no representations about
+' the suitability of this material for any purpose.  It is
+' provided "as is" without express or implied warranty.
+' 
+' $Header: /a/attcmds/lpass1/RCS/lpass1.man,v 1.1 89/01/18 11:58:42 ouster Exp $ SPRITE (Berkeley)
+' 
+.so \*(]ltmac.sprite
+.HS LPASS1 cmds
+.BS
+.SH NAME
+lpass1 \- First pass of lint program
+.SH SYNOPSIS
+.nf
+\fBlpass1\fR [\fIoptions\fR]\fR
+.SH OPTIONS
+.PP
+See code for details.
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBLpass1\fR is a program used internally by \fBlint\fR.  It 
+reads its standard input, checking for lint errors and outputting
+procedure linkage information to standard output for use by the
+\fBlpass2\fR program during \fBlint\fR's second pass.
+
+.SH KEYWORDS
+check, lint, pass

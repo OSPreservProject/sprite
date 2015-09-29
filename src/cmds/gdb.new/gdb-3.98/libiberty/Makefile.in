@@ -1,0 +1,95 @@
+#
+# Makefile for libiberty directory
+#
+
+#CC = gcc -b$(target) -g -nostdinc
+#CFLAGS= -I- -I/usr/local/lib/gcc/$(target)/1.92/include -I$(srcdir) -I$(srcdir)/../include
+
+srcdir = .
+destdir = /usr/local
+
+libdir = $(destdir)/lib
+
+CFILES = getopt.c getopt1.c obstack.c
+OFILES = getopt.o getopt1.o obstack.o
+
+TARGETLIB = libiberty.a
+RANLIB = ranlib
+AR = ar
+AR_FLAGS = crv
+CFLAGS = -I$(srcdir)/../include
+
+STAGESTUFF = $(TARGETLIB) $(OFILES)
+
+all:	$(TARGETLIB)
+
+install: all
+	install -c $(TARGETLIB) $(libdir)/$(TARGETLIB)
+	$(RANLIB) $(libdir)/$(TARGETLIB)
+
+$(TARGETLIB): $(OFILES)
+	rm -rf $(TARGETLIB)
+	$(AR) $(AR_FLAGS) $(TARGETLIB) $(OFILES)
+	$(RANLIB) $(TARGETLIB)
+
+.PHONEY: all etags tags ls clean stage1 stage2
+
+stage1: force
+	- mkdir stage1
+	- mv -f $(STAGESTUFF) stage1
+
+stage2: force
+	- mkdir stage2
+	- mv -f $(STAGESTUFF) stage2
+
+stage3: force
+	- mkdir stage3
+	- mv -f $(STAGESTUFF) stage3
+
+stage4: force
+	- mkdir stage4
+	- mv -f $(STAGESTUFF) stage4
+
+against=stage2
+
+comparison: force
+	for i in *.o ; do cmp $$i $(against)/$$i || exit 1 ; done
+
+de-stage1: force
+	- (cd stage1 ; mv -f * ..)
+	- rmdir stage1
+
+de-stage2: force
+	- (cd stage2 ; mv -f * ..)
+	- rmdir stage2
+
+de-stage3: force
+	- (cd stage3 ; mv -f * ..)
+	- rmdir stage3
+
+de-stage4: force
+	- (cd stage4 ; mv -f * ..)
+	- rmdir stage4
+
+etags tags: TAGS
+
+TAGS: $(CFILES)
+	etags $(HFILES) $(CFILES)
+
+ls:
+	@echo Makefile $(HFILES) $(CFILES)
+
+# Need to deal with profiled libraries, too.
+
+clean:
+	rm -f *.a *.o core errs *~ \#* TAGS *.E
+
+force:
+
+Makefile: $(srcdir)/Makefile.in $(srcdir)/configure
+	(cd $(srcdir) ; \
+		./configure +norecurse \
+		+destdir=$(destdir) \
+		`if [ "$(srcdir)" != "." ] ; then echo +f; fi` \
+		$(host) +target=$(target))
+

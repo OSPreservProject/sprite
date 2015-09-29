@@ -1,0 +1,20 @@
+D DS3100_M                          	ds3100.md
+F FSIO.H;1                          	fsio.h
+F FSIOCLIE.C;1                      	fsioClientList.c
+F FSIODEVI.C;1                      	fsioDevice.c
+F FSIODEVI.H;1                      	fsioDevice.h
+F FSIOFILE.C;1                      	fsioFile.c
+F FSIOFILE.H;1                      	fsioFile.h
+F FSIOLOCK.C;1                      	fsioLock.c
+F FSIOLOCK.H;1                      	fsioLock.h
+F FSIOMIGR.C;1                      	fsioMigrate.c
+F FSIOOPS.C;1                       	fsioOps.c
+F FSIOPIPE.C;1                      	fsioPipe.c
+F FSIOPIPE.H;1                      	fsioPipe.h
+F FSIORPC.H;1                       	fsioRpc.h
+F FSIOSTR0.C;1                      	fsioStream.c
+F FSIOSTR1.C;1                      	fsioStreamOpTable.c
+L LOCAL.MK;1                        	local.mk	../main/local.mk
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+D SUN3_MD                           	sun3.md

@@ -1,0 +1,9 @@
+D COPYIN                            	copyin
+D EXECTEST                          	exectest
+D FORK                              	fork
+D GETPID                            	getpid
+D GETTIMEO                          	gettimeofday
+D ITC                               	itc
+D READ                              	read
+D RPCECHO                           	rpcecho
+D SYSCALL                           	syscall

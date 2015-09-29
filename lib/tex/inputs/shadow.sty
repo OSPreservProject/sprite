@@ -1,0 +1,61 @@
+%
+% File:     SHADOW.STY
+%           (adapted from the file dropshadow.tex by drstrip@cd.sandia.gov)
+%
+% Creation date: 6 June 1990
+% 
+% Abstract: The command \shabox has the same meaning of the LaTeX command
+%           \fbox except for the fact that a "shadow" is added to the
+%           bottom and the right side of the box.
+%           It computes the right dimension of the box, also if the text
+%           spans over more than one line; in this case a warning message
+%           is given.
+%           There are three parameters governing:
+%        1. the width of the lines comprising the box -> \sboxrule
+%        2. the separation between the edge of the box
+%           and its contents -> \sboxsep
+%        3. the dimension of the shadow -> \sdim
+%           To use this file put it in the preamble, as usual:
+%           \documentstyle[...,shadow,...]{...}
+%
+% Sintax:   \shabox{<text>}
+%           where <text> is the text to be put in the framed box. It can
+%           be an entire paragraph.
+% Example:  \shabox{This is an example.}
+%
+% Author:   Mauro Orlandini
+%           NASA/Goddard Space Flight Center - Greenbelt, MD 20771 - USA
+%           ORLANDINI@LHEAVX.SPAN.NASA.GOV   (Bitnet)
+%           ORLANDINI@LHEAVX.GSFC.NASA.GOV   (Internet)
+%           6224::ORLANDINI                  (SPAN)
+%
+\newdimen\sht  \newdimen\shw  \newbox\shbox
+\newdimen\sboxsep  \newdimen\sboxrule  \newdimen\sdim
+\sboxsep  = 10pt
+\sdim     = 4pt
+\sboxrule = .4pt
+\def\shabox#1{\setbox\@tempboxa\hbox{#1}
+\shw\wd\@tempboxa  
+\ifdim\shw<\textwidth 
+  \leavevmode\setbox\@tempboxa\hbox{#1}
+\else
+  \typeout{Shadow Warning: Box dimension greater than textwidth.}
+  \setbox\@tempboxa\vbox{\hsize\textwidth\advance\hsize-2\sboxsep
+       \advance\hsize-2\sboxrule \advance\hsize-\sdim#1}
+\fi
+ \setbox\shbox\hbox{\@tempdima\sboxrule
+     \advance\@tempdima \sboxsep \advance\@tempdima \dp\@tempboxa
+    \hbox{\lower \@tempdima\hbox
+   {\vbox{\hrule \@height \sboxrule
+           \hbox{\vrule \@width \sboxrule \hskip\sboxsep
+  	    \vbox{\vskip\sboxsep \box\@tempboxa\vskip\sboxsep}\hskip
+	 		 \sboxsep\vrule \@width \sboxrule}
+	 	   \hrule \@height \sboxrule}}}}
+\sht\ht\shbox \advance\sht-\sdim
+\leavevmode\vbox{\baselineskip0pt\lineskip0pt
+             \hbox{\copy\shbox\vrule width\sdim height\sht}
+             \hbox{\kern\sdim\vrule height\sdim width \wd\shbox}}}
+%
+% End of SHADOW.STY
+%
+

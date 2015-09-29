@@ -1,0 +1,8 @@
+
+
+          cindex string indexExpr
+               Returns the character indexed by the expression
+               indexExpr (zero based) from string. This command is a
+               shortcut for:
+
+                   string index string [expr indexExpr]

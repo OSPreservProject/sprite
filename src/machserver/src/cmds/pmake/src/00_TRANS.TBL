@@ -1,0 +1,24 @@
+F ARCH.C;1                          	arch.c
+F BUF.C;1                           	buf.c
+F BUF.H;1                           	buf.h
+F COMPAT.C;1                        	compat.c
+F COND.C;1                          	cond.c
+F CONFIG.H;1                        	config.h
+F DIR.C;1                           	dir.c
+D DS3100_M                          	ds3100.md
+F JOB.C;1                           	job.c
+F JOB.H;1                           	job.h
+F LOCAL.MK;1                        	local.mk
+L LST.H;1                           	lst.h	../lst/lst.h
+F MAIN.C;1                          	main.c
+F MAKE.C;1                          	make.c
+F MAKE.H;1                          	make.h
+F MAKEFILE.;1                       	Makefile
+F NONINTS.H;1                       	nonints.h
+F PARSE.C;1                         	parse.c
+D RCS                               	RCS
+F RMT.C;1                           	rmt.c
+F STR.C;1                           	str.c
+F SUFF.C;1                          	suff.c
+F TARG.C;1                          	targ.c
+F VAR.C;1                           	var.c

@@ -1,0 +1,15 @@
+sysCalls.c:
+sysCode.c:
+sysPrintf.c:
+spriteSrvServer.c:
+spriteSrvServer.c(1906): warning: msgh_simple set but not used in function _XVm_CmdInbandStub
+spriteSrvServer.c(9083): warning: msgh_simple set but not used in function _XProc_ExecEnvStub
+sysTestCall.c:
+sysSysCall.c:
+bzero, arg. 1 used inconsistently	sysCalls.c(966)  ::  sysCalls.c(1113)
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(473)  ::  sysTestCall.c(285)
+Timer_GetTimeOfDay, arg. 2 used inconsistently	llib-ltimer:timerClock.c 2(208)  ::  sysSysCall.c(565)
+Timer_GetTimeOfDay, arg. 3 used inconsistently	llib-ltimer:timerClock.c 2(208)  ::  sysSysCall.c(565)
+Timer_GetTimeOfDay, arg. 2 used inconsistently	llib-ltimer:timerClock.c 2(208)  ::  sysSysCall.c(574)
+Timer_GetTimeOfDay, arg. 3 used inconsistently	llib-ltimer:timerClock.c 2(208)  ::  sysSysCall.c(574)
+sprintf returns value which is always ignored

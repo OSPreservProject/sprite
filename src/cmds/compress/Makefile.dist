@@ -1,0 +1,22 @@
+bindir=/usr/local
+sacred=-DSACREDMEM=256000
+system=-DBSD4_2
+CFLAGS=-O
+
+compress: compress.c USERMEM
+	cc $(CFLAGS) $(sacred) $(system) -DUSERMEM=`cat USERMEM` -o compress compress.c
+
+# USERMEM may have to be set by hand.  It should contain the amount of
+# available user memory in bytes.  Set it to zero, for physical memory
+# less than 1 Meg.
+USERMEM:
+	sh usermem.sh > USERMEM
+
+install: compress
+	install -s compress $(bindir)
+	rm -f $(bindir)/uncompress $(bindir)/zcat
+	ln $(bindir)/compress $(bindir)/uncompress
+	ln $(bindir)/compress $(bindir)/zcat
+
+clean:
+	rm -f compress USERMEM core

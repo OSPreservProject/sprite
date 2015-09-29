@@ -1,0 +1,1160 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  ;
+locks    mgbaker:1.4; strict;
+comment  @ * @;
+
+
+1.4
+date     89.01.18.00.07.38;  author mgbaker;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.01.11.11.58.21;  author mlgray;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.11.02.14.50.49;  author mlgray;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.10.03.12.48.21;  author mlgray;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@X11: works pretty much now.
+@
+
+
+1.4
+log
+@John changed mx/tx color interface, so I fixed wish.
+@
+text
+@/* 
+ * wishMain.c --
+ *
+ *	Main routine for wish stuff.
+ *
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /a/newcmds/wish/RCS/wishMain.c,v 1.3 89/01/11 11:58:21 mlgray Exp Locker: mgbaker $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
+#define	Time	SpriteTime
+#include <sys/time.h>
+#include "string.h"
+#include <fs.h>
+#include "sx.h"
+#include "util.h"
+#include "monitorClient.h"
+#include "wishInt.h"
+#include <signal.h>
+
+int	size;
+
+/*
+ * The global table in which pointers to window information for each
+ * wish window is kept.
+ */
+XContext	wishWindowContext;
+XContext	wishGroupWindowContext;
+
+/* Whether debugging is turned on or not */
+Boolean		wishDebugP = FALSE;
+
+/* Whether the application should pick the initial window size */
+Boolean		wishPickSizeP = TRUE;
+/* whether the application can resize the window */
+Boolean		wishResizeP = FALSE;
+/* whether to display headers for groups with no files. */
+Boolean		wishShowEmptyGroupsP = FALSE;
+/* The display */
+Display		*wishDisplay;
+
+/*
+ * The application name.
+ */
+char	*wishApplication = "wish";
+
+/*
+ * For formulating error strings.  How big is big enough?
+ */
+char	wishErrorMsg[2 * MAXPATHLEN + 50];
+
+/* Display info for calculating max size of windows */
+int		wishRootHeight;
+int		wishRootWidth;
+
+/* Keep track of current directory. */
+char	wishCurrentDirectory[MAXPATHLEN + 1];
+
+/*
+ * Wish's startup directory in which to look for the default .files if there
+ * aren't others.
+ */
+char	wishStartUp[MAXPATHLEN];
+
+#ifdef ICON
+/*
+ * Icon window information.
+ */
+
+#define ICONDIR	"/usr2/icon/X"
+
+typedef struct {
+    int x;			/* Initial X, Y positions. */
+    int y;			
+    int width;
+    int height;
+    int foreground;		/* Foreground, background colors 
+				 * are same as the main window. */
+    int background;
+    char *name;			/* Filename of the icon bitmap file. */
+    Pixmap bitmap;		/* Bitmap data. */
+    Window window;		/* ID of the icon window. */
+} TxIconInfo;
+static TxIconInfo iconInfo = { 0, 0, 0, 0, 0, 0, NULL, NULL,};
+static void CreateIcon();
+#endif /* ICON */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	Main routine for wish.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Many.
+ *
+ *----------------------------------------------------------------------
+ */
+main(argc, argv)
+    int	argc;
+    char	*argv[];
+{
+    char	*string;
+    char	*geometry = NULL;	/* for window set-up */
+    char	*font;
+    WishWindow	*aWindow = NULL;
+    char	*startDir = NULL;
+    int		displayMask = 0;
+    int		numFDs;
+#ifdef NOTDEF
+    struct	timeval	alarm;
+#else /* NOTDEF */
+    SpriteTime	alarm;
+#endif /* NOTDEF */
+    int		monitorMask;
+    char	*cPtr;
+    extern	void	HandleMonitorEvent();
+    extern	void	WishDisplayEventProc();
+    extern	void	HandleMonitorStats();
+
+    /*
+     * Process command line arguments.
+     */
+    while (argc > 1 ) { 
+	argc--;
+	argv++;
+	if (strcmp(argv[0], "-debug") == 0) {
+	    wishDebugP = TRUE;
+	    continue;
+	}
+	if (strcmp(argv[0], "-nopick") == 0) {
+	    wishPickSizeP = FALSE;
+	    continue;
+	}
+	if (strcmp(argv[0], "-resize") == 0) {
+	    wishResizeP = TRUE;
+	    continue;
+	}
+	if (strcmp(argv[0], "-empty") == 0) {
+	    wishShowEmptyGroupsP = TRUE;
+	    continue;
+	}
+	if (strcmp(argv[0], "-usage") == 0 ||
+		strcmp(argv[0], "-u") == 0) {
+	    fprintf(stderr, "%s\n\n%s\n%s\n%s\n%s\n",
+		    "wish -debug -nopick -resize -empty -usage dirname",
+		    "-debug	Print debug messages and don't fork.",
+		    "-nopick	Don't automatically pick initial window size.",
+		    "-resize	Allow automatic resizing of window.",
+		    "-empty	Display headers for groups without entries.");
+	    exit(1);
+	}
+	startDir = argv[0];
+    }
+    /* get directory in which we're starting up */
+    (void) Whence(wishStartUp, argv[0]);
+
+    /* Don't fork into background if debugging is on - so dbx works, etc. */
+    if (!wishDebugP) {
+	Proc_Detach(0);
+    }
+    /*
+     * Initialize the display and wishWindowContext and
+     * wishGroupWindowContext.
+     */
+    if ((wishDisplay = XOpenDisplay(NULL)) == NULL) {
+	fprintf(stderr, "Could not open display.\n");
+	exit(1);
+    }
+    if (wishDebugP) {
+	XSynchronize(wishDisplay, True);
+    }
+    Sx_SetErrorHandler();
+
+    wishRootHeight = DisplayHeight(wishDisplay,
+	    DefaultScreen(wishDisplay));
+    wishRootWidth = DisplayWidth(wishDisplay,
+	    DefaultScreen(wishDisplay));
+
+    /*
+     * 8 should be more than enough considering there's only 1 window
+     * right now!
+     */
+    wishWindowContext = XUniqueContext();
+    wishGroupWindowContext = XUniqueContext();
+
+    /*
+     * Create a dummy structure for passing to WishCreate to create
+     * the first window and then process XDefault arguments.  
+     */
+    aWindow = (WishWindow *) malloc(sizeof (WishWindow));
+	
+    if (startDir != NULL) {
+	if (Util_CanonicalDir(startDir, NULL, aWindow->dir) == NULL) {
+	    /* error message returned in aWindow->dir */
+	    Sx_Panic(wishDisplay, aWindow->dir);
+	}
+    } else if (getwd(aWindow->dir) == NULL) {
+	sprintf(wishErrorMsg,
+		"%s: Couldn't get current working directory.\n",
+		wishApplication);
+	Sx_Panic(wishDisplay, wishErrorMsg);
+    }
+
+    if ((string = XGetDefault(wishDisplay, wishApplication,
+	    "Background")) != NULL) {
+	if ((aWindow->background =
+		Util_StringToColor(wishDisplay, string)) == -1) {
+	    aWindow->background = BlackPixel(wishDisplay,
+		    DefaultScreen(wishDisplay));
+	}
+    } else {
+	aWindow->background = BlackPixel(wishDisplay,
+		DefaultScreen(wishDisplay));
+    }
+
+    if ((string = XGetDefault(wishDisplay, wishApplication,
+	    "Foreground")) != NULL) {
+	if ((aWindow->foreground =
+		Util_StringToColor(wishDisplay, string)) == -1) {
+	    /* Try to make it the opposite of the background */
+	    if (aWindow->background == WhitePixel(wishDisplay,
+		    DefaultScreen(wishDisplay))) {
+		aWindow->foreground = BlackPixel(wishDisplay,
+			DefaultScreen(wishDisplay));
+	    } else {
+		aWindow->foreground = WhitePixel(wishDisplay,
+			DefaultScreen(wishDisplay));
+	    }
+	}	
+    /* At least try to make it the opposite of the background */
+    } else if (aWindow->background == WhitePixel(wishDisplay,
+	    DefaultScreen(wishDisplay))) {
+	aWindow->foreground = BlackPixel(wishDisplay,
+		DefaultScreen(wishDisplay));
+    } else {
+	aWindow->foreground = WhitePixel(wishDisplay,
+	    DefaultScreen(wishDisplay));
+    }
+
+    if ((string = XGetDefault(wishDisplay, wishApplication, "Border"))
+	    != NULL) {
+	if ((aWindow->border =
+		Util_StringToColor(wishDisplay, string)) == -1) {
+	    /* Try to make it the opposite of the background */
+	    if (aWindow->background == WhitePixel(wishDisplay,
+		    DefaultScreen(wishDisplay))) {
+		aWindow->border = BlackPixel(wishDisplay,
+			DefaultScreen(wishDisplay));
+	    } else {
+		aWindow->border = WhitePixel(wishDisplay,
+			DefaultScreen(wishDisplay));
+	    }
+	}
+    /* At least try to make it the opposite of the background */
+    } else if (aWindow->background == WhitePixel(wishDisplay,
+	    DefaultScreen(wishDisplay))) {
+	aWindow->border = BlackPixel(wishDisplay,
+		DefaultScreen(wishDisplay));
+    } else {
+	aWindow->border = WhitePixel(wishDisplay,
+		DefaultScreen(wishDisplay));
+    }
+
+    if ((string = XGetDefault(wishDisplay, wishApplication, "Selection"))
+	    != NULL) {
+	if ((aWindow->selection =
+		Util_StringToColor(wishDisplay, string)) == -1) {
+	    /* Try to make it the opposite of the background */
+	    if (aWindow->background == WhitePixel(wishDisplay,
+		    DefaultScreen(wishDisplay))) {
+		aWindow->selection = BlackPixel(wishDisplay,
+			DefaultScreen(wishDisplay));
+	    } else {
+		aWindow->selection = WhitePixel(wishDisplay,
+			DefaultScreen(wishDisplay));
+	    }
+	}	
+    /* At least try to make it the opposite of the background */
+    } else if (aWindow->background == WhitePixel(wishDisplay,
+	    DefaultScreen(wishDisplay))) {
+	aWindow->selection = BlackPixel(wishDisplay,
+		DefaultScreen(wishDisplay));
+    } else {
+	aWindow->selection = WhitePixel(wishDisplay,
+		DefaultScreen(wishDisplay));
+    }
+ 
+    if ((string = XGetDefault(wishDisplay, wishApplication,
+	    "TitleBackground")) != NULL) {
+	if ((aWindow->titleBackground =
+		Util_StringToColor(wishDisplay, string)) == -1) {
+	    aWindow->titleBackground = aWindow->background;
+	}
+    } else {
+	aWindow->titleBackground = aWindow->background;
+    }
+
+    if ((string = XGetDefault(wishDisplay, wishApplication,
+	    "TxBackground")) != NULL) {
+	if ((aWindow->txBackground =
+		Util_StringToColor(wishDisplay, string)) == -1) {
+	    aWindow->txBackground = aWindow->background;
+	}
+    } else {
+	aWindow->txBackground = aWindow->background;
+    }
+    if ((string = XGetDefault(wishDisplay, wishApplication,
+	    "MenuBackground")) != NULL) {
+	if ((aWindow->menuBackground =
+		Util_StringToColor(wishDisplay, string)) == -1) {
+	    aWindow->menuBackground = aWindow->background;
+	}
+    } else {
+	aWindow->menuBackground = aWindow->background;
+    }
+    if ((string = XGetDefault(wishDisplay, wishApplication,
+	    "SortBackground")) != NULL) {
+	if ((aWindow->sortBackground =
+		Util_StringToColor(wishDisplay, string)) == -1) {
+	    aWindow->sortBackground = aWindow->background;
+	}
+    } else {
+	aWindow->sortBackground = aWindow->background;
+    }
+    if ((string = XGetDefault(wishDisplay, wishApplication,
+	    "FieldsBackground")) != NULL) {
+	if ((aWindow->fieldsBackground =
+		Util_StringToColor(wishDisplay, string)) == -1) {
+	    aWindow->fieldsBackground = aWindow->background;
+	}
+    } else {
+	aWindow->fieldsBackground = aWindow->background;
+    }
+
+    if ((string = XGetDefault(wishDisplay, wishApplication,
+	    "EntryBackground")) != NULL) {
+	if ((aWindow->entryBackground =
+		Util_StringToColor(wishDisplay, string)) == -1) {
+	    aWindow->entryBackground = aWindow->background;
+	}
+    } else {
+	aWindow->entryBackground = aWindow->background;
+    }
+
+    if ((string = XGetDefault(wishDisplay, wishApplication,
+	    "ScrollBackground")) != NULL) {
+	if ((aWindow->scrollBackground =
+		Util_StringToColor(wishDisplay, string)) == -1) {
+	    aWindow->scrollBackground = aWindow->background;
+	}
+    } else {
+	aWindow->scrollBackground = aWindow->background;
+    }
+
+    if ((string = XGetDefault(wishDisplay, wishApplication,
+	    "TitleForeground")) != NULL) {
+	if ((aWindow->titleForeground =
+		Util_StringToColor(wishDisplay, string)) == -1) {
+	    aWindow->titleForeground = aWindow->foreground;
+	}	
+    } else {
+	aWindow->titleForeground = aWindow->foreground;
+    }
+
+    if ((string = XGetDefault(wishDisplay, wishApplication,
+	    "TxForeground")) != NULL) {
+	if ((aWindow->txForeground =
+		Util_StringToColor(wishDisplay, string)) == -1) {
+	    aWindow->txForeground = aWindow->foreground;
+	}	
+    } else {
+	aWindow->txForeground = aWindow->foreground;
+    }
+
+    if ((string = XGetDefault(wishDisplay, wishApplication,
+	    "MenuForeground")) != NULL) {
+	if ((aWindow->menuForeground =
+		Util_StringToColor(wishDisplay, string)) == -1) {
+	    aWindow->menuForeground = aWindow->foreground;
+	}
+    } else {
+	aWindow->menuForeground = aWindow->foreground;
+    }
+
+    if ((string = XGetDefault(wishDisplay, wishApplication,
+	    "SortForeground")) != NULL) {
+	if ((aWindow->sortForeground =
+		Util_StringToColor(wishDisplay, string)) == -1) {
+	    aWindow->sortForeground = aWindow->foreground;
+	}	
+    } else {
+	aWindow->sortForeground = aWindow->foreground;
+    }
+
+    if ((string = XGetDefault(wishDisplay, wishApplication,
+	    "FieldsForeground")) != NULL) {
+	if ((aWindow->fieldsForeground =
+		Util_StringToColor(wishDisplay, string)) == -1) {
+	    aWindow->fieldsForeground = aWindow->foreground;
+	}	
+    } else {
+	aWindow->fieldsForeground = aWindow->foreground;
+    }
+
+    if ((string = XGetDefault(wishDisplay, wishApplication,
+	    "EntryForeground")) != NULL) {
+	if ((aWindow->entryForeground =
+		Util_StringToColor(wishDisplay, string)) == -1) {
+	    aWindow->entryForeground = aWindow->foreground;
+	}	
+    } else {
+	aWindow->entryForeground = aWindow->foreground;
+    }
+
+    if ((string = XGetDefault(wishDisplay, wishApplication,
+	    "ScrollForeground")) != NULL) {
+	if ((aWindow->scrollForeground =
+		Util_StringToColor(wishDisplay, string)) == -1) {
+	    aWindow->scrollForeground = aWindow->foreground;
+	}	
+    } else {
+	aWindow->scrollForeground = aWindow->foreground;
+    }
+
+    if ((string = XGetDefault(wishDisplay, wishApplication,
+	    "BorderWidth")) != NULL) {
+	if ((aWindow->borderWidth = strtol(string, &cPtr, 10)) == 0 &&
+		cPtr == string) {
+	    /* AtoI failed */
+	    aWindow->borderWidth = 2;
+	}
+    } else {
+	aWindow->borderWidth = 2;
+    }
+
+    if ((string = XGetDefault(wishDisplay, wishApplication,
+	    "TitleBorder")) != NULL) {
+	if ((aWindow->titleBorder =
+		Util_StringToColor(wishDisplay, string)) == -1) {
+	    aWindow->titleBorder = aWindow->border;
+	}
+    } else {
+	aWindow->titleBorder = aWindow->border;
+    }
+
+    if ((string = XGetDefault(wishDisplay, wishApplication, "TxBorder"))
+	    != NULL) {
+	if ((aWindow->txBorder =
+		Util_StringToColor(wishDisplay, string)) == -1) {
+	    aWindow->txBorder = aWindow->border;
+	}
+    } else {
+	aWindow->txBorder = aWindow->border;
+    }
+
+    if ((string = XGetDefault(wishDisplay, wishApplication,
+	    "ScrollElevator")) != NULL) {
+	if ((aWindow->scrollElevator =
+		Util_StringToColor(wishDisplay, string)) == -1) {
+	    aWindow->scrollElevator = aWindow->scrollForeground;
+	}	
+    } else {
+	aWindow->scrollElevator = aWindow->scrollForeground;
+    }
+
+    if ((geometry = XGetDefault(wishDisplay, wishApplication, "Geometry"))
+	    == NULL) {
+	geometry = "=550x350+160+160";
+    }
+    aWindow->geometry = geometry;
+
+    if ((font = XGetDefault(wishDisplay, wishApplication, "Font"))
+	    != NULL) {
+	aWindow->fontPtr = XLoadQueryFont(wishDisplay, font);
+	if (aWindow->fontPtr != NULL) {
+	    Sx_SetDefaultFont(aWindow->fontPtr);
+	} else {
+	    aWindow->fontPtr = Sx_GetDefaultFont(wishDisplay);
+	}
+    } else {
+	aWindow->fontPtr = Sx_GetDefaultFont(wishDisplay);
+    }
+
+    if ((font = XGetDefault(wishDisplay, wishApplication, "TitleFont"))
+	    != NULL) {
+	aWindow->titleFontPtr = XLoadQueryFont(wishDisplay, font);
+	if (aWindow->titleFontPtr != NULL) {
+	    Sx_SetDefaultFont(aWindow->titleFontPtr);
+	}
+    }
+    if (aWindow->titleFontPtr == NULL) {
+	aWindow->titleFontPtr = Sx_GetDefaultFont(wishDisplay);
+    }
+
+    aWindow->interp = NULL;
+
+    if (!MonClient_Register()) {
+	Sx_Panic(wishDisplay,
+		"Initialization of file system monitor failed.");
+    }
+
+    /* create the first window */
+    if (startDir != NULL) {
+	if (WishCreate(aWindow, startDir) == NULL) {
+	    Sx_Panic(wishDisplay, "Couldn't create flat display window.");
+	}
+    } else {
+	if (WishCreate(aWindow, NULL) == NULL) {
+	    Sx_Panic(wishDisplay, "Couldn't create flat display window.");
+	}
+    }
+    free(aWindow);		/* free dummy structure */
+
+#ifdef ICON
+    /*
+     * Create the icon for the window. This must done after the
+     * main window is initialized.
+     */
+
+    CreateIcon(display, window, info.foreground, info.background);
+#endif /* ICON */
+
+    alarm.seconds = 5;
+    alarm.microseconds = 0;
+    Fs_EventHandlerCreate(monClient_ReadPort, FS_READABLE,
+	    HandleMonitorEvent, NULL);
+    Fs_EventHandlerCreate(ConnectionNumber(wishDisplay), FS_READABLE,
+	    WishDisplayEventProc, NULL);
+    Fs_TimeoutHandlerCreate(alarm, TRUE, HandleMonitorStats,
+	    (ClientData) NULL);
+    while (wishWindowCount > 0) {
+	while ((size = QLength(wishDisplay)) > 0) {
+	    XEvent	event;
+
+	    XNextEvent(wishDisplay, &event);
+	    Sx_HandleEvent(&event);
+	}
+	Tx_FlushStreams();
+	Tx_Update();
+	Mx_Update();
+	if ((size = QLength(wishDisplay)) > 0) {
+	    continue;
+	}
+	XFlush(wishDisplay);
+	Fs_Dispatch();
+    }
+
+# ifdef NOTDEF
+/*
+ * Can't do this yet.  I don't know what I'll do about the utmp
+ * stuff for now.
+ */
+    if (txRegisterPty) {
+	char	*ptyName;
+   
+	if ((ptyName = TxWindowToPtyName(window)) != NULL) {
+	    (void) TxUtmpEntry(FALSE, ptyName, (char *) NULL);
+	}
+    }
+# endif /* NOTDEF */
+    exit(0);
+}
+
+
+void
+WishDisplayEventProc(clientData, streamID, eventMask)
+    ClientData	clientData;
+    int		streamID;
+    int		eventMask;
+{
+    static	int	count = 0;
+    XEvent	event;
+
+    do {
+	count++;
+	XNextEvent(wishDisplay, &event);
+	Sx_HandleEvent(&event);
+    } while (QLength(wishDisplay) > 0);
+
+    return;
+}
+
+void
+HandleMonitorStats(clientData, time)
+    ClientData	clientData;
+    SpriteTime	time;
+{
+    Mon_StatDirs();
+    return;
+}
+
+void
+HandleMonitorEvent(clientData, streamID, eventMask)
+    ClientData	clientData;
+    int		streamID;
+    int		eventMask;
+{
+    WishHandleMonitorUpdates();
+    return;
+}
+
+#ifdef ICON
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CreateIcon --
+ *
+ *	This procedure creates an icon window for the main window 
+ *	using data read in from a X bitmap file.
+ *
+ *	If the icon file name is "localhost", the hostname of the machine
+ *	is used to locate an icon file for the host in a standard directory.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	An icon window is created.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+CreateIcon(display, window, foreground, background)
+    Display	*display;
+    Window window;		/* An icon will be created for this window. */
+    unsigned long foreground;	/* Foreground color of the icon. */
+    unsigned long background;	/* Background color of the icon. */
+{
+    char iconfile[256];		/* Buffer to hold a complete icon file name. */
+    char hostname[100];		/* Buffer to hold the hostname. */
+    char *dot;
+    int status;
+    XWMHints hints;
+
+    /*
+     * See if a icon file name was given on the command line or is in the
+     * .Xdefaults file.
+     */
+    if (iconInfo.name == (char *) NULL) {
+	iconInfo.name = XGetDefault(display, "tx", "icon");
+	if (iconInfo.name == (char *) NULL) {
+	    return;
+	}
+    }
+
+    /*
+     * If the file name is localhost, look in a standard directory for
+     * a file named after the host.
+     */
+    if (strcmp(iconInfo.name, "localhost") == 0) {
+	gethostname(hostname, sizeof(hostname));
+	dot = strchr(hostname, '.');
+	if (dot != (char *) NULL) {
+	    *dot = '\0';
+	}
+	sprintf(iconfile, "%s/%s", ICONDIR, hostname);
+	iconInfo.name = iconfile;
+    }
+
+    status = XReadBitmapFile(display, window, iconInfo.name, &iconInfo.width,
+	    &iconInfo.height, &iconInfo.bitmap, 0, 0);
+
+    if (status == 0) {
+	fprintf(stderr,
+		"Tx: can't open icon file %s, using default icon.\n", 
+		iconInfo.name);
+	return;
+    } else if (status < 0) {
+	fprintf(stderr, 
+		"Tx: icon file %s has invalid format.\n", iconInfo.name);
+	return;
+    }
+
+    hints.flags = InputHint|StateHint|IconWindowHint
+	    |IconPixmapHint|IconPositionHint;
+    hints.input = False;
+    hints.icon_pixmap = iconInfo.bitmap;
+    hints.icon_window = XCreateSimpleWindow(display,
+	    RootWindow(display, DefaultScreen(display)),
+	    iconInfo.x, iconInfo.y, iconInfo.width, iconInfo.height,
+	    0, foreground, background);
+    hints.icon_x = iconInfo.x;
+    hints.icon_y = iconInfo.y;
+    XSetWMHints(display, window, &hints);
+
+#ifdef notdef	/* Shouldn't be needed under X11. */
+    (void) Sx_HandlerCreate(display, iconInfo.window, ExposureMask,
+	    RefreshIcon, (ClientData) 0);
+#endif
+}
+#endif /* ICON */
+@
+
+
+1.3
+log
+@Temporary checkin
+@
+text
+@d4 1
+a4 2
+ *	Main routine for wish stuff.  Right now I'm just testing the
+ *	new scrollbar stuff.
+d18 1
+a18 1
+static char rcsid[] = "$Header: /a/newcmds/wish/RCS/wishMain.c,v 1.2 88/11/02 14:50:49 mlgray Exp Locker: mlgray $ SPRITE (Berkeley)";
+@
+
+
+1.2
+log
+@fsflat changed to wish
+@
+text
+@d19 1
+a19 1
+static char rcsid[] = "$Header: wishMain.c,v 1.1 88/10/03 12:48:21 mlgray Exp $ SPRITE (Berkeley)";
+d72 6
+d173 3
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d2 1
+a2 1
+ * fsflatMain.c --
+d4 1
+a4 1
+ *	Main routine for fsflat stuff.  Right now I'm just testing the
+d19 1
+a19 1
+static char rcsid[] = "$Header: fsflatMain.c,v 1.11 88/06/10 13:15:07 mlgray Exp $ SPRITE (Berkeley)";
+d31 1
+a31 1
+#include "fsflatInt.h"
+d38 1
+a38 1
+ * fsflat window is kept.
+d40 2
+a41 2
+XContext	fsflatWindowContext;
+XContext	fsflatGroupWindowContext;
+d44 1
+a44 1
+Boolean		fsflatDebugP = FALSE;
+d47 1
+a47 1
+Boolean		fsflatPickSizeP = TRUE;
+d49 1
+a49 1
+Boolean		fsflatResizeP = FALSE;
+d51 1
+a51 1
+Boolean		fsflatShowEmptyGroupsP = FALSE;
+d53 1
+a53 1
+Display		*fsflatDisplay;
+d58 1
+a58 1
+char	*fsflatApplication = "fsflat";
+d63 1
+a63 1
+char	fsflatErrorMsg[2 * MAXPATHLEN + 50];
+d66 2
+a67 2
+int		fsflatRootHeight;
+int		fsflatRootWidth;
+d70 1
+a70 1
+char	fsflatCurrentDirectory[MAXPATHLEN + 1];
+d72 23
+d101 1
+a101 1
+ *	Main routine for fsflat.
+d118 1
+a118 1
+    FsflatWindow	*aWindow = NULL;
+d130 1
+a130 1
+    extern	void	FsflatDisplayEventProc();
+d140 1
+a140 1
+	    fsflatDebugP = TRUE;
+d144 1
+a144 1
+	    fsflatPickSizeP = FALSE;
+d148 1
+a148 1
+	    fsflatResizeP = TRUE;
+d152 1
+a152 1
+	    fsflatShowEmptyGroupsP = TRUE;
+d158 1
+a158 1
+		    "fsflat -debug -nopick -resize -empty -usage dirname",
+d168 1
+a168 1
+    if (!fsflatDebugP) {
+d172 2
+a173 2
+     * Initialize the display and fsflatWindowContext and
+     * fsflatGroupWindowContext.
+d175 1
+a175 1
+    if ((fsflatDisplay = XOpenDisplay(NULL)) == NULL) {
+d179 2
+a180 2
+    if (fsflatDebugP) {
+	XSynchronize(fsflatDisplay, True);
+d184 4
+a187 4
+    fsflatRootHeight = DisplayHeight(fsflatDisplay,
+	    DefaultScreen(fsflatDisplay));
+    fsflatRootWidth = DisplayWidth(fsflatDisplay,
+	    DefaultScreen(fsflatDisplay));
+d193 2
+a194 2
+    fsflatWindowContext = XUniqueContext();
+    fsflatGroupWindowContext = XUniqueContext();
+d197 1
+a197 1
+     * Create a dummy structure for passing to FsflatCreate to create
+d200 1
+a200 1
+    aWindow = (FsflatWindow *) malloc(sizeof (FsflatWindow));
+d205 1
+a205 1
+	    Sx_Panic(fsflatDisplay, aWindow->dir);
+d208 1
+a208 1
+	sprintf(fsflatErrorMsg,
+d210 2
+a211 2
+		fsflatApplication);
+	Sx_Panic(fsflatDisplay, fsflatErrorMsg);
+d214 1
+a214 1
+    if ((string = XGetDefault(fsflatDisplay, fsflatApplication,
+d217 3
+a219 3
+		Util_StringToColor(fsflatDisplay, string)) == -1) {
+	    aWindow->background = BlackPixel(fsflatDisplay,
+		    DefaultScreen(fsflatDisplay));
+d222 2
+a223 2
+	aWindow->background = BlackPixel(fsflatDisplay,
+		DefaultScreen(fsflatDisplay));
+d226 1
+a226 1
+    if ((string = XGetDefault(fsflatDisplay, fsflatApplication,
+d229 1
+a229 1
+		Util_StringToColor(fsflatDisplay, string)) == -1) {
+d231 4
+a234 4
+	    if (aWindow->background == WhitePixel(fsflatDisplay,
+		    DefaultScreen(fsflatDisplay))) {
+		aWindow->foreground = BlackPixel(fsflatDisplay,
+			DefaultScreen(fsflatDisplay));
+d236 2
+a237 2
+		aWindow->foreground = WhitePixel(fsflatDisplay,
+			DefaultScreen(fsflatDisplay));
+d241 4
+a244 4
+    } else if (aWindow->background == WhitePixel(fsflatDisplay,
+	    DefaultScreen(fsflatDisplay))) {
+	aWindow->foreground = BlackPixel(fsflatDisplay,
+		DefaultScreen(fsflatDisplay));
+d246 2
+a247 2
+	aWindow->foreground = WhitePixel(fsflatDisplay,
+	    DefaultScreen(fsflatDisplay));
+d250 1
+a250 1
+    if ((string = XGetDefault(fsflatDisplay, fsflatApplication, "Border"))
+d253 1
+a253 1
+		Util_StringToColor(fsflatDisplay, string)) == -1) {
+d255 4
+a258 4
+	    if (aWindow->background == WhitePixel(fsflatDisplay,
+		    DefaultScreen(fsflatDisplay))) {
+		aWindow->border = BlackPixel(fsflatDisplay,
+			DefaultScreen(fsflatDisplay));
+d260 2
+a261 2
+		aWindow->border = WhitePixel(fsflatDisplay,
+			DefaultScreen(fsflatDisplay));
+d265 4
+a268 4
+    } else if (aWindow->background == WhitePixel(fsflatDisplay,
+	    DefaultScreen(fsflatDisplay))) {
+	aWindow->border = BlackPixel(fsflatDisplay,
+		DefaultScreen(fsflatDisplay));
+d270 2
+a271 2
+	aWindow->border = WhitePixel(fsflatDisplay,
+		DefaultScreen(fsflatDisplay));
+d274 1
+a274 1
+    if ((string = XGetDefault(fsflatDisplay, fsflatApplication, "Selection"))
+d277 1
+a277 1
+		Util_StringToColor(fsflatDisplay, string)) == -1) {
+d279 4
+a282 4
+	    if (aWindow->background == WhitePixel(fsflatDisplay,
+		    DefaultScreen(fsflatDisplay))) {
+		aWindow->selection = BlackPixel(fsflatDisplay,
+			DefaultScreen(fsflatDisplay));
+d284 2
+a285 2
+		aWindow->selection = WhitePixel(fsflatDisplay,
+			DefaultScreen(fsflatDisplay));
+d289 4
+a292 4
+    } else if (aWindow->background == WhitePixel(fsflatDisplay,
+	    DefaultScreen(fsflatDisplay))) {
+	aWindow->selection = BlackPixel(fsflatDisplay,
+		DefaultScreen(fsflatDisplay));
+d294 2
+a295 2
+	aWindow->selection = WhitePixel(fsflatDisplay,
+		DefaultScreen(fsflatDisplay));
+d298 1
+a298 1
+    if ((string = XGetDefault(fsflatDisplay, fsflatApplication,
+d301 1
+a301 1
+		Util_StringToColor(fsflatDisplay, string)) == -1) {
+d308 1
+a308 1
+    if ((string = XGetDefault(fsflatDisplay, fsflatApplication,
+d311 1
+a311 1
+		Util_StringToColor(fsflatDisplay, string)) == -1) {
+d317 1
+a317 1
+    if ((string = XGetDefault(fsflatDisplay, fsflatApplication,
+d320 1
+a320 1
+		Util_StringToColor(fsflatDisplay, string)) == -1) {
+d326 1
+a326 1
+    if ((string = XGetDefault(fsflatDisplay, fsflatApplication,
+d329 1
+a329 1
+		Util_StringToColor(fsflatDisplay, string)) == -1) {
+d335 1
+a335 1
+    if ((string = XGetDefault(fsflatDisplay, fsflatApplication,
+d338 1
+a338 1
+		Util_StringToColor(fsflatDisplay, string)) == -1) {
+d345 1
+a345 1
+    if ((string = XGetDefault(fsflatDisplay, fsflatApplication,
+d348 1
+a348 1
+		Util_StringToColor(fsflatDisplay, string)) == -1) {
+d355 1
+a355 1
+    if ((string = XGetDefault(fsflatDisplay, fsflatApplication,
+d358 1
+a358 1
+		Util_StringToColor(fsflatDisplay, string)) == -1) {
+d365 1
+a365 1
+    if ((string = XGetDefault(fsflatDisplay, fsflatApplication,
+d368 1
+a368 1
+		Util_StringToColor(fsflatDisplay, string)) == -1) {
+d375 1
+a375 1
+    if ((string = XGetDefault(fsflatDisplay, fsflatApplication,
+d378 1
+a378 1
+		Util_StringToColor(fsflatDisplay, string)) == -1) {
+d385 1
+a385 1
+    if ((string = XGetDefault(fsflatDisplay, fsflatApplication,
+d388 1
+a388 1
+		Util_StringToColor(fsflatDisplay, string)) == -1) {
+d395 1
+a395 1
+    if ((string = XGetDefault(fsflatDisplay, fsflatApplication,
+d398 1
+a398 1
+		Util_StringToColor(fsflatDisplay, string)) == -1) {
+d405 1
+a405 1
+    if ((string = XGetDefault(fsflatDisplay, fsflatApplication,
+d408 1
+a408 1
+		Util_StringToColor(fsflatDisplay, string)) == -1) {
+d415 1
+a415 1
+    if ((string = XGetDefault(fsflatDisplay, fsflatApplication,
+d418 1
+a418 1
+		Util_StringToColor(fsflatDisplay, string)) == -1) {
+d425 1
+a425 1
+    if ((string = XGetDefault(fsflatDisplay, fsflatApplication,
+d428 1
+a428 1
+		Util_StringToColor(fsflatDisplay, string)) == -1) {
+d435 1
+a435 1
+    if ((string = XGetDefault(fsflatDisplay, fsflatApplication,
+d446 1
+a446 1
+    if ((string = XGetDefault(fsflatDisplay, fsflatApplication,
+d449 1
+a449 1
+		Util_StringToColor(fsflatDisplay, string)) == -1) {
+d456 1
+a456 1
+    if ((string = XGetDefault(fsflatDisplay, fsflatApplication, "TxBorder"))
+d459 1
+a459 1
+		Util_StringToColor(fsflatDisplay, string)) == -1) {
+d466 1
+a466 1
+    if ((string = XGetDefault(fsflatDisplay, fsflatApplication,
+d469 1
+a469 1
+		Util_StringToColor(fsflatDisplay, string)) == -1) {
+d476 1
+a476 1
+    if ((geometry = XGetDefault(fsflatDisplay, fsflatApplication, "Geometry"))
+d482 1
+a482 1
+    if ((font = XGetDefault(fsflatDisplay, fsflatApplication, "Font"))
+d484 1
+a484 1
+	aWindow->fontPtr = XLoadQueryFont(fsflatDisplay, font);
+d488 1
+a488 1
+	    aWindow->fontPtr = Sx_GetDefaultFont(fsflatDisplay);
+d491 1
+a491 1
+	aWindow->fontPtr = Sx_GetDefaultFont(fsflatDisplay);
+d494 1
+a494 1
+    if ((font = XGetDefault(fsflatDisplay, fsflatApplication, "TitleFont"))
+d496 1
+a496 1
+	aWindow->titleFontPtr = XLoadQueryFont(fsflatDisplay, font);
+d502 1
+a502 1
+	aWindow->titleFontPtr = Sx_GetDefaultFont(fsflatDisplay);
+d508 1
+a508 1
+	Sx_Panic(fsflatDisplay,
+d514 2
+a515 2
+	if (FsflatCreate(aWindow, startDir) == NULL) {
+	    Sx_Panic(fsflatDisplay, "Couldn't create flat display window.");
+d518 2
+a519 2
+	if (FsflatCreate(aWindow, NULL) == NULL) {
+	    Sx_Panic(fsflatDisplay, "Couldn't create flat display window.");
+d524 9
+d537 2
+a538 2
+    Fs_EventHandlerCreate(ConnectionNumber(fsflatDisplay), FS_READABLE,
+	    FsflatDisplayEventProc, NULL);
+d541 2
+a542 2
+    while (fsflatWindowCount > 0) {
+	while ((size = QLength(fsflatDisplay)) > 0) {
+d545 1
+a545 1
+	    XNextEvent(fsflatDisplay, &event);
+d551 1
+a551 1
+	if ((size = QLength(fsflatDisplay)) > 0) {
+d554 1
+a554 1
+	XFlush(fsflatDisplay);
+d576 1
+a576 1
+FsflatDisplayEventProc(clientData, streamID, eventMask)
+d586 1
+a586 1
+	XNextEvent(fsflatDisplay, &event);
+d588 1
+a588 1
+    } while (QLength(fsflatDisplay) > 0);
+d608 1
+a608 1
+    FsflatHandleMonitorUpdates();
+d611 93
+@

@@ -1,0 +1,528 @@
+
+
+
+menu                      User Commands                      menu
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     menu - Create and manipulate menu widgets
+
+SSYYNNOOPPSSIISS
+     mmeennuu _p_a_t_h_N_a_m_e ?_o_p_t_i_o_n_s?
+
+SSTTAANNDDAARRDD OOPPTTIIOONNSS
+     aaccttiivveeBBaacckkggrroouunndd               aaccttiivveeFFoorreeggrroouunnddbboorrddeerrWWiiddtthhffoonntt|
+     aaccttiivveeBBoorrddeerrWWiiddtthh              bbaacckkggrroouunndd      ccuurrssoorrffoorreeggrroouunndd|
+
+     See the ``options'' manual entry for details on the standard
+     options.
+
+WWIIDDGGEETT--SSPPEECCIIFFIICC OOPPTTIIOONNSS
+     Name:           sseelleeccttoorr
+     Class:          FFoorreeggrroouunndd
+     Command-Line Switch:--sseelleeccttoorr
+
+          For menu entries that are check buttons or  radio  but-
+          tons, this option specifies the color to display in the
+          selector when the  check  button  or  radio  button  is
+          selected.
+_________________________________________________________________
+
+
+IINNTTRROODDUUCCTTIIOONN
+     The mmeennuu command creates a new top-level  window  (given  by
+     the  _p_a_t_h_N_a_m_e  argument)  and  makes  it into a menu widget.
+     Additional options, described above, may be specified on the
+     command  line or in the option database to configure aspects
+     of the menu such as its colors and font.  The  mmeennuu  command
+     returns  its _p_a_t_h_N_a_m_e argument.  At the time this command is
+     invoked, there must not exist a window named  _p_a_t_h_N_a_m_e,  but
+     _p_a_t_h_N_a_m_e's parent must exist.
+
+     A menu is a widget that displays a  collection  of  one-line
+     entries arranged in a column.  There exist several different
+     types of entries, each with different  properties.   Entries
+     of  different  types may be combined in a single menu.  Menu
+     entries are not the same as entry widgets.   In  fact,  menu
+     entries  are  not  even distinct widgets; the entire menu is
+     one widget.
+
+     Menu entries are displayed with up to three separate fields.
+     The  main  field is a label in the form of text or a bitmap,
+     which is determined by the --llaabbeell or --bbiittmmaapp option for  the
+     entry.   If  the   --aacccceelleerraattoorr  option  is specified for an
+     entry then a second textual field is displayed to the  right
+     of  the  label.  The accelerator typically describes a keys-
+     troke sequence that may be typed in the application to cause
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+menu                      User Commands                      menu
+
+
+
+     the same result as invoking the menu entry.  The third field
+     is a _s_e_l_e_c_t_o_r.  The selector  is  present  only  for  check-
+     button  or  radio-button  entries.  It indicates whether the
+     entry is selected or not, and is displayed to  the  left  of
+     the entry's string.
+
+     In normal use, an entry becomes active (displays itself dif-
+     ferently)  whenever the mouse pointer is over the entry.  If
+     a mouse button is released over the entry then the entry  is
+     _i_n_v_o_k_e_d.   The  effect  of  invocation is different for each
+     type of entry; these effects are described below in the sec-
+     tions on individual entries.
+
+     Entries may be  _d_i_s_a_b_l_e_d,  which  causes  their  labels  and
+     accelerators to be displayed with dimmer colors.  A disabled
+     entry cannot be activated or invoked.  Disabled entries  may
+     be  re-enabled,  at  which  point  it  becomes  possible  to
+     activate and invoke them again.
+
+
+CCOOMMMMAANNDD EENNTTRRIIEESS
+     The most common kind of menu entry is a command entry, which
+     behaves  much like a button widget.  When a command entry is
+     invoked, a Tcl command is  executed.   The  Tcl  command  is
+     specified with the --ccoommmmaanndd option.
+
+
+SSEEPPAARRAATTOORR EENNTTRRIIEESS
+     A separator is an entry that is displayed  as  a  horizontal
+     dividing line.  A separator may not be activated or invoked,
+     and it has no behavior other than its display appearance.
+
+
+CCHHEECCKK--BBUUTTTTOONN EENNTTRRIIEESS
+     A check-button menu entry behaves much like  a  check-button
+     widget.   When  it  is  invoked  it  toggles  back and forth
+     between the selected and deselected states.  When the  entry
+     is  selected,  a  particular value is stored in a particular
+     global variable (as determined by the --oonnvvaalluuee and --vvaarriiaabbllee
+     options  for  the  entry);   when  the  entry  is deselected
+     another value (determined by the --ooffffvvaalluuee option) is stored
+     in  the global variable.  A selector box is displayed to the
+     left of the label in a check-button entry.  If the entry  is
+     selected  then  the  box's  center is displayed in the color
+     given by the sseelleeccttoorr option for  the  menu;  otherwise  the
+     box's  center  is  displayed in the background color for the
+     menu.  If a --ccoommmmaanndd option is specified for a  check-button
+     entry,  then  its  value  is evaluated as a Tcl command each
+     time the entry is invoked;  this happens after toggling  the
+     entry's selected state.
+
+
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+menu                      User Commands                      menu
+
+
+
+RRAADDIIOO--BBUUTTTTOONN EENNTTRRIIEESS
+     A radio-button menu entry behaves much like  a  radio-button
+     widget.   Radio-button  entries  are  organized in groups of
+     which only one entry may be selected at a time.  Whenever  a
+     particular  entry  becomes  selected  it stores a particular
+     value into a particular global variable  (as  determined  by
+     the  --vvaalluuee  and  --vvaarriiaabbllee  options  for  the entry).  This
+     action causes any  previously-selected  entry  in  the  same
+     group   to  deselect  itself.   Once  an  entry  has  become
+     selected, any change to the entry's associated variable will
+     cause  the  entry  to  deselect  itself.  Grouping of radio-
+     button entries is determined by their associated  variables:
+     if  two  entries have the same associated variable then they
+     are in the same group.  A selector diamond is  displayed  to
+     the  left  of  the label in each radio-button entry.  If the
+     entry is selected then the diamond's center is displayed  in
+     the  color given by the sseelleeccttoorr option for the menu; other-
+     wise the diamond's center is  displayed  in  the  background
+     color for the menu.  If a --ccoommmmaanndd option is specified for a
+     radio-button entry, then its value is  evaluated  as  a  Tcl
+     command  each time the entry is invoked;  this happens after
+     selecting the entry.
+
+
+CCAASSCCAADDEE EENNTTRRIIEESS
+     A cascade entry is one with an associated  menu  (determined
+     by the --mmeennuu option.  Cascade entries allow the construction
+     of cascading menus.  When the entry is activated, the  asso-
+     ciated  menu  is posted just to the right of the entry; that
+     menu remains posted until the higher-level menu is  unposted
+     or  until  some  other  cascade  entry  is  activated in the
+     higher-level menu (each menu may have  at  most  one  posted
+     cascade entry at a time).  A cascade entry posts its associ-
+     ated menu by invoking a Tcl command of the form
+
+               _m_e_n_u ppoosstt _x _y _g_r_o_u_p
+
+     where _m_e_n_u is the path name of the associated menu, _x and  _y
+     are the root-window coordinates of the upper-right corner of
+     the cascade entry, and _g_r_o_u_p is the name of the menu's group
+     (as  determined  in  its  last  ppoosstt  widget  command).  The
+     lower-level menu is unposted by executing a Tcl command with
+     the form
+
+               _m_e_n_u uunnppoosstt
+
+     where _m_e_n_u is the name of the associated menu.
+
+     If a --ccoommmmaanndd option is specified for a cascade entry,  then
+     its  value is evaluated as a Tcl command each time the entry
+     is invoked.
+
+
+
+
+Sprite v1.0                                                     3
+
+
+
+
+
+
+menu                      User Commands                      menu
+
+
+
+WWIIDDGGEETT CCOOMMMMAANNDD
+     The mmeennuu command creates a new Tcl  command  whose  name  is
+     _p_a_t_h_N_a_m_e.  This command may be used to invoke various opera-
+     tions on the widget.  It has the following general form:
+
+          _p_a_t_h_N_a_m_e _o_p_t_i_o_n ?_a_r_g _a_r_g ...?
+     _O_p_t_i_o_n and the _a_r_gs determine the exact behavior of the com-
+     mand.
+
+     Many of the widget commands for a menu take as one  argument
+     an  indicator  of  which  entry  of  the menu to operate on.
+     These indicators are called _i_n_d_e_xes and may be specified  in
+     any of the following forms:
+
+     _n_u_m_b_e_r      Specifies  the  entry   numerically,   where   0
+                 corresponds to the top-most entry of the menu, 1
+                 to the entry below it, and so on.
+
+     aaccttiivvee      Indicates the entry that  is  currently  active.
+                 If   no  entry  is  active  then  this  form  is
+                 equivalent to nnoonnee.  This form may not be abbre-
+                 viated.
+
+     llaasstt        Indicates the bottommost entry in the menu.   If
+                 there  are no entries in the menu then this form
+                 is equivalent to nnoonnee.  This  form  may  not  be
+                 abbreviated.
+
+     nnoonnee        Indicates ``no entry at  all'';   this  is  used
+                 most  commonly with the aaccttiivvaattee option to deac-
+                 tivate all the entries in  the  menu.   In  most
+                 cases  the  specification of nnoonnee causes nothing
+                 to happen in the widget command.  This form  may
+                 not be abbreviated.
+
+     @@_n_u_m_b_e_r     In  this  form,  _n_u_m_b_e_r  is  treated  as  a   y-
+                 coordinate  in  the  menu's  window;   the entry
+                 spanning that y-coordinate is used.   For  exam-
+                 ple,  ``@@00'' indicates the top-most entry in the
+                 window.  If _n_u_m_b_e_r is outside the range  of  the
+                 window then this form is equivalent to nnoonnee.
+
+     _p_a_t_t_e_r_n     If the index doesn't satisfy one  of  the  above
+                 forms  then  this  form  is  used.   _P_a_t_t_e_r_n  is
+                 pattern-matched against the label of each  entry
+                 in the menu, in order from the top down, until a
+                 matching  entry  is   found.    The   rules   of
+                 TTccll__SSttrriinnggMMaattcchh are used.
+
+     The following widget commands are possible for menu widgets:
+
+     _p_a_t_h_N_a_m_e aaccttiivvaattee _i_n_d_e_x
+
+
+
+Sprite v1.0                                                     4
+
+
+
+
+
+
+menu                      User Commands                      menu
+
+
+
+          Arrange  for  the  entry  indicated  by  _i_n_d_e_x  to   be
+          displayed  as  active.   Any previously-active entry is
+          deactivated.  If _i_n_d_e_x is specified as nnoonnee, or if  the
+          specified entry is disabled, then the menu ends up with
+          no active entry.  Returns an empty string.
+
+     _p_a_t_h_N_a_m_e aadddd _t_y_p_e ?_o_p_t_i_o_n _v_a_l_u_e _o_p_t_i_o_n _v_a_l_u_e ...?
+          Add a new entry to the bottom of  the  menu.   The  new
+          entry's  type  is given by _t_y_p_e and must be one of ccaass--
+          ccaaddee, cchheecckkbbuuttttoonn, ccoommmmaanndd, rraaddiioobbuuttttoonn, or  sseeppaarraattoorr,
+          or a unique abbreviation of one of the above.  If addi-
+          tional arguments are present, they specify any  of  the
+          following options:
+
+          --aacccceelleerraattoorr _v_a_l_u_e
+               Specifies a string to display at the right side of
+               the menu entry.  Normally describes an accelerator
+               keystroke sequence that may be typed to invoke the
+               same  function  as the menu entry.  This option is
+               not available for separator entries.
+
+          --bbiittmmaapp _v_a_l_u_e
+               Specifies a bitmap to display in the menu  instead
+               of  a  textual label, in any of the forms accepted
+               by TTkk__GGeettBBiittmmaapp.  This option overrides the --llaabbeell
+               option  but  may  be  reset  to an empty string to
+               enable a textual  label  to  be  displayed.   This
+               option is not available for separator entries.
+
+          --ccoommmmaanndd _v_a_l_u_e
+               Specifies a Tcl command to execute when this  menu
+               entry  is  invoked.   Not  available for separator
+               entries.
+
+          --llaabbeell _v_a_l_u_e
+               Specifies a string to display  as  an  identifying
+               label  in  the  menu  entry.   Not  available  for
+               separator entries.
+
+          --mmeennuu _v_a_l_u_e
+               Available only for cascade entries.  Specifies the
+               path name of the menu associated with this entry.
+
+          --ooffffvvaalluuee _v_a_l_u_e
+               Available only for check-button  entries.   Speci-
+               fies  the value to store in the entry's associated
+               variable when the entry is deselected.
+
+          --oonnvvaalluuee _v_a_l_u_e
+               Available only for check-button  entries.   Speci-
+               fies  the value to store in the entry's associated
+               variable when the entry is selected.
+
+
+
+Sprite v1.0                                                     5
+
+
+
+
+
+
+menu                      User Commands                      menu
+
+
+
+          --vvaalluuee _v_a_l_u_e
+               Available only for radio-button  entries.   Speci-
+               fies  the value to store in the entry's associated
+               variable when the entry is selected.
+
+          --vvaarriiaabbllee _v_a_l_u_e
+               Available only for check-button  and  radio-button
+               entries.   Specifies the name of a global value to
+               set when the entry is selected.  For  check-button
+               entries the variable is also set when the entry is
+               deselected.  For  radio-button  entries,  changing
+               the  variable  causes the currently-selected entry
+               to deselect itself.
+
+          The aadddd widget command returns an empty string.
+
+     _p_a_t_h_N_a_m_e ccoonnffiigguurree ?_o_p_t_i_o_n? ?_v_a_l_u_e _o_p_t_i_o_n _v_a_l_u_e ...?
+          Query  or  modify  the  configuration  options  of  the
+          widget.   If  no  _o_p_t_i_o_n  is  specified, returns a list
+          describing all of the available  options  for  _p_a_t_h_N_a_m_e
+          (see  TTkk__CCoonnffiigguurreeIInnffoo for information on the format of
+          this list).  If _o_p_t_i_o_n is specified with no _v_a_l_u_e, then
+          the  command  returns  a  list describing the one named
+          option (this list will be identical to the  correspond-
+          ing  sublist  of  the  value  returned  if no _o_p_t_i_o_n is
+          specified).  If one  or  more  _o_p_t_i_o_n-_v_a_l_u_e  pairs  are
+          specified,  then  the command modifies the given widget
+          option(s) to have the given value(s);  in this case the
+          command  returns  an empty string.  _O_p_t_i_o_n may have any
+          of the values accepted by the mmeennuu command.
+
+     _p_a_t_h_N_a_m_e ddeelleettee _i_n_d_e_x
+          Delete the menu entry indicated by _i_n_d_e_x.   Returns  an
+          empty string.
+
+     _p_a_t_h_N_a_m_e ddiissaabbllee _i_n_d_e_x
+          Disable the  entry  given  by  _i_n_d_e_x,  so  that  it  is
+          displayed  in dimmer colors and may not be activated or
+          invoked.  Returns an empty string.
+
+     _p_a_t_h_N_a_m_e eennaabbllee _i_n_d_e_x
+          Undo the effects of a previous ddiissaabbllee command, so that
+          _i_n_d_e_x  may once again be activated or invoked.  Returns
+          an empty string.
+
+     _p_a_t_h_N_a_m_e eennttrryyccoonnffiigguurree _i_n_d_e_x ?_o_p_t_i_o_n_s?
+          This command  is  similar  to  the  ccoonnffiigguurree  command,
+          except that it applies to the options for an individual
+          entry, whereas ccoonnffiigguurree applies to the options for the
+          menu  as  a  whole.  _O_p_t_i_o_n_s may have any of the values
+          accepted by the aadddd widget  command.   If  _o_p_t_i_o_n_s  are
+          specified,  options  are  modified  as indicated in the
+
+
+
+Sprite v1.0                                                     6
+
+
+
+
+
+
+menu                      User Commands                      menu
+
+
+
+          command and the command returns an empty string.  If no
+          _o_p_t_i_o_n_s  are  specified,  returns a list describing the
+          current options for entry _i_n_d_e_x  (see  TTkk__CCoonnffiigguurreeIInnffoo
+          for information on the format of this list).
+
+     _p_a_t_h_N_a_m_e iinnddeexx _i_n_d_e_x
+          Returns the numerical index corresponding to _i_n_d_e_x,  or
+          nnoonnee if _i_n_d_e_x was specified as nnoonnee.
+
+     _p_a_t_h_N_a_m_e iinnvvookkee _i_n_d_e_x
+          Invoke the action of the menu entry.  See the  sections
+          on  the  individual  entries  above for details on what
+          happens.  If the menu entry is  disabled  then  nothing
+          happens.  If the entry has a command associated with it
+          then the result of that  command  is  returned  as  the
+          result  of  the  iinnvvookkee  widget command.  Otherwise the
+          result is an empty  string.   Note:   invoking  a  menu
+          entry does not automatically unpost the menu.  Normally
+          the associated menubutton will take care  of  unposting
+          the menu.
+
+     _p_a_t_h_N_a_m_e ppoosstt _x _y ?_g_r_o_u_p?
+          Arrange for the menu to be displayed on the  screen  at
+          the  root-window  coordinates  given by _x and _y.  These
+          coordinates are adjust if necessary to  guarantee  that
+          the entire menu is visible on the screen.  _G_r_o_u_p speci-
+          fies the name of a group to use for event-sharing  pur-
+          poses,  and defaults to ddeeffaauulltt.  If the menu is posted
+          from a menubutton widget then the  group  must  be  the
+          same  as  the  group of the menubutton.  If the menu is
+          posted from a cascade entry in some  other  menu,  then
+          the  group must be the same as the group of the higher-
+          level menu.  If the menu is posted  as  a  pop-up  menu
+          then  the group can probably be defaulted.  To find out
+          more about groups and event  sharing,  see  the  manual
+          entries  for  mmeennuubbuuttttoonn and TTkk__SShhaarreeEEvveennttss.  This com-
+          mand returns an empty string.
+
+     _p_a_t_h_N_a_m_e uunnppoosstt
+          Unmap the window so that it is no longer displayed, and
+          remove it from any event-sharing group it may have been
+          part of.  If a lower-level  cascaded  menu  is  posted,
+          unpost that menu.  Returns an empty string.
+
+
+
+DDEEFFAAUULLTT BBIINNDDIINNGGSS
+     Tk automatically creates class bindings for menus that  give  |
+     them the following default behavior:                          |
+
+     [1]                                                                ||
+          When   the  mouse  cursor  enters  a  menu,  the  entry  |
+
+
+
+Sprite v1.0                                                     7
+
+
+
+
+
+
+menu                      User Commands                      menu
+
+
+
+          underneath the mouse cursor is activated;  as the mouse  |
+          moves  around  the  menu,  the  active entry changes to  |
+          track the mouse.                                         |
+
+     [2]                                                                ||
+          When button 1 is released over a menu, the active entry  |
+          (if any) is invoked.                                     |
+
+     [3]                                                                ||
+          A menu can be repositioned on the screen by dragging it  |
+          with mouse button 2.                                     |
+
+     The behavior of menus can be changed by defining  new  bind-  |
+     ings for individual widgets or by redefining the class bind-  |
+     ings.
+
+
+BBUUGGSS
+     At present it isn't possible  to  assign  colors  and  fonts
+     separately to individual entries.  In addition it isn't pos-
+     sible to use the option database to specify values  for  the
+     options to individual entries.
+
+
+KKEEYYWWOORRDDSS
+     menu, widget
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     8
+
+
+

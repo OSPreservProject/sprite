@@ -1,0 +1,158 @@
+* (August)
+* client can map file read/write into its address space
+* VM error handling (permissions, non-existent pages)
+* server has no-op locking calls in place
+* client is backed entirely by single-threaded Sprite pager
+
+* (September)
+* ds5000 running Mach 3.0 installed, but not used for Sprite work
+* server is multi-threaded, with coarse-grained locking 
+** add real condition variables
+*** look for Sync_Wait calls that were if'd out.
+** fix code to read requests and fork off a thread 
+   Have a queue of messages for each segment, with an "active" flag
+   telling if there is currently a server process working on that
+   segment.  Note that the pager routines shouldn't keep the segment
+   locked for a long time; use a reference instead.  Change "destroy"
+   routine to wait until the segment has been cleaned and invoke
+   memory_object_destroy itself?
+** Add code to Sys_Shutdown to check for pending operations (esp. VM)
+** Ditch the numSegments hack?
+** Fix Proc_GetCurrentProc to deal with kernel and user processes correctly.
+** Fix StartClient to work in context of multithreaded server
+** set up process information for the first server thread.
+** Make sure Sync debugging code is in place
+   This is the native Sprite lock paranoia code & the lock ownership
+   code.  You might not want to actually turn it on.
+** Fix DoStack to use vm_write to initialize the stack page.
+* client can fork and exec children
+** remove stuff from Proc_NewProc that is specific to initial process.
+** Check calls that operate on task/thread in case the object has disappeared
+** server can pass argument of file through server to client.
+** review notes in callsProc & review process state transition table
+*** review Proc_Flags (any to get rid of?)
+** run overnight test program to do lots of fork/exec
+   (e.g., have a tree of processes that update the time of day in a
+   shared memory region)
+* server can read time-of-day chip
+* (review callsProc, callsVm, newVm, and changes lists)
+
+* (October)
+* doing all work on ds5000
+* server can ping a native Sprite system (i.e., RPC's work)
+** fix UX to not grab all packets?
+   If the packet filter allows multiple recipients of a packet, then
+   having the UX server get Sprite packets is merely a performance
+   problem. 
+** when Sprite server exits, does it need to deregister its packet filter?  
+   (See the mail "Net filters" in +mach.)
+** Make sure you can do many RPC's before declaring success.
+   (e.g., at least 1K)
+* client calls through emulation library, which then invokes MIG stub
+** client uses real printf?
+** use mapped-file stdio?
+** pass path names in MIG request (versus having server do CopyIn)?
+* (SOSP)
+
+* (November)
+* Proc_ServerProc's work (change timer queue to use message w/ timeout)
+** Fix Timer_Statistics?
+  A cleanup job would be to ditch the Proc_Time stuff and just use
+  Time everywhere.
+** Enable procTimer.c & other SPRITED_TIMER stuff.
+* file system works 
+** client can read & write file from Sprite file server
+** cache memory is static & pinned
+** rerun the object file/mapped file tests (listed in 1 September notes).
+** Look for SPRITED_REALFS ifdefs.
+   Put in a mousetrap to make sure that anarchy doesn't think it's the
+   root file server.
+   Fix or disable Fs_AcceptStub, so that it doesn't try to treat a
+   kernel address as a user address.  Maybe better to just not include
+   fsSocketStubs at all, at least initially?
+** verify that process cwd, umask, and groups are handled correctly.
+** verify that file inheritance across fork works
+   See /sprite/src/tests/syscalls/fork.
+   Don't forget to change malloc etc. to use ckalloc.
+* (review changes list)
+
+* (December)
+* client can page across network
+** Check remaining uses of SPRITED_REALFS.
+   Make sure FS handle's segPtr gets updated correctly.  Are there
+   other fields that need fixing as well?
+   Look at the 1.098 Vm_Recovery().  Put what you need into sprited.
+   Fix the swap directory path.
+   Try a test where enough pages are dirtied that all the
+   Proc_ServerProcs are used for VM work and are stuck waiting for
+   recovery.  When the server comes back, does the system recover, or
+   is it permanently wedged?
+   Redo old VM tests (e.g., file mapping).
+   Another test: make sure the VM code deals with stale handles
+   correctly.  
+** Testing
+*** run thrasher
+   Pay particular attention to interaction & possible race conditions
+   between the file system and VM.
+*** Verify that setuid stuff works?  (Maybe just put in "cleanups" list.)  
+   Have to re-enable Fs_CheckSetID call in DoExec.
+* start on signals
+** Fix Sig_Handle 
+   It shouldn't assume that procPtr is for the current proc. (done?)
+** Enable SPRITED_SIGNALS
+** put signals-related fields into PCB.
+   Fix code that computes signals mask to use macro (use your recent kernel
+   changes).
+   Incorporate proc changes for suspend/resume race.
+* (short Christmas vacation)
+
+* (January 1992)
+* client can send, catch signals
+** Look for XXX'd code that should use signals.
+** Check over calls to Proc_Kill & check Proc_Kill code itself.
+   Check references to PROC_NO_MORE_REQUESTS.
+   Make sure that the signal has been handled (either the process's
+   thread has been killed or the setup for the signal handler has been
+   done) before returning from catch_exception_raise.
+** Turn on procDebug.c code?
+** Should shell scripts work at this point?
+** Check use of SPRITED_SIGNALS in libc.
+* (XPRS retreat)
+
+* (February)
+* work on C library
+* access to console device.
+  Check for SPRITED_DEVICES in libc & test programs.  Rerun stdio
+  test.
+  Verify that "cp -i" & "mv -i" do the Right Thing.
+* be able to run gcc, maybe vi.
+  Should be able to run: file utils, gcc, bin utils, pmake, mkmf, sh,
+  csh, ex (if not vi), gdb; date.
+  Would like to run: Emacs, troff (?), TeX, X (?), inetd, telnetd
+* (review changes list)
+  Should be able to run a pseudo-file server?
+* Change to use a version number for the server.
+
+* (March)
+* run benchmarks, find bottlenecks
+  Look for performance/benchmarking suites.  Do any of them exercise the
+  variable FS cache size?
+  Look in /sprite/src/benchmarks.
+  Try the BYTE benchmarks (in ~/src/byte)?
+  WPI benchmarks?
+* start fixing bottlenecks
+  Look at benchmarking programs in Sprite sources.  Try to come up
+  with a realistic benchmark that makes the FS cache grow and shrink.
+  (According to the SOSP paper, what are the primary reasons for
+  removing a block from the FS cache?)
+  For the Andrew benchmark, fix MACHINEID to (also?) do a sysstat -v.
+  Also, the first time you run it, check timer_Statistics, to verify
+  that you're not getting burned by the timer problems.
+  Note that UX28 apparently implements vfork() using fork().
+** Look in perf for ideas on things to measure.
+* (April)
+* more benchmarks, performance work
+
+Local Variables:
+mode: outline
+End:

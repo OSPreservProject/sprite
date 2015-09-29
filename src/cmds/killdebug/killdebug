@@ -1,0 +1,55 @@
+#! /sprite/cmds/perl
+#
+#  This is a Perl script that kills off all processes in the DEBUG state.
+#
+# $Header: /sprite/src/cmds/killdebug/RCS/killdebug,v 1.4 92/04/23 12:33:00 shirriff Exp $ SPRITE (Berkeley)
+#
+# Copyright 1990 Regents of the University of California
+# Permission to use, copy, modify, and distribute this
+# software and its documentation for any purpose and without
+# fee is hereby granted, provided that the above copyright
+# notice appear in all copies.  The University of California
+# makes no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without
+# express or implied warranty.
+#
+#
+
+#
+# Read output of "ps -d".
+#
+
+if ($#ARGV == 0 && $ARGV[0] eq "all") {
+    $user = `whoami`;
+    chop($user);
+    if ($user ne "root") {
+	printf("Warning: can't kill all unless root\n");
+    }
+    open(input, "ps -ad |") || print("Open failed: $!\n");
+} else {
+    open(input, "ps -d |") || print("Open failed: $!\n");
+}
+
+#
+# Get rid of header.
+#
+<input>;
+
+
+while(<input>) {
+    ($f1) = split(' ');
+    $goners[$#goners + 1] = hex($f1);
+    $pids[$#pids + 1] = $f1;
+}
+
+if ($#goners >= 0) {
+    printf("%s\n", join(' ', @pids));
+    #
+    # Give them a chance to die nicely.
+    #
+    kill ("TERM", @goners) || print("Kill failed: $!\n");
+    #
+    # Finish them off.
+    #
+    kill ("KILL", @goners) || print("Kill failed: $!\n");
+}

@@ -1,0 +1,134 @@
+
+
+
+Tcl_AssembleCmd   Tcl Command Language Library    Tcl_AssembleCmd
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tcl_CreateCmdBuf, Tcl_AssembleCmd, Tcl_DeleteCmdBuf - buffer
+     pieces of Tcl commands
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttccll..hh>>
+
+     Tcl_CmdBuf
+     TTccll__CCrreeaatteeCCmmddBBuuff()
+
+     TTccll__DDeelleetteeCCmmddBBuuff(_b_u_f_f_e_r)
+
+     char *
+     TTccll__AAsssseemmbblleeCCmmdd(_b_u_f_f_e_r, _s_t_r_i_n_g)
+
+AARRGGUUMMEENNTTSS
+     Tcl_CmdBuf   _b_u_f_f_e_r     (in)      Token for a command buffer
+                                       (the result of some previ-
+                                       ous        call         to
+                                       TTccll__CCrreeaatteeCCmmddBBuuff).
+
+     char         *_s_t_r_i_n_g    (in)      Additional piece  of  com-
+                                       mand  input to be added to
+                                       anything  currently   buf-
+                                       fered.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     These three procedures provide a  convenient  mechanism  for
+     assembling  Tcl  commands from an input source where command
+     boundaries are not obvious.  For example, if input is  being
+     read  from  a  terminal,  a user may type commands that span
+     multiple lines.  In situations  like  this,  TTccll__AAsssseemmbblleeCCmmdd
+     can  be  called  with  the  individual  lines  as  they  are
+     received.  It buffers the lines internally and returns  full
+     commands when they are complete.
+
+     A command buffer is created by calling TTccll__CCrreeaatteeCCmmddBBuuff, and
+     it is deleted by calling TTccll__DDeelleetteeCCmmddBBuuff.  There may be any
+     number of command buffers for a particular program  or  even
+     for a particular interpreter;  in most cases there should be
+     one buffer for each independent source of command input.
+
+     When  input  arrives  from  a   source   you   should   call
+     TTccll__AAsssseemmbblleeCCmmdd,  passing  it  the  new  input as the _s_t_r_i_n_g
+     argument.  TTccll__AAsssseemmbblleeCCmmdd will add the new  input  to  any-
+     thing  currently buffered in _b_u_f_f_e_r.  If the information now
+     buffered represents a complete Tcl command (i.e.  the  whole
+     command  ends  with  a  newline  character  and there are no
+     unmatched quotes, braces, or brackets), then TTccll__AAsssseemmbblleeCCmmdd
+
+
+
+Sprite v.1.0        Printed:  April 19, 1991                    1
+
+
+
+
+
+
+Tcl_AssembleCmd   Tcl Command Language Library    Tcl_AssembleCmd
+
+
+
+     returns  a  pointer to the complete command and arranges for
+     the  buffer  to   be   cleared   on   the   next   call   to
+     TTccll__AAsssseemmbblleeCCmmdd.    If   the  command  is  still  incomplete
+     (because, for example,  there  are  unmatched  braces)  then
+     TTccll__AAsssseemmbblleeCCmmdd   returns  NULL.   TTccll__AAsssseemmbblleeCCmmdd  keeps  a
+     private copy of the command being  assembled,  so  that  the
+     caller  need  not  preserve  the  contents of _s_t_r_i_n_g between
+     calls to TTccll__AAsssseemmbblleeCCmmdd.  TTccll__AAsssseemmbblleeCCmmdd supports commands
+     of arbitrary length (up to the total memory limit imposed by
+     the operating system, if any).
+
+
+KKEEYYWWOORRDDSS
+     assemble, buffer, partial command
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  April 19, 1991                    2
+
+
+

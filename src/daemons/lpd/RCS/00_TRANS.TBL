@@ -1,0 +1,10 @@
+F COMMON.C_V;1                      	common.c,v
+F DISPLAYQ.C_V;1                    	displayq.c,v
+F LPD.C_V;1                         	lpd.c,v
+F LPDCHAR.C_V;1                     	lpdchar.c,v
+F LPD_MAN_.;1                       	lpd.man,v
+F LP_LOCAL.H_V;1                    	lp.local.h,v
+F PRINTCAP.C_V;1                    	printcap.c,v
+F PRINTJOB.C_V;1                    	printjob.c,v
+F RECVJOB.C_V;1                     	recvjob.c,v
+F RMJOB.C_V;1                       	rmjob.c,v

@@ -1,0 +1,250 @@
+head     9.1;
+branch   ;
+access   ;
+symbols  ds3100:9.1 sun3:9.1 sprited:9.1.1 sun4nw:9.1 symm:9.1 spur:9.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.1
+date     90.10.08.15.54.11;  author mendel;  state Exp;
+branches 9.1.1.1;
+next     9.0;
+
+9.0
+date     89.09.12.15.06.26;  author douglis;  state Stable;
+branches ;
+next     8.2;
+
+8.2
+date     89.08.21.15.26.28;  author mendel;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.08.15.18.42.52;  author rab;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.20.30;  author douglis;  state Stable;
+branches ;
+next     7.0;
+
+7.0
+date     88.11.07.14.47.33;  author brent;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.09.28.13.31.23;  author brent;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.16.32;  author brent;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     88.04.04.10.34.33;  author brent;  state Exp;
+branches ;
+next     ;
+
+9.1.1.1
+date     91.11.15.15.58.32;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Definitions for the file locking module
+@
+
+
+9.1
+log
+@Fixed include files to use <> rather than "".
+Added function prototyping.  
+@
+text
+@/*
+ * fsioLock.h --
+ *
+ *	Declarations for user-level file locking routines.
+ *
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/fs.mendel/RCS/fsioLock.h,v 1.1 90/01/16 17:12:07 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+ */
+
+#ifndef _FSLOCK
+#define _FSLOCK
+/*
+ * There is a system call to lock a file.  The lock state is kept in
+ * the I/O handle on the I/O server so that the lock has network-wide effect.
+ */
+
+typedef struct Fsio_LockState {
+    int		flags;		/* Bits defined below */
+    List_Links	waitList;	/* List of processes to wakeup when the
+				 * file gets unlocked */
+    int		numShared;	/* Number of shared lock holders */
+    List_Links	ownerList;	/* List of processes responsible for locks */
+} Fsio_LockState;
+
+/*
+ * (The following lock bits are defined in user/fs.h)
+ * IOC_LOCK_EXCLUSIVE - only one process may hold an exclusive lock.
+ * IOC_LOCK_SHARED    - many processes may hold shared locks as long as
+ *	there are no exclusive locks held.  Exclusive locks have to
+ *	wait until all shared locks go away.
+ */
+
+/*
+ * flock() support
+ */
+extern void Fsio_LockInit _ARGS_((Fsio_LockState *lockPtr));
+extern ReturnStatus Fsio_IocLock _ARGS_((Fsio_LockState *lockPtr, 
+			Fs_IOCParam *ioctlPtr, Fs_FileID *streamIDPtr));
+extern ReturnStatus Fsio_Lock _ARGS_((Fsio_LockState *lockPtr, 
+			Ioc_LockArgs *argPtr, Fs_FileID *streamIDPtr));
+extern ReturnStatus Fsio_Unlock _ARGS_((Fsio_LockState *lockPtr, 
+			Ioc_LockArgs *argPtr, Fs_FileID *streamIDPtr));
+extern void Fsio_LockClose _ARGS_((Fsio_LockState *lockPtr,
+			Fs_FileID *streamIDPtr));
+extern void Fsio_LockClientKill _ARGS_((Fsio_LockState *lockPtr, int clientID));
+
+/*
+ * Cache consistency routines.
+ */
+#endif _FSLOCK
+@
+
+
+9.1.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/fsio/fsioLock.h,v 9.1 90/10/08 15:54:11 mendel Exp $ SPRITE (Berkeley)
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fsio/RCS/fsioLock.h,v 8.2 89/08/21 15:26:28 mendel Exp Locker: douglis $ SPRITE (Berkeley)
+d41 14
+@
+
+
+8.2
+log
+@Break up fs into many modules.    
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsLock.h,v 7.0 88/11/07 14:47:33 brent Exp $ SPRITE (Berkeley)
+@
+
+
+8.1
+log
+@Commented #endif labels.
+@
+text
+@d2 1
+a2 1
+ * fsLock.h --
+d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsLock.h,v 8.0 88/11/11 18:20:30 douglis Stable Locker: rab $ SPRITE (Berkeley)
+d21 20
+d45 1
+a45 7
+extern void		FsLockInit();
+extern ReturnStatus	FsIocLock();
+extern ReturnStatus	FsLock();
+extern ReturnStatus	FsUnlock();
+extern void		FsLockClose();
+extern void		FsLockClientKill();
+#endif /* _FSLOCK */
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsLock.h,v 7.0 88/11/07 14:47:33 brent Exp Locker: douglis $ SPRITE (Berkeley)
+d31 1
+a31 1
+#endif _FSLOCK
+@
+
+
+7.0
+log
+@New version for conversion to new C library
+@
+text
+@d16 1
+a16 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsLock.h,v 6.1 88/09/28 13:31:23 brent Exp Locker: brent $ SPRITE (Berkeley)
+@
+
+
+6.1
+log
+@Updated externs
+@
+text
+@d16 1
+a16 1
+ * $Header: fsLock.h,v 6.0 88/08/11 12:16:32 brent Stable $ SPRITE (Berkeley)
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d16 1
+a16 1
+ * $Header: fsLock.h,v 1.1 88/04/04 10:34:33 brent Exp $ SPRITE (Berkeley)
+d26 5
+a30 2
+extern ReturnStatus	FsFileLock();
+extern ReturnStatus	FsFileUnlock();
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+ * $Header: fsFile.h,v 5.7 87/11/02 10:43:56 brent Exp $ SPRITE (Berkeley)
+@

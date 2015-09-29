@@ -1,0 +1,29 @@
+For the X11R3 servers, all the fonts are below /X11R3/lib/fonts. The four
+subdirectories contain:
+	misc	: miscellaneous fonts for terminal emulators and cursors
+	75dpi	: regular fonts
+	100dpi	: regular fonts
+	xproof	: a few special fonts for xproof (troff previewer)
+	local	: special local fonts and fonts from X11R2 (and X10 ?)
+
+All fonts are found by the server using its font path. Clients never have
+anything to do with fonts (except for parsing the command arguments and
+handing them to the server of course). The font path for _all_ servers is
+set in the server startup script (/X11R3/cmds/Xsprite):
+xset fp "/X11R3/lib/fonts/misc/md,/X11R3/lib/fonts/75dpi/md,\
+/X11R3/lib/fonts/100dpi/md,/X11R3/lib/fonts/xproof/md,/X11R3/lib/fonts/local/md"
+to change the font path of your server (dunno why you would want to do that)
+use the "fp"/"+fp"/"fp+" options to set/append/prepend your font path. Please	
+refer to the man page of xset or type "xset -help". Note that "xset q" will
+inform you about your current font path (among other things).
+
+To add new fonts:
+You need the font description in BDF format (file extension .bdf). Copy the
+bdf file into /X11R3/lib/fonts/local, cd to that directory, compress the
+bdf files you just copied, run mkmf, finally do a pmake on a ds3100 and
+on either a sun4 or a sun3 (note that sun3.md is linked to sun4.md). Your
+new fonts should now be available. (If you want to create a new font
+directory, please contact me or look at the symbolic links in the
+misc font directory.)
+
+					-Thorsten (tve@sprite.berkeley.edu)

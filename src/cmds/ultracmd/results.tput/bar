@@ -1,0 +1,7 @@
+#!/sprite/cmds/csh -f
+
+
+while (1) 
+    ultracmd -sink on
+    set foo = $<
+end

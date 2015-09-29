@@ -1,0 +1,68 @@
+
+
+
+Sync_Wait             C Library Procedures              Sync_Wait
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Sync_Wait - wait on a monitor condition variable
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyynncc..hh>>
+     SSyynncc__WWaaiitt(_c_o_n_d_i_t_i_o_n_P_t_r, _w_a_k_e_I_f_S_i_g_n_a_l)
+
+AARRGGUUMMEENNTTSS
+     Sync_Condition   *_c_o_n_d_i_t_i_o_n_P_t_r   (in)      Address of a con-
+                                                dition   variable
+                                                to    distinguish
+                                                waiting   process
+                                                for later notifi-
+                                                cation.
+
+     Boolean          _w_a_k_e_I_f_S_i_g_n_a_l    (in)      This parameter is
+                                                currently
+                                                ignored.
+
+_________________________________________________________________
+
+DDEESSCCRRIIPPTTIIOONN
+     SSyynncc__WWaaiitt allows a process using a monitor  to  wait  for  a
+     particular condition.  This routine can only be called while
+     a monitor lock is aquired because it is only safe  to  check
+     global  state  while  in the monitor. This call releases the
+     monitor lock and makes the process sleep on  the  condition.
+     Other  processes  waiting  on  the  monitor lock will become
+     runnable.  The process remains asleep until some other  pro-
+     cess  invokes  SSyynncc__BBrrooaaddccaasstt  with the same condition vari-
+     able.
+
+     Because broadcast semantics are used,  it  is  possible  for
+     spurious wakeups to occur if multiple processes are awaiting
+     the same condition.  Additionally, all processes waiting  on
+     *_c_o_n_d_i_t_i_o_n_P_t_r  will  be awakened simultaneously and may exe-
+     cute in any  order.   For  these  reasons,  when  a  process
+     resumes  execution  it  may  find  that the condition it was
+     awaiting is no longer valid.  In this case, it  should  call
+     SSyynncc__WWaaiitt again.
+
+     When the process awakens due to event  notification  through
+     SSyynncc__BBrrooaaddccaasstt, SSUUCCCCEESSSS is returned.
+
+SSEEEE AALLSSOO
+     Sync, Sync_Broadcast, Sig_Send
+
+KKEEYYWWOORRDDSS
+     synchronization, wait, block, signal, process, event
+
+
+
+
+
+
+Sprite v.1.0      Printed:  September 13, 1990                  1
+
+
+

@@ -1,0 +1,666 @@
+%% @texfile{
+%%   author = "Karl Berry and Oren Patashnik",
+%%   version = "0.99d",
+%%   date = "6 Sep 1990",
+%%   filename = "btxmac.tex",
+%%   address = "Please use e-mail",
+%%   checksum = "666    3012   23149",
+%%   email = "opbibtex@neon.stanford.edu",
+%%   codetable = "ISO/ASCII",
+%%   supported = "yes",
+%%   docstring = "Defines macros that make BibTeX work with plain TeX",
+%% }
+% BibTeX-for-TeX macros, version 0.99d, for BibTeX 0.99c, TeX 3.0 or later.
+% Copyright (C) 1990 by Karl Berry and Oren Patashnik; all rights reserved.
+% You may copy this file provided: that it's accompanied by the
+% "BibTeXing" document, whose text is contained in the file `btxdoc.tex';
+% that any documentation you write for these macros also gives a
+% reference for "BibTeXing"; and that either you make absolutely no
+% changes to your copy, or if you do make changes, (1) you name the file
+% something other than `btxmac.tex' and you remove all occurrences of
+% `btxmac.tex' from the file, (2) you put, somewhere in the first twenty
+% lines of the file, your name, along with an electronic address at which 
+% others who might use the file may reach you, and (3) you remove each
+% occurrence of Oren's name and electronic address from this file.  These
+% restrictions help ensure that all standard versions of these macros are
+% identical, and that Oren doesn't get deluged with inappropriate e-mail.
+%
+% This file, btxmac.tex, contains TeX macros that allow BibTeX, a
+% bibliography program that was originally designed for use with LaTeX,
+% to work with plain TeX.  Please report any bugs (outright goofs,
+% improvable macros, misfeatures, or unclear documentation) to Oren
+% Patashnik (opbibtex@neon.stanford.edu).  These macros will become
+% frozen shortly after BibTeX version 1.00 is released.
+%
+% To use these macros you should be familiar with how BibTeX interacts
+% with LaTeX, since BibTeX's interaction with TeX is very similar; that
+% interaction is explained in the LaTeX manual.  It also helps to
+% have read "BibTeXing", the documentation that accompanies BibTeX.
+% Then, if you want, you should redefine any of the macros that begin
+% with `\bbl' or `\biblabel' or `\print' that you need to get formatting
+% different from the default (the default settings are designed to
+% accompany a bibliography style like BibTeX's standard style `plain').
+% The macros you might want to change are described briefly a few
+% paragraphs hence.  Finally, as long as you follow the guidelines given
+% by the LaTeX manual and "BibTeXing", you simply \input btxmac.
+% [Remember the general scheme: Running (La)TeX writes information on
+% the .aux (auxiliary) file; then running BibTeX reads information from
+% the .aux, .bst (style), and .bib (database) files and writes
+% information (the bibliography) on a .bbl file; then running (La)TeX
+% incorporates the bibliography; then running (La)TeX once more fixes
+% the remaining forward references into the bibliography.  Thus, to get
+% everything incorporated into your output, you'll have to run (La)TeX,
+% BibTeX, (La)TeX, (La)TeX.  (Standup, sitdown, fight, fight, fight.)]
+%
+% If you want to try out these macros on the 0.99 version of the
+% xampl.bib file that's distributed with BibTeX (that version of the
+% file has no self-identification), you'll need to define \mbox, which
+% is a LaTeX command, to be \hbox.
+%
+%
+%%%%   HISTORY   %%%%
+%
+% Karl Berry wrote the original version of these macros in 1989 and 1990,
+% for use in his `eplain' package.  Oren Patashnik modified them slightly
+% in July 1990, as part of the official BibTeX distribution.
+%    1-Aug-90  Version 0.99a, not released to the general public.
+%   14-Aug-90  0.99b, first general release.
+%   26-Aug-90  0.99c, made \@undefinedmessage work with other macro packages.
+%    6-Sep-90  0.99d, allowed for general formatting of bibliography labels,
+%                     for general formatting of (in-text) citations, and for
+%                     changing certain catcodes while reading the .aux file.
+%
+%
+%
+% The LaTeX-related commands defined in this file include (a) the four
+% commands that a user types (\bibliography, \bibliographystyle, \cite,
+% and \nocite); (b) the three commands that BibTeX looks for in the .aux
+% file (\bibdata, \bibstyle, and \citation---there is a fourth command
+% that BibTeX looks for, but that command is related to LaTeX's \include
+% facility, so these macros ignore that command); and (c) the only LaTeX
+% command (\newcommand) that's written by any of the four standard
+% bibliography styles.  The definitions here are not exactly the same as
+% the corresponding LaTeX definitions (those eight LaTeX definitions
+% depend on a significant fraction of LaTeX itself).  But the only
+% substantial difference is with \newcommand, which here, without
+% complaining, lets you redefine a preexisting control sequence (in
+% LaTeX, \newcommand won't let you redefine a preexisting command).  So
+% unless you know what you're doing, you shouldn't define any control
+% sequences with these eight names:
+%
+% \bibdata
+% \bibliography
+% \bibliographystyle
+% \bibstyle
+% \citation
+% \cite
+% \newcommand
+% \nocite
+%
+% There's one control sequence you might want to use (but not redefine)
+% in redefining \biblabelprint:
+%
+% \biblabelwidth
+%
+% There are ten other control sequences (explained later in more detail)
+% that the macros of this file will use if you define them---you should
+% define them after the \input btxmac command but before the \bibliography
+% command.  The first four begin with `\bbl' and affect fonts, spacing,
+% and perhaps other characteristics of the bibliography; the next two
+% begin with `\biblabel' and determine how labels are formatted in the
+% bibliography; and the last four begin with `\print' and determine how
+% the in-text citations are formatted:
+%
+% \bblem
+% \bblhook
+% \bblnewblock
+% \bblrm
+% \biblabelcontents
+% \biblabelprint
+% \printbetweencitations
+% \printcitefinish
+% \printcitenote
+% \printcitestart
+%
+% Here are two more control sequences (that are described later), each
+% with an `@' in its name, that you probably won't want to redefine
+% unless you are writing another macro package; if you do redefine them,
+% however, you should do it before the \input btxmac command.
+%
+% \@setmoreletters
+% \@undefinedmessage
+%
+% And here are still more control sequences that, should you already have
+% them defined, might conflict with the way the btxmac.tex macros use them
+% (but since each of these has an `@' in its name, it's unlikely you will
+% already have any of them defined).
+%
+% \@auxfile              \@auxfileopenedtrue     \@auxfileopenedfalse
+% \@citation             \@cite                  \@@cite
+% \@citedef              \@citelabel             \@citenote
+% \@citewarningtrue      \@citewarningfalse      \@citewithnote
+% \@commandname          \@continuenewcommand    \@emptymarkA
+% \@emptymarkB           \@fileexiststrue        \@fileexistsfalse
+% \@finishcitedef        \@for                   \@forloop
+% \@fornoop              \@fortmp                \@gobble
+% \if@auxfileopened      \if@citewarning         \@ifempty
+% \@@ifempty             \if@fileexists          \if@notfirstcitation
+% \@iforloop             \@itemnum               \@letter
+% \@newcommandwithargs   \@newcommand            \@next
+% \@nextwhile            \@nil                   \@nnil
+% \@notfirstcitationtrue \@notfirstcitationfalse \@numparams
+% \@oldatcatcode         \@onecitation           \@openauxfile
+% \@other                \@paramdef              \@readauxfile
+% \@readbblfile          \@resetnumerals         \@setletters
+% \@spacesub             \@startdef              \@testfileexistence
+% \@tokstostring         \@ttsA                  \@ttsB
+% \@ttsmarkA             \@ttsmarkB              \@undefined
+%
+% So to start things off, we turn `@' into a letter (catcode 11),
+% keeping track of the old catcode for future restoration.  (Simply
+% resetting it to 12 when we leave these macros is insufficient.)  The
+% use of `\cite' as a temporary control sequence is a kludge, but it's a
+% reasonably simple way to accomplish what we need without possibly
+% overwriting something (without an `@' in its name) that might already
+% be defined.
+%
+\edef\cite{\the\catcode`@}%
+\catcode`@ = 11
+\let\@oldatcatcode = \cite
+\chardef\@letter = 11
+\chardef\@other = 12
+%
+%
+% Next come some things that will be useful later.
+%
+% Swallow one parameter.
+%
+\def\@gobble#1{}%
+%
+%
+% \@tokstostring converts its argument into a list of character tokens.
+% It uses no commands that are executed in the stomach, only expansions
+% handled in the gullet.  (This is necessary for use with \edef).
+%
+% Control sequences in the argument are not expanded.  Blanks become a
+% \spacesub.  The argument shouldn't contain other special characters.
+%
+\def\@tokstostring#1{\@ttsA#1 \@ttsmarkA}%
+%
+% \@ttsA partitions a sequence of tokens into portions delimited by blanks.
+%
+\def\@ttsA#1 #2\@ttsmarkA{%
+   \@ifempty{#1}\else
+      \@ttsB #1\@ttsmarkB
+      %
+      \@ifempty{#2}\else
+         \@spacesub\@ttsA#2\@ttsmarkA
+      \fi
+   \fi
+}%
+%
+% \@ttsB processes a sequence of tokens with no contained blanks.
+%
+\def\@ttsB#1{%
+   \ifx #1\@ttsmarkB\else
+      \string #1%
+      \expandafter\@ttsB
+   \fi
+}%
+%
+% This is just so \ifx won't complain about an undefined control sequence.
+%
+\def\@ttsmarkB{\@ttsmarkB}% should never be expanded
+%
+% The expansion of this macro replaces spaces.
+%
+\def\@spacesub{+}%
+%
+%
+% \@ifempty tests if it is given an argument.
+%
+\def\@ifempty#1{\@@ifempty #1\@emptymarkA\@emptymarkB}%
+\def\@@ifempty#1#2\@emptymarkB{\ifx #1\@emptymarkA}%
+%
+\def\@emptymarkA{\@emptymarkA}% Again, so \ifx won't complain.
+%
+%
+% From LaTeX.
+%
+\def\@nnil{\@nil}%
+\def\@fornoop#1\@@#2#3{}%
+%
+\def\@for#1:=#2\do#3{%
+   \edef\@fortmp{#2}%
+   \ifx\@fortmp\empty \else
+      \expandafter\@forloop#2,\@nil,\@nil\@@#1{#3}%
+   \fi
+}%
+%
+\def\@forloop#1,#2,#3\@@#4#5{\def#4{#1}\ifx #4\@nnil \else
+       #5\def#4{#2}\ifx #4\@nnil \else#5\@iforloop #3\@@#4{#5}\fi\fi
+}%
+%
+\def\@iforloop#1,#2\@@#3#4{\def#3{#1}\ifx #3\@nnil
+       \let\@nextwhile=\@fornoop \else
+      #4\relax\let\@nextwhile=\@iforloop\fi\@nextwhile#2\@@#3{#4}%
+}%
+%
+%
+% This routine tests if a file \jobname.#1 exists, and sets
+% \if@fileexists appropriately.
+%
+\newif\if@fileexists
+%
+\def\@testfileexistence#1{%
+   \begingroup
+      \immediate\openin0 = \jobname.#1 % That space is swallowed by TeX.
+      \ifeof 0
+         \global\@fileexistsfalse
+      \else
+         \global\@fileexiststrue
+      \fi
+      \immediate\closein0
+   \endgroup
+}%
+%
+%
+% Now come the four main LaTeX commands and their associated .aux
+% commands.  Just as in LaTeX, \bibliographystyle defines the BibTeX
+% style name (.bst file, that is), and \bibliography defines the
+% database (.bib) file(s).  The corresponding .aux-file commands are
+% \bibstyle and \bibdata, which are there only for BibTeX's (but not
+% LaTeX's) use.
+%
+\def\bibliographystyle#1{\write\@auxfile{\string\bibstyle{#1}}}%
+\let\bibstyle = \@gobble
+%
+% As well as writing the \bibdata command to tell BibTeX
+% which .bib files to read, we read the .bbl file that
+% BibTeX (or a person, conceivably) has produced.
+%
+\def\bibliography#1{%
+   \write\@auxfile{\string\bibdata{#1}}%
+   \@testfileexistence{bbl}%
+   \if@fileexists
+      \@readbblfile
+   \fi
+}%
+\let\bibdata = \@gobble
+%
+%
+% The \nocite{label,label,...} command writes its argument to \@auxfile,
+% but produces no text in the document.  Both \nocite and \cite
+% commands produce \citation commands in the .aux file.
+%
+\def\nocite#1{\write\@auxfile{\string\citation{#1}}}%
+%
+%
+\newif\if@notfirstcitation
+%
+% \cite[note]{label,label,...} produces the citations for the labels as
+% well.  If `[note]' is present, it's added after the labels.
+%
+\def\cite{\futurelet\next\@cite}%
+\def\@cite{%
+   \begingroup \if [\next
+      \aftergroup\@citewithnote
+   \else
+      \global\let\@citenote = \empty
+      \aftergroup\@@cite
+   \fi \endgroup
+}%
+%
+% We get here when we have the optional note.
+%
+\def\@citewithnote[#1]{%
+   \def\@citenote{#1}%
+   \@@cite
+}%
+%
+% Typeset the citations for the labels in #1, followed by \@citenote, if
+% non\empty.  To change the citation's format in the text, redefine one
+% or more `\print...' macros, whose defaults appear later in this file.
+%
+\def\@@cite#1{%
+   \nocite{#1}%
+   % Start printing the text, beginning with a left bracket by default.
+   %
+   \printcitestart
+   \@notfirstcitationfalse
+   \@for \@citation :=#1\do
+   {%
+      \expandafter\@onecitation\@citation\@@
+   }%
+   \ifx\empty\@citenote\else
+      \printcitenote{\@citenote}%
+   \fi
+   \printcitefinish
+}%
+%
+\def\@onecitation#1\@@{%
+   \if@notfirstcitation
+      \printbetweencitations
+   \fi
+   %
+   \expandafter \ifx \csname\@citelabel{#1}\endcsname \relax
+      \if@citewarning
+         \message{Undefined citation `#1'.}%
+      \fi
+      % Give it a dummy definition:
+      \expandafter\gdef\csname\@citelabel{#1}\endcsname{%
+         \nobreak\hskip0pt#1\nobreak\hskip0pt}%
+   \fi
+   % Now produce the text, whether it was undefined or not.
+   \csname\@citelabel{#1}\endcsname
+   \@notfirstcitationtrue
+}%
+%
+% Given a label `foo', the macro `\b@foo' is supposed to
+% hold the text that should be produced.
+%
+\def\@citelabel#1{\@tokstostring{b@#1}}%
+%
+% So, how does a citation label get defined?  When we read the .bbl file
+% (below), a \bibitem writes out a \@citedef command.  And when we read
+% the \@citedef, we define \@citelabel{#1}, where #1 is the user's label.
+% But we have to be careful when reading the \@citedef, because the
+% second argument might have accents or other commands with numbers as
+% arguments. We have given the numerals category code 11 for reading the
+% .aux file, and that prevents them from being recognized as TeX
+% <number>s.
+%
+\def\@citedef#1{\@resetnumerals\@finishcitedef{#1}}%
+\def\@finishcitedef#1#2{\expandafter\gdef\csname\@citelabel{#1}\endcsname{#2}}%
+\def\@resetnumerals{%
+   \catcode`0 = \@other \catcode`1 = \@other \catcode`2 = \@other
+   \catcode`3 = \@other \catcode`4 = \@other \catcode`5 = \@other
+   \catcode`6 = \@other \catcode`7 = \@other \catcode`8 = \@other
+   \catcode`9 = \@other
+}%
+%
+%
+% Reading the .bbl file also produces the typeset bibliography.  Please
+% notice, however, that we do not produce the title for the references
+% (e.g., ``References''), as LaTeX does.  The formatting and spacing of
+% that title, whether it should go into the headline, and so on, are all
+% things determined by your format.  We cannot know these things in
+% advance.  If you wish, you can define \bblhook to produce the title.
+% Or just do it before the \bibliography command.
+%
+\def\@readbblfile{%
+   \begingroup
+      \def\begin##1##2{%
+         % ##1 is just `thebibliography'.
+         % ##2 is the widest label.
+         % We set (new dimen) \biblabelwidth based on the widest label
+         \setbox0 = \hbox{\biblabelcontents{##2}}%
+         \biblabelwidth = \wd0
+      }%
+      \def\end##1{}% ##1 is `thebibliography' again.
+      %
+      % Here we have two possibilities:
+      % \bibitem[typesetlabel]{citationlabel}
+      % \bibitem{citationlabel}
+      % If we have the second of these, the citations are numbered, starting
+      % from one; we use our own count register \@itemnum for this.
+      %
+      \@itemnum = 0
+      \def\bibitem{\futurelet\next\@bibitem}%
+      \def\@bibitem{%
+         \begingroup \if [\next
+            \aftergroup\@alphabibitem
+         \else
+            \aftergroup\@numberedbibitem
+         \fi \endgroup
+      }%
+      \def\@alphabibitem[##1]##2{%
+         % Need \xdef here for various reasons.
+         \expandafter \xdef\csname\@citelabel{##2}\endcsname {##1}%
+         \@finishbibitem{##2}%
+      }%
+      %
+      \def\@numberedbibitem##1{%
+         \advance\@itemnum by 1
+         \expandafter \xdef\csname\@citelabel{##1}\endcsname{\number\@itemnum}%
+         \@finishbibitem{##1}%
+      }%
+      %
+      \def\@finishbibitem##1{%
+         \biblabelprint{\csname\@citelabel{##1}\endcsname}%
+         \write\@auxfile
+            {\string\@citedef{##1}{\csname\@citelabel{##1}\endcsname}}%
+         \ignorespaces
+      }%
+      %
+      % Do the printing (we're producing the bibliography, remember).
+      %
+      \let\em = \bblem
+      \let\newblock = \bblnewblock
+      % Punctuation won't affect spacing;
+      \frenchspacing
+      % the penalties below are from LaTeX's [article,book,report].sty;
+      \clubpenalty = 4000 \widowpenalty = 4000
+      % the next two values come from LaTeX's \sloppy command;
+      \tolerance = 10000 \hfuzz = .5pt
+      % the \parskip is a guess at what looks good;
+      \parskip = 1.5ex plus .5ex minus .5ex
+      % and the .5em matches the \enspace of \biblabelprint below.
+      \everypar = {\hangindent = \biblabelwidth \advance\hangindent by .5em}%
+      \bblrm
+      \bblhook
+      %
+      \input \jobname.bbl
+   \endgroup
+}%
+%
+% \@itemnum is declared outside of \@readbblfile because \newcount is \outer.
+%
+\newcount\@itemnum
+%
+% The widest label's width is useful for redefining \biblabelprint; you
+% redefine \biblabelwidth, in effect, by redefining the \biblabelcontents
+% macro that appears below.
+%
+\newdimen\biblabelwidth
+%
+%
+% Now come the main macros that are related to the printing of the
+% bibliography.  Since you might want to redefine them, they are given
+% default definitions outside of \@readbblfile.
+%
+% The first one controls the printing of a bibliography entry's label.
+%
+\def\biblabelprint#1{%
+   \noindent\hbox to \biblabelwidth{\biblabelcontents{#1}\hfil}\enspace}%
+%
+% By default the labels are typeset in \bblrm, and enclosed in brackets.
+%
+\def\biblabelcontents#1{\bblrm [#1]}%
+%
+% The main text, too, is typeset using \bblrm, which is \rm by default.
+%
+\def\bblrm{\rm}%
+%
+% Emphasis in, e.g., titles, uses \it by default:
+%
+\def\bblem{\it}%
+%
+% The major parts of an entry are separated with \bblnewblock.  The
+% numbers below are taken from LaTeX's article.doc.
+%
+\def\bblnewblock{\hskip .11em plus .33em minus .07em}%
+%
+% Here's where you stick any other bibliography-formatting goodies.
+%
+\let\bblhook = \empty
+%
+%
+% Here are the four default definitions for formatting the in-text
+% citations.  These are what you redefine (after your \input btxmac but
+% before your \bibliography) to get parens instead of brackets, or
+% superscripts, or footnotes, or whatever.
+%
+\def\printcitestart{[}%         left bracket
+\def\printcitefinish{]}%        right bracket
+\def\printbetweencitations{, }% comma, space
+\def\printcitenote#1{, #1}%     comma, space, non\empty note
+%
+% That scheme is pretty flexible.  For example you could use
+%     \def\printcitestart{$^\bgroup}
+%     \def\printcitefinish{\egroup$}
+%     \def\printbetweencitations{,}
+%     \def\printcitenote#1{\hbox{\sevenrm\space (#1)}}
+% to get superscripted in-text citations.  To get something radically
+% different, however, you'll have to define your own \cite command.
+%
+% When we read this from the .aux file, \citation means nothing.
+%
+\let\citation = \@gobble
+%
+%
+% Definitions of references are recorded in \jobname.aux, called
+% the \@auxfile in these macros, which we open (for writing)
+% right after we read it.
+%
+\newwrite\@auxfile
+\newif\if@auxfileopened
+%
+\def\@openauxfile{%
+   \if@auxfileopened\else
+      \@auxfileopenedtrue
+      \immediate\openout\@auxfile = \jobname.aux
+   \fi
+}%
+%
+% Those definitions are read in when we call \@readauxfile,
+% which happens at the end of this (btxmac.tex) file.
+%
+% \@readauxfile treats many characters as letters, since it
+% makes a control sequence name out of the argument, and yet
+% we want to allow general names for labels.
+%
+\def\@readauxfile{%
+   \@testfileexistence{aux}%
+   \if@fileexists
+      \begingroup
+         \@setletters
+         \input \jobname.aux
+      \endgroup
+   \else
+      \message{\@undefinedmessage}%
+      \@citewarningfalse
+   \fi
+   \@openauxfile
+}%
+%
+% We prepare to read certain characters correctly from the .aux file.
+%
+\def\@setletters{%
+   \catcode`_ = \@letter
+   \catcode`+ = \@letter \catcode`- = \@letter
+   \catcode`@ = \@letter
+   \catcode`0 = \@letter \catcode`1 = \@letter \catcode`2 = \@letter
+   \catcode`3 = \@letter \catcode`4 = \@letter \catcode`5 = \@letter
+   \catcode`6 = \@letter \catcode`7 = \@letter \catcode`8 = \@letter
+   \catcode`9 = \@letter
+   \catcode`( = \@letter \catcode`) = \@letter
+   \@setmoreletters
+}%
+%
+% It's conceivable you'd want to change how other characters are read;
+% to do that, define \@setmoreletters before doing an \input btxmac.
+%
+\ifx\@setmoreletters\@undefined
+   \let\@setmoreletters = \empty
+\fi
+%
+% Similarly, a macro package that uses btxmac.tex might define
+% \@undefinedmessage (before doing an \input btxmac).
+%
+\ifx\@undefinedmessage\@undefined
+   \def\@undefinedmessage{No .aux file; I won't give you warnings about
+                          undefined citations.}%
+\fi
+%
+% Even if citations are undefined, we only want to complain if
+% \@citewarningtrue.
+%
+\newif\if@citewarning  \@citewarningtrue
+%
+%
+% Now comes the stuff for dealing with LaTeX's \newcommand.  As
+% mentioned earlier, this \newcommand will redefine a preexisting
+% command; that's different from how LaTeX's \newcommand behaves.
+%
+\newcount\@numparams
+%
+% \newcommand{\foo}[n]{text} defines the control sequence \foo to have
+% n parameters, and replacement text `text'.
+%
+\def\newcommand#1{%
+   \def\@commandname{#1}%
+   \futurelet\@next\@continuenewcommand
+}%
+%
+% Figure out if this definition has parameters.
+%
+\def\@continuenewcommand{\begingroup
+   \if [\@next
+      \aftergroup\@newcommandwithargs
+   \else
+      \global\@numparams = 0
+      \aftergroup\@newcommand
+   \fi
+\endgroup}%
+%
+\def\@newcommandwithargs[#1]{%
+   \global\@numparams = #1
+   \@newcommand
+}%
+%
+% \@numparams is how many arguments this command has.  The name of the
+% command is \@commandname.  The replacement text for the new macro is #1.
+%
+\def\@newcommand#1{%
+   \def\@startdef{\expandafter\edef\@commandname}%
+   \ifnum\@numparams=0
+      \let\@paramdef = \empty
+   \else
+      \ifnum\@numparams>9
+         \errmessage{\the\@numparams\space is too many parameters}%
+      \else
+         \ifnum\@numparams<0
+            \errmessage{\the\@numparams\space is too few parameters}%
+         \else
+            \edef\@paramdef{%
+               % This is disgusting, but \loop doesn't work inside \edef,
+               % because \body isn't defined.
+               %
+               \ifcase\@numparams
+                  \empty  No arguments.
+               \or ####1%
+               \or ####1####2%
+               \or ####1####2####3%
+               \or ####1####2####3####4%
+               \or ####1####2####3####4####5%
+               \or ####1####2####3####4####5####6%
+               \or ####1####2####3####4####5####6####7%
+               \or ####1####2####3####4####5####6####7####8%
+               \or ####1####2####3####4####5####6####7####8####9%
+               \fi
+            }%
+         \fi
+      \fi
+   \fi
+   \expandafter\@startdef\@paramdef{#1}%
+}%
+%
+%
+% Finally, before leaving we read in the .aux file
+%
+\@readauxfile
+%
+% and restore @'s old catcode.
+%
+\catcode`@ = \@oldatcatcode

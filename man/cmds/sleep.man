@@ -1,0 +1,19 @@
+' $Header: /a/newcmds/sleep/RCS/sleep.man,v 1.1 88/12/22 11:53:55 ouster Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS SLEEP cmds
+.BS
+.SH NAME
+sleep \- Suspend execution for a given time period
+.SH SYNOPSIS
+\fBsleep \fIseconds\fR
+.BE
+
+.SH DESCRIPTION
+.LP
+This process simply suspends itself for \fIseconds\fR seconds, then
+exits.  It is convenient in situations where a particular command
+should be executed after a given time period:  run \fBsleep\fR first,
+then the desired command.
+
+.SH KEYWORDS
+delay, sleep

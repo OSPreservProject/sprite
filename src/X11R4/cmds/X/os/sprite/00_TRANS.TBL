@@ -1,0 +1,30 @@
+F ACCESS.C;1                        	access.c
+F AUTH.C;1                          	auth.c
+F CHANGES.;1                        	CHANGES
+L COMMON.MK;1                       	common.mk	/X11/R4/src/cmds/X/common.mk
+F CONNECTI.C;1                      	connection.c
+L DIX.;1                            	dix	/X11/R4/src/cmds/X/dix
+D DS3100_M                          	ds3100.md
+L EXTENSIO.;1                       	extensions	/X11/R4/src/cmds/X/extensions
+L FONTDIR.C;1                       	fontdir.c	/X11/R4/src/cmds/mkfontdir/fontdir.c
+F FONTTYPE.C;1                      	fonttype.c
+F FONTTYPE.H;1                      	fonttype.h
+F GENALLOC.C;1                      	genalloca.c
+F IO.C;1                            	io.c
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+F MITAUTH.C;1                       	mitauth.c
+F OSCOLOR.C;1                       	oscolor.c
+F OSDEP.H;1                         	osdep.h
+F OSFONTS.C;1                       	osfonts.c
+F OSINIT.C;1                        	osinit.c
+F PDEV.C;1                          	pdev.c
+D RCS                               	RCS
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md
+F TAGS.;1                           	tags
+F TMP.;1                            	tmp
+F UTILS.C;1                         	utils.c
+F WAITFOR.C;1                       	WaitFor.c
+F XDMCP.C;1                         	xdmcp.c
+D _IMAKE                            	.imake

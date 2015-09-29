@@ -1,0 +1,118 @@
+'\" Copyright 1991 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /r3/mgbaker/src/cmds/recovTest/RCS/recovBox.man,v 1.1 92/01/07 17:44:29 mgbaker Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS recovBox lib
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+RecovBox_IntObjType, RecovBox_InsertObj, RecovBox_InsertArray, RecovBox_DeleteObj, RecovBox_UpdateObj, RecovBox_ReturnObj, RecovBox_ReturnArray, RecovBox_ReturnContents, RecovBox_GetObjSize, RecovBox_MapType, RecovBox_MapObjectNum \- Routines (actually macros) to add, delete, manipulate and view objects in non-volatile storage.
+
+.SH SYNOPSIS
+.nf
+\fB#include <recovBox.h>\fR
+.sp
+ReturnStatus *
+\fBRecovBox_InitObjType\fR(\fIinitArgsPtr\fP)
+.sp
+ReturnStatus *
+\fBRecovBox_InsertObj\fR(\fIinsertArgsPtr\fP)
+.sp
+ReturnStatus *
+\fBRecovBox_InsertArray\fR(\fIinsertArrayArgsPtr\fP)
+.sp
+ReturnStatus *
+\fBRecovBox_DeleteObj\fR(\fIdeleteArgsPtr\fP)
+.sp
+ReturnStatus *
+\fBRecovBox_UpdateObj\fR(\fIupdateArgsPtr\fP)
+.sp
+ReturnStatus *
+\fBRecovBox_ReturnObj\fR(\fIreturnObjArgsPtr\fP)
+.sp
+ReturnStatus *
+\fBRecovBox_ReturnArray\fR(\fIreturnArrayArgsPtr\fP)
+.sp
+ReturnStatus *
+\fBRecovBox_ReturnContents\fR(\fIreturnTableArgsPtr\fP)
+.sp
+ReturnStatus *
+\fBRecovBox_GetObjSize\fR(\fIgetObjSizeArgsPtr\fP)
+.sp
+ReturnStatus *
+\fBRecovBox_MapType\fR(\fImapTypeArgsPtr\fP)
+.sp
+ReturnStatus *
+\fBRecovBox_MapObjectNum\fR(\fImapObjectNumArgsPtr\fP)
+
+.SH ARGUMENTS
+.AS XXXXXXX XXXXXXX
+.AP Recov_InitObjTypeArgs *initArgsPtr in/out
+Pointer to structure containing information about new object type to be created.
+One field will return the new object type number.
+.AP Recov_InsertObjArgs *insertArgsPtr in/out
+Pointer to structure containing information about object to insert in box.
+.AP Recov_InsertArrayArgs *insertArrayArgsPtr in/out
+Pointer to structure containing information about set of objects to insert in
+box.  One field will return the new objects' ID.
+.AP Recov_DeleteObjArgs *deleteArgsPtr in
+Pointer to structure containing information about the object to delete from
+the box.
+.AP Recov_UpdateObjArgs *updateArgsPtr in
+Pointer to structure containing information about the object to update and how
+to update it.
+.AP Recov_ReturnObjArgs *returnObjArgsPtr in/out
+Pointer to structure containing information about the object to return.  One
+field will return the object.
+.AP Recov_ReturnArrayArgs *returnArrayArgsPtr in/out
+Pointer to structure containing information about the type of objects to return.
+One field will contain the array of returned objects of the specified type
+number.
+.AP Recov_ReturnTableArgs *returnContentsArgsPtr in/out
+Pointer to structure containing information about how to return the table
+of contents for the box.  One field will return the table of contents.
+.AP Recov_GetObjectSizeArgs *getObjectSizeArgsPtr in/out
+Pointer to structure containing information about returning the size of
+the objects of a given type.  One field will be the returned size.
+.AP Recov_MapTypeArgs *mapTypeArgsPtr in/out
+Pointer to structure containing information about returning the real typeID
+for a given typeID used by an application.
+.AP Recov_MapObjectNumArgs *mapObjectNumArgsPtr in/out
+Pointer to structure containing information about returning the real object
+number for a given object number used by an application.  The real type ID
+must be specified in the structure.
+.BE
+
+.SH DESCRIPTION
+.PP
+The recovery box will store sets of objects and preserve them across machine
+failure.  RecovBox_InitObjType() will initialize a new object type.
+The structure
+parameter must be filled in with the object size and the maximum number of
+objects that will be allowed to exist at once.  See "recovBox.h" for a
+description of this structure and all other structure parameters to the
+routines described in this manual page.  The other routines make it possible
+to insert, update, and delete objects of a given type.  It is also possible
+to return the contents of an object, all the objects of a given type, or
+to return the table of contents of the recovery box.  For a description of
+the what the table of contents looks like, see "recovBox.h."  To make it
+possible for different processes to refer to the same types and objects
+without needing to know about their order of insertion, types can be
+initialized by an application with a special "application typeID," and
+likewise, when objects are inserted, they can be given special "application
+object numbers."  Then any application can ask what is the real typeID or
+real object number for a given application typeID or object number.
+.PP
+Note that the kernel on the machine may already be using the recovery box,
+so that returning its table of contents may show object types already in use
+before the user has initialized any types.
+
+.SH KEYWORDS
+Recovery, non-volatile storage

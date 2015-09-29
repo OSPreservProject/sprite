@@ -1,0 +1,66 @@
+
+
+
+Tcl_StringMatch       C Library Procedures        Tcl_StringMatch
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tcl_StringMatch - test whether a string matches a pattern
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttccll..hh>>
+
+     int
+     TTccll__SSttrriinnggMMaattcchh(_s_t_r_i_n_g, _p_a_t_t_e_r_n)
+
+AARRGGUUMMEENNTTSS
+     char*_s_t_r_i_n_g(in)
+     String to test.
+
+     char*_p_a_t_t_e_r_n(in)
+     Pattern to match against string.  May contain special  char-
+     acters from the set *?\[].
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This utility procedure determines whether a string matches a
+     given  pattern.  If it does, then TTccll__SSttrriinnggMMaattcchh returns 1.
+     Otherwise TTccll__SSttrriinnggMMaattcchh returns 0.  The algorithm used for
+     matching  is the same algorithm used in the ``string match''
+     Tcl command and is similar to the algorithm used by  the  C-
+     shell  for file name matching;  see the Tcl manual entry for
+     details.
+
+
+KKEEYYWWOORRDDSS
+     match, pattern, string
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     1
+
+
+

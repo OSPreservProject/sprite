@@ -1,0 +1,68 @@
+
+
+
+SRANLIB                   User Commands                   SRANLIB
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     sranlib - Version of ranlib for SPUR libraries
+
+SSYYNNOOPPSSIISS
+     ssrraannlliibb [--tt] [--LL] _f_i_l_e _f_i_l_e ...
+
+OOPPTTIIOONNSS
+     --tt            Simply ``touch'' the archive, so that the sym-
+                   bol table will be considered up-to-date.  Use-
+                   ful after copying an archive.
+
+     --LL            Disable locking.  Ordinarily  sranlib  and  ar
+                   use  flock()  to  synchronize access to files.
+                   This option turns locking off.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     SSrraannlliibb is similar to rraannlliibb  except  that  it  operates  on
+     libraries  containing  SPUR  binaries.  See the manual entry
+     for rraannlliibb for details on what it does.
+
+
+BBUUGGSS
+     The existence of this program at all is a bug.  There should
+     not  be  different versions of rraannlliibb for different instruc-
+     tion sets, but rather a single version that can  handle  all
+     binary formats.
+
+
+KKEEYYWWOORRDDSS
+     library, random access, table of contents
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  April 4, 1989                    1
+
+
+

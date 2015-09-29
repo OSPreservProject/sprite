@@ -1,0 +1,945 @@
+head     1.26;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.26
+date     90.11.02.08.43.08;  author mendel;  state Exp;
+branches ;
+next     1.25;
+
+1.25
+date     90.03.14.13.46.45;  author rab;  state Exp;
+branches ;
+next     1.24;
+
+1.24
+date     90.03.01.16.45.12;  author ouster;  state Exp;
+branches ;
+next     1.23;
+
+1.23
+date     90.02.27.17.43.03;  author douglis;  state Exp;
+branches ;
+next     1.22;
+
+1.22
+date     90.02.20.11.50.15;  author douglis;  state Exp;
+branches ;
+next     1.21;
+
+1.21
+date     90.02.13.22.55.19;  author rab;  state Exp;
+branches ;
+next     1.20;
+
+1.20
+date     89.10.09.16.59.18;  author tve;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     89.10.09.06.55.52;  author rab;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     89.10.02.10.05.40;  author rab;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     89.09.27.12.32.05;  author douglis;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     89.07.21.18.29.50;  author douglis;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     89.06.16.09.25.43;  author ouster;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     89.04.03.22.23.36;  author douglis;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     89.03.15.11.26.59;  author douglis;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     88.12.31.14.47.45;  author ouster;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     88.11.23.17.28.17;  author ouster;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     88.11.23.09.52.10;  author ouster;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     88.11.08.11.17.38;  author douglis;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     88.10.02.17.15.03;  author ouster;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.09.19.08.31.54;  author ouster;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.09.15.10.23.27;  author douglis;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.08.31.17.15.24;  author ouster;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.08.31.16.54.39;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.08.29.15.02.19;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.08.26.15.07.34;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.08.26.15.05.00;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@system makefile for the top of a directory containing library directories,
+such as lib/c.
+@
+
+
+1.26
+log
+@Changed R3 stuff to R4 stuff.
+@
+text
+@#
+# This is a library Makefile that is included by the Makefiles for
+# the top-level directories of multi-directory libraries ("biglib"s).
+# For most targets, this file just passes the targets on to each of
+# the subdirectories.  The file that includes this one should already
+# have defined the following variables:
+#	INSTALLDIR	generic place to install archive (we'll add a .md
+#			subdirectory specifier here)
+#	LINTDIR		place to install lint library (we'll add a .mach
+#			extension here)
+#	NAME		base name of library (e.g. tcl, sx, c, etc.)
+#	SUBDIRS		subdirectories that contain "interesting" things
+#			(e.g., individual commands, modules of the kernel,
+#			of sub-portions of a large library).
+#	TM		target machine type for object files etc.
+#	TYPE		a keyword identifying which sort of command this
+#			is;  used to determine where to install, etc.
+#
+# A bunch of variables are passed on to lower-level makes, if they are
+# defined;  see the definitions immediately below for a complete list.
+#	
+# $Header: /sprite/lib/pmake/RCS/biglibtop.mk,v 1.25 90/03/14 13:46:45 rab Exp $
+#
+
+#
+# Set up search paths.
+#
+.PATH.a		: # Clear out;  otherwise Pmake uses the installed libraries
+		  # where it should be using uninstalled ones.
+
+#
+# System programs -- assign conditionally so they may be redefined in
+# including makefile
+#
+BINDIR		?= /sprite/cmds.$(MACHINE)
+
+CAT		?= $(BINDIR)/cat
+CP		?= $(BINDIR)/cp
+MV		?= $(BINDIR)/mv
+RANLIB		?= $(BINDIR)/ranlib
+RM		?= $(BINDIR)/rm
+TEST            ?= $(BINDIR)/test
+UPDATE		?= $(BINDIR)/update
+
+#
+# Several variables (such as where to install) are set based on the
+# TYPE variable.  Of course, any of these variables can be overridden
+# by explicit assignments.
+#
+TYPE		?= unknown
+#if !empty(TYPE:Msprite)
+INSTALLDIR	?= /sprite/lib
+INSTALLMAN	?= /sprite/man/lib/$(NAME)
+LINTDIR		?= /sprite/lib/lint
+#elif !empty(TYPE:Mx)
+INSTALLDIR	?= /X/lib
+INSTALLMAN	?= /X/man/lib/$(NAME)
+LINTDIR		?= /X/lib/lint
+#elif !empty(TYPE:MX11R4)
+INSTALLDIR	?= /X11/R4/lib
+INSTALLMAN	?= /X11/R4/man/lib/$(NAME)
+LINTDIR		?= /X11/R4/lib/lint
+#else
+INSTALLDIR	?=
+INSTALLMAN	?=
+LINTDIR		?=
+#endif
+
+#
+# Figure out what stuff we'll pass to sub-makes.
+#
+PASSVARS	=
+#if		defined(CC) && empty(CC:Mcc)
+PASSVARS	+= 'CC=$(CC)'
+#endif
+#ifdef		XCFLAGS
+PASSVARS	+= 'XCFLAGS=$(XCFLAGS)'
+#endif
+#ifdef		XAFLAGS
+PASSVARS	+= 'XAFLAGS=$(XAFLAGS)'
+#endif
+#ifdef		INCLUDEDIR
+PASSVARS	+= 'INCLUDEDIR=$(INCLUDEDIR)'
+#endif
+#ifdef		INSTALLDIR
+PASSVARS	+= 'INSTALLDIR=$(INSTALLDIR)'
+#endif
+#ifdef		NOBACKUP
+PASSVARS	+= 'NOBACKUP=$(NOBACKUP)'
+#endif
+#ifdef		BACKUPAGE
+PASSVARS	+= 'BACKUPAGE=$(BACKUPAGE)'
+#endif
+#ifdef		TM
+PASSVARS	+= 'TM=$(TM)'
+#endif
+
+#
+# The following include is so that RANLIB can get re-set depending
+# on the machine type.
+#
+#include	<tm.mk>
+INSTALLFLAGS	?=
+INSTALLMANFLAGS	?=
+
+# MAKESUBDIRS usage:
+#	<target> : MAKESUBDIRS
+#
+# This .USE target will simply pass <target> onto each subdirectory
+# in a separate make.If the TM variable is defined, then only pass
+# the target on to subdirectories whose Makefiles include the given
+# TM among their MACHINES.
+#
+MAKESUBDIRS	: .USE .MAKE .EXEC .SILENT .NOEXPORT
+	for i in $(SUBDIRS);
+	do
+#ifdef TM
+		if grep '^MACHINES' $i/Makefile | grep -s $(TM); then
+			true;
+		else continue;
+		fi
+#endif TM
+		echo %%% ${i} %%%
+		(cd $i; $(MAKE) $(PASSVARS) $(.TARGET))
+	done
+
+#
+# MAKEINSTALLLIB usage:
+#	<target> : <source> MAKEINSTALLLIB
+# Will copy over a library and re-ranlib it.
+#
+MAKEINSTALLLIB : .USE
+	$(RM) -f $(.TARGET).old $(.TARGET).new~
+	$(CP) $(.ALLSRC) $(.TARGET).new~
+	$(RANLIB) $(.TARGET).new~
+	- $(MV) $(.TARGET) $(.TARGET).old
+	$(MV) $(.TARGET).new~ $(.TARGET)
+
+REGLIB			= $(TM).md/lib$(NAME).a
+PROFLIB			= $(TM).md/lib$(NAME)_p.a
+DEBUGLIB		= $(TM).md/lib$(NAME)_g.a
+LINTLIB			= $(TM).md/llib-l$(NAME).ln
+INSTLIB			= $(INSTALLDIR)/$(REGLIB)
+INSTPROFILE		= $(INSTALLDIR)/$(PROFLIB)
+INSTDEBUG		= $(INSTALLDIR)/$(DEBUGLIB)
+LINTLIB			= $(TM).md/llib-l$(NAME).ln
+INSTLINT		= $(LINTDIR).$(TM)/llib-l$(NAME).ln
+
+#ifndef no_targets
+#
+# We should define the main targets.  See the Mkmf man page for details.
+#
+
+default		: $(REGLIB)
+
+#
+# Here as with MAKESUBDIRS, if an explicit TM is given then only
+# re-make in the subdirectories that support that target machine.
+#
+$(REGLIB)	: $(SUBDIRS)	
+$(SUBDIRS)	:: .MAKE .EXEC .SILENT .NOEXPORT
+#ifdef TM
+	if grep '^MACHINES' $(.TARGET)/Makefile | grep -s $(TM); then
+		cd $(.TARGET); $(MAKE) $(PASSVARS)
+	else true;
+	fi
+#else
+	cd $(.TARGET); $(MAKE) $(PASSVARS)
+#endif
+
+$(PROFLIB)	: profile
+$(DEBUGLIB)	: debug
+
+clean tidy		:: .MAKE .SILENT
+	echo "rm -f $(REGLIB) $(PROFLIB) $(DEBUGLIB)"
+	rm -f $(REGLIB) $(PROFLIB) $(DEBUGLIB)
+	for i in $(SUBDIRS);
+	do
+#ifdef TM
+		if grep '^MACHINES' $i/Makefile | grep -s $(TM); then
+			true;
+		else continue;
+		fi
+#endif TM
+		echo %%% ${i} %%%
+		(cd $i; $(MAKE) $(PASSVARS) clean)
+	done
+
+#if empty(TYPE:Munknown)
+#
+# The install target is handled specially, in order to avoid multiple
+# passes through the subdirectories for compiling, generating lint
+# libraries, installing headers, and so on.
+#
+install			:: .MAKE .EXEC .NOEXPORT
+	$(RM) -f $(TM).md/llib-l$(NAME).ln
+	for i in $(SUBDIRS);
+	do
+#ifdef TM
+		if grep '^MACHINES' $i/Makefile | grep -s $(TM); then
+			true;
+		else continue;
+		fi
+#endif TM
+		echo %%% ${i} %%%
+		(cd $i; $(MAKE) $(PASSVARS) install)
+		$(CAT) ${i}/$(TM).md/llib-l${i}.ln >> $(LINTLIB)
+	done
+	$(RM) -f $(INSTLIB).old $(INSTLIB).new~
+	$(CP) $(REGLIB) $(INSTLIB).new~
+	$(RANLIB) $(INSTLIB).new~
+	- $(MV) $(INSTLIB) $(INSTLIB).old
+	$(MV) $(INSTLIB).new~ $(INSTLIB)
+	$(UPDATE) -m 664 $(INSTALLFLAGS) $(LINTLIB) $(INSTLINT)
+
+#
+# Rebuild is like install, but it nukes the library first and starts
+# from scratch, telling the subdirs to append and not to ranlib.
+#
+rebuild			:: .MAKE .EXEC .NOEXPORT
+	$(RM) -f $(REGLIB)
+	for i in $(SUBDIRS);
+	do
+#ifdef TM
+		if grep '^MACHINES' $i/Makefile | grep -s $(TM); then
+			true;
+		else continue;
+		fi
+#endif TM
+		echo %%% ${i} %%%
+		(cd $i; $(MAKE) $(PASSVARS) rebuild)
+	done
+	ranlib $(REGLIB)
+
+$(INSTLIB)		: $(REGLIB) MAKEINSTALLLIB
+installdebug		:: $(DEBUGLIB) debuglink
+debuglink		!
+	rm -f $(INSTDEBUG)
+	ln -s `pwd`/$(DEBUGLIB) $(INSTDEBUG)
+installlint		:: $(INSTLINT)
+$(INSTLINT)		:: $(LINTLIB) .SILENT
+	$(UPDATE) -m 664 $(INSTALLFLAGS) $(LINTLIB) $(INSTLINT)
+installman		:: .SILENT
+#if !empty(MANPAGES)
+	$(UPDATE) -m 444 -l $(INSTALLMANFLAGS) $(MANPAGES) $(INSTALLMAN)
+#endif
+installprofile		:: $(INSTPROFILE)
+$(INSTPROFILE)		: $(PROFLIB) MAKEINSTALLLIB
+
+#
+# The following target does a quick install without cycling through to
+# recompile in each of the subdirectories.  Can't use the MAKEINSTALLLIB
+# macro for this, unfortunately.
+#
+installquick		::
+	$(RM) -f $(INSTLIB).old $(INSTLIB).new~
+	$(CP) $(REGLIB) $(INSTLIB).new~
+	$(RANLIB) $(INSTLIB).new~
+	- $(MV) $(INSTLIB) $(INSTLIB).old
+	$(MV) $(INSTLIB).new~ $(INSTLIB)
+
+#else
+#
+# The targets below are used if there's no known place to install this
+# library:  just output a warning message.
+#
+install installdebug installlint installman installprofile \
+installquick		:: .SILENT
+	echo "Can't install library $(NAME): no install directory defined"
+#endif
+
+
+lintlib			: $(LINTLIB)
+$(LINTLIB)		: .MAKE .EXEC .SILENT
+	$(RM) -f $(TM).md/llib-l$(NAME).ln
+	for i in $(SUBDIRS);
+	do
+#ifdef TM
+		if grep '^MACHINES' $i/Makefile | grep -s $(TM); then
+			true;
+		else continue;
+		fi
+#endif TM
+		echo %%% ${i} %%%
+		(cd $i; $(MAKE) $(PASSVARS) lintlib)
+		$(CAT) ${i}/$(TM).md/llib-l${i}.ln >> $(LINTLIB)
+	done
+
+mkmf			::
+	mkmf
+
+newtm			! .MAKE .SILENT
+	if $(TEST) -d $(TM).md; then
+	    true
+	else
+	    mkdir $(TM).md;
+	    chmod 775 $(TM).md;
+	    mkmf -m$(TM)
+	fi
+	for i in $(SUBDIRS);
+	do
+		echo %%% ${i} %%%
+		(cd $i; $(MAKE) $(PASSVARS) newtm)
+	done
+
+rcsinfo			: .MAKE .SILENT
+	for i in $(SUBDIRS);
+	do
+		echo %%% ${i} %%%
+		(cd $i; rcsinfo)
+	done
+
+debug depend installdebug 		:: MAKESUBDIRS
+installhdrs installman installprofile	:: MAKESUBDIRS
+lint mkmf profile rdist			:: MAKESUBDIRS
+
+dist: subdirs_d
+#if defined(DISTDIR) && !empty(DISTDIR)
+	if $(TEST) -e $(DISTDIR)/$(TM).md ;then
+	    echo ""
+	else
+	    mkdir $(DISTDIR)/$(TM).md
+	fi
+	for i in Makefile local.mk
+	do
+	if $(TEST) -e $${i}; then
+	    $(UPDATE)  $${i} $(DISTDIR)/$${i} ;else true; fi
+	done
+#endif
+
+subdirs_d:
+#if defined(DISTDIR) && !empty(DISTDIR)
+	for i in $(SUBDIRS)
+	do
+	    echo %%% $${i} %%%
+#ifdef TM
+	    ( cd $${i}; $(MAKE) dist 'DISTDIR=$(DISTDIR)'/$${i} 'TM=$(TM)' )
+#else
+	    ( cd $${i}; $(MAKE) dist 'DISTDIR=$(DISTDIR)'/$${i} )
+#endif
+	done
+#if !empty(MANPAGES)
+	$(UPDATE)  $(MANPAGES) $(DISTDIR)/$(MANPAGES)
+#endif
+#else
+	@@echo "Sorry, no distribution directory defined."
+#endif
+
+#include <all.mk>
+
+#endif no_targets
+
+.MAKEFLAGS	: -C		# No compatibility needed
+@
+
+
+1.25
+log
+@Some of the files in gnulib must be compiled with gcc, even on the
+ds3100, so I changed biglibtop.mk so that it doesn't pass CC to
+sub-makes unless CC is something other than cc.
+@
+text
+@d22 1
+a22 1
+# $Header: /sprite/lib/pmake/RCS/biglibtop.mk,v 1.24 90/03/01 16:45:12 ouster Exp Locker: rab $
+d59 4
+a62 4
+#elif !empty(TYPE:MX11R3)
+INSTALLDIR	?= /mic/X11R3/lib
+INSTALLMAN	?= /mic/X11R3/man/lib/$(NAME)
+LINTDIR		?= /mic/X11R3/lib/lint
+@
+
+
+1.24
+log
+@Changed debuggable versions of libraries to be symbolic links
+to source areas.
+@
+text
+@d22 1
+a22 1
+# $Header: /sprite/lib/pmake/RCS/biglibtop.mk,v 1.23 90/02/27 17:43:03 douglis Exp $
+d73 1
+a73 1
+#ifdef		CC
+@
+
+
+1.23
+log
+@added support for backup age flag BACKUPAGE
+@
+text
+@d22 1
+a22 1
+# $Header: /sprite/lib/pmake/RCS/biglibtop.mk,v 1.22 90/02/20 11:50:15 douglis Exp Locker: douglis $
+d236 4
+a239 2
+installdebug		:: $(INSTDEBUG)
+$(INSTDEBUG)		: $(DEBUGLIB) MAKEINSTALLLIB
+@
+
+
+1.22
+log
+@tried to add some consistency to ::/: operators, and fixed tve's TYPE==personal complaint
+@
+text
+@d22 1
+a22 1
+# $Header: /sprite/lib/pmake/RCS/biglibtop.mk,v 1.21 90/02/13 22:55:19 rab Exp Locker: douglis $
+d90 3
+@
+
+
+1.21
+log
+@Make md subdirs for distribution.
+@
+text
+@d22 1
+a22 1
+# $Header: /sprite/lib/pmake/RCS/biglibtop.mk,v 1.20 89/10/09 16:59:18 tve Exp Locker: rab $
+d250 1
+a250 1
+installquick		:
+@
+
+
+1.20
+log
+@Added INSTALLMAN, INSTALLDIR for TYPE=X11R3
+@
+text
+@d22 1
+a22 1
+# $Header: /sprite/lib/pmake/RCS/biglibtop.mk,v 1.19 89/10/09 06:55:52 rab Exp Locker: tve $
+d314 5
+@
+
+
+1.19
+log
+@Fixed distribution stuff.
+@
+text
+@d22 1
+a22 1
+# $Header: /sprite/lib/pmake/RCS/biglibtop.mk,v 1.18 89/10/02 10:05:40 rab Exp Locker: rab $
+d59 4
+@
+
+
+1.18
+log
+@Added Distribution stuff.
+@
+text
+@d22 1
+a22 1
+# $Header: /sprite/lib/pmake/RCS/biglibtop.mk,v 1.17 89/09/27 12:32:05 douglis Exp Locker: rab $
+d42 1
+d284 1
+a284 1
+	if test -d $(TM).md; then
+d312 2
+a313 1
+	if test -e $${i}; then $(UPDATE)  $${i} $(DISTDIR)/$${i} ;fi
+@
+
+
+1.17
+log
+@added rebuild target
+@
+text
+@d22 1
+a22 1
+# $Header: /sprite/lib/pmake/RCS/biglibtop.mk,v 1.16 89/07/21 18:29:50 douglis Exp Locker: douglis $
+d306 26
+@
+
+
+1.16
+log
+@changed newtm to do mkmf for only the new machine type
+@
+text
+@d22 1
+a22 1
+# $Header: /sprite/lib/pmake/RCS/biglibtop.mk,v 1.15 89/06/16 09:25:43 ouster Exp Locker: douglis $
+d207 19
+@
+
+
+1.15
+log
+@Install lint during "install", and echo all commands.
+@
+text
+@d22 1
+a22 1
+# $Header: /sprite/lib/pmake/RCS/biglibtop.mk,v 1.14 89/04/03 22:23:36 douglis Exp $
+d269 1
+a269 1
+	    mkmf
+@
+
+
+1.14
+log
+@added 'tidy' target.
+@
+text
+@d22 1
+a22 1
+# $Header: /sprite/lib/pmake/RCS/biglibtop.mk,v 1.13 89/03/15 11:26:59 douglis Exp Locker: douglis $
+d187 1
+a187 1
+install			:: .MAKE .EXEC .SILENT .NOEXPORT
+d206 1
+@
+
+
+1.13
+log
+@don't export SUBDIRS -- do pmake within each subdir but
+do sequential make across the top level, or get exponential growth.
+@
+text
+@d22 1
+a22 1
+# $Header: /sprite/lib/pmake/RCS/biglibtop.mk,v 1.12 88/12/31 14:47:45 ouster Exp Locker: douglis $
+d166 1
+a166 1
+clean			:: .MAKE .SILENT
+@
+
+
+1.12
+log
+@Use TYPE variable to decide on things like INSTALLDIR, INCLUDEDIR, etc.
+@
+text
+@d22 1
+a22 1
+# $Header: /sprite/lib/pmake/RCS/biglibtop.mk,v 1.11 88/11/23 17:28:17 ouster Exp Locker: ouster $
+d153 1
+a153 1
+$(SUBDIRS)	:: .MAKE .EXEC .SILENT
+@
+
+
+1.11
+log
+@Revisions to make "make newtm" work.
+@
+text
+@d16 2
+d22 1
+a22 1
+# $Header: /sprite/lib/pmake/RCS/biglibtop.mk,v 1.10 88/11/23 09:52:10 ouster Exp Locker: ouster $
+d45 20
+d96 1
+d181 26
+a206 1
+install			:: $(INSTLIB) installlint installhdrs
+d208 2
+d213 4
+a216 2
+installdebug		:: $(INSTDEBUG)
+$(INSTDEBUG)		: $(DEBUGLIB) MAKEINSTALLLIB
+d232 11
+d283 3
+a285 3
+debug depend installhdrs 		:: MAKESUBDIRS
+installdebug installprofile		:: MAKESUBDIRS
+lint profile rdist			:: MAKESUBDIRS
+@
+
+
+1.10
+log
+@Major changes to finalize the new C library (move include.new to
+include, etc.).
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/biglibtop.mk,v 1.9 88/11/08 11:17:38 douglis Exp Locker: ouster $
+d199 14
+a212 3
+newtm			:: .IGNORE
+	mkdir $(TM).md
+	mkmf
+d222 1
+a222 1
+lint newtm profile rdist		:: MAKESUBDIRS
+@
+
+
+1.9
+log
+@don't export the "for i in $(SUBDIRS) loop.
+@
+text
+@a8 1
+#	LIBRARY		base name of library (e.g. tcl, sx, c, etc.)
+d11 1
+d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/biglibtop.mk,v 1.8 88/10/02 17:15:03 ouster Exp Locker: douglis $
+d26 2
+a27 1
+.PATH.a		: # Clear out
+d72 1
+a72 1
+#include	<tmflags.mk>
+d79 5
+a83 2
+# in a separate make.
+MAKESUBDIRS	: .USE .MAKE .SILENT .NOEXPORT
+d86 6
+d108 4
+a111 4
+REGLIB			= $(TM).md/lib$(LIBRARY).a
+PROFLIB			= $(TM).md/lib$(LIBRARY)_p.a
+DEBUGLIB		= $(TM).md/lib$(LIBRARY)_g.a
+LINTLIB			= $(TM).md/llib-l$(LIBRARY).ln
+d115 2
+a116 2
+LINTLIB			= $(TM).md/llib-l$(LIBRARY).ln
+INSTLINT		= $(LINTDIR).$(TM)/llib-l$(LIBRARY).ln
+d123 14
+a136 2
+default		: $(SUBDIRS)
+$(SUBDIRS)	::
+d138 1
+a139 1
+$(REGLIB)	: default
+d143 16
+a158 1
+install			:: $(INSTLIB)
+d160 5
+a166 2
+installdebug		:: $(INSTDEBUG)
+$(INSTDEBUG)		: $(DEBUGLIB) MAKEINSTALLLIB
+d180 3
+a182 2
+$(LINTLIB)		: .MAKE .SILENT
+	$(RM) -f $(TM).md/llib-l$(LIBRARY).ln
+d185 6
+d196 2
+a197 1
+lintlib			: $(LINTLIB)
+d199 3
+a201 18
+installlint		:: $(INSTLINT)
+$(INSTLINT)		:: $(LINTLIB)
+	@@$(UPDATE) -m 664 $(INSTALLFLAGS) $(LINTLIB) $(INSTLINT)
+
+mkmf			: .MAKE .SILENT
+	for i in $(SUBDIRS);
+	do
+		echo %%% ${i} %%%
+		(cd $i; mkmf)
+	done
+
+newtarget		: .MAKE .SILENT
+	for i in $(SUBDIRS);
+	do
+		echo %%% ${i} %%%
+		(cd $i; mkdir $(TM).md)
+	done
+
+d209 1
+a209 1
+clean debug depend install installhdrs 	:: MAKESUBDIRS
+d211 1
+a211 1
+lint profile rdist			:: MAKESUBDIRS
+@
+
+
+1.8
+log
+@Don't use .ZEROTIME attribute anymore.
+@
+text
+@d20 1
+a20 1
+# $Header: biglibtop.mk,v 1.7 88/09/19 08:31:54 ouster Exp $
+d79 1
+a79 1
+MAKESUBDIRS	: .USE .MAKE .SILENT
+@
+
+
+1.7
+log
+@Don't quit during installs if there's no old library to mv.
+@
+text
+@d20 1
+a20 1
+# $Header: biglibtop.mk,v 1.6 88/09/15 10:23:27 douglis Exp $
+d140 1
+a140 1
+$(LINTLIB)		: .MAKE .SILENT .ZEROTIME
+@
+
+
+1.6
+log
+@added include of all.mk
+@
+text
+@d20 1
+a20 1
+# $Header: biglibtop.mk,v 1.5 88/08/31 17:15:24 ouster Exp $
+d95 1
+a95 1
+	$(MV) $(.TARGET) $(.TARGET).old
+d137 1
+a137 1
+	$(MV) $(INSTLIB) $(INSTLIB).old
+@
+
+
+1.5
+log
+@Last fix didn't work.  This one does.
+@
+text
+@d20 1
+a20 1
+# $Header: biglibtop.mk,v 1.4 88/08/31 16:54:39 ouster Exp $
+d179 2
+@
+
+
+1.4
+log
+@Keep "installquick" from needing to check all subdirs.
+@
+text
+@d20 1
+a20 1
+# $Header: biglibtop.mk,v 1.3 88/08/29 15:02:19 ouster Exp $
+d127 12
+a138 1
+installquick		: MAKEINSTALLLIB
+@
+
+
+1.3
+log
+@Connect $(DEBUGLIB) to debug, etc.
+@
+text
+@d20 1
+a20 1
+# $Header: biglibtop.mk,v 1.2 88/08/26 15:07:34 douglis Exp $
+d127 1
+a127 1
+installquick		: $(INSTLIB)
+@
+
+
+1.2
+log
+@save away old library w/ .old suffix.
+@
+text
+@d20 1
+a20 1
+# $Header: top.mk,v 1.8 88/08/13 11:23:15 ouster Exp $
+d116 4
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d36 1
+d92 5
+a96 3
+	$(RM) -f $(.TARGET)
+	$(CP) $(.ALLSRC) $(.TARGET)
+	$(RANLIB) $(.TARGET)
+@

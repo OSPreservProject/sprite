@@ -1,0 +1,28 @@
+*
+*   We have half a megabyte of VM; let's be conservative and claim a bit less.
+*   Not really... seems like maybe we only have 150K.  seen in another config
+*   file -- 140K.  let's go for it.
+* m 400000
+m 140000
+* (for testing I claim a LOT less! Uncomment this if you want to see sections.)
+* m 100000
+*
+*   And send output by default to lpr.
+*
+* o !lpr
+*   Oh, just added hack to get printer name into output string: $ get replaced
+o !lpr -P$
+*
+*   Default resolution.
+*
+D 300
+*
+*   Stack pages correctly, assuming that they come out face-up.
+*
+* r
+*
+*
+*   Always compress the fonts, since we've got fast computers and slow ports.
+*
+* But on the other hand, things don't seem to work if we compress fonts.
+*Z

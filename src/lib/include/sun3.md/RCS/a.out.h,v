@@ -1,0 +1,341 @@
+head     1.13;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.13
+date     91.11.14.21.39.08;  author kupfer;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     90.12.07.23.47.20;  author rab;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     90.10.26.01.15.26;  author rab;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     90.02.16.14.02.26;  author rab;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     89.12.16.01.12.41;  author mendel;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     89.07.31.18.09.44;  author jhh;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     89.07.17.15.14.53;  author mgbaker;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.06.19.14.13.14;  author jhh;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.03.12.14.06.40;  author mendel;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.09.02.08.37.17;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.08.01.08.14.18;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.07.28.11.28.08;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.07.02.17.06.10;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.13
+log
+@Add RCS Header line.
+@
+text
+@/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@@(#)a.out.h	5.2 (Berkeley) 4/7/87
+ * $Header$ SPRITE (Berkeley)
+ */
+
+/*
+ * Definitions of the a.out header
+ * and magic numbers are shared with
+ * the kernel.
+ */
+#ifndef _AOUT
+#define _AOUT
+
+#include <sun3.md/sys/exec.h>
+
+extern int Aout_PageSize[];
+
+/*
+ * Macro to tell whether or not the magic number in an a.out file
+ * is an illegal one.
+ */
+
+#define	N_BADMAG(x) \
+    (((x).a_magic)!=OMAGIC && \
+     ((x).a_magic)!=NMAGIC && \
+     ((x).a_magic)!=ZMAGIC && \
+     ((x).a_magic)!=SPRITE_ZMAGIC && \
+     ((x).a_magic)!=UNIX_ZMAGIC)
+
+/*
+ * Macros to tell where various pieces of information start in the
+ * a.out file.
+ */
+
+#define N_PAGSIZ(x) (Aout_PageSize[(x).a_machtype])
+
+#define N_TXTOFF(x) \
+	(((x).a_magic==ZMAGIC || (x).a_magic==UNIX_ZMAGIC) \
+	    ? 0 : sizeof (struct exec))
+#define N_SYMOFF(x) \
+	(N_TXTOFF(x) + (x).a_text+(x).a_data + (x).a_trsize + (x).a_drsize)
+#define	N_STROFF(x) \
+	(N_SYMOFF(x) + (x).a_syms)
+
+/*
+ * Macros to tell where the various segments start in virtual memory,
+ * when the process is loaded.
+ */
+#include <sun3.md/kernel/procMach.h>
+
+#define N_TXTADDR(x) PROC_CODE_LOAD_ADDR(*((ProcExecHeader *) &(x)))
+#define N_DATADDR(x) PROC_DATA_LOAD_ADDR(*((ProcExecHeader *) &(x)))
+#define N_BSSADDR(x) PROC_BSS_LOAD_ADDR(*((ProcExecHeader *) &(x)))
+
+/*
+ * Format of a relocation datum.
+ */
+struct relocation_info {
+	int	r_address;	/* address which is relocated */
+unsigned int	r_symbolnum:24,	/* local symbol ordinal */
+		r_pcrel:1, 	/* was relocated pc relative already */
+		r_length:2,	/* 0=byte, 1=word, 2=long */
+		r_extern:1,	/* does not include value of sym referenced */
+		:4;		/* nothing, yet */
+};
+
+/*
+ * Format of a symbol table entry; this file is included by <a.out.h>
+ * and should be used if you aren't interested the a.out header
+ * or relocation information.
+ */
+struct	nlist {
+	union {
+		char	*n_name;	/* for use when in-core */
+		long	n_strx;		/* index into file string table */
+	} n_un;
+unsigned char	n_type;		/* type flag, i.e. N_TEXT etc; see below */
+	char	n_other;	/* unused */
+	short	n_desc;		/* see <stab.h> */
+unsigned long	n_value;	/* value of this symbol (or sdb offset) */
+};
+#define	n_hash	n_desc		/* used internally by ld */
+
+/*
+ * Simple values for n_type.
+ */
+#define	N_UNDF	0x0		/* undefined */
+#define	N_ABS	0x2		/* absolute */
+#define	N_TEXT	0x4		/* text */
+#define	N_DATA	0x6		/* data */
+#define	N_BSS	0x8		/* bss */
+#define	N_COMM	0x12		/* common (internal to ld) */
+#define	N_FN	0x1e		/* file name symbol */
+
+#define	N_EXT	01		/* external bit, or'ed in */
+#define	N_TYPE	0x1e		/* mask for all the type bits */
+
+/*
+ * Sdb entries have some of the N_STAB bits set.
+ * These are given in <stab.h>
+ */
+#define	N_STAB	0xe0		/* if any of these bits set, a SDB entry */
+
+/*
+ * Format for namelist values.
+ */
+#define	N_FORMAT	"%08x"
+
+#endif /* _AOUT */
+@
+
+
+1.12
+log
+@Unix compatibilty.
+@
+text
+@d7 1
+@
+
+
+1.11
+log
+@Fixed definition of N_BSSADDR.
+@
+text
+@d27 5
+a31 1
+    (((x).a_magic)!=OMAGIC && ((x).a_magic)!=NMAGIC && ((x).a_magic)!=ZMAGIC)
+d41 2
+a42 1
+	((x).a_magic==ZMAGIC ? 0 : sizeof (struct exec))
+@
+
+
+1.10
+log
+@Fixed include path, so that this file can be used by a cross-compiler.
+@
+text
+@d51 1
+a51 1
+#define N_BSSADDR(x) PROC_DATA_BSS_ADDR(*((ProcExecHeader *) &(x)))
+@
+
+
+1.9
+log
+@Added (ProcExecHeader *) cast to N_TXTADDR macros.
+@
+text
+@d17 1
+a17 1
+#include <sys/exec.h>
+d47 1
+a47 1
+#include <kernel/procMach.h>
+@
+
+
+1.8
+log
+@added cast of struct exec to ProcExecHeader
+@
+text
+@d49 1
+a49 1
+#define N_TXTADDR(x) PROC_CODE_LOAD_ADDR(x)
+d51 1
+a51 1
+#define N_BSSADDR(x) PROC_DATA_BSS_ADDR(x)
+@
+
+
+1.7
+log
+@Removed references to nonexistent procAOUT.h header file.
+@
+text
+@d50 1
+a50 1
+#define N_DATADDR(x) PROC_DATA_LOAD_ADDR(x)
+@
+
+
+1.6
+log
+@added ifdef _AOUT
+@
+text
+@d47 1
+a47 1
+#include <kernel/procAOUT.h>
+d49 3
+a51 3
+#define N_TXTADDR(x) PROC_CODE_LOAD_ADDR(*(Proc_AOUT *) &(x))
+#define N_DATADDR(x) PROC_DATA_LOAD_ADDR(*(Proc_AOUT *) &(x))
+#define N_BSSADDR(x) PROC_DATA_BSS_ADDR(*(Proc_AOUT *) &(x))
+@
+
+
+1.5
+log
+@Modified the N_* macro's to use the same macro's as the kernel code.
+@
+text
+@d14 3
+d106 2
+@
+
+
+1.4
+log
+@Defined N_TXTADDR etc.
+@
+text
+@d44 1
+d46 3
+a48 3
+#define N_TXTADDR(x) N_PAGSIZ(x)
+#define N_DATADDR(x) (N_TXTADDR(x) + (x).a_text)
+#define N_BSSADDR(x) (N_DATADDR(x) + (x).a_data)
+@
+
+
+1.3
+log
+@Renamed N_PAGESIZE to N_PAGSIZ for compatibility.
+@
+text
+@d41 9
+@
+
+
+1.2
+log
+@N_TXTOFF was wrong:  it was set for VAXes, not for Sprite.
+@
+text
+@d31 1
+a31 1
+#define N_PAGESIZE(x) (Aout_PageSize[(x).a_machtype])
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d34 1
+a34 1
+	((x).a_magic==ZMAGIC ? N_PAGESIZE(x) : sizeof (struct exec))
+@

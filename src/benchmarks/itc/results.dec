@@ -1,0 +1,194 @@
+From chet@decvax.dec.com Mon Feb 18 17:42:39 1991
+Received: from decvax.dec.com by sprite.Berkeley.EDU (5.59/1.29)
+	id AA921210; Mon, 18 Feb 91 17:42:32 PST
+Received: by decvax.dec.com (5.57/decvax-27Nov90)
+	id AA08075; Mon, 18 Feb 91 19:45:22 -0500
+Received: by maxixe.zk3.dec.com (5.57/ueg-15Nov90)
+	id AA03558; Mon, 18 Feb 91 19:45:04 -0500
+Message-Id: <9102190045.AA03558@maxixe.zk3.dec.com>
+To: mogul@abyss.zk3.dec.com, ouster@sprite.Berkeley.EDU
+Cc: chet@maxixe.zk3.dec.com, cb@maxixe.zk3.dec.com, enw@abyss.zk3.dec.com,
+        fglover@abyss.zk3.dec.com
+Subject: ITC benchmark runs on DS5500s
+Date: Mon, 18 Feb 91 19:45:03 EST
+From: chet@decvax.dec.com
+Status: RO
+
+
+I ran these tests about a week ago but couldn't get back to it until now.
+I've reduced the data and put this mail together quickly, so please forgive
+any typos.
+
+	-chet
+
+**************************************************************
+
+I unpacked the tar file and tested the benchmark
+for sanity on abyss, a 4 processor 6000 system (6340 I believe).
+The system was pretty lightly loaded (20 users, load average 1.69).
+
+Here are the reduced results:
+
+Phase 1: 3.000000 seconds (min 3, max 3)
+Phase 2: 8.000000 seconds (min 8, max 8)
+Phase 3: 8.000000 seconds (min 8, max 8)
+Phase 4: 6.000000 seconds (min 6, max 6)
+Phase 5: 97.000000 seconds (min 97, max 97)
+Total: 122.000000 seconds
+
+So far, so good.
+Next, I connected a pair of DS5500s on a private net.
+Both systems are running ULTRIX V4.1.
+
+The server system has 32 MB, 25% bufcache, and RZ57 disks (the
+benchmark is loaded in the g partition of an RZ57).
+
+The client system has either 16 MB, 10% bufcache or
+32 MB, 25% bufcache. The root filesystem (where /tmp is located)
+is the a partition of an RF71 disk (less performance than RZ57).
+
+I controlled for benchmark execution on server with benchmark
+directory local on server and /tmp local on server:
+
+	+ with and without presto
+
+I controlled for benchmark execution on client with benchmark
+directory remote on server and /tmp local on client:
+
+	+ with and without presto on server.
+	+ with and without presto on client.
+	+ 16 MB, 10% bufcache and 32 MB, 25% bufcache clients.
+
+With each configuration I ran three test iterations.
+Here are the reduced results:
+
+===== Local Execution =====
+
+test1:	32 MB, 25% bufcache server
+	execution on server, benchmark directory local, /tmp local
+	no presto
+
+Phase 1: 2.666667 seconds (min 2, max 3)
+Phase 2: 3.333333 seconds (min 3, max 4)
+Phase 3: 6.333333 seconds (min 6, max 7)
+Phase 4: 5.666667 seconds (min 5, max 7)
+Phase 5: 60.000000 seconds (min 59, max 62)
+Total: 78.000000 seconds
+
+test2:	32 MB, 25% bufcache server
+	execution on server, benchmark directory local, /tmp local
+	presto
+	 
+Phase 1: 0.000000 seconds (min 0, max 0)
+Phase 2: 1.333333 seconds (min 1, max 2)
+Phase 3: 6.666667 seconds (min 6, max 8)
+Phase 4: 4.666667 seconds (min 4, max 5)
+Phase 5: 53.333332 seconds (min 53, max 54)
+Total: 66.000000 seconds
+
+** From test2 we can see there is 12 seconds of disk head latency
+** associated with synchronous writes in the benchmark across all
+** filesystems.
+
+===== Remote Execution, Small Client =====
+
+test3:	32 MB, 25% bufcache server
+	16 MB, 10% bufcache client
+	execution on client, benchmark directory NFS, /tmp local
+	no presto on server, no presto on client
+
+Phase 1: 3.000000 seconds (min 3, max 3)
+Phase 2: 11.333333 seconds (min 11, max 12)
+Phase 3: 13.000000 seconds (min 13, max 13)
+Phase 4: 8.000000 seconds (min 8, max 8)
+Phase 5: 82.666664 seconds (min 82, max 83)
+Total: 118.000000 seconds
+
+test4:	32 MB, 25% bufcache server
+	16 MB, 10% bufcache client
+	execution on client, benchmark directory NFS, /tmp local
+	presto on server, no presto on client
+
+Phase 1: 1.000000 seconds (min 1, max 1)
+Phase 2: 5.666667 seconds (min 5, max 6)
+Phase 3: 13.000000 seconds (min 13, max 13)
+Phase 4: 8.666667 seconds (min 8, max 9)
+Phase 5: 66.333336 seconds (min 66, max 67)
+Total: 94.666664 seconds
+
+** Execution time reduced by 23 seconds (about 20%) with presto
+** on server.
+
+test5:	32 MB, 25% bufcache server
+	16 MB, 10% bufcache client
+	execution on client, benchmark directory NFS, /tmp local
+	presto on server, presto on client
+
+Phase 1: 1.000000 seconds (min 1, max 1)
+Phase 2: 5.666667 seconds (min 5, max 6)
+Phase 3: 12.666667 seconds (min 12, max 13)
+Phase 4: 8.000000 seconds (min 8, max 8)
+Phase 5: 58.000000 seconds (min 58, max 58)
+Total: 85.333336 seconds
+
+** From test5 we see there is about 9 seconds of disk head latency
+** associated with synchronous writes in the benchmark across /tmp.
+** Execution time reduced by about 28% with presto on both sides.
+
+===== Remote Execution, Large Client =====
+
+test6:	32 MB, 25% bufcache server
+	32 MB, 25% bufcache client
+	execution on client, benchmark directory NFS, /tmp local
+	no presto on server, no presto on client
+
+Phase 1: 2.333333 seconds (min 2, max 3)
+Phase 2: 11.333333 seconds (min 11, max 12)
+Phase 3: 10.666667 seconds (min 10, max 11)
+Phase 4: 7.333333 seconds (min 7, max 8)
+Phase 5: 79.000000 seconds (min 79, max 79)
+Total: 110.666664 seconds
+
+** 8 seconds reduced due to larger client cache compared to test3.
+** Indeed, there is a reduction of 72% in read requests over the wire
+** with the larger client cache.
+
+test7:	32 MB, 25% bufcache server
+	32 MB, 25% bufcache client
+	execution on client, benchmark directory NFS, /tmp local
+	presto on server, no presto on client
+
+Phase 1: 1.000000 seconds (min 1, max 1)
+Phase 2: 4.000000 seconds (min 4, max 4)
+Phase 3: 11.000000 seconds (min 11, max 11)
+Phase 4: 7.333333 seconds (min 7, max 8)
+Phase 5: 62.333332 seconds (min 62, max 63)
+Total: 85.666664 seconds
+
+** Execution time reduced by 25 seconds (about 23%) with presto
+** on server. This should be constant across runs if the volume of NFS
+** write data is the same.
+
+test8:	32 MB, 25% bufcache server
+	32 MB, 25% bufcache client
+	execution on client, benchmark directory NFS, /tmp local
+	presto on server, presto on client
+
+Phase 1: 0.333333 seconds (min 0, max 1)
+Phase 2: 4.666667 seconds (min 4, max 5)
+Phase 3: 11.000000 seconds (min 11, max 11)
+Phase 4: 7.000000 seconds (min 7, max 7)
+Phase 5: 54.666668 seconds (min 54, max 55)
+Total: 77.666664 seconds
+
+** From test7 we see there is about 8 seconds of disk head latency
+** associated with synchronous writes in the benchmark across /tmp.
+** This should be constant across runs if there is the same amount
+** of local directory operations on the client.
+** Execution time reduced by about 30% with presto on both sides.
+** 
+**
+** With presto on both sides, remote execution was equivalent
+** to local execution without presto (test1).
+
+

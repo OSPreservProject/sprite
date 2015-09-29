@@ -1,0 +1,75 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     89.07.31.17.54.12;  author douglis;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.26.23.20.45;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@port to the ds3100
+@
+text
+@
+/*
+** The machine dependent statistics routines.
+*/
+#include "sprite.h"
+#include "status.h"
+#include "fs.h"
+#include "fsCmd.h"
+#include "sysStats.h"
+#include "proc.h"
+#include "vm.h"
+#include "kernel/sched.h"
+#include "kernel/fsStat.h"
+#include "kernel/vm.h"
+#include "stdio.h"
+#include "ccMachStat.h"
+
+ReturnStatus
+InitMachStats(stats)
+MachStats	*stats;
+{
+	return(SUCCESS);
+}
+
+ReturnStatus
+GetMachStats(stats)
+MachStats	*stats;
+{
+	return(SUCCESS);
+}
+
+PrintMachStats(startStats, endStats)
+MachStats       *startStats;
+MachStats       *endStats;
+{
+}
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d37 1
+@

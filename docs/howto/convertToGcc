@@ -1,0 +1,61 @@
+A couple of quick comments on converting programs to run under gcc,
+because these are things I often forget myself:
+
+1.  You need -fwritable-strings if the program assigns string
+    constants and then overwrites them.  The most frequent
+    culprit is a call to the library routine `mktemp()'.
+
+2.  Pre-processing is different.  Something that does
+
+	#define foo(bar) "/x/y/z/bar"
+	foo(baz)
+
+    will work under the unix cc but not gcc (it will come out "bar"
+    instead of expanding the argument to "baz").  You need to use the
+    ANSI C `stringify' operator:
+
+	#define foo(bar) "/x/y/z/" #bar
+	foo(baz)
+
+    this will come out as:
+
+	"/x/y/z/" "baz"
+
+    The compiler will then join these into a single string.
+
+    Unfortunately there isn't any `character-constantify' operator
+    so something like:
+
+    #define CTRL(x)     ('x' & 0x1f)
+
+    CTRL(c)
+
+    will come out as ('x' & 0x1f) instead of the intended ('c' & 0x1f).
+    If you specify the `-traditional' flag the macro will still work.
+    The only alternative is to expicitly type the quotes each time:
+
+    #define CTRL(x)     (x & 0x1f)
+
+    CTRL('c')
+
+
+3.  Token concatanation is different.  With the old cc you could define
+    a constant like:
+
+    #define ENTRY(label)        .globl _/**/label ; _/**/label:
+    ENTRY(foobar)
+
+    which would expand to:
+
+    .globl _foobar ; _foobar:
+
+    But gcc replaces the comment with a space rather that eliding
+    it completely.  You can compile with the `-traditional' flag,
+    or you can use the `concatenation' operator.
+
+    #define ENTRY(label)        .globl _ ## label ; _ ## label:
+
+
+    Fred Douglis
+    6/13/89
+

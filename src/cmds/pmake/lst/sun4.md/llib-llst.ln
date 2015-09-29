@@ -1,0 +1,333 @@
+512
+llib-llst:lstAppend.c 2
+2
+3 43 36 0 0
+Lst_Append
+24 0 5900
+24 0 32295
+20 0 0
+16
+0 86 4 0 0
+Lst_Append
+512
+llib-llst:lstAtEnd.c 2
+2
+2 40 36 0 0
+Lst_AtEnd
+24 0 5900
+20 0 0
+16
+0 45 4 0 0
+Lst_AtEnd
+512
+llib-llst:lstAtFront.c 2
+2
+2 41 36 0 0
+Lst_AtFront
+24 0 5900
+20 0 0
+16
+0 46 4 0 0
+Lst_AtFront
+512
+llib-llst:lstClose.c 2
+2
+1 43 32 0 0
+Lst_Close
+24 0 5900
+512
+llib-llst:lstConcat.c 2
+2
+3 46 36 0 0
+Lst_Concat
+24 0 5900
+24 0 5900
+4 0 0
+16
+0 148 4 0 0
+Lst_Concat
+512
+llib-llst:lstCur.c 2
+2
+1 44 104 0 32295
+Lst_Cur
+24 0 5900
+16
+0 53 24 0 32295
+Lst_Cur
+512
+llib-llst:lstDatum.c 2
+2
+1 38 100 0 0
+Lst_Datum
+24 0 32295
+16
+0 44 20 0 0
+Lst_Datum
+512
+llib-llst:lstDeQueue.c 2
+2
+1 39 100 0 0
+Lst_DeQueue
+24 0 5900
+16
+0 54 20 0 0
+Lst_DeQueue
+512
+llib-llst:lstDestroy.c 2
+2
+2 41 32 0 0
+Lst_Destroy
+24 0 5900
+144 0 0
+512
+llib-llst:lstDupl.c 2
+2
+2 33 104 0 5900
+Lst_Duplicate
+24 0 5900
+404 0 0
+16
+0 65 24 0 5900
+Lst_Duplicate
+512
+llib-llst:lstEnQueue.c 2
+2
+2 40 36 0 0
+Lst_EnQueue
+24 0 5900
+20 0 0
+16
+0 46 4 0 0
+Lst_EnQueue
+512
+llib-llst:lstFake.c
+2
+0 27 4 0 0
+_junk_one__
+2
+0 28 4 0 0
+_junk_two__
+2
+0 29 4 0 0
+_junk_three__
+2
+0 30 4 0 0
+_junk_four__
+2
+0 31 4 0 0
+_junk_five__
+512
+llib-llst:lstFind.c 2
+2
+3 41 104 0 32295
+Lst_Find
+24 0 5900
+20 0 0
+148 0 0
+16
+0 43 24 0 32295
+Lst_Find
+512
+llib-llst:lstFindFrom.c 2
+2
+4 43 104 0 32295
+Lst_FindFrom
+24 0 5900
+24 0 32295
+20 0 0
+148 0 0
+16
+0 67 24 0 32295
+Lst_FindFrom
+512
+llib-llst:lstFirst.c 2
+2
+1 38 104 0 32295
+Lst_First
+24 0 5900
+16
+0 44 24 0 32295
+Lst_First
+512
+llib-llst:lstForEach.c 2
+2
+-2 43 32 0 0
+Lst_ForEach
+24 0 5900
+148 0 0
+512
+llib-llst:lstForEachFrom.c 2
+2
+-2 45 32 0 0
+Lst_ForEachFrom
+24 0 5900
+24 0 32295
+512
+llib-llst:lstIndex.c 2
+2
+2 42 36 0 0
+Lst_Index
+24 0 5900
+20 0 0
+16
+0 64 4 0 0
+Lst_Index
+512
+llib-llst:lstInit.c 2
+2
+1 38 104 0 5900
+Lst_Init
+4 0 0
+16
+0 50 24 0 5900
+Lst_Init
+2
+1 53 36 0 0
+Malloc
+4 0 0
+16
+0 58 4 0 0
+Malloc
+512
+llib-llst:lstInsert.c 2
+2
+3 42 36 0 0
+Lst_Insert
+24 0 5900
+24 0 32295
+20 0 0
+16
+0 86 4 0 0
+Lst_Insert
+512
+llib-llst:lstIsAtEnd.c 2
+2
+1 49 36 0 0
+Lst_IsAtEnd
+24 0 5900
+16
+0 54 4 0 0
+Lst_IsAtEnd
+512
+llib-llst:lstIsEmpty.c 2
+2
+1 40 36 0 0
+Lst_IsEmpty
+24 0 5900
+16
+0 42 4 0 0
+Lst_IsEmpty
+512
+llib-llst:lstLast.c 2
+2
+1 38 104 0 32295
+Lst_Last
+24 0 5900
+16
+0 44 24 0 32295
+Lst_Last
+512
+llib-llst:lstLength.c 2
+2
+1 28 36 0 0
+Lst_Length
+24 0 5900
+16
+0 45 4 0 0
+Lst_Length
+512
+llib-llst:lstMember.c 2
+2
+2 29 104 0 32295
+Lst_Member
+24 0 5900
+20 0 0
+16
+0 46 24 0 32295
+Lst_Member
+512
+llib-llst:lstMove.c 2
+2
+5 45 36 0 0
+Lst_Move
+24 0 5900
+24 0 32295
+24 0 5900
+24 0 32295
+4 0 0
+16
+0 66 4 0 0
+Lst_Move
+512
+llib-llst:lstNext.c 2
+2
+1 45 104 0 32295
+Lst_Next
+24 0 5900
+16
+0 87 24 0 32295
+Lst_Next
+512
+llib-llst:lstOpen.c 2
+2
+1 45 36 0 0
+Lst_Open
+24 0 5900
+16
+0 54 4 0 0
+Lst_Open
+512
+llib-llst:lstPred.c 2
+2
+1 38 104 0 32295
+Lst_Pred
+24 0 32295
+16
+0 44 24 0 32295
+Lst_Pred
+512
+llib-llst:lstPrev.c 2
+2
+1 45 104 0 32295
+Lst_Prev
+24 0 5900
+16
+0 75 24 0 32295
+Lst_Prev
+512
+llib-llst:lstRemove.c 2
+2
+2 41 36 0 0
+Lst_Remove
+24 0 5900
+24 0 32295
+16
+0 104 4 0 0
+Lst_Remove
+512
+llib-llst:lstReplace.c 2
+2
+2 39 36 0 0
+Lst_Replace
+24 0 32295
+20 0 0
+16
+0 46 4 0 0
+Lst_Replace
+512
+llib-llst:lstSetCirc.c 2
+2
+2 43 32 0 0
+Lst_SetCirc
+24 0 5900
+4 0 0
+512
+llib-llst:lstSucc.c 2
+2
+1 40 104 0 32295
+Lst_Succ
+24 0 32295
+16
+0 46 24 0 32295
+Lst_Succ

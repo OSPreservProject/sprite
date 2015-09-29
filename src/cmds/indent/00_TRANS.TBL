@@ -1,0 +1,16 @@
+F ARGS.C;1                          	args.c
+D DS3100_M                          	ds3100.md
+F INDENT.C;1                        	indent.c
+F INDENT.MAN;1                      	indent.man
+F INDENT_C.H;1                      	indent_codes.h
+F INDENT_G.H;1                      	indent_globs.h
+F IO.C;1                            	io.c
+F LEXI.C;1                          	lexi.c
+F MAKEFILE.;1                       	Makefile
+F MAKEFILE.ORI;1                    	Makefile.orig
+F PARSE.C;1                         	parse.c
+F PR_COMME.C;1                      	pr_comment.c
+D RCS                               	RCS
+F README.;1                         	README
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md

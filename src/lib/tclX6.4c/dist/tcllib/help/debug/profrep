@@ -1,0 +1,14 @@
+
+
+          profrep profDataVar sortKey stackDepth [outFile] [userTitle]
+               Generate a report from data collect from the profile
+               command.  ProfDataVar is the name of the array
+               containing the data returned by the profile command.
+               SortKey indicates which data value to sort by.  It
+               should be one of "calls", "cpu" or "real".  StackDepth
+               is the stack depth to consider significant.  A value of
+               1 reports by procedure only, a value of 2 reports by
+               procedure and its caller, etc. OutFile is the name of
+               file to write the report to.  If omitted, stdout is
+               assumed.  UserTitle is an optional title line to add to
+               output.

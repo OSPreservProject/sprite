@@ -1,0 +1,438 @@
+/* 
+ * fsLock.c --
+ *
+ *	File locking routines.  The Fsio_LockState data structure keeps info
+ *	about shared and exlusive locks.  This includes a list of waiting
+ *	processes, and a list of owning processes.  The ownership list
+ *	is used to recover from processes that exit before unlocking their
+ *	file, and to recover from hosts that crash running processes that
+ *	held file locks.  Synchronization over these routines is assumed
+ *	to be done by the caller via Fsutil_HandleLock.
+ *
+ * Copyright (C) 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/fsio/RCS/fsioLock.c,v 1.2 91/12/01 21:58:42 kupfer Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <sprite.h>
+#include <fs.h>
+#include <fsMach.h>
+#include <fsutil.h>
+#include <fsioLock.h>
+#include <fsNameOps.h>
+#include <proc.h>
+#include <rpc.h>
+#include <net.h>
+
+Boolean fsio_LockDebug = FALSE;
+
+/*
+ * A  counter is incremented each time a process waits for a lock.
+ * This is used to track locking activity.
+ */
+int fsio_NumLockWaits = 0;
+
+/*
+ * A list of lock owners is kept for files for error recovery.
+ * If a process exits without unlocking a file, or a host crashes
+ * that had processes with locks, then the locks are broken.
+ */
+typedef struct FsLockOwner {
+    List_Links links;		/* A list of these hangs from Fsio_LockState */
+    int hostID;			/* SpriteID of process that got the lock */
+    int procID;			/* ProcessID of owning process */
+    Fs_FileID streamID;		/* Stream on which lock call was made */
+    int flags;			/* IOC_LOCK_EXCLUSIVE, IOC_LOCK_SHARED */
+} FsLockOwner;
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsio_LockInit --
+ *
+ *	Initialize lock state.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Initializes the wait list, zeros out counters, etc.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Fsio_LockInit(lockPtr)
+    register Fsio_LockState *lockPtr;	/* Locking state for a file. */
+{
+    List_Init(&lockPtr->waitList);
+    List_Init(&lockPtr->ownerList);
+    lockPtr->flags = 0;
+    lockPtr->numShared = 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsio_IocLock --
+ *
+ *	Top-level locking/unlocking routine that handles I/O control
+ *	related byte swapping.  If the lock I/O control has been issued
+ *	from a client with a different archetecture the data block containing
+ *	the lock arguments has to be byte swapped.
+ *
+ * Results:
+ *	SUCCESS or FS_WOULD_BLOCK
+ *
+ * Side effects:
+ *	Lock or unlock the file, see Fsio_Lock and Fsio_Unlock.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Fsio_IocLock(lockPtr, ioctlPtr, streamIDPtr)
+    register Fsio_LockState *lockPtr;	/* Locking state for a file. */
+    Fs_IOCParam *ioctlPtr;		/* I/O control parameter block */
+    Fs_FileID	*streamIDPtr;		/* ID of stream associated with lock */
+{
+    register Ioc_LockArgs *lockArgsPtr;
+    register ReturnStatus status = SUCCESS;
+    Ioc_LockArgs lockArgs;
+
+    lockArgsPtr = (Ioc_LockArgs *) NIL;
+    if (ioctlPtr->format != fsMach_Format) {
+	int size = sizeof(Ioc_LockArgs);
+	int inSize = ioctlPtr->inBufSize;
+	int fmtStatus;
+	fmtStatus = Fmt_Convert("w4", ioctlPtr->format, &inSize, 
+			ioctlPtr->inBuffer, fsMach_Format, &size, 
+			(Address) &lockArgs);
+	if (fmtStatus != 0) {
+	    printf("Format of ioctl failed <0x%x>\n", fmtStatus);
+	    status = GEN_INVALID_ARG;
+	}
+	if (size != sizeof(Ioc_LockArgs)) {
+	    status = GEN_INVALID_ARG;
+	} else {
+	    lockArgsPtr = &lockArgs;
+	}
+    } else if (ioctlPtr->inBufSize < sizeof(Ioc_LockArgs)) {
+	status = GEN_INVALID_ARG;
+    } else {
+	lockArgsPtr = (Ioc_LockArgs *)ioctlPtr->inBuffer;
+    }
+    if (status == SUCCESS) {
+	if (ioctlPtr->command == IOC_LOCK) {
+	    status = Fsio_Lock(lockPtr, lockArgsPtr, streamIDPtr);
+	} else {
+	    status = Fsio_Unlock(lockPtr, lockArgsPtr, streamIDPtr);
+	}
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsio_Lock --
+ *
+ *	Try to get a lock a stream.  If the lock is already held then
+ *	the caller is added to the waitlist for the lock and FS_WOULD_BLOCK
+ *	is returned.  Otherwise, the lock is marked as held and our
+ *	caller is put on the ownership list for the lock.
+ *
+ * Results:
+ *	SUCCESS or FS_WOULD_BLOCK
+ *
+ * Side effects:
+ *	If the lock is available then update the lock state of the file.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Fsio_Lock(lockPtr, argPtr, streamIDPtr)
+    register Fsio_LockState *lockPtr;	/* Locking state for a file. */
+    Ioc_LockArgs *argPtr;		/* IOC_LOCK_EXCLUSIVE|IOC_LOCK_SHARED */
+    Fs_FileID	*streamIDPtr;		/* Stream that owns the lock */
+{
+    ReturnStatus status = SUCCESS;
+    register int operation = argPtr->flags;
+
+    /*
+     * Attempt to lock the file.  Exclusive locks can't co-exist with
+     * any locks, while shared locks can exist with other shared locks.
+     */
+    if (operation & IOC_LOCK_EXCLUSIVE) {
+	if (lockPtr->flags & (IOC_LOCK_SHARED|IOC_LOCK_EXCLUSIVE)) {
+	    status = FS_WOULD_BLOCK;
+	} else {
+	    lockPtr->flags |= IOC_LOCK_EXCLUSIVE;
+	}
+    } else if (operation & IOC_LOCK_SHARED) {
+	if (lockPtr->flags & IOC_LOCK_EXCLUSIVE) {
+	    status = FS_WOULD_BLOCK;
+	} else {
+	    lockPtr->flags |= IOC_LOCK_SHARED;
+	    lockPtr->numShared++;
+	}
+    } else {
+	status = GEN_INVALID_ARG;
+    }
+    if (status == SUCCESS) {
+	register FsLockOwner *lockOwnerPtr;
+	/*
+	 * Put the calling process on the lock ownership list.
+	 */
+	lockOwnerPtr = mnew(FsLockOwner);
+	List_InitElement((List_Links *)lockOwnerPtr);
+	lockOwnerPtr->hostID = argPtr->hostID;
+	lockOwnerPtr->procID = argPtr->pid;
+	if (streamIDPtr != (Fs_FileID *)NIL) {
+	    lockOwnerPtr->streamID = *streamIDPtr;
+	} else {
+	    lockOwnerPtr->streamID.type = -1;
+	}
+	lockOwnerPtr->flags = operation & (IOC_LOCK_EXCLUSIVE|IOC_LOCK_SHARED);
+	List_Insert((List_Links *)lockOwnerPtr,
+		    LIST_ATREAR(&lockPtr->ownerList));
+	if (fsio_LockDebug) {
+	    printf("Stream <%d,%d> locked %x by proc %x\n", streamIDPtr->major,
+		streamIDPtr->minor, lockOwnerPtr->flags, argPtr->pid);
+	}
+    } else if (status == FS_WOULD_BLOCK) {
+	Sync_RemoteWaiter wait;
+	/*
+	 * Put the potential waiter on the file's lockWaitList.
+	 */
+	if (argPtr->hostID > NET_NUM_SPRITE_HOSTS) {
+	    printf( "Fsio_Lock: bad hostID %d.\n",
+		      argPtr->hostID);
+	} else {
+	    wait.hostID = argPtr->hostID;
+	    wait.pid = argPtr->pid;
+	    wait.waitToken = argPtr->token;
+	    Fsutil_FastWaitListInsert(&lockPtr->waitList, &wait);
+	    if (fsio_LockDebug) {
+		printf("Stream <%d,%d> Blocked, proc %x\n", streamIDPtr->major,
+		    streamIDPtr->minor, argPtr->pid);
+	    }
+	}
+    } else if (fsio_LockDebug) {
+	printf("Stream <%d,%d> locking error %x\n", streamIDPtr->major,
+		    streamIDPtr->minor, status);
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsio_Unlock --
+ *
+ *	Release a lock a stream.  The ownership list is checked here, but
+ *	the lock is released anyway.
+ *
+ * Results:
+ *	SUCCESS or FS_WOULD_BLOCK
+ *
+ * Side effects:
+ *	If the lock is available then update the lock state of the file.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Fsio_Unlock(lockPtr, argPtr, streamIDPtr)
+    register Fsio_LockState *lockPtr;	/* Locking state for the file. */
+    Ioc_LockArgs *argPtr;	/* Lock flags and process info for waiting */
+    Fs_FileID	*streamIDPtr;	/* Verified against the lock ownership list */ 
+{
+    ReturnStatus status = SUCCESS;
+    register int operation = argPtr->flags;
+    register FsLockOwner *lockOwnerPtr;
+
+    if (operation & IOC_LOCK_EXCLUSIVE) {
+	if (lockPtr->flags & IOC_LOCK_EXCLUSIVE) {
+	    LIST_FORALL(&lockPtr->ownerList, (List_Links *)lockOwnerPtr) {
+		if ((lockOwnerPtr->procID == argPtr->pid) ||
+		    (streamIDPtr != (Fs_FileID *)NIL &&
+		     lockOwnerPtr->streamID.major == streamIDPtr->major &&
+		     lockOwnerPtr->streamID.minor == streamIDPtr->minor &&
+		     lockOwnerPtr->streamID.serverID == streamIDPtr->serverID)){
+		    lockPtr->flags &= ~IOC_LOCK_EXCLUSIVE;
+		    List_Remove((List_Links *)lockOwnerPtr);
+		    ckfree((Address)lockOwnerPtr);
+		    break;
+		}
+	    }
+	    if (lockPtr->flags & IOC_LOCK_EXCLUSIVE) {
+		/*
+		 * Oops, unlocking process didn't match lock owner.
+		 */
+		if (!List_IsEmpty(&lockPtr->ownerList)) {
+		    lockOwnerPtr =
+			(FsLockOwner *)List_First(&lockPtr->ownerList);
+#ifdef notdef
+		    printf("Fsio_Unlock, non-owner <%x> unlocked, owner <%x>\n",
+			argPtr->pid, lockOwnerPtr->procID);
+#endif
+		    List_Remove((List_Links *)lockOwnerPtr);
+		    ckfree((Address)lockOwnerPtr);
+		} else {
+		    printf( "Fsio_Unlock, no lock owner\n");
+		}
+		lockPtr->flags &= ~IOC_LOCK_EXCLUSIVE;
+	    }
+	} else {
+	    status = FS_NO_EXCLUSIVE_LOCK;
+	}
+    } else if (operation & IOC_LOCK_SHARED) {
+	if (lockPtr->flags & IOC_LOCK_SHARED) {
+	    status = FAILURE;
+	    lockPtr->numShared--;
+	    LIST_FORALL(&lockPtr->ownerList, (List_Links *)lockOwnerPtr) {
+		if ((lockOwnerPtr->procID == argPtr->pid) ||
+		    (streamIDPtr != (Fs_FileID *)NIL &&
+		     lockOwnerPtr->streamID.major == streamIDPtr->major &&
+		     lockOwnerPtr->streamID.minor == streamIDPtr->minor &&
+		     lockOwnerPtr->streamID.serverID == streamIDPtr->serverID)){
+		    status = SUCCESS;
+		    List_Remove((List_Links *)lockOwnerPtr);
+		    ckfree((Address)lockOwnerPtr);
+		    break;
+		}
+	    }
+	    if (status != SUCCESS) {
+		/*
+		 * Oops, unlocking process didn't match lock owner.
+		 */
+#ifdef notdef
+		printf("Fsio_Unlock, non-owner <%x> did shared unlock\n",
+		    argPtr->pid);
+#endif
+		status = SUCCESS;
+	    }
+	    if (lockPtr->numShared == 0) {
+		lockPtr->flags &= ~IOC_LOCK_SHARED;
+	    }
+	} else {
+	    status = FS_NO_SHARED_LOCK;
+	}
+    } else {
+	status = GEN_INVALID_ARG;
+    }
+    if (status == SUCCESS) {
+	/*
+	 * Go through the list of waiters and notify them.  There is only
+	 * a single waiting list for both exclusive and shared locks.  This
+	 * means that exclusive lock attempts will be retried even if the
+	 * shared lock count has not gone to zero.
+	 */
+	Fsutil_FastWaitListNotify(&lockPtr->waitList);
+	if (fsio_LockDebug) {
+	    printf("Stream <%d,%d> Unlocked %x, proc %x\n", streamIDPtr->major,
+		streamIDPtr->minor, operation, argPtr->pid);
+	}
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsio_LockClose --
+ *
+ *	Check that the stream owns a lock on this file,
+ *	and if it does then break that lock.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Cleans up the lock and frees owner information.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Fsio_LockClose(lockPtr, streamIDPtr)
+    register Fsio_LockState *lockPtr;	/* Locking state for the file. */
+    Fs_FileID *streamIDPtr;		/* Stream being closed */
+{
+    register FsLockOwner *lockOwnerPtr;
+
+    LIST_FORALL(&lockPtr->ownerList, (List_Links *)lockOwnerPtr) {
+	if (streamIDPtr != (Fs_FileID *)NIL &&
+	    lockOwnerPtr->streamID.major == streamIDPtr->major &&
+	    lockOwnerPtr->streamID.minor == streamIDPtr->minor &&
+	    lockOwnerPtr->streamID.serverID == streamIDPtr->serverID) {
+	    if (fsio_LockDebug) {
+		printf("Stream <%d,%d> Lock Closed %x\n",
+		    streamIDPtr->major, streamIDPtr->minor,
+		    lockOwnerPtr->flags);
+	    }
+	    lockPtr->flags &= ~lockOwnerPtr->flags;
+	    List_Remove((List_Links *)lockOwnerPtr);
+	    ckfree((Address)lockOwnerPtr);
+	    Fsutil_FastWaitListNotify(&lockPtr->waitList);
+	    Fsutil_WaitListDelete(&lockPtr->waitList);
+	    break;
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsio_LockClientKill --
+ *
+ *	Go through the list of lock owners and release any locks
+ *	held by processes on the given client.  This is called after
+ *	the client is assumed to be down.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Releases locks held by processes on the client.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Fsio_LockClientKill(lockPtr, clientID)
+    register Fsio_LockState *lockPtr;	/* Locking state for the file. */
+    int clientID;			/* SpriteID of crashed client. */
+{
+    register FsLockOwner *lockOwnerPtr;
+    register FsLockOwner *nextOwnerPtr;
+    register Boolean breakLock = FALSE;
+
+    nextOwnerPtr = (FsLockOwner *)List_First(&lockPtr->ownerList);
+    while (!List_IsAtEnd(&lockPtr->ownerList, (List_Links *)nextOwnerPtr)) {
+	lockOwnerPtr = nextOwnerPtr;
+	nextOwnerPtr = (FsLockOwner *)List_Next((List_Links *)lockOwnerPtr);
+
+	if (lockOwnerPtr->hostID == clientID) {
+	    breakLock = TRUE;
+	    lockPtr->flags &= ~lockOwnerPtr->flags;
+	    if (fsio_LockDebug) {
+		printf("Stream <%d,%d> Lock Broken %x Client %d\n",
+		    lockOwnerPtr->streamID.major, lockOwnerPtr->streamID.minor,
+		    lockOwnerPtr->flags, clientID);
+	    }
+	    List_Remove((List_Links *)lockOwnerPtr);
+	    ckfree((Address)lockOwnerPtr);
+	}
+    }
+    if (breakLock) {
+	Fsutil_FastWaitListNotify(&lockPtr->waitList);
+    }
+}
+

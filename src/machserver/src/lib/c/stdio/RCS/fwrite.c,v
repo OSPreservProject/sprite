@@ -1,0 +1,117 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  srv030:1.2 srv028:1.2 srv027:1.2 srv026:1.2 srv024:1.2 srv022:1.2 srv021:1.2 srv019:1.2 srv018:1.2 srv016:1.2 srv014:1.2 srv010:1.2 srv008:1.2 srv007:1.2 srv006:1.2 srv005:1.2 srv004:1.2 srv003:1.2 srv002:1.2 srv001:1.2;
+locks    ; strict;
+comment  @ * @;
+
+
+1.2
+date     91.12.12.22.09.22;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.12.04.17.10.51;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Lint.
+@
+text
+@/* 
+ * fwrite.c --
+ *
+ *	Source code for the "fwrite" library procedure.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/lib/c/stdio/RCS/fwrite.c,v 1.1 91/12/04 17:10:51 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <stdio.h>
+#include <bstring.h>
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * fwrite --
+ *
+ *	This procedure outputs binary data to a buffered stream.
+ *
+ * Results:
+ *	The return value is the number of complete items actually written.
+ *	It may be less than numItems if an error condition was encountered;
+ *	in this case, there may be an additional partial item output after
+ *	the complete items.
+ *
+ * Side effects:
+ *	Up to numItems*size bytes are written into the stream from memory at
+ *	buf.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+fwrite(bufferPtr, size, numItems, stream)
+    register char *bufferPtr;	/* Origin of items to be written on stream.
+				 * Must contain numItems*size bytes. */
+    int size;			/* Size of each item to be written. */
+    int numItems;		/* Number of items to be written. */
+    register FILE *stream;	/* Stream where bytes are to be written. */
+{
+
+    register int num, byteCount, itemCount;
+
+    for (itemCount = 0; itemCount < numItems; itemCount++) {
+        for (byteCount = size; byteCount > 0;) {
+            if (stream->writeCount <=1 || stream->flags & STDIO_LINEBUF) {
+                if (fputc(*bufferPtr, stream) == EOF) {
+                    return(itemCount);
+                }
+                bufferPtr++;
+                byteCount--;
+            } else {
+                num = stream->writeCount-1 < byteCount ? stream->writeCount-1
+                        : byteCount;
+                bcopy(bufferPtr, stream->lastAccess+1, num);
+                stream->writeCount -= num;
+                stream->lastAccess += num;
+                bufferPtr += num;
+                byteCount -= num;
+            }
+        }
+    }
+    return(numItems);
+}
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/lib/c/stdio/RCS/fwrite.c,v 1.2 91/05/29 16:49:45 shirriff Exp $ SPRITE (Berkeley)";
+d20 2
+a21 1
+#include "stdio.h"
+@

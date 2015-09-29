@@ -1,0 +1,232 @@
+head     9.9;
+branch   ;
+access   ;
+symbols  ds3100:9.9 sun3:9.9 sun4nw:9.7 symm:9.7 spur:9.7 Summer89:9.0;
+locks    ; strict;
+comment  @@;
+
+
+9.9
+date     92.04.14.17.13.13;  author jhh;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     92.04.14.16.53.51;  author jhh;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     91.07.30.16.40.05;  author shirriff;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.11.27.17.00.12;  author shirriff;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.10.19.15.43.29;  author jhh;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.07.05.17.36.44;  author douglis;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.05.15.17.20.28;  author mgbaker;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.05.14.14.49.56;  author rab;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     90.01.30.11.13.51;  author rab;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.51.13;  author douglis;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     89.06.21.15.07.53;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.9
+log
+@Got rid of NEW_NET (now in kernel.mk).
+@
+text
+@#
+# This file is included by Makefile.  Makefile is generated automatically
+# by mkmf, and this file provides additional local personalization.  The
+# variable SYSMAKEFILE is provided by Makefile;  it's a system Makefile
+# that must be included to set up various compilation stuff.
+#
+
+NAME = mach
+
+NOOPTIMIZATION	= no -O please
+
+#if !empty(TM:Mds3100) || !empty(TM:Mds5000)
+DISTFILES   +=  ds3100.md/softfp.o
+#endif
+
+#if !empty(TM:Msun4) || !empty(TM:Msun4c)
+DISTFILES   +=  $(TM).md/sun4 $(TM).md/sun4/reg.h $(TM).md/sun4/fpu \
+                $(TM).md/sys $(TM).md/sys/ieeefp.h
+#endif
+
+#if !empty(TM:Msun4c)
+DISTFILES   +=  $(TM).md/sparcStationPromMap $(TM).md/sunFiles \
+                $(TM).md/sunFiles/openprom.h
+#endif
+
+#include	<$(SYSMAKEFILE)>
+
+#if !empty(TM:Msun4) || !empty(TM:Msun4c)
+INSTFILES   +=  $(TM).md/sun4 $(TM).md/sys
+#endif
+
+#if !empty(TM:Msymm)
+
+# The symmetry generates a header file for assembler files on the fly.
+# This is a problem for two reasons 1) we need a program to generate
+# the file, and 2) we can only run the program on the symmetry. If the
+# header file is out of date then you can't cross-compile.
+#
+
+machAsmSymbols.h:	symm.md/machGenAsmSymbols
+#if empty(MACHINE:Msymm)
+	@@echo "You must compile this on a symmetry"
+	@@exit 1
+#else
+	rm -f symm.md/machAsmSymbols.h
+	symm.md/machGenAsmSymbols > symm.md/machAsmSymbols.h
+#endif
+
+symm.md/machGenAsmSymbols:	symm.md/machGenAsmSymbols.c ${HDRS:Nsymm.md/machAsmSymbols.h}
+	${CC} ${CFLAGS} -o $(.TARGET) symm.md/machGenAsmSymbols.c
+#endif
+@
+
+
+9.8
+log
+@Added NEW_NET so the new network definitions get used.
+@
+text
+@a9 2
+CFLAGS += -DNEW_NET
+
+@
+
+
+9.7
+log
+@Enabled migration of ds3100/5000 unix compatible program.s
+@
+text
+@d10 2
+@
+
+
+9.6
+log
+@Added ds5000.
+@
+text
+@a13 2
+# Can't migrate processes doing compatibility calls.
+CFLAGS += -DCANT_MIGRATE_COMPAT
+@
+
+
+9.5
+log
+@added stuff for the symmetry.
+@
+text
+@d8 2
+d12 1
+a12 1
+#if !empty(TM:Mds3100)
+@
+
+
+9.4
+log
+@added flag for ds3100 migration compat checking
+@
+text
+@d32 20
+@
+
+
+9.3
+log
+@Fixed bug in dist file additions.
+@
+text
+@d12 2
+@
+
+
+9.2
+log
+@Added sun4.md/sys to INSTFILES so it gets installed.
+@
+text
+@d15 2
+a16 2
+DISTFILES   +=  $TM.md/sun4 $TM.md/sun4/reg.h $TM.md/sun4/fpu \
+                $TM.md/sys $TM.md/sys/ieeefp.h
+d20 2
+a21 2
+DISTFILES   +=  $TM.md/sparcStationPromMap $TM.md/sunFiles \
+                $TM.md/sunFiles/openprom.h
+d27 1
+a27 1
+INSTFILES   +=  $TM.md/sun4 $TM.md/sys
+@
+
+
+9.1
+log
+@*** empty log message ***
+@
+text
+@d26 4
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d10 14
+d25 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@@

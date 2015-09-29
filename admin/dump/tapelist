@@ -1,0 +1,17 @@
+#
+# This file is a list of tape drives for the dumper to use. 
+# Format is:
+# <deviceName> <level>
+#
+# For example the following line (without the '#' character):
+# /dev/exb1.nr 0
+#
+# tells the dumper that the device "/dev/exb1.nr" is to be used for
+# level 0 dumps.  If the level does not follow the device name then the
+# device can be used for any level of dump. 
+# The dumper will use the tapes in the order in which they appear in
+# this file.
+#
+/dev/rst04.nr
+/dev/rst05.nr
+

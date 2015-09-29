@@ -1,0 +1,46 @@
+'\" Copyright 1991 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/lib/c/string/RCS/stringArray.man,v 1.1 91/04/23 18:00:46 kupfer Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS String lib
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+String_SaveArray, String_FreeArray \- copy and destroy null-terminated string array
+.SH SYNOPSIS
+.nf
+\fB#include <spriteString.h>\fR
+.sp
+char **
+\fBString_SaveArray\fR(\fIstringsPtr\fP)
+.sp
+char **
+\fBString_FreeArray\fR(\fIstringsPtr\fR)
+.SH ARGUMENTS
+.AS char **stringsPtr
+.AP char **stringsPtr in
+Pointer to a null-terminated array of string pointers.
+.BE
+
+.SH DESCRIPTION
+.PP
+These routines create and destroy null-terminated arrays of strings.
+They are useful for making copies of the
+.B argv
+argument array or of a host alias list.
+.B String_SaveArray
+creates new copies of the strings and of the array of pointers.
+.B String_FreeArray
+frees the strings and the array.  It returns a nil pointer that can be
+used to nil out the given
+.IR stringsPtr .
+
+.SH KEYWORDS
+string, copy

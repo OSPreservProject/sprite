@@ -1,0 +1,73 @@
+Making info file `bfd.info' from `./bfd.texinfo'.
+ -*- from input
+file ./bfd.texinfo.
+
+START-INFO-DIR-ENTRY
+* Bfd: (bfd).			The Binary File Descriptor library.
+END-INFO-DIR-ENTRY
+
+This file documents the BFD library.
+
+Copyright (C) 1991 Free Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, subject to the
+terms of the GNU General Public License, which includes the provision
+that the entire resulting derived work is distributed under the terms
+of a permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions.
+
+Indirect:
+bfd.info-1: 901
+bfd.info-2: 50163
+bfd.info-3: 97626
+
+Tag Table:
+(Indirect)
+Node: Top903
+Node: Overview1164
+Node: History2037
+Node: How It Works2967
+Node: What BFD Version 1 Can Do4344
+Node: BFD information loss5367
+Node: Mechanism7970
+Node: BFD front end12008
+Node: Memory Usage20625
+Node: Initialization21859
+Node: Sections22529
+Node: Section Input23002
+Node: Section Output24272
+Node: typedef asection26318
+Node: section prototypes32900
+Node: Symbols36946
+Node: Reading Symbols38506
+Node: Writing Symbols39388
+Node: typedef asymbol40818
+Node: symbol handling functions44194
+Node: Archives46274
+Node: Formats50165
+Node: Relocations52167
+Node: typedef arelent52899
+Node: howto manager64341
+Node: Core Files66442
+Node: Targets67413
+Node: bfd_target68754
+Node: Architectures77881
+Node: Opening and Closing85890
+Node: Constructors88642
+Node: Internal91790
+Node: File Caching94719
+Node: BFD back end97300
+Node: What to Put Where97494
+Node: aout97628
+Node: coff103263
+Node: Index114255
+
+End Tag Table

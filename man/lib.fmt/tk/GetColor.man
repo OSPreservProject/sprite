@@ -1,0 +1,198 @@
+
+
+
+Tk_GetColor           C Library Procedures            Tk_GetColor
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tk_GetColor, Tk_GetColorByValue, Tk_NameOfColor Tk_FreeColor
+     - maintain database of colors
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttkk..hh>>
+
+     XColor *
+     TTkk__GGeettCCoolloorr(_i_n_t_e_r_p, _t_k_w_i_n, _c_o_l_o_r_M_a_p, _n_a_m_e_I_d))
+
+     XColor *
+     TTkk__GGeettCCoolloorrBByyVVaalluuee(_i_n_t_e_r_p, _t_k_w_i_n, _c_o_l_o_r_M_a_p, _p_r_e_f_P_t_r))
+
+     char *
+     TTkk__NNaammeeOOffCCoolloorr((_c_o_l_o_r_P_t_r))
+
+     TTkk__FFrreeeeCCoolloorr((_c_o_l_o_r_P_t_r))
+
+AARRGGUUMMEENNTTSS
+     Tcl_Interp   *_i_n_t_e_r_p     (in)      Interpreter  to  use  for
+                                        error reporting.
+
+     Tk_Window    _t_k_w_i_n       (in)      Token for window in which
+                                        color will be used.
+
+     Colormap     _c_o_l_o_r_m_a_p    (in)      Colormap  from  which  to
+                                        allocate color.  If NULL,
+                                        then the default colormap
+                                        for   _t_k_w_i_n's  screen  is
+                                        used.
+
+     Tk_Uid       _n_a_m_e_I_d      (in)      Textual  description   of
+                                        desired color.
+
+     XColor       *_p_r_e_f_P_t_r    (in)      Indicates red, green, and
+                                        blue    intensities    of
+                                        desired color.
+
+     XColor       *_c_o_l_o_r_P_t_r   (in)      Pointer to X color infor-
+                                        mation.   Must  have been
+                                        allocated   by   previous
+                                        call  to  TTkk__GGeettCCoolloorr  or
+                                        TTkk__GGeettCCoolloorrBByyVVaalluuee,
+                                        except   when  passed  to
+                                        TTkk__NNaammeeOOffCCoolloorr.
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The TTkk__GGeettCCoolloorr  and  TTkk__GGeettCCoolloorrBByyVVaalluuee  procedures  locate
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+Tk_GetColor           C Library Procedures            Tk_GetColor
+
+
+
+     pixel values that may be used to render particular colors in
+     the window given by _t_k_w_i_n using the colormap given by _c_o_l_o_r_-
+     _m_a_p.   In  TTkk__GGeettCCoolloorr the desired color is specified with a
+     Tk_Uid (_n_a_m_e_I_d), which may have any of the following forms:
+
+     _c_o_l_o_r_n_a_m_e           Any of the valid  textual  names  for  a
+                         color  defined  in  the  server's  color
+                         database file, such as rreedd or PPeeaacchhPPuuffff.
+
+     ##_R_G_B
+
+     ##_R_R_G_G_B_B
+
+     ##_R_R_R_G_G_G_B_B_B
+
+     ##_R_R_R_R_G_G_G_G_B_B_B_B       A  numeric  specification  of  the  red,
+                         green,  and  blue  intensities to use to
+                         display the color.   Each  _R,  _G,  or  _B
+                         represents  a  single hexadecimal digit.
+                         The  four  forms  permit  colors  to  be
+                         specified  with  4-bit, 8-bit, 12-bit or
+                         16-bit values.  When fewer than 16  bits
+                         are   provided   for  each  color,  they
+                         represent the most significant  bits  of
+                         the  color.   For  example,  #3a7 is the
+                         same as #3000a0007000.
+
+     In TTkk__GGeettCCoolloorrBByyVVaalluuee, the desired color is  indicated  with
+     the  _r_e_d, _g_r_e_e_n, and _b_l_u_e fields of the structure pointed to
+     by _c_o_l_o_r_P_t_r.
+
+     If TTkk__GGeettCCoolloorr or TTkk__GGeettCCoolloorrBByyVVaalluuee is successful in  allo-
+     cating  the  desired  color, then it returns a pointer to an
+     XColor structure;  the structure indicates the exact  inten-
+     sities  of  the  allocated  color (which may differ slightly
+     from those requested, depending on the  limitations  of  the
+     screen)  and a pixel value from _c_o_l_o_r_m_a_p that may be used to
+     draw in the color.  If an error occurs in allocating a color
+     then NULL is returned and an error message will be stored in
+     _i_n_t_e_r_p->_r_e_s_u_l_t.
+
+     TTkk__GGeettCCoolloorr and TTkk__GGeettCCoolloorrBByyVVaalluuee maintain  a  database  of
+     all  the  colors  currently  in  use.  If the same _n_a_m_e_I_d is
+     requested multiple times from TTkk__GGeettCCoolloorr (e.g. by different
+     windows),  or if the same intensities are requested multiple
+     times from TTkk__GGeettCCoolloorrBByyVVaalluuee, then  existing  pixel  values
+     will  be  re-used.   Re-using  an  existing pixel avoids any
+     interaction with the X server, which  makes  the  allocation
+     much  more efficient.  For this reason, you should generally
+     use TTkk__GGeettCCoolloorr or TTkk__GGeettCCoolloorrBByyVVaalluuee instead of  Xlib  pro-
+     cedures like XXAAllllooccCCoolloorr, XXAAllllooccNNaammeeddCCoolloorr, or XXPPaarrsseeCCoolloorr.
+
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+Tk_GetColor           C Library Procedures            Tk_GetColor
+
+
+
+     Since different calls to TTkk__GGeettCCoolloorr  or  TTkk__GGeettCCoolloorrBByyVVaalluuee
+     may return the same shared pixel value, callers should never
+     change the color of a pixel returned by the procedures.   If
+     you need to change a color value dynamically, you should use
+     XXAAllllooccCCoolloorrCCeellllss to allocate the pixel value for the color.
+
+     The procedure  TTkk__NNaammeeOOffCCoolloorr  is  roughly  the  inverse  of
+     TTkk__GGeettCCoolloorr.   If  its  _c_o_l_o_r_P_t_r  argument  was  created  by
+     TTkk__GGeettCCoolloorr, then the return value is the _n_a_m_e_I_d string that
+     was  passed to TTkk__GGeettCCoolloorr to create the color.  If _c_o_l_o_r_P_t_r
+     was created by a call to TTkk__GGeettCCoolloorrBByyVVaalluuee, or by any other
+     mechanism,  then  the return value is a string that could be
+     passed to TTkk__GGeettCCoolloorr to return the same color.  Note:   the
+     string returned by TTkk__NNaammeeOOffCCoolloorr is only guaranteed to per-
+     sist until the next call to TTkk__NNaammeeOOffCCoolloorr.
+
+     When   a   pixel   value   returned   by   TTkk__GGeettCCoolloorr    or
+     TTkk__GGeettCCoolloorrBByyVVaalluuee  is no longer needed, TTkk__FFrreeeeCCoolloorr should
+     be called to release the color.  There should be exactly one
+     call  to  TTkk__FFrreeeeCCoolloorr  for  each  call  to  TTkk__GGeettCCoolloorr  or
+     TTkk__GGeettCCoolloorrBByyVVaalluuee.  When a pixel value is no longer in  use
+     anywhere  (i.e.  it  has  been freed as many times as it has
+     been gotten) TTkk__FFrreeeeCCoolloorr will release it to  the  X  server
+     and delete it from the database.
+
+
+KKEEYYWWOORRDDSS
+     color, intensity, pixel value
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     3
+
+
+

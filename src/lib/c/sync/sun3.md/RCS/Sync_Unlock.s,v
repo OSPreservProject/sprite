@@ -1,0 +1,131 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @# @;
+
+
+1.2
+date     90.02.12.02.53.02;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.19.14.34.19;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.2
+log
+@Converted local labels to Gnu syntax.
+@
+text
+@|*
+|* syncAsm.s --
+|*
+|*	Source code for the Sync_Unlock library procedure.
+|*
+|* Copyright 1988 Regents of the University of California
+|* Permission to use, copy, modify, and distribute this
+|* software and its documentation for any purpose and without
+|* fee is hereby granted, provided that the above copyright
+|* notice appear in all copies.  The University of California
+|* makes no representations about the suitability of this
+|* software for any purpose.  It is provided "as is" without
+|* express or implied warranty.
+|*
+
+    .data
+    .asciz "$Header: /sprite/src/lib/c/sync/sun3.md/RCS/Sync_Unlock.s,v 1.1 88/06/19 14:34:19 ouster Exp Locker: rab $ SPRITE (Berkeley)"
+    .even
+    .text
+
+
+/*
+ *----------------------------------------------------------------------------
+ *
+ * Sync_Unlock --
+ *
+ *      Release a lock.  This is called at the end of a critical
+ *      section of code to allow other processes to execute within the
+ *      critical section.  If any processes are waiting to acquire this
+ *      lock they are made runnable.  They will try to gain the lock
+ *      again the next time they run.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The lock is cleared.  Processes waiting on the lock are made runnable.
+ *
+ * C equivalent:
+ *
+ *	void
+ *	Sync_Unlock(lockPtr)
+ *	    Sync_Lock *lockPtr;
+ *	{
+ *	    lockPtr->inUse = 0;
+ *	    if (lockPtr->waiting) {
+ *		Sync_SlowBroadcast((int)lockPtr, &lockPtr->waiting);
+ *	    }
+ *	}
+ *
+ *----------------------------------------------------------------------------
+ */
+
+    .text
+    .globl _Sync_Unlock
+_Sync_Unlock:
+
+    movl	sp@@(4), a0	| a0 = lockPtr
+    clrl	a0@@		| lockPtr->inUse = 0;
+
+    /*
+     * The check on the waiting bit races with the assignment
+     * statement that clears it in Sync_SlowBroadcast. In the
+     * worst case we assume someone is waiting that is really
+     * just waking up because we've cleared the inUse bit.
+     * That results in a wasted call to Sync_SlowBroadcast.
+     */
+
+    tstl	a0@@(4)		| if (lockPtr->waiting) {
+    jeq		1f		| Bail out if !lockPtr->waiting
+
+    /*
+     * Note the broadcast semantics for Sync_SlowBroadcast.
+     * All processes waiting on the lock will be made runnable,
+     * however, all but one will sleep again inside Sync_SlowLock.
+     */
+
+    movl	a0, d0
+    addql	#4, d0		| Get address of lockPtr->waiting.
+    movl	d0, sp@@-	| Push &lockPtr->waiting on the stack.
+    movl	a0, sp@@-	| Push lockPtr on the stack.
+    jbsr	_Sync_SlowBroadcast
+    addql	#8, sp		| Pop the stack.
+
+1:  rts
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+    .asciz "$Header: proto.s,v 1.2 88/03/11 08:39:36 ouster Exp $ SPRITE (Berkeley)"
+d70 1
+a70 1
+    jeq		1$		| Bail out if !lockPtr->waiting
+d85 1
+a85 1
+1$: rts
+@

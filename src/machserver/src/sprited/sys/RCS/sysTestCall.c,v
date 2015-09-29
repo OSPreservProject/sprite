@@ -1,0 +1,977 @@
+head     1.16;
+branch   ;
+access   ;
+symbols  srv030:1.15 srv028:1.14 srv027:1.14 srv026:1.14 srv024:1.14 srv022:1.14 srv021:1.14 srv019:1.14 srv018:1.14 srv016:1.14 srv015:1.14 srv014:1.14 srv012:1.14 srv011:1.14 srv010:1.14 srv008:1.14 srv007:1.14 srv006:1.14 srv005:1.14 srv004:1.14 srv003:1.14 srv002:1.14 srv001:1.14;
+locks    ; strict;
+comment  @ * @;
+
+
+1.16
+date     92.07.17.16.34.24;  author kupfer;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     92.07.16.18.06.43;  author kupfer;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     92.03.23.14.26.50;  author kupfer;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     91.12.12.21.10.18;  author kupfer;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     91.12.01.21.58.00;  author kupfer;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     91.11.14.10.02.02;  author kupfer;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     91.10.18.18.07.26;  author kupfer;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     91.10.04.11.37.44;  author kupfer;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     91.09.26.12.12.59;  author kupfer;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     91.09.24.16.29.24;  author kupfer;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     91.09.23.14.20.02;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.09.02.22.55.11;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.08.19.12.16.58;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.08.15.14.23.34;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.07.19.15.26.53;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.07.17.11.14.40;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Simple printf server.
+@
+
+
+1.16
+log
+@Add Test_Return1Stub, Test_Return2Stub.
+@
+text
+@/* 
+ * sysTestCall.c --
+ *
+ *	Test system calls for the Sprite server.
+ *
+ * Copyright 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/sys/RCS/sysTestCall.c,v 1.15 92/07/16 18:06:43 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <mach.h>
+#include <bstring.h>
+#include <ckalloc.h>
+#include <status.h>
+#include <stdio.h>
+#include <string.h>
+#include <time.h>
+
+#include <spriteSrvServer.h>
+#include <sys.h>
+#include <sysInt.h>
+#include <utils.h>
+#include <vm.h>
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Test_PutDecimalStub --
+ *
+ *	Write an integer to stdout in decimal.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+kern_return_t
+Test_PutDecimalStub(port, value)
+    mach_port_t	port;		/* request port */
+    int		value;		/* value to print */
+{
+    printf("%d", value);
+    return KERN_SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Test_PutOctalStub --
+ *
+ *	Write an integer to stdout in octal.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+kern_return_t
+Test_PutOctalStub(port, value)
+    mach_port_t	port;		/* request port */
+    int		value;		/* value to print */
+{
+    printf("0%o", value);
+    return KERN_SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Test_PutHexStub --
+ *
+ *	Write an integer to stdout in hex.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+kern_return_t
+Test_PutHexStub(port, value)
+    mach_port_t	port;		/* request port */
+    int		value;		/* value to print */
+{
+    printf("0x%x", value);
+    return KERN_SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Test_PutMessageStub --
+ *
+ *	Print a string to stdout.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/* ARGSUSED */
+kern_return_t
+Test_PutMessageStub(port, message)
+    mach_port_t	port;
+    Test_MessageBuffer message;
+{
+    /* XXX verify that string ends with a null? */
+    printf("%s", message);
+    return KERN_SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Test_PutTimeStub --
+ *
+ *	Format and print a time value.
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+kern_return_t
+Test_PutTimeStub(port, time, overwrite)
+    mach_port_t port;
+    int time;			/* XXX should be time_t */
+    Boolean overwrite;		/* hack: if true, pretend the cursor is at 
+				 * the end of a formatted time and
+				 * overwrite it */
+{
+    char buffer[1024];		/* what we actually print */
+    int i;
+
+#ifdef lint
+    port = port;
+#endif
+
+    if (!overwrite) {
+	buffer[0] = '\0';
+    } else {
+	for (i = 0; i < 24; ++i) {
+	    buffer[i] = '\b';
+	}
+	buffer[i] = '\0';
+    }
+    strcat(buffer, ctime((time_t*)&time));
+    /* 
+     * Null out the final newline.
+     */
+    buffer[strlen(buffer)-1] = '\0';
+    printf(buffer);
+
+    return KERN_SUCCESS;
+}
+
+
+#if 0
+/*
+ *----------------------------------------------------------------------
+ *
+ * Test_PutStringStub --
+ *
+ *	Print a string to stdout, accessing it via Vm_MakeAccessible.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+kern_return_t
+Test_PutStringStub(port, userString, numBytes)
+    mach_port_t port;
+    vm_address_t userString;
+    int numBytes;
+{
+    Address string;		/* server address for the user's string */
+    int mappedBytes;
+    char *buffer;
+
+#ifdef lint
+    port = port;
+#endif
+
+    Vm_MakeAccessible(VM_READONLY_ACCESS, numBytes, (Address)userString,
+		      &mappedBytes, &string);
+    if (mappedBytes == 0) {
+	return KERN_SUCCESS;
+    }
+
+    /* 
+     * If the string doesn't end with a null, copy it to a buffer and tack 
+     * one on.
+     */
+    if (string[mappedBytes-1] == '\0') {
+	printf("%s", string);
+    } else {
+	buffer = ckalloc(mappedBytes + 1);
+	bcopy(string, buffer, mappedBytes);
+	buffer[mappedBytes] = '\0';
+	printf("%s", buffer);
+	ckfree(buffer);
+    }
+
+    Vm_MakeUnaccessible(string, mappedBytes);
+    return KERN_SUCCESS;
+}
+#endif /* 0 */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Test_PutStringStub --
+ *
+ *	Print a string to stdout, accessing it via Vm_StringNCopy.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+kern_return_t
+Test_PutStringStub(port, userString, numBytes)
+    mach_port_t port;
+    vm_address_t userString;
+    int numBytes;
+{
+    Address buffer;
+    ReturnStatus status;
+    int stringLength;		/* actual length of the string */
+    
+#ifdef lint
+    port = port;
+#endif
+    
+    if (numBytes <= 0) {
+	return KERN_SUCCESS;
+    }
+
+    buffer = ckalloc(numBytes * 2);
+    status = Vm_StringNCopy(numBytes, (Address)userString, buffer,
+			    &stringLength);
+    if (status != SUCCESS) {
+	printf("Test_PutString: couldn't copy in string: %s\n",
+	       Stat_GetMsg(status));
+	return KERN_SUCCESS;
+    }
+			    
+    if (stringLength > 0) {
+	/* 
+	 * Make sure the string has a trailing null.
+	 */
+	buffer[stringLength] = '\0';
+	printf("%s", buffer);
+    }
+
+    ckfree(buffer);
+    return KERN_SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Test_GetStringStub --
+ *
+ *	Read a string from stdin and return it via Vm_MakeAccessible.
+ *
+ * Results:
+ *	If we hit EOF on stdin, the first character in the buffer is made 
+ *	to be null.
+ *
+ * Side effects:
+ *	The string is copied into the user's address space.  EOF on stdin 
+ *	is reset after returning an empty string.
+ *
+ *----------------------------------------------------------------------
+ */
+
+kern_return_t
+Test_GetStringStub(port, userBuffer, bufferLength)
+    mach_port_t port;
+    vm_address_t userBuffer;
+    int bufferLength;
+{
+#if 1
+#ifdef lint
+    port = port;
+    userBuffer = userBuffer;
+    bufferLength = bufferLength;
+#endif /* lint */
+    return KERN_FAILURE;	/* not supported with /dev/console */
+#else
+    Address ourBuffer;
+    int mappedLength;
+
+#ifdef lint
+    port = port;
+#endif
+
+    Vm_MakeAccessible(VM_READWRITE_ACCESS, bufferLength, (Address)userBuffer,
+		      &mappedLength, &ourBuffer);
+    if (mappedLength == 0) {
+	printf("Test_GetString: Couldn't map user buffer\n");
+	return KERN_SUCCESS;
+    }
+
+    if (feof(stdin)) {
+	ourBuffer[0] = '\0';
+	clearerr(stdin);
+    } else {
+	fgets(ourBuffer, mappedLength, stdin);
+	if (feof(stdin)) {
+	    ourBuffer[0] = '\0';
+	    clearerr(stdin);
+	}
+    }
+
+    Vm_MakeUnaccessible(ourBuffer, mappedLength);
+    return KERN_SUCCESS;
+#endif
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Test_MemCheckStub --
+ *
+ *	Dump out information about server memory usage.
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+kern_return_t
+Test_MemCheckStub(serverPort)
+    mach_port_t serverPort;	/* request port */
+{
+#ifdef MEM_DEBUG
+    /* 
+     * Call the package the print the results.  The filename argument is 
+     * ignored when the package is built for the server.
+     */
+    Mem_DumpActiveMemory("dummyFile");
+#else
+    printf("Warning: malloc debugging unavailable.\n");
+#endif
+
+#ifdef lint
+    serverPort = serverPort;
+#endif
+
+    SysBufferStats();
+    return KERN_SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Test_Return1Stub --
+ *
+ *	Return immediately.  For testing "syscall" overhead.
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+kern_return_t
+Test_Return1Stub(serverPort)
+    mach_port_t serverPort;	/* request port */
+{
+#ifdef lint
+    serverPort = serverPort;
+#endif
+
+    return KERN_SUCCESS;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Test_Return2Stub --
+ *
+ *	Like Test_Return1Stub.
+ *
+ * Results:
+ *	Returns KERN_SUCCESS.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+kern_return_t
+Test_Return2Stub(serverPort)
+    mach_port_t serverPort;	/* request port */
+{
+#ifdef lint
+    serverPort = serverPort;
+#endif
+
+    return KERN_SUCCESS;
+}
+@
+
+
+1.15
+log
+@Split spriteSrv.h into user and server versions.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/sys/RCS/sysTestCall.c,v 1.14 92/03/23 14:26:50 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d405 56
+@
+
+
+1.14
+log
+@Disable Test_GetStringStub, since it doesn't interact well with
+/dev/console.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/sys/RCS/sysTestCall.c,v 1.13 91/12/12 21:10:18 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d28 1
+a28 1
+#include <spriteSrv.h>
+@
+
+
+1.13
+log
+@Fix Test_GetString to reset stdin after EOF.  Flush some debug
+printf's.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/sys/RCS/sysTestCall.c,v 1.12 91/12/01 21:58:00 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d331 8
+d366 1
+@
+
+
+1.12
+log
+@Snapshot.  FS appears to work.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/sys/RCS/sysTestCall.c,v 1.11 91/11/14 10:02:02 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a281 1
+	printf("Test_PutString: non-positive byte count.\n");
+a293 1
+    printf("Test_PutString: string is %d bytes:\n", stringLength);
+d319 2
+a320 1
+ *	The string is copied into the user's address space.
+d347 1
+d352 1
+@
+
+
+1.11
+log
+@Snapshot. net, rpc, recov modules added.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/sys/RCS/sysTestCall.c,v 1.10 91/10/18 18:07:26 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d21 1
+a22 1
+#include <libc.h>
+d25 2
+d138 1
+d194 1
+d212 1
+a212 1
+Test_PutStringStub(port, userString, stringLength)
+d215 1
+a215 1
+    int stringLength;
+d217 3
+a219 2
+    Address string;
+    int mappedLength;
+d225 3
+a227 3
+    Vm_MakeAccessible(VM_READONLY_ACCESS, stringLength, (Address)userString,
+		      &mappedLength, &string);
+    if (mappedLength == 0) {
+d231 72
+a302 1
+    printf("%s", string);
+d304 1
+a304 1
+    Vm_MakeUnaccessible(string, mappedLength);
+@
+
+
+1.10
+log
+@Add Test_MemCheckStub.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/sys/RCS/sysTestCall.c,v 1.9 91/10/04 11:37:44 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d160 1
+a160 1
+    time_t time;
+d168 4
+d180 1
+a180 1
+    strcat(buffer, ctime(&time));
+d216 4
+d259 4
+d312 4
+@
+
+
+1.9
+log
+@Snapshot.  fork/exec work.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/sys/RCS/sysTestCall.c,v 1.8 91/09/26 12:12:59 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d21 1
+d28 1
+d268 35
+@
+
+
+1.8
+log
+@Append "Stub" to procedure names, so that user code can call routines
+with the clean names and not know anything about Mach.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/sys/RCS/sysTestCall.c,v 1.7 91/09/24 16:29:24 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d142 46
+a211 2
+    printf("Test_PutString: read %d bytes starting at 0x%x\n",
+	   mappedLength, userString);
+@
+
+
+1.7
+log
+@Use Vm_MakeAccessible instead of Vm_Copy{In,Out} for Test_{Get,Put}String.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/sys/RCS/sysTestCall.c,v 1.6 91/09/23 14:20:02 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d34 1
+a34 1
+ * Test_PutDecimal --
+d49 1
+a49 1
+Test_PutDecimal(port, value)
+d61 1
+a61 1
+ * Test_PutOctal --
+d76 1
+a76 1
+Test_PutOctal(port, value)
+d88 1
+a88 1
+ * Test_PutHex --
+d103 1
+a103 1
+Test_PutHex(port, value)
+d115 1
+a115 1
+ * Test_PutMessage --
+d130 1
+a130 1
+Test_PutMessage(port, message)
+d142 1
+a142 1
+ * Test_PutString --
+d156 1
+a156 1
+Test_PutString(port, userString, stringLength)
+d182 1
+a182 1
+ * Test_GetString --
+d197 1
+a197 1
+Test_GetString(port, userBuffer, bufferLength)
+@
+
+
+1.6
+log
+@Snapshot.  Server is multithreaded internally.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/sys/RCS/sysTestCall.c,v 1.5 91/09/02 22:55:11 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d144 1
+a144 1
+ *	Print a string to stdout, accessing it via CopyIn.
+d161 2
+a162 2
+    Address buffer;
+    ReturnStatus status;
+d164 6
+a169 3
+    buffer = malloc(stringLength + 1);
+    if (buffer == NULL) {
+	panic("Test_PutString: out of memory.\n");
+d172 1
+a172 11
+    status = Vm_CopyIn(stringLength, (Address)userString, buffer);
+    if (status != SUCCESS) {
+	printf("Test_PutString: can't copy in string: %s\n",
+	       Stat_GetMsg(status));
+	return KERN_SUCCESS;
+    }
+    /* 
+     * Make sure there's a final null for printf.
+     */
+    buffer[stringLength] = '\0';
+    printf("%s", buffer);
+d174 1
+a174 1
+    free(buffer);
+d184 1
+a184 1
+ *	Read a string from stdin and return it via CopyOut.
+d203 1
+a203 1
+    ReturnStatus status;
+d205 5
+a209 7
+    if (bufferLength == trunc_page(bufferLength)) {
+	ourBuffer = valloc(bufferLength);
+    } else {
+	ourBuffer = malloc(bufferLength);
+    }
+    if (ourBuffer == NULL) {
+	panic("Test_GetString: out of memory.\n");
+d215 1
+a215 1
+	fgets(ourBuffer, bufferLength, stdin);
+a219 5
+    status = Vm_CopyOut(bufferLength, ourBuffer, (Address)userBuffer);
+    if (status != SUCCESS) {
+	printf("Test_GetString: couldn't copy to user buffer: %s\n",
+	       Stat_GetMsg(status));
+    }
+d221 1
+a221 1
+    free(ourBuffer);
+@
+
+
+1.5
+log
+@Changes for module-based source organization.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/sprited/sys/RCS/sysTestCall.c,v 1.4 91/08/19 12:16:58 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d21 3
+d26 1
+d28 1
+d135 101
+@
+
+
+1.4
+log
+@Snapshot: Code reorg. and locking for processes & segments.
+@
+text
+@d2 1
+a2 1
+ * printfd.c --
+d4 1
+a4 1
+ *	Service routines for printf server.
+d17 1
+a17 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/printfd/RCS/printfd.c,v 1.3 91/08/15 14:23:34 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d21 3
+a23 2
+#include "spriteSrv.h"
+#include "util.h"
+@
+
+
+1.3
+log
+@Snapshot.  Read-write mapped files work.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/printfd/RCS/printfd.c,v 1.2 91/07/19 15:26:53 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a20 1
+#include <stdio.h>
+d22 1
+a47 1
+    fflush(stdout);
+a74 1
+    fflush(stdout);
+a101 1
+    fflush(stdout);
+a128 1
+    fflush(stdout);
+@
+
+
+1.2
+log
+@Move startup code into another file.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user6/kupfer/spriteserver/src/printfd/RCS/printfd.c,v 1.1 91/07/17 11:14:40 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d28 1
+a28 1
+ * Sys_PutDecimal --
+d43 1
+a43 1
+Sys_PutDecimal(port, value)
+d48 1
+d56 1
+a56 1
+ * Sys_PutOctal --
+d71 1
+a71 1
+Sys_PutOctal(port, value)
+d76 1
+d84 1
+a84 1
+ * Sys_PutHex --
+d99 1
+a99 1
+Sys_PutHex(port, value)
+d104 1
+d112 1
+a112 1
+ * Sys_PutMessage --
+d127 1
+a127 1
+Sys_PutMessage(port, message)
+d129 1
+a129 1
+    MessageBuffer message;
+d132 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d2 1
+a2 1
+ * sprited.c --
+d4 1
+a4 1
+ *	Sprite server.
+d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.5 91/02/09 13:24:44 ouster Exp $ SPRITE (Berkeley)";
+a21 1
+#include <servers/netname.h>
+a22 32
+
+static void ProcessRequests();
+extern boolean_t spriteSrv_server();
+
+main()
+{
+    mach_port_t ourPort;		/* our service port */
+    kern_return_t status;
+
+    status = mach_port_allocate(mach_task_self(), MACH_PORT_RIGHT_RECEIVE,
+				&ourPort);
+    if (status != KERN_SUCCESS) {
+	fprintf(stderr, "Couldn't allocate port: %s\n",
+		mach_error_string(status));
+	exit(1);
+    }
+
+    status = netname_check_in(name_server_port, "Sprite", PORT_NULL, ourPort);
+    if (status != KERN_SUCCESS) {
+	fprintf(stderr, "Couldn't check in port: %s\n",
+		mach_error_string(status));
+	exit(1);
+    }
+
+    /* XXX - get rid of magic 8192 */
+    status = mach_msg_server(spriteSrv_server, 8192, ourPort);
+    if (status != KERN_SUCCESS) {
+	fprintf(stderr, "Couldn't enter server loop: %s\n",
+		mach_error_string(status));
+	exit(1);
+    }
+}
+@

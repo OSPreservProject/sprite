@@ -1,0 +1,1 @@
+../../dist/t/base/pat.t

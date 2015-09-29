@@ -1,0 +1,179 @@
+#include "sprite.h"
+#include "time.h"
+#include "fs.h"
+#include "io.h"
+#include "option.h"
+
+static char *buffer;
+
+int	blockSize = 16384;
+int	kbytes = 1024;
+char	*outFileName = (char *)NULL;
+Boolean errorTest = FALSE;
+int	pause = 0;
+
+Option optionArray[] = {
+    {OPT_INT, 'b', (Address) &blockSize, 
+     "\tBlock size to use for writing (Default 16384)."},
+    {OPT_INT, 'k', (Address) &kbytes,
+     "\tKbytes to write (Default 1024)."},
+    {OPT_STRING, 'o', (Address)&outFileName,
+     "\tName of file for output (Default write.out)."},
+    {OPT_TRUE, 'e', (Address)&errorTest,
+     "\tTest error cases. "},
+    {OPT_INT, 'p', (Address)&pause,
+     "\tNumber of seconds to pause after each write (default 0)"},
+};
+int numOptions = sizeof(optionArray) / sizeof(Option);
+
+int Handler();
+int gotSig = FALSE;
+
+main(argc, argv)
+int argc;
+char **argv;
+{
+    int cnt, total;
+    double rate, tmp;
+    Time before, after;
+    ReturnStatus status;
+    int	bytesToWrite;
+    int	outFD;
+    Sig_Action		newAction, oldAction;
+
+    (void)Opt_Parse(&argc, argv, numOptions, optionArray);
+
+    /*
+     * Set up signal handling, trap interrupts in order to test
+     * the GEN_INTERRUPTED_BY_SIGNAL return code.
+     */
+    newAction.action = SIG_HANDLE_ACTION;
+    newAction.handler = Handler;
+    newAction.sigHoldMask = 0;
+    Sig_SetAction(SIG_INTERRUPT, &newAction, &oldAction);
+
+    buffer = (char *)Mem_Alloc(blockSize);
+    total = 0;
+    bytesToWrite = kbytes * 1024;
+    if (outFileName == (char *)NULL) {
+	outFileName = "write.out";
+    }
+    status = Fs_Open(outFileName, FS_WRITE | FS_CREATE | FS_TRUNC, 0666,&outFD);
+    if (status != SUCCESS) {
+	Io_PrintStream(io_StdErr, "Could not open %s for writing, status %x\n",
+		       outFileName, status);
+	Proc_Exit(status);
+    }
+    if (errorTest) {
+	int numErrors = 0;
+	Io_Print("Write Error Tests\n"); Io_Flush(io_StdOut);
+
+	status = Fs_Write(-2, 0, 0, &cnt);
+	if (status == SUCCESS) {
+	    Io_Print("ERROR: Fs_Write(-2) worked!\n");
+	    numErrors++;
+	} else {
+	    Stat_PrintMsg(status, "Fs_Write(-2)");
+	}
+
+	status = Fs_Write(outFD, 10, -1, &cnt);
+	if (status == SUCCESS) {
+	    Io_Print("ERROR: Fs_Write{buffer = -1} worked!\n");
+	    numErrors++;
+	} else {
+	    Stat_PrintMsg(status, "Fs_Write{buffer = -1}");
+	}
+
+	status = Fs_Write(outFD, -1, buffer, &cnt);
+	if (status == SUCCESS) {
+	    Io_Print("ERROR: Fs_Write{count < 0} worked!\n");
+	    numErrors++;
+	} else {
+	    Stat_PrintMsg(status, "Fs_Write{count < 0}");
+	}
+
+	/*
+	 * The following case uses Fs_RawWrite because the library
+	 * routine Fs_Write dies on a bad amountReadPtr.
+	 */
+	status = Fs_RawWrite(outFD, 10, buffer, 0);
+	if (status == SUCCESS) {
+	    Io_Print("ERROR: Fs_RawWrite{&cnt = 0} worked!\n");
+	    numErrors++;
+	} else {
+	    Stat_PrintMsg(status, "Fs_RawWrite{&cnt = 0}");
+	}
+
+	{
+	    int outFD2;
+	    status = Fs_Open("/dev/null", FS_READ, 0,&outFD2);
+	    if (status != SUCCESS) {
+		Io_PrintStream(io_StdErr, "Could not open %s for reading, status %x\n",
+			       "/dev/null", status);
+	    } else {
+		status = Fs_Write(outFD2, 10, buffer, &cnt);
+		if (status == SUCCESS) {
+		    Io_Print("ERROR: Fs_Write{readonly stream} worked!\n");
+		    numErrors++;
+		} else {
+		    Stat_PrintMsg(status, "Fs_Write{readonly stream}");
+		}
+	    }
+	}
+
+	{
+	    char *newBuf = (char *)Mem_Alloc(100 * 1024);
+	    Io_Print("Starting 100K write... "); Io_Flush(io_StdOut);
+	    status = Fs_RawWrite(outFD, 100 * 1024, newBuf, &cnt);
+	    if (gotSig) {
+		Io_Print("Got Signal, "); Io_Flush(io_StdOut);
+	    }
+	    if (status == SUCCESS) {
+		Io_Print("Wrote %d bytes\n", cnt);
+	    } else {
+		Stat_PrintMsg(status, "write");
+	    }
+	}
+
+	Fs_Close(outFD);
+	status = Fs_Write(outFD, sizeof("oops"), "oops", &cnt);
+	if (status == SUCCESS) {
+	    Io_Print("ERROR: Fs_Write{closed stream} worked!\n");
+	    numErrors++;
+	} else {
+	    Stat_PrintMsg(status, "Fs_Write{closed stream}");
+	}
+	if (numErrors) {
+	    Io_Print("Write Test had %d errors\n", numErrors);
+	} else {
+	    Io_Print("No errors\n");
+	}
+	Proc_Exit(numErrors);
+    } else {
+	Sys_GetTimeOfDay(&before, NULL, NULL);
+	while (total < bytesToWrite) {
+	    status = Fs_Write(outFD, blockSize, buffer, &cnt);
+	    total += cnt;
+	    if (status != SUCCESS) {
+		Io_PrintStream(io_StdErr, "Write failed status %x\n", status);
+		Proc_Exit(status);
+	    }
+	    if (pause > 0) {
+		Sync_WaitTime(pause, 0);
+	    }
+	}
+	Fs_Close(outFD);
+	Sys_GetTimeOfDay(&after, NULL, NULL);
+	rate = after.seconds - before.seconds;
+	rate += (after.microseconds - before.microseconds)*.000001;
+	rate = total/rate;
+	Io_PrintStream(io_StdErr,
+		       "%d bytes written at %.0f bytes/sec.\n", total, rate);
+   }
+}
+
+int
+Handler()
+{
+    gotSig = TRUE;
+}

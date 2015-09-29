@@ -1,0 +1,4265 @@
+head     9.26;
+branch   ;
+access   ;
+symbols  ds3100:9.26 sun3:9.26 sun4nw:9.17 symm:9.17 spur:9.17 sprited:9.16.1 Summer89:9.0 newlib:8.0 Summer88:6.0 argString:5.2;
+locks    ; strict;
+comment  @ * @;
+
+
+9.26
+date     92.09.27.15.50.49;  author shirriff;  state Exp;
+branches ;
+next     9.25;
+
+9.25
+date     92.09.03.22.35.29;  author shirriff;  state Exp;
+branches ;
+next     9.24;
+
+9.24
+date     92.09.03.21.56.57;  author shirriff;  state Exp;
+branches ;
+next     9.23;
+
+9.23
+date     92.09.03.18.13.32;  author shirriff;  state Exp;
+branches ;
+next     9.22;
+
+9.22
+date     92.09.03.17.26.28;  author shirriff;  state Exp;
+branches ;
+next     9.21;
+
+9.21
+date     92.09.03.17.22.26;  author shirriff;  state Exp;
+branches ;
+next     9.20;
+
+9.20
+date     92.09.03.14.54.17;  author shirriff;  state Exp;
+branches ;
+next     9.19;
+
+9.19
+date     92.06.01.14.40.13;  author kupfer;  state Exp;
+branches ;
+next     9.18;
+
+9.18
+date     92.03.11.17.08.07;  author shirriff;  state Exp;
+branches ;
+next     9.17;
+
+9.17
+date     91.09.10.18.28.48;  author rab;  state Exp;
+branches ;
+next     9.16;
+
+9.16
+date     91.04.29.16.31.46;  author kupfer;  state Exp;
+branches 9.16.1.1;
+next     9.15;
+
+9.15
+date     91.04.28.21.02.48;  author shirriff;  state Exp;
+branches ;
+next     9.14;
+
+9.14
+date     91.04.12.17.36.21;  author kupfer;  state Exp;
+branches ;
+next     9.13;
+
+9.13
+date     91.03.20.14.51.07;  author kupfer;  state Exp;
+branches ;
+next     9.12;
+
+9.12
+date     90.10.10.16.58.34;  author kupfer;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     90.10.01.18.55.27;  author mendel;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     90.09.12.13.58.17;  author jhh;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     90.09.06.17.58.04;  author jhh;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     90.07.31.18.04.53;  author shirriff;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.07.29.15.52.24;  author shirriff;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.07.18.15.04.41;  author shirriff;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.07.17.13.39.44;  author shirriff;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.07.16.22.40.50;  author shirriff;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.06.24.16.34.45;  author douglis;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.26.15.23.20;  author douglis;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.12.11.15.39;  author douglis;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.15.37;  author douglis;  state Stable;
+branches ;
+next     8.11;
+
+8.11
+date     89.08.13.21.45.09;  author douglis;  state Exp;
+branches ;
+next     8.10;
+
+8.10
+date     89.07.14.13.04.54;  author nelson;  state Exp;
+branches ;
+next     8.9;
+
+8.9
+date     89.06.15.16.52.48;  author douglis;  state Exp;
+branches ;
+next     8.8;
+
+8.8
+date     89.05.30.12.25.41;  author douglis;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.04.06.12.07.59;  author jhh;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.03.12.21.14.06;  author rab;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.03.03.05.37.25;  author rab;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.02.28.12.06.29;  author jhh;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.02.19.22.08.17;  author jhh;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.12.04.15.17.37;  author ouster;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.18.14.10.08;  author douglis;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.31.13;  author douglis;  state Stable;
+branches ;
+next     6.11;
+
+6.11
+date     88.11.08.16.45.34;  author douglis;  state Exp;
+branches ;
+next     6.10;
+
+6.10
+date     88.11.08.16.01.35;  author douglis;  state Exp;
+branches ;
+next     6.9;
+
+6.9
+date     88.11.02.10.16.24;  author douglis;  state Exp;
+branches ;
+next     6.8;
+
+6.8
+date     88.11.01.16.22.32;  author douglis;  state Exp;
+branches ;
+next     6.7;
+
+6.7
+date     88.10.28.15.05.17;  author douglis;  state Exp;
+branches ;
+next     6.6;
+
+6.6
+date     88.10.27.20.03.55;  author mlgray;  state Exp;
+branches ;
+next     6.5;
+
+6.5
+date     88.10.27.18.15.31;  author douglis;  state Exp;
+branches ;
+next     6.4;
+
+6.4
+date     88.10.19.14.10.35;  author douglis;  state Exp;
+branches ;
+next     6.3;
+
+6.3
+date     88.08.31.17.55.52;  author douglis;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.08.25.12.09.45;  author nelson;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.24.14.19.11;  author douglis;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.22.50;  author brent;  state Stable;
+branches ;
+next     5.8;
+
+5.8
+date     88.08.02.15.16.37;  author douglis;  state Exp;
+branches ;
+next     5.7;
+
+5.7
+date     88.05.05.17.58.20;  author nelson;  state Exp;
+branches ;
+next     5.6;
+
+5.6
+date     88.05.04.16.46.45;  author nelson;  state Exp;
+branches ;
+next     5.5;
+
+5.5
+date     88.04.27.18.57.04;  author nelson;  state Exp;
+branches ;
+next     5.4;
+
+5.4
+date     88.04.18.09.10.04;  author ouster;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     88.03.14.12.37.47;  author brent;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     88.03.02.11.59.07;  author douglis;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.10.09.09.44.17;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.47.24;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.16.1.1
+date     91.08.16.12.04.13;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.26
+log
+@Added more lfs lock checking to L1-i.
+@
+text
+@/*
+ *  procMisc.c --
+ *
+ *	Misc. routines to get and set process state.
+ *
+ * Copyright 1986 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/proc/procMisc.c,v 9.25 92/09/03 22:35:29 shirriff Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <proc.h>
+#include <status.h>
+#include <sync.h>
+#include <sched.h>
+#include <sig.h>
+#include <stdlib.h>
+#include <list.h>
+#include <string.h>
+#include <procInt.h>
+#include <rpc.h>
+#include <dbg.h>
+#include <vm.h>
+#include <ctype.h>
+#include <fscache.h>
+#include <fsutil.h>
+#include <rpcClient.h>
+#include <rpcServer.h>
+#include <procServer.h>
+#include <fsrmt.h>
+#include <lfsTypes.h>
+#include <fsconsist.h>
+#include <bstring.h>
+#include <stdio.h>
+
+#define min(a,b) ((a) < (b) ? (a) : (b))
+/*
+ * Procedures internal to this file
+ */
+
+static ReturnStatus 	GetRemotePCB _ARGS_((int hostID, Proc_PID pid,
+				Proc_PCBInfo *pcbPtr, char *argString));
+static void		FillPCBInfo _ARGS_((Proc_ControlBlock *pcbPtr,
+				Proc_PCBInfo *statusInfoPtr));	
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_Init --
+ *
+ *	Called during startup to initialize data structures.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Process table initialized, debug list initialized, locks initialized.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Proc_Init()
+{
+    ProcInitTable();
+    ProcDebugInit();
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_GetPCBInfo --
+ *
+ *	Returns the process control blocks for the specified processes
+ *	on the specified host.  If firstPid is equal to PROC_MY_PID
+ *	and the hostID is PROC_MY_HOSTID, then the PCB for the current
+ *	process is returned.  Otherwise PCBs for all processes in the
+ *	range firstPid to lastPid on host hostID are returned.  Only
+ *	the index portions of the processIDs for firstPid and lastPid
+ *	are relevant. 
+ *
+ * Results:
+ *	SYS_INVALID_ARG - 	firstPid was < 0, firstPid > lastPid
+ *	SYS_ARG_NOACCESS - 	The buffers to store the pcbs in were not
+ *				accessible.
+ *      *trueNumBuffers is set to be the actual number of
+ *	PCBs returned which can be less than the number requested if
+ *	lastPid - firstPid is greater than the maximum PCBs available.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*
+ * Macro to fix up ticks for a process control block.
+ */
+#define TICKS_TO_TIME(pcbEntry) \
+	Timer_TicksToTime(pcbEntry.kernelCpuUsage.ticks,  \
+			  &pcbEntry.kernelCpuUsage.time); \
+	Timer_TicksToTime(pcbEntry.userCpuUsage.ticks,  \
+			  &pcbEntry.userCpuUsage.time); \
+	Timer_TicksToTime(pcbEntry.childKernelCpuUsage.ticks,  \
+			  &pcbEntry.childKernelCpuUsage.time); \
+	Timer_TicksToTime(pcbEntry.childUserCpuUsage.ticks,  \
+			  &pcbEntry.childUserCpuUsage.time);
+
+
+ReturnStatus
+Proc_GetPCBInfo(firstPid, lastPid, hostID, infoSize, bufferPtr, 
+		argsPtr, trueNumBuffersPtr)
+    Proc_PID 		firstPid;	     /* First pid to get info for. */
+    Proc_PID		lastPid;	     /* Last pid to get info for. */
+    int			hostID;		     /* Host ID to get info for. */
+    int			infoSize;   	     /* Size of structure */
+    Address	 	bufferPtr;	     /* Pointer to buffers. */
+    Proc_PCBArgString	*argsPtr;	     /* Pointer to argument strings. */
+    int 		*trueNumBuffersPtr;  /* The actual number of buffers 
+						used.*/
+{
+    register Proc_ControlBlock 	*procPtr = (Proc_ControlBlock *) NIL;
+    int				i, j;
+    char 			argString[PROC_PCB_ARG_LENGTH];
+    Proc_ControlBlock		pcbEntry;
+    Boolean			remote = FALSE;
+    Proc_PID			processID = firstPid;
+    ReturnStatus		status = SUCCESS;
+    Proc_PCBInfo		statusInfo;
+    int				bytesToCopy;
+
+
+    if (firstPid != PROC_MY_PID) {
+	firstPid &= PROC_INDEX_MASK;
+	lastPid &= PROC_INDEX_MASK;
+	if ((firstPid > lastPid) ||
+	    ((firstPid == PROC_MY_PID) && hostID != PROC_MY_HOSTID)) {
+	    return(GEN_INVALID_ARG);
+	}
+    }
+    if (bufferPtr == USER_NIL) {
+	return (SYS_ARG_NOACCESS);
+    }
+    if (hostID != PROC_MY_HOSTID &&
+	(hostID <= 0 || hostID > NET_NUM_SPRITE_HOSTS)) {
+	return(GEN_INVALID_ARG);
+    }
+
+    bytesToCopy = min(sizeof(Proc_PCBInfo), infoSize);
+    /*
+     * Determine whether to get process table entries for this machine.
+     * Currently, the information for this machine is returned unless
+     * another machine is explicitly specified; i.e., migrated processes
+     * get information for their current machine rather than their home.
+     */
+
+    if (hostID == PROC_MY_HOSTID) {
+#ifdef FORWARD_MIGRATED_GET_PCBS
+	procPtr = Proc_GetCurrentProc();
+	Proc_Lock(procPtr);
+	if (procPtr->genFlags & PROC_FOREIGN) {
+	    hostID = procPtr->peerHostID;
+	    processID = procPtr->peerHostID;
+	    remote = TRUE;
+	} 
+	Proc_Unlock(procPtr);
+#endif /* FORWARD_MIGRATED_GET_PCBS */
+    } else if (hostID != rpc_SpriteID) {
+	remote = TRUE;
+    }
+
+    if (firstPid == PROC_MY_PID) {
+	/*
+	 *  Return PCB for the current process.
+	 */
+	procPtr = Proc_GetCurrentProc();
+	if (!remote) {
+	    bcopy((Address)procPtr, (Address)&pcbEntry,
+		    sizeof (Proc_ControlBlock));
+	    TICKS_TO_TIME(pcbEntry);
+	    FillPCBInfo(&pcbEntry, &statusInfo);
+	} else {
+	    status = GetRemotePCB(hostID, processID, &statusInfo,
+				       argString);
+	    if (status != SUCCESS) {
+		return(status);
+	    }
+	}
+	if (Proc_ByteCopy(FALSE, bytesToCopy,
+		(Address)&statusInfo, (Address) bufferPtr) != SUCCESS) {
+	    return(SYS_ARG_NOACCESS);
+	}
+	if (argsPtr != (Proc_PCBArgString *) USER_NIL) {
+	    if (!remote) {
+		if (procPtr->argString != (Address) NIL) {
+		    (void) strncpy(argString, procPtr->argString,
+			    PROC_PCB_ARG_LENGTH - 1);
+		    argString[PROC_PCB_ARG_LENGTH - 1] = '\0';
+		} else {
+		    argString[0] = '\0';
+		}
+	    }
+	    if (Proc_ByteCopy(FALSE, PROC_PCB_ARG_LENGTH, argString,
+			      (Address) argsPtr) != SUCCESS) {
+		return(SYS_ARG_NOACCESS);
+	    }
+	}
+    } else {
+	
+	/*
+	 * Return PCB for all processes or enough to fill all of
+	 * the buffers, whichever comes first.
+	 */
+
+	
+	for (i = firstPid, j = 0; 
+	     i <= lastPid; 
+	     i++, j++, (Address) bufferPtr += infoSize) {
+	    if (!remote) {
+		if (i >= proc_MaxNumProcesses) {
+		    break;
+		}
+		procPtr = Proc_GetPCB(i);
+		if (procPtr == (Proc_ControlBlock *) NIL) {
+		    panic("Proc_GetInfo: procPtr == NIL!\n");
+		    status = FAILURE;
+		    break;
+		}
+		bcopy((Address)procPtr, (Address)&pcbEntry,
+			sizeof (Proc_ControlBlock));
+
+		TICKS_TO_TIME(pcbEntry);
+		FillPCBInfo(&pcbEntry, &statusInfo);
+	    } else {
+		status = GetRemotePCB(hostID, (Proc_PID) i, &statusInfo,
+					   argString);
+		if (status != SUCCESS) {
+		    /*
+		     * Break if we hit an error.  The typical error condition
+		     * is to hit an invalid process ID, which happens since
+		     * we don't know proc_MaxNumProcesses on the other
+		     * machine.  Instead, we convert GEN_INVALID_ARG to
+		     * SUCCESS and return what we found so far.
+		     */
+		    if (status == GEN_INVALID_ARG) {
+			status = SUCCESS;
+		    }
+		    break;
+		}
+	    }
+	    if (Proc_ByteCopy(FALSE, bytesToCopy,
+		    (Address)&statusInfo, (Address) bufferPtr) != SUCCESS) {
+		return(SYS_ARG_NOACCESS);
+	    }
+	    if (argsPtr != (Proc_PCBArgString *) USER_NIL) {
+		if (!remote) {
+		    if (procPtr->argString != (Address) NIL) {
+			(void) strncpy(argString, procPtr->argString,
+				       PROC_PCB_ARG_LENGTH - 1);
+			argString[PROC_PCB_ARG_LENGTH - 1] = '\0';
+		    } else {
+			argString[0] = '\0';
+		    }
+		}
+		if (Proc_ByteCopy(FALSE, PROC_PCB_ARG_LENGTH, argString,
+				  (Address) &(argsPtr[j])) != SUCCESS) {
+		    return(SYS_ARG_NOACCESS);
+		}
+	    }
+	}
+
+	if (trueNumBuffersPtr != USER_NIL) {
+	    if (Proc_ByteCopy(FALSE, sizeof(j), (Address) &j, 
+			    (Address) trueNumBuffersPtr) != SUCCESS) {
+		return(SYS_ARG_NOACCESS);
+	    }
+	}
+    }
+
+    return(status);
+}
+
+
+
+/*
+ * Define some constants used to distinguish RPC sub-commands.
+ */
+#define GET_PCB 1
+#define GET_SEG_INFO 2
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetRemotePCB --
+ *
+ *	Perform an RPC to get a process control block from another host.
+ *
+ * Results:
+ *	The return status from the RPC is returned.  
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus	
+GetRemotePCB(hostID, pid, pcbPtr, argString)
+    int		hostID;		/* Host to send RPC to. */
+    Proc_PID	pid;		/* index of PCB to obtain. */
+    Proc_PCBInfo *pcbPtr;	/* Place to return PCB data. */
+    char	*argString;	/* Place to return argument string. */
+{
+    Rpc_Storage		storage;
+    ReturnStatus 	status;
+    int			request;
+
+    request = GET_PCB;
+    storage.requestParamPtr = (Address)&request;
+    storage.requestParamSize = sizeof(request);
+    storage.requestDataPtr = (Address)&pid;
+    storage.requestDataSize = sizeof(Proc_PID);
+    storage.replyParamPtr = (Address)pcbPtr;
+    storage.replyParamSize = sizeof(Proc_PCBInfo);
+    storage.replyDataPtr = (Address)argString;
+    storage.replyDataSize = PROC_PCB_ARG_LENGTH;
+
+    status = Rpc_Call(hostID, RPC_PROC_GETPCB, &storage);
+    if (status == SUCCESS && storage.replyDataSize == 0) {
+	argString[0] = '\0';
+    }
+    return(status);
+
+}
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_GetRemoteSegInfo --
+ *
+ *	Perform an RPC to get info for a VM segment control from another host.
+ *
+ * Results:
+ *	The return status from the RPC is returned.  
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus	
+Proc_GetRemoteSegInfo(hostID, segNum, segInfoPtr)
+    int		hostID;		/* Host to send RPC to. */
+    int		segNum;		/* index of segment to obtain. */
+    Vm_SegmentInfo *segInfoPtr;	/* Place to return segment data. */
+{
+    Rpc_Storage		storage;
+    ReturnStatus 	status;
+    int			request;
+
+    request = GET_SEG_INFO;
+    storage.requestParamPtr = (Address)&request;
+    storage.requestParamSize = sizeof(request);
+    storage.requestDataPtr = (Address)&segNum;
+    storage.requestDataSize = sizeof(int);
+    storage.replyParamPtr = (Address)segInfoPtr;
+    storage.replyParamSize = sizeof(Vm_SegmentInfo);
+    storage.replyDataPtr = (Address)NIL;
+    storage.replyDataSize = 0;
+
+    status = Rpc_Call(hostID, RPC_PROC_GETPCB, &storage);
+    return(status);
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FillPCBInfo --
+ *
+ *	Fills in a Proc_PCBInfo structure from the contents of a
+ *	control block.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+FillPCBInfo(pcbPtr, statusInfoPtr)
+    Proc_ControlBlock		*pcbPtr; 	/* Ptr to pcb to convert */
+    Proc_PCBInfo		*statusInfoPtr; /* Structure to fill in */
+{
+    int 	i;
+
+    statusInfoPtr->processor = pcbPtr->processor;
+    statusInfoPtr->state = pcbPtr->state;
+    statusInfoPtr->genFlags = pcbPtr->genFlags;
+    statusInfoPtr->processID = pcbPtr->processID;
+    statusInfoPtr->parentID = pcbPtr->parentID;
+    statusInfoPtr->familyID = pcbPtr->familyID;
+    statusInfoPtr->userID = pcbPtr->userID;
+    statusInfoPtr->effectiveUserID = pcbPtr->effectiveUserID;
+    statusInfoPtr->event = pcbPtr->event;
+    statusInfoPtr->billingRate = pcbPtr->billingRate;
+    statusInfoPtr->recentUsage = pcbPtr->recentUsage;
+    statusInfoPtr->weightedUsage = pcbPtr->weightedUsage;
+    statusInfoPtr->unweightedUsage = pcbPtr->unweightedUsage;
+    statusInfoPtr->kernelCpuUsage = pcbPtr->kernelCpuUsage.time;
+    statusInfoPtr->userCpuUsage = pcbPtr->userCpuUsage.time;
+    statusInfoPtr->childKernelCpuUsage = pcbPtr->childKernelCpuUsage.time;
+    statusInfoPtr->childUserCpuUsage = pcbPtr->childUserCpuUsage.time;
+    statusInfoPtr->numQuantumEnds = pcbPtr->numQuantumEnds;
+    statusInfoPtr->numWaitEvents = pcbPtr->numWaitEvents;
+    statusInfoPtr->schedQuantumTicks = pcbPtr->schedQuantumTicks;
+    for(i = 0; i < VM_NUM_SEGMENTS; i++) {
+	if (pcbPtr->vmPtr != (Vm_ProcInfo *) NIL && 
+	    pcbPtr->vmPtr->segPtrArray[i] != (Vm_Segment *) NIL) {
+	    statusInfoPtr->vmSegments[i] = 
+		(Vm_SegmentID) pcbPtr->vmPtr->segPtrArray[i]->segNum;
+	} else {
+	    statusInfoPtr->vmSegments[i] = (Vm_SegmentID) -1;
+	}
+    }
+    statusInfoPtr->sigHoldMask = pcbPtr->sigHoldMask;
+    statusInfoPtr->sigPendingMask = pcbPtr->sigPendingMask;
+    for(i = 0; i < SIG_NUM_SIGNALS; i++) {
+	statusInfoPtr->sigActions[i] = pcbPtr->sigActions[i];
+    }
+    statusInfoPtr->peerHostID = pcbPtr->peerHostID;
+    statusInfoPtr->peerProcessID = pcbPtr->peerProcessID;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_RpcGetPCB --
+ *
+ *	Stub to handle a remote request for a PCB or Vm_Segment.
+ *
+ * Results:
+ *	Status of reply:
+ *	GEN_INVALID_ARG - index into table of process control blocks is
+ *			  invalid, or segment is invalid.
+ *	SUCCESS 	- information is returned.
+ *
+ *	SUCCESS is passed to the caller on this machine.
+ *
+ * Side effects:
+ *	Reply is sent.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus	
+Proc_RpcGetPCB(srvToken, clientID, command, storagePtr)
+    ClientData 		 srvToken;	/* Handle on server process passed to
+				 	 * Rpc_Reply */
+    int 		 clientID;	/* Sprite ID of client host */
+    int 		 command;	/* Command identifier */
+    register Rpc_Storage *storagePtr;	/* The request fields refer to the 
+					 * request buffers and also indicate 
+					 * the exact amount of data in the 
+					 * request buffers.  The reply fields 
+					 * are initialized to NIL for the
+				 	 * pointers and 0 for the lengths.  
+					 * This can be passed to Rpc_Reply */
+{
+    ReturnStatus	status = SUCCESS;
+    Proc_PID		*pidPtr;
+    Rpc_ReplyMem	*replyMemPtr;
+    Proc_PCBInfo	*pcbPtr;
+    Proc_ControlBlock   *procPtr = (Proc_ControlBlock *) NIL;
+    Proc_ControlBlock   pcb;
+    int			*segNumPtr;
+    Vm_SegmentInfo	*segInfoPtr;
+    int			*requestPtr;
+
+    requestPtr = (int *) storagePtr->requestParamPtr;
+    if (*requestPtr == GET_SEG_INFO) {
+	segNumPtr = (int *) storagePtr->requestDataPtr;
+	segInfoPtr = (Vm_SegmentInfo *) malloc(sizeof (Vm_SegmentInfo));
+	status = Vm_EncapSegInfo(*segNumPtr, segInfoPtr);
+	storagePtr->replyParamPtr = (Address) segInfoPtr;
+	storagePtr->replyParamSize = sizeof(Vm_SegmentInfo);
+	goto done;
+    } else if (*requestPtr == GET_PCB) {
+	pidPtr = (Proc_PID *) storagePtr->requestDataPtr;
+	if (*pidPtr >= proc_MaxNumProcesses) {
+	    status = GEN_INVALID_ARG;
+	} else {
+	    procPtr = Proc_GetPCB(*pidPtr);
+	    if (procPtr == (Proc_ControlBlock *) NIL) {
+		panic("Proc_RpcGetPCB: found nil PCB!");
+		status = FAILURE;
+	    }
+	}
+	if (status != SUCCESS) {
+	    Rpc_Reply(srvToken, status, storagePtr,
+		      (int(*)())NIL, (ClientData)NIL);
+	    return(SUCCESS);
+	}
+
+	bcopy((Address) procPtr, (Address) &pcb, sizeof (Proc_ControlBlock));
+	TICKS_TO_TIME(pcb);
+	pcbPtr = (Proc_PCBInfo *) malloc(sizeof (Proc_PCBInfo));
+	storagePtr->replyParamPtr = (Address) pcbPtr;
+	storagePtr->replyParamSize = sizeof(Proc_PCBInfo);
+	FillPCBInfo(&pcb, pcbPtr);
+
+	if (procPtr->argString != (Address) NIL) {
+	    storagePtr->replyDataSize = strlen(procPtr->argString) + 1;
+	    storagePtr->replyDataPtr = (Address) malloc(storagePtr->replyDataSize);
+	    (void) strcpy(storagePtr->replyDataPtr, procPtr->argString);
+	} else {
+	    storagePtr->replyDataSize = 0;
+	    storagePtr->replyDataPtr = (Address) NIL;
+	}
+    }
+    done:
+    replyMemPtr = (Rpc_ReplyMem *) malloc(sizeof(Rpc_ReplyMem));
+    replyMemPtr->paramPtr = storagePtr->replyParamPtr;
+    replyMemPtr->dataPtr = storagePtr->replyDataPtr;
+
+    Rpc_Reply(srvToken, status, storagePtr, Rpc_FreeMem,
+	    (ClientData) replyMemPtr);
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_GetResUsage --
+ *
+ *	Returns the resource usage for a process.
+ *
+ * Results:
+ *	SYS_INVALID_ARG - 	buffer address was invalid.
+ *	PROC_INVALID_PID - 	The pid was out-of-range or specified a
+ *				non-existent process.
+ *	SYS_ARG_NOACCESS - 	The buffers to store the pcbs in were not
+ *				accessible.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Proc_GetResUsage(pid, bufferPtr)
+    Proc_PID 		pid;
+    Proc_ResUsage 	*bufferPtr;	     
+{
+    register Proc_ControlBlock 	*procPtr;
+    Proc_ResUsage 		resUsage;	     
+    ReturnStatus		status = SUCCESS;
+
+    if (pid == PROC_MY_PID) {
+	procPtr = Proc_GetEffectiveProc();
+	if (procPtr == (Proc_ControlBlock *) NIL) {
+	    panic("Proc_GetResUsage: procPtr == NIL\n");
+	} 
+	Proc_Lock(procPtr);
+    } else {
+	procPtr = Proc_LockPID(pid);
+        if (procPtr == (Proc_ControlBlock *) NIL) {
+            return (PROC_INVALID_PID);
+        }
+    }
+
+    /*
+     *  Copy the information to the out parameters.
+     */
+
+    if (bufferPtr == USER_NIL) {
+	status = SYS_INVALID_ARG;
+    } else {
+	Timer_TicksToTime(procPtr->kernelCpuUsage.ticks,
+			  &resUsage.kernelCpuUsage);
+	Timer_TicksToTime(procPtr->userCpuUsage.ticks, &resUsage.userCpuUsage);
+	Timer_TicksToTime(procPtr->childKernelCpuUsage.ticks, 
+				&resUsage.childKernelCpuUsage);
+	Timer_TicksToTime(procPtr->childUserCpuUsage.ticks,
+				&resUsage.childUserCpuUsage);
+	resUsage.numQuantumEnds = procPtr->numQuantumEnds;
+	resUsage.numWaitEvents 	= procPtr->numWaitEvents;
+
+	if (Proc_ByteCopy(FALSE, sizeof(Proc_ResUsage), 
+	    (Address) &resUsage, (Address) bufferPtr) != SUCCESS){
+	    status = SYS_ARG_NOACCESS;
+	}
+    }
+    Proc_Unlock(procPtr);
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_GetPriority --
+ *
+ *	Returns the priority of a process.
+ *
+ * Results:
+ *	SYS_INVALID_ARG - 	priorityPtr address was invalid.
+ *	PROC_INVALID_PID - 	The pid was out-of-range or specified a
+ *				non-existent process.
+ *	SYS_ARG_NOACCESS - 	The buffer to store the priority was not
+ *				accessible.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Proc_GetPriority(pid, priorityPtr)
+    Proc_PID pid;	/* ID of process whose priority is to be returned. */
+    int *priorityPtr;	/* Priority returned by Proc_GetPriority. */
+{
+    register Proc_ControlBlock 	*procPtr;
+    ReturnStatus		status = SUCCESS;
+
+    if (pid == PROC_MY_PID) {
+	procPtr = Proc_GetEffectiveProc();
+	if (procPtr == (Proc_ControlBlock *) NIL) {
+	    panic("Proc_GetPriority: procPtr == NIL\n");
+	} 
+	Proc_Lock(procPtr);
+    } else {
+	procPtr = Proc_LockPID(pid);
+        if (procPtr == (Proc_ControlBlock *) NIL) {
+            return (PROC_INVALID_PID);
+        }
+    }
+
+    /*
+     *  Copy the information to the out parameter.
+     */
+
+    if (priorityPtr == USER_NIL) {
+	status = SYS_INVALID_ARG;
+    } else {
+	if (Proc_ByteCopy(FALSE, sizeof(int),
+ 	        (Address) &(procPtr->billingRate),
+	        (Address) priorityPtr) != SUCCESS) {
+	    status = SYS_ARG_NOACCESS;
+	}
+    }
+    Proc_Unlock(procPtr);
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_SetPriority --
+ *
+ *	Sets the priority for a process.
+ *
+ * Results:
+ *	PROC_INVALID_PID - 	The pid was out-of-range or specified a
+ *				non-existent process.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Proc_SetPriority(pid, priority, useFamily)
+    Proc_PID 	pid;		/* ID of process whose priority is to be set. */
+    int 	priority;	/* New scheduling priority for pid. */
+    Boolean 	useFamily;	/* If TRUE, use pid as the head of a process 
+				 * family, and set the priority of every 
+				 * process in the family. */
+{
+    register Proc_ControlBlock 	*procPtr;
+    register Proc_PCBLink	*procLinkPtr;
+    List_Links			*familyList;
+    int				userID;
+    ReturnStatus		status;
+
+    if (priority > PROC_MAX_PRIORITY) {
+	priority = PROC_MAX_PRIORITY;
+    } else if (priority < PROC_MIN_PRIORITY) {
+	priority = PROC_MIN_PRIORITY;
+    }
+
+    if (useFamily) {
+	/*
+	 * Set priorities of processes in family.
+	 */
+	status = Proc_LockFamily((int) pid, &familyList, &userID);
+	if (status != SUCCESS) {
+	    return(status);
+	}
+	if (!Proc_HasPermission(userID)) {
+	    Proc_UnlockFamily((int) pid);
+	    return(PROC_UID_MISMATCH);
+	}
+	LIST_FORALL(familyList, (List_Links *) procLinkPtr) {
+	    procPtr = procLinkPtr->procPtr;
+	    Proc_Lock(procPtr);
+	    procPtr->billingRate = priority;
+	    Proc_Unlock(procPtr);
+	}
+	Proc_UnlockFamily((int) pid);
+    } else {
+	/*
+	 * Set the individual process's priority.
+	 */
+	if (pid == PROC_MY_PID) {
+	    procPtr = Proc_GetEffectiveProc();
+	    Proc_Lock(procPtr);
+	} else {
+	    procPtr = Proc_LockPID(pid);
+	    if (procPtr == (Proc_ControlBlock *) NIL) {
+		return (PROC_INVALID_PID);
+	    }
+	    if (!Proc_HasPermission(procPtr->effectiveUserID)) {
+		Proc_Unlock(procPtr);
+		return(PROC_UID_MISMATCH);
+	    }
+	}
+	procPtr->billingRate = priority;
+	Proc_Unlock(procPtr);
+    }
+
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_Profile --
+ *
+ *	Starts profiling the memory accesses of the current process.
+ *
+ * Results:
+ *	SUCCESS		-	always returned for now.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*ARGSUSED*/
+ReturnStatus
+Proc_Profile(shiftSize, lowPC, highPC, interval, counterArray)
+    int shiftSize;	/* # of bits to shift the PC to the right. */
+    int lowPC;		/* The lowest PC to profile. */
+    int highPC;		/* The highest PC to profile. */
+    Time interval;	/* The time interval at which the PC is sampled. */
+    int counterArray[];	/* Counters used to count instruction executions. */
+{
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_Dump --
+ *
+ *	Prints out an abbreviated proc table for debugging purposes.
+ *
+ * Results:
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	Prints stuff to screen.
+ *
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Proc_Dump()
+{
+    int i;
+    Proc_ControlBlock *pcbPtr;
+
+    printf("\n%8s %5s %10s %10s %8s %8s   %s\n",
+	"ID", "wtd", "user", "kernel", "event", "state", "name");
+    
+    for (i = 0; i < proc_MaxNumProcesses; i++) {
+	pcbPtr = proc_PCBTable[i];
+	if (pcbPtr->state != PROC_UNUSED) {
+	    Proc_DumpPCB(pcbPtr);
+	}
+    }
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_DumpPCB --
+ *
+ *	Prints out the contents of a PCB for debugging purposes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Prints stuff to the screen.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Proc_DumpPCB(procPtr)
+    Proc_ControlBlock *procPtr;
+{
+
+    Time	kernelTime, userTime;
+
+#define DEBUG_INDEX	0x9
+
+    static char *states[] = {
+	"unused",
+	"running",
+	"ready",
+	"waiting",
+	"exiting",
+	"dead",
+	"migrated",
+	"new",
+	"suspended",
+	"debug",
+    };
+    Proc_State state;
+
+    state = procPtr->state;
+    switch (state) {
+	case PROC_UNUSED:
+	case PROC_RUNNING:
+	case PROC_READY:
+	case PROC_WAITING:
+	case PROC_EXITING:
+	case PROC_DEAD:
+	case PROC_MIGRATED:
+	case PROC_NEW:
+	    break;
+	case PROC_SUSPENDED:
+	    /* If process is suspended for debugging print "debug" for its
+	     * state.
+	     */
+	    if (procPtr->genFlags & (PROC_DEBUGGED | PROC_ON_DEBUG_LIST)) {
+		state = (Proc_State)DEBUG_INDEX;
+	    }
+	    break;
+	default:
+	    printf("Warning: Proc_DumpPCB: process %x has invalid process state: %x.\n",
+		   procPtr->processID, state);
+	    return;
+    }
+    /*
+     * A header describing the fields has already been printed.
+     */
+    Timer_TicksToTime(procPtr->userCpuUsage.ticks, &userTime);
+    Timer_TicksToTime(procPtr->kernelCpuUsage.ticks, &kernelTime);
+    printf("%8x %5d [%1d,%6d] [%1d,%6d] %8x %8s",
+	       procPtr->processID, 
+	       procPtr->weightedUsage, 
+	       userTime.seconds,
+	       userTime.microseconds,
+	       kernelTime.seconds, 
+	       kernelTime.microseconds,
+	       procPtr->event,
+	       states[(int) state]);
+    if (procPtr->argString != (Address) NIL) {
+	char cmd[30];
+	char *space;
+
+	(void) strncpy(cmd, procPtr->argString, 30);
+	space = strchr(cmd, ' ');
+	if (space != (char *) NULL) {
+	    *space = '\0';
+	}
+	printf(" %s\n", cmd);
+    } else {
+	printf("\n");
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_KillAllProcesses --
+ *
+ *	Send the kill signal to all processes in the proc table except for
+ *	the caller.  If userProcsOnly is TRUE only send signals to user 
+ *	processes.
+ *
+ * Results:
+ *	The number of runnable and waiting processes.
+ *
+ * Side effects:
+ *	The kill signal bit is set for all processes.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Proc_KillAllProcesses(userProcsOnly)
+    Boolean	userProcsOnly;	/* TRUE if only kill user processes. */
+{
+    register int i;
+    register Proc_ControlBlock	*pcbPtr;
+    Proc_ControlBlock		*curProcPtr;
+    int				alive = 0;
+
+    curProcPtr = Proc_GetActualProc();
+
+    for (i = 0; i < proc_MaxNumProcesses; i++) {
+	pcbPtr = proc_PCBTable[i];
+	if (pcbPtr == curProcPtr || pcbPtr->state == PROC_UNUSED ||
+	    (userProcsOnly && !(pcbPtr->genFlags & PROC_USER))) {
+	    continue;
+	}
+	Proc_Lock(pcbPtr);
+	if (pcbPtr->state == PROC_RUNNING ||
+		pcbPtr->state == PROC_READY ||
+		pcbPtr->state == PROC_WAITING ||
+		pcbPtr->state == PROC_MIGRATED) {
+	    alive++;
+	    (void) Sig_SendProc(pcbPtr, SIG_KILL, 0, (Address)0);
+	}
+	Proc_Unlock(pcbPtr);
+    }
+
+    return(alive);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_WakeupAllProcesses --
+ *
+ *	Wakup all waiting processes.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	All waiting processes are awakened.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Proc_WakeupAllProcesses()
+{
+    register int		i;
+    register Proc_ControlBlock	*pcbPtr;
+    Proc_ControlBlock		*curProcPtr;
+
+    curProcPtr = Proc_GetActualProc();
+
+    for (i = 0; i < proc_MaxNumProcesses; i++) {
+	pcbPtr = proc_PCBTable[i];
+	if (pcbPtr == curProcPtr) {
+	    continue;
+	}
+	Proc_Lock(pcbPtr);
+	if (pcbPtr->state != PROC_UNUSED) {
+	    Sync_WakeWaitingProcess(pcbPtr);
+	}
+	Proc_Unlock(pcbPtr);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_HasPermission --
+ *
+ *      See if the current process has permission to perform an operation on
+ *      a process with the given user id.
+ *
+ * Results:
+ *      TRUE if the current process has the same effective user id
+ *      as the given user id or the current process is super user.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Boolean
+Proc_HasPermission(userID)
+    int         userID;
+{
+    Proc_ControlBlock   *procPtr;
+
+    procPtr = Proc_GetEffectiveProc();
+    return(procPtr->effectiveUserID == userID ||
+           procPtr->effectiveUserID == PROC_SUPER_USER_ID);
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_DoForEveryProc --
+ *
+ *	For every process in the process table, apply *booleanFuncPtr to it.
+ *	If that returns TRUE, apply *actionFuncPtr to it.  This is done by
+ *	passing booleanFuncPtr to a monitored routine and having it
+ *	return an array of qualifying processes.  There is a bit of a race
+ *	condition if something happens to any of those processes after the
+ *	list is returned, but in that case the process is ignored and the next
+ *	one is processed.
+ *
+ *	IgnoreStatus indicates whether the routine should abort if
+ *	a non-SUCCESS status is returned by *actionFuncPtr.
+ *
+ * Results:
+ *	If anything "unexpected" happens, FAILURE will be returned, but in
+ *	general SUCCESS is returned.  If numMatchedPtr is non-NIL, then
+ *	the number of processes matched is returned in *numMatchedPtr.
+ *
+ * Side effects:
+ *	The process table is locked temporarily.  Otherwise, dependent on the
+ *	call-back procedures.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Proc_DoForEveryProc(booleanFuncPtr, actionFuncPtr, ignoreStatus, numMatchedPtr)
+    Boolean (*booleanFuncPtr) _ARGS_((Proc_ControlBlock *pcbPtr));
+					/* function to match */
+    ReturnStatus (*actionFuncPtr)_ARGS_((Proc_PID pid));	
+					/* function to invoke on matches */
+    Boolean ignoreStatus;		/* do not abort if bad ReturnStatus  */
+    int *numMatchedPtr;			/* number of matches in table, or NIL */
+{
+    ReturnStatus status = SUCCESS;
+    Proc_PID *pidArray;
+    int max;
+    int i;
+    int numMatched;
+
+    max = proc_MaxNumProcesses;
+
+    pidArray = (Proc_PID *) malloc(sizeof(Proc_PID) * max);
+    numMatched = ProcTableMatch(max, booleanFuncPtr, pidArray);
+    for (i = 0; i < numMatched; i++) {
+	status = (*actionFuncPtr)(pidArray[i]);
+	if ((!ignoreStatus) && (status != SUCCESS)) {
+	    break;
+	}
+    }
+    free((Address) pidArray);
+    if (numMatchedPtr != (int *) NIL) {
+	*numMatchedPtr = numMatched;
+    }
+    if (ignoreStatus) {
+	return(SUCCESS);
+    }
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_SetServerPriority --
+ *
+ *	Changes the priority of a server process to the non-interruptable
+ *	value. The pid is assumed to be valid.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The process's priority is changed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Proc_SetServerPriority(pid)
+    Proc_PID	pid;
+{
+    Proc_GetPCB(pid)->billingRate = PROC_NO_INTR_PRIORITY;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_GetHostIDs --
+ *
+ *	Returns the sprite IDs corresponding to the machines on which
+ *	the current process is effectively executing and on which
+ *	it is physically executing.  These hosts are called the virtualHost
+ *	and physicalHost, respectively.  For an unmigrated process, these
+ *	two are identical.
+ *
+ * Results:
+ *	SUCCESS 		The call was successful.
+ *	SYS_ARG_NOACCESS	The user arguments were not accessible.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ReturnStatus
+Proc_GetHostIDs(virtualHostPtr, physicalHostPtr)
+    int	*virtualHostPtr;   	/* Buffer to hold virtual host ID. */
+    int	*physicalHostPtr;   	/* Buffer to hold physical host ID. */
+{
+
+    Proc_ControlBlock *procPtr;
+    int host;
+
+    if (physicalHostPtr != (int *) USER_NIL) {
+
+	if (Vm_CopyOut(sizeof(int), (Address) &rpc_SpriteID, 
+				(Address) physicalHostPtr) != SUCCESS) {
+	    return(SYS_ARG_NOACCESS);
+	}
+    }
+
+
+    if (virtualHostPtr != (int *) USER_NIL) {
+	procPtr = Proc_GetCurrentProc();
+	Proc_Lock(procPtr);
+	host = procPtr->peerHostID;
+	Proc_Unlock(procPtr);
+	if (host == NIL) {
+	    host = rpc_SpriteID;
+	}
+	if (Vm_CopyOut(sizeof(int), (Address) &host, 
+				(Address) virtualHostPtr) != SUCCESS) {
+	    return(SYS_ARG_NOACCESS);
+	}
+    }
+
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_PushLockStack --
+ *
+ *	Pushes the given lock type on the lock stack for the process.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Stuff is printed if the stack overflows.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*ARGSUSED*/
+void
+Proc_PushLockStack(pcbPtr, type, lockPtr)
+    Proc_ControlBlock		*pcbPtr;	/* ptr to pcb to modify */
+    int				type;		/* type of lock */
+    Address			lockPtr;	/* ptr to lock */
+
+{
+#ifdef LOCKDEP
+    static Boolean	firstOverflow = TRUE;
+
+    /*
+     *  Modifying the lock stack of a process has to be an atomic operation,
+     *  but we don't want to use a lock to do this, since this is part of
+     *  the code used when locking or unlocking. Using a lock would lead
+     *  to a circularity and probably a deadlock. All we really need to
+     *  prevent is an interrupt handler from grabbing a lock while we're
+     *  modifying the lock stack. A process only modifies its own
+     *  lock stack, so turning off interrupts should be good enough.
+     */
+    DISABLE_INTR();
+    if (pcbPtr->lockStackSize >= PROC_LOCKSTACK_SIZE) {
+	if (firstOverflow) {
+	    printf("Proc_PushLockStack: stack overflow in pcb 0x%x.\n",pcbPtr);
+	    firstOverflow = FALSE;
+	}
+	goto exit;
+    }
+    if (pcbPtr->lockStackSize < 0 ) {
+	printf("Proc_PushLockStack: stack underflow (%d) in pcb 0x%x.\n",
+	       pcbPtr->lockStackSize, pcbPtr);
+        goto exit;
+    }
+    pcbPtr->lockStack[pcbPtr->lockStackSize].type = type;
+    pcbPtr->lockStack[pcbPtr->lockStackSize].lockPtr = lockPtr;
+    pcbPtr->lockStackSize++;
+exit:
+    ENABLE_INTR();
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_RemoveFromLockStack --
+ *
+ *	Removes the given lock from the stack if it is there.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*ARGSUSED*/
+void
+Proc_RemoveFromLockStack(pcbPtr, lockPtr)
+    Proc_ControlBlock		*pcbPtr;	/* ptr to pcb to modify */
+    Address			lockPtr;	/* ptr to lock */
+{
+#ifdef LOCKDEP
+    int 	i;
+    int		stackTop;
+    Boolean 	found = FALSE;
+
+    DISABLE_INTR();
+    if (pcbPtr->lockStackSize < 0) {
+	ENABLE_INTR();
+	panic("Lock stack underflow (1).\n");
+	goto exit;
+    }
+    if (pcbPtr->lockStackSize == 0) {
+	goto exit;
+    }
+    stackTop = pcbPtr->lockStackSize - 1;
+    for (i = pcbPtr->lockStackSize - 1; i >= 0; i--) {
+	if (pcbPtr->lockStack[i].lockPtr == lockPtr) {
+	    pcbPtr->lockStack[i].lockPtr = (Address) NIL;
+	    pcbPtr->lockStack[i].type = -1;
+	    found = TRUE;
+	    break;
+	}
+    }
+    if (!found) {
+	goto exit;
+    }
+    for (i = stackTop; i >= 0; i--) {
+	if (pcbPtr->lockStack[i].lockPtr != (Address) NIL) {
+	    break;
+	}
+    }
+    pcbPtr->lockStackSize = i + 1;
+    if (pcbPtr->lockStackSize < 0) {
+	printf("lockStackSize %d\n",pcbPtr->lockStackSize);
+    }
+exit:
+    ENABLE_INTR();
+#endif
+}
+
+#ifndef LOCKREG
+#ifndef CLEAN_LOCK
+#ifndef CLEAN
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_KDump --
+ *
+ *	Prints out an (kluged) proc table with state information.
+ *
+ *	This routine uses several macros to analyse the event data structure:
+ *	ISADDR(x) tests if x is a valid address.
+ *	ISSTR(x) tests if x is a pointer to a valid string.
+ *	ISALIGN(x) tests if x is an aligned address.
+ *	ISBOOL(x) tests if x is a boolean.
+ *	ISSMALL(x) tests is x is a small integer.
+ *	ISLIST(x) tests if x points to a List_Links structure.
+ *	ISPCB(x) tests if x points to a Proc_ControlBlock structure.
+ *	FIELD(x,type,field) is x->type.field
+ *
+ * Results:
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	Prints stuff to screen.
+ *
+ *
+ *----------------------------------------------------------------------
+ */
+#define INT(x)		((int)(x))
+#define INTP(x)		((int *)(x))
+#define	ISSTRZ(x)	(INT(x)==0 || ISSTR(x))
+#define ISALIGN(x)	(ISADDR(x) && (INT(x)&3)==0)
+#define ISALIGNZ(x)	(INT(x)==0 || INT(x)==NIL || ISALIGN(x))
+/* sun3 test-and-set sets to 0x80000000, sun4 to 0xff000000 */
+#define ISBOOL(x)	(INT(x)==0||INT(x)==1||INT(x)==0x80000000||\
+			INT(x)==0xff000000)
+#define ISSMALL(x)	(INT(x)>=0&&INT(x)<20)
+#define ISPCBZ(x)	(INT(x)==0||INT(x)==NIL||ISPCB(x))
+#define OFF(type,field) (INTP(&(((type *)0)->field))-INTP(0))
+#define READIN(type,src,dst) (READIN_INT(sizeof(type),(Address)(src),\
+		(Address)(dst)))
+
+static int ISADDR _ARGS_((Address x));
+static int ISSTR _ARGS_((char *x));
+static int PRINTHANDLE _ARGS_ ((char *str, Fs_HandleHeader *handlePtr));
+static int ISLIST _ARGS_((List_Links *x));
+static int ISPCB _ARGS_((Proc_ControlBlock *x));
+static int FINDPID _ARGS_((Proc_ControlBlock *x));
+static int PRINTRPCCLIENT _ARGS_((RpcClientChannel *x));
+static int PRINTRPCSERVER _ARGS_((RpcServerState *x));
+static int PRINTSERVERPROC _ARGS_((ServerInfo *x));
+static int PRINTLOCK _ARGS_((Sync_Lock *x, int print));
+static int PRINTSEM _ARGS_((Sync_Semaphore *x));
+static int PRINTLFS _ARGS_((Lfs *x, char *text));
+
+/*
+ * Read in some memory.
+ * The macro looks after the types.
+ */
+static int READIN_INT(len,src,dst)
+int len;
+Address src,dst;
+{
+    ReturnStatus status;
+    int i;
+#if defined(ds3100) || defined(ds5000)
+    /* Mach_Probe doesn't work right for some reason */
+    char buf[2];
+    for (i=0;i<len;i++) {
+	if (! Dbg_InRange(((unsigned)src)&~1,2,FALSE)) {
+	    return FALSE;
+	}
+    }
+    bcopy(src,dst,len);
+    return TRUE;
+#else
+    for (i=0;i<len;i++) {
+	status = Mach_Probe(1,src+i,dst+i);
+	if (status != SUCCESS) return FALSE;
+    }
+    return TRUE;
+#endif
+}
+
+/*
+ * Test if x is a valid address.
+ */
+static int ISADDR(x)
+Address x;
+{
+    int buf;
+    if (READIN(int,x,(Address)&buf)) {
+	return TRUE;
+    } else {
+	return FALSE;
+    }
+}
+
+/*
+ * Test if x is a string.  Leave the string in strbuf if so.
+ */
+char strbuf[40];
+static int ISSTR(x)
+char *x;
+{
+    int i;
+    for (i=0;i<sizeof(strbuf);i++) {
+	if (!READIN(char,x+i,strbuf+i)) {
+	    return FALSE;
+	}
+	if (strbuf[i]=='\0') {
+	    return TRUE;
+	}
+	if (!isprint(strbuf[i])) {
+	    return FALSE;
+	}
+    }
+    strbuf[39]='\0';
+    return TRUE;
+}
+
+
+/*
+ * Print out the name associated with a handle.
+ */
+static int PRINTHANDLE(str,handlePtr)
+char *str;
+Fs_HandleHeader *handlePtr;
+{
+    Fs_HandleHeader handle;
+    if (!READIN(Fs_HandleHeader,handlePtr,&handle) ||
+	    !ISLIST(&handle.lruLinks) || !ISBOOL(handle.unlocked.waiting) ||
+	    !ISSMALL(handle.refCount) ||
+		!(handle.lockProcPtr==(Proc_ControlBlock *)NIL ||
+		ISPCB(handle.lockProcPtr))) {
+	return FALSE;
+    }
+    if (handle.name==(char *)NIL) {
+	printf("%s: \"%s\" (handle locked by %x)", str, "(no name)",
+		handle.lockProcPtr);
+    } else if (ISSTR(handle.name)) {
+	printf("%s: \"%s\" (handle locked by %x)", str, strbuf,
+		handle.lockProcPtr);
+    } else {
+	printf("%s: \"%s\" (handle locked by %x)", str, "(bad name)",
+		handle.lockProcPtr);
+    }
+    return TRUE;
+}
+
+/*
+ * Test if x is a list.
+ */
+static int ISLIST(x)
+List_Links *x;
+{
+    List_Links thisList, prevList, nextList;
+    int retVal;
+    retVal =  READIN(List_Links,x,&thisList) &&
+	    READIN(List_Links,thisList.prevPtr,&prevList) &&
+	    READIN(List_Links,thisList.nextPtr,&nextList) &&
+	    prevList.nextPtr == x && nextList.prevPtr == x;
+    return retVal;
+}
+
+/*
+ * Test if x is a pcb
+ */
+static int ISPCB(x)
+Proc_ControlBlock *x;
+{
+    Proc_ControlBlock pcb;
+    int retVal;
+    retVal = READIN(Proc_ControlBlock,x,&pcb) && ISSMALL(pcb.processor) &&
+            ISSTR(pcb.argString) && ISADDR((Address)pcb.links.prevPtr) &&
+	    ISADDR((Address)pcb.links.nextPtr) && ISSMALL(pcb.state) &&
+	    ISADDR((Address)pcb.childList) && pcb.processID <=0xfffff;
+#if 0
+    if (!retVal) {
+        if (!READIN(Proc_ControlBlock,x,&pcb)) {
+	    printf("PCB: READIN failed ");
+	} else if (!ISLIST(&pcb.links)) {
+	    printf("PCB: LIST failed ");
+	} else if (!ISSMALL(pcb.processor)) {
+	    printf("PCB: SMALL failed ");
+	} else if (!ISLIST(&pcb.childListHdr)) {
+	    printf("PCB: LIST2 failed ");
+	} else if (pcb.processID >0xfffff) {
+	} else {
+	    printf("PCB: mystery ");
+	}
+    }
+#endif
+    return retVal;
+}
+
+/*
+ * Return PID or 0
+ */
+static int FINDPID(x)
+Proc_ControlBlock *x;
+{
+    Proc_ControlBlock pcb;
+    if (READIN(Proc_ControlBlock,x,&pcb) && ISPCB(&pcb)) {
+	return pcb.processID;
+    } else {
+	return FALSE;
+    }
+}
+
+/*
+ * Print if x is a rpc client channel
+ */
+static int PRINTRPCCLIENT(x)
+RpcClientChannel *x;
+{
+    int i;
+    RpcClientChannel chan;
+    if (!READIN(RpcClientChannel,x,&chan)) {
+	return FALSE;
+    }
+    for (i=0;i<rpcNumChannels;i++) {
+	if (rpcChannelPtrPtr[i] == x) {
+	    printf("RPC client: \"waitCondition\", server %d ",
+		    chan.serverID);
+	    if (chan.state & CHAN_FREE) {
+		printf("FREE ");
+	    }
+	    if (chan.state & CHAN_BUSY) {
+		printf("BUSY ");
+	    }
+	    if (chan.state & CHAN_WAITING) {
+		printf("WAIT ");
+	    }
+	    if (chan.state & CHAN_TIMEOUT) {
+		printf("TIME ");
+	    }
+	    if (chan.state & CHAN_FRAGMENTING) {
+		printf("FRAG ");
+	    }
+	    return TRUE;
+	}
+    }
+    return FALSE;
+}
+
+/*
+ * Test if x is a rpc server.
+ */
+static int PRINTRPCSERVER(x)
+RpcServerState *x;
+{
+    int i;
+    RpcServerState state;
+    if (!READIN(RpcServerState,x,&state)) {
+	return FALSE;
+    }
+    for (i=0;i<rpcMaxServers;i++) {
+	if (rpcServerPtrPtr[i] == x) {
+	    printf("RPC server:\"waitCondition\", client %d ",
+		    state.clientID);
+	    if (state.state & SRV_NOTREADY) {
+		printf("NOTREADY ");
+	    }
+	    if (state.state & SRV_FREE) {
+		printf("FREE ");
+	    }
+	    if (state.state & SRV_BUSY) {
+		printf("BUSY ");
+	    }
+	    if (state.state & SRV_WAITING) {
+		printf("WAIT ");
+	    }
+	    if (state.state & SRV_AGING) {
+		printf("AGING ");
+	    }
+	    if (state.state & SRV_FRAGMENT) {
+		printf("FRAG ");
+	    }
+	    if (state.state & SRV_NO_REPLY) {
+		printf("NO_REPLY ");
+	    }
+	    if (state.state & SRV_STUCK) {
+		printf("STUCK ");
+	    }
+	    return TRUE;
+	}
+    }
+    return FALSE;
+}
+
+/* 
+ * Print if x is a rpc server proc
+ */
+static int PRINTSERVERPROC(x)
+ServerInfo *x;
+{
+    int i;
+    ServerInfo info;
+    if (!READIN(ServerInfo,x,&info)) {
+	return FALSE;
+    }
+    for (i=0;i<proc_NumServers;i++) {
+	if (serverInfoTable+i == x) {
+	    printf("ServerProc: \"condition\" (waiting for task)");
+	    if (info.flags & SERVER_BUSY) {
+		printf("BUSY ");
+	    }
+	    if (info.flags & FUNC_PENDING) {
+		printf("PENDING ");
+	    }
+	    return TRUE;
+	}
+    }
+    return FALSE;
+}
+
+/*
+ * Print if x is a Lfs structure
+ */
+static int PRINTLFS(x, text)
+Lfs *x;
+char *text;
+{
+    Lfs lfs;
+    if (!READIN(Lfs,x,&lfs)) {
+	return FALSE;
+    }
+    if (ISSTR(lfs.name) && ISBOOL(lfs.writeBackActive) &&
+	    PRINTLOCK(&lfs.cacheBackendLock,0) &&
+	    ISBOOL(lfs.writeBackMoreWork) && ISBOOL(lfs.shutDownActive) &&
+	    PRINTLOCK(&lfs.lock,0)) {
+	(void) ISSTR(lfs.name);
+	printf("Lfs: %s on %s", text, strbuf);
+	return TRUE;
+    }
+    return FALSE;
+}
+
+/*
+ * Print if x is a lock.
+ * Or just return true/false if print=0;
+ */
+static int PRINTLOCK(x,print)
+Sync_Lock *x;
+int print;
+{
+    Sync_Lock lock;
+    if (READIN(Sync_Lock,x,&lock) && ISBOOL(lock.inUse) &&
+	    ISBOOL(lock.waiting) &&
+	    ISALIGNZ(lock.holderPC) && ISPCBZ(lock.holderPCBPtr) &&
+	    ISSTR(lock.name)) {
+	if (print) {
+	    printf("lock \"%s\" at %x", strbuf, lock.holderPC);
+	}
+	if (print && FINDPID(lock.holderPCBPtr)) {
+	    printf(" held by process %x", FINDPID(lock.holderPCBPtr));
+	}
+	return TRUE;
+    } else {
+	return FALSE;
+    }
+}
+
+/*
+ * Test if x is a semaphore.
+ */
+static int PRINTSEM(x)
+Sync_Semaphore *x;
+{
+    Sync_Semaphore sem;
+    if (READIN(Sync_Semaphore,x,&sem) && ISSMALL(sem.value) &&
+	    ISALIGNZ(sem.holderPC) &&
+	    ISPCBZ(sem.holderPCBPtr) && ISSTR(sem.name)) {
+	printf("semaphore \"%s\" at %x", strbuf, sem.holderPC);
+	if (FINDPID(sem.holderPCBPtr)) {
+	    printf(" held by process %x",
+		    FINDPID(sem.holderPCBPtr));
+	}
+	return TRUE;
+    } else {
+	return FALSE;
+    }
+}
+
+typedef struct LockEntry {
+    int	addr;		/* Address (event) associated with the lock. */
+    char *name;		/* Name of the lock event. */
+} LockEntry;
+
+extern Sync_Condition cleanBlockCondition, writeBackComplete,
+    closeCondition, lruDone, debugListCondition, familyCondition,
+    migrateCondition, evictCondition, recovCondition, recovPingCondition,
+    rpcDaemon, freeChannels, signalCondition, codeSegCondition,
+    cleanCondition, swapDownCondition, mappingCondition, swapFileCondition;
+
+LockEntry locks[] = {
+    (int)&cleanBlockCondition, "cleanBlockCondition",
+    (int)&writeBackComplete, "writeBackComplete",
+    (int)&closeCondition, "closeCondition",
+    (int)&lruDone, "lruDone",
+    (int)&debugListCondition, "debugListCondition",
+    (int)&familyCondition, "familyCondition",
+    (int)&migrateCondition, "migrateCondition",
+    (int)&evictCondition, "evictCondition",
+    (int)&recovCondition, "recovCondition",
+    (int)&rpcDaemon, "rpcDaemon",
+    (int)&freeChannels, "freeChannels",
+    (int)&signalCondition, "signalCondition (pause syscall)",
+    (int)&codeSegCondition, "codeSegCondition",
+    (int)&cleanCondition, "cleanCondition",
+    (int)&swapDownCondition, "swapDownCondition",
+    (int)&mappingCondition, "mappingCondition",
+    (int)&swapFileCondition, "swapFileCondition",
+    (int)&recovPingCondition, "recovPingCondition",
+    0, 0
+};
+
+static void Proc_KDumpInt _ARGS_((ClientData data, Proc_CallInfo *callInfoPtr));
+
+void
+Proc_KDump(data)
+    ClientData data;
+{
+    Proc_CallFunc(Proc_KDumpInt, data, 0);
+}
+
+/*ARGSUSED*/
+static void
+Proc_KDumpInt(data, callInfoPtr)
+    ClientData	data;
+    Proc_CallInfo *callInfoPtr;
+{
+    int i;
+    Proc_ControlBlock *procPtr, *tmpProcPtr;
+    int *event;
+    int atEvent;
+    LockEntry *lockPtr;
+    Fscache_FileInfo cacheInfo, *cacheInfoPtr;
+    Fs_HandleHeader *handlePtr;
+    RpcClientChannel *rpcClientPtr;
+    RpcServerState *rpcServerPtr;
+    ServerInfo *serverProcPtr;
+    Sync_Lock *syncLockPtr;
+    Fsconsist_Info consistInfo;
+    Lfs *lfsPtr;
+    int match;
+
+    for (i = 0; i < proc_MaxNumProcesses; i++) {
+	procPtr = proc_PCBTable[i];
+	match = 0;
+	if (procPtr->state == PROC_WAITING) {
+	    printf("%6x", procPtr->processID);
+	    if (procPtr->argString != (Address) NIL) {
+		char cmd[30];
+		char *space;
+
+		(void) strncpy(cmd, procPtr->argString, 30);
+		space = strchr(cmd, ' ');
+		if (space != (char *) NULL) {
+		    *space = '\0';
+		} else {
+		    cmd[29] = '\0';
+		}
+		printf("(%s)", cmd);
+	    }
+	    printf(": ");
+	    event = (int *)procPtr->event;
+	    if (ISADDR((Address)event)) {
+		for (lockPtr = locks ; lockPtr->addr != 0; lockPtr++) {
+		    if ((int)event == lockPtr->addr) {
+			printf("condition \"%s\"\n", lockPtr->name);
+			goto found;
+		    }
+		}
+		if (PRINTLOCK((Sync_Lock *)event,1)) {
+			/* Sync_Lock / Sync_KernelLock */
+		} else if ((Proc_ControlBlock *)event==procPtr) {
+		    /* Proc_ControlBlock */
+		    printf("timer");
+		} else if (FINDPID((Proc_ControlBlock *)event)) {
+		    /* Proc_ControlBlock */
+		    printf("timer %x", FINDPID((Proc_ControlBlock *)event));
+		} else if (PRINTSEM((Sync_Semaphore *)event)) {
+		   /* Sync_Semaphore */
+		} else if (READIN(int,event,&atEvent) && ISBOOL(atEvent)) {
+		    /* Sync_Condition */
+		    handlePtr = (Fs_HandleHeader *)
+			    (event-OFF(Fs_HandleHeader,unlocked));
+		    if (PRINTHANDLE("handle: \"unlocked\"", handlePtr)) {
+			match++;
+		    }
+		    /*
+		     * We might be blocked on the noDirtyBlocks field of
+		     * a Fscache_FileInfo structure.  In that case, print
+		     * the associated handle.
+		     */
+		    if (READIN(Fs_HandleHeader *,((int *)event)-
+			    OFF(Fscache_FileInfo,noDirtyBlocks)+
+			    OFF(Fscache_FileInfo,hdrPtr),&handlePtr)) {
+			if (PRINTHANDLE("cache block: \"noDirtyBlocks\"",
+				    handlePtr)) {
+			    match++;
+			}
+		    }
+		    /*
+		     * We might be blocked on the ioDone field of a
+		     * Fscache_Block structure.  In that case, access the
+		     * cacheInfoPtr and print the handle.
+		     */
+		    if (READIN(Fscache_FileInfo *,((int *)event)-
+			    OFF(Fscache_Block,ioDone)+
+			    OFF(Fscache_Block,cacheInfoPtr),&cacheInfoPtr)) {
+			if (READIN(Fscache_FileInfo,cacheInfoPtr,&cacheInfo) &&
+				PRINTHANDLE("cache block: \"ioDone\"",
+				    cacheInfo.hdrPtr)) {
+			    match++;
+			}
+		    }
+		    /*
+		     * We might be blocked on the waitCondition in the PCB.
+		     */
+		    tmpProcPtr = (Proc_ControlBlock *)
+			    (event-OFF(Proc_ControlBlock,waitCondition));
+		    if (tmpProcPtr == procPtr) {
+			printf("PCB: \"waitCondition\" (wait syscall) ");
+			match++;
+		    } else if (FINDPID(tmpProcPtr)) {
+			printf("PCB: \"waitCondition\" %x (wait syscall) ",
+				FINDPID(tmpProcPtr));
+			match++;
+		    }
+		    /* Or we might be blocked on the lockedCondition */
+		    tmpProcPtr = (Proc_ControlBlock *)
+			    (event-OFF(Proc_ControlBlock,lockedCondition));
+		    if (tmpProcPtr==procPtr) {
+			printf("PCB: \"lockedCondition\" (locked entry) ");
+			match++;
+		    } else if (FINDPID(tmpProcPtr)) {
+			printf("PCB: \"lockedCondition\" %x (locked entry) ",
+				FINDPID(tmpProcPtr));
+			match++;
+		    }
+		    /* Or we might be blocked on Fsconsist_Info */
+		    syncLockPtr = (Sync_Lock *)(event-
+			    OFF(Fsconsist_Info,consistDone));
+		    if (PRINTLOCK(syncLockPtr,1)) {
+			printf(" (consistDone)\n");
+			match++;
+			if (READIN(Fsconsist_Info,syncLockPtr,&consistInfo)) {
+			    (void) PRINTHANDLE("handle:", consistInfo.hdrPtr);
+			}
+		    }
+		    syncLockPtr = (Sync_Lock *)(event-
+			    OFF(Fsconsist_Info,repliesIn));
+		    if (PRINTLOCK(syncLockPtr,1)) {
+			printf(" (repliesIn)\n");
+			match++;
+			if (READIN(Fsconsist_Info,syncLockPtr,&consistInfo)) {
+			    (void) PRINTHANDLE("handle:", consistInfo.hdrPtr);
+			}
+		    }
+
+		    /* Maybe it's a LFS structure */
+		    lfsPtr = (Lfs *)(event-OFF(Lfs, writeWait));
+		    if (PRINTLFS(lfsPtr, "writeWait")) {
+			match++;
+		    }
+		    lfsPtr = (Lfs *)(event-OFF(Lfs, cleanSegmentsWait));
+		    if (PRINTLFS(lfsPtr, "cleanSegmentsWait")) {
+			match++;
+		    }
+		    lfsPtr = (Lfs *)(event-OFF(Lfs, cacheBackendLock));
+		    if (PRINTLFS(lfsPtr, "cacheBackendLock")) {
+			match++;
+		    }
+		    lfsPtr = (Lfs *)(event-OFF(Lfs, lock));
+		    if (PRINTLFS(lfsPtr, "Lfs master lock")) {
+			match++;
+		    }
+		    lfsPtr = (Lfs *)(event-OFF(Lfs, checkPointWait));
+		    if (PRINTLFS(lfsPtr, "checkPointWait")) {
+			match++;
+		    }
+
+		    /* Or maybe something else. */
+		    serverProcPtr = (ServerInfo *)(event-
+			    OFF(ServerInfo, condition));
+		    if (PRINTSERVERPROC(serverProcPtr)) {
+			match++;
+		    }
+		    rpcClientPtr = (RpcClientChannel *)(event-
+			    OFF(RpcClientChannel, waitCondition));
+		    if (PRINTRPCCLIENT(rpcClientPtr)) {
+			match++;
+		    }
+		    rpcServerPtr = (RpcServerState *)(event-
+			    OFF(RpcServerState, waitCondition));
+		    if (PRINTRPCSERVER(rpcServerPtr)) {
+			match++;
+		    }
+		    handlePtr = (Fs_HandleHeader *)(event-OFF(Fsrmt_IOHandle,
+			recovery.reopenComplete));
+		    if (PRINTHANDLE("\"recovery.reopenComplete\"", handlePtr)) {
+			match++;
+		    }
+		    if (!match) {
+			printf("condition %x", (int)event);
+		    } else if (match>1) {
+			printf("(Ambiguous)");
+		    }
+		} else {
+		    printf("event %x", (int)event);
+		}
+	    } else if ((int)event == -1) {
+		printf("wakeup signal (prob. select syscall)");
+	    } else {
+		printf("event? %x", (int)event);
+	    }
+	    printf("\n");
+found:;
+	}
+    }
+}
+#define KDUMP
+#endif
+#endif
+#endif
+
+#ifndef KDUMP
+/* ARGSUSED */
+ReturnStatus
+Proc_KDump(dummy) 
+    ClientData dummy;
+{ 
+    return SUCCESS;
+}
+#endif
+@
+
+
+9.25
+log
+@Change to L1-i to handle NIL PC values.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/proc/procMisc.c,v 9.24 92/09/03 21:56:57 shirriff Exp $ SPRITE (Berkeley)";
+d1866 8
+@
+
+
+9.24
+log
+@Yet another L1-i fix.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/proc/procMisc.c,v 9.23 92/09/03 18:13:32 shirriff Exp $ SPRITE (Berkeley)";
+d1328 1
+a1328 1
+#define ISALIGNZ(x)	(INT(x)==0 || ISALIGN(x))
+d1333 1
+a1333 1
+#define ISPCBZ(x)	(INT(x)==0||ISPCB(x))
+@
+
+
+9.23
+log
+@Attempted to get include declarations right.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/proc/procMisc.c,v 9.22 92/09/03 17:26:28 shirriff Exp $ SPRITE (Berkeley)";
+d1628 2
+a1629 1
+	printf("Lfs: %s on %s\n", text, strbuf);
+@
+
+
+9.22
+log
+@Fixed bug in previous L1-i change.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/proc/procMisc.c,v 9.21 92/09/03 17:22:26 shirriff Exp $ SPRITE (Berkeley)";
+d40 1
+a40 1
+#include <lfsInt.h>
+d1626 1
+a1626 1
+	    ISBOOL(lfs.writeBackMoreWork) && ISBOOL(shutDownActive) &&
+d1860 1
+a1860 1
+		    if (PRINTLFS(lfsPtr, "writeWait") {
+d1864 1
+a1864 1
+		    if (PRINTLFS(lfsPtr, "cleanSegmentsWait") {
+d1868 1
+a1868 1
+		    if (PRINTLFS(lfsPtr, "checkPointWait") {
+@
+
+
+9.21
+log
+@Added L1-i checking for Lfs condition variables.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/proc/procMisc.c,v 9.20 92/09/03 14:54:17 shirriff Exp $ SPRITE (Berkeley)";
+d40 1
+a40 1
+#include <lfs.h>
+@
+
+
+9.20
+log
+@Added checking for a Fsconsist_Info lock held.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/proc/procMisc.c,v 9.19 92/06/01 14:40:13 kupfer Exp $ SPRITE (Berkeley)";
+d40 1
+d1347 1
+a1347 1
+static int PRINTLOCK _ARGS_((Sync_Lock *x));
+d1349 1
+d1614 21
+d1636 1
+d1638 1
+a1638 1
+static int PRINTLOCK(x)
+d1640 1
+d1647 4
+a1650 2
+	printf("lock \"%s\" at %x", strbuf, lock.holderPC);
+	if (FINDPID(lock.holderPCBPtr)) {
+d1740 1
+d1770 1
+a1770 1
+		if (PRINTLOCK((Sync_Lock *)event)) {
+d1841 1
+a1841 1
+		    if (PRINTLOCK(syncLockPtr)) {
+d1850 1
+a1850 1
+		    if (PRINTLOCK(syncLockPtr)) {
+d1857 15
+@
+
+
+9.19
+log
+@Lint.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/proc/procMisc.c,v 9.18 92/03/11 17:08:07 shirriff Exp $ SPRITE (Berkeley)";
+d40 1
+d1711 2
+d1810 20
+@
+
+
+9.18
+log
+@Modified L1-i so it hopefully won't crash the machine.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/proc/procMisc.c,v 9.17 91/09/10 18:28:48 rab Exp $ SPRITE (Berkeley)";
+d1406 3
+a1408 1
+	if (!isprint(strbuf[i])) return FALSE;
+d1511 3
+a1513 1
+    if (!READIN(RpcClientChannel,x,&chan)) return FALSE;
+d1547 3
+a1549 1
+    if (!READIN(RpcServerState,x,&state)) return FALSE;
+d1592 3
+a1594 1
+    if (!READIN(ServerInfo,x,&info)) return FALSE;
+@
+
+
+9.17
+log
+@Fixed lint errors and removed tracing.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 9.16 91/04/29 16:31:46 kupfer Exp Locker: rab $ SPRITE (Berkeley)";
+a1310 1
+ *	ISHANDLE(x) tests is x points to a Fs_HandleHeader structure.
+d1322 2
+a1323 7
+#define INT(x)	((int)(x))
+#define INTP(x)	((int *)(x))
+#define ISADDRR(x,range)  ((INT(x)&1)==0 && Dbg_InRange((unsigned)(x),2,FALSE)\
+		&& Dbg_InRange(((unsigned)(x))+(range)-2,2,FALSE))
+#define ISADDR(x)	ISADDRR(x,sizeof(int))
+#define ISSTR(x)	(ISADDRR(x,20) && \
+    ((void) strncpy(buf,(char *)(x),20),strlen(buf)<20) && isprint(buf[0]))
+d1333 2
+a1334 10
+#define FIELD(var,type,field)	(((type *)(var))->field)
+#define P_cb	Proc_ControlBlock
+#define Fc_b	Fscache_Block
+#define Fc_fi	Fscache_FileInfo
+#define F_hh	Fs_HandleHeader
+#define L_L	List_Links
+#define HANDLENAME(x)	(Fsutil_HandleName((Fs_HandleHeader *)(x)))
+#define PRINTHANDLE(str,handle)	printf("%s: \"%s\" (handle locked by %x)",\
+		str, HANDLENAME(handle), handle->lockProcPtr)
+char buf[21] = {0};
+d1336 108
+d1447 7
+a1453 2
+    return ISADDRR(x,sizeof(List_Links)) && ISADDR(x->prevPtr) &&
+	    ISADDR(x->nextPtr);
+d1456 3
+d1462 23
+a1484 3
+    return ISADDRR(x,sizeof(Proc_ControlBlock)) && ISLIST(&x->links) &&
+	   ISSMALL(x->processor) && ISLIST(&x->childListHdr) &&
+	   x->processID <= 0xfffff;
+d1487 13
+a1499 9
+static int ISHANDLE(x)
+Fs_HandleHeader *x;
+{
+    return ISADDRR(x,sizeof(Fs_HandleHeader)) && ISLIST(&x->lruLinks) &&
+	   ISBOOL(x->unlocked.waiting) && ISSMALL(x->refCount) &&
+	   ISSTRZ(x->name) && 
+	   (x->lockProcPtr == (Proc_ControlBlock *)NIL
+	    	|| ISPCB(x->lockProcPtr));
+}
+d1501 4
+a1504 1
+static int ISRPCCLIENT(x)
+d1508 2
+a1509 3
+    if (!ISADDRR(x,sizeof(RpcClientChannel))) {
+	return 0;
+    }
+d1512 22
+a1533 5
+	    return 1;
+	}
+    }
+    return 0;
+}
+d1535 4
+a1538 1
+static int ISRPCSERVER(x)
+d1542 2
+a1543 3
+    if (!ISADDRR(x,sizeof(RpcServerState))) {
+	return 0;
+    }
+d1546 31
+a1576 5
+	    return 1;
+	}
+    }
+    return 0;
+}
+d1578 4
+a1581 1
+static int ISSERVERPROC(x)
+d1585 2
+a1586 3
+    if (!ISADDRR(x,sizeof(ServerInfo))) {
+	return 0;
+    }
+d1589 12
+a1600 5
+	    return 1;
+	}
+    }
+    return 0;
+}
+d1602 4
+a1605 1
+static int ISLOCK(x)
+d1608 14
+a1621 4
+    return ISADDRR(x,sizeof(Sync_Lock)) && ISBOOL(x->inUse) &&
+	    ISBOOL(x->waiting) && ISSTR(x->name) && ISALIGNZ(x->holderPC) &&
+	    ISPCBZ(x->holderPCBPtr);
+}
+d1623 4
+a1626 1
+static int ISSEM(x)
+d1629 13
+a1641 2
+    return ISADDRR(x,sizeof(Sync_Semaphore)) && ISSMALL(x->value) &&
+	    ISSTR(x->name) && ISALIGNZ(x->holderPC) && ISPCBZ(x->holderPCBPtr);
+d1667 1
+a1667 1
+    (int)&signalCondition, "signalCondition",
+d1677 9
+d1687 4
+a1690 3
+void
+Proc_KDump(dummy)
+    ClientData dummy;		/* unused - see dump.c:eventTable */
+d1695 1
+d1697 1
+a1697 1
+    Fscache_FileInfo *cacheInfoPtr;
+d1708 1
+a1708 1
+	    printf("%8x", procPtr->processID);
+d1722 1
+a1722 1
+	    printf(": waiting on ");
+d1724 1
+a1724 1
+	    if (ISADDR(event)) {
+d1731 1
+a1731 1
+		if (ISLOCK((Sync_Lock *)event)) {
+d1733 4
+a1736 7
+			printf("lock \"%s\" at %x", (char *)(event[2]), 
+				(int)event[3]);
+			if (ISPCB((P_cb *)event[4])) {
+			    printf(" held by process %x",
+				((Proc_ControlBlock *)(event[4]))->processID);
+			}
+		} else if (ISPCB((P_cb *)event)) {
+d1738 2
+a1739 3
+		    printf("timer %x",
+			    ((Proc_ControlBlock *)event)->processID);
+		} else if (ISSEM((Sync_Semaphore *)event)) {
+d1741 1
+a1741 7
+		    printf("semaphore \"%s\" at %x",
+			    (char *)(event[1]), (int)(event[2]));
+		    if (ISPCB((P_cb *)event[3])) {
+			printf(" held by process %x",
+			    ((Proc_ControlBlock *)(event[3]))->processID);
+		    }
+		} else if (ISBOOL(event[0])) {
+d1743 3
+a1745 3
+		    handlePtr = (F_hh *)(event-OFF(F_hh,unlocked));
+		    if (ISHANDLE(handlePtr)) {
+			PRINTHANDLE("handle: \"unlocked\"", handlePtr);
+d1748 49
+a1796 24
+		    handlePtr = (F_hh *)(FIELD(event-OFF(Fc_fi,noDirtyBlocks),
+			    Fc_fi, hdrPtr));
+		    if (ISHANDLE(handlePtr)) {
+			PRINTHANDLE("cache block: \"noDirtyBlocks\"",
+				handlePtr);
+			match++;
+		    }
+		    /* See if intPtr is a cacheInfoPtr */
+		    cacheInfoPtr = (Fc_fi *)FIELD(event-OFF(Fc_b,ioDone), Fc_b,
+			    cacheInfoPtr);
+		    if (ISADDRR(cacheInfoPtr,sizeof(Fc_fi)) &&
+			    ISHANDLE(cacheInfoPtr->hdrPtr)) {
+			PRINTHANDLE("cache block: \"ioDone\"",
+				cacheInfoPtr->hdrPtr);
+			match++;
+		    }
+		    tmpProcPtr = (P_cb *)(event-OFF(P_cb,waitCondition));
+		    if (ISPCB(tmpProcPtr)) {
+			printf("PCB: \"waitCondition\" ");
+			match++;
+		    }
+		    tmpProcPtr = (P_cb *)(event-OFF(P_cb,lockedCondition));
+		    if (ISPCB(tmpProcPtr)) {
+			printf("PCB: \"lockedCondition\" ");
+d1801 1
+a1801 11
+		    if (ISSERVERPROC(serverProcPtr)) {
+			printf("ServerProc: \"condition\" ");
+			if (serverProcPtr->flags & ENTRY_INUSE) {
+			    printf("INUSE ");
+			}
+			if (serverProcPtr->flags & SERVER_BUSY) {
+			    printf("BUSY ");
+			}
+			if (serverProcPtr->flags & FUNC_PENDING) {
+			    printf("PENDING ");
+			}
+d1806 1
+a1806 18
+		    if (ISRPCCLIENT(rpcClientPtr)) {
+			printf("RPC client: \"waitCondition\", server %d ",
+				rpcClientPtr->serverID);
+			if (rpcClientPtr->state & CHAN_FREE) {
+			    printf("FREE ");
+			}
+			if (rpcClientPtr->state & CHAN_BUSY) {
+			    printf("BUSY ");
+			}
+			if (rpcClientPtr->state & CHAN_WAITING) {
+			    printf("WAIT ");
+			}
+			if (rpcClientPtr->state & CHAN_TIMEOUT) {
+			    printf("TIME ");
+			}
+			if (rpcClientPtr->state & CHAN_FRAGMENTING) {
+			    printf("FRAG ");
+			}
+d1811 1
+a1811 27
+		    if (ISRPCSERVER(rpcServerPtr)) {
+			printf("RPC server:\"waitCondition\", client %d ",
+				rpcServerPtr->clientID);
+			if (rpcServerPtr->state & SRV_NOTREADY) {
+			    printf("NOTREADY ");
+			}
+			if (rpcServerPtr->state & SRV_FREE) {
+			    printf("FREE ");
+			}
+			if (rpcServerPtr->state & SRV_BUSY) {
+			    printf("BUSY ");
+			}
+			if (rpcServerPtr->state & SRV_WAITING) {
+			    printf("WAIT ");
+			}
+			if (rpcServerPtr->state & SRV_AGING) {
+			    printf("AGING ");
+			}
+			if (rpcServerPtr->state & SRV_FRAGMENT) {
+			    printf("FRAG ");
+			}
+			if (rpcServerPtr->state & SRV_NO_REPLY) {
+			    printf("NO_REPLY ");
+			}
+			if (rpcServerPtr->state & SRV_STUCK) {
+			    printf("STUCK ");
+			}
+d1814 1
+a1814 1
+		    handlePtr = (F_hh *)(event-OFF(Fsrmt_IOHandle,
+d1816 1
+a1816 2
+		    if (ISHANDLE(handlePtr)) {
+			PRINTHANDLE("\"recovery.reopenComplete\"", handlePtr);
+d1828 1
+a1828 1
+		printf("wakeup signal");
+@
+
+
+9.16
+log
+@In Proc_SetPriority, check the requested priority against the min and
+max, not against constants that currently happen to have the same
+values as the min and max.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 9.15 91/04/28 21:02:48 shirriff Exp Locker: kupfer $ SPRITE (Berkeley)";
+d1329 1
+a1329 1
+    (strncpy(buf,(char *)(x),20),strlen(buf)<20) && isprint(buf[0]))
+d1379 3
+a1381 1
+    if (!ISADDRR(x,sizeof(RpcClientChannel))) return 0;
+d1383 3
+a1385 1
+	if (rpcChannelPtrPtr[i] == x) return 1;
+d1394 3
+a1396 1
+    if (!ISADDRR(x,sizeof(RpcServerState))) return 0;
+d1398 3
+a1400 1
+	if (rpcServerPtrPtr[i] == x) return 1;
+d1409 3
+a1411 1
+    if (!ISADDRR(x,sizeof(ServerInfo))) return 0;
+d1413 3
+a1415 1
+	if (serverInfoTable+i == x) return 1;
+d1584 12
+a1595 4
+			if (rpcClientPtr->state & CHAN_FREE) printf("FREE ");
+			if (rpcClientPtr->state & CHAN_BUSY) printf("BUSY ");
+			if (rpcClientPtr->state & CHAN_WAITING) printf("WAIT ");
+			if (rpcClientPtr->state & CHAN_TIMEOUT) printf("TIME ");
+d1609 15
+a1623 5
+			if (rpcServerPtr->state & SRV_FREE) printf("FREE ");
+			if (rpcServerPtr->state & SRV_BUSY) printf("BUSY ");
+			if (rpcServerPtr->state & SRV_WAITING) printf("WAIT ");
+			if (rpcServerPtr->state & SRV_AGING) printf("AGING ");
+			if (rpcServerPtr->state & SRV_FRAGMENT) printf("FRAG ");
+d1627 3
+a1629 1
+			if (rpcServerPtr->state & SRV_STUCK) printf("STUCK ");
+@
+
+
+9.16.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 9.16 91/04/29 16:31:46 kupfer Exp $ SPRITE (Berkeley)";
+@
+
+
+9.15
+log
+@Fixed a bug in L1-i.  (At least it sure looks like a bug)
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 9.14 91/04/12 17:36:21 kupfer Exp $ SPRITE (Berkeley)";
+d703 4
+a706 4
+    if (priority > PROC_NO_INTR_PRIORITY) {
+	priority = PROC_NO_INTR_PRIORITY;
+    } else if (priority < PROC_VERY_LOW_PRIORITY) {
+	priority = PROC_VERY_LOW_PRIORITY;
+@
+
+
+9.14
+log
+@lockProcID => lockProcPtr.  Also tweak ISHANDLE and ISPCB.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 9.13 91/03/20 14:51:07 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d1326 1
+a1326 1
+		&& Dbg_InRange(((unsigned)(x))-(range)-2,2,FALSE))
+@
+
+
+9.13
+log
+@Recov module now waits on condition variables instead of events.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 9.12 90/10/10 16:58:34 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d1347 1
+a1347 1
+		str, HANDLENAME(handle), handle->lockProcID)
+d1357 8
+d1369 4
+a1372 9
+	    ISBOOL(x->unlocked.waiting) && ISSMALL(x->refCount) &&
+	    ISSTRZ(x->name) && (unsigned)x->lockProcID <= 0xfffff; 
+}
+
+static int ISPCB(x)
+Proc_ControlBlock *x;
+{
+    return ISADDRR(x,sizeof(Proc_ControlBlock)) && ISLIST(&x->links) &&
+	    ISSMALL(x->processor) && ISLIST(&x->childListHdr);
+@
+
+
+9.12
+log
+@Proc_KDump should take a ClientData
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 9.11 90/10/01 18:55:27 mendel Exp Locker: kupfer $ SPRITE (Berkeley)";
+d1427 3
+a1429 4
+    migrateCondition, evictCondition, recovCondition, rpcDaemon, freeChannels,
+    signalCondition, codeSegCondition, cleanCondition, swapDownCondition,
+mappingCondition, swapFileCondition;
+extern int recovPingEvent;
+d1449 1
+a1449 1
+    (int)&recovPingEvent, "recovPingEvent",
+@
+
+
+9.11
+log
+@Added function prototypes for CallFunc routines and data structures.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 9.10 90/09/12 13:58:17 jhh Exp $ SPRITE (Berkeley)";
+d1454 1
+d1456 2
+a1457 1
+Proc_KDump()
+d1628 1
+d1630 5
+a1634 1
+Proc_KDump() { return SUCCESS; }
+@
+
+
+9.10
+log
+@changed format of #includes to use <>
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 9.9 90/09/06 17:58:04 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d1058 4
+a1061 2
+    Boolean (*booleanFuncPtr)();	/* function to match */
+    ReturnStatus (*actionFuncPtr)();	/* function to invoke on matches */
+@
+
+
+9.9
+log
+@First pass at function prototypes
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 9.8 90/07/31 18:04:53 shirriff Exp Locker: jhh $ SPRITE (Berkeley)";
+d20 22
+a41 22
+#include "sprite.h"
+#include "proc.h"
+#include "status.h"
+#include "sync.h"
+#include "sched.h"
+#include "sig.h"
+#include "stdlib.h"
+#include "list.h"
+#include "string.h"
+#include "procInt.h"
+#include "rpc.h"
+#include "dbg.h"
+#include "vm.h"
+#include "ctype.h"
+#include "fscache.h"
+#include "fsutil.h"
+#include "rpcClient.h"
+#include "rpcServer.h"
+#include "procServer.h"
+#include "fsrmt.h"
+#include "bstring.h"
+#include "stdio.h"
+@
+
+
+9.8
+log
+@Fixed a stupid array indexing bug.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 9.7 90/07/29 15:52:24 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d40 2
+d48 4
+a51 3
+static Boolean 		CheckIfUsed();
+static ReturnStatus 	GetRemotePCB();
+static void		FillPCBInfo();	
+d130 1
+a130 1
+    register Proc_ControlBlock 	*procPtr;
+d486 1
+a486 1
+    Proc_ControlBlock   *procPtr;
+d1348 1
+a1348 1
+static ISLIST(x)
+d1355 1
+a1355 1
+static ISHANDLE(x)
+d1363 1
+a1363 1
+static ISPCB(x)
+d1370 1
+a1370 1
+static ISRPCCLIENT(x)
+d1381 1
+a1381 1
+static ISRPCSERVER(x)
+d1392 1
+a1392 1
+static ISSERVERPROC(x)
+d1403 1
+a1403 1
+static ISLOCK(x)
+d1411 1
+a1411 1
+static ISSEM(x)
+d1452 1
+d1455 1
+a1455 1
+    int i,j;
+@
+
+
+9.7
+log
+@Added a bunch of new L1-i functions.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 9.6 90/07/18 15:04:41 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d1476 1
+a1476 1
+		    cmd[30] = '\0';
+@
+
+
+9.6
+log
+@Added Proc_KDump to dump info on waiting processes.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 9.4 90/07/16 22:40:50 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d33 7
+d947 1
+a947 1
+	    (void) Sig_SendProc(pcbPtr, SIG_KILL, 0);
+d1288 3
+d1298 11
+d1318 130
+a1447 10
+#define ISADDR(x)  (((x)&1)==0 && Dbg_InRange(x,4,FALSE))
+#define ISSTR(x)   (ISADDR(x) && Dbg_InRange(x,20,FALSE) && \
+    (strncpy(buf,(char *)(x),20),strlen(buf)<20))
+#define ISALIGN(x) (ISADDR(x) && (((x)&3)==0))
+#define ISALIGNZ(x) ((int)(x)==0 || ISALIGN(x))
+/* sun3 test-and-set sets to 0x80000000 */
+#define ISBOOL(x)  ((x)==0||(x)==1||(x)==0x80000000)
+#define ISSMALL(x) ((x)>=0&&(x)<20)
+#define ISPCB(x)   (ISADDR(x) && ISADDR(((int *)(x))[0]) &&\
+		ISADDR(((int *)(x))[1])  && ISSMALL(((int *)(x))[2]))
+a1448 1
+ReturnStatus
+a1450 2
+#ifndef LOCKREG
+#ifndef CLEAN_LOCK
+d1452 1
+a1452 1
+    Proc_ControlBlock *procPtr;
+d1454 7
+a1460 3
+    char buf[21];
+
+    buf[21] = '\0';
+d1464 1
+d1482 5
+a1486 9
+	    if (ISALIGN((int)event)) {
+		if (ISBOOL(event[0]) && ISBOOL(event[1]) && ISSTR(event[2])
+			&& ISALIGNZ(event[3])) {
+		    /* Sync_Lock / Sync_KernelLock */
+		    printf("lock %s at %x", (char *)(event[2]), 
+			    (int)event[3]);
+		    if (ISPCB(event[4])) {
+			printf(" held by process %x",
+			    ((Proc_ControlBlock *)(event[4]))->processID);
+d1488 10
+a1497 1
+		} else if (ISPCB((int)event)) {
+d1501 3
+a1503 4
+		} else if (ISSMALL(event[0]) && ISSTR(event[1]) &&
+			ISALIGNZ(event[2])) {
+		    /* Sync_Semaphore */
+		    printf("semaphore %s at %x",
+d1505 1
+a1505 1
+		    if (ISPCB(event[3])) {
+d1511 90
+a1600 1
+		    printf("condition %x", (int)event);
+d1604 2
+d1610 1
+d1613 3
+d1618 5
+a1622 2
+    return(SUCCESS);
+}
+@
+
+
+9.5
+log
+@Previous version doesn't work.  I'll get back to it later.  This is 9.3.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 9.3 90/06/24 16:34:45 douglis Exp Locker: shirriff $ SPRITE (Berkeley)";
+d1280 39
+d1320 58
+@
+
+
+9.4
+log
+@Added Proc_KDump to dump lock status of waiting processes.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 9.3 90/06/24 16:34:45 douglis Exp $ SPRITE (Berkeley)";
+a1279 38
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_KDump --
+ *
+ *	Prints out an (kluged) proc table with state information.
+ *
+ * Results:
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	Prints stuff to screen.
+ *
+ *
+ *----------------------------------------------------------------------
+ */
+
+#define ISADDR(x)  (MACH_KERN_START<((int)x) && ((int)x)<MACH_KERN_END)
+#define ISALIGN(x) (ISADDR(x) && (((int)(x)&3)==0))
+#define ISALIGNZ(x) ((int)(x)==0 || ISALIGN(x))
+#define ISSTR(x)   (ISADDR(x) && \
+		(strncpy(buf,(char *)(x),20),buf[20]='\0',strlen(buf)<20))
+#define ISBOOL(x)  ((x)==0||(x)==1)
+#define ISSMALL(x) ((x)>=0&&(x)<20)
+#define ISPCB(x)   (ISADDR(x) && ISADDR(((int *)(x))[0]) &&\
+		ISADDR(((int *)(x))[1])  && ISSMALL(((int *)(x))[2]))
+
+ReturnStatus
+Proc_KDump()
+{
+#ifndef LOCKREG
+#ifndef CLEAN_LOCK
+    int i;
+    Proc_ControlBlock *procPtr;
+    int *event;
+    char buf[21];
+a1280 56
+    for (i = 0; i < proc_MaxNumProcesses; i++) {
+	procPtr = proc_PCBTable[i];
+	if (procPtr->state == PROC_WAITING) {
+	    printf("%8x: waiting on ", procPtr->processID);
+	    event = (int *)procPtr->event;
+	    if (ISALIGN(event)) {
+		if (ISBOOL(event[0]) && ISBOOL(event[1]) && ISSTR(event[2])
+			&& ISALIGNZ(event[3])) {
+		    /* Sync_Lock / Sync_KernelLock */
+		    printf("lock %s at %x", (char *)(event[2]), 
+			    (int)event[3]);
+		    if (ISPCB(event[4])) {
+			printf(" held by process %x",
+			    ((Proc_ControlBlock *)(event[4]))->processID);
+		    }
+		} else if (ISPCB(event)) {
+		    /* Proc_ControlBlock */
+		    printf("timer %x",
+			    ((Proc_ControlBlock *)event)->processID);
+		} else if (ISSMALL(event[0]) && ISSTR(event[1]) &&
+			ISALIGNZ(event[2])) {
+		    /* Sync_Semaphore */
+		    printf("semaphore %s at %x",
+			    (char *)(event[1]), (int)(event[2]));
+		    if (ISPCB(event[3])) {
+			printf(" held by process %x",
+			    ((Proc_ControlBlock *)(event[3]))->processID);
+		    }
+		} else if (ISBOOL(event[0])) {
+		    /* Sync_Condition */
+		    printf("condition %x", (int)event);
+		} else {
+		    printf("event %x", (int)event);
+		}
+	    } else {
+		printf("event %x", (int)event);
+	    }
+	    if (procPtr->argString != (Address) NIL) {
+		char cmd[30];
+		char *space;
+
+		(void) strncpy(cmd, procPtr->argString, 30);
+		space = strchr(cmd, ' ');
+		if (space != (char *) NULL) {
+		    *space = '\0';
+		}
+		printf("  -- cmd = %s\n", cmd);
+	    } else {
+		printf("\n");
+	    }
+	}
+    }
+#endif
+#endif
+    return(SUCCESS);
+}
+@
+
+
+9.3
+log
+@check against USER_NIL instead of NIL when looking for a NIL array of
+argStrings in case of PROC_MY_PID.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 9.2 89/10/26 15:23:20 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d1280 38
+d1319 56
+@
+
+
+9.2
+log
+@removed some lint.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 9.1 89/10/12 11:15:39 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d191 1
+a191 1
+	if (argsPtr != (Proc_PCBArgString *) NIL) {
+@
+
+
+9.1
+log
+@changed panic messages to print correct procedure names -- someone blew
+it doing a cut & paste.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 9.0 89/09/12 15:15:37 douglis Stable Locker: douglis $ SPRITE (Berkeley)";
+d178 2
+d181 1
+a181 1
+	    status = GetRemotePCB(hostID, processID, &pcbEntry,
+a186 2
+	TICKS_TO_TIME(pcbEntry);
+	FillPCBInfo(&pcbEntry, &statusInfo);
+d256 2
+a257 2
+			strncpy(argString, procPtr->argString,
+				PROC_PCB_ARG_LENGTH - 1);
+d517 1
+a517 1
+	    strcpy(storagePtr->replyDataPtr, procPtr->argString);
+d816 1
+a816 1
+ *	SUCCESS/FAILURE
+d824 1
+a824 1
+ReturnStatus
+d869 1
+a869 1
+	    return (FAILURE);
+a897 1
+    return (SUCCESS);
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 8.11 89/08/13 21:45:09 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d566 1
+a566 1
+	    panic("Proc_GetIDs: procPtr == NIL\n");
+d634 1
+a634 1
+	    panic("Proc_GetIDs: procPtr == NIL\n");
+@
+
+
+8.11
+log
+@changed Proc_DoForEveryProc to return the number of processes found,
+for migration statistics
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 8.10 89/07/14 13:04:54 nelson Exp Locker: douglis $ SPRITE (Berkeley)";
+@
+
+
+8.10
+log
+@Integrated changes from DECWRL.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 8.9 89/06/15 16:52:48 douglis Exp $ SPRITE (Berkeley)";
+d1037 2
+a1038 1
+ *	general SUCCESS is returned.
+d1048 1
+a1048 1
+Proc_DoForEveryProc(booleanFuncPtr, actionFuncPtr, ignoreStatus)
+d1052 1
+d1054 1
+a1054 1
+    ReturnStatus status;
+d1071 6
+@
+
+
+8.9
+log
+@change to support remote access to segment info for ps.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 8.8 89/05/30 12:25:41 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d115 1
+a115 1
+    Proc_PCBInfo 	*bufferPtr;	     /* Pointer to buffers. */
+d831 2
+d863 1
+a863 1
+		((int) state)++;
+@
+
+
+8.8
+log
+@Checking this in for Fred -- John
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 8.7 89/04/06 12:07:59 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d94 14
+d185 1
+a185 9
+	Timer_TicksToTime(pcbEntry.kernelCpuUsage.ticks, 
+			  &pcbEntry.kernelCpuUsage.time);
+	Timer_TicksToTime(pcbEntry.userCpuUsage.ticks, 
+			  &pcbEntry.userCpuUsage.time);
+	Timer_TicksToTime(pcbEntry.childKernelCpuUsage.ticks, 
+			  &pcbEntry.childKernelCpuUsage.time);
+	Timer_TicksToTime(pcbEntry.childUserCpuUsage.ticks, 
+			  &pcbEntry.childUserCpuUsage.time);
+
+d229 3
+d233 1
+a233 1
+		status = GetRemotePCB(hostID, (Proc_PID) i, &pcbEntry,
+a248 10
+	    Timer_TicksToTime(pcbEntry.kernelCpuUsage.ticks, 
+			      &pcbEntry.kernelCpuUsage.time);
+	    Timer_TicksToTime(pcbEntry.userCpuUsage.ticks, 
+			      &pcbEntry.userCpuUsage.time);
+	    Timer_TicksToTime(pcbEntry.childKernelCpuUsage.ticks, 
+			      &pcbEntry.childKernelCpuUsage.time);
+	    Timer_TicksToTime(pcbEntry.childUserCpuUsage.ticks, 
+			      &pcbEntry.childUserCpuUsage.time);
+
+	    FillPCBInfo(&pcbEntry, &statusInfo);
+d253 1
+a253 1
+	    if (argsPtr != (Proc_PCBArgString *) NIL) {
+d284 6
+d309 1
+a309 1
+    Proc_ControlBlock *pcbPtr;	/* Place to return PCB data. */
+d314 1
+d316 5
+a320 4
+    storage.requestParamPtr = (Address)&pid;
+    storage.requestParamSize = sizeof(Proc_PID);
+    storage.requestDataPtr = (Address)NIL;
+    storage.requestDataSize = 0;
+d322 1
+a322 1
+    storage.replyParamSize = sizeof(Proc_ControlBlock);
+d333 40
+d442 1
+a442 1
+ *	Stub to handle a remote request for a PCB.
+d447 1
+a447 1
+ *			  invalid.
+d475 1
+a475 1
+    Proc_ControlBlock   *pcbPtr;
+d477 36
+d514 7
+a520 8
+    pidPtr = (Proc_PID *) storagePtr->requestParamPtr;
+    if (*pidPtr >= proc_MaxNumProcesses) {
+	status = GEN_INVALID_ARG;
+    } else {
+	procPtr = Proc_GetPCB(*pidPtr);
+	if (procPtr == (Proc_ControlBlock *) NIL) {
+	    panic("Proc_RpcGetPCB: found nil PCB!");
+	    status = FAILURE;
+d523 1
+a523 19
+    if (status != SUCCESS) {
+    	Rpc_Reply(srvToken, status, storagePtr,
+		  (int(*)())NIL, (ClientData)NIL);
+	return(SUCCESS);
+    }
+
+    pcbPtr = (Proc_ControlBlock *) malloc(sizeof (Proc_ControlBlock));
+    storagePtr->replyParamPtr = (Address) pcbPtr;
+    storagePtr->replyParamSize = sizeof(Proc_ControlBlock);
+    bcopy((Address) procPtr, (Address) pcbPtr, sizeof (Proc_ControlBlock));
+    
+    if (procPtr->argString != (Address) NIL) {
+	storagePtr->replyDataSize = strlen(procPtr->argString + 1);
+	storagePtr->replyDataPtr = (Address) malloc(storagePtr->replyDataSize);
+	strcpy(storagePtr->replyDataPtr, procPtr->argString);
+    } else {
+	storagePtr->replyDataSize = 0;
+	storagePtr->replyDataPtr = (Address) NIL;
+    }
+@
+
+
+8.7
+log
+@turn off interrupts while messing with lock stack
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 8.6 89/03/12 21:14:06 rab Exp $ SPRITE (Berkeley)";
+d1105 1
+d1113 1
+d1143 1
+d1162 1
+d1168 1
+d1205 1
+@
+
+
+8.6
+log
+@*** empty log message ***
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 8.5 89/03/03 05:37:25 rab Exp Locker: rab $ SPRITE (Berkeley)";
+d1114 10
+d1129 1
+a1129 1
+	return;
+d1134 1
+a1134 1
+        return;
+d1139 2
+d1168 1
+d1170 1
+d1172 1
+a1172 1
+	return;
+d1175 1
+a1175 1
+	return;
+d1187 1
+a1187 1
+	return;
+d1189 1
+a1189 1
+    for (i = pcbPtr->lockStackSize - 1; i >= 0; i--) {
+d1198 2
+a1199 1
+    pcbPtr->lockStackSize = 0;
+@
+
+
+8.5
+log
+@Removed Proc_Profile, it is replaced by Prof_Profil.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 8.4 89/02/28 12:06:29 jhh Exp Locker: rab $ SPRITE (Berkeley)";
+d682 29
+d1114 5
+a1118 3
+    if (pcbPtr->lockStackSize >= PROC_LOCKSTACK_SIZE && firstOverflow) {
+	printf("Proc_PushLockStack: stack overflow in pcb 0x%x.\n",pcbPtr);
+	firstOverflow = FALSE;
+a1182 1
+	panic("Lock stack underflow (2).\n");
+d1184 1
+@
+
+
+8.4
+log
+@New interface for Proc_GetPCBInfo and Vm_GetSegInfo
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 8.3 89/02/19 22:08:17 jhh Exp $ SPRITE (Berkeley)";
+a674 29
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_Profile --
+ *
+ *	Starts profiling the memory accesses of the current process.
+ *
+ * Results:
+ *	SUCCESS		-	always returned for now.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*ARGSUSED*/
+ReturnStatus
+Proc_Profile(shiftSize, lowPC, highPC, interval, counterArray)
+    int shiftSize;	/* # of bits to shift the PC to the right. */
+    int lowPC;		/* The lowest PC to profile. */
+    int highPC;		/* The highest PC to profile. */
+    Time interval;	/* The time interval at which the PC is sampled. */
+    int counterArray[];	/* Counters used to count instruction executions. */
+{
+@
+
+
+8.3
+log
+@Changes due to lock registration
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 8.2 88/12/04 15:17:37 ouster Exp Locker: jhh $ SPRITE (Berkeley)";
+d32 1
+d34 1
+d39 3
+a41 2
+static Boolean CheckIfUsed();
+static ReturnStatus GetRemotePCB();
+d95 2
+a96 2
+Proc_GetPCBInfo(firstPid, lastPid, hostID, bufferPtr, argsPtr,
+		trueNumBuffersPtr)
+d100 2
+a101 1
+    Proc_ControlBlock 	*bufferPtr;	     /* Pointer to buffers. */
+d113 2
+d116 1
+d133 1
+d180 3
+a182 2
+	if (Proc_ByteCopy(FALSE, sizeof(Proc_ControlBlock), 
+		(Address)&pcbEntry, (Address) bufferPtr) != SUCCESS) {
+d208 3
+a210 1
+	for (i = firstPid, j = 0; i <= lastPid; i++, j++) {
+d248 4
+a251 2
+	    if (Proc_ByteCopy(FALSE, sizeof(Proc_ControlBlock), 
+		(Address)&pcbEntry, (Address) &(bufferPtr[j])) != SUCCESS) {
+d325 62
+@
+
+
+8.2
+log
+@
+Stop using obsolete header files.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 8.1 88/11/18 14:10:08 douglis Exp $ SPRITE (Berkeley)";
+d31 1
+d39 16
+d56 7
+d1012 96
+@
+
+
+8.1
+log
+@fixed bug reversing sense of *HostPtr in Proc_GetHosts call.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 8.0 88/11/11 18:31:13 douglis Stable Locker: douglis $ SPRITE (Berkeley)";
+d26 1
+a26 1
+#include "mem.h"
+a28 1
+#include "byte.h"
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 6.11 88/11/08 16:45:34 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d968 1
+a968 1
+				(Address) virtualHostPtr) != SUCCESS) {
+d983 1
+a983 1
+				(Address) physicalHostPtr) != SUCCESS) {
+@
+
+
+6.11
+log
+@initialize processID to firstPid.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 6.10 88/11/08 16:01:35 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+@
+
+
+6.10
+log
+@added Proc_GetHostIDs RPC, but it's not currently used by anyone (though
+ps could try if it wanted).
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 6.9 88/11/02 10:16:24 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d84 1
+a84 1
+    Proc_PID			processID;
+@
+
+
+6.9
+log
+@fixed to check hostID argument and to handle getting processes from another
+host until GEN_INVALID_ARG is returned.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 6.8 88/11/01 16:22:32 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+d105 3
+d111 1
+d120 1
+d931 58
+@
+
+
+6.8
+log
+@[for JHH]  cut out the CheckIfUsed procedure; calls Proc_DumpPCB directly.
+This eliminates some incompatibility between pids & procPtrs that used
+to cause a bus error.
+
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 6.7 88/10/28 15:05:17 douglis Exp Locker: jhh $ SPRITE (Berkeley)";
+d94 2
+a95 1
+    } else if (bufferPtr == USER_NIL) {
+d98 4
+d188 10
+@
+
+
+6.7
+log
+@changed ProcDumpPCB to Proc_DumpPCB and changed panic to warning when
+in invalid state (also printing pid of offending proc.)
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 6.6 88/10/27 20:03:55 mlgray Exp Locker: douglis $ SPRITE (Berkeley)";
+a592 27
+ * CheckIfUsed --
+ *
+ *	Returns TRUE if process is in use. (this function is used for 
+ *	dumping out the process table).
+ *
+ * Results:
+ *	FALSE if process state is NOT_USED, TRUE otherwise
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Boolean
+CheckIfUsed(procPtr)
+    register Proc_ControlBlock *procPtr;
+{
+	if (procPtr->state == PROC_UNUSED) {
+	    return FALSE;
+	}
+	return TRUE;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+d610 4
+a613 1
+    printf("%8s %5s %10s %10s %8s %8s   %s\n",
+d615 7
+a621 1
+    Proc_DoForEveryProc(CheckIfUsed, Proc_DumpPCB, TRUE);
+d634 1
+a634 1
+ *	SUCCESS
+d685 1
+a685 1
+	    return;
+@
+
+
+6.6
+log
+@1st pass at multi-processor, conversion to new C library.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 6.4 88/10/19 14:10:35 douglis Exp Locker: douglis $ SPRITE (Berkeley)";
+a37 1
+static ReturnStatus ProcDumpPCB();
+d639 1
+a639 1
+    Proc_DoForEveryProc(CheckIfUsed, ProcDumpPCB, TRUE);
+d647 1
+a647 1
+ * ProcDumpPCB --
+d660 2
+a661 2
+static ReturnStatus
+ProcDumpPCB(procPtr)
+d701 3
+a703 1
+	    panic("DumpPCB: invalid process state: %x.\n", state);
+@
+
+
+6.5
+log
+@Mary checking in for Fred.
+@
+text
+@d122 2
+a123 2
+	    Byte_Copy(sizeof(Proc_ControlBlock), (Address)procPtr,
+		      (Address)&pcbEntry);
+d147 2
+a148 2
+		    (void) String_NCopy(PROC_PCB_ARG_LENGTH - 1,
+					procPtr->argString, argString);
+d174 1
+a174 1
+		    Sys_Panic(SYS_FATAL, "Proc_GetInfo: procPtr == NIL!\n");
+d178 2
+a179 2
+		Byte_Copy(sizeof(Proc_ControlBlock), (Address)procPtr,
+			  (Address)&pcbEntry);
+d202 2
+a203 2
+			(void) String_NCopy(PROC_PCB_ARG_LENGTH - 1,
+					    procPtr->argString, argString);
+d320 1
+a320 1
+	    Sys_Panic(SYS_FATAL, "Proc_RpcGetPCB: found nil PCB!");
+d330 1
+a330 1
+    pcbPtr = Mem_New(Proc_ControlBlock);
+d333 1
+a333 1
+    Byte_Copy(sizeof(Proc_ControlBlock), (Address) procPtr, (Address) pcbPtr);
+d336 3
+a338 3
+	storagePtr->replyDataSize = String_Length(procPtr->argString + 1);
+	storagePtr->replyDataPtr = Mem_Alloc(storagePtr->replyDataSize);
+	String_Copy(procPtr->argString, storagePtr->replyDataPtr);
+d343 1
+a343 1
+    replyMemPtr = (Rpc_ReplyMem *) Mem_Alloc(sizeof(Rpc_ReplyMem));
+d385 1
+a385 1
+	    Sys_Panic(SYS_FATAL, "Proc_GetIDs: procPtr == NIL\n");
+d453 1
+a453 1
+	    Sys_Panic(SYS_FATAL, "Proc_GetIDs: procPtr == NIL\n");
+d638 1
+a638 1
+    Sys_Printf("%8s %5s %10s %10s %8s %8s   %s\n",
+d702 1
+a702 2
+	    Sys_Panic(SYS_FATAL, 
+		      "DumpPCB: invalid process state: %x.\n", state);
+d709 1
+a709 1
+    Sys_Printf("%8x %5d [%1d,%6d] [%1d,%6d] %8x %8s",
+d727 1
+a727 1
+	Sys_Printf(" %s\n", cmd);
+d729 1
+a729 1
+	Sys_Printf("\n");
+d893 1
+a893 1
+    pidArray = (Proc_PID *) Mem_Alloc(sizeof(Proc_PID) * max);
+d901 1
+a901 1
+    Mem_Free((Address) pidArray);
+@
+
+
+6.4
+log
+@checking this in for JHH.  Changed Proc_Dump to use internal routine
+ProcDumpPCB, removed from utils module.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procMisc.c,v 6.3 88/08/31 17:55:52 douglis Exp Locker: jhh $ SPRITE (Berkeley)";
+d31 1
+d39 1
+d47 7
+a53 6
+ *	Returns the process control block.  If firstPid is equal to  
+ *	PROC_MY_PID then the PCB for the current process is returned.
+ *	Otherwise PCBs for all processes in the range firstPid to lastPid
+ *	are returned.  trueNumBuffers is set to be the actual number of
+ *	PCBs returned which can be less than the number requested if firstPid
+ *	of lastPid are greater than the maximum PCB available.
+d59 3
+d70 2
+a71 1
+Proc_GetPCBInfo(firstPid, lastPid, bufferPtr, argsPtr, trueNumBuffersPtr)
+d74 1
+d81 2
+a82 2
+    int				i, j, len;
+    char 			buf[PROC_PCB_ARG_LENGTH];
+d84 3
+d88 7
+a94 2
+    if ((firstPid != PROC_MY_PID) && (firstPid > lastPid)) {
+	return(SYS_INVALID_ARG);
+d99 17
+d120 11
+a130 4
+
+	procPtr = Proc_GetEffectiveProc();
+	Byte_Copy(sizeof(Proc_ControlBlock), (Address)procPtr,
+		  (Address)&pcbEntry);
+d145 8
+a152 7
+	    if (procPtr->argString != (Address) NIL) {
+		(void) Proc_StringNCopy(PROC_PCB_ARG_LENGTH - 1,
+					procPtr->argString,
+				 buf, &len);
+		buf[PROC_PCB_ARG_LENGTH - 1] = '\0';
+	    } else {
+		buf[0] = '\0';
+d154 1
+a154 1
+	    if (Proc_ByteCopy(FALSE, PROC_PCB_ARG_LENGTH, buf,
+d160 1
+a160 1
+
+d166 20
+a185 6
+	for (i = firstPid, j = 0; 
+	     i < proc_MaxNumProcesses && i <= lastPid; 
+	     i++, j++) {
+	    procPtr = Proc_GetPCB(i);
+	    if (procPtr == (Proc_ControlBlock *) NIL) {
+		Sys_Panic(SYS_FATAL, "Proc_GetInfo: procPtr == NIL!");
+a186 2
+	    Byte_Copy(sizeof(Proc_ControlBlock), (Address)procPtr,
+		      (Address)&pcbEntry);
+d200 8
+a207 6
+		if (procPtr->argString != (Address) NIL) {
+		    (void) Proc_StringNCopy(PROC_PCB_ARG_LENGTH - 1,
+				     procPtr->argString, buf, &len);
+		    buf[PROC_PCB_ARG_LENGTH - 1] = '\0';
+		} else {
+		    buf[0] = '\0';
+d209 1
+a209 1
+		if (Proc_ByteCopy(FALSE, PROC_PCB_ARG_LENGTH, buf,
+d224 125
+d351 1
+a352 1
+
+@
+
+
+6.3
+log
+@de-linted and endif-fix'ed.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: procMisc.c,v 6.2 88/08/25 12:09:45 nelson Exp $ SPRITE (Berkeley)";
+d30 1
+d32 7
+d414 27
+d446 1
+a446 1
+ *	None.
+d449 1
+a449 1
+ *	None.
+d451 1
+d458 6
+a463 2
+    register int i;
+    register Proc_ControlBlock *pcbPtr;
+d465 15
+a479 45
+    Sys_Printf("%8s: %11s %8s %s\n", "PID:", "state ", "event ",
+		     "program");
+    for (i = 0; i < proc_MaxNumProcesses; i++) {
+	pcbPtr = proc_PCBTable[i];
+	if (pcbPtr->state == PROC_UNUSED) {
+	    continue;
+	}
+	Sys_Printf("%8x:", pcbPtr->processID);
+	switch(pcbPtr->state) {
+	    case PROC_RUNNING:
+		Sys_Printf(" running   ");
+		break;
+	    case PROC_READY:
+		Sys_Printf(" ready     ");
+		break;
+	    case PROC_WAITING:
+		Sys_Printf(" waiting   ");
+		break;
+	    case PROC_EXITING:
+		Sys_Printf(" exiting   ");
+		break;
+	    case PROC_DEAD:
+		Sys_Printf(" dead      ");
+		break;
+	    case PROC_MIGRATED:
+		Sys_Printf(" migrated  ");
+		break;
+	    case PROC_NEW:
+		Sys_Printf(" new       ");
+		break;
+	    case PROC_SUSPENDED:
+		if (pcbPtr->genFlags & (PROC_DEBUGGED | PROC_ON_DEBUG_LIST)) {
+		    Sys_Printf(" debug     ");
+		} else {
+		    Sys_Printf(" suspended ");
+		}
+		break;
+	    default:
+		Sys_Printf(" ?%x?", (int) pcbPtr->state);
+		break;
+	}
+	Sys_Printf(" %8x", pcbPtr->event);
+	if (pcbPtr->argString != (Address) NIL) {
+	    char cmd[30];
+	    char *space;
+d481 38
+a518 4
+	    (void) String_NCopy(30, pcbPtr->argString, cmd);
+	    space = String_FindChar(cmd, ' ');
+	    if (space != (char *) NULL) {
+		*space = '\0';
+d520 27
+a546 3
+	    Sys_Printf(" %s\n", cmd);
+	} else {
+	    Sys_Printf("\n");
+d548 3
+d552 1
+a552 1
+    return(SUCCESS);
+a553 1
+
+@
+
+
+6.2
+log
+@Changed to make cpu usage be represented in a format such that both the
+kernel and user programs can use time.
+@
+text
+@d17 2
+a18 2
+static char rcsid[] = "$Header: procMisc.c,v 6.1 88/08/24 14:19:11 douglis Exp $ SPRITE (Berkeley)";
+#endif not lint
+d29 1
+@
+
+
+6.1
+log
+@got rid of some lint.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: procMisc.c,v 6.0 88/08/11 12:22:50 brent Stable $ SPRITE (Berkeley)";
+d66 1
+a74 1
+
+d80 11
+d92 1
+a92 1
+		(Address) procPtr, (Address) bufferPtr) != SUCCESS) {
+d123 10
+d134 1
+a134 1
+		(Address) procPtr, (Address) &(bufferPtr[j])) != SUCCESS) {
+d213 4
+a216 3
+	Timer_TicksToTime(procPtr->kernelCpuUsage, &resUsage.kernelCpuUsage);
+	Timer_TicksToTime(procPtr->userCpuUsage, &resUsage.userCpuUsage);
+	Timer_TicksToTime(procPtr->childKernelCpuUsage, 
+d218 1
+a218 1
+	Timer_TicksToTime(procPtr->childUserCpuUsage,
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: procMisc.c,v 5.8 88/08/02 15:16:37 douglis Exp $ SPRITE (Berkeley)";
+d86 2
+a87 1
+		Proc_StringNCopy(PROC_PCB_ARG_LENGTH - 1, procPtr->argString,
+d118 1
+a118 1
+		    Proc_StringNCopy(PROC_PCB_ARG_LENGTH - 1,
+d448 1
+a448 1
+	    String_NCopy(30, pcbPtr->argString, cmd);
+@
+
+
+5.8
+log
+@Made Proc_Dump know about PROC_MIGRATED and PROC_NEW states.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: procMisc.c,v 5.7 88/05/05 17:58:20 nelson Exp $ SPRITE (Berkeley)";
+@
+
+
+5.7
+log
+@Handles move of functionality from sys to mach.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: procMisc.c,v 5.6 88/05/04 16:46:45 nelson Exp $ SPRITE (Berkeley)";
+d425 6
+d437 3
+@
+
+
+5.6
+log
+@Uses new mach module stuff.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: procMisc.c,v 5.5 88/04/27 18:57:04 nelson Exp $ SPRITE (Berkeley)";
+d79 1
+a79 1
+	procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+d172 1
+a172 1
+	procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+d239 1
+a239 1
+	procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+d330 1
+a330 1
+	    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+d478 1
+a478 1
+    curProcPtr = Proc_GetActualProc(Sys_GetProcessorNumber());
+d523 1
+a523 1
+    curProcPtr = Proc_GetActualProc(Sys_GetProcessorNumber());
+d563 1
+a563 1
+    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+@
+
+
+5.5
+log
+@Moved functionality from here to procDebug.c
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: procMisc.c,v 5.4 88/04/18 09:10:04 ouster Exp $ SPRITE (Berkeley)";
+d401 1
+a401 1
+    Sys_Printf("%8s: %11s %8s %8s %s\n", "PID:", "state ", "event ", "pc ",
+a433 1
+	Sys_Printf(" %8x", pcbPtr->progCounter);
+@
+
+
+5.4
+log
+@Lint cleanup, change copyright notices.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: procMisc.c,v 5.3 88/03/14 12:37:47 brent Exp $ SPRITE (Berkeley)";
+a33 64
+ * Proc_Suspend --
+ *
+ *	Suspend execution of the calling process.  The parent is notified
+ *	that this child stopped but the child remains attached to the
+ *	parent.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Process context switches to the suspended state.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Proc_Suspend(sigNum)
+    int	sigNum;
+{
+    register	Proc_ControlBlock	*procPtr;
+
+    procPtr = Proc_GetEffectiveProc(Sys_GetProcessorNumber());
+    procPtr->termReason = PROC_TERM_SIGNALED;
+    procPtr->termStatus = sigNum;
+    procPtr->termCode = SIG_NO_CODE;
+    ProcInformParent();
+    Sched_ContextSwitch(PROC_SUSPENDED);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_Resume --
+ *
+ *	Resume execution of the given process if it is currently suspended.
+ *	
+ *	SYNCHRONIZATION NOTE:
+ *
+ *	This routine is only called from the signal module with its monitor
+ *	lock down which ensures that we are the only ones who can change the 
+ *	state of the process to or from the suspended state.  Thus there
+ *	is no race condition on the state of the destination process.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Process is made runnable
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Proc_Resume(procPtr)
+    Proc_ControlBlock	*procPtr;
+{
+    if (procPtr->state == PROC_SUSPENDED) {
+	Sched_MakeReady(procPtr);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+a424 3
+	    case PROC_DEBUGABLE:
+		Sys_Printf(" debug     ");
+		break;
+d426 5
+a430 1
+		Sys_Printf(" suspended ");
+@
+
+
+5.3
+log
+@Fixed lint regarding call to Proc_StringNCopy
+@
+text
+@d7 7
+a13 1
+ * All rights reserved.
+d17 1
+a17 1
+static char rcsid[] = "$Header: procMisc.c,v 5.2 88/03/02 11:59:07 douglis Exp $ SPRITE (Berkeley)";
+@
+
+
+5.2
+log
+@Added another argument to GetPCBInfo to pass out the arg strings, since
+they're stored outside of the PCB block now but procstat wants to
+get to them.  Ugly as sin.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: procMisc.c,v 5.1 87/10/09 09:44:17 nelson Exp $ SPRITE (Berkeley)";
+d122 1
+a122 1
+    int				i, j;
+d145 1
+a145 1
+				 buf);
+d176 1
+a176 1
+				     procPtr->argString, buf);
+@
+
+
+5.1
+log
+@Added Proc_WakeupAllProcesses, needed after recovery with a server.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: procMisc.c,v 5.0 87/08/11 10:47:24 sprite Exp $ SPRITE (Berkeley)";
+d22 1
+d113 1
+a113 1
+Proc_GetPCBInfo(firstPid, lastPid, bufferPtr, trueNumBuffersPtr)
+d117 1
+d123 1
+d137 1
+d139 1
+a139 2
+		(Address) Proc_GetEffectiveProc(Sys_GetProcessorNumber()),
+		(Address) bufferPtr) != SUCCESS) {
+d142 13
+d173 13
+d492 13
+a504 2
+	Sys_Printf(" %s", pcbPtr->codeFileName);
+	Sys_Printf("\n");
+d705 1
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: procMisc.c,v 4.3 87/08/04 11:09:08 andrew Exp $ SPRITE (Berkeley)";
+a486 1
+
+d518 37
+@

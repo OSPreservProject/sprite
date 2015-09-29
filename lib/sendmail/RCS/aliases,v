@@ -1,0 +1,2524 @@
+head     1.373;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @# @;
+
+
+1.373
+date     92.12.15.09.25.11;  author bmiller;  state Exp;
+branches ;
+next     1.372;
+
+1.372
+date     92.12.09.16.00.59;  author pmchen;  state Exp;
+branches ;
+next     1.371;
+
+1.371
+date     92.12.09.15.59.23;  author jhh;  state Exp;
+branches ;
+next     1.370;
+
+1.370
+date     92.11.24.14.57.07;  author jhh;  state Exp;
+branches ;
+next     1.369;
+
+1.369
+date     92.11.20.14.28.10;  author jhh;  state Exp;
+branches ;
+next     1.368;
+
+1.368
+date     92.11.19.16.39.14;  author jhh;  state Exp;
+branches ;
+next     1.367;
+
+1.367
+date     92.11.19.16.38.56;  author jhh;  state Exp;
+branches ;
+next     1.366;
+
+1.366
+date     92.11.19.16.38.48;  author jhh;  state Exp;
+branches ;
+next     1.365;
+
+1.365
+date     92.11.19.16.38.38;  author jhh;  state Exp;
+branches ;
+next     1.364;
+
+1.364
+date     92.11.19.16.32.01;  author jhh;  state Exp;
+branches ;
+next     1.363;
+
+1.363
+date     92.11.19.16.31.48;  author jhh;  state Exp;
+branches ;
+next     1.362;
+
+1.362
+date     92.11.19.16.31.38;  author jhh;  state Exp;
+branches ;
+next     1.361;
+
+1.361
+date     92.11.19.16.31.29;  author jhh;  state Exp;
+branches ;
+next     1.360;
+
+1.360
+date     92.11.19.16.31.16;  author jhh;  state Exp;
+branches ;
+next     1.359;
+
+1.359
+date     92.11.19.16.30.32;  author jhh;  state Exp;
+branches ;
+next     1.358;
+
+1.358
+date     92.11.19.16.30.01;  author jhh;  state Exp;
+branches ;
+next     1.357;
+
+1.357
+date     92.11.19.16.29.42;  author jhh;  state Exp;
+branches ;
+next     1.356;
+
+1.356
+date     92.11.19.16.28.24;  author jhh;  state Exp;
+branches ;
+next     1.355;
+
+1.355
+date     92.11.19.16.28.00;  author jhh;  state Exp;
+branches ;
+next     1.354;
+
+1.354
+date     92.11.19.16.27.40;  author jhh;  state Exp;
+branches ;
+next     1.353;
+
+1.353
+date     92.11.19.16.27.21;  author jhh;  state Exp;
+branches ;
+next     1.352;
+
+1.352
+date     92.11.19.16.26.53;  author jhh;  state Exp;
+branches ;
+next     1.351;
+
+1.351
+date     92.11.19.16.25.58;  author jhh;  state Exp;
+branches ;
+next     1.350;
+
+1.350
+date     92.11.19.16.25.09;  author jhh;  state Exp;
+branches ;
+next     1.349;
+
+1.349
+date     92.11.19.16.24.27;  author jhh;  state Exp;
+branches ;
+next     1.348;
+
+1.348
+date     92.11.19.16.23.38;  author jhh;  state Exp;
+branches ;
+next     1.347;
+
+1.347
+date     92.11.19.16.22.49;  author jhh;  state Exp;
+branches ;
+next     1.346;
+
+1.346
+date     92.11.19.16.21.50;  author jhh;  state Exp;
+branches ;
+next     1.345;
+
+1.345
+date     92.11.19.16.19.21;  author jhh;  state Exp;
+branches ;
+next     1.344;
+
+1.344
+date     92.11.19.16.18.30;  author jhh;  state Exp;
+branches ;
+next     1.343;
+
+1.343
+date     92.11.19.16.17.55;  author jhh;  state Exp;
+branches ;
+next     1.342;
+
+1.342
+date     92.11.19.16.15.42;  author jhh;  state Exp;
+branches ;
+next     1.341;
+
+1.341
+date     92.11.19.16.14.30;  author jhh;  state Exp;
+branches ;
+next     1.340;
+
+1.340
+date     92.11.19.16.08.43;  author jhh;  state Exp;
+branches ;
+next     1.339;
+
+1.339
+date     92.11.19.16.08.02;  author jhh;  state Exp;
+branches ;
+next     1.338;
+
+1.338
+date     92.11.19.16.07.38;  author jhh;  state Exp;
+branches ;
+next     1.337;
+
+1.337
+date     92.11.19.16.06.43;  author jhh;  state Exp;
+branches ;
+next     1.336;
+
+1.336
+date     92.11.19.11.36.07;  author jhh;  state Exp;
+branches ;
+next     1.335;
+
+1.335
+date     92.11.19.11.34.31;  author jhh;  state Exp;
+branches ;
+next     1.334;
+
+1.334
+date     92.11.18.21.44.47;  author jhh;  state Exp;
+branches ;
+next     1.333;
+
+1.333
+date     92.11.16.13.23.14;  author jhh;  state Exp;
+branches ;
+next     1.332;
+
+1.332
+date     92.11.15.21.45.11;  author jhh;  state Exp;
+branches ;
+next     1.331;
+
+1.331
+date     92.11.15.21.43.58;  author jhh;  state Exp;
+branches ;
+next     1.330;
+
+1.330
+date     92.11.15.21.40.38;  author jhh;  state Exp;
+branches ;
+next     1.329;
+
+1.329
+date     92.11.13.14.28.54;  author elm;  state Exp;
+branches ;
+next     1.328;
+
+1.328
+date     92.11.13.14.21.37;  author jhh;  state Exp;
+branches ;
+next     1.327;
+
+1.327
+date     92.11.13.13.16.17;  author jhh;  state Exp;
+branches ;
+next     1.326;
+
+1.326
+date     92.11.13.12.59.48;  author jhh;  state Exp;
+branches ;
+next     1.325;
+
+1.325
+date     92.11.13.12.57.20;  author jhh;  state Exp;
+branches ;
+next     1.324;
+
+1.324
+date     92.11.13.12.56.08;  author jhh;  state Exp;
+branches ;
+next     1.323;
+
+1.323
+date     92.11.12.23.08.50;  author jhh;  state Exp;
+branches ;
+next     1.322;
+
+1.322
+date     92.11.12.22.44.41;  author jhh;  state Exp;
+branches ;
+next     1.321;
+
+1.321
+date     92.11.12.16.38.16;  author elm;  state Exp;
+branches ;
+next     1.320;
+
+1.320
+date     92.11.11.17.54.52;  author elm;  state Exp;
+branches ;
+next     1.319;
+
+1.319
+date     92.10.20.13.02.18;  author bmiller;  state Exp;
+branches ;
+next     1.318;
+
+1.318
+date     92.10.12.10.35.28;  author elm;  state Exp;
+branches ;
+next     1.317;
+
+1.317
+date     92.09.24.16.00.22;  author shirriff;  state Exp;
+branches ;
+next     1.316;
+
+1.316
+date     92.09.24.12.27.57;  author jhh;  state Exp;
+branches ;
+next     1.315;
+
+1.315
+date     92.09.21.10.30.08;  author ss;  state Exp;
+branches ;
+next     1.314;
+
+1.314
+date     92.09.14.10.00.49;  author bmiller;  state Exp;
+branches ;
+next     1.313;
+
+1.313
+date     92.09.01.12.38.16;  author elm;  state Exp;
+branches ;
+next     1.312;
+
+1.312
+date     92.08.18.15.09.06;  author jhh;  state Exp;
+branches ;
+next     1.311;
+
+1.311
+date     92.08.18.14.55.50;  author jhh;  state Exp;
+branches ;
+next     1.310;
+
+1.310
+date     92.08.18.13.54.03;  author kupfer;  state Exp;
+branches ;
+next     1.309;
+
+1.309
+date     92.08.11.12.52.30;  author jhh;  state Exp;
+branches ;
+next     1.308;
+
+1.308
+date     92.07.28.16.30.24;  author elm;  state Exp;
+branches ;
+next     1.307;
+
+1.307
+date     92.07.17.16.00.42;  author mani;  state Exp;
+branches ;
+next     1.306;
+
+1.306
+date     92.07.16.13.24.19;  author bmiller;  state Exp;
+branches ;
+next     1.305;
+
+1.305
+date     92.07.14.08.37.18;  author bmiller;  state Exp;
+branches ;
+next     1.304;
+
+1.304
+date     92.07.01.11.12.19;  author bmiller;  state Exp;
+branches ;
+next     1.303;
+
+1.303
+date     92.06.29.16.17.32;  author bmiller;  state Exp;
+branches ;
+next     1.302;
+
+1.302
+date     92.06.29.16.16.55;  author bmiller;  state Exp;
+branches ;
+next     1.301;
+
+1.301
+date     92.06.29.16.16.07;  author bmiller;  state Exp;
+branches ;
+next     1.300;
+
+1.300
+date     92.06.29.16.15.18;  author bmiller;  state Exp;
+branches ;
+next     1.299;
+
+1.299
+date     92.06.29.16.14.09;  author bmiller;  state Exp;
+branches ;
+next     1.298;
+
+1.298
+date     92.06.29.16.12.52;  author bmiller;  state Exp;
+branches ;
+next     1.297;
+
+1.297
+date     92.06.29.16.11.44;  author bmiller;  state Exp;
+branches ;
+next     1.296;
+
+1.296
+date     92.06.01.21.11.32;  author jhh;  state Exp;
+branches ;
+next     1.295;
+
+1.295
+date     92.05.15.17.02.19;  author kupfer;  state Exp;
+branches ;
+next     1.294;
+
+1.294
+date     92.05.14.14.56.30;  author voelker;  state Exp;
+branches ;
+next     1.293;
+
+1.293
+date     92.04.30.09.28.22;  author kupfer;  state Exp;
+branches ;
+next     1.292;
+
+1.292
+date     92.04.22.16.32.02;  author ouster;  state Exp;
+branches ;
+next     1.291;
+
+1.291
+date     92.04.13.13.56.54;  author elm;  state Exp;
+branches ;
+next     1.290;
+
+1.290
+date     92.04.13.13.44.18;  author elm;  state Exp;
+branches ;
+next     1.289;
+
+1.289
+date     92.04.06.15.59.38;  author kupfer;  state Exp;
+branches ;
+next     1.288;
+
+1.288
+date     92.03.18.15.00.59;  author bmiller;  state Exp;
+branches ;
+next     1.287;
+
+1.287
+date     92.03.18.13.56.32;  author elm;  state Exp;
+branches ;
+next     1.286;
+
+1.286
+date     92.03.16.09.16.24;  author bmiller;  state Exp;
+branches ;
+next     1.285;
+
+1.285
+date     92.03.16.09.15.50;  author bmiller;  state Exp;
+branches ;
+next     1.284;
+
+1.284
+date     92.03.16.09.14.28;  author bmiller;  state Exp;
+branches ;
+next     1.283;
+
+1.283
+date     92.03.16.09.14.04;  author bmiller;  state Exp;
+branches ;
+next     1.282;
+
+1.282
+date     92.03.16.09.11.38;  author bmiller;  state Exp;
+branches ;
+next     1.281;
+
+1.281
+date     92.03.16.07.43.17;  author bmiller;  state Exp;
+branches ;
+next     1.280;
+
+1.280
+date     92.03.13.19.16.23;  author eklee;  state Exp;
+branches ;
+next     1.279;
+
+1.279
+date     92.03.13.17.46.26;  author kupfer;  state Exp;
+branches ;
+next     1.278;
+
+1.278
+date     92.03.11.12.51.07;  author voelker;  state Exp;
+branches ;
+next     1.277;
+
+1.277
+date     92.02.28.08.12.16;  author ouster;  state Exp;
+branches ;
+next     1.276;
+
+1.276
+date     92.02.26.14.11.30;  author bmiller;  state Exp;
+branches ;
+next     1.275;
+
+1.275
+date     92.02.26.14.08.35;  author bmiller;  state Exp;
+branches ;
+next     1.274;
+
+1.274
+date     92.02.23.15.05.25;  author kupfer;  state Exp;
+branches ;
+next     1.273;
+
+1.273
+date     92.02.20.10.43.05;  author mgbaker;  state Exp;
+branches ;
+next     1.272;
+
+1.272
+date     92.02.19.11.26.23;  author mgbaker;  state Exp;
+branches ;
+next     1.271;
+
+1.271
+date     92.02.18.14.36.11;  author bmiller;  state Exp;
+branches ;
+next     1.270;
+
+1.270
+date     92.02.18.14.35.26;  author bmiller;  state Exp;
+branches ;
+next     1.269;
+
+1.269
+date     92.02.18.14.34.35;  author bmiller;  state Exp;
+branches ;
+next     1.268;
+
+1.268
+date     92.02.18.14.32.49;  author bmiller;  state Exp;
+branches ;
+next     1.267;
+
+1.267
+date     92.02.18.14.28.23;  author bmiller;  state Exp;
+branches ;
+next     1.266;
+
+1.266
+date     92.02.17.09.13.08;  author ouster;  state Exp;
+branches ;
+next     1.265;
+
+1.265
+date     92.02.14.12.33.59;  author kupfer;  state Exp;
+branches ;
+next     1.264;
+
+1.264
+date     92.02.13.14.08.47;  author jhh;  state Exp;
+branches ;
+next     1.263;
+
+1.263
+date     92.02.13.13.15.08;  author jhh;  state Exp;
+branches ;
+next     1.262;
+
+1.262
+date     92.02.10.15.56.45;  author jhh;  state Exp;
+branches ;
+next     1.261;
+
+1.261
+date     92.02.07.13.45.07;  author bmiller;  state Exp;
+branches ;
+next     1.260;
+
+1.260
+date     92.02.06.16.22.11;  author ouster;  state Exp;
+branches ;
+next     1.259;
+
+1.259
+date     92.02.05.18.12.10;  author shirriff;  state Exp;
+branches ;
+next     1.258;
+
+1.258
+date     92.02.03.13.40.13;  author ouster;  state Exp;
+branches ;
+next     1.257;
+
+1.257
+date     92.02.03.11.36.46;  author ouster;  state Exp;
+branches ;
+next     1.256;
+
+1.256
+date     92.02.03.08.03.25;  author bmiller;  state Exp;
+branches ;
+next     1.255;
+
+1.255
+date     92.01.27.15.29.29;  author ouster;  state Exp;
+branches ;
+next     1.254;
+
+1.254
+date     92.01.22.14.20.30;  author ouster;  state Exp;
+branches ;
+next     1.253;
+
+1.253
+date     92.01.22.13.12.28;  author ouster;  state Exp;
+branches ;
+next     1.252;
+
+1.252
+date     92.01.21.14.36.15;  author bmiller;  state Exp;
+branches ;
+next     1.251;
+
+1.251
+date     92.01.21.13.18.34;  author ss;  state Exp;
+branches ;
+next     1.250;
+
+1.250
+date     92.01.21.12.56.11;  author bmiller;  state Exp;
+branches ;
+next     1.249;
+
+1.249
+date     92.01.09.23.14.45;  author kupfer;  state Exp;
+branches ;
+next     1.248;
+
+1.248
+date     92.01.09.23.06.32;  author kupfer;  state Exp;
+branches ;
+next     1.247;
+
+1.247
+date     92.01.08.11.49.43;  author jhh;  state Exp;
+branches ;
+next     1.246;
+
+1.246
+date     91.12.13.13.15.41;  author mottsmth;  state Exp;
+branches ;
+next     1.245;
+
+1.245
+date     91.12.12.12.02.45;  author kupfer;  state Exp;
+branches ;
+next     1.244;
+
+1.244
+date     91.12.11.13.28.31;  author ouster;  state Exp;
+branches ;
+next     1.243;
+
+1.243
+date     91.12.01.15.44.35;  author tve;  state Exp;
+branches ;
+next     1.242;
+
+1.242
+date     91.11.25.15.25.50;  author pmchen;  state Exp;
+branches ;
+next     1.241;
+
+1.241
+date     91.11.25.15.23.33;  author pmchen;  state Exp;
+branches ;
+next     1.240;
+
+1.240
+date     91.11.22.15.02.42;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@User aliases, mailing lists, etc.
+@
+
+
+1.373
+log
+@adduser: add asah to "sprite-users".
+@
+text
+@#
+# Sprite mail alias file
+#
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# !!! THIS FILE IS UNDER RCS REVISION CONTROL                           !!!
+# !!! PLEASE: CHECK THIS FILE OUT, DO YOUR CHANGES AND CHECK IT BACK IN !!!
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#
+
+allmsgs:allmsgs@@ucbvax.Berkeley.EDU
+csmsgs:csmsgs@@ucbvax.Berkeley.EDU
+#decode: "|/usr/bin/uudecode"  see bks
+dumper: :include:/sprite/admin/dump/dumpalias
+operator:operator@@sequoia.Berkeley.EDU
+peterv:peterv@@ginger.CS.Berkeley.EDU
+root:spriters,bmiller
+admin:bmiller
+msgs: msgs@@ginger
+sys: sys@@ginger.CS.Berkeley.EDU
+nobody: /dev/null
+sklower:sklower@@renoir.Berkeley.EDU
+postmaster: root
+mailer-daemon: postmaster
+daemon:root
+#
+# SPUR project mailing lists (mostly forwarded to ginger)
+#
+spur-retro: spur-retro@@ginger
+#
+spur:	spur@@ginger
+# SPUR Staff
+spur-staff: spur-staff@@ginger
+# SPUR Hardware list
+# spur-h-folder@@ucbarpa: /h/spur/spur-h-messages
+spur-h: spur-h@@ginger
+spur-chip: spur-chip@@ginger
+# SPUR Diagnostics Group
+spur-d: spur-d@@ginger
+# SPUR Board lunch group
+spur-lunch: spur-lunch@@ginger
+# SPUR simulator users
+spur-sim: spur-sim@@ginger
+# SPUR Software list
+spur-s:	spur-s@@ginger
+# SPUR operating system ("Sprite") list
+# sprite-log is a way to mail directly to the log without copying humans.
+spur-os:   sprite
+bugs:      spriters, sprite-log, margo@@postgres
+sprite:    spriters, sprite-log
+spriters:  ouster, arc, douglis, deboor, mendel, mgbaker,
+	jhh, shirriff, eklee, pmchen-spritefolder, bmiller, theresa@@ginger,
+	elm, kupfer, mottsmth, dlong, voelker, mani, secor
+# sprite-fans is for followers of sprite who don't care about programs and
+# such, but want to hear about TRs and other worthy news.
+sprite-fans: all-sprite-users, vijay@@mica, kevin@@mimsy.umd.edu, 
+	paris@@sun1.cs.uh.edu, lauer@@btc.kodak.com, raphael@@ms.uky.edu,
+	theimer.pa@@Xerox.COM, amnon@@shum.huji.ac.il, zorn@@ginger,
+	steve@@umiacs.umd.edu, pat@@orac.pgh.pa.us, welch@@parc.xerox.com,
+	jtv@@santra.hut.fi, iwamoto@@cavax3.cis.canon.co.jp, 
+	swansonc@@acc.stolaf.edu, kcs@@cc.purdue.edu,
+	ryan@@berlin-gw.diag.stratus.com,
+	Pierre-Louis.Neumann@@inria.fr, shsieh@@aerospace.aero.org
+
+# separate sprite-users into frequent and casual users.
+all-sprite-users: sprite-users, pattrsn, hilfingr, fwo, david, 
+	rafael, af, jamin, randi, fixen,
+        funk, sonia, chou, dougj, drewes, 
+	postgres-sprite-users@@postgres, sahay,
+	sprite-ucsc, sprite-cory, sprite-parc
+
+sprite-users: sprite, sah, pfile, rquiros, bedk, lucco, klier, kyi, asah,
+	ghan, aresho, tea, wchen, atctemp,
+	ramon, dahlin, kkeeton, bmah, sahai, secor,
+	olson, colinp,
+	jolly, tester, diane, rywang,
+	gibbens, paxson, asplos, isca, voelker, smoot,
+	juels, clarsen, staelin,
+	forrest, deprit, asami,
+	gunter, vahdat, mani, dan, torek, gibson,
+	msilva, rohit, bks, joel, tonys, strange, ddgarcia,
+	dc, bertrand, dekai, hzhang, asw,
+	wallack, sethg, wallack, mib, negri, 
+	anvari, doong, andre, dfb, flb,
+	krste, hohmeyer, tockey, kriguer, chou,
+	stolcke, alc, randy, bmiller, culler, johnw, dedood,    
+	elm, fubar, schauser, glass, vojin, chiueh, ss, dlong,
+	tea@@jericho, tve, hubertc
+
+all-sprite-users-request: sprite-users-request
+sprite-users-request: spriters
+owner-all-sprite-users: owner-sprite-users
+owner-sprite-users: spriters
+
+sprite-log: "|/users/sprite/cmds.gen/logger sprite log 'Sprite Log'"
+sprite-log-notification: nobody
+sprite-log-test: "|/users/sprite/cmds.gen/logger.test sprite log-test 'Sprite Log'"
+sprite-log-test-notification: nobody
+owner-sprite-log: jhh
+
+# old alias
+sprite-secretary: sprite-request
+
+sprite-request: bmiller
+sprite-ucsc: darrell, gunjan, noshpitz, jeffk, golding
+sprite-cory: lutz 
+sprite-parc: welch@@parc.xerox.com
+
+# just for ds3100 owners
+ds3100-owners: culler,elm,eklee,tve,jhh,pmchen,randy,ouster,shirriff,alc,bmiller,pattrsn,douglis,vojin,mottsmth
+# just for sun4 owners
+sun4-owners: mgbaker, tve, jhh, mendel, eklee, elm, dedood,
+	sahay, ouster, kupfer
+
+# kernel hackers
+kernel-hackers: spriters, sullivan, alc
+#
+# SPUR instruction set list
+# spur-is-folder@@ucbarpa: /h/spur/spur-is-messages
+# spur-is-folder: spur-is-folder@@ucbarpa
+spur-is: larus, zorn, taylor, hilfingr, jkf, luigi, samples
+#
+# SPUR N2 users and problem log
+# spur-n2-folder@@ucbarpa: /h/spur/spur-n2-messages
+# spur-n2-folder: spur-n2-folder@@ucbarpa.Berkeley.EDU
+spur-n2: hansen, david, kong, eggers
+# SPUR hangers on.  For the moment, here to debug mailing list.
+spur-extra:sklower,mayo,fwo,gedye
+# Sprite emacs users
+sprite-emacs-users: douglis, luigi, alc, culler, schauser, elm,
+	kupfer, mottsmth, sethg, rab, gunter
+sprite-emacs-users-request: kupfer
+owner-sprite-emacs-users: kupfer
+# Gnu C++ users
+g++-users: msilva, tve, hohmeyer, eklee, rab
+#
+# XPRS aliases
+xprs-profs: xprs-profs@@ginger
+raid-folder: /raid/mail/hw-folder
+xprs-hw: raid
+raid: randy, pattrsn@@ginger, pmchen, gibson@@ginger, lutz, eklee, theresa@@ginger,
+	bmiller, mendel, alc, elm, drewes@@ginger, margo@@postgres,
+	raid-folder, chiueh, ss, jhh, pfile, shirriff, joel, mani,
+	vahdat, tea@@jericho
+xprs-db: xprs-db@@ginger
+xprs-os: xprs-os@@ginger
+xprs-other: xprs-other@@ginger
+xprs: xprs@@ginger
+#
+# SPUR personal aliases
+pattrsn:pattrsn@@ginger.CS.Berkeley.EDU
+ousterhout:ouster
+ouster:\ouster, ouster-log@@ginger.CS.Berkeley.EDU
+eklee:eklee@@ginger.CS.Berkeley.EDU
+elm:elm@@ginger.CS.Berkeley.EDU
+eggers:eggers@@ginger.CS.Berkeley.EDU
+gibson-local:\gibson
+gibson:gibson-local, gibson@@ginger.CS.Berkeley.EDU
+pmchen-spritefolder:/users/pmchen/tmp/spritembox
+garth:gibson
+brent:welch@@parc.xerox.com
+welch:welch@@parc.xerox.com
+owner-bmiller: \bmiller
+pmchen:pmchen-local@@ginger.CS.Berkeley.EDU, pmchen-local
+pmchen-local: \pmchen
+owner-douglis-local: \douglis
+owner-douglis: \douglis
+douglis-local: \douglis
+douglis: douglis@@mitl.com
+mayo:mayo@@ginger.CS.Berkeley.EDU
+mlgray:mgbaker
+#andrew:andrew@@ginger.CS.Berkeley.EDU
+zorn:zorn@@ginger.CS.Berkeley.EDU
+markhill:markhill@@ginger.CS.Berkeley.EDU
+hill:markhill@@ginger.CS.Berkeley.EDU
+larus:larus@@ginger.CS.Berkeley.EDU
+david:david@@ginger.CS.Berkeley.EDU
+gedye:gedye@@ginger.CS.Berkeley.EDU
+deboor:adam%bsw.uucp@@uunet.uu.net
+wood:david
+lutz:lutz@@zworykin.Berkeley.EDU
+jhartman:jhh
+baker:mgbaker
+ethan:elm
+shiriff:shirriff
+shirrif:shirriff
+sheriff:shirriff
+sherriff:shirriff
+# mail to platinum is bouncing, let ginger queue it!
+dougj:dougj@@ginger.CS.Berkeley.EDU
+johnson:dougj
+hilfingr:hilfingr@@ginger.CS.Berkeley.EDU
+bk:bk@@ginger.CS.Berkeley.EDU
+wookkoh:wookkoh@@ginger.CS.Berkeley.EDU
+luigi:luigi@@ginger.CS.Berkeley.EDU
+taxlaw:taxlaw@@ginger.CS.Berkeley.EDU
+ho:ho@@ginger.CS.Berkeley.EDU
+bennett:bennett@@ginger.CS.Berkeley.EDU
+kong:kong@@ginger.CS.Berkeley.EDU
+cori:cori@@ginger.CS.Berkeley.EDU
+gaetano:gaetano@@ginger.CS.Berkeley.EDU
+fwo:fwo@@ginger.CS.Berkeley.EDU
+chang:chang@@ginger.CS.Berkeley.EDU
+taylor:taylor@@ginger.CS.Berkeley.EDU
+hartman:jhh
+daebum:daebum@@ginger.CS.Berkeley.EDU
+betten:betten@@ginger.CS.Berkeley.EDU
+castillo:castillo@@ginger.CS.Berkeley.EDU
+vanroy:vanroy@@ginger.CS.Berkeley.EDU
+carlton:carlton@@ginger.CS.Berkeley.EDU
+lacy:lacy@@ginger.CS.Berkeley.EDU
+magic:magic@@ginger.CS.Berkeley.EDU
+cad:cad@@ginger.CS.Berkeley.EDU
+guest:guest@@ginger.CS.Berkeley.EDU
+kupfer:\kupfer,kupfer@@eng.sun.com
+# the unconverted masses
+dkjeong:dkjeong@@kilby.Berkeley.EDU
+jensen:jensen@@ginger.CS.Berkeley.EDU
+hu:hu@@ernie.Berkeley.EDU
+hansen:hansen@@ucbarpa.Berkeley.EDU
+glenn:glenn@@ernie.Berkeley.EDU
+sharad:sharad@@ucbarpa.Berkeley.EDU
+richd:richd@@ucbarpa.Berkeley.EDU
+jkf:jkf@@franz.uucp
+samples:samples@@cs.Berkeley.EDU
+baden:baden@@ucbarpa.Berkeley.EDU
+sechrest:sechrest@@eecs.umich.edu
+gusella:gusella@@cs.Berkeley.EDU
+kathya:kathya@@volta.Berkeley.EDU
+mottsmith:mottsmth
+mott-smith:mottsmth
+flaster:thshadow@@athena.mit.edu
+tve:tve@@ginger.cs.berkeley.edu
+jclee:jclee@@next.com
+#
+# other aliases
+#
+theresa:theresa@@ginger.CS.Berkeley.EDU
+deirdre:deirdre@@janus.Berkeley.EDU
+# Patterson guest - see gibson
+ns:ns@@ginger.CS.Berkeley.EDU
+eugene:eugene@@ginger.CS.Berkeley.EDU
+
+dacosta:dacosta@@janus.Berkeley.EDU
+smith:smith@@cs.Berkeley.EDU
+
+# csgrad-social mailing list (Maintained by elm@@sprite)
+# NOTE: the list was split because it was getting too big (over 1000
+# characters seems to be a problem).
+csgrad-social: csgrad-social-1,csgrad-social-2
+csgrad-social-request: elm@@sprite
+owner-csgrad-social: elm@@sprite
+csgrad-social-1: :include:/users/elm/Mail/lists/csgrad-social.1
+csgrad-social-2: :include:/users/elm/Mail/lists/csgrad-social.2
+
+# flag football mailing list (Maintained by elm@@sprite)
+flag-football: :include:/users/elm/Mail/lists/flag-football-list
+flag-football-request: elm@@sprite
+# softball mailing list (maintained by jhh@@sprite)
+softball: :include:/users/jhh/Mail/lists/softball
+softball-request: jhh@@sprite
+
+# cs150 tas (Fall 1990)
+cs150tas: wayne@@bandit, hsheng@@ic, hgkim@@ernie, hoch@@sim, paola@@cory,
+	link@@cory, flb@@cory, vincze@@janus, randy@@sprite, tang@@ocf
+
+
+# CS252 class aliases (Spring 1991), maintained by Schauser
+cs252: :include:/pcs/c252/class.email 
+
+# CS254 class aliases (Spring 1991), maintained by Bertrand
+cs254: :include:/users/bertrand/.cs254.aliases
+
+# CS298-7 class aliases (Spring 1991), maintained by Sethg
+plg: cs298-7
+cs298-7: :include:/users/sethg/.plg.alias
+
+#
+# CS298-15 Parallel Computer Architecture Seminar (FL 1990)
+# Maintained by schauser@@sprite
+#
+#pararch: :include:/users/schauser/pararch.alias
+
+#
+# OS lunch run by Tom Anderson (tea@@jericho)
+# List currently maintained by elm@@sprite
+#
+oslunch-request: tea@@cs, elm@@cs
+oslunch: arvindk@@cs, rywang@@cs, markb@@cs, ghorm@@cs, kkeeton@@cs,
+	piaw@@centralsparc, jtkohl@@cs, mottsmth@@cs, mao@@cs, 
+	eklee@@cs, margo@@cs, jhh@@cs, hartzog@@cory, mgbaker@@cs,
+	ouster@@cs, tea@@cs, chiueh@@cs, sullivan@@cs, 
+	bostic@@cs, harry@@cs, elm@@cs, ramon@@cs, glass@@cs,
+	dfb@@cs, paxson@@cs
+#
+# Sequoia hardware group (maintained by elm@@sprite)
+#
+
+s2k-hw: alc@@cs,dahlin@@cs,elm@@cs,joel@@cs,kkeeton@@cory,paxson@@cs,randy@@cs,
+	pattrsn@@cs,ss@@cs
+
+#
+# NTU-252 Long-distance 252 :-)
+# Maintained by schauser@@sprite
+#
+ntu: :include:/users/schauser/ntu.email
+
+#
+# Mike's basketball list
+# Maintained by flaster@@sprite
+# Now maintained by pfile@@sprite (8/5/91)
+# Now maintained by ajay@@cs (9/1/92)
+#
+basketball: basketball@@miro
+basketball-request: ajay@@cs
+
+#
+# Ted's volleyball & nfl lists
+# Maintained by kyi@@sprite
+#
+volleyball: :include:/users/kyi/mail/volleyball.alias
+nfl: :include:/users/kyi/mail/nfl.alias
+
+#
+# Frameusers Mailing list 
+# Maintained by ss@@ginger
+#
+frame-users: :include:/users/ss/Mail/frame.alias
+
+#
+# Parallel Computing Systems group aliases (maintained by tve@@sprite)
+#
+tic-group:	tic-group@@ginger
+tic-log:	pcs-log
+tic-bugs:	tic-bugs@@ginger
+tic:		tic@@ginger
+btm-group:	johnw, tve, bedk, krste, bertrand, dedood, schauser
+btm:		pcs-log, btm-group
+pcs-group:	tic-group, btm-group
+pcs:		pcs-log, pcs-group
+id-bugs:	id-bugs@@ginger
+id-io:		id-io@@ginger
+#	Logging program
+pcs-log:	"|/pcs/log/logger pcs log 'PCS Log'"
+pcs-log-notification: tve@@ginger
+owner-pcs-log: tve@@ginger
+
+#
+# Tcl mailing list (maintained by ouster@@sprite)
+#
+tcl: comp-lang-tcl@@ucbvax.berkeley.edu
+tcl-from-news: :include:/users/ouster/misc/tcl.alias
+tcl-admin: ouster
+tcl-request: ouster
+
+#
+# Mailing list for Grace Murray Hopper Award Committee
+# (maintained by ouster@@sprite)
+#
+gmh: gls@@think.com, redell@@src.dec.com, danny@@think.com,
+	frantz@@dssdev.enet.dec.com, ouster
+
+#
+# Perl users mailing list maintained by jhh@@sprite.
+#
+perl: :include:/users/jhh/Mail/lists/perl
+
+#
+# ICON-92 programm committee members.
+#
+no: mgbaker, margo@@postgres
+
+#
+# Aliases for CS 60b Spring 1992, maintained by ouster@@sprite
+#
+60btas: cihula@@cory, zeina@@cory, joel@@ginger, srinivas@@euler, secan@@cory,
+	ouster
+60breaders: yua@@cory, c164-hr@@ara, c162-ay@@danube, ronald@@cory,
+	labb-1ac@@web, c164-hs@@ara, secan@@cory, ouster
+
+#
+# Alias for tertiary storage group
+# Maintained by elm@@cs
+#
+tertiary: elm@@cs, dahlin@@cs, joel@@cs, alc@@cs, rywang@@cs, patterson@@cs, tea@@cs,
+	randy@@cs, stonebraker@@cs, lutz@@cs, lubbers@@postgres, forrest@@postgres,
+	pmchen@@cs
+tertiary-owner: elm@@cs
+@
+
+
+1.372
+log
+@added pmchen to tertiary
+@
+text
+@d71 1
+a71 1
+sprite-users: sprite, sah, pfile, rquiros, bedk, lucco, klier, kyi, 
+@
+
+
+1.371
+log
+@got rid of bogus entry
+@
+text
+@d385 2
+a386 1
+	randy@@cs, stonebraker@@cs, lutz@@cs, lubbers@@postgres, forrest@@postgres
+@
+
+
+1.370
+log
+@deleteuser: remove arvindk.
+@
+text
+@d68 1
+a68 1
+	cs292i, postgres-sprite-users@@postgres, sahay,
+@
+
+
+1.369
+log
+@deleteuser: remove ho.
+@
+text
+@d75 1
+a75 1
+	jolly, tester, diane, arvindk, rywang,
+@
+
+
+1.368
+log
+@deleteuser: remove whitcomb.
+@
+text
+@d65 1
+a65 1
+all-sprite-users: sprite-users, ho, pattrsn, hilfingr, fwo, david, 
+d120 1
+a120 1
+spur-is: larus, zorn, ho, taylor, hilfingr, jkf, luigi, samples
+d129 1
+a129 1
+sprite-emacs-users: douglis, luigi, ho, alc, culler, schauser, elm,
+@
+
+
+1.367
+log
+@deleteuser: remove slee.
+@
+text
+@d66 1
+a66 1
+	rafael, af, jamin, randi, whitcomb, fixen,
+@
+
+
+1.366
+log
+@deleteuser: remove mitch.
+@
+text
+@@
+
+
+1.365
+log
+@deleteuser: remove gino.
+@
+text
+@@
+
+
+1.364
+log
+@deleteuser: remove threadid.
+@
+text
+@@
+
+
+1.363
+log
+@deleteuser: remove hchang.
+@
+text
+@@
+
+
+1.362
+log
+@deleteuser: remove casotto.
+@
+text
+@@
+
+
+1.361
+log
+@deleteuser: remove cad.
+@
+text
+@@
+
+
+1.360
+log
+@deleteuser: remove beards.
+@
+text
+@@
+
+
+1.359
+log
+@deleteuser: remove ywang.
+@
+text
+@@
+
+
+1.358
+log
+@deleteuser: remove wensel.
+@
+text
+@@
+
+
+1.357
+log
+@deleteuser: remove sp.
+@
+text
+@@
+
+
+1.356
+log
+@deleteuser: remove luis.
+@
+text
+@@
+
+
+1.355
+log
+@deleteuser: remove kemnitz.
+@
+text
+@@
+
+
+1.354
+log
+@deleteuser: remove hong.
+@
+text
+@@
+
+
+1.353
+log
+@deleteuser: remove choi.
+@
+text
+@@
+
+
+1.352
+log
+@deleteuser: remove ong.
+@
+text
+@@
+
+
+1.351
+log
+@deleteuser: remove mike.
+@
+text
+@@
+
+
+1.350
+log
+@deleteuser: remove mao.
+@
+text
+@@
+
+
+1.349
+log
+@deleteuser: remove jhingran.
+@
+text
+@@
+
+
+1.348
+log
+@deleteuser: remove goh.
+@
+text
+@@
+
+
+1.347
+log
+@deleteuser: remove cimarron.
+@
+text
+@@
+
+
+1.346
+log
+@deleteuser: remove schloss.
+@
+text
+@@
+
+
+1.345
+log
+@deleteuser: remove wlo.
+@
+text
+@@
+
+
+1.344
+log
+@deleteuser: remove anpc.
+@
+text
+@d85 1
+a85 1
+	stolcke, alc, randy, bmiller, culler, johnw, dedood, wlo,   
+@
+
+
+1.343
+log
+@deleteuser: remove marc.
+@
+text
+@@
+
+
+1.342
+log
+@deleteuser: remove mogul.
+@
+text
+@@
+
+
+1.341
+log
+@deleteuser: remove octtools.
+@
+text
+@@
+
+
+1.340
+log
+@deleteuser: remove zimet.
+@
+text
+@@
+
+
+1.339
+log
+@deleteuser: remove jsgf.
+@
+text
+@d67 1
+a67 1
+        funk, sonia, chou, dougj, drewes, zimet, 
+@
+
+
+1.338
+log
+@deleteuser: remove horizon.
+@
+text
+@d74 1
+a74 1
+	jsgf, olson, colinp,
+@
+
+
+1.337
+log
+@deleteuser: remove dusseau.
+@
+text
+@d71 2
+a72 1
+sprite-users: sprite, sah, pfile, rquiros, bedk, lucco, klier, kyi, ghan, aresho, tea, wchen, atctemp,
+d82 1
+a82 1
+	wallack, sethg, wallack, mib, negri, horizon,
+@
+
+
+1.336
+log
+@deleteuser: remove manocha.
+@
+text
+@d72 1
+a72 1
+	dusseau, ramon, dahlin, kkeeton, bmah, sahai, secor,
+@
+
+
+1.335
+log
+@deleteuser: remove rbk.
+@
+text
+@d82 1
+a82 1
+	anvari, doong, andre, manocha, dfb, dfb, flb,
+@
+
+
+1.334
+log
+@deleteuser: remove daniels.
+@
+text
+@d85 1
+a85 1
+	elm, rbk, fubar, schauser, glass, vojin, chiueh, ss, dlong,
+@
+
+
+1.333
+log
+@deleteuser: remove cheriton.
+@
+text
+@d80 1
+a80 1
+	dc, bertrand, dekai, hzhang, daniels, asw,
+@
+
+
+1.332
+log
+@deleteuser: remove seth.
+@
+text
+@d66 1
+a66 1
+	rafael, cheriton, af, jamin, randi, whitcomb, fixen,
+@
+
+
+1.331
+log
+@added forward for jclee to jclee@@next.com
+@
+text
+@d66 1
+a66 1
+	rafael, cheriton, af, jamin, randi, whitcomb, seth, fixen,
+@
+
+
+1.330
+log
+@deleteuser: remove jclee.
+@
+text
+@d85 1
+a85 1
+	elm, rbk, fubar, schauser, glass, vojin, chiueh, ss, jclee, dlong,
+@
+
+
+1.329
+log
+@Added people to the tertiary@@sprite list.
+@
+text
+@d232 1
+@
+
+
+1.328
+log
+@deleteuser: remove rothman.
+@
+text
+@d383 1
+a383 1
+	randy@@cs, stonebraker@@cs lutz@@cs lubbers@@postgres
+@
+
+
+1.327
+log
+@deleteuser: remove luigi.
+@
+text
+@d67 1
+a67 1
+        funk, sonia, chou, dougj, drewes, zimet, rothman,
+@
+
+
+1.326
+log
+@deleteuser: remove halstead.
+@
+text
+@d67 1
+a67 1
+        funk, sonia, chou, luigi, dougj, drewes, zimet, rothman,
+@
+
+
+1.325
+log
+@deleteuser: remove yelick.
+@
+text
+@d76 1
+a76 1
+	halstead, juels, clarsen, staelin,
+@
+
+
+1.324
+log
+@deleteuser: remove vdlinden.
+@
+text
+@d76 1
+a76 1
+	halstead, juels, clarsen, yelick, staelin,
+@
+
+
+1.323
+log
+@deleteuser: remove barsky.
+@
+text
+@d76 1
+a76 1
+	halstead, juels, clarsen, vdlinden, yelick, staelin,
+@
+
+
+1.322
+log
+@deleteuser: remove pasquale.
+@
+text
+@d79 1
+a79 1
+	msilva, rohit, bks, joel, tonys, strange, barsky, ddgarcia,
+@
+
+
+1.321
+log
+@Added 2 names to tertiary alias.
+@
+text
+@d86 1
+a86 1
+	pasquale, tea@@jericho, tve, hubertc
+@
+
+
+1.320
+log
+@added tertiary storage group aliases.
+@
+text
+@d383 1
+a383 1
+	randy@@cs, stonebraker@@cs
+@
+
+
+1.319
+log
+@adduser: add atctemp to "sprite-users".
+@
+text
+@d377 8
+@
+
+
+1.318
+log
+@Deleted Rob Quiros from the raid@@sprite alias.
+@
+text
+@d71 1
+a71 1
+sprite-users: sprite, sah, pfile, rquiros, bedk, lucco, klier, kyi, ghan, aresho, tea, wchen,
+@
+
+
+1.317
+log
+@Added new user.
+@
+text
+@d141 1
+a141 1
+	raid-folder, chiueh, ss, jhh, rquiros, pfile, shirriff, joel, mani,
+@
+
+
+1.316
+log
+@deleteuser: remove downey.
+@
+text
+@d86 1
+a86 1
+	pasquale, tea@@jericho, tve
+@
+
+
+1.315
+log
+@took myself off of spriters - ss
+@
+text
+@d71 1
+a71 1
+sprite-users: sprite, sah, pfile, rquiros, bedk, lucco, klier, kyi, downey, ghan, aresho, tea, wchen,
+@
+
+
+1.314
+log
+@adduser: add wchen to "sprite-users".
+@
+text
+@d52 1
+a52 1
+	elm, kupfer, mottsmth, ss, dlong, voelker, mani, secor
+d104 1
+a104 1
+sprite-cory: lutz, ss
+@
+
+
+1.313
+log
+@Changed basketball list owner to ajay@@cs, and forwarded alias to
+basketball@@miro.
+@
+text
+@d71 1
+a71 1
+sprite-users: sprite, sah, pfile, rquiros, bedk, lucco, klier, kyi, downey, ghan, aresho, tea,
+@
+
+
+1.312
+log
+@removed cmtice and stevel
+@
+text
+@d309 1
+d311 2
+a312 2
+basketball: :include:/users/pfile/basketball.alias
+basketball-request: pfile@@sprite
+@
+
+
+1.311
+log
+@adduser: add tea to "sprite-users".
+@
+text
+@d73 1
+a73 1
+	stevel, cmtice, jsgf, olson, colinp,
+@
+
+
+1.310
+log
+@Start forwarding my mail to Sun.
+@
+text
+@d71 1
+a71 1
+sprite-users: sprite, sah, pfile, rquiros, bedk, lucco, klier, kyi, downey, ghan, aresho,
+@
+
+
+1.309
+log
+@made myself owner-sprite-log
+@
+text
+@d213 1
+@
+
+
+1.308
+log
+@made alias for elm point to ginger
+@
+text
+@d97 1
+a97 1
+owner-sprite-log: kupfer
+@
+
+
+1.307
+log
+@added secor to spriters
+@
+text
+@d153 1
+@
+
+
+1.306
+log
+@adduser: add aresho to "sprite-users".
+@
+text
+@d52 1
+a52 1
+	elm, kupfer, mottsmth, ss, dlong, voelker, mani
+@
+
+
+1.305
+log
+@adduser: add ghan to "sprite-users".
+@
+text
+@d71 1
+a71 1
+sprite-users: sprite, sah, pfile, rquiros, bedk, lucco, klier, kyi, downey, ghan,
+@
+
+
+1.304
+log
+@adduser: add downey to "sprite-users".
+@
+text
+@d71 1
+a71 1
+sprite-users: sprite, sah, pfile, rquiros, bedk, lucco, klier, kyi, downey,
+@
+
+
+1.303
+log
+@deleteuser: remove gedye.
+@
+text
+@d71 1
+a71 1
+sprite-users: sprite, sah, pfile, rquiros, bedk, lucco, klier, kyi,
+@
+
+
+1.302
+log
+@deleteuser: remove oscarsso.
+@
+text
+@@
+
+
+1.301
+log
+@deleteuser: remove rap.
+@
+text
+@d81 1
+a81 1
+	wallack, sethg, wallack, mib, oscarsso, negri, horizon,
+@
+
+
+1.300
+log
+@deleteuser: remove jon.
+@
+text
+@d67 1
+a67 1
+        funk, rap, sonia, chou, luigi, dougj, drewes, zimet, rothman,
+@
+
+
+1.299
+log
+@deleteuser: remove subramon.
+@
+text
+@@
+
+
+1.298
+log
+@deleteuser: remove heatherh.
+@
+text
+@d75 1
+a75 1
+	subramon, gibbens, paxson, asplos, isca, voelker, smoot,
+@
+
+
+1.297
+log
+@deleteuser: remove vincze.
+@
+text
+@d68 1
+a68 1
+	cs292i, postgres-sprite-users@@postgres, heatherh, sahay,
+@
+
+
+1.296
+log
+@cleaned up spriters
+@
+text
+@d72 1
+a72 1
+	dusseau, ramon, vincze, dahlin, kkeeton, bmah, sahai, secor,
+@
+
+
+1.295
+log
+@Forward tve's mail to ginger.  
+ginger.berkeley -> ginger.cs.berkeley.
+@
+text
+@d52 1
+a52 1
+	elm, kupfer, mottsmth, ss, rab, dlong, vahdat, voelker, mani
+@
+
+
+1.294
+log
+@deleteuser: remove digres.
+@
+text
+@d15 1
+a15 1
+peterv:peterv@@ginger.Berkeley.EDU
+d19 1
+a19 1
+sys: sys@@ginger.Berkeley.EDU
+d149 1
+a149 1
+pattrsn:pattrsn@@ginger.Berkeley.EDU
+d151 3
+a153 3
+ouster:\ouster, ouster-log@@ginger.berkeley.EDU
+eklee:eklee@@ginger.Berkeley.EDU
+eggers:eggers@@ginger.Berkeley.EDU
+d155 1
+a155 1
+gibson:gibson-local, gibson@@ginger.Berkeley.EDU
+d161 1
+a161 1
+pmchen:pmchen-local@@ginger.Berkeley.EDU, pmchen-local
+d167 1
+a167 1
+mayo:mayo@@ginger.Berkeley.EDU
+d169 7
+a175 7
+#andrew:andrew@@ginger.Berkeley.EDU
+zorn:zorn@@ginger.Berkeley.EDU
+markhill:markhill@@ginger.Berkeley.EDU
+hill:markhill@@ginger.Berkeley.EDU
+larus:larus@@ginger.Berkeley.EDU
+david:david@@ginger.Berkeley.EDU
+gedye:gedye@@ginger.Berkeley.EDU
+d187 1
+a187 1
+dougj:dougj@@ginger.Berkeley.EDU
+d189 13
+a201 13
+hilfingr:hilfingr@@ginger.Berkeley.EDU
+bk:bk@@ginger.Berkeley.EDU
+wookkoh:wookkoh@@ginger.Berkeley.EDU
+luigi:luigi@@ginger.Berkeley.EDU
+taxlaw:taxlaw@@ginger.Berkeley.EDU
+ho:ho@@ginger.Berkeley.EDU
+bennett:bennett@@ginger.Berkeley.EDU
+kong:kong@@ginger.Berkeley.EDU
+cori:cori@@ginger.Berkeley.EDU
+gaetano:gaetano@@ginger.Berkeley.EDU
+fwo:fwo@@ginger.Berkeley.EDU
+chang:chang@@ginger.Berkeley.EDU
+taylor:taylor@@ginger.Berkeley.EDU
+d203 9
+a211 9
+daebum:daebum@@ginger.Berkeley.EDU
+betten:betten@@ginger.Berkeley.EDU
+castillo:castillo@@ginger.Berkeley.EDU
+vanroy:vanroy@@ginger.Berkeley.EDU
+carlton:carlton@@ginger.Berkeley.EDU
+lacy:lacy@@ginger.Berkeley.EDU
+magic:magic@@ginger.Berkeley.EDU
+cad:cad@@ginger.Berkeley.EDU
+guest:guest@@ginger.Berkeley.EDU
+d214 1
+a214 1
+jensen:jensen@@ginger.Berkeley.EDU
+d229 1
+d233 1
+a233 1
+theresa:theresa@@ginger.Berkeley.EDU
+d236 2
+a237 2
+ns:ns@@ginger.Berkeley.EDU
+eugene:eugene@@ginger.Berkeley.EDU
+@
+
+
+1.293
+log
+@Add gunter to sprite-emacs-users.
+@
+text
+@d73 1
+a73 1
+	stevel, cmtice, digres, jsgf, olson, colinp,
+@
+
+
+1.292
+log
+@Alias change for Ben Wu.
+@
+text
+@d129 1
+a129 1
+	kupfer, mottsmth, sethg, rab
+@
+
+
+1.291
+log
+@modified oslunch alias
+@
+text
+@d372 1
+a372 1
+	c162-de@@danube, c164-hs@@ara, secan@@cory, ouster
+@
+
+
+1.290
+log
+@Added oslunch alias
+@
+text
+@d283 1
+a283 1
+oslunch: arvindk@@cs, rywang@@cs, markb@@cs, ghorm@@cs, kkeeton@@cs, ventre@@icsi
+@
+
+
+1.289
+log
+@deleteuser: remove sluna.
+@
+text
+@d279 11
+@
+
+
+1.288
+log
+@adduser: add colinp to "sprite-users".
+@
+text
+@d71 3
+a73 1
+sprite-users: sprite, sah, pfile, rquiros, bedk, lucco, klier, kyi, dusseau, ramon, vincze, dahlin, kkeeton, bmah, sahai, secor, stevel, cmtice, digres, jsgf, olson, colinp,
+d77 1
+a77 1
+	forrest, sluna, deprit, asami,
+@
+
+
+1.287
+log
+@Added Sequoia hardware group mailing list.
+@
+text
+@d71 1
+a71 1
+sprite-users: sprite, sah, pfile, rquiros, bedk, lucco, klier, kyi, dusseau, ramon, vincze, dahlin, kkeeton, bmah, sahai, secor, stevel, cmtice, digres, jsgf, olson,
+@
+
+
+1.286
+log
+@deleteuser: remove markb.
+@
+text
+@d277 7
+@
+
+
+1.285
+log
+@deleteuser: remove downey.
+@
+text
+@d72 1
+a72 1
+	markb, jolly, tester, diane, arvindk, rywang,
+@
+
+
+1.284
+log
+@deleteuser: remove soumen.
+@
+text
+@d72 1
+a72 1
+	downey, markb, jolly, tester, diane, arvindk, rywang,
+@
+
+
+1.283
+log
+@deleteuser: remove vvij.
+@
+text
+@d75 1
+a75 1
+	forrest, sluna, soumen, deprit, asami,
+@
+
+
+1.282
+log
+@deleteuser: remove gong.
+@
+text
+@d75 1
+a75 1
+	forrest, sluna, soumen, deprit, vvij, asami,
+@
+
+
+1.281
+log
+@adduser: add olson to "sprite-users".
+@
+text
+@d74 1
+a74 1
+	halstead, juels, clarsen, vdlinden, yelick, gong, staelin,
+@
+
+
+1.280
+log
+@added alias for eklee
+@
+text
+@d71 1
+a71 1
+sprite-users: sprite, sah, pfile, rquiros, bedk, lucco, klier, kyi, dusseau, ramon, vincze, dahlin, kkeeton, bmah, sahai, secor, stevel, cmtice, digres, jsgf,
+@
+
+
+1.279
+log
+@adduser: add jsgf to "sprite-users".
+@
+text
+@d150 1
+@
+
+
+1.278
+log
+@adduser: add digres to "sprite-users".
+@
+text
+@d71 1
+a71 1
+sprite-users: sprite, sah, pfile, rquiros, bedk, lucco, klier, kyi, dusseau, ramon, vincze, dahlin, kkeeton, bmah, sahai, secor, stevel, cmtice, digres,
+@
+
+
+1.277
+log
+@Installed gateway from tcl <-> comp.lang.tcl
+@
+text
+@d71 1
+a71 1
+sprite-users: sprite, sah, pfile, rquiros, bedk, lucco, klier, kyi, dusseau, ramon, vincze, dahlin, kkeeton, bmah, sahai, secor, stevel, cmtice,
+@
+
+
+1.276
+log
+@adduser: add cmtice to "sprite-users".
+@
+text
+@d323 2
+a324 2
+tcl: :include:/users/ouster/misc/tcl.alias
+tcl-from-news: \ouster
+@
+
+
+1.275
+log
+@adduser: add stevel to "sprite-users".
+@
+text
+@d71 1
+a71 1
+sprite-users: sprite, sah, pfile, rquiros, bedk, lucco, klier, kyi, dusseau, ramon, vincze, dahlin, kkeeton, bmah, sahai, secor, stevel,
+@
+
+
+1.274
+log
+@deleteuser: remove dillon.
+@
+text
+@d71 1
+a71 1
+sprite-users: sprite, sah, pfile, rquiros, bedk, lucco, klier, kyi, dusseau, ramon, vincze, dahlin, kkeeton, bmah, sahai, secor,
+@
+
+
+1.273
+log
+@*** empty log message ***
+@
+text
+@@
+
+
+1.272
+log
+@*** empty log message ***
+@
+text
+@d78 1
+a78 1
+	dc, decman, bertrand, dekai, hzhang, daniels, asw,
+@
+
+
+1.271
+log
+@deleteuser: remove bsmith.
+@
+text
+@d177 1
+@
+
+
+1.270
+log
+@deleteuser: remove byers.
+@
+text
+@d81 1
+a81 1
+	krste, hohmeyer, bsmith, tockey, kriguer, chou,
+@
+
+
+1.269
+log
+@deleteuser: remove aho.
+@
+text
+@d75 1
+a75 1
+	byers, forrest, sluna, soumen, deprit, vvij, asami,
+@
+
+
+1.268
+log
+@deleteuser: remove fmeyer.
+@
+text
+@d81 1
+a81 1
+	krste, hohmeyer, bsmith, aho, tockey, kriguer, chou,
+@
+
+
+1.267
+log
+@deleteuser: remove mccanne.
+@
+text
+@d66 1
+a66 1
+	rafael, cheriton, af, jamin, randi, whitcomb, fmeyer, seth, fixen,
+@
+
+
+1.266
+log
+@Added "tcl-from-news" alias.
+@
+text
+@d72 1
+a72 1
+	downey, markb, jolly, mccanne, tester, diane, arvindk, rywang,
+@
+
+
+1.265
+log
+@deleteuser: remove brookler.
+@
+text
+@d323 1
+@
+
+
+1.264
+log
+@adduser: add secor to "sprite-users".
+@
+text
+@d74 1
+a74 1
+	halstead, juels, clarsen, vdlinden, yelick, gong, brookler, staelin,
+@
+
+
+1.263
+log
+@adduser: add sahai to "sprite-users".
+@
+text
+@d71 1
+a71 1
+sprite-users: sprite, sah, pfile, rquiros, bedk, lucco, klier, kyi, dusseau, ramon, vincze, dahlin, kkeeton, bmah, sahai,
+@
+
+
+1.262
+log
+@*** empty log message ***
+@
+text
+@d71 1
+a71 1
+sprite-users: sprite, sah, pfile, rquiros, bedk, lucco, klier, kyi, dusseau, ramon, vincze, dahlin, kkeeton, bmah,
+@
+
+
+1.261
+log
+@adduser: add bmah to "sprite-users".
+@
+text
+@d249 3
+a251 3
+# softball mailing list (maintained by elm@@sprite)
+softball: :include:/users/elm/Mail/lists/softball-list
+softball-request: elm@@sprite
+@
+
+
+1.260
+log
+@New reader for CS 60B.
+@
+text
+@d71 1
+a71 1
+sprite-users: sprite, sah, pfile, rquiros, bedk, lucco, klier, kyi, dusseau, ramon, vincze, dahlin, kkeeton,
+@
+
+
+1.259
+log
+@changed andrew to arc
+@
+text
+@d349 1
+a349 1
+	c162-de@@danube, secan@@cory, ouster
+@
+
+
+1.258
+log
+@Change to 60B aliases.
+@
+text
+@d50 1
+a50 1
+spriters:  ouster, andrew, douglis, deboor, mendel, mgbaker,
+@
+
+
+1.257
+log
+@Added CS 60B aliases.
+@
+text
+@d348 2
+a349 2
+60breaders: yua@@cory, c164-hr@@ara, c162-ay@@danube, ronald@@cory, secan@@cory,
+	ouster
+@
+
+
+1.256
+log
+@adduser: add kkeeton to "sprite-users".
+@
+text
+@d342 8
+@
+
+
+1.255
+log
+@Mary checking this in for John.
+@
+text
+@d71 1
+a71 1
+sprite-users: sprite, sah, pfile, rquiros, bedk, lucco, klier, kyi, dusseau, ramon, vincze, dahlin,
+@
+
+
+1.254
+log
+@Undo last change:  doesn't work.
+@
+text
+@d149 1
+@
+
+
+1.253
+log
+@Make ouster mail go to file also.
+@
+text
+@a148 1
+ouster: \ouster, /users/ouster/mail/mail.bak
+@
+
+
+1.252
+log
+@adduser: add dahlin to "sprite-users".
+@
+text
+@d149 1
+@
+
+
+1.251
+log
+@added frame-users alias - ss@@sprite 1/21/92
+@
+text
+@d71 1
+a71 1
+sprite-users: sprite, sah, pfile, rquiros, bedk, lucco, klier, kyi, dusseau, ramon, vincze,
+@
+
+
+1.250
+log
+@adduser: add vincze to "sprite-users".
+@
+text
+@d295 6
+@
+
+
+1.249
+log
+@2nd attempt at setting up sprite-log-test stuff.
+@
+text
+@d71 1
+a71 1
+sprite-users: sprite, sah, pfile, rquiros, bedk, lucco, klier, kyi, dusseau, ramon,
+@
+
+
+1.248
+log
+@Add sprite-log-test.
+@
+text
+@a91 1
+sprite-log-test: "|/users/sprite/cmds.gen/logger.test sprite log.test 'Sprite Log'"
+d93 2
+@
+
+
+1.247
+log
+@adduser: add ramon to "sprite-users".
+@
+text
+@d92 1
+@
+
+
+1.246
+log
+@adduser: add dusseau to "sprite-users".
+@
+text
+@d71 1
+a71 1
+sprite-users: sprite, sah, pfile, rquiros, bedk, lucco, klier, kyi, dusseau,
+@
+
+
+1.245
+log
+@deleteuser: remove leong.
+@
+text
+@d71 1
+a71 1
+sprite-users: sprite, sah, pfile, rquiros, bedk, lucco, klier, kyi,
+@
+
+
+1.244
+log
+@Removed 262 alias.
+@
+text
+@d68 1
+a68 1
+	leong, cs292i, postgres-sprite-users@@postgres, heatherh, sahay,
+@
+
+
+1.243
+log
+@*** empty log message ***
+@
+text
+@a332 6
+
+#
+# CS 262 students in Fall 1991 using sosp traces for projects.
+#
+cs262-traces: byers@@cory, downey@@antipodes, jolly@@ucbvax, markb@@cory,
+	soumen@@cory, vvij@@cory, deprit@@cory, asami@@cs.berkeley.edu
+@
+
+
+1.242
+log
+@updated tea
+@
+text
+@d50 1
+a50 1
+spriters:  ouster, andrew, douglis, deboor, mendel, mgbaker, tve,
+d84 1
+a84 1
+	pasquale, tea@@jericho
+@
+
+
+1.241
+log
+@added tea to RAID alias
+@
+text
+@d138 1
+a138 1
+	vahdat, tea@@jericho.cs
+@
+
+
+1.240
+log
+@Had to start new RCS file because old one caused "co error, line 1202: 
+Hashtable overflow".
+@
+text
+@d138 1
+a138 1
+	vahdat
+@

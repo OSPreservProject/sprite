@@ -1,0 +1,2 @@
+_eprintf.c:
+fprintf returns value which is always ignored

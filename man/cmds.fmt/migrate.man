@@ -1,0 +1,200 @@
+
+
+
+MIGRATE                   User Commands                   MIGRATE
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     migrate - Migrate a command to another machine
+
+SSYYNNOOPPSSIISS
+     mmiiggrraattee [--BBbbvvllDD] [[--hh _h_o_s_t] | [--HH  _h_o_s_t_I_D]]  [--pp  _p_r_o_c_e_s_s_I_D]
+     [(--EE _c_m_d arg0 | _c_m_d) _a_r_g_s ...]
+
+_________________________________________________________________
+
+IINNTTRROODDUUCCTTIIOONN
+     This command is used to execute commands remotely using  the
+     Sprite  process  migration facility.  It may be used to exe-
+     cute commands on a particular machine or to select from idle
+     machines;  and  it  may  execute  a command specified by the
+     arguments to the mmiiggrraattee program, or an interactive shell.
+
+SSEELLEECCTTIINNGG AA HHOOSSTT
+     --BB   The --BB specifies that the host should  be  selected  at
+          ``background''  priority,  rather  than at the priority
+          used for other tasks such as compilations.
+
+     --hh
+
+     --HH   By default, a host is  selected  from  among  the  idle
+          hosts  available  on  the  local network.  This host is
+          then marked as being in use for  the  duration  of  the
+          command being executed; the host will not be chosen for
+          remote execution of other processes  in  the  meantime.
+          If  a host is specified with the --hh or --HH options, then
+          the ``in-use'' flag is bypassed; this  is  useful  when
+          invoking mmiiggrraattee as a ``remote login'' facility to exe-
+          cute commands directly on another host.   The  --hh  flag
+          specifies  a host by name, and the --HH flag specifies it
+          by spriteID (thereby bypassing the host database lookup
+          to convert from name to internal numeric identifier).
+
+     --ll   If no host is specified and no idle host is  available,
+          the  command  is  not  executed unless the --ll option is
+          specified,  in  which  case  the  command  is  executed
+          locally.    The  ``--ll''  option  similiarly affects the
+          disposition of the command if migrating  to  the  other
+          host fails.
+
+EEXXEECCUUTTIINNGG AA CCOOMMMMAANNDD
+     To execute a single command remotely,  the  command  may  be
+     specified by placing the command and its arguments after any
+     options to mmiiggrraattee.  If no command is specified, an interac-
+     tive shell is created.  If the SSHHEELLLL environment variable is
+     present, that shell is invoked, otherwise  ccsshh  is  invoked.
+     In any case, the exit status from the subprocess is returned
+     by mmiiggrraattee.
+
+
+
+
+Sprite v.1.0         Printed:  April 3, 1991                    1
+
+
+
+
+
+
+MIGRATE                   User Commands                   MIGRATE
+
+
+
+     --EE  _c_o_m_m_a_n_d
+          In some circumstances, programs  may  be  invoked  with
+          aarrggvv[[00]]  different  from  the  name of the command.  In
+          this case, the --EE option may be  used  to  specify  the
+          name of a file to execute, and the first argument after
+          the option list specifies the value of aarrggvv[[00]].    Oth-
+          erwise,  aarrggvv[[00]] is set to the name of the command that
+          is invoked.
+
+MMIIGGRRAATTIINNGG AA CCUURRRREENNTT PPRROOCCEESSSS
+     --pp   To migrate a process that is already executing,  invoke
+          mmiiggrraattee  with  the  --pp option, giving the process ID of
+          the process to migrate (in hex notation).  Each process
+          must  be  migrated  individually,  in  separate runs of
+          mmiiggrraattee.
+
+OOTTHHEERR OOPPTTIIOONNSS
+     --bb   The --bb option may be used to enter ``background mode'',
+          in which mmiiggrraattee executes a command and returns immedi-
+          ately, printing the process identifier of the  migrated
+          child.  Thus,
+                              mmiiggrraattee xxyyzzzzyy&&
+          is different from
+                             mmiiggrraattee --bb xxyyzzzzyy.
+          The process identifier for the former case  is  printed
+          by  the  shell,  and it corresponds to the mmiiggrraattee pro-
+          cess; while the process identifier in the  latter  case
+          corresponds  to  the  migrated  child  itself.   In the
+          former case, normal ccsshh job  control  may  be  used  to
+          foreground  and  background  the migrated child, but in
+          the latter case, the process is not controlled by ccsshh.
+
+     --vv   The --vv option may be used to enter ``verbose mode'', in
+          which  case the host selected for migration is printed,
+          or a message that no host could be selected is  printed
+          if  the  command  is  executed  locally  due  to the --ll
+          option.
+
+     --DD   The --DD option  enables  ``debug  mode'',  which  causes
+          various  debugging statements to be printed as the pro-
+          gram executes.
+
+SSEEEE AALLSSOO
+     migrate, db, xload, pmake, loadavg, csh, ps
+
+FFIILLEESS
+     //sspprriittee//aaddmmiinn//ddaattaa//mmiiggIInnffoo - the global  migration  database
+     file.
+
+KKEEYYWWOORRDDSS
+     process migration, load average, uptime,  idle  time,  data-
+     base, remote execution
+
+
+
+Sprite v.1.0         Printed:  April 3, 1991                    2
+
+
+
+
+
+
+MIGRATE                   User Commands                   MIGRATE
+
+
+
+BBUUGGSS
+     If a process that is executing remotely is evicted when that
+     machine is no longer available, the process will continue to
+     execute locally.  This is nearly completely  transparent  to
+     the  user  (ppss  --mm  will  no  longer  show  the  process  as
+     migrated).  Even if the host were not selected as an  ``idle
+     host'',  the  migrated  process  can be evicted if the other
+     host goes from being available to being unavailable.
+
+     If another host is selected at random to migrate  a  process
+     that  is already running, when that process exits the remote
+     host, the remote host will remain flagged as ``in use''  for
+     a short period of time.  This is because the mmiiggrraattee process
+     cannot conveniently wait for a process that isn't its child.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  April 3, 1991                    3
+
+
+

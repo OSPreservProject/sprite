@@ -1,0 +1,330 @@
+
+
+
+AWK                       User Commands                       AWK
+
+
+
+NNAAMMEE
+     awk - pattern-directed scanning and processing language
+
+SSYYNNOOPPSSIISS
+     aawwkk [ --FF_f_s ] [ prog ] [ file ... ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _A_w_k scans each input _f_i_l_e for lines that match any of a set
+     of patterns specified literally in _p_r_o_g or in a file speci-
+     fied as --ff _f_i_l_e.  With each pattern there can be an associ-
+     ated action that will be performed when a line of a _f_i_l_e
+     matches the pattern.  Each line is matched against the pat-
+     tern portion of every pattern-action statement; the associ-
+     ated action is performed for each matched pattern.  The file
+     name means the standard input.  Any _f_i_l_e of the form
+     _v_a_r=_v_a_l_u_e is treated as an assignment, not a filename.
+
+     An input line is made up of fields separated by white space,
+     or by regular expression FFSS.  The fields are denoted $$11, $$22,
+     ...; $$00 refers to the entire line.
+
+     A pattern-action statement has the form
+
+          _p_a_t_t_e_r_n {{ _a_c_t_i_o_n }}
+
+     A missing {{ _a_c_t_i_o_n }} means print the line; a missing pattern
+     always matches.  Pattern-action statements are separated by
+     newlines or semicolons.
+
+     An action is a sequence of statements.  A statement can be
+     one of the following:
+
+          iiff(( _e_x_p_r_e_s_s_i_o_n )) _s_t_a_t_e_m_e_n_t [ eellssee _s_t_a_t_e_m_e_n_t ] wwhhiillee((
+          _e_x_p_r_e_s_s_i_o_n )) _s_t_a_t_e_m_e_n_t ffoorr(( _e_x_p_r_e_s_s_i_o_n ;; _e_x_p_r_e_s_s_i_o_n ;;
+          _e_x_p_r_e_s_s_i_o_n )) _s_t_a_t_e_m_e_n_t ffoorr(( _v_a_r iinn _a_r_r_a_y )) _s_t_a_t_e_m_e_n_t ddoo
+          _s_t_a_t_e_m_e_n_t wwhhiillee(( _e_x_p_r_e_s_s_i_o_n )) bbrreeaakk ccoonnttiinnuuee {{ [ _s_t_a_t_e_-
+          _m_e_n_t ... ] }} _e_x_p_r_e_s_s_i_o_n                ## commonly _v_a_r =
+          _e_x_p_r_e_s_s_i_o_n pprriinntt [ _e_x_p_r_e_s_s_i_o_n-_l_i_s_t ] [ >> _e_x_p_r_e_s_s_i_o_n ]
+          pprriinnttff _f_o_r_m_a_t [ ,, _e_x_p_r_e_s_s_i_o_n-_l_i_s_t ] [ >> _e_x_p_r_e_s_s_i_o_n ]
+          rreettuurrnn [ _e_x_p_r_e_s_s_i_o_n ] nneexxtt                      ## skip
+          remaining patterns on this input line ddeelleettee _a_r_r_a_y[[
+          _e_x_p_r_e_s_s_i_o_n ]]## delete an array element eexxiitt [ _e_x_p_r_e_s_s_i_o_n
+          ]       ## exit immediately; status is _e_x_p_r_e_s_s_i_o_n
+
+     Statements are terminated by semicolons, newlines or right
+     braces.  An empty _e_x_p_r_e_s_s_i_o_n-_l_i_s_t stands for $$00.  String
+     constants are quoted " ", with the usual C escapes recog-
+     nized within.  Expressions take on string or numeric values
+     as appropriate, and are built using the operators ++ -- ** // %%
+     ^^ (exponentiation), and concatenation (indicated by a
+     blank).  The operators ++++ ---- ++== --== **== //== %%== ^^== ****== >> >>== << <<==
+     ==== !!== ??:: are also available in expressions.  Variables may
+
+
+
+AT&T UNIX System Toolchest7 December 1987                        1
+
+
+
+
+
+
+AWK                       User Commands                       AWK
+
+
+
+     be scalars, array elements (denoted _x[[_i]]) or fields.  Vari-
+     ables are initialized to the null string.  Array subscripts
+     may be any string, not necessarily numeric; this allows for
+     a form of associative memory.  Multiple subscripts such as
+     [[ii,,jj,,kk]] are permitted; the constituents are concatenated,
+     separated by the value of SSUUBBSSEEPP.
+
+     The pprriinntt statement prints its arguments on the standard
+     output (or on a file if >>_f_i_l_e or >>>>_f_i_l_e is present or on a
+     pipe if ||_c_m_d is present), separated by the current output
+     field separator, and terminated by the output record separa-
+     tor.  _f_i_l_e and _c_m_d may be literal names or parenthesized
+     expressions; identical string values in different statements
+     denote the same open file.  The pprriinnttff statement formats its
+     expression list according to the format (see _p_r_i_n_t_f(3)).
+     The built-in function cclloossee((_e_x_p_r)) closes the file or pipe
+     _e_x_p_r.
+
+     The customary functions eexxpp, lloogg, ssqqrrtt, ssiinn, ccooss, aattaann22 are
+     built in.  Other built-in functions:
+
+     lleennggtthh
+          the length of its argument taken as a string, or of $$00
+          if no argument.
+
+     rraanndd random number on (0,1)
+
+     ssrraanndd
+          sets seed for rraanndd
+
+     iinntt  truncates to an integer value
+
+     ssuubbssttrr((_s,, _m,, _n))
+          the _n-character substring of _s that begins at position
+          _m counted from 1.
+
+     iinnddeexx((_s,, _t))
+          the position in _s where the string _t occurs, or 0 if it
+          does not.
+
+     mmaattcchh((_s,, _r))
+          the position in _s where the regular expression _r
+          occurs, or 0 if it does not.  The variables RRSSTTAARRTT and
+          RRLLEENNGGTTHH are set to the position and length of the
+          matched string.
+
+     sspplliitt((_s,, _a,, _f_s))
+          splits the string _s into array elements _a[[11]], _a[[22]],
+          ..., _a[[_n]], and returns _n.  The separation is done with
+          the regular expression _f_s or with the field separator
+          FFSS if _f_s is not given.
+
+
+
+
+AT&T UNIX System Toolchest7 December 1987                        2
+
+
+
+
+
+
+AWK                       User Commands                       AWK
+
+
+
+     ssuubb((_r,, _t,, _s))
+          substitutes _t for the first occurrence of the regular
+          expression _r in the string _s.  If _s is not given, $$00 is
+          used.
+
+     ggssuubb same as ssuubb except that all occurrences of the regular
+          expression are replaced; ssuubb and ggssuubb return the number
+          of replacements.
+
+     sspprriinnttff((_f_m_t,, _e_x_p_r,, ... ))
+          the string resulting from formatting _e_x_p_r ... according
+          to the _p_r_i_n_t_f(3) format _f_m_t
+
+     ssyysstteemm((_c_m_d))
+          executes _c_m_d and returns its exit status
+
+     The ``function'' ggeettlliinnee sets $$00 ttoo the next input record
+     from the current input file; ggeettlliinnee <<_f_i_l_e sets $$00 to the
+     next record from _f_i_l_e.  ggeettlliinnee _x sets variable _x instead.
+     Finally, _c_m_d || ggeettlliinnee pipes the output of _c_m_d into ggeettlliinnee;
+     each call of ggeettlliinnee returns the next line of output from
+     _c_m_d.  In all cases, ggeettlliinnee returns 1 for a successful
+     input, 0 for end of file, and -1 for an error.
+
+     Patterns are arbitrary Boolean combinations (with !! |||| &&&&)
+     of regular expressions and relational expressions.  Regular
+     expressions are as in _e_g_r_e_p(1).  Isolated regular expres-
+     sions in a pattern apply to the entire line.  Regular
+     expressions may also occur in relational expressions, using
+     the operators ~~ and !!~~.  //_r_e// is a constant regular expres-
+     sion; any string (constant or variable) may be used as a
+     regular expression, except in the position of an isolated
+     regular expression in a pattern.
+
+     A pattern may consist of two patterns separated by a comma;
+     in this case, the action is performed for all lines from an
+     occurrence of the first pattern though an occurrence of the
+     second.
+
+     A relational expression is one of the following:
+
+          _e_x_p_r_e_s_s_i_o_n _m_a_t_c_h_o_p _r_e_g_u_l_a_r-_e_x_p_r_e_s_s_i_o_n
+          _e_x_p_r_e_s_s_i_o_n _r_e_l_o_p _e_x_p_r_e_s_s_i_o_n
+
+     where a relop is any of the six relational operators in C,
+     and a matchop is either ~~ (matches) or !!~~ (does not match).
+     A conditional is an arithmetic expression, a relational
+     expression, or a Boolean combination of these.
+
+     The special patterns BBEEGGIINN and EENNDD may be used to capture
+     control before the first input line is read and after the
+     last.  BBEEGGIINN and EENNDD do not combine with other patterns.
+
+
+
+AT&T UNIX System Toolchest7 December 1987                        3
+
+
+
+
+
+
+AWK                       User Commands                       AWK
+
+
+
+     Variable names with special meanings:
+
+     FFSS   regular expression used to separate fields; also sett-
+          able by option --FF_f_s.
+
+     NNFF   number of fields in the current record
+
+     NNRR   ordinal number of the current record
+
+     FFNNRR  ordinal number of the current record in the current
+          file
+
+     FFIILLEENNAAMMEE
+          the name of the current input file
+
+     RRSS   input record separator (default newline)
+
+     OOFFSS  output field separator (default blank)
+
+     OORRSS  output record separator (default newline)
+
+     OOFFMMTT output format for numbers (default %%..66gg)
+
+     SSUUBBSSEEPP
+          separates multiple subscripts (default 034)
+
+     AARRGGCC argument count, assignable
+
+     AARRGGVV argument array, assignable; non-null members are taken
+          as filenames
+
+     Functions may be defined (at the position of a pattern-
+     action statement) thus:
+
+          function foo(a, b, c) { ...; return x }
+
+     Parameters are passed by value if scalar and by reference if
+     array name; functions may be called recursively.  Parameters
+     are local to the function; all other variables are global.
+
+EEXXAAMMPPLLEESS
+     length > 72
+
+          Print lines longer than 72 characters.
+
+     { print $2, $1 }
+
+          Print first two fields in opposite order.
+
+     BEGIN     { FS = ",[ \t]*|[ \t]+" }
+          { print $2, $1 }
+
+
+
+
+AT&T UNIX System Toolchest7 December 1987                        4
+
+
+
+
+
+
+AWK                       User Commands                       AWK
+
+
+
+          Same, with input fields separated by comma and/or
+          blanks and tabs.
+
+          { s += $1 }
+     END  { print "sum is", s, " average is", s/NR }
+
+          Add up first column, print sum and average.
+
+     /start/, /stop/
+
+          Print all lines between start/stop pairs.
+
+     BEGIN     {    # Simulate echo(1)
+          for (i = 1; i < ARGC; i++) printf "%s ", ARGV[i]
+          printf "\n"
+          exit }
+
+SSEEEE AALLSSOO
+     lex(1), sed(1)
+     A. V. Aho, B. W. Kernighan, P. J. Weinberger, _A_w_k - _a _P_a_t_-
+     _t_e_r_n _S_c_a_n_n_i_n_g _a_n_d _P_r_o_c_e_s_s_i_n_g _L_a_n_g_u_a_g_e: _U_s_e_r'_s _M_a_n_u_a_l
+
+BBUUGGSS
+     There are no explicit conversions between numbers and
+     strings.  To force an expression to be treated as a number
+     add 0 to it; to force it to be treated as a string concaten-
+     ate "" to it.
+     The scope rules for variables in functions are a botch.
+     The (undocumented) options --SS and --RR are flaky.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+AT&T UNIX System Toolchest7 December 1987                        5
+
+
+

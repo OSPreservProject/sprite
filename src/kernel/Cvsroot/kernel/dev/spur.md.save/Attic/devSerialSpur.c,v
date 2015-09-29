@@ -1,0 +1,161 @@
+head     8.1;
+branch   ;
+access   ;
+symbols  sun4nw:8.1 symm:8.1 spur:8.1 newlib:8.0;
+locks    ; strict;
+comment  @ * @;
+
+
+8.1
+date     89.07.15.14.49.51;  author ouster;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.16.04;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     88.10.30.21.42.47;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.07.20.22.04.30;  author douglis;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@This file contains machine-dependent routines that handle the
+output queue for the serial lines.
+@
+
+
+8.1
+log
+@Conversion to new tty driver.
+@
+text
+@/* 
+ *  devSerialSpur.c --
+ *
+ *     	This file contains machine-dependent routines that handle the
+ *	output queue for the serial lines.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/spur.md/RCS/devSerialSpur.c,v 1.2 88/10/30 21:42:47 jhh Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+#include "devSerial.h"
+#include "serial.h"
+#include "devConsole.h"
+#include "devUart.h"
+#include "vm.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_SerialInitAddr --
+ *
+ *	Initializes the address of the device for a serial port.
+ *	Called from Dev_KbdInit at boot time.  Combines the address
+ *	and unit into an opaque type and calls the machine-independent
+ *	initialization routine.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Memory is allocated for the machine-dependent structure.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Dev_SerialInitAddr(unit, devAddr)
+    int			unit;
+    Address		devAddr;
+{
+    Dev_UartInfo 	*infoPtr;
+
+    infoPtr = (Dev_UartInfo *) Vm_BootAlloc(sizeof(Dev_UartInfo));
+    infoPtr->uartAddress = devAddr;
+    switch (unit) {
+        case DEV_SERIAL_A_UNIT:
+	    infoPtr->channel = DEV_UART_CHANNEL_A;
+	    break;
+	case DEV_SERIAL_B_UNIT:
+	    infoPtr->channel = DEV_UART_CHANNEL_B;
+	    break;
+	/*
+	 * Unclear yet what this will be once implemented.
+	 */
+	case DEV_EVENT_UNIT:
+	    infoPtr->channel = DEV_UART_CHANNEL_A;
+	    break;
+	default: 
+	    panic("Dev_SerialInitAddr: unknown unit %d",
+		      unit);
+	    break;
+    }
+
+    /*
+     * The following statement was commented out by JO (7/15/89) as part
+     * of new tty driver installation:  the current SPUR tty code needs
+     * revision to work with new driver.
+    DevSerialInitQueue(unit, (ClientData) infoPtr);
+    */
+}
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/spur.md/RCS/devSerialSpur.c,v 1.2 88/10/30 21:42:47 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d75 5
+d81 1
+@
+
+
+1.2
+log
+@multiprocessor port, change to new C lib
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/spur.md/RCS/devSerialSpur.c,v 1.1 88/07/20 22:04:30 douglis Exp Locker: jhh $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: devSerial.c,v 5.2 88/02/09 18:47:03 deboor Exp $ SPRITE (Berkeley)";
+d71 1
+a71 1
+	    Sys_Panic(SYS_FATAL, "Dev_SerialInitAddr: unknown unit %d",
+@

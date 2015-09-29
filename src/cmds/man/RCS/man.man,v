@@ -1,0 +1,272 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  ;
+locks    shirriff:1.6; strict;
+comment  @@;
+
+
+1.6
+date     91.01.08.21.48.08;  author tve;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.01.13.17.05.17;  author ouster;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.01.13.16.50.42;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.01.11.15.25.02;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.12.30.09.44.51;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.12.28.17.09.05;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.6
+log
+@Added mention of PAGER environment variable.
+@
+text
+@' $Header: /a/newcmds/man/RCS/man.man,v 1.5 89/01/13 17:05:17 ouster Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS MAN cmds
+.BS
+.SH NAME
+man \- Print entries in the user reference manual
+.SH SYNOPSIS
+\fBman\fR [\fIoptions\fR] [\fIsectionNumber\fR] \fIentryName entryName ...\fR
+.SH OPTIONS
+.IP "\fB\-c \fIconfigFile\fR" 15
+\fBMan\fR normally looks in the file \fB/sprite/lib/man/config\fR for
+information about where the man pages are.  If the \fB\-c\fR switch is given,
+then \fBman\fR uses \fIconfigFile\fR instead.
+.IP "\fB\-i\fR" 15
+Generate index.  Instead of printing manual entries, treat each
+\fIentryName\fR as a file name.  Read all the files, and output index
+information on standard output.
+.IP "\fB\-help\fR" 15
+Print a summary of the command-line options and exit without printing
+any manual pages.
+.IP "\fB\-k\fR" 15
+Keyword search.  Instead of printing manual entries, treat each \fIentryName\fR
+argument as a keyword, search the manual indexes for information about
+the keywords, and print all the matching index entries.
+.IP "\fB\-r\fR" 15
+Normally, \fBman\fR retains formatted versions of man pages for faster printing.
+It only reformats a man page if there is no formatted version or if the
+source is newer than the formatted version.  This switch causes \fBman\fR to
+reformat the man page even if the formatted copy appears to be up-to-date.
+.IP "\fB\-s \fIsectionName\fR" 15
+Check only in section \fIsectionName\fR of the manual for the desired
+entries.
+.IP "\fB\-t\fR" 15
+Print the manual entries on the printer instead of on
+standard output.
+.IP "\fB\-\fR" 15
+\fBMan\fR normally filters the man pages through \fBmore -s\fR to break up
+the output and process underline and boldface requests.  If the \fB\-\fR
+switch is given, then the \fBmore\fR filter is omitted, and the \fBnroff\fR
+output is passed directly to standard output. The \fBPAGER\fP environment
+variable can be set to the name of a program to use instead of \fBmore\fP.
+.BE
+
+.SH DESCRIPTION
+.PP
+The \fBman\fR program locates and prints one or more entries of the
+Sprite reference manual.  The entries are given by the \fIentryName\fR
+arguments;  these are usually the names of programs or library
+procedures.  Normally, \fBman\fR searches the entire manual and invokes
+\fBmore\fR to print the
+first entry that matches each \fIentryName\fR.  The manual is divided
+into sections, and it is possible for the same name to be used for
+entries in different sections.  You may use the
+\fB\-s\fR switch to specify a particular section;  in this case, \fBman\fR
+will look only in the named section.  Section names include both the
+traditional UNIX names (\fB1\fR, \fB2\fR, etc.) and the Sprite names
+(\fBcmds\fR, \fBlib\fR, \fBlib/c\fR, \fBdev\fR, etc.).
+You may specify a section name without the \fB\-s\fR switch
+if the section name starts with a number and is entered as the first
+\fIentryName\fR.
+.PP
+The default configuration file causes the current directory to be
+searched for the desired manual entry before the system directories.
+If there is a file \fIentryName\fB.man\fR in the current directory,
+then it will be printed in preference to any entries in the system
+area.
+.PP
+The \fB\-i\fR switch causes \fBman\fR to generate an index
+instead of printing a manual page.  Each \fIentryName\fR argument
+is taken to be a file name.  \fBMan\fR will read all the files and
+output index information for them on standard output.  Normally, each
+directory containing installed unformatted manual entries also has
+a file named \fBindex\fR containing index information for all the files
+in the directory.  When printing manual entries, if \fBman\fR cannot
+locate a file for a given \fIentryName\fR, then it reads the \fBindex\fR
+files to see if \fIentryName\fR is an alternate name for some other
+manual entry (an alternate name is any name listed in the \fBNAME\fR
+section of the entry).
+.PP
+The \fB\-k\fR switch causes \fBman\fR to perform a keyword search instead
+of printing a manual page.  Each \fIentryName\fR argument is taken to
+be a keyword, and \fBman\fR searches all the \fBindex\fR files for
+entries that match the keywords.
+Each matching entry is printed on standard output in a human-readable form.
+A keyword matches an index entry if
+it is a substring of any of the entry's name, synopsis, or keyword fields.
+
+.SH FILES
+/sprite/lib/man/config \- default configuration file
+
+.SH KEYWORDS
+help, index, keyword, manual, reference, section
+@
+
+
+1.5
+log
+@Cleanup typos.
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/man/RCS/man.man,v 1.3 89/01/11 15:25:02 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d40 2
+a41 1
+output is passed directly to standard output.
+@
+
+
+1.4
+log
+@Added "-i", "-k", and "-f" switches.
+@
+text
+@d14 1
+a14 1
+.IP "\fB-i\fR" 15
+d67 1
+a67 1
+The \fB-i\fR switch causes \fBman\fR to generate an index
+d70 1
+a70 1
+outputs index information for them on standard output.  Normally, each
+d79 1
+a79 1
+The \fB-k\fR switch causes \fBman\fR to perform a keyword search instead
+d82 1
+a82 2
+entries that match the keywords (a keyword matches an index entry if
+it is a substring of any of the entry's name, synopsis, or keyword fields).
+d84 2
+@
+
+
+1.3
+log
+@Document current directory mechanism.
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/man/RCS/man.man,v 1.2 88/12/30 09:44:51 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d13 12
+a24 1
+then \fBman\fR uses \fIconfigFile\fR instead. 
+a32 3
+.IP "\fB\-help\fR" 15
+Print a summary of the command-line options and exit without printing
+any manual pages.
+d66 19
+d90 1
+a90 1
+help, manual, reference, section
+@
+
+
+1.2
+log
+@More format upgrades.
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/man/RCS/man.man,v 1.1 88/12/28 17:09:05 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+d40 1
+a40 1
+procedures.  Normally, \fBman\fR searches the entire manual invokes
+d48 2
+a49 2
+(\fBcmds\fR, \fBlib\fR, \fBlib/c\fR, etc.).  You may specify a section name
+without the \fB\-s\fR switch
+d52 9
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 1
+a1 1
+' $Header: /a/newcmds/update/RCS/update.man,v 1.3 88/12/28 11:37:36 ouster Exp $ SPRITE (Berkeley)
+d10 6
+a15 6
+.IP "\fB-c \fIconfigFile\fR" 15
+Man normally looks in the file \fB/sprite/lib/man/config\fR for
+information about where the man pages are.  If the \fB-c\fR switch is given,
+then Man uses \fIconfigFile\fR instead. 
+.IP "\fB-r\fR" 15
+Normally, Man retains formatted versions of man pages for faster printing.
+d17 1
+a17 1
+source is newer than the formatted version.  This switch causes Man to
+d19 1
+a19 1
+.IP "\fB-s \fIsectionName\fR" 15
+d22 1
+a22 1
+.IP "\fB-help\fR" 15
+d25 1
+a25 1
+.IP "\fB-t\fR" 15
+d28 3
+a30 3
+.IP "\fB-\fR" 15
+Man normally filters the man pages through \fBmore -s\fR to break up
+the output and process underline and boldface requests.  If the \fB-\fR
+d37 1
+a37 1
+The Man program locates and prints one or more entries of the
+d40 1
+a40 1
+procedures.  Normally, Man searches the entire manual invokes
+d45 1
+a45 1
+\fB-s\fR switch to specify a particular section;  in this case, Man
+d49 1
+a49 1
+without the \fB-s\fR switch
+d51 1
+a51 1
+``entry name''.
+@

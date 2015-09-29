@@ -1,0 +1,100 @@
+' $Header: /sprite/src/cmds/fddicmd/RCS/fddicmd.man,v 1.2 92/05/29 11:13:40 voelker Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS FDDICMD cmds
+.BS
+.SH NAME
+fddicmd \- invoke ioctls on the FDDI device driver
+.SH SYNOPSIS
+.IP \fBfddicmd 10
+[\fB\-reset\fR]
+[\fB\-halt\fR]
+[\fB\-flush\fR]
+[\fB\-addr\fR]
+[\fB\-debug\fR]
+[\fB\-stats\fR]
+[\fB\-echo SpriteID\fR]
+[\fB\-size bytes\fR]
+[\fB\-repeat n\fR]
+[\fB\-syslog\fR]
+[\fB\-reg\fR]
+[\fB\-errlog\fR]
+.SH OPTIONS
+.IP \fB\-reset\fP
+Reset the adapter.
+.IP \fB\-halt\fP
+Halt the adapter.
+.IP \fB\-flush\fP
+Flush the driver's transmit queue of waiting packets.
+.IP \fB\-addr\fP
+Print the adapter's network address.
+.IP \fB\-debug\fP
+Toggle debugging.  Messages are printed to the syslog.
+.IP \fB\-stats\fP
+Print adapter statistics.
+.IP \fB\-echo\ SpriteID\fP
+Echo packets off of the specified host.
+.IP \fB\-size\ bytes\fP
+Set the size of packets to echo.
+.IP \fB\-repeat\ n\fP
+Number of times to echo packets.
+.IP \fB\-reg\fP
+Print the contents of the adapter registers.
+.IP \fB\-errlog\fP
+Print the internal and external error codes that the adapter writes as it halts.  Should be zero for normal operation.
+.IP \fB\-syslog\fP
+Print info onto syslog instead of terminal.
+.BE
+
+.SH DESCRIPTION
+
+.LP
+The various options perform ioctls on the FDDI driver.  
+
+.LP
+The \fBreset\fP and \fBhalt\fP options control the adapter's connection to the
+ring. The \fBreset\fP option resets the adapter, connecting it back to
+the ring.  The \fBhalt\fP option halts the adapter, disconnecting it
+from the ring.
+
+.LP
+The \fBflush\fP option flushes the driver's transmit queue.
+
+.LP
+The \fBaddr\fP option prints out the adapter's network address in the standard
+aa:bb:cc:dd:ee:ff form.
+
+.LP
+The \fBdebug\fP option toggles debugging output.  The messages are written
+to the syslog, and really slow down the adapter.  Useful for seeing
+how the adapter works.
+
+.LP
+The \fBstats\fP option prints out adapter statistics. It first reports
+the number of packets and bytes sent and received.  Then comes an
+array of receive reaped numbers.  Each array slot denotes a number of
+received packets, and the value in that slot is the number of
+times that the driver reaped that number of packets in one interrupt.
+Following this is an array counting packet sizes, both sent and received.
+
+.LP
+The \fBecho\fP, \fBsize\fP, and \fBrepeat\fP options let hosts
+be pinged over FDDI.  The argument to \fBehco\fP is the Sprite ID
+of a host to ping.  The argument to \fBsize\fP controls the size
+of the RPC to ping with.  And \fBrepeat\fP controls the number of
+times the host is echoed.  Timing numbers are reported when the
+echoes finish.
+
+.LP
+The \fBreg\fP and \fBerrlog\fP options print out some of the adapter's
+internal state.  \fBreg\fP prints out the contents of the adapter's
+registers.  \fBerrlog\fP prints out the internal and external
+error codes written by the adapter when it halts.  These codes should be
+zero during normal operation.
+
+.LP
+The \fBsyslog\fP option was intended to control whethere output would
+be printed on the syslog or on the terminal that invoked \fBfddicmd\fP.
+This is only partially supported.
+
+.SH KEYWORDS
+net, FDDI

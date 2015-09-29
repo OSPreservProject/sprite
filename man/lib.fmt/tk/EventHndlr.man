@@ -1,0 +1,132 @@
+
+
+
+Tk_CreateEventHandler C Library Procedures  Tk_CreateEventHandler
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tk_CreateEventHandler,  Tk_DeleteEventHandler  -   associate
+     procedure callback with an X event
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttkk..hh>>
+
+     TTkk__CCrreeaatteeEEvveennttHHaannddlleerr(_t_k_w_i_n, _m_a_s_k, _p_r_o_c, _c_l_i_e_n_t_D_a_t_a)
+
+     TTkk__DDeelleetteeEEvveennttHHaannddlleerr(_t_k_w_i_n, _m_a_s_k, _p_r_o_c, _c_l_i_e_n_t_D_a_t_a)
+
+AARRGGUUMMEENNTTSS
+     Tk_Window       _t_k_w_i_n        (in)      Token for  window  in
+                                            which    events   may
+                                            occur.
+
+     unsigned long   _m_a_s_k         (in)      Bit-mask  of   events
+                                            (such     as     BBuutt--
+                                            ttoonnPPrreessssMMaasskk)     for
+                                            which  _p_r_o_c should be
+                                            called.
+
+     Tk_EventProc    *_p_r_o_c        (in)      Procedure  to  invoke
+                                            whenever  an event in
+                                            _m_a_s_k  occurs  in  the
+                                            window    given    by
+                                            _t_k_w_i_n.
+
+     ClientData      _c_l_i_e_n_t_D_a_t_a   (in)      Arbitrary    one-word
+                                            value   to   pass  to
+                                            _p_r_o_c.
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     TTkk__CCrreeaatteeEEvveennttHHaannddlleerr arranges for _p_r_o_c to be invoked in the
+     future  whenever  one  of  the event types specified by _m_a_s_k
+     occurs in the window specified by _t_k_w_i_n.   The  callback  to
+     _p_r_o_c  will  be  made  by TTkk__HHaannddlleeEEvveenntt; this mechanism only
+     works   in   programs   that   dispatch    events    through
+     TTkk__HHaannddlleeEEvveenntt  (or  through  other  Tk procedures that call
+     TTkk__HHaannddlleeEEvveenntt, such as TTkk__DDooOOnneeEEvveenntt or TTkk__MMaaiinnLLoooopp).
+
+     _P_r_o_c should have arguments and result that  match  the  type
+     TTkk__EEvveennttPPrroocc:
+          typedef void Tk_EventProc(
+               ClientData _c_l_i_e_n_t_D_a_t_a,
+               XEvent *_e_v_e_n_t_P_t_r);
+     The _c_l_i_e_n_t_D_a_t_a parameter to _p_r_o_c is a copy of the _c_l_i_e_n_t_D_a_t_a
+     argument  given  to  TTkk__CCrreeaatteeEEvveennttHHaannddlleerr when the callback
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+Tk_CreateEventHandler C Library Procedures  Tk_CreateEventHandler
+
+
+
+     was created.  Typically, _c_l_i_e_n_t_D_a_t_a points to a data  struc-
+     ture  containing  application-specific information about the
+     window in which the event occurred.  _E_v_e_n_t_P_t_r is  a  pointer
+     to  the  X event, which will be one of the ones specified in
+     the _m_a_s_k argument to TTkk__CCrreeaatteeEEvveennttHHaannddlleerr.
+
+     TTkk__DDeelleetteeEEvveennttHHaannddlleerr may be called to delete a  previously-
+     created  event  handler:   it  deletes  the first handler it
+     finds that is associated with _t_k_w_i_n and  matches  the  _m_a_s_k,
+     _p_r_o_c,  and _c_l_i_e_n_t_D_a_t_a arguments.  If no such handler exists,
+     then  TTkk__EEvveennttHHaannddlleerr  returns   without   doing   anything.
+     Although  Tk  supports  it, it's probably a bad idea to have
+     more than one callback with the same _m_a_s_k, _p_r_o_c, and _c_l_i_e_n_t_-
+     _D_a_t_a  arguments.   When  a  window  is  deleted  all  of its
+     handlers will be deleted automatically;  in this case  there
+     is no need to call TTkk__DDeelleetteeEEvveennttHHaannddlleerr.
+
+     If mutliple handlers are declared for the  same  type  of  X
+     event  on the same window, then the handlers will be invoked
+     in the order they were created.
+
+
+KKEEYYWWOORRDDSS
+     bind, callback, event, handler
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     2
+
+
+

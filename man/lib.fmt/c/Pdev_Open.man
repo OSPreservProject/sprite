@@ -1,0 +1,266 @@
+
+
+
+Pdev_Open          UNKNOWN SECTION (libcalls)           Pdev_Open
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Pdev_Open - open  pseudo-device  and  install  service  pro-
+     cedures for it.
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ppddeevv..hh>>
+
+     ClientData PPddeevv__OOppeenn(_n_a_m_e, _r_e_a_l_N_a_m_e_P_t_r, _s_e_r_v_i_c_e)
+
+AARRGGUUMMEENNTTSS
+     char   *_n_a_m_e         (in)      Name  of  file  to  use   for
+                                    pseudo-device.
+
+     char   **_r_e_a_l_N_a_m_e_P_t_r (out)     Where  to  store  pointer  to
+                                    actual   pseudo-device   file
+                                    name, or NULL if _n_a_m_e  is  to
+                                    be   the   complete  name  of
+                                    pseudo-device file.
+
+     IntProc   *_s_e_r_v_i_c_e             Array  of  service  call-back
+                                    procedures.
+
+_________________________________________________________________
+
+DDEESSCCRRIIPPTTIIOONN
+     PPddeevv__OOppeenn creates a pseudo-device and installs a set of ser-
+     vice  procedures  for it.  The service procedures are called
+     when client processes open and use the  pseudo-device.   The
+     callbacks  are  given  as  an array of procedures (IInnttPPrroocc).
+     Any of the array elements can be NULL to indicate  that  the
+     operation  should be handled by a default handler.  The sseerr--
+     vviiccee parameter itself can also be NULL to  indicate  default
+     handling  for  all  operations.   This is only useful during
+     initial test.  If a client makes an operation for  which  no
+     service  procedure  is  provided it is simply a no-op; it is
+     not an error.  The global variable ppddeevvTTrraaccee can be  set  to
+     generate  printfs  when  each  service procedure (default or
+     user-supplied) is invoked.  The details of the service  pro-
+     cedures  are described below, after a description of how the
+     pseudo-device's name is chosen by PPddeevv__OOppeenn.
+
+     There are two ways that PPddeevv__OOppeenn can pick the name  of  the
+     file  to use for the pseudo-device.  If _r_e_a_l_N_a_m_e_P_t_r is NULL,
+     then PPddeevv__OOppeenn uses _n_a_m_e as the name.  If _r_e_a_l_N_a_m_e_P_t_r  isn't
+     NULL,  then  PPddeevv__OOppeenn will generate a file name of the form
+     _h_o_s_t_D_i_r//_n_a_m_e_X_X, where _h_o_s_t_D_i_r is  the  name  of  a  standard
+     host-specific  directory, _n_a_m_e is the parameter to this pro-
+     cedure, and _X_X is a decimal number generated  by  PPddeevv__OOppeenn.
+     PPddeevv__OOppeenn  tries  numbers  up from 1 until it finds one that
+     works.  The name of the  successful  pseudo-device  file  is
+     returned  by  storing  a pointer to it at *_r_e_a_l_N_a_m_e_P_t_r;  the
+     storage for the name is dynamically  allocated  with  mmaalllloocc
+
+
+
+Sprite v.1.0       Printed:  January 19, 1989                   1
+
+
+
+
+
+
+Pdev_Open          UNKNOWN SECTION (libcalls)           Pdev_Open
+
+
+
+     and must eventually be freed by the caller.
+
+     The return value of PPddeevv__OOppeenn is a  token  for  the  pseudo-
+     device,  which  must  be  used  in  calls  to PPddeevv__CClloossee and
+     PPddeevv__RReeaaddyy.  If a pseudo-device  couldn't  be  opened,  then
+     NULL   is  returned  and  ppddeevv__EErrrroorrMMssgg  contains  a  string
+     describing the problem.
+
+     The Pdev package uses the facilities of FFss__DDiissppaattcchh in order
+     to  keep  track  of  the streams associated with the pseudo-
+     device and ensure  that  Pdev  is  notified  whenever  those
+     streams  become  readable.   In  order to use Pdev, you must
+     also use FFss__DDiissppaattcchh.
+
+     The service procedures in the service array  are indexed  by
+     the pseudo-device operation type.  Thus
+
+          bzero(service, PDEV_NUM_OPS * sizeof(IntProc));
+          service[PDEV_OPEN] = MyOpenProc;
+          service[PDEV_READ] = MyReadProc;
+     is a valid initialization for the service array that defines
+     open  and read callbacks, and leaves the other pseudo-device
+     operations as no-ops.
+
+     The return value of a service procedure will be  the  return
+     value  of  the corresponding system call by the client, with
+     the exception of FS_WOULD_BLOCK as described below.
+
+PPDDEEVV__OOPPEENN
+          ReturnStatus
+          OpenProc(token, flags, pid, hostID, uid, privatePtr, selectBitsPtr)
+              ClientData token;    /* Token to identify stream to pseudo-device. */
+                         /* Pass this token to Pdev_Ready */
+              int flags;      /* Flags to the open system call */
+              int pid;        /* ID of process opening the pseudo-device */
+              int hostID;          /* Host where that process is executing */
+              int uid;        /* User ID of that process */
+              ClientData *privatePtr;   /* Settable by openProc for its own use */
+              int *selectBitsPtr;  /* Return - the initial select state of the process */
+                         /* A combination of FS_READABLE|FS_WRITABLE|FS_EXCEPTION */
+
+     The open service procedure gives  the  server  a  chance  to
+     refuse or accept the open by the client process.  The return
+     value of the open procedure is passed back as the return  of
+     the client's open system call.  The private data pointer can
+     be set by the open  service  procedure  to  reference  state
+     specific to its own needs.  This pointer is passed back into
+     the other service procedures.  There is also a token  passed
+     into  the  openProc  which  distinguishes  the stream to the
+     pseudo-device.  This token is to be used with the Pdev_Ready
+     procedure  that indicates the stream to the pseudo-device is
+     ready for I/O.
+
+
+
+Sprite v.1.0       Printed:  January 19, 1989                   2
+
+
+
+
+
+
+Pdev_Open          UNKNOWN SECTION (libcalls)           Pdev_Open
+
+
+
+     The selectBits are used in the  kernel's  implementation  of
+     sseelleecctt(())  for  pseudo-devices.   They should be a bitwise or
+     combination of FS_READABLE, FS_WRITABLE,  and  FS_EXCEPTION.
+     As  well  as  setting  this  select  state after each client
+     operation, it may be set asynchronously with the  Pdev_Ready
+     procedure.
+
+PPDDEEVV__CCLLOOSSEE
+          ReturnStatus
+          CloseProc(private)
+              ClientData private;  /* Set by openProc */
+     This is called when the client  closes  its  stream  to  the
+     pseudo-device.   Dups  and  forks  are  not  visible  to the
+     pseudo-device server, so the CloseProc is only  called  once
+     when the stream to the pseudo-device is really going away.
+
+PPDDEEVV__RREEAADD
+          ReturnStatus
+          ReadProc(private, offset, familyID, numBytesPtr, bufferPtr, freeItPtr, selectBitsPtr)
+              ClientData private;  /* Set by openProc */
+              int offset;          /* Byte offset at which to read */
+              int *numBytesPtr;    /* In/Out - num bytes to read/were read */
+              Address *bufferPtr;  /* Pointer to Buffer to hold data.  This
+                          * can be re-allocated by ReadProc. */
+              Boolean *freeItPtr;  /* TRUE if *bufferPtr is dynamically allocated. */
+              int *selectBitsPtr;  /* Return - select state of the pseudo-device */
+
+     The read service procedure is passed a pointer to  a  buffer
+     which  it  should  fill  with  data  in order to satisfy the
+     client's read  request.   The  read  service  procedure  can
+     either  use the preallocated buffer, or change the buffer to
+     one of its own choosing.  The freeItPtr parameter  indicates
+     if  the buffer is dynamically allocated.  The library uses a
+     buffer on the stack which is FS_BLOCK_SIZE bytes  long,  but
+     will  dynamically  allocate a new one if the read request is
+     for more bytes than this.  If the service procedure  changes
+     the  buffer it should free the passed in buffer if indicated
+     by *freeItPtr, and it should set *freeItPtr appropriately so
+     the  library  can  free  the  buffer  after  completing  the
+     PDEV_READ transaction  with  the  kernel.   The  numBytesPtr
+     indicates  how  much  data  is  requested,  and it should be
+     updated to reflect the amount of data actually returned.
+
+PPDDEEVV__WWRRIITTEE
+          ReturnStatus
+          WriteProc(private, offset, familyID, numBytesPtr, buffer, selectBitsPtr)
+              ClientData private;  /* Set by openProc */
+              int offset;          /* Byte offset at which to write */
+              int *numBytesPtr;    /* In/Out - num bytes to write/were written */
+              Address buffer; /* Buffer that holds data written by client */
+              int *selectBitsPtr;  /* Return - select state of the pseudo-device */
+
+
+
+
+Sprite v.1.0       Printed:  January 19, 1989                   3
+
+
+
+
+
+
+Pdev_Open          UNKNOWN SECTION (libcalls)           Pdev_Open
+
+
+
+     The write service procedure is passed  a  buffer  containing
+     the  data  written  by the client.  The numBytesPtr argument
+     should be updated to reflect how much data was processed  by
+     the service procedure.
+
+PPDDEEVV__IIOOCCTTLL
+          ReturnStatus
+          IoctlProc(private, command, familyID, byteOrder, inSize, inBuffer, outSizePtr,
+               outBuffer, selectBitsPtr)
+              ClientData private;  /*Set by open service procedure*/
+              int command;    /*IOControl command*/
+              int familyID;   /*Family ID of calling process*/
+              int byteOrder;  /*Indicates clients byte ordering */
+              int inSize;          /*Size of inBuffer*/
+              Address inBuffer;    /*Buffer containing input data*/
+              int *outSizePtr;     /*Resutl - size of outBuffer*/
+              Address outBuffer;   /*Buffer containing result data*/
+              int *selectBitsPtr;  /*Return - select state of pdev*/
+
+     The ioctl service procedure involves two buffers,  one  con-
+     taining input data, and one for data returned to the client.
+     The ioctlProc has to set *outSizePtr to  indicate  how  much
+     data  is being returned to the client process.  This data is
+     not byteswapped by the operating system in the case that the
+     client  is  on  a  host  with  different byte-ordering.  The
+     client's byte order is indicated by the byteOrder  argument,
+     and  the  SSwwaapp__BBuuffffeerr  library  routine  can be used to swap
+     incomming and outgoing buffers.
+
+SSEEEE AALLSSOO
+     Pdev_Ready, Pdev_Close, Pfs_Open, Swap_Buffer
+
+KKEEYYWWOORRDDSS
+     pseudo-device
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  January 19, 1989                   4
+
+
+

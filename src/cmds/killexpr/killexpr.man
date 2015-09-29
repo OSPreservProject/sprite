@@ -1,0 +1,55 @@
+'\" Copyright 1990 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/cmds/killexpr/RCS/killexpr.man,v 1.1 90/02/28 23:01:01 jhh Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS KILLEXPR cmds
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+killexpr \- Kill all processes who match the given expression(s)
+.SH SYNOPSIS
+\fBkillexpr\fR [\fIoptions\fR] \fIexpr expr...\fR
+.SH OPTIONS
+.IP "\fB\-h \fIhost\fR" 15
+Kills processes on the machine \fIhost\fR. The default is to kill processes
+on the local host.
+.IP "\fB\-help\fR" 15
+Print a summary of the command-line options.
+.BE
+
+.SH DESCRIPTION
+.PP
+The \fBkillexpr\fR command
+is used to a user's processes whose command line contains
+one of a set of regular expressions.
+The regular expression arguments are 'or'ed together to form a single
+expression that compared to the command lines of the user's processes.
+If a match is found the process is sent a SIGTERM signal, followed by
+a SIGKILL signal.
+The expression arguments are often simple strings, but can be more
+complex regular expressions of the form found in Perl.
+A process will be killed even if the expression matches only part
+of a word.  
+If you want the expression to match an entire word in the command line
+then you should surround the argument with spaces.
+.SH EXAMPLES
+.PP
+.IP "killexpr foo"
+Kills all processes that have the pattern 'foo' in their command line.
+.IP "killexpr ' foo '"
+Kills all processes that have the word 'foo' in their command line.
+.IP "killexpr foo bar
+Kills all processes that have either the pattern 'foo' 
+or the pattern 'bar' in their command line.
+.IP "killexpr '^foo'
+Kills all processes whose command line starts with the pattern 'foo'.
+.SH KEYWORDS
+kill
+

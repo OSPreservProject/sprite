@@ -1,0 +1,7 @@
+These subdirectories contain operating-system dependent routines.  All of the
+servers in this release use the 4.2bsd code to drive the networking, although
+two of them also use the sysV code to emulate various bsd utility routines.
+
+One thing that we have learned over the last releases is that having multiple
+copies of similar routines causes substantial troubles.  It is far better to
+work at building a common base than to replicate intricate code.

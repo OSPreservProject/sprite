@@ -1,0 +1,2 @@
+# this isn't full encap, but work's for .o files.
+TDEFINES = -DDEFAULT_VECTOR=aout_little_vec

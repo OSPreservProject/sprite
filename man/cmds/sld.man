@@ -1,0 +1,305 @@
+.TH SLD 1 "14 April 1987"
+.\" $Header$
+.ds ]W SPUR Release 1.0
+.SH NAME
+sld \- SPUR link editor
+.SH SYNOPSIS
+.B sld
+[ \fB\-A\ \fP\^\fIbasefile\fP ]
+[ \fB\-d\fP ]
+[ \fB\-e\ \fP\^\fIentry\fP ]
+[ \fB\-j\fP ]
+[ \fB\-l\fP\fIx\fP ]
+.if n .ti +0.5i
+[ \fB\-L\fIdir\fR ]
+[ \fB\-N\fP ]
+[
+.BI \-o \ name
+] [
+.B \-p[d]
+] [
+.B \-pt
+] [
+.B \-r
+]
+.if t .ti +0.5i
+[
+.B \-s
+] [
+.B \-S
+]
+.if n .ti +0.5i
+[
+.BI \-T[text]\  hex
+] [
+.BI \-Tdata\  hex
+] [
+.BI \-Tsdata\ hex
+]
+.if n .ti +0.5i
+[
+.BI \-u\  name
+] [
+.B \-w
+] [
+.B \-x
+] [
+.B \-X
+]
+[ \fB-y\fIsym\fR ]
+[
+\fB\-z\fP
+]
+.if n .ti +0.5i
+file .\|.\|.
+.SH DESCRIPTION
+.IX  "ld command"  ""  "\fLld\fP \(em link editor"
+.IX  "programming tools"  "ld command"  ""  "\fLld\fP \(em link editor"
+.IX  "link editor"  ""  "link editor \(em \fLld\fP"
+.I sld
+combines several object programs into one, resolves external references,
+and searches libraries.  In the simplest case several object
+.IR file s
+are given, and
+.I sld
+combines them, producing an object module which can be either executed or
+become the input for a further
+.I sld
+run.  In the latter case, the
+.B \-r
+option must be given to preserve the relocation bits. The output of
+.I sld
+is left on a file called
+.IB a . out
+if not otherwise specified by the 
+.B \-o
+option.  The output file 
+is made executable only if no errors occurred during the load, and the
+.B \-N
+and
+.B \-r
+options were not specified.
+.LP
+The argument
+.IR file s
+are concatenated in the order specified.  The entry
+point of the output is the beginning of the text unless the
+\fB\-e\fP option is specified.
+.LP
+If any 
+.I file
+is a library, it is searched exactly once at the point it
+is encountered in the argument list.  Only those routines defining an
+unresolved external reference are loaded.  The library must have been
+processed by
+.IR ranlib (1);
+its first member must be a file named `\_\^\_.SYMDEF',
+which is the dictionary for the library.
+The dictionary is searched iteratively to satisfy as many references as possible.
+.LP
+The symbols \fB\_etext\fP, \fB\_edata\fP,  \fB\_end\fP, 
+\fB\_bpdata\fP, and \fB_bpbss\fP (\fBetext\fP,
+\fBedata\fP, \fBend\fP, \fBbpdata\fP, and \fBbpbss\fP
+in C) are reserved, and if referred to, are set
+to the first location above the program, the first location above initialized
+shared data, and the first location above all shared data, the beginning
+of private initialized data, and the beginning of uninitialized private
+data, respectively.
+It is erroneous to define these symbols.
+.SH OPTIONS
+Options should appear before the file names, except abbreviated library
+names specified by the
+.B \-l
+option which can appear anywhere.
+.TP
+.BI \-A \ name
+Incremental loading: the
+resulting object may be read into an already executing program. 
+.I name
+is the name of a file that supplies the initial symbol table for the
+resulting object file.  Only newly linked material is 
+entered into the text and data portions of 
+.IB a . out,
+but the new symbol table will reflect all symbols defined before and after
+the incremental load.  This argument must appear before any other object
+file in the argument list.  One or more of the 
+.B \-T
+options may be used as well, and will be taken to mean that the newly linked
+segments will commence at the corresponding addresses (which must
+divisible by 8).  By default, text and private data are concatenated.
+The default starting point for text is the old value of 
+.BR _end .
+The default starting point for shared data is the old value of
+.BR _edata_s.
+The values of \fB_etext\fR, etc., are the same for the resulting
+object file as they were for
+.I name.
+.TP 
+.B  \-d
+Force definition of common storage even if the 
+.B \-r
+flag is present.
+.TP
+.BI \-e \ entry
+Define the \fBe\fPntry point: \fIentry\fP argument is the name of the
+entry point of the loaded program.
+.TP
+.BI \-j
+Join private data to the end of text.  This is the default for the
+.B \-N
+option.  The switch is ignored if overridden by the
+.B \-Tdata
+or
+.B \-pd
+options.
+.TP 
+.BI \-l x
+This option is an abbreviation for the library name `\fIdir\fR/lib\fIx\fR.a'.
+Here,
+.I x
+is a string.
+\fIDir\fR is one of the directories listed in preceding
+\fB\-L\fR options, or, if no such file exists,
+then one of the directories `/lib', `/lib/local', or `/usr/local/lib' (tried
+in that order).
+A library is searched when its name is encountered, so the placement of a
+.B  \-l
+is significant.
+.TP
+.BI \-L dir
+See \fB\-l\fR above.
+.TP
+.B \-N
+Do not make the text portion read only or sharable.  The data portion
+immediately follows the text, which is relocated to begin at address 0
+(i.e., not preceded by the header).
+(Use `magic number' 0507.)
+.TP 
+.BI  \-o \ name
+.I Name
+is the name of the
+.I sld
+output file, instead of
+.BR a.out .
+.TP 
+.B  \-p[d]
+`Publicize' private data segment.  The initialized
+private data in each object file 
+is concatenated to the front of the initialized shareable data of that
+file, and relocated as shareable data.
+Likewise, the uninitialized private data is concatenated to the front of the
+uninitialized shared data.
+The \-Tdata option, if present,
+is ignored.
+The \-Tsdata option is honored, and governs the position of the
+combined segment.    The names 
+.B _edata 
+and
+.B _end 
+(\fBedata\fR and \fBend\fR in C) are set
+to the values of _edata_s and _end_s, respectively.
+.TP
+.B \-pt
+Publicize text segment.  The text segments of the object files are concatenated
+together at the from of the initialized shareable data of that file, and
+relocated as shareable data.  The \-Ttext option, if present, only affects the
+placement of private data (when this follows the text segment), and has
+no effect on the placement of text.  The \-Tsdata option is honored, and 
+governs the position of the combined segment.
+.TP 
+.B  \-r
+Generate relocation bits in the output file
+so that it can be the subject of another
+.I sld
+run.  This flag also prevents final definitions from being given to common
+symbols, and suppresses the `undefined symbol' diagnostics.
+It implies the
+.B \-N
+option.
+.TP 
+.B  \-s
+Strip the output, that is, remove the symbol table and relocation bits to save
+space (but impair the usefulness of the debuggers).  This information can also
+be removed by
+.IR  strip (1).
+.TP
+.B \-S
+Strip the output by removing all symbols except locals and globals.
+.TP
+.BI \-T[text] \ hex
+Relocate as if the text (i.e., exclusive of the header) started at
+address
+.I hex
+(a hexadecimal number, possibly with preceding `0x').  This does \fInot\fP
+affect where the text is actually loaded; loading the file in the
+usual way will place the text segment at its standard location,
+relocated as if it were at address \fIhex\fR.
+.TP
+.BI \-Tdata hex
+Relocate the private data segment as if it started at location
+\fIhex\fR (a hexadecimal number as above).  Again, this does not
+affect where the private data segments are actually loaded.
+.TP
+.BI \-Tsdata hex
+Relocate the shared data segment as if it started at location
+\fIhex\fR (a hexadecimal number as above).  This does not
+affect where the shared data segments are actually loaded.
+.TP 
+.BI  \-u \ name
+Enter \fIname\fP as an \fBu\fPndefined symbol.  This is useful for loading
+wholly from a library, since initially the symbol table is empty and an
+unresolved reference is needed to force the loading of the first routine.
+.TP
+.B  \-w
+Each time an object file is automatically included from a library,
+indicate the name of the object file and a symbol that caused it to be
+loaded.
+.TP 
+.B  \-x
+Do not preserve local (non-\|\fB.globl\fP) symbols in the output symbol
+table; only enter external symbols.
+This option saves some space in the output file.
+.TP 
+.B  \-X
+Save local symbols except for those whose names begin with `L'.
+This option is used by
+.IR cc (1)
+to discard internally-generated labels while
+retaining symbols local to routines.
+.TP
+\fB\-y\fIsym\fR
+Display each file in which
+.I sym
+appears, its type and whether the file defines or references it.
+Many such options may be given to trace many symbols.
+It is usually necessary to begin
+.I sym
+with an `_', as external C, FORTRAN and Pascal variables begin
+with underscores.
+.TP
+.B \-z
+Arrange for the process to be loaded on demand from the resulting executable
+file (0513 `magic number') rather than preloaded.  
+This is the default (and is present here only for compatibility).
+In the resulting object file, the sizes of the text segment and initialized data
+segments are multiples of the page size (padded with nulls, if
+necessary).  When loaded in the usual 
+way, they all start on page boundaries, allowing easy demand loading
+from the object file.
+The header is incorporated in the first page of text.
+With this format the first few BSS segment symbols may actually end up
+in the initialized data segment, and likewise for SBSS segment symbols
+and the shared data segment;
+this is to avoid wasting the space resulting from rounding up
+the data segment sizes.
+.SH FILES
+.ta \w'/usr/local/lib/lib*.a\ \ 'u
+/lib/lib*.a	libraries
+.br
+/usr/lib/lib*.a	more libraries
+.br
+/usr/local/lib/lib*.a	still more libraries
+.br
+a.out	output file
+.SH "SEE ALSO"
+sas(1), ar(1), cc(1), ranlib(1), strip(1)

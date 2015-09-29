@@ -1,0 +1,149 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  ds3100:1.4 sun3:1.4 sun4nw:1.1 symm:1.1 spur:1.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.4
+date     92.06.03.22.48.33;  author voelker;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.12.19.18.00.44;  author jhh;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.11.15.20.57.50;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.03.19.13.58.42;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.4
+log
+@FDDI implementation
+@
+text
+@/*
+ * netLEMachInt.h --
+ *
+ *	Internal definitions for the ds5000-based LANCE controller.
+ *
+ * Copyright 1990 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/voelker/net/ds5000.md/RCS/netLEMachInt.h,v 1.1 92/05/28 17:59:19 voelker Exp Locker: voelker $ SPRITE (Berkeley)
+ */
+
+#ifndef _NETLEMACHINT
+#define _NETLEMACHINT
+
+#include <netInt.h>
+#include <machAddrs.h>
+
+/*
+ * Register address port and register data port definition.
+ */
+
+typedef struct NetLEMach_Reg {
+	volatile unsigned short	dataPort;	/* RDP */
+	unsigned short unused;
+        volatile unsigned short	addrPort[1];	/* RAP */
+} NetLEMach_Reg;
+
+#define NET_LE_REG_SIZE	6
+
+/*
+ * Defined constants:
+ */
+
+/*
+ * We have to copy the packets into the network buffer.
+ */
+
+#define NET_LE_COPY_PACKET		TRUE
+
+/*
+ * Misc addresses (offsets from slot address).
+ */
+
+#define NET_LE_MACH_BUFFER_OFFSET	0x0
+#define NET_LE_MACH_BUFFER_SIZE		0x20000
+#define NET_LE_MACH_RDP_OFFSET		0x100000
+#define NET_LE_MACH_RAP_OFFSET		0x100004
+#define NET_LE_MACH_DIAG_ROM_OFFSET	0x1c0000
+#define NET_LE_MACH_ESAR_OFFSET		0x1c0000
+
+/*
+ * Macros for converting chip to cpu and cpu to chip address.
+ * We always deal with chip addresses in two parts, the lower 16 bits
+ * and the upper 8 bits.
+ */
+#define	NET_LE_FROM_CHIP_ADDR(statePtr, high,low)	\
+		((Address) (statePtr->bufAddr + ((int) (high) << 16) + (low)))
+#define	NET_LE_TO_CHIP_ADDR_LOW(a) ( ((unsigned int) (a)) & 0xffff)
+
+#define	NET_LE_TO_CHIP_ADDR_HIGH(a) ( (((unsigned int) (a)) >> 16) & 0x1)
+
+/*
+ * Macro to allocate a network buffer.  For the ds5000 we call the 
+ * routine to allocate memory in the region accessible by the chip.
+ */
+#define BufAlloc(statePtr, numBytes) \
+    NetLEMemAlloc((statePtr), (numBytes))
+
+#endif /* _NETLEMACHINT */
+@
+
+
+1.3
+log
+@New mips compiler request char type to be cast before shifting greater
+than 8.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/net/ds5000.md/netLEMachInt.h,v 1.2 91/11/15 20:57:50 kupfer Exp $ SPRITE (Berkeley)
+@
+
+
+1.2
+log
+@Add missing RCS Header line.
+@
+text
+@d15 1
+a15 1
+ * $Header$ SPRITE (Berkeley)
+d63 1
+a63 1
+		((Address) (statePtr->bufAddr + ((high) << 16) + (low)))
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d14 2
+@

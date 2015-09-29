@@ -1,0 +1,168 @@
+512
+llib-lzss:zss.c 2
+2
+2 54 36 0 0
+Zss_ReadVolumeHeader
+4 0 0
+24 4096 -32768
+16
+0 62 4 0 0
+Zss_ReadVolumeHeader
+2
+2 84 36 0 0
+Zss_WriteVolumeHeader
+4 0 0
+24 4096 -32768
+16
+0 92 4 0 0
+Zss_WriteVolumeHeader
+2
+4 118 36 0 0
+Zss_ReadCheckpoint
+4 0 0
+24 4096 -32768
+4 0 0
+24 4096 -32768
+16
+0 126 4 0 0
+Zss_ReadCheckpoint
+2
+4 152 36 0 0
+Zss_WriteCheckpoint
+4 0 0
+24 4096 -32768
+4 0 0
+24 4096 -32768
+16
+0 160 4 0 0
+Zss_WriteCheckpoint
+512
+llib-lzss:zss.c
+2
+3 243 36 0 0
+Zss_ReadSummaryTable
+4 0 0
+24 4096 -32768
+24 224 -32768
+16
+0 267 4 0 0
+Zss_ReadSummaryTable
+2
+3 291 36 0 0
+Zss_WriteSummaryTable
+4 0 0
+24 4096 -32768
+24 224 -32768
+16
+0 318 4 0 0
+Zss_WriteSummaryTable
+2
+4 342 36 0 0
+Zss_ReadFrameHeader
+4 0 0
+24 4096 -32768
+4 0 0
+24 8192 -32768
+16
+0 354 4 0 0
+Zss_ReadFrameHeader
+2
+5 379 36 0 0
+Zss_ReadFrame
+4 0 0
+24 4096 -32768
+4 0 0
+4 0 0
+18 0 0
+16
+0 392 4 0 0
+Zss_ReadFrame
+2
+4 416 36 0 0
+Zss_WriteFrameHeader
+4 0 0
+24 4096 -32768
+4 0 0
+24 8192 -32768
+16
+0 428 4 0 0
+Zss_WriteFrameHeader
+2
+3 452 36 0 0
+Zss_ReadFreeTable
+4 0 0
+24 4096 -32768
+20 0 0
+16
+0 475 4 0 0
+Zss_ReadFreeTable
+2
+3 498 36 0 0
+Zss_WriteFreeTable
+4 0 0
+24 4096 -32768
+20 0 0
+16
+0 522 4 0 0
+Zss_WriteFreeTable
+2
+2 545 36 0 0
+Zss_PrintVolumeHeader
+24 384 23058
+24 4096 -32768
+16
+0 564 4 0 0
+Zss_PrintVolumeHeader
+2
+2 587 36 0 0
+Zss_PrintCheckpoint
+24 384 23058
+24 4096 -32768
+16
+0 592 4 0 0
+Zss_PrintCheckpoint
+2
+2 614 36 0 0
+Zss_PrintFrameSummary
+24 384 23058
+24 224 -32768
+16
+0 623 4 0 0
+Zss_PrintFrameSummary
+2
+2 645 36 0 0
+Zss_PrintFrameHeader
+24 384 23058
+24 8192 -32768
+16
+0 657 4 0 0
+Zss_PrintFrameHeader
+2
+2 679 36 0 0
+Zss_PrintFrameSubHeader
+24 384 23058
+24 4096 -32768
+16
+0 689 4 0 0
+Zss_PrintFrameSubHeader
+512
+llib-lzss:zssChecksum.c 2
+2
+3 49 36 0 0
+Zss_Checksum
+4 0 0
+18 0 0
+30 0 0
+16
+0 133 4 0 0
+Zss_Checksum
+2
+4 162 36 0 0
+Zss_ChecksumCopy
+4 0 0
+18 0 0
+18 0 0
+30 0 0
+16
+0 250 4 0 0
+Zss_ChecksumCopy

@@ -1,0 +1,1248 @@
+head     1.38;
+branch   ;
+access   ;
+symbols  ;
+locks    mottsmth:1.38; strict;
+comment  @@;
+
+
+1.38
+date     91.11.06.18.34.52;  author kupfer;  state Exp;
+branches ;
+next     1.37;
+
+1.37
+date     90.04.15.11.52.57;  author mendel;  state Exp;
+branches ;
+next     1.36;
+
+1.36
+date     90.03.07.15.00.57;  author douglis;  state Exp;
+branches ;
+next     1.35;
+
+1.35
+date     90.02.27.17.43.05;  author douglis;  state Exp;
+branches ;
+next     1.34;
+
+1.34
+date     90.02.20.11.50.16;  author douglis;  state Exp;
+branches ;
+next     1.33;
+
+1.33
+date     90.01.30.19.43.04;  author tve;  state Exp;
+branches ;
+next     1.32;
+
+1.32
+date     90.01.30.19.40.27;  author tve;  state Exp;
+branches ;
+next     1.31;
+
+1.31
+date     89.12.13.21.30.39;  author tve;  state Exp;
+branches ;
+next     1.30;
+
+1.30
+date     89.11.30.13.56.44;  author rab;  state Exp;
+branches ;
+next     1.29;
+
+1.29
+date     89.11.30.11.11.12;  author douglis;  state Exp;
+branches ;
+next     1.28;
+
+1.28
+date     89.10.09.16.59.21;  author tve;  state Exp;
+branches ;
+next     1.27;
+
+1.27
+date     89.10.09.06.55.55;  author rab;  state Exp;
+branches ;
+next     1.26;
+
+1.26
+date     89.10.02.10.05.56;  author rab;  state Exp;
+branches ;
+next     1.25;
+
+1.25
+date     89.07.21.18.29.53;  author douglis;  state Exp;
+branches ;
+next     1.24;
+
+1.24
+date     89.07.20.17.36.25;  author mgbaker;  state Exp;
+branches ;
+next     1.23;
+
+1.23
+date     89.07.02.23.31.02;  author rab;  state Exp;
+branches ;
+next     1.22;
+
+1.22
+date     89.07.02.23.06.19;  author douglis;  state Exp;
+branches ;
+next     1.21;
+
+1.21
+date     89.06.29.17.30.11;  author douglis;  state Exp;
+branches ;
+next     1.20;
+
+1.20
+date     89.04.23.23.20.20;  author jhh;  state Exp;
+branches ;
+next     1.19;
+
+1.19
+date     89.04.03.22.23.41;  author douglis;  state Exp;
+branches ;
+next     1.18;
+
+1.18
+date     89.03.15.22.25.09;  author douglis;  state Exp;
+branches ;
+next     1.17;
+
+1.17
+date     89.03.15.22.14.13;  author jhh;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     88.12.31.11.11.58;  author ouster;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     88.12.29.08.37.54;  author ouster;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     88.12.28.17.06.25;  author ouster;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     88.11.23.17.28.22;  author ouster;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     88.11.23.09.52.14;  author ouster;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     88.11.10.17.52.58;  author douglis;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     88.11.08.11.17.49;  author douglis;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     88.10.19.16.48.30;  author ouster;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     88.10.19.09.40.12;  author ouster;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     88.10.14.16.54.31;  author ouster;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     88.10.03.09.51.58;  author ouster;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     88.10.02.17.14.55;  author ouster;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.10.02.11.30.33;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.09.19.09.02.38;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.09.11.17.02.28;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.09.09.17.44.19;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.38
+log
+@Generate the lint library correctly, and name it so that it can be
+used to lint individual modules.
+@
+text
+@#
+# This is a library Makefile that is included by the Makefiles for
+# the top-level directories of multi-directory libraries ("biglib"s).
+# For most targets, this file just passes the targets on to each of
+# the subdirectories.  The file that includes this one should already
+# have defined the following variables:
+#	LIBRARY		base name of library (e.g. tcl, sx, c, etc.)
+#	LINTDIR		place to install lint library (we'll add a .mach
+#			extension here)
+#	SUBDIRS		subdirectories that contain "interesting" things
+#			(e.g., individual commands, modules of the kernel,
+#			of sub-portions of a large library).
+#	TM		target machine type for object files etc.
+#	TYPE		a keyword identifying which sort of command this
+#			is;  used to determine where to install, etc.
+#
+# A bunch of variables are passed on to lower-level makes, if they are
+# defined;  see the definitions immediately below for a complete list.
+#	
+# $Header: /sprite/lib/pmake/RCS/bigcmdtop.mk,v 1.37 90/04/15 11:52:57 mendel Exp Locker: kupfer $
+#
+
+OBJS		= $(SUBDIRS:S|$|/$(TM).md/linked.o|g)
+POBJS		= $(SUBDIRS:S|$|/$(TM).md/linked.po|g)
+
+#
+# Suffix for profiled targets.
+#
+PROFSUFFIX	?= .pg
+
+#
+# System programs -- assign conditionally so they may be redefined in
+# including makefile
+#
+BINDIR		?= /sprite/cmds.$(MACHINE)
+
+CAT		?= $(BINDIR)/cat
+CP		?= $(BINDIR)/cp
+MV		?= $(BINDIR)/mv
+RM		?= $(BINDIR)/rm
+TEST            ?= $(BINDIR)/test
+UPDATE		?= $(BINDIR)/update
+
+#
+# Several variables (such as where to install) are set based on the
+# TYPE variable.  Of course, any of these variables can be overridden
+# by explicit assignments.
+#
+TYPE		?= unknown
+#if !empty(TYPE:Msprite)
+INSTALLDIR	?= /sprite/cmds
+INSTALLMAN	?= /sprite/man/cmds
+#elif !empty(TYPE:Mx)
+INSTALLDIR	?= /X/cmds
+INSTALLMAN	?= /X/man/cmds
+#elif !empty(TYPE:MX11R3)
+INSTALLDIR	?= /mic/X11R3/cmds
+INSTALLMAN	?= /mic/X11R3/man/cmds
+#elif !empty(TYPE:MX11R4)
+INSTALLDIR	?= /X11/R4/cmds
+INSTALLMAN	?= /X11/R4/man/cmds
+#elif !empty(TYPE:Mdaemon)
+INSTALLDIR	?= /sprite/daemons
+INSTALLMAN	?= /sprite/man/daemons
+#elif !empty(TYPE:Madmin)
+INSTALLDIR	?= /sprite/admin
+INSTALLMAN	?= /sprite/man/admin
+#elif !empty(TYPE:Mpersonal)
+INSTALLDIR	?= $(HOME)/cmds
+INSTALLMAN	?= $(HOME)/man/cmds
+LOADFLAGS	+= -L$(HOME)/lib/$(TM).md
+XCFLAGS		+= -I$(HOME)/lib/include
+.PATH.h		: $(HOME)/lib/include
+#ifndef		USERBACKUP
+NOBACKUP	=
+#endif
+#endif
+#ifdef INSTALLDIR
+TMINSTALLDIR	?= $(INSTALLDIR).$(TM)
+#endif
+
+#
+# Figure out what stuff we'll pass to sub-makes.
+#
+PASSVARS	=
+#ifdef		CC
+PASSVARS	+= 'CC=$(CC)'
+#endif
+#ifdef		XCFLAGS
+PASSVARS	+= 'XCFLAGS=$(XCFLAGS)'
+#endif
+#ifdef		XAFLAGS
+PASSVARS	+= 'XAFLAGS=$(XAFLAGS)'
+#endif
+#ifdef		INCLUDEDIR
+PASSVARS	+= 'INCLUDEDIR=$(INCLUDEDIR)'
+#endif
+#ifdef		INSTALLDIR
+PASSVARS	+= 'INSTALLDIR=$(INSTALLDIR)'
+#endif
+#ifdef		TM
+PASSVARS	+= 'TM=$(TM)'
+#endif
+
+#
+# Collect flags and other machine-dependent things for compilation.
+#
+#include	<tm.mk>
+CTFLAGS		?= -wt
+INSTALLFLAGS	?=
+INSTALLMANFLAGS	?=
+LINTFLAGS	?= -S -m$(TM)
+XCFLAGS		?=
+LOADFLAGS	?=
+XAFLAGS		?=
+CFLAGS		+= -g -O $(TMCFLAGS) $(XCFLAGS)
+
+# MAKESUBDIRS usage:
+#	<target> : MAKESUBDIRS
+#
+# This .USE target will simply pass <target> onto each subdirectory
+# in a separate make.  If the TM variable is defined, then only pass
+# the target on to subdirectories whose Makefiles include the given
+# TM among their MACHINES.
+#
+MAKESUBDIRS	: .USE .MAKE .SILENT .NOEXPORT
+	for i in $(SUBDIRS);
+	do
+#ifdef TM
+		if grep '^MACHINES' $i/Makefile | grep -s $(TM); then
+			true;
+		else continue;
+		fi
+#endif TM
+		echo %%% ${i} %%%
+		(cd $i; $(MAKE) $(PASSVARS) $(.TARGET))
+	done
+
+#
+# MAKEINSTALL usage:
+#	target : source MAKEINSTALL
+#
+# The source is installed at the target and backed-up to
+# $(INSTALLDIR).$(TM).old
+#
+#ifndef NOBACKUP
+BACKUP		= -b $(INSTALLDIR).$(TM).old
+#ifdef BACKUPAGE
+BACKUP += -B $(BACKUPAGE)
+#endif
+#else
+BACKUP		=
+#endif  NOBACKUP
+#if !empty(TM:Mspur)
+# use a separate install script that doesn't strip
+# note that XLD has already been run
+MAKEINSTALL	: .USE .SILENT
+	$(UPDATE) -m 775 $(BACKUP) $(INSTALLFLAGS) $(.ALLSRC) $(.TARGET)
+#else
+MAKEINSTALL	: .USE .SILENT
+	$(UPDATE) -m 775 -s $(BACKUP) $(INSTALLFLAGS) $(.ALLSRC) $(.TARGET)
+#endif
+
+#ifndef no_targets
+#
+# We should define the main targets.  See the Mkmf man page for details.
+#
+
+LIBS			?=
+
+default			: $(TM).md/$(NAME)
+$(TM).md/$(NAME)	: subdirs $(LIBS) $(OBJS) -lc
+	$(RM) -f $(.TARGET)
+	$(CC) $(CFLAGS) -o $(.TARGET) $(LOADFLAGS) $(OBJS) $(LIBS)
+#if !empty(TM:Mspur)
+	$(XLD) $(.TARGET)
+#endif
+
+#
+# make the linked.o files depend on the subdirectories so pmake won't 
+# stat linked.o before remaking the subdirectories and think that the top-level
+# target is up-to-date.  This generates N^2 dependencies, but there aren't
+# typically many subdirectories so this should be okay, and all the
+# subdirectories get remade anyway.
+#
+$(SUBDIRS:S|$|/$(TM).md/linked.o|g): $(SUBDIRS)
+
+clean			:: .MAKE .SILENT tidy
+	echo "rm -f $(TM).md/$(NAME)"
+	rm -f $(TM).md/$(NAME)
+	echo "rm -f $(TM).md/$(NAME)$(PROFSUFFIX)"
+	rm -f $(TM).md/$(NAME)$(PROFSUFFIX)
+
+tidy			:: .MAKE .SILENT .NOEXPORT
+	for i in $(SUBDIRS);
+	do
+#ifdef TM
+		if grep '^MACHINES' $i/Makefile | grep -s $(TM); then
+			true;
+		else continue;
+		fi
+#endif TM
+		echo %%% ${i} %%%
+		(cd $i; $(MAKE) $(PASSVARS) clean)
+	done
+
+#
+# For "install", a couple of tricks.  First, allow local.mk to disable
+# by setting no_install.  Second, use :: instead of : so that local.mk
+# can augment install with additional stuff.  Third, don't install if
+# TMINSTALLDIR isn't set.
+#
+INSTCMD			= $(INSTALLDIR).$(TM)/$(NAME)
+#ifndef no_install
+#ifdef TMINSTALLDIR
+install			:: $(INSTCMD) installman
+$(INSTCMD)		: $(TM).md/$(NAME) MAKEINSTALL
+#else
+install			:: .SILENT
+	echo "Can't install $(NAME):  no install directory defined"
+#endif TMINSTALLDIR
+#endif no_install
+
+#if empty(MANPAGES)
+installman		:: .SILENT
+	echo "There's no man page for $(NAME).  Please write one."
+#elif !empty(MANPAGES:MNONE)
+installman		::
+
+#elif defined(INSTALLMAN)
+installman		:: .SILENT
+	$(UPDATE) -m 444 -l $(INSTALLMANFLAGS) $(MANPAGES) $(INSTALLMAN)
+#else
+installman		:: .SILENT
+	echo "Can't install man page(s): no install directory defined"
+#endif
+
+lint			:: lintlib
+lint			:: MAKESUBDIRS
+lintlib			: $(TM).md/lintlib.ln
+$(TM).md/lintlib.ln	: .MAKE .SILENT
+	$(RM) -f $(.TARGET)
+	for i in $(SUBDIRS);
+	do
+#ifdef TM
+		if grep '^MACHINES' $i/Makefile | grep -s $(TM); then
+			true;
+		else continue;
+		fi
+#endif TM
+		echo %%% ${i} %%%
+		(cd $i; $(MAKE) $(PASSVARS) lintlib)
+		$(CAT) ${i}/$(TM).md/llib-l${i}.ln >> $(.TARGET)
+	done
+
+mkmf			::
+	mkmf
+
+newtm			! .MAKE .SILENT
+	if $(TEST) -d $(TM).md; then
+	    true
+	else
+	    mkdir $(TM).md;
+	    chmod 775 $(TM).md;
+	    mkmf -m$(TM)
+	fi
+	for i in $(SUBDIRS);
+	do
+		echo %%% ${i} %%%
+		(cd $i; $(MAKE) $(PASSVARS) newtm)
+	done
+
+profile			: $(TM).md/$(NAME)$(PROFSUFFIX)
+$(TM).md/$(NAME)$(PROFSUFFIX)	: subdirs_p $(POBJS) $(LIBS:S/.a$/_p.a/g) 
+	$(RM) -f $(.TARGET)
+	$(CC) $(CFLAGS) -pg -o $(.TARGET) $(LOADFLAGS) $(POBJS) $(LIBS) 
+
+
+#
+# The following target does a quick make without cycling through to
+# recompile in each of the subdirectories.
+#
+quick			: $(LIBS) -lc
+	$(RM) -f $(TM).md/$(NAME)
+	$(CC) $(CFLAGS) -o $(TM).md/$(NAME) $(LOADFLAGS) $(OBJS) $(LIBS)
+
+rcsinfo			: .MAKE .SILENT
+	for i in $(SUBDIRS);
+	do
+		echo %%% ${i} %%%
+		(cd $i; rcsinfo)
+	done
+
+#
+# The rules immediately below are a trick to get Pmake to remake in
+# the subdirectories, but not to consider $(TM).md/$(NAME) to
+# be out-of-date with respect to $(OBJS) unless $(OBJS) are actually
+# more recent than $(TM).md/$(NAME).
+#
+
+$(OBJS)			: .DONTCARE
+subdirs			: .MAKE .EXEC .SILENT .NOEXPORT
+	for i in $(SUBDIRS);
+	do
+#ifdef TM
+		if grep '^MACHINES' $i/Makefile | grep -s $(TM); then
+			true;
+		else continue;
+		fi
+#endif TM
+		echo %%% ${i} %%%
+		(cd $i; $(MAKE) $(PASSVARS))
+	done
+
+$(POBJS)			: .DONTCARE
+subdirs_p			: .MAKE .EXEC .SILENT .NOEXPORT
+	for i in $(SUBDIRS);
+	do
+#ifdef TM
+		if grep '^MACHINES' $i/Makefile | grep -s $(TM); then
+			true;
+		else continue;
+		fi
+#endif TM
+		echo %%% ${i} %%%
+		(cd $i; $(MAKE) $(PASSVARS) profile)
+	done
+
+depend mkmf tags 	:: MAKESUBDIRS
+
+dist        !
+#if defined(DISTDIR) && !empty(DISTDIR)
+	for i in Makefile local.mk $(MANPAGES)
+	do
+	if $(TEST) -e $${i}; then
+	    $(UPDATE)  $${i} $(DISTDIR)/$${i} ;else true; fi
+	done
+	for i in $(SUBDIRS)
+	do
+	    echo %%% $${i} %%%
+#ifdef TM
+	    ( cd $${i}; $(MAKE) dist 'DISTDIR=$(DISTDIR)'/$${i} 'TM=$(TM)' )
+#else
+	    ( cd $${i}; $(MAKE) dist 'DISTDIR=$(DISTDIR)'/$${i} )
+#endif
+	done
+#else
+	@@echo "Sorry, no distribution directory defined for $(NAME)."
+#endif
+
+#include <all.mk>
+
+#endif no_targets
+
+.MAKEFLAGS	: -C		# No compatibility needed
+@
+
+
+1.37
+log
+@Added /X11/R4 directories.
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/bigcmdtop.mk,v 1.36 90/03/07 15:00:57 douglis Exp $
+d240 2
+a241 2
+lintlib			: $(TM).md/lintlib
+$(TM).md/lintlib	: .MAKE .SILENT
+d253 1
+a253 1
+		$(CAT) ${i}/$(TM).md/lintlib >> $(.TARGET)
+@
+
+
+1.36
+log
+@removed entry to clear PATH.a -- why on earth would we want to remove
+the path that points to /sprite/lib?!
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/bigcmdtop.mk,v 1.35 90/02/27 17:43:05 douglis Exp Locker: douglis $
+d59 3
+@
+
+
+1.35
+log
+@added support for backup age flag BACKUPAGE
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/bigcmdtop.mk,v 1.34 90/02/20 11:50:16 douglis Exp Locker: douglis $
+a24 5
+
+#
+# Set up search paths.
+#
+.PATH.a		: # Clear out
+@
+
+
+1.34
+log
+@tried to add some consistency to ::/: operators, and fixed tve's TYPE==personal complaint
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/bigcmdtop.mk,v 1.33 90/01/30 19:43:04 tve Exp Locker: douglis $
+d150 3
+@
+
+
+1.33
+log
+@more LOADFLAGS handling
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/bigcmdtop.mk,v 1.31 89/12/13 21:30:39 tve Exp $
+d70 9
+@
+
+
+1.32
+log
+@added LOADFLAGS handling
+@
+text
+@d266 1
+a266 1
+	$(CC) $(CFLAGS) -pg -o $(.TARGET) $(POBJS) $(LIBS) 
+d275 1
+a275 1
+	$(CC) $(CFLAGS) -o $(TM).md/$(NAME) $(OBJS) $(LIBS)
+@
+
+
+1.31
+log
+@installman used ':' instead of '::'
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/bigcmdtop.mk,v 1.30 89/11/30 13:56:44 rab Exp Locker: tve $
+d107 1
+d164 1
+a164 1
+	$(CC) $(CFLAGS) -o $(.TARGET) $(OBJS) $(LIBS)
+@
+
+
+1.30
+log
+@Changed dist: to dist!,
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/bigcmdtop.mk,v 1.29 89/11/30 11:11:12 douglis Exp Locker: rab $
+d214 1
+a214 1
+installman		: .SILENT
+d220 1
+a220 1
+installman		: .SILENT
+d223 1
+a223 1
+installman		: .SILENT
+@
+
+
+1.29
+log
+@make the linked.o files depend on the subdirectories so pmake won't
+tat linked.o before remaking the subdirectories and think that the top-level
+ target is up-to-date..
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/bigcmdtop.mk,v 1.28 89/10/09 16:59:21 tve Exp Locker: douglis $
+d320 1
+a320 1
+dist:
+@
+
+
+1.28
+log
+@Added INSTALLMAN, INSTALLDIR for TYPE=X11R3
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/bigcmdtop.mk,v 1.27 89/10/09 06:55:55 rab Exp Locker: tve $
+d168 8
+@
+
+
+1.27
+log
+@Fixed distribution stuff.
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/bigcmdtop.mk,v 1.26 89/10/02 10:05:56 rab Exp Locker: rab $
+d61 3
+@
+
+
+1.26
+log
+@Added Distribution stuff.
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/bigcmdtop.mk,v 1.25 89/07/21 18:29:53 douglis Exp Locker: rab $
+d46 1
+d238 1
+a238 1
+	if test -d $(TM).md; then
+d313 2
+a314 1
+	if test -e $${i}; then $(UPDATE)  $${i} $(DISTDIR)/$${i} ;fi
+@
+
+
+1.25
+log
+@changed newtm to do mkmf for only the new machine type
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/bigcmdtop.mk,v 1.24 89/07/20 17:36:25 mgbaker Exp Locker: douglis $
+d307 19
+@
+
+
+1.24
+log
+@Got rid of extra porting stuff for sun4.
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/bigcmdtop.mk,v 1.23 89/07/02 23:31:02 rab Exp Locker: mgbaker $
+d242 1
+a242 1
+	    mkmf
+@
+
+
+1.23
+log
+@Fixed sun4 stuff to work with gcc & gld.
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/bigcmdtop.mk,v 1.22 89/07/02 23:06:19 douglis Exp Locker: rab $
+a103 4
+#if !empty(TM:Msun4)
+CFLAGS		+= -g $(TMCFLAGS) $(XCFLAGS)
+LOADFLAGS	= -L/sprite/lib/sun4.md
+#else
+a104 1
+#endif
+a158 4
+#if !empty(TM:Msun4)
+	$(LD) -msun4 -o /tmp/$(.TARGET) $(LOADFLAGS) -e start $(OBJS) $(LIBS) /sprite/lib/sun4.md/libc.a
+#	$(LD) $(CFLAGS) -o $(.TARGET) $(OBJS) $(LIBS)
+#else
+a159 1
+#endif
+@
+
+
+1.22
+log
+@*** empty log message ***
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/bigcmdtop.mk,v 1.21 89/06/29 17:30:11 douglis Exp Locker: douglis $
+d165 2
+a166 2
+	$(LD) -o /tmp/$(.TARGET) $(LOADFLAGS) -Bstatic -e start -T 2020 -Tdata 40000 $(OBJS) $(LIBS) /sprite/src/lib/c/sun4.md/libc.a
+	$(LD) $(CFLAGS) -o $(.TARGET) $(OBJS) $(LIBS)
+@
+
+
+1.21
+log
+@added some sun4-dependent checks (done by MGB).
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/bigcmdtop.mk,v 1.20 89/04/23 23:20:20 jhh Exp Locker: mgbaker $
+d181 1
+a181 1
+tidy			:: .MAKE .SILENT
+@
+
+
+1.20
+log
+@added spur support
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/bigcmdtop.mk,v 1.19 89/04/03 22:23:41 douglis Exp $
+d104 4
+d109 1
+d164 4
+d169 1
+@
+
+
+1.19
+log
+@added 'tidy' target.
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/bigcmdtop.mk,v 1.18 89/03/15 22:25:09 douglis Exp Locker: douglis $
+d139 3
+d143 3
+d147 1
+d160 4
+@
+
+
+1.18
+log
+@added check for MANPAGES = NONE to override complaint about lack of man
+pages.
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/bigcmdtop.mk,v 1.17 89/03/15 22:14:13 jhh Exp Locker: douglis $
+d154 1
+a154 1
+clean			:: .MAKE .SILENT
+d159 2
+@
+
+
+1.17
+log
+@added 'profile' target
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/bigcmdtop.mk,v 1.16 88/12/31 11:11:58 ouster Exp Locker: jhh $
+d191 3
+@
+
+
+1.16
+log
+@Type in previous "fix".
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/bigcmdtop.mk,v 1.15 88/12/29 08:37:54 ouster Exp $
+d24 1
+d32 5
+d157 2
+d234 6
+d274 14
+@
+
+
+1.15
+log
+@When installing man pages, copy files referenced by symbolic links,
+not the links themselves.
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/bigcmdtop.mk,v 1.14 88/12/28 17:06:25 ouster Exp Locker: ouster $
+d59 1
+a59 1
+INSTALLMAN	?= /srpite/man/admin
+@
+
+
+1.14
+log
+@Add "installman" target, use TYPE to pick installation locations.
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/bigcmdtop.mk,v 1.13 88/11/23 17:28:22 ouster Exp $
+d185 1
+a185 1
+	$(UPDATE) -m 444 $(INSTALLMANFLAGS) $(MANPAGES) $(INSTALLMAN)
+@
+
+
+1.13
+log
+@Revisions to make "make newtm" work.
+@
+text
+@a6 2
+#	INSTALLDIR	generic place to install archive (we'll add a .md
+#			subdirectory specifier here)
+d14 2
+d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/bigcmdtop.mk,v 1.12 88/11/23 09:52:14 ouster Exp Locker: ouster $
+d43 23
+d94 1
+d166 2
+a167 1
+# can augment install with additional stuff.
+d171 2
+a172 1
+install			:: $(INSTCMD)
+d174 4
+d179 11
+@
+
+
+1.12
+log
+@Major changes to finalize the new C library (move include.new to
+include, etc.).
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/bigcmdtop.mk,v 1.11 88/11/10 17:52:58 douglis Exp Locker: ouster $
+d171 13
+a183 3
+newtm			:: .IGNORE
+	mkdir $(TM).md
+	mkmf
+d221 1
+a221 1
+depend mkmf newtm tags 	:: MAKESUBDIRS
+@
+
+
+1.11
+log
+@added .NOEXPORT in subdirs target, to go along with the
+change I already made to MAKESUBDIRS macro.
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/bigcmdtop.mk,v 1.10 88/11/08 11:17:49 douglis Exp Locker: douglis $
+d68 4
+a71 1
+#include	<tmflags.mk>
+d73 2
+a74 3
+CFLAGS		+= $(TMCFLAGS) -I. $(.INCLUDES) $(XCFLAGS)
+LINTFLAGS	?= -S
+INSTALLFLAGS	?=
+d80 4
+a83 1
+# in a separate make.
+d87 6
+a97 10
+# MAKECMDNOVERS usage:
+#	<program> : <objects> <libraries> MAKECMDNOVERS
+#
+# Links a command, without using the version.[ho] files.
+#
+MAKECMDNOVERS	:  .USE -lc
+	$(RM) -f $(.TARGET)
+	$(CC) $(CFLAGS) -o $(.TARGET) $(.ALLSRC)
+
+#
+d119 1
+d124 3
+a126 9
+#
+# The rules immediately below are a trick to get Pmake to remake in
+# the subdirectories, but not to consider $(TM).md/$(NAME) to
+# be out-of-date with respect to $(OBJS) unless $(OBJS) are actually
+# more recent than $(TM).md/$(NAME).
+#
+
+$(OBJS)			: .DONTCARE
+subdirs			: .MAKE .EXEC .SILENT .NOEXPORT
+d129 6
+d136 1
+a136 1
+		(cd $i; $(MAKE) $(PASSVARS))
+a137 1
+default			: $(TM).md/$(NAME)
+a139 8
+# The following target does a quick make without cycling through to
+# recompile in each of the subdirectories.
+#
+quick			: $(LIBS) -lc
+	$(RM) -f $(TM).md/$(NAME)
+	$(CC) $(CFLAGS) -o $(TM).md/$(NAME) $(OBJS) $(LIBS)
+
+#
+d150 3
+d157 6
+a166 1
+lintlib			: $(TM).md/lintlib
+d168 2
+a169 2
+lint			:: lintlib
+lint			:: MAKESUBDIRS
+d171 3
+a173 6
+mkmf			: .MAKE .SILENT
+	for i in $(SUBDIRS);
+	do
+		echo %%% ${i} %%%
+		(cd $i; mkmf)
+	done
+d175 9
+a183 1
+newtarget		: .MAKE .SILENT
+d187 1
+a187 1
+		(cd $i; mkdir $(TM).md)
+d190 9
+a198 1
+rcsinfo			: .MAKE .SILENT
+d201 6
+d208 1
+a208 1
+		(cd $i; rcsinfo)
+d211 1
+a211 1
+clean depend tags 	:: MAKESUBDIRS
+@
+
+
+1.10
+log
+@don't export the "for i in $(SUBDIRS) loop.
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/bigcmdtop.mk,v 1.9 88/10/19 16:48:30 ouster Exp Locker: douglis $
+d130 1
+a130 1
+subdirs			: .MAKE .EXEC .SILENT
+@
+
+
+1.9
+log
+@I think I finally got things right so that re-makes will always
+occur in the subdirectories, but the top-level program won't be
+linked unless one of the subdirectories actually changed.
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/bigcmdtop.mk,v 1.8 88/10/19 09:40:12 ouster Exp Locker: ouster $
+d79 1
+a79 1
+MAKESUBDIRS	: .USE .MAKE .SILENT
+@
+
+
+1.8
+log
+@Remove .EXEC:  causes final program not to be remade right.
+@
+text
+@d20 1
+a20 1
+# $Header: /sprite/lib/pmake/RCS/bigcmdtop.mk,v 1.7 88/10/14 16:54:31 ouster Exp Locker: ouster $
+d118 1
+a118 1
+$(TM).md/$(NAME)	: $(LIBS) $(OBJS) -lc
+d121 15
+a135 2
+$(OBJS)			:: .MAKE
+	cd $(.TARGET:H:H); $(MAKE) $(PASSVARS)
+@
+
+
+1.7
+log
+@Revisions for new version of Pmake.
+@
+text
+@d20 1
+a20 1
+# $Header: bigcmdtop.mk,v 1.6 88/10/03 09:51:58 ouster Exp $
+d121 1
+a121 1
+$(OBJS)			:: .MAKE .EXEC
+@
+
+
+1.6
+log
+@Use .EXEC attribute instead of old .ZEROTIME.
+@
+text
+@d20 1
+a20 1
+# $Header: bigcmdtop.mk,v 1.5 88/10/02 17:14:55 ouster Exp $
+d118 1
+a118 1
+$(TM).md/$(NAME)	: $(LIBS) $(SUBDIRS) $(OBJS) -lc
+d121 2
+a122 2
+$(SUBDIRS)		:: .EXEC
+	cd $(.TARGET); $(MAKE) $(PASSVARS)
+@
+
+
+1.5
+log
+@Don't use .ZEROTIME attribute anymore.
+@
+text
+@d20 1
+a20 1
+# $Header: bigcmdtop.mk,v 1.4 88/10/02 11:30:33 ouster Exp $
+d121 1
+a121 1
+$(SUBDIRS)		:: .MAKE
+@
+
+
+1.4
+log
+@Moved linked modules from ../$(TM).md/$(MODULE).o to $(TM).md/linked.o.
+This makes it easier to share modules between programs by making
+symbolic links.
+@
+text
+@d20 1
+a20 1
+# $Header: bigcmdtop.mk,v 1.3 88/09/19 09:02:38 ouster Exp $
+d121 1
+a121 1
+$(SUBDIRS)		:: .ZEROTIME
+d144 1
+a144 1
+$(TM).md/lintlib	: .MAKE .SILENT .ZEROTIME
+@
+
+
+1.3
+log
+@Added explicit dependency for installed file name.
+@
+text
+@d20 1
+a20 1
+# $Header: bigcmdtop.mk,v 1.2 88/09/11 17:02:28 ouster Exp $
+d23 1
+a23 1
+OBJS		= $(SUBDIRS:S/$/.o/g:S|^|$(TM).md/|g)
+@
+
+
+1.2
+log
+@Various fixes to get X server to compile.
+@
+text
+@d20 1
+a20 1
+# $Header: biglibtop.mk,v 1.5 88/08/31 17:15:24 ouster Exp $
+d98 1
+a98 1
+#	install : <files to install> MAKEINSTALL
+d100 1
+a100 1
+# The sources are installed in $(INSTALLDIR).$(TM) and backed-up to
+d109 1
+a109 2
+	$(UPDATE) -m 775 -s $(BACKUP) $(INSTALLFLAGS) $(.ALLSRC) \
+		$(INSTALLDIR).$(TM)/$(NAME)
+d138 1
+d140 2
+a141 1
+install			:: $(TM).md/$(NAME) MAKEINSTALL
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d23 1
+a23 1
+OBJS		= $(SUBDIRS:S/$/.o/g)
+a28 2
+.PATH.o		: # Clear out
+.PATH.o		: $(TM).md
+d119 1
+a119 1
+$(TM).md/$(NAME)	: $(LIBS) $(SUBDIRS) -lc
+d122 1
+a122 1
+$(SUBDIRS)		:: .SILENT
+d127 8
+a141 8
+
+#
+# The following target does a quick make without cycling through to
+# recompile in each of the subdirectories.
+#
+quick			: $(LIBS) -lc
+	$(RM) -f $(.TARGET)
+	$(CC) $(CFLAGS) -o $(.TARGET) $(OBJS) $(LIBS)
+@

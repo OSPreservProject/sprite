@@ -1,0 +1,198 @@
+
+
+
+Tcl_CreateCommand     C Library Procedures      Tcl_CreateCommand
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tcl_CreateCommand, Tcl_DeleteCommand -  define  application-
+     specific command bindings
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttccll..hh>>
+
+     TTccll__CCrreeaatteeCCoommmmaanndd(_i_n_t_e_r_p, _c_m_d_N_a_m_e, _p_r_o_c, _c_l_i_e_n_t_D_a_t_a, _d_e_l_e_t_e_P_r_o_c)
+
+     int
+     TTccll__DDeelleetteeCCoommmmaanndd(_i_n_t_e_r_p, _c_m_d_N_a_m_e)
+
+AARRGGUUMMEENNTTSS
+     Tcl_Interp          *_i_n_t_e_r_p           (in)      Interpreter
+                                                     in  which to
+                                                     create   new
+                                                     command.
+
+     char                *_c_m_d_N_a_m_e          (in)      Name of com-
+                                                     mand      to
+                                                     create    or
+                                                     delete.
+
+     Tcl_CmdProc         *_p_r_o_c             (in)      Implementation
+                                                     of  new com-
+                                                     mand:   _p_r_o_c
+                                                     will      be
+                                                     called when-
+                                                     ever _c_m_d_N_a_m_e
+                                                     is   invoked
+                                                     as   a  com-
+                                                     mand.
+
+     ClientData          _c_l_i_e_n_t_D_a_t_a        (in)      Arbitrary
+                                                     one-word
+                                                     value     to
+                                                     pass to _p_r_o_c
+                                                     and
+                                                     _d_e_l_e_t_e_P_r_o_c.
+
+     Tcl_CmdDeleteProc   *_d_e_l_e_t_e_P_r_o_c       (in)      Procedure to
+                                                     call  before
+                                                     _c_m_d_N_a_m_e   is
+                                                     deleted from
+                                                     the   inter-
+                                                     preter;
+                                                     allows   for
+                                                     command-
+                                                     specific
+                                                     cleanup.  If
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+Tcl_CreateCommand     C Library Procedures      Tcl_CreateCommand
+
+
+
+                                                     NULL,   then
+                                                     no procedure
+                                                     is    called
+                                                     before   the
+                                                     command   is
+                                                     deleted.
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     TTccll__CCrreeaatteeCCoommmmaanndd defines a new command in _i_n_t_e_r_p and  asso-
+     ciates  it with procedure _p_r_o_c such that whenever _c_m_d_N_a_m_e is
+     invoked as a Tcl command (via a call to  TTccll__EEvvaall)  the  Tcl
+     interpreter will call _p_r_o_c to process the command.  If there
+     is already a command  _c_m_d_N_a_m_e  associated  with  the  inter-
+     preter,  it  is  deleted.   _P_r_o_c  should  have arguments and
+     result that match the type TTccll__CCmmddPPrroocc:
+          typedef int Tcl_CmdProc(
+               ClientData _c_l_i_e_n_t_D_a_t_a,
+               Tcl_Interp *_i_n_t_e_r_p,
+               int _a_r_g_c,
+               char *_a_r_g_v[]);
+     When _p_r_o_c is invoked the _c_l_i_e_n_t_D_a_t_a  and  _i_n_t_e_r_p  parameters
+     will  be copies of the _c_l_i_e_n_t_D_a_t_a and _i_n_t_e_r_p arguments given
+     to TTccll__CCrreeaatteeCCoommmmaanndd.  Typically, _c_l_i_e_n_t_D_a_t_a  points  to  an
+     application-specific  data  structure that describes what to
+     do when the command procedure is  invoked.   _A_r_g_c  and  _a_r_g_v
+     describe  the  arguments  to  the  command,  _a_r_g_c giving the
+     number of arguments (including the command  name)  and  _a_r_g_v
+     giving  the  values  of  the arguments as strings.  The _a_r_g_v
+     array will contain _a_r_g_c+1  values;  the  first  _a_r_g_c  values
+     point to the argument strings, and the last value is NULL.
+
+     _P_r_o_c must return an integer  code  that  is  either  TTCCLL__OOKK,
+     TTCCLL__EERRRROORR,  TTCCLL__RREETTUURRNN, TTCCLL__BBRREEAAKK, or TTCCLL__CCOONNTTIINNUUEE.  See the
+     Tcl overview man page for details on what these codes  mean.
+     Most  normal  commands will only return TTCCLL__OOKK or TTCCLL__EERRRROORR.
+     In addition, _p_r_o_c must set  _i_n_t_e_r_p->_r_e_s_u_l_t  to  point  to  a
+     string value; in the case of a TTCCLL__OOKK return code this gives
+     the result of the command, and in the case of  TTCCLL__EERRRROORR  it
+     gives  an  error  message.  The TTccll__SSeettRReessuulltt procedure pro-
+     vides an easy interface for setting the return  value;   for
+     complete details on how the _i_n_t_e_r_p->_r_e_s_u_l_t field is managed,
+     see the TTccll__IInntteerrpp man page.  Before invoking a command pro-
+     cedure,  TTccll__EEvvaall  sets  _i_n_t_e_r_p->_r_e_s_u_l_t to point to an empty
+     string, so simple commands can return  an  empty  result  by
+     doing nothing at all.
+
+     The contents of the _a_r_g_v array are copies made  by  the  Tcl
+     interpreter  for the use of _p_r_o_c.  _P_r_o_c may alter any of the
+     strings in _a_r_g_v.  However, the _a_r_g_v  array  is  recycled  as
+     soon as _p_r_o_c returns, so _p_r_o_c must not set _i_n_t_e_r_p->_r_e_s_u_l_t to
+
+
+
+Sprite v1.0                                                     2
+
+
+
+
+
+
+Tcl_CreateCommand     C Library Procedures      Tcl_CreateCommand
+
+
+
+     point anywhere within the _a_r_g_v  values  (call  Tcl_SetResult
+     with  status  TTCCLL__VVOOLLAATTIILLEE  if  you want to return something
+     from the _a_r_g_v array).
+
+     _D_e_l_e_t_e_P_r_o_c will be invoked when  (if)  _c_m_d_N_a_m_e  is  deleted.
+     This  can  occur  through  a  call  to  TTccll__DDeelleetteeCCoommmmaanndd or
+     TTccll__DDeelleetteeIInntteerrpp, or by replacing _c_m_d_N_a_m_e in another call to
+     Tcl_CreateCommand.  _D_e_l_e_t_e_P_r_o_c is invoked before the command
+     is deleted, and gives  the  application  an  opportunity  to
+     release   any   structures   associated  with  the  command.
+     _D_e_l_e_t_e_P_r_o_c should have arguments and result that  match  the
+     type TTccll__CCmmddDDeelleetteePPrroocc:
+
+          typedef void Tcl_CmdDeleteProc(ClientData _c_l_i_e_n_t_D_a_t_a);
+
+     The _c_l_i_e_n_t_D_a_t_a argument will be the same as  the  _c_l_i_e_n_t_D_a_t_a
+     argument passed to TTccll__CCrreeaatteeCCoommmmaanndd.
+
+     TTccll__DDeelleetteeCCoommmmaanndd deletes a command from  a  command  inter-
+     preter.  Once the call completes, attempts to invoke _c_m_d_N_a_m_e
+     in _i_n_t_e_r_p will result in errors.  If _c_m_d_N_a_m_e isn't bound  as
+     a  command in _i_n_t_e_r_p then TTccll__DDeelleetteeCCoommmmaanndd does nothing and
+     returns -1;  otherwise it returns 0.  There are no  restric-
+     tions  on  _c_m_d_N_a_m_e:   it may refer to a built-in command, an
+     application-specific command, or a Tcl procedure.
+
+
+KKEEYYWWOORRDDSS
+     bind, command, create, delete, interpreter
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     3
+
+
+

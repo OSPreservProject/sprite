@@ -1,0 +1,68 @@
+
+
+
+atexit                    User Commands                    atexit
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     atexit - Register procedure to  be  invoked  before  process
+     exits
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddlliibb..hh>>
+
+     iinntt
+     aatteexxiitt((_f_u_n_c))
+
+AARRGGUUMMEENNTTSS
+     void      *_f_u_n_c()        (in)      Procedure  to  call  just
+                                        before process exits.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     AAtteexxiitt may be used to register the procedure _f_u_n_c, such that
+     _f_u_n_c  will  be invoked by the eexxiitt procedure before the pro-
+     cess exits.  _F_u_n_c will only be called if the eexxiitt  procedure
+     is  invoked:  if the process terminates because of a signal,
+     or if the process bypasses eexxiitt by calling __eexxiitt, then  _f_u_n_c
+     will not be invoked.  _F_u_n_c takes no arguments and returns no
+     result.
+
+     The normal return value from aatteexxiitt is 0.  If the  registra-
+     tion fails then a non-zero value is returned.
+
+KKEEYYWWOORRDDSS
+     exit, handler, register
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0         Printed:  March 3, 1990                    1
+
+
+

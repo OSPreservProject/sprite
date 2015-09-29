@@ -1,0 +1,43 @@
+#
+# mkmf.dist
+#
+# This file is an awk script that returns the default distribution
+# directory.
+#
+
+#
+#   Stuff in /sprite/src/cmds.ancient is not included in ditribution.
+#
+
+/^\/sprite\/src\/cmds.ancient\//    { print "" ; exit }
+/^\/sprite\/src\/adobecmds\//       { print "" ; exit }
+
+#
+#   Stuff in /sprite/src/* is put in /dist/sprite/src/*
+#
+/^\/sprite\/src\//  { print "/dist" $1 }
+
+
+/^\/X11\/R3\/src\//    {
+    print replace($1, "/X11/R3/src/", "/dist/X11/R3/src/") ; exit }
+
+#
+#   Programs in /a/newcmds/* are put in /dist/sprite/src/cmds/*
+#
+/^\/a\/newcmds\// {
+    print replace($1, "/a/newcmds/", "/dist/sprite/src/cmds/") ; exit }
+
+#
+#   Programs in /a/attcmds are put in /dist/sprite/src/attcmds/*
+#
+/^\/a\/attcmds\// {
+        printf replace($1, "/a/attcmds/", "/dist/sprite/src/attcmds/") ; exit }
+
+#
+#   Stuff in /a/adobecmds/* and private directories
+#   is not included in the distribution.
+#
+    { print "" ; exit }
+
+    function replace(s, s1, s2) { return s2 substr(s, length(s1) + 1) }
+

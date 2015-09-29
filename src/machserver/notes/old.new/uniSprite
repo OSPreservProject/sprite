@@ -1,0 +1,124 @@
+(1) Study Mach interface.  Think about which parts of Sprite go away.
+    [DONE].
+
+(2) Study Sprite machine-dependent interface (mach module and
+    machine-dependent stuff in other modules).  Study VM, dev, fsdm, fsio,
+    ofs, proc, prof, sched, sync, timer interfaces.  Make changes in
+    Sprite to machine-dependent interface, as necessary?  Determine
+    mapping to Mach.  Areas that will need special attention: device & net
+    interfaces (drivers, etc.), startup (e.g., mach/*.md, main/*.md),
+    support for local disk, kernel (er, Sprite server) profiling.  For
+    dev, note which items are used in dev and which are only in the
+    header file (presumably for completeness); this gives an idea of
+    how much hacking on Mach device drivers you have to do.
+    Also need to think about use of threads!
+    [VM: 1 day [DONE/3 days], startup: 1 day, other mach: 3 days,
+    Dev+net: 3 days,
+    fsdm/fsio: 1 day, ofs: xxx, proc: 1 day, sched/sync: 1 day, timer: 1
+    day; double => 5 weeks]
+
+(2.5) Make sure X works with 2.5. [DONE]
+
+(3) Get Mach 3.0 UNIX development environment running on Oregano.
+    (Installation notes?) [kernel: 1 week, gdb: 1 week; double => 4
+    weeks]
+
+(4) Set up development environment for building Sprite binaries and
+    the server.  Make sure you've got a consistent threads package
+    (see the mail from Michael Jones in +mach3 about how the UX and US
+    servers have their own private threads implementations)
+    [1 week; double => 2 weeks]
+
+(5) Get MIG to work with Sprite.  Change sys to work with MIG.  [write
+    MIG interface: 1 week, change sys to use MIG: 1 week; double => 4
+    weeks]
+
+(6) Merge Sprite libc with Mach 3.0 libc.  Probably want to start
+    from Sprite libc, merging in: Mach crt code (and any other Mach
+    calls made from generic code); changing sync to use C Threads
+    [actually, want C Threads to use Sprite fork],
+    changing syscall and unixSyscall to use MIG; and disabling "disk"
+    routines.  (Any libc code that's currently in the kernel should be
+    adequately protected against races.  Anything else is probably
+    not.)  [1 week; double => 2 weeks]
+
+(7) Hack up simple "printf" server with client, get it to work.  This
+    is to test infrastructure and provide support for debugging.
+    (e.g., try dereferencing a null pointer--does the debugging
+    support work?)
+    [1 month]
+
+(8) Add simple VM support (e.g., the client faults on a page, which
+    the server maps in and fills with a predetermined pattern).  This
+    is to provide experience with the external pager interface.
+    [1 month]
+
+(9) Study emulation library; write Sprite version. [study: 1 week,
+    write: 4 weeks; double => 8 weeks]
+
+(10) Study the system call redirection code.  If it's simple, include
+     it in the initial version.  Otherwise just go initially for
+     source compatibility.  (Would eventually like binary compatibility with
+     both Mach and Sprite.)  [2 days]
+
+(11) Make RCS branch and split off a copy of the Sprite kernel.
+     [1 day; double => 2 days]
+
+(12) Finish VM, with only one process running a predetermined object
+     file.  Use the UNIX server for backing store and the predetermined
+     binary.  Use "spriteinit" as the application?
+     [1 month]
+
+(13) Get fork/exec working, still with the UNIX file system.
+     [1 month]
+
+(14) Get the low-level network stuff working.
+     [2 weeks; double => 1 month]
+
+(15) Get the Sprite FS working, using remote files only.
+     [1 month]
+
+(16) Move the VM/proc code that uses the UNIX file system over to the
+     Sprite FS.  Check for vm_allocate calls--calls that allocate
+     memory in a client's address space should use vm_map using some
+     default pager (originally the UNIX one, for this step one that
+     uses Sprite). [1 week; double => 2 weeks]
+
+(17) Fix major performance problems, including memory leaks.  Did
+     anyone ever fix the sun3 so that it discards kernel stacks when
+     appropriate?  To figure out how much time locking/unlocking is
+     taking, may need to run a benchmark to get the average time for
+     the operation, then look at the counts of how often the different
+     operations occur.  [2 weeks; double => 4 weeks] 
+
+(18) Add support for local files, using LFS. [1 month]
+
+(19) Hack C Threads for use with user-level programs.  In particular,
+     fork should create a new Sprite process.
+
+(20) Add encapsulation/decapsulation routines for process migration.
+     Add code to ensure that a process is in a migratable state (see, e.g.,
+     Proc_MigrateTrap).  Re-enable migration.  [2 weeks; double => 4
+     weeks]
+
+Total: ?? weeks
+
+(21) Teach kernel pager about Sprite file system?  (See the mail
+     discussion "default pager" in +mach.)  Make Sprite stable
+     enough to use as the default server.  Add hacks for debugging a
+     second Sprite server under Sprite/Mach (e.g., so that debugging
+     version uses different Sprite ID).  Think about how the L1
+     commands should be replaced.  Get rid of UNIX framework.  Get rid
+     of unused routines, symbols.  Get rid of stubs that assume
+     presence of Unix server.
+
+(22) Get running diskless.
+
+(23) Add support to Sprite server to understand Mach disk layout.
+     Test as server, using Mach layout and LFS.  Be careful not to
+     take any proprietary code.
+
+
+Local Variables:
+mode: indented-text
+End:

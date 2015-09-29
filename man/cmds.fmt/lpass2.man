@@ -1,0 +1,68 @@
+
+
+
+LPASS2                    User Commands                    LPASS2
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     lpass2 - Second pass of lint program
+
+SSYYNNOOPPSSIISS
+     llppaassss11 [_o_p_t_i_o_n_s] _f_i_l_e _f_i_l_e ...
+
+OOPPTTIIOONNSS
+     See code for details.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     LLppaassss22 is a program used internally by lliinntt.  It  reads  its
+     _f_i_l_e  arguments,  which  were  output by llppaassss11, and outputs
+     lint diagnostics resulting  from  improper  procedure  calls
+     (wrong number of arguments, wrong argument type, etc.).
+
+     This program should only be invoked by lliinntt;   users  should
+     not normally invoke it directly.
+
+
+KKEEYYWWOORRDDSS
+     check, lint, pass
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  February 25, 1991                  1
+
+
+

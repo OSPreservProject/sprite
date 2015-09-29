@@ -1,0 +1,68 @@
+
+
+
+TXCMD                     User Commands                     TXCMD
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     txcmd - Invoke a tx command
+
+SSYYNNOOPPSSIISS
+     ttxxccmmdd _c_o_m_m_a_n_d _c_o_m_m_a_n_d ...
+
+_________________________________________________________________
+
+IINNTTRROODDUUCCTTIIOONN
+     For this command to work correctly, the standard output must
+     connect  (eventually) to a ttxx window.  TTxxccmmdd will output the
+     _c_o_m_m_a_n_ds to standard output, preceded by an  escape  charac-
+     ter,  separated by spaces, and followed by a newline charac-
+     ter.  This will cause ttxx to process them as commands, rather
+     than  as  data  to be displayed.  There should be no newline
+     characters embedded in any of the _c_o_m_m_a_n_ds.
+
+
+SSEEEE AALLSSOO
+     tx
+
+
+KKEEYYWWOORRDDSS
+     terminal emulator, typescript, window
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  January 17, 1989                   1
+
+
+

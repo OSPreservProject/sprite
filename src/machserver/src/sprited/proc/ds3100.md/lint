@@ -1,0 +1,38 @@
+ds3100.md/procMach.c:
+procDebug.c:
+procExec.c:
+procExit.c:
+procFork.c:
+procID.c:
+procMisc.c:
+procTable.c:
+procEnviron.c:
+procFamily.c:
+procRpc.c:
+procTaskThread.c:
+procTimer.c:
+procServer.c:
+procSysCall.c:
+procMigrate.c:
+Sig_SendProc, arg. 1 used inconsistently	llib-lsig:signals.c(506)  ::  procDebug.c(773)
+Timer_GetTimeOfDay, arg. 2 used inconsistently	llib-ltimer:timerClock.c 2(208)  ::  procExec.c(1054)
+Timer_GetTimeOfDay, arg. 3 used inconsistently	llib-ltimer:timerClock.c 2(208)  ::  procExec.c(1054)
+Sig_Exec, arg. 1 used inconsistently	llib-lsig:signals.c 2(246)  ::  procExec.c(1186)
+Sig_SendProc, arg. 1 used inconsistently	llib-lsig:signals.c(506)  ::  procExec.c(1192)
+Sig_SendProc, arg. 1 used inconsistently	llib-lsig:signals.c(506)  ::  procExec.c(1213)
+Timer_GetTimeOfDay, arg. 2 used inconsistently	llib-ltimer:timerClock.c 2(208)  ::  procExec.c(1265)
+Timer_GetTimeOfDay, arg. 3 used inconsistently	llib-ltimer:timerClock.c 2(208)  ::  procExec.c(1265)
+Sig_Fork, arg. 1 used inconsistently	llib-lsig:signals.c 2(201)  ::  procFork.c 2(211)
+Sig_Fork, arg. 2 used inconsistently	llib-lsig:signals.c 2(201)  ::  procFork.c 2(211)
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(473)  ::  procID.c 2(274)
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(473)  ::  procID.c 2(324)
+Sig_SendProc, arg. 1 used inconsistently	llib-lsig:signals.c(506)  ::  procMisc.c(688)
+Sig_ProcInit, arg. 1 used inconsistently	llib-lsig:signals.c 2(168)  ::  procTable.c 2(318)
+Sig_SendProc, arg. 1 used inconsistently	llib-lsig:signals.c(506)  ::  procTaskThread.c 2(246)
+Sig_SendProc, arg. 1 used inconsistently	llib-lsig:signals.c(506)  ::  procTimer.c 2(416)
+Timer_GetTimeOfDay, arg. 2 used inconsistently	llib-ltimer:timerClock.c 2(208)  ::  procServer.c 2(473)
+Timer_GetTimeOfDay, arg. 3 used inconsistently	llib-ltimer:timerClock.c 2(208)  ::  procServer.c 2(473)
+bcopy, arg. 1 used inconsistently	procExec.c(690)  ::  procServer.c 2(669)
+bcopy, arg. 2 used inconsistently	procExec.c(690)  ::  procServer.c 2(669)
+sprintf returns value which is always ignored
+Sync_SlowWait returns value which is sometimes ignored

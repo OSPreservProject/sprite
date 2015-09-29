@@ -1,0 +1,25 @@
+' $Header: /a/newcmds/df/RCS/df.man,v 1.2 88/12/30 09:25:16 ouster Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS DF prog
+.BS
+.SH NAME
+df \- Print information about disk free space
+.SH SYNOPSIS
+\fBdf\fR [\fIfile file \fR...]
+.BE
+
+.SH DESCRIPTION
+.PP
+This command will print information about disk utilization and free
+space for some or all of the file system domains.  If no arguments
+are given, it prints out information for all the domains in the
+current host's prefix table (i.e., all the domains that have been
+accessed since the host was booted).  If one or more \fIfile\fR
+arguments is given, then \fBdf\fR will print out information for the
+domains containing those files.
+
+.SH "SEE ALSO"
+prefix
+
+.SH KEYWORDS
+disk, free space, utilization

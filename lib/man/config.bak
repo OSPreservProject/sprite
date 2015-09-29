@@ -1,0 +1,28 @@
+#
+# This is the main configuration file used by Sprite's "man" program.
+# Each line contains several fields separated by spaces:
+#
+# First field:		Name of directory that contains man page sources.
+# Second field:		Name of directory that contains formatted man pages
+#			corresponding to those in source directory ("-"
+#			means that no formatted versions are to be kept for
+#			these man pages;  reformat each time they're needed).
+# Additional fields:	Any number of keywords:  if one of these is typed
+#			on the command line as a "section", then this
+#			directory will be checked.  The first of these fields
+#			is considered to be the official section name for the
+#			directory;  it is printed in "man -k" output.
+# Directories will be checked in the order they are listed here
+
+.			-			local
+/sprite/man/cmds	/sprite/man/cmds.fmt	cmds 1 1l 1n 1o
+/X11/R4/man/cmds	/X11/R4/man/cmds.fmt	x cmds 1
+/X11/R4/man/lib/Xlib	/X11/R4/man/lib.fmt/Xlib	x lib 3
+/X11/R4/man/lib/Xt	/X11/R4/man/lib.fmt/Xt	x lib 3
+/sprite/man/lib/c	/sprite/man/lib.fmt/c	lib lib/c 2 3 3s 3x 3n 3c
+/sprite/man/lib/m	/sprite/man/lib.fmt/m	lib lib/m 3 3m
+/sprite/man/lib/sunrpc	/sprite/man/lib.fmt/sunrpc	lib lib/sunrpc 3 sunrpc
+/sprite/man/lib/tcl	/sprite/man/lib.fmt/tcl	lib lib/tcl tcl 3
+/sprite/man/dev		/sprite/man/dev.fmt	dev 4
+/sprite/man/files	/sprite/man/files.fmt	files 5
+/sprite/man/admin       /sprite/man/admin.fmt   admin 8

@@ -1,0 +1,68 @@
+
+
+
+makeboot             Administrative Commands             makeboot
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     makeboot - Strips a.out header off of bootstrap program
+
+SSYYNNOOPPSSIISS
+     mmaakkeebboooott [_o_p_t_i_o_n_s] _b_o_o_t_F_i_l_e [_t_a_r_g_e_t_B_o_o_t_F_i_l_e]
+
+OOPPTTIIOONNSS
+     --hh _h_o_s_t_n_a_m_e    Creates a boot file under the  internet  host
+                    address of the named host.
+
+     --hheellpp          Print a summary of the  command-line  options
+                    and exit.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     MMaakkeebboooott copies a boot program and removes the a.out  header
+     as  it does so.  The boot program is loaded by the PROM into
+     memory and execution begins at word 0, so the  a.out  header
+     must  be  removed.   This  program also knows where the boot
+     program ought to be installed, so without the _t_a_r_g_e_t_B_o_o_t_F_i_l_e
+     argument  it will do the right thing.  Typically mmaakkeebboooott is
+     used to install network boot programs.  These are loaded  by
+     the PROM using TFTP, which looks in the standard boot direc-
+     tory.
+
+
+SSEEEE AALLSSOO
+     installboot, which copies a disk boot program onto the  disk
+     header and strips the a.out header as it does so.
+
+
+FFIILLEESS
+     /sprite/boot   - Directory containing per-machine TFTP  boot
+     files.   These  are  typically  symbolic  links  to machine-
+     dependent boot programs.
+     /sprite/boot.$MACHINE    - Home for  the  machine  dependent
+     boot programs.
+
+
+KKEEYYWWOORRDDSS
+     boot, a.out
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  December 20, 1989                  1
+
+
+

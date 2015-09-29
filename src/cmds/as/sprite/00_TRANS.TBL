@@ -1,0 +1,10 @@
+F APP.C;1                           	app.c
+F AS.C;1                            	as.c
+F FOO.C;1                           	foo.c
+F M68K_OPC.H;1                      	m68k-opcode.h
+F MESSAGES.C;1                      	messages.c
+D RCS                               	RCS
+F SPARC.C;1                         	sparc.c
+F SPARC.H;1                         	sparc.h
+F SPARC_OP.H;1                      	sparc-opcode.h
+F WRITE.C;1                         	write.c

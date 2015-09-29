@@ -1,0 +1,68 @@
+
+
+
+BLACKSCREEN               User Commands               BLACKSCREEN
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     blackscreen - Turn the display off or on
+
+SSYYNNOOPPSSIISS
+     bbllaacckkssccrreeeenn [_o_p_t_i_o_n]
+
+OOPPTTIIOONNSS
+     --nn             Turn the display back on again.
+
+     --yy             Turn the display off.
+
+_________________________________________________________________
+
+
+IINNTTRROODDUUCCTTIIOONN
+     This command may be used to turn  the  display  off  when  a
+     workstation  is  about to be idle for a long period of time.
+     When invoked with no arguments, it turns  the  display  off,
+     waits  for  a  carriage-return  to  be typed, then turns the
+     display back on again.  If invoked with any argument  except
+     --nn,  bbllaacckkssccrreeeenn  turns  the  display off and exits with the
+     display left off.  If the --nn argument is given,  bbllaacckkssccrreeeenn
+     re-enables the display immediately and exits.
+
+
+KKEEYYWWOORRDDSS
+     black, display, off, screen
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  March 28, 1989                    1
+
+
+

@@ -1,0 +1,164 @@
+The LaTeX style collection now contains the files listed below.  You
+should retrieve the file 00index first to obtain a brief description of
+current directory contents.  The file 00directory contains a reverse
+time sorted list of files; this may be helpful in keeping your
+collection in sync with LaTeX-style.
+
+More submissions are very welcome.
+
+00directory                00index
+00readme                   a4.sty
+a4wide.sty                 aaai-instructions.tex
+aaai-named.bst             aaai.sty
+acm.bst                    agugrl-sample.tex
+agugrl.sty                 agujgr-sample.tex
+agujgr.sty                 alltt.sty
+amssymbols.sty             apalike.bst
+apalike.doc                apalike.sty
+art10.txt                  art11.txt
+art12.txt                  article.txt
+biihead.sty                bsf.doc
+bsf.sty                    captcont.sty
+cyrillic.sty               dayofweek.tex
+deproc.sty                 deprocldc.tex
+docsty.shar                doublespace.sty
+draft.sty                  drafthead.sty
+drop.doc                   drop.sty
+dvidoc.shar1               dvidoc.shar2
+epic.shar1                 epic.shar2
+espo.sty                   format.sty
+fullpage.doc               geophysics.sty
+german.sty                 ieeetr.bst
+ist21.sty                  latex.bug
+latex.dif                  layout.readme
+layout.tex                 lcustom.tex
+lfonts_ams.readme          lfonts_ams.tex
+lgraph.shar                local-suppl.tex
+man10.sty                  man11.sty
+man12.sty                  manual.readme
+manual.sty                 memo.sty
+mfr.sty                    mitthesis-sample.tex
+mitthesis.sty              natsci.bst
+natsci.sty                 newalpha.bst
+nl.sty                     nopagenumbers.doc
+remark.sty                 resume-sample.tex
+resume.sty                 rscsencode.shar
+sc21-wg1.sty               sc21.sty
+schedule.doc               schedule.sty
+sfwmac.sty                 shapiro-btxbst-0.98.readme
+shapiro-btxbst-0.98.doc    shapiro-makebst.sh
+showlabels.sty             siam.bib
+siam.bst                   siam.sty
+siam.tex                   siam10.sty
+siam11.sty                 siam12.sty
+slem.doc                   spacecites.doc
+suthesis.doc               suthesis.sty
+texindex.shar              texnames.doc
+tgrind.sty                 threepart.sty
+titlepage.txt              trademark.sty
+uct10.doc                  uct11.doc
+uct12.doc                  ucthesis.doc
+ucthesis.readme            uuencode.shar
+vdm.doc                    vdm.sty
+vdm.tex                    wsltex.shar
+xxxcustom.tex              xxxslides.sty
+
+***** Please note that ieeetr, acm, siam and apalike BibTeX styles
+require BibTeX 0.99b. The others require an 0.98i or older.
+
+1. For Internet users - how to ftp:
+
+Here is an example session.  Disclaimer: ftp syntax varies from host to
+host. Your syntax may be different. The syntax presented here is that
+of Unix ftp. Comments in parentheses.
+
+% ftp cayuga.cs.rochester.edu	(a.k.a. cs.rochester.edu, a.k.a. 192.5.53.209)
+ ...				(general blurb)
+user: anonymous
+password: <any non-null string>
+ftp> cd public/latex-style	(where the files are)
+ftp> ls				(to see what is there)
+ ...				(lots of output)
+ftp> get 00index
+ ...				(more blurb)
+ftp> quit
+
+2. Non-Internet users - how to retrieve by mail:
+
+An archive server has been installed. Send a piece of mail to LaTeX-Style
+(@cs.rochester.edu, via uucp or your favourite gateway) in the following
+format:
+
+Subject line should contain the phrase "@file request".  Body of the
+mail should start with a line containing only an @ (at) sign.
+The first line following should be a mail address FROM rochester TO
+you.  Then follow by the names of the files you want, either one to
+each line, or many to each line, separated by spaces.  End with a line
+containing only an @ sign.  Case is not significant.
+
+For example, if you are user at site.bitnet, this is what you should send:
+
+To: latex-style@cs.rochester.edu
+Subject: @file request
+
+@
+user%site.bitnet@cunyvm.cuny.edu		(don't forget your address!)
+00readme
+00index
+@
+
+A word to the wise: it is best to fully qualify your mail address. Our
+mailer is pretty ignorant of Bitnet, CSnet or UUCP addresses unless they
+are in registered domains.  It is best that you supply explicit gateway
+routes.  Use the new domainized form or addresses whenever possible.
+
+If the Subject: line looks like:
+
+Subject: @file request uuencode
+
+	or
+
+Subject: @file request rscsencode
+
+then the mail will be encoded with the requested scheme before
+sending.  This _might_ help sites that get mail through gateways with
+unfriendly EBCDIC/ASCII mappings. You can find sources for the two
+types of en/decoders in the collection. You may have to do some porting
+of sources.
+
+Be patient as the server is actually a batch program run once a day.
+Files will be sent in batches, each not exceeding 100kbytes in size.
+
+3. Distribution for IBM PC and clone users:
+
+There are two sources.
+
+	David W. Hopper
+	446 Main Street
+	Toronto, Ontario
+	Canada M4C 4Y2
+
+has LaTeX style files only.
+
+1. Either one 1.2 MB diskette or three 360KB diskettes, blank and formatted.
+2. Indication of the format required,
+3. A self-addressed mailer, and
+4. A $5.00 donation per set of files, to cover postage and equipment
+wear & tear. (If you live outside North America, airmail delivery will
+probably require more postage. You should probably contact David for
+details.)
+5. No phone calls or personal visits please.
+
+	Jon Radel
+	P.O. Box 2276
+	Reston, VA 22090
+
+has LaTeX style files and other goodies.  For a list or other info send a SASE.
+
+1. 360KB diskettes, blank and formatted.
+2. A stamped, self-addressed mailer, and
+3. $1.50 per disk. If you live outside North America, skip the stamps
+and send additional money or International Reply Coupons.
+
+As a convenience for people who have more money than floppies, Jon will
+supply everything for $6.00 per disk to U.S./Canada/Mexico addresses.

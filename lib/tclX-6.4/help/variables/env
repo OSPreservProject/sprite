@@ -1,0 +1,13 @@
+          env
+               This variable is maintained by Tcl as  an  array  whose
+               elements are the environment variables for the process.
+               Reading  an  element  will  return  the  value  of  the
+               corresponding environment variable.  Setting an element
+               of the array will modify the corresponding  environment
+               variable  or  create  a  new  one if it doesn't already
+               exist.  Unsetting an element of  env  will  remove  the
+               corresponding environment variable.  Changes to the env
+               array will affect the environment passed to children by
+               commands  like  exec.  If the entire env array is unset
+               then Tcl will stop monitoring env accesses and will not
+               update environment variables.

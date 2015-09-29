@@ -1,0 +1,4 @@
+ln -s PS-Helvetica.tfm phvr.tfm
+ln -s PS-Helvetica-Oblique.tfm phvro.tfm
+ln -s PS-Helvetica-Bold.tfm phvb.tfm
+ln -s PS-Helvetica-BoldOblique.tfm phvbo.tfm

@@ -1,0 +1,77 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     90.05.15.18.53.42;  author eklee;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.08.30.11.29.40;  author eklee;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.27.13.05.40;  author eklee;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@Moved reconstruction specific code to devRaidReconstruct.h.
+@
+text
+@/*
+ * devRaidInitiate.h --
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /user4/eklee/raidlib/RCS/devRaidInitiate.h,v 1.1 90/03/05 11:39:04 eklee Exp Locker: eklee $ SPRITE (Berkeley)
+ */
+
+extern void InitiateSimpleStripeIOs();
+extern void InitiateStripeIOs();
+extern void InitiateHardInit();
+extern void blockIODoneProc();
+extern void nonInterruptLevelCallBackProc();
+extern void InitiateIORequests();
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d13 1
+a13 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.2 89/01/07 04:12:44 rab Exp $ SPRITE (Berkeley)
+d19 3
+a21 1
+extern void InitiateReconstruction();
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@@

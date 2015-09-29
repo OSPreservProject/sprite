@@ -1,0 +1,2337 @@
+***************
+*** 23,37 ****
+  #include <sys/types.h>
+  #include <sys/stat.h>
+  #include <sys/file.h>
+  #ifndef sony_news
+  #include <fcntl.h>
+  #endif
+  
+  #ifdef COFF_ENCAPSULATE
+  #include "a.out.encap.h"
+  #else
+  #include <a.out.h>
+  #endif
+  
+  #ifndef N_SET_MAGIC
+  #define N_SET_MAGIC(exec, val)  ((exec).a_magic = val)
+--- 23,60 ----
+  #include <sys/types.h>
+  #include <sys/stat.h>
+  #include <sys/file.h>
++ #ifndef USG
++ #include <sys/time.h>
++ #include <sys/resource.h>
++ #endif
+  #ifndef sony_news
+  #include <fcntl.h>
+  #endif
+  
++ #if !defined(A_OUT) && !defined(MACH_O)
++ #define A_OUT
++ #endif
++ 
++ #ifdef A_OUT
+  #ifdef COFF_ENCAPSULATE
+  #include "a.out.encap.h"
+  #else
+  #include <a.out.h>
+  #endif
++ #endif
++ 
++ #ifdef MACH_O
++ #ifndef A_OUT
++ #include <nlist.h>
++ #include <reloc.h>
++ #endif
++ #ifndef N_TEXT
++ #define N_TEXT 0x04
++ #define N_DATA 0x06
++ #define N_BSS 0x08
++ #endif
++ #include <sys/loader.h>
++ #endif
+  
+  #ifndef N_SET_MAGIC
+  #define N_SET_MAGIC(exec, val)  ((exec).a_magic = val)
+***************
+*** 219,235 ****
+  /* Define this to specify the default executable format.  */
+  
+  #ifdef hpux
+! #define DEFAULT_MAGIC NMAGIC  /* hpux bugs screw ZMAGIC */
+  #endif
+  
+- #ifndef DEFAULT_MAGIC
+- #define DEFAULT_MAGIC ZMAGIC
+- #endif
+- 
+  /* Ordinary 4.3bsd lacks these macros in a.out.h.  */
+  
+  #ifndef N_TXTADDR
+! #if defined(vax) || defined(sony_news)
+  #define N_TXTADDR(X) 0
+  #endif
+  #ifdef is68k
+--- 250,262 ----
+  /* Define this to specify the default executable format.  */
+  
+  #ifdef hpux
+! #define DEFAULT_OUTPUT_STYLE OUTPUT_READONLY_TEXT
+  #endif
+  
+  /* Ordinary 4.3bsd lacks these macros in a.out.h.  */
+  
+  #ifndef N_TXTADDR
+! #if defined(vax) || defined(sony_news) || defined(hp300) || defined(pyr)
+  #define N_TXTADDR(X) 0
+  #endif
+  #ifdef is68k
+***************
+*** 238,247 ****
+  #ifdef sequent
+  #define	N_TXTADDR(x) (N_ADDRADJ(x))
+  #endif
+  #endif
+  
+  #ifndef N_DATADDR
+! #if defined(vax) || defined(sony_news)
+  #define N_DATADDR(x) \
+  	(((x).a_magic==OMAGIC)? (N_TXTADDR(x)+(x).a_text) \
+  	: (page_size+((N_TXTADDR(x)+(x).a_text-1) & ~(page_size-1))))
+--- 265,277 ----
+  #ifdef sequent
+  #define	N_TXTADDR(x) (N_ADDRADJ(x))
+  #endif
++ #ifdef NeXT
++ #define N_TXTADDR(X) ((X).a_magic == ZMAGIC ? page_size : 0)
++ #endif
+  #endif
+  
+  #ifndef N_DATADDR
+! #if defined(vax) || defined(sony_news) || defined(hp300) || defined(pyr)
+  #define N_DATADDR(x) \
+  	(((x).a_magic==OMAGIC)? (N_TXTADDR(x)+(x).a_text) \
+  	: (page_size+((N_TXTADDR(x)+(x).a_text-1) & ~(page_size-1))))
+***************
+*** 264,277 ****
+  #ifdef sparc
+  #define INITIALIZE_HEADER \
+    {outheader.a_machtype = M_SPARC; outheader.a_toolversion = 1;}
+! #endif
+! #if defined(mc68010) || defined(m68010)
+! #define INITIALIZE_HEADER outheader.a_machtype = M_68010
+! #endif
+! #ifndef INITIALIZE_HEADER
+! #define INITIALIZE_HEADER outheader.a_machtype = M_68020
+! #endif
+! #endif
+  #ifdef ALTOS
+  #define INITIALIZE_HEADER N_SET_MACHTYPE (outheader, M_68020)
+  #endif
+--- 306,328 ----
+  #ifdef sparc
+  #define INITIALIZE_HEADER \
+    {outheader.a_machtype = M_SPARC; outheader.a_toolversion = 1;}
+! #endif /* sparc.  */
+! #if defined(mc68000)
+! /* Set the machine type according to the machine type of the .o files.
+!    If they are all sun2 (68010), then the type of the executable is sun2.
+!    If any is sun3 (68020), then the type of the executable is sun3.
+!    This is consistent with the Sun loader and more useful than having
+!    it depend on which machine you are on when you run ld.  */
+! static int sun_machtype = M_68010;
+! #define INITIALIZE_HEADER outheader.a_machtype = sun_machtype
+! #define READ_HEADER_HOOK(machtype) \
+!   if (machtype == M_68020)           \
+!     {				     \
+!       sun_machtype = M_68020;	     \
+!     }
+! #endif /* mc68000.  */
+! #endif /* Sun.  */
+! 
+  #ifdef ALTOS
+  #define INITIALIZE_HEADER N_SET_MACHTYPE (outheader, M_68020)
+  #endif
+***************
+*** 288,294 ****
+  #endif
+  #if defined(i386) && !defined(sequent)
+  #define INITIALIZE_HEADER N_SET_MACHTYPE (outheader, M_386)
+! #endif
+  
+  #ifdef is68k
+  /* This enables code to take care of an ugly hack in the ISI OS.
+--- 339,351 ----
+  #endif
+  #if defined(i386) && !defined(sequent)
+  #define INITIALIZE_HEADER N_SET_MACHTYPE (outheader, M_386)
+! #endif /* Sequent symmetry.  */
+! #if defined(hp300)
+! #define INITIALIZE_HEADER outheader.a_mid = MID_HP300
+! #endif /* hp300.  */
+! #ifdef pyr
+! #define INITIALIZE_HEADER outheader.a_machid = PYR90X
+! #endif /* Pyramid.  */
+  
+  #ifdef is68k
+  /* This enables code to take care of an ugly hack in the ISI OS.
+***************
+*** 390,402 ****
+  /* Sparc (Sun 4) macros */
+  #undef relocation_info
+  #define relocation_info	                reloc_info_sparc
+! #define RELOC_ADDRESS(r)		((r)->r_address)                 
+! #define RELOC_EXTERN_P(r)               ((r)->r_extern)      
+! #define RELOC_TYPE(r)                   ((r)->r_index)  
+! #define RELOC_SYMBOL(r)                 ((r)->r_index)   
+  #define RELOC_MEMORY_SUB_P(r)		0
+  #define RELOC_MEMORY_ADD_P(r)           0
+! #define RELOC_ADD_EXTRA(r)              ((r)->r_addend)       
+  #define RELOC_PCREL_P(r)             \
+          ((r)->r_type >= RELOC_DISP8 && (r)->r_type <= RELOC_WDISP22)
+  #define RELOC_VALUE_RIGHTSHIFT(r)       (reloc_target_rightshift[(r)->r_type])
+--- 445,457 ----
+  /* Sparc (Sun 4) macros */
+  #undef relocation_info
+  #define relocation_info	                reloc_info_sparc
+! #define RELOC_ADDRESS(r)		((r)->r_address)
+! #define RELOC_EXTERN_P(r)               ((r)->r_extern)
+! #define RELOC_TYPE(r)                   ((r)->r_index)
+! #define RELOC_SYMBOL(r)                 ((r)->r_index)
+  #define RELOC_MEMORY_SUB_P(r)		0
+  #define RELOC_MEMORY_ADD_P(r)           0
+! #define RELOC_ADD_EXTRA(r)              ((r)->r_addend)
+  #define RELOC_PCREL_P(r)             \
+          ((r)->r_type >= RELOC_DISP8 && (r)->r_type <= RELOC_WDISP22)
+  #define RELOC_VALUE_RIGHTSHIFT(r)       (reloc_target_rightshift[(r)->r_type])
+***************
+*** 1124,1171 ****
+  
+    decode_command (argc, argv);
+  
+-   /* Create the symbols `etext', `edata' and `end'.  */
+- 
+-   if (!relocatable_output)
+-     symtab_init ();
+- 
+-   /* Determine whether to count the header as part of
+-      the text size, and initialize the text size accordingly.
+-      This depends on the kind of system and on the output format selected.  */
+- 
+-   N_SET_MAGIC (outheader, magic);
+- #ifdef INITIALIZE_HEADER
+-   INITIALIZE_HEADER;
+- #endif
+- 
+-   text_size = sizeof (struct exec);
+- #ifdef COFF_ENCAPSULATE
+-   if (relocatable_output == 0)
+-     {
+-       need_coff_header = 1;
+-       /* set this flag now, since it will change the values of N_TXTOFF, etc */
+-       N_SET_FLAGS (outheader, N_FLAGS_COFF_ENCAPSULATE);
+-       text_size += sizeof (struct coffheader);
+-     }
+- #endif
+- 
+-   text_size -= N_TXTOFF (outheader);
+- 
+-   if (text_size < 0)
+-     text_size = 0;
+-   entry_offset = text_size;
+- 
+-   if (!T_flag_specified && !relocatable_output)
+-     text_start = N_TXTADDR (outheader);
+- 
+-   /* The text-start address is normally this far past a page boundary.  */
+-   text_start_alignment = text_start % page_size;
+- 
+    /* Load symbols of all input files.
+       Also search all libraries and decide which library members to load.  */
+  
+    load_symbols ();
+  
+    /* Compute where each file's sections go, and relocate symbols.  */
+  
+    digest_symbols ();
+--- 1283,1300 ----
+  
+    decode_command (argc, argv);
+  
+    /* Load symbols of all input files.
+       Also search all libraries and decide which library members to load.  */
+  
+    load_symbols ();
+  
++   /* Create various built-in symbols.  This must occur after
++      all input files are loaded so that a user program can have a
++      symbol named etext (for example).  */
++ 
++   if (output_style != OUTPUT_RELOCATABLE)
++     symtab_init ();
++ 
+    /* Compute where each file's sections go, and relocate symbols.  */
+  
+    digest_symbols ();
+***************
+*** 1187,1238 ****
+    exit (!make_executable);
+  }
+  
+! void decode_option ();
+! 
+! /* Analyze a command line argument.
+!    Return 0 if the argument is a filename.
+!    Return 1 if the argument is a option complete in itself.
+!    Return 2 if the argument is a option which uses an argument.
+! 
+!    Thus, the value is the number of consecutive arguments
+!    that are part of options.  */
+! 
+! int
+! classify_arg (arg)
+!      register char *arg;
+! {
+!   if (*arg != '-') return 0;
+!   switch (arg[1])
+!     {
+!     case 'A':
+!     case 'D':
+!     case 'e':
+!     case 'L':
+!     case 'l':
+!     case 'o':
+!     case 'u':
+!     case 'V':
+!     case 'y':
+!       if (arg[2])
+! 	return 1;
+!       return 2;
+! 
+!     case 'B':
+!       if (! strcmp (&arg[2], "static"))
+! 	return 1;
+! 
+!     case 'T':
+!       if (arg[2] == 0)
+! 	return 2;
+!       if (! strcmp (&arg[2], "text"))
+! 	return 2;
+!       if (! strcmp (&arg[2], "data"))
+! 	return 2;
+!       return 1;
+!     }
+  
+!   return 1;
+! }
+  
+  /* Process the command arguments,
+     setting up file_table with an entry for each input file,
+--- 1316,1357 ----
+    exit (!make_executable);
+  }
+  
+! void add_cmdline_ref ();
+  
+! static struct option longopts[] =
+! {
+!   {"d", 0, 0, 'd'},
+!   {"dc", 0, 0, 'd'},		/* For Sun compatibility. */
+!   {"dp", 0, 0, 'd'},		/* For Sun compatibility. */
+!   {"e", 1, 0, 'e'},
+!   {"n", 0, 0, 'n'},
+!   {"noinhibit-exec", 0, 0, 130},
+!   {"nostdlib", 0, 0, 133},
+!   {"o", 1, 0, 'o'},
+!   {"r", 0, 0, 'r'},
+!   {"s", 0, 0, 's'},
+!   {"t", 0, 0, 't'},
+!   {"u", 1, 0, 'u'},
+!   {"x", 0, 0, 'x'},
+!   {"z", 0, 0, 'z'},
+!   {"A", 1, 0, 'A'},
+!   {"Bstatic", 0, 0, 129},	/* For Sun compatibility. */
+!   {"D", 1, 0, 'D'},
+!   {"M", 0, 0, 'M'},
+!   {"N", 0, 0, 'N'},
+!   {"S", 0, 0, 'S'},
+!   {"T", 1, 0, 'T'},
+!   {"Ttext", 1, 0, 'T'},
+!   {"Tdata", 1, 0, 132},
+!   {"V", 1, 0, 'V'},
+!   {"X", 0, 0, 'X'},
+!   {0, 0, 0, 0}
+! };
+! 
+! /* Since the Unix ld accepts -lfoo, -Lfoo, and -yfoo, we must also.
+!    This effectively prevents any long options from starting with
+!    one of these letters. */
+! #define SHORTOPTS "-l:y:L:"
+  
+  /* Process the command arguments,
+     setting up file_table with an entry for each input file,
+***************
+*** 1116,1211 ****
+    n_search_dirs = 0;
+    search_dirs = (char **) xmalloc (sizeof (char *));
+  
+!   /* First compute number_of_files so we know how long to make file_table.  */
+!   /* Also process most options completely.  */
+  
+!   for (i = 1; i < argc; i++)
+!     {
+!       register int code = classify_arg (argv[i]);
+!       if (code)
+! 	{
+! 	  if (i + code > argc)
+! 	    fatal ("no argument following %s\n", argv[i]);
+! 
+! 	  decode_option (argv[i], argv[i+1]);
+! 
+! 	  if (argv[i][1] == 'l' || argv[i][1] == 'A')
+! 	    number_of_files++;
+! 
+! 	  i += code - 1;
+  	}
+-       else
+- 	number_of_files++;
+      }
+  
+    if (!number_of_files)
+!     fatal ("no input files", 0);
+  
+    p = file_table
+      = (struct file_entry *) xmalloc (number_of_files * sizeof (struct file_entry));
+    bzero (p, number_of_files * sizeof (struct file_entry));
+  
+!   /* Now scan again and fill in file_table.  */
+!   /* All options except -A and -l are ignored here.  */
+  
+!   for (i = 1; i < argc; i++)
+!     {
+!       register int code = classify_arg (argv[i]);
+! 
+!       if (code)
+! 	{
+! 	  char *string;
+! 	  if (code == 2)
+! 	    string = argv[i+1];
+! 	  else
+! 	    string = &argv[i][2];
+! 
+! 	  if (argv[i][1] == 'A')
+! 	    {
+! 	      if (p != file_table)
+! 		fatal ("-A specified before an input file other than the first");
+! 
+! 	      p->filename = string;
+! 	      p->local_sym_name = string;
+! 	      p->just_syms_flag = 1;
+! 	      p++;
+! 	    }
+! 	  if (argv[i][1] == 'l')
+! 	    {
+! 	      p->filename = concat ("lib", string, ".a");
+! 	      p->local_sym_name = concat ("-l", string, "");
+! 	      p->search_dirs_flag = 1;
+! 	      p++;
+! 	    }
+! 	  i += code - 1;
+! 	}
+!       else
+  	{
+! 	  p->filename = argv[i];
+! 	  p->local_sym_name = argv[i];
+  	  p++;
+  	}
+      }
+  
+    /* Now check some option settings for consistency.  */
+  
+! #ifdef NMAGIC
+!   if ((magic == ZMAGIC || magic == NMAGIC)
+! #else
+!   if ((magic == ZMAGIC)
+! #endif
+        && (text_start - text_start_alignment) & (page_size - 1))
+!     fatal ("-T argument not multiple of page size, with sharable output", 0);
+  
+    /* Append the standard search directories to the user-specified ones.  */
+!   {
+!     int n = sizeof standard_search_dirs / sizeof standard_search_dirs[0];
+!     n_search_dirs += n;
+!     search_dirs
+!       = (char **) xrealloc (search_dirs, n_search_dirs * sizeof (char *));
+!     bcopy (standard_search_dirs, &search_dirs[n_search_dirs - n],
+! 	   n * sizeof (char *));
+!   }
+  }
+  
+  
+--- 1235,1468 ----
+    n_search_dirs = 0;
+    search_dirs = (char **) xmalloc (sizeof (char *));
+  
+!   /* First compute number_of_files so we know how long to make file_table.
+!      Also process most options completely.  */
+  
+!   while ((optc = getopt_long_only (argc, argv, SHORTOPTS, longopts, &longind))
+! 	 != EOF)
+!     {
+!       if (optc == 0)
+! 	optc = longopts[longind].val;
+! 
+!       switch (optc)
+! 	{
+! 	case '?':
+! 	  usage (0, 0);
+! 	  break;
+! 
+! 	case 1:
+! 	  /* Non-option argument. */
+! 	  number_of_files++;
+! 	  break;
+! 
+! 	case 'd':
+! 	  force_common_definition = 1;
+! 	  break;
+! 
+! 	case 'e':
+! 	  entry_symbol = getsym (optarg);
+! 	  if (!entry_symbol->defined && !entry_symbol->referenced)
+! 	    undefined_global_sym_count++;
+! 	  entry_symbol->referenced = 1;
+! 	  add_cmdline_ref (entry_symbol);
+! 	  break;
+! 
+! 	case 'l':
+! 	  number_of_files++;
+! 	  break;
+! 
+! 	case 'n':
+! 	  if (output_style && output_style != OUTPUT_READONLY_TEXT)
+! 	    fatal ("illegal combination of -n with -N, -r, or -z", (char *) 0);
+! 	  output_style = OUTPUT_READONLY_TEXT;
+! 	  break;
+! 
+! 	case 130:		/* -noinhibit-exec */
+! 	  force_executable = 1;
+! 	  break;
+! 
+! 	case 133:		/* -nostdlib */
+! 	  no_standard_dirs = 1;
+! 	  break;
+! 
+! 	case 'o':
+! 	  output_filename = optarg;
+! 	  break;
+! 
+! 	case 'r':
+! 	  if (output_style && output_style != OUTPUT_RELOCATABLE)
+! 	    fatal ("illegal combination of -r with -N, -n, or -z", (char *) 0);
+! 	  output_style = OUTPUT_RELOCATABLE;
+! 	  text_start = 0;
+! 	  break;
+! 
+! 	case 's':
+! 	  strip_symbols = STRIP_ALL;
+! 	  break;
+! 
+! 	case 't':
+! 	  trace_files = 1;
+! 	  break;
+! 
+! 	case 'u':
+! 	  {
+! 	    register symbol *sp = getsym (optarg);
+! 
+! 	    if (!sp->defined && !sp->referenced)
+! 	      undefined_global_sym_count++;
+! 	    sp->referenced = 1;
+! 	    add_cmdline_ref (sp);
+! 	  }
+! 	  break;
+! 
+! 	case 'x':
+! 	  discard_locals = DISCARD_ALL;
+! 	  break;
+! 	  
+! 	case 'y':
+! 	  {
+! 	    register symbol *sp = getsym (optarg);
+! 
+! 	    sp->trace = 1;
+! 	  }
+! 	  break;
+! 
+! 	case 'z':
+! 	  if (output_style && output_style != OUTPUT_DEMAND_PAGED)
+! 	    fatal ("illegal combination of -z with -N, -n, or -r", (char *) 0);
+! 	  output_style = OUTPUT_DEMAND_PAGED;
+! 	  break;
+! 
+! 	case 'A':
+! 	  number_of_files++;
+! 	  break;
+! 
+! 	case 129:		/* -Bstatic. */
+! 	  /* Ignore. */
+! 	  break;
+! 
+! 	case 'D':
+! 	  specified_data_size = parse (optarg, "%x", "invalid argument to -D");
+! 	  break;
+! 
+! 	case 'L':
+! 	  n_search_dirs++;
+! 	  search_dirs = (char **)
+! 	    xrealloc (search_dirs, n_search_dirs * sizeof (char *));
+! 	  search_dirs[n_search_dirs - 1] = optarg;
+! 	  break;
+! 	  
+! 	case 'M':
+! 	  write_map = 1;
+! 	  break;
+! 
+! 	case 'N':
+! 	  if (output_style && output_style != OUTPUT_WRITABLE_TEXT)
+! 	    fatal ("illegal combination of -N with -n, -r, or -z", (char *) 0);
+! 	  output_style = OUTPUT_WRITABLE_TEXT;
+! 	  break;
+! 
+! 	case 'S':
+! 	  strip_symbols = STRIP_DEBUGGER;
+! 	  break;
+! 
+! 	case 'T':
+! 	  text_start = parse (optarg, "%x", "invalid argument to -Ttext");
+! 	  T_flag_specified = 1;
+! 	  break;
+! 
+! 	case 132:		/* -Tdata addr */
+! 	  data_start = parse (optarg, "%x", "invalid argument to -Tdata");
+! 	  Tdata_flag_specified = 1;
+! 	  break;
+! 
+! 	case 'V':
+! 	  {
+! 	    struct string_list_element *new
+! 	      = (struct string_list_element *)
+! 		xmalloc (sizeof (struct string_list_element));
+! 	    
+! 	    new->str = optarg;
+! 	    new->next = set_element_prefixes;
+! 	    set_element_prefixes = new;
+! 	  }
+! 	  break;
+! 
+! 	case 'X':
+! 	  discard_locals = DISCARD_L;
+! 	  break;
+  	}
+      }
+  
+    if (!number_of_files)
+!     usage ("no input files", 0);
+  
+    p = file_table
+      = (struct file_entry *) xmalloc (number_of_files * sizeof (struct file_entry));
+    bzero (p, number_of_files * sizeof (struct file_entry));
+  
+!   /* Now scan again and fill in file_table.
+!      All options except -A and -l are ignored here.  */
+  
+!   optind = 0;			/* Reset getopt. */
+!   while ((optc = getopt_long_only (argc, argv, SHORTOPTS, longopts, &longind))
+! 	 != EOF)
+!     {
+!       if (optc == 0)
+! 	optc = longopts[longind].val;
+! 
+!       switch (optc)
+  	{
+! 	case 1:
+! 	  /* Non-option argument. */
+! 	  p->filename = optarg;
+! 	  p->local_sym_name = optarg;
+! 	  p++;
+! 	  break;
+! 
+! 	case 'A':
+! 	  if (p != file_table)
+! 	    usage ("-A specified before an input file other than the first");
+! 	  p->filename = optarg;
+! 	  p->local_sym_name = optarg;
+! 	  p->just_syms_flag = 1;
+! 	  p++;
+! 	  break;
+! 
+! 	case 'l':
+! 	  p->filename = concat ("lib", optarg, ".a");
+! 	  p->local_sym_name = concat ("-l", optarg, "");
+! 	  p->search_dirs_flag = 1;
+  	  p++;
++ 	  break;
+  	}
+      }
+  
++   if (!output_file_type)
++     output_file_type = DEFAULT_OUTPUT_FILE_TYPE;
++ 
++   if (!output_style)
++     output_style = DEFAULT_OUTPUT_STYLE;
++ 
++ #if 0
++   /* THIS CONSISTENCY CHECK BELONGS SOMEWHERE ELSE.  */
+    /* Now check some option settings for consistency.  */
+  
+!   if ((output_style == OUTPUT_READONLY_TEXT || output_style == OUTPUT_DEMAND_PAGED)
+        && (text_start - text_start_alignment) & (page_size - 1))
+!     usage ("-T argument not multiple of page size, with sharable output", 0);
+! #endif
+  
+    /* Append the standard search directories to the user-specified ones.  */
+!   if (!no_standard_dirs)
+!     {
+!       int n = sizeof standard_search_dirs / sizeof standard_search_dirs[0];
+!       n_search_dirs += n;
+!       search_dirs
+! 	= (char **) xrealloc (search_dirs, n_search_dirs * sizeof (char *));
+!       bcopy (standard_search_dirs, &search_dirs[n_search_dirs - n],
+! 	     n * sizeof (char *));
+!     }
+  }
+  
+  
+***************
+*** 1252,1415 ****
+      }
+    return 0;
+  }
+- 
+- int parse ();
+- 
+- /* Record an option and arrange to act on it later.
+-    ARG should be the following command argument,
+-    which may or may not be used by this option.
+- 
+-    The `l' and `A' options are ignored here since they actually
+-    specify input files.  */
+- 
+- void
+- decode_option (swt, arg)
+-      register char *swt, *arg;
+- {
+-   /* We get Bstatic from gcc on suns.  */
+-   if (! strcmp (swt + 1, "Bstatic"))
+-     return;
+-   if (! strcmp (swt + 1, "Ttext"))
+-     {
+-       text_start = parse (arg, "%x", "invalid argument to -Ttext");
+-       T_flag_specified = 1;
+-       return;
+-     }
+-   if (! strcmp (swt + 1, "Tdata"))
+-     {
+-       data_start = parse (arg, "%x", "invalid argument to -Tdata");
+-       Tdata_flag_specified = 1;
+-       return;
+-     }
+-   if (! strcmp (swt + 1, "noinhibit-exec"))
+-     {
+-       force_executable = 1;
+-       return;
+-     }
+- 
+-   if (swt[2] != 0)
+-     arg = &swt[2];
+- 
+-   switch (swt[1])
+-     {
+-     case 'A':
+-       return;
+- 
+-     case 'D':
+-       specified_data_size = parse (arg, "%x", "invalid argument to -D");
+-       return;
+- 
+-     case 'd':
+-       force_common_definition = 1;
+-       return;
+- 
+-     case 'e':
+-       entry_symbol = getsym (arg);
+-       if (!entry_symbol->defined && !entry_symbol->referenced)
+- 	undefined_global_sym_count++;
+-       entry_symbol->referenced = 1;
+-       add_cmdline_ref (entry_symbol);
+-       return;
+- 
+-     case 'l':
+-       return;
+- 
+-     case 'L':
+-       n_search_dirs++;
+-       search_dirs
+- 	= (char **) xrealloc (search_dirs, n_search_dirs * sizeof (char *));
+-       search_dirs[n_search_dirs - 1] = arg;
+-       return;
+- 
+-     case 'M':
+-       write_map = 1;
+-       return;
+- 
+-     case 'N':
+-       magic = OMAGIC;
+-       return;
+- 
+- #ifdef NMAGIC
+-     case 'n':
+-       magic = NMAGIC;
+-       return;
+- #endif
+- 
+-     case 'o':
+-       output_filename = arg;
+-       return;
+- 
+-     case 'r':
+-       relocatable_output = 1;
+-       magic = OMAGIC;
+-       text_start = 0;
+-       return;
+- 
+-     case 'S':
+-       strip_symbols = STRIP_DEBUGGER;
+-       return;
+- 
+-     case 's':
+-       strip_symbols = STRIP_ALL;
+-       return;
+- 
+-     case 'T':
+-       text_start = parse (arg, "%x", "invalid argument to -T");
+-       T_flag_specified = 1;
+-       return;
+- 
+-     case 't':
+-       trace_files = 1;
+-       return;
+- 
+-     case 'u':
+-       {
+- 	register symbol *sp = getsym (arg);
+- 	if (!sp->defined && !sp->referenced)
+- 	  undefined_global_sym_count++;
+- 	sp->referenced = 1;
+- 	add_cmdline_ref (sp);
+-       }
+-       return;
+- 
+-     case 'V':
+-       {
+- 	struct string_list_element *new
+- 	  = (struct string_list_element *)
+- 	    xmalloc (sizeof (struct string_list_element));
+- 
+- 	new->str = arg;
+- 	new->next = set_element_prefixes;
+- 	set_element_prefixes = new;
+- 	return;
+-       }
+- 
+-     case 'X':
+-       discard_locals = DISCARD_L;
+-       return;
+- 
+-     case 'x':
+-       discard_locals = DISCARD_ALL;
+-       return;
+- 
+-     case 'y':
+-       {
+- 	register symbol *sp = getsym (&swt[2]);
+- 	sp->trace = 1;
+-       }
+-       return;
+- 
+-     case 'z':
+-       magic = ZMAGIC;
+-       return;
+- 
+-     default:
+-       fatal ("invalid command option `%s'", swt);
+-     }
+- }
+  
+! /** Convenient functions for operating on one or all files being */
+!  /** loaded.  */
+  void print_file_name ();
+  
+  /* Call FUNCTION on each input file entry.
+--- 1509,1517 ----
+      }
+    return 0;
+  }
+  
+! /* Convenient functions for operating on one or all files being
+!    loaded.  */
+  void print_file_name ();
+  
+  /* Call FUNCTION on each input file entry.
+***************
+*** 1525,1533 ****
+  
+    if (input_file) file_close ();
+  
+!   if (entry->search_dirs_flag)
+      {
+-       register char **p = search_dirs;
+        int i;
+  
+        for (i = 0; i < n_search_dirs; i++)
+--- 1627,1634 ----
+  
+    if (input_file) file_close ();
+  
+!   if (entry->search_dirs_flag && n_search_dirs)
+      {
+        int i;
+  
+        for (i = 0; i < n_search_dirs; i++)
+***************
+*** 1790,1812 ****
+       int desc;
+       register struct file_entry *entry;
+  {
+!   register int len;
+!   struct exec *loc = (struct exec *) &entry->header;
+  
+!   lseek (desc, entry->starting_offset, 0);
+!   len = read (desc, loc, sizeof (struct exec));
+!   if (len != sizeof (struct exec))
+!     fatal_with_file ("failure reading header of ", entry);
+!   if (N_BADMAG (*loc))
+!     fatal_with_file ("bad magic number in ", entry);
+  
+    entry->header_read_flag = 1;
+  }
+  
+  /* Read the symbols of file ENTRY into core.
+!    Assume it is already open, on descriptor DESC.
+!    Also read the length of the string table, which follows the symbol table,
+!    but don't read the contents of the string table.  */
+  
+  void
+  read_entry_symbols (desc, entry)
+--- 2173,2210 ----
+       int desc;
+       register struct file_entry *entry;
+  {
+!   if (!entry->file_type)
+!     deduce_file_type (desc, entry);
+  
+!   switch (entry->file_type)
+!     {
+!     case IS_ARCHIVE:
+!     default:
+!       /* Should never happen. */
+!       abort ();
+! 
+! #ifdef A_OUT
+!     case IS_A_OUT:
+!       read_a_out_header (desc, entry);
+!       break;
+! #endif
+  
++ #ifdef MACH_O
++     case IS_MACH_O:
++       read_mach_o_header (desc, entry);
++       break;
++ #endif
++     }
++ 
+    entry->header_read_flag = 1;
+  }
+  
++ #ifdef MACH_O
++ void translate_mach_o_symbols ();
++ #endif
++ 
+  /* Read the symbols of file ENTRY into core.
+!    Assume it is already open, on descriptor DESC.  */
+  
+  void
+  read_entry_symbols (desc, entry)
+***************
+*** 1818,1839 ****
+    if (!entry->header_read_flag)
+      read_header (desc, entry);
+  
+!   entry->symbols = (struct nlist *) xmalloc (entry->header.a_syms);
+  
+!   lseek (desc, N_SYMOFF (entry->header) + entry->starting_offset, 0);
+!   if (entry->header.a_syms != read (desc, entry->symbols, entry->header.a_syms))
+      fatal_with_file ("premature end of file in symbols of ", entry);
+  
+!   lseek (desc, N_STROFF (entry->header) + entry->starting_offset, 0);
+!   if (sizeof str_size != read (desc, &str_size, sizeof str_size))
+!     fatal_with_file ("bad string table size in ", entry);
+! 
+!   entry->string_size = str_size;
+  }
+  
+  /* Read the string table of file ENTRY into core.
+!    Assume it is already open, on descriptor DESC.
+!    Also record whether a GDB symbol segment follows the string table.  */
+  
+  void
+  read_entry_strings (desc, entry)
+--- 2216,2235 ----
+    if (!entry->header_read_flag)
+      read_header (desc, entry);
+  
+!   entry->symbols = (struct nlist *) xmalloc (entry->syms_size);
+  
+!   lseek (desc, entry->syms_offset + entry->starting_offset, 0);
+!   if (entry->syms_size != read (desc, entry->symbols, entry->syms_size))
+      fatal_with_file ("premature end of file in symbols of ", entry);
+  
+! #ifdef MACH_O
+!   if (entry->file_type == IS_MACH_O)
+!     translate_mach_o_symbols (entry);
+! #endif
+  }
+  
+  /* Read the string table of file ENTRY into core.
+!    Assume it is already open, on descriptor DESC.  */
+  
+  void
+  read_entry_strings (desc, entry)
+***************
+*** 1736,1768 ****
+       register struct file_entry *entry;
+  {
+    register int desc;
+-   register int len;
+-   struct exec hdr;
+  
+    desc = file_open (entry);
+  
+!   len = read (desc, &hdr, sizeof hdr);
+!   if (len != sizeof hdr)
+!     fatal_with_file ("failure reading header of ", entry);
+  
+!   if (!N_BADMAG (hdr))
+      {
+        read_entry_symbols (desc, entry);
+!       entry->strings = (char *) alloca (entry->string_size);
+        read_entry_strings (desc, entry);
+        enter_file_symbols (entry);
+        entry->strings = 0;
+      }
+-   else
+-     {
+-       char armag[SARMAG];
+- 
+-       lseek (desc, 0, 0);
+-       if (SARMAG != read (desc, armag, SARMAG) || strncmp (armag, ARMAG, SARMAG))
+- 	fatal_with_file ("malformed input file (not rel or archive) ", entry);
+-       entry->library_flag = 1;
+-       search_library (desc, entry);
+-     }
+  
+    file_close ();
+  }
+--- 2113,2137 ----
+       register struct file_entry *entry;
+  {
+    register int desc;
+  
+    desc = file_open (entry);
+  
+!   if (!entry->file_type)
+!     deduce_file_type (desc, entry);
+  
+!   if (entry->file_type == IS_ARCHIVE)
+!     {
+!       entry->library_flag = 1;
+!       search_library (desc, entry);
+!     }
+!   else
+      {
+        read_entry_symbols (desc, entry);
+!       entry->strings = (char *) alloca (entry->strs_size);
+        read_entry_strings (desc, entry);
+        enter_file_symbols (entry);
+        entry->strings = 0;
+      }
+  
+    file_close ();
+  }
+***************
+*** 1775,1782 ****
+  {
+    register struct nlist
+      *p,
+!     *end = entry->symbols + entry->header.a_syms / sizeof (struct nlist);
+!   int lowest_set_vector = -1;
+  
+    if (trace_files) prline_file_name (entry, stderr);
+  
+--- 2144,2150 ----
+  {
+    register struct nlist
+      *p,
+!     *end = entry->symbols + entry->syms_size / sizeof (struct nlist);
+  
+    if (trace_files) prline_file_name (entry, stderr);
+  
+***************
+*** 1900,1907 ****
+  	  /* Indirect symbols value should be modified to point
+  	     a symbol being equivalenced to. */
+  	  nlist_p->n_value
+  	    = (unsigned int) getsym ((nlist_p + 1)->n_un.n_strx
+  				     + entry->strings);
+  	  if ((symbol *) nlist_p->n_value == sp)
+  	    {
+  	      /* Somebody redefined a symbol to be itself.  */
+--- 2268,2280 ----
+  	  /* Indirect symbols value should be modified to point
+  	     a symbol being equivalenced to. */
+  	  nlist_p->n_value
++ #ifndef NeXT
+  	    = (unsigned int) getsym ((nlist_p + 1)->n_un.n_strx
+  				     + entry->strings);
++ #else
++ 	    /* NeXT also has indirection but they do it weirdly. */
++ 	    = (unsigned int) getsym (nlist_p->n_value + entry->strings);
++ #endif
+  	  if ((symbol *) nlist_p->n_value == sp)
+  	    {
+  	      /* Somebody redefined a symbol to be itself.  */
+***************
+*** 2371,2377 ****
+  	 potentially want it.  */
+        if (type & N_EXT
+  	  && (type != (N_UNDF | N_EXT) || p->n_value
+! 	      
+  #ifdef DOLLAR_KLUDGE
+  	       || name[1] == '$'
+  #endif
+--- 2742,2748 ----
+  	 potentially want it.  */
+        if (type & N_EXT
+  	  && (type != (N_UNDF | N_EXT) || p->n_value
+! 
+  #ifdef DOLLAR_KLUDGE
+  	       || name[1] == '$'
+  #endif
+***************
+*** 2493,2526 ****
+    /* If necessary, pad text section to full page in the file.
+       Include the padding in the text segment size.  */
+  
+! #ifdef NMAGIC
+!   if (magic == ZMAGIC || magic == NMAGIC)
+! #else
+!   if (magic == ZMAGIC)
+! #endif
+      {
+!       int text_end = text_size + N_TXTOFF (outheader);
+!       text_pad = ((text_end + page_size - 1) & (- page_size)) - text_end;
+        text_size += text_pad;
+      }
+  
+!   outheader.a_text = text_size;
+! #ifdef sequent
+!   outheader.a_text += N_ADDRADJ (outheader);
+! #endif
+! 
+!   /* Make the data segment address start in memory on a suitable boundary.  */
+  
+!   if (! Tdata_flag_specified)
+!     data_start = N_DATADDR (outheader) + text_start - N_TXTADDR (outheader);
+  
+    /* Make sure bss starts out aligned as much as anyone can want.  */
+  
+!   data_size = (data_size + sizeof(double) - 1) & ~(sizeof(double)-1);
+  
+    /* Set up the set element vector */
+  
+!   if (!relocatable_output)
+      {
+        /* The set sector size is the number of set elements + a word
+           for each symbol for the length word at the beginning of the
+--- 2872,2899 ----
+    /* If necessary, pad text section to full page in the file.
+       Include the padding in the text segment size.  */
+  
+!   if (output_style == OUTPUT_READONLY_TEXT || output_style == OUTPUT_DEMAND_PAGED)
+      {
+!       text_pad = ((text_size + page_size - 1) & (- page_size)) - text_size;
+        text_size += text_pad;
+      }
+  
+!   /* Now that the text_size is known, initialize the data start address;
+!      this depends on text_size as well as the output file format.  */
+  
+!   initialize_data_start ();
+  
+    /* Make sure bss starts out aligned as much as anyone can want.  */
++   {
++     int new_data_size = (data_size + sizeof(double) - 1) & ~(sizeof(double)-1);
+  
+!     data_pad += new_data_size - data_size;
+!     data_size = new_data_size;
+!   }
+  
+    /* Set up the set element vector */
+  
+!   if (output_style != OUTPUT_RELOCATABLE)
+      {
+        /* The set sector size is the number of set elements + a word
+           for each symbol for the length word at the beginning of the
+***************
+*** 2556,2562 ****
+  	{
+  	  /* For each symbol */
+  	  register struct nlist *p, *next;
+! 	  int defs = 0, com = sp->max_common_size, erred = 0;
+  	  struct nlist *first_definition;
+  	  for (p = sp->refs; p; p = next)
+  	    {
+--- 2929,2935 ----
+  	{
+  	  /* For each symbol */
+  	  register struct nlist *p, *next;
+! 	  int defs = 0, com = sp->max_common_size;
+  	  struct nlist *first_definition;
+  	  for (p = sp->refs; p; p = next)
+  	    {
+***************
+*** 2828,2853 ****
+  
+    bss_size = (bss_size + sizeof(double) - 1) & ~(sizeof(double)-1);
+  
+!   if (end_symbol)		/* These are null if -r.  */
+!     {
+!       etext_symbol->value = text_size + text_start;
+!       edata_symbol->value = data_start + data_size;
+!       end_symbol->value = data_start + data_size + bss_size;
+!     }
+  
+    /* Figure the data_pad now, so that it overlaps with the bss addresses.  */
+  
+!   if (specified_data_size && specified_data_size > data_size)
+!     data_pad = specified_data_size - data_size;
+  
+!   if (magic == ZMAGIC)
+!     data_pad = ((data_pad + data_size + page_size - 1) & (- page_size))
+!                - data_size;
+! 
+!   bss_size -= data_pad;
+!   if (bss_size < 0) bss_size = 0;
+  
+!   data_size += data_pad;
+  }
+  
+  /* Accumulate the section sizes of input file ENTRY
+--- 3201,3253 ----
+  
+    bss_size = (bss_size + sizeof(double) - 1) & ~(sizeof(double)-1);
+  
+!   /* Give values to _end and friends.  */
+!   {
+!     int end_value = data_start + data_size + bss_size;
+!     if (end_symbol)
+!       end_symbol->value = end_value;
+!     if (end_symbol_alt)
+!       end_symbol_alt->value = end_value;
+!   }
+! 
+!   {
+!     int etext_value = text_size + text_start;
+!     if (etext_symbol)
+!       etext_symbol->value = etext_value;
+!     if (etext_symbol_alt)
+!       etext_symbol_alt->value = etext_value;
+!   }
+! 
+!   {
+!     int edata_value = data_start + data_size;
+!     if (edata_symbol)
+!       edata_symbol->value = edata_value;
+!     if (edata_symbol_alt)
+!       edata_symbol_alt->value = edata_value;
+!   }
+  
+    /* Figure the data_pad now, so that it overlaps with the bss addresses.  */
+  
+!   {
+!     /* The amount of data_pad that we are computing now.  This is the
+!        part which overlaps with bss.  What was computed previously
+!        goes before bss.  */
+!     int data_pad_additional = 0;
+!     
+!     if (specified_data_size && specified_data_size > data_size)
+!       data_pad_additional = specified_data_size - data_size;
+! 
+!     if (output_style == OUTPUT_DEMAND_PAGED)
+!       data_pad_additional =
+! 	((data_pad_additional + data_size + page_size - 1) & (- page_size)) - data_size;
+! 
+!     bss_size -= data_pad_additional;
+!     if (bss_size < 0) bss_size = 0;
+  
+!     data_size += data_pad_additional;
+  
+!     data_pad += data_pad_additional;
+!   }
+  }
+  
+  /* Accumulate the section sizes of input file ENTRY
+***************
+*** 2899,2910 ****
+    current->filename = next->filename;
+  
+    while (++(next->sym) < (entry->symbols
+! 			  + entry->header.a_syms/sizeof (struct nlist)))
+      {
+        /* n_type is a char, and N_SOL, N_EINCL and N_BINCL are > 0x80, so
+         * may look negative...therefore, must mask to low bits
+         */
+!       switch (next->sym->n_type & 0xff) 
+  	{
+  	case N_SLINE:
+  	  if (use_data_symbols) continue;
+--- 3300,3311 ----
+    current->filename = next->filename;
+  
+    while (++(next->sym) < (entry->symbols
+! 			  + entry->syms_size/sizeof (struct nlist)))
+      {
+        /* n_type is a char, and N_SOL, N_EINCL and N_BINCL are > 0x80, so
+         * may look negative...therefore, must mask to low bits
+         */
+!       switch (next->sym->n_type & 0xff)
+  	{
+  	case N_SLINE:
+  	  if (use_data_symbols) continue;
+***************
+*** 3023,3029 ****
+    int use_data_symbols;
+  
+    if (next->sym)
+!     use_data_symbols = (next->sym->n_type & N_TYPE) == N_DATA;
+    else
+      return current->line;
+  
+--- 3424,3430 ----
+    int use_data_symbols;
+  
+    if (next->sym)
+!     use_data_symbols = (next->sym->n_type & ~N_EXT) == N_DATA;
+    else
+      return current->line;
+  
+***************
+*** 3075,3081 ****
+      *reloc_start = data_segment ? entry->datarel : entry->textrel,
+      *reloc;
+    int reloc_size
+!     = ((data_segment ? entry->header.a_drsize : entry->header.a_trsize)
+         / sizeof (struct relocation_info));
+    int start_of_segment
+      = (data_segment ? entry->data_start_address : entry->text_start_address);
+--- 3476,3482 ----
+      *reloc_start = data_segment ? entry->datarel : entry->textrel,
+      *reloc;
+    int reloc_size
+!     = ((data_segment ? entry->data_reloc_size : entry->text_reloc_size)
+         / sizeof (struct relocation_info));
+    int start_of_segment
+      = (data_segment ? entry->data_start_address : entry->text_start_address);
+***************
+*** 3082,3091 ****
+    struct nlist *start_of_syms = entry->symbols;
+    struct line_debug_entry *state_pointer
+      = init_debug_scan (data_segment != 0, entry);
+!   register struct line_debug_entry
+!     *current = state_pointer,
+!     *next = state_pointer + 1,
+!     *source = state_pointer + 2;
+    /* Assigned to generally static values; should not be written into.  */
+    char *errfmt;
+    /* Assigned to alloca'd values cand copied into; should be freed
+--- 3483,3489 ----
+    struct nlist *start_of_syms = entry->symbols;
+    struct line_debug_entry *state_pointer
+      = init_debug_scan (data_segment != 0, entry);
+!   register struct line_debug_entry *current = state_pointer;
+    /* Assigned to generally static values; should not be written into.  */
+    char *errfmt;
+    /* Assigned to alloca'd values cand copied into; should be freed
+***************
+*** 3307,3324 ****
+  
+  	  /* Mark as being noted by relocation warning pass.  */
+  	  SET_BIT (nlist_bitvector, s - start_of_syms);
+! 	  
+  	  errfmt = 0;
+  	  errmsg = g->warning;
+  	  invalidate_line_number = 0;
+  	}
+!       
+  
+        /* If errfmt == 0, errmsg has already been defined.  */
+        if (errfmt != 0)
+  	{
+! 	  errmsg = (char *) xmalloc (strlen (errfmt) + strlen (g->name) + 1);
+! 	  sprintf (errmsg, errfmt, g->name, data_segment ? "data" : "text");
+  	}
+  
+        address_to_line (RELOC_ADDRESS (reloc) + start_of_segment,
+--- 3705,3728 ----
+  
+  	  /* Mark as being noted by relocation warning pass.  */
+  	  SET_BIT (nlist_bitvector, s - start_of_syms);
+! 
+  	  errfmt = 0;
+  	  errmsg = g->warning;
+  	  invalidate_line_number = 0;
+  	}
+! 
+  
+        /* If errfmt == 0, errmsg has already been defined.  */
+        if (errfmt != 0)
+  	{
+! 	  char *nm;
+! 
+! 	  if (!demangler || !(nm = (*demangler)(g->name)))
+! 	    nm = g->name;
+! 	  errmsg = xmalloc (strlen (errfmt) + strlen (nm) + 1);
+! 	  sprintf (errmsg, errfmt, nm, data_segment ? "data" : "text");
+! 	  if (nm != g->name)
+! 	    free (nm);
+  	}
+  
+        address_to_line (RELOC_ADDRESS (reloc) + start_of_segment,
+***************
+*** 3198,3204 ****
+       struct file_entry *entry;
+       FILE *outfile;
+  {
+!   int number_of_syms = entry->header.a_syms / sizeof (struct nlist);
+    unsigned char *nlist_bitvector
+      = (unsigned char *) alloca ((number_of_syms >> 3) + 1);
+    struct line_debug_entry *text_scan, *data_scan;
+--- 3609,3615 ----
+       struct file_entry *entry;
+       FILE *outfile;
+  {
+!   int number_of_syms = entry->syms_size / sizeof (struct nlist);
+    unsigned char *nlist_bitvector
+      = (unsigned char *) alloca ((number_of_syms >> 3) + 1);
+    struct line_debug_entry *text_scan, *data_scan;
+***************
+*** 3426,3432 ****
+  	{
+  	  if (g->undef_refs >= MAX_UREFS_PRINTED)
+  	    continue;
+! 	  
+  	  if (++(g->undef_refs) == MAX_UREFS_PRINTED)
+  	    errfmt = "More undefined \"%s\" refs follow";
+  	  else
+--- 3837,3843 ----
+  	{
+  	  if (g->undef_refs >= MAX_UREFS_PRINTED)
+  	    continue;
+! 
+  	  if (++(g->undef_refs) == MAX_UREFS_PRINTED)
+  	    errfmt = "More undefined \"%s\" refs follow";
+  	  else
+***************
+*** 3449,3464 ****
+  	}
+        else
+  	continue;
+!       
+        if (line_number == -1)
+! 	fprintf (outfile, "%s: ", entry->filename);
+        else
+! 	fprintf (outfile, "%s:%d: ", file_name, line_number);
+  
+        if (dont_allow_symbol_name)
+  	fprintf (outfile, "%s", errfmt);
+        else
+! 	fprintf (outfile, errfmt, g->name);
+  
+        fputc ('\n', outfile);
+      }
+--- 3860,3892 ----
+  	}
+        else
+  	continue;
+! 
+        if (line_number == -1)
+! 	{
+! 	  print_file_name (entry, outfile);
+! 	  fprintf (outfile, ": ");
+! 	}
+        else
+! 	{
+! 	  fprintf (outfile, "%s:%d (", file_name, line_number);
+! 	  print_file_name (entry, outfile);
+! 	  fprintf (outfile, "): ");
+! 	}
+  
+        if (dont_allow_symbol_name)
+  	fprintf (outfile, "%s", errfmt);
+        else
+! 	{
+! 	  char *nm;
+! 
+! 	  if (!demangler || !(nm = (*demangler)(g->name)))
+! 	    fprintf (outfile, errfmt, g->name);
+! 	  else
+! 	    {
+! 	      fprintf (outfile, errfmt, nm);
+! 	      free (nm);
+! 	    }
+! 	}
+  
+        fputc ('\n', outfile);
+      }
+***************
+*** 3348,3408 ****
+      make_executable = 0;
+  }
+  
+! /* Write the output file */
+! 
+! void
+! write_output ()
+! {
+!   struct stat statbuf;
+!   int filemode;
+! 
+!   outdesc = open (output_filename, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+!   if (outdesc < 0) perror_name (output_filename);
+  
+!   if (fstat (outdesc, &statbuf) < 0)
+!     perror_name (output_filename);
+  
+!   filemode = statbuf.st_mode;
+  
+!   chmod (output_filename, filemode & ~0111);
+  
+!   /* Output the a.out header.  */
+!   write_header ();
+  
+!   /* Output the text and data segments, relocating as we go.  */
+!   write_text ();
+!   write_data ();
+  
+!   /* Output the merged relocation info, if requested with `-r'.  */
+!   if (relocatable_output)
+!     write_rel ();
+  
+!   /* Output the symbol table (both globals and locals).  */
+!   write_syms ();
+  
+!   /* Copy any GDB symbol segments from input files.  */
+!   write_symsegs ();
+  
+!   close (outdesc);
+  
+!   if (chmod (output_filename, filemode | 0111) == -1)
+!     perror_name (output_filename);
+  }
+! 
+! void modify_location (), perform_relocation (), copy_text (), copy_data ();
+  
+  void
+! write_header ()
+  {
+-   N_SET_MAGIC (outheader, magic);
+    outheader.a_text = text_size;
+  #ifdef sequent
+    outheader.a_text += N_ADDRADJ (outheader);
+  #endif
+    outheader.a_data = data_size;
+    outheader.a_bss = bss_size;
+    outheader.a_entry = (entry_symbol ? entry_symbol->value
+! 		       : text_start + entry_offset);
+  #ifdef COFF_ENCAPSULATE
+    if (need_coff_header)
+      {
+--- 3774,3877 ----
+      make_executable = 0;
+  }
+  
+! #ifdef A_OUT
+  
+! /* Stuff pertaining to creating a.out files. */
+  
+! /* The a.out header. */
+  
+! struct exec outheader;
+  
+! #ifdef COFF_ENCAPSULATE
+! int need_coff_header;
+! struct coffheader coffheader;
+! #endif
+  
+! /* Compute text_start and text_header_size for an a.out file.  */
+  
+! void
+! initialize_a_out_text_start ()
+! {
+!   int magic;
+  
+!   switch (output_style)
+!     {
+!     case OUTPUT_RELOCATABLE:
+!     case OUTPUT_WRITABLE_TEXT:
+!       magic = OMAGIC;
+!       break;
+!     case OUTPUT_READONLY_TEXT:
+! #ifdef NMAGIC
+!       magic = NMAGIC;
+!       break;
+! #endif
+!     case OUTPUT_DEMAND_PAGED:
+!       magic = ZMAGIC;
+!       break;
+!     default:
+!       fatal ("unknown output style found (bug in ld)", (char *) 0);
+!       break;
+!     }
+  
+!   /* Determine whether to count the header as part of
+!      the text size, and initialize the text size accordingly.
+!      This depends on the kind of system and on the output format selected.  */
+!   N_SET_MAGIC (outheader, magic);
+! #ifdef INITIALIZE_HEADER
+!   INITIALIZE_HEADER;
+! #endif
+  
+!   text_header_size = sizeof (struct exec);
+! #ifdef COFF_ENCAPSULATE
+!   /* Don't write the coff header for the output of ld -A (since
+!      it is not executable by the kernel anyway).  */
+!   if (output_style != OUTPUT_RELOCATABLE && !file_table[0].just_syms_flag)
+!     {
+!       need_coff_header = 1;
+!       /* set this flag now, since it will change the values of N_TXTOFF, etc */
+!       N_SET_FLAGS (outheader, N_FLAGS_COFF_ENCAPSULATE);
+!       text_header_size += sizeof (struct coffheader);
+!     }
+! #endif
+!   if (text_header_size <= N_TXTOFF (outheader))
+!     text_header_size = 0;
+!   else
+!     text_header_size -= N_TXTOFF (outheader);
+! 
+! #ifdef _N_BASEADDR
+!   /* SunOS 4.1 N_TXTADDR depends on the value of outheader.a_entry. */
+!   outheader.a_entry = N_PAGSIZ(outheader);
+! #endif
+  
+!   if (!T_flag_specified && output_style != OUTPUT_RELOCATABLE)
+!     text_start = N_TXTADDR (outheader);
+  }
+! 
+! /* Compute data_start once text_size is known. */
+  
+  void
+! initialize_a_out_data_start ()
+  {
+    outheader.a_text = text_size;
+  #ifdef sequent
+    outheader.a_text += N_ADDRADJ (outheader);
++   if (entry_symbol == 0)
++     entry_symbol = getsym ("start");
+  #endif
++   if (! Tdata_flag_specified)
++     data_start = N_DATADDR (outheader) + text_start - N_TXTADDR (outheader);
++ }
++ 
++ /* Compute offsets of various pieces of the a.out output file.  */
++ 
++ void
++ compute_a_out_section_offsets ()
++ {
+    outheader.a_data = data_size;
+    outheader.a_bss = bss_size;
+    outheader.a_entry = (entry_symbol ? entry_symbol->value
+! 		       : text_start + text_header_size);
+! 
+  #ifdef COFF_ENCAPSULATE
+    if (need_coff_header)
+      {
+***************
+*** 3665,3674 ****
+        outheader.a_drsize = 0;
+      }
+  
+  #ifdef COFF_ENCAPSULATE
+    if (need_coff_header)
+      mywrite (&coffheader, sizeof coffheader, 1, outdesc);
+  #endif
+    mywrite (&outheader, sizeof (struct exec), 1, outdesc);
+  
+    /* Output whatever padding is required in the executable file
+--- 4134,4181 ----
+        outheader.a_drsize = 0;
+      }
+  
++   /* Initialize the various file offsets.  */
++ 
++   output_text_offset = N_TXTOFF (outheader);
++ #ifdef N_DATOFF
++   output_data_offset = N_DATOFF (outheader);
++ #else
++   output_data_offset = output_text_offset + text_size;
++ #endif
++ #ifdef N_TRELOFF
++   output_trel_offset = N_TRELOFF (outheader);
++ #else
++   output_trel_offset = output_data_offset + data_size;
++ #endif
++ #ifdef N_DRELOFF
++   output_drel_offset = N_DRELOFF (outheader);
++ #else
++   output_drel_offset = output_trel_offset + text_reloc_size;
++ #endif
++   output_syms_offset = N_SYMOFF (outheader);
++   output_strs_offset = N_STROFF (outheader);
++ }
++ 
++ /* Compute more section offsets once the size of the string table is known.  */
++ 
++ void
++ compute_more_a_out_section_offsets ()
++ {
++   output_symseg_offset = output_strs_offset + output_strs_size;
++ }
++ 
++ /* Write the a.out header once everything else is known.  */
++ 
++ void
++ write_a_out_header ()
++ {
++   lseek (outdesc, 0L, 0);
++ 
+  #ifdef COFF_ENCAPSULATE
+    if (need_coff_header)
+      mywrite (&coffheader, sizeof coffheader, 1, outdesc);
+  #endif
++ 
+    mywrite (&outheader, sizeof (struct exec), 1, outdesc);
+  
+    /* Output whatever padding is required in the executable file
+***************
+*** 3740,3755 ****
+  
+    if (!entry->datarel)
+      {
+!       reloc = (struct relocation_info *) xmalloc (entry->header.a_drsize);
+        if (desc == -1) desc = file_open (entry);
+!       lseek (desc,
+! 	     text_offset (entry) + entry->header.a_text
+! 	     + entry->header.a_data + entry->header.a_trsize,
+! 	     L_SET);
+!       if (entry->header.a_drsize != read (desc, reloc, entry->header.a_drsize))
+  	fatal_with_file ("premature eof in data relocation of ", entry);
+        entry->datarel = reloc;
+      }
+  }
+  
+  /* Read the text segment contents of ENTRY, relocate them,
+--- 4865,4887 ----
+  
+    if (!entry->datarel)
+      {
+!       reloc = (struct relocation_info *) xmalloc (entry->data_reloc_size);
+        if (desc == -1) desc = file_open (entry);
+!       lseek (desc, entry->starting_offset + entry->data_reloc_offset, L_SET);
+!       if (entry->data_reloc_size != read (desc, reloc, entry->data_reloc_size))
+  	fatal_with_file ("premature eof in data relocation of ", entry);
+        entry->datarel = reloc;
+      }
++ 
++ #ifdef MACH_O
++   if (entry->file_type == IS_MACH_O)
++     {
++       translate_mach_o_relocation (entry, entry->textrel,
++ 				   entry->text_reloc_size / sizeof (struct relocation_info));
++       translate_mach_o_relocation (entry, entry->datarel,
++ 				   entry->data_reloc_size / sizeof (struct relocation_info));
++     }
++ #endif
+  }
+  
+  /* Read the text segment contents of ENTRY, relocate them,
+***************
+*** 3638,3664 ****
+      }
+    else
+      {
+!       reloc = (struct relocation_info *) alloca (entry->header.a_trsize);
+!       lseek (desc, text_offset (entry) + entry->header.a_text + entry->header.a_data, 0);
+!       if (entry->header.a_trsize != read (desc, reloc, entry->header.a_trsize))
+  	fatal_with_file ("premature eof in text relocation of ", entry);
+      }
+  
+    /* Read the text section into core.  */
+  
+!   lseek (desc, text_offset (entry), 0);
+!   if (entry->header.a_text != read (desc, bytes, entry->header.a_text))
+      fatal_with_file ("premature eof in text section of ", entry);
+  
+- 
+    /* Relocate the text according to the text relocation.  */
+  
+!   perform_relocation (bytes, entry->text_start_address, entry->header.a_text,
+! 		      reloc, entry->header.a_trsize, entry);
+  
+    /* Write the relocated text to the output file.  */
+  
+!   mywrite (bytes, 1, entry->header.a_text, outdesc);
+  }
+  
+  /* Relocate the data segment of each input file
+--- 4770,4800 ----
+      }
+    else
+      {
+!       reloc = (struct relocation_info *) alloca (entry->text_reloc_size);
+!       lseek (desc, entry->starting_offset + entry->text_reloc_offset, L_SET);
+!       if (entry->text_reloc_size != read (desc, reloc, entry->text_reloc_size))
+  	fatal_with_file ("premature eof in text relocation of ", entry);
++ #ifdef MACH_O
++       if (entry->file_type == IS_MACH_O)
++ 	translate_mach_o_relocation (entry, reloc,
++ 				     entry->text_reloc_size / sizeof (struct relocation_info));
++ #endif
+      }
+  
+    /* Read the text section into core.  */
+  
+!   lseek (desc, entry->starting_offset + entry->text_offset, L_SET);
+!   if (entry->text_size != read (desc, bytes, entry->text_size))
+      fatal_with_file ("premature eof in text section of ", entry);
+  
+    /* Relocate the text according to the text relocation.  */
+  
+!   perform_relocation (bytes, entry->text_start_address - entry->orig_text_address,
+! 		      entry->text_size, reloc, entry->text_reloc_size, entry);
+  
+    /* Write the relocated text to the output file.  */
+  
+!   mywrite (bytes, 1, entry->text_size, outdesc);
+  }
+  
+  /* Relocate the data segment of each input file
+***************
+*** 3723,3744 ****
+      }
+    else
+      {
+!       reloc = (struct relocation_info *) alloca (entry->header.a_drsize);
+!       lseek (desc, text_offset (entry) + entry->header.a_text
+! 	     + entry->header.a_data + entry->header.a_trsize,
+! 	     0);
+!       if (entry->header.a_drsize != read (desc, reloc, entry->header.a_drsize))
+  	fatal_with_file ("premature eof in data relocation of ", entry);
+      }
+  
+!   lseek (desc, text_offset (entry) + entry->header.a_text, 0);
+!   if (entry->header.a_data != read (desc, bytes, entry->header.a_data))
+      fatal_with_file ("premature eof in data section of ", entry);
+  
+!   perform_relocation (bytes, entry->data_start_address - entry->header.a_text,
+! 		      entry->header.a_data, reloc, entry->header.a_drsize, entry);
+  
+!   mywrite (bytes, 1, entry->header.a_data, outdesc);
+  }
+  
+  /* Relocate ENTRY's text or data section contents.
+--- 4861,4885 ----
+      }
+    else
+      {
+!       reloc = (struct relocation_info *) alloca (entry->data_reloc_size);
+!       lseek (desc, entry->starting_offset + entry->data_reloc_offset, L_SET);
+!       if (entry->data_reloc_size != read (desc, reloc, entry->data_reloc_size))
+  	fatal_with_file ("premature eof in data relocation of ", entry);
++ #ifdef MACH_O
++       if (entry->file_type == IS_MACH_O)
++ 	translate_mach_o_relocation (entry, reloc,
++ 				     entry->data_reloc_size / sizeof (struct relocation_info));
++ #endif
+      }
+  
+!   lseek (desc, entry->starting_offset + entry->data_offset, L_SET);
+!   if (entry->data_size != read (desc, bytes, entry->data_size))
+      fatal_with_file ("premature eof in data section of ", entry);
+  
+!   perform_relocation (bytes, entry->data_start_address - entry->orig_data_address,
+! 		      entry->data_size, reloc, entry->data_reloc_size, entry);
+  
+!   mywrite (bytes, 1, entry->data_size, outdesc);
+  }
+  
+  /* Relocate ENTRY's text or data section contents.
+***************
+*** 4044,4049 ****
+  	  break;
+  
+  	case 2:
+  	  if (RELOC_MEMORY_SUB_P(p))
+  	    relocation -= mask & *(long *) (data + addr);
+  	  else if (RELOC_MEMORY_ADD_P(p))
+--- 5179,5200 ----
+  	  break;
+  
+  	case 2:
++ #ifdef CROSS_LINKER
++ 	  /* This is necessary if the host has stricter alignment
++ 	     than the target.  Too slow to use all the time.
++ 	     Also doesn't deal with differing byte-order.  */
++ 	  {
++ 	    /* Thing to relocate.  */
++ 	    long thing;
++ 	    bcopy (data + addr, &thing, sizeof (thing));
++ 	    if (RELOC_MEMORY_SUB_P (p))
++ 	      relocation -= mask & thing;
++ 	    else if (RELOC_MEMORY_ADD_P (p))
++ 	      relocation += mask & thing;
++ 	    thing = (thing & ~mask) | relocation;
++ 	    bcopy (&thing, data + addr, sizeof (thing));
++ 	  }
++ #else /* not CROSS_LINKER */
+  	  if (RELOC_MEMORY_SUB_P(p))
+  	    relocation -= mask & *(long *) (data + addr);
+  	  else if (RELOC_MEMORY_ADD_P(p))
+***************
+*** 4050,4055 ****
+  	    relocation += mask & *(long *) (data + addr);
+  	  *(long *) (data + addr) &= ~mask;
+  	  *(long *) (data + addr) |= relocation;
+  	  break;
+  
+  	default:
+--- 5201,5207 ----
+  	    relocation += mask & *(long *) (data + addr);
+  	  *(long *) (data + addr) &= ~mask;
+  	  *(long *) (data + addr) |= relocation;
++ #endif /* not CROSS_LINKER */
+  	  break;
+  
+  	default:
+***************
+*** 4050,4063 ****
+  	  else
+  	    /* Debugger symbols come first, so have to start this
+  	       after them.  */
+  	      RELOC_SYMBOL(p) = (symptr->def_count + nsyms
+  				 - defined_global_sym_count
+  				 - undefined_global_sym_count
+  				 - global_indirect_count);
+  	}
+        p++;
+      }
+!   mywrite (entry->textrel, 1, entry->header.a_trsize, outdesc);
+  }
+  
+  void
+--- 5211,5237 ----
+  	  else
+  	    /* Debugger symbols come first, so have to start this
+  	       after them.  */
++ #ifndef NeXT
+  	      RELOC_SYMBOL(p) = (symptr->def_count + nsyms
+  				 - defined_global_sym_count
+  				 - undefined_global_sym_count
+  				 - global_indirect_count);
++ #else
++ 	      RELOC_SYMBOL(p) = (symptr->def_count + nsyms
++ 				 - defined_global_sym_count
++ 				 - undefined_global_sym_count);
++ #endif
+  	}
+        p++;
+      }
+! 
+! #ifdef MACH_O
+!   if (output_file_type == IS_MACH_O)
+!     generate_mach_o_relocations(entry->textrel,
+! 				entry->text_reloc_size / sizeof (struct relocation_info));
+! #endif
+! 
+!   mywrite (entry->textrel, 1, entry->text_reloc_size, outdesc);
+  }
+  
+  void
+***************
+*** 4113,4139 ****
+  		 + nsyms - defined_global_sym_count
+  		 - undefined_global_sym_count
+  		 - global_indirect_count);
+  	}
+        p++;
+      }
+!   mywrite (entry->datarel, 1, entry->header.a_drsize, outdesc);
+  }
+  
+  void write_file_syms ();
+  void write_string_table ();
+  
+- /* Offsets and current lengths of symbol and string tables in output file. */
+- 
+- int symbol_table_offset;
+- int symbol_table_len;
+- 
+- /* Address in output file where string table starts.  */
+- int string_table_offset;
+- 
+- /* Offset within string table
+-    where the strings in `strtab_vector' should be written.  */
+- int string_table_len;
+- 
+  /* Total size of string table strings allocated so far,
+     including strings in `strtab_vector'.  */
+  int strtab_size;
+--- 5291,5321 ----
+  		 + nsyms - defined_global_sym_count
+  		 - undefined_global_sym_count
+  		 - global_indirect_count);
++ #else
++ 	    RELOC_SYMBOL(p)
++ 	      = (((symbol *)
++ 		  (((struct nlist *)
++ 		    (((char *)entry->symbols) + symindex))
++ 		   ->n_un.n_name))
++ 		 ->def_count
++ 		 + nsyms - defined_global_sym_count
++ 		 - undefined_global_sym_count);
++ #endif
+  	}
+        p++;
+      }
+! #ifdef MACH_O
+!   if (output_file_type == IS_MACH_O)
+!     generate_mach_o_relocations(entry->datarel,
+! 				entry->data_reloc_size / sizeof (struct relocation_info));
+! #endif
+! 
+!   mywrite (entry->datarel, 1, entry->data_reloc_size, outdesc);
+  }
+  
+  void write_file_syms ();
+  void write_string_table ();
+  
+  /* Total size of string table strings allocated so far,
+     including strings in `strtab_vector'.  */
+  int strtab_size;
+***************
+*** 4306,4342 ****
+  	    *bufp++ = nl;
+  	    syms_written++;
+  	    if (nl.n_type == (N_INDR | N_EXT))
+  	      {
+  		struct nlist xtra_ref;
+  		xtra_ref.n_type == N_EXT | N_UNDF;
+  		xtra_ref.n_un.n_strx
+  		  = assign_string_table_index (((symbol *) sp->value)->name);
+  		xtra_ref.n_other = 0;
+  		xtra_ref.n_desc = 0;
+  		xtra_ref.n_value = 0;
+  		*bufp++ = xtra_ref;
+  		syms_written++;
+  	      }
+  	  }
+        }
+  
+    /* Output the buffer full of `struct nlist's.  */
+  
+!   lseek (outdesc, symbol_table_offset + symbol_table_len, 0);
+    mywrite (buf, sizeof (struct nlist), bufp - buf, outdesc);
+!   symbol_table_len += sizeof (struct nlist) * (bufp - buf);
+  
+    if (syms_written != nsyms)
+      fatal ("internal error: wrong number of symbols written into output file", 0);
+  
+!   if (symbol_table_offset + symbol_table_len != string_table_offset)
+!     fatal ("internal error: inconsistent symbol table length", 0);
+  
+!   /* Now the total string table size is known, so write it.
+!      We are already positioned at the right place in the file.  */
+  
+-   mywrite (&strtab_size, sizeof (int), 1, outdesc);  /* we're at right place */
+- 
+    /* Write the strings for the global symbols.  */
+  
+    write_string_table ();
+--- 5496,5543 ----
+  	    *bufp++ = nl;
+  	    syms_written++;
+  	    if (nl.n_type == (N_INDR | N_EXT))
++ #ifndef NeXT
+  	      {
+  		struct nlist xtra_ref;
+  		xtra_ref.n_type == N_EXT | N_UNDF;
+  		xtra_ref.n_un.n_strx
+  		  = assign_string_table_index (((symbol *) sp->value)->name);
++ #ifdef N_SECT
++ 		xtra_ref.n_sect = 0;
++ #else
+  		xtra_ref.n_other = 0;
++ #endif
+  		xtra_ref.n_desc = 0;
+  		xtra_ref.n_value = 0;
+  		*bufp++ = xtra_ref;
+  		syms_written++;
+  	      }
++ #else
++ 	    nl.n_value = assign_string_table_index (((symbol *) sp->value)->name);
++ #endif
+  	  }
+        }
+  
++ #ifdef MACH_O
++   if (output_file_type == IS_MACH_O)
++     generate_mach_o_symbols(buf, bufp - buf);
++ #endif
++ 
+    /* Output the buffer full of `struct nlist's.  */
+  
+!   lseek (outdesc, output_syms_offset + output_syms_size, 0);
+    mywrite (buf, sizeof (struct nlist), bufp - buf, outdesc);
+!   output_syms_size += sizeof (struct nlist) * (bufp - buf);
+  
+    if (syms_written != nsyms)
+      fatal ("internal error: wrong number of symbols written into output file", 0);
+  
+!   /* Now the total string table size is known, so write it into the
+!      first word of the string table.  */
+  
+!   lseek (outdesc, output_strs_offset, 0);
+!   mywrite (&strtab_size, sizeof (int), 1, outdesc);
+  
+    /* Write the strings for the global symbols.  */
+  
+    write_string_table ();
+***************
+*** 4436,4446 ****
+  	}
+      }
+  
+    /* All the symbols are now in BUF; write them.  */
+  
+!   lseek (outdesc, symbol_table_offset + symbol_table_len, 0);
+    mywrite (buf, sizeof (struct nlist), bufp - buf, outdesc);
+!   symbol_table_len += sizeof (struct nlist) * (bufp - buf);
+  
+    /* Write the string-table data for the symbols just written,
+       using the data in vectors `strtab_vector' and `strtab_lens'.  */
+--- 5641,5656 ----
+  	}
+      }
+  
++ #ifdef MACH_O
++   if (output_file_type == IS_MACH_O)
++     generate_mach_o_symbols(buf, bufp - buf);
++ #endif
++ 
+    /* All the symbols are now in BUF; write them.  */
+  
+!   lseek (outdesc, output_syms_offset + output_syms_size, 0);
+    mywrite (buf, sizeof (struct nlist), bufp - buf, outdesc);
+!   output_syms_size += sizeof (struct nlist) * (bufp - buf);
+  
+    /* Write the string-table data for the symbols just written,
+       using the data in vectors `strtab_vector' and `strtab_lens'.  */
+***************
+*** 4639,4715 ****
+  
+    /* Copy the rest of the symbol segment unchanged.  */
+  
+!   if (entry->superfile)
+!     {
+!       /* Library member: number of bytes to copy is determined
+! 	 from the member's total size.  */
+! 
+!       int total = entry->total_size - entry->symseg_offset - sizeof root;
+  
+!       while (total > 0)
+! 	{
+! 	  len = read (indesc, buffer, min (sizeof buffer, total));
+! 
+! 	  if (len != min (sizeof buffer, total))
+! 	    fatal_with_file ("premature end of file in symbol segment of ", entry);
+! 	  total -= len;
+! 	  mywrite (buffer, len, 1, outdesc);
+! 	}
+!     }
+!   else
+!     {
+!       /* A separate file: copy until end of file.  */
+! 
+!       while (len = read (indesc, buffer, sizeof buffer))
+! 	{
+! 	  mywrite (buffer, len, 1, outdesc);
+! 	  if (len < sizeof buffer)
+! 	    break;
+! 	}
+      }
+  
+    file_close ();
+  }
+  
+  /* Create the symbol table entries for `etext', `edata' and `end'.  */
+  
+  void
+  symtab_init ()
+  {
+! #ifndef nounderscore
+!   edata_symbol = getsym ("_edata");
+!   etext_symbol = getsym ("_etext");
+!   end_symbol = getsym ("_end");
+! #else
+!   edata_symbol = getsym ("edata");
+!   etext_symbol = getsym ("etext");
+!   end_symbol = getsym ("end");
+! #endif
+  
+  #ifdef sun
+    {
+!     symbol *dynamic_symbol = getsym ("__DYNAMIC");
+!     dynamic_symbol->defined = N_ABS | N_EXT;
+!     dynamic_symbol->referenced = 1;
+!     dynamic_symbol->value = 0;
+    }
+! #endif
+! #ifdef sequent
+!   {
+!     symbol *_387_flt_symbol = getsym ("_387_flt");
+!     _387_flt_symbol->defined = N_ABS | N_EXT;
+!     _387_flt_symbol->referenced = 1;
+!     _387_flt_symbol->value = 0;
+!   }
+! #endif
+! 
+!   edata_symbol->defined = N_DATA | N_EXT;
+!   etext_symbol->defined = N_TEXT | N_EXT;
+!   end_symbol->defined = N_BSS | N_EXT;
+! 
+!   edata_symbol->referenced = 1;
+!   etext_symbol->referenced = 1;
+!   end_symbol->referenced = 1;
+  }
+  
+  /* Compute the hash code for symbol name KEY.  */
+--- 5850,5947 ----
+  
+    /* Copy the rest of the symbol segment unchanged.  */
+  
+!   total = entry->symseg_size - sizeof root;
+  
+!   while (total > 0)
+!     {
+!       len = read (indesc, buffer, min (sizeof buffer, total));
+! 
+!       if (len != min (sizeof buffer, total))
+! 	fatal_with_file ("premature end of file in symbol segment of ", entry);
+!       total -= len;
+!       mywrite (buffer, len, 1, outdesc);
+      }
+  
+    file_close ();
+  }
+  
++ /* Define a special symbol (etext, edata, or end).  NAME is the
++    name of the symbol, with a leading underscore (whether or not this
++    system uses such underscores).  TYPE is its type (e.g. N_DATA | N_EXT).
++    Store a symbol * for the symbol in *SYM if SYM is non-NULL.  */
++ static void
++ symbol_define (name, type, sym)
++      /* const */ char *name;
++      int type;
++      symbol **sym;
++ {
++   symbol *thesym;
++ 
++ #if defined(nounderscore)
++   /* Skip the leading underscore.  */
++   name++;
++ #endif
++ 
++   thesym = getsym (name);
++   if (thesym->defined)
++     {
++       /* The symbol is defined in some input file.  Don't mess with it.  */
++       if (sym)
++ 	*sym = 0;
++     }
++   else
++     {
++       if (thesym->referenced)
++ 	/* The symbol was not defined, and we are defining it now.  */
++ 	undefined_global_sym_count--;
++       thesym->defined = type;
++       thesym->referenced = 1;
++       if (sym)
++ 	*sym = thesym;
++     }
++ }
++ 
+  /* Create the symbol table entries for `etext', `edata' and `end'.  */
+  
+  void
+  symtab_init ()
+  {
+!   symbol_define ("_edata", N_DATA | N_EXT, &edata_symbol);
+!   symbol_define ("_etext", N_TEXT | N_EXT, &etext_symbol);
+!   symbol_define ("_end", N_BSS | N_EXT, &end_symbol);
+! 
+!   /* Either _edata or __edata (C names) is OK as far as ANSI is concerned
+!      (see section 4.1.2.1).  In general, it is best to use __foo and
+!      not worry about the confusing rules for the _foo namespace.
+!      But HPUX 7.0 uses _edata, so we might as weel be consistent.  */
+!   symbol_define ("__edata", N_DATA | N_EXT, &edata_symbol_alt);
+!   symbol_define ("__etext", N_TEXT | N_EXT, &etext_symbol_alt);
+!   symbol_define ("__end", N_BSS | N_EXT, &end_symbol_alt);
+  
+  #ifdef sun
+    {
+!     symbol *dynamic_symbol;
+!     symbol_define ("__DYNAMIC", N_ABS | N_EXT, &dynamic_symbol);
+!     if (dynamic_symbol)
+!       dynamic_symbol->value = 0;
+!   }
+! #endif
+! #ifdef sequent
+!   {
+!     symbol *i387_flt_symbol;
+!     symbol_define ("_387_flt", N_ABS | N_EXT, &i387_flt_symbol);
+!     if (i387_flt_symbol)
+!       i387_flt_symbol->value = 0;
+!   }
+! #endif
+! #ifdef NeXT
+!   {
+!     symbol *shlib_init_symbol;
+!     symbol_define ("__shared_library_initialization", N_UNDF | N_EXT, &shlib_init_symbol);
+!     if (shlib_init_symbol)
+!       shlib_init_symbol->max_common_size = sizeof (long int);
+    }
+! #endif
+  }
+  
+  /* Compute the hash code for symbol name KEY.  */

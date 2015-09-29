@@ -1,0 +1,1086 @@
+#
+# mxedit.utils --
+#
+# This script defines basic editing operations for the mxedit widget.
+# This has the core functionality of the editor.  The procedures here
+# rely on the global variable "mxedit" that identifies the file editing
+# widget.  This widget supports a couple dozen operations, and the
+# procs in this file are layers on these operations.  Many are thin
+# layers that just hide the use of this global variable.  Others are
+# useful combinations of low-level edit operations.  Finally, others
+# are more complex layers that put up dialog boxes to handle error cases.
+#
+# Copyright (c) 1992 Xerox Corporation.
+# Use and copying of this software and preparation of derivative works based
+# upon this software are permitted. Any distribution of this software or
+# derivative works must comply with all applicable United States export
+# control laws. This software is made available AS IS, and Xerox Corporation
+# makes no warranty about the software, its performance or its conformity to
+# any specification.
+
+# Global variables that can be redefined by the user
+# indent - the number of spaces for indentation
+
+######################## FILE PROCEDURES ########################
+
+# These procedures are layers on the raw mxedit commands
+# write, reset, switch, quit
+# that protect against losing modified files
+# Ordinarily these file-related procedures are accessed via the File menu
+# Most of these commands pop up dialog boxes to handle error conditions
+
+# save [filename] --
+#	Write out the buffer to the current or named file
+
+proc save { args } {
+    global mxedit file
+    if {[llength $args]>0} {
+	set filename [lindex $args 0]
+	saveInner $filename [list $mxedit write $filename]
+    } else {
+	saveInner $file [list $mxedit write]
+    }
+}
+
+# saveSel --
+#	Write out the file using the selection as the filename
+
+proc saveSel { } {
+    global mxedit
+    if [catch {selection get} filename] {
+	mxFeedback $filename
+    } else {
+	saveInner $filename [list $mxedit write $filename]
+    }
+}
+
+# saveInner --
+#	Inner core of saving a file.  This checks for write errors
+#	and puts up various dialog boxes to deal with them.
+
+proc saveInner { file writeCommand } {
+    global mxedit
+    global paleBackground
+
+    mxFeedback "Writing $file ..." ; update
+    if [catch $writeCommand msg] {
+	mxFeedback $msg
+	case $msg in {
+	    {{Cannot write*}} {
+		toplevel .writefailed -background $paleBackground
+		wm title .writefailed "$msg"
+		buttonFrame .writefailed .buttons
+		packedButton .writefailed.buttons .quit \
+			"Cannot save $file" \
+			"destroy .writefailed" left
+		placePopUp .writefailed center
+	    }
+	    {{File exists*}} {
+		toplevel .fileexists -background $paleBackground
+		wm title .fileexists "$msg"
+		buttonFrame .fileexists .buttons
+		packedButton .fileexists.buttons .skip \
+		    "Skip command" \
+		    "destroy .fileexists" left
+		packedButton .fileexists.buttons .write \
+		    "Overwrite existing $file" \
+			"mxFeedback \"Writing $file\" ; \
+			$mxedit write $file force ; \
+			destroy .fileexists" left
+		placePopUp .fileexists center
+	    }
+	    {{File modified*}} {
+		toplevel .filemodified -background $paleBackground
+		wm title .filemodified "$msg"
+		buttonFrame .filemodified .buttons
+		packedButton .filemodified.buttons .skip \
+		    "Skip command" "destroy .filemodified" left
+		packedButton .filemodified.buttons .write \
+		    "Overwrite modified $file" \
+			"mxFeedback \"Writing $file\" ; \
+			$mxedit write $file force ; \
+			destroy .filemodified" left
+		placePopUp .filemodified center
+	    }
+	    default {
+		toplevel .badwrite -background $paleBackground
+		wm title .badwrite "$msg"
+		buttonFrame .badwrite .buttons
+		packedButton .badwrite.buttons .quit \
+			"Bad TCL write cmd for $file" \
+			"destroy .badwrite" left
+		placePopUp .badwrite center
+	    }
+	}
+	return $msg
+    } else {
+	mxFeedback $msg
+    }
+}
+
+# reset --
+#	Reinitialize the contents of the mxedit window from the disk file.
+
+proc reset { } {
+    global mxedit
+    if [catch {$mxedit written} msg] {
+	mxFeedback $msg
+	resetdialog $msg
+	return $msg
+    } else {
+	return [resetAlways]
+    }
+}
+
+# resetAlways --
+
+proc resetAlways { } {
+    global mxedit
+    # Save the current position, even though it won't be perfect
+    # after the reset, it probably will be close
+    set _c [mark caret]
+    if [catch {$mxedit reset force} msg] {
+	return $msg
+    } else {
+	mxWindowNameFix
+	caret $_c
+	see caret
+	mxFeedback $msg
+	return $msg
+    }
+}
+
+# resetdialog --
+
+proc resetdialog { msg } {
+	global mxedit
+	global paleBackground
+	toplevel .resetdialog -background $paleBackground
+	wm title .resetdialog $msg
+	wm transient .resetdialog
+
+	buttonFrame .resetdialog .buttons
+	packedButton .resetdialog.buttons .reset \
+		"Reset anyway" \
+		"resetAlways ; destroy .resetdialog" left
+	packedButton .resetdialog.buttons .skip \
+		"Skip command" "destroy .resetdialog" left
+
+	placePopUp .resetdialog center
+}
+
+# switch --
+#	Change to a different file
+
+proc sw { filename } { switch $filename }
+proc switch { filename } {
+    global mxedit
+    if [catch {$mxedit written} msg] {
+	mxFeedback $msg
+	switchdialog $msg $filename
+    } else {
+	switchAlways $filename
+    }
+}
+
+# switchAlways --
+#	Always switch files, even if the current on is dirty
+#	This procedure remembers the previous file and position
+#	for use with the switchBack command
+
+proc switchAlways { filename } {
+    global mxedit
+    global file
+    global lastFile lastCaret
+    set _f $file
+    set _c [mark caret]
+    if [catch {$mxedit switch $filename force} msg] {
+	mxFeedback "Switch failed: $msg"
+    } else {
+	set lastFile $_f
+	set lastCaret $_c
+	mxWindowNameFix
+	mxFeedback $msg
+	return $msg
+    }
+}
+
+# switchBack --
+#	Switch back to the previous file
+proc switchBack { } {
+    global lastFile lastCaret
+    if [catch {set lastFile}] {
+	mxFeedback "No previous file to switch back to"
+    } else {
+	set _p $lastCaret
+	switch $lastFile
+	caret $_p
+	see caret
+    }
+}
+
+# switchdialog --
+
+proc switchdialog { msg filename } {
+    global mxedit
+    global paleBackground
+    toplevel .switchdialog -background $paleBackground
+    wm title .switchdialog $msg
+    wm transient .switchdialog
+
+    buttonFrame .switchdialog .buttons
+    packedButton .switchdialog.buttons .switch \
+	    "Switch anyway" \
+	    "switchAlways $filename ; destroy .switchdialog" left
+    packedButton .switchdialog.buttons .write \
+	    "Save instead" \
+	    "save ; destroy .switchdialog" left
+    packedButton .switchdialog.buttons .skip \
+	    "Skip command" \
+	    "destroy .switchdialog" left
+
+    placePopUp .switchdialog center
+}
+
+# quit --
+#	Quit the editing session.  This checks against a modified file
+#	and puts up a dialog to ask confirmation in that case.
+
+proc quit { } {
+    global mxedit 
+    if [catch {$mxedit written} msg] {
+	mxFeedback $msg
+	quitdialog $msg
+    } else {
+	destroy .
+    }
+}
+
+# quitdialog --
+
+proc quitdialog { msg } {
+	global mxedit
+	global paleBackground
+	toplevel .quitdialog -background $paleBackground
+	wm title .quitdialog $msg
+	wm transient .quitdialog
+
+	buttonFrame .quitdialog .buttons
+	packedButton .quitdialog.buttons .quit \
+		"Quit anyway" "destroy ." left
+	packedButton .quitdialog.buttons .write \
+		"Save instead" "save ; destroy .quitdialog" left
+	packedButton .quitdialog.buttons .skip \
+		"Skip command" "destroy .quitdialog" left
+
+	placePopUp .quitdialog center
+}
+
+# Provide an alias for mxopen
+proc edit { args } {
+    mxFeedback "Edit $args"
+    eval "mxopen $args"
+}
+
+########################### EDIT PROCEDURES ###########################
+
+# undo --
+#	Undo the previous editing command.  mxedit provides a complete
+#	editing log so repeated invocations of undo keeps undoing more.
+#	Hint: to roll forward after undoing a lot, insert a space, then
+#	go back to using undo repeatedly.  Go ahead, confuse yourself.
+
+proc undo { } {
+    global mxedit
+    if [catch {$mxedit history next history [list $mxedit undo more]} msg] {
+	mxFeedback $msg
+	return $msg
+    }
+}
+
+# redo --
+#	Redo the previous editing sequence.
+#	Each sequence is delimited by mouse clicks;
+#	there are no explicit "start" and "stop" remembering commands.
+#	Note: redo depends on a call to
+#	$mxedit history on
+#	in order to turn history on
+
+proc redo { } {
+    global mxedit history
+    if [catch {
+		$mxedit history add $history
+		$mxedit history ignore "eval $history"
+	      } msg] {
+	mxFeedback $msg
+	return $msg
+    }
+}
+
+# delete --
+#	delete mark1 [mark2 [noviewchange]]
+#	Delete the specified region
+
+proc delete { args } {
+    global mxedit
+    eval "$mxedit delete $args"
+}
+
+# deleteSel --
+#	Delete the selection
+
+proc deleteSel { } {
+    if [catch {delete sel.left sel.right}] {
+	mxFeedback "nothing is selected in this file"
+    }
+}
+
+# deleteSave --
+#	Delete the selection and save it in a variable
+
+proc deleteSave { } {
+    global _saved
+    if [mxselection here] {
+	set _saved [selection get]
+	delete sel.left sel.right
+    } else {
+	mxFeedback "Selection not in window"
+    }
+}
+
+# batchDelete --
+#	batchDelete uses the ! syntax to batch up a history log entry.
+#	This means that many deletes in a row are undone as one operation.
+
+proc batchDelete { args } {
+    global mxedit
+    eval "$mxedit ! delete $args"
+}
+
+# deleteForwChar --
+
+proc deleteForwChar { } {
+    batchDelete caret
+}
+
+# deleteBackChar --
+
+proc deleteBackChar { } {
+    batchDelete [mark caret back 1 char]
+}
+
+# deleteBackWord --
+
+proc deleteBackWord { } {
+    batchDelete [mark caret back 1 word] [mark caret back 1 char]
+}
+
+# deleteForwWord --
+
+proc deleteForwWord { } {
+    batchDelete caret [mark [mark caret forw 1 word] back 1 char]
+}
+
+# deleteEndOfLine --
+
+proc deleteEndOfLine { } {
+    if {[string compare [mark caret] [mark caret char -1]] != 0} {
+	delete caret [mark [mark caret char -1] back 1 char]
+    } else {
+	delete [mark caret]
+    }
+}
+
+# deleteLine --
+
+proc deleteLine { } {
+    if {[string compare [mark caret] [mark caret char -1]] != 0} {
+	delete [mark caret char 0] [mark caret char -1]
+    } else {
+	delete [mark caret]
+    }
+}
+
+# moveSel --
+#	Move the selection to the insert pointselection
+#	TODO - figure out how to allow insertion of selections
+#	that contain escaped newlines while preserving the backslash
+
+proc moveSel {  } {
+    if [mxselection here] {
+	set _t [mark caret]
+	insert [selection get]
+	set _l [mark sel.left]
+	set _r [mark sel.right]
+	mxselection set $_t [mark caret back 1 char]
+	delete $_l $_r noviewchange
+    } else {
+	mxFeedback "selection not in this window"
+    }
+}
+
+# paste --
+#	Insert the selection at the insert point.
+#	In order to support things like OpenLook that have a cut-then-paste
+#	paradigm, we fall back to inserting the saved selection on the
+#	assumption that the user has done a recent cut.  This only
+#	works within a single window, however...
+#	TODO - add support for the cut buffer to TK
+
+proc paste { } {
+    if [catch {insert [selection get]}] {
+	pasteSave
+    }
+}
+
+# pasteSave --
+#	Insert the previously saved deletion
+
+proc pasteSave { } {
+    global _saved
+    if [info exists _saved] {
+	insert $_saved
+    } else {
+	mxFeedback "no saved selection"
+    }
+}
+
+# openLineBelow --
+
+proc openLineBelow { } {
+    caret [mark caret char -1]
+    newline
+}
+
+# openLineAbove --
+
+proc openLineAbove { } {
+    insert \n [mark caret char 0]
+    caret [mark [mark caret char 0] back 1 char]
+}
+
+# indentLine --
+#	indent the line with the caret
+# 	A (user-settable) indent variable is used to control the amount
+
+proc indentLine { } {
+    global indent
+    indent caret caret + $indent
+}
+
+# outdentLine --
+#	outdent the line with the caret
+
+proc outdentLine { } {
+    global indent
+    indent caret caret - $indent
+}
+# indentSel --
+# Indent the selected region
+
+proc indentSel { } {
+    global indent
+    indent sel.left sel.right + $indent
+}
+
+# outdentSel --
+# Outdent the selected region
+
+proc outdentSel { } {
+    global indent
+    indent sel.left sel.right - $indent
+}
+
+# back1char --
+#	Move the insert point one character back
+
+proc back1char { } {
+    caret [mark caret back 1 char]
+    see caret
+}
+
+# forw1char --
+#	Move the insert point one character forward
+
+proc forw1char { } {
+    caret [mark caret forw 1 char]
+    see caret
+}
+
+# back1word --
+#	Move the insert point one word backward
+
+proc back1word { } {
+    caret [mark caret back 1 word]
+    see caret
+}
+
+# forw1word --
+#	Move the insert point one word forward
+
+proc forw1word { } {
+    caret [mark caret forw 1 word]
+    see caret
+}
+
+# nextline --
+#	Move the insert point to the begining of the next line
+
+proc nextline {}  {
+    caret [mark [mark caret forw 1 line] char 0]
+    see caret
+}
+
+# down1line --
+#	Move the insert point down one line, maintaining current column
+
+set _lastPos 0.0
+proc down1line { } {
+    global _lastPos _lastCol
+
+    if {[string compare $_lastPos [mark caret]] != 0} {
+	set _lastCol [column caret]
+    }
+    set _lastPos [mark [mark caret forw 1 line] column $_lastCol]
+    caret $_lastPos
+    see caret
+    return $_lastPos
+}
+
+# up1line --
+#	Move the insert point up 1 line
+
+proc up1line { } {
+    global _lastPos _lastCol
+
+    if {[string compare $_lastPos [mark caret]] != 0} {
+	set _lastCol [column caret]
+    }
+    set _lastPos [mark [mark caret back 1 line] column $_lastCol]
+    caret $_lastPos
+    see caret
+    return $_lastPos
+}
+
+# beginOfLine --
+#	Move the caret to the beginning of the line
+
+proc beginOfLine { } {
+    caret [mark caret char 0]
+    see caret
+}
+
+# endOfLine --
+#	Move the caret to the end of the line
+
+proc endOfLine { } {
+    set _t [mark caret char -1]
+    if {[string compare [mark caret] $_t] == 0} {
+	set _t [mark [mark caret forw 1 line] char -1]
+    }
+    caret $_t
+    see caret
+}
+
+# pageUp --
+#	Move the caret up, towards the beginning of the file, one screen
+
+proc pageUp { } {
+    scan [geometry] "%dx%d" _width _height
+    caret [mark caret back $_height lines]
+    see caret
+}
+
+# pageDown --
+#	Move the caret down, towards the end of the file, one screen
+
+proc pageDown { } {
+    scan [geometry] "%dx%d" _width _height
+    caret [mark caret forw $_height lines]
+    see caret
+}
+
+######################### Basic mxedit Operations #########################
+# These are top-level names that map down to widget-instance operations
+# These top-level names are used in keystroke bindings.
+# The level of indirection allows for easy renames to avoid conflicts
+# and it provides a place for hooks added later.
+
+# mxBind --
+#	This is what users should use to bind keystrokes to the edit window
+
+proc mxBind { args } {
+    global mxedit
+    eval "bind $mxedit $args"
+}
+
+# caret --
+#	caret mark - this positions the insert caret
+#	caret display [block|caret] - change caret appearance
+proc caret { args } {
+    global mxedit
+    eval "$mxedit caret $args"
+}
+
+# clean --
+#	Mark the file as clean - but don't really write out its contents
+
+proc clean { args } {
+    global mxedit
+    eval "$mxedit clean $args"
+}
+
+# column --
+#	Return the column corresponding to the left edge of the
+#          character at the position indicated by mark.
+
+proc column { args } {
+    global mxedit
+    eval "$mxedit column $args"
+}
+
+# control --
+#	control option string
+#	options:
+#		backslash -- replace non-printing chars with escape sequences
+#		binding -- returns a binding syntax for a string (broken)
+#		make -- folds ascii down to control
+
+proc control { args } {
+    global mxedit
+    eval "$mxedit control $args"
+}
+
+# extract --
+#	extract mark1 [mark2]
+#	Return all the characters between two marks
+
+proc extract { args } {
+    global mxedit
+    eval "$mxedit extract $args"
+}
+
+# history --
+#	remember actions for the puposes of redo
+#	Note this is different than the TCL history command
+
+proc history { args } {
+    global mxedit
+    eval "$mxedit history $args"
+}
+
+# gridsize --
+#	Return a gridsize as determined from the font metrics.  Used
+#	in conjuction with the "wm grid" command:
+#	eval "wm grid . $baseWidth $baseHeight [gridsize]
+
+proc gridsize { args } {
+    global mxedit
+    eval "$mxedit gridsize $args"
+}
+
+# indent --
+#	indent mark1 mark2 [+|-] amount
+
+proc indent { args } {
+    global mxedit
+    eval "$mxedit indent $args"
+}
+
+# insert --
+#	insert bytes [mark]
+#	Defaults to inserting at the caret
+
+proc insert { args } {
+    global mxedit
+    eval "$mxedit insert $args"
+}
+
+# batchInsert --
+#	Use the ! syntax to batch up insertions
+
+proc batchInsert { args } {
+    global mxedit
+    eval "$mxedit ! insert $args"
+}
+
+# mark --
+#	mark src op args
+#	Returns a position marker of the form lines.chars
+#	See the man page for details
+
+proc mark { args } {
+    global mxedit
+    eval "$mxedit mark $args"
+}
+
+# newline --
+#	Insert a newline character and do auto indentation
+proc newline {  } {
+    global mxedit
+    eval "$mxedit newline "
+}
+
+# quote --
+#	Quote (insert) the next character, ignoring its binding.
+
+proc quote {  } {
+    global mxedit
+    eval "$mxedit quote "
+}
+
+# read --
+#	Read in the contents of a file
+
+catch {rename read unixRead}
+proc read { args } {
+    global mxedit
+    eval "$mxedit read $args"
+}
+
+# replace --
+#	replace [option args]
+#          replace range start stop [pattern string]
+#          replace selection string
+#	Replace the selection with a string,
+#	or do a replace	within a range
+#	If there are no options, then the widget reaches out
+#	for the value of mxReplaceString
+
+proc replace { args } {
+    global mxedit
+    catch {
+	 global find mxReplaceString
+	 set mxReplaceString [$find.replace.entry get]
+    }
+    if [catch "$mxedit replace $args" msg] {
+	mxFeedback "$msg"
+    }
+}
+
+# search --
+#	search [forward|backward] target
+#	if there is no target specified, then the widget reaches
+#	out for the mxSearchString variable
+
+proc search { args } {
+    global mxedit
+    catch {
+	 global find mxSearchString
+	 set mxSearchString [$find.target.entry get]
+    }
+    if [catch "$mxedit search $args" msg] {
+	mxFeedback "$msg"
+    }
+}
+
+# see --
+#	see mark [[top|center|bottom]
+#	Adjust the view so the mark is visible
+
+proc see { args } {
+    global mxedit
+    eval "$mxedit see $args"
+}
+
+# mxselection --
+#	mxselection get - identical to TK's selection command
+#	mxselection clear - clear this window's selection
+#	mxselection here - returns 1 if selection is in this window
+#	mxselection set mark1 [mark2]
+
+proc mxselection { args } {
+    global mxedit
+    eval "$mxedit selection $args"
+}
+
+# applyToSelection --
+#	Apply a command to the current selection, catching errors.
+#	
+
+proc applyToSelection { prefix } {
+    if [catch {selection get} sel] {
+	mxFeedback "$prefix: $sel"
+    } else {
+	return [eval [concat $prefix [list $sel]]]
+    }
+}
+# taginfo --
+#	Returns information from a tags file.
+
+proc taginfo { name } {
+    global mxedit
+    eval "$mxedit taginfo $name"
+}
+
+# written --
+#	Raises an error if the file is dirty.
+
+proc written { args } {
+    global mxedit
+    eval "$mxedit written $args"
+}
+
+############################### Callbacks ##########################
+
+# If the following procedures are defined, they are invoked by
+# the mxedit implementation to notify the script-level about
+# internal state changes
+
+# mxSizeChangeCallback --
+#	Called when the geometry of the window changes
+#	This is called as a result of ConfigureNotify X events,
+#	which are apparently only generated when the size changes,
+#	not the location.
+
+proc mxSizeChangeCallback { } {
+#    mxFeedback "New geometry: [geometry] [winfo geometry .]"
+}
+
+# mxStateChangeCallback --
+#	Called when the clean/dirty state of the file changes
+
+proc mxStateChangeCallback { } {
+    global file
+    mxNameWindow . $file
+}
+
+
+############################### Abbreviations #######################
+
+# Very weak support for abbreviations that could ultimately be
+# expanded to support editing modes (like C or M3 mode)
+
+# mxAbbrev --
+#	Set up an abbreviation so that typing the short sequence
+#	is equivalent to the longer one.
+
+proc mxAbbrev { abbrev args } {
+    mxBind $abbrev "delete caret \[mark caret back [expr [string length $abbrev]-1] chars\] ; insertWords $args"
+}
+
+# insertWords --
+#	Insert a bunch of words.  This won't do the right thing with tabs.
+
+proc insertWords { args } {
+    set space {}
+    foreach word $args {
+	batchInsert $space
+	batchInsert $word
+	set space " "
+    }
+}
+############################### Miscellany ##########################
+
+# geometry --
+#	Set the window's X geometry
+
+proc geometry { { xGeometry none } } {
+    if { [string compare $xGeometry none] == 0} {
+	return [wm geometry .]
+    } else {
+	return [wm geometry . $xGeometry]
+    }
+}
+
+# screenwidth --
+#	Return the width of the screen
+
+proc screenwidth {} {
+    global mxedit
+    return [winfo screenwidth $mxedit]
+}
+
+# screenheight --
+#	Return the height of the screen
+
+proc screenheight {} {
+    global mxedit
+    return [winfo screenheight $mxedit]
+}
+
+# line --
+#	Make a particular line visible
+
+proc line { i } {
+    if {[scan $i %d _t] != 1} {error [format {bad line number "%s"} $i]}
+    set _t [format %d.0 $i]
+    see $_t
+    mxselection set $_t [mark $_t char -1]
+    caret $_t
+}
+
+# tag --
+#	Switch files and tag to the given name.
+
+proc tag { name } {
+    global mxedit
+    if [catch {taginfo $name} i] {
+	mxFeedback $i
+    } else {
+	switch [lindex $i 0]
+	search forw [lindex $i 1]
+    }
+}
+
+# tagOpen --
+#	Open a new window and tag to the given name.
+
+proc tagOpen { name } {
+    global mxedit
+    if [catch {taginfo $name} i] {
+	mxFeedback "$i"
+    } else {
+	set newWindow [mxopen [lindex $i 0]]
+	send $newWindow "search forw \{[lindex $i 1]\}"
+    }
+}
+
+# caretInfo --
+#	Returns lines and caret information
+
+proc caretInfo { } {
+    global file
+    scan [mark eof] %d _t
+    scan [mark caret] %d _t2
+    return [format {\"%s\" : %d total lines, caret on line %d} $file $_t $_t2]
+}
+
+proc showProcs {args} {
+    set newWindow [mxopen {}]
+    send $newWindow {insert Procedure\ information:\n}
+    send $newWindow {insert ---------\ -----------}
+    if {[llength $args] == 0} {set args [lsort [info procs]]}
+    foreach proc $args {
+	set space {}
+	send $newWindow [list insert [format \n\n%s( $proc]]
+	send $newWindow clean
+	foreach param [info args $proc] {
+	    send $newWindow [list insert [format %s%s $space $param]]
+	    set space {, }
+	    if [info default $proc $param default] {
+		send $newWindow [list insert [format { [%s]} $default]]
+	    }
+	}
+	send $newWindow {insert ):\n}
+	send $newWindow [list insert [info body $proc]]
+    }
+    send $newWindow clean
+    send $newWindow {see 0.0}
+}
+
+proc showVars {args} {
+    set newWindow [mxopen {}]
+    send $newWindow {insert Variable\ values:\n}
+    send $newWindow {insert --------\ -------\n}
+    set _maxLength 10
+    if {[llength $args] == 0} {set args [lsort [uplevel #0 {info vars}]]}
+    foreach _i $args {
+	if {[string length $_i] > $_maxLength} {
+	    set _maxLength [string length $_i]
+	}
+    }
+    set _maxLength [expr $_maxLength+6]
+    set format "\\n%-${_maxLength}s = \"%s\""
+    foreach _i $args {
+	if [catch {uplevel #0 "set $_i"} value] {
+	    # The variable is probably an array
+	    set _maxLength 10
+	    if {[catch {lsort [uplevel #0 "array names $_i"]} names] == 0} {
+#		foreach _j $names {
+#		    if {[string length $_j] > $_maxLength} {
+#			set _maxLength [string length $_j]
+#		    }
+#		}
+#		set _maxLength [expr $_maxLength+[string length $_i]+2]
+#		set format2 "\\n%-${_maxLength}s = \"%s\""
+		set format2 $format
+		foreach _j $names {
+		    if {[catch {uplevel #0 "set ${_i}($_j)"} value] == 0} {
+			send $newWindow [list insert \
+				[format $format2 \
+					[format "%s(%s)" $_i $_j] $value]]
+		    }
+		}
+	    }
+	} else {
+	    send $newWindow [list insert [format $format $_i $value]]
+	}
+    }
+    send $newWindow clean
+    send $newWindow {see 0.0}
+}
+
+
+#
+# placePopUp -
+#	Place a popup relative to its parent window
+#
+proc placePopUp { widget {where center} } {
+    global mxedit
+
+    if {[string compare [screenwidth] unknown] == 0} {
+	set screenWidth [lindex [exec xwininfo -root | egrep Width:] 2]
+	set screenHeight [lindex [exec xwininfo -root | egrep Height:] 2]
+    }
+
+    scan [wm geometry .] "%dx%d+%d+%d" charsWide linesHigh xoff yoff
+#    puts stderr "Geometry $charsWide $linesHigh $xoff $yoff"
+    
+    set gridWidth [lindex [$mxedit gridsize] 0]
+    set gridHeight [lindex [$mxedit gridsize] 1]
+    set mainWidth [expr {$charsWide * $gridWidth}]
+    set mainHeight [expr {$linesHigh * $gridHeight}]
+
+    wm withdraw $widget
+    update
+    scan [wm geometry $widget] "%dx%d" itsWidth itsHeight    
+#    puts stderr "Its $itsWidth $itsHeight"
+
+    set leftRoom $xoff 
+    set rightRoom [expr {[screenwidth] - $xoff - $mainWidth}]
+
+    set topRoom $yoff 
+    set bottomRoom [expr {[screenheight] - $yoff - $mainHeight}]
+
+    case $where in {
+	"off" {
+#	    puts stderr "placePopUp " nonewline
+	    if {$leftRoom > $rightRoom} {
+		set itsXoff [expr {$xoff - $itsWidth}]
+		if {$itsXoff < 0} {
+		    set itsXoff 0
+		}
+#		puts stderr "left $itsXoff " nonewline
+	    } else {
+		set itsXoff [expr {$xoff + $mainWidth}]
+		if {[expr {$itsXoff + $itsWidth}] > [screenwidth]} {
+		    set itsXoff [expr {[screenwidth] - $itsWidth}]
+		}
+#		puts stderr "right $itsXoff " nonewline
+	    }
+	    if {$topRoom > $bottomRoom} {
+		set itsYoff [expr {$yoff - $itsHeight}]
+		if {$itsYoff < 0} {
+		    set itsYoff 0
+		}
+#		puts stderr "top $itsYoff " nonewline
+	    } else {
+		set itsYoff [expr {$yoff + $mainHeight}]
+		if {[expr {$itsYoff + $itsHeight}] > [screenheight]} {
+		    set itsYoff [expr {[screenheight] - $itsHeight}]
+		}
+#		puts stderr "bottom $itsYoff " nonewline
+	    }
+	}
+	{ default center } {
+	    if {[string compare $where center] == 0} {
+		set itsXoff [expr {$xoff + ($mainWidth - $itsWidth) / 2}]
+		set itsYoff [expr {$yoff + ($mainHeight - $itsHeight) / 2}]
+	    }
+	}
+    }
+    wm geometry $widget +${itsXoff}+${itsYoff}
+    wm deiconify $widget
+}
+

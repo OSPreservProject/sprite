@@ -1,0 +1,49 @@
+'\" Copyright 1989 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/man/dev/RCS/disk.man,v 1.1 89/07/02 13:29:17 mendel Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS DISK dev
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+disk \- Device used to read and write disk sectors
+.BE
+.SH DESCRIPTION
+.PP
+Disk devices are used to read and write sectors on magnetic disk devices.
+Each \fBread\fR or \fBwrite\fR kernel call
+on a disk device may access one or more sectors on the device.
+The buffer specified to the kernel call must be 
+a multiple of the disk's sector size, normally 512 bytes.
+Reading or writing disk sectors advances the file pointer to the
+sector after the last one accessed.  
+The \fBlseek\fR kernel call may be used to position the file pointer to
+any sector.
+.SH PARTITIONS
+.PP
+A disk may be divided into eight possibly overlapping ranges of 
+disk sectors called partitions.  
+The partitions are defined by a structure called a disk label which
+resides in the first sector of the disk.  The label structure
+is defined in the include file <kernel/devDiskLabel.h>. 
+Traditionally, partitions have been named by the letters \fBa\fR through 
+\fBh\fR.
+Partition \fBc\fR is normally used to access the entire disk.
+.SH "UNIT NUMBERS"
+.PP
+For disk devices, the least significant four bits of the unit number
+are used to select the partition.  
+A unit number of zero implies partition \fBa\fR while seven implies partition
+\fBh\fR.
+The entire disk can be accessed using a unit number of eight regardless of
+the partitioning defined by the label. 
+Unit number eight is useful for writing a label to an unlabeled disk.
+.SH KEYWORDS
+disk, partition, label

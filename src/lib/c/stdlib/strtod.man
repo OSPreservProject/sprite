@@ -1,0 +1,54 @@
+' Copyright 1989 Regents of the University of California
+' Permission to use, copy, modify, and distribute this
+' documentation for any purpose and without fee is hereby
+' granted, provided that this notice appears in all copies.
+' The University of California makes no representations about
+' the suitability of this material for any purpose.  It is
+' provided "as is" without express or implied warranty.
+' 
+' $Header: /sprite/src/lib/c/stdlib/RCS/strtod.man,v 1.1 89/01/05 18:00:47 ouster Exp $ SPRITE (Berkeley)
+' 
+.so \*(]ltmac.sprite
+.HS strtod cmds
+.BS
+.SH NAME
+strtod \- Convert character string to floating-point number
+.SH SYNOPSIS
+.nf
+\fB#include <stdlib.h>
+
+\fBdouble
+\fBstrtod(\fIstring\fR, \fIendPtr\fR)
+.SH ARGUMENTS
+.AS "char *" endPtr
+.AP char *string in
+String containing ASCII representation of floating-point number.
+.AP char **endPtr out
+If not \fBNULL\fR, gives address of pointer to fill in with address of
+first character not forming part of number.
+.BE
+
+.SH DESCRIPTION
+.PP
+The \fBstrtod\fR procedure parses a floating-point number in ASCII
+representation and returns a \fBdouble\fR result containing the
+binary form of the number.  The expected
+form of \fIstring\fR is an optional plus or minus sign, then a sequence
+of decimal digits optionally containing a decimal point, then an
+optional exponent part.  If the exponent part is present, it consists
+of the letter \fBE\fR (or \fBe\fR), then an optional plus or minus sign,
+then a sequence of decimal digits.  The entire floating-point number
+may be preceded by any amount of white space (as defined by the
+\fBisspace\fR procedure).
+.PP
+\fIStrtod\fR examines as many characters as possible from \fIstring\fR
+while still obeying the syntax rules given above.
+If \fIendPtr\fR is not \fBNULL\fR, then the address of the first
+character following the floating-point number is stored in \fI*endPtr\fR.
+.PP
+If \fIstring\fR does not refer to a floating-point number in the format
+given above, then zero is returned and \fIstring\fR will be stored at
+\fI*endPtr\fR.
+
+.SH KEYWORDS
+convert, floating-point, string

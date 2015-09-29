@@ -1,0 +1,26 @@
+% CLBIBA DOCUMENT-STYLE OPTION FOR ARTICLE STYLE
+%    for LaTeX version 2.08
+% Copyright (C) 1985, all rights reserved
+
+% The following commands make the bibliography have a "closed" format,
+% where the blocks (major units of information) of an entry run together;
+% in the future, this will be the default format.
+%	\def\newblock{\hskip .11em plus .33em minus -.07em}
+%
+% It's rather hard to do line breaks in bibliographies,
+% so we allow "sloppy" setting.
+%	\sloppy
+%
+% The following \sfcode declaration causes a `.' (period) not to
+% produce an end-of-sentence space.
+%	\sfcode`\.=1000\relax
+
+\def\thebibliography#1{\section*{References\markboth
+  {REFERENCES}{REFERENCES}}\list
+  {[\arabic{enumi}]}{\settowidth\labelwidth{[#1]}
+    \leftmargin\labelwidth
+    \advance\leftmargin\labelsep
+    \usecounter{enumi}}
+    \def\newblock{\hskip .11em plus .33em minus -.07em}
+    \sloppy
+    \sfcode`\.=1000\relax}

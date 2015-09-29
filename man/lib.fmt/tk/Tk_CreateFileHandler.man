@@ -1,0 +1,134 @@
+
+
+
+Tk_CreateFileHandler  UNKNOWN SECTION (tk)   Tk_CreateFileHandler
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tk_CreateFileHandler, Tk_DeleteFileHandler - associate  pro-
+     cedure callback with a file or device
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttkk..hh>>
+
+     TTkk__CCrreeaatteeFFiilleeHHaannddlleerr(_i_d, _m_a_s_k, _p_r_o_c, _c_l_i_e_n_t_D_a_t_a)
+
+     TTkk__DDeelleetteeFFiilleeHHaannddlleerr(_i_d)
+
+AARRGGUUMMEENNTTSS
+     int          _i_d           (in)      Integer  identifier  for
+                                         an  open  file or device
+                                         (such  as  returned   by
+                                         ooppeenn system call).
+
+     int          _m_a_s_k         (in)      Conditions  under  which
+                                         _p_r_o_c  should  be called:
+                                         OR-ed   combination   of
+                                         TTKK__RREEAADDAABBLLEE,
+                                         TTKK__WWRRIITTAABBLLEE,         and
+                                         TTKK__EEXXCCEEPPTTIIOONN.
+
+     void         (*_p_r_o_c)()    (in)      Procedure   to    invoke
+                                         whenever   the  file  or
+                                         device indicated  by  _i_d
+                                         meets   the   conditions
+                                         specified by _m_a_s_k.
+
+     ClientData   _c_l_i_e_n_t_D_a_t_a   (in)      Arbitrary one-word value
+                                         to pass to _p_r_o_c.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     TTkk__CCrreeaatteeFFiilleeHHaannddlleerr arranges for _p_r_o_c to be invoked in  the
+     future  whenever I/O becomes possible on a file or an excep-
+     tional condition exists for the file.  The file is indicated
+     by _i_d, and the conditions of interest are indicated by _m_a_s_k.
+     For example, if _m_a_s_k  is  TTKK__RREEAADDAABBLLEE,  then  _p_r_o_c  will  be
+     called  when  the file is readable.  The callback to _p_r_o_c is
+     made by TTkk__DDooOOnneeEEvveenntt, so TTkk__CCrreeaatteeFFiilleeHHaannddlleerr is only  use-
+     ful  in  programs that dispatch events through TTkk__DDooOOnneeEEvveenntt
+     or through other Tk procedures that call TTkk__DDooOOnneeEEvveenntt, such
+     as TTkk__MMaaiinnLLoooopp.
+
+     _P_r_o_c should have the following structure:
+          void
+          _p_r_o_c(_c_l_i_e_n_t_D_a_t_a, _m_a_s_k)
+               ClientData _c_l_i_e_n_t_D_a_t_a;
+
+
+
+Sprite v.1.0       Printed:  November 6, 1991                   1
+
+
+
+
+
+
+Tk_CreateFileHandler  UNKNOWN SECTION (tk)   Tk_CreateFileHandler
+
+
+
+               int _m_a_s_k;
+          {
+          }
+     The _c_l_i_e_n_t_D_a_t_a parameter to _p_r_o_c is a copy of the _c_l_i_e_n_t_D_a_t_a
+     argument  given  to  TTccll__CCrreeaatteeFFiilleeHHaannddlleerr when the callback
+     was created.  Typically, _c_l_i_e_n_t_D_a_t_a points to a data  struc-
+     ture  containing  application-specific information about the
+     file.  _M_a_s_k is an  integer  mask  indicating  which  of  the
+     requested  conditions actually exists for the file;  it will
+     contain a subset  of  the  bits  in  the  _m_a_s_k  argument  to
+     TTccll__CCrreeaatteeFFiilleeHHaannddlleerr.
+
+     There may exist only one handler for a given file at a given
+     time.   If  TTkk__CCrreeaatteeEEvveennttHHaannddlleerr  is  called when a handler
+     already exists for _i_d, then the _m_a_s_k, _p_r_o_c,  and  _c_l_i_e_n_t_D_a_t_a
+     for the new call to TTkk__CCrreeaatteeEEvveennttHHaannddlleerr replace the infor-
+     mation that was previously recorded.
+
+     TTkk__DDeelleetteeFFiilleeHHaannddlleerr  may  be  called  to  delete  the  file
+     handler  for _i_d;  if no handler exists for the file given by
+     _i_d then the procedure has no effect.
+
+     The purpose of file handlers is to enable an application  to
+     respond to X events and other events while waiting for files
+     to become ready for I/O.  For this to  work  correctly,  the
+     application  must  use  non-blocking  I/O  operations on the
+     files for which handlers are declared.  Otherwise the appli-
+     cation  may  be  put  to  sleep if it specifies too large an
+     input or output buffer; while waiting for the  I/O  to  com-
+     plete the application won't be able to service other events.
+     In BSD-based UNIX systems, non-blocking I/O can be specified
+     for  a  file  using  the  ffccnnttll kernel call with the FFNNDDEELLAAYY
+     flag.
+
+
+KKEEYYWWOORRDDSS
+     callback, file, handler
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  November 6, 1991                   2
+
+
+

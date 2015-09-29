@@ -1,0 +1,36 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     88.11.16.16.36.08;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Add -lsunrpc to load.
+@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#
+# This file is included by Makefile.  Makefile is generated automatically
+# by mkmf, and this file provides additional local personalization.  The
+# variable SYSMAKEFILE is provdied by Makefile;  it's a system Makefile
+# that must be included to set up various compilation stuff.
+#
+
+LIBS		+= -lsunrpc
+
+#include	<$(SYSMAKEFILE)>
+@

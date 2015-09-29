@@ -1,0 +1,142 @@
+% an example of how to use the agujgr macro package
+% By Stephen Gildea <mit-erl!gildea> 22 Feb 89
+% This text is from ``Sample for typeset JGR papers''
+\documentstyle[agujgr]{article}
+\begin{document}
+
+\title{Investigation of Two High-Stress Drop Earthquakes in the
+  Shumagin Seismic Gap, Alaska}
+\author{Leigh House and John Boatwright}
+\address{Lamont-Doherty Geological Observatory and Department of
+  Geological Sciences, Columbia University
+  Palisades, New York}
+\author{Keith Preistley\thanks{Also at U.S. Geological Survey,
+  Menlo Park, California.}}
+\address{Seismological Laboratory, Mackay School of Mines, University of
+  Nevada at Reno}
+\maketitle
+
+\begin{abstract}
+Two moderate size earthquakes occurred within a local network of
+short-period seismograph stations in the Shumagin Islands, Alaska, on
+April 6, 1974.
+\end{abstract}
+
+\section{Introduction}
+Two moderate size ($m_b =5.8$, $6.0$) earthquakes and their
+aftershocks that occurred within the Shumagin Islands seismic network
+in Alaska have produced a unique data set for a detailed study of
+convergent tectonics at depth in an area that has been identified as a
+seismic gap \cite{kelleher}.
+
+Lamont-Doherty Geological Observatory has operated a network of
+vertical short-period, radio-telemetered station in the Shumagin
+Islands region of Alaska since July 1973 \cite{davies}.  As originally
+installed, the network consisted of eight high-gain remote stations that
+telemeter their data to a central recording site at Sand Point (Figure 1).
+\marginboxed{Fig. 1}
+
+\section{SMA 1 Waveform Analysis}
+Since the Sand Point station was at an {\em SH\/} node, the vertical
+and horizontal components were combined to obtain the incident {\em
+SV\/} pulse shape by using the free surface transformation
+\begin{equation}
+u_{sv}(t) = \frac{\cos 2j}{2 \cos j} u_x(t) + \sin ju_z(t)
+\end{equation}
+Here $j$ is the angle of incidence of the {\em S\/} save, and $u_x(t)$
+is the horizontal component (positive downward), shown in Figure 2.
+\marginboxed{Fig. 2}
+
+\subsection{Focal Mechanism of the Main Shocks}
+The focal mechanism of the second main shock ($m_b = 6.0$), shown in
+Figure 3, was determined from long-period arrivals at World-Wide
+Standard Seismographic network stations.  Both {\em S\/} and {\em P\/}
+wave first motions were used; however, the solution is more strongly
+constrained by the {\em S\/} wave polarizations.  The results are
+shown in Table 1.\marginboxed{Table 1}
+
+\subsubsection{Magnitudes and b value}
+Magnitudes of most of the earthquakes in this sequence were estimated
+from coda duration measurements similar to the techniques used by R.
+Lee et al.\ (unpublished manuscript, 1984).
+
+\begin{acknowledgments}
+The authors are grateful to L. Sykes and K. Jacob for critical reviews
+of this paper.
+\end{acknowledgments}
+
+% You can also use BibTeX to generate the bibliography automatically.
+% With BibTeX, use the natsci bibliography format.
+\begin{thebibliography}{}
+
+\bibitem[{\em Belt,} 1968]{belt}
+Belt, E.S., Post-Acadian rifts and related facies, eastern Canada, in 
+{\em Studies on Appalachian Geology,} edited by E. Zen et al.,
+pp.~95--113, John Wiley, New York, 1968.
+
+\bibitem[{\em Davies and House,} 1979]{davies}
+Davies, J.R., and House, M.O, Another random paper.
+
+\bibitem[{\em Kelleher et al.,} 1970]{kelleher}
+Kelleher et al., Can anyone find these two referenced papers for me.
+
+\bibitem[{\em Orringer,} 1974]{mit}
+Orringer, O., Frontal analysis program, {\em Rep.\ ASRL TR 1023,}
+Aeroelastic and Struct.\ Lab., Mass.\ Inst.\ of Technol., Cambridge, 1974.
+\end{thebibliography}
+
+\begin{addresses}
+J. Boatwright and L. House, Lamont-Doherty Geological Observatory and
+Department of Geological Sciences, Columbia University, Palisades NY
+10964.
+
+K. Priestley, Seismological Laboratory, Mackay School of Mines,
+University of Nevada at Reno, Reno NV 89557.
+\end{addresses}
+
+\begin{received}
+(Received September 17, 1983; \\
+revised June 9, 1984; \\
+accepted June 22, 1984)
+\end{received}
+
+\copyrightnotice{Copyright 1986 by the American Geophysical Union.}
+
+\papernumber{4B1073. \\ 0148--0227/86/004B--1073\$05.00}
+
+\runningheads{2}{House et al.: High-Stress Drop Earthquakes}
+
+\begin{captions}
+Fig.~1. Detail of short-period WWSSN analysis.  The lowermost trace
+is the seismogram as digitized with the band-passed seismogram above it.
+
+% Sometimes captions or tables need to have a different length.
+% The wider environment does this.
+\begin{wider}{30pc}
+Fig.~2. Source parameters of the earthquake from combined Rayleigh and
+Love wave moment tensor inversion and fault model inversion.
+\end{wider}
+\end{captions}
+
+%% Every table goes in its own table environment.
+\begin{table}
+  \begin{center}
+  TABLE 1. Average Rate of Change of Line Length
+
+  \end{center}
+  %% The expandedtabular environment is like tabular, but the table
+  %% is expanded to the current line width.
+  \begin{expandedtabular}{ccrr}
+  \hline
+  &&\multicolumn{2}{c}{{\em dl/dt,} mm/yr} \\ \cline{3-4}
+  From     & To		& Observed	& Model \\ \hline
+  Alamillo & Palvadero	& 0.6 + 0.8	& 1.4 \\
+  Campana  & Canas	& 0.4 + 1.1	& $-0.7$ \\
+	   & Chupardera	& $-0.5$ + 1.0	& 0.2 \\ \hline
+  \end{expandedtabular}
+
+  The quoted uncertainty is one standard deviation.  These rates were
+  measured using the method described in the paper.
+\end{table}
+
+\end{document}

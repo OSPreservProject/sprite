@@ -1,0 +1,6 @@
+F FSCACHE.H_V;1                     	fscache.h,v
+F FSCACHEB.C_B;1                    	fscacheBlocks.c,BAD
+F FSCACHEB.C_V;1                    	fscacheBlocks.c,v
+F FSCACHEB.H_V;1                    	fscacheBlocks.h,v
+F FSCACHEO.C_V;1                    	fscacheOps.c,v
+F FSCACHER.C_V;1                    	fscacheReadAhead.c,v

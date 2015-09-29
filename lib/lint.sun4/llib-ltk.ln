@@ -1,0 +1,1809 @@
+512
+llib-ltk:tk3d.c 2
+2
+4 124 104 0 29141
+Tk_Get3DBorder
+24 96 2461
+24 0 30931
+15 0 0
+18 0 0
+16
+0 261 24 0 29141
+Tk_Get3DBorder
+2
+9 296 32 0 0
+Tk_Draw3DRectangle
+24 10016 1308
+15 0 0
+24 0 29141
+4 0 0
+4 0 0
+4 0 0
+4 0 0
+4 0 0
+4 0 0
+2
+1 352 98 0 0
+Tk_NameOf3DBorder
+24 0 29141
+16
+0 356 18 0 0
+Tk_NameOf3DBorder
+2
+1 377 104 96 -32768
+Tk_3DBorderColor
+24 0 29141
+16
+0 379 24 96 -32768
+Tk_3DBorderColor
+2
+1 403 32 0 0
+Tk_Free3DBorder
+24 0 29141
+2
+2 455 32 0 0
+Tk_SetBackgroundFromBorder
+24 0 30931
+24 0 29141
+2
+3 485 36 0 0
+Tk_GetRelief
+24 96 2461
+18 0 0
+20 0 0
+16
+0 503 4 0 0
+Tk_GetRelief
+2
+1 527 98 0 0
+Tk_NameOfRelief
+4 0 0
+16
+0 537 18 0 0
+Tk_NameOfRelief
+2
+7 577 32 0 0
+Tk_Draw3DPolygon
+24 10016 1308
+15 0 0
+24 0 29141
+24 32 -32768
+4 0 0
+4 0 0
+4 0 0
+2
+9 757 32 0 0
+Tk_Fill3DRectangle
+24 10016 1308
+15 0 0
+24 0 29141
+4 0 0
+4 0 0
+4 0 0
+4 0 0
+4 0 0
+4 0 0
+2
+7 801 32 0 0
+Tk_Fill3DPolygon
+24 10016 1308
+15 0 0
+24 0 29141
+24 32 -32768
+4 0 0
+4 0 0
+4 0 0
+512
+llib-ltk:tkArgv.c 2
+2
+6 80 36 0 0
+Tk_ParseArgv
+24 96 2461
+24 0 30931
+20 0 0
+82 0 0
+24 160 -32768
+4 0 0
+16
+0 320 4 0 0
+Tk_ParseArgv
+512
+llib-ltk:tkAtom.c 2
+2
+2 57 47 0 0
+Tk_InternAtom
+24 0 30931
+18 0 0
+16
+0 79 15 0 0
+Tk_InternAtom
+2
+2 109 98 0 0
+Tk_GetAtomName
+24 0 30931
+15 0 0
+16
+0 140 18 0 0
+Tk_GetAtomName
+512
+llib-ltk:tkBind.c 2
+2
+0 177 56 64 -32768
+keyArray
+2
+1 411 104 0 9800
+Tk_CreateBindingTable
+24 96 2461
+16
+0 462 24 0 9800
+Tk_CreateBindingTable
+2
+1 486 32 0 0
+Tk_DeleteBindingTable
+24 0 9800
+2
+6 555 47 0 0
+Tk_CreateBinding
+24 96 2461
+24 0 9800
+20 0 0
+18 0 0
+18 0 0
+4 0 0
+16
+0 591 15 0 0
+Tk_CreateBinding
+2
+4 619 36 0 0
+Tk_DeleteBinding
+24 96 2461
+24 0 9800
+20 0 0
+18 0 0
+16
+0 675 4 0 0
+Tk_DeleteBinding
+2
+4 708 98 0 0
+Tk_GetBinding
+24 96 2461
+24 0 9800
+20 0 0
+18 0 0
+16
+0 718 18 0 0
+Tk_GetBinding
+2
+3 747 32 0 0
+Tk_GetAllBindings
+24 96 2461
+24 0 9800
+20 0 0
+2
+2 900 32 0 0
+Tk_DeleteAllBindings
+24 0 9800
+20 0 0
+2
+5 977 32 0 0
+Tk_BindEvent
+24 0 9800
+25 768 23678
+24 0 30931
+4 0 0
+84 0 0
+2
+1 2126 32 0 0
+TkBindError
+24 96 2461
+512
+llib-ltk:tkBitmap.c 2
+2
+3 140 47 0 0
+Tk_GetBitmap
+24 96 2461
+24 0 30931
+18 0 0
+16
+0 217 15 0 0
+Tk_GetBitmap
+2
+5 247 36 0 0
+Tk_DefineBitmap
+24 96 2461
+18 0 0
+18 0 0
+14 0 0
+14 0 0
+16
+0 268 4 0 0
+Tk_DefineBitmap
+2
+1 290 98 0 0
+Tk_NameOfBitmap
+15 0 0
+16
+0 305 18 0 0
+Tk_NameOfBitmap
+2
+3 331 32 0 0
+Tk_SizeOfBitmap
+15 0 0
+30 0 0
+30 0 0
+2
+1 370 32 0 0
+Tk_FreeBitmap
+15 0 0
+2
+5 424 47 0 0
+Tk_GetBitmapFromData
+24 96 2461
+24 0 30931
+18 0 0
+14 0 0
+14 0 0
+16
+0 454 15 0 0
+Tk_GetBitmapFromData
+512
+llib-ltk:tkButton.c 2
+2
+4 355 36 0 0
+Tk_ButtonCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 451 4 0 0
+Tk_ButtonCmd
+512
+llib-ltk:tkCmds.c 2
+2
+4 75 36 0 0
+Tk_AfterCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 120 4 0 0
+Tk_AfterCmd
+2
+4 186 36 0 0
+Tk_BindCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 238 4 0 0
+Tk_BindCmd
+2
+2 262 32 0 0
+TkBindEventProc
+24 1568 8621
+25 768 23678
+2
+4 303 36 0 0
+Tk_DestroyCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 319 4 0 0
+Tk_DestroyCmd
+2
+4 346 36 0 0
+Tk_UpdateCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 387 4 0 0
+Tk_UpdateCmd
+2
+4 414 36 0 0
+Tk_TkwaitCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 465 4 0 0
+Tk_TkwaitCmd
+2
+4 518 36 0 0
+Tk_WinfoCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+512
+llib-ltk:tkCmds.c
+16
+0 784 4 0 0
+Tk_WinfoCmd
+2
+4 811 36 0 0
+TkDeadAppCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 815 4 0 0
+TkDeadAppCmd
+512
+llib-ltk:tkColor.c 2
+2
+4 131 104 96 -32768
+Tk_GetColor
+24 96 2461
+24 0 30931
+15 0 0
+18 0 0
+16
+0 205 24 96 -32768
+Tk_GetColor
+2
+4 242 104 96 -32768
+Tk_GetColorByValue
+24 96 2461
+24 0 30931
+15 0 0
+24 96 -32768
+16
+0 296 24 96 -32768
+Tk_GetColorByValue
+2
+1 323 98 0 0
+Tk_NameOfColor
+24 96 -32768
+16
+0 334 18 0 0
+Tk_NameOfColor
+2
+1 360 32 0 0
+Tk_FreeColor
+24 96 -32768
+512
+llib-ltk:tkConfig.c 2
+2
+7 83 36 0 0
+Tk_ConfigureWidget
+24 96 2461
+24 0 30931
+24 256 31603
+4 0 0
+82 0 0
+18 0 0
+4 0 0
+16
+0 205 4 0 0
+Tk_ConfigureWidget
+2
+6 601 36 0 0
+Tk_ConfigureInfo
+24 96 2461
+24 0 30931
+24 256 31603
+18 0 0
+18 0 0
+4 0 0
+16
+0 653 4 0 0
+Tk_ConfigureInfo
+512
+llib-ltk:main.c 2
+2
+0 33 50 0 0
+initCmd
+2
+0 35 24 0 30931
+w
+2
+0 36 24 0 12383
+timeToken
+2
+0 37 4 0 0
+idleHandler
+2
+0 38 24 96 2461
+interp
+2
+0 39 4 0 0
+x
+2
+0 39 4 0 0
+y
+2
+0 40 20 0 0
+buffer
+2
+0 41 4 0 0
+tty
+2
+0 49 4 0 0
+synchronize
+2
+0 50 18 0 0
+fileName
+2
+0 51 18 0 0
+name
+2
+0 52 18 0 0
+display
+2
+0 53 18 0 0
+geometry
+2
+0 55 56 160 -32768
+argTable
+2
+2 75 32 0 0
+StdinProc
+20 0 0
+4 0 0
+2
+4 154 36 0 0
+DotCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 168 4 0 0
+DotCmd
+2
+4 177 36 0 0
+MovetoCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 186 4 0 0
+MovetoCmd
+2
+4 194 36 0 0
+LinetoCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 210 4 0 0
+LinetoCmd
+2
+2 216 36 0 0
+main
+4 0 0
+82 0 0
+16
+0 322 4 0 0
+main
+512
+llib-ltk:tkCursor.c 2
+2
+3 216 47 0 0
+Tk_GetCursor
+24 96 2461
+24 0 30931
+18 0 0
+16
+0 418 15 0 0
+Tk_GetCursor
+2
+10 456 47 0 0
+Tk_GetCursorFromData
+24 96 2461
+24 0 30931
+18 0 0
+18 0 0
+14 0 0
+14 0 0
+4 0 0
+4 0 0
+18 0 0
+18 0 0
+16
+0 526 15 0 0
+Tk_GetCursorFromData
+2
+1 552 98 0 0
+Tk_NameOfCursor
+15 0 0
+16
+0 571 18 0 0
+Tk_NameOfCursor
+2
+1 594 32 0 0
+Tk_FreeCursor
+15 0 0
+512
+llib-ltk:tkEntry.c 2
+2
+4 290 36 0 0
+Tk_EntryCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 368 4 0 0
+Tk_EntryCmd
+512
+llib-ltk:tkError.c 2
+2
+6 95 104 0 8808
+Tk_CreateErrorHandler
+24 10016 1308
+4 0 0
+4 0 0
+4 0 0
+148 0 0
+20 0 0
+16
+0 139 24 0 8808
+Tk_CreateErrorHandler
+2
+1 168 32 0 0
+Tk_DeleteErrorHandler
+24 0 8808
+512
+llib-ltk:tkEvent.c 2
+2
+4 226 32 0 0
+Tk_CreateEventHandler
+24 0 30931
+15 0 0
+144 0 0
+20 0 0
+2
+4 305 32 0 0
+Tk_DeleteEventHandler
+24 0 30931
+15 0 0
+144 0 0
+20 0 0
+2
+1 376 32 0 0
+Tk_HandleEvent
+25 768 23678
+2
+4 549 32 0 0
+Tk_CreateFileHandler
+4 0 0
+4 0 0
+144 0 0
+20 0 0
+2
+1 650 32 0 0
+Tk_DeleteFileHandler
+4 0 0
+2
+3 735 104 0 12383
+Tk_CreateTimerHandler
+4 0 0
+144 0 0
+20 0 0
+16
+0 783 24 0 12383
+Tk_CreateTimerHandler
+2
+1 808 32 0 0
+Tk_DeleteTimerHandler
+24 0 12383
+2
+2 850 32 0 0
+Tk_DoWhenIdle
+144 0 0
+20 0 0
+2
+2 887 32 0 0
+Tk_CancelIdleCall
+144 0 0
+20 0 0
+2
+1 942 36 0 0
+Tk_DoOneEvent
+4 0 0
+16
+0 1230 4 0 0
+Tk_DoOneEvent
+2
+0 1251 32 0 0
+Tk_MainLoop
+2
+1 1276 32 0 0
+Tk_Sleep
+4 0 0
+2
+3 1313 612 0 0
+Tk_RestrictEvents
+148 0 0
+18 0 0
+82 0 0
+16
+0 1321 148 0 0
+Tk_RestrictEvents
+2
+3 1360 32 0 0
+Tk_CreateFocusHandler
+24 0 30931
+144 0 0
+20 0 0
+2
+4 1391 36 0 0
+Tk_FocusCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 1436 4 0 0
+Tk_FocusCmd
+2
+2 1460 32 0 0
+TkFocusEventProc
+24 1568 8621
+25 768 23678
+2
+1 1505 32 0 0
+TkEventDeadWindow
+24 1568 8621
+2
+1 1558 47 0 0
+TkCurrentTime
+24 1824 29659
+16
+0 1581 15 0 0
+TkCurrentTime
+512
+llib-ltk:tkFont.c 2
+2
+3 147 104 640 -32768
+Tk_GetFontStruct
+24 96 2461
+24 0 30931
+18 0 0
+16
+0 198 24 640 -32768
+Tk_GetFontStruct
+2
+1 224 98 0 0
+Tk_NameOfFontStruct
+24 640 -32768
+16
+0 240 18 0 0
+Tk_NameOfFontStruct
+2
+1 264 32 0 0
+Tk_FreeFontStruct
+24 640 -32768
+2
+7 473 36 0 0
+TkMeasureChars
+24 640 -32768
+18 0 0
+4 0 0
+4 0 0
+4 0 0
+4 0 0
+20 0 0
+16
+0 573 4 0 0
+TkMeasureChars
+2
+9 612 32 0 0
+TkDisplayChars
+24 10016 1308
+15 0 0
+24 896 22140
+24 640 -32768
+18 0 0
+4 0 0
+4 0 0
+4 0 0
+4 0 0
+2
+10 741 32 0 0
+TkUnderlineChars
+24 10016 1308
+15 0 0
+24 896 22140
+24 640 -32768
+18 0 0
+4 0 0
+4 0 0
+4 0 0
+4 0 0
+4 0 0
+512
+llib-ltk:tkGC.c 2
+2
+3 97 104 896 22140
+Tk_GetGC
+24 0 30931
+15 0 0
+24 736 -32768
+16
+0 260 24 896 22140
+Tk_GetGC
+2
+1 283 32 0 0
+Tk_FreeGC
+24 896 22140
+512
+llib-ltk:tkGeometry.c 2
+2
+3 69 32 0 0
+Tk_ManageGeometry
+24 0 30931
+144 0 0
+20 0 0
+2
+3 106 32 0 0
+Tk_GeometryRequest
+24 0 30931
+4 0 0
+4 0 0
+2
+2 143 32 0 0
+Tk_SetInternalBorder
+24 0 30931
+4 0 0
+512
+llib-ltk:tkGet.c 2
+2
+3 61 36 0 0
+Tk_GetAnchor
+24 96 2461
+18 0 0
+26 0 0
+16
+0 113 4 0 0
+Tk_GetAnchor
+2
+1 136 98 0 0
+Tk_NameOfAnchor
+10 0 0
+16
+0 149 18 0 0
+Tk_NameOfAnchor
+2
+3 177 36 0 0
+Tk_GetJoinStyle
+24 96 2461
+18 0 0
+20 0 0
+16
+0 200 4 0 0
+Tk_GetJoinStyle
+2
+1 223 98 0 0
+Tk_NameOfJoinStyle
+4 0 0
+16
+0 230 18 0 0
+Tk_NameOfJoinStyle
+2
+3 258 36 0 0
+Tk_GetCapStyle
+24 96 2461
+18 0 0
+20 0 0
+16
+0 281 4 0 0
+Tk_GetCapStyle
+2
+1 304 98 0 0
+Tk_NameOfCapStyle
+4 0 0
+16
+0 311 18 0 0
+Tk_NameOfCapStyle
+2
+3 339 36 0 0
+Tk_GetJustify
+24 96 2461
+18 0 0
+26 0 0
+16
+0 366 4 0 0
+Tk_GetJustify
+2
+1 389 98 0 0
+Tk_NameOfJustify
+10 0 0
+16
+0 397 18 0 0
+Tk_NameOfJustify
+2
+1 425 98 0 0
+Tk_GetUid
+18 0 0
+512
+llib-ltk:tkGet.c
+16
+0 434 18 0 0
+Tk_GetUid
+2
+4 465 36 0 0
+Tk_GetScreenMM
+24 96 2461
+24 0 30931
+18 0 0
+23 0 0
+16
+0 510 4 0 0
+Tk_GetScreenMM
+2
+4 541 36 0 0
+Tk_GetPixels
+24 96 2461
+24 0 30931
+18 0 0
+20 0 0
+16
+0 593 4 0 0
+Tk_GetPixels
+512
+llib-ltk:tkMenu.c 2
+2
+4 391 36 0 0
+Tk_MenuCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 470 4 0 0
+Tk_MenuCmd
+512
+llib-ltk:tkMenubutton.c 2
+2
+4 261 36 0 0
+Tk_MenubuttonCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 332 4 0 0
+Tk_MenubuttonCmd
+512
+llib-ltk:tkMessage.c 2
+2
+4 183 36 0 0
+Tk_MessageCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 233 4 0 0
+Tk_MessageCmd
+512
+llib-ltk:tkOption.c 2
+2
+4 244 32 0 0
+Tk_AddOption
+24 0 30931
+18 0 0
+18 0 0
+4 0 0
+2
+3 398 98 0 0
+Tk_GetOption
+24 0 30931
+18 0 0
+18 0 0
+16
+0 450 18 0 0
+Tk_GetOption
+2
+4 476 36 0 0
+Tk_OptionCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 562 4 0 0
+Tk_OptionCmd
+2
+1 586 32 0 0
+TkOptionDeadWindow
+24 1568 8621
+512
+llib-ltk:tkPack.c 2
+2
+4 139 36 0 0
+Tk_PackCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 287 4 0 0
+Tk_PackCmd
+512
+llib-ltk:tkPreserve.c 2
+2
+1 72 32 0 0
+Tk_Preserve
+20 0 0
+2
+1 144 32 0 0
+Tk_Release
+20 0 0
+2
+2 206 32 0 0
+Tk_EventuallyFree
+20 0 0
+144 0 0
+512
+llib-ltk:tkScale.c 2
+2
+4 253 36 0 0
+Tk_ScaleCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 308 4 0 0
+Tk_ScaleCmd
+512
+llib-ltk:tkScrollbar.c 2
+2
+4 239 36 0 0
+Tk_ScrollbarCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 297 4 0 0
+Tk_ScrollbarCmd
+512
+llib-ltk:tkSelect.c 2
+2
+5 240 32 0 0
+Tk_CreateSelHandler
+24 0 30931
+15 0 0
+148 0 0
+20 0 0
+15 0 0
+2
+3 313 32 0 0
+Tk_OwnSelection
+24 0 30931
+144 0 0
+20 0 0
+2
+5 394 36 0 0
+Tk_GetSelection
+24 96 2461
+24 0 30931
+15 0 0
+148 0 0
+20 0 0
+16
+0 538 4 0 0
+Tk_GetSelection
+2
+4 565 36 0 0
+Tk_SelectionCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 645 4 0 0
+Tk_SelectionCmd
+2
+1 667 32 0 0
+TkSelDeadWindow
+24 1568 8621
+2
+2 745 32 0 0
+TkSelEventProc
+24 0 30931
+25 768 23678
+2
+1 1513 32 0 0
+TkSelPropProc
+25 768 23678
+512
+llib-ltk:tkSend.c 2
+2
+3 175 36 0 0
+Tk_RegisterInterp
+24 96 2461
+18 0 0
+24 0 30931
+16
+0 266 4 0 0
+Tk_RegisterInterp
+2
+4 292 36 0 0
+Tk_SendCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 445 4 0 0
+Tk_SendCmd
+2
+2 473 36 0 0
+TkGetInterpNames
+24 96 2461
+24 0 30931
+16
+0 532 4 0 0
+TkGetInterpNames
+2
+2 983 36 0 0
+AppendErrorProc
+24 192 2959
+24 160 -32768
+16
+0 1006 4 0 0
+AppendErrorProc
+512
+llib-ltk:tkShare.c 2
+2
+0 35 25 768 23678
+tkShareEventPtr
+2
+2 100 32 0 0
+Tk_ShareEvents
+24 0 30931
+18 0 0
+2
+2 172 32 0 0
+Tk_UnshareEvents
+24 0 30931
+18 0 0
+512
+llib-ltk:tkWindow.c 2
+2
+0 30 4 0 0
+tk_NumMainWindows
+2
+0 36 24 1824 29659
+tkDisplayList
+2
+0 49 4 0 0
+tkWindowContext
+2
+0 95 56 64 -32768
+commands
+2
+3 525 104 0 30931
+Tk_CreateMainWindow
+24 96 2461
+18 0 0
+18 0 0
+16
+0 610 24 0 30931
+Tk_CreateMainWindow
+2
+4 648 104 0 30931
+Tk_CreateWindow
+24 96 2461
+24 0 30931
+18 0 0
+18 0 0
+16
+0 663 24 0 30931
+Tk_CreateWindow
+2
+4 705 104 0 30931
+Tk_CreateWindowFromPath
+24 96 2461
+24 0 30931
+18 0 0
+18 0 0
+16
+0 773 24 0 30931
+Tk_CreateWindowFromPath
+2
+1 796 32 0 0
+Tk_DestroyWindow
+24 0 30931
+2
+1 929 32 0 0
+Tk_MapWindow
+24 0 30931
+2
+1 990 32 0 0
+Tk_MakeWindowExist
+24 0 30931
+2
+1 1057 32 0 0
+Tk_UnmapWindow
+24 0 30931
+2
+3 1085 32 0 0
+Tk_ConfigureWindow
+24 0 30931
+14 0 0
+24 224 -32768
+2
+3 1129 32 0 0
+Tk_MoveWindow
+24 0 30931
+4 0 0
+4 0 0
+2
+3 1151 32 0 0
+Tk_ResizeWindow
+24 0 30931
+14 0 0
+14 0 0
+2
+5 1175 32 0 0
+Tk_MoveResizeWindow
+24 0 30931
+4 0 0
+4 0 0
+14 0 0
+14 0 0
+2
+2 1202 32 0 0
+Tk_SetWindowBorderWidth
+24 0 30931
+4 0 0
+2
+3 1225 32 0 0
+Tk_ChangeWindowAttributes
+24 0 30931
+15 0 0
+24 480 -32768
+2
+2 1288 32 0 0
+Tk_SetWindowBackground
+24 0 30931
+15 0 0
+2
+2 1306 32 0 0
+Tk_SetWindowBackgroundPixmap
+24 0 30931
+15 0 0
+2
+2 1325 32 0 0
+Tk_SetWindowBorder
+24 0 30931
+15 0 0
+2
+2 1343 32 0 0
+Tk_SetWindowBorderPixmap
+24 0 30931
+15 0 0
+2
+2 1361 32 0 0
+Tk_DefineCursor
+24 0 30931
+15 0 0
+2
+1 1376 32 0 0
+Tk_UndefineCursor
+24 0 30931
+2
+2 1445 32 0 0
+Tk_SetClass
+24 0 30931
+18 0 0
+2
+3 1480 104 0 30931
+Tk_NameToWindow
+24 96 2461
+18 0 0
+24 0 30931
+16
+0 1491 24 0 30931
+Tk_NameToWindow
+2
+1 1513 98 0 0
+Tk_DisplayName
+24 0 30931
+16
+0 1515 18 0 0
+Tk_DisplayName
+512
+llib-ltk:tkWm.c 2
+2
+1 227 32 0 0
+TkWmNewWindow
+24 1568 8621
+2
+1 319 36 0 0
+TkWmMapWindow
+24 1568 8621
+16
+0 372 4 0 0
+TkWmMapWindow
+2
+1 395 32 0 0
+TkWmDeadWindow
+24 1568 8621
+2
+1 452 32 0 0
+TkWmSetClass
+24 1568 8621
+2
+4 495 36 0 0
+Tk_WmCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 1092 4 0 0
+Tk_WmCmd
+2
+5 1126 32 0 0
+Tk_SetGrid
+24 0 30931
+4 0 0
+4 0 0
+4 0 0
+4 0 0
+2
+3 1949 32 0 0
+Tk_GetRootCoords
+24 0 30931
+20 0 0
+20 0 0
+2
+3 1997 104 0 30931
+Tk_CoordsToWindow
+4 0 0
+4 0 0
+24 0 30931
+16
+0 2100 24 0 30931
+Tk_CoordsToWindow
+512
+llib-ltk:tkCanvas.c 2
+2
+0 222 8 96 28182
+tkCanvasTagsOption
+2
+4 253 36 0 0
+Tk_CanvasCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 332 4 0 0
+Tk_CanvasCmd
+2
+1 1741 32 0 0
+Tk_CreateItemType
+24 640 7900
+2
+3 3038 36 0 0
+TkGetCanvasCoord
+24 2624 -32768
+18 0 0
+23 0 0
+16
+0 3045 4 0 0
+TkGetCanvasCoord
+512
+llib-ltk:tkFrame.c 2
+2
+4 134 36 0 0
+Tk_FrameCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 222 4 0 0
+Tk_FrameCmd
+512
+llib-ltk:tkCanvLine.c 2
+2
+0 147 8 640 7900
+TkLineType
+512
+llib-ltk:tkPlace.c 2
+2
+4 165 36 0 0
+Tk_PlaceCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 313 4 0 0
+Tk_PlaceCmd
+512
+llib-ltk:tkCanvArc.c 2
+2
+0 137 8 640 7900
+TkArcType
+512
+llib-ltk:tkCanvPoly.c 2
+2
+0 97 8 640 7900
+TkPolygonType
+2
+5 477 32 0 0
+TkFillPolygon
+24 2624 -32768
+23 0 0
+4 0 0
+15 0 0
+24 896 22140
+512
+llib-ltk:tkCanvText.c 2
+2
+0 151 8 640 7900
+TkTextType
+512
+llib-ltk:tkListbox.c 2
+2
+4 281 36 0 0
+Tk_ListboxCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 343 4 0 0
+Tk_ListboxCmd
+512
+llib-ltk:tkRectOval.c 2
+2
+0 99 8 640 7900
+TkRectangleType
+2
+0 122 8 640 7900
+TkOvalType
+512
+llib-ltk:tkTrig.c 2
+2
+3 55 39 0 0
+TkLineToPoint
+23 0 0
+23 0 0
+23 0 0
+16
+0 132 7 0 0
+TkLineToPoint
+2
+3 163 36 0 0
+TkLineToArea
+23 0 0
+23 0 0
+23 0 0
+16
+0 271 4 0 0
+TkLineToArea
+2
+3 299 39 0 0
+TkPolygonToPoint
+23 0 0
+4 0 0
+23 0 0
+16
+0 428 7 0 0
+TkPolygonToPoint
+2
+3 459 36 0 0
+TkPolygonToArea
+23 0 0
+4 0 0
+23 0 0
+16
+0 497 4 0 0
+TkPolygonToArea
+2
+4 532 39 0 0
+TkOvalToPoint
+23 0 0
+7 0 0
+4 0 0
+23 0 0
+16
+0 580 7 0 0
+TkOvalToPoint
+2
+2 611 36 0 0
+TkOvalToArea
+23 0 0
+23 0 0
+16
+0 702 4 0 0
+TkOvalToArea
+2
+3 729 32 0 0
+TkIncludePoint
+24 2624 -32768
+24 416 9645
+23 0 0
+2
+4 779 32 0 0
+TkBezierScreenPoints
+24 2624 -32768
+23 0 0
+4 0 0
+24 32 -32768
+2
+3 826 32 0 0
+TkBezierPoints
+23 0 0
+4 0 0
+23 0 0
+2
+6 885 36 0 0
+TkMakeBezierCurve
+24 2624 -32768
+23 0 0
+4 0 0
+4 0 0
+24 32 -32768
+23 0 0
+16
+0 1013 4 0 0
+TkMakeBezierCurve
+2
+6 1051 36 0 0
+TkGetMiterPoints
+23 0 0
+23 0 0
+23 0 0
+7 0 0
+23 0 0
+23 0 0
+16
+0 1108 4 0 0
+TkGetMiterPoints
+2
+6 1160 32 0 0
+TkGetButtPoints
+23 0 0
+23 0 0
+7 0 0
+4 0 0
+23 0 0
+23 0 0
+512
+llib-ltk:tkCanvWind.c 2
+2
+0 99 8 640 7900
+TkWindowType
+512
+llib-ltk:tkGrab.c 2
+2
+4 94 36 0 0
+Tk_GrabCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 139 4 0 0
+Tk_GrabCmd
+2
+3 174 36 0 0
+Tk_Grab
+24 96 2461
+24 0 30931
+4 0 0
+16
+0 330 4 0 0
+Tk_Grab
+2
+1 353 32 0 0
+Tk_Ungrab
+24 0 30931
+2
+2 485 36 0 0
+TkPointerEvent
+25 768 23678
+24 1568 8621
+16
+0 713 4 0 0
+TkPointerEvent
+2
+1 1066 32 0 0
+TkGrabDeadWindow
+24 1568 8621
+512
+llib-ltk:tkText.c 2
+2
+0 121 18 0 0
+tkTextCharUid
+2
+0 122 18 0 0
+tkTextDisabledUid
+2
+0 123 18 0 0
+tkTextNoneUid
+2
+0 124 18 0 0
+tkTextNormalUid
+2
+0 125 18 0 0
+tkTextWordUid
+2
+4 176 36 0 0
+Tk_TextCmd
+20 0 0
+24 96 2461
+4 0 0
+82 0 0
+16
+0 265 4 0 0
+Tk_TextCmd
+2
+1 1147 32 0 0
+TkTextLostSelection
+20 0 0
+2
+4 1283 104 160 9397
+TkTextSetMark
+24 2944 30166
+18 0 0
+4 0 0
+4 0 0
+16
+0 1347 24 160 9397
+TkTextSetMark
+512
+llib-ltk:tkTextBTree.c 2
+2
+0 113 4 0 0
+tkBTreeDebug
+2
+0 150 104 0 24045
+TkBTreeCreate
+16
+0 176 24 0 24045
+TkBTreeCreate
+2
+1 198 32 0 0
+TkBTreeDestroy
+24 0 24045
+2
+4 314 32 0 0
+TkBTreeInsertChars
+24 0 24045
+24 160 9425
+4 0 0
+18 0 0
+2
+5 522 32 0 0
+TkBTreeDeleteChars
+24 0 24045
+24 160 9425
+4 0 0
+24 160 9425
+4 0 0
+2
+7 794 32 0 0
+TkBTreeTag
+24 0 24045
+4 0 0
+4 0 0
+4 0 0
+4 0 0
+24 320 17990
+4 0 0
+2
+1 911 32 0 0
+TkBTreeAddAnnotation
+24 160 9397
+2
+1 954 32 0 0
+TkBTreeRemoveAnnotation
+24 160 9397
+2
+2 990 104 160 9425
+TkBTreeFindLine
+24 0 24045
+4 0 0
+16
+0 1030 24 160 9425
+TkBTreeFindLine
+2
+1 1055 104 160 9425
+TkBTreeNextLine
+24 160 9425
+16
+0 1081 24 160 9425
+TkBTreeNextLine
+2
+1 1105 36 0 0
+TkBTreeLineIndex
+24 160 9425
+16
+0 1142 4 0 0
+TkBTreeLineIndex
+2
+7 1175 32 0 0
+TkBTreeStartSearch
+24 0 24045
+4 0 0
+4 0 0
+4 0 0
+4 0 0
+24 320 17990
+24 288 24856
+2
+1 1233 36 0 0
+TkBTreeNextTag
+24 288 24856
+16
+0 1356 4 0 0
+TkBTreeNextTag
+2
+1 1379 32 0 0
+TkBTreeCheck
+24 0 24045
+2
+3 1943 36 0 0
+TkBTreeCharTagged
+24 160 9425
+4 0 0
+24 320 17990
+16
+0 2000 4 0 0
+TkBTreeCharTagged
+2
+4 2033 360 320 17990
+TkBTreeGetTags
+24 0 24045
+24 160 9425
+4 0 0
+20 0 0
+16
+0 2108 88 320 17990
+TkBTreeGetTags
+2
+1 2366 36 0 0
+TkBTreeNumLines
+24 0 24045
+16
+0 2369 4 0 0
+TkBTreeNumLines
+512
+llib-ltk:tkTextDisp.c 2
+2
+1 250 32 0 0
+TkTextCreateDInfo
+24 2944 30166
+2
+1 287 32 0 0
+TkTextFreeDInfo
+24 2944 30166
+2
+5 1451 32 0 0
+TkTextRedrawRegion
+24 2944 30166
+4 0 0
+4 0 0
+4 0 0
+4 0 0
+2
+3 1515 32 0 0
+TkTextLinesChanged
+24 2944 30166
+4 0 0
+4 0 0
+2
+7 1579 32 0 0
+TkTextRedrawTag
+24 2944 30166
+4 0 0
+4 0 0
+4 0 0
+4 0 0
+24 320 17990
+4 0 0
+2
+1 1697 32 0 0
+TkTextRelayoutWindow
+24 2944 30166
+2
+3 1753 32 0 0
+TkTextSetView
+24 2944 30166
+4 0 0
+4 0 0
+2
+4 1961 104 160 9425
+TkTextCharAtLoc
+24 2944 30166
+4 0 0
+4 0 0
+20 0 0
+16
+0 2032 24 160 9425
+TkTextCharAtLoc
+512
+llib-ltk:tkTextIndex.c 2
+2
+5 68 36 0 0
+TkTextGetIndex
+24 96 2461
+24 2944 30166
+18 0 0
+20 0 0
+20 0 0
+16
+0 246 4 0 0
+TkTextGetIndex
+2
+3 272 32 0 0
+TkTextPrintIndex
+4 0 0
+4 0 0
+18 0 0
+2
+3 308 104 160 9425
+TkTextRoundIndex
+24 2944 30166
+20 0 0
+20 0 0
+16
+0 341 24 160 9425
+TkTextRoundIndex
+512
+llib-ltk:tkTextTag.c 2
+2
+4 101 36 0 0
+TkTextTagCmd
+24 2944 30166
+24 96 2461
+4 0 0
+82 0 0
+16
+0 486 4 0 0
+TkTextTagCmd
+2
+2 510 104 320 17990
+TkTextCreateTag
+24 2944 30166
+18 0 0
+16
+0 539 24 320 17990
+TkTextCreateTag
+2
+1 601 32 0 0
+TkTextFreeTag
+24 320 17990
+2
+2 781 32 0 0
+TkTextBindProc
+20 0 0
+25 768 23678
+2
+2 875 32 0 0
+TkTextPickCurrent
+24 2944 30166
+25 768 23678
+2
+1 990 32 0 0
+TkTextUnpickCurrent
+24 2944 30166
+512
+llib-ltk:tkCanvBmap.c 2
+2
+0 93 8 640 7900
+TkBitmapType

@@ -1,0 +1,2036 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  srv030:1.6 srv028:1.6 srv027:1.6 srv026:1.6 srv024:1.6 srv022:1.6 srv021:1.6 srv019:1.6 srv018:1.6 srv016:1.6 srv015:1.6 srv014:1.6 srv012:1.6 srv011:1.6 srv010:1.6 srv008:1.6 srv007:1.6 srv006:1.6 srv005:1.6 srv004:1.6 srv003:1.6 srv002:1.5 srv001:1.5;
+locks    ; strict;
+comment  @ * @;
+
+
+1.6
+date     92.04.29.22.08.13;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     92.04.16.11.47.17;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     92.01.21.16.19.01;  author kupfer;  state Exp;
+branches 1.4.1.1 1.4.2.1;
+next     1.3;
+
+1.3
+date     91.11.14.10.03.11;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.10.07.14.08.25;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.10.04.23.18.02;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+1.4.1.1
+date     92.04.13.17.43.03;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+1.4.2.1
+date     92.04.14.16.58.28;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.6
+log
+@Move mach_host_self() prototype into a header file.
+@
+text
+@/* 
+ * timerQueue.c --
+ *
+ *	Routines to manage the timer queue.  This queue lists functions
+ *	that are to be called at particular times (e.g., for network
+ *	timeouts).
+ *
+ *	The queue is managed by a thread that waits for the next scheduled 
+ *	time and then calls the requested function.  The thread waits by 
+ *	doing a message receive on a private port and then timing out.  If 
+ *	the queue is changed so that the thread needs to time out earlier, 
+ *	a message is sent to the private port, which forces the thread to 
+ *	look around and reschedule itself.
+ *
+ *
+ * Copyright 1986, 1988, 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/timer/RCS/timerQueue.c,v 1.5 92/04/16 11:47:17 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <sprite.h>
+#include <bstring.h>
+#include <mach.h>
+#include <mach_error.h>
+#include <mach/mach_host.h>
+#include <status.h>
+#include <stdlib.h>
+#include <user/time.h>
+
+#include <machCalls.h>
+#include <proc.h>
+#include <timer.h>
+#include <timerInt.h>
+#include <timerStat.h>
+#include <sync.h>
+#include <list.h>
+#include <utilsMach.h>
+#include <vm.h>
+
+/* 
+ * Someday TIMER_BACKLOG_STATS will go away (I hope).  However, we keep a 
+ * separate flag to control statistics gathering, because that's the way 
+ * native Sprite is set up.
+ */
+#if defined(TIMER_BACKLOG_STATS) && !defined(GATHER_STAT)
+#define GATHER_STAT
+#endif
+
+
+/*
+ *  The timer queue is a linked list of routines that need to be called at
+ *  certain times. TimerQueueList points to the head structure for the queue.
+ *
+ * >>>>>>>>>>>>>>>>>>>
+ * N.B. For debugging purposes, timerQueueList is global
+ *      so it can be accessed by routines outside this module.
+ * <<<<<<<<<<<<<<<<<<<
+ */ 
+
+/* static */ List_Links	*timerQueueList;
+
+
+static mach_port_t timeoutPort;	/* timer thread sleeps on this port */
+static mach_msg_header_t timeoutMsg; /* used to interrupt the sleeping 
+				      * thread. */ 
+static Boolean threadSleeping;	/* TRUE if the thread is sleeping, and no 
+				 * "wakeup" messages have been sent.
+				 * protected by timerMutex */
+
+/*
+ * The timer module mutex semaphore.  
+ */
+
+Sync_Semaphore timerMutex;
+
+/* 
+ * The process ID for the timer thread.
+ */
+
+static Proc_PID timerThreadPid;
+
+/* 
+ * Globals related to the timer resolution offered by Mach.
+ */
+
+int timer_Quantum;		/* minimum quantum offered by Mach, in msec */
+static int timerMinTimeout;	/* minimum timeout offered by Mach, in msec */
+
+Time timer_Resolution;		/* resolution for scheduling a callback 
+				 * routine */ 
+
+/*
+ *  Array for debugging trace, protected by timerMutex.
+ */
+
+#ifdef DEBUG
+
+#define TRACE_SIZE 500
+#define INC(ctr) { (ctr) = ((ctr) == TRACE_SIZE-1) ? 0 : (ctr)+1; }
+typedef struct {
+    char *action;
+    Timer_QueueElement *eltPtr;
+    Proc_PID pid;
+} TimerDebugElt;
+
+static TimerDebugElt timerDebugArray[TRACE_SIZE];
+static int timerDebugCounter;
+
+#define TIMER_TRACE(timerPtr, string) \
+{ \
+    TimerDebugElt *ptr = &timerDebugArray[timerDebugCounter]; \
+    INC(timerDebugCounter); \
+    ptr->action = string; \
+    ptr->eltPtr = timerPtr; \
+    ptr->pid = Proc_GetCurrentProc()->processID; \
+}
+
+#else DEBUG
+
+#define TIMER_TRACE(timerPtr, string)
+
+#endif DEBUG
+
+/* 
+ * timer_QueueMaxBacklog is a debugging value.  If the timer queue gets this 
+ * far behind, there may be a problem that we should notify the user about. 
+ */
+static Boolean timerQueueDebug = FALSE;
+Time timer_QueueMaxBacklog;
+
+/*
+ * Instrumentation for counting how many times the routines get called.
+ */
+
+Timer_Statistics timer_Statistics;
+
+
+/*
+ * Procedures internal to this file
+ */
+
+static void GetSchedInfo _ARGS_((void));
+static void InitTimerQueue _ARGS_((void));
+static void TimerDumpElement _ARGS_((Timer_QueueElement *timerPtr));
+static void TimerThread _ARGS_((void));
+static mach_msg_timeout_t TimeToMs _ARGS_((Time someTime));
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Timer_Init --
+ *
+ *	Timer module initialization.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     The timer queue is initialized and a thread created to monitor it.  
+ *     Initialization is done so that we can get the time of day.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Timer_Init()
+{
+    static	Boolean	initialized	= FALSE;
+
+    Sync_SemInitDynamic(&timerMutex,"Timer:timerMutex");
+
+    if (initialized) {
+	printf("Timer_Init: Timer module initialized more that once!\n");
+    }
+    initialized = TRUE;
+
+    bzero((Address) &timer_Statistics, sizeof(timer_Statistics));
+
+    GetSchedInfo();
+
+    /*
+     * Initialize the time of day clock.
+     */
+    TimerClock_Init();
+
+    InitTimerQueue();
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * InitTimerQueue --
+ *
+ *	Initialization for the timer queue.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The timer queue is created and initialized.  A thread is created to 
+ *	monitor it.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+InitTimerQueue()
+{
+    kern_return_t kernStatus;
+
+    /* 
+     * Complain if the timer gets behind by more than twice its resolution.
+     */
+    Time_Multiply(timer_Resolution, 2, &timer_QueueMaxBacklog);
+
+    timerQueueList = (List_Links *) Vm_BootAlloc(sizeof(List_Links));
+    List_Init(timerQueueList);
+
+    /* 
+     * Create the private port that the timer thread will sleep on.  Make 
+     * sure we can also send "reschedule" messages to it.
+     */
+    kernStatus = mach_port_allocate(mach_task_self(), MACH_PORT_RIGHT_RECEIVE,
+				    &timeoutPort);
+    if (kernStatus != KERN_SUCCESS) {
+	panic("InitTimerQueue: couldn't allocate timeout port: %s\n",
+	      mach_error_string(kernStatus));
+    }
+    kernStatus = mach_port_insert_right(mach_task_self(), timeoutPort,
+					timeoutPort,
+					MACH_MSG_TYPE_MAKE_SEND);
+    if (kernStatus != KERN_SUCCESS) {
+	panic("InitTimerQueue: couldn't make timeout send right: %s\n",
+	      mach_error_string(kernStatus));
+    }
+
+    /* 
+     * Create a prototype message that we can use to reschedule the timer 
+     * thread. 
+     */
+    timeoutMsg.msgh_bits = MACH_MSGH_BITS(MACH_MSG_TYPE_COPY_SEND, 0);
+    timeoutMsg.msgh_size = 0;
+    timeoutMsg.msgh_remote_port = timeoutPort;
+    timeoutMsg.msgh_local_port = MACH_PORT_NULL;
+    timeoutMsg.msgh_kind = MACH_MSGH_KIND_NORMAL;
+    timeoutMsg.msgh_id = 0;
+
+    /* 
+     * Fork off a thread to manage the queue.
+     */
+    if (Proc_NewProc((Address) UTILSMACH_MAGIC_CAST TimerThread,
+		     (Address)0, PROC_KERNEL, FALSE,
+		     &timerThreadPid, "timer thread") != SUCCESS) {
+	panic("InitTimerQueue: couldn't start thread.");
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  TimerThread --
+ *
+ *      This routine calls functions from the timer queue when their time 
+ *      is reached.
+ *
+ *  Results:
+ *	None.
+ *
+ *  Side Effects:
+ *	Routines on the timer queue may cause side effects.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+TimerThread()
+{
+    register Timer_QueueElement	*readyPtr; /* Ptr to queue element that's ready
+					    * to be called. */
+    Time	timeOfDay;	/* current time of day */
+    Time	nextActivity;	/* time of expected next activity */
+    Time	sleepTime;	/* time to wait for next activity */
+    mach_msg_header_t dummyMsg;	/* buffer to read reschedule messages into */
+    Time	backlog;	/* how late is the current call */
+    int callsThisInterval;	/* count of callbacks since last pass thru 
+				 * the queue*/
+    ReturnStatus status;
+    
+    /* 
+     * Raise our priority, to help ensure that functions are called when
+     * they're supposed to be.  First make sure that we are wired to a
+     * kernel thread, so that changing the kernel thread's priority makes
+     * sense.  
+     * XXX I'm not sure how much good this really does.
+     */
+    cthread_wire();
+    status = Proc_SetPriority(PROC_MY_PID, PROC_NO_INTR_PRIORITY, FALSE);
+    if (status != SUCCESS) {
+	printf("TimerThread: warning: couldn't set priority: %s\n",
+	       Stat_GetMsg(status));
+    }
+
+    for (;;) {
+
+	/*
+	 *  Go through the queue and call all routines that are scheduled
+	 *  to be called. Since the queue is ordered by time, we can quit
+	 *  looking when we find the first routine that does not need to be
+	 *  called.
+	 */
+	
+	Timer_GetTimeOfDay(&timeOfDay, (int *)NULL, (Boolean *)NULL);
+	callsThisInterval = 0;
+    
+#ifdef SPRITED_LOCALDISK	
+	Dev_GatherDiskStats();
+#endif
+    
+	MASTER_LOCK(&timerMutex);
+	while (!List_IsEmpty(timerQueueList)) {
+	    readyPtr = (Timer_QueueElement *)List_First(timerQueueList); 
+	    if (Time_GT(readyPtr->time, timeOfDay)) {
+		break;
+	    }
+	    ++callsThisInterval;
+#ifdef GATHER_STAT
+	    Time_Subtract(timeOfDay, readyPtr->time, &backlog);
+	    if (Time_GT(backlog, timer_QueueMaxBacklog)) {
+		timer_Statistics.totalLateCalls++;
+		if (timerQueueDebug) {
+		    printf("%s: %d.%03d call #%d: called 0x%x %d msec late.\n",
+			   "TimerThread", timeOfDay.seconds % 60,
+			   timeOfDay.microseconds / 1000,
+			   callsThisInterval,
+			   readyPtr->routine, TimeToMs(backlog));
+		}
+	    }
+#endif
+		
+	    /*
+	     *  First remove the item before calling it so the routine 
+	     *  can call Timer_ScheduleRoutine to reschedule itself on 
+	     *  the timer queue and not mess up the pointers on the 
+	     *  queue.
+	     */
+		
+	    TIMER_TRACE(readyPtr, "about to call");
+	    List_Remove((List_Links *)readyPtr);
+		
+	    /*
+	     *  Now call the routine.  The routine is passed the time
+	     *  it was scheduled to be called at and a client-specified
+	     *  argument.
+	     * 
+	     *  We release the timerMutex during the call backs to
+	     *  prevent deadlocks.
+	     */
+	    
+	    if (readyPtr->routine == 0) {
+		panic("TimerThread: t.q.e. routine == 0\n");
+	    } else {
+		void        (*routine) _ARGS_((Timer_Ticks timeTicks,
+					       ClientData  clientData));
+		Timer_Ticks timeTk;
+		ClientData  clientData;
+		
+		readyPtr->processed = TRUE;
+		routine = readyPtr->routine;
+		timeTk = readyPtr->time;
+		clientData = readyPtr->clientData;
+		MASTER_UNLOCK(&timerMutex);
+		(routine) (timeTk, clientData);
+		MASTER_LOCK(&timerMutex);
+	    }
+	}
+
+	/* 
+	 * No more elements to process for now.  Get a new time of day in 
+	 * case it took a long time to process the list.  Then figure out
+	 * how long to sleep and wait for that long.  If there's nothing in
+	 * the timer queue, sleep for 10 seconds, just to pick a random
+	 * number.
+	 */
+	
+	Timer_GetTimeOfDay(&timeOfDay, (int *)NULL, (Boolean *)NULL);
+	if (List_IsEmpty(timerQueueList)) {
+	    nextActivity = timeOfDay;
+	    nextActivity.seconds += 10;
+	} else {
+	    readyPtr = (Timer_QueueElement *)List_First(timerQueueList);
+	    nextActivity = readyPtr->time;
+	}
+	threadSleeping = TRUE;
+	MASTER_UNLOCK(&timerMutex);
+
+	Time_Subtract(nextActivity, timeOfDay, &sleepTime);
+	if (Time_LE(sleepTime, time_ZeroSeconds)) {
+#ifdef GATHER_STAT
+	    timer_Statistics.skipSleep++;
+#endif
+	} else {
+	    (void)mach_msg(&dummyMsg, MACH_RCV_MSG|MACH_RCV_TIMEOUT,
+			   0, sizeof(dummyMsg), timeoutPort,
+			   TimeToMs(sleepTime), MACH_PORT_NULL);
+	}
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimeToMs --
+ *
+ *	Convert a timeout Time into milliseconds.
+ *
+ * Results:
+ *	Returns the number of milliseconds corresponding to aTime.  May
+ *	round down to zero.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+    
+static mach_msg_timeout_t
+TimeToMs(aTime)
+    Time aTime;			/* time to convert */
+{
+    return (aTime.seconds * 1000 + aTime.microseconds / 1000);
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Timer_ScheduleRoutine --
+ *
+ *	Schedules a routine to be called at a certain time by adding 
+ *	it to the timer queue. A routine is specified using a
+ *	Timer_QueueElement structure, which is described in timer.h.
+ *
+ *	When the client routine is called at its scheduled time, it is 
+ *	passed two parameters:
+ *	 a) the time it is scheduled to be called at, and
+ *	 b) uninterpreted data.
+ *	Hence the routine should be declared as:
+ *
+ *	    void
+ *	    ExampleRoutine(time, data)
+ *		Timer_Ticks time;
+ *		ClientData data;
+ *	    {}
+ *
+ *
+ *	The time a routine should be called at can be specified in two
+ *	ways: an absolute time or an interval. For example, to have 
+ *	ExampleRoutine called in 1 hour, the timer queue element would 
+ *	be setup as:
+ *	    Timer_QueueElement	element;
+ *
+ *	    element.routine	= ExampleRoutine;
+ *	    element.clientData	= (ClientData) 0;
+ *	    element.interval	= timer_IntOneHour;
+ *	    Timer_ScheduleRoutine(&element, TRUE);
+ *
+ *	The 2nd argument (TRUE) to Timer_ScheduleRoutine means the routine
+ *	will be called at the interval + the current time.
+ *
+ *      Once ExampleRoutine is called, it can schedule itself to be
+ *      called again using Timer_ScheduleRoutine().   
+ *
+ *	    Timer_ScheduleRoutine(&element, TRUE);
+ *
+ *	The 2nd argument again means schedule the routine relative to the
+ *	current time. Since we still want ExampleRoutine to be called in
+ *	an hour, we don't have to change the interval field in the timer
+ *	queue element.
+ *      Obviously, the timer queue element has to be accessible 
+ *	to ExampleRoutine.
+ *
+ *	If we want ExampleRoutine to be called at a specific time, say
+ *	March 1, 1986, the time field in the t.q. element must be set:
+ *
+ *	    element.routine	= ExampleRoutine;
+ *	    element.clientData	= (ClientData) 0;
+ *	    element.time	= march1;
+ *	    Timer_ScheduleRoutine(&element, FALSE);
+ *
+ *	(Assume march1 has the appropriate value for the date 3/1/86.)
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The timer queue element is added to the timer queue.  A message is 
+ *	sent to the timer thread if the new element must be processed 
+ *	earlier than the previous head of the timer queue.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Timer_ScheduleRoutine(newElementPtr, interval)
+    register	Timer_QueueElement *newElementPtr; /* routine to be added */
+    Boolean	interval;	/* TRUE if schedule relative to current time. */
+{
+    register List_Links	 *itemPtr;
+    Boolean inserted;		/* TRUE if added to Q in FORALL loop. */
+    Boolean emptyList;		/* TRUE if queue was empty at proc entry */
+    Time queuedActivity;	/* time to run the 1st element in the queue */
+    Time thisActivity;		/* time to run this element */
+    kern_return_t kernStatus;
+
+    MASTER_LOCK(&timerMutex); 
+
+    if (List_IsEmpty(timerQueueList)) {
+	emptyList = TRUE;
+    } else {
+	emptyList = FALSE;
+	itemPtr = List_First(timerQueueList);
+	queuedActivity = ((Timer_QueueElement *)itemPtr)->time;
+    }
+
+    /*
+     *  Go through the timer queue and insert the new routine.  The queue
+     *  is ordered by the time field in the element.  The sooner the
+     *  routine needs to be called, the closer it is to the front of the
+     *  queue.  The new routine will not be added to the queue inside the
+     *  FOR loop if its scheduled time is after all elements in the queue
+     *  or the queue is empty.  It will be added after the last element in
+     *  the queue.
+     */
+
+    inserted = FALSE;  /* assume new element not inserted inside FOR loop.*/
+
+#ifdef GATHER_STAT
+    timer_Statistics.schedule++;
+#endif
+
+    /*
+     * Safety check.
+     */
+    if (newElementPtr->routine == 0) {
+	panic("Timer_ScheduleRoutine: bad address for t.q.e. routine.\n");
+    }
+
+    /* 
+     *  Reset the processed flag. It is used by the client to see if 
+     *  the routine is being called from the timer queue. This flag is
+     *  necessary because the client passes in the timer queue element
+     *  and it may need to examine the element to determine its status.
+     */
+    newElementPtr->processed = FALSE;
+
+    /*
+     * Convert the interval into an absolute time by adding the 
+     * interval to the current time.
+     */
+    if (interval) {
+	Timer_Ticks currentTime;
+	Timer_GetCurrentTicks(&currentTime);
+	Timer_AddIntervalToTicks(currentTime, newElementPtr->interval,
+            	       &(newElementPtr->time));
+    }
+    thisActivity = newElementPtr->time;
+
+    /* 
+     * Sanity check.  The element should not already be in the list (the 
+     * List package will break if it is).
+     */
+    if (timerQueueDebug) {
+	LIST_FORALL(timerQueueList, itemPtr) {
+	    if (itemPtr == (List_Links *)newElementPtr) {
+		panic("%s: element is already in the queue.\n",
+		      "Timer_ScheduleRoutine");
+	    }
+	}
+    }
+
+    List_InitElement((List_Links *) newElementPtr);
+
+    LIST_FORALL(timerQueueList, itemPtr) {
+
+       if (Timer_TickLT(newElementPtr->time, 
+	   ((Timer_QueueElement *)itemPtr)->time)) {
+	    List_Insert((List_Links *) newElementPtr, LIST_BEFORE(itemPtr));
+	    inserted = TRUE;
+	    break;
+	}
+    }
+
+    if (!inserted) {
+	List_Insert((List_Links *) newElementPtr, LIST_ATREAR(timerQueueList));
+    }
+    TIMER_TRACE(newElementPtr, "inserted");
+
+    /* 
+     * Make the timer thread reschedule if either the queue was empty or
+     * the new element has to get run before anything else on the queue.
+     * On the other hand, if the current thread *is* the timer thread,
+     * don't bother sending a message; the thread will recompute the new
+     * sleep time anyway. 
+     * Unless we think that the message is needed (because the thread is 
+     * sleeping or about to sleep), don't send it.  Bad things seem to
+     * happen if the queue fills up (XXX).
+     */
+    
+    if ((emptyList || Time_LT(thisActivity, queuedActivity)) &&
+	    Proc_GetCurrentProc()->processID != timerThreadPid &&
+	    threadSleeping) {
+#ifdef GATHER_STAT
+	timer_Statistics.resched++;
+#endif
+	kernStatus = mach_msg(&timeoutMsg, MACH_SEND_MSG | MACH_SEND_TIMEOUT,
+			      sizeof(timeoutMsg), 0, MACH_PORT_NULL,
+			      0, MACH_PORT_NULL);
+	if (kernStatus == KERN_SUCCESS) {
+	    threadSleeping = FALSE;
+	} else {
+	    printf("Timer_ScheduleRoutine: couldn't prod timer: %s\n",
+		   mach_error_string(kernStatus));
+	}
+    }
+
+    MASTER_UNLOCK(&timerMutex); 
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Timer_DescheduleRoutine --
+ *
+ *	Deschedules a routine to be called at a certain time by removing 
+ *	it from the timer queue.
+ *
+ *	Note that Timer_DescheduleRoutine does NOT guarantee that the 
+ *	routine to be descheduled will not be called, only that the 
+ *	routine will not be on the timer queue when Timer_DescheduleRoutine 
+ *	returns.
+ *
+ *	If Timer_DescheduleRoutine is able to obtain the timer mutex before
+ *	the timer thread wakes up, the routine will be removed from the
+ *	timer queue before the interrupt handler has a chance to call it.
+ *	If the timer thread is able to obtain the timer mutex before
+ *	Timer_DescheduleRoutine, then the thread will remove the element
+ *	from the queue and call the routine before Timer_DescheduleRoutine
+ *	has a chance to remove it.
+ *
+ * Results:
+ *	TRUE if the element was removed, FALSE if it was already gone.
+ *
+ * Side effects:
+ *	The timer queue structure is updated. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+Boolean
+Timer_DescheduleRoutine(elementPtr)
+    register Timer_QueueElement *elementPtr;	/* routine to be removed */
+{
+    register List_Links	 *itemPtr;
+    Boolean foundIt = FALSE;
+
+    /*
+     *  Go through the timer queue and remove the routine.  
+     */
+
+    MASTER_LOCK(&timerMutex); 
+#ifdef GATHER_STAT
+    timer_Statistics.desched++;
+#endif
+    TIMER_TRACE(elementPtr, "about to deschedule");
+
+    LIST_FORALL(timerQueueList, itemPtr) {
+	if ((List_Links *) elementPtr == itemPtr) {
+	    List_Remove(itemPtr);
+	    TIMER_TRACE(elementPtr, "descheduled");
+	    foundIt = TRUE;
+	    break;
+	}
+    }
+    if (!foundIt) {
+	timer_Statistics.failedDesched++;
+    }
+
+    /* 
+     * Don't make the timer thread reschedule; it'll find out soon enough 
+     * that the queue has been changed.
+     */
+
+    MASTER_UNLOCK(&timerMutex);
+    return(foundIt);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Timer_DumpQueue --
+ *
+ *	Output the timer queue on the display.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Output is written to the display.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*ARGSUSED*/
+void
+Timer_DumpQueue(data)
+    ClientData	data;	/* Not used. */
+{
+    Timer_Ticks	ticks;
+    Time	time;
+    List_Links *itemPtr;
+
+    Timer_GetCurrentTicks(&ticks);
+    Timer_TicksToTime(ticks, &time);
+    printf("Now: %d.%06u sec\n", time.seconds, time.microseconds);
+
+    if (List_IsEmpty(timerQueueList)) {
+	printf("\nList is empty.\n");
+    } else {
+	printf("\n");
+
+	MASTER_LOCK(&timerMutex); 
+
+	LIST_FORALL(timerQueueList, itemPtr) {
+	    TimerDumpElement((Timer_QueueElement *) itemPtr);
+	}
+
+	MASTER_UNLOCK(&timerMutex); 
+
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TimerDumpElement --
+ *
+ *	Output the more important parts of a Timer_QueueElement on the display.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Output is written to the display.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+TimerDumpElement(timerPtr)
+    Timer_QueueElement *timerPtr;
+{
+    Time  	time;
+
+    Timer_TicksToTime(timerPtr->time, &time);
+
+    printf("(*0x%x)(0x%x) @@ %d.%06u\n",
+	    (Address) timerPtr->routine, 
+	    (Address) timerPtr->clientData,
+	    time.seconds, time.microseconds);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Timer_DumpStats --
+ *
+ *	Initializes and prints the timer module statistics.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Output is written to the display.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Timer_DumpStats(arg)
+    ClientData	arg;
+{
+    static   Timer_Ticks	start;
+    static   Timer_Ticks	end;
+    Timer_Ticks	diff;
+    Time  	time;
+
+    if (arg ==  (ClientData) 's') {
+	Timer_GetCurrentTicks(&start);
+	bzero((Address) &timer_Statistics,sizeof(timer_Statistics));
+    } else {
+	Timer_GetCurrentTicks(&end);
+	Timer_SubtractTicks(end, start, &diff);
+	Timer_TicksToTime(diff, &time);
+
+	printf("\n%d.%06d Sched %d Res %d Des %d\n",
+	    time.seconds, time.microseconds,
+	    timer_Statistics.schedule,
+	    timer_Statistics.resched,
+	    timer_Statistics.desched
+	);
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Timer_IsScheduled --
+ *
+ *	Is the given entry in the timer queue?  (This routine is intended 
+ *	for use in debugging.)
+ *
+ * Results:
+ *	Returns TRUE if the given entry is found in the queue, FALSE if 
+ *	not.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Boolean
+Timer_IsScheduled(elementPtr)
+    Timer_QueueElement *elementPtr; /* routine to look for */
+{
+    Boolean foundIt = FALSE;
+    List_Links *itemPtr;
+
+    MASTER_LOCK(&timerMutex); 
+    LIST_FORALL(timerQueueList, itemPtr) {
+	if ((List_Links *)elementPtr == itemPtr) {
+	    foundIt = TRUE;
+	    break;
+	}
+    }
+    MASTER_UNLOCK(&timerMutex);
+    return foundIt;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetSchedInfo --
+ *
+ *	Get scheduling information from Mach.  Currently (13-Apr-92) this 
+ *	information is mostly used by the timer module, so we obtain it 
+ *	here, too.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Initializes timer_Quantum and timerMinTimeout.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+GetSchedInfo()
+{
+    kern_return_t kernStatus;
+    mach_msg_type_number_t infoCount;
+    struct host_sched_info schedInfo;
+
+    infoCount = HOST_SCHED_INFO_COUNT;
+    kernStatus = host_info(mach_host_self(), HOST_SCHED_INFO,
+			   (host_info_t)&schedInfo, &infoCount);
+    if (kernStatus != KERN_SUCCESS) {
+	panic("GetSchedInfo failed: %s\n", mach_error_string(kernStatus));
+    }
+    if (infoCount != HOST_SCHED_INFO_COUNT) {
+	panic("GetSchedInfo: expected %d words, got %d.\n",
+	      HOST_SCHED_INFO_COUNT, infoCount);
+    }
+
+    /* 
+     * XXX the sched info times are in usec, up thru MK73, even though they 
+     * are documented as msec.
+     */
+    timer_Quantum = schedInfo.min_quantum / 1000;
+    timerMinTimeout = schedInfo.min_timeout / 1000; 
+    timer_Resolution.seconds = schedInfo.min_timeout / 1000000;
+    timer_Resolution.microseconds = schedInfo.min_timeout % 1000000;
+}
+@
+
+
+1.5
+log
+@Raise the priority of the timer thread and fix up instrumentation.
+Put in a hack to avoid overflowing the timer thread wakeup port.  Get
+the clock resolution from Mach.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/timer/RCS/timerQueue.c,v 1.4 92/01/21 16:19:01 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d39 1
+a47 6
+
+/* 
+ * XXX - this is in mach_traps.h, but there's a cpp problem including both 
+ * mach.h and mach_traps.h. 2-Oct-91.
+ */
+extern mach_port_t mach_host_self _ARGS_((void));
+@
+
+
+1.4
+log
+@Add Timer_IsScheduled.  Fix up the debug trace definitions.  Add a
+bunch of trace points.  Add a sanity check to avoid confusing the List
+package.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/timer/RCS/timerQueue.c,v 1.3 91/11/14 10:03:11 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d34 2
+d42 1
+d48 5
+d54 4
+a57 2
+/*
+ * Procedures internal to this file
+d59 3
+a61 6
+
+static void InitTimerQueue _ARGS_((void));
+static mach_msg_timeout_t SleepTime _ARGS_((Time now, Time then));
+static void TimerDumpElement _ARGS_((Timer_QueueElement *timerPtr));
+static void TimerThread _ARGS_((void));
+
+a63 2
+/* DATA STRUCTURES */
+
+d76 1
+d80 3
+d93 1
+d96 10
+d139 2
+a140 2
+ * timerQueueMaxBacklog is a debugging value.  If the timer queue gets this 
+ * far behind, there may be a problem that we should notify the user about.
+d142 2
+a143 2
+Boolean timerQueueDebug = TRUE;
+Time timerQueueMaxBacklog;
+d151 11
+d194 2
+d227 4
+a230 2
+    /* 20 msec is the approximate callback interval in native Sprite. */
+    Time_Multiply(time_TenMilliseconds, 2, &timerQueueMaxBacklog);
+d299 1
+d301 4
+a304 1
+    Time	backlog;	/* how far behind we are in the queue */
+a305 1
+#if 0
+d310 2
+a311 1
+     * sense.
+d313 6
+a318 3
+    cthread_wire(cthread_self());
+    Proc_SetPriority(PROC_MY_PID, PROC_NO_INTR_PRIORITY, FALSE);
+#endif
+d330 1
+d342 11
+a352 7
+	    if (timerQueueDebug) {
+		Time_Subtract(timeOfDay, readyPtr->time, &backlog);
+		if (Time_GT(backlog, timerQueueMaxBacklog)) {
+		    printf("TimerThread: called 0x%x %d msec behind.\n",
+			   readyPtr->routine,
+			   backlog.seconds * 1000 +
+			   backlog.microseconds / 1000);
+d355 1
+d410 1
+d413 6
+a418 1
+	if (Time_GT(nextActivity, timeOfDay)) {
+d421 1
+a421 2
+			   SleepTime(timeOfDay, nextActivity),
+			   MACH_PORT_NULL);
+d430 1
+a430 1
+ * SleepTime --
+d432 1
+a432 2
+ *	Return timeout value given the current time and the desired wakeup 
+ *	time.
+d435 2
+a436 3
+ *	Returns the number of milliseconds between now and then.  Unless 
+ *	the two times are exactly the same, always returns a non-zero 
+ *	value.
+d443 1
+a443 1
+
+d445 2
+a446 3
+SleepTime(now, then)
+    Time now;			/* current time */
+    Time then;			/* desired wakeup time */
+d448 1
+a448 11
+    Time difference;
+    mach_msg_timeout_t result;
+
+    Time_Subtract(then, now, &difference);
+    result = difference.seconds * 1000;
+    result += difference.microseconds / 1000;
+    if (result == 0 && difference.microseconds != 0) {
+	result = 1;
+    }
+    
+    return result;
+d622 4
+a625 1
+     * sleep time anyway.
+d629 5
+a633 1
+	    Proc_GetCurrentProc()->processID != timerThreadPid) {
+d637 3
+a639 1
+	if (kernStatus != KERN_SUCCESS) {
+a683 4
+
+#ifdef GATHER_STAT
+    timer_Statistics.desched++;
+#endif
+d691 3
+a696 1
+
+d704 3
+d827 1
+a827 1
+	printf("\n%d.%06d cb %d prof %d spur %d; Sched %d Res %d Des %d\n",
+a828 3
+	    timer_Statistics.callback,
+	    timer_Statistics.profile,
+	    timer_Statistics.spurious,
+d871 47
+@
+
+
+1.4.2.1
+log
+@Use thread_switch instead of mach_msg as the "sleep" primitive.  Needs
+cleaning up.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/timer/RCS/timerQueue.c,v 1.4 92/01/21 16:19:01 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a33 3
+#include <mach/mach_host.h>
+#include <mach/thread_switch.h>
+#include <status.h>
+a39 1
+#include <timerStat.h>
+a44 14
+/* 
+ * XXX - this is in mach_traps.h, but there's a cpp problem including both 
+ * mach.h and mach_traps.h. 2-Oct-91.
+ */
+extern mach_port_t mach_host_self _ARGS_((void));
+extern kern_return_t thread_switch _ARGS_((thread_t newThread, int option,
+					   int timeout));
+
+
+int timer_Quantum;		/* minimum quantum offered by Mach, in msec */
+static int timerMinTimeout;	/* minimum timeout offered by Mach, in msec */
+
+Time timer_Resolution;		/* resolution for scheduling a callback 
+				 * routine */ 
+a49 1
+static void GetSchedInfo _ARGS_((void));
+d51 1
+a53 1
+static mach_msg_timeout_t TimeToMs _ARGS_((Time someTime));
+a73 6
+static Boolean threadSleeping;	/* TRUE if the thread is sleeping, and no 
+				 * "interrupt" messages have been sent */
+
+#if defined(TIMER_BACKLOG_STATS) && !defined(GATHER_STAT)
+#define GATHER_STAT
+#endif
+a74 2
+/* GLOBAL VARIABLES */
+
+a117 18
+#define LOG_SIZE	50	/* more DEBUG */
+
+typedef struct {
+    Time scheduledStart;
+    Time startSleep;
+    Time reallyStartSleep;
+    Time endSleep;
+    int requestedMsec;
+    int basePriority;
+    int currPriority;
+} LogInfo;
+
+#define LogSucc(index)	((index) == LOG_SIZE - 1 ? 0 : (index) + 1)
+#define LogPred(index)	((index) == 0 ? LOG_SIZE - 1 : (index) - 1)
+
+LogInfo timerLog[LOG_SIZE];
+int timerLogIndex = 0;
+
+d119 1
+a119 1
+ * timer_QueueMaxBacklog is a debugging value.  If the timer queue gets this 
+d122 2
+a123 2
+static Boolean timerQueueDebug = FALSE;
+Time timer_QueueMaxBacklog;
+a124 10
+/* 
+ * timerQueueThreshold controls whether the timer thread will sleep
+ * before processing the next element in the queue.  If the next activity
+ * is beyond the threshold, it will sleep, otherwise it will immediately
+ * resume processing the queue.
+ */
+static Time timerQueueThreshold;
+
+static Time lastActivity;	/* DEBUG */
+
+a162 2
+    GetSchedInfo();
+
+d194 2
+a195 12
+    /* 
+     * Complain if the timer gets behind by more than twice its resolution.
+     * For routines that are supposed to be called within the limit of the 
+     * timer resolution, set the threshold so that half the routines are 
+     * called early and the other half are called late.
+     */
+    Time_Multiply(timer_Resolution, 2, &timer_QueueMaxBacklog);
+#if 0
+    Time_Divide(timer_Resolution, 2, &timerQueueThreshold);
+#else
+    timerQueueThreshold = time_ZeroSeconds;
+#endif
+a263 1
+    Time	sleepTime;	/* time to wait for next activity */
+a265 3
+    ReturnStatus status;
+    kern_return_t kernStatus;	/* DEBUG */
+    int callsThisInterval;	/* DEBUG */
+d267 1
+d274 3
+a276 6
+    cthread_wire();
+    status = Proc_SetPriority(PROC_MY_PID, PROC_NO_INTR_PRIORITY, FALSE);
+    if (status != SUCCESS) {
+	printf("Warning: couldn't set timer thread priority: %s\n",
+	       Stat_GetMsg(status));
+    }
+a287 2
+	lastActivity = timeOfDay;
+	callsThisInterval = 0;
+d299 7
+a305 11
+	    ++callsThisInterval;
+#ifdef GATHER_STAT
+	    Time_Subtract(timeOfDay, readyPtr->time, &backlog);
+	    if (Time_GT(backlog, timer_QueueMaxBacklog)) {
+		timer_Statistics.totalLateCalls++;
+		if (timerQueueDebug) {
+		    printf("%s: %d.%03d call #%d: called 0x%x %d msec late.\n",
+			   "TimerThread", timeOfDay.seconds % 60,
+			   timeOfDay.microseconds / 1000,
+			   callsThisInterval,
+			   readyPtr->routine, TimeToMs(backlog));
+a307 1
+#endif
+a361 1
+	threadSleeping = TRUE;
+d364 5
+a368 52
+	Time_Subtract(nextActivity, timeOfDay, &sleepTime);
+	if (Time_LE(sleepTime, timerQueueThreshold)) {
+#ifdef GATHER_STAT
+	    timer_Statistics.skipSleep++;
+#endif
+	} else {
+	    timerLog[timerLogIndex].startSleep = timeOfDay;
+	    Timer_GetTimeOfDay(&timerLog[timerLogIndex].reallyStartSleep,
+			       NULL, NULL);
+	    kernStatus = thread_switch(MACH_PORT_NULL, SWITCH_OPTION_DEPRESS,
+				       2 * timerMinTimeout); /* XXX */
+#if 0
+	    if (kernStatus == MACH_RCV_TIMED_OUT) {
+		struct thread_basic_info threadInfo;
+		mach_msg_type_number_t infoCount;
+		extern mach_port_t mach_thread_self _ARGS_((void));
+
+		timerLog[timerLogIndex].scheduledStart = nextActivity;
+		Timer_GetTimeOfDay(&timerLog[timerLogIndex].endSleep,
+				   NULL, NULL);
+		timerLog[timerLogIndex].requestedMsec = TimeToMs(sleepTime);
+		infoCount = THREAD_BASIC_INFO_COUNT;
+		kernStatus = thread_info(mach_thread_self(),
+					 THREAD_BASIC_INFO,
+					 (thread_info_t)&threadInfo,
+					 &infoCount);
+		if (kernStatus != KERN_SUCCESS) {
+		    panic("Can't get thread info: %s\n",
+			  mach_error_string(kernStatus));
+		}
+		timerLog[timerLogIndex].basePriority = threadInfo.base_priority;
+		timerLog[timerLogIndex].currPriority = threadInfo.cur_priority;
+		timerLogIndex = LogSucc(timerLogIndex);
+	    }
+#endif
+	}
+
+	/* 
+	 * Flush any pending "wakeup" messages.
+	 */
+	for (;;) {
+	    kernStatus = mach_msg(&dummyMsg, MACH_RCV_MSG|MACH_RCV_TIMEOUT,
+				  0, sizeof(dummyMsg), timeoutPort,
+				  0, MACH_PORT_NULL);
+	    if (kernStatus == MACH_RCV_TIMED_OUT) {
+		break;
+	    }
+	    if (kernStatus != KERN_SUCCESS) {
+		printf("%s: problem clearing the timeout port: %s\n",
+		       "TimerThread", mach_error_string(kernStatus));
+		break;
+	    }
+d377 1
+a377 1
+ * TimeToMs --
+d379 2
+a380 1
+ *	Convert a timeout Time into milliseconds.
+d383 3
+a385 2
+ *	Returns the number of milliseconds corresponding to aTime.  May
+ *	round down to zero.
+d392 1
+a392 1
+    
+d394 3
+a396 2
+TimeToMs(aTime)
+    Time aTime;			/* time to convert */
+d398 11
+a408 1
+    return (aTime.seconds * 1000 + aTime.microseconds / 1000);
+d582 1
+a582 4
+     * sleep time anyway. 
+     * Unless we think that the message is needed (because the thread is 
+     * sleeping or about to sleep), don't send it.  Bad things seem to
+     * happen if the queue fills up (XXX).
+d586 1
+a586 5
+	    Proc_GetCurrentProc()->processID != timerThreadPid &&
+	    threadSleeping) {
+#ifdef GATHER_STAT
+	timer_Statistics.resched++;
+#endif
+d590 1
+a590 3
+	if (kernStatus == KERN_SUCCESS) {
+	    threadSleeping = FALSE;
+	} else {
+d635 4
+a645 3
+#ifdef GATHER_STAT
+    timer_Statistics.desched++;
+#endif
+d649 1
+a656 3
+    if (!foundIt) {
+	timer_Statistics.failedDesched++;
+    }
+d777 1
+a777 1
+	printf("\n%d.%06d Sched %d Res %d Des %d\n",
+d779 3
+a823 46
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetSchedInfo --
+ *
+ *	Get scheduling information from Mach.  Currently (13-Apr-92) this 
+ *	information is mostly used by the timer module, so get it here.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Initializes timer_Quantum and timerMinTimeout.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+GetSchedInfo()
+{
+    kern_return_t kernStatus;
+    mach_msg_type_number_t infoCount;
+    struct host_sched_info schedInfo;
+
+    infoCount = HOST_SCHED_INFO_COUNT;
+    kernStatus = host_info(mach_host_self(), HOST_SCHED_INFO,
+			   (host_info_t)&schedInfo, &infoCount);
+    if (kernStatus != KERN_SUCCESS) {
+	panic("GetSchedInfo failed: %s\n", mach_error_string(kernStatus));
+    }
+    if (infoCount != HOST_SCHED_INFO_COUNT) {
+	panic("GetSchedInfo: expected %d words, got %d.\n",
+	      HOST_SCHED_INFO_COUNT, infoCount);
+    }
+
+    /* 
+     * XXX the sched info times are in usec, up thru MK73, even though they 
+     * are documented as msec.
+     */
+    timer_Quantum = schedInfo.min_quantum / 1000;
+    timerMinTimeout = schedInfo.min_timeout / 1000; 
+    timer_Resolution.seconds = schedInfo.min_timeout / 1000000;
+    timer_Resolution.microseconds = schedInfo.min_timeout % 1000000;
+@
+
+
+1.4.1.1
+log
+@Try to make the timer thread more responsive by giving it a high
+priority.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/timer/RCS/timerQueue.c,v 1.4 92/01/21 16:19:01 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+a33 2
+#include <mach/mach_host.h>
+#include <status.h>
+a39 1
+#include <timerMach.h>
+a44 9
+/* 
+ * XXX - this is in mach_traps.h, but there's a cpp problem including both 
+ * mach.h and mach_traps.h. 2-Oct-91.
+ */
+extern mach_port_t mach_host_self _ARGS_((void));
+
+
+int timer_Quantum;		/* minimum quantum offered by Mach, in msec */
+int timer_MinTimeout;		/* minimum timeout offered by Mach, in msec */
+a45 1
+
+a49 1
+static void GetSchedInfo _ARGS_((void));
+d51 1
+a53 1
+static mach_msg_timeout_t TimeToMs _ARGS_((Time someTime));
+a73 21
+static Boolean threadSleeping;	/* TRUE if the thread is sleeping, and no 
+				 * "interrupt" messages have been sent */
+
+/*
+ *  The statistics for the module.
+ */
+
+typedef struct {
+    int		schedule;	/* count of Timer_ScheduleRoutine calls */
+    int		desched;	/* count of Timer_DescheduleRoutine calls */
+    int		skipSleep;	/* count of times TimerThread didn't bother 
+				 * sleeping */ 
+    int		resched;	/* count of times we had to interrupt the
+				 * sleeping timer thread */
+    int		lateCalls;	/* count of calls that were made later than 
+				 * the maximum backlog time */
+} Timer_Statistics;
+
+#define GATHER_STAT
+
+/* GLOBAL VARIABLES */
+a117 18
+#define LOG_SIZE	50
+
+typedef struct {
+    Time scheduledStart;
+    Time startSleep;
+    Time reallyStartSleep;
+    Time endSleep;
+    int requestedMsec;
+    int basePriority;
+    int currPriority;
+} LogInfo;
+
+#define LogSucc(index)	((index) == LOG_SIZE - 1 ? 0 : (index) + 1)
+#define LogPred(index)	((index) == 0 ? LOG_SIZE - 1 : (index) - 1)
+
+LogInfo timerLog[LOG_SIZE];
+int timerLogIndex = 0;
+
+d122 2
+a123 12
+static Boolean timerQueueDebug = TRUE;
+static Time timerQueueMaxBacklog;
+
+/* 
+ * timerQueueThreshold controls whether the timer thread will sleep
+ * before processing the next element in the queue.  If the next activity
+ * is beyond the threshold, it will sleep, otherwise it will immediately
+ * resume processing the queue.
+ */
+static Time timerQueueThreshold;
+
+static Time lastActivity;	/* DEBUG */
+a162 2
+    GetSchedInfo();
+
+d194 2
+a195 12
+    /* 
+     * Complain if the timer gets behind by more than twice its resolution.
+     * For routines that are supposed to be called within the limit of the 
+     * timer resolution, set the threshold so that half the routines are 
+     * called early and the other half are called late.
+     */
+    Time_Multiply(timerMach_Resolution, 2, &timerQueueMaxBacklog);
+#if 0
+    Time_Divide(timerMach_Resolution, 2, &timerQueueThreshold);
+#else
+    timerQueueThreshold = time_ZeroSeconds;
+#endif
+a263 1
+    Time	sleepTime;	/* time to wait for next activity */
+a265 4
+    ReturnStatus status;
+    kern_return_t kernStatus;	/* DEBUG */
+    char *machMsgStatus = "initially";	/* DEBUG */
+    int callsThisInterval;	/* DEBUG */
+d267 1
+d274 3
+a276 6
+    cthread_wire();
+    status = Proc_SetPriority(PROC_MY_PID, PROC_NO_INTR_PRIORITY, FALSE);
+    if (status != SUCCESS) {
+	printf("Warning: couldn't set timer thread priority: %s\n",
+	       Stat_GetMsg(status));
+    }
+a287 2
+	lastActivity = timeOfDay;
+	callsThisInterval = 0;
+a298 1
+	    ++callsThisInterval;
+d302 4
+a305 26
+		    int prevIndex = LogPred(timerLogIndex);
+
+#ifdef GATHER_STAT
+		    timer_Statistics.lateCalls++;
+#endif
+		    printf("%s: %d.%03d call #%d: called 0x%x %d msec late %s.\n",
+			   "TimerThread", timeOfDay.seconds % 60,
+			   timeOfDay.microseconds / 1000,
+			   callsThisInterval,
+			   readyPtr->routine, TimeToMs(backlog),
+			   machMsgStatus);
+		    Time_Subtract(timerLog[prevIndex].reallyStartSleep,
+				  timerLog[prevIndex].startSleep,
+				  &backlog);
+		    printf("  lost %d", TimeToMs(backlog));
+		    Time_Subtract(timerLog[prevIndex].endSleep,
+				  readyPtr->time,
+				  &backlog);
+		    printf("+%d", TimeToMs(backlog));
+		    Time_Subtract(timeOfDay,
+				  timerLog[prevIndex].endSleep,
+				  &backlog);
+		    printf("+%d msec, basepri %d, curpri %d\n",
+			   TimeToMs(backlog),
+			   timerLog[prevIndex].basePriority,
+			   timerLog[prevIndex].currPriority);
+a361 1
+	threadSleeping = TRUE;
+d364 5
+a368 64
+	Time_Subtract(nextActivity, timeOfDay, &sleepTime);
+	if (Time_LE(sleepTime, timerQueueThreshold)) {
+#ifdef GATHER_STAT
+	    timer_Statistics.skipSleep++;
+#endif
+	} else {
+	    timerLog[timerLogIndex].startSleep = timeOfDay;
+	    Timer_GetTimeOfDay(&timerLog[timerLogIndex].reallyStartSleep,
+			       NULL, NULL);
+	    kernStatus = mach_msg(&dummyMsg,
+				  (MACH_RCV_MSG | MACH_RCV_TIMEOUT |
+				   MACH_RCV_INTERRUPT),
+				  0, sizeof(dummyMsg), timeoutPort,
+				  TimeToMs(sleepTime), MACH_PORT_NULL); 
+	    switch (kernStatus) {
+	    case MACH_RCV_TIMED_OUT:
+		machMsgStatus = "after timeout";
+		break;
+	    case KERN_SUCCESS:
+		machMsgStatus = "after wakeup";
+		break;
+	    default:
+		machMsgStatus = mach_error_string(kernStatus);
+		break;
+	    }
+	    if (kernStatus == MACH_RCV_TIMED_OUT) {
+		struct thread_basic_info threadInfo;
+		mach_msg_type_number_t infoCount;
+		extern mach_port_t mach_thread_self _ARGS_((void));
+
+		timerLog[timerLogIndex].scheduledStart = nextActivity;
+		Timer_GetTimeOfDay(&timerLog[timerLogIndex].endSleep,
+				   NULL, NULL);
+		timerLog[timerLogIndex].requestedMsec = TimeToMs(sleepTime);
+		infoCount = THREAD_BASIC_INFO_COUNT;
+		kernStatus = thread_info(mach_thread_self(),
+					 THREAD_BASIC_INFO,
+					 (thread_info_t)&threadInfo,
+					 &infoCount);
+		if (kernStatus != KERN_SUCCESS) {
+		    panic("Can't get thread info: %s\n",
+			  mach_error_string(kernStatus));
+		}
+		timerLog[timerLogIndex].basePriority = threadInfo.base_priority;
+		timerLog[timerLogIndex].currPriority = threadInfo.cur_priority;
+		timerLogIndex = LogSucc(timerLogIndex);
+	    }
+	}
+
+	/* 
+	 * Flush any pending "wakeup" messages.
+	 */
+	for (;;) {
+	    kernStatus = mach_msg(&dummyMsg, MACH_RCV_MSG|MACH_RCV_TIMEOUT,
+				  0, sizeof(dummyMsg), timeoutPort,
+				  0, MACH_PORT_NULL);
+	    if (kernStatus == MACH_RCV_TIMED_OUT) {
+		break;
+	    }
+	    if (kernStatus != KERN_SUCCESS) {
+		printf("%s: problem clearing the timeout port: %s\n",
+		       "TimerThread", mach_error_string(kernStatus));
+		break;
+	    }
+d377 1
+a377 1
+ * TimeToMs --
+d379 2
+a380 1
+ *	Convert a timeout Time into milliseconds.
+d383 3
+a385 2
+ *	Returns the number of milliseconds corresponding to aTime.  May
+ *	round down to zero.
+d392 1
+a392 1
+    
+d394 3
+a396 2
+TimeToMs(aTime)
+    Time aTime;			/* time to convert */
+d398 11
+a408 1
+    return (aTime.seconds * 1000 + aTime.microseconds / 1000);
+d582 1
+a582 4
+     * sleep time anyway. 
+     * Unless we think that the message is needed (because the thread is 
+     * sleeping or about to sleep), don't send it.  Bad things seem to
+     * happen if the queue fills up (XXX).
+d586 1
+a586 5
+	    Proc_GetCurrentProc()->processID != timerThreadPid &&
+	    threadSleeping) {
+#ifdef GATHER_STAT
+	timer_Statistics.resched++;
+#endif
+d590 1
+a590 3
+	if (kernStatus == KERN_SUCCESS) {
+	    threadSleeping = FALSE;
+	} else {
+a634 1
+    Boolean foundIt = FALSE;
+d639 1
+d777 1
+a777 1
+	printf("\n%d.%06d Sched %d Res %d Des %d\n",
+d779 3
+a823 42
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetSchedInfo --
+ *
+ *	Get scheduling information from Mach.  Currently (13-Apr-92) this 
+ *	information is mostly used by the timer module, so get it here.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Initializes timer_Quantum and timer_MinTimeout.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+GetSchedInfo()
+{
+    kern_return_t kernStatus;
+    mach_msg_type_number_t infoCount;
+    struct host_sched_info schedInfo;
+
+    infoCount = HOST_SCHED_INFO_COUNT;
+    kernStatus = host_info(mach_host_self(), HOST_SCHED_INFO,
+			   (host_info_t)&schedInfo, &infoCount);
+    if (kernStatus != KERN_SUCCESS) {
+	panic("GetSchedInfo failed: %s\n", mach_error_string(kernStatus));
+    }
+    if (infoCount != HOST_SCHED_INFO_COUNT) {
+	panic("GetSchedInfo: expected %d words, got %d.\n",
+	      HOST_SCHED_INFO_COUNT, infoCount);
+    }
+
+    timer_Quantum = schedInfo.min_quantum / 1000; /* XXX */
+    timer_MinTimeout = schedInfo.min_timeout / 1000; /* XXX */
+    printf("minimum quantum: %d, minimum timeout: %d\n",
+	   timer_Quantum, timer_MinTimeout); /* DEBUG */
+@
+
+
+1.3
+log
+@Snapshot. net, rpc, recov modules added.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/timer/RCS/timerQueue.c,v 1.2 91/10/07 14:08:25 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d87 1
+a87 1
+ *  Debugging routine and data.
+d91 25
+a115 3
+#define SIZE 500
+static unsigned char array[SIZE+1];
+static int count = 0;
+d316 1
+d329 1
+a329 1
+		panic("Timer_ServiceInterrupt: t.q.e. routine == 0\n");
+d547 13
+d575 1
+d646 1
+d652 1
+d787 37
+@
+
+
+1.2
+log
+@Initial changes for Sprite server.
+@
+text
+@d4 3
+a6 1
+ *	Routines to handle interrupts from the timer chip.
+d8 6
+a13 9
+ *      The timer call back routine is called at every callback timer
+ *      interrupt. The callback timer is used to enable various modules of
+ *      the kernel to have routines called at a particular time in the
+ *      future.  For example, to run the "clock" paging algorithm once a
+ *      second, to see if a Fs_Select call has timed-out, etc.  The timer
+ *      queue can only be used by kernel modules because it is assumed
+ *      that the routines to be called exist in the system segment.  The
+ *      routines to be called are maintained on the timer queue.  The
+ *      callback timer is active only when the timer queue is not empty.
+d16 1
+a16 1
+ * Copyright 1986, 1988 Regents of the University of California
+d27 1
+a27 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/timer/RCS/timerQueue.c,v 1.1 91/10/04 23:18:02 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d32 2
+d35 1
+d37 1
+d42 1
+d50 4
+a53 3
+#ifdef SPRITED_TIMER
+void TimerDumpElement _ARGS_((Timer_QueueElement *timerPtr));
+#endif
+d71 4
+d81 5
+d96 7
+a106 1
+#ifdef SPRITED_TIMER
+a107 1
+#endif
+a109 1
+
+d115 1
+a115 2
+ *	Initializes the data structures necessary to manage the timer
+ *	queue of procedures.
+d121 2
+a122 1
+ *     The timer queue structure is created and initialized.
+a138 1
+#ifdef SPRITED_TIMER
+a139 4
+#endif
+
+    timerQueueList = (List_Links *) Vm_BootAlloc(sizeof(List_Links));
+    List_Init(timerQueueList);
+d142 1
+a142 1
+     * Initialized the time of day clock.
+d145 2
+a146 4
+#ifdef SPRITED_TIMER
+    Timer_TimerInit(TIMER_CALLBACK_TIMER);
+    Timer_TimerStart(TIMER_CALLBACK_TIMER);
+#endif
+a149 1
+#ifdef SPRITED_TIMER
+d153 69
+a221 1
+ *  Timer_CallBack --
+d223 2
+a224 2
+ *      This routine is called at every call back timer interrupt. 
+ *      It calls routines on the timer queue. 
+d235 2
+a236 4
+void
+Timer_CallBack(interval, time)
+    unsigned int interval;  /* Number of ticks since last invocation. */
+    Time   time;    	    /* Interval as time. */
+d238 17
+a254 4
+	register List_Links	*readyPtr;	/* Ptr to TQE that's ready
+						 * to be called. */
+	Time			timeOfDay;	/* Best guess at tod. */
+	Timer_Ticks		currentSystemTimeTk;
+d256 2
+d259 4
+a262 5
+	 *  The callback timer has expired. This means at least the first
+	 *  routine on the timer queue is ready to be called.  Go through
+	 *  the queue and call all routines that are scheduled to be
+	 *  called. Since the queue is ordered by time, we can quit looking 
+	 *  when we find the first routine that does not need to be called.
+d264 5
+a268 3
+
+#ifdef GATHER_STAT
+	timer_Statistics.callback++;
+d270 52
+d323 17
+a339 4
+	MASTER_LOCK(&timer_ClockMutex);
+	Time_Add(timer_UniversalApprox, time, &timer_UniversalApprox);
+	timeOfDay = timer_UniversalApprox;
+	MASTER_UNLOCK(&timer_ClockMutex);
+d341 5
+a345 2
+	if (vm_Tracing) {
+	    Vm_StoreTraceTime(timeOfDay);
+d347 2
+a348 2
+	Sched_GatherProcessInfo(interval);
+	Dev_GatherDiskStats();
+d350 19
+a368 51
+	MASTER_LOCK(&timerMutex);
+	if (!List_IsEmpty(timerQueueList)) {
+	    Timer_GetCurrentTicks(&currentSystemTimeTk);
+	    while (!List_IsEmpty(timerQueueList)) {
+		readyPtr = List_First(timerQueueList); 
+		if(Timer_TickGT(((Timer_QueueElement *)readyPtr)->time, 
+				  currentSystemTimeTk)) {
+		    break;
+		} else {
+
+		    /*
+		     *  First remove the item before calling it so the routine 
+		     *  can call Timer_ScheduleRoutine to reschedule itself on 
+		     *  the timer queue and not mess up the pointers on the 
+		     *  queue.
+		     */
+
+		    List_Remove(readyPtr);
+
+		    /*
+		     *  Now call the routine.  It is interrupt time and 
+		     *  the routine must do as little as possible.  The 
+		     *  routine is passed the time it was scheduled to 
+		     *  be called at and a client-specified argument.
+		     * 
+		     *  We release the timerMutex during the call backs to
+		     *	prevent the many deadlocks that can occur on a 
+		     *	multiprocessor.
+		     */
+
+#define  ELEMENTPTR ((Timer_QueueElement *) readyPtr)
+
+		    if (ELEMENTPTR->routine == 0) {
+			panic("Timer_ServiceInterrupt: t.q.e. routine == 0\n");
+		    } else {
+			void        (*routine) _ARGS_((Timer_Ticks timeTicks,
+						      ClientData  clientData));
+			Timer_Ticks timeTk;
+			ClientData  clientData;
+
+			ELEMENTPTR->processed = TRUE;
+			routine = ELEMENTPTR->routine;
+			timeTk = ELEMENTPTR->time;
+			clientData = ELEMENTPTR->clientData;
+			MASTER_UNLOCK(&timerMutex);
+			(routine) (timeTk, clientData);
+			MASTER_LOCK(&timerMutex);
+		    }
+		}
+	    }
+#undef  ELEMENTPTR
+d370 14
+a383 3
+
+	} 
+	MASTER_UNLOCK(&timerMutex);
+d385 1
+d387 1
+a387 1
+#endif /* SPRITED_TIMER */
+a389 1
+#ifdef SPRITED_TIMER
+d452 3
+a454 1
+ *	The timer queue element is added to the timer queue.
+d466 4
+d472 9
+d522 1
+d539 20
+a560 1
+#endif /* SPRITED_TIMER */
+a562 1
+#ifdef SPRITED_TIMER
+d577 1
+a577 1
+ *	the timer interrupts, the routine will be removed from the
+d579 4
+a582 4
+ *	If the interrupt handler is able to obtain the timer mutex before
+ *	Timer_DescheduleRoutine, then the interrupt handler will remove and 
+ *	call the routine before Timer_DescheduleRoutine has a chance 
+ *	to remove it.
+d619 5
+a626 1
+#endif /* SPRITED_TIMER */
+a628 1
+#ifdef SPRITED_TIMER
+a672 1
+#endif /* SPRITED_TIMER */
+a674 1
+#ifdef SPRITED_TIMER
+d691 1
+a691 1
+void
+a703 1
+#endif /* SPRITED_TIMER */
+a705 1
+#ifdef SPRITED_TIMER
+a748 1
+#endif /* SPRITED_TIMER */
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d28 1
+a28 1
+static char rcsid[] = "$Header: /sprite/src/kernel/timer/RCS/timerQueue.c,v 9.5 90/10/13 17:05:43 mendel Exp $ SPRITE (Berkeley)";
+d31 3
+a33 11
+#include "sprite.h"
+#include "timer.h"
+#include "timerInt.h"
+#include "sys.h"
+#include "sync.h"
+#include "sched.h"
+#include "list.h"
+#include "vm.h"
+#include "dev.h"
+#include "stdio.h"
+#include "bstring.h"
+d35 5
+d41 1
+d46 1
+d48 1
+d86 1
+d88 1
+d121 1
+a121 2
+    TimerTicksInit();
+
+d123 1
+d132 1
+d135 1
+d139 1
+a139 1
+
+d247 1
+d250 1
+d386 2
+d389 1
+a389 1
+
+d449 2
+d452 1
+d497 2
+d500 1
+d530 2
+d533 1
+d577 1
+@

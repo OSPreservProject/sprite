@@ -1,0 +1,6 @@
+F DISKFRAG.C_V;1                    	diskFragIO.c,v
+F DISKHEAD.C_V;1                    	diskHeader.c,v
+F DISKIO.C_V;1                      	diskIO.c,v
+F DISKPRIN.C_V;1                    	diskPrint.c,v
+F DISKUTIL.H_V;1                    	diskUtils.h,v
+F FSMAKE.C_V;1                      	fsmake.c,v

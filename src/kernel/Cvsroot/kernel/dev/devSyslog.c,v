@@ -1,0 +1,1490 @@
+head     9.9;
+branch   ;
+access   ;
+symbols  ds3100:9.9 sun3:9.9 sprited:9.7.1 sun4nw:9.8 symm:9.8 spur:9.8 Summer89:9.0 newlib:8.0 Summer88:6.0 sbc:5.4;
+locks    ; strict;
+comment  @ * @;
+
+
+9.9
+date     92.08.03.18.04.49;  author mgbaker;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     91.09.18.18.57.02;  author rab;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.10.16.11.19.49;  author kupfer;  state Exp;
+branches 9.7.1.1;
+next     9.6;
+
+9.6
+date     90.10.11.12.29.02;  author kupfer;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.10.11.12.12.18;  author shirriff;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.10.10.22.34.41;  author shirriff;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.09.11.12.27.47;  author rab;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.23.08.36.12;  author brent;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.12.11.19.12;  author douglis;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.57.53;  author douglis;  state Stable;
+branches ;
+next     8.8;
+
+8.8
+date     89.08.28.17.39.49;  author brent;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.06.22.16.54.39;  author brent;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.06.16.12.08.05;  author brent;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.06.15.08.47.48;  author brent;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.02.19.21.58.18;  author jhh;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     88.12.04.14.25.29;  author ouster;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.11.30.11.39.24;  author brent;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.22.19.05.58;  author jhh;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.10.48;  author douglis;  state Stable;
+branches ;
+next     6.1;
+
+6.1
+date     88.10.30.21.22.51;  author jhh;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.26.58;  author douglis;  state Stable;
+branches ;
+next     5.4;
+
+5.4
+date     88.05.05.17.50.38;  author nelson;  state Exp;
+branches ;
+next     5.3;
+
+5.3
+date     87.10.07.10.33.33;  author nelson;  state Exp;
+branches ;
+next     5.2;
+
+5.2
+date     87.09.29.15.49.59;  author nelson;  state Exp;
+branches ;
+next     5.1;
+
+5.1
+date     87.09.24.13.20.42;  author nelson;  state Exp;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.40.19;  author sprite;  state Exp;
+branches ;
+next     ;
+
+9.7.1.1
+date     92.03.26.19.12.20;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.9
+log
+@Added ability to turn off printing during boot.
+@
+text
+@/* 
+ * devSyslog.c --
+ *
+ *	Device driver for processing internal kernel writes to the console.
+ *			
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/mgbaker/dev/RCS/devSyslog.c,v 1.1 92/04/30 12:47:00 mgbaker Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <sprite.h>
+#include <dev.h>
+#include <fs.h>
+#include <fsio.h>
+#include <fsioDevice.h>
+#include <sys.h>
+#include <machMon.h>
+#include <sig.h>
+#include <stdlib.h>
+#include <sync.h>
+#include <sched.h>
+#include <proc.h>
+#include <timer.h>
+#include <dbg.h>
+#include <list.h>
+#include <bstring.h>
+
+/*
+ * Definition of mutual exclusion variable.
+ */
+static Sync_Semaphore	syslogMutex = Sync_SemInitStatic("Dev:syslogMutex");
+/*
+ * Monitored circular buffer of data written out by the kernel.
+ */
+#define	SYSLOG_BUF_SIZE	8192
+static	char	syslogBuffer[SYSLOG_BUF_SIZE];
+static	int	firstIndex = -1;
+static	int	lastIndex = -1;
+
+static	Boolean syslogEnable = TRUE;
+static	Boolean	openForReading = FALSE;	/* TRUE if the device is open for
+					 * reading.  Only one process can
+					 * be reading syslog at a time. */
+static	Fs_NotifyToken notifyToken;	/* Used for Fs call-back to notify
+					 * waiting processes that the syslog
+					 * device is ready.*/
+static	Boolean	   overflow = FALSE;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_SyslogOpen --
+ *
+ *	Open the system log device.
+ *
+ * Results:
+ *	SUCCESS		- the device was opened.
+ *	FAILURE		- some other reader is already reading the syslog.
+ *
+ * Side effects:
+ *	The system log is "opened" and static variables are initialized.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+Dev_SyslogOpen(devicePtr, useFlags, token, flagsPtr)
+    Fs_Device *devicePtr;	/* Specifies type and unit number. */
+    int useFlags;		/* Flags from the stream.  We only allow
+				 * a single reader at one time. */
+    Fs_NotifyToken token;	/* Used for Fs call-back to notify waiting
+				 * processes that the syslog device is ready.*/
+    int *flagsPtr;	        /* OUT: Device IO flags */
+{
+    MASTER_LOCK(&syslogMutex);
+    Sync_SemRegister(&syslogMutex);
+    if (useFlags & FS_READ) {
+	if (openForReading) {
+	    MASTER_UNLOCK(&syslogMutex);
+	    return(FAILURE);
+	}
+	openForReading = TRUE;
+    }
+    notifyToken = token;
+    MASTER_UNLOCK(&syslogMutex);
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_SyslogReopen --
+ *
+ *	Reopen the system log device.  This uses Dev_SyslogOpen to
+ *	do all the work.
+ *
+ * Results:
+ *	SUCCESS		- the device was opened.
+ *	FAILURE		- some other reader is already reading the syslog.
+ *
+ * Side effects:
+ *	See Dev_SyslogOpen.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+Dev_SyslogReopen(devicePtr, refs, writers, token, flagsPtr)
+    Fs_Device *devicePtr;	/* Specifies type and unit number. */
+    int refs;			/* Number of existing opens */
+    int writers;		/* Number of existing writers */
+    Fs_NotifyToken token;	/* Used for Fs call-back to notify waiting
+				 * processes that the console device is ready.*/
+    int *flagsPtr;	        /* OUT: Device IO flags */
+{
+    int useFlags;
+
+    /*
+     * Because there can only be a single reader of dev syslog,
+     * and it is most always a local process, we deny a reopen
+     * for reading.  Unfortuneatly we can't always tell exactly
+     * because 'refs' includes writers.  The whole usage state
+     * needs to be fixed to be 'readers', not 'refs'.
+     */
+    if (refs == writers) {
+	useFlags = FS_WRITE;
+    } else {
+	return(DEV_BUSY);
+    }
+    return( Dev_SyslogOpen(devicePtr, useFlags, token, (int *) NIL) );
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_SyslogRead --
+ *
+ *	Copy data out of the syslog buffer.
+ *
+ * Results:
+ *	FS_WOULD_BLOCK if no data available, otherwise SUCCESS.
+ *
+ * Side effects:
+ *	Data is removed from the syslog buffer.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+Dev_SyslogRead(devicePtr, readPtr, replyPtr)
+    Fs_Device	*devicePtr;
+    Fs_IOParam	*readPtr;	/* Read parameter block */
+    Fs_IOReply	*replyPtr;	/* Return length and signal */ 
+{
+    int		toRead;
+    int		bytesLeft;
+    Address	copyAddr;
+    Address	bufPtr = readPtr->buffer;
+
+    bytesLeft = readPtr->length;
+
+    MASTER_LOCK(&syslogMutex);
+    overflow = FALSE;
+    if (firstIndex == -1) {
+	replyPtr->length = 0;
+	MASTER_UNLOCK(&syslogMutex);
+	return(FS_WOULD_BLOCK);
+    }
+    if (firstIndex > lastIndex) {
+	toRead = SYSLOG_BUF_SIZE - firstIndex;
+	copyAddr = &syslogBuffer[firstIndex];
+	if (toRead <= bytesLeft) {
+	    firstIndex = 0;
+	} else {
+	    toRead = bytesLeft;
+	    firstIndex += toRead;
+	}
+	bcopy(copyAddr, bufPtr,toRead);
+	bufPtr += toRead;
+	bytesLeft -= toRead;
+    }
+    if (bytesLeft > 0) {
+	toRead = lastIndex - firstIndex + 1;
+	copyAddr = &syslogBuffer[firstIndex];
+	if (toRead <= bytesLeft) {
+	    firstIndex = -1;
+	    lastIndex = -1;
+	} else {
+	    toRead = bytesLeft;
+	    firstIndex += toRead;
+	}
+	bcopy(copyAddr, bufPtr,toRead);
+	bytesLeft -= toRead;
+    }
+    MASTER_UNLOCK(&syslogMutex);
+    replyPtr->length = readPtr->length - bytesLeft;
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_SyslogWrite --
+ *
+ *	Write characters to the system log.  If the device isn't open
+ *	then Mach_MonPutChar is used to output directly to the screen.  
+ *	Otherwise data is output to a buffer that is emptied by
+ *	reading the syslog device.
+ *
+ * Results:
+ *	SUCCESS.
+ *
+ * Side effects:
+ *	Data is written to the console or to the buffer.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+Dev_SyslogWrite(devicePtr, writePtr, replyPtr)
+    Fs_Device     *devicePtr;		/* Ignored. */
+    Fs_IOParam	*writePtr;	/* Standard write parameter block */
+    Fs_IOReply	*replyPtr;	/* Return length and signal */
+{
+    int	i;
+    int	toWrite;
+    int origSize = writePtr->length;
+    Address bufPtr = writePtr->buffer;
+
+
+    if (!syslogEnable) {
+	replyPtr->length = writePtr->length;
+	return(SUCCESS);
+    }
+
+    if (!dbg_UsingSyslog) {
+	if (!openForReading) {
+	    for (i = 0; i < writePtr->length; i++, bufPtr++) {
+		if (!sys_DontPrint) {
+		    Mach_MonPutChar(*bufPtr);
+		}
+	    }
+	    replyPtr->length = writePtr->length;
+	    return(SUCCESS);
+	}
+	MASTER_LOCK(&syslogMutex);
+    }
+
+    if (firstIndex != -1 && firstIndex <= lastIndex) {
+	/*
+	 * Fill up until the end of the buffer or until run out of
+	 * bytes, whichever comes first.
+	 */
+	toWrite = SYSLOG_BUF_SIZE - (lastIndex + 1);
+	if (toWrite > writePtr->length) {
+	    toWrite = writePtr->length;
+	}
+	bcopy(bufPtr, &syslogBuffer[lastIndex + 1], toWrite);
+	writePtr->length -= toWrite;
+	bufPtr += toWrite;
+	lastIndex += toWrite;
+    }
+    if (writePtr->length > 0) {
+	int	nextIndex;
+
+	nextIndex = lastIndex + 1;
+	if (nextIndex == SYSLOG_BUF_SIZE) {
+	    nextIndex = 0;
+	}
+	if (nextIndex == firstIndex) {
+	    /*
+	     * Buffer overflow
+	     */
+	    if (!overflow) {
+		Mach_MonPrintf("Dev_SyslogWrite: Buffer overflow ...\n");
+		overflow = TRUE;
+	    }
+	    for (i = 0; i < writePtr->length; i++, bufPtr++) {
+		if (!sys_DontPrint) {
+		    Mach_MonPutChar(*bufPtr);
+		}
+	    }
+	    /*
+	     * Make sure we return that the entire amount was written.
+	     */
+	    writePtr->length = 0;
+	} else {
+	    if (firstIndex == -1) {
+		toWrite = SYSLOG_BUF_SIZE;
+		firstIndex = 0;
+	    } else {
+		toWrite = firstIndex - nextIndex;
+	    }
+	    if (toWrite > writePtr->length) {
+		toWrite = writePtr->length;
+	    }
+	    bcopy(bufPtr, syslogBuffer, toWrite);
+	    lastIndex = nextIndex + toWrite - 1;
+	    writePtr->length -= toWrite;
+	}
+    }
+
+    if (!dbg_UsingSyslog) {
+	Fsio_DevNotifyReader(notifyToken);
+	MASTER_UNLOCK(&syslogMutex);
+    }
+    replyPtr->length = origSize - writePtr->length;
+
+    return(SUCCESS);
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_SyslogPutChar --
+ *
+ *	Write a single character to the system log.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+void
+Dev_SyslogPutChar(ch)
+    char	ch;
+{
+    Fs_IOParam io;
+    Fs_IOReply reply;
+
+    io.buffer = &ch;
+    io.length = 1;
+    io.offset = 0;
+    io.flags = 0;
+    reply.signal = 0;
+
+    (void) Dev_SyslogWrite((Fs_Device *) NIL, &io, &reply);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_SyslogClose --
+ *
+ *	Close the system log and flush any remaining output.
+ *
+ * Results:
+ *	SUCCESS		- always returned.
+ *
+ * Side effects:
+ *	The console is "closed".
+ *
+ *----------------------------------------------------------------------
+ */
+/* ARGSUSED */
+ReturnStatus
+Dev_SyslogClose(devicePtr, useFlags, openCount, writerCount)
+    Fs_Device	*devicePtr;
+    int		useFlags;
+    int		openCount;
+    int		writerCount;
+{
+    int	i;
+
+    MASTER_LOCK(&syslogMutex);
+    if (useFlags & FS_READ) {
+	openForReading = FALSE;
+	if (firstIndex != -1) {
+	    if (firstIndex <= lastIndex) {
+		for (i = firstIndex; i <= lastIndex; i++) {
+		    if (!sys_DontPrint) {
+			Mach_MonPutChar(syslogBuffer[i]);
+		    }
+		}
+	    } else {
+		for (i = firstIndex; i < SYSLOG_BUF_SIZE; i++) {
+		    if (!sys_DontPrint) {
+			Mach_MonPutChar(syslogBuffer[i]);
+		    }
+		}
+		for (i = 0; i <= lastIndex; i++)  {
+		    if (!sys_DontPrint) {
+			Mach_MonPutChar(syslogBuffer[i]);
+		    }
+		}
+	    }
+	    firstIndex = -1;
+	    lastIndex = -1;
+	}
+    }
+    MASTER_UNLOCK(&syslogMutex);
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_SyslogIOControl --
+ *
+ *	Perform device-specific functions with the console.
+ *
+ * Results:
+ *	GEN_NOT_IMPLEMENTED if io control not supported.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/* ARGSUSED */
+ReturnStatus
+Dev_SyslogIOControl(devicePtr, ioctlPtr, replyPtr)
+    Fs_Device	        *devicePtr;
+    Fs_IOCParam		*ioctlPtr;
+    Fs_IOReply		*replyPtr;
+{
+    ReturnStatus	status = SUCCESS;
+
+    MASTER_LOCK(&syslogMutex);
+    switch (ioctlPtr->command) {
+	case	IOC_REPOSITION:
+	    /*
+	     * Reposition doesn't matter
+	     */
+	    break;
+	case	IOC_GET_FLAGS:
+	case	IOC_SET_FLAGS:
+	case	IOC_SET_BITS:
+	case	IOC_CLEAR_BITS:
+	    /*
+	     * No syslog specific bits are set this way.
+	     */
+	    break;
+#ifdef notdef
+	case	IOC_TRUNCATE:
+	    firstIndex = -1;
+	    lastIndex = - 1;
+	    break;
+#endif
+
+	default:
+	    status = GEN_NOT_IMPLEMENTED;
+    }
+    MASTER_UNLOCK(&syslogMutex);
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_SyslogSelect --
+ *
+ *	Perform device-specific select functions with the console.
+ *
+ * Results:
+ *	SUCCESS	
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+Dev_SyslogSelect(devicePtr, readPtr, writePtr, exceptPtr)
+    Fs_Device	        *devicePtr;
+    int			*readPtr;
+    int			*writePtr;
+    int			*exceptPtr;
+{
+    MASTER_LOCK(&syslogMutex);
+    if (*readPtr) {
+	if (lastIndex == -1) {
+	    *readPtr = 0;
+	}
+    }
+    if (*writePtr) {
+	if (firstIndex == lastIndex + 1) {
+	    *writePtr = 0;
+	}
+    }
+    *exceptPtr = 0;
+    MASTER_UNLOCK(&syslogMutex);
+    return(SUCCESS);
+}
+
+static	Boolean	savedOpenForReading;
+static	int	syslogDebugCount = 0;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_SyslogDebug --
+ *
+ *	Start or stop redirecting output to the log buffer.  This is intended
+ *	to be called by Dbg_Main when entering and leaving the debugger and
+ *	by panic() so that debugger output will go on the
+ *	console since no process can run to flush the buffer.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Redirecting output to the log buffer is turned off or on.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Dev_SyslogDebug(stopLog)
+    Boolean	stopLog;	/* TRUE => stop storing log output into the
+				 *         buffer. */
+{
+    if (stopLog) {
+	if (syslogDebugCount == 0) {
+	    savedOpenForReading = openForReading;
+	    Dev_SyslogClose((Fs_Device *) NIL, FS_READ, 0, 0);
+	}
+        syslogDebugCount++;
+    } else {
+	syslogDebugCount--;
+	if (syslogDebugCount == 0) {
+	    openForReading = savedOpenForReading;
+	}
+    }
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_SyslogReturnBuffer --
+ *
+ *	Return the data in the syslog buffer to the caller.  Intended to be
+ *	called by the debugger.
+ *
+ * Results:
+ *	Pointer to buffer and the first and last indices.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Dev_SyslogReturnBuffer(bufPtrPtr, firstIndexPtrPtr, lastIndexPtrPtr, bufSizePtr)
+    char	**bufPtrPtr;
+    int		**firstIndexPtrPtr;
+    int		**lastIndexPtrPtr;
+    int		*bufSizePtr;
+{
+    *bufPtrPtr = syslogBuffer;
+    *firstIndexPtrPtr = &firstIndex;
+    *lastIndexPtrPtr = &lastIndex;
+    *bufSizePtr = SYSLOG_BUF_SIZE;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Dev_SyslogDisable --
+ *
+ *	Toggles syslog on/off.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+/* ARGSUSED */
+void
+Dev_SyslogDisable(dummy)
+    ClientData dummy;
+{
+    if (syslogEnable) {
+	MASTER_LOCK(&syslogMutex);
+	firstIndex = -1;
+	lastIndex = - 1;
+	syslogEnable = FALSE;
+	MASTER_UNLOCK(&syslogMutex);
+    } else {
+	MASTER_LOCK(&syslogMutex);
+	syslogEnable = TRUE;
+	MASTER_UNLOCK(&syslogMutex);
+    }
+}
+@
+
+
+9.8
+log
+@Fixed Dev_SyslogDebug so that it flushes the buffers to the console.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devSyslog.c,v 9.7 90/10/16 11:19:49 kupfer Exp Locker: rab $ SPRITE (Berkeley)";
+d246 3
+a248 1
+		Mach_MonPutChar(*bufPtr);
+d286 3
+a288 1
+		Mach_MonPutChar(*bufPtr);
+d385 3
+a387 1
+		    Mach_MonPutChar(syslogBuffer[i]);
+d391 3
+a393 1
+		    Mach_MonPutChar(syslogBuffer[i]);
+d396 3
+a398 1
+		    Mach_MonPutChar(syslogBuffer[i]);
+@
+
+
+9.7
+log
+@Use <> include's instead of "".
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devSyslog.c,v 9.6 90/10/11 12:29:02 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d305 1
+d311 1
+d523 1
+a523 1
+	    openForReading = FALSE;
+d525 1
+a525 1
+	syslogDebugCount++;
+@
+
+
+9.7.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/dev/devSyslog.c,v 9.7 90/10/16 11:19:49 kupfer Exp $ SPRITE (Berkeley)";
+@
+
+
+9.6
+log
+@Dev_SyslogDisable should take a ClientData.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devSyslog.c,v 9.5 90/10/11 12:12:18 shirriff Exp Locker: kupfer $ SPRITE (Berkeley)";
+d15 16
+a30 15
+#include "sprite.h"
+#include "dev.h"
+#include "fs.h"
+#include "fsio.h"
+#include "sys.h"
+#include "machMon.h"
+#include "sig.h"
+#include "stdlib.h"
+#include "sync.h"
+#include "sched.h"
+#include "proc.h"
+#include "timer.h"
+#include "dbg.h"
+#include "list.h"
+#include "bstring.h"
+@
+
+
+9.5
+log
+@Fixed locking, which I totally messed up before.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devSyslog.c,v 9.4 90/10/10 22:34:41 shirriff Exp Locker: shirriff $ SPRITE (Berkeley)";
+d578 1
+d580 2
+a581 1
+Dev_SyslogDisable()
+@
+
+
+9.4
+log
+@Added Dev_SyslogDisable to disable the syslog with L1-j.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devSyslog.c,v 9.3 90/09/11 12:27:47 rab Exp Locker: shirriff $ SPRITE (Berkeley)";
+a582 1
+	MASTER_UNLOCK(&syslogMutex);
+d586 1
+d588 1
+d590 1
+@
+
+
+9.3
+log
+@Fixed function argument counts so they match the prototypes.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devSyslog.c,v 9.2 89/10/23 08:36:12 brent Exp Locker: rab $ SPRITE (Berkeley)";
+d43 1
+d237 5
+d562 29
+@
+
+
+9.2
+log
+@Updated calls to new FS modules
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devSyslog.c,v 9.1 89/10/12 11:19:12 douglis Exp Locker: brent $ SPRITE (Berkeley)";
+d18 1
+d28 2
+a29 1
+#include "user/list.h"
+d70 1
+a70 1
+Dev_SyslogOpen(devicePtr, useFlags, token)
+d76 1
+d111 1
+a111 1
+Dev_SyslogReopen(devicePtr, refs, writers, token)
+d117 1
+d133 1
+a133 1
+    return( Dev_SyslogOpen(devicePtr, useFlags, token) );
+@
+
+
+9.1
+log
+@fixed syslog repeating write problem caused by overflowing, and 
+eliminated IOC_TRUNCATE support since opening from csh was causing syslog
+to be flushed on open.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devSyslog.c,v 9.0 89/09/12 14:57:53 douglis Stable Locker: douglis $ SPRITE (Berkeley)";
+d295 1
+a295 1
+	Fs_DevNotifyReader(notifyToken);
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devSyslog.c,v 8.8 89/08/28 17:39:49 brent Exp Locker: douglis $ SPRITE (Berkeley)";
+d275 4
+d426 1
+d431 1
+@
+
+
+8.8
+log
+@Fixed reopen so it only accepts write-only reopens.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devSyslog.c,v 8.7 89/06/22 16:54:39 brent Exp $ SPRITE (Berkeley)";
+@
+
+
+8.7
+log
+@Fixed close routine to return SUCCESS
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devSyslog.c,v 8.6 89/06/16 12:08:05 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d115 1
+a115 1
+    int useFlags = FS_READ;
+d117 11
+a127 2
+    if (writers) {
+	useFlags |= FS_WRITE;
+@
+
+
+8.6
+log
+@Updated I/O Control interface
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devSyslog.c,v 8.5 89/06/15 08:47:48 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d370 1
+@
+
+
+8.5
+log
+@Updated to new DEV / FS interface
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devSyslog.c,v 8.4 89/02/19 21:58:18 jhh Exp Locker: brent $ SPRITE (Berkeley)";
+d390 1
+a390 2
+Dev_SyslogIOControl(devicePtr, command, byteOrder, inBufSize, inBuffer, outBufSize,
+		     outBuffer)
+d392 2
+a393 6
+    int			command;
+    int			byteOrder;
+    int			inBufSize;
+    Address		inBuffer;
+    int			outBufSize;
+    Address		outBuffer;
+d398 1
+a398 1
+    switch (command) {
+@
+
+
+8.4
+log
+@Changes due to lock registration
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devSyslog.c,v 8.3 88/12/04 14:25:29 ouster Exp Locker: jhh $ SPRITE (Berkeley)";
+d42 5
+a46 3
+					 * reading. */
+static	ClientData notifyToken;	/* Used for Fs call-back to notify waiting
+				 * processes that the syslog device is ready.*/
+d59 1
+a59 1
+ *	FAILURE		- the event device is already opened.
+d72 1
+a72 1
+    ClientData token;		/* Used for Fs call-back to notify waiting
+d88 34
+d141 1
+a141 1
+Dev_SyslogRead(devicePtr, offset, bufSize, bufPtr, lenPtr)
+d143 2
+a144 5
+    int		offset;	  	/* Ignored. */
+    int		bufSize;	/* Size of buffer. */
+    Address	bufPtr;		/* Place to store data. */
+    register int *lenPtr;  	/* Maximum number of chars to read 
+				 * before returning. */ 
+a146 1
+    int		origSize;
+d149 1
+d151 1
+a151 2
+    origSize = *lenPtr;
+    bytesLeft = *lenPtr;
+d156 1
+a156 1
+	*lenPtr = 0;
+d187 1
+a187 1
+    *lenPtr = origSize - bytesLeft;
+d199 2
+a200 1
+ *	Otherwise data is output to a buffer.
+d212 1
+a212 1
+Dev_SyslogWrite(devicePtr, offset, bufSize, bufPtr, bytesWrittenPtr)
+d214 2
+a215 4
+    int		 offset;		/* Ignored. */
+    int		 bufSize;		/* Number of bytes to write. */
+    register char *bufPtr;		/* Place to find data */
+    int 	 *bytesWrittenPtr;	/* Number of chars written */ 
+a216 1
+    int	origSize;
+d219 2
+d225 1
+a225 1
+	    for (i = 0; i < bufSize; i++, bufPtr++) {
+d228 1
+a228 1
+	    *bytesWrittenPtr = bufSize;
+a233 1
+    origSize = bufSize;
+d240 2
+a241 2
+	if (toWrite > bufSize) {
+	    toWrite = bufSize;
+d244 1
+a244 1
+	bufSize -= toWrite;
+d248 1
+a248 1
+    if (bufSize > 0) {
+d260 1
+a260 1
+		Mach_MonPrintf("Dev_SyslogWrite: Buffer overflow, dumping overflow ...\n");
+d263 1
+a263 1
+	    for (i = 0; i < bufSize; i++, bufPtr++) {
+d273 2
+a274 2
+	    if (toWrite > bufSize) {
+		toWrite = bufSize;
+d278 1
+a278 1
+	    bufSize -= toWrite;
+d282 1
+a282 1
+	Fs_NotifyReader(notifyToken);
+d285 1
+a285 1
+    *bytesWrittenPtr = origSize - bufSize;
+d311 2
+a312 1
+    int	bytesWritten;
+d314 8
+a321 2
+    (void) Dev_SyslogWrite((Fs_Device *) NIL, 0, 1, &ch, &bytesWritten);
+}
+d390 1
+a390 1
+Dev_SyslogIOControl(devicePtr, command, inBufSize, inBuffer, outBufSize,
+d394 1
+d447 1
+a447 1
+Dev_SyslogSelect(devicePtr, inFlags, outFlagsPtr)
+d449 3
+a451 2
+    int			inFlags;
+    int			*outFlagsPtr;
+d454 3
+a456 3
+    if (inFlags & FS_READABLE) {
+	if (lastIndex != -1) {
+	    *outFlagsPtr |= FS_READABLE;
+d459 3
+a461 3
+    if (inFlags & FS_WRITABLE) {
+	if (firstIndex != lastIndex + 1) {
+	    *outFlagsPtr |= FS_WRITABLE;
+d464 1
+@
+
+
+8.3
+log
+@Eliminated header files that aren't needed anymore.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devSyslog.c,v 8.2 88/11/30 11:39:24 brent Exp $ SPRITE (Berkeley)";
+d21 1
+a21 1
+#include "mem.h"
+d32 1
+a32 1
+static Sync_Semaphore	syslogMutex = SYNC_SEM_INIT_STATIC("syslogMutex");
+d74 1
+@
+
+
+8.2
+log
+@Sys_Panic => panic
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devSyslog.c,v 8.1 88/11/22 19:05:58 jhh Exp Locker: brent $ SPRITE (Berkeley)";
+a26 1
+#include "varg.h"
+@
+
+
+8.1
+log
+@new semaphore definition
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devSyslog.c,v 8.0 88/11/11 18:10:48 douglis Stable Locker: jhh $ SPRITE (Berkeley)";
+d439 1
+a439 1
+ *	Sys_Panic on a FATAL panic so that debugger output will go on the
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devSyslog.c,v 6.1 88/10/30 21:22:51 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d33 1
+a33 1
+static int	syslogMutex = 0;
+d74 1
+a74 1
+    MASTER_LOCK(syslogMutex);
+d77 1
+a77 1
+	    MASTER_UNLOCK(syslogMutex);
+d83 1
+a83 1
+    MASTER_UNLOCK(syslogMutex);
+d121 1
+a121 1
+    MASTER_LOCK(syslogMutex);
+d125 1
+a125 1
+	MASTER_UNLOCK(syslogMutex);
+d154 1
+a154 1
+    MASTER_UNLOCK(syslogMutex);
+d199 1
+a199 1
+	MASTER_LOCK(syslogMutex);
+d252 1
+a252 1
+	MASTER_UNLOCK(syslogMutex);
+d311 1
+a311 1
+    MASTER_LOCK(syslogMutex);
+d331 1
+a331 1
+    MASTER_UNLOCK(syslogMutex);
+d363 1
+a363 1
+    MASTER_LOCK(syslogMutex);
+d386 1
+a386 1
+    MASTER_UNLOCK(syslogMutex);
+d413 1
+a413 1
+    MASTER_LOCK(syslogMutex);
+d424 1
+a424 1
+    MASTER_UNLOCK(syslogMutex);
+@
+
+
+6.1
+log
+@multiprocessor port, change to new C lib
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devSyslog.c,v 6.0 88/08/11 12:26:58 douglis Stable Locker: jhh $ SPRITE (Berkeley)";
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: devSyslog.c,v 5.4 88/05/05 17:50:38 nelson Exp $ SPRITE (Berkeley)";
+a27 1
+#include "user/byte.h"
+a28 1
+#include "user/char.h"
+d137 1
+a137 1
+	Byte_Copy(toRead, copyAddr, bufPtr);
+d151 1
+a151 1
+	Byte_Copy(toRead, copyAddr, bufPtr);
+d212 1
+a212 1
+	Byte_Copy(toWrite, bufPtr, &syslogBuffer[lastIndex + 1]);
+d245 1
+a245 1
+	    Byte_Copy(toWrite, bufPtr, syslogBuffer);
+@
+
+
+5.4
+log
+@Changed to handle movement of functionality from sys to mach.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: devSyslog.c,v 5.3 87/10/07 10:33:33 nelson Exp $ SPRITE (Berkeley)";
+@
+
+
+5.3
+log
+@Added support to allow the debugger to use the system log for call commands.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: devSyslog.c,v 5.2 87/09/29 15:49:59 nelson Exp $ SPRITE (Berkeley)";
+d19 1
+a19 1
+#include "sunMon.h"
+d168 2
+a169 2
+ *	then Mon_PutChar is used to output directly to the screen.  Otherwise
+ *	data is output to a buffer.
+d196 1
+a196 1
+		Mon_PutChar(*bufPtr);
+d231 1
+a231 1
+		Mon_Printf("Dev_SyslogWrite: Buffer overflow, dumping overflow ...\n");
+d235 1
+a235 1
+		Mon_PutChar(*bufPtr);
+d319 1
+a319 1
+		    Mon_PutChar(syslogBuffer[i]);
+d323 1
+a323 1
+		    Mon_PutChar(syslogBuffer[i]);
+d326 1
+a326 1
+		    Mon_PutChar(syslogBuffer[i]);
+@
+
+
+5.2
+log
+@Changed to handle new close interface.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: devSyslog.c,v 1.2 87/07/01 17:37:46 brent Exp $ SPRITE (Berkeley)";
+d192 12
+d205 16
+d222 3
+a224 4
+    MASTER_LOCK(syslogMutex);
+    if (!openForReading) {
+	for (i = 0; i < bufSize; i++, bufPtr++) {
+	    Mon_PutChar(*bufPtr);
+d226 1
+a226 3
+	*bytesWrittenPtr = bufSize;
+    } else {
+	if (firstIndex != -1 && firstIndex <= lastIndex) {
+d228 1
+a228 2
+	     * Fill up until the end of the buffer or until run out of
+	     * bytes, whichever comes first.
+d230 14
+a243 1
+	    toWrite = SYSLOG_BUF_SIZE - (lastIndex + 1);
+d247 2
+a248 1
+	    Byte_Copy(toWrite, bufPtr, &syslogBuffer[lastIndex + 1]);
+a249 2
+	    bufPtr += toWrite;
+	    lastIndex += toWrite;
+d251 2
+a252 33
+	if (bufSize > 0) {
+	    int	nextIndex;
+
+	    nextIndex = lastIndex + 1;
+	    if (nextIndex == SYSLOG_BUF_SIZE) {
+		nextIndex = 0;
+	    }
+	    if (nextIndex == firstIndex) {
+		/*
+		 * Buffer overflow
+		 */
+		if (!overflow) {
+		    Mon_Printf("Dev_SyslogWrite: Buffer overflow, dumping overflow ...\n");
+		    overflow = TRUE;
+		}
+		for (i = 0; i < bufSize; i++, bufPtr++) {
+		    Mon_PutChar(*bufPtr);
+		}
+	    } else {
+		if (firstIndex == -1) {
+		    toWrite = SYSLOG_BUF_SIZE;
+		    firstIndex = 0;
+		} else {
+		    toWrite = firstIndex - nextIndex;
+		}
+		if (toWrite > bufSize) {
+		    toWrite = bufSize;
+		}
+		Byte_Copy(toWrite, bufPtr, syslogBuffer);
+		lastIndex = nextIndex + toWrite - 1;
+		bufSize -= toWrite;
+	    }
+	}
+d254 1
+a254 1
+	*bytesWrittenPtr = origSize - bufSize;
+d256 1
+a256 1
+    MASTER_UNLOCK(syslogMutex);
+d470 32
+@
+
+
+5.1
+log
+@Added ability for Dev_SyslogDebug to have nested calls.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: devSyslog.c,v 5.0 87/08/11 10:40:19 sprite Exp $ SPRITE (Berkeley)";
+d44 2
+a45 1
+static	Boolean	deviceOpen = FALSE;	/* TRUE if the device has been opened.*/
+d77 6
+a82 3
+    if (deviceOpen) {
+	MASTER_UNLOCK(syslogMutex);
+	return(FAILURE);
+a84 4
+    firstIndex = -1;
+    lastIndex = -1;
+    deviceOpen = TRUE;
+    overflow = FALSE;
+d195 1
+a195 1
+    if (!deviceOpen) {
+d300 5
+a304 3
+Dev_SyslogClose(devicePtr, useFlags)
+    Fs_Device *devicePtr;
+    int useFlags;
+d309 14
+a322 5
+    deviceOpen = FALSE;
+    if (firstIndex != -1) {
+	if (firstIndex <= lastIndex) {
+	    for (i = firstIndex; i <= lastIndex; i++) {
+		Mon_PutChar(syslogBuffer[i]);
+d324 2
+a325 7
+	} else {
+	    for (i = firstIndex; i < SYSLOG_BUF_SIZE; i++) {
+		Mon_PutChar(syslogBuffer[i]);
+	    }
+	    for (i = 0; i <= lastIndex; i++)  {
+		Mon_PutChar(syslogBuffer[i]);
+	    }
+a326 2
+	firstIndex = -1;
+	lastIndex = -1;
+d425 1
+a425 1
+static	Boolean	savedDeviceOpen;
+d454 2
+a455 2
+	    savedDeviceOpen = deviceOpen;
+	    deviceOpen = FALSE;
+d461 1
+a461 1
+	    deviceOpen = savedDeviceOpen;
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: devSyslog.c,v 1.2 87/07/01 17:37:46 brent Exp $ SPRITE (Berkeley)";
+d422 1
+d431 3
+a433 3
+ *	to be called by Dbg_Main when entering and leaving the debugger so
+ *	that debugger output will go on the console since no process can
+ *	run to flush the buffer.
+d449 5
+a453 2
+	savedDeviceOpen = deviceOpen;
+	deviceOpen = FALSE;
+d455 4
+a458 1
+	deviceOpen = savedDeviceOpen;
+@

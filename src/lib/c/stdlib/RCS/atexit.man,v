@@ -1,0 +1,66 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.1
+date     89.01.05.18.00.22;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@' Copyright 1989 Regents of the University of California
+' Permission to use, copy, modify, and distribute this
+' documentation for any purpose and without fee is hereby
+' granted, provided that this notice appears in all copies.
+' The University of California makes no representations about
+' the suitability of this material for any purpose.  It is
+' provided "as is" without express or implied warranty.
+' 
+' $Header: /sprite/lib/forms/RCS/proto.man,v 1.1 88/12/29 17:09:50 ouster Exp $ SPRITE (Berkeley)
+' 
+.so \*(]ltmac.sprite
+.HS atexit cmds
+.BS
+.SH NAME
+atexit \- Register procedure to be invoked before process exits
+.SH SYNOPSIS
+.nf
+\fB#include <stdlib.h>
+
+\fBint
+atexit(\fIfunc\fB)\fR
+.SH ARGUMENTS
+.AP void *func() in
+Procedure to call just before process exits.
+.BE
+
+.SH DESCRIPTION
+.PP
+\fBAtexit\fR may be used to register the procedure \fIfunc\fR, such
+that \fIfunc\fR will be invoked by the \fBexit\fR procedure before
+the process exits.  \fIFunc\fR will only be called if the \fBexit\fR
+procedure is invoked:  if the process terminates because of a signal,
+or if the process bypasses \fBexit\fR by calling \fB_exit\fR, then \fIfunc\fR
+will not be invoked.
+\fIFunc\fR takes no arguments and returns no result.
+.PP
+The normal return value from \fBatexit\fR is 0.  If the registration
+fails then a non-zero value is returned.
+.DE
+.SH KEYWORDS
+exit, handler, register
+@

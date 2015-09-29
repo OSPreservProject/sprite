@@ -1,0 +1,259 @@
+% agujgr.sty
+% For American Geophysical Union
+% Journal of Geophysical Research
+%
+% This style option is designed to work with the article document
+% style of LaTeX version 2.09.  Use
+% \documentstyle[agujgr]{article}
+%
+% The rules here are from "Information for Contributors" January 1985
+% and SAMPLE FOR TYPESET JGR PAPERS, 1986.
+
+% 09 Jul 87
+
+% Jan 87 gildea original version
+% Jun 87 gildea revised based on "Sample for typeset JGR papers"
+
+% Copyright (c) 1987 by Stephen Gildea
+% Permission to copy all or part of this work is granted, provided
+% that the copies are not made or distributed for resale, and that
+% the copyright notice and this notice are retained.
+% 
+% THIS WORK IS PROVIDED ON AN "AS IS" BASIS.  THE AUTHOR PROVIDES NO
+% WARRANTY WHATSOEVER, EITHER EXPRESS OR IMPLIED, REGARDING THE WORK,
+% INCLUDING WARRANTIES WITH RESPECT TO ITS MERCHANTABILITY OR FITNESS
+% FOR ANY PARTICULAR PURPOSE.
+
+% If you make any improvements, I'd like to hear about them.
+
+% Stephen Gildea
+% MIT Earth Resources Lab
+% Cambridge, Mass. 02139
+% mit-erl!gildea
+% gildea@erl.mit.edu
+
+\oddsidemargin 0in
+\textwidth 20pc
+
+% With such a short line width, line breaking is going to be a
+% problem, so give TeX a break:
+\sloppy
+
+\textheight 8.5in
+
+\topmargin 0pt
+\footheight 0pt
+\footskip 0pt
+
+\parindent 1em
+\parskip 0in
+
+%% Font sizes %%
+
+% text: 9/11
+% equations: 6 points space above and below
+\def\@normalsize{\@setsize\normalsize{11pt}\ixpt\@ixpt
+\abovedisplayskip 6pt \belowdisplayskip \abovedisplayskip
+\abovedisplayshortskip 6pt \belowdisplayshortskip \abovedisplayshortskip}
+
+% 8/9 is used for lots of things
+\def\small{\@setsize\small{9pt}\viiipt\@viiipt}
+
+% 10/13 for author's names
+\def\large{\@setsize\large{13pt}\xpt\@xpt}
+
+% 14/18 for title
+\def\Large{\@setsize\Large{18pt}\xivpt\@xivpt}
+
+\def\footnotesize{\@setsize\footnotesize{9pt}\viiipt\@viiipt}
+
+% Set up page style
+\def\ps@agu{\def\@oddhead{\hss\hbox to 7in{\rm\hfil\thepage}\hss}
+  \let\@evenhead\@oddhead
+  \def\@oddfoot{}\def\@evenfoot{}}
+
+\ps@agu
+
+%% Bibliography %%
+
+\def\thebibliography#1{\section*{References\markboth
+ {REFERENCES}{REFERENCES}}\list
+ %% default is no labels, for those not using \cite or BibTeX
+ {}{\settowidth\labelwidth{[#1]}\leftmargin\labelwidth
+ \advance\leftmargin\labelsep
+ \usecounter{enumi}\@bibsetup}
+ \def\newblock{\hskip .11em plus .33em minus -.07em}
+ \sloppy
+ \sfcode`\.=1000\relax}
+
+% Don't put the citation in an hbox.
+\def\@citex[#1]#2{\if@filesw\immediate\write\@auxout{\string\citation{#2}}\fi
+  \def\@citea{}\@cite{\@for\@citeb:=#2\do
+    {\@citea\def\@citea{\@citesep}\@ifundefined
+       {b@\@citeb}{{\bf ?}\@warning
+       {Citation `\@citeb' on page \thepage \space undefined}}%
+{\csname b@\@citeb\endcsname}}}{#1}}
+
+% undent first line of a reference by using negative \itemindent.
+% set \itemsep and \parsep to 0pt so there is no space between items.
+\def\@bibsetup{\itemindent=-\leftmargin \itemsep=0pt \parsep=0pt \small}
+
+% Use a semicolon instead of a comma between multiple citations.
+\def\@citesep{; }
+
+% square brackets instead of the round parens that most nat. sci.
+% publications use.
+\def\@cite#1#2{[{#1\if@tempswa , #2\fi}]}
+ 
+% Labels should not be printed in References
+\def\@biblabel#1{\hfill}
+
+%% Titles %%
+
+% We have to accumulate the title info into a box because \author
+% and \address may be called more than once if there are multiple
+% authors with different addresses.
+\newbox\@titlebox
+
+\def\title#1{\setbox\@titlebox\vbox{{\hsize 41pc \centering\Large #1\par}
+  \addvspace{16pt}}}
+
+\def\author#1{\setbox\@titlebox\vbox{\unvbox\@titlebox
+  {\hsize 41pc \centering\large\sc #1\par}\addvspace{10pt}}}
+
+\def\address#1{\setbox\@titlebox\vbox{\unvbox\@titlebox
+  {\hsize 41pc \centering\small\it #1\par}\addvspace{16pt}}}
+
+\def\thanks#1{\footnotemark
+  \xdef\@thanks{\@thanks \par\@makefntext{#1}}}
+
+% To be centered on 8.5in, the title must start a little to the left
+% of 1in in from the left of the page.
+\newdimen\@titleoffset \@titleoffset=-.927pc
+
+% Handle \thanks differently.
+\def\maketitle{\par
+ \begingroup
+ \def\@makefnmark{\hbox 
+ to 0pt{$^{\@thefnmark}$\hss}} 
+ \if@twocolumn 
+ \twocolumn[\@maketitle] 
+ \else \newpage
+ \global\@topnum\z@ \@maketitle \fi\thispagestyle{empty}
+ \endgroup
+ \setcounter{footnote}{0}
+ \let\maketitle\relax
+ \let\@maketitle\relax
+ \gdef\@author{}\gdef\@title{}\let\thanks\relax}
+\def\@maketitle{\newpage
+  \hbox{\hskip\@titleoffset \vbox{\unvbox\@titlebox\unskip}}}
+
+% The abstract environment.  
+% Since it is 30pc wide (11pc narrower than the title),
+% we move it to the right a little to keep everything centered.
+\def\abstract{\addvspace{16pt}\small \leftskip=5.5pc \hsize=30pc
+  \addtolength\leftskip\@titleoffset \addtolength\hsize\leftskip}
+\def\endabstract{\par\addvspace{24pt}}
+
+\def\acknowledgments{\par\addvspace{11pt}
+   \subsubsection{Acknowledgments}\small}
+\def\acknowledgements{\par\addvspace{11pt}
+   \subsubsection{Acknowledgements}\small}
+\def\endacknowledgments{\par}
+\def\endacknowledgements{\par}
+
+% Headings:
+%   for level 1 heading use \section
+%   for level 2 heading use \subsection
+%   for level 3 heading use \subsubsection
+\setcounter{secnumdepth}{0}
+\def\section{\@startsection {section}{1}{\z@}{11pt}{6pt}{\centering\sc}}
+\def\subsection{\@startsection {subsection}{2}{\z@}{11pt}{6pt}{\it}}
+\def\subsubsection#1{\par{\it #1.}}
+
+% Put the boxes in the margin that show the first reference
+% to a figure or table
+\def\marginboxed#1{\marginpar{{\Large\fbox{#1}}}}
+
+% A modification of plain TeX to make the rule shorter.
+\def\footnoterule{\kern-3\p@
+  \hrule width 4pc \kern 2.6\p@} % the \hrule is .4pt high
+
+\def\authorrule{\footnoterule}
+
+% The addresses environment is used at the end of the paper to
+% list the authors' full addresses.  Put a blank line between each address.
+\def\addresses{\vskip-\lastskip\leavevmode\authorrule\small}
+\def\endaddresses{\par}
+
+% the received environment for the Received, Revised, Accepted lines
+\def\received{\par\small\addvspace{\baselineskip}\centering}
+\def\endreceived{\par\addvspace{\baselineskip}}
+
+\def\copyrightnotice#1{{\small\par\addvspace{\baselineskip}
+  \ifx\@thanks\empty \else \addvspace{2\baselineskip}\footnoterule
+    \@thanks\par\vskip\baselineskip \fi
+  #1\par
+  \addvspace{2ex}}}
+
+\def\papernumber#1{\par\noindent{\small Paper number #1}\par}
+
+\def\runninghead#1{\runningheads{3}{#1}}
+
+% \runningheads prints #1 copies of the text in #2
+\newcount\@rhcnt
+\def\runningheads#1#2{\par\addvspace{2\baselineskip}\@rhcnt=0
+  \loop\ifnum\@rhcnt<#1
+     \advance \@rhcnt by 1
+     \rhead{#2}
+  \repeat
+  \par\vskip 6pt}
+\def\rhead#1{\par\noindent\vskip 6pt\hbox to 30pc
+  {\small\sc #1\hfil}}
+
+% put this before the figure captions
+\def\captions{\par\parskip 14pt \parindent 0pt \small}
+\def\endcaptions{\par}
+
+% Put each table in a separate table environment
+\def\table{\par \vskip 14pt \parskip 0pt \parindent 1em \small}
+\def\endtable{\par}
+
+% If figure captions or tables need to be a specific width,
+% put them inside the wider environment.  The argument is the
+% width, ala minipage.  The advantage over minipage is that the
+% requested width can be wider than \textwidth
+
+\def\wider#1{\par\noindent\hbox to \textwidth\bgroup
+  \begin{minipage}{#1}}
+\def\endwider{\end{minipage}\hss\egroup\par}
+
+% Unfortunately, the default \@arrayparboxrestore clobbers \parindent.
+% This version doesn't.
+\def\@arrayparboxrestore{\let\par\@@par
+    \let\-\@dischyph
+    \let\'\@acci \let\`\@accii \let\=\@acciii
+    \everypar{}\linewidth\hsize 
+    \@totalleftmargin\z@ \leftskip\z@ \rightskip\z@ \@rightskip\z@ 
+    \parfillskip\@flushglue \lineskip\normallineskip 
+    \baselineskip\normalbaselineskip\sloppy}
+
+% The expandedtablar environment is like tabular, but always produces
+% tables that are as wide as the current text length.  It does NOT
+% take the optional [] argument that tabular does.
+
+% This is \@tabular and \@array collapsed.
+\def\expandedtabular#1{\leavevmode \hbox \bgroup $\let\@acol\@tabacol 
+   \let\@classz\@tabclassz
+   \let\@classiv\@tabclassiv \let\\\@tabularcr
+     \setbox\@arstrutbox=\hbox{\vrule 
+     height\arraystretch \ht\strutbox
+     depth\arraystretch \dp\strutbox
+     width\z@}\@mkpream{#1}\edef\@preamble{\halign to \textwidth
+\bgroup \tabskip 0pt plus 1fil \@arstrut \@preamble \tabskip\z@ \cr}%
+\let\@startpbox\@@startpbox \let\@endpbox\@@endpbox
+  \vcenter
+  \bgroup \let\par\relax
+  \let\@sharp##\let\protect\relax \lineskip\z@\baselineskip\z@\@preamble}
+
+\def\endexpandedtabular{\crcr\egroup\egroup $\egroup}

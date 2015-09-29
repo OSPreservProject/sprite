@@ -1,0 +1,10 @@
+F CMD_MAN_.;1                       	cmd.man,v
+F LIB_MAN_.;1                       	lib.man,v
+F LOCAL.MK_;1                       	local.mk,v
+F MAIN.C_V;1                        	main.c,v
+F PROCHEAD.;1                       	prochead,v
+F PROTO.CSH;1                       	proto.csh,v
+F PROTO.C_V;1                       	proto.c,v
+F PROTO.EL_;1                       	proto.el,v
+F PROTO.H_V;1                       	proto.h,v
+F PROTO.MAN;1                       	proto.man,v

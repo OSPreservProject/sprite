@@ -1,0 +1,66 @@
+
+
+
+RDATE                     User Commands                     RDATE
+
+
+
+NNAAMMEE
+     rdate - set system date from a remote host
+
+SSYYNNOOPPSSIISS
+     rrddaattee  hostname
+
+DDEESSCCRRIIPPTTIIOONN
+     _R_d_a_t_e sets the local date and time from the _h_o_s_t_n_a_m_e given
+     as argument.  You must be super-user on the local system.
+     Typically _r_d_a_t_e can be inserted as part of your
+     /_e_t_c/_r_c._l_o_c_a_l startup script.
+
+SSEEEE AALLSSOO
+     timed(8C)
+
+BBUUGGSS
+     Could be modified to accept a list of hostnames and try each
+     until a valid date returned.  Better yet would be to write a
+     real date server that accepted broadcast requests.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0              1 February 1985                        1
+
+
+

@@ -1,0 +1,1 @@
+../../dist/tclsrc/compat.tcl

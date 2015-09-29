@@ -1,0 +1,14 @@
+F B.;1                              	B
+F CW.;1                             	CW
+F DESC.;1                           	DESC
+D DS3100_M                          	ds3100.md
+F I.;1                              	I
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+F MAKEFILE.DIS;1                    	Makefile.dist
+F R.;1                              	R
+D RCS                               	RCS
+F S.;1                              	S
+F SPECFILE.;1                       	specfile
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md

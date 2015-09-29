@@ -1,0 +1,40 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  srv030:1.1 srv028:1.1 srv027:1.1 srv026:1.1 srv024:1.1 srv022:1.1 srv021:1.1 srv019:1.1 srv018:1.1 srv016:1.1 srv014:1.1;
+locks    ; strict;
+comment  @# @;
+
+
+1.1
+date     92.06.09.20.57.37;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@all:
+	cd gcc;		make
+	cd cpp;		make
+	cd cc1.spur;	make
+	cd sas;		make
+	cd sld;		make
+	cd sranlib;	make
+
+clean:
+	cd gcc;		make clean
+	cd cpp;		make clean
+	cd cc1.spur;	make clean
+	cd sas;		make clean
+	cd sld;		make clean
+	cd sranlib;	make clean
+@

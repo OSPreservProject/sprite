@@ -1,0 +1,111 @@
+README:
+
+This is GNU Awk 2.11. It should be upwardly compatible with the
+System V Release 4 awk.
+
+This release is essentially a bug fix release.  The files have been
+renamed and code moved around to organize things by function.  Gawk should
+also be somewhat faster now.  More care has been given towards portability
+across different Unix systems.  See the installation instructions, below.
+
+Known problems are given in the PROBLEMS file.  Work to be done is
+described briefly in the FUTURES file.
+
+The gawk.texinfo included in this release has been revised; it should
+be in sync with what the code does.  The man page should also be accurate,
+but no promises there.
+
+CHANGES FROM 2.10
+
+User visible changes:
+	Compatibility mode is now obtained via new -c option.
+	The new ANSI C \a and \x escapes are now a standard part of gawk
+		as Unix nawk has picked them up.
+	The new tolower() and toupper() functions are also standard.
+	A new undocumented option, -nostalgia, has been added.
+	Command line options have changed somewhat from 2.10.
+		-v	is now	-V
+		-V	is now	-C
+		new -v for doing variable assignments before the BEGIN block.
+		new -c for compatibility mode.
+		new -a for awk style regexps (default)
+		new -e for egrep style regexps, per the POSIX draft spec.
+	Some more formats have been added to printf, ala nawk and ANSI C.
+
+Other changes (the hard stuff):
+	All known bugs fixed.
+	Still more memory leaks plugged.
+	Lots of changes to improve performance and portability.
+
+PC users, you've been saved!
+	As of patchlevel 1, we are now supplying MS-DOS "support."  Said
+	support was generously provided by Kent Williams, who is now
+	the contact person for it.  See below for his address.
+
+INSTALLATION:
+
+The Makefile will need some tailoring.  Currently it is set up for
+a Sun running SunOS 4.x and gcc.  The changes to make in the Makefile are
+commented and should be obvious.  Starting with 2.11, our intent has been
+to make the code conform to standards (ANSI, POSIX, SVID, in that order)
+whenever possible, and to not penalize standard conforming systems.
+We have included substitute versions of routines not universally available.
+Simply add the appropriate define for the missing feature(s) on your system.
+
+If you have 4.2 or 4.3 BSD, you should add -DTMPNAM_MISSING since the
+version of tmpnam on these systems won't accept a NULL pointer.
+This does not apply to 4.3-tahoe or the S5R[23] systems I have access to.
+You need this if gawk core dumps on something simple like 'BEGIN {print "hi"}'.
+
+If you have neither bison nor yacc, use the awk.tab.c file here.  It was
+generated with bison, and should have no AT&T code in it.  (Note that
+modifying awk.y without bison or yacc will be difficult, at best.  You might
+want to get a copy of bison from the FSF too.)
+
+If you have an MS-DOS system, use the stuff in pc.d.
+
+PRINTING THE MANUAL
+
+The 'support' directory contains texinfo.tex 2.1, which will be necessary
+for printing the manual, and the texindex.c program from the emacs distribution
+which is also necessary.  See the makefile for the steps needed to get a
+DVI file from the manual.
+
+CAVEATS
+
+The existence of a patchlevel.h file does *N*O*T* imply a commitment on
+our part to issue bug fixes or patches.  It is there in case we should
+decide to do so.
+
+BUG REPORTS AND FIXES:
+
+Please coordinate changes through David Trueman and/or Arnold Robbins.
+
+David Trueman
+Department of Mathematics, Statistics and Computing Science,
+Dalhousie University, Halifax, Nova Scotia, Canada
+
+UUCP		{uunet utai watmath}!dalcs!david
+INTERNET	david@cs.dal.ca
+
+Arnold Robbins
+1315 Kittredge Court, N.E.
+Atlanta, GA, 30329-3539, USA
+
+INTERNET:	arnold@skeeve.atl.ga.us
+UUCP:		{ gatech, emory, emoryu1 }!skeeve!arnold
+
+If you can't contact either of us, try Jay Fenlason, hack@prep.ai.mit.edu
+AKA mit-eddie!prep!hack.  During odd hours he can sometimes be reached at
+(617) 253-8975, which is an MIT phone in the middle of the corridor, so don't
+be suprised if someone wierd answers, or if the person on the other end has
+never heard of him.  (Direct them to the microvax about 10 feet to their left.)
+
+MS-DOS SUPPORT
+
+Support for MSC 5.1 was supplied for 2.11 by Kent Williams, who can be
+reached at williams@umaxc.weeg.uiowa.edu.  It relies heavily on the
+earlier work done for 2.10 by Conrad Kwok and Scott Garfinkle.  Bug
+reports on the MS-DOS version should go to Kent.  Of course, if it's
+a generic bug, we want to hear about it too, but if it isn't reproducible
+under Unix, we won't be as interested.

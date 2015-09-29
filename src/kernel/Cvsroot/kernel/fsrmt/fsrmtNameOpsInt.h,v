@@ -1,0 +1,202 @@
+head     9.1;
+branch   ;
+access   ;
+symbols  ds3100:9.1 sun3:9.1 sprited:9.1.1 sun4nw:9.1 symm:9.1 spur:9.1 Summer89:9.0 newlib:8.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.1
+date     90.10.08.15.08.36;  author mendel;  state Exp;
+branches 9.1.1.1;
+next     9.0;
+
+9.0
+date     89.09.12.15.09.26;  author douglis;  state Stable;
+branches ;
+next     8.2;
+
+8.2
+date     89.08.21.15.28.44;  author mendel;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.08.15.18.43.03;  author rab;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.25.23;  author douglis;  state Stable;
+branches ;
+next     7.0;
+
+7.0
+date     88.11.07.14.48.37;  author brent;  state Exp;
+branches ;
+next     ;
+
+9.1.1.1
+date     91.11.15.16.53.17;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Name operation definitions that are truely private to fs.
+@
+
+
+9.1
+log
+@Changed file name to  fsrmtNameOpsInt.h
+Fixed includes to use <> rather than "", added functions prototypes, and
+removed lint.
+@
+text
+@/*
+ * fsrmtNameOpsInt.h --
+ *
+ *	Internal definitions for pathname related operations that go
+ *	with the other definitions in fsNameOps.h.  This file is
+ *	needed because of the FsrmtUnionData which is a pain to export
+ *	to user programs because it references private
+ *	file, device, and pseudo-device data.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/fs.mendel/RCS/fsNameOpsInt.h,v 1.1 90/01/16 17:11:04 mendel Exp Locker: mendel $ SPRITE (Berkeley)
+ */
+
+#ifndef _FSNAMEOPSINT
+#define _FSNAMEOPSINT
+
+#include <fsNameOps.h>
+#include <fsioFile.h>
+#include <fsioDevice.h>
+#include <fspdev.h>
+
+/*
+ * The stream data is a reference to the following union.  The union is used
+ * to facilitate byte-swaping in the RPC stubs.
+ */
+typedef	union	FsrmtUnionData {
+    Fsio_FileState		fileState;
+    Fsio_DeviceState	devState;
+    Fspdev_State		pdevState;
+} FsrmtUnionData;
+
+typedef	struct	FsrmtOpenResultsParam {
+    int			prefixLength;
+    Fs_OpenResults	openResults;
+    FsrmtUnionData		openData;
+} FsrmtOpenResultsParam;
+
+#endif _FSNAMEOPSINT
+@
+
+
+9.1.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d14 1
+a14 1
+ * $Header: /sprite/src/kernel/Cvsroot/kernel/fsrmt/fsrmtNameOpsInt.h,v 9.1 90/10/08 15:08:36 mendel Exp $ SPRITE (Berkeley)
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d2 1
+a2 1
+ * fsNameOpsInt.h --
+d14 1
+a14 1
+ * $Header: /sprite/src/kernel/fsrmt/RCS/fsNameOpsInt.h,v 8.2 89/08/21 15:28:44 mendel Exp Locker: douglis $ SPRITE (Berkeley)
+d20 4
+a23 4
+#include "fsNameOps.h"
+#include "fsioFile.h"
+#include "fsioDevice.h"
+#include "fspdev.h"
+@
+
+
+8.2
+log
+@Break up fs into many modules.    
+@
+text
+@d14 1
+a14 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsNameOpsInt.h,v 7.0 88/11/07 14:48:37 brent Exp $ SPRITE (Berkeley)
+@
+
+
+8.1
+log
+@Commented #endif labels.
+@
+text
+@d6 1
+a6 1
+ *	needed because of the FsUnionData which is a pain to export
+d14 1
+a14 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsNameOpsInt.h,v 8.0 88/11/11 18:25:23 douglis Stable Locker: rab $ SPRITE (Berkeley)
+d21 3
+a23 3
+#include "fsFile.h"
+#include "fsDevice.h"
+#include "fsPdevState.h"
+d29 5
+a33 5
+typedef	union	FsUnionData {
+    FsFileState		fileState;
+    FsDeviceState	devState;
+    FsPdevState		pdevState;
+} FsUnionData;
+d35 1
+a35 1
+typedef	struct	FsOpenResultsParam {
+d37 3
+a39 3
+    FsOpenResults	openResults;
+    FsUnionData		openData;
+} FsOpenResultsParam;
+d41 1
+a41 1
+#endif /* _FSNAMEOPSINT */
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d14 1
+a14 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsNameOpsInt.h,v 7.0 88/11/07 14:48:37 brent Exp Locker: douglis $ SPRITE (Berkeley)
+d41 1
+a41 1
+#endif _FSNAMEOPSINT
+@
+
+
+7.0
+log
+@New version for conversion to new C library
+@
+text
+@d14 1
+a14 1
+ * $Header: /sprite/src/kernel/fs/RCS/fsNameOpsInt.h,v 60.2 88/10/14 10:43:05 brent Exp Locker: brent $ SPRITE (Berkeley)
+@

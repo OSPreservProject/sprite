@@ -1,0 +1,13 @@
+                      Extended Tcl Expermental Directory
+
+This directory contains code that is useful in its current state, but has
+not reached the level of maturity, documentation and testing that we require
+to include the code in the Extended Tcl package.  We are still interested
+in your input on this code, include any problems you encounter.  Included
+in currently:
+
+  o getkey.c - A command to read keys from a terminal.  Only tested under
+    Sys-V.
+  o debugger - A Tcl debugger.
+
+  o tclScoket.c - Lance Ellinghouse's socket interface.

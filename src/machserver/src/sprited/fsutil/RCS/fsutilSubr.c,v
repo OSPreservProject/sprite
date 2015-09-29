@@ -1,0 +1,457 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  srv030:1.3 srv028:1.3 srv027:1.3 srv026:1.3 srv024:1.3 srv022:1.3 srv021:1.3 srv019:1.3 srv018:1.3 srv016:1.3 srv015:1.3 srv014:1.3 srv012:1.3 srv011:1.3 srv010:1.3 srv008:1.3 srv007:1.3 srv006:1.3 srv005:1.3 srv004:1.3 srv003:1.3 srv002:1.3 srv001:1.3;
+locks    ; strict;
+comment  @ * @;
+
+
+1.3
+date     92.01.21.15.48.40;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.12.01.21.59.11;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.11.18.23.06.06;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@Fix include's.  Add Fsutil_RecoverableError.
+@
+text
+@/* 
+ * fsutilSubr.c --
+ *
+ *	Miscellaneous routines.
+ *
+ * Copyright 1986 Regents of the University of California
+ * All rights reserved.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/fsutil/RCS/fsutilSubr.c,v 1.2 91/12/01 21:59:11 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <sprite.h>
+
+#include <dev.h>
+#include <devDiskLabel.h>
+#include <fs.h>
+#include <fsNameOps.h>
+#include <fsStat.h>
+#include <fsdm.h>
+#include <fslcl.h>
+#include <fspdev.h>
+#include <fsprefix.h>
+#include <fsrmt.h>
+#include <fsutil.h>
+#include <fsutilTrace.h>
+#include <hash.h>
+#include <net.h>
+#include <proc.h>
+#include <rpc.h>
+#include <sync.h>
+#include <timer.h>
+#include <trace.h>
+#include <vm.h>
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_DomainInfo --
+ *
+ *	Return info about the given domain.
+ *	FIX ME FIX ME FIX ME
+ *	This should be replaced by a call through the domain switch.
+ *	The prefix table module has the domain type, so can do this.
+ *	For now, we infer the domain type from the stream type.
+ *
+ * Results:
+ *	A return status.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus 
+Fsutil_DomainInfo(fileIDPtr, domainInfoPtr)
+    Fs_FileID		*fileIDPtr;	/* FileID from the prefix table,
+					 * This can be changed to make
+					 * it match with what a user sees
+					 * when it stats the file.  This
+					 * is important when computing
+					 * the current directory in getwd(). */
+    Fs_DomainInfo	*domainInfoPtr;	/* Fill in with # free blocks, etc */
+{
+    ReturnStatus	status;
+
+    switch (fileIDPtr->type) {
+	case FSIO_LCL_FILE_STREAM:
+#ifdef SPRITED_LOCALDISK
+	    status = Fsdm_DomainInfo(fileIDPtr, domainInfoPtr);
+#else
+	    printf("%s: warning: asking for local domain info.\n",
+		   "Fsutil_DomainInfo");
+	    status = FS_DOMAIN_UNAVAILABLE;
+#endif
+	    break;
+	case FSIO_PFS_NAMING_STREAM:
+	case FSIO_RMT_FILE_STREAM:
+	    status = Fsrmt_DomainInfo(fileIDPtr, domainInfoPtr);
+	    break;
+	case FSIO_LCL_PSEUDO_STREAM:
+	    status = FspdevPfsDomainInfo(fileIDPtr, domainInfoPtr);
+	    break;
+	default:
+	    printf("Fsutil_DomainInfo: Unexpected stream type <%d>\n",
+		    fileIDPtr->type);
+	    status = FS_DOMAIN_UNAVAILABLE;
+	    break;
+    }
+    if (status != SUCCESS) {
+	domainInfoPtr->maxKbytes = -1;
+	domainInfoPtr->freeKbytes = -1;
+	domainInfoPtr->maxFileDesc = -1;
+	domainInfoPtr->freeFileDesc = -1;
+	domainInfoPtr->blockSize = -1;
+    }
+
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_FileError --
+ *
+ *	Print an error message about a file.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Fsutil_FileError(hdrPtr, string, status)
+    Fs_HandleHeader *hdrPtr;
+    char *string;
+    int status;
+{
+    if (hdrPtr == (Fs_HandleHeader *)NIL) {
+	printf("(NIL handle) %s: ", string);
+    } else {
+	Net_HostPrint(hdrPtr->fileID.serverID,
+		      Fsutil_FileTypeToString(hdrPtr->fileID.type));
+	printf(" \"%s\" <%d,%d> %s: ", Fsutil_HandleName(hdrPtr),
+		hdrPtr->fileID.major, hdrPtr->fileID.minor, string);
+    }
+    Fsutil_PrintStatus(status);
+    printf("\n");
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_PrintStatus --
+ *
+ *	Print out an error status, using a mnemonic if possible.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	A print statement.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Fsutil_PrintStatus(status)
+    int status;
+{
+    switch (status) {
+	case SUCCESS:
+	    break;
+	case FS_DOMAIN_UNAVAILABLE:
+	    printf("domain unavailable");
+	    break;
+	case FS_VERSION_MISMATCH:
+	    printf("version mismatch");
+	    break;
+	case FAILURE:
+	    printf("cacheable/busy conflict");
+	    break;
+	case RPC_TIMEOUT:
+	    printf("rpc timeout");
+	    break;
+	case RPC_SERVICE_DISABLED:
+	    printf("server rebooting");
+	    break;
+	case FS_STALE_HANDLE:
+	    printf("stale handle");
+	    break;
+	case DEV_RETRY_ERROR:
+	case DEV_HARD_ERROR:
+	    printf("DISK ERROR");
+	    break;
+	case FS_NO_DISK_SPACE:
+	    printf("out of disk space");
+	default:
+	    printf("<%x>", status);
+	    break;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_FileTypeToString --
+ *
+ *	Map a stream type to a string.  Used for error messages.
+ *
+ * Results:
+ *	A string.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+char *
+Fsutil_FileTypeToString(type)
+    int type;
+{
+    register char *fileType;
+
+    switch (type) {
+	case FSIO_STREAM:
+	    fileType = "Stream";
+	    break;
+	case FSIO_LCL_FILE_STREAM:
+	    fileType = "File";
+	    break;
+	case FSIO_RMT_FILE_STREAM:
+	    fileType = "RmtFile";
+	    break;
+	case FSIO_LCL_DEVICE_STREAM:
+	    fileType = "Device";
+	    break;
+	case FSIO_RMT_DEVICE_STREAM:
+	    fileType = "RmtDevice";
+	    break;
+	case FSIO_LCL_PIPE_STREAM:
+	    fileType = "Pipe";
+	    break;
+	case FSIO_RMT_PIPE_STREAM:
+	    fileType = "RmtPipe";
+	    break;
+#ifdef notdef
+	case FS_LCL_NAMED_PIPE_STREAM:
+	    fileType = "NamedPipe";
+	    break;
+	case FS_RMT_NAMED_PIPE_STREAM:
+	    fileType = "RmtNamedPipe";
+	    break;
+#endif
+	case FSIO_CONTROL_STREAM:
+	    fileType = "PdevControlStream";
+	    break;
+	case FSIO_SERVER_STREAM:
+	    fileType = "SrvStream";
+	    break;
+	case FSIO_LCL_PSEUDO_STREAM:
+	    fileType = "LclPdev";
+	    break;
+	case FSIO_RMT_PSEUDO_STREAM:
+	    fileType = "RmtPdev";
+	    break;
+	case FSIO_PFS_CONTROL_STREAM:
+	    fileType = "PfsControlStream";
+	    break;
+	case FSIO_PFS_NAMING_STREAM:
+	    fileType = "PfsNamingStream";
+	    break;
+	case FSIO_LCL_PFS_STREAM:
+	    fileType = "LclPfs";
+	    break;
+	case FSIO_RMT_PFS_STREAM:
+	    fileType = "RmtPfs";
+	    break;
+#ifdef INET
+	case FSIO_RAW_IP_STREAM:
+	    fileType = "RawIp Socket";
+	    break;
+	case FSIO_UDP_STREAM:
+	    fileType = "UDP Socket";
+	    break;
+	case FSIO_TCP_STREAM:
+	    fileType = "TCP Socket";
+	    break;
+#endif
+#ifdef notdef
+	case FS_RMT_UNIX_STREAM:
+	    fileType = "UnixFile";
+	    break;
+	case FS_RMT_NFS_STREAM:
+	    fileType = "NFSFile";
+	    break;
+#endif
+	default:
+	    fileType = "<unknown file type>";
+	    break;
+    }
+    return(fileType);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_GetFileName --
+ *
+ *	Return a pointer to the file name for the given stream.
+ *
+ * Results:
+ *	Pointer to file name from handle of given stream.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+char *
+Fsutil_GetFileName(streamPtr)
+    Fs_Stream	*streamPtr;
+{
+    if (streamPtr->hdr.name != (char *)NIL) {
+	return(streamPtr->hdr.name);
+    } else if (streamPtr->ioHandlePtr != (Fs_HandleHeader *)NIL) {
+	return(streamPtr->ioHandlePtr->name);
+    } else {
+	return("(noname)");
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_TimeInSeconds --
+ *
+ *	Return the current time, in seconds past the epoch.
+ *
+ * Results:
+ *	Returns the number of seconds since Jan. 1, 1970 GMT.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+time_t
+Fsutil_TimeInSeconds()
+{
+    Time now;
+
+    Timer_GetTimeOfDay(&now, (int *)NULL, (Boolean *)NULL);
+    return (time_t)now.seconds;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Fsutil_RecoverableError --
+ *
+ *	Tell if the given status code implies that the caller should wait
+ *	for a server to come back.
+ *
+ * Results:
+ *	Returns TRUE if the given status implies that the caller should
+ *	wait for the server to come back (and FALSE otherwise).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Boolean
+Fsutil_RecoverableError(status)
+    ReturnStatus status;	/* the status code to check */
+{
+    return (status == RPC_TIMEOUT || status == RPC_SERVICE_DISABLED
+	    || status == FS_STALE_HANDLE);
+}
+
+@
+
+
+1.2
+log
+@Snapshot.  FS appears to work.
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /r3/kupfer/spriteserver/src/sprited/fsutil/RCS/fsutilSubr.c,v 1.1 91/11/18 23:06:06 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d17 2
+d20 2
+a21 3
+#include <vm.h>
+#include <rpc.h>
+#include <fsutil.h>
+d24 1
+d26 2
+a27 1
+#include <fsNameOps.h>
+d29 4
+a32 4
+#include <fspdev.h>
+#include <fsStat.h>
+#include <devDiskLabel.h>
+#include <dev.h>
+a34 1
+#include <proc.h>
+d36 1
+a36 2
+#include <hash.h>
+#include <fsrmt.h>
+d344 28
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d11 1
+a11 1
+static char rcsid[] = "$Header: /sprite/src/kernel/fsutil/RCS/fsutilSubr.c,v 9.2 90/10/08 13:19:20 mendel Exp $ SPRITE (Berkeley)";
+a36 1
+#include <stdio.h>
+a37 1
+
+d72 1
+d74 5
+d316 26
+@

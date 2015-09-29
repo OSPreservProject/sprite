@@ -1,0 +1,1257 @@
+head     9.12;
+branch   ;
+access   ;
+symbols  ds3100:9.12 sun3:9.12 sun4nw:9.10 symm:9.10 spur:9.10 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.12
+date     91.12.11.17.58.58;  author jhh;  state Exp;
+branches ;
+next     9.11;
+
+9.11
+date     91.12.11.16.42.46;  author jhh;  state Exp;
+branches ;
+next     9.10;
+
+9.10
+date     91.09.25.11.17.05;  author jhh;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     91.09.24.17.45.10;  author jhh;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     91.08.19.13.44.54;  author jhh;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     91.07.17.11.46.47;  author jhh;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.12.07.10.11.19;  author mendel;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.09.11.12.26.47;  author rab;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.04.17.12.18.19;  author mendel;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.02.13.23.12.04;  author jhh;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     90.01.30.11.02.04;  author mendel;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.09.15.14.26.20;  author jhh;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.57.49;  author douglis;  state Stable;
+branches ;
+next     1.7;
+
+1.7
+date     89.07.31.17.26.18;  author mendel;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.07.05.10.52.14;  author mendel;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.06.16.12.27.16;  author brent;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.06.16.12.08.31;  author brent;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.06.15.08.47.10;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.05.23.10.23.26;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.05.01.16.15.09;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Routines for attaching/releasing/sending commands to SCSI devices.
+@
+
+
+9.12
+log
+@New mips cc requires casting of char's that are shifted more than 8.
+@
+text
+@/* 
+ * devScsiDevice.c --
+ *
+ *	Routines for attaching/releasing/sending commands to SCSI device 
+ *	attached to SCSI HBAs.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/dev/devScsiDevice.c,v 9.11 91/12/11 16:42:46 jhh Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include <sprite.h>
+#include <scsiDevice.h>
+#include <scsiHBA.h>
+#include <dev/scsi.h>
+#include <sys/scsi.h>
+#include <devQueue.h>
+#include <fs.h>
+#include <sync.h>
+#include <stdlib.h>
+#include <bstring.h>
+
+static int scsiDoneProc _ARGS_((struct ScsiCmd *scsiCmdPtr, 
+		    ReturnStatus status, int statusByte, 
+		    int byteCount, int senseLength, Address senseDataPtr));
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevScsiAttachDevice --
+ *
+ *	Return a handle that allows access to the specified SCSI device.
+ *
+ * Results:
+ *	A pointer to the ScsiDevice structure for the device. 
+ *	NIL if the device could not be attached.
+ *
+ * Side effects:
+ *	If the device is attached, an INQUIRY command is sent to the 
+ *	device.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ScsiDevice   *
+DevScsiAttachDevice(devicePtr, insertProc)
+    Fs_Device	*devicePtr;	/* Device to attach. */
+    void 	(*insertProc)(); /* Insert procedure to use. */
+{
+    int	 hbaType;	
+    ScsiDevice   *handle;
+    ScsiCmd	inquiryCmdBlock;
+
+    /*
+     * Call the Attach procedure for the HBA type specified in the Fs_Device.
+     */
+    hbaType = SCSI_HBA_TYPE(devicePtr);
+
+    if (hbaType >= devScsiNumHBATypes) {
+	handle = (ScsiDevice *) NIL;
+    } else {
+	handle = (devScsiAttachProcs[hbaType])(devicePtr,insertProc);
+	/*
+	 * The attach routines bzero the handle and only fill in some
+	 * of the fields.  The rest of the kernel assumes that errorProc
+	 * is either points to a routine or it is NIL.  Take care of it
+	 * here.
+	 */
+	if ((handle != (ScsiDevice *) NIL) &&
+	    (handle->errorProc == (ReturnStatus (*)()) 0)) {
+	    handle->errorProc = (ReturnStatus (*)()) NIL;
+	}
+    }
+    /*
+     * If the inquiry data doesn't exists for this device yet send the
+     * device a INQUIRY command. We try it twice because the device might
+     * abort the INQUIRY with a UNIT_ATTENTION.
+     */
+    if ((handle != (ScsiDevice *) NIL) && (handle->inquiryLength == 0)) {
+	int	tryNumber = 1;
+	ReturnStatus	status = SUCCESS;
+
+	while((tryNumber <= 2) && (handle->inquiryLength == 0) && 
+	      (status != DEV_TIMEOUT)) { 
+	    if (handle->inquiryDataPtr == (char *) 0) {
+		handle->inquiryDataPtr = (char *) malloc(DEV_MAX_INQUIRY_SIZE);
+	    }
+	    (void) DevScsiGroup0Cmd(handle,SCSI_INQUIRY,0,DEV_MAX_INQUIRY_SIZE,
+				    &inquiryCmdBlock);
+	    inquiryCmdBlock.buffer = handle->inquiryDataPtr;
+	    inquiryCmdBlock.bufferLen = DEV_MAX_INQUIRY_SIZE;
+	    inquiryCmdBlock.dataToDevice = FALSE;
+	    status =  DevScsiSendCmdSync(handle, &inquiryCmdBlock, 
+			    &(handle->inquiryLength));
+	    if (status != SUCCESS) {
+		if (status == DEV_NO_DEVICE) {
+		    return (ScsiDevice *) NIL;
+		} else {
+		    handle->inquiryLength = 0;
+		}
+	    }
+	    tryNumber++;
+	}
+    }
+    if (handle != (ScsiDevice *) NIL) {
+	handle->referenceCount++;
+    }
+    return handle;
+}
+
+/*
+ * The following structure and routine are used to implement DevScsiSendCmdSync.
+ * The arguments to DevScsiSendCmdSync are stored in a SyncCmdBuf on 
+ * the caller's stack and DevScsiSendCmd is called. The call back function
+ * scsiDoneProc fills in the OUT arguments are wakes the caller.
+ *
+ */
+typedef struct SyncCmdBuf {
+    Sync_Semaphore mutex;	  /* Lock for synronizing updates of 
+				   * this structure with the call back 
+				   * function. */
+    Sync_Condition wait;	  /* Condition valued used to wait for
+				   * callback. */
+    Boolean	  done;		  /* Is the operation finished or not? */
+    int		 *statusBytePtr; /* Area to store SCSI status byte. */
+    int	      *senseBufferLenPtr; /* Sense buffer length pointer. */
+    Address    senseBufferPtr;	  /* Sense buffer. */
+    ReturnStatus status;   	  /* HBA error for command. */
+    int	       *countPtr;	  /* Btes transferred pointer. */
+} SyncCmdBuf;
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * scsiDoneProc --
+ *
+ *	This procedure is called when a scsi command started by 
+ *	DevScsiSendCmdSync finished. It's calling sequence is 
+ *	defined by the call back done by the DevScsiSendCmd routine.
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	A scsi command is executed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+scsiDoneProc(scsiCmdPtr, errorCode, statusByte, byteCount, 
+	     senseDataLen, senseDataPtr)
+    ScsiCmd	*scsiCmdPtr;
+    ReturnStatus errorCode;
+    unsigned char statusByte;
+    int		byteCount;
+    int		senseDataLen;
+    Address	senseDataPtr;
+{
+    SyncCmdBuf	*syncCmdDataPtr = (SyncCmdBuf *) (scsiCmdPtr->clientData);
+    /*
+     * A pointer to a SyncCmdBuf is passed as the clientData to this call.
+     * Lock the structure, fill in the return values and wake up the
+     * initiator.
+     */
+    MASTER_LOCK(&syncCmdDataPtr->mutex);
+
+    *(syncCmdDataPtr->statusBytePtr) = (int) statusByte;
+    syncCmdDataPtr->status = errorCode;
+    *(syncCmdDataPtr->countPtr) = byteCount;
+    if (syncCmdDataPtr->senseBufferLenPtr != (int *) NIL) {
+	int	len;
+	len = *(syncCmdDataPtr->senseBufferLenPtr);
+	if (senseDataLen < len) {
+	    len = senseDataLen;
+	}
+	bcopy(senseDataPtr, syncCmdDataPtr->senseBufferPtr, len);			*(syncCmdDataPtr->senseBufferLenPtr) = len;
+    }
+    syncCmdDataPtr->done = TRUE;
+    Sync_MasterBroadcast(&syncCmdDataPtr->wait);
+    MASTER_UNLOCK(&syncCmdDataPtr->mutex);
+    return (0);
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevScsiSendCmdSync --
+ *
+ *	Send a SCSI command block to the device specified in the 
+ *	ScsiDevice. This is the synchronous version that waits
+ *	for the status byte and sense data before returning.
+ *
+ * Results:
+ *	A ReturnStatus
+ *
+ * Side effects: 
+ *	A SCSI command block is sent to the device.  
+ *
+ *----------------------------------------------------------------------
+ *
+ */
+ReturnStatus
+DevScsiSendCmdSync(scsiDevicePtr, scsiCmdPtr, amountTransferredPtr)
+    ScsiDevice *scsiDevicePtr;  /* Handle for target device. */
+    ScsiCmd	*scsiCmdPtr;		    /* SCSI command to be sent. */
+    int		*amountTransferredPtr; /* OUT - Nuber of bytes transferred. */
+{
+    ReturnStatus status;
+    SyncCmdBuf	 syncCmdData;
+
+    scsiCmdPtr->clientData = (ClientData) &syncCmdData;
+    scsiCmdPtr->doneProc = scsiDoneProc;
+    scsiCmdPtr->senseLen = sizeof(scsiCmdPtr->senseBuffer);
+    Sync_SemInitDynamic((&syncCmdData.mutex),"ScsiSyncCmdMutex");
+    syncCmdData.done = FALSE;
+    syncCmdData.statusBytePtr = &scsiCmdPtr->statusByte;
+    syncCmdData.senseBufferPtr = (Address) scsiCmdPtr->senseBuffer;
+    syncCmdData.senseBufferLenPtr = &scsiCmdPtr->senseLen;
+    syncCmdData.countPtr = amountTransferredPtr;
+    DevScsiSendCmd(scsiDevicePtr, scsiCmdPtr);
+    MASTER_LOCK((&syncCmdData.mutex));
+    while (syncCmdData.done == FALSE) { 
+	Sync_MasterWait((&syncCmdData.wait),(&syncCmdData.mutex),FALSE);
+    }
+    MASTER_UNLOCK((&syncCmdData.mutex));
+    status = syncCmdData.status;
+    Sync_SemClear(&syncCmdData.mutex);
+    if ((status == SUCCESS) && (scsiCmdPtr->statusByte != 0) &&
+	(scsiDevicePtr->errorProc != (ReturnStatus (*)()) NIL)) {
+	status = (scsiDevicePtr->errorProc)(scsiDevicePtr, scsiCmdPtr);
+    }
+    return status;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevScsiSendCmd --
+ *
+ *	Send a SCSI command block to the device specified in the 
+ *	ScsiDevice.
+ *
+ * Results:
+ *	Nothing
+ *
+ * Side effects: 
+ *	A SCSI command block enqueue for the device.  The doneProc procedure
+ *	is call upon SCSI command completion.
+ *
+ *----------------------------------------------------------------------
+ *
+ * Due to the simplity of this routine and as an attempt to reduce procedure
+ * calling depth, this routine is coded as a macro and can be found in
+ * scsiHBAInt.h. 
+ */
+#ifndef DevScsiSendCmd
+void 
+DevScsiSendCmd(scsiDevicePtr, scsiCmdPtr)
+    ScsiDevice 	  *scsiDevicePtr; 	 /* Handle for target device. */
+    ScsiCmd	     *scsiCmdPtr;        /* Command to be executed. */
+{
+     Dev_QueueInsert(scsiDevicePtr->devQueue, (List_Links *) scsiCmdPtr);
+}
+#endif /* DevScsiSendCmd */
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevScsiReleaseDevice --
+ *
+ * 	Release a device previously attached with ScsiAttachDevice().
+ *
+ * Results:
+ *	A ReturnStatus.
+ *
+ * Side effects: 
+ *	Unknown.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus 
+DevScsiReleaseDevice(scsiDevicePtr)
+    ScsiDevice *scsiDevicePtr;  /* Handle for device to be released. */
+{
+    scsiDevicePtr->referenceCount--;
+    if (scsiDevicePtr->referenceCount == 0) { 
+	free(scsiDevicePtr->inquiryDataPtr);
+	scsiDevicePtr->inquiryDataPtr = (char *) 0;
+	scsiDevicePtr->inquiryLength = 0;
+    }
+    return ((scsiDevicePtr->releaseProc)(scsiDevicePtr));
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  DevScsiGetSenseCmd --
+ *
+ * 	Procedure for formatting REQUEST SENSE.
+ *
+ * Results:
+ *	void
+ *
+ * Side effects: 
+ *	Unknown.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+DevScsiSenseCmd(scsiDevicePtr, bufferSize, buffer, scsiCmdPtr)
+    ScsiDevice *scsiDevicePtr;  /* Handle for device to be released. */
+    int		bufferSize;	/* Size of request sense data buffer. */
+    char	*buffer;	/* Data buffer to put sense data. */
+    ScsiCmd	*scsiCmdPtr;	/* Scsi command buffer to fill in. */
+{
+    DevScsiGroup0Cmd(scsiDevicePtr, SCSI_REQUEST_SENSE, 0, 
+			(unsigned) bufferSize, scsiCmdPtr);
+    scsiCmdPtr->dataToDevice = FALSE;
+    scsiCmdPtr->bufferLen = bufferSize;
+    scsiCmdPtr->buffer = buffer;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  DevScsiTestReady --
+ *
+ * 	Test to see if a SCSI device is ready.
+ *
+ * Results:
+ *	
+ *
+ * Side effects: 
+ *	A TEST_UNIT_READY command is set to the device.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+DevScsiTestReady(scsiDevicePtr)
+    ScsiDevice *scsiDevicePtr;  /* Handle for device to be released. */
+{
+    ScsiCmd	unitReadyCmd;	/* Scsi command buffer to fill in. */
+    ReturnStatus status;
+    int		len;
+
+    DevScsiGroup0Cmd(scsiDevicePtr,SCSI_TEST_UNIT_READY, 0, 0, &unitReadyCmd);
+    unitReadyCmd.bufferLen = 0;
+    len = 0;
+    status = DevScsiSendCmdSync(scsiDevicePtr,&unitReadyCmd, &len);
+    return status;
+}
+/*
+ *----------------------------------------------------------------------
+ *
+ *  DevScsiStartStopUnit --
+ *
+ * 	Test to see if a SCSI device is ready.
+ *
+ * Results:
+ *	
+ *
+ * Side effects: 
+ *	A TEST_UNIT_READY command is set to the device.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+DevScsiStartStopUnit(scsiDevicePtr, start)
+    ScsiDevice *scsiDevicePtr;  /* Handle for device to be released. */
+    Boolean start;
+{
+    ScsiCmd		scsiCmd;	/* Scsi command buffer to fill in. */
+    ScsiStartStopCmd 	*cmdPtr;
+    ReturnStatus 	status;
+    int			len;
+
+    bzero((char *) &scsiCmd, sizeof(ScsiCmd));
+    scsiCmd.commandBlockLen = sizeof(ScsiStartStopCmd);
+    scsiCmd.bufferLen = 0;
+    cmdPtr = (ScsiStartStopCmd *) scsiCmd.commandBlock;
+    cmdPtr->command = SCSI_START_STOP;
+    cmdPtr->unitNumber = scsiDevicePtr->LUN;
+    cmdPtr->immed = 0;
+    cmdPtr->loadEject = 0;
+    cmdPtr->start = (start == TRUE) ? 1 : 0;
+    len = 0;
+    status = DevScsiSendCmdSync(scsiDevicePtr,&scsiCmd, &len);
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  DevScsiReadBlockLimits --
+ *
+ * 	Send a Read Block Limits command to the device.
+ *
+ * Results:
+ *	
+ *
+ * Side effects: 
+ *	A SCSI_READ_BLOCK_LIMITS command is set to the device.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+DevScsiReadBlockLimits(scsiDevicePtr, minPtr, maxPtr)
+    ScsiDevice 	*scsiDevicePtr; /* Handle for device to be released. */
+    int		*minPtr;	/* Minimum block size. */
+    int		*maxPtr;	/* Max block size. */
+{
+    ScsiCmd		cmd;	/* Scsi command buffer to fill in. */
+    ReturnStatus 	status = SUCCESS;
+    int			len;
+    ScsiBlockLimits	limits;
+
+    DevScsiGroup0Cmd(scsiDevicePtr,SCSI_READ_BLOCK_LIMITS, 0, 0, &cmd);
+    cmd.dataToDevice = FALSE;
+    cmd.bufferLen = sizeof(ScsiBlockLimits);
+    cmd.buffer = (char *) &limits;
+    len = 0;
+    status = DevScsiSendCmdSync(scsiDevicePtr,&cmd, &len);
+    *maxPtr = ((unsigned int) limits.max2 << 16) | 
+		((unsigned int) limits.max1 << 8) | 
+		limits.max0;
+    *minPtr = (limits.min1 << 8) | limits.min0;
+    return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  DevScsiModeSense --
+ *
+ * 	Send a Mode Sense command to the device.
+ *
+ * Results:
+ *	
+ *
+ * Side effects: 
+ *	A SCSI_READ_BLOCK_LIMITS command is set to the device.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+DevScsiModeSense(scsiDevicePtr, disableBlockDesc, pageControl, pageCode, 
+	    vendor, sizePtr, bufferPtr)
+    ScsiDevice 	*scsiDevicePtr; 	/* Handle for device to be released. */
+    int		disableBlockDesc;	/* Disable block descriptor field */
+    int		pageControl;		/* Page control field. */
+    int		pageCode;		/* Page code field. */
+    int		vendor;			/* Vendor unique field. */
+    int		*sizePtr;		/* Size of buffer/data returned. */
+    char	*bufferPtr;		/* Buffer for mode sense data. */
+{
+    ReturnStatus 	status = SUCCESS;
+    int			len;
+    ScsiCmd		scsiCmd;	/* Scsi command buffer to fill in. */
+    ScsiModeSenseCmd 	*cmdPtr;
+
+    bzero((char *) &scsiCmd, sizeof(ScsiCmd));
+    scsiCmd.commandBlockLen = sizeof(ScsiModeSenseCmd);
+    scsiCmd.dataToDevice = FALSE;
+    scsiCmd.bufferLen = *sizePtr;
+    scsiCmd.buffer = bufferPtr;
+    cmdPtr = (ScsiModeSenseCmd *) scsiCmd.commandBlock;
+    cmdPtr->command = SCSI_MODE_SENSE;
+    cmdPtr->unitNumber = scsiDevicePtr->LUN;
+    cmdPtr->disableBlockDesc = disableBlockDesc;
+    cmdPtr->pageControl = pageControl;
+    cmdPtr->pageCode = pageCode;
+    cmdPtr->allocLen = *sizePtr;
+    cmdPtr->vendor = vendor;
+    len = 0;
+    status = DevScsiSendCmdSync(scsiDevicePtr,&scsiCmd, &len);
+    *sizePtr = len;
+    return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  DevScsiRequestSense --
+ *
+ * 	Send a Request Sense command to the device.
+ *
+ * Results:
+ *	
+ *
+ * Side effects: 
+ *	A SCSI_REQUEST_SENSE command is set to the device.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+DevScsiRequestSense(scsiDevicePtr, clearCount, vendor, sizePtr, 
+	bufferPtr)
+    ScsiDevice 	*scsiDevicePtr; 	/* Handle for device to be released. */
+    int		clearCount;		/* Clear counters field. */
+    int		vendor;			/* Vendor unique field. */
+    int		*sizePtr;		/* Size of buffer/data returned. */
+    char	*bufferPtr;		/* Buffer for mode sense data. */
+{
+    ReturnStatus 	status = SUCCESS;
+    int			len;
+    ScsiCmd		scsiCmd;	/* Scsi command buffer to fill in. */
+    ScsiRequestSenseCmd 	*cmdPtr;
+
+    bzero((char *) &scsiCmd, sizeof(ScsiCmd));
+    scsiCmd.commandBlockLen = sizeof(ScsiRequestSenseCmd);
+    scsiCmd.dataToDevice = FALSE;
+    scsiCmd.bufferLen = *sizePtr;
+    scsiCmd.buffer = bufferPtr;
+    cmdPtr = (ScsiRequestSenseCmd *) scsiCmd.commandBlock;
+    cmdPtr->command = SCSI_REQUEST_SENSE;
+    cmdPtr->unitNumber = scsiDevicePtr->LUN;
+    cmdPtr->allocLen = *sizePtr;
+    cmdPtr->clearCount = clearCount;
+    cmdPtr->vendor = vendor;
+    len = 0;
+    status = DevScsiSendCmdSync(scsiDevicePtr,&scsiCmd, &len);
+    *sizePtr = len;
+    return status;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ *  DevScsiReadPosition --
+ *
+ * 	Send a Read Position command to the device.
+ *
+ * Results:
+ *	
+ *
+ * Side effects: 
+ *	A SCSI_READ_POSITION command is set to the device.
+ *
+ *----------------------------------------------------------------------
+ */
+ReturnStatus
+DevScsiReadPosition(scsiDevicePtr, blockType, positionPtr)
+    ScsiDevice 	*scsiDevicePtr; 	/* Handle for device to be released. */
+    int		blockType;		/* Block type field. */
+    ScsiReadPositionResult *positionPtr; /* Position information. */
+{
+    ReturnStatus 	status = SUCCESS;
+    int			len;
+    ScsiCmd		scsiCmd;	/* Scsi command buffer to fill in. */
+    ScsiReadPositionCmd 	*cmdPtr;
+
+    bzero((char *) &scsiCmd, sizeof(ScsiCmd));
+    scsiCmd.commandBlockLen = sizeof(ScsiReadPositionCmd);
+    scsiCmd.dataToDevice = FALSE;
+    scsiCmd.bufferLen = sizeof(ScsiReadPositionResult);
+    scsiCmd.buffer = (char *) positionPtr;
+    cmdPtr = (ScsiReadPositionCmd *) scsiCmd.commandBlock;
+    cmdPtr->command = SCSI_READ_POSITION;
+    cmdPtr->unitNumber = scsiDevicePtr->LUN;
+    cmdPtr->blockType = blockType;
+    len = 0;
+    status = DevScsiSendCmdSync(scsiDevicePtr,&scsiCmd, &len);
+    return status;
+}
+
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevScsiIOControl --
+ *
+ *	Process a generic SCSI device IOControl.
+ *
+ * Results:
+ *	The return status of the IOControl.
+ *
+ * Side effects:
+ *	Many.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+DevScsiIOControl(devPtr, ioctlPtr, replyPtr)
+    ScsiDevice	*devPtr;	/* SCSI Handle for device. */
+    Fs_IOCParam *ioctlPtr;	/* Standard I/O Control parameter block */
+    Fs_IOReply *replyPtr;	/* Size of outBuffer and returned signal */
+{
+    ReturnStatus	status;
+
+    if (ioctlPtr->command == IOC_SCSI_COMMAND) {
+	Dev_ScsiCommand	 *cmdPtr;
+	Dev_ScsiStatus	 *statusPtr;
+	ScsiCmd		 scsiCmd;
+	Boolean		dataToDevice;
+	int		senseBufLen;
+	/*
+	 * The user wants to send a SCSI command. First validate
+	 * the input buffer is large enough to have the parameter
+	 * block and the output buffer can hold the return status.
+	 */
+	if ((ioctlPtr->inBufSize < sizeof(Dev_ScsiCommand)) ||
+	    (ioctlPtr->outBufSize < sizeof(Dev_ScsiStatus))) {
+	    return(GEN_INVALID_ARG);
+	}
+	cmdPtr = (Dev_ScsiCommand *) ioctlPtr->inBuffer;
+	/*
+	 * Validate the SCSI command block.
+	 */
+	if ((cmdPtr->commandLen < 0) || (cmdPtr->commandLen > 16) ||
+	    (cmdPtr->commandLen > 
+		(ioctlPtr->inBufSize-sizeof(Dev_ScsiCommand))))	{
+	    return(GEN_INVALID_ARG);
+	}
+	/*
+	 * Validate the input or output data buffer.
+	 */
+	dataToDevice = (cmdPtr->dataOffset < ioctlPtr->inBufSize);
+	if ((cmdPtr->bufferLen < 0) ||
+	    (cmdPtr->bufferLen > devPtr->maxTransferSize)) {
+	    return FS_BUFFER_TOO_BIG;
+	}
+	if (dataToDevice && 
+	    (cmdPtr->bufferLen > (ioctlPtr->inBufSize - cmdPtr->dataOffset))) {
+		return (GEN_INVALID_ARG);
+	}
+	if (!dataToDevice && 
+	   (cmdPtr->bufferLen > (ioctlPtr->outBufSize-sizeof(Dev_ScsiStatus)))){
+		return (GEN_INVALID_ARG);
+	}
+	/*
+	 * Things look ok. Fill in the ScsiCmd for the device.
+	 */
+	scsiCmd.dataToDevice = dataToDevice;
+	scsiCmd.bufferLen = cmdPtr->bufferLen;
+	scsiCmd.buffer = dataToDevice ? 
+				(ioctlPtr->inBuffer+cmdPtr->dataOffset) :
+				(ioctlPtr->outBuffer + sizeof(Dev_ScsiStatus));
+
+	scsiCmd.commandBlockLen = cmdPtr->commandLen;
+	bcopy(ioctlPtr->inBuffer+sizeof(Dev_ScsiCommand), scsiCmd.commandBlock,
+	      scsiCmd.commandBlockLen);
+	statusPtr = (Dev_ScsiStatus *) ioctlPtr->outBuffer;
+	status = DevScsiSendCmdSync(devPtr, &scsiCmd, 
+			&(statusPtr->amountTransferred));
+	statusPtr->statusByte = scsiCmd.statusByte;
+        statusPtr->senseDataLen = scsiCmd.senseLen;
+	senseBufLen = (ioctlPtr->outBufSize - sizeof(Dev_ScsiStatus) - 
+			statusPtr->amountTransferred);
+        if (senseBufLen > statusPtr->senseDataLen) {
+	    senseBufLen = statusPtr->senseDataLen;
+	}
+	if (senseBufLen >= 0) {
+	    bcopy(scsiCmd.senseBuffer, 
+			(char *)(ioctlPtr->outBuffer + sizeof(Dev_ScsiStatus)
+					 + statusPtr->amountTransferred),
+	                 senseBufLen);
+	}
+	return status;
+    } else {
+	return GEN_INVALID_ARG;
+    }
+
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevNoHBAAttachDevice --
+ *
+ *	A SCSI HBA attach procedure that always returns no device. This
+ *	routine should be inserted into attach procedure for HBA types
+ *	that aren't support on the machine.
+ *
+ * Results:
+ *	NIL 
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ScsiDevice *
+DevNoHBAAttachDevice(devicePtr, insertProc)
+    Fs_Device	*devicePtr;	/* Device to attach. */
+    void 	(*insertProc)(); /* Insert procedure to use. */
+{
+    return (ScsiDevice *) NIL;
+}
+@
+
+
+9.11
+log
+@DevScsiAttachDevice returns a NIL handle if the inquiry command returned
+DEV_NO_DEVICE instead of forging ahead.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/dev/devScsiDevice.c,v 9.10 91/09/25 11:17:05 jhh Exp $ SPRITE (Berkeley)";
+d439 3
+a441 1
+    *maxPtr = (limits.max2 << 16) | (limits.max1 << 8) | limits.max0;
+@
+
+
+9.10
+log
+@handle returned from attach procs can be NIL, so don't dereference it
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devScsiDevice.c,v 9.9 91/09/24 17:45:10 jhh Exp $ SPRITE (Berkeley)";
+d106 5
+a110 1
+		handle->inquiryLength = 0;
+@
+
+
+9.9
+log
+@errorProc can be 0 in one case
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devScsiDevice.c,v 9.8 91/08/19 13:44:54 jhh Exp $ SPRITE (Berkeley)";
+d79 2
+a80 1
+	if (handle->errorProc == (ReturnStatus (*)()) 0) {
+@
+
+
+9.8
+log
+@added support for a bunch of scsi commands, DevScsiSendCmdSync has
+different arguments (sense data embedded in command).
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devScsiDevice.c,v 9.7 91/07/17 11:46:47 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d73 9
+@
+
+
+9.7
+log
+@raw scsi device ioctl didn't check size of output buffer before
+bcopying stuff into it
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devScsiDevice.c,v 9.6 90/12/07 10:11:19 mendel Exp $ SPRITE (Berkeley)";
+d21 14
+a34 11
+#include "sprite.h"
+#include "scsiDevice.h"
+#include "scsiHBA.h"
+#include "dev/scsi.h"
+#include "scsi.h"
+#include "devQueue.h"
+#include "fs.h"
+#include "sync.h"	
+#include "stdlib.h"
+#include "bstring.h"
+
+a79 1
+	unsigned char statusByte;
+d93 2
+a94 2
+	    status =  DevScsiSendCmdSync(handle, &inquiryCmdBlock, &statusByte, 
+			&(handle->inquiryLength),  (int *) NIL, (char *) NIL);
+d121 1
+a121 1
+    unsigned char *statusBytePtr; /* Area to store SCSI status byte. */
+d164 1
+a164 1
+    *(syncCmdDataPtr->statusBytePtr) = statusByte;
+d201 1
+a201 2
+DevScsiSendCmdSync(scsiDevicePtr, scsiCmdPtr, statusBytePtr, 
+		    amountTransferredPtr,  senseBufferLenPtr, senseBufferPtr)
+a203 1
+    unsigned char *statusBytePtr; /* Area to store SCSI status byte. */
+a204 3
+    Address 	senseBufferPtr;	  /* Buffer to put sense data upon error. */
+    int		*senseBufferLenPtr; /*  IN - Length of senseBuffer available.
+				     * OUT - Length of senseData returned. */
+d211 1
+d214 3
+a216 3
+    syncCmdData.statusBytePtr = statusBytePtr;
+    syncCmdData.senseBufferPtr = senseBufferPtr;
+    syncCmdData.senseBufferLenPtr = senseBufferLenPtr;
+d226 4
+a345 1
+    unsigned char	statusByte;
+a346 4
+    char	senseData[SCSI_MAX_SENSE_LEN];
+    int		senseLen;
+    char	errorString[MAX_SCSI_ERROR_STRING];
+    Boolean	class7;
+d351 1
+a351 7
+    senseLen = SCSI_MAX_SENSE_LEN;
+    status = DevScsiSendCmdSync(scsiDevicePtr,&unitReadyCmd, &statusByte,
+				&len, &senseLen, senseData);
+    class7 = DevScsiMapClass7Sense(senseLen, senseData, &status, errorString);
+    if (class7) {
+	return status;
+    }
+a376 1
+    unsigned char	statusByte;
+d389 177
+a565 2
+    status = DevScsiSendCmdSync(scsiDevicePtr,&scsiCmd, &statusByte,
+				&len, (int *) NIL, (Address) NIL);
+d569 2
+a594 2
+    int			senseDataLen;
+    char		senseData[DEV_MAX_SENSE_BYTES];
+a599 1
+	unsigned char    statusByte;
+d649 4
+a652 5
+	senseDataLen = DEV_MAX_SENSE_BYTES;
+	status = DevScsiSendCmdSync(devPtr, &scsiCmd, &statusByte,
+		&(statusPtr->amountTransferred), &senseDataLen, senseData);
+	statusPtr->statusByte = statusByte;
+        statusPtr->senseDataLen = senseDataLen;
+d655 2
+a656 2
+        if (senseBufLen > senseDataLen) {
+	    senseBufLen = senseDataLen;
+d659 1
+a659 1
+	    bcopy(senseData, 
+d661 1
+a661 1
+					 + statusPtr->amountTransferred) ,
+@
+
+
+9.6
+log
+@Set inquiry length back to zero if inquiry command fails.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devScsiDevice.c,v 9.5 90/09/11 12:26:47 rab Exp $ SPRITE (Berkeley)";
+d495 4
+a498 2
+	bcopy(senseData, (char *)(ioctlPtr->outBuffer + sizeof(Dev_ScsiStatus)
+				     + statusPtr->amountTransferred) ,
+d500 1
+@
+
+
+9.5
+log
+@#included bstring.h for forward decl of bcopy.  Put casts on NIL
+arguments to functions.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devScsiDevice.c,v 9.4 90/04/17 12:18:19 mendel Exp Locker: rab $ SPRITE (Berkeley)";
+d93 3
+@
+
+
+9.4
+log
+@Fixed problem with generic SCSI device IOControl.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devScsiDevice.c,v 9.3 90/02/13 23:12:04 jhh Exp $ SPRITE (Berkeley)";
+d30 1
+d397 1
+a397 1
+				&len, NIL, NIL);
+@
+
+
+9.3
+log
+@added DevScsiStartStopUnit()
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev.jhh/RCS/devScsiDevice.c,v 9.2 90/01/30 11:02:04 mendel Exp Locker: jhh $ SPRITE (Berkeley)";
+d481 1
+@
+
+
+9.2
+log
+@Fixed inquire command to handle UNIT_ATTENTIONS.  Fixed bug in raw SCSI
+access.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devScsiDevice.c,v 9.1 89/09/15 14:26:20 jhh Exp $ SPRITE (Berkeley)";
+d357 40
+@
+
+
+9.1
+log
+@need to clear locks after use
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devScsiDevice.c,v 1.7 89/07/31 17:26:18 mendel Exp $ SPRITE (Berkeley)";
+d72 2
+a73 1
+     * device a INQUIRY command.
+d77 16
+a92 2
+	if (handle->inquiryDataPtr == (char *) 0) {
+	    handle->inquiryDataPtr = (char *) malloc(DEV_MAX_INQUIRY_SIZE);
+a93 7
+	(void) DevScsiGroup0Cmd(handle,SCSI_INQUIRY,0,DEV_MAX_INQUIRY_SIZE,
+				&inquiryCmdBlock);
+	inquiryCmdBlock.buffer = handle->inquiryDataPtr;
+	inquiryCmdBlock.bufferLen = DEV_MAX_INQUIRY_SIZE;
+	inquiryCmdBlock.dataToDevice = FALSE;
+	(void) DevScsiSendCmdSync(handle, &inquiryCmdBlock, &statusByte, 
+		    &(handle->inquiryLength),  (int *) NIL, (char *) NIL);
+d450 1
+a450 1
+	bcopy(senseData, (char *)(ioctlPtr->outBufSize + sizeof(Dev_ScsiStatus)
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devScsiDevice.c,v 1.7 89/07/31 17:26:18 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d215 1
+@
+
+
+1.7
+log
+@Removed lint.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devScsiDevice.c,v 1.6 89/07/05 10:52:14 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+1.6
+log
+@Change SCSI command IO-Control to use new interface.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devScsiDevice.c,v 1.5 89/06/16 12:27:16 brent Exp $ SPRITE (Berkeley)";
+d192 1
+a195 1
+    int		*amountTransferredPtr; /* OUT - Nuber of bytes transferred. */
+d367 1
+a367 1
+
+d441 3
+a443 3
+	bcopy(senseData, ioctlPtr->outBufSize + sizeof(Dev_ScsiStatus) + 
+			statusPtr->amountTransferred,
+	     senseBufLen);
+@
+
+
+1.5
+log
+@Fixed typo
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devScsiDevice.c,v 1.4 89/06/16 12:08:31 brent Exp $ SPRITE (Berkeley)";
+d375 2
+d383 2
+d395 12
+d411 7
+a417 3
+	scsiCmd.commandBlockLen = ioctlPtr->inBufSize - sizeof(Dev_ScsiCommand);
+	if ((scsiCmd.commandBlockLen < 0) || (scsiCmd.commandBlockLen > 16)) {
+	    return(GEN_INVALID_ARG);
+d419 12
+a431 6
+	bcopy(ioctlPtr->inBuffer + sizeof(Dev_ScsiCommand), scsiCmd.commandBlock,
+	      scsiCmd.commandBlockLen);
+	scsiCmd.dataToDevice = cmdPtr->dataToDevice;
+	scsiCmd.bufferLen = cmdPtr->bufferLen;
+	scsiCmd.buffer = malloc(scsiCmd.bufferLen);
+	statusPtr->senseDataLen = ioctlPtr->outBufSize - sizeof(Dev_ScsiStatus);
+d433 1
+a433 2
+		&(statusPtr->amountTransferred), &(statusPtr->senseDataLen),
+		ioctlPtr->outBuffer + sizeof(Dev_ScsiStatus));
+d435 5
+a439 3
+	if (status == SUCCESS) {
+	    status = Vm_CopyOut(statusPtr->amountTransferred, scsiCmd.buffer,
+				cmdPtr->buffer);
+d441 3
+a443 1
+	free(scsiCmd.buffer);
+@
+
+
+1.4
+log
+@Updated I/O Control interface
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devScsiDevice.c,v 1.3 89/06/15 08:47:10 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d27 1
+a27 1
+#include "user/fs.h"
+d387 1
+a387 1
+	    (outBufSize < sizeof(Dev_ScsiStatus))) {
+d405 1
+a405 1
+	statusPtr->senseDataLen = outBufSize - sizeof(Dev_ScsiStatus);
+@
+
+
+1.3
+log
+@Updated to new DEV / FS interface
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devScsiDevice.c,v 1.2 89/05/23 10:23:26 mendel Exp Locker: brent $ SPRITE (Berkeley)";
+d369 1
+a369 1
+DevScsiIOControl(devPtr, command, byteOrder, inBufSize, inBuffer, outBufSize, outBuffer)
+d371 2
+a372 6
+    int command;		/* IO Control Command. */
+    int byteOrder;		/* Caller's byte ordering */
+    int inBufSize;		/* Input buffer size. */
+    char *inBuffer;		/* IO Control input buffer. */
+    int outBufSize;		/* Output buffer size. */
+    char *outBuffer;		/* IO Control input buffer. */
+d376 1
+a376 1
+    if (command == IOC_SCSI_COMMAND) {
+d386 1
+a386 1
+	if ((inBufSize < sizeof(Dev_ScsiCommand)) ||
+d390 1
+a390 1
+	cmdPtr = (Dev_ScsiCommand *) inBuffer;
+d395 1
+a395 1
+	scsiCmd.commandBlockLen = inBufSize - sizeof(Dev_ScsiCommand);
+d399 2
+a400 2
+	statusPtr = (Dev_ScsiStatus *) outBuffer;
+	bcopy(inBuffer + sizeof(Dev_ScsiCommand), scsiCmd.commandBlock,
+d408 1
+a408 1
+		outBuffer + sizeof(Dev_ScsiStatus));
+@
+
+
+1.2
+log
+@Attach attach procedure for missing HBAs.
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev.new/RCS/devScsiDevice.c,v 1.1 89/05/01 16:15:09 mendel Exp Locker: mendel $ SPRITE (Berkeley)";
+d369 1
+a369 1
+DevScsiIOControl(devPtr,command, inBufSize, inBuffer, outBufSize, outBuffer)
+d372 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.2 89/01/07 04:12:18 rab Exp $ SPRITE (Berkeley)";
+d424 25
+a448 1
+
+@

@@ -1,0 +1,1 @@
+ds3100.md/installboot -dev raw_rsd00 /sprite/src/boot/decprom/ds3100.md/decprom

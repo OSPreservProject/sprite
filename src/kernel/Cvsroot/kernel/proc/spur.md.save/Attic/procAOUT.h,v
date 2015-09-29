@@ -1,0 +1,176 @@
+head     8.0;
+branch   ;
+access   ;
+symbols  sun4nw:8.0 symm:8.0 spur:8.0 newlib:8.0;
+locks    ; strict;
+comment  @ * @;
+
+
+8.0
+date     88.11.11.18.32.48;  author douglis;  state Stable;
+branches ;
+next     1.3;
+
+1.3
+date     88.08.25.22.48.36;  author douglis;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.08.05.10.06.36;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.08.05.09.59.39;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@/*
+ * procAOUT.h --
+ *
+ *	The a.out format for an object file for SPUR. This file is based on
+ * a.out.h and sys/exec.h for SPUR.
+ *
+ * Copyright (C)  1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ *
+ * $Header: /sprite/src/kernel/proc/spur.md/RCS/procAOUT.h,v 1.3 88/08/25 22:48:36 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+ */
+
+#ifndef _PROCAOUT
+#define _PROCAOUT
+
+#include "sprite.h"
+
+#ifdef KERNEL
+#include "vm.h"
+#else
+#include <kernel/vm.h>
+#endif /* */
+
+#define	NEW_PAGE_SIZE		0x1000
+#define	NEW_SEG_SIZE		0x20000
+
+/*
+ * Header prepended to each a.out file. Taken from sys/exec.h.  
+ *
+ * NOTE: sdata and data and sbss and bss are switched for now until
+ *       the loader works correctly.
+ */
+
+typedef struct {
+    unsigned long 	magic;		/* magic number */
+    unsigned long	bytord;		/* byte order indicator. */
+    unsigned long	code;		/* Size of code segment */
+    unsigned long	sdata;		/* Size of shared initialized data */
+    unsigned long	data;		/* Size of initialized data */
+    unsigned long	sbss;		/* Size of shared uninitialized data */
+    unsigned long	bss;		/* Size of uninitialized data */
+    unsigned long	syms;		/* Size of symbol table */
+    unsigned long	entry;		/* Entry point */
+    unsigned long	rsize;		/* Size of relocation area */
+    unsigned long	expsize;	/* Size of load-time expressions */
+    unsigned long	a_padding;	
+} Proc_AOUT;
+
+#define	PROC_OMAGIC	0507		/* impure format */
+#define	PROC_ZMAGIC	0513		/* Demand load format */
+
+/*
+ * Macros which take exec structures as arguments and tell whether
+ * the file has a reasonable magic number or offsets to text|symbols|strings.
+ */
+#define	PROC_BAD_MAGIC_NUMBER(x) \
+    (((x).magic)!=PROC_ZMAGIC)
+
+#define	PROC_CODE_FILE_OFFSET(x) \
+	((x).magic==PROC_ZMAGIC ? 0 : sizeof (Proc_AOUT))
+#define	PROC_DATA_FILE_OFFSET(x) \
+	(PROC_CODE_FILE_OFFSET(x) + (x).code)
+
+/*
+ * Macros which take exec structures as arguments and tell where the
+ * various pieces will be loaded.
+ */
+#define PROC_CODE_LOAD_ADDR(x) 0x40000000
+#define PROC_DATA_LOAD_ADDR(x) \
+	(((x).magic==PROC_OMAGIC)? (PROC_CODE_LOAD_ADDR(x)+(x).code) \
+	: (0x80000000))
+#define PROC_BSS_LOAD_ADDR(x)  (PROC_DATA_LOAD_ADDR(x)+(x).data)
+
+#endif /* _PROCAOUT */
+@
+
+
+1.3
+log
+@sdata and data and sbss and bss are switched for now until
+the loader works correctly.
+(done by MNN).
+fixed #endif /* */ problem (FD).
+@
+text
+@d17 1
+a17 1
+ * $Header: procAOUT.h,v 1.2 88/08/05 10:06:36 ouster Exp $ SPRITE (Berkeley)
+@
+
+
+1.2
+log
+@Changed includes to allow inclusion from new user programs.
+@
+text
+@d17 1
+a17 1
+ * $Header: procAOUT.h,v 1.1 88/08/05 09:59:39 ouster Exp $ SPRITE (Berkeley)
+d29 1
+a29 1
+#endif
+d35 4
+a38 1
+ * Header prepended to each a.out file. Taken from sys/exec.h
+d45 1
+d47 1
+a47 1
+    unsigned long	sdata;		/* Size of shared initialized data */
+a48 1
+    unsigned long	sbss;		/* Size of shared uninitialized data */
+d78 1
+a78 1
+	: (0xc0000000))
+d81 1
+a81 1
+#endif _PROCAOUT
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+ * $Header: procAOUT.h,v 5.2 88/04/18 09:07:17 ouster Exp $ SPRITE (Berkeley)
+d24 2
+d27 3
+@

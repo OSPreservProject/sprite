@@ -1,0 +1,8 @@
+/dev/rsd00c:UsageArray: FreeBlocks wrong; is 83380 should be 83426
+10:20:50.920:Read LFS checkpoint from /dev/rsd00c
+10:20:52.000:Checking files
+10:21:55.060:Checking usage array
+10:21:55.060:Checking directory tree
+10:21:56.320:Checking summary regions
+10:22:09.360:Reporting errors
+/dev/rsd00c: 0 major errors 1 minor errors

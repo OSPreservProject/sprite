@@ -1,0 +1,229 @@
+head     9.1;
+branch   ;
+access   ;
+symbols  ds3100:9.1 sun3:9.1 sun4nw:9.1 symm:9.1 spur:9.1 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.1
+date     90.10.05.17.50.26;  author mendel;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.15.19.51;  author douglis;  state Stable;
+branches ;
+next     8.2;
+
+8.2
+date     89.07.23.16.58.58;  author jhh;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     89.02.19.22.15.14;  author jhh;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.37.53;  author douglis;  state Stable;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.25.22.39.53;  author douglis;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.27.01;  author brent;  state Stable;
+branches ;
+next     5.0;
+
+5.0
+date     87.08.11.10.50.57;  author sprite;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+9.1
+log
+@Did function prototypeing and fixed include files.
+@
+text
+@/* * syncInt.h --
+ *
+ *	Declarations of internal procedures of the sync module.
+ *
+ * Copyright (C) 1985 Regents of the University of California
+ * All rights reserved.
+ *
+ *
+ * $Header: /sprite/src/kernel/sync/RCS/syncInt.h,v 9.0 89/09/12 15:19:51 douglis Stable Locker: mendel $ SPRITE (Berkeley)
+ */
+
+#ifndef _SYNCINT
+#define _SYNCINT
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SyncAddLockStats --
+ *
+ *	Adds the statistics for the given lock to the type total.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *	
+ *----------------------------------------------------------------------
+ */
+
+#define SyncAddLockStats(regPtr, lock) 					\
+    { 									\
+	 (regPtr)->hit += FIELD(lock, hit); 				\
+	(regPtr)->miss += FIELD(lock, miss); 				\
+	if (((Sync_Lock *) lock)->type == SYNC_LOCK) { 			\
+	    SyncMergePrior((Sync_Lock *) (lock), (regPtr));		\
+	} else {							\
+	    SyncMergePrior((Sync_Semaphore *) (lock), (regPtr));	\
+	}								\
+    }
+
+extern void SyncEventWakeupInt _ARGS_((unsigned int event));
+extern Boolean SyncEventWaitInt _ARGS_((unsigned int event, 
+					Boolean wakeIfSignal));
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FIELD --
+ *
+ *	Some of the routines take either semaphores or locks as parameters.
+ *	This macro is used to get the desired field from the object,
+ *	regardless of its type.
+ *
+ * Results:
+ *	Value of the field.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#define FIELD(lock,name) ( \
+    ((Sync_Lock *) (lock))->class == SYNC_SEMAPHORE ? \
+    ((Sync_Semaphore *) (lock))->name : \
+    ((Sync_Lock *) (lock))->name ) 
+
+#endif /* _SYNCINT */
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/sync/RCS/syncInt.h,v 8.2 89/07/23 16:58:58 jhh Exp Locker: douglis $ SPRITE (Berkeley)
+d42 3
+a44 5
+extern 	void 	SyncSlowWait();
+extern 	void 	SyncSlowLock();
+extern 	void 	SyncSlowBroadcast();
+extern	void	SyncEventWakeupInt();
+extern	Boolean	SyncEventWaitInt();
+@
+
+
+8.2
+log
+@Cleaned up implementation
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/sync/RCS/syncInt.h,v 8.1 89/02/19 22:15:14 jhh Exp $ SPRITE (Berkeley)
+@
+
+
+8.1
+log
+@Changes due to lock registration
+@
+text
+@d9 1
+a9 1
+ * $Header: syncInt.h,v 6.1 88/08/25 22:39:53 douglis Exp $ SPRITE (Berkeley)
+d31 10
+a40 6
+#define SyncAddLockStats(regPtr, lock) \
+    { \
+	 (regPtr)->hit += FIELD(lock, hit); \
+	(regPtr)->miss += FIELD(lock, miss); \
+	SyncMergePrior(FIELD(lock, priorCount), FIELD(lock, priorTypes), \
+	(regPtr));}
+d53 3
+a55 1
+ *	Used to get a field from either a lock or a semaphore.
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d9 1
+a9 1
+ * $Header: /sprite/src/kernel/sync/RCS/syncInt.h,v 6.1 88/08/25 22:39:53 douglis Exp Locker: douglis $ SPRITE (Berkeley)
+d14 16
+d31 7
+d43 21
+@
+
+
+6.1
+log
+@
+@
+text
+@d9 1
+a9 1
+ * $Header: syncInt.h,v 6.0 88/08/11 12:27:01 brent Stable $ SPRITE (Berkeley)
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d9 1
+a9 1
+ * $Header: syncInt.h,v 5.0 87/08/11 10:50:57 sprite Exp $ SPRITE (Berkeley)
+d21 1
+a21 1
+#endif _SYNCINT
+@
+
+
+5.0
+log
+@First Sprite native copy
+@
+text
+@d9 1
+a9 1
+ * $Header: syncInt.h,v 3.1 86/10/10 14:50:24 nelson Exp $ SPRITE (Berkeley)
+@

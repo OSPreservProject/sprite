@@ -1,0 +1,1869 @@
+head     9.10;
+branch   ;
+access   ;
+symbols  ds3100:9.10 sun3:9.10 sun4nw:9.9 symm:9.9 spur:9.9 Summer89:9.0 newlib:8.0 Summer88:6.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.10
+date     92.06.03.22.54.22;  author voelker;  state Exp;
+branches ;
+next     9.9;
+
+9.9
+date     91.06.06.16.56.34;  author jhh;  state Exp;
+branches ;
+next     9.8;
+
+9.8
+date     90.12.06.21.58.55;  author jhh;  state Exp;
+branches ;
+next     9.7;
+
+9.7
+date     90.11.05.18.04.07;  author jhh;  state Exp;
+branches ;
+next     9.6;
+
+9.6
+date     90.10.11.17.12.00;  author mendel;  state Exp;
+branches ;
+next     9.5;
+
+9.5
+date     90.10.09.11.51.20;  author jhh;  state Exp;
+branches ;
+next     9.4;
+
+9.4
+date     90.09.11.13.52.00;  author rab;  state Exp;
+branches ;
+next     9.3;
+
+9.3
+date     90.09.11.12.16.25;  author rab;  state Exp;
+branches ;
+next     9.2;
+
+9.2
+date     89.10.26.11.29.39;  author mgbaker;  state Exp;
+branches ;
+next     9.1;
+
+9.1
+date     89.10.23.08.36.09;  author brent;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.56.38;  author douglis;  state Stable;
+branches ;
+next     8.10;
+
+8.10
+date     89.07.14.09.33.22;  author mendel;  state Exp;
+branches ;
+next     8.9;
+
+8.9
+date     89.06.16.12.08.02;  author brent;  state Exp;
+branches ;
+next     8.8;
+
+8.8
+date     89.06.15.08.45.21;  author brent;  state Exp;
+branches ;
+next     8.7;
+
+8.7
+date     89.05.23.09.58.34;  author mendel;  state Exp;
+branches ;
+next     8.6;
+
+8.6
+date     89.03.15.15.19.50;  author brent;  state Exp;
+branches ;
+next     8.5;
+
+8.5
+date     89.02.19.21.58.12;  author jhh;  state Exp;
+branches ;
+next     8.4;
+
+8.4
+date     89.01.31.12.44.58;  author brent;  state Exp;
+branches ;
+next     8.3;
+
+8.3
+date     89.01.26.08.40.50;  author brent;  state Exp;
+branches ;
+next     8.2;
+
+8.2
+date     88.12.04.14.25.25;  author ouster;  state Exp;
+branches ;
+next     8.1;
+
+8.1
+date     88.11.22.19.05.53;  author jhh;  state Exp;
+branches ;
+next     8.0;
+
+8.0
+date     88.11.11.18.10.11;  author douglis;  state Stable;
+branches ;
+next     6.3;
+
+6.3
+date     88.10.30.21.22.47;  author jhh;  state Exp;
+branches ;
+next     6.2;
+
+6.2
+date     88.09.07.11.43.31;  author nelson;  state Exp;
+branches ;
+next     6.1;
+
+6.1
+date     88.08.26.15.59.27;  author mendel;  state Exp;
+branches ;
+next     6.0;
+
+6.0
+date     88.08.11.12.16.36;  author douglis;  state Stable;
+branches ;
+next     1.2;
+
+1.2
+date     88.08.11.12.13.03;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.07.15.16.57.44;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Network device file system stubs. Moved here from net module.
+@
+
+
+9.10
+log
+@Added FDDI support
+@
+text
+@/* 
+ * devNet.c --
+ *
+ *	Device interface to the network.  The routines here implement
+ *	filesystem devices for the various ethernet protocols.  Input
+ *	queues of received packets are maintainted here, although the
+ *	device has to be open before packets are queued.  There is a
+ *	different queue for each different ethernet protocol, and the
+ *	device unit number is used to identify the protocol.
+ *
+ *	TODO: this needs to be fixed to understand more than one network
+ *	interface.  It seems that at open time the correct interface
+ *	should be chosen.  Also, some interface-data needs to be passed
+ *	down to the output routines so they can choose the right interface.
+ *
+ * Copyright 1987 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/dev/devNet.c,v 9.9 91/06/06 16:56:34 jhh Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include <sprite.h>
+#include <stdio.h>
+#include <net.h>
+#include <fs.h>
+#include <vm.h>
+#include <fsio.h>
+#include <devNet.h>
+#include <user/netInet.h>
+#include <stdlib.h>
+#include <sync.h>
+#include <fsioDevice.h>
+#include <user/net.h>
+#include <bstring.h>
+
+Boolean devNetDebug = FALSE;
+
+/*
+ * The  packets are kept in a circular queue whose length is a power of 2.
+ * Stuff gets added to the queues at interrupt time so removal requires
+ * synchronization with MASTER_LOCK/UNLOCK.
+ */
+
+#define PACKET_QUEUE_LEN	16
+typedef struct {
+    int		head;
+    int		tail;
+    Address	packet[PACKET_QUEUE_LEN];
+    int		size[PACKET_QUEUE_LEN];
+} PacketQueue;
+
+/*
+ * A circular queue is full if its tail is right in front of its
+ * head (mod length). A queue is empty if its tail is its head.
+ */
+
+#define NextTail(queue)		(((queue).tail + 1) & (PACKET_QUEUE_LEN -1))
+#define NextHead(queue)		(((queue).head + 1) & (PACKET_QUEUE_LEN -1))
+
+#define QueueFull(queue)	(NextTail(queue) == (queue).head)
+#define QueueEmpty(queue)       ((queue).tail == (queue).head)
+
+/*
+ * Event counters kept on a per-device basis.
+ */
+typedef struct DeviceStats {
+    int		shorts;		/* Number of short packets received */
+    int		drops;		/* Number of packets dropped when queue full */
+} DeviceStats;
+
+/*
+ * State for the devices.  They are linked together and scanned when
+ * a packet is received.  Packets with protocols that don't match any
+ * of the protocols in this list will be dropped.
+ */
+
+typedef struct DeviceState {
+    List_Links		links;
+    Net_Interface 	*interPtr;	/* Interface associated with the 
+					 * device; */
+    int			protocol;	/* Protocol associated with device. */
+    Boolean		kernel;		/* TRUE if kernel is using this proto */
+    PacketQueue		queue;		/* Queue of received packets */
+    DeviceStats		stats;		/* Event counters */
+    Fs_NotifyToken	fsReadyToken;	/* Used for filesystem callback that
+					 * notifies waiting processes that
+					 * packets are here */
+    int			(*inputProc)();	/* Used when the kernel is using the
+					 * protocol. */
+} DeviceState;
+
+
+/*
+ * Queue of all devices associated with an interface. 
+ */
+
+typedef struct DeviceQueueState {
+    List_Links		links;		/* Queue of DeviceState structures
+					 * for this interface. */
+    Sync_Semaphore	mutex;		/* Synchronizes access to the queue. */
+} DeviceQueueState;
+
+extern void		DevNetHandler();
+static ReturnStatus	ProtocolFromPacket();
+static ReturnStatus	ProtocolFromDevice();
+static DeviceQueueState *QueueFromInterface();
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevNet_FsOpen --
+ *
+ *	Open an ethernet protocol device.  Protocol state is set up and
+ * 	linked in to a list of active protocols.  The protocol is marked
+ * 	open to enable queueing of packets for this protocol.
+ *
+ * Results:
+ *	SUCCESS		- the operation was successful.
+ *	FS_FILE_BUSY	- the device was already opened.
+ *
+ * Side effects:
+ *	Storage for the protocol state is allocated and linked into
+ *	the list of active protocols.  
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+DevNet_FsOpen(devicePtr, useFlags, data, flagsPtr)
+    Fs_Device   *devicePtr;	/* Device info, unit number == protocol */
+    int 	useFlags;	/* Flags from the stream being opened */
+    Fs_NotifyToken  data;	/* Call-back for input notification */
+    int		*flagsPtr;	/* OUT: Device flags. */
+{
+    register int i;
+    unsigned int protocol;
+    ReturnStatus status = SUCCESS;
+    DeviceState		*statePtr;
+    DeviceQueueState *deviceQueuePtr;
+    Boolean		newFormat = FALSE;
+    Net_NetworkType	netType;
+    int			interface;
+    int			unitProto = 0;
+    Net_Interface	*interPtr;
+    DeviceState		*itemPtr;
+    int			maxSize;
+
+    if (devNetDebug) {
+	printf("DevNet_FsOpen: opening device 0x%x 0x%x\n",
+	    devicePtr->type, devicePtr->unit);
+    }
+    statePtr = (DeviceState *) (devicePtr->data);
+    if (statePtr == (DeviceState *) NIL) {
+	statePtr = (DeviceState *) malloc(sizeof(DeviceState));
+	bzero((char *) statePtr, sizeof(DeviceState));
+	List_InitElement((List_Links *) statePtr);
+    } else {
+	/*
+	 * If the device has a state structure then it must be in use.
+	 */
+	if (devNetDebug) {
+	    printf("Extra open\n");
+	}
+	return FS_FILE_BUSY;
+    }
+    if (!(devicePtr->unit & DEV_NET_COMPAT_BIT)) {
+	interface = 0;
+	netType = NET_NETWORK_ETHER;
+	protocol = devicePtr->unit;
+	if (devNetDebug) {
+	    printf("Device has old unit number\n");
+	}
+    } else {
+	int	tmp = (devicePtr->unit & ~DEV_NET_COMPAT_BIT);
+	netType = DEV_NET_NETTYPE_FROM_UNIT(tmp);
+	interface = DEV_NET_NUMBER_FROM_UNIT(tmp);
+	unitProto = DEV_NET_PROTO_FROM_UNIT(tmp);
+	if (devNetDebug) {
+	    printf("Device has new unit number\n");
+	}
+	newFormat = TRUE;
+    }
+    interPtr = Net_GetInterface(netType, interface);
+    if (interPtr == (Net_Interface *) NIL) {
+	if (devNetDebug) {
+	    printf("No interface.\n");
+	}
+	free((char *) statePtr);
+	return DEV_NO_DEVICE;
+    }
+    statePtr->interPtr = interPtr;
+    if (newFormat) {
+	status = ProtocolFromDevice(unitProto, interPtr, &protocol);
+	if (status != SUCCESS) {
+	    if (devNetDebug) {
+		printf("No such protocol %d\n", protocol);
+	    }
+	    free((char *) statePtr);
+	    return DEV_NO_DEVICE;
+	}
+    }
+    deviceQueuePtr = QueueFromInterface(interPtr);
+    switch(netType) {
+	case NET_NETWORK_ETHER: 
+	    /*
+	     * We keep the protocol number in network byte order so as to match
+	     * the values coming off the net.
+	     */
+	    protocol = (unsigned int) 
+			    Net_HostToNetShort((unsigned short) protocol);
+	    break;
+    }
+    statePtr->protocol = protocol;
+    /*
+     * Pre-allocate buffer space for the input queue.
+     * This is probably a bad idea for anything but an ethernet since
+     * packet sizes may get large.
+     */
+    switch(netType) {
+	case NET_NETWORK_ETHER:
+	    maxSize = NET_ETHER_MAX_BYTES;
+	    break;
+	case NET_NETWORK_ULTRA:
+	    maxSize = NET_ULTRA_MAX_BYTES;
+	    break;
+	case NET_NETWORK_FDDI:
+	    maxSize = NET_FDDI_MAX_BYTES;
+	    break;
+	default:
+	    printf("DevNet_FsOpen: unknown net type %d\n", netType);
+	    return DEV_NO_DEVICE;
+    }
+    for (i=0 ; i< PACKET_QUEUE_LEN ; i++) {
+	statePtr->queue.packet[i] = (Address) malloc (maxSize);
+    }
+
+    /*
+     * Differentiate between user-level reads and the kernel.
+     * DevNetEtherHandler will handle packets differently in
+     * the two cases.  It notifies the user-level process, or
+     * it calls the kernel protocol handler.
+     */
+    if (useFlags & FS_USER) {
+	statePtr->kernel = FALSE;
+	statePtr->fsReadyToken = data;
+    } else {
+	statePtr->kernel = TRUE;
+#ifndef lint
+	statePtr->inputProc = (int(*)())data;
+#endif /* lint */
+    }
+    statePtr->queue.head = 0;
+    statePtr->queue.tail = 0;
+    devicePtr->data = (ClientData) statePtr;
+    MASTER_LOCK(&deviceQueuePtr->mutex);
+    LIST_FORALL((List_Links *) deviceQueuePtr, (List_Links *) itemPtr) {
+	if (itemPtr->protocol == protocol) {
+	    panic("DevNet_FsOpen: found protocol already in use.\n");
+	}
+    }
+    List_Insert((List_Links *)statePtr, 
+	LIST_ATREAR((List_Links *) deviceQueuePtr));
+    Net_SetPacketHandler(interPtr, DevNetHandler);
+    MASTER_UNLOCK(&deviceQueuePtr->mutex);
+    if (devNetDebug) {
+	printf("DevNet_FsOpen: Open proto 0x%x status 0x%x\n", 
+			protocol, status);
+    }
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevNet_FsReopen --
+ *
+ *	Reopen an ethernet protocol device.  Call the regular
+ *	open routine to do all the work.
+ *
+ * Results:
+ *	SUCCESS		- the operation was successful.
+ *	FS_FILE_BUSY	- the device was already opened.
+ *
+ * Side effects:
+ *	Storage for the protocol state is allocated and linked into
+ *	the list of active protocols.  
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+DevNet_FsReopen(devicePtr, refs, writers, data, flagsPtr)
+    Fs_Device   *devicePtr;	/* Device info, unit number == protocol */
+    int 	refs;		/* Number of open network streams */
+    int		writers;	/* Number that are open for writing */
+    Fs_NotifyToken  data;	/* Call-back for input notification */
+    int		*flagsPtr;	/* OUT: Device flags. */
+{
+    int useFlags = FS_READ;
+
+    if (writers) {
+	useFlags |= FS_WRITE;
+    }
+    return( DevNet_FsOpen(devicePtr, useFlags, data, flagsPtr) );
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevNetHandler --
+ *
+ *	Dispatcher for packets.  The list of active protocols
+ *	is scanned for a matching protocol.  If found, the packet is
+ *	enqueued for the protocol.
+ *
+ *	Note: This routine is called from the network interrupt routine.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The packet is saved in the protocols queue (if there's room and
+ *	the protocol device is currently open).
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*ARGSUSED*/
+void
+DevNetHandler(interPtr, size, packetPtr)
+    Net_Interface	*interPtr; 	/* Network interface. */
+    int			size;		/* Size of the packet. */
+    Address		packetPtr;	/* Pointer to the packet in the hardware
+					 * receive buffer. */
+{
+    register DeviceQueueState *deviceQueuePtr;
+    int	protocol;
+    DeviceState		*statePtr;
+    ReturnStatus	status;
+
+
+    deviceQueuePtr = (DeviceQueueState *) interPtr->devNetData;
+    if (deviceQueuePtr == (DeviceQueueState *) NIL) {
+	return;
+    }
+    status = ProtocolFromPacket(packetPtr, interPtr->netType, &protocol);
+    if (status != SUCCESS) {
+	printf("DevNetHandler: couldn't get protocol from packet.\n");
+	return;
+    }
+    if (devNetDebug) {
+	printf("DevNetHandler %d:%d 0x%x %d\n", interPtr->netType, 
+		interPtr->number, protocol, size);
+    }
+    MASTER_LOCK(&deviceQueuePtr->mutex);
+    LIST_FORALL((List_Links *) deviceQueuePtr, (List_Links *)statePtr) {
+	if (protocol == statePtr->protocol) {
+	    if (QueueFull(statePtr->queue)) {
+		statePtr->stats.drops++;
+	    } else {
+		bcopy(packetPtr,statePtr->queue.packet[statePtr->queue.tail],
+		      size);
+		statePtr->queue.size[statePtr->queue.tail] = size;
+		statePtr->queue.tail = NextTail(statePtr->queue);
+		if (statePtr->kernel) {
+		    /*
+		     * Indirect to a process to pull the packet off of
+		     * the input queue.  We can't call the protocol handlers
+		     * directly because they use malloc and free. 
+		     */
+		    Proc_CallFunc((void (*)())statePtr->inputProc, 
+			(ClientData)statePtr, 0);
+		} else {
+		    Fsio_DevNotifyReader(statePtr->fsReadyToken);
+		}
+	    }
+	    break;
+	}
+    }
+    MASTER_UNLOCK(&deviceQueuePtr->mutex);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevNet_FsRead --
+ *
+ *	Read a packet from a network device. This returns the first
+ *	packet from the device's input queue, if any.  This returns
+ *	data from at most 1 network packet.  If the caller's buffer is
+ *	too short, the packet is truncated.
+ *
+ * Results:
+ *	SUCCESS		- if a packet was found in the queue.  
+ *	FS_WOULD_BLOCK	- no packets found.
+ *
+ * Side effects:
+ *	Removes the first packet from the queue and copies it into
+ *	the receiver's buffer.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*ARGSUSED*/
+ReturnStatus
+DevNet_FsRead(devicePtr, readPtr, replyPtr)
+    Fs_Device	*devicePtr;
+    Fs_IOParam	*readPtr;	/* Read parameter block */
+    Fs_IOReply	*replyPtr;	/* Return length and signal */ 
+{
+    ReturnStatus status;
+    register DeviceState *statePtr;
+    register Address packetPtr;
+    register int size;
+    DeviceQueueState	*deviceQueuePtr;
+
+    statePtr = (DeviceState *) devicePtr->data;
+    deviceQueuePtr = (DeviceQueueState *) statePtr->interPtr->devNetData;
+
+    MASTER_LOCK(&deviceQueuePtr->mutex);
+    if (QueueEmpty(statePtr->queue)) {
+	size = 0;
+	status = FS_WOULD_BLOCK;
+	if (devNetDebug) {
+	    printf("DevNet_FsRead: empty queue, %d:%d proto 0x%x\n",
+				statePtr->interPtr->netType,
+				statePtr->interPtr->number,
+				statePtr->protocol);
+	}
+    } else {
+	packetPtr = statePtr->queue.packet[statePtr->queue.head];
+	size = statePtr->queue.size[statePtr->queue.head];
+
+	statePtr->queue.head = NextHead(statePtr->queue);
+
+	if (size > readPtr->length) {
+	    size = readPtr->length;
+	}
+	bcopy(packetPtr, readPtr->buffer, size);
+
+	status = SUCCESS;
+	if (devNetDebug) {
+	    printf("DevNet_FsRead: Found packet %d:%d proto 0x%x, size %d\n",
+				statePtr->interPtr->netType,
+				statePtr->interPtr->number,
+				statePtr->protocol, size);
+	}
+    }
+
+    replyPtr->length = size;
+    MASTER_UNLOCK(&deviceQueuePtr->mutex);
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevNet_FsWrite --
+ *
+ *	Pass a packet off to the network driver for output.  The driver
+ *	maintains a transmit queue so we don't have to.  The protocol
+ *	in the output packet header is verified to be the one corresponding
+ *	to the device file.
+ *
+ * Results:
+ *	SUCCESS		- the packet was transmitted.
+ *	SYS_INVALID_ARG	- packet is too small or the protocol in the
+ *			  buffer doesn't match the one for the device.
+ *
+ * Side effects:
+ *	Initiates transmission of the packet.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*ARGSUSED*/
+ReturnStatus
+DevNet_FsWrite(devicePtr, writePtr, replyPtr)
+    Fs_Device	*devicePtr;
+    Fs_IOParam	*writePtr;	/* Standard write parameter block */
+    Fs_IOReply	*replyPtr;	/* Return length and signal */
+{
+    register DeviceState *statePtr;
+    Net_ScatterGather ioVector;
+    Net_Interface	*interPtr;
+    int			dataSize;
+    int			protocol;
+    ReturnStatus	status;
+
+    statePtr = (DeviceState *) devicePtr->data;
+    interPtr = statePtr->interPtr;
+    dataSize = writePtr->length - net_NetworkHeaderSize[interPtr->netType];
+    if (devNetDebug) {
+	printf(
+    "DevNet_FsWrite: Writing packet %d:%d proto 0x%x, size %d (%d)\n",
+	    statePtr->interPtr->netType, statePtr->interPtr->number,
+	    statePtr->protocol, writePtr->length, dataSize);
+    }
+    if (dataSize < interPtr->minBytes ||
+	dataSize >  interPtr->maxBytes) {
+	if (devNetDebug) {
+	    printf("DevNet_FsWrite: bad dataSize %d, maxBytes %d, minBytes\n",
+		dataSize, interPtr->maxBytes, interPtr->minBytes);
+	}
+	return(SYS_INVALID_ARG);
+    }
+    status = ProtocolFromPacket((Address) writePtr->buffer, 
+		    interPtr->netType, &protocol);
+    if (status != SUCCESS) {
+	printf("DevNet_FsWrite: can't get protocol from packet\n");
+	return SYS_INVALID_ARG;
+    }
+    if (protocol != statePtr->protocol) {
+	if (devNetDebug) {
+	    printf("DevNet_FsWrite: packet protocol %d != device protocol %d\n",
+		protocol, statePtr->protocol);
+	}
+	return(SYS_INVALID_ARG);
+    }
+    ioVector.bufAddr = (Address)((int)writePtr->buffer + 
+	net_NetworkHeaderSize[interPtr->netType]);
+    ioVector.length  = dataSize;
+    status = Net_RawOutputSync(interPtr, writePtr->buffer, &ioVector, 1);
+    replyPtr->length = writePtr->length;
+    return(status);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevNet_FsClose --
+ *
+ *	Close the device.
+ *
+ * Results:
+ *	SUCCESS
+ *
+ * Side effects:
+ *	The protocol state is marked as closed, and any packets on the
+ *	input queue are discarded.
+ *
+ *----------------------------------------------------------------------
+ */
+/*ARGSUSED*/
+ReturnStatus
+DevNet_FsClose(devicePtr, useFlags, openCount, writerCount)
+    Fs_Device	*devicePtr;	/* Device info. */
+    int		useFlags;	/* FS_READ | FS_WRITE */
+    int		openCount;
+    /* Number of times device still open. */
+    int		writerCount;	/* Number of writers still on the device. */
+{
+    DeviceState		*statePtr;
+    DeviceQueueState 	*deviceQueuePtr;
+    int			i;
+
+    statePtr = (DeviceState *) (devicePtr->data);
+    deviceQueuePtr = (DeviceQueueState *) statePtr->interPtr->devNetData;
+    MASTER_LOCK(&deviceQueuePtr->mutex);
+    List_Remove((List_Links *) statePtr);
+    if (List_IsEmpty((List_Links *) deviceQueuePtr)) {
+	Net_RemovePacketHandler(statePtr->interPtr);
+    }
+    MASTER_UNLOCK(&deviceQueuePtr->mutex);
+    for (i=0 ; i< PACKET_QUEUE_LEN ; i++) {
+	free ((char *) statePtr->queue.packet[i]);
+    }
+    free((char *) statePtr);
+    devicePtr->data = (ClientData) NIL;
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevNet_FsSelect --
+ *
+ *	Perform device-specific select functions on the device.
+ *	Always indicates that the device is writable. Indicates the
+ *	device is readable if the queue is not empty.
+ *
+ * Results:
+ *	SUCCESS		- the operation was successful.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*ARGSUSED*/
+ReturnStatus
+DevNet_FsSelect(devicePtr, readPtr, writePtr, exceptPtr)
+    Fs_Device	*devicePtr;
+    int			*readPtr;
+    int			*writePtr;
+    int			*exceptPtr;
+{
+    DeviceState		*statePtr;
+    DeviceQueueState 	*deviceQueuePtr;
+
+    statePtr = (DeviceState *) (devicePtr->data);
+    deviceQueuePtr = (DeviceQueueState *) statePtr->interPtr->devNetData;
+
+    MASTER_LOCK(&deviceQueuePtr->mutex);
+
+    if (*readPtr) {
+	if (QueueEmpty(statePtr->queue)) {
+	    *readPtr = 0;
+	}
+    }
+    *exceptPtr = 0;
+    MASTER_UNLOCK(&deviceQueuePtr->mutex);
+    return(SUCCESS);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DevNet_FsIOControl --
+ *
+ *	Not implemented yet.
+ *
+ * Results:
+ *	SUCCESS		- the operation was successful.
+ *	SYS_INVALID_ARG - bad command, or wrong buffer size.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+/*ARGSUSED*/
+ReturnStatus
+DevNet_FsIOControl(devicePtr, ioctlPtr, replyPtr)
+    Fs_Device	*devicePtr;
+    Fs_IOCParam *ioctlPtr;
+    Fs_IOReply *replyPtr;
+
+{
+    DeviceState		*statePtr;
+    Net_Interface	*interPtr;
+    ReturnStatus	status = SUCCESS;
+
+    statePtr = (DeviceState *) (devicePtr->data);
+    interPtr = statePtr->interPtr;
+
+    /*
+     * Call the ioctl routine specific to the interface.
+     */
+    status = (interPtr->ioctl)(interPtr, ioctlPtr, replyPtr);
+
+    /*
+     * Here should be the handling of any ioctls that are specific to
+     * the protocol or network devices in general.
+     */
+
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProtocolFromPacket --
+ *
+ *	Retrieves the protocol from a packet.  For the Ethernet
+ *	the protocol is the type field in the header.  In general
+ *	the protocol can be an arbitrary characteristic of the
+ *	packet.  
+ *
+ * Results:
+ *	The protocol associated with the packet.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+ProtocolFromPacket(packetPtr, netType, protoPtr)
+    Address		packetPtr;	/* Network-specific packet. */
+    Net_NetworkType	netType;	/* Type of network. */
+    int			*protoPtr;	/* Place to return protocol. */
+{
+    int			protocol = 0;
+    ReturnStatus	status = SUCCESS;
+
+    switch(netType) {
+	case NET_NETWORK_ETHER:
+	    protocol = NET_ETHER_HDR_TYPE(*(Net_EtherHdr *)packetPtr);
+	    break;
+	case NET_NETWORK_ULTRA:
+	    protocol = 0;
+	    break;
+	case NET_NETWORK_FDDI:
+	    protocol = 0;  
+	    break;
+	default:
+	    status = FAILURE;
+    }
+    if (status == SUCCESS) {
+	*protoPtr = protocol;
+    }
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProtocolFromDevice--
+ *
+ *	Determine the protocol number from the protocol field in the
+ *	device unit number.  This is also a function of the network
+ *	type.
+ *
+ * Results:
+ *	SUCCESS if the protocol was found, FAILURE otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ReturnStatus
+ProtocolFromDevice(unitProto, interPtr, protoPtr)
+    int			unitProto;	/* Value of proto field in unit. */
+    Net_Interface 	*interPtr;	/* Network interface. */
+    int			*protoPtr;	/* Place to return protocol. */
+{
+    static int	mapping[NET_NUM_NETWORK_TYPES][DEV_NET_NUM_PROTO] = {
+
+	/* NET_NETWORK_ETHER */ 
+	    {0, /* Doesn't match any. */
+	     NET_ETHER_ARP, 
+	     NET_ETHER_REVARP,
+	     NET_ETHER_IP, 
+	     NET_ETHER_SPRITE_DEBUG,
+	     NET_ETHER_MOP},
+	/* NET_NETWORK_ULTRA */
+	    {0, /* Doesn't match any. */
+	     0,
+	     0,
+	     0},
+	/* NET_NETWORK_FDDI */
+	    {0, /* Doesn't match any. */
+	     0,
+	     0,
+	     0,
+             0,
+             0}
+     };
+
+    if (unitProto < 0 || unitProto >= DEV_NET_NUM_PROTO) {
+	return FAILURE;
+    }
+    *protoPtr = mapping[interPtr->netType][unitProto];
+    return SUCCESS;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * QueueFromInterface --
+ *
+ *	This routine gets the queue structure from the interface if
+ *	one exists, or allocates one otherwise.  We need to have 
+ *	this separate routine because many devices share the same
+ *	queue structure of an interface and we have to avoid race
+ *	conditions when two devices are opened.
+ *
+ * Results:
+ *	Pointer to the queue structure.
+ *
+ * Side effects:
+ *	The queue structure is allocated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static DeviceQueueState *
+QueueFromInterface(interPtr)
+    Net_Interface	*interPtr;  /* The network interface. */
+{
+    static Sync_Lock  lock = Sync_LockInitStatic("QueueFromInterface:lock");
+#define LOCKPTR (&lock)
+
+    DeviceQueueState *deviceQueuePtr;
+
+    LOCK_MONITOR;
+    deviceQueuePtr = (DeviceQueueState *) interPtr->devNetData;
+    if (deviceQueuePtr == (DeviceQueueState *) NIL) {
+	deviceQueuePtr = (DeviceQueueState *) 
+				malloc(sizeof(DeviceQueueState));
+	List_Init((List_Links *) deviceQueuePtr);
+	Sync_SemInitDynamic(&deviceQueuePtr->mutex, 
+	    "Dev:queueStateMutex");
+	interPtr->devNetData = (ClientData) deviceQueuePtr;
+    }
+    UNLOCK_MONITOR;
+    return deviceQueuePtr;
+}
+
+@
+
+
+9.9
+log
+@added missing default to switch statement on netType
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devNet.c,v 9.8 90/12/06 21:58:55 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d235 3
+d711 3
+d760 8
+a767 1
+	     0}
+@
+
+
+9.8
+log
+@added the mop protocol
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devNet.c,v 9.7 90/11/05 18:04:07 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d235 3
+@
+
+
+9.7
+log
+@added ultranet support
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devNet.c,v 9.6 90/10/11 17:12:00 mendel Exp $ SPRITE (Berkeley)";
+d745 2
+a746 1
+	     NET_ETHER_SPRITE_DEBUG},
+@
+
+
+9.6
+log
+@Added include to rid file of lint.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devNet.c,v 9.5 90/10/09 11:51:20 jhh Exp Locker: mendel $ SPRITE (Berkeley)";
+d155 1
+d228 8
+d237 1
+a237 1
+	statePtr->queue.packet[i] = (Address) malloc (NET_ETHER_MAX_BYTES);
+a349 7
+    switch(interPtr->netType) {
+	case NET_NETWORK_ETHER: 
+	    protocol = NET_ETHER_HDR_TYPE(*(Net_EtherHdr *)packetPtr);
+	    break;
+	default:
+	    return;
+    }
+d528 1
+a528 1
+    Net_RawOutputSync(interPtr, writePtr->buffer, &ioVector, 1);
+d530 1
+a530 1
+    return(SUCCESS);
+d701 3
+@
+
+
+9.5
+log
+@new net module
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devNet.c,v 9.4 90/09/11 13:52:00 rab Exp Locker: jhh $ SPRITE (Berkeley)";
+d34 3
+d41 1
+a41 3
+#include <fs.h>
+#include <vm.h>
+#include <fsio.h>
+@
+
+
+9.4
+log
+@#include "stdio.h" for forward decl of printf.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devNet.c,v 9.3 90/09/11 12:16:25 rab Exp Locker: rab $ SPRITE (Berkeley)";
+d31 12
+a42 12
+#include "sprite.h"
+#include "stdio.h"
+#include "net.h"
+#include "devNet.h"
+#include "user/netInet.h"
+#include "stdlib.h"
+#include "sync.h"
+#include "fs.h"
+#include "vm.h"
+#include "fsio.h"
+#include "user/net.h"
+#include "bstring.h"
+d44 1
+a44 1
+Boolean devNetEtherDebug = FALSE;
+d72 1
+a72 1
+ * Event counters kept on a per-protocol basis.
+d74 1
+a74 1
+typedef struct ProtoStats {
+d77 1
+a77 1
+} ProtoStats;
+d80 1
+a80 1
+ * State for the protocols.  They are linked together and scanned when
+d85 1
+a85 1
+typedef struct ProtocolState {
+d87 3
+a89 3
+    int			protocol;	/* Ethernet protocol number */
+    Boolean		open;		/* TRUE is the device is open.  Packets
+					 * are only queued if it is open. */
+d92 1
+a92 1
+    ProtoStats		stats;		/* Event counters */
+d98 1
+a98 1
+} ProtocolState;
+a99 5
+/*
+ * The header for the list of protocols.
+ */
+List_Links etherProtos;
+static Boolean initList = FALSE;
+d102 13
+a114 4
+ * A master lock is used to synchronize access to the list of protocols.
+ */
+static Sync_Semaphore protoMutex = Sync_SemInitStatic("Dev:protoMutex");
+
+d131 1
+a131 2
+ *	the list of active protocols.  If this has already been done,
+ *	then the protocol is simply marked as open.
+a142 1
+    register ProtocolState *protoPtr;
+d144 1
+a144 1
+    register unsigned int protocol;
+d146 58
+a203 26
+    ProtocolState *newProtoPtr;	
+
+    /*
+     * Allocate a new protocol state structure before we grap a master lock.
+     * This is only needed if this protocol is being opened for this 
+     * first time. 
+     */
+    newProtoPtr = (ProtocolState *)malloc(sizeof(ProtocolState));
+    MASTER_LOCK(&protoMutex);
+    if (!initList) {
+	List_Init(&etherProtos);
+	Sync_SemRegister(&protoMutex);
+	initList = TRUE;
+    }
+    /*
+     * We keep the protocol number in network byte order so as to match
+     * the values coming off the net.
+     */
+    protocol = (unsigned int) 
+		Net_HostToNetShort((unsigned short) (devicePtr->unit));  
+    LIST_FORALL(&etherProtos, (List_Links *)protoPtr) {
+	if (protoPtr->protocol == protocol) {
+	    if (protoPtr->open) {
+		printf("Warning: DevNet_FsOpen: Extra open of net device");
+		status = FS_FILE_BUSY;
+		goto exit;
+d205 2
+a206 1
+	    goto found;
+d209 12
+a220 13
+
+    /*
+     * Protocol not in the list.  Just stick it at the end, although it
+     * would be possible to sort the list...
+     */
+
+    protoPtr = newProtoPtr;
+    newProtoPtr = (ProtocolState *) NIL;
+    List_InitElement((List_Links*) protoPtr);
+    List_Insert((List_Links *)protoPtr, LIST_ATREAR(&etherProtos));
+
+    protoPtr->protocol = protocol;
+    bzero((Address)&protoPtr->stats,sizeof(ProtoStats));
+d223 2
+a224 1
+     * Vm_RawAlloc is used because this queue space is never recycled.
+a225 1
+
+d227 1
+a227 1
+	protoPtr->queue.packet[i] = (Address) Vm_RawAlloc(NET_ETHER_MAX_BYTES);
+a229 3
+
+found:
+
+d237 2
+a238 2
+	protoPtr->kernel = FALSE;
+	protoPtr->fsReadyToken = data;
+d240 1
+a240 1
+	protoPtr->kernel = TRUE;
+d242 1
+a242 1
+	protoPtr->inputProc = (int(*)())data;
+d245 14
+a258 13
+    protoPtr->open = TRUE;
+    protoPtr->queue.head = 0;
+    protoPtr->queue.tail = 0;
+
+    /*
+     * These client data fields are set up for call backs to the filesystem
+     * and so we can quickly get to the protocol state on read/write etc.
+     */
+    devicePtr->data = (ClientData) protoPtr;
+
+exit:
+
+    if (devNetEtherDebug) {
+d260 1
+a260 9
+			devicePtr->unit, status);
+    }
+
+    MASTER_UNLOCK(&protoMutex);
+    /*
+     * Free the potocol state pointer if we didn't need it.
+     */
+    if (newProtoPtr != (ProtocolState *) NIL) {
+	free((char *) newProtoPtr);
+d279 1
+a279 2
+ *	the list of active protocols.  If this has already been done,
+ *	then the protocol is simply marked as open.
+d304 1
+a304 1
+ * DevNetEtherHandler --
+d306 1
+a306 1
+ *	Dispatcher for ethernet packets.  The list of active protocols
+d310 1
+a310 1
+ *	Note: This routine is called from the ethernet interrupt routine.
+d322 1
+d324 37
+a360 23
+DevNetEtherHandler(packetPtr, size)
+    Address	packetPtr;	/* Pointer to the packet in the hardware
+				 * receive buffer. */
+    int		size;		/* Size of the packet. */
+{
+    register ProtocolState *protoPtr;
+    register Net_EtherHdr *etherHdrPtr = (Net_EtherHdr *)packetPtr;
+
+    MASTER_LOCK(&protoMutex);
+    if (!initList) {
+	List_Init(&etherProtos);
+	initList = TRUE;
+    }
+
+    if (devNetEtherDebug) {
+	printf("EtherHandler 0x%x %d\n", NET_ETHER_HDR_TYPE(*etherHdrPtr),
+			size);
+    }
+    LIST_FORALL(&etherProtos, (List_Links *)protoPtr) {
+	if (NET_ETHER_HDR_TYPE(*etherHdrPtr) == protoPtr->protocol && 
+				protoPtr->open) { 
+	    if (QueueFull(protoPtr->queue)) {
+		protoPtr->stats.drops++;
+d362 1
+a362 1
+		bcopy(packetPtr,protoPtr->queue.packet[protoPtr->queue.tail],
+d364 3
+a366 3
+		protoPtr->queue.size[protoPtr->queue.tail] = size;
+		protoPtr->queue.tail = NextTail(protoPtr->queue);
+		if (protoPtr->kernel) {
+d370 1
+a370 3
+		     * directly because they use malloc and free.  Note
+		     * that we pass the protoPtr to the packet handler
+		     * so it can call DevNet_FsRead to get the packet.
+d372 2
+a373 2
+		    Proc_CallFunc((void (*)()) protoPtr->inputProc,
+			(ClientData)protoPtr, 0);
+d375 1
+a375 1
+		    Fsio_DevNotifyReader(protoPtr->fsReadyToken);
+d381 1
+a381 1
+    MASTER_UNLOCK(&protoMutex);
+d389 2
+a390 2
+ *	Read a packet for an ethernet protocol.  This returns the first
+ *	packet from the protocol's input queue, if any.  This returns
+d413 1
+a413 1
+    register ProtocolState *protoPtr;
+d416 1
+d418 2
+a419 1
+    protoPtr = (ProtocolState *)devicePtr->data;
+d421 2
+a422 2
+    MASTER_LOCK(&protoMutex);
+    if (QueueEmpty(protoPtr->queue)) {
+d425 5
+a429 3
+	if (devNetEtherDebug) {
+	    printf("DevNet_FsRead: empty queue, proto 0x%x\n",
+				protoPtr->protocol);
+d432 2
+a433 2
+	packetPtr = protoPtr->queue.packet[protoPtr->queue.head];
+	size = protoPtr->queue.size[protoPtr->queue.head];
+d435 1
+a435 1
+	protoPtr->queue.head = NextHead(protoPtr->queue);
+d443 5
+a447 3
+	if (devNetEtherDebug) {
+	    printf("DevNet_FsRead: Found packet proto 0x%x, size %d\n",
+				protoPtr->protocol, size);
+d452 1
+a452 1
+    MASTER_UNLOCK(&protoMutex);
+d485 1
+a485 2
+    register Net_EtherHdr *etherHdrPtr;
+    register ProtocolState *protoPtr;
+d487 4
+d492 15
+a506 2
+    if (writePtr->length < sizeof(Net_EtherHdr) ||
+	writePtr->length > NET_ETHER_MAX_BYTES) {
+d509 11
+a519 8
+    protoPtr = (ProtocolState *)devicePtr->data;
+    etherHdrPtr = (Net_EtherHdr *)writePtr->buffer;
+
+    /*
+     * Verify the protocol type in the header.  The low level driver
+     * will fill in the source address for us.
+     */
+    if (NET_ETHER_HDR_TYPE(*etherHdrPtr) != protoPtr->protocol) {
+d522 4
+a525 6
+
+    ioVector.bufAddr = (Address)((int)writePtr->buffer + sizeof(Net_EtherHdr));
+    ioVector.length  = writePtr->length - sizeof(Net_EtherHdr);
+
+    Net_EtherOutputSync(etherHdrPtr, &ioVector, 1);
+
+d552 2
+a553 1
+    int		openCount;	/* Number of times device still open. */
+d556 3
+a558 1
+    ProtocolState *protoPtr;
+d560 13
+a572 10
+    MASTER_LOCK(&protoMutex);
+
+    protoPtr = (ProtocolState *)devicePtr->data;
+    protoPtr->open = FALSE;
+    protoPtr->fsReadyToken = (Fs_NotifyToken)NIL;
+    /*
+     * Nuke the queue here?
+     */
+
+    MASTER_UNLOCK(&protoMutex);
+d603 2
+a604 1
+    register ProtocolState *protoPtr;
+d606 2
+a607 2
+    MASTER_LOCK(&protoMutex);
+    protoPtr = (ProtocolState *)devicePtr->data;
+d609 2
+d612 1
+a612 1
+	if (QueueEmpty(protoPtr->queue)) {
+d617 1
+a617 1
+    MASTER_UNLOCK(&protoMutex);
+d645 1
+d647 148
+a794 1
+    return(FAILURE);
+d796 1
+@
+
+
+9.3
+log
+@Added #includes of vm.h, fsio.h, bstring.h for forward declarations.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devNet.c,v 9.2 89/10/26 11:29:39 mgbaker Exp Locker: rab $ SPRITE (Berkeley)";
+d32 1
+d336 2
+a337 1
+		    Proc_CallFunc(protoPtr->inputProc, (ClientData)protoPtr, 0);
+@
+
+
+9.2
+log
+@fixing lint
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devNet.c,v 9.1 89/10/23 08:36:09 brent Exp Locker: mgbaker $ SPRITE (Berkeley)";
+d38 2
+d41 1
+@
+
+
+9.1
+log
+@Updated calls to new FS modules
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devNet.c,v 9.0 89/09/12 14:56:38 douglis Stable Locker: brent $ SPRITE (Berkeley)";
+d206 1
+d208 1
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devNet.c,v 8.10 89/07/14 09:33:22 mendel Exp Locker: douglis $ SPRITE (Berkeley)";
+d332 1
+a332 1
+		    Fs_DevNotifyReader(protoPtr->fsReadyToken);
+@
+
+
+8.10
+log
+@Added flag to device open call.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devNet.c,v 8.9 89/06/16 12:08:02 brent Exp Locker: mendel $ SPRITE (Berkeley)";
+@
+
+
+8.9
+log
+@Updated I/O Control interface
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devNet.c,v 8.8 89/06/15 08:45:21 brent Exp Locker: brent $ SPRITE (Berkeley)";
+d130 1
+a130 1
+DevNet_FsOpen(devicePtr, useFlags, data)
+d134 1
+d256 1
+a256 1
+DevNet_FsReopen(devicePtr, refs, writers, data)
+d261 1
+d268 1
+a268 1
+    return( DevNet_FsOpen(devicePtr, useFlags, data) );
+@
+
+
+8.8
+log
+@Updated new new DEV / FS interface
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devNet.c,v 8.7 89/05/23 09:58:34 mendel Exp Locker: brent $ SPRITE (Berkeley)";
+d564 1
+a564 2
+DevNet_FsIOControl(devicePtr, command, byteOrder, inBufSize, inBuffer,
+		outBufSize, outBuffer)
+d566 2
+a567 6
+    int		command;
+    int		byteOrder;
+    int		inBufSize;
+    Address	inBuffer;
+    int		outBufSize;
+    Address	outBuffer;
+@
+
+
+8.7
+log
+@Removed malloc from MASTER_LOCKed code.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devNet.c,v 8.6 89/03/15 15:19:50 brent Exp $ SPRITE (Berkeley)";
+d89 1
+a89 1
+    ClientData		fsReadyToken;	/* Used for filesystem callback that
+d133 1
+a133 1
+    ClientData  data;		/* Call-back for input notification */
+d237 36
+d330 1
+a330 1
+		    Fs_NotifyReader(protoPtr->fsReadyToken);
+d362 1
+a362 1
+DevNet_FsRead(devicePtr, offset, bufSize, buffer, lenPtr)
+d364 2
+a365 4
+    int		offset;		/* ignored */
+    int		bufSize;	/* size of buffer */
+    Address	buffer;		/* place to store data */
+    int		*lenPtr;	/* max. # of chars to read before returning */
+d388 2
+a389 2
+	if (size > bufSize) {
+	    size = bufSize;
+d391 1
+a391 1
+	bcopy(packetPtr, buffer,size);
+d400 1
+a400 1
+    *lenPtr = size;
+d429 1
+a429 1
+DevNet_FsWrite(devicePtr, offset, bufSize, buffer, lenPtr)
+d431 2
+a432 4
+    int		offset;		/* Ignored */
+    int		bufSize;	/* Size of buffer */
+    Address	buffer;		/* Place to find data */
+    int		*lenPtr;	/* Number of chars written */
+d438 2
+a439 1
+    if (bufSize < sizeof(Net_EtherHdr)) {
+d443 1
+a443 1
+    etherHdrPtr = (Net_EtherHdr *)buffer;
+d453 2
+a454 2
+    ioVector.bufAddr	= (Address)((int)buffer + sizeof(Net_EtherHdr));
+    ioVector.length	= bufSize - sizeof(Net_EtherHdr);
+d458 1
+a458 1
+    *lenPtr = bufSize;
+d493 1
+a493 1
+    protoPtr->fsReadyToken = (ClientData)NIL;
+d523 1
+a523 1
+DevNet_FsSelect(devicePtr, inFlags, outFlagsPtr)
+d525 3
+a527 3
+    int		inFlags;		/* FS_READABLE and/or FS_WRITABLE. */
+    int		*outFlagsPtr;		/* The above flags if the device
+    					 * is ready now. */
+d534 3
+a536 7
+    *outFlagsPtr = 0;
+    if (inFlags & FS_WRITABLE) {
+	*outFlagsPtr |= FS_WRITABLE;
+    }
+    if (inFlags & FS_READABLE) {
+	if ( ! QueueEmpty(protoPtr->queue)) {
+	    *outFlagsPtr |= FS_READABLE;
+d539 1
+d564 2
+a565 2
+DevNet_FsIOControl(devicePtr, command, inBufSize, inBuffer, outBufSize,
+		outBuffer)
+d568 1
+@
+
+
+8.6
+log
+@Changed protocol open routine to distinquish a kernel open from
+a user-level open.  This is needed to correctly dispatch an
+incomming packet at interrupt time.  Proc_CallFunc is used to
+invoke the kernel-level input routine.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devNet.c,v 8.5 89/02/19 21:58:12 jhh Exp $ SPRITE (Berkeley)";
+d139 1
+d141 6
+d175 2
+a176 1
+    protoPtr = (ProtocolState *)malloc(sizeof(ProtocolState));
+d225 6
+@
+
+
+8.5
+log
+@Changes due to lock registration
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devNet.c,v 8.4 89/01/31 12:44:58 brent Exp $ SPRITE (Berkeley)";
+d86 1
+d92 2
+a158 2
+	    protoPtr->open = TRUE;
+	    devicePtr->data = (ClientData)protoPtr;
+d186 13
+a206 1
+    protoPtr->fsReadyToken = data;
+d270 12
+a281 1
+		Fs_NotifyReader(protoPtr->fsReadyToken);
+@
+
+
+8.4
+log
+@Fixed net device to use Vm_RawAlloc for its packet queue,
+which is never free'ed.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devNet.c,v 8.3 89/01/26 08:40:50 brent Exp $ SPRITE (Berkeley)";
+d35 1
+a35 1
+#include "mem.h"
+d102 1
+a102 1
+static Sync_Semaphore protoMutex = SYNC_SEM_INIT_STATIC("protoMutex");
+d140 1
+@
+
+
+8.3
+log
+@Mem_Alloc => malloc
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devNet.c,v 8.2 88/12/04 14:25:25 ouster Exp Locker: brent $ SPRITE (Berkeley)";
+d173 2
+a174 2
+     * Pre-allocate buffer space for the input queue.  This seems excessive,
+     * we could go to a global buffer pool...
+d178 1
+a178 1
+	protoPtr->queue.packet[i] = (Address) malloc(NET_ETHER_MAX_BYTES);
+@
+
+
+8.2
+log
+@Eliminated header files that aren't needed anymore.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devNet.c,v 8.1 88/11/22 19:05:53 jhh Exp Locker: ouster $ SPRITE (Berkeley)";
+d166 1
+a166 1
+    protoPtr = (ProtocolState *)Mem_Alloc(sizeof(ProtocolState));
+d178 1
+a178 1
+	protoPtr->queue.packet[i] = (Address) Mem_Alloc(NET_ETHER_MAX_BYTES);
+@
+
+
+8.1
+log
+@new semaphore definition
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devNet.c,v 8.0 88/11/11 18:10:11 douglis Stable Locker: jhh $ SPRITE (Berkeley)";
+a35 1
+#include "byte.h"
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devNet.c,v 6.3 88/10/30 21:22:47 jhh Exp Locker: douglis $ SPRITE (Berkeley)";
+d103 1
+a103 1
+static int protoMutex;
+d138 1
+a138 1
+    MASTER_LOCK(protoMutex);
+d203 1
+a203 1
+    MASTER_UNLOCK(protoMutex);
+d237 1
+a237 1
+    MASTER_LOCK(protoMutex);
+d262 1
+a262 1
+    MASTER_UNLOCK(protoMutex);
+d302 1
+a302 1
+    MASTER_LOCK(protoMutex);
+d329 1
+a329 1
+    MASTER_UNLOCK(protoMutex);
+d418 1
+a418 1
+    MASTER_LOCK(protoMutex);
+d427 1
+a427 1
+    MASTER_UNLOCK(protoMutex);
+d460 1
+a460 1
+    MASTER_LOCK(protoMutex);
+d472 1
+a472 1
+    MASTER_UNLOCK(protoMutex);
+@
+
+
+6.3
+log
+@multiprocessor port, change to new C lib
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/RCS/devNet.c,v 6.2 88/09/07 11:43:31 nelson Exp Locker: jhh $ SPRITE (Berkeley)";
+@
+
+
+6.2
+log
+@Removed lint.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: devNet.c,v 6.1 88/08/26 15:59:27 mendel Exp $ SPRITE (Berkeley)";
+d152 1
+a152 1
+		Sys_Panic(SYS_WARNING, "DevNet_FsOpen: Extra open of net device");
+d172 1
+a172 2
+    Byte_Zero(sizeof(ProtoStats), (Address)&protoPtr->stats);
+
+d199 1
+a199 1
+	Sys_Printf("DevNet_FsOpen: Open proto 0x%x status 0x%x\n", 
+d244 1
+a244 1
+	Sys_Printf("EtherHandler 0x%x %d\n", NET_ETHER_HDR_TYPE(*etherHdrPtr),
+d253 2
+a254 2
+		Byte_Copy(size, packetPtr,
+				protoPtr->queue.packet[protoPtr->queue.tail]);
+d307 1
+a307 1
+	    Sys_Printf("DevNet_FsRead: empty queue, proto 0x%x\n",
+d319 1
+a319 1
+	Byte_Copy(size, packetPtr, buffer);
+d323 1
+a323 1
+	    Sys_Printf("DevNet_FsRead: Found packet proto 0x%x, size %d\n",
+@
+
+
+6.1
+log
+@Added code to handle byte swapped ethernet header.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: devNet.c,v 6.0 88/08/11 12:16:36 douglis Stable $ SPRITE (Berkeley)";
+d126 1
+d409 1
+@
+
+
+6.0
+log
+@Changing version numbers.
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: devNet.c,v 1.2 88/08/11 12:13:03 mendel Exp $ SPRITE (Berkeley)";
+d39 1
+a40 1
+
+d134 1
+d142 6
+a147 1
+
+d149 1
+a149 1
+	if (protoPtr->protocol == devicePtr->unit) {
+d170 1
+a170 1
+    protoPtr->protocol = devicePtr->unit;
+@
+
+
+1.2
+log
+@Added use of NET_ETHER_HDR_TYPE macro
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: devNet.c,v 1.1 88/07/15 16:57:44 mendel Exp $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d27 1
+a27 1
+static char rcsid[] = "$Header: netDevice.c,v 5.5 88/06/27 10:43:13 mendel Exp $ SPRITE (Berkeley)";
+d238 2
+a239 1
+	Sys_Printf("EtherHandler 0x%x %d\n", etherHdrPtr->type, size);
+a240 1
+
+d242 2
+a243 1
+	if (etherHdrPtr->type == protoPtr->protocol && protoPtr->open) { 
+d372 1
+a372 1
+    if (etherHdrPtr->type != protoPtr->protocol) {
+@

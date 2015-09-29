@@ -1,0 +1,11 @@
+fsutilHandle.c:
+fsutilHandleScavenge.c:
+fsutilNotify.c:
+fsutilRecovery.c:
+fsutilSubr.c:
+fsutilSync.c:
+fsutilTrace.c:
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(452)  ::  fsutilHandle.c(325)
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(452)  ::  fsutilHandle.c(329)
+Mem_Ckalloc, arg. 1 used inconsistently	llib-llibc:ckalloc.c(452)  ::  fsutilHandle.c(389)
+Recov_SetClientState returns value which is sometimes ignored

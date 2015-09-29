@@ -1,0 +1,8 @@
+F COPYING.;1                        	COPYING
+D DOC                               	doc
+D LIB                               	lib
+F LOCAL.MK;1                        	local.mk
+D PAPER                             	paper
+F README.;1                         	README
+L SRC.;1                            	src	..
+D TEST                              	test

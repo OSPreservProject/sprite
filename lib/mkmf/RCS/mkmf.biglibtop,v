@@ -1,0 +1,271 @@
+head     1.8;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.8
+date     91.04.11.12.53.33;  author kupfer;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     89.10.09.21.28.33;  author rab;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.08.18.11.21.48;  author douglis;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.08.17.11.16.09;  author douglis;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.04.06.21.40.38;  author jhh;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.12.31.14.45.24;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.11.27.16.29.00;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.08.20.12.58.43;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.8
+log
+@Flush DEFTARGET: the default target is now determined by a pmake
+library file.
+@
+text
+@#!/sprite/cmds/csh -f
+#
+# A script to generate (or regenerate) a Makefile for the topmost directory
+# of a library that is divided up into subdirectories.  This direcctory is
+# little more than a container for lots of subdirectories that have the
+# interesting stuff in them.
+#
+# We assume we were invoked from mkmf.
+#
+# Parameters passed in from mkmf as environment variables:
+#
+#	MKMFDIR		directory containing prototype makefiles
+#	MAKEFILE	name of makefile to create
+#	MACHINES	list of machine names (e.g. "sun2 sun3"), for
+#			which there are machine-dependent subdirectories
+#			(sun3.md, spur.md, etc.) of this directory.
+#	SUBTYPE		what sort of library this is:  "sprite", "x", etc.
+#			Used to determine where to install things.
+#
+# $Header: /sprite/lib/mkmf/RCS/mkmf.biglibtop,v 1.7 89/10/09 21:28:33 rab Exp Locker: kupfer $ (SPRITE) Berkeley
+#
+
+#
+# Argument processing.  (Generalized form, even though just one flag so far.)
+#
+while ($#argv >= 1)
+    if ("$1" == '-x') then
+	set echo
+    endif
+    shift
+end
+
+set subtype=$SUBTYPE
+set lib=$cwd:t
+set machines=($MACHINES)
+set makefile=$MAKEFILE
+set distdir=($DISTDIR)
+
+if (-e $makefile.proto) then
+	set proto=$makefile.proto
+else
+	set proto="${MKMFDIR}/Makefile.biglibtop"
+endif
+
+echo "Generating $makefile for $cwd using $proto"
+
+set subDirs="`find * -type d ! -name \*.md ! -name RCS -prune -print`"
+if ("$subDirs" == "") then
+	echo "No subdirectories found."
+endif
+
+set nonomatch
+set manPages = (*.man)
+if ("$manPages" == "*.man") set manPages=()
+
+cat $proto | sed \
+	-e "s,@@(DATE),`date`,g" \
+	-e "s,@@(MAKEFILE),$makefile,g" \
+	-e "s,@@(MANPAGES),$manPages,g" \
+	-e "s,@@(MACHINES),$machines,g" \
+	-e "s,@@(NAME),$lib,g" \
+	-e "s,@@(SUBDIRS),$subDirs,g" \
+	-e "s,@@(TEMPLATE),$proto,g" \
+	-e "s,@@(TYPE),$subtype,g" \
+	-e "s,@@(DISTDIR),$distdir,g" \
+	> $makefile
+@
+
+
+1.7
+log
+@Modifications for distribution.
+@
+text
+@a11 1
+#	DEFTARGET	name of default target
+d20 1
+a20 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.biglibtop,v 1.6 89/08/18 11:21:48 douglis Exp Locker: rab $ (SPRITE) Berkeley
+a36 1
+set defTarget=($DEFTARGET)
+a57 1
+	-e "s,@@(DEFTARGET),${defTarget:q},g" \
+@
+
+
+1.6
+log
+@another change for TM -- use single machine if it exists, else \ds3100
+@
+text
+@d21 1
+a21 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.biglibtop,v 1.4 89/04/06 21:40:38 jhh Exp Locker: douglis $ (SPRITE) Berkeley
+d39 1
+d68 1
+@
+
+
+1.5
+log
+@removed DEFTARGET -- we use $MACHINE now
+@
+text
+@d12 1
+d38 1
+d59 1
+@
+
+
+1.4
+log
+@added abilty to make specific machine types
+@
+text
+@a11 1
+#	DEFTARGET	name of default target
+d20 1
+a20 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.biglibtop,v 1.3 88/12/31 14:45:24 ouster Exp Locker: jhh $ (SPRITE) Berkeley
+a36 1
+set defTarget=($DEFTARGET)
+a56 1
+	-e "s,@@(DEFTARGET),$defTarget,g" \
+@
+
+
+1.3
+log
+@Use TYPE instead of INSTALLDIR, INSTALLMAN, etc.
+@
+text
+@d11 2
+d21 1
+a21 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.biglibtop,v 1.2 88/11/27 16:29:00 ouster Exp Locker: ouster $ (SPRITE) Berkeley
+d38 1
+a46 6
+
+if (" $machines " =~ *\ sun3\ *) then
+	set defTarget=sun3
+else
+	set defTarget=$machines[1]
+endif
+@
+
+
+1.2
+log
+@Various changes to replace old C library entirely with new C library.
+@
+text
+@d19 1
+a19 1
+# $Header: /sprite/lib/mkmf/RCS/mkmf.biglibtop,v 1.1 88/08/20 12:58:43 ouster Exp Locker: ouster $ (SPRITE) Berkeley
+a35 15
+switch ($subtype)
+    case sprite:
+	set installdir=/sprite/lib
+	set installman=/sprite/doc/ref/lib/$lib
+	set lintdir=/sprite/lib/lint
+	breaksw
+    case x:
+	set installdir=/X/lib
+	set installman=/X/doc/ref/lib/$lib
+	set lintdir=/X/lib/lint
+	breaksw
+    default:
+	echo Unknown library subtype "$subtype"
+	exit 1
+endsw
+a62 3
+	-e "s,@@(INSTALLDIR),$installdir,g" \
+	-e "s,@@(INSTALLMAN),$installman,g" \
+	-e "s,@@(LINTDIR),$lintdir,g" \
+d69 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+d19 1
+a19 1
+# $Header: mkmf.top,v 1.6 88/08/12 14:38:30 ouster Exp $ (SPRITE) Berkeley
+d33 3
+d39 1
+d43 3
+a45 2
+	set installdir=/sprite/lib
+	set lintdir=/sprite/lib/lint
+a50 3
+set lib=$cwd:t
+set machines=($MACHINES)
+set makefile=$MAKEFILE
+a66 1
+
+d71 4
+d76 1
+a76 2
+	-e "s,@@(LIBRARY),$lib,g" \
+	-e "s,@@(MACHINES),$machines,g" \
+a77 1
+	-e "s,@@(SUBDIRS),$subDirs,g" \
+d79 1
+d82 4
+a86 1
+	-e "s,@@(DATE),`date`,g" \
+@

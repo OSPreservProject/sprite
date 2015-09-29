@@ -1,0 +1,55 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  srv030:1.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     92.07.14.17.45.18;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/*
+ * fsMach.h --
+ *
+ *	Machine-dependent file system declarations.
+ *
+ * Copyright 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.7 91/02/09 13:24:52 ouster Exp $ SPRITE (Berkeley)
+ */
+
+#ifndef _FSMACH
+#define _FSMACH
+
+#include <user/fmt.h>
+
+/*
+ * fsMach_Format defines a byte ordering/structure alignment type
+ * used when servicing IOControls.  The input and output buffers for
+ * IOControls have to be made right by the server.
+ */
+extern	Fmt_Format	fsMach_Format;
+
+#endif /* _FSMACH */
+@

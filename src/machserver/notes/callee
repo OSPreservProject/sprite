@@ -1,0 +1,41 @@
+#! /bin/sh
+# Display files that use a particular module.
+# 
+# Use: callee module
+#
+# Todo: arrange to kill the file if the script is interrupted.
+
+if [ $# != 1 ] ; then
+	echo "Use: callee module"
+	exit 1
+fi
+
+module=$1
+echo "Dependencies on ${module}:"
+echo " "
+
+tmpFile=/tmp/callee$$
+
+rm -f $tmpFile
+touch $tmpFile
+
+# Find all the header files in the module.  Then find all the source
+# files that use them.
+
+# Asking for, e.g., lock.h, causes lid to tell us about, e.g.,
+# timerClock.h.  This is a bit gnarly to fix.
+# Asking for, e.g., "vm.h" gets references to, e.g., "vmShmLock".
+# This is fixed by the fgrep.
+
+for f in $module/*.h ; do 
+	fileName=`basename $f`
+	lid $fileName | fgrep $fileName >> $tmpFile
+done
+
+# Can't use awk for formatting - lid can generate lines that are too
+# long for it.  Dunno how to put newline or tab into the file using
+# sed.
+
+emacs -batch $tmpFile -l /users/kupfer/emacs/callee.el -f save-buffer > /dev/null
+cat $tmpFile
+rm $tmpFile

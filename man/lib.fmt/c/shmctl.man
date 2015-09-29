@@ -1,0 +1,132 @@
+
+
+
+shmctl                C Library Procedures                 shmctl
+
+
+
+NNAAMMEE
+     shmctl - shared memory control operations
+
+SSYYNNTTAAXX
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<ssyyss//iippcc..hh>>
+     ##iinncclluuddee <<ssyyss//sshhmm..hh>>
+
+     iinntt sshhmmccttll ((sshhmmiidd,, ccmmdd,, bbuuff))
+     iinntt sshhmmiidd,, ccmmdd;;
+     ssttrruucctt sshhmmiidd__ddss **bbuuff;;
+
+DDEESSCCRRIIPPTTIIOONN
+     The system call provides a variety of shared memory control
+     operations as specified by _c_m_d. The following _c_m_d_s are
+     available:
+
+     IIPPCC__SSTTAATT       Place the current value of each member of the
+                    data structure associated with _s_h_m_i_d into the
+                    structure pointed to by _b_u_f.  The contents of
+                    this structure are defined in
+
+     IIPPCC__SSEETT        Set the value of the following members of the
+                    data structure associated with _s_h_m_i_d to the
+                    corresponding value found in the structure
+                    pointed to by _b_u_f: shm_perm.uid shm_perm.gid
+                    shm_perm.mode    /* only low 9 bits */
+
+             This _c_m_d can only be executed by a process that has
+             an effective user ID equal to either that of super
+             user or to the value of sshhmm__ppeerrmm..uuiidd in the data
+             structure associated with _s_h_m_i_d.
+
+     IIPPCC__RRMMIIDD       Remove the shared memory identifier specified
+                    by _s_h_m_i_d from the system and destroy the
+                    shared memory segment and data structure
+                    associated with it. This _c_m_d can only be exe-
+                    cuted by a process that has an effective user
+                    ID equal to either that of super user or to
+                    the value of sshhmm__ppeerrmm..uuiidd in the data struc-
+                    ture associated with _s_h_m_i_d.
+
+     SSHHMM__LLOOCCKK       Lock the shared memory segment specified by
+                    _s_h_m_i_d in memory.  This _c_m_d can only be exe-
+                    cuted by a process that has an effective usr
+                    ID equal to super user.
+
+     SSHHMM__UUNNLLOOCCKK     Unlock the shared memory segment specified by
+                    _s_h_m_i_d. This _c_m_d can only be executed by a
+                    process that has an effective usr ID equal to
+                    super user.
+
+
+
+
+Sprite v1.0                                                     1
+
+
+
+
+
+
+shmctl                C Library Procedures                 shmctl
+
+
+
+RREETTUURRNN VVAALLUUEE
+     Upon successful completion, a value of 0 is returned.  Oth-
+     erwise, a value of -1 is returned and _e_r_r_n_o is set to indi-
+     cated the error.
+
+DDIIAAGGNNOOSSTTIICCSS
+     The system call will fail if one or more of the following
+     are true:
+
+     [EINVAL]       The _s_h_m_i_d is not a valid shared memory iden-
+                    tifier.
+
+     [EINVAL]       The _c_m_d is not a valid command.
+
+     [EACCES]       The _c_m_d is equal to IPC_STAT and read permis-
+                    sion is denied to the calling process.  For
+                    further information, see
+
+     [EPERM]        The _c_m_d is equal to IPC_RMID or IPC_SET and
+                    the effective user ID of the calling process
+                    is not equal to that of super user and it is
+                    not equal to the value of sshhmm__ppeerrmm..uuiidd in the
+                    data structure associated with _s_h_m_i_d.
+
+     [EPERM]        The _c_m_d is equal to SHM_LOCK or SHM_UNLOCK
+                    and the effective user ID of the calling pro-
+                    cess is not equal to that of superuser.
+
+     [EINVAL]       The _c_m_d is equal to SHM_LOCK and the shared
+                    memory segment is currently locked by this
+                    process.
+
+     [EINVAL]       The _c_m_d is equal to SHM_UNLOCK and the shared
+                    memory segment specified by _s_h_m_i_d is not
+                    currently locked in memory by this process.
+
+     [EFAULT]       The _b_u_f points to an illegal address.
+
+SSEEEE AALLSSOO
+     shmget(2), shmop(2)
+
+BBUUGGSS
+     The System V shared memory functions are implemented at user
+     level on top of the mmap(2) interface.  Not all the System V
+     functionality is implemented.
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     2
+
+
+

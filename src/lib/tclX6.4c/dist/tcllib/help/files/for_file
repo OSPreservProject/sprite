@@ -1,0 +1,13 @@
+
+
+          for_file var filename { code }
+               For each line in filename, sets var to the line and
+               executes code.
+
+               The break and continue commands work as with foreach.
+
+               For example, the command
+
+                    for_file line /etc/passwd {echo $line}
+
+               would echo all the lines in the password file.

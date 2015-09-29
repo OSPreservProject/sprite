@@ -1,0 +1,5 @@
+
+
+          showproc procname
+               List the definition of the named procedure, loading it
+               if it is not already loaded.

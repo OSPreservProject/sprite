@@ -1,0 +1,29 @@
+BasicDiskInfo	fsDisk.h	/^} BasicDiskInfo;$/
+BlockRead	fsDiskUtils.c	/^BlockRead(openFileID, headerPtr, firstBlock, numBl/
+BlockWrite	fsDiskUtils.c	/^BlockWrite(openFileID, headerPtr, firstBlock, numB/
+CopySuperBlock	makeFilesystem.c	/^CopySuperBlock(firstPartFID, partFID)$/
+MakeFileDescBitmap	makeFilesystem.c	/^MakeFileDescBitmap(headerPtr)$/
+MakeFilesystem	makeFilesystem.c	/^MakeFilesystem(firstPartFID, partFID, partition, s/
+MmakeFilesystem	makeFilesystem.c	/^main(argc, argv)$/
+PrintDataBlockBitmap	fsDiskUtils.c	/^PrintDataBlockBitmap(headerPtr, bitmap)$/
+PrintDirEntry	fsDiskUtils.c	/^PrintDirEntry(dirEntryPtr)$/
+PrintDomainHeader	fsDiskUtils.c	/^PrintDomainHeader(headerPtr)$/
+PrintFileDescBitmap	fsDiskUtils.c	/^PrintFileDescBitmap(headerPtr, bitmap)$/
+PrintSummaryInfo	fsDiskUtils.c	/^PrintSummaryInfo(summaryPtr)$/
+ReadBasicDiskInfo	fsDiskUtils.c	/^ReadBasicDiskInfo(fileID, partition)$/
+ReadDiskHeader	fsDiskUtils.c	/^ReadDiskHeader(openFileID)$/
+ReadSunLabel	fsDiskUtils.c	/^ReadSunLabel(fileID)$/
+SectorRead	fsDiskUtils.c	/^SectorRead(openFileID, firstSector, numSectors, bu/
+SectorWrite	fsDiskUtils.c	/^SectorWrite(openFileID, firstSector, numSectors, b/
+SetBadBlockFileDescriptor	makeFilesystem.c	/^SetBadBlockFileDescriptor(fileDescPtr)$/
+SetDiskGeometry	makeFilesystem.c	/^SetDiskGeometry(diskInfoPtr, geoPtr)$/
+SetDomainHeader	makeFilesystem.c	/^SetDomainHeader(diskInfoPtr, headerPtr, spriteID)$/
+SetDomainParts	makeFilesystem.c	/^SetDomainParts(diskInfoPtr, headerPtr)$/
+SetEmptyFileDescriptor	makeFilesystem.c	/^SetEmptyFileDescriptor(fileDescPtr)$/
+SetLostFoundFileDescriptor	makeFilesystem.c	/^SetLostFoundFileDescriptor(fileDescPtr)$/
+SetRootFileDescriptor	makeFilesystem.c	/^SetRootFileDescriptor(fileDescPtr)$/
+SetSummaryInfo	makeFilesystem.c	/^SetSummaryInfo(diskInfoPtr, headerPtr, summaryPtr)/
+WriteBitmap	makeFilesystem.c	/^WriteBitmap(headerPtr, partFID)$/
+WriteFileDesc	makeFilesystem.c	/^WriteFileDesc(headerPtr, partFID)$/
+WriteLostFoundDirectory	makeFilesystem.c	/^WriteLostFoundDirectory(headerPtr, partFID)$/
+WriteRootDirectory	makeFilesystem.c	/^WriteRootDirectory(headerPtr, partFID)$/

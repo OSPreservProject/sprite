@@ -1,0 +1,152 @@
+SuperBlock.hdr.version: 1
+SuperBlock.hdr.blockSize: 512
+SuperBlock.hdr.maxCheckPointBlocks: 5
+SuperBlock.hdr.checkPointOffset[0]: 65
+SuperBlock.hdr.checkPointOffset[1]: 70
+SuperBlock.hdr.logStartOffset: 75
+SuperBlock.hdr.maxNumCacheBlocks: 1280
+SuperBlock.descMap.version: 1
+SuperBlock.descMap.maxDesc: 6464
+SuperBlock.descMap.stableMem.blockSize: 4096
+SuperBlock.descMap.stableMem.maxNumBlocks: 20
+SuperBlock.usageArray.segmentSize: 524288
+SuperBlock.usageArray.numberSegments: 101
+SuperBlock.usageArray.minNumClean: 63
+SuperBlock.usageArray.minFreeBlocks: 34474
+SuperBlock.usageArray.stableMem.blockSize: 4096
+SuperBlock.usageArray.stableMem.maxNumBlocks: 20
+SuperBlock.fileLayout.descPerBlock: 32
+CheckPointHdr[0].timestamp: 1
+CheckPointHdr[0].size: 256
+CheckPointHdr[0].version: 1
+CheckPointHdr[0].domainPrefix: 
+CheckPointHdr[0].domainNumber: -1
+CheckPointHdr[0].attachSeconds: 663015701
+CheckPointHdr[0].detachSeconds: 663015701
+CheckPointHdr[0].serverID: 73
+CheckPointHdr[1].timestamp: 0
+CheckPointHdr[1].size: 92
+CheckPointHdr[1].version: 1
+CheckPointHdr[1].domainPrefix: 
+CheckPointHdr[1].domainNumber: 0
+CheckPointHdr[1].attachSeconds: 0
+CheckPointHdr[1].detachSeconds: 0
+CheckPointHdr[1].serverID: 0
+11:34:33.780:Read LFS checkpoint from /hosts/larceny/dev/rsd04c
+Using checkpoint area 0 with timestamp 1 domain -1 ()
+DescMap num allocated: 4
+File 0 at 0 (seg 0) version 0 flags 1
+File 1 at 0 (seg 0) version 0 flags 1
+File 2 at 1090 (seg 1) version 1 flags 1
+File 3 at 1090 (seg 1) version 1 flags 1
+NumClean segments 100 (99.0%) NumDirty 1 (1.0%)
+FreeBlocks 103405 (99.9%) dirtyActiveBytes 349525 (66.7%)
+currentSegment 0 currentBlockOffset -1 curSegActiveBytes 9472
+previousSegment -1 cleanSegList 1
+SegNum 0 activeBytes 9472 state Dirty
+SegNum 1 activeBytes 2 state Clean
+SegNum 2 activeBytes 3 state Clean
+SegNum 3 activeBytes 4 state Clean
+SegNum 4 activeBytes 5 state Clean
+SegNum 5 activeBytes 6 state Clean
+SegNum 6 activeBytes 7 state Clean
+SegNum 7 activeBytes 8 state Clean
+SegNum 8 activeBytes 9 state Clean
+SegNum 9 activeBytes 10 state Clean
+SegNum 10 activeBytes 11 state Clean
+SegNum 11 activeBytes 12 state Clean
+SegNum 12 activeBytes 13 state Clean
+SegNum 13 activeBytes 14 state Clean
+SegNum 14 activeBytes 15 state Clean
+SegNum 15 activeBytes 16 state Clean
+SegNum 16 activeBytes 17 state Clean
+SegNum 17 activeBytes 18 state Clean
+SegNum 18 activeBytes 19 state Clean
+SegNum 19 activeBytes 20 state Clean
+SegNum 20 activeBytes 21 state Clean
+SegNum 21 activeBytes 22 state Clean
+SegNum 22 activeBytes 23 state Clean
+SegNum 23 activeBytes 24 state Clean
+SegNum 24 activeBytes 25 state Clean
+SegNum 25 activeBytes 26 state Clean
+SegNum 26 activeBytes 27 state Clean
+SegNum 27 activeBytes 28 state Clean
+SegNum 28 activeBytes 29 state Clean
+SegNum 29 activeBytes 30 state Clean
+SegNum 30 activeBytes 31 state Clean
+SegNum 31 activeBytes 32 state Clean
+SegNum 32 activeBytes 33 state Clean
+SegNum 33 activeBytes 34 state Clean
+SegNum 34 activeBytes 35 state Clean
+SegNum 35 activeBytes 36 state Clean
+SegNum 36 activeBytes 37 state Clean
+SegNum 37 activeBytes 38 state Clean
+SegNum 38 activeBytes 39 state Clean
+SegNum 39 activeBytes 40 state Clean
+SegNum 40 activeBytes 41 state Clean
+SegNum 41 activeBytes 42 state Clean
+SegNum 42 activeBytes 43 state Clean
+SegNum 43 activeBytes 44 state Clean
+SegNum 44 activeBytes 45 state Clean
+SegNum 45 activeBytes 46 state Clean
+SegNum 46 activeBytes 47 state Clean
+SegNum 47 activeBytes 48 state Clean
+SegNum 48 activeBytes 49 state Clean
+SegNum 49 activeBytes 50 state Clean
+SegNum 50 activeBytes 51 state Clean
+SegNum 51 activeBytes 52 state Clean
+SegNum 52 activeBytes 53 state Clean
+SegNum 53 activeBytes 54 state Clean
+SegNum 54 activeBytes 55 state Clean
+SegNum 55 activeBytes 56 state Clean
+SegNum 56 activeBytes 57 state Clean
+SegNum 57 activeBytes 58 state Clean
+SegNum 58 activeBytes 59 state Clean
+SegNum 59 activeBytes 60 state Clean
+SegNum 60 activeBytes 61 state Clean
+SegNum 61 activeBytes 62 state Clean
+SegNum 62 activeBytes 63 state Clean
+SegNum 63 activeBytes 64 state Clean
+SegNum 64 activeBytes 65 state Clean
+SegNum 65 activeBytes 66 state Clean
+SegNum 66 activeBytes 67 state Clean
+SegNum 67 activeBytes 68 state Clean
+SegNum 68 activeBytes 69 state Clean
+SegNum 69 activeBytes 70 state Clean
+SegNum 70 activeBytes 71 state Clean
+SegNum 71 activeBytes 72 state Clean
+SegNum 72 activeBytes 73 state Clean
+SegNum 73 activeBytes 74 state Clean
+SegNum 74 activeBytes 75 state Clean
+SegNum 75 activeBytes 76 state Clean
+SegNum 76 activeBytes 77 state Clean
+SegNum 77 activeBytes 78 state Clean
+SegNum 78 activeBytes 79 state Clean
+SegNum 79 activeBytes 80 state Clean
+SegNum 80 activeBytes 81 state Clean
+SegNum 81 activeBytes 82 state Clean
+SegNum 82 activeBytes 83 state Clean
+SegNum 83 activeBytes 84 state Clean
+SegNum 84 activeBytes 85 state Clean
+SegNum 85 activeBytes 86 state Clean
+SegNum 86 activeBytes 87 state Clean
+SegNum 87 activeBytes 88 state Clean
+SegNum 88 activeBytes 89 state Clean
+SegNum 89 activeBytes 90 state Clean
+SegNum 90 activeBytes 91 state Clean
+SegNum 91 activeBytes 92 state Clean
+SegNum 92 activeBytes 93 state Clean
+SegNum 93 activeBytes 94 state Clean
+SegNum 94 activeBytes 95 state Clean
+SegNum 95 activeBytes 96 state Clean
+SegNum 96 activeBytes 97 state Clean
+SegNum 97 activeBytes 98 state Clean
+SegNum 98 activeBytes 99 state Clean
+SegNum 99 activeBytes 100 state Clean
+SegNum 100 activeBytes -1 state Clean
+11:34:34.360:Checking files
+11:34:34.500:Checking usage array
+11:34:34.500:Checking directory tree
+11:34:34.660:Checking summary regions
+11:34:37.460:Reporting errors
+/hosts/larceny/dev/rsd04c: 0 major errors 1 minor errors

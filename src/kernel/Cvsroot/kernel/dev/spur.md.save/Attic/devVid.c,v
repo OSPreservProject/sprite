@@ -1,0 +1,83 @@
+head     8.0;
+branch   ;
+access   ;
+symbols  sun4nw:8.0 symm:8.0 spur:8.0 newlib:8.0;
+locks    ; strict;
+comment  @ * @;
+
+
+8.0
+date     88.11.11.18.16.08;  author douglis;  state Stable;
+branches ;
+next     1.1;
+
+1.1
+date     88.08.29.12.54.43;  author mlgray;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@fixed lint errors
+@
+
+
+8.0
+log
+@Changing version numbers.
+@
+text
+@/* devVid.c -
+ *
+ *     This file contains video routines.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/spur.md/RCS/devVid.c,v 1.1 88/08/29 12:54:43 mlgray Exp Locker: douglis $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * Dev_VidEnable --
+ *
+ *     Enable the video board.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+ReturnStatus
+Dev_VidEnable(on)
+    Boolean	on;
+{
+    return SUCCESS;
+}
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+static char rcsid[] = "$Header: devUart.c,v 1.2 88/07/20 22:06:18 douglis Exp $ SPRITE (Berkeley)";
+@

@@ -1,0 +1,244 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  ds3100:1.6 sun3:1.6 sun4nw:1.4 symm:1.4 spur:1.4;
+locks    ; strict;
+comment  @ * @;
+
+
+1.6
+date     92.06.03.22.54.33;  author voelker;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     92.01.09.11.03.48;  author jhh;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.05.08.16.29.40;  author jhh;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.03.05.15.07.02;  author jhh;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.12.18.10.35.24;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.11.09.22.34.10;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.6
+log
+@Added FDDI support
+@
+text
+@/* 
+ * devConfig.c --
+ *
+ *	Configuration table for the devices in the system.  There is
+ *	a table for the possible controllers in the system, and
+ *	then a table for devices.  Devices are implicitly associated
+ *	with a controller.  This file should be automatically generated
+ *	by a config program, but it isn't.
+ *
+ *	Copyright (C) 1989 Digital Equipment Corporation.
+ *	Permission to use, copy, modify, and distribute this software and
+ *	its documentation for any purpose and without fee is hereby granted,
+ *	provided that the above copyright notice appears in all copies.  
+ *	Digital Equipment Corporation makes no representations about the
+ *	suitability of this software for any purpose.  It is provided "as is"
+ *	without express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/dev/ds5000.md/devConfig.c,v 1.5 92/01/09 11:03:48 jhh Exp $ SPRITE (Berkeley)";
+#endif not lint
+
+#include "sprite.h"
+#include "devInt.h"
+#include "scsiHBA.h"
+#include "fs.h"
+#include "devTypes.h"
+
+/*
+ * Per device include files.
+ */
+#include "scsiC90.h"
+
+/*
+ * The controller configuration table.
+ */
+DevConfigController devCntrlr[] = {
+   /* Name	Slot	ID	InitProc. */
+    {"SCSI#0",   5, 0, DevSCSIC90Init},
+    {"SCSI#1", 0, 1, DevSCSIC90Init},
+/*
+ * This is commented out because when the device module checks this
+ * slot it makes the FDDI adapter go crazy.  There should be more
+ * interaction among the modules so that when something is installed
+ * in a slot other modules won't bother trying.
+ *
+ *    {"SCSI#2", 1, 2, DevSCSIC90Init},
+ */
+    {"SCSI#3", 2, 3, DevSCSIC90Init},
+};
+int devNumConfigCntrlrs = sizeof(devCntrlr) / sizeof(DevConfigController);
+
+/*
+ * Table of SCSI HBA types attached to this system.
+ */
+
+ScsiDevice *((*devScsiAttachProcs[]) ()) = {
+    DevSCSIC90AttachDevice,		/* SCSI Controller type 0. */
+};
+int devScsiNumHBATypes = sizeof(devScsiAttachProcs) / 
+			 sizeof(devScsiAttachProcs[0]);
+
+/*
+ * A list of disk devices that is used when probing for a root partition.
+ * SCSI Disk target ID 0 LUN 0 partition 0 on SCSIC90 HBA 0. 
+ * SCSI Disk target ID 0 LUN 0 partition 2 on SCSIC90 HBA 0. 
+ */
+Fs_Device devFsDefaultDiskPartitions[] = {
+    { -1, SCSI_MAKE_DEVICE_TYPE(DEV_SCSI_DISK, DEV_SCSIC90_HBA, 0, 0, 0, 0),
+          SCSI_MAKE_DEVICE_UNIT(DEV_SCSI_DISK, DEV_SCSIC90_HBA, 0, 0, 0, 0),
+	(ClientData) NIL },
+    { -1, SCSI_MAKE_DEVICE_TYPE(DEV_SCSI_DISK, DEV_SCSIC90_HBA, 0, 0, 0, 2),
+          SCSI_MAKE_DEVICE_UNIT(DEV_SCSI_DISK, DEV_SCSIC90_HBA, 0, 0, 0, 2),
+	(ClientData) NIL },
+  };
+int devNumDefaultDiskPartitions = sizeof(devFsDefaultDiskPartitions) / 
+			  sizeof(Fs_Device);
+
+@
+
+
+1.5
+log
+@Added default partitions to attach on boot.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/dev/ds5000.md/devConfig.c,v 1.4 91/05/08 16:29:40 jhh Exp $ SPRITE (Berkeley)";
+d41 8
+a48 1
+    {"SCSI#2", 1, 2, DevSCSIC90Init},
+@
+
+
+1.4
+log
+@scsi devices
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/ds5000.md/RCS/devConfig.c,v 1.3 91/03/05 15:07:02 jhh Exp $ SPRITE (Berkeley)";
+d59 1
+a60 1
+#if 0
+d62 3
+a70 3
+#endif
+Fs_Device devFsDefaultDiskPartitions[1];
+int devNumDefaultDiskPartitions = 0;
+@
+
+
+1.3
+log
+@ds5000 port
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/ds5000.md/RCS/devConfig.c,v 1.2 90/12/18 10:35:24 jhh Exp $ SPRITE (Berkeley)";
+d32 1
+a32 1
+#include "sii.h"
+d37 6
+a42 4
+DevConfigController devCntrlr[1];
+#if 0
+= {
+   /* Name	Address		ID	InitProc	IntrRoutine. */
+a44 2
+#endif
+int devNumConfigCntrlrs = 0;
+d50 2
+a51 4
+ScsiDevice *((*devScsiAttachProcs[1])());
+#if 0
+= {
+    DevSIIAttachDevice,		/* SCSI Controller type 0. */
+a54 2
+#endif
+int devScsiNumHBATypes = 0;
+d58 1
+a58 2
+ * Note that we put the default partition as partition C so as to use the
+ * entire disk.
+d60 9
+@
+
+
+1.2
+log
+@first pass
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/ds5000.md/RCS/devConfig.c,v 1.1 90/11/09 22:34:10 jhh Exp Locker: jhh $ SPRITE (Berkeley)";
+d27 1
+a27 1
+#include "devTypesInt.h"
+d65 2
+a66 10
+Fs_Device devFsDefaultDiskPartitions[] = {
+    { -1, SCSI_MAKE_DEVICE_TYPE(DEV_SCSI_DISK, DEV_SII_HBA, 0, 0, 0, 0),
+          SCSI_MAKE_DEVICE_UNIT(DEV_SCSI_DISK, DEV_SII_HBA, 0, 0, 0, 0),
+                (ClientData) NIL },
+    { -1, SCSI_MAKE_DEVICE_TYPE(DEV_SCSI_DISK, DEV_SII_HBA, 0, 0, 0, 2),
+          SCSI_MAKE_DEVICE_UNIT(DEV_SCSI_DISK, DEV_SII_HBA, 0, 0, 0, 2),
+                (ClientData) NIL },
+    };
+int devNumDefaultDiskPartitions = sizeof(devFsDefaultDiskPartitions) /
+                          sizeof(Fs_Device);
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/dev/ds3100.md/RCS/devConfig.c,v 9.1 90/07/30 16:28:08 jhh Exp $ SPRITE (Berkeley)";
+d37 3
+a39 1
+DevConfigController devCntrlr[] = {
+a40 1
+    { "SII",	0xBA000000,  	0,  	DevSIIInit, 	Dev_SIIIntr },
+d43 2
+d50 3
+a52 1
+ScsiDevice *((*devScsiAttachProcs[])()) = {
+d57 2
+@

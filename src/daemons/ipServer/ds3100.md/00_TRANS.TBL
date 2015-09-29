@@ -1,0 +1,4 @@
+F DEPENDEN.FOO;1                    	dependencies.mk.foo
+F DEPENDEN.MK;1                     	dependencies.mk
+F IPSERVER.NM;1                     	ipServer.nm
+F MD.MK;1                           	md.mk

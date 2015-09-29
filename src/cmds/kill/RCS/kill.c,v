@@ -1,0 +1,512 @@
+head     1.6;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @ * @;
+
+
+1.6
+date     90.11.11.12.31.59;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     90.02.08.13.44.56;  author ouster;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     88.10.21.17.29.54;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.10.20.10.44.55;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.10.20.10.07.48;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.10.20.09.09.52;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.6
+log
+@Recognize HUP.
+@
+text
+@/* 
+ * kill.c --
+ *
+ *	A program to send a signal to a process or process group.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/cmds/kill/RCS/kill.c,v 1.5 90/02/08 13:44:56 ouster Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif not lint
+
+#include <ctype.h>
+#include <errno.h>
+#include <option.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+/*
+ * Variables and tables used to parse command-line options:
+ */
+
+int sendToGroup = 0;
+int printSignals = 0;
+int signalNumber = SIGTERM;
+
+Option optionArray[] = {
+    {OPT_DOC, (char *) NULL, (char *) NULL,
+	    "kill [-sig] [options] pid pid ..."},
+    {OPT_DOC, (char *) NULL, (char *) NULL,
+	    "\"Sig\" may be either a signal name or a number (default: TERM).\n"},
+    {OPT_TRUE, "g", (char *) &sendToGroup,
+	    "Send signal to group instead of single process"},
+    {OPT_TRUE, "l", (char *) &printSignals,
+	    "Print out list of valid signal names"}
+};
+
+/*
+ * Printable names and identifying messages for all signals, indexed by
+ * signal number.
+ */
+
+struct	info {
+	char	*name;
+	char	*reason;
+} info[] = {
+	0, 0,
+	"HUP",		"Hangup",
+	"INT",		"Interrupt",
+	"DEBUG",	"Debug",
+	"ILL",		"Illegal instruction",
+	0,		"Signal 5",
+	"IOT",		"IOT instruction",
+	"EMT",		"EMT instruction",
+	"FPE",		"Floating-point exception",
+	"KILL",		"Killed",
+	"MIG",		"Migrated",
+	"SEGV",		"Segmentation violation",
+	0,		"Signal 12",
+	"PIPE",		"Broken pipe",
+	"ALRM",		"Alarm clock",
+	"TERM",		"Software termination",
+	"URG",		"Urgent I/O condition",
+	"STOP",		"Suspended (signal)",
+	"TSTP",		"Suspended",
+	"CONT",		"Continued",
+	"CHLD",		"Child status changed",
+	"TTIN",		"Suspended (tty input)",
+	0,		"Signal 22",
+	"IO",		"I/O is possible on a descriptor",
+	0,		"Signal 24",
+	0,		"Signal 25",
+	0,		"Signal 26",
+	0,		"Signal 27",
+	"WINCH",	"Window changed",
+	"MIGHOME",	"Migrated home",
+	"USR1",		"User-defined signal 1",
+	"USR2",		"User-defined signal 2",
+	0,		"Signal 32",
+};
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * main --
+ *
+ *	Main program for "kill".
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	See the man page for details.
+ *
+ *----------------------------------------------------------------------
+ */
+
+main(argc, argv)
+    int argc;
+    char **argv;
+{
+    int i, j, newArgc;
+    int result = 0;
+    char *sigName, *endPtr;
+    char scratch[10];
+
+    /*
+     * Make a pass over the options to suck up the signal number or name.
+     * Then call Opt_ to parse the remaining options.
+     */
+
+    for (i = 1, newArgc = 1; i < argc; i++) {
+	char *p;
+
+	p = argv[i];
+	if (*p != '-') {
+	    argv[newArgc] = argv[i];
+	    newArgc++;
+	    continue;
+	}
+	p++;
+	if (isdigit(*p)) {
+	    signalNumber = strtoul(p, &endPtr, 0);
+	    if (*endPtr != 0) {
+		(void) fprintf(stderr, "Bad signal number \"%s\".\n", p);
+		exit(1);
+	    }
+	} else {
+	    for (j = 1; j <= 32; j++) {
+		if ((info[j].name != 0) && (strcmp(p, info[j].name) == 0)) {
+		    signalNumber = j;
+		    break;
+		}
+
+		/*
+		 * If this switch didn't match a signal name, save the
+		 * argument for Opt_ processing.
+		 */
+
+		if (j == 32) {
+		    argv[newArgc] = argv[i];
+		    newArgc++;
+		}
+	    }
+	}
+    }
+    argc = Opt_Parse(newArgc, argv, optionArray, Opt_Number(optionArray), 0);
+
+    /*
+     * If the user just wants a list of signals, print it and quit.
+     */
+
+    if (printSignals) {
+	for (i = 0; i < 32; i++) {
+	    if (info[i].name == 0) {
+		continue;
+	    }
+	    (void) printf("%2d  %-15s %s\n", i, info[i].name, info[i].reason);
+	}
+	exit(0);
+    }
+
+    if (argc == 1) {
+	(void) fprintf(stderr, "Usage:  %s [options] pid pid ...\n", argv[0]);
+	exit(1);
+    }
+
+    if (signalNumber <= 32) {
+	sigName = info[signalNumber].name;
+    } else {
+	(void) sprintf(scratch, "Signal %d", signalNumber);
+	sigName = scratch;
+    }
+
+    for (i = 1; i < argc; i++) {
+	int pid;
+	char *endPtr;
+
+	pid = strtoul(argv[i], &endPtr, 16);
+	if ((endPtr == argv[i]) || (*endPtr != 0)) {
+	    (void) fprintf(stderr, "Bad process id \"%s\";  ignoring.\n", argv[i]);
+	    continue;
+	}
+
+	if (sendToGroup) {
+	    if (killpg(pid, signalNumber) != 0) {
+		    (void) fprintf(stderr,
+			    "Couldn't send %s signal to group 0x%x: %s.\n",
+			    sigName, pid, strerror(errno));
+	    }
+	    result = 1;
+	} else {
+	    if (kill(pid, signalNumber) != 0) {
+		    (void) fprintf(stderr,
+			    "Couldn't send %s signal to process 0x%x: %s.\n",
+			    sigName, pid, strerror(errno));
+	    }
+	    result = 1;
+	}
+    }
+    return result;
+}
+@
+
+
+1.5
+log
+@Added support for SIGWINCH and SIGIO.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/cmds/kill/RCS/kill.c,v 1.4 88/10/21 17:29:54 ouster Exp Locker: ouster $ SPRITE (Berkeley)";
+d57 1
+a57 1
+	0,		"Signal 1",
+@
+
+
+1.4
+log
+@Switch to use same messages as csh.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /a/newcmds/kill/RCS/kill.c,v 1.3 88/10/20 10:44:55 ouster Exp $ SPRITE (Berkeley)";
+d79 1
+a79 1
+	0,		"Signal 23",
+d84 1
+a84 1
+	0,		"Signal 28",
+@
+
+
+1.3
+log
+@Lint cleanup.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /a/newcmds/kill/RCS/kill.c,v 1.2 88/10/20 10:07:48 ouster Exp Locker: ouster $ SPRITE (Berkeley)";
+d52 37
+a88 34
+char *names[] = {
+    "0",
+    "1",
+    "INT",
+    "DEBUG",
+    "ILL",
+    "5",
+    "IOT",
+    "EMT",
+    "FPE",
+    "KILL",
+    "10",
+    "SEGV",
+    "12",
+    "PIPE",
+    "ALRM",
+    "TERM",
+    "URG",
+    "STOP",
+    "TSTP",
+    "CONT",
+    "CHLD",
+    "TTIN",
+    "22",
+    "23",
+    "24",
+    "25",
+    "26",
+    "27",
+    "28",
+    "29",
+    "30",
+    "31",
+    "32"
+a89 35
+char *messages[] = {
+    NULL,
+    NULL,
+    "Interrupt",
+    "Stop process for debugging",
+    "Illegal instruction",
+    NULL,
+    "IOT instruction",
+    "EMT instruction",
+    "Floating-point exception",
+    "Kill (cannot be caught or blocked or ignored)",
+    NULL,
+    "Segmentation violation",
+    NULL,
+    "Write on reader-less pipe",
+    "Alarm clock",
+    "Software termination signal",
+    "Urgent condition present on socket",
+    "Stop (cannot be caught or blocked or ignored)",
+    "Stop signal generated from keyboard",
+    "Continue (cannot be blocked)",
+    "Child status has changed",
+    "Background read attempted from control terminal",
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+};
+d139 1
+a139 1
+		if (strcmp(p, names[j]) == 0) {
+d164 1
+a164 1
+	    if (messages[i] == NULL) {
+d167 1
+a167 1
+	    (void) printf("%2d  %-8s %s\n", i, names[i], messages[i]);
+d178 1
+a178 1
+	sigName = names[signalNumber];
+d180 1
+a180 1
+	(void) sprintf(scratch, "%d", signalNumber);
+@
+
+
+1.2
+log
+@First version up and running.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: proto.c,v 1.2 88/03/11 08:39:08 ouster Exp $ SPRITE (Berkeley)";
+d25 1
+d166 1
+a166 1
+		fprintf(stderr, "Bad signal number \"%s\".\n", p);
+d199 1
+a199 1
+	    printf("%2d  %-8s %s\n", i, names[i], messages[i]);
+d205 1
+a205 1
+	fprintf(stderr, "Usage:  %s [options] pid pid ...\n", argv[0]);
+d212 1
+a212 1
+	sprintf(scratch, "%d", signalNumber);
+d217 1
+a217 1
+	int pid, status;
+d222 1
+a222 1
+	    fprintf(stderr, "Bad process id \"%s\";  ignoring.\n", argv[i]);
+d228 1
+a228 1
+		    fprintf(stderr,
+d235 1
+a235 1
+		    fprintf(stderr,
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d36 4
+d43 1
+a43 32
+	    "Print out list of valid signal names"},
+    {OPT_CONSTANT(SIGINT), "INT", (char *) &signalNumber, "Interrupt"},
+    {OPT_CONSTANT(SIGQUIT), "QUIT", (char *) &signalNumber, "Quit"},
+    {OPT_CONSTANT(SIGILL), "ILL", (char *) &signalNumber,
+	    "Illegal instruction"},
+    {OPT_CONSTANT(SIGIOT), "IOT", (char *) &signalNumber, "IOT instruction"},
+    {OPT_CONSTANT(SIGEMT), "EMT", (char *) &signalNumber, "EMT instruction"},
+    {OPT_CONSTANT(SIGFPE), "FPE", (char *) &signalNumber,
+	    "Floating-point exception"},
+    {OPT_CONSTANT(SIGKILL), "KILL", (char *) &signalNumber,
+	    "Kill (cannot be caught or blocked or ignored)"},
+    {OPT_CONSTANT(SIGSEGV), "SEGV", (char *) &signalNumber,
+	    "Segmentation violation"},
+    {OPT_CONSTANT(SIGPIPE), "PIPE", (char *) &signalNumber,
+	    "Write on reader-less pipe"},
+    {OPT_CONSTANT(SIGALRM), "ALRM", (char *) &signalNumber, "Alarm clock"},
+    {OPT_CONSTANT(SIGTERM), "TERM", (char *) &signalNumber,
+	    "Software termination signal"},
+    {OPT_CONSTANT(SIGURG), "URG", (char *) &signalNumber,
+	    "Urgent condition present on socket"},
+    {OPT_CONSTANT(SIGSTOP), "STOP", (char *) &signalNumber,
+	    "Stop (cannot be caught or blocked or ignored)"},
+    {OPT_CONSTANT(SIGTSTP), "TSTP", (char *) &signalNumber,
+	    "Stop signal generated from keyboard"},
+    {OPT_CONSTANT(SIGCONT), "CONT", (char *) &signalNumber,
+	    "Continue (cannot be blocked)"},
+    {OPT_CONSTANT(SIGCHLD), "CHLD", (char *) &signalNumber,
+	    "Child status has changed"},
+    {OPT_CONSTANT(SIGTTIN), "TTIN", (char *) &signalNumber,
+	    "Background read attempted from control terminal"},
+    {OPT_CONSTANT(SIGQUIT), "DEBUG", (char *) &signalNumber,
+	    "Stop process for debugging"},
+d87 2
+a88 2
+    "Signal 0 (undefined)",
+    "Signal 1 (undefined)",
+d92 1
+a92 1
+    "Signal 5 (undefined)",
+d97 1
+a97 1
+    "Signal 10 (undefined)",
+d99 1
+a99 1
+    "Signal 12 (undefined)",
+d109 11
+d142 1
+a142 1
+    int i;
+d144 1
+a144 1
+    char *sigName;
+d148 1
+a148 1
+     * Make a pass over the options to suck up the signal name.
+d152 1
+a152 1
+    for (i = 1; i < argc; i++) {
+d157 2
+d161 13
+a173 4
+	if (isdigit(
+    /*
+     * Suck up command line options.
+     */
+d175 11
+a185 4
+    argc = Opt_Parse(argc, argv, optionArray, Opt_Number(optionArray), 0);
+    if (argc == 1) {
+	fprintf(stderr, "Usage:  %s [options] pid pid ...\n", argv[0]);
+	return 1;
+d187 1
+d194 5
+a198 1
+	for (i = 0; i < Opt_Number(optionArray); i++) {
+d201 5
+@

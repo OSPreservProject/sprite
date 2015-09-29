@@ -1,0 +1,87 @@
+% natsci.sty  28 Feb 91
+
+% Correctly formats citations in the NATSCI bibliography style.
+% You also need the file natsci.bst to get the most out of this.
+
+% Use with LaTeX version 2.09 article document style
+% and the natsci bibliography style:
+% \documentstyle[natsci]{article}
+% \begin{document}
+% \bibliographystyle{natsci}
+
+% Copyright (c) 1987 by Stephen Gildea
+% Permission to copy all or part of this work is granted, provided
+% that the copies are not made or distributed for resale, and that
+% the copyright notice and this notice are retained.
+% 
+% THIS WORK IS PROVIDED ON AN "AS IS" BASIS.  THE AUTHOR PROVIDES NO
+% WARRANTY WHATSOEVER, EITHER EXPRESS OR IMPLIED, REGARDING THE WORK,
+% INCLUDING WARRANTIES WITH RESPECT TO ITS MERCHANTABILITY OR FITNESS
+% FOR ANY PARTICULAR PURPOSE.
+
+% 1987 original version
+% 22 Feb 89 small changes
+% 27 Feb 91 added \incite
+
+% If you make any improvements, I'd like to hear about them.
+
+% Stephen Gildea
+% MIT Earth Resources Lab
+% Cambridge, Mass. 02139
+% mit-erl!gildea
+% gildea@erl.mit.edu
+
+% This definition has to be changed slightly for different document
+% styles such as report.
+\def\thebibliography#1{\section*{References\@mkboth
+ {REFERENCES}{REFERENCES}}\list
+ %% default is no labels, for those not using \cite or BibTeX
+ {}{\settowidth\labelwidth{[#1]}\leftmargin\labelwidth
+ \advance\leftmargin\labelsep
+ \usecounter{enumi}\@bibsetup}
+ \def\newblock{\hskip .11em plus .33em minus .07em}
+ \sloppy\clubpenalty4000\widowpenalty4000
+ \sfcode`\.=1000\relax}
+
+% Don't put the citation in an hbox.
+\def\@citex[#1]#2{\if@filesw\immediate\write\@auxout{\string\citation{#2}}\fi
+  \def\@citea{}\@cite{\@for\@citeb:=#2\do
+    {\@citea\def\@citea{\@citesep}\@ifundefined
+       {b@\@citeb}{{\bf ?}\@warning
+       {Citation `\@citeb' on page \thepage \space undefined}}%
+{\csname b@\@citeb\endcsname}}}{#1}}
+
+% undent first line of a reference by using negative \itemindent.
+\def\@bibsetup{\itemindent=-\leftmargin \itemsep=0pt}
+
+% Use a semicolon instead of a comma between multiple citations.
+\def\@citesep{; }
+
+% round parens instead of square brackets
+\def\@cite#1#2{({#1\if@tempswa , #2\fi})}
+ 
+% Labels should not be printed in References
+\def\@biblabel#1{\hfill}
+
+
+% \incite puts the parens only around the date, not the entire citation,
+% for when the work is referenced in running text.
+%
+% E.g., if \cite{foo} produces "(Gildea, 1990)", then \incite{foo}
+% produces "Gildea (1990)".  Since this code uses the comma to determine
+% where the date starts, formats like "(Gildea 1990)" will not work.
+%
+% Only works with one citation, unlike \cite.
+% Does not print optional comment in [].  gildea 23 Oct 90
+
+\def\incite#1{{\let\@citex\@incitex\cite{#1}}}
+
+\def\@incitex[#1]#2{\if@filesw\immediate\write\@auxout{\string\citation{#2}}\fi
+   \@ifundefined{b@#2}%
+      {{\bf ?}\@warning{Citation `#2' on page \thepage \space undefined}}%
+      {\edef\@citeb{\csname b@#2\endcsname}\expandafter\@incite\@citeb;}}
+
+% find the comma and put leading paren in place of it
+\def\@incite#1, #2;{#1 (#2)}
+
+

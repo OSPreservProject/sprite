@@ -1,0 +1,53 @@
+CheckSunCheckSum	diskHeader.c	/^CheckSunCheckSum(sunLabelPtr)$/
+ConvertFromDecLabel	diskHeader.c	/^ConvertFromDecLabel(fileID, decLabelPtr)$/
+ConvertFromSunLabel	diskHeader.c	/^ConvertFromSunLabel(fileID, sunLabelPtr)$/
+ConvertToDecLabel	diskHeader.c	/^ConvertToDecLabel(labelPtr)$/
+ConvertToSunLabel	diskHeader.c	/^ConvertToSunLabel(labelPtr)$/
+Disk_BadBlockRead	diskIO.c	/^Disk_BadBlockRead(openFileID, headerPtr, blockNumb/
+Disk_BlockRead	diskIO.c	/^Disk_BlockRead(openFileID, headerPtr, firstBlock, /
+Disk_BlockWrite	diskIO.c	/^Disk_BlockWrite(openFileID, headerPtr, firstBlock,/
+Disk_EraseLabel	diskHeader.c	/^Disk_EraseLabel(fileID, labelType)$/
+Disk_ForEachCheckPointRegion	diskHeader.c	/^Disk_ForEachCheckPointRegion(checkPointPtr, region/
+Disk_FragRead	diskFragIO.c	/^Disk_FragRead(openFileID, headerPtr, firstFrag, nu/
+Disk_FragWrite	diskFragIO.c	/^Disk_FragWrite(openFileID, headerPtr, firstFrag, n/
+Disk_GetLabelTypeName	diskPrint.c	/^Disk_GetLabelTypeName(labelType)$/
+Disk_HasFilesystem	diskHeader.c	/^Disk_HasFilesystem(fileID, diskLabelPtr)$/
+Disk_LfsCheckPointTrailer	diskHeader.c	/^Disk_LfsCheckPointTrailer(checkPointPtr)$/
+Disk_NewLabel	diskHeader.c	/^Disk_NewLabel(labelType) $/
+Disk_PrintDataBlockBitmap	diskPrint.c	/^Disk_PrintDataBlockBitmap(headerPtr, bitmap)$/
+Disk_PrintDirEntry	diskPrint.c	/^Disk_PrintDirEntry(dirEntryPtr)$/
+Disk_PrintDomainHeader	diskPrint.c	/^Disk_PrintDomainHeader(headerPtr)$/
+Disk_PrintFileDescBitmap	diskPrint.c	/^Disk_PrintFileDescBitmap(headerPtr, bitmap)$/
+Disk_PrintLabel	diskPrint.c	/^Disk_PrintLabel(labelPtr)$/
+Disk_PrintLfsCheckPointHdr	diskPrint.c	/^Disk_PrintLfsCheckPointHdr(headerPtr)$/
+Disk_PrintLfsCheckPointRegion	diskPrint.c	/^Disk_PrintLfsCheckPointRegion(regionPtr)$/
+Disk_PrintLfsCheckPointTrailer	diskPrint.c	/^Disk_PrintLfsCheckPointTrailer(trailerPtr)$/
+Disk_PrintLfsDescMapParams	diskPrint.c	/^Disk_PrintLfsDescMapParams(descMapPtr)$/
+Disk_PrintLfsFileLayoutParams	diskPrint.c	/^Disk_PrintLfsFileLayoutParams(fileLayoutPtr)$/
+Disk_PrintLfsSegUsageParams	diskPrint.c	/^Disk_PrintLfsSegUsageParams(segUsagePtr)$/
+Disk_PrintLfsStableMemParams	diskPrint.c	/^Disk_PrintLfsStableMemParams(stableMemPtr)$/
+Disk_PrintLfsSuperBlock	diskPrint.c	/^Disk_PrintLfsSuperBlock(superPtr)$/
+Disk_PrintLfsSuperBlockHdr	diskPrint.c	/^Disk_PrintLfsSuperBlockHdr(headerPtr)$/
+Disk_PrintSummaryInfo	diskPrint.c	/^Disk_PrintSummaryInfo(summaryPtr)$/
+Disk_ReadDecLabel	diskHeader.c	/^Disk_ReadDecLabel(fileID)$/
+Disk_ReadDiskHeader	diskHeader.c	/^Disk_ReadDiskHeader(openFileID)$/
+Disk_ReadDomainHeader	diskHeader.c	/^Disk_ReadDomainHeader(fileID, diskLabelPtr)$/
+Disk_ReadLabel	diskHeader.c	/^Disk_ReadLabel(fileID)$/
+Disk_ReadLfsCheckPointHdr	diskHeader.c	/^Disk_ReadLfsCheckPointHdr(fileID, labelPtr, areaPt/
+Disk_ReadLfsSegSummary	diskHeader.c	/^Disk_ReadLfsSegSummary(fileID, superPtr, segment, /
+Disk_ReadLfsSuperBlock	diskHeader.c	/^Disk_ReadLfsSuperBlock(fileID, diskLabelPtr)$/
+Disk_ReadSummaryInfo	diskHeader.c	/^Disk_ReadSummaryInfo(fileID, diskLabelPtr)$/
+Disk_ReadSunLabel	diskHeader.c	/^Disk_ReadSunLabel(fileID)$/
+Disk_SectorRead	diskIO.c	/^Disk_SectorRead(openFileID, firstSector, numSector/
+Disk_SectorWrite	diskIO.c	/^Disk_SectorWrite(openFileID, firstSector, numSecto/
+Disk_WriteDecLabel	diskHeader.c	/^Disk_WriteDecLabel(fileID, labelPtr)$/
+Disk_WriteDomainHeader	diskHeader.c	/^Disk_WriteDomainHeader(fileID, diskLabelPtr, heade/
+Disk_WriteLabel	diskHeader.c	/^Disk_WriteLabel(fileID, labelPtr)$/
+Disk_WriteLfsCheckPointArea	diskHeader.c	/^Disk_WriteLfsCheckPointArea(fileID, areaPtr, area,/
+Disk_WriteLfsCheckPointHdr	diskHeader.c	/^Disk_WriteLfsCheckPointHdr(fileID, headerPtr, area/
+Disk_WriteLfsSegSummary	diskHeader.c	/^Disk_WriteLfsSegSummary(fileID, superPtr, segment,/
+Disk_WriteLfsSuperBlock	diskHeader.c	/^Disk_WriteLfsSuperBlock(fileID, superPtr)$/
+Disk_WriteSummaryInfo	diskHeader.c	/^Disk_WriteSummaryInfo(fileID, diskLabelPtr, summar/
+Disk_WriteSunLabel	diskHeader.c	/^Disk_WriteSunLabel(fileID, labelPtr)$/
+MakeSunCheckSum	diskHeader.c	/^MakeSunCheckSum(sunLabelPtr)$/
+SeeSunCheckSum	diskHeader.c	/^SeeSunCheckSum(sunLabelPtr)$/

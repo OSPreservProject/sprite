@@ -1,0 +1,37 @@
+SRCS =	\
+	spriteInit.c \
+	spriteBW2.c \
+	spriteCursor.c \
+	spriteIo.c \
+	spriteKbd.c \
+	spriteMouse.c \
+	spriteGC.c \
+	spriteCG2M.c
+
+OFILES = spriteInit.o
+
+OBJS = \
+	spriteBW2.o \
+	spriteCursor.o \
+	spriteIo.o \
+	spriteKbd.o \
+	spriteMouse.o \
+	spriteGC.o \
+	spriteCG2M.o 
+
+STD_DEFINES = ServerDefines
+CDEBUGFLAGS = ServerCDebugFlags
+   INCLUDES = -I.  -I../../include -I../mfb -I../../dix -I$(INCLUDESRC)
+   LINTLIBS = ../../dix/llib-ldix.ln ../../os/4.2bsd/llib-los.ln \
+	      ../mfb/llib-lmfb.ln ../mi/llib-lmi.ln ../cfb/llib-lcfb.ln
+
+NormalLibraryObjectRule()
+
+all:: $(OFILES) 
+
+lintlib:
+
+NormalLibraryTarget(sprite,$(OBJS))
+NormalLintTarget($(SRCS))
+DependTarget()
+InstallManPage(Xsprite,$(MANDIR))

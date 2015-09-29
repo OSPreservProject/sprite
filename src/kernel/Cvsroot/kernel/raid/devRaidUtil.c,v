@@ -1,0 +1,1482 @@
+head     1.14;
+branch   ;
+access   ;
+symbols  ds3100:1.14 sun3:1.14 sun4nw:1.13 symm:1.13 spur:1.13;
+locks    ; strict;
+comment  @ * @;
+
+
+1.14
+date     92.06.25.17.21.14;  author eklee;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     90.11.09.13.15.52;  author eklee;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     90.10.12.14.01.13;  author eklee;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     90.10.11.16.57.21;  author eklee;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     90.09.19.14.54.11;  author eklee;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     90.06.22.13.37.00;  author eklee;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     90.05.15.19.00.31;  author eklee;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     90.01.04.17.39.31;  author eklee;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.11.02.15.53.45;  author eklee;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.09.27.17.10.18;  author eklee;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.08.30.11.29.27;  author eklee;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     89.08.30.11.10.08;  author eklee;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.07.31.17.12.07;  author eklee;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.07.27.13.01.39;  author eklee;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@routines for initializing, allocating and freeing RAID related data structures
+@
+
+
+1.14
+log
+@Fixed bug where data was sometimes trashed during writes with a failed disk.
+Fixed up consistency problems while a disk is failed.
+Redid logging.
+@
+text
+@/* 
+ * devRaidUtil.c --
+ *
+ *	Routines for allocating, initializing and deallocating various
+ *	RAID data structures.
+ *	Routines for mapping logical RAID sectors to physical devices.
+ *
+ * Copyright 1989 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /sprite/src/kernel/Cvsroot/kernel/raid/devRaidUtil.c,v 1.13 90/11/09 13:15:52 eklee Exp $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+#include "sync.h"
+#include "sprite.h"
+#include "fs.h"
+#include "dev.h"
+#include "devBlockDevice.h"
+#include "devRaid.h"
+#include "semaphore.h"
+#include "stdlib.h"
+#include "dbg.h"
+#include "devRaidUtil.h"
+#include "devRaidProto.h"
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * InitRaidBlockRequest --
+ *
+ *	Initialize RaidBlockRequest.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+InitRaidBlockRequest(reqPtr, raidPtr, operation, col, row, diskSector,
+	numSectorsToTransfer, buffer, ctrlData)
+    RaidBlockRequest	*reqPtr;
+    Raid		*raidPtr;
+    int			 operation;
+    int			 col, row;
+    unsigned		 diskSector;
+    int			 numSectorsToTransfer;
+    Address		 buffer;
+    int			 ctrlData;
+{
+    reqPtr->devReq.operation     = operation;
+    reqPtr->devReq.startAddress  = SectorToByte(raidPtr, diskSector);
+    reqPtr->devReq.startAddrHigh = 0;
+    reqPtr->devReq.bufferLen	 = SectorToByte(raidPtr, numSectorsToTransfer);
+    reqPtr->devReq.buffer        = buffer;
+    reqPtr->devReq.ctrlData[0]   = ctrlData;
+    reqPtr->state                = REQ_READY;
+    reqPtr->status               = FAILURE;
+    reqPtr->raidPtr              = raidPtr;
+    reqPtr->col                  = col;
+    reqPtr->row                  = row;
+    reqPtr->diskPtr              = raidPtr->disk[col][row];
+    reqPtr->version              = reqPtr->diskPtr->version;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_MakeBlockDeviceRequest --
+ *
+ *	Allocate and initialize DevBlockDeviceRequest.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+DevBlockDeviceRequest *
+Raid_MakeBlockDeviceRequest(raidPtr, operation, diskSector, numSectorsToTransfer,
+	buffer, doneProc, clientData, ctrlData)
+    Raid		*raidPtr;
+    int			 operation;
+    unsigned		 diskSector;
+    int			 numSectorsToTransfer;
+    Address		 buffer;
+    void	       (*doneProc)();
+    ClientData		 clientData;
+    int			 ctrlData;
+{
+    DevBlockDeviceRequest	*requestPtr =
+	(DevBlockDeviceRequest *) Malloc(sizeof(DevBlockDeviceRequest));
+
+    requestPtr->operation     = operation;
+    requestPtr->startAddress  = SectorToByte(raidPtr, diskSector);
+    requestPtr->startAddrHigh = 0;
+    requestPtr->bufferLen     = SectorToByte(raidPtr, numSectorsToTransfer);
+    requestPtr->buffer        = buffer;
+    requestPtr->doneProc      = doneProc;
+    requestPtr->clientData    = clientData;
+    requestPtr->ctrlData[0]   = ctrlData;
+
+    return requestPtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_FreeBlockDeviceRequest --
+ *
+ *	Free DevBlockDeviceRequest.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Raid_FreeBlockDeviceRequest(requestPtr)
+    DevBlockDeviceRequest	*requestPtr;
+{
+    Free((char *) requestPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_MakeIOControl --
+ *
+ *	Allocate and initialize RaidIOControl.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+RaidIOControl *
+Raid_MakeIOControl(doneProc, clientData)
+    void	       (*doneProc)();
+    ClientData		 clientData;
+{
+    RaidIOControl	*IOControlPtr;
+    IOControlPtr = (RaidIOControl *) Malloc(sizeof(RaidIOControl));
+
+    Sync_SemInitDynamic(&IOControlPtr->mutex, "RAID IOControl Sema");
+    IOControlPtr->numIO			= 0;
+    IOControlPtr->doneProc		= doneProc;
+    IOControlPtr->clientData		= clientData;
+    IOControlPtr->status		= SUCCESS;
+    IOControlPtr->amountTransferred	= 0;
+    IOControlPtr->numFailed		= 0;
+    IOControlPtr->failedReqPtr		= (RaidBlockRequest *) NIL;
+
+    return IOControlPtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_FreeIOControl --
+ *
+ *	Free RaidIOControl.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Raid_FreeIOControl(IOControlPtr)
+    RaidIOControl	*IOControlPtr;
+{
+    Sync_LockClear(&IOControlPtr->mutex);
+    Free((char *) IOControlPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_MakeRequestControl --
+ *
+ *	Allocate and initialize RaidRequestControl.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+RaidRequestControl *
+Raid_MakeRequestControl(raidPtr)
+    Raid	*raidPtr;
+{
+    RaidRequestControl	*reqControlPtr;
+
+    reqControlPtr = (RaidRequestControl *) Malloc(sizeof(RaidRequestControl));
+    reqControlPtr->reqPtr = (RaidBlockRequest *)
+    	    Malloc((unsigned) (raidPtr->numCol+4) * sizeof(RaidBlockRequest));
+    reqControlPtr->numReq = 0;
+    reqControlPtr->numFailed = 0;
+    reqControlPtr->failedReqPtr = (RaidBlockRequest *) NIL;
+
+    return reqControlPtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_FreeRequestControl --
+ *
+ *	Free RaidRequestControl.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Raid_FreeRequestControl(reqControlPtr)
+    RaidRequestControl	*reqControlPtr;
+{
+    Free((char *) reqControlPtr->reqPtr);
+    Free((char *) reqControlPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MakeRaidStripeIOControl --
+ *
+ *	Allocate and initialize RaidStripeIOControl.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+RaidStripeIOControl *
+Raid_MakeStripeIOControl(raidPtr, operation, firstSector, nthSector, buffer,
+	doneProc, clientData, ctrlData)
+    Raid                *raidPtr;
+    int			 operation;
+    unsigned             firstSector;
+    unsigned             nthSector;
+    Address              buffer;
+    void               (*doneProc)();
+    ClientData           clientData;
+    int                  ctrlData;
+{
+    RaidStripeIOControl	*stripeIOControlPtr;
+    stripeIOControlPtr = (RaidStripeIOControl *)
+				 Malloc(sizeof(RaidStripeIOControl));
+
+    stripeIOControlPtr->raidPtr       = raidPtr;
+    stripeIOControlPtr->operation     = operation;
+    stripeIOControlPtr->firstSector   = firstSector;
+    stripeIOControlPtr->nthSector     = nthSector;
+    stripeIOControlPtr->buffer        = buffer;
+    stripeIOControlPtr->doneProc      = doneProc;
+    stripeIOControlPtr->clientData    = clientData;
+    stripeIOControlPtr->recoverProc   = (void (*)()) NIL;
+    stripeIOControlPtr->ctrlData      = ctrlData;
+    stripeIOControlPtr->reqControlPtr = Raid_MakeRequestControl(raidPtr);
+    stripeIOControlPtr->parityBuf     =
+#ifdef NODATA
+	    (char *) NIL;
+#else
+            Malloc((unsigned) raidPtr->bytesPerStripeUnit);
+#endif
+    stripeIOControlPtr->readBuf       =
+#ifdef NODATA
+	    (char *) NIL;
+#else
+	    Malloc((unsigned) raidPtr->dataBytesPerStripe);
+#endif
+    stripeIOControlPtr->rangeOff      = 0;
+    stripeIOControlPtr->rangeLen      = 0;
+
+    return stripeIOControlPtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_FreeStripeIOControl --
+ *
+ *	Free RaidStripeIOControl.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Raid_FreeStripeIOControl(stripeIOControlPtr)
+    RaidStripeIOControl	*stripeIOControlPtr;
+{
+    Raid_FreeRequestControl(stripeIOControlPtr->reqControlPtr);
+#ifndef NODATA
+    Free((char *) stripeIOControlPtr->parityBuf);
+    Free((char *) stripeIOControlPtr->readBuf);
+#endif
+    Free((char *) stripeIOControlPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_MakeReconstructionControl --
+ *
+ *	Allocate and initialize RaidReconstructionControl.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+RaidReconstructionControl *
+Raid_MakeReconstructionControl(raidPtr, col, row, diskPtr, doneProc, clientData,
+	ctrlData)
+    Raid        *raidPtr;
+    int		 col;
+    int		 row;
+    RaidDisk	*diskPtr;
+    void       (*doneProc)();
+    ClientData   clientData;
+    int		 ctrlData;
+{
+    RaidReconstructionControl *reconstructionControlPtr;
+    reconstructionControlPtr = (RaidReconstructionControl *)
+	    Malloc(sizeof(RaidReconstructionControl));
+
+    reconstructionControlPtr->raidPtr       = raidPtr;
+    reconstructionControlPtr->col           = col;
+    reconstructionControlPtr->row           = row;
+    reconstructionControlPtr->diskPtr       = diskPtr;
+    reconstructionControlPtr->stripeID      = 0;
+    reconstructionControlPtr->numStripe     = 0;
+    reconstructionControlPtr->doneProc      = doneProc;
+    reconstructionControlPtr->clientData    = clientData;
+    reconstructionControlPtr->ctrlData      = ctrlData;
+    reconstructionControlPtr->reqControlPtr = Raid_MakeRequestControl(raidPtr);
+    reconstructionControlPtr->status        = SUCCESS;
+    reconstructionControlPtr->parityBuf     =
+#ifdef NODATA
+	    (char *) NIL;
+#else
+            Malloc((unsigned) raidPtr->bytesPerStripeUnit);
+#endif
+    reconstructionControlPtr->readBuf       =
+#ifdef NODATA
+	    (char *) NIL;
+#else
+	    Malloc((unsigned) raidPtr->dataBytesPerStripe);
+#endif
+    return reconstructionControlPtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_FreeReconstructionControl --
+ *
+ *	Free RaidReconstructionControl.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Raid_FreeReconstructionControl(reconstructionControlPtr)
+    RaidReconstructionControl *reconstructionControlPtr;
+{
+    Raid_FreeRequestControl(reconstructionControlPtr->reqControlPtr);
+#ifndef NODATA
+    Free((char *) reconstructionControlPtr->parityBuf);
+    Free((char *) reconstructionControlPtr->readBuf);
+#endif
+    Free((char *) reconstructionControlPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_RangeRestrict --
+ *
+ *	Restricts start and len so that they lie within rangeOffset and
+ *	rangeLen.  Note that start is restricted modulo the fieldLen.
+ *
+ * Results:
+ *	The restricted values of start and len (newStart, newLen).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Raid_RangeRestrict(start, len, rangeOffset, rangeLen, fieldLen, newStart, newLen)
+    int		 start, len;
+    int		 rangeOffset, rangeLen;
+    int		 fieldLen;
+    int		*newStart, *newLen;
+{
+    int		 startBase, startOffset;
+    int		 newStartOffset;
+
+    startOffset = start % fieldLen;
+    startBase   = (start / fieldLen) * fieldLen;
+    newStartOffset = MAX(startOffset, rangeOffset);
+    *newStart = startBase + newStartOffset;
+    *newLen = MIN(startOffset + len, rangeOffset + rangeLen) - newStartOffset;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_XorRangeRequests --
+ *
+ *	Xor's the contents of the buffers of the requests in *reqControlPtr 
+ *	restricted by rangeOffset and rangeLen and place the result in 
+ *	*destBuf.
+ *
+ * Results:
+ *      *destBuf.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Raid_XorRangeRequests(reqControlPtr, raidPtr, destBuf, rangeOffset, rangeLen)
+    RaidRequestControl	*reqControlPtr;
+    Raid		*raidPtr;
+    char		*destBuf;   
+    int			 rangeOffset;
+    int			 rangeLen;
+{
+    RaidBlockRequest	*reqPtr;
+    int			 rangeStartAddress;
+    int			 newRangeLen;
+    int			 i;
+
+    rangeOffset = StripeUnitOffset(raidPtr, rangeOffset);
+    for (i = 0; i < reqControlPtr->numReq; i++) {
+	reqPtr = &reqControlPtr->reqPtr[i];
+	if (reqPtr->state == REQ_READY || reqPtr->state == REQ_COMPLETED ) {
+	    Raid_RangeRestrict((int) reqPtr->devReq.startAddress,
+		    reqPtr->devReq.bufferLen,
+		    rangeOffset, rangeLen, raidPtr->bytesPerStripeUnit,
+		    &rangeStartAddress, &newRangeLen);
+            Xor2(newRangeLen, reqPtr->devReq.buffer +
+		    	    (rangeStartAddress - reqPtr->devReq.startAddress),
+		    destBuf + StripeUnitOffset(raidPtr,
+			    rangeStartAddress)-rangeOffset);
+	}
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_AddParityRangeRequest --
+ *
+ *	Add a RaidBlockRequest for the indicated parity sectors to
+ *	reqControlPtr.
+ *
+ * Results:
+ *	Updates reqControlPtr.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Raid_AddParityRangeRequest(reqControlPtr, raidPtr, operation,
+	sector, buffer, ctrlData, rangeOffset, rangeLen)
+    RaidRequestControl	*reqControlPtr;
+    Raid		*raidPtr;
+    int			 operation;
+    unsigned		 sector;
+    Address		 buffer;
+    int			 ctrlData;
+    int			 rangeOffset;
+    int			 rangeLen;
+{
+    RaidBlockRequest	*reqPtr;
+    int			 col, row;
+    int 		 numSectorsToTransfer;
+    unsigned		 diskSector;
+
+    rangeOffset = ByteToSector(raidPtr, StripeUnitOffset(raidPtr, rangeOffset));
+    rangeLen    = ByteToSector(raidPtr, rangeLen);
+
+    reqPtr = &reqControlPtr->reqPtr[reqControlPtr->numReq];
+    sector = FirstSectorOfStripeUnit(raidPtr, sector) + rangeOffset;
+    numSectorsToTransfer = rangeLen;
+
+    /*
+     * Map logical Raid sector address to (diskHandlePtr, diskSector).
+     */
+    Raid_MapParity(raidPtr, sector, &col, &row, &diskSector);
+
+    if (numSectorsToTransfer > 0) {
+	InitRaidBlockRequest(reqPtr, raidPtr, operation, col, row,
+		diskSector, numSectorsToTransfer, buffer, ctrlData);
+	if ( IsValid(reqPtr->diskPtr, diskSector, numSectorsToTransfer) ) {
+	    reqPtr->state = REQ_READY;
+	} else {
+	    reqPtr->state = REQ_INVALID;
+	    reqControlPtr->numFailed++;
+	    reqControlPtr->failedReqPtr = reqPtr;
+	}
+        reqControlPtr->numReq++;
+    }
+    if (reqControlPtr->numReq >= raidPtr->numCol +4) {
+	panic("Error: AddRaidParity: reqControl overrun.\n");
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Raid_AddDataRangeRequests --
+ *
+ *	Add RaidBlockRequest's for the indicated data sectors to
+ *	reqControlPtr.
+ *
+ * Results:
+ *	Updates reqControlPtr.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Raid_AddDataRangeRequests(reqControlPtr, raidPtr, operation,
+		firstSector, nthSector, buffer, ctrlData, rangeOffset, rangeLen)
+    RaidRequestControl	*reqControlPtr;
+    Raid		*raidPtr;
+    int			 operation;
+    unsigned		 firstSector, nthSector;
+    Address		 buffer;
+    int			 ctrlData;
+    int			 rangeOffset;
+    int			 rangeLen;
+{
+    RaidBlockRequest	*reqPtr;
+    int			 col, row;
+    int 		 numSectorsToTransfer;
+    int 		 rangeSectorsToTransfer;
+    unsigned 		 currentSector;
+    unsigned		 diskSector;
+
+    rangeOffset = ByteToSector(raidPtr, StripeUnitOffset(raidPtr, rangeOffset));
+    rangeLen    = ByteToSector(raidPtr, rangeLen);
+    /*
+     * Break up requests into stripe units.
+     */
+    currentSector = firstSector;
+    while ( currentSector < nthSector ) {
+	reqPtr = &reqControlPtr->reqPtr[reqControlPtr->numReq];
+        numSectorsToTransfer = MIN( raidPtr->sectorsPerStripeUnit -
+		currentSector%raidPtr->sectorsPerStripeUnit,
+		nthSector - currentSector );
+	/*
+	 * Map logical Raid sector address to (diskHandlePtr, diskSector).
+	 */
+	Raid_MapSector(raidPtr, currentSector, &col, &row, &diskSector);
+
+	Raid_RangeRestrict((int) diskSector, numSectorsToTransfer,
+		rangeOffset, rangeLen,
+		raidPtr->sectorsPerStripeUnit,
+		(int *) &(diskSector), &rangeSectorsToTransfer);
+
+	if (rangeSectorsToTransfer > 0) {
+	    InitRaidBlockRequest(reqPtr, raidPtr, operation, col, row,
+		    diskSector, rangeSectorsToTransfer, buffer, ctrlData);
+	    if (IsValid(reqPtr->diskPtr, diskSector,rangeSectorsToTransfer)) {
+		reqPtr->state = REQ_READY;
+	    } else {
+		reqPtr->state = REQ_INVALID;
+		reqControlPtr->numFailed++;
+		reqControlPtr->failedReqPtr = reqPtr;
+	    }
+	    reqControlPtr->numReq++;
+	}
+
+        currentSector += numSectorsToTransfer;
+	buffer += SectorToByte(raidPtr, numSectorsToTransfer);
+    }
+    if (reqControlPtr->numReq >= raidPtr->numCol +4) {
+	panic("Error: AddRaidData: reqControl overrun.\n");
+    }
+}
+@
+
+
+1.13
+log
+@Moved semaphore routies to semaphore.c.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaidUtil.c,v 1.12 90/10/12 14:01:13 eklee Exp Locker: eklee $ SPRITE (Berkeley)";
+d151 1
+a151 1
+ * MakeRaidIOControl --
+d213 1
+a213 1
+ * MakeRaidRequestControl --
+d361 1
+a361 1
+ * MakeRaidReconstructionControl --
+@
+
+
+1.12
+log
+@Added Raid_ prefix to external names and cleaned up warning messages.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaidUtil.c,v 1.11 90/10/11 16:57:21 eklee Exp Locker: eklee $ SPRITE (Berkeley)";
+d29 1
+a29 1
+#include "devRaidLock.h"
+@
+
+
+1.11
+log
+@Fixed XorRaidRangeRequests to xor only ready and completed requests.
+(Previously, all non failed requests, including invalid, were xored.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaidUtil.c,v 1.10 90/09/19 14:54:11 eklee Exp $ SPRITE (Berkeley)";
+d83 1
+a83 1
+ * MakeBlockDeviceRequest --
+d97 1
+a97 1
+MakeBlockDeviceRequest(raidPtr, operation, diskSector, numSectorsToTransfer,
+d127 1
+a127 1
+ * FreeBlockDeviceRequest --
+d141 1
+a141 1
+FreeBlockDeviceRequest(requestPtr)
+d165 1
+a165 1
+MakeIOControl(doneProc, clientData)
+d188 1
+a188 1
+ * FreeIOControl --
+d202 1
+a202 1
+FreeIOControl(IOControlPtr)
+d227 1
+a227 1
+MakeRequestControl(raidPtr)
+d246 1
+a246 1
+ * FreeRequestControl --
+d260 1
+a260 1
+FreeRequestControl(reqControlPtr)
+d285 1
+a285 1
+MakeStripeIOControl(raidPtr, operation, firstSector, nthSector, buffer,
+d309 1
+a309 1
+    stripeIOControlPtr->reqControlPtr = MakeRequestControl(raidPtr);
+d332 1
+a332 1
+ * FreeStripeIOControl --
+d346 1
+a346 1
+FreeStripeIOControl(stripeIOControlPtr)
+d349 1
+a349 1
+    FreeRequestControl(stripeIOControlPtr->reqControlPtr);
+d375 1
+a375 1
+MakeReconstructionControl(raidPtr, col, row, diskPtr, doneProc, clientData,
+d398 1
+a398 1
+    reconstructionControlPtr->reqControlPtr = MakeRequestControl(raidPtr);
+d419 1
+a419 1
+ * FreeReconstructionControl --
+d433 1
+a433 1
+FreeReconstructionControl(reconstructionControlPtr)
+d436 1
+a436 1
+    FreeRequestControl(reconstructionControlPtr->reqControlPtr);
+d448 1
+a448 1
+ * RangeRestrict --
+d463 1
+a463 1
+RangeRestrict(start, len, rangeOffset, rangeLen, fieldLen, newStart, newLen)
+d483 1
+a483 1
+ * XorRaidRangeRequests --
+d499 1
+a499 1
+XorRaidRangeRequests(reqControlPtr, raidPtr, destBuf, rangeOffset, rangeLen)
+d515 1
+a515 1
+	    RangeRestrict((int) reqPtr->devReq.startAddress,
+d531 1
+a531 1
+ * AddRaidParityRangeRequest --
+d546 1
+a546 1
+AddRaidParityRangeRequest(reqControlPtr, raidPtr, operation,
+d572 1
+a572 1
+    MapParity(raidPtr, sector, &col, &row, &diskSector);
+d595 1
+a595 1
+ * AddRaidDataRangeRequests --
+d610 1
+a610 1
+AddRaidDataRangeRequests(reqControlPtr, raidPtr, operation,
+d642 1
+a642 1
+	MapSector(raidPtr, currentSector, &col, &row, &diskSector);
+d644 1
+a644 1
+	RangeRestrict((int) diskSector, numSectorsToTransfer,
+@
+
+
+1.10
+log
+@Added prototypes.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaidUtil.c,v 1.9 90/06/22 13:37:00 eklee Exp Locker: eklee $ SPRITE (Berkeley)";
+d512 1
+a512 1
+    for ( i = 0; i < reqControlPtr->numReq; i++ ) {
+d514 1
+a514 1
+	if ( reqPtr->state != REQ_FAILED ) {
+@
+
+
+1.9
+log
+@Added support for logging RAID state changes.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaidUtil.c,v 1.8 90/05/15 19:00:31 eklee Exp Locker: eklee $ SPRITE (Berkeley)";
+a22 1
+#include <stdio.h>
+a26 4
+/*
+#include "devDiskLabel.h"
+#include "devDiskStats.h"
+*/
+a28 1
+#include "devRaidIOC.h"
+d33 1
+a33 1
+#include "debugMem.h"
+d399 1
+@
+
+
+1.8
+log
+@Moved Raid Disk related code to separate module (devRaidDisk.c).
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /user4/eklee/raidlib/RCS/devRaidUtil.c,v 1.1 90/03/05 11:38:54 eklee Exp Locker: eklee $ SPRITE (Berkeley)";
+d381 2
+a382 1
+MakeReconstructionControl(raidPtr, col, row, diskPtr, ctrlData)
+d387 2
+d401 2
+@
+
+
+1.7
+log
+@Made Xor2 more efficient.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaidUtil.c,v 1.6 89/11/02 15:53:45 eklee Exp Locker: eklee $ SPRITE (Berkeley)";
+a39 1
+#include "machparam.h"
+a156 69
+ * MakeRaidDisk --
+ *
+ *	Allocate and initialize RaidDisk.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+RaidDisk *
+MakeRaidDisk(type, unit, numSector)
+    int 	 type, unit;
+    int		 numSector;
+{
+    RaidDisk	*diskPtr;
+
+    diskPtr = (RaidDisk *) malloc(sizeof(RaidDisk));
+    Sync_SemInitDynamic(&diskPtr->mutex, "RaidDisk Mutex");
+    diskPtr->version = 1;
+    diskPtr->useCount = 1;
+    diskPtr->device.type = type;
+    diskPtr->device.unit = unit;
+    diskPtr->handlePtr = Dev_BlockDeviceAttach(&diskPtr->device);
+    if (diskPtr->handlePtr == (DevBlockDeviceHandle *) NIL) {
+        diskPtr->numValidSector = 0;
+        diskPtr->state = RAID_DISK_INVALID;
+	ReportRaidDiskAttachError(type, unit);
+    } else {
+        diskPtr->numValidSector = numSector;
+        diskPtr->state = RAID_DISK_READY;
+    }
+    return diskPtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FreeRaidDisk --
+ *
+ *	Free RaidDisk.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void FreeRaidDisk(diskPtr)
+    RaidDisk	*diskPtr;
+{
+    Sync_LockClear(&diskPtr->mutex);
+    if (diskPtr->handlePtr != (DevBlockDeviceHandle *) NIL) {
+        (void) Dev_BlockDeviceRelease(diskPtr->handlePtr);
+    }
+    free((char *) diskPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+d317 3
+d321 1
+d323 3
+d327 1
+d356 1
+d359 1
+d401 3
+d405 1
+d407 3
+d411 1
+d437 1
+d440 1
+a447 182
+ * MapPhysicalToStripeID --
+ *
+ *	Maps physical address (raid, col, row, sector) to stripeID.
+ *
+ * Results:
+ *	stripeID
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+MapPhysicalToStripeID(raidPtr, col, row, sector, outStripeIDPtr)
+    Raid	*raidPtr;
+    int		 col;
+    int		 row;
+    unsigned	 sector;
+    int		*outStripeIDPtr;
+{
+    int group, groupRow, stripeUnit;
+    int stripeID;
+
+    group    = row / raidPtr->rowsPerGroup;
+    groupRow = row % raidPtr->rowsPerGroup;
+    stripeUnit = sector / raidPtr->sectorsPerStripeUnit;
+
+    stripeID = group * raidPtr->stripeUnitsPerDisk + stripeUnit;
+    stripeID = stripeID * raidPtr->rowsPerGroup + groupRow;
+    *outStripeIDPtr = stripeID;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MapParity --
+ *
+ *	Maps logical sector address to (col, row, sector) of corresponding
+ *	parity sector.
+ *
+ * Results:
+ *      (col, row, sector).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+MapParity(raidPtr, sectorNum, outColPtr, outRowPtr, sectorNumPtr)
+    Raid	*raidPtr;
+    unsigned	 sectorNum;
+    int		*outColPtr, *outRowPtr;
+    unsigned	*sectorNumPtr;
+{
+    int sector, col, groupRow, stripeUnit, group;
+    int row, stripeID;
+
+    sector     = sectorNum%raidPtr->sectorsPerStripeUnit;
+    sectorNum /= raidPtr->sectorsPerStripeUnit;
+    col        = sectorNum%raidPtr->numDataCol;
+    sectorNum /= raidPtr->numDataCol;
+    groupRow   = sectorNum%raidPtr->rowsPerGroup;
+    sectorNum /= raidPtr->rowsPerGroup;
+    stripeUnit = sectorNum%raidPtr->stripeUnitsPerDisk;
+    sectorNum /= raidPtr->stripeUnitsPerDisk;
+    group      = sectorNum%raidPtr->groupsPerArray;
+    sectorNum /= raidPtr->groupsPerArray;
+
+    if (sectorNum != 0) {
+	(void)printf("Error: MapSector: sectorNum=%d\n", (int) sectorNum);
+    }
+
+    row = group * raidPtr->rowsPerGroup + groupRow;
+    stripeID = group * raidPtr->stripeUnitsPerDisk + stripeUnit;
+    stripeID = stripeID * raidPtr->rowsPerGroup + groupRow;
+
+    /*
+     * Rotate sectors/parity.
+     */
+    switch (raidPtr->parityConfig) {
+    case 'R': /* Right Symetric */
+	col = (raidPtr->numCol-1 + stripeID) % raidPtr->numCol;
+	break;
+    case 'L': /* Left Symetric */
+	col = (raidPtr->numCol-1 - stripeID) % raidPtr->numCol;
+	if (col < 0) {
+	    col += raidPtr->numCol;
+	}
+	break;
+    default:  /* No Rotation */
+	col = raidPtr->numCol-1;
+	break;
+    }
+
+    /*
+     * Return values.
+     */
+    *outColPtr = col;
+    *outRowPtr = row;
+    *sectorNumPtr = stripeUnit*raidPtr->sectorsPerStripeUnit + sector;
+    return;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MapSector --
+ *
+ *	Maps logical sector address to (col, row, sector).
+ *
+ * Results:
+ *      (col, row, sector).
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+MapSector(raidPtr, sectorNum, outColPtr, outRowPtr, sectorNumPtr)
+    Raid	*raidPtr;
+    unsigned	 sectorNum;
+    int		*outColPtr, *outRowPtr;
+    unsigned	*sectorNumPtr;
+{
+    int sector, col, groupRow, stripeUnit, group;
+    int row, stripeID;
+
+    sector     = sectorNum%raidPtr->sectorsPerStripeUnit;
+    sectorNum /= raidPtr->sectorsPerStripeUnit;
+    col        = sectorNum%raidPtr->numDataCol;
+    sectorNum /= raidPtr->numDataCol;
+    groupRow   = sectorNum%raidPtr->rowsPerGroup;
+    sectorNum /= raidPtr->rowsPerGroup;
+    stripeUnit = sectorNum%raidPtr->stripeUnitsPerDisk;
+    sectorNum /= raidPtr->stripeUnitsPerDisk;
+    group      = sectorNum%raidPtr->groupsPerArray;
+    sectorNum /= raidPtr->groupsPerArray;
+
+    if (sectorNum != 0) {
+	(void)printf("Error: MapSector: sectorNum=%d\n", (int) sectorNum);
+    }
+
+    row = group * raidPtr->rowsPerGroup + groupRow;
+    stripeID = group * raidPtr->stripeUnitsPerDisk + stripeUnit;
+    stripeID = stripeID * raidPtr->rowsPerGroup + groupRow;
+
+    /*
+     * Rotate sectors/parity.
+     */
+    switch (raidPtr->parityConfig) {
+    case 'R': /* Right Symetric */
+	col = (col + stripeID) % raidPtr->numCol;
+	break;
+    case 'L': /* Left Symetric */
+	col = (col - stripeID) % raidPtr->numCol;
+	if (col < 0) {
+	    col += raidPtr->numCol;
+	}
+	break;
+    default:  /* No Rotation */
+	break;
+    }
+
+    /*
+     * Return values.
+     */
+    *outColPtr = col;
+    *outRowPtr = row;
+    *sectorNumPtr = stripeUnit*raidPtr->sectorsPerStripeUnit + sector;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+a482 141
+ * Xor2 --
+ *
+ *	*destBuf ^= *srcBuf;
+ *	Modified from bcopy.
+ *
+ * Results:
+ *      *destBuf.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#define WORDMASK WORD_ALIGN_MASK
+
+static void
+Xor2(numBytes, sourcePtr, destPtr)
+    char *sourcePtr;		/* Where to copy from */
+    char *destPtr;		/* Where to copy to */
+    register int numBytes;	/* The number of bytes to copy */
+{
+    register int *sPtr = (int *) sourcePtr;
+    register int *dPtr = (int *) destPtr;
+
+    /*
+     * If the destination is below the source then it is safe to copy
+     * in the forward direction.  Otherwise, we must start at the top
+     * and work down, again optimizing for large transfers.
+     */
+
+    if (dPtr < sPtr) {
+	/*
+	 * If both the source and the destination point to aligned
+	 * addresses then copy as much as we can in large transfers.  Once
+	 * we have less than a whole int to copy then it must be done by
+	 * byte transfers.  Furthermore, use an expanded loop to avoid
+	 * the overhead of continually testing loop variables.
+	 */
+	
+	if (!((((int) sPtr) | (int) dPtr) & WORDMASK)) {
+	    while (numBytes >= 16*sizeof(int)) {
+		dPtr[0] ^= sPtr[0];
+		dPtr[1] ^= sPtr[1];
+		dPtr[2] ^= sPtr[2];
+		dPtr[3] ^= sPtr[3];
+		dPtr[4] ^= sPtr[4];
+		dPtr[5] ^= sPtr[5];
+		dPtr[6] ^= sPtr[6];
+		dPtr[7] ^= sPtr[7];
+		dPtr[8] ^= sPtr[8];
+		dPtr[9] ^= sPtr[9];
+		dPtr[10] ^= sPtr[10];
+		dPtr[11] ^= sPtr[11];
+		dPtr[12] ^= sPtr[12];
+		dPtr[13] ^= sPtr[13];
+		dPtr[14] ^= sPtr[14];
+		dPtr[15] ^= sPtr[15];
+		sPtr += 16;
+		dPtr += 16;
+		numBytes -= 16*sizeof(int);
+	    }
+	    while (numBytes >= sizeof(int)) {
+		*dPtr++ ^= *sPtr++;
+		numBytes -= sizeof(int);
+	    }
+	    if (numBytes == 0) {
+		return;
+	    }
+	}
+	
+	/*
+	 * Copy the remaining bytes.
+	 */
+	
+	sourcePtr = (char *) sPtr;
+	destPtr = (char *) dPtr;
+	while (numBytes > 0) {
+	    *destPtr++ ^= *sourcePtr++;
+	    numBytes--;
+	}
+    } else {
+	/*
+	 * Handle extra bytes at the top that are due to the transfer
+	 * length rather than pointer misalignment.
+	 */
+	while (numBytes & WORDMASK) {
+	    numBytes --;
+	    destPtr[numBytes] ^= sourcePtr[numBytes];
+	}
+	sPtr = (int *) (sourcePtr + numBytes);
+	dPtr = (int *) (destPtr + numBytes);
+
+	if (!((((int) sPtr) | (int) dPtr) & WORDMASK)) {
+	    while (numBytes >= 16*sizeof(int)) {
+		sPtr -= 16;
+		dPtr -= 16;
+		dPtr[15] ^= sPtr[15];
+		dPtr[14] ^= sPtr[14];
+		dPtr[13] ^= sPtr[13];
+		dPtr[12] ^= sPtr[12];
+		dPtr[11] ^= sPtr[11];
+		dPtr[10] ^= sPtr[10];
+		dPtr[9] ^= sPtr[9];
+		dPtr[8] ^= sPtr[8];
+		dPtr[7] ^= sPtr[7];
+		dPtr[6] ^= sPtr[6];
+		dPtr[5] ^= sPtr[5];
+		dPtr[4] ^= sPtr[4];
+		dPtr[3] ^= sPtr[3];
+		dPtr[2] ^= sPtr[2];
+		dPtr[1] ^= sPtr[1];
+		dPtr[0] ^= sPtr[0];
+		numBytes -= 16*sizeof(int);
+	    }
+	    while (numBytes >= sizeof(int)) {
+		*--dPtr ^= *--sPtr;
+		numBytes -= sizeof(int);
+	    }
+	    if (numBytes == 0) {
+		return;
+	    }
+	}
+	
+	/*
+	 * Copy the remaining bytes.
+	 */
+	
+	destPtr = (char *) dPtr;
+	sourcePtr = (char *) sPtr;
+	while (numBytes > 0) {
+	    *--destPtr ^= *--sourcePtr;
+	    numBytes--;
+	}
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+d577 1
+a577 1
+	if ( IsInRange(reqPtr->diskPtr, diskSector, numSectorsToTransfer) ) {
+d652 1
+a652 1
+	    if (IsInRange(reqPtr->diskPtr, diskSector,rangeSectorsToTransfer)) {
+@
+
+
+1.6
+log
+@Changed a couple of printf's to panics.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/src/kernel/raid/RCS/devRaidUtil.c,v 1.5 89/09/27 17:10:18 eklee Exp $ SPRITE (Berkeley)";
+d40 1
+d718 1
+d729 2
+d732 4
+a735 3
+Xor2(len, srcBuf, destBuf)
+    int		 len;
+    char	*srcBuf, *destBuf;
+d737 70
+a806 3
+    register char *srcPtr = (char *) srcBuf;
+    register char *destPtr = (char *) destBuf;
+    register char *endDestPtr = (char *) (destBuf + len);
+d808 41
+a848 4
+    while (destPtr < endDestPtr) {
+	*destPtr ^= *srcPtr;
+	destPtr++;
+	srcPtr++;
+@
+
+
+1.5
+log
+@Misc insignificant changes.
+@
+text
+@d20 1
+a20 1
+static char rcsid[] = "$Header: /sprite/lib/forms/RCS/proto.c,v 1.2 89/01/07 04:12:18 rab Exp $ SPRITE (Berkeley)";
+d851 1
+a851 1
+	printf("Error: AddRaidParity: reqControl overrun.\n");
+d930 1
+a930 1
+	printf("Error: AddRaidData: reqControl overrun.\n");
+@
+
+
+1.4
+log
+@*** empty log message ***
+@
+text
+@d389 2
+a390 2
+    stripeIOControlPtr->rangeOff      = -1;
+    stripeIOControlPtr->rangeLen      = -1;
+@
+
+
+1.3
+log
+@*** empty log message ***
+@
+text
+@@
+
+
+1.2
+log
+@Added runtime error checks to make sure reqControl structures are not overrun.
+@
+text
+@d795 1
+a795 1
+ * AddRaidParityRequest --
+d844 1
+a844 1
+	    reqPtr->state = REQ_FAILED;
+d859 1
+a859 1
+ * AddRaidDataRequests --
+d919 1
+a919 1
+		reqPtr->state = REQ_FAILED;
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d850 3
+d928 3
+@

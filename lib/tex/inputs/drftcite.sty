@@ -1,0 +1,102 @@
+%     D R A F T C I T E . S T Y
+%
+%     Copyright (C) 1989,1991 by Donald Arseneau
+%     These macros may be freely transmitted, reproduced, or modified for
+%     non-commercial purposes provided that this notice is left intact.
+%
+%  Use the label instead of the number for citations, as if
+%  \bibitem[name]{name}{....}, but write the proper citation number to
+%  the aux file. Ignore spaces before the \cite, inserting an ordinary
+%  interword space.  This is particularly useful for draft versions of
+%  papers that will eventually use cite.sty or overcite.sty.
+%
+%  This also keeps track of the order of first-citations in the text for
+%  easy sorting (in lieu of BibTeX).  To omit this counting, comment-out
+%  the lines ending with %%o below, and omit everything following the line
+%  that begins with %%o.
+% ........................
+%
+%  Pull out the code that writes the aux file citation and gives the name.
+%  \citen can be used by itself to give citation name without the other
+%  formatting; e.g., "See also ref.~\citen{junk}" gives "See also ref. junk".
+%
+\def\citen#1{%
+\if@filesw \immediate \write \@auxout {\string \citation {#1}}\fi
+\def\@citea{}%
+\@for \@citeb:=#1\do {\@citea
+  \@ifundefined {b@\@citeb}%
+    {{\bf \expandafter\@citeverb\expandafter{\@citeb}?}%
+    \@warning {Citation `\@citeb ' on page \thepage \space undefined}}%
+% else, defined
+    {\expandafter\@citeverb\expandafter{\@citeb}}%
+  \def\@citea{, }%
+  \@advancecitecount%%o
+  }}
+%
+%     Replacement for \@citex:
+%
+\def\@citex[#1]#2{\leavevmode\unskip
+   \ \@cite{\citen{#2}}{#1}\spacefactor\@m}%
+%
+%  Give the citation tag as the label (even if another label is specified)
+%
+\def\@lbibitem[#1]#2{\item[\@biblabel{%
+   \llap{$^{\@nameuse{DCN@#2}}$\ \ }%%o
+   \@citeverb{#2}}]\if@filesw
+   {\def\protect##1{\string ##1\space}%
+   \immediate\write\@auxout{\string\bibcite{#2}{#1}}\fi\ignorespaces}}
+%
+\def\@bibitem#1{\item[\@biblabel{%
+   \llap{$^{\@nameuse{DCN@#1}}$\ \ }%%o
+   \@citeverb{#1}}]\stepcounter{\@listctr}\if@filesw
+   \immediate\write\@auxout{\string\bibcite{#1}{\the\c@enumi}}\fi
+   \ignorespaces}
+%
+%  make the special characters in the citation tag printable
+%
+\def\@citeverb#1{%
+   \expandafter \expandafter \expandafter \@gobble  %  do \csname, \string, ...
+   \expandafter \string\csname#1\endcsname}         %  \@gobble, in that order.
+%
+%%o ---------------
+%%o  all the remainder deals with counting, so if you don't want the
+%%o  citations counted, put \endinput here or comment-out all the rest
+%%o ---------------
+%
+%     count the citations as they appear in the text
+%
+\newcount\@HighCite \global\@HighCite\z@
+%
+\def\@advancecitecount{\@ifundefined {DCN@\@citeb}%
+  {\global\advance\@HighCite\@ne
+  \expandafter\xdef\csname DCN@\@citeb\endcsname{\the\@HighCite}}%
+  {}}
+%
+%  The remainder handles input files skipped by \includeonly.  It adds code to
+%  LaTeX's \include to re-read the .aux file checking the \citation commands.
+%
+\ifx\LA@include\@undefined   % make sure we aren't recursing
+\let\LA@include\include      % preserve LaTeX's \include
+\def\include#1{\begingroup 
+  \let\setcounter\relax      % don't expand cp@#1 completely
+  \let\@draftauxcite\@gobble % don't repeat on repeated \include
+  \expandafter\xdef\csname cp@#1\endcsname % add my stuff to \cp@#1
+    {\csname cp@#1\endcsname \noexpand\@draftauxcite{#1}}\endgroup
+  \LA@include{#1}}%
+\fi
+%
+%  input the .aux file ignoring all commands but \citation, which
+%  does \@advancecitecount (keeps count of the citations).
+%
+\def\@draftauxcite#1{\begingroup 
+  \let\bibcite\@gobbletwo \let\newlabel\@gobbletwo \let\@writefile\@gobbletwo
+% \let\bibdata\@gobble \let\bibstyle\@gobble % normal
+  \def\citation##1{\@for\@citeb:=##1\do {\@advancecitecount}}%
+  \makeatletter\@input{#1.aux}\endgroup}
+%
+%  Send problem reports to asnd@triumfcl.bitnet or Arseneau@mtsg.ubc.ca
+%
+%  Test integrity of file:
+%  brackets:  round, square, curly, angle:   () [] {} <>
+%  backslash, slash, vertical, at, dollar, and: \ / | @ $ &
+%  hat, grave, acute (apostrophe), quote, tilde:   ^ ` ' " ~

@@ -1,0 +1,68 @@
+
+
+
+RESTARTIPSERVER           User Commands           RESTARTIPSERVER
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     restartIPServer - restart IP server and dependent daemons
+
+SSYYNNOOPPSSIISS
+     rreessttaarrttIIPPSSeerrvveerr [_o_p_t_i_o_n_s]
+
+OOPPTTIIOONNSS
+     -rr             Start up daemons that run only  on  the  root
+                    server.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     This script kills off the IP server  and  daemons  that  are
+     known to communicate using Internet protocols.  It then res-
+     tarts the server and a standard  set  of  daemons.   If  the
+     script  is run on the root server, additional daemons (e.g.,
+     bboooottpp) are started.  The --rr flag can be used to start up the
+     root server daemons on other machines.
+
+     If the file //hhoossttss//$$HHOOSSTT//nnffss exists, it  is  run.   This  is
+     usually a script to start up an NFS gateway.
+
+     If the file //hhoossttss//$$HHOOSSTT//iippSSttaarrtt exists, it is used to  fire
+     up the IP server.  This is useful for starting up a new ver-
+     sion of the server  for  debugging.   If  the  file  doesn't
+     exist,  the  server  is  simply  invoked,  with  all  output
+     redirected to //hhoossttss//$$HHOOSSTT//iipp..oouutt..
+
+KKEEYYWWOORRDDSS
+     IP server
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  October 23, 1991                   1
+
+
+

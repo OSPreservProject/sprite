@@ -1,0 +1,300 @@
+A Brief Retrospective on the Sprite Network Operating System
+------------------------------------------------------------
+
+John Ousterhout
+Computer Science Division
+Department of EECS
+University of California at Berkeley
+
+Sprite is a research operating system whose development I have had the
+pleasure of leading over the last eight years.  Four graduate students
+and I started the project in the Fall of 1984 because we felt that
+current operating systems were paying insufficient attention to local-area
+networks.  It seemed to us that networking support had been added in a
+quick and dirty fashion to systems that were designed to run stand-alone.
+As a result, networked workstations didn't work well together.  At the
+time we started Sprite there were no good network file systems (even NFS
+didn't exist yet) and administering a network of workstations was a
+nightmare.
+
+Our goal for Sprite was to "do networking right" by building a new operating
+system kernel from scratch and designing the network support into the system
+from the start.  We hoped to create a system where a collection of
+networked workstations would behave like a single system with both storage
+and processing power shared uniformly among the workstations.  We hoped
+that users would be able to tap the power of the entire network while
+preserving the simple behavior and administrative ease of a traditional
+time-shared system.
+
+I think that we achieved these goals.  Four technical accomplishments
+stand out in my mind.  First and foremost is Sprite's network file system,
+which demonstrated that network file systems can provide a convenient
+user model without sacrificing performance.  Sprite's file system allows
+file sharing while completely hiding the network.  It provides the same
+behavior among workstations that users would see if they all ran on a
+traditional time-sharing system.  Even I/O devices can be accessed
+unformly across the network, and user processes can extend the file
+system by implementing its I/O and naming protocols using pseudo devices
+and pseudo file systems.  At the same time, Sprite uses aggressive file
+caching to achieve high performance.  Five years after its construction,
+Sprite still has the fastest network file system in existence.
+
+Sprite's second key accomplishment is its process migration mechanism,
+which allows processes to be moved transparently between workstations
+at any time.  With process migration a single user can harness the power
+of many workstations simultaneously, achieving speedups of four or more
+on common system tasks such as recompilation.  The migration mechanism
+keeps track of idle machines, uses them for migration, and evicts
+migrated processes when a workstation's owner returns, so that migration
+doesn't impact the response time of active users.  Evicted processes are
+remigrated to a different idle machine or executed on their home machine.
+Sprite is one of only a few systems where process migration has been
+used on a day-to-day basis by a large user community.
+
+Sprite's third key accomplishment is its single system image.  The file
+system and process migration provide the most obvious evidence of the
+single system image, since they make storage and processing power sharable
+among workstations.  But in many other ways Sprite looks and feels just like
+a single system.  There is one root partition, one password file, one swap
+area (in the network file system), one login database, and so on.  The
+"finger" command tells about all users on all workstations in the Sprite
+cluster, not just those on the workstation where the command was invoked.
+System administration is no harder with fifty machines in the network than
+it is with ten, and adding a new machine is no more difficult than adding
+a new user account.
+
+Sprite's single system image also supports different machine architectures
+in the same cluster.  We developed a framework for separating architecture-
+independent information from architecture-specific information.  All the
+information for all architectures is visible at all times, which simplifies
+cross-development, yet each machine uses the appropriate architecture-
+dependent information when it is needed.
+
+Sprite's fourth key accomplishment is its log-structured file system (LFS),
+which demonstrates a radical new approach to file system design.  LFS
+treats the disk more like a tape, writing information sequentially in large
+runs that permit great efficiency.  We developed a new garbage collection
+mechanism that continually opens up large extents of free space on the
+disk.  The result is a system that writes small files to disk an order of
+magnitude faster than any other existing file system.  At the same time
+it handles other operations, such as reads and large writes, at least
+as well as other systems.  Log-structured file systems have many other
+advantages as well, such as fast crash recovery, the ability to store
+information on disk in compressed form, and the ability to vary the block
+size from file to file.
+
+In addition to the above results, which have already been achieved, there
+are several promising projects still underway, such as recovery enhancements,
+a new file system called Zebra that stripes files across multiple servers,
+and high-bandwidth file service using disk arrays.  Before the Sprite project
+ends I expect to see major results from each of these projects too.
+
+Throughout the Sprite project we have tried to characterize the behavior
+of the system and to use this information to guide future developments.
+Some of our most important results are the measurements we have made.  The
+founding of the project was based in part on file system measurements made
+on time-shared systems in 1984 and 1985.  We made additional measurements
+of Sprite usage in 1991 to see how patterns had changed and to analyze
+the potential application of non-volatile memory in networked systems.
+
+Perhaps the most significant accomplishment of all is that we were able
+to make the system work, not just for ourselves but for a community of
+users that numbered as high as 80 or more at the peak of the project.
+Many of these users depended on Sprite for all of their day-to-day
+computing needs, such as mail and printing.  For a period of several
+years it was common to see 25-35 simultaneous logins of which only a
+half-dozen were Sprite developers.  I know of only one other university
+project that developed a new operating system kernel from scratch and
+used it to support a user community this large for this long;  that project
+was Multics, which was carried out at MIT in the late 1960's.
+
+Furthermore,  we built Sprite (more than 200,000 lines of new code in all)
+with a small team that averaged only about four graduate students and one
+or two staff or undergraduate assistants.  We never got too large to have
+project meetings in my office, although there were times when we had to
+borrow two additional chairs to supplement the six already in my office.
+
+The history of Sprite divides into roughly three phases:  initial
+development, consolidation and LFS development, and new ventures
+and closeout.
+
+The first phase of Sprite, initial development, lasted from the founding
+of the project in the fall of 1984  until about the end of 1987.  We began
+coding on Sun-2 workstations in early 1985 and had a system that could
+execute shell commands by the spring of 1986.  In the summer of 1986 we
+started developing the "real" Sprite file system (we'd used an older
+network file system called BNFS up until that point).  About that time
+we also started on process migration and porting the X window system.
+By the fall of 1987 all of these things were working, along with an
+internet protocol sever.  We had also ported Sprite to Sun-3's.  At this
+point we copied the kernel sources over to Sprite and began doing all of
+our kernel development on Sprite itself.
+
+The second phase in Sprite's history lasted from late 1987 to late 1990.
+This phase consisted mostly of consolidation.  In early 1988 we made a
+major revision of the file system.  Remote device support was improved,
+the pseudo device implementation was rewritten, and a simple recovery
+protocol was introduced so the system could recover gracefully from
+server crashes.  Process migration underwent major improvements also,
+and by late 1988 it became stable enough for us to use it daily in system
+development.  In 1988 we ported Sprite to the SPUR research multiprocessor
+(the SPUR project provided much of the early funding for Sprite), and
+in 1989 we ported it to DECstation-3100 and Sun-4 platforms.  A port to
+the Sequent Symmetry machine was carred out at Sequent in late 1989 and
+early 1990.
+
+In late 1988 we began to support users other than Sprite developers. The
+user community gradually grew in size, peaking at around 80 in 1990 and
+1991.  We also prepared a distribution tape so that we could make Sprite
+available to people outside Berkeley.  The first tapes were sent out in
+late 1989; over the life of the project Sprite has run at about ten
+different sites.
+
+The most significant new development during Sprite's second phase was
+the LFS implementation.  We made preliminary designs and studies in 1988
+but didn't solidify the prototype design until 1989 (as part of the
+newly started RAID project).  Coding started in late 1989.  By the spring of
+1990 LFS was showing signs of life, and it entered production use in the
+fall of 1990.  By late 1991 virtually all of Sprite's dozen disks were
+using LFS.
+
+The final phase of the project started in late 1990 and will continue
+until Sprite shuts down in late 1993 or early 1994.  In this phase we
+initiated several new projects, most of which reflected the increasing
+focus of the project on issues related to storage management.  In the
+winter of 1990 we began to analyze the behavior of recovery after file
+server crashes;  this led to a series of experiments with better recovery
+techniques, such as server-driven recovery and the use of non-volatile
+storage.  In 1991 we began a project to see if Sprite could be
+re-implemented as a user-level server process running under the Mach 3.0
+kernel;  this project completed in the summer of 1992 with substantial
+functionality but disappointing performance.  In 1991 and 1992 we also
+developed the Jaquith tape library system, which made robotically-controlled
+tape systems available for both Sprite and other UNIX systems.  During the
+same period we started projects to experiment with striping files across
+multiple file servers (Zebra) and to improve the bandwidth of remote
+accesses to disk arrays.  Both of these projects are still underway.
+
+Like most software, the Sprite kernel became harder and harder to maintain
+as it aged.  Frequent revisions and changes in project personnel led to
+increases in system complexity, in spite of our best efforts to keep
+things clean and simple. In addition, we found it harder and harder to
+keep up with developments in commercial operating systems.  By 1990
+there were several commercial versions of UNIX with massive support teams,
+such as System V, Solaris, and OSF.  These systems were adding features
+at a rapid pace and our users wanted access to these features under
+Sprite.  We added new features such as shared libraries and binary
+compatibility with SunOS and Ultrix, but we found ourselves spending
+more and more time on tasks that were not research oriented.
+
+At the end of 1991 we decided to bring the Sprite project to a gradual
+close.  Since then we have not started any major new developments and
+no new graduate students have joined the project.  We plan to complete
+the projects that are currently underway and then shut down the system
+in late 1993 or early 1994.  We no longer encourage new users to work on
+Sprite, and our user community is slowly shrinking back to just the Sprite
+team.  Sprite has served us long and well as a research vehicle; now it is
+time to move on to other things.
+
+Many people have contributed to Sprite over the years.  I can't possibly
+hope to list every significant contribution, but I'll try anyway.  The
+list below summarizes the work of the principal project members (my
+research students and the staff who reported directly to me).  The people
+are listed in chronological order by the date when they started working
+on Sprite-related things, and the projects are listed with the most
+important ones (in my opinion) first.
+
+Brent Welch (Summer 1984 - Spring 1990):
+    Remote procedure calls; file system (storage manager, file system
+    switches, prefixes, name lookup, remote devices, crash recovery
+    protocol, disk formatting, dump and restore, migration support);
+    pseudo devices; pseudo file systems; BNFS file system; NFS support;
+    device drivers; kernel profiling; bootstrapping.
+
+Andrew Cherenson (Fall 1984 - Fall 1987):
+    Internet protocol sever; window system design and X10 porting;
+    timer; serial interfaces; user-level debugging;  pseudo-devices;
+    init process; command porting (network commands, login); process-related
+    system calls; UNIX compatibility; manual entry formatting; C library.
+
+Fred Douglis (Fall 1984 - Fall 1990):
+    Process migration and the pmake program; UNIX compatibility and
+    command porting; system call interfaces; synchronization, scheduling,
+    and process support; porting and support for major programs such
+    as emacs and tex; trap handling and UART support for SPUR; early
+    design work for log-structured file systems; experiments with
+    optical disks.
+
+Mike Nelson (Fall 1984 - Fall 1988):
+    Virtual memory; file system (caching, disk checker, vm interactions,
+    migration support, crash recovery, select); kernel debugging;
+    Sun-3 and DECstation-3100 ports; device and network drivers;
+    signal handling;  SPUR port (virtual memory, trap handlers, etc.);
+    command porting.
+
+John Ousterhout (Fall 1984 - ??):
+    Memory allocation; C library; terminal driver; context switching;
+    gcc porting, mkmf program.
+
+Adam de Boor (Fall 1986 - Summer 1988):
+    Pmake program; X11 porting (e.g. device drivers and region code);
+    xman and mkmf programs; swat debugger.
+
+Mendel Rosenblum (Winter 1988 - Fall 1992):
+    Log-structured file system; SPUR port; debugging tools; disk drivers;
+    Sun-4 port; X11R4 porting.
+
+Mary Baker (Winter 1988 - ??):
+    Recovery analysis and redesign; congestion control for remote procedure
+    calls; recovery box; Sun-4, SPARCstation, SPARCstation-2 ports; file
+    system measurements; analysis of NVRAM uses; RPC byte-swapping; SCSI
+    device driver; multi-processor conversion.
+
+Bob Bruce (Fall 1988 - Fall 1990, Fall 1991 - Winter 1992):
+    Spooler daemons; dump and restore utilities; Sprite distribution tape;
+    support for compilation and debugging tools; user-level profiling;
+    floating-point support; DECstation-3100 and Sequent ports; UNIX
+    compatibility; Operation Desert Storm support; X11R5 port.
+
+John Hartman (Fall 1988 - ??):
+    Zebra striped file system; file system measurements; port to SPUR
+    multiprocessor; measurements of Sprite running on SPUR multiprocessor;
+    device and network drivers (FDDI and Ultranet); synchronization
+    analysis; disk checker, dumps, and other disk utilities; multiprocessor
+    support;  bootstrapping; debugger support; LFS support; scheduler.
+
+Don Reeves (Spring 1989):
+    ARP and reverse ARP.
+
+Ken Shirriff (Summer 1989 - ??):
+    High-speed file transfer using RAID; file system traces; analysis
+    of name caching; shared virtual memory; mapped files; System-V
+    synchronization; security enforcement; mail support; UNIX
+    compatibility; dynamic linking; network daemons; DECstation-3100
+    command porting; dump/restore utilities.
+
+Mike Kupfer (Summer 1990 - Summer 1992):
+    Sprite as Mach server process; measurements for Sprite analysis paper;
+    internal error checks in kernel; support for pmake, X, dump/restore
+    utilities, and other administrative tools.
+
+Jim Mott-Smith (Winter 1991 - Fall 1992):
+    Jaquith tape archive system; SCSI drivers; NFS support; internet
+    protocol server support; dump/restore utilities; sendmail support.
+
+Geoff Voelker (Fall 1991 - Summer 1992):
+    Disk utilities; FDDI network driver; network utilities.
+
+Matt Secor (Summer 1992):
+    Debugger support.
+
+In addition to the people listed above, there were many others who made
+significant contributions to Sprite even though they didn't report
+directly to me.  Here are a few of the "outside helpers";  apologies to
+anyone that I've overlooked.
+
+Bob Beck (Sequent port), Ann Chervenak (device drivers), Doug Johnson
+(SPUR debugging), Ed Lee (RAID striping driver), Dean Long (kernel bug
+fixing, bootstrapping, SPARCstation port), Ethan Miller (RAID controller
+support) , Srinivasan Seshan (Ultranet support), Thorsten Von Eicken
+(X11R4 port), Jay Vosburgh (Sequent port).

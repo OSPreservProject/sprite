@@ -1,0 +1,1700 @@
+head     1.14;
+branch   ;
+access   ;
+symbols  ;
+locks    jhh:1.14; strict;
+comment  @# @;
+
+
+1.14
+date     90.11.06.16.22.33;  author jhh;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     90.09.13.12.01.54;  author jhh;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     90.06.28.15.16.50;  author jhh;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     90.04.03.11.48.47;  author jhh;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     90.03.07.11.06.42;  author jhh;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     90.02.14.22.36.13;  author jhh;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     90.02.12.21.12.13;  author jhh;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     90.02.12.20.48.35;  author jhh;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     90.01.24.16.07.49;  author jhh;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     90.01.24.15.11.28;  author jhh;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     90.01.18.17.55.18;  author jhh;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     90.01.18.17.42.38;  author jhh;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     90.01.17.17.46.40;  author jhh;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.01.16.13.20.52;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@original version
+@
+
+
+1.14
+log
+@added ds5000 support
+@
+text
+@#!/bin/csh -f
+#
+# Script for adding a new host to a Sprite system.  It creates directories,
+# makes links, and edits files.
+#
+# $Header: /sprite/src/cmds/addhost/RCS/addhost,v 1.13 90/09/13 12:01:54 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+#
+# Copyright 1989 Regents of the University of California
+# Permission to use, copy, modify, and distribute this
+# software and its documentation for any purpose and without
+# fee is hereby granted, provided that the above copyright
+# notice appear in all copies.  The University of California
+# makes no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without
+# express or implied warranty.
+#
+
+onintr cleanup
+
+#set debugFlag
+set awk = 'nawk'
+set netType="ether"
+set root="/"
+set domain = "";
+set domain = `$awk '/^[0-9]+/ {print substr($6, index($6,".")+1);exit;}' $root/etc/spritehosts`
+set swapDir = "/swap"
+set owner = ""
+set location = ""
+set fullType = ""
+
+
+set tmpfile=/tmp/addhost.$$
+set tmpfile2=/tmp/addhost2.$$
+set spriteID = 0
+
+if ($#argv > 0) then
+    while ($#argv)
+	switch ($1)
+	    case "-r":
+		shift
+		if ($#argv == 0) then
+		    echo "-r option requires an argument"
+		    goto usage
+		else
+		    set root = $1
+		    shift
+		endif
+		breaksw
+	    case "-i":
+		shift
+		if ($#argv == 0) then
+		    echo "-i option requires an argument"
+		    goto usage
+		else
+		    set internet = $1
+		    shift
+		endif
+		breaksw
+	    case "-a":
+		shift
+		if ($#argv == 0) then
+		    echo "-a option requires an argument"
+		else
+		    set address = $1
+		    shift
+		endif
+		breaksw
+	    case "-n"
+		shift
+		if ($#argv == 0) then
+		    echo "-n option requires an argument"
+		else
+		    set name = $1
+		    shift
+		endif
+		breaksw
+	    case "-I"
+		shift
+		if ($#argv == 0) then
+		    echo "-I option requires an argument"
+		else
+		    set spriteID = $1
+		    shift
+		endif
+		breaksw
+	    case "-d"
+		shift
+		if ($#argv == 0) then
+		    echo "-d option requires an argument"
+		else
+		    set domain = $1
+		    shift
+		endif
+		breaksw
+	    case "-m"
+		shift
+		if ($#argv == 0) then
+		    echo "-m option requires an argument"
+		else
+		    set machineType = $1
+		    shift
+		endif
+		breaksw
+	    case "-t"
+		shift
+		if ($#argv == 0) then
+		    echo "-t option requires an argument"
+		else
+		    set netType = $1
+		    shift
+		endif
+		breaksw
+	    case "-s"
+		shift
+		if ($#argv == 0) then
+		    echo "-s option requires an argument"
+		else
+		    set swapDir = $1
+		    shift
+		endif
+		breaksw
+	    case "-R"
+		shift
+		set replace
+		breaksw
+	    case "-o"
+		shift
+		if ($#argv == 0) then
+		    echo "-o option requires an argument"
+		else
+		    set owner = "$1"
+		    shift
+		endif
+		breaksw
+	    case "-l"
+		shift
+		if ($#argv == 0) then
+		    echo "-l option requires an argument"
+		else
+		    set location = "$1"
+		    shift
+		endif
+		breaksw
+	    case "-T"
+		shift
+		if ($#argv == 0) then
+		    echo "-T option requires an argument"
+		else
+		    set fullType = $1
+		    shift
+		endif
+		breaksw
+	    case "-h"
+	    case "-help"
+	    case "-?"
+		shift
+		goto usage
+		breaksw
+	    default:
+		echo "Invalid option" $1 "to $0"
+		shift
+		goto usage
+		breaksw
+	endsw
+    end
+    
+    if (! $?internet) then
+	echo "-i option is required"
+	goto usage
+    endif
+    
+    if (! $?address) then
+	echo "-a option is required"
+	goto usage
+    endif
+    
+    if (! $?name) then
+	echo "-n option is required"
+	goto usage
+    endif
+    
+    if (! $?machineType) then
+	echo "-m option is required"
+	goto usage
+    endif
+    
+    if (! $?swapDir) then
+	echo "-s option is required"
+	goto usage
+    endif
+    if ($domain == "") then
+	set domain = 
+	    `$awk '/^[0-9]+/ {print substr($6, index($6,".")+1);exit;}' 
+	    $root/etc/spritehosts`
+    endif
+    if ($domain == "") then
+	echo "Can't determine domain from $root/etc/spritehosts. Use -d flag"
+	goto usage
+    endif
+
+    if (! -d "$root") then
+	echo "The directory $root does not exist"
+	goto usage
+    endif
+
+    if ($?SPRITE_OS) then
+	rcsinfo $root/etc/RCS |& grep spritehosts > /dev/null
+	if ($status == 0) then
+	    echo "Please check in $root/etc/spritehosts"
+	    exit 1;
+	endif
+	rcsinfo $root/etc/RCS |& grep hosts.equiv > /dev/null
+	if ($status == 0) then
+	    echo "Please check in $root/etc/hosts.equiv"
+	    exit 1;
+	endif
+	rcsinfo $root/sprite/admin/RCS |& grep hosts > /dev/null
+	if ($status == 0) then
+	    echo "Please check in $root/sprite/admin/hosts"
+	    exit 1;
+	endif
+	rcsinfo $root/etc/RCS |& grep hosts > /dev/null
+	if ($status == 0) then
+	    echo "Please check in $root/etc/hosts"
+	    exit 1;
+	endif
+
+    endif
+else
+    set interactive
+    set machineType = ""
+    set name = ""
+    set address = ""
+    set internet = ""
+    set swapDir = "/swap"
+
+startQuestions:
+    echo ""
+    echo "Please answer the following questions."
+    echo "Default answers are surrounded by ()'s."
+    echo "Multiple choices are surrounded by []'s"
+    echo ""
+    echo -n "Name of Sprite filesystem root ($root): "
+    set answer = $<
+    if ("$answer" != "") set root = "$answer"
+
+    if (! -d $root/. ) then
+	echo "The directory $root does not exist"
+	goto startQuestions
+    endif
+
+    if ($?SPRITE_OS) then
+	rcsinfo $root/etc/RCS |& grep spritehosts > /dev/null
+	if ($status == 0) then
+	    echo "Please check in $root/etc/spritehosts"
+	    exit 1;
+	endif
+	rcsinfo $root/etc/RCS |& grep hosts.equiv > /dev/null
+	if ($status == 0) then
+	    echo "Please check in $root/etc/hosts.equiv"
+	    exit 1;
+	endif
+	rcsinfo $root/sprite/admin/RCS |& grep hosts > /dev/null
+	if ($status == 0) then
+	    echo "Please check in $root/sprite/admin/hosts"
+	    exit 1;
+	endif
+	rcsinfo $root/etc/RCS |& grep hosts > /dev/null
+	if ($status == 0) then
+	    echo "Please check in $root/etc/hosts"
+	    exit 1;
+	endif
+    endif
+
+    echo -n "Machine name ($name): "
+    set answer = $<
+    if ("$answer" != "") set name = "$answer"
+
+    echo -n "Machine type [sun3, sun4, sun4c, ds3100, symm, ds5000] "
+    echo -n "($machineType): "
+    set answer = $<
+    if ("$answer" != "") set machineType = "$answer"
+
+    echo -n "Type of local network [ether, inet] ($netType): "
+    set answer = $<
+    if ("$answer" != "") set netType = "$answer"
+
+    echo -n "Local network address, eg 8:0:28:1:0f:EC ($address): "
+    set answer = $<
+    if ("$answer" != "") set address = "$answer"
+
+    echo -n "Internet address, eg 128.32.150.11 ($internet): "
+    set answer = $<
+    if ("$answer" != "") set internet = "$answer"
+
+    echo -n "Internet domain ($domain): "
+    set answer = $<
+    if ("$answer" != "") set domain = "$answer"
+
+    echo -n "Swap directory ($swapDir): "
+    set answer = $<
+    if ("$answer" != "") set swapDir = "$answer"
+
+    echo -n "Sprite id, default is to assign a new one: "
+    set answer = $<
+    if ("$answer" != "") set spriteID = "$answer"
+
+    echo -n "Owner or primary user of machine ($owner): "
+    set answer = $<
+    if ("$answer" != "") set owner = "$answer"
+
+    echo -n "Location of machine ($location): "
+    set answer = $<
+    if ("$answer" != "") set location = "$answer"
+
+    echo -n "Description of machine, ex. sun3/75, sun4/280 ($fullType): "
+    set answer = $<
+    if ("$answer" != "") set fullType = "$answer"
+
+
+    echo ""
+    if ($name == "") then
+	echo "You must specify a name for the machine"
+	goto startQuestions
+    endif
+    if ($address == "") then
+	echo "You must specify a local net address"
+	goto startQuestions
+    endif
+    if ($internet == "") then
+	echo "You must specify an internet address"
+	goto startQuestions
+    endif
+    if ($domain == "") then
+	set domain = 
+	    `$awk '/^[0-9]+/ {print substr($6, index($6,".")+1);exit;}' 
+	    $root/etc/spritehosts`
+    endif
+    if ($domain == "") then
+	echo "You must specify a domain"
+	goto startQuestions
+    endif
+endif
+if ($?debugFlag) then
+    set debug = "echo"
+else
+    set debug = ""
+endif
+
+if ("$root" == "/") set root = ""
+
+#
+# Check that machine type is valid
+#
+switch ($machineType) 
+    case "sun3"
+    case "sun4"
+    case "ds3100"
+    case "symm"
+    case "ds5000"
+	set spriteHostType = $machineType
+	breaksw
+    case "sun4c"
+	set spriteHostType = "sun4"
+	breaksw
+    default
+	echo -n "Machine type must be one of "
+	echo "[sun3, sun4, sun4c, ds3100, symm, ds5000]"
+	if ($?interactive) then
+	    goto startQuestions
+	else
+	    goto usage
+	endif
+endsw
+
+#
+# Check that the network type is valid
+#
+switch ($netType)
+    case "ether"
+    case "inet"
+	breaksw
+    default
+	echo "Network type must be one of [ether, inet]"
+	if ($?interactive) then
+	    goto startQuestions
+	else
+	    goto usage
+	endif
+endsw
+
+set fullName=$name.$domain
+if ($fullType == "") then
+    set fullType = $machineType
+endif
+
+echo "Name: 			$name"
+echo "Full name:		$fullName"
+echo "Machine type:		$machineType"
+echo "Local net address:	$address"
+echo "Local net type:		$netType"
+echo "Internet address: 	$internet"
+if ($spriteID != 0) then
+    echo "Sprite ID:		$spriteID"
+endif
+echo "Swap directory:		$swapDir"
+echo "Owner:			$owner"
+echo "Location:			$location"
+echo "Machine description:	$fullType"
+
+if ($?interactive) then
+    echo -n "Is the above information correct? (y) "
+    set answer = $<
+    if (("$answer" != "") && ("$answer" !~ [yY]*)) goto startQuestions
+endif
+
+if ("$owner" == "") set owner = "JOE NOBODY"
+if ("$location" == "") set location = "UNKNOWN"
+
+cat << AWK_EOF > $tmpfile
+BEGIN {
+    id = "$spriteID";
+    status = 0;
+}
+
+\$7 ~ /^$name\$/ {
+    printf("\nLine %d of %s: name %s already used\n", NR,  
+	FILENAME, "$name");
+    print ">>> " \$0;
+    if (status < 2) {
+	status = 2;
+    }
+}
+\$1 == "$spriteID" {
+    printf("\nLine %d of %s: id %d already used\n", NR, FILENAME, id);
+    print ">>> " \$0;
+    print NR \$5 > "$tmpfile2";
+    if (status < 2) {
+	status = 2;
+    }
+}
+/^#[ \t]*[0-9]+/ {
+	n = split(\$1, w, "#");
+	if (id == w[n]) {
+	    printf("\nLine %d of %s: id %d used in a commented-out line", NR,  
+		FILENAME,id);
+	    print ">>> " \$0;
+	    if (status < 1) {
+		status = 1;
+	    }
+	    print;
+	}
+}
+\$3 ~ /^$address\$/ {
+    printf("\nLine %d of %s: address %s already used\n", NR,
+	FILENAME,"$address");
+    print ">>> " \$0;
+    if (status < 2) {
+	status = 2;
+    }
+}
+\$4 ~ /^$internet\$/ {
+    printf("\nLine %d of %s: internet address %s already used\n", NR,  
+	FILENAME,$internet);
+    print ">>> " \$0;
+    if (status < 2) {
+	status = 2;
+    }
+
+}
+END {
+    exit(status);
+}
+AWK_EOF
+
+$awk -f $tmpfile $root/etc/spritehosts
+switch ($status) 
+    case '0' 
+    case '1' 
+	breaksw
+    case '2'  
+	if ($?interactive) then
+	    set response = "n";
+	    echo -n "Do you want to add the host anyway? (n) "
+	    set answer = $<
+	    if ("$answer" != "") set response = "$answer"
+	    if ($response !~ [yY]*) then
+		goto startQuestions
+	    endif
+	else
+	    if (! $?replace) then
+		echo "Host $name is already in spritehosts."
+		echo "Use the -R flag"
+		exit 1
+	    endif
+	endif
+	breaksw
+endsw
+# 
+# The following awk script is used to add the new machine to /etc/spritehosts.
+# If the spriteID is 0 then a new spriteID is assigned that is one
+# greater than the largest found in the file.  The script is also smart
+# enough to know that all inet address must follow ethernet addresses.
+# Thats what the 'save' array is used for.
+#
+cat << AWK_EOF > $tmpfile
+BEGIN {
+    id = "$spriteID";
+    netType = "$netType";
+    addr = "$address";
+    inet = "$internet";
+    type = "$spriteHostType";
+    fullName = "$fullName";
+    name = "$name";
+    if (id != 0) {
+	assignID=0;
+    } else {
+	assignID=1;
+    }
+    line = 1;
+    biggestid = 0;
+    inetStart = 0;
+}
+{
+    currentid = 0;
+}
+/^[^0-9]/ {
+    if (\$1 ~ /^#[ \t]*[0-9]+/) {
+	n = split(\$1, w, "#");
+	currentid = w[n];
+	if (inetStart == 0) {
+	    etherEnd = line;
+	}
+    }
+}
+/^[0-9]/ {
+    currentid = \$1;
+    if (\$7 == name) {
+	next;
+    }
+}
+\$2 == "inet" {
+    inetStart = line;
+}
+\$2 == "ether" {
+    etherEnd = line;
+}
+{
+    save[line] = \$0;
+    if (currentid != 0) {
+	saveid[line] = currentid;
+	if (currentid  + 0 > biggestid) {
+	    biggestid = currentid;
+	}
+    }
+    line++;
+}
+END {
+    if (assignID) {
+	id = biggestid + 1;
+    }
+    print1 = 0;
+    print2 = 0;
+    for(i = 1; i < line ; i++) {
+	if (!print1) {
+	    if (saveid[i] + 0 > id || i + 0 > etherEnd) {
+		if (netType == "ether") {
+		    printf("%d %s %s %s %s %s %s\n", 
+			id, netType, addr, inet, type, fullName, name);
+		} else {
+		    printf("#%d is at bottom of file\n", id);
+		}
+		print1 = 1;
+	    }
+	}
+	if (!print2) {
+	    if (saveid[i] + 0 > id && i + 0 > inetStart && netType == "inet"){
+		printf("%d %s %s %s %s %s %s\n", 
+		    id, netType, addr, inet, type, fullName, name);
+		print2 = 1;
+	    }
+	}
+	print save[i];
+    }
+    if (!print2 && netType == "inet") {
+	printf("%d %s %s %s %s %s %s\n", 
+	    id, netType, addr, inet, type, fullName, name);
+    }
+    print id > "$tmpfile2";
+}
+AWK_EOF
+
+echo "Adding to $root/etc/spritehosts"
+pushd $root/etc > /dev/null
+if ($?SPRITE_OS) then
+    $debug co -l spritehosts
+    if ($status) then
+	echo "co -l failed ($status)"
+	exit 1
+    endif
+endif
+$awk -f $tmpfile spritehosts > spritehosts.new 
+if ($status) then
+    echo "Awk of spritehosts failed ($status)
+    exit 1
+endif
+$debug mv spritehosts.new spritehosts
+if ($status) then
+    echo "Move of spritehosts.new to spritehosts failed ($status)
+endif
+if ($?SPRITE_OS) then
+    $debug rcsdiff spritehosts > /dev/null
+    if ($status) then
+	$debug ci -u -m"$name added by addhost" spritehosts
+	if ($status) then
+	    echo "ci -u failed ($status)"
+	    exit 1
+	endif
+    else
+	rcs -u spritehosts
+	chmod -w spritehosts
+    endif
+endif
+popd > /dev/null
+if ($spriteID == 0) then
+    set spriteID = `cat $tmpfile2`
+    echo "Sprite ID:		$spriteID"
+endif
+
+#
+# Add the machine to /etc/hosts.equiv.
+#
+grep $fullName $root/etc/hosts.equiv > /dev/null
+if ($status == 1) then
+    echo "Adding to $root/etc/hosts.equiv"
+    pushd $root/etc > /dev/null
+    if ($?SPRITE_OS) then
+	$debug co -l hosts.equiv
+	if ($status) then
+	    echo "co -l failed ($status)"
+	    exit 1
+	endif
+    endif
+    echo "$fullName" > $tmpfile
+    cat $tmpfile hosts.equiv | sort > hosts.equiv.new
+    $debug mv hosts.equiv.new hosts.equiv
+    if ($?SPRITE_OS) then
+	$debug ci -u -m"$name added by addhost" hosts.equiv
+	if ($status) then
+	    echo "ci -u failed ($status)"
+	    exit 1
+	endif
+    endif
+    popd > /dev/null
+else
+    echo "$fullName is already in $root/etc/hosts.equiv"
+endif
+#
+# Adding to /etc/hosts
+#
+grep $fullName $root/etc/hosts > /dev/null
+if ($status == 1) then
+    echo "Adding to $root/etc/hosts"
+    pushd $root/etc > /dev/null
+    if ($?SPRITE_OS) then
+	$debug co -l hosts
+	if ($status) then
+	    echo "co -l failed ($status)"
+	    exit 1
+	endif
+    endif
+    echo "$internet $fullName $name" > $tmpfile
+    cat $tmpfile hosts | sort > hosts.new
+    $debug mv hosts.new hosts
+    if ($?SPRITE_OS) then
+	$debug ci -u -m"$name added by addhost" hosts
+	if ($status) then
+	    echo "ci -u failed ($status)"
+	    exit 1
+	endif
+    endif
+    popd > /dev/null
+else
+    echo "$fullName is already in $root/etc/hosts"
+endif
+
+
+#
+# Add the machine to /sprite/admin/hosts
+#
+echo "Adding to $root/sprite/admin/hosts"
+pushd $root/sprite/admin > /dev/null
+if ($?SPRITE_OS) then
+    $debug co -l hosts
+    if ($status) then
+	echo "co -l failed ($status)"
+	exit 1
+    endif
+endif
+cat << AWK_EOF > $tmpfile
+BEGIN {
+    printf("%-15s%-15s%-15s %s\n","$name","$fullType","$location","$owner") | "sort";
+    phase = 0;
+}
+/^$name/ {
+    next;
+}
+/^[^#]/ {
+    phase = 1;
+    print | "sort";
+    next;
+}
+{ 
+if (phase == 0) {
+    print >> "/tmp/addhost.out1.$$";
+  } else {
+    print >> "/tmp/addhost.out3.$$";
+  }
+}
+
+AWK_EOF
+$awk -f $tmpfile hosts > /tmp/addhost.out2.$$
+if (-e /tmp/addhost.out3.$$) then
+    cat /tmp/addhost.out1.$$ /tmp/addhost.out2.$$ /tmp/addhost.out3.$$ > hosts.new
+else
+    cat /tmp/addhost.out1.$$ /tmp/addhost.out2.$$  > hosts.new
+endif
+$debug mv hosts.new hosts
+if ($?SPRITE_OS) then
+    $debug rcsdiff hosts > /dev/null
+    if ($status) then
+	$debug ci -u -m"$name added by addhost" hosts
+	if ($status) then
+	    echo "ci -u failed ($status)"
+	    exit 1
+	endif
+    else
+	rcs -u hosts
+	chmod -w hosts
+    endif
+endif
+popd > /dev/null
+
+#
+# Now we create /hosts/foo, /hosts/foo.Berkeley.EDU, and /hosts/foo/dev/syslog.
+#
+if (! -e $root/hosts/$name.$domain) then
+    echo "Creating $root/hosts/$name.$domain"
+    $debug mkdir $root/hosts/$name.$domain
+    if ($status) then
+	echo "mkdir failed ($status)"
+	exit 1
+    endif
+    $debug chmod 777 $root/hosts/$name.$domain
+    if ($status) then
+	echo "chmod failed ($status)"
+	exit 1
+    endif
+endif
+
+echo "Creating symbolic link $root/hosts/$name -> $root/hosts/$name.$domain"
+$debug rm -f $root/hosts/$name
+$debug ln -s $root/hosts/$name.$domain $root/hosts/$name
+if ($status) then
+    echo "ln -s failed ($status)"
+    exit 1
+endif
+
+if (! -e $root/hosts/$name/dev) then
+    echo "Creating $root/hosts/$name/dev"
+    $debug mkdir $root/hosts/$name/dev
+    if ($status) then
+	echo "mkdir failed ($status)"
+	exit 1
+    endif
+    $debug chmod 777 $root/hosts/$name/dev
+    if ($status) then
+	echo "chmod failed ($status)"
+	exit 1
+    endif
+endif
+
+$debug rm -f $root/hosts/$name/dev/syslog
+echo "Creating $root/hosts/$name/dev/syslog"
+if ($?SPRITE_OS) then
+    $debug fsmakedev -s $spriteID -d 1 -u 0 $root/hosts/$name/dev/syslog
+    if ($status) then
+	echo "fsmakedev failed ($status)"
+	exit 1
+    endif
+else
+    echo "# This file was created by \"addhost\"." > $tmpfile
+    echo "# \"fsmake\" uses it to create Sprite devices." >> $tmpfile
+    echo "# Format is: ServerID  Type Unit" >> $tmpfile
+    echo "# This particular file is for a syslog device." >> $tmpfile
+    echo "$spriteID 1 0" >> $tmpfile
+    $debug cp $tmpfile $root/hosts/$name/dev/syslog.SPRITE_DEV
+endif
+
+#
+# Some machine types need other stuff in their dev directories.
+#
+switch ($machineType)
+    case "sun3"
+    case "sun4"
+    case "sun4c"
+    case "ds3100"
+    case "symm"
+    case "ds5000"
+	rm -f $root/hosts/$name/dev/serialB
+	echo "ing $root/hosts/$name/dev/serialB"
+	if ($?SPRITE_OS) then
+	    $debug fsmakedev -s $spriteID -d 0 -u 2 \
+		$root/hosts/$name/dev/serialB
+	    if ($status) then
+		echo "fsmakedev failed ($status)"
+		exit 1
+	    endif
+	else
+	    echo "# This file was created by \"addhost\"." > $tmpfile
+	    echo "# \"fsmake\" uses it to create Sprite devices." >> $tmpfile
+	    echo "# Format is: ServerID  Type Unit" >> $tmpfile
+	    echo "# This particular file is for a syslog device." >> $tmpfile
+	    echo "$spriteID 0 2" >> $tmpfile
+	    $debug cp $tmpfile $root/hosts/$name/dev/serialB.SPRITE_DEV
+	endif
+endsw
+
+
+#
+# Now create a link in /sprite/boot, if needed.  Some of the machine
+# types need this for tftp to work.  The link name is the hex value
+# of the internet address, and points to the net boot program for the
+# machine type.  The following awk script converts a.b.c.d internet
+# address format into the hex string.
+#
+cat << AWK_EOF > $tmpfile
+BEGIN {
+    FS = ".";
+}
+{
+    printf("%02x%02x%02x%02x", \$1, \$2, \$3, \$4);
+}
+AWK_EOF
+
+set hexInet = `echo $internet | $awk -f $tmpfile`
+echo "Hex internet address is $hexInet"
+pushd $root/sprite/boot
+$debug rm -f $hexInet*
+
+switch ($machineType) 
+    case "sun3" 
+	echo "Making link in $root/sprite/boot"
+	$debug ln -s sun3.md/netBoot $hexInet
+	if ($status) then
+	    echo "ln -s failed ($status)"
+	    exit 1
+	endif
+	breaksw
+    case "sun4"
+	echo "Making link in $root/sprite/boot"
+	$debug ln -s sun4.md/netBoot $hexInet.SUN4
+	if ($status) then
+	    echo "ln -s failed ($status)"
+	    exit 1
+	endif
+	breaksw
+    case "sun4c"
+	echo "Making link in $root/sprite/boot"
+	$debug ln -s sun4c.md/netBoot $hexInet.SUN4C
+	if ($status) then
+	    echo "ln -s failed ($status)"
+	    exit 1
+	endif
+	breaksw
+endsw
+
+popd
+#
+# Create the swap directory
+#
+echo "Creating swap directory $swapDir/$spriteID"
+if (! -d $swapDir/$spriteID) then
+    rm -f $swapDir/$spriteID
+    $debug mkdir $swapDir/$spriteID
+    if ($status) then
+	echo "mkdir failed ($status)"
+	exit 1
+    endif
+endif
+if ($swapDir != "/swap") then
+    echo "Linking /swap/$spriteID -> $swapDir/$spriteID"
+    $debug ln -s $swapDir/$spriteID /swap/$spriteID
+endif
+
+echo 
+echo "Do the following:"
+echo "   Run 'netroute -f /etc/spritehosts' on all fileservers."
+echo "   Add the machine name to /etc/hosts.equiv on ginger."
+echo "   If the machine has a color frame buffer then edit Xsprite."
+echo "Things you may want to do:"
+echo "   Set up tftp booting from ginger"
+echo "Read /sprite/admin/howto/addNewHost for detailed instructions"
+
+cleanup:
+    #rm -f /tmp/addhost*$$
+    exit
+
+usage:
+    echo "Usage: $0 "
+    echo "	-n hostName "
+    echo "	-i internetAddress "
+    echo "	-a netAddress (ethernet address) "
+    echo "	-m machineType "
+    echo "	-s swapDirectory "
+    echo "	[-d domainName] "
+    echo "	[-r rootDirectory] "
+    echo "	[-I spriteID] "
+    echo "	[-t netType (ethernet)] "
+    echo "	[-R] "
+    echo "	[-o ownerName] "
+    echo "	[-l machineLocation] "
+    echo "	[-T machineDescription] "
+    echo " Ex: $0 -n lust -i 128.32.150.11 -a 8:0:28:1:0f:EC -m spur -s /swap1"
+    exit
+
+@
+
+
+1.13
+log
+@added symmetry, fixed bug in creating links in /sprite/boot
+@
+text
+@d6 1
+a6 1
+# $Header: /sprite/src/cmds/addhost/RCS/addhost,v 1.12 90/06/28 15:16:50 jhh Exp $ SPRITE (Berkeley)
+d279 2
+a280 1
+    echo -n "Machine type [sun3, sun4, sun4c, ds3100, symm] ($machineType): "
+d360 1
+d367 2
+a368 1
+	echo "Machine type must be one of [sun3, sun4, sun4c, ds3100, symm]"
+d809 1
+@
+
+
+1.12
+log
+@creates the "placeholder" files for Sprite devices when run on unix
+@
+text
+@d6 1
+a6 1
+# $Header: /sprite/src/cmds/addhost/RCS/addhost,v 1.11 90/04/03 11:48:47 jhh Exp $ SPRITE (Berkeley)
+d279 1
+a279 1
+    echo -n "Machine type [sun3, sun4, sun4c, ds3100] ($machineType): "
+d358 1
+d365 1
+a365 1
+	echo "Machine type must be one of [sun3, sun4, sun4c, ds3100]"
+d805 1
+d838 1
+a838 1
+    printf("%x%x%x%x", \$1, \$2, \$3, \$4);
+@
+
+
+1.11
+log
+@fixed typo
+@
+text
+@d6 1
+a6 1
+# $Header: /sprite/src/cmds/addhost/RCS/addhost,v 1.10 90/03/07 11:06:42 jhh Exp $ SPRITE (Berkeley)
+d788 6
+a793 1
+    echo "create syslog"
+d803 1
+d814 6
+a819 1
+	    echo "create serialB"
+@
+
+
+1.10
+log
+@adds to /etc/hosts, fixed a few bugs
+@
+text
+@d6 1
+a6 1
+# $Header: /sprite/src/cmds/addhost/RCS/addhost,v 1.9 90/02/14 22:36:13 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+a885 1
+echo "   
+@
+
+
+1.9
+log
+@didn't sort correctly
+@
+text
+@d6 1
+a6 1
+# $Header: /sprite/src/cmds/addhost/RCS/addhost,v 1.8 90/02/12 21:12:13 jhh Exp $ SPRITE (Berkeley)
+d222 6
+d268 5
+a588 1
+exit
+d654 28
+d683 1
+d719 5
+a723 1
+cat /tmp/addhost.out1.$$ /tmp/addhost.out2.$$ /tmp/addhost.out3.$$ > hosts.new
+d880 8
+a887 3
+echo "Installation of $name complete"
+echo "*** Please add machine information to $root/sprite/admin/hosts"
+echo "*** READ /sprite/admin/howto/addNewHost for further instructions"
+@
+
+
+1.8
+log
+@made tftp symbolic links relative
+@
+text
+@d6 1
+a6 1
+# $Header: /sprite/src/cmds/addhost/RCS/addhost,v 1.7 90/02/12 20:48:35 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+a265 1
+    echo "$answer"
+d412 1
+a412 1
+    printf("Line %d of %s: name %s already used\n", NR,  
+d420 1
+a420 1
+    printf("Line %d of %s: id %d already used\n", NR, FILENAME, id);
+d428 1
+a428 1
+	n = split(\$1, w);
+d430 1
+a430 1
+	    printf("Line %d of %s: id %d used in a commented-out line", NR,  
+d440 2
+a441 1
+    printf("Line %d of %s: address %s already used\n", NR,FILENAME,"$address");
+d448 1
+a448 1
+    printf("Line %d of %s: internet address %s already used\n", NR,  
+d514 1
+a514 1
+	n = split(\$1, w);
+d537 1
+a537 1
+	if (currentid > biggestid) {
+d551 1
+a551 1
+	    if (saveid[i] > id || i > etherEnd) {
+d562 1
+a562 1
+	    if (saveid[i] > id && i > inetStart && netType == "inet"){
+d578 1
+d756 1
+a756 1
+	echo "Creating $root/hosts/$name/dev/serialB"
+@
+
+
+1.7
+log
+@adds to /sprite/admin/hosts, other new features
+@
+text
+@d6 1
+a6 1
+# $Header: /sprite/src/cmds/addhost/RCS/addhost,v 1.6 90/01/24 16:07:49 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+d787 2
+a788 1
+$debug rm -f $root/sprite/boot/$hexInet*
+d793 1
+a793 2
+	$debug ln -s $root/sprite/boot/sun3.md/netBoot \
+	    $root/sprite/boot/$hexInet
+d801 1
+a801 2
+	$debug ln -s $root/sprite/boot/sun4.md/netBoot \
+	    $root/sprite/boot/$hexInet.SUN4
+d809 1
+a809 2
+	$debug ln -s $root/sprite/boot/sun4c.md/netBoot \
+	    $root/sprite/boot/$hexInet.SUN4C
+d817 1
+@
+
+
+1.6
+log
+@fixed problem with quotes
+@
+text
+@d6 1
+a6 1
+# $Header: /sprite/src/cmds/addhost/RCS/addhost,v 1.5 90/01/24 15:11:28 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+d20 2
+d23 3
+a25 4
+set root=""
+set sprite
+set domain = `awk '/^[0-9]+/ {print substr($6, index($6,".")+1);exit;}' $root/etc/spritehosts`
+#set debugFlag
+d27 3
+d32 2
+a33 1
+set tmpfile=/tmp/addhost$$
+d39 1
+a39 1
+	    case "-u":
+d42 1
+a42 1
+		    echo "-u option requires an argument"
+a44 1
+		    unset sprite
+d122 31
+d192 5
+d201 22
+a229 1
+    set onUnix = "n"
+d237 27
+d266 2
+a267 1
+    if ($answer != "") set name = $answer
+d271 1
+a271 1
+    if ($answer != "") set machineType = $answer
+d275 1
+a275 1
+    if ($answer != "") set netType = $answer
+d279 1
+a279 1
+    if ($answer != "") set address = $answer
+d283 1
+a283 1
+    if ($answer != "") set internet = $answer
+d287 1
+a287 1
+    if ($answer != "") set domain = $answer
+d291 1
+a291 1
+    if ($answer != "") set swapDir = $answer
+d295 1
+a295 1
+    if ($answer != "") set spriteID = $answer
+d297 9
+a305 1
+    echo -n "Is this script being run on Unix? (n) "
+d307 3
+a309 9
+    if (($answer != "") && ($answer =~ [yY]*)) then
+	unset sprite
+	echo -n "Name of the Sprite root ($root): "
+	set answer = $<
+	if ($answer != "") set root = $answer
+	set onUnix = "y"
+    else
+	set sprite
+    endif
+d323 9
+a332 1
+
+d339 2
+d347 3
+d351 1
+a351 1
+    case "ds3100"
+a362 14
+# Check that the given Sprite root exists
+#
+if (! $?sprite) then
+    if (! -d $root) then
+	echo "The directory $root does not exist"
+	if ($?interactive) then
+	    goto startQuestions
+	else
+	    goto usage
+	endif
+    endif
+endif
+
+#
+d379 3
+d393 3
+d400 1
+a400 1
+    if (($answer != "") && ($answer !~ [yY]*)) goto startQuestions
+d403 81
+d497 1
+a497 1
+    type = "$machineType";
+d505 6
+a511 1
+
+d513 13
+a525 2
+    save[count++] = \$0;
+    next;
+d528 4
+a531 2
+    save[count++] = \$0;
+    inInet=1;
+d534 5
+a538 3
+    if (inInet == 0) {
+	for (i = 0; i < count; i++) {
+	    print save[i];
+a539 1
+	count = 0;
+d541 1
+a541 6
+    if (assignID && \$1 > id) {
+	id = \$1;
+    }
+    if (inInet == 0) {
+	print;
+    }
+d545 1
+a545 1
+	id++;
+d547 21
+a567 4
+    if (netType == "ether") {
+	printf("%d %s %s %s %s %s %s\n", id, netType, addr, inet, type, fullName, name);
+    }
+    for (i = 0; i < count; i++) {
+d570 3
+a572 2
+    if (netType == "inet") {
+	printf("%d %s %s %s %s %s %s\n", id, netType, addr, inet, type, fullName, name);
+d574 1
+d580 1
+a580 1
+if ($?sprite) then
+d587 1
+a587 1
+awk -f $tmpfile spritehosts > spritehosts.new
+d596 2
+a597 2
+if ($?sprite) then
+    $debug ci -u -m"$name added by addhost" spritehosts
+d599 8
+a606 2
+	echo "ci -u failed ($status)"
+	exit 1
+d610 4
+d616 28
+a643 3
+# I couldn't figure out a way to get the previous script to both modify
+# spritehosts and return the spriteID that was assigned, so the following
+# awk script looks through the new file and gets the id.
+d645 11
+a655 1
+if ($spriteID == 0) then
+d657 20
+a676 1
+/$name/ { print \$1; exit;}
+d678 11
+a688 3
+    if ($?debugFlag) then
+	set spriteID = `awk -f $tmpfile $root/etc/spritehosts.new`
+	rm $root/etc/spritehosts.new
+d690 2
+a691 1
+	set spriteID = `awk -f $tmpfile $root/etc/spritehosts`
+a692 1
+    echo "Sprite ID:		$spriteID"
+d694 1
+d737 1
+a737 1
+if ($?sprite) then
+d756 1
+a756 1
+	if ($?sprite) then
+a767 21
+#
+# Add the machine to /etc/hosts.equiv.
+#
+echo "Adding to $root/etc/hosts.equiv"
+pushd $root/etc > /dev/null
+if ($?sprite) then
+    $debug co -l hosts.equiv
+    if ($status) then
+	echo "co -l failed ($status)"
+	exit 1
+    endif
+endif
+$debug echo "$fullName >> $root/etc/hosts.equiv"
+if ($?sprite) then
+    $debug ci -u -m"$name added by addhost" hosts.equiv
+    if ($status) then
+	echo "ci -u failed ($status)"
+	exit 1
+    endif
+endif
+popd > /dev/null
+d785 1
+a785 1
+set hexInet = `echo $internet | awk -f $tmpfile`
+d787 1
+a787 1
+$debug rm -f $root/sprite/boot/$hexInet
+d823 7
+a829 4
+$debug mkdir $swapDir/$spriteID
+if ($status) then
+    echo "mkdir failed ($status)"
+    exit 1
+d842 1
+a842 1
+    rm $tmpfile
+d853 1
+a853 1
+    echo "	[-u unixRoot] "
+d856 4
+@
+
+
+1.5
+log
+@fixed typo that caused it to assign sprite id 0
+@
+text
+@d6 1
+a6 1
+# $Header: /sprite/src/cmds/addhost/RCS/addhost,v 1.4 90/01/18 17:55:18 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+d497 1
+a497 1
+$debug "echo $fullName >> $root/etc/hosts.equiv"
+@
+
+
+1.4
+log
+@fixed a couple of bugs
+@
+text
+@d6 1
+a6 1
+# $Header: /sprite/src/cmds/addhost/RCS/addhost,v 1.3 90/01/18 17:42:38 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+d323 1
+a323 1
+    if (id != -1) {
+@
+
+
+1.3
+log
+@New! Improved! Interactive!
+@
+text
+@d6 1
+a6 1
+# $Header: /sprite/src/cmds/addhost/RCS/addhost,v 1.2 90/01/17 17:46:40 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+a178 1
+    echo $name
+d302 1
+a302 1
+    echo "Is the above information correct? (y) "
+@
+
+
+1.2
+log
+@added msg at end to read addNewHost
+@
+text
+@d6 1
+a6 1
+# $Header: /sprite/src/cmds/addhost/RCS/addhost,v 1.1 90/01/16 13:20:52 jhh Exp Locker: jhh $ SPRITE (Berkeley)
+d18 2
+d23 4
+d31 91
+a121 6
+while ($#argv)
+    switch ($1)
+	case "-u":
+	    shift
+	    if ($#argv == 0) then
+		echo "-u option requires an argument"
+d123 3
+a125 3
+	    else
+		unset sprite
+		set root = $1
+a126 6
+	    endif
+	    breaksw
+	case "-i":
+	    shift
+	    if ($#argv == 0) then
+		echo "-i option requires an argument"
+d128 106
+a233 81
+	    else
+		set internet = $1
+		shift
+	    endif
+	    breaksw
+	case "-a":
+	    shift
+	    if ($#argv == 0) then
+		echo "-a option requires an argument"
+	    else
+		set address = $1
+		shift
+	    endif
+	    breaksw
+	case "-n"
+	    shift
+	    if ($#argv == 0) then
+		echo "-n option requires an argument"
+	    else
+		set name = $1
+		shift
+	    endif
+	    breaksw
+	case "-I"
+	    shift
+	    if ($#argv == 0) then
+		echo "-I option requires an argument"
+	    else
+		set spriteID = $1
+		shift
+	    endif
+	    breaksw
+	case "-d"
+	    shift
+	    if ($#argv == 0) then
+		echo "-d option requires an argument"
+	    else
+		set domain = $1
+		shift
+	    endif
+	    breaksw
+	case "-m"
+	    shift
+	    if ($#argv == 0) then
+		echo "-m option requires an argument"
+	    else
+		set machineType = $1
+		shift
+	    endif
+	    breaksw
+	case "-t"
+	    shift
+	    if ($#argv == 0) then
+		echo "-t option requires an argument"
+	    else
+		set netType = $1
+		shift
+	    endif
+	    breaksw
+	case "-s"
+	    shift
+	    if ($#argv == 0) then
+		echo "-s option requires an argument"
+	    else
+		set swapDir = $1
+		shift
+	    endif
+	    breaksw
+	case "-h"
+	case "-help"
+	case "-?"
+	    shift
+	    goto usage
+	    breaksw
+	default:
+	    echo "Invalid option" $1 "to $0"
+	    shift
+	    goto usage
+	    breaksw
+    endsw
+end
+d235 4
+a238 23
+if (! $?internet) then
+    echo "-i option is required"
+    goto usage
+endif
+
+if (! $?address) then
+    echo "-a option is required"
+    goto usage
+endif
+
+if (! $?name) then
+    echo "-n option is required"
+    goto usage
+endif
+
+if (! $?machineType) then
+    echo "-m option is required"
+    goto usage
+endif
+
+if (! $?swapDir) then
+    echo "-s option is required"
+    goto usage
+d251 36
+a286 2
+	echo "Machine type must be one of (sun3, sun4, sun4c, ds3100)"
+	goto usage
+d289 2
+d292 1
+d300 1
+a300 2
+
+set domain = `awk '/^[0-9]+/ {print substr($6, index($6,".")+1);exit;}' $root/etc/spritehosts`
+d302 4
+a305 3
+if ($domain == "") then
+    echo "Can't determine domain from $root/etc/spritehosts. Use -d flag"
+    goto usage
+a307 4
+set fullName=$name.$domain
+
+echo "Full name:		$fullName"
+
+d372 1
+a372 1
+    co -l spritehosts
+d383 1
+a383 1
+mv spritehosts.new spritehosts
+d388 1
+a388 1
+    ci -u -m"$name added by addhost" spritehosts
+d405 6
+a410 1
+    set spriteID = `awk -f $tmpfile $root/etc/spritehosts`
+d419 1
+a419 1
+    mkdir $root/hosts/$name.$domain
+d424 1
+a424 1
+    chmod 777 $root/hosts/$name.$domain
+d432 2
+a433 2
+rm -f $root/hosts/$name
+ln -s $root/hosts/$name.$domain $root/hosts/$name
+d441 1
+a441 1
+    mkdir $root/hosts/$name/dev
+d446 1
+a446 1
+    chmod 777 $root/hosts/$name/dev
+d453 1
+a453 1
+rm -f $root/hosts/$name/dev/syslog
+d456 1
+a456 1
+    fsmakedev -s $spriteID -d 1 -u 0 $root/hosts/$name/dev/syslog
+d475 2
+a476 1
+	    fsmakedev -s $spriteID -d 0 -u 2 $root/hosts/$name/dev/serialB
+d492 1
+a492 1
+    co -l hosts.equiv
+d498 1
+a498 1
+echo $fullName >> $root/etc/hosts.equiv
+d500 1
+a500 1
+    ci -u -m"$name added by addhost" hosts.equiv
+d526 1
+a526 1
+rm -f $root/sprite/boot/$hexInet
+d531 2
+a532 1
+	ln -s $root/sprite/boot/sun3.md/netBoot $root/sprite/boot/$hexInet
+d540 2
+a541 1
+	ln -s $root/sprite/boot/sun4.md/netBoot $root/sprite/boot/$hexInet.SUN4
+d549 1
+a549 1
+	ln -s $root/sprite/boot/sun4c.md/netBoot 
+d562 1
+a562 1
+mkdir $swapDir/$spriteID
+d569 1
+a569 1
+    ln -s $swapDir/$spriteID /swap/$spriteID
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d6 1
+a6 1
+# $Header: /sprite/src/cmds/mkscsidev/RCS/mkscsidev,v 1.2 90/01/11 15:10:01 jhh Exp $ SPRITE (Berkeley)
+d442 2
+a443 1
+echo "Please add machine information to $root/sprite/admin/hosts"
+@

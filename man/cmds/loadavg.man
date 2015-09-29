@@ -1,0 +1,80 @@
+' $Header: /sprite/src/cmds/loadavg/RCS/loadavg.man,v 1.11 90/04/09 10:25:56 douglis Exp Locker: shirriff $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS LOADAVG cmds
+.BS
+.SH NAME
+loadavg, uptime, la, evict \- Interface to the migration load average and idle time database
+.SH SYNOPSIS
+.nf
+\fBloadavg\fR \fB\-l \fR
+\fBloadavg\fR \fB\-a \fR
+\fBloadavg\fR \fB\-Z \fIhost ... \fR
+\fBloadavg\fR \fB\-E \fR
+\fBuptime\fR
+\fBla\fR
+\fBevict\fR
+.fi
+.BE
+.SH INTRODUCTION
+This command is used to provide user access to the migration load
+average and idle 
+time database.  It may be used to retrieve information about the local
+host or all hosts on the network, invalidate entries in the migration
+database,
+or evict foreign processes.  The default for \fBloadavg\fR if invoked with
+no arguments is to list the load average of the local host.  This is
+also true if the program is invoked as \fBla\fR or \fBuptime\fR, which
+are synonyms to make \fBloadavg\fR somewhat compatible with UNIX.  If the
+program is invoked as \fIevict\fR, the default is to evict foreign
+processes. 
+.SH "RETRIEVING INFORMATION"
+.IP "\fB\-l\fR"
+.IP "\fB\-a\fR"
+When invoked with the \fB\-l\fR flag, or with no arguments, \fBloadavg\fR
+will print a line containing information about the local host.  
+The \fB-a\fR flag is used to list information about all hosts.  
+Each
+line contains the hostname; machine type; machine status; migration
+status; 
+1-minute, 5-minute, and 15-minute weighted load averages; and time
+since input was last received at the console, for idle hosts.  
+Times are given in the
+form ``days+hours:minutes''.
+For hosts that are running, the machine status is listed as ``up''
+followed by the time since they last rebooted.  The migration status
+is ``inuse'' for hosts with one or more active local users, ``avail''
+for hosts that are available for migration, ``hasmig''for hosts that
+are currently running processes that are migrated from other hosts,
+and ``refuses'' for hosts that are idle but are refusing migration
+(perhaps because they are running an incompatible version of the
+kernel, or because they are file servers).  
+In addition, for
+hosts that are currently available for migration from the host
+invoking \fBloadavg\fR, a \fB*\fR is printed next to the hostname.
+After the migration status, \fBloadavg\fR lists the weighted load
+averages and time since last input.  Note: idle times of less than the
+threshold for permitting migration are not listed, and input from
+remote logins does not affect host idle time.
+Finally, the machine status is ``down'' for hosts that are not currently
+running, in which case the host is listed with the time since it was
+last running.
+.SH "INVALIDATING INFORMATION"
+.IP "\fB\-Z \fIhost ...\fR"
+To invalidate the entries for one or more hosts in the shared
+migration database, invoke \fBloadavg\fR with the \fB\-Z\fR option,
+followed by the names of the hosts to invalidate.  This may be used if
+a host is removed from the network, for example.  Hosts that are not
+invalidated but are down indefinitely will appear in the list of hosts
+as being down.
+.SH "EVICTION"
+.IP "\fB\-E\fR"
+Running \fBloadavg\fR with the \fB\-E\fR option causes it to evict foreign processes
+as though the machine were no longer idle.  If \fBloadavg\fR is invoked by the
+name \fIevict\fR,  eviction is the default operation.
+Eviction is performed by invoking an ioctl on the pseudo-device
+corresponding to the host-specific \fBmigd\fR daemon.  
+.SH "SEE ALSO"
+migd, mig, xload, migcmd
+.SH KEYWORDS
+eviction, foreign, idle time, load average, process migration,
+uptime

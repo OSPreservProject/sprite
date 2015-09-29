@@ -1,0 +1,15 @@
+D ARPD                              	arpd
+D BOOTP                             	bootp
+D CRON                              	cron
+D FTPD                              	ftpd
+D INETD                             	inetd
+D IPSERVER                          	ipServer
+D LPD                               	lpd
+F MAKEFILE.;1                       	Makefile
+D MIGD                              	migd
+D MOPD                              	mopd
+D PORTMAP                           	portmap
+D RLOGIND                           	rlogind
+D TIMED                             	timed
+D XGONED                            	xgoned
+D ZHM                               	zhm

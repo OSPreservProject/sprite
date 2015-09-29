@@ -1,0 +1,104 @@
+@section Opening and Closing BFDs
+
+@*
+@findex bfd_openr
+@subsubsection @code{bfd_openr}
+@strong{Synopsis}
+@example
+bfd *bfd_openr(CONST char *filename, CONST char*target);
+@end example
+@strong{Description}@*
+This function opens the file supplied (using @code{fopen}) with the target
+supplied, it returns a pointer to the created BFD.
+If NULL is returned then an error has occured. Possible errors
+are @code{no_memory}, @code{invalid_target} or @code{system_call} error.
+@*
+@findex bfd_fdopenr
+@subsubsection @code{bfd_fdopenr}
+@strong{Synopsis}
+@example
+bfd *bfd_fdopenr(CONST char *filename, CONST char *target, int fd);
+@end example
+@strong{Description}@*
+bfd_fdopenr is to bfd_fopenr much like  fdopen is to fopen.
+It opens a BFD on a file already described by the @var{fd}
+supplied. 
+Possible errors are no_memory, invalid_target and system_call
+error.
+@*
+@findex bfd_openw
+@subsubsection @code{bfd_openw}
+@strong{Synopsis}
+@example
+bfd *bfd_openw(CONST char *filename, CONST char *target);
+@end example
+@strong{Description}@*
+Creates a BFD, associated with file @var{filename}, using the
+file format @var{target}, and returns a pointer to it.
+Possible errors are system_call_error, no_memory,
+invalid_target.
+@*
+@findex bfd_close
+@subsubsection @code{bfd_close}
+@strong{Synopsis}
+@example
+boolean bfd_close(bfd *);
+@end example
+@strong{Description}@*
+This function closes a BFD. If the BFD was open for writing,
+then pending operations are completed and the file written out
+and closed. If the created file is executable, then
+@code{chmod} is called to mark it as such.
+All memory attached to the BFD's obstacks is released.
+@*
+@strong{Returns}@*
+@code{true} is returned if all is ok, otherwise @code{false}.
+@*
+@findex bfd_close_all_done
+@subsubsection @code{bfd_close_all_done}
+@strong{Synopsis}
+@example
+boolean bfd_close_all_done(bfd *);
+@end example
+@strong{Description}@*
+This function closes a BFD. It differs from @code{bfd_close}
+since it does not complete any pending operations.  This
+routine would be used if the application had just used BFD for
+swapping and didn't want to use any of the writing code.
+If the created file is executable, then @code{chmod} is called
+to mark it as such.
+All memory attached to the BFD's obstacks is released.
+@*
+@strong{Returns}@*
+@code{true} is returned if all is ok, otherwise @code{false}.
+@*
+@strong{Synopsis}
+@example
+bfd_size_type bfd_alloc_size(bfd *abfd);
+@end example
+@strong{Description}@*
+Return the number of bytes in the obstacks connected to the
+supplied BFD.
+@*
+@findex bfd_create
+@subsubsection @code{bfd_create}
+@strong{Synopsis}
+@example
+bfd *bfd_create(CONST char *filename, bfd *template);
+@end example
+@strong{Description}@*
+This routine creates a new BFD in the manner of
+@code{bfd_openw}, but without opening a file. The new BFD
+takes the target from the target used by @var{template}. The
+format is always set to @code{bfd_object}.
+@*
+@findex bfd_alloc_by_size_t
+@subsubsection @code{bfd_alloc_by_size_t}
+@strong{Synopsis}
+@example
+PTR bfd_alloc_by_size_t(bfd *abfd, size_t wanted);
+@end example
+@strong{Description}@*
+This function allocates a block of memory in the obstack
+attatched to @code{abfd} and returns a pointer to it.
+@*

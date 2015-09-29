@@ -1,0 +1,15 @@
+AddExecArgs	exec.c	/^AddExecArgs(foo)$/
+AddList	misc.c	/^AddList(srcListPtr, destListPtr)$/
+CacheWriteBack	fsattach.c	/^CacheWriteBack(value)$/
+CheckDisks	fsattach.c	/^CheckDisks(mountCount, maxChildren)$/
+DeleteList	misc.c	/^DeleteList(listPtr)$/
+DoExec	exec.c	/^DoExec()$/
+MergeList	misc.c	/^MergeList(srcListPtr, destListPtr)$/
+Mfsattach	fsattach.c	/^main(argc, argv)$/
+MoveRootOutput	misc.c	/^MoveRootOutput(device)$/
+ParseMount	misc.c	/^ParseMount(mountFile, countPtr)$/
+Prefix	fsattach.c	/^Prefix(count)$/
+PreloadPrefixTable	misc.c	/^PreloadPrefixTable(spriteID, mountCount)$/
+PrintFscheckError	misc.c	/^PrintFscheckError(code, mountPtr)$/
+RunChild	fsattach.c	/^RunChild(pass, mountCount, maxChildren, childInfo,/
+StartExec	exec.c	/^StartExec(routine, firstArg)$/

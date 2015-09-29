@@ -1,0 +1,341 @@
+head     1.11;
+branch   ;
+access   ;
+symbols  sprited:1.10.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.11
+date     92.11.25.13.22.02;  author jhh;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     90.12.05.14.55.08;  author ouster;  state Exp;
+branches 1.10.1.1;
+next     1.9;
+
+1.9
+date     90.09.10.18.14.50;  author mendel;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     90.09.10.17.13.14;  author rab;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     90.08.27.18.17.36;  author mendel;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     89.09.08.16.27.43;  author mgbaker;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     89.06.23.11.29.58;  author rab;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     89.05.24.06.17.23;  author rab;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.07.15.16.42.41;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.07.15.15.33.15;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.21.09.36.56;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.10.1.1
+date     91.08.15.21.46.23;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.11
+log
+@don't undefine volatile for the mips. This makes device drivers unhappy.
+@
+text
+@/*
+ * sprite.h --
+ *
+ * Common constants and type declarations for Sprite.
+ *
+ * Copyright 1985, 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/lib/include/RCS/sprite.h,v 1.10 90/12/05 14:55:08 ouster Exp Locker: jhh $ SPRITE (Berkeley)
+ */
+
+#ifndef _SPRITE
+#define _SPRITE
+
+#include "cfuncproto.h"
+/*
+ * A boolean type is defined as an integer, not an enum. This allows a
+ * boolean argument to be an expression that isn't strictly 0 or 1 valued.
+ */
+
+#ifndef TRUE
+#define TRUE	1
+#endif
+#ifndef FALSE
+#define FALSE	0
+#endif
+
+#ifndef _ASM
+typedef int Boolean;
+
+/*
+ * Functions that must return a status can return a ReturnStatus to
+ * indicate success or type of failure.
+ */
+
+typedef int  ReturnStatus;
+#endif /* _ASM */
+
+/*
+ * The following statuses overlap with the first 2 generic statuses 
+ * defined in status.h:
+ *
+ * SUCCESS			There was no error.
+ * FAILURE			There was a general error.
+ */
+
+#define	SUCCESS			0x00000000
+#define	FAILURE			0x00000001
+
+
+/*
+ * A nil pointer must be something that will cause an exception if 
+ * referenced.  There are two nils: the kernels nil and the nil used
+ * by user processes.
+ */
+
+#define NIL 		0xFFFFFFFF
+#define USER_NIL 	0
+#ifndef NULL
+#define NULL	 	0
+#endif
+
+#ifndef _ASM
+/*
+ * An address is just a pointer in C.  It is defined as a character pointer
+ * so that address arithmetic will work properly, a byte at a time.
+ */
+
+typedef char *Address;
+
+/*
+ * ClientData is an uninterpreted word.  It is defined as an int so that
+ * kdbx will not interpret client data as a string.  Unlike an "Address",
+ * client data will generally not be used in arithmetic.
+ */
+
+#ifndef _CLIENTDATA
+typedef int *ClientData;
+#define _CLIENTDATA
+#endif
+
+#ifndef __STDC__
+#ifndef mips
+#define volatile
+#endif
+#define const
+#endif
+
+extern void panic();
+
+#endif /* !_ASM */
+
+#endif /* _SPRITE */
+@
+
+
+1.10
+log
+@Added panic declaration.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/sprite.h,v 1.9 90/09/10 18:14:50 mendel Exp $ SPRITE (Berkeley)
+d89 1
+d91 1
+@
+
+
+1.10.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/sprite.h,v 1.10 90/12/05 14:55:08 ouster Exp $ SPRITE (Berkeley)
+@
+
+
+1.9
+log
+@Changed Address to be `char *` rather than `void *`.  The kernel kernel
+does address arithmetic on the type Address assuming that it is a 
+byte pointer.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/sprite.h,v 1.8 90/09/10 17:13:14 rab Exp Locker: mendel $ SPRITE (Berkeley)
+d92 3
+a95 1
+
+@
+
+
+1.8
+log
+@Changed Address to be `void *' instead of `char *'.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/sprite.h,v 1.7 90/08/27 18:17:36 mendel Exp Locker: rab $ SPRITE (Berkeley)
+a74 3
+#ifdef __STDC__
+typedef void *Address;
+#else 
+a75 1
+#endif
+@
+
+
+1.7
+log
+@Added include of cfuncproto.h
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/sprite.h,v 1.6 89/09/08 16:27:43 mgbaker Exp Locker: mendel $ SPRITE (Berkeley)
+d75 3
+d79 1
+d96 1
+a96 1
+#endif /* _ASM */
+@
+
+
+1.6
+log
+@Adding more _ASM stuff.
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/sprite.h,v 1.5 89/06/23 11:29:58 rab Exp Locker: mgbaker $ SPRITE (Berkeley)
+d21 1
+@
+
+
+1.5
+log
+@*** empty log message ***
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/sprite.h,v 1.4 89/05/24 06:17:23 rab Exp Locker: rab $ SPRITE (Berkeley)
+a25 1
+typedef int Boolean;
+d33 3
+d42 1
+d68 1
+d91 2
+@
+
+
+1.4
+log
+@*** empty log message ***
+@
+text
+@d15 1
+a15 1
+ * $Header: /sprite/src/lib/include/RCS/sprite.h,v 1.3 88/07/15 16:42:41 ouster Exp Locker: rab $ SPRITE (Berkeley)
+d29 1
+a29 1
+#endif TRUE
+d32 1
+a32 1
+#endif FALSE
+d63 1
+a63 1
+#endif NULL
+@
+
+
+1.3
+log
+@Add "volatile" definition.
+@
+text
+@d15 1
+a15 1
+ * $Header: sprite.h,v 1.2 88/07/15 15:33:15 ouster Exp $ SPRITE (Berkeley)
+d85 1
+d88 1
+a88 1
+#endif _SPRITE
+@
+
+
+1.2
+log
+@Define ClientData conditionally, so it can already be defined
+elsewhere.
+@
+text
+@d15 1
+a15 1
+ * $Header: sprite.h,v 1.1 88/06/21 09:36:56 ouster Exp $ SPRITE (Berkeley)
+d81 4
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d15 1
+a15 1
+ * $Header: sprite.h,v 1.1 88/06/20 09:38:20 ouster Exp $ SPRITE (Berkeley)
+d78 1
+d80 2
+@

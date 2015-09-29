@@ -1,0 +1,4 @@
+          exit ?returnCode?
+               Terminate  the  process,  returning  returnCode  to the
+               parent  as  the  exit  status.   If  returnCode   isn't
+               specified then it defaults to 0.

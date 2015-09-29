@@ -1,0 +1,53 @@
+%
+% insertplot.sty
+%
+% This macro is to be used with the Arbortext DVIPS PostScript driver.
+% 15 July 1988.
+%
+%   C. E. Higgs
+%   Paul Scherrer Institute
+%   CH-5303 Wuerenlingen
+%   Switzerland
+%   tel: 056 992062 (direct)
+%        056 992078 (secretary)
+%   Email: HIGGS@CAGEIR5A.BITNET
+%
+%
+% parameter #1: Offset from left margin
+%           #2: PostScript file name
+%           #3: Vertical space to leave for figure
+%           #4: Scaling factor on X-axis
+%           #5: Scaling factor on Y-axis
+%           #6: Orientation of original figure
+%               0 = landscape
+%
+\def\insertplot#1#2#3#4#5#6{\par\nointerlineskip
+  \hbox{%
+    \hskip #1
+     \vbox to #3{
+       \vfil
+       \special{ps::[asis,begin]
+          0 SPB
+          /figsave save def
+          /showpage {} def
+%
+          /initgraphics {} def                   % redefine 3 commands from
+          /erasepage {} def                      % the DI-3000 output to be
+          /a4 {} def                             % null operations.
+%
+          /slide{#6 0 eq                         % translate the origin
+            {-100 #4 mul 600 #5 mul translate    % and rotate if the
+             270.0 rotate}if                     % original figure is
+                   } def                         % landscape
+          gsave
+          Xpos Ypos translate
+          slide
+          #4 #5 scale}
+       \special{ps: plotfile #2 asis}
+       \special{ps::[asis,end]
+          grestore
+          figsave restore
+          0 SPE}
+    }%
+ }}
+%

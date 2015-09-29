@@ -1,0 +1,21 @@
+ClientDone	client.c	/^ClientDone(data)$/
+ClientIOControl	client.c	/^ClientIOControl(data, size, reps)$/
+ClientRead	client.c	/^ClientRead(data, size, reps)$/
+ClientSetup	client.c	/^ClientSetup(dataPtr)$/
+ClientState	client.c	/^} ClientState;$/
+ClientWrite	client.c	/^ClientWrite(data, size, reps)$/
+IntProc	server.c	/^typedef int  (*IntProc)();$/
+Mpdevtest	pdevtest.c	/^main(argc, argv)$/
+NullProc	server.c	/^NullProc(streamID, requestPtr, requestBuf, replyBu/
+PrintFsStats	printStats.c	/^PrintFsStats(stream, start, end, verbose)$/
+PrintIdleTime	printStats.c	/^PrintIdleTime(stream, startSchedPtr, endSchedPtr, /
+PrintTimes	printStats.c	/^PrintTimes(stream, usagePtr, timePtr)$/
+PrintVmStats	printStats.c	/^PrintVmStats(stream, start, end)$/
+Serve	server.c	/^Serve(data)$/
+ServeIOControl	server.c	/^ServeIOControl(streamID, requestPtr, requestBuf, r/
+ServeOpen	server.c	/^ServeOpen(streamID, requestPtr, requestBuf, replyB/
+ServeRead	server.c	/^ServeRead(streamID, requestPtr, requestBuf, replyB/
+ServeRequest	server.c	/^ServeRequest(clientStreamID, requestBuf, opTable)$/
+ServeWrite	server.c	/^ServeWrite(streamID, requestPtr, requestBuf, reply/
+ServerSetup	server.c	/^ServerSetup(numClients, dataPtr)$/
+ServerState	server.c	/^} ServerState;$/

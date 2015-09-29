@@ -1,0 +1,9 @@
+D DS3100_M                          	ds3100.md
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+F STDIO.C;1                         	stdio.c
+D SUN3_MD                           	sun3.md
+D SUN4_MD                           	sun4.md
+F TEST.;1                           	test
+F TEST2.;1                          	test2

@@ -1,0 +1,496 @@
+512
+llib-lsx:sxButton.c 2
+2
+10 150 32 0 0
+Sx_ButtonMake
+24 10016 1308
+15 0 0
+18 0 0
+24 640 -32768
+15 0 0
+15 0 0
+15 0 0
+15 0 0
+144 0 0
+20 0 0
+2
+15 270 47 0 0
+Sx_ButtonCreate
+24 10016 1308
+15 0 0
+4 0 0
+4 0 0
+4 0 0
+4 0 0
+4 0 0
+18 0 0
+24 640 -32768
+15 0 0
+15 0 0
+15 0 0
+15 0 0
+144 0 0
+20 0 0
+16
+0 288 15 0 0
+Sx_ButtonCreate
+512
+llib-lsx:sxEntry.c 2
+2
+9 205 32 0 0
+Sx_EntryMake
+24 10016 1308
+15 0 0
+15 0 0
+18 0 0
+24 640 -32768
+15 0 0
+15 0 0
+18 0 0
+4 0 0
+2
+14 337 47 0 0
+Sx_EntryCreate
+24 10016 1308
+15 0 0
+15 0 0
+4 0 0
+4 0 0
+4 0 0
+4 0 0
+4 0 0
+18 0 0
+24 640 -32768
+15 0 0
+15 0 0
+18 0 0
+4 0 0
+16
+0 348 15 0 0
+Sx_EntryCreate
+512
+llib-lsx:sxNotify.c 2
+2
+-8 175 36 0 0
+Sx_Notify
+24 10016 1308
+15 0 0
+4 0 0
+4 0 0
+4 0 0
+18 0 0
+24 640 -32768
+4 0 0
+512
+llib-lsx:sxNotify.c
+16
+0 461 4 0 0
+Sx_Notify
+2
+2 486 32 0 0
+Sx_Panic
+24 10016 1308
+18 0 0
+512
+llib-lsx:sxMenu.c 2
+2
+8 243 47 0 0
+Sx_MenuCreate
+24 10016 1308
+15 0 0
+18 0 0
+4 0 0
+24 192 30549
+24 640 -32768
+15 0 0
+15 0 0
+16
+0 406 15 0 0
+Sx_MenuCreate
+2
+3 438 36 0 0
+Sx_MenuSetMask
+24 10016 1308
+15 0 0
+4 0 0
+16
+0 462 4 0 0
+Sx_MenuSetMask
+2
+2 486 36 0 0
+Sx_MenuGetMask
+24 10016 1308
+15 0 0
+16
+0 497 4 0 0
+Sx_MenuGetMask
+2
+4 525 32 0 0
+Sx_MenuReplaceEntry
+24 10016 1308
+15 0 0
+4 0 0
+24 192 30549
+2
+6 627 36 0 0
+Sx_MenuGetInfo
+24 10016 1308
+15 0 0
+24 192 30549
+88 640 -32768
+31 0 0
+31 0 0
+16
+0 666 4 0 0
+Sx_MenuGetInfo
+2
+4 703 36 0 0
+Sx_MenuGetNames
+24 10016 1308
+15 0 0
+82 0 0
+31 0 0
+16
+0 731 4 0 0
+Sx_MenuGetNames
+2
+3 758 47 0 0
+Sx_MenuGetWindow
+24 10016 1308
+15 0 0
+18 0 0
+16
+0 783 15 0 0
+Sx_MenuGetWindow
+512
+llib-lsx:sxPack.c 2
+2
+9 164 32 0 0
+Sx_Pack
+24 10016 1308
+15 0 0
+15 0 0
+10 0 0
+4 0 0
+4 0 0
+4 0 0
+15 0 0
+15 0 0
+2
+9 333 47 0 0
+Sx_CreatePacked
+24 10016 1308
+15 0 0
+10 0 0
+4 0 0
+4 0 0
+4 0 0
+15 0 0
+15 0 0
+15 0 0
+16
+0 341 15 0 0
+Sx_CreatePacked
+2
+2 365 32 0 0
+Sx_Unpack
+24 10016 1308
+15 0 0
+2
+2 415 32 0 0
+Sx_PackUpdateOff
+24 10016 1308
+15 0 0
+2
+2 448 32 0 0
+Sx_PackUpdateOn
+24 10016 1308
+15 0 0
+512
+llib-lsx:sxTitle.c 2
+2
+9 137 32 0 0
+Sx_TitleMake
+24 10016 1308
+15 0 0
+24 640 -32768
+15 0 0
+15 0 0
+15 0 0
+18 0 0
+18 0 0
+18 0 0
+2
+12 284 47 0 0
+Sx_TitleCreate
+24 10016 1308
+15 0 0
+10 0 0
+4 0 0
+4 0 0
+24 640 -32768
+15 0 0
+15 0 0
+15 0 0
+18 0 0
+18 0 0
+18 0 0
+16
+0 292 15 0 0
+Sx_TitleCreate
+512
+llib-lsx:sxSelect.c 2
+2
+0 55 8 1568 8621
+tkWindow
+2
+0 59 24 1536 29659
+tkDisplayList
+2
+0 60 4 0 0
+debug
+2
+4 142 32 0 0
+Sx_SelectionSet
+24 10016 1308
+148 0 0
+144 0 0
+20 0 0
+2
+1 183 32 0 0
+Sx_SelectionClear
+24 10016 1308
+2
+6 243 36 0 0
+Sx_SelectionGet
+24 10016 1308
+18 0 0
+4 0 0
+4 0 0
+18 0 0
+18 0 0
+16
+0 274 4 0 0
+Sx_SelectionGet
+512
+llib-lsx:sxScrollbar.c 2
+2
+0 89 15 0 0
+scrollPattern
+2
+8 205 32 0 0
+Sx_ScrollbarMake
+24 10016 1308
+15 0 0
+4 0 0
+15 0 0
+15 0 0
+15 0 0
+144 0 0
+20 0 0
+2
+10 312 47 0 0
+Sx_ScrollbarCreate
+24 10016 1308
+15 0 0
+10 0 0
+4 0 0
+15 0 0
+15 0 0
+15 0 0
+15 0 0
+144 0 0
+20 0 0
+16
+0 322 15 0 0
+Sx_ScrollbarCreate
+2
+4 358 32 0 0
+Sx_ScrollbarSetRange
+24 10016 1308
+15 0 0
+7 0 0
+7 0 0
+2
+4 417 32 0 0
+Sx_ScrollbarGetRange
+24 10016 1308
+15 0 0
+22 0 0
+22 0 0
+2
+0 458 36 0 0
+Sx_ScrollbarWidth
+16
+0 460 4 0 0
+Sx_ScrollbarWidth
+512
+llib-lsx:sxUtils.c 2
+2
+0 40 4 0 0
+sxIgnoreBadWindow
+2
+1 71 32 0 0
+Sx_SetDefaultFont
+24 640 -32768
+2
+1 96 104 640 -32768
+Sx_GetDefaultFont
+24 10016 1308
+16
+0 107 24 640 -32768
+Sx_GetDefaultFont
+2
+2 131 36 0 0
+Sx_DefaultHeight
+24 10016 1308
+24 640 -32768
+16
+0 136 4 0 0
+Sx_DefaultHeight
+2
+1 160 36 0 0
+Sx_FocusEnabled
+24 10016 1308
+16
+0 174 4 0 0
+Sx_FocusEnabled
+2
+1 197 32 0 0
+SxFlashWait
+24 10016 1308
+2
+7 233 32 0 0
+SxDrawShadow
+24 10016 1308
+15 0 0
+24 896 22140
+4 0 0
+4 0 0
+4 0 0
+4 0 0
+2
+0 279 36 0 0
+Sx_NullProc
+16
+0 281 4 0 0
+Sx_NullProc
+2
+2 304 32 0 0
+SxUnmapCarefully
+24 10016 1308
+15 0 0
+2
+0 333 32 0 0
+Sx_SetErrorHandler
+2
+2 357 36 0 0
+SxErrorHandler
+24 10016 1308
+24 160 -32768
+16
+0 363 4 0 0
+SxErrorHandler
+512
+llib-lsx:tkSelect.c 2
+2
+5 216 32 0 0
+SxTk_CreateSelHandler
+24 0 30931
+15 0 0
+148 0 0
+20 0 0
+15 0 0
+2
+3 289 32 0 0
+SxTk_OwnSelection
+24 0 30931
+144 0 0
+20 0 0
+2
+4 380 36 0 0
+SxTk_GetSelection
+24 0 30931
+15 0 0
+148 0 0
+20 0 0
+16
+0 543 4 0 0
+SxTk_GetSelection
+2
+2 606 32 0 0
+SxTkSelEventProc
+24 0 30931
+25 768 23678
+512
+llib-lsx:tkSelect.c
+512
+llib-lsx:sxDispatch.c 2
+2
+5 234 104 0 19651
+Sx_HandlerCreate
+24 10016 1308
+15 0 0
+15 0 0
+144 0 0
+20 0 0
+16
+0 292 24 0 19651
+Sx_HandlerCreate
+2
+1 316 32 0 0
+Sx_HandlerDelete
+24 0 19651
+2
+1 394 32 0 0
+Sx_HandleEvent
+25 768 23678
+2
+5 559 32 0 0
+Sx_EnableFocus
+24 10016 1308
+15 0 0
+15 0 0
+144 0 0
+20 0 0
+2
+2 617 32 0 0
+Sx_Focus
+24 10016 1308
+15 0 0
+512
+llib-lsx:tkAtom.c 2
+2
+2 64 47 0 0
+Tk_InternAtom
+24 0 30931
+18 0 0
+16
+0 86 15 0 0
+Tk_InternAtom
+2
+2 116 98 0 0
+Tk_GetAtomName
+24 0 30931
+15 0 0
+16
+0 145 18 0 0
+Tk_GetAtomName
+512
+llib-lsx:tkError.c 2
+2
+6 95 104 0 8808
+Tk_CreateErrorHandler
+24 10016 1308
+4 0 0
+4 0 0
+4 0 0
+148 0 0
+20 0 0
+16
+0 139 24 0 8808
+Tk_CreateErrorHandler
+2
+1 168 32 0 0
+Tk_DeleteErrorHandler
+24 0 8808

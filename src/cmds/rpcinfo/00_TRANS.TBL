@@ -1,0 +1,7 @@
+F GETOPT.C;1                        	getopt.c
+F LOCAL.MK;1                        	local.mk
+F MAKEFILE.;1                       	Makefile
+D RCS                               	RCS
+F RPCINFO.C;1                       	rpcinfo.c
+F RPCINFO.MAN;1                     	rpcinfo.man
+D SUN3_MD                           	sun3.md

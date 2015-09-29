@@ -1,0 +1,68 @@
+
+
+
+Tcl_RecordAndEval Tcl Command Language Library  Tcl_RecordAndEval
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     Tcl_RecordAndEval - save a Tcl command in the history  list,
+     then execute it
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ttccll..hh>>
+
+     int
+     TTccll__RReeccoorrddAAnnddEEvvaall(_i_n_t_e_r_p, _c_m_d, _f_l_a_g_s)
+
+AARRGGUUMMEENNTTSS
+     Tcl_Interp   *_i_n_t_e_r_p    (in)      Interpreter  in  which  to
+                                       record   and  execute  the
+                                       command.
+
+     char         *_c_m_d       (in)      Command  (or  sequence  of
+                                       commands) to execute.
+
+     char         _f_l_a_g_s      (in)      Flags to pass to  TTccll__EEvvaall
+                                       (normally 0).  If -1, then
+                                       the command  is  not  exe-
+                                       cuted;       it's     just
+                                       recorded.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     TTccll__RReeccoorrddAAnnddEEvvaall is invoked to record a command on the his-
+     tory list and then execute it.  Programs that do not wish to
+     use the history mechanism should not call TTccll__RReeccoorrddAAnnddEEvvaall;
+     they    should    call   TTccll__EEvvaall   instead.    Furthermore,
+     TTccll__RReeccoorrddAAnnddEEvvaall should only be called with top-level  com-
+     mands  typed by the user, since the purpose of history is to
+     allow the user to re-issue recently-invoked commands.
+
+     This procedure does three  things.   First,  it  initializes
+     history  for  the  interpreter  _i_n_t_e_r_p, if this is the first
+     call for _i_n_t_e_r_p.  Among other things, this makes the hhiissttoorryy
+     command  available  in  _i_n_t_e_r_p.   If TTccll__RReeccoorrddAAnnddEEvvaall isn't
+     called for an interpreter then there will be no hhiissttoorryy com-
+     mand  in  that interpreter.  Second, TTccll__RReeccoorrddAAnnddEEvvaall saves
+     _c_o_m_m_a_n_d in the history list for iinntteerrpp, making a  new  event
+     to  hold the command.  Third, TTccll__RReeccoorrddAAnnddEEvvaall executes the
+     command by passing it and _f_l_a_g_s to TTccll__EEvvaall.  If _f_l_a_g_s is -1
+     then  only  the first two steps are taken;  the command will
+     not be executed.
+
+
+KKEEYYWWOORRDDSS
+     command, event, execute, history, interpreter, record
+
+
+
+
+Sprite v.1.0        Printed:  October 9, 1991                   1
+
+
+

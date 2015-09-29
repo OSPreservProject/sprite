@@ -1,0 +1,113 @@
+if (!defined &_FS_H) {
+    eval 'sub _FS_H {1;}';
+    require 'spriteTime.ph';
+    require 'kernel/procTypes.ph';
+    if (!defined &__STDC__) {
+	if (defined &major) {
+	}
+	if (defined &minor) {
+	}
+    }
+    eval 'sub FS_BLOCK_SIZE {4096;}';
+    eval 'sub FS_MAX_PATH_NAME_LENGTH {1024;}';
+    eval 'sub FS_MAX_NAME_LENGTH {255;}';
+    eval 'sub FS_USER_FLAGS {0xfff;}';
+    eval 'sub FS_READ {0x001;}';
+    eval 'sub FS_WRITE {0x002;}';
+    eval 'sub FS_EXECUTE {0x004;}';
+    eval 'sub FS_APPEND {0x008;}';
+    eval 'sub FS_CLOSE_ON_EXEC {0x010;}';
+    eval 'sub FS_PDEV_MASTER {0x020;}';
+    eval 'sub FS_NAMED_PIPE_OPEN {0x040;}';
+    eval 'sub FS_PFS_MASTER {0x080;}';
+    eval 'sub FS_NON_BLOCKING {0x100;}';
+    eval 'sub FS_CREATE {0x200;}';
+    eval 'sub FS_TRUNC {0x400;}';
+    eval 'sub FS_EXCLUSIVE {0x800;}';
+    eval 'sub FS_READABLE { &FS_READ;}';
+    eval 'sub FS_WRITABLE { &FS_WRITE;}';
+    eval 'sub FS_EXCEPTION { &FS_EXECUTE;}';
+    eval 'sub FS_EXCEPTABLE { &FS_EXCEPTION;}';
+    eval 'sub FS_ATTRIB_LINK {1;}';
+    eval 'sub FS_ATTRIB_FILE {2;}';
+    eval 'sub FS_SET_ALL_ATTRS {0x1F;}';
+    eval 'sub FS_SET_TIMES {0x01;}';
+    eval 'sub FS_SET_MODE {0x02;}';
+    eval 'sub FS_SET_OWNER {0x04;}';
+    eval 'sub FS_SET_FILE_TYPE {0x08;}';
+    eval 'sub FS_SET_DEVICE {0x10;}';
+    eval 'sub FS_LOCALHOST_ID {-1;}';
+    eval 'sub FS_FILE {0;}';
+    eval 'sub FS_DIRECTORY {1;}';
+    eval 'sub FS_SYMBOLIC_LINK {2;}';
+    eval 'sub FS_REMOTE_LINK {3;}';
+    eval 'sub FS_DEVICE {4;}';
+    eval 'sub FS_REMOTE_DEVICE {5;}';
+    eval 'sub FS_LOCAL_PIPE {6;}';
+    eval 'sub FS_NAMED_PIPE {7;}';
+    eval 'sub FS_PSEUDO_DEV {8;}';
+    eval 'sub FS_PSEUDO_FS {9;}';
+    eval 'sub FS_XTRA_FILE {10;}';
+    eval 'sub FS_USER_TYPE_UNDEFINED {0;}';
+    eval 'sub FS_USER_TYPE_TMP {1;}';
+    eval 'sub FS_USER_TYPE_SWAP {2;}';
+    eval 'sub FS_USER_TYPE_OBJECT {3;}';
+    eval 'sub FS_USER_TYPE_BINARY {4;}';
+    eval 'sub FS_USER_TYPE_OTHER {5;}';
+    eval 'sub FS_NUM_GROUPS {8;}';
+    eval 'sub IOC_REPOSITION {1;}';
+    eval 'sub IOC_GET_FLAGS {2;}';
+    eval 'sub IOC_SET_FLAGS {3;}';
+    eval 'sub IOC_SET_BITS {4;}';
+    eval 'sub IOC_CLEAR_BITS {5;}';
+    eval 'sub IOC_TRUNCATE {6;}';
+    eval 'sub IOC_LOCK {7;}';
+    eval 'sub IOC_UNLOCK {8;}';
+    eval 'sub IOC_NUM_READABLE {9;}';
+    eval 'sub IOC_GET_OWNER {10;}';
+    eval 'sub IOC_SET_OWNER {11;}';
+    eval 'sub IOC_MAP {12;}';
+    eval 'sub IOC_PREFIX {13;}';
+    eval 'sub IOC_WRITE_BACK {14;}';
+    eval 'sub IOC_MMAP_INFO {15;}';
+    eval 'sub IOC_GENERIC_LIMIT {((1<<16)-1);}';
+    eval 'sub IOC_MAX_BYTES {4096;}';
+    eval 'sub IOC_BASE_ZERO {0;}';
+    eval 'sub IOC_BASE_CURRENT {1;}';
+    eval 'sub IOC_BASE_EOF {2;}';
+    eval 'sub IOC_GENERIC_FLAGS {0xFF;}';
+    eval 'sub IOC_APPEND {0x01;}';
+    eval 'sub IOC_NON_BLOCKING {0x02;}';
+    eval 'sub IOC_ASYNCHRONOUS {0x04;}';
+    eval 'sub IOC_CLOSE_ON_EXEC {0x08;}';
+    eval 'sub IOC_LOCK_SHARED {0x1;}';
+    eval 'sub IOC_LOCK_EXCLUSIVE {0x2;}';
+    eval 'sub IOC_LOCK_NO_BLOCK {0x8;}';
+    eval 'sub IOC_OWNER_FAMILY {0x1;}';
+    eval 'sub IOC_OWNER_PROC {0x2;}';
+    eval 'sub FS_OWNER_READ {00400;}';
+    eval 'sub FS_OWNER_WRITE {00200;}';
+    eval 'sub FS_OWNER_EXEC {00100;}';
+    eval 'sub FS_GROUP_READ {00040;}';
+    eval 'sub FS_GROUP_WRITE {00020;}';
+    eval 'sub FS_GROUP_EXEC {00010;}';
+    eval 'sub FS_WORLD_READ {00004;}';
+    eval 'sub FS_WORLD_WRITE {00002;}';
+    eval 'sub FS_WORLD_EXEC {00001;}';
+    eval 'sub FS_SET_UID {04000;}';
+    eval 'sub FS_SET_GID {02000;}';
+    eval 'sub FS_EXISTS {0x0;}';
+    eval 'sub FS_ANYID {-1;}';
+    eval 'sub FS_ATTACH_READ_ONLY {0x1;}';
+    eval 'sub FS_DETACH {0x2;}';
+    eval 'sub FS_ATTACH_LOCAL {0x4;}';
+    eval 'sub FS_DEFAULT_DOMAIN {0x8;}';
+    eval 'sub FS_USER_PREFIX_LENGTH {64;}';
+    eval 'sub FS_NO_SERVER {0;}';
+    if (!defined &FS_EXPORTED_PREFIX) {
+	eval 'sub FS_EXPORTED_PREFIX {0x1;}';
+	eval 'sub FS_IMPORTED_PREFIX {0x2;}';
+	eval 'sub FS_LOCAL_PREFIX {0x4;}';
+    }
+}
+1;

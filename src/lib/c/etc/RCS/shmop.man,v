@@ -1,0 +1,199 @@
+head     1.2;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.2
+date     90.06.27.11.18.25;  author shirriff;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     90.04.03.11.56.48;  author shirriff;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Man page for shmop.
+@
+
+
+1.2
+log
+@Added BUGS section.
+@
+text
+@.\" @@(#)shmop.2 1.20 88/03/01 SMI; from S5R3
+.TH SHMOP 2 "21 November 1987"
+.SH NAME
+shmop, shmat, shmdt \- shared memory operations
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+.LP
+.ft B
+char \(**shmat(shmid, shmaddr, shmflg)
+int shmid;
+char \(**shmaddr;
+int shmflg;
+.LP
+.ft B
+int shmdt(shmaddr)
+char \(**shmaddr;
+.fi
+.ft R
+.SH DESCRIPTION
+.IX  shmop  ""  "\fLshmop\fR \(em get shared memory operations"
+.IX  "shared memory" "operation \(em\fLshmop\fR"
+.B shmat(\|)
+maps the shared memory segment associated with the shared memory identifier
+specified by
+.I shmid
+into the data segment of the calling process.  Upon successful completion,
+the address of the mapped segment is returned.
+.LP
+The shared memory segment is mapped at the address specified
+by one of the following criteria:
+.TP
+\(bu
+If
+.I shmaddr
+is equal to zero, the segment is mapped at an address selected by the
+system.  Ordinarily, applications should invoke
+.B shmat(\|)
+with
+.I shmaddr
+equal to zero so that the operating system may make the best
+use of available resources.
+.TP
+\(bu
+If
+.I shmaddr
+is not equal to zero and
+.RI ( shmflg " &"
+.SM
+.BR SHM_RND \s0)
+is ``true'', the segment is mapped at the address given by
+.RI ( shmaddr " -"
+.RI ( shmaddr " modulus"
+.SM
+.BR SHMLBA \s0)).
+.TP
+\(bu
+If
+.I shmaddr
+is not equal to zero and
+.RI ( shmflg " &"
+.SM
+.BR SHM_RND \s0)
+is ``false'', the segment is mapped at the address given by
+.IR shmaddr .
+.LP
+The segment is mapped for reading if
+.RI ( shmflg " &"
+.SM
+.BR SHM_RDONLY \s0)
+is ``true''
+.BR \%{\s-1READ\s0} ,
+otherwise it is mapped for reading and writing
+.BR \%{\s-1READ\s0/\s-1WRITE\s0} .
+.LP
+.B shmdt(\|)
+unmaps from the calling process's address space
+the shared memory segment that is mapped at the address specified by
+.IR shmaddr .
+The shared memory segment must have been mapped with a prior
+.B shmat(\|)
+function call.  The segment and contents are retained until explicitly
+removed by means of the
+.SB IPC_RMID
+function (see
+.BR shmctl (2)).
+.SH RETURN VALUES
+Upon successful completion, the return values are as follows:
+.TP
+\(bu
+.B shmat(\|)
+returns the data segment start address of the mapped shared memory segment.
+.TP
+\(bu
+.B shmdt(\|)
+returns a value of 0.
+.LP
+Otherwise, a value of \-1 is returned and
+.B errno
+is set to indicate the error.
+.SH ERRORS
+.B shmat(\|)
+will fail and not map the shared memory segment if one or more of the
+following are true:
+.TP 20
+.SM EINVAL
+.I shmid
+is not a valid shared memory identifier.
+.TP
+.SM EACCES
+Operation permission is denied to the calling process (see
+.BR intro (2)).
+.TP
+.SM ENOMEM
+The available data space
+is not large enough to accommodate the shared memory segment.
+.TP
+.SM EINVAL
+.I shmaddr
+is not equal to zero, and the value of
+.RI ( shmaddr " -"
+.RI ( shmaddr " modulus"
+.SM
+.BR SHMLBA \s0))
+is an illegal address.
+.TP
+.SM EINVAL
+.I shmaddr
+is not equal to zero,
+.RI ( shmflg " &"
+.SM
+.BR SHM_RND \s0)
+is ``false'', and the value of
+.I shmaddr
+is an illegal address.
+.TP
+.SM EMFILE
+The number of shared memory segments mapped to the calling process would
+exceed the system-imposed limit.
+.LP
+.B shmdt(\|)
+will fail and not unmap the shared memory segment if:
+.TP
+.SM EINVAL
+.I shmaddr
+is not the data segment start address of a shared memory segment.
+.SH SEE ALSO
+.BR execve (2),
+.BR exit (2),
+.BR fork (2),
+.BR intro (2),
+.BR shmctl (2),
+.BR shmget (2)
+.SH BUGS
+The System V shared memory functions are implemented at user level on top
+of the mmap(2) interface.  Not all the System V functionality is
+implemented.
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d157 4
+@

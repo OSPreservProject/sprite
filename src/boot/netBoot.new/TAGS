@@ -1,0 +1,652 @@
+
+spriteboot.c,14
+main(47,1282
+
+dev/am8068.h,0
+
+dev/am9513.h,50
+#define CLKS_BIT(48,1503
+#define	CLK_BIT(33,946
+
+dev/amd_ether.h,0
+
+dev/cg2reg.h,637
+#define	CGOP_NEEDS_MASK(140,4335
+#define	cg2_height(198,6589
+#define	cg2_linebytes(200,6683
+#define	cg2_pixaddr(180,5803
+#define	cg2_prskew(204,6852
+#define	cg2_roppixaddr(188,6138
+#define	cg2_ropwordaddr(192,6304
+#define	cg2_setfunction(149,4672
+#define	cg2_setlsource(147,4566
+#define	cg2_setpanoffset(165,5327
+#define	cg2_setpanorigin(168,5455
+#define	cg2_setpattern(151,4774
+#define	cg2_setrsource(145,4460
+#define	cg2_setshift(153,4880
+#define	cg2_setwidth(156,5006
+#define	cg2_setzoom(163,5247
+#define	cg2_setzoomstop(173,5665
+#define	cg2_touch(207,6898
+#define	cg2_width(196,6497
+#define	cg2_wordaddr(184,5957
+
+dev/dkbad.h,0
+
+dev/dkio.h,0
+
+dev/dklabel.h,0
+
+dev/if.h,138
+#define	IF_DEQUEUE(116,4314
+#define	IF_DROP(99,3911
+#define	IF_ENQUEUE(100,3954
+#define	IF_PREPEND(109,4145
+#define	IF_QFULL(98,3850
+
+dev/if_ether.h,100
+#define	arp_sha(59,1805
+#define	arp_spa(60,1864
+#define	arp_tha(61,1920
+#define	arp_tpa(62,1979
+
+dev/if_ie.c,245
+ieca(321,9255
+ieclose(530,14271
+iedefaultconf(507,13590
+ieinit(143,4232
+ieopen(125,3925
+iepoll(411,11435
+ieprobe(116,3782
+iereset(164,4648
+ierustart(266,7748
+iesimple(329,9358
+iexmit(367,10252
+to_ieaddr(462,12788
+to_ieoff(488,13283
+
+dev/if_iereg.h,92
+typedef	long ieaddr_t;18,491
+typedef short ieint_t;17,445
+typedef u_short ieoff_t;15,324
+
+dev/if_le.c,173
+install_buf_in_rmd(262,6520
+lanceclose(453,11795
+lanceinit(149,3501
+lanceopen(122,2968
+lancepoll(365,9328
+lanceprobe(106,2704
+lancereset(179,4169
+lancexmit(277,6853
+
+dev/if_lereg.h,0
+
+dev/if_mie.h,0
+
+dev/if_obie.h,0
+
+dev/promether.h,242
+#define BCLEAR(9,158
+typedef	char	etheraddr[326,10358
+typedef unsigned long 60,1650
+typedef unsigned long 60,1650
+	mieoff_t	329,10468
+typedef unsigned short 58,1531
+typedef unsigned short 59,1594
+struct 328,10419
+	mieoff_t	329,10468
+
+dev/saio.h,109
+#define	CDELAY(89,2094
+#define	DELAY(81,1976
+#define MAX(107,2543
+106,2509
+#define	MB_DMA_ADDR(104,2427
+
+dev/sasun.h,50
+14,287
+#define	DELAY(21,548
+#define	MAX(19,436
+
+dev/sc.c,141
+#define	SCSI_DMA_ADDR(34,781
+sc_error(51,1105
+sc_getbyte(256,5604
+sc_putbyte(232,4995
+sc_wait(203,4549
+scdoit(114,2586
+scopen(69,1546
+
+dev/screg.h,26
+#define ISEMULEX(70,1801
+
+dev/scsi.h,96
+#define LUN(206,6323
+#define TARGET(205,6281
+#define	TYPE(204,6253
+#define	cdbaddr(122,3607
+
+dev/scutils.c,21
+init_scolor(44,1313
+
+dev/sd.c,164
+61,1118
+#define	sc_error(51,957
+sd_pr_sense(424,8428
+sd_probe(125,2387
+sdclose(484,9778
+sdcmd(244,4674
+sdopen(139,2537
+sdspin(103,1913
+sdstrategy(227,4327
+
+dev/si.c,272
+#define	SI_OB_DMA_ADDR(42,970
+#define	SI_VME_DMA_ADDR(39,859
+si_dma_cleanup(474,10664
+si_getbyte(593,13059
+si_ob_dma_setup(423,9423
+si_putbyte(542,11825
+si_reset(650,14351
+si_sbc_wait(518,11448
+si_wait(494,11045
+sidoit(210,4298
+siopen(129,2656
+siprobe(69,1477
+
+dev/sireg.h,0
+
+dev/st.c,162
+#define ISAEMULEX(65,1233
+#define	ROUNDUP(90,1797
+#define min(26,500
+st_probe(97,1990
+stclose(281,6012
+stcmd(329,6902
+stopen(112,2144
+ststrategy(311,6605
+
+dev/streg.h,53
+#define IS_EMULEX(55,1233
+#define IS_SYSGEN(46,994
+
+dev/tm.c,182
+#define ATTN(135,2556
+#define RESET(136,2618
+static c68t86(291,6405
+#define clrtpb(137,2682
+tmclose(88,1689
+tmcmd(139,2738
+tminit(213,4415
+tmopen(71,1412
+tmstrategy(96,1804
+
+dev/tmreg.h,67
+typedef	unsigned bit;17,246
+typedef	struct addr86 ptr86_t;16,215
+
+dev/xd.c,106
+#define CYL(38,882
+xdcmd(217,4763
+xdfwd(330,7866
+xdopen(86,1707
+xdspin(205,4451
+xdstrategy(158,3401
+
+dev/xdcreg.h,22
+#define XDOFF(36,693
+
+dev/xdreg.h,0
+
+dev/xt.c,68
+xtclose(63,1265
+xtcmd(109,1997
+xtopen(43,848
+xtstrategy(71,1383
+
+dev/xtreg.h,0
+
+dev/xy.c,106
+#define CYL(38,888
+xycmd(218,4827
+xyfwd(305,7135
+xyopen(85,1712
+xyspin(207,4581
+xystrategy(160,3531
+
+dev/xycreg.h,69
+#define XYNEWREL(36,864
+#define	XYOFF(32,707
+#define	XYREL(33,744
+
+dev/xyreg.h,170
+#define	XY_CYL_HI(162,5014
+#define	XY_CYL_LO(161,4977
+#define	XY_GET_CYL(166,5199
+#define	XY_GET_SEC(165,5136
+#define	XY_SEC_HI(164,5094
+#define	XY_SEC_LO(163,5057
+
+dev/zsreg.h,29
+#define	ZSTIMECONST(76,3088
+
+h/asyncbuf.h,288
+#define	baccs(180,6658
+#define	bget(155,5817
+#define	bgetclr(186,6781
+#define	bgetp(148,5586
+#define	bgets(162,5992
+#define	boverclr(192,6897
+#define	boverp(189,6845
+#define	bput(134,5263
+#define	bputclr(183,6717
+#define	bputo(141,5442
+#define	bsize(195,6948
+#define	108,4236
+
+h/bootparam.h,0
+
+h/buf.h,195
+#define	binshash(109,4621
+#define	binsheadfree(123,4925
+#define	binstailfree(129,5078
+#define	bremfree(119,4812
+#define	bremhash(105,4514
+#define	clrbuf(153,5534
+#define	notavail(140,5332
+
+h/buserr.h,0
+
+h/cache.h,0
+
+h/clock.h,24
+#define	SECYEAR(25,873
+
+h/cpu.addrs.h,0
+
+h/cpu.map.h,0
+
+h/ctype.h,361
+#define isalnum(23,525
+#define	isalpha(16,241
+#define isascii(27,714
+#define iscntrl(26,675
+#define	isdigit(19,363
+#define	isgraph(25,625
+#define	islower(18,324
+#define isprint(24,572
+#define ispunct(22,486
+#define	isspace(21,447
+#define	isupper(17,285
+#define	isxdigit(20,402
+#define toascii(30,821
+#define tolower(29,788
+#define toupper(28,755
+
+h/diag.h,0
+
+h/dir.h,51
+#define DIRSIZ(45,1710
+#define rewinddir(68,2155
+
+h/dpy.h,48
+#define	POX_NOT(41,775
+#define	bresw(107,2908
+
+h/eeprom.h,0
+
+h/enable.h,0
+
+h/exception.h,0
+
+h/fbio.h,0
+
+h/fsdir.h,51
+#define DIRSIZ(50,2155
+#define rewinddir(70,2576
+
+h/globram.h,25
+DEFBUF (keybuf_t,38,925
+
+h/idprom.h,0
+
+h/in.h,178
+#define	IN_CLASSA(94,2161
+#define	IN_CLASSB(99,2311
+#define	IN_CLASSC(104,2470
+#define	htonl(128,2959
+#define	htons(129,2980
+#define	ntohl(126,2917
+#define	ntohs(127,2938
+
+h/in_systm.h,92
+typedef u_long	n_long;19,507
+typedef u_short n_short;18,444
+typedef	u_long	n_time;20,568
+
+h/interreg.h,0
+
+h/ip.h,89
+#define	IPOPT_CLASS(42,1103
+#define	IPOPT_COPIED(41,1067
+#define	IPOPT_NUMBER(43,1138
+
+h/keyboard.h,50
+#define	KEYOF(140,4942
+#define	STATEOF(139,4872
+
+h/led.h,0
+
+h/map.h,0
+
+h/mem.h,0
+
+h/memvar.h,417
+#define	CAT(86,3051
+#define IDENT(85,3032
+#define	MP_NOTMPR(99,3486
+extern int	(*mem_lrcode(122,4036
+#define mpr_d(39,1197
+#define	mpr_linebytes(44,1380
+#define	mpr_mdlinebytes(48,1565
+#define mpr_prlinebytes(46,1479
+#define mpr_static(88,3079
+#define mprd8_addr(56,1872
+#define mprd_addr(51,1630
+#define	mprd_skew(62,2100
+#define	mprs8_addr(65,2240
+#define	mprs_addr(64,2176
+#define	mprs_skew(66,2305
+
+h/montrap.h,0
+
+h/msg.h,0
+
+h/ndreg.h,0
+
+h/param.h,227
+#define	BASEPRI(65,1629
+#define	USERMODE(64,1583
+#define	btoc(59,1478
+#define	ctob(56,1424
+#define	ctod(51,1321
+#define	ctos(44,1094
+#define	dtob(53,1376
+#define	dtoc(52,1346
+#define	ptos(48,1218
+#define	stoc(45,1140
+
+h/pginit.h,0
+
+h/pixrect.h,874
+#define	PIXOP_NEEDS_DST(182,6637
+#define	PIXOP_NEEDS_SRC(183,6705
+#define PIX_COLOR(175,6504
+#define PIX_NOT(172,6328
+#define PIX_OPCOLOR(176,6534
+#define pr_batchrop(134,4713
+#define pr_destroy(136,4815
+#define	pr_get(138,4880
+#define	pr_getattributes(148,5342
+#define	pr_getcolormap(146,5224
+#define	pr_put(140,4948
+#define	pr_putattributes(129,4462
+#define	pr_putcolormap(127,4344
+#define	pr_region(144,5139
+#define pr_rop(125,4227
+#define pr_stencil(132,4568
+#define pr_vector(142,5026
+#define prs_batchrop(207,7549
+#define prs_destroy(209,7662
+#define	prs_get(211,7729
+#define	prs_getattributes(225,8430
+#define	prs_getcolormap(221,8219
+#define	prs_put(213,7809
+#define	prs_putattributes(223,8338
+#define	prs_putcolormap(219,8100
+#define	prs_region(217,8013
+#define prs_rop(202,7295
+#define prs_stencil(204,7403
+#define prs_vector(215,7899
+
+h/pr_util.h,353
+#define	alloctype(74,2137
+#define cases8(43,1328
+#define loopd6(63,1902
+#define pr_area(90,2532
+#define pr_product(82,2384
+#define pr_product(84,2441
+#define	rop_direction(22,489
+#define	rop_fastloop(51,1598
+#define	rop_isdown(28,773
+#define	rop_isleft(25,646
+#define	rop_isright(27,726
+#define	rop_isup(26,688
+#define	rop_slowloop(48,1513
+
+h/sainet.h,0
+
+h/setbus.h,63
+typedef struct busbuf bus_buf[28,563
+int 30,598
+void 31,612
+
+h/socket.h,0
+
+h/statreg.h,0
+
+h/stdio.h,157
+#define	feof(37,775
+#define	ferror(38,817
+#define	fileno(39,860
+#define	getc(33,550
+#define	getchar(34,614
+#define putc(35,644
+#define	putchar(36,741
+
+h/sunconfig.h,45
+typedef char bool;34,469
+#define eq(13,197
+
+h/sunromvec.h,0
+
+h/suntimer.h,0
+
+h/systime.h,0
+
+h/systm.h,96
+#define	dequeue(88,2234
+#define	insque(85,2096
+#define	queue(87,2185
+#define	remque(86,2147
+
+h/systypes.h,446
+typedef	char *	caddr_t;39,884
+typedef	unsigned char	19,398
+typedef	long	daddr_t;38,862
+typedef	short	dev_t;44,992
+typedef	u_long	ino_t;40,908
+typedef	unsigned int	21,460
+typedef	unsigned long	22,488
+#define	major(11,207
+#define	makedev(17,350
+#define	minor(14,287
+typedef	int	off_t;45,1013
+typedef	unsigned short	20,428
+typedef	unsigned short	23,518
+typedef	int	size_t;42,952
+typedef	long	swblk_t;41,930
+typedef	int	time_t;43,972
+
+h/tftp.h,0
+
+h/time.h,79
+#define	timerclear(33,899
+#define	timercmp(30,755
+#define	timerisset(29,696
+
+h/token.h,16
+#define 14,212
+
+h/trap.h,0
+
+h/types.h,102
+#define mem_alloc(20,270
+#define mem_alloc(26,410
+#define mem_free(21,309
+#define mem_free(27,460
+
+h/udp.h,0
+
+h/video.h,0
+
+sys/banner.c,76
+banner(24,408
+display_border(131,4125
+help(86,2359
+menu_string(147,4398
+
+sys/boot.c,93
+boot(94,1724
+gethex(250,5598
+nullsys(289,6189
+puthex(277,6017
+#define	skipblank(92,1671
+
+sys/busyio.c,85
+getchar(58,1168
+mayget(72,1377
+mayput(29,524
+putchar(17,286
+remote_msg(116,2696
+
+sys/commands.c,188
+boot_me(964,28289
+dobreak(172,5216
+eeprom_update(1007,29042
+map_mainmem(992,28739
+menutests(1072,31627
+monitor(225,6696
+openreg(157,4851
+queryval(75,2516
+vector_default(978,28514
+
+sys/common.c,68
+bcopy(45,1302
+bzero(35,1150
+chklabel(55,1444
+isspinning(85,2176
+
+sys/expand.c,17
+fexpand(61,2239
+
+sys/finit.c,14
+finit(15,329
+
+sys/fwritestr.c,402
+#define CTRL(25,584
+blinkscreen(261,6090
+cursorcomp(243,5725
+delchar(532,13212
+delline(500,12309
+drawchr(382,9242
+fwritechar(28,617
+fwritechar(680,17645
+fwritestr(36,674
+fwritestr(686,17691
+inschar(574,14342
+insline(514,12678
+invertwholescreen(478,11850
+pos(227,5523
+rect_enable(429,10730
+rectcopy(284,6629
+rectcopy(332,7924
+rectfill(458,11474
+screencomp(253,5989
+sunlogo(648,17035
+
+sys/gallmash.c,0
+
+sys/getkey.c,57
+abortfix(69,1796
+int getkey 88,2227
+initgetkey(42,990
+
+sys/getline.c,103
+getline(17,258
+getnum(88,1660
+getone(69,1399
+ishex(112,2060
+peekchar(80,1589
+skipblanks(102,1928
+
+sys/idprom.c,15
+idprom(24,624
+
+sys/inet.c,231
+arp(154,3982
+comarp(197,5110
+ether_print(337,8693
+in_lnaof(286,7721
+inet_init(58,1254
+inet_print(322,8371
+ip_input(106,2564
+ip_output(74,1574
+ipcksum(303,8011
+#define millitime(22,430
+myetheraddr(40,880
+revarp(178,4632
+
+sys/keypress.c,17
+keypress(31,717
+
+sys/ktab.s2.c,18
+#define	c(26,745
+
+sys/mapmem.c,36
+mapmem(120,3307
+setupmap(228,7133
+
+sys/mem_grab.c,22
+prom_mem_grab(28,887
+
+sys/monalloc.c,58
+devalloc(117,2543
+resalloc(34,671
+reset_alloc(151,3268
+
+sys/printf.c,48
+printf(13,222
+printhex(87,1548
+printn(57,838
+
+sys/reset.c,108
+banner_test(334,10511
+close_window(438,13667
+monreset(91,2897
+open_window(415,12976
+test_mem(373,11543
+
+sys/tftp.c,86
+etheropen(67,1539
+etherstrategy(77,1749
+#define millitime(39,705
+tftpload(85,1889
+
+sys/usecmd.c,78
+#define B(54,1623
+findspeed(377,10190
+reset_uart(142,4711
+usecmd(193,6015
+
+sys/xxboot.c,84
+devclose(91,1823
+devopen(49,909
+tftpboot(131,2692
+ttboot(98,1912
+xxboot(21,347
+
+sys/xxprobe.c,16
+xxprobe(22,443

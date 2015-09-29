@@ -1,0 +1,9 @@
+Ulog_ClearLogins.c:
+Ulog_GetAllLogins.c:
+Ulog_LastLogin.c:
+Ulog_RecordLogin.c:
+Ulog_RecordLogout.c:
+bzero value declared inconsistently	llib-lc:bzero.c 2(58)  ::  Ulog_ClearLogins.c 2(70)
+syslog: variable # of args.	Ulog_ClearLogins.c 2(54)  ::  Ulog_LastLogin.c 2(71)
+bzero value declared inconsistently	llib-lc:bzero.c 2(58)  ::  Ulog_RecordLogin.c 2(92)
+bzero value declared inconsistently	llib-lc:bzero.c 2(58)  ::  Ulog_RecordLogout.c 2(79)

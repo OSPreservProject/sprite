@@ -1,0 +1,604 @@
+head     1.17;
+branch   ;
+access   ;
+symbols  srv030:1.17 srv028:1.17 srv027:1.17 srv026:1.17 srv024:1.17 srv022:1.17 srv021:1.17 srv019:1.17 srv018:1.17 srv016:1.17 srv015:1.17 srv014:1.17 srv012:1.17 srv011:1.17 srv010:1.17 srv008:1.16 srv007:1.16 srv006:1.16 srv005:1.16 srv004:1.16 srv003:1.15 srv002:1.15 srv001:1.14;
+locks    ; strict;
+comment  @ * @;
+
+
+1.17
+date     92.06.04.14.10.55;  author kupfer;  state Exp;
+branches ;
+next     1.16;
+
+1.16
+date     92.05.08.12.53.48;  author kupfer;  state Exp;
+branches ;
+next     1.15;
+
+1.15
+date     92.04.23.23.38.37;  author kupfer;  state Exp;
+branches ;
+next     1.14;
+
+1.14
+date     92.04.16.11.21.06;  author kupfer;  state Exp;
+branches ;
+next     1.13;
+
+1.13
+date     92.02.27.15.54.09;  author kupfer;  state Exp;
+branches ;
+next     1.12;
+
+1.12
+date     92.01.21.17.07.07;  author kupfer;  state Exp;
+branches ;
+next     1.11;
+
+1.11
+date     91.12.12.20.52.57;  author kupfer;  state Exp;
+branches ;
+next     1.10;
+
+1.10
+date     91.12.01.22.00.35;  author kupfer;  state Exp;
+branches ;
+next     1.9;
+
+1.9
+date     91.11.14.10.03.17;  author kupfer;  state Exp;
+branches ;
+next     1.8;
+
+1.8
+date     91.10.18.18.27.37;  author kupfer;  state Exp;
+branches ;
+next     1.7;
+
+1.7
+date     91.10.08.17.30.40;  author kupfer;  state Exp;
+branches ;
+next     1.6;
+
+1.6
+date     91.10.04.11.37.53;  author kupfer;  state Exp;
+branches ;
+next     1.5;
+
+1.5
+date     91.09.23.14.20.09;  author kupfer;  state Exp;
+branches ;
+next     1.4;
+
+1.4
+date     91.09.02.22.56.09;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     91.09.01.21.02.57;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     91.08.19.12.17.26;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     91.08.15.15.51.51;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@External declarations for Sprite VM module.
+@
+
+
+1.17
+log
+@Support for sticky segments.
+@
+text
+@/*
+ * vm.h --
+ *
+ *	Public declarations for Sprite VM module.
+ *
+ * Copyright 1991 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that this copyright
+ * notice appears in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vm.h,v 1.16 92/05/08 12:53:48 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+ */
+
+#ifndef _VM
+#define _VM
+
+#include <sprite.h>
+#include <ckalloc.h>
+#include <mach.h>
+
+#include <fs.h>
+#include <vmTypes.h>
+#include <proc.h>
+
+extern int vm_MaxPendingRequests;
+extern Boolean vm_StickySegments;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_ByteToPage --
+ *
+ *	Convert a byte address or offset to a page number.
+ *	XXX This should probably be VmMach_ByteToPage, and it should 
+ *	probably be defined to do a right shift, using the constants 
+ *	from <mach/machine/vm_param.h>.
+ *
+ * Results:
+ *	Returns the given number, divided by the page size.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#define Vm_ByteToPage(num)	((num)/vm_page_size)
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_PageToByte --
+ *
+ *	Convert a page number to a byte address or offset.
+ *	XXX This should probably be VmMach_ByteToPage, and it should 
+ *	probably be defined to do a left shift, using the constants 
+ *	from <mach/machine/vm_param.h>.
+ *
+ * Results:
+ *	Returns the given number, multiplied by the page size.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#define Vm_PageToByte(num)	((num)*vm_page_size)
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_RoundPage --
+ *
+ *	Round an address to the next page boundary.
+ *
+ * Results:
+ *	Returns the given address, rounded up to the start of a page 
+ *	boundary.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#define Vm_RoundPage(addr)	((Address)round_page((vm_address_t)(addr)))
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Vm_TruncPage --
+ *
+ *	Return the starting address of the page that contains the 
+ *	given address.
+ *
+ * Results:
+ *	Returns the given address, truncated to the start of a page 
+ *	boundary.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#define Vm_TruncPage(addr)	((Address)trunc_page((vm_address_t)(addr)))
+
+
+/* 
+ * Aliases for compatibility with old code.
+ */
+
+#define Vm_BootAlloc(howMuch)	ckalloc(howMuch)
+#define Vm_RawAlloc(howMuch)	ckalloc(howMuch)
+
+/*
+ * Maximum number of processes to handle paging requests.  This information
+ * is needed in order to configure the correct number of Proc_ServerProcs.
+ * Native Sprite allows for 3 page-out procs.  We'll allow for the same 
+ * number of page-in procs, plus another 3 procs for handling miscellaneous 
+ * paging requests.
+ */
+#define VM_MAX_PAGE_OUT_PROCS	9
+
+
+#ifdef SPRITED
+
+extern	void		Vm_AddHeapInfo _ARGS_((Vm_Segment *segPtr,
+				Fs_Stream *initFilePtr, char *initFileName,
+				Proc_ObjInfo *execInfoPtr));
+extern	void		Vm_CleanupSharedFile _ARGS_((
+				Proc_ControlBlock *procPtr, 
+				Fs_Stream *streamPtr));
+extern	void		Vm_CleanupTask _ARGS_((Proc_LockedPCB *procPtr));
+extern	ReturnStatus	Vm_Cmd _ARGS_((int command, vm_size_t length,
+				       Address arg));
+extern	ReturnStatus	Vm_CreateVA _ARGS_((Address address,
+				vm_size_t bytes));
+extern	ReturnStatus	Vm_CopyIn _ARGS_((int numBytes,
+				Address sourcePtr, Address destPtr));
+extern	ReturnStatus	Vm_CopyOut _ARGS_((int numBytes,
+				Address sourcePtr, Address destPtr));
+extern	ReturnStatus	Vm_CopyInProc _ARGS_((int numBytes,
+				Proc_LockedPCB *fromProcPtr, 
+				Address fromAddr, Address toAddr,
+				Boolean toKernel));
+extern	ReturnStatus	Vm_CopyOutProc _ARGS_((int numBytes, Address fromAddr,
+				Boolean fromKernel,
+				Proc_LockedPCB *toProcPtr,
+				Address toAddr));
+extern	void		Vm_EnqueueRequest _ARGS_((Vm_Segment *segPtr,
+				Sys_MsgBuffer *requestPtr,
+				Sys_MsgBuffer *replyPtr));
+extern	ReturnStatus	Vm_ExtendStack _ARGS_((Proc_LockedPCB *procPtr,
+				Address address));
+extern	void		Vm_FileChanged _ARGS_((Vm_Segment **segPtrPtr));
+extern	ReturnStatus	Vm_Fork _ARGS_ ((Proc_ControlBlock *procPtr,
+				Proc_ControlBlock *parentProcPtr));
+extern	void		Vm_FsCacheSize _ARGS_((Address *startAddrPtr,
+				Address *endAddrPtr));
+extern	ReturnStatus	Vm_GetCodeSegment _ARGS_((Fs_Stream *filePtr,
+				char *fileName, Proc_ObjInfo *execInfoPtr,
+				Boolean dontCreate, Vm_Segment **segPtrPtr));
+extern	int		Vm_GetPageSize _ARGS_((void));
+extern	int		Vm_GetRefTime _ARGS_((void));
+extern	ReturnStatus	Vm_GetSharedSegment _ARGS_((char *fileName,
+				Vm_Segment **segmentPtrPtr));
+extern	ReturnStatus	Vm_GetSwapSegment _ARGS_((Vm_SegmentType type,
+				vm_size_t size, Vm_Segment **segPtrPtr));
+extern	void		Vm_Init _ARGS_((void));
+extern	int		Vm_MapBlock _ARGS_((Address addr));
+extern	kern_return_t	Vm_MapFile _ARGS_((Proc_ControlBlock *procPtr,
+				char *fileName, boolean_t readOnly,
+				off_t offset, vm_size_t length, 
+				ReturnStatus *statusPtr, 
+				Address *startAddrPtr));
+extern	kern_return_t	Vm_MapSegment _ARGS_((Proc_LockedPCB *procPtr,
+				Vm_Segment *segPtr, boolean_t readOnly,
+				boolean_t anywhere, vm_offset_t offset,
+				vm_size_t length, Address *startAddrPtr,
+				ReturnStatus *statusPtr));
+extern	void		Vm_MakeAccessible _ARGS_((int accessType, int numBytes,
+				Address startAddr, int *retBytesPtr,
+				Address *retAddrPtr));
+extern	void		Vm_MakeUnaccessible _ARGS_((Address addr,
+				int numBytes));
+extern	void		Vm_NewProcess _ARGS_((Vm_TaskInfo *vmPtr));
+extern	Vm_Segment	*Vm_PortToSegment _ARGS_((mach_port_t port));
+extern	void		Vm_Recovery _ARGS_((void));
+extern	void		Vm_ReleaseMappedSegments _ARGS_((
+				Proc_LockedPCB *procPtr));
+extern	void		Vm_SegmentAddRef _ARGS_((Vm_Segment *segmentPtr));
+extern	char		*Vm_SegmentName _ARGS_((Vm_Segment *segPtr));
+extern	void		Vm_SegmentRelease _ARGS_((Vm_Segment *segmentPtr));
+extern	int		Vm_Shutdown _ARGS_((void));
+extern	ReturnStatus	Vm_StringNCopy _ARGS_((int numBytes,
+				Address sourcePtr, Address destPtr,
+				int *bytesCopiedPtr));
+extern	void		Vm_SyncAll _ARGS_((void));
+extern	int		Vm_UnmapBlock _ARGS_((Address addr));
+
+#endif /* SPRITED */
+
+#endif /* _VM */
+@
+
+
+1.16
+log
+@Don't keep the PCB locked so long in Proc_NewProc.
+@
+text
+@d15 1
+a15 1
+ * $Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vm.h,v 1.15 92/04/23 23:38:37 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d30 1
+@
+
+
+1.15
+log
+@More robust definition of Vm_TruncPage and Vm_RoundPage.
+@
+text
+@d15 1
+a15 1
+ * $Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vm.h,v 1.14 92/04/16 11:21:06 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d166 2
+a167 2
+extern	ReturnStatus	Vm_Fork _ARGS_ ((Proc_LockedPCB *procPtr,
+				Proc_LockedPCB *parentProcPtr));
+@
+
+
+1.14
+log
+@Only declare functions when compiling the server.  Add a length parameter
+to Vm_Cmd.
+@
+text
+@d15 1
+a15 1
+ * $Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vm.h,v 1.13 92/02/27 15:54:09 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d93 1
+a93 1
+#define Vm_RoundPage(addr)	((Address)round_page(addr))
+d115 1
+a115 1
+#define Vm_TruncPage(addr)	((Address)trunc_page(addr))
+@
+
+
+1.13
+log
+@Add Vm_Cmd.
+@
+text
+@d15 1
+a15 1
+ * $Header: /user5/kupfer/spriteserver/src/sprited/vm/RCS/vm.h,v 1.12 92/01/21 17:07:07 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d135 2
+d144 2
+a145 1
+extern	ReturnStatus	Vm_Cmd _ARGS_((int command, Address arg));
+d210 2
+@
+
+
+1.12
+log
+@Change VM code to use Sprite FS instead of UNIX.  Limit the length of
+a segment's request queue (vm_MaxPendingRequests).  Add Vm_SyncAll.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vm.h,v 1.11 91/12/12 20:52:57 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d142 1
+@
+
+
+1.11
+log
+@Add Vm_CreateVA.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vm.h,v 1.10 91/12/01 22:00:35 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d25 1
+d29 2
+d136 1
+a136 1
+				TempFs_Stream *initFilePtr, char *initFileName,
+d138 3
+d166 1
+a166 1
+extern	ReturnStatus	Vm_GetCodeSegment _ARGS_((TempFs_Stream *filePtr,
+d204 1
+@
+
+
+1.10
+log
+@Snapshot.  FS appears to work.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vm.h,v 1.9 91/11/14 10:03:17 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d136 2
+@
+
+
+1.9
+log
+@Snapshot. net, rpc, recov modules added.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vm.h,v 1.8 91/10/18 18:27:37 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d153 1
+d156 2
+d161 2
+d168 1
+d186 1
+d196 1
+@
+
+
+1.8
+log
+@Use ckalloc instead of malloc.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vm.h,v 1.7 91/10/08 17:30:40 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d161 1
+a161 1
+				int size, Vm_Segment **segPtrPtr));
+d164 3
+a166 2
+				char *fileName, boolean_t readOnly, int offset,
+				int length, ReturnStatus *statusPtr,
+d171 1
+a171 1
+				int length, Address *startAddrPtr,
+@
+
+
+1.7
+log
+@Export Vm_MapFile (rather than rename to private name).
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vm.h,v 1.6 91/10/04 11:37:53 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d22 1
+d119 2
+a120 2
+#define Vm_BootAlloc(howMuch)	malloc(howMuch)
+#define Vm_RawAlloc(howMuch)	malloc(howMuch)
+@
+
+
+1.6
+log
+@Snapshot.  fork/exec work.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vm.h,v 1.5 91/09/23 14:20:09 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d162 4
+@
+
+
+1.5
+log
+@Snapshot.  Server is multithreaded internally.
+@
+text
+@d15 1
+a15 1
+ * $Header: /r3/kupfer/spriteserver/src/sprited/vm/RCS/vm.h,v 1.4 91/09/02 22:56:09 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d53 22
+d134 1
+a134 1
+extern	void		Vm_CleanupTask _ARGS_((Vm_TaskInfo *vmInfoPtr));
+d152 2
+d174 2
+@
+
+
+1.4
+log
+@Changes for module-based source organization.
+@
+text
+@d15 1
+a15 1
+ * $Header: /user6/kupfer/spriteserver/src/sprited/vm/RCS/vm.h,v 1.3 91/09/01 21:02:57 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+a26 3
+extern int vm_numSegments;		/* XXX for single-thread */
+					/* support */
+
+d92 20
+a111 4
+
+extern void		Vm_AddHeapInfo _ARGS_((Vm_Segment *segPtr,
+		TempFs_Stream *initFilePtr, char *initFileName,
+		Proc_ObjInfo *execInfoPtr));
+d113 17
+a129 2
+extern	ReturnStatus	Vm_ExtendStack _ARGS_((Proc_ControlBlock *procPtr,
+		Address address));
+d131 2
+a132 2
+		char *fileName, Proc_ObjInfo *execInfoPtr,
+		Vm_Segment **segPtrPtr));
+d134 1
+a134 1
+		Vm_Segment **segmentPtrPtr));
+d136 1
+a136 1
+		int size, Vm_Segment **segPtrPtr));
+d138 10
+a147 4
+extern	kern_return_t	Vm_MapSegment _ARGS_((Proc_ControlBlock *procPtr,
+		Vm_Segment *segPtr, boolean_t readOnly, boolean_t anywhere,
+		vm_offset_t offset, int length, Address *startAddrPtr,
+		ReturnStatus *statusPtr));
+d151 1
+d153 4
+@
+
+
+1.3
+log
+@Snapshot.  Full VM support.
+@
+text
+@d15 1
+a15 1
+ * $Header: /user6/kupfer/spriteserver/src/printfd/RCS/vm.h,v 1.2 91/08/19 12:17:26 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d23 3
+a25 2
+#include "vmTypes.h"
+#include "proc.h"
+@
+
+
+1.2
+log
+@Snapshot: Code reorg. and locking for processes & segments.
+@
+text
+@d15 1
+a15 1
+ * $Header: /user6/kupfer/spriteserver/src/printfd/RCS/vm.h,v 1.1 91/08/15 15:51:51 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)
+d26 2
+a27 1
+extern int vm_numSegments;		/* XXX for single-thread support */
+d29 88
+a116 5
+extern void Vm_CleanupTask _ARGS_((Vm_TaskInfo *vmInfoPtr));
+extern void Vm_Init _ARGS_((void));
+extern void Vm_NewProcess _ARGS_((Vm_TaskInfo *vmPtr));
+extern Vm_Segment *Vm_PortToSegment _ARGS_((mach_port_t port));
+extern void Vm_SegmentRelease _ARGS_((Vm_Segment *segmentPtr));
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d4 1
+a4 1
+ *	Declarations for Sprite external pager.
+d15 1
+a15 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.7 91/02/09 13:24:52 ouster Exp $ SPRITE (Berkeley)
+d21 2
+d31 2
+@

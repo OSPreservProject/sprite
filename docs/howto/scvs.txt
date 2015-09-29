@@ -1,0 +1,462 @@
+
+
+
+
+
+
+
+                      SSCCVVSS CChheeaatt SShheeeett
+
+                      November 3, 1991
+
+
+     The SCVS Cheat Sheet explains some of the standard uses
+of  ssccvvss.   If  you want to do something that is not covered
+here you should refer to the man pages for  ssccvvss,  ccvvss,  and
+rrccss.   SSccvvss  manages  source directory trees called modules.
+SSccvvss modules for the kernel correspond to what we've  tradi-
+tionally  called  modules,  e.g. net, timer, mach, etc.  The
+"master" copy of the modules is stored  in  the  repository,
+which   is   a   directory  tree  of  RCS  files  rooted  at
+/sprite/src/kernel/Cvsroot.  In order to modify  the  source
+for a module you must first get your own copy of the module.
+Make your changes in your copy, and when you  are  satisfied
+with  them  commit  your  changes  to  the repository.  Your
+changes are not applied to the repository until  you  commit
+them,  at which time they become the "latest" version of the
+sources.  Throughout this cheat sheet the term "latest  ver-
+sion"  refers  to  the current version of the sources in the
+repository.
+
+
+HHooww ddoo II ggeett aa ccooppyy ooff aa mmoodduullee??
+
+     Copies of kernel modules are usually kept  in  your
+     kernel                build               directory
+     (/sprite/src/kernel/username))..  IInn  tthhiiss  ddiirreeccttoorryy
+     ttyyppee  ssccvvss ccoo module..  AA ssuubbddiirreeccttoorryy ccaalllleedd module
+     wwiillll bbee ccrreeaatteedd,, aanndd iitt wwiillll bbee ppooppuullaatteedd wwiitthh  tthhee
+     ccuurrrreenntt  vveerrssiioonn  ooff  tthhee  mmoodduullee.. YYoouu wwiillll bbee ttoolldd
+     aabboouutt ootthheerr uusseerrss tthhaatt hhaavvee aa ccooppyy  ooff  tthhee  mmoodduullee
+     cchheecckkeedd  oouutt,,  iinncclluuddiinngg aannyy ootthheerr ccooppiieess yyoouu mmiigghhtt
+     hhaavvee..  YYoouu mmaayy wwaanntt ttoo cchheecckk wwiitthh tthheessee  ppeeooppllee  ttoo
+     mmaakkee ssuurree tthhaatt yyoouurr cchhaannggeess wwiillll bbee ccoommppaattiibbllee..  IIff
+     yyoouu ddoonn''tt iinntteenndd ttoo ccoommmmiitt yyoouurr cchhaannggeess ttoo tthhee  rree--
+     ppoossiittoorryy  tthheenn yyoouu sshhoouulldd uussee tthhee --ii ooppttiioonn ssoo tthhaatt
+     ootthheerr uusseerrss aarree nnoott ttoolldd aabboouutt yyoouurr ccooppyy..
+
+     AAfftteerr tthhee cchheecckkoouutt iiss ccoommpplleettee yyoouu nneeeedd ttoo rruunn mmkkmmff
+     iinn yyoouurr ccooppyy ttoo ccrreeaattee aa MMaakkeeffiillee,, ddeeppeennddeenncciieess..mmkk,,
+     eettcc..
+
+     IItt iiss ookk ttoo rree--cchheecckkoouutt aa mmoodduullee iiff yyoouu cchheecckkeedd  iitt
+     oouutt bbeeffoorree aanndd ssttiillll hhaavvee tthhee ssoouurrccee ttrreeee..
+
+
+
+
+
+
+
+
+
+                             11
+
+
+
+
+
+
+
+
+
+
+
+HHooww ddoo II ggeett iinnffoorrmmaattiioonn aabboouutt tthhee ssttaattuuss ooff mmyy ccooppyy  ooff
+     aa mmoodduullee??
+
+     Once you have a copy of a module you may want  some
+     information  about  the  files  in  your copy, like
+     which ones you've modified and which ones are  out-
+     of-date  with  the  latest  version. ssccvvss iinnffoo will
+     tell you what you want to know.   Here's  what  its
+     output means:
+
+         UU file                                                                                                                    Your copy of file needs to be updated.
+         MM file                                                                                                                             You've modified file.
+         CC file                                                                                                               You've modified file, and it is also out-of-date.
+         AA file                                                                                                                              You've added file.
+         RR file                                                                                                                             You've removed file.
+         DD file                                                                                                                  Somebody deleted file from the repository.
+
+
+
+
+
+WWhhaatt iiff II wwaanntt mmoorree iinnffoorrmmaattiioonn aabboouutt mmyy ccooppyy ooff aa ffiillee??
+
+     The command ssccvvss ssttaattuuss file will give you RCS  in-
+     formation about the your copy of a file and the la-
+     test version of the file.  Here is some sample out-
+     put for the file timerInt.h.
+
+         File:                                                                                                                                   timerInt.h
+         From:                                                                                                                                       9.8                                                                                                                        Fri Sep 13 15:04:52 1991 timerInt.h
+         RCS:                                                                                                                                        9.9                                                                                                               /sprite/src/kernel/Cvsroot/kernel/timer/timerInt.h,v
+
+
+     The  From:  line  tells  you  that  your  copy   of
+     timerInt.h  came from RCS version 9.8 of that file,
+     and that you created the copy on Friday,  September
+     13, 1991 at 15:04:52.  The RCS: line tells you that
+     the latest RCS version of the file is 9.9,  and  it
+     gives  you  the full path to the RCS file, not that
+     you would ever need it.
+
+
+
+
+HHooww ddoo II ggeett tthhee RRCCSS lloogg ffoorr mmyy ccooppyy ooff aa ffiillee??
+
+     SSccvvss lloogg file will print out the RCS  log  for  the
+     file.
+
+
+
+
+
+
+                             22
+
+
+
+
+
+
+
+
+
+
+
+HHooww ddoo II rruunn ddiiffff oonn mmyy ccooppyy ooff aa ffiillee??
+
+     SSccvvss ddiiffff file will do a rrccssddiiffff between your  copy
+     of  a  file and the version from which it came.  If
+     you want to do a diff between your version and  the
+     latest  version  you  should  do ssccvvss ddiiffff --RR file.
+     You can also do diffs between various  versions  of
+     the file by specifying the standard --rr options.
+
+
+
+
+HHooww ddoo II bbrriinngg mmyy ccooppyy uupp--ttoo--ddaattee wwiitthh tthhee  llaatteesstt  vveerr--
+     ssiioonn??
+
+     If your copy of the sources is out-of-date with the
+     latest  version in the repository you can update it
+     using ssccvvss uuppddaattee [modules|subdirs|files].  If  you
+     don't specify any files it will update all files in
+     the current directory and its subdirectories,  oth-
+     erwise  it  will only update the files or subdirec-
+     tories you listed.  If ssccvvss uuppddaattee  discovers  that
+     you  have modified a file, and the copy of the file
+     in the repository has changed  also,  it  will  use
+     rrccssmmeerrggee  to  try  and  merge the changes.  If this
+     happens you will want to look at the file  to  make
+     sure  the changes were compatible.  The output from
+     ssccvvss uuppddaattee is similar to that of ssccvvss iinnffoo:
+
+         UU file                                                                                                                        Your copy of file was updated.
+         MM file                                                                                                            Your changes to file were merged with the new version.
+         CC file                                                                                                          Your changes to file were merged, but there was a conflict.
+         AA file                                                                                                                              You've added file.
+         RR file                                                                                                                             You've removed file.
+         DD file                                                                                                                      file was deleted from your sources.
+
+
+     An "update" target has been added to  the  Makefile
+     for  kernel  modules  so that ppmmaakkee uuppddaattee will run
+     ssccvvss uuppddaattee.   This  is  useful  for  updating  all
+     modules in /sprite/src/kernel..
+
+
+
+
+WWhhoo eellssee hhaass aa ccooppyy ooff tthhee ssaammee mmoodduullee??
+
+     When you check out a module you will be told  about
+     other  users  who  also  have a copy.  You can also
+     find out by doing ssccvvss wwhhoo [modules].
+
+
+
+
+                             33
+
+
+
+
+
+
+
+
+
+
+
+WWhhaatt iiff II jjuusstt wwaanntt ttoo llooookk aatt tthhee ssoouurrcceess ffoorr aa mmoodduullee??
+
+     Copies  of  all  kernel   modules   are   kept   in
+     /sprite/src/kernel..   TThheessee ccooppiieess aarree rreeaadd--oonnllyy ssoo
+     ddoonn''tt ttrryy ttoo mmooddiiffyy tthheemm.. TThheessee ccooppiieess ccaann bbee  uusseedd
+     ffoorr  bbrroowwssiinngg,,  aass  wweellll aass ffoorr bbuuiillddiinngg tthhee oobbjjeecctt
+     ffiilleess tthhaatt aarree uusseedd ttoo pprroodduuccee ooffffiicciiaall kkeerrnneellss..
+
+
+
+
+HHooww ddoo II aadddd aa nneeww ffiillee ttoo aa mmoodduullee??
+
+     SSccvvss only deals with files it knows about. If  ssccvvss
+     hasn't been told about a file it will be ignored by
+     any ssccvvss commands.  To  add  a  file  to  a  module
+     create  the  file  in your copy of the module, then
+     type ssccvvss aadddd file. The file must exist in order to
+     be  added.  The file will not be added to the repo-
+     sitory until you ccoommmmiitt your changes.
+
+
+
+
+HHooww ddoo II aadddd aa nneeww ssuubbddiirreeccttoorryy ttoo aa mmoodduullee??
+
+     Subdirectories are added using  ssccvvss  aadddd  in  your
+     copy  of  a module just like files, except that you
+     will be asked if you really want to  do  this.   If
+     the  subdirectory  contains  any files they must be
+     added individually (aadddd is not recursive).
+
+
+
+
+HHooww ddoo II rreemmoovvee aa ffiillee ffrroomm aa mmoodduullee??
+
+     In your copy of a module type ssccvvss rreemmoovvee  file  to
+     remove a file.  If the file still exists it will be
+     deleted.  The file will not be removed from the re-
+     pository until you ccoommmmiitt your changes.
+
+
+
+
+OOooppss.. II jjuusstt aacccciiddeennttllyy rreemmoovveedd aa ffiillee ffrroomm mmyy ccooppyy!!
+
+     If you haven't ccoommmmiittted your changes yet, you  can
+     retrieve  the  file  using  ssccvvss aadddd file.  It will
+     give you the version of  the  file  you  originally
+     checked out.
+
+
+
+                             44
+
+
+
+
+
+
+
+
+
+
+
+HHooww ddoo II aadddd aa nneeww mmoodduullee ttoo tthhee rreeppoossiittoorryy??
+
+     Don't try this at home.  Send mail to jhh@sprite.
+
+
+
+
+HHooww ddoo II uunnddoo mmyy cchhaannggeess ttoo aa ffiillee??
+
+     Currently the best way to do this is  to  use  ssccvvss
+     rreemmoovvee  file,  followed by ssccvvss aadddd file. This will
+     give you the version of  the  file  you  originally
+     checked out.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                             55
+
+
+
+
+
+
+
+
+
+
+
+HHooww ddoo II ccoommmmiitt mmyy cchhaannggeess ttoo aa mmoodduullee??
+
+     After you have made your changes to  a  module  you
+     need to commit them into the repository.  There are
+     several steps in committing your changes:
+
+ (1)   Verify that your copy is up-to-date and it  works
+       properly.
+
+ (2)   Lock the module(s)  using  ssccvvss  lloocckk  [modules].
+       Locking  the  modules  prevents  other users from
+       committing changes at the same time.
+
+ (3)   Use ssccvvss ccoommmmiitt [files] (ccoommmmiitt is usually abbre-
+       viated  as  ccii) to commit your changes. Each ssccvvss
+       ccii command allows you to specify one log  message
+       (either using --mm or by bringing up an editor). If
+       you want all the files you modified to  have  the
+       same  message  use  ssccvvss  ccii without any options,
+       otherwise you must run ssccvvss ccii once for each mes-
+       sage and corresponding list of files.
+
+ (4)   As you  commit  your  changes  the  copy  of  the
+       sources  in /sprite/src/kernel/module will be up-
+       dated.  These copies are used to  build  kernels,
+       so you need to recompile any source files you may
+       have    changed.     To    do    this    cd    to
+       /sprite/src/kernel/module.  Run mmkkmmff, followed by
+       ppmmaakkee.  Make sure the resulting object files pro-
+       duce  a  working kernel.  Then run ppmmaakkee iinnssttaallll.
+       Be sure to compile and install  for  all  machine
+       types.  If the sources don't build a working ker-
+       nel then you may have forgotten to aadddd or  rreemmoovvee
+       a file.
+
+ (5)   Unlock the modules using ssccvvss  uunnlloocckk  [modules].
+       Don't forget to do this.
+
+
+
+
+WWhhaatt ddoo II ddoo wwhheenn II''mm ddoonnee wwiitthh mmyy ccooppyy??
+
+     ssccvvss ddoonnee lets ssccvvss know that  you  are  done  with
+     your  copy,  so  that other users will no longer be
+     told about it.  The  --dd  option  will  delete  your
+     copy.  Use the --dd option with care.  If you deleted
+     your copy using rrmm without running ssccvvss ddoonnee  first
+     then  ssccvvss  will  think you still have a copy.  You
+     set it straight  with  ssccvvss  ddoonnee  pathname,  where
+     pathname  is the full pathname of the copy you used
+     to have.
+
+
+                             66
+
+
+
+
+
+
+
+
+
+
+
+HHooww ddoo II uunnlloocckk aa lloocckkeedd mmoodduullee??
+
+     If ssvvccss is killed unexpectedly it will leave  locks
+     on  any  modules it was processing at the time.  If
+     you have an unwanted lock on a module you  can  re-
+     move it with ssccvvss uunnlloocckk [modules].  If you want to
+     remove all locks on a module, even those  owned  by
+     other  people,  you  can  do so with ssccvvss uunnlloocckk --aa
+     [modules].
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                             77
+
+
+

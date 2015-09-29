@@ -1,0 +1,787 @@
+head     1.4;
+branch   ;
+access   ;
+symbols  srv030:1.4 srv028:1.4 srv027:1.4 srv026:1.4 srv024:1.4 srv022:1.4 srv021:1.4 srv019:1.4 srv018:1.4 srv016:1.4 srv015:1.4 srv014:1.4 srv012:1.4 srv011:1.4 srv010:1.4 srv008:1.4 srv007:1.4 srv006:1.4 srv005:1.4 srv004:1.4 srv003:1.4 srv002:1.4 srv001:1.4;
+locks    ; strict;
+comment  @ * @;
+
+
+1.4
+date     92.04.16.11.36.37;  author kupfer;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     92.04.07.13.41.21;  author kupfer;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     92.03.12.17.36.59;  author kupfer;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     92.03.04.14.36.15;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.4
+log
+@Fix includes.
+@
+text
+@/* 
+ * procTimer.c --
+ *
+ *	Routines to manipulate the interval timers of a process.
+ *
+ * Copyright 1987, 1988, 1992 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/proc/RCS/procTimer.c,v 1.3 92/04/07 13:41:21 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+#endif /* not lint */
+
+
+#include <sprite.h>
+#include <bstring.h>
+#include <ckalloc.h>
+#include <stdlib.h>
+
+#include <proc.h>
+#include <procInt.h>
+#include <sys.h>
+#include <sig.h>
+#include <sync.h>
+#include <timer.h>
+
+/*
+ * Information about the state of an interval timer for a process.
+ * There are several types of interval timers and the info for all of
+ * them are kept in an array pointed to by the PCB entry.
+ */
+typedef struct ProcIntTimerInfo {
+    Timer_Ticks	expire;		/* When the timer is to expire. */
+    Timer_Ticks	interval;	/* Amount of time between expirations.
+				 * If zero, then the timer is not restarted 
+				 * after the first expiration. */
+    ClientData	token;		/* Token returned by Proc_CallFuncAbsTime. 
+				 * Used by the signal-sending func to check if
+				 * a timer has been cancelled. */
+} ProcIntTimerInfo;
+
+
+/*
+ * Monitor lock to serialize access to timer callback queue elements.
+ * This could be changed to a per-process monitor lock if contention is a
+ * problem.  To avoid deadlock, routines that lock a PCB should lock the
+ * PCB before acquiring the monitor lock.
+ */
+static Sync_Lock	procTimerLock = Sync_LockInitStatic("procTimerLock");
+#define	LOCKPTR &procTimerLock
+
+static ReturnStatus	GetCurrentTimer _ARGS_((Proc_LockedPCB *procPtr,
+				int timerType,
+				Proc_TimerInterval *timerBufPtr));
+static void		SendTimerSigFunc _ARGS_((ClientData data,
+				Proc_CallInfo *infoPtr));
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_GetIntervalTimer --
+ *
+ *	Retrieves the current value of the interval timer. If the timer
+ *	is not set, zero time values are returned.
+ *	
+ *
+ * Results:
+ *	SUCCESS			- the timer value was returned.
+ *	GEN_INVALID_ARG		- unknown timer type.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY ReturnStatus
+Proc_GetIntervalTimer(timerType, timerPtr)
+    int			timerType;	/* What type of timer: one of 
+					 * PROC_TIMER_REAL, PROC_TIMER_VIRTUAL,
+					 * PROC_TIMER_PROFILE. */
+    Proc_TimerInterval	*timerPtr;	/* Buffer to store the current value 
+					 * of the interval timer. */
+{
+    ReturnStatus status;
+    Proc_ControlBlock	*procPtr;
+
+    if (timerType < 0 || timerType > PROC_MAX_TIMER) {
+	return(GEN_INVALID_ARG);
+    }
+
+    procPtr = Proc_GetEffectiveProc();
+    if (procPtr == (Proc_ControlBlock *) NIL) {
+	panic("Proc_GetIntervalTime: current procPtr == NIL\n");
+	/*
+	 * Just in case someone tries to continue.
+	 */
+	return(FAILURE);
+    }
+
+    Proc_Lock(procPtr);
+    LOCK_MONITOR;
+    status = GetCurrentTimer(Proc_AssertLocked(procPtr), timerType, timerPtr);
+    UNLOCK_MONITOR;
+    Proc_Unlock(Proc_AssertLocked(procPtr));
+
+    return(status);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetCurrentTimer --
+ *
+ *	An internal routine to get the current value of an interval timer
+ *	and copy it to the user's address space.
+ *
+ *	Note: this routine assumes the process's proc table entry is locked.
+ *
+ * Results:
+ *	SUCCESS			- the timer value was returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static INTERNAL ReturnStatus
+GetCurrentTimer(procPtr, timerType, timerBufPtr)
+    Proc_LockedPCB	*procPtr;	/* Process to get the timer value 
+					 * from. */
+    int			timerType;	/* What type of timer: one of 
+					 * PROC_TIMER_REAL, PROC_TIMER_VIRTUAL,
+					 * PROC_TIMER_PROFILE. */
+    Proc_TimerInterval	*timerBufPtr;	/* Buffer to store the current value 
+					 * of the interval timer. */
+{
+    register ProcIntTimerInfo	*timerPtr = (ProcIntTimerInfo *) NIL;
+    Proc_TimerInterval	timer;
+    Boolean exists = FALSE;
+
+    if (procPtr->pcb.timerArray != (ProcIntTimerInfo  *) NIL) {
+	timerPtr = &procPtr->pcb.timerArray[timerType];
+	if (timerPtr->token != (ClientData) NIL) {
+	    exists = TRUE;
+	}
+    }
+    if (!exists) {
+
+	/*
+	 * No timer is scheduled. Just return zero values.
+	 */
+	timer.interval.seconds = 0;
+	timer.interval.microseconds = 0;
+	timer.curValue.seconds = 0;
+	timer.curValue.microseconds = 0;
+    } else {
+	Timer_Ticks temp;
+
+	Timer_TicksToTime(timerPtr->interval, &timer.interval);
+
+	/*
+	 * Get the amount of time remaining before the timer's expiration.
+	 */
+	Timer_GetCurrentTicks(&temp);
+	Timer_SubtractTicks(timerPtr->expire, temp, &temp);
+	Timer_TicksToTime(temp, &timer.curValue);
+    }
+
+    bcopy((Address) &timer, (Address) timerBufPtr, sizeof(timer));
+
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Proc_SetIntervalTimer --
+ *
+ *	Start or cancel an interval timer for a process.  This is the
+ *	system call version, which calls a more general routine.
+ *
+ * Results:
+ *	SUCCESS			- the timer was started or stopped.
+ *	GEN_INVALID_ARG		- unknown timer type or invalid time value.
+ *
+ * Side effects:
+ *	A CallFunc process might be scheduled. The process's PCB entry
+ *	is updated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY ReturnStatus
+Proc_SetIntervalTimer(timerType, newTimerPtr, oldTimerPtr)
+    int			timerType;	/* What type of timer: one of 
+					 * PROC_TIMER_REAL, PROC_TIMER_VIRTUAL,
+					 * PROC_TIMER_PROFILE. */
+    Proc_TimerInterval	*newTimerPtr;	/* Buffer that holds a new value for
+					 * the interval timer. */
+    Proc_TimerInterval	*oldTimerPtr;	/* Buffer to hold the former value of
+					 * the timer. */
+{
+    return(ProcChangeTimer(timerType, newTimerPtr, oldTimerPtr));
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcChangeTimer --
+ *
+ *	Start or cancel an interval timer for a process.
+ *
+ * Results:
+ *	SUCCESS			- the timer was started or stopped.
+ *	GEN_INVALID_ARG		- unknown timer type or invalid time value.
+ *
+ * Side effects:
+ *	A CallFunc process might be scheduled. The process's PCB entry
+ *	is updated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY ReturnStatus
+ProcChangeTimer(timerType, newTimerPtr, oldTimerPtr)
+    int			timerType;	/* What type of timer: one of 
+					 * PROC_TIMER_REAL, PROC_TIMER_VIRTUAL,
+					 * PROC_TIMER_PROFILE. */
+    Proc_TimerInterval	*newTimerPtr;	/* Buffer that holds a new value for
+					 * the interval timer. */
+    Proc_TimerInterval	*oldTimerPtr;	/* Buffer to hold the former value of
+					 * the timer. */
+{
+    register ProcIntTimerInfo	*timerPtr;
+    register Proc_ControlBlock	*procPtr;
+    Proc_TimerInterval	newTimer;
+
+    if (timerType < 0 || timerType > PROC_MAX_TIMER) {
+	return(GEN_INVALID_ARG);
+    }
+
+    procPtr = Proc_GetEffectiveProc();
+    if (procPtr == (Proc_ControlBlock *) NIL) {
+	panic("Proc_SetIntervalTime: procPtr == NIL\n");
+	return(FAILURE);
+    }
+
+    Proc_Lock(procPtr);
+    LOCK_MONITOR;
+
+    if (procPtr->timerArray == (ProcIntTimerInfo  *) NIL) {
+	int j;
+
+	/*
+	 * The table hasn't been initialized yet. Allocate enough entries
+	 * for all the timers. The memory won't be deallocated when the
+	 * process dies so it can be reused by the next process using the
+	 * PCB entry.
+	 */
+	procPtr->timerArray = (ProcIntTimerInfo  *)
+	    ckalloc(sizeof(ProcIntTimerInfo) * (PROC_MAX_TIMER +1));
+
+	for (j = 0; j <= PROC_MAX_TIMER; j++) {
+	    procPtr->timerArray[j].token = (ClientData) NIL;
+	}
+    }
+    timerPtr = &procPtr->timerArray[timerType];
+
+    /*
+     * Return the current value if the user wants it.
+     */
+    if (oldTimerPtr != USER_NIL) {
+	(void)GetCurrentTimer(Proc_AssertLocked(procPtr), timerType,
+			      oldTimerPtr);
+    }
+
+    /* 
+     * Copy in the new value.
+     */
+    bcopy((Address) newTimerPtr, (Address) &newTimer, sizeof(newTimer));
+
+    if ((newTimer.curValue.seconds == 0) && 
+	(newTimer.curValue.microseconds == 0)) {
+
+	/*
+	 * The user wants to cancel the timer.  Invalidate the token for
+	 * the existing expiration routine, and cancel the timer.
+	 */
+	if (timerPtr->token != (ClientData) NIL) {
+	    Proc_CancelCallFunc(timerPtr->token);
+	    timerPtr->token = (ClientData) NIL;
+	}
+    } else {
+	Timer_Ticks curTime;
+
+	/*
+	 * Make sure the times are valid and within the clock's resolution.
+	 */
+	if ((newTimer.curValue.seconds < 0) || 
+	    (newTimer.curValue.microseconds < 0) ||
+	    (newTimer.curValue.microseconds > ONE_SECOND) ||
+	    (newTimer.interval.seconds < 0) || 
+	    (newTimer.interval.microseconds < 0) ||
+	    (newTimer.interval.microseconds > ONE_SECOND)) {
+
+	    Proc_Unlock(Proc_AssertLocked(procPtr));
+	    UNLOCK_MONITOR;
+	    return(GEN_INVALID_ARG);
+	}
+	if ((newTimer.curValue.seconds == 0) && 
+	    (newTimer.curValue.microseconds < TIMER_CALLBACK_INTERVAL_APPROX)) {
+	    newTimer.curValue.microseconds = TIMER_CALLBACK_INTERVAL_APPROX;
+	}
+	if ((newTimer.interval.seconds == 0) && 
+	    (newTimer.interval.microseconds > 0) &&
+	    (newTimer.interval.microseconds < TIMER_CALLBACK_INTERVAL_APPROX)) {
+	    newTimer.interval.microseconds = TIMER_CALLBACK_INTERVAL_APPROX;
+	}
+
+	Timer_TimeToTicks(newTimer.interval, &timerPtr->interval);
+	Timer_TimeToTicks(newTimer.curValue, &timerPtr->expire);
+
+	Timer_GetCurrentTicks(&curTime);
+	Timer_AddTicks(curTime, timerPtr->expire, &timerPtr->expire);
+
+	/*
+	 * Setting the token implicitly cancels a previous expiration
+	 * routine's callback, but let's clear the old one to avoid
+	 * putting cruft in the timer queue.
+	 */
+	if (timerPtr->token != (ClientData) NIL) {
+	    Proc_CancelCallFunc(timerPtr->token);
+	}
+	timerPtr->token = Proc_CallFuncAbsTime(SendTimerSigFunc, 
+			(ClientData) procPtr->processID, timerPtr->expire);
+    }
+
+    Proc_Unlock(Proc_AssertLocked(procPtr));
+    UNLOCK_MONITOR;
+    return(SUCCESS);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SendTimerSigFunc --
+ *
+ *	Called when one of a process's interval timers has expired. This
+ *	routine sends a SIG_TIMER signal to process (the signal subcode is
+ *	the timer type, as defined in user/proc.h).
+ *
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	A signal is sent to the process. A call-func process may be 
+ *	scheduled to send a signal in the future.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ENTRY void
+SendTimerSigFunc(data, infoPtr)
+    ClientData		data;		/* Really the ID of the process that
+					 * should get the signal. */
+    Proc_CallInfo	*infoPtr;	/* Used to compare the token in the
+					 * PCB entry to make sure the signal
+					 * is wanted. */
+{
+    Proc_LockedPCB	*procPtr;
+    register ProcIntTimerInfo	*timerPtr;
+    int i;
+
+    /*
+     * If the process has died, the procPtr will be NIL. 
+     */
+    procPtr = Proc_LockPID((Proc_PID) data);
+    if (procPtr == (Proc_LockedPCB *) NIL) {
+	return;
+    }
+
+    LOCK_MONITOR;
+    
+    /*
+     * Scan all the timer state info to see which timer expired.
+     * If our token matches the one in the timer table entry, then
+     * send the signal (the subcode is the timer type). If there's no 
+     * match after scanning all the timers, then the user cancelled the
+     * a timer so there's nothing to do.
+     */
+    for (i = 0; i <= PROC_MAX_TIMER; i++) {
+	
+	if (procPtr->pcb.timerArray == (ProcIntTimerInfo  *) NIL) {
+	    /*
+	     * This should not happen: why did we get scheduled if
+	     * there aren't any timers?
+	     */
+	    panic("SendTimerSigFunc: null timer table!\n");
+	    break;
+	}
+	
+	timerPtr = &procPtr->pcb.timerArray[i];
+	if (timerPtr->token == infoPtr->token) {
+	    (void) Sig_SendProc(procPtr, SIG_TIMER, FALSE, i, (Address)0);
+	    
+	    /*
+	     * See if the signal is supposed to be repeated in the future.
+	     */
+	    if (Timer_TickEQ(timerPtr->interval, timer_TicksZeroSeconds)){
+		/*
+		 * Nope -- all done.
+		 */
+		timerPtr->token = (ClientData) NIL;
+	    } else {
+		/*
+		 * A signal is wanted in "interval" seconds from now.
+		 * Add the interval to the expiration time instead of
+		 * the current time to prevent drift.
+		 */
+		
+		Timer_AddTicks(timerPtr->interval, timerPtr->expire, 
+			       &timerPtr->expire);
+		timerPtr->token = Proc_CallFuncAbsTime(SendTimerSigFunc,
+						       data, timerPtr->expire);
+	    }
+	    break;
+	}
+    }
+
+    UNLOCK_MONITOR;
+    Proc_Unlock(procPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcDeleteTimers --
+ *
+ *	Cancel all interval timers for a process.  Performed on exit.
+ *	ProcPtr is assumed to be locked on entry.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	A CallFunc process might be descheduled. 
+ *
+ *----------------------------------------------------------------------
+ */
+
+ENTRY void
+ProcDeleteTimers(procPtr)
+    register Proc_LockedPCB	*procPtr;
+{
+    register ProcIntTimerInfo	*timerPtr;
+    int j;
+
+    LOCK_MONITOR;
+
+    if (procPtr->pcb.timerArray == (ProcIntTimerInfo  *) NIL) {
+	goto done;
+    }
+
+    for (j = 0; j <= PROC_MAX_TIMER; j++) {
+	timerPtr = &procPtr->pcb.timerArray[j];
+	if (timerPtr->token != (ClientData) NIL) {
+	    Proc_CancelCallFunc(timerPtr->token);
+	    timerPtr->token = (ClientData) NIL;
+	}
+    }
+
+ done:
+    UNLOCK_MONITOR;
+}
+
+@
+
+
+1.3
+log
+@Fix the other routines (besides SendTimerSigFunc) to lock the PCB
+before acquiring the monitor lock.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/proc/RCS/procTimer.c,v 1.2 92/03/12 17:36:59 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d22 1
+d24 2
+a27 1
+#include <timer.h>
+a29 1
+#include <stdlib.h>
+d31 1
+a31 1
+#include <bstring.h>
+@
+
+
+1.2
+log
+@Enable interval timers.
+@
+text
+@d17 1
+a17 1
+static char rcsid[] = "$Header: /user5/kupfer/spriteserver/src/sprited/proc/RCS/procTimer.c,v 1.1 92/03/04 14:36:15 kupfer Exp Locker: kupfer $ SPRITE (Berkeley)";
+d50 3
+a52 2
+ * This could be changed to a per-process monitor lock if contention
+ * is a problem.
+a94 2
+    LOCK_MONITOR;
+    
+d96 1
+a96 2
+	status = GEN_INVALID_ARG;
+	goto done;
+d105 1
+a105 2
+	status = FAILURE;
+	goto done;
+d107 1
+d109 1
+a109 1
+
+d111 2
+a113 3
+    Proc_Unlock(Proc_AssertLocked(procPtr));
+done:
+    UNLOCK_MONITOR;
+a247 2
+    LOCK_MONITOR;
+
+a248 1
+	UNLOCK_MONITOR;
+a253 1
+	UNLOCK_MONITOR;
+d257 1
+d259 1
+d483 2
+a484 1
+    done:
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d6 1
+a6 1
+ * Copyright 1987, 1988 Regents of the University of California
+d17 1
+a17 1
+static char rcsid[] = "$Header: /sprite/src/kernel/proc/RCS/procTimer.c,v 9.3 90/09/12 13:58:24 jhh Exp $ SPRITE (Berkeley)";
+d22 1
+d56 3
+a58 3
+static ReturnStatus	GetCurrentTimer _ARGS_((Proc_ControlBlock *procPtr,
+				int timerType, Proc_TimerInterval *timerBufPtr,
+				Boolean userMode));
+a75 1
+ *	SYS_ARG_NOACCESS	- the timer value could not be accessed.
+d84 1
+a84 1
+Proc_GetIntervalTimer(timerType, userTimerPtr)
+d88 1
+a88 1
+    Proc_TimerInterval	*userTimerPtr;	/* Buffer to store the current value 
+a100 5
+    if (userTimerPtr == USER_NIL) {
+	status = SYS_ARG_NOACCESS;
+	goto done;
+    }
+
+d112 1
+a112 1
+    status = GetCurrentTimer(procPtr, timerType, userTimerPtr, TRUE);
+d114 1
+a114 1
+    Proc_Unlock(procPtr);
+a131 1
+ *	SYS_ARG_NOACCESS	- the timer value could not be accessed.
+d140 2
+a141 2
+GetCurrentTimer(procPtr, timerType, timerBufPtr, userMode)
+    Proc_ControlBlock	*procPtr;	/* Process to get the timer value 
+a147 4
+    Boolean		userMode;	/* TRUE if timerBufPtr is in user
+					 * space (normal case).  FALSE
+					 * for encapsulation.
+					 */
+d153 2
+a154 2
+    if (procPtr->timerArray != (ProcIntTimerInfo  *) NIL) {
+	timerPtr = &procPtr->timerArray[timerType];
+d181 1
+a181 8
+    if (userMode) {
+	if (Proc_ByteCopy(FALSE, sizeof(timer), 
+			  (Address) &timer, (Address) timerBufPtr) != SUCCESS) {
+	    return(SYS_ARG_NOACCESS);
+	}
+    } else {
+	bcopy((Address) &timer, (Address) timerBufPtr, sizeof(timer));
+    }
+a196 1
+ *	SYS_ARG_NOACCESS	- a timer value could not be accessed.
+d215 1
+a215 1
+    return(ProcChangeTimer(timerType, newTimerPtr, oldTimerPtr, TRUE));
+d224 1
+a224 2
+ *	Start or cancel an interval timer for a process.  This can
+ *	be called from kernel mode as well as user mode.
+a228 1
+ *	SYS_ARG_NOACCESS	- a timer value could not be accessed.
+d238 1
+a238 1
+ProcChangeTimer(timerType, newTimerPtr, oldTimerPtr, userMode)
+a245 4
+    Boolean		userMode;	/* TRUE if intervals are in user
+					 * space (normal case).  FALSE
+					 * for encapsulation.
+					 */
+d276 1
+a276 1
+	    malloc(sizeof(ProcIntTimerInfo) * (PROC_MAX_TIMER +1));
+d288 2
+a289 6
+	if (GetCurrentTimer(procPtr, timerType, oldTimerPtr,
+			    userMode) != SUCCESS) {
+	    Proc_Unlock(procPtr);
+	    UNLOCK_MONITOR;
+	    return(SYS_ARG_NOACCESS);
+	}
+d292 2
+a293 2
+    /*
+     * Copy the new timer value from user space or a kernel buffer.
+d295 1
+a295 10
+    if (userMode) {
+	if (Proc_ByteCopy(TRUE, sizeof(newTimer), 
+		(Address) newTimerPtr, (Address) &newTimer) != SUCCESS) {
+	    Proc_Unlock(procPtr);
+	    UNLOCK_MONITOR;
+	    return(SYS_ARG_NOACCESS);
+	}
+    } else {
+	bcopy((Address) newTimerPtr, (Address) &newTimer, sizeof(newTimer));
+    }
+d321 1
+a321 1
+	    Proc_Unlock(procPtr);
+d353 1
+a353 1
+    Proc_Unlock(procPtr);
+d386 1
+a386 1
+    Proc_ControlBlock	*procPtr;
+d388 1
+a389 1
+    LOCK_MONITOR;
+a392 1
+
+d394 3
+a396 2
+    if (procPtr != (Proc_ControlBlock *) NIL) {
+	int i;
+d398 28
+a425 10
+	/*
+	 * Scan all the timer state info to see which timer expired.
+	 * If our token matches the one in the timer table entry, then
+	 * send the signal (the subcode is the timer type). If there's no 
+	 * match after scanning all the timers, then the user cancelled the
+	 * a timer so there's nothing to do.
+	 */
+	for (i = 0; i <= PROC_MAX_TIMER; i++) {
+
+	    if (procPtr->timerArray == (ProcIntTimerInfo  *) NIL) {
+d427 1
+a427 2
+		 * This should not happen: why did we get scheduled if
+		 * there aren't any timers?
+d429 2
+a430 8
+		panic("SendTimerSigFunc: null timer table!\n");
+		break;
+	    }
+
+	    timerPtr = &procPtr->timerArray[i];
+	    if (timerPtr->token == infoPtr->token) {
+		(void) Sig_SendProc(procPtr, SIG_TIMER, i, (Address)0);
+
+d432 3
+a434 1
+		 * See if the signal is supposed to be repeated in the future.
+d436 5
+a440 18
+		if (Timer_TickEQ(timerPtr->interval, timer_TicksZeroSeconds)){
+		    /*
+		     * Nope -- all done.
+		     */
+		    timerPtr->token = (ClientData) NIL;
+		} else {
+		    /*
+		     * A signal is wanted in "interval" seconds from now.
+		     * Add the interval to the expiration time instead of
+		     * the current time to prevent drift.
+		     */
+
+		    Timer_AddTicks(timerPtr->interval, timerPtr->expire, 
+				    &timerPtr->expire);
+		    timerPtr->token = Proc_CallFuncAbsTime(SendTimerSigFunc,
+					data, timerPtr->expire);
+		}
+		break;
+d442 1
+a443 1
+	Proc_Unlock(procPtr);
+d445 1
+d447 1
+d470 1
+a470 1
+    register Proc_ControlBlock	*procPtr;
+d477 1
+a477 1
+    if (procPtr->timerArray == (ProcIntTimerInfo  *) NIL) {
+d482 1
+a482 1
+	timerPtr = &procPtr->timerArray[j];
+@

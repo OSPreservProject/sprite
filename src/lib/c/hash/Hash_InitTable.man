@@ -1,0 +1,75 @@
+\fB' $Header: /sprite/src/lib/c/hash/RCS/Hash_InitTable.man,v 1.1 88/12/30 15:05:24 ouster Exp $ SPRITE (Berkeley)
+.so \*(]ltmac.sprite
+.HS Hash_InitTable lib
+.BS
+.SH NAME
+Hash_InitTable \- set up new hash table
+.SH SYNOPSIS
+\fB#include <hash.h>\fR
+.sp
+Hash_InitTable(\fItablePtr, numBuckets, keyType\fR)
+.AS Hash_Table numBuckets
+.SH ARGUMENTS
+.AP Hash_Table *tablePtr in
+Structure to use to hold information about hash table.  Caller
+must have allocated space at *tablePtr, but need not have initialized
+contents.
+.AP int numBuckets in
+How many buckets should be in table initially.  If <= 0, a reasonable
+default will be chosen.  In any case, the number of buckets will
+change dynamically as the number of entries in the table grows.
+.AP int keyType in
+What type of keys will be used for table:  \fBHASH_STRING_KEYS\fR,
+\fBHASH_ONE_WORD_KEYS\fR, or integer >= 2.
+.BE
+
+.SH DESCRIPTION
+.LP
+\fBHash_InitTable\fR initializes a Hash_Table structure and sets up
+bucket storage for the table, with no entries in the table initially.
+It must be called before any other operations are performed on the
+hash table.
+.LP
+The \fIkeyType\fP argument indicates what type of keys will be used
+in the table.  HASH_STRING_KEYS means that all keys will be strings,
+and that the \fIkey\fP argument to procedures like Hash_FindEntry will
+be passed in as a string:
+.DS
+
+Hash_Table table;
+Hash_Entry *entryPtr;
+char *key = "foobar";
+
+Hash_InitTable(&table, 0, HASH_STRING_KEYS); 
+entryPtr = Hash_FindEntry(&table, key);
+
+.DE
+If \fIkeyType\fP is HASH_ONE_WORD_KEYS,
+then keys will be one-word (Address) values;  \fIkey\fP arguments passed
+to procedures like \fBHash_FindEntry\fR may be integers or any other values of
+the same size as addresses, passed by casting the value to an Address:
+.DS
+
+Hash_Table table;
+Hash_Entry *entryPtr;
+int key = 24;
+
+Hash_InitTable(&table, 0, HASH_ONE_WORD_KEYS);
+entryPtr = Hash_FindEntry(&table, (Address) key);
+
+.DE
+Finally, if \fIkeyType\fP is an integer greater than 1, then keys
+are multi-word values containing \fIkeyType\fP words (not bytes!),
+passed into procedures like \fBHash_FindEntry\fR by address:
+.DS
+
+Hash_Table table;
+Hash_Entry *entryPtr;
+int key[6] = {1,2,3,4,5,6};
+
+Hash_InitTable(&table, 0, 6);
+entryPtr = Hash_CreateEntry(tablePtr, (Address) key);
+.DE
+
+.SH KEYWORDS
+hash table, initialization, key

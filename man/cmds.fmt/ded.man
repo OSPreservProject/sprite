@@ -1,0 +1,330 @@
+
+
+
+DED                       User Commands                       DED
+
+
+
+NNAAMMEE
+     ded - directory editor
+
+SSYYNNOOPPSSIISS
+     ddeedd
+     [ -[s|r][fnsrwd] ] [ -w[f|h|Number] ] [ -xPattern ] [ dir-name|file-list ]
+
+DDEESSCCRRIIPPTTIIOONN
+     Ded displays a long-form ls directory listing on the screen
+     of a display terminal and allows you to 'edit' and peruse
+     that listing by moving up and down it, deleting, editing,
+     and displaying entries.  Normally the index is displayed in
+     one window and file perusal done in the other.  With no
+     string argument, the connected directory is used.  With one
+     string argument, the argument is interpreted as a directory
+     and it is used.  With multiple string arguments, they are
+     interpreted as filenames.
+
+     Options, which are inherited by recursive invocations of
+     ded:
+
+     --[[ssrr]][[ff||nn||ss||rr||ww||dd]]
+          Sort or reverse sort by Filename, filename as Number,
+          Size, Read date, Write date, or directory order (no
+          sort) respectively.  "Normal sort" is the order you are
+          most likely to desire, so is largest first for size,
+          and most recent for read and write date sorts.  Default
+          is to sort by filename.
+
+     --ww[[ff||hh||NNuummbbeerr]]
+          Use NNuummbbeerr lines for the directory index window,
+          reserving the other half for quick file display.  ff
+          means use the full screen for the index.  hh means use
+          half of the screen for the index, and is the default.
+
+     --xxPPaatttteerrnn
+          PPaatttteerrnn is contiguous to the --xx option and signifies
+          the file suffixes to be eXcluded from the display.
+          Separate the suffixes by the || character.  For example,
+          ded "-x.o|.mo" will exclude all .o and .mo files from
+          ded's display.  It is wise to surround this option by
+          quotes to prevent the shell from interpreting it.
+
+     From left the index fields are: file mode, link count,
+     owner, size, write date and name.  Executable files are
+     tagged with a '*', directories with a '/', symbolic links to
+     non-directories with a '@', and symlinks to directories with
+     a '>'.  The bottom half of the screen is used for displaying
+     files via the 't'ype command and for short command execu-
+     tion.  If there are too many files to all fit on one window,
+     more windows are allocated. The 'f' and 'b' commands can be
+     used for stepping forward and backward windows.
+
+
+
+Sprite v1.0               Utah 4/27/84                          1
+
+
+
+
+
+
+DED                       User Commands                       DED
+
+
+
+     CCoommmmaanndd lliisstt
+
+     MMoottiioonn CCoommmmaannddss::
+
+     <cr>
+     <lf>
+     j
+     ^N   steps to the next file.
+
+     -
+     <backspace>
+     k
+     ^P   steps to previous file.
+
+     ^F
+     ^V
+     f    goes forward a window, leaving a one line overlap.
+
+     ^B
+     Meta-V
+     b    goes backward a window, leaving a one line overlap.
+          Meta-V only works at Utah.
+
+     1    goes to the first entry of the first screen.
+
+     G    goes to the last entry of the last screen.
+
+     /    does a forward regular-expression search of the
+          filenames starting with the current entry, and posi-
+          tions the cursor on that entry.  If nothing is entered
+          to the prompt, the last regular expression is used, and
+          the search starts at the _n_e_x_t entry.
+
+     ?    does a reverse regular expression search.
+
+     GGeenneerraall CCoonnttrrooll::
+
+     Q
+     q    exits the program, displaying files marked for deletion
+          and requiring confirmation before deleting them.  If no
+          confirmation is given (typing anything other than y),
+          ded goes back to its display.  When many files are to
+          be deleted, ded does the deletions asyncronously unless
+          it is top-level and can be ^Z'ed and backgrounded by
+          the user.
+
+     x    aborts completely out of ded. No deletions are done.
+
+     ^Z   stops ded.
+
+     h    displays a help file.
+
+
+
+
+Sprite v1.0               Utah 4/27/84                          2
+
+
+
+
+
+
+DED                       User Commands                       DED
+
+
+
+     !
+     %    prompts for a system command to invoke.  Unless escaped
+          via '\', all %% characters in the command itself are
+          replaced with the relative pathname of the current
+          entry, all ## chars are replaced with just the trailing
+          filename component (what you see on the screen), and
+          all @@ characters are replaced with the relative name of
+          the directory whose index is currently being displayed.
+          "Relative" means relative to your current working
+          directory, which does not change as you descend a
+          hierarchy.  When invoked via '!' the command is exe-
+          cuted in the other window, if it exists, and can result
+          in garbaging of the display if it has much output.
+          This is designed for "action" commands, e.g. "mv".
+          When invoked via '%' the screen is cleared before exe-
+          cution and re-displayed afterwards.
+
+     .    Repeats the previous !! or %% shell command, substituting
+          from the current entry for any special chars (%#@) in
+          the original command.
+
+     IInnddeexx DDiissppllaayy
+
+     l    re-stats the current entry and redisplays that line.
+          If the file has disappeared, a '-' sign appears next to
+          the file name.
+
+     L    all the entries on the current screen are re-stat'ed
+          and redisplayed.
+
+     ^L   refreshes the screen.
+
+     r
+     s    sorts the file list by various fields: filename,
+          filename treated as a number, read date, size, write
+          date.  Only the first letter (e.g. f, n, r, s, or w) is
+          required after giving the r and s commands. s sorts in
+          increasing alphabetic, decreasing size, newest to old-
+          est dates. r reverses the sense of s. For the f, n, s,
+          and w orders, the date field is the write date. For the
+          r subcommand, the date field is the read date. Whenever
+          a sort is done, you are positioned at the top of the
+          list afterwards.  A proposed sort can be aborted via
+          ^G.
+
+     AAccttiioonnss oonn ccuurrrreenntt eennttrryy
+
+     d    marks the current entry for deletion. Upon exit and
+          confirmation, this entry will be deleted.  WARNING:
+          this includes directories!  If it is a directory,
+          everything in it and underneath it will be removed.
+          For symbolic links, only the link is removed, not its
+
+
+
+Sprite v1.0               Utah 4/27/84                          3
+
+
+
+
+
+
+DED                       User Commands                       DED
+
+
+
+          target.
+
+     u    undeletes the current entry, if it was previously
+          marked for deletion.
+
+     t
+     T    types the file out to the terminal.  Little 't' speci-
+          fies that in two-window mode, the bottom window be
+          used, pausing after each screenful, and wrapping long
+          lines.  The type-out may be interrupted by the "Inter-
+          rupt" character (^C), or by 'q' when the file is
+          displayed in the bottom window.  Capital 'T' says to
+          use the full screen; essentially just a "cat" of the
+          file.
+
+     m    runs the local pager upon the current file.  As distri-
+          buted, the default is Berkeley's mmoorree program.
+
+     e    runs the editor defined in your EDITOR environment
+          variable upon the current file.  If EDITOR is not
+          defined, "vi" ("little emacs" at Utah) is used.  How-
+          ever, if the current file is a directory or a symlink
+          to a directory it is not edited, but rather, a recur-
+          sive ded is done upon that directory.  In this manner,
+          you can examine the contents of that directory and thus
+          move down the directory hierarchy.
+
+     p
+     P    prints the current file on the line-printer.  At Utah,
+          'p' prints in small font (pr2) while 'P' gets normal
+          font size.
+
+FFIILLEESS
+     /usr/local/lib/ded.hlp    help file for ? and h
+
+SSEEEE AALLSSOO
+     ls(1)
+
+DDIIAAGGNNOOSSTTIICCSS
+     The error messages are basically self-explanatory.
+
+AAUUTTHHOORRSS
+     Stuart Mclure Cracraft
+     Jay Lepreau
+
+BBUUGGSS
+     Should use curses!
+
+     Needs a command to move the current entry to the top of the
+     screen.
+
+     Would be nice to be able to change file modes by editing the
+
+
+
+Sprite v1.0               Utah 4/27/84                          4
+
+
+
+
+
+
+DED                       User Commands                       DED
+
+
+
+     mode field directly.
+
+     When tabs are in a line displayed via the 't' command, the
+     line may wrap one character early.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0               Utah 4/27/84                          5
+
+
+

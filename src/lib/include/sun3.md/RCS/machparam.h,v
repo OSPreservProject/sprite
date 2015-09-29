@@ -1,0 +1,185 @@
+head     1.5;
+branch   ;
+access   ;
+symbols  sprited:1.5.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.5
+date     89.07.14.09.17.38;  author rab;  state Exp;
+branches 1.5.1.1;
+next     1.4;
+
+1.4
+date     88.08.01.08.13.47;  author ouster;  state Exp;
+branches ;
+next     1.3;
+
+1.3
+date     88.07.21.16.20.48;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.07.19.13.19.31;  author mendel;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.06.21.17.35.36;  author ouster;  state Exp;
+branches ;
+next     ;
+
+1.5.1.1
+date     91.10.22.12.18.41;  author kupfer;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.5
+log
+@*** empty log message ***
+@
+text
+@/*
+ * machparam.h --
+ *
+ *	This file contains various machine-dependent parameters needed
+ *	by UNIX programs running under Sprite.  This file includes parts
+ *	of the UNIX header files "machine/machparm.h" and
+ *	"machine/endian.h".  Many of things in the UNIX file are only
+ *	useful for the kernel;  stuff gets added to this file only
+ *	when it's clear that it is needed for user programs.
+ *
+ * Copyright 1988 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/lib/include/sun3.md/RCS/machparam.h,v 1.4 88/08/01 08:13:47 ouster Exp Locker: rab $ SPRITE (Berkeley)
+ */
+
+#ifndef _MACHPARAM
+#define _MACHPARAM
+
+#ifndef _LIMITS
+#include <limits.h>
+#endif
+
+/*
+ *----------------------
+ * Taken from endian.h:
+ *----------------------
+ */
+
+/*
+ * Definitions for byte order,
+ * according to byte significance from low address to high.
+ */
+#define LITTLE_ENDIAN   1234    /* least-significant byte first (vax) */
+#define BIG_ENDIAN      4321    /* most-significant byte first (IBM, net) */
+#define PDP_ENDIAN      3412    /* LSB first in word, MSW first in long (pdp) */
+
+#define BYTE_ORDER      BIG_ENDIAN   /* byte order on sun3 */
+
+/*
+ *----------------------
+ * Miscellaneous:
+ *----------------------
+ */
+
+/*
+ * The bits of a address that should not be set if word loads and stores
+ * are done on the address. This mask intended for fast byte manipulation
+ * routines.
+ */
+
+#define	WORD_ALIGN_MASK	0x1
+
+/*
+ * Sizes of pages and segments.  SEGSIZ is valid only on Suns, and used
+ * only in EMACS, I think.  I'm not sure why it should get used anywhere.
+ */
+
+#define PAGSIZ 0x2000
+#define SEGSIZ 0x20000
+
+#endif /* _MACHPARAM */
+@
+
+
+1.5.1.1
+log
+@Initial branch for Sprite server.
+@
+text
+@d20 1
+a20 1
+ * $Header: /sprite/src/lib/include/sun3.md/RCS/machparam.h,v 1.5 89/07/14 09:17:38 rab Exp $ SPRITE (Berkeley)
+@
+
+
+1.4
+log
+@Added SEGSIZ and PAGSIZ.
+@
+text
+@d20 1
+a20 1
+ * $Header: machparam.h,v 1.3 88/07/21 16:20:48 ouster Exp $ SPRITE (Berkeley)
+d68 1
+a68 1
+#endif _MACHPARAM
+@
+
+
+1.3
+log
+@Include limits.h.
+@
+text
+@d20 1
+a20 1
+ * $Header: machparam.h,v 1.2 88/07/19 13:19:31 mendel Exp $ SPRITE (Berkeley)
+d46 21
+a66 6
+#define	WORD_ALIGN_MASK	0x1		/* The bits of a address that should 
+					 * not be set if word loads and stores
+					 * are done on the address. This mask
+					 * intended for fast byte manipulation
+					 * routines.
+					 */
+@
+
+
+1.2
+log
+@Added WORD_ALIGN_MASK.
+@
+text
+@d20 1
+a20 1
+ * $Header: machparam.h,v 1.1 88/06/21 17:35:36 ouster Exp $ SPRITE (Berkeley)
+d25 4
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d20 1
+a20 1
+ * $Header: proto.h,v 1.2 88/03/11 08:39:40 ouster Exp $ SPRITE (Berkeley)
+d41 7
+@

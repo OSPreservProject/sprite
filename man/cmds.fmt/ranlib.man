@@ -1,0 +1,68 @@
+
+
+
+RANLIB                    User Commands                    RANLIB
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     ranlib - make symbol table for object library
+
+SSYYNNOOPPSSIISS
+     rraannlliibb [--ff] _a_r_c_h_i_v_e ...
+
+OOPPTTIIOONNSS
+     --ff             Force the symbol table to be regenerated.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     RRaannlliibb generates a file called __.SYMDEF  with  a  table  of
+     external  symbols for an archive.  It puts it in the archive
+     for use by lldd.
+
+     The current version of rraannlliibb is actually a wrapper over aarr,
+     which maintains the symbol table in-place, as the archive is
+     updated.  Any arguments that the old rraannlliibb took are ignored
+     by this version.
+
+     If the symbol table already exists,  rraannlliibb  is  normally  a
+     no-op.   If  the  symbol table has somehow become corrupted,
+     use the --ff flag to force it to be regenerated from scratch.
+
+
+SSEEEE AALLSSOO
+     ld, ar
+
+
+KKEEYYWWOORRDDSS
+     library, archive
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0       Printed:  December 10, 1990                  1
+
+
+

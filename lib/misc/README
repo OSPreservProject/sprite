@@ -1,0 +1,4 @@
+This directory contains miscellaneous files for maintenance of
+Sprite.  For now, the distfiles are symbolic links to another directory
+where they are kept RCS'ed; after they stabilize, installed copies will
+be left in this directory.

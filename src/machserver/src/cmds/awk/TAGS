@@ -1,0 +1,125 @@
+
+awk.g.c,42
+#	define	PUTS(82,1507
+yyparse(418,16526
+
+awk.h,0
+
+b.c,336
+int *add(281,5184
+char *cclenter(117,2287
+cfoll(153,2844
+struct fa *cgotofn(297,5553
+first(185,3407
+follow(219,4193
+freetr(89,1857
+#define left(16,255
+struct fa *makedfa(45,885
+match(516,10477
+member(254,4758
+notin(263,4869
+overflo(148,2781
+#define parent(18,310
+penter(64,1435
+#define right(17,282
+#define type(15,231
+
+freeze.c,26
+freeze(6,91
+thaw(20,320
+
+lib.c,160
+PUTS(220,5092
+error(210,4861
+cell *fieldadr(196,4635
+fldbld(112,2637
+getrec(36,967
+isnumber(226,5206
+recbld(173,4128
+setclvar(98,2400
+yyerror(205,4765
+
+main.c,52
+#define TOLOWER(9,155
+main(24,553
+yywrap(97,2286
+
+parse.c,385
+node *ALLOC(8,126
+node *exptostat(16,292
+node *genprint(145,2261
+node *linkum(136,2082
+node *node0(22,371
+node *node1(30,464
+node *node2(39,583
+node *node3(49,731
+node *node4(60,902
+node *op1(86,1312
+node *op2(79,1209
+node *op3(100,1504
+node *pa2stat(129,1959
+node *stat1(93,1407
+node *stat2(107,1615
+node *stat3(72,1096
+node *stat4(114,1720
+node *valtonode(121,1841
+
+proc.c,14
+main(66,1647
+
+proctab.c,0
+
+run.c,722
+obj aprintf(588,9800
+obj arith(413,7069
+obj array(110,1929
+obj arrayel(121,2063
+obj asprintf(397,6854
+obj assign(478,8029
+obj boolop(159,2661
+obj cat(529,8956
+obj dopa2(567,9507
+obj execute(42,757
+obj fncn(788,13095
+char *format(325,5466
+obj forstat(709,11803
+obj getline(101,1834
+obj gettemp(231,3975
+obj ifstat(674,11351
+obj incrdecr(457,7700
+obj indirect(248,4222
+obj instat(732,12165
+obj jump(759,12706
+obj matchop(142,2402
+obj nodetoobj(842,14054
+obj nullproc(840,14035
+obj pastat(552,9338
+obj print(814,13579
+obj program(74,1355
+redirprint(853,14199
+obj relop(190,3163
+run(30,557
+obj sindex(300,5026
+obj split(602,10000
+obj substr(263,4416
+tempfree(224,3883
+obj whilestat(690,11549
+
+token.c,23
+char *tokname(89,1217
+
+tran.c,312
+checkval(211,4977
+freesymtab(56,1705
+awkfloat getfval(162,3865
+char *getsval(187,4502
+hash(106,2699
+cell *lookup(116,2877
+cell **makesymtab(43,1491
+awkfloat setfval(129,3178
+char *setsval(144,3512
+cell *setsymtab(75,2004
+syminit(24,598
+char *tostring(221,5227
+yfree(240,5556
+char *ymalloc(248,5643

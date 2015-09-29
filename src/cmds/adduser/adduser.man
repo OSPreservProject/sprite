@@ -1,0 +1,38 @@
+'\" Copyright 1991 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/admin/adduser/RCS/adduser.man,v 1.1 91/06/03 17:03:10 kupfer Exp $ SPRITE (Berkeley)
+'/" 
+.so \*(]ltmac.sprite
+.HS ADDUSER admin
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+adduser \- Create a user account
+.SH SYNOPSIS
+\fBadduser\fR
+.BE
+
+.SH DESCRIPTION
+.PP
+The
+.B adduser
+program creates a new user account.  This involves gathering
+information for the account (user's name, password, etc.), creating an
+entry for the user in the password file, creating and initializing the
+user's home directory, and adding the user's account to the
+.B sprite-users
+mailing list.
+.PP
+.B Adduser
+is basically menu-driven; its usage should be self-explanatory.  If it
+runs into problems or you kill it halfway through, it will try to
+clean up after itself.
+
+.SH KEYWORDS
+user, account

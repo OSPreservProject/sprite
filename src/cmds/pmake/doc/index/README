@@ -1,0 +1,14 @@
+September 1, 1987
+	The files in this directory implement a simple ditroff postprocessor
+for producing alphabetically-sorted indices. Macros in tmac.index are used
+with the -ms macros to make entries in the index. Other helpful things are
+planned but unimplemented as yet. See the macro file for more information.
+
+Typical use will be:
+	ditroff -Pcad -ms -t tmac.index doc.ms | index 
+
+index will pick out the name of the typesetter to use, but it may be specified
+explicitly with a -P argument. Normally, all output will be sent to lpr for
+printing, but -t may be given to send the output to the standard output stream.
+
+Adam de Boor

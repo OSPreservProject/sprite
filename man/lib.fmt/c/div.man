@@ -1,0 +1,68 @@
+
+
+
+div                       User Commands                       div
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     div, ldiv - Return quotient and remainder from division
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddlliibb..hh>>
+
+     ddiivv__tt
+     ddiivv((_n_u_m_e_r, _d_e_n_o_m))
+
+     llddiivv__tt
+     llddiivv((_n_u_m_e_r, _d_e_n_o_m))
+
+AARRGGUUMMEENNTTSS
+     int       _n_u_m_e_r          (in)      Numerator for division.
+
+     int       _d_e_n_o_m          (in)      Denominator for division.
+
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     The ddiivv and llddiivv procedures divide _n_u_m_e_r by _d_e_n_o_m and return
+     both  the quotient and remainder, in the qquuoott and rreemm fields
+     of the result structure.  If the division  is  inexact,  the
+     sign of the resulting quotient is that of the algebraic quo-
+     tient, and the magnitude of the resulting  quotient  is  the
+     largest  integer  less  than  the magnitude of the algebraic
+     quotient.
+
+     DDiivv takes iinntt arguments and produces iinntt results, while llddiivv
+     works with lloonngg iinntt arguments and results.
+
+
+KKEEYYWWOORRDDSS
+     divide, quotient, remainder
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v.1.0        Printed:  August 12, 1989                   1
+
+
+

@@ -1,0 +1,208 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    ; strict;
+comment  @@;
+
+
+1.3
+date     89.01.27.08.37.01;  author ouster;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.01.26.10.05.19;  author ouster;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.01.26.10.01.12;  author ouster;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+1.3
+log
+@Cleanup comment sequences.
+@
+text
+@'\" Copyright 1989 Regents of the University of California
+'\" Permission to use, copy, modify, and distribute this
+'\" documentation for any purpose and without fee is hereby
+'\" granted, provided that this notice appears in all copies.
+'\" The University of California makes no representations about
+'\" the suitability of this material for any purpose.  It is
+'\" provided "as is" without express or implied warranty.
+'\" 
+'\" $Header: /sprite/src/lib/c/etc/RCS/Fs_Dispatch.man,v 1.2 89/01/26 10:05:19 ouster Exp $ SPRITE (Berkeley)
+'\" 
+.so \*(]ltmac.sprite
+.HS Fs_Dispatch lib
+.BS
+.SH NAME
+Fs_Dispatch, Fs_EventHandlerCreate, Fs_EventHandlerDestroy, Fs_EventHandlerData,
+Fs_EventHandlerChangeData, Fs_TimeoutHandlerCreate, Fs_TimeoutHandlerDestroy \- stream event and timeout dispatcher routines.
+.SH SYNOPSIS
+.nf
+\fB#include <fs.h>\fR
+
+void 
+\fBFs_Dispatch\fR()
+
+void 
+\fBFs_EventHandlerCreate\fR(\fIstreamID, eventMask, proc, clientData\fP)
+
+void 
+\fBFs_EventHandlerDestroy\fR(\fIstreamID\fP)
+
+void 
+\fBFs_EventHandlerData\fR(\fIstreamID\fP)
+
+ClientData 
+\fBFs_EventHandlerChangeData\fR(\fIstreamID, clientData\fP)
+
+\fB#include <time.h>\fR
+
+Fs_TimeoutHandler 
+\fBFs_TimeoutHandlerCreate\fR(\fItime, relativeTime, proc, clientData\fP)
+
+void 
+\fBFs_TimeoutHandlerDestroy\fR(\fPtoken\fP)
+
+.SH ARGUMENTS
+.AS Fs_TimeoutHandler relativeTime
+.AP int streamID in
+Specifies the stream to create an event handler for.
+.AP int eventMask in
+Mask indicating which events on \fIstreamID\fP are to be processed 
+by \fIproc\fP. Can be the bitwise OR of \fBFS_READABLE\fR, \fBFS_WRITABLE\fR and
+\fBFS_EXCEPTION\fR.
+.AP void (*proc)() in
+Procedure to invoke when one of the events in \fIeventMask\fP occurs on a 
+stream or when a timeout period expires.
+.AP ClientData clientData in
+Uninterpreted value passed to \fIproc\fP when it is invoked.
+.AP Time time in
+The absolute time when \fIproc\fP should be called or the time interval
+between calls to \fIproc\fP.
+.AP Boolean relativeTime in
+If \fBTRUE\fR, then \fItime\fP specifies a interval between calls to \fIproc\fP.
+If \fBFALSE\fR, then \fItime\fP specifies the absolute time when \fIproc\fP should
+be called.
+.AP Fs_TimeoutHandler token in
+A token to identify a particular timeout handler so it can be destroyed.
+.BE
+.SH DESCRIPTION
+These routines implement a dispatcher for events on streams and
+timeouts. An event occurs when the stream becomes readable, writable or
+has an exception condition pending. The dispatcher handles the 
+details of waiting for events to
+occur on streams. When an event occurs, the dispatcher calls a routine
+supplied by the clients to deal with the event. Also, timeout handlers can
+be created so that a client-supplied routine can be called at a
+specific time or at regular intervals.
+.PP
+The dispatcher must be initialized by calling \fBFs_EventHandlerCreate\fR and/or
+\fBFs_TimeoutHandlerCreate\fR before \fBFs_Dispatch\fR is called.
+\fBFs_Dispatch\fR causes the process to wait until an event occurs on a stream 
+or until a time-out occurs. 
+At that point, it calls the appropriate handler. Once the handler completes,
+\fBFs_Dispatch\fR returns to its caller. To have the dispatcher remain in control,
+do
+.DS
+    while (TRUE) {
+	Fs_Dispatch();
+    }
+.DE
+.PP
+\fBFs_EventHandlerCreate\fR is used to cause the procedure \fIproc\fP to be 
+called when one or more of the events in \fIeventMask\fP occur 
+on \fIstreamID\fP. Only one procedure may be attached to a stream so 
+it should be able to deal with all of the event types. 
+\fIProc\fP should be declared as:
+.DS
+void
+proc(clientData, streamID, eventMask)
+    ClientData	clientData;
+    int		streamID;
+    int		eventMask;
+{ 
+}
+.DE
+\fBFs_EventHandlerData\fR can be used to get the \fIclientData\fP associated with
+\fIstreamID\fP. 
+\fBFs_EventHandlerChangeData\fR can be used to change the \fIclientData\fP 
+associated with \fIstreamID\fP. 
+The handler can be destroyed with \fBFs_EventHandlerDestroy\fR.
+.PP
+In addition, a time-out routine can be setup to be called using
+\fBFs_TimeoutHandlerCreate\fR. If \fIrelativeTime\fP is \fBTRUE\fR, then \fItime\fP 
+specifies an interval (e.g. one hour) 
+from the current time that \fIproc\fP will be called at.
+When \fIproc\fP returns, it will automatically be rescheduled to be called 
+at the next interval. If \fIproc\fP doesn't need to be called again, it should
+call \fBFs_TimeoutHandlerDestroy\fR.
+If \fIrelativeTime\fP is \fBFALSE\fR, then \fItime\fP specifies a specific time
+(e.g., 3:15pm 17 Sept. 1987)
+that \fIproc\fP will be called at. \fIProc\fP is called once \(em it is not
+automatically rescheduled to be called again. However, it could call
+\fBFs_TimeoutHandlerCreate\fR to cause it to be called again.
+\fIProc\fP should be declared as:
+.DS
+void
+proc(clientData, time)
+    ClientData	clientData;
+    Time	Time;
+{ 
+}
+.DE
+For example, to have \fBExampleRoutine\fR called in 1 minute from now and every
+minute after that, the call should be:
+.DS
+  Fs_TimeoutHandlerCreate(time_OneMinute, TRUE, ExampleRoutine, clientData);
+.DE
+\fBFs_TimeoutHandlerCreate\fR returns a token that must be saved 
+if \fBFs_TimeoutHandlerDestroy\fR is to be called.
+
+.SH KEYWORDS
+callback, client data, dispatcher, stream ID, time
+@
+
+
+1.2
+log
+@Typo.
+@
+text
+@d1 10
+a10 10
+' Copyright 1989 Regents of the University of California
+' Permission to use, copy, modify, and distribute this
+' documentation for any purpose and without fee is hereby
+' granted, provided that this notice appears in all copies.
+' The University of California makes no representations about
+' the suitability of this material for any purpose.  It is
+' provided "as is" without express or implied warranty.
+' 
+' $Header: /sprite/src/lib/c/etc/RCS/Fs_Dispatch.man,v 1.1 89/01/26 10:01:12 ouster Exp Locker: ouster $ SPRITE (Berkeley)
+' 
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d9 1
+a9 1
+' $Header: /sprite/lib/forms/RCS/proto.man,v 1.3 89/01/09 11:43:01 ouster Exp $ SPRITE (Berkeley)
+d12 1
+a12 1
+.HS Fs_Dispatch libc
+@

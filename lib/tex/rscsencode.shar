@@ -1,0 +1,263 @@
+#! /bin/sh
+# This is a shell archive.  Remove anything before this line, then unpack
+# it by saving it into a file and typing "sh file".  To overwrite existing
+# files, type "sh file -c".  You can also feed this as standard input via
+# unshar, or by typing "sh <file", e.g..  If this archive is complete, you
+# will see the following message at the end:
+#		"End of shell archive."
+# Contents:  Makefile README coder.h rscsdecode.c rscsencode.c
+# Wrapped by lamy@ai.toronto.edu on Fri Aug  7 10:55:15 1987
+PATH=/bin:/usr/bin:/usr/ucb ; export PATH
+if test -f Makefile -a "${1}" != "-c" ; then 
+  echo shar: Will not over-write existing file \"Makefile\"
+else
+echo shar: Extracting \"Makefile\" \(361 characters\)
+sed "s/^X//" >Makefile <<'END_OF_Makefile'
+XCFLAGS = -O
+XDESTDIR=/usr/lib/news
+X
+Xall:	rscsdecode rscsencode
+X
+Xrscsencode: rscsencode.c
+X	cc $(CFLAGS) rscsencode.c -o rscsencode
+Xrscsdecode: rscsdecode.c
+X	cc $(CFLAGS) rscsdecode.c -o rscsdecode
+X
+Xinstall: all
+X	install rscsdecode $(DESTDIR)
+X	install rscsencode $(DESTDIR)
+X
+Xclean:		
+X	rm -f rscsencode rscsdecode *.o SHAR
+X
+Xshar:
+X	shar Makefile README *.[ch] >SHAR
+END_OF_Makefile
+if test 361 -ne `wc -c <Makefile`; then
+    echo shar: \"Makefile\" unpacked with wrong size!
+fi
+# end of overwriting check
+fi
+if test -f README -a "${1}" != "-c" ; then 
+  echo shar: Will not over-write existing file \"README\"
+else
+echo shar: Extracting \"README\" \(341 characters\)
+sed "s/^X//" >README <<'END_OF_README'
+XThese are much modified versions of encode/decode. I code 3 bytes into
+X4 characters. This can be done with a 64 character set (3*8 == 4*6) which
+Xshould pass through any network without translation. The character set I
+Xuse is so innocuous that no checksums, etc. are necessary.
+X
+Xreggers@uwo.UUCP (Reg Quinton)
+Xwatmath!kwlalonde (Ken Lalonde)
+END_OF_README
+if test 341 -ne `wc -c <README`; then
+    echo shar: \"README\" unpacked with wrong size!
+fi
+# end of overwriting check
+fi
+if test -f coder.h -a "${1}" != "-c" ; then 
+  echo shar: Will not over-write existing file \"coder.h\"
+else
+echo shar: Extracting \"coder.h\" \(186 characters\)
+sed "s/^X//" >coder.h <<'END_OF_coder.h'
+Xchar header[] = "Begin Decoding\n";	/* marks start of encoded data */
+Xchar codeset[] =
+X	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-";
+X
+X#define ENCODE(c)	codeset[c]
+END_OF_coder.h
+if test 186 -ne `wc -c <coder.h`; then
+    echo shar: \"coder.h\" unpacked with wrong size!
+fi
+# end of overwriting check
+fi
+if test -f rscsdecode.c -a "${1}" != "-c" ; then 
+  echo shar: Will not over-write existing file \"rscsdecode.c\"
+else
+echo shar: Extracting \"rscsdecode.c\" \(2257 characters\)
+sed "s/^X//" >rscsdecode.c <<'END_OF_rscsdecode.c'
+X/*
+X * Stream filter to decode printable ASCII back into 8 bit bytes from
+X * survive most networks -- especially the RSCS community which seems
+X * to gobble up all sorts of the "ordinary" characters.
+X * Encoding is into a 64 character set "[A-Z][a-z][0-9]+-". This means
+X * that using 4 characters we can safely represent 3 bytes. Some overhead
+X * but I can take it.
+X */
+X
+X#include <stdio.h>
+X#include "coder.h"
+Xchar *myname;
+X
+Xmain(argc, argv) 
+X	char **argv;
+X{
+X	register int c, word, bcount;
+X	register FILE *fin = stdin, *fout = stdout;	/* in regs for speed */
+X	register char *map, *p;
+X	int w;
+X	char buf[512];
+X	extern char *index();
+X
+X	myname = argv[0];
+X	if (argc > 2)
+X		fprintf(stderr, "Usage: %s [file]\n", myname), exit(1);
+X	if (argc == 2 && (fin = fopen(argv[1], "r")) == NULL) {
+X		fprintf(stderr, "%s: ", myname);
+X		perror(argv[1]);
+X		exit(1);
+X	}
+X	/* skip to beginning of encoded data */
+X	do {
+X		if (fgets(buf, sizeof buf, fin) == NULL)
+X			fatal("Missing header");
+X		/* trim trailing blanks (sigh) */
+X		p = index(buf, '\n');
+X		if (p == 0)
+X			continue;
+X		while (*--p == ' ')
+X			;
+X		p[1] = '\n';
+X		p[2] = '\0';
+X	} while (strcmp(buf, header) != 0);
+X	
+X	/* define input mapping table */
+X	map = buf+1;
+X	for (c = 0; c < 256; c++)
+X		map[c] = 64;		/* illegal */
+X	for (c = 0; c < 64; c++)
+X		map[ENCODE(c)] = c;
+X	map[EOF] = 65;		/* special cases */
+X	map['/'] = 66;
+X
+X	word = 0;
+X	bcount = 4;
+X	for (;;) {
+X		c = map[getc(fin)];
+X		if ((unsigned)c < 64) {
+X			word <<= 6;
+X			word |= c;
+X			if (--bcount == 0) {
+X				putc((word >> 16) & 0xFF, fout);
+X				putc((word >>  8) & 0xFF, fout);
+X				putc((word)       & 0xFF, fout);
+X				word = 0;
+X				bcount = 4;
+X			}
+X			continue;
+X		}
+X		switch (c) {
+X		default:
+X			/*
+X			 * Ignore stuff not in the code set.
+X			 * I don't like this.
+X			 */
+X			continue;
+X		case 65:	/* EOF */
+X			fatal("Unexpected EOF");
+X		case 66:	/* '/' */
+X			/* trailer follows: %d%x */
+X			c = getc(fin) - '0';
+X			if ((unsigned)c >= 3) /* must be 0,1,2 */
+X				fatal("Corrupted input (trailer)");
+X			if (fscanf(fin, "%x", &w) != 1)
+X				fatal("Corrupted input (trailer)");
+X			switch (c) {
+X			case 2: putc((w >>  8) & 0xFF, fout);
+X			case 1: putc((w      ) & 0xFF, fout);
+X			}
+X			exit(0);
+X		}
+X	}
+X}
+X
+Xfatal(s)
+X	char *s;
+X{
+X	fprintf(stderr, "%s: %s\n", myname, s);
+X	exit(1);
+X}
+END_OF_rscsdecode.c
+if test 2257 -ne `wc -c <rscsdecode.c`; then
+    echo shar: \"rscsdecode.c\" unpacked with wrong size!
+fi
+# end of overwriting check
+fi
+if test -f rscsencode.c -a "${1}" != "-c" ; then 
+  echo shar: Will not over-write existing file \"rscsencode.c\"
+else
+echo shar: Extracting \"rscsencode.c\" \(1570 characters\)
+sed "s/^X//" >rscsencode.c <<'END_OF_rscsencode.c'
+X/*
+X * Stream filter to change 8 bit bytes into printable ASCII which will
+X * survive most networks -- especially the RSCS community which seems
+X * to gobble up all sorts of the "ordinary" characters.
+X * Encoding is into a 64 character set "[A-Z][a-z][0-9]+-". This means
+X * that using 4 characters we can safely represent 3 bytes. Some overhead
+X * but I can take it.
+X */
+X
+X#include <stdio.h>
+X#include "coder.h"
+X#define MAXPERLINE 79		/* max chars/line */
+Xchar *myname;
+X
+Xmain(argc,argv) 
+X	char **argv;
+X{
+X	register FILE *fin = stdin, *fout = stdout; /* faster in a register */
+X	register int c, bcount, ccount = MAXPERLINE-1;
+X	register long word;
+X
+X	myname = argv[0];
+X	if (argc == 2 && (fin = fopen(argv[1], "r")) == NULL) {
+X		fprintf(stderr, "%s: ", myname);
+X		perror(argv[1]);
+X		exit(1);
+X	}
+X	else if (argc > 2) {
+X		fprintf(stderr, "usage: %s [file]\n", myname);
+X		exit(1);
+X	}
+X
+X#define charout(c) \
+X	putc(c, fout); \
+X	if (--ccount == 0) { \
+X		putc('\n', fout); \
+X		ccount = MAXPERLINE-1; \
+X	}
+X
+X	fputs(header, fout);
+X	word = 0;
+X	bcount = 3;
+X	while ((c = getc(fin)) != EOF) {
+X		word <<= 8;
+X		word |= c;
+X		if (--bcount == 0) {
+X			charout(ENCODE((word >> 18) & 077));
+X			charout(ENCODE((word >> 12) & 077));
+X			charout(ENCODE((word >>  6) & 077));
+X			charout(ENCODE((word      ) & 077));
+X			word = 0;
+X			bcount = 3;
+X		}
+X	}
+X	/*
+X	 * A trailing / marks end of data.
+X	 * The last partial encoded word follows in hex,
+X	 * preceded by the byte count.
+X	 */
+X	if (ccount != MAXPERLINE-1)	/* avoid empty lines */
+X		putc('\n', fout);
+X	fprintf(fout, "/%d%x\n", 3-bcount, word);
+X	exit(0);
+X}
+END_OF_rscsencode.c
+if test 1570 -ne `wc -c <rscsencode.c`; then
+    echo shar: \"rscsencode.c\" unpacked with wrong size!
+fi
+# end of overwriting check
+fi
+echo shar: End of shell archive.
+exit 0

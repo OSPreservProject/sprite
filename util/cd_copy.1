@@ -1,0 +1,163 @@
+.\" @(#)cd_copy.1 1.00 91/04/05 Copyright 1990, 1991 By Young Minds, Incorporated
+.nh
+.TH CD_COPY 1  "5 April 1991"
+.SH NAME
+cd_copy \- Copy files from a CD_ROM to a UNIX filesystem
+.SH SYNOPSIS
+.B cd_copy
+[
+.B \-rR
+]
+.IB cdrom_directory
+[
+.IB target_directory
+]
+.SH DESCRIPTION
+
+.B cd_copy
+copies files/directories stored on a CD-ROM created by Young Minds'
+CD-ROM Publishing Software.  The program uses the
+.IB cdrom_directory
+to search for a
+translation file (normally
+.BR 00_TRANS.TBL).
+If found, the program uses the file to get the original UNIX names
+for the files it will copy to the
+.IB target_directory.
+If the
+.IB target_directory
+is not specified on the command line, the files
+are copied to the current working directory.
+
+The names given to the copied files in the
+.IB target_directory
+are the original UNIX\(dg
+names that the files on the CD-ROM had before they were formatted
+to conform to the
+.B ISO9660
+specification.  This gives you the ability to use
+the files on the CD-ROM as they were originally intended to be used
+under a UNIX\(dg
+filesystem.  For example, if you had a source distribution on CD-ROM,
+you could use
+.B cd_copy
+to copy the files with their original UNIX\(dg
+names to a writable partition in order to make the executables.
+
+Since it is often desirable to have the original UNIX\(dg
+names in a writable partition, 
+.B cd_copy
+will also copy files from a
+.B Rock Ridge
+disc.
+
+.SH OPTIONS
+.TP
+.B \-r
+Recursively descend the subdirectory rooted at
+.IB cdrom_directory.
+.TP
+.B \-R
+Copy files from a disc mounted with a
+.B Rock Ridge
+filesystem driver.
+
+.SH EXAMPLE
+
+The example below shows how to copy the files from a CD-ROM
+subdirectory to your hard disk.  The CD-ROM is mounted on
+/cd-rom_disc.  The subdirectory is /cd-rom_disc/x11r2/gnuplot.
+
+.nf
+.RS
+my_prompt% cd ~my_account
+my_prompt% mkdir gnuplot
+my_prompt% cd_copy -r /cd-rom_disc/x11r2/gnuplot gnuplot
+.RE
+.fi
+.SH MAKING AN EXECUTABLE CD_COPY
+
+Because we wish our CD-ROM publications to be usefull on as
+many platforms as possible, 
+.B cd_copy
+is distributed in source form.  To make the executables you will
+need a
+.B C
+compiler (which is a standard part of most UNIX systems).  First, copy
+.B cd_copy.c
+from the CD-ROM onto a hard disk.  On most systems this will look
+somehthing like this:
+
+.nf
+.RS
+% cp /cd-rom/ym_utils/"cd_copy.c;1" cd_copy.c
+.RE
+.fi
+
+The quotes around
+.B cd_copy.c;1
+above are necessary to prevent the shell from interfering with
+the operation.  Note that on some platforms the ";1" will not be needed
+because the CD-ROM filesystem driver may automatically strip it off.
+
+After you have a copy of 
+.B cd_copy.c
+on your hard disk, you need to compile it.  Type:
+
+.nf
+.RS
+% cc -o cd_copy cd_copy.c
+.RE
+.fi
+
+This will create an executable file named
+.B cd_copy.
+On some platforms it may be necessary to link in a BSD compatibility
+library.  HP-UX machines are in this catagory.  In this case you should
+instead type:
+
+.nf
+.RS
+% cc -o cd_copy cd_copy.c /usr/lib/libBSD.a
+.RE
+.fi
+
+Once you have successfully created the executable you may want to
+install it in a commonly accessible location like /usr/local/bin.
+.SH NOTES
+
+While all filenames on CD-ROM discs from Young Minds are stored using
+upper case letters, the CD-ROM filesystem driver for the Sun workstation
+automatically translates all upper case filename characters to lower case.
+.B cd_copy 
+automatically detects several types of translations that
+are commonly performed by CD-ROM filesystem drivers, so this
+should cause no problems.
+.LP
+The directory
+.IB cdrom_directory
+need not reside on a CD-ROM disc, as long as it contains a copy of all
+files from a directory on a CD-ROM disc (and that directory's
+sub-directories, if you wish to use the
+.B -r
+option).
+
+.LP
+While the current version of Young Minds' CD-ROM Publishing Software
+generates translation tables entries for block device nodes, character
+device nodes, pipes, and sockets (denoted B, C, P, and S), the current
+version of 
+.B cd_copy
+ignores these entries as there is not yet a well defined, machine
+independent mapping for these entries.
+.SH ALSO SEE
+.BR 00_TRANS.TBL (5),
+.SH BUGS
+
+While there is no reason why the program could not be useful in
+copying directory trees to arbitrary directories, the
+required translation file only allows the program to be used on directory
+(or directory trees) that contain correct translation files.
+.LP
+\(dg \s-1UNIX\s0 is a trademark of Bell Laboratories.
+

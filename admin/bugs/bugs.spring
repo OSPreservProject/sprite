@@ -1,0 +1,556 @@
+Log-Number: 30479
+From: mendel (Mendel Rosenblum)
+Subject: Re: The story about anise/burble 
+Date: Mon, 10 Dec 90 10:25:47 PST
+
+> Return-Path: mgbaker
+> Received: by sprite.Berkeley.EDU (5.59/1.29)
+> 	id AA79210; Sun, 9 Dec 90 17:24:48 PST
+> Message-Id: <9012100124.AA79210@sprite.Berkeley.EDU>
+> To: bugs
+> Subject: The story about anise/burble
+> Date: Sun, 09 Dec 90 17:24:45 PST
+> From: Mary Baker <mgbaker>
+> 
+> Burble was trying to fork an "sh -ev".  It was in the midst of trying to
+> do a Vm_SegmentDup and copy a page for the segment from its swap space
+> (VmCopySwapSpace).  The src swapFilePtr for the src segment had a server ID
+> of anise, while the destination swapFilePtr had a server ID of allspice.
+> The link /swap/56 points to allspice.  In Fsrmt_BlockCopy (called by
+> Fs_PageCopy) the Rpc_Call to do the RPC_FS_COPY_BLOCK command uses
+> the serverID in the src swapFilePtr.  The server (anise in this case) then
+> executes Fsrmt_RpcBlockCopy for a file which is actually on allspice.  This
+> routine does a FsrmtFileVerify on the handle, which returns NIL.
+> This ends up causing STALE_HANDLE to be returned from the Rpc_Call, which
+> causes Fs_PageCopy to decide the server is down and it waits for recovery
+> and retries the copy forever.  It seems to me that there are a number of
+> problems here, including the confusion of serverIDs and the infinite retrying
+> of the access of a swap file which doesn't exist.  We've moved the swap
+> directories back and forth between allspice and anise a couple of times now.
+> Maybe that's not supposed to happen often, but perhaps should try to get this
+> to work correctly anyway since it wouldn't be difficult.  It's funny that this
+> is just happening now to burble, since its swap directory was moved to allspice
+> from anise quite a while ago.
+> 
+> 
+> Mary
+
+We should make sure that tve or someone else didn't try to move the swap directory.
+This problem is reported in the sprite log entry #30367 has happened everytime
+I`ve try to move a swap directory of a sun4 while it was running. Sometimes it 
+took a long time to happen. An old shell with a single page swapped out will cause
+the problem next command you time at it.
+
+Another possibility that occurred to me it an iteraction with migration.
+Was the forking process migrated there?  Was the swap file being copied in "56" or 
+some other swap directory?  What happens if a shell migrates from a machine with a
+swap directory on anise to a machine will a swap directory on allspice and then trys
+to fork?  The swap file for the shell will reside on anise but the newly created 
+data and stack segments for the shell will reside on allspice.  1) This would happen
+on sun4s because its only possible if copy-on-write is turned off. 2)
+It also wouldn't
+happen frequently because we infrequently migrate processes with vm segments active.
+Most migration uses remote exec which should not (does not?) create swap files.
+3) Should be 100% reproducible with a simple test program that migrates and forks()
+to a swap with a different swap server.
+
+	Mendel
+ 
+ 
+Log-Number: 30502
+From: mendel (Mendel Rosenblum)
+Subject: /hosts/{assault allspice anise}/bootcmds does exit
+Date: Wed, 12 Dec 90 17:01:09 PST
+
+I was adding the command to /hosts/anise/bootcmds to redirect the
+syslog into a file so I looked how it was done on allspice and assault.
+It was done by adding the command:
+
+newtee -inputFile /dev/syslog /sprite/syslogs/$HOST
+
+to the end of /hosts/<hostname>/bootcmds.   
+
+Since newtee doesn't exit, this means that the bootcmds script never
+exits.  Was this done for a reason? Does it cause any problems for the
+boot script not to exit?  
+
+
+	Mendel
+ 
+
+Log-Number: 30678
+From: mendel (Mendel Rosenblum)
+Subject: Anise crash with disk full
+Date: Tue, 05 Feb 91 13:17:36 PST
+
+Anise panic'ed inside of LFS today with the code trying to update the
+attributes of an unallocated descriptor. The kgcore program from allsprite
+would not finish. It kept hanging part way thru the dump.  
+The message before the crash indicated that the disk was full and file
+allocates and writes were failing.  My guess is that the crash had something
+to do with this.  Note that currently the LFS file systems will stop
+allocation when the disks are 75% full.  This is why you get disk full
+messages when the disk is 75% full.
+
+	Mendel
+ 
+ 
+Log-Number: 30769
+Date: Sat, 9 Mar 91 12:35:20 PST
+From: shirriff (Ken Shirriff)
+Subject: Re: allspice didn't boot;
+
+Allspice died yesterday afternoon with:
+Fscache_write: DISK FULL
+Ofs_FileTrunc Abandoning (indirect) block
+Fscache_FetchBlock hashing error
+
+Since this is a known bug, I rebooted.
+ 
+ 
+Log-Number: <none>
+Subject: Kernel install finished
+Date: Tue, 02 Apr 91 16:04:23 PST
+From: Mary Baker <mgbaker>
+
+I've finished installing the new kernel.  It is version 1.087.  Since the last
+"new" kernel was pretty stable, I moved it to "sprite."  I did not blow
+away the old "sprite" though.  I moved it to "old."  The old "old" kernel
+was real old, so I removed it.
+
+This new kernel has a lot of changes in it.  I've tried to test things,
+but something may still be wrong.  Also, the size of the Fs_Stat
+structure changed, so programs looking at that structure will need to be
+recompiled.  I've recompiled fsStat, spritemon and getcounters.  I haven't
+installed them though, since they would not be compatible with the older
+kernels.  Shall I call them something different or put them in a cmds.new,
+or how do we handle this?
+
+
+Mary
+
+
+[19-Apr-91: as discussed at today's Sprite meeting, one thing to do is
+have (1) a table in /sprite/admin of utilities that depend on kernel
+data structures (either size or layout) and (2) a program that
+interprets it.  Each entry in the table would contain the name of a
+utility and a list of kernel version numbers and paths to
+corresponding versions of the utility.  For example, one line might
+say that for kernels up through 1.086 you should run fsstat.old, but
+for kernels starting with 1.087, run fsstat.new.  (There should also
+be support for private kernels that aren't numbered the same as
+installed kernels.  Perhaps some sort of Tcl expression could be
+used.)  The table would be maintained on an ad-hoc basis, as people
+make kernel changes.  So, if you make an incompatible change like the
+one Mary mentioned, you would (a) move fsstat to fsstat.old, (b) build
+fsstat.new using the new structure definition, and (c) change "fsstat"
+to be a link to this interpreter program, which would exec the proper
+version of fsstat when invoked.  When everyone is running a kernel
+with the new definition, you'd get rid of fsstat.old, remove the
+"fsstat" link, and rename fsstat.new to fsstat.
+
+-mdk]
+
+
+
+Log-Number: 30875
+Subject: Sync_Wait can return wrong value
+Date: Thu, 11 Apr 91 15:23:52 PDT
+From: Mike Kupfer <kupfer>
+
+
+There's a fair amount of kernel code that checks whether a wait on a
+condition variable was interrupted by a signal.  Unfortunately, the
+main "wait" primitive, SyncEventWaitInt, only checks for signals
+before the context switch; it doesn't check after it wakes up again
+and can therefore return the wrong value.
+
+Also, a minor bug: the comment header for Sync_Wait is wrong, since
+Sync_Wait is in fact supposed to return a meaningful value.
+
+mike
+ 
+
+Log-Number: 01589
+Date: Wed, 7 Mar 90 12:58:04 PST
+From: mendel (Mendel Rosenblum)
+Subject: fsync() broken
+
+Fsync() on a large remote file doesn't push the file to disk.   The file is
+written to the server's cache but not to disk. It appears that the 
+file needs to be large enought so that it doesn't fit in the local cache.
+
+	Mendel
+
+[19-Apr-91: the problem appears to be more general: fsync() only
+pushes the file to the server; it doesn't push it all the way out to
+the server's disk. -mdk]
+
+
+Log-Number: 30931
+Date: Thu, 25 Apr 91 00:03:41 PDT
+From: shirriff (Ken Shirriff)
+Subject: /dev/tty
+
+Two problems:
+First, bogus /dev/tty files sometimes show up and cause problems.  e.g.
+-rw-rw-r--  1 ouster        521 Apr 19 09:28 /dev/tty
+Second, for Unix compatibility, we should probably have /dev/tty.
+
+Ken
+ 
+ 
+Log-Number: 30962
+Date: Mon, 29 Apr 91 00:18:37 PDT
+From: mottsmth (Jim Mott-Smith)
+Subject: Assault died
+
+
+Assault died at about 11:50pm with
+	Fatal error: HandleRelease handle <1,25,0,59200>
+	"cmds" not locked
+	Syncing disks
+	FslclLookup, missing '..' link: ID <25,0,44624>
+
+Ken claims responsibility.  He was in a directory in one window
+and deleted the directory from another.
+
+-- Jim M-S (part-time ddj)
+
+
+ 
+Log-Number: 30990
+Subject: deadlock when remote exec fails
+Date: Thu, 02 May 91 14:52:49 PDT
+From: Mike Kupfer <kupfer>
+
+A process migrated from nutmeg to catnip.  It was supposed to do a
+remote exec, but that failed with SYS_ARG_NOACCESS.  When exiting it
+tried to lock its pcb, which deadlocked because it had locked the pcb
+in Proc_ResumeMigProc.
+
+mike
+--
+(gdb) bt
+#0  0xe004132 in Mach_ContextSwitch ()
+#1  0xfeedbabe in ?? ()
+#2  0xe081cde in SyncEventWaitInt (event=237605708, wakeIfSignal=0) 
+    (syncLock.c line 655)
+#3  0xe08123e in Sync_SlowWait (
+    conditionPtr=(struct Sync_Condition *) 0xe29934c, 
+    lockPtr=(struct Sync_KernelLock *) 0xe0c92c4, wakeIfSignal=0) 
+    (syncLock.c line 298)
+#4  0xe071e02 in Proc_Lock (
+    procPtr=(struct Proc_ControlBlock *) 0xe2992e0) 
+    (procTable.c line 416)
+#5  0xe0682ec in ProcExitProcess (
+    exitProcPtr=(struct Proc_ControlBlock *) 0xe2992e0, reason=4, 
+    status=5, code=0, thisProcess=1) (procExit.c line 538)
+#6  0xe067dba in Proc_ExitInt (reason=4, status=5, code=0) 
+    (procExit.c line 270)
+#7  0xe067ae6 in ProcDoRemoteExec (
+    procPtr=(struct Proc_ControlBlock *) 0xe2992e0) 
+    (procExec.c line 1878)
+#8  0xe06ef58 in Proc_ResumeMigProc (pc=106756) (procRemote.c line 313)
+
+ 
+ 
+Log-Number: 31002
+From: mendel (Mendel Rosenblum)
+Subject: Allspice, anise, assault crash
+Date: Sat, 04 May 91 12:58:35 PDT
+
+When I came in this morning allspice was hung and anise and assault were
+in the debugger. I could not login to allspice because it was
+out of processes. The problem is that when assault dies allspice fills
+its process table with sendmail processes waiting for assault.  Assault
+died because it ran out of memory. I decided to just reboot assault 
+with the hope that this would unwedge allspice so I could debug anise
+which was in the debugger because it tried to unlock a file handle
+that was not locked.  More on anise later.   Assault couldn't reboot
+because allspice wasn't answering its requests for "/".  I tried
+to type L1-i to see what was wrong and the L1-i code seg faulted
+and put allspice in the debugger.  I took a core dump of allspice 
+into /home/ginger/pnh/cores/vmcore.allspice.crash.l1i if the author
+of the L1-i code is interested.  
+
+The problem with anise appears to be a shell on sedition that was sitting in a 
+deleted directory tree. Each time sedition went thru recovery it
+tried to open this file and crashed anise.   Is this a known bug?
+
+	Mendel
+
+[There are two things here for Spring cleaning.
+
+(1) The lock registration stuff needs to be rationalized so that we
+can reliably take an event number and get the lock information, if
+any.  The heuristics used by L1-i to verify that the event number
+points to a lock do not seem to be adequate.
+
+(2) We need to fix the problem of what happens to processes whose
+current working directory has been deleted.
+
+-mdk 13-May-91].
+
+
+Log-Number: 01551
+Date: Fri, 2 Mar 90 19:02:12 PST
+From: shirriff (Ken Shirriff)
+Subject: / full
+
+I got tired of write-back failed errors, so I removed
+/boot/cmds.spur/netroute and prefix, freeing up 172K.  If anyone wishes
+to reboot the spur, they can copy these files from /sprite/src/cmds.spur.
+Wait, I just checked again and now there's only 3K free.  Something evil
+must be swallowing up space in /.
+
+[We need a better way to track down runaway clients that fill up a
+partition or otherwise monopolize a server.  One suggestion is to have
+a tool like spritemon (or a new option to spritemon) that displays
+per-client RPC information when run on a server. -mdk 13-May-91].
+
+
+Log-Number: 31065
+Date: Thu, 16 May 91 01:45:59 PDT
+From: Dean Long <dlong@@>
+Subject: weird prefix behavior
+
+Sprite lets you mount a prefix on top of a directory (not just special
+files created by ln -r).  For example, I can have a directory
+/sprite with a sub-directory /sprite/cmds.sun4, and then mount a /sprite
+prefix on top of the /sprite directory on the / partition.  Now,
+I can access either one.  To access the prefix, I can use /sprite,
+and to access the sprite directory of /, I can use /./sprite.  Now
+the fun part comes with you do "cd .." from /./sprite/cmds.sun4 --
+infinite loop -- your shell hangs, and you have to kill -KILL the
+whole thing.
+
+dl
+["prefix" should ensure that the remote link (and nothing else) exists
+and should bail out if there's a problem. -mdk 17-May-91.] 
+ 
+
+Log-Number: 31068
+Date: Thu, 16 May 91 13:19:00 PDT
+From: Dean Long <dlong@oak.ucsc.edu>
+Subject: prefixes without a /
+
+If I do something like this:
+
+prefix -M /dev/rsd01a -l root_back
+
+and forget to put a / in front of root_back, it still
+gets mounted, but I cannot access it, or unmount it
+(at least, I haven't figured out how yet.)
+
+dl
+[As long as somebody is working on prefix, they might as well fix this
+one, too. -mdk 17-May-1991.]
+ 
+
+Log-Number: 31071
+Subject: ANSI compatibility (whining)
+Date: Fri, 17 May 91 18:56:07 PDT
+From: Mike Kupfer <kupfer>
+
+It sure would be nice if we had an ANSI-compatible C library (e.g.,
+one in which "scanf" with "%i" recognizes a hex number correctly). 
+Maybe for spring cleaning we could steal part or all of the BSD C
+library?
+
+mike
+ 
+ 
+Log-Number: 31142
+Subject: structure of setjmp.h
+Date: Wed, 05 Jun 91 21:35:37 PDT
+From: Mike Kupfer <kupfer>
+
+/sprite/lib/include/setjmp.h is currently a symbolic link to
+$MACHINE.md/setjmp.h.  It might be better if it were broken into a
+machine-independent part (function prototypes) and machine-dependent
+part (size of jmp buf, etc.).
+
+mike
+ 
+ 
+Log-Number: 31165
+From: mendel (Mendel Rosenblum)
+Subject: Re: couldn't boot allspice off ginger 
+Date: Fri, 14 Jun 91 09:00:42 PDT
+
+
+> 
+> (begin bitching)
+> 
+> Why in Hell do we still have this problem where we can't shut down a
+> system cleanly?
+
+I suspect the problem is that we sync the disk and then kill off all
+processes.  Killing processes can causes files to be deleted from
+/swap/14 (allspice's swap area) which is on /.   This explains the
+directory /swap/14/{number} pointing to a unallocated inode.
+
+> 
+> And why in Hell is the root partition so big?  The bigger it is, the
+> more likely it will fail the disk check, hence the more likely we'll
+> have to reboot.
+
+Too bad you weren't around when I tried to argue against this and lost.
+
+> 
+> (end bitching)
+> 
+> I went through the 1990 bug list and found a couple instances of
+> similar problems, where downloading a kernel would go very slowly.
+> One suggestion from the bug list is that the clients are somehow
+> polluting the net trying to talk to allspice.  I tried ftp'ing a copy
+> of the kernel from ginger to shallot and it went at normal speed, so
+> if there is some global problem, why would it only affect the
+> downloading of the kernel?
+
+Did you use ftp or tftp?  The PROM and netBoot use tftp to down the
+kernel.
+
+> 
+> I am suspicious that it might be a problem with the network driver in
+> allspice's PROM.  Etherfind shows a pattern very similar to that
+> exhibited when murder takes forever to boot: the client asks for a
+> packet, and the server immediately replies.  Then there is a
+> two-second pause before the client sends anything else to the server.
+> Unfortunately, etherfind doesn't conveniently give sequence numbers
+> for tftp connections, so I don't know for sure whether the second
+> request is for the block that the server just sent it.
+
+It seems more likely to be a problem in netBoot.  The PROM network driver
+is only called to send and receive packets and allspice and murder have
+different network inferface hardware. The piece in common here is the
+netBoot program.
+
+> 
+> Anyway, the reason that we're going through all this fuss and bother
+> in the first place is because of the problems we had last year where
+> we couldn't boot anything except "new" off the disk.  Has this been
+> fixed?
+
+I don't remember anyone fixing this.  Hook up a disk to anise and you
+have a good test setup for looking at this problem.  
+
+	Mendel
+ 
+[The problem of booting alternate kernels off the disk has gone away.
+The problem of slow booting off ginger should be looked into as a
+spring cleaning project.  Maybe it's the same problem that
+occasionally affects murder.  -mdk 6/21/91]
+
+
+Log-Number: 31171
+Date: Sun, 16 Jun 91 14:56:47 PDT
+From: shirriff (Ken Shirriff)
+Subject: exb1 doesn't work
+
+I'm still getting media errors on the exabyte drive attached to allspice
+after running the cleaning tape through the drive.  As there are now no
+working drives, I am unable to complete the dumps.
+
+Ken
+ 
+[After swapping murder's and allspice's drives, we were able to start
+the dumps, but they hung.  These hung processes aren't killable, and
+the tape drive is unusable until the machine is rebooted.  The spring
+cleaning project is to fix things so that the processes can be killed.
+Maybe the driver is waiting with the "wakeup on signal" parameter set
+to FALSE. -mdk 6/21/91.]
+
+
+Log-Number: 31255
+From: mendel (Mendel Rosenblum)
+Subject: Panic message not printed on Allspice's console.
+Date: Fri, 26 Jul 91 10:14:14 PDT
+
+
+Allspice crashed yesterday during the Sprite meeting with the message:
+
+   Entering debugger with a Interrupt Trap (16) exception at PC 0x...
+
+This message was caused by the DBG_CALL macro in the panic() routine.
+Unfortunately, the panic message itself was lost.  I suspect that this is
+due to the newtee program being used to capture the syslog. On a panic() 
+call the system goes down before the newtee program has a chance to 
+output the panic() message to the console.  Because the newtee program
+has already read the message from the syslog buffer it is not in the
+kernel core file either and is sometimes hard to reconstruct the
+arguments to panic() using the backtrace.  
+
+	Mendel
+ 
+ 
+Log-Number: 31257
+From: mendel (Mendel Rosenblum)
+Subject: Allspice panic with disk full
+Date: Fri, 26 Jul 91 10:56:38 PDT
+
+
+Allspice crashed yesterday during the Sprite meeting when /tmp ran out 
+of disk space.  The crash had a previously reported error message of:
+
+Fatal Error: LfsError on: /tmp status 0x1, Can't update descriptor map.
+
+Contrary to the error message, this is not a problem in LFS.  The problem
+is in fslclLookup.c in the routine CreateFile(). It occurs when a file
+or directory can't be created or added to a directory because the disk is
+full.  If the directory block create or the component insert fails the
+code releases the newly created handle, frees the memory allocated
+for the file descriptor memory, and deallocates the file number.  Unfortunately,
+it leaves the handle inserted in the handle table pointing at unallocated
+memory for its descriptor and possible with dirty blocks in the cache.
+LFS panics when it finds this file because it's file number is not
+allocated. It's going to take more than a one-line bug fix to back out
+of the mess left when this happens.  If you ever see the message:
+DISK FULL followed by "CreateFile: unwinding" this problem just happened
+and the system doesn't have long to live.
+
+	Mendel
+ 
+ 
+Log-Number: 31304
+From: mendel (Mendel Rosenblum)
+Subject: Hack in sched mod for register window problem
+Date: Fri, 09 Aug 91 13:26:24 PDT
+
+
+So people can use their sparc2 without fear of random processes 
+getting killed I added some code to the sched module to flush
+the regsiter windows before call Proc_SetCurrentProc(). Hopefully
+this code is temporary and can be removed when the 
+window handlers are fixed.  I've included a description of the
+problem at the end of this message.
+
+	Mendel
+
+>To: mgbaker
+Subject: Re: Something to watch for 
+In-reply-to: Your message of Sun, 04 Aug 91 22:51:36 -0700.
+             <9108050551.AA472380@sprite.Berkeley.EDU> 
+Date: Tue, 06 Aug 91 18:27:25 PDT
+>From: mendel
+
+I found the problem that caused the "MachHandleWindowUnderflow: killing process!"
+error.  In Sched_ContextSwitchInt() the code sets proc_RunningProcesses[0] 
+(using Proc_SetCurrentProc) before calling Mach_ContextSwitch().  
+Mach_ContextSwitch() does many save's to spill the windows to the stack.  
+If there is a user window for which the page is nonresident it saves
+the window into the Mach_State structure pointed to by proc_RunningProcesses[0].
+This saves the window into the wrong Mach_State structure; the one that is
+being switched to rather than the structure of the old process.  The underflow 
+error occurs because the handler finds a bogus fp to restore from when the
+process is switched back in.
+
+This also happens on the sparcStation1.  The extra window on the sparc2 makes
+it much more frequent.  This problem explains the random tcsh going into the
+debugger that ethan reported in March (log message 30757)
+
+	Mendel
+
+ 
+ 

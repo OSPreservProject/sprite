@@ -1,0 +1,139 @@
+head     9.1;
+branch   ;
+access   ;
+symbols  ds3100:9.1 sun3:9.1 sun4nw:9.1 symm:9.1 spur:9.1 Summer89:9.0;
+locks    ; strict;
+comment  @ * @;
+
+
+9.1
+date     90.09.11.12.13.31;  author rab;  state Exp;
+branches ;
+next     9.0;
+
+9.0
+date     89.09.12.14.58.04;  author douglis;  state Stable;
+branches ;
+next     1.3;
+
+1.3
+date     89.06.15.08.40.43;  author brent;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     89.05.24.07.54.13;  author rab;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     89.05.01.15.52.45;  author mendel;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@Declarations of routines for raw mode access to block devices.
+@
+
+
+9.1
+log
+@Added prototypes.
+@
+text
+@/*
+ * rawBlockDev.h --
+ *
+ *	Declarations of routines for raw mode access to block devices.
+ *	This routines should be accessed thru the file system device
+ *	switch.
+ *
+ * Copyright 1989 Regents of the University of California
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ *
+ * $Header: /sprite/src/kernel/dev/RCS/rawBlockDev.h,v 9.0 89/09/12 14:58:04 douglis Stable Locker: rab $ SPRITE (Berkeley)
+ */
+
+#ifndef _RAWBLOCKDEV
+#define _RAWBLOCKDEV
+
+#include "user/fs.h"
+#include "fs.h"
+
+extern ReturnStatus DevRawBlockDevOpen _ARGS_((Fs_Device *devicePtr,
+    int useFlags, Fs_NotifyToken token, int *flagsPtr));
+extern ReturnStatus DevRawBlockDevReopen _ARGS_((Fs_Device *devicePtr,
+    int refs, int writers, Fs_NotifyToken token, int *flagsPtr));
+extern ReturnStatus DevRawBlockDevRead _ARGS_((Fs_Device *devicePtr,
+    Fs_IOParam *readPtr, Fs_IOReply *replyPtr));
+extern ReturnStatus DevRawBlockDevWrite _ARGS_((Fs_Device *devicePtr,
+    Fs_IOParam *writePtr, Fs_IOReply *replyPtr));
+extern ReturnStatus DevRawBlockDevClose _ARGS_((Fs_Device *devicePtr,
+    int useFlags, int openCount, int writerCount));
+extern ReturnStatus DevRawBlockDevIOControl _ARGS_((Fs_Device *devicePtr,
+    Fs_IOCParam *ioctlPtr, Fs_IOReply *replyPtr));
+
+#endif /* _RAWBLOCKDEV */
+
+@
+
+
+9.0
+log
+@Changing version numbers.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/dev/RCS/rawBlockDev.h,v 1.3 89/06/15 08:40:43 brent Exp Locker: douglis $ SPRITE (Berkeley)
+d23 2
+a24 6
+extern ReturnStatus DevRawBlockDevOpen();
+extern ReturnStatus DevRawBlockDevReopen();
+extern ReturnStatus DevRawBlockDevRead();
+extern ReturnStatus DevRawBlockDevWrite();
+extern ReturnStatus DevRawBlockDevClose();
+extern ReturnStatus DevRawBlockDevIOControl();
+d26 12
+@
+
+
+1.3
+log
+@Added reopen extern
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/dev/RCS/rawBlockDev.h,v 1.2 89/05/24 07:54:13 rab Exp Locker: brent $ SPRITE (Berkeley)
+@
+
+
+1.2
+log
+@Changes to allow optimization.
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/src/kernel/dev/RCS/rawBlockDev.h,v 1.1 89/05/01 15:52:45 mendel Exp Locker: rab $ SPRITE (Berkeley)
+d24 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d17 1
+a17 1
+ * $Header: /sprite/lib/forms/RCS/proto.h,v 1.2 89/01/07 04:12:44 rab Exp $ SPRITE (Berkeley)
+@

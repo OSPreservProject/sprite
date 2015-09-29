@@ -1,0 +1,11 @@
+local.mk
+sync.h
+syncInt.h
+syncLock.c
+syncLock.h
+syncLockStat.c
+syncSleep.c
+syncStat.c
+syncSysV.c
+syncTypes.h
+syncUser.c

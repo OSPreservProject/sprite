@@ -1,0 +1,54 @@
+head     1.1;
+branch   ;
+access   ;
+symbols  ds3100:1.1 sun3:1.1 sun4nw:1.1 symm:1.1 spur:1.1;
+locks    ; strict;
+comment  @ * @;
+
+
+1.1
+date     90.09.12.17.10.13;  author jhh;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@@
+
+
+
+1.1
+log
+@fixed include statements
+@
+text
+@#ifdef notdef
+
+#include <devTMR.h>
+
+#define	TIMEIT_SIZE 1024
+struct timeIt {
+    int	   place;
+    unsigned int time;
+};
+extern struct timeIt timeItArray[TIMEIT_SIZE];
+extern int	timeItPoint;
+#define	AddTime(Zplace)  { \
+		if (!dbg_UsingNetwork) { \
+		timeItArray[timeItPoint].place = (Zplace); \
+		Dev_TimerReadRegInline(&timeItArray[timeItPoint].time); \
+		timeItPoint++; \
+		if (timeItPoint >= TIMEIT_SIZE) \
+		    timeItPoint = 0; \
+		} \
+		}
+#else
+
+#define	TIMEIT_SIZE 1024
+struct timeIt {
+    int	   place;
+    unsigned int time;
+};
+#define AddTime(Zplace)
+#endif
+@

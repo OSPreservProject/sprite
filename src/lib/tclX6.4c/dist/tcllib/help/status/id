@@ -1,0 +1,62 @@
+
+
+          id options
+               This command provides a means of getting, setting and
+               converting user, group and process ids.  The id command
+               has the following options:
+
+               id user [name]
+
+               id userid [uid]
+                    Set the real and effective user ID to name or uid,
+                    if the name (or uid) is valid and permissions
+                    allow it.  If the name (or uid) is not specified,
+                    the current name (or uid) is returned.
+
+               id convert userid uid
+
+               id convert user name
+                    Convert a user ID number to a user name, or vice
+                    versa.
+
+               id group [name]
+
+               id groupid [gid]
+                    Set the real and effective group ID to name or
+                    gid, if the name (or gid) is valid and permissions
+                    allow it.  If the group name (or gid) is not
+                    specified, the current group name (or gid) is
+                    returned.
+
+               id convert groupid gid
+
+               id convert group name
+                    Convert a group ID number to a group name, or vice
+                    versa.
+
+               id effective user
+
+               id effective userid
+                    Return the effective user name, or effective user
+                    ID number, respectively.
+
+               id effective group
+
+               id effective groupid
+                    Return the effective group name, or effective
+                    group ID number, respectively.
+
+               id process
+                    Return the process ID of the current process.
+
+               id process parent
+                    Return the process ID of the parent of the current
+                    process.
+
+               id process group
+                    Return the process group ID of the current
+                    process.
+
+               id process group set
+                    Set the process group ID of the current process to
+                    its process ID.

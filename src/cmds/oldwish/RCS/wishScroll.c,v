@@ -1,0 +1,376 @@
+head     1.3;
+branch   ;
+access   ;
+symbols  ;
+locks    mgbaker:1.3; strict;
+comment  @ * @;
+
+
+1.3
+date     89.01.11.11.58.35;  author mlgray;  state Exp;
+branches ;
+next     1.2;
+
+1.2
+date     88.11.02.14.50.55;  author mlgray;  state Exp;
+branches ;
+next     1.1;
+
+1.1
+date     88.10.03.12.48.30;  author mlgray;  state Exp;
+branches ;
+next     ;
+
+
+desc
+@X11: works pretty much now.
+@
+
+
+1.3
+log
+@Temporary checkin
+@
+text
+@/* 
+ * WishScroll.c --
+ *
+ *	Routines for dealing with scrolling.
+ *
+ * Copyright 1987 Regents of the University of California
+ * All rights reserved.
+ * Permission to use, copy, modify, and distribute this
+ * software and its documentation for any purpose and without
+ * fee is hereby granted, provided that the above copyright
+ * notice appear in all copies.  The University of California
+ * makes no representations about the suitability of this
+ * software for any purpose.  It is provided "as is" without
+ * express or implied warranty.
+ */
+
+#ifndef lint
+static char rcsid[] = "$Header: /a/newcmds/wish/RCS/wishScroll.c,v 1.2 88/11/02 14:50:55 mlgray Exp Locker: mlgray $ SPRITE (Berkeley)";
+#endif not lint
+
+
+#include "string.h"
+#include "sx.h"
+#include "wishInt.h"
+
+/* This is global for now but will go into WishWindow structure... */
+extern	int	wishNumGroupsToHide;
+extern	Boolean	wishSkipEmptyGroupsP;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WishScroll --
+ *
+ *	Scrollbar call-back routine.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The display may scroll.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+WishScroll(clientData, distance, units, window)
+    ClientData	clientData;
+    float	distance;
+    int		units;	/*  SX_SCROLL_ABSOLUTE or ..._PAGES */
+    Window	window;
+{
+    float	top, bottom;
+    float	newTop, newBottom;
+    WishWindow	*aWindow;
+    float	displayCover;		
+    int		oldFirstElement;
+    int		newLastElement;
+    int		numDisplayed;
+    int		numCouldDisplay;
+
+    aWindow = (WishWindow *) clientData;
+
+#ifdef SCROLL_DEBUG
+    fprintf(stderr, "Entered WishScroll:\n");
+    fprintf(stderr, "\tdistance is %f\n", distance);
+    fprintf(stderr, "\tunits is %s\n", units == SX_SCROLL_PAGES ?
+	    "scroll_pages" : "scroll_absolute");
+    fprintf(stderr, "\tfirstElement is %d\n",
+	    aWindow->firstElement);
+    fprintf(stderr, "\tlastElement is %d\n",
+	    aWindow->lastElement);
+    fprintf(stderr, "\tnumElements is %d\n",
+	    aWindow->numElements);
+    fprintf(stderr, "\tnumGroups is %d\n",
+	    aWindow->numGroups);
+#endif SCROLL_DEBUG
+
+    oldFirstElement = aWindow->firstElement;	/* save to compare */
+    numCouldDisplay = aWindow->numRows * (aWindow->usedCol + 1);
+    numDisplayed = aWindow->lastElement - aWindow->firstElement + 1;
+
+    if (units == SX_SCROLL_PAGES) {
+	/*
+	 * If we're supposed to scroll forwards, check to see if the end of
+	 * the display has already been reached.
+	 */
+	if (distance > 0 && (numDisplayed < numCouldDisplay ||
+		aWindow->lastElement >= aWindow->totalDisplayEntries)) {
+	    return;	/* No point -- already hit end of display */
+	}
+	aWindow->firstElement += distance * numCouldDisplay;
+	/* no point in scrolling so that we waste space in last column */
+	if (aWindow->firstElement + numCouldDisplay - 1 >
+		aWindow->totalDisplayEntries) {
+	    aWindow->firstElement = aWindow->totalDisplayEntries -
+		    numCouldDisplay + 1;
+	}
+	/* The lowest numbered element that makes sense is number 1 */
+	if (aWindow->firstElement < 1) {
+	    aWindow->firstElement = 1;
+	}
+	if (aWindow->firstElement == oldFirstElement) {
+	    return;	/* no change */
+	}
+	newLastElement = aWindow->firstElement + numCouldDisplay - 1;
+
+#ifdef SCROLL_DEBUG
+	fprintf(stderr,
+		"WishScroll dealing with page scrolling:\n");
+	fprintf(stderr, "\tfirstElement is %d\n",
+		aWindow->firstElement);
+	fprintf(stderr, "\tnewLastElement is %d\n",
+		newLastElement);
+	fprintf(stderr, "\tcalling SetPositions and Redraw\n");
+#endif SCROLL_DEBUG
+
+	/* scroll */
+	WishSetPositions(aWindow);
+	/*
+	 * WishRedraw will be called from event caused in
+	 * WishSetPositions().
+	 */
+
+#ifdef SCROLL_DEBUG
+	{
+	    float	a, b;
+
+	    fprintf(stderr,
+		    "End of WishScroll dealing with page scrolling:\n");
+	    fprintf(stderr, "\tfirstElement is %d\n",
+		    aWindow->firstElement);
+	    fprintf(stderr, "\tlastElement is %d\n",
+		    aWindow->lastElement);
+	    Sx_ScrollbarGetRange(wishDisplay, window, &a, &b);
+	    fprintf(stderr, "\ttop is now %f\n", a);
+	    fprintf(stderr, "\tbottom is now %f\n", b);
+	}
+#endif SCROLL_DEBUG
+
+	return;
+    }
+    if (units != SX_SCROLL_ABSOLUTE) {
+	Sx_Panic(wishDisplay,
+		"In WishScroll(): Unknown scrolling method requested.");
+    }
+    /* SX_SCROLL_ABSOLUTE from here on */
+
+    Sx_ScrollbarGetRange(wishDisplay, window, &top, &bottom);
+
+#ifdef SCROLL_DEBUG
+    fprintf(stderr, "\tbefore scrolling, top is %f\n", top);
+    fprintf(stderr, "\tbefore scrolling, bottom is %f\n", bottom);
+#endif SCROLL_DEBUG
+
+    if (aWindow->numElements <= 0) {
+	displayCover = 1.0;
+    } else {
+	/* The portion of the total entries that can be visible. */
+	displayCover = ((float) numCouldDisplay) /
+		((float) aWindow->totalDisplayEntries);
+	if (displayCover > 1.0) {
+	    displayCover = 1.0; 	/* can't cover more than all of it */
+	}
+    }
+#ifdef SCROLL_DEBUG
+    fprintf(stderr, "\tdisplayCover is %f\n", displayCover);
+#endif SCROLL_DEBUG
+
+    newTop = distance - (displayCover / 2.0);
+    newBottom = distance + (displayCover / 2.0);
+    if (newTop < 0) {
+	newTop = 0.0;
+	newBottom = displayCover;
+    }
+    if (newBottom > 1.0) {
+	newBottom = 1.0;
+	newTop = 1.0 - displayCover;
+    }
+    if (newTop == top && newBottom == bottom) {
+	return;		/* no change */
+    }
+    /*
+     * I set firstElement from newTop unless newBottom happens to be
+     * the very end.  If so, I make sure that the last element should
+     * be visible to avoid roundoff errors.
+     */
+    if (newBottom == 1.0) {
+	newLastElement = aWindow->totalDisplayEntries;
+	aWindow->firstElement = aWindow->totalDisplayEntries -
+		numCouldDisplay + 1;
+	/*
+	 * If there are fewer things to display than there are spaces,
+	 * the above would leave firstElement < 0.  The lowest element
+	 * we can start displaying is the first element.  (firstElement
+	 * is incremented below by one.)
+	 */
+	if (aWindow->firstElement < 1) {
+	    aWindow->firstElement = 1;
+	}
+    } else {
+	aWindow->firstElement =
+		(int) (newTop * aWindow->totalDisplayEntries) + 1;
+#ifdef NOTDEF
+	/* this seems not to be necessary */
+	newLastElement = aWindow->firstElement + numCouldDisplay - 1;
+#endif NOTDEF
+    }
+#ifdef SCROLL_DEBUG
+    fprintf(stderr, "In WishScroll, after calculations:\n");
+    fprintf(stderr, "\tfirstElement is %d\n",
+	    aWindow->firstElement);
+    fprintf(stderr, "\tnewLastElement is %d\n",
+	    newLastElement);
+    fprintf(stderr, "\tnewTop is %f\n", newTop);
+    fprintf(stderr, "\tnewBottom is %f\n", newBottom);
+    fprintf(stderr,
+	    "\tcalling WishSetPositions, then WishRedraw\n");
+#endif SCROLL_DEBUG
+    if (oldFirstElement == aWindow->firstElement) {
+	return;		/* no change */
+    }
+
+    WishSetPositions(aWindow);
+
+    /* Things are where we want them.  WishRedraw() should be called
+     * as a result of an event caused in WishSetPositions.  WishRedraw()
+     * will call SetRange again...  Go scroll.
+     */
+	
+#ifdef SCROLL_DEBUG
+    {
+	float	a, b;
+
+	Sx_ScrollbarGetRange(wishDisplay, window, &a, &b);
+	fprintf(stderr, "At end of WishScroll:\n");
+	fprintf(stderr, "\tnewTop was supposed to be %f\n", newTop);
+	fprintf(stderr, "\tnewBottom was supposed to be %f\n",
+		newBottom);
+	fprintf(stderr, "\tRedraw called SetRange and:\n");
+	fprintf(stderr, "\ttop is really %f\n", a);
+	fprintf(stderr, "\tbottom is really %f\n", b);
+	fprintf(stderr, "\tfirstElement is %d\n",
+		aWindow->firstElement);
+	fprintf(stderr, "\tlastElement is %d\n",
+		aWindow->lastElement);
+	fprintf(stderr, "\tnumElements is %d\n",
+		aWindow->numElements);
+    }
+#endif SCROLL_DEBUG
+
+    return;
+}
+@
+
+
+1.2
+log
+@fsflat changed to wish
+@
+text
+@d18 1
+a18 1
+static char rcsid[] = "$Header: wishScroll.c,v 1.1 88/10/03 12:48:30 mlgray Exp $ SPRITE (Berkeley)";
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d2 1
+a2 1
+ * FsflatScroll.c --
+d18 1
+a18 1
+static char rcsid[] = "$Header: fsflatScroll.c,v 1.10 88/06/10 13:15:22 mlgray Exp $ SPRITE (Berkeley)";
+d24 1
+a24 1
+#include "fsflatInt.h"
+d26 3
+a28 3
+/* This is global for now but will go into FsflatWindow structure... */
+extern	int	fsflatNumGroupsToHide;
+extern	Boolean	fsflatSkipEmptyGroupsP;
+d34 1
+a34 1
+ * FsflatScroll --
+d47 1
+a47 1
+FsflatScroll(clientData, distance, units, window)
+d55 1
+a55 1
+    FsflatWindow	*aWindow;
+d62 1
+a62 1
+    aWindow = (FsflatWindow *) clientData;
+d65 1
+a65 1
+    fprintf(stderr, "Entered FsflatScroll:\n");
+d110 1
+a110 1
+		"FsflatScroll dealing with page scrolling:\n");
+d119 1
+a119 1
+	FsflatSetPositions(aWindow);
+d121 2
+a122 2
+	 * FsflatRedraw will be called from event caused in
+	 * FsflatSetPositions().
+d130 1
+a130 1
+		    "End of FsflatScroll dealing with page scrolling:\n");
+d135 1
+a135 1
+	    Sx_ScrollbarGetRange(fsflatDisplay, window, &a, &b);
+d144 2
+a145 2
+	Sx_Panic(fsflatDisplay,
+		"In FsflatScroll(): Unknown scrolling method requested.");
+d149 1
+a149 1
+    Sx_ScrollbarGetRange(fsflatDisplay, window, &top, &bottom);
+d210 1
+a210 1
+    fprintf(stderr, "In FsflatScroll, after calculations:\n");
+d218 1
+a218 1
+	    "\tcalling FsflatSetPositions, then FsflatRedraw\n");
+d224 1
+a224 1
+    FsflatSetPositions(aWindow);
+d226 2
+a227 2
+    /* Things are where we want them.  FsflatRedraw() should be called
+     * as a result of an event caused in FsflatSetPositions.  FsflatRedraw()
+d235 2
+a236 2
+	Sx_ScrollbarGetRange(fsflatDisplay, window, &a, &b);
+	fprintf(stderr, "At end of FsflatScroll:\n");
+@

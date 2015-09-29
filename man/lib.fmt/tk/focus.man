@@ -1,0 +1,66 @@
+
+
+
+focus                     User Commands                     focus
+
+
+
+_________________________________________________________________
+
+NNAAMMEE
+     focus - Direct keyboard events to a particular window
+
+SSYYNNOOPPSSIISS
+     ffooccuuss ?_w_i_n_d_o_w?
+_________________________________________________________________
+
+
+DDEESSCCRRIIPPTTIIOONN
+     If no _w_i_n_d_o_w is specified, return the path name of the  win-
+     dow  that currently has the input focus for this application
+     (or nnoonnee if no window has claimed the focus).  If _w_i_n_d_o_w  is
+     specified  then  give  it  the  input  focus (all future key
+     presses and releases in any window  sharing  the  same  main
+     window  as _w_i_n_d_o_w will be sent to _w_i_n_d_o_w).  In this case the
+     return value is an empty string.  If _w_i_n_d_o_w is specified  as  |
+     nnoonnee then the focus is cleared for this application.
+
+
+KKEEYYWWOORRDDSS
+     focus, keyboard
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     1
+
+
+

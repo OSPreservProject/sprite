@@ -1,0 +1,66 @@
+
+
+
+GRAP                      User Commands                      GRAP
+
+
+
+NNAAMMEE
+     grap - pic preprocessor for drawing graphs
+
+SSYYNNOOPPSSIISS
+     ggrraapp [ files ]
+
+DDEESSCCRRIIPPTTIIOONN
+     _G_r_a_p is a _p_i_c(1) preprocessor for drawing graphs on a
+     typesetter.  Graphs are surrounded by the _t_r_o_f_f `commands'
+     ..GG11 and ..GG22.  Data that is enclosed is scaled and plotted,
+     with tick marks supplied automatically.  Commands exist to
+     modify the frame, add labels, override the default ticks,
+     change the plotting style, define coordinate ranges and
+     transformations, and include data from files.  In addition,
+     _g_r_a_p provides the same loops, conditionals and macro pro-
+     cessing that _p_i_c does.
+
+FFIILLEESS
+     /_u_s_r/_l_i_b/_g_r_a_p._d_e_f_i_n_e_s: definitions of standard plotting
+     characters, e.g., bullet.
+
+SSEEEE AALLSSOO
+     graph(1), plot(3)
+     J. L. Bentley, B. W. Kernighan, _G_R_A_P - _A _L_a_n_g_u_a_g_e _f_o_r
+     _T_y_p_e_s_e_t_t_i_n_g _G_r_a_p_h_s
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sprite v1.0                                                     1
+
+
+

@@ -1,0 +1,119 @@
+% ithyphen.tex :         hyphen.tex for italian
+%
+% Installation:
+%
+% Replace the file HYPHEN.TEX by the one given below.
+% Run initex on the preferred format (e.g. PLAIN.TEX or LPLAIN.TEX).
+% Rename the output .FMT file : e.g. PLAIN.FMT ---> I_PLAIN.FMT
+% Replace the original HYPHEN.TEX.
+% Define the commands ITeX   as ``TeX &I_PLAIN'',
+%                     ILaTeX as ``TeX &I_LPLAIN''.
+%
+%
+%                                                 Max Calvani
+%
+%  BITNET:  FISICA%ASTRPD.INFN.IT@ICINECA2.BITNET
+%  SPAN:    39003::FISICA
+%
+% --------------------------------- cut -------------------------------------
+%                              ithyphen.tex
+%
+% Ifenazione italiana (G. Patergnani)
+%
+% Le regole ortografiche usate sono quelle di una grammatica di
+% scuola media: sarebbe occorso riferirsi alla celebre grammatica del
+% Restagno, edita verso il 1930, non reperita dal compilatore
+% di quanto sotto. In questa grammatica sono dedicate 10 pagine
+% a questo argomento, nella grammatica usata mezza pagina,
+% con le seguenti regole.
+% Patterns per l'italiano: si potra` spezzare la parola solo tra le lettere
+% sottoelencate dopo "\patterns{" tra le quali vi sia un numero dispari,
+% Non viene mai fatta la spezzatura se restano meno di due lettere, oppure
+% vanno a capo meno di tre .
+%
+% I raggruppamenti di lettere dopo "\patterns{" si sono costruiti con i
+% seguenti criteri, salvo poche eccezioni: se vi e` conflitto tra i criteri a)
+% e b) vince sempre a):
+%
+% a) si impedisce(2) la spezzatura tra due consonanti o vocali diseguali,
+%    delle quali la prima sia diversa da l,m,n,r, oppure diverse da cq.
+%
+% b) si permette(1)  la spezzatura
+%    tra due consonanti o vocali eguali,
+%    tra due consonanti delle quali la prima sia l,m,n,r
+%    tra c e q
+%    prima di una consonante seguita da vocale ;questo e`un caso possibile
+%    di conflitto con a, e prevale , come detto, a.
+%    prima di una s seguita da consonante
+%
+%    Vi e` conflitto tra i criteri da adottare, in particolare tra tipografi
+% e puristi. Qui si e` stati coi tipografi.
+%    Se si vogliono aggiungere altri gruppi di lettere si puo` fare, mettendo
+% un numero pari ove si vuole proibire la spezzatura, dispari ove si permette,
+% in caso di conflitto prevale il numero piu` grande. Non e` necessario
+% l'ordine alfabetico. Nulla impedisce di omettere gruppi di lettere non
+% voluti.  Vedasi appendice H tex82, pag. 449
+%
+%
+% modificato il 26 set. 87
+% modificato  il 4 marzo 88 per l'apostrofo.
+% a2u, e2u suppongono a,e  accentate,
+% i2a, i2e, i2o, i2u suppongono a, e, o, u accentate.
+
+\lccode`'=39 % altrimenti non mangia l'apostrofo. Si spera non
+             % abbia controindicazioni !
+
+\patterns{ 2'2 a1y e1y i2y j1y o1y u1y y1y
+a2u e2u i2u j1u o1u u1u y1u
+a1o e1o i2o j1o o1o u2o y1o
+a1j e1j i2j j1j o1j u1j y1j
+a1i e1i i1i j1i o1i u1i y1i
+a1e e1e i2e j1e o1e u1e y1e
+a1a e1a i2a j1a o1a u1a y1a
+ba1 ca1 da1 fa1 ga1 ha1 ka1 la1 ma1 na1 pa1 qa1 ra1 sa1 ta1 va1 wa 1xa1 za1
+be1 ce1 de1 fe1 ge1 he1 ke1 le1 me1 ne1 pe1 qe1 re1 se1 te1 ve1 we 1xe1 ze1
+bi1 ci1 di1 fi1 gi1 hi1 ki1 li1 mi1 ni1 pi1 qi1 ri1 si1 ti1 vi1 wi 1xi1 zi1
+bj1 cj1 dj1 fj1 gj1 hj1 kj1 lj1 mj1 nj1 pj1 qj1 rj1 sj1 tj1 vj1 wj 1xj1 zj1
+bo1 co1 do1 fo1 go1 ho1 ko1 lo1 mo1 no1 po1 qo1 ro1 so1 to1 vo1 wo 1xo1 zo1
+bu1 cu1 du1 fu1 gu1 hu1 ku1 lu1 mu1 nu1 pu1 qu1 ru1 su1 tu1 vu1 wu 1xu1 zu1
+by1 cy1 dy1 fy1 gy1 hy1 ky1 ly1 my1 ny1 py1 qy1 ry1 sy1 ty1 vy1 wu 1xy1 zy1
+2b3b 2c2b 2d2b 2f2b 2g2b 2h2b 2k2b 2l1b 2m1b 2n1b 2p2b 2q2b 2r1b 2s2b 2t2b 2v2b
+2w2b 2x2b 2z2b
+2b2c 2c3c 2d2c 2f2c 2g2c 2h2c 2k2c 2l1c 2m1c 2n1c 2p2c 2q2c 2r1c 2s2c 2t2c 2v2c
+2w2c 2x2c 2z2c
+2b1d 2c2d 2d3d 2f2d 2g2d 2h2d 2k2d 2l1d 2m1d 2n1d 2p2d 2q2d 2r1d 2s2d 2t2d 2v2d
+2w2d 2x2d 2z2d
+2b2f 2c2f 2d2f 2f3f 2g2f 2h2f 2k2f 2l1f 2m1f 2n1f 2p2f 2q2f 2r1f 2s2f 2t2f 2v2f
+2w2f 2x2f 2z2f
+2b2g 2c2g 2d2g 2f2g 2g3g 2h2g 2k2g 2l1g 2m1g 2n1g 2p2g 2q2g 2r1g 2s2g 2t2g 2v2g
+2w2g 2x2g 2z2g
+2b2h 2c2h 2d2h 2f2h 2g2h 2h3h 2k2h 2l1h 2m1h 2n1h 2p2h 2q2h 2r1h 2s2h 2t2h 2v2h
+2w2h 2x2h 2z2h
+2b2k 2c2k 2d2k 2f2k 2g2k 2h2k 2k3k 2l1k 2m1k 2n1k 2p2k 2q2k 2r1k 2s2k 2t2k 2v2k
+2w2k 2x2k 2z2k
+2b2l 2c2l 2d2l 2f2l 2g2l 2h2l 2k2l 2l3l 2m1l 2n1l 2p2l 2q2l 2r1l 2s2l 1t2l 2v2l
+2w2l 2x2l 2z2l
+2b2m 2c2m 2d2m 2f2m 1g2m 2h2m 2k2m 2l1m 2m3m 2n1m 2p2m 2q2m 2r1m 2s2m 1t2m 2v2m
+2w2m 2x2m 2z2m
+2b1n 1c2n 2d2n 2f2n 2g2n 2h2n 2k2n 2l1n 1m2n 2n3n 2p2n 2q2n 2r1n 2s2n 2t2n 2v2n
+2w2n 2x2n 2z2n
+2b2p 2c2p 2d2p 2f2p 2g2p 2h2p 2k2p 2l1p 2m1p 2n1p 2p3p 2q2p 2r1p 2s2p 2t2p 2v2p
+2w2p 2x2p 2z2p
+2b2q 2c1q 2d2q 2f2q 2g2q 2h2q 2k2q 2l1q 2m1q 2n1q 2p1q 2q3q 2r1q 2s2q 2t2q 2v2q
+2w2q 2x2q 2z2q
+2b2r 2c2r 2d2r 2f2r 2g2r 2h2r 2k2r 2l1r 2m1r 2n1r 2p2r 2q2r 2r3r 2s2r 2t2r 2v2r
+2w2r 2x2r 2z2r
+2b1s 2c2s 2d2s 2f2s 2g2s 2h2s 2k2s 2l1s 2m1s 2n1s 1p2s 2q2s 2r1s 2s3s 2t2s 2v2s
+2w2s 2x2s 2z2s
+2b2t 1c2t 2d2t 2f2t 2g2t 2h2t 2k2t 2l1t 2m1t 2n1t 1p2t 2q2t 2r1t 2s2t 2t3t 2v2t
+2w2t 2x2t 2z2t
+2b2v 2c2v 2d2v 2f2v 2g2v 2h2v 2k2v 2l1v 2m1v 2n1v 2p2v 2q2v 2r1v 2s2v 2t2v 2v3
+2w2v 2x2v 2z2
+2b2w 2c2w 2d2w 2f2w 2g2w 2h2w 2k2w 2l1w 2m1w 2n1w 2p2w 2q2w 2r1w 2s2w 2t2w 2v2w
+2w3w 2x2w 2z2w
+2b2x 2c2x 2d2x 2f2x 2g2x 2h2x 2k2x 2l1x 2m1x 2n1x 2p2x 2q2x 2r1x 2s2x 2t2x 2v2x
+2w2x 2x3x 2z2x
+2b2z 2c2z 2d2z 2f2z 2g2z 2h2z 2k2z 2l1z 2m1z 2n1z 2p2z 2q2z 2r1z 2s2z 2t2z 2v2z
+2w2z 2x2z 2z3z
+ .op3t2
+}

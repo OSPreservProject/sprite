@@ -1,0 +1,22 @@
+L COMPATMA.C;1                      	compatMapCode.c	/sprite/src/lib/c/unixSyscall/compatMapCode.c
+F COMPATSI.C;1                      	compatSig.c
+L COMPATSI.H;1                      	compatSig.h	/sprite/src/lib/c/unixSyscall/compatSig.h
+D CVS_ADM                           	CVS.adm
+F CVTSTAT.C;1                       	cvtStat.c
+F LOMEM.S;1                         	loMem.s
+F MACH.H;1                          	mach.h
+F MACHADDR.H;1                      	machAddrs.h
+F MACHASM.S;1                       	machAsm.s
+F MACHASMD.H;1                      	machAsmDefs.h
+F MACHCODE.C;1                      	machCode.c
+F MACHCONS.H;1                      	machConst.h
+F MACHDIS.C;1                       	machDis.c
+F MACHINT.H;1                       	machInt.h
+F MACHMIGR.C;1                      	machMigrate.c
+F MACHMON.C;1                       	machMon.c
+F MACHMON.H;1                       	machMon.h
+F MACHTYPE.H;1                      	machTypes.h
+F MACHUNIX.C;1                      	machUNIXSyscall.c
+F MD_MK.SED;1                       	md.mk.sed
+D SCVS                              	SCVS
+F STAT.H;1                          	stat.h

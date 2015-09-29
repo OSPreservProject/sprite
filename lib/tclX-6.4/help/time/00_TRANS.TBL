@@ -1,0 +1,7 @@
+F ALARM.;1                          	alarm
+F CONVERTC.;1                       	convertclock
+F FMTCLOCK.;1                       	fmtclock
+F GETCLOCK.;1                       	getclock
+F SLEEP.;1                          	sleep
+F TIME.;1                           	time
+F TIMES.;1                          	times
